@@ -289,15 +289,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	XNull
 	 -> 	transX table 	$ XNull
 
-	-- boxing
-	XBox 	t x
-	 -> do	x'		<- transZM table x
-		transX table	$ XBox t x'
-
-	XUnbox 	t x
-	 -> do	x'		<- transZM table x
-		transX table	$ XUnbox t x'
-
 	-- allocation
 	XAlloc i
 	 ->	transX table 	$ XAlloc i

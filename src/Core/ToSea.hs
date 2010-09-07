@@ -243,8 +243,7 @@ toSeaX		xx
 	C.XPrim C.MBox [_, x]
 	 -> do	let t	= C.checkedTypeOfOpenExp (stage ++ "toSeaX") x
 		x'	<- toSeaX x
-
-		return	$ E.XBox (toSeaT t) x'
+		return	$ E.XPrim (E.MBox $ toSeaT t) [x']
 
 	-- the unboxing function is named after the result type
 	C.XPrim C.MUnbox [C.XPrimType r, x]
@@ -252,8 +251,7 @@ toSeaX		xx
 	 			$ C.checkedTypeOfOpenExp (stage ++ "toSeaX") x
 
 		x'	<- toSeaX x
-
-		return	$ E.XUnbox (toSeaT tResult) x'
+		return	$ E.XPrim (E.MUnbox $ toSeaT tResult) [x']
 
 	-- forcing
 	C.XPrim (C.MForce) [x]

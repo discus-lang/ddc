@@ -220,6 +220,30 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XSlot    v _ i		-> "_S(" % i % ")"
 	XSlotCAF v _		-> "_CAF(" % sV v % ")"
 
+	-- projection
+	XTag x
+	 -> "_getObjTag(" % x % ")"
+
+	XArg x t i
+	 -> case t of
+	 	TObjData	-> "_DARG(" % x % ", " % i % ")"
+		TObjThunk	-> "_TARG(" % x % ", " % i % ")"
+		TObjSusp 	-> "_SARG(" % x % ", " % i % ")"
+
+	XField x v l		-> "_FIELD("  % x % ", " % "_S" % sV v % ", " % l % ")"
+	XFieldR x v l		-> "_FIELDR(" % x % ", " % "_S" % sV v % ", " % l % ")"
+
+	-- constants
+	XCon v			-> "_tag" % sV v
+	XInt i			-> ppr i
+	XUnit 			-> ppr "_primUnit"
+	XLit lit		-> pprLiteralFmt lit
+	XTagThunk		-> ppr "_tagThunk"
+	XSuper v		-> "(void*)" % sV v
+	XNull			-> ppr "_null"
+	XAtom v			-> "_atom" % sV v
+
+	-- Primitives ---------------------------------------------------------
 	-- Primitive arithmetic operators.
 	XPrim (MOp f) [x1]
 	 |  f == OpNeg
@@ -282,31 +306,8 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		PFunStrCmp	-> "strcmp (" % x1 % ", " % x2 % ")"
 		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
 
-	-- projection
-	XTag x
-	 -> "_getObjTag(" % x % ")"
-
-	XArg x t i
-	 -> case t of
-	 	TObjData	-> "_DARG(" % x % ", " % i % ")"
-		TObjThunk	-> "_TARG(" % x % ", " % i % ")"
-		TObjSusp 	-> "_SARG(" % x % ", " % i % ")"
-
-	XField x v l		-> "_FIELD("  % x % ", " % "_S" % sV v % ", " % l % ")"
-	XFieldR x v l		-> "_FIELDR(" % x % ", " % "_S" % sV v % ", " % l % ")"
-
-	-- constants
-	XCon v			-> "_tag" % sV v
-	XInt i			-> ppr i
-	XUnit 			-> ppr "_primUnit"
-	XLit lit		-> pprLiteralFmt lit
-	XTagThunk		-> ppr "_tagThunk"
-	XSuper v		-> "(void*)" % sV v
-	XNull			-> ppr "_null"
-	XAtom v			-> "_atom" % sV v
-
 	-- boxing
-	XBox t x
+	XPrim (MBox t) [x]
 	 | t == TCon (Var.primTBool Unboxed) []
 	 -> "_boxEnum(" % x % ")"
 
@@ -316,7 +317,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 | otherwise
 	 -> "_box(" % t % ", " % x % ")"
 
-	XUnbox t x
+	XPrim (MUnbox t) [x]
 	 |  t == TCon (Var.primTBool Unboxed) []
 	 -> "_unboxEnum(" % x % ")"
 

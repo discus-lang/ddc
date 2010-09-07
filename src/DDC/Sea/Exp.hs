@@ -152,8 +152,9 @@ data Guard a
 data Exp a
 	= XNil
 
-	-- | Var-ish things
-	--   TODO: merge all of XVar, XVarCAF, XSlot and XSlotCAF into the same constructor.
+	-- Names ----------------------
+	-- Names of things that can be assigned to, lvalues.
+	-- TODO: merge these into the same constructor.
 	| XVar		Var Type
 	| XVarCAF	Var Type
 
@@ -169,7 +170,14 @@ data Exp a
 	--	This references a global variable refering to a CAF object.
 	| XSlotCAF	Var Type
 
+	-- Names of things that can be used, but not assigned to.
+	-- TODO: merge these into the same constructor.
+	| XSuper	Var			-- name of a supercombinator
+	| XAtom		Var
+	| XCon		Var			-- a data constructor
 
+
+	-------------------------------
 	-- projection
 	| XArg		(Exp a) ObjType Int	-- of some object
 	| XTag		(Exp a)			-- tag of data object	((Data)x) ->tag
@@ -178,26 +186,17 @@ data Exp a
 	| XFieldR	(Exp a) Var Var		-- exp, type of exp, field name
 
 	-- constants
-	| XCon		Var			-- a data constructor
 	| XInt		Int			-- an integer
 	| XUnit					-- the unit data type
 	| XLit		LiteralFmt		-- a literal
-	| XSuper	Var			-- name of a supercombinator
-	| XAtom		Var
 
 	-- control
 	| XLabel	Var			-- a label, for jumping to
 	| XTagThunk
 	| XNull
 
-
 	-- primitive operators
 	| XPrim		Prim [Exp a]
-
-	-- boxing. 
-	-- TODO: merge this into XPrim
-	| XBox		Type (Exp a)		-- type, exp
-	| XUnbox	Type (Exp a)		-- type, exp
 
 	-- allocation
 	-- TODO: merge this into XPrim

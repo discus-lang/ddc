@@ -333,11 +333,12 @@ llvmOfAssign (XSlot v1 t1 i) t@(TPtr TObj) (XVar v2 t2)
  | t1 == t && t2 == t
  =	writeSlot (toLlvmVar v2 t2) i
 
+{-
 llvmOfAssign ((XSlot v1 t1 i)) t@(TPtr TObj) (XBox t2 exp)
  | t1 == t
  = do	boxed		<- boxExp t2 exp
 	writeSlot	boxed i
-
+-}
 {-
 llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XApply (XSlot v2 t2 i2) args)
  | t1 == t && t2 == t
@@ -537,6 +538,7 @@ llvmVarOfExp (XInt i)
 	addBlock [ Comment ["llvmVarOfExp (XInt i)"], Assignment reg (Load (llvmWordLitVar i)) ]
 	return	reg
 
+{-
 llvmVarOfExp (XUnbox ty@TCon{} (XVar v t))
  =	unboxAny (toLlvmType ty) (toLlvmVar v t)
 
@@ -544,15 +546,15 @@ llvmVarOfExp (XUnbox ty@TCon{} (XSlot v _ i))
  = do	objptr	<- readSlot i
 	unboxAny (toLlvmType ty) objptr
 
-{-
+
 llvmVarOfExp (XUnbox ty@TCon{} (XForce (XSlot _ _ i)))
  = do	orig	<- readSlot i
 	forced	<- forceObj orig
 	unboxAny (toLlvmType ty) forced
--}
+
 llvmVarOfExp (XUnbox ty@TCon{} (XVarCAF v t))
  =	unboxAny (toLlvmType ty) (pVarLift (toLlvmCafVar v t))
-
+-}
 
 llvmVarOfExp x
  = panic stage $ "llvmVarOfExp " ++ show x

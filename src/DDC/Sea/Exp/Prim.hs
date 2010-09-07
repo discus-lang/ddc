@@ -25,6 +25,13 @@ data	Prim
 
 	-- | Call some other primitive function in the runtime system.
 	| MFun	PrimFun
+	
+	-- | Box some unboxed value, given the type of the unboxed version.
+	| MBox	Type
+	
+	-- | Unbox some boxed value, given the type of the unboxed version.
+	| MUnbox Type
+	
 	deriving (Show, Eq)
 
 
