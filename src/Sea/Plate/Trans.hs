@@ -290,9 +290,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> 	transX table 	$ XNull
 
 	-- allocation
-	XAlloc i
-	 ->	transX table 	$ XAlloc i
-
 	XAllocThunk v airity args
 	 -> do	v'		<- transV table v
 	 	transX table	$ XAllocThunk v' airity args
@@ -300,15 +297,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	XAllocData v airity
 	 -> do	v'		<- transV table v
 	 	transX table	$ XAllocData v' airity
-
-	XAllocSusp v airity
-	 -> do	v'		<- transV table v
-	 	transX table	$ XAllocSusp v' airity
-
-	XAllocDataAnchored v i
-	 -> do	v'		<- transV table v
-	 	transX table	$ XAllocDataAnchored v i
-
 
 -- Alt ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Alt where

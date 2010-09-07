@@ -9,10 +9,7 @@ module DDC.Sea.Exp.Prim
 where
 import DDC.Sea.Exp.Type
 
-
 -- | Primitive operators implemented directly in the C language or runtime system.
---	We keep these separate from the Core Op type because the two languages
---	might implement different operators.
 data	Prim
 	-- | Invoke a primitive arithmetic operator.
 	= MOp	PrimOp
@@ -25,6 +22,9 @@ data	Prim
 
 	-- | Call some other primitive function in the runtime system.
 	| MFun	PrimFun
+	
+	-- | Allocation of objects
+--	| MAlloc PrimAlloc
 	
 	-- | Box some unboxed value, given the type of the unboxed version.
 	| MBox	Type
@@ -79,6 +79,22 @@ data PrimApp
 	| PAppCurry Int		-- super arity. TODO: determine this from the type of the super.
 	deriving (Show, Eq)
 
+
+{-
+-- | Allocation of objects.
+data PrimAlloc
+	-- | Allocate an object of this many bytes in size. 
+	--   This just allocates the space. The caller is responsible for initialising it.
+	= PAllocBytes Int
+	
+	-- | Allocate a fresh thunk object, 
+	--   and fill in the super pointer, super arity, and number of args in the thunk.
+	| PAllocThunk Var Int Int
+	
+	-- | Allocate a fresh suspension, and fill in the arity.
+	| PAllocSusp
+-}	
+			
 
 -- | Primitive projections.
 --   These may be implemented by a function call depending on the backend.

@@ -200,12 +200,8 @@ data Exp a
 
 	-- allocation
 	-- TODO: merge this into XPrim
-	| XAlloc		Int		-- heap allocation: size
 	| XAllocThunk		Var Int Int	-- alloc thunk:	function name, airity, args in this thunk.
-	| XAllocSusp		Var Int
-
 	| XAllocData		Var Int		-- alloc data:  ctor name, airity
-	| XAllocDataAnchored	Var Int
 
 	deriving (Show, Eq)
 

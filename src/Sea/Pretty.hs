@@ -325,21 +325,11 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> "_unboxDirect(" % t % ", " % x % ")"
 
 	-- allocation
-	XAlloc i
-	 -> "_alloc (" % i % ")"
-
 	XAllocThunk f superA argCount
 	 -> "_allocThunk ((FunPtr) " % sV f % ", " % superA % ", " % argCount % ")"
 
 	XAllocData  ctor arity
 	 -> "_allocData (" % "_tag" % sV ctor % ", " % arity % ")"
-
-	XAllocDataAnchored ctor arity
-	 -> "_allocData_anchored (" % "_tag" % sV ctor % ", " % arity % ")"
-
-	XAllocSusp  thunk arity
-	 -> "_allocSusp (" % sV thunk % ", " % arity % ")"
-
 	_ -> panic stage $ "pprStr[Exp]: no match for " % show xx
 
 
