@@ -262,10 +262,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	XLit l
 	 -> 	transX table 	$ XLit l
 
-	XSuper v
-	 -> do	v'		<- transV table v
-	 	transX table	$ XSuper v'
-
 	-- control
 	XLabel v
 	 ->	transX table 	$ XLabel v

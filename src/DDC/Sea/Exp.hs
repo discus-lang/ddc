@@ -172,12 +172,11 @@ data Exp a
 
 	-- Literals
 	-- TODO: break these out into an RValue type.
-	| XNull					-- The null pointer.
-	| XInt		Int			-- An integer.
-	| XUnit					-- A unit value.
-	| XLit		LiteralFmt		-- a literal
-	| XSuper	Var			-- name of a supercombinator
-	| XCon		Var			-- a data constructor
+	| XNull					-- The null pointer
+	| XUnit					-- The unit value
+	| XInt		Int			-- An integer
+	| XLit		LiteralFmt		-- A literal
+	| XCon		Var			-- A data constructor tag.
 
 	-- control
 	| XLabel	Var			-- a label, for jumping to
