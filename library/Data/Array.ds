@@ -22,7 +22,7 @@ project Array a
 -- An array of boxed values.
 data Array %r1 a;
 
--- Primitives -------------------------------------------------------------------------------------
+-- Primitives -----------------------------------------------------------------
 -- These are implemented by the runtime system.
 
 -- | Create a new array and point all the cells to this initial object.
