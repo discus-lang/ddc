@@ -19,7 +19,7 @@ export
 	map; mapL; maps; maps_; mapAccumL; mapAccumR; 
 	reverse; intersperse; 
 	intercalate; 
-	--partition;
+	partition;
 		
 	-- Folds 
 	foldl1; foldr1; 
@@ -84,12 +84,11 @@ import	Base
 	Control.Exception
 
 
--- The List Type ----------------------------------------------------------------------------------
+-- The List Type --------------------------------------------------------------
 data	List a
 	= Nil
-	| Cons { 
-		x 	:: a;
-		xs	:: List a; }
+	| Cons 	{ x 	:: a
+		; xs	:: List a }
 
 project List a where
 	head 		= head
@@ -100,23 +99,31 @@ project List a where
 	elemBy xx f x	= elemBy f x xx
 
 
--- Basic Functions --------------------------------------------------------------------------------
+-- Basic Functions ------------------------------------------------------------
 infixr 6 : 
 (:)  x xs 	= Cons   x xs
 
+
 -- | Append two lists. 
---   This uses time and stack space proportional to the length of the first list.
+--   This uses time and stack space proportional to the length
+--   of the first list.
 (++) :: [a] -> [a] -> [a]
 (++) [] b	= b
 (++) (x:xs) b	= x : (xs ++ b)
 
+
+-- | Take the first element of a list.
 head :: [a] -> a
 head (x:xs)	= x
 
+
+-- | Take the elements after the first one.
 tail ::	[a] -> [a]
 tail (x:xs)	= xs
 
-last :: [a] -> a;
+
+-- | Take the last element from a list.
+last :: [a] -> a
 last (x:[])	= x
 last (x:xs)	= last xs
 
@@ -128,11 +135,12 @@ length xs	= go xs 0
     go (x:xs) n = go xs (n+1)
 
 
--- Predicates on Lists ----------------------------------------------------------------------------
+-- Predicates on Lists --------------------------------------------------------
 -- | Check if a list is empty.
 isNil :: [a] -> Bool
 isNil Nil	= True
 isNil _		= False
+
 
 -- | Check if this element is in the list
 elemBy :: (a -> a -> Bool) -> a -> [a] -> Bool
@@ -152,20 +160,21 @@ equalsBy p (x:xs) (y:ys)
 	| otherwise	= False
 	
 	
--- Building Lists --------------------------------------------------------------------------------
+-- Building Lists -------------------------------------------------------------
 -- | Replicate an an element a number of times.
-replicate :: 	Int -> a -> [a]
+replicate :: Int -> a -> [a]
 replicate 0 x	= []
 replicate i x	= x : replicate (i - 1) x
 
 
--- | Keep applying this function to a value and return an infinite list of the results.
-iterateL ::	(a -> a) -> a -> [a]
+-- | Keep applying this function to a value and return an infinite
+--   list of the results.
+iterateL :: (a -> a) -> a -> [a]
 iterateL f a	
 	= a : iterateL@ f (f a)
 
 
--- Mapping ----------------------------------------------------------------------------------------
+-- Mapping --------------------------------------------------------------------
 instance Functor (List %r) where
 	map f []	= []
 	map f (x : xs)	= f x : map f xs
@@ -174,13 +183,13 @@ instance Functor (List %r) where
 	map_ f (x : xs)	= do { f x; map_ f xs }
 	
 -- | A spine-lazy map
-mapL 	:: (a -> b) -> [a] -> [b]
+mapL :: (a -> b) -> [a] -> [b]
 mapL f []	= []
 mapL f (x:xs)	= f x : ((mapL f) @ xs)
 
 
 -- | A map with the arguments switched around
-maps 	:: [a] -> (a -> b) -> [b]
+maps :: [a] -> (a -> b) -> [b]
 maps xx f = map f xx
 
 
@@ -224,7 +233,7 @@ mapAccumR f s (x:xs)    =  (s'', y:ys)
               (s'', y)  = f s' x
              
 
--- Transformations --------------------------------------------------------------------------------
+-- Transformations ------------------------------------------------------------
 -- | Reverse the elements of this list
 reverse :: [a] -> [a]
 reverse []	= []
@@ -259,7 +268,6 @@ intercalate xs xss = concat (intersperse xs xss)
 --   the pair of lists of elements which do and do not satisfy the
 --   predicate, respectively; i.e.,
 -- > partition p xs == (filter p xs, filter (\x -> not $ p x) xs)
-{-
 partition  :: (a -> Bool) -> [a] -> ([a],[a])
 partition p xs = foldr (select p) ([],[]) xs
  where
@@ -267,9 +275,9 @@ partition p xs = foldr (select p) ([],[]) xs
 	select p x (ts,fs) 
 		| p x       = (x:ts,fs)
 		| otherwise = (ts, x:fs)
--}
 
--- Folding ----------------------------------------------------------------------------------------
+
+-- Folding --------------------------------------------------------------------
 instance Foldable (List %r) where
 	foldl f state []	= state
 	foldl f state (x:xs)	= foldl f (f state x) xs
@@ -280,30 +288,30 @@ instance Foldable (List %r) where
 
 -- | 'foldr1' is a variant of 'foldr' that has no starting value argument,
 -- 	and thus must be applied to non-empty lists.
-foldr1                  :: (a -> a -> a) -> [a] -> a
-foldr1 _ [x]            =  x
-foldr1 f (x:xs)         =  f x (foldr1 f xs)
-foldr1 _ []             =  error "foldr1: empty list"
+foldr1 :: (a -> a -> a) -> [a] -> a
+foldr1 _ [x]     =  x
+foldr1 f (x:xs)  =  f x (foldr1 f xs)
+foldr1 _ []      =  error "foldr1: empty list"
 
 
 -- | 'foldl1' is a variant of 'foldl' that has no starting value argument,
 -- and thus must be applied to non-empty lists.
-foldl1                  :: (a -> a -> a) -> [a] -> a
-foldl1 f (x:xs)         =  foldl f x xs
-foldl1 _ []             =  error "foldl1: empty list"
+foldl1 :: (a -> a -> a) -> [a] -> a
+foldl1 f (x:xs)  =  foldl f x xs
+foldl1 _ []      =  error "foldl1: empty list"
 
 
--- Special Folds ----------------------------------------------------------------------------------
+-- Special Folds --------------------------------------------------------------
 -- | Concatenate all these lists together
 concat :: [[a]] -> [a]
-concat []		= []
-concat (x:xs)		= x ++ concat xs
+concat []	= []
+concat (x:xs)	= x ++ concat xs
 
 
 -- | Concat all these lists together (lazy spine)
 concatL :: [[a]] -> [a]
-concatL []		= []
-concatL (x:xs)		= (++)@ x (concatL @ xs)
+concatL []	= []
+concatL (x:xs)	= (++)@ x (concatL @ xs)
 
 
 -- | Map a function across this list and concatenate the elements together
@@ -312,7 +320,8 @@ concatMap f []		= []
 concatMap f (x:xs)	= f x ++ concatMap f xs
 
 
--- | Map a function across this list and concatenate the elements together (lazy spine)
+-- | Map a function across this list and concatenate the elements
+--   together (lazy spine)
 concatMapL :: (a -> [b]) -> [a] -> [b]
 concatMapL f []		= []
 concatMapL f (x:xs)	= (++)@ (f x) (concatMapL @ f xs)
@@ -340,7 +349,8 @@ any :: (a -> Bool) -> [a] -> Bool
 any f xs	= or $ map f xs
 
 
--- | Sum up the elements of this int list
+-- | Sum up the elements of this int list.
+--   TODO: This leaks a Mutable constraint on the returned Int.
 sumDestructive :: [Int] -> Int
 sumDestructive xx
  = do 	count	= 0; 
@@ -358,38 +368,32 @@ sum xx = sum' 0 xx
 
 
 -- | Multiply all the elements of this int list together
-product :: [Int] -> Int;
+product :: [Int] -> Int
 product xs 
 	= foldl (*) 1 xs
 
 
 -- | Extract the largest value from a list, using the provided ordering relation.
 maximumBy :: (a -> a -> Ordering) -> [a] -> a
-maximumBy _ []
-	= error "List.maximumBy: empty list"
-
-maximumBy cmp (a:as)
-	= foldl (\x y -> case cmp x y of { GT -> x; _  -> y}) a as
+maximumBy _ []       = error "List.maximumBy: empty list"
+maximumBy cmp (a:as) = foldl (\x y -> case cmp x y of { GT -> x; _  -> y}) a as
 
 
 -- | Extract the smallest value from a list, using the provided ordering relation.
 minimumBy :: (a -> a -> Ordering) -> [a] -> a
-minimumBy _ []		
-	= error "List.minimumBy: empty list"
-
-minimumBy cmp (a:as)
-	= foldl (\x y -> case cmp x y of { GT -> y; _  -> x}) a as
+minimumBy _ []       = error "List.minimumBy: empty list"
+minimumBy cmp (a:as) = foldl (\x y -> case cmp x y of { GT -> y; _  -> x}) a as
 
 
--- Unfolding --------------------------------------------------------------------------------------
-unfoldr      :: (b -> Maybe (a, b)) -> b -> [a]
+-- Unfolding ------------------------------------------------------------------
+unfoldr :: (b -> Maybe (a, b)) -> b -> [a]
 unfoldr f b  =
   case f b of
    Just (a, new_b) -> a : unfoldr f new_b
    Nothing        -> []
 
 
--- Insertion and Lookup ---------------------------------------------------------------------------
+-- Insertion and Lookup -------------------------------------------------------
 -- | The 'insert' function takes an element and a list and inserts the
 --   element into the list at the last position where it is still less
 --   than or equal to the next element.  In particular, if the list
@@ -422,7 +426,7 @@ find f (x:xs)
 find f _	= Nothing
 
 
--- Zipping and Unzipping --------------------------------------------------------------------------
+-- Zipping and Unzipping ------------------------------------------------------
 -- | Zip these lists together with a function
 zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
 zipWith f [] yy		= []
@@ -440,7 +444,7 @@ zipWith_ f (x:xs) (y:ys)
  	zipWith_ f xs ys
 
 
--- Extracting Sublists ----------------------------------------------------------------------------
+-- Extracting Sublists --------------------------------------------------------
 -- | Take the first few elements from the front of this this list
 take :: Int -> [a] -> [a]
 take 0 xx	= []
@@ -462,7 +466,7 @@ drop 0 xx	= xx
 drop n (_:xs)	= drop (n - 1) xs
 
 
--- | Return a list of all the elements that match this predicate
+-- | Return a list of all the elements that match this predicate.
 filter :: (a -> Bool) -> [a] -> [a]
 filter f []	= []
 filter f (x:xs)	
@@ -470,7 +474,7 @@ filter f (x:xs)
 		\= filter f xs
 
 
--- | Return a list of all the elements that match this predicate (lazy spine)
+-- | Lazily produce a list of all the elements that match this predicate.
 filterL	:: (a -> Bool) -> [a] -> [a]
 filterL f []	= []
 filterL f (x:xs)
@@ -478,7 +482,8 @@ filterL f (x:xs)
 		\= filterL @ f xs
 
 
--- | Delete all the elements which match this one, using the provided equality function
+-- | Delete all the elements which match this one, using the provided
+--   equality function.
 deleteBy :: (a -> a -> Bool) -> a -> [a] -> [a]
 deleteBy eqF y	[] 	= []
 deleteBy eqF y	(x:xs)
@@ -536,8 +541,8 @@ breakList p xs@(x:xs')
 
 
 -- | The 'groupBy' function is the non-overloaded version of 'group'.
-groupBy                 :: (a -> a -> Bool) -> [a] -> [[a]]
-groupBy _  []           =  []
+groupBy :: (a -> a -> Bool) -> [a] -> [[a]]
+groupBy _  []  =  []
 groupBy eq (x:xs)       
 	=  (x:ys) : groupBy eq zs
 	where (ys,zs) = span (eq x) xs
@@ -548,9 +553,9 @@ groupBy eq (x:xs)
 --
 -- > inits "abc" == ["","a","ab","abc"]
 --
-inits                   :: [a] -> [[a]]
-inits []                =  [[]]
-inits (x:xs)            =  [[]] ++ map (\xx -> x : xx) (inits xs)
+inits :: [a] -> [[a]]
+inits []	=  [[]]
+inits (x:xs)	=  [[]] ++ map (\xx -> x : xx) (inits xs)
 
 
 -- | The 'tails' function returns all final segments of the argument,
@@ -558,29 +563,30 @@ inits (x:xs)            =  [[]] ++ map (\xx -> x : xx) (inits xs)
 --
 -- > tails "abc" == ["abc", "bc", "c",""]
 --
-tails                   :: [a] -> [[a]]
-tails []                =  [[]]
-tails xxs@(_:xs)        =  xxs : tails xs
+tails :: [a] -> [[a]]
+tails []	 =  [[]]
+tails xxs@(_:xs) =  xxs : tails xs
 
 
--- | The 'subsequences' function returns the list of all subsequences of the argument.
+-- | The 'subsequences' function returns the list of all subsequences of
+--   the argument.
 --
 -- > subsequences "abc" == ["","a","b","ab","c","ac","bc","abc"]
-subsequences            :: [a] -> [[a]]
-subsequences xs         =  [] : nonEmptySubsequences xs
+subsequences :: [a] -> [[a]]
+subsequences xs  =  [] : nonEmptySubsequences xs
 
--- | The 'nonEmptySubsequences' function returns the list of all subsequences of the argument,
---   except for the empty list.
+-- | The 'nonEmptySubsequences' function returns the list of all subsequences
+--   of the argument, except for the empty list.
 --
 -- > nonEmptySubsequences "abc" == ["a","b","ab","c","ac","bc","abc"]
-nonEmptySubsequences         :: [a] -> [[a]]
+nonEmptySubsequences :: [a] -> [[a]]
 nonEmptySubsequences []      =  []
 nonEmptySubsequences (x:xs)  
 	=  [x] : foldr f [] (nonEmptySubsequences xs)
   	where f ys r = ys : (x : ys) : r
 
 
--- Int Ranges -------------------------------------------------------------------------------------
+-- Int Ranges -----------------------------------------------------------------
 -- | Return a list of ints in this range
 rangeInt :: Int -> Int -> [Int]
 rangeInt x y =
@@ -602,8 +608,8 @@ rangeIntStep x next y =
 		(LT, LT)	-> rangeIntStepUp x y
 		(GT, GT)	-> rangeIntStepDown x y
 		_		-> []
- where
-	step = next - x
+
+ where	step = next - x
 	rangeIntStepUp x' y'
 		| x' > y'	= []
 				\= x' : rangeIntStepUp (x' + step) y'
@@ -618,8 +624,8 @@ rangeIntL x y =
 	if x > y
 	 then rangeIntDownL x y
 	 else rangeIntUpL x y
- where
-	rangeIntUpL x y
+
+ where	rangeIntUpL x y
 		| x > y		=  []
 				\= x : rangeIntUpL @ (x + 1) y
 	rangeIntDownL x y
@@ -636,8 +642,8 @@ rangeIntStepL x next y =
 		(LT, LT)	-> rangeIntStepUpL x y
 		(GT,  GT)	-> rangeIntStepDownL x y
 		_		-> []
- where
-	step = next - x
+
+ where	step = next - x
 	rangeIntStepUpL x' y'
 		| x' > y'	= []
 				\= x' : rangeIntStepUpL @ (x' + step) y'
@@ -656,8 +662,8 @@ rangeInfIntStepL x next =
 	if x == next
          then infListIntL x
          else rangeInfIntStepInnerL x
- where
-	step = next - x
+
+ where	step = next - x
 	rangeInfIntStepInnerL x' = x' : rangeInfIntStepInnerL @ (x' + step)
 
 
@@ -667,7 +673,7 @@ infListIntL x =
 
 
 
--- List Copying  ---------------------------------------------------------------------------------
+-- List Copying  --------------------------------------------------------------
 instance Copy (List Int) where
  copy xx	
   = case xx of
@@ -675,11 +681,9 @@ instance Copy (List Int) where
 	(x:xs)	-> copy x : copy xs
 
 
--- Lists are Bags ---------------------------------------------------------------------------------
--- instance Bag List where
---	size = length
-
--- Maybe Utils ------------------------------------------------------------------------------------
+-- Maybe Utils ----------------------------------------------------------------
+-- TODO: These should be in Data.Maybe, but they're defined here to break
+--       recursive import dependencies.
 mapMaybe :: (a -> Maybe b) -> [a] -> [b]
 mapMaybe _ [] 		= []
 mapMaybe f (x:xs)
@@ -693,11 +697,12 @@ maybeToList Nothing	= []
 maybeToList (Just x)	= [x]
 
 
--- String Utils -----------------------------------------------------------------------------------
--- This should be in Data.String but we don't support recursive modules ATM.
+-- String Utils ---------------------------------------------------------------
+-- TODO: These should be in Data.String, but they're defined here to break
+--       recursive import dependencies.
 
+-- | Convert a string to a list of charaters.
 charListOfString :: String -> [Char]
-
 charListOfString (SAppend s1 s2)
 	= charListOfString s1 ++ charListOfString s2
 
@@ -705,6 +710,7 @@ charListOfString (SChunk fs)
 	= charListOfFlatString' fs 0 (fs.length) []
 	
 
+-- | Convert a FlatString to a list of characters.
 charListOfFlatString :: FlatString -> [Char]
 charListOfFlatString fs
  	= charListOfFlatString' fs 0 (fs.length) []
@@ -720,9 +726,10 @@ concatStrings (str : rest)
 	= str % concatStrings rest
 
 
--- Int Utils --------------------------------------------------------------------------------------
+-- Int Utils ------------------------------------------------------------------
+-- TODO: Do this recursively and move to Data.Int
 -- | Raise this int to a power.
 pow :: Int -> Int -> Int;
-pow x n		= product $ replicate n x
+pow x n	= product $ replicate n x
 
 
