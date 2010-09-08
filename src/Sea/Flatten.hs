@@ -10,7 +10,7 @@ import DDC.Sea.Exp
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Var
-import Sea.Pretty		()
+import DDC.Sea.Pretty		()
 
 -----
 type FlatM	= VarGenM

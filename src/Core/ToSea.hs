@@ -14,16 +14,16 @@ import Data.Sequence			(Seq)
 import Data.Traversable			(mapM)
 import Util				hiding (mapM)
 import Prelude				hiding (mapM)
+import qualified Core.Util		as C
+import qualified Core.OpType		as C
+import qualified Shared.VarPrim		as Var
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T
 import qualified DDC.Core.Check.Prim	as C
 import qualified DDC.Core.Check.Exp	as C
-import qualified Core.Util		as C
-import qualified Core.OpType		as C
 import qualified DDC.Sea.Exp  		as E
-import qualified Sea.Pretty		as E
-import qualified Shared.VarPrim		as Var
+import qualified DDC.Sea.Pretty		as E
 import qualified DDC.Var.PrimId		as Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set

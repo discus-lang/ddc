@@ -11,9 +11,9 @@ module DDC.Sea.Init
 	( initTree
 	, mainTree )
 where
-import Sea.Pretty
 import Sea.Util
 import DDC.Main.Error
+import DDC.Sea.Pretty
 import DDC.Sea.Exp
 import DDC.Var
 import Util

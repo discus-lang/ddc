@@ -1,12 +1,11 @@
-{-# OPTIONS -fwarn-incomplete-patterns -O2 #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# OPTIONS -O2 #-}
 
 -- | Pretty printing of Sea expressions.
-module Sea.Pretty
+module DDC.Sea.Pretty
 	(seaVar)
 where
 import Sea.Util
-import Util
-import Data.Function
 import DDC.Sea.Compounds
 import DDC.Sea.Exp
 import DDC.Main.Pretty
@@ -18,13 +17,16 @@ import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
+import Data.Function
+import Util
 
 stage	= "Sea.Pretty"
 
------
+-- Show global sea vars
 sV  v		= ppr $ seaVar False v
 sVn n v		= ppr $ padL n $ seaVar False v
 
+-- Show local sea vars
 sVL  v		= ppr $ seaVar True v
 sVLn n v 	= ppr $ padL  n $ seaVar True v
 
@@ -74,14 +76,14 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 % "}\n\n\n"
 
 	-- Sea hackery.
-	PInclude s		-> "#include <" % s % ">\n"
-	PIncludeAbs s		-> "#include \"" % s % "\"\n"
-	PHackery []		-> ppr "\n"
-	PHackery s		-> ppr s
-	PComment []		-> ppr "//\n"
-	PComment s		-> "// " % s % "\n"
-	PBlank			-> ppr "\n"
-	PHashDef s1 s2		-> "#define " %  padL 8 s1 %>> " " % s2 % "\n"
+	PInclude s	-> "#include <" % s % ">\n"
+	PIncludeAbs s	-> "#include \"" % s % "\"\n"
+	PHackery []	-> ppr "\n"
+	PHackery s	-> ppr s
+	PComment []	-> ppr "//\n"
+	PComment s	-> "// " % s % "\n"
+	PBlank		-> ppr "\n"
+	PHashDef s1 s2	-> "#define " %  padL 8 s1 %>> " " % s2 % "\n"
 
 	PMain mn ml
 	 ->	"int main (int argc, char** argv)\n"
@@ -125,8 +127,8 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SLeave countS		-> "_LEAVE (" % countS % ");"
 
 	-- assignment
-	SAssign (XVar v _) t x2	-> (sVLn 23 v) 			% " = " % x2 % ";"
-	SAssign x1 t x2		-> (padL 23 $ pprStrPlain x1) 	% " = " % x2 % ";"
+	SAssign (XVar v _) _ x2	-> (sVLn 23 v) 			% " = " % x2 % ";"
+	SAssign x1 _ x2		-> (padL 23 $ pprStrPlain x1) 	% " = " % x2 % ";"
 
 	SStmt s			-> ppr s % ";"
 
@@ -174,9 +176,14 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 		%  "break;\n")
 	  % "  }\n"
 
-	ACaseSusp x l				-> "  _CASESUSP (" % x % ", " % "_" % l % ");\n"
-	ACaseIndir x l				-> "  _CASEINDIR (" % x % ", " % "_" % l % ");\n"
-	ACaseDeath (SourcePos (f, l, c))	-> ppr "  _CASEDEATH (\"" % f % "\", " % l % ", " % c % ");\n"
+	ACaseSusp x l
+	 -> "  _CASESUSP (" % x % ", " % "_" % l % ");\n"
+
+	ACaseIndir x l
+	 -> "  _CASEINDIR (" % x % ", " % "_" % l % ");\n"
+
+	ACaseDeath (SourcePos (f, l, c))
+	 -> ppr "  _CASEDEATH (\"" % f % "\", " % l % ", " % c % ");\n"
 
 	ADefault [SGoto v]
 	 -> "  default: goto " % sV v % ";\n"
@@ -207,17 +214,17 @@ instance Pretty a PMode => Pretty (Guard (Maybe a)) PMode where
 instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
  ppr xx
   = case xx of
-  	XNil			-> ppr "$XNil"
-	XVar v _		-> sVL v
+  	XNil		-> ppr "$XNil"
+	XVar v _	-> sVL v
 
 	XVarCAF v t
 	 |  typeIsUnboxed t
 	 -> sV v % "()"
 
-	XVarCAF v _		-> "_CAF(" % sV v % ")"
+	XVarCAF v _	-> "_CAF(" % sV v % ")"
 
-	XSlot    v _ i		-> "_S(" % i % ")"
-	XSlotCAF v _		-> "_CAF(" % sV v % ")"
+	XSlot    _ _ i	-> "_S(" % i % ")"
+	XSlotCAF v _	-> "_CAF(" % sV v % ")"
 
 	-- projection
 	XTag x
@@ -225,16 +232,16 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	XArg x t i
 	 -> case t of
-	 	TObjData	-> "_DARG(" % x % ", " % i % ")"
-		TObjThunk	-> "_TARG(" % x % ", " % i % ")"
-		TObjSusp 	-> "_SARG(" % x % ", " % i % ")"
+	     TObjData	-> "_DARG(" % x % ", " % i % ")"
+	     TObjThunk	-> "_TARG(" % x % ", " % i % ")"
+	     TObjSusp 	-> "_SARG(" % x % ", " % i % ")"
 
 	-- constants
-	XCon v			-> "_tag" % sV v
-	XInt i			-> ppr i
-	XUnit 			-> ppr "_primUnit"
-	XLit lit		-> pprLiteralFmt lit
-	XNull			-> ppr "_null"
+	XCon v		-> "_tag" % sV v
+	XInt i		-> ppr i
+	XUnit 		-> ppr "_primUnit"
+	XLit lit	-> pprLiteralFmt lit
+	XNull		-> ppr "_null"
 
 	-- Primitives ---------------------------------------------------------
 	-- Primitive arithmetic operators.
@@ -328,12 +335,14 @@ instance Pretty Type PMode where
 	TVoid		-> ppr "void"
 	TFun t1 t2	-> t1 <> "->" <> t2
 	TPtr x		-> x % "*"
-	TCon var []	-> ppr $ getSeaName var
+	TCon var []	-> ppr $ seaNameOfCtor var
 	TObj		-> ppr "Obj"
 	_ 		-> panic stage $ "pprStr[Type]: no match for " % show xx
 
-getSeaName :: Var -> String
-getSeaName var
+
+-- | Get the Sea name of a type constructor name.
+seaNameOfCtor :: Var -> String
+seaNameOfCtor var
 	| [name]	<- [n | ISeaName n <- varInfo var]
 	= name
 
@@ -343,10 +352,12 @@ getSeaName var
 
  	| otherwise
 	= panic stage
-		$  "getSeaName: no sea name for TCon " % var % "\n"
-		%  "  info = " % show (varInfo var) % "\n"
+	$  "getSeaName: no sea name for TCon " % var % "\n"
+	%  "  info = " % show (varInfo var) % "\n"
 
 
+-- | Print a literal as a Sea expression.
+pprLiteralFmt :: LiteralFmt -> Str
 pprLiteralFmt litfmt@(LiteralFmt lit fmt)
  = case (lit, fmt) of
 
@@ -355,16 +366,16 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 	 	True	-> ppr "true"
 		False	-> ppr "false"
 
-	(LWord i,   UnboxedBits b)	-> ppr i
-	(LInt i,    UnboxedBits b)	-> ppr i
-	(LFloat f,  UnboxedBits b)	-> ppr f
+	(LWord i,   UnboxedBits _)	-> ppr i
+	(LInt i,    UnboxedBits _)	-> ppr i
+	(LFloat f,  UnboxedBits _)	-> ppr f
 
-	(LChar c,   UnboxedBits b)	-> ppr $ show c
+	(LChar c,   UnboxedBits _)	-> ppr $ show c
 	(LString s, Unboxed)		-> ppr $ show s
 	_ -> panic stage $ "pprLiteralFmt: no match for " % show litfmt
 
 
------
+-- | Show the Sea name of a varaible.
 seaVar :: Bool -> Var -> String
 seaVar local v
 
@@ -374,13 +385,14 @@ seaVar local v
 
 	-- Binding occurance has an explicit Sea name, so use that.
 	--	Used for calling foreign functions.
-	| name : _	<- [name |  ISeaName name
+	| name : _	<- [name |  ISeaName name 
 				 <- concat $ [varInfo bound | IBoundBy bound <- varInfo v]]
 	= name
 
 	| Var.varHasSymbols v
 	= seaModule (varModuleId v)
-	++ (if local then "_" ++ (pprStrPlain $ varId v) ++ "_" else "_")
+	++ (if local 	then "_" ++ (pprStrPlain $ varId v) ++ "_" 
+			else "_") 
 	++ "_sym" ++ (Var.deSymString $ varName v)
 
 	-- If the variable is explicitly set as global use the given name.
@@ -398,6 +410,7 @@ seaVar local v
 	= seaModule (varModuleId v) ++ "_" ++ varName v
 
 
+-- | Show a module id. 
 seaModule :: ModuleId -> String
 seaModule m
  = case m of

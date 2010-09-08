@@ -31,7 +31,7 @@ import Llvm.Util
 
 import DDC.Sea.Exp
 import Sea.Util				(eraseAnnotsTree)
-import Sea.Pretty
+import DDC.Sea.Pretty
 
 import Util
 import qualified Data.Map		as Map
