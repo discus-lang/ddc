@@ -222,9 +222,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> sV v % "()"
 
 	XVarCAF v _	-> "_CAF(" % sV v % ")"
-
 	XSlot    _ _ i	-> "_S(" % i % ")"
-	XSlotCAF v _	-> "_CAF(" % sV v % ")"
 
 	-- projection
 	XTag x
@@ -376,7 +374,11 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 
 
 -- | Show the Sea name of a varaible.
-seaVar :: Bool -> Var -> String
+--   The first argument says whether the variable is local to the current supercombinator,
+--   and should not have a moduleid attached.
+--   TODO: Change this so the way to print a variable can be termined directly from the Sea.Exp.
+--
+seaVar 	:: Bool -> Var -> String
 seaVar local v
 
 	-- If the variable has an explicit sea name embedded in it, then use that

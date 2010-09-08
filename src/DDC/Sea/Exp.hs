@@ -145,6 +145,28 @@ data Guard a
 			(Exp a)			-- matches this one (always a var)
 	deriving (Show, Eq)
 
+{-
+-- | The name of variable-like thing.
+data Name
+	-- | Some automatic variable, managed by the back-end compiler.
+	= NAuto Var
+
+	-- | A top-level Constant Applicative Form (CAF).
+	| NCaf   Var
+
+	-- | A top-level supercombinator.
+	| NSuper Var
+
+	-- | A slot of the GC shadow stack.
+	--   All pointers to objects in the heap must be on the slot stack
+	--   when we do something that might cause a garbage collection.
+	| NSlot 
+		{ -- | The original variable this slot is standing in for.
+		  nameSlotVar 	:: Var
+
+		  -- | Number of the slot in the current frame.
+		, nameSlotNum	:: Int}
+-}
 
 -- | Expressions
 --   TODO: There are still too many constructors in this type.
@@ -164,11 +186,6 @@ data Exp a
 		Var 				-- the name of the var it's currently holding
 		Type				-- the type of the var
 		Int				-- the index of the slot
-
-	-- | A reference to a CAF object ptr.
-	--	This references a global variable refering to a CAF object.
-	| XSlotCAF	Var Type
-
 
 	-- Literals
 	-- TODO: break these out into an RValue type.

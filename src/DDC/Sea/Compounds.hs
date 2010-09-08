@@ -13,5 +13,4 @@ takeXVar xx
 	XVar     v _	-> Just v
 	XVarCAF  v _ 	-> Just v
 	XSlot    v _ _	-> Just v
-	XSlotCAF v _ 	-> Just v 
 	_		-> Nothing
