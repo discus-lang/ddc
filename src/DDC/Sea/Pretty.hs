@@ -216,13 +216,6 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
   	XNil		-> ppr "@XNil"
 
 	-- variables
-	XVar (NCaf  v) t
-	 	|  typeIsUnboxed t
-	 	-> sV v % "()"
-		
-		| otherwise
-		-> "_CAF(" % sV v % ")"
-
 	XVar name _	-> ppr name
 
 	-- projection
@@ -379,11 +372,12 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 instance Pretty Name PMode where
  ppr nn 
   = case nn of
-	NAuto  v	-> ppr $ seaVar True  v
-	NCaf   v	-> ppr $ seaVar False v
-	NSuper v	-> ppr $ seaVar False v
-	NSlot  _ i	-> "_S(" % i % ")"
 	NRts   v	-> ppr $ varName v
+	NSuper v	-> ppr $ seaVar False v
+	NAuto  v	-> ppr $ seaVar True  v
+	NSlot  _ i	-> "_S(" % i % ")"
+	NCafPtr v	-> ppr $  "_ddcCAF_" ++ seaVar False v
+	NCaf    v	-> ppr $ "*_ddcCAF_" ++ seaVar False v
 	
 
 -- | Show the Sea name of a varaible.

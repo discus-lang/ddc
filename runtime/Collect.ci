@@ -13,9 +13,16 @@
 // Get a pointer from the GC stack, indexed relative to the current frame.
 #define _S(index)	_localSlotBase [index]
 
+// Take the name of a CAF pointer.
+//   This points to the slot in the slot stack that holds the pointer
+//   to the real object.
+#define	_CAFPTR(name)	_ddcCAF_##name
 
-// Take the pointer of the CAF with this name.
+// Take the pointer of the CAF object with this name.
+//   As the pointer to the actual object is held on the slot stack, 
+//   we have to dereference this one to get at it.
 #define _CAF(name)	*_ddcCAF_##name
+
 
 // Push some slots on the GC stack.
 //	We also have to set them to zero incase the GC is activated

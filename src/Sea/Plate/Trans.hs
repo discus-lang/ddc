@@ -215,11 +215,12 @@ instance Monad m => TransM m a1 a2 Stmt where
 -- Name --------------------------------------------------------------------------------------------
 transName table name
  = case name of
-	NAuto	v	-> liftM  NAuto  (transV table v)
-	NCaf	v	-> liftM  NCaf   (transV table v)
-	NSuper	v	-> liftM  NSuper (transV table v)
-	NSlot	v i	-> liftM2 NSlot  (transV table v) (return i)
-	NRts	v	-> liftM  NRts   (transV table v)
+	NRts	v	-> liftM  NRts    (transV table v)
+	NSuper	v	-> liftM  NSuper  (transV table v)
+	NAuto	v	-> liftM  NAuto   (transV table v)
+	NSlot	v i	-> liftM2 NSlot   (transV table v) (return i)
+	NCafPtr v	-> liftM  NCafPtr (transV table v)
+	NCaf	v	-> liftM  NCaf    (transV table v)
 
 
 -- Exp ---------------------------------------------------------------------------------------------
@@ -259,6 +260,7 @@ instance Monad m => TransM m a1 a2 Exp where
 
 	XLit l
 	 -> 	transX table 	$ XLit l
+
 
 	-- control
 	XLabel v

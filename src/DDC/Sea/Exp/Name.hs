@@ -8,10 +8,17 @@ import Data.Function
 
 -- | The name of something we can take the value of.
 data Name
+	-- | A top-level name belonging to the runtime system,
+	--   like a heap or stack base pointer.
+	= NRts	 Var
+
+	-- | The name of a top-level supercombinator.
+	| NSuper Var
+
 	-- | Some automatic variable, managed by the back-end compiler.
 	--   Could refer to either a boxed or unboxed value.
-	--   Used for parameters to supers, and block local "scratch" vars.
-	= NAuto  Var
+	--   Used for parameters to supers, and block local variables.
+	| NAuto  Var
 
 	-- | A slot of the GC shadow stack.
 	--   All pointers to objects in the heap must be on the slot stack
@@ -23,14 +30,20 @@ data Name
 		, nameSlotNum	:: Int}
 
 	-- | A top-level Constant Applicative Form (CAF).
-	| NCaf   Var
+	--   Pointers to CAF objects are held on the slot stack.
+	--   For each CAF there is another pointer that gives us the address of the slot.
+        --   To get to the actual object we have to dereference the CafPtr twice.
+        --  @
+        --                      SLOT(4)
+	--   _ddcCAF_someVar -> SLOT(5) -> OBJ
+	--                      SLOT(6)
+	--  @
+	| NCafPtr   Var
 
-	-- | A top-level supercombinator.
-	| NSuper Var
-
-	-- | A top-level name belonging to the runtime system,
-	--   like a heap or stack base pointer.
-	| NRts	 Var
+	-- | The pointer to the CAF object.
+	--   This is formed by dereferencing the corresponding CafPtr once only.
+	| NCaf	    Var
+	
 	deriving (Show, Eq)
 
 
@@ -42,9 +55,10 @@ instance Ord Name where
 varOfName :: Name -> Var
 varOfName name
  = case name of
-	NAuto	v	-> v
-	NCaf	v	-> v
-	NSuper	v	-> v
-	NSlot	v _	-> v
 	NRts	v	-> v
+	NSuper	v	-> v
+	NAuto	v	-> v
+	NSlot	v _	-> v
+	NCafPtr v	-> v
+	NCaf	v	-> v
 

@@ -13,7 +13,6 @@ module DDC.Sea.Init
 where
 import Sea.Util
 import DDC.Main.Error
-import DDC.Sea.Pretty
 import DDC.Sea.Exp
 import DDC.Var
 import Util
@@ -22,54 +21,62 @@ stage	= "DDC.Sea.Init"
 
 -- | Add code that initialises this module
 initTree
-	:: ModuleId		-- ^ name of this module
-	-> Tree () 		-- ^ code for the module
+	:: ModuleId	-- ^ Name of this module.
+	-> Tree () 	-- ^ Code for the module.
 	-> Tree ()
 
-initTree modName cTree
- = let 	initCafSS	= catMap makeInitCaf [ (v, t) | PCafSlot v t <- cTree, not (typeIsUnboxed t) ]
-	initV		= makeInitVar modName
+initTree mid cTree
+ = let 	
+	-- Make code that initialises the top-level caf var.
+	initCafSS	= catMap makeInitCaf 
+			$ [ (v, t) 	| PCafSlot v t <- cTree
+					, not (typeIsUnboxed t) ]
+
+	-- The function to call to intialise the module.
+	initV		= makeModuleInitVar mid
 	super		= [ PProto initV [] TVoid
 			  , PSuper initV [] TVoid initCafSS ]
+
    in	super ++ cTree
 
 
 -- | Make code that initialises a CAF.
 makeInitCaf :: (Var, Type) -> [Stmt ()]
 makeInitCaf (v, t)
- = 	[ SAssign (xVarWithSeaName ("_ddcCAF_" ++  name) ppObj) ppObj slotPtr
-	, SAssign slotPtr pObj (XPrim (MOp OpAdd) [slotPtr, XInt 1])
-	, SAssign (XVar (NCaf v) pObj) pObj (XInt 0)
-	, SAssign (XVar (NCaf v) pObj) pObj (XPrim (MApp $ PAppCall) [XVar (NCaf v) t]) ]
-	where	name	= seaVar False v
-		slotPtr = xVarWithSeaName "_ddcSlotPtr" ppObj
-                pObj	= TPtr TObj
-                ppObj	= TPtr pObj
+ = 	-- Allocate the slot at the top of the stack for this CAF.
+	[ SAssign (XVar (NCafPtr v) ppObj) ppObj (XVar nSlotPtr ppObj)
+	, SAssign xSlotPtr pObj (XPrim (MOp OpAdd) [xSlotPtr, XInt 1])
 
-makeInitVar mid
+	-- Assign the new slot to zero, then call the function that computes the CAF.
+	-- We want to set the slot to zero while we're computing the CAF incase
+	-- it tries to recursively call itself.
+	, SAssign (XVar (NCaf v) pObj) pObj (XInt 0)
+	, SAssign (XVar (NCaf v) pObj) pObj (XPrim (MApp $ PAppCall) [XVar (NSuper v) t]) ]
+
+ where	nSlotPtr	= NRts $ varWithName "_ddcSlotPtr"
+	xSlotPtr	= XVar nSlotPtr ppObj
+	pObj		= TPtr TObj
+	ppObj		= TPtr pObj
+
+
+-- | Make the var of the function we should use to initialise a module.
+makeModuleInitVar :: ModuleId -> Var
+makeModuleInitVar mid
  = case mid of
 	ModuleId vs	-> varWithName ("ddcInitModule_" ++ (catInt "_" vs))
 	_		-> panic stage $ "makeInitVar: no match"
 
-xVarWithSeaName name typ
- =	let v = Var
-		{ varName 	= name
-		, varModuleId	= ModuleIdNil
-		, varNameSpace	= NameNothing
-		, varId		= VarIdNil
-		, varInfo	= [ISeaName name, ISeaGlobal True] }
-	in XVar (NRts v) typ
 
-
+-- Main -------------------------------------------------------------------------------------------
 -- | Make code that initialises each module and calls the main function.
 mainTree
-	:: [ModuleId]		-- ^ list of modules in this program
-	-> ModuleId		-- ^ The module holding the Disciple main function
+	:: [ModuleId]	-- ^ list of modules in this program
+	-> ModuleId	-- ^ The module holding the Disciple main function
 	-> Tree ()
 
 mainTree imports mainModule
  = let	ModuleId [mainModuleName]	= mainModule
    in	[ PMain mainModuleName
-		$ map (\m -> "_" ++ (varName $ makeInitVar m)) imports ]
+		$ map (\m -> "_" ++ (varName $ makeModuleInitVar m)) imports ]
 
 
