@@ -214,7 +214,7 @@ llvmOfStmt stmt
 --------------------------------------------------------------------------------
 
 llvmSwitch :: Exp a -> [Alt a] -> LlvmM ()
-llvmSwitch (XTag (XSlot v (TPtr TObj) i)) alt
+llvmSwitch (XTag (XVar (NSlot v i) (TPtr TObj))) alt
  = do	addComment	$ "llvmSwitch : " ++ seaVar False v
 	reg		<- readSlot i
 	tag		<- getObjTag reg
@@ -248,11 +248,11 @@ genAltVars switchEnd alt@(ASwitch (XCon v) [])
  | varName v == "Unit"
  =	return ((i32LitVar 0, switchEnd), alt)
 
-genAltVars _ alt@(ACaseSusp (XSlot v t i) label)
+genAltVars _ alt@(ACaseSusp (XVar (NSlot v i) t) label)
  = do	lab	<- newUniqueLabel "susp"
 	return	((tagSusp, lab), alt)
 
-genAltVars _ alt@(ACaseIndir (XSlot v t i) label)
+genAltVars _ alt@(ACaseIndir (XVar (NSlot v i) t) label)
  = do	lab	<- newUniqueLabel "indir"
 	return	((tagIndir, lab), alt)
 
@@ -264,14 +264,14 @@ genAltVars _ x
 
 
 genAltBlock :: ((LlvmVar, LlvmVar), Alt a) -> LlvmM ()
-genAltBlock ((_, lab), ACaseSusp (XSlot v t i) label)
+genAltBlock ((_, lab), ACaseSusp (XVar (NSlot v i) t) label)
  = do	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- readSlot i
 	forced		<- forceObj obj
 	writeSlot	forced i
 	addBlock	[ Branch lab ]
 
-genAltBlock ((_, lab), ACaseIndir (XSlot v t i) label)
+genAltBlock ((_, lab), ACaseIndir (XVar (NSlot v i) t) label)
  = do	addBlock [ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- readSlot i
 	followed	<- followObj obj
@@ -308,31 +308,31 @@ genAltDefault _ def
 --------------------------------------------------------------------------------
 
 llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
-llvmOfAssign (XVar v1 t1) t@(TPtr (TPtr TObj)) (XVar v2 t2)
- | t1 == t && t2 == t && isGlobalVar v1 && isGlobalVar v2
+llvmOfAssign (XVar n1 t1) t@(TPtr (TPtr TObj)) (XVar n2 t2)
+ | t1 == t && t2 == t && isGlobalVar (varOfName n1) && isGlobalVar (varOfName n2)
  = do	src	<- newUniqueReg (toLlvmType t1)
 	addBlock $
-		[ Assignment src (loadAddress (toLlvmVar v2 t2))
-		, Store src (pVarLift (toLlvmVar v1 t1)) ]
+		[ Assignment src (loadAddress (toLlvmVar (varOfName n2) t2))
+		, Store src (pVarLift (toLlvmVar (varOfName n1) t1)) ]
 
-llvmOfAssign (XVar v1 t1) t@(TPtr (TPtr TObj)) (XVar v2 t2@(TPtr (TPtr TObj)))
+llvmOfAssign (XVar n1 t1) t@(TPtr (TPtr TObj)) (XVar n2 t2@(TPtr (TPtr TObj)))
  | t1 == t
  = do	reg		<- newUniqueReg (toLlvmType t1)
-	addBlock	[ Assignment reg (Load (toLlvmVar v2 t2))
-			, Store reg (toLlvmVar v1 t1) ]
+	addBlock	[ Assignment reg (Load (toLlvmVar (varOfName n2) t2))
+			, Store reg (toLlvmVar (varOfName n1) t1) ]
 
-llvmOfAssign (XVar v1 t1@(TPtr (TPtr TObj))) t@(TPtr TObj) x@(XPrim op args)
+llvmOfAssign (XVar n1 t1@(TPtr (TPtr TObj))) t@(TPtr TObj) x@(XPrim op args)
  = do	dstreg		<- llvmOfPtrManip (toLlvmType t1) op args
-	addBlock	[ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
+	addBlock	[ Store dstreg (pVarLift (toLlvmVar (varOfName n1) t1)) ]
 
-llvmOfAssign (XVar v1 t1) t@(TPtr TObj) (XSlot v2 t2 i)
+llvmOfAssign (XVar n1 t1) t@(TPtr TObj) (XVar (NSlot v2 i) t2)
  | t1 == t && t2 == t
- = do	let dst		= toLlvmVar v1 t1
+ = do	let dst		= toLlvmVar (varOfName n1) t1
 	readSlotVar i dst
 
-llvmOfAssign (XSlot v1 t1 i) t@(TPtr TObj) (XVar v2 t2)
+llvmOfAssign (XVar (NSlot v1 i) t1) t@(TPtr TObj) (XVar n2 t2)
  | t1 == t && t2 == t
- =	writeSlot (toLlvmVar v2 t2) i
+ =	writeSlot (toLlvmVar (varOfName n2) t2) i
 
 {-
 llvmOfAssign ((XSlot v1 t1 i)) t@(TPtr TObj) (XBox t2 exp)
@@ -370,20 +370,20 @@ llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) (XAllocThunk var airity args)
 
 
 
-llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) x@(XPrim op args)
+llvmOfAssign (XVar n1 t1@(TCon vt1 _)) (TCon vt _) x@(XPrim op args)
  | varName vt1 == "Int32#" && varName vt == "Int32#"
  = do	dstreg		<- llvmOfXPrim i32 op args
 	addBlock	[ Comment ["Dummy add 0."]
-			, Assignment (toLlvmVar v1 t1) (LlvmOp LM_MO_Add dstreg (i32LitVar 0)) ]
+			, Assignment (toLlvmVar (varOfName n1) t1) (LlvmOp LM_MO_Add dstreg (i32LitVar 0)) ]
 
-llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) exp
+llvmOfAssign (XVar n1 t1@(TCon vt1 _)) (TCon vt _) exp
  | varName vt1 == "Int32#" && varName vt == "Int32#"
  = do	dstreg		<- llvmVarOfExp exp
 	addBlock	[ Comment ["Dummy add 0."]
-			, Assignment (toLlvmVar v1 t1) (LlvmOp LM_MO_Add dstreg (i32LitVar 0)) ]
+			, Assignment (toLlvmVar (varOfName n1) t1) (LlvmOp LM_MO_Add dstreg (i32LitVar 0)) ]
 
 
-llvmOfAssign (XVarCAF v1 t1) t@TPtr{} (XInt 0)
+llvmOfAssign (XVar (NCaf v1) t1) t@TPtr{} (XInt 0)
  = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = NULL"
 	dst		<- newUniqueReg ppObj
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
@@ -416,11 +416,12 @@ llvmFunApply fptr typ args
 
 
 llvmFunParam :: Exp a -> LlvmM LlvmVar
-llvmFunParam (XVar v t@(TPtr TObj))
- =	return $ toLlvmVar v t
 
-llvmFunParam (XSlot v (TPtr TObj) i)
+llvmFunParam (XVar (NSlot v i) (TPtr TObj))
  = 	readSlot i
+
+llvmFunParam (XVar n t@(TPtr TObj))
+ =	return $ toLlvmVar (varOfName n) t
 
 llvmFunParam p
  = panic stage $ "llvmFunParam " ++ show p
@@ -459,9 +460,9 @@ boxExp t (XPrim op args)
 	addComment $ "Erik : " ++ show calc
 	boxAny	calc
 
-boxExp t (XVar v1 t1@TCon{})
+boxExp t (XVar n1 t1@TCon{})
  = do	addComment $ "boxing4 " ++ show t
-	boxAny $ toLlvmVar v1 t1
+	boxAny $ toLlvmVar (varOfName n1) t1
 
 boxExp t x
  = panic stage $ "Unhandled : boxExp\n    " ++ show t ++ "\n    " ++ (show x)
@@ -479,8 +480,8 @@ branchLabel name
 --------------------------------------------------------------------------------
 
 llvmOfReturn :: Exp a -> LlvmM ()
-llvmOfReturn (XVar v t)
- =	addBlock [ Return (Just (toLlvmVar v t)) ]
+llvmOfReturn (XVar n t)
+ =	addBlock [ Return (Just (toLlvmVar (varOfName n) t)) ]
 
 llvmOfReturn x
  = 	panic stage $ "llvmOfReturn " ++ (takeWhile (/= ' ') (show x))
@@ -506,11 +507,11 @@ primMapFunc t build sofar exp
 llvmOfPtrManip :: LlvmType -> Prim -> [Exp a] -> LlvmM LlvmVar
 llvmOfPtrManip t (MOp OpAdd) args
  = case args of
-	[l@(XVar v t), XInt i]
+	[l@(XVar n t), XInt i]
 	 ->	do	addComment "llvmOfPtrManip"
 			src		<- newUniqueReg $ toLlvmType t
 			dst		<- newUniqueReg $ toLlvmType t
-			addBlock	[ Assignment src (loadAddress (toLlvmVar v t))
+			addBlock	[ Assignment src (loadAddress (toLlvmVar (varOfName n) t))
 					, Assignment dst (GetElemPtr True src [llvmWordLitVar i]) ]
 			return dst
 
@@ -534,18 +535,20 @@ llvmOfXPrim t op args
 
 
 llvmVarOfExp :: Exp a -> LlvmM LlvmVar
-llvmVarOfExp (XVar v t@TCon{})
+llvmVarOfExp (XVar n t@TCon{})
  = do	addComment "llvmVarOfExp (XVar v Int32#)"
-	return	$ toLlvmVar v t
+	return	$ toLlvmVar (varOfName n) t
 
-llvmVarOfExp (XVar v t)
+llvmVarOfExp (XVar n t)
  = do	reg	<- newUniqueReg pObj
-	addBlock [ Comment ["llvmVarOfExp (XVar v t)"], Assignment reg (Load (toLlvmVar v t)) ]
+	addBlock [ Comment ["llvmVarOfExp (XVar v t)"]
+		 , Assignment reg (Load (toLlvmVar (varOfName n) t)) ]
 	return	reg
 
 llvmVarOfExp (XInt i)
  = do	reg	<- newUniqueReg i32
-	addBlock [ Comment ["llvmVarOfExp (XInt i)"], Assignment reg (Load (llvmWordLitVar i)) ]
+	addBlock [ Comment ["llvmVarOfExp (XInt i)"]
+		 , Assignment reg (Load (llvmWordLitVar i)) ]
 	return	reg
 
 {-
@@ -648,7 +651,7 @@ toLlvmFuncDecl linkage v t args
 
 
 toDeclParam :: Exp a -> LlvmParameter
-toDeclParam (XSlot v t i)
+toDeclParam (XVar (NSlot v i) t)
  = (toLlvmType t, [])
 
 toDeclParam x

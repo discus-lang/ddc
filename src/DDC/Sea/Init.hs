@@ -39,8 +39,8 @@ makeInitCaf :: (Var, Type) -> [Stmt ()]
 makeInitCaf (v, t)
  = 	[ SAssign (xVarWithSeaName ("_ddcCAF_" ++  name) ppObj) ppObj slotPtr
 	, SAssign slotPtr pObj (XPrim (MOp OpAdd) [slotPtr, XInt 1])
-	, SAssign (XVarCAF v pObj) pObj (XInt 0)
-	, SAssign (XVarCAF v pObj) pObj (XPrim (MApp $ PAppCall) [XVar v t]) ]
+	, SAssign (XVar (NCaf v) pObj) pObj (XInt 0)
+	, SAssign (XVar (NCaf v) pObj) pObj (XPrim (MApp $ PAppCall) [XVar (NCaf v) t]) ]
 	where	name	= seaVar False v
 		slotPtr = xVarWithSeaName "_ddcSlotPtr" ppObj
                 pObj	= TPtr TObj
@@ -58,7 +58,7 @@ xVarWithSeaName name typ
 		, varNameSpace	= NameNothing
 		, varId		= VarIdNil
 		, varInfo	= [ISeaName name, ISeaGlobal True] }
-	in XVar v typ
+	in XVar (NRts v) typ
 
 
 -- | Make code that initialises each module and calls the main function.

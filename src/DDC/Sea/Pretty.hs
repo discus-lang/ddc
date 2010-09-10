@@ -28,7 +28,6 @@ sVn n v		= ppr $ padL n $ seaVar False v
 
 -- Show local sea vars
 sVL  v		= ppr $ seaVar True v
-sVLn n v 	= ppr $ padL  n $ seaVar True v
 
 
 -- Top ---------------------------------------------------------------------------------------------
@@ -127,8 +126,8 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SLeave countS		-> "_LEAVE (" % countS % ");"
 
 	-- assignment
-	SAssign (XVar v _) _ x2	-> (sVLn 23 v) 			% " = " % x2 % ";"
-	SAssign x1 _ x2		-> (padL 23 $ pprStrPlain x1) 	% " = " % x2 % ";"
+	SAssign (XVar n _) _ x2	-> (padL 15 $ pprStrPlain n) 	% " = " % x2 % ";"
+	SAssign x1 _ x2		-> (padL 25 $ pprStrPlain x1) 	% " = " % x2 % ";"
 
 	SStmt s			-> ppr s % ";"
 
@@ -214,15 +213,17 @@ instance Pretty a PMode => Pretty (Guard (Maybe a)) PMode where
 instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
  ppr xx
   = case xx of
-  	XNil		-> ppr "$XNil"
-	XVar v _	-> sVL v
+  	XNil		-> ppr "@XNil"
 
-	XVarCAF v t
-	 |  typeIsUnboxed t
-	 -> sV v % "()"
+	-- variables
+	XVar (NCaf  v) t
+	 	|  typeIsUnboxed t
+	 	-> sV v % "()"
+		
+		| otherwise
+		-> "_CAF(" % sV v % ")"
 
-	XVarCAF v _	-> "_CAF(" % sV v % ")"
-	XSlot    _ _ i	-> "_S(" % i % ")"
+	XVar name _	-> ppr name
 
 	-- projection
 	XTag x
@@ -295,10 +296,10 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		 -> "_allocData (" % "_tag" % sV ctor % ", " % ctorArity % ")"
 
 	-- Primitive projections.
-	XPrim (MProj f) [(XVar ctorV _), (XVar fieldV _), x]
+	XPrim (MProj f) [xCtor, xField, x]
 	 -> case f of
-	 	PProjField	-> "_FIELD("  % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
-	 	PProjFieldRef	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
+	 	PProjField	-> "_FIELD("  % x % ", " % "_S" % xCtor % ", " % xField % ")"
+	 	PProjFieldRef	-> "_FIELDR(" % x % ", " % "_S" % xCtor % ", " % xField % ")"
 
 	-- Primitive functions in the RTS.
 	XPrim (MFun f) [x1]
@@ -354,6 +355,7 @@ seaNameOfCtor var
 	%  "  info = " % show (varInfo var) % "\n"
 
 
+-- Literals ---------------------------------------------------------------------------------------
 -- | Print a literal as a Sea expression.
 pprLiteralFmt :: LiteralFmt -> Str
 pprLiteralFmt litfmt@(LiteralFmt lit fmt)
@@ -372,6 +374,17 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 	(LString s, Unboxed)		-> ppr $ show s
 	_ -> panic stage $ "pprLiteralFmt: no match for " % show litfmt
 
+
+-- Names ------------------------------------------------------------------------------------------
+instance Pretty Name PMode where
+ ppr nn 
+  = case nn of
+	NAuto  v	-> ppr $ seaVar True  v
+	NCaf   v	-> ppr $ seaVar False v
+	NSuper v	-> ppr $ seaVar False v
+	NSlot  _ i	-> "_S(" % i % ")"
+	NRts   v	-> ppr $ varName v
+	
 
 -- | Show the Sea name of a varaible.
 --   The first argument says whether the variable is local to the current supercombinator,

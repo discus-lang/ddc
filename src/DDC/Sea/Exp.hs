@@ -7,6 +7,7 @@
 module DDC.Sea.Exp
 	( module DDC.Sea.Exp.Prim
 	, module DDC.Sea.Exp.Type
+	, module DDC.Sea.Exp.Name
 	, Tree
 	, Top		(..)
 	, CtorDef	(..)
@@ -18,6 +19,7 @@ module DDC.Sea.Exp
 where
 import DDC.Sea.Exp.Prim
 import DDC.Sea.Exp.Type
+import DDC.Sea.Exp.Name
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Var
@@ -145,58 +147,24 @@ data Guard a
 			(Exp a)			-- matches this one (always a var)
 	deriving (Show, Eq)
 
-{-
--- | The name of variable-like thing.
-data Name
-	-- | Some automatic variable, managed by the back-end compiler.
-	= NAuto Var
-
-	-- | A top-level Constant Applicative Form (CAF).
-	| NCaf   Var
-
-	-- | A top-level supercombinator.
-	| NSuper Var
-
-	-- | A slot of the GC shadow stack.
-	--   All pointers to objects in the heap must be on the slot stack
-	--   when we do something that might cause a garbage collection.
-	| NSlot 
-		{ -- | The original variable this slot is standing in for.
-		  nameSlotVar 	:: Var
-
-		  -- | Number of the slot in the current frame.
-		, nameSlotNum	:: Int}
--}
 
 -- | Expressions
 --   TODO: There are still too many constructors in this type.
---	   We probably want to make an LValue/RValue split.
+--         Break this into a LValue / RValue, and only permit 
+--         assignments to LValues. Maybe use "Loc" for assignable values.
 data Exp a
 	= XNil
 
-	-- Assignable names.
-	-- TODO: Break these out into an LValue type.
-	| XVar		Var Type
-	| XVarCAF	Var Type
-
-	-- | A slot on the GC stack.
-	--	All pointers to objects in the heap must be on the slot stack
-	--	when we do something that might cause a garbage collection.
-	| XSlot
-		Var 				-- the name of the var it's currently holding
-		Type				-- the type of the var
-		Int				-- the index of the slot
+	-- | Value variables.
+	| XVar		Name Type
 
 	-- Literals
-	-- TODO: break these out into an RValue type.
-	| XNull					-- The null pointer
-	| XUnit					-- The unit value
-	| XInt		Int			-- An integer
-	| XLit		LiteralFmt		-- A literal
-	| XCon		Var			-- A data constructor tag.
-
-	-- control
-	| XLabel	Var			-- a label, for jumping to
+	-- TODO: Ditch XInt and break the rest out into their own type.
+	| XNull					-- ^ The null pointer
+	| XUnit					-- ^ The unit value
+	| XInt		Int			-- ^ An integer
+	| XLit		LiteralFmt		-- ^ A literal
+	| XCon		Var			-- ^ A data constructor tag
 
 	-- projection
 	| XArg		(Exp a) ObjType Int	-- of some object
@@ -204,6 +172,11 @@ data Exp a
 
 	-- invoke some primitive operator.
 	| XPrim		Prim [Exp a]
+
+	-- control
+	-- | A label, for jumping to.
+	--   TODO: I don't think we're really using this.
+	| XLabel	Var			
 	deriving (Show, Eq)
 
 

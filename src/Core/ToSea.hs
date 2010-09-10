@@ -113,8 +113,8 @@ toSeaP	xx
 		let argNTs	= zip argNames argTypes
 
 		retV		<- newVarN NameValue
-		let ssRet	= assignLastSS (E.XVar retV resultType, resultType) ss'
-				++ [E.SReturn (E.XVar retV resultType)]
+		let ssRet	= assignLastSS (E.XVar (E.NAuto retV) resultType, resultType) ss'
+				++ [E.SReturn  (E.XVar (E.NAuto retV) resultType)]
 
 		case (resultType, argNTs) of
 		  (E.TPtr E.TObj, [])
@@ -193,7 +193,7 @@ toSeaX	:: C.Exp -> SeaM (E.Exp ())
 toSeaX		xx
  = case xx of
 	C.XVar v t
-	 -> return $ E.XVar v (toSeaT t)
+	 -> return $ E.XVar (E.NAuto v) (toSeaT t)
 
 	C.XTau    t x		
 	 -> toSeaX x
@@ -279,7 +279,7 @@ toSeaX		xx
 	 	parts		= C.flattenApps xx
 		(Left (C.XVar vF vT) : _)	= parts
 		
-	    in 	return	$ E.XVar vF $ toSeaT vT
+	    in 	return	$ E.XVar (E.NAuto vF) $ toSeaT vT
 	 	
 	_ -> panic stage
 		$ "toSeaX: cannot convert expression to Sea IR.\n" 
@@ -336,12 +336,12 @@ toSeaS xx
 	    	return	$ ssInit' ++ ssMore
 
 	-- matches
-	C.SBind (Just v) x@(C.XMatch aa)
+	C.SBind (Just var) x@(C.XMatch aa)
 	 -> do	aa'		<- mapM (toSeaA Nothing) aa
 
 		let xT		= C.checkedTypeOfOpenExp (stage ++ ".toSeaS") x
 		let t		= toSeaT xT
-		let aaL		= map (assignLastA (E.XVar v t, t)) aa'
+		let aaL		= map (assignLastA (E.XVar (E.NAuto var) t, t)) aa'
 		
 		return		[E.SMatch aaL]
 
@@ -352,10 +352,10 @@ toSeaS xx
 
 	    
 	-- expressions
-	C.SBind (Just v) x
+	C.SBind (Just var) x
 	 -> do	x'		<- toSeaX $ C.slurpExpX x
 		let t		= C.checkedTypeOfOpenExp (stage ++ ".toSeaS") x
-	    	return		[E.SAssign (E.XVar v (toSeaT t)) (toSeaT t) x']
+	    	return		[E.SAssign (E.XVar (E.NAuto var) (toSeaT t)) (toSeaT t) x']
 
 	C.SBind Nothing x
 	 -> do	x'		<- toSeaX x
@@ -415,7 +415,7 @@ toSeaG	mObjV ssFront gg
 		let result
 			-- if the LHS is var we can make the last stmt of the RHS assign it.
 			| C.WVar var'	<- w
-			= do	let ssL		= assignLastSS (E.XVar var' t', t') ssRHS
+			= do	let ssL		= assignLastSS (E.XVar (E.NAuto var') t', t') ssRHS
 				return	( ssFront ++ ssL
 					, Nothing)
 
@@ -428,26 +428,26 @@ toSeaG	mObjV ssFront gg
 			-- match against an unboxed literal value
 			| C.WLit spos litFmt@(LiteralFmt lit fmt)	<- w
 			, dataFormatIsUnboxed fmt
-			= do	var	<- newVarN NameValue
+			= do	name	<- liftM E.NAuto $ newVarN NameValue
 
 				let compX	= if isPatConst w
-					then E.XVar var t'
-					else E.XTag $ E.XVar var t'
+					then E.XVar name t'
+					else E.XTag $ E.XVar name t'
 
-				let ssL		= assignLastSS (E.XVar var t', t') ssRHS
+				let ssL		= assignLastSS (E.XVar name t', t') ssRHS
 				return	( []
 					, Just $ E.GCase spos False (ssFront ++ ssL) compX (E.XLit litFmt))
 			  
 			-- match against constructor
 			| C.WCon sp v lvts	<- w
-			= do	var		<- newVarN NameValue
+			= do	name		<- liftM E.NAuto $ newVarN NameValue
 
 				let compX	= if isPatConst w
-					then E.XVar var t'
-					else E.XTag $ E.XVar var t'
+					then E.XVar name t'
+					else E.XTag $ E.XVar name t'
 
-				let ssL		= assignLastSS (E.XVar var t', t') ssRHS
-				return	( map (toSeaGL var) lvts
+				let ssL		= assignLastSS (E.XVar name t', t') ssRHS
+				return	( map (toSeaGL name) lvts
 					, Just $ E.GCase sp 
 							(not rhsIsDirect) 
 							(ssFront ++ ssL) 
@@ -475,12 +475,12 @@ isPatConst gg
 	_		-> False
 	
 
-toSeaGL	 objV (label, var, t)
+toSeaGL	nObj (label, var, t)
 	| C.LIndex i	<- label
 	= E.SAssign 
-		(E.XVar var (toSeaT t)) 
+		(E.XVar (E.NAuto var) (toSeaT t)) 
 		(toSeaT t)
-		(E.XArg (E.XVar objV (toSeaT t)) E.TObjData i)
+		(E.XArg (E.XVar nObj (toSeaT t)) E.TObjData i)
 
 
 -- | Decend into XLocal and XDo and slurp out the contained lists of statements.

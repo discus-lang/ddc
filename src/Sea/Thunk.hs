@@ -1,5 +1,6 @@
 
--- Expand out code to call supercombinators or create partial applications are required.
+-- Expand out code to call supercombinators or create partial applications as required.
+-- We expand out code to do tail-calls.
 --
 -- TODO: Setting the return value to XNull in expandS is a brutal hack.
 --	 Better to detect that nothing is ever returned, or init an
@@ -7,7 +8,9 @@
 --
 
 module Sea.Thunk
-	(thunkTree)
+	( thunkTree
+	, TailTable
+	, TailCallable	(..) )
 where
 import Sea.Plate.Trans
 import Util
@@ -15,48 +18,71 @@ import DDC.Sea.Pretty
 import DDC.Sea.Exp
 import DDC.Main.Pretty
 import DDC.Var
+import qualified Data.Map	as Map
 import qualified Shared.Unique	as Unique
 
+-- | Maps the var of a tail-callable super to information
+--   about how to do the call.
+type TailTable
+	= Map 	Var 		-- Var of super name that is tail callable.
+		TailCallable	-- How to call tail-call the super.	
+
+-- | Describes how to tail-call a supercombinator.
+data TailCallable
+	= TailCallable
+	{ -- | Name of the supercombinator.
+	  tailCallableSuper	:: Var
+
+	  -- | Label to jump to to tail-call it.
+	, tailCallableLabel	:: Var
+
+	  -- | Parameters of the super, with their types.
+	, tailCallableParams	:: [(Name, Type)] }
+	
 
 -- | Expand calls in this tree.
 thunkTree :: Tree () -> Tree ()
-thunkTree tree
- 	= evalState (mapM expandP tree) initExS
+thunkTree tree 
+	= evalState (mapM expandP tree) initExS
 
 
 -- | Expand calls in this top level thing.
 expandP :: Top () -> ExM (Top ())
 expandP	xx 
  = case xx of
- 	PSuper v aa r ss
+ 	PSuper vSuper params r ss
 	 -> do
-		start		<- newVar $ Just (seaVar False v ++ "_start")
+		lStart	<- newVar $ Just (seaVar False vSuper ++ "_start")
 
-		let ?tailCallTargets	
-				= [(v, (start, aa))]
+		let params'	= [(NAuto v, t) | (v, t) <- params]
+		let table 	= Map.fromList
+				[ (vSuper, TailCallable vSuper lStart params')]
 
-		ss1		<- mapM (transformSSM expandSS) ss
-		ss2		<- expandSS ss1
-		return 	$ PSuper v aa r 
-			$ 	[ SBlank
-				, SLabel start] ++ ss2
-	 
+		ss1	<- mapM (transformSSM (expandSS table)) ss
+		ss2	<- expandSS table ss1
+		return 	$ PSuper vSuper params r 
+			$ [SLabel lStart] ++ ss2
 	 
 	PCafInit v t ss
-	  -> do	let ?tailCallTargets	= []
-	  	ss1		<- mapM (transformSSM expandSS) ss
-	  	ss2		<- expandSS ss1
+	  -> do	let table	= Map.empty
+		ss1	<- mapM (transformSSM (expandSS table)) ss
+	  	ss2	<- expandSS table ss1
 		return	$ PCafInit v t ss2
 	 
 	_ -> return xx
 	
 
 -- | Expand calls in the body of some super
-expandSS ss
+expandSS 
+	:: TailTable 
+	-> [Stmt()]
+	-> ExM [Stmt()]
+
+expandSS table ss
  	= liftM concat
-	$ mapM expandS ss
+	$ mapM (expandS table) ss
 	
-expandS	s
+expandS	table s
 	-- tail calls.
 	--   BRUTAL HACK:
 	--   For functions which never return, such as.
@@ -68,14 +94,14 @@ expandS	s
 	--   (never) return so we'll give it an XNull.
 	--
 	| SAssign (XVar v _) t x@(XPrim (MApp PAppTailCall{}) _) <- s
-	= do	callSS	<- expandTailCall x
+	= do	callSS	<- expandTailCall table x
 
 		return	$ [ SAssign (XVar v t) t XNull ]
 			++ callSS
 
 	-- tail calls
 	| SStmt x@(XPrim (MApp PAppTailCall{}) _) <- s
-	= do	callSS	<- expandTailCall x
+	= do	callSS	<- expandTailCall table x
 		return	callSS
 	
 	-- curry
@@ -121,48 +147,41 @@ expandAppX x
 -- | Expand out XTailCall primitives
 --	Intra-function tail calls are implemented by jumping back to the start of the function.
 expandTailCall
-	-- possible call targets
-	:: (?tailCallTargets 
-		:: [ (Var			-- function name
-		     , (Var			-- label to jump to
-		       , [(Var, Type)]))])	-- function parameters and their types
-				
-
-	=> Exp ()				-- the tail call primitive
-	-> ExM [Stmt ()]			-- statements to do the call
+	:: TailTable		-- ^ Table descibing how to do the call.
+	-> Exp ()		-- ^ The tail call primitive
+	-> ExM [Stmt ()]	-- ^ Statements to do the call
 	
-expandTailCall x@(XPrim (MApp PAppTailCall) (XVar v _ : args))
+expandTailCall table x@(XPrim (MApp PAppTailCall) (XVar name _ : args))
  = do
 	-- See how we're supposed to call this function.
-	let Just (label, params)	
-		= lookup v ?tailCallTargets
+	let Just (TailCallable _ label params)	
+		= Map.lookup (varOfName name) table
 
-	let assignParam param@(vP, tP) arg@(XVar vA _)
+	let assignParam param@(vP, tP) arg@(XVar nA _)
 		-- don't emit (v = v) assignments
-		| vP == vA
+		| vP == nA
 		= Nothing
 		
 	    assignParam param@(vP, tP) arg
 	    	= Just $ SAssign (XVar vP tP) tP arg
 				
- 	return	$ 
-		-- Overwrite the parameter vars with the new args.
-		(catMaybes $ zipWith assignParam params args)
+ 	return	$ -- Overwrite the parameter vars with the new args.
+		   (catMaybes $ zipWith assignParam params args)
 
 		-- Jump back to the start of the function.
 		++ [SGoto label]
-		++ [SBlank]
-	
 
 -- | Expand code to build a thunk.
 expandCurry 
-	:: Var		-- ^ var to bind the thunk to.
+	:: Name		-- ^ name to bind the thunk to.
 	-> Exp () 	-- ^ thunk expresion.
 	-> ExM ([Stmt ()], Exp ())
 
-expandCurry v x@(XPrim (MApp (PAppCurry superArity)) (XVar f _  : args))
- = do	let allocX	= XPrim (MAlloc $ PAllocThunk f superArity (length args)) []
-	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v (TPtr TObj)) TObjThunk i) (TPtr TObj) a)
+expandCurry nThunk x@(XPrim (MApp (PAppCurry superArity)) (XVar (NSuper super) _  : args))
+ = do	let allocX	= XPrim (MAlloc $ PAllocThunk super superArity (length args)) []
+	let assignSS	= map (\(a, i) -> SAssign 
+						(XArg (XVar nThunk (TPtr TObj)) TObjThunk i) 
+						(TPtr TObj) a)
 		  	$ zip args [0..]
 		
   	return	(assignSS, allocX)
@@ -174,7 +193,7 @@ expandCallApp
 	-> ExM ([Stmt ()], Exp ())
 
 expandCallApp x@(XPrim (MApp (PAppCallApp superA)) (xFun@(XVar f _) : args))
- = do 	tmp	<- newVar Nothing
+ = do 	tmp	<- liftM NAuto $ newVar Nothing
 	let (callArgs, appArgs) 
 			= splitAt superA args
 
@@ -182,7 +201,9 @@ expandCallApp x@(XPrim (MApp (PAppCallApp superA)) (xFun@(XVar f _) : args))
 					(TPtr TObj) 
 					(XPrim (MApp PAppCall) (xFun : callArgs)) ]
 
-	(appSS, lastX)	<- expandApply (XPrim (MApp PAppApply) (XVar tmp (TPtr TObj) : appArgs))
+	(appSS, lastX)	<- expandApply 	(XPrim 	(MApp PAppApply) 
+						(XVar tmp (TPtr TObj) 
+					: appArgs))
 
 	return	( callSS ++ appSS 
 		, lastX)
@@ -209,34 +230,34 @@ expandApply x@(XPrim (MApp PAppApply) (XVar v _ : xx))
 -----
 expandApplyN 
 	:: Int 
-	-> Var 
+	-> Name 
 	-> [Exp ()] 
 	-> [Stmt ()]
-	-> ExM (Var, [Stmt ()])
+	-> ExM (Name, [Stmt ()])
 
 expandApplyN
 	maxApp		-- largest apply function to use
-	thunkV		-- the var to apply more args to
+	nThunk		-- the var to apply more args to
 	args		-- the args to apply
 	ssAcc		-- stmt accumulator
 
 	| []	<- args
-	= return (thunkV, ssAcc)
+	= return (nThunk, ssAcc)
 	
 	| otherwise
 	= do
-		v		<- newVar Nothing
+		name		<- liftM NAuto $ newVar Nothing
 
 	 	let (argsHere, argsMore)	
 				= splitAt maxApp args
  		
 		let ssAcc'
 			=  ssAcc
-			++ [SAssign 	(XVar v (TPtr TObj)) 
+			++ [SAssign 	(XVar name (TPtr TObj)) 
 					(TPtr TObj) 
-					(XPrim (MApp PAppApply) (XVar thunkV (TPtr TObj) : argsHere))]
+					(XPrim (MApp PAppApply) (XVar nThunk (TPtr TObj) : argsHere))]
 		
-		expandApplyN maxApp v argsMore ssAcc'
+		expandApplyN maxApp name argsMore ssAcc'
 
 
 -- ExM ------------------------------------------------------------------------

@@ -212,6 +212,16 @@ instance Monad m => TransM m a1 a2 Stmt where
 	 ->	transS table	$ SCaseFail
 
 
+-- Name --------------------------------------------------------------------------------------------
+transName table name
+ = case name of
+	NAuto	v	-> liftM  NAuto  (transV table v)
+	NCaf	v	-> liftM  NCaf   (transV table v)
+	NSuper	v	-> liftM  NSuper (transV table v)
+	NSlot	v i	-> liftM2 NSlot  (transV table v) (return i)
+	NRts	v	-> liftM  NRts   (transV table v)
+
+
 -- Exp ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Exp where
  transZM table x
@@ -219,17 +229,9 @@ instance Monad m => TransM m a1 a2 Exp where
  	XNil
 	 -> 	transX table 	$ XNil
 
-	XVar v t
-	 -> do 	v'		<- transV table v
-		transX table	$ XVar v' t
-
-	XVarCAF v t
-	 -> do 	v'		<- transV table v
-		transX table	$ XVarCAF v' t
-
-	XSlot  v t i
-	 -> do 	v'		<- transV table v
-		transX table	$ XSlot v' t i
+	XVar n t
+	 -> do 	n'		<- transName table n
+		transX table	$ XVar n' t
 
 	XPrim v xs
 	 -> do	xs'		<- mapM (transZM table) xs

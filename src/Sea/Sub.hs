@@ -1,20 +1,20 @@
--- | Erases simple assignments of the form, v1 = v2 
---   and substitutes them into the subsequent code.
+
+-- | Erases simple assignments of the form, v1 = v2 and substitutes them
+--   into the subsequent code.
 --
---	We can erase a v1 = v2 assignment if v1 is only ever assigned to
---	a single time. In this case v1 is acting as a simple alias for the
---	value on the RHS.
+--   We can erase a v1 = v2 assignment if v1 is only assigned to once.
+--   In this case v1 is just acting as an alias for the value on the RHS.
 --
---	If the variable v1 appears on the LHS of more than one assignment 
---	statement, eg:
+--   However, if v1 appears on the LHS of more than one assignment statement, 
+--   such as with:
 --	
---		switch (exp) {
---		 case c1:	v1 = v3; break;
---		 case c2:	v1 = v4; break;
---		}
+--     switch (exp) {
+--         case c1: v1 = v3; break;
+--         case c2: v1 = v4; break;
+--     }
 --
---	.. then v1 is acting as a communication channel and these assignments
---	can not be erased.
+--   .. then v1 is acting as a communication channel and these assignments
+--   can not be erased.
 --
 --
 module Sea.Sub
@@ -23,14 +23,12 @@ where
 import Util
 import Sea.Plate.Trans
 import DDC.Sea.Exp
+import DDC.Sea.Pretty		()
 import DDC.Main.Error
 import qualified Data.Map	as Map
 
-
------
 stage	= "Sea.Sub"
 
------
 type MapAssignCount	= Map Var Int
 type MapAssignVar	= Map Var Var
 
@@ -83,9 +81,9 @@ assignCountS
 	:: Stmt () 
 	-> State MapAssignCount (Stmt ())
 
-assignCountS	s
+assignCountS s
  = case s of
- 	SAssign (XVar v _) _ _
+ 	SAssign (XVar (NAuto v) _) _ _
 	 -> do	modify $ accMap 1 (\x -> x + 1) v
 	 	return s
 	 
@@ -107,26 +105,23 @@ eraseTreeSS assignCount xx
  = case xx of
  	[]	-> return xx
 	
- 	s@(SAssign (XVar v1 _) _ (XVar v2 _)) : ss
-	 -> case Map.lookup v1 assignCount of
+ 	s@(SAssign (XVar n1 _) _ (XVar n2 _)) : ss
+	 -> case Map.lookup (varOfName n1) assignCount of
 
 	 	Nothing 	
 		 -> panic stage 
-		 $  "subTreeSS: assigned var " % v1 % " has no assignCount entry\n"
+		 $  "subTreeSS: assigned var " % n1 % " has no assignCount entry\n"
 
 		Just count
 		 |  count == 1	
-		 -> do
-		 	modify (Map.insert v1 v2)
+		 -> do 	modify (Map.insert (varOfName n1) (varOfName n2))
 			eraseTreeSS assignCount ss
 
 		 | otherwise
-		 -> do
-		 	ss'	<- eraseTreeSS assignCount ss
+		 -> do 	ss'	<- eraseTreeSS assignCount ss
 			return	$ s : ss'
 
 	s : ss
-	 -> do
-		ss'		<- eraseTreeSS assignCount ss
+	 -> do	ss'		<- eraseTreeSS assignCount ss
 	 	return $ s : ss'
 

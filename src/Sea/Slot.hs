@@ -13,7 +13,6 @@ import DDC.Sea.Exp
 import DDC.Var
 import qualified DDC.Core.Glob	as C
 import qualified Shared.Unique	as Unique
-import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 
 
@@ -53,10 +52,10 @@ slotP cgHeader cgSource p
 			++ (if hasSlots			then [ SEnter	slotCount  ] 		else [])
 			++ ssArg
 			++ init ssR
-			++ (if retBoxed && hasSlots	then [ SAssign	(XVar retVar retT) retT x ]	else [])
+			++ (if retBoxed && hasSlots	then [ SAssign	(XVar (NAuto retVar) retT) retT x ]	else [])
 			++ (if hasSlots			then [ SLeave	slotCount ] 		else [])
 			++ (if retBoxed && hasSlots
-				then [ SReturn (XVar retVar retT) ]
+				then [ SReturn (XVar (NAuto retVar) retT) ]
 				else [ SReturn x ])
 
 	_ -> return p
@@ -72,7 +71,7 @@ slotSS 	:: C.Glob		-- ^ header glob
 		, [Stmt ()]	-- body of the super, rewritten to use slots.
 		, Int)		-- the number of GC slots used by this super.
 
-slotSS cgHeader cgSource args ss
+slotSS _cgHeader _cgSource args ss
  = do
  	-- Place the managed args into GC slots.
 	let (ssArg_, state0)
@@ -90,7 +89,7 @@ slotSS cgHeader cgSource args ss
 
 	-- Rewrite vars in expressions to their slots.
 	let ss3	= map (transformX
-			(\x -> slotifyX x (stateMap state1) cgHeader cgSource))
+			(\x -> slotifyX x (stateMap state1)))
 			ss2
 
 	-- Make automatic variables for unboxed values.
@@ -112,22 +111,27 @@ slotAssignArg	(v, t)
 
 	| otherwise
 	= do
-	 	slot	<- newSlot
-		let exp	= XSlot v t slot
+	 	ixSlot	<- newSlot
+		let exp	= XVar (NSlot v ixSlot) t
+
 		addSlotMap v exp
 
 		return	$ Just
-			$ SAssign exp t (XVar v t)
+			$ SAssign exp t (XVar (NAuto v) t)
 
-slotifyX x m cgHeader cgSource
-	| XVar v _	<- x
+slotifyX 
+	:: Exp  ()
+	-> Map Var (Exp ())
+	-> Exp  ()
+	
+slotifyX x m
+	| XVar (NAuto v) _	<- x
 	, Just exp	<- Map.lookup v m
 	= exp
 
 	-- BUGS: unboxed top level data is not a CAF
-	| XVar v t	<- x
-	, isCafVar cgHeader cgSource v
-	= XVarCAF v t
+	| XVar (NCaf v) t	<- x
+	= XVar (NCaf v) t
 
 	| otherwise
 	= x
@@ -138,6 +142,7 @@ slotifyX x m cgHeader cgSource
 --	A binding with an explicit Sea name is an external constant, so we don't need
 --	to compute the value of it at module startup time (like we do with other CAFs)
 --
+{-
 isCafVar :: C.Glob -> C.Glob -> Var -> Bool
 isCafVar cgHeader cgSource v
 	| Just 0	<- C.bindingArityFromGlob v cgHeader
@@ -148,7 +153,7 @@ isCafVar cgHeader cgSource v
 
 	| otherwise
 	= False
-
+-}
 
 -- SlotM ------------------------------------------------------------------------------------------
 -- State monad for doing the GC slot transform.
@@ -190,16 +195,16 @@ addSlotMap    var    x
 
 
 -- | Assign a GC slot for all variables present on the LHS of an assignment.
-slotAssignS ::	Stmt () -> SlotM (Stmt ())
-slotAssignS	ss
+slotAssignS :: Stmt () -> SlotM (Stmt ())
+slotAssignS ss
  = case ss of
- 	SAssign (XVar v t) (TPtr TObj) x
+ 	SAssign (XVar (NAuto v) t) (TPtr TObj) x
 	 -> do 	slotMap	<- gets stateMap
 
 	 	case Map.lookup v slotMap of
 		 Nothing
-		  -> do	slot	<- newSlot
-			let exp	= XSlot v t slot
+		  -> do	ixSlot	<- newSlot
+			let exp	= XVar (NSlot v ixSlot) t
 			addSlotMap v exp
 
 			return	$ SAssign exp (TPtr TObj) x
@@ -207,7 +212,7 @@ slotAssignS	ss
 		 Just exp
 		  ->	return	$ SAssign exp (TPtr TObj) x
 
-	SAssign (XVar v _) t x
+	SAssign (XVar (NAuto v) _) t x
 	 -> do	modify (\s -> s {
 	 		stateAuto = (v, t) : stateAuto s })
 		return ss

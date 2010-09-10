@@ -39,21 +39,21 @@ expandCtor
 	
 expandCtor (CtorDef vCtor tCtor arity tag fields)
  = do	-- var of the constructed object.
-	objV		<- newVarN NameValue
+	nObj		<- liftM NAuto $ newVarN NameValue
 
 	-- allocate the object
-	let allocS 	= SAssign (XVar objV (TPtr TObj)) (TPtr TObj) 
+	let allocS 	= SAssign (XVar nObj (TPtr TObj)) (TPtr TObj) 
 			$ XPrim (MAlloc (PAllocData vCtor arity)) []
 
 	-- Initialise all the fields.
 	(stmtss, mArgVs)
-		<- liftM unzip $ mapM (expandField objV) [0 .. arity - 1]
+		<- liftM unzip $ mapM (expandField nObj) [0 .. arity - 1]
 
 	let fieldSs	= concat stmtss
 	let argVs	= catMaybes mArgVs
 
 	-- Return the result.
-	let retS	= SReturn $ (XVar objV (TPtr TObj)) 
+	let retS	= SReturn $ (XVar nObj (TPtr TObj)) 
 
 	let stmts	= [allocS] ++ fieldSs ++ [retS]
 	let super	= [PSuper vCtor argVs (TPtr TObj) stmts]
@@ -63,16 +63,15 @@ expandCtor (CtorDef vCtor tCtor arity tag fields)
 
 -- | Create initialization code for this field
 expandField
-	:: Var				-- ^ var of object being constructed.
+	:: Name				-- ^ name of the object being constructed.
 	-> Int				-- ^ index of argument.
 	-> ExM 	( [Stmt ()]		-- initialization code
-
 		, Maybe (Var, Type))	-- the arguments to the constructor
 					--	(will be Nothing if the field is secondary)
-expandField objV ixArg
- = do	argV	<- newVarN NameValue
-	return	( [SAssign 	(XArg (XVar objV (TPtr TObj)) TObjData ixArg)
+expandField nObj ixArg
+ = do	vArg	<- newVarN NameValue
+	return	( [SAssign 	(XArg (XVar nObj (TPtr TObj)) TObjData ixArg)
 				(TPtr TObj) 
-				(XVar argV (TPtr TObj))]
-		, Just (argV, TPtr TObj) )
+				(XVar (NAuto vArg) (TPtr TObj))]
+		, Just (vArg, TPtr TObj) )
 
