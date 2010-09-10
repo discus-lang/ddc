@@ -147,10 +147,14 @@ enum _ObjFlag
 
 #define _MaskObjAnchored	(~_ObjFlagAnchored)
 
-#if __SIZEOF_POINTER__ == 8
-#define	PADDING(x)		Int32	x
+#ifndef	BITS
+#error	"BITS needs to be defined in the src/Config.hs.XXXX config file."
+#elif	(BITS == 64)
+#define	PAD64(x)		x
+#elif	(BITS == 32)
+#define	PAD64(x)
 #else
-#define	PADDING(x)
+#error	"BITS should be defined as either 32 or 64 in the src/Config.hs.XXXX config file."
 #endif
 
 // Objects ----------------------------------------------------------------------------------------
@@ -162,7 +166,7 @@ enum _ObjFlag
 //
 typedef struct {
 	uint32_t	tagFlags;
-	PADDING		(pad);
+	PAD64		(Int32 pad);
  } Obj;
 
 // A version of Obj for holding 32 bit values like Int32, Float32 and enums.
@@ -178,7 +182,7 @@ typedef struct {
 // A Thunk that represents a partial application.
 typedef struct {
 	uint32_t	tagFlags;
-	PADDING		(pad);
+	PAD64		(Int32 pad);
 	FunPtr		func;		// Pointer to the supercombinator of the function.
 	uint32_t	arity;		// The arity of the supercombinator.
 	uint32_t	args;		// Number of arg pointers stored in this thunk.
@@ -235,7 +239,7 @@ typedef struct {
 //
 typedef struct {
 	uint32_t	tagFlags;
-	PADDING		(pad);
+	PAD64		(Int32 pad);
 	uint32_t	size;		// Size of the whole object, in bytes.
 	uint32_t	ptrCount;	// The number of pointers at the start of the payload
 	Word8		payload[];	// Contains ptrCount pointers, then some uninterpreted data.
