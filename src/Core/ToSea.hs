@@ -215,29 +215,38 @@ toSeaX		xx
 		return	$ E.XPrim (E.MOp $ toSeaPrimOp op) args
 
 	-- function calls
-	C.XPrim (C.MCall C.PrimCallTail) xs
-	 -> do	args	<- mapM toSeaX $ stripValues xs
-		return	$ E.XPrim (E.MApp E.PAppTailCall) args
+	-- For these four we statically know that the thing we're calling is a supercombinator.
+	C.XPrim (C.MCall C.PrimCallTail)  (C.XVar vSuper tSuper : args)
+	 -> do	args'	<- mapM toSeaX $ stripValues args
+		return	$ E.XPrim (E.MApp E.PAppTailCall) 
+				  (E.XVar (E.NSuper vSuper) (toSeaT tSuper) : args')
 
-	C.XPrim (C.MCall C.PrimCallSuper) xs
-	 -> do	args	<- mapM toSeaX $ stripValues xs
-	    	return	$ E.XPrim (E.MApp E.PAppCall) args
+	C.XPrim (C.MCall C.PrimCallSuper) (C.XVar vSuper tSuper : args)
+	 -> do	args'	<- mapM toSeaX $ stripValues args
+	    	return	$ E.XPrim (E.MApp E.PAppCall) 
+				  (E.XVar (E.NSuper vSuper) (toSeaT tSuper) : args')
 
-	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) xs
-	 -> do	args	<- mapM toSeaX $ stripValues xs
-		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA) args
+	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) (C.XVar vSuper tSuper : args)
+	 -> do	args'	<- mapM toSeaX $ stripValues args
+		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA) 
+				  (E.XVar (E.NSuper vSuper) (toSeaT tSuper) : args')
+	   
+	C.XPrim (C.MCall (C.PrimCallCurry superA)) (C.XVar vSuper tSuper : args)
+	 -> do	let xsValues = stripValues args
+		if  any isUnboxed xsValues
+                 then panic stage 
+				$ "Partial application of function to unboxed args at "
+ 				% prettyPos vSuper
+                 else
+		  do	args'	<- mapM toSeaX xsValues
+			return	$ E.XPrim (E.MApp $ E.PAppCurry superA) 
+					  (E.XVar (E.NSuper vSuper) (toSeaT tSuper) : args')
 
+	-- For general application, the two things we're applying are boxed objects.
 	C.XPrim (C.MCall C.PrimCallApply) xs
 	 -> do	args	<- mapM toSeaX $ stripValues xs
 	    	return	$ E.XPrim (E.MApp $ E.PAppApply) args
-	   
-	C.XPrim (C.MCall (C.PrimCallCurry superA)) xs
-	 -> do	let xsValues@(C.XVar v _ : xsValues') = stripValues xs
-		if  any isUnboxed xsValues'
-                 then panic stage $ "Partial application of function to unboxed args at " % prettyPos v
-                 else
-		  do	args	<- mapM toSeaX xsValues
-			return	$ E.XPrim (E.MApp $ E.PAppCurry superA) args
+
 
 	-- boxing
 	C.XPrim C.MBox [_, x]

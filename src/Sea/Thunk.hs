@@ -17,9 +17,12 @@ import Util
 import DDC.Sea.Pretty
 import DDC.Sea.Exp
 import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Shared.Unique	as Unique
+
+stage = "Sea.Thunk"
 
 -- | Maps the var of a tail-callable super to information
 --   about how to do the call.
@@ -175,9 +178,12 @@ expandTailCall table x@(XPrim (MApp PAppTailCall) (XVar name _ : args))
 expandCurry 
 	:: Name		-- ^ name to bind the thunk to.
 	-> Exp () 	-- ^ thunk expresion.
-	-> ExM ([Stmt ()], Exp ())
+	-> ExM ( [Stmt ()]
+	       , Exp ())
 
-expandCurry nThunk x@(XPrim (MApp (PAppCurry superArity)) (XVar (NSuper super) _  : args))
+expandCurry nThunk x@(XPrim (MApp (PAppCurry superArity)) 
+			    (XVar (NSuper super) _  : args))
+
  = do	let allocX	= XPrim (MAlloc $ PAllocThunk super superArity (length args)) []
 	let assignSS	= map (\(a, i) -> SAssign 
 						(XArg (XVar nThunk (TPtr TObj)) TObjThunk i) 
@@ -185,6 +191,9 @@ expandCurry nThunk x@(XPrim (MApp (PAppCurry superArity)) (XVar (NSuper super) _
 		  	$ zip args [0..]
 		
   	return	(assignSS, allocX)
+
+expandCurry _ x
+	= panic stage $ "expandCurry: no match for " % show x
 
 
 -- | Expand code to do a super call then an application.
