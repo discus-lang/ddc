@@ -30,7 +30,7 @@ import qualified Data.Map	as Map
 stage	= "Sea.Sub"
 
 type MapAssignCount	= Map Var Int
-type MapAssignVar	= Map Var Var
+type MapAssignVar	= Map Name Name
 
 
 -- | Erase simple assignments in this tree
@@ -66,13 +66,18 @@ subTreeP p
 -----
 transTableModV varMap
 	= (transTableId return)
-		{ transV	= sinkVar varMap }
+		{ transX	= \x -> return $ sinkVarX varMap x }
 
 
-sinkVar varMap v
- = case Map.lookup v varMap of
- 	Nothing	-> return v
-	Just v'	-> sinkVar varMap v'
+sinkVarX :: MapAssignVar -> Exp () -> Exp ()
+sinkVarX varMap xx
+	| XVar name t	<- xx
+	, Just name'	<- Map.lookup name varMap
+	= sinkVarX varMap (XVar name' t)
+	
+	| otherwise
+	= xx
+	
 
 
 -- | If this statement is an assignment, then remember that we've
@@ -114,7 +119,7 @@ eraseTreeSS assignCount xx
 
 		Just count
 		 |  count == 1	
-		 -> do 	modify (Map.insert (varOfName n1) (varOfName n2))
+		 -> do 	modify (Map.insert n1 n2)
 			eraseTreeSS assignCount ss
 
 		 | otherwise

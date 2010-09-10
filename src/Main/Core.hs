@@ -330,7 +330,7 @@ toSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
 	let (  cgModule_binds_cafs
 	     , cgModule_binds_nonCafs)	
 			= Map.partition isCafP cgModule_binds
-			
+				
 	-- Order the CAFs by the given CAF initilization order.
 	let cgModule_binds_orderedCafs
 		= foldl' (\psCafs v
@@ -350,13 +350,20 @@ toSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
 	let cModule'		
 		=      cModule_binds_ordered 
 		Seq.>< cModule_nobinds
-			
+
+	-- For the toSea transform we need to know which bindings are CAFs
+	let vsCafs	= Set.union 
+				(Set.fromList $ Map.keys cgModule_binds_cafs)
+				(Set.fromList $ Map.keys $ Map.filter isCafP $ globExtern cgHeader)
+	
+	dumpS DumpSea "sea--vsCafs"  $ pprStrPlain $ ppr vsCafs
+	
 	-- conversion
-	let eTree	= toSeaTree (unique ++ "S") cModule'
+	let eTree	= toSeaTree (unique ++ "S") vsCafs cModule'
 	let eTree_list	= foldr (:) [] eTree
 	dumpET DumpSea "sea--source" $ E.eraseAnnotsTree eTree_list
 
-	let eHeader	 = toSeaTree (unique ++ "H") $ seqOfGlob cgHeader
+	let eHeader	 = toSeaTree (unique ++ "H") vsCafs $ seqOfGlob cgHeader
 	let eHeader_list = foldr (:) [] eHeader
 	dumpET DumpSea "sea--header" $ E.eraseAnnotsTree eHeader_list
 

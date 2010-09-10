@@ -38,6 +38,9 @@ data SeaS
 	{ -- variable name generator
 	  stateVarGen		:: VarId
 
+	  -- top level vars known to be CAFs
+	, stateCafVars		:: Set Var
+
 	  -- regions known to be direct
 	, stateDirectRegions	:: Set Var }
 
@@ -72,14 +75,16 @@ slurpWitnessKind kk
 
 -- Tree -------------------------------------------------------------------------------------------
 toSeaTree 
-	:: String		-- unique
+	:: String		-- ^ unique
+	-> Set Var		-- ^ Set of top-level vars which are known to be CAFs
 	-> Seq C.Top
 	-> Seq (E.Top ())
 	
-toSeaTree unique cTree
+toSeaTree unique vsCafs cTree
   = evalState
   	(liftM join $ mapM toSeaP cTree)
 	SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
+		, stateCafVars		= vsCafs
 		, stateDirectRegions	= Set.empty }
    
     
@@ -193,7 +198,10 @@ toSeaX	:: C.Exp -> SeaM (E.Exp ())
 toSeaX		xx
  = case xx of
 	C.XVar v t
-	 -> return $ E.XVar (E.NAuto v) (toSeaT t)
+	 -> do	vsCafs	<- gets stateCafVars
+		if Set.member v vsCafs 
+		 then return $ E.XVar (E.NCaf  v) (toSeaT t)
+		 else return $ E.XVar (E.NAuto v) (toSeaT t)
 
 	C.XTau    t x		
 	 -> toSeaX x
@@ -246,7 +254,6 @@ toSeaX		xx
 	C.XPrim (C.MCall C.PrimCallApply) xs
 	 -> do	args	<- mapM toSeaX $ stripValues xs
 	    	return	$ E.XPrim (E.MApp $ E.PAppApply) args
-
 
 	-- boxing
 	C.XPrim C.MBox [_, x]

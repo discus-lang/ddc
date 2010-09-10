@@ -15,6 +15,7 @@ module Core.Util.Bits
 	
 	-- projections	
 	, takeVarOfStmt
+	, takeVarOfPBind
 	
 	-- application
 	, buildApp
@@ -51,6 +52,11 @@ isCafP :: Top -> Bool
 isCafP	pp
  = case pp of
  	PBind v x	-> isCafX x
+
+	PExtern v _ to
+	 |  Just 0	<- takeValueArityOfType to
+	 -> True
+	
 	_		-> False
 	
 isCafX xx
@@ -118,6 +124,13 @@ hasLambdasX	x
 
 
 -- Projections -------------------------------------------------------------------------------------
+takeVarOfPBind :: Top -> Maybe Var
+takeVarOfPBind pp
+ = case pp of
+	PBind v _	-> Just v
+	_		-> Nothing
+	
+
 takeVarOfStmt :: Stmt -> Maybe Var
 takeVarOfStmt ss
  = case ss of
