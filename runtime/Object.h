@@ -161,13 +161,13 @@ enum _ObjFlag
 //	on machine word boundaries.
 //
 typedef struct {
-	Tag	tagFlags;
-	PADDING	(pad);
+	uint32_t	tagFlags;
+	PADDING		(pad);
  } Obj;
 
 // A version of Obj for holding 32 bit values like Int32, Float32 and enums.
 typedef struct {
-	Tag	tagFlags;
+	uint32_t	tagFlags;
 	union {
 		Float32 f;
 		Int32 i;
@@ -177,13 +177,13 @@ typedef struct {
 // Partial Applications ---------------------------------------------------------------------------
 // A Thunk that represents a partial application.
 typedef struct {
-	Tag	tagFlags;
-	PADDING	(pad);
-	FunPtr	func;		// Pointer to the supercombinator of the function.
-	UInt	arity;		// The arity of the supercombinator.
-	UInt	args;		// Number of arg pointers stored in this thunk.
-				//	(ie, the length of the "a" array)
-	Obj*	a[];		// Pointers to the arguments.
+	uint32_t	tagFlags;
+	PADDING		(pad);
+	FunPtr		func;		// Pointer to the supercombinator of the function.
+	uint32_t	arity;		// The arity of the supercombinator.
+	uint32_t	args;		// Number of arg pointers stored in this thunk.
+					//	(ie, the length of the "a" array)
+	Obj*		a[];		// Pointers to the arguments.
 } Thunk;
 
 
@@ -192,11 +192,11 @@ typedef struct {
 //	When the tag is _tagIndir this object is an indirection.
 //
 typedef struct {
-	Tag	tagFlags;
-	UInt	arity;		// Arity of the supercombinator
-	Obj*	obj;		// When the tag is _tagSusp this field points to the thunk to be evaluated.
-				// When the tag is _tagIndir it points to the result object.
-	Obj*	a[];		// Pointers to the arguments.
+	uint32_t	tagFlags;
+	uint32_t	arity;		// Arity of the supercombinator
+	Obj*		obj;		// When the tag is _tagSusp this field points to the thunk to be evaluated.
+					// When the tag is _tagIndir it points to the result object.
+	Obj*		a[];		// Pointers to the arguments.
  } SuspIndir;
 
 
@@ -205,19 +205,19 @@ typedef struct {
 // A general Data object.
 //	It contains a tag (in the header word), and pointers to other objects.
 typedef struct {
-	Tag	tagFlags;
-	UInt	arity;		// Arity of the data constructor.
-				//	(ie, the length of the "a" array)
-	Obj*	a[];
+	uint32_t	tagFlags;
+	uint32_t	arity;		// Arity of the data constructor.
+					//	(ie, the length of the "a" array)
+	Obj*		a[];
 } Data;
 
 
 // A raw data object that only contains non-pointer data.
 typedef struct {
-	Tag	tagFlags;
-	UInt	size;		// Size of the whole object, in bytes.
-	Word8	payload[];	// Some unboxed binary data, which isn't interpreted
-				//	by the GC.
+	uint32_t	tagFlags;
+	uint32_t	size;		// Size of the whole object, in bytes.
+	Word8		payload[];	// Some unboxed binary data, which isn't interpreted
+					//	by the GC.
 } DataR;
 
 
@@ -225,8 +225,8 @@ typedef struct {
 //	The object size is encoded as part of tagFlags field / header word.
 //	This saves us from having to include a separate arity field.
 typedef struct {
-	Tag	tagFlags;
-	Word8	payload[];
+	uint32_t	tagFlags;
+	Word8		payload[];
 } DataRS;
 
 
@@ -234,36 +234,36 @@ typedef struct {
 //	All the pointers in the payload are present before the non-pointer data.
 //
 typedef struct {
-	Tag	tagFlags;
-	PADDING	(pad);
-	UInt	size;		// Size of the whole object, in bytes.
-	UInt	ptrCount;	// The number of pointers at the start of the payload
-	Word8	payload[];	// Contains ptrCount pointers, then some uninterpreted data.
+	uint32_t	tagFlags;
+	PADDING		(pad);
+	uint32_t	size;		// Size of the whole object, in bytes.
+	uint32_t	ptrCount;	// The number of pointers at the start of the payload
+	Word8		payload[];	// Contains ptrCount pointers, then some uninterpreted data.
 } DataM;
 
 
 // Header Utils -----------------------------------------------------------------------------------
 
 // Get the tag portion of this object's header word.
-static inline UInt _getObjTag	(Obj* obj)
+static inline uint32_t _getObjTag	(Obj* obj)
 {
 	return obj ->tagFlags >> 8;
 }
 
 // Get the arg portion of this object's format field.
-static inline UInt _getObjArg	(Obj* obj)
+static inline uint32_t _getObjArg	(Obj* obj)
 {
 	return (obj ->tagFlags & 0x0f0) >> 4;
 }
 
 // Get this objects header word.
-static inline UInt _getObjFlags	(Obj* obj)
+static inline uint32_t _getObjFlags	(Obj* obj)
 {
 	return obj ->tagFlags & 0x0ff;
 }
 
 // Get this object's header word.
-static inline UInt _getObjId	(Obj* obj)
+static inline uint32_t _getObjId	(Obj* obj)
 {
 	return obj ->tagFlags & 0x0ff;
 }
@@ -276,7 +276,7 @@ enum _ObjType	_objType 	(Obj* obj);
 enum _ObjType	_objTypeFixed 	(Obj* obj);
 
 // Determine the total size of this object.
-UInt		_objSize 	(Obj* obj);
+size_t		_objSize 	(Obj* obj);
 
 // Determine whether the object is anchored and cannot
 //	be moved by the garbage collector.

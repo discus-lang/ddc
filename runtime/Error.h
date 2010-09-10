@@ -9,24 +9,24 @@
 #include "Types.h"
 
 
-void	_deathCase 
-		(const char* moduleName, Int32 line, Int32 column) 
+void	_deathCase
+		(const char* moduleName, int line, int column)
 		__attribute__((noreturn));
 
 void	_deathEval (void)
 		__attribute__((noreturn));
 
-void	_panicOutOfHeap	 
-		(UInt allocCount, UInt64 heapSize)
+void	_panicOutOfHeap
+		(size_t allocCount, size_t heapSize)
 		__attribute__((noreturn));
 
 void	_panicOutOfSlots (void)
 		__attribute__((noreturn));
-		
+
 void	_panicApply (void)
 		__attribute__((noreturn));
-		
-		
+
+
 void	_panicSlotUnderflow (void)
 		__attribute__((noreturn));
 

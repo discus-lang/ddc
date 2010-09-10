@@ -8,10 +8,10 @@
 
 // Initialise the allocation system.
 //	and allocate the heap.
-void	_allocInit	(UInt 	heapSize);
+void	_allocInit	(size_t 	heapSize);
 
 // Perform a garbage collection.
-void	_allocCollect	(UInt 	byteCount);
+void	_allocCollect	(size_t 	byteCount);
 
 
 #endif

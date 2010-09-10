@@ -48,7 +48,7 @@
 	*((Type*) ((DataRS*)data)->payload)
 
 
-static inline UInt _unboxEnum(Obj* obj)
+static inline uint32_t _unboxEnum(Obj* obj)
 {
 	Obj* data	= _force(obj);
 	return		_getObjTag(data);

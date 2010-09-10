@@ -28,11 +28,11 @@ Obj*	primArrayU_Int_new
 	_S(1)		= elemCount_;
 
 	// unboxing
-	UInt	anchored	= _unbox(Int32, _S(0));
-	UInt	elemCount	= _unbox(Int32, _S(1));
+	uint32_t	anchored	= _unbox(Int32, _S(0));
+	uint32_t	elemCount	= _unbox(Int32, _S(1));
 
 	// alloc the object
-	UInt	payloadSize
+	size_t	payloadSize
 			= sizeof (struct ArrayU_Int_Payload)
 			+ sizeof (Int32) * elemCount;
 
@@ -65,8 +65,8 @@ Obj*	primArrayU_Int_get
 	_S(1)		= ix_;
 
 	// unboxing
-	DataR*	array	= (DataR*)_force (_S(0));
-	UInt	ix	= _unbox(Int32, _S(1));
+	DataR*		array	= (DataR*)_force (_S(0));
+	uint32_t	ix	= _unbox(Int32, _S(1));
 
 	struct ArrayU_Int_Payload* payload
 		= (struct ArrayU_Int_Payload*)array ->payload;
@@ -110,8 +110,8 @@ Obj*	primArrayU_Int_set
 
 	// unboxing
 	DataR*	array		= (DataR*)_force (_S(0));
-	UInt	ix		= _unbox(Int32, _S(1));
-	UInt	x		= _unbox(Int32, _S(2));
+	uint32_t	ix		= _unbox(Int32, _S(1));
+	uint32_t	x		= _unbox(Int32, _S(2));
 
 	struct ArrayU_Int_Payload* payload
 		= (struct ArrayU_Int_Payload*)array ->payload;
@@ -140,7 +140,7 @@ Obj*	primArrayU_Int_dump
 
 	UInt32	elemCount	= payload [0];
 
-	UInt i;
+	uint32_t i;
 	printf ("--- arrayU, size = %d\n", elemCount);
 	for (i = 0; i < elemCount; i++) {
 		printf (" %4d = %5d\n", i, elems [i]);

@@ -19,14 +19,14 @@ Obj*	primArray_new_unsafe_noInit
 		(Obj* elemCount_)
 {
 	// unboxing
-	UInt	elemCount	= _unbox(Int32, elemCount_);
+	uint32_t	elemCount	= _unbox(Int32, elemCount_);
 
 	// alloc the object
 	Data*	array		= (Data*)_allocData (0, elemCount);
-	
+
 	// clear the pointers.
 	memset (array ->a, 0, sizeof (Obj*) * elemCount);
-	
+
 	return (Obj*)array;
 }
 
@@ -38,17 +38,17 @@ Obj*	primArray_new
 	_ENTER(2);
 	_S(0)	= elemCount_;
 	_S(1)	= obj_;
-	
+
 	// unboxing
-	UInt	elemCount	= _unbox(Int32, _S(0));
-	
+	uint32_t	elemCount	= _unbox(Int32, _S(0));
+
 	// alloc the object
 	Data*	array		= (Data*)_allocData (0, elemCount);
-	
+
 	// initialize
-	for (UInt i = 0; i < elemCount; i++)
+	for (uint32_t i = 0; i < elemCount; i++)
 		array ->a[i] = _S(1);
-		
+
 	_LEAVE(2);
 	return (Obj*)array;
 }
@@ -60,7 +60,7 @@ Obj*	primArray_size
 {
 	// unboxing
 	Data*	array		= (Data*)_force	(array_);
-	
+
 	return	_boxInt32 (array ->arity);
 }
 
@@ -72,10 +72,10 @@ Obj*	primArray_index
 	_ENTER(2);
 	_S(0)	= array_;
 	_S(1)	= ix_;
-	
+
 	// unboxing
 	Data*	array		= (Data*)_force	(_S(0));
-	UInt	ix		= _unbox(Int32, _S(1));
+	uint32_t	ix		= _unbox(Int32, _S(1));
 
 	// bounds check
 	if (ix >= array ->arity) {
@@ -85,7 +85,7 @@ Obj*	primArray_index
 				( _boxInt32 (array ->arity)
 				, _boxInt32 (ix) ));
 	}
-	
+
 	_LEAVE(2)
 	return	array->a [ix];
 }
@@ -98,11 +98,11 @@ Obj*	primArray_indexR
 	_ENTER(2);
 	_S(0)	= array_;
 	_S(1)	= ix_;
-	
+
 	// unboxing
-	Data*	array		= (Data*)_force	(_S(0));
-	UInt	ix		= _unbox(Int32, _S(1));
-	
+	Data*		array		= (Data*)_force	(_S(0));
+	uint32_t	ix		= _unbox(Int32, _S(1));
+
 	// bounds check
 	if (ix >= array ->arity) {
 		_LEAVE(2);
@@ -111,9 +111,9 @@ Obj*	primArray_indexR
 				( _boxInt32 (array ->arity)
 				, _boxInt32 (ix) ));
 	}
-	
+
 	Obj*	ref		= _boxRef (array_, &(array ->a[ix]));
-	
+
 	_LEAVE(2);
 	return ref;
 }

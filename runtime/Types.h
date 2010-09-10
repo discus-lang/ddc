@@ -9,10 +9,6 @@
 //	These names are also used as the names of unboxed types
 //	In the Disciple source code.
 
-// Object tags
-//	Records the index of the constructor in a data type.
-typedef uint32_t		Tag;
-
 // Function pointers
 typedef void			(*FunPtr) (void);
 
@@ -34,7 +30,6 @@ typedef int32_t			Int32;
 typedef int64_t			Int64;
 
 // Unsigned integers
-typedef unsigned int		UInt;
 typedef uint32_t 		UInt32;
 typedef uint64_t		UInt64;
 

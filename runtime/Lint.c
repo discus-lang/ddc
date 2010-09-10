@@ -11,7 +11,7 @@
 static inline void _TRACE (const char* format, ...)
 {
 	va_list	ap;
-	
+
 	va_start (ap, format);
 	vfprintf (_traceFile, format, ap);
 	va_end(ap);
@@ -30,7 +30,7 @@ static inline void _TRACE (const char* format, ...)
 void	_lintHeap
 		( Word8* base		// Base of heap.
 		, Word8* top)		// The word _after_ the last one in the last allocated object.
-		
+
 {
 	_TRACE("* lintHeap ------------------------------------------------------------------------- lintHeap\n");
 	_TRACE("  base = %p\n", base);
@@ -40,16 +40,16 @@ void	_lintHeap
 	while (ptr < top)
 	{
 		Obj*	obj	= (Obj*)ptr;
-		
+
 		enum _ObjType
 			objType	= _objType (obj);
-			
+
 		// Check for forwards.
-		if (objType == _ObjTypeForward) 
+		if (objType == _ObjTypeForward)
 			_PANIC ("_lintHeap: Obj %p is a Forward can't lint a heap containing forwards.\n", obj);
 
 		// Check known object type.
-		if (objType == _ObjTypeUnknown) 
+		if (objType == _ObjTypeUnknown)
 		{
 			_ERROR ("_lintHeap: unknown object type\n");
 			_ERROR ("  obj      = %p\n", 	obj);
@@ -64,9 +64,9 @@ void	_lintHeap
 		 case _ObjTypeDataM:	_lintDataM (obj, base, top);	break;
 		 case _ObjTypeDataR:	break;
 		 case _ObjTypeDataRS:	break;
-		 
+
 		 default:		_PANIC ("Bad object type\n");
-		 
+
 		}
 
 		ptr	+= _objSize (obj);
@@ -80,7 +80,7 @@ void	_lintHeap
 // Lint all the data reachable from the GC slot stack.
 void	_lintHeapCurrentlyReachable()
 {
-	_lintSlots 
+	_lintSlots
 		( _ddcSlotBase
 		, _ddcSlotPtr
 		, _ddcHeapBase
@@ -99,11 +99,11 @@ void	_lintSlots
 	_TRACE("  slotBase = %p\n", slotBase);
 	_TRACE("  slotPtr  = %p\n", slotPtr);
 	_TRACE("  s0       = %p\n", *slotPtr);
-	
+
 	Obj**	ptr	= slotBase;
 	while (ptr < slotPtr)
 	{
-		if (*ptr != 0) 
+		if (*ptr != 0)
 			_lintObjPtr (*ptr, heapBase, heapTop);
 
 		ptr++;
@@ -120,7 +120,7 @@ void	_lintObjPtr
 		, Word8*	base
 		, Word8*	top)
 {
-	enum _ObjType	
+	enum _ObjType
 		objType		= _objType (obj);
 
 	if (!_objIsAnchored (obj))
@@ -143,11 +143,11 @@ void	_lintObjPtr
 			_panicCorruption();
 		}
 
-		if ((Word8*)obj + _objSize (obj) > (Word8*)top) 
+		if ((Word8*)obj + _objSize (obj) > (Word8*)top)
 		{
 			_ERROR ("Object spills off the end of the heap.\n");
 			_ERROR ("  obj        = %p\n", obj);
-			_ERROR ("  size       = %d\n", _objSize(obj));
+			_ERROR ("  size       = %zu\n", _objSize(obj));
 			_ERROR ("  obj + size = %p\n", (Word8*)obj + _objSize(obj));
 			_ERROR ("  heapBase   = %p\n", base);
 			_ERROR ("  heapTop    = %p\n", top);
@@ -180,7 +180,7 @@ void	_lintThunk
 {
 	Thunk* thunk	= (Thunk*) obj;
 
-	for (UInt i = 0; i < thunk ->args; i++)
+	for (uint32_t i = 0; i < thunk ->args; i++)
 		_lintObjPtr (thunk ->a[i], base, top);
 }
 
@@ -194,7 +194,7 @@ void	_lintSusp
 	_lintObjPtr (obj, base, top);
 
 	SuspIndir* susp	= (SuspIndir*) obj;
-	
+
 	if (_getObjTag(obj) == _tagIndir)
 	{
 		_lintObjPtr (susp ->obj, base, top);
@@ -203,11 +203,11 @@ void	_lintSusp
 	else if (_getObjTag(obj) == _tagSusp)
 	{
 		_lintObjPtr (susp ->obj, base, top);
-		
-		for (UInt i = 0; i < susp->arity; i++)
+
+		for (uint32_t i = 0; i < susp->arity; i++)
 			_lintObjPtr (susp ->a[i], base, top);
 	}
-	
+
 	else 	_PANIC ("Bad tag for Susp\n");
 }
 
@@ -219,8 +219,8 @@ void	_lintData
 		, Word8*	top)
 {
 	Data* data	= (Data*) obj;
-	
-	for (UInt i = 0; i < data ->arity; i++)
+
+	for (uint32_t i = 0; i < data ->arity; i++)
 		_lintObjPtr (data ->a[i], base, top);
 }
 
@@ -232,10 +232,10 @@ void	_lintDataM
 		, Word8*	top)
 {
 	DataM* data	= (DataM*) obj;
-	
+
 	Obj**	ptr	= (Obj**)(&data ->payload);
-	
-	for (UInt i = 0; i < data ->ptrCount; i++)
+
+	for (uint32_t i = 0; i < data ->ptrCount; i++)
 		_lintObjPtr (ptr[i], base, top);
 }
 

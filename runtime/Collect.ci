@@ -26,7 +26,7 @@
 		_ddcSlotPtr	+= countS; \
 		if (_ddcSlotPtr >= _ddcSlotMax)\
 			_panicOutOfSlots();\
-		for (UInt _i = 0; _i < countS; _i++)\
+		for (uint32_t _i = 0; _i < countS; _i++)\
 			_localSlotBase [_i]	= 0; \
 		if (_ddcSlotPtr > _ddcProfile ->slot.highWater) \
 			_ddcProfile ->slot.highWater = _ddcSlotPtr;
@@ -36,7 +36,7 @@
 		_ddcSlotPtr	+= countS; \
 		if (_ddcSlotPtr >= _ddcSlotMax)\
 			_panicOutOfSlots();\
-		for (UInt _i = 0; _i < countS; _i++)\
+		for (uint32_t _i = 0; _i < countS; _i++)\
 			_localSlotBase [_i]	= 0;
 #endif
 

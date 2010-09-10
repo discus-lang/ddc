@@ -36,7 +36,7 @@ static inline void _TRACE (const char* format, ...)
 
 
 // Allocate and initialise the current GC slot stack.
-void	_collectInit (UInt maxGCSlots)
+void	_collectInit (size_t maxGCSlots)
 {
 	_ddcSlotBase	= malloc (sizeof (Obj*) * maxGCSlots);
 	_ddcSlotPtr	= _ddcSlotBase;
@@ -90,7 +90,7 @@ void	_collectHeap
 
 	// Debugging
 	_TRACE ("-------------------------------------------------------------------------------------- collect Heap done\n");
-	_TRACES(fprintf(_traceFile, "  newSize = %u\n", (UInt)(*heapBackPtr - heapBackBase)));
+	_TRACES(fprintf(_traceFile, "  newSize = %u\n", (size_t)(*heapBackPtr - heapBackBase)));
 	_TRACES(_dumpState (_traceFile));
 	_TRACES(_dumpHeap  (_traceFile, heapBackBase, *heapBackPtr));
 
@@ -190,7 +190,7 @@ Obj*	_evacuateObj
 		}
 
 		// Otherwise, copy the object to the toHeap.
-		UInt	size	= _objSize (obj);
+		size_t	size	= _objSize (obj);
 		Obj*	newObj	= (Obj*) *toPtr;
 
 		memcpy (newObj, obj, size);
@@ -225,7 +225,7 @@ void	_scanThunk
 	_TRACES(_printObjP (_traceFile , obj));
 
 	Thunk*	thunk	= (Thunk*)obj;
-	for (UInt i = 0; i < thunk->args; i++)
+	for (uint32_t i = 0; i < thunk->args; i++)
 		thunk->a[i]	= _evacuateObj (thunk->a[i], toPtr);
 
 }
@@ -240,7 +240,7 @@ void	_scanData
 	_TRACE("--- scanData\n");
 
 	Data*	data	= (Data*)obj;
-	for (UInt i = 0; i < data->arity; i++)
+	for (uint32_t i = 0; i < data->arity; i++)
 		data->a[i]	= _evacuateObj (data->a[i], toPtr);
 }
 
@@ -256,7 +256,7 @@ void	_scanDataM
 	// The pointers all lie at the front of the data payload.
 	DataM*	data	= (DataM*)obj;
 	Obj**	ptr	= (Obj**)&(data->payload);
-	for (UInt i = 0; i < data->ptrCount; i++)
+	for (uint32_t i = 0; i < data->ptrCount; i++)
 		ptr[i]		= _evacuateObj (ptr[i], toPtr);
 }
 
@@ -271,7 +271,7 @@ void	_scanSusp
 	_TRACES(_printObjP (_traceFile, obj));
 
 	SuspIndir*	susp	= (SuspIndir*)obj;
-	Tag		tag	= _getObjTag (obj);
+	uint32_t	tag	= _getObjTag (obj);
 
 	// Object is a zero airity suspension.
 	//	The function ptr for these is stored directly in the obj field
@@ -290,7 +290,7 @@ void	_scanSusp
 		_TRACE("    SUSPENSION\n");
 
 		susp ->obj	= _evacuateObj (susp ->obj, toPtr);
-		for (UInt i = 0; i < susp ->arity; i++)
+		for (uint32_t i = 0; i < susp ->arity; i++)
 			susp->a[i]	= _evacuateObj (susp ->a[i], toPtr);
 	}
 

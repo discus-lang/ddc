@@ -1,12 +1,13 @@
 // -- Error handling
 
+#include <stddef.h>
+#include <inttypes.h>
+
 #include "Error.h"
 #include "Prim.h"
 
 #include "Collect.ci"
 #include "Alloc.ci"
-
-#include <inttypes.h>
 
 
 // User errors -------------------------------------------------------------------------------------
@@ -19,8 +20,8 @@ Obj*	Data_String_boxString	  (String str);
 // Die due to non-matching pattern
 void	_deathCase (const char* moduleName, Int32 line, Int32 column)
 {
-	primException_throw 
-		(Base_ExceptionCaseNoMatch 
+	primException_throw
+		(Base_ExceptionCaseNoMatch
 			(  Data_String_boxString ((Char8*)moduleName)
 			, _boxInt32	(line)
 			, _boxInt32	(column)));
@@ -35,11 +36,11 @@ void	_deathCase (const char* moduleName, Int32 line, Int32 column)
 // Ran out of heap space.
 //	This can also be happen when we run out of heap space.
 //	The implementation can't grow the heap yet.
-void	_panicOutOfHeap (UInt allocCount, UInt64 heapSize)
+void	_panicOutOfHeap (size_t allocCount, size_t heapSize)
 {
 	fprintf (stderr, "*** DDC RTS PANIC! Out of heap space.\n");
 	fprintf (stderr, "        current (full) heap size: %" PRId64 " bytes\n", heapSize);
-	fprintf (stderr, "      could not allocate another: %d bytes\n",   allocCount);
+	fprintf (stderr, "      could not allocate another: %zu bytes\n",   allocCount);
 	abort();
 }
 
@@ -82,7 +83,7 @@ void	_panicCorruption (void)
 {
 	fprintf ( stderr
 		, "*** DDC RTS PANIC! Heap/stack corruption.\n");
-		
+
 	_dumpPanic();
 	abort();
 }

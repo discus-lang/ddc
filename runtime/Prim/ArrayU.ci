@@ -10,35 +10,35 @@
 #include "../State.h"
 
 struct ArrayU_Int_Payload {
-	UInt	elemCount;
-	Int32	elem[];
+	uint32_t	elemCount;
+	Int32		elem[];
 };
 
 #define _arrayPeek(type,a,ix)	(primArray##type##_peek (a, ix))
 #define _arrayPoke(type,a,ix,x)	(primArray##type##_poke (a, ix, x))
 
-static inline Int32 primArrayInt32_peek 
+static inline Int32 primArrayInt32_peek
 	(Obj* array_, Int32 ix)
 {
 	DataR*	array	= (DataR*)array_;
 
 	struct ArrayU_Int_Payload* payload
 		= (struct ArrayU_Int_Payload*)array ->payload;
-	
-	return payload ->elem [ix]; 
+
+	return payload ->elem [ix];
 }
 
 
-static inline Obj* primArrayInt32_poke 
+static inline Obj* primArrayInt32_poke
 	(Obj* array_, Int32 ix, Int32 x)
 {
 	DataR*	array	= (DataR*)array_;
 
 	struct ArrayU_Int_Payload* payload
 		= (struct ArrayU_Int_Payload*)array ->payload;
-	
-	payload ->elem [ix] = x; 
-	
+
+	payload ->elem [ix] = x;
+
 	return _primUnit;
 }
 

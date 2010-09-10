@@ -7,7 +7,7 @@
 
 // Allocate and initialise the current GC slot stack.
 void	_collectInit
-	(UInt maxGCSlots);
+	(size_t maxGCSlots);
 
 
 // Perform a collection on on this heap.
