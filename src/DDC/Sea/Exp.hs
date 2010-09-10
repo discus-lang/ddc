@@ -172,11 +172,6 @@ data Exp a
 
 	-- invoke some primitive operator.
 	| XPrim		Prim [Exp a]
-
-	-- control
-	-- | A label, for jumping to.
-	--   TODO: I don't think we're really using this.
-	| XLabel	Var			
 	deriving (Show, Eq)
 
 

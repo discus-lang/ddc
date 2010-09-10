@@ -252,23 +252,10 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	v'		<- transV table v
 	 	transX table	$ XCon v'
 
-	XInt i
-	 -> 	transX table 	$ XInt i
-
-	XUnit
-	 ->	transX table 	$ XUnit
-
-	XLit l
-	 -> 	transX table 	$ XLit l
-
-
-	-- control
-	XLabel v
-	 ->	transX table 	$ XLabel v
-
-
-	XNull
-	 -> 	transX table 	$ XNull
+	XInt i -> transX table 	$ XInt i
+	XUnit  -> transX table 	$ XUnit
+	XLit l -> transX table 	$ XLit l
+	XNull  -> transX table 	$ XNull
 
 
 -- Alt ---------------------------------------------------------------------------------------------
