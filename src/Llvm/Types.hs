@@ -42,7 +42,6 @@ data LlvmType
   | LMLabel              -- ^ A 'LlvmVar' can represent a label (address)
   | LMVoid               -- ^ Void type
   | LMStruct [LlvmType]  -- ^ Structure type
-  | LMUnion [LlvmType]   -- ^ Union type
   | LMAlias LlvmAlias    -- ^ A type alias
 
   -- | Function type, used to create pointers to functions
@@ -60,7 +59,6 @@ instance Show LlvmType where
   show (LMLabel       ) = "label"
   show (LMVoid        ) = "void"
   show (LMStruct tys  ) = "<{" ++ (commaCat tys) ++ "}>"
-  show (LMUnion  tys  ) = "union {" ++ (commaCat tys) ++ "}"
 
   show (LMFunction (LlvmFunctionDecl _ _ _ r varg p _))
     = let args = ((drop 1).concat) $ -- use drop since it can handle empty lists
@@ -322,7 +320,6 @@ llvmWidthInBits (LMArray _ _)   = llvmWidthInBits llvmWord
 llvmWidthInBits LMLabel         = 0
 llvmWidthInBits LMVoid          = 0
 llvmWidthInBits (LMStruct tys)  = sum $ map llvmWidthInBits tys
-llvmWidthInBits (LMUnion tys)   = maximum $ map llvmWidthInBits tys
 llvmWidthInBits (LMFunction  _) = 0
 llvmWidthInBits (LMAlias (_,t)) = llvmWidthInBits t
 

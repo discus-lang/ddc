@@ -128,9 +128,7 @@ thunk32
 
 thunk64 :: LlvmType
 thunk64
- = LMStruct 	[ LMUnion
-			[ i32		-- tag
-			, i64 ]		-- padding
+ = LMStruct 	[ i32		-- tag
 		, pFunction 		-- function pointer
 		, i32			-- arity
 		, i32			-- args
@@ -163,7 +161,6 @@ sizeOfLlvmType t
 	LMLabel		-> panic stage $ "sizeOfLlvmType LMLabel"
 	LMVoid		-> panic stage $ "sizeOfLlvmType LMVoid"
 	LMStruct t	-> sum $ map sizeOfLlvmType t
-	LMUnion t	-> maximum $ map sizeOfLlvmType t
 	LMAlias (_, t)	-> sizeOfLlvmType t
 
 offsetOfIndex :: LlvmType -> Int -> Int
