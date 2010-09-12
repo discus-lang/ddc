@@ -62,10 +62,10 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> ppr "\n"
 
 	PCafProto v t
-	 -> "extern " % t % " " %>> "_ddcCAF_" % sV v % ";\n\n"
+	 -> "extern " % t % " " %>> "*_ddcCAF_" % sV v % ";\n\n"
 
 	PCafSlot  v t
-	 -> t % " " %>> "_ddcCAF_" % sV v % " = 0;\n"
+	 -> t % " " %>> "*_ddcCAF_" % sV v % " = 0;\n"
 
 	PCafInit v _ ss
 	 -> "void " %>> "_ddcInitCAF_" % sV v %>> "()\n"
@@ -120,7 +120,7 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SComment s		-> "// " % s
 
 	-- stacks
-	SAuto	v t		-> (padL 12 $ pprStrPlain t) % " " % sVL v % ";"
+	SAuto	v t		-> (padL 12 $ pprStrPlain $ pprTypeArg t) % " " % sVL v % ";"
 	SEnter countS		-> "_ENTER (" % countS % ");"
 	SLeave countS		-> "_LEAVE (" % countS % ");"
 
@@ -224,11 +224,8 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XTag x
 	 -> "_getObjTag(" % x % ")"
 
-	XArg x t i
-	 -> case t of
-	     TObjData	-> "_DARG(" % x % ", " % i % ")"
-	     TObjThunk	-> "_TARG(" % x % ", " % i % ")"
-	     TObjSusp 	-> "_SARG(" % x % ", " % i % ")"
+	XArg x@(XVar _ _) i
+	 -> "_DARG(" % x % ", " % i % ")"
 
 	-- constants
 	XCon v		-> "_tag" % sV v
@@ -311,13 +308,21 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	-- Primitive boxing functions.
 	XPrim (MBox t) [x]
-	 | t == TCon (Var.primTBool   Unboxed) [] -> "_boxEnum(" % x % ")"
-	 | t == TCon (Var.primTString Unboxed) [] -> "Data_String_boxString(" % x % ")"
-	 | otherwise				  -> "_box(" % t % ", " % x % ")"
+	 | t == TCon (TyConUnboxed  $ Var.primTBool   Unboxed)  
+	 -> "_boxEnum(" % x % ")"
+
+	 | t == TCon (TyConAbstract $ Var.primTString Unboxed) 
+	 -> "Data_String_boxString(" % x % ")"
+	
+	 | otherwise
+	 -> "_box(" % t % ", " % x % ")"
 
 	XPrim (MUnbox t) [x]
-	 | t == TCon (Var.primTBool  Unboxed) [] -> "_unboxEnum(" % x % ")"
-	 | otherwise				  -> "_unboxDirect(" % t % ", " % x % ")"
+	 | t == TCon (TyConUnboxed $ Var.primTBool  Unboxed)
+	 -> "_unboxEnum(" % x % ")"
+
+	 | otherwise
+	 -> "_unboxDirect(" % t % ", " % x % ")"
 
 	_ -> panic stage ("ppr[Exp]: no match for " % show xx)
 
@@ -327,11 +332,35 @@ instance Pretty Type PMode where
  ppr xx
   = case xx of
 	TVoid		-> ppr "void"
-	TFun t1 t2	-> t1 <> "->" <> t2
+
+	TFun [] tRes	 
+	 -> "() -> " % tRes
+
+	TFun [tArg] tRes
+	 -> pprTypeArg tArg % " -> " % tRes
+	
+	TFun tsArgs tRes
+	 -> parens (punc ", " (map pprTypeArg tsArgs)) % " -> " % tRes
+
 	TPtr x		-> x % "*"
-	TCon var []	-> ppr $ seaNameOfCtor var
-	TObj		-> ppr "Obj"
-	_ 		-> panic stage $ "pprStr[Type]: no match for " % show xx
+
+	TCon tc		-> ppr tc
+
+pprTypeArg :: Type -> Str
+pprTypeArg tt
+ = case tt of
+	TFun{}	-> parens $ ppr tt
+	_	-> ppr tt
+
+
+-- TyCon ------------------------------------------------------------------------------------------
+instance Pretty TyCon PMode where
+ ppr xx
+  = case xx of
+	TyConObj	-> ppr "Obj"
+	TyConAbstract v	-> ppr $ seaNameOfCtor v
+	TyConUnboxed  v -> ppr $ seaNameOfCtor v
+	
 
 
 -- | Get the Sea name of a type constructor name.

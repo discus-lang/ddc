@@ -161,7 +161,7 @@ llvmOfParams (v, t) = (toLlvmType t, [])
 
 llvmOfSeaGlobal :: Top (Maybe a) -> LMGlobal
 llvmOfSeaGlobal (PCafSlot v t)
- | t == TPtr (TPtr TObj)
+ | t == TPtr tPtrObj
  =	let	tt = toLlvmType t
 		var = LMGlobalVar
  			("_ddcCAF_" ++ seaVar False v)	-- Variable name
@@ -214,7 +214,7 @@ llvmOfStmt stmt
 --------------------------------------------------------------------------------
 
 llvmSwitch :: Exp a -> [Alt a] -> LlvmM ()
-llvmSwitch (XTag (XVar (NSlot v i) (TPtr TObj))) alt
+llvmSwitch (XTag (XVar (NSlot v i) tPtrObj)) alt
  = do	addComment	$ "llvmSwitch : " ++ seaVar False v
 	reg		<- readSlot i
 	tag		<- getObjTag reg
@@ -308,7 +308,9 @@ genAltDefault _ def
 --------------------------------------------------------------------------------
 
 llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
-llvmOfAssign (XVar n1 t1) t@(TPtr (TPtr TObj)) (XVar n2 t2)
+llvmOfAssign = error "llvmOfAssign"
+{-
+llvmOfAssign (XVar n1 t1) t@(TPtr tPtrObj) (XVar n2 t2)
  | t1 == t && t2 == t && isGlobalVar (varOfName n1) && isGlobalVar (varOfName n2)
  = do	src	<- newUniqueReg (toLlvmType t1)
 	addBlock $
@@ -333,7 +335,7 @@ llvmOfAssign (XVar n1 t1) t@(TPtr TObj) (XVar (NSlot v2 i) t2)
 llvmOfAssign (XVar (NSlot v1 i) t1) t@(TPtr TObj) (XVar n2 t2)
  | t1 == t && t2 == t
  =	writeSlot (toLlvmVar (varOfName n2) t2) i
-
+-}
 {-
 llvmOfAssign ((XSlot v1 t1 i)) t@(TPtr TObj) (XBox t2 exp)
  | t1 == t
@@ -368,7 +370,7 @@ llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) (XAllocThunk var airity args)
 -}
 
 
-
+{-
 
 llvmOfAssign (XVar n1 t1@(TCon vt1 _)) (TCon vt _) x@(XPrim op args)
  | varName vt1 == "Int32#" && varName vt == "Int32#"
@@ -388,7 +390,7 @@ llvmOfAssign (XVar (NCaf v1) t1) t@TPtr{} (XInt 0)
 	dst		<- newUniqueReg ppObj
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
-
+-}
 {-
 llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
  = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = " ++ seaVar False v2 ++ " ()"
@@ -400,12 +402,13 @@ llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
 			, Store dst2 (pVarLift dst1)
 			]
 -}
+{-
 llvmOfAssign a b c
  = panic stage $ "Unhandled : llvmOfAssign \n"
 	++ take 150 (show a) ++ "\n"
 	++ take 150 (show b) ++ "\n"
 	++ {- take 150 -} (show c) ++ "\n"
-
+-}
 
 llvmFunApply :: LlvmVar -> Type -> [Exp a] -> LlvmM LlvmVar
 llvmFunApply fptr typ args
@@ -417,10 +420,10 @@ llvmFunApply fptr typ args
 
 llvmFunParam :: Exp a -> LlvmM LlvmVar
 
-llvmFunParam (XVar (NSlot v i) (TPtr TObj))
+llvmFunParam (XVar (NSlot v i) _)
  = 	readSlot i
 
-llvmFunParam (XVar n t@(TPtr TObj))
+llvmFunParam (XVar n t)
  =	return $ toLlvmVar (varOfName n) t
 
 llvmFunParam p
@@ -588,11 +591,11 @@ llvmOpOfPrim p
 
 -- | Convert a Sea type to an LlvmType.
 toLlvmType :: Type -> LlvmType
-toLlvmType (TPtr t)	= LMPointer (toLlvmType t)
-toLlvmType TObj		= structObj
-toLlvmType TVoid	= LMVoid
+toLlvmType (TPtr t)		= LMPointer (toLlvmType t)
+toLlvmType (TCon TyConObj)	= structObj
+toLlvmType TVoid		= LMVoid
 
-toLlvmType (TCon v _)
+toLlvmType (TCon (TyConUnboxed v))
  = case varName v of
 	"Bool#"		-> i1
 	"Int32#"	-> i32

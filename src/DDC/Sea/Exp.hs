@@ -166,9 +166,9 @@ data Exp a
 	| XLit		LiteralFmt		-- ^ A literal
 	| XCon		Var			-- ^ A data constructor tag
 
-	-- projection
-	| XArg		(Exp a) ObjType Int	-- of some object
-	| XTag		(Exp a)			-- tag of data object	((Data)x) ->tag
+	-- project
+	| XArg		(Exp a) Int		-- ^ Take a numbered field of some boxed data type.
+	| XTag		(Exp a)			-- ^ Take the tag of a boxed object.
 
 	-- invoke some primitive operator.
 	| XPrim		Prim [Exp a]

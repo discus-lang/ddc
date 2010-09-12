@@ -186,8 +186,8 @@ expandCurry nThunk x@(XPrim (MApp (PAppCurry superArity))
 
  = do	let allocX	= XPrim (MAlloc $ PAllocThunk super superArity (length args)) []
 	let assignSS	= map (\(a, i) -> SAssign 
-						(XArg (XVar nThunk (TPtr TObj)) TObjThunk i) 
-						(TPtr TObj) a)
+						(XArg (XVar nThunk tPtrObj) i) 
+						tPtrObj a)
 		  	$ zip args [0..]
 		
   	return	(assignSS, allocX)
@@ -206,13 +206,12 @@ expandCallApp x@(XPrim (MApp (PAppCallApp superA)) (xFun@(XVar f _) : args))
 	let (callArgs, appArgs) 
 			= splitAt superA args
 
- 	let callSS	= [ SAssign 	(XVar tmp (TPtr TObj)) 
-					(TPtr TObj) 
+ 	let callSS	= [ SAssign 	(XVar tmp tPtrObj) 
+					tPtrObj
 					(XPrim (MApp PAppCall) (xFun : callArgs)) ]
 
 	(appSS, lastX)	<- expandApply 	(XPrim 	(MApp PAppApply) 
-						(XVar tmp (TPtr TObj) 
-					: appArgs))
+						(XVar tmp tPtrObj : appArgs))
 
 	return	( callSS ++ appSS 
 		, lastX)
@@ -262,9 +261,9 @@ expandApplyN
  		
 		let ssAcc'
 			=  ssAcc
-			++ [SAssign 	(XVar name (TPtr TObj)) 
-					(TPtr TObj) 
-					(XPrim (MApp PAppApply) (XVar nThunk (TPtr TObj) : argsHere))]
+			++ [SAssign 	(XVar name tPtrObj) 
+					tPtrObj
+					(XPrim (MApp PAppApply) (XVar nThunk tPtrObj : argsHere))]
 		
 		expandApplyN maxApp name argsMore ssAcc'
 

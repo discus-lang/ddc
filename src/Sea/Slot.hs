@@ -198,7 +198,8 @@ addSlotMap    var    x
 slotAssignS :: Stmt () -> SlotM (Stmt ())
 slotAssignS ss
  = case ss of
- 	SAssign (XVar (NAuto v) t) (TPtr TObj) x
+ 	SAssign (XVar (NAuto v) t) tt x
+ 	 | typeIsBoxed tt
 	 -> do 	slotMap	<- gets stateMap
 
 	 	case Map.lookup v slotMap of
@@ -207,10 +208,10 @@ slotAssignS ss
 			let exp	= XVar (NSlot v ixSlot) t
 			addSlotMap v exp
 
-			return	$ SAssign exp (TPtr TObj) x
+			return	$ SAssign exp tt x
 
 		 Just exp
-		  ->	return	$ SAssign exp (TPtr TObj) x
+		  ->	return	$ SAssign exp tt x
 
 	SAssign (XVar (NAuto v) _) t x
 	 -> do	modify (\s -> s {

@@ -42,7 +42,7 @@ expandCtor (CtorDef vCtor tCtor arity tag fields)
 	nObj		<- liftM NAuto $ newVarN NameValue
 
 	-- allocate the object
-	let allocS 	= SAssign (XVar nObj (TPtr TObj)) (TPtr TObj) 
+	let allocS 	= SAssign (XVar nObj tPtrObj) tPtrObj
 			$ XPrim (MAlloc (PAllocData vCtor arity)) []
 
 	-- Initialise all the fields.
@@ -53,10 +53,10 @@ expandCtor (CtorDef vCtor tCtor arity tag fields)
 	let argVs	= catMaybes mArgVs
 
 	-- Return the result.
-	let retS	= SReturn $ (XVar nObj (TPtr TObj)) 
+	let retS	= SReturn $ (XVar nObj tPtrObj) 
 
 	let stmts	= [allocS] ++ fieldSs ++ [retS]
-	let super	= [PSuper vCtor argVs (TPtr TObj) stmts]
+	let super	= [PSuper vCtor argVs tPtrObj stmts]
 	
 	return 		$ super
  	
@@ -70,8 +70,8 @@ expandField
 					--	(will be Nothing if the field is secondary)
 expandField nObj ixArg
  = do	vArg	<- newVarN NameValue
-	return	( [SAssign 	(XArg (XVar nObj (TPtr TObj)) TObjData ixArg)
-				(TPtr TObj) 
-				(XVar (NAuto vArg) (TPtr TObj))]
-		, Just (vArg, TPtr TObj) )
+	return	( [SAssign 	(XArg (XVar nObj tPtrObj) ixArg)
+				tPtrObj
+				(XVar (NAuto vArg) tPtrObj)]
+		, Just (vArg, tPtrObj) )
 

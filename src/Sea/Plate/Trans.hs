@@ -239,9 +239,9 @@ instance Monad m => TransM m a1 a2 Exp where
 	 	transX table	$ XPrim v xs'
 
 	-- projection
-	XArg x t i
+	XArg x i
 	 -> do	x'		<- transZM table x
-		transX table	$ XArg x' t i
+		transX table	$ XArg x' i
 
 	XTag x
 	 -> do	x'		<- transZM table x

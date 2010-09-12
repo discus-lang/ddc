@@ -105,6 +105,7 @@ toSeaP	xx
 	 	 
  	C.PBind v x
 	 -> do	let to		= C.superOpTypeX x
+		let to'		= toSeaT to
 
 		let (argTypes, resultType)	
 				= splitOpType to
@@ -121,19 +122,15 @@ toSeaP	xx
 		let ssRet	= assignLastSS (E.XVar (E.NAuto retV) resultType, resultType) ss'
 				++ [E.SReturn  (E.XVar (E.NAuto retV) resultType)]
 
-		case (resultType, argNTs) of
-		  (E.TPtr E.TObj, [])
-			->	return	$ Seq.fromList
-					[ E.PCafProto	v (E.TPtr (E.TPtr E.TObj))
-					, E.PCafSlot 	v (E.TPtr (E.TPtr E.TObj))
-					, E.PSuper	v [] 	resultType  ssRet]
 
-		  (_, [])
-			->	return	$ Seq.fromList
-					[ E.PSuper	v [] 	resultType  ssRet]
+		if T.takeValueArityOfType to == Just 0
+		 then return	$ Seq.fromList
+				[ E.PCafProto	v to'
+				, E.PCafSlot 	v to'
+				, E.PSuper	v [] 	resultType  ssRet]
 
-		  _	->	return	$ Seq.fromList
-					[E.PSuper 	v argNTs resultType ssRet]
+		 else return	$ Seq.fromList
+				[E.PSuper 	v argNTs resultType ssRet]
 
 
 	C.PData (T.DataDef
@@ -227,17 +224,17 @@ toSeaX		xx
 	C.XPrim (C.MCall C.PrimCallTail)  (C.XVar vSuper tSuper : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
 		return	$ E.XPrim (E.MApp E.PAppTailCall) 
-				  (E.XVar (E.NSuper vSuper) (toSeaT tSuper) : args')
+				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
 	C.XPrim (C.MCall C.PrimCallSuper) (C.XVar vSuper tSuper : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
 	    	return	$ E.XPrim (E.MApp E.PAppCall) 
-				  (E.XVar (E.NSuper vSuper) (toSeaT tSuper) : args')
+				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
 	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) (C.XVar vSuper tSuper : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
 		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA) 
-				  (E.XVar (E.NSuper vSuper) (toSeaT tSuper) : args')
+				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 	   
 	C.XPrim (C.MCall (C.PrimCallCurry superA)) (C.XVar vSuper tSuper : args)
 	 -> do	let xsValues = stripValues args
@@ -248,7 +245,7 @@ toSeaX		xx
                  else
 		  do	args'	<- mapM toSeaX xsValues
 			return	$ E.XPrim (E.MApp $ E.PAppCurry superA) 
-					  (E.XVar (E.NSuper vSuper) (toSeaT tSuper) : args')
+					  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
 	-- For general application, the two things we're applying are boxed objects.
 	C.XPrim (C.MCall C.PrimCallApply) xs
@@ -496,7 +493,7 @@ toSeaGL	nObj (label, var, t)
 	= E.SAssign 
 		(E.XVar (E.NAuto var) (toSeaT t)) 
 		(toSeaT t)
-		(E.XArg (E.XVar nObj (toSeaT t)) E.TObjData i)
+		(E.XArg (E.XVar nObj (toSeaT t)) i)
 
 
 -- | Decend into XLocal and XDo and slurp out the contained lists of statements.
@@ -510,68 +507,81 @@ slurpStmtsX xx
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Convert an operational type from the core to the equivalent Sea type.
+--   For functional types, we convert the types of the arguments as usual.
+toSeaSuperT :: T.Type -> E.Type
+toSeaSuperT tt	= toSeaT' False tt
+
+
+-- | Convert an operational type from core to equivalent Sea representation type.
+--   In the Sea backend, functional values are represented as boxed thunks, so 
+--   we convert all function types to the type of an anonymous boxed object.
 toSeaT :: T.Type -> E.Type
-toSeaT tt
- = case tt of
-	T.TForall _ _ t		-> toSeaT t
-	T.TConstrain t _	-> toSeaT t
+toSeaT tt	= toSeaT' True tt 
+
+toSeaT' :: Bool -> T.Type -> E.Type
+toSeaT' repr tt
+ = let down	= toSeaT' repr 
+   in case tt of
+	T.TForall _ _ t		-> down t
+	T.TConstrain t _	-> down t
 
 	T.TApp{}
 	 -> let result
 		 | Just tx		<- T.takeTData tt
 		 = toSeaT_data tx
 	
-		 | Just (t1, t2, _, _)	<- T.takeTFun tt
-		 = E.TPtr E.TObj
+		 | Just _		<- T.takeTFun tt
+		 , tsBits		<- T.flattenTFuns tt
+		 , Just tsArgs		<- takeInit tsBits
+		 , Just tResult		<- takeLast tsBits
+		 = if repr 
+			then E.tPtrObj
+			else E.TFun (map toSeaT tsArgs) (toSeaT tResult)
 
 	    in result
 
 	T.TCon{}
-		| Just tx		<- T.takeTData tt
-		-> toSeaT_data tx
+	 | Just tx		<- T.takeTData tt
+	 -> toSeaT_data tx
 	
-	T.TVar{}		-> E.TPtr E.TObj
+	T.TVar{}	
+	  -> E.tPtrObj
 
 	_ 	-> panic stage
 		$ "toSeaT: No match for " ++ show tt ++ "\n"
 	
 
 toSeaT_data tx
-	-- the unboxed void type is represented directly.
+	-- The unboxed void type is represented directly.
  	| (v, _, _)			<- tx
  	, VarIdPrim Var.TVoidU	<- varId v
 	= E.TVoid
 
- 	 -- we know about unboxed pointers
+ 	 -- We know about unboxed pointers.
 	| (v, _, [t])			<- tx
 	, VarIdPrim Var.TPtrU	<- varId v
 	= E.TPtr (toSeaT t)
 
-	-- the built-in unboxed types are represented directly.
-	| (v, _, ts)			<- tx
+	-- The built-in unboxed types are represented directly.
+	-- These are types like Int32 and Char.
+	| (v, _, [])			<- tx
 	, Var.varIsUnboxedTyConData v
-	= E.TCon v (map toSeaT $ filter hasValueKind ts)
+	= E.TCon (E.TyConUnboxed v)
 
-	-- some user defined unboxed type.
-	-- TODO: We just check for a '#' in the name to detect these, which is pretty nasty. 
-	--	 Is there a better way to detect this?
-	| (v, _, ts)			<- tx
+	-- An abstract unboxed data type.
+	-- The are types like FILE which are defined by the system libraries, and will usually 
+	-- be be referenced via a pointer.
+	-- TODO: To detect these we just check for the '#' characted in the type name, which pretty nasty.
+	--       We don't require the arg list to be empty because type constructors like (String# :: % -> *)
+	--       have region parameters.
+	| (v, _, _)			<- tx
 	, elem '#' (varName v)
-	= E.TCon v (map toSeaT $ filter hasValueKind ts)
+	= E.TCon (E.TyConAbstract v)
 
+	-- A generic boxed object that the Sea language don't distinguish further.
+	-- These are usually ADTs defined in the Disciple source language.
 	| otherwise
-	= E.TPtr E.TObj
-
-
--- | Check if this type has value kind
-hasValueKind :: T.Type -> Bool
-hasValueKind xx
-	| k	<- T.kindOfType xx
-	, not $ elem k [T.kRegion, T.kClosure, T.kEffect]
-	= True
-	
-	| otherwise
-	= False
+	= E.tPtrObj
 
 
 -- | Split a type into its params and return parts.

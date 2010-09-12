@@ -55,8 +55,8 @@ makeInitCaf (v, t)
 
  where	nSlotPtr	= NRts $ varWithName "_ddcSlotPtr"
 	xSlotPtr	= XVar nSlotPtr ppObj
-	pObj		= TPtr TObj
-	ppObj		= TPtr pObj
+	pObj		= tPtrObj
+	ppObj		= TPtr tPtrObj
 
 
 -- | Make the var of the function we should use to initialise a module.
