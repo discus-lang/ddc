@@ -377,7 +377,9 @@ instance Pretty Name PMode where
 	NAuto  v	-> ppr $ seaVar True  v
 	NSlot  _ i	-> "_S(" % i % ")"
 	NCafPtr v	-> ppr $  "_ddcCAF_" ++ seaVar False v
-	NCaf    v	-> ppr $ "*_ddcCAF_" ++ seaVar False v
+	NCaf    v	
+	 | isJust (takeSeaNameOfVar v)	-> ppr $ seaVar False v
+	 | otherwise			-> ppr $ "*_ddcCAF_" ++ seaVar False v
 	
 
 -- | Show the Sea name of a varaible.

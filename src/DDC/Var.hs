@@ -12,7 +12,8 @@ module DDC.Var
 	, VarInfo	(..)
 	, varWithName
 	, varWithoutModuleId
-	, loadSpaceQualifier)
+	, loadSpaceQualifier
+	, takeSeaNameOfVar)
 where
 import DDC.Var.ModuleId
 import DDC.Var.NameSpace
@@ -153,5 +154,19 @@ loadSpaceQualifier var
 varWithoutModuleId:: Var -> Var
 varWithoutModuleId var
 	= var { varModuleId = ModuleIdNil }
+
+
+-- | Take the SeaName info from a var
+takeSeaNameOfVar :: Var -> Maybe String
+takeSeaNameOfVar var
+	| name : _	<- [v | ISeaName v <- varInfo var]
+	= Just name
+
+	| name : _	<- [name |  ISeaName name 
+				 <- concat $ [varInfo bound | IBoundBy bound <- varInfo var]]
+	= Just name
+	
+	| otherwise
+	= Nothing
 
 
