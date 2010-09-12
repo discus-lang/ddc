@@ -6,7 +6,6 @@ module DDC.Sea.Pretty
 	(seaVar)
 where
 import Sea.Util
-import DDC.Sea.Compounds
 import DDC.Sea.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -216,7 +215,10 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
   	XNil		-> ppr "@XNil"
 
 	-- variables
-	XVar name _	-> ppr name
+	XVar name typ	
+	 -> ifMode (elem PrettySeaTypes)
+		(parens $ ppr name % " :: " % ppr typ)
+		(ppr name)
 
 	-- projection
 	XTag x
@@ -262,22 +264,22 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	-- Primitive function application operators.
 	XPrim (MApp f) (x : args)
-	 | Just v	<- takeXVar x
+	 |  XVar _ _ <- x
 	 -> case f of
 		PAppTailCall	
-		 -> "@XTailCall " % sV v % " (" % ", " %!% args % ")"
+		 -> "@XTailCall " % x % " (" % ", " %!% args % ")"
 
 		PAppCall
-		 -> sV v % " (" % ", " %!% args % ")"
+		 -> x % " (" % ", " %!% args % ")"
 
 		PAppCallApp superArity
-		 -> "_callApp"	% length args % " (" % ", " %!% (sV v : ppr superArity : map ppr args) % ")"
+		 -> "_callApp"	% length args % " (" % ", " %!% (ppr x : ppr superArity : map ppr args) % ")"
 
 		PAppApply
 		 -> "_apply"	% length args % " (" % x % ", " % ", " %!% args % ")"
 
 		PAppCurry superArity
-		 -> "_curry"	% length args % " (" % ", " %!% (sV v : ppr superArity : map ppr args) % ")"
+		 -> "_curry"	% length args % " (" % ", " %!% (ppr x : ppr superArity : map ppr args) % ")"
 
 	-- Primitive allocation functions.
 	XPrim (MAlloc prim) []

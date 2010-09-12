@@ -77,6 +77,7 @@ data Arg
 	| DumpPrettyTypeKinds		-- ^ Show kinds of type variables.
 	| DumpPrettyCoreTypes		-- ^ Show types on variables in core program.
 	| DumpPrettyCoreMore		-- ^ Show more-than constraints on effect variables in core program.
+	| DumpPrettySeaTypes		-- ^ Show types on variables in the sea program.
 
 	-- dump everything
 	| DumpAll			-- ^ Dump everything.
@@ -217,4 +218,5 @@ takePrettyModeOfArg aa
 	DumpPrettyTypeKinds	-> Just $ PrettyTypeKinds
 	DumpPrettyCoreTypes	-> Just $ PrettyCoreTypes
 	DumpPrettyCoreMore	-> Just $ PrettyCoreMore
+	DumpPrettySeaTypes	-> Just $ PrettySeaTypes
 	_			-> Nothing

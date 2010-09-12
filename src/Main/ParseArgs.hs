@@ -254,6 +254,7 @@ options	=
 	, OFlag		DumpPrettyTypeKinds	["-dump-pretty-type-kinds"]	"Show kinds on type vars and constructors."
 	, OFlag		DumpPrettyCoreTypes	["-dump-pretty-core-types"]	"Show type annots on vars in core."
 	, OFlag		DumpPrettyCoreMore	["-dump-pretty-core-more"]	"Show :> constraints on type vars in core."
+	, OFlag		DumpPrettySeaTypes	["-dump-pretty-sea-types"]	"Show type annots on vars in the sea program.."
 	, OBlank
 	
 	, OFlag 	DumpAll			["-dump"]			"Dump everything."

@@ -1,6 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Base pretty printer support and fancy display options.
+--   TODO: Stop using the pervasive PMode type. We should make pprStrPlain polymorphic
+--         in the mode and just pass in the required mode string when we apply it.
 module DDC.Main.Pretty
 	( module DDC.Util.Pretty
 	, PMode
@@ -12,7 +14,7 @@ import DDC.Util.Pretty
 
 
 -- | The pretty printers for most data types take can look in PMode
---	to determine what options to use.
+--   to determine what options to use.
 type PMode	
 	= [PrettyMode]
 
@@ -21,11 +23,23 @@ type Str = PrettyM PMode
 
 -- | Pretty printing options that we support.
 data PrettyMode
-	= PrettyUnique		-- ^ Annotate vars with their uniqueBinds.
-	| PrettyTypeSpaces	-- ^ Show a '*' namespace qualifier on type variables.
-	| PrettyTypeKinds	-- ^ Show kinds on type vars and constructors.
-	| PrettyCoreTypes	-- ^ Show type annotations on vars in core.
-	| PrettyCoreMore	-- ^ Show more-than constraints on effect vars in core.
+	-- | Annotate vars with their unique binds.
+	= PrettyUnique
+
+	-- | Show a '*' namespace qualified on tyoe variables.
+	| PrettyTypeSpaces
+
+	-- | Show the kinds of type variables and constructors.
+	| PrettyTypeKinds
+
+	-- | Show type annotations on variables in core.
+	| PrettyCoreTypes
+
+	-- | Show more-than constraints on effect variables in core.
+	| PrettyCoreMore
+
+	-- | Show type annotations on variables in the Sea language.
+	| PrettySeaTypes
 	deriving (Eq, Show)
 
 
@@ -33,3 +47,5 @@ data PrettyMode
 pprStrPlain :: Pretty a PMode => a -> String
 pprStrPlain x
  	= pprStr [] x
+
+
