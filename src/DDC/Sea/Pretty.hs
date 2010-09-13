@@ -399,6 +399,8 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 	(LInt i,    UnboxedBits _)	-> ppr i
 	(LFloat f,  UnboxedBits _)	-> ppr f
 
+	(LInt i,    Unboxed)		-> ppr i
+
 	(LChar c,   UnboxedBits _)	-> ppr $ show c
 	(LString s, Unboxed)		-> ppr $ show s
 	_ -> panic stage $ "pprLiteralFmt: no match for " % show litfmt
