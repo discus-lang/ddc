@@ -7,6 +7,7 @@ import Sea.Plate.Trans
 import Shared.VarGen
 import Util
 import DDC.Sea.Exp
+import DDC.Sea.Compounds
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Var
@@ -95,7 +96,7 @@ flattenG
 	( ixGuard	-- index of this guard
 	 , g)		-- the guard
 
-	| GCase _ isLazy ss x1 x2@(XLit litFmt) 	<- g
+	| GCase _ isLazy ss x1 x2@(XLit (LLit litFmt)) 	<- g
 	, LiteralFmt lit fmt			<- litFmt
 	= do
 		let lName	= "a" ++ show ixAlt ++ "g" ++ show ixGuard
@@ -114,7 +115,7 @@ flattenG
 		let stmts
 			| LiteralFmt (LString _) Unboxed <- litFmt
 			= ss
-			++ [ SIf (XPrim (MOp OpNeq) [XPrim (MFun PFunStrCmp) [x1, x2], XInt 0])
+			++ [ SIf (XPrim (MOp OpNeq) [XPrim (MFun PFunStrCmp) [x1, x2], xInt 0])
 				 ssNext]
 
 			| otherwise
@@ -145,8 +146,8 @@ flattenG
 		let (ssAgain, ssFollow)
 			-- if we're matching against a constructor tag
 			--	and the constructor is in a lazy region, then yes
-			| XTag x	<- x1
-			, XCon{}	<- x2
+			| XTag x		<- x1
+			, XLit LDataTag{}	<- x2
 			, isLazy
 			= ([SLabel vGuardAgain], [ACaseSusp x vGuardAgain, ACaseIndir x vGuardAgain])
 

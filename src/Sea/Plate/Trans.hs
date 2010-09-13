@@ -248,14 +248,13 @@ instance Monad m => TransM m a1 a2 Exp where
 	 	transX table	$ XTag x'
 
 	-- constants
-	XCon v
+	XLit (LDataTag v)
 	 -> do	v'		<- transV table v
-	 	transX table	$ XCon v'
+	 	transX table	$ XLit (LDataTag v')
 
-	XInt i -> transX table 	$ XInt i
-	XUnit  -> transX table 	$ XUnit
-	XLit l -> transX table 	$ XLit l
-	XNull  -> transX table 	$ XNull
+	XLit lit
+	 -> 	transX table	$ XLit lit
+
 
 
 -- Alt ---------------------------------------------------------------------------------------------

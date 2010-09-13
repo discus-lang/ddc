@@ -14,6 +14,7 @@ where
 import Sea.Util
 import DDC.Main.Error
 import DDC.Sea.Exp
+import DDC.Sea.Compounds
 import DDC.Var
 import Util
 
@@ -45,12 +46,12 @@ makeInitCaf :: (Var, Type) -> [Stmt ()]
 makeInitCaf (v, t)
  = 	-- Allocate the slot at the top of the stack for this CAF.
 	[ SAssign (XVar (NCafPtr v) ppObj) ppObj $ XVar nSlotPtr ppObj
-	, SAssign xSlotPtr                 pObj  $ XPrim (MOp OpAdd) [xSlotPtr, XInt 1]
+	, SAssign xSlotPtr                 pObj  $ XPrim (MOp OpAdd) [xSlotPtr, xInt 1]
 
 	-- Assign the new slot to zero, then call the function that computes the CAF.
 	-- We want to set the slot to zero while we're computing the CAF incase
 	-- it tries to recursively call itself.
-	, SAssign (XVar (NCaf v) pObj) pObj      $ XInt 0
+	, SAssign (XVar (NCaf v) pObj) pObj      $ xInt 0
 	, SAssign (XVar (NCaf v) pObj) pObj      $ XPrim (MApp $ PAppCall) [XVar (NSuper v) t] ]
 
  where	nSlotPtr	= NRts $ varWithName "_ddcSlotPtr"

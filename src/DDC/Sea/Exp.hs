@@ -15,6 +15,7 @@ module DDC.Sea.Exp
 	, Alt		(..)
 	, Guard		(..)
 	, Exp		(..)
+	, Lit		(..)
 	, Var)
 where
 import DDC.Sea.Exp.Prim
@@ -149,30 +150,38 @@ data Guard a
 
 
 -- | Expressions
---   TODO: There are still too many constructors in this type.
---         Break this into a LValue / RValue, and only permit 
---         assignments to LValues. Maybe use "Loc" for assignable values.
 data Exp a
+	-- | A missing node in the AST. Used for debugging.
 	= XNil
 
-	-- | Value variables.
+	-- | Value variables with their types.
 	| XVar		Name Type
 
-	-- Literals
-	-- TODO: Ditch XInt and break the rest out into their own type.
-	| XNull					-- ^ The null pointer
-	| XUnit					-- ^ The unit value
-	| XInt		Int			-- ^ An integer
-	| XLit		LiteralFmt		-- ^ A literal
-	| XCon		Var			-- ^ A data constructor tag
+	-- | Literal values.
+	| XLit		Lit
 
-	-- project
-	| XArg		(Exp a) Int		-- ^ Take a numbered field of some boxed data type.
-	| XTag		(Exp a)			-- ^ Take the tag of a boxed object.
+	-- | Take a numbered field from a boxed data object.
+	| XArg		(Exp a) Int
 
-	-- invoke some primitive operator.
+	-- | Take the tag of a boxed object.
+	| XTag		(Exp a)
+
+	-- | Invoke a primitive operator.
 	| XPrim		Prim [Exp a]
 	deriving (Show, Eq)
 
 
-
+-- | A literal value.
+data Lit
+	-- | The null pointer.
+	= LNull
+	
+	-- | The boxed unit value.
+	| LUnit
+	
+	-- | The tag of a data constructor.
+	| LDataTag	Var
+	
+	-- | A literal of some primitve type like int or float.
+	| LLit		LiteralFmt
+	deriving (Show, Eq)

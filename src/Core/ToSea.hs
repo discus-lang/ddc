@@ -278,12 +278,12 @@ toSeaX		xx
 	 -> panic stage $ "toSeaX[XLit]: can't convert boxed literal " % litFmt
 	 
 	 | otherwise
-	 -> return	$ E.XLit litFmt
+	 -> return	$ E.XLit (E.LLit litFmt)
 
 	-- string constants are always applied to regions 
 	C.XAPP (C.XLit litFmt@(LiteralFmt l@LString{} fmt)) (T.TVar k r)
 	 | k == T.kRegion
-	 -> return $ E.XLit litFmt
+	 -> return $ E.XLit (E.LLit litFmt)
 
 	-- An application to type/region/effects only
 	--	we can just discard the TRE applications and keep the value.
@@ -449,7 +449,7 @@ toSeaG	mObjV ssFront gg
 
 				let ssL		= assignLastSS (E.XVar name t', t') ssRHS
 				return	( []
-					, Just $ E.GCase spos False (ssFront ++ ssL) compX (E.XLit litFmt))
+					, Just $ E.GCase spos False (ssFront ++ ssL) compX (E.XLit (E.LLit litFmt)))
 			  
 			-- match against constructor
 			| C.WCon sp v lvts	<- w
@@ -465,7 +465,7 @@ toSeaG	mObjV ssFront gg
 							(not rhsIsDirect) 
 							(ssFront ++ ssL) 
 							compX (
-							E.XCon v))
+							(E.XLit (E.LDataTag v))))
 
 		result
 

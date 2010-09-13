@@ -241,7 +241,7 @@ llvmSwitch e _
 
 
 genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
-genAltVars switchEnd alt@(ASwitch (XCon v) [])
+genAltVars switchEnd alt@(ASwitch (XLit (LDataTag v)) [])
  | varName v == "True"
  =	return ((i32LitVar 1, switchEnd), alt)
 
@@ -278,7 +278,7 @@ genAltBlock ((_, lab), ACaseIndir (XVar (NSlot v i) t) label)
 	writeSlot	followed i
 	addBlock	[ Branch lab ]
 
-genAltBlock ((_, lab), ASwitch (XCon _) [])
+genAltBlock ((_, lab), ASwitch (XLit (LDataTag _)) [])
  =	addBlock [ Branch lab ]
 
 genAltBlock ((_, lab), x)
@@ -444,12 +444,12 @@ pFunctionVar v
 
 
 boxExp :: Type -> Exp a -> LlvmM LlvmVar
-boxExp t (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
+boxExp t (XLit lit@(LLit (LiteralFmt (LInt value) (UnboxedBits 32))))
  = do	addComment $ "boxing1 " ++ show t
 	boxInt32 $ i32LitVar value
 
 
-boxExp t lit@(XLit (LiteralFmt (LString s) Unboxed))
+boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
  = do	addComment $ "boxing2 " ++ show t
 	gname	<- newUniqueName "str"
 	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
@@ -510,7 +510,7 @@ primMapFunc t build sofar exp
 llvmOfPtrManip :: LlvmType -> Prim -> [Exp a] -> LlvmM LlvmVar
 llvmOfPtrManip t (MOp OpAdd) args
  = case args of
-	[l@(XVar n t), XInt i]
+	[l@(XVar n t), XLit (LLit (LiteralFmt (LInt i) Unboxed))]
 	 ->	do	addComment "llvmOfPtrManip"
 			src		<- newUniqueReg $ toLlvmType t
 			dst		<- newUniqueReg $ toLlvmType t
@@ -548,7 +548,7 @@ llvmVarOfExp (XVar n t)
 		 , Assignment reg (Load (toLlvmVar (varOfName n) t)) ]
 	return	reg
 
-llvmVarOfExp (XInt i)
+llvmVarOfExp (XLit (LLit (LiteralFmt (LInt i) Unboxed)))
  = do	reg	<- newUniqueReg i32
 	addBlock [ Comment ["llvmVarOfExp (XInt i)"]
 		 , Assignment reg (Load (llvmWordLitVar i)) ]

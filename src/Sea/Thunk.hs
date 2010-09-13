@@ -16,6 +16,7 @@ import Sea.Plate.Trans
 import Util
 import DDC.Sea.Pretty
 import DDC.Sea.Exp
+import DDC.Sea.Compounds
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
@@ -99,7 +100,7 @@ expandS	table s
 	| SAssign (XVar v _) t x@(XPrim (MApp PAppTailCall{}) _) <- s
 	= do	callSS	<- expandTailCall table x
 
-		return	$ [ SAssign (XVar v t) t XNull ]
+		return	$ [ SAssign (XVar v t) t xNull ]
 			++ callSS
 
 	-- tail calls

@@ -227,12 +227,8 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XArg x@(XVar _ _) i
 	 -> "_DARG(" % x % ", " % i % ")"
 
-	-- constants
-	XCon v		-> "_tag" % sV v
-	XInt i		-> ppr i
-	XUnit 		-> ppr "_primUnit"
-	XLit lit	-> pprLiteralFmt lit
-	XNull		-> ppr "_null"
+	-- literals
+	XLit lit	-> ppr lit
 
 	-- Primitives ---------------------------------------------------------
 	-- Primitive arithmetic operators.
@@ -325,6 +321,15 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> "_unboxDirect(" % t % ", " % x % ")"
 
 	_ -> panic stage ("ppr[Exp]: no match for " % show xx)
+
+-- Lit ---------------------------------------------------------------------------------------------
+instance Pretty Lit PMode where
+ ppr xx 
+  = case xx of
+	LNull		-> ppr "_null"
+	LUnit 		-> ppr "_primUnit"
+	LDataTag v	-> "_tag" % sV v
+	LLit lit	-> pprLiteralFmt lit
 
 
 -- Type --------------------------------------------------------------------------------------------
