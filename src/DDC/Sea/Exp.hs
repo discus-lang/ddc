@@ -172,9 +172,11 @@ data Exp a
 	-- | Literal values.
 	| XLit		Lit
 
-	-- project
-	| XArg		(Exp a) Int		-- ^ Take a numbered field of some boxed data type.
-	| XTag		(Exp a)			-- ^ Take the tag of a boxed object.
+	-- | Take a numbered field from some boxed data object.
+	| XArgData	(Exp a) Int
+	
+	-- | Take a numbered field from some thunk.		
+	| XArgThunk	(Exp a) Int
 
 	-- | Take the tag of a boxed object.
 	| XTag		(Exp a)
