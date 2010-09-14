@@ -142,10 +142,9 @@ data Exception
 
 	-- | Thrown when pattern matching fails.
 	| ExceptionCaseNoMatch
-		String 	-- the qualified name of the function we were evaluating
-			--	(or supercombinator?? ticket #119)
-		Int 	-- line number
-		Int	-- column number
+		FlatString	-- The name of the module that threw this error.
+		Int 		-- Line number in the module.
+		Int		-- Column number in the module.
 
 	-- | Thrown when an array is accessed out of bounds.
 	--   runtime/Prim/Array.c requires this constructor to have this

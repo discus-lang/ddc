@@ -81,7 +81,7 @@ topHandle f
 
 		ExceptionCaseNoMatch name line column
 		 -> 	print	$ "*** DDC RTS: Non-exhaustive patterns in "
-		 		% name	
+		 		% SChunk name
 				% ":" % string_Int32 line % ":" % string_Int32 column
 				% "\n\n"
 
