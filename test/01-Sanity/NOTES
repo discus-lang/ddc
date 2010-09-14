@@ -1,8 +1,0 @@
-The tests in this directory are for basic sanity testing. 
-This is where we compile "Hello World" and see what happens.
-
-All basic functionality and syntax should be covered, and if
-anything fundamental is wrong it should be picked up here.
-
-All the tests here should compile and run successfully.
-Put tests that are expected to fail somewhere else.

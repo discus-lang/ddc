@@ -1,0 +1,6 @@
+The "Sanity Tests" cover all basic functionality and syntax.
+If all the sanity tests run then you can be sure that the compiler
+isn't completely broken.
+
+All the sanity tests should compile and run successfully.
+Put tests that are expected to fail somewhere else.
