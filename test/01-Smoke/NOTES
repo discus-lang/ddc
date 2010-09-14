@@ -5,4 +5,5 @@ They are used to work out what's gone wrong when you've been hacking on the runt
 system and now every program is segfaulting.
 
 They should test trivial things, like simple addition and printing to the screen,
-and each file should contain just a single test.
+and each file should contain just a single test. All tests here should compile
+and run successfully. Put tests that are expected to fail somewhere else.
