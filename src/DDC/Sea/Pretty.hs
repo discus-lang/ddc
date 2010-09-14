@@ -83,7 +83,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PBlank		-> ppr "\n"
 	PHashDef s1 s2	-> "#define " %  padL 8 s1 %>> " " % s2 % "\n"
 
-	PMain mn ml
+	PMain mn ml withHandler
 	 ->	"int main (int argc, char** argv)\n"
 	  %	"{\n"
 	  %	"\t_ddcRuntimeInit(argc, argv);\n\n"
@@ -92,8 +92,9 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	  %	"\n\n"
 	  %	"\t_ddcInitModule_" % mn % "();\n"
 	  %	"\n"
-          %     "\tMain_main(Base_Unit());"
---	  %	"\tControl_Exception_topHandle(_allocThunk((FunPtr) " % mn % "_main, 1, 0));\n"
+          %     (if withHandler
+			then "\tControl_Exception_topHandle(_allocThunk((FunPtr) " % mn % "_main, 1, 0));\n"
+			else ppr "\tMain_main(Base_Unit());")
 	  %	"\n"
 	  %	"\t_ddcRuntimeCleanup();\n"
 	  %	"\n"

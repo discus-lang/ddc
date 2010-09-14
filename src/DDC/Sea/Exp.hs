@@ -69,7 +69,19 @@ data Top a
 	| PIncludeAbs	String			-- #include "..."
 
 	| PHackery	String			-- string is inlined straight into the output file
-	| PMain		String [String]		-- C main() function with moduleName and imported modules
+
+	-- C main function.
+	| PMain
+		{ -- | Name of the module containin the C main function.
+		  topMainModuleName	:: String
+
+		  -- | Names of modules imported by the main module.
+		, topMainImported	:: [String]
+
+		  -- | Whether to wrap the Disciple main fn in the top-level
+		  --   exception handler from the prelude.
+		  --   TODO: Handle this in the desugarer in instead.
+		, topDefaultHandler	:: Bool}
 
 	| PComment	String
 	| PBlank

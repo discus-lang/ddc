@@ -360,7 +360,8 @@ seaMain	:: (?args :: [Arg.Arg])
 	-> IO (Tree ())
 	
 seaMain imports mainModule
-	= return $ mainTree imports mainModule
+	= return $ mainTree mainModule imports
+			(not $ elem Arg.NoImplicitHandler ?args)
 	
 
 

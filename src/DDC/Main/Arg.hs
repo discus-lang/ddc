@@ -26,6 +26,7 @@ data Arg
 	| ImportDirs	[String]	-- ^ Dirs to look for imports.
 	| PathBase	String		-- ^ Base path to libraries.
 	| NoImplicitPrelude		-- ^ Don't implicitly import the prelude.
+	| NoImplicitHandler		-- ^ Don't use the prelude's top-level exception handler.
 
 	-- lint options
 	| LintAll			-- ^ Run all lint passes.
@@ -160,6 +161,10 @@ expandArgs (x:xs)
 	 
 	StopCompile
 	 -> x : KeepOFiles : expandArgs xs
+
+	-- we can't use the default top-level handler if the prelude isn't imported
+	NoImplicitPrelude
+	 -> x : NoImplicitHandler : expandArgs xs
 
 	-- dump flags
 	DumpAll		

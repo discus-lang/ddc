@@ -139,7 +139,8 @@ buildLoop' args setup graph buildCount buildIx roots build
 		-- run the compiler to produce the object file
 		let Just scrape		= Map.lookup m graph_pruned
 		let Just pathSource	= scrapePathSource scrape
-		definesMain		<- compileFile setup graph_pruned m (shouldBlessMain roots m) 
+		let setup'		= setup { setupArgsCmd = setupArgsCmd setup ++ scrapeArgsInline scrape }
+		definesMain		<- compileFile setup' graph_pruned m (shouldBlessMain roots m) 
 
 		-- check that the object and interface is actually there
 		let (_, fileDir, fileBase, _)

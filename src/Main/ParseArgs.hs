@@ -140,6 +140,10 @@ options	=
 			["-no-implicit-prelude"]
 			"Don't implicitly import Prelude."
 
+	, OFlag		NoImplicitHandler
+			["-no-implicit-handler"]
+			"Don't implicitly use the Prelude's top-level exception handler."
+
 	, OBlank
 	, OFlag		LintAll			
 			["-lint"]

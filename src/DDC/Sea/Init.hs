@@ -71,13 +71,15 @@ makeModuleInitVar mid
 -- Main -------------------------------------------------------------------------------------------
 -- | Make code that initialises each module and calls the main function.
 mainTree
-	:: [ModuleId]	-- ^ list of modules in this program
-	-> ModuleId	-- ^ The module holding the Disciple main function
+	:: ModuleId	-- ^ The module holding the Disciple main function
+	-> [ModuleId]	-- ^ list of modules in this program
+	-> Bool		-- ^ Whether to wrap the Disciple main fn in a top-level exception handler.
 	-> Tree ()
 
-mainTree imports mainModule
- = let	ModuleId [mainModuleName]	= mainModule
+mainTree midMain midsImported withHandler
+ = let	ModuleId [mainModuleName]	= midMain
    in	[ PMain mainModuleName
-		$ map (\m -> "_" ++ (varName $ makeModuleInitVar m)) imports ]
+		(map (\m -> "_" ++ (varName $ makeModuleInitVar m)) midsImported)
+		withHandler]
 
 
