@@ -1,0 +1,18 @@
+{-# OPTIONS -no-implicit-prelude #-}
+-- See if basic higher order functions / thunks work.
+-- We need these to use the Prelude's top-level exception handler.
+import Base
+
+foreign import "printf"
+ printf :: String#{read} -> Int#
+
+data List a = Nil | Cons a (List a)
+
+map f Nil		= Nil
+map f (Cons x xs)	= Cons (f x) (map f xs)
+
+main () 
+ = do	map (\x -> printf "beep!\n"#) (Cons 1 (Cons 2 (Cons 3 (Cons 4 (Cons 5 Nil)))))
+	()
+
+
