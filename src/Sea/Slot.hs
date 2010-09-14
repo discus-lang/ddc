@@ -7,7 +7,6 @@ module Sea.Slot
 where
 import Util
 import Shared.VarUtil
-import Sea.Util
 import Sea.Plate.Trans
 import DDC.Sea.Exp
 import DDC.Var
@@ -43,7 +42,7 @@ slotP cgHeader cgSource p
 		let Just (SReturn x) = takeLast ssR
 		retVar		<- newVarN NameValue
 
-		let retBoxed		= not $ typeIsUnboxed retT
+		let retBoxed		= typeIsBoxed retT
 		let hasSlots		= slotCount > 0
 
 		return	$ PSuper v args retT
@@ -106,7 +105,7 @@ slotSS _cgHeader _cgSource args ss
 	return	(ssAuto, ssArg, ss3, slotCount)
 
 slotAssignArg	(v, t)
- 	| typeIsUnboxed t
+ 	| not $ typeIsBoxed t
 	= return Nothing
 
 	| otherwise
@@ -131,29 +130,12 @@ slotifyX x m
 
 	-- BUGS: unboxed top level data is not a CAF
 	| XVar (NCaf v) t	<- x
-	= XVar (NCaf v) t
+	, typeIsBoxed t
+	= XVar (NCafPtr v) t
 
 	| otherwise
 	= x
 
--- | Decide whether a var is represented as a top level CAF.
---	CAFs are bindings with arity 0, and that weren't imported with an explicit Sea name.
---
---	A binding with an explicit Sea name is an external constant, so we don't need
---	to compute the value of it at module startup time (like we do with other CAFs)
---
-{-
-isCafVar :: C.Glob -> C.Glob -> Var -> Bool
-isCafVar cgHeader cgSource v
-	| Just 0	<- C.bindingArityFromGlob v cgHeader
-	= not $ isJust $ Var.takeSeaNameOfBindingVar v
-
-	| Just 0	<- C.bindingArityFromGlob v cgSource
-	= not $ isJust $ Var.takeSeaNameOfBindingVar v
-
-	| otherwise
-	= False
--}
 
 -- SlotM ------------------------------------------------------------------------------------------
 -- State monad for doing the GC slot transform.

@@ -11,7 +11,6 @@ module DDC.Sea.Init
 	( initTree
 	, mainTree )
 where
-import Sea.Util
 import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Sea.Compounds
@@ -30,8 +29,7 @@ initTree mid cTree
  = let 	
 	-- Make code that initialises the top-level caf var.
 	initCafSS	= catMap makeInitCaf 
-			$ [ (v, t) 	| PCafSlot v t <- cTree
-					, not (typeIsUnboxed t) ]
+			$ [ (v, t) 	| PCafSlot v t <- cTree]
 
 	-- The function to call to intialise the module.
 	initV		= makeModuleInitVar mid
@@ -44,20 +42,24 @@ initTree mid cTree
 -- | Make code that initialises a CAF.
 makeInitCaf :: (Var, Type) -> [Stmt ()]
 makeInitCaf (v, t)
- = 	-- Allocate the slot at the top of the stack for this CAF.
-	[ SAssign (XVar (NCafPtr v) ppObj) ppObj $ XVar nSlotPtr ppObj
+ | typeIsBoxed t
+ = let 	nSlotPtr	= NRts $ varWithName "_ddcSlotPtr"
+	xSlotPtr	= XVar nSlotPtr ppObj
+	pObj		= tPtrObj
+	ppObj		= TPtr tPtrObj
+
+	-- Allocate the slot at the top of the stack for this CAF.
+   in	[ SAssign (XVar (NCaf v) ppObj) ppObj $ XVar nSlotPtr ppObj
 	, SAssign xSlotPtr                 pObj  $ XPrim (MOp OpAdd) [xSlotPtr, xInt 1]
 
 	-- Assign the new slot to zero, then call the function that computes the CAF.
 	-- We want to set the slot to zero while we're computing the CAF incase
 	-- it tries to recursively call itself.
-	, SAssign (XVar (NCaf v) pObj) pObj      $ xInt 0
-	, SAssign (XVar (NCaf v) pObj) pObj      $ XPrim (MApp $ PAppCall) [XVar (NSuper v) t] ]
+	, SAssign (XVar (NCafPtr v) pObj) pObj      $ xInt 0
+	, SAssign (XVar (NCafPtr v) pObj) pObj      $ XPrim (MApp $ PAppCall) [XVar (NSuper v) t] ]
 
- where	nSlotPtr	= NRts $ varWithName "_ddcSlotPtr"
-	xSlotPtr	= XVar nSlotPtr ppObj
-	pObj		= tPtrObj
-	ppObj		= TPtr tPtrObj
+ | otherwise
+ = 	[ SAssign (XVar (NCaf v) t) t $ XPrim (MApp PAppCall) [XVar (NSuper v) t] ]
 
 
 -- | Make the var of the function we should use to initialise a module.

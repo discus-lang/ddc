@@ -5,7 +5,6 @@
 module DDC.Sea.Pretty
 	(seaVar)
 where
-import Sea.Util
 import DDC.Sea.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -57,15 +56,14 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	  % "}\n\n\n"
 
 	-- cafs
-	PCafProto _ t
-	 | typeIsUnboxed t
-	 -> ppr "\n"
-
 	PCafProto v t
-	 -> "extern " % t % " " %>> "*_ddcCAF_" % sV v % ";\n\n"
+	 | not $ typeIsBoxed t	 -> ppr "\n"
+	 | otherwise		-> "extern " % t % " " %>> "*_ddcCAF_" % sV v % ";\n\n"
 
 	PCafSlot  v t
-	 -> t % " " %>> "*_ddcCAF_" % sV v % " = 0;\n"
+	 | not $ typeIsBoxed t	-> t % " " %>>  "_ddcCAF_" % sV v % " = 0;\n"
+	 | otherwise		-> t % " " %>> "*_ddcCAF_" % sV v % " = 0;\n"
+
 
 	PCafInit v _ ss
 	 -> "void " %>> "_ddcInitCAF_" % sV v %>> "()\n"
@@ -419,10 +417,10 @@ instance Pretty Name PMode where
 	NSuper v	-> ppr $ seaVar False v
 	NAuto  v	-> ppr $ seaVar True  v
 	NSlot  _ i	-> "_S(" % i % ")"
-	NCafPtr v	-> ppr $  "_ddcCAF_" ++ seaVar False v
+	NCafPtr v	-> ppr $  "*_ddcCAF_" ++ seaVar False v
 	NCaf    v	
 	 | isJust (takeSeaNameOfVar v)	-> ppr $ seaVar False v
-	 | otherwise			-> ppr $ "*_ddcCAF_" ++ seaVar False v
+	 | otherwise			-> ppr $ "_ddcCAF_" ++ seaVar False v
 	
 
 -- | Show the Sea name of a varaible.
