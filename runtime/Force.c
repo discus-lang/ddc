@@ -89,7 +89,7 @@ Obj*	_forceStep (Obj* susp_)
 
 #if _DDC_DEBUG
 	// Zap any remaining args for debugging purposes
-	for (UInt i = 0; i < susp2 ->arity; i++)
+	for (unsigned int i = 0; i < susp2 ->arity; i++)
 		susp2 ->a[i]	= 0;
 #endif
 
