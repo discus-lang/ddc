@@ -6,15 +6,18 @@
 module DDC.Type.Data.Material
 	(annotMaterialInDataDefs)
 where
+import DDC.Type.Collect.FreeVars ()
 import DDC.Type.Data.Base
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Kind
-import DDC.Type.Pretty		()
+import DDC.Type.Pretty		 ()
 import DDC.Type.Operators.Instantiate
+import DDC.Util.FreeVars
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
+import qualified Shared.VarUtil	as Var
 import Data.List
 import Data.Set			(Set)
 import Data.Map			(Map)
@@ -49,39 +52,47 @@ annotMaterialDataDef ddefsEnv ddef
 			(dataDefKind ddef)
 			[TVar k (UVar v) | (v, k) <- dataDefParams ddef]
 
-	vsMaterial = materialVarsOfType ddefsEnv tData
+	vsMaterial   = milkVarsOfType (  materialVarsOfType1 ddefsEnv) tData
+	vsImmaterial = milkVarsOfType (immaterialVarsOfType1 ddefsEnv) tData
 	
-   in	ddef { dataDefMaterialVars	
-		= Just vsMaterial }
+   in	ddef 	{ dataDefMaterialVars	= Just vsMaterial 
+		, dataDefImmaterialVars	= Just vsImmaterial }
 
+
+-- Milk -------------------------------------------------------------------------------------------
+type MilkFun
+	=  (Constraints, Type)
+	-> (Set Var, [(Constraints, Type)])
 
 -- | Determine which variables are material in this type.
 --   This doesn't support quantified types. If there are any quantifers then `panic`.
-materialVarsOfType 
-	:: Map Var DataDef	-- ^ Map of data type constructor var to its definition.
+milkVarsOfType 
+	:: MilkFun
 	-> Type
 	-> Set Var
 
-materialVarsOfType dataDefs tt
- = trace ("\nmaterialVarsOfType: " % tt)
+milkVarsOfType milkFun tt
+ = trace ("\nmilkVarsOfType: " % tt)
  $ go Set.empty [(emptyConstraints, tt)]
 
- where	go vsMaterial ds
-	 = trace ("step " % (vsMaterial, map snd ds)) $ 
-	   let	(vssMaterial', dss')	
-			=  unzip
-			$  map (materialVarsOfType1 dataDefs) ds
-
-		vsMaterial'	= Set.unions (vsMaterial : vssMaterial')
+ where	go vs ds
+	 = trace ("step " % (vs, map snd ds)) $ 
+	   let	(vss', dss')	= unzip $ map milkFun ds
+		vs'		= Set.unions (vs : vss')
 		ds'		= nub $ concat dss'
 
 		-- If no new vars or elems were addeed in this round then we're done.
-	  in	if   (vsMaterial  == vsMaterial') 
+	  in	if   (vs  == vs') 
 		  && (length ds   == length ds')
-			then vsMaterial
-			else go vsMaterial' ds'
-		
+			then vs
+			else go vs' ds'
 
+
+
+-- Material Vars ----------------------------------------------------------------------------------
+-- | Do one step in the computation of material vars of a type.
+--   TODO: This only works for ctor arg types at the moment, not arbitrary ones
+--         that might include constraints or embedded effect and closure terms.
 materialVarsOfType1
 	:: Map Var DataDef	-- ^ Map of data type constructor var to its definition.
 	-> (Constraints, Type)
@@ -130,8 +141,66 @@ materialVarsOfType1 dataDefs (crs, tt)
 	
 		_	-> panic stage $ "materialVarsOfType: no primary region var"
 	
-	| otherwise
+	| Just {}		<- takeTFun tt
 	= (Set.empty, [])
+	
+
+	| otherwise
+	= panic stage $ "materialVarsOfType1: no match for " % tt
+
+
+-- Immaterial Vars --------------------------------------------------------------------------------
+-- | Do one step in the computation of immaterial vars of a type.
+--   TODO: This only works for ctor arg types at the moment, not arbitrary ones
+--         that might include constraints or embedded effect and closure terms.
+immaterialVarsOfType1
+	:: Map Var DataDef	-- ^ Map of data type constructor var to its definition.
+	-> (Constraints, Type)
+	-> (Set Var, [(Constraints, Type)])
+
+immaterialVarsOfType1 dataDefs (crs, tt)
+
+	-- Plain region and value vars are always material.
+	| TVar k _	<- tt
+	, isRegionKind k || isValueKind k	
+	= (Set.empty, [])
+
+	-- Effect and closure vars are always immaterial
+	| TVar k b	<- tt
+	, isEffectKind k || isClosureKind k	
+	, Just v	<- takeVarOfBound b
+	= (Set.singleton v, [])
+	
+	-- 
+	| Just (vCon, _, tsArgs) <- takeTData tt
+	= let	-- look up the data definition for this type.
+		Just dataDef = Map.lookup vCon dataDefs 
+		
+		-- get the parameter of all the data constructors for this type.
+		ctorParams	= concatMap quantParamsOfCtorType 
+				$ map ctorDefType
+				$ Map.elems 
+				$ dataDefCtors dataDef
+
+		tsParamsInst	= map	(\(Just t) -> t) 
+				$ map	(flip instantiateT tsArgs)
+					ctorParams
+
+	  in	( Set.empty 
+		, zip (repeat crs) tsParamsInst)
+	
+	| Just (t1, t2, eff@TVar{}, clo@TVar{}) <- takeTFun tt
+	= let	vsImmaterial 	= Set.filter (not . Var.isCtorName)
+				$ Set.unions $ map freeVars [t1, t2, eff, clo]
+
+	  in	(vsImmaterial, [])
+
+	| Just {} <- takeTFun tt
+	= panic stage $ "immaterialVarsOfType1: no eff or closure var on function type"
+	
+	| otherwise
+	= panic stage $ "immaterialVarsOfType1: no match for " % tt
+	
 
 
 -- | Get a list of all the parameters of a data constructor's type, 
