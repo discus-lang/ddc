@@ -1,10 +1,13 @@
 {-# OPTIONS -no-implicit-prelude #-}
-
+-- See if we can do anything at all.
+-- We use C printf so we don't have to import the Prelude and
+-- initialise its modules.
 import Base
+
+foreign import "printf"
+ printf :: String#{read} -> Int#
 
 main () 
  = do	printf "Hello World\n"#
 	()
 
-foreign import "printf"
- printf :: String#{read} -> Int#

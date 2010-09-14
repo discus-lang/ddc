@@ -1,0 +1,7 @@
+{-# OPTIONS -no-implicit-prelude #-}
+-- Try to load the Prelude console library
+-- After this point we don't need to rely on the C printf function
+-- for smoke testing.
+import Data.List
+
+main () = putStr "Console library works ok\n"

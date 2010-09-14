@@ -1,0 +1,9 @@
+{-# OPTIONS -no-implicit-prelude #-}
+-- Try to load the Prelude string library
+import Data.String
+
+foreign import "printf"
+ printf :: String#{read} -> Int#
+
+main ()
+	= printf "Loaded string libs ok\n"#

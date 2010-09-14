@@ -1,0 +1,61 @@
+{-# OPTIONS -no-implicit-prelude #-}
+-- Explitly load the prelude modules, but don't use the top-level execption handler.
+
+import	Base
+import	Base.Thunk
+
+import	Class.Copy
+import	Class.Eq
+import	Class.Foldable
+import	Class.Functor
+import	Class.Monad
+import	Class.Num
+import	Class.Ord
+import	Class.Out
+import	Class.Promote
+import	Class.Read
+import	Class.Show
+import	Class.Update
+
+import	Control.Exception
+import	Control.Imperative
+	
+import	Data.ArrayU
+import	Data.Array
+import	Data.Bool
+import	Data.BoolU
+import	Data.Char
+import	Data.Either
+import	Data.FlatString
+import	Data.Float
+import	Data.Function
+import	Data.Int
+import	Data.Int32U
+import	Data.Int64
+import	Data.List
+import	Data.Maybe
+import	Data.Ptr
+import	Data.Ref
+import	Data.Set
+import	Data.String
+import	Data.StringU
+import	Data.Tuple
+import	Data.Word32U
+		
+import	DDC.Runtime
+import	DDC.Runtime.Alloc
+import	DDC.Runtime.Store
+		
+import	Math.Constants
+import	Math.Matrix33
+import 	Math.Util
+import	Math.Vec2
+import	Math.Vec3
+	
+import	System.Console
+import	System.Environment
+import	System.File
+import 	System.Network
+
+main ()
+ = putStr "The prelude loads explicitly.\n"

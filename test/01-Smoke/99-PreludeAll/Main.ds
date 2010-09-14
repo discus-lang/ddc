@@ -1,0 +1,8 @@
+
+-- Try to import the Prelude. 
+-- This calls all the module initialiasation functions, and wraps
+-- our main in the top-level exception handler from Control.Exception.
+import Prelude
+
+main ()
+ = println "The Prelude loaded ok"
