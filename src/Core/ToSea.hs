@@ -493,7 +493,7 @@ toSeaGL	nObj (label, var, t)
 	= E.SAssign 
 		(E.XVar (E.NAuto var) (toSeaT t)) 
 		(toSeaT t)
-		(E.XArg (E.XVar nObj (toSeaT t)) i)
+		(E.XArgData (E.XVar nObj (toSeaT t)) i)
 
 
 -- | Decend into XLocal and XDo and slurp out the contained lists of statements.

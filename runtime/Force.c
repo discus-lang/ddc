@@ -13,9 +13,7 @@
 // If this object is a suspended application, then force it.
 Obj*	_force (Obj* obj)
 {
-#if _DDC_DEBUG
-	_lintObjPtr (obj, _ddcHeapBase, _ddcHeapMax);
-#endif
+	_DEBUG(_lintObjPtr (obj, _ddcHeapBase, _ddcHeapMax));
 	_PROFILE_APPLY (forceCount++);
 
 	_ENTER(1);

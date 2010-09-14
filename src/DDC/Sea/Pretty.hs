@@ -226,11 +226,15 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XTag x
 	 -> "_getObjTag(" % x % ")"
 
-	XArg x@(XVar _ _) i
+	XArgData x@(XVar _ _) i
 	 -> "_DARG(" % x % ", " % i % ")"
 
-	-- literals
-	XLit lit	-> ppr lit
+	-- constants
+	XCon v		-> "_tag" % sV v
+	XInt i		-> ppr i
+	XUnit 		-> ppr "_primUnit"
+	XLit lit	-> pprLiteralFmt lit
+	XNull		-> ppr "_null"
 
 	-- Primitives ---------------------------------------------------------
 	-- Primitive arithmetic operators.

@@ -73,7 +73,7 @@ void	_collectHeap
 	_TRACES(_dumpState (_traceFile));
 
 	_DEBUG (_lintHeap  (heapBase, heapPtr));
-	_DEBUG (_lintSlots (_slotBase, _slotPtr, heapBase, heapPtr));
+	_DEBUG (_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBase, heapPtr));
 
 	// -------
 	// Reset the toPtr
@@ -95,7 +95,7 @@ void	_collectHeap
 	_TRACES(_dumpHeap  (_traceFile, heapBackBase, *heapBackPtr));
 
 	_DEBUG(_lintHeap  (heapBackBase, *heapBackPtr));
-	_DEBUG(_lintSlots (_slotBase, _slotPtr, heapBackBase, *heapBackPtr));
+	_DEBUG(_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBackBase, *heapBackPtr));
 
 	// Update collection counter
 	_PROFILE_GC (count++);

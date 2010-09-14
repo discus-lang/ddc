@@ -187,7 +187,7 @@ expandCurry nThunk x@(XPrim (MApp (PAppCurry superArity))
 
  = do	let allocX	= XPrim (MAlloc $ PAllocThunk super superArity (length args)) []
 	let assignSS	= map (\(a, i) -> SAssign 
-						(XArg (XVar nThunk tPtrObj) i) 
+						(XArgThunk (XVar nThunk tPtrObj) i) 
 						tPtrObj a)
 		  	$ zip args [0..]
 		
