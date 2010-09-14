@@ -32,7 +32,7 @@ void	_ddcConfigSetup();
 #define _DDC_DEBUG		0
 
 // ---- 
-#ifdef _DDC_DEBUG 
+#if _DDC_DEBUG 
 # define _DEBUG(x)	x
 # define _DDC_DEBUG_GC	1
 #else
