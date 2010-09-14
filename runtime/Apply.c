@@ -30,7 +30,6 @@
 // Apply another argument to a thunk.
 Obj*	_apply1		(Obj* obj, Obj* x1)
 {
-	_DEBUG	(assert (_getObjTag(obj) == _tagThunk));
 	_PROFILE_APPLY (apply[1]++);
 
 	_ENTER(2);
@@ -38,6 +37,7 @@ Obj*	_apply1		(Obj* obj, Obj* x1)
 
 	// -----
 	_S(0)		= _force (obj);
+	_DEBUG	(assert (_getObjTag(_S(0)) == _tagThunk));
 	
 	Thunk*	thunk	= (Thunk*)_S(0);
 	if (thunk ->args + 1 == thunk ->arity) {
@@ -84,7 +84,6 @@ Obj*	_apply1		(Obj* obj, Obj* x1)
 // Apply two more arguments to a thunk
 Obj*	_apply2		(Obj* obj, Obj* x1, Obj* x2)
 {
-	_DEBUG (assert (_getObjTag(obj) == _tagThunk));
 	_PROFILE_APPLY (apply[2]++);
 
 	_ENTER(3);
@@ -93,6 +92,7 @@ Obj*	_apply2		(Obj* obj, Obj* x1, Obj* x2)
 
 	// -----
 	_S(0)		= _force (obj);
+	_DEBUG	(assert (_getObjTag(_S(0)) == _tagThunk));
 
 	Thunk*	thunk	= (Thunk*)_S(0);
 	if (thunk ->args + 2 == thunk ->arity) {
@@ -151,7 +151,6 @@ Obj*	_apply2		(Obj* obj, Obj* x1, Obj* x2)
 // Apply three more arguments to a thunk
 Obj*	_apply3		(Obj* obj, Obj* x1, Obj* x2, Obj* x3)
 {
-	_DEBUG (assert (_getObjTag(obj) == _tagThunk));
 	_PROFILE_APPLY (apply[3]++);
 
 	_ENTER(4);
@@ -162,6 +161,7 @@ Obj*	_apply3		(Obj* obj, Obj* x1, Obj* x2, Obj* x3)
 
 	// -----
 	_S(0)		= _force (_S(0));
+	_DEBUG	(assert (_getObjTag(_S(0)) == _tagThunk));
 
 	Thunk*	thunk	= (Thunk*)_S(0);
 	if (thunk ->args + 3 == thunk ->arity) {
@@ -225,7 +225,6 @@ Obj*	_apply3		(Obj* obj, Obj* x1, Obj* x2, Obj* x3)
 // Apply four more arguments to a thunk.
 Obj*	_apply4		(Obj* obj, Obj* x1, Obj* x2, Obj* x3, Obj* x4)
 {
-	_DEBUG (assert (_getObjTag(obj) == _tagThunk));
 	_PROFILE_APPLY (apply[4]++);
 
 	_ENTER(5);
@@ -237,6 +236,7 @@ Obj*	_apply4		(Obj* obj, Obj* x1, Obj* x2, Obj* x3, Obj* x4)
 	
 	// -----
 	_S(0)	= _force (_S(0));
+	_DEBUG	(assert (_getObjTag(_S(0)) == _tagThunk));
 
 	Thunk*	thunk	= (Thunk*)_S(0);
 	if (thunk ->args + 4 == thunk ->arity) {
