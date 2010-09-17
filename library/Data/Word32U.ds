@@ -71,3 +71,4 @@ instance Num Word32# where
 	(/) 		= primWord32U_div
 	mod		= primWord32U_mod
 	negate		= primWord32U_neg
+

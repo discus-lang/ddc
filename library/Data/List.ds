@@ -65,9 +65,6 @@ export
 	charListOfString;
 	charListOfFlatString;
 	concatStrings;
-	
-	-- Int Utils ------------------
-	pow;
 }
 	
 import	Base
@@ -725,11 +722,5 @@ concatStrings []	= ""
 concatStrings (str : rest)
 	= str % concatStrings rest
 
-
--- Int Utils ------------------------------------------------------------------
--- TODO: Do this recursively and move to Data.Int
--- | Raise this int to a power.
-pow :: Int -> Int -> Int;
-pow x n	= product $ replicate n x
 
 

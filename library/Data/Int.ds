@@ -143,6 +143,13 @@ quot = primInt32_div
 -- | Raise an integer to an integer power.
 --   TODO: do this more efficiently.
 pow :: Int32 -> Int32 -> Int32 
-pow x 0	= 1
-pow x n	= x * pow x (n - 1)
+pow x n = pow' x n 1
+
+pow' :: Int32 -> Int32 -> Int32 -> Int32
+pow' x 0 acc = acc
+pow' x n acc = pow' x (n - 1) (acc * x)
+
+
+
+
 
