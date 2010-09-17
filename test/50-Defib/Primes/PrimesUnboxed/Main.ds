@@ -1,5 +1,4 @@
 
-import Data.Int32U;
 
 main ()
  = do {	
