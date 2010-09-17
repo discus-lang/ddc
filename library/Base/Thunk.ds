@@ -68,7 +68,7 @@ foreign import "primSuspend4"
 	:$ Obj -> Obj -> Obj -> Obj -> Obj -> Obj;
 
 
-foreign import "primForce"
+foreign import "_force"
  force 
  	:: forall a.  a -> a
 	:$ Obj -> Obj;

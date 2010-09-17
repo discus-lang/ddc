@@ -32,7 +32,7 @@ maxLengthU :: FlatString -> Int32#
 maxLengthU str@(FlatString)
  = do	payload	= peekDataR_payload str
 	ptr	= castToPtrInt32 payload
- 	peekPtr (castToPtrInt32 ptr)
+ 	peek (castToPtrInt32 ptr)
 
 maxLength :: FlatString -> Int32
 maxLength fs = boxInt32 fs.maxLengthU
@@ -43,7 +43,7 @@ lengthU :: FlatString -> Int32#
 lengthU str@(FlatString)
  = do	payload	= peekDataR_payload str
 	ptr	= castToPtrInt32 (plusPtr payload 4#)
- 	peekPtr ptr
+ 	peek ptr
 
 length :: FlatString -> Int32
 length fs = boxInt32 fs.lengthU
@@ -177,7 +177,7 @@ index str ix
  	payload	= peekDataR_payload str
 
  	ptr	= plusPtr payload (8#i32 + ixU)
-	w8	= peekPtr ptr
+	w8	= peek ptr
 	
 	boxChar32 (promote_word8ToChar32 w8)
 

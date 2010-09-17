@@ -22,3 +22,12 @@ foreign import "_allocDataR"
 	-> Int32# 	-- data size (in bytes)
 	-> a
 	:$ Word32# -> Word32# -> Data
+
+
+foreign import "_allocDataRS"
+ primAlloc_dataRS
+ 	:: forall a
+	.  Int32# 	-- tag
+	-> Int32# 	-- data size (in bytes)
+	-> a
+	:$ Word32# -> Word32# -> Data

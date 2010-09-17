@@ -18,6 +18,14 @@ static inline void* primStore_peekDataR_payload (Obj* obj)
 }
 
 
+static inline void* primStore_peekDataRS_payload (Obj* obj)
+{
+	DataRS* data	= (DataRS*) obj;
+	void*  payload	= (void*)data->payload;
+	return	payload;
+}
+
+
 static inline void primStore_pokeInt32 (Int32* ptr, Int32 val)
 {
 	*ptr	= val;

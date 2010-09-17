@@ -79,6 +79,12 @@ instance Num Int32 where
 	mod		= primInt32_mod
 	negate		= primInt32_neg
 
+	-- | Raise an integer to an integer power.
+	pow x n = pow' n 1
+	 where	pow' :: Int32 -> Int32 -> Int32
+		pow' 0 acc = acc
+		pow' n acc = pow' (n - 1) (acc * x)
+
 
 instance Eq Int32 where
 	(==)		= primInt32_eq
@@ -139,15 +145,6 @@ div = primInt32_div
 quot :: Int32 -> Int32 -> Int32
 quot = primInt32_div
 
-
--- | Raise an integer to an integer power.
---   TODO: do this more efficiently.
-pow :: Int32 -> Int32 -> Int32 
-pow x n = pow' x n 1
-
-pow' :: Int32 -> Int32 -> Int32 -> Int32
-pow' x 0 acc = acc
-pow' x n acc = pow' x (n - 1) (acc * x)
 
 
 

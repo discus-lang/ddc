@@ -68,5 +68,5 @@ foreign import "memset"
 stringU_danger_index :: String# -> Int# -> Char32#
 stringU_danger_index str pos
  = do	ptr	= stringU_castToPtrWord8 str
- 	w	= peekPtr (plusPtr ptr pos) 
+ 	w	= peek (plusPtr ptr pos) 
 	promote_word8ToChar32 w

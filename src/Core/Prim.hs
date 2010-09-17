@@ -343,16 +343,15 @@ primFuns
 	-- unboxed ptr functions
 	[ ("primPtrVoid_eq",	OpEq)
 
-	-- unboxed int functions
+	-- Int32U
  	, ("primInt32U_neg",	OpNeg)
 	
 	, ("primInt32U_add",	OpAdd)
 	, ("primInt32U_sub",	OpSub)
+	, ("primInt32U_mul",	OpMul) 
 	, ("primInt32U_div",	OpDiv)
 	, ("primInt32U_mod",	OpMod)
-	, ("primInt32U_mul",	OpMul) 
 
-	-- unboxed int comparisons
 	, ("primInt32U_eq",	OpEq)
 	, ("primInt32U_neq",	OpNeq)
 	, ("primInt32U_gt",	OpGt)
@@ -360,7 +359,15 @@ primFuns
 	, ("primInt32U_lt",	OpLt)
 	, ("primInt32U_le",	OpLe) 
 
-	-- unboxed workd comparisons
+	-- Word32U
+	, ("primWord32U_neg",	OpNeg) 
+
+	, ("primWord32U_add",	OpAdd)
+	, ("primWord32U_sub",	OpSub)
+	, ("primWord32U_mul",	OpMul)
+	, ("primWord32U_div",	OpDiv)
+	, ("primWord32U_mod",	OpMod)
+
 	, ("primWord32U_eq",	OpEq)
 	, ("primWord32U_neq",	OpNeq)
 	, ("primWord32U_gt",	OpGt)
@@ -368,12 +375,14 @@ primFuns
 	, ("primWord32U_lt",	OpLt)
 	, ("primWord32U_le",	OpLe) 
 	
-	-- unboxed float functions
+	-- Float32U
+	, ("primFloat32U_neg",	OpNeg)
+
 	, ("primFloat32U_add",	OpAdd)
 	, ("primFloat32U_sub",	OpSub)
+	, ("primFloat32U_mul",	OpMul) 
 	, ("primFloat32U_div",	OpDiv)
 	, ("primFloat32U_mod",	OpMod)
-	, ("primFloat32U_mul",	OpMul) 
 
 	-- unboxed float comparisons
 	, ("primFloat32U_eq",	OpEq)

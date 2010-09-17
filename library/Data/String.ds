@@ -5,6 +5,7 @@ module	Data.String
 export	string_copy
 	string_eq
 	string_Int32
+	string_Word32
 	string_Float32
 	string_Char32
 	boxString
@@ -14,6 +15,7 @@ export	string_copy
 import	Base
 	Data.FlatString
 	Data.Numeric.Int32
+	Data.Numeric.Word32
 	Data.Numeric.Float32
 	Data.Char
 	Class.Eq
@@ -46,6 +48,21 @@ string_Int32 i
 	strU	= fs.danger_string
 
  	show_danger_snprintf strU maxLenU "%d"# iU
+	fs.setLengthU (stringU_length strU)
+	
+	SChunk fs
+
+
+string_Word32 :: Word32 -> String
+string_Word32 i
+ = do	maxLen	= 20
+ 	maxLenU	= unboxInt32 maxLen
+	iU	= unboxWord32 i
+
+ 	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+
+ 	show_danger_snprintf strU maxLenU "%u"# iU
 	fs.setLengthU (stringU_length strU)
 	
 	SChunk fs

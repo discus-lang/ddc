@@ -71,6 +71,7 @@ static inline Float32 _unboxFloat32(Obj* obj)
 //
 MAKE_BOXFUN (Char32,	sizeof(Word32));
 MAKE_BOXFUN (Word8,	sizeof(Word32));
+MAKE_BOXFUN (Word32,    sizeof(Word32));
 MAKE_BOXFUN (Int64,	sizeof(Int64));
 MAKE_BOXFUN (Float64,	sizeof(Float64));
 

@@ -16,10 +16,17 @@ import	Base
 foreign import "primStore_peekDataR_size"
  peekDataR_size	
  	:: forall a. a -> Int32#
+
 	
 -- | Get a pointer to the payload of this DataR object.
 foreign import "primStore_peekDataR_payload"
  peekDataR_payload
+ 	:: forall a. a -> Ptr# Word8#
+
+
+-- | Get a pointer to the payload of this DataR object.
+foreign import "primStore_peekDataRS_payload"
+ peekDataRS_payload
  	:: forall a. a -> Ptr# Word8#
 	
 
@@ -29,7 +36,10 @@ foreign import "_PLUSPTR"
  plusPtr	:: Ptr# Word8# -> Int# -> Ptr# Word8#
 
 foreign import "_PEEK"
- peekPtr	:: forall a. Ptr# a -> a
+ peek		:: forall a. Ptr# a -> a
+
+foreign import "_POKE"
+ poke		:: forall a. Ptr# a -> a -> Void#
 
 
 -- Poke --------------------------------------------------------------------------------------------
@@ -54,6 +64,11 @@ foreign import "(Int32 *)"
  castToPtrInt32
  	:: forall a
 	.  Ptr# a -> Ptr# Int32#
+
+foreign import "(Word32 *)"
+ castToPtrWord32
+ 	:: forall a
+	.  Ptr# a -> Ptr# Word32#
 
 
 -- TODO: redo these as peek/poke functions.
