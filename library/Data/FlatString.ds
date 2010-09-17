@@ -4,8 +4,8 @@ module 	Data.FlatString
 
 export	flatString_copy
 
-import 	Data.Int
-	Data.Int32U
+import 	Data.Numeric.Int32
+	Data.Numeric.Int32U
  	Data.StringU
  	Data.Char
  	Class.Copy
@@ -87,9 +87,9 @@ new length
 
 	-- round length up to 4 byte word boundary for the DataR object.
 	spill		= mod len_nul 4#
-	len_spilled	= case spill #== 0# of
-				true#	-> len_nul
-				false#	-> len_nul + (4# - spill)
+	len_spilled	= if spill == 0# 
+				then len_nul
+				else len_nul + (4# - spill)
 
 	len_payload	= 4#		-- for the maxLength field
 			+ 4#		-- for the length field

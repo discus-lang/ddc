@@ -20,18 +20,21 @@ import	Class.Update
 import	Control.Exception
 import	Control.Imperative
 	
-import	Data.ArrayU
-import	Data.Array
 import	Data.Bool
 import	Data.BoolU
+import	Data.Numeric.Int32
+import	Data.Numeric.Int32U
+import	Data.Numeric.Int64
+import	Data.Numeric.Float32
+import	Data.Numeric.Float32U
+import	Data.Numeric.Float64
+import	Data.Numeric.Word32U
+import	Data.ArrayU
+import	Data.Array
 import	Data.Char
 import	Data.Either
 import	Data.FlatString
-import	Data.Float
 import	Data.Function
-import	Data.Int
-import	Data.Int32U
-import	Data.Int64
 import	Data.List
 import	Data.Maybe
 import	Data.Ptr
@@ -40,7 +43,6 @@ import	Data.Set
 import	Data.String
 import	Data.StringU
 import	Data.Tuple
-import	Data.Word32U
 		
 import	DDC.Runtime
 import	DDC.Runtime.Alloc

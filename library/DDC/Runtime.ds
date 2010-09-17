@@ -2,7 +2,7 @@
 
 module	DDC.Runtime
 import	Base
-	Data.Int32U
+	Data.Numeric.Int32U
 	System.Console
 
 -- The effect of functions that prod the runtime system

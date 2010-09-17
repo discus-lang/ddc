@@ -1,11 +1,11 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-module	Data.Float64
+module	Data.Numeric.Float64
 
 import	Base
 	Data.Bool
-	Data.Int
-	Data.Int64
+	Data.Numeric.Int32
+	Data.Numeric.Int64
 	Class.Eq
 	Class.Num
 	Class.Ord

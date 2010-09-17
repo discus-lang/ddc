@@ -76,7 +76,7 @@ import	Base
 	Data.Ref
 	Data.Tuple
 	Data.Maybe
-	Data.Int
+	Data.Numeric.Int32
 	Data.String
 	Control.Exception
 

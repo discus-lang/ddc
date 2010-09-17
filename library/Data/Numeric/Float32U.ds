@@ -5,13 +5,14 @@
 --	We define them so the type inferencer has a schemes for them.
 --
 
-module	Data.Float32U
+module	Data.Numeric.Float32U
 
 import	Class.Eq
 	Class.Num
 	Class.Ord
 
--- math
+
+-- Arithmetic -----------------------------------------------------------------
 foreign import "primFloat32U_neg"
  primFloat32U_neg	:: Float32# -> Float32#
 
@@ -30,7 +31,8 @@ foreign import "primFloat32U_div"
 foreign import "primFloat32U_mod"
  primFloat32U_mod	:: Float32# -> Float32# -> Float32#
 
--- comparisons
+
+-- Comparisons ----------------------------------------------------------------
 foreign import "primFloat32U_eq"
  primFloat32U_eq	:: Float32# -> Float32# -> Bool#
 
@@ -50,9 +52,20 @@ foreign import "primFloat32U_le"
  primFloat32U_le	:: Float32# -> Float32# -> Bool#
 
 
+-- Instances ------------------------------------------------------------------
+
+instance Num Float32# where 
+ 	(+) 		= primFloat32U_add
+	(-) 		= primFloat32U_sub
+	(*) 		= primFloat32U_mul
+	(/) 		= primFloat32U_div
+	mod		= primFloat32U_mod
+	negate		= primFloat32U_neg
+
+
 instance Eq Float32# where
-	(#==)		= primFloat32U_eq
-	(#/=)		= primFloat32U_neq
+	(==) x y	= boxBool (primFloat32U_eq  x y)
+	(/=) x y	= boxBool (primFloat32U_neq x y)
 
 
 instance Ord Float32# where
@@ -62,10 +75,3 @@ instance Ord Float32# where
 	(<=)		= primFloat32U_le
 
 
-instance Num Float32# where 
- 	(+) 		= primFloat32U_add
-	(-) 		= primFloat32U_sub
-	(*) 		= primFloat32U_mul
-	(/) 		= primFloat32U_div
-	mod		= primFloat32U_mod
-	negate		= primFloat32U_neg

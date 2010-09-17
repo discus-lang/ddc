@@ -4,13 +4,13 @@
 --	There are no actual C functions associated with these.
 --	We define them so the type inferencer has a schemes for them.
 --
-module	Data.Int32U
+module	Data.Numeric.Int32U
 
 import	Class.Eq
 	Class.Num
 	Class.Ord
 
--- math
+-- Arithmetic -----------------------------------------------------------------
 foreign import "primInt32U_neg"
  primInt32U_neg :: Int32# -> Int32#
 
@@ -28,7 +28,9 @@ foreign import "primInt32U_div"
  
 foreign import "primInt32U_mod"
  primInt32U_mod	:: Int32# -> Int32# -> Int32#
- 
+
+
+-- Comparisons ----------------------------------------------------------------
 foreign import "primInt32U_eq"	
  primInt32U_eq	:: Int32# -> Int32# -> Bool#
 
@@ -48,10 +50,10 @@ foreign import "primInt32U_le"
  primInt32U_le	:: Int32# -> Int32# -> Bool#
 
 
------
+-- Instances ------------------------------------------------------------------
 instance Eq Int32# where
-	(#==)		= primInt32U_eq
-	(#/=)		= primInt32U_neq
+	(==) x y	= boxBool (primInt32U_eq  x y)
+	(/=) x y	= boxBool (primInt32U_neq x y)
 
 instance Ord Int32# where
 	(>)		= primInt32U_gt

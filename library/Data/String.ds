@@ -13,8 +13,8 @@ export	string_copy
 
 import	Base
 	Data.FlatString
-	Data.Int
-	Data.Float
+	Data.Numeric.Int32
+	Data.Numeric.Float32
 	Data.Char
 	Class.Eq
 	Class.Copy
@@ -182,7 +182,7 @@ string_eq str1 str2
 				fs1.danger_string
 				fs2.danger_string
 	
-	boxBool (res #== 0#)
+	res == 0#
 
 
 -- | Find the first character in this string

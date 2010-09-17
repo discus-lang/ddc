@@ -1,19 +1,20 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-module	Data.Float
+module	Data.Numeric.Float32
 
 import 	Base
  	Data.Bool
-	Data.Int
- 	Data.Int32U
- 	Data.Float32U
+	Data.Numeric.Int32
+ 	Data.Numeric.Int32U
+ 	Data.Numeric.Float32U
 	Class.Eq
 	Class.Num
 	Class.Ord
 
 pragma	cc_includes ["math.h"]
 
--- boxing
+
+-- Boxing ---------------------------------------------------------------------
 foreign import "_boxFloat32"
  boxFloat32 	:: forall %r1
   		.  Float32# -> Float %r1
@@ -24,10 +25,13 @@ foreign import "_unboxFloat32"
  		.  Float %r1 -(!Read %r1)> Float32#
 		:$ Obj -> Float32#
 
+
+-- Conversion -----------------------------------------------------------------
 foreign import "primFloat32_toFloat"
  toFloat	:: Int{read} -> Float
 
--- math
+
+-- Arithmetic -----------------------------------------------------------------
 foreign import "primFloat32_neg"
  primFloat32_neg	:: Float{read} -> Float
 
@@ -49,7 +53,7 @@ foreign import "fmodf"
 fmod x y		= boxFloat32 (fmodU (unboxFloat32 x) (unboxFloat32 y))
 
 
--- comparisons
+-- Comparisons ----------------------------------------------------------------
 foreign import "primFloat32_eq"
  primFloat32_eq		:: Float{read} -> Float{read} -> Bool
 
@@ -68,10 +72,51 @@ foreign import "primFloat32_lt"
 foreign import "primFloat32_le"
  primFloat32_le		:: Float{read} -> Float{read} -> Bool
 
--- update
+
+-- Update ---------------------------------------------------------------------
 foreign import "primFloat32_update"
  primFloat32_update	:: Float{write} -> Float{read} -> ()
 
+
+-- Trig -----------------------------------------------------------------------
+foreign import "sinf"
+ sinU	:: Float32# -> Float32#
+
+foreign import "asinf"
+ asinU	:: Float32# -> Float32#
+
+foreign import "cosf"
+ cosU	:: Float32# -> Float32#
+ 
+foreign import "acosf"
+ acosU	:: Float32# -> Float32#
+
+foreign import "tanf"
+ tanU	:: Float32# -> Float32#
+ 
+foreign import "atanf"
+ atanU	:: Float32# -> Float32#
+
+foreign import "sqrtf"
+ sqrtU	:: Float32# -> Float32#
+
+foreign import "truncf"
+ truncU	:: Float32# -> Float32#
+
+foreign import "powf"
+ fpowU	:: Float32# -> Float32# -> Float32#
+
+sin x	= boxFloat32 (sinU   (unboxFloat32 x))
+asin x	= boxFloat32 (asinU  (unboxFloat32 x))
+cos x	= boxFloat32 (cosU   (unboxFloat32 x))
+acos x	= boxFloat32 (acosU  (unboxFloat32 x))
+tan x	= boxFloat32 (tanU   (unboxFloat32 x))
+atan x	= boxFloat32 (atanU  (unboxFloat32 x))
+sqrt x	= boxFloat32 (sqrtU  (unboxFloat32 x))
+trunc x = boxFloat32 (truncU (unboxFloat32 x))
+
+
+-- Instances ------------------------------------------------------------------
 instance Copy Float where
 	copy x		= boxFloat32 (unboxFloat32 x)
 
@@ -108,42 +153,6 @@ instance Updatable Float where
 instance Accum Float where
 	(+=) a b 	= primFloat32_update a (primFloat32_add a b)
 
--- trig
-foreign import "sinf"
- sinU	:: Float32# -> Float32#
-
-foreign import "asinf"
- asinU	:: Float32# -> Float32#
-
-foreign import "cosf"
- cosU	:: Float32# -> Float32#
- 
-foreign import "acosf"
- acosU	:: Float32# -> Float32#
-
-foreign import "tanf"
- tanU	:: Float32# -> Float32#
- 
-foreign import "atanf"
- atanU	:: Float32# -> Float32#
-
-foreign import "sqrtf"
- sqrtU	:: Float32# -> Float32#
-
-foreign import "truncf"
- truncU	:: Float32# -> Float32#
-
-foreign import "powf"
- fpowU	:: Float32# -> Float32# -> Float32#
-
-sin x	= boxFloat32 (sinU   (unboxFloat32 x))
-asin x	= boxFloat32 (asinU  (unboxFloat32 x))
-cos x	= boxFloat32 (cosU   (unboxFloat32 x))
-acos x	= boxFloat32 (acosU  (unboxFloat32 x))
-tan x	= boxFloat32 (tanU   (unboxFloat32 x))
-atan x	= boxFloat32 (atanU  (unboxFloat32 x))
-sqrt x	= boxFloat32 (sqrtU  (unboxFloat32 x))
-trunc x = boxFloat32 (truncU (unboxFloat32 x))
 
 -- 
 foreign import "logf"

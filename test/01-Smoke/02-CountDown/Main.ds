@@ -1,7 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 -- Execute a simple tail-recursive function.
 import Base
-import Data.Int
+import Data.Numeric.Int32
 
 
 foreign import "printf"

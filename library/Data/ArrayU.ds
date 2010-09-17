@@ -3,8 +3,8 @@
 module	Data.ArrayU
 
 import	Base
-	Data.Int
- 	Data.Int32U
+	Data.Numeric.Int32
+ 	Data.Numeric.Int32U
 	Control.Imperative
 	Control.Exception
 

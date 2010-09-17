@@ -3,7 +3,7 @@
 module	Math.Util
 import	Math.Constants
 import	Class.Num
-import	Data.Float
+import	Data.Numeric.Float32
 
 radToDeg r	= (180.0 / pi) 	 	* r
 degToRad d	= (pi    / 180.0)	* d

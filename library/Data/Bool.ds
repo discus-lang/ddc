@@ -5,13 +5,16 @@ module	Data.Bool
 import	Base
  	Data.BoolU
 
-
--- boxBool :: Bool# -> Bool
+-- | Box a boolean value.
+boxBool :: Bool# -> Bool
 boxBool b
  = case b of
  	true#	-> True
 	false#	-> False
 
+
+-- | Negation.
+not :: Bool -> Bool
 not b
  = case b of
  	True	-> False
@@ -44,6 +47,9 @@ xor a b
 			True	-> True
 			False	-> False
 				
- 
+
+-- | Always true. 
 otherwise :: Bool
 otherwise = True
+
+

@@ -2,7 +2,7 @@
 
 module	Control.Exception
 import	Base
-	Data.Int
+	Data.Numeric.Int32
 	Data.String
 	System.Console
 	Control.Imperative

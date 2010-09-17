@@ -25,7 +25,7 @@ module	Data.Set
 import	Base
 	Class.Ord
 	Class.Num
-	Data.Int
+	Data.Numeric.Int32
 	Data.List
 
 

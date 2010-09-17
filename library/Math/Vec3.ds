@@ -7,7 +7,7 @@
 --	
 module	Math.Vec3
 import	Class.Show
-import	Data.Float
+import	Data.Numeric.Float32
 import	Math.Constants
 
 

@@ -1,10 +1,10 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-module	Data.Int
+module	Data.Numeric.Int32
 
 import	Base
 	Data.Bool
-	Data.Int32U
+	Data.Numeric.Int32U
 	Class.Copy
 	Class.Eq
 	Class.Num

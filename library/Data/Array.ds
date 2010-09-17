@@ -7,7 +7,7 @@ export	index
 	indexR
 	
 import	Base
-	Data.Int
+	Data.Numeric.Int32
 	Data.Ref
 	Data.List
 

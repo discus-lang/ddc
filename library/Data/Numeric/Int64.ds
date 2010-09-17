@@ -1,6 +1,6 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-module	Data.Int64
+module	Data.Numeric.Int64
 
 import	Base
 	Data.Bool
