@@ -1,7 +1,7 @@
 {-      # OPTIONS -no-implicit-prelude # -}
 
 import System.Console
-import Data.Float64
+import Data.Numeric.Float64
 
 foreign import "1.0"
 	unboxedOneFloat64 :: Float64#

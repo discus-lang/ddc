@@ -1,7 +1,7 @@
 {-      # OPTIONS -no-implicit-prelude # -}
 
 import System.Console
-import Data.Int64
+import Data.Numeric.Int64
 
 foreign import "1"
 	unboxedOneInt64 :: Int64#

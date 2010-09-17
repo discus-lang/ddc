@@ -85,7 +85,7 @@ instance Ord Int64 where
 
 	compare x y
 	 | x == y	=  EQ
-	 | x <= y	=  LT
+	 | x <  y	=  LT
 			\= GT
 
 instance Num Int64 where

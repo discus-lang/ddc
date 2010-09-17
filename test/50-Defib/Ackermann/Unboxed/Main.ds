@@ -1,6 +1,4 @@
 
-import Data.Int32U;
-
 ack m n
  = case primInt32U_eq m 0# of {
  	true#	-> n + 1#;

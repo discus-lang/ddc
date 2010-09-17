@@ -1,7 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 import Base
-import Data.Int
+import Data.Numeric.Int32
 
 -- succ is a first order function
 succ x = x + 1

@@ -8,7 +8,7 @@ export	index
 	array_foldl
 	
 import	Base
-import	Data.Int
+import	Data.Numeric.Int32
 import	Data.Ref
 import	Data.List
 

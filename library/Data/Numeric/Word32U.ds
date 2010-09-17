@@ -10,6 +10,7 @@ import	Class.Eq
 	Class.Num
 	Class.Ord
 
+
 -- Arithmetic -----------------------------------------------------------------
 foreign import "primWord32U_neg"
  primWord32U_neg :: Word32# -> Word32#
@@ -73,5 +74,5 @@ instance Ord Word32# where
 
 	compare x y
 	 | x == y	=  EQ
-	 | x <= y	=  LT
+	 | x <  y	=  LT
 			\= GT
