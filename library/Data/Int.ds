@@ -11,6 +11,12 @@ import	Base
 	Class.Ord
 	Class.Update
 
+infixl 7  `quot`, `div`, `mod`
+
+project Int32 
+ with	{ min; max }
+
+-- Boxing ---------------------------------------------------------------------
 foreign import "_boxInt32"
  boxInt32 	:: Int32# -> Int32
 		:$ Int32# -> Obj
@@ -19,7 +25,7 @@ foreign import "_unboxInt32"
  unboxInt32	:: Int32{read} -> Int32#
 		:$ Obj -> Int32#
 
--- math
+-- Arithmetic -----------------------------------------------------------------
 foreign import "primInt32_neg"
  primInt32_neg  :: Int32{read} -> Int32
 
@@ -38,7 +44,8 @@ foreign import "primInt32_div"
 foreign import "primInt32_mod"	
  primInt32_mod	:: Int32{read} -> Int32{read} -> Int32
 
--- comparisons
+
+-- Comparisons ----------------------------------------------------------------
 foreign import "primInt32_eq"	
  primInt32_eq	:: Int32{read} -> Int32{read} -> Bool
 
@@ -57,20 +64,26 @@ foreign import "primInt32_ge"
 foreign import "primInt32_le"	
  primInt32_le	:: Int32{read} -> Int32{read} -> Bool
 
--- update
+
+-- Update ---------------------------------------------------------------------
 foreign import "primInt32_update"
- primInt32_update
- 	:: Int32{write} -> Int32{read} -> ()
+ primInt32_update :: Int32{write} -> Int32{read} -> ()
 
-instance Copy Int32 where
- 	copy x 		= boxInt32 (unboxInt32 x)
 
-instance Updatable Int32 where
-	(:=)		= primInt32_update
+-- Instances ------------------------------------------------------------------
+instance Num Int32 where 
+ 	(+) 		= primInt32_add
+	(-) 		= primInt32_sub
+	(*) 		= primInt32_mul
+	(/) 		= primInt32_div
+	mod		= primInt32_mod
+	negate		= primInt32_neg
+
 
 instance Eq Int32 where
 	(==)		= primInt32_eq
 	(/=)		= primInt32_neq
+
 
 instance Ord Int32 where
 	(>)		= primInt32_gt
@@ -83,46 +96,53 @@ instance Ord Int32 where
 	 | x <= y	=  LT
 	 		\= GT
 
-instance Num Int32 where 
- 	(+) 		= primInt32_add
-	(-) 		= primInt32_sub
-	(*) 		= primInt32_mul
-	(/) 		= primInt32_div
-	mod		= primInt32_mod
-	negate		= primInt32_neg
+
+instance Copy Int32 where
+ 	copy x 		= boxInt32 (unboxInt32 x)
+
+
+instance Updatable Int32 where
+	(:=)		= primInt32_update
 
 
 instance Accum Int32 where
 	(+=) a b	= primInt32_update a (primInt32_add a b)
 
 
------
+-- Projections ----------------------------------------------------------------
+-- | Take the minimum of two integers.
+min :: Int32 -> Int32 -> Int32
+min x y
+ = if x <= y then x else y
 
+
+-- | Take the maximum of two integers.
+max :: Int32 -> Int32 -> Int32
+max x y
+ = if x >= y then x else y
+
+
+-- | Modify an integer using a function.
 (<>) :: Int32 -> (Int32 -> Int32) -> ()
 (<>) x f
  = do 	x'	= f x
 	x	:= x'
 
 
--- integer division truncated towards negative infinity
+-- | Integer division truncated towards negative infinity
 div :: Int32 -> Int32 -> Int32
 div = primInt32_div
 
--- integer division truncated towards zero
+
+-- | Integer division truncated towards zero.
+--   BUGS: This is wrong.
 quot :: Int32 -> Int32 -> Int32
 quot = primInt32_div
 
-project Int32 where
-	
-	min :: Int32 -> Int32 -> Int32
-	min x y
-	 = if x < y	then x
-			else y
 
-	max :: Int32 -> Int32 -> Int32
-	max x y
-	 = if x > y	then x
- 			else y
-
-infixl 7  `quot`, `div`, `mod`
+-- | Raise an integer to an integer power.
+--   TODO: do this more efficiently.
+pow :: Int32 -> Int32 -> Int32 
+pow x 0	= 1
+pow x n	= x * pow x (n - 1)
 
