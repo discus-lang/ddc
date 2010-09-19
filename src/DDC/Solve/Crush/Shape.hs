@@ -152,8 +152,8 @@ crushShapeWithTemplate cidShape srcCrushed diags (Just diagTemplate)
 	dataDefs <- liftM squidEnvDataDefs $ gets stateEnv
 	
 	-- Lookup the materialities for the type
-	let NCon tc		= nTemplateCtor
-	let (TyConData v _)	= tc
+	let NCon tc	  	= nTemplateCtor
+	let TyConData v _	= tc
 	let Just dataDef	= Map.lookup v dataDefs
 	let Just materiality	= paramMaterialityOfDataDef dataDef
 	let kinds		= map snd $ dataDefParams dataDef
@@ -313,7 +313,8 @@ diagShapeConstrainedCid cid
 		Just clsHead     <- lookupClass cidHead
 		
 		case classUnified clsHead of
-		 Just n@NCon{}	-> return $ DiagTemplate cid n cidsApps
+		 Just n@(NCon (TyConData _ _))
+				-> return $ DiagTemplate cid n cidsApps
 		 _		-> return $ DiagReceiver cid)
 
 
