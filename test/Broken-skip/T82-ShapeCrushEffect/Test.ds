@@ -3,21 +3,23 @@ data IntFun %r1 a !e1 $c1
  	= FInt (Int %r1)
 	| FFun (a -(!e1 $c1)> a)
  	
+
 class Copy2 a where
   copy2 :: forall b. a -(!e1)> b
 	:- !e1 = !ReadT a
 	,  Shape2 a b
 
-copyIntFun2 xx
- = case xx of 
+
+instance Copy2 (IntFun %r Int32 !e $c) where
+ copy2 xx
+  = case xx of 
 	FInt i	-> FInt (copy i)
 	FFun f	-> FFun f
 
-instance Copy2 (IntFun %r Int32 !e $c) where
-  copy2	= copyIntFun2
 
 x :: Int %r1 :- Mutable %r1
 x	= 1
+
 
 main ()
  = do	f2	= FFun ((+) x)
