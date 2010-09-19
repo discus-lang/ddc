@@ -15,13 +15,17 @@ import	Data.Numeric.Int64U
 
 
 -- Boxing ---------------------------------------------------------------------
-foreign import "_boxInt64"
- boxInt64 	:: Int64# -> Int64
-		:$ Int64# -> Obj
+boxInt64 :: Int64# -> Int64
+boxInt64 u
+ = do	w	= primAlloc_dataRS 0# 8#
+	poke (castToPtrInt64 (peekDataRS_payload w)) u
+	w
 
-foreign import "_unboxInt64"
- unboxInt64	:: Int64{read} -> Int64#
-		:$ Obj -> Int64#
+
+unboxInt64 :: Int64 -> Int64#
+unboxInt64 w
+ = do	w'	= force w
+	peekOn w (castToPtrInt64 (peekDataRS_payload w'))
 
 
 -- Instances ------------------------------------------------------------------

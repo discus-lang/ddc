@@ -18,13 +18,17 @@ infixl 7  `quot`, `div`, `mod`
 
 
 -- Boxing ---------------------------------------------------------------------
-foreign import "_boxInt32"
- boxInt32 	:: Int32# -> Int32
-		:$ Int32# -> Obj
+boxInt32 :: Int32# -> Int32
+boxInt32 u
+ = do	w	= primAlloc_dataRS 0# 4#
+	poke (castToPtrInt32 (peekDataRS_payload w)) u
+	w
 
-foreign import "_unboxInt32"
- unboxInt32	:: Int32{read} -> Int32#
-		:$ Obj -> Int32#
+
+unboxInt32 :: Int32 -> Int32#
+unboxInt32 w
+ = do	w'	= force w
+	peekOn w (castToPtrInt32 (peekDataRS_payload w'))
 
 
 -- Instances ------------------------------------------------------------------

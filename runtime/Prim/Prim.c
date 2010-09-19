@@ -90,6 +90,20 @@ Obj*	primFloat32_truncate (Obj* x_)
 	return	_boxInt32 (x);
 }
 
+// ------ Float64
+// TODO: We could implmement both of these directly in Disciple using casts.
+Obj*	primFloat64_toFloat (Obj* x1)
+{
+	Float64 x	= _unbox(Int64, x1);
+	return	_boxFloat64 (x);
+}
+
+Obj*	primFloat64_truncate (Obj* x_)
+{
+	double x	= _unbox(Float64, x_);
+	return	_boxInt64 (x);
+}
+
 
 // ------ Network
 #include <sys/types.h>

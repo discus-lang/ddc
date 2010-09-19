@@ -57,17 +57,6 @@ Obj*	primFloat64_mod (Obj* x1_, Obj* x2_)
 	return	_boxFloat64 (fmod (x1, x2));
 }
 
-Obj*	primFloat64_toFloat (Obj* x1)
-{
-	Float64 x	= _unbox(Int64, x1);
-	return	_boxFloat64 (x);
-}
-
-Obj*	primFloat64_truncate (Obj* x_)
-{
-	double x	= _unbox(Float64, x_);
-	return	_boxInt64 (x);
-}
 
 
 Obj*	primFloat64_update (Obj* dest_, Obj* src_)

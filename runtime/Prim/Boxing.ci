@@ -48,75 +48,22 @@
 	*((Type*) ((DataRS*)data)->payload)
 
 
-static inline uint32_t _unboxEnum(Obj* obj)
-{
-	Obj* data	= _force(obj);
-	return		_getObjTag(data);
-}
-
-static inline Int32 _unboxInt32(Obj* obj)
-{
-	Obj32* o32	= (Obj32*) _force(obj);
-	return		o32->u32.i;
-}
-
-static inline Float32 _unboxFloat32(Obj* obj)
-{
-	Obj32* o32	= (Obj32*) _force(obj);
-	return		o32->u32.f;
-}
-
-// -----
 // -- Boxing Functions
-//
-MAKE_BOXFUN (Char32,	sizeof(Word32));
 MAKE_BOXFUN (Word8,	sizeof(Word32));
 MAKE_BOXFUN (Word32,    sizeof(Word32));
+MAKE_BOXFUN (Int32,	sizeof(Int32));
 MAKE_BOXFUN (Int64,	sizeof(Int64));
+MAKE_BOXFUN (Float32,	sizeof(Float32));
 MAKE_BOXFUN (Float64,	sizeof(Float64));
+MAKE_BOXFUN (Char32,	sizeof(Word32));
 
-// Int32
-static inline
-Obj*	_boxInt32 (Int32 v)
-{
-	if (_ddcHeapPtr + sizeof (Obj32) > _ddcHeapMax)
-		_allocCollect (sizeof (Obj32));
-
-	Obj32*	obj	= (Obj32*)_ddcHeapPtr;
-	_ddcHeapPtr 	+= sizeof (Obj32);
-
-	obj->tagFlags	= 0x00000013;			// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
-	obj->u32.i	= v;
-
-	_PROFILE_ALLOC  ( dataRawSmall.count++ );
-	_PROFILE_ALLOC  ( dataRawSmall.bytes += sizeof (Obj32) );
-	_PROFILE_BOXING ( bInt32.count ++);
-	_PROFILE_BOXING ( bInt32.bytes += sizeof (Obj32));
-
-	return (Obj*)obj;
-}
-
-
-// Float32
-static inline
-Obj*	_boxFloat32 (Float32 v)
-{
-	if (_ddcHeapPtr + sizeof (Obj32) > _ddcHeapMax)
-		_allocCollect (sizeof (Obj32));
-
-	Obj32*	obj	= (Obj32*)_ddcHeapPtr;
-	_ddcHeapPtr	+= sizeof (Obj32);
-
-	obj->tagFlags	= 0x00000013;		// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
-	obj->u32.f	= v;
-
-	_PROFILE_ALLOC  ( dataRawSmall.count++ );
-	_PROFILE_ALLOC  ( dataRawSmall.bytes += sizeof (Obj32));
-	_PROFILE_BOXING ( bFloat32.count ++);
-	_PROFILE_BOXING ( bFloat32.bytes += sizeof (Obj32));
-
-	return (Obj*)obj;
-}
+// -- Unboxing Functions
+MAKE_GETFUN (Word32)
+MAKE_GETFUN (Int32);
+MAKE_GETFUN (Int64);
+MAKE_GETFUN (Float32);
+MAKE_GETFUN (Float64);
+MAKE_GETFUN (Char32);
 
 
 // Enum
@@ -136,6 +83,13 @@ Obj*	_boxEnum (Word32 tag)
 }
 
 
+static inline uint32_t _unboxEnum(Obj* obj)
+{
+	Obj* data	= _force(obj);
+	return		_getObjTag(data);
+}
+
+
 static inline
 Obj* 	primProjField  (Obj* obj, Int32 ix)
 {
@@ -151,10 +105,6 @@ Obj*	primProjFieldR (Obj* obj, Int32 ix)
 	return	_boxRef (obj, &(data ->a[ix]));
 }
 
-
-MAKE_GETFUN (Char32);
-MAKE_GETFUN (Int64);
-MAKE_GETFUN (Float64);
 
 
 static inline

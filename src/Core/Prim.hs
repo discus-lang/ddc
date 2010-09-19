@@ -284,8 +284,8 @@ isBoxFunctionV v
  	[ "boxInt32"
 	, "boxFloat32"
 	, "boxInt64"
-	, "boxFloat64" ]
--- 	, "boxWord32" ]
+	, "boxFloat64"
+ 	, "boxWord32" ]
 
 
 -- | Is this the name of a fn that unboxes a value of primitive type.
@@ -295,8 +295,8 @@ isUnboxFunctionV v
  	[ "unboxInt32"
 	, "unboxFloat32"
 	, "unboxInt64"
-	, "unboxFloat64" ]
---	, "unboxWord32" ]
+	, "unboxFloat64"
+	, "unboxWord32" ]
 
 
 -- | Frimitive functions

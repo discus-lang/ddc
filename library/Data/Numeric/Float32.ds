@@ -15,16 +15,19 @@ import 	Base
 
 pragma	cc_includes ["math.h"]
 
--- Boxing ---------------------------------------------------------------------
-foreign import "_boxFloat32"
- boxFloat32 	:: forall %r1
-  		.  Float32# -> Float32 %r1
-		:$ Float32# -> Obj
 
-foreign import "_unboxFloat32"
- unboxFloat32	:: forall %r1
- 		.  Float32 %r1 -(!Read %r1)> Float32#
-		:$ Obj -> Float32#
+-- Boxing ---------------------------------------------------------------------
+boxFloat32 :: Float32# -> Float32
+boxFloat32 u
+ = do	w	= primAlloc_dataRS 0# 4#
+	poke (castToPtrFloat32 (peekDataRS_payload w)) u
+	w
+
+
+unboxFloat32 :: Float32 -> Float32#
+unboxFloat32 w
+ = do	w'	= force w
+	peekOn w (castToPtrFloat32 (peekDataRS_payload w'))
 
 
 -- Conversion -----------------------------------------------------------------

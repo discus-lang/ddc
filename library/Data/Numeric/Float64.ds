@@ -17,20 +17,22 @@ pragma	cc_includes ["math.h"]
 
 
 -- Boxing ---------------------------------------------------------------------
-foreign import "_boxFloat64"
- boxFloat64 	:: forall %r1
-  		.  Float64# -> Float64 %r1
-		:$ Float64# -> Obj
+boxFloat64 :: Float64# -> Float64
+boxFloat64 u
+ = do	w	= primAlloc_dataRS 0# 8#
+	poke (castToPtrFloat64 (peekDataRS_payload w)) u
+	w
 
-foreign import "_unboxFloat64"
- unboxFloat64	:: forall %r1
- 		.  Float64 %r1 -(!Read %r1)> Float64#
-		:$ Obj -> Float64#
+
+unboxFloat64 :: Float64 -> Float64#
+unboxFloat64 w
+ = do	w'	= force w
+	peekOn w (castToPtrFloat64 (peekDataRS_payload w'))
 
 
 -- Conversion -----------------------------------------------------------------
 foreign import "primFloat64_toFloat"
- toFloat64	:: Int32{read}   -> Float64
+ toFloat64	:: Int64{read}   -> Float64
 
 foreign import "primFloat64_truncate"
  truncate64	:: Float64{read} -> Int64
