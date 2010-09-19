@@ -1,4 +1,8 @@
 
+-- Check that crushing ReadT effects respects the materiality of data types.
+-- If it erroneously treads $c1 as being material then the use of copy2 in main
+-- will cause an unmaskable read effect on %r1 in x
+--
 data IntFun %r1 a !e1 $c1
  	= FInt (Int %r1)
 	| FFun (a -(!e1 $c1)> a)

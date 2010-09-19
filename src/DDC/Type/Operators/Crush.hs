@@ -9,8 +9,10 @@ import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Builtin
 import DDC.Type.Kind
-import Type.Util	(slurpTVarsRD)
-
+import DDC.Type.Data.Pretty	()
+import DDC.Type.Data
+import Type.Util		(slurpTVarsRD)
+import Data.Maybe
 
 -- | Crush effects and constraints in a type.
 crushT :: Type -> Type
@@ -38,28 +40,52 @@ crushT tt
 		
 		_ -> TApp t1 t2'
 
+	 -- Deep reads and writes only apply to the material parameters of a type constructor.
+	 --  If there is a data def attached to the TyCon then we can use that to determine
+	 --  the materiality. If there is no def, then this is probably a foreign imported type
+	 --  so we assume all the params are strongly material.
+	 -- 
+	 --  If the data def has gone missing for some reason (the field on the TyCon is Nothing)
+	 --  then we just get all the possible effects, which is a safe default behaviour.
+			
 	 -- Deep Read
 	 | TyConEffectDeepRead	<- tc
 	 , t2'			<- crushT t2
-	 -> case takeTData t2' of
-		Just (_, _, ts)
-		 -> let (tRs, tDs) = unzip $ map slurpTVarsRD ts
-		    in  makeTSum kEffect
-				(  [TApp tRead t	| t <- concat tRs]
-				++ [TApp tDeepRead t	| t <- concat tDs] )
+	 -> case takeTDataTC t2' of
+		Just (tcData, ts)
+		 -> let	mats		= fromMaybe (replicate (length ts) MaterialStrong)
+					$ do 	def	<- tyConDataDef tcData
+						paramMaterialityOfDataDef def
+						
+			tsMaterial	= [t	| t <- ts 
+						| m <- mats
+						, m == MaterialStrong || m == MaterialMixed]
+						
+			newReads	= [TApp tRead t		| t <- tsMaterial, isRegion t ]
+			newDeepReads	= [TApp tDeepRead t	| t <- tsMaterial, isValueType t]
+			
+		    in	makeTSum kEffect (newReads ++ newDeepReads)
 
 		Nothing	-> TApp t1 t2'
 
 	 -- Deep Write
 	 | TyConEffectDeepWrite	<- tc
 	 , t2'			<- crushT t2
-	 -> case takeTData t2' of
-		Just (_, _, ts)
-		 -> let (tRs, tDs) = unzip $ map slurpTVarsRD ts
-		    in  makeTSum kEffect
-				(  [TApp tWrite t	| t <- concat tRs]
-				++ [TApp tDeepWrite t	| t <- concat tDs] )
-
+	 -> case takeTDataTC t2' of
+		Just (tcData, ts)
+		 -> let	mats		= fromMaybe (replicate (length ts) MaterialStrong)
+					$ do 	def	<- tyConDataDef tcData
+						paramMaterialityOfDataDef def
+						
+			tsMaterial	= [t	| t <- ts 
+						| m <- mats
+						, m == MaterialStrong || m == MaterialMixed]
+						
+			newWrites	= [TApp tWrite t	| t <- tsMaterial, isRegion t ]
+			newDeepWrites	= [TApp tDeepWrite t	| t <- tsMaterial, isValueType t]
+			
+		    in	makeTSum kEffect (newWrites ++ newDeepWrites)
+		
 		Nothing	-> TApp t1 t2'
 	
 	TApp t1 t2
