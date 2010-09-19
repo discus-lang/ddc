@@ -28,10 +28,10 @@ foreign import "_unboxFloat32"
 
 -- Conversion -----------------------------------------------------------------
 foreign import "primFloat32_toFloat"
- toFloat32	 :: Int32{read}   -> Float32
+ toFloat	:: Int32{read}   -> Float32
 
 foreign import "primFloat32_truncate"
- truncateFloat32 :: Float32{read} -> Int32
+ truncate	:: Float32{read} -> Int32
 
 
 -- Trig -----------------------------------------------------------------------
@@ -105,8 +105,8 @@ instance Accum Float32 where
 
 -- Other ----------------------------------------------------------------------
 -- The Haskell versions of round and floor are also conversions.
-roundFloat32 x = truncateFloat32 (fround x)
-floorFloat32 x = truncateFloat32 (ffloor x)
+round x		= truncate (fround x)
+floor x 	= truncate (ffloor x)
 
 project Float where
  clamp :: Float -> Float -> Float -> Float 
