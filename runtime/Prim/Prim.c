@@ -76,6 +76,21 @@ void	primInt64_to_string	(Int64 value, char * str, int slen)
 }
 
 
+// ------ Float32
+// TODO: We could implmement both of these directly in Disciple using casts.
+Obj*	primFloat32_toFloat (Obj* x1)
+{
+	Int32 x		= _unbox(Int32, x1);
+	return	_boxFloat32 (x);
+}
+
+Obj*	primFloat32_truncate (Obj* x_)
+{
+	float x		= _unbox(Float32, x_);
+	return	_boxInt32 (x);
+}
+
+
 // ------ Network
 #include <sys/types.h>
 #include <netdb.h>
