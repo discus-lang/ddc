@@ -1,5 +1,19 @@
 ddc: ERROR
-./test/15-Typing/Unification/Shape2/Main.ds:5:25
+./test/15-Typing/Unification/Shape2/Main.ds:5:10
+    Type mismatch during unification.
+          cannot match: String
+                  with: Int32
+
+              the use of: println
+                 of type: String
+                      at: ./test/15-Typing/Unification/Shape2/Main.ds:5:10
+
+        conflicts with, 
+              the use of: (-)
+                 of type: Int32
+                      at: ./test/15-Typing/Unification/Shape2/Main.ds:5:25
+
+./test/15-Typing/Unification/Shape2/Main.ds:5:20
     Kind mismatch during unification.
           cannot match: $ -> *
                   with: % -> *
@@ -8,14 +22,4 @@ ddc: ERROR
     Kind mismatch during unification.
           cannot match: $
                   with: %
-
-./test/15-Typing/Unification/Shape2/Main.ds:5:10
-    Kind mismatch during unification.
-          cannot match: % -> *
-                  with: $ -> *
-
-./test/15-Typing/Unification/Shape2/Main.ds:5:10
-    Kind mismatch during unification.
-          cannot match: %
-                  with: $
 

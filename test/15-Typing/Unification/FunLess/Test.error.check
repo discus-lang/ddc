@@ -1,17 +1,8 @@
 ddc: ERROR
-./test/15-Typing/Unification/FunLess/Test.ds:6:15
-    Type mismatch during unification.
-          cannot match: *123 !111
-                  with: Int32
-
-              the use of: (+)
-                 of type: *123 !111
-                      at: ./test/15-Typing/Unification/FunLess/Test.ds:6:15
-
-        conflicts with, 
-          literal value 3i32
-                 of type: Int32
-                      at: ./test/15-Typing/Unification/FunLess/Test.ds:6:17
+./test/15-Typing/Unification/FunLess/Test.ds:6:10
+    Kind mismatch during unification.
+          cannot match: $ -> *
+                  with: % -> *
 
 ./test/15-Typing/Unification/FunLess/Test.ds:6:10
     Kind mismatch during unification.
