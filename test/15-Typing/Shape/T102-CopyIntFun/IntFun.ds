@@ -1,0 +1,37 @@
+
+-- Test out proper handling of material/immaterial variables
+-- during shape crushing.
+
+data IntFun %r1 %r2 %r3 %r4 !e1 $c1
+	= FInt (Int %r2)
+	| FFun (Int %r3 -(!e1 $c1)> Int %r4)
+
+instance Copy IntFun where
+ copy xx
+  = case xx of 
+	FInt i	-> FInt (copy i)
+	FFun f	-> FFun f
+
+
+-- Check the interface file to make sure the embedded function has
+-- the correct effect. It should read the parameter as well as wibble
+-- in both the original and copied version.
+wibble	= 5
+fun	= FFun (\x -> x + wibble)
+funCopy = copy fun
+
+
+main ()
+ = do	if1	= FInt 4
+	if1'	= copy if1
+
+	if2	= FFun ((+) 1)
+	if2'	= copy if2
+
+	i :: Int %r1 :- Const %r1
+	i	= 5
+
+	i'	= copy i
+	i' := 27
+
+	()

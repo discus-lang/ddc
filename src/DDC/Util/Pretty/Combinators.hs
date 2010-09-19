@@ -5,7 +5,7 @@ module DDC.Util.Pretty.Combinators
 	( plain
 	, blank
 	, newline
-	, paste,  (%)
+	, paste,  (%), (%%)
 	, punc,	  (%!%)
 	, indent, (%>)
 	, shift,  (%>>)
@@ -62,6 +62,10 @@ paste a b
 (%) 	:: (Pretty a m, Pretty b m) => a -> b -> PrettyM m
 (%)	= paste
 		
+-- | Paste with a space
+(%%)	:: (Pretty [Char] m, Pretty a m, Pretty b m) => a -> b -> PrettyM m
+(%%) x y = x % " " % y
+
 
 -- Punc -----------------------------------------------------------------------
 -- | Punctuate a pretty thing between others.

@@ -5,6 +5,7 @@ module Util.Control.Monad
 	, returnJ
 	, partitionM
 	, whenM
+	, whenMaybeM
 	, mLiftM
 	, ttLiftM
 	, t21LiftM
@@ -35,11 +36,21 @@ partitionM f (x:xs)
 	 else return (aa,   	x : bb)		
 
 
--- | Like `when`, but with teh monadz...
+-- | Like `when`, but with teh monadz.
 whenM :: Monad m => m Bool -> m () -> m ()
 whenM    f op
  = do 	b	<- f
 	when b op
+
+
+-- | like `maybe`, but with teh monadz.
+whenMaybeM 
+	:: Monad m 
+	=> Maybe a -> m b -> (a -> m b) -> m b
+whenMaybeM mm def f
+ = case mm of
+	Nothing	-> def
+	Just x	-> f x
 
 
 -- | Apply a computation to the element in a `Maybe`

@@ -1,21 +1,26 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-{-# OPTIONS -fno-warn-incomplete-patterns #-}
+{-# OPTIONS -fno-warn-incomplete-patterns -fno-warn-unused-binds #-}
 
 module DDC.Solve.Crush.Shape
 	(crushShapeInClass)
 where
 import Type.Feed
 import Shared.VarPrim
+import DDC.Solve.Walk
 import DDC.Solve.Location
 import DDC.Solve.Crush.Unify
 import DDC.Solve.State
+import DDC.Type.Data
+import DDC.Type.Data.Pretty		()
 import DDC.Type
+import DDC.Main.Error
+import DDC.Main.Pretty
 import Util
 import qualified Data.Map		as Map
-import qualified Data.Set		as Set
 
 debug	= False
 trace s	= when debug $ traceM s
+stage	= "DDC.Solve.Crush.Shape"
 
 -- | Try and crush the Shape constraint in this class.
 --   If any of the nodes in the constraint contains a type constructor then add a similar constructor
@@ -33,179 +38,157 @@ crushShapeInClass cidShape
 			<- lookupClass cidShape
 
 	-- All the cids constrained by the Shape constraint.
-	let mergeCids	= map (\(TVar _ (UClass cid)) -> cid) shapeTs
+	let cidsMerge	= map (\(TVar _ (UClass cid)) -> cid) shapeTs
 
 	trace	$ vcat
 		[ "-- Crush.shape " 		% cidShape
-		, "   fetter      = "	 	% fShape
-		, "   mergeCids   = "		% mergeCids
+		, "   fetter          = "	% fShape
+		, "   cidsMerge       = "	% cidsMerge
 		, blank ]
 
  	-- Ensure that all the classes to be merged are unified.
 	-- We need this because resolving shape constraints can add more nodes
 	-- to an equivalence class. So if the grinder is just calling crushShapeInClass
 	-- on a set of cids the unifier won't get to run otherwise.
- 	mapM crushUnifyInClass mergeCids
+ 	mapM crushUnifyInClass cidsMerge
  
-	-- Lookup all the classes that are being constrained by the Shape.
- 	clsMerge	<- liftM (map (\(Just cls) -> cls)) 
- 			$  mapM lookupClass mergeCids
+	-- diagnose the constrained classes to see if we have any templates.
+	diagsMerge		<- mapM diagShapeConstrainedCid cidsMerge
+	let mDiagTemplate	= takeHead $ filter isDiagTemplate diagsMerge
 
-	-- See if any of the nodes contain information that needs
-	--	to be propagated to the others.
-	let templates	= map (\c -> case classUnified c of
-					Just t@NApp{}	-> Just t
-					Just t@NCon{}	-> Just t
-					_		-> Nothing)
-			$ clsMerge
-	
 	trace	$ vcat
-		[ "-- Crush.shape " 	% cidShape % " (unify done)"
-		, "   unified      = " 	% map classUnified  clsMerge ]
+		[ ppr "-- Crush.shape"  %% cidShape %% "(diag)"
+		, "   diags:\n"         %> vcat diagsMerge
+		, "   mDiagTemplate   = " % mDiagTemplate
+		, blank ]
 	
-	-- If we have to propagate the constraint we'll use the first constructor as a template.
-	let mTemplate	= takeFirstJust templates
-	trace	$ "   templates    = "	% templates	% "\n"
-		% "   mTemplate    = "	% mTemplate	% "\n"
-
-	let result
-		-- TODO: For region classes, check if they're material or not before merging.
-
-		-- Effects and closures are always immaterial, so we just merge the classes.
-		| clsMerge1 : _	<- clsMerge
-		, kind		<- classKind clsMerge1
-		, kind == kClosure || kind == kEffect
-		= do	trace $ ppr "    -- eff/clo are immaterial so merging classes\n\n"
-			mergeClasses 	$ map classId clsMerge
-			delMultiFetter cidShape
-			return True
-
-		-- None of the nodes contain data constructors, so there's no template to work from.
-		-- However, something might be unified in later, so activiate ourselves
-		-- so the grinder calls us again on the next pass.
-		| Nothing	<- mTemplate
-		= do	trace $ ppr "   -- no template, reactivating\n\n"
-			activateClass cidShape
-			return False
-		
-		-- we've got a template
-		--	we can now merge the sub-classes and remove the shape constraint.
-		| Just tTemplate	<- mTemplate
-		= do	crushShapeWithTemplate cidShape fShape srcShape tTemplate clsMerge
-			delMultiFetter cidShape
-			return True
-	
-	result		
-
-
--- | Given come classes constrained by a Shape, and a template node giving the required
---   shape, constrain each of the classes so they match the template.
-crushShapeWithTemplate
-	:: ClassId		-- ^ cid of the Shape fetter being crushed.
-	-> Fetter		-- ^ the Shape fetter being crushed.
-	-> TypeSource		-- ^ source of the shape fetter.
-	-> Node			-- ^ the template node.
-	-> [Class]		-- ^ the classes being constrained by the Shape fetter.
-	-> SquidM ()
-
-crushShapeWithTemplate cidShape fShape srcShape tTemplate csMerge
- = do
- 	trace  	( "-- Crush.shape (got template)\n"
-	 	% "   cidShape  = " % cidShape		% "\n"
-		% "   fShape    = " % fShape		% "\n"
-		% "   srcShape  = " % srcShape		% "\n"
-		% "   tTemplate = " % tTemplate	% "\n")
-
 	-- the source to use for the new constraints.
 	let srcCrushed	= TSI $ SICrushedFS cidShape fShape srcShape
-
-	-- look at each of the classes being constrained, and if they don't already
-	-- have a constructor that maches the template, then push one in.
-	mtsPushed	<- mapM (pushTemplate tTemplate srcCrushed) csMerge
 	
-	case sequence mtsPushed of
-	 -- get the cids that should be recursively constrained.	
-	 Just tsPushed
-	  -> do	let takeRec tt
-		     = case tt of
-			NApp t1 t2	-> [t1, t2]
-			_		-> []
-					
-		let tssMerged	= map takeRec tsPushed
-		let tssMergeRec	= transpose tssMerged
+	crushShapeWithTemplate cidShape srcCrushed diagsMerge mDiagTemplate	
+
+
+-- None of the nodes contain data constructors, so there's no template to work from.
+-- However, something might be unified in later, so activiate ourselves
+-- so the grinder calls us again on the next pass.
+crushShapeWithTemplate cidShape _srcCrushed _diags Nothing
+ = do	trace	$ vcat
+		[ "-- Crush.shape" %% cidShape %% "(template)"
+		, ppr "   -- no templates, reactivating"
+		, blank]
+
+	activateClass cidShape
+	return False
+
+
+-- We've got a template, so we need to constrain the other classes so they
+-- match the template.
+crushShapeWithTemplate cidShape srcCrushed diags (Just diagTemplate)
+ = do	trace	$ vcat
+		[ "-- Crush.shape" %% cidShape %% "(template)"
+		, "   diagTemplate    = "       % diagTemplate
+		, blank]
+
+	let DiagTemplate cidTemplate nTemplateCtor cidsTemplateLeaves
+		= diagTemplate
 		
-		trace	$ "    tssMergeRec = " % tssMergeRec		% "\n"
+	-- Get the leaf classes of the template.
+	--   The leaf classes are the ones that hold the type constructor and its arguments.
+	--   For example, if the template type looks like this:
+	--  	C %1 *2 !3
+	--   Then the leaf classes are the one that holds the constructor C, 
+	--   along with the three argument classes %1 *2 !3. 
+	--   We don't care about the classes that hold intermediate applications, like for (C %1).
+	Just clsTemplateLeaves
+		<- liftM sequence 
+		$  mapM lookupClass cidsTemplateLeaves
 
-		-- add shape constraints to constraint the args as well
-		mapM_ (addShapeFetter srcCrushed) tssMergeRec
+	-- As we've already chosen the template we're working with, set the diags
+	-- of the other Shape constrained classes to be receivers of this template.
+	let diags_recv	
+		= map diagMakeReceiver
+		$ filter (\d -> cidOfDiag d /= cidOfDiag diagTemplate) diags
 
+	-- Instantiate the template for each of the Shape constrained classes.
+	(cidsNewSpinesRoot, cidssNewSpinesLeaves)
+		<- liftM unzip 
+		$  replicateM (length diags_recv)
+		$  createSpine srcCrushed kValue (reverse clsTemplateLeaves)
 
-	 -- If adding the template to the class would result in a type error
-	 -- then stop now, as we don't want to change the graph anymore if it
-	 -- already has errors. We'll get an invalid instance error for
-	 -- the un-crushed shape constraint anyway.
-	 _ 	-> return ()
-		
-
--- | Add a template type to a class.
-pushTemplate 
-	:: Node			-- the template type
-	-> TypeSource		-- the source of the shape fetter doing the pushing
-	-> Class		-- the class to push the template into.
-	-> SquidM (Maybe Node)
+	-- The new spines are fresh and currently have no relationship with 
+	-- the classes being constrained, so we merge their root classes 
+	-- with the ones actually being constrained by the Shape.
+	cidsNewSpinesRoot_merged
+		<- zipWithM (\cid1 cid2 -> mergeClasses [cid1, cid2])
+			(map cidOfDiag diags_recv)
+			cidsNewSpinesRoot
 	
-pushTemplate tTemplate srcShape cMerge
+	-- Match up leaves of the template and the ones we've just made.
+	let cidssMergeLeaves
+		= transpose $ (cidssNewSpinesLeaves ++ [cidsTemplateLeaves])
+	
+	-- The first one of these leaves should contain the type constructor
+	-- and createSpines will have already added it to the fresh ones, 
+	-- so we don't have to worry about it. How we constrain the arguments
+	-- of the constructor depends on what kind they are, and whether
+	-- they correspond to material positions of the data type or not.
+	let (_ : cidssMergeArgs) = cidssMergeLeaves
+		
+	trace	$ vcat
+		[ "-- Crush.shape" %% cidShape %% "(template) "
+		, "   diags_recv:\n" 			%> vcat diags_recv
+		, "   cidsNewSpinesRoot:          "	%> cidsNewSpinesRoot
+		, "   cidsNewSpinesRoot_merged:   "	%> cidsNewSpinesRoot_merged
+		, "   cidssNewSpinesLeaves:       "	%> cidssNewSpinesLeaves
+		, "   cidssMergeLeaves:           "	%> cidssMergeLeaves
+		, "   cidssMergeArgs:             "	%> cidssMergeArgs
+		, blank]
 
-	-- if this class does not have a constructor then we 
-	--	can push the template into it.
-	| Class { classUnified = Just node }	<- cMerge
-	, isNBot node
-	= do	
-		tPush	<- freshenNode srcShape tTemplate
-		trace 	$ "  -- merge class\n"
-			% "    tPush = " % tPush	% "\n"		
+	-- At this point we've made the top-level of the constrained types
+	-- the same, we now have to constrain the arguments appropriately.
 
-		addNodeToClass (classId cMerge) (classKind cMerge) srcShape tPush
-		return $ Just tPush		
+	-- We need to now what args are material, so grab the data type
+	-- definition for the template type constructor.
+	dataDefs <- liftM squidEnvDataDefs $ gets stateEnv
+	
+	-- Lookup the materialities for the type
+	let NCon tc		= nTemplateCtor
+	let (TyConData v _)	= tc
+	let Just dataDef	= Map.lookup v dataDefs
+	let Just materiality	= paramMaterialityOfDataDef dataDef
+	let kinds		= map snd $ dataDefParams dataDef
+	
+	-- Add constraints depending on what materiality the parameters are.
+	mapM (mergeMaterial srcCrushed) 
+		$ zip3 materiality kinds cidssMergeArgs
 
-	-- If adding the template will result in a type error then add the error to
-	-- 	the solver state, and return Nothing.
-	--	This prevents the caller, crushShape2 recursively adding more errornous
-	--	Shape constraints to the graph.
-	--	
-	| Class { classUnified = Just t }	<- cMerge
-	= if isShallowConflict t tTemplate
-	   then	
-	    do	let cError	= cMerge { classTypeSources = (tTemplate, srcShape) : classTypeSources cMerge }
-	 	addErrorConflict (classId cError) cError
-		return Nothing
-
-	   else return (Just t)
-
-
--- | Replace all the free cids in this node with fresh ones.
-freshenNode :: TypeSource -> Node -> SquidM Node
-freshenNode src node
- = do	let cidsFree	= Set.toList $ cidsOfNode node
- 	cidsFresh	<- mapM (freshenCid src) cidsFree
-	let sub		= Map.fromList $ zip cidsFree cidsFresh
-	return	$ subNodeCidCid sub node
+	trace	$ vcat
+		[ "   dataDef:\n"		%> dataDef
+		, "   materiality:       "	% materiality ]
+	
+	-- We've discharged the constraint by modifying the graph appropriately, 
+	-- so we don't need the original fetter any more.
+	delMultiFetter cidShape
+	return True
 
 
--- | Allocate a new class with the same kind as this one.
-freshenCid :: TypeSource -> ClassId -> SquidM ClassId
-freshenCid src cid
- = do	Just Class { classKind = k }	
- 		<- lookupClass cid
- 
- 	cid'	<- allocClass k src
-	updateClass False cid'
-		(emptyClass k src cid')
-		{ classUnified = Just nBot }
+mergeMaterial :: TypeSource -> (Materiality, Kind, [ClassId]) -> SquidM ()
+mergeMaterial srcCrushed (mm, kind, cids)
+	| elem mm [MaterialAbsent, MaterialNot, MaterialMixed]
+	= do	mergeClasses cids
+		return ()
 
-	return	cid'
-
- 
+	-- strongly material.
+	| isRegionKind kind
+	= return ()
+	
+	| isValueKind kind
+	= addShapeFetter srcCrushed cids
+	
+	| otherwise
+	= panic stage $ "mergeMaterial: no match"
+	
+	
 -- | Add a shape fetter to constrain all these classes.
 --   TODO: We're treating all regions as strongly material, until we
 --         can work out the real materiality. 
@@ -223,3 +206,119 @@ addShapeFetter src cids@(cid1 : _)
 
 		addFetter src (FConstraint (primFShape (length ts)) ts)
 		return ()
+
+
+-- Spine ------------------------------------------------------------------------------------------
+--   Create a new spine of type applications based on the kinds of a list of classes.
+--   The spine is built in reverse order, so in the following example the first
+--   class in the list is an effect class, and the last contains the constructor
+--   we put in *1.
+--
+--   The last class must contain a constructor, else panic.
+--
+--  @
+--            / 
+--          app 
+--         /   \\
+--       app    !4
+--      /   \\          
+--    app    *3 
+--   /   \\
+--  *1    %2
+-- @
+-- 
+createSpine 
+	:: TypeSource	-- ^ Source to use for the new classes.
+	-> Kind		-- ^ Kind of the result of the constructor.
+	-> [Class]	-- ^ Leaf classes to use to get the kinds of the new classes.
+	-> SquidM (ClassId , [ClassId])
+			-- ^ Class holding the top level application, and the list
+			--   of leaf classes, [*1, %2, *3, !4] in this example.
+
+createSpine src kResult clss
+
+	| [cls]	<- clss
+	, Class { classUnified = Just nCtor@(NCon _) } <- cls
+	= do	cidHere'	<- allocClass (classKind cls) src
+		addNodeToClass cidHere' (classKind cls) src nCtor
+		return (cidHere', [cidHere'])
+	
+	| clsRight : clssRest	<- clss
+	= do	let kRight	= classKind clsRight
+		cidRight'	<- allocClass kRight src
+	
+		let kLeft	= KFun kRight kResult
+		(cidLeft', cidsArgLeft)
+				<- createSpine src kLeft clssRest
+
+		let nHere	= NApp cidLeft' cidRight'
+		cidHere'	<- allocClass kResult src
+		addNodeToClass cidHere' kResult src nHere
+		return (cidHere', cidsArgLeft ++ [cidRight'])
+
+
+-- Diag -------------------------------------------------------------------------------------------
+data Diag
+	= DiagTemplate ClassId Node [ClassId]
+	| DiagReceiver ClassId 
+	| DiagNotReady ClassId
+	deriving (Show, Eq)
+
+
+-- | Get the classId of a diag
+cidOfDiag :: Diag -> ClassId
+cidOfDiag diag
+ = case diag of
+	DiagTemplate cid _ _	-> cid
+	DiagReceiver cid 	-> cid
+	DiagNotReady cid	-> cid
+	
+
+-- | Check if a diag is a template.
+isDiagTemplate :: Diag -> Bool
+isDiagTemplate diag
+ = case diag of
+	DiagTemplate{}	-> True
+	_		-> False
+
+instance Pretty Diag PMode where
+ ppr diag
+  = case diag of
+	DiagTemplate cid node cidsApps 	-> "DiagTemplate" %% cid %% node %% cidsApps
+	DiagReceiver cid                -> "DiagReceiver" %% cid
+	DiagNotReady cid		-> "DiagNotReady" %% cid
+
+
+-- Look at the types being constrained.
+-- We get back a list of cids that might look something like this:
+--        [[*1, %2, *3], [*6]]
+-- 
+-- When there are more than one element in the inner list, the first one
+-- is likely to hold a data construcor. For example:
+--          *1 = List, 
+--          %2 is it's primary region
+--          *3 = (Int %8)
+-- 
+-- For *6, this is probably an unconstrained class that doesn't have any 
+-- constructors in it yet.
+--
+diagShapeConstrainedCid :: ClassId -> SquidM Diag
+diagShapeConstrainedCid cid
+ = do	mCidsApps	<- takeAppsDownLeftSpine cid
+
+	whenMaybeM mCidsApps 
+	  (return $ DiagNotReady cid) 
+	  (\cidsApps -> do
+		let Just cidHead =  takeHead cidsApps
+		Just clsHead     <- lookupClass cidHead
+		
+		case classUnified clsHead of
+		 Just n@NCon{}	-> return $ DiagTemplate cid n cidsApps
+		 _		-> return $ DiagReceiver cid)
+
+
+-- | If this diag does not refer to the given cid then turn it into a receiver.
+diagMakeReceiver :: Diag -> Diag
+diagMakeReceiver diag
+	= DiagReceiver (cidOfDiag diag)
+

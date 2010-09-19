@@ -10,13 +10,17 @@ module DDC.Type.Data.Base
 	, lookupTypeOfNumberedFieldFromCtorDef
 	, lookupLabelOfFieldIndex
 	, fieldsOfDataDef
-	, fieldTypeLabels)
+	, fieldTypeLabels
+	
+	, Materiality(..)
+	, paramMaterialityOfDataDef)
 where
 import DDC.Type.Builtin
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Operators.Strip
 import DDC.Var
+import DDC.Main.Pretty
 import Control.Monad
 import Data.List
 import Data.Maybe
@@ -26,6 +30,7 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
 
+-- DataDef ----------------------------------------------------------------------------------------
 -- | A data type definition
 data DataDef
 	= DataDef
@@ -60,6 +65,7 @@ dataDefKind ddef
 	= makeKFuns (map snd $ dataDefParams ddef) kValue
 
 
+-- CtorDef ----------------------------------------------------------------------------------------
 -- | A data constructor definition.
 --	We need to remember the indices of each field so we can convert
 --	pattern matches using labels to Sea form. 
@@ -83,6 +89,7 @@ data CtorDef
 	deriving (Show, Eq)
 
 
+-- Fields -----------------------------------------------------------------------------------------
 -- | Get the type of a named field from a data type definition.
 --	If multiple constructors define this field then we just take the
 --	type of the first one. It's up to the constructor of the `DataDef` 
@@ -149,4 +156,47 @@ fieldTypeLabels ctorDef
  =	[ ( lookupLabelOfFieldIndex ix ctorDef
 	  , let Just t = lookupTypeOfNumberedFieldFromCtorDef ix ctorDef in t)
 	| ix <- [0 .. (ctorDefArity ctorDef - 1)] ]
+
+
+-- Materiality ------------------------------------------------------------------------------------
+
+-- | Describes how a parameter variable of the data type is used
+--   in the constructors of its definition.
+data Materiality
+	-- | Completely absent from the constructors.
+	= MaterialAbsent
+
+	-- | Variable either has a kind that is always immaterial (effect or closure)
+	--   or is only used in an immaterial position, like in the return type of
+	--   a function.
+	| MaterialNot
+
+	-- | Variable is only used a material position, so we're likely to get 
+	--   objects of the corresponding type being allocated into the heap.
+	| MaterialStrong
+
+	-- | Variable is used in both a material and immaterial position.
+	| MaterialMixed
+	deriving (Eq, Show)
+
+instance Pretty Materiality PMode where
+ ppr mat	= ppr $ show mat
+
+-- | Get a list giving the materiality of each of the parameter variables
+--   of a given data type.
+paramMaterialityOfDataDef :: DataDef -> Maybe [Materiality]
+paramMaterialityOfDataDef dataDef
+ | Just mvs	<- dataDefMaterialVars  dataDef
+ , Just ivs	<- dataDefImmaterialVars dataDef
+ = let	materiality1 v
+	 = case (Set.member v mvs, Set.member v ivs) of
+		(False, False)	-> MaterialAbsent
+		(False, True)	-> MaterialNot
+		(True,  False)	-> MaterialStrong
+		(True,  True)	-> MaterialMixed
+
+   in	Just $ map (materiality1 . fst) $ dataDefParams dataDef
+
+ | otherwise
+ = Nothing
 
