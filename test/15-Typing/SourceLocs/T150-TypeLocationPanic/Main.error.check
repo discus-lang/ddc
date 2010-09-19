@@ -6,7 +6,7 @@ ddc: ERROR
                       at: ./test/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:8
 
      conflicts with,
-              constraint: MutableT *300
+              constraint: MutableT *302
          from the use of: (:=)
                       at: ./test/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:10
 

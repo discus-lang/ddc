@@ -4,14 +4,14 @@ ddc: ERROR
                constraint: Const %106
         which purifies
               the use of: succ
-                 of type: !Read %141
+                 of type: !Read %146
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:9:18
         due to
               the use of: suspend1
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:9:23
 
      conflicts with,
-              constraint: MutableT *197
+              constraint: MutableT *202
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:10:16
 

@@ -6,7 +6,7 @@ ddc: ERROR
                       at: ./test/15-Typing/Purity/ConstWrite/Test.ds:13:18
 
      conflicts with,
-              constraint: MutableT *237
+              constraint: MutableT *242
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/ConstWrite/Test.ds:15:16
 

@@ -1,15 +1,15 @@
 ddc: ERROR
-./test/15-Typing/Unification/Shape/Test.ds:7:6
+./test/15-Typing/Unification/Shape/Test.ds:7:8
     Type mismatch during unification.
-          cannot match: Int32
-                  with: String
+          cannot match: String
+                  with: Int32
 
-              the use of: (+)
-                 of type: Int32
-                      at: ./test/15-Typing/Unification/Shape/Test.ds:7:6
-
-        conflicts with, 
           literal value "erk"
                  of type: String
                       at: ./test/15-Typing/Unification/Shape/Test.ds:7:8
+
+        conflicts with, 
+              the use of: (+)
+                 of type: Int32
+                      at: ./test/15-Typing/Unification/Shape/Test.ds:7:6
 
