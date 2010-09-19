@@ -6,203 +6,110 @@ import	Base
 	Data.Bool
 	Data.Numeric.Int32
 	Data.Numeric.Int64
+	Data.Numeric.Float64U
 	Class.Eq
 	Class.Num
 	Class.Ord
-	Class.Show
 	Class.Fractional
+	Class.Floating
 
 pragma	cc_includes ["math.h"]
 
--- boxing
+
+-- Boxing ---------------------------------------------------------------------
 foreign import "_boxFloat64"
- boxFloat64	:: forall %r1
-		.  Float64# -> Float64 %r1
+ boxFloat64 	:: forall %r1
+  		.  Float64# -> Float64 %r1
 		:$ Float64# -> Obj
 
 foreign import "_unboxFloat64"
  unboxFloat64	:: forall %r1
-		.  Float64 %r1 -(!Read %r1)> Float64#
+ 		.  Float64 %r1 -(!Read %r1)> Float64#
 		:$ Obj -> Float64#
 
-foreign import "primFloat64_toFloat64"
- toFloat64	:: Int64{read} -> Float64
 
--- math
-foreign import "primFloat64_neg"
- primFloat64_neg	:: Float64{read} -> Float64
+-- Conversion -----------------------------------------------------------------
+foreign import "primFloat64_toFloat"
+ toFloat64	:: Int32{read}   -> Float64
 
-foreign import "primFloat64_add"
- primFloat64_add	:: Float64{read} -> Float64{read} -> Float64
-
-foreign import "primFloat64_sub"
- primFloat64_sub	:: Float64{read} -> Float64{read} -> Float64
-
-foreign import "primFloat64_mul"
- primFloat64_mul	:: Float64{read} -> Float64{read} -> Float64
-
-foreign import "primFloat64_div"
- primFloat64_div	:: Float64{read} -> Float64{read} -> Float64
-
-foreign import "fmod"
- fmod64U :: Float64# -> Float64# -> Float64#
-
-fmod64 x y		= boxFloat64 (fmod64U (unboxFloat64 x) (unboxFloat64 y))
+foreign import "primFloat64_truncate"
+ truncate64	:: Float64{read} -> Int64
 
 
--- comparisons
-foreign import "primFloat64_eq"
- primFloat64_eq		:: Float64{read} -> Float64{read} -> Bool
+-- Instances ------------------------------------------------------------------
+instance Eq Float64 where
+	(==) x y	= boxBool   (primFloat64U_eq  (unboxFloat64 x) (unboxFloat64 y))
+	(/=) x y	= boxBool   (primFloat64U_neq (unboxFloat64 x) (unboxFloat64 y))
+		
 
-foreign import "primFloat64_neq"
- primFloat64_neq	:: Float64{read} -> Float64{read} -> Bool
+instance Ord Float64 where
+	(>) x y		= boxBool   (primFloat64U_gt  (unboxFloat64 x) (unboxFloat64 y))
+	(<) x y		= boxBool   (primFloat64U_lt  (unboxFloat64 x) (unboxFloat64 y))
+	(>=) x y	= boxBool   (primFloat64U_ge  (unboxFloat64 x) (unboxFloat64 y))
+	(<=) x y	= boxBool   (primFloat64U_le  (unboxFloat64 x) (unboxFloat64 y))
 
-foreign import "primFloat64_gt"
- primFloat64_gt		:: Float64{read} -> Float64{read} -> Bool
+	compare x y
+	 | x == y	=  EQ
+	 | x <  y	=  LT
+	 		\= GT
 
-foreign import "primFloat64_ge"
- primFloat64_ge		:: Float64{read} -> Float64{read} -> Bool
-
-foreign import "primFloat64_lt"
- primFloat64_lt		:: Float64{read} -> Float64{read} -> Bool
-
-foreign import "primFloat64_le"
- primFloat64_le		:: Float64{read} -> Float64{read} -> Bool
-
--- update
-foreign import "primFloat64_update"
- primFloat64_update	:: Float64{write} -> Float64{read} -> ()
-
-instance Show Float64 where
-	show x = string_Float64 x
+	min x y		= if x <= y then x else y
+	max x y		= if x >= y then x else y
 
 
 instance Copy Float64 where
-	copy x		= boxFloat64 (unboxFloat64 x)
-
-instance Eq Float64 where
-	(==)		= primFloat64_eq
-	(/=)		= primFloat64_neq
-
-
-instance Ord Float64 where
-	(>)		= primFloat64_gt
-	(>=)		= primFloat64_ge
-
-	(<)		= primFloat64_lt
-	(<=)		= primFloat64_le
-
-	compare x y
-	 | x < y	= LT
-	 | x > y	= GT
-	 | otherwise	= EQ
-
-instance Num Float64 where
-	(+)		= primFloat64_add
-	(-)		= primFloat64_sub
-	(*)		= primFloat64_mul
-	negate		= primFloat64_neg
-
-
-instance Fractional Float64 where
-	(/)		= primFloat64_div
+ 	copy x 		= boxFloat64 (unboxFloat64 x)
 
 
 instance Updatable Float64 where
-	(:=)		= primFloat64_update
+	(:=) w1 w2
+	 = do	w1'	= force w1
+		poke (castToPtrFloat64 (peekDataRS_payload w1)) (unboxFloat64 w2)
+		()
+
+
+instance Num Float64 where
+	negate x 	= boxFloat64 (primFloat64U_neg (unboxFloat64 x))
+	abs x		= boxFloat64 (primFloat64U_abs (unboxFloat64 x))
+	(+) x y		= boxFloat64 (primFloat64U_add (unboxFloat64 x) (unboxFloat64 y))
+	(-) x y		= boxFloat64 (primFloat64U_sub (unboxFloat64 x) (unboxFloat64 y))
+	(*) x y		= boxFloat64 (primFloat64U_mul (unboxFloat64 x) (unboxFloat64 y))
+
+
+instance Fractional Float64 where
+	(/) x y		= boxFloat64 (primFloat64U_div  (unboxFloat64 x) (unboxFloat64 y))
+
+
+instance Floating Float64 where
+	ftrunc	x	= boxFloat64 (primFloat64U_ftrunc (unboxFloat64 x))
+	fround	x	= boxFloat64 (primFloat64U_fround (unboxFloat64 x))
+	ffloor	x	= boxFloat64 (primFloat64U_ffloor (unboxFloat64 x))
+	fmod	x y	= boxFloat64 (primFloat64U_fmod   (unboxFloat64 x) (unboxFloat64 y))
+	fpow	x y	= boxFloat64 (primFloat64U_fpow   (unboxFloat64 x) (unboxFloat64 y))
+	sqrt	x	= boxFloat64 (primFloat64U_sqrt   (unboxFloat64 x))
+	log	x	= boxFloat64 (primFloat64U_log    (unboxFloat64 x))
+
+	sin	x	= boxFloat64 (primFloat64U_sin    (unboxFloat64 x))
+	asin	x	= boxFloat64 (primFloat64U_asin   (unboxFloat64 x))
+	cos	x	= boxFloat64 (primFloat64U_cos    (unboxFloat64 x))
+	acos	x	= boxFloat64 (primFloat64U_acos   (unboxFloat64 x))
+	tan	x	= boxFloat64 (primFloat64U_tan    (unboxFloat64 x))
+	atan	x	= boxFloat64 (primFloat64U_atan   (unboxFloat64 x))
 
 
 instance Accum Float64 where
-	(+=) a b	= primFloat64_update a (primFloat64_add a b)
+	(+=) a b	= a := (a + b)
 
--- trig
-foreign import "sin"
- sin64U	:: Float64# -> Float64#
 
-foreign import "asin"
- asin64U	:: Float64# -> Float64#
-
-foreign import "cos"
- cos64U	:: Float64# -> Float64#
-
-foreign import "acos"
- acos64U	:: Float64# -> Float64#
-
-foreign import "tan"
- tan64U	:: Float64# -> Float64#
-
-foreign import "atan"
- atan64U	:: Float64# -> Float64#
-
-foreign import "sqrt"
- sqrt64U	:: Float64# -> Float64#
-
-foreign import "trunc"
- trunc64U	:: Float64# -> Float64#
-
-foreign import "pow"
- fpow64U	:: Float64# -> Float64# -> Float64#
-
-sin64 x	= boxFloat64 (sin64U   (unboxFloat64 x))
-asin64 x	= boxFloat64 (asin64U  (unboxFloat64 x))
-cos64 x	= boxFloat64 (cos64U   (unboxFloat64 x))
-acos64 x	= boxFloat64 (acos64U  (unboxFloat64 x))
-tan64 x	= boxFloat64 (tan64U   (unboxFloat64 x))
-atan64 x	= boxFloat64 (atan64U  (unboxFloat64 x))
-sqrt64 x	= boxFloat64 (sqrt64U  (unboxFloat64 x))
-trunc64 x = boxFloat64 (trunc64U (unboxFloat64 x))
-
---
-foreign import "log"
- log64U   :: Float64# -> Float64#
-
-foreign import "floor"
- floor64U :: Float64# -> Float64#
-
-foreign import "fabs"
- fabs64U  :: Float64# -> Float64#
-
-log64   x	  = boxFloat64 (log64U   (unboxFloat64 x))
-floor64 x	  = boxFloat64 (floor64U (unboxFloat64 x))
-fabs64 x	  = boxFloat64 (fabs64U  (unboxFloat64 x))
-fpow64 x y  = boxFloat64 (fpow64U  (unboxFloat64 x) (unboxFloat64 y))
-
--- conversion
-foreign import "primFloat64_truncate"
- truncate64 :: Float64{read} -> Int64
-
+-- Other ----------------------------------------------------------------------
+-- The Haskell versions of round and floor are also conversions.
+round64 x	= truncate64 (fround x)
+floor64 x 	= truncate64 (ffloor x)
 
 project Float64 where
-
-	min :: Float64 -> Float64 -> Float64
-	min x y
-	 = if x < y	then x
-			else y
-
-	max :: Float64 -> Float64 -> Float64
-	max x y
-	 = if x > y	then x
-			else y
-
-	clamp :: Float64 -> Float64 -> Float64 -> Float64
-	clamp x a b
-		| x < a		= a
-		| x > b		= b
-		| otherwise	= x
-
-
-string_Float64 :: Float64 -> String
-string_Float64 f
- = do	maxLen	= 40
-	maxLenU	= unboxInt32 maxLen
-	fU	= unboxFloat64 f
-
-	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
-
-	-- %f probably isn't the best way of printing floats.
-	show_danger_snprintf strU maxLenU "%f"# fU
-	fs.setLengthU (stringU_length strU)
-
-	SChunk fs
+ clamp :: Float64 -> Float64 -> Float64 -> Float64 
+ clamp x a b
+	| x < a		= a
+	| x > b		= b
+	| otherwise	= x
 

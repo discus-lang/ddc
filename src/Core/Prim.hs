@@ -273,26 +273,33 @@ opD3U2	= [Discard, Discard, Discard, Unbox, Unbox]
 unboxableFuns :: Map String (PrimOp, [Action])
 unboxableFuns
  = Map.fromList
+	[ ("&&",		(OpAnd,	opD3U2))
+	, ("||",		(OpOr,	opD3U2)) ]	
 
-	[
-	-- boxed boolean functions
-	  ("&&",		(OpAnd,	opD3U2))
-	, ("||",		(OpOr,	opD3U2))
 
-	-- boxed float64 functions
-	, ("primFloat64_add",	(OpAdd,	opD3U2))
-	, ("primFloat64_sub",	(OpSub,	opD3U2))
-	, ("primFloat64_div",	(OpDiv,	opD3U2))
-	, ("primFloat64_mul",	(OpMul,	opD3U2))
-	, ("primFloat64_eq",	(OpEq,	opD3U2))
-	, ("primFloat64_neq",	(OpNeq,	opD3U2))
-	, ("primFloat64_gt",	(OpGt,	opD3U2))
-	, ("primFloat64_ge",	(OpGe,	opD3U2))
-	, ("primFloat64_lt",	(OpLt,	opD3U2))
-	, ("primFloat64_le",	(OpLe,	opD3U2)) ]
-	
+-- | Is this the name of a fn that unboxes a value of primitive type.
+isBoxFunctionV :: Var -> Bool
+isBoxFunctionV v
+ = elem	(varName v)
+ 	[ "boxInt32"
+	, "boxFloat32"
+	, "boxInt64"
+	, "boxFloat64" ]
+-- 	, "boxWord32" ]
 
--- primitive functions
+
+-- | Is this the name of a fn that unboxes a value of primitive type.
+isUnboxFunctionV :: Var -> Bool
+isUnboxFunctionV v
+ =  elem (varName v)
+ 	[ "unboxInt32"
+	, "unboxFloat32"
+	, "unboxInt64"
+	, "unboxFloat64" ]
+--	, "unboxWord32" ]
+
+
+-- | Frimitive functions
 primFuns :: Map String PrimOp
 primFuns 
  = Map.fromList
@@ -302,7 +309,6 @@ primFuns
 
 	-- Word32U
 	, ("primWord32U_neg",	OpNeg) 
-
 	, ("primWord32U_add",	OpAdd)
 	, ("primWord32U_sub",	OpSub)
 	, ("primWord32U_mul",	OpMul)
@@ -318,7 +324,6 @@ primFuns
 
 	-- Int32U
  	, ("primInt32U_neg",	OpNeg)
-	
 	, ("primInt32U_add",	OpAdd)
 	, ("primInt32U_sub",	OpSub)
 	, ("primInt32U_mul",	OpMul) 
@@ -334,7 +339,6 @@ primFuns
 
 	-- Int64U
  	, ("primInt64U_neg",	OpNeg)
-	
 	, ("primInt64U_add",	OpAdd)
 	, ("primInt64U_sub",	OpSub)
 	, ("primInt64U_mul",	OpMul) 
@@ -348,10 +352,8 @@ primFuns
 	, ("primInt64U_lt",	OpLt)
 	, ("primInt64U_le",	OpLe) 
 
-	
 	-- Float32U
 	, ("primFloat32U_neg",	OpNeg)
-
 	, ("primFloat32U_add",	OpAdd)
 	, ("primFloat32U_sub",	OpSub)
 	, ("primFloat32U_mul",	OpMul) 
@@ -362,24 +364,19 @@ primFuns
 	, ("primFloat32U_gt",	OpGt)
 	, ("primFloat32U_ge",	OpGe)
 	, ("primFloat32U_lt",	OpLt)
-	, ("primFloat32U_le",	OpLe) ]
+	, ("primFloat32U_le",	OpLe) 
 
+	-- Float64U
+	, ("primFloat64U_neg",	OpNeg)
+	, ("primFloat64U_add",	OpAdd)
+	, ("primFloat64U_sub",	OpSub)
+	, ("primFloat64U_mul",	OpMul) 
+	, ("primFloat64U_div",	OpDiv)
 
+	, ("primFloat64U_eq",	OpEq)
+	, ("primFloat64U_neq",	OpNeq)
+	, ("primFloat64U_gt",	OpGt)
+	, ("primFloat64U_ge",	OpGe)
+	, ("primFloat64U_lt",	OpLt)
+	, ("primFloat64U_le",	OpLe) ]
 
-
-isUnboxFunctionV :: Var -> Bool
-isUnboxFunctionV v
- =  elem (varName v)
- 	[ "unboxInt32"
-	, "unboxFloat32"
-	, "unboxInt64"
-	, "unboxFloat64" ]
-
-isBoxFunctionV :: Var -> Bool
-isBoxFunctionV v
- = elem	(varName v)
- 	[ "boxInt32"
-	, "boxFloat32"
-	, "boxInt64"
-	, "boxFloat64" ]
-	

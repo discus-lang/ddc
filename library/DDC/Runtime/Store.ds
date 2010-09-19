@@ -71,6 +71,11 @@ foreign import "(Float32 *)"
  	:: forall a
 	.  Ptr# a -> Ptr# Float32#
 
+foreign import "(Float64 *)"
+ castToPtrFloat64
+ 	:: forall a
+	.  Ptr# a -> Ptr# Float64#
+
 foreign import "(Char32 *)"
  castToPtrChar32
  	:: forall a 

@@ -18,12 +18,12 @@ pragma	cc_includes ["math.h"]
 -- Boxing ---------------------------------------------------------------------
 foreign import "_boxFloat32"
  boxFloat32 	:: forall %r1
-  		.  Float32# -> Float %r1
+  		.  Float32# -> Float32 %r1
 		:$ Float32# -> Obj
 
 foreign import "_unboxFloat32"
  unboxFloat32	:: forall %r1
- 		.  Float %r1 -(!Read %r1)> Float32#
+ 		.  Float32 %r1 -(!Read %r1)> Float32#
 		:$ Obj -> Float32#
 
 
@@ -75,7 +75,7 @@ instance Num Float32 where
 	(*) x y		= boxFloat32 (primFloat32U_mul (unboxFloat32 x) (unboxFloat32 y))
 
 
-instance Fractional Float where
+instance Fractional Float32 where
 	(/) x y		= boxFloat32 (primFloat32U_div  (unboxFloat32 x) (unboxFloat32 y))
 
 

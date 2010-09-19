@@ -91,7 +91,6 @@ foreign import "logf"
  primFloat32U_log	:: Float32# -> Float32#
 
 
-
 -- Instances ------------------------------------------------------------------
 instance Eq Float32# where
 	(==) x y	= boxBool (primFloat32U_eq  x y)
