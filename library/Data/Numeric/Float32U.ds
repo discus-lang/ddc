@@ -6,11 +6,14 @@ import	Class.Eq
 	Class.Num
 	Class.Ord
 	Class.Fractional
-
+	Class.Floating
 
 -- Arithmetic -----------------------------------------------------------------
 foreign import "primFloat32U_neg"
  primFloat32U_neg	:: Float32# -> Float32#
+
+foreign import "fabsf"
+ primFloat32U_abs  	:: Float32# -> Float32#
 
 foreign import "primFloat32U_add"
  primFloat32U_add	:: Float32# -> Float32# -> Float32#
@@ -84,12 +87,8 @@ foreign import "powf"
 foreign import "sqrtf"
  primFloat32U_sqrt	:: Float32# -> Float32#
 
-foreign import "fabsf"
- primFloat32U_abs  	:: Float32# -> Float32#
-
 foreign import "logf"
  primFloat32U_log	:: Float32# -> Float32#
-
 
 
 
@@ -107,12 +106,30 @@ instance Ord Float32# where
 
 
 instance Num Float32# where 
+	negate		= primFloat32U_neg
+	abs		= primFloat32U_abs
  	(+) 		= primFloat32U_add
 	(-) 		= primFloat32U_sub
 	(*) 		= primFloat32U_mul
-	negate		= primFloat32U_neg
 
 
 instance Fractional Float32# where
 	(/) 		= primFloat32U_div
+
+
+instance Floating Float32# where
+	ftrunc		= primFloat32U_ftrunc
+	fround		= primFloat32U_fround
+	ffloor		= primFloat32U_ffloor
+	fmod		= primFloat32U_fmod
+	fpow		= primFloat32U_fpow
+	sqrt		= primFloat32U_sqrt
+	log		= primFloat32U_log
+
+	sin		= primFloat32U_sin
+	asin		= primFloat32U_asin
+	cos		= primFloat32U_cos
+	acos		= primFloat32U_acos
+	tan		= primFloat32U_tan
+	atan		= primFloat32U_atan
 
