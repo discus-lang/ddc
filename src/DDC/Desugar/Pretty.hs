@@ -37,8 +37,11 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 			% "\n}\n\n")
 
 	PExtern nn v tv (Just to)
-	 -> annot nn 
-	 	("extern " % v	
+	 -> let mSeaName	= takeSeaNameOfVar v
+		pName		= case mSeaName of  { Nothing -> ppr " "; Just s  -> ppr $ show s }
+		
+	    in annot nn 
+	 	("foreign import " % pName %% v % " " 
 			%> ("\n" % ":: " % prettyTypeSplit tv	% "\n"
 				 % ":$ " % to			% ";\n"))
 		% "\n"

@@ -538,6 +538,10 @@ toSeaT' repr tt
 			then E.tPtrObj
 			else E.TFun (map toSeaT tsArgs) (toSeaT tResult)
 
+
+		 | otherwise
+		 = E.tPtrObj
+		
 	    in result
 
 	T.TCon{}

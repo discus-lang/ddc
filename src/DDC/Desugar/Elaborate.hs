@@ -38,6 +38,8 @@ import DDC.Type.Data
 import DDC.Type
 import DDC.Var
 import DDC.Base.SourcePos
+import DDC.Main.Error
+import DDC.Main.Pretty
 import Data.Sequence			(Seq)
 import Data.Map				(Map)
 import qualified DDC.Type.Transform	as T
@@ -46,7 +48,9 @@ import qualified Data.Map		as Map
 import Data.Traversable			(mapM)
 import Prelude				hiding (mapM)
 import Control.Monad.State.Strict	hiding (mapM)
+import Data.Maybe
 
+stage = "DDC.Desugar.Elaborate"
 
 -- | Elaborate types in this tree.
 elaborateTree 
@@ -132,26 +136,57 @@ elaborateTreeM dgHeader dgModule
 tagKindsInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
 tagKindsInGlob pp
 	= transZM (transTableId return)
-		{ transT	= T.transformTM tagKindsT }
+		{ transT	= tagKindsT Map.empty }
 		pp
 		
-tagKindsT :: Type -> ElabM Type
-tagKindsT tt
+tagKindsT :: Map Var Kind -> Type -> ElabM Type
+tagKindsT local tt
  	| TVar _ (UVar v)	<- tt
 	= do	kindMap	<- gets stateKinds 
-		case Map.lookup v kindMap of
+		case listToMaybe $ catMaybes [Map.lookup v kindMap, Map.lookup v local] of
 			Nothing	-> return $ tt
 			Just k'	-> return $ TVar k' $ UVar v
-		
-	| Just (v, _, ts)	<- takeTData tt
+
+	| TCon (TyConData v _ mDef) <- tt
 	= do	kindMap	<- gets stateKinds
-		case Map.lookup v kindMap of
+		case listToMaybe $ catMaybes [Map.lookup v kindMap, Map.lookup v local] of
 			Nothing	-> return tt
-			Just k'	-> return $ makeTData v k' ts
+			Just k'	-> return $ TCon (TyConData v k' mDef)
+
+	| TCon{}		<- tt
+	= return tt
+			
+	| TSum k ts		<- tt
+	= do	ts'	<- mapM (tagKindsT local) ts
+		return	$ TSum k ts'
+	
+	| TApp t1 t2		<- tt
+	= liftM2 TApp (tagKindsT local t1) (tagKindsT local t2)
+	
+	| TForall b k t <- tt
+	, Just v	<- takeVarOfBind b
+	= do	let local'	= Map.insert v k local
+		t'		<- tagKindsT local' t
+		return		$ TForall b k t'
+
+	| TForall b k t <- tt
+	= do	t'		<- tagKindsT local t
+		return		$ TForall b k t'
+
+	| TConstrain t crs	<- tt
+	= do	t'	<- tagKindsT local t
+		crs'	<- tagKindsCrs local crs
+		return	$ TConstrain t' crs'
 		
 	| otherwise
-	= return tt
-
+	= panic stage $ "tagKindsT: no match for " % tt
+		
+tagKindsCrs :: Map Var Kind -> Constraints -> ElabM Constraints
+tagKindsCrs local crs
+ = do	eqs'	<- mapM (tagKindsT local) $ crsEq   crs
+	mores'	<- mapM (tagKindsT local) $ crsMore crs
+	return	$ Constraints eqs' mores' (crsOther crs)
+	
 
 -- Attach -----------------------------------------------------------------------------------------
 -- | Attach DataDefs to all TyCons in a glob.

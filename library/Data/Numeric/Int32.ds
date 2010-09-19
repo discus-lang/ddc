@@ -55,7 +55,7 @@ instance Copy Int32 where
 instance Updatable Int32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		poke (castToPtrInt32 (peekDataRS_payload w1)) (unboxInt32 w2)
+		pokeOn w1 (castToPtrInt32 (peekDataRS_payload w1)) (unboxInt32 w2)
 		()
 
 

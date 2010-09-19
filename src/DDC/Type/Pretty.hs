@@ -180,10 +180,31 @@ pprVarKind vsLocal v k
 -- | Pretty print a binder with its kind.
 pprBindKind :: Bind -> Kind -> PrettyM PMode
 pprBindKind bb k
+ = ifMode 
+	(\mode -> elem PrettyTypeKinds mode || interesting)
+	(pprBindWithKind True bb k)
+	(pprBindWithKind False bb k)
+
+ where	interesting
+	 | Just v	<- takeVarOfBind bb
+	 = kindOfSpace (varNameSpace v) /= Just k
+	
+	 | otherwise
+	 = False
+	
+
+pprBindWithKind :: Bool -> Bind -> Kind -> PrettyM PMode
+pprBindWithKind withKind bb k 
  = case bb of
 	BNil		-> "_ :: " % k
- 	BVar v		-> pprVarKind Set.empty (varWithoutModuleId v) k
-	BMore v t	-> pprVarKind Set.empty (varWithoutModuleId v) k % " :> " % t
+ 	BVar v
+	 | withKind	-> parens $ v %% "::" %% k
+	 | otherwise	-> ppr v
+	
+	BMore v t
+	 | withKind	-> parens $ v %% "::" %% k %% ":>" %% t
+	 | otherwise	-> parens $ v %% ":>" %% t
+	
 	
 
 -- | Pretty print a type, wrapping it in parens if it's not some atomic thing like a `TVar` or `TSum`.

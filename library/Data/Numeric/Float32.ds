@@ -63,7 +63,7 @@ instance Copy Float32 where
 instance Updatable Float32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		poke (castToPtrFloat32 (peekDataRS_payload w1)) (unboxFloat32 w2)
+		pokeOn w1 (castToPtrFloat32 (peekDataRS_payload w1)) (unboxFloat32 w2)
 		()
 
 

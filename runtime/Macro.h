@@ -59,7 +59,9 @@
 
 // These are used in the source code for the DDC.Store library
 #define _PEEK(ptr)		*(ptr)
+#define _PEEKON(ignored,ptr)	*(ptr)
 #define _POKE(ptr,x)		(*ptr = x) 
+#define _POKEON(ignored,ptr,x)	(*ptr = x) 
 #define	_PLUSPTR(ptr,offset)	(ptr + offset)
 
 

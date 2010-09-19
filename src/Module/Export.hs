@@ -186,7 +186,7 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	
 	++ "-- Foreign imports\n"
 	++ (concat [pprStrPlain p 
-			| p@(S.PForeign _ S.OImport{})			<- ps])
+			| p@D.PExtern{}		<- psDesugared])
 	++ "\n"
 
 	-- only export types for bindings that were in scope in the source, and

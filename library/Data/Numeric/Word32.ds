@@ -25,7 +25,7 @@ boxWord32 u
 unboxWord32 :: Word32 -> Word32#
 unboxWord32 w
  = do	w'	= force w
-	peek (castToPtrWord32 (peekDataRS_payload w'))
+	peekOn w (castToPtrWord32 (peekDataRS_payload w'))
 
 
 -- Instances ------------------------------------------------------------------
@@ -52,7 +52,7 @@ instance Copy Word32 where
 instance Updatable Word32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		poke (castToPtrWord32 (peekDataRS_payload w1)) (unboxWord32 w2)
+		pokeOn w1 (castToPtrWord32 (peekDataRS_payload w1)) (unboxWord32 w2)
 		()
 
 
