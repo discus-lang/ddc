@@ -295,7 +295,7 @@ pTyCon
  = do	con	<- pQualified pCon
 	case varNameSpace con of
 		NameEffect 	-> pTyCon_effect con
-		_		-> return $ TCon (TyConData con kValue)
+		_		-> return $ TCon (TyConData con kValue Nothing)
 		
 pTyCon_effect con
  = case varName con of

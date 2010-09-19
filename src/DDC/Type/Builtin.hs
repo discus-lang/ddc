@@ -176,8 +176,8 @@ tElaborateModify = TCon $ TyConElaborate TyConElaborateModify
 tcBool :: DataFormat -> Maybe TyCon
 tcBool fmt
  = case fmt of
-	Unboxed		-> Just $ TyConData (primTBool fmt) kValue
-	Boxed		-> Just $ TyConData (primTBool fmt) (KFun kRegion kValue)
+	Unboxed		-> Just $ TyConData (primTBool fmt) kValue Nothing
+	Boxed		-> Just $ TyConData (primTBool fmt) (KFun kRegion kValue) Nothing
 	_		-> Nothing
 	
 	
@@ -205,18 +205,18 @@ tcChar	= tcTyDataBits primTChar
 tcTyDataBits :: (DataFormat -> Var) -> DataFormat -> TyCon
 tcTyDataBits mkVar fmt
  = case fmt of 
-	Boxed		-> TyConData (mkVar fmt) (KFun kRegion kValue)
-	BoxedBits _	-> TyConData (mkVar fmt) (KFun kRegion kValue)
-	Unboxed		-> TyConData (mkVar fmt) kValue
-	UnboxedBits _	-> TyConData (mkVar fmt) kValue
+	Boxed		-> TyConData (mkVar fmt) (KFun kRegion kValue) Nothing
+	BoxedBits _	-> TyConData (mkVar fmt) (KFun kRegion kValue) Nothing
+	Unboxed		-> TyConData (mkVar fmt) kValue Nothing
+	UnboxedBits _	-> TyConData (mkVar fmt) kValue Nothing
 	
 
 -- | Get the type constructor of a string of this format.
 tcString :: DataFormat -> Maybe TyCon
 tcString fmt
  = case fmt of
-	Unboxed		-> Just $ TyConData (primTString fmt) (KFun kRegion kValue)
-	Boxed		-> Just $ TyConData (primTString fmt) (KFun kRegion kValue)
+	Unboxed		-> Just $ TyConData (primTString fmt) (KFun kRegion kValue) Nothing
+	Boxed		-> Just $ TyConData (primTString fmt) (KFun kRegion kValue) Nothing
 	_		-> Nothing
 
 -- | Get the type constructor used to represent some literal value

@@ -65,7 +65,7 @@ instance DeepSeq TyCon where
  deepSeq xx y
   = case xx of
 	TyConFun 			-> y
-	TyConData 	n k		-> deepSeq n $! deepSeq k y
+	TyConData 	n k _		-> deepSeq n $! deepSeq k y
 	TyConWitness 	c k		-> deepSeq c $! deepSeq k y
 	
 

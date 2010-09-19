@@ -96,12 +96,12 @@ superOpTypePart	tt
 	TConstrain t crs	-> superOpTypePart t
 
 	-- an unboxed var of airity zero, eg Int32#
-	TCon (TyConData name kind)
+	TCon (TyConData name kind _)
 	 | isUnboxedT tt
 	 -> makeTData name kValue []
 
 	-- a tycon of arity zero, eg Unit
-	TCon (TyConData name kind)
+	TCon (TyConData name kind _)
 	 -> makeTData Var.primTData kValue []
 
 	TApp{}

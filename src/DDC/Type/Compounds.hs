@@ -35,6 +35,7 @@ module DDC.Type.Compounds
 	  -- * Data
 	, makeTData
 	, takeTData
+	, takeTDataTC
 	
 	  -- * Sums
   	, makeTSum
@@ -257,7 +258,7 @@ flattenTFuns xx
 -- | Make a data type given the var and kind of its constructor, and its arguments.
 makeTData :: Var -> Kind -> [Type] -> Type
 makeTData v k ts
- 	= makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k }) ts
+ 	= makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k, tyConDataDef = Nothing }) ts
 
 	
 -- | Take a data type from an application.
@@ -274,6 +275,21 @@ takeTData tt
 		
 	_ -> Nothing
 
+
+-- | Like `takeTData` but also give the `TyCon`
+takeTDataTC :: Type -> Maybe (TyCon, [Type])
+takeTDataTC tt
+ = case tt of
+	TCon tc@TyConData{}
+		-> Just (tc, [])
+
+	TApp t1 t2
+	 -> case takeTDataTC t1 of
+	 	Just (tc, ts)	-> Just (tc, ts ++ [t2])
+		Nothing		-> Nothing
+		
+	_ -> Nothing
+		
 
 -- Sums -------------------------------------------------------------------------------------------
 -- | Make a new sum from a list of types.

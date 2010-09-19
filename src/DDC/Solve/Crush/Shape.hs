@@ -153,7 +153,7 @@ crushShapeWithTemplate cidShape srcCrushed diags (Just diagTemplate)
 	
 	-- Lookup the materialities for the type
 	let NCon tc	  	= nTemplateCtor
-	let TyConData v _	= tc
+	let TyConData v _ _	= tc
 	let Just dataDef	= Map.lookup v dataDefs
 	let Just materiality	= paramMaterialityOfDataDef dataDef
 	let kinds		= map snd $ dataDefParams dataDef
@@ -313,7 +313,7 @@ diagShapeConstrainedCid cid
 		Just clsHead     <- lookupClass cidHead
 		
 		case classUnified clsHead of
-		 Just n@(NCon (TyConData _ _))
+		 Just n@(NCon (TyConData _ _ _))
 				-> return $ DiagTemplate cid n cidsApps
 		 _		-> return $ DiagReceiver cid)
 

@@ -13,7 +13,7 @@ where
 import DDC.Var
 import DDC.Type.Exp.KiCon
 import {-# SOURCE #-} DDC.Type.Exp
-
+import {-# SOURCE #-} DDC.Type.Data.Base
 
 -- | Type constructors.
 data TyCon
@@ -23,7 +23,8 @@ data TyCon
 	-- | A data type constructor.
 	| TyConData
 		{ tyConName		:: !Var
-		, tyConDataKind		:: !Kind }
+		, tyConDataKind		:: !Kind 
+		, tyConDataDef		:: !(Maybe DataDef) }
 
 	-- | An effect type constructor.
 	| TyConEffect

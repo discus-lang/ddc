@@ -40,7 +40,7 @@ instance Docable TyCon Str where
 	TyConFun	
 	 -> DLeaf (ppr "TyConFun")
 	
-	TyConData name kind	
+	TyConData name kind _
 	 -> DNode "TyConData"
 	 $  DList
 		[ DNode "name" $ DLeaf $ ppr name

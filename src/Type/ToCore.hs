@@ -99,11 +99,8 @@ toCoreT' ttsMore tt
 
 	-- data
 	TApp t1 t2
-	 | Just (v, k, ts)	<- takeTData tt
-	 -> let tyCon	= TyConData 
-		 		{ tyConName		= v
-				, tyConDataKind	= k }
-	    in  makeTApp (TCon tyCon) (map down ts)
+	 | Just (tc, ts)	<- takeTDataTC tt
+	 -> makeTApp (TCon tc) (map down ts)
 
 	 | Just (t11, t12, eff, clo) <- takeTFun tt
 	 -> makeTFun (down t11) (down t12) (down eff) (down clo)
@@ -145,8 +142,8 @@ toCoreTyCon tt
  = case tt of
  	TyConFun 	 -> TyConFun
 
-	TyConData v k
-	 -> TyConData v (toCoreK k)
+	TyConData v k mDef
+	 -> TyConData v (toCoreK k) mDef
 
 	TyConEffect tc k
 	 -> TyConEffect tc (toCoreK k)
