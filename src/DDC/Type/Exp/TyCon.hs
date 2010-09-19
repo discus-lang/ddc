@@ -47,7 +47,20 @@ data TyCon
 		{ tyConElaborate	:: !TyConElaborate
 		, tyConElaborateKind	:: !Kind }
 
-	deriving (Show, Eq)
+	deriving (Show)
+
+-- When comparing `TyCons` we usually don't want to worry about any
+-- attached kinds or `DataDefs`.
+instance Eq TyCon where
+ (==) tc1 tc2
+  = case (tc1, tc2) of
+	(TyConFun,  		TyConFun)		-> True
+	(TyConData	v1 _ _,	TyConData	v2 _ _)	-> v1 == v2
+	(TyConEffect	v1 _,	TyConEffect 	v2 _)	-> v1 == v2
+	(TyConClosure	v1 _,	TyConClosure	v2 _)	-> v1 == v2
+	(TyConWitness	v1 _,	TyConWitness	v2 _)	-> v1 == v2
+	(TyConElaborate	v1 _,	TyConElaborate	v2 _)	-> v1 == v2
+	_						-> False
 
 
 -- TyConEffect ------------------------------------------------------------------------------------

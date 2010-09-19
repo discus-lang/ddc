@@ -115,9 +115,15 @@ elaborateTreeM dgHeader dgModule
 	-- Elaborate effects and closures
 	dgHeader_effclo	<- elaborateEffCloInGlob dgHeader_rs
 	dgModule_effclo	<- elaborateEffCloInGlob dgModule_rs
+
+	-- Attach data defs
+	-- TODO: merge tagkinds above with this phase to save another walk over the code.
+	let defsAll		= Map.union defsHeader' defsModule'
+	let dgHeader_attach	= attachDataDefsToTyConsInGlob defsAll dgHeader_effclo
+	let dgModule_attach	= attachDataDefsToTyConsInGlob defsAll dgModule_effclo
 	
-	return	( dgHeader_effclo
-		, dgModule_effclo
+	return	( dgHeader_attach
+		, dgModule_attach
 		, constraints)
 
 
@@ -145,6 +151,27 @@ tagKindsT tt
 		
 	| otherwise
 	= return tt
+
+
+-- Attach -----------------------------------------------------------------------------------------
+-- | Attach DataDefs to all TyCons in a glob.
+--   This makes it easy to get the def when consuming the type.
+--
+attachDataDefsToTyConsInGlob :: Map Var DataDef -> Glob SourcePos -> Glob SourcePos
+attachDataDefsToTyConsInGlob defs glob
+	= transZ (transTableId return)
+		{ transT	= \t -> return $ T.transformT (attachDataDefsT defs) t }
+		glob
+
+
+attachDataDefsT :: Map Var DataDef -> Type -> Type
+attachDataDefsT defs tt
+	| TCon (TyConData v k Nothing)	<- tt
+	, Just def			<- Map.lookup v defs
+	= TCon (TyConData v k (Just def))
+	
+	| otherwise
+	= tt
 
 
 -- EffClo -----------------------------------------------------------------------------------------
