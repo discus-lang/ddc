@@ -14,7 +14,6 @@ import 	Base
 
 pragma	cc_includes ["math.h"]
 
-
 -- Boxing ---------------------------------------------------------------------
 foreign import "_boxFloat32"
  boxFloat32 	:: forall %r1
@@ -29,177 +28,91 @@ foreign import "_unboxFloat32"
 
 -- Conversion -----------------------------------------------------------------
 foreign import "primFloat32_toFloat"
- toFloat	:: Int{read} -> Float
+ toFloat32	 :: Int32{read}   -> Float32
 
-
--- Arithmetic -----------------------------------------------------------------
-foreign import "primFloat32_neg"
- primFloat32_neg	:: Float{read} -> Float
-
-foreign import "primFloat32_add"
- primFloat32_add	:: Float{read} -> Float{read} -> Float
-
-foreign import "primFloat32_sub"
- primFloat32_sub	:: Float{read} -> Float{read} -> Float
-
-foreign import "primFloat32_mul"
- primFloat32_mul	:: Float{read} -> Float{read} -> Float
-
-foreign import "primFloat32_div"
- primFloat32_div	:: Float{read} -> Float{read} -> Float
-
-foreign import "fmodf"
- fmodU :: Float32# -> Float32# -> Float32#
-
-fmod x y		= boxFloat32 (fmodU (unboxFloat32 x) (unboxFloat32 y))
-
-
--- Comparisons ----------------------------------------------------------------
-foreign import "primFloat32_eq"
- primFloat32_eq		:: Float{read} -> Float{read} -> Bool
-
-foreign import "primFloat32_neq"
- primFloat32_neq	:: Float{read} -> Float{read} -> Bool
-
-foreign import "primFloat32_gt"
- primFloat32_gt		:: Float{read} -> Float{read} -> Bool
-
-foreign import "primFloat32_ge"
- primFloat32_ge		:: Float{read} -> Float{read} -> Bool
-
-foreign import "primFloat32_lt"
- primFloat32_lt		:: Float{read} -> Float{read} -> Bool
-
-foreign import "primFloat32_le"
- primFloat32_le		:: Float{read} -> Float{read} -> Bool
-
-
--- Update ---------------------------------------------------------------------
-foreign import "primFloat32_update"
- primFloat32_update	:: Float{write} -> Float{read} -> ()
+foreign import "primFloat32_truncate"
+ truncateFloat32 :: Float32{read} -> Int32
 
 
 -- Trig -----------------------------------------------------------------------
-foreign import "sinf"
- sinU	:: Float32# -> Float32#
+sin x		= boxFloat32 (primFloat32U_sin   (unboxFloat32 x))
+asin x		= boxFloat32 (primFloat32U_asin  (unboxFloat32 x))
+cos x		= boxFloat32 (primFloat32U_cos   (unboxFloat32 x))
+acos x		= boxFloat32 (primFloat32U_acos  (unboxFloat32 x))
+tan x		= boxFloat32 (primFloat32U_tan   (unboxFloat32 x))
+atan x		= boxFloat32 (primFloat32U_atan  (unboxFloat32 x))
 
-foreign import "asinf"
- asinU	:: Float32# -> Float32#
 
-foreign import "cosf"
- cosU	:: Float32# -> Float32#
- 
-foreign import "acosf"
- acosU	:: Float32# -> Float32#
+-- Utils ----------------------------------------------------------------------
+ftrunc x	= boxFloat32 (primFloat32U_ftrunc  (unboxFloat32 x))
+fround x 	= boxFloat32 (primFloat32U_fround  (unboxFloat32 x))
+ffloor x	= boxFloat32 (primFloat32U_ffloor  (unboxFloat32 x))
 
-foreign import "tanf"
- tanU	:: Float32# -> Float32#
- 
-foreign import "atanf"
- atanU	:: Float32# -> Float32#
+fmod x y	= boxFloat32 (primFloat32U_fmod    (unboxFloat32 x) (unboxFloat32 y))
+fpow x y  	= boxFloat32 (primFloat32U_fpow    (unboxFloat32 x) (unboxFloat32 y))
 
-foreign import "sqrtf"
- sqrtU	:: Float32# -> Float32#
-
-foreign import "truncf"
- truncU	:: Float32# -> Float32#
-
-foreign import "powf"
- fpowU	:: Float32# -> Float32# -> Float32#
-
-sin x	= boxFloat32 (sinU   (unboxFloat32 x))
-asin x	= boxFloat32 (asinU  (unboxFloat32 x))
-cos x	= boxFloat32 (cosU   (unboxFloat32 x))
-acos x	= boxFloat32 (acosU  (unboxFloat32 x))
-tan x	= boxFloat32 (tanU   (unboxFloat32 x))
-atan x	= boxFloat32 (atanU  (unboxFloat32 x))
-sqrt x	= boxFloat32 (sqrtU  (unboxFloat32 x))
-trunc x = boxFloat32 (truncU (unboxFloat32 x))
+sqrt x		= boxFloat32 (primFloat32U_sqrt    (unboxFloat32 x))
+abs  x	  	= boxFloat32 (primFloat32U_abs     (unboxFloat32 x))
+log  x		= boxFloat32 (primFloat32U_log     (unboxFloat32 x))
 
 
 -- Instances ------------------------------------------------------------------
-instance Copy Float where
-	copy x		= boxFloat32 (unboxFloat32 x)
+instance Eq Float32 where
+	(==) x y	= boxBool   (primFloat32U_eq  (unboxFloat32 x) (unboxFloat32 y))
+	(/=) x y	= boxBool   (primFloat32U_neq (unboxFloat32 x) (unboxFloat32 y))
+		
 
+instance Ord Float32 where
+	(>) x y		= boxBool   (primFloat32U_gt  (unboxFloat32 x) (unboxFloat32 y))
+	(<) x y		= boxBool   (primFloat32U_lt  (unboxFloat32 x) (unboxFloat32 y))
+	(>=) x y	= boxBool   (primFloat32U_ge  (unboxFloat32 x) (unboxFloat32 y))
+	(<=) x y	= boxBool   (primFloat32U_le  (unboxFloat32 x) (unboxFloat32 y))
 
-instance Eq Float where
-	(==)		= primFloat32_eq
-	(/=)		= primFloat32_neq
-
-
-instance Ord Float where
-	(>)		= primFloat32_gt
-	(>=)		= primFloat32_ge
-
-	(<)		= primFloat32_lt
-	(<=)		= primFloat32_le
-	
 	compare x y
-	 | x < y	=  LT
-	 | x > y	=  GT
-	 \= EQ
+	 | x == y	=  EQ
+	 | x <  y	=  LT
+	 		\= GT
 
-instance Num Float where
-	(+)		= primFloat32_add
-	(-)		= primFloat32_sub
-	(*)		= primFloat32_mul
-	negate		= primFloat32_neg
+	min x y		= if x <= y then x else y
+	max x y		= if x >= y then x else y
+
+
+instance Copy Float32 where
+ 	copy x 		= boxFloat32 (unboxFloat32 x)
+
+
+instance Updatable Float32 where
+	(:=) w1 w2
+	 = do	w1'	= force w1
+		poke (castToPtrFloat32 (peekDataRS_payload w1)) (unboxFloat32 w2)
+		()
+
+
+instance Num Float32 where
+	negate x 	= boxFloat32 (primFloat32U_neg (unboxFloat32 x))
+	(+) x y		= boxFloat32 (primFloat32U_add (unboxFloat32 x) (unboxFloat32 y))
+	(-) x y		= boxFloat32 (primFloat32U_sub (unboxFloat32 x) (unboxFloat32 y))
+	(*) x y		= boxFloat32 (primFloat32U_mul (unboxFloat32 x) (unboxFloat32 y))
 
 
 instance Fractional Float where
-	(/)		= primFloat32_div
+	(/) x y		= boxFloat32 (primFloat32U_div  (unboxFloat32 x) (unboxFloat32 y))
 
 
-instance Updatable Float where
-	(:=)		= primFloat32_update
+instance Accum Float32 where
+	(+=) a b	= a := (a + b)
 
 
-instance Accum Float where
-	(+=) a b 	= primFloat32_update a (primFloat32_add a b)
-
-
--- 
-foreign import "logf"
- logU   :: Float32# -> Float32#
-
-foreign import "floorf"
- floorfU :: Float32# -> Float32#
-
-foreign import "roundf"
- roundfU :: Float32# -> Float32#
-
-foreign import "fabsf"
- fabsU  :: Float32# -> Float32#
-
-log   x	  = boxFloat32 (logU   (unboxFloat32 x))
-fabs x	  = boxFloat32 (fabsU  (unboxFloat32 x))
-fpow x y  = boxFloat32 (fpowU  (unboxFloat32 x) (unboxFloat32 y))
-roundf x  = boxFloat32 (roundfU (unboxFloat32 x))
-floorf x  = boxFloat32 (floorfU (unboxFloat32 x))
-
--- conversion
-foreign import "primFloat32_truncate"
- truncate :: Float{read} -> Int
-
+-- Other ----------------------------------------------------------------------
 -- The Haskell versions of round and floor are also conversions.
-round x = truncate (roundf x)
-floor x = truncate (floorf x)
+roundFloat32 x = truncateFloat32 (fround x)
+floorFloat32 x = truncateFloat32 (ffloor x)
 
 project Float where
-	
-	min :: Float -> Float -> Float
-	min x y
-	 = if x < y	then x
-			else y
+ clamp :: Float -> Float -> Float -> Float 
+ clamp x a b
+	| x < a		= a
+	| x > b		= b
+	| otherwise	= x
 
-	max :: Float -> Float -> Float		
-	max x y
-	 = if x > y	then x
- 			else y
 
-	clamp :: Float -> Float -> Float -> Float 
-	clamp x a b
-		| x < a		= a
-		| x > b		= b
-		| otherwise	= x
-	

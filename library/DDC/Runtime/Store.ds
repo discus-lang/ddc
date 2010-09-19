@@ -4,10 +4,6 @@
 --	This gives direct access to the store.
 --	Sooo many ways to crash and burn
 --
-
--- All low level operations should have this effect.
---	But we can't mask it yet so its been left out.
---	Make sure your stmts have enough data dependencies, else badness.
 module	DDC.Runtime.Store
 import	Base
 
@@ -69,6 +65,11 @@ foreign import "(Int64 *)"
  castToPtrInt64
  	:: forall a
 	.  Ptr# a -> Ptr# Int64#
+
+foreign import "(Float32 *)"
+ castToPtrFloat32
+ 	:: forall a
+	.  Ptr# a -> Ptr# Float32#
 
 foreign import "(Char32 *)"
  castToPtrChar32

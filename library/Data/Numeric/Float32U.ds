@@ -1,10 +1,5 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
--- Primitive functions for unboxed Float32 operations.
---	There are no actual C functions associated with these.
---	We define them so the type inferencer has a schemes for them.
---
-
 module	Data.Numeric.Float32U
 
 import	Class.Eq
@@ -29,9 +24,6 @@ foreign import "primFloat32U_mul"
 foreign import "primFloat32U_div"
  primFloat32U_div	:: Float32# -> Float32# -> Float32#
 
-foreign import "primFloat32U_mod"
- primFloat32U_mod	:: Float32# -> Float32# -> Float32#
-
 
 -- Comparisons ----------------------------------------------------------------
 foreign import "primFloat32U_eq"
@@ -53,19 +45,55 @@ foreign import "primFloat32U_le"
  primFloat32U_le	:: Float32# -> Float32# -> Bool#
 
 
+-- Trig -----------------------------------------------------------------------
+foreign import "sinf"
+ primFloat32U_sin	:: Float32# -> Float32#
+
+foreign import "asinf"
+ primFloat32U_asin	:: Float32# -> Float32#
+
+foreign import "cosf"
+ primFloat32U_cos	:: Float32# -> Float32#
+ 
+foreign import "acosf"
+ primFloat32U_acos	:: Float32# -> Float32#
+
+foreign import "tanf"
+ primFloat32U_tan	:: Float32# -> Float32#
+ 
+foreign import "atanf"
+ primFloat32U_atan	:: Float32# -> Float32#
+
+
+-- Utils ----------------------------------------------------------------------
+foreign import "truncf"
+ primFloat32U_ftrunc	:: Float32# -> Float32#
+
+foreign import "roundf"
+ primFloat32U_fround	:: Float32# -> Float32#
+
+foreign import "floorf"
+ primFloat32U_ffloor	:: Float32# -> Float32#
+
+foreign import "fmodf"
+ primFloat32U_fmod	:: Float32# -> Float32# -> Float32#
+
+foreign import "powf"
+ primFloat32U_fpow	:: Float32# -> Float32# -> Float32#
+
+foreign import "sqrtf"
+ primFloat32U_sqrt	:: Float32# -> Float32#
+
+foreign import "fabsf"
+ primFloat32U_abs  	:: Float32# -> Float32#
+
+foreign import "logf"
+ primFloat32U_log	:: Float32# -> Float32#
+
+
+
+
 -- Instances ------------------------------------------------------------------
-
-instance Num Float32# where 
- 	(+) 		= primFloat32U_add
-	(-) 		= primFloat32U_sub
-	(*) 		= primFloat32U_mul
-	negate		= primFloat32U_neg
-
-
-instance Fractional Float32# where
-	(/) 		= primFloat32U_div
-
-
 instance Eq Float32# where
 	(==) x y	= boxBool (primFloat32U_eq  x y)
 	(/=) x y	= boxBool (primFloat32U_neq x y)
@@ -77,4 +105,14 @@ instance Ord Float32# where
 	(>=)		= primFloat32U_ge
 	(<=)		= primFloat32U_le
 
+
+instance Num Float32# where 
+ 	(+) 		= primFloat32U_add
+	(-) 		= primFloat32U_sub
+	(*) 		= primFloat32U_mul
+	negate		= primFloat32U_neg
+
+
+instance Fractional Float32# where
+	(/) 		= primFloat32U_div
 

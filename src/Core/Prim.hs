@@ -279,18 +279,6 @@ unboxableFuns
 	  ("&&",		(OpAnd,	opD3U2))
 	, ("||",		(OpOr,	opD3U2))
 
-	-- boxed float32 functions
-	, ("primFloat32_add",	(OpAdd,	opD3U2))
-	, ("primFloat32_sub",	(OpSub,	opD3U2))
-	, ("primFloat32_div",	(OpDiv,	opD3U2))
-	, ("primFloat32_mul",	(OpMul,	opD3U2))
-	, ("primFloat32_eq",	(OpEq,	opD3U2))
-	, ("primFloat32_neq",	(OpNeq,	opD3U2))
-	, ("primFloat32_gt",	(OpGt,	opD3U2))
-	, ("primFloat32_ge",	(OpGe,	opD3U2))
-	, ("primFloat32_lt",	(OpLt,	opD3U2))
-	, ("primFloat32_le",	(OpLe,	opD3U2))
-
 	-- boxed float64 functions
 	, ("primFloat64_add",	(OpAdd,	opD3U2))
 	, ("primFloat64_sub",	(OpSub,	opD3U2))
@@ -311,6 +299,22 @@ primFuns
 
 	-- unboxed ptr functions
 	[ ("primPtrVoid_eq",	OpEq)
+
+	-- Word32U
+	, ("primWord32U_neg",	OpNeg) 
+
+	, ("primWord32U_add",	OpAdd)
+	, ("primWord32U_sub",	OpSub)
+	, ("primWord32U_mul",	OpMul)
+	, ("primWord32U_div",	OpDiv)
+	, ("primWord32U_mod",	OpMod)
+
+	, ("primWord32U_eq",	OpEq)
+	, ("primWord32U_neq",	OpNeq)
+	, ("primWord32U_gt",	OpGt)
+	, ("primWord32U_ge",	OpGe)
+	, ("primWord32U_lt",	OpLt)
+	, ("primWord32U_le",	OpLe) 
 
 	-- Int32U
  	, ("primInt32U_neg",	OpNeg)
@@ -344,21 +348,6 @@ primFuns
 	, ("primInt64U_lt",	OpLt)
 	, ("primInt64U_le",	OpLe) 
 
-	-- Word32U
-	, ("primWord32U_neg",	OpNeg) 
-
-	, ("primWord32U_add",	OpAdd)
-	, ("primWord32U_sub",	OpSub)
-	, ("primWord32U_mul",	OpMul)
-	, ("primWord32U_div",	OpDiv)
-	, ("primWord32U_mod",	OpMod)
-
-	, ("primWord32U_eq",	OpEq)
-	, ("primWord32U_neq",	OpNeq)
-	, ("primWord32U_gt",	OpGt)
-	, ("primWord32U_ge",	OpGe)
-	, ("primWord32U_lt",	OpLt)
-	, ("primWord32U_le",	OpLe) 
 	
 	-- Float32U
 	, ("primFloat32U_neg",	OpNeg)
@@ -367,9 +356,7 @@ primFuns
 	, ("primFloat32U_sub",	OpSub)
 	, ("primFloat32U_mul",	OpMul) 
 	, ("primFloat32U_div",	OpDiv)
-	, ("primFloat32U_mod",	OpMod)
 
-	-- unboxed float comparisons
 	, ("primFloat32U_eq",	OpEq)
 	, ("primFloat32U_neq",	OpNeq)
 	, ("primFloat32U_gt",	OpGt)
