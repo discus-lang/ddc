@@ -55,20 +55,25 @@ foreign import "(Word8 *)"
  	:: forall a
 	.  Ptr# a -> Ptr# Word8#
 
-foreign import "(Char32 *)"
- castToPtrChar32
- 	:: forall a 
- 	.  Ptr# a -> Ptr# Char32#
+foreign import "(Word32 *)"
+ castToPtrWord32
+ 	:: forall a
+	.  Ptr# a -> Ptr# Word32#
 
 foreign import "(Int32 *)"
  castToPtrInt32
  	:: forall a
 	.  Ptr# a -> Ptr# Int32#
 
-foreign import "(Word32 *)"
- castToPtrWord32
+foreign import "(Int64 *)"
+ castToPtrInt64
  	:: forall a
-	.  Ptr# a -> Ptr# Word32#
+	.  Ptr# a -> Ptr# Int64#
+
+foreign import "(Char32 *)"
+ castToPtrChar32
+ 	:: forall a 
+ 	.  Ptr# a -> Ptr# Char32#
 
 
 -- TODO: redo these as peek/poke functions.

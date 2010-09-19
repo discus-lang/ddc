@@ -21,14 +21,15 @@ import	Control.Imperative
 	
 import	Data.Bool
 import	Data.BoolU
+import  Data.Numeric.Word32
+import	Data.Numeric.Word32U
 import	Data.Numeric.Int32
 import	Data.Numeric.Int32U
 import	Data.Numeric.Int64
+import	Data.Numeric.Int64U
 import	Data.Numeric.Float32
 import	Data.Numeric.Float32U
 import	Data.Numeric.Float64
-import  Data.Numeric.Word32
-import	Data.Numeric.Word32U
 import	Data.ArrayU
 import	Data.Array
 import	Data.Char

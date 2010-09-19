@@ -1,36 +1,31 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-module	Class.Num
-import	Base
+module Class.Integral
+import Base
 
-infixl 7 *
-infixl 6 +, - 
+infixl 7  `quot`, `rem`, `div`, `mod`
 
-class Num a where 
+class Integral a where
 
-	(+)	:: forall b c
+	quot	:: forall b c
 		.  a -> b -(!e1 $c1)> c
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
 		,  Shape3 a b c
 
-	(-)	:: forall b c
+	rem	:: forall b c
 		.  a -> b -(!e1 $c1)> c
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
 		,  Shape3 a b c
 
-	(*)	:: forall b c
+	div	:: forall b c
 		.  a -> b -(!e1 $c1)> c
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
 		,  Shape3 a b c
 
-	negate :: forall b
-	 	.  a -(!ReadT a)> b
-		:- Shape2 a b
-	
-	pow 	:: forall b c
+	mod	:: forall b c
 		.  a -> b -(!e1 $c1)> c
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a

@@ -27,7 +27,7 @@ randomList len = do
     update mem = do
         x = 1664525 * mem + 1013904223 	
         mem := x
-        (x / 32716) `mod` 100
+        (x `div` 32716) `mod` 100
 
 
 

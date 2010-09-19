@@ -11,6 +11,11 @@ data Ordering %r1
 
 -- The class of types which support ordering
 class Ord a where 
+	compare :: forall b %r1
+		. a -> b -(!e1 $c1)> Ordering %r1
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		, $c1 = x : a
+		, Shape2 a b
 
 	(>)	:: forall b %r1
 		.  a -> b -(!e1 $c1)> Bool %r1
@@ -36,8 +41,11 @@ class Ord a where
 		,  $c1 = x : a
 		,  Shape2 a b
 
-	compare :: forall b %r1
-		. a -> b -(!e1 $c1)> Ordering %r1
-		:- !e1 = !{ !ReadT a; !ReadT b }
-		, $c1 = x : a
-		, Shape2 a b
+	min	::  a -> a -(!e1 $c1)> a
+		:- !e1 = !ReadT a
+		,  $c1 = x : a
+
+	max	::  a -> a -(!e1 $c1)> a
+		:- !e1 = !ReadT a
+		,  $c1 = x : a
+		

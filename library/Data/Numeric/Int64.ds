@@ -2,142 +2,78 @@
 
 module	Data.Numeric.Int64
 
-import	Base
-	Data.Bool
-	Class.Copy
+import	Data.Numeric.Int64U
+	DDC.Runtime.Store
+	DDC.Runtime.Alloc
 	Class.Eq
-	Class.Num
 	Class.Ord
-	Class.Show
+	Class.Num
+	Class.Integral
+	Class.Copy
 	Class.Update
-	Data.String
+	Base.Thunk
 
 
+-- Boxing ---------------------------------------------------------------------
 foreign import "_boxInt64"
- boxInt64	:: Int64# -> Int64
+ boxInt64 	:: Int64# -> Int64
 		:$ Int64# -> Obj
 
 foreign import "_unboxInt64"
  unboxInt64	:: Int64{read} -> Int64#
 		:$ Obj -> Int64#
 
--- math
-foreign import "primInt64_neg"
- primInt64_neg  :: Int64{read} -> Int64
 
-foreign import "primInt64_add"
- primInt64_add	:: Int64{read} -> Int64{read} -> Int64
-
-foreign import "primInt64_sub"
- primInt64_sub	:: Int64{read} -> Int64{read} -> Int64
-
-foreign import "primInt64_mul"
- primInt64_mul	:: Int64{read} -> Int64{read} -> Int64
-
-foreign import "primInt64_div"
- primInt64_div	:: Int64{read} -> Int64{read} -> Int64
-
-foreign import "primInt64_mod"
- primInt64_mod	:: Int64{read} -> Int64{read} -> Int64
-
--- comparisons
-foreign import "primInt64_eq"
- primInt64_eq	:: Int64{read} -> Int64{read} -> Bool
-
-foreign import "primInt64_neq"
- primInt64_neq	:: Int64{read} -> Int64{read} -> Bool
-
-foreign import "primInt64_gt"
- primInt64_gt	:: Int64{read} -> Int64{read} -> Bool
-
-foreign import "primInt64_lt"
- primInt64_lt	:: Int64{read} -> Int64{read} -> Bool
-
-foreign import "primInt64_ge"
- primInt64_ge	:: Int64{read} -> Int64{read} -> Bool
-
-foreign import "primInt64_le"
- primInt64_le	:: Int64{read} -> Int64{read} -> Bool
-
--- update
-foreign import "primInt64_update"
- primInt64_update
-	:: Int64{write} -> Int64{read} -> ()
-
-instance Show Int64 where
-	show x = string_Int64 x
-
-instance Copy Int64 where
-	copy x		= boxInt64 (unboxInt64 x)
-
-instance Updatable Int64 where
-	(:=)		= primInt64_update
-
+-- Instances ------------------------------------------------------------------
 instance Eq Int64 where
-	(==)		= primInt64_eq
-	(/=)		= primInt64_neq
+	(==) x y	= boxBool   (primInt64U_eq  (unboxInt64 x) (unboxInt64 y))
+	(/=) x y	= boxBool   (primInt64U_neq (unboxInt64 x) (unboxInt64 y))
+		
 
 instance Ord Int64 where
-	(>)		= primInt64_gt
-	(<)		= primInt64_lt
-	(>=)		= primInt64_ge
-	(<=)		= primInt64_le
+	(>) x y		= boxBool   (primInt64U_gt  (unboxInt64 x) (unboxInt64 y))
+	(<) x y		= boxBool   (primInt64U_lt  (unboxInt64 x) (unboxInt64 y))
+	(>=) x y	= boxBool   (primInt64U_ge  (unboxInt64 x) (unboxInt64 y))
+	(<=) x y	= boxBool   (primInt64U_le  (unboxInt64 x) (unboxInt64 y))
 
 	compare x y
 	 | x == y	=  EQ
 	 | x <  y	=  LT
-			\= GT
+	 		\= GT
+
+	min x y		= if x <= y then x else y
+	max x y		= if x >= y then x else y
+
+
+instance Copy Int64 where
+ 	copy x 		= boxInt64 (unboxInt64 x)
+
+
+instance Updatable Int64 where
+	(:=) w1 w2
+	 = do	w1'	= force w1
+		poke (castToPtrInt64 (peekDataRS_payload w1)) (unboxInt64 w2)
+		()
+
 
 instance Num Int64 where
-	(+)		= primInt64_add
-	(-)		= primInt64_sub
-	(*)		= primInt64_mul
-	(/)		= primInt64_div
-	mod		= primInt64_mod
-	negate		= primInt64_neg
+	negate x 	= boxInt64 (primInt64U_neg (unboxInt64 x))
+	(+) x y		= boxInt64 (primInt64U_add (unboxInt64 x) (unboxInt64 y))
+	(-) x y		= boxInt64 (primInt64U_sub (unboxInt64 x) (unboxInt64 y))
+	(*) x y		= boxInt64 (primInt64U_mul (unboxInt64 x) (unboxInt64 y))
+
+	pow x n = pow' n 1i64
+	 where	pow' :: Int64 -> Int64 -> Int64
+		pow' 0i64 acc = acc
+		pow' n    acc = pow' (n - 1i64) (acc * x)
+
+
+instance Integral Int64 where
+	div x y		= boxInt64 (primInt64U_div (unboxInt64 x) (unboxInt64 y))
+	mod x y		= boxInt64 (primInt64U_mod (unboxInt64 x) (unboxInt64 y))
+	
 
 instance Accum Int64 where
-	(+=) a b	= primInt64_update a (primInt64_add a b)
-
-
------
-
-{-=(<>) :: Int64 -> (Int64 -> Int64) -> ()
-(<>) x f
- = do	x'	= f x
-	x	:= x'
-=-}
-
-inc64 x	= x + 1i64
-
-project Int64 where
-
-	min :: Int64 -> Int64 -> Int64
-	min x y
-	 = if x < y	then x
-			else y
-
-	max :: Int64 -> Int64 -> Int64
-	max x y
-	 = if x > y	then x
-			else y
-
-foreign import "primInt64_to_string"
- primInt64_to_string :: Int64# -> String# -> Int32# -> ()
-
-string_Int64 :: Int64 -> String
-string_Int64 i
- = do	maxLen	= 40
-	maxLenU	= unboxInt32 maxLen
-	iU	= unboxInt64 i
-
-	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
-
-	-- Safe and correct for 32 and 64 bit systems.
-	primInt64_to_string iU strU maxLenU
-	fs.setLengthU (stringU_length strU)
-
-	SChunk fs
+	(+=) a b	= a := (a + b)
 
 

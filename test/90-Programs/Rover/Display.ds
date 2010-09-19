@@ -15,8 +15,8 @@ scale		= 2.0
 updateFrame :: Rover -> Frame -> ()
 updateFrame rover frame
  = do	-- center point
- 	cX	= toFloat $ winSizeX / 2
- 	cY	= toFloat $ winSizeY / 2
+ 	cX	= toFloat $ winSizeX `div` 2
+ 	cY	= toFloat $ winSizeY `div` 2
  
 	frame.clear (color&{Frame} 0 0 0)
  	renderPrims frame

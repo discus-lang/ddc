@@ -41,8 +41,8 @@ project Frame where
 	-- make an RGB value from a color
 	rgbOfColor :: Int -> (Int, Int, Int)
 	rgbOfColor color
-	 = 	( (color / (256 * 256)) `mod` 256
-		, (color / 256) 	`mod` 256
+	 = 	( (color `div` (256 * 256)) `mod` 256
+		, (color `div` 256) 	`mod` 256
 		,  color `mod` 256)
 
 	-- clear the frame

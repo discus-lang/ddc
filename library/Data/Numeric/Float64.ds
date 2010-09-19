@@ -9,6 +9,8 @@ import	Base
 	Class.Eq
 	Class.Num
 	Class.Ord
+	Class.Show
+	Class.Fractional
 
 pragma	cc_includes ["math.h"]
 
@@ -99,8 +101,11 @@ instance Num Float64 where
 	(+)		= primFloat64_add
 	(-)		= primFloat64_sub
 	(*)		= primFloat64_mul
-	(/)		= primFloat64_div
 	negate		= primFloat64_neg
+
+
+instance Fractional Float64 where
+	(/)		= primFloat64_div
 
 
 instance Updatable Float64 where

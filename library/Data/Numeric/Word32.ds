@@ -6,10 +6,11 @@ import	Data.Numeric.Word32U
 	DDC.Runtime.Store
 	DDC.Runtime.Alloc
 	Class.Eq
-	Class.Num
 	Class.Ord
 	Class.Copy
 	Class.Update
+	Class.Num
+	Class.Integral
 	Base.Thunk
 
 
@@ -28,20 +29,6 @@ unboxWord32 w
 
 
 -- Instances ------------------------------------------------------------------
-instance Num Word32 where
-	negate x 	= boxWord32 (primWord32U_neg (unboxWord32 x))
-	(+) x y		= boxWord32 (primWord32U_add (unboxWord32 x) (unboxWord32 y))
-	(-) x y		= boxWord32 (primWord32U_sub (unboxWord32 x) (unboxWord32 y))
-	(*) x y		= boxWord32 (primWord32U_mul (unboxWord32 x) (unboxWord32 y))
-	(/) x y		= boxWord32 (primWord32U_div (unboxWord32 x) (unboxWord32 y))
-	mod x y		= boxWord32 (primWord32U_mod (unboxWord32 x) (unboxWord32 y))
-
-	pow x n = pow' n 1u32
-	 where	pow' :: Word32 -> Word32 -> Word32
-		pow' 0u32 acc = acc
-		pow' n    acc = pow' (n - 1u32) (acc * x)
-
-
 instance Eq Word32 where
 	(==) x y	= boxBool   (primWord32U_eq  (unboxWord32 x) (unboxWord32 y))
 	(/=) x y	= boxBool   (primWord32U_neq (unboxWord32 x) (unboxWord32 y))
@@ -67,6 +54,23 @@ instance Updatable Word32 where
 	 = do	w1'	= force w1
 		poke (castToPtrWord32 (peekDataRS_payload w1)) (unboxWord32 w2)
 		()
+
+
+instance Num Word32 where
+	negate x 	= boxWord32 (primWord32U_neg (unboxWord32 x))
+	(+) x y		= boxWord32 (primWord32U_add (unboxWord32 x) (unboxWord32 y))
+	(-) x y		= boxWord32 (primWord32U_sub (unboxWord32 x) (unboxWord32 y))
+	(*) x y		= boxWord32 (primWord32U_mul (unboxWord32 x) (unboxWord32 y))
+
+	pow x n = pow' n 1u32
+	 where	pow' :: Word32 -> Word32 -> Word32
+		pow' 0u32 acc = acc
+		pow' n    acc = pow' (n - 1u32) (acc * x)
+
+
+instance Integral Word32 where
+	div x y		= boxWord32 (primWord32U_div (unboxWord32 x) (unboxWord32 y))
+	mod x y		= boxWord32 (primWord32U_mod (unboxWord32 x) (unboxWord32 y))
 
 
 instance Accum Word32 where

@@ -78,7 +78,7 @@ danger_string str@(FlatString)
 ----------------------------------------------------------------------------------------------------
 
 -- | Create a new string with this length on the heap
-new :: Int -> FlatString
+new :: Int32 -> FlatString
 new length
  = do 
 	-- make sure to include space for the nul char on the end.

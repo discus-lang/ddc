@@ -54,9 +54,13 @@ instance Show String where
  show  ss 	= "'" % copy ss % "'"
  showL ss	= "'" % copy @ ss % "'"
 
-instance Show Int where
+instance Show Int32 where
  show  ss	= string_Int32 ss
  showL ss	= string_Int32 @ ss
+
+instance Show Int64 where
+ show  ss	= string_Int64 ss
+ showL ss	= string_Int64 @ ss
 
 instance Show Int32# where
  show  ss	= string_Int32 (boxInt32 ss)
@@ -66,11 +70,9 @@ instance Show Word32 where
  show  ss	= string_Word32 ss
  showL ss	= string_Word32 @ ss
 
-
 instance Show Float where
  show  ss	= string_Float32 ss
  showL ss	= string_Float32 @ ss
-
  
 instance Show [Int] where
  show  ss	= showList  show  ss

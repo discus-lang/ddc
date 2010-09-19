@@ -1,0 +1,14 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+module Class.Fractional
+import Base
+
+infixl 8 /
+
+class Fractional a where
+
+	(/)	:: forall b c
+		.  a -> b -(!e1 $c1)> c
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		,  $c1 = x : a
+		,  Shape3 a b c

@@ -260,7 +260,7 @@ data Action
 --	We tend to ignore type arguments, and unbox boxed values.
 
 -- opI3U2	= [Ignore, Ignore, Ignore, Unbox, Unbox]
-opD1U1	= [Discard, Discard, Unbox]
+-- opD1U1	= [Discard, Discard, Unbox]
 opD3U2	= [Discard, Discard, Discard, Unbox, Unbox]
 
 ----------------------------------------------------------------------------------------------------
@@ -275,24 +275,8 @@ unboxableFuns
  = Map.fromList
 
 	[
-	-- boxed int64 functions
-	  ("primInt64_neg",	(OpNeg, opD1U1))
-	, ("primInt64_add",	(OpAdd,	opD3U2))
-	, ("primInt64_sub",	(OpSub,	opD3U2))
-	, ("primInt64_div",	(OpDiv,	opD3U2))
-	, ("primInt64_mod",	(OpMod,	opD3U2))
-	, ("primInt64_mul",	(OpMul,	opD3U2))
-
-	-- boxed Int64 comparisions
-	, ("primInt64_eq",	(OpEq,	opD3U2))
-	, ("primInt64_neq",	(OpNeq,	opD3U2))
-	, ("primInt64_gt",	(OpGt,	opD3U2))
-	, ("primInt64_ge",	(OpGe,	opD3U2))
-	, ("primInt64_lt",	(OpLt,	opD3U2))
-	, ("primInt64_le",	(OpLe,	opD3U2))
-
 	-- boxed boolean functions
-	, ("&&",		(OpAnd,	opD3U2))
+	  ("&&",		(OpAnd,	opD3U2))
 	, ("||",		(OpOr,	opD3U2))
 
 	-- boxed float32 functions
@@ -343,6 +327,22 @@ primFuns
 	, ("primInt32U_ge",	OpGe)
 	, ("primInt32U_lt",	OpLt)
 	, ("primInt32U_le",	OpLe) 
+
+	-- Int64U
+ 	, ("primInt64U_neg",	OpNeg)
+	
+	, ("primInt64U_add",	OpAdd)
+	, ("primInt64U_sub",	OpSub)
+	, ("primInt64U_mul",	OpMul) 
+	, ("primInt64U_div",	OpDiv)
+	, ("primInt64U_mod",	OpMod)
+
+	, ("primInt64U_eq",	OpEq)
+	, ("primInt64U_neq",	OpNeq)
+	, ("primInt64U_gt",	OpGt)
+	, ("primInt64U_ge",	OpGe)
+	, ("primInt64U_lt",	OpLt)
+	, ("primInt64U_le",	OpLe) 
 
 	-- Word32U
 	, ("primWord32U_neg",	OpNeg) 

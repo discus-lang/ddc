@@ -2,7 +2,7 @@
 main ()
  = do
 	-- Output: [3.5,7.0,10.5,14.0]
- 	println $ show [x + 2 * x + x / 2 | x <- [one,2,3,4]]
+ 	println $ show [x + 2 * x + x `div` 2 | x <- [one,2,3,4]]
 	
 	-- Output: [3,5,7,9,6,10,14,18,9,15,21,27,12,20,28,36]
 	println $ show [ x * y | x <- [one,2,3,4], y <- [3,5,7,9]]

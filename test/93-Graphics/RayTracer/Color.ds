@@ -37,6 +37,7 @@ instance Num Color where
 	(*) (Color r1 g1 b1) (Color r2 g2 b2)
 		= Color (r1 * r2) (g1 * g2) (b1 * b2)
 
+instance Fractional Color where
 	(/) (Color r1 g1 b1) (Color r2 g2 b2)
 		= Color (r1 / r2) (g1 / g2) (b1 / b2)
 

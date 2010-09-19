@@ -6,17 +6,16 @@ import	Data.Numeric.Int32U
 	DDC.Runtime.Store
 	DDC.Runtime.Alloc
 	Class.Eq
-	Class.Num
 	Class.Ord
 	Class.Copy
 	Class.Update
+	Class.Num
+	Class.Integral
 	Base.Thunk
 	
 	
 infixl 7  `quot`, `div`, `mod`
 
-project Int32 
- with	{ min; max }
 
 -- Boxing ---------------------------------------------------------------------
 foreign import "_boxInt32"
@@ -29,20 +28,6 @@ foreign import "_unboxInt32"
 
 
 -- Instances ------------------------------------------------------------------
-instance Num Int32 where
-	negate x 	= boxInt32 (primInt32U_neg (unboxInt32 x))
-	(+) x y		= boxInt32 (primInt32U_add (unboxInt32 x) (unboxInt32 y))
-	(-) x y		= boxInt32 (primInt32U_sub (unboxInt32 x) (unboxInt32 y))
-	(*) x y		= boxInt32 (primInt32U_mul (unboxInt32 x) (unboxInt32 y))
-	(/) x y		= boxInt32 (primInt32U_div (unboxInt32 x) (unboxInt32 y))
-	mod x y		= boxInt32 (primInt32U_mod (unboxInt32 x) (unboxInt32 y))
-
-	pow x n = pow' n 1i32
-	 where	pow' :: Int32 -> Int32 -> Int32
-		pow' 0i32 acc = acc
-		pow' n    acc = pow' (n - 1i32) (acc * x)
-
-
 instance Eq Int32 where
 	(==) x y	= boxBool   (primInt32U_eq  (unboxInt32 x) (unboxInt32 y))
 	(/=) x y	= boxBool   (primInt32U_neq (unboxInt32 x) (unboxInt32 y))
@@ -59,6 +44,10 @@ instance Ord Int32 where
 	 | x <  y	=  LT
 	 		\= GT
 
+	min x y		= if x <= y then x else y
+	max x y		= if x >= y then x else y
+
+
 instance Copy Int32 where
  	copy x 		= boxInt32 (unboxInt32 x)
 
@@ -70,37 +59,24 @@ instance Updatable Int32 where
 		()
 
 
+instance Num Int32 where
+	negate x 	= boxInt32 (primInt32U_neg (unboxInt32 x))
+	(+) x y		= boxInt32 (primInt32U_add (unboxInt32 x) (unboxInt32 y))
+	(-) x y		= boxInt32 (primInt32U_sub (unboxInt32 x) (unboxInt32 y))
+	(*) x y		= boxInt32 (primInt32U_mul (unboxInt32 x) (unboxInt32 y))
+
+	pow x n = pow' n 1i32
+	 where	pow' :: Int32 -> Int32 -> Int32
+		pow' 0i32 acc = acc
+		pow' n    acc = pow' (n - 1i32) (acc * x)
+
+
+instance Integral Int32 where
+	div x y		= boxInt32 (primInt32U_div (unboxInt32 x) (unboxInt32 y))
+	mod x y		= boxInt32 (primInt32U_mod (unboxInt32 x) (unboxInt32 y))
+
+
 instance Accum Int32 where
 	(+=) a b	= a := (a + b)
 
-
--- Projections ----------------------------------------------------------------
--- | Take the minimum of two integers.
-min :: Int32 -> Int32 -> Int32
-min x y
- = if x <= y then x else y
-
-
--- | Take the maximum of two integers.
-max :: Int32 -> Int32 -> Int32
-max x y
- = if x >= y then x else y
-
-
--- | Modify an integer using a function.
-(<>) :: Int32 -> (Int32 -> Int32) -> ()
-(<>) x f
- = do 	x'	= f x
-	x	:= x'
-
-
--- | Integer division truncated towards negative infinity
-div :: Int32 -> Int32 -> Int32
-div = (/)
-
-
--- | Integer division truncated towards zero.
---   BUGS: This is wrong.
-quot :: Int32 -> Int32 -> Int32
-quot = (/)
 

@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 // ----- Evil globals
 //
@@ -64,6 +66,14 @@ Obj*	primRefUpdate	(Obj* ref_, Obj* x_)
 	return	_primUnit;
 }
 
+
+// ------ Int64 
+void	primInt64_to_string	(Int64 value, char * str, int slen)
+{
+	// Need to do it this way to correctly print an Int64, because
+	// we need "%lld" on 32 bit systems and "%ld" on 64 bit systems.
+	snprintf (str, slen, "%" PRId64, value);
+}
 
 
 // ------ Network
