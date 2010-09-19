@@ -135,7 +135,7 @@ project Body where
 		dy	= y2 - y1
 
  		d2	= dx * dx  +  dy * dy
-		d	= sqrtU d2
+		d	= sqrt d2
 
 		attract_rangeU	
 			= unboxFloat32 attract_range
@@ -151,8 +151,8 @@ project Body where
 
 		theta	= vec2_angleU dx dy
 
-		forceX	= forceS * cosU theta
-		forceY	= forceS * sinU theta
+		forceX	= forceS * cos theta
+		forceY	= forceS * sin theta
 
 		Vec2 (boxFloat32 forceX) (boxFloat32 forceY)
 
@@ -162,9 +162,9 @@ vec2_angleU x y
  = do 	piU	= 3.1415926536#
 	match 
 		| true#	<- x `primFloat32U_lt` 0.0#
-		= piU + atanU (y / x)
+		= piU + atan (y / x)
 		
-		\= atanU (y / x)
+		\= atan (y / x)
 
 
 -- Main -----------------------------------------------------------------------------

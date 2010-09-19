@@ -29,6 +29,7 @@ project Vec3 Float where
 		z1	:= z2
 
 	-- | Take the magnitute of a vector.
+	magnitude :: Vec3 Float -> Float
 	magnitude (Vec3 x y z)
 	 	= sqrt (x * x + y * y + z * z)
 

@@ -80,20 +80,20 @@ instance Fractional Float where
 
 
 instance Floating Float32 where
-	ftrunc		= boxFloat32 (primFloat32U_ftrunc (unboxFloat32 x))
-	fround		= boxFloat32 (primFloat32U_fround (unboxFloat32 x))
-	ffloor		= boxFloat32 (primFloat32U_ffloor (unboxFloat32 x))
-	fmod		= boxFloat32 (primFloat32U_fmod   (unboxFloat32 x))
-	fpow		= boxFloat32 (primFloat32U_fpow   (unboxFloat32 x))
-	sqrt		= boxFloat32 (primFloat32U_sqrt   (unboxFloat32 x))
-	log		= boxFloat32 (primFloat32U_log    (unboxFloat32 x))
+	ftrunc	x	= boxFloat32 (primFloat32U_ftrunc (unboxFloat32 x))
+	fround	x	= boxFloat32 (primFloat32U_fround (unboxFloat32 x))
+	ffloor	x	= boxFloat32 (primFloat32U_ffloor (unboxFloat32 x))
+	fmod	x y	= boxFloat32 (primFloat32U_fmod   (unboxFloat32 x) (unboxFloat32 y))
+	fpow	x y	= boxFloat32 (primFloat32U_fpow   (unboxFloat32 x) (unboxFloat32 y))
+	sqrt	x	= boxFloat32 (primFloat32U_sqrt   (unboxFloat32 x))
+	log	x	= boxFloat32 (primFloat32U_log    (unboxFloat32 x))
 
-	sin		= boxFloat32 (primFloat32U_sin    (unboxFloat32 x))
-	asin		= boxFloat32 (primFloat32U_asin   (unboxFloat32 x))
-	cos		= boxFloat32 (primFloat32U_cos    (unboxFloat32 x))
-	acos		= boxFloat32 (primFloat32U_acos   (unboxFloat32 x))
-	tan		= boxFloat32 (primFloat32U_tan    (unboxFloat32 x))
-	atan		= boxFloat32 (primFloat32U_atan   (unboxFloat32 x))
+	sin	x	= boxFloat32 (primFloat32U_sin    (unboxFloat32 x))
+	asin	x	= boxFloat32 (primFloat32U_asin   (unboxFloat32 x))
+	cos	x	= boxFloat32 (primFloat32U_cos    (unboxFloat32 x))
+	acos	x	= boxFloat32 (primFloat32U_acos   (unboxFloat32 x))
+	tan	x	= boxFloat32 (primFloat32U_tan    (unboxFloat32 x))
+	atan	x	= boxFloat32 (primFloat32U_atan   (unboxFloat32 x))
 
 
 instance Accum Float32 where

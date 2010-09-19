@@ -32,6 +32,7 @@ project Vec2 Float where
 	 | otherwise	= atan (y / x)
 
 	-- | Take the magnitute of a vector.
+	magnitude :: Vec2 Float -> Float
 	magnitude (Vec2 x y)
 	 	= sqrt (x * x + y * y)
 

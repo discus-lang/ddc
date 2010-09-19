@@ -29,6 +29,7 @@ circlePoints (Vec2 x y) radius steps
 	tStop	= 2.0 * pi
 	circlePoints' x y radius tStep tStop 0.0
 
+circlePoints' :: Float -> Float -> Float -> Float -> Float -> Float -> [Vec2 Float]
 circlePoints' x y radius tStep tStop theta
 	| theta >= tStop	= []
 	\= do	theta'	= theta + tStep

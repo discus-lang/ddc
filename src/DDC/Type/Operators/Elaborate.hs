@@ -18,6 +18,7 @@ import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.Kind
 import DDC.Type.Operators.Pack
 import DDC.Type.Operators.Trim
@@ -293,18 +294,9 @@ elaborateEffT
 	
 elaborateEffT newVarN vsRsConst vsRsMutable tt
  = do	
- 	-- make a fresh hook var
-	--	The new effect fetter constrains this var.
- 	freshHookVar	<- newVarN NameEffect
-
-	-- see if there is already a var on the rightmost function arrow,
-	--	if there isn't one then add the freshHookVar.
- 	let Just (tHooked, hookVar, hookEffs) =
-		hookEffT freshHookVar tt
-  
     	-- assume that regions added into a contra-variant
 	--	branch during elaboration will be read by the function.
-	let rsContra	= slurpConRegions tHooked
+	let rsContra	= slurpConRegions tt
 	let effsRead	= [ TApp tRead (TVar kRegion $ UVar v)
 				| v <- (vsRsConst ++ vsRsMutable)
 				, elem v rsContra ]
@@ -313,14 +305,27 @@ elaborateEffT newVarN vsRsConst vsRsMutable tt
 				| v <- vsRsMutable
 				, elem v rsContra ]
 	
-	let effs	= effsRead ++ effsWrite ++ maybeToList hookEffs
+	let effsNew	= packT $ makeTSum kEffect $ effsRead ++ effsWrite 
+
+	if isTBot effsNew 
+	 then	return tt
+	 else do
+		-- make a fresh hook var
+		--	The new effect fetter constrains this var.
+ 		freshHookVar	<- newVarN NameEffect
+
+		-- see if there is already a var on the rightmost function arrow,
+		--	if there isn't one then add the freshHookVar.
+ 		let Just (tHooked, hookVar, hookEffs) =
+			hookEffT freshHookVar tt
+  	
+		let effsNew'	= packT $ makeTSum kEffect (effsNew : maybeToList hookEffs)
+		let tFinal	= addEffectsToFsT effsNew' hookVar tHooked
 	
-	let tFinal	= addEffectsToFsT effs hookVar tHooked
+		-- pack the type to drop out any left-over  !e1 = !Bot  constraints.
+  		let tPacked	= packT tFinal
 
-	-- pack the type to drop out any left-over  !e1 = !Bot  constraints.
-  	let tPacked_fast	= packT tFinal
-
-	return $ tPacked_fast
+		return $ tPacked
 		
 
 -- | Find the right most function arrow in this function type and return the effect variable
@@ -390,37 +395,35 @@ hookEffT hookVar tt
 
 
 -- | Add some effects to the fetter with this var.
-addEffectsToFsT
-	:: [Effect] -> Var -> Type -> Type
-	
-addEffectsToFsT effs var tt
+addEffectsToFsT :: Effect -> Var -> Type -> Type
+addEffectsToFsT eff var tt
  = case tt of
  	TForall b k t1 
-	 -> TForall b k (addEffectsToFsT effs var t1)
+	 -> TForall b k (addEffectsToFsT eff var t1)
 
 	TConstrain t1 crs
-	 -> TConstrain t1 (addEffectsToCrs var effs crs)
+	 -> TConstrain t1 (addEffectsToCrs var eff crs)
 	 
 	tx
 	 -> TConstrain tx 
 		(Constraints 
-			(Map.singleton (TVar kEffect $ UVar var) (makeTSum kEffect effs))
+			(Map.singleton (TVar kEffect $ UVar var) eff)
 			Map.empty
 			[])
 	 
 
-addEffectsToCrs v1 effs crs
+addEffectsToCrs v1 eff crs
  = let	t1	= TVar kEffect (UVar v1) 
    in   case Map.lookup t1 (crsEq crs) of
 	 Just eff'
 	  -> Constraints
-		(Map.insert t1 (makeTSum kEffect (eff' : effs)) $ crsEq crs)
+		(Map.insert t1 (makeTSum kEffect [eff' , eff]) $ crsEq crs)
 		(crsMore crs)
 		(crsOther crs)
 		
 	 Nothing
 	  -> Constraints
-		(Map.singleton t1 $ makeTSum kEffect effs)
+		(Map.singleton t1 eff)
 		Map.empty
 		[]
 		
