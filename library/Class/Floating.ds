@@ -20,13 +20,13 @@ class Floating a where
 		:- !e1 = !ReadT a
 		,  Shape2 a b
 
-	fmod	:: forall b
+	fmod	:: forall b c
 		.  a -> b -(!e1 $c1)> c
 		:- !e1 = !{ !ReadT a; !ReadT b}
 		,  $c1 = x : a
 		,  Shape3 a b c
 
-	fpow	:: forall b
+	fpow	:: forall b c
 		.  a -> b -(!e1 $c1)> c
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
