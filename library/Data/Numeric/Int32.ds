@@ -2,15 +2,17 @@
 
 module	Data.Numeric.Int32
 
-import	Base
-	Data.Bool
-	Data.Numeric.Int32U
-	Class.Copy
+import	Data.Numeric.Int32U
+	DDC.Runtime.Store
+	DDC.Runtime.Alloc
 	Class.Eq
 	Class.Num
 	Class.Ord
+	Class.Copy
 	Class.Update
-
+	Base.Thunk
+	
+	
 infixl 7  `quot`, `div`, `mod`
 
 project Int32 
@@ -25,94 +27,51 @@ foreign import "_unboxInt32"
  unboxInt32	:: Int32{read} -> Int32#
 		:$ Obj -> Int32#
 
--- Arithmetic -----------------------------------------------------------------
-foreign import "primInt32_neg"
- primInt32_neg  :: Int32{read} -> Int32
-
-foreign import "primInt32_add"
- primInt32_add	:: Int32{read} -> Int32{read} -> Int32
-
-foreign import "primInt32_sub"	
- primInt32_sub	:: Int32{read} -> Int32{read} -> Int32
-
-foreign import "primInt32_mul"	
- primInt32_mul	:: Int32{read} -> Int32{read} -> Int32
-
-foreign import "primInt32_div"	
- primInt32_div	:: Int32{read} -> Int32{read} -> Int32
-
-foreign import "primInt32_mod"	
- primInt32_mod	:: Int32{read} -> Int32{read} -> Int32
-
-
--- Comparisons ----------------------------------------------------------------
-foreign import "primInt32_eq"	
- primInt32_eq	:: Int32{read} -> Int32{read} -> Bool
-
-foreign import "primInt32_neq"	
- primInt32_neq	:: Int32{read} -> Int32{read} -> Bool
-
-foreign import "primInt32_gt"	
- primInt32_gt	:: Int32{read} -> Int32{read} -> Bool
-
-foreign import "primInt32_lt"	
- primInt32_lt	:: Int32{read} -> Int32{read} -> Bool
-
-foreign import "primInt32_ge"	
- primInt32_ge	:: Int32{read} -> Int32{read} -> Bool
-
-foreign import "primInt32_le"	
- primInt32_le	:: Int32{read} -> Int32{read} -> Bool
-
-
--- Update ---------------------------------------------------------------------
-foreign import "primInt32_update"
- primInt32_update :: Int32{write} -> Int32{read} -> ()
-
 
 -- Instances ------------------------------------------------------------------
-instance Num Int32 where 
- 	(+) 		= primInt32_add
-	(-) 		= primInt32_sub
-	(*) 		= primInt32_mul
-	(/) 		= primInt32_div
-	mod		= primInt32_mod
-	negate		= primInt32_neg
+instance Num Int32 where
+	negate x 	= boxInt32 (primInt32U_neg (unboxInt32 x))
+	(+) x y		= boxInt32 (primInt32U_add (unboxInt32 x) (unboxInt32 y))
+	(-) x y		= boxInt32 (primInt32U_sub (unboxInt32 x) (unboxInt32 y))
+	(*) x y		= boxInt32 (primInt32U_mul (unboxInt32 x) (unboxInt32 y))
+	(/) x y		= boxInt32 (primInt32U_div (unboxInt32 x) (unboxInt32 y))
+	mod x y		= boxInt32 (primInt32U_mod (unboxInt32 x) (unboxInt32 y))
 
-	-- | Raise an integer to an integer power.
-	pow x n = pow' n 1
+	pow x n = pow' n 1i32
 	 where	pow' :: Int32 -> Int32 -> Int32
-		pow' 0 acc = acc
-		pow' n acc = pow' (n - 1) (acc * x)
+		pow' 0i32 acc = acc
+		pow' n    acc = pow' (n - 1i32) (acc * x)
 
 
 instance Eq Int32 where
-	(==)		= primInt32_eq
-	(/=)		= primInt32_neq
-
+	(==) x y	= boxBool   (primInt32U_eq  (unboxInt32 x) (unboxInt32 y))
+	(/=) x y	= boxBool   (primInt32U_neq (unboxInt32 x) (unboxInt32 y))
+		
 
 instance Ord Int32 where
-	(>)		= primInt32_gt
-	(<)		= primInt32_lt
-	(>=)		= primInt32_ge
-	(<=)		= primInt32_le
+	(>) x y		= boxBool   (primInt32U_gt  (unboxInt32 x) (unboxInt32 y))
+	(<) x y		= boxBool   (primInt32U_lt  (unboxInt32 x) (unboxInt32 y))
+	(>=) x y	= boxBool   (primInt32U_ge  (unboxInt32 x) (unboxInt32 y))
+	(<=) x y	= boxBool   (primInt32U_le  (unboxInt32 x) (unboxInt32 y))
 
 	compare x y
 	 | x == y	=  EQ
 	 | x <  y	=  LT
 	 		\= GT
 
-
 instance Copy Int32 where
  	copy x 		= boxInt32 (unboxInt32 x)
 
 
 instance Updatable Int32 where
-	(:=)		= primInt32_update
+	(:=) w1 w2
+	 = do	w1'	= force w1
+		poke (castToPtrInt32 (peekDataRS_payload w1)) (unboxInt32 w2)
+		()
 
 
 instance Accum Int32 where
-	(+=) a b	= primInt32_update a (primInt32_add a b)
+	(+=) a b	= a := (a + b)
 
 
 -- Projections ----------------------------------------------------------------
@@ -137,16 +96,11 @@ max x y
 
 -- | Integer division truncated towards negative infinity
 div :: Int32 -> Int32 -> Int32
-div = primInt32_div
+div = (/)
 
 
 -- | Integer division truncated towards zero.
 --   BUGS: This is wrong.
 quot :: Int32 -> Int32 -> Int32
-quot = primInt32_div
-
-
-
-
-
+quot = (/)
 

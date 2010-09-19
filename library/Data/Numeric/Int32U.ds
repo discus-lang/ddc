@@ -10,6 +10,7 @@ import	Class.Eq
 	Class.Num
 	Class.Ord
 
+
 -- Arithmetic -----------------------------------------------------------------
 foreign import "primInt32U_neg"
  primInt32U_neg :: Int32# -> Int32#
@@ -55,11 +56,18 @@ instance Eq Int32# where
 	(==) x y	= boxBool (primInt32U_eq  x y)
 	(/=) x y	= boxBool (primInt32U_neq x y)
 
+
 instance Ord Int32# where
-	(>)		= primInt32U_gt
-	(<)		= primInt32U_lt
-	(>=)		= primInt32U_ge
-	(<=)		= primInt32U_le
+	(>)  x y	= boxBool (primInt32U_gt x y)
+	(<)  x y	= boxBool (primInt32U_lt x y)
+	(>=) x y	= boxBool (primInt32U_ge x y)
+	(<=) x y	= boxBool (primInt32U_le x y)
+
+	compare x y
+	 | x == y	=  EQ
+	 | x <  y	=  LT
+			\= GT
+
 
 instance Num Int32# where 
  	(+) 		= primInt32U_add

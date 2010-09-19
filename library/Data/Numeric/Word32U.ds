@@ -52,15 +52,6 @@ foreign import "primWord32U_le"
 
 
 -- Instances ------------------------------------------------------------------
-instance Num Word32# where 
- 	(+) 		= primWord32U_add
-	(-) 		= primWord32U_sub
-	(*) 		= primWord32U_mul
-	(/) 		= primWord32U_div
-	mod		= primWord32U_mod
-	negate		= primWord32U_neg
-
-
 instance Eq Word32# where
 	(==)  x y	= boxBool (primWord32U_eq x y) 
 	(/=)  x y	= boxBool (primWord32U_neq x y)
@@ -76,3 +67,12 @@ instance Ord Word32# where
 	 | x == y	=  EQ
 	 | x <  y	=  LT
 			\= GT
+
+
+instance Num Word32# where 
+ 	(+) 		= primWord32U_add
+	(-) 		= primWord32U_sub
+	(*) 		= primWord32U_mul
+	(/) 		= primWord32U_div
+	mod		= primWord32U_mod
+	negate		= primWord32U_neg

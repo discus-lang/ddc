@@ -29,25 +29,6 @@ Obj*	_boxRef		(Obj*  obj, void* field);
 
 // -----------------------------------------------------------------------------
 
-// -- Int
-Obj*	primInt32_neg			(Obj* x1);
-
-Obj*	primInt32_add			(Obj* x1, Obj* x2);
-Obj*	primInt32_sub			(Obj* x1, Obj* x2);
-Obj*	primInt32_mul			(Obj* x1, Obj* x2);
-Obj*	primInt32_div			(Obj* x1, Obj* x2);
-Obj*	primInt32_mod			(Obj* x1, Obj* x2);
-
-Obj*	primInt32_eq			(Obj* a, Obj* b);
-Obj*	primInt32_neq			(Obj* a, Obj* b);
-Obj*	primInt32_gt			(Obj* a, Obj* b);
-Obj*	primInt32_ge			(Obj* a, Obj* b);
-Obj*	primInt32_lt			(Obj* a, Obj* b);
-Obj*	primInt32_le			(Obj* a, Obj* b);	
-
-Obj* 	primInt32_update		(Obj* dest_, Obj* src_);
-
-
 // -- Int64
 Obj*	primInt64_neg			(Obj* x1);
 
