@@ -106,16 +106,3 @@ Obj*	primProjFieldR (Obj* obj, Int32 ix)
 }
 
 
-
-static inline
-void	primFloat32U_write (Obj* obj, Int32 offset, Float32 data)
-{
-	*(Float32*) ((Word8*)obj + offset)	= data;
-}
-
-static inline
-Float32	primFloat32U_read (Obj* obj, Int32 offset)
-{
-	return		* (Float32*) ((Word8*)obj + offset);
-}
-

@@ -7,7 +7,8 @@
 module	DDC.Runtime.Store
 import	Base
 
--- DataR -------------------------------------------------------------------------------------------
+
+-- Raw Data Internals ---------------------------------------------------------
 -- | Get the size of this entire DataR object.
 foreign import "primStore_peekDataR_size"
  peekDataR_size	
@@ -26,7 +27,7 @@ foreign import "primStore_peekDataRS_payload"
  	:: forall a. a -> Ptr# Word8#
 	
 
--- Ptr ---------------------------------------------------------------------------------------------
+-- Ptr ------------------------------------------------------------------------
 -- | Advances the pointer by the given offset in bytes
 foreign import "_PLUSPTR"
  plusPtr :: Ptr# Word8# -> Int# -> Ptr# Word8#
@@ -62,12 +63,12 @@ foreign import "_POKEON"
 	:$ Obj -> Obj -> Obj -> Obj
 
 
--- Taste -------------------------------------------------------------------------------------------
--- | Phantom type used to carry around a region constraint.
+-- Taste ----------------------------------------------------------------------
+-- | Phantom type used to carry around a region variable.
 data Taste %r
 
 -- | Sample the right-most region variable in a type.
---   This can be useful when contraining the region to be the same as another, 
+--   This can be useful when contraining a region variable to be the same as another, 
 --   or causing a read or write effect on it separate from the actual objects
 --   contained in the region.
 foreign import 
@@ -75,14 +76,10 @@ foreign import
 	:$ Data -> Data
 
 
--- Poke --------------------------------------------------------------------------------------------
-foreign import "primStore_pokeInt32"
- pokeInt32 	:: Ptr# Int32# -> Int32# -> Void#
+-- Casting --------------------------------------------------------------------
+-- TODO: If we had better support for inline type annots then we
+--       wouldn't need these.
 
-
--- Casting -----------------------------------------------------------------------------------------
--- These should go somewhere else
---
 foreign import "(Word8 *)"
  castToPtrWord8
  	:: forall a
@@ -117,29 +114,3 @@ foreign import "(Char32 *)"
  castToPtrChar32
  	:: forall a 
  	.  Ptr# a -> Ptr# Char32#
-
-
--- TODO: redo these as peek/poke functions.
-foreign import "primInt32U_read"
- primInt32U_read
- 	:: forall a 
-	.  a -> Int32# -> Int32#		-- obj, offset (in bytes), result.
-	:$ Data -> Int32# -> Int32#
-	
-foreign import "primInt32U_write"
- primInt32U_write
- 	:: forall a
-	.  a -> Int32# -> Int32# -> Void#	-- obj, offset (in bytes), data.
-	:$ Data -> Int32# -> Int32# -> Void#
-
-foreign import "primFloat32U_read"
- primFloat32U_read
- 	:: forall a
-	.  a -> Int32# -> Float32#		-- obj, offset (in bytes), result.
-	:$ Data -> Int32# -> Float32#
-	
-foreign import "primFloat32U_write"
- primFloat32U_write
- 	:: forall a
-	.  a -> Int32# -> Float32# -> Void#	-- obj, offset (in bytes), data.
-	:$ Data -> Int32# -> Float32# -> Void#

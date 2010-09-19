@@ -26,7 +26,6 @@ instance Copy FlatString where
 -- Primitive Projections ---------------------------------------------------------------------------
 -- The compiler can't derive these yet.. yawn.
 
-
 -- | Get the number of chars currently in this FlatString.
 maxLengthU :: FlatString -> Int32#
 maxLengthU str@(FlatString)
@@ -51,13 +50,16 @@ length fs = boxInt32 fs.lengthU
 
 -- | Set the current length of the string
 --   TODO: don't allow this to be set over the maximum available
+--         This really wants a write effect, but we haven't added one because 
+--         it's used by "new" and we cant mask effs on the return type of a
+--         fn yet.
 setLengthU :: FlatString -> Int32# -> ()
 setLengthU 
 	str@(FlatString) len
 
  = do	payload	= peekDataR_payload str
  	ptr	= castToPtrInt32 (plusPtr payload 4#)
-	pokeInt32 ptr len
+	poke (castToPtrInt32 ptr) len
 	()
 
 setLength :: FlatString -> Int32 -> ()
@@ -76,7 +78,6 @@ danger_string str@(FlatString)
 
 
 ----------------------------------------------------------------------------------------------------
-
 -- | Create a new string with this length on the heap
 new :: Int32 -> FlatString
 new length
@@ -105,17 +106,16 @@ new length
 	stringU_danger_memset (castToStringU payload) 0# len_payload
  
 	-- write the maxLength
-	pokeInt32 (castToPtrInt32 payload) len
+	poke (castToPtrInt32 payload) len
 
 	-- write the length
-	pokeInt32 (castToPtrInt32 (plusPtr payload 4#)) 0#
+	poke (castToPtrInt32 (plusPtr payload 4#)) 0#
 	
 	str
 
 
 -- | Create a new flatstring
 --	This creates a new heap object and copies the source string into it.
---
 box :: String# %r1 -> FlatString %r2
 box strU
  = do	-- make a new string for the destination
@@ -145,7 +145,6 @@ flatString_copy str@(FlatString)
 	str'.setLength len
 	
 	str'
-
 
 
 -- | Work out how much space is left inside this FlatString

@@ -26,10 +26,4 @@ static inline void* primStore_peekDataRS_payload (Obj* obj)
 }
 
 
-static inline void primStore_pokeInt32 (Int32* ptr, Int32 val)
-{
-	*ptr	= val;
-}
-
-
 #endif

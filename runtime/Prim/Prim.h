@@ -24,72 +24,13 @@ extern Obj*	_primFalse;
 // -----------------------------------------------------------------------------
 // -- Boxing.c
 // -----------------------------------------------------------------------------
-Obj*	_boxRef		(Obj*  obj, void* field);
-
-
-// -----------------------------------------------------------------------------
-
-// -- Int64
-Obj*	primInt64_neg			(Obj* x1);
-
-Obj*	primInt64_add			(Obj* x1, Obj* x2);
-Obj*	primInt64_sub			(Obj* x1, Obj* x2);
-Obj*	primInt64_mul			(Obj* x1, Obj* x2);
-Obj*	primInt64_div			(Obj* x1, Obj* x2);
-Obj*	primInt64_mod			(Obj* x1, Obj* x2);
-
-Obj*	primInt64_eq			(Obj* a, Obj* b);
-Obj*	primInt64_neq			(Obj* a, Obj* b);
-Obj*	primInt64_gt			(Obj* a, Obj* b);
-Obj*	primInt64_ge			(Obj* a, Obj* b);
-Obj*	primInt64_lt			(Obj* a, Obj* b);
-Obj*	primInt64_le			(Obj* a, Obj* b);	
-
-Obj* 	primInt64_update		(Obj* dest_, Obj* src_);
-
-void	primInt64_to_string		(Int64 value, char * str, int slen);
-
-// -- Float32
-Obj*	primFloat32_neg			(Obj* x1);
-
-Obj*	primFloat32_add			(Obj* x1, Obj* x2);
-Obj*	primFloat32_sub			(Obj* x1, Obj* x2);
-Obj*	primFloat32_mul			(Obj* x1, Obj* x2);
-Obj*	primFloat32_div			(Obj* x1, Obj* x2);
-Obj*	primFloat32_mod			(Obj* x1, Obj* x2);
-
-Obj*	primFloat32_eq			(Obj* x1, Obj* x2);
-Obj*	primFloat32_neq			(Obj* x1, Obj* x2);
-Obj*	primFloat32_gt			(Obj* x1, Obj* x2);
-Obj*	primFloat32_ge			(Obj* x1, Obj* x2);
-Obj*	primFloat32_lt			(Obj* x1, Obj* x2);
-Obj*	primFloat32_le			(Obj* x1, Obj* x2);
+Obj*	_boxRef				(Obj*  obj, void* field);
 
 Obj*	primFloat32_toFloat 		(Obj* x1);
-
 Obj*	primFloat32_truncate		(Obj* x1);
-Obj*	primFloat32_update 		(Obj* dest_, Obj* src_);
-
-// -- Float64
-Obj*	primFloat64_neg			(Obj* x1);
-
-Obj*	primFloat64_add			(Obj* x1, Obj* x2);
-Obj*	primFloat64_sub			(Obj* x1, Obj* x2);
-Obj*	primFloat64_mul			(Obj* x1, Obj* x2);
-Obj*	primFloat64_div			(Obj* x1, Obj* x2);
-Obj*	primFloat64_mod			(Obj* x1, Obj* x2);
-
-Obj*	primFloat64_eq			(Obj* x1, Obj* x2);
-Obj*	primFloat64_neq			(Obj* x1, Obj* x2);
-Obj*	primFloat64_gt			(Obj* x1, Obj* x2);
-Obj*	primFloat64_ge			(Obj* x1, Obj* x2);
-Obj*	primFloat64_lt			(Obj* x1, Obj* x2);
-Obj*	primFloat64_le			(Obj* x1, Obj* x2);
-
 Obj*	primFloat64_toFloat 		(Obj* x1);
-
 Obj*	primFloat64_truncate		(Obj* x1);
-Obj*	primFloat64_update 		(Obj* dest_, Obj* src_);
+void	primInt64_to_string		(Int64 value, char * str, int slen);
 
 // -- Suspend
 Obj*	primSuspend0			(void* f);
@@ -97,7 +38,6 @@ Obj*	primSuspend1			(Obj* f, Obj* x);
 Obj*	primSuspend2			(Obj* f, Obj* x1, Obj* x2);
 Obj*	primSuspend3			(Obj* f, Obj* x1, Obj* x2, Obj *x3);
 Obj*	primSuspend4			(Obj* f, Obj* x1, Obj* x2, Obj *x3, Obj *x4);
-
 
 // -- Control
 Obj*	primControl_while		(Obj* test, Obj* body);
@@ -111,16 +51,11 @@ Obj*	primException_throw	 	(Obj* exception);
 Obj*	primException_init 		(Obj* contextStackDepth);
 Obj*	primException_handleUncaught	(Obj* exception);
 
-// -- File
-Obj*	primFile_openF  		(Obj* name, Obj* flags);
-Obj*	primFile_openFM 		(Obj* name, Obj* flags, Obj* mode);
-
 // -- Array
 Obj*	primArray_new			(Obj* elemCount_, Obj* obj);
 Obj*	primArray_size			(Obj* array_);
 Obj*	primArray_index			(Obj* array_, Obj* ix_);
 Obj*	primArray_indexR		(Obj* array_, Obj* ix_);
-
 
 // -- ArrayU
 Obj*	primArrayU_Int_new 		(Obj* anchored, Obj* elemCount_);
@@ -139,11 +74,9 @@ Int32	primConnect			(String hostname, Int32 port);
 Int32	primArgCount			(Obj* x);
 String	primArgValue			(Int32 x);
 
-
 // -- Runtime
 Int32	primRuntime_slotUsage		(Obj* x);
 Obj*	primRuntime_printObj		(Obj* x);
-
 
 // -----
 #include "Boxing.ci"
