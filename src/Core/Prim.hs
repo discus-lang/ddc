@@ -274,29 +274,14 @@ unboxableFuns :: Map String (PrimOp, [Action])
 unboxableFuns
  = Map.fromList
 
-	-- boxed int32 functions
-	[ ("primInt32_neg",	(OpNeg, opD1U1))
-	, ("primInt32_add",	(OpAdd,	opD3U2))
-	, ("primInt32_sub",	(OpSub,	opD3U2))
-	, ("primInt32_div",	(OpDiv,	opD3U2))
-	, ("primInt32_mod",	(OpMod,	opD3U2))
-	, ("primInt32_mul",	(OpMul,	opD3U2))
-
+	[
 	-- boxed int64 functions
-	, ("primInt64_neg",	(OpNeg, opD1U1))
+	  ("primInt64_neg",	(OpNeg, opD1U1))
 	, ("primInt64_add",	(OpAdd,	opD3U2))
 	, ("primInt64_sub",	(OpSub,	opD3U2))
 	, ("primInt64_div",	(OpDiv,	opD3U2))
 	, ("primInt64_mod",	(OpMod,	opD3U2))
 	, ("primInt64_mul",	(OpMul,	opD3U2))
-
-	-- boxed Int32 comparisions
-	, ("primInt32_eq",	(OpEq,	opD3U2))
-	, ("primInt32_neq",	(OpNeq,	opD3U2))
-	, ("primInt32_gt",	(OpGt,	opD3U2))
-	, ("primInt32_ge",	(OpGe,	opD3U2))
-	, ("primInt32_lt",	(OpLt,	opD3U2))
-	, ("primInt32_le",	(OpLe,	opD3U2))
 
 	-- boxed Int64 comparisions
 	, ("primInt64_eq",	(OpEq,	opD3U2))
