@@ -13,11 +13,11 @@ data World %r1 %r2
 		(QuadTree  Actor)	-- tree
 
 -- | The initial world
-worldInit 
-	:: World   %r1 %r2 
+makeWorldInit 
+	:: () -> World   %r1 %r2 
 	:- Mutable %r2
 
-worldInit	
+makeWorldInit ()
   	= World (actorArrayInit (walls ++ beads)) treeInit
 
 actorArrayInit :: [Actor] -> Array Actor
@@ -27,12 +27,13 @@ actorArrayInit actors
 		$ map (\a -> (actorIx a, a))
 		$ zipWith actorSetIndex actors [0 .. count - 1]
 
+treeInit :: QuadTree Actor
 treeInit = treeZero 300.0
 
 
 arrayFromList :: Int -> a -> [(Int, a)] -> Array a
-arrayFromList size def elems 
- = 	arrayFromList' (array_new size def) elems
+arrayFromList sz def elems 
+ = 	arrayFromList' (new&{Array a} sz def) elems
 
 arrayFromList' array elems
 	| []		<- elems
@@ -61,19 +62,19 @@ box
 
 splitterMid :: [Actor]
 splitterMid
- =	[ Wall	0 (Vec2 -15.0 100.0) (Vec2 -200.0 0.0) 
- 	, Wall  0 (Vec2  15.0 100.0) (Vec2  200.0 0.0) ]
+ =	[ Wall	0 (Vec2 (-15.0) 100.0) (Vec2 (-200.0) 0.0) 
+ 	, Wall  0 (Vec2   15.0  100.0) (Vec2   200.0  0.0) ]
 
 
 splitterBot :: [Actor]
 splitterBot
- = 	[ Wall  0 (Vec2 -15.0 280.0) (Vec2    0.0 150.0) 
- 	, Wall  0 (Vec2  15.0 280.0) (Vec2    0.0 150.0) ]
+ = 	[ Wall  0 (Vec2 (-15.0) 280.0) (Vec2    0.0 150.0) 
+ 	, Wall  0 (Vec2   15.0  280.0) (Vec2    0.0 150.0) ]
 
 splitterTop :: [Actor]
 splitterTop
- = 	[ Wall  0 (Vec2 -15.0 -280.0) (Vec2    0.0 -150.0) 
- 	, Wall  0 (Vec2  15.0 -280.0) (Vec2    0.0 -150.0) ]
+ = 	[ Wall  0 (Vec2 (-15.0) (-280.0)) (Vec2    0.0 (-150.0)) 
+ 	, Wall  0 (Vec2  (15.0) (-280.0)) (Vec2    0.0 (-150.0)) ]
 
 
 -- Beads ------------------
@@ -106,9 +107,9 @@ beadPos ix iy
 maxDepth	= 4
 
 -- | insert an actor into the tree
-insertActor :: QuadTree Actor -> Actor -> QuadTree Actor
+insertActor :: Actor -> QuadTree Actor -> QuadTree Actor
 
-insertActor tree actor
+insertActor actor tree
 	-- insert a bead into the tree
 	| bead@(Bead ix _ radius pos@(Vec2 x y) vel) 	<- actor
 	= do
@@ -121,8 +122,8 @@ insertActor tree actor
 	| wall@(Wall ix (Vec2 x0 y0) (Vec2 x1 y1))		<- actor
 	= do
 		-- the bottom left and top right of the wall's bounding box.
-		p0	= Vec2 (x0 .min x1) (y0 .min y1)
- 		p1	= Vec2 (x0 .max x1) (y0 .max y1)
+		p0	= Vec2 (min x0 x1) (min y0 y1)
+ 		p1	= Vec2 (max x0 x1) (max y0 y1)
    	
 		treeInsert maxDepth 0 p0 p1 wall tree
 

@@ -62,24 +62,24 @@ insert clo cs
 	TVar _ (UMore v _)	 
 	 -> cs { csVar  = Set.insert v (csVar cs) }
 
-	TApp{}
-	 | Just (v1, TVar k (UVar v2)) <- takeTFree clo
+	clo'@TApp{}
+	 | Just (v1, TVar k (UVar v2))    <- takeTFree clo'
 	 -> insertVar v1 k v2 cs
 	
-	 | Just (v1, TVar k (UMore v2 _)) <- takeTFree clo
+	 | Just (v1, TVar k (UMore v2 _)) <- takeTFree clo'
 	 -> insertVar v1 k v2 cs
 	
 	 | otherwise
 	 -> panic stage $ vcat
-			[ "insert: no match for " % clo
-			, ppr $ show clo ]
+			[ "insert: no match in app for " % clo'
+			, ppr $ show clo' ]
 			
 	TSum k clos
 	 | isClosureKind k
 	 -> foldr insert cs clos
 	
 	_ 	-> panic stage $ vcat
-			[ "insert: no match for " % clo
+			[ "insert: no match for closure " % clo
 			, ppr $ show clo]
 		
 insertVar v1 k v2 cs

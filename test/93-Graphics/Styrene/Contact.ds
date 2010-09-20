@@ -19,7 +19,7 @@ findContacts (World actors _)
    	treeInit	= treeZero 300.0
 
 	-- insert all the actors into the quadtree.
-	tree'		= foldl insertActor treeInit actors
+	tree'		= foldr insertActor treeInit actors
 
 	-- the potential contacts are lists of actors
 	--	that _might_ be in contact.
@@ -31,8 +31,7 @@ findContacts (World actors _)
 	contactSet	= makeContacts potentialContacts
 	
 	(contactSet, tree')
-  	
-
+ 
 
 -- | Make add all these test pairs to a map
 --	normalise so the actor with the lowest ix is first in the pair.
@@ -60,7 +59,7 @@ makeTests1 acc a1 (a2 : as)
 	| inContact a1 a2
 	= let	k1		= actorIx a1
 		k2		= actorIx a2
-		contact		= (k1 .min k2, k1 .max k2)
+		contact		= (min k1 k2, max k1 k2)
 		acc'		= insertF&{Set a} acc compareIxPair contact
 	  in	makeTests1 acc' a1 as
 	

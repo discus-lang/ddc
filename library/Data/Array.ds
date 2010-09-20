@@ -68,11 +68,18 @@ instance Functor Array where
 
 instance Foldable Array where
  foldl f acc arr 
-  = go acc 0
+  = go 0 acc
   where	len	= arr.size
 	go ix acc
 	 | ix >= len	= acc
 	 \= go (ix + 1) (f acc arr.(ix))
+
+ foldr f acc arr 
+  = go 0 acc
+  where	len	= arr.size
+	go ix acc
+	 | ix >= len	= acc
+	 \= go (ix + 1) (f arr.(ix) acc)
 
 
 -- Constructors ---------------------------------------------------------------
