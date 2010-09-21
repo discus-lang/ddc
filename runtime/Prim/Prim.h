@@ -30,7 +30,8 @@ Obj*	primFloat32_toFloat 		(Obj* x1);
 Obj*	primFloat32_truncate		(Obj* x1);
 Obj*	primFloat64_toFloat 		(Obj* x1);
 Obj*	primFloat64_truncate		(Obj* x1);
-void	primInt64_to_string		(Int64 value, char * str, int slen);
+void	primInt64_toString		(Int64 value, char * str, int slen);
+void	primWord64_toString		(Word64 value, char * str, int slen);
 
 // -- Suspend
 Obj*	primSuspend0			(void* f);

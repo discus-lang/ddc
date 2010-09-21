@@ -1,15 +1,10 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 module	Class.Show
-import	Base.Thunk
-	Data.List
- 	Data.FlatString
-	Data.String
- 	System.Console
-	Class.Out
 
+import	Data.String
+	Base
 
-----------------------------------------------------------------------------------------------------
 -- The show class for converting things to string
 class Show a where 
 
@@ -25,129 +20,5 @@ class Show a where
 		:- !e1	= !{ !ReadT a; !Read %r }
 		,  ConstT a
 		,  Lazy %r
-
-
--- Strict Show -------------------------------------------------------------------------------------
--- These instances are defined here instead of in Data.* so we don't 
---	have to worry about recursive module definitions.
-
-instance Show Unit where
- show  ss  	= "()"
- showL ss 	= "()"
-
-instance Show Bool where
- show  True	= "True"
- show  False	= "False"
-
- showL True	= "True"
- showL False	= "False"
- 
-
-instance Show Char where
- show  ss 	= "'" % string_Char32 ss % "'"
- showL ss 	= "'" % (string_Char32 @ ss) % "'"
-
-
--- We need to copy shown strings because the returned
---	string might have a different mutability.
-instance Show String where
- show  ss 	= "'" % copy ss % "'"
- showL ss	= "'" % copy @ ss % "'"
-
-instance Show Int32 where
- show  ss	= string_Int32 ss
- showL ss	= string_Int32 @ ss
-
-instance Show Int64 where
- show  ss	= string_Int64 ss
- showL ss	= string_Int64 @ ss
-
-instance Show Int32# where
- show  ss	= string_Int32 (boxInt32 ss)
- showL  ss	= string_Int32 (boxInt32 ss)
-
-instance Show Word32 where
- show  ss	= string_Word32 ss
- showL ss	= string_Word32 @ ss
-
-instance Show Float32 where
- show  ss	= string_Float32 ss
- showL ss	= string_Float32 @ ss
-
-instance Show Float64 where
- show  ss	= string_Float64 ss
- showL ss	= string_Float64 @ ss
- 
-instance Show [Int] where
- show  ss	= showList  show  ss
- showL ss	= showListL @ showL  ss
-
-instance Show [Word32] where
- show  ss	= showList  show  ss
- showL ss	= showListL @ showL  ss
-
-instance Show [Char] where
- show  ss	= showList  show   ss
- showL ss	= showListL showL  ss
-
-
-
-instance Show [Bool] where
- show  ss	= showList  show  ss
- showL ss	= showListL @ showL  ss
-
-instance Show [[Int]] where
- show  ss	= showList  show  ss
- showL ss	= showListL @ showL  ss
-
-instance Show (Int, Int) where
- show  (a,b)	= "(" % show a % ", " % show b % ")"
- showL (a,b)	= "(" % showL a % ", " % showL b % ")"
-
-instance Show [(Int, Int)] where
- show  ss	= showList  show  ss
- showL ss	= showListL @ showL  ss
-
-
-
-
--- Show a maybe something
-showMaybe showX xx
- = case xx of
- 	Just x	-> "Just " % showX x
-	Nothing	-> "Nothing"
-
--- Show a list strictly
---	this demands the entire list
-showList  showX xx
- = "[" % showList2 showX xx;
- 
-showList2 showX xx
- = case xx of 
- 	Nil		-> "]"
-	Cons x xs	-> showX x % showList3 showX xs
-	 
- 
-showList3 showX xx
- = case xx of  	
- 	Nil 		-> "]"
-	Cons x xs	-> ", " % showX x % showList3 showX xs
-
--- Show a list lazilly
---	this works for infinite data structures, but requires
---	the list and elements to be constant.
-showListL showX xx
- = case xx of 
-	Nil 		-> "[]"
-	Cons x xs	-> "[" % showX x % showListL2 @ showX xs
-
-showListL2 showX xx
- = case xx of 
- 	Nil 		-> "]"
-	Cons x xs 	-> ", " % showX x % showListL2 @ showX xs
-
--- | Wrap a string in parens
-parens :: String -> String
-parens ss	= "(" % ss % ")"
 
 

@@ -14,6 +14,10 @@ import	Class.Out
 import	Class.Promote
 import	Class.Read
 import	Class.Show
+import	Class.Show.Base
+import	Class.Show.Numeric
+import	Class.Show.List
+import	Class.Show.Other
 import	Class.Update
 
 import	Control.Exception

@@ -1,0 +1,32 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+-- | Show instances for other things.
+--   Some of these can go away when we have dictionary passing implemented.
+module	Class.Show.Other
+import	Class.Show.List
+	Class.Show.Base
+ 	System.Console
+	Data.List
+ 	Data.FlatString
+	Data.String
+	Base.Thunk
+
+instance Show (Int, Int) where
+ show  (a,b)	= "(" % show a % ", " % show b % ")"
+ showL (a,b)	= "(" % showL a % ", " % showL b % ")"
+
+
+instance Show [(Int, Int)] where
+ show  ss	= showList  show  ss
+ showL ss	= showListL @ showL  ss
+
+
+-- | Show a maybe something
+showMaybe showX xx
+ = case xx of
+ 	Just x	-> "Just " % showX x
+	Nothing	-> "Nothing"
+
+
+
+

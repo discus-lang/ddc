@@ -68,11 +68,20 @@ Obj*	primRefUpdate	(Obj* ref_, Obj* x_)
 
 
 // ------ Int64 
-void	primInt64_to_string	(Int64 value, char * str, int slen)
+void	primInt64_toString	(Int64 value, char * str, int slen)
 {
 	// Need to do it this way to correctly print an Int64, because
 	// we need "%lld" on 32 bit systems and "%ld" on 64 bit systems.
 	snprintf (str, slen, "%" PRId64, value);
+}
+
+
+// ------ Word64
+void	primWord64_toString	(Word64 value, char * str, int slen)
+{
+	// Need to do it this way to correctly print an Int64, because
+	// we need "%llu" on 32 bit systems and "%lu" on 64 bit systems.
+	snprintf (str, slen, "%" PRIu64, value);
 }
 
 

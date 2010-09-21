@@ -4,6 +4,7 @@ module	Control.Exception
 import	Base
 	Data.Numeric.Int32
 	Data.String
+	Class.Show.Numeric
 	System.Console
 	Control.Imperative
 
@@ -82,13 +83,13 @@ topHandle f
 		ExceptionCaseNoMatch name line column
 		 -> 	print	$ "*** DDC RTS: Non-exhaustive patterns in "
 		 		% SChunk name
-				% ":" % string_Int32 line % ":" % string_Int32 column
+				% ":" % showInt32 line % ":" % showInt32 column
 				% "\n\n"
 
 		ExceptionArrayBounds size ix
 		 ->	print	$ "*** DDC RTS: Array bounds exception.\n"
-				% "      Tried to access array at index: " % string_Int32 ix	% "\n"
-				% "           which is outside of range: [0 .. " % string_Int32 (size - 1) % "]\n"
+				% "      Tried to access array at index: " % showInt32 ix	% "\n"
+				% "           which is outside of range: [0 .. " % showInt32 (size - 1) % "]\n"
 				% "\n"
 	with exit 1
 

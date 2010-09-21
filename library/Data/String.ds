@@ -1,146 +1,24 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 module	Data.String 
-
 export	string_copy
 	string_eq
-	string_Word32
-	string_Int32
-	string_Int64
-	string_Float32
-	string_Float64
-	string_Char32
 	boxString
 	(%)
 	(%%)
+	parens
 
-import	Base
-	Data.FlatString
-	Data.Numeric.Word32
+import	Data.FlatString
 	Data.Numeric.Int32
 	Data.Numeric.Int64
-	Data.Numeric.Float32
-	Data.Numeric.Float64
 	Data.Char
 	Class.Eq
 	Class.Copy
+	Base
 
 
 project String 
  with	{ box; isFlat; isNul; length; flatten; head }
-
-
-instance Eq String where
-	(==) 		= string_eq
-	(/=) s1 s2	= not (string_eq s1 s2)
-
-
-instance Copy String where	
-	copy		= string_copy
-
--- Conversions -------------------------------------------------------------------------------------
-foreign import "snprintf"
-	show_danger_snprintf :: String# -> Int32# -> String# -> a -> ()
-
-
--- | Show a `Word32` as a `String`.
-string_Word32 :: Word32 -> String
-string_Word32 i
- = do	maxLen	= 20i32
- 	maxLenU	= unboxInt32 maxLen
-	iU	= unboxWord32 i
-
- 	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
-
- 	show_danger_snprintf strU maxLenU "%u"# iU
-	fs.setLengthU (stringU_length strU)
-	
-	SChunk fs
-
-
--- | Show an `Int32` as a `String`.
-string_Int32 :: Int32 -> String
-string_Int32 i
- = do	maxLen	= 20i32
- 	maxLenU	= unboxInt32 maxLen
-	iU	= unboxInt32 i
-
- 	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
-
- 	show_danger_snprintf strU maxLenU "%d"# iU
-	fs.setLengthU (stringU_length strU)
-	
-	SChunk fs
-
-
--- | Show an `Int64` as a `String`.
-string_Int64 :: Int64 -> String
-string_Int64 i
- = do	maxLen	= 40i32
-	iU	= unboxInt64 i
-
-	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
-
-	-- Safe and correct for 32 and 64 bit systems.
-	primInt64_to_string iU strU 40#i64
-	fs.setLengthU (stringU_length strU)
-
-	SChunk fs
-
-foreign import "primInt64_to_string"
- primInt64_to_string :: Int64# -> String# -> Int64# -> ()
-
-
--- | Show a `Float32` as a `String`.
-string_Float32 :: Float32 -> String
-string_Float32 f
- = do	maxLen	= 20
- 	maxLenU	= unboxInt32 maxLen
-	fU	= unboxFloat32 f
-	
-	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
-	
-	show_danger_snprintf strU maxLenU "%f"# fU
-	fs.setLengthU (stringU_length strU)
-	
-	SChunk fs
-
-
--- | Show a `Float64` as a `String`
-string_Float64 :: Float64 -> String
-string_Float64 f
- = do	maxLen	= 40
-	maxLenU	= unboxInt32 maxLen
-	fU	= unboxFloat64 f
-
-	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
-
-	-- %f probably isn't the best way of printing floats.
-	show_danger_snprintf strU maxLenU "%f"# fU
-	fs.setLengthU (stringU_length strU)
-
-	SChunk fs
-
-
--- | Show a `Char32` as a `String`.
-string_Char32 :: Char32 -> String
-string_Char32 f
- = do	maxLen	= 5
- 	maxLenU	= unboxInt32 maxLen
-	cU	= unboxChar32 f
-	
-	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
-	
-	show_danger_snprintf strU maxLenU "%c"# cU
-	fs.setLengthU (stringU_length strU)
-	
-	SChunk fs
 
 
 -- Append ------------------------------------------------------------------------------------------
@@ -255,4 +133,16 @@ head (SAppend s1 s2)
 	| isNul s1	=  head s2
 			\= head s1
 
+-- | Wrap a string in parens
+parens :: String -> String
+parens ss	= "(" % ss % ")"
 
+
+-- Instances ------------------------------------------------------------------
+instance Eq String where
+	(==) 		= string_eq
+	(/=) s1 s2	= not (string_eq s1 s2)
+
+
+instance Copy String where	
+	copy		= string_copy

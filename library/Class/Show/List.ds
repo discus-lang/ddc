@@ -1,0 +1,64 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+module Class.Show.List
+
+import	Base.Thunk
+	Class.Show
+	Class.Show.Numeric
+	Class.Show.Base
+	Data.List
+ 	Data.FlatString
+	Data.String
+ 	System.Console
+
+
+-- Show a list strictly
+--	this demands the entire list
+showList  showX xx
+ = "[" % showList2 showX xx;
+ 
+showList2 showX xx
+ = case xx of 
+ 	Nil		-> "]"
+	Cons x xs	-> showX x % showList3 showX xs
+	 
+ 
+showList3 showX xx
+ = case xx of  	
+ 	Nil 		-> "]"
+	Cons x xs	-> ", " % showX x % showList3 showX xs
+
+
+-- Show a list lazilly
+--	this works for infinite data structures, but requires
+--	the list and elements to be constant.
+showListL showX xx
+ = case xx of 
+	Nil 		-> "[]"
+	Cons x xs	-> "[" % showX x % showListL2 @ showX xs
+
+showListL2 showX xx
+ = case xx of 
+ 	Nil 		-> "]"
+	Cons x xs 	-> ", " % showX x % showListL2 @ showX xs
+
+
+instance Show [Int] where
+ show  ss	= showList  show  ss
+ showL ss	= showListL @ showL  ss
+
+instance Show [Word32] where
+ show  ss	= showList  show  ss
+ showL ss	= showListL @ showL  ss
+
+instance Show [Char] where
+ show  ss	= showList  show   ss
+ showL ss	= showListL @ showL  ss
+
+instance Show [Bool] where
+ show  ss	= showList  show  ss
+ showL ss	= showListL @ showL  ss
+
+instance Show [[Int]] where
+ show  ss	= showList  show  ss
+ showL ss	= showListL @ showL  ss

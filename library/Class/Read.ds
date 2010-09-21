@@ -2,6 +2,7 @@
 
 module	Class.Read
 import	Data.String
+	Data.Numeric.Float32
 
 class Read a where
  	read 	:: forall %r

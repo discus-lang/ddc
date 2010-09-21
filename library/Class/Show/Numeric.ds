@@ -1,0 +1,195 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+-- Show functions for Numeric types.
+-- We put them here instead of the numeric modules to break import loops.
+module	Class.Show.Numeric
+
+import 	Class.Show
+	Data.Numeric.Int32
+	Data.Numeric.Int64
+	Data.Numeric.Word32
+	Data.Numeric.Word64
+	Data.Numeric.Float32
+	Data.Numeric.Float64
+
+
+-- Imports --------------------------------------------------------------------
+foreign import "snprintf"
+	show_danger_snprintf :: String# -> Int32# -> String# -> a -> ()
+
+foreign import "primInt64_toString"
+ 	primInt64_toString :: Int64# -> String# -> Int64# -> ()
+
+foreign import "primWord64_toString"
+ 	primWord64_toString :: Word64# -> String# -> Int64# -> ()
+
+
+-- Conversions ----------------------------------------------------------------
+-- | Show an `Int32` as a `String`.
+showInt32 :: Int32 -> String
+showInt32 i
+ = do	maxLen	= 20i32
+ 	maxLenU	= unboxInt32 maxLen
+	iU	= unboxInt32 i
+
+ 	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+
+ 	show_danger_snprintf strU maxLenU "%d"# iU
+	fs.setLengthU (stringU_length strU)
+	
+	SChunk fs
+
+
+-- | Show an `Int64` as a `String`.
+showInt64 :: Int64 -> String
+showInt64 i
+ = do	maxLen	= 40i32
+	iU	= unboxInt64 i
+
+	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+
+	-- Safe and correct for 32 and 64 bit systems.
+	primInt64_toString iU strU 40#i64
+	fs.setLengthU (stringU_length strU)
+
+	SChunk fs
+
+
+-- | Show a `Word32` as a `String`.
+showWord32 :: Word32 -> String
+showWord32 i
+ = do	maxLen	= 20i32
+ 	maxLenU	= unboxInt32 maxLen
+	iU	= unboxWord32 i
+
+ 	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+
+ 	show_danger_snprintf strU maxLenU "%u"# iU
+	fs.setLengthU (stringU_length strU)
+	
+	SChunk fs
+
+
+-- | Show a `Word64` as a `String`.
+showWord64 :: Word64 -> String
+showWord64 i
+ = do	maxLen	= 40i32
+	iU	= unboxWord64 i
+
+	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+
+	-- Safe and correct for 32 and 64 bit systems.
+	primWord64_toString iU strU 40#i64
+	fs.setLengthU (stringU_length strU)
+
+	SChunk fs
+
+
+-- | Show a `Float32` as a `String`.
+showFloat32 :: Float32 -> String
+showFloat32 f
+ = do	maxLen	= 20
+ 	maxLenU	= unboxInt32 maxLen
+	fU	= unboxFloat32 f
+	
+	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+	
+	show_danger_snprintf strU maxLenU "%f"# fU
+	fs.setLengthU (stringU_length strU)
+	
+	SChunk fs
+
+
+-- | Show a `Float64` as a `String`
+showFloat64 :: Float64 -> String
+showFloat64 f
+ = do	maxLen	= 40
+	maxLenU	= unboxInt32 maxLen
+	fU	= unboxFloat64 f
+
+	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+
+	-- %f probably isn't the best way of printing floats.
+	show_danger_snprintf strU maxLenU "%f"# fU
+	fs.setLengthU (stringU_length strU)
+
+	SChunk fs
+
+
+-- | Show a `Char32` as a `String`.
+showChar32 :: Char32 -> String
+showChar32 f
+ = do	maxLen	= 5
+ 	maxLenU	= unboxInt32 maxLen
+	cU	= unboxChar32 f
+	
+	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+	
+	show_danger_snprintf strU maxLenU "%c"# cU
+	fs.setLengthU (stringU_length strU)
+	
+	SChunk fs
+
+	
+-- Instances ------------------------------------------------------------------
+instance Show Int32# where
+ show  ss	= showInt32 (boxInt32 ss)
+ showL ss	= showInt32 (boxInt32 ss)
+
+instance Show Int32 where
+ show  ss	= showInt32 ss
+ showL ss	= showInt32 @ ss
+
+
+instance Show Int64# where
+ show  ss	= showInt64 (boxInt64 ss)
+ showL ss	= showInt64 (boxInt64 ss)
+
+instance Show Int64 where
+ show  ss	= showInt64 ss
+ showL ss	= showInt64 @ ss
+
+
+instance Show Word32# where
+ show  ss	= showWord32 (boxWord32 ss)
+ showL ss	= showWord32 (boxWord32 ss)
+
+instance Show Word32 where
+ show  ss	= showWord32 ss
+ showL ss	= showWord32 @ ss
+
+
+instance Show Word64# where
+ show  ss	= showWord64 (boxWord64 ss)
+ showL ss	= showWord64 (boxWord64 ss)
+
+instance Show Word64 where
+ show  ss	= showWord64 ss
+ showL ss	= showWord64 @ ss
+
+
+instance Show Float32# where
+ show  ss	= showFloat32 (boxFloat32 ss)
+ showL ss	= showFloat32 (boxFloat32 ss)
+
+instance Show Float32 where
+ show  ss	= showFloat32 ss
+ showL ss	= showFloat32 @ ss
+
+
+instance Show Float64# where
+ show  ss	= showFloat64 (boxFloat64 ss)
+ showL ss	= showFloat64 (boxFloat64 ss)
+
+instance Show Float64 where
+ show  ss	= showFloat64 ss
+ showL ss	= showFloat64 @ ss
+
+

@@ -6,9 +6,10 @@
 --	but the 2d and 3d cases are used most often, so we use specialised versions.
 --	
 module	Math.Vec3
-import	Class.Show
-import	Data.Numeric.Float32
 import	Math.Constants
+	Data.Numeric.Float32
+	Data.List
+	Class.Show
 
 
 -- A polymorphic vector of dimension 3

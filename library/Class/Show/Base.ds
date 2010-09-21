@@ -1,0 +1,35 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+-- | Show instances for basic types.
+module	Class.Show.Base
+import	Base.Thunk
+	Data.List
+ 	Data.FlatString
+	Data.String
+ 	System.Console
+	Class.Out
+
+
+instance Show Unit where
+ show  ss  	= "()"
+ showL ss 	= "()"
+
+
+instance Show Bool where
+ show  True	= "True"
+ show  False	= "False"
+
+ showL True	= "True"
+ showL False	= "False"
+
+ 
+instance Show Char where
+ show  ss 	= "'" % showChar32 ss % "'"
+ showL ss 	= "'" % (showChar32 @ ss) % "'"
+
+
+-- | We need to copy shown strings here because the returned
+--   string might have a different mutability.
+instance Show String where
+ show  ss 	= "'" % copy ss % "'"
+ showL ss	= "'" % copy @ ss % "'"
