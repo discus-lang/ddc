@@ -1,0 +1,78 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+module Data.Numeric.Word64
+
+import	Data.Numeric.Word64U
+	DDC.Runtime.Store
+	DDC.Runtime.Alloc
+	Class.Eq
+	Class.Ord
+	Class.Copy
+	Class.Update
+	Class.Num
+	Class.Integral
+	Base.Thunk
+
+
+-- Boxing ---------------------------------------------------------------------
+boxWord64 :: Word64# -> Word64
+boxWord64 u
+ = do	w	= primAlloc_dataRS 0# 8#
+	poke (castToPtrWord64 (peekDataRS_payload w)) u
+	w
+
+
+unboxWord64 :: Word64 -> Word64#
+unboxWord64 w
+ = do	w'	= force w
+	peekOn w (castToPtrWord64 (peekDataRS_payload w'))
+
+
+-- Instances ------------------------------------------------------------------
+instance Eq Word64 where
+	(==) x y	= boxBool   (primWord64U_eq  (unboxWord64 x) (unboxWord64 y))
+	(/=) x y	= boxBool   (primWord64U_neq (unboxWord64 x) (unboxWord64 y))
+		
+
+instance Ord Word64 where
+	(>) x y		= boxBool   (primWord64U_gt  (unboxWord64 x) (unboxWord64 y))
+	(<) x y		= boxBool   (primWord64U_lt  (unboxWord64 x) (unboxWord64 y))
+	(>=) x y	= boxBool   (primWord64U_ge  (unboxWord64 x) (unboxWord64 y))
+	(<=) x y	= boxBool   (primWord64U_le  (unboxWord64 x) (unboxWord64 y))
+
+	compare x y
+	 | x == y	=  EQ
+	 | x <  y	=  LT
+	 		\= GT
+
+instance Copy Word64 where
+ 	copy x 		= boxWord64 (unboxWord64 x)
+
+
+instance Updatable Word64 where
+	(:=) w1 w2
+	 = do	w1'	= force w1
+		pokeOn w1 (castToPtrWord64 (peekDataRS_payload w1)) (unboxWord64 w2)
+		()
+
+
+instance Num Word64 where
+	negate x 	= boxWord64 (primWord64U_neg (unboxWord64 x))
+	(+) x y		= boxWord64 (primWord64U_add (unboxWord64 x) (unboxWord64 y))
+	(-) x y		= boxWord64 (primWord64U_sub (unboxWord64 x) (unboxWord64 y))
+	(*) x y		= boxWord64 (primWord64U_mul (unboxWord64 x) (unboxWord64 y))
+
+	pow x n = pow' n 1u64
+	 where	pow' :: Word64 -> Word64 -> Word64
+		pow' 0u64 acc = acc
+		pow' n    acc = pow' (n - 1u64) (acc * x)
+
+
+instance Integral Word64 where
+	div x y		= boxWord64 (primWord64U_div (unboxWord64 x) (unboxWord64 y))
+	mod x y		= boxWord64 (primWord64U_mod (unboxWord64 x) (unboxWord64 y))
+
+
+instance Accum Word64 where
+	(+=) a b	= a := (a + b)
+

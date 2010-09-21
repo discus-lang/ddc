@@ -51,6 +51,7 @@
 // -- Boxing Functions
 MAKE_BOXFUN (Word8,	sizeof(Word32));
 MAKE_BOXFUN (Word32,    sizeof(Word32));
+MAKE_BOXFUN (Word64,    sizeof(Word64));
 MAKE_BOXFUN (Int32,	sizeof(Int32));
 MAKE_BOXFUN (Int64,	sizeof(Int64));
 MAKE_BOXFUN (Float32,	sizeof(Float32));

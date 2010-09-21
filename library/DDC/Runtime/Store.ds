@@ -90,6 +90,11 @@ foreign import "(Word32 *)"
  	:: forall a
 	.  Ptr# a -> Ptr# Word32#
 
+foreign import "(Word64 *)"
+ castToPtrWord64
+ 	:: forall a
+	.  Ptr# a -> Ptr# Word64#
+
 foreign import "(Int32 *)"
  castToPtrInt32
  	:: forall a

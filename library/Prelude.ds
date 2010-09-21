@@ -23,6 +23,8 @@ import	Data.Bool
 import	Data.BoolU
 import  Data.Numeric.Word32
 import	Data.Numeric.Word32U
+import	Data.Numeric.Word64
+import	Data.Numeric.Word64U
 import	Data.Numeric.Int32
 import	Data.Numeric.Int32U
 import	Data.Numeric.Int64

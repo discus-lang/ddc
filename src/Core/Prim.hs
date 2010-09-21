@@ -285,7 +285,8 @@ isBoxFunctionV v
 	, "boxFloat32"
 	, "boxInt64"
 	, "boxFloat64"
- 	, "boxWord32" ]
+ 	, "boxWord32"
+	, "boxWord64" ]
 
 
 -- | Is this the name of a fn that unboxes a value of primitive type.
@@ -296,7 +297,8 @@ isUnboxFunctionV v
 	, "unboxFloat32"
 	, "unboxInt64"
 	, "unboxFloat64"
-	, "unboxWord32" ]
+	, "unboxWord32"
+	, "unboxWord64" ]
 
 
 -- | Frimitive functions
@@ -321,6 +323,21 @@ primFuns
 	, ("primWord32U_ge",	OpGe)
 	, ("primWord32U_lt",	OpLt)
 	, ("primWord32U_le",	OpLe) 
+
+	-- Word64U
+	, ("primWord64U_neg",	OpNeg) 
+	, ("primWord64U_add",	OpAdd)
+	, ("primWord64U_sub",	OpSub)
+	, ("primWord64U_mul",	OpMul)
+	, ("primWord64U_div",	OpDiv)
+	, ("primWord64U_mod",	OpMod)
+
+	, ("primWord64U_eq",	OpEq)
+	, ("primWord64U_neq",	OpNeq)
+	, ("primWord64U_gt",	OpGt)
+	, ("primWord64U_ge",	OpGe)
+	, ("primWord64U_lt",	OpLt)
+	, ("primWord64U_le",	OpLe) 
 
 	-- Int32U
  	, ("primInt32U_neg",	OpNeg)
