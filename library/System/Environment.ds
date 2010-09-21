@@ -1,6 +1,5 @@
 {-# OPTIONS -no-implicit-prelude #-}
 import Data.Numeric.Int32
-import Data.Numeric.Int32U
 import Data.String
 import Data.StringU
 import Data.FlatString

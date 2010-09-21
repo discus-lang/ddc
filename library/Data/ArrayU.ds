@@ -4,7 +4,6 @@ module	Data.ArrayU
 
 import	Base
 	Data.Numeric.Int32
- 	Data.Numeric.Int32U
 	Control.Imperative
 	Control.Exception
 

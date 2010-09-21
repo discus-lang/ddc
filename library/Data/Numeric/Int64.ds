@@ -2,15 +2,14 @@
 
 module	Data.Numeric.Int64
 
-import	Data.Numeric.Int64U
-	DDC.Runtime.Store
+import	DDC.Runtime.Store
 	DDC.Runtime.Alloc
 	Class.Eq
 	Class.Ord
-	Class.Num
-	Class.Integral
 	Class.Copy
 	Class.Update
+	Class.Num
+	Class.Integral
 	Base.Thunk
 
 
@@ -28,7 +27,77 @@ unboxInt64 w
 	peekOn w (castToPtrInt64 (peekDataRS_payload w'))
 
 
--- Instances ------------------------------------------------------------------
+-- Arithmetic -----------------------------------------------------------------
+foreign import "primInt64U_neg"
+ primInt64U_neg :: Int64# -> Int64#
+
+foreign import "primInt64U_add"
+ primInt64U_add :: Int64# -> Int64# -> Int64#
+
+foreign import "primInt64U_sub"
+ primInt64U_sub :: Int64# -> Int64# -> Int64#
+
+foreign import "primInt64U_mul"
+ primInt64U_mul :: Int64# -> Int64# -> Int64#
+
+foreign import "primInt64U_div"
+ primInt64U_div :: Int64# -> Int64# -> Int64#
+
+foreign import "primInt64U_mod"
+ primInt64U_mod :: Int64# -> Int64# -> Int64#
+
+
+-- Comparisons ----------------------------------------------------------------
+foreign import "primInt64U_eq"	
+ primInt64U_eq	:: Int64# -> Int64# -> Bool#
+
+foreign import "primInt64U_neq"	
+ primInt64U_neq :: Int64# -> Int64# -> Bool#
+
+foreign import "primInt64U_gt"	
+ primInt64U_gt	:: Int64# -> Int64# -> Bool#
+
+foreign import "primInt64U_ge"	
+ primInt64U_ge	:: Int64# -> Int64# -> Bool#
+
+foreign import "primInt64U_lt"	
+ primInt64U_lt	:: Int64# -> Int64# -> Bool#
+
+foreign import "primInt64U_le"	
+ primInt64U_le	:: Int64# -> Int64# -> Bool#
+
+
+-- Unboxed Instances ----------------------------------------------------------
+instance Eq Int64# where
+	(==)  x y	= boxBool (primInt64U_eq x y) 
+	(/=)  x y	= boxBool (primInt64U_neq x y)
+
+
+instance Ord Int64# where
+	(>)   x y	= boxBool (primInt64U_gt x y)
+	(<)   x y	= boxBool (primInt64U_lt x y)
+	(>=)  x y	= boxBool (primInt64U_ge x y)
+	(<=)  x y	= boxBool (primInt64U_le x y)
+
+	compare x y
+	 | x == y	=  EQ
+	 | x <  y	=  LT
+			\= GT
+
+
+instance Num Int64# where 
+ 	(+) 		= primInt64U_add
+	(-) 		= primInt64U_sub
+	(*) 		= primInt64U_mul
+	negate		= primInt64U_neg
+
+
+instance Integral Int64# where
+	div		= primInt64U_div
+	mod		= primInt64U_mod
+	
+
+-- Boxed Instances ------------------------------------------------------------
 instance Eq Int64 where
 	(==) x y	= boxBool   (primInt64U_eq  (unboxInt64 x) (unboxInt64 y))
 	(/=) x y	= boxBool   (primInt64U_neq (unboxInt64 x) (unboxInt64 y))

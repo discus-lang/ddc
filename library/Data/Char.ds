@@ -3,7 +3,7 @@
 module	Data.Char
 
 import	Base
-	Data.Numeric.Word32U
+	Data.Numeric.Word32
 
 foreign import "_boxChar32"
  boxChar32	:: Char32#{read} -> Char

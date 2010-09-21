@@ -5,7 +5,6 @@ module 	Data.FlatString
 export	flatString_copy
 
 import 	Data.Numeric.Int32
-	Data.Numeric.Int32U
  	Data.StringU
  	Data.Char
  	Class.Copy
