@@ -12,8 +12,10 @@ import Data.Map			(Map)
 
 -- CTree ------------------------------------------------------------------------------------------
 -- | The tree of type constraints.
---	In most of these constraints, the first Type parameter should always be 
---	a TClass or a TVar.
+--   In most of these constraints, the first Type parameter should always be 
+--   a TClass or a TVar.
+--
+--   TODO: Shift the internal constraints used internally by the solver somewhere else.
 --
 data	CTree
 	= -- | An empty tree, used as a place holder.
