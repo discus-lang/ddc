@@ -411,7 +411,11 @@ instance Pretty (LCQual a) PMode where
 instance Pretty (Stmt a) PMode where
  ppr xx
   = case xx of
-	SStmt sp  x		-> prettyX_naked x 					% ";"
+	SSig sp sigMode v t		
+	 -> v %> " " % sigMode %% t % ";"
+
+	SStmt sp  x
+	 -> prettyX_naked x % ";"
 
 	SBindFun sp v [] [ADefault _ x]
 	 -> padL 8 v % " " 
@@ -435,7 +439,6 @@ instance Pretty (Stmt a) PMode where
 	SBindMonadic sp v x
 	 -> v <> "<-" <> x % ";"
 
-	SSig sp v t		-> v %> " :: " % t % ";"
 
 spaceDown xx
  = case xx of

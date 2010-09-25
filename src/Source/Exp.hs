@@ -20,6 +20,7 @@ module Source.Exp
 where
 import DDC.Base.Literal
 import DDC.Type
+import DDC.Type.SigMode
 import DDC.Var
 
 -- | A `Tree` is a list of top level declarations.
@@ -119,6 +120,8 @@ data Top a
 		{ topStmt		:: Stmt a }
 		
 	deriving (Show, Eq)
+
+
 
 
 -- TODO: make this into its own data type.
@@ -248,11 +251,22 @@ data Proj a
 
 -- | Statements.
 data Stmt a	
-	= SSig		a [Var] Type
-	| SStmt		a (Exp a)			-- ^ a statement (with no arguments)
-	| SBindFun	a Var [Pat a] [Alt a]		-- ^ a guarded function binding, with patterns for the arguments. 
-	| SBindPat	a (Pat a) (Exp a)		-- ^ an irrefutable pattern binding
-	| SBindMonadic	a (Pat a) (Exp a)		-- ^ a monadic bind. Desugars to  (exp `bind` \var -> ...)
+	-- | Type of binding must be compatible with this one.
+	--   The `SigMode` field says how to do the actual comparison.
+	= SSig		a SigMode [Var] Type
+
+	-- | A statement.
+	| SStmt		a (Exp a)
+
+	-- | A guarded function binding, with patterns for the arguments.
+	| SBindFun	a Var [Pat a] [Alt a]
+
+	-- | An irrefutable pattern binding.
+	| SBindPat	a (Pat a) (Exp a)
+
+	-- | A monadic binding. 
+	--   Desugars to  (exp `bind` \var -> ...)
+	| SBindMonadic	a (Pat a) (Exp a)
 	deriving (Show, Eq)
 	
 

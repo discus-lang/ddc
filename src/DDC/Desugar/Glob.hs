@@ -33,7 +33,9 @@ data Glob a
 	, globKindSigs		:: Map Var (Top a)
 	
 	-- | Type signatures.
-	, globTypeSigs		:: Map Var (Top a)
+	--   We have a list here because there could be multiple sigs
+	--   for a given var, each with a different `SigMode`
+	, globTypeSigs		:: Map Var [Top a]
 	
 	-- | Type synonyms
 	, globTypeSynonyms	:: Map Var (Top a)
@@ -96,10 +98,11 @@ insertTopInGlob pp glob
 	PKindSig{}
 	 -> glob { globKindSigs	  = Map.insert (topKindSigVar pp)  pp (globKindSigs glob) }
 			
-	PTypeSig nn vs t
-	 -> glob { globTypeSigs	  = Map.union (Map.fromList [(v, PTypeSig nn [v] t) 
+	PTypeSig nn sigMode vs t
+	 -> glob { globTypeSigs	  = Map.unionWith (++) 
+						(Map.fromList [(v, [PTypeSig nn sigMode [v] t]) 
 								| v <- topTypeSigVars pp])
-					    (globTypeSigs glob) }
+					    	(globTypeSigs glob) }
 	PTypeSynonym{}
 	 -> glob { globTypeSynonyms
 			= Map.insert (topTypeSynonymVar pp) pp (globTypeSynonyms glob)	}
@@ -142,11 +145,11 @@ treeOfGlob glob
 		[ globExterns		glob
 		, globSuperSigs		glob
 		, globKindSigs		glob
-		, globTypeSigs		glob
 		, globTypeSynonyms	glob
 		, globRegions		glob
 		, globDataDecls		glob
 		, globClassDecls	glob])
+	++ (concat $ Map.elems $ globTypeSigs   glob)
 	++ globClassInsts glob
 	++ globProjDicts  glob
 	++ (Map.elems $ globBinds glob)

@@ -149,7 +149,7 @@ instance Monad m => TransM m a1 a2 Glob where
 	externs'	<- mapM (transZM table) $ globExterns 	   glob
 	superSigs'	<- mapM (transZM table) $ globSuperSigs    glob
 	kindSigs'	<- mapM (transZM table) $ globKindSigs 	   glob
-	typeSigs'	<- mapM (transZM table) $ globTypeSigs 	   glob
+	typeSigs'	<- mapM (mapM (transZM table)) $ globTypeSigs 	   glob
 	typeSyns'	<- mapM (transZM table) $ globTypeSynonyms glob
 	regions'	<- mapM (transZM table) $ globRegions      glob
 	dataDecls'	<- mapM (transZM table) $ globDataDecls    glob
@@ -220,8 +220,8 @@ instance Monad m => TransM m a1 a2 Top where
 	 ->  liftM3 PProjDict	(transN table nn) (transT table t) (mapM (transZM table) ss)
 	 >>= transP table
 
-	PTypeSig nn vs t
-	 ->  liftM3 PTypeSig	(transN table nn) (mapM (transV table) vs) (transT table t)
+	PTypeSig nn sigMode vs t
+	 ->  liftM4 PTypeSig	(transN table nn) (return sigMode) (mapM (transV table) vs) (transT table t)
 	 >>= transP table
 		 
 	PBind nn v x
@@ -357,9 +357,10 @@ transS_default table ss
 	
 followS table xx
   = case xx of
-	SSig nn vs t	
-	 -> liftM3 SSig		(transN table nn) (mapM (transV table) vs) (transT table t)
-
+	SSig nn sigMode vs t	
+	 -> liftM4 SSig		(transN table nn) (return sigMode)
+				(mapM (transV table) vs) (transT table t)
+				
   	SBind nn mV x
 	 -> liftM3 SBind	(transN table nn) (mLiftM (transV table) mV) (transZM table x)
 	

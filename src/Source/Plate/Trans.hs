@@ -13,6 +13,7 @@ import Util
 import Source.Exp
 import DDC.Base.Literal
 import DDC.Type
+import DDC.Type.SigMode
 import DDC.Var
 
 -- | The transform class.
@@ -126,6 +127,8 @@ instance Monad m => TransM m n1 n2 Super Super
 instance Monad m => TransM m n1 n2 Char Char
  where 	transZM table xx = return xx
 
+instance Monad m => TransM m n1 n2 SigMode SigMode
+ where	transZM table xx = return xx
 
 -- Helper functions --------------------------------------------------------------------------------
 -- | Transform some thing with the identity monad
@@ -653,11 +656,12 @@ instance (Monad m) => TransM m n1 n2 (Stmt n1) (Stmt n2) where
               xx
         followZM table xx
           = case xx of
-                SSig x0 x1 x2
+                SSig x0 x1 x2 x3
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         x2' <- transZM table x2
-                        return (SSig x0' x1' x2')
+                        x3' <- transZM table x3
+                        return (SSig x0' x1' x2' x3')
                 SStmt x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1

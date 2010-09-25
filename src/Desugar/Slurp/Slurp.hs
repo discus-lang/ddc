@@ -143,7 +143,7 @@ slurpP top@(PClassInst sp v ts ss)
 	return	( PClassInst Nothing v ts ss'
 		, [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
 
-slurpP	(PTypeSig sp vs tSig) 
+slurpP	(PTypeSig sp sigMode vs tSig) 
  = do	tVars		<- mapM lbindVtoT vs
 
 	let qs	= 
@@ -151,7 +151,7 @@ slurpP	(PTypeSig sp vs tSig)
 			| v 	<- vs
 			| tVar	<- tVars ]
 
- 	return	( PTypeSig Nothing vs tSig
+ 	return	( PTypeSig Nothing sigMode vs tSig
 		, qs)
 
 slurpP x@(PTypeSynonym sp v t)

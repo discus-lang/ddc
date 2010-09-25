@@ -55,7 +55,7 @@ slurpS	(SBind sp (Just v) e1)
 				++ [ CGen (TSM $ SMGen sp v) tBind ] } ] )
 
 -- type signatures
-slurpS	stmt@(SSig sp vs t)
+slurpS	stmt@(SSig sp sigMode vs t)
  = do
  	tXs@(tX1 : _)	<- mapM lbindVtoT vs
 	
@@ -67,7 +67,7 @@ slurpS	stmt@(SSig sp vs t)
 	return	( tX1
 		, tPure
 		, tEmpty
-		, SSig Nothing vs t
+		, SSig Nothing sigMode vs t
 		, qs)
 
 

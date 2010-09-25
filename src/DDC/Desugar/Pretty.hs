@@ -104,9 +104,9 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 			%> ("\n\n" %!% ss) % "\n"
 			% "}\n\n")
 
-	PTypeSig nn v t
+	PTypeSig nn sigMode v t
 	 -> annot nn
-	 	(v %> ("\n:: " % prettyTypeSplit t))	% ";\n\n"
+	 	(v %> ("\n" % sigMode %% prettyTypeSplit t))	% ";\n\n"
 
 	PBind nn v x
 	 -> annot nn 
@@ -215,9 +215,9 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SBindPat nn pat x
 	 -> annot nn	(pat %>> " = " % x)	% ";"
 	
-	SSig  nn vs  t	
+	SSig  nn sigMode vs  t	
 	 -> let vs'	= map (\v -> v { varModuleId = ModuleIdNil}) vs
-	    in	annot nn (vs' %!% ", " %>> " :: " % t) % ";"
+	    in	annot nn (vs' %!% ", " %>> (ppr sigMode %% t)) % ";"
 
 
 -- Alt -------------------------------------------------------------------------

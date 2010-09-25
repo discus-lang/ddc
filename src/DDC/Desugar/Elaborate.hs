@@ -214,7 +214,7 @@ attachDataDefsT defs tt
 elaborateEffCloInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
 elaborateEffCloInGlob glob
  = do	externs'	<- mapM elaborateEffCloP (globExterns glob)
-	typesigs'	<- mapM elaborateEffCloP (globTypeSigs glob)
+	typesigs'	<- mapM (mapM elaborateEffCloP) (globTypeSigs glob)
 	return	$ glob 	{ globExterns	= externs' 
 			, globTypeSigs	= typesigs' }
 
@@ -225,9 +225,9 @@ elaborateEffCloP pp
 	 -> do	t'	<- elaborateEffCloInFunSigT t
 		return	$ PExtern sp v t' mt
 		
-	PTypeSig a vs t
+	PTypeSig a sigMode vs t
 	 -> do	t'	<- elaborateEffCloInFunSigT t
-		return	$ PTypeSig a vs t'
+		return	$ PTypeSig a sigMode vs t'
 	
 	_ -> return pp
 

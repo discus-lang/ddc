@@ -93,7 +93,7 @@ pVar_withKind1 :: Parser (Var, Kind)
 pVar_withKind1
  =	do	var	<- liftM (vNameDefaultN NameType) pVarPlain
 		(	do	-- VAR :: KIND
-				pTok K.HasType
+				pTok K.HasTypeMatch
 				kind	<- pKind
 				return	(var, kind)
 
@@ -312,7 +312,7 @@ pParenTypeBody
  =	-- (VAR :: KIND)
 	Parsec.try
 	  (do	var	<- pOfSpace NameType pVarPlain
-		pTok K.HasType
+		pTok K.HasTypeMatch
 		kind	<- pKind
 
 		return	$ TVar kind $ UVar var)
@@ -320,7 +320,7 @@ pParenTypeBody
  <|>	-- (CON :: KIND)
 	Parsec.try
 	  (do	con	<- pOfSpace NameType $ pQualified pCon
-		pTok K.HasType
+		pTok K.HasTypeMatch
 		kind	<- pKind
 
 		return	$ makeTData con kind [])
@@ -419,7 +419,7 @@ pFetter
 					 effClo)
 
 		-- VAR :> EFFECT/CLOSURE
-	  <|>	(do	pTok K.IsSuptypeOf
+	  <|>	(do	pTok K.HasTypeMore
 			effClo	<- pEffect <|> pClosure
 			return	$ FMore (TVar (let Just k = kindOfSpace $ varNameSpace var in k) $ UVar var)
 					effClo))

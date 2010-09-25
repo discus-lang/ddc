@@ -170,9 +170,9 @@ pVarPlainOfSpace spaces
 pVarSpaceHasType :: NameSpace -> Parser Var
 pVarSpaceHasType spaceWant
  = Parsec.try
-	(do	var	<- pOfSpace spaceWant pVar
-		pTok	K.HasType
-		return	var)
+ $ do	var	<- pOfSpace spaceWant pVar
+	pTok	K.HasTypeMatch
+	return	var
 
 
 -- | Parse a object field name

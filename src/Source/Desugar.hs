@@ -183,10 +183,9 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		returnJ		$ D.PProjDict sp t' ss_merged
 		
 
-	S.PStmt (S.SSig sp vs t)
+	S.PStmt (S.SSig sp sigMode vs t)
 	 -> do	t'	<- rewrite t
-
-	 	returnJ	$ D.PTypeSig sp vs t
+	 	returnJ	$ D.PTypeSig sp sigMode vs t
 
   	S.PStmt s
 	 -> do	(D.SBind sp (Just v) x)	<- rewrite s
@@ -529,9 +528,9 @@ instance Rewrite (S.Proj SourcePos) (D.Proj Annot) where
 instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
  rewrite ss
   = case ss of
-	S.SSig sp vs t
+	S.SSig sp sigMode vs t
 	 -> do 	t'	<- rewrite t
-	 	return	$ D.SSig sp vs t
+	 	return	$ D.SSig sp sigMode vs t
 
 	S.SStmt sp x
 	 -> do	x'	<- rewrite x

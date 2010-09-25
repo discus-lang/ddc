@@ -20,6 +20,7 @@ import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Type
 import DDC.Type.Data
+import DDC.Type.SigMode
 import DDC.Var
 import DDC.Util.FreeVars
 import qualified Data.Set		as Set
@@ -213,7 +214,7 @@ snipInstBind' modName
 	tInst_fresh	<- freshenCrsEq modName tInst_quant
 	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
-		,  [ PTypeSig spBind [vTop] tInst_fresh
+		,  [ PTypeSig spBind SigModeMatch [vTop] tInst_fresh
 		   , PBind    spBind  vTop  xx])
 
 
@@ -230,9 +231,9 @@ snipProjDictS varMap xx
 	= ( Just $ PBind nn v' x
 	  , Just $ SBind nn (Just v)  (XVar nn v'))
 	  	
-	| SSig  nn vs t		<- xx
+	| SSig  nn sigMode vs t	 <- xx
 	, Just vs'		<- sequence $ map (\v -> Map.lookup v varMap) vs
-	= ( Just $ PTypeSig  nn vs' t
+	= ( Just $ PTypeSig nn sigMode vs' t
 	  , Nothing )
 
 	| otherwise
@@ -355,7 +356,7 @@ makeProjFun sp tData dataDef fieldV
 		= liftM stripToBodyT 
 		$ lookupTypeOfFieldFromDataDef fieldV dataDef
 
-    	return	[ SSig  sp [fieldV]
+    	return	[ SSig  sp SigModeMatch [fieldV]
 			(makeTFun tData resultT tPure tEmpty) 
 
 		, SBind sp (Just fieldV) 
@@ -415,7 +416,7 @@ makeProjR_fun sp tData dataDef vField
 				$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
 				% "  tData = " % show tData			% "\n"
 
-	return	$ 	[ SSig  sp [funV]
+	return	$ 	[ SSig  sp SigModeMatch [funV]
 				(makeTFun tData (makeTData 
 							primTRef 
 							(KFun kRegion (KFun kValue kValue))

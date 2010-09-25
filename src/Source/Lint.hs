@@ -193,10 +193,10 @@ instance Lint (DataField SourcePos) where
 instance Lint (Stmt SourcePos) where
  lint s
   = case s of
-	SSig  sp v t			
+	SSig  sp sigMode v t			
 	 -> do	v'	<- lint v
 		t'	<- lint t
-		return	$ SSig sp v' t'
+		return	$ SSig sp sigMode v' t'
 
 	SStmt sp x	
 	 -> do	x'	<- lint x
@@ -225,7 +225,7 @@ lintStmts_sigsHaveBindings ss
  = do	let sigVars	
 		= Set.fromList 
 		$ concat
-		$ [vs	| SSig _ vs _		<- ss ]
+		$ [vs	| SSig _ _ vs _		<- ss ]
 			
 	let bindVars	
 		= Set.fromList

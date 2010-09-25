@@ -42,18 +42,18 @@ elabRegionsP pp
 	 -> do	t'	<- elabRegionsT t
 		return	$ PProjDict sp t' ss
 	
-	PTypeSig sp v t
+	PTypeSig sp sigMode v t
 	 -> do	t'	<- elabRegionsT t
-		return	$ PTypeSig sp v t'
+		return	$ PTypeSig sp sigMode v t'
 			
 	_ ->	return pp
 
 
 elabRegionsS ss
  = case ss of
-	SSig sp v t
+	SSig sp sigMode v t
 	 -> do	t'	<- elabRegionsT t
-		return	$ SSig sp v t'
+		return	$ SSig sp sigMode v t'
 
 	_		-> return ss
 

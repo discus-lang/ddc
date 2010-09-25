@@ -14,6 +14,7 @@ module DDC.Desugar.Exp
 where
 import DDC.Base.Literal
 import DDC.Type.Exp
+import DDC.Type.SigMode
 import DDC.Type.Data.Base
 import DDC.Var.ModuleId
 import DDC.Var
@@ -53,6 +54,7 @@ data Top a
 	-- | Type signature.
 	| PTypeSig	
 		{ topAnnot		:: a
+		, topTypeSigMode	:: SigMode
 		, topTypeSigVars	:: [Var]
 		, topTypeSigType	:: Type }
 
@@ -223,7 +225,7 @@ data Stmt a
 	= SBind 	a (Maybe Var) 	(Exp a)
 	| SBindMonadic	a (Pat a) 	(Exp a)
 	| SBindPat	a (Pat a) 	(Exp a)
-	| SSig		a [Var]	Type
+	| SSig		a SigMode [Var]	Type
 	deriving (Show, Eq)
 	
 	

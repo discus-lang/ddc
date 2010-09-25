@@ -86,7 +86,7 @@ slurpTopNames p
 	PRegion sp v	
 	 -> [v { varNameSpace = NameRegion }]
 
-	PStmt (SSig sp vs t) 
+	PStmt (SSig sp _ vs t) 
 	 -> [v { varNameSpace = NameValue } | v <- vs]
 	
 	PStmt (SBindFun sp v pats alts)

@@ -8,6 +8,7 @@ import Source.Exp
 import Source.Parser.Type
 import Source.Parser.Pattern
 import Source.Parser.Base
+import DDC.Type.SigMode
 import DDC.Var
 import qualified Source.Token					as K
 import qualified Shared.VarPrim					as Var
@@ -495,10 +496,24 @@ pStmt_bindPat2 pat
 -- | Parse a type sig (only)
 pStmt_sig :: Parser (Stmt SP)
 pStmt_sig
- = do	vars	<- Parsec.sepBy1 (pOfSpace NameValue pVar) (pTok K.Comma)
- 	ht	<- pTok K.HasType
-	typ	<- pType
-	return	$ SSig (spTP ht) vars typ
+ = Parsec.sepBy1 (pOfSpace NameValue pVar) (pTok K.Comma) 
+ >>= \vars 
+ -> 	do 	ht	<- pTok K.HasTypeMatch
+	   	typ	<- pType
+	   	return	$ SSig (spTP ht) SigModeMatch vars typ
+
+ <|> 	do 	ht	<- pTok K.HasTypeExact
+	   	typ	<- pType
+	   	return	$ SSig (spTP ht) SigModeExact vars typ
+
+ <|>	do 	ht	<- pTok K.HasTypeLess
+	   	typ	<- pType
+	   	return	$ SSig (spTP ht) SigModeLess vars typ
+	
+ <|>	do 	ht	<- pTok K.HasTypeMore
+	   	typ	<- pType
+	   	return	$ SSig (spTP ht) SigModeMore vars typ
+
 
 -- | Parse a signature or binding
 pStmt_sigBind :: Parser (Stmt SP)

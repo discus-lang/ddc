@@ -73,6 +73,6 @@ instance FreeVars (Stmt a) where
 
 	SBindMonadic _ w x	-> freeVars x \\ bindingVarsOfPat w
 	SBindPat     _ w x	-> freeVars x \\ bindingVarsOfPat w
-	SSig	     _ _ t	-> freeVars t
+	SSig	     _ _ _ t	-> freeVars t
 
 

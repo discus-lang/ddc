@@ -106,9 +106,10 @@ tokString =
 	-- Symbols -----------------------------------------
 	
 	-- type symbols 
-	, (HasType,		"::")
-	, (IsSubtypeOf,		"<:")
-	, (IsSuptypeOf,		":>")
+	, (HasTypeMatch,	"::")
+	, (HasTypeExact,	"=:")
+	, (HasTypeLess,		"<:")
+	, (HasTypeMore,		">:")
 
 	, (HasOpType,		":$")
 	, (HasConstraint,	":-")

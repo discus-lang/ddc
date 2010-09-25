@@ -109,7 +109,7 @@ bindingVarsOfStmt ss
 	SBind 		_ (Just v) _	-> Set.singleton v
 	SBindMonadic 	_ w _		-> bindingVarsOfPat w
 	SBindPat	_ w _		-> bindingVarsOfPat w
-	SSig		_ vs _		-> Set.fromList vs
+	SSig		_ _ vs _	-> Set.fromList vs
 
 
 -- | Determine the vars being bound by a pattern lhs

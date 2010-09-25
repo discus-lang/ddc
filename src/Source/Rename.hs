@@ -180,7 +180,7 @@ instance Rename (Top SourcePos) where
 		
 		let ssF		
 			= map (\s -> case s of 
-					SSig  sp vs t		-> SSig   sp 	(map fixupV vs) t
+					SSig  sp sigMode vs t	-> SSig   sp sigMode (map fixupV vs) t
 					SBindFun sp v pats alts	-> SBindFun sp	(fixupV v) pats alts
 					_			-> panic stage "rename[Top]: no match")
 			$ ss
@@ -649,10 +649,10 @@ renameStmt bindLHS s
   = case s of
 
 	-- Note that we give sigs for both value and projection vars.
-	SSig sp vs t
+	SSig sp sigMode vs t
 	 -> do	vs'	<- mapM bindLHS vs
 		t'	<- withLocalScope $ rename t
-		return	$ SSig sp vs' t'
+		return	$ SSig sp sigMode vs' t'
 
 	SStmt sp x
 	 -> do	x'	<- withLocalScope $ rename x

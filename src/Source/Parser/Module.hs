@@ -176,7 +176,7 @@ pTopForeignImportNext startPos
  <|>	-- foreign import STRING var :: TYPE
 	do	mExName	<- Parsec.optionMaybe pString
 		var	<- pOfSpace NameValue pVar
-		pTok K.HasType
+		pTok K.HasTypeMatch
 		sig	<- pType
 
 		mOpType	<- Parsec.optionMaybe
@@ -190,7 +190,7 @@ pTopForeignImportNext startPos
 
 pTopForeignImportEnd :: SP -> String -> Var -> Parser (Top SP)
 pTopForeignImportEnd startPos name var
- =	do	pTok K.HasType
+ =	do	pTok K.HasTypeMatch
 		kind	<- pKind
 		return	$ PForeign startPos (OImportUnboxedData name var kind)
 
@@ -245,7 +245,7 @@ pTopTypePlus startPos
 
  <|>	do	-- type VAR ...
 		var	<- pOfSpace NameType pVar
-		pTok	K.HasType
+		pTok	K.HasTypeMatch
 		t	<- pType
 		return	$ PTypeSynonym startPos var t
 
@@ -254,7 +254,7 @@ pTopTypePlus startPos
 pTopTypePlus2 :: SP -> Var -> Parser (Top SP)
 pTopTypePlus2 startPos var
  =	do	-- :: TYPE
-		pTok	K.HasType
+		pTok	K.HasTypeMatch
 		kind	<- pKind
 		return	$ PKindSig startPos var kind
 
@@ -272,7 +272,7 @@ pTopEffect
  =	-- effect CON :: KIND
  	do	tok	<- pTok K.Effect
 		con	<- pOfSpace NameEffect pCon
-		pTok	K.HasType
+		pTok	K.HasTypeMatch
 		kind	<- pKind
 		return	$ PKindSig (spTP tok) con kind
 
@@ -297,7 +297,7 @@ pTopData
 		pTopData2 tok con
 
 pTopData2 tok con 
- = 	do	pTok	K.HasType
+ = 	do	pTok	K.HasTypeMatch
 		kind	<- pKind
 		return	$ PKindSig (spTP tok) con kind
 		
@@ -364,7 +364,7 @@ pTopClass
 pTopClassMore :: SP -> Var -> Parser (Top SP)
 pTopClassMore startPos con
  =	-- class CON :: SUPER
-	do	pTok K.HasType
+	do	pTok K.HasTypeMatch
 		super	<- pSuper
 		return	$ PClass startPos con super
 
@@ -381,7 +381,7 @@ pVarKind
  = 	-- (VAR :: KIND)
 	pRParen
 	  (do	var	<- liftM (vNameDefaultN NameType) pVar
-		pTok K.HasType
+		pTok K.HasTypeMatch
 		kind	<- pKind
 		return	(var, kind))
 
@@ -396,7 +396,7 @@ pVarKind
 pTopClass_sig :: Parser ([Var], Type)
 pTopClass_sig
  = do	vars	<- Parsec.sepBy1 pVar (pTok K.Comma)
-	pTok K.HasType
+	pTok K.HasTypeMatch
 	t	<- pType
 	return	(vars, t)
 

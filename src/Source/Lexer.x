@@ -114,10 +114,10 @@ tokens :-
  true\#			{ ptag (mkLit (LBool True)  Unboxed) }
  false\#		{ ptag (mkLit (LBool False) Unboxed) }
 
- \:\:			{ ptag HasType			} 
-
- \<\:			{ ptag IsSubtypeOf		}
- \:\>			{ ptag IsSuptypeOf		}
+ \:\:			{ ptag HasTypeMatch		} 
+ \=\:			{ ptag HasTypeExact		}
+ \<\:			{ ptag HasTypeLess		}
+ \:\>			{ ptag HasTypeMore		}
 
  \:\$			{ ptag HasOpType		}
  \:\-			{ ptag HasConstraint		}
