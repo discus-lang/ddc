@@ -55,12 +55,6 @@ instance Pretty CTree PMode where
 	CGen src v1
 	 -> "@CGen  " % v1 % ";"
 	 
-	CTopEffect t
-	 -> "@CTopEffect " % t		% ";"
-	 
-	CTopClosure t
-	 -> "@CTopClosure " % t	 	% ";"
-
 	-- internal
 	CLeave v
 	 -> "@CLeave " % v % ";"

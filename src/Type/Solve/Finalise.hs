@@ -66,6 +66,7 @@ solveFinalise solveCs blessMain
 	when (null errors_checkInstances)
 		checkInstances
 
+	-- Check 
 	errors_checkSchemes	<- gets stateErrors
 	when (null errors_checkSchemes)
 		checkSchemes

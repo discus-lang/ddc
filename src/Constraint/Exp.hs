@@ -82,16 +82,6 @@ data	CTree
 		Var 			--  var of type class
 		[Type]			--  type parameters of class
 
-	-- | Gathers up effect and closure visible at top level.
-	--	ie, all effects caused by cafs, and all external vars used by the module.
-	--	There should be one of each of these in the constraint list generated
-	--	by Desugar.Slurp
-	--
-	--	TODO: Is this still being used?
-	--
-	| CTopEffect	Type
-	| CTopClosure	Type
-
 
 	--------------
 	-- These constraints are used internally by the solver.
