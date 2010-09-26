@@ -258,7 +258,7 @@ compileFile_parse
 	-- Slurp out type constraints -----------------------------------------
 	outVerb $ ppr $ "  * Desugar: Slurp\n"
 
-	(sTagged, problem, vsTypesPlease)
+	(sTagged, problem)
 			<- SD.desugarSlurpConstraints
 				blessMain
 				dProg_project
@@ -272,9 +272,7 @@ compileFile_parse
 
 	-- Solve type constraints ---------------------------------------------
 	outVerb $ ppr "  * Type: Solve\n"
-	solution	<- SD.desugarSolveConstraints
-				problem
-				vsTypesPlease
+	solution	<- SD.desugarSolveConstraints problem
 
 	-- !! Early exit on StopType
 	when (elem Arg.StopType ?args)

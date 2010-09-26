@@ -15,10 +15,8 @@ import DDC.Var
 import Data.IORef
 import System.IO			(hFlush)
 import Util				hiding (null, elem)
-import qualified DDC.Type.Data		as T
 import qualified DDC.Type		as T
 import qualified Data.Foldable		as Foldable
-import qualified Constraint.Simplify	as N
 import qualified DDC.Core.Exp		as C
 import qualified Type.Export		as T
 import qualified Type.Dump		as T
@@ -29,7 +27,6 @@ import qualified DDC.Desugar.Glob	as D
 import qualified DDC.Desugar.Exp	as D
 import qualified DDC.Desugar.ToCore	as D
 import qualified DDC.Desugar.Elaborate	as D
-import qualified Desugar.Slurp.State	as D
 import qualified Desugar.Slurp.Slurp	as D
 import qualified Desugar.ProjectEta	as D
 import qualified Desugar.Project	as D
@@ -137,73 +134,31 @@ desugarSlurpConstraints
 	-> (D.Tree SourcePos)				-- source tree
 	-> (D.Tree SourcePos)				-- header tree
 	-> IO	( (D.Tree (Maybe (T.Type, T.Effect)))	-- source tree with type and effect annotations
-		, T.Problem				-- problem for contraint solver
-		, Set Var)				-- type vars we want types for.
+		, T.Problem)				-- problem for contraint solver
 				
 desugarSlurpConstraints blessMain sTree hTree
  = {-# SCC "slurpC" #-}
    do
-	let state	= D.initCSlurpS 
-	
-	-- slurp constraints from the header
-	let ((_, hctrs, _), state2)
-			= runState (D.slurpTreeM hTree)
-			$ state
-		
-	-- slurp constraints from the source 
-	let ((source', sctrs, vsBoundTopLevel), state3)
-			= runState (D.slurpTreeM sTree)
-			$ state2
-
-	let dataDefs	= Map.union
-				(Map.fromList [(T.dataDefName def, def) | D.PData _ def <- sTree])
-				(Map.fromList [(T.dataDefName def, def) | D.PData _ def <- hTree])
+	let (sTree', problem, errs)	
+		= D.slurpTree blessMain hTree sTree
 
 	-- handle errors arrising from constraint slurping
-	when (not $ null $ D.stateErrors state3)
-	 $ exitWithUserError ?args $ D.stateErrors state3
-
-	-- these are the vars we'll need types for during the Core->Desugar transform
-	let vsTypesPlease = D.stateTypesRequest state3
-
-	-- this is the table mapping value vars to type vars
-	let sigmaTable	= D.stateVarType state3
-
-	-- simplify source constraints (header constraints are already pretty simple)
-	let sctrs_simple = N.simplify vsTypesPlease sctrs
-
-	-- problem for the type constraint solver
-	let problem
-		= T.Problem
-		{ T.problemDefs			= Map.empty	-- TODO: add defs
-		, T.problemDataDefs		= dataDefs
-		, T.problemSigs			= Map.empty	-- TODO: add sigs
-		, T.problemProjDicts		= Map.empty	-- TODO: add proj dicts
-		, T.problemClassInst		= Map.empty	-- TODO: add class instances
-		, T.problemValueToTypeVars	= sigmaTable
-		, T.problemTopLevelTypeVars	= vsBoundTopLevel
-		, T.problemMainIsMain		= blessMain
-		, T.problemConstraints		= hctrs ++ sctrs_simple }
+	when (not $ null errs)
+	 $ exitWithUserError ?args errs
 
 	-- dump
 	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
-	dumpST	DumpDesugarSlurp "desugar-slurp" source'
+	dumpST	DumpDesugarSlurp "desugar-slurp" sTree'
+	
 	
 	dumpS	DumpTypeConstraints "type-constraints--source"
-		$ (catInt "\n" $ map (pprStr pprMode) sctrs)
-
-	dumpS	DumpTypeConstraints "type-constraints--source-simple"
-		$ (catInt "\n" $ map (pprStr pprMode) sctrs_simple)
-		
-	dumpS	DumpTypeConstraints "type-constraints--header"
-		$ (catInt "\n" $ map (pprStr pprMode) hctrs)
+		$ (catInt "\n" $ map (pprStr pprMode) $ T.problemConstraints problem)
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
-		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList vsTypesPlease)
+		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem)
 		
-	return	( source'
-		, problem
-		, vsTypesPlease)
+	return	( sTree'
+		, problem)
 	
 	
 -- Solve -------------------------------------------------------------------------------------------
@@ -211,13 +166,9 @@ desugarSolveConstraints
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> T.Problem		-- ^ Problem for type constraint solver.
-	-> Set Var		-- ^ Type type variables we want types for.
 	-> IO T.Solution
 	
-desugarSolveConstraints
-	problem
-	vsTypesPlease
-	
+desugarSolveConstraints problem
  = {-# SCC "solveSquid" #-}
    do
 	-- The solver state gets dumped in real-time so we can see
@@ -244,7 +195,7 @@ desugarSolveConstraints
 	 [] -> desugarSolveConstraints2 
 			hTrace
 			problem 
-	 		vsTypesPlease 
+	 		(T.problemTypeVarsPlease problem)
 			state
 
 	 -- time to die

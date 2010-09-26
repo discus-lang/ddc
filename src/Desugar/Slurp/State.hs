@@ -6,6 +6,7 @@ module	Desugar.Slurp.State
 	, CSlurpM
 	, CSlurpS  (..)
 	, initCSlurpS 
+	, addDataDefToState
 	, lookupDataDefOfCtorNamed
 	, lookupCtorDefOfCtorNamed)
 where
@@ -98,7 +99,22 @@ initCSlurpS
 	, stateTypesRequest	= Set.empty
 	, stateSlurpDefs 	= Map.empty
 	, stateVarType		= Map.empty }
-		
+
+
+-- | Add a DatDef to the slurper state
+addDataDefToState :: DataDef -> CSlurpS -> CSlurpS
+addDataDefToState dataDef state
+ = state	{ stateDataDefs	= Map.insert 
+					(dataDefName dataDef)
+					dataDef
+					(stateDataDefs state)
+
+		, stateCtorData	= Map.union 
+					(stateCtorData state)
+					(Map.fromList $ zip
+						(Map.keys  $ dataDefCtors dataDef)
+						(repeat    $ dataDefName  dataDef)) }
+
 
 -- | Lookup the data type definition containing a given data constructor
 lookupDataDefOfCtorNamed :: Var -> CSlurpM (Maybe DataDef)

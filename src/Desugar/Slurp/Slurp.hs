@@ -2,30 +2,71 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 -- | Slurp out type constraints from the desugared IR.
 module Desugar.Slurp.Slurp
-	(slurpTreeM)
+	(slurpTree)
 where
 import Util
 import Constraint.Exp
 import Constraint.Bits
+import Constraint.Simplify
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpS
 import DDC.Solve.Location
+import DDC.Solve.Interface.Problem
 import DDC.Var
 import DDC.Type			()
 import DDC.Type.Data
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
-
 stage	= "Desugar.Slurp.Slurp"
 
--- | Slurp out type constraints from this tree.
-slurpTreeM :: Tree Annot1
+-- | Slurp out a type inferencer problem from this tree.
+--   The problem carries type constraints and other information from the program
+--   that we'll need to solve them.
+slurpTree 
+	:: Bool 		-- ^ Whether to require the main fn to have type () -> ()
+	-> Tree Annot1		-- ^ Desugared header
+	-> Tree Annot1 		-- ^ Desugared tree.
+	-> (  Tree Annot2	--   Desugared tree   with type and effect annots.
+	    , Problem		--   Problem for type constraints solver.
+	    , [Error])		--   Errors found when slurping constraints.
+
+slurpTree blessMain hTree sTree
+ = let
+	state	= initCSlurpS
+
+	-- slurp constraints from this module
+	((_ , hConstraints, vsTopHeader), state1)
+		= runState (slurpTreeM hTree) state
+
+	((sTree', sConstraints, vsTopSource), state2)
+		= runState (slurpTreeM sTree) state1
+		
+	-- problem for the type constraint solver
+   	problem
+		= Problem
+		{ problemDefs			= Map.empty	-- TODO: add defs
+		, problemDataDefs		= Map.fromList [(dataDefName def, def) | PData _ def <- hTree ++ sTree ]
+		, problemSigs			= Map.empty	-- TODO: add sigs
+		, problemProjDicts		= Map.empty	-- TODO: add proj dicts
+		, problemClassInst		= Map.empty	-- TODO: add class instances
+		, problemValueToTypeVars	= stateVarType state2
+		, problemTopLevelTypeVars	= Set.union vsTopHeader vsTopSource
+		, problemMainIsMain		= blessMain
+		, problemConstraints		= simplify (stateTypesRequest state2) (hConstraints ++ sConstraints)
+		, problemTypeVarsPlease		= stateTypesRequest state2 }
+
+   in	(sTree', problem, stateErrors state2)
+
+
+slurpTreeM 
+	:: Tree Annot1
 	-> CSlurpM 
 		( Tree Annot2	-- the tree annotated with TREC variables linking it
 				--	with the constraints.
-		, [CTree]	-- list of type constraints
-		, Set Var)	-- type vars of top level bindings
+		, [CTree]
+		, Set Var)	-- vars bound at top level
+
 slurpTreeM tree
  = do
 	-- sort the top level things so that data definitions go through before their uses.
@@ -43,7 +84,6 @@ slurpTreeM tree
 	(tree', qss)	<- liftM unzip $ mapM slurpP psSorted
 	let qs		= concat qss
 	
-
 	-- pack all the bindings together.
 	let (qsBranch, qsRest)
 		= partition isCBranch qs
@@ -158,18 +198,7 @@ slurpP x@(PTypeSynonym sp v t)
  = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"
 
 slurpP p@(PData sp dataDef)
- = do	modify 	$ \s -> s 
-		{ stateDataDefs	= Map.insert 
-					(dataDefName dataDef)
-					dataDef
-					(stateDataDefs s)
-
-		, stateCtorData	= Map.union 
-					(stateCtorData s)
-					(Map.fromList $ zip
-						(Map.keys  $ dataDefCtors dataDef)
-						(repeat    $ dataDefName dataDef)) }
-			 
+ = do	modify 	$ addDataDefToState dataDef
 	return 	( PData Nothing dataDef
 		, [])
 

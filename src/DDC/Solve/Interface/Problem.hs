@@ -6,7 +6,8 @@ module DDC.Solve.Interface.Problem
 	, ProbDef	(..)
 	, ProbSig	(..)
 	, ProbProjDict	(..)
-	, ProbClassInst	(..) )
+	, ProbClassInst	(..)
+	, addProblems)
 where
 import DDC.Var
 import DDC.Type
@@ -16,6 +17,8 @@ import DDC.Solve.Location
 import Constraint.Exp
 import Data.Map			(Map)
 import Data.Set			(Set)
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 
 -- | A problem for the type inferencer.
@@ -57,9 +60,12 @@ data Problem
 	
 	  -- | Whether to require the main function to have type () -> ()
 	, problemMainIsMain	:: Bool
-	
+		
 	  -- | Constraint tree from the module being compiled.
-	, problemConstraints	:: [CTree] }
+	, problemConstraints	:: [CTree]
+	
+	  -- | Type variables we need a solution for.
+	, problemTypeVarsPlease :: Set Var }
 	
 
 -- | Type of an imported binding.
@@ -95,3 +101,17 @@ data ProbClassInst
 	, probClassInstTypeArgs	:: [Type] }
 
 
+-- | Combine two problems into one equally problematic.
+addProblems :: Problem -> Problem -> Problem
+addProblems p1 p2
+ 	= Problem
+	{ problemDefs		= Map.union          (problemDefs      p1)	  (problemDefs      p2)
+	, problemDataDefs	= Map.union          (problemDataDefs  p1)	  (problemDataDefs  p2)
+	, problemSigs		= Map.unionWith (++) (problemSigs      p1)	  (problemSigs      p2)
+	, problemProjDicts	= Map.unionWith (++) (problemProjDicts p1)	  (problemProjDicts p2)
+	, problemClassInst	= Map.unionWith (++) (problemClassInst p1)	  (problemClassInst p2)
+	, problemValueToTypeVars  = Map.union	     (problemValueToTypeVars p1)  (problemValueToTypeVars p2)
+	, problemTopLevelTypeVars = Set.union 	     (problemTopLevelTypeVars p1) (problemTopLevelTypeVars p2)
+	, problemMainIsMain	= problemMainIsMain p1 || problemMainIsMain p2 
+	, problemConstraints	= problemConstraints p1 ++ problemConstraints p2
+	, problemTypeVarsPlease = Set.union 	     (problemTypeVarsPlease p1)   (problemTypeVarsPlease p2) }
