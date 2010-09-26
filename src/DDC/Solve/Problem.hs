@@ -14,6 +14,7 @@ import DDC.Type.SigMode
 import DDC.Solve.Location
 import Constraint.Exp
 import Data.Map			(Map)
+import Data.Set			(Set)
 
 
 -- | A problem for the type inferencer.
@@ -43,10 +44,21 @@ data Problem
 	, problemProjDicts	:: Map Var [ProbProjDict]
 	
 	  -- | Type class instances.
-	, problemClassInt	:: Map Var [ProbClassInst] 
+	, problemClassInst	:: Map Var [ProbClassInst] 
+	
+	  -- | Maps value vars to their associated type vars.
+	  --   TODO: Why do we need this?
+	, problemValueToTypeVars  :: Map Var Var
+	
+	  -- | Type vars of value vars that are defined at top level
+	  --   TODO: Why do we need this? If we need it then just pass in value vars.
+	, problemTopLevelTypeVars :: Set Var
+	
+	  -- | Whether to require the main function to have type () -> ()
+	, problemMainIsMain	:: Bool
 	
 	  -- | Constraint tree from the module being compiled.
-	, problemConstraints	:: CTree }
+	, problemConstraints	:: [CTree] }
 	
 
 -- | Type of an imported binding.

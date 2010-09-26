@@ -18,15 +18,14 @@ import Constraint.Exp
 import Util
 import DDC.Solve.Location
 import DDC.Main.Error
-import DDC.Main.Arg		(Arg)
 import DDC.Solve.State
+import DDC.Solve.Problem
 import DDC.Type.Data
 import DDC.Type
-import DDC.Var
+import System.IO
+import DDC.Main.Arg		(Arg)
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
-import System.IO
-import Data.IORef
 
 debug	= True
 trace s	= when debug $ traceM s
@@ -35,29 +34,22 @@ stage	= "Type.Solve"
 
 -- | Solve some type constraints.
 squidSolve 	
-	:: [Arg]		-- ^ compiler args.
-	-> Map Var DataDef	-- ^ Data type definitions in environment.
-	-> [CTree] 		-- ^ the type constraints to solve.
-	-> Map Var Var		-- ^ table of value vars to type vars.
-	-> Set Var		-- ^ type vars of value vars which are bound at top level.
-	-> Maybe Handle		-- ^ write the debug trace to this file handle (if set).
-	-> Bool			-- ^ whether to require "main" have type () -> ().
-	-> IO SquidS		-- ^ the final solver state.
+	:: [Arg]		-- ^ Compiler args.
+	-> Maybe Handle		-- ^ Write the debug trace to this file handle (if set).
+	-> Problem		-- ^ Typing problem to solve.
+	-> IO SquidS		-- ^ The final solver state.
 
-squidSolve args dataDefs ctree sigmaTable vsBoundTopLevel mTrace blessMain
+squidSolve args mTrace problem
  = do
-	-- initialise the solver state
-	stateInit	<- squidSInit sigmaTable dataDefs
-
-	writeIORef (stateSigmaTable stateInit) sigmaTable
-	writeIORef (stateVsBoundTopLevel stateInit) vsBoundTopLevel
-
- 	let state	= stateInit
-			{ stateTrace		= mTrace
-			, stateArgs		= Set.fromList args }
+	-- Create the initial solver state.
+	state		<- squidSInit args mTrace problem
 		
-	-- run the main solver.
-	execStateT (solveM args ctree blessMain) state
+	-- Run the solver.
+	execStateT 
+		(solveM args
+			(problemConstraints problem)
+			(problemMainIsMain  problem))
+		state
 	   
 
 -- | Solve some type constraints (monadic version)

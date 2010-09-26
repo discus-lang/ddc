@@ -12,6 +12,7 @@ import qualified Shared.Unique	as U
 import Constraint.Exp
 import DDC.Solve.Error
 import DDC.Main.Arg
+import DDC.Solve.Problem
 import DDC.Solve.Graph
 import DDC.Solve.State.InstanceInfo
 import DDC.Type.Data
@@ -144,11 +145,12 @@ data SquidS
 
 -- | build an initial solver state
 squidSInit 
-	:: Map Var Var 		-- sigma table
-	-> Map Var DataDef
+	:: [Arg]		-- ^ Compiler arguments.
+	-> Maybe Handle		-- ^ File handle to dump solver trace.
+	-> Problem		-- ^ Typing problem to solve.
 	-> IO SquidS
-	
-squidSInit sigmaTable dataDefs
+
+squidSInit args mTrace problem
  = do	
 	-- Variable generator stuff
 	let Just tT	= lookup NameType 	U.typeSolve
@@ -163,21 +165,22 @@ squidSInit sigmaTable dataDefs
 			$ Map.empty 
 
 	refTraceIndent	<- liftIO $ newIORef 0
-	refSigmaTable	<- liftIO $ newIORef Map.empty
-	refVsBoundTop	<- liftIO $ newIORef Set.empty
+	refSigmaTable	<- liftIO $ newIORef $ problemValueToTypeVars  problem
+	refVsBoundTop	<- liftIO $ newIORef $ problemTopLevelTypeVars problem
 	refVarGen	<- liftIO $ newIORef varGen
 	refVarSub	<- liftIO $ newIORef Map.empty
 
 	-- Solver environment
 	let ctorDataMap	= Map.fromList
 			$ [(ctorNameT, ctorDef)
-				| dataDef	<- Map.elems dataDefs
+				| dataDef	<- Map.elems $ problemDataDefs problem
 				, ctorDef	<- Map.elems $ dataDefCtors dataDef
-				, ctorNameT	<- maybeToList $ Map.lookup (ctorDefName ctorDef) sigmaTable ]
+				, ctorNameT	<- maybeToList $ Map.lookup (ctorDefName ctorDef) 
+							(problemValueToTypeVars problem) ]
 			
 	let squidEnv
 		= SquidEnv
-		{ squidEnvDataDefs	= dataDefs
+		{ squidEnvDataDefs	= problemDataDefs problem
 		, squidEnvCtorDefs	= ctorDataMap }
 			
 	-- The type graph
@@ -199,10 +202,10 @@ squidSInit sigmaTable dataDefs
 	refClassInst	<- liftIO $ newIORef Map.empty
 
    	return	SquidS
-		{ stateTrace		= Nothing
+		{ stateTrace		= mTrace
 		, stateErrors		= []
 		, stateStop		= False 
-		, stateArgs		= Set.empty
+		, stateArgs		= Set.fromList args
 		, stateEnv		= squidEnv
 		, stateTraceIndent	= refTraceIndent
 		, stateSigmaTable	= refSigmaTable

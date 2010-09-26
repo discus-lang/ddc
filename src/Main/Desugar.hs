@@ -24,6 +24,7 @@ import qualified DDC.Core.Exp		as C
 import qualified Type.Export		as T
 import qualified Type.Dump		as T
 import qualified Type.Solve		as T
+import qualified DDC.Solve.Problem	as T
 import qualified DDC.Solve.State	as T
 import qualified DDC.Desugar.Glob	as D
 import qualified DDC.Desugar.Exp	as D
@@ -234,11 +235,20 @@ desugarSolveConstraints
 
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
 		
- 	state	<- {-# SCC "solveSquid/solve" #-} T.squidSolve 
-			?args		dataDefs
-			constraints
-			sigmaTable	vsBoundTopLevel	
-			hTrace		blessMain
+	let problem
+		= T.Problem
+		{ T.problemDefs			= Map.empty	-- TODO: add defs
+		, T.problemDataDefs		= dataDefs
+		, T.problemSigs			= Map.empty	-- TODO: add sigs
+		, T.problemProjDicts		= Map.empty	-- TODO: add proj dicts
+		, T.problemClassInst		= Map.empty	-- TODO: add class instances
+		, T.problemValueToTypeVars	= sigmaTable
+		, T.problemTopLevelTypeVars	= vsBoundTopLevel
+		, T.problemMainIsMain		= blessMain
+		, T.problemConstraints		= constraints }
+		
+ 	state	<- {-# SCC "solveSquid/solve" #-} 
+		   T.squidSolve ?args hTrace problem
 
 	-- dump out the type graph
 	--	do this before bailing on errors so we can see what's gone wrong.
