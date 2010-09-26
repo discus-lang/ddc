@@ -31,11 +31,6 @@ data	CTree
 	    -- | sub constraints
 	  , branchSub	:: [CTree] }		
 
-
-	-- | A complete type definition for a variable. 
-	--	Imported from a module, or via the FFI. Assumed to be correct.
-	| CDef		TypeSource Type Type	
-
 	-- | A type signature from the source program.
 	--	These can contain partial information about the type of bound variable.
 	| CSig		TypeSource Type Type	

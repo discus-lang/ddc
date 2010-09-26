@@ -11,6 +11,7 @@ import Util
 import DDC.Solve.Error
 import DDC.Solve.State
 import DDC.Solve.Trace
+import DDC.Solve.Interface.Problem
 import DDC.Main.Error
 import DDC.Type.Data
 import DDC.Type
@@ -41,13 +42,12 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
- = do	defs	<- getsRef stateDefs
-	env	<- gets stateEnv
+ = do	env	<- gets stateEnv
 
 	let result
 	 	-- If this var is in the defs table then it was imported from an external
 	 	--	interface (or is a generated constructor function), so we can just return it directly.
-		| Just tt	<- Map.lookup varT defs
+		| Just (ProbDef _ _ tt)	<- Map.lookup varT (squidEnvDefs env)
 		= return $ Just tt
 		
 		| Just ctorDef	<- Map.lookup varT (squidEnvCtorDefs env)

@@ -43,11 +43,6 @@ instance Monad m => TransM m CTree where
 	 -> do 	bs'	<- down bs
 		return	$ CBranch bb bs'
 	
-	CDef ts t1 t2
-	 -> do 	t1'	<- down t1
-		t2'	<- down t2
-		return	$ CDef ts t1' t2'
-
 	CSig ts t1 t2
 	 -> do 	t1'	<- down t1
 		t2'	<- down t2

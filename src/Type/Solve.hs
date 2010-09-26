@@ -85,19 +85,6 @@ solveCs	(c:cs)
 	--	the constraint slurper over the program, and are passed
 	--	into the solver from the main compiler pipeline.
 	
-	-- A type definition from some interface file.
-	--	These are 'finished', which means they're guaranteed not to
-	--	contain monomorphic type vars or meta-type variables (TClasses)
-	CDef src t1@(TVar k (UVar vDef)) t
- 	 -> do	
---	 	trace	$ "### Def  " % vDef %> ("\n:: " % prettyTypeSplit t) % "\n\n"
-
-		-- Record the constraint in the solver state
-		stateDefs `modifyRef` \defs -> 
-			Map.insert vDef t defs
-
-		solveNext cs
-
 	-- A type signagure
 	CSig src t1 t2
 	 -> do	trace	$ "### CSig  " % t1 % "\n"
@@ -246,13 +233,16 @@ solveCs	(c:cs)
 	CInstLet src vUse vInst
 	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% "\n"
 
-		defs		<- getsRef stateDefs
+		defs		<- liftM squidEnvDefs $ gets stateEnv
+		
+		trace	$ "*** defs = " % Map.keys defs
+		
 		genDone		<- getsRef stateGenDone
 		env		<- gets stateEnv
 
 		let getScheme
 			-- The scheme is in our table of external definitions
-			| Just tt	<- Map.lookup vInst defs
+			| Just (ProbDef _ _ tt)	<- Map.lookup vInst defs
 			= return (Just tt)
 
 			-- The variable refers to a data constructor in our table of data defs
@@ -359,11 +349,11 @@ solveCInst 	cs c@(CInst src vUse vInst)
  = do
 	path		<- getsRef statePath
 	sGenDone	<- getsRef stateGenDone
-	sDefs		<- getsRef stateDefs
+	sDefs		<- liftM squidEnvDefs $ gets stateEnv
 	env		<- gets stateEnv
 	trace	$ vcat
 		[ "### CInst " % vUse % " <- " % vInst
---		, "    path          = " % path
+		, "    path          = " % path
 		, "    ctorDefs      = " % (Map.keys $ squidEnvCtorDefs env)
 		, "    got           = " % Map.member vInst (squidEnvCtorDefs env) ]
 
@@ -407,7 +397,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	 (p:_)	-> graphInstantiatesAdd p bindInst
 
 	sGenDone	<- getsRef stateGenDone
-	sDefs		<- getsRef stateDefs
+	sDefs		<- liftM squidEnvDefs $ gets stateEnv 
 
 	solveCInst_simple cs c bindInst path sGenDone sDefs env
 	

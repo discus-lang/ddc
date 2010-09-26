@@ -10,6 +10,7 @@ import Constraint.Exp
 import Type.Link
 import Type.Dump		()
 import Util
+import DDC.Solve.Interface.Problem
 import DDC.Solve.Location
 import DDC.Solve.State
 import DDC.Main.Error
@@ -62,13 +63,6 @@ feedConstraint cc
 	CProject src j v1 tDict tBind
 	 -> do	addFetter src (FProj j v1 tDict tBind)
 		return ()		
-				
-	-- Type definitions, eg data constructors, external functions.
-	--	These get added to the defs table by the main solver,
-	--	and shouldn't appear in the graph.
-	CDef src (TVar k v1) t2
-	 -> 	panic stage 
-		 $ "feedConstraint: not feeding def " % cc % "\n"
 
 	_ -> 	panic stage
 		 $ "feedConstraint: can't feed " % cc % "\n"
@@ -133,10 +127,10 @@ feedType src tt
 	 | Just (v1, t@(TVar kV (UVar v2)))	<- takeTFree tt
 	 , kV == kValue
 	 -> do	cid		<- allocClass kClosure src
-		defs		<- getsRef stateDefs
-		case Map.lookup v2 defs of
+		env		<- gets stateEnv
+		case Map.lookup v2 (squidEnvDefs env) of
 		 -- type that we're refering to is in the defs table
-		 Just tDef
+		 Just (ProbDef _ _ tDef)
 		  -> do	let tDef_trim	= trimClosureT $ flattenT tDef
 
 		  	tDef'		<- linkType [] src tDef_trim

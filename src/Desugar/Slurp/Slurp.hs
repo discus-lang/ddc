@@ -33,30 +33,78 @@ slurpTree
 
 slurpTree blessMain hTree sTree
  = let
-	state	= initCSlurpS
+	tree	= hTree ++ sTree
+	state0	= initCSlurpS
 
+	-- TODO: doing thing lbindVtoT thing is a pain in the ass.
+	--       Want we really want is a constructor in Bound that takes the type
+	--       of a value variable and turns it into the corresponding type variable.
+	(defMap, state1)
+	 = runState 
+	    (do	
+		-- convert external type definitions and method types.
+		let defsExtern	= [ProbDef v sp typ | PExtern sp v typ _ 	<- tree]
+		let defsMethod	= concat 
+				$ [map (\(v, t) -> ProbDef v sp (makeMethodType vClass tsParam v t)) sigs
+					| PClassDecl sp vClass tsParam sigs <- tree]
+	
+		let defs	= defsExtern ++ defsMethod
+	
+		tsDefT		<- mapM lbindVtoT [v | ProbDef v _ _ <- defs]
+		let vsDefT	= map (\(TVar _ (UVar v)) -> v) tsDefT
+
+		return		$ Map.fromList $ zip vsDefT defs)
+	    state0
+		
+		
 	-- slurp constraints from this module
-	((_ , hConstraints, vsTopHeader), state1)
-		= runState (slurpTreeM hTree) state
+	((_ , hConstraints, vsTopHeader), state2)
+		= runState (slurpTreeM hTree) state1
 
-	((sTree', sConstraints, vsTopSource), state2)
-		= runState (slurpTreeM sTree) state1
+	((sTree', sConstraints, vsTopSource), state3)
+		= runState (slurpTreeM sTree) state2
+		
 		
 	-- problem for the type constraint solver
    	problem
 		= Problem
-		{ problemDefs			= Map.empty	-- TODO: add defs
-		, problemDataDefs		= Map.fromList [(dataDefName def, def) | PData _ def <- hTree ++ sTree ]
-		, problemSigs			= Map.empty	-- TODO: add sigs
-		, problemProjDicts		= Map.empty	-- TODO: add proj dicts
-		, problemClassInst		= Map.empty	-- TODO: add class instances
-		, problemValueToTypeVars	= stateVarType state2
-		, problemTopLevelTypeVars	= Set.union vsTopHeader vsTopSource
-		, problemMainIsMain		= blessMain
-		, problemConstraints		= simplify (stateTypesRequest state2) (hConstraints ++ sConstraints)
-		, problemTypeVarsPlease		= stateTypesRequest state2 }
+		{ problemDefs		   = defMap
+		, problemDataDefs	   = Map.fromList [(dataDefName def, def) | PData _ def        <- tree ]
+		, problemSigs		   = Map.empty	-- TODO: add sigs
+		, problemProjDicts	   = Map.empty	-- TODO: add proj dicts
+		, problemClassInst	   = Map.empty	-- TODO: add class instances
 
-   in	(sTree', problem, stateErrors state2)
+		, problemValueToTypeVars   = stateVarType state3
+		, problemTopLevelTypeVars  = Set.union vsTopHeader vsTopSource
+		, problemMainIsMain	   = blessMain
+		, problemConstraints	   = simplify (stateTypesRequest state3) (hConstraints ++ sConstraints)
+		, problemTypeVarsPlease	   = stateTypesRequest state3 }
+
+   in	(sTree', problem, stateErrors state3)
+
+
+-- create a signature from each of the bindings in the class definition
+-- eg: for something like
+--
+--	class Num a where
+--	 (+) :: a -> a -> a
+--
+-- the actual type of (+) is
+--
+-- 	(+) :: forall a. Num a => a -> a -> a
+--
+-- TODO: Put this somewhere else.
+-- TODO: Check the quantified variables aren't already there.
+--
+--
+makeMethodType vClass tsParam vSig tSig
+ = 	-- add a forall for each of the parameters of the type class
+   let	bksParam	= map (\(TVar k (UVar v)) -> (BVar v, k)) tsParam
+
+	-- add the enclosing class constraint
+   in	makeTForall_front bksParam
+		$ pushConstraintsOther [FConstraint vClass tsParam] tSig
+
 
 
 slurpTreeM 
@@ -102,7 +150,6 @@ slurpTreeM tree
 	let qsFinal_rest
 		= partitionFsSort
 			[ (=@=) CProject{}, (=@=) CClassInst{}
-			, (=@=) CDef{}
 			, (=@=) CSig{} ]
 			qsRest
 			
@@ -122,15 +169,6 @@ slurpP	(PImport sp ms)
  =	return	( PImport Nothing ms
 		, [])
 
-slurpP	(PExtern sp v tv to) 
- = do
-	vT		<- lbindVtoT v
-	let qs	= 
-		[CDef (TSV $ SVSigExtern sp v) vT tv]
-	
-	return	( PExtern Nothing v tv to
-		, qs)
-
 slurpP	(PRegion sp v)
  =	return 	( PRegion Nothing v
 		, [])
@@ -142,35 +180,6 @@ slurpP	(PKindSig sp v k)
 slurpP	(PSuperSig sp v k)
  =	return	( PSuperSig Nothing v k
 		, [])
-
-slurpP top@(PClassDecl sp vClass tsParam sigs)
- = do 	
-	-- create a signature from each of the bindings in the class definition
-	-- eg: for something like
-	--
-	--	class Num a where
-	--	 (+) :: a -> a -> a
-	--
-	-- the actual type of (+) is
-	--
-	-- 	(+) :: forall a. Num a => a -> a -> a
-	--
-	let makeDef (vSig, tSig)
-	     	= do 	vT		<- lbindVtoT vSig
-
-			-- add a forall for each of the parameters of the type class
-	     		let bksParam	= map (\(TVar k (UVar v)) -> (BVar v, k)) tsParam
-
-			-- add the enclosing class constraint
-			let tSig'	= makeTForall_front bksParam
-					$ pushConstraintsOther [FConstraint vClass tsParam] tSig
-
-			return $ CDef 	(TSV $ SVSigClass sp vClass) vT tSig'
-
-	qs <- mapM makeDef sigs
-
-	return	( PClassDecl Nothing vClass tsParam sigs
-		, qs)
 		
 slurpP top@(PClassInst sp v ts ss)
  = do	
@@ -234,4 +243,11 @@ slurpP (PBind sp v x)
 	return	( PBind Nothing v' x'
 		, qs )
 
+slurpP pp@(PExtern nn v t tSea)
+	= return (PExtern Nothing v t tSea
+		 , [])
+
+slurpP pp@(PClassDecl nn vClass tsParam tsMethods)
+	= return ( PClassDecl Nothing vClass tsParam tsMethods
+		 , [])
 					

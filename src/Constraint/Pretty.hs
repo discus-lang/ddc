@@ -22,9 +22,6 @@ instance Pretty CTree PMode where
 		%> ("\n" %!% branchSub c % "\n")
 	  % "}\n"
 
-	CDef 	src v t	
-	 -> "@CDef " % padL 15 v % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
-
 	CSig	src v t
 	 -> "@CSig  " % v % "\n" %> prettyTypeSplit t % ";\n"
 

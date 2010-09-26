@@ -6,10 +6,10 @@ module DDC.Solve.Interface.Problem
 	, ProbDef	(..)
 	, ProbSig	(..)
 	, ProbProjDict	(..)
-	, ProbClassInst	(..)
-	, addProblems)
+	, ProbClassInst	(..))
 where
 import DDC.Var
+import DDC.Base.SourcePos
 import DDC.Type
 import DDC.Type.Data
 import DDC.Type.SigMode
@@ -17,8 +17,6 @@ import DDC.Solve.Location
 import Constraint.Exp
 import Data.Map			(Map)
 import Data.Set			(Set)
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
 
 
 -- | A problem for the type inferencer.
@@ -53,6 +51,7 @@ data Problem
 	  -- | Maps value vars to their associated type vars.
 	  --   TODO: Why do we need this?
 	, problemValueToTypeVars  :: Map Var Var
+	, problemTypeToValueVars  :: Map Var Var
 	
 	  -- | Type vars of value vars that are defined at top level
 	  --   TODO: Why do we need this? If we need it then just pass in value vars.
@@ -72,7 +71,7 @@ data Problem
 data ProbDef
 	= ProbDef 
 	{ probDefVar		:: Var
-	, probDefSrc		:: TypeSource
+	, probDefSrc		:: SourcePos
 	, probDefType		:: Type }
 
 
@@ -100,18 +99,3 @@ data ProbClassInst
 	, probClassInstSrc	:: TypeSource
 	, probClassInstTypeArgs	:: [Type] }
 
-
--- | Combine two problems into one equally problematic.
-addProblems :: Problem -> Problem -> Problem
-addProblems p1 p2
- 	= Problem
-	{ problemDefs		= Map.union          (problemDefs      p1)	  (problemDefs      p2)
-	, problemDataDefs	= Map.union          (problemDataDefs  p1)	  (problemDataDefs  p2)
-	, problemSigs		= Map.unionWith (++) (problemSigs      p1)	  (problemSigs      p2)
-	, problemProjDicts	= Map.unionWith (++) (problemProjDicts p1)	  (problemProjDicts p2)
-	, problemClassInst	= Map.unionWith (++) (problemClassInst p1)	  (problemClassInst p2)
-	, problemValueToTypeVars  = Map.union	     (problemValueToTypeVars p1)  (problemValueToTypeVars p2)
-	, problemTopLevelTypeVars = Set.union 	     (problemTopLevelTypeVars p1) (problemTopLevelTypeVars p2)
-	, problemMainIsMain	= problemMainIsMain p1 || problemMainIsMain p2 
-	, problemConstraints	= problemConstraints p1 ++ problemConstraints p2
-	, problemTypeVarsPlease = Set.union 	     (problemTypeVarsPlease p1)   (problemTypeVarsPlease p2) }

@@ -40,7 +40,12 @@ data SquidEnv
 	  squidEnvDataDefs	:: Map Var DataDef
 
 	-- | Map of data constructor name to the type constructor for it.
-	, squidEnvCtorDefs	:: Map Var CtorDef }
+	, squidEnvCtorDefs	:: Map Var CtorDef 
+	
+	-- | Map type var of imported binding to its type.
+	, squidEnvDefs		:: Map Var ProbDef
+	}
+
 
 
 data SquidS 
@@ -84,10 +89,6 @@ data SquidS
 	, stateGraph		:: IORef Graph
 
 	-- | Type definitons from CDef constraints.
-	--	Most of these won't be used in any particular program and we don't want to pollute
-	--	the type graph with this information, nor have to extract them back from the graph
-	--	when it's time to export types to the Desugar->Core transform.
-	, stateDefs		:: IORef (Map Var Type)
 	
 	-- | The current path we've taken though the branches.
 	--	This tells us what branch we're currently in, and by tracing
@@ -177,18 +178,17 @@ squidSInit args mTrace problem
 				, ctorDef	<- Map.elems $ dataDefCtors dataDef
 				, ctorNameT	<- maybeToList $ Map.lookup (ctorDefName ctorDef) 
 							(problemValueToTypeVars problem) ]
-			
 	let squidEnv
 		= SquidEnv
 		{ squidEnvDataDefs	= problemDataDefs problem
-		, squidEnvCtorDefs	= ctorDataMap }
+		, squidEnvCtorDefs	= ctorDataMap 
+		, squidEnvDefs		= problemDefs problem }
 			
 	-- The type graph
 	graph		<- makeEmptyGraph
    	refGraph	<- liftIO $ newIORef graph
    
 	-- Solver state
-	refDefs		<- liftIO $ newIORef Map.empty
 	refPath		<- liftIO $ newIORef []
 	refContains	<- liftIO $ newIORef Map.empty
 	refInstantiates	<- liftIO $ newIORef Map.empty
@@ -213,7 +213,6 @@ squidSInit args mTrace problem
 		, stateVarGen		= refVarGen
 		, stateVarSub		= refVarSub
 		, stateGraph		= refGraph
-		, stateDefs		= refDefs
 		, statePath		= refPath
 		, stateContains		= refContains
 		, stateInstantiates	= refInstantiates
