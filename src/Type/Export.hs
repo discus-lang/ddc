@@ -8,6 +8,7 @@ import Type.Extract
 import Type.Plug
 import Shared.VarPrim
 import Util
+import DDC.Solve.Interface.Solution
 import DDC.Solve.Error
 import DDC.Solve.State
 import DDC.Main.Error
@@ -20,25 +21,6 @@ import qualified Data.Sequence	as Seq
 debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Export"
-
-
--- | Solution of type inferencer.
-data Solution
-	= Solution
-	{ -- | Canonical names for given variables.
-	  solutionCanon			:: Map Var Var
-
-	  -- | Types for given variables.
-	, solutionTypes			:: Map Var Type
-	
-	  -- | How the type of each occurrence of a let-bound variable was instantiated.
-	, solutionInstanceInfo		:: Map Var (InstanceInfo Type)
-
-	  -- | The constraints on each region variable.
-	, solutionRegionClasses		:: Map Var [Var] 
-	
-	  -- | How projections were resolved
-	, solutionProjResolution	:: Map Var Var }
 
 
 -- | Export useful information from the constraint solver state.

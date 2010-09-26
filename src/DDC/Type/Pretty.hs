@@ -6,7 +6,10 @@ module DDC.Type.Pretty
 	, prettyType
 	, prettyKind)
 where
-import DDC.Solve.State.InstanceInfo
+
+-- TODO: move the pretty instance for this elsewhere
+import DDC.Solve.Interface.Solution
+
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp

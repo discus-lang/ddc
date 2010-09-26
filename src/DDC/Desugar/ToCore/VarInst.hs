@@ -10,7 +10,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import Type.ToCore
 import qualified DDC.Type			as T
-import qualified DDC.Solve.State.InstanceInfo	as T
+import qualified DDC.Solve.Interface.Solution	as T
 import qualified DDC.Core.Exp			as C
 import qualified Core.Util			as C
 import qualified Data.Map			as Map

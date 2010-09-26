@@ -13,7 +13,7 @@ import Constraint.Exp
 import DDC.Solve.Error
 import DDC.Main.Arg
 import DDC.Solve.Graph
-import DDC.Solve.State.InstanceInfo
+import DDC.Solve.Interface.Solution
 import DDC.Solve.Interface.Problem
 import DDC.Type.Data
 import DDC.Type
