@@ -19,7 +19,6 @@ import qualified DDC.Type.Data		as T
 import qualified DDC.Type		as T
 import qualified Data.Foldable		as Foldable
 import qualified Constraint.Simplify	as N
-import qualified Constraint.Exp		as N
 import qualified DDC.Core.Exp		as C
 import qualified Type.Export		as T
 import qualified Type.Dump		as T
@@ -134,19 +133,14 @@ desugarProject unique modName headerTree sourceTree
 desugarSlurpConstraints 	
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
-	=> (D.Tree SourcePos)				-- source tree
+	=> Bool						-- whether to require main fn to have type () -> ()
+	-> (D.Tree SourcePos)				-- source tree
 	-> (D.Tree SourcePos)				-- header tree
 	-> IO	( (D.Tree (Maybe (T.Type, T.Effect)))	-- source tree with type and effect annotations
-		, [N.CTree]				-- type constraints
-		, Map Var T.DataDef			-- data type definitions
-		, Map Var Var 				-- sigma table (map of value -> type vars)
-		, Set Var				-- all the value vars used in the program that we'll want types for
-		, Set Var)				-- type vars for all top level bindings in the source module
-		
-desugarSlurpConstraints
-	sTree
-	hTree
-
+		, T.Problem				-- problem for contraint solver
+		, Set Var)				-- type vars we want types for.
+				
+desugarSlurpConstraints blessMain sTree hTree
  = {-# SCC "slurpC" #-}
    do
 	let state	= D.initCSlurpS 
@@ -178,6 +172,18 @@ desugarSlurpConstraints
 	-- simplify source constraints (header constraints are already pretty simple)
 	let sctrs_simple = N.simplify vsTypesPlease sctrs
 
+	-- problem for the type constraint solver
+	let problem
+		= T.Problem
+		{ T.problemDefs			= Map.empty	-- TODO: add defs
+		, T.problemDataDefs		= dataDefs
+		, T.problemSigs			= Map.empty	-- TODO: add sigs
+		, T.problemProjDicts		= Map.empty	-- TODO: add proj dicts
+		, T.problemClassInst		= Map.empty	-- TODO: add class instances
+		, T.problemValueToTypeVars	= sigmaTable
+		, T.problemTopLevelTypeVars	= vsBoundTopLevel
+		, T.problemMainIsMain		= blessMain
+		, T.problemConstraints		= hctrs ++ sctrs_simple }
 
 	-- dump
 	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
@@ -195,57 +201,29 @@ desugarSlurpConstraints
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
 		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList vsTypesPlease)
 		
-	-- all the constraints we're passing to the inferencer
-	let constraints	= hctrs ++ sctrs_simple
-
-	--
 	return	( source'
-		, constraints
-		, dataDefs
-		, sigmaTable 
-		, vsTypesPlease
-		, vsBoundTopLevel)
+		, problem
+		, vsTypesPlease)
 	
 	
 -- Solve -------------------------------------------------------------------------------------------
-
 desugarSolveConstraints
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
-	=> Map Var T.DataDef	-- ^ Map of type constructor name to data type definition.
-	-> [N.CTree]		-- ^ Type constraints to solve.
-	-> Set Var		-- ^ The type variables we want types for	
-	-> Set Var		-- ^ type vars of value vars bound at top level
-	-> Map Var Var		-- ^ sigma table
-	-> Bool			-- ^ whether to require the 'main' function to have () -> () type
+	=> T.Problem		-- ^ Problem for type constraint solver.
+	-> Set Var		-- ^ Type type variables we want types for.
 	-> IO T.Solution
-
+	
 desugarSolveConstraints
-	dataDefs
-	constraints
+	problem
 	vsTypesPlease
-	vsBoundTopLevel
-	sigmaTable
-	blessMain
-
+	
  = {-# SCC "solveSquid" #-}
    do
 	-- The solver state gets dumped in real-time so we can see
 	--	what's gone wrong if it crashes mid-stream.
 
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
-		
-	let problem
-		= T.Problem
-		{ T.problemDefs			= Map.empty	-- TODO: add defs
-		, T.problemDataDefs		= dataDefs
-		, T.problemSigs			= Map.empty	-- TODO: add sigs
-		, T.problemProjDicts		= Map.empty	-- TODO: add proj dicts
-		, T.problemClassInst		= Map.empty	-- TODO: add class instances
-		, T.problemValueToTypeVars	= sigmaTable
-		, T.problemTopLevelTypeVars	= vsBoundTopLevel
-		, T.problemMainIsMain		= blessMain
-		, T.problemConstraints		= constraints }
 		
  	state	<- {-# SCC "solveSquid/solve" #-} 
 		   T.squidSolve ?args hTrace problem
@@ -264,8 +242,9 @@ desugarSolveConstraints
 
 	 -- no errors, carry on
 	 [] -> desugarSolveConstraints2 
+			hTrace
+			problem 
 	 		vsTypesPlease 
-			hTrace 
 			state
 
 	 -- time to die
@@ -282,8 +261,9 @@ desugarSolveConstraints
 
 	 
 desugarSolveConstraints2 
-	vsTypesPlease 
 	hTrace 
+	problem
+	vsTypesPlease 
 	state
  = do	
 	when (elem Verbose ?args)

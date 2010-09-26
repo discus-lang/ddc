@@ -31,6 +31,7 @@ import qualified Source.Pragma		as Pragma
 -- desugar
 import qualified DDC.Desugar.Transform	as D
 import qualified DDC.Desugar.Glob	as D
+import qualified DDC.Solve.Interface.Problem as T
 import qualified Type.Export		as T
 
 -- core
@@ -257,13 +258,9 @@ compileFile_parse
 	-- Slurp out type constraints -----------------------------------------
 	outVerb $ ppr $ "  * Desugar: Slurp\n"
 
-	(  sTagged
-	 , sConstrs
-	 , dataDefs
-	 , mapValueToTypeVars
-	 , vsTypesPlease
-	 , vsBoundTopLevelTREC)
+	(sTagged, problem, vsTypesPlease)
 			<- SD.desugarSlurpConstraints
+				blessMain
 				dProg_project
 				hElab
 
@@ -275,14 +272,9 @@ compileFile_parse
 
 	-- Solve type constraints ---------------------------------------------
 	outVerb $ ppr "  * Type: Solve\n"
-
 	solution	<- SD.desugarSolveConstraints
-				dataDefs
-				sConstrs
+				problem
 				vsTypesPlease
-				vsBoundTopLevelTREC
-				mapValueToTypeVars
-				blessMain
 
 	-- !! Early exit on StopType
 	when (elem Arg.StopType ?args)
@@ -295,7 +287,7 @@ compileFile_parse
 	 , cHeader )	<- SD.desugarToCore
 		 		sTagged
 				hTagged
-				mapValueToTypeVars
+				(T.problemValueToTypeVars problem)
 				projTable
 				solution 
 				
@@ -321,7 +313,7 @@ compileFile_parse
 			$ Set.unions
 			$ map freeVars
 			$ [t	| (v, t)	<- Map.toList $ T.solutionTypes solution
-				, Set.member v vsBoundTopLevelTREC]
+				, Set.member v (T.problemTopLevelTypeVars problem)]
 		
 	cgModule_bind	<- SC.coreBind 
 				sModule 
@@ -416,7 +408,7 @@ compileFile_parse
 				sRenamed
 				dProg_project
 				(C.treeOfGlob cgModule_final)
-				mapValueToTypeVars
+				(T.problemValueToTypeVars problem)
 				(T.solutionTypes solution)
 				vsNoExport
 
@@ -431,7 +423,7 @@ compileFile_parse
 	 		= MN.makeInterface
 				thisScrape
 				vsNoExport
-				mapValueToTypeVars
+				(T.problemValueToTypeVars problem)
 				(T.solutionTypes solution)
 				sProg_linted
 				dProg_project
