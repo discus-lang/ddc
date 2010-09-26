@@ -19,7 +19,7 @@ import Util
 import DDC.Solve.Location
 import DDC.Main.Error
 import DDC.Solve.State
-import DDC.Solve.Problem
+import DDC.Solve.Interface.Problem
 import DDC.Type.Data
 import DDC.Type
 import System.IO

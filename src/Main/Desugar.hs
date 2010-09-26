@@ -24,7 +24,7 @@ import qualified DDC.Core.Exp		as C
 import qualified Type.Export		as T
 import qualified Type.Dump		as T
 import qualified Type.Solve		as T
-import qualified DDC.Solve.Problem	as T
+import qualified DDC.Solve.Interface.Problem as T
 import qualified DDC.Solve.State	as T
 import qualified DDC.Desugar.Glob	as D
 import qualified DDC.Desugar.Exp	as D

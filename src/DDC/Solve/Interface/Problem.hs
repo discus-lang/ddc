@@ -1,6 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module DDC.Solve.Problem
+-- | Defines a typing problem we want the type inferencer to solve.
+module DDC.Solve.Interface.Problem
 	( Problem	(..)
 	, ProbDef	(..)
 	, ProbSig	(..)

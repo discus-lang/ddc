@@ -12,9 +12,9 @@ import qualified Shared.Unique	as U
 import Constraint.Exp
 import DDC.Solve.Error
 import DDC.Main.Arg
-import DDC.Solve.Problem
 import DDC.Solve.Graph
 import DDC.Solve.State.InstanceInfo
+import DDC.Solve.Interface.Problem
 import DDC.Type.Data
 import DDC.Type
 import DDC.Var
