@@ -212,9 +212,9 @@ desugarSlurpConstraints
 desugarSolveConstraints
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
-	=> Map Var T.DataDef	-- ^ Type constructor name to data type definitions in environment.
-	-> [N.CTree]		-- ^ type constraints
-	-> Set Var		-- ^ the TEC vars to infer TECs for	
+	=> Map Var T.DataDef	-- ^ Map of type constructor name to data type definition.
+	-> [N.CTree]		-- ^ Type constraints to solve.
+	-> Set Var		-- ^ The type variables we want types for	
 	-> Set Var		-- ^ type vars of value vars bound at top level
 	-> Map Var Var		-- ^ sigma table
 	-> Bool			-- ^ whether to require the 'main' function to have () -> () type
