@@ -87,8 +87,6 @@ data SquidS
 
 	-- | The type graph
 	, stateGraph		:: IORef Graph
-
-	-- | Type definitons from CDef constraints.
 	
 	-- | The current path we've taken though the branches.
 	--	This tells us what branch we're currently in, and by tracing
