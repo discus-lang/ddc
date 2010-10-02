@@ -58,7 +58,7 @@ rewriteListComp x
 	 	return	$ D.XDo sp
 				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) (D.XLambda sp p lc') ) l') ]
 
-	-- [e | pattern <- l, Q]		=> 
+	-- [e | pattern <- l, Q]		=> concatMap (\p -> case p of pattern -> [e | Q]; _ -> []) l
 	S.XListComp sp exp (S.LCGen lazy pat l : qs)
 	 -> do
 		let catMapVar	= if lazy then primConcatMapL else primConcatMap
@@ -66,7 +66,7 @@ rewriteListComp x
 		lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		l'	<- rewrite l
 		pat'	<- rewrite [pat]
-		patFunc	<- makeMatchFunction sp pat' lc'
+		patFunc	<- makeMatchFunction sp pat' lc' (Just (D.XVar sp primNil))
 
 	 	return	$ D.XDo sp
 				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) patFunc) l') ]

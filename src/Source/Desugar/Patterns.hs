@@ -239,13 +239,15 @@ litToExp ll fmt
 
 -- | Build a function that matches on the given pattern expressions then returns the result
 --
--- eg 	makeMatchFunction  [(x, y) : xs, Just 3] exp
+-- eg 	makeMatchFunction  [(x, y) : xs, Just 3] exp (Just exp_failure)
 --
 -- => 	\v1 v2  
 --	  -> match { 
 --		| (v1, y) : xs 	<- v1 
 --		| Just 3	<- v2
 --		= exp
+--		| otherwise
+--		= exp_failure
 --	  }
 --
 --	where v1 and v2 are fresh variables
@@ -255,12 +257,13 @@ makeMatchFunction
 	:: SourcePos			-- ^ source position to use on new expression nodes
 	-> [D.Pat Annot]		-- ^ patterns to match against
 	-> D.Exp Annot			-- ^ result expression
+	-> Maybe (D.Exp Annot)	-- ^ expression to fall back on if matching fails
 	-> RewriteM (D.Exp Annot)
 	
-makeMatchFunction sp pp xResult
+makeMatchFunction sp pp xResult xFallback
  = do	
 	-- make the body expression
-	(vsFree, xBody)	<- makeMatchExp sp pp xResult
+	(vsFree, xBody)	<- makeMatchExp sp pp xResult xFallback
 
 	-- add the lambdas out the front
 	let xFinal	= addLambdas sp vsFree xBody
@@ -272,9 +275,10 @@ makeMatchExp
 	:: SourcePos 
 	-> [D.Pat Annot]
 	-> D.Exp Annot
+	-> Maybe (D.Exp Annot)
 	-> RewriteM ([Var], D.Exp Annot)
 	
-makeMatchExp sp pp xResult
+makeMatchExp sp pp xResult xFallback
  = do
 	-- make a guard for each of the patterns
 	(vs, mGs)	<- liftM unzip $ mapM makeGuard pp
@@ -284,7 +288,9 @@ makeMatchExp sp pp xResult
 	--	with a new guard to match each of the argument patterns
 	let xMatch	= case gs of
 				[]	-> xResult
-				_	-> D.XMatch sp Nothing [D.AAlt sp gs xResult]
+				-- NB: it's ok if we don't have a fallback expression because the Sea generator will fill in
+				-- a default case that just throws an appropriate exception
+				_	-> D.XMatch sp Nothing $ [D.AAlt sp gs xResult] ++ maybe [] (\x -> [D.AAlt sp [] x]) xFallback
 	return (vs, xMatch)
 
 	

@@ -321,7 +321,7 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	S.XLambdaPats sp ps x
 	 -> do	x'	<- rewrite x
 		ps'	<- mapM rewrite ps
-	 	x2	<- makeMatchFunction sp ps' x'
+	 	x2	<- makeMatchFunction sp ps' x' Nothing
 		return x2
 
 	S.XLambdaCase sp alts
@@ -766,7 +766,7 @@ rewriteDoSS (s : ss)
 	 -> do 	ss'	<- rewriteDoSS ss
 	  	let xDo	= D.XDo sp ss'
 
-		([var], xMatch)	<- makeMatchExp sp [pat] xDo
+		([var], xMatch)	<- makeMatchExp sp [pat] xDo Nothing
 
 	        let xRest	= D.XLambda sp var xMatch
 
