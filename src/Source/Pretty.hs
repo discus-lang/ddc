@@ -404,7 +404,9 @@ instance Pretty (LCQual a) PMode where
   	LCGen False p x	-> p % " <- " % x
 	LCGen True  p x -> p % " <@- " % x
 	LCExp x		-> ppr x
-	LCLet ss	-> "let { " % ss % "}"
+	LCLet ss	-> "let {\n" 
+				%> ";\n" %!% ss
+				%  "\n}"
 
 
 -- Stmt --------------------------------------------------------------------------------------------

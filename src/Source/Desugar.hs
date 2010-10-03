@@ -6,7 +6,8 @@
 --   
 module Source.Desugar
 	( rewriteTree
-	, rewrite)
+	, rewrite
+	, rewriteLetStmts )
 where
 import Util
 import Type.Util			
@@ -303,31 +304,13 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	-- Let and where expressions are treated similarly.
 	--	They're just sugar for do expressions, and don't support mutual recursion.
 	S.XLet sp ss x
-	 -> do	ss'		<- rewrite ss
-		x'		<- rewrite x
-		let ssX		= ss' ++ [D.SBind sp Nothing x']
-	 
-		ssX_demon	<- rewriteDoSS ssX
-	
- 		-- merge pattern bindings
-		let (ssX_merged, errs) = mergeBindings ssX_demon
-		mapM_ addError errs
-	 
-		return	$ D.XDo sp ssX_merged
+	 -> do	x'		<- rewrite x
+		rewriteLetStmts sp ss x'
 
 	S.XWhere sp x ss
-	 -> do	ss'		<- mapM rewrite ss
-		x'		<- rewrite x
-	 	let ssX		= ss' ++ [D.SBind sp Nothing x']
-	
-		ssX_demon	<- rewriteDoSS ssX
-	
- 		-- merge pattern bindings
-		let (ssX_merged, errs) = mergeBindings ssX_demon
-		mapM_ addError errs
+	 -> do	x'		<- rewrite x
+		rewriteLetStmts sp ss x'
 
-		return	$ D.XDo	sp ssX_merged
-		
 	S.XIfThenElse sp x1 x2 x3
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
@@ -489,6 +472,22 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	_	-> panic stage
 		$ "rewrite[Exp]: can't rewrite " % xx % "\n\n"
 		%  show xx	% "\n"
+
+-- | Used for rewriting let/where-like statements into a use of the do notation.
+-- Takes a body of the let that has already been rewritten.
+rewriteLetStmts :: SourcePos -> [S.Stmt SourcePos] -> D.Exp Annot -> RewriteM (D.Exp Annot)
+rewriteLetStmts sp ss x_body'
+  = do	ss'		<- mapM rewrite ss	
+	let ssX		= ss' ++ [D.SBind sp Nothing x_body']
+
+	ssX_demon	<- rewriteDoSS ssX
+
+	-- merge pattern bindings
+	let (ssX_merged, errs) = mergeBindings ssX_demon
+	mapM_ addError errs
+
+	return	$ D.XDo	sp ssX_merged
+
 
 
 -- Default literals to the machine type

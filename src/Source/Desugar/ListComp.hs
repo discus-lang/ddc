@@ -71,6 +71,10 @@ rewriteListComp x
 	 	return	$ D.XDo sp
 				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) patFunc) l') ]
 
+	-- [e | let s, Q]		=> let s in [e | Q]
+	S.XListComp sp exp (S.LCLet ss : qs)
+	 -> do	lc'	<- rewriteListComp $ S.XListComp sp exp qs
+		rewriteLetStmts sp ss lc'
 
 	_ -> panic stage
 		$ pprStrPlain $ "rewriteListComp failed for\n    " % x % "\n"

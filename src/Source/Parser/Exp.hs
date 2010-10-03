@@ -338,11 +338,8 @@ pLCQual :: Parser (LCQual SP)
 pLCQual
  =	-- LET VAR ...
 	do	pTok K.Let
-		pTok K.CBra
-                lcq	<- pLCQualLet
-		pSemis
-		pTok K.CKet
-                return $ lcq
+                ss	<- pCParen (Parsec.sepEndBy1 pLCQualLet pSemis)
+                return	$ LCLet ss
 
  <|> 	-- PAT <- EXP
  	-- overlaps with let and guard
@@ -358,16 +355,16 @@ pLCQual
   <?>   "pLCQual"
 
 
-pLCQualLet :: Parser (LCQual SP)
+pLCQualLet :: Parser (Stmt SP)
 pLCQualLet
  =	do	var	<- pOfSpace NameValue pVar
 		pats	<- Parsec.many pPat1
 		stmt	<- pStmt_bindVarPat var pats
-		return	$ LCLet stmt
+		return	stmt
 
  <|>	do	pat	<- pPat
 		stmt	<- pStmt_bindPat2 pat
-		return	$ LCLet stmt
+		return	stmt
 
 
 pLeftArrowIsLazy :: Parser Bool

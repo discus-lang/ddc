@@ -314,6 +314,6 @@ data Label a
 -- | Qualifiers for list comprehensions.
 data LCQual a
 	= LCGen		Bool (Pat a) (Exp a)		-- ^ Generator.			p <\@- e, p <- e
-	| LCLet		(Stmt a)			-- ^ Local declaration.		Stmt can only be SBind.
+	| LCLet		[Stmt a]			-- ^ Local declarations.	Stmts can only be SBind.
 	| LCExp		(Exp a)				-- ^ Guard.
 	deriving (Show, Eq)

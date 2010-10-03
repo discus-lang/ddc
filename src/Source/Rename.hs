@@ -494,8 +494,11 @@ renameListComp qq xx
 	 	(qs', xx')	<- renameListComp qs xx
 		return	(LCExp x' : qs', xx')
 
-	LCLet{} : _
-	 -> panic stage "renameListComp: LCLet not finished"
+	LCLet ss : qs
+	 -> withLocalScope
+	 $ do	ss'		<- renameSs ss
+		(qs', xx')	<- renameListComp qs xx
+		return	(LCLet ss' : qs', xx')
 
 		
 -- Projections -------------------------------------------------------------------------------------

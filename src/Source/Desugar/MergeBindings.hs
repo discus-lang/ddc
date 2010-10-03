@@ -11,7 +11,15 @@ import qualified Data.Map		as Map
 
 
 -- Merge -------------------------------------------------------------------------------------------
--- | Merge consecutive pattern bindings into a single binding.
+-- | Merge consecutive pattern bindings into a single binding, i.e:
+--
+--  f = \x y -> match \Delta_1
+--  f = \a b -> match \Delta_2
+--  
+-- Is rewritten to:
+--
+--  f = \x y -> match \Delta_1, \Delta_2[a/x, b/y]
+--
 --	TODO: throw an error if merged bindings aren't consecutive
 --	TODO: check for overlapping patterns		
 --
