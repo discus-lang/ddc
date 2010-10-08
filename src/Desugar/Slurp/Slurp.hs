@@ -37,23 +37,41 @@ slurpTree blessMain hTree sTree
 	state0	= initCSlurpS
 
 	-- TODO: doing thing lbindVtoT thing is a pain in the ass.
-	--       Want we really want is a constructor in Bound that takes the type
-	--       of a value variable and turns it into the corresponding type variable.
-	(defMap, state1)
+	--       It would be nice to have a constructor in Bound that takes the type of a value
+	--	 variable and changes it into the corresponding type variable... but then we can't
+	--       add that variable to sets of other type varibles.
+	((defMap, sigMap), state1)
 	 = runState 
 	    (do	
 		-- convert external type definitions and method types.
-		let defsExtern	= [ProbDef v sp typ | PExtern sp v typ _ 	<- tree]
+		let defsExtern	= [ProbDef v sp typ 
+					| PExtern sp v typ _ 	<- tree]
+
 		let defsMethod	= concat 
 				$ [map (\(v, t) -> ProbDef v sp (makeMethodType vClass tsParam v t)) sigs
 					| PClassDecl sp vClass tsParam sigs <- tree]
 	
 		let defs	= defsExtern ++ defsMethod
 	
-		tsDefT		<- mapM lbindVtoT [v | ProbDef v _ _ <- defs]
-		let vsDefT	= map (\(TVar _ (UVar v)) -> v) tsDefT
+		-- Built the map of type definitions.
+		defMap		<- liftM Map.fromList
+				$ mapM (\def@(ProbDef v _ _) -> do
+					TVar _ (UVar vT) <- lbindVtoT v
+					return	(vT, def))
+				$ defs
+				
+		-- Build the map of type sigs
+		-- TODO: Allow multiple sigs for the same variable.
+		sigMap		<- liftM Map.fromList
+				$  liftM (map (\(vT, sig) -> (vT, [sig])))
+				$  mapM (\sig@(ProbSig v _ _ _) -> do
+					TVar _ (UVar vT) <- lbindVtoT v
+					return	(vT, sig))
+				$  concat
+				$  [ map (\v -> ProbSig v sp mode t) vs
+					| PTypeSig sp mode vs t <- tree]				
 
-		return		$ Map.fromList $ zip vsDefT defs)
+		return	(defMap, sigMap))
 	    state0
 		
 		
@@ -70,7 +88,7 @@ slurpTree blessMain hTree sTree
 		= Problem
 		{ problemDefs		   = defMap
 		, problemDataDefs	   = Map.fromList [(dataDefName def, def) | PData _ def        <- tree ]
-		, problemSigs		   = Map.empty	-- TODO: add sigs
+		, problemSigs		   = sigMap
 		, problemProjDicts	   = Map.empty	-- TODO: add proj dicts
 		, problemClassInst	   = Map.empty	-- TODO: add class instances
 
@@ -193,15 +211,8 @@ slurpP top@(PClassInst sp v ts ss)
 		, [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
 
 slurpP	(PTypeSig sp sigMode vs tSig) 
- = do	tVars		<- mapM lbindVtoT vs
-
-	let qs	= 
-		[CSig (TSV $ SVSig sp v) tVar tSig
-			| v 	<- vs
-			| tVar	<- tVars ]
-
- 	return	( PTypeSig Nothing sigMode vs tSig
-		, qs)
+ = 	return	( PTypeSig Nothing sigMode vs tSig
+		, [])
 
 slurpP x@(PTypeSynonym sp v t)
  = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"

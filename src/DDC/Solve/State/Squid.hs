@@ -44,6 +44,9 @@ data SquidEnv
 	
 	-- | Map type var of imported binding to its type.
 	, squidEnvDefs		:: Map Var ProbDef
+	
+	-- | Map of type var to type sigs
+	, squidEnvSigs		:: Map Var [ProbSig]
 	}
 
 
@@ -180,7 +183,8 @@ squidSInit args mTrace problem
 		= SquidEnv
 		{ squidEnvDataDefs	= problemDataDefs problem
 		, squidEnvCtorDefs	= ctorDataMap 
-		, squidEnvDefs		= problemDefs problem }
+		, squidEnvDefs		= problemDefs problem 
+		, squidEnvSigs		= problemSigs problem }
 			
 	-- The type graph
 	graph		<- makeEmptyGraph

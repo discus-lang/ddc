@@ -11,6 +11,7 @@ import Shared.VarPrim
 import Util
 import DDC.Solve.Error
 import DDC.Solve.State
+import DDC.Solve.Interface.Problem
 import DDC.Type
 import DDC.Var.NameSpace
 import DDC.Var
@@ -20,8 +21,10 @@ import qualified DDC.Main.Arg		as Arg
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
-debug	= True
-trace s	= when debug $ traceM s
+debug	 	= True
+trace s	 	= when debug $ traceM s
+tracel s 	= when debug $ traceM (s % "\n")
+tracell s 	= when debug $ traceM (s % "\n\n")
 
 -- | Generalise a type
 generaliseType
@@ -36,19 +39,16 @@ generaliseType varT tCore envCids
 generaliseType' varT tCore envCids
  = do
 	args			<- gets stateArgs
-	trace	$ "*** Scheme.generaliseType " % varT % "\n"
-		% "\n"
-		% "    tCore\n"
-		%> prettyTypeSplit tCore	% "\n\n"
-
-		% "    envCids          = " % envCids		% "\n"
-		% "\n"
+	trace	$ vcat
+		[ "*** Scheme.generaliseType "	% varT
+		, "    tCore:\n"		%> prettyTypeSplit tCore
+		, blank
+		, "    envCids          = "	% envCids
+		, blank]
 
 	-- flatten out the scheme so its easier for staticRs.. to deal with
 	let tFlat	= flattenT tCore
-
-	trace	$ "    tFlat\n"
-		%> prettyTypeSplit tFlat	% "\n\n"
+	tracell $ "    tFlat:\n"		%> prettyTypeSplit tFlat
 
 	-- Work out which cids can't be generalised in this type.
 	-- 	Can't generalise regions in non-functions.
@@ -57,19 +57,18 @@ generaliseType' varT tCore envCids
 	let staticRsData 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsDataT    tFlat ]
 	let staticRsClosure 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsClosureT tFlat ]
 
-	trace	$ "    staticRsData     = " % staticRsData	% "\n"
-		% "    staticRsClosure  = " % staticRsClosure	% "\n"
+	trace	$ vcat
+		[ "    staticRsData     = " 	% staticRsData
+		, "    staticRsClosure  = " 	% staticRsClosure ]
 
-
-	--	Can't generalise cids which are under mutable constructors.
-	--	... if we generalise these classes then we could update an object at one 
-	--		type and read it at another, violating soundness.
-	--	
+	-- Can't generalise cids which are under mutable constructors.
+	-- ... if we generalise these classes then we could update an object at one 
+	-- 	type and read it at another, violating soundness.
 	let staticDanger	= if Set.member Arg.GenDangerousVars args
 					then []
 					else dangerousCidsT tCore
 
-	trace	$ "    staticDanger     = " % staticDanger	% "\n"
+	tracel	$ "    staticDanger     = " 	% staticDanger
 
 	-- These are all the cids we can't generalise
 	let staticCids		
@@ -79,55 +78,46 @@ generaliseType' varT tCore envCids
 			, Set.fromList staticRsClosure
 			, Set.fromList staticDanger]
 
+	tracel	$ "    staticCids       = "	% staticCids
+
+
 	-- Rewrite non-static cids to the var for their equivalence class.
 	tPlug			<- plugClassIds staticCids tCore
-
-	trace	$ "    staticCids       = " % staticCids	% "\n\n"
-		% "    tPlug\n"
-		%> prettyTypeSplit tPlug 	% "\n\n"
+	tracell	$ "    tPlug:\n"		%> prettyTypeSplit tPlug
 
 	-- Clean empty effect and closure classes that aren't ports.
 	let tsParam	=  slurpParamClassVarsT_constrainForm tPlug
 	classInst	<- getsRef stateClassInst
+
 	let tClean	= cleanType (Set.fromList tsParam) tPlug
-
-	trace	$ "    tClean\n" 
-			%> ("= " % prettyTypeSplit tClean)		% "\n\n"
-
+	tracell	$ "    tClean:\n" 		%> prettyTypeSplit tClean
 
 	let tReduce	= reduceContextT classInst tClean
-	trace	$ "    tReduce\n"
-			%> ("= " % prettyTypeSplit tReduce)		% "\n\n"
-
---	trace	$ "     classInts = " % classInst		% "\n\n"
+	tracell	$ "    tReduce:\n"		%> prettyTypeSplit tReduce
 
 	-- Mask effects and Const/Mutable/Local/Direct constraints on local regions.
 	-- 	Do this before adding foralls so we don't end up with quantified regions that
 	--	aren't present in the type scheme.
 	--
 	let rsVisible	= visibleRsT $ flattenT tReduce
+	tracell	$ "    rsVisible        = " 	% rsVisible
 
 	let tMskLocal	= maskLocalT rsVisible tReduce
-
-	trace	$ "    rsVisible    = " % rsVisible		% "\n\n"
-	trace	$ "    tMskLocal\n"
-		%> prettyTypeSplit tMskLocal 	% "\n\n"
+	tracell	$ "    tMskLocal:\n"		%> prettyTypeSplit tMskLocal
 
 	-- If we're generalising the type of a top level binding, 
 	--	and if any of its free regions are unconstraind,
 	--	then make them constant.
 	vsBoundTop	<- getsRef stateVsBoundTopLevel
-	let isTopLevel	= Set.member varT vsBoundTop
 
-	let fsMskLocal	
-		= case tMskLocal of
-			TConstrain _ crs	-> fettersOfConstraints crs
-			_			-> []
+	let isTopLevel	= Set.member varT vsBoundTop
+	tracell	$ "    isTopLevel       = " 	% isTopLevel
 
 	let rsMskLocal	= Set.toList $ freeTClasses tMskLocal
+	let fsMskLocal	= case tMskLocal of
+				TConstrain _ crs	-> fettersOfConstraints crs
+				_			-> []
 	
-	trace	$ "    isTopLevel   = " % isTopLevel		% "\n\n"
-
 	let fsMore
 		| isTopLevel
 		=  [ FConstraint primConst [tR]
@@ -144,8 +134,7 @@ generaliseType' varT tCore envCids
 		= []
 		
 	let tConstify	= addConstraints (constraintsOfFetters fsMore) tMskLocal
-
-	trace	$ "    tConstify    = " % tConstify 		% "\n\n"
+	tracell	$ "    tConstify:\n" 		%> prettyTypeSplit tConstify
 
 	-- Check context for problems
 	checkContext tConstify
@@ -156,11 +145,11 @@ generaliseType' varT tCore envCids
 			$ Var.sortForallVars
 			$ Set.toList $ freeVars tConstify
 
-	let vksFree	= map 	 (\v -> (v, let Just k = kindOfSpace $ varNameSpace v in k)) 
-			$ vsFree
+	let vksFree	= map 	 (\v -> (v, let Just k = kindOfSpace $ varNameSpace v in k)) $ vsFree
+	tracell	$ "    vksFree          = " 	% vksFree
 
-	trace	$ "    vksFree   = " % vksFree	% "\n\n"
 	let tScheme	= quantifyVarsT vksFree tConstify
+	tracell	$ "    tScheme:\n"		%> prettyTypeSplit tScheme
 
 	-- Remember which vars are quantified
 	--	we can use this information later to clean out non-port effect and closure vars
@@ -169,7 +158,6 @@ generaliseType' varT tCore envCids
 			$ [(v, t)	| FMore (TVar k (UVar v)) t
 					<- slurpFetters tScheme]
 	
-	
 	-- lookup :> bounds for each quantified var
 	let (vkbsFree	:: [(Var, (Kind, Maybe Type))])
 		= map (\(v, k) -> (v, (k, Map.lookup v vtsMore))) vksFree
@@ -177,12 +165,28 @@ generaliseType' varT tCore envCids
 	stateQuantifiedVarsKM 	`modifyRef` Map.union (Map.fromList vkbsFree)
 	stateQuantifiedVars	`modifyRef` Set.union (Set.fromList vsFree) 
 
-	trace	$ "    tScheme\n"
-		%> prettyTypeSplit tScheme 	% "\n\n"
+	-- Check generalised scheme any sigs we have for it.
+	pbSigs		<- liftM (join . maybeToList . Map.lookup varT) 
+			$  liftM squidEnvSigs
+			$  gets  stateEnv 
+
+	mapM_ (checkSchemeAgainstSig tScheme) pbSigs
 
 	return	tScheme
 
 
+-- | Check a generalised type scheme against a provided type signature.
+checkSchemeAgainstSig :: Type -> ProbSig -> SquidM ()
+checkSchemeAgainstSig tScheme (ProbSig v sp mode tSig)
+ = do	trace	$ vcat
+		[ "    tSig\n"	%> prettyTypeSplit tSig
+		, "    mode  = " % show mode
+		, blank ]
+
+
+
+-- | Slurp the fetters from a type.
+slurpFetters :: Type -> [Fetter]
 slurpFetters tt
 	= case tt of
 		TForall b k t'	 -> slurpFetters t'

@@ -233,9 +233,8 @@ solveCs	(c:cs)
 	CInstLet src vUse vInst
 	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% "\n"
 
-		defs		<- liftM squidEnvDefs $ gets stateEnv
-		
-		trace	$ "*** defs = " % Map.keys defs
+		defs		<- liftM squidEnvDefs $ gets stateEnv		
+--		trace	$ "*** defs = " % Map.keys defs
 		
 		genDone		<- getsRef stateGenDone
 		env		<- gets stateEnv

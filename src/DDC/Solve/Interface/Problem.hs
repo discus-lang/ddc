@@ -79,7 +79,7 @@ data ProbDef
 data ProbSig
 	= ProbSig
 	{ probSigVar		:: Var
-	, probSigSrc		:: TypeSource
+	, probSigSrc		:: SourcePos
 	, probSigMode		:: SigMode
 	, probSigType		:: Type }
 
