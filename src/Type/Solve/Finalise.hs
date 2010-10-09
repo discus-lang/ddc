@@ -79,6 +79,5 @@ solveFinalise solveCs blessMain
 	-- Report whether there were any errors
 	errors	<- gets stateErrors
 	trace   $ "=== Errors: " % errors % "\n"
-
-		
+	
 	return ()

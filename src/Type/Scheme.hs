@@ -6,15 +6,13 @@ module Type.Scheme
 where
 import Type.Check.Danger
 import Type.Plug
-import Type.ToCore		
 import Type.Strengthen
 import Shared.VarPrim
 import Util
 import DDC.Solve.Error
 import DDC.Solve.State
-import DDC.Solve.Interface.Problem
+import DDC.Solve.Check.Signature
 import DDC.Type
-import DDC.Type.SigMode
 import DDC.Var.NameSpace
 import DDC.Var
 import DDC.Util.FreeVars
@@ -22,7 +20,6 @@ import qualified Shared.VarUtil		as Var
 import qualified DDC.Main.Arg		as Arg
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-import qualified Data.Foldable		as Foldable
 
 debug	 	= True
 trace s	 	= when debug $ traceM s
@@ -176,118 +173,6 @@ generaliseType' varT tCore envCids
 	mapM_ (checkSchemeAgainstSig tScheme) pbSigs
 
 	return	tScheme
-
-
--- | Check a generalised type scheme against a provided type signature.
---
---   TODO: This won't work for type sigs that have constraints on monomorphic effect
---         or closure variables. This could happen if we have mutable data at top 
---         level which contains effectful functions, so the effect vars aren't generalised.
---         It would also happen if we had sigs on local bindings.
---
-checkSchemeAgainstSig :: Type -> ProbSig -> SquidM ()
-checkSchemeAgainstSig tScheme prob@(ProbSig v sp mode tSig)
- = do	
-	-- Break both types down into their component parts
-	-- This doesn't reveal more-than constraints on skolem vars.
-	let (bksSchemeQuant, ksSchemeContext, tSchemeBody)	
-		= stripForallContextT $ toCoreT tScheme
-
-	let (bksSigQuant,    ksSigContext,    tSigBody)	
-		= stripForallContextT $ toCoreT tSig
-
-	-- Try to unify the bodies of both types
-	-- They always have to unify, but we allow the constraints to differ depending
-	-- on what mode the signature has.
-	-- TODO: Handle unification failure
-	let Just csBits	= unifyTT    tSchemeBody tSigBody
-	
-	-- The inferred scheme will use different variable names than the signature.
-	-- We recover the name mapping from the constraints given to us by the unifier.
-	-- TODO: Check for "not sufficiently polymorphic" problems, make sure
-	--       different names in the sig are also different in the inferred scheme.
-	let vvsRenames	= catMaybes
-	 		$ map (uncurry slurpRename)
-			$ Foldable.toList csBits
-
-	-- Rename the inferred scheme to it (hopefully) matches the signature.
-	let tSchemeBody'	= subVV_everywhere (Map.fromList vvsRenames) tSchemeBody
-	
-	-- 
-	let subsLow		= subsumesTT tSchemeBody' tSigBody
-	let subsHigh		= subsumesTT tSigBody     tSchemeBody'
-
-	-- TODO: Compare sets of quantified variables.
-	-- TODO: Compare constraints.
-
-	trace	$ vcat
-		[ "    schemeQuant\n"		%> bksSchemeQuant, 			blank
-		, "    schemeContext\n"		%> ksSchemeContext,		 	blank
-		, "    schemeBody\n"		%> prettyTypeSplit tSchemeBody, 	blank
-		, "    schemeBody'\n"		%> prettyTypeSplit tSchemeBody',	blank
-		, blank
-		, "    sigQuant\n"		%> bksSigQuant, 			blank
-		, "    sigContext\n"		%>  ksSigContext,		 	blank
-		, "    sigBody\n"		%> prettyTypeSplit tSigBody, 		blank
-		, blank
-		, "    mode       = "		% show mode
-		, "    csBits     = "		% csBits
-		, "    vvsRenames = "		% vvsRenames
-		, "    subsLow    = "		% isSubsumes subsLow
-		, "    subsHigh   = "		% isSubsumes subsHigh ,		blank ]
-
-	let mErrs	= checkSchemeDiagnose tScheme prob subsLow subsHigh
-	addErrors $ maybeToList mErrs
-	
-	return ()
-		
-
-checkSchemeDiagnose
-	:: Type 
-	-> ProbSig 
-	-> Subsumes
-	-> Subsumes
-	-> Maybe Error
-	
-checkSchemeDiagnose tScheme prob@(ProbSig v sp mode tSig) subsLow subsHigh
-	| SigModeMatch	<- mode
-	= Nothing
-
-	| SigModeLess	<- mode
-	, Subsumes	<- subsLow
-	= Nothing
-	
-	| SigModeMore	<- mode
-	, Subsumes	<- subsHigh
-	= Nothing
-
-	| SigModeExact	<- mode
-	, Subsumes	<- subsLow
-	, Subsumes	<- subsHigh
-	= Nothing
-	
-	| otherwise
-	= Just 	$ ErrorSigMismatch
-		{ eScheme	= (v, tScheme)
-		, eSigMode	= mode
-		, eSigPos	= sp
-		, eSigType	= tSig }
-	
-
-slurpRename :: Type -> Type -> Maybe (Var, Var)
-slurpRename t1 t2
- 	| TVar _ u1	<- t1
-	, TVar _ u2	<- t2
-	, Just v1	<- takeVarOfBound u1
-	, Just v2	<- takeVarOfBound u2
-	= Just (v1, v2)
-	
-	| otherwise
-	= Nothing
-	
-
-
-	
 
 
 -- | Slurp the fetters from a type.
