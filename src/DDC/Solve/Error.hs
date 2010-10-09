@@ -9,6 +9,7 @@ import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
+import DDC.Type.SigMode
 import DDC.Var
 import qualified Shared.VarUtil	as Var
 import Util
@@ -28,59 +29,59 @@ data Error
 
 	-- | Constructor mismatch.
 	| ErrorUnifyCtorMismatch
-		{ eCtor1	:: Type
-		, eTypeSource1	:: TypeSource
+		{ eCtor1		:: Type
+		, eTypeSource1		:: TypeSource
 
-		, eCtor2	:: Type 
-		, eTypeSource2	:: TypeSource }
+		, eCtor2		:: Type 
+		, eTypeSource2		:: TypeSource }
 		
 	-- | Kind mismatch.
 	| ErrorUnifyKindMismatch
-		{ eKind1	:: Kind
-		, eTypeSource1	:: TypeSource
-		, eKind2	:: Kind
-		, eTypeSource2	:: TypeSource }
+		{ eKind1		:: Kind
+		, eTypeSource1		:: TypeSource
+		, eKind2		:: Kind
+		, eTypeSource2		:: TypeSource }
 
 	-- | Cannot construct infinite type.
 	| ErrorInfiniteType
-		{ eVar		:: Var
-		, eLoops	:: [(Type, Type)] }
+		{ eVar			:: Var
+		, eLoops		:: [(Type, Type)] }
 		
 	-- | No instance for type class.
 	| ErrorNoInstance
-		{ eClassVar	:: Var
-		, eTypeArgs	:: [Type] 
-		, eFetterMaybeSrc :: Maybe TypeSource }
+		{ eClassVar		:: Var
+		, eTypeArgs		:: [Type] 
+		, eFetterMaybeSrc 	:: Maybe TypeSource }
 		
 	-- | Type has no projections defined for it.
 	| ErrorNoProjections
-		{ eProj		:: TProj
-		, eConstructor	:: Type }		
+		{ eProj			:: TProj
+		, eConstructor		:: Type }		
 
 	-- | Field not present in type.
 	| ErrorFieldNotPresent
-		{ eProj		:: TProj
-		, eConstructor	:: Type 
-		, eFields	:: [Var] }
+		{ eProj			:: TProj
+		, eConstructor		:: Type 
+		, eFields		:: [Var] }
 
 	-- | Field projection is ambiguous.
 	| ErrorAmbiguousProjection
-		{ eProj		:: TProj }
+		{ eProj			:: TProj }
 
 	-- | Cannot purify some effect.
 	| ErrorCannotPurify
-		{ eEffect	:: Effect
-		, eEffectSource	:: TypeSource
-		, eFetter	:: Fetter
-		, eFetterSource	:: TypeSource }
+		{ eEffect		:: Effect
+		, eEffectSource		:: TypeSource
+		, eFetter		:: Fetter
+		, eFetterSource		:: TypeSource }
 
 	-- | Region constraint conflict.
 	| ErrorRegionConstraint
-		{ eFetter1	:: Fetter
-		, eFetterSource1 :: TypeSource
+		{ eFetter1		:: Fetter
+		, eFetterSource1	:: TypeSource
 		
-		, eFetter2	:: Fetter
-		, eFetterSource2 :: TypeSource }
+		, eFetter2		:: Fetter
+		, eFetterSource2 	:: TypeSource }
 		
 	-- | We found out about a mutability constraint on a region too late,
 	--	and have already generalised a scheme assuming it was constant.
@@ -93,12 +94,19 @@ data Error
 		
 	-- | Main function has wrong type
 	| ErrorWrongMainType	
-		{ eScheme	:: (Var, Type) }
+		{ eScheme		:: (Var, Type) }
 
 	-- | A CAF has effects that can't be masked.
 	| ErrorEffectfulCAF
-		{ eScheme	:: (Var, Type)
-		, eEffect	:: Effect }
+		{ eScheme		:: (Var, Type)
+		, eEffect		:: Effect }
+		
+	-- | Inferred type does not match signature.
+	| ErrorSigMismatch
+		{ eScheme		:: (Var, Type)
+		, eSigMode		:: SigMode 
+		, eSigPos		:: SourcePos
+		, eSigType		:: Type }
 		
 	deriving (Show)
 
@@ -268,6 +276,29 @@ instance Pretty Error PMode where
 	%> eff
 	% "\n\n    were found.\n\n"
 
+ ppr (ErrorSigMismatch
+		{ eScheme	= (v, tScheme)
+		, eSigMode	= mode
+		, eSigPos	= sp
+		, eSigType	= tSig })
+	= sp % "\n"
+	% "    Inferred type:"
+	% prettyVTS (v, tScheme)
+	% "\n\n"
+	% "    " % strMode
+	% prettyVTS (v, tSig)
+	% "\n\n"
+	
+	where	strMode
+		 = case mode of
+			SigModeMatch	-> "Does not match signature:"
+			SigModeExact	-> "Is not identical to signature:"
+			SigModeLess	-> "Is greater than signature:"
+			SigModeMore	-> "Is less than signature:"
+			
+
+ -- We can't display this error...
+ -- TODO: eliminate this. The ppr function should be total.
  ppr err
 	= panic stage
 	$ "no match for " % show err
