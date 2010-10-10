@@ -86,9 +86,9 @@ checkFetter cls errs f@(FConstraint vClass tsArg)
 		| otherwise
 		= return 
 			$ ErrorNoInstance
-	  		  { eClassVar 		= vClass
-			  , eTypeArgs		= tsArg' 
-			  , eFetterMaybeSrc	= Just $ takeFetterSrc cls f' }
+	  		  { eClassVar 	= vClass
+			  , eTypeArgs	= tsArg' 
+			  , eFetterSrc	= takeFetterSrc cls f' }
 			: errs
 	result
 

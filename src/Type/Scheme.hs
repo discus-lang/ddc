@@ -12,6 +12,7 @@ import Util
 import DDC.Solve.Error
 import DDC.Solve.State
 import DDC.Solve.Check.Signature
+import DDC.Solve.Location
 import DDC.Type
 import DDC.Var.NameSpace
 import DDC.Var
@@ -28,17 +29,14 @@ tracell s 	= when debug $ traceM (s % "\n\n")
 
 -- | Generalise a type
 generaliseType
-	:: Var 			-- binding variable of the type being generalised
+	:: TypeSource		-- source of variable definition
+	-> Var 			-- binding variable of the type being generalised
 	-> Type			-- the type to generalise
 	-> Set ClassId		-- the classIds which must remain fixed (non general)
 	-> SquidM Type
 
-generaliseType varT tCore envCids
- = {-# SCC "generaliseType" #-} generaliseType' varT tCore envCids 
-
-generaliseType' varT tCore envCids
- = do
-	args			<- gets stateArgs
+generaliseType src varT tCore envCids
+ = do	args	<- gets stateArgs
 	trace	$ vcat
 		[ "*** Scheme.generaliseType "	% varT
 		, "    tCore:\n"		%> prettyTypeSplit tCore
@@ -137,7 +135,7 @@ generaliseType' varT tCore envCids
 	tracell	$ "    tConstify:\n" 		%> prettyTypeSplit tConstify
 
 	-- Check context for problems
-	checkContext tConstify
+	checkContext src tConstify
 
 	-- Quantify free variables.
 	let vsFree	= filter (\v -> not $ varNameSpace v == NameValue)
@@ -224,14 +222,14 @@ cleanType tsSave tt
 --	Shape constraints indicate 
 --	Type class constraints indicate that no instance for this type is available.
 --
-checkContext :: Type -> SquidM ()
-checkContext tt
+checkContext :: TypeSource -> Type -> SquidM ()
+checkContext src tt
  = case tt of
  	TConstrain t crs
-  	  -> mapM_ checkContextF $ fettersOfConstraints crs
+  	  -> mapM_ (checkContextF src) $ fettersOfConstraints crs
 	_ -> return ()
  
-checkContextF ff
+checkContextF src ff
  = case ff of
  	FProj j vInst tDict tBind
 	 -> addErrors
@@ -248,9 +246,9 @@ checkContextF ff
 	 , varName vClass /= "Safe"
 	 -> addErrors
 	 	[ ErrorNoInstance
-			{ eClassVar		= vClass
-			, eTypeArgs		= ts 
-			, eFetterMaybeSrc	= Nothing } ] -- TODO: find the source
+			{ eClassVar	= vClass
+			, eTypeArgs	= ts 
+			, eFetterSrc	= src } ]
 		
 	_ -> return ()
 	

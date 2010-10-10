@@ -51,7 +51,7 @@ data Error
 	| ErrorNoInstance
 		{ eClassVar		:: Var
 		, eTypeArgs		:: [Type] 
-		, eFetterMaybeSrc 	:: Maybe TypeSource }
+		, eFetterSrc 		:: TypeSource }
 		
 	-- | Type has no projections defined for it.
 	| ErrorNoProjections
@@ -175,15 +175,9 @@ instance Pretty Error PMode where
  ppr (ErrorNoInstance
  		{ eClassVar	= v
 		, eTypeArgs	= ts
-		, eFetterMaybeSrc = Just src })
+		, eFetterSrc	= src })
 	= dispSourcePos src % "\n"
 	% "    No instance for " % v % " " % punc " " (map prettyTypeParens ts) % "\n"
-
- ppr (ErrorNoInstance
- 		{ eClassVar	= v
-		, eTypeArgs	= ts
-		, eFetterMaybeSrc = Nothing })
-	= "    No instance for " % v % " " % punc " " (map prettyTypeParens ts) % "\n"
 	
  -- Field projection problems.
  ppr (ErrorNoProjections

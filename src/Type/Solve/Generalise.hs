@@ -132,9 +132,11 @@ solveGeneralise_group src vsGen@(vGen : vsGenRest)
 
 
 -- | Extract a single type from the graph and generalise it using this set of fixed classIds.
---
 solveGeneralise_single 
-	:: TypeSource -> Set ClassId -> Var -> SquidM Type
+	:: TypeSource		-- Source of variable definition.
+	-> Set ClassId		-- Cids that must remain monomorphic.
+	-> Var			-- Var of scheme to be generalised.
+	-> SquidM Type
 
 solveGeneralise_single src cidsFixed vGen
  = do	
@@ -142,7 +144,7 @@ solveGeneralise_single src cidsFixed vGen
 	Just tGraph	<- extractType False vGen
 
 	-- Generalise the type into a scheme.
-	tScheme		<- generaliseType vGen tGraph cidsFixed
+	tScheme		<- generaliseType src vGen tGraph cidsFixed
 	
 	-- Add the scheme back to the graph.
 	addSchemeToGraph src vGen tScheme

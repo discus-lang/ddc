@@ -280,7 +280,7 @@ solveCs	(c:cs)
 				
 			-- Scheme hasn't been generalised yet
 			| otherwise
-			= do	t	<- solveGeneralise (TSI $ SIGenInst vUse) vInst
+			= do	t	<- solveGeneralise (TSI $ SIGenInst vUse src) vInst
 				return $ Just t
 			
 		mScheme	<- getScheme

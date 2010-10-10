@@ -178,7 +178,9 @@ data SourceInfer
 
 	-- ^ A scheme that was generalised and added to the graph because its 
 	--	bound var was instantiated.
-	| SIGenInst	Var
+	| SIGenInst
+		Var
+		TypeSource
 
 	-- ^ A scheme that was generalised and added to the graph during 
 	--	the finialisation process of the solver.
@@ -194,7 +196,7 @@ instance Pretty SourceInfer PMode where
 
  ppr (SICrushedFS cid iF src)	= "SICrushedFS" <> cid <> parens iF <> src
  ppr (SICrushedES cid  iF src)	= "SICrushedES" <> cid <> parens iF <> src
- ppr (SIGenInst v)		= "SIGenInst " % v
+ ppr (SIGenInst v src)		= "SIGenInst " %% v %% src
  ppr SIGenFinal			= ppr "SIGenFinal"
 
 
@@ -211,6 +213,7 @@ takeSourcePos ts
 	TSI (SICrushedFS _ _ src)	-> takeSourcePos src
 	TSI (SICrushedES _ _ src)	-> takeSourcePos src
 	TSI (SIPurifier  _ _ _ _ fSrc)	-> takeSourcePos fSrc
+	TSI (SIGenInst   _ src)		-> takeSourcePos src
 		
 	_	-> Nothing
 
