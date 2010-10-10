@@ -106,7 +106,10 @@ data Error
 		{ eScheme		:: (Var, Type)
 		, eSigMode		:: SigMode 
 		, eSigPos		:: SourcePos
-		, eSigType		:: Type }
+		, eSigType		:: Type
+
+		-- Expected and offending part of signature.
+		, eSigOffending		:: Maybe (Type, Type) }
 		
 	deriving (Show)
 
@@ -280,7 +283,8 @@ instance Pretty Error PMode where
 		{ eScheme	= (v, tScheme)
 		, eSigMode	= mode
 		, eSigPos	= sp
-		, eSigType	= tSig })
+		, eSigType	= tSig 
+		, eSigOffending	= mOffending })
 	= sp % "\n"
 	% "    Inferred type:"
 	% prettyVTS (v, tScheme)
@@ -288,6 +292,7 @@ instance Pretty Error PMode where
 	% "    " % strMode
 	% prettyVTS (v, tSig)
 	% "\n\n"
+	% strOffending mOffending
 	
 	where	strMode
 		 = case mode of
@@ -296,6 +301,15 @@ instance Pretty Error PMode where
 			SigModeLess	-> "Is greater than signature:"
 			SigModeMore	-> "Is less than signature:"
 			
+
+		strOffending Nothing	 = blank
+		strOffending (Just (tExpected, tOffending))
+		 = "    Because " 
+		 %% case mode of
+			SigModeLess 	-> tOffending %% " is greater than " %% tExpected
+			SigModeMore	-> tOffending %% " is less than "    %% tExpected
+			_		-> blank
+		 %% "\n\n"
 
  -- We can't display this error...
  -- TODO: eliminate this. The ppr function should be total.

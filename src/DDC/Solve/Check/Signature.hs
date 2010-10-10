@@ -19,6 +19,7 @@ import Util
 debug	 	= True
 trace s	 	= when debug $ traceM s
 
+
 -- | Check a generalised type scheme against a provided type signature.
 --
 --   TODO: This won't work for type sigs that have constraints on monomorphic effect
@@ -77,7 +78,7 @@ checkSchemeAgainstSig tScheme prob@(ProbSig _ _ mode tSig)
 		, "    subsLow    = "		% isSubsumes subsLow
 		, "    subsHigh   = "		% isSubsumes subsHigh ,		blank ]
 
-	let mErrs	= checkSchemeDiagnose tScheme prob subsLow subsHigh
+	let mErrs	= checkSchemeDiagnose prob tScheme subsLow subsHigh
 	addErrors $ maybeToList mErrs
 	
 	return ()
@@ -87,37 +88,53 @@ checkSchemeAgainstSig tScheme prob@(ProbSig _ _ mode tSig)
 --   The signature is associated with a mode, which determines how it is supposed
 --   to be related to the inferred scheme,
 checkSchemeDiagnose
-	:: Type		-- ^ The inferred scheme.
-	-> ProbSig	-- ^ Type signature from the probem definition.
+	:: ProbSig	-- ^ Type signature from the probem definition.
+	-> Type		-- ^ The inferred scheme.
 	-> Subsumes	-- ^ Whether the body of the signature subsumes the body of the scheme.
 	-> Subsumes	-- ^ Whether the body of the scheme    subsumes the body of the signature.
-	-> Maybe Error	-- ^ Maybe an error if the signature doesn't match.
+	-> Maybe Error	-- ^ Maybe an error if the signature doesn't match
 	
-checkSchemeDiagnose tScheme (ProbSig v sp mode tSig) subsLow subsHigh
-	| SigModeMatch	<- mode
-	= Nothing
-
-	| SigModeLess	<- mode
-	, Subsumes	<- subsLow
-	= Nothing
-	
-	| SigModeMore	<- mode
-	, Subsumes	<- subsHigh
-	= Nothing
-
-	| SigModeExact	<- mode
-	, Subsumes	<- subsLow
-	, Subsumes	<- subsHigh
-	= Nothing
-	
-	| otherwise
-	= Just 	$ ErrorSigMismatch
+checkSchemeDiagnose (ProbSig v sp mode tSig) tScheme subsLow subsHigh
+ = let	errMismatch
+	 = ErrorSigMismatch
 		{ eScheme	= (v, tScheme)
 		, eSigMode	= mode
 		, eSigPos	= sp
-		, eSigType	= tSig }
-	
+		, eSigType	= tSig 
+		, eSigOffending	= Nothing }
 
+   in	case mode of
+	 -- Signature must match inferred.
+	 -- TODO: Eliminate this mode during desugaring.
+    	 SigModeMatch
+	  -> Nothing
+
+	 -- Signature must be less-then inferred scheme.
+    	 SigModeLess
+	  | NoSubsumes t1 t2	<- subsLow
+	  -> Just $ errMismatch { eSigOffending = Just (t2, t1) }
+
+	  | otherwise		-> Nothing
+    	 
+	 -- Signature must be more-than inferred scheme.
+	 SigModeMore
+	  | NoSubsumes t1 t2	<- subsHigh
+	  -> Just $ errMismatch { eSigOffending = Just (t2, t1) }
+
+	  | otherwise		-> Nothing
+
+	 -- Signature must match inferred scheme exactly.
+    	 SigModeExact
+	  | NoSubsumes t1 t2	<- subsLow
+	  -> Just $ errMismatch { eSigOffending = Just (t2, t1) }
+	
+	  | NoSubsumes t1 t2 	<- subsHigh
+	  -> Just $ errMismatch { eSigOffending = Just (t2, t1) }
+
+	  | otherwise		-> Nothing
+
+
+-- | If these two types are both vars then return them both, else Nothing.
 slurpRename :: Type -> Type -> Maybe (Var, Var)
 slurpRename t1 t2
  	| TVar _ u1	<- t1

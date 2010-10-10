@@ -169,8 +169,14 @@ generaliseType' varT tCore envCids
 	pbSigs		<- liftM (join . maybeToList . Map.lookup varT) 
 			$  liftM squidEnvSigs
 			$  gets  stateEnv 
+	
+	-- Signature checking only works on finalised types,
+	-- without embeded meta variables.
+	vsQuant		<- getsRef stateQuantifiedVars
+	tPlugged	<- plugClassIds Set.empty tScheme
+	tracell	$ "    tPlugged:\n"		%> prettyTypeSplit tPlugged
 
-	mapM_ (checkSchemeAgainstSig tScheme) pbSigs
+	mapM_ (checkSchemeAgainstSig tPlugged) pbSigs
 
 	return	tScheme
 
