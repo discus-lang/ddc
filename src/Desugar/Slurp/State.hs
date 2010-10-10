@@ -14,6 +14,7 @@ import Util
 import DDC.Solve.Error
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
+import DDC.Solve.Interface.Problem
 import DDC.Type
 import DDC.Type.Data
 import DDC.Var
@@ -73,6 +74,9 @@ data	CSlurpS
 	-- | Types defined via by a foreign import.
 	, stateSlurpDefs	:: Map Var Type
 
+	-- | Type signatures
+	, stateSlurpSigs	:: Map Var [ProbSig]
+
 	-- | Maps value vars to type vars, v -> sigma_v
 	, stateVarType		:: Map Var Var }
 	
@@ -98,6 +102,7 @@ initCSlurpS
 	, stateCtorData		= Map.empty
 	, stateTypesRequest	= Set.empty
 	, stateSlurpDefs 	= Map.empty
+	, stateSlurpSigs	= Map.empty
 	, stateVarType		= Map.empty }
 
 

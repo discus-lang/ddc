@@ -16,6 +16,7 @@ import DDC.Var
 import DDC.Type			()
 import DDC.Type.Data
 import qualified Data.Map	as Map
+import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
 
 stage	= "Desugar.Slurp.Slurp"
@@ -40,7 +41,7 @@ slurpTree blessMain hTree sTree
 	--       It would be nice to have a constructor in Bound that takes the type of a value
 	--	 variable and changes it into the corresponding type variable... but then we can't
 	--       add that variable to sets of other type varibles.
-	((defMap, sigMap), state1)
+	(defMap, state1)
 	 = runState 
 	    (do	
 		-- convert external type definitions and method types.
@@ -60,18 +61,7 @@ slurpTree blessMain hTree sTree
 					return	(vT, def))
 				$ defs
 				
-		-- Build the map of type sigs
-		-- TODO: Allow multiple sigs for the same variable.
-		sigMap		<- liftM Map.fromList
-				$  liftM (map (\(vT, sig) -> (vT, [sig])))
-				$  mapM (\sig@(ProbSig v _ _ _) -> do
-					TVar _ (UVar vT) <- lbindVtoT v
-					return	(vT, sig))
-				$  concat
-				$  [ map (\v -> ProbSig v sp mode t) vs
-					| PTypeSig sp mode vs t <- tree]				
-
-		return	(defMap, sigMap))
+		return	defMap)
 	    state0
 		
 		
@@ -88,7 +78,7 @@ slurpTree blessMain hTree sTree
 		= Problem
 		{ problemDefs		   = defMap
 		, problemDataDefs	   = Map.fromList [(dataDefName def, def) | PData _ def        <- tree ]
-		, problemSigs		   = sigMap
+		, problemSigs		   = stateSlurpSigs state3
 		, problemProjDicts	   = Map.empty	-- TODO: add proj dicts
 		, problemClassInst	   = Map.empty	-- TODO: add class instances
 
@@ -211,7 +201,14 @@ slurpP top@(PClassInst sp v ts ss)
 		, [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
 
 slurpP	(PTypeSig sp sigMode vs tSig) 
- = 	return	( PTypeSig Nothing sigMode vs tSig
+ = do	forM_ vs 
+	 $ \v -> do	
+		TVar _ (UVar vT) <- lbindVtoT v
+		let sig	= ProbSig v sp sigMode tSig
+		modify $ \s -> s { 
+			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
+		
+	return	( PTypeSig Nothing sigMode vs tSig
 		, [])
 
 slurpP x@(PTypeSynonym sp v t)
