@@ -6,6 +6,9 @@ where
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import DDC.Solve.Location
+import DDC.Solve.Interface.Problem
+import Util
+import qualified Util.Data.Map	as Map
 
 -- | Slurp the type constraints for this statement.
 slurpS 	:: Stmt Annot1
@@ -55,20 +58,22 @@ slurpS	(SBind sp (Just v) e1)
 				++ [ CGen (TSM $ SMGen sp v) tBind ] } ] )
 
 -- type signatures
-slurpS	stmt@(SSig sp sigMode vs t)
+slurpS	stmt@(SSig sp sigMode vs tSig)
  = do
- 	tXs@(tX1 : _)	<- mapM lbindVtoT vs
-	
-	let qs	= 
-		[ CSig (TSV $ SVSig sp varV) tX	$ t 
-			| tX   <- tXs 
-			| varV <- vs ]
-		
+	forM_ vs 
+	 $ \v -> do	
+		TVar _ (UVar vT) <- lbindVtoT v
+		let sig	= ProbSig v sp sigMode tSig
+		modify $ \s -> s { 
+			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
+
+	(tX1 : _)	<- mapM lbindVtoT vs
+ 		
 	return	( tX1
 		, tPure
 		, tEmpty
-		, SSig Nothing sigMode vs t
-		, qs)
+		, SSig Nothing sigMode vs tSig
+		, [])
 
 
 
