@@ -107,9 +107,9 @@ data Error
 		, eSigMode		:: SigMode 
 		, eSigPos		:: SourcePos
 		, eSigType		:: Type
-
-		-- Expected and offending part of signature.
-		, eSigOffending		:: Maybe (Type, Type) }
+		, eSigBadType		:: Maybe (Type, Type) 	-- Expected and offending part of signature.	
+		, eSigBadContext	:: Maybe [Kind]		-- Unexpected context
+		}
 		
 	deriving (Show)
 
@@ -274,11 +274,12 @@ instance Pretty Error PMode where
 	% "\n\n    were found.\n\n"
 
  ppr (ErrorSigMismatch
-		{ eScheme	= (v, tScheme)
-		, eSigMode	= mode
-		, eSigPos	= sp
-		, eSigType	= tSig 
-		, eSigOffending	= mOffending })
+		{ eScheme		= (v, tScheme)
+		, eSigMode		= mode
+		, eSigPos		= sp
+		, eSigType		= tSig 
+		, eSigBadType		= mBadType 
+		, eSigBadContext	= mBadContext })
 	= sp % "\n"
 	% "    Inferred type:"
 	% prettyVTS (v, tScheme)
@@ -286,7 +287,8 @@ instance Pretty Error PMode where
 	% "    " % strMode
 	% prettyVTS (v, tSig)
 	% "\n\n"
-	% strOffending mOffending
+	% strBadType    mBadType
+	% strBadContext mBadContext
 	
 	where	strMode
 		 = case mode of
@@ -296,10 +298,17 @@ instance Pretty Error PMode where
 			SigModeMore	-> "Is less than signature:"
 			
 
-		strOffending Nothing	 = blank
-		strOffending (Just (tExpected, tOffending))
+		strBadType Nothing	 = blank
+		strBadType (Just (tExpected, tOffending))
 		 = "    Because " %% tOffending %% " does not match " %% tExpected
 		 %% "\n\n"
+
+		strBadContext Nothing	= blank
+		strBadContext (Just [kContext])
+		 = "    Unexpected constraint: " %% kContext %% "\n\n"
+
+		strBadContext (Just ksContext)
+		 = "    Unexpected constraints: " %% punc " " ksContext %% "\n\n"
 
  -- We can't display this error...
  -- TODO: eliminate this. The ppr function should be total.

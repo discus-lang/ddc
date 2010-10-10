@@ -47,33 +47,36 @@ checkSchemeAgainstSig tScheme prob@(ProbSig _ _ mode tSig)
 	let tScheme'	= subVV_everywhere mpRenames tScheme
 	
 	-- Our subsumption operator only works on types in core form..
-	let (bksSigQuant',  ksSigContext', tSigBody') = stripForallContextT $ toCoreT tSig
-	let (bksSchQuant',  ksSchContext', tSchBody') = stripForallContextT $ toCoreT tScheme'
+	let (_bksSigQuant',  ksSigContext', tSigBody') = stripForallContextT $ toCoreT tSig
+	let (_bksSchQuant',  ksSchContext', tSchBody') = stripForallContextT $ toCoreT tScheme'
 	
-	-- 
-	let subsLow		= subsumesTT tSchBody' tSigBody'
-	let subsHigh		= subsumesTT tSigBody' tSchBody'
+	-- Compare effects and closures in the body of the type
+	let bodySubsLow		= subsumesTT tSchBody' tSigBody'
+	let bodySubsHigh	= subsumesTT tSigBody' tSchBody'
+
+	-- Compare contexts
+	let extraContextSch	= nub ksSchContext' \\ nub ksSigContext'
+	let extraContextSig	= nub ksSigContext' \\ nub ksSchContext'
 
 	trace	$ vcat
-		[ "    schemeQuant\n"		%> bksSchQuant', 			blank
-		, "    schemeContext\n"		%>  ksSchContext',	 		blank
-		, "    schemeBody\n"		%> prettyTypeSplit tSchBody',		blank
-		, "    scheme'\n"		%> prettyTypeSplit tScheme',		blank
-		, "    scheme core'\n"		%> prettyTypeSplit (toCoreT tScheme'),	blank
-		, blank
+		[ "    --  Checking signature " % show mode
 		, "    sig\n"			%> prettyTypeSplit tSig,		blank
 		, "    sig core\n"		%> prettyTypeSplit (toCoreT tSig),	blank
-		, "    sigQuant\n"		%> bksSigQuant', 			blank
-		, "    sigContext\n"		%>  ksSigContext',			blank
-		, "    sigBody\n"		%> prettyTypeSplit tSigBody', 		blank
 		, blank
-		, "    mode       = "		% show mode
-		, "    csBits     = "		% csBits
-		, "    vvsRenames = "		% vvsRenames
-		, "    subsLow    = "		% isSubsumes subsLow
-		, "    subsHigh   = "		% isSubsumes subsHigh ,			blank ]
+		, "    scheme\n"		%> prettyTypeSplit tScheme,		blank
+		, "    scheme renamed\n"	%> prettyTypeSplit tScheme',		blank
+		, "    scheme core'\n"		%> prettyTypeSplit (toCoreT tScheme'),	blank
+		, blank
+		, "    bodySubsLow      = "	% isSubsumes bodySubsLow,		blank
+		, "    bodySubsHigh     = "	% isSubsumes bodySubsHigh,		blank 
+		, "    extraContextSch  = "	% extraContextSch,			blank
+		, "    extraContextSig  = "	% extraContextSig,			blank ]
 
-	let mErrs	= checkSchemeDiagnose prob tScheme' subsLow subsHigh
+	let mErrs	= checkSchemeDiagnose 
+				prob tScheme' 
+				bodySubsLow bodySubsHigh
+				extraContextSch extraContextSig
+				
 	addErrors $ maybeToList mErrs
 	
 	return ()
@@ -87,16 +90,22 @@ checkSchemeDiagnose
 	-> Type		-- ^ The inferred scheme.
 	-> Subsumes	-- ^ Whether the body of the signature subsumes the body of the scheme.
 	-> Subsumes	-- ^ Whether the body of the scheme    subsumes the body of the signature.
+	-> [Kind]	-- ^ Extra contexts in the scheme wrt the sig
+	-> [Kind]	-- ^ Extra contexts in the sig    wrt the scheme
 	-> Maybe Error	-- ^ Maybe an error if the signature doesn't match
 	
-checkSchemeDiagnose (ProbSig v sp mode tSig) tScheme subsLow subsHigh
+checkSchemeDiagnose (ProbSig v sp mode tSig) tScheme 
+	subsLow         subsHigh
+	extraContextSch extraContextSig
+
  = let	errMismatch
 	 = ErrorSigMismatch
-		{ eScheme	= (v, tScheme)
-		, eSigMode	= mode
-		, eSigPos	= sp
-		, eSigType	= tSig 
-		, eSigOffending	= Nothing }
+		{ eScheme		= (v, tScheme)
+		, eSigMode		= mode
+		, eSigPos		= sp
+		, eSigType		= tSig 
+		, eSigBadType		= Nothing 
+		, eSigBadContext	= Nothing }
 
    in	case mode of
 	 -- Signature must match inferred.
@@ -107,24 +116,36 @@ checkSchemeDiagnose (ProbSig v sp mode tSig) tScheme subsLow subsHigh
 	 -- Signature must be less-then inferred scheme.
     	 SigModeLess
 	  | NoSubsumes t1 t2	<- subsLow
-	  -> Just $ errMismatch { eSigOffending = Just (t2, t1) }
+	  -> Just $ errMismatch { eSigBadType = Just (t2, t1) }
+
+	  | not $ null extraContextSch
+	  -> Just $ errMismatch { eSigBadContext = Just extraContextSch }
 
 	  | otherwise		-> Nothing
     	 
 	 -- Signature must be more-than inferred scheme.
 	 SigModeMore
 	  | NoSubsumes t1 t2	<- subsHigh
-	  -> Just $ errMismatch { eSigOffending = Just (t2, t1) }
+	  -> Just $ errMismatch { eSigBadType = Just (t2, t1) }
+
+	  | not $ null extraContextSig
+	  -> Just $ errMismatch { eSigBadContext = Just extraContextSig }
 
 	  | otherwise		-> Nothing
 
 	 -- Signature must match inferred scheme exactly.
     	 SigModeExact
 	  | NoSubsumes t1 t2	<- subsLow
-	  -> Just $ errMismatch { eSigOffending = Just (t2, t1) }
+	  -> Just $ errMismatch { eSigBadType = Just (t2, t1) }
 	
 	  | NoSubsumes t1 t2 	<- subsHigh
-	  -> Just $ errMismatch { eSigOffending = Just (t2, t1) }
+	  -> Just $ errMismatch { eSigBadType = Just (t2, t1) }
+
+	  | not $ null extraContextSig
+	  -> Just $ errMismatch { eSigBadContext = Just extraContextSig }
+
+	  | not $ null extraContextSch
+	  -> Just $ errMismatch { eSigBadContext = Just extraContextSch }
 
 	  | otherwise		-> Nothing
 
