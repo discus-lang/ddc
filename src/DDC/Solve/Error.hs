@@ -298,11 +298,7 @@ instance Pretty Error PMode where
 
 		strOffending Nothing	 = blank
 		strOffending (Just (tExpected, tOffending))
-		 = "    Because " 
-		 %% case mode of
-			SigModeLess 	-> tOffending %% " is greater than " %% tExpected
-			SigModeMore	-> tOffending %% " is less than "    %% tExpected
-			_		-> blank
+		 = "    Because " %% tOffending %% " does not match " %% tExpected
 		 %% "\n\n"
 
  -- We can't display this error...

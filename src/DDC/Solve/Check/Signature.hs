@@ -23,63 +23,57 @@ trace s	 	= when debug $ traceM s
 
 -- | Check a generalised type scheme against a provided type signature.
 --
---   TODO: This won't work for type sigs that have constraints on monomorphic effect
---         or closure variables. This could happen if we have mutable data at top 
---         level which contains effectful functions, so the effect vars aren't generalised.
---         It would also happen if we had sigs on local bindings.
+--   TODO: Check more-than bounds on quantified vars
+--	   Check more-than bounds on monomorphic vars
+--         Check contexts
+--         Check sets of quantified variables.
 --
 checkSchemeAgainstSig :: Type -> ProbSig -> SquidM ()
 checkSchemeAgainstSig tScheme prob@(ProbSig _ _ mode tSig)
  = do	
-	-- Break both types down into their component parts
-	-- This doesn't reveal more-than constraints on skolem vars.
-	let (bksSchemeQuant, ksSchemeContext, tSchemeBody)	
-		= stripForallContextT $ toCoreT tScheme
-
-	let (bksSigQuant,    ksSigContext,    tSigBody)	
-		= stripForallContextT $ toCoreT tSig
-
-	-- Try to unify the bodies of both types
-	-- They always have to unify, but we allow the constraints to differ depending
-	-- on what mode the signature has.
-	-- TODO: Handle unification failure
-	let Just csBits	= unifyTT    tSchemeBody tSigBody
+	-- The signature and inferred scheme will use different names, 
+	-- 	so we unify their bodies to recover the renaming.
+	-- 	TODO: Handle unification failure.
+	let tSchBody	= stripToBodyT tScheme
+	let tSigBody	= stripToBodyT tSig
+	let Just csBits	= unifyTT tSchBody tSigBody
 	
-	-- The inferred scheme will use different variable names than the signature.
-	-- We recover the name mapping from the constraints given to us by the unifier.
-	-- TODO: Check for "not sufficiently polymorphic" problems, make sure
-	--       different names in the sig are also different in the inferred scheme.
 	let vvsRenames	= catMaybes
 	 		$ map (uncurry slurpRename)
 			$ Foldable.toList csBits
 
-	-- Rename the inferred scheme to it (hopefully) matches the signature.
-	let tSchemeBody'	= subVV_everywhere (Map.fromList vvsRenames) tSchemeBody
+	-- Rename the inferred scheme so it (hopefully) matches the signature.
+	let mpRenames	= Map.fromList vvsRenames
+	let tScheme'	= subVV_everywhere mpRenames tScheme
+	
+	-- Our subsumption operator only works on types in core form..
+	let (bksSigQuant',  ksSigContext', tSigBody') = stripForallContextT $ toCoreT tSig
+	let (bksSchQuant',  ksSchContext', tSchBody') = stripForallContextT $ toCoreT tScheme'
 	
 	-- 
-	let subsLow		= subsumesTT tSchemeBody' tSigBody
-	let subsHigh		= subsumesTT tSigBody     tSchemeBody'
-
-	-- TODO: Compare sets of quantified variables.
-	-- TODO: Compare constraints.
+	let subsLow		= subsumesTT tSchBody' tSigBody'
+	let subsHigh		= subsumesTT tSigBody' tSchBody'
 
 	trace	$ vcat
-		[ "    schemeQuant\n"		%> bksSchemeQuant, 			blank
-		, "    schemeContext\n"		%> ksSchemeContext,		 	blank
-		, "    schemeBody\n"		%> prettyTypeSplit tSchemeBody, 	blank
-		, "    schemeBody'\n"		%> prettyTypeSplit tSchemeBody',	blank
+		[ "    schemeQuant\n"		%> bksSchQuant', 			blank
+		, "    schemeContext\n"		%>  ksSchContext',	 		blank
+		, "    schemeBody\n"		%> prettyTypeSplit tSchBody',		blank
+		, "    scheme'\n"		%> prettyTypeSplit tScheme',		blank
+		, "    scheme core'\n"		%> prettyTypeSplit (toCoreT tScheme'),	blank
 		, blank
-		, "    sigQuant\n"		%> bksSigQuant, 			blank
-		, "    sigContext\n"		%>  ksSigContext,		 	blank
-		, "    sigBody\n"		%> prettyTypeSplit tSigBody, 		blank
+		, "    sig\n"			%> prettyTypeSplit tSig,		blank
+		, "    sig core\n"		%> prettyTypeSplit (toCoreT tSig),	blank
+		, "    sigQuant\n"		%> bksSigQuant', 			blank
+		, "    sigContext\n"		%>  ksSigContext',			blank
+		, "    sigBody\n"		%> prettyTypeSplit tSigBody', 		blank
 		, blank
 		, "    mode       = "		% show mode
 		, "    csBits     = "		% csBits
 		, "    vvsRenames = "		% vvsRenames
 		, "    subsLow    = "		% isSubsumes subsLow
-		, "    subsHigh   = "		% isSubsumes subsHigh ,		blank ]
+		, "    subsHigh   = "		% isSubsumes subsHigh ,			blank ]
 
-	let mErrs	= checkSchemeDiagnose prob tScheme subsLow subsHigh
+	let mErrs	= checkSchemeDiagnose prob tScheme' subsLow subsHigh
 	addErrors $ maybeToList mErrs
 	
 	return ()
