@@ -1,5 +1,14 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module Type.Check.Instances 
+-- | Checking that all value type class constraints in the graph have a valid instance.
+--
+--   TODO: Merge this with DDC.Type.Operators.Context
+--         That module discharges constraints attached to schemes, whereas this one
+--         discharges constraints directly in the graph. If we don't catch undefined
+--         instances here then Core.Dictionary will panic when trying to resolve
+--         overloaded calls when converting the program to the core language.
+--         
+module DDC.Solve.Check.Instances 
 	(checkInstances)
 where
 import Type.Extract
@@ -10,15 +19,15 @@ import DDC.Type
 import DDC.Type.Operators.Context
 import DDC.Solve.State
 import DDC.Solve.Error
+import DDC.Main.Error
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
 debug		= True
+stage		= "DDC.Solve.Check.Instances"
 trace ss 	= if debug then traceM ss else return ()
 
--- | Check that all FConstraints in the graph have a corresponding instance.
---	If we don't catch undefined instances here then Core.Dictionary will
---	panic when trying to resolve the overloaded calls.
+-- | Check all value type class constraints in the graph have a valid instance.
 checkInstances :: SquidM ()
 checkInstances 
  = do	errs	<- foldClasses checkInstances1 []
@@ -31,15 +40,16 @@ checkInstances1 errs cls
 			| vFetter <- Map.keys $ classFetters cls]
 	
 	| ClassFetter { classFetter = f }	<- cls
-	, FConstraint v t	<- f
+	, FConstraint{}				<- f
 	= checkFetter cls errs f
 	
 	| otherwise
 	= return errs
+
 	
 checkFetter cls errs f@(FConstraint vClass tsArg)
  = do	trace	$ "*   checkFetter: checking " % f % "\n"
-	let cidsArg	= map (\(TVar k (UClass cid)) -> cid) tsArg
+	let cidsArg	= map (\(TVar _ (UClass cid)) -> cid) tsArg
 	
 	-- extract the types for the constraint params
 	Just tsArg_ex	<- liftM sequence
@@ -82,20 +92,26 @@ checkFetter cls errs f@(FConstraint vClass tsArg)
 			: errs
 	result
 
+checkFetter _ _ _
+	= panic stage $ "checkFetter: no match"
+
+
 takeShapeT tt
  = case tt of
  	TConstrain t _	-> t
 	_		-> tt
 
 
-takeFetterSrc cls f@(FConstraint vClass _)
+takeFetterSrc cls f 
  = case cls of
  	ClassFetter { classSource = src }	
 	 -> src
 
 	Class { classFetters = fetters }
+	 | FConstraint vClass _ <- f
 	 -> let Just (src Seq.:< _)	
 			= liftM Seq.viewl
 			$ Map.lookup vClass fetters
 	    in  src
 
+	_ -> panic stage $ "takeFetterSrc: no match"

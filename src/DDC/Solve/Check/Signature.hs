@@ -1,5 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
+-- | Checking inferred type schemes against signatures.
 module DDC.Solve.Check.Signature
 	(checkSchemeAgainstSig)
 where

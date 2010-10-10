@@ -4,8 +4,8 @@ module Type.Solve.Finalise
 where
 import Type.Solve.Generalise
 import Type.Check.Main
-import Type.Check.Instances
 import Type.Check.SchemeDanger
+import DDC.Solve.Check.Instances
 import DDC.Solve.Location
 import DDC.Solve.State
 import Constraint.Exp
