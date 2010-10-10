@@ -294,8 +294,8 @@ instance Pretty Error PMode where
 		 = case mode of
 			SigModeMatch	-> "Does not match signature:"
 			SigModeExact	-> "Is not identical to signature:"
-			SigModeLess	-> "Is greater than signature:"
-			SigModeMore	-> "Is less than signature:"
+			SigModeLess	-> "Is bigger than signature:"
+			SigModeMore	-> "Is smaller than signature:"
 			
 
 		strBadType Nothing	 = blank
