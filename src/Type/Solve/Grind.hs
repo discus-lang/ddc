@@ -17,7 +17,7 @@ import DDC.Var
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Set	as Set
 
-debug	= True
+debug	= False
 stage	= "Type.Solve.Grind"
 trace s = when debug $ traceM s
 

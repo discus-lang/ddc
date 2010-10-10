@@ -23,6 +23,7 @@ import DDC.Solve.Interface.Problem
 import DDC.Solve.Interface.Solution
 import DDC.Type.Data
 import DDC.Type
+import DDC.Var
 import System.IO
 import DDC.Main.Arg		(Arg)
 import qualified Util.Data.Map	as Map
@@ -47,10 +48,44 @@ squidSolve args mTrace problem
 		
 	-- Run the solver.
 	execStateT 
-		(solveM args
+	 (do	-- Feed all the signatures into the graph.
+		mapM_ solveFeedSig 
+			$ concat 
+			$ Map.elems $ problemSigs problem
+
+		solveM args
 			(problemConstraints problem)
 			(problemMainIsMain  problem))
 		state
+
+
+-- | Feed information from a type signature into the graph
+solveFeedSig :: ProbSig -> SquidM ()
+solveFeedSig (ProbSig v sp mode tSig)
+ = do	Just vT	<- lookupSigmaVar v
+	
+	trace	$ vcat
+		[ "### CSig  "	% v
+		, "    name:\n" %  (show $ varNameSpace v)
+		, "    tSig:\n" %> prettyTypeSplit tSig 
+		]
+
+	-- The signature itself is a type scheme, but we want to
+	--	add a fresh version to the graph so that it unifies
+	--	with the other information in the graph.
+	tSig_inst	<- liftM fst $ instantiateWithFreshVarsT instVar tSig
+
+	-- Strip fetters off the sig before adding it to the graph
+	-- 	as we're only using information in the sig for guiding 
+	-- 	projection resolution.
+	let tSig_body	= stripFWheresT tSig_inst
+	trace	$ "    tSig_body:\n" %> prettyTypeSplit tSig_body % "\n\n"
+
+	-- Add the constraints to the graph and continue solving.
+	feedConstraint (CEq 	(TSV $ SVSig sp v)
+				(TVar kValue (UVar vT)) 
+				tSig_body)
+	return ()
 	   
 
 -- | Solve some type constraints (monadic version)
@@ -70,7 +105,7 @@ solveM	args ctree blessMain
 
 	-- Generalise left-over types and check for errors.
 	solveFinalise solveCs blessMain
- 			
+
 
 -- | Add some constraints to the type graph.
 solveCs :: [CTree] 		-- ^ the constraints to add.
@@ -85,28 +120,6 @@ solveCs	(c:cs)
 	--	the constraint slurper over the program, and are passed
 	--	into the solver from the main compiler pipeline.
 	
-	-- A type signagure
-	CSig src t1 t2
-	 -> do	trace	$ "### CSig  " % t1 % "\n"
-	 		% "    t2:\n" %> prettyTypeSplit t2 % "\n\n"
-
-		-- The signature itself is a type scheme, but we want to
-		--	add a fresh version to the graph so that it unifies
-		--	with the other information in the graph.
-		t2_inst	<- liftM fst $ instantiateWithFreshVarsT instVar t2
-
-		-- Strip fetters off the sig before adding it to the graph
-		-- 	as we're only using information in the sig for guiding 
-		-- 	projection resolution.
-		let t2_strip
-			= stripFWheresT t2_inst
-
-		trace	$ "    t2_strip:\n" %> prettyTypeSplit t2_strip % "\n\n"
-
-		-- Add the constraints to the graph and continue solving.
-		feedConstraint (CSig src t1 t2_strip)
-		solveNext cs
-
 	-- A branch contains a list of constraints that are associated
 	--	with a particular binding in the original program
 	CBranch{}
@@ -352,7 +365,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	env		<- gets stateEnv
 	trace	$ vcat
 		[ "### CInst " % vUse % " <- " % vInst
-		, "    path          = " % path
+--		, "    path          = " % path
 		, "    ctorDefs      = " % (Map.keys $ squidEnvCtorDefs env)
 		, "    got           = " % Map.member vInst (squidEnvCtorDefs env) ]
 
