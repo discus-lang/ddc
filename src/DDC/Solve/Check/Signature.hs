@@ -25,7 +25,6 @@ trace s	 	= when debug $ traceM s
 --
 --   TODO: Check more-than bounds on quantified vars
 --	   Check more-than bounds on monomorphic vars
---         Check contexts
 --         Check sets of quantified variables.
 --
 checkSchemeAgainstSig :: Type -> ProbSig -> SquidM ()

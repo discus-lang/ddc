@@ -182,10 +182,6 @@ data SourceInfer
 		Var
 		TypeSource
 
-	-- ^ A scheme that was generalised and added to the graph during 
-	--	the finialisation process of the solver.
-	| SIGenFinal
-
 	deriving (Show, Eq)
 
 instance Pretty SourceInfer PMode where
@@ -196,8 +192,7 @@ instance Pretty SourceInfer PMode where
 
  ppr (SICrushedFS cid iF src)	= "SICrushedFS" <> cid <> parens iF <> src
  ppr (SICrushedES cid  iF src)	= "SICrushedES" <> cid <> parens iF <> src
- ppr (SIGenInst v src)		= "SIGenInst " %% v %% src
- ppr SIGenFinal			= ppr "SIGenFinal"
+ ppr (SIGenInst  v src)		= "SIGenInst "  %% v %% src
 
 
 ---------------------------------------------------------------------------------------------------

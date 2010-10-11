@@ -151,7 +151,7 @@ solveGeneralise_single src cidsFixed vGen
 
 	-- Record that this type has been generalised, and delete the suspended generalisation
 	stateGenDone `modifyRef` Set.insert vGen
-	stateGenSusp `modifyRef` Set.delete vGen
+	stateGenSusp `modifyRef` Map.delete vGen
 	
 	return tScheme
 

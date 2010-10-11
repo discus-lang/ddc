@@ -174,7 +174,7 @@ solveCs	(c:cs)
 	--	the fact that the var is safe to generalise in the GenSusp set.
 	CGen src t1@(TVar k (UVar v1))
 	 -> do	trace	$ "### CGen  " % prettyTypeSplit t1 %  "\n"
-		stateGenSusp `modifyRef` Set.insert v1
+		stateGenSusp `modifyRef` Map.insert v1 src
 		solveNext cs
 
 	-- Instantiate the type of some variable.
@@ -472,7 +472,7 @@ solveCInst_find
 	-- If the binding to be instantiated is part of a recursive group and we're not ready
 	--	to generalise all the members yet, then we must be inside one of them.
 	| Just vsGroup	<- mBindGroup
-	, not $ and $ map (\v -> Set.member v genSusp) $ Set.toList vsGroup
+	, not $ and $ map (\v -> Map.member v genSusp) $ Set.toList vsGroup
 	= do 	
 		trace	$ ppr "*   solveCInst_find: Recursive binding.\n"
 		return	$ (CInstLetRec src vUse vInst) : cs
@@ -481,7 +481,7 @@ solveCInst_find
 	-- IF	There is a suspended generalisation
 	-- AND	it's not recursive
 	-- THEN	generalise it and use that scheme for the instantiation
-	| Set.member vInst genSusp
+	| Map.member vInst genSusp
 	= do	
 		trace	$ ppr "*   solveCInst_find: Generalisation\n"
 

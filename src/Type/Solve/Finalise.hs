@@ -6,13 +6,12 @@ import Type.Solve.Generalise
 import Type.Check.Main
 import Type.Check.SchemeDanger
 import DDC.Solve.Check.Instances
-import DDC.Solve.Location
 import DDC.Solve.State
 import Constraint.Exp
 import Data.IORef
 
 import Util
-import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 -----
 debug	= True
@@ -34,7 +33,7 @@ solveFinalise solveCs blessMain
 	--	generalisation now so we can export its type scheme.
 	--
 	sGenSusp		<- getsRef stateGenSusp
-	let sGenLeftover 	= Set.toList sGenSusp
+	let sGenLeftover 	= Map.toList sGenSusp
 
 	trace	$ "\n== Finalise ====================================================================\n"
 		% "     sGenLeftover   = " % sGenLeftover % "\n"
@@ -45,7 +44,8 @@ solveFinalise solveCs blessMain
 	errs	<- gotErrors
 	when (not errs)
 	 $ do 	
-	 	mapM_ (solveGeneralise (TSI $ SIGenFinal)) $ sGenLeftover
+	 	mapM_ (\(v, src) -> solveGeneralise src v) 
+			$ sGenLeftover
 
 		-- When generalised schemes are added back to the graph we can end up with (var = ctor)
 		--	constraints in class queues which need to be pushed into the graph by another grind.

@@ -13,6 +13,7 @@ import Constraint.Exp
 import DDC.Solve.Error
 import DDC.Main.Arg
 import DDC.Solve.Graph
+import DDC.Solve.Location
 import DDC.Solve.Interface.Solution
 import DDC.Solve.Interface.Problem
 import DDC.Type.Data
@@ -108,7 +109,7 @@ data SquidS
 	--	the graph, but we haven't done the generalisation yet. If this binding is
 	--	part of a recursive group then it won't be safe to generalise it until we're
 	--	out of that group.
-	, stateGenSusp		:: IORef (Set Var)
+	, stateGenSusp		:: IORef (Map Var TypeSource)
 
 	-- | Vars of types which have already been generalised 
 	--	When we want to instantiate the type for one of the vars in this set then
@@ -194,7 +195,7 @@ squidSInit args mTrace problem
 	refPath		<- liftIO $ newIORef []
 	refContains	<- liftIO $ newIORef Map.empty
 	refInstantiates	<- liftIO $ newIORef Map.empty
-	refGenSusp	<- liftIO $ newIORef Set.empty
+	refGenSusp	<- liftIO $ newIORef Map.empty
 	refGenDone	<- liftIO $ newIORef Set.empty
 	refGenInst	<- liftIO $ newIORef Map.empty
 	refQuantVsKM	<- liftIO $ newIORef Map.empty
