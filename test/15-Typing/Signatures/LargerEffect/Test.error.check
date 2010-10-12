@@ -1,0 +1,19 @@
+ddc: ERROR
+./test/15-Typing/Signatures/LargerEffect/Test.ds:2:8
+    Inferred type:
+            succ
+              :: forall %rDE111 Test.%r1 Test.%r2
+              .  Int32 %r1 -> Int32 %rDE111 -(!eDE476 $cDE479)> Int32 %r2
+              :- !eDE476 =  !{!Read %r1; !Read %rDE111}
+              ,  $cDE479 =  Test.x : %r1
+
+    Is bigger than signature:
+            succ
+              :: forall %rDE111 Test.%r1 Test.%r2
+              .  Int32 %r1 -> Int32 %rDE111 -(!eDE476 $cDE479)> Int32 %r2
+              :- !eDE476 =  !Read %r1
+              ,  $cDE479 =  xDE477 : %r1
+
+    Because  !{!Read Test.%r1; !Read %rDE111}  does not match  !Read Test.%r1 
+
+
