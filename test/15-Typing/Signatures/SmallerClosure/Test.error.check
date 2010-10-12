@@ -1,0 +1,18 @@
+ddc: ERROR
+./test/15-Typing/Signatures/SmallerClosure/Test.ds:6:8
+    Inferred type:
+            thing
+              :: forall %rDE113 %rDE112
+              .  Int32 %rDE113 -> Int32 %rDE112 -($cDE480)> Int32 %rDE113
+              :- $cDE480 =  Test.x : %rDE113
+
+    Is smaller than signature:
+            thing
+              :: forall %rDE111 %rDE112 %rDE113 Test.$c1 Test.%r5
+              .  Int32 %rDE111 -> Int32 %rDE112 -($cDE480)> Int32 %rDE113
+              :- $cDE480 =  xDE478 : %rDE111
+              ,  !c1 =  Test.x : %r5
+
+    Because  %rDE111  does not match  %rDE113 
+
+

@@ -1,0 +1,3 @@
+
+thing 	:> Int %r1 {read} -> Int -> Int
+thing x y = x

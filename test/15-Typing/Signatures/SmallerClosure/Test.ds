@@ -1,0 +1,9 @@
+
+
+dude	:: Int %r5
+dude	= 5
+
+thing 	:> Int -> Int -($c1)> Int
+	:- !c1 = x : %r5
+	
+thing x y = x
