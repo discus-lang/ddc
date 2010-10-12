@@ -27,8 +27,8 @@ import qualified DDC.Desugar.Glob	as D
 import qualified DDC.Desugar.Exp	as D
 import qualified DDC.Desugar.ToCore	as D
 import qualified DDC.Desugar.Elaborate	as D
+import qualified DDC.Desugar.ProjectEta	as D
 import qualified Desugar.Slurp.Slurp	as D
-import qualified Desugar.ProjectEta	as D
 import qualified Desugar.Project	as D
 import qualified DDC.Desugar.Transform	as D
 import qualified Data.Map		as Map

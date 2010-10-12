@@ -1,23 +1,22 @@
-
-module Desugar.ProjectEta 
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+module DDC.Desugar.ProjectEta 
 	(projectEtaExpandTree) 
 where
 import DDC.Desugar.Exp
 import DDC.Desugar.Bits
-import Shared.VarGen
-import Control.Monad
 import DDC.Base.SourcePos
 import DDC.Var
+import Shared.VarGen
+import Control.Monad
 import qualified Data.Map	as Map
 import Util
 
+type Annot	= SourcePos
 
--- Eta expand projection functions
---	This helps avoid intermediate partial of the projection's
---	'worker' function.
+-- | Eta expand projection functions
+--	This helps avoid intermediate partial of the projection's 'worker' function.
 --
-
--- Eg: change
+-- Eg change
 -- 	project Type where
 --		fun1 = fun1_impl
 --		fun2 = fun2_impl
@@ -34,9 +33,6 @@ import Util
 --	fun1_impl1 x y = ...
 --	fun2_impl2 x   = ...
 --
-
-type Annot	= SourcePos
-
 projectEtaExpandTree 
 	:: String		-- ^ unqiue bind 
 	-> Tree Annot		-- ^ source tree
@@ -45,6 +41,7 @@ projectEtaExpandTree
 projectEtaExpandTree unique tree
  = let	arities	= slurpArity tree
    in	evalVarGen (mapM (projectEtaP arities) tree) ("x" ++ unique)
+
 
 projectEtaP :: Map Var Int -> Top Annot -> VarGenM (Top Annot)
 projectEtaP table pp
@@ -56,7 +53,7 @@ projectEtaP table pp
 	_ ->	return pp
 	
 	
--- Eta explain plain var bindings
+-- | Eta explain variable bindings.
 projectEtaS :: Map Var Int -> Stmt Annot -> VarGenM (Stmt Annot)
 projectEtaS table ss
  	| SBind n1 mV (XVar n2 v2)	<- ss
@@ -68,7 +65,7 @@ projectEtaS table ss
 	= return ss
 	
 
--- Eta expand this expression 
+-- | Eta expand this expression 
 etaExpand 
 	:: Int 		-- ^ number of args to add
 	-> Exp Annot	-- ^ expression
@@ -84,7 +81,7 @@ etaExpand args xx
 	return xxLam
 
 
--- Slurp a map binding arities from this tree
+-- | Slurp out a map of arities for each of the top level bindings in this tree.
 slurpArity :: Tree Annot -> Map Var Int
 slurpArity tree
  = foldl' slurpArityP Map.empty tree
@@ -96,10 +93,10 @@ slurpArityP table pp
 	_		-> table
 
 
--- Work out the arity of this expression
+-- | Determine the binding arity of an expression.
 arityX :: Exp Annot -> Int
 arityX xx
  = case xx of
- 	XLambda _ v x	-> 1 + arityX x
+ 	XLambda _ _ x	-> 1 + arityX x
 	_		-> 0
-	
+
