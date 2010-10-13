@@ -4,6 +4,7 @@ module	Data.Numeric.Int32
 
 import	DDC.Runtime.Store
 	DDC.Runtime.Alloc
+	Foreign.Ptr
 	Class.Eq
 	Class.Ord
 	Class.Copy

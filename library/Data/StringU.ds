@@ -2,9 +2,10 @@
 
 module	Data.StringU
 import	Base
-	DDC.Runtime.Store
 	Class.Promote
 	Class.Num
+	Foreign.Ptr
+	DDC.Runtime.Store
 
 --- Casting -------------------------------------------------------------------
 foreign import "(Word8 *)"

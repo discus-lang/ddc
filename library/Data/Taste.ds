@@ -1,0 +1,12 @@
+
+-- Taste ----------------------------------------------------------------------
+-- | Phantom type used to carry around a region variable.
+data Taste %r
+
+-- | Sample the right-most region variable in a type.
+--   This can be useful when contraining a region variable to be the same as another, 
+--   or causing a read or write effect on it separate from the actual objects
+--   contained in the region.
+foreign import 
+ taste	:: forall (t :: % -> *). t %r1 -> Taste %r1
+	:$ Data -> Data

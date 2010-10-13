@@ -117,7 +117,7 @@ recvServer link
 	buf	:: FlatString %r :- Mutable %r
 	buf	= new&{FlatString} 4096
 	msgLen	= recv 	(unboxInt32 link.socket) 
-			(unsafe_castToVoidPtr (buf.danger_string)) 
+			(unsafe_castToVoidPtr (buf.unsafeUnbox)) 
 			1024# 
 			0#
 
@@ -149,9 +149,9 @@ sendCommand sock (MsgCommand Nothing Nothing)
 	= ()
 
 sendCommand sock cc
- | SChunk fs	<- (showMsgCommand cc) .flatten
+ | SChunk fs	<- (showMsgCommand cc) .force
  = do 	send 	(unboxInt32 sock)
-		(unsafe_castToVoidPtr (fs.danger_string))
+		(unsafe_castToVoidPtr (fs.unsafeUnbox))
 		(unboxInt32 (fs.length))
 		0#
 	()

@@ -137,17 +137,12 @@ setLength fs l = setLengthU fs (unboxInt32 l)
 -- | Copy this FlatString
 flatString_copy :: FlatString %r1 -> FlatString %r2
 flatString_copy str@(FlatString)
- = do	
- 	len	= str.length
+ = do	len	= str.length
 	str'	= new&{FlatString} len
-
-	strU	= unsafeUnbox str
-	strU'	= unsafeUnbox str'
-	
-	strcpy strU' strU
 	str'.setLength len
-	
+	strcpy (unsafeUnbox str') (unsafeUnbox str)
 	str'
+
 
 -- Utils ----------------------------------------------------------------------
 -- | Take a character from this FlatString
@@ -156,9 +151,7 @@ index str ix
  | ix < str.length
  = do	ixU	= unboxInt32 ix
  	payload	= peekDataR_payload str
-
- 	ptr	= plusPtr payload (8#i32 + ixU)
-	w8	= peek ptr
+	w8	= peek (plusPtr payload (8#i32 + ixU))
 	
 	boxChar32 (promote_word8ToChar32 w8)
 
@@ -173,10 +166,7 @@ charsLeft fs
 append :: FlatString -> FlatString -> ()
 append fs1@(FlatString) fs2@(FlatString)
  | fs1.charsLeft >= fs2.length
- = do	str1	= unsafeUnbox fs1
-	str2	= unsafeUnbox fs2
-
- 	strcat str1 str2
+ = do	strcat (unsafeUnbox fs1) (unsafeUnbox fs2)
 	fs1.setLength (fs1.length + fs2.length)
 
 

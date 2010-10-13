@@ -1,0 +1,83 @@
+{-# OPTIONS -no-implicit-prelude #-}
+module Foreign.Ptr
+import Base
+
+-- Pointer Manipulation -------------------------------------------------------
+-- | Advances the pointer by the given offset in bytes
+foreign import "_PLUSPTR"
+ plusPtr :: Ptr# Word8# -> Int# -> Ptr# Word8#
+
+
+-- | Read a value from the address given by a pointer.
+foreign import "_PEEK"
+ peek	:: forall a. Ptr# a -> a
+
+
+-- | Like `peek` but assign a read effect to the region holding the given object.
+--   TODO: This is just a macro in C land, so we can't partially apply it.
+foreign import "_PEEKON"
+ peekOn	:: forall (t :: % -> *) a
+	.  t %r1 -> Ptr# a -(!e1)> a
+	:- !e1 = !Read %r1
+	:$ Obj -> Obj -> Obj
+
+
+-- | Write a value to the address given by a pointer.
+--   TODO: This is just a macro in C land, so we can't partially apply it.
+foreign import "_POKE"
+ poke	:: forall a. Ptr# a -> a -> Void#
+
+
+-- | Like `poke` but assign a write effect to the region holding the given object.
+--   TODO: This is just a macro in C land, so we can't partially apply it.
+foreign import "_POKEON"
+ pokeOn	:: forall (t :: % -> *) a
+	.  t %r1 -> Ptr# a -> a -(!e1)> ()
+	:- !e1 = !Write %r1
+	,  Mutable %r1
+	:$ Obj -> Obj -> Obj -> Obj
+
+
+-- Casting --------------------------------------------------------------------
+-- TODO: If we had better support for inline type annots then we
+--       wouldn't need these.
+
+foreign import "(Word8 *)"
+ castToPtrWord8
+ 	:: forall a
+	.  Ptr# a -> Ptr# Word8#
+
+foreign import "(Word32 *)"
+ castToPtrWord32
+ 	:: forall a
+	.  Ptr# a -> Ptr# Word32#
+
+foreign import "(Word64 *)"
+ castToPtrWord64
+ 	:: forall a
+	.  Ptr# a -> Ptr# Word64#
+
+foreign import "(Int32 *)"
+ castToPtrInt32
+ 	:: forall a
+	.  Ptr# a -> Ptr# Int32#
+
+foreign import "(Int64 *)"
+ castToPtrInt64
+ 	:: forall a
+	.  Ptr# a -> Ptr# Int64#
+
+foreign import "(Float32 *)"
+ castToPtrFloat32
+ 	:: forall a
+	.  Ptr# a -> Ptr# Float32#
+
+foreign import "(Float64 *)"
+ castToPtrFloat64
+ 	:: forall a
+	.  Ptr# a -> Ptr# Float64#
+
+foreign import "(Char32 *)"
+ castToPtrChar32
+ 	:: forall a 
+ 	.  Ptr# a -> Ptr# Char32#

@@ -5,6 +5,7 @@ module	Data.Numeric.Float32
 import 	Base
  	Data.Bool
 	Data.Numeric.Int32
+	Foreign.Ptr
 	Class.Eq
 	Class.Num
 	Class.Ord
