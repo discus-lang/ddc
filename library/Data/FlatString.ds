@@ -35,8 +35,7 @@ box strU
 	str	= new&{FlatString} (boxInt32 (len + 1#))
 
 	-- copy the source into it
-	payload	= peekDataR_payload str
-	dest	= castPtrWord8ToString (plusPtr payload 8#)
+	dest	= castPtrWord8ToString (plusPtr (peekDataR_payload str) 8#)
 	strcpy dest strU
 
 	str.setLengthU len
@@ -52,10 +51,7 @@ box strU
 --
 unsafeUnbox :: FlatString %r1 -> String# %r1
 unsafeUnbox str@(FlatString)
- = do	payload	= peekDataR_payload str
- 	ptr	= plusPtr payload 8#
- 	castPtrWord8ToString ptr
-
+ 	= castPtrWord8ToString (plusPtr (peekDataR_payload str) 8#)
 
 -- | With 
 {-
@@ -93,10 +89,10 @@ new length
 	memset (castPtrWord8ToString payload) 0# len_payload
  
 	-- write the maxLength
-	poke (castToPtrInt32 payload) len
+	poke   (castToPtrInt32 payload) len
 
 	-- write the length
-	poke (castToPtrInt32 (plusPtr payload 4#)) 0#
+	poke   (castToPtrInt32 (plusPtr payload 4#)) 0#
 	
 	str
 
@@ -105,7 +101,7 @@ new length
 -- | Get the maximum number of charaters that can be stored in a FlatString.
 maxLengthU :: FlatString -> Int32#
 maxLengthU str@(FlatString)
- = do	payload	= peekDataR_payload str
+ = do	payload = peekDataR_payload str
 	peek (castToPtrInt32 payload)
 
 
@@ -132,7 +128,7 @@ maxLength :: FlatString -> Int32
 maxLength fs = boxInt32 fs.maxLengthU
 
 length :: FlatString -> Int32
-length fs = boxInt32 fs.lengthU
+length fs    = boxInt32 fs.lengthU
 
 setLength :: FlatString -> Int32 -> ()
 setLength fs l = setLengthU fs (unboxInt32 l)

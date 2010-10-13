@@ -10,20 +10,20 @@ main ()
 	
 	-- test flattening
 	strFlat
-		= ("Some " % "merged " % "string.\n") .flatten
+		= ("Some " % "merged " % "string.\n") .force
 
 	print	$ strFlat
-	print	$ "strMerged isFlat  = " % show (strFlat .isFlat) % "\n"
+	print	$ "strMerged isFlat  = " % show (strFlat .isForced) % "\n"
 
-	print	$ (show $ "Some appended string.\n" == strApp.flatten) % "\n"
+	print	$ (show $ "Some appended string.\n" == strApp.force) % "\n"
 	
 	-- test flattening of strings
 	str6		= ("wibble " % "wobble ") % ("wabble" % "\n")
-	str6_flat	= str6.flatten
+	str6_flat	= str6.force
 	print str6_flat
 
 	str7 		= ("" % "") % (("a" % "") % "b\n")
-	str7_flat	= str7.flatten
+	str7_flat	= str7.force
 	print str7_flat
 
 	-- test string equality
