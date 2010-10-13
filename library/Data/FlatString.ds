@@ -11,18 +11,30 @@ import 	Data.Numeric.Int32
 	DDC.Runtime.Alloc
  	Base
 
-
 project FlatString 
  with {	maxLengthU; lengthU; setLengthU; 
  	maxLength;  length;  setLength;
 	danger_string; 
  	new; box;
-	freeChars; append; index }
-	
+	freeChars; 
+	append; 
+	index; slice }
+
+foreign import "memcpy" 
+ memcpy	:: Ptr# Word8# -> Ptr# Word8# -> Int32# -> Int32#
+
+foreign import "(Word8 *)"
+ castStringToPtrWord8 :: String# %r1 -> Ptr# Word8#
+
+foreign import "(String)"
+ castPtrWord8ToString :: Ptr# Word8# -> String# %r1
+
+
+-- Instances ------------------------------------------------------------------	
 instance Copy FlatString where
  copy	= flatString_copy
 
--- Primitive Projections ---------------------------------------------------------------------------
+-- Primitive Projections ------------------------------------------------------
 -- The compiler can't derive these yet.. yawn.
 
 -- | Get the number of chars currently in this FlatString.
@@ -76,7 +88,7 @@ danger_string str@(FlatString)
  	castToStringU ptr
 
 
-----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Create a new string with this length on the heap
 new :: Int32 -> FlatString
 new length
@@ -180,3 +192,20 @@ index str ix
 	boxChar32 (promote_word8ToChar32 w8)
 
 
+-- | Take a range of characters from a FlatString.
+slice 	:: FlatString
+	-> Int32	-- ^ Starting index
+	-> Int32	-- ^ Length.
+	-> FlatString
+
+slice str start len
+ = do	len'	= max (length str - start) len
+	str'	= new len'
+	
+	startU	= unboxInt32 start
+	lenU	= unboxInt32 len
+	dst	= castStringToPtrWord8 (danger_string str')
+	src	= plusPtr (castStringToPtrWord8 (danger_string str)) startU
+	memcpy dst src lenU
+	
+	str'

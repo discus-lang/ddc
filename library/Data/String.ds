@@ -1,9 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 module	Data.String 
-export	string_copy
-	string_eq
-	boxString
+export	boxString
 	(%)
 	(%%)
 	parens
@@ -18,10 +16,10 @@ import	Data.FlatString
 
 
 project String 
- with	{ box; isFlat; isNul; length; flatten; head }
+ with	{ box; isNul; isForced; force; length;  head }
 
 
--- Append ------------------------------------------------------------------------------------------
+-- Append ---------------------------------------------------------------------
 infixr 7 %
 infixr 7 %%
 
@@ -48,7 +46,7 @@ infixr 7 %%
 (%%) a b = a % " " % b
 
 
--- Boxing ------------------------------------------------------------------------------------------
+-- Boxing ---------------------------------------------------------------------
 -- | Box a string
 boxString :: String# -> String
 boxString strU
@@ -56,14 +54,32 @@ boxString strU
 
 box	= boxString
 
--- Simple Operations -------------------------------------------------------------------------------
 
--- | Copy a string, preserving its shape.
-string_copy :: String -> String
-string_copy str
- = case str of
- 	SChunk fs	-> SChunk (copy fs)
+-- Instances ------------------------------------------------------------------
+instance Eq String where
+ (==) s1 s2
+	| SChunk fs1	<- (copy s1).force
+	, SChunk fs2	<- (copy s2).force
+	= (stringU_compare fs1.danger_string fs2.danger_string) == 0#
+	
+ (/=) s1 s2
+	= not (s1 == s2)
+	
+
+instance Copy String where	
+ copy str
+  = case str of
+ 	SChunk fs	-> SChunk  (copy fs)
 	SAppend l r	-> SAppend (copy l) (copy r)
+
+
+-- Simple Operations ----------------------------------------------------------
+-- | Check whether a string contains no characters
+isNul :: String -> Bool
+isNul ss
+ = case ss of
+ 	SChunk fs	-> ss.length == 0
+	SAppend s1 s2	-> s1.isNul && s2.isNul
 
 
 -- | Return how many characters are in this string
@@ -73,59 +89,8 @@ length ss
 	SChunk fs	-> fs.length
 	SAppend l r	-> l.length + r.length
 
--- | Check whether this string is flat, ie is a single SChink and contains
---	contains no SAppend constructors.
-isFlat :: String -> Bool
-isFlat ss
- = case ss of 
-	SChunk _	-> True
-	_ 		-> False
-	
 
--- | Check whether a string contains no characters
-isNul :: String -> Bool
-isNul ss
- = case ss of
- 	SChunk fs	-> ss.length == 0
-	SAppend s1 s2	-> s1.isNul && s2.isNul
-
-
--- | Create a new, flat string which contains no SAppend constructors.
-flatten :: String -> String
-
-flatten str@(SChunk fs)
-	= str
-
-flatten ss
- = do	len	= ss.length
- 	fsDest	= new&{FlatString} len
-	string_flatten' fsDest ss
-	SChunk fsDest
-
-string_flatten' dest (SChunk fs)
- = do	append&{FlatString} dest fs
-	
-string_flatten' dest (SAppend str1 str2)
- = do	string_flatten' dest str1
-	string_flatten' dest str2
-
-
--- | Test if two strings are equal
---	This flattens both and uses strcmp
-string_eq :: String -> String -> Bool
-string_eq str1 str2
- = do	
-	res	= match
-			| SChunk fs1	<- (copy str1).flatten
-			, SChunk fs2	<- (copy str2).flatten
-			= stringU_compare
-				fs1.danger_string
-				fs2.danger_string
-	
-	res == 0#
-
-
--- | Find the first character in this string
+-- | Find the first character in this String.
 head :: String -> Char32 
 head (SChunk fs)	= fs.index 0
 
@@ -133,16 +98,54 @@ head (SAppend s1 s2)
 	| isNul s1	=  head s2
 			\= head s1
 
--- | Wrap a string in parens
+
+-- | If the string is empty then Nothing
+--   otherwise take all but the first character of a string.
+{-
+tail :: String -> Maybe String
+tail str	
+	| length str == 0
+	= Nothing
+
+tail str
+ = case flatten str of
+	SChunk fs	-> 
+-}
+
+
+-- Forcing --------------------------------------------------------------------
+-- | Check whether the string is represented by a single chunk.
+isForced :: String -> Bool
+isForced ss
+ = case ss of 
+	SChunk _	-> True
+	_ 		-> False
+
+
+-- | Return a new string that has the same contents as the old one, 
+--   but is represented by a single chunk.
+force :: String -> String
+force str@(SChunk fs) = str
+force str
+ = do 	fsDest	= new&{FlatString} str.length
+	appendToFlatString fsDest str
+	SChunk fsDest
+
+-- | Append the contents of a String to a FlatString
+appendToFlatString :: FlatString -> String -> ()
+appendToFlatString dest str
+ = case str of
+	SChunk fs
+	 -> append&{FlatString} dest fs
+
+	SAppend s1 s2	
+	 -> do	appendToFlatString dest s1
+		appendToFlatString dest s2
+
+
+
+-- Pretty printing utils ------------------------------------------------------
+-- | Wrap a string in parenthesis.
 parens :: String -> String
 parens ss	= "(" % ss % ")"
 
-
--- Instances ------------------------------------------------------------------
-instance Eq String where
-	(==) 		= string_eq
-	(/=) s1 s2	= not (string_eq s1 s2)
-
-
-instance Copy String where	
-	copy		= string_copy
