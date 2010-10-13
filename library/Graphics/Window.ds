@@ -14,9 +14,9 @@ project Window where
 	-- create a new window for this frame
 	newWithFrame :: String -> Frame -> Window
 	newWithFrame name frame
-	 = do	(SChunk fs_flat) = name.flatten
+	 = do	(SChunk fs_flat) = name.force
 
-	 	ptcOpen (fs_flat .danger_string) 
+	 	ptcOpen (fs_flat .unsafeUnbox) 
 			(unboxInt32 frame.sizeX)
 			(unboxInt32 frame.sizeY)
 

@@ -9,87 +9,63 @@ import 	Data.Numeric.Int32
  	Data.Char
  	Class.Copy
 	DDC.Runtime.Alloc
+	Foreign.C.String
  	Base
 
 project FlatString 
- with {	maxLengthU; lengthU; setLengthU; 
+ with {	box; unsafeUnbox; new;
+	maxLengthU; lengthU; setLengthU; 
  	maxLength;  length;  setLength;
-	danger_string; 
- 	new; box;
-	freeChars; 
+	index; 
+	charsLeft;
 	append; 
-	index; slice }
-
-foreign import "memcpy" 
- memcpy	:: Ptr# Word8# -> Ptr# Word8# -> Int32# -> Int32#
-
-foreign import "(Word8 *)"
- castStringToPtrWord8 :: String# %r1 -> Ptr# Word8#
-
-foreign import "(String)"
- castPtrWord8ToString :: Ptr# Word8# -> String# %r1
+	slice }
 
 
 -- Instances ------------------------------------------------------------------	
 instance Copy FlatString where
  copy	= flatString_copy
 
--- Primitive Projections ------------------------------------------------------
--- The compiler can't derive these yet.. yawn.
+-- Boxing --------------------------------------------------------------------
+-- | Create a new FlatString and copy the source into it.
+box :: String# %r1 -> FlatString %r2
+box strU
+ = do	-- make a new string for the destination
+ 	len	= strlen strU
+	str	= new&{FlatString} (boxInt32 (len + 1#))
 
--- | Get the number of chars currently in this FlatString.
-maxLengthU :: FlatString -> Int32#
-maxLengthU str@(FlatString)
- = do	payload	= peekDataR_payload str
-	ptr	= castToPtrInt32 payload
- 	peek (castToPtrInt32 ptr)
+	-- copy the source into it
+	payload	= peekDataR_payload str
+	dest	= castPtrWord8ToString (plusPtr payload 8#)
+	strcpy dest strU
 
-maxLength :: FlatString -> Int32
-maxLength fs = boxInt32 fs.maxLengthU
-
-
--- | Get the maximum number of chars that can be contained by this FlatString.
-lengthU :: FlatString -> Int32#
-lengthU str@(FlatString)
- = do	payload	= peekDataR_payload str
-	ptr	= castToPtrInt32 (plusPtr payload 4#)
- 	peek ptr
-
-length :: FlatString -> Int32
-length fs = boxInt32 fs.lengthU
+	str.setLengthU len
+	str
 
 
--- | Set the current length of the string
---   TODO: don't allow this to be set over the maximum available
---         This really wants a write effect, but we haven't added one because 
---         it's used by "new" and we cant mask effs on the return type of a
---         fn yet.
-setLengthU :: FlatString -> Int32# -> ()
-setLengthU 
-	str@(FlatString) len
-
- = do	payload	= peekDataR_payload str
- 	ptr	= castToPtrInt32 (plusPtr payload 4#)
-	poke (castToPtrInt32 ptr) len
-	()
-
-setLength :: FlatString -> Int32 -> ()
-setLength fs l = setLengthU fs (unboxInt32 l)
-
-
--- | Unboxing a FlatString returns a pointer to a C string. 
---   DANGER: This object will move on the next GC. 
---           Don't hold onto the poitner across an allocation, else badness.
+-- | Return a pointer to the unboxed null-terminated string that is inside
+--   the boxed heap object.
 --
-danger_string :: FlatString %r1 -> String# %r1
-danger_string str@(FlatString)
+--   DANGER: The object will probably move on the next GC, invalidating
+--           the returned pointer. Don't hold onto the pointer across a
+--           a potential allocation.
+--
+unsafeUnbox :: FlatString %r1 -> String# %r1
+unsafeUnbox str@(FlatString)
  = do	payload	= peekDataR_payload str
  	ptr	= plusPtr payload 8#
- 	castToStringU ptr
+ 	castPtrWord8ToString ptr
 
 
--------------------------------------------------------------------------------
--- | Create a new string with this length on the heap
+-- | With 
+{-
+withStringU :: FlatString %r1 -> (String# %r1 -> a) -> a
+withStringU fs
+ = do	
+-}
+
+-- Constructors ---------------------------------------------------------------
+-- | Create a new string with the given length, and fill it will null charaters.
 new :: Int32 -> FlatString
 new length
  = do 
@@ -114,7 +90,7 @@ new length
 	payload	= peekDataR_payload str
 
 	-- clear out the payload
-	stringU_danger_memset (castToStringU payload) 0# len_payload
+	memset (castPtrWord8ToString payload) 0# len_payload
  
 	-- write the maxLength
 	poke (castToPtrInt32 payload) len
@@ -125,21 +101,41 @@ new length
 	str
 
 
--- | Create a new flatstring
---	This creates a new heap object and copies the source string into it.
-box :: String# %r1 -> FlatString %r2
-box strU
- = do	-- make a new string for the destination
- 	len	= stringU_length strU
-	str	= new&{FlatString} (boxInt32 (len + 1#))
+-- Field Accessors ------------------------------------------------------------
+-- | Get the maximum number of charaters that can be stored in a FlatString.
+maxLengthU :: FlatString -> Int32#
+maxLengthU str@(FlatString)
+ = do	payload	= peekDataR_payload str
+	peek (castToPtrInt32 payload)
 
-	-- copy the source into it
-	payload	= peekDataR_payload str
-	dest	= castToStringU (plusPtr payload 8#)
-	stringU_danger_strcpy dest strU
 
-	str.setLengthU len
-	str
+-- | Get the number of charaters currently stored in a FlatString.
+lengthU :: FlatString -> Int32#
+lengthU str@(FlatString)
+ = do	payload	= peekDataR_payload str
+	peek (castToPtrInt32 (plusPtr payload 4#))
+
+
+-- | Set the current length of the string
+--   TODO: don't allow this to be set over the maximum available
+--         This really wants a write effect, but we haven't added one because 
+--         it's used by "new" and we cant mask effs on the return type of a
+--         fn yet.
+setLengthU :: FlatString -> Int32# -> ()
+setLengthU str@(FlatString) len
+ = do	payload	= peekDataR_payload str
+	poke (castToPtrInt32 (plusPtr payload 4#)) len
+	()
+
+
+maxLength :: FlatString -> Int32
+maxLength fs = boxInt32 fs.maxLengthU
+
+length :: FlatString -> Int32
+length fs = boxInt32 fs.lengthU
+
+setLength :: FlatString -> Int32 -> ()
+setLength fs l = setLengthU fs (unboxInt32 l)
 
 
 -- | Copy this FlatString
@@ -149,36 +145,15 @@ flatString_copy str@(FlatString)
  	len	= str.length
 	str'	= new&{FlatString} len
 
-	strU	= str .danger_string
-	strU'	= str'.danger_string
+	strU	= unsafeUnbox str
+	strU'	= unsafeUnbox str'
 	
-	stringU_danger_strcpy strU' strU
+	strcpy strU' strU
 	str'.setLength len
 	
 	str'
 
-
--- | Work out how much space is left inside this FlatString
-freeChars :: FlatString -> Int32
-freeChars fs
- = 	boxInt32 (fs.maxLengthU - fs.lengthU)
-
-
--- | Append some data to the end of a FlatString
-append :: FlatString %r1 -> FlatString %r2 -> ()
-append fs1@(FlatString) fs2@(FlatString)
- | fs1.freeChars >= fs2.length
- = do
-	str1	= fs1.danger_string
-	str2	= fs2.danger_string
-
- 	stringU_danger_concat str1 str2
-	
-	fs1.setLength (fs1.length + fs2.length)
-		
-	()
-
-
+-- Utils ----------------------------------------------------------------------
 -- | Take a character from this FlatString
 index :: FlatString -> Int32 -> Char32
 index str ix
@@ -190,6 +165,23 @@ index str ix
 	w8	= peek ptr
 	
 	boxChar32 (promote_word8ToChar32 w8)
+
+
+-- | Get how many charaters there are still available in a FlatString.
+charsLeft :: FlatString -> Int32
+charsLeft fs
+ = boxInt32 (maxLengthU fs - lengthU fs)
+
+
+-- | Append some data to the end of a FlatString
+append :: FlatString -> FlatString -> ()
+append fs1@(FlatString) fs2@(FlatString)
+ | fs1.charsLeft >= fs2.length
+ = do	str1	= unsafeUnbox fs1
+	str2	= unsafeUnbox fs2
+
+ 	strcat str1 str2
+	fs1.setLength (fs1.length + fs2.length)
 
 
 -- | Take a range of characters from a FlatString.
@@ -204,8 +196,8 @@ slice str start len
 	
 	startU	= unboxInt32 start
 	lenU	= unboxInt32 len
-	dst	= castStringToPtrWord8 (danger_string str')
-	src	= plusPtr (castStringToPtrWord8 (danger_string str)) startU
+	dst	= castStringToPtrWord8 (unsafeUnbox str')
+	src	= plusPtr (castStringToPtrWord8 (unsafeUnbox str)) startU
 	memcpy dst src lenU
 	
 	str'

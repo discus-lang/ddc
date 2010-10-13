@@ -33,10 +33,10 @@ showInt32 i
 	iU	= unboxInt32 i
 
  	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
+	strU	= fs.unsafeUnbox
 
  	show_danger_snprintf strU maxLenU "%d"# iU
-	fs.setLengthU (stringU_length strU)
+	fs.setLengthU (strlen strU)
 	
 	SChunk fs
 
@@ -48,11 +48,11 @@ showInt64 i
 	iU	= unboxInt64 i
 
 	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
+	strU	= fs.unsafeUnbox
 
 	-- Safe and correct for 32 and 64 bit systems.
 	primInt64_toString iU strU 40#i64
-	fs.setLengthU (stringU_length strU)
+	fs.setLengthU (strlen strU)
 
 	SChunk fs
 
@@ -65,10 +65,10 @@ showWord32 i
 	iU	= unboxWord32 i
 
  	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
+	strU	= fs.unsafeUnbox
 
  	show_danger_snprintf strU maxLenU "%u"# iU
-	fs.setLengthU (stringU_length strU)
+	fs.setLengthU (strlen strU)
 	
 	SChunk fs
 
@@ -80,11 +80,11 @@ showWord64 i
 	iU	= unboxWord64 i
 
 	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
+	strU	= fs.unsafeUnbox
 
 	-- Safe and correct for 32 and 64 bit systems.
 	primWord64_toString iU strU 40#i64
-	fs.setLengthU (stringU_length strU)
+	fs.setLengthU (strlen strU)
 
 	SChunk fs
 
@@ -97,10 +97,10 @@ showFloat32 f
 	fU	= unboxFloat32 f
 	
 	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
+	strU	= fs.unsafeUnbox
 	
 	show_danger_snprintf strU maxLenU "%f"# fU
-	fs.setLengthU (stringU_length strU)
+	fs.setLengthU (strlen strU)
 	
 	SChunk fs
 
@@ -113,11 +113,11 @@ showFloat64 f
 	fU	= unboxFloat64 f
 
 	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
+	strU	= fs.unsafeUnbox
 
 	-- %f probably isn't the best way of printing floats.
 	show_danger_snprintf strU maxLenU "%f"# fU
-	fs.setLengthU (stringU_length strU)
+	fs.setLengthU (strlen strU)
 
 	SChunk fs
 
@@ -130,10 +130,10 @@ showChar32 f
 	cU	= unboxChar32 f
 	
 	fs	= new&{FlatString} maxLen
-	strU	= fs.danger_string
+	strU	= fs.unsafeUnbox
 	
 	show_danger_snprintf strU maxLenU "%c"# cU
-	fs.setLengthU (stringU_length strU)
+	fs.setLengthU (strlen strU)
 	
 	SChunk fs
 

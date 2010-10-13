@@ -32,7 +32,7 @@ print :: String -> ()
 print xx
  = case xx of 
  	SChunk fs@FlatString
-	-> do	fputsU_console (fs.danger_string) stdout
+	-> do	fputsU_console (fs.unsafeUnbox) stdout
 		()
 
 	SAppend s1 s2	

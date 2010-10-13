@@ -15,7 +15,7 @@ foreign import "atof"
 instance Read Float where
  read ss	
   = case (copy ss).force of
- 	SChunk fs	-> boxFloat32 (atof fs.danger_string)
+ 	SChunk fs	-> boxFloat32 (atof fs.unsafeUnbox)
 
 	
 foreign import "atoi"
@@ -24,4 +24,4 @@ foreign import "atoi"
 instance Read Int where
  read ss	
   = case (copy ss).force of
-	SChunk fs	-> boxInt32 (atoi fs.danger_string)
+	SChunk fs	-> boxInt32 (atoi fs.unsafeUnbox)

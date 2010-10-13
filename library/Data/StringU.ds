@@ -1,72 +1,25 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 module	Data.StringU
-
 import	Base
 	DDC.Runtime.Store
 	Class.Promote
 	Class.Num
 
-pragma	cc_includes ["string.h"]
+--- Casting -------------------------------------------------------------------
+foreign import "(Word8 *)"
+ castStringToPtrWord8 :: String# %r1 -> Ptr# Word8#
 
-
--- project String# 
---  with { compare; length; danger_concat; danger_memset; danger_index};
- 
-foreign import "(Word8*)"
- stringU_castToPtrWord8 
- 		:: String# -> Ptr# Word8#
- 
 foreign import "(String)"
- castToStringU
- 	:: Ptr# Word8# -> String#
-
- 
--- Functions imported from C land ------------------------------------------------------------------
-
--- | Compare two strings for equality.
-foreign import "strcmp"
- stringU_compare :: String#{read} -> String#{read} -> Int#
-
--- | Return the length of this string.
-foreign import "strlen"
- stringU_length	 :: String#{read} -> Int#
-
--- | Append the src string to the dest string by overwriting the dest
---   DANGER: The destination string must be large enough to hold the result, else badness.
---
-foreign import "strcat"
- stringU_danger_concat	:: String#{write} -> String#{read} -> Void#
+ castPtrWord8ToString :: Ptr# Word8# -> String# %r1
 
 
--- | Copy the src string into the dest string
---   DANGER: The destination string must be large enough to hold the result, else badness.
---
---   TODO:   This should really have a write effect
---	     but it's left off because flatString_copy uses it
---
-foreign import "strcpy"
- stringU_danger_strcpy	:: String# -> String# -> Void#
- 
- 
--- | Write some characters into this string.
---   DANGER: the number of bytes must be less than the length of the string -1, else badness.
---
-foreign import "memset"
- stringU_danger_memset	
- 	:: String# {write} 	-- destination string
-	-> Int32# 		-- byte to use
-	-> Int32# 		-- number of bytes to set
-	-> String#		-- same as desination string
-
-	
--- Functions defined in the RTS --------------------------------------------------------------------
-
+-- Functions defined in the RTS -----------------------------------------------
 -- | Get a single charater from this string.
 --   DANGER: the array bounds is not checked.
 --
 stringU_danger_index :: String# -> Int# -> Char32#
 stringU_danger_index str pos
- = do	ptr	= stringU_castToPtrWord8 str
+ = do	ptr	= castStringToPtrWord8 str
  	w	= peek (plusPtr ptr pos) 
 	promote_word8ToChar32 w

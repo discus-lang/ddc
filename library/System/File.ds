@@ -90,7 +90,7 @@ try_file_open
 try_file_open name mode
  | SChunk name_flat	<- (copy name).force
  , SChunk mode_flat	<- (copy mode).force
- = fopenU (name_flat.danger_string) (mode_flat.danger_string)
+ = fopenU (name_flat.unsafeUnbox) (mode_flat.unsafeUnbox)
 
 file_open 
 	:: String 		-- ^ file name
@@ -128,7 +128,7 @@ file_read name = do
 
 	fs	= new&{FlatString} len
 	fseekU file 0# file_SEEK_SET
-	len'	= freadU (fs.danger_string) (unboxInt32 len) 1# file
+	len'	= freadU (fs.unsafeUnbox) (unboxInt32 len) 1# file
 
 	if (boxInt32 len') /= 1 && boxInt32 (feofU file) /= 0
 	 then Nothing

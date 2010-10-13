@@ -60,7 +60,7 @@ instance Eq String where
  (==) s1 s2
 	| SChunk fs1	<- (copy s1).force
 	, SChunk fs2	<- (copy s2).force
-	= (stringU_compare fs1.danger_string fs2.danger_string) == 0#
+	= (strcmp fs1.unsafeUnbox fs2.unsafeUnbox) == 0#
 	
  (/=) s1 s2
 	= not (s1 == s2)
@@ -131,6 +131,7 @@ force str
 	appendToFlatString fsDest str
 	SChunk fsDest
 
+
 -- | Append the contents of a String to a FlatString
 appendToFlatString :: FlatString -> String -> ()
 appendToFlatString dest str
@@ -141,7 +142,6 @@ appendToFlatString dest str
 	SAppend s1 s2	
 	 -> do	appendToFlatString dest s1
 		appendToFlatString dest s2
-
 
 
 -- Pretty printing utils ------------------------------------------------------
