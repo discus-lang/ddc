@@ -88,8 +88,8 @@ try_file_open
 	-> Ptr# File#
 
 try_file_open name mode
- | SChunk name_flat	<- (copy name).flatten
- , SChunk mode_flat	<- (copy mode).flatten  
+ | SChunk name_flat	<- (copy name).force
+ , SChunk mode_flat	<- (copy mode).force
  = fopenU (name_flat.danger_string) (mode_flat.danger_string)
 
 file_open 

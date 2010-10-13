@@ -38,7 +38,7 @@ foreign import "(void *)"
 
 getEnv :: String -(!e1)>  Maybe String :- !e1 = !Environment
 getEnv name
- | SChunk flat_name	<- (copy name).flatten
+ | SChunk flat_name	<- (copy name).force
  = do	s = getEnvU flat_name.danger_string
 	case primPtrVoid_eq (castStringToVoidPtr s) primPtrVoid_null of
          false# -> Just (SChunk (box&{FlatString} s))

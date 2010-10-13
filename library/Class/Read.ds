@@ -13,15 +13,15 @@ foreign import "atof"
 	
 -- BUGS: atof produces a double, not a float, but it's auto type-cast in the c code
 instance Read Float where
- 	read ss	
-	 = case (copy ss).flatten of
-	 	SChunk fs	-> boxFloat32 (atof fs.danger_string)
+ read ss	
+  = case (copy ss).force of
+ 	SChunk fs	-> boxFloat32 (atof fs.danger_string)
 
 	
 foreign import "atoi"
-	atoi :: String# {read} -> Int32#
+ atoi :: String# {read} -> Int32#
 	
 instance Read Int where
-	read ss	
-	 = case (copy ss).flatten of
-	 	SChunk fs	-> boxInt32 (atoi fs.danger_string)
+ read ss	
+  = case (copy ss).force of
+	SChunk fs	-> boxInt32 (atoi fs.danger_string)
