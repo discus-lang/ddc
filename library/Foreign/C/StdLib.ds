@@ -1,0 +1,18 @@
+{-# OPTIONS -no-implicit-prelude #-}
+module Foreign.C.StdLib
+import	Base
+	DDC.Runtime.Store
+	Class.Promote
+	Class.Num
+
+pragma	cc_includes ["stdlib.h"]
+
+-- TODO: These functions really want to work on some kind of ByteArray type
+--       instead of a String. It'd also be nice if we had a store effect
+--       instead of having to use modify, which requires a witness of mutability.
+foreign import "free"
+ free   :: String# {modify} -> Void#
+
+foreign import "malloc"
+ malloc :: Int32# -> String#
+

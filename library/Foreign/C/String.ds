@@ -33,7 +33,7 @@ foreign import "strlen"
 --         needs to be pure. We can add the write effect when we have proper
 --         effect masking working.
 foreign import "strcpy"
- strcpy	:: String# -> String# -> Void#
+ strcpy	:: String# -> String# {read} -> Void#
 
 -- | Append a copy of the second string to the first.
 foreign import "strcat"

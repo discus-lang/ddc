@@ -10,6 +10,7 @@ import 	Data.Numeric.Int32
  	Class.Copy
 	DDC.Runtime.Alloc
 	Foreign.C.String
+	Foreign.C.StdLib
  	Base
 
 project FlatString 
@@ -53,11 +54,21 @@ unsafeUnbox :: FlatString %r1 -> String# %r1
 unsafeUnbox str@(FlatString)
  	= castPtrWord8ToString (plusPtr (peekDataR_payload str) 8#)
 
--- | With 
+
+-- | Apply a function to a copy of the unboxed String contained
+--   in a FlatString. This String is copied out to the C heap before,
+--   so it's ok if the function invokes the GC. The string is freed 
+--   after the function returns, so don't hold pointers to it afterwards.
+
+--   TODO: This doesn't work because we can't build a thunk that takes
+--         an unboxed parameter.
 {-
-withStringU :: FlatString %r1 -> (String# %r1 -> a) -> a
-withStringU fs
- = do	
+withStringU :: FlatString %r1 -> (String# %r2 -> a) -> a
+withStringU fs fun
+ = do	tmp	= malloc (fs.lengthU + 1#)
+	strcpy tmp fs.unsafeUnbox
+	x	= fun tmp
+	free tmp
 -}
 
 -- Constructors ---------------------------------------------------------------
