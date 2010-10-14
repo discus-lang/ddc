@@ -11,12 +11,8 @@ module DDC.Type
 	, module DDC.Type.Unify
 	, module DDC.Type.Equiv
 	, module DDC.Type.Subsumes
-	
 	, module DDC.Type.Operators
-	, module DDC.Type.Collect.FreeVars
-	, module DDC.Type.Collect.FreeTVars
-	, module DDC.Type.Collect.Visible)
-
+	, module DDC.Type.Collect)
 where
 import DDC.Type.Exp
 import DDC.Type.Bits
@@ -30,6 +26,4 @@ import DDC.Type.Unify
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Type.Operators
-import DDC.Type.Collect.FreeVars()
-import DDC.Type.Collect.FreeTVars
-import DDC.Type.Collect.Visible
+import DDC.Type.Collect

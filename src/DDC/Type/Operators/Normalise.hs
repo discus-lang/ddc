@@ -3,9 +3,9 @@
 module DDC.Type.Operators.Normalise
 	(normaliseT)
 where
-import Type.Plate.Collect
-import DDC.Type.Exp
+import DDC.Type.Collect
 import DDC.Type.Transform
+import DDC.Type.Exp
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

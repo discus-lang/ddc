@@ -5,9 +5,9 @@
 --   and _all_ of the TVars with containing `UIndex` and `UClass` nodes.
 --
 module DDC.Type.Collect.FreeTVars
-	( freeTClasses
-	, freeTClassVars
+	( freeTClassVars
 	, freeCids
+	, freeTClasses
 	, freeTVars)
 where
 import DDC.Type.Exp

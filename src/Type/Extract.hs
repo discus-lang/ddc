@@ -6,7 +6,6 @@ module Type.Extract
 where
 import Type.Plug
 import Type.Strengthen
-import Type.Plate.Collect
 import Util
 import DDC.Solve.Error
 import DDC.Solve.State
