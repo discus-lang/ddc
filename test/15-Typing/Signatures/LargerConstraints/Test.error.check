@@ -3,17 +3,17 @@ ddc: ERROR
     Inferred type:
             succ
               :: forall %rDE111 Test.%r1 Test.%r2
-              .  Int32 %r1 -> Int32 %rDE111 -(!eDE476 $cDE479)> Int32 %r2
-              :- !eDE476 =  !Read %rDE111
-              ,  $cDE479 =  Test.x : %r1
+              .  Int32 %r1 -> Int32 %rDE111 -(!eDE482 $cDE485)> Int32 %r2
+              :- !eDE482 =  !Read %rDE111
+              ,  $cDE485 =  Test.x : %r1
               ,  Const %r1
 
     Is bigger than signature:
             succ
               :: forall %rDE111 Test.%r1 Test.%r2
-              .  Int32 %r1 -> Int32 %rDE111 -(!eDE476 $cDE479)> Int32 %r2
-              :- !eDE476 =  !{!Read %rDE111; !Read %r1}
-              ,  $cDE479 =  xDE477 : %r1
+              .  Int32 %r1 -> Int32 %rDE111 -(!eDE482 $cDE485)> Int32 %r2
+              :- !eDE482 =  !{!Read %rDE111; !Read %r1}
+              ,  $cDE485 =  xDE483 : %r1
 
     Unexpected constraint:  Const Test.%r1 
 

@@ -3,15 +3,15 @@ ddc: ERROR
     Inferred type:
             thing
               :: forall %rDE111 %rDE112
-              .  Int32 %rDE112 -> Int32 %rDE111 -($cDE480)> Int32 %rDE112
-              :- $cDE480 =  Test.x : %rDE112
+              .  Int32 %rDE112 -> Int32 %rDE111 -($cDE486)> Int32 %rDE112
+              :- $cDE486 =  Test.x : %rDE112
 
     Is smaller than signature:
             thing
               :: forall %rDE111 %rDE112 Test.%r1
-              .  Int32 %r1 -> Int32 %rDE111 -(!eDE477 $cDE480)> Int32 %rDE112
-              :- !eDE477 =  !Read %r1
-              ,  $cDE480 =  xDE478 : %r1
+              .  Int32 %r1 -> Int32 %rDE111 -(!eDE483 $cDE486)> Int32 %rDE112
+              :- !eDE483 =  !Read %r1
+              ,  $cDE486 =  xDE484 : %r1
 
     Because  Test.%r1  does not match  %rDE112 
 

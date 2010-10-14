@@ -3,9 +3,9 @@ ddc: ERROR
     Inferred type:
             succ
               :: forall %rDE111 %rDE112 Test.%r2
-              .  Int32 %rDE111 -($cTC0)> Int32 %rDE112 -(!eDE477 $cDE480)> Int32 %r2
-              :- !eDE477 =  !{!Read %rDE111; !Read Test.%r1}
-              ,  $cDE480 =  ${Test.y : Test.%r1; Test.x : %rDE111}
+              .  Int32 %rDE111 -($cTC0)> Int32 %rDE112 -(!eDE483 $cDE486)> Int32 %r2
+              :- !eDE483 =  !{!Read %rDE111; !Read Test.%r1}
+              ,  $cDE486 =  ${Test.y : Test.%r1; Test.x : %rDE111}
               ,  $cTC0 =  Test.y : Test.%r1
               ,  Const Test.%r1
               ,  Direct Test.%r1
@@ -15,10 +15,10 @@ ddc: ERROR
     Is bigger than signature:
             succ
               :: forall %rDE111 %rDE112 Test.%r2
-              .  Int32 %rDE111 -> Int32 %rDE112 -(!eDE477 $cDE480)> Int32 %r2
-              :- !eDE477 =  !{!Read %rDE111; !Read %rDE112}
-              ,  $cDE480 =  xDE478 : %rDE111
+              .  Int32 %rDE111 -> Int32 %rDE112 -(!eDE483 $cDE486)> Int32 %r2
+              :- !eDE483 =  !{!Read %rDE111; !Read %rDE112}
+              ,  $cDE486 =  xDE484 : %rDE111
 
-    Because  ${Test.y : Test.%r1; Test.x : %rDE111}  does not match  xDE478 : %rDE111 
+    Because  ${Test.y : Test.%r1; Test.x : %rDE111}  does not match  xDE484 : %rDE111 
 
 
