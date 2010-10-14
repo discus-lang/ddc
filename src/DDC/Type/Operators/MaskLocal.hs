@@ -1,6 +1,6 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Type.Operators.MaskLocal
-	( maskLocalT )
+	(maskLocalT)
 where
 import Util
 import Shared.VarPrim
@@ -40,17 +40,17 @@ maskLocalT tsVis tt
 -- | Erase read effects to regions not in this list.
 --	also erase Const, Mutable, Lazy, Direct constraints on regions not in the list
 maskF :: Set Type -> Fetter -> Maybe Fetter
-maskF	tsVis	(FWhere t1 t2)
+maskF	tsVis (FWhere t1 t2)
 	| isEffect t1
 	= Just $ FWhere t1 (maskE tsVis t2)
 
-maskF	tsVis	(FConstraint v [tR])
+maskF	tsVis (FConstraint v [tR])
 	| elem v [primConst, primMutable, primLazy, primDirect]
 	, isTClass tR || isSomeTVar tR
 	, not $ Set.member tR tsVis
 	= Nothing
 	
-maskF	tsVis	f	
+maskF	_ f	
 	= Just f
 
 

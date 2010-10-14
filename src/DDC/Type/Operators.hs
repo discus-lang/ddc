@@ -16,6 +16,9 @@ module DDC.Type.Operators
 	, elaborateAndQuantifyRsT
 	, elaborateEffT
 	, elaborateCloT
+
+	-- * Normalising names
+	, normaliseT
 		
 	-- * Finalisation
 	, finaliseT
@@ -71,6 +74,7 @@ import DDC.Type.Operators.Flatten
 import DDC.Type.Operators.Instantiate
 import DDC.Type.Operators.JoinSum
 import DDC.Type.Operators.MaskLocal
+import DDC.Type.Operators.Normalise
 import DDC.Type.Operators.Pack
 import DDC.Type.Operators.Quantify
 import DDC.Type.Operators.Strip

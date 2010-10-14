@@ -17,7 +17,6 @@ import qualified Source.Exp		as S
 import qualified Source.Plate.Trans	as S
 import qualified Source.Slurp		as S
 import qualified Source.Util		as S
-import qualified Type.Util		as T
 import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T
 import qualified DDC.Type.Transform	as T

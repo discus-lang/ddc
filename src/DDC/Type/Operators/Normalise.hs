@@ -1,9 +1,7 @@
------
--- Normalises the names in a type.
---
---
-module Type.Util.Normalise
-	( normaliseT )
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+-- Normalise the names in a type.
+module DDC.Type.Operators.Normalise
+	(normaliseT)
 where
 import Type.Plate.Collect
 import DDC.Type.Exp
@@ -13,43 +11,43 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import Util
 
------
-normaliseT :: 	Type -> Type
-normaliseT	tt
+-- | Normalise the names in a type.
+normaliseT :: Type -> Type
+normaliseT tt
  = let	vsBinding	= Set.toList $ collectBindingVarsT tt
  	(_, state')	= runState (mapM bindVar vsBinding) initState
 	varMap		= stateVarMap state'
-	t2		= transformV (rewriteVarV varMap) tt
- in 	t2
+   in	transformV (rewriteVarV varMap) tt
+
 
 -----
 type StateN	= State StateS
 
 data StateS	
 	= StateS 
-	{ stateGen		:: Map NameSpace Int
-	, stateVarMap		:: Map Var Var }
+	{ stateGen	:: Map NameSpace Int
+	, stateVarMap	:: Map Var Var }
 		
 
 initState
  =	StateS
- 	{ stateGen		= Map.insert NameType   0
-				$ Map.insert NameRegion 0
-				$ Map.insert NameEffect 0
-				$ Map.insert NameClosure 0
-				$ Map.empty
+ 	{ stateGen	= Map.insert NameType   0
+			$ Map.insert NameRegion 0
+			$ Map.insert NameEffect 0
+			$ Map.insert NameClosure 0
+			$ Map.empty
 				
-	, stateVarMap		= Map.empty }
+	, stateVarMap	= Map.empty }
 	
 spacePrefix
-	= [ (NameType,	"t")
-	  , (NameRegion,	"r")
-	  , (NameEffect,	"e") 
-	  , (NameClosure,   "c") ]
+	= [ (NameType,	  "t")
+	  , (NameRegion,  "r")
+	  , (NameEffect,  "e") 
+	  , (NameClosure, "c") ]
 
 
-bindVar ::	Var ->	StateN Var
-bindVar		var	
+bindVar :: Var -> StateN Var
+bindVar	var	
  = do
 	let space		= varNameSpace var
 	let (Just prefix)	= lookup space spacePrefix
@@ -65,7 +63,6 @@ bindVar		var
 	return var'
 
 
------
 rewriteVarV m v
  = case Map.lookup v m of
 	Nothing	-> v

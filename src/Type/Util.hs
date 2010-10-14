@@ -1,11 +1,9 @@
 module Type.Util
-	( module Type.Util.Normalise
-	, makeOpTypeT
+	( makeOpTypeT
 	, makeTVar 
 	, makeTWhere
 	, slurpTVarsRD)
 where
-import Type.Util.Normalise
 import Shared.VarPrim
 import Util
 import DDC.Main.Error
