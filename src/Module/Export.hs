@@ -223,7 +223,7 @@ exportForeign v tv to
 	= pprStrPlain
 	$ "foreign import "
 	% pprStrPlain v { varModuleId = ModuleIdNil }
-	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTypeSplit $ T.normaliseT tv)
+	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTypeSplit $ T.beautifyLocalNamesT tv)
 		++ "\n:$ " ++ pprStrPlain to
 
 		++ ";\n\n")

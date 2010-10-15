@@ -2,8 +2,12 @@
 -- | Type operators that map types to types.
 module DDC.Type.Operators
 	( 
+	-- * Beautification of variable names
+	  beautifyNamesT
+	, beautifyLocalNamesT
+
 	-- * Discharging constraints	
-	   reduceContextT
+	, reduceContextT
 
 	-- * Crushing
 	, crushT, crushK
@@ -16,9 +20,6 @@ module DDC.Type.Operators
 	, elaborateAndQuantifyRsT
 	, elaborateEffT
 	, elaborateCloT
-
-	-- * Normalising names
-	, normaliseT
 		
 	-- * Finalisation
 	, finaliseT
@@ -64,6 +65,7 @@ module DDC.Type.Operators
  	, trimClosureT
 	, trimClosureC)
 where
+import DDC.Type.Operators.Beautify
 import DDC.Type.Operators.Context
 import DDC.Type.Operators.Crush
 import DDC.Type.Operators.CutLoops
@@ -74,7 +76,6 @@ import DDC.Type.Operators.Flatten
 import DDC.Type.Operators.Instantiate
 import DDC.Type.Operators.JoinSum
 import DDC.Type.Operators.MaskLocal
-import DDC.Type.Operators.Normalise
 import DDC.Type.Operators.Pack
 import DDC.Type.Operators.Quantify
 import DDC.Type.Operators.Strip

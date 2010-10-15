@@ -3,6 +3,7 @@ module DDC.Type.Collect
 	( module DDC.Type.Collect.FreeTVars
 	, module DDC.Type.Collect.FreeVars
 	, module DDC.Type.Collect.Visible
+	, module DDC.Type.Collect.Textual
 	
 	, collectBindingVarsT
 	, collectTErrors)
@@ -10,13 +11,16 @@ where
 import DDC.Type.Collect.FreeTVars
 import DDC.Type.Collect.FreeVars	()
 import DDC.Type.Collect.Visible
-import DDC.Type.Exp
+import DDC.Type.Collect.Textual
+import DDC.Type.Compounds
 import DDC.Type.Transform
+import DDC.Type.Exp
 import DDC.Var
 import Control.Monad.State.Strict
+import Data.Maybe
 import Data.Set			(Set)
 import qualified Data.Set	as Set
-
+import qualified Data.Map	as Map
 
 -- | Collect all the binding variables in foralls and where constraints.
 collectBindingVarsT :: Type -> Set Var
@@ -31,21 +35,17 @@ collectBindingVarsT tt
 	 	 -> do	modify (Set.insert v)
  			return tt
 		
+		TConstrain t crs
+		 -> do	modify (\s -> Set.unions
+			 	[ Set.fromList $ mapMaybe takeVarOfType $ Map.keys $ crsEq   crs
+				, Set.fromList $ mapMaybe takeVarOfType $ Map.keys $ crsMore crs
+				, s ])
+			return tt
+		
 		_ ->	return tt
-		
-	collectF ff
- 	 = case ff of
-		FWhere (TVar k (UVar v)) _	
-	 	 -> do	modify (Set.insert v)
- 			return ff
-		
-		_ ->	return ff	
 
    in	execState 
-		(transZM (transTableId 
-				{ transT_enter	= collectT 
-				, transF	= collectF })
-			 tt)
+		(transformTM collectT tt)
 		Set.empty
 
 
