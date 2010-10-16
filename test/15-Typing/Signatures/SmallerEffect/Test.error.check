@@ -2,17 +2,17 @@ ddc: ERROR
 ./test/15-Typing/Signatures/SmallerEffect/Test.ds:2:8
     Inferred type:
             thing
-              :: forall %rDE111 %rDE112
-              .  Int32 %rDE112 -> Int32 %rDE111 -($cDE486)> Int32 %rDE112
-              :- $cDE486 =  Test.x : %rDE112
+              :: forall %r2 %r0
+              .  Int32 %r0 -> Int32 %r2 -($c0)> Int32 %r0
+              :- $c0 =  Test.x : %r0
 
     Is smaller than signature:
             thing
-              :: forall %rDE111 %rDE112 Test.%r1
-              .  Int32 %r1 -> Int32 %rDE111 -(!eDE483 $cDE486)> Int32 %rDE112
-              :- !eDE483 =  !Read %r1
-              ,  $cDE486 =  xDE484 : %r1
+              :: forall %r2 %r0 Test.%r1
+              .  Int32 %r1 -> Int32 %r2 -(!e0 $c0)> Int32 %r0
+              :- !e0 =  !Read %r1
+              ,  $c0 =  xDE484 : %r1
 
-    Because  Test.%r1  does not match  %rDE112 
+    Because  Test.%r1  does not match  %r0 
 
 

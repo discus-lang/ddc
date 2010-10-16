@@ -1,0 +1,21 @@
+
+
+-- Constraints from sigs are always added to the graph
+-- so it doesn't matter if the inferred scheme doesn't have them.
+thing 	:> Int %r1 -> ()
+	:- Mutable %r1
+	
+thing x	= ()
+
+
+
+-- Same as LargerClosure test, but with the required closure info
+y	:: Int %r1 :- Const %r1
+y	= 5
+
+add3 	<: Int %r2 -($c1)> Int %r3 -(!e0 $c2)> Int %r4
+	:- $c1 = ${ y : %r1 }
+	,  $c2 = ${ x : %r2; y : %r1 }
+        ,  !e0 =  !{!Read %r2; !Read %r3}
+	
+add3 x	= \z -> x + y 
