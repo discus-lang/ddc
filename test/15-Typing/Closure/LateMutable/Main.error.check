@@ -5,8 +5,8 @@ ddc: ERROR
 
         we were using this type scheme:
             box
-              :: forall tTS3
-              .  Main.Box %173 (Data.List.List %180 tTS3)
+              :: forall t0
+              .  Main.Box %173 (Data.List.List %180 t0)
 
         but a new
               constraint: Mutable %173

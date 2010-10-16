@@ -5,8 +5,8 @@ ddc: ERROR
 
         we were using this type scheme:
             ref
-              :: forall tTS4
-              .  Ref %117 (tTS4 -> tTS4)
+              :: forall t0
+              .  Ref %117 (t0 -> t0)
 
         but a new
               constraint: Mutable %117
