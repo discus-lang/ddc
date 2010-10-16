@@ -13,26 +13,27 @@ import DDC.Main.Error
 import DDC.Base.SourcePos
 import DDC.Var
 import Data.IORef
-import System.IO			(hFlush)
-import Util				hiding (null, elem)
-import qualified DDC.Type		as T
-import qualified Data.Foldable		as Foldable
-import qualified DDC.Core.Exp		as C
-import qualified Type.Export		as T
-import qualified Type.Dump		as T
-import qualified Type.Solve		as T
-import qualified DDC.Solve.Interface.Problem as T
-import qualified DDC.Solve.State	as T
-import qualified DDC.Desugar.Glob	as D
-import qualified DDC.Desugar.Exp	as D
-import qualified DDC.Desugar.ToCore	as D
-import qualified DDC.Desugar.Elaborate	as D
-import qualified DDC.Desugar.ProjectEta	as D
-import qualified Desugar.Slurp.Slurp	as D
-import qualified Desugar.Project	as D
-import qualified DDC.Desugar.Transform	as D
-import qualified Data.Map		as Map
-import qualified Data.Set		as Set
+import System.IO				(hFlush)
+import Util					hiding (null, elem)
+import qualified DDC.Type			as T
+import qualified Data.Foldable			as Foldable
+import qualified DDC.Core.Exp			as C
+import qualified Type.Export			as T
+import qualified Type.Dump			as T
+import qualified Type.Solve			as T
+import qualified DDC.Solve.Interface.Problem	as T
+import qualified DDC.Solve.State		as T
+import qualified DDC.Solve.Error.Beautify	as T
+import qualified DDC.Desugar.Glob		as D
+import qualified DDC.Desugar.Exp		as D
+import qualified DDC.Desugar.ToCore		as D
+import qualified DDC.Desugar.Elaborate		as D
+import qualified DDC.Desugar.ProjectEta		as D
+import qualified Desugar.Slurp.Slurp		as D
+import qualified Desugar.Project		as D
+import qualified DDC.Desugar.Transform		as D
+import qualified Data.Map			as Map
+import qualified Data.Set			as Set
 
 
 -- Elaborate ---------------------------------------------------------------------------------------
@@ -206,7 +207,9 @@ desugarSolveConstraints problem
 		 Nothing	-> return ())
 
 		when (not $ null $ T.stateErrors state)
-		 $ exitWithUserError ?args $ T.stateErrors state
+		 	$ exitWithUserError ?args 
+			$ T.beautifyErrors
+			$ T.stateErrors state
 		
 		panic "Core.SolveSquid" "done already"
 
@@ -267,8 +270,10 @@ desugarSolveConstraints2
 
 	-- the export process can find more errors
 	when (not $ null $ T.stateErrors state2)
-	 $ exitWithUserError ?args $ T.stateErrors state2
-
+	 	$ exitWithUserError ?args 
+		$ T.beautifyErrors 
+		$ T.stateErrors state2
+		
 	return 	solution
 
 
