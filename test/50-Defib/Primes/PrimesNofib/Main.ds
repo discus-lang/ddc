@@ -3,20 +3,35 @@
 --	Find the 1500'th prime number.
 --	Based on the NoFib example.
 --
+{-
+suCC :: Int -> Int
+suCC x = x + 1
 
-suCC x		= x + 1;
-isDivs n x	= mod x n /= 0;
+isdivs :: Int  -> Int -> Bool
+isdivs n x = mod x n /= 0
 
-theFilter xx
- = case xx of {
- 	Cons x xs 	
-	 -> filterL (isDivs x) xs;
- };
+the_filter :: [Int] -> [Int]
+the_filter (n:ns) = filter (isdivs n) ns
 
-primes ()	= mapL head (iterateL theFilter (iterateL suCC 2));
+primes :: [Int]
+primes = map head (iterate the_filter (iterate suCC 2))
 
-main ()
- = do {
-	print	$ show $ (primes ()) !! 1500;
-	print "\n";
- };
+main = do
+	[arg] <- getArgs
+	print $ primes !! (read arg)
+-}
+
+suCC :: Int -> Int
+suCC x	= x + 1
+
+isdivs :: Int -> Int -> Bool
+isdivs n x = mod x n /= 0
+
+the_filter :: [Int] -> [Int]
+the_filter (n:ns) = filterL (isdivs n) ns
+
+primes :: [Int]
+primes = mapL head (iterateL the_filter (iterateL suCC 2))
+
+main ()	
+ = 	println $ show $ primes !! 1500
