@@ -16,25 +16,42 @@ import Util
 
 stage	= "DDC.Solve.Error.Pretty"
 
+-- helpers for generating error messages
+spErr  ts ls
+	= dispSourcePos ts % newline
+	% indent "    " (vcat ls)
 
+tsErr  ts ls
+	= dispSourcePos ts % newline
+	% indent "    " (vcat ls)
+
+varErr var ls
+	= prettyValuePos var % newline
+	% indent "    " (vcat ls)
+
+projErr j  ls
+	= getProjSP j % newline
+	% indent "    " (vcat ls)
+
+
+-- Pretty ---------------------------------------------------------------------
 instance Pretty Error PMode where
 
- -- Random badness.
+ -- Random badness, used for debugging only.
  ppr (ErrorBadness
- 		{ eMessage	= s })
-		
+ 		{ eMessage	= s })		
 	= "    Badness: " % s % "\n"
 
  -- Constructor Arity.
  ppr err@(ErrorCtorArity{})
- 	= Var.prettyPos (eCtorVar err) % "\n"
-	% "    Wrong number of arguments for constructor match.\n"
-	% "         constructor: " % eCtorVar err 				% "\n"
-	% "          defined at: " % Var.prettyPosBound (eCtorVar err)		% "\n"
-	% "                 has: " % eCtorArity err 
+ 	= vcat
+	[ ppr $ Var.prettyPos (eCtorVar err)
+	, ppr "    Wrong number of arguments for constructor match."
+	, "         constructor: " % eCtorVar err
+	, "          defined at: " % Var.prettyPosBound (eCtorVar err)
+	, "                 has: " % eCtorArity err 
 				   % " arguments, but has been used here with " 
-				   % ePatternArity err % ".\n"
-
+				   % ePatternArity err % "." ]
 
  -- Constructor mismatch.
  ppr (ErrorUnifyCtorMismatch 
@@ -42,15 +59,15 @@ instance Pretty Error PMode where
 		, eTypeSource1	= ts1
 		, eCtor2 	= t2 
 		, eTypeSource2	= ts2})
- 	= (dispSourcePos ts1)						% "\n"
-	% "    Type mismatch during unification.\n"
-	% "          cannot match: " % t1				% "\n"
-	% "                  with: " % t2				% "\n"
-	% "\n"
-	%> dispTypeSource t1 ts1
-	% "\n"
-	% "        conflicts with, " 					% "\n"
-	%> dispTypeSource t2 ts2
+ 	= tsErr ts1
+	[ ppr 	"Type mismatch during unification."
+	, 	"    cannot match: " % t1
+	, 	"            with: " % t2
+	, blank
+	, 	dispTypeSource t1 ts1
+	, ppr	"        conflicts with, " 
+	, 	dispTypeSource t2 ts2 ]
+
 
  -- Kind Mismatch
  ppr (ErrorUnifyKindMismatch
@@ -58,49 +75,52 @@ instance Pretty Error PMode where
 		, eTypeSource1	= ts1
 		
 		, eKind2	= k2 })
-	= (dispSourcePos ts1)						% "\n"
-	% "    Kind mismatch during unification.\n"
-	% "          cannot match: " % k1				% "\n"
-	% "                  with: " % k2				% "\n"
+	= tsErr ts1
+	[ ppr	"Kind mismatch during unification."
+	, 	"    cannot match: " % k1
+	,	"            with: " % k2 ]
+
 
  -- Infinite types.
  ppr (ErrorInfiniteType
  		{ eVar		= var 
 		, eLoops	= tsLoops })
-	= prettyValuePos var % "\n"
-	% "    Cannot construct infinite type for '" % var % "'.\n"			
-	% "    via: \n" 
-	%> (punc "\n" $ map (\(t1, t2) -> t1 % " = " % t2) tsLoops)
-	% "\n"
+	= varErr var 
+	[ ppr	"Cannot construct infinite type for '" % var % "'."
+	, 	"    via: \n" 
+		%> (punc "\n" $ map (\(t1, t2) -> t1 % " = " % t2) tsLoops)
+	]
+
 	
  -- Type class problems.
  ppr (ErrorNoInstance
  		{ eClassVar	= v
 		, eTypeArgs	= ts
 		, eFetterSrc	= src })
-	= dispSourcePos src % "\n"
-	% "    No instance for " % v % " " % punc " " (map prettyTypeParens ts) % "\n"
+	= tsErr src
+	[ "No instance for " % v % " " % punc " " (map prettyTypeParens ts)]
+
 	
  -- Field projection problems.
  ppr (ErrorNoProjections
  		{ eProj		= p
 		, eConstructor	= t })
-	= (getProjSP p)		% "\n"
-	% "    Type '" % t	% "' has no projections defined for it.\n"
+	= projErr p
+	[ "Type '" % t	% "' has no projections defined for it." ]
 
 
  ppr (ErrorFieldNotPresent 
  		{ eProj		= p
 		, eConstructor	= tt })
 	| Just (v, _, _)	<- takeTData tt
-	= (getProjSP p)							% "\n"
-	% "    Type '" % v 	% "' has no projection named '" % p	% "'\n"
+	= projErr p
+	[ "Type '" % v 	% "' has no projection named '" % p	% "'"]
 
 	
  ppr (ErrorAmbiguousProjection
  		{ eProj		= p })
-	= (getProjSP p)							% "\n"
-	% "    Ambiguous projection: " % p 				% "\n"
+	= projErr p
+	[ "Ambiguous projection: " % p ]
 	
 
  -- Purity problems.
@@ -110,13 +130,12 @@ instance Pretty Error PMode where
 		, eFetter	= f
 		, eFetterSource	= fSource })
 		
-	= (dispSourcePos eSource)					% "\n" 
-	% "    Cannot purify effect `" % e % "'.\n"
-	% "\n"
-	%> dispTypeSource e eSource 
-	% "\n"
-	% "     conflicts with,\n"
-	%> dispFetterSource f fSource
+	= tsErr eSource
+	[ 	"Cannot purify effect `" % e % "'."
+	, blank
+	, 	dispTypeSource   e eSource 
+	, ppr	"    conflicts with,"
+	, 	dispFetterSource f fSource ]
 
 
  -- Region constraint problems
@@ -125,12 +144,13 @@ instance Pretty Error PMode where
 		, eFetterSource1 = fSource1
  		, eFetter2	= f2
 		, eFetterSource2 = fSource2})
-	= (dispSourcePos fSource1)					% "\n"
-	% "    Conflicting region constraints.\n"
-	%> (dispFetterSource f1 fSource1)
-	% "\n"
-	% "     conflicts with,\n"
-	%> (dispFetterSource f2 fSource2)
+	= tsErr fSource1
+	[ ppr	"Conflicting region constraints."
+	, 	dispFetterSource f1 fSource1
+	, blank
+	, ppr 	"    conflicts with,"
+	, 	dispFetterSource f2 fSource2 ]
+
 
  -- Inference screw-ups.
  ppr (ErrorLateConstraint
@@ -139,42 +159,45 @@ instance Pretty Error PMode where
 		, eMutableSrc		= srcMutable
 		, eDangerVar		= varDanger })
 		
-	= prettyValuePos v				% "\n"
-	% "    The type inferencer made an incorrect assumption about the\n"
-	% "        mutability of '" % v % "', (and backtracking isn't implemented).\n"
-	% "\n"
-	% "        we were using this type scheme:"
-	% prettyVTS (v, scheme)
-	% "\n\n"
-	% "        but a new\n"
-	%> dispFetterSource fMutable srcMutable
-	% "\n"
-	% "        was discovered, which means '" % varDanger % "' was not actually\n"
-	% "        safe to generalise.\n"
-	% "\n"
-	% "    Please add a type signature for '" % v % "' which provides this\n"
-	% "        mutability constraint.\n"
+	= varErr v
+	[ ppr	"d'oh."
+	, 	"I made an incorrect assumption about the mutability of '" % v % "',"
+	, ppr	"and I'm not smart enough to backtrack and try again."
+	, blank
+	, ppr	"    I was using this type scheme:"
+	, ppr	$ prettyVTS (v, scheme)
+	, blank
+	, ppr	"    but then I found a:"
+	, 	dispFetterSource fMutable srcMutable
+	, blank
+	, 	"    later, which means that '" % varDanger % "' was not"
+	, ppr 	"    safe to generalise in the first place."
+	, blank
+	, 	"    Please add a type signature for '" % v % "' which provides this"
+	, ppr	"    mutability constraint so I can see it earlier. Sorry." ]
+
 
  -- Main function has wrong type
  ppr (ErrorWrongMainType
  		{ eScheme	= (v, scheme) })
 		
-	= prettyValuePos v				% "\n"
-	% "    The type of main must be a function.\n"
-	% "        but it was inferred to be:"
-	% prettyVTS (v, scheme)
-	% "\n\n"
+	= varErr v
+	[ ppr	"The type of main must be a function,\n"
+	, ppr	"but it was inferred to be:"
+	, ppr	$ prettyVTS (v, scheme) ]
+
 
  -- A CAF has effects that can't be masked.
  ppr (ErrorEffectfulCAF
  		{ eScheme	= (v, _)
 		, eEffect	= eff })
 
-	= v				% "\n"
-	% "    CAF " % v % " must be pure, but effects:\n\n"
-	%> eff
-	% "\n\n    were found.\n\n"
+	= varErr v
+	[ 	"CAFs like " % v % " must be pure,"
+	, ppr	"but this one has the unmaskable effects: " % eff ]
+
 
+ -- Type signatures
  ppr (ErrorSigMismatch
 		{ eScheme		= (v, tScheme)
 		, eSigMode		= mode
