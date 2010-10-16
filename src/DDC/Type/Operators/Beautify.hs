@@ -20,7 +20,7 @@ beautifyNamesT :: Type -> Type
 beautifyNamesT tt
  = let	bs		= texBound tt
 	vs		= nub $ mapMaybe takeVarOfBound $ Foldable.toList bs
-	(_, sub)	= makeNiceVarSub allNiceNames vs
+	(_, sub)	= makeNiceVarSub (const True) allNiceNames vs
    in	subVV_everywhere sub tt
 
 
@@ -28,5 +28,5 @@ beautifyNamesT tt
 beautifyLocalNamesT :: Type -> Type
 beautifyLocalNamesT tt
  = let	vs		= Set.toList $ collectBindingVarsT tt
-	(_, sub)	= makeNiceVarSub allNiceNames vs
+	(_, sub)	= makeNiceVarSub (const True) allNiceNames vs
    in	subVV_everywhere sub tt

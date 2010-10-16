@@ -13,7 +13,9 @@ module DDC.Var
 	, varWithName
 	, varWithoutModuleId
 	, loadSpaceQualifier
-	, takeSeaNameOfVar)
+	, valueParentOfVar
+	, takeSeaNameOfVar
+	, takeSourcePosOfVar)
 where
 import DDC.Var.ModuleId
 import DDC.Var.NameSpace
@@ -65,6 +67,7 @@ varWithName name
 
 -- | Comparing variables for equality.
 instance Eq Var where
+  {-# INLINE (==) #-}
   (==) v1 v2	
 	=   varId v1 == varId v2
 	&&  varModuleId v1 == varModuleId v2
@@ -72,6 +75,7 @@ instance Eq Var where
 
 -- | Ordering of variables.
 instance Ord Var where
+ {-# INLINE compare #-}
  compare v1 v2 	
   = case compare (varId v1) (varId v2) of
 	EQ	-> compare (varModuleId v1) (varModuleId v2)
@@ -156,15 +160,40 @@ varWithoutModuleId var
 	= var { varModuleId = ModuleIdNil }
 
 
--- | Take the SeaName info from a var
+-- | For bound occurrences of value variables, get the binding occurrence.
+--   For type variables, get the binding occurence of the value.
+--   Good for finding the original source location that gave rise to a variable. 
+valueParentOfVar :: Var -> Var
+valueParentOfVar var
+	| vBinding : _	<- [ v | IBoundBy v <- varInfo var]
+	= valueParentOfVar vBinding
+	
+	| vValue   : _	<- [ v | IValueVar v <- varInfo var]
+	= valueParentOfVar vValue
+	
+	| otherwise
+	= var
+	
+
+-- | Take the `ISeaName` info from a `Var`.
 takeSeaNameOfVar :: Var -> Maybe String
 takeSeaNameOfVar var
 	| name : _	<- [v | ISeaName v <- varInfo var]
 	= Just name
 
 	| name : _	<- [name |  ISeaName name 
-				 <- concat $ [varInfo bound | IBoundBy bound <- varInfo var]]
+			 	<- concat $ [varInfo bound | IBoundBy bound <- varInfo var]]
 	= Just name
+	
+	| otherwise
+	= Nothing
+
+
+-- | Take the `ISourcePos` info from a `Var`.
+takeSourcePosOfVar :: Var -> Maybe SourcePos
+takeSourcePosOfVar var
+	| sp  : _	<- [sp | ISourcePos sp <- varInfo $ valueParentOfVar var]
+	= Just sp
 	
 	| otherwise
 	= Nothing

@@ -1,12 +1,16 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Solve.Error.Transform
 	( TransM (..)
 	, TransTable (..)
 	, transTableId)
 where
-import DDC.Type
 import DDC.Solve.Location
 import DDC.Solve.Error.Base
+import DDC.Type.SigMode
+import DDC.Type
+import DDC.Var
+import DDC.Base.SourcePos
 import Control.Monad
 import Util.Control.Monad
 
@@ -36,14 +40,37 @@ transTableId
 instance Monad m => TransM m Type where
  transZM table tt	= transT table tt
 
+instance Monad m => TransM m Kind where
+ transZM table kk	= transK table kk
+
+
 -- Structure
 instance (Monad m, TransM m a, TransM m b) => TransM m (a, b) where
  transZM table (x, y)	= liftM2 (,) (transZM table x) (transZM table y)
 
+instance (Monad m, TransM m a) => TransM m (Maybe a) where
+ transZM table xx
+  = case xx of
+	Nothing		-> return Nothing
+	Just x		-> liftM Just (transZM table x)
+
+instance (Monad m, TransM m a) => TransM m [a] where
+ transZM table xx	= mapM (transZM table) xx
+
+
 -- No-ops
+instance Monad m => TransM m Var where
+ transZM _ xx	= return xx
+
+instance Monad m => TransM m SourcePos where
+ transZM _ xx	= return xx
+
 instance Monad m => TransM m TypeSource where
- transZM table xx	= return xx
-	
+ transZM _ xx	= return xx
+
+instance Monad m => TransM m SigMode where
+ transZM _ xx	= return xx
+
 
 -- The errors
 instance Monad m => TransM m Error where

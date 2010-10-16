@@ -1,3 +1,3 @@
 
-succ 	<: Int %r1 {read} -> Int -> Int %r2
+succ 	<: Int {read} -> Int -> Int %r1
 succ x y = x + y

@@ -235,7 +235,11 @@ subVT_everywhere sub tt
 
 
 -- | Substiute vars for vars everywhere in this type.
-subVV_everywhere :: Map Var Var -> Type -> Type
+subVV_everywhere 
+	:: TransM (State ()) a
+	=> Map Var Var 
+	-> a -> a
+
 subVV_everywhere sub 
  = transformV 
  	(\v -> case Map.lookup v sub of
