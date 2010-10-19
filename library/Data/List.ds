@@ -16,7 +16,8 @@ export
 	replicate; iterateL;
 	
 	-- List Transformations 
-	map; mapL; maps; maps_; mapAccumL; mapAccumR; 
+	map; mapL; for; for_; 
+	mapAccumL; mapAccumR; 
 	reverse; intersperse; 
 	intercalate; 
 	partition;
@@ -186,13 +187,13 @@ mapL f (x:xs)	= f x : ((mapL f) @ xs)
 
 
 -- | A map with the arguments switched around
-maps :: [a] -> (a -> b) -> [b]
-maps xx f = map f xx
+for :: [a] -> (a -> b) -> [b]
+for xx f = map f xx
 
 
 -- | map_ with the arugments switched around
-maps_ :: [a] -> (a -> b) -> ()
-maps_ xx f 
+for_ :: [a] -> (a -> b) -> ()
+for_ xx f 
  = 	map_ f xx
 
 
@@ -351,7 +352,7 @@ any f xs	= or $ map f xs
 sumDestructive :: [Int] -> Int
 sumDestructive xx
  = do 	count	= 0; 
-	maps_ xx 
+	for_ xx 
 	 (\x ->	count := count + x)
 	count
 

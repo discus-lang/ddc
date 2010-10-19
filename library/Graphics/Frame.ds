@@ -12,126 +12,148 @@ data Frame %r1 %r2
 		array	:: ArrayU %r1 (Int %r2);
 	};
 
-project Frame where
-	-- create a new frame of this size
-	new :: Int -> Int -> Frame
-	new sizeX sizeY
-	 = do	sizeX'		= unboxInt32 sizeX
-		sizeY'		= unboxInt32 sizeY
-	 	array	= arrayUI_new 1 (sizeX * sizeY * 4)
-		Frame sizeX sizeY array
+project Frame 
+ with { new;
+	color; colorf; rgbOfColor;
+	clear; 
+	point; getPoint;
+	line;  lines;
+	circle;
+	putPPM }
+	
+	
+-- create a new frame of this size
+new :: Int -> Int -> Frame
+new sizeX sizeY
+ = do	sizeX'		= unboxInt32 sizeX
+	sizeY'		= unboxInt32 sizeY
+ 	array	= arrayUI_new 1 (sizeX * sizeY * 4)
+	Frame sizeX sizeY array
 
-	-- make a color from these RGB components.
-	--	components should be in the range [0..255]
-	color :: Int -> Int -> Int -> Int
-	color r g b
-		= b
-		+ (256 * g)
-		+ (256 * 256 * r)
 
-	-- make a color from these RGB components
-	--	components should be in range [0.0 .. 1.0]
-	colorf :: Float -> Float -> Float -> Int
-	colorf r g b
-		= color&{Frame}
-			(truncate (r * 255.0))
-			(truncate (g * 255.0))
-			(truncate (b * 255.0))
+-- make a color from these RGB components.
+--	components should be in the range [0..255]
+color :: Int -> Int -> Int -> Int
+color r g b
+	= b
+	+ (256 * g)
+	+ (256 * 256 * r)
 
-	-- make an RGB value from a color
-	rgbOfColor :: Int -> (Int, Int, Int)
-	rgbOfColor color
-	 = 	( (color `div` (256 * 256)) `mod` 256
-		, (color `div` 256) 	`mod` 256
-		,  color `mod` 256)
 
-	-- clear the frame
-	clear ::  Frame -> Int -> ()
-	clear frame color
-		= arrayUI_fill frame.array color
+-- make a color from these RGB components
+--	components should be in range [0.0 .. 1.0]
+colorf :: Float -> Float -> Float -> Int
+colorf r g b
+	= color&{Frame}
+		(truncate (r * 255.0))
+		(truncate (g * 255.0))
+		(truncate (b * 255.0))
 
-	-- draw a single point
-	--	Discard it if it lies outside the frame.
-	point :: Frame -> Int -> Int -> Int -> ()
-	point frame x y c
-		| x >= 0,	x < frame.sizeX
-		, y >= 0, 	y < frame.sizeY
-		= arrayUI_set 
-	 		frame.array
-			(x + y * frame.sizeX)
-			c
 
-		| otherwise
-		= ()
+-- make an RGB value from a color
+rgbOfColor :: Int -> (Int, Int, Int)
+rgbOfColor color
+ = 	( (color `div` (256 * 256)) `mod` 256
+	, (color `div` 256) 	`mod` 256
+	,  color `mod` 256)
 
-	-- get a point back from the frame
-	getPoint :: Frame -> Int -> Int -> Int
-	getPoint frame x y
-		= arrayUI_get 
-			frame.array
-			(x + y * frame.sizeX)
 
-	-- draw a line
-	line ::	 Frame -> Int -> Int -> Int -> Int -> Int -> ()
-	line frame x0 y0 x1 y1 c
-	 = drawBresenhamLine 
-		frame.array 
-		frame.sizeX 
-		frame.sizeY
+-- clear the frame
+clear ::  Frame -> Int -> ()
+clear frame color
+	= arrayUI_fill frame.array color
+
+
+-- draw a single point
+--	Discard it if it lies outside the frame.
+point :: Frame -> Int -> Int -> Int -> ()
+point frame x y c
+	| x >= 0,	x < frame.sizeX
+	, y >= 0, 	y < frame.sizeY
+	= arrayUI_set 
+ 		frame.array
+		(x + y * frame.sizeX)
 		c
-		x0 y0
-		x1 y1
 
-	-- draw a line through all these points
-	lines :: Frame -> [(Int, Int)] -> Int -> ()
-	lines frame xx color
-	 = match 
-		| ((x1, y1) : (x2, y2) : xs)	<- xx
-		= do	frame.line x1 y1 x2 y2 color
-			frame.lines ((x2, y2) : xs) color
-			
-		\= ()
+	| otherwise
+	= ()
 
-	-- draw a circle
-	circle :: Frame -> Int -> Int -> Int -> Int -> Int -> ()
-	circle frame ps pX pY r color
-	 = do 	pi 	= 3.1415926536
-		rF	= toFloat r
 
-	 	points	
-		 = 	maps 	[0..ps]
-			(\x -> do {
-				theta	= (toFloat x) / (toFloat ps) * 2.0 * pi;
-				(rF * cos theta, rF * sin theta); 
-			})
+-- get a point back from the frame
+getPoint :: Frame -> Int -> Int -> Int
+getPoint frame x y
+	= arrayUI_get 
+		frame.array
+		(x + y * frame.sizeX)
+
+
+-- draw a line
+line ::	 Frame -> Int -> Int -> Int -> Int -> Int -> ()
+line frame x0 y0 x1 y1 c
+ = drawBresenhamLine 
+	frame.array 
+	frame.sizeX 
+	frame.sizeY
+	c
+	x0 y0
+	x1 y1
+
+
+-- draw a line through all these points
+lines :: Frame -> [(Int, Int)] -> Int -> ()
+lines frame xx color
+ = match 
+	| ((x1, y1) : (x2, y2) : xs)	<- xx
+	= do	frame.line x1 y1 x2 y2 color
+		frame.lines ((x2, y2) : xs) color
 		
-		points'
-		 = 	maps	points
-		 	(\case { (x, y) -> (pX + truncate x, frame.sizeY - (pY + truncate y)); })
-
-		frame.lines points' color
+	\= ()
 
 
-	-- print the frame as a PPM to the console
-	putPPM :: Frame -> ()
-	putPPM ^frame
-	 = do	putStr $ "P3\n"					-- magic
-		putStr $ show _sizeX %% show _sizeY 	% "\n"	-- width, height
-		putStr $ show 255			% "\n"	-- max color value
+-- draw a circle
+circle :: Frame -> Int -> Int -> Int -> Int -> Int -> ()
+circle frame ps pX pY r color
+ = do 	pi 	= 3.1415926536
+	rF	= toFloat r
+
+ 	points	
+	 = for [0..ps]
+		(\x -> do {
+			theta	= (toFloat x) / (toFloat ps) * 2.0 * pi;
+			(rF * cos theta, rF * sin theta); 
+		})
 		
-		map_ 	(putPPM_line&{Frame} frame) 
-			[0 .. _sizeY - 1]
+	points'
+	 = for points
+	 	(\case { (x, y) -> (pX + truncate x, frame.sizeY - (pY + truncate y)); })
 
-	putPPM_line :: Frame -> Int -> ()
-	putPPM_line ^frame y
-	 = do	map_ 	(\x -> do {
-				putPPM_color&{Frame} (frame.getPoint x y);
-				putStr " "; })
-			[0 .. _sizeX - 1]
+	frame.lines points' color
 
-		putStr "\n"
 
-	putPPM_color :: Int -> ()
-	putPPM_color color
-	 = case rgbOfColor&{Frame} color of
-		(r, g, b) -> putStr $ show r %% show g %% show b
+-- print the frame as a PPM to the console
+putPPM :: Frame -> ()
+putPPM ^frame
+ = do	putStr $ "P3\n"					-- magic
+	putStr $ show _sizeX %% show _sizeY 	% "\n"	-- width, height
+	putStr $ show 255			% "\n"	-- max color value
+		
+	for_ 	[0 .. _sizeY - 1]
+		(putPPM_line frame) 
+
+
+putPPM_line :: Frame -> Int -> ()
+putPPM_line ^frame y
+ = do	for_ 	[0 .. _sizeX - 1]
+		(\x -> do {
+			putPPM_color (frame.getPoint x y);
+			putStr " "; })
+
+	putStr "\n"
+
+
+putPPM_color :: Int -> ()
+putPPM_color color
+ = case rgbOfColor&{Frame} color of
+	(r, g, b) -> putStr $ show r %% show g %% show b
+
+
