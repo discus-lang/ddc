@@ -47,6 +47,7 @@ module DDC.Type.Compounds
 	, takeTWitness	
 	
 	  -- * Closures
+	, eqClo
  	, makeTFree
 	, makeTFreeBot
 	, takeTFree
@@ -306,6 +307,12 @@ takeTDataTC tt
 --	If there is only one element in the list then return that element instead of making a sum.
 makeTSum :: Kind -> [Type] -> Type
 makeTSum k ts
+ | isClosureKind k
+ = case nubBy eqClo $ catMap flattenTSum ts of
+	[t']	-> t'
+	ts'	-> TSum k ts'
+ 
+ | otherwise
  = case nub $ catMap flattenTSum ts of
 	[t']	-> t'
 	ts'	-> TSum k ts'
@@ -343,6 +350,18 @@ takeTWitness tt
 
 
 -- Closures ---------------------------------------------------------------------------------------
+
+-- | Compare two closures, while ignoring tag variables.
+eqClo :: Closure -> Closure -> Bool
+eqClo c1 c2
+ 	| Just (_v1, t1) <- takeTFree c1
+	, Just (_v2, t2) <- takeTFree c2
+	= t1 == t2
+	
+	| otherwise
+	= c1 == c2
+	
+
 -- | Take an application of the $Free closure constructor.
 takeTFree :: Type -> Maybe (Var, Type)
 takeTFree tt
