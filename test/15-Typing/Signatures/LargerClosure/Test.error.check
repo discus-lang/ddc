@@ -4,9 +4,9 @@ ddc: ERROR
             succ
               :: forall %r0 %r3 %r2
               .  Int32 %r0 -($c0)> Int32 %r3 -(!e0 $c1)> Int32 %r2
-              :- !e0 =  !{!Read %r0; !Read Test.%r1}
-              ,  $c1 =  ${Test.y : Test.%r1; Test.x : %r0}
-              ,  $c0 =  Test.y : Test.%r1
+              :- !e0 =  !Read %r0 + !Read Test.%r1
+              ,  $c1 =  ${Test.y : Test.%r1} + ${Test.x : %r0}
+              ,  $c0 =  ${Test.y : Test.%r1}
               ,  Const Test.%r1
               ,  Direct Test.%r1
         
@@ -14,9 +14,9 @@ ddc: ERROR
             succ
               :: forall %r0 %r3 %r2
               .  Int32 %r0 -> Int32 %r3 -(!e0 $c1)> Int32 %r2
-              :- !e0 =  !{!Read %r0; !Read %r3}
-              ,  $c1 =  xDE484 : %r0
+              :- !e0 =  !Read %r0 + !Read %r3
+              ,  $c1 =  ${xDE484 : %r0}
         
-        Because  ${Test.y : Test.%r1; Test.x : %r0}  does not match  xDE484 : %r0
+        Because  ${Test.y : Test.%r1} + ${Test.x : %r0}  does not match  ${xDE484 : %r0}
         
 

@@ -73,22 +73,25 @@ pprType vsLocal tt
 		% ", " %!% [down t1 % " =  " % down t2 | (t1, t2) <- Map.toList crsEq ]
 		% ", " %!% [down t1 % " :> " % down t2 | (t1, t2) <- Map.toList crsMore ]
 		% ", " %!% (map (pprFetter vsLocal) crsOther)
+	
+	TSum k []
+	 -> k % "0"
 		
-	TSum k  es	
-	 -> k  % "{" % "; " %!% map down es % "}"
-
+	TSum _ es	
+	 -> punc (ppr " + ") $ map down es
+	
 	-- type elaboration in source types
 	TApp (TCon (TyConElaborate elab _)) t
 	 -> pprTypeParens vsLocal t % "{" % elab % "}"
 
 	TApp (TCon (TyConClosure (TyConClosureFree v) _)) t
-	 -> v % " : " % pprType vsLocal t
+	 -> "${" % v % " : " % pprType vsLocal t % "}"
 
 	TApp (TCon (TyConClosure (TyConClosureFreeType v) _)) t
-	 -> v % " : " % pprType vsLocal t
+	 -> "${" % v % " : " % pprType vsLocal t % "}"
 
 	TApp (TCon (TyConClosure (TyConClosureFreeRegion v) _)) t
-	 -> v % " : " % pprType vsLocal t
+	 -> "${" % v % " : " % pprType vsLocal t % "}"
 
 	TApp (TApp (TCon (TyConClosure TyConClosureDanger _)) v) t
 	 -> v % " $> " % pprType vsLocal t

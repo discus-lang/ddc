@@ -12,10 +12,10 @@ class Monad (m :: * -> *) where
 
 	(>>=)	:: forall a b !e0 $c0
 		.  m a -> (a -(!e0 $c0)> m b) -(!e1 $c1)> m b
-		:- !e1	= !{ !e0 ; !ReadT (m a) }
-		,  $c1	= x : m a
+		:- !e1	= !e0 + !ReadT (m a)
+		,  $c1	= ${x : m a}
  
 	(>>)	:: forall a !e0 $c0
 		.  m a -> m b -($c1)> m b
 		:- !e1	= !ReadT (m a)
-		,  $c1	= x : m a
+		,  $c1	= ${x : m a}

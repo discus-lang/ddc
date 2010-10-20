@@ -4,6 +4,7 @@ module Source.Parser.Util
 	( Var		-- from Shared.Var
 	, (<|>)		-- from Parsec
 	, (<?>)		-- from Parsec
+	, fail		-- from Control.Monad
 
 	, SP, Parser
 
@@ -21,6 +22,10 @@ module Source.Parser.Util
 	-- Parsing Combinators
 	, makeParsecSourcePos
 
+	-- Helpers for error messages
+	, showVar,  quotVar
+	, showVars, quotVars
+
 	-- Debugging
 	, traceStateS, traceState)
 where
@@ -28,6 +33,7 @@ import Source.Util
 import Source.Exp
 import DDC.Base.SourcePos
 import DDC.Main.Error
+import DDC.Main.Pretty
 import DDC.Type
 import DDC.Var
 import Text.ParserCombinators.Parsec.Prim		( (<|>), (<?>) )
@@ -134,8 +140,25 @@ makeParsecSourcePos tok
 	$ Parsec.initialPos      (K.tokenFile tok)
 
 
--- Debugging ---------------------------------------------------------------------------------------
+-- Helpers for error messages ----------------------------------------------------------------------
+showVar :: Var -> String
+showVar var
+	= pprStrPlain var
 
+quotVar :: Var -> String
+quotVar var
+	= "'" ++ pprStrPlain var ++ "'"
+
+showVars :: [Var] -> String
+showVars vars 
+	= pprStrPlain $ punc (ppr ", ") vars
+
+quotVars :: [Var] -> String
+quotVars vars
+	= "'" ++ showVars vars ++ "'"
+
+
+-- Debugging ---------------------------------------------------------------------------------------
 traceStateS :: Show tok => String -> Parsec.GenParser tok st ()
 traceStateS str
  = do	state	<- Parsec.getParserState
@@ -146,5 +169,6 @@ traceStateS str
 
 traceState :: Show tok => Parsec.GenParser tok st ()
 traceState = traceStateS ""
+
 
 

@@ -403,7 +403,7 @@ pMatchAlt
 		exp	<- pExpRHS
 		return	$ ADefault (spTP tok) exp
 
-  <?>   "pMatchAlt"
+  <?>   "a pattern match alternative"
 
 -- | Parse a guard
 pGuard :: Parser (Guard SP)
@@ -419,7 +419,7 @@ pGuard
 	-- EXP
  <|>	do	exp	<- pExpRHS
  		return	$ GBool (spX exp) exp
- <?>   "pGuard"
+ <?>   "a guard"
 
 
 -- Statements --------------------------------------------------------------------------------------
@@ -432,7 +432,7 @@ pStmt
 
   <|>	do	exp	<- pExpRHS
   		return	$ SStmt (spX exp) exp
-  <?>   "pStmt"
+  <?>   "a statement"
 
 
 -- | Parse a bind (only)
@@ -455,8 +455,8 @@ pStmt_bind
 		pStmt_bindVarPat var pats)
 
  <|>	-- PAT  ...
- 	do	pat	<- pPat
-		pStmt_bindPat2 pat
+	  (do	pat	<- pPat
+		pStmt_bindPat2 pat)
 
  <?>	"pStmt_bind"
 
@@ -471,6 +471,8 @@ pStmt_bindVarPat var pats
  <|>	-- VAR PAT .. | ALT ..
  	do	alts	<- Parsec.many1 pMatchAlt
 		return	$ SBindFun (spV var) var pats alts
+
+ <?>	"variable binding"
 
 
 pStmt_bindPat2 :: Pat SP -> Parser (Stmt SP)
@@ -489,6 +491,8 @@ pStmt_bindPat2 pat
  	do	alts	<- Parsec.many1 pMatchAlt
 		return	$ SBindPat (spW pat) pat (XMatch (spW pat) alts)
 
+ <?> 	"pattern binding"
+
 
 -- | Parse a type sig (only)
 pStmt_sig :: Parser (Stmt SP)
@@ -496,21 +500,22 @@ pStmt_sig
  = Parsec.sepBy1 (pOfSpace NameValue pVar) (pTok K.Comma) 
  >>= \vars 
  -> 	do 	ht	<- pTok K.HasTypeMatch
-	   	typ	<- pType
+	   	typ	<- pType <?> "a type for " ++ quotVars vars
 	   	return	$ SSig (spTP ht) SigModeMatch vars typ
 
  <|> 	do 	ht	<- pTok K.HasTypeExact
-	   	typ	<- pType
+	   	typ	<- pType <?> "a type for " ++ quotVars vars
 	   	return	$ SSig (spTP ht) SigModeExact vars typ
 
  <|>	do 	ht	<- pTok K.HasTypeLess
-	   	typ	<- pType
+	   	typ	<- pType <?> "a type for " ++ quotVars vars
 	   	return	$ SSig (spTP ht) SigModeLess vars typ
 	
  <|>	do 	ht	<- pTok K.HasTypeMore
-	   	typ	<- pType
+	   	typ	<- pType <?> "a type for " ++ quotVars vars
 	   	return	$ SSig (spTP ht) SigModeMore vars typ
 
+ <?> "a type signature"
 
 -- | Parse a signature or binding
 pStmt_sigBind :: Parser (Stmt SP)

@@ -17,7 +17,7 @@ module Source.Parser.Base
 
 	-- Literal Constants
 	, pLiteralFmtSP
-	, pInt, pIntSP
+	, pInt, pIntSP, pZero
 	, pString, pStringSP
 
 	-- Debugging and tracing combinators.
@@ -323,6 +323,17 @@ pIntSP = token parseInt
 
 pInt	= liftM fst pIntSP
 
+
+-- | Parse a literal zero.
+pZero	:: Parser ()
+pZero	= token parseZero
+ where parseZero t
+	| K.TokenP
+	{ K.token = K.Literal (LiteralFmt (LInt 0) Boxed) }	<- t
+	= Just ()
+	
+	| otherwise
+	= Nothing
 
 -- | Parse a single string
 pStringSP :: Parser (String, SP)

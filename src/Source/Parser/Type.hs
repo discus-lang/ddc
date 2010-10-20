@@ -29,7 +29,7 @@ pSuper
 		s2	<- pSuper
 		return $ SFun k1 s2
 		
- <?>    "pSuper"	
+ <?>    "a super kind"	
 
 
 -- Kind --------------------------------------------------------------------------------------------
@@ -43,7 +43,8 @@ pKind
 			k2	<- pKind
 			return $ KFun k1 k2
 
- <?>    "pKind"
+ <?>    "a kind"
+
 
 pKind1 :: Parser Kind
 pKind1
@@ -62,12 +63,10 @@ pKind1
  <|>	-- ( KIND )
 	pRParen pKind
 
- <?>    "pKind1"
+ <?>    "a simple kind"
 
 
 -- Type --------------------------------------------------------------------------------------------
-
--- Parse a type.
 pType :: Parser Type
 pType
  =  	-- forall VAR .. . TYPE
@@ -80,27 +79,8 @@ pType
 				body
 
  <|>	pType_bodyFetters
- <?>    "pType"
+ <?>    "a type"
 
--- Parse a quantified variable, with optional kind
-pVar_withKind :: Parser (Var, Kind)
-pVar_withKind
- = 	pRParen pVar_withKind1
- <|>	pVar_withKind1
- <?>    "pVar_withKind"
-
-pVar_withKind1 :: Parser (Var, Kind)
-pVar_withKind1
- =	do	var	<- liftM (vNameDefaultN NameType) pVarPlain
-		(	do	-- VAR :: KIND
-				pTok K.HasTypeMatch
-				kind	<- pKind
-				return	(var, kind)
-
-		 <|>	-- VAR
-			return (var, kindOfVarSpace (varNameSpace var)))
-
- <?>    "pVar_withKind1"
 
 -- Parse a body type with an optional context and constraint list
 pType_bodyFetters :: Parser Type
@@ -121,42 +101,6 @@ pType_bodyFetters
 		fs	-> return $ TConstrain body 
 				  $ Constraints Map.empty Map.empty fs	
 
-pType_someContext :: Parser [Fetter]
-pType_someContext
- = do	fs <- pType_hsContext
-	pTok K.RightArrowEquals
-        return fs
-
- <|>	pType_context []
-
-
--- Parse some class constraints written as a Disciple context
---	C1 => C2 => C3 ...
-pType_context :: [Fetter] -> Parser [Fetter]
-pType_context accum
- =	-- CONTEXT => CONTEXT ..
-	do	fs	<- pType_classConstraint
- 		pTok K.RightArrowEquals
-		pType_context (fs : accum)
-
- <|>	return accum
-
--- Parser some class constraints written as a Haskell context
---	(ClassConstraint ,ClassConstraint*)
-pType_hsContext :: Parser [Fetter]
-pType_hsContext
- = 	-- (CONTEXT, ..)
-	pRParen $ Parsec.sepBy1 pType_classConstraint (pTok K.Comma)
-
--- Parse a single type class constraint
---	Con Type*
-pType_classConstraint :: Parser Fetter
-pType_classConstraint
- =	do	con	<- pOfSpace NameClass pCon
-	 	ts	<- Parsec.many1 pType_body1
-		return	$ FConstraint con ts
-
-
 
 -- Parse a body type (without a forall or fetters)
 pType_body :: Parser Type
@@ -176,7 +120,8 @@ pType_body
 				-- TYPE -(EFF/CLO)> TYPE
 			  <|>	do	pTok K.Dash
 					pTok K.RBra
-					pTypeDashRBra t1)
+					pTypeDashRBra t1
+			  <?>	"function type")
 
 		case mRest of
 			Just (eff, clo, t2)	-> return $ makeTFun t1 t2 eff clo
@@ -188,18 +133,19 @@ pTypeDashRBra t1
  =	-- EFF/CLO)> TYPE
 	-- EFF)> TYPE
 	do	eff	<- pEffect
-		clo	<- Parsec.option tEmpty pClosure
-		pTok K.RKet
-		pTok K.AKet
+		clo	<- Parsec.option tEmpty pClosure1
+		pTok K.RKet <?> "closing ')' for annotation on function constructor"
+		pTok K.AKet <?> "'>' to finish the function constructor"
 		t2	<- pType_body
 		return	(eff, clo, t2)
 
   <|>	-- CLO)> TYPE
-	do	clo	<- pClosure
-		pTok K.RKet
-		pTok K.AKet
+	do	clo	<- pClosure1
+		pTok K.RKet <?> "closing ')' for annotation on function constructor"
+		pTok K.AKet <?> "'>' to finish the function constructor"
 		t2	<- pType_body
 		return (tPure, clo, t2)
+  <?> "function type"
 
 
 pType_body3 :: Parser Type
@@ -221,7 +167,8 @@ pType_body3
 
 	-- TYPE
    <|>		return	t
-   <?>      "pType_body3"
+   <?>      "a possibly annotated type expression"
+
 
 -- | Parse a type that can be used as an argument to a function constructor
 pType_body2 :: Parser Type
@@ -236,7 +183,8 @@ pType_body2
 			(do	ts	<- Parsec.many1 pType_body1
 				return	$ makeTApp t1 ts)
 
- <?>    "pType_body2"
+ <?>    "a type"
+
 
 -- | Parse a type that can be used as an argument to a type constructor
 pType_body1 :: Parser Type
@@ -268,43 +216,7 @@ pType_body1
  	do	con	<- pTyCon
 		return	$ con
 
- <?>    "pType_body1"
-
-
-pConBottom :: Parser Type
-pConBottom
- =	do	pTok	K.Star
-		pCParen $ return []
-		return	$ tBot kValue
-
- <|>	do	pTok	K.Percent
-		pCParen $ return []
-        	return $ tBot kRegion
-
- <|>	do	pTok	K.Bang
-		pCParen $ return []
-        	return $ tBot kEffect
-
- <|>	do	pTok	K.Dollar
-		pCParen $ return []
-        	return $ tBot kClosure
-
-
-pTyCon :: Parser Type
-pTyCon 	
- = do	con	<- pQualified pCon
-	case varNameSpace con of
-		NameEffect 	-> pTyCon_effect con
-		_		-> return $ TCon (TyConData con kValue Nothing)
-		
-pTyCon_effect con
- = case varName con of
-	"Read"		-> return tRead
-	"ReadH"		-> return tHeadRead
-	"ReadT"		-> return tDeepRead
-	"Write"		-> return tWrite
-	"WriteT"	-> return tDeepWrite
-	_		-> return $ TCon (TyConEffect (TyConEffectTop con) kEffect)
+ <?>    "a simple type"
 
 
 pParenTypeBody :: Parser Type
@@ -335,68 +247,123 @@ pParenTypeBody
 				(KFun (KFun kRegion kValue) kValue)
 				ts
 
+ <?> 	"parenthesised body type "
+
+
+-- Type Class Contexts -----------------------------------------------------------------------------
+pType_someContext :: Parser [Fetter]
+pType_someContext
+ = do	fs <- pType_hsContext
+	pTok K.RightArrowEquals
+        return fs
+
+ <|>	pType_context []
+
+
+-- Parse some class constraints written as a Disciple context
+--	C1 => C2 => C3 ...
+pType_context :: [Fetter] -> Parser [Fetter]
+pType_context accum
+ =	-- CONTEXT => CONTEXT ..
+	do	fs	<- pType_classConstraint
+ 		pTok K.RightArrowEquals
+		pType_context (fs : accum)
+
+ <|>	return accum
+
+
+-- Parser some class constraints written as a Haskell context
+--	(ClassConstraint ,ClassConstraint*)
+pType_hsContext :: Parser [Fetter]
+pType_hsContext
+ = 	-- (CONTEXT, ..)
+	pRParen $ Parsec.sepBy1 pType_classConstraint (pTok K.Comma)
+
+
+-- Parse a single type class constraint
+--	Con Type*
+pType_classConstraint :: Parser Fetter
+pType_classConstraint
+ =	do	con	<- pOfSpace NameClass pCon
+	 	ts	<- Parsec.many1 pType_body1
+		return	$ FConstraint con ts
+
 
 -- Effect ------------------------------------------------------------------------------------------
 -- | Parse an effect
 pEffect :: Parser Type
 pEffect
- = 	-- VAR
+  = do	-- EFF + EFF + ...
+ 	effs	<- Parsec.sepBy1 pEffect1 (pTok K.Plus)
+	case effs of
+	 [eff]	-> return eff
+	 _	-> return $ TSum kEffect effs
+
+
+pEffect1 :: Parser Type
+  = 	-- VAR
  	do	var	<- pVarPlainOfSpace [NameEffect]
 		return $ TVar kEffect $ UVar var
-
- <|>	-- !{ EFF; .. }
- 	do	pTok	K.Bang
-		effs	<- pCParen $ Parsec.sepEndBy1 pEffect pSemis
-		return	$ TSum kEffect effs
 
  <|>	-- !CON TYPE..
 	do	t1	<- pTyCon
  		ts	<- Parsec.many pType_body1
 		return	$ makeTApp t1 ts
 
- <?>    "pEfect"
+ <|>	-- !0
+	do	pTok K.Bang
+		pZero
+		return	$ tBot kEffect
+
+ <?>    "a simple effect"
 
 
 -- Closure -----------------------------------------------------------------------------------------
 -- | Parse a closure
 pClosure :: Parser Type
 pClosure
-  	-- VAR :  CLO
-  	-- VAR :  TYPE
-	-- VAR $> VAR
- =	Parsec.try 
-	  (do	var	<- pQualified pVar
-	 
-	 	do	pTok K.Colon
-			let varN	= vNameDefaultN NameValue var
-			-- VAR :  CLO
-			do	clo	<- pClosure
-				let Just clo'	= makeTFree varN clo
-				return $ clo'
+ = do	-- CLO + CLO + ...
+	clos	<- Parsec.sepBy1 pClosure1 (pTok K.Plus)
+	case clos of
+	 [clo]	-> return clo
+	 _	-> return $ TSum kClosure clos
+		
 
-		  	-- VAR :  TYPE
-		   	 <|> do	typ	<- pType
- 				return	$ TApp (tFreeType varN) typ
+pClosure1 :: Parser Type
+pClosure1
 
-		-- VAR $> CLO
-	  	 <|> do	pTok K.HoldsMono
-			var2	<- pVarPlain
-			let varN	= vNameDefaultN NameType var
-	 		let var2N	= vNameDefaultN NameType var2
-			return	$ makeTDanger
-					(TVar kRegion $ UVar varN)
-					(TVar (let Just k = kindOfSpace $ varNameSpace var2N in k) $ UVar var2N))
+  	-- ${ VAR :  CLO  }
+  	-- ${ VAR :  TYPE }
+ = do 	pTok K.Dollar
+	pCParen $ do
+		var <- pQualified pVar
+		let varN	= vNameDefaultN NameValue var
+		pTok K.Colon
+			
+		-- VAR : CLO
+		(do	clo		<- pClosure
+			let Just clo'	= makeTFree varN clo
+			return clo'
 
+	 	 -- VAR : TYPE
+		 <|> do typ	<- pType
+			return	$ TApp (tFreeType varN) typ)
 
- <|>	-- \${ CLO ; .. }
- 	do	pTok	K.Dollar
-		clos	<- pCParen $ Parsec.sepEndBy1 pClosure pSemis
-		return	$ TSum kClosure clos
+ <|> Parsec.try	-- VAR $> VAR
+	(do	var1	<- pVarPlain
+		pTok K.HoldsMono
+		var2	<- pVarPlain
+		let var1N	= vNameDefaultN NameType var1
+	 	let var2N	= vNameDefaultN NameType var2
+		return	$ makeTDanger
+				(TVar kRegion $ UVar var1N)
+				(TVar (let Just k = kindOfSpace $ varNameSpace var2N in k) $ UVar var2N))
 
  <|>	-- VAR
 	do	var	<- pVarPlainOfSpace [NameClosure]
 		return	$ TVar kClosure $ UVar var
- <?>    "pClosure"
+
+ <?>    "a closure"
 
 
 -- Fetter ------------------------------------------------------------------------------------------
@@ -408,40 +375,122 @@ pFetter
 		ts	<- Parsec.many pType_body1
 		return	$ FConstraint con ts
 
-
- <|>	-- VAR =  EFFECT/CLOSURE
-	-- VAR :> EFFECT/CLOSURE
-	(pVarPlainOfSpace [NameEffect, NameClosure] >>= \var ->
-		-- VAR = EFFECT/CLOSURE
+ -- NOTE: The following cases are duplicated to get better error messages.
+ --       If we see an effect var on the left of the constraint we're expecting
+ --       an effect expression on the right, and not a closure.
+ <|>	-- VAR =  EFF
+	-- VAR :> EFF
+	(pVarPlainOfSpace [NameEffect] >>= \var ->
+		-- VAR = EFF
  		(do	pTok K.Equals
-			effClo	<- pEffect <|> pClosure
-			return	$ FWhere (TVar (let Just k = kindOfSpace $ varNameSpace var in k) $ UVar var)
-					 effClo)
+			eff	<- pEffect <?> "an effect constraint for " ++ quotVar var
+			return	$ FWhere (TVar kEffect $ UVar var) eff)
 
-		-- VAR :> EFFECT/CLOSURE
+		-- VAR :> EFF
+	  <|>	(do	pTok K.HasTypeMore 
+			eff	<- pEffect <?> "an effect constraint for " ++ quotVar var
+			return	$ FMore  (TVar kEffect $ UVar var) eff)
+
+	  <?>	"an '=' or ':>' and the rest of the effect constraint for " ++ quotVar var)
+
+ <|>	-- VAR =  CLO
+	-- VAR :> CLO
+	(pVarPlainOfSpace [NameClosure] >>= \var ->
+		-- VAR = CLO
+ 		(do	pTok K.Equals
+			clo	<- pClosure <?> "a closure constraint for " ++ quotVar var
+			return	$ FWhere (TVar kClosure $ UVar var) clo)
+
+		-- VAR :> CLO
 	  <|>	(do	pTok K.HasTypeMore
-			effClo	<- pEffect <|> pClosure
-			return	$ FMore (TVar (let Just k = kindOfSpace $ varNameSpace var in k) $ UVar var)
-					effClo))
- <?>    "pFetter"
+			clo	<- pClosure <?> "a closure constraint for " ++ quotVar var
+			return	$ FMore (TVar kClosure $ UVar var) clo)
+	
+	  <?>	"an '=' or ':>' and the rest of the closure constraint for " ++ quotVar var)
+
+ <?>    "a type constraint"
+
+
+-- Bottom Types -----------------------------------------------------------------------------------
+pConBottom :: Parser Type
+pConBottom
+ =	do	pTok	K.Star
+		pZero
+		return	$ tBot kValue
+
+ <|>	do	pTok	K.Percent
+		pZero
+        	return $ tBot kRegion
+
+ <|>	do	pTok	K.Bang
+		pZero
+        	return $ tBot kEffect
+
+ <|>	do	pTok	K.Dollar
+		pZero
+        	return $ tBot kClosure
+
+ <?>	"a zero/bottom type"
+
 
 -- TypeOp ------------------------------------------------------------------------------------------
-
--- Parse an operational type
+-- | Parse an operational type.
 pTypeOp :: Parser Type
 pTypeOp
- =	do	t1	<- pTypeOp1
-		Parsec.option t1
-                	(do	pTok K.RightArrow
-				t2	<- pTypeOp
-				return	$ makeTFun t1 t2 tPure tEmpty)
+ = do	t1	<- pTypeOp1
+	Parsec.option t1
+	 (do	pTok K.RightArrow
+		t2	<- pTypeOp
+		return	$ makeTFun t1 t2 tPure tEmpty)
 
- <?>    "pTypeOp"
+ <?>    "an operational type"
 
 pTypeOp1 :: Parser Type
 pTypeOp1
- =	-- CON
-	do	con	<- pOfSpace NameType $ pQualified pCon
-		ts	<- Parsec.many pTypeOp1
-		return	$ makeTData con KNil ts
+ = do	-- CON
+	con	<- pOfSpace NameType $ pQualified pCon
+	ts	<- Parsec.many pTypeOp1
+	return	$ makeTData con KNil ts
+
+
+-- Type Constructors ------------------------------------------------------------------------------
+-- | Parse a type constructor.
+pTyCon :: Parser Type
+pTyCon 	
+ = do	con	<- pQualified pCon
+	case varNameSpace con of
+		NameEffect 	-> pTyCon_effect con
+		_		-> return $ TCon (TyConData con kValue Nothing)
+		
+pTyCon_effect con
+ = case varName con of
+	"Read"		-> return tRead
+	"ReadH"		-> return tHeadRead
+	"ReadT"		-> return tDeepRead
+	"Write"		-> return tWrite
+	"WriteT"	-> return tDeepWrite
+	_		-> return $ TCon (TyConEffect (TyConEffectTop con) kEffect)
+
+
+-- Vars with Kinds --------------------------------------------------------------------------------
+-- Parse a quantified variable, with optional kind
+pVar_withKind :: Parser (Var, Kind)
+pVar_withKind
+ = 	pRParen pVar_withKind1
+ <|>	pVar_withKind1
+ <?>    "a variable with it's kind"
+
+
+pVar_withKind1 :: Parser (Var, Kind)
+pVar_withKind1
+ = do	var	<- liftM (vNameDefaultN NameType) pVarPlain
+	(	do	-- VAR :: KIND
+			pTok K.HasTypeMatch	<?> "a '::' and the kind for '" ++ varName var ++ "'"
+			kind	<- pKind	<?> "a kind"
+			return	(var, kind)
+
+	 <|>	-- VAR
+		return (var, kindOfVarSpace (varNameSpace var)))
+
+ <?>    "a variable with it's kind"
 

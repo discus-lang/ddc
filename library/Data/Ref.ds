@@ -10,7 +10,7 @@ foreign import "primRefUpdate"
 		.  Ref %r1 a -> a -(!e1 $c1)> ()
 		:- Mutable %r1
 		,  !e1 = !Write %r1
-		,  $c1 = x : Ref %r1 a
+		,  $c1 = ${x : Ref %r1 a}
 		:$ Obj -> Obj -> Obj;
 
 

@@ -26,15 +26,15 @@ foreign import "primException_try"
  primTry
 	:: forall a %r !e1 !e2 $c1
 	.  (() -(!e1 $c1)> a) -> (Exception %r -(!e2)> a) -(!e3 $c3)> a
-	:- !e3 = !{ !e1; !e2 }
-	,  $c3 = f : $c1
+	:- !e3 = !e1 + !e2
+	,  $c3 = ${f : $c1}
 	:$ Obj -> Obj -> Obj
 		
 foreign import "primException_throw"
  primThrow
 	:: forall a %r
 	.  Exception %r -(!e1)> a
-	:- !e1 = !{ !Throw }
+	:- !e1 = !Throw
 	:$ Obj -> Obj
 
 foreign import "primException_throw"

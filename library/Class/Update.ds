@@ -15,8 +15,8 @@ class Updatable a where
 		.  a -> b -(!e1 $c1)> ()
 		:- Shape2 a b
 		,  MutableT a
-		,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
-		,  $c1  = x : a
+		,  !e1	= !ReadT a + !ReadT b + !WriteT a
+		,  $c1  = ${x : a}
 
 
 -- The class of types which support destructive accumulation.
@@ -26,5 +26,5 @@ class Accum a where
 		. a -> b -(!e1 $c1)> ()
 		:- Shape2 a b
 		,  MutableT a
-		,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
-		,  $c1  = x : a
+		,  !e1	= !ReadT a + !ReadT b + !WriteT a
+		,  $c1  = ${x : a}

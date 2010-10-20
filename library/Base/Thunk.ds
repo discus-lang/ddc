@@ -21,32 +21,30 @@ foreign import "primSuspend1"
  suspend1 
 	:: forall a b !e1 $c0
 	.  (a -(!e1 $c0)> b) -> a -($c1)> b
-	:- $c1	= f : $c0
+	:- $c1	= ${f : $c0}
 	,  Pure  !e1
 	,  LazyH b
-	:$ Obj -> Obj -> Obj;
-
+	:$ Obj -> Obj -> Obj
 
 foreign import "primSuspend2"
  suspend2
 	:: forall a b c !e1 !e2 $c1 $c2
 	.  (a -(!e1 $c1)> b -(!e2 $c2)> c) -> a -($c4)> b -($c5)> c
-	:- $c5 = ${ f : ${ $c1 ; $c2 }; x : a}
-	,  $c4 = ${ f : ${ $c1 ; $c2 }; }
+	:- $c5	= ${f : $c1 + $c2} + ${x : a}
+	,  $c4	= ${f : $c1 + $c2}
 	,  Pure  !e1
 	,  Pure  !e2
 	,  LazyH c
 	:$ Obj -> Obj -> Obj -> Obj;
-
 
 foreign import "primSuspend3"
  suspend3
 	:: forall a b c d !e1 !e2 !e3 $c1 $c2 $c3
 	.  (a -(!e1 $c1)> b -(!e2 $c2)> c -(!e3 $c3)> d) 
 		-> a -($c5)> b -($c6)> c -($c7)> d
-	:- $c7 = ${ f : ${ $c1 ; $c2 ; $c3 }; x : a; y : b } 
-	,  $c6 = ${ f : ${ $c1 ; $c2 ; $c3 }; x : a } 
-	,  $c5 = ${ f : ${ $c1 ; $c2 ; $c3 } } 
+	:- $c7	= ${f : $c1 + $c2 + $c3 } + ${x : a} + ${y : b}
+	,  $c6	= ${f : $c1 + $c2 + $c3 } + ${x : a} 
+	,  $c5	= ${f : $c1 + $c2 + $c3 }
 	,  Pure  !e1,  Pure  !e2
 	,  Pure  !e3
 	,  LazyH d
@@ -58,10 +56,10 @@ foreign import "primSuspend4"
 	:: forall a b c d e !e1 !e2 !e3 !e4 $c1 $c2 $c3 $c4
 	.  (a -(!e1 $c1)> b -(!e2 $c2)> c -(!e3 $c3)> d -(!e4 $c4)> e) 
 		-> a -($c6)> b -($c7)> c -($c8)> d -($c9)> e
-	:- $c9	= ${ f : ${ $c1; $c2; $c3; $c4}; x : a; y : b; z : c }
-	,  $c8	= ${ f : ${ $c1; $c2; $c3; $c4}; x : a; y : b }
-	,  $c7	= ${ f : ${ $c1; $c2; $c3; $c4}; x : a }
-	,  $c6	= ${ f : ${ $c1; $c2; $c3; $c4}  }
+	:- $c9	= ${f : $c1 + $c2 + $c3 + $c4} + ${x : a} + ${y : b} + ${z : c}
+	,  $c8	= ${f : $c1 + $c2 + $c3 + $c4} + ${x : a} + ${y : b}
+	,  $c7	= ${f : $c1 + $c2 + $c3 + $c4} + ${x : a}
+	,  $c6	= ${f : $c1 + $c2 + $c3 + $c4}
 	,  Pure  !e1,  Pure  !e2
 	,  Pure  !e3,  Pure  !e4
 	,  LazyH e

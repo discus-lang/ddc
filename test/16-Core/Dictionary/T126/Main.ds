@@ -24,7 +24,7 @@ String bound to xCS10 is in the wrong region
 class Show2 a where 
  show2 	:: forall %r
 	.  a -(!e1)> String %r
-	:- !e1	= !{ !ReadT a }
+	:- !e1	= !ReadT a
 
 -- instance Show2 String where
 --  show2 ss = "'" % ss % "'"
@@ -36,7 +36,7 @@ instance Show2 String where
 
 class Out2 a where
  out2 	:: a -(!e1)> ()
-	:- !e1 = !{ !ReadT a; !Console }
+	:- !e1 = !ReadT a + !Console
 
 instance Out2 String where
  out2 x	= println (show2 x)

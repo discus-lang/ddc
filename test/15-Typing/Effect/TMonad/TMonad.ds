@@ -12,7 +12,7 @@ returnT a
 --	Note that the effect of the resulting one includes
 --	the effect of the other two.
 bindT :: T $e0 a -> (a -> T !e1 b) -> T !e2 b
-      :- !e2 = !{ !e0 ; !e1 }
+      :- !e2 = !e0 + !e1
 
 bindT (T f1) mf2
  = T (\() -> case mf2 (f1 ()) of { T f2 -> f2 () })

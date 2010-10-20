@@ -36,8 +36,8 @@ foreign import "primArrayInt32_peek"
  arrayUI_peek  
  	:: forall %r1 %r2 %r3 %r4
 	.  ArrayU %r1 (Int %r2) -> Int32# -(!e1 $c1)> Int32#
-	:- !e1 = !{ !Read %r1; !Read %r2; !Read %r3; !Read %r4 }
-	,  $c1 =  x : ArrayU %r1 Int32#
+	:- !e1 = !Read %r1 + !Read %r2 + !Read %r3 + !Read %r4
+	,  $c1 = ${x : ArrayU %r1 Int32#}
 	:$ Obj -> Int32# -> Int32#
 
 -- A fast, unchecked write to an array.
@@ -45,9 +45,9 @@ foreign import "primArrayInt32_poke"
  arrayUI_poke
  	:: forall %r1 %r2 %r3 %r4
 	.  ArrayU %r1 (Int %r2) -> Int32# -($c1)> Int32# -(!e2 $c2)> ()
-	:- $c1 = ${ a :  ArrayU %r1 (Int %r2) }
-	,  $c2 = ${ a :  ArrayU %r1 (Int %r2); ix : Int32# }
-	,  !e2 = !{ !Read %r1; !Write %r2; !Read %r3; !Read %r4 }
+	:- $c1 = ${a : ArrayU %r1 (Int %r2)}
+	,  $c2 = ${a : ArrayU %r1 (Int %r2)} + ${ix : Int32#}
+	,  !e2 = !Read %r1 + !Write %r2 + !Read %r3 + !Read %r4
 	,  Mutable %r2
 	:$ Obj -> Int32# -> Int32# -> Obj
 

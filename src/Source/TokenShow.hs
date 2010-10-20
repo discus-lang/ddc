@@ -109,7 +109,7 @@ tokString =
 	, (HasTypeMatch,	"::")
 	, (HasTypeExact,	"=:")
 	, (HasTypeLess,		"<:")
-	, (HasTypeMore,		">:")
+	, (HasTypeMore,		":>")
 
 	, (HasOpType,		":$")
 	, (HasConstraint,	":-")

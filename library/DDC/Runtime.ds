@@ -12,14 +12,12 @@ effect !Runtime	:: !;
 foreign import "primRuntime_slotUsage"
  runtime_slotUsage
  	:: forall %r1
- 	. Unit -(!e1)> Int32#
-	:- !e1 = !{ !Runtime };
+ 	. Unit -(!Runtime)> Int32#
 	
 
 -- Print a low level description of a heap object to stdout
 foreign import "primRuntime_printObj"	
  runtime_printObj
  	:: forall a
-	. a -(!e1)> ()
-	:- !e1 = !{ !Console };
+	. a -(!Console)> ()
  

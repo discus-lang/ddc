@@ -11,13 +11,13 @@ class Show a where
 	 -- strict show which demands the entire structure
 	show 	:: forall %r
 		.  a -(!e1)> String %r
-		:- !e1	= !{ !ReadT a; !Read %r}
+		:- !e1	= !ReadT a + !Read %r
 
 	-- lazy show which works for infinite structures,
 	--	but requires its argument to be const
 	showL	:: forall %r
 		.  a -(!e1)> String %r
-		:- !e1	= !{ !ReadT a; !Read %r }
+		:- !e1	= !ReadT a + !Read %r
 		,  ConstT a
 		,  Lazy %r
 
