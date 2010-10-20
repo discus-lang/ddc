@@ -201,12 +201,12 @@ pprBindWithKind withKind bb k
  = case bb of
 	BNil		-> "_ :: " % k
  	BVar v
-	 | withKind	-> parens $ v %% "::" %% k
-	 | otherwise	-> ppr v
+	 | withKind	-> parens $ varWithoutModuleId v %% "::" %% k
+	 | otherwise	-> ppr (varWithoutModuleId v)
 	
 	BMore v t
-	 | withKind	-> parens $ v %% "::" %% k %% ":>" %% t
-	 | otherwise	-> parens $ v %% ":>" %% t
+	 | withKind	-> parens $ varWithoutModuleId v %% "::" %% k %% ":>" %% t
+	 | otherwise	-> parens $ varWithoutModuleId v %% ":>" %% t
 	
 	
 
