@@ -3,8 +3,8 @@ module	Graphics.Frame
 import	Graphics.TinyPTC
 	Graphics.Raster.Bresenham
 
--- A frame of pixels that can be drawn on the screen.
---	Allow the pixels to be mutable while the sizeX, sizeY is constant.
+-- | A frame of pixels that can be drawn on the screen.
+--   Allows the pixels to be mutable while the sizeX, sizeY is constant.
 data Frame %r1 %r2
 	= Frame {
 		sizeX	:: Int %r1;
@@ -20,9 +20,9 @@ project Frame
 	line;  lines;
 	circle;
 	putPPM }
-	
-	
--- create a new frame of this size
+
+
+-- | Create a new frame of a given size.
 new :: Int -> Int -> Frame
 new sizeX sizeY
  = do	sizeX'		= unboxInt32 sizeX
@@ -31,8 +31,8 @@ new sizeX sizeY
 	Frame sizeX sizeY array
 
 
--- make a color from these RGB components.
---	components should be in the range [0..255]
+-- | Make a color from these RGB components.
+--   Components are in the range [0..255]
 color :: Int -> Int -> Int -> Int
 color r g b
 	= b
@@ -40,8 +40,8 @@ color r g b
 	+ (256 * 256 * r)
 
 
--- make a color from these RGB components
---	components should be in range [0.0 .. 1.0]
+-- | Make a color from these RGB components
+--   Components should be in range [0.0 .. 1.0].
 colorf :: Float -> Float -> Float -> Int
 colorf r g b
 	= color&{Frame}
@@ -50,22 +50,22 @@ colorf r g b
 		(truncate (b * 255.0))
 
 
--- make an RGB value from a color
+-- | Make an RGB value from a color.
 rgbOfColor :: Int -> (Int, Int, Int)
 rgbOfColor color
- = 	( (color `div` (256 * 256)) `mod` 256
-	, (color `div` 256) 	`mod` 256
+ = 	( (color `div` (256 * 256))	`mod` 256
+	, (color `div` 256) 		`mod` 256
 	,  color `mod` 256)
 
 
--- clear the frame
-clear ::  Frame -> Int -> ()
+-- | Clear the frame to a given color.
+clear :: Frame -> Int -> ()
 clear frame color
 	= arrayUI_fill frame.array color
 
 
--- draw a single point
---	Discard it if it lies outside the frame.
+-- | Draw a single point,
+--   discarding it if it lies outside the frame.
 point :: Frame -> Int -> Int -> Int -> ()
 point frame x y c
 	| x >= 0,	x < frame.sizeX
@@ -79,7 +79,7 @@ point frame x y c
 	= ()
 
 
--- get a point back from the frame
+-- | Get the value of a point in the frame.
 getPoint :: Frame -> Int -> Int -> Int
 getPoint frame x y
 	= arrayUI_get 
@@ -87,7 +87,7 @@ getPoint frame x y
 		(x + y * frame.sizeX)
 
 
--- draw a line
+-- | Draw a line in the frame.
 line ::	 Frame -> Int -> Int -> Int -> Int -> Int -> ()
 line frame x0 y0 x1 y1 c
  = drawBresenhamLine 
@@ -99,7 +99,8 @@ line frame x0 y0 x1 y1 c
 	x1 y1
 
 
--- draw a line through all these points
+-- | Draw a line through all these points,
+--   with the given color.
 lines :: Frame -> [(Int, Int)] -> Int -> ()
 lines frame xx color
  = match 
@@ -110,27 +111,27 @@ lines frame xx color
 	\= ()
 
 
--- draw a circle
+-- | Draw a circle with the given color.
 circle :: Frame -> Int -> Int -> Int -> Int -> Int -> ()
 circle frame ps pX pY r color
  = do 	pi 	= 3.1415926536
 	rF	= toFloat r
 
  	points	
-	 = for [0..ps]
-		(\x -> do {
-			theta	= (toFloat x) / (toFloat ps) * 2.0 * pi;
-			(rF * cos theta, rF * sin theta); 
-		})
+	 = for [0..ps] 
+	 $ \x -> do
+		theta	= (toFloat x) / (toFloat ps) * 2.0 * pi;
+		(rF * cos theta, rF * sin theta); 
+		
 		
 	points'
 	 = for points
-	 	(\case { (x, y) -> (pX + truncate x, frame.sizeY - (pY + truncate y)); })
+	 $ \case { (x, y) -> (pX + truncate x, frame.sizeY - (pY + truncate y)) }
 
 	frame.lines points' color
 
 
--- print the frame as a PPM to the console
+-- | Print the frame as a PPM to the console.
 putPPM :: Frame -> ()
 putPPM ^frame
  = do	putStr $ "P3\n"					-- magic
@@ -143,10 +144,10 @@ putPPM ^frame
 
 putPPM_line :: Frame -> Int -> ()
 putPPM_line ^frame y
- = do	for_ 	[0 .. _sizeX - 1]
-		(\x -> do {
-			putPPM_color (frame.getPoint x y);
-			putStr " "; })
+ = do	for_ [0 .. _sizeX - 1]
+	 $ \x -> do
+		putPPM_color (frame.getPoint x y)
+		putStr " "
 
 	putStr "\n"
 
