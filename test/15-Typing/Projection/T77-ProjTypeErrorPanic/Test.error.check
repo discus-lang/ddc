@@ -1,15 +1,16 @@
 ddc: ERROR
 ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
-    Type mismatch during unification.
-          cannot match: *52 Unit
-                  with: Unit
-
+        Type mismatch during unification.
+            cannot match: *52 Unit
+                    with: Unit
+        
               the use of: (:)
                  of type: *52 Unit
                       at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
-
-        conflicts with, 
+        
+                conflicts with, 
           type signature for 'Test.example'
           which requires: Unit
                       at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:3:8
+        
 

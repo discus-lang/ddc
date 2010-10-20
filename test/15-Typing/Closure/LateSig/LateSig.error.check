@@ -1,15 +1,16 @@
 ddc: ERROR
 ./test/15-Typing/Closure/LateSig/LateSig.ds:15:8
-    Type mismatch during unification.
-          cannot match: Int32
-                  with: Char32
-
+        Type mismatch during unification.
+            cannot match: Int32
+                    with: Char32
+        
               the use of: box
                  of type: Int32
                       at: ./test/15-Typing/Closure/LateSig/LateSig.ds:15:8
-
-        conflicts with, 
+        
+                conflicts with, 
           literal value ac32
                  of type: Char32
                       at: ./test/15-Typing/Closure/LateSig/LateSig.ds:15:20
+        
 

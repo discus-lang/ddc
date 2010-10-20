@@ -22,7 +22,8 @@ class Monad m => TransM m a
 -- | Table containing fns to apply to various components of a type error
 data TransTable m
 	= TransTable
-	{ transK	:: Kind   -> m Kind
+	{ transV	:: Var	  -> m Var
+	, transK	:: Kind   -> m Kind
 	, transT	:: Type   -> m Type
 	, transF	:: Fetter -> m Fetter }
 	
@@ -31,12 +32,16 @@ data TransTable m
 transTableId :: Monad m => TransTable m
 transTableId
 	= TransTable
-	{ transK	= \k -> return k
+	{ transV	= \v -> return v
+	, transK	= \k -> return k
 	, transT	= \t -> return t
 	, transF	= \f -> return f }
 	
 
 -- Basics
+instance Monad m => TransM m Var where
+ transZM table vv	= transV table vv
+
 instance Monad m => TransM m Type where
  transZM table tt	= transT table tt
 
@@ -62,9 +67,6 @@ instance (Monad m, TransM m a) => TransM m [a] where
 
 
 -- No-ops
-instance Monad m => TransM m Var where
- transZM _ xx	= return xx
-
 instance Monad m => TransM m SourcePos where
  transZM _ xx	= return xx
 

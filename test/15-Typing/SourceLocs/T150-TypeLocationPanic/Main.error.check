@@ -1,12 +1,14 @@
 ddc: ERROR
 ./test/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:8
-    Conflicting region constraints.
+        Conflicting region constraints.
               constraint: Const %3
          from the use of: a
                       at: ./test/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:8
-
-     conflicts with,
+        
+        
+            conflicts with,
               constraint: MutableT *302
          from the use of: (:=)
                       at: ./test/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:10
+        
 

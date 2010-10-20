@@ -1,21 +1,23 @@
 ddc: ERROR
 ./test/15-Typing/Closure/LateMutable/Main.ds:25:8
-    The type inferencer made an incorrect assumption about the
-        mutability of 'box', (and backtracking isn't implemented).
-
-        we were using this type scheme:
+        
+        I naively assumed that 'box' was constant,
+        and thus safe to generalise.
+        Recent statements have yielded new constraints,
+        alas, I was mistaken.
+        
+        I was using:
             box
               :: forall t0
               .  Main.Box %173 (Data.List.List %180 t0)
-
-        but a new
+        
+        But then I found the
               constraint: Mutable %173
          from the use of: (#=)
                       at: ./test/15-Typing/Closure/LateMutable/Main.ds:27:16
-
-        was discovered, which means 'tTS3' was not actually
-        safe to generalise.
-
-    Please add a type signature for 'box' which provides this
-        mutability constraint.
+        
+        This means that 't0' was not safe to generalise in the first place.
+        
+        Please add a type signature for 'box' which provides this mutability
+        constraint so I can see it earlier. Sorry.
 

@@ -1,15 +1,16 @@
 ddc: ERROR
 ./test/15-Typing/Unification/DefConst/Test.ds:6:10
-    Type mismatch during unification.
-          cannot match: Int32
-                  with: String
-
+        Type mismatch during unification.
+            cannot match: Int32
+                    with: String
+        
               the use of: fish
                  of type: Int32
                       at: ./test/15-Typing/Unification/DefConst/Test.ds:6:10
-
-        conflicts with, 
+        
+                conflicts with, 
           literal value "perch"
                  of type: String
                       at: ./test/15-Typing/Unification/DefConst/Test.ds:6:15
+        
 

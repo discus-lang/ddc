@@ -92,7 +92,8 @@ subError :: Map Var Var -> Error -> Error
 subError sub err
 	= evalState 
 		(transZM (transTableId :: TransTable (State ()))
-				{ transK	= \k -> return $ subVV_everywhere sub k
+				{ transV	= \v -> return $ subVV_everywhere sub v
+				, transK	= \k -> return $ subVV_everywhere sub k
 				, transT	= \t -> return $ subVV_everywhere sub t
 				, transF	= \f -> return $ subVV_everywhere sub f }
 			err)

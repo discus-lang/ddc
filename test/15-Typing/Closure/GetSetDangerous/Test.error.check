@@ -1,15 +1,16 @@
 ddc: ERROR
 ./test/15-Typing/Closure/GetSetDangerous/Test.ds:28:8
-    Type mismatch during unification.
-          cannot match: Int32
-                  with: String
-
+        Type mismatch during unification.
+            cannot match: Int32
+                    with: String
+        
               the use of: setB
                  of type: Int32
                       at: ./test/15-Typing/Closure/GetSetDangerous/Test.ds:28:8
-
-        conflicts with, 
+        
+                conflicts with, 
           literal value "a"
                  of type: String
                       at: ./test/15-Typing/Closure/GetSetDangerous/Test.ds:28:14
+        
 

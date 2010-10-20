@@ -1,4 +1,4 @@
 ddc: ERROR
 ./test/15-Typing/Projection/FieldNotPresent/Main.ds:13:39
-    Type 'Main.Fish' has no projection named '.tastiness'
+        Type 'Main.Fish' has no projection named '.tastiness'
 

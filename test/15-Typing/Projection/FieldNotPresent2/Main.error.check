@@ -1,4 +1,4 @@
 ddc: ERROR
 ./test/15-Typing/Projection/FieldNotPresent2/Main.ds:3:15
-    Type '(->)' has no projections defined for it.
+        Type '(->)' has no projections defined for it.
 

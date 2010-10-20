@@ -82,16 +82,15 @@ punc p (x1 : x2 : xs)	= x1 % p % punc p (x2 : xs)
 
 
 -- Indent ---------------------------------------------------------------------
--- | Indent a pretty thing to the right of another one.
---	Consecutive lines are also indented.
-indent 	:: (Pretty a m, Pretty b m) => a -> b -> PrettyM m
-indent a b 
- = case (ppr a, ppr b) of
- 	(PrettyM fa, PrettyM fb)
-		-> PrettyM (\m -> PAppend [fa m, PIndent $ fb m])
+-- | Indent a pretty thing, consecutive lines are also indented.
+indent 	:: Pretty a m => a -> PrettyM m
+indent a 
+ = case ppr a of
+ 	(PrettyM fa)
+		-> PrettyM (\m -> PIndent $ fa m)
 
 
--- | Same as `indent`.
+-- | Indent a thing to the right of another.
 (%>) 	:: (Pretty a m, Pretty b m) => a -> b -> PrettyM m
 (%>)  a b 
  = case (ppr a, ppr b) of

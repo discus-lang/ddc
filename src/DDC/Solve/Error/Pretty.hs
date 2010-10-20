@@ -17,21 +17,21 @@ import Util
 stage	= "DDC.Solve.Error.Pretty"
 
 -- helpers for generating error messages
-spErr  ts ls
-	= dispSourcePos ts % newline
-	% indent "    " (vcat ls)
+spErr  sp ls
+	= sp % newline
+	% (indent $ vcat ls)
 
 tsErr  ts ls
 	= dispSourcePos ts % newline
-	% indent "    " (vcat ls)
+	% (indent $ vcat ls)
 
 varErr var ls
 	= prettyValuePos var % newline
-	% indent "    " (vcat ls)
+	% (indent $ vcat ls)
 
 projErr j  ls
 	= getProjSP j % newline
-	% indent "    " (vcat ls)
+	% (indent $ vcat ls)
 
 
 -- Pretty ---------------------------------------------------------------------
@@ -160,21 +160,21 @@ instance Pretty Error PMode where
 		, eDangerVar		= varDanger })
 		
 	= varErr v
-	[ ppr	"d'oh."
-	, 	"I made an incorrect assumption about the mutability of '" % v % "',"
-	, ppr	"and I'm not smart enough to backtrack and try again."
+	[ blank
+	,  	"I naively assumed that '" % v % "' was constant,"
+	, ppr   "and thus safe to generalise."
+	, ppr	"Recent statements have yielded new constraints,"
+	, ppr	"alas, I was mistaken."
 	, blank
-	, ppr	"    I was using this type scheme:"
+	, ppr	"I was using:"
 	, ppr	$ prettyVTS (v, scheme)
 	, blank
-	, ppr	"    but then I found a:"
+	, ppr	"But then I found the"
 	, 	dispFetterSource fMutable srcMutable
+	, 	"This means that '" % varDanger % "' was not safe to generalise in the first place."
 	, blank
-	, 	"    later, which means that '" % varDanger % "' was not"
-	, ppr 	"    safe to generalise in the first place."
-	, blank
-	, 	"    Please add a type signature for '" % v % "' which provides this"
-	, ppr	"    mutability constraint so I can see it earlier. Sorry." ]
+	, 	"Please add a type signature for '" % v % "' which provides this mutability"
+	, ppr	"constraint so I can see it earlier. Sorry." ]
 
 
  -- Main function has wrong type
@@ -195,7 +195,7 @@ instance Pretty Error PMode where
 	= varErr v
 	[ 	"CAFs like " % v % " must be pure,"
 	, ppr	"but this one has the unmaskable effects: " % eff ]
-
+
 
  -- Type signatures
  ppr (ErrorSigMismatch
@@ -205,15 +205,16 @@ instance Pretty Error PMode where
 		, eSigType		= tSig 
 		, eSigBadType		= mBadType 
 		, eSigBadContext	= mBadContext })
-	= sp % "\n"
-	% "    Inferred type:"
-	% prettyVTS (v, tScheme)
-	% "\n\n"
-	% "    " % strMode
-	% prettyVTS (v, tSig)
-	% "\n\n"
-	% strBadType    mBadType
-	% strBadContext mBadContext
+	= spErr sp
+	[ ppr "Inferred type:"
+	, ppr	$ prettyVTS (v, tScheme)
+	, blank
+	, ppr strMode
+	, ppr	$ prettyVTS (v, tSig)
+	, blank
+	, vcat 	$ catMaybes
+		[ strBadType    mBadType
+		, strBadContext mBadContext ] ]
 	
 	where	strMode
 		 = case mode of
@@ -223,17 +224,16 @@ instance Pretty Error PMode where
 			SigModeMore	-> "Is smaller than signature:"
 			
 
-		strBadType Nothing	 = blank
+		strBadType Nothing	 = Nothing
 		strBadType (Just (tExpected, tOffending))
-		 = "    Because " %% tOffending %% " does not match " %% tExpected
-		 %% "\n\n"
+		 = Just $ "Because " %% tOffending %% " does not match " %% tExpected
 
-		strBadContext Nothing	= blank
+		strBadContext Nothing	= Nothing
 		strBadContext (Just [kContext])
-		 = "    Unexpected constraint: " %% kContext %% "\n\n"
+		 = Just $ "Unexpected constraint: " %% kContext
 
 		strBadContext (Just ksContext)
-		 = "    Unexpected constraints: " %% punc " " ksContext %% "\n\n"
+		 = Just $ "Unexpected constraints: " %% punc " " ksContext
 
  -- We can't display this error...
  -- TODO: eliminate this. The ppr function should be total.
@@ -244,9 +244,11 @@ instance Pretty Error PMode where
 
 -- Utils ------------------------------------------------------------------------------------------
 prettyVTS (v, t)
- 	= indentSpace 12 (
-		"\n" ++ (varName v) ++ "\n  :: "
-		++ (indentSpace 2 $ pprStrPlain $ prettyTypeSplit $ t))
+ 	= indentSpace 4
+	$ "    " 
+		++ varName v 
+		++ "\n  :: "
+		++ (indentSpace 2 $ pprStrPlain $ prettyTypeSplit $ t)
 
 
 -- | Pretty print the location of the value var that corresponds to this typevar.
