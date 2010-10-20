@@ -17,7 +17,6 @@ module DDC.Type.Equiv
 	, equivKK)
 where
 import DDC.Type.Exp
-import DDC.Type.Kind
 import DDC.Type.Pretty		()
 
 
@@ -75,21 +74,13 @@ equivTT	t1 t2
 	, isEquiv $ equivKK k1 k2		
 	= IsEquiv
 
+	-- TODO: Erk, n^2 comparison of sums. 
+	--       We need to keep these sorted.
 	| TSum k1 ts1	<- t1
 	, TSum k2 ts2	<- t2
 	, isEquiv $ equivKK k1 k2
-	, or $ map (isEquiv . equivTT t1) ts2
-	, or $ map (isEquiv . equivTT t2) ts1
-	= IsEquiv
-
-	| TSum k1 ts1	<- t1
-	, isEquiv $ equivKK (kindOfType t2) k1
-	, or $ map (isEquiv . equivTT t2) ts1
-	= IsEquiv
-	
-	| TSum k2 ts2	<- t2
-	, isEquiv $ equivKK (kindOfType t1) k2
-	, or $ map (isEquiv . equivTT t1) ts2
+	, and $ [ or (map (isEquiv . equivTT ts1i) ts2) | ts1i <- ts1]
+	, and $ [ or (map (isEquiv . equivTT ts2i) ts1) | ts2i <- ts2]
 	= IsEquiv
 
 	| TApp t11 t12	<- t1

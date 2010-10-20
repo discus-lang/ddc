@@ -72,15 +72,15 @@ subsumesTT t1 t2
 	, isRegionKind k1 || isEffectKind k1 || isClosureKind k1
 	, isEquiv (equivTT t1 t2)
 	= Subsumes
-		
-	| TSum k2 ts2		<- t2
-	, isRegionKind k2 || isEffectKind k2 || isClosureKind k2
-	, or $ map (\t2i -> isSubsumes $ subsumesTT t1  t2i) ts2
-	= Subsumes
 
 	| TSum k1 ts1		<- t1
 	, isRegionKind k1 || isEffectKind k1 || isClosureKind k1
 	, and $ map (\t1i -> isSubsumes $ subsumesTT t1i t2)  ts1
+	= Subsumes
+		
+	| TSum k2 ts2		<- t2
+	, isRegionKind k2 || isEffectKind k2 || isClosureKind k2
+	, or $ map (\t2i -> isSubsumes $ subsumesTT t1  t2i) ts2
 	= Subsumes
 
 	-- Vars -----------------------
