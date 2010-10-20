@@ -496,7 +496,7 @@ addConstraints crs@(Constraints crsEq1 crsMore1 crsOther1) tt
 		(Constraints 
 			(Map.union crsEq1   crsEq2)
 			(Map.union crsMore1 crsMore2)
-			(crsOther1 ++ crsOther2))
+			(nub $ crsOther1 ++ crsOther2))
 		t
 			
 	_ -> addConstraints' crs tt
