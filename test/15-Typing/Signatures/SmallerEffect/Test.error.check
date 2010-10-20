@@ -8,7 +8,7 @@ ddc: ERROR
         
         Is smaller than signature:
             thing
-              :: forall %r2 %r0 Test.%r1
+              :: forall %r2 %r0 %r1
               .  Int32 %r1 -> Int32 %r2 -(!e0 $c0)> Int32 %r0
               :- !e0 =  !Read %r1
               ,  $c0 =  xDE484 : %r1
