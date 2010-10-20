@@ -332,8 +332,8 @@ pClosure
 pClosure1 :: Parser Type
 pClosure1
 
-  	-- ${ VAR :  CLO  }
-  	-- ${ VAR :  TYPE }
+  	-- \${ VAR :  CLO  }
+  	-- \${ VAR :  TYPE }
  = do 	pTok K.Dollar
 	pCParen $ do
 		var <- pQualified pVar
