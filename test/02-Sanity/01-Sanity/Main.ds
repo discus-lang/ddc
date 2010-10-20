@@ -83,7 +83,7 @@ checkLambdaLifting ()
 
 	--
 	x	= 0
-	maps_ [1..10]
+	for_ [1..10]
 		(\i -> x := x + i)
 
 	checkI 55 x
@@ -91,7 +91,7 @@ checkLambdaLifting ()
 	-- 
 	y	= 0
 	f i	= y := y + i
-	maps_ [1..10] f
+	for_ [1..10] f
 
 	checkI 55 y
 

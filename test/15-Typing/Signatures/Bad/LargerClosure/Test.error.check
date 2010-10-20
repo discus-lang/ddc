@@ -1,5 +1,5 @@
 ddc: ERROR
-./test/15-Typing/Signatures/LargerClosure/Test.ds:5:8
+./test/15-Typing/Signatures/Bad/LargerClosure/Test.ds:5:8
         Inferred type:
             succ
               :: forall %r0 %r3 %r2
