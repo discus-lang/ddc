@@ -49,7 +49,9 @@ import qualified Data.Set		as Set
 import qualified Data.Sequence		as Seq
 
 
--- | Normalise the form of Do blocks in a glob.
+-- | Normalise the form of expressions in a glob to use do blocks.
+--   This makes the right of every pattern alternative, and the body of every function do.
+--   This is the form that coreBind below needs.
 coreNormaliseDo
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
@@ -86,12 +88,7 @@ coreBind
 	-> Glob
 	-> IO Glob
 	
-coreBind
-	mod
-	unique	
-	classMap
-	rsGlobal
-	cgModule
+coreBind mod unique classMap rsGlobal cgModule
  = do
  	let cgModule' 
 		= {-# SCC "Core.Bind" #-}
