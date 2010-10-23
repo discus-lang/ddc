@@ -136,7 +136,7 @@ crushK kk
 	KApp k1 t2
 	 -> KApp (crushK k1) (crushT t2)
 	
-	-- | +{Pure e1, Pure e2}  =>  Pure (e1 + e2)
+	-- +{Pure e1, Pure e2}  =>  Pure (e1 + e2)
 	KSum ks
 	 -> packK $ makeKSum $ map crushK ks
 

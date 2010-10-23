@@ -236,7 +236,7 @@ trimClosureC_step config quant rsData cc
 	-- TODO: This looks bogus.
 	--       Danger terms just encode dangerousness, not reachability information also.
 	-- 
-	-- ${tag : %r11 $> %r12}
+	-- \${tag : %r11 $> %r12}
 	--  => ${tag : %r11} + ${tag : %r12}
 	TApp{}
 	 | Just (tag, t1)	<- takeTFree   cc
@@ -247,7 +247,7 @@ trimClosureC_step config quant rsData cc
 		[ makeTFreeBot tag t11
 		, makeTFreeBot tag t12 ]
 	
-	 -- ${tag : t11 $> (t121 $> t122)}
+	 -- \${tag : t11 $> (t121 $> t122)}
 	 --  => ${tag : t11 $> t121;  tag : t11 $> t122;  tag : t121 $> t122}
 	 | Just (tag, t1)	<- takeTFree cc
 	 , Just (t11, t12)	<- takeTDanger t1
