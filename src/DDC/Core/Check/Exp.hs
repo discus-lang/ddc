@@ -419,7 +419,7 @@ checkExp_trace m xx env
 	 , (x', tExp, eff, clo)	<- checkExp' n x env
 	 , tExp'		<- trimClosureT $ crushT tExp
 	 -> kAnnot `seq`
-	    if isEquiv $ equivTT tAnnot' tExp'
+	    if isSubsumes $ subsumesTT tExp' tAnnot'
 		then	( XTau tAnnot' x'
 			, tExp'
 			, eff
