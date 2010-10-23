@@ -6,7 +6,7 @@
 --   or core language transforms. We trim most of it out to save time in later stages, and make the 
 --   code easier to read.
 --
---   For example, in a function type like @a -(%e1 $c1)> b@ only the @$c1@ part can manifest
+--   For example, in a function type like @a -(%e1 $c1)> b@ only the @$c1@ part can contain
 --   region variables that we have to worry about during generalisation etc.
 --
 --   NOTE: when trimming under foralls, we must retain the quantification of manifest variables.
@@ -23,6 +23,9 @@
 --
 --   The variable @%r1@ was quantified in the original, so must also be quantified in the result.
 --
+--   TODO: Do a proper dangerous variables check here using the materiality
+--         information attached to data type definitions.
+-- 
 module DDC.Type.Operators.Trim
 	( trimClosureT
 	, trimClosureC)
@@ -82,6 +85,9 @@ trimClosureT' config quant rsData tt
     		then tt'
 		else trimClosureT' config quant rsData tt'
 
+
+-- Here we are walking over the type looking for closures.
+-- If we find one we pass it to trimClosureC to do the actual trimming.
 trimClosureT_trace config quant rsData tt		
  = let down	= trimClosureT' config quant rsData
    in  case tt of
@@ -111,8 +117,20 @@ trimClosureT_trace config quant rsData tt
 		$ "trimClosureT: no match for " % show tt
 
 
+-- | If this fetter is a closure constrain then trim the closure on the right,
+--   otherwise return it unharmed.
+trimClosureT_tt :: Config -> Set Type -> Set Type -> Type -> Type -> Type
+trimClosureT_tt config quant rsData c1 c2
+	| isClosure c1		= trimClosureC' config quant rsData c2
+	| otherwise		= c2
+
+
+
 -- Closure ----------------------------------------------------------------------------------------
 -- | Trim a closure down to its interesting parts.
+--   Here we are given a type which we know is a closure term.
+--   It should not be embedded in a larger type (like as the closure of a function)
+--   because we're not being passed the set of possibly quantified variables above us.
 trimClosureC :: Closure -> Closure
 trimClosureC cc
  = let	config	= Config
@@ -121,7 +139,7 @@ trimClosureC cc
    in	trimClosureC' config Set.empty Set.empty cc
 
 trimClosureC' config quant rsData cc
- = let 	cc_trimmed	= trimClosureC_trace config quant rsData cc
+ = let 	cc_trimmed	= trimClosureC_step config quant rsData cc
 	cc_packed	= packT $ cc_trimmed
 		
 	cc'		= trace 
@@ -134,40 +152,63 @@ trimClosureC' config quant rsData cc
    	 then cc'
 	 else trimClosureC' config quant rsData cc'
 	
-trimClosureC_trace config quant rsData cc
+	
+-- | Do a single step of closure trimming.
+trimClosureC_step 
+	:: Config	-- ^ Configuration saying how to do the trim.
+	-> Set Type	-- ^ Variables that have been bound by a forall above us.
+	-> Set Type	-- ^ Primary region variables of data types that we are inside.
+	-> Closure 
+	-> Closure
+	
+trimClosureC_step config quant rsData cc
  = let down	= trimClosureC' config quant rsData
    in  case cc of
-	-- if some var has been quantified by a forall then it's not free
-	--	and not part of the closure
-	TVar{}
+
+	TVar k _
+		-- Sanity: the types passed to trimClosureC should always be closures.
+		| not $ isClosureKind k
+		-> panic stage $ "trimClosureC: var doesn't have closure kind"
+
+		-- If a variable has been bound by a forall above then it's not free
+		-- and thus not part of the closure. We can safely leave it out.
 		| Set.member cc quant 
 		-> tEmpty
 
+		-- A closure variable.
+		-- TODO: why do we have the r /= c term?
 		| otherwise		
-		-> makeTSum kClosure
-		$ (cc : [makeTDanger r cc	
-				| r	<- Set.toList rsData
-				, r /= cc])
+		-> let	csDanger	= [makeTDanger' config r cc	
+						| r	<- Set.toList rsData
+						, r /= cc]
+		   in	makeTSum kClosure $ cc : csDanger
 	
-	-- Trim all the elements of a sum
-	TSum{}
-		-> makeTSum kClosure 
+	-- Trim the elements of a sum
+	TSum{}	-> makeTSum kClosure 
 		$  map down
 		$  flattenTSum cc
 
+	-- Trim constraints.
 	TConstrain t Constraints { crsEq, crsMore }
 	 -> let	t'		= trimClosureC' config quant rsData t
 		crsEq'		= Map.mapWithKey (\_ t2 -> trimClosureT' config quant rsData t2) crsEq
 		crsMore'	= Map.mapWithKey (\_ t2 -> trimClosureT' config quant rsData t2) crsMore
 	    in	addConstraints (Constraints crsEq' crsMore' []) t'
 
-	-- add quantified vars to the set
+	-- When we see a forall then add the bound variables to the remembered set.
 	TForall b k t		
 	 -> let Just v	= takeVarOfBind b
 		quant'	= Set.insert (TVar k (UVar v)) quant
 	    in	trimClosureC' config quant' rsData t
 
-	-- free
+
+	-- Normalisation of TDanger terms --------------------------------------
+	-- TODO: This probably isn't the right place for these.
+	--       They'd be better of as a part of crushT.
+	
+	-- TODO: This looks bogus.
+	-- ${tag : %r11 $> %r12}
+	--  => ${tag : %r11} + ${tag : %r12}
 	TApp{}
 	 | Just (tag, t1)	<- takeTFree   cc
 	 , Just (t11, t12)	<- takeTDanger t1
@@ -177,8 +218,8 @@ trimClosureC_trace config quant rsData cc
 		[ makeTFreeBot tag t11
 		, makeTFreeBot tag t12 ]
 	
-	 -- Free tag (TDanger t11 (TDanger t121 t122)) 
-	 --	=> ${tag : t11 $> t121;  tag : t11 $: t122;  tag : t121 $> t122}
+	 -- ${tag : t11 $> (t121 $> t122)}
+	 --  => ${tag : t11 $> t121;  tag : t11 $> t122;  tag : t121 $> t122}
 	 | Just (tag, t1)	<- takeTFree cc
 	 , Just (t11, t12)	<- takeTDanger t1
 	 , Just (t121, t122)	<- takeTDanger t12
@@ -198,6 +239,7 @@ trimClosureC_trace config quant rsData cc
 			  $ map (makeTDangerIfRegion tag t11)
 			  $ trimClosureC_t config tag quant rsData t12
 
+	-- TODO: this shouldn't happen. 
 	 | Just (_, t)		<- takeTFree cc
 	 , isEffect t		
 	 -> tEmpty
@@ -205,8 +247,9 @@ trimClosureC_trace config quant rsData cc
 	 | Just (tag, t)	<- takeTFree cc
 	 -> if isClosure t
 		then makeTFreeBot tag $ down t
-		else makeTFreeBot tag $ makeTSum kClosure 
-				   $ trimClosureC_t config tag quant rsData t
+		else makeTFreeBot tag 
+			$ makeTSum kClosure 
+			$ trimClosureC_t config tag quant rsData t
 
 	 | Just _		<- takeTDanger cc
 	 -> cc
@@ -221,13 +264,13 @@ trimClosureC_t :: Config -> Var -> Set Type -> Set Type -> Type -> [Type]
 trimClosureC_t config tag quant rsData tt
  = let down	= trimClosureC_t config tag quant rsData
    in  case tt of
-	-- if some var has been quantified by a forall then it's not free
-	--	and not part of the closure
+	-- If a variable has been bound by a forall above then it's not free
+	-- and thus not part of the closure. We can safely leave it out.
 	TVar{}
 		| Set.member tt quant	-> []
 		| otherwise		-> makeFreeDanger tag rsData tt
 
-	-- Trim the fetters of this data
+	-- Trim constraints.
 	TConstrain tBody (Constraints crsEq crsMore crsOther)
 	 -> let	crsEq'		= Map.fromList $ mapMaybe (trimClosureC_tt config quant rsData) $ Map.toList crsEq
 		crsMore'	= Map.fromList $ mapMaybe (trimClosureC_tt config quant rsData) $ Map.toList crsMore
@@ -235,7 +278,7 @@ trimClosureC_t config tag quant rsData tt
 	    	cBits		= down tBody
 	    in	map (addConstraints crs) cBits
 			
-	-- Trim under foralls
+	-- When we see a forall then add the bound variables to the remembered set.
 	TForall BNil _ t
 	 -> trimClosureC_t config tag quant rsData t
 
@@ -244,30 +287,40 @@ trimClosureC_t config tag quant rsData tt
 		quant'	= Set.insert (TVar k (UVar v)) quant
 	    in	trimClosureC_t config tag quant' rsData t
 	
+	-- Trim sums.
 	TSum _ ts	-> concatMap down ts
 
+	-- Plain constructors have no region variables or dangerous parts
+	-- that we need to worry about.
 	TCon{}		-> []
 
-	-- when we enter into a data object remember that we're under its primary region.
+	-- When we enter into a data type then remember that we're under its primary region variable.
+	-- If this region variable becomes mutable then all variables under it are dangerous.
 	TApp{}
-	 | Just (_, _, [])	<- takeTData tt 
-	 -> []
-		
-	 | Just (_, _, (t:ts))	<- takeTData tt
-	 -> 
-	    -- If the primary region is mutable then all the variables under it are dangerous.
-	    if isRegion t
-	     then let 	rsData'	= Set.insert t rsData
-			vs	= freeVars (t:ts)
-	    	   in  	concatMap (trimClosureC_t config tag quant rsData') (t:ts)
+	 | Just (_, _, t : ts)	<- takeTData tt
+	 , isRegion t
+	 -> let rsData'	= Set.insert t rsData
+		vs	= freeVars (t:ts)
+	    in  concatMap (trimClosureC_t config tag quant rsData') (t:ts)
 			  ++ map (makeTDanger t) 
 				[TVar k (UVar v)
 					| v <- Set.toList vs 
 					, not $ Var.isCtorName v
 					, let Just k = kindOfSpace $ varNameSpace v]
-	     else concatMap down ts
 
-	 | Just (_, _, _, clo) <- takeTFun tt
+	 -- data type has parameters but there is no primary region variable.
+	 | Just (_, _, ts@(_ : _)) <- takeTData tt
+	 -> concatMap down ts
+
+	 -- data type has no parameters.
+ 	 | Just (_, _, [])	<- takeTData tt 
+	 -> []
+	
+	
+	 -- only the closure portion of a function type is material
+	 -- TODO: this is wrong. we also need to look at the arg types incase they
+	 --       consist of dangerous variables.
+	 | Just (_, _, _, clo)	<- takeTFun tt
 	 -> down clo
 
 	 | Just (_, _)		<- takeTFree tt
@@ -280,42 +333,15 @@ trimClosureC_t config tag quant rsData tt
 		$ "trimClosureC_t: no match for (" % tt % ")"
 
 
--- Fetter -----------------------------------------------------------------------------------------
--- | Trim a fetter of a closure
+-- | Trim a fetter on a type that is inside a closure term.
 trimClosureC_tt 
-	:: Config 
-	-> Set Type 
-	-> Set Type 
-	-> (Type, Type)
-	-> Maybe (Type, Type)
-
+	:: Config -> Set Type -> Set Type 
+	-> (Type, Type) -> Maybe (Type, Type)
 trimClosureC_tt config quant rsData (c1, c2)
- 	| isClosure c1
-	= Just (c1, trimClosureC' config quant rsData c2)
+ 	| isClosure c1		= Just (c1, trimClosureC' config quant rsData c2)
+	| isEffect c1		= Just (c1, c2)
+	| otherwise		= Nothing
 	
-	| isEffect c1
-	= Just (c1, c2)
-	
-	| otherwise
-	= Nothing
-	
-
--- | Trim the closure in this fetter.
---	where the fetter was on a type.
-trimClosureT_tt 
-	:: Config
-	-> Set Type
-	-> Set Type
-	-> Type -> Type
-	-> Type
-
-trimClosureT_tt config quant rsData c1 c2
-	| isClosure c1
-	= trimClosureC' config quant rsData c2
-	
-	| otherwise
-	= c2
-
 
 makeFreeDanger tag rsData t
 	| Set.null rsData	= [t]
@@ -327,3 +353,11 @@ makeFreeDanger tag rsData t
 makeTDangerIfRegion tag r t
 	| isRegion t	= makeTFreeBot tag t
 	| otherwise	= makeTDanger r t
+
+
+-- | If the config says we want TDanger terms then make one,
+--   otherwise turn tEmpty.
+makeTDanger' :: Config -> Region -> Type -> Closure
+makeTDanger' config t1 t2
+	| configMakeDanger config	= makeTDanger t1 t2
+	| otherwise			= tEmpty
