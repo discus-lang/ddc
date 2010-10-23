@@ -78,6 +78,7 @@ equivTT	t1 t2
 	--       We need to keep these sorted.
 	| TSum k1 ts1	<- t1
 	, TSum k2 ts2	<- t2
+	, length ts1 == length ts2
 	, isEquiv $ equivKK k1 k2
 	, and $ [ or (map (isEquiv . equivTT ts1i) ts2) | ts1i <- ts1]
 	, and $ [ or (map (isEquiv . equivTT ts2i) ts1) | ts2i <- ts2]
