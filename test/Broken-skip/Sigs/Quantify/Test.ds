@@ -1,9 +1,13 @@
 
+region %r1
 
 y :: Int %r1
 y = 5
 
 -- The %r1 in this signature refers to the one for y.
 -- We don't want to add an outer forall here.
-add 	<: Int -> Int -(!Read %r1)> Int
+add 	<: Int %r2 -> Int %r4 -(!e1 $c1)> Int
+	:- !e1 = !Read %r2 + !Read %r4 + !Read %r1
+	,  $c1 = ${y : %r2} + ${x : %r1}
+	
 add a b	= a + b + y 

@@ -1,6 +1,13 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
+-- | Collection of static variables in a type.
+--   TODO: Also collect dangerous variables here.
+--	   Once we check our sigs for dangerous variables it will be easy
+--         to add tests that check the valididity of closure trimming.
+--
 module DDC.Type.Collect.Static
-	( staticRsDataT
+	( staticRsT
+	, staticRsDataT
 	, staticRsClosureT)
 where
 import DDC.Type.Exp
@@ -8,6 +15,17 @@ import DDC.Type.Compounds
 import DDC.Type.Builtin
 import Data.Set			(Set)
 import qualified Data.Set	as Set
+
+-- | Collect the set of regions that are non-generalisable in a type.
+--   This function uses the materiality information present in the data
+--   definitions attached to TyCons. If you want to compute the material
+--   variables of a type directly then use "DDC.Type.Data.Material"
+--
+--   We return a set of types so that it can contain meta-variables as well.
+--
+staticRsT  :: Type -> Set Type
+staticRsT tt
+ 	= Set.union (staticRsDataT tt) (staticRsClosureT tt)
 
 
 -- | Get the set of regions that are non-generalisable because they are

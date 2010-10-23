@@ -52,29 +52,25 @@ generaliseType src varT tCore envCids
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	let staticRsData 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsDataT    tFlat ]
-	let staticRsClosure 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsClosureT tFlat ]
+	let staticRs 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsT tFlat]
 
-	trace	$ vcat
-		[ "    staticRsData     = " 	% staticRsData
-		, "    staticRsClosure  = " 	% staticRsClosure ]
+	tracel	$ "    staticRs    = " 		% staticRs
 
 	-- Can't generalise cids which are under mutable constructors.
 	-- ... if we generalise these classes then we could update an object at one 
 	-- 	type and read it at another, violating soundness.
-	let staticDanger	= if Set.member Arg.GenDangerousVars args
+	let staticRsDanger	= if Set.member Arg.GenDangerousVars args
 					then []
 					else dangerousCidsT tCore
 
-	tracel	$ "    staticDanger     = " 	% staticDanger
+	tracel	$ "    staticRsDanger     = " 	% staticRsDanger
 
 	-- These are all the cids we can't generalise
 	let staticCids		
 		= Set.unions
 			[ envCids
-			, Set.fromList staticRsData 
-			, Set.fromList staticRsClosure
-			, Set.fromList staticDanger]
+			, Set.fromList staticRs
+			, Set.fromList staticRsDanger]
 
 	tracel	$ "    staticCids       = "	% staticCids
 

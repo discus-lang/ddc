@@ -45,14 +45,14 @@ elaborateEffCloInSigT tt
 	let free	= Set.filter (not . Var.isCtorName) $ freeVars tt'
 	
 	-- see what vars are already quantified in this scheme
-	let (bks, _)		= takeTForall tt'
+{-	let (bks, _)		= takeTForall tt'
 	let Just quantVs	= liftM Set.fromList 
 				$ sequence
 				$ map (takeVarOfBind . fst) bks
-	
-	(tt_rs, newRs)		<- elaborateRsT newVarN tt'
+-}	
+	(tt_rs, _)		<- elaborateRsT newVarN tt'
 			
-	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
+{-	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.
 	let extraQuantBKs	
 		= [(BVar v, k)
@@ -63,17 +63,16 @@ elaborateEffCloInSigT tt
 		
 	-- quantify free vars in the scheme		
 	let tt_quant	= makeTForall_back extraQuantBKs tt_rs
-
+-}
 	-- add read and write effects
 	tt_eff		<- elaborateEffT 
 				newVarN
 				(Set.toList rsRead) (Set.toList rsWrite) 
-				tt_quant
+				tt_rs
 
 	-- add closures
 	tt_clo		<- elaborateCloT newVarN tt_eff
 			
-	
 	-- add a Mutable constraint for each region that is written to.
 	let fsMutable	= map (\r -> FConstraint Var.primMutable [TVar kRegion $ UVar r])
 			$ Set.toList rsWrite

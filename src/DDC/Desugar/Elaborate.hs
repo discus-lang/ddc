@@ -26,6 +26,7 @@ module DDC.Desugar.Elaborate
 where
 import Source.Error
 import DDC.Desugar.Transform
+import DDC.Desugar.Elaborate.Quantify
 import DDC.Desugar.Elaborate.EffClo
 import DDC.Desugar.Elaborate.Constraint
 import DDC.Desugar.Elaborate.Regions
@@ -44,13 +45,17 @@ import Data.Sequence			(Seq)
 import Data.Map				(Map)
 import qualified DDC.Type.Transform	as T
 import qualified Data.Sequence		as Seq
+import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 import Data.Traversable			(mapM)
 import Prelude				hiding (mapM)
 import Control.Monad.State.Strict	hiding (mapM)
 import Data.Maybe
+import qualified Debug.Trace
 
-stage = "DDC.Desugar.Elaborate"
+debug		= False
+trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
+stage 		= "DDC.Desugar.Elaborate"
 
 -- | Elaborate types in this tree.
 elaborateTree 
@@ -126,8 +131,13 @@ elaborateTreeM dgHeader dgModule
 	let dgHeader_attach	= attachDataDefsToTyConsInGlob defsAll dgHeader_effclo
 	let dgModule_attach	= attachDataDefsToTyConsInGlob defsAll dgModule_effclo
 	
-	return	( dgHeader_attach
-		, dgModule_attach
+	-- Add missing forall quantifiers to sigs.
+	let (dgHeader_quant, vsMono')	= elabQuantifySigsInGlob Set.empty dgHeader_attach
+	let (dgModule_quant, vsMono2)	= elabQuantifySigsInGlob vsMono'   dgModule_attach
+	
+	return	$ trace ("vsMono'' = " % vsMono2)
+		( dgHeader_quant
+		, dgModule_quant
 		, constraints)
 
 
