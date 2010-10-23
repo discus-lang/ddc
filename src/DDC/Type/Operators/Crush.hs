@@ -64,7 +64,7 @@ crushT tt
 			newReads	= [TApp tRead t		| t <- tsMaterial, isRegion t ]
 			newDeepReads	= [TApp tDeepRead t	| t <- tsMaterial, isValueType t]
 			
-		    in	makeTSum kEffect (newReads ++ newDeepReads)
+		    in	crushT $ makeTSum kEffect (newReads ++ newDeepReads)
 
 		Nothing	-> TApp t1 t2'
 
@@ -84,7 +84,7 @@ crushT tt
 			newWrites	= [TApp tWrite t	| t <- tsMaterial, isRegion t ]
 			newDeepWrites	= [TApp tDeepWrite t	| t <- tsMaterial, isValueType t]
 			
-		    in	makeTSum kEffect (newWrites ++ newDeepWrites)
+		    in	crushT $ makeTSum kEffect (newWrites ++ newDeepWrites)
 		
 		Nothing	-> TApp t1 t2'
 	
