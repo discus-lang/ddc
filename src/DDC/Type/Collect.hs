@@ -4,6 +4,7 @@ module DDC.Type.Collect
 	, module DDC.Type.Collect.FreeVars
 	, module DDC.Type.Collect.Visible
 	, module DDC.Type.Collect.Textual
+	, module DDC.Type.Collect.Static
 	
 	, collectBindingVarsT
 	, collectTErrors)
@@ -12,6 +13,7 @@ import DDC.Type.Collect.FreeTVars
 import DDC.Type.Collect.FreeVars	()
 import DDC.Type.Collect.Visible
 import DDC.Type.Collect.Textual
+import DDC.Type.Collect.Static
 import DDC.Type.Compounds
 import DDC.Type.Transform
 import DDC.Type.Exp
