@@ -17,6 +17,7 @@ import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
+import DDC.Var.PrimId
 
 import qualified Module.Scrape		as M
 import qualified DDC.Main.Arg		as Arg
@@ -308,107 +309,37 @@ genAltDefault _ def
 --------------------------------------------------------------------------------
 
 llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
-llvmOfAssign = error "llvmOfAssign"
-{-
-llvmOfAssign (XVar n1 t1) t@(TPtr tPtrObj) (XVar n2 t2)
- | t1 == t && t2 == t && isGlobalVar (varOfName n1) && isGlobalVar (varOfName n2)
- = do	src	<- newUniqueReg (toLlvmType t1)
-	addBlock $
-		[ Assignment src (loadAddress (toLlvmVar (varOfName n2) t2))
-		, Store src (pVarLift (toLlvmVar (varOfName n1) t1)) ]
+llvmOfAssign (XVar (NSlot v i) (TPtr (TCon TyConObj))) t@(TPtr (TCon TyConObj)) src
+ = do	reg	<- loadExp t src
+	writeSlot reg i
 
-llvmOfAssign (XVar n1 t1) t@(TPtr (TPtr TObj)) (XVar n2 t2@(TPtr (TPtr TObj)))
- | t1 == t
- = do	reg		<- newUniqueReg (toLlvmType t1)
-	addBlock	[ Assignment reg (Load (toLlvmVar (varOfName n2) t2))
-			, Store reg (toLlvmVar (varOfName n1) t1) ]
-
-llvmOfAssign (XVar n1 t1@(TPtr (TPtr TObj))) t@(TPtr TObj) x@(XPrim op args)
- = do	dstreg		<- llvmOfPtrManip (toLlvmType t1) op args
-	addBlock	[ Store dstreg (pVarLift (toLlvmVar (varOfName n1) t1)) ]
-
-llvmOfAssign (XVar n1 t1) t@(TPtr TObj) (XVar (NSlot v2 i) t2)
+llvmOfAssign (XVar n1 t1) t@(TPtr (TCon TyConObj)) (XVar n2@NSlot{} t2)
  | t1 == t && t2 == t
- = do	let dst		= toLlvmVar (varOfName n1) t1
-	readSlotVar i dst
-
-llvmOfAssign (XVar (NSlot v1 i) t1) t@(TPtr TObj) (XVar n2 t2)
- | t1 == t && t2 == t
- =	writeSlot (toLlvmVar (varOfName n2) t2) i
--}
-{-
-llvmOfAssign ((XSlot v1 t1 i)) t@(TPtr TObj) (XBox t2 exp)
- | t1 == t
- = do	boxed		<- boxExp t2 exp
-	writeSlot	boxed i
--}
-{-
-llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XApply (XSlot v2 t2 i2) args)
- | t1 == t && t2 == t
- = do	fptr		<- readSlot i2
-	result		<- llvmFunApply fptr t2 args
-	writeSlot	result i1
+ =	readSlotVar (nameSlotNum n2) $ toLlvmVar (varOfName n1) t
 
 
-llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XCall v2 args)
- | t1 == t
- = do	let func	= toLlvmFuncDecl External v2 t args
-	addGlobalFuncDecl func
-	params		<- mapM llvmFunParam args
-	result		<- newUniqueNamedReg "result" pObj
-	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
-	writeSlot	result i1
-
-llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) (XAllocThunk var airity args)
- = do	addComment	$ "slot [" ++ show i1 ++ "] = allocThunk ("
-			++ seaVar False var ++ "," ++ show airity
-			++ "," ++ show args ++ ")"
-
-	lift $ putStrLn $ show var
-	result		<- allocThunk (pFunctionVar var) airity args
-	writeSlot	result i1
--}
-
-
-{-
-
-llvmOfAssign (XVar n1 t1@(TCon vt1 _)) (TCon vt _) x@(XPrim op args)
- | varName vt1 == "Int32#" && varName vt == "Int32#"
- = do	dstreg		<- llvmOfXPrim i32 op args
-	addBlock	[ Comment ["Dummy add 0."]
-			, Assignment (toLlvmVar (varOfName n1) t1) (LlvmOp LM_MO_Add dstreg (i32LitVar 0)) ]
-
-llvmOfAssign (XVar n1 t1@(TCon vt1 _)) (TCon vt _) exp
- | varName vt1 == "Int32#" && varName vt == "Int32#"
- = do	dstreg		<- llvmVarOfExp exp
-	addBlock	[ Comment ["Dummy add 0."]
-			, Assignment (toLlvmVar (varOfName n1) t1) (LlvmOp LM_MO_Add dstreg (i32LitVar 0)) ]
-
-
-llvmOfAssign (XVar (NCaf v1) t1) t@TPtr{} (XInt 0)
- = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = NULL"
-	dst		<- newUniqueReg ppObj
-	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
-			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
--}
-{-
-llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
- = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = " ++ seaVar False v2 ++ " ()"
-	dst1		<- newUniqueReg pObj
-	dst2		<- newUniqueReg pObj
-	params		<- mapM llvmFunParam args
-	addBlock	[ Assignment dst1 (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
-			, Assignment dst2 (Call TailCall (funcVarOfDecl (toLlvmFuncDecl Internal v2 t args)) params [])
-			, Store dst2 (pVarLift dst1)
-			]
--}
-{-
 llvmOfAssign a b c
  = panic stage $ "Unhandled : llvmOfAssign \n"
-	++ take 150 (show a) ++ "\n"
-	++ take 150 (show b) ++ "\n"
+	++ {- take 150 -} (show a) ++ "\n"
+	++ {- take 150 -} (show b) ++ "\n"
 	++ {- take 150 -} (show c) ++ "\n"
--}
+
+--------------------------------------------------------------------------------
+
+loadExp :: Type -> Exp a -> LlvmM LlvmVar
+loadExp (TPtr (TCon TyConObj)) (XVar n t@(TPtr (TCon TyConObj)))
+ = 	return $ toLlvmVar (varOfName n) t
+
+loadExp (TPtr (TCon TyConObj)) (XPrim op args)
+ =	llvmOfXPrim op args
+
+loadExp t src
+ = panic stage $ "loadExp\n"
+	++ show t ++ "\n"
+	++ show src ++ "\n"
+
+--------------------------------------------------------------------------------
+
 
 llvmFunApply :: LlvmVar -> Type -> [Exp a] -> LlvmM LlvmVar
 llvmFunApply fptr typ args
@@ -454,18 +385,8 @@ boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
 	gname	<- newUniqueName "str"
 	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
 	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
+	panic stage $ "boxAny2 " ++ show svar
 	boxAny		svar
-
-
-boxExp t (XPrim op args)
- = do	addComment $ "boxing3 " ++ show t
-	calc	<- llvmOfXPrim (toLlvmType t) op args
-	addComment $ "Erik : " ++ show calc
-	boxAny	calc
-
-boxExp t (XVar n1 t1@TCon{})
- = do	addComment $ "boxing4 " ++ show t
-	boxAny $ toLlvmVar (varOfName n1) t1
 
 boxExp t x
  = panic stage $ "Unhandled : boxExp\n    " ++ show t ++ "\n    " ++ (show x)
@@ -478,13 +399,14 @@ boxExp t x
 branchLabel :: String -> LlvmM ()
 branchLabel name
  = do	let label = fakeUnique name
-	addBlock [Branch (LMLocalVar label LMLabel), MkLabel label]
+	addBlock [ Branch (LMLocalVar label LMLabel), MkLabel label ]
 
 --------------------------------------------------------------------------------
 
 llvmOfReturn :: Exp a -> LlvmM ()
 llvmOfReturn (XVar n t)
- =	addBlock [ Return (Just (toLlvmVar (varOfName n) t)) ]
+ = do	addComment $ "Return type " ++ show t
+	addBlock [ Return (Just (toLlvmVar (varOfName n) t)) ]
 
 llvmOfReturn x
  = 	panic stage $ "llvmOfReturn " ++ (takeWhile (/= ' ') (show x))
@@ -524,16 +446,32 @@ llvmOfPtrManip t (MOp OpAdd) args
 llvmOfPtrManip _ op _
  = panic stage $ "Unhandled : llvmOfPtrManip " ++ show op
 
+--------------------------------------------------------------------------------
 
-llvmOfXPrim :: LlvmType -> Prim -> [Exp a] -> LlvmM LlvmVar
-llvmOfXPrim t op args
- = case args of
-	[]	-> panic stage "llvmOfXPrim : empty list"
-	[x]	-> panic stage "llvmOfXPrim : singleton list"
+llvmOfXPrim :: Prim -> [Exp a] -> LlvmM LlvmVar
+llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit (LiteralFmt (LInt i) (UnboxedBits 32))) ]
+ | varId v == VarIdPrim (TInt (UnboxedBits 32))
+ =	boxInt32 $ i32LitVar i
 
-	x : xs
-	 -> do	dst	<- llvmVarOfExp x
-		foldM (primMapFunc t (llvmOpOfPrim op)) dst xs
+llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) ftype@(TFun pt rt)):args)
+ | rt == TPtr (TCon TyConObj)
+ = do	let func	= toLlvmFuncDecl External fv rt args
+	addGlobalFuncDecl func
+	params		<- mapM llvmFunParam args
+	result		<- newUniqueNamedReg "result" pObj
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
+	return		result
+
+llvmOfXPrim op args
+ = panic stage $ "llvmOfXPrim\n"
+	++ show op ++ "\n"
+	++ show args ++ "\n"
+
+
+
+
+llvmXPrimOne p e
+ = panic stage $ "llvmXPrimOne\n    " ++ show p ++ "\n    " ++ show e
 
 
 
@@ -554,26 +492,8 @@ llvmVarOfExp (XLit (LLit (LiteralFmt (LInt i) Unboxed)))
 		 , Assignment reg (Load (llvmWordLitVar i)) ]
 	return	reg
 
-{-
-llvmVarOfExp (XUnbox ty@TCon{} (XVar v t))
- =	unboxAny (toLlvmType ty) (toLlvmVar v t)
-
-llvmVarOfExp (XUnbox ty@TCon{} (XSlot v _ i))
- = do	objptr	<- readSlot i
-	unboxAny (toLlvmType ty) objptr
-
-
-llvmVarOfExp (XUnbox ty@TCon{} (XForce (XSlot _ _ i)))
- = do	orig	<- readSlot i
-	forced	<- forceObj orig
-	unboxAny (toLlvmType ty) forced
-
-llvmVarOfExp (XUnbox ty@TCon{} (XVarCAF v t))
- =	unboxAny (toLlvmType ty) (pVarLift (toLlvmCafVar v t))
--}
-
 llvmVarOfExp x
- = panic stage $ "llvmVarOfExp " ++ show x
+ = panic stage $ "llvmVarOfExp : " ++ show x
 
 
 
@@ -675,10 +595,3 @@ isGlobalVar v
  | otherwise
  = False
 
-{-
-llvmIntLitVar :: LiteralFmt -> LlvmVar
-llvmIntLitVar (LiteralFmt (LInt i) (UnboxedBits 32)) = i32LitVar i
-llvmIntLitVar (LiteralFmt (LInt i) (UnboxedBits 64)) = i64LitVar i
-
-llvmIntLitVar _ = panic stage $ "llvmIntLitVar : unhandled case."
--}
