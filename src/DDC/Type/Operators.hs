@@ -63,7 +63,9 @@ module DDC.Type.Operators
 	
 	-- * Trimming closures
  	, trimClosureT
-	, trimClosureC)
+	, trimClosureNoDangerT
+	, trimClosureC
+	, trimClosureNoDangerC)
 where
 import DDC.Type.Operators.Beautify
 import DDC.Type.Operators.Context

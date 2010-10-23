@@ -23,12 +23,17 @@
 --
 --   The variable @%r1@ was quantified in the original, so must also be quantified in the result.
 --
---   TODO: Do a proper dangerous variables check here using the materiality
---         information attached to data type definitions.
+--   TODO: This module is really buggy, and parts of it may be outright wrong.
+--         When I started it I didn't know how it was supposed to work.
+--         It needs to be rewritten to use the materiality information.
+-- 
 -- 
 module DDC.Type.Operators.Trim
 	( trimClosureT
-	, trimClosureC)
+	, trimClosureNoDangerT
+
+	, trimClosureC
+	, trimClosureNoDangerC)
 where
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -67,10 +72,16 @@ data Config
 -- | Trim the closure portion of this type.
 trimClosureT :: Type -> Type
 trimClosureT tt
- = let	config	= Config 
-		{ configMakeDanger	= True }
-		
+ = let	config	= Config { configMakeDanger	= True }
    in	trimClosureT' config Set.empty Set.empty tt
+
+-- | Trim the closure portion of this type, without producing TDanger terms.
+trimClosureNoDangerT :: Type -> Type
+trimClosureNoDangerT tt
+ = let	config	= Config { configMakeDanger	= False }
+   in	trimClosureT' config Set.empty Set.empty tt
+
+
 
 trimClosureT' config quant rsData tt
   = trace ("trimClosureT " % tt % "\n")
@@ -95,7 +106,7 @@ trimClosureT_trace config quant rsData tt
 	TCon{}		-> tt
 
 	TSum k _
-	 | isClosureKind k	-> trimClosureC tt
+	 | isClosureKind k	-> trimClosureC' config quant rsData tt
 	 | otherwise		-> tt
 
 	TApp t1 t2
@@ -133,10 +144,15 @@ trimClosureT_tt config quant rsData c1 c2
 --   because we're not being passed the set of possibly quantified variables above us.
 trimClosureC :: Closure -> Closure
 trimClosureC cc
- = let	config	= Config
-		{ configMakeDanger	= True }
-		
+ = let	config	= Config { configMakeDanger	= True }
    in	trimClosureC' config Set.empty Set.empty cc
+
+-- | Trim a closure, without producing TDanger terms.
+trimClosureNoDangerC :: Closure -> Closure
+trimClosureNoDangerC cc
+ = let	config	= Config { configMakeDanger	= False }
+   in	trimClosureC' config Set.empty Set.empty cc
+
 
 trimClosureC' config quant rsData cc
  = let 	cc_trimmed	= trimClosureC_step config quant rsData cc
@@ -151,6 +167,7 @@ trimClosureC' config quant rsData cc
    in	if cc' == cc
    	 then cc'
 	 else trimClosureC' config quant rsData cc'
+
 	
 	
 -- | Do a single step of closure trimming.
@@ -203,10 +220,22 @@ trimClosureC_step config quant rsData cc
 
 
 	-- Normalisation of TDanger terms --------------------------------------
+
+	-- If configMakeTDanger is off then eat up any we see.
+	-- TODO: make it so we don't produce the terms instead.
+	TApp{}
+	 | not $ configMakeDanger config
+	 , Just (_, t1)		<- takeTFree cc
+	 , Just (_, _)		<- takeTDanger t1
+	 -> tEmpty
+	
+	
 	-- TODO: This probably isn't the right place for these.
 	--       They'd be better of as a part of crushT.
 	
 	-- TODO: This looks bogus.
+	--       Danger terms just encode dangerousness, not reachability information also.
+	-- 
 	-- ${tag : %r11 $> %r12}
 	--  => ${tag : %r11} + ${tag : %r12}
 	TApp{}
@@ -296,17 +325,22 @@ trimClosureC_t config tag quant rsData tt
 
 	-- When we enter into a data type then remember that we're under its primary region variable.
 	-- If this region variable becomes mutable then all variables under it are dangerous.
+	-- TODO: Won't the csDanger case be handled by the TVar case above?
+	--       we don't need to create the danger terms twice.
 	TApp{}
-	 | Just (_, _, t : ts)	<- takeTData tt
+	 | Just (_, _, tsArgs)	<- takeTData tt
+	 , t : _		<- tsArgs
 	 , isRegion t
-	 -> let rsData'	= Set.insert t rsData
-		vs	= freeVars (t:ts)
-	    in  concatMap (trimClosureC_t config tag quant rsData') (t:ts)
-			  ++ map (makeTDanger t) 
+	 -> let rsData'	 = Set.insert t rsData
+		vsArgs	 = freeVars tsArgs
+		
+		csHere   = concatMap (trimClosureC_t config tag quant rsData') tsArgs
+		csDanger = map (makeTDanger t) 
 				[TVar k (UVar v)
-					| v <- Set.toList vs 
+					| v <- Set.toList vsArgs
 					, not $ Var.isCtorName v
 					, let Just k = kindOfSpace $ varNameSpace v]
+	    in  csHere ++ csDanger
 
 	 -- data type has parameters but there is no primary region variable.
 	 | Just (_, _, ts@(_ : _)) <- takeTData tt

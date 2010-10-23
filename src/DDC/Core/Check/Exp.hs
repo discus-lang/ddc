@@ -133,19 +133,19 @@ checkExp_trace m xx env
 	 -> k `seq`
 	    let	-- Running the trimmer also produces tDanger terms,
 		-- but we don't need those in the core language, only in source.
-		crushDanger c
+{-		crushDanger c
 			| Just (v', t')	<- takeTFree c
 			, Just (_,  t2)	<- takeTDanger t'
 			= makeTFreeBot v' t2
 			
 			| otherwise
 			= c
-		
+-}		
 		-- Crush out all the tDanger terms.
 		clo	= makeTSum kClosure 
-			$ map crushDanger 
+--			$ map crushDanger 
 			$ flattenTSum
-			$ trimClosureC
+			$ trimClosureNoDangerC
 			$ makeTFreeBot v
 			$ t1		  
 
@@ -328,8 +328,8 @@ checkExp_trace m xx env
 	XApp x1 x2
 	 | (x1', t1, eff1, clo1) <- checkExp' n x1 env
 	 , (x2', t2, eff2, clo2) <- checkExp' n x2 env
-	 , t1'			 <- crushT $ trimClosureT t1
-	 , t2'			 <- crushT $ trimClosureT t2
+	 , t1'			 <- crushT $ trimClosureNoDangerT t1
+	 , t2'			 <- crushT $ trimClosureNoDangerT t2
 	 -> case takeTFun t1' of
 	     Just (t11, t12, eff3, _)
 	      -> case subsumesTT t2' t11 of
@@ -417,7 +417,7 @@ checkExp_trace m xx env
 	XTau tAnnot x
 	 | (tAnnot', kAnnot)	<- checkTypeI n tAnnot env
 	 , (x', tExp, eff, clo)	<- checkExp' n x env
-	 , tExp'		<- trimClosureT $ crushT tExp
+	 , tExp'		<- trimClosureNoDangerT $ crushT tExp
 	 -> kAnnot `seq`
 	    if isSubsumes $ subsumesTT tExp' tAnnot'
 		then	( XTau tAnnot' x'
