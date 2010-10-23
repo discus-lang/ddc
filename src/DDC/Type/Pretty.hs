@@ -162,6 +162,9 @@ pprFunArg vsLocal t
 	| TForall{}	<- t
 	= parens (pprType vsLocal t)
 
+	| TSum _ (_ : _ : _) <- t
+	= parens (pprType vsLocal t)
+	
 	| otherwise
 	= pprType vsLocal t
 
@@ -218,8 +221,9 @@ pprTypeParens :: Set Var -> Type -> Str
 pprTypeParens vsLocal t
  = case t of
 	TVar{}	 	-> pprType vsLocal t
-	TSum{}		-> pprType vsLocal t
 	TCon{}		-> pprType vsLocal t
+	TSum _ []	-> pprType vsLocal t
+	TSum _ [_]	-> pprType vsLocal t
 	_		-> "(" % pprType vsLocal t % ")"
 
 
