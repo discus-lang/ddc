@@ -17,7 +17,6 @@ module DDC.Type.Operators
 
 	-- * Elaboration
 	, elaborateRsT
-	, elaborateAndQuantifyRsT
 	, elaborateEffT
 	, elaborateCloT
 		

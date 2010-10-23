@@ -2,5 +2,5 @@
 y	:: Int %r1 :- Const %r1
 y	= 5
 
-succ 	<: Int {read} -> Int {read} -> Int %r2
+succ 	<: Int {read} -> Int {read} -(!Read %r1)> Int
 succ x	= \z -> x + y 

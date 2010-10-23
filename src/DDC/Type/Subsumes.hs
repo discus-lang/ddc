@@ -1,4 +1,13 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
+-- | Subsumption checking.
+--
+--   TODO: We assume effects and closures are always covariant.
+--         The fact that we're not swapping the variance for function 
+---	   should not matter due to the form of constraints on higher
+--         order effects and closures, but we should check that this
+--         form holds during the subsumption rules..
+--
 module DDC.Type.Subsumes
 	( Subsumes(..)
 	, isSubsumes

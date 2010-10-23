@@ -9,7 +9,6 @@
 --	it automatically.
 module DDC.Type.Operators.Elaborate
 	( elaborateRsT
-	, elaborateAndQuantifyRsT
 	, elaborateEffT
 	, elaborateCloT )
 where
@@ -29,21 +28,6 @@ import qualified Data.Map		as Map
 stage	= "DDC.Type.Operators.Elaborate"
 
 -- Elaborate Regions ------------------------------------------------------------------------------
--- | Look at uses of data type constructors, and if they don't have enough
---	region args applied then add some more so the resulting type has kind *.
-elaborateAndQuantifyRsT
-	:: Monad m
-	=> (NameSpace -> m Var)	-- ^ A compuation to generate a fresh region var
-	-> Type 		-- ^ the type to elaborate
-	-> m Type		--   elaborated type.
-	
-elaborateAndQuantifyRsT newVar tt
- = do	(t_elab, vks)	<- elaborateRsT newVar tt
-	let bks		= [(BVar v, k) | (v, k) <- vks]
-	let t_quant	= makeTForall_back bks t_elab
-	return t_quant
-
-
 -- | Look at uses of data type constructors, and if they don't have enough
 --	region args applied then add some more so the resulting type has kind *.
 elaborateRsT 
