@@ -171,6 +171,10 @@ splitPrefix (p:ps) []	= Nothing
 -- | Check whether a var is for an unboxed type constructor
 varIsUnboxedTyConData :: Var -> Bool
 varIsUnboxedTyConData var
+ 	| takeLast (varName var) == Just '#'
+	= True
+	
+	| otherwise
 	= varBindIsUnboxedTyConData (varId var)
 
 varBindIsUnboxedTyConData vid
