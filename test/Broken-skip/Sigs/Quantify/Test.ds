@@ -1,0 +1,9 @@
+
+
+y :: Int %r1
+y = 5
+
+-- The %r1 in this signature refers to the one for y.
+-- We don't want to add an outer forall here.
+add 	<: Int -> Int -(!Read %r1)> Int
+add a b	= a + b + y 
