@@ -61,10 +61,12 @@ checkSchemeAgainstSig tScheme prob@(ProbSig _ _ mode tSig)
 		[ "    --  Checking signature " % show mode
 		, "    sig\n"			%> prettyTypeSplit tSig,		blank
 		, "    sig core\n"		%> prettyTypeSplit (toCoreT tSig),	blank
+		, "    sig body\n"		%> tSigBody',				blank
 		, blank
 		, "    scheme\n"		%> prettyTypeSplit tScheme,		blank
 		, "    scheme renamed\n"	%> prettyTypeSplit tScheme',		blank
 		, "    scheme core'\n"		%> prettyTypeSplit (toCoreT tScheme'),	blank
+		, "    scheme body\n"		%> tSchBody',				blank
 		, blank
 		, "    bodySubsLow      = "	% isSubsumes bodySubsLow,		blank
 		, "    bodySubsHigh     = "	% isSubsumes bodySubsHigh,		blank 
