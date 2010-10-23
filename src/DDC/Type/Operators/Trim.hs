@@ -50,15 +50,28 @@ debug		= False
 trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 
+-- Config -----------------------------------------------------------------------------------------
+data Config
+	= Config { 
+	
+	-- | Return danger (%r1 $> v) terms in the closure.
+	--   We want these during type inference to control generalisation, but they're 
+	--   not needed in the core program.
+	  configMakeDanger	:: Bool }
+	
+
 -- Type -------------------------------------------------------------------------------------------
 -- | Trim the closure portion of this type.
 trimClosureT :: Type -> Type
 trimClosureT tt
-	= trimClosureT' Set.empty Set.empty tt
+ = let	config	= Config 
+		{ configMakeDanger	= True }
+		
+   in	trimClosureT' config Set.empty Set.empty tt
 
-trimClosureT' quant rsData tt
+trimClosureT' config quant rsData tt
   = trace ("trimClosureT " % tt % "\n")
-  $ let	tt_trimmed	= trimClosureT_trace quant rsData tt
+  $ let	tt_trimmed	= trimClosureT_trace config quant rsData tt
 	tt_packFast	= packT tt_trimmed
 			
 	tt'		= trace ( "tt_trimmed  = " % tt_trimmed 	% "\n"
@@ -67,10 +80,10 @@ trimClosureT' quant rsData tt
 		
     in	if tt' == tt
     		then tt'
-		else trimClosureT' quant rsData tt'
+		else trimClosureT' config quant rsData tt'
 
-trimClosureT_trace quant rsData tt		
- = let down	= trimClosureT' quant rsData
+trimClosureT_trace config quant rsData tt		
+ = let down	= trimClosureT' config quant rsData
    in  case tt of
 	TVar{}		-> tt
 	TCon{}		-> tt
@@ -81,7 +94,7 @@ trimClosureT_trace quant rsData tt
 
 	TApp t1 t2
 	 | Just _	<- takeTFree tt
-	 -> trimClosureC' quant rsData tt
+	 -> trimClosureC' config quant rsData tt
 
 	 | otherwise	-> TApp (down t1) (down t2)
 
@@ -89,8 +102,8 @@ trimClosureT_trace quant rsData tt
 	 -> TForall b k (down t)
 	
 	TConstrain tBody (Constraints crsEq crsMore crsOther)
-	 -> let	crsEq'		= Map.mapWithKey (trimClosureT_tt quant rsData) crsEq
-		crsMore'	= Map.mapWithKey (trimClosureT_tt quant rsData) crsMore
+	 -> let	crsEq'		= Map.mapWithKey (trimClosureT_tt config quant rsData) crsEq
+		crsMore'	= Map.mapWithKey (trimClosureT_tt config quant rsData) crsMore
 		crs'		= Constraints crsEq' crsMore' crsOther
 	    in	addConstraints crs' tBody
 
@@ -102,10 +115,13 @@ trimClosureT_trace quant rsData tt
 -- | Trim a closure down to its interesting parts.
 trimClosureC :: Closure -> Closure
 trimClosureC cc
-	= trimClosureC' Set.empty Set.empty cc
+ = let	config	= Config
+		{ configMakeDanger	= True }
+		
+   in	trimClosureC' config Set.empty Set.empty cc
 
-trimClosureC' quant rsData cc
- = let 	cc_trimmed	= trimClosureC_trace quant rsData cc
+trimClosureC' config quant rsData cc
+ = let 	cc_trimmed	= trimClosureC_trace config quant rsData cc
 	cc_packed	= packT $ cc_trimmed
 		
 	cc'		= trace 
@@ -116,10 +132,10 @@ trimClosureC' quant rsData cc
 				cc_packed
    in	if cc' == cc
    	 then cc'
-	 else trimClosureC' quant rsData cc'
+	 else trimClosureC' config quant rsData cc'
 	
-trimClosureC_trace quant rsData cc
- = let down	= trimClosureC' quant rsData
+trimClosureC_trace config quant rsData cc
+ = let down	= trimClosureC' config quant rsData
    in  case cc of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
@@ -140,16 +156,16 @@ trimClosureC_trace quant rsData cc
 		$  flattenTSum cc
 
 	TConstrain t Constraints { crsEq, crsMore }
-	 -> let	t'		= trimClosureC' quant rsData t
-		crsEq'		= Map.mapWithKey (\_ t2 -> trimClosureT' quant rsData t2) crsEq
-		crsMore'	= Map.mapWithKey (\_ t2 -> trimClosureT' quant rsData t2) crsMore
+	 -> let	t'		= trimClosureC' config quant rsData t
+		crsEq'		= Map.mapWithKey (\_ t2 -> trimClosureT' config quant rsData t2) crsEq
+		crsMore'	= Map.mapWithKey (\_ t2 -> trimClosureT' config quant rsData t2) crsMore
 	    in	addConstraints (Constraints crsEq' crsMore' []) t'
 
 	-- add quantified vars to the set
 	TForall b k t		
 	 -> let Just v	= takeVarOfBind b
 		quant'	= Set.insert (TVar k (UVar v)) quant
-	    in	trimClosureC' quant' rsData t
+	    in	trimClosureC' config quant' rsData t
 
 	-- free
 	TApp{}
@@ -180,7 +196,7 @@ trimClosureC_trace quant rsData cc
 		else makeTSum kClosure
 			  $ map (makeTFreeBot tag)
 			  $ map (makeTDangerIfRegion tag t11)
-			  $ trimClosureC_t tag quant rsData t12
+			  $ trimClosureC_t config tag quant rsData t12
 
 	 | Just (_, t)		<- takeTFree cc
 	 , isEffect t		
@@ -190,7 +206,7 @@ trimClosureC_trace quant rsData cc
 	 -> if isClosure t
 		then makeTFreeBot tag $ down t
 		else makeTFreeBot tag $ makeTSum kClosure 
-				   $ trimClosureC_t tag quant rsData t
+				   $ trimClosureC_t config tag quant rsData t
 
 	 | Just _		<- takeTDanger cc
 	 -> cc
@@ -201,9 +217,9 @@ trimClosureC_trace quant rsData cc
 
 
 -- | Trim a value type element of a closure.
-trimClosureC_t :: Var -> Set Type -> Set Type -> Type -> [Type]
-trimClosureC_t tag quant rsData tt
- = let down	= trimClosureC_t tag quant rsData
+trimClosureC_t :: Config -> Var -> Set Type -> Set Type -> Type -> [Type]
+trimClosureC_t config tag quant rsData tt
+ = let down	= trimClosureC_t config tag quant rsData
    in  case tt of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
@@ -213,20 +229,20 @@ trimClosureC_t tag quant rsData tt
 
 	-- Trim the fetters of this data
 	TConstrain tBody (Constraints crsEq crsMore crsOther)
-	 -> let	crsEq'		= Map.fromList $ mapMaybe (trimClosureC_tt quant rsData) $ Map.toList crsEq
-		crsMore'	= Map.fromList $ mapMaybe (trimClosureC_tt quant rsData) $ Map.toList crsMore
+	 -> let	crsEq'		= Map.fromList $ mapMaybe (trimClosureC_tt config quant rsData) $ Map.toList crsEq
+		crsMore'	= Map.fromList $ mapMaybe (trimClosureC_tt config quant rsData) $ Map.toList crsMore
 		crs		= Constraints crsEq' crsMore' crsOther
 	    	cBits		= down tBody
 	    in	map (addConstraints crs) cBits
 			
 	-- Trim under foralls
 	TForall BNil _ t
-	 -> trimClosureC_t tag quant rsData t
+	 -> trimClosureC_t config tag quant rsData t
 
 	TForall b k t		
 	 -> let	Just v	= takeVarOfBind b
 		quant'	= Set.insert (TVar k (UVar v)) quant
-	    in	trimClosureC_t tag quant' rsData t
+	    in	trimClosureC_t config tag quant' rsData t
 	
 	TSum _ ts	-> concatMap down ts
 
@@ -243,7 +259,7 @@ trimClosureC_t tag quant rsData tt
 	    if isRegion t
 	     then let 	rsData'	= Set.insert t rsData
 			vs	= freeVars (t:ts)
-	    	   in  	concatMap (trimClosureC_t tag quant rsData') (t:ts)
+	    	   in  	concatMap (trimClosureC_t config tag quant rsData') (t:ts)
 			  ++ map (makeTDanger t) 
 				[TVar k (UVar v)
 					| v <- Set.toList vs 
@@ -255,7 +271,7 @@ trimClosureC_t tag quant rsData tt
 	 -> down clo
 
 	 | Just (_, _)		<- takeTFree tt
-	 -> [trimClosureC' quant rsData tt]
+	 -> [trimClosureC' config quant rsData tt]
 		
 	 | otherwise
 	 -> []
@@ -267,14 +283,15 @@ trimClosureC_t tag quant rsData tt
 -- Fetter -----------------------------------------------------------------------------------------
 -- | Trim a fetter of a closure
 trimClosureC_tt 
-	:: Set Type 
+	:: Config 
+	-> Set Type 
 	-> Set Type 
 	-> (Type, Type)
 	-> Maybe (Type, Type)
 
-trimClosureC_tt quant rsData (c1, c2)
+trimClosureC_tt config quant rsData (c1, c2)
  	| isClosure c1
-	= Just (c1, trimClosureC' quant rsData c2)
+	= Just (c1, trimClosureC' config quant rsData c2)
 	
 	| isEffect c1
 	= Just (c1, c2)
@@ -286,14 +303,15 @@ trimClosureC_tt quant rsData (c1, c2)
 -- | Trim the closure in this fetter.
 --	where the fetter was on a type.
 trimClosureT_tt 
-	:: Set Type
+	:: Config
+	-> Set Type
 	-> Set Type
 	-> Type -> Type
 	-> Type
 
-trimClosureT_tt quant rsData c1 c2
+trimClosureT_tt config quant rsData c1 c2
 	| isClosure c1
-	= trimClosureC' quant rsData c2
+	= trimClosureC' config quant rsData c2
 	
 	| otherwise
 	= c2
