@@ -249,7 +249,7 @@ checkExp_trace m xx env
 			[ ppr "Type mismatch in (value/type) application."
 			, "During:\n"		 %> envCaller env, blank
 			, "Cannot apply type:\n" %> t2,  blank
-			, "of kind:\n"		 %> k2', blank
+			, "     of kind:\n"	 %> k2', blank
 			, "to expression:\n" 	 %> xx,	 blank
 			, "with type:\n"	 %> t1,	 blank]
 			

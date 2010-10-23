@@ -136,8 +136,29 @@ crushK kk
 	KApp k1 t2
 	 -> KApp (crushK k1) (crushT t2)
 	
+	-- | +{Pure e1, Pure e2}  =>  Pure (e1 + e2)
 	KSum ks
-	 -> makeKSum $ map crushK ks
+	 -> packK $ makeKSum $ map crushK ks
 
+-- TODO: combine crushing and packing into the same normalisation pass.
+packK :: Kind -> Kind
+packK kk
+	| KSum ks	<- kk
+	, Just effs	<- sequence $ map takePureK ks
+	= makeKApps kPure [makeTSum kEffect effs]
+	
+	| otherwise
+	= kk
+	
+-- | If this is the kind of a Pure witness then take the effect.
+takePureK :: Kind -> Maybe Effect
+takePureK kk
+	| Just (kPure', [tEff])		<- takeKApps kk
+	, kPure' == kPure
+	= Just tEff
+	
+	| otherwise
+	= Nothing
 
-
+	
+	
