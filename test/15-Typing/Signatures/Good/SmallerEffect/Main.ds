@@ -1,0 +1,34 @@
+
+-- | Check if an int is a multiple of any in a given array.
+checkPrime :: Array Int -> Int -> Int -> Int -> Bool
+checkPrime array high x n
+	| n >= high		=  True
+	| mod x array.(n) == 0	=  False
+	\= checkPrime array high x (n + 1)
+
+
+-- | Fill an array with primes.
+fillPrimes <: (Array{read}) (Int{modify}) -> Int{read} -> Int{read} -> Int{read} -> ()
+fillPrimes primes max high i
+	| high > max = ()
+
+	| checkPrime primes high i 0		
+	= do	primes.(high) := i
+		fillPrimes primes max (high + 1) (i + 1)
+
+	\= fillPrimes primes max high (i + 1)
+
+
+main ()
+ = do 	-- We want the 1500'th prime.
+ 	max	   = 1500
+
+	-- Start with an array containing the first prime as its first element.
+	primes	   = generate&{Array Int} (max + 1) (\_ -> 0)
+	primes.(0) := 2
+	
+	-- Fill the array with more primes.
+	fillPrimes primes max 1 2
+
+	-- Take the last prime found as the answer.
+	println	   $ show primes.(max)
