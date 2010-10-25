@@ -34,8 +34,9 @@ elabQuantifySigsInGlob vsMono glob
 	
 	vsMono'	= Set.unions [vsMono, rsTop, rsData, rsClo, vsDanger]
 
-	glob'	= glob { globTypeSigs = Map.map (map (elabQuantifySig vsMono')) 
-						(globTypeSigs glob) }
+	glob'	= glob 	{ globTypeSigs 	= Map.map (map (elabQuantifySig vsMono')) (globTypeSigs glob)
+			, globExterns	= Map.map (elabQuantifySig vsMono') (globExterns glob) }
+			
    in	(glob', vsMono')
 
 
@@ -44,16 +45,24 @@ elabQuantifySig
 	-> Top SourcePos 
 	-> Top SourcePos
 	
-elabQuantifySig vsMono (PTypeSig sp mode vs tSig)
+elabQuantifySig vsMono pp
+ = case pp of
+	PTypeSig sp mode vs tSig
+ 	 -> let	tSig'	= elabQuantifySigT vsMono tSig
+	    in	PTypeSig sp mode vs tSig' 
+
+	PExtern sp v tSig mSeaType
+	 -> let	tSig'	= elabQuantifySigT vsMono tSig
+	    in	PExtern sp v tSig' mSeaType
+	
+	_ -> panic stage "elabQuantifySig: no match"
+
+elabQuantifySigT vsMono tSig
  = let	vtsHere	= freeTVars tSig
 	bksHere	= [ (BVar v, k)	| TVar k (UVar v)	<- Set.toList vtsHere
 				, not $ Set.member v vsMono ]
-			
-	tSig'	= makeTForall_back bksHere tSig	
-   in	PTypeSig sp mode vs tSig'
-	
-elabQuantifySig _ _
-	= panic stage $ "elabQuantifySig: no match"
+						
+   in	makeTForall_back bksHere tSig	
 
 -- | Get the variables from type sigs in this glob that cannot be generalised,
 --   either because they represent static data, are in a closure, or are dangerous.

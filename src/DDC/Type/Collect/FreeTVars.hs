@@ -81,7 +81,8 @@ instance FreeTVars Type where
 			Set.\\ Set.singleton (TVar k (UMore v t1))
 
 	TConstrain t crs
-	 -> Set.union  (freeTVars t)  (freeTVars crs)
+	 -> (Set.union (freeTVars t)  (freeTVars crs))
+		Set.\\ (Set.unions $ map freeTVars $ Map.keys $ crsEq crs)
 
 	TError{}
 	 -> Set.empty
