@@ -162,10 +162,10 @@ llvmOfParams (v, t) = (toLlvmType t, [])
 
 llvmOfSeaGlobal :: Top (Maybe a) -> LMGlobal
 llvmOfSeaGlobal (PCafSlot v t)
- | t == TPtr tPtrObj
- =	let	tt = toLlvmType t
+ | t == TPtr (TCon TyConObj)
+ =	let	tt = pLift $ toLlvmType t
 		var = LMGlobalVar
- 			("_ddcCAF_" ++ seaVar False v)	-- Variable name
+			("_ddcCAF_" ++ seaVar False v)	-- Variable name
 			tt				-- LlvmType
 			ExternallyVisible		-- LlvmLinkageType
 			Nothing				-- LMSection
@@ -313,9 +313,37 @@ llvmOfAssign (XVar (NSlot v i) (TPtr (TCon TyConObj))) t@(TPtr (TCon TyConObj)) 
  = do	reg	<- loadExp t src
 	writeSlot reg i
 
-llvmOfAssign (XVar n1 t1) t@(TPtr (TCon TyConObj)) (XVar n2@NSlot{} t2)
+llvmOfAssign (XVar n1@NAuto{} t1) t@(TPtr (TCon TyConObj)) (XVar n2@NSlot{} t2)
  | t1 == t && t2 == t
  =	readSlotVar (nameSlotNum n2) $ toLlvmVar (varOfName n1) t
+
+
+llvmOfAssign (XVar v1@NCaf{} t1) t@(TPtr (TPtr (TCon TyConObj))) (XVar v2@NRts{} t2)
+ | t1 == t && t2 == t
+ = do	src		<- newUniqueReg $ toLlvmType t
+	addBlock	[ Assignment src (loadAddress (toLlvmCafVar (varOfName v2) t2))
+			, Store src (pVarLift (toLlvmCafVar (varOfName v1) t1)) ]
+
+
+
+llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (LiteralFmt (LInt 0) Unboxed)))
+ | t1 == t
+ = do	dst		<- newUniqueReg $ pLift $ toLlvmType t1
+	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) t1)))
+			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
+
+
+llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) x@(XPrim op args)
+ | t1 == t
+ = do	result		<- llvmOfXPrim op args
+	addBlock	[ Store result (pVarLift (toLlvmCafVar (varOfName v1) t)) ]
+
+
+
+llvmOfAssign (XVar v1@NRts{} t1) _ b@(XPrim op args)
+ =	panic stage  ("llvmOfAssign .....\n" ++ (show v1) ++ "\n" ++ (show b) ++ "\n")
+
+
 
 
 llvmOfAssign a b c
@@ -385,7 +413,7 @@ boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
 	gname	<- newUniqueName "str"
 	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
 	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
-	panic stage $ "boxAny2 " ++ show svar
+	-- panic stage $ "boxAny2 " ++ show svar
 	boxAny		svar
 
 boxExp t x
@@ -461,6 +489,25 @@ llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) ftype@(TFun pt rt)):args)
 	result		<- newUniqueNamedReg "result" pObj
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
 	return		result
+
+llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
+ = do	let func	= toLlvmFuncDecl External fv rt []
+	addGlobalFuncDecl func
+	result		<- newUniqueNamedReg "result" pObj
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
+	return		result
+
+
+llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i) Unboxed)) ]
+ = do	src		<- newUniqueReg (toLlvmType t)
+	next		<- newUniqueReg (toLlvmType t)
+	addBlock	[ Assignment src (loadAddress (toLlvmVar (varOfName v) t))
+			, Assignment next (GetElemPtr True src [llvmWordLitVar i]) ]
+	return		next
+
+llvmOfXPrim (MBox t@(TCon (TyConAbstract tt))) [ x ]
+ | varName tt == "String#"
+ =	boxExp t x
 
 llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim\n"
