@@ -1,12 +1,12 @@
 
-import Foreign.Storable		(sizeOf)
-import Foreign.Ptr			(Ptr)
-import Foreign.C.Types		(CChar)
+-- Get the wordsize of the machine.
 
+import Foreign.Storable		(sizeOf)
+import Foreign.Ptr		(Ptr)
+import Foreign.C.Types		(CChar)
 
 pointerSize :: Int
 pointerSize = 8 * sizeOf (undefined :: Ptr CChar)
-
 
 main :: IO ()
 main

@@ -115,7 +115,7 @@ make/Makefile.deps : src/Config/Config.hs $(src_hs_existing)
 # -- build the boiler plate generator
 bin/plate : tools/plate/Main.hs src/Config/Config.hs
 	@echo "* Building boilerplate generator ---------------------------------------------------"
-	$(GHC) $(GHC_FLAGS) -isrc -itools/plate -o bin/plate --make $^
+	$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -isrc -itools/plate -o bin/plate --make $^
 
 # -- generate boilerplate
 src/Source/Plate/Trans.hs : bin/plate src/Source/Plate/Trans.hs-stub src/Source/Exp.hs
@@ -188,7 +188,7 @@ library/Prelude.di library/Graphics.di : bin/ddc
 war_hs	= $(shell find tools/war -name "*.hs") $(shell find src/Util -name "*.hs")
 
 bin/war : $(war_hs)
-	$(GHC) $(GHC_FLAGS) -O2 -fglasgow-exts -threaded -fglasgow-exts \
+	$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -fglasgow-exts -threaded -fglasgow-exts \
 		-isrc -itools/war --make tools/war/Main.hs -o bin/war
 
 
@@ -343,11 +343,11 @@ clean  : cleanWar cleanRuntime cleanLibrary
 # -- Tarball ---------------------------------------------------------------------------------------
 # -- make a tarball for distribution
 
-srcdir := $(shell pwd)
-datestamp := $(shell date "+%Y%m%d")
-dateseconds := $(shell date "+%s")
-tmpdir = ddc-head-$(dateseconds)
-tarname = $(srcdir)/ddc-head-$(datestamp).tgz
+srcdir 		:= $(shell pwd)
+datestamp 	:= $(shell date "+%Y%m%d")
+dateseconds 	:= $(shell date "+%s")
+tmpdir 		= ddc-head-$(dateseconds)
+tarname 	= $(srcdir)/ddc-head-$(datestamp).tgz
 
 .PHONY  : tarball
 tarball :
@@ -360,7 +360,7 @@ tarball :
 
 # -- Include magic ---------------------------------------------------------------------------------
 
-include make/plate.mk
+include make/rules.mk
 -include runtime/*.dep
 
 
