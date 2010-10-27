@@ -14,7 +14,8 @@ import Util
 import Util.FilePath
 import DDC.Main.Pretty
 import DDC.Main.Error
-import qualified System
+import qualified System.Exit		as System
+import qualified System.Environment	as System
 import qualified Shared.VarUtil		as Var
 import qualified Main.ParseArgs		as Arg
 import qualified DDC.Config.Version	as Version

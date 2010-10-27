@@ -21,7 +21,7 @@ import System.Directory
 import Data.Char
 import DDC.Var
 import DDC.Main.Pretty					()
-import qualified System
+import qualified System.Exit				as System
 import qualified Main.ParseArgs				as Arg
 import qualified DDC.Main.Arg				as Arg
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec

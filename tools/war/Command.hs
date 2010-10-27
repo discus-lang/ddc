@@ -20,19 +20,13 @@ module Command
 	, lsDirsIn
 	, lsDirs
 	, lsFiles
-	, chmod
-	, makeTempFile)
+	, chmod)
 where
-
 import Timing
-
 import qualified System.Cmd
-import System.IO
 import System.Exit
 import System.Directory
 import System.Time
-import System.Posix.Directory
-import System.Posix.Temp
 import Control.Monad.Error
 import Data.List
 
@@ -128,12 +122,12 @@ removeIfExists file
 -- | Run this command in the given directory
 inDir :: DirPath -> IOF a -> IOF a
 inDir dir action
- = do	oldDir	<- liftIO $ getWorkingDirectory
-	liftIO $ changeWorkingDirectory dir
+ = do	oldDir	<- liftIO $ getCurrentDirectory
+	liftIO $ setCurrentDirectory dir
 
 	result	<- action
 
-	liftIO $ changeWorkingDirectory oldDir
+	liftIO $ setCurrentDirectory oldDir
 	return result
 
 
@@ -184,13 +178,4 @@ dropDotPaths xx
 chmod :: String -> String -> IOF ()
 chmod mode fileName
  = do	system $ "chmod " ++ mode ++ " " ++ fileName
-
-
--- Temp files -----------------------------------------------------------------
-makeTempFile :: String -> IOF String
-makeTempFile str
- = do	(name, handle)	<- io $ mkstemp (str ++ "XXXXXX")
-	io $ hClose handle
-	return name
-
 
