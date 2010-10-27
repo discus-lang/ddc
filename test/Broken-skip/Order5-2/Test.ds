@@ -1,0 +1,29 @@
+
+
+-- succ is a first order function
+succ :: Int -> Int
+succ x = x + 1
+
+-- appFive is a second order function
+appFive g	= g 5
+
+-- succ2succ is a third order function
+succ2succ f 	= succ (f succ)
+
+-- tetra is a fifth order function
+perch b p -- h 
+ = do 
+ 	-- force the argument 'p' to be third order by comparing it with tetra
+ 	p'	= if b then succ2succ else p
+	p' appFive
+
+	5
+
+appAppFive f 	= f appFive
+
+printSome f 
+ = do 	print "dude"
+	5 
+
+main ()
+ = 	print (show (perch True printSome)) 
