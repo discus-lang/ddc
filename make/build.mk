@@ -27,7 +27,6 @@ DDC_PACKAGES	:= \
 	-package mtl \
 	-package containers \
 	-package parsec \
-	-package regex-compat \
 	-package QuickCheck
 
 # -- Warnings ----------------------------------------------------------------------------

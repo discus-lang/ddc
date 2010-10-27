@@ -15,9 +15,9 @@ import Source.Exp
 import Util
 import Util.FilePath
 import Util.System.Directory
+import DDC.Util.Text
 import System.IO
 import System.Directory
-import Text.Regex
 import Data.Char
 import DDC.Var
 import DDC.Main.Pretty					()
@@ -300,11 +300,10 @@ scrapeOptions source
 
 scrapeOptions' [] = []
 scrapeOptions' (l:ls)
-	| isPrefixOf "{-# OPTIONS" l ||
-	  isPrefixOf "{-#\tOPTIONS" l
-	= let	regex		= mkRegex "\\{-#[ \\t]+OPTIONS[ \\t]+(.*)#-\\}"
-		Just [str]	= matchRegex regex l
-	  in	words str ++ scrapeOptions' ls
+	| l'		<- normaliseSpaces l
+	, Just rest	<- stripPrefix "{-# OPTIONS " l 
+	, params	<- takeWhile (not . (== '#')) rest
+	= words params ++ scrapeOptions' ls
 	
 	| otherwise
 	= scrapeOptions' ls
