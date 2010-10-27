@@ -18,7 +18,7 @@ TARGET_OS	:= $(shell uname -s | tr 'A-Z' 'a-z')
 #
 #   We don't currently support ppc64 because the only machine available to test
 #   this has a 32 bit ghc6. Therefore we automatically convert ppc64 to ppc.
-TARGET_ARCH	:= $(shell sh make/goop/getArch.sh)
+TARGET_ARCH	:= $(shell sh make/config/goop/getArch.sh)
 
 # The target is the combination of OS and machine architecture.
 TARGET		= $(TARGET_OS)-$(TARGET_ARCH)

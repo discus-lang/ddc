@@ -3,8 +3,8 @@
 # Get the architecture of the machine.
 # Must be run from the root of the ddc build tree.
 
-ghc --make make/goop/getBits.hs -o make/goop/getBits > /dev/null 2>&1
-bits=`make/goop/getBits`
+ghc --make make/config/goop/getBits.hs -o make/config/goop/getBits > /dev/null 2>&1
+bits=`make/config/goop/getBits`
 cpu=`uname -m`
 
 case "$cpu-$bits" in

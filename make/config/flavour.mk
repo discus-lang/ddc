@@ -1,6 +1,6 @@
 # Setting 
 include make/config.mk
-include make/options.mk
+include make/config/options.mk
 
 BuildFlavour    := $(strip $(BUILDFLAVOUR))
 

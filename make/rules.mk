@@ -1,6 +1,6 @@
 # Default make rules.
 include make/build.mk
-include make/target.mk
+include make/config/target.mk
 
 %.hs : %.x
 	@echo "* Preprocessing $<"

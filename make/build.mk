@@ -1,8 +1,8 @@
 
 include make/config.mk
-include make/options.mk
-include make/target.mk
-include make/flavour.mk
+include make/config/options.mk
+include make/config/target.mk
+include make/config/flavour.mk
 
 
 
