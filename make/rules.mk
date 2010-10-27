@@ -28,7 +28,7 @@ include make/config/target.mk
 
 %.dep : %.c
 	@echo "* Building Deps $<"
-	gcc $(GCC_FLAGS) -MM $< -MT $(patsubst %.dep,%.o,$@) -o $@
+	@gcc $(GCC_FLAGS) -MM $< -MT $(patsubst %.dep,%.o,$@) -o $@
 
 
 
