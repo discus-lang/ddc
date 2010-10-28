@@ -8,7 +8,6 @@ import Util.System.Directory
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Main.Arg		(Arg)
-import qualified Config.Config	as Config
 import qualified DDC.Main.Arg	as Arg
 
 
@@ -35,7 +34,7 @@ verbLocateRunLib verbose args
 	-- use the pathBase args and see if we can find the base library and the runtime system.
 	mPathRuntime	<- liftM (liftM fst)
 			$  findFileInDirs pathRuntime_test
-			$ "libddc-runtime." ++ Config.extSharedObject
+			$ "libddc-runtime.a"
 
 	mPathLibrary	<- liftM (liftM fst)
 			$  findFileInDirs pathLibrary_test

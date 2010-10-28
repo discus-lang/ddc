@@ -30,9 +30,9 @@ makeSeaCompileCmd
 	args pathSourceBase pathRuntime pathLibrary
 	extraIncludeDirs extraCompileFlags
 	
-	=  "gcc-3"	-- Must use 'gcc-3' on Cygwin because plain 'gcc' is a symlink
-			-- and Windows cmd doesn't support them. If you use plain 'gcc'
-			-- you will get "Access is Denied" errors.
+	=  "gcc-3"		-- Must use 'gcc-3' on Cygwin because plain 'gcc' is a symlink
+				-- and Windows cmd doesn't support them. If you use plain 'gcc'
+				-- you will get "Access is Denied" errors.
 
 	++ " -Werror"
 	++ " -std=c99"
@@ -41,17 +41,9 @@ makeSeaCompileCmd
 	++ " -c " ++ pathSourceBase ++ ".ddc.c"
 	++ " -o " ++ pathSourceBase ++ ".o"
 
-	++ (if elem Debug args
-		then " -g"
-		else "")
-
-	++ (if elem OptAll args
-		then " -O3"
-		else "")
-
-	++ (if elem Profile args
-		then " -pg"
-		else "")
+	++ (if elem Debug args   then " -g"  else "")
+	++ (if elem OptAll args  then " -O3" else "")
+	++ (if elem Profile args then " -pg" else "")
 
 	++ " -I."
 	++ " -I"  ++ (take (length pathRuntime - length "/runtime") pathRuntime)
@@ -74,9 +66,10 @@ makeLinkCmd
 makeLinkCmd
 	args objects outFile pathRuntime extraLibs extraLibDirs
 
-	= "gcc-3"	-- Must use gcc-3 on Cygwin because plain 'gcc' is a symlink
-			-- and Windows cmd doesn't support them. If you use plain 'gcc'
-			-- you will get "Access is Deined" errors.
+	-- Must use gcc-3 on Cygwin because plain 'gcc' is a symlink
+	-- and Windows cmd doesn't support them. If you use plain 'gcc'
+	-- you will get "Access is Deined" errors.
+	= "gcc-3"		
 
 	++ " -std=c99"
 	
@@ -88,9 +81,9 @@ makeLinkCmd
 
 	++ " " ++ concat [" " ++ obj | obj <- objects]
 					
-	++ (if elem StaticRuntime args 
-		then " " ++ pathRuntime ++ "/libddc-runtime.a"
-		else " " ++ pathRuntime ++ "/libddc-runtime.so")
+	-- Shared libraries/DLLS don't work on Windows/Cygwin
+	-- so we always link against the static runtime.
+	++ " " ++ pathRuntime ++ "/libddc-runtime.a"	
 
 	++ " -lm"
 
