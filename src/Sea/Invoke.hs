@@ -4,6 +4,7 @@ where
 import Util
 import System.Cmd
 import System.Exit
+import System.Directory
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import qualified DDC.Main.Arg	as Arg
@@ -30,11 +31,16 @@ invokeSeaCompiler
 	importDirs
 	extraFlags
  = do
+	pathSourceBase'	<- canonicalizePath pathSourceBase
+	pathRuntime'	<- canonicalizePath pathRuntime
+	pathLibrary'	<- canonicalizePath pathLibrary
+	importDirs'	<- mapM canonicalizePath $ nub importDirs
+
 	let cmd	= Config.makeSeaCompileCmd 
 			args
-			pathSourceBase
-			pathRuntime
-			pathLibrary
+			pathSourceBase'
+			pathRuntime'
+			pathLibrary'
 			importDirs
 			extraFlags
 
@@ -50,5 +56,5 @@ invokeSeaCompiler
 	 ExitFailure _
 	  -> panic stage
 	  	$ "invokeSeaCompiler: compilation of C file failed.\n"
-		% "    pathC = " % pathSourceBase % ".ddc.c" % "\n"
+		% "  command was = '" % cmd % "'\n"
 
