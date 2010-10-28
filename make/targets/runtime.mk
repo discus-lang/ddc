@@ -1,6 +1,6 @@
 # Runtime system
 
-# -- find source files
+# Find source files for the runtime system.
 runtime_c = \
 	$(shell ls runtime/*.c) \
 	$(shell find runtime/Prim -name "*.c")
@@ -9,11 +9,11 @@ runtime_dep	= $(patsubst %.c,%.dep,$(runtime_c))
 runtime_o	= $(patsubst %.c,%.o,$(runtime_c))
 
 
-# -- link runtime libraries
+# Link runtime libraries
 runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 	@echo
 	@echo "* Linking $@"
-	$(BUILD_SHARED) -o $@ $^
+	$(GCC_LINK_SHARED) -o $@ $^
 	@echo
 
 runtime/libddc-runtime.a  : $(runtime_o)
@@ -22,12 +22,15 @@ runtime/libddc-runtime.a  : $(runtime_o)
 	@echo
 
 
-# -- build runtime system
+# Build runtime system.
+#   The shared runtime is only built if SHARED_SUFFIX is defined.
 .PHONY  : runtime
-runtime : $(runtime_dep) runtime/libddc-runtime.$(SHARED_SUFFIX) runtime/libddc-runtime.a
-
-
-# -- clean objects in the runtime system
+runtime : $(runtime_dep) \
+		runtime/libddc-runtime.a \
+		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),)
+		
+		
+# Clean objects in the runtime system
 .PHONY : cleanRuntime
 cleanRuntime :
 	@echo "* Cleaning runtime"
@@ -35,7 +38,7 @@ cleanRuntime :
 		    	-name "*.o" \
 		-o	-name "*.dep" \
 		-o	-name "*.so" \
-		-o  -name "*.dylib" \
+		-o	-name "*.dylib" \
 		-o	-name "*.a" \
 		-o	-name "*~" \
 		-follow | xargs -n 1 rm -f

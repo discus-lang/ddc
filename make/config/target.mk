@@ -28,47 +28,54 @@ TARGET		= $(TARGET_OS)-$(TARGET_ARCH)
 Target          := $(strip $(TARGET))
 
 # -----------------------------------------------------------------------------
-# Target dependent make flags.
+# Target dependent settings.
 # 
-#     *ALL* of the target dependent settings should be defined right here.
-#   Don't spread target dependent stuff through the rest of the build system.
+#  *ALL* of the target dependent settings should be defined right here.
+#  Don't spread target dependent stuff through the rest of the build system.
+#
+#  The settings are:
+#
+#  GCC_FLAGS		-- Flags to use when compiling .c files.
+#  GCC_LINK_SHARED	-- Command to use to link a shared library.
+#
+#  SHARED_SUFFIX	-- File name suffix for shared libraries (eg .so or .dynlib)
+#			-- If the platform doesn't support shared libs then don't define it.
 #
 
 # -- Linux on x86
 ifeq "$(Target)" "linux-x86"
-GCC_FLAGS           += -fPIC -D BITS=32
-BUILD_SHARED        := gcc -shared
-SHARED_SUFFIX       := so
+GCC_FLAGS		+= -fPIC -D BITS=32
+GCC_LINK_SHARED		:= gcc -shared
+SHARED_SUFFIX		:= so
 
 # -- Linux on x86_64
 else ifeq "$(Target)" "linux-x86_64"
-GCC_FLAGS           += -fPIC -D BITS=64 -m64
-BUILD_SHARED        := gcc -shared
-SHARED_SUFFIX       := so
+GCC_FLAGS		+= -fPIC -D BITS=64 -m64
+GCC_LINK_SHARED		:= gcc -shared
+SHARED_SUFFIX		:= so
 
 # -- Linux on ppc
 else ifeq "$(Target)" "linux-ppc"
-GCC_FLAGS           += -fPIC -D BITS=32 -m32
-BUILD_SHARED        := gcc -shared
-SHARED_SUFFIX       := so
+GCC_FLAGS		+= -fPIC -D BITS=32 -m32
+GCC_LINK_SHARED		:= gcc -shared
+SHARED_SUFFIX		:= so
 
 # -- FreeBSD on x86
 else ifeq "$(Target)" "freebsd-x86"
-GCC_FLAGS           += -fPIC -D BITS=32
-BUILD_SHARED        := gcc -shared
-SHARED_SUFFIX       := so 
+GCC_FLAGS		+= -fPIC -D BITS=32
+GCC_LINK_SHARED		:= gcc -shared
+SHARED_SUFFIX		:= so 
 
 # -- Darwin on x86
 else ifeq "$(Target)" "darwin-x86"
-GCC_FLAGS           += -fPIC -D BITS=32 -m32
-BUILD_SHARED        := gcc -m32 -dynamiclib -undefined dynamic_lookup 
-SHARED_SUFFIX       := dylib
+GCC_FLAGS		+= -fPIC -D BITS=32 -m32
+GCC_LINK_SHARED		:= gcc -m32 -dynamiclib -undefined dynamic_lookup 
+SHARED_SUFFIX		:= dylib
 
 # -- WindowsXP/Cygwin on x86
 else ifeq "$(Target)" "cygwin-x86"
-GCC_FLAGS           += -D BITS=32 -m32
-BUILD_SHARED        := gcc -shared
-SHARED_SUFFIX       := dll
+GCC_FLAGS		+= -D BITS=32 -m32
+GCC_LINK_SHARED		:= gcc -shared
 
 else
 all : $(error "Unknown Target '$(Target)'. Set this in make/config.mk")
