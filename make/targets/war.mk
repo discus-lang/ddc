@@ -12,7 +12,7 @@ bin/war : $(war_hs)
 
 # Run the testsuite interactively
 .PHONY 	: war
-war : bin/ddc runtime/libddc-runtime.a runtime/libddc-runtime.$(SHARED_SUFFIX) bin/war library/Prelude.di
+war : bin/ddc runtime bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS)
 	@echo
