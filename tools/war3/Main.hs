@@ -49,12 +49,13 @@ main
 		
 	let jobs
 		= concat 
-		$ map createJobs 
+		$ map    (createJobs "normal")
+		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
 		$ Seq.toList testFiles
 
 --	print jobs
 
-	runBuildPrint "/tmp" $ mapM dispatchJob jobs
+	runBuildPrint "/tmp" $ mapM (dispatchJob config) jobs
 
 	return ()
 

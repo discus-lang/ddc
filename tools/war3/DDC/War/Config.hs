@@ -7,30 +7,33 @@ import DDC.War.Options
 import DDC.War.Way
 import Util
 
+
 data Config
-	= Config
+	= Config {
+ 	-- | Raw options list passed to war.
+ 	  configOptions		:: [Opt] 
 
-	-- Raw options list passed to war.
-	{ configOptions		:: [Opt] 
-
-	-- Whether to emit debugging info for war.
+	-- | Whether to emit debugging info for war.
 	, configDebug		:: Bool
 
-	-- Number of threads to use when running tests.
+	-- | Number of threads to use when running tests.
 	, configThreads		:: Int 
 
-	-- Whether to run in batch mode with no color and no interactive
+	-- | Whether to run in batch mode with no color and no interactive
 	--	test failure resolution.
 	, configBatch		:: Bool 
 
-	-- Where to write the list of failed tests to.
+	-- | Where to write the list of failed tests to.
 	, configLogFailed	:: Maybe FilePath 
 
-	-- What ways to compile the tests with.
+	-- | What ways to compile the tests with.
 	, configWays		:: [Way] 
 
-	-- Clean up ddc generated files after each test
-	, configClean		:: Bool }
+	-- | Clean up ddc generated files after each test
+	, configClean		:: Bool 
+	
+	-- | Width of reports.
+	, configFormatPathWidth	:: Int }
 	deriving (Show, Eq)
 
 
@@ -65,5 +68,6 @@ loadConfig options
 	, configLogFailed	= takeLast [s | OptLogFailed s		<- options]
 	, configWays		= ways
 	, configClean		= elem OptClean options
+	, configFormatPathWidth	= 80
 	}
 

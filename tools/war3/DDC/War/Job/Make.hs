@@ -12,14 +12,14 @@ import Util.Data.List
 import Control.Monad
 
 
+-- | Make a Disciple program.
 jobMake :: Job -> Build [Aspect]
 jobMake (JobMake 
-		name mainDS optionsDDC optionsRTS
+		testName _wayName mainDS optionsDDC optionsRTS
 		buildDir mainBin mainCompOut mainCompErr)
+
  = do	needs mainDS
-	
-	outLn $ "jobMake: " ++ mainDS
-	
+		
 	-- The directory holding the Main.ds file.
 	let srcDir	= takeDirectory mainDS
 	
