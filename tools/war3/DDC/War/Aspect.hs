@@ -1,0 +1,6 @@
+
+
+data Aspect
+	= AspectCompileTime Float
+	
+	

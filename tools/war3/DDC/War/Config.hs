@@ -1,9 +1,11 @@
 
 module DDC.War.Config
-	(Config(..))
+	( Config(..)
+	, loadConfig)
 where
 import DDC.War.Options
 import DDC.War.Way
+import Util
 
 data Config
 	= Config
@@ -30,4 +32,38 @@ data Config
 	-- Clean up ddc generated files after each test
 	, configClean		:: Bool }
 	deriving (Show, Eq)
+
+
+loadConfig :: [Opt] -> Config
+loadConfig options
+ = let
+	-- Calculate all the ways we should run the tests
+	--	If no options are given for comp or run, then just use
+	--	a "normal" way with no options.
+	makeWayPair (name:opts)	= (name, opts)
+	makeWayPair way		= error $ "bad way specification " ++ catInt " " way
+
+	compWayPairs_		= [makeWayPair opts | OptCompWay opts	<- options ]
+	compWayPairs		= if null compWayPairs_ 
+					then [("normal", [])] 
+					else compWayPairs_
+
+	runWayPairs_		= [makeWayPair opts | OptRunWay  opts	<- options ]
+	runWayPairs		= if null runWayPairs_ 
+					then [("normal", [])]
+					else runWayPairs_
+
+	ways			= [ WayOpts (compName ++ "-" ++ runName) compOpts runOpts
+					| (compName, compOpts)	<- compWayPairs
+					, (runName,  runOpts)	<- runWayPairs ]
+
+    in	Config
+	{ configOptions		= options
+	, configDebug		= elem OptDebug options
+	, configThreads		= fromMaybe 1 (takeLast [n | OptThreads n <- options])
+	, configBatch		= elem OptBatch options 
+	, configLogFailed	= takeLast [s | OptLogFailed s		<- options]
+	, configWays		= ways
+	, configClean		= elem OptClean options
+	}
 

@@ -72,6 +72,7 @@ DDC_PACKAGES	:= \
 	-package containers \
 	-package mtl \
 	-package directory \
+	-package filepath \
 	-package process \
 	-package old-time \
 	-package haskell-src \

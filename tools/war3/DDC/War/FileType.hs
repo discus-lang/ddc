@@ -3,6 +3,8 @@ module DDC.War.FileType
 	( FileType(..)
 	, classifyFile)
 where
+import Data.List
+import System.FilePath
 
 -- | Classification of a file that is interesting to us.
 --   This is a file that we have to build, or might contain output we need to compare against.
@@ -54,6 +56,7 @@ classifyFile path
 	| isSuffixOf ".stdout.check" name	= FileRunStdoutCheck
 	| isSuffixOf ".stderr.check" name	= FileRunStderrCheck
 	
+	| otherwise				= FileBoring
 	where	name	= takeFileName path
 
 
