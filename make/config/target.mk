@@ -11,7 +11,10 @@ include make/config.mk
 
 # Autodetect the build operating system.
 #   This works for 'Linux', 'Darwin' and 'FreeBSD'.
-TARGET_OS	:= $(shell uname -s | tr 'A-Z' 'a-z')
+TARGET_OS \
+	:= $(shell uname -s \
+		| tr 'A-Z' 'a-z' \
+		| sed 's/cygwin_nt-5.1/cygwin/')
 
 # Autodetect the build architecture.
 #   This works for 'i386', 'i686', 'x86_64' and 'ppc'.
@@ -61,11 +64,11 @@ GCC_FLAGS           += -fPIC -D BITS=32 -m32
 BUILD_SHARED        := gcc -m32 -dynamiclib -undefined dynamic_lookup 
 SHARED_SUFFIX       := dylib
 
-# -- Darwin on x86_64
-else ifeq "$(Target)" "darwin-x86_64"
-GCC_FLAGS           += -fPIC -D BITS=64 -m64
-BUILD_SHARED        := gcc -m64 -dynamiclib -undefined dynamic_lookup
-SHARED_SUFFIX       := dylib
+# -- WindowsXP/Cygwin on x86
+else ifeq "$(Target)" "cygwin-x86"
+GCC_FLAGS           += -D BITS=32 -m32
+BUILD_SHARED        := gcc -shared
+SHARED_SUFFIX       := dll
 
 else
 all : $(error "Unknown Target '$(Target)'. Set this in make/config.mk")
