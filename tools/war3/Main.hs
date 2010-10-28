@@ -1,7 +1,7 @@
 
 import DDC.War.Options
--- import DDC.War.Way
--- import DDC.War.Config
+import DDC.War.Way	()
+import DDC.War.Config	()
 import Util.Options
 import Util.Options.Help
 import System.Environment
@@ -19,11 +19,11 @@ main
 
 	-- Print command usage if asked for
 	when (elem OptHelp options)
-	 $ do	putStr $ help ++ "\n"
+	 $ do	putStrLn $ help
 		exitSuccess
 
 	-- Print errors if there are any
 	when (not $ null errs)
-	 $ do	putStr $ (catInt "\n" errs) ++ "\n"
-		putStr $ help ++ "\n"
+	 $ do	putStrLn $ (catInt "\n" errs) 
+		putStrLn $ help
 		exitFailure
