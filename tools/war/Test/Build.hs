@@ -21,7 +21,7 @@ import Foreign.C.Types		(CChar)
 
 -- | Build a program starting from a Main.ds file
 testBuild :: Test -> Way -> War TestWin
-testBuild test@(TestBuild mainDS) way
+testBuild test@(TestBuild mainDS)
  | isSuffixOf "Main.ds" mainDS
  = do	debugLn $ "* TestBuild " ++ mainDS 
 

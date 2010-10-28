@@ -2,17 +2,19 @@
 import DDC.War.Options
 import DDC.War.Way	()
 import DDC.War.Config
-import DDC.War.FileType
+import DDC.War.Job
+import DDC.War.JobDispatch
 import Util.Options
 import Util.Options.Help
+import BuildBox
+import BuildBox.IO.Directory
 import System.Environment
-import System.Exit
 import System.Directory
 import Control.Monad
 import Util
 import qualified Data.Sequence	as Seq
-import Data.Sequence		(Seq)
 import qualified Data.Foldable	as Seq
+
 
 main :: IO ()
 main 
@@ -44,53 +46,16 @@ main
 	testFiles
 		<- liftM (join . Seq.fromList)
 		$ mapM traceFilesFrom testDirs
-
-	-- Check the types of the files
-	let testFileTypes
-		= [(file, classifyFile file) | file <- Seq.toList testFiles]
-
-	print testFileTypes
-
-
--- | Get all the files reachable from this directory
--- TODO: Move this to buildbox.
-traceFilesFrom :: FilePath -> IO (Seq FilePath)
-traceFilesFrom path
- = do	isDir	<- doesDirectoryExist path
-	isFile	<- doesFileExist      path
-
-	let result
-		| isDir 	
-		= do	contents <- liftM (filter (\s -> not $ elem s [".", ".."]))
-			 	 $  getDirectoryContents path
-
-			liftM (join  . Seq.fromList)
-				$ mapM traceFilesFrom 
-				$ map (\f -> path ++ "/" ++ f) 
-				$ contents
-
-		| isFile
-		=	return	$ Seq.singleton path
 		
-		| otherwise
-		=	return	$ Seq.empty
-	
-	result
+	let jobs
+		= concat 
+		$ map createJobs 
+		$ Seq.toList testFiles
 
+--	print jobs
 
+	runBuildPrint "/tmp" $ mapM dispatchJob jobs
 
-
-	
-
-
-
-
-
-
-
-
-
-
-
+	return ()
 
 

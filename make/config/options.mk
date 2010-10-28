@@ -75,6 +75,8 @@ DDC_PACKAGES	:= \
 	-package filepath \
 	-package process \
 	-package old-time \
+	-package time \
 	-package haskell-src \
 	-package parsec \
-	-package QuickCheck
+	-package QuickCheck \
+	-package buildbox

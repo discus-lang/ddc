@@ -1,6 +1,10 @@
 
+module DDC.War.Aspect
+	(Aspect(..))
+where
+import Data.Time
 
 data Aspect
-	= AspectCompileTime Float
-	
+	= AspectTime NominalDiffTime
+	deriving (Show)
 	
