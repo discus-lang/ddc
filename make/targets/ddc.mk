@@ -7,6 +7,9 @@ src_alex_hs	=  $(patsubst %.x,%.hs,$(src_alex_x))
 # -- files that are ready to compile
 src_hs_existing	=  $(shell find src -name "*.hs" -follow)
 
+# -- files that will be generated
+src_hs_generated = src/Config/Config.hs src/Source/Plate/Trans.hs
+
 # -- all .hs files in the src dir, including ones we need to preprocess.
 src_hs_all	+= $(src_hs_existing)
 src_hs_all	+= $(src_alex_hs)
@@ -23,7 +26,7 @@ src/Config/Config.hs : src/Config/Config.hs.$(Target)
 .PHONY	: deps
 deps	: make/Makefile.deps
 
-make/Makefile.deps : src/Config/Config.hs $(src_hs_existing)
+make/Makefile.deps : $(src_hs_existing) $(src_hs_generated)
 	@echo "* Building dependencies"
 	@$(GHC) -isrc -M $^ -dep-makefile -optdepmake/Makefile.deps $(GHC_INCDIRS)
 	@rm -f make/Makefile.deps.bak
