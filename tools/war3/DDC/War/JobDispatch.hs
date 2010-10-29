@@ -62,7 +62,7 @@ pprJobResult width useColor job aspects
 
 	JobRun{}
 	 | Just (AspectTime time)	<- takeAspectTime aspects
-	 ->  padL width (ppr $ jobFileSrc job)
+	 ->  padL width (ppr $ jobFileBin job)
 	 <> (padL 10 $ text $ jobWayName job)
 	 <>  text "run    "
 	 <> pprAsColor useColor Green 
@@ -73,14 +73,14 @@ pprJobResult width useColor job aspects
 	-- diffed files were different.
 	JobDiff{}
    	 | Just AspectDiff{}		<- takeAspectDiff aspects
-	 ->  padL width (ppr $ jobFile job)
+	 ->  padL width (ppr $ jobFileOut job)
 	 <> (padL 10 $ text $ jobWayName job)
 	 <>  text "diff   "
 	 <> pprAsColor useColor Red (text "failed")
 
 	-- diffed files were identical, all ok.
 	JobDiff{}
-	 ->  padL width (ppr $ jobFile job)
+	 ->  padL width (ppr $ jobFileOut job)
 	 <> (padL 10 $ text $ jobWayName job)
 	 <>  text "diff   "
 	 <>  text "ok"
