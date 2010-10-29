@@ -40,7 +40,7 @@ pprJobResult width useColor job aspects
 	 | elem AspectUnexpectedFailure aspects
 	 ->  padL width (ppr $ jobFile job) 
 	 <> (padL 10 $ text $ jobWayName job)
-	 <>  text "make   "
+	 <>  text "compile "
 	 <> pprAsColor useColor Red (text "compile fail")
 	
 	-- compile should have failed, but didn't.
@@ -48,7 +48,7 @@ pprJobResult width useColor job aspects
 	 | elem AspectUnexpectedSuccess aspects
 	 ->  padL width (ppr $ jobFile job) 
 	 <> (padL 10 $ text $ jobWayName job)
-	 <>  text "make   "
+	 <>  text "compile "
 	 <> pprAsColor useColor Red (text "unexpected success")
 
 	-- compile did was was expected of it.
@@ -56,7 +56,7 @@ pprJobResult width useColor job aspects
 	 | Just (AspectTime time)	<- takeAspectTime aspects 
 	 ->  padL width (ppr $ jobFile job) 
 	 <> (padL 10 $ text $ jobWayName job)
-	 <>  text "make   "
+	 <>  text "compile "
 	 <> pprAsColor useColor Blue
 		(text "time" <> (parens $ padR 7 $ pprFloatTime $ realToFrac time))
 
@@ -64,7 +64,7 @@ pprJobResult width useColor job aspects
 	 | Just (AspectTime time)	<- takeAspectTime aspects
 	 ->  padL width (ppr $ jobFileBin job)
 	 <> (padL 10 $ text $ jobWayName job)
-	 <>  text "run    "
+	 <>  text "run     "
 	 <> pprAsColor useColor Green 
 		(text "time" <> (parens $ padR 7 $ pprFloatTime $ realToFrac time))
 
@@ -75,14 +75,14 @@ pprJobResult width useColor job aspects
    	 | Just AspectDiff{}		<- takeAspectDiff aspects
 	 ->  padL width (ppr $ jobFileOut job)
 	 <> (padL 10 $ text $ jobWayName job)
-	 <>  text "diff   "
+	 <>  text "diff    "
 	 <> pprAsColor useColor Red (text "failed")
 
 	-- diffed files were identical, all ok.
 	JobDiff{}
 	 ->  padL width (ppr $ jobFileOut job)
 	 <> (padL 10 $ text $ jobWayName job)
-	 <>  text "diff   "
+	 <>  text "diff    "
 	 <>  text "ok"
 
 

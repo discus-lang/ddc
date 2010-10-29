@@ -94,32 +94,12 @@ createJobs
 	-> FilePath		-- ^ File we want to create jobs for.
 	-> [Job]
 
-createJobs wayName allFiles fileName
- = let	dir		= takeDirectory  fileName
+createJobs wayName allFiles filePath
+ = let	dir		= takeDirectory  filePath
 	buildDir	= dir ++ "/war-" ++ wayName
-   in	case classifyFile fileName of
+   in	case classifyFile filePath of
 	 FileBoring
 	  -> []
-
-	 -- Test.ds files should be compiled.
-	 -- If we also have Test.error.check then expect failure and check DDC's stdout against the file.
-	 -- otherwise just compile it and expect success.
-	 FileTestDS
-	  -> let testCompStdout	= buildDir ++ "/Test.compile.stdout"
-		 testCompStderr	= buildDir ++ "/Test.compile.stderr"
-		 testCompDiff   = buildDir ++ "/Test.compile.stderr.diff"
-		 testErrorCheck	= dir 	   ++ "/Test.error.check"
-		 shouldSucceed	= not $ Set.member testErrorCheck allFiles
-
-		 compile	= JobCompile	dir wayName fileName [] ["-M30M"]
-						buildDir testCompStdout testCompStderr
-						Nothing shouldSucceed
-		 
-		 diffError	= JobDiff	dir wayName testErrorCheck 
-						testCompStderr testCompDiff
-
-	     in	 [compile] ++ (if shouldSucceed then [] else [diffError])
-
 
 	 -- For Main.ds files, build and run them.
 	 FileMainDS	
@@ -132,11 +112,11 @@ createJobs wayName allFiles fileName
 		 mainErrorCheck	= dir	   ++ "/Main.error.check"
 		 shouldSucceed	= not $ Set.member mainErrorCheck allFiles
 	
-		 compile 	= JobCompile 	dir wayName fileName [] ["-M30M"]
+		 compile 	= JobCompile 	dir wayName filePath [] ["-M30M"]
 						buildDir mainCompStdout mainCompStderr 
 						(Just mainBin) shouldSucceed
 
-		 run		= JobRun  	dir wayName fileName mainBin 
+		 run		= JobRun  	dir wayName filePath mainBin 
 						mainRunStdout mainRunStderr	
 		 
 		 diffError	= JobDiff	dir wayName mainErrorCheck
@@ -145,22 +125,49 @@ createJobs wayName allFiles fileName
 	     in	 [compile] ++ (if shouldSucceed then [run] else [diffError])
 
 
+	 -- If there is no Main.ds in the same directory, but there is some
+	 -- other .ds file, then complile it. If we also have Test.error.check
+	 -- then expect failure and check DDC's stdout against the file.
+	 -- otherwise just compile it and expect success.
+	 FileTestDS
+	  -> let (base, _ext)	= splitExtensions $ takeFileName filePath
+		 mainDS		= buildDir ++ "/Main.ds"
+		 testCompStdout	= buildDir ++ "/" ++ base ++ ".compile.stdout"
+		 testCompStderr	= buildDir ++ "/" ++ base ++ ".compile.stderr"
+		 testCompDiff   = buildDir ++ "/" ++ base ++ ".compile.stderr.diff"
+		 testErrorCheck	= dir 	   ++ "/" ++ base ++ ".error.check"
+		 shouldSucceed	= not $ Set.member testErrorCheck allFiles
+
+		 compile	= JobCompile	dir wayName filePath [] ["-M30M"]
+						buildDir testCompStdout testCompStderr
+						Nothing shouldSucceed
+		 
+		 diffError	= JobDiff	dir wayName testErrorCheck 
+						testCompStderr testCompDiff
+
+		 -- Don't do anything if there is a Main.ds here.
+		 -- This other .ds file is probably a part of a larger program.
+	     in	 if Set.member mainDS allFiles
+		  then []
+		  else [compile] ++ (if shouldSucceed then [] else [diffError])
+
+
 	 -- Run binary was supposed to emit this to stdout.
 	 FileRunStdoutCheck
 	  -> let mainRunStdout		= buildDir ++ "/Main.run.stdout"
 		 mainRunStdoutDiff	= buildDir ++ "/Main.run.stdout.diff"
-	     in	 [ JobDiff 	dir wayName fileName mainRunStdout mainRunStdoutDiff]
+	     in	 [ JobDiff 	dir wayName filePath mainRunStdout mainRunStdoutDiff]
 
 	
 	 -- Run binary was supposed to emit this to stderr.
 	 FileRunStderrCheck
 	  -> let mainRunStderr		= buildDir ++ "/Main.run.stderr"
 		 mainRunStderrDiff	= buildDir ++ "/Main.run.stderr.diff"
-	     in	 [ JobDiff 	dir wayName fileName mainRunStderr mainRunStderrDiff ]
+	     in	 [ JobDiff 	dir wayName filePath mainRunStderr mainRunStderrDiff ]
 	
 	
 	 -- Expected compile errors are handled by the corresponding FileMainDS or FileTestDS rule.
 	 FileCompileErrorCheck	-> []
 	
-	 fileType -> error $ "creatJobs: " ++ show fileName ++ " " ++ show fileType
+	 fileType -> error $ "creatJobs: " ++ show filePath ++ " " ++ show fileType
 	

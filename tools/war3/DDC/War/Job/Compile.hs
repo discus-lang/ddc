@@ -17,13 +17,13 @@ import Control.Monad
 --         Don't just duplicate the code again like in war2.
 
 jobCompile :: Job -> Build [Aspect]
-jobCompile (JobCompile
+jobCompile job@(JobCompile
 		testName _wayName srcDS optionsDDC optionsRTS
 		buildDir mainCompOut mainCompErr
 		mMainBin shouldSucceed)
 
  = do	needs srcDS
-		
+	
 	-- The directory holding the Main.ds file.
 	let (srcDir, srcFile)	= splitFileName srcDS
 		

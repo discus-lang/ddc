@@ -51,7 +51,8 @@ classifyFile path
 	| name	== "Main.ds"			= FileMainDS
 	
 	-- Test compile files
-	| name  == "Test.ds"			= FileTestDS
+	| (_base, ext) <- splitExtension path
+	, ext == ".ds"				= FileTestDS
 	
 	-- Check errors when compiling.
 	| isSuffixOf ".error.check"  name	= FileCompileErrorCheck

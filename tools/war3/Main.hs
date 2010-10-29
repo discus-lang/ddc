@@ -54,6 +54,8 @@ main
 	let jobs
 		= concat 
 		$ map    (createJobs "normal" testFilesSet)
+		$ filter (not . isInfixOf "skip-")	-- skip over skippable files.
+		$ filter (not . isInfixOf "-skip")
 		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
 		$ Seq.toList testFiles
 
