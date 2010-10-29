@@ -72,4 +72,5 @@ cleanWar :
 		-o	-name "*.compile.stdout" \
 		-o	-name "*.stdout" \
 		-o	-name "*.stderr" \
-		-follow | xargs -n 1 rm -f
+		-o	-name "war-*" \
+		-follow | xargs -n 1 rm -Rf
