@@ -18,8 +18,14 @@ data Aspect
 		{ aspectFileBaseLine	:: FilePath
 		, aspectFileActual	:: FilePath
 		, aspectFileDiff	:: FilePath }
-		
-	deriving (Show)
+	
+	-- | We thought this test would succeed, but it didn't.
+	| AspectUnexpectedFailure
+
+	-- | We thought this test would fail, but it didn't.
+	| AspectUnexpectedSuccess
+	deriving (Eq, Show)
+	
 	
 takeAspectTime :: [Aspect] -> Maybe Aspect
 takeAspectTime as

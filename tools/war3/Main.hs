@@ -14,6 +14,7 @@ import Control.Monad
 import Util
 import qualified Data.Sequence	as Seq
 import qualified Data.Foldable	as Seq
+import qualified Data.Set	as Set
 
 
 main :: IO ()
@@ -46,10 +47,13 @@ main
 	testFiles
 		<- liftM (join . Seq.fromList)
 		$ mapM traceFilesFrom testDirs
+	
+	let testFilesSet
+		= Set.fromList $ Seq.toList testFiles
 		
 	let jobs
 		= concat 
-		$ map    (createJobs "normal")
+		$ map    (createJobs "normal" testFilesSet)
 		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
 		$ Seq.toList testFiles
 

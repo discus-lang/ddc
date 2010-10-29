@@ -17,9 +17,11 @@ data FileType
 	-- | A Main.sh script we should run.
 	| FileMainSH
 
-	-- | A Main.ds file we should compile with DDC.
+	-- | A Main.ds file we should make into an executable with DDC.
 	| FileMainDS
 
+	-- | A Test.ds file we should compile, but not into an excutale.
+	| FileTestDS
 
 	-- Check errors when compiling
 	-- | Compile is expected to fail, and produce some errors into a file.
@@ -47,6 +49,9 @@ classifyFile path
 	| name	== "Main.hs"			= FileMainHS
 	| name	== "Main.sh"			= FileMainSH
 	| name	== "Main.ds"			= FileMainDS
+	
+	-- Test compile files
+	| name  == "Test.ds"			= FileTestDS
 	
 	-- Check errors when compiling.
 	| isSuffixOf ".error.check"  name	= FileCompileErrorCheck
