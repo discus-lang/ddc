@@ -18,7 +18,7 @@ jobDiff (JobDiff testName _wayName
 	-- Run the binary.
 	(code, strOut, strErr)
 	 <- systemTee False 
-	 	("diff " ++ fileOut ++ " " ++ fileDiff)
+	 	("diff " ++ file ++ " " ++ fileOut)
 		""
 	
 	-- Write its output to file.

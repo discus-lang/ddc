@@ -101,24 +101,32 @@ createJobs wayName allFiles fileName
 	 FileBoring
 	  -> []
 
-	 -- | Test.ds files should be compiled.
-	 --   If we also have Test.error.check then expect failure and check DDC's stdout against the file.
-	 --   otherwise just compile it and expect success.
+	 -- Test.ds files should be compiled.
+	 -- If we also have Test.error.check then expect failure and check DDC's stdout against the file.
+	 -- otherwise just compile it and expect success.
 	 FileTestDS
 	  -> let testCompStdout	= buildDir ++ "/Test.compile.stdout"
 		 testCompStderr	= buildDir ++ "/Test.compile.stderr"
+		 testCompDiff   = buildDir ++ "/Test.compile.stderr.diff"
 		 testErrorCheck	= dir 	   ++ "/Test.error.check"
 		 shouldSucceed	= not $ Set.member testErrorCheck allFiles
 
-	     in	 [ JobCompile	dir wayName fileName [] ["-M30M"]
-				buildDir testCompStdout testCompStderr
-				Nothing shouldSucceed ]
+		 compile	= JobCompile	dir wayName fileName [] ["-M30M"]
+						buildDir testCompStdout testCompStderr
+						Nothing shouldSucceed
+		 
+		 diffError	= JobDiff	dir wayName testErrorCheck 
+						testCompStderr testCompDiff
 
-	 -- | For Main.ds files, build and run them.
+	     in	 [compile] ++ (if shouldSucceed then [] else [diffError])
+
+
+	 -- For Main.ds files, build and run them.
 	 FileMainDS	
 	  -> let mainBin	= buildDir ++ "/Main.bin"
 		 mainCompStdout	= buildDir ++ "/Main.compile.stdout"
 		 mainCompStderr	= buildDir ++ "/Main.compile.stderr"
+		 mainCompDiff   = buildDir ++ "/Main.compile.stderr.diff"
 		 mainRunStdout	= buildDir ++ "/Main.run.stdout"
 		 mainRunStderr	= buildDir ++ "/Main.run.stderr"
 		 mainErrorCheck	= dir	   ++ "/Main.error.check"
@@ -130,22 +138,29 @@ createJobs wayName allFiles fileName
 
 		 run		= JobRun  	dir wayName fileName mainBin 
 						mainRunStdout mainRunStderr	
-	     in	 [compile] 
-	  	   ++ (if shouldSucceed then [run] else [])
-			
+		 
+		 diffError	= JobDiff	dir wayName mainErrorCheck
+						mainCompStderr mainCompDiff
+		
+	     in	 [compile] ++ (if shouldSucceed then [run] else [diffError])
+
+
+	 -- Run binary was supposed to emit this to stdout.
 	 FileRunStdoutCheck
 	  -> let mainRunStdout		= buildDir ++ "/Main.run.stdout"
 		 mainRunStdoutDiff	= buildDir ++ "/Main.run.stdout.diff"
 	     in	 [ JobDiff 	dir wayName fileName mainRunStdout mainRunStdoutDiff]
+
 	
+	 -- Run binary was supposed to emit this to stderr.
 	 FileRunStderrCheck
 	  -> let mainRunStderr		= buildDir ++ "/Main.run.stderr"
 		 mainRunStderrDiff	= buildDir ++ "/Main.run.stderr.diff"
 	     in	 [ JobDiff 	dir wayName fileName mainRunStderr mainRunStderrDiff ]
 	
-	 -- | Expected compile errors are handled by the corresponding FileMainDS or FileTestDS rule.
-	 FileCompileErrorCheck
-	  -> []
+	
+	 -- Expected compile errors are handled by the corresponding FileMainDS or FileTestDS rule.
+	 FileCompileErrorCheck	-> []
 	
 	 fileType -> error $ "creatJobs: " ++ show fileName ++ " " ++ show fileType
 	

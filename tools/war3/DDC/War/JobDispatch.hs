@@ -70,10 +70,20 @@ pprJobResult width useColor job aspects
 
 	-- TODO: Handle run failure.
 	
+	-- diffed files were different.
+	JobDiff{}
+   	 | Just AspectDiff{}		<- takeAspectDiff aspects
+	 ->  padL width (ppr $ jobFile job)
+	 <> (padL 10 $ text $ jobWayName job)
+	 <>  text "diff   "
+	 <> pprAsColor useColor Red (text "failed")
+
+	-- diffed files were identical, all ok.
 	JobDiff{}
 	 ->  padL width (ppr $ jobFile job)
 	 <> (padL 10 $ text $ jobWayName job)
 	 <>  text "diff   "
+	 <>  text "ok"
 
 
 pprAsColor :: Bool -> Color -> Doc -> Doc
