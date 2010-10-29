@@ -2,7 +2,7 @@
 import DDC.War.Options
 import DDC.War.Way	()
 import DDC.War.Config
-import DDC.War.Job
+import DDC.War.JobCreate
 import DDC.War.JobDispatch
 import Util.Options
 import Util.Options.Help
