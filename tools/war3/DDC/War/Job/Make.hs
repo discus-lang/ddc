@@ -13,6 +13,9 @@ import Control.Monad
 
 
 -- | Make a Disciple program.
+--   TODO: Take a parameter saying whether it's alowd to fail with error.
+--         Don't just duplicate the code again like in war2.
+
 jobMake :: Job -> Build [Aspect]
 jobMake (JobMake 
 		testName _wayName mainDS optionsDDC optionsRTS
@@ -48,6 +51,7 @@ jobMake (JobMake
 				++ " " 		++ catInt " " optionsDDC
 				++ " +RTS "	++ catInt " " optionsRTS)
 			""
+			
 	io $ atomicWriteFile mainCompOut strOut
 	io $ atomicWriteFile mainCompErr strErr
 
