@@ -105,10 +105,10 @@ createJobs wayName allFiles fileName
 	 --   If we also have Test.error.check then expect failure and check DDC's stdout against the file.
 	 --   otherwise just compile it and expect success.
 	 FileTestDS
-	  -> let testCompStdout		= buildDir ++ "/Test.compile.stdout"
-		 testCompStderr		= buildDir ++ "/Test.compile.stderr"
-		 testErrorCheck		= dir 	   ++ "/Test.error.check"
-		 shouldSucceed		= not $ Set.member testErrorCheck allFiles
+	  -> let testCompStdout	= buildDir ++ "/Test.compile.stdout"
+		 testCompStderr	= buildDir ++ "/Test.compile.stderr"
+		 testErrorCheck	= dir 	   ++ "/Test.error.check"
+		 shouldSucceed	= not $ Set.member testErrorCheck allFiles
 
 	     in	 [ JobCompile	dir wayName fileName [] ["-M30M"]
 				buildDir testCompStdout testCompStderr
@@ -116,21 +116,23 @@ createJobs wayName allFiles fileName
 
 	 -- | For Main.ds files, build and run them.
 	 FileMainDS	
-	  -> let mainBin		= buildDir ++ "/Main.bin"
-		 mainCompStdout		= buildDir ++ "/Main.compile.stdout"
-		 mainCompStderr		= buildDir ++ "/Main.compile.stderr"
-		 mainRunStdout		= buildDir ++ "/Main.run.stdout"
-		 mainRunStderr		= buildDir ++ "/Main.run.stderr"
-		 mainErrorCheck		= dir	   ++ "/Main.error.check"
-		 shouldSucceed		= not $ Set.member mainErrorCheck allFiles
+	  -> let mainBin	= buildDir ++ "/Main.bin"
+		 mainCompStdout	= buildDir ++ "/Main.compile.stdout"
+		 mainCompStderr	= buildDir ++ "/Main.compile.stderr"
+		 mainRunStdout	= buildDir ++ "/Main.run.stdout"
+		 mainRunStderr	= buildDir ++ "/Main.run.stderr"
+		 mainErrorCheck	= dir	   ++ "/Main.error.check"
+		 shouldSucceed	= not $ Set.member mainErrorCheck allFiles
 	
-	     in	[ JobCompile 	dir wayName fileName [] ["-M30M"]
-				buildDir mainCompStdout mainCompStderr 
-				(Just mainBin) shouldSucceed
+		 compile 	= JobCompile 	dir wayName fileName [] ["-M30M"]
+						buildDir mainCompStdout mainCompStderr 
+						(Just mainBin) shouldSucceed
 
-		, JobRun  	dir wayName fileName mainBin 
-				mainRunStdout mainRunStderr ]
-		
+		 run		= JobRun  	dir wayName fileName mainBin 
+						mainRunStdout mainRunStderr	
+	     in	 [compile] 
+	  	   ++ (if shouldSucceed then [run] else [])
+			
 	 FileRunStdoutCheck
 	  -> let mainRunStdout		= buildDir ++ "/Main.run.stdout"
 		 mainRunStdoutDiff	= buildDir ++ "/Main.run.stdout.diff"
