@@ -47,6 +47,7 @@ import DDC.Util.FreeVars
 -- haskell
 import Util
 import System.FilePath
+import System.Directory
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
@@ -106,9 +107,12 @@ compileFile_parse
  -- Emit a nice error message if the source file is empty.
  --	If we parse an empty file to happy it will bail with "reading EOF!" which isn't as nice.
  | words sSource == []
- = let Just pathSource	= M.scrapePathSource sRoot
-   in  exitWithUserError (setupArgs setup) 
-   	[pathSource % "\n    Source file is empty.\n"]
+ = do	let Just pathSource	= M.scrapePathSource sRoot
+	dirWorking		<- getCurrentDirectory
+	let pathRelative	=  "./" ++ makeRelative dirWorking pathSource
+	
+   	exitWithUserError (setupArgs setup) 
+   		[pathRelative % "\n    Source file is empty.\n"]
 
  | otherwise
  = do	let ?args		= setupArgs setup
