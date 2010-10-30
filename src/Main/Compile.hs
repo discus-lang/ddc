@@ -22,7 +22,7 @@ import qualified DDC.Main.Arg		as Arg
 import qualified Module.Interface.Docable ()
 import qualified Module.Export		as M
 import qualified Module.Interface.Export as MN
-import qualified Module.Scrape		as M
+import qualified DDC.Module.Scrape	as M
 
 -- source
 import qualified Source.Exp		as S
@@ -46,7 +46,7 @@ import DDC.Util.FreeVars
 
 -- haskell
 import Util
-import Util.FilePath
+import System.FilePath
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
@@ -72,8 +72,9 @@ compileFile setup scrapes sModule blessMain
 	-- Decide on module names  ---------------------------------------------
 	let Just sRoot	= Map.lookup sModule scrapes
 	let pathSource	= let Just s = M.scrapePathSource sRoot in s
-	let (fileName, fileDir, _, _)
-		= normalMunchFilePath pathSource
+
+	let fileName	= takeFileName  pathSource
+	let fileDir	= takeDirectory pathSource
 
 	-- Gather up all the import dirs.
 	let importDirs	
@@ -119,8 +120,8 @@ compileFile_parse
 	let modName		= M.scrapeModuleName sRoot
 	let pathSource		= let Just s = M.scrapePathSource sRoot in s
 
-	let Just (fileDir, fileBase, _) 
-				= munchFileName pathSource
+	let fileDir		= takeDirectory pathSource
+	let fileBase		= takeBaseName  pathSource
 	let ?pathSourceBase	= fileDir ++ "/" ++ fileBase
 	
 	-- Parse imported interface files --------------------------------------

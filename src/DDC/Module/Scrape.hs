@@ -1,33 +1,33 @@
-
--- A scrape contains useful about a module that we can derive directly from the
---	source, interface and build files without properly parsing or type checking it.
---
-module Module.Scrape
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+module DDC.Module.Scrape
 	( Scrape (..)
 	, scrapeSourceFile
-	, scrapeModule)
+	, scrapeSourceModule)
 where
 import Main.BuildFile
 import Source.Parser.Base
 import Source.Parser.Module
 import Source.Lexer
 import Source.Exp
-import Util
-import Util.FilePath
-import Util.System.Directory
+import DDC.Var
+import DDC.Main.Error
 import DDC.Util.Text
+import Data.Char
+import Util.System.Directory
+import Util
 import System.IO
 import System.Directory
-import Data.Char
-import DDC.Var
+import System.FilePath
 import DDC.Main.Pretty					()
+import qualified DDC.Main.Arg				as Arg
 import qualified System.Exit				as System
 import qualified Main.ParseArgs				as Arg
-import qualified DDC.Main.Arg				as Arg
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 
+stage = "DDC.Module.Scrape"
 
--- Scrape -----------------------------------------------------------------------------------------
+-- | A scrape contains useful about a module that we can derive directly from the
+--   source, interface and build files without properly parsing or type checking it.
 data Scrape
 	= Scrape
 	-- the module name, derived from its file path
@@ -67,87 +67,70 @@ data Scrape
 	deriving (Show)
 
 
--- ScrapeSource -----------------------------------------------------------------------------------
-
--- Find a module based on its file name and scrape it
---	Raises System.exitFailure if the file does not exist
---
+-- | Read a module from a file and scrape it.
+--   Raises System.exitFailure if the file does not exist
 scrapeSourceFile
-	:: [FilePath]		-- Directories to look for imported modules in
-	-> Bool			-- Whether the Prelude module is being auto imported
-				--	This can be overridden by pragmas in the source file.
-	-> FilePath		-- path to source file
+	:: Bool			-- ^ Whether to implicitly import the Prelude.
+	-> FilePath		-- ^ Path to source file (need not be canonical)
 	-> IO (Maybe Scrape)
 	
-scrapeSourceFile importDirs importPrelude pathSource
- = do	exists	<- doesFileExist pathSource
+scrapeSourceFile shouldImportPrelude pathSource_
+ = do	pathSource	<- canonicalizePath pathSource_
+	exists		<- doesFileExist pathSource
+
 	if not exists
 	 then do
 		hPutStrLn stderr $ "ddc error: File '" ++ pathSource ++ "' does not exist.\n"
 		System.exitFailure
-	 else do
-		source	<- readFile pathSource
-		scrapeSourceFile' importDirs importPrelude pathSource source
-		
-scrapeSourceFile' importDirs importPrelude pathSource source
- = do	
-	-- split up the path to the module
-	let (fileName, fileDir, fileBase, _)
-		= normalMunchFilePath pathSource
 
-	-- Also look for imports in the dir the module is in
-	let importDirs'	
-		= fileDir : importDirs
+	 else	scrapeModuleFromFile Nothing shouldImportPrelude pathSource
 
-	scrapeModule' 
-		Nothing
-		importDirs' importPrelude
-		Nothing fileDir fileName fileBase
-
-
--- ScrapeModule -----------------------------------------------------------------------------------
--- Use the import dirs to find the source file for a particular module, 
---	then and scrape it to work out whether we have to rebuild it or not.
---
-scrapeModule
-	:: [FilePath]		-- Directories to look for imported modules in.
-	-> Bool			-- Whether the Prelude module is being auto imported
-				--	This can be overridden by pragmas in the source file.
-	-> ModuleId		-- The name of the module to scrape.
+	
+-- | Find a module based on its name, and scrape out some info about it.
+scrapeSourceModule
+	:: [FilePath]		-- ^ Directories to search for imports.
+	-> Bool			-- ^ Whether we should implicitly import the prelude.a
+	-> ModuleId		-- ^ The name of the module to find.
 	-> IO (Maybe Scrape)
-	
-scrapeModule importDirs importPrelude moduleNameSearchedFor
- = do	-- get the base path of a module by replacing '.' by '/'
-	let ModuleId vs	= moduleNameSearchedFor
-	let fileNameDS		= catInt "/" vs ++ ".ds"
 
-	mFileDirName	<- findFileInDirs importDirs fileNameDS
+scrapeSourceModule impDirs shouldImportPrelude modName
+ = do	
+	-- Look for the module in a dir matching it's name.
+	-- eg, it the module is     SomeLib.SomeThing.ModuleName
+	--     then look for it in  <some import dir>/SomeLib/SomeThing/ModuleName
+	let ModuleId vs		= modName
+	let fileNameDS		= catInt "/" vs ++ ".ds"
+	mFileDirName		<- findFileInDirs impDirs fileNameDS
 	
+	-- Did we find it?
 	case mFileDirName of
 	 Nothing	-> return Nothing
-	 Just (importDir, fileNameFound)	
-	  -> do	
-		let (fileName, fileDir, fileBase, _)
-			= normalMunchFilePath fileNameFound
+	 Just (_impDir, pathFileFound_)	
+	  -> do	pathFileFound	<- canonicalizePath pathFileFound_
+		scrapeModuleFromFile (Just modName) shouldImportPrelude pathFileFound
 
-		scrapeModule' 
-			(Just moduleNameSearchedFor)
-			importDirs importPrelude
-			(Just importDir) fileDir fileName fileBase
 
-scrapeModule' 
-	(mModuleNameSearchedFor :: Maybe ModuleId)
-	importDirs importPrelude
-	mImportDir fileDir fileName fileBase
+-- | Scrape a module from a given file.
+scrapeModuleFromFile
+	:: Maybe ModuleId	-- ^ Module name that we think this file should have.
+	-> Bool			-- ^ Whether we should implicitly import the prelude.
+	-> FilePath		-- ^ Name of .ds file holding module (must be canonical)
+	-> IO (Maybe Scrape)
+	
+scrapeModuleFromFile mModuleNameSearchedFor shouldImportPrelude filePath
  = do	
+	let fileDir	= takeDirectory filePath
+	let fileName	= takeFileName  filePath
+	let fileBase	= takeBaseName  filePath
+		
 	-- See if there is a build file
 	--	For some source file,             ./Thing.ds
 	--	the build file should be called   ./Thing.build
-	let buildFile	= fileDir ++ "/" ++ fileBase ++ ".build"
+	let buildFile	= replaceExtension filePath "build"
 	mBuild		<- loadBuildFile  buildFile
 
-	-- Read the file
-	source	<- readFile fileName
+	-- Read the source file.
+	source	<- readFile filePath
 
 	let sourceLines_noComments
 		= lines $ dropStrComments source
@@ -156,53 +139,44 @@ scrapeModule'
 	let mModuleScraped	
 		= scrapeModuleId sourceLines_noComments
 
-	let moduleName
+	-- Decide on a module name for this source file.
+	let modName
 		-- Always believe the module id given in the source file.
-		| Just m	<- mModuleScraped
-		= m
+		| Just m <- mModuleScraped	   = m
 
 		-- If there is no id in the source file, but we found a specific module
 		--	in the appropriate place, then we already have the module id.
-		| Just m	<- mModuleNameSearchedFor
-		= m
+		| Just m <- mModuleNameSearchedFor = m
 
 		-- If neither of the above apply, then derive the module id from the file name.
-		| otherwise					
-		= ModuleId [fileBase]
+		| otherwise			   = ModuleId [fileBase]
 
-{-
-	putStr 	$  "fileName           = " ++ show fileName 			++ "\n"
-		++ "mModuleSearchedFor = " ++ show mModuleNameSearchedFor 	++ "\n"
-		++ "mModuleScraped     = " ++ show mModuleScraped 		++ "\n"
-		++ "fileBase           = " ++ show fileBase 			++ "\n"
-		++ "chosen modulename  = " ++ show moduleName			++ "\n\n"
--}
 	-- Scrape the inline options from the source file
 	let options	= scrapeOptions source
 	let inlineArgs	= Arg.parse options
 
 	-- Scrape the imported modules from the source file
-	let importMods	= scrapeImports sourceLines_noComments
+	let impModules	= scrapeImports sourceLines_noComments
 	
 	-- Auto-import the Prelude unless something's telling us not to
-	let importModsPrelude
-		= if   importPrelude
+	let impModulesPrelude
+		= if   shouldImportPrelude
 		    && (not $ elem Arg.NoImplicitPrelude inlineArgs)
-			then nub (importMods ++ [ModuleId ["Prelude"]])
-			else importMods
+			then nub (impModules ++ [ModuleId ["Prelude"]])
+			else impModules
 			
 	-- See if there is an interface file
-	let intFile	= fileDir ++ "/" ++ fileBase ++ ".di"
+	let intFile	= replaceExtension filePath ".di"
 	intExists	<- doesFileExist intFile
 	let mInterface	= if intExists then Just intFile else Nothing
 
 	-- See if there is a header file
-	let headerFile	= fileDir ++ "/" ++ fileBase ++ ".ddc.h"
+	let headerFile	= replaceExtension filePath ".ddc.h"
 	headerExists	<- doesFileExist headerFile
 	let mHeader	= if headerExists then Just headerFile else Nothing
 
 	-- See if there is an object file
-	let objFile	= fileDir ++ "/" ++ fileBase ++ ".o"
+	let objFile	= replaceExtension filePath ".o"
 	objExists	<- doesFileExist objFile
 	let mObject	= if objExists then Just objFile else Nothing
 		
@@ -210,17 +184,18 @@ scrapeModule'
 	needsRebuild	<- checkNeedsRebuild (Just fileName) mInterface	mHeader mObject
 		
   	return	$ Just $ Scrape
-		{ scrapeModuleName	= moduleName
-		, scrapePathSource	= Just fileName
+		{ scrapeModuleName	= modName
+		, scrapePathSource	= Just filePath
 		, scrapePathInterface	= mInterface
 		, scrapePathHeader	= mHeader
 		, scrapePathObject	= mObject
-		, scrapeImportDir	= mImportDir
+		, scrapeImportDir	= Just fileDir
 		, scrapeNeedsRebuild	= needsRebuild
-		, scrapeImported	= importModsPrelude
+		, scrapeImported	= impModulesPrelude
 		, scrapeArgsInline	= inlineArgs
 		, scrapeBuild		= mBuild 
 		, scrapeDefinesMain	= False }
+
 
 checkNeedsRebuild mSource mInt mHeader mObj
 	-- module not found
@@ -246,12 +221,13 @@ checkNeedsRebuild mSource mInt mHeader mObj
 		timeInt		<- getModificationTime fileInt
 		return	(timeInt < timeSource)
 
+	| otherwise
+	= return True
 
--- ScrapeImports ----------------------------------------------------------------------------------
+
 -- | Scrape the list of imported modules directly from a source file.
 --	This needs to be fast, as we need to scrape all the source files in a project
 --	every time we do a make.
---
 scrapeImports :: [String] -> [ModuleId]
 scrapeImports [] = []
 scrapeImports (l:ls)
@@ -278,10 +254,11 @@ scrapeImport ls
 	 -- if we get a parse error then just return an empty scrape
 	 -- the compiler will give an error when we get to that module anyway
 	 Left err			-> error (show err)
-	 Right (PImportModule sp mods)	-> mods
-	
+	 Right (PImportModule _ mods)	-> mods
+	 Right _			-> panic stage $ "scrapeImport: unexpected pragma"
 
--- ScrapeModuleName -------------------------------------------------------------------------------
+
+-- | Scrape the module id from the source file.
 scrapeModuleId :: [String] -> Maybe ModuleId
 scrapeModuleId []	= Nothing
 scrapeModuleId (l:ls)
@@ -289,11 +266,10 @@ scrapeModuleId (l:ls)
 	 "module" : name : _	-> Just (ModuleId (breakOns '.' name))
 	 _			-> scrapeModuleId ls
 
--- ScrapeOptions ----------------------------------------------------------------------------------
+
 -- | Scrape options from the source file.
 --	Options are treated as though they were passed to the compiler 
 --	on the command line.
---
 scrapeOptions :: String -> [String]
 scrapeOptions source
  	= scrapeOptions' (lines source)
@@ -301,11 +277,10 @@ scrapeOptions source
 scrapeOptions' [] = []
 scrapeOptions' (l:ls)
 	| l'		<- normaliseSpaces l
-	, Just rest	<- stripPrefix "{-# OPTIONS " l 
+	, Just rest	<- stripPrefix "{-# OPTIONS " l'
 	, params	<- takeWhile (not . (== '#')) rest
 	= words params ++ scrapeOptions' ls
 	
 	| otherwise
 	= scrapeOptions' ls
-	
-	
+

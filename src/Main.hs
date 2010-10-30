@@ -8,14 +8,14 @@ import Main.Compile
 import Main.Init
 import Main.Make
 import Main.Error
-import Module.Scrape
+import DDC.Module.Scrape
 import Module.ScrapeGraph
 import Util
-import Util.FilePath
 import DDC.Main.Pretty
 import DDC.Main.Error
 import qualified System.Exit		as System
 import qualified System.Environment	as System
+import qualified System.FilePath	as System
 import qualified Shared.VarUtil		as Var
 import qualified Main.ParseArgs		as Arg
 import qualified DDC.Config.Version	as Version
@@ -81,7 +81,7 @@ ddc argStrs
 		
 	let result
 		| symbols	<- nub  ( filter Var.isSymbol 
-					$ concatMap fileNameOfPath
+					$ concatMap (System.takeFileName)
 					$ compileFiles ++ makeFiles) \\ "./"
 		, Just sym	<- takeHead symbols
 		= exitWithUserError args [ErrorSymbolInFileName sym]
@@ -115,22 +115,21 @@ ddc argStrs
 -- | Do a regular compile.
 ddcCompile args verbose setup files
  = do 	-- use the directories containing the files to be compiled as extra import dirs
-	let takeDir path
-		= case normalMunchFilePath path of
-			(_, dir, _, _)	-> dir
-
 	let setup'	
 		= setup { setupArgsBuild 
 				=   setupArgsBuild setup
-				++ [Arg.ImportDirs (map takeDir files)] }
+				++ [Arg.ImportDirs (map System.takeDirectory files)] }
 
+	putStr "scraping sources\n"
 	-- scrape the root modules
 	Just roots	
 		<- liftM sequence 
-		$  mapM (scrapeSourceFile (importDirsOfSetup setup') True) files 
+		$  mapM (scrapeSourceFile True) files 
 
 	-- scrape all modules reachable from the roots
 	graph		<- scrapeRecursive args setup' roots
+
+	print graph
 
 	-- during a plain compile, all the dependencies should already be up-to-date
 	let graph_noRoots 

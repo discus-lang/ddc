@@ -19,7 +19,7 @@ import DDC.Main.Pretty
 import DDC.Var
 import DDC.Var.PrimId
 
-import qualified Module.Scrape		as M
+import qualified DDC.Module.Scrape	as M
 import qualified DDC.Main.Arg		as Arg
 import qualified DDC.Config.Version	as Version
 

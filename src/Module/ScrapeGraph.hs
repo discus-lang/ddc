@@ -9,7 +9,7 @@ module Module.ScrapeGraph
 	, scrapeRecursive
         , propagateNeedsRebuild)
 where
-import Module.Scrape
+import DDC.Module.Scrape
 import Main.Error
 import Main.Setup
 import Util
@@ -59,7 +59,7 @@ scrapeRecursive' args setup graph ((sParent, v):vs)
 	
 	-- scrape module and add its children
 	| otherwise
-	= do	mScrapeChild	<- scrapeModule 
+	= do	mScrapeChild	<- scrapeSourceModule 
 					(importDirsOfSetup setup) 
 					True
 					v

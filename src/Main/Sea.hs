@@ -25,7 +25,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
 
-import qualified Module.Scrape		as M
+import qualified DDC.Module.Scrape	as M
 import qualified DDC.Main.Arg		as Arg
 import qualified DDC.Core.Glob		as C
 import qualified DDC.Config.Version	as Version
@@ -37,14 +37,14 @@ import DDC.Sea.Exp
 import Sea.Util
 import Sea.Invoke
 
-import Sea.Sub				(subTree)
-import Sea.Ctor				(expandCtorTree)
-import Sea.Proto			(addSuperProtosTree)
-import Sea.Thunk			(thunkTree)
-import Sea.Force			(forceTree)
-import Sea.Slot				(slotTree)
-import Sea.Flatten			(flattenTree)
-import DDC.Sea.Init			(initTree, mainTree)
+import Sea.Sub		(subTree)
+import Sea.Ctor		(expandCtorTree)
+import Sea.Proto	(addSuperProtosTree)
+import Sea.Thunk	(thunkTree)
+import Sea.Force	(forceTree)
+import Sea.Slot		(slotTree)
+import Sea.Flatten	(flattenTree)
+import DDC.Sea.Init	(initTree, mainTree)
 
 import Util
 

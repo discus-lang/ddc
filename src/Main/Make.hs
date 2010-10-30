@@ -7,10 +7,9 @@ import Main.Setup
 import Main.Compile
 import Main.Link
 import Main.Error
-import Module.Scrape
+import DDC.Module.Scrape
 import Module.ScrapeGraph
 import Util
-import Util.FilePath
 import Util.Graph.Deps
 import DDC.Var
 import DDC.Main.Pretty
@@ -20,6 +19,7 @@ import qualified DDC.Main.Arg 		as Arg
 import qualified System.IO		as System
 import qualified System.Exit		as System
 import qualified System.Directory 	as System
+import qualified System.FilePath	as System
 import qualified Data.Set		as Set
 
 -- Map.insert is hidden. Use scrapeGraphInsert instead.
@@ -30,16 +30,12 @@ import qualified Data.Map	as Map hiding (insert)
 ddcMake args verbose setup linkExecutable files 
  = do
 	-- use the directories containing the root files as extra import dirs
-	let takeDir path
-		= case normalMunchFilePath path of
-			(_, dir, _, _)	-> dir
-
-	let setup'	= setup { setupArgsBuild = Arg.ImportDirs (map takeDir files) 
+	let setup'	= setup { setupArgsBuild = Arg.ImportDirs (map System.takeDirectory files) 
 						 : setupArgsBuild setup }
 	-- Scrape the root modules.
 	Just roots_
 		<- liftM sequence 
-		$  mapM (scrapeSourceFile (importDirsOfSetup setup') True) files 
+		$  mapM (scrapeSourceFile True) files 
 	
 	-- Force the roots to be rebuilt. 
 	--	This ensures that we'll see the main function if it's sensibly defined in the program.
@@ -143,8 +139,8 @@ buildLoop' args setup graph buildCount buildIx roots build
 		definesMain		<- compileFile setup' graph_pruned m (shouldBlessMain roots m) 
 
 		-- check that the object and interface is actually there
-		let (_, fileDir, fileBase, _)
-			= normalMunchFilePath pathSource
+		let fileDir		= System.takeDirectory pathSource
+		let fileBase		= System.takeBaseName  pathSource
 
 		let droppedFile ext	= fileDir ++ "/" ++ fileBase ++ ext
 		let checkDropped ext 	= do

@@ -17,6 +17,7 @@ normaliseSpaces ss
 	 , isSpace c2
 	 -> normaliseSpaces (' ' : rest)
 	
-	
+ 	 | otherwise
+  	 -> c1 : normaliseSpaces (c2 : rest)
 	
 	

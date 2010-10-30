@@ -3,7 +3,7 @@ module Module.Interface.Export
 	(makeInterface)
 where
 import Module.Interface
-import Module.Scrape
+import DDC.Module.Scrape
 import DDC.Var
 import DDC.Type
 import DDC.Base.SourcePos
