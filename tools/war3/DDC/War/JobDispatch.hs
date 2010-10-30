@@ -2,6 +2,7 @@
 module DDC.War.JobDispatch
 	(dispatchJob)
 where
+import DDC.War.Job.CompileHS
 import DDC.War.Job.Compile
 import DDC.War.Job.Run
 import DDC.War.Job.Diff
@@ -26,8 +27,9 @@ dispatchJob config job
 dispatchJob' :: Job -> Build [Aspect]
 dispatchJob' job
  = case job of
-	JobCompile{}	-> jobCompile job
-	JobRun{}	-> jobRun  job
-	JobDiff{}	-> jobDiff job
+	JobCompile{}	-> jobCompile	job
+	JobCompileHS{}	-> jobCompileHS	job
+	JobRun{}	-> jobRun	job
+	JobDiff{}	-> jobDiff 	job
 
 

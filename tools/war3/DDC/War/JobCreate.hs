@@ -76,6 +76,23 @@ createJobs wayName allFiles filePath
 		  then []
 		  else [compile] ++ (if shouldSucceed then [] else [diffError])
 
+	 -- For Main.hs files, compile with GHC and run them
+	 FileMainHS
+	  -> let mainBin	= buildDir ++ "/Main.bin"
+		 mainCompStdout	= buildDir ++ "/Main.compile.stdout"
+		 mainCompStderr	= buildDir ++ "/Main.compile.stderr"
+		 mainRunStdout	= buildDir ++ "/Main.run.stdout"
+		 mainRunStderr	= buildDir ++ "/Main.run.stderr"
+
+		 compile 	= JobCompileHS 	dir wayName filePath []
+						buildDir mainCompStdout mainCompStderr 
+						mainBin
+
+		 run		= JobRun  	dir wayName filePath mainBin 
+						mainRunStdout mainRunStderr	
+		
+	     in	 [compile, run]
+
 
 	 -- Run binary was supposed to emit this to stdout.
 	 FileRunStdoutCheck
