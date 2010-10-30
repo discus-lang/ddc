@@ -9,9 +9,8 @@ import Test.TestWin
 import War
 import Command
 import Config
-
-import Util.FilePath
 import Control.Monad.Error
+import System.FilePath
 
 -- | Build a program starting from a Main.ds file
 testDiff :: Test -> Way -> War TestWin
@@ -35,7 +34,7 @@ testDiff' test@(TestDiff exp out)
  = do	debugLn $ "* TestDiff " ++ exp ++ " " ++ out
 
 	-- the base name of the output file
-	let outBase	= baseNameOfPath out
+	let outBase	= takeBaseName out
 
 	-- file to write the diff output to
 	let outDiff	= outBase ++ ".diff"

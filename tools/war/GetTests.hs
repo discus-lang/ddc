@@ -6,8 +6,8 @@ import TestNode
 import Command
 import War
 import Util
-import Util.FilePath
 import System.Exit
+import System.FilePath
 
 
 -- Get Tests --------------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ getTestsInDir config dirPath
 			, TestDiff	   errorCheckFile compileStderr]
 			
 			| file	<- filter (isSuffixOf ".ds") files 
-			, let fileBase		= baseNameOfPath file
+			, let fileBase		= takeBaseName file
 			, let errorCheckFile	= fileBase ++ ".error.check"
 			, let compileStderr	= fileBase ++ ".compile.stderr"
 			, elem errorCheckFile files 

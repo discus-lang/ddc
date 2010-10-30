@@ -11,7 +11,7 @@ import War
 import Command
 import Config
 import Util
-import Util.FilePath
+import System.FilePath
 
 
 -- | Build a program starting from a Main.ds file
@@ -24,7 +24,7 @@ testCompile test@(TestCompile srcDS) way
 	liftIOF $ system $ "touch " ++ srcDS
 
 	-- the base name of the test file
-	let srcBase	= baseNameOfPath srcDS
+	let srcBase	= takeBaseName srcDS
 	let srcObj	= srcBase ++ ".o"
 
 	debugLn $ srcBase
