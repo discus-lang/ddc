@@ -124,12 +124,8 @@ ddcCompile args verbose setup files
 	Just roots	<- liftM sequence 
 			$  mapM (scrapeSourceFile True) files 
 
-	putStr "scraping graph\n"
-
 	-- scrape all modules reachable from the roots
 	graph		<- scrapeRecursive args setup' roots
-
-	print graph
 
 	-- during a plain compile, all the dependencies should already be up-to-date
 	-- if they're not then complain.

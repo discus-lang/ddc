@@ -83,7 +83,7 @@ scrapeSourceFile shouldImportPrelude pathSource_
 		hPutStrLn stderr $ "ddc error: File '" ++ pathSource ++ "' does not exist.\n"
 		System.exitFailure
 
-	 else	scrapeModuleFromFile Nothing shouldImportPrelude pathSource
+	 else	liftM Just $ scrapeModuleFromFile Nothing shouldImportPrelude pathSource
 
 	
 -- | Find a module based on its name, and scrape out some info about it.
@@ -107,20 +107,24 @@ scrapeSourceModule impDirs shouldImportPrelude modName
 	 Nothing	-> return Nothing
 	 Just (_impDir, pathFileFound_)	
 	  -> do	pathFileFound	<- canonicalizePath pathFileFound_
-		scrapeModuleFromFile (Just modName) shouldImportPrelude pathFileFound
+		liftM Just $ scrapeModuleFromFile (Just modName) shouldImportPrelude pathFileFound
 
 
 -- | Scrape a module from a given file.
+--   The file must exist else 'panic'.
 scrapeModuleFromFile
 	:: Maybe ModuleId	-- ^ Module name that we think this file should have.
 	-> Bool			-- ^ Whether we should implicitly import the prelude.
-	-> FilePath		-- ^ Name of .ds file holding module (must be canonical)
-	-> IO (Maybe Scrape)
+	-> FilePath		-- ^ Name of .ds file holding module (need not be canonical)
+	-> IO Scrape
 	
-scrapeModuleFromFile mModuleNameSearchedFor shouldImportPrelude filePath
- = do	
+scrapeModuleFromFile mModuleNameSearchedFor shouldImportPrelude filePath_
+ = do	filePath	<- canonicalizePath filePath_
+	exists		<- doesFileExist filePath
+	when (not exists)
+	 $ panic stage $ "scrapeModuleFromFile: no such file " ++ filePath
+	
 	let fileDir	= takeDirectory filePath
-	let fileName	= takeFileName  filePath
 	let fileBase	= takeBaseName  filePath
 		
 	-- See if there is a build file
@@ -181,9 +185,12 @@ scrapeModuleFromFile mModuleNameSearchedFor shouldImportPrelude filePath
 	let mObject	= if objExists then Just objFile else Nothing
 		
 	-- Decide whether the module needs (re)building 
-	needsRebuild	<- checkNeedsRebuild (Just fileName) mInterface	mHeader mObject
+	needsRebuilds	 <- mapM (isMoreRecentOrMissing filePath) 
+				[mInterface, mHeader, mObject]
+				
+	let needsRebuild = or needsRebuilds
 		
-  	return	$ Just $ Scrape
+  	return	$ Scrape
 		{ scrapeModuleName	= modName
 		, scrapePathSource	= Just filePath
 		, scrapePathInterface	= mInterface
@@ -197,32 +204,16 @@ scrapeModuleFromFile mModuleNameSearchedFor shouldImportPrelude filePath
 		, scrapeDefinesMain	= False }
 
 
-checkNeedsRebuild mSource mInt mHeader mObj
-	-- module not found
-	| isNothing mSource
-	, isNothing mInt
-	= return False
-	
-	-- source file but no interface, or object, rebuild
-	| isJust mSource
-	, isNothing mInt ||  isNothing mHeader || isNothing mObj 
-	= return True
-	
-	-- interface but no source.. can't rebuild
-	| isNothing mSource
-	, isJust mInt
-	, isJust mObj
-	= return False
-	
-	-- check that interface is as recent as source
-	| Just fileSource	<- mSource
-	, Just fileInt		<- mInt
-	= do	timeSource	<- getModificationTime fileSource
-		timeInt		<- getModificationTime fileInt
-		return	(timeInt < timeSource)
+isMoreRecentOrMissing :: FilePath -> Maybe FilePath -> IO Bool
+isMoreRecentOrMissing file1 mFile2
+ = case mFile2 of
+	Nothing	
+	 -> return True
 
-	| otherwise
-	= return True
+	Just file2
+	 -> do	time1	<- getModificationTime file1	
+		time2	<- getModificationTime file2
+		return	$ time1 > time2
 
 
 -- | Scrape the list of imported modules directly from a source file.

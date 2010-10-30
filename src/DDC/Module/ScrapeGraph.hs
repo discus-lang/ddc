@@ -6,14 +6,14 @@ module DDC.Module.ScrapeGraph
         , propagateNeedsRebuild)
 where
 import DDC.Module.Scrape
-import Main.Error
-import Main.Setup
-import Util
-import System.Exit
 import DDC.Main.Arg
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
+import Main.Error
+import Main.Setup
+import Util
+import System.Exit
 import qualified Data.Map	as Map
 
 -- | A graph of scraped module information

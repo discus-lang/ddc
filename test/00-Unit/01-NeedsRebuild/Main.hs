@@ -1,6 +1,6 @@
 import Data.List
-import Module.Scrape
-import Module.ScrapeGraph
+import DDC.Module.Scrape
+import DDC.Module.ScrapeGraph
 import DDC.Var
 import DDC.Main.Arg
 import System.Exit		(exitFailure)
