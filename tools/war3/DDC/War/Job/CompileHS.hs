@@ -8,8 +8,10 @@ import BuildBox
 import BuildBox.IO.File
 import BuildBox.IO.Directory
 import System.FilePath
+import System.Directory
 import Util.Data.List
 import Control.Monad
+
 
 
 -- | Compile a Haskell Source File
@@ -39,8 +41,14 @@ jobCompileHS (JobCompileHS
 	let buildMk	= buildDir ++ "/build.mk"
 	
 	-- We're doing this via a makefile so we get the ghc flags and options
-	-- from the DDC build system.
-	genBuildMk buildMk mainBin srcCopyHS
+	-- from the DDC build system. The paths in the make file need to be in
+	-- posix form with '/' as the separators.
+	currentDir	<- io $ getCurrentDirectory
+	let hacks f	= map (\z -> if z == '\\' then '/' else z) f
+	let mainBin'	= hacks $ makeRelative currentDir mainBin
+	let srcCopyHS'	= hacks $ makeRelative currentDir srcCopyHS
+	
+	genBuildMk buildMk mainBin' srcCopyHS'
 	
 	(code, strOut, strErr)
 	  <- io $ systemTeeIO False

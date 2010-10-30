@@ -110,6 +110,9 @@ createJobs wayName allFiles filePath
 	
 	
 	 -- Expected compile errors are handled by the corresponding FileMainDS or FileTestDS rule.
-	 FileCompileErrorCheck	-> []
+	 FileCompileErrorCheck		-> []
 	
-	 fileType -> error $ "creatJobs: " ++ show filePath ++ " " ++ show fileType
+	 -- These tests don't work yet.
+	 FileMainSH			-> []
+	 FileCompileWarningCheck	-> []
+	

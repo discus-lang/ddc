@@ -181,7 +181,10 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 	 -> "  _CASEINDIR (" % x % ", " % "_" % l % ");\n"
 
 	ACaseDeath (SourcePos (f, l, c))
-	 -> ppr "  _CASEDEATH (\"" % f % "\", " % l % ", " % c % ");\n"
+	 -> let	-- Hack fixup windows file paths.
+		f'	= map (\z -> if z == '\\' then '/' else z) f
+	    in	ppr "  _CASEDEATH (\"" % f' % "\", " % l % ", " % c % ");\n"
+	 
 
 	ADefault [SGoto v]
 	 -> "  default: goto " % sV v % ";\n"
