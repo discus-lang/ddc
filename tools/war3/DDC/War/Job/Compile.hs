@@ -33,7 +33,7 @@ jobCompile job@(JobCompile
 	-- running on the same source files, but in different ways.
 	ensureDir buildDir
 	sources	<- io
-		$  liftM (filter (\f -> isSuffixOf ".ds" f))
+		$  liftM (filter (\f -> isSuffixOf ".ds" f || isSuffixOf ".build" f))
 		$  lsFilesIn srcDir
 
 	qssystem $ "cp " ++ (catInt " " sources) ++ " " ++ buildDir
