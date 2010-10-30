@@ -33,11 +33,8 @@ testDiff test@(TestDiff exp out) way
 testDiff' test@(TestDiff exp out)
  = do	debugLn $ "* TestDiff " ++ exp ++ " " ++ out
 
-	-- the base name of the output file
-	let outBase	= takeBaseName out
-
 	-- file to write the diff output to
-	let outDiff	= outBase ++ ".diff"
+	let outDiff	= replaceExtension out ".diff"
 
 	-- if there is an existing diff file then remove it
 	liftIOF $ removeIfExists outDiff

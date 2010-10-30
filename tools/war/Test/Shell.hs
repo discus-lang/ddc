@@ -12,7 +12,7 @@ import Command
 import Config
 import Data.List
 import System.Directory
-
+import System.FilePath
 
 -- | Build a program starting from a Main.ds file
 testShell :: Test -> Way -> War TestWin
@@ -24,11 +24,10 @@ testShell test@(TestShell mainSH) way
 
 	-- the full path name of the test file
 	let mainSH	= mainDir ++ "Main.sh"
-	let mainBase	= take (length mainSH - length ".sh") mainSH
 
 	-- where to put the execute logs
-	let mainExOut	= mainBase ++ ".execute.stdout"
-	let mainExErr	= mainBase ++ ".execute.stderr"
+	let mainExOut	= replaceExtension mainSH ".execute.stdout"
+	let mainExErr	= replaceExtension mainSH ".execute.stderr"
 
 	curDir		<- io $ getCurrentDirectory
 

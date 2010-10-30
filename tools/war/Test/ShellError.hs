@@ -13,7 +13,7 @@ import Config
 import Data.List		(isSuffixOf)
 import System.Directory
 import Control.Monad.Error
-
+import System.FilePath
 
 -- | Build a program starting from a Main.ds file
 testShellError :: Test -> Way -> War TestWin
@@ -25,11 +25,10 @@ testShellError test@(TestShellError mainSH) way
 
 	-- the full path name of the test file
 	let mainSH	= mainDir ++ "Main.sh"
-	let mainBase	= take (length mainSH - length ".sh") mainSH
 
 	-- where to put the execute logs
-	let mainExOut	= mainBase ++ ".execute.stdout"
-	let mainExErr	= mainBase ++ ".execute.stderr"
+	let mainExOut	= replaceExtension mainSH ".execute.stdout"
+	let mainExErr	= replaceExtension mainSH ".execute.stderr"
 
 	curDir		<- io $ getCurrentDirectory
 

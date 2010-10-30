@@ -9,7 +9,7 @@ import War
 import Command
 import Config
 import Data.List
-
+import System.FilePath
 
 -- | Build a program starting from a Main.hs file
 testHsBuild :: Test -> Way -> War TestWin
@@ -30,14 +30,13 @@ testHsBuild test@(TestHsBuild mainHs) way
 
 	-- the full path name of the test file
 	let mainHs	= mainDir ++ "Main.hs"
-	let mainBase	= take (length mainHs - length ".hs") mainHs
 
 	-- where to put the compile logs
-	let mainCompOut	= mainBase ++ ".compile.stdout"
-	let mainCompErr	= mainBase ++ ".compile.stderr"
+	let mainCompOut	= replaceExtension mainHs ".compile.stdout"
+	let mainCompErr	= replaceExtension mainHs ".compile.stderr"
 
 	-- where to put the compiled binary
-	let mainBin	= mainBase ++ ".bin"
+	let mainBin	= replaceExtension mainHs ".bin"
 	let buildMk	= mainDir ++ "build.mk"
 
 	-- if there is an existing binary then remove it

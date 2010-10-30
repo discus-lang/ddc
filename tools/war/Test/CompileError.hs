@@ -24,15 +24,11 @@ testCompileError test@(TestCompileError srcDS) way
 	liftIOF $ system $ "touch " ++ srcDS
 
 	-- the base name of the test file
-	let srcBase	= takeBaseName srcDS
-	let srcObj	= srcBase ++ ".o"
-
-	debugLn $ srcBase
-	debugLn $ srcObj
+	let srcObj	= replaceExtension srcDS ".o"
 
 	-- where to put the compile logs
-	let srcCompOut	= srcBase ++ ".compile.stdout"
-	let srcCompErr	= srcBase ++ ".compile.stderr"
+	let srcCompOut	= replaceExtension srcDS ".compile.stdout"
+	let srcCompErr	= replaceExtension srcDS ".compile.stderr"
 	
 	-- if there is an existing obj file then remove it
 	liftIOF $ removeIfExists srcObj

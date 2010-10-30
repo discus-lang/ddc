@@ -13,7 +13,7 @@ import Data.List
 import Util.Data.List
 import Control.Monad.Error
 import qualified System.Cmd	as System.Cmd
-
+import System.FilePath
 
 testRun :: Test -> Way -> War TestWin
 testRun test@(TestRun mainBin (NoShow exitCodeIsSuccess)) way
@@ -25,9 +25,8 @@ testRun test@(TestRun mainBin (NoShow exitCodeIsSuccess)) way
 	 then	throwError (TestFailMissingFile mainBin)
 	 else do
 		-- where to put the run logs
-		let mainBase	= take (length mainBin - length ".bin") mainBin
-		let mainRunOut	= mainBase ++ ".stdout"
-		let mainRunErr	= mainBase ++ ".stderr"
+		let mainRunOut	= replaceExtension mainBin ".stdout"
+		let mainRunErr	= replaceExtension mainBin".stderr"
 
 		-- run the test
 		let cmdRun	= mainBin

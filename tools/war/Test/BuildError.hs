@@ -12,6 +12,7 @@ import Command
 import Config
 import Util
 import Control.Monad.Error
+import System.FilePath
 
 
 -- | Build a program starting from a Main.ds file
@@ -30,14 +31,13 @@ testBuildError test@(TestBuildError mainDS) way
 
 	-- the full path name of the test file
 	let mainDS	= mainDir ++ "Main.ds"
-	let mainBase	= take (length mainDS - length ".ds") mainDS
 
 	-- where to put the compile logs
-	let mainCompOut	= mainBase ++ ".compile.stdout"
-	let mainCompErr	= mainBase ++ ".compile.stderr"
+	let mainCompOut	= replaceExtension mainDS ".compile.stdout"
+	let mainCompErr	= replaceExtension mainDS ".compile.stderr"
 
 	-- where to put the compiled binary
-	let mainBin	= mainBase ++ ".bin"
+	let mainBin	= replaceExtension mainDS ".bin"
 	
 	-- if there is an existing binary then remove it
 	liftIOF $ removeIfExists mainBin
