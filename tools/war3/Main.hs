@@ -12,9 +12,10 @@ import System.Environment
 import System.Directory
 import Control.Monad
 import Util
-import qualified Data.Sequence	as Seq
-import qualified Data.Foldable	as Seq
-import qualified Data.Set	as Set
+import qualified Data.Sequence		as Seq
+import qualified Data.Foldable		as Seq
+import qualified Data.Set		as Set
+import qualified Data.Traversable	as Seq
 
 
 main :: IO ()
@@ -38,28 +39,36 @@ main
 	-- Load war config from the cmd line options
 	let config = loadConfig options
 		
-	-- All the starting test directories.
+	-- All the starting test directories from the command line.
 	testDirs
 		<- mapM (makeRelativeToCurrentDirectory <=< canonicalizePath)
 		$  [dirs | OptTestDir dirs <- configOptions config]
 
-	-- All the files in these directories.
-	testFiles
+	-- Trace all the files reachable from these directories.
+	testFilesRaw
 		<- liftM (join . Seq.fromList)
-		$ mapM traceFilesFrom testDirs
-	
-	let testFilesSet
-		= Set.fromList $ Seq.toList testFiles
+		$  mapM traceFilesFrom testDirs
 		
+	-- Canonicalize all the paths and put them in a set (which sorts them)
+	testFilesSet
+		<- liftM (Set.fromList . Seq.toList)
+		$  Seq.mapM canonicalizePath
+		$  testFilesRaw
+
+	let testFilesSorted
+		= Set.toList testFilesSet
+
+	-- Create test jobs based on the files we have.
 	let jobs
-		= concat 
+		= Seq.toList
+		$ join
+		$ Seq.fromList
+		$ map	 (Seq.fromList)
 		$ map    (createJobs "normal" testFilesSet)
 		$ filter (not . isInfixOf "skip-")	-- skip over skippable files.
 		$ filter (not . isInfixOf "-skip")
 		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
-		$ Seq.toList testFiles
-
---	print jobs
+		$ testFilesSorted
 
 	runBuildPrint "/tmp" $ mapM (dispatchJob config) jobs
 

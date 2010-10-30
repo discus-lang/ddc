@@ -11,6 +11,8 @@ import DDC.War.Aspect
 import DDC.War.Config
 import DDC.War.Pretty
 import BuildBox
+import System.Directory
+
 
 dispatchJob :: Config -> Job -> Build [Aspect]
 dispatchJob config job
@@ -18,8 +20,9 @@ dispatchJob config job
 
 	let useColor	= not $ configBatch config
 	let width	= configFormatPathWidth config
+	dirWorking	<- io $ getCurrentDirectory
 	outLn 	$ text " * " 
-		<> pprJobResult width useColor job aspects
+		<> pprJobResult width useColor dirWorking job aspects
 
 	return aspects
 

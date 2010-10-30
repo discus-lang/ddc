@@ -8,6 +8,7 @@ import BuildBox
 import BuildBox.IO.File
 import BuildBox.IO.Directory
 import System.FilePath
+import System.Directory
 import Util.Data.List
 import Control.Monad
 
@@ -39,29 +40,36 @@ jobCompile job@(JobCompile
 
 	-- The copied version of the root source file.
 	let srcCopyDS	= buildDir ++ "/" ++ srcFile
+	srcCopyDS'	<- io $ canonicalizePath srcCopyDS
+
+	ddcBin'		<- io $ canonicalizePath "bin/ddc"
 		
 	-- Do the compile.
 	let compile
 		| Just mainBin	<- mMainBin
 		= do	
+			mainBin'	<- io $ canonicalizePath mainBin
+
 			-- If there is an existing binary then remove it.
-			qssystem $ "rm -f " ++ mainBin
+			qssystem $ "rm -f " ++ mainBin'
 
 			-- Build the program.
 	 		runTimedCommand 
-	 		 $ io $ systemTeeIO False
-				("bin/ddc"
-				++ " -make "	++ srcCopyDS
-				++ " -o "	++ mainBin
+	 		 $ io $ systemTeeIO False 
+				(ddcBin'
+				++ " -v -make "	++ srcCopyDS'
+				++ " -o "	++ mainBin'
 				++ " " 		++ catInt " " optionsDDC
 				++ " +RTS "	++ catInt " " optionsRTS)
 				""
+
+
 		-- Compile the program.
 		| otherwise
 		=	runTimedCommand 
 	 		 $ io $ systemTeeIO False
-				("bin/ddc"
-				++ " -c "	++ srcCopyDS
+				(ddcBin'
+				++ " -c "	++ srcCopyDS'
 				++ " " 		++ catInt " " optionsDDC
 				++ " +RTS "	++ catInt " " optionsRTS)
 				""

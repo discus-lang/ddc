@@ -80,9 +80,16 @@ ddc argStrs
 		, setupRecursive	= Nothing }
 		
 	let result
-		| symbols	<- nub  ( filter Var.isSymbol 
+
+		-- Check there are no wierd symbols in the name portion of the paths.
+		-- We name modules after files, and we don't want bogus symbols
+		-- appearing in the module names in later stages.
+		| names		<- map System.takeFileName 
+				$ compileFiles ++ makeFiles
+
+		, symbols	<- nub  ( filter Var.isSymbol 
 					$ concatMap (System.takeFileName)
-					$ compileFiles ++ makeFiles) \\ "./"
+					$ names) \\ "./"
 		, Just sym	<- takeHead symbols
 		= exitWithUserError args [ErrorSymbolInFileName sym]
 

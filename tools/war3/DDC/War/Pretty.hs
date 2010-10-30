@@ -6,12 +6,19 @@ import DDC.War.Job
 import DDC.War.Aspect
 import Util.Terminal.VT100
 import BuildBox
+import System.FilePath
 
-
-pprJobResult :: Int -> Bool -> Job -> [Aspect] -> Doc
-pprJobResult width useColor job aspects
+pprJobResult 
+	:: Int 		-- ^ Width of reports.
+	-> Bool 	-- ^ Whether to use color in reports.
+	-> FilePath	-- ^ Working directory to show test files relative to.
+	-> Job 		-- ^ Job to pretty print.
+	-> [Aspect]	-- ^ Returned aspects of job.
+	-> Doc
+	
+pprJobResult width useColor workingDir job aspects
  = let	pprResult strFile strAction colorResult docResult 
-	 =  padL width (text strFile) 
+	 =  padL width (text $ makeRelative workingDir strFile) 
 	 <> (padL 10 $ text $ jobWayName job)
 	 <> (padL 10 $ text strAction)
 	 <> pprAsColor useColor colorResult (docResult)
