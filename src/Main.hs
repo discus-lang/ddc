@@ -8,9 +8,9 @@ import Main.Compile
 import Main.Init
 import Main.Make
 import Main.Error
-import DDC.Module.Scrape
-import Module.ScrapeGraph
 import Util
+import DDC.Module.Scrape
+import DDC.Module.ScrapeGraph
 import DDC.Main.Pretty
 import DDC.Main.Error
 import qualified System.Exit		as System
@@ -120,11 +120,11 @@ ddcCompile args verbose setup files
 				=   setupArgsBuild setup
 				++ [Arg.ImportDirs (map System.takeDirectory files)] }
 
-	putStr "scraping sources\n"
 	-- scrape the root modules
-	Just roots	
-		<- liftM sequence 
-		$  mapM (scrapeSourceFile True) files 
+	Just roots	<- liftM sequence 
+			$  mapM (scrapeSourceFile True) files 
+
+	putStr "scraping graph\n"
 
 	-- scrape all modules reachable from the roots
 	graph		<- scrapeRecursive args setup' roots
@@ -132,6 +132,7 @@ ddcCompile args verbose setup files
 	print graph
 
 	-- during a plain compile, all the dependencies should already be up-to-date
+	-- if they're not then complain.
 	let graph_noRoots 
 			= foldr Map.delete graph 
 			$ map scrapeModuleName roots

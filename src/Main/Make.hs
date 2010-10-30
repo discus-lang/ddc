@@ -3,14 +3,14 @@ module Main.Make
 	( ddcMake
 	, shouldBlessMain )	
 where
+import Util
+import Util.Graph.Deps
 import Main.Setup
 import Main.Compile
 import Main.Link
 import Main.Error
 import DDC.Module.Scrape
-import Module.ScrapeGraph
-import Util
-import Util.Graph.Deps
+import DDC.Module.ScrapeGraph
 import DDC.Var
 import DDC.Main.Pretty
 import DDC.Main.Error

@@ -71,10 +71,8 @@ compileFile setup scrapes sModule blessMain
 
 	-- Decide on module names  ---------------------------------------------
 	let Just sRoot	= Map.lookup sModule scrapes
-	let pathSource	= let Just s = M.scrapePathSource sRoot in s
-
-	let fileName	= takeFileName  pathSource
-	let fileDir	= takeDirectory pathSource
+	let filePath	= let Just s = M.scrapePathSource sRoot in s
+	let fileDir	= takeDirectory filePath
 
 	-- Gather up all the import dirs.
 	let importDirs	
@@ -94,7 +92,7 @@ compileFile setup scrapes sModule blessMain
 			% "\n"
 			
 	-- Load the source file
-	sSource		<- readFile fileName
+	sSource		<- readFile filePath
 
 	compileFile_parse 
 		setup scrapes sRoot sModule
@@ -141,19 +139,6 @@ compileFile_parse
 	Dump.dumpST 	Arg.DumpSourceParse "source-parse--header" 
 		(concat $ Map.elems importsExp)
 
-
-	-- Dump a nice graph of the module hierarchy.
-{-	let modulesCut	= concat
-			$ [ss | Arg.GraphModulesCut ss <- ?args]
-			
-	SD.dumpDot Arg.GraphModules
-		"modules"
-		(M.dotModuleHierarchy 
-			moduleName
-			modulesCut 
-			importsRoot
-			importsExp)
--}
 
 	-- Parse the source file ----------------------------------------------
 	outVerb $ ppr $ "  * Source: Parse\n"

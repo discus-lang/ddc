@@ -1,9 +1,5 @@
-
--- | A graph of scraped module information
---	Used to work out what to build next when doing a 
---	recursive make.
-
-module Module.ScrapeGraph 
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+module DDC.Module.ScrapeGraph 
 	( ScrapeGraph
 	, scrapeGraphInsert
 	, scrapeRecursive
@@ -20,9 +16,10 @@ import DDC.Main.Error
 import DDC.Var
 import qualified Data.Map	as Map
 
+-- | A graph of scraped module information
+--	Used to determine what to build next when doing a recursive make.
 type ScrapeGraph	
 	= Map ModuleId Scrape
-
 
 -- | Scrape all modules transtitively imported by these ones.
 scrapeRecursive
@@ -49,7 +46,8 @@ scrapeRecursive'
 	-> ScrapeGraph
 	-> [(Scrape, ModuleId)]
 	-> IO ScrapeGraph
-scrapeRecursive' args setup graph []
+
+scrapeRecursive' _ _ graph []
 	= return graph
 	
 scrapeRecursive' args setup graph ((sParent, v):vs)
@@ -80,19 +78,19 @@ scrapeRecursive' args setup graph ((sParent, v):vs)
 				  ++ vs)
 
 
--- Invert the ScrapeGraph to create a dependency graph.
---
+-- | Invert the ScrapeGraph to create a dependency graph.
 dependencyGraph :: ScrapeGraph -> Map ModuleId (Bool, [ModuleId])
 dependencyGraph graph
  = do	let x = foldl' builder Map.empty
 			$ concat
-			$ map (\ (k, v) -> map (\i -> (i, needsRebuild i, k)) (scrapeImported v))
+			$ map (\ (k, v) -> map (\i -> (i, needsRebuild' i, k)) (scrapeImported v))
 			$ Map.toList graph
 	x
 	where 	builder m (k, r, v) = case Map.lookup k m of
 			Nothing -> Map.insert k (r, [v]) m
-			Just _ -> Map.adjust (\(rm, vl) -> (rm || r, v : vl)) k m
-		needsRebuild k = case Map.lookup k graph of
+			Just _  -> Map.adjust (\(rm, vl) -> (rm || r, v : vl)) k m
+
+		needsRebuild' k = case Map.lookup k graph of
 			Nothing -> False
 			Just v -> scrapeNeedsRebuild v
 
@@ -105,12 +103,12 @@ needsRebuild
 	-> ModuleId
 	-> [ModuleId]
 
-needsRebuild force map accum mod
- = do	case (force, Map.lookup mod map) of
+needsRebuild force graph accum modBuild
+ = do	case (force, Map.lookup modBuild graph) of
  	  (_, Nothing) -> accum
-	  (True, Just (_, deps)) -> foldl' (needsRebuild True map) (deps ++ accum) deps
-	  (False, Just (True, deps)) -> foldl' (needsRebuild True map) (deps ++ accum) deps
-	  (False, Just (False, deps)) -> accum
+	  (True, Just (_, deps))	-> foldl' (needsRebuild True graph) (deps ++ accum) deps
+	  (False, Just (True, deps)) 	-> foldl' (needsRebuild True graph) (deps ++ accum) deps
+	  (False, Just (False, _)) 	-> accum
 
 
 -- | Take a Scrape graph walk the dependencies and set the scrapeNeedsRebuild
@@ -127,10 +125,9 @@ propagateNeedsRebuild graph
 
 
 
--- A replacement for Map.insert for the ScrapeGraph.
--- This replacement detectd cycles in the import graph as modules are
--- inserted.
---
+-- | A replacement for Map.insert for the ScrapeGraph.
+--   This replacement detectd cycles in the import graph as modules are
+--   inserted.
 scrapeGraphInsert 
 	:: [Arg] 
 	-> ModuleId
@@ -154,11 +151,11 @@ scrapeGraphInsert args m s sg
 			 $ "Module import graph has cycle : "
 			 % punc " -> " (map ppr (head c : reverse c))]
 
--- Checks to see if adding the Module to the ScrapeGraph would result in a
--- ScrapeGraph with a cycle.
--- If adding the Module will result in a cyclic graph then return the list
--- of modules that constitue a cycle, otherwise return Nothing.
---
+
+-- | Checks to see if adding the Module to the ScrapeGraph would result in a
+--   ScrapeGraph with a cycle.
+--   If adding the Module will result in a cyclic graph then return the list
+--   of modules that constitue a cycle, otherwise return Nothing.
 cyclicImport :: ModuleId -> Scrape -> ScrapeGraph -> Maybe [ModuleId]
 cyclicImport m s sp
  = do	if elem m $ scrapeImported s
@@ -167,14 +164,14 @@ cyclicImport m s sp
 		$ catMaybes
 		$ map (\m' -> cyclicImportR m [m] m' sp)
 		$ scrapeImported s
-     where
-	cyclicImportR mx cycle m sp
-	 = do	let imports	= concat
-				$ map scrapeImported
-                                $ catMaybes [Map.lookup m sp]
-		if elem mx imports
-		 then Just (m : cycle)
-		 else listToMaybe
-			$ catMaybes
-			$ map (\m' -> cyclicImportR mx (m:cycle) m' sp) imports
+
+cyclicImportR mx cycle' m sp
+ = do	let imports	= concat
+			$ map scrapeImported
+                        $ catMaybes [Map.lookup m sp]
+	if elem mx imports
+	 then Just (m : cycle')
+	 else listToMaybe
+		$ catMaybes
+		$ map (\m' -> cyclicImportR mx (m:cycle') m' sp) imports
 
