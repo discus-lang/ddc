@@ -80,7 +80,9 @@ scrapeSourceFile shouldImportPrelude pathSource_
 
 	if not exists
 	 then do
-		hPutStrLn stderr $ "ddc error: File '" ++ pathSource ++ "' does not exist.\n"
+		dirWorking	 <- getCurrentDirectory
+		let pathRelative = makeRelative dirWorking pathSource_
+		hPutStrLn stderr $ "ddc error: File '" ++ pathRelative ++ "' does not exist.\n"
 		System.exitFailure
 
 	 else	liftM Just $ scrapeModuleFromFile Nothing shouldImportPrelude pathSource

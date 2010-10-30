@@ -122,6 +122,9 @@ compileFile_parse
 	let modName		= M.scrapeModuleName sRoot
 	let pathSource		= let Just s = M.scrapePathSource sRoot in s
 
+	dirWorking		<- getCurrentDirectory
+	let pathSourceRelative	= "./" ++ makeRelative dirWorking pathSource
+
 	let fileDir		= takeDirectory pathSource
 	let fileBase		= takeBaseName  pathSource
 	let ?pathSourceBase	= fileDir ++ "/" ++ fileBase
@@ -132,7 +135,7 @@ compileFile_parse
 	      Nothing	-> panic "Main.Compile" $ "compileFile: no interface for " % mod % "\n"
 	      Just path	-> do
 		src		<- readFile path
-		(tree, _)	<- SS.parse path src
+		(tree, _)	<- SS.parse ("./" ++ makeRelative dirWorking path) src
 		return	(mod, tree)
 		
 	let scrapes_noRoot	= Map.delete (M.scrapeModuleName sRoot) scrapes 
@@ -147,7 +150,7 @@ compileFile_parse
 	-- Parse the source file ----------------------------------------------
 	outVerb $ ppr $ "  * Source: Parse\n"
 	(sParsed, pragmas)	
-			<- {-# SCC "Main.parsed" #-} SS.parse pathSource sSource
+			<- {-# SCC "Main.parsed" #-} SS.parse pathSourceRelative sSource
 
 	-- Slurp out pragmas
 	let pragmas	= Pragma.slurpPragmaTree sParsed
