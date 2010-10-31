@@ -2,6 +2,9 @@
 -- | Generic transformations on type expressions.
 --   This isn't particuarly fast. Depending on what you're doing, it may be better to write
 --   traversal code specific to the transform you're implementing.
+--
+-- TODO: use TransEnv instead for all of this.
+--
 module DDC.Type.Transform
 	( TransM	(..)
 	, TransTable	(..)
@@ -35,6 +38,7 @@ transZ	table x
 
 
 -- | Table containing fns to apply at each node in the AST.
+--   TODO: Redo this to use TransEnv
 data TransTable m
 	= TransTable
 	{ -- | Transform to apply to variables.

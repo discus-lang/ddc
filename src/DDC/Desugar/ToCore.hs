@@ -29,12 +29,7 @@ toCoreTree
 	-> D.Tree Annot
 	-> C.Tree
 
-toCoreTree 
-	mapValueToTypeVars
-	projTable
-	solution 
-	sTree
-
+toCoreTree mapValueToTypeVars projTable solution sTree
  = let	initCoreS'
 		= initCoreS
 		{ coreSigmaTable	= mapValueToTypeVars
