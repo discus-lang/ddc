@@ -76,7 +76,7 @@ nightly :
 	@echo
 	@$(GHC) --version
 	@echo
-	@ghc-pkg list | grep "QuickCheck\|regex-base\|regex-posix\|regex-compat\|haskell-src\|parsec"
+	@ghc-pkg list | grep "QuickCheck\|regex-base\|regex-posix\|regex-compat\|haskell-src\|parsec\|buildbox"
 	@echo
 	@echo "------------------------------------------------------------------------------------"
 	@$(MAKE) cleantotal
