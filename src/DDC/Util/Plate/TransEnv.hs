@@ -1,8 +1,8 @@
 
 module DDC.Util.Plate.TransEnv
 	( TransEnv(..)
-	, TransEnvDown
-	, TransEnvUp)
+	, TransEnvDown, transEnvDownId
+	, TransEnvUp,   transEnvUpId)
 where
 import Control.Monad
 
@@ -20,7 +20,15 @@ type TransEnvDown m env a
 -- | Tranform that is applied to a node of the tree on the way up.
 type TransEnvUp   m env a
 	= env -> a -> m a 
-	
+
+-- | Identity downwards transform.
+transEnvDownId :: Monad m => TransEnvDown m env a
+transEnvDownId env x 	= return (x, env)
+
+-- | Identity upwards transform.
+transEnvUpId :: Monad m => TransEnvUp m env a
+transEnvUpId env x 	= return x
+
 
 -- Instances ------------------------------------------------------------------
 

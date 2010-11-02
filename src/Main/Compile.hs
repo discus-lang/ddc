@@ -274,17 +274,14 @@ compileFile_parse
 	-- Convert source tree to core tree -----------------------------------
 	outVerb $ ppr $ "  * Convert to Core IR\n"
 
-	(  cSource
-	 , cHeader )	<- SD.desugarToCore
+	(  cgModule
+	 , cgHeader )	<- SD.desugarToCore
 		 		sTagged
 				hTagged
 				(T.problemValueToTypeVars problem)
 				projTable
 				solution 
 				
-	let cgHeader	= C.globOfTree cHeader
-	let cgModule	= C.globOfTree cSource
-
 	------------------------------------------------------------------------
 	-- Core stages
 	------------------------------------------------------------------------	

@@ -17,7 +17,7 @@ import System.IO				(hFlush)
 import Util					hiding (null, elem)
 import qualified DDC.Type			as T
 import qualified Data.Foldable			as Foldable
-import qualified DDC.Core.Exp			as C
+import qualified DDC.Core.Glob			as C
 import qualified Type.Export			as T
 import qualified Type.Dump			as T
 import qualified Type.Solve			as T
@@ -27,6 +27,7 @@ import qualified DDC.Solve.Error.Beautify	as T
 import qualified DDC.Desugar.Glob		as D
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Desugar.ToCore		as D
+import qualified DDC.Desugar.ToCore.Clean	as D
 import qualified DDC.Desugar.Elaborate		as D
 import qualified DDC.Desugar.ProjectEta		as D
 import qualified Desugar.Slurp.Slurp		as D
@@ -286,8 +287,8 @@ desugarToCore
 	-> Map Var Var				-- ^ value -> type vars.
 	-> D.ProjTable				-- ^ projection dictionaries.
 	-> T.Solution				-- ^ solution from constraint solver.
-	-> IO	( C.Tree
-		, C.Tree )
+	-> IO	( C.Glob
+		, C.Glob )
 
 desugarToCore 
 	sourceTree
@@ -297,19 +298,22 @@ desugarToCore
 	solution
 
  = {-# SCC "toCore" #-} 
-   do 	let toCoreTree'
+   do 	let toCoreGlob'
 		= D.toCoreTree 
 			mapValueToTypeVars
 			projTable
 			solution
 	
-	let cSource	= toCoreTree' sourceTree
-	let cHeader	= toCoreTree' headerTree
+	let cgSource		= toCoreGlob' sourceTree
+	let cgSource_clean	= D.cleanGlob cgSource
+	let cgHeader		= toCoreGlob' headerTree
 
-	dumpCT DumpCore "core-source" cSource
-	dumpCT DumpCore "core-header" cHeader
+	dumpCT DumpCore "core-header"       $ C.treeOfGlob cgHeader
+	dumpCT DumpCore "core-source"       $ C.treeOfGlob cgSource
+	dumpCT DumpCore "core-source-clean" $ C.treeOfGlob cgSource_clean
 
-	return	( cSource
-		, cHeader )
+
+	return	( cgSource
+		, cgHeader )
 
 

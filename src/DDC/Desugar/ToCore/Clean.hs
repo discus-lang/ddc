@@ -1,12 +1,23 @@
 
 module DDC.Desugar.ToCore.Clean
---	(cleanTree)
+	(cleanGlob)
 where
--- import DDC.Core.Glob
--- import DDC.Core.Exp
+import DDC.Type.TransEnv
+import DDC.Core.TransEnv
+import DDC.Core.Glob
+import DDC.Core.Exp
+import DDC.Type
+import DDC.Var
+import DDC.Main.Error
+import DDC.Main.Pretty
+import Control.Monad.Identity
+import Data.Maybe
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+import Debug.Trace
 
--- stage = "DDC.Desguar.ToCore.Clean"
-{-
+stage = "DDC.Desguar.ToCore.Clean"
+
 
 -- | With higher order programs with complex more-than constraints we sometimes get
 --   constraints on variables that aren't bound by a type-lambda.
@@ -22,38 +33,53 @@ cleanGlob :: Glob -> Glob
 cleanGlob = mapBindsOfGlob cleanTop
 
 cleanTop  :: Top -> Top
-cleanTop (PBind v xx) 	= PBind v (cleanExp xx)
+cleanTop (PBind v xx) 	= PBind v (cleanX xx)
 cleanTop _		= panic stage $ "cleanTop: no match"
 
-cleanX :: Set.Var	-- ^ Type variables bound in the environment.
-	 -> Exp -> Exp
+cleanX :: Exp -> Exp
+cleanX xx 	
+ = let	tableT	= transEnvTypeId
+		{ transEnvTypeT_up	= cleanT_up 
+		, transEnvTypeT_down	= cleanT_down }
+		
+	tableX	= transEnvCoreId
+		{ transEnvCoreX_down	= cleanX_down
+		, transEnvCoreT		= Just tableT }
 
-cleanX env xx
+   in	runIdentity $ transEnv tableX Set.empty xx
+
+
+-- | Transform keep track of bound type variables on the way down.
+cleanX_down :: Set Var -> Exp -> Identity (Exp, Set Var)
+cleanX_down env xx
  = case xx of
-	XVar v t	-> XVar v (cleanT env t)
-	XLit{}		-> xx
 	XLAM b k x	
+	 -> let	env'	= Set.union env (Set.fromList $ maybeToList $ takeVarOfBind b)
+	    in	return (xx, env')
+
+	_ -> return (xx, env)
+
+cleanT_down :: Set Var -> Type -> Identity (Type, Set Var)
+cleanT_down env tt
+ = case tt of
+	TForall b k t
 	 -> let env'	= Set.union env (Set.fromList $ maybeToList $ takeVarOfBind b)
-	    in  XLam (cleanB env' b) (cleanK env' k) (cleanX env' x)
-	XAPP x t	-> XAPP (cleanX x) (cleanT t)
-
-	XLam v t x e c	-> XLam v (cleanT t) x (cleanT e) (cleanT c)
-	XApp x1 x2	-> XApp (cleanX x1) (cleanX x2)
-	XDo    ss	-> XDo  (map cleanS ss)
-	XMatch alts	-> XMatch 
-
-
--- | Cleaner monad holds an environment of bound type variables.
-type CleanM a	= State (Set Var) a
-
-cleanX xx
-	= 
+	    in	return (tt, env')
 	
-cleanX_enter xx
- = case xx of
-	XLAM{}
-	 -> do	modify $ \env -> Set.union env (Set.fromList $ maybeToList $ takeVarOfBind b)
-		return xx
+	_ -> return (tt, env)
 
-	_ -> return xx
--}	
+
+-- | Substitute constraints for unbound effect and closure variables.
+cleanT_up :: Set Var -> Type -> Identity Type
+cleanT_up env tt
+	| TVar k (UMore v tMore) 	<- tt
+	, not $ Set.member v env
+	= trace (pprStrPlain $ vcat 	[ "cleaning " % v 
+					, "env = " % env ])
+		$ return tMore -- return tMore
+	
+	| otherwise
+	= return tt
+
+
+

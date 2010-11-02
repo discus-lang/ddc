@@ -1,7 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module DDC.Type.TransEnv
-	( TransEnvType(..)
+	( module DDC.Util.Plate.TransEnv
+	, TransEnvType(..)
 	, transEnvTypeId)
 where
 import DDC.Util.Plate.TransEnv
@@ -23,17 +24,17 @@ data TransEnvType m env
 	, transEnvTypeK_up	:: TransEnvUp   m env Kind }
 	
 
--- | Identity transEnvformation table.
+-- | Identity transformation table.
 transEnvTypeId :: Monad m => TransEnvType m env
 transEnvTypeId
 	= TransEnvType
-	{ transEnvTypeV		= \_   x -> return x
+	{ transEnvTypeV		= transEnvUpId
 
-	, transEnvTypeT_down	= \env x -> return (x, env)
-	, transEnvTypeT_up	= \_   x -> return x
+	, transEnvTypeT_down	= transEnvDownId
+	, transEnvTypeT_up	= transEnvUpId
 
-	, transEnvTypeK_down	= \env x -> return (x, env)
-	, transEnvTypeK_up	= \_   x -> return x }
+	, transEnvTypeK_down	= transEnvDownId
+	, transEnvTypeK_up	= transEnvUpId }
 
 
 -- Instances ------------------------------------------------------------------

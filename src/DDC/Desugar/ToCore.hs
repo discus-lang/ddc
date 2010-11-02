@@ -7,6 +7,7 @@ import Util
 import DDC.Desugar.Pretty		()
 import DDC.Desugar.ToCore.Base
 import DDC.Desugar.ToCore.Exp
+-- import DDC.Desugar.ToCore.Clean
 import DDC.Main.Error
 import DDC.Var
 import Type.ToCore			(toCoreT, toCoreK)
@@ -15,6 +16,7 @@ import Desugar.Project			(ProjTable)
 import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T
 import qualified DDC.Core.Exp 		as C
+import qualified DDC.Core.Glob		as C
 import qualified DDC.Desugar.Exp 	as D
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
@@ -27,7 +29,7 @@ toCoreTree
 	-> ProjTable		-- ^ projection table
 	-> Solution		-- ^ solution from type constraint solver
 	-> D.Tree Annot
-	-> C.Tree
+	-> C.Glob
 
 toCoreTree mapValueToTypeVars projTable solution sTree
  = let	initCoreS'
@@ -41,8 +43,8 @@ toCoreTree mapValueToTypeVars projTable solution sTree
 	toCoreTreeM tree
 		= liftM concat
 		$ mapM toCoreP tree
-
-   in	evalState (toCoreTreeM sTree) initCoreS'
+	
+   in	C.globOfTree $ evalState (toCoreTreeM sTree) initCoreS'
 
 
 -- Top ---------------------------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Core.TransEnv
-	(TransEnvCore(..))
+	( module DDC.Util.Plate.TransEnv
+	, TransEnvCore(..)
+	, transEnvCoreId)
 where
 import DDC.Util.Plate.TransEnv
 import DDC.Type.TransEnv
@@ -27,6 +29,23 @@ data TransEnvCore m env
 	
 	, transEnvCoreV		:: TransEnvUp   m env Var }
 
+-- | Identity transformation table.
+transEnvCoreId :: Monad m => TransEnvCore m env
+transEnvCoreId 
+	= TransEnvCore
+	{ transEnvCoreT		= Nothing
+
+	, transEnvCoreP		= transEnvUpId
+	, transEnvCoreA		= transEnvUpId
+	, transEnvCoreG		= transEnvUpId
+	, transEnvCoreW		= transEnvUpId
+	, transEnvCoreS		= transEnvUpId
+
+	, transEnvCoreX_down	= transEnvDownId
+	, transEnvCoreX_up	= transEnvUpId
+
+	, transEnvCoreV		= transEnvUpId }
+	
 
 -- Instances --------------------------------------------------------------------------------------
 

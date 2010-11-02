@@ -10,20 +10,25 @@ appFive g	= g 5
 -- succ2succ is a third order function
 succ2succ f 	= succ (f succ)
 
--- tetra is a fifth order function
-perch b p -- h 
+-- tetra is a fourth order function
+--    its argument is a third order function
+--    will apply this argument to a second order function
+perch p 
  = do 
  	-- force the argument 'p' to be third order by comparing it with tetra
- 	p'	= if b then succ2succ else p
+ 	p'	= if False then succ2succ else p
 	p' appFive
 
 	5
 
-appAppFive f 	= f appFive
 
+-- ignores its argument and prints to the console.
 printSome f 
  = do 	print "dude"
-	5 
+	23
 
-main ()
- = 	print (show (perch True printSome)) 
+thing _ = perch printSome
+
+main _
+ = do	thing ()
+	()
