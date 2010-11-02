@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-unused-imports #-}
+{-# OPTIONS -XNoMonomorphismRestriction #-}
 
 -- | Wrappers for the compiler stages dealing with the Core IR.
 --	These wrappers are responsible for calling the functions that actually
@@ -14,9 +15,8 @@ module Main.Core
 	, coreSimplify
 	, coreLint
 	, coreLambdaLift
-	, coreLabelIndex
-	, coreCurryCall
 	, corePrep
+	, coreCurry
 	, coreToSea)
 where
 import Core.Util
@@ -38,6 +38,8 @@ import Core.Lift			(lambdaLiftGlob)
 import Core.LabelIndex			(labelIndexGlob)
 import Core.Curry			(curryGlob)
 import Core.ToSea			(toSeaTree)
+import DDC.Core.Exp
+import Core.Plate.Trans
 import Data.Foldable			(foldr)
 import Util				hiding (foldr)
 import Prelude				hiding (foldr)
@@ -228,35 +230,6 @@ coreLambdaLift cgHeader cgModule
 		, vsNewLambdaLifted)
 
 
--- | Convert data structure labels to offsets.
-coreLabelIndex
-	:: (?args :: [Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> Glob				-- ^ Header glob.
-	-> Glob				-- ^ Module glob.
-	-> IO Glob
-	
-coreLabelIndex cgHeader cgModule
- = do	let cgModule'	= labelIndexGlob cgHeader cgModule
- 	
-	dumpCT DumpCoreLabelIndex "core-labelIndex"	$ treeOfGlob cgModule'
-	return	cgModule'
-
-
--- | Identify partial applications and insert calls to explicitly create and apply thunks.
-coreCurryCall
-	:: (?args :: [Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> Glob -> Glob -> IO Glob
-
-coreCurryCall cgHeader cgModule
- = do	let optTailCall	= elem OptTailCall ?args
-	let cgModule'	= curryGlob optTailCall cgHeader cgModule
-
-	dumpCT DumpCoreCurry "core-curry" 		$ treeOfGlob cgModule'
-	return	cgModule'
-
-
 -- | Prepare for conversion to Sea.
 corePrep
 	:: (?args :: [Arg])
@@ -264,10 +237,30 @@ corePrep
 	=> Glob -> Glob -> IO Glob
 	
 corePrep cgHeader cgModule
- = do	let cgModule'	= mapBindsOfGlob blockP cgModule
-	dumpCT DumpCorePrep "core-prep"	 		$ treeOfGlob cgModule'
+ = do	let eatXTau	= transformX 
+			$ \xx -> case xx of 
+					XTau _ x -> x
+					_	 -> xx				
+
+	let cgModule2	= labelIndexGlob cgHeader cgModule
+	let cgModule3	= mapBindsOfGlob (blockP . eatXTau) cgModule2
+	dumpCT DumpCorePrep "core-prep"	 $ treeOfGlob cgModule3
+	return	cgModule3
+
+
+-- | Identify partial applications and insert calls to explicitly create and apply thunks.
+coreCurry
+	:: (?args :: [Arg])
+	=> (?pathSourceBase :: FilePath)
+	=> Glob -> Glob -> IO Glob
+
+coreCurry cgHeader cgModule
+ = do	let optTailCall	= elem OptTailCall ?args
+	let cgModule'	= curryGlob optTailCall cgHeader cgModule
+
+	dumpCT DumpCoreCurry "core-curry" 		$ treeOfGlob cgModule'
 	return	cgModule'
-			
+
 			
 -- | Convert Core-IR to Abstract-C
 coreToSea	

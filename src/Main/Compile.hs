@@ -349,31 +349,21 @@ compileFile_parse
 	 , vsNewLambdaLifted) 
 	 <- SC.coreLambdaLift	cgHeader cgModule_simplified
 
+	-- Prepare for conversion to core -------------------------------------
+	outVerb $ ppr $ "  * Core: Prep\n"
+	cgModule_prep
+	 <- SC.corePrep		cgHeader cgModule_lambdaLifted
+
 	-- Check the program one last time ------------------------------------
-	--	Lambda lifting doesn't currently preserve the typing, so we can't
-	--	check it again after this point. This panics if there is any lint.
 	outVerb $ ppr $ "  * Core: Lint (final)\n"
 	cgModule_lintFinal  
 	 <- SC.coreLint		"core-lint-final" 
-				cgHeader cgModule_lambdaLifted
+				cgHeader cgModule_prep
 
-
-	-- Convert field labels to field indicies -----------------------------
-	outVerb $ ppr $ "  * Core: LabelIndex\n"
-	cgModule_labelIndex
-	 <- SC.coreLabelIndex	cgHeader cgModule_lintFinal
-									
 	-- Resolve partial applications ---------------------------------------
 	outVerb $ ppr $ "  * Core: Curry\n"
-	cgCurry	
-	 <- SC.coreCurryCall	cgHeader cgModule_labelIndex
-
-	-- Prepare for conversion to core -------------------------------------
-	outVerb $ ppr $ "  * Core: Prep\n"
-	cgPrep	
-	 <- SC.corePrep		cgHeader cgCurry
-
-	let cgModule_final = cgPrep
+	cgModule_final
+	 <- SC.coreCurry	cgHeader cgModule_lintFinal
 
 	-- Generate the module interface --------------------------------------
 	outVerb $ ppr $ "  * Make interface file\n"

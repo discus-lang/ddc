@@ -114,10 +114,8 @@ data Arg
 	| DumpCorePrim
 	| DumpCoreSimplify
 	| DumpCoreLift
-	| DumpCoreLabelIndex
-	| DumpCoreSequence
-	| DumpCoreCurry
 	| DumpCorePrep
+	| DumpCoreCurry
 
 	-- sea dumps
 	| DumpSea
@@ -194,8 +192,6 @@ expandArgs (x:xs)
 	   , DumpCorePrim
 	   , DumpCoreSimplify
 	   , DumpCoreLift
-	   , DumpCoreLabelIndex
-	   , DumpCoreSequence
 	   , DumpCoreCurry
 	   , DumpCorePrep
 

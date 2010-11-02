@@ -295,8 +295,6 @@ options	=
 	, OFlag		DumpCorePrim		["-dump-core-prim"]		"Identify primitive operations."
 	, OFlag		DumpCoreSimplify	["-dump-core-simplify"]		"Core simplification. (when enabled)"
 	, OFlag		DumpCoreLift		["-dump-core-lift"]		"Convert nested functions to supercombinators."
-	, OFlag		DumpCoreLabelIndex	["-dump-core-labelIndex"]	"Convert field labels to indicies."
-	, OFlag		DumpCoreSequence	["-dump-core-sequence"]		"Sequence CAFs and bindings into dependency order."
 	, OFlag		DumpCoreCurry		["-dump-core-curry"]		"Identify super calls vs curried applications."
 	, OFlag		DumpCorePrep		["-dump-core-prep"]		"Prepare for conversion to Sea."
 	, OBlank
