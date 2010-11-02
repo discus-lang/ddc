@@ -104,8 +104,7 @@ data Arg
 
 	-- core dumps
 	| DumpCore
-	| DumpCoreBlock
-	| DumpCoreCrush
+	| DumpCoreTidy
 	| DumpCoreSnip
 	| DumpCoreClean
 	| DumpCoreThread
@@ -185,8 +184,7 @@ expandArgs (x:xs)
 	   , DumpTypeSolve
 
 	   , DumpCore
-	   , DumpCoreBlock
-	   , DumpCoreCrush
+	   , DumpCoreTidy
 	   , DumpCoreSnip
 	   , DumpCoreClean
 	   , DumpCoreThread

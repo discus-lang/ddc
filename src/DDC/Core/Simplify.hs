@@ -5,7 +5,9 @@
 --   Rewrites core programs so they are (hopefully) smaller and faster.
 module DDC.Core.Simplify
 	( Stats(..)
-	, simplifyGlob )
+	, fixSimplifierPass
+	, simplifyPassTidy
+	, simplifyPassAll)
 where
 import Core.Plate.Trans
 import DDC.Core.Simplify.Boxing
@@ -16,53 +18,53 @@ import Util
 import qualified Core.Float	as Float
 import qualified Core.Snip	as Snip
 
--- | Simplify the bindings in a glob.
-simplifyGlob
-	:: String		-- ^ Unique id for allocating fresh variables.
+type SimplifierPass
+	=  String 		-- ^ Unique id for allocating fresh variables.
 	-> Glob			-- ^ Header Glob.
-	-> Glob			-- ^ Module Glob.
-	-> ( Glob		--   Module glob after simplificaton.
-	   , [Stats])		--   Stats from each stage of the simplifier
-	   
-simplifyGlob unique cgHeader cgModule
- = let	(psSimplified, statss)	
- 		= simplifyFix 0 unique [] cgHeader cgModule
-    in	( psSimplified
-   	, statss)
+	-> Glob 		-- ^ Module glob to simplify.
+	-> ( Glob		--   Module glob after simplification.
+	   , Stats)		--   Simplifier stats for this pass.
 
 
 -- | Keep doing passes of the core simplifier until we stop making progress, 
 --   that is, until we reach a fix-point.
-simplifyFix
-	:: Int			-- ^ Cycle count so far.
-	-> String 		-- ^ Unique id for allocating fresh variables.
-	-> [Stats]		-- ^ Stat accumulator
-	-> Glob			-- ^ Header Glob.
-	-> Glob			-- ^ Module glob to simplify.
-	-> ( Glob		--   Module glob after simplification.
-	   , [Stats])		--   Stats from each stage of the simplifier.
+fixSimplifierPass 
+	:: SimplifierPass	-- ^ The pass to run.
+	-> String		-- ^ Unique id for generating fresh variables.
+	-> Glob 		-- ^ Header glob
+	-> Glob			-- ^ Module glob
+	-> (Glob, [Stats])	
+	
+fixSimplifierPass pass unique cgHeader cgModule_
+ = go 0 [] cgModule_
+ where	go (cycles :: Int) accStats cgModule
+	 = let	(cgModule', stats) 
+			= pass 	(unique ++ show cycles ++ "p")
+				cgHeader cgModule
 
-simplifyFix cycles unique accStats cgHeader cgModule 
- = let	(cgModule', stats)	
-		= simplifyPassAll
-			(unique ++ show cycles ++ "p") 
-			cgHeader cgModule
+	   in	if statsProgress stats
+   		 then go (cycles + 1) (accStats ++ [stats]) cgModule'
+		 else (cgModule', accStats)
 
-   in	if statsProgress stats
-   		then simplifyFix (cycles + 1) unique (accStats ++ [stats]) 
-			cgHeader cgModule'
 
-		else (cgModule', accStats)
-
+-- | Do a quick tidy up that doesn't involve moving bindings around.
+simplifyPassTidy :: SimplifierPass
+simplifyPassTidy _unique _cgHeader cgModule
+ = let	transXM
+	 = 	simplifyMatchX	  countMatch False
+	
+	(cgFinal, ruleCounts) 
+	 = runState 	(mapBindsOfGlobM (transformXM transXM) cgModule) 
+			ruleCountsZero
+			
+   in	( cgFinal
+	, Stats	{ statsFloat		= Nothing
+		, statsRuleCounts	= ruleCounts })
+		
+				
 
 -- | Do a pass of the simplifier
-simplifyPassAll
-	:: String 		-- ^ Unique id for allocating fresh variables.
-	-> Glob			-- ^ Header Glob.
-	-> Glob 		-- ^ Module glob to simplify.
-	-> ( Glob		--   Module glob after simplification.
-           , Stats)		--   Simplifier stats for this pass.
-
+simplifyPassAll :: SimplifierPass 
 simplifyPassAll unique cgHeader cgModule
  = let	
 	-- Extract a table of how many times each binding was used.
@@ -92,17 +94,7 @@ simplifyPassAll unique cgHeader cgModule
 			$ cgRules
 	
    in	( cgSnipped
-	, Stats	{ statsFloat      = Float.tableStats table'
+	, Stats	{ statsFloat      = Just $ Float.tableStats table'
 		, statsRuleCounts = ruleCounts })
-		
-{-
--- | Do a quick tidy up of the glob that doesn't involve
---   moving bindings around.
-simplifyTidy :: Glob -> State RuleCounts Glob
- = let	transXM
-	 = 	simplifyMatchX	  countMatch
-
-   in	mapBindsOfGlobM (transformXM transXM) glob
--}
-	
+			
 		

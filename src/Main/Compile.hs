@@ -116,6 +116,7 @@ compileFile_parse
 
  | otherwise
  = do	let ?args		= setupArgs setup
+	let args		= setupArgs setup
 	let ?verbose		= elem Arg.Verbose ?args
 
 	-- extract some file names
@@ -128,6 +129,7 @@ compileFile_parse
 	let fileDir		= takeDirectory pathSource
 	let fileBase		= takeBaseName  pathSource
 	let ?pathSourceBase	= fileDir ++ "/" ++ fileBase
+	let base		= fileDir ++ "/" ++ fileBase
 	
 	-- Parse imported interface files --------------------------------------
 	let loadInterface (mod, scrape) = 
@@ -287,10 +289,10 @@ compileFile_parse
 	------------------------------------------------------------------------	
 
 	-- Convert to normalised form -----------------------------------------
-	outVerb $ ppr $ "  * Core: NormalDo\n"
-	cgModule_normal	
-	 <- SC.coreNormaliseDo	"core-normaldo" "CN" 
-				cgModule
+	outVerb $ ppr $ "  * Core: Tidy\n"
+	cgModule_tidy
+	 <- SC.coreTidy		"core-tidy" args base "CN" 
+				cgHeader cgModule
 							
 	-- Create local regions -----------------------------------------------
 	outVerb $ ppr $ "  * Core: Bind\n"
@@ -303,9 +305,9 @@ compileFile_parse
 				, Set.member v (T.problemTopLevelTypeVars problem)]
 		
 	cgModule_bind	
-	 <- SC.coreBind 	sModule "CB"
-				(T.solutionRegionClasses solution)
-				rsGlobal cgModule_normal
+	 <- SC.coreBind 	sModule (T.solutionRegionClasses solution) rsGlobal 
+				"core-bind" args base "CB"
+				cgHeader cgModule_tidy
 
 	-- Convert to A-normal form -------------------------------------------
 	outVerb $ ppr $ "  * Core: Snip\n"

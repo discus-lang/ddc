@@ -5,9 +5,9 @@
 --	implement the transforms, and for dumping debugging info.
 --
 module Main.Core
-	( coreNormaliseDo
-	, coreSnip
+	( coreTidy
 	, coreBind
+	, coreSnip
 	, coreThread
 	, coreDictionary
 	, corePrim
@@ -28,13 +28,12 @@ import DDC.Main.Arg
 import DDC.Core.Glob
 import DDC.Core.Check			(checkGlobs)
 import DDC.Var
-import Core.Block			(blockGlob, blockP)
-import Core.Crush			(crushGlob)
+import Core.Block			(blockP)
 import Core.Dictionary			(dictGlob)
 import Core.Bind			(bindGlob)
 import Core.Thread			(threadGlob)
 import Core.Prim			(primGlob)
-import DDC.Core.Simplify		(simplifyGlob)
+import DDC.Core.Simplify
 import Core.Lift			(lambdaLiftGlob)
 import Core.LabelIndex			(labelIndexGlob)
 import Core.Curry			(curryGlob)
@@ -50,59 +49,41 @@ import qualified Data.Set		as Set
 import qualified Data.Sequence		as Seq
 
 
--- | Normalise the form of expressions in a glob to use do blocks.
---   This makes the right of every pattern alternative, and the body of every function do.
---   This is the form that coreBind below needs.
-coreNormaliseDo
-	:: (?args :: [Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> String		-- ^ Stage Name.
-	-> String		-- ^ Unique.
-	-> Glob			-- ^ Module Glog.
+type CoreStage
+	=  String		-- ^ Name of this stage to use for dump files.
+	-> [Arg] 		-- ^ Cmd line args of compiler.
+	-> FilePath		-- ^ Unique id for generating fresh vars.
+	-> String
+	-> Glob			-- ^ Header glob
+	-> Glob			-- ^ Core glob
 	-> IO Glob
-	
-coreNormaliseDo stage unique cgModule
- = do	
- 	-- ensure all exprs are wrapped in do blocks.
- 	let cgModule_blocked	= blockGlob cgModule
- 	dumpCT DumpCoreBlock (stage ++ "-block") 
-		$ treeOfGlob cgModule_blocked
 
-	-- crush nested do exprs
-	let cgModule_crushed	= crushGlob cgModule_blocked
- 	dumpCT DumpCoreCrush (stage ++ "-crush") 
-		$ treeOfGlob cgModule_crushed
-
-	return	cgModule_crushed
+-- | Tidy up after conversion to core.
+--   The Desugar -> Core conversion doesn't produce very nice code.
+coreTidy :: CoreStage
+coreTidy stage args base unique cgHeader cgModule
+ = do	let cgModule_tidy	= fst $ simplifyPassTidy unique cgHeader cgModule
+ 	dumpCG args base DumpCoreTidy stage cgModule_tidy
+	return	cgModule_tidy
 
 
 -- | Bind local regions.
 coreBind
-	:: (?args ::	[Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> ModuleId
-	-> String		-- ^ unique
-	-> (Map Var [Var])	-- ^ map of class constraints on each region
-				--	eg (%r1, [Lazy, Const])
-	-> Set Var		-- the regions with global lifetimes which should be bound 
-				--	at top level.
-	-> Glob
-	-> IO Glob
+	:: ModuleId
+	-> (Map Var [Var])	-- ^ TODO: get this from the glob.
+				--         map of class constraints on each region eg (%r1, [Lazy, Const]). 
+	-> Set Var		-- ^ TODO: get this from the glob: he regions with global lifetimes
+				--         which should be bound at top level.
+	-> CoreStage
 	
-coreBind mod unique classMap rsGlobal cgModule
+coreBind modId classMap rsGlobal 
+	 stage args base unique cgHeader cgModule
  = do
  	let cgModule' 
-		= {-# SCC "Core.Bind" #-}
-	          bindGlob mod unique classMap rsGlobal cgModule
+		= bindGlob modId unique classMap rsGlobal 
+		$ mapBindsOfGlob blockP cgModule
 	
-	dumpCT DumpCoreBind "core-bind"
-		$ treeOfGlob cgModule'
-
-	dumpS  DumpCoreBind "core-bind--rsGlobal" 
-		$ catInt "\n"
-		$ map pprStrPlain 
-		$ Set.toList rsGlobal
-	
+	dumpCG args base DumpCoreBind stage cgModule'
 	return cgModule'
 
 
@@ -192,7 +173,7 @@ coreSimplify
 	
 coreSimplify unique cgHeader cgModule
  = do	let (cgModule', statss)
- 		= simplifyGlob unique cgHeader cgModule
+ 		= fixSimplifierPass simplifyPassAll unique cgHeader cgModule
 
 	when (elem Verbose ?args)
 	 $ do	putStr	$ pprStrPlain	$ "\n" %!% statss % "\n\n"
@@ -202,17 +183,6 @@ coreSimplify unique cgHeader cgModule
 	when (elem DumpCoreSimplify ?args)
 	 $ do	dumpCT DumpCoreSimplify "core-simplify" $ treeOfGlob cgModule'
 
-{-		dumpCT DumpCoreSimplify "core-simplify--refloat" cFloat
-		let (_, cFloat)	= Float.floatBindsTreeUse cSimplify
-		(case takeLast statss of
-		   Just stats	-> dumpS DumpCoreSimplify "core-simplify--missedUnboxing" 
-		   			(pprStrPlain $ "\n" %!% map ppr (reverse $ Float.statsMissedUnboxing 
-									(Simplify.statsFloat stats)))
-		   Nothing	-> return ())
-
-		dumpS DumpCoreSimplify "core-simplify--stats"
-			(pprStrPlain	$ "\n" %!% statss % "\n\n")
--}
 	return	cgModule'
 	
 

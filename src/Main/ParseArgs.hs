@@ -286,8 +286,7 @@ options	=
 	, OBlank
 
 	, OFlag		DumpCore		["-dump-core"]			"Core version of desugared code."
-	, OFlag		DumpCoreBlock		["-dump-core-block"]		"RHS of bindings made into do expressions."
-	, OFlag		DumpCoreCrush		["-dump-core-crush"]		"Crush nested do expressions."
+	, OFlag		DumpCoreTidy		["-dump-core-tidy"]		"Tidy up after conversion to core."
 	, OFlag		DumpCoreBind		["-dump-core-bind"]		"Bind regions locally within functions."
 	, OFlag		DumpCoreSnip		["-dump-core-snip"]		"Create fresh bindings for function applications."
 	, OFlag		DumpCoreThread		["-dump-core-thread"]		"Thread witnesses through bindings."

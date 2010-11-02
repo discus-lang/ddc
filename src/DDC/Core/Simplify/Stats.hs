@@ -21,7 +21,7 @@ import qualified Core.Float	as Float
 data Stats
 	= Stats
 	{ -- | Stats from the let-floater
-	  statsFloat		:: Float.Stats
+	  statsFloat		:: Maybe Float.Stats
 
 	  -- | Counts of rule firings.
 	, statsRuleCounts	:: RuleCounts }
@@ -32,8 +32,8 @@ statsProgress :: Stats -> Bool
 statsProgress stats
  = or	[ not $ Map.null $ ruleCountsBoxing $ statsRuleCounts stats
 	, not $ Map.null $ ruleCountsMatch  $ statsRuleCounts stats
-	, not $ null $ Float.statsSharedForcings  $ statsFloat stats
-	, not $ null $ Float.statsSharedUnboxings $ statsFloat stats ]
+	, maybe False (\s -> not $ null $ Float.statsSharedForcings  s) $ statsFloat stats
+	, maybe False (\s -> not $ null $ Float.statsSharedUnboxings s) $ statsFloat stats ]
 
 
 -- RuleCounts -------------------------------------------------------------------------------------

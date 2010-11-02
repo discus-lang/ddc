@@ -3,13 +3,28 @@ module Main.Dump
 	( dumpST
 	, dumpS
 	, dumpDot
-	, dumpCT
 	, dumpET
-	, dumpOpen)
+	, dumpOpen
+	, dumpCT
+	, dumpCG)
 where
 import System.IO
 import Util
 import DDC.Main.Arg
+import qualified DDC.Core.Glob	as C
+
+-- | Dump a core glob.
+dumpCG args fileBase flag name glob
+ = do	let pprMode	= catMaybes $ map takePrettyModeOfArg args
+
+ 	when (elem flag args)
+  	 (writeFile 
+		(fileBase ++ ".dump-" ++ name ++ ".dc")
+		(catInt "\n"
+			$ map (pprStr pprMode)
+			$ C.treeOfGlob glob))
+	
+	return ()
 
 
 -- | Dump a source tree
@@ -19,6 +34,18 @@ dumpST flag name sourceTree
  	when (elem flag ?args)
   	 (writeFile 
 		(?pathSourceBase ++ ".dump-" ++ name ++ ".ds")
+		(concat $ map (pprStr pprMode)
+			$ sourceTree))
+	
+	return ()
+
+-- | Dump a core
+dumpCT flag name sourceTree
+ = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
+
+ 	when (elem flag ?args)
+  	 (writeFile 
+		(?pathSourceBase ++ ".dump-" ++ name ++ ".dc")
 		(concat $ map (pprStr pprMode)
 			$ sourceTree))
 	
@@ -43,18 +70,6 @@ dumpDot flag name str
 	return ()
 
 
--- | Dump a core tree
-dumpCT flag name tree
- = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
-
- 	when (elem flag ?args)
-  	 (writeFile 
-		(?pathSourceBase ++ ".dump-" ++ name ++ ".dc")
-		(catInt "\n"
-			$ map (pprStr pprMode)
-			$ tree))
-	
-	return ()
 
 
 -- Dump a sea tree
