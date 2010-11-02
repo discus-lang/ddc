@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | The Core simplifier.
 --   Rewrites core programs so they are (hopefully) smaller and faster.
 module DDC.Core.Simplify
@@ -6,8 +6,8 @@ module DDC.Core.Simplify
 	, simplifyGlob )
 where
 import Core.Plate.Trans
+import DDC.Core.Simplify.Boxing
 import DDC.Core.Simplify.Stats
-import DDC.Core.Exp
 import DDC.Core.Glob
 import Util
 import qualified Core.Float	as Float
@@ -39,14 +39,14 @@ simplifyFix
 	-> ( Glob		--   Module glob after simplification.
 	   , [Stats])		--   Stats from each stage of the simplifier.
 
-simplifyFix cycle unique accStats cgHeader cgModule 
+simplifyFix cycles unique accStats cgHeader cgModule 
  = let	(cgModule', stats)	
 		= simplifyPass 
-			(unique ++ show cycle ++ "p") 
+			(unique ++ show cycles ++ "p") 
 			cgHeader cgModule
 
    in	if statsProgress stats
-   		then simplifyFix (cycle + 1) unique (accStats ++ [stats]) 
+   		then simplifyFix (cycles + 1) unique (accStats ++ [stats]) 
 			cgHeader cgModule'
 
 		else (cgModule', accStats)
@@ -69,7 +69,7 @@ simplifyPass unique cgHeader cgModule
 	-- Zap pairs of Unbox/Box expressions
    	(cgZapped, countZapped)
 		= runState 
-			(mapBindsOfGlobM (transformXM zapUnboxBoxX) cgFloat)
+			(mapBindsOfGlobM (transformXM simplifyUnboxBoxX) cgFloat)
 			0
 	
 	-- | Resnip the tree to get back into a-normal form.
@@ -87,22 +87,3 @@ simplifyPass unique cgHeader cgModule
 	, Stats	{ statsFloat		= Float.tableStats table'
 		, statsReducedUnboxBox	= countZapped })
 		
-
--- Simply an expression 
-zapUnboxBoxX :: Exp -> State Int Exp
-zapUnboxBoxX xx
- = case xx of 
-
-	-- unbox/box
- 	XPrim MUnbox [r1, XPrim MBox [r2, x]]
-		| r1 == r2	
-		-> do	modify $ \s -> s + 1
-			return	x
-		
-	-- unbox/force/box
-	XPrim MUnbox [r1, XPrim MForce [XPrim MBox [r2, x]]]
-		| r1 == r2
-		-> do	modify $ \s -> s + 1
-			return x
-		
-	_	-> return xx
