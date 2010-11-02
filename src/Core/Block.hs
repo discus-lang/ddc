@@ -6,7 +6,8 @@
 --	by a list of statements (which can be added to).
 --
 module Core.Block
-	(blockGlob)
+	( blockGlob
+	, blockP)
 where
 import Core.Plate.Trans
 import DDC.Core.Exp

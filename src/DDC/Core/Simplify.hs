@@ -1,4 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# OPTIONs -XNoMonomorphismRestriction #-}
+
 -- | The Core simplifier.
 --   Rewrites core programs so they are (hopefully) smaller and faster.
 module DDC.Core.Simplify
@@ -7,6 +9,7 @@ module DDC.Core.Simplify
 where
 import Core.Plate.Trans
 import DDC.Core.Simplify.Boxing
+import DDC.Core.Simplify.Match
 import DDC.Core.Simplify.Stats
 import DDC.Core.Glob
 import Util
@@ -66,11 +69,9 @@ simplifyPass unique cgHeader cgModule
 	(table', cgFloat)	
 		= Float.floatBindsUseOfGlob cgModule
  
-	-- Zap pairs of Unbox/Box expressions
-   	(cgZapped, countZapped)
-		= runState 
-			(mapBindsOfGlobM (transformXM simplifyUnboxBoxX) cgFloat)
-			0
+	-- Run simplification rules.
+   	(cgRules, ruleCounts)
+	 	= runState (simplifyAll cgFloat) ruleCountsZero	
 	
 	-- | Resnip the tree to get back into a-normal form.
 	--	this breaking up of compond expressions also separates the different effects
@@ -81,9 +82,21 @@ simplifyPass unique cgHeader cgModule
 			, Snip.tablePreserveTypes	= True }
 
    	cgSnipped	= Snip.snipGlob snipTable ("x" ++ unique ++ "S") 
-			$ cgZapped
+			$ cgRules
 	
    in	( cgSnipped
-	, Stats	{ statsFloat		= Float.tableStats table'
-		, statsReducedUnboxBox	= countZapped })
+	, Stats	{ statsFloat      = Float.tableStats table'
+		, statsRuleCounts = ruleCounts })
+		
+		
+simplifyAll :: Glob -> State RuleCounts Glob
+simplifyAll glob
+ = let	transXM
+	 =	simplifyUnboxBoxX countBoxing
+	 >=>	simplifyMatchX	  countMatch
+
+   in	mapBindsOfGlobM (transformXM transXM) glob
+
+		
+		
 		
