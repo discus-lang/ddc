@@ -60,8 +60,7 @@ simplifyPassTidy _unique _cgHeader cgModule
    in	( cgFinal
 	, Stats	{ statsFloat		= Nothing
 		, statsRuleCounts	= ruleCounts })
-		
-				
+						
 
 -- | Do a pass of the simplifier
 simplifyPassAll :: SimplifierPass 
@@ -72,14 +71,17 @@ simplifyPassAll unique cgHeader cgModule
 		= Float.floatBindsUseOfGlob cgModule
  
 	-- All available rules.
-	transXM
-	 = 	simplifyUnboxBoxX countBoxing 
-	 >=>	simplifyMatchX    countMatch  True
+	table
+	 = transTableId
+	 { transX	=  	simplifyUnboxBoxX countBoxing 
+	 		>=>	simplifyMatchX    countMatch  True
 
+	 , transA	=	simplifyMatchA    countMatch }
+ 
 	-- Run simplification rules.
 	(cgRules, ruleCounts)
 	  = runState 
-		(mapBindsOfGlobM (transformXM transXM) cgFloat) 
+		(mapBindsOfGlobM (transZM table) cgFloat) 
 		ruleCountsZero	
 	
 	-- | Resnip the tree to get back into a-normal form.
