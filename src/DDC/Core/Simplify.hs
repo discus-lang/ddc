@@ -44,7 +44,7 @@ simplifyFix
 
 simplifyFix cycles unique accStats cgHeader cgModule 
  = let	(cgModule', stats)	
-		= simplifyPass 
+		= simplifyPassAll
 			(unique ++ show cycles ++ "p") 
 			cgHeader cgModule
 
@@ -56,26 +56,33 @@ simplifyFix cycles unique accStats cgHeader cgModule
 
 
 -- | Do a pass of the simplifier
-simplifyPass
+simplifyPassAll
 	:: String 		-- ^ Unique id for allocating fresh variables.
 	-> Glob			-- ^ Header Glob.
 	-> Glob 		-- ^ Module glob to simplify.
 	-> ( Glob		--   Module glob after simplification.
            , Stats)		--   Simplifier stats for this pass.
 
-simplifyPass unique cgHeader cgModule
+simplifyPassAll unique cgHeader cgModule
  = let	
 	-- Extract a table of how many times each binding was used.
 	(table', cgFloat)	
 		= Float.floatBindsUseOfGlob cgModule
  
+	-- All available rules.
+	transXM
+	 = 	simplifyUnboxBoxX countBoxing
+	 >=>	simplifyMatchX    countMatch
+
 	-- Run simplification rules.
-   	(cgRules, ruleCounts)
-	 	= runState (simplifyAll cgFloat) ruleCountsZero	
+	(cgRules, ruleCounts)
+	  = runState 
+		(mapBindsOfGlobM (transformXM transXM) cgFloat) 
+		ruleCountsZero	
 	
 	-- | Resnip the tree to get back into a-normal form.
-	--	this breaking up of compond expressions also separates the different effects
-	--	and makes it more likely that let floating will succeed next time around.
+	--   This also breaks up compond expressions which makes it more likely
+	--   that let-floating will succeed the next time around.
 	snipTable	= Snip.Table
 			{ Snip.tableHeaderGlob		= cgHeader
 			, Snip.tableModuleGlob		= cgModule
@@ -88,15 +95,14 @@ simplifyPass unique cgHeader cgModule
 	, Stats	{ statsFloat      = Float.tableStats table'
 		, statsRuleCounts = ruleCounts })
 		
-		
-simplifyAll :: Glob -> State RuleCounts Glob
-simplifyAll glob
+{-
+-- | Do a quick tidy up of the glob that doesn't involve
+--   moving bindings around.
+simplifyTidy :: Glob -> State RuleCounts Glob
  = let	transXM
-	 =	simplifyUnboxBoxX countBoxing
-	 >=>	simplifyMatchX	  countMatch
+	 = 	simplifyMatchX	  countMatch
 
    in	mapBindsOfGlobM (transformXM transXM) glob
-
-		
-		
+-}
+	
 		

@@ -17,12 +17,18 @@ simplifyMatchX
 simplifyMatchX count xx
  = case xx of
 	
-	-- | Dump matches with no alternatives
+	-- Dump matches with no alternatives
 	XMatch [AAlt [] x]	
 	 -> do	count RuleMatchNoAlts
 	 	return x
-	
+
+	-- Eat up boring XDo expressions.
 	XDo [SBind Nothing x]
 	 -> do	return x
+	
+	-- By the time the simplifier runs we don't need XTau nodes.
+	-- We should really annotate top level bindings with their types
+	-- and eradicate XTaus entirely.
+	XTau _ x -> return x
 	
 	_ -> return xx

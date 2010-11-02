@@ -229,8 +229,7 @@ coreLint
 	-> IO Glob
 	
 coreLint stage cgHeader cgModule
- = do	let cgModule'	
-		= checkGlobs ("Compile.coreLint." ++ stage) cgHeader cgModule 
+ = do	let cgModule'	= checkGlobs ("Compile.coreLint." ++ stage) cgHeader cgModule 
 
 	dumpCT DumpCoreLint stage 		
 		$ treeOfGlob cgModule'		
