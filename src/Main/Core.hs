@@ -49,14 +49,17 @@ import qualified Data.Set		as Set
 import qualified Data.Sequence		as Seq
 
 
+-- | A consistent interface for Core Stages.
+--   TODO: They're all pretty regular, we should refactor them to match this type.
 type CoreStage
 	=  String		-- ^ Name of this stage to use for dump files.
 	-> [Arg] 		-- ^ Cmd line args of compiler.
-	-> FilePath		-- ^ Unique id for generating fresh vars.
-	-> String
+	-> FilePath		-- ^ Base name of path for dump files.
+	-> String		-- ^ Unique id for generating fresh names.
 	-> Glob			-- ^ Header glob
 	-> Glob			-- ^ Core glob
 	-> IO Glob
+
 
 -- | Tidy up after conversion to core.
 --   The Desugar -> Core conversion doesn't produce very nice code.
