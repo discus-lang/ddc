@@ -71,8 +71,8 @@ simplifyPassAll unique cgHeader cgModule
  
 	-- All available rules.
 	transXM
-	 = 	simplifyUnboxBoxX countBoxing
-	 >=>	simplifyMatchX    countMatch
+	 = 	simplifyUnboxBoxX countBoxing 
+	 >=>	simplifyMatchX    countMatch  True
 
 	-- Run simplification rules.
 	(cgRules, ruleCounts)

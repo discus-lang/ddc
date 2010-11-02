@@ -6,6 +6,7 @@ import Core.Util
 import Core.Plate.Trans
 import Core.Plate.FreeVarsXT
 import Core.Lift.Base
+import Core.Block
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -37,8 +38,10 @@ liftLambdasP
 		( Top		-- new super
 		, [Top])	-- lifted bindings
 
-liftLambdasP	p@(PBind superName x)
+liftLambdasP p
  = do
+	let (PBind superName x)	= blockP p
+
 	-- Chop out the inner most lambda abstractions from this binding
 	--	The new supers get added to the lift state
  	xChopped	<- lambdaLiftX superName x

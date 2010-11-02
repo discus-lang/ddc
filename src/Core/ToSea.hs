@@ -14,7 +14,6 @@ import Data.Sequence			(Seq)
 import Data.Traversable			(mapM)
 import Util				hiding (mapM)
 import Prelude				hiding (mapM)
-import qualified Core.Block		as C
 import qualified Core.Util		as C
 import qualified Core.OpType		as C
 import qualified Shared.VarPrim		as Var
@@ -83,7 +82,7 @@ toSeaTree
 	
 toSeaTree unique vsCafs cTree
   = evalState
-  	(liftM join $ mapM (toSeaP . C.blockP) cTree)
+  	(liftM join $ mapM toSeaP cTree)
 	SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
 		, stateCafVars		= vsCafs
 		, stateDirectRegions	= Set.empty }

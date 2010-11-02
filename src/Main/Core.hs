@@ -16,7 +16,8 @@ module Main.Core
 	, coreLambdaLift
 	, coreLabelIndex
 	, coreCurryCall
-	, toSea)
+	, corePrep
+	, coreToSea)
 where
 import Core.Util
 import Core.ToSea.Sequence
@@ -27,7 +28,7 @@ import DDC.Main.Arg
 import DDC.Core.Glob
 import DDC.Core.Check			(checkGlobs)
 import DDC.Var
-import Core.Block			(blockGlob)
+import Core.Block			(blockGlob, blockP)
 import Core.Crush			(crushGlob)
 import Core.Dictionary			(dictGlob)
 import Core.Bind			(bindGlob)
@@ -178,8 +179,7 @@ corePrim
 corePrim cgHeader cgModule
  = do	let cgModule'	= primGlob cgModule
 
- 	dumpCT DumpCorePrim "core-prim" 
-		$ treeOfGlob cgModule'
+ 	dumpCT DumpCorePrim "core-prim" 	$ treeOfGlob cgModule'
 
 	return cgModule'
 
@@ -188,10 +188,7 @@ corePrim cgHeader cgModule
 coreSimplify
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> String		-- ^ unique
-	-> Glob			-- ^ Header glob.
-	-> Glob			-- ^ Module glob.
-	-> IO Glob
+	=> String -> Glob -> Glob -> IO Glob
 	
 coreSimplify unique cgHeader cgModule
  = do	let (cgModule', statss)
@@ -249,15 +246,10 @@ coreLambdaLift
 coreLambdaLift cgHeader cgModule
  = do	
  	let (cgModule', vsNewLambdaLifted)
-		= lambdaLiftGlob 
-			cgHeader
-			cgModule
-						
-	dumpCT DumpCoreLift "core-lift" 		
-		$ treeOfGlob cgModule'
-
-	dumpS  DumpCoreLift "core-lift--new-bindings"	
-		$ show vsNewLambdaLifted
+		= lambdaLiftGlob cgHeader cgModule
+					
+	dumpCT DumpCoreLift "core-lift" 		$ treeOfGlob cgModule'
+	dumpS  DumpCoreLift "core-lift--new-bindings"	$ show vsNewLambdaLifted
 			
 	return	( cgModule'
 		, vsNewLambdaLifted)
@@ -274,9 +266,7 @@ coreLabelIndex
 coreLabelIndex cgHeader cgModule
  = do	let cgModule'	= labelIndexGlob cgHeader cgModule
  	
-	dumpCT DumpCoreLabelIndex "core-labelIndex" 
-		$ treeOfGlob cgModule'
-
+	dumpCT DumpCoreLabelIndex "core-labelIndex"	$ treeOfGlob cgModule'
 	return	cgModule'
 
 
@@ -284,22 +274,31 @@ coreLabelIndex cgHeader cgModule
 coreCurryCall
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Glob				-- ^ Header glob.
-	-> Glob				-- ^ Module glob.
-	-> IO Glob
+	=> Glob -> Glob -> IO Glob
 
 coreCurryCall cgHeader cgModule
  = do	let optTailCall	= elem OptTailCall ?args
 	let cgModule'	= curryGlob optTailCall cgHeader cgModule
 
-	dumpCT DumpCoreCurry "core-curry" 
-		$ treeOfGlob cgModule'
-
+	dumpCT DumpCoreCurry "core-curry" 		$ treeOfGlob cgModule'
 	return	cgModule'
 
+
+-- | Prepare for conversion to Sea.
+corePrep
+	:: (?args :: [Arg])
+	=> (?pathSourceBase :: FilePath)
+	=> Glob -> Glob -> IO Glob
+	
+corePrep cgHeader cgModule
+ = do	let cgModule'	= mapBindsOfGlob blockP cgModule
+	dumpCT DumpCorePrep "core-prep"	 		$ treeOfGlob cgModule'
+	return	cgModule'
+			
 			
 -- | Convert Core-IR to Abstract-C
-toSea	:: (?args	    :: [Arg])
+coreToSea	
+	:: (?args	    :: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> String			-- ^ Unique.
 	-> Glob				-- ^ Header glob.
@@ -307,7 +306,7 @@ toSea	:: (?args	    :: [Arg])
 	-> IO 	( E.Tree ()		-- sea source tree
 		, E.Tree ())		-- sea header tree
 
-toSea unique cgHeader cgModule
+coreToSea unique cgHeader cgModule
  = do	eCafOrder	<- slurpCafInitSequence cgModule
 
 	case eCafOrder of
@@ -317,9 +316,9 @@ toSea unique cgHeader cgModule
 		% "     offending variables: " % vsRecursive % "\n\n"]
 
 	 Right vsCafOrdering
-	  -> toSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
+	  -> coreToSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
 
-toSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
+coreToSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
  = do
 	-- Partition the bindings into CAFs and non-CAFs 
 	let cgModule_binds = globBind cgModule

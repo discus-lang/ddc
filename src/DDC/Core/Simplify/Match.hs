@@ -12,9 +12,11 @@ data RuleMatch
 -- | Simpify match expressions.
 simplifyMatchX 
 	:: Monad m 
-	=> (RuleMatch -> m ()) -> Exp -> m Exp
+	=> (RuleMatch -> m ()) 
+	-> Bool			-- ^ Whether to eat up XTay nodes.
+	-> Exp -> m Exp
 
-simplifyMatchX count xx
+simplifyMatchX count eatXTaus xx
  = case xx of
 	
 	-- Dump matches with no alternatives
@@ -29,6 +31,7 @@ simplifyMatchX count xx
 	-- By the time the simplifier runs we don't need XTau nodes.
 	-- We should really annotate top level bindings with their types
 	-- and eradicate XTaus entirely.
-	XTau _ x -> return x
+	XTau _ x
+	 | eatXTaus	-> return x
 	
 	_ -> return xx

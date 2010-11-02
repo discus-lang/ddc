@@ -288,9 +288,8 @@ compileFile_parse
 
 	-- Convert to normalised form -----------------------------------------
 	outVerb $ ppr $ "  * Core: NormalDo\n"
-	cgModule_normal	<- SC.coreNormaliseDo 
-				"core-normaldo"
-				"CN" 
+	cgModule_normal	
+	 <- SC.coreNormaliseDo	"core-normaldo" "CN" 
 				cgModule
 							
 	-- Create local regions -----------------------------------------------
@@ -303,46 +302,37 @@ compileFile_parse
 			$ [t	| (v, t)	<- Map.toList $ T.solutionTypes solution
 				, Set.member v (T.problemTopLevelTypeVars problem)]
 		
-	cgModule_bind	<- SC.coreBind 
-				sModule 
-				"CB"
+	cgModule_bind	
+	 <- SC.coreBind 	sModule "CB"
 				(T.solutionRegionClasses solution)
-				rsGlobal
-				cgModule_normal
+				rsGlobal cgModule_normal
 
 	-- Convert to A-normal form -------------------------------------------
 	outVerb $ ppr $ "  * Core: Snip\n"
-	cgModule_snip	<- SC.coreSnip 
-				"core-snip" 
-				"CS" 
-				cgHeader 
-				cgModule_bind
+	cgModule_snip
+	 <- SC.coreSnip		"core-snip" "CS" 
+				cgHeader cgModule_bind
 
 	-- Thread through witnesses -------------------------------------------
 	outVerb $ ppr $ "  * Core: Thread\n"
-	cgModule_thread	<- SC.coreThread 
-				cgHeader 
-				cgModule_snip
+	cgModule_thread	
+	 <- SC.coreThread 	cgHeader cgModule_snip
 
 	-- Reconstruct and check types (with the linter) ----------------------
 	outVerb $ ppr $ "  * Core: Lint Reconstruct\n"
 	cgModule_lintRecon	
-			<- SC.coreLint 
-				"core-lint-reconstruct" 
-				cgHeader
-				cgModule_thread
+	 <- SC.coreLint 	"core-lint-reconstruct" 
+				cgHeader cgModule_thread
 
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"
-	cgModule_dict	<- SC.coreDictionary 
-				cgHeader
-				cgModule_lintRecon
+	cgModule_dict	
+	 <- SC.coreDictionary	cgHeader cgModule_lintRecon
 
 	-- Identify prim ops --------------------------------------------------
 	outVerb $ ppr $ "  * Core: Prim\n"
-	cgModule_prim	<- SC.corePrim
-				cgHeader
-				cgModule_dict
+	cgModule_prim	
+	 <- SC.corePrim		cgHeader cgModule_dict
 
 	-- Simplifier does various simple optimising transforms ---------------
 	outVerb $ ppr $ "  * Core: Simplify\n"
@@ -355,35 +345,33 @@ compileFile_parse
 	outVerb $ ppr $ "  * Core: LambdaLift\n"
 	(  cgModule_lambdaLifted
 	 , vsNewLambdaLifted) 
-			<- SC.coreLambdaLift
-				cgHeader
-				cgModule_simplified
+	 <- SC.coreLambdaLift	cgHeader cgModule_simplified
 
 	-- Check the program one last time ------------------------------------
 	--	Lambda lifting doesn't currently preserve the typing, so we can't
 	--	check it again after this point. This panics if there is any lint.
 	outVerb $ ppr $ "  * Core: Lint (final)\n"
 	cgModule_lintFinal  
-			<- SC.coreLint
-				"core-lint-final" 
-				cgHeader 
-				cgModule_lambdaLifted
+	 <- SC.coreLint		"core-lint-final" 
+				cgHeader cgModule_lambdaLifted
 
 
 	-- Convert field labels to field indicies -----------------------------
 	outVerb $ ppr $ "  * Core: LabelIndex\n"
 	cgModule_labelIndex
-			<- SC.coreLabelIndex
-				cgHeader
-				cgModule_lintFinal
+	 <- SC.coreLabelIndex	cgHeader cgModule_lintFinal
 									
 	-- Resolve partial applications ---------------------------------------
 	outVerb $ ppr $ "  * Core: Curry\n"
-	cgCurry		<- SC.coreCurryCall
-				cgHeader
-				cgModule_labelIndex
+	cgCurry	
+	 <- SC.coreCurryCall	cgHeader cgModule_labelIndex
 
-	let cgModule_final = cgCurry
+	-- Prepare for conversion to core -------------------------------------
+	outVerb $ ppr $ "  * Core: Prep\n"
+	cgPrep	
+	 <- SC.corePrep		cgHeader cgCurry
+
+	let cgModule_final = cgPrep
 
 	-- Generate the module interface --------------------------------------
 	outVerb $ ppr $ "  * Make interface file\n"
@@ -439,10 +427,8 @@ compileFile_parse
 	-- Convert to Sea code ------------------------------------------------
 	outVerb $ ppr $ "  * Convert to Sea IR\n"
 
-	(eSea, eHeader)	<- SC.toSea
-				"TE"
-				cgHeader
-				cgModule
+	(eSea, eHeader)	
+	 <- SC.coreToSea "TE" cgHeader cgModule
 
 	------------------------------------------------------------------------
 	-- Sea stages
