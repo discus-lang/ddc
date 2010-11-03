@@ -55,7 +55,7 @@ dumpCT flag name sourceTree
 dumpS flag name str
  = do	when (elem flag ?args)
 	 (writeFile 
-	 	(?pathSourceBase ++ ".dump-" ++ name ++ ".ds")
+	 	(?pathSourceBase ++ ".dump-" ++ name)
 		str)
 	
 	return ()

@@ -191,7 +191,7 @@ instance Copy Float64 where
 instance Updatable Float64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrFloat64 (peekDataRS_payload w1)) (unboxFloat64 w2)
+		pokeOn w1 (castToPtrFloat64 (peekDataRS_payload w1')) (unboxFloat64 w2)
 		()
 
 

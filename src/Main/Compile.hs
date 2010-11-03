@@ -352,7 +352,8 @@ compileFile_parse
 	-- Prepare for conversion to core -------------------------------------
 	outVerb $ ppr $ "  * Core: Prep\n"
 	cgModule_prep
-	 <- SC.corePrep		cgHeader cgModule_lambdaLifted
+	 <- SC.corePrep		"core-prep" args base "CP"
+				cgHeader cgModule_lambdaLifted 
 
 	-- Check the program one last time ------------------------------------
 	outVerb $ ppr $ "  * Core: Lint (final)\n"

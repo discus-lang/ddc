@@ -55,11 +55,12 @@ blockTreeP pp
 	_		-> pp
 
 -- | Force this expression to be an XDo
---	but allow XTau, XTet, XLam XLAM wrappers
+--	but allow XTau, XLam XLAM wrappers
 blockX xx
  = case xx of
 	XDo{}		-> xx
 	XTau t x	-> blockX_lambda xx
+	XLocal _ _ x	-> blockX_lambda xx
 	_		-> XDo [ SBind Nothing xx ]
 
 
@@ -69,6 +70,7 @@ blockX_tau xx
  = case xx of
  	XDo{}		-> xx
 	XTau t x	-> XTau t $ blockX_tau x
+	XLocal r vts x	-> XLocal r vts $ blockX_tau x
 	_		-> XDo [SBind Nothing xx]
 
 
@@ -77,5 +79,6 @@ blockX_lambda xx
   	XLAM{}		-> xx
 	XLam{}		-> xx
 	XTau   t x	-> XTau t $ blockX_lambda x
+	XLocal r vts x	-> XLocal r vts $ blockX_lambda x
 	XDo{}		-> xx
 	_		-> XDo [SBind Nothing xx]

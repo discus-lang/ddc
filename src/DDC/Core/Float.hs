@@ -173,16 +173,17 @@ floatBindsG level share tt (GExp ws x)
 --	 might start to hurt. Rejig Core.Recon to drop XTau to remember these.
 
 floatBindsXDo :: Level -> Share -> Table -> Exp -> (Table, Exp)
-floatBindsXDo level share tt (XDo ss)
- = let	(table', ss')	= floatBindsSS level share tt [] ss
-   in	(table', XDo ss')
+floatBindsXDo level share tt xx
+ = case xx of
+	XDo ss
+	 -> let	(table', ss')	= floatBindsSS level share tt [] ss
+   	    in	(table', XDo ss')
 
-floatBindsXDo _ _ _ _
-	= panic stage $ "floatBindsXDo: no a do"
+	_ -> panic stage $ "floatBindsXDo: no a do"
 
--- float bindings in a list of statements
---	carrying shared expressions forward and down
 
+-- | Float bindings in a list of statements
+--   carrying shared expressions forward and down
 floatBindsSS :: Level -> Share -> Table -> [Stmt] -> [Stmt] -> (Table, [Stmt])
 
 floatBindsSS _ _ table ssAcc [] = (table, ssAcc)
@@ -193,24 +194,17 @@ floatBindsSS level share table ssAcc (s : ssRest)
 
 
 -- Stmt --------------------------------------------------------------------------------------------
+-- | When we get to the end of the block of statements
+--   the table should contain no more bindings.
+--   We're only inlining things that have exactly one occurance.
+--   CAREFUL: don't loose or duplicate bindings with top level effects.
 floatBindsS :: Level -> Share -> Table -> Stmt -> (Share, Table, [Stmt])
-
--- when we get to the end of the block of statements
---	the table should contain no more bindings.
---	We're only inlining things that have exactly one occurance.
---
---	CAREFUL: don't loose or duplicate bindings with top level effects.
-
--- not a binding
---	!! drop bindings that conflict
-floatBindsS level share table (SBind Nothing x)
+floatBindsS level share table	(SBind Nothing x)
  = let	(table', x')	= floatBindsX level share table x
    in	(share, table', [SBind Nothing x'])
    
+floatBindsS level share table_	(SBind (Just vBind) xBind_)
 
-floatBindsS level share table_ (SBind (Just vBind) xBind_)
-
-	----- force 
 	-- remember forcings that we haven't seen before
 	-- hrm.. this leaves them where they are and never carries them down into match stmts..
 	| XPrim MForce [XVar v2 _]	<- xBind
@@ -225,16 +219,15 @@ floatBindsS level share table_ (SBind (Just vBind) xBind_)
 		table'	= (tableStats_ ## statsSharedForcings_ <#> \s -> vBind : s) table	
 	  in	(share', table', [])
 	  
-	----- unbox
 	-- remember unboxings we haven't seen before
+	-- only move pure unboxings for now.
 	| XPrim MUnbox [XPrimType (TVar kR (UVar vR)), XVar v2 _]	<- xBind
 	, kR	== kRegion
 	, Nothing	 <- Map.lookup v2 (shareUnboxings share)
-	, Set.member vR (tableConstRegions table) -- only move pure unboxings for now
+	, Set.member vR (tableConstRegions table)
 	= let	share'		= share { shareUnboxings = Map.insert v2 (vBind, vR) (shareUnboxings share) }
 	  in	(share', table, [SBind (Just vBind) xBind])
 	  
-
 	-- replace calls to unbox with ones we've seen before
 	| XPrim MUnbox [XPrimType (TVar kR (UVar vR1)), XVar v2 _]	<- xBind
 	, kR	== kRegion
@@ -244,12 +237,10 @@ floatBindsS level share table_ (SBind (Just vBind) xBind_)
 		table'	= (tableStats_ ## statsSharedUnboxings_ <#> \s -> vBind : s) table	
 	  in	(share', table', [])
 
-
-	  
 	-- some other expression
 	| otherwise
 	= let	-- work out the effects of the expression
-		effBind		= checkedTypeOfOpenExp (stage ++ ".floatBindsS") xBind
+		effBind		= checkedEffectOfOpenExp (stage ++ ".floatBindsS") xBind
 
 		-- reduce the effect using information about what things are const / pure
 		effReduced	= reduceEffect 
@@ -263,7 +254,9 @@ floatBindsS level share table_ (SBind (Just vBind) xBind_)
 			= Map.lookup vBind (tableBoundUse table)
 
 		-- decide whether its ok to move it
-		(canMove, tt2)	= shouldMove level table mUse vBind effReduced
+		(canMove, tt2)	= {- trace (vcat	[ "shouldMove: " % stmt
+						, "      effs: " % effReduced ]) -}
+				  shouldMove level table mUse vBind effReduced xBind
 
 	   	xx	-- if we're ok to move this binding
 			| canMove
@@ -272,22 +265,13 @@ floatBindsS level share table_ (SBind (Just vBind) xBind_)
 				-- add the statement to the table
 				tt3	= tt2 { tableBinds = Map.insert vBind (xStripped, effReduced) (tableBinds tt2) }
 		
-			  in {- trace	( "floatBindsS: picking up binding\n"
-		  			% "    ss      = " % ss 	% "\n"
-					% "    effBind = " % effBind	% "\n")-}
-					(share, tt3, [])
+			  in 	(share, tt3, [])
 
 			-- not ok to move this binding
 			| otherwise
-			= (share, table, [SBind (Just vBind) xBind])
+			= (share, tt2, [SBind (Just vBind) xBind])
 	   in	xx
 
 	-- do the initial decent into the rhs
 	where	(table, xBind)	= floatBindsX level share table_ xBind_
 	
-
--- | Strip any XTaus of the front of an expression
-stripXTau :: Exp -> Exp
-stripXTau (XTau _ x)	= stripXTau x
-stripXTau xx		= xx
-

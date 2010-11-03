@@ -8,8 +8,12 @@ module Core.Util.Bits
 	, isXLambda
 	, isXLAMBDA
 	, isXTau
+	, isXMatch
+	, isXDo
+	, isXLocal
 	, isCafP 
 	, isFunctionX
+	, stripXTau
 	, hasEmbeddedLambdasX
 	, hasLambdasX
 	
@@ -42,10 +46,18 @@ isXApp x
 	, x =@= XApp{} ]
 
 
-isXLambda x	= (x =@= XLam{})
-isXLAMBDA x	= (x =@= XLAM{})
-isXTau x	= (x =@= XTau{})
+isXLambda x	= x =@= XLam{}
+isXLAMBDA x	= x =@= XLAM{}
+isXTau x	= x =@= XTau{}
+isXMatch x	= x =@= XMatch{}
+isXDo x		= x =@= XDo{}
+isXLocal x	= x =@= XLocal{}
 
+-- FFS XTaus were never a good idea.
+stripXTau xx
+ = case xx of
+	XTau _ x	-> stripXTau x
+	_		-> xx
 
 -- | Check whether a top level thing is a CAF binding
 isCafP :: Top -> Bool

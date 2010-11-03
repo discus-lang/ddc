@@ -169,10 +169,10 @@ instance Eq Float32 where
 		
 
 instance Ord Float32 where
-	(>) x y		= boxBool   (primFloat32U_gt  (unboxFloat32 x) (unboxFloat32 y))
-	(<) x y		= boxBool   (primFloat32U_lt  (unboxFloat32 x) (unboxFloat32 y))
-	(>=) x y	= boxBool   (primFloat32U_ge  (unboxFloat32 x) (unboxFloat32 y))
-	(<=) x y	= boxBool   (primFloat32U_le  (unboxFloat32 x) (unboxFloat32 y))
+	(>)		= primFloat32_gt
+	(<)		= primFloat32_lt
+	(>=)		= primFloat32_ge
+	(<=)		= primFloat32_le
 
 	compare x y
 	 | x == y	=  EQ
@@ -182,6 +182,13 @@ instance Ord Float32 where
 	min x y		= if x <= y then x else y
 	max x y		= if x >= y then x else y
 
+-- Note: The primFloat32* functions shouldn't be inlined because Core.Prim
+--       needs these specific names for our pretend cross-module inlining setup.
+primFloat32_gt x y	= boxBool   (primFloat32U_gt  (unboxFloat32 x) (unboxFloat32 y))
+primFloat32_lt x y	= boxBool   (primFloat32U_lt  (unboxFloat32 x) (unboxFloat32 y))
+primFloat32_ge x y	= boxBool   (primFloat32U_ge  (unboxFloat32 x) (unboxFloat32 y))
+primFloat32_le x y	= boxBool   (primFloat32U_le  (unboxFloat32 x) (unboxFloat32 y))
+
 
 instance Copy Float32 where
  	copy x 		= boxFloat32 (unboxFloat32 x)
@@ -190,16 +197,22 @@ instance Copy Float32 where
 instance Updatable Float32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrFloat32 (peekDataRS_payload w1)) (unboxFloat32 w2)
+		pokeOn w1 (castToPtrFloat32 (peekDataRS_payload w1')) (unboxFloat32 w2)
 		()
 
 
+-- Note: The primFloat32* functions shouldn't be inlined because Core.Prim
+--       needs these specific names for our pretend cross-module inlining setup.
 instance Num Float32 where
 	negate x 	= boxFloat32 (primFloat32U_neg (unboxFloat32 x))
 	abs x		= boxFloat32 (primFloat32U_abs (unboxFloat32 x))
-	(+) x y		= boxFloat32 (primFloat32U_add (unboxFloat32 x) (unboxFloat32 y))
-	(-) x y		= boxFloat32 (primFloat32U_sub (unboxFloat32 x) (unboxFloat32 y))
-	(*) x y		= boxFloat32 (primFloat32U_mul (unboxFloat32 x) (unboxFloat32 y))
+	(+) 		= primFloat32_add
+	(-) 		= primFloat32_sub
+	(*) 		= primFloat32_mul
+
+primFloat32_add	x y	= boxFloat32 (primFloat32U_add (unboxFloat32 x) (unboxFloat32 y))
+primFloat32_sub	x y 	= boxFloat32 (primFloat32U_add (unboxFloat32 x) (unboxFloat32 y))
+primFloat32_mul	x y	= boxFloat32 (primFloat32U_add (unboxFloat32 x) (unboxFloat32 y))
 
 
 instance Fractional Float32 where

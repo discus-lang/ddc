@@ -13,6 +13,7 @@ module DDC.Core.Check
 	, checkKindI
 	, checkedTypeOfExp 
 	, checkedTypeOfOpenExp
+	, checkedEffectOfOpenExp
 	, Env	(..))
 where
 import DDC.Core.Check.Env

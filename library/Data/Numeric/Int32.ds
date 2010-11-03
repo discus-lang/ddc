@@ -100,15 +100,20 @@ instance Integral Int32# where
 
 -- Boxed Instances ------------------------------------------------------------
 instance Eq Int32 where
-	(==) x y	= boxBool   (primInt32U_eq  (unboxInt32 x) (unboxInt32 y))
-	(/=) x y	= boxBool   (primInt32U_neq (unboxInt32 x) (unboxInt32 y))
+	(==) 		= primInt32_eq
+	(/=) 		= primInt32_neq
+
+-- Note: The primFloat32* functions shouldn't be inlined because Core.Prim
+--       needs these specific names for our pretend cross-module inlining setup.
+primInt32_eq  x y	= boxBool   (primInt32U_eq   (unboxInt32 x) (unboxInt32 y))
+primInt32_neq x y	= boxBool   (primInt32U_neq  (unboxInt32 x) (unboxInt32 y))
 		
 
 instance Ord Int32 where
-	(>) x y		= boxBool   (primInt32U_gt  (unboxInt32 x) (unboxInt32 y))
-	(<) x y		= boxBool   (primInt32U_lt  (unboxInt32 x) (unboxInt32 y))
-	(>=) x y	= boxBool   (primInt32U_ge  (unboxInt32 x) (unboxInt32 y))
-	(<=) x y	= boxBool   (primInt32U_le  (unboxInt32 x) (unboxInt32 y))
+	(>) 		= primInt32_gt 
+	(<) 		= primInt32_lt
+	(>=)		= primInt32_ge
+	(<=)		= primInt32_le
 
 	compare x y
 	 | x == y	=  EQ
@@ -118,6 +123,13 @@ instance Ord Int32 where
 	min x y		= if x <= y then x else y
 	max x y		= if x >= y then x else y
 
+-- Note: The primFloat32* functions shouldn't be inlined because Core.Prim
+--       needs these specific names for our pretend cross-module inlining setup.
+primInt32_gt x y	= boxBool   (primInt32U_gt  (unboxInt32 x) (unboxInt32 y))
+primInt32_lt x y	= boxBool   (primInt32U_lt  (unboxInt32 x) (unboxInt32 y))
+primInt32_ge x y	= boxBool   (primInt32U_ge  (unboxInt32 x) (unboxInt32 y))
+primInt32_le x y	= boxBool   (primInt32U_le  (unboxInt32 x) (unboxInt32 y))
+
 
 instance Copy Int32 where
  	copy x 		= boxInt32 (unboxInt32 x)
@@ -126,20 +138,26 @@ instance Copy Int32 where
 instance Updatable Int32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrInt32 (peekDataRS_payload w1)) (unboxInt32 w2)
+		pokeOn w1 (castToPtrInt32 (peekDataRS_payload w1')) (unboxInt32 w2)
 		()
 
 
 instance Num Int32 where
 	negate x 	= boxInt32 (primInt32U_neg (unboxInt32 x))
-	(+) x y		= boxInt32 (primInt32U_add (unboxInt32 x) (unboxInt32 y))
-	(-) x y		= boxInt32 (primInt32U_sub (unboxInt32 x) (unboxInt32 y))
-	(*) x y		= boxInt32 (primInt32U_mul (unboxInt32 x) (unboxInt32 y))
+	(+) 		= primInt32_add
+	(-) 		= primInt32_sub
+	(*) 		= primInt32_mul
 
 	pow x n = pow' n 1i32
 	 where	pow' :: Int32 -> Int32 -> Int32
 		pow' 0i32 acc = acc
 		pow' n    acc = pow' (n - 1i32) (acc * x)
+
+-- Note: The primFloat32* functions shouldn't be inlined because Core.Prim
+--       needs these specific names for our pretend cross-module inlining setup.
+primInt32_add x y	= boxInt32 (primInt32U_add (unboxInt32 x) (unboxInt32 y))
+primInt32_sub x y	= boxInt32 (primInt32U_sub (unboxInt32 x) (unboxInt32 y))
+primInt32_mul x y	= boxInt32 (primInt32U_mul (unboxInt32 x) (unboxInt32 y))
 
 
 instance Integral Int32 where

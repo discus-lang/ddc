@@ -8,6 +8,7 @@
 module DDC.Core.Check.Exp
 	( checkedTypeOfExp 
 	, checkedTypeOfOpenExp
+	, checkedEffectOfOpenExp
 	, checkOpenExp
 	, checkExp
 	, checkExp')	-- used by DDC.Core.Lint.Prim
@@ -54,6 +55,16 @@ checkedTypeOfOpenExp callerName xx
 				{ envClosed	= False }
 	(_, t, _, _)	= checkExp xx env
    in	t
+
+
+-- | Check an expression, returning it's effect.
+--	Variables can be free provided they are annotated with their types.
+checkedEffectOfOpenExp :: String -> Exp -> Effect
+checkedEffectOfOpenExp callerName xx
+ = let	env		= (envInit callerName globEmpty globEmpty)
+				{ envClosed	= False }
+	(_, _, eff, _)	= checkExp xx env
+   in	eff
 
 
 -- | Check an expression.

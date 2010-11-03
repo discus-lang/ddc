@@ -5,11 +5,14 @@ module DDC.Core.Simplify.Match
 	, simplifyMatchA)
 where
 import DDC.Core.Exp
+import Util
 
 data RuleMatch
 	= RuleMatchNoAlts
 	| RuleMatchInMatch
 	| RuleSingleMatchInAlt
+	| RuleNestedDo
+	| RuleBoringDo
 	deriving (Eq, Ord, Show)
 
 -- | Simpify match expressions.
@@ -30,8 +33,27 @@ simplifyMatchX count eatXTaus xx
 	-- Eat up boring XDo expressions.
 	--   do { x } ==> x
 	XDo [SBind Nothing x]
-	 -> do	return x
+	 -> do	count RuleBoringDo
+		return x
 	
+	XDo ss
+	 -> let slurp s
+	 	 = case s of
+			SBind _        (XDo [s1])
+			 -> return [s1]
+			
+			SBind (Just v) (XDo ss')
+		 	 -> do	let Just ini               = takeInit ss'
+		    		let Just (SBind Nothing x) = takeLast ss'
+				count RuleNestedDo
+		   		return $ ini ++ [SBind (Just v) x]
+			
+			_ -> return [s]
+		
+	    in do
+		ss'	<- liftM concat $ mapM slurp ss
+		return	$ XDo ss'
+		
 	-- Dump matches with no alternatives.
 	--   match { | otherwise = x } ==> x
 	XMatch [AAlt [] x]	

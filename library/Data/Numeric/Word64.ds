@@ -122,7 +122,7 @@ instance Copy Word64 where
 instance Updatable Word64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrWord64 (peekDataRS_payload w1)) (unboxWord64 w2)
+		pokeOn w1 (castToPtrWord64 (peekDataRS_payload w1')) (unboxWord64 w2)
 		()
 
 

@@ -9,7 +9,6 @@ import Core.Util
 import Core.Plate.Trans
 import Util
 import DDC.Main.Pretty
-import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Core.Glob
 import DDC.Core.Check
@@ -157,8 +156,7 @@ snipX table xx
 	 -> leaveIt xx
 	 
 	-- we should never see XLocals as arguments..
-	XLocal{}
-	 -> panic stage	$ "snipDownX: unexpected XLocal\n"
+	XLocal{}		-> leaveIt xx
 	 
 	XPrim{}			-> snipIt table xx	
 	XPrimType{}		-> leaveIt xx

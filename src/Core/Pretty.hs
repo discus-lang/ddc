@@ -187,7 +187,7 @@ instance Pretty Exp PMode where
 	
 	XDo bs
 	 -> "do {\n"
-	 	%> ";\n\n" %!% bs % ";\n}"
+	 	%> ";\n\n" %!% bs % ";\n\n}"
 
 	XMatch alts
 	 -> "match {\n"
@@ -207,7 +207,7 @@ instance Pretty Exp PMode where
 	 -> m % " " %> (" " %!% map prettyExpB args)
 
 	XPrimType t
-	 -> parens $ ppr t
+	 -> prettyTypeParens t
 
 
 spaceApp xx
@@ -220,6 +220,7 @@ prettyExpB x
  = case x of
 	XVar{}		-> ppr x
 	XLit{}		-> ppr x
+	XPrimType t	-> prettyTypeParens t
 	_		-> "(" % x % ")"
 
 

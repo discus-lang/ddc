@@ -1,8 +1,11 @@
 
--- Core.Prim
+-- | Core.Prim
 --	Find direct uses of primitive functions and replace them by XPrim nodes.
 --	When we walk down the tree we remember what regions are marked as Direct.
 --	Direct regions don't need to be forced before being unboxed.
+--
+--	We also do some pretend cross-module inlining for critical aritmetic operations
+--	where we really want to expose the box\/unbox pairs to the simplifier.
 --
 module Core.Prim
 	(primGlob)
@@ -248,33 +251,49 @@ flattenAppsEff xx
 	_	-> Nothing
 
 
--- whether to ignore or unbox the argument
+----------------------------------------------------------------------------------------------------
+-- Poor man's cross module inliner.
+--   Says what to do with the arguments of a function.
+--   We tend to ignore type arguments, and unbox boxed values.
+
+-- Whether to ignore or unbox the argument
 data Action
 	= Ignore
 	| Discard
 	| Unbox
 	deriving (Show, Eq)
 
--- poor man's type signatures
---	Says what to do with the arguments of a function.
---	We tend to ignore type arguments, and unbox boxed values.
-
--- opI3U2	= [Ignore, Ignore, Ignore, Unbox, Unbox]
--- opD1U1	= [Discard, Discard, Unbox]
 opD3U2	= [Discard, Discard, Discard, Unbox, Unbox]
 
-----------------------------------------------------------------------------------------------------
--- TODO: the code for these tables could be a lot cleverer
---	explicitly listing each member won't be the right way when we want
---	to support all the other primitive types as well.
 
-
--- functions who's arguments can be unboxed
+-- Functions who's arguments can be unboxed.
+-- These functions must have these specific names in the prelude.
 unboxableFuns :: Map String (PrimOp, [Action])
 unboxableFuns
  = Map.fromList
 	[ ("&&",		(OpAnd,	opD3U2))
-	, ("||",		(OpOr,	opD3U2)) ]	
+	, ("||",		(OpOr,	opD3U2))
+
+	, ("primInt32_add",	(OpAdd, opD3U2))
+	, ("primInt32_sub",	(OpSub, opD3U2))
+	, ("primInt32_mul",	(OpMul, opD3U2)) 
+	, ("primInt32_eq",	(OpEq,  opD3U2))
+	, ("primInt32_neq",	(OpNeq, opD3U2))
+	, ("primInt32_lt",	(OpLt,  opD3U2))
+	, ("primInt32_gt",	(OpGt,  opD3U2))
+	, ("primInt32_le",	(OpLe,  opD3U2)) 
+	, ("primInt32_ge",	(OpGe,  opD3U2)) 
+
+	, ("primFloat32_add",	(OpAdd, opD3U2))
+	, ("primFloat32_sub",	(OpSub, opD3U2))
+	, ("primFloat32_mul",	(OpMul, opD3U2)) 
+	, ("primFloat32_eq",	(OpEq,  opD3U2))
+	, ("primFloat32_neq",	(OpNeq, opD3U2))
+	, ("primFloat32_lt",	(OpLt,  opD3U2))
+	, ("primFloat32_gt",	(OpGt,  opD3U2))
+	, ("primFloat32_le",	(OpLe,  opD3U2)) 
+	, ("primFloat32_ge",	(OpGe,  opD3U2)) ]
+
 
 
 -- | Is this the name of a fn that unboxes a value of primitive type.

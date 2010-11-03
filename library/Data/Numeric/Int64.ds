@@ -126,7 +126,7 @@ instance Copy Int64 where
 instance Updatable Int64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrInt64 (peekDataRS_payload w1)) (unboxInt64 w2)
+		pokeOn w1 (castToPtrInt64 (peekDataRS_payload w1')) (unboxInt64 w2)
 		()
 
 

@@ -25,6 +25,7 @@ data Stats
 
 	  -- | Counts of rule firings.
 	, statsRuleCounts	:: RuleCounts }
+	deriving (Show)
 
 
 -- | Check the stats of a simplifier pass to see if we made any progress
@@ -42,6 +43,7 @@ data RuleCounts
 	= RuleCounts
 	{ ruleCountsBoxing	:: Map RuleBoxing Int
 	, ruleCountsMatch	:: Map RuleMatch Int }
+	deriving (Show)
 	
 ruleCountsZero 
 	= RuleCounts
@@ -63,16 +65,21 @@ bumpCount rule mp
 -- Pretty -----------------------------------------------------------------------------------------
 instance Pretty Stats PMode where
  ppr stats
- 	= "Simplify.Stats\n"
-	% "    - stats from let-floater:\n"
-	%> (ppr (statsFloat stats))
-	% "\n"
-	% (pprStats $ Map.toList $ ruleCountsBoxing $ statsRuleCounts stats)
-	% (pprStats $ Map.toList $ ruleCountsMatch  $ statsRuleCounts stats)
+ 	= vcat
+	[ ppr "Simplify.Stats"
+	, " * Stats from let-floater:\n"
+		%> ppr (statsFloat stats)
+ 	, ppr " * Rule firings:"
+	, vcat 	(  (pprStats $ Map.toList $ ruleCountsBoxing $ statsRuleCounts stats)
+		++ (pprStats $ Map.toList $ ruleCountsMatch  $ statsRuleCounts stats)) ]
 			
 
-pprStats :: Show name => [(name, Int)] -> Str
+pprStats :: Show name => [(name, Int)] -> [Str]
 pprStats stats
-	= vcat
-	[ "    - " % padR 20 (show name) % " : " % show count
+	= [ "   " % padL 20 (show name) % " : " % show count
 		| (name, count)	<- stats]
+
+
+
+
+

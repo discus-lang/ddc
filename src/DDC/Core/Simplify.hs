@@ -44,7 +44,7 @@ fixSimplifierPass pass unique cgHeader cgModule_
 
 	   in	if statsProgress stats
    		 then go (cycles + 1) (accStats ++ [stats]) cgModule'
-		 else (cgModule', accStats)
+		 else (cgModule', accStats ++ [stats])
 
 
 -- | Do a quick tidy up that doesn't involve moving bindings around.

@@ -234,16 +234,14 @@ makeThunkCall xF args callArity
 isValueArg :: Exp -> Bool
 isValueArg xx
  = case xx of
-	XLit{}		-> True
-
  	XVar v t
-	 | varNameSpace v == NameValue
-	 -> True
+	 | varNameSpace v == NameValue	-> True
 
+	XLit{}		-> True
 	XAPP x t	-> isValueArg x
-	
+	XPrim{}		-> True
 	XPrimType{}	-> False
 	
-	_	-> panic stage 
-			$ "isValueArg: unexpected arg in function application " % xx 
+	_ 	-> panic stage 
+		$ "isValueArg: unexpected arg in function application " % xx 
 	

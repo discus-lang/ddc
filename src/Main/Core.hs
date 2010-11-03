@@ -183,11 +183,11 @@ coreSimplify unique cgHeader cgModule
 	when (elem Verbose ?args)
 	 $ do	putStr	$ pprStrPlain	$ "\n" %!% statss % "\n\n"
 
-	-- when dumping our state, refloat let bindings so we can see 
-	--	where the simplifier gave up.
 	when (elem DumpCoreSimplify ?args)
 	 $ do	dumpCT DumpCoreSimplify "core-simplify" $ treeOfGlob cgModule'
-
+		dumpS  DumpCoreSimplify "core-simplify--stats"
+			$ pprStrPlain $ vcat $ map ppr statss
+		
 	return	cgModule'
 	
 
@@ -231,12 +231,8 @@ coreLambdaLift cgHeader cgModule
 
 
 -- | Prepare for conversion to Sea.
-corePrep
-	:: (?args :: [Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> Glob -> Glob -> IO Glob
-	
-corePrep cgHeader cgModule
+corePrep :: CoreStage
+corePrep stage args base unique cgHeader cgModule
  = do	let eatXTau	= transformX 
 			$ \xx -> case xx of 
 					XTau _ x -> x
@@ -244,8 +240,18 @@ corePrep cgHeader cgModule
 
 	let cgModule2	= labelIndexGlob cgHeader cgModule
 	let cgModule3	= mapBindsOfGlob (blockP . eatXTau) cgModule2
-	dumpCT DumpCorePrep "core-prep"	 $ treeOfGlob cgModule3
-	return	cgModule3
+
+	-- snip exprs out of fn arguments
+	let snipTable	= Snip.Table
+			{ Snip.tableHeaderGlob		= cgHeader
+			, Snip.tableModuleGlob		= cgModule
+			, Snip.tablePreserveTypes	= True }
+			
+	let cgModule_snipped	
+			= Snip.snipGlob snipTable ("x" ++ unique) cgModule3
+
+	dumpCG args base DumpCorePrep stage cgModule_snipped
+	return	cgModule_snipped
 
 
 -- | Identify partial applications and insert calls to explicitly create and apply thunks.
