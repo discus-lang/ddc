@@ -12,9 +12,9 @@ import DDC.Core.Simplify.Boxing
 import DDC.Core.Simplify.Match
 import DDC.Main.Pretty
 import Control.Monad.State.Strict
+import qualified DDC.Core.Float	as Float
 import Data.Map			(Map)
 import qualified Data.Map	as Map
-import qualified Core.Float	as Float
 
 -- Stats ------------------------------------------------------------------------------------------
 -- | Statistics about what happened during a pass of the simplifier.

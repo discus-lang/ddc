@@ -9,14 +9,14 @@ module DDC.Core.Simplify
 	, simplifyPassTidy
 	, simplifyPassAll)
 where
-import Core.Plate.Trans
 import DDC.Core.Simplify.Boxing
 import DDC.Core.Simplify.Match
 import DDC.Core.Simplify.Stats
 import DDC.Core.Glob
+import Core.Plate.Trans
 import Util
-import qualified Core.Float	as Float
 import qualified Core.Snip	as Snip
+import qualified DDC.Core.Float	as Float
 
 type SimplifierPass
 	=  String 		-- ^ Unique id for allocating fresh variables.
