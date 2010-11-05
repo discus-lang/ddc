@@ -215,7 +215,8 @@ elaborateCloT' newVarN env tt
 			, tEmpty )
 
 	TApp{}
-	 | Just (t1, t2, eff, _)	<- takeTFun tt
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
+	 , TSum _ []			<- clo
 	 -> do	-- create a new value variable as a name for the function parameter
 		varVal			<- newVarN NameValue
 		
