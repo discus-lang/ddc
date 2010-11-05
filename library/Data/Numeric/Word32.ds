@@ -122,7 +122,7 @@ instance Copy Word32 where
 instance Updatable Word32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrWord32 (peekDataRS_payload w1)) (unboxWord32 w2)
+		pokeOn w1 (castToPtrWord32 (peekDataRS_payload w1')) (unboxWord32 w2)
 		()
 
 
