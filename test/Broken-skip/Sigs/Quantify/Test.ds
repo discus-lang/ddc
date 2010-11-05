@@ -1,6 +1,4 @@
 
-region %r1
-
 y :: Int %r1
 y = 5
 

@@ -63,6 +63,7 @@ module DDC.Type.Compounds
 	
 	  -- * Constraints
 	, emptyConstraints
+	, plusConstraints
 	, makeTConstrain
 	, addConstraints
 	, addConstraintsEq
@@ -496,6 +497,13 @@ emptyConstraints
 	{ crsEq		= Map.empty
 	, crsMore	= Map.empty
 	, crsOther	= [] }
+
+plusConstraints :: Constraints -> Constraints -> Constraints
+plusConstraints crs1 crs2
+ 	= Constraints
+	{ crsEq		= crsEq    crs1 `Map.union` crsEq crs2
+	, crsMore	= crsMore  crs1 `Map.union` crsMore crs2
+	, crsOther	= crsOther crs1 ++ crsOther crs2 }
 
 -- | If the given constraints are non empty then add a TConstrain to the type, 
 --   otherwise return the original type.

@@ -53,7 +53,7 @@ import Control.Monad.State.Strict	hiding (mapM)
 import Data.Maybe
 import qualified Debug.Trace
 
-debug		= False
+debug		= True
 trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 stage 		= "DDC.Desugar.Elaborate"
 
@@ -135,10 +135,48 @@ elaborateTreeM dgHeader dgModule
 	let (dgHeader_quant, vsMono')	= elabQuantifySigsInGlob Set.empty dgHeader_attach
 	let (dgModule_quant, vsMono2)	= elabQuantifySigsInGlob vsMono'   dgModule_attach
 	
+	-- See NOTE [Merging top-level monomorphic vars]
+	-- TODO: Do the merging pass.
+	--       Find groups of vars with the same name and module id, pick one uniqueid
+	--	 and substitute into all globs, source and header included.
+	
 	return	$ trace ("vsMono'' = " % vsMono2)
 		( dgHeader_quant
 		, dgModule_quant
 		, constraints)
+
+
+{-	NOTE [Merging top-level monomorphic vars]
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	Consider the following program:
+	  x :: Int %r1
+
+	  f :: Int %r2 -($c1)> Int %r3
+	    :- $c1 = ${%r1}
+	  f = ...
+
+	Note that both occurrences of %r1 are monomorphic because they appear
+	in material positions. However, because the renamer renames each
+	signature in its own context, the two occurrences of %r1 will have
+	different unique ids. This is because the renamer assumes that forall
+	quantifiers will be added for every free variable in a signature. 
+	
+	Here in the elaborator though, we don't add foralls for material vars.
+	Of course, the renamer can't know what vars are material because the
+	materiality of the data type of interest might not have been computed then.
+	
+	For comparison, suppose we added an explicit region binder at top level:	
+
+	 region %r1
+	
+	In this case we'd be ok: all occurrences of %r1 would have the same uniqueid.
+	owever, we don't want to require every top-level region to be explicitly
+	defined, so instead we must collect up groups of monomorphic top level region
+	vars with the same name and moduleid, and rewrite them so they also have the
+	same unqiue. In effect we're finishing the job of the renamer based on the
+	materiality information we've now computed.	
+-}
 
 
 -- Tag Kinds --------------------------------------------------------------------------------------
@@ -201,7 +239,6 @@ tagKindsCrs local crs
 -- Attach -----------------------------------------------------------------------------------------
 -- | Attach DataDefs to all TyCons in a glob.
 --   This makes it easy to get the def when consuming the type.
---
 attachDataDefsToTyConsInGlob :: Map Var DataDef -> Glob SourcePos -> Glob SourcePos
 attachDataDefsToTyConsInGlob defs glob
 	= transZ (transTableId return)

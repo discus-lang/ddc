@@ -81,7 +81,7 @@ staticVarsFromSigsOfGlob glob
  = 	( Set.fromList $ Map.keys $ globRegions glob
 
 	, Set.unions
-		$ map staticRsDataT'
+		$ map staticRsT'
 		$ map (\p@PTypeSig{} -> topTypeSigType p)
 		$ concat
 		$ Map.elems $ globTypeSigs glob
@@ -89,12 +89,13 @@ staticVarsFromSigsOfGlob glob
 	, Set.empty
 	, Set.empty)
 	
-staticRsDataT' :: Type -> Set Var
-staticRsDataT' tt
+-- TODO: This just takes material vars, we want dangerous ones as well.
+staticRsT' :: Type -> Set Var
+staticRsT' tt
 	= Set.fromList
 	$ mapMaybe takeVarOfType 
 	$ Set.toList
-	$ staticRsDataT tt
+	$ materialRsT tt
 	
 	
 

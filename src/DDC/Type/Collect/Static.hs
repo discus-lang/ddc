@@ -8,13 +8,19 @@
 module DDC.Type.Collect.Static
 	( staticRsT
 	, staticRsDataT
-	, staticRsClosureT)
+	, staticRsClosureT
+	, materialRsT)
 where
 import DDC.Type.Exp
+import DDC.Type.Kind
 import DDC.Type.Compounds
 import DDC.Type.Builtin
+import DDC.Main.Error
 import Data.Set			(Set)
 import qualified Data.Set	as Set
+import qualified Data.Map	as Map
+
+stage	= "DDC.Type.Collect.Static"
 
 -- | Collect the set of regions that are non-generalisable in a type.
 --   This function uses the materiality information present in the data
@@ -22,14 +28,17 @@ import qualified Data.Set	as Set
 --   variables of a type directly then use "DDC.Type.Data.Material"
 --
 --   We return a set of types so that it can contain meta-variables as well.
+--  TODO: This is wrong.
 --
 staticRsT  :: Type -> Set Type
 staticRsT tt
  	= Set.union (staticRsDataT tt) (staticRsClosureT tt)
 
 
+
 -- | Get the set of regions that are non-generalisable because they are
 --   material in this type. 
+--   TODO: This is wrong.
 staticRsDataT :: Type -> Set Type
 staticRsDataT tt
  = case tt of
@@ -71,10 +80,12 @@ staticRsDataT tt
 -- | Region cids that are free in the closure of the outer-most function
 --	constructor(s) are being shared with the caller. These functions
 --	did not allocate those regions, so they be can't generalised here.
+--  TODO: this is wrong.
 staticRsClosureT :: Type -> Set Type
 staticRsClosureT tt
  = case tt of
-	TConstrain t _		-> staticRsClosureT t
+	TConstrain t _
+	 -> staticRsClosureT t
 
 	TApp{} 
 	 | Just (_, _, _, clo)	<- takeTFun tt
@@ -96,3 +107,62 @@ staticRsClosureT tt
 	 -> Set.unions $ map staticRsClosureT ts
 
 	_ 	-> Set.empty
+
+
+
+-- | Compute the material vars in a type
+--   TODO: This isn't finished.
+--         All vars in a data type are taken to be material.
+materialRsT :: Type -> Set Type
+materialRsT tt
+	= materialRsWithCrs emptyConstraints tt
+	
+materialRsWithCrs crs tt
+ = let down	= materialRsWithCrs crs
+   in case tt of
+	TNil			-> Set.empty
+
+	TVar k _
+	 | isValueKind  k	-> Set.singleton tt
+	 | isRegionKind k	-> Set.singleton tt
+	 | isEffectKind k	-> Set.empty
+
+	 | isClosureKind k
+	 -> case Map.lookup tt (crsEq crs) of
+	 	Nothing		-> Set.empty
+		Just clo	-> down clo
+
+	 |  isClosureKind k
+	 ,  Just _	<- Map.lookup tt (crsMore crs)
+	 -> panic stage $ "materialRsT: what do we do for more-than constraints?"
+	
+	 | otherwise
+	 -> panic stage $ "materialRsT: not sure what to do with this kind"
+	
+	TCon{}			-> Set.empty
+	
+	TSum _ ts		-> Set.unions $ map down ts
+	
+	-- TODO: we're taking all args to be material, 
+	--	which is a safe overapproximation. 
+	TApp{}
+	 | Just (_, _, ts)	<- takeTData tt
+	 -> Set.unions $ map down ts
+	 
+	 | Just (_, t)		<- takeTFree tt
+	 -> down t
+
+	 | Just (_, _, _, clo)	<- takeTFun tt
+	 -> down clo
+	
+	 | otherwise
+	 -> panic stage $ "materialRsT: not sure what to do"
+	
+	TForall{}
+	 -> panic stage $ "materialRsT: got quantifiers"
+	
+	TConstrain tBody crs'
+	 -> materialRsWithCrs (plusConstraints crs crs') tBody
+	
+	TError{}
+	 -> Set.empty

@@ -68,8 +68,8 @@ checkSchemeAgainstSig tScheme prob@(ProbSig _ _ mode tSig)
 		, "    scheme core'\n"		%> prettyTypeSplit (toCoreT tScheme'),	blank
 		, "    scheme body\n"		%> tSchBody',				blank
 		, blank
-		, "    bodySubsLow      = "	% isSubsumes bodySubsLow,		blank
-		, "    bodySubsHigh     = "	% isSubsumes bodySubsHigh,		blank 
+		, "    bodySubsLow      = "	% bodySubsLow,				blank
+		, "    bodySubsHigh     = "	% bodySubsHigh,				blank 
 		, "    extraContextSch  = "	% extraContextSch,			blank
 		, "    extraContextSig  = "	% extraContextSig,			blank ]
 

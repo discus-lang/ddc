@@ -18,12 +18,24 @@ import DDC.Type.Exp
 import DDC.Type.Equiv
 import DDC.Type.Kind
 import DDC.Type.Compounds
+import DDC.Type.Pretty
+import DDC.Main.Pretty
+import qualified Debug.Trace
+
+-- stage		= "DDC.Type.Subsumes"
+debug 		= False
+trace s	x 	= if debug then Debug.Trace.trace (pprStrPlain s) x else x
 
 -- Subsumes ---------------------------------------------------------------------------------------
 data Subsumes
 	= Subsumes
 	| NoSubsumes Type Type
 	deriving (Show, Eq)
+
+instance Pretty Subsumes PMode where
+ ppr Subsumes		= ppr "Subsumes"
+ ppr (NoSubsumes t1 t2)	= ppr "NoSubsumes" %% prettyTypeParens t1 %% prettyTypeParens t2
+
 
 isSubsumes :: Subsumes -> Bool
 isSubsumes eq
@@ -42,6 +54,13 @@ joinSubsumes e1 e2
 -- | Check that the first type is subsumed by the second. @t1 <: t2@
 subsumesTT :: Type -> Type -> Subsumes
 subsumesTT t1 t2
+ = let subs	= subsumesTT' t1 t2
+   in  trace (vcat 	[ ppr "subsumes"
+			, "t1   = " %% t1
+			, "t2   = " %% t2 
+			, "subs = " %% subs]) subs
+
+subsumesTT' t1 t2
 	| TNil		<- t1
 	, TNil		<- t2
 	= Subsumes
