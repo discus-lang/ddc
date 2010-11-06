@@ -53,7 +53,7 @@ import Control.Monad.State.Strict	hiding (mapM)
 import Data.Maybe
 import qualified Debug.Trace
 
-debug		= True
+debug		= False
 trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 stage 		= "DDC.Desugar.Elaborate"
 
