@@ -1,0 +1,8 @@
+
+
+-- We don't handle (or want) quantifiers in closure constraints.
+-- This just gives a parse error.
+fun 	:: forall a. a -($c1)> a
+	:- $c1 = forall b. b -> b
+
+fun x	= x

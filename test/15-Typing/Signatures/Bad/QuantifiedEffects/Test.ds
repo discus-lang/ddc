@@ -1,0 +1,7 @@
+
+-- We don't handle (or want) quantifiers in effect constraints.
+-- This just gives a parse error.
+fun 	:: a -(!e1)> a
+	:- !e1 = forall %r1. !Read %r1
+
+fun x	= x

@@ -1,0 +1,5 @@
+
+-- We don't handle higher ranked types.
+-- ATM it just gives a parse error.
+fun :: (forall a. a -> a) -> b -> b
+fun x y = y

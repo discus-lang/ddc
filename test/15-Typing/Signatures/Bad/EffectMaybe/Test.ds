@@ -1,0 +1,5 @@
+
+fun 	<: a -(!e1)> a
+	:- !e1 = Maybe
+	
+fun x = x
