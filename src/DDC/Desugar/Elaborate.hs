@@ -171,11 +171,11 @@ elaborateTreeM dgHeader dgModule
 	 region %r1
 	
 	In this case we'd be ok: all occurrences of %r1 would have the same uniqueid.
-	owever, we don't want to require every top-level region to be explicitly
-	defined, so instead we must collect up groups of monomorphic top level region
+	However, as we don't want to require every top-level region to be explicitly
+	defined, we must instead collect up groups of monomorphic top level region
 	vars with the same name and moduleid, and rewrite them so they also have the
 	same unqiue. In effect we're finishing the job of the renamer based on the
-	materiality information we've now computed.	
+	materiality information we've just computed.	
 -}
 
 
