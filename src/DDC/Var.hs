@@ -12,6 +12,7 @@ module DDC.Var
 	, VarInfo	(..)
 	, varWithName
 	, varWithoutModuleId
+	, varsMatchByName
 	, loadSpaceQualifier
 	, valueParentOfVar
 	, takeSeaNameOfVar
@@ -158,6 +159,15 @@ loadSpaceQualifier var
 varWithoutModuleId:: Var -> Var
 varWithoutModuleId var
 	= var { varModuleId = ModuleIdNil }
+
+
+-- | Check whether the names, namespaces and moduleids of some var match,
+--   but don't look at the uniqueid.
+varsMatchByName :: Var -> Var -> Bool
+varsMatchByName v1 v2 
+	=  varName v1      == varName v2
+	&& varModuleId v1  == varModuleId v2
+	&& varNameSpace v1 == varNameSpace v2
 
 
 -- | For bound occurrences of value variables, get the binding occurrence.

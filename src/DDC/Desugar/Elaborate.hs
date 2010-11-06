@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 -- | Elaborate data type definitions and type signatures in this tree.
 --   In the source program we allow region, effect, and closure infomation to be elided
@@ -25,7 +26,6 @@ module DDC.Desugar.Elaborate
 	(elaborateTree)
 where
 import Source.Error
-import DDC.Desugar.Transform
 import DDC.Desugar.Elaborate.Quantify
 import DDC.Desugar.Elaborate.EffClo
 import DDC.Desugar.Elaborate.Constraint
@@ -41,9 +41,12 @@ import DDC.Var
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
+import Data.List
 import Data.Sequence			(Seq)
 import Data.Map				(Map)
+import Data.Set				(Set)
 import qualified DDC.Type.Transform	as T
+import qualified DDC.Desugar.Transform	as D
 import qualified Data.Sequence		as Seq
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
@@ -51,10 +54,7 @@ import Data.Traversable			(mapM)
 import Prelude				hiding (mapM)
 import Control.Monad.State.Strict	hiding (mapM)
 import Data.Maybe
-import qualified Debug.Trace
 
-debug		= False
-trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 stage 		= "DDC.Desugar.Elaborate"
 
 -- | Elaborate types in this tree.
@@ -132,59 +132,42 @@ elaborateTreeM dgHeader dgModule
 	let dgModule_attach	= attachDataDefsToTyConsInGlob defsAll dgModule_effclo
 	
 	-- Add missing forall quantifiers to sigs.
-	let (dgHeader_quant, vsMono')	= elabQuantifySigsInGlob Set.empty dgHeader_attach
-	let (dgModule_quant, vsMono2)	= elabQuantifySigsInGlob vsMono'   dgModule_attach
+	let (dgHeader_quant, vsMono_)	= elabQuantifySigsInGlob Set.empty dgHeader_attach
+	let (dgModule_quant, vsMono)	= elabQuantifySigsInGlob vsMono_   dgModule_attach
 	
 	-- See NOTE [Merging top-level monomorphic vars]
-	-- TODO: Do the merging pass.
-	--       Find groups of vars with the same name and module id, pick one uniqueid
-	--	 and substitute into all globs, source and header included.
+	let (dgModule_merged)		= mergeMonoVarsOfGlobs vsMono dgModule_quant
 	
-	return	$ trace ("vsMono'' = " % vsMono2)
-		( dgHeader_quant
-		, dgModule_quant
+	return	( dgHeader_quant
+		, dgModule_merged
 		, constraints)
 
 
-{-	NOTE [Merging top-level monomorphic vars]
-	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-	Consider the following program:
-	  x :: Int %r1
-
-	  f :: Int %r2 -($c1)> Int %r3
-	    :- $c1 = ${%r1}
-	  f = ...
-
-	Note that both occurrences of %r1 are monomorphic because they appear
-	in material positions. However, because the renamer renames each
-	signature in its own context, the two occurrences of %r1 will have
-	different unique ids. This is because the renamer assumes that forall
-	quantifiers will be added for every free variable in a signature. 
+-- | Find groups of vars with the same name and module id, pick one uniqueid
+--   and substitute into all globs, source and header included.
+mergeMonoVarsOfGlobs :: Set Var -> Glob SourcePos -> Glob SourcePos
+mergeMonoVarsOfGlobs vsMono dgModule
+ = let	vsGroups	= groupBy varsMatchByName $ Set.toList vsMono
+	sub		= Map.unions
+		 	$ [ Map.fromList $ zip rest (repeat v1)	
+				| (v1 : rest)	<- vsGroups
+				, not $ null rest]
 	
-	Here in the elaborator though, we don't add foralls for material vars.
-	Of course, the renamer can't know what vars are material because the
-	materiality of the data type of interest might not have been computed then.
+	transT		= T.transZM T.transTableId 
+			{ T.transV = \v -> return $ fromMaybe v (Map.lookup v sub) }
+
+	transP		= D.transZ (D.transTableId return) 
+			{ D.transT = transT }
+
+   in	dgModule { globTypeSigs = Map.map (map transP) (globTypeSigs dgModule) }
+
 	
-	For comparison, suppose we added an explicit region binder at top level:	
-
-	 region %r1
-	
-	In this case we'd be ok: all occurrences of %r1 would have the same uniqueid.
-	However, as we don't want to require every top-level region to be explicitly
-	defined, we must instead collect up groups of monomorphic top level region
-	vars with the same name and moduleid, and rewrite them so they also have the
-	same unqiue. In effect we're finishing the job of the renamer based on the
-	materiality information we've just computed.	
--}
-
-
 -- Tag Kinds --------------------------------------------------------------------------------------
 -- Tag each data constructor with its kind from this table
 tagKindsInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
 tagKindsInGlob pp
-	= transZM (transTableId return)
-		{ transT	= tagKindsT Map.empty }
+	= D.transZM (D.transTableId return)
+		{ D.transT	= tagKindsT Map.empty }
 		pp
 		
 tagKindsT :: Map Var Kind -> Type -> ElabM Type
@@ -241,8 +224,8 @@ tagKindsCrs local crs
 --   This makes it easy to get the def when consuming the type.
 attachDataDefsToTyConsInGlob :: Map Var DataDef -> Glob SourcePos -> Glob SourcePos
 attachDataDefsToTyConsInGlob defs glob
-	= transZ (transTableId return)
-		{ transT	= \t -> return $ T.transformT (attachDataDefsT defs) t }
+	= D.transZ (D.transTableId return)
+		{ D.transT	= \t -> return $ T.transformT (attachDataDefsT defs) t }
 		glob
 
 
@@ -278,4 +261,38 @@ elaborateEffCloP pp
 	
 	_ -> return pp
 
+
+---------------------------------------------------------------------------------------------------
+
+{-	NOTE [Merging top-level monomorphic vars]
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	Consider the following program:
+	  x :: Int %r1
+
+	  f :: Int %r2 -($c1)> Int %r3
+	    :- $c1 = ${%r1}
+	  f = ...
+
+	Note that both occurrences of %r1 are monomorphic because they appear
+	in material positions. However, because the renamer renames each
+	signature in its own context, the two occurrences of %r1 will have
+	different unique ids. This is because the renamer assumes that forall
+	quantifiers will be added for every free variable in a signature. 
+	
+	Here in the elaborator though, we don't add foralls for material vars.
+	Of course, the renamer can't know what vars are material because the
+	materiality of the data type of interest might not have been computed then.
+	
+	For comparison, suppose we added an explicit region binder at top level:	
+
+	 region %r1
+	
+	In this case we'd be ok: all occurrences of %r1 would have the same uniqueid.
+	However, as we don't want to require every top-level region to be explicitly
+	defined, we must instead collect up groups of monomorphic top level region
+	vars with the same name and moduleid, and rewrite them so they also have the
+	same unqiue. In effect we're finishing the job of the renamer based on the
+	materiality information we've just computed.	
+-}
 

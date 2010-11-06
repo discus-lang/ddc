@@ -3,7 +3,9 @@ y :: Int %r1
 y = 5
 
 -- The %r1 in this signature refers to the one for y.
--- We don't want to add an outer forall here.
+--   We don't want to add an outer forall here, but there is no top-level 
+--   region %r1 binder. The elaborator needs to determine that %r1 is material
+--   and rename the uniquids on both occurrences to match.
 add 	<: Int %r2 -($c2)> Int %r4 -(!e1 $c1)> Int
 	:- !e1 = !Read %r2 + !Read %r4 + !Read %r1
 	,  $c1 = ${a : %r2} + ${b : %r4} + ${y : %r1}
