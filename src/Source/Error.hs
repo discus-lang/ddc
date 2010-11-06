@@ -1,18 +1,16 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- Pretty printing of parse and renamer errors in the source program.
 module Source.Error
 	( Error(..))
 where
 import Util
-import Source.Token	
+import Source.Token
+import DDC.Type
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
-import DDC.Main.Error
 import DDC.Var
 import Shared.VarUtil			(prettyPos, isCtorName)
 import qualified Source.TokenShow 	as Token
-
-stage	= "Source.Error"
 
 
 -- | All the errors that the parser and renamer can generate
@@ -97,10 +95,20 @@ data Error
 		, eVar2			:: Var
 		, eAirity2		:: Int }
 
+	-- | Tried to make an instance for a method that's not in the specified class.
 	| ErrorNotMethodOfClass
 		{ eInstVar		:: Var
 		, eClassVar		:: Var }
+		
+	-- | Type signature quantifies a material variable.
+	| ErrorQuantifiedMaterialVar	
+		{ eVarSig		:: Var
+		, eTypeSig		:: Type 
+		, eVarQuantified	:: Var }
 
+	-- | Type signature quantifies a dangerous variable.
+	| ErrorQuantifiedDangerousVar
+		{ eVar			:: Var }
 
 	deriving Show		
 
@@ -142,15 +150,16 @@ instance Pretty Error PMode where
 	[ pprStrPlain sp
 	, "    Parse error: " ++ str ]
 
- ppr (ErrorParseBefore tt@(t1 : _))
+ ppr (ErrorParseBefore tt)
 	| Just toks	<- sequence 
 			$ map takeToken 
 			$ take 10 tt
 
- 	= ppr $ unlines $ 
-	[ prettyTokenPos t1
-	, "    Parse error before: " ++ (catInt " " $ map Token.showSource toks) ++ " ..."]
-
+ 	= let	Just t1	= takeHead tt
+ 	  in	ppr $ unlines $ 
+		[ prettyTokenPos t1
+		, "    Parse error before: " ++ (catInt " " $ map Token.showSource toks) ++ " ..."]
+		
 	| otherwise
 	= ppr "    Parse error at start of module"
 
@@ -160,21 +169,23 @@ instance Pretty Error PMode where
 
 
  -- Defixer Errors -----------------------------------------------------
- ppr (ErrorDefixNonAssoc (v:vs))
-	= prettyPos v % "\n"
+ ppr (ErrorDefixNonAssoc vs)
+  = let	Just v	= takeHead vs
+    in	prettyPos v % "\n"
 	% "    Precedence parsing error.\n"
 	% "      Cannot have multiple, adjacent, non-associative operators of the\n"
 	% "      same precedence in an infix expression.\n"
 	% "\n"
-	% "      Offending operators: " % ", " %!% (map varName (v:vs)) % "\n"
+	% "      Offending operators: " % ", " %!% (map varName vs) % "\n"
 
- ppr (ErrorDefixMixedAssoc (v:vs))
-	= prettyPos v % "\n"
+ ppr (ErrorDefixMixedAssoc vs)
+  = let	Just v	= takeHead vs
+    in	prettyPos v % "\n"
 	% "    Precedence parsing error.\n"
 	% "      Cannot have operators of same precedence but with differing\n"
 	% "      associativities in an infix expression.\n"
 	% "\n"
-	% "      Offending operators: " % ", " %!% (map varName (v:vs)) % "\n"
+	% "      Offending operators: " % ", " %!% (map varName vs) % "\n"
 
 
  -- Renamer Errors ------------------------------------------------------------
@@ -192,12 +203,12 @@ instance Pretty Error PMode where
  ppr err@(ErrorRedefinedVar{})
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Redefined "
-		% sort % " '"
+		% thing % " '"
 		% varName (eRedefined err) % "'\n"
 	% "      first defined at: " 	% prettyPos (eFirstDefined err) 			% "\n"
 
 	where var = eFirstDefined err
-	      sort 
+	      thing 
 		| isCtorName var
 		, varNameSpace var == NameValue
 		= ppr "data constructor"
@@ -246,10 +257,34 @@ instance Pretty Error PMode where
 	= prettyPos vInst % "\n"
 	% "    '" % vInst % "' is not a (visible) method of class '" % vClass % "'.\n"
 
- ppr x
-  	= panic stage
-	$ "ppr: no match for " % show x
+ ppr (ErrorQuantifiedMaterialVar vSig tSig vQuant)
+  	= varErr vQuant
+	[ "    Variable '" 
+			% varWithoutModuleId vQuant 
+			% "' cannot be quantified because it is material in this type."
+	, ppr "    Offending signature:"
+	, blank
+	, indent $ ppr $ prettyVTS vSig tSig ]
+
+
+ ppr (ErrorQuantifiedDangerousVar v)
+  	= vcat
+	[ ppr $ prettyPos v
+	, "    Variable '" % v % "' cannot be quantified because it is dangerous in this type." ]
 	
+
+-- Utils ------------------------------------------------------------------------------------------	
+prettyVTS v t
+ 	= indentSpace 4
+	$ "    " 
+		++ varName v 
+		++ "\n  :: "
+		++ (indentSpace 2 $ pprStrPlain $ prettyTypeSplit $ t)
+
+varErr var ls
+	= prettyPos var % newline
+	% (indent $ vcat ls)
+
 
 
 

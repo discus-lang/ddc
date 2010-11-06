@@ -70,7 +70,7 @@ elaborateTree
 
 elaborateTree unique dgHeader dgModule
  = let
-	((dgHeader', dgModule', constraints), state')
+	((dgHeader', dgModule', constraints, errs), state')
 		= runState
 			(elaborateTreeM dgHeader dgModule)
 			(stateInit unique)
@@ -79,7 +79,7 @@ elaborateTree unique dgHeader dgModule
 	, dgModule'
 	, constraints
 	, stateKinds state'
-	, [] )
+	, errs )
 		
 elaborateTreeM dgHeader dgModule
  = do	
@@ -132,15 +132,19 @@ elaborateTreeM dgHeader dgModule
 	let dgModule_attach	= attachDataDefsToTyConsInGlob defsAll dgModule_effclo
 	
 	-- Add missing forall quantifiers to sigs.
-	let (dgHeader_quant, vsMono_)	= elabQuantifySigsInGlob Set.empty dgHeader_attach
-	let (dgModule_quant, vsMono)	= elabQuantifySigsInGlob vsMono_   dgModule_attach
+	let (dgHeader_quant, vsMono_, errsHeader)	
+				= elabQuantifySigsInGlob Set.empty dgHeader_attach
+
+	let (dgModule_quant, vsMono,  errsModule)	
+				= elabQuantifySigsInGlob vsMono_   dgModule_attach
 	
 	-- See NOTE [Merging top-level monomorphic vars]
-	let (dgModule_merged)		= mergeMonoVarsOfGlobs vsMono dgModule_quant
+	let (dgModule_merged)	= mergeMonoVarsOfGlobs vsMono dgModule_quant
 	
 	return	( dgHeader_quant
 		, dgModule_merged
-		, constraints)
+		, constraints
+		, errsHeader ++ errsModule)
 
 
 -- | Find groups of vars with the same name and module id, pick one uniqueid

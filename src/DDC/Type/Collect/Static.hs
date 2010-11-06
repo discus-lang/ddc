@@ -15,7 +15,9 @@ import DDC.Type.Exp
 import DDC.Type.Kind
 import DDC.Type.Compounds
 import DDC.Type.Builtin
+import DDC.Type.Pretty		()
 import DDC.Main.Error
+import DDC.Main.Pretty
 import Data.Set			(Set)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -133,18 +135,25 @@ materialRsWithCrs crs tt
 		Just clo	-> down clo
 
 	 |  isClosureKind k
-	 ,  Just _	<- Map.lookup tt (crsMore crs)
-	 -> panic stage $ "materialRsT: what do we do for more-than constraints?"
-	
+	 ,  Just t2	<- Map.lookup tt (crsMore crs)
+	 -> warning	(vcat	[ stage %% "materialRsT"
+				, ppr "Following more-than constraint for" %% tt
+				, ppr "Check this is ok"])
+	 		$ down t2
+	 
 	 | otherwise
-	 -> panic stage $ "materialRsT: not sure what to do with this kind"
+	 -> warning	(vcat	[ stage %% "materialRsT"
+				, ppr "Assuming" %% tt %% "has no material vars"
+				, ppr "Check this is ok"])
+			$ Set.empty
 	
 	TCon{}			-> Set.empty
 	
 	TSum _ ts		-> Set.unions $ map down ts
 	
 	-- TODO: we're taking all args to be material, 
-	--	which is a safe overapproximation. 
+	--       which is a safe overapproximation if we're just using this
+	--       to quantify sigs. Not safe for reducing Shape constraints though.
 	TApp{}
 	 | Just (_, _, ts)	<- takeTData tt
 	 -> Set.unions $ map down ts
@@ -156,13 +165,18 @@ materialRsWithCrs crs tt
 	 -> down clo
 	
 	 | otherwise
-	 -> panic stage $ "materialRsT: not sure what to do"
+	 -> warning 	(vcat	[ stage %% "materialRsT"
+				, ppr "Assuming type application" %% tt %% "has no material vars."
+				, ppr "Check this is ok." ])
+	 		$ Set.empty
 	
 	TForall{}
-	 -> panic stage $ "materialRsT: got quantifiers"
+	 -> panic stage $ "materialRsT: shouldn't be passed a quantified type."
 	
 	TConstrain tBody crs'
 	 -> materialRsWithCrs (plusConstraints crs crs') tBody
 	
 	TError{}
-	 -> Set.empty
+	 -> panic stage $ "materialRsT: got TError"
+
+

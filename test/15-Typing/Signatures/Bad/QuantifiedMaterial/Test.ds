@@ -1,0 +1,6 @@
+
+
+-- This %r1 can't be quantified because it's material in the type.
+-- We get the same object back for each occurrence of the variable 'x'.
+x :: forall %r1. Int %r1
+x = 5
