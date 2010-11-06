@@ -1,0 +1,3 @@
+ddc: "./test/15-Typing/Signatures/Unsupported/HigherRanked/Test.ds" (line 4, column 5):
+unexpected ::
+expecting pattern binding

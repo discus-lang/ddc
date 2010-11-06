@@ -7,7 +7,6 @@ import Command
 import War
 import Util
 import System.Exit
-import System.FilePath
 
 
 -- Get Tests --------------------------------------------------------------------------------------
@@ -138,11 +137,10 @@ getTestsInDir config dirPath
 			, TestDiff	   errorCheckFile compileStderr]
 			
 			| file	<- filter (isSuffixOf ".ds") files 
-			, let fileBase		= takeBaseName file
-			, let errorCheckFile	= fileBase ++ ".error.check"
-			, let compileStderr	= fileBase ++ ".compile.stderr"
-			, elem errorCheckFile files 
-		  ]
+			, let fileRoot		= take (length file - length ".ds") file
+			, let errorCheckFile	= fileRoot ++ ".error.check"
+			, let compileStderr	= fileRoot ++ ".compile.stderr"
+			, elem errorCheckFile files  ]
 
 
 	-- These tests are can be run in all ways
@@ -159,43 +157,15 @@ getTestsInDir config dirPath
 		= expandWays (configWays config) testsAllWays
 
 
-	-- These tests can only be run in a specific way
-{-	let takeStdoutWayFile way file
-		| name		<- "Main.stdout.check." ++ pprWayName way
-		, isSuffixOf name file
-		= Just (TestDiff "Main.stdout" name)
-		
-		| otherwise
-		= Nothing
-	
-	let filesStdoutWayed
-		= catMaybes
-		$ [ liftM (\t -> (t, way)) $ takeStdoutWayFile way file
-		 	| file		<- filesAll
-			, way		<- configWays config ]
-
-	let testsStdoutWayed
-		| not $ null filesStdoutWayed
-		, Just (TestNode tid _)	<- takeLast testsHereExpanded
-		= concat
-		$ chainNodes 
-			[ [TestNode (file, way) [tid]]
-				| (file, way)	<- filesStdoutWayed ]
-				
-		| otherwise
-		= []
--}		
 	-- Cleanup after each set of tests if asked 
 	let testsFinal
 		| configClean config
 		, Just n1	<- takeLast $ testsHereExpanded
 		= testsHereExpanded 
---			++ testsStdoutWayed
 			++ [TestNode (TestClean dirPath, WayNil) [testIdOfNode n1]]
 
 		| otherwise
 		= testsHereExpanded
---			++ testsStdoutWayed
 
 
 	debugLn 
@@ -206,6 +176,9 @@ getTestsInDir config dirPath
 		++ "\n"
 		++ " -- final -- \n"
 		++ (unlines $ map show $ testsFinal)
+		++ "\n"
+		++ " -- compile error -- \n"
+		++ (unlines $ map show $ testsCompileError)
 		++ "\n"
 
 

@@ -1,0 +1,9 @@
+ddc: ERROR
+./test/15-Typing/Signatures/Bad/QuantifiedMaterial/Test.ds:5:12
+            Variable '%r1' cannot be quantified because it is material in this type.
+            Offending signature:
+        
+                    x
+                      :: forall %r1
+                      .  Int32 %r1
+
