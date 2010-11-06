@@ -1,0 +1,10 @@
+
+
+thing 	:: forall a. a -(!e1)> a
+	:- !e1 = !ReadT a
+
+thing x = x
+
+
+thong 	:: forall %r1 %r2. Int %r1 -> Int %r2
+thong x = x
