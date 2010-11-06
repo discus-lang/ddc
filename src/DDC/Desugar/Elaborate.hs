@@ -163,7 +163,7 @@ mergeMonoVarsOfGlobs vsMono dgModule
 
 	
 -- Tag Kinds --------------------------------------------------------------------------------------
--- Tag each data constructor with its kind from this table
+-- | Tag each data constructor with its kind from this table
 tagKindsInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
 tagKindsInGlob pp
 	= D.transZM (D.transTableId return)
@@ -172,51 +172,49 @@ tagKindsInGlob pp
 		
 tagKindsT :: Map Var Kind -> Type -> ElabM Type
 tagKindsT local tt
- 	| TVar _ (UVar v)	<- tt
-	= do	kindMap	<- gets stateKinds 
+ = case tt of
+	TVar _ (UVar v)
+	 -> do	kindMap	<- gets stateKinds 
 		case listToMaybe $ catMaybes [Map.lookup v kindMap, Map.lookup v local] of
 			Nothing	-> return $ tt
 			Just k'	-> return $ TVar k' $ UVar v
 
-	| TCon (TyConData v _ mDef) <- tt
-	= do	kindMap	<- gets stateKinds
+	TCon (TyConData v _ mDef)
+	 -> do	kindMap	<- gets stateKinds
 		case listToMaybe $ catMaybes [Map.lookup v kindMap, Map.lookup v local] of
 			Nothing	-> return tt
 			Just k'	-> return $ TCon (TyConData v k' mDef)
 
-	| TCon{}		<- tt
-	= return tt
+	TCon{}
+	 -> return tt
 			
-	| TSum k ts		<- tt
-	= do	ts'	<- mapM (tagKindsT local) ts
-		return	$ TSum k ts'
+	TSum k ts
+	 -> liftM2 TSum (return k) (mapM (tagKindsT local) ts)
+		
+	TApp t1 t2
+	 -> liftM2 TApp (tagKindsT local t1) (tagKindsT local t2)
 	
-	| TApp t1 t2		<- tt
-	= liftM2 TApp (tagKindsT local t1) (tagKindsT local t2)
-	
-	| TForall b k t <- tt
-	, Just v	<- takeVarOfBind b
-	= do	let local'	= Map.insert v k local
+	TForall b k t
+	 | Just v	<- takeVarOfBind b
+	 -> do	let local'	= Map.insert v k local
 		t'		<- tagKindsT local' t
 		return		$ TForall b k t'
 
-	| TForall b k t <- tt
-	= do	t'		<- tagKindsT local t
-		return		$ TForall b k t'
+	TForall b k t
+	 -> liftM3 TForall (return b) (return k) (tagKindsT local t)
 
-	| TConstrain t crs	<- tt
-	= do	t'	<- tagKindsT local t
-		crs'	<- tagKindsCrs local crs
-		return	$ TConstrain t' crs'
-		
-	| otherwise
-	= panic stage $ "tagKindsT: no match for " % tt
+	TConstrain t crs
+	 -> liftM2 TConstrain (tagKindsT local t) (tagKindsCrs local crs)
+			
+	_ -> panic stage $ "tagKindsT: no match for " % tt
+
 		
 tagKindsCrs :: Map Var Kind -> Constraints -> ElabM Constraints
 tagKindsCrs local crs
- = do	eqs'	<- mapM (tagKindsT local) $ crsEq   crs
-	mores'	<- mapM (tagKindsT local) $ crsMore crs
-	return	$ Constraints eqs' mores' (crsOther crs)
+ = liftM3 Constraints 
+		(mapM (tagKindsT local) $ crsEq   crs)
+		(mapM (tagKindsT local) $ crsMore crs)
+		(return $ crsOther crs)
 	
 
 -- Attach -----------------------------------------------------------------------------------------
