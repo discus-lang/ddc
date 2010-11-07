@@ -9,10 +9,10 @@ ddc: ERROR
         I was using:
             ref
               :: forall t0
-              .  Ref %117 (t0 -> t0)
+              .  Ref %120 (t0 -> t0)
         
         But then I found the
-              constraint: Mutable %117
+              constraint: Mutable %120
          from the use of: (#=)
                       at: ./test/15-Typing/Closure/T84-LateExport/Main.ds:7:16
         
