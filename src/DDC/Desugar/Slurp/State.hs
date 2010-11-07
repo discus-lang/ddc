@@ -1,5 +1,6 @@
-
-module	Desugar.Slurp.State
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+-- | Type constraint slurper state.
+module	DDC.Desugar.Slurp.State
 	( Annot1
 	, Annot2
 	, BindMode (..)
@@ -10,7 +11,6 @@ module	Desugar.Slurp.State
 	, lookupDataDefOfCtorNamed
 	, lookupCtorDefOfCtorNamed)
 where
-import Util
 import DDC.Solve.Error
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
@@ -18,6 +18,7 @@ import DDC.Solve.Interface.Problem
 import DDC.Type
 import DDC.Type.Data
 import DDC.Var
+import Util
 import qualified Data.Set 	as Set
 import qualified Data.Map 	as Map
 import qualified Shared.Unique	as Unique

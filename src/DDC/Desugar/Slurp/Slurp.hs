@@ -1,23 +1,23 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-missing-fields #-}
-{-# OPTIONS -fwarn-incomplete-patterns #-}
--- | Slurp out type constraints from the desugared IR.
-module Desugar.Slurp.Slurp
+-- | Slurping type constraints from the Desugared IR.
+module DDC.Desugar.Slurp.Slurp
 	(slurpTree)
 where
-import Util
-import Desugar.Slurp.Base
-import Desugar.Slurp.SlurpS
+import DDC.Desugar.Slurp.Base
+import DDC.Desugar.Slurp.SlurpS
 import DDC.Constraint.Simplify
 import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
 import DDC.Var
 import DDC.Type			()
 import DDC.Type.Data
+import Util
 import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
 
-stage	= "Desugar.Slurp.Slurp"
+stage	= "DDC.Desugar.Slurp.Slurp"
 
 -- | Slurp out a type inferencer problem from this tree.
 --   The problem carries type constraints and other information from the program
@@ -53,13 +53,13 @@ slurpTree blessMain hTree sTree
 		let defs	= defsExtern ++ defsMethod
 	
 		-- Built the map of type definitions.
-		defMap		<- liftM Map.fromList
+		defMap'		<- liftM Map.fromList
 				$ mapM (\def@(ProbDef v _ _) -> do
 					TVar _ (UVar vT) <- lbindVtoT v
 					return	(vT, def))
 				$ defs
 				
-		return	defMap)
+		return	defMap')
 	    state0
 		
 		
@@ -103,7 +103,7 @@ slurpTree blessMain hTree sTree
 -- TODO: Check the quantified variables aren't already there.
 --
 --
-makeMethodType vClass tsParam vSig tSig
+makeMethodType vClass tsParam _ tSig
  = 	-- add a forall for each of the parameters of the type class
    let	bksParam	= map (\(TVar k (UVar v)) -> (BVar v, k)) tsParam
 
@@ -171,23 +171,23 @@ slurpTreeM tree
 slurpP 	:: Top Annot1	
 	-> CSlurpM (Top Annot2, [CTree])
 
-slurpP	(PImport sp ms)
+slurpP	(PImport _ ms)
  =	return	( PImport Nothing ms
 		, [])
 
-slurpP	(PRegion sp v)
+slurpP	(PRegion _ v)
  =	return 	( PRegion Nothing v
 		, [])
 
-slurpP	(PKindSig sp v k)
+slurpP	(PKindSig _ v k)
    =	return	( PKindSig Nothing v k
 		, [])
  
-slurpP	(PSuperSig sp v k)
+slurpP	(PSuperSig _ v k)
  =	return	( PSuperSig Nothing v k
 		, [])
 		
-slurpP top@(PClassInst sp v ts ss)
+slurpP (PClassInst sp v ts ss)
  = do	
 	-- All the RHS of the statements are vars, so we don't get any useful constraints back
 	(_, _, _, ss', _)
@@ -209,10 +209,10 @@ slurpP	(PTypeSig sp sigMode vs tSig)
 	return	( PTypeSig Nothing sigMode vs tSig
 		, [])
 
-slurpP x@(PTypeSynonym sp v t)
+slurpP (PTypeSynonym{})
  = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"
 
-slurpP p@(PData sp dataDef)
+slurpP (PData _ dataDef)
  = do	modify 	$ addDataDefToState dataDef
 	return 	( PData Nothing dataDef
 		, [])
@@ -231,13 +231,13 @@ slurpP	(PProjDict sp t ss)
 		, [CDictProject (TSM $ SMProjDict sp) t (Map.fromList projVars)] )
 	
 slurpP (PBind sp v x)
- = do	(vT, eff, clo, stmt', qs)
+ = do	(_, _, _, stmt', qs)
 			<- slurpS (SBind sp (Just v) x)
 
 	-- If the stmt binds a var then we want the type for it from the solver.
 	(case bindingVarOfStmt stmt' of
-		Just v	
-		 -> do	vT_bound	<- getVtoT v
+		Just v'	
+		 -> do	vT_bound	<- getVtoT v'
 		 	wantTypeV vT_bound
 			return ()
 		
@@ -249,11 +249,11 @@ slurpP (PBind sp v x)
 	return	( PBind Nothing v' x'
 		, qs )
 
-slurpP pp@(PExtern nn v t tSea)
+slurpP (PExtern _ v t tSea)
 	= return (PExtern Nothing v t tSea
 		 , [])
 
-slurpP pp@(PClassDecl nn vClass tsParam tsMethods)
+slurpP (PClassDecl _ vClass tsParam tsMethods)
 	= return ( PClassDecl Nothing vClass tsParam tsMethods
 		 , [])
 					

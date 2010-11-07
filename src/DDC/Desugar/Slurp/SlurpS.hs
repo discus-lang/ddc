@@ -1,16 +1,17 @@
--- | Constraint slurper for statements.
---
-module Desugar.Slurp.SlurpS 
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+module DDC.Desugar.Slurp.SlurpS 
 	(slurpS)
 where
-import Desugar.Slurp.Base
-import Desugar.Slurp.SlurpX
+import DDC.Desugar.Slurp.Base
+import DDC.Desugar.Slurp.SlurpX
 import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
 import Util
 import qualified Util.Data.Map	as Map
 
--- | Slurp the type constraints for this statement.
+stage	= "DDC.Desugar.Slurp.SlurpS"
+
+-- | Slurp out type constraints a statement.
 slurpS 	:: Stmt Annot1
 	-> CSlurpM 
 		( Type		-- type var
@@ -24,7 +25,7 @@ slurpS 	(SBind sp Nothing e1)
  = do
 	tBind		<- newTVarD
 	
-	(tX@(TVar _ tXv), eX, cX, x1', qsX)	
+	(tX@TVar{}, eX, _, x1', qsX)	
 			<- slurpX e1
 	
 	let qs	= 
@@ -43,7 +44,7 @@ slurpS	(SBind sp (Just v) e1)
  = do
 	tBind@(TVar _ (UVar vBindT))	<- lbindVtoT v
 	
- 	(tX@(TVar _ (UVar tXv)), eX, cX, x1', qsX)	
+ 	(tX@(TVar _ (UVar{})), eX, _, x1', qsX)	
 			<- slurpX e1
 
 	return	( tX
@@ -58,7 +59,7 @@ slurpS	(SBind sp (Just v) e1)
 				++ [ CGen (TSM $ SMGen sp v) tBind ] } ] )
 
 -- type signatures
-slurpS	stmt@(SSig sp sigMode vs tSig)
+slurpS	(SSig sp sigMode vs tSig)
  = do
 	forM_ vs 
 	 $ \v -> do	
@@ -75,5 +76,7 @@ slurpS	stmt@(SSig sp sigMode vs tSig)
 		, SSig Nothing sigMode vs tSig
 		, [])
 
-
-
+slurpS	_
+	= panic stage
+	$ "slurpS: unexpected statement during slurping. Maybe the desugarer messed up."
+	

@@ -1,41 +1,43 @@
-
-module Desugar.Slurp.SlurpA 
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+module DDC.Desugar.Slurp.SlurpA 
 	(slurpA)
 where
-import Desugar.Slurp.Base
-import Desugar.Slurp.SlurpX
+import DDC.Desugar.Slurp.Base
+import DDC.Desugar.Slurp.SlurpX
 import DDC.Type.Data.Base
 import DDC.Solve.Location
 import DDC.Var
 import Util
 
-stage	= "Desugar.Slurp.SlurpA"
+stage	= "DDC.Desugar.Slurp.SlurpA"
 
--- Alt ---------------------------------------------------------------------------------------------
+-- | Slurp out type constraints from a match alternative.
 slurpA	:: Alt Annot1	
 	-> CSlurpM 
-		( Type					-- type constraint placed on the case object.
-		, Type					-- type of the RHS.
-		, Effect				-- effect of evaluating the alternative.
-		, Closure				-- closure of this alternative.
-		, Alt Annot2				-- annotated Alt.
-		, CTree)				-- constraints.
+		( Type		-- type constraint placed on the case object.
+		, Type		-- type of the RHS.
+		, Effect	-- effect of evaluating the alternative.
+		, Closure	-- closure of this alternative.
+		, Alt Annot2	-- annotated Alt.
+		, CTree)	-- constraints.
 
-slurpA	alt@(AAlt sp gs x)
+slurpA	(AAlt sp gs x)
  = do
 	tGuards	<- newTVarDS "guards"
 	eAlt	<- newTVarES "alt"
-	cAlt	<- newTVarCS "alt"
 
 	-- slurp the guards
 	--	we need to do this before slurping the RHS
 	--	because slurpW sets the bindMode for any matched vars.
 	--
-	(cbindssGuards, mtsGuards, esGuards, csGuards, gs', qssGuards)
+	-- BUGS?: we're not using the guards, check this
+	
+	(cbindssGuards, mtsGuards, esGuards, _csGuards, gs', qssGuards)
 			<- liftM unzip6 $ mapM slurpG gs
 
 	-- slurp the RHS of the alternative
-	(tX, eX, cX, x', qsX)
+	-- BUGS?: we're not using the closure
+	(tX, eX, _, x', qsX)
 			<- slurpX x
 
 	let qs	=
@@ -48,7 +50,7 @@ slurpA	alt@(AAlt sp gs x)
 		= BNothing
 		
 		| otherwise
-		= BDecon [vDeconT | (vDeconV, vDeconT) <- cbindsGuards]
+		= BDecon [vDeconT | (_, vDeconT) <- cbindsGuards]
 
 	return	( tGuards
 		, tX
@@ -70,7 +72,7 @@ slurpG 	:: Guard Annot1
 		, Guard Annot2		-- annotated guard.
 		, [CTree])		-- constraints.
 		
-slurpG	(GCase sp w)
+slurpG	(GCase _ w)
  = do	
  	(cbindsW, tW, w', qsW)	
  		<- slurpW w
@@ -86,13 +88,13 @@ slurpG	(GCase sp w)
 slurpG	(GExp sp w x)
  = do
 	eGuard	<- newTVarES "guard"
-	cGuard	<- newTVarCS "guard"
 
 	(cbindsW, tW, w', qsW) 
 		<- slurpW w
 		
 	-- slurp the matched exp
-	(tX, eX, cX, x', qsX)
+	-- BUGS? we're not using the closure
+	(tX, eX, _, x', qsX)
 		<- slurpX x
 
 	-- make the effect of testing the case object
@@ -124,7 +126,7 @@ slurpW	:: Pat Annot1
 		, Pat Annot2		-- annotatted pattern.
 		, [CTree])		-- constraints for each arg in the pattern.
 
-slurpW	(WConLabel sp vCon lvs)
+slurpW	(WConLabel _ vCon lvs)
  = do	
 	-- Lookup what data type this constructor belongs to.
 	mDataDef	<- lookupDataDefOfCtorNamed vCon
@@ -176,6 +178,11 @@ slurpW	(WLit sp litFmt)
 		| tcKind == KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
 			return	$ makeTData tcVar tcKind [TVar kRegion $ UVar vR]
+			
+		| otherwise
+		= panic stage $ "tLitM: no match"
+		
+			
 	tLit <- tLitM
 
 	wantTypeV tV
@@ -186,8 +193,8 @@ slurpW	(WLit sp litFmt)
 		, [CEq (TSV $ SVLiteralMatch sp litFmt) tD tLit])
 
 
-slurpW	(WVar sp v)
- = do	tBound@(TVar k (UVar vT))	<- lbindVtoT v
+slurpW	(WVar _ v)
+ = do	tBound@(TVar _ (UVar vT))	<- lbindVtoT v
  			
 	return	( [(v, vT)]
 		, tBound
@@ -215,7 +222,6 @@ slurpLV vCtor tsParams (LIndex sp ix, vBind)
 	wantTypeV vT	
 
 	-- Get the ctor definition.
-	Just dataDef	<- lookupDataDefOfCtorNamed vCtor
 	Just ctorDef	<- lookupCtorDefOfCtorNamed vCtor
 	
 	case lookupTypeOfNumberedFieldFromCtorDef ix ctorDef of
@@ -251,7 +257,6 @@ slurpLV vCtor tsParams (LVar sp vField, vBind)
 	wantTypeV vT
  
 	-- Get the ctor definition.
-	Just dataDef	<- lookupDataDefOfCtorNamed vCtor
 	Just ctorDef	<- lookupCtorDefOfCtorNamed vCtor
 
 	-- Lookup the fields for this constructor.

@@ -1,8 +1,8 @@
 
-module Desugar.Slurp.SlurpA
+module DDC.Desugar.Slurp.SlurpA
 	(slurpA)
 where
-import Desugar.Slurp.Base
+import DDC.Desugar.Slurp.Base
 
 slurpA	:: Alt Annot1	
 	-> CSlurpM 

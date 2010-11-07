@@ -1,11 +1,11 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Constraint slurping for Expressions.
-
-module Desugar.Slurp.SlurpX
+module DDC.Desugar.Slurp.SlurpX
 	( slurpX )
 where
-import {-# SOURCE #-} Desugar.Slurp.SlurpS
-import {-# SOURCE #-} Desugar.Slurp.SlurpA
-import Desugar.Slurp.Base
+import {-# SOURCE #-} DDC.Desugar.Slurp.SlurpS
+import {-# SOURCE #-} DDC.Desugar.Slurp.SlurpA
+import DDC.Desugar.Slurp.Base
 import DDC.Solve.Location
 import DDC.Var
 import DDC.Base.DataFormat
@@ -13,10 +13,9 @@ import Util			(liftM, unzip6, unzip5, takeLast, catMap)
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
 
-stage	= "Desugar.Slurp.SlurpX"
+stage	= "DDC.Desugar.Slurp.SlurpX"
 
--- | Slurp out type an effect constraints from an expression.
---   Annotate the expression with new type and effect variables as we go.
+-- | Slurp out type constraints from an expression.
 slurpX	:: Exp Annot1
 	-> CSlurpM 
 		( Type		-- type of expression.
@@ -27,24 +26,23 @@ slurpX	:: Exp Annot1
 
 
 -- Lam ------------------------------------------------------------------------
-slurpX	exp@(XLambda sp vBound xBody)
+slurpX	xx@(XLambda sp vBound xBody)
  = do
 	tX		<- newTVarDS "lam"
 	cX		<- newTVarCS "lam"
-	cX2		<- newTVarCS "lam"
 
 	-- Create type vars for all the lambda bound vars.
 	Just tBound@(TVar _ (UVar vBoundT))
 			<- bindVtoT vBound
 	
 	-- Slurp the body.
-	(tBody, eBody, cBody, xBody', qsBody)	
+	(tBody, eBody, _, xBody', qsBody)	
 			<- slurpX xBody
 
 	-- Get the closure terms for value vars free in this expression
 	let freeVs	= Set.filter (\v ->  (varNameSpace v == NameValue)
 					 &&  (not $ Var.isCtorName v))
-			$ freeVars exp 
+			$ freeVars xx
 
 	tsCloFree	<- mapM (\v -> do
 					vT	<- lbindVtoT v
@@ -90,21 +88,20 @@ slurpX	exp@(XLambda sp vBound xBody)
 
 
 -- App ------------------------------------------------------------------------
-slurpX	exp@(XApp sp fun arg)
+slurpX	(XApp sp fun arg)
  = do
 	tX		<- newTVarDS "app"
 	eX		<- newTVarES "app"
-	cX		<- newTVarCS "app"
 
-	eApp@(TVar _ vEApp)
+	eApp@(TVar _ _)
 			<- newTVarES "app"
 
 	-- function
- 	(tFun, eFun, cFun, fun', qsFun)	
+ 	(tFun, eFun, _, fun', qsFun)	
 			<- slurpX fun
 
 	-- arg
-	(tArg, eArg, cArg, arg', qsArg)	
+	(tArg, eArg, _, arg', qsArg)	
 			<- slurpX arg
 	
 	let qs	= 
@@ -119,24 +116,23 @@ slurpX	exp@(XApp sp fun arg)
 
 
 -- Match ----------------------------------------------------------------------
-slurpX	exp@(XMatch sp (Just obj) alts)
+slurpX	(XMatch sp (Just obj) alts)
  = do
 	-- unification vars
 	tRHS		<- newTVarDS "matRHS"
 	eX		<- newTVarES "mat"
-	cX		<- newTVarCS "mat"
 
-	eMatch@(TVar _ (UVar vEMatch))
+	eMatch@(TVar _ (UVar{}))
 			<- newTVarES "matI"
 
 	-- object
-	(tObj, eObj, cObj, obj', qsObj)	
+	(tObj, eObj, _, obj', qsObj)	
 			<- slurpX obj
 
 	let TVar _ (UVar vObj) = tObj
 
 	-- alternatives
-	(tsAltsLHS, tsAltsRHS, esAlts, csAlts, alts', qsAlts)	
+	(tsAltsLHS, tsAltsRHS, esAlts, _, alts', qsAlts)	
 			<- liftM unzip6 $ mapM slurpA alts
 
 	let qsMatch	= 
@@ -154,16 +150,15 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 		, qsMatch ++ qsObj ++ qsAlts)
 
 
-slurpX	exp@(XMatch sp Nothing alts)
+slurpX	(XMatch sp Nothing alts)
  = do
 	-- unification vars
 	tLHS		<- newTVarDS "matLHS"
 	tRHS		<- newTVarDS "matRHS"
 	eMatch		<- newTVarES "mat"
-	cMatch		<- newTVarCS "mat"
 
 	-- alternatives
-	(altsTP, altsTX, altsEs, altsClos, alts', altsQs)	
+	(altsTP, altsTX, altsEs, _, alts', altsQs)	
 			<- liftM unzip6 $ mapM slurpA alts
 	
 	let matchQs	=  
@@ -179,7 +174,7 @@ slurpX	exp@(XMatch sp Nothing alts)
 
 
 -- Lit ------------------------------------------------------------------------
-slurpX	exp@(XLit sp litFmt)
+slurpX	(XLit sp litFmt)
  = do	
  	tX@(TVar _ (UVar vT))	<- newTVarDS "lit"
 
@@ -197,6 +192,10 @@ slurpX	exp@(XLit sp litFmt)
 		| tcKind	== KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
 		 	return	$ makeTData tcVar tcKind [TVar kRegion $ UVar vR]
+			
+		| otherwise
+		= panic stage $ "tLitM: no match"
+
 	tLit	<- tLitM
 	
 	let qs = [ CEq (TSV $ SVLiteral sp litFmt) tX tLit]
@@ -212,27 +211,25 @@ slurpX	exp@(XLit sp litFmt)
 
 
 -- Var ------------------------------------------------------------------------
-slurpX 	exp@(XVar sp var)
- = do	tV@(TVar k (UVar vT))	
+slurpX 	xx@(XVar _ var)
+ = do	tV@(TVar _ (UVar vT))	
 		<- lbindVtoT    var
 	
 	wantTypeV vT
-	slurpV exp tV
+	slurpV xx tV
 
 
 -- Do -------------------------------------------------------------------------
-slurpX	exp@(XDo sp stmts)
+slurpX	(XDo sp stmts)
  = do
 	tX		<- newTVarDS 	"do"
 	eX		<- newTVarES	"do"
-	cX		<- newTVarCS	"do"
 	
 	--  Add all the bound vars to the bindMode map.
 	let boundVs	= [v | Just v <- map bindingVarOfStmt stmts]
-	boundVsT	<- mapM lbindVtoT boundVs
 	
 	-- Decend into each statement in turn.
-	(tsStmts, esStmts, csStmts, stmts', qssStmts)
+	(tsStmts, esStmts, _, stmts', qssStmts)
 			<- liftM unzip5 $ mapM slurpS stmts
 
 	boundTVs	<- mapM getVtoT boundVs
@@ -273,15 +270,14 @@ slurpX	exp@(XDo sp stmts)
 
 
 -- If -------------------------------------------------------------------------
-slurpX	exp@(XIfThenElse sp xObj xThen xElse)
+slurpX	(XIfThenElse sp xObj xThen xElse)
  = do
 	tAlts		<- newTVarDS 	"ifAlts"
 	eX		<- newTVarES	"if"
-	cX		<- newTVarCS 	"if"
 	eTest		<- newTVarES 	"ifObj"
 
 	-- Slurp the case object.
- 	(tObj, eObj, cObj, xObj', qsObj)	
+ 	(tObj, eObj, _, xObj', qsObj)	
 			<- slurpX xObj
 
 	let TVar _ (UVar vObj) = tObj
@@ -291,11 +287,11 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 	let tBool	= makeTData (primTBool Boxed) (KFun kRegion kValue) [tR]
 
 	-- Slurp the THEN expression.
-	(tThen, eThen, cThen, xThen', qsThen)	
+	(tThen, eThen, _, xThen', qsThen)	
 			<- slurpX xThen
 
 	-- Slurp the ELSE expression.
-	(tElse, eElse, cElse, xElse', qsElse)	
+	(tElse, eElse, _, xElse', qsElse)	
 			<- slurpX xElse
 	
 	let qs	= 
@@ -315,21 +311,20 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 
 
 -- Proj ------------------------------------------------------------------------
-slurpX 	exp@(XProj sp xBody proj)
+slurpX 	(XProj sp xBody proj)
  = do
 	let (projT, label)	
 		= case proj of
-			JField  nn l	-> (TJField  l, l)
-			JFieldR nn l	-> (TJFieldR l, l)
+			JField  _ l	-> (TJField  l, l)
+			JFieldR _ l	-> (TJFieldR l, l)
 
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
 	eX	<- newTVarES	"proj"
-	cX	<- newTVarCS	"proj"
 
 	-- instance var for projection function.
 	--	When we work out what the projection function is it'll be instantiated and bound to this var.
-	tInst@(TVar _ (UVar vInst)) <- newTVarD
+	(TVar _ (UVar vInst)) <- newTVarD
 
 	-- effect and closure of projection function
 	--	This will turn into the effect/closure of the function that is being applied
@@ -338,10 +333,10 @@ slurpX 	exp@(XProj sp xBody proj)
 	eProj	<- newTVarES	"proj"
 	cProj	<- newTVarCS	"proj"
 
- 	(tBody, eBody, cBody, xBody', qsBody)
+ 	(tBody, eBody, _, xBody', qsBody)
 			<- slurpX xBody
 	
-	let proj'	= transformN (\n -> Nothing) proj
+	let proj'	= transformN (const Nothing) proj
 			
 	let qs	 = 
 		[ CProject (TSV $ SVProj sp projT)	
@@ -357,24 +352,23 @@ slurpX 	exp@(XProj sp xBody proj)
 		, qsBody ++ qs )
 
 
-slurpX	exp@(XProjT sp tDict proj)
+slurpX	(XProjT sp tDict proj)
  = do	
  	let (projT, label)	
 		= case proj of
-			JField  nn l	-> (TJField  l, l)
-			JFieldR nn l	-> (TJFieldR l, l)
+			JField  _ l	-> (TJField  l, l)
+			JFieldR _ l	-> (TJFieldR l, l)
 
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
 	eX	<- newTVarES	"proj"
-	cX	<- newTVarCS	"proj"
 
 	-- a var to tie the dictionary type to
 	tDictVar <- newTVarDS	"proj"
 
 	-- instance var for projection function.
 	--	When we work out what the projection function is it'll be instantiated and bound to this var.
-	tInst@(TVar _ (UVar vInst)) <- newTVarD
+	(TVar _ (UVar vInst)) <- newTVarD
 
 	-- closure of projection function
 	-- 	Make a closure term out of the projection function, once we know what it is.
@@ -382,7 +376,7 @@ slurpX	exp@(XProjT sp tDict proj)
 	--
 	cProj	<- newTVarCS	"proj"
 
-	let proj'	= transformN (\n -> Nothing) proj
+	let proj'	= transformN (const Nothing) proj
 
 	let qs	 = 
 		[ CProject (TSV $ SVProj sp projT) projT vInst tDictVar tX 
@@ -401,7 +395,7 @@ slurpX x
 
 
 -- | Make an Inst constraint for a variable.
-slurpV exp@(XVar sp var) tV@(TVar k (UVar vT))
+slurpV (XVar sp var) (TVar k (UVar vT))
  = do
 	vTu		<- makeUseVar var vT
 	let tX		= TVar k $ UVar vTu
@@ -413,6 +407,8 @@ slurpV exp@(XVar sp var) tV@(TVar k (UVar vT))
 		, tEmpty
 	        , XVarInst (Just (tX, eX)) var
 		, qs)
+
+slurpV _ _	= panic stage $ "no match"
 
 makeUseVar vInst vT
  = do 	TVar _ (UVar vTu_) <- newTVarD

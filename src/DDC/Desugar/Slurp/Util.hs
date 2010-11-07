@@ -1,5 +1,6 @@
-
-module Desugar.Slurp.Util
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+-- | Utils used by the type constraint slurper.
+module DDC.Desugar.Slurp.Util
 	( traceM
 	, newVarN
 	, newVarV, newVarVS
@@ -17,8 +18,7 @@ module Desugar.Slurp.Util
 	, wantTypeV
 	, wantTypeVs )
 where
-import Util
-import Desugar.Slurp.State
+import DDC.Desugar.Slurp.State
 import DDC.Solve.Error
 import DDC.Desugar.Exp
 import DDC.Main.Error
@@ -26,6 +26,7 @@ import DDC.Main.Pretty
 import DDC.Type
 import DDC.Type.Data
 import DDC.Var
+import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -39,9 +40,12 @@ traceM	  ss
 	
 
 -- Variables --------------------------------------------------------------------------------------
+-- | Allocate a fresh variable in a given namespace.
 newVarN :: NameSpace -> CSlurpM Var
 newVarN space	= newVarNS space ""
 
+
+-- | Allocate a fresh variable named after some string.
 newVarNS :: NameSpace -> String -> CSlurpM Var
 newVarNS space str	
  = do	gen		<- gets stateGen
@@ -64,11 +68,13 @@ newVarNS space str
 	return var'
 
 
+-- | Allocate a fresh variable, in the same namespace as a given one.
 newVarZ :: Var -> CSlurpM Var
 newVarZ	var 
 	= newVarN (varNameSpace var) 
 
 
+-- | Bind value variables to type variables.
 bindVtoT :: Var -> CSlurpM (Maybe Type)
 bindVtoT varV
  = do
@@ -100,12 +106,15 @@ bindVtoT varV
 		return $ Just (TVar kValue $ UVar varT')
 
 
+-- | Lookup the type variable corresponding to a value variable.
 lookupVtoT :: Var -> CSlurpM (Maybe Var)
 lookupVtoT varV
  = do 	varType		<- gets stateVarType
 	return		$ Map.lookup varV varType
 	
 
+-- | Get the type variable corresponding to a value variable.
+--   If there is none then `panic`.
 getVtoT :: Var -> CSlurpM Var
 getVtoT	varV
  = do 	mVar		<- lookupVtoT varV
@@ -116,6 +125,9 @@ getVtoT	varV
 			% "  bind = " % (show $ varId varV)	% "\n"
 			% "  info = " % (show $ varInfo varV)	% "\n"
 
+
+-- | Lazily bind a value variable to at type variable.
+--   If there is an existing one then use that, otherwise create a fresh one.
 lbindVtoT :: Var -> CSlurpM Type
 lbindVtoT varV
  = do
@@ -127,29 +139,39 @@ lbindVtoT varV
 	  	return	v
 	 
 	
--- | Add a DataDef to the CSlurp state.
+-- | Add a DataDef to the slurper state.
 --   This function gets called when any top level TData nodes are encountered.
 addDataDef :: (Top Annot2) -> CSlurpM ()
-addDataDef ddef@(PData _ def)
- 	= modify (\s -> s 
+addDataDef pp
+ = case pp of
+	PData _ def
+ 	 -> modify (\s -> s 
 		{ stateDataDefs = Map.insert (dataDefName def) def (stateDataDefs s) })
 
+	_ -> panic stage $ "addDataDef: no match"
+		
+
+-- | Add a def to the slurper state.
 addDef :: Var -> Type -> CSlurpM ()
 addDef v t
  	= modify (\s -> s 
 		{ stateSlurpDefs = Map.insert v t (stateSlurpDefs s)})
 
------
+
+-- | Add an error the slurper state.
 addError :: Error -> CSlurpM ()
 addError err
  = modify (\s -> s { stateErrors = err : stateErrors s })
 
 
------
+-- | Say that we want this variable in the constraint solution.
+--   It's the inferencers job to supply a type for each of these variables.
 wantTypeV :: Var -> CSlurpM ()
 wantTypeV v
 	= modify (\s -> s { stateTypesRequest = Set.insert v (stateTypesRequest s) })
+
  
+-- | Say we want several variables in the constraint solution.
 wantTypeVs :: [Var] -> CSlurpM ()
 wantTypeVs vs
 	= modify (\s -> s { stateTypesRequest = Set.union (Set.fromList vs) (stateTypesRequest s) })
