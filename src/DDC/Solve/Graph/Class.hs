@@ -75,7 +75,16 @@ data Class
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
 		-- 
-		--   INVARIANT: The node type is not an NVar or NBot.
+		--      For effect and closure classes, the associated constraints are.
+		--          aliases :> nodes
+		--
+		--      For classes of other kinds, the constraints are
+		--          aliases =  nodes
+		--
+		--     INVARIANTS
+		--       - The node type is not an NBot.
+		--       - For non-effect and closure classes, the node type is not NVar.
+		--             
 		, classTypeSources	:: ![(Node, TypeSource)]	 
 
 		-- | Single parameter type class constraints on this equivalence class.

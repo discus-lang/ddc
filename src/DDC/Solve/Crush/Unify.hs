@@ -17,7 +17,7 @@ import qualified Data.Set	as Set
 debug	= False
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
-
+traceln s = trace (s % "\n")
 
 -- | Unify the elements in an equivalences classes queue.
 --   If there are any errors then these are added to the SquidM monad.
@@ -57,15 +57,27 @@ crushUnifyInClass cid
 		return False
 
 
--- Sort through the ctors in the queue, and update the class.
+-- Ensure that there are no NBot nodes in the queue, as they don't contribute
+-- to the type. For types of non-injective kind there shouldn't be NVars either.
 crushUnifyInClass_unify cid cls@Class{}
- = do	-- Disregard vars and bottoms as they don't contribute real type constraints.
-	-- TODO: make sure these aren't being added to the class in the first place.
-	let queue
-		= filter (\(n, _) -> not (isNVar n || isNBot n))
+ = let	badNodes
+		| isInjectiveKind (classKind cls)
+		= filter (isNBot . fst) $ classTypeSources cls
+	 
+		| otherwise
+		= filter (\(n, _) -> isNBot n || isNVar n)
 		$ classTypeSources cls
 	
-	trace	$ "    queue       = " % ppr queue % "\n"
+   in	case badNodes of
+	 []	-> crushUnifyInClass_checked cid cls (classTypeSources cls)
+	 _	-> panic stage $ "crushUnifyInClass_unify: bad node"
+	
+
+crushUnifyInClass_checked cid cls@Class{} queue
+ = do	
+	traceln	$ "    kind:        " % classKind cls
+	traceln	$ "    queue after:\n" 
+		% indent (vcat $ map ppr queue)
 
 	-- If there is nothing left in the queue, or there's only one element
 	-- then we're done. Otherwise call the real unifier.

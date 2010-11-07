@@ -8,10 +8,11 @@ module DDC.Type.Kind
 	, defaultKindOfVar
 
 	-- * Fast kind tests
-	, isValueType,	isValueKind
-	, isRegion, 	isRegionKind
-	, isEffect,	isEffectKind
-	, isClosure,	isClosureKind
+	, isValueType,	   isValueKind
+	, isRegion, 	   isRegionKind
+	, isEffect,	   isEffectKind
+	, isClosure,   	   isClosureKind
+	, isInjectiveType, isInjectiveKind
 
 	-- * Projections
 	, tyConKind
@@ -114,6 +115,13 @@ isEffect tt
 	_			-> False
 
 
+-- | Fast test whether a type is an effect or closure.
+isInjectiveType :: Type -> Bool
+{-# INLINE isInjectiveType #-}
+isInjectiveType tt
+ 	= isEffect tt || isClosure tt
+
+
 -- | Fast test whether a kind is the value type kind.
 isValueKind :: Kind -> Bool
 {-# INLINE isValueKind #-}
@@ -148,6 +156,13 @@ isClosureKind kk
  = case kk of
 	KCon KiConClosure _	-> True
 	_			-> False
+
+
+-- | Fast test whether a kind is the effect or closure kind.
+isInjectiveKind :: Kind -> Bool
+{-# INLINE isInjectiveKind #-}
+isInjectiveKind kk
+ 	= isEffectKind kk || isClosureKind kk
 
 
 -- Projections -------------------------------------------------------------------------------------
