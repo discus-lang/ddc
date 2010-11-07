@@ -31,9 +31,7 @@ import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import Util
 
-
 stage = "DDC.Constraint.Simplify"
-
 
 -- | Simplify some type constraints.
 --	This simplification is just simple substitution. Unification (and more simplification)

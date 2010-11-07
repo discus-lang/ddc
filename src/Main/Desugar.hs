@@ -24,6 +24,7 @@ import qualified Type.Solve			as T
 import qualified DDC.Solve.Interface.Problem	as T
 import qualified DDC.Solve.State		as T
 import qualified DDC.Solve.Error.Beautify	as T
+import qualified DDC.Constraint.Simplify	as T
 import qualified DDC.Desugar.Glob		as D
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Desugar.ToCore		as D
@@ -148,19 +149,35 @@ desugarSlurpConstraints blessMain sTree hTree
 	when (not $ null errs)
 	 $ exitWithUserError ?args errs
 
-	-- dump
+	-- Run the constraint simplifier unless we were told not to.
+	-- This tidies up the constraints before solving, which makes the final
+	-- constraints easier to read. It's also a small performance boost,
+	-- but is otherwise an optional pass.
+	let problem_simplified
+		| elem DebugNoConstraintSimplifier ?args
+		= problem
+		
+		| otherwise
+		= problem { T.problemConstraints 
+				= T.simplify 	(T.problemTypeVarsPlease problem)
+						(T.problemConstraints    problem) }
+
+	-- dumping.
 	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 	dumpST	DumpDesugarSlurp "desugar-slurp" sTree'
 	
-	
-	dumpS	DumpTypeConstraints "type-constraints--source"
+	dumpS	DumpTypeConstraints "type-constraints"
 		$ (catInt "\n" $ map (pprStr pprMode) $ T.problemConstraints problem)
 
+	when (not $ elem DebugNoConstraintSimplifier ?args)
+	 $ dumpS DumpTypeConstraints "type-constraints--simpified"
+		 $ (catInt "\n" $ map (pprStr pprMode) $ T.problemConstraints problem_simplified)
+
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
-		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem)
-		
+		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem_simplified)
+	
 	return	( sTree'
-		, problem)
+		, problem_simplified)
 	
 	
 -- Solve -------------------------------------------------------------------------------------------
