@@ -128,13 +128,20 @@ feedType src tt
 
 		return cidT
 
-	-- TFree's that we get from the constraints might refer to types that are in
-	-- the defs table but not the graph. We don't want to pollute the graph
-	-- with the whole external def so trim these types down and just add the
-	-- closure information that we need.
+
+	-- TFree's that we get from the constraint slurper may refer to types that are
+	-- in the defs table, and not in the graph.
+	-- We don't want to pollute the graph with the whole external def, so trim these
+	-- types down and just add the closure information that we need.
+	-- 
+	-- TODO: We're using this form to mean ''the type of some binding''.
+	--       The variable refers to the binding, and is not a type variable in the true sense.
+	--       We should use a different closure constructor to represent this so that it 
+	--       doesn't clash with the next form that carries ''real'' types.
+	--
 	TApp{}
 	 | Just (v1, t@(TVar kV (UVar v2)))	<- takeTFree tt
-	 , kV == kValue
+	 , isValueKind kV
 	 -> do	cid		<- allocClass kClosure src
 		env		<- gets stateEnv
 		case Map.lookup v2 (squidEnvDefs env) of
@@ -145,7 +152,7 @@ feedType src tt
 		  	tDef'		<- linkType [] src tDef_trim
 
 			-- we use addToClass here because we don't need to register effects and 
-			--	classes for crushing in this type
+			-- classes for crushing in this type
 			addNodeToClass cid kClosure src
 				$ NFree v1 tDef'
 
@@ -160,14 +167,13 @@ feedType src tt
 
 			return cid
 
-	-- A closure term that contains a type with constructors instead of just a plain
-	-- variable. We allow these in signatures, but we only need the trimmed
-	-- version for inference.
-	-- TODO: trim the closure.
+	-- A closure term containing a type expression.
+	-- We allow full expressions like ''Int %r1'' in the constraints, but only
+	-- need the trimmed form for inference.
 	TApp{}
 	 | Just (v1, t)	<- takeTFree tt
 	 -> do	cid	<- allocClass kClosure src
-		t'	<- linkType [] src t
+		t'	<- linkType [] src $ trimClosureT t
 
 		addNode	cid src kClosure	
 			$ NFree v1 t'
