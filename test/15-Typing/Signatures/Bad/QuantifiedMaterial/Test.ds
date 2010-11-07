@@ -2,5 +2,12 @@
 
 -- This %r1 can't be quantified because it's material in the type.
 -- We get the same object back for each occurrence of the variable 'x'.
-x :: forall %r1. Int %r1
-x = 5
+x1 	:: forall %r1. Int %r1
+x1 	= 5
+
+
+x2 	:: forall %r1 %r2. Int %r2 -($c1)> Int %r2
+	:- $c1 = ${x1 : %r1}
+	
+x2 x = 1 + x1
+
