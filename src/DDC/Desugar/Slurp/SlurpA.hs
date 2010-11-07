@@ -41,8 +41,8 @@ slurpA	(AAlt sp gs x)
 			<- slurpX x
 
 	let qs	=
-		[ CEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
-		, CEq  (TSE $ SEGuards sp) eAlt	  $ makeTSum   kEffect  (eX : esGuards) ]
+		[ CEqs  (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
+		, CMore (TSE $ SEGuards sp) eAlt $ makeTSum   kEffect  (eX : esGuards) ]
 
 	let cbindsGuards	= concat cbindssGuards
 	let bind 
@@ -93,7 +93,6 @@ slurpG	(GExp sp w x)
 		<- slurpW w
 		
 	-- slurp the matched exp
-	-- BUGS? we're not using the closure
 	(tX, eX, _, x', qsX)
 		<- slurpX x
 
@@ -108,7 +107,7 @@ slurpG	(GExp sp w x)
 
 	let qs = 
 		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 
-		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum kEffect (eX : effMatch) ]
+		, CMore	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum kEffect (eX : effMatch) ]
 
 	return	( cbindsW		
 		, Nothing

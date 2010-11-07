@@ -26,7 +26,7 @@ instance Pretty CTree PMode where
 	  % "}"
 
 	CBranch binds subs
-	 -> "BRANCH ("  % binds % ")\n"
+	 -> "BRANCH" %% binds % "\n"
 	  % "{\n"
 		%> (vcat (map ppr subs))
 	  % "}"
@@ -89,9 +89,7 @@ instance Pretty CBind PMode where
  ppr bb	
   = case bb of
 	BNothing	-> ppr "NOTHING"
-  	BLet  	  vs	-> "LET"	%% punc " " vs
-	BLetGroup vs	-> "LETGROUP"	%% punc " " vs
-	BLambda	  vs 	-> "LAMBDA"	%% punc " " vs
-  	BDecon 	  vs  	-> "DECON"	%% punc " " vs
-
-
+  	BLet  	  vs	-> punc " " (ppr "LET"		: map ppr vs)
+	BLetGroup vs	-> punc " " (ppr "LETGROUP" 	: map ppr vs)
+	BLambda	  vs 	-> punc " " (ppr "LAMBDA"	: map ppr vs)
+  	BDecon 	  vs  	-> punc " " (ppr "DECON"	: map ppr vs)

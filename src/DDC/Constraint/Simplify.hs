@@ -9,17 +9,23 @@
 --	Simplifying the constraints here prior to solving keeps the number
 --	of nodes in the graph down and makes life easier for Type.Util.Pack.
 --
---	TODO: 	Not sure if we should really do this.
+--	NOTE:	Now that we're using :> constraints for effects and closures
+--		this simplifier isn't actually doing anything.
+--
+--	TODO: 	Not sure if we should really do it anyway.
 --		If we had a more efficient graph representation it would be better
 --		to store individual type constructors in nodes instead of compound types.
 --
 --	TODO:	At the least we should make the simplifier optional so it's
 --		easier to debug the compiler with and without.
+--
+--	TODO:	Maybe we should be doing simplification of value type constraints as well,
+--		though doing this may adversely affect error reporting because we attach
+--		source positions to constraints instead of to type constructors.
 -- 
 module DDC.Constraint.Simplify
 	(simplify)
 where
-
 import qualified DDC.Constraint.Trans	as Trans
 import DDC.Constraint.Exp
 import DDC.Type
@@ -34,8 +40,10 @@ import Util
 stage = "DDC.Constraint.Simplify"
 
 -- | Simplify some type constraints.
---	This simplification is just simple substitution. Unification (and more simplification)
---	is done by the constraint solver proper.
+--	This only changes the effect and closure constraints, and does some simple
+--	substitution which makes the constraint files easier to read in debug logs.
+--	It also reduces the number of classes in the graph.
+--	Unification and real solving is done by the constraint solver proper.
 --
 simplify 
 	:: Set Var		-- ^ don't inline these vars. 
@@ -45,11 +53,12 @@ simplify
 	
 simplify vsNeeded tree
  = let	
- 	-- collect up vars that can't be inlined because they are free in types
+ 	-- collect up bound vars that can't be inlined because they appear
+	-- in the body of value type consraints.
 	vsInTypes	= collectNoInline tree
 
-	-- don't inline constraints for vars that are needed by the desugar to core transform,
-	--	or are present in type constraints
+	-- don't inline constraints for vars that are needed by the desugar
+	-- to core transform, or are present in value type constraints.
 	vsNoInline	= Set.union vsNeeded vsInTypes
 	
 	tree'		= evalState (inline tree)
@@ -107,14 +116,14 @@ inlineCollect acc (c:cs)
 	 -> do	noInline	<- gets tableNoInline
 		
 		let res
+			-- can't inline this constraint, leave it alone
+		 	| Set.member v1 noInline
+			= inlineCollect (c : acc) cs
+
 			-- leave value type constraints alone
 			| varNameSpace v1 == NameType
 			= inlineCollect (c : acc) cs
 
-			-- can't inline this constraint, leave it alone
-		 	| Set.member v1 noInline
-			= inlineCollect (c : acc) cs
-			
 			-- we can inline this constraint, so slurp it into the map
 			| otherwise
 			= do	modify $ \s -> s { tableSub = Map.insert v1 t2 (tableSub s) }
@@ -145,6 +154,11 @@ inlineDump acc (c : cs)
 	 -> do	sub	<- gets tableSub
 		let t2'	=  packT $ subFollowVT sub t2
 		inlineDump (CEq sp t1 t2' : acc) cs
+
+	CMore sp t1@TVar{} t2
+	 -> do	sub	<- gets tableSub
+		let t2'	=  packT $ subFollowVT sub t2
+		inlineDump (CMore sp t1 t2' : acc) cs
 		
 	_ ->	inlineDump (c : acc) cs
 		

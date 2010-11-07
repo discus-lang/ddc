@@ -56,7 +56,7 @@ slurpX	xx@(XLambda sp vBound xBody)
 	-- the constraints
 	let qs	= 
 		[ CEq   (TSV $ SVLambda sp) tX	$ makeTFun tBound tBody eBody cX
-		, CEq   (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
+		, CMore (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
  	
 	-- If the sub expression is also a lambda then we can pack its constraints
 	--	into this branch as well. This reduces the number of nested branches
@@ -105,8 +105,8 @@ slurpX	(XApp sp fun arg)
 			<- slurpX arg
 	
 	let qs	= 
-		[ CEq (TSV $ SVApp sp) tFun	$ makeTFun tArg tX eApp tEmpty 
-		, CEq (TSE $ SEApp sp) eX	$ makeTSum kEffect  [eFun, eArg, eApp] ]
+		[ CEq   (TSV $ SVApp sp) tFun	$ makeTFun tArg tX eApp tEmpty 
+		, CMore (TSE $ SEApp sp) eX	$ makeTSum kEffect  [eFun, eArg, eApp] ]
 	
 	return	( tX
 		, eX
@@ -136,10 +136,10 @@ slurpX	(XMatch sp (Just obj) alts)
 			<- liftM unzip6 $ mapM slurpA alts
 
 	let qsMatch	= 
-		[ CEqs (TSU $ SUAltLeft sp)	(tObj : tsAltsLHS)
-		, CEqs (TSU $ SUAltRight sp)	(tRHS : tsAltsRHS)
-		, CEq  (TSE $ SEMatchObj sp)	eMatch	$ TApp tHeadRead tObj
-		, CEq  (TSE $ SEMatch sp) 	eX	$ makeTSum kEffect  ([eObj, eMatch] ++ esAlts) ]
+		[ CEqs   (TSU $ SUAltLeft sp)	(tObj : tsAltsLHS)
+		, CEqs   (TSU $ SUAltRight sp)	(tRHS : tsAltsRHS)
+		, CMore  (TSE $ SEMatchObj sp)	eMatch	$ TApp tHeadRead tObj
+		, CMore  (TSE $ SEMatch sp) 	eX	$ makeTSum kEffect  ([eObj, eMatch] ++ esAlts) ]
 
 	wantTypeV vObj
 
@@ -164,7 +164,7 @@ slurpX	(XMatch sp Nothing alts)
 	let matchQs	=  
 		[ CEqs (TSU $ SUAltLeft sp)	(tLHS 	: altsTP)
 		, CEqs (TSU $ SUAltRight sp)	(tRHS	: altsTX)
-		, CEq  (TSE $ SEMatch sp)	eMatch	$ makeTSum kEffect altsEs ]
+		, CMore  (TSE $ SEMatch sp)	eMatch	$ makeTSum kEffect altsEs ]
 				  
 	return	( tRHS
 		, eMatch
@@ -256,8 +256,8 @@ slurpX	(XDo sp stmts)
 	let q	= CBranch 
 		{ branchBind	= bindLeave
 		, branchSub	
-		   = 	[ CEq (TSV $ SVDoLast sp) tX 	$ tLast
-			, CEq (TSE $ SEDo sp)	eX 	$ makeTSum  kEffect  esStmts ]
+		   = 	[ CEq   (TSV $ SVDoLast sp) tX 	$ tLast
+			, CMore (TSE $ SEDo sp)	eX 	$ makeTSum  kEffect  esStmts ]
 		   ++ qsStmts }
 
 	wantTypeVs boundTVs
@@ -295,11 +295,11 @@ slurpX	(XIfThenElse sp xObj xThen xElse)
 			<- slurpX xElse
 	
 	let qs	= 
-		[ CEq  (TSV $ SVIfObj sp)	tObj	$ tBool
-		, CEqs (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse])
+		[ CEq   (TSV $ SVIfObj sp)	tObj	$ tBool
+		, CEqs  (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse])
 		
-		, CEq  (TSE $ SEIfObj sp)	eTest 	$ TApp tHeadRead tObj
-		, CEq  (TSE $ SEIf sp)		eX	$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
+		, CMore (TSE $ SEIfObj sp)	eTest 	$ TApp tHeadRead tObj
+		, CMore (TSE $ SEIf sp)		eX	$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
 		
 	wantTypeV vObj
 		
@@ -342,7 +342,7 @@ slurpX 	(XProj sp xBody proj)
 		[ CProject (TSV $ SVProj sp projT)	
 			projT vInst tBody (makeTFun tBody tX eProj cProj)
 
-		, CEq	(TSE $ SEProj sp)	
+		, CMore	(TSE $ SEProj sp)	
 			eX $ makeTSum kEffect  [eBody, eProj] ]
 
 	return	( tX
