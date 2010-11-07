@@ -122,10 +122,13 @@ ddc argStrs
 -- | Do a regular compile.
 ddcCompile args verbose setup files
  = do 	-- use the directories containing the files to be compiled as extra import dirs
-	let setup'	
-		= setup { setupArgsBuild 
+	let impDirs	= map (\p -> if null p then "." else p)
+			$ map System.takeDirectory files
+
+	let setup'
+		= setup { setupArgsBuild
 				=   setupArgsBuild setup
-				++ [Arg.ImportDirs (map System.takeDirectory files)] }
+				++ [Arg.ImportDirs impDirs] }
 
 	-- scrape the root modules
 	Just roots	<- liftM sequence 

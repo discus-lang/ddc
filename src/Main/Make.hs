@@ -29,8 +29,11 @@ import qualified Data.Map	as Map hiding (insert)
 -- | Do a recursive make
 ddcMake args verbose setup linkExecutable files 
  = do
+	let impDirs	= map (\p -> if null p then "." else p)
+			$ map System.takeDirectory files
+
 	-- use the directories containing the root files as extra import dirs
-	let setup'	= setup { setupArgsBuild = Arg.ImportDirs (map System.takeDirectory files) 
+	let setup'	= setup { setupArgsBuild = Arg.ImportDirs impDirs
 						 : setupArgsBuild setup }
 	-- Scrape the root modules.
 	Just roots_
