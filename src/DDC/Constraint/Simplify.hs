@@ -14,8 +14,9 @@
 --		to store individual type constructors in nodes instead of compound types.
 --
 module DDC.Constraint.Simplify
-	(simplify)
+--	(simplify)
 where
+{-
 import qualified DDC.Constraint.Trans	as Trans
 import DDC.Constraint.Exp
 import DDC.Type
@@ -26,6 +27,7 @@ import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import Util
+
 
 stage = "DDC.Constraint.Simplify"
 
@@ -247,3 +249,4 @@ isValueTypeFromVar tt
 	_	-> False
 
 
+-}
