@@ -1,4 +1,3 @@
--- {-# OPTIONS -fwarn-unused-imports -fwarn-incomplete-patterns -fno-warn-type-defaults #-}
 {-# OPTIONS -fno-warn-unused-binds -fno-warn-type-defaults #-}
 
 -- | Wrappers for compiler stages dealing with LLVM code.
@@ -292,14 +291,17 @@ genAltDefault label (ADefault ss)
 	mapM_ llvmOfStmt ss
 
 genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
- = do	addComment "deathCase goes here"
-	gname	<- newUniqueName "str"
-	let name = LMGlobalVar gname (typeOfString n) Internal Nothing ptrAlign True
+ = do	addGlobalFuncDecl deathCase
 
+	gname	<- newUniqueName "str.src.file"
+	let name = LMGlobalVar gname (typeOfString n) Internal Nothing ptrAlign True
 	addGlobalVar ( name, Just (LMStaticStr n (typeOfString n)) )
+	pstr	<- newUniqueNamedReg "pstr" pChar
+
 	addBlock
 		[ MkLabel (uniqueOfLlvmVar label)
-		, Expr (Call StdCall (funcVarOfDecl deathCase) [name, i32LitVar l, i32LitVar c] [])
+		, Assignment pstr (GetElemPtr True (pVarLift name) [llvmWordLitVar 0, llvmWordLitVar 0])
+		, Expr (Call StdCall (funcVarOfDecl deathCase) [pstr, i32LitVar l, i32LitVar c] [])
 		, Unreachable
 		]
 
