@@ -8,18 +8,18 @@ import Main.Compile
 import Main.Init
 import Main.Make
 import Main.Error
-import Util
 import DDC.Module.Scrape
 import DDC.Module.ScrapeGraph
 import DDC.Main.Pretty
 import DDC.Main.Error
+import Util
+import qualified DDC.Main.ParseArgs	as Arg
+import qualified DDC.Config.Version	as Version
+import qualified DDC.Main.Arg 		as Arg
+import qualified Shared.VarUtil		as Var
 import qualified System.Exit		as System
 import qualified System.Environment	as System
 import qualified System.FilePath	as System
-import qualified Shared.VarUtil		as Var
-import qualified Main.ParseArgs		as Arg
-import qualified DDC.Config.Version	as Version
-import qualified DDC.Main.Arg 		as Arg
 import qualified Data.Map		as Map
 
 
@@ -81,7 +81,7 @@ ddc argStrs
 		
 	let result
 
-		-- Check there are no wierd symbols in the name portion of the paths.
+		-- Check there are no weird symbols in the name portion of the paths.
 		-- We name modules after files, and we don't want bogus symbols
 		-- appearing in the module names in later stages.
 		| names		<- map System.takeFileName 

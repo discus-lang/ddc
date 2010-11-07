@@ -32,9 +32,6 @@ data Arg
 	| LintAll			-- ^ Run all lint passes.
 	| LintCore			-- ^ Lint the core program.
 
-	-- type system options
-	| GenDangerousVars		-- ^ Generalise dangrous type variables.
-
 	-- optimisation
 	| OptAll			-- ^ Perform all optimistaions.
 	| OptSimplify			-- ^ Do core simplification.
@@ -66,6 +63,9 @@ data Arg
 	| KeepCFiles			-- ^ Keep intermediate .c files.
 	| KeepOFiles			-- ^ Keep intermediate .o files.
 
+	-- Compiler debugging.
+	| DebugGeneraliseDangerousVars	-- ^ Generalise dangrous type variables.
+	| DebugNoConstraintSimplifier	-- ^ Don't run the constraint simplifier before solving.
 
 	-- Dump flags ---------------------------------------------------------
 	-- NOTE: If you add something here then make sure it's also present

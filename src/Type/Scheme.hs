@@ -59,7 +59,7 @@ generaliseType src varT tCore envCids
 	-- Can't generalise cids which are under mutable constructors.
 	-- ... if we generalise these classes then we could update an object at one 
 	-- 	type and read it at another, violating soundness.
-	let staticRsDanger	= if Set.member Arg.GenDangerousVars args
+	let staticRsDanger	= if Set.member Arg.DebugGeneraliseDangerousVars args
 					then []
 					else dangerousCidsT tCore
 

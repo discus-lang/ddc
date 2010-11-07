@@ -20,8 +20,8 @@ import System.Directory
 import System.FilePath
 import DDC.Main.Pretty					()
 import qualified DDC.Main.Arg				as Arg
+import qualified DDC.Main.ParseArgs			as Arg
 import qualified System.Exit				as System
-import qualified Main.ParseArgs				as Arg
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 
 stage = "DDC.Module.Scrape"
