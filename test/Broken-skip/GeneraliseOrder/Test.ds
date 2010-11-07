@@ -1,0 +1,5 @@
+
+-- The fact that 'sieve' is used before 'foo' was causing the purity
+-- constraint from filterL to be crushed too late.
+foo 		= sieve 4 []
+sieve n xx	= filterL (\x -> mod x n /= 0) xx;
