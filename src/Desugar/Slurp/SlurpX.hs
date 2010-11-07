@@ -29,9 +29,9 @@ slurpX	:: Exp Annot1
 -- Lam ------------------------------------------------------------------------
 slurpX	exp@(XLambda sp vBound xBody)
  = do
-	tX		<- newTVarDS "" -- "lam"
-	cX		<- newTVarCS "" -- "lam"
-	cX2		<- newTVarCS "" -- "lam"
+	tX		<- newTVarDS "lam"
+	cX		<- newTVarCS "lam"
+	cX2		<- newTVarCS "lam"
 
 	-- Create type vars for all the lambda bound vars.
 	Just tBound@(TVar _ (UVar vBoundT))
@@ -57,13 +57,12 @@ slurpX	exp@(XLambda sp vBound xBody)
 
 	-- the constraints
 	let qs	= 
-		[ CEq (TSV $ SVLambda sp) tX	$ makeTFun tBound tBody eBody cX
-		, CEq (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
+		[ CEq   (TSV $ SVLambda sp) tX	$ makeTFun tBound tBody eBody cX
+		, CMore (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
  	
-	-- If the sub expression is also a lambda
-	--	then we can pack its constraints into this branch as well.
-	--	This reduces the number of nested branches and saves indenting in the constraint file.
-	--
+	-- If the sub expression is also a lambda then we can pack its constraints
+	--	into this branch as well. This reduces the number of nested branches
+	-- 	and saves indenting in the constraint file.
 	let qs' = case xBody of
 		XLambda{}
 		  -> let [branch2]	= qsBody
@@ -76,7 +75,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 		 		{ branchBind 	= BLambda [vBoundT]
 				, branchSub  	= qs ++ qsBody }
 	
-
+	
 	-- we'll be wanting to annotate these vars with TECs when we convert to core.
 	wantTypeVs
 		$  vBoundT
@@ -93,12 +92,12 @@ slurpX	exp@(XLambda sp vBound xBody)
 -- App ------------------------------------------------------------------------
 slurpX	exp@(XApp sp fun arg)
  = do
-	tX		<- newTVarDS "" --  "app"
-	eX		<- newTVarES "" -- "app"
-	cX		<- newTVarCS "" -- "app"
+	tX		<- newTVarDS "app"
+	eX		<- newTVarES "app"
+	cX		<- newTVarCS "app"
 
 	eApp@(TVar _ vEApp)
-			<- newTVarES "" -- "app"
+			<- newTVarES "app"
 
 	-- function
  	(tFun, eFun, cFun, fun', qsFun)	

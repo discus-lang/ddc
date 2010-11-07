@@ -53,6 +53,9 @@ instance Monad m => TransM m CTree where
 	CEqs ts tt
 	 -> liftM2 CEqs	   (return ts) (down tt)
 	
+	CMore ts t1 t2
+	 -> liftM3 CMore   (return ts) (down t1) (down t2)
+	
 	CClass ts v tt
 	 -> liftM3 CClass  (return ts) (return v) (down tt)
 			

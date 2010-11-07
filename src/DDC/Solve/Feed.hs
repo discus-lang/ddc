@@ -47,6 +47,12 @@ feedConstraint cc
 		mergeClasses [cid1, cid2]
 		return ()
 
+	-- TODO: Handle this differently
+	-- TODO  Check we don't have eq constraints for effects or closures.
+	CMore src t1 t2
+	 -> do	feedConstraint (CEq src t1 t2)
+		return ()
+
 	-- Multiple equality.
 	-- Feed them all into the graph and merge the root classes.
 	CEqs src ts

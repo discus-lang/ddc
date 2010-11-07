@@ -14,7 +14,7 @@ import DDC.Type
 import Util
 import qualified Data.Set	as Set
 
-debug	= True
+debug	= False
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 traceln s = trace (s % "\n")

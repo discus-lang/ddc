@@ -41,6 +41,9 @@ instance Pretty CTree PMode where
 	CEqs 	_ ts
 	 -> punc " =  " $ map padVar ts
 	
+	CMore	_ v t
+	 -> padVar v	%% ":>" %% prettyTypeSplit t
+	
 	CClass	_ v ts
 	 -> "CLASS " % v %% ts
 

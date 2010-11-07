@@ -140,11 +140,17 @@ solveCs	(c:cs)
 		feedConstraint c
 		solveNext cs
 	
-	-- Some equality constraints
+	-- Some type equality constraints
 	--	all the types ts are supposed to be equal. ]
 	CEqs src ts
 	 -> do	trace	$ "### CEqs " % ts % "\n"
  	 	feedConstraint c
+		solveNext cs
+
+	-- A type inequality constraint
+	CMore src t1 t2
+ 	 -> do	trace	$ "### CMore  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % "\n"
+		feedConstraint c
 		solveNext cs
 
 	-- A type class constraint.
@@ -317,9 +323,8 @@ solveCs	(c:cs)
 			++ cs
 
 	-- Some other constraint	
-	_ -> do
-	 	trace $ "--- Ignoring constraint " % c % "\n"
-		solveNext cs
+	_ -> panic stage
+		$ "Unhandled constraint" %% c
 
 
 -- | If the solver state does not contain errors, 
