@@ -12,18 +12,18 @@ import Type.Solve.Generalise
 import Type.Solve.Finalise
 import Type.Check.SchemeDanger
 import Type.Extract
-import Type.Feed
 import Constraint.Bits
 import Constraint.Exp
 import Util
+import DDC.Solve.Feed
 import DDC.Solve.Location
-import DDC.Main.Error
 import DDC.Solve.State
 import DDC.Solve.Interface.Problem
 import DDC.Solve.Interface.Solution
 import DDC.Type.Data
 import DDC.Type
 import DDC.Var
+import DDC.Main.Error
 import System.IO
 import DDC.Main.Arg		(Arg)
 import qualified Util.Data.Map	as Map

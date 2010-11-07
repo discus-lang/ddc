@@ -1,6 +1,8 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
-module Type.Feed
+-- | ''Feeding'' refers to adding type constraints to the type graph.
+module DDC.Solve.Feed
 	( feedConstraint
 	, feedType 
 	, feedFetter
@@ -19,13 +21,13 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Sequence	as Seq
 
-stage	= "Type.Feed"
-
-debug	= False
+stage	 = "DDC.Type.Feed"
+debug	 = False
 trace ss = when debug $ traceM ss
 
--- feedConstraint ----------------------------------------------------------------------------------
--- | Add a constraint to the type graph.
+
+-- Constraints ------------------------------------------------------------------------------------
+-- | Add a single constraint to the type graph.
 feedConstraint :: CTree -> SquidM ()
 feedConstraint cc
  = trace ("feedConstraint\n" %> cc % "\n\n") >>
@@ -48,11 +50,9 @@ feedConstraint cc
 		mergeClasses cids
 		return ()
 
-
 	-- Signatures behave the same way as plain equality constraints.
-	CSig src t1@(TVar k v1) t2
-	 -> do 	feedConstraint (CEq src t1 t2)
-		return ()
+	CSig src t1@TVar{} t2
+	 -> 	feedConstraint (CEq src t1 t2)
 
 	-- Class constraints
 	CClass src vC ts
@@ -68,14 +68,11 @@ feedConstraint cc
 		 $ "feedConstraint: can't feed " % cc % "\n"
 
 
--- feedType --------------------------------------------------------------------------------------------
--- | Add a type to the type graph.
---	The type is converted to the node form on the way in.
-feedType 	
-	:: TypeSource
-	-> Type 
-	-> SquidM ClassId
 
+-- Types ------------------------------------------------------------------------------------------
+-- | Add a type to the graph, returning the cid of the root node.
+--   The type is converted to the node form on the way in.
+feedType :: TypeSource -> Type -> SquidM ClassId
 feedType src tt
  = case tt of
 	-- We need to rename the vars on the LHS of FWhere bindings to make sure
@@ -88,7 +85,7 @@ feedType src tt
 	 	--	they don't conflict with any vars already in the graph.
 		ttSub		<- liftM (Map.fromList . catMaybes)
 				$  mapM (\f -> case f of
-					FWhere t1@(TVar k v1@UVar{}) t2
+					FWhere t1@(TVar k UVar{}) _
 					 -> do	let Just nameSpace	= spaceOfKind k
 						v1'	<- newVarN nameSpace
 					 	return	$ Just (t1, TVar k (UVar v1'))
@@ -187,7 +184,7 @@ feedType src tt
 		return cidT
 
 
-	TVar k (UClass cid)
+	TVar _ (UClass cid)
 	 -> do 	cidT'		<- sinkClassId cid
 		return cidT'
 		
@@ -209,7 +206,7 @@ addNode cid src kind node
 	activateClass cid
 
 
--- Fetter ------------------------------------------------------------------------------------------
+-- Fetters ----------------------------------------------------------------------------------------
 feedFetter 
 	:: TypeSource
 	-> Fetter 
@@ -227,7 +224,7 @@ feedFetter src f
 	FMore t1 t2	
 	 -> 	feedFetter src (FWhere t1 t2)
 
-	FConstraint v ts
+	FConstraint{}
 	 -> do	addFetter src f
 	 	return ()
 
@@ -244,7 +241,6 @@ feedFetter src f
 		return ()
 		
 
--- addFetter ---------------------------------------------------------------------------------------
 -- | Add a new fetter constraint to the graph
 addFetter
 	:: TypeSource
@@ -267,7 +263,7 @@ addFetter src f@(FConstraint vFetter [t])
 	case Map.lookup vFetter (classFetters cls) of
 
 	 -- We already had a fetter of this sort on the class.
-	 Just srcs	
+	 Just{}
 	  -> 	return False
 
 	 -- This is a new fetter. 
@@ -282,7 +278,7 @@ addFetter src f@(FConstraint vFetter [t])
 	
 -- Multi parameter type class constraints are added as ClassFetter nodes in the graph 
 --	and the equivalence classes which they constraint hold ClassIds which point to them.
-addFetter src f@(FConstraint v ts)
+addFetter src (FConstraint v ts)
  = do 	
  	-- create a new class to hold this node
 	cidF		<- allocClass KNil src
@@ -296,7 +292,7 @@ addFetter src f@(FConstraint v ts)
 	let f	= FConstraint v ts'
 
 	modifyClass cidF
-	 $ \c -> ClassFetter
+	 $ \_ -> ClassFetter
 	 	{ classId	= cidF
 		, classFetter	= f 
 		, classSource	= src }
@@ -304,16 +300,16 @@ addFetter src f@(FConstraint v ts)
 	activateClass cidF
 
 	-- work out what cids this constraint is acting on
-	let cids	= map (\(TVar k (UClass cid)) -> cid) ts'
+	let cids'	= map (\(TVar _ (UClass cid)) -> cid) ts'
 	
 	-- add a reference to this constraint to all those classes
 	mapM	(\cid -> modifyClass cid
 			$ \c -> c { classFettersMulti = Set.insert cidF (classFettersMulti c) })
-		$ cids
+		$ cids'
 
 	return True
 
-addFetter src f@(FProj j v1 tDict tBind)
+addFetter src (FProj j v1 tDict tBind)
  = do
  	-- a new class to hold this node
  	cidF	<- allocClass KNil src
@@ -329,7 +325,7 @@ addFetter src f@(FProj j v1 tDict tBind)
 			(TVar kBind $ UClass cidBind')
 	
 	modifyClass cidF
-	 $ \c -> ClassFetter
+	 $ \_ -> ClassFetter
 	 	{ classId	= cidF
 		, classFetter	= f 
 		, classSource	= src }
@@ -342,5 +338,7 @@ addFetter src f@(FProj j v1 tDict tBind)
 		[cidDict', cidBind']
 			
 	return True
-	
+
+addFetter _ _
+	= panic stage $ "addFetter: no match"
 

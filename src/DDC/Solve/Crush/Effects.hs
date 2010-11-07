@@ -11,7 +11,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Solve.Walk
 import DDC.Solve.Location
-import Type.Feed
+import DDC.Solve.Feed
 import Control.Monad
 import Data.Maybe
 

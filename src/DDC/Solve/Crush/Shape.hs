@@ -4,8 +4,7 @@
 module DDC.Solve.Crush.Shape
 	(crushShapeInClass)
 where
-import Type.Feed
-import Shared.VarPrim
+import DDC.Solve.Feed
 import DDC.Solve.Walk
 import DDC.Solve.Location
 import DDC.Solve.Crush.Unify
@@ -15,6 +14,7 @@ import DDC.Type.Data.Pretty		()
 import DDC.Type
 import DDC.Main.Error
 import DDC.Main.Pretty
+import Shared.VarPrim
 import Util
 import qualified Data.Map		as Map
 
