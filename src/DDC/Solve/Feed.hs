@@ -35,7 +35,9 @@ feedConstraint cc
 	-- Equality constraints. The LHS must be a variable.
  	CEq src (TVar k (UVar v1)) t2
 	 -> do
-		-- create a new class for the LHS, with just that var in it.
+		-- Lookup/create new class for the var on the left
+		-- There might already be a class for this var in the graph.
+		-- If not then create a new one.
 	 	cid1	<- ensureClassWithVar k src v1
 
 		-- feed the RHS into the graph.
@@ -45,6 +47,8 @@ feedConstraint cc
 		mergeClasses [cid1, cid2]
 		return ()
 
+	-- Multiple equality.
+	-- Feed them all into the graph and merge the root classes.
 	CEqs src ts
 	 -> do	cids		<- mapM (feedType src) ts
 		mergeClasses cids
@@ -64,6 +68,8 @@ feedConstraint cc
 	 -> do	addFetter src (FProj j v1 tDict tBind)
 		return ()		
 
+	-- Other ``constraints'' carry class definitions etc, and can't be added directly
+	-- to the graph. TODO: refactor constraint type to store these separately.
 	_ -> 	panic stage
 		 $ "feedConstraint: can't feed " % cc % "\n"
 
@@ -80,9 +86,7 @@ feedType src tt
 	TConstrain t crs
 	 -> do 	let fs		= fettersOfConstraints crs
 
-
-		-- Rename the vars on the LHS of FLet bindings to make sure
-	 	--	they don't conflict with any vars already in the graph.
+		-- Rename the vars on the LHS of bindints.
 		ttSub		<- liftM (Map.fromList . catMaybes)
 				$  mapM (\f -> case f of
 					FWhere t1@(TVar k UVar{}) _
@@ -93,33 +97,41 @@ feedType src tt
 					_ -> 	return	$ Nothing)
 				$ fs
 
+		-- Substitute the reamings into the fetters and body type.
 		let fs2		= subTT_everywhere ttSub fs
 		let t2		= subTT_everywhere ttSub t
 
+		-- Add the constraints to the graph.
 		mapM_ (feedFetter src) fs2
-	 	t3		<- feedType src t2
+		
+		-- Add the body type.
+	 	cidT		<- feedType src t2
 
-		return	t3
+		return cidT
 
-	TSum k ts
-	 | []	<- ts
+
+	-- For empty classes ther are no nodes, but create the class anyway so we have its cid
+	TSum k []
 	 -> do	cidT		<- allocClass k src
 		addNode cidT src k $ NBot
 		return cidT
 
-	 | otherwise
+	-- Add summations
+	-- TODO: all the nodes should be stored seprately.
+	TSum k ts
 	 -> do 	cidT		<- allocClass k src
 		cids		<- mapM (feedType src) ts
+
+		-- TODO: Don't add sums to classes.
 		addNode cidT src k 
 			$ NSum (Set.fromList cids)
 
 		return cidT
 
-	-- closure
 	-- TFree's that we get from the constraints might refer to types that are in
-	--	the defs table but not the graph. We don't want to pollute the graph
-	--	with the whole external def so trim these types down and just add the
-	--	closure information that we need.
+	-- the defs table but not the graph. We don't want to pollute the graph
+	-- with the whole external def so trim these types down and just add the
+	-- closure information that we need.
 	TApp{}
 	 | Just (v1, t@(TVar kV (UVar v2)))	<- takeTFree tt
 	 , kV == kValue
@@ -148,7 +160,10 @@ feedType src tt
 
 			return cid
 
-	-- A non-var closure. We can get these from signatures and instantiated schemes
+	-- A closure term that contains a type with constructors instead of just a plain
+	-- variable. We allow these in signatures, but we only need the trimmed
+	-- version for inference.
+	-- TODO: trim the closure.
 	TApp{}
 	 | Just (v1, t)	<- takeTFree tt
 	 -> do	cid	<- allocClass kClosure src
@@ -159,17 +174,19 @@ feedType src tt
 
 		return cid
 
+	-- Type applications.
 	TApp t1 t2
 	 -> do	let k	= kindOfType tt
 	 	cidT	<- allocClass k src
 	 	cid1	<- feedType src t1
 		cid2	<- feedType src t2
 
-		addNode cidT src k	
+		addNode cidT src k
 			$ NApp cid1 cid2
 
 		return cidT
 
+	-- Plain constructors
 	TCon tc
 	 -> do	let k	= tyConKind tc
 		cidT	<- allocClass k src
@@ -179,6 +196,7 @@ feedType src tt
 
 		return cidT
 
+	-- Variables.
  	TVar k (UVar v)
 	 -> do 	cidT		<- ensureClassWithVar k src v 
 		return cidT
