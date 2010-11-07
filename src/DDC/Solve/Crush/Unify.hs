@@ -14,7 +14,7 @@ import DDC.Type
 import Util
 import qualified Data.Set	as Set
 
-debug	= False
+debug	= True
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 traceln s = trace (s % "\n")
@@ -56,9 +56,13 @@ crushUnifyInClass cid
 	  -> do	trace $ ppr "   -- WARNING: not unifying deleted fetter\n\n"
 		return False
 
-
--- Ensure that there are no NBot nodes in the queue, as they don't contribute
--- to the type. For types of non-injective kind there shouldn't be NVars either.
+-- Check that the queue is well-formed.
+--	- There should be no NBot nodes, as they don't contribute to the type.
+--	- For types of non-injective kind there shouldn't be NVars (they should all be aliases)
+--	- There shouldn't be NSums. All these should be unpacked into the queue
+--
+--	TODO: eradicate NSums. from Node type.
+--
 crushUnifyInClass_unify cid cls@Class{}
  = let	badNodes
 		| isInjectiveKind (classKind cls)
