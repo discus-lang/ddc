@@ -35,9 +35,7 @@ trace s = when debug $ traceM s
 --	continuing the grind. In this case the last constraint in the list will
 --	be another CGrind.
 --
-solveGrind 
-	:: SquidM [CTree]
-
+solveGrind :: SquidM [CTree]
 solveGrind
  = do	-- if there are already errors in the state then don't start the grind.
  	errs		<- gets stateErrors

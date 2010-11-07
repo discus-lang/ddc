@@ -13,10 +13,13 @@
 --		If we had a more efficient graph representation it would be better
 --		to store individual type constructors in nodes instead of compound types.
 --
+--	TODO:	At the least we should make the simplifier optional so it's
+--		easier to debug the compiler with and without.
+-- 
 module DDC.Constraint.Simplify
---	(simplify)
+	(simplify)
 where
-{-
+
 import qualified DDC.Constraint.Trans	as Trans
 import DDC.Constraint.Exp
 import DDC.Type
@@ -248,5 +251,3 @@ isValueTypeFromVar tt
 		
 	_	-> False
 
-
--}

@@ -275,7 +275,7 @@ feedFetter src f
 addFetter
 	:: TypeSource
 	-> Fetter
-	-> SquidM Bool
+	-> SquidM Bool	-- ^ Whether the fetter we added was new.
 	
 -- Single parameter type class contraints are added directly to the equivalence
 --	class which they constrain.

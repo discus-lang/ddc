@@ -55,13 +55,14 @@ crushFetterWithClass cid cls
 				| (v, srcs)		<- Map.toList fetterSrcs
 				, let src Seq.:< _	= Seq.viewl srcs]
 
-		trace	$ "--  crushFetterInClass "	%  cid		% "\n"
-			% "    fetters:\n" 		%> fetterSrcs	% "\n"
+		when (not $ Map.null fetterSrcs)
+		 $ trace $ "--  crushFetterInClass "	%  cid		% "\n"
+			 % "    fetters:\n" 		%> fetterSrcs	% "\n"
 
 		-- Try to crush each fetter into smaller pieces.
-		mapM_ (crushFetterSingle cid cls) fsSrc
+		progress	<- mapM (crushFetterSingle cid cls) fsSrc
 		
-		return False
+		return $ or progress
 
 -- | Try to crush a fetter from a class into smaller pieces.
 --	All parameters should have their cids canonicalised.
@@ -87,7 +88,7 @@ crushFetterSingle cid cls
 				addFetter src headFetter
 
 				trace	$ vcat
-					[ ppr "  * crushing LazyH\n"
+					[ ppr "    --  crushing LazyH\n"
 					, "    headFetter = " % headFetter ]
 				
 				return True
@@ -96,7 +97,7 @@ crushFetterSingle cid cls
 
 	-- DeepConst --------------------------------------
 	| vFetter == primConstT
-	= do	trace	$ ppr "  * crushing ConstT\n"
+	= do	trace	$ ppr "    --  crushing ConstT\n"
 		mApps	<- takeAppsDownLeftSpine cid
 	
 		let constIt (cid', k)
@@ -118,7 +119,7 @@ crushFetterSingle cid cls
 	
 	-- DeepMutable ------------------------------------
 	| vFetter == primMutableT
-	= do	trace	$ ppr "  * crushing MutableT\n"
+	= do	trace	$ ppr "    --  crushing MutableT\n"
 		mApps	<- takeAppsDownLeftSpine cid
 	
 		let mutableIt (cid', k)
@@ -141,7 +142,9 @@ crushFetterSingle cid cls
 	-- Pure -------------------------------------------
 	-- Apply the same constraint to all the cids in a sum.
 	| vFetter == primPure
-	= do	progress	
+	= do	trace	$ ppr "    -- crushing Pure\n"
+	
+		progress	
 			<- mapM (purifyNodeOfClass cid fetter srcFetter)
 			$  classTypeSources cls
 			
@@ -154,7 +157,13 @@ crushFetterSingle cid cls
 
 
 -- | Purify an effect node in a class.
---   NOTE: We leave purified effects in the class.
+--   NOTE: We leave purified effects in the class, because something might
+--         be unified into them later that also needs to be purified.
+--
+--   NOTE: We MUST return a valid progress indicator, otherwise we risk causing
+--         the grinder to enter into an endless loop. Adding purity fetters 
+--         to the graph that are already there doesn't count as progress.
+--
 purifyNodeOfClass 
 	:: ClassId		-- ^ Cid containing the class being purified.
 	-> Fetter		-- ^ The Pure fetter during doing the purification.
@@ -165,14 +174,17 @@ purifyNodeOfClass
 purifyNodeOfClass cid fPure srcPure (node, srcNode)
 	| NSum cids	<- node
 	= do	
+		trace	$ ppr "    * purifyNodeOfClass: node is sum " % node % "\n"
+
 		let cidsList	= Set.toList cids
 		ks		<- mapM kindOfClass cidsList
 		let ts		= zipWith (\k c -> TVar k (UClass c)) ks cidsList
-		zipWithM addFetter
-			(repeat $ TSI $ SICrushedFS cid fPure srcPure)
-			[FConstraint primPure [t] | t <- ts]
 
-		return True
+		progress	<- zipWithM addFetter
+					(repeat $ TSI $ SICrushedFS cid fPure srcPure)
+					[FConstraint primPure [t] | t <- ts]
+
+		return $ or progress
 	
 	| isNApp node || isNCon node
 	= do	
@@ -184,14 +196,16 @@ purifyNodeOfClass cid fPure srcPure (node, srcNode)
 			return False
 		
 		 Right (Just (fPurifier, srcPurifier))
-		  -> do	addFetter srcPurifier fPurifier
-			return True
+		  -> do	trace 	$ "    * purifyNodeOfClass: purifier is " % fPurifier % "\n"
+			addFetter srcPurifier fPurifier
 							
 		 Right Nothing
-		  -> 	return False
+		  -> do	trace	$ ppr "    * purifyNodeOfClass: no purifier"
+			return False
 	
 	| otherwise
-	= return False
+	= do	trace		$ ppr "    * purifyNodeOfClass: can't purify " % node % "\n"
+		return False
 
 
 -- | Get the fetter we need to add to the graph to ensure that the effect

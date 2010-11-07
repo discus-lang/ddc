@@ -6,7 +6,7 @@ module DDC.Desugar.Slurp.Slurp
 where
 import DDC.Desugar.Slurp.Base
 import DDC.Desugar.Slurp.SlurpS
--- import DDC.Constraint.Simplify
+import DDC.Constraint.Simplify
 import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
 import DDC.Var
@@ -83,8 +83,10 @@ slurpTree blessMain hTree sTree
 		, problemValueToTypeVars   = stateVarType state3
 		, problemTopLevelTypeVars  = Set.union vsTopHeader vsTopSource
 		, problemMainIsMain	   = blessMain
---		, problemConstraints	   = simplify (stateTypesRequest state3) (hConstraints ++ sConstraints)
-		, problemConstraints	   = hConstraints ++ sConstraints
+
+		, problemConstraints	   
+			= simplify (stateTypesRequest state3) (hConstraints ++ sConstraints) 
+--			  hConstraints ++ sConstraints
 
 		, problemTypeVarsPlease	   = stateTypesRequest state3 }
 
