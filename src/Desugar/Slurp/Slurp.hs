@@ -5,11 +5,9 @@ module Desugar.Slurp.Slurp
 	(slurpTree)
 where
 import Util
-import Constraint.Exp
-import Constraint.Bits
-import Constraint.Simplify
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpS
+import DDC.Constraint.Simplify
 import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
 import DDC.Var

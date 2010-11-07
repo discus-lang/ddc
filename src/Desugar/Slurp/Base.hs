@@ -8,14 +8,14 @@ module Desugar.Slurp.Base
 	, module DDC.Desugar.Bits
 	, module DDC.Desugar.Exp
 	, module Shared.VarPrim
-	, module Constraint.Exp
-	, module Constraint.Bits
+	, module DDC.Constraint.Exp
+	, module DDC.Constraint.Util
 	, module Desugar.Slurp.State
 	, module Desugar.Slurp.Util)
 where
 import Shared.VarPrim
-import Constraint.Exp
-import Constraint.Bits
+import DDC.Constraint.Exp
+import DDC.Constraint.Util
 import DDC.Desugar.Transform
 import Desugar.Slurp.State
 import Desugar.Slurp.Util

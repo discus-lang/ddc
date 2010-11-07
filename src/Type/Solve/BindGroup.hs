@@ -3,7 +3,7 @@ module Type.Solve.BindGroup
 	(bindGroup)
 where
 import DDC.Solve.State
-import Constraint.Exp
+import DDC.Constraint.Exp
 import Util
 import Util.Graph.Deps
 import DDC.Var

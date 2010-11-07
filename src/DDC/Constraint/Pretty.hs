@@ -1,13 +1,14 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Pretty printing of type constraints.
-module Constraint.Pretty
-	( )
+module DDC.Constraint.Pretty
+	()
 where
-import qualified Data.Map	as Map
-import Constraint.Exp
-import DDC.Main.Pretty
+import DDC.Constraint.Exp
 import DDC.Type
+import DDC.Main.Pretty
+import qualified Data.Map	as Map
+
 
 -- CTree ------------------------------------------------------------------------------------------
 instance Pretty CTree PMode where
@@ -22,34 +23,34 @@ instance Pretty CTree PMode where
 		%> ("\n" %!% branchSub c % "\n")
 	  % "}\n"
 
-	CSig	src v t
+	CSig	_ v t
 	 -> "@CSig  " % v % "\n" %> prettyTypeSplit t % ";\n"
 
-	CEq 	src v t	
+	CEq 	_ v t	
 	 -> "@CEq   " % padL 15 v % " " % prettyTypeSplit t % ";"
 
-	CEqs 	src ts
+	CEqs 	_ ts
 	 -> "@CEqs  " % ts
 
-	CClass	src v ts
+	CClass	_ v ts
 	 -> "@CClass " % v % " " % ts
 
-	CProject src tp vInst tDict tBind
+	CProject _ tp vInst tDict tBind
 	 -> "@CProject " % tp % " " % vInst % " " % tDict % " " % tBind % ";\n"
 
-	CDictProject src t vs
+	CDictProject _ t vs
 	 -> "@CDictProject    " % t % "\n"
 	 	% "{\n"
 		%> ("\n" %!% map (\(v1, v2) -> v1 %>> " = " % v2 % ";") (Map.toList vs) % "\n")
 		% "};\n\n"
 	
-	CClassInst src v ts
+	CClassInst _ v ts
 	 -> "@ClassInst " % v % " " % ts % ";"
 
-	CInst src v1 v2
+	CInst _ v1 v2
 	 -> "@CInst " % padL 15 v1 % " " % v2 % ";"
 	 
-	CGen src v1
+	CGen _ v1
 	 -> "@CGen  " % v1 % ";"
 	 
 	-- internal
@@ -59,13 +60,13 @@ instance Pretty CTree PMode where
  	CGrind
 	 -> ppr "@CGrind"
 
-	CInstLambda ts v1 v2
+	CInstLambda _ v1 v2
 	 -> "@InstLambda " % v1 % " " % v2
 
-	CInstLet ts v1 v2
+	CInstLet _ v1 v2
 	 -> "@InstLet " % v1 % " " % v2
 
-	CInstLetRec ts v1 v2
+	CInstLetRec _ v1 v2
 	 -> "@InstLetRec " % v1 % " " % v2
 	 
 	 

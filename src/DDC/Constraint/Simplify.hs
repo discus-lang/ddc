@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Simplification of type constraints prior to solving.
 --	The constraints returned from slurping the desugared code contain
@@ -12,18 +13,21 @@
 --		If we had a more efficient graph representation it would be better
 --		to store individual type constructors in nodes instead of compound types.
 --
-module Constraint.Simplify
+module DDC.Constraint.Simplify
 	(simplify)
 where
-import Constraint.Exp
-import Util
+import qualified DDC.Constraint.Trans	as Trans
+import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Var
 import DDC.Util.FreeVars
-import qualified Constraint.Plate.Trans	as CTrans
+import DDC.Main.Error
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
+import Util
+
+stage = "DDC.Constraint.Simplify"
 
 
 -- | Simplify some type constraints.
@@ -96,9 +100,8 @@ inlineCollect acc (c:cs)
 	 -> do	cc'	<- inlineCollect [] cc
 		inlineCollect (CBranch bind cc' : acc) cs
 		
-	CEq sp t1@(TVar k (UVar v1)) t2
+	CEq _ (TVar _ (UVar v1)) t2
 	 -> do	noInline	<- gets tableNoInline
-	 	sub		<- gets tableSub 
 		
 		let res
 			-- leave value type constraints alone
@@ -135,7 +138,7 @@ inlineDump acc (c : cs)
 	 -> do	cc'	<- inlineDump [] cc
 	 	inlineDump (CBranch bind cc' : acc) cs
 		
-	CEq sp t1@(TVar k v1) t2
+	CEq sp t1@TVar{} t2
 	 -> do	sub	<- gets tableSub
 		let t2'	=  packT $ subFollowVT sub t2
 		inlineDump (CEq sp t1 t2' : acc) cs
@@ -165,15 +168,16 @@ subFollowVT' sub block tt
 				(map downF $ crsOther crs))
 
 	TSum 	k ts		-> TSum	k (map down ts)
-	TApp t1 t2		-> TApp	(down t1) (down t2)
+	TApp	t1 t2		-> TApp	(down t1) (down t2)
 	TCon{}			-> tt
-	TVar	k (UVar v)
+	TVar	_ (UVar v)
 	 | Set.member v block	-> tt
 	 | otherwise
 	 -> case Map.lookup v sub of
 	 	Nothing		-> tt
 		Just t'		-> subFollowVT' sub (Set.insert v block) t'
-		
+
+	_ -> panic stage $ "subFollow: no match"
 
 subFollowVT_f sub block ff
  = let down	= subFollowVT' sub block
@@ -200,8 +204,8 @@ collectNoInline
 	
 collectNoInline bb
 	= execState 
-		(CTrans.transM 
-			CTrans.Table { CTrans.tableTransT = collectNoInlineT } 
+		(Trans.transM 
+			Trans.Table { Trans.tableTransT = collectNoInlineT } 
 			bb) 
 		Set.empty
 
@@ -231,8 +235,9 @@ collectNoInlineT' tt
 	modify $ \s -> Set.union s free_keep
 	return tt 	
 
+
 -- | Quick check if this type has a value kind, used when deciding what
---	type constraints to inline.
+--   type constraints to inline.
 isValueTypeFromVar tt
  = case tt of
 	TVar _ (UVar v)

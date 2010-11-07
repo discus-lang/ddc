@@ -1,17 +1,20 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Bits and pieces for dealing with type constraints.
-module Constraint.Bits
+module DDC.Constraint.Util
 	( isCBranch
 	, takeCBindVs
 	, mergeCBinds
 	, slurpContains)
 where
-import Util
-import Constraint.Exp
+import DDC.Constraint.Exp
 import DDC.Var
+import DDC.Main.Error
+import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
+stage	= "DDC.Constraint.Util"
 
 -- | Check if this is a branch in the constraint tree.
 isCBranch :: CTree -> Bool
@@ -39,7 +42,7 @@ mergeCBinds (BLet    	vs1) (BLet    	vs2)	= BLet	  	(vs1 ++ vs2)
 mergeCBinds (BLetGroup  vs1) (BLetGroup vs2) 	= BLetGroup  	(vs1 ++ vs2)
 mergeCBinds (BLambda 	vs1) (BLambda 	vs2)	= BLambda 	(vs1 ++ vs2)
 mergeCBinds (BDecon  	vs1) (BDecon  	vs2) 	= BDecon  	(vs1 ++ vs2)
-
+mergeCBinds _ _					= panic stage $ "mergeCBinds: no match"
 
 -- | Slurp the containment map from this tree.
 --	This is a map of all the variables bound by sub-branches in this tree.
@@ -69,6 +72,6 @@ slurpContains' mParent tree@(CBranch{})
 	
 	where	boundVsT	= branchBind tree
 
-slurpContains' mParent _
+slurpContains' _ _
 	= []
 	

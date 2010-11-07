@@ -7,7 +7,7 @@ import Type.Check.Main
 import Type.Check.SchemeDanger
 import DDC.Solve.Check.Instances
 import DDC.Solve.State
-import Constraint.Exp
+import DDC.Constraint.Exp
 import Data.IORef
 
 import Util

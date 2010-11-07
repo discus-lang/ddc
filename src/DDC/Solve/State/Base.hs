@@ -26,17 +26,17 @@ module DDC.Solve.State.Base
 	  -- * Bits and pieces
 	, graphInstantiatesAdd)
 where
-import Constraint.Exp
-import Constraint.Pretty	()
+import DDC.Constraint.Exp
+import DDC.Constraint.Pretty	()
 import DDC.Solve.Error
 import DDC.Solve.State.Squid
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
-import Control.Monad.State.Strict
-import System.IO
 import Data.IORef
 import Data.Maybe
+import System.IO
+import Control.Monad.State.Strict
 import qualified DDC.Main.Arg	as Arg
 import qualified Data.Set	as Set
 import qualified Util.Data.Map	as Map

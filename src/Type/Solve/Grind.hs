@@ -7,7 +7,7 @@ import DDC.Solve.Crush.Shape
 import DDC.Solve.Crush.Effects
 import DDC.Solve.Crush.Fetter
 import DDC.Solve.Crush.Proj
-import Constraint.Exp
+import DDC.Constraint.Exp
 import Util
 import DDC.Main.Error
 import DDC.Solve.State

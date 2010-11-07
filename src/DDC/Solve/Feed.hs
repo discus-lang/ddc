@@ -8,15 +8,15 @@ module DDC.Solve.Feed
 	, feedFetter
 	, addFetter)
 where
-import Constraint.Exp
 import Type.Link
 import Type.Dump		()
-import Util
 import DDC.Solve.Interface.Problem
 import DDC.Solve.Location
 import DDC.Solve.State
+import DDC.Constraint.Exp
 import DDC.Main.Error
 import DDC.Type
+import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Sequence	as Seq

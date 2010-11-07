@@ -1,6 +1,6 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | The tree of type constraints.
-module	Constraint.Exp
+module	DDC.Constraint.Exp
 	( CTree(..)
 	, CBind(..) )
 where
@@ -10,12 +10,13 @@ import DDC.Var
 import Data.Map			(Map)
 
 
--- CTree ------------------------------------------------------------------------------------------
 -- | The tree of type constraints.
 --   In most of these constraints, the first Type parameter should always be 
 --   a TClass or a TVar.
+--   TODO: Change representation to enforce this. Maybe use Bind.
 --
 --   TODO: Shift the internal constraints used internally by the solver somewhere else.
+--	   We also want to break the dictionaries out into a different type.
 --
 data	CTree
 	= -- | An empty tree, used as a place holder.

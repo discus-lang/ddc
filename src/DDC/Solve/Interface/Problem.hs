@@ -8,13 +8,13 @@ module DDC.Solve.Interface.Problem
 	, ProbProjDict	(..)
 	, ProbClassInst	(..))
 where
-import DDC.Var
-import DDC.Base.SourcePos
-import DDC.Type
+import DDC.Solve.Location
+import DDC.Constraint.Exp
 import DDC.Type.Data
 import DDC.Type.SigMode
-import DDC.Solve.Location
-import Constraint.Exp
+import DDC.Type
+import DDC.Base.SourcePos
+import DDC.Var
 import Data.Map			(Map)
 import Data.Set			(Set)
 
