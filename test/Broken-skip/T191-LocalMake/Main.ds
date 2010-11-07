@@ -1,0 +1,7 @@
+import Test
+
+main ()
+ = do	println "Hello!"
+	println $ "identInt 42       : " % (show (identInt 42))
+	println "Done!"
+
