@@ -56,7 +56,7 @@ slurpX	xx@(XLambda sp vBound xBody)
 	-- the constraints
 	let qs	= 
 		[ CEq   (TSV $ SVLambda sp) tX	$ makeTFun tBound tBody eBody cX
-		, CMore (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
+		, CEq   (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
  	
 	-- If the sub expression is also a lambda then we can pack its constraints
 	--	into this branch as well. This reduces the number of nested branches
