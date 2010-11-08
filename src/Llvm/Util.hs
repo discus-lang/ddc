@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-unused-imports #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
 
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Util
@@ -26,6 +26,10 @@ module Llvm.Util
 	, pThunk
 	, structThunk
 
+	, toLlvmType
+	, typeOfString
+	, alignOfType
+
 	, pChar
 	, ppChar
 	, pInt32
@@ -35,6 +39,8 @@ module Llvm.Util
 where
 
 import DDC.Main.Error
+import DDC.Sea.Exp
+import DDC.Var
 
 import Llvm
 import Llvm.GhcReplace.Unique
@@ -177,4 +183,31 @@ offsetOfIndex typ i
 
 ptrAlign :: Maybe Int
 ptrAlign = Just Config.pointerBytes
+
+-- | Convert a Sea type to an LlvmType.
+toLlvmType :: Type -> LlvmType
+toLlvmType (TPtr t)		= LMPointer (toLlvmType t)
+toLlvmType (TCon TyConObj)	= structObj
+toLlvmType TVoid		= LMVoid
+
+toLlvmType (TCon (TyConUnboxed v))
+ = case varName v of
+	"Bool#"		-> i1
+	"Int32#"	-> i32
+	"Int64#"	-> i64
+	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
+
+toLlvmType (TFun r TVoid)
+ = pFunction
+
+toLlvmType t
+ = panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : " ++ show t ++ "\n"
+
+
+typeOfString :: String -> LlvmType
+typeOfString s = LMArray (length s + 1) i8
+
+alignOfType :: Type -> Maybe Int
+alignOfType (TPtr _) = ptrAlign
+alignOfType _ = Nothing
 

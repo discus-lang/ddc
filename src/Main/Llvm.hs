@@ -1,4 +1,4 @@
-{-# OPTIONS -fno-warn-unused-binds -fno-warn-type-defaults #-}
+{-# OPTIONS -fno-warn-unused-binds -fno-warn-type-defaults -cpp #-}
 
 -- | Wrappers for compiler stages dealing with LLVM code.
 module Main.Llvm
@@ -15,8 +15,9 @@ import DDC.Base.Literal
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Sea.Exp
+import DDC.Sea.Pretty
 import DDC.Var
-import DDC.Var.PrimId
 
 import qualified DDC.Module.Scrape	as M
 import qualified DDC.Main.Arg		as Arg
@@ -28,10 +29,10 @@ import Llvm.GhcReplace.Unique
 import Llvm.Invoke
 import Llvm.Runtime
 import Llvm.Util
+import Llvm.XPrim
+import Llvm.Var
 
-import DDC.Sea.Exp
 import Sea.Util				(eraseAnnotsTree)
-import DDC.Sea.Pretty
 
 import Util
 import qualified Data.Map		as Map
@@ -237,7 +238,7 @@ llvmSwitch (XTag (XVar (NSlot v i) tPtrObj)) alt
 	addBlock	[ MkLabel (uniqueOfLlvmVar switchEnd) ]
 
 llvmSwitch e _
- = 	panic stage $ "llvmSwitch : " ++ show e
+ = 	panic stage $ "(" ++ (show __LINE__) ++ ") llvmSwitch : " ++ show e
 
 
 genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
@@ -257,10 +258,10 @@ genAltVars _ alt@(ACaseIndir (XVar (NSlot v i) t) label)
 	return	((tagIndir, lab), alt)
 
 genAltVars _ (ADefault _)
- = panic stage "getAltVars : found ADefault."
+ = panic stage $ "(" ++ (show __LINE__) ++ ") getAltVars : found ADefault."
 
 genAltVars _ x
- = panic stage $ "getAltVars : found " ++ show x
+ = panic stage $ "(" ++ (show __LINE__) ++ ") getAltVars : found " ++ show x
 
 
 genAltBlock :: ((LlvmVar, LlvmVar), Alt a) -> LlvmM ()
@@ -282,7 +283,7 @@ genAltBlock ((_, lab), ASwitch (XLit (LDataTag _)) [])
  =	addBlock [ Branch lab ]
 
 genAltBlock ((_, lab), x)
- = do	panic stage $ "getAltBlock : " ++ show x
+ = do	panic stage $ "(" ++ (show __LINE__) ++ ") getAltBlock : " ++ show x
 
 
 genAltDefault :: LlvmVar -> Alt a -> LlvmM ()
@@ -306,7 +307,7 @@ genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
 		]
 
 genAltDefault _ def
- =	panic stage $ "getAltDefault : " ++ show def
+ =	panic stage $ "(" ++ (show __LINE__) ++ ") getAltDefault : " ++ show def
 
 --------------------------------------------------------------------------------
 
@@ -342,14 +343,18 @@ llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) x@(XPrim op args)
 
 
 
-llvmOfAssign (XVar v1@NRts{} t1) _ b@(XPrim op args)
- =	panic stage  ("llvmOfAssign .....\n" ++ (show v1) ++ "\n" ++ (show b) ++ "\n")
+llvmOfAssign xv@(XVar v1@NRts{} t1) _ b@(XPrim op args)
+ = do	addComment  (stage ++ " (" ++ (show __LINE__) ++ ") llvmOfAssig\n" ++ (show v1) ++ "\n" ++ (show b) ++ "\n")
+	result	<- llvmOfXPrim op args
+	addBlock	[ Store result (pVarLift (llvmVarOfXVar xv)) ]
+
+
 
 
 
 
 llvmOfAssign a b c
- = panic stage $ "Unhandled : llvmOfAssign \n"
+ = panic stage $ "llvmOfAssign (" ++ (show __LINE__) ++ ") Unhandled : \n"
 	++ {- take 150 -} (show a) ++ "\n"
 	++ {- take 150 -} (show b) ++ "\n"
 	++ {- take 150 -} (show c) ++ "\n"
@@ -364,7 +369,7 @@ loadExp (TPtr (TCon TyConObj)) (XPrim op args)
  =	llvmOfXPrim op args
 
 loadExp t src
- = panic stage $ "loadExp\n"
+ = panic stage $  " (" ++ (show __LINE__) ++ ") loadExp\n"
 	++ show t ++ "\n"
 	++ show src ++ "\n"
 
@@ -388,7 +393,7 @@ llvmFunParam (XVar n t)
  =	return $ toLlvmVar (varOfName n) t
 
 llvmFunParam p
- = panic stage $ "llvmFunParam " ++ show p
+ = panic stage $ "(" ++ (show __LINE__) ++ ") llvmFunParam " ++ show p
 
 
 
@@ -415,11 +420,10 @@ boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
 	gname	<- newUniqueName "str"
 	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
 	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
-	-- panic stage $ "boxAny2 " ++ show svar
 	boxAny		svar
 
 boxExp t x
- = panic stage $ "Unhandled : boxExp\n    " ++ show t ++ "\n    " ++ (show x)
+ = panic stage $ "(" ++ (show __LINE__) ++ ") Unhandled : boxExp\n    " ++ show t ++ "\n    " ++ (show x)
 
 
 --------------------------------------------------------------------------------
@@ -439,7 +443,7 @@ llvmOfReturn (XVar n t)
 	addBlock [ Return (Just (toLlvmVar (varOfName n) t)) ]
 
 llvmOfReturn x
- = 	panic stage $ "llvmOfReturn " ++ (takeWhile (/= ' ') (show x))
+ = 	panic stage $ "(" ++ (show __LINE__) ++ ") llvmOfReturn " ++ (takeWhile (/= ' ') (show x))
 
 --------------------------------------------------------------------------------
 
@@ -471,58 +475,12 @@ llvmOfPtrManip t (MOp OpAdd) args
 			return dst
 
 	_ ->	do	lift $ mapM_ (\a -> putStrLn ("\n    " ++ show a)) args
-			panic stage $ "Unhandled : llvmOfPtrManip"
+			panic stage $ "(" ++ (show __LINE__) ++ ") Unhandled : llvmOfPtrManip"
 
 llvmOfPtrManip _ op _
- = panic stage $ "Unhandled : llvmOfPtrManip " ++ show op
+ = panic stage $ "(" ++ (show __LINE__) ++ ") Unhandled : llvmOfPtrManip " ++ show op
 
 --------------------------------------------------------------------------------
-
-llvmOfXPrim :: Prim -> [Exp a] -> LlvmM LlvmVar
-llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit (LiteralFmt (LInt i) (UnboxedBits 32))) ]
- | varId v == VarIdPrim (TInt (UnboxedBits 32))
- =	boxInt32 $ i32LitVar i
-
-llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) ftype@(TFun pt rt)):args)
- | rt == TPtr (TCon TyConObj)
- = do	let func	= toLlvmFuncDecl External fv rt args
-	addGlobalFuncDecl func
-	params		<- mapM llvmFunParam args
-	result		<- newUniqueNamedReg "result" pObj
-	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
-	return		result
-
-llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
- = do	let func	= toLlvmFuncDecl External fv rt []
-	addGlobalFuncDecl func
-	result		<- newUniqueNamedReg "result" pObj
-	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
-	return		result
-
-
-llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i) Unboxed)) ]
- = do	src		<- newUniqueReg (toLlvmType t)
-	next		<- newUniqueReg (toLlvmType t)
-	addBlock	[ Assignment src (loadAddress (toLlvmVar (varOfName v) t))
-			, Assignment next (GetElemPtr True src [llvmWordLitVar i]) ]
-	return		next
-
-llvmOfXPrim (MBox t@(TCon (TyConAbstract tt))) [ x ]
- | varName tt == "String#"
- =	boxExp t x
-
-llvmOfXPrim op args
- = panic stage $ "llvmOfXPrim\n"
-	++ show op ++ "\n"
-	++ show args ++ "\n"
-
-
-
-
-llvmXPrimOne p e
- = panic stage $ "llvmXPrimOne\n    " ++ show p ++ "\n    " ++ show e
-
-
 
 llvmVarOfExp :: Exp a -> LlvmM LlvmVar
 llvmVarOfExp (XVar n t@TCon{})
@@ -542,7 +500,7 @@ llvmVarOfExp (XLit (LLit (LiteralFmt (LInt i) Unboxed)))
 	return	reg
 
 llvmVarOfExp x
- = panic stage $ "llvmVarOfExp : " ++ show x
+ = panic stage $ "llvmVarOfExp (" ++ (show __LINE__) ++ ") : " ++ show x
 
 
 
@@ -555,92 +513,21 @@ llvmOpOfPrim p
 	MOp OpMul	-> LlvmOp LM_MO_Mul
 
 	MOp OpEq	-> Compare LM_CMP_Eq
-	_		-> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
+	_		-> panic stage $ "llvmOpOfPrim (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show p
 
 
--- | Convert a Sea type to an LlvmType.
-toLlvmType :: Type -> LlvmType
-toLlvmType (TPtr t)		= LMPointer (toLlvmType t)
-toLlvmType (TCon TyConObj)	= structObj
-toLlvmType TVoid		= LMVoid
 
-toLlvmType (TCon (TyConUnboxed v))
- = case varName v of
-	"Bool#"		-> i1
-	"Int32#"	-> i32
-	"Int64#"	-> i64
-	name		-> panic stage $ "toLlvmType unboxed " ++ name ++ "\n"
+llvmVarOfXVar :: Exp a -> LlvmVar
+llvmVarOfXVar (XVar (NRts v) t)
+ = LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
 
-toLlvmType (TFun r TVoid)
- = pFunction
-
-toLlvmType t
- = panic stage $ "toLlvmType " ++ show t ++ "\n"
+llvmVarOfXVar exp
+ = panic stage $ "llvmVarOfXVar (" ++ (show __LINE__) ++ ")\n"
+	++ show exp
 
 
-typeOfString :: String -> LlvmType
-typeOfString s = LMArray (length s + 1) i8
-
--- | Convert a Sea Var (wit a Type) to a typed LlvmVar.
-toLlvmVar :: Var -> Type -> LlvmVar
-toLlvmVar v t@(TFun r TVoid)
- = LMNLocalVar (seaVar True v) (toLlvmType t)
-
-toLlvmVar v t@(TFun _ _ )
- = panic stage $ "toLlvmVar type : " ++ show t
-
-toLlvmVar v t
- = case isGlobalVar v of
-	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
-	False -> LMNLocalVar (seaVar True v) (toLlvmType t)
-
-alignOfType :: Type -> Maybe Int
-alignOfType (TPtr _) = ptrAlign
-alignOfType _ = Nothing
 
 toLlvmCafVar :: Var -> Type -> LlvmVar
 toLlvmCafVar v t
  = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
-
-toLlvmFuncDecl :: LlvmLinkageType -> Var -> Type -> [Exp a] -> LlvmFunctionDecl
-toLlvmFuncDecl linkage v t args
- = LlvmFunctionDecl {
-	--  Unique identifier of the function
-	decName = seaVar False v,
-	--  LinkageType of the function
-	funcLinkage = linkage,
-	--  The calling convention of the function
-	funcCc = CC_Ccc,
-	--  Type of the returned value
-	decReturnType = toLlvmType t,
-	--  Indicates if this function uses varargs
-	decVarargs = FixedArgs,
-	--  Parameter types and attributes
-	decParams = map toDeclParam args,
-	--  Function align value, must be power of 2
-	funcAlign = ptrAlign
-	}
-
-
-toDeclParam :: Exp a -> LlvmParameter
-toDeclParam (XVar (NSlot v i) t)
- = (toLlvmType t, [])
-
-toDeclParam x
- = panic stage $ "toDeclParam " ++ show x
-
-
--- | Does the given Sea variable have global scope? TODO: Move this to the Sea stuff.
-isGlobalVar :: Var -> Bool
-isGlobalVar v
- -- If the variable is explicitly set as global use the given name.
- | bool : _	<- [global | ISeaGlobal global <- varInfo v]
- = bool
-
- | file : _	<- [sfile | ISourcePos (SourcePos (sfile, _, _))
-		<-  concat [varInfo bound | IBoundBy bound <- varInfo v]]
- = isSuffixOf ".di" file
-
- | otherwise
- = False
 
