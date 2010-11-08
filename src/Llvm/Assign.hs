@@ -1,6 +1,5 @@
 {-# OPTIONS -fno-warn-unused-binds -fno-warn-type-defaults -cpp #-}
 
--- | Wrappers for compiler stages dealing with LLVM code.
 module Llvm.Assign
 	(llvmOfAssign)
 where
@@ -23,23 +22,8 @@ stage = "Llvm.Assign"
 debug = True
 
 llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
-llvmOfAssign (XVar (NSlot v i) (TPtr (TCon TyConObj))) t@(TPtr (TCon TyConObj)) src
- = do	reg	<- loadExp t src
-	writeSlot reg i
 
-llvmOfAssign (XVar n1@NAuto{} t1) t@(TPtr (TCon TyConObj)) (XVar n2@NSlot{} t2)
- | t1 == t && t2 == t
- =	readSlotVar (nameSlotNum n2) $ toLlvmVar (varOfName n1) t
-
-
-llvmOfAssign (XVar v1@NCaf{} t1) t@(TPtr (TPtr (TCon TyConObj))) (XVar v2@NRts{} t2)
- | t1 == t && t2 == t
- = do	src		<- newUniqueReg $ toLlvmType t
-	addBlock	[ Assignment src (loadAddress (toLlvmCafVar (varOfName v2) t2))
-			, Store src (pVarLift (toLlvmCafVar (varOfName v1) t1)) ]
-
-
-
+-- Special case NULL pointer assignment
 llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (LiteralFmt (LInt 0) Unboxed)))
  | t1 == t
  = do	dst		<- newUniqueReg $ pLift $ toLlvmType t1
@@ -47,20 +31,30 @@ llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (Litera
 			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
 
 
-llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) x@(XPrim op args)
- | t1 == t
- = do	result		<- llvmOfXPrim op args
-	addBlock	[ Store result (pVarLift (toLlvmCafVar (varOfName v1) t)) ]
 
+llvmOfAssign dst@(XVar n1@NAuto{} t1@(TPtr (TCon TyConObj))) tc src
+ | t1 == tc
+ = do	reg	<- evalSrc tc src
+	addBlock [ Assignment (toLlvmVar (varOfName n1) tc) (loadAddress reg) ]
 
+llvmOfAssign (XVar (NSlot v i) tv@(TPtr (TCon TyConObj))) tc src
+ | tv == tc
+ = do	reg	<- evalSrc tc src
+	writeSlot reg i
 
-llvmOfAssign xv@(XVar v1@NRts{} t1) _ b@(XPrim op args)
- = do	addComment  (stage ++ " (" ++ (show __LINE__) ++ ") llvmOfAssig\n" ++ (show v1) ++ "\n" ++ (show b) ++ "\n")
-	result	<- llvmOfXPrim op args
-	addBlock	[ Store result (pVarLift (llvmVarOfXVar xv)) ]
+llvmOfAssign (XVar v1@NCaf{} tv@(TPtr (TPtr (TCon TyConObj)))) tc src
+ | tv == tc
+ = do	reg		<- evalSrc tc src
+	addBlock	[ Store reg (pVarLift (toLlvmCafVar (varOfName v1) tv)) ]
 
+llvmOfAssign (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj))) tc src
+ | tv == tc
+ = do	reg		<- evalSrc tc src
+	addBlock	[ Store reg (pVarLift (toLlvmCafVar (varOfName v1) tv)) ]
 
-
+llvmOfAssign xv@(XVar v1@NRts{} t1) tc src
+ = do	reg		<- evalSrc tc src
+	addBlock	[ Store reg (pVarLift (llvmVarOfXVar xv)) ]
 
 
 
@@ -70,22 +64,60 @@ llvmOfAssign a b c
 	++ {- take 150 -} (show b) ++ "\n"
 	++ {- take 150 -} (show c) ++ "\n"
 
-
-
 --------------------------------------------------------------------------------
 
-loadExp :: Type -> Exp a -> LlvmM LlvmVar
-loadExp (TPtr (TCon TyConObj)) (XVar n t@(TPtr (TCon TyConObj)))
- = 	return $ toLlvmVar (varOfName n) t
+evalSrc :: Type -> Exp a -> LlvmM LlvmVar
+evalSrc t (XVar v2@NRts{} t2)
+ | t == t2
+ = do	src		<- newUniqueReg $ toLlvmType t
+	addBlock [ Assignment src (loadAddress (toLlvmCafVar (varOfName v2) t2)) ]
+	return src
 
-loadExp (TPtr (TCon TyConObj)) (XPrim op args)
+evalSrc t (XVar (NSlot _ 0) tv)
+ | t == tv
+ = do	reg		<- newUniqueNamedReg "slot.0" $ toLlvmType t
+	addBlock	[ Assignment reg (Load localSlotBase) ]
+	return		reg
+
+evalSrc t (XVar (NSlot _ n) tv)
+ | t == tv
+ , n > 0
+ = do	reg		<- newUniqueNamedReg ("slot." ++ show n) $ toLlvmType t
+	addBlock	[ Assignment reg (GetElemPtr True localSlotBase [llvmWordLitVar n]) ]
+	return		reg
+
+evalSrc t (XVar n@NAuto{} tv)
+ | t == tv
+ = return $ toLlvmVar (varOfName n) t
+
+evalSrc t@(TPtr (TCon TyConObj)) (XPrim op args)
  =	llvmOfXPrim op args
 
-loadExp t src
- = panic stage $  " (" ++ (show __LINE__) ++ ") loadExp\n"
+
+
+
+evalSrc t (XVar n@NSuper{} tv)
+ | t == tv
+ = panic stage $ "evalSrc (" ++ (show __LINE__) ++ ") :\n"
+	++ show t ++ "\n"
+	++ show n ++ "\n"
+
+evalSrc t (XVar n@NCafPtr{} tv)
+ | t == tv
+ = panic stage $ "evalSrc (" ++ (show __LINE__) ++ ") :\n"
+	++ show t ++ "\n"
+	++ show n ++ "\n"
+
+evalSrc t (XVar n@NCaf{} tv)
+ | t == tv
+ = panic stage $ "evalSrc (" ++ (show __LINE__) ++ ") :\n"
+	++ show t ++ "\n"
+	++ show n ++ "\n"
+
+
+
+evalSrc t src
+ = panic stage $ "evalSrc (" ++ (show __LINE__) ++ ") :\n"
 	++ show t ++ "\n"
 	++ show src ++ "\n"
-
-
-
 
