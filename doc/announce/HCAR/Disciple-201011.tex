@@ -1,0 +1,18 @@
+% TheDisciplinedDiscipleCom-BT.tex
+\begin{hcarentry}[updated,section]{Disciple}
+\report{Ben Lippmeier}%11/10
+\status{experimental, active development}
+\participants{Erik de Castro Lopo}
+\makeheader
+
+Disciple is a dialect of Haskell that uses strict evaluation as the default and supports destructive update of arbitrary data.  Many Haskell programs are also Disciple programs, or will run with minor changes. In addition, Disciple includes region, effect, and closure typing, and this extra information provides a handle on the operational behaviour of code that is not available in other languages. Our target applications are the ones that you always find yourself writing C programs for, because existing functional languages are too slow, use too much memory, or do not let you update the data that you need to.
+
+Our compiler (DDC) is still in the ``research prototype'' stage, meaning that it will compile programs if you are nice to it, but expect compiler panics and missing features. You will get panics due to ungraceful handling of errors in the source code, but valid programs should compile ok. The test suite includes a few thousand-line graphical demos, like a ray-tracer and an n-body collision simulation, so it is definitely hackable.
+
+We have spent a good slab of time this year cleaning up the internals and getting proper regression testing build bots online. We now support OSX/x86, Linux/$\{$x86, x86--64, PPC$\}$, FreeBSD/x86, and Cygwin/x86 so you should be able to get DDC running on your own system without trouble. Other than that, we have been stabilising the existing implementation and fixing bugs. The plan for the coming year is to complete support for type classes and dictionary passing, and to extend the type system so that it can ``auto-freeze'' data structures that have been created using destructive update but will be treated as constant from then on. We are also working on an LLVM port which will provide faster code in the long term without having to rely on the existing via-C backend.
+
+Disciple programs can be written in either a pure/functional or effectful/imperative style, and one of our main goals is to provide both styles coherently in the same language. The two styles can be mixed safely. For example: when using laziness, the type system guarantees that computations with visible side effects are not suspended. The fact that we have region, effect, and closure typing available means we can also support more fine-grained notions of ST-monad style effect encapsulation, with the added benefit that the encapsulation/masking is handled seamlessly by the type system. If this sounds interesting to you then drop us a line!
+
+\FurtherReading
+  \url{http://trac.haskell.org/ddc}
+\end{hcarentry}
