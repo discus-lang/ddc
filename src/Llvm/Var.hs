@@ -3,6 +3,8 @@
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Var
 	( toLlvmVar
+	, toLlvmCafVar
+	, llvmVarOfXVar
 	, isGlobalVar )
 where
 
@@ -31,6 +33,26 @@ toLlvmVar v t
  = case isGlobalVar v of
 	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
 	False -> LMNLocalVar (seaVar True v) (toLlvmType t)
+
+
+
+
+llvmVarOfXVar :: Exp a -> LlvmVar
+llvmVarOfXVar (XVar (NRts v) t)
+ = LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
+
+llvmVarOfXVar exp
+ = panic stage $ "llvmVarOfXVar (" ++ (show __LINE__) ++ ")\n"
+	++ show exp
+
+
+
+toLlvmCafVar :: Var -> Type -> LlvmVar
+toLlvmCafVar v t
+ = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
+
+
+
 
 -- | Does the given Sea variable have global scope? TODO: Move this to the Sea stuff.
 isGlobalVar :: Var -> Bool

@@ -25,11 +25,11 @@ import qualified DDC.Config.Version	as Version
 
 import Llvm
 import LlvmM
+import Llvm.Assign
 import Llvm.GhcReplace.Unique
 import Llvm.Invoke
 import Llvm.Runtime
 import Llvm.Util
-import Llvm.XPrim
 import Llvm.Var
 
 import Sea.Util				(eraseAnnotsTree)
@@ -238,7 +238,7 @@ llvmSwitch (XTag (XVar (NSlot v i) tPtrObj)) alt
 	addBlock	[ MkLabel (uniqueOfLlvmVar switchEnd) ]
 
 llvmSwitch e _
- = 	panic stage $ "(" ++ (show __LINE__) ++ ") llvmSwitch : " ++ show e
+ = 	panic stage $ "llvmSwitch (" ++ (show __LINE__) ++ ") : " ++ show e
 
 
 genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
@@ -258,10 +258,10 @@ genAltVars _ alt@(ACaseIndir (XVar (NSlot v i) t) label)
 	return	((tagIndir, lab), alt)
 
 genAltVars _ (ADefault _)
- = panic stage $ "(" ++ (show __LINE__) ++ ") getAltVars : found ADefault."
+ = panic stage $ "getAltVars (" ++ (show __LINE__) ++ ") : found ADefault."
 
 genAltVars _ x
- = panic stage $ "(" ++ (show __LINE__) ++ ") getAltVars : found " ++ show x
+ = panic stage $ "getAltVars (" ++ (show __LINE__) ++ ") : found " ++ show x
 
 
 genAltBlock :: ((LlvmVar, LlvmVar), Alt a) -> LlvmM ()
@@ -283,7 +283,7 @@ genAltBlock ((_, lab), ASwitch (XLit (LDataTag _)) [])
  =	addBlock [ Branch lab ]
 
 genAltBlock ((_, lab), x)
- = do	panic stage $ "(" ++ (show __LINE__) ++ ") getAltBlock : " ++ show x
+ =	panic stage $ "getAltBlock (" ++ (show __LINE__) ++ ") : " ++ show x
 
 
 genAltDefault :: LlvmVar -> Alt a -> LlvmM ()
@@ -307,71 +307,7 @@ genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
 		]
 
 genAltDefault _ def
- =	panic stage $ "(" ++ (show __LINE__) ++ ") getAltDefault : " ++ show def
-
---------------------------------------------------------------------------------
-
-llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
-llvmOfAssign (XVar (NSlot v i) (TPtr (TCon TyConObj))) t@(TPtr (TCon TyConObj)) src
- = do	reg	<- loadExp t src
-	writeSlot reg i
-
-llvmOfAssign (XVar n1@NAuto{} t1) t@(TPtr (TCon TyConObj)) (XVar n2@NSlot{} t2)
- | t1 == t && t2 == t
- =	readSlotVar (nameSlotNum n2) $ toLlvmVar (varOfName n1) t
-
-
-llvmOfAssign (XVar v1@NCaf{} t1) t@(TPtr (TPtr (TCon TyConObj))) (XVar v2@NRts{} t2)
- | t1 == t && t2 == t
- = do	src		<- newUniqueReg $ toLlvmType t
-	addBlock	[ Assignment src (loadAddress (toLlvmCafVar (varOfName v2) t2))
-			, Store src (pVarLift (toLlvmCafVar (varOfName v1) t1)) ]
-
-
-
-llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (LiteralFmt (LInt 0) Unboxed)))
- | t1 == t
- = do	dst		<- newUniqueReg $ pLift $ toLlvmType t1
-	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) t1)))
-			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
-
-
-llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) x@(XPrim op args)
- | t1 == t
- = do	result		<- llvmOfXPrim op args
-	addBlock	[ Store result (pVarLift (toLlvmCafVar (varOfName v1) t)) ]
-
-
-
-llvmOfAssign xv@(XVar v1@NRts{} t1) _ b@(XPrim op args)
- = do	addComment  (stage ++ " (" ++ (show __LINE__) ++ ") llvmOfAssig\n" ++ (show v1) ++ "\n" ++ (show b) ++ "\n")
-	result	<- llvmOfXPrim op args
-	addBlock	[ Store result (pVarLift (llvmVarOfXVar xv)) ]
-
-
-
-
-
-
-llvmOfAssign a b c
- = panic stage $ "llvmOfAssign (" ++ (show __LINE__) ++ ") Unhandled : \n"
-	++ {- take 150 -} (show a) ++ "\n"
-	++ {- take 150 -} (show b) ++ "\n"
-	++ {- take 150 -} (show c) ++ "\n"
-
---------------------------------------------------------------------------------
-
-loadExp :: Type -> Exp a -> LlvmM LlvmVar
-loadExp (TPtr (TCon TyConObj)) (XVar n t@(TPtr (TCon TyConObj)))
- = 	return $ toLlvmVar (varOfName n) t
-
-loadExp (TPtr (TCon TyConObj)) (XPrim op args)
- =	llvmOfXPrim op args
-
-loadExp t src
- = panic stage $  " (" ++ (show __LINE__) ++ ") loadExp\n"
-	++ show t ++ "\n"
-	++ show src ++ "\n"
+ =	panic stage $ "getAltDefault (" ++ (show __LINE__) ++ ") : " ++ show def
 
 --------------------------------------------------------------------------------
 
@@ -393,7 +329,7 @@ llvmFunParam (XVar n t)
  =	return $ toLlvmVar (varOfName n) t
 
 llvmFunParam p
- = panic stage $ "(" ++ (show __LINE__) ++ ") llvmFunParam " ++ show p
+ = panic stage $ "llvmFunParam (" ++ (show __LINE__) ++ ") " ++ show p
 
 
 
@@ -402,10 +338,6 @@ pFunctionVar v
  = case isGlobalVar v of
 	True -> LMGlobalVar (seaVar False v) pFunction External Nothing ptrAlign False
 	False -> LMNLocalVar (seaVar True v) pFunction
-
-
-
-
 
 
 
@@ -423,7 +355,7 @@ boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
 	boxAny		svar
 
 boxExp t x
- = panic stage $ "(" ++ (show __LINE__) ++ ") Unhandled : boxExp\n    " ++ show t ++ "\n    " ++ (show x)
+ = panic stage $ "boxExp (" ++ (show __LINE__) ++ ") Unhandled :\n    " ++ show t ++ "\n    " ++ (show x)
 
 
 --------------------------------------------------------------------------------
@@ -443,7 +375,7 @@ llvmOfReturn (XVar n t)
 	addBlock [ Return (Just (toLlvmVar (varOfName n) t)) ]
 
 llvmOfReturn x
- = 	panic stage $ "(" ++ (show __LINE__) ++ ") llvmOfReturn " ++ (takeWhile (/= ' ') (show x))
+ = 	panic stage $ "llvmOfReturn (" ++ (show __LINE__) ++ ") " ++ (takeWhile (/= ' ') (show x))
 
 --------------------------------------------------------------------------------
 
@@ -475,10 +407,10 @@ llvmOfPtrManip t (MOp OpAdd) args
 			return dst
 
 	_ ->	do	lift $ mapM_ (\a -> putStrLn ("\n    " ++ show a)) args
-			panic stage $ "(" ++ (show __LINE__) ++ ") Unhandled : llvmOfPtrManip"
+			panic stage $ "llvmOfPtrManip (" ++ (show __LINE__) ++ ") Unhandled : "
 
 llvmOfPtrManip _ op _
- = panic stage $ "(" ++ (show __LINE__) ++ ") Unhandled : llvmOfPtrManip " ++ show op
+ = panic stage $ "llvmOfPtrManip (" ++ (show __LINE__) ++ ") Unhandled : " ++ show op
 
 --------------------------------------------------------------------------------
 
@@ -516,18 +448,4 @@ llvmOpOfPrim p
 	_		-> panic stage $ "llvmOpOfPrim (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show p
 
 
-
-llvmVarOfXVar :: Exp a -> LlvmVar
-llvmVarOfXVar (XVar (NRts v) t)
- = LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
-
-llvmVarOfXVar exp
- = panic stage $ "llvmVarOfXVar (" ++ (show __LINE__) ++ ")\n"
-	++ show exp
-
-
-
-toLlvmCafVar :: Var -> Type -> LlvmVar
-toLlvmCafVar v t
- = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
 
