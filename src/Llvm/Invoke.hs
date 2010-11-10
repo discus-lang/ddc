@@ -26,7 +26,7 @@ invokeLlvmCompiler
 	extraFlags
  = do
  	-- let cmd = Config.makeLlvmCompileCmd
-	let cmd	=  "llc-2.7 "
+	let cmd	=  "llc "
 		++ pathSourceBase ++ ".ddc.ll"
 		++ " -o " ++ pathSourceBase ++ ".ddc.s"
 
