@@ -139,11 +139,12 @@ outLlvm moduleName eTree pathThis
 llvmOfSeaDecls :: Top (Maybe a) -> LlvmM ()
 llvmOfSeaDecls (PSuper v p t ss)
  = do	startFunction
+	mapM_ allocForParam p
 	llvmOfFunc ss
 	endFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map llvmOfParams p) Nothing)
 		-- (toLlvmFuncDecl linkage v t [])
-		(map (seaVar True . fst) p)	-- funcArgs
+		(map (\ (v, _) -> "_p" ++ seaVar True v) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
 
@@ -158,6 +159,35 @@ llvmOfSeaDecls x
 
 llvmOfParams :: (Var, Type) -> LlvmParameter
 llvmOfParams (v, t) = (toLlvmType t, [])
+
+
+-- All SAuto vars need to be alloca-ed on the stack. There are two reasons for
+-- this:
+--
+--    a) According to the comments in src/Sea/Slot.hs, in compiled tail
+--       recursive functions there may be assignments to arguments in the
+--       parameter list.
+--
+--    b) Nauto variables can appear on the LHS of an assignment requiring Nauto
+--       vars to be handled differently whether they are on the LHS or RHS of
+--       the assignment. Handling them differently would make LLVM code gen
+--       difficult.
+--
+-- The should be no performance penalty to using alloca-ed vars because,
+-- fortunately, the LLVM compiler will convert alloca-ed variables into SSA
+-- registers on-the-fly early in the optimisation pipeline.
+--
+-- For a function parameter in the Sea AST called 'X', the variable in the code
+-- will be called '_vX' and the function parameter called '_p_vX'. The function
+-- allocForParam generates the alloca required for the given variable.
+
+allocForParam :: (Var, Type) -> LlvmM ()
+allocForParam (v, t)
+ = do	reg		<- newNamedReg ("_p" ++ seaVar True v) $ toLlvmType t
+	alloc		<- newNamedReg (seaVar True v) $ toLlvmType t
+	addBlock	[ Assignment alloc (Alloca (toLlvmType t) 1)
+			, Store reg (pVarLift alloc) ]
+
 
 
 llvmOfSeaGlobal :: Top (Maybe a) -> LMGlobal

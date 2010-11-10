@@ -1,0 +1,198 @@
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+
+-- | Helpers for converting Sea to LLVM code.
+module Llvm.Exp
+	( llvmOfExp )
+where
+
+import DDC.Base.DataFormat
+import DDC.Base.Literal
+import DDC.Main.Error
+import DDC.Sea.Exp
+import DDC.Var
+import DDC.Var.PrimId
+
+import Llvm
+import LlvmM
+import Llvm.Func
+import Llvm.Runtime
+import Llvm.Util
+import Llvm.Var
+
+
+import Data.List			(intercalate)
+
+stage = "Llvm.Exp"
+
+llvmOfExp :: Type -> Exp a -> LlvmM LlvmVar
+llvmOfExp tc (XVar v2@NRts{} t2@(TPtr (TPtr (TCon TyConObj))))
+ | tc == t2
+ = do	reg		<- newUniqueReg $ toLlvmType tc
+	addBlock	[ Assignment reg (loadAddress (toLlvmRtsVar (varOfName v2) t2)) ]
+	return		reg
+
+llvmOfExp tc (XVar (NSlot _ n) tv)
+ | tc == tv
+ =	readSlot n
+
+llvmOfExp tc (XVar n@NAuto{} tv)
+ | tc == tv
+ = do	reg		<- newUniqueReg $ toLlvmType tc
+	addBlock	[ Assignment reg (loadAddress (toLlvmVar (varOfName n) tc)) ]
+	return		reg
+
+
+llvmOfExp t@(TPtr (TCon TyConObj)) (XPrim op args)
+ =	llvmOfXPrim op args
+
+llvmOfExp t@(TCon (TyConUnboxed tvar)) (XPrim (MOp op) [l, r])
+ = do	addComment $ "llvmOfExp (" ++ show __LINE__ ++ ") Type checking?"
+	lhs		<- llvmOfExp t l
+	rhs		<- llvmOfExp t r
+	result		<- newUniqueReg $ opResultType op lhs
+	addBlock	[ Assignment result (mkOpFunc op lhs rhs) ]
+	return		result
+
+
+llvmOfExp t@(TCon (TyConUnboxed tvar)) (XPrim op args)
+ =	llvmOfXPrim op args
+
+
+llvmOfExp tc (XVar n@NSuper{} tv)
+ | tc == tv
+ = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
+	++ show tc ++ "\n"
+	++ show n ++ "\n"
+
+llvmOfExp tc (XVar n@NCafPtr{} tv)
+ | tc == tv
+ = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
+	++ show tc ++ "\n"
+	++ show n ++ "\n"
+
+llvmOfExp tc (XVar n@NCaf{} tv)
+ | tc == tv
+ = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
+	++ show tc ++ "\n"
+	++ show n ++ "\n"
+
+
+
+llvmOfExp tc src
+ = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
+	++ show tc ++ "\n"
+	++ show src ++ "\n"
+
+--------------------------------------------------------------------------------
+
+llvmOfXPrim :: Prim -> [Exp a] -> LlvmM LlvmVar
+llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit (LiteralFmt (LInt i) (UnboxedBits 32))) ]
+ | varId v == VarIdPrim (TInt (UnboxedBits 32))
+ =	boxInt32 $ i32LitVar i
+
+llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) ftype@(TFun pt rt)):args)
+ | rt == TPtr (TCon TyConObj)
+ = do	let func	= toLlvmFuncDecl External fv rt args
+	addGlobalFuncDecl func
+	params		<- mapM llvmFunParam args
+	result		<- newUniqueNamedReg "result" pObj
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
+	return		result
+
+llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
+ = do	let func	= toLlvmFuncDecl External fv rt []
+	addGlobalFuncDecl func
+	result		<- newUniqueNamedReg "result" pObj
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
+	return		result
+
+llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i) Unboxed)) ]
+ = do	src		<- newUniqueReg $ pLift $ toLlvmType t
+	next		<- newUniqueReg $ pLift $ toLlvmType t
+	addBlock	[ Assignment src (loadAddress (pVarLift (toLlvmRtsVar (varOfName v) t)))
+			, Assignment next (GetElemPtr True src [llvmWordLitVar i]) ]
+	return		next
+
+llvmOfXPrim (MOp op) args@[ l, r ]
+ = do	let opType 	= opResultType op (llvmWordLitVar 1)
+	panic stage	$ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n    "
+				++ intercalate "\n    " (map show args)
+				++ "\n\n"
+				++ "opType : " ++ show opType
+				++ "\n\n"
+
+
+llvmOfXPrim (MBox t@(TCon _)) [ x ]
+ =	boxExp t x
+
+llvmOfXPrim (MUnbox t@(TCon (TyConUnboxed tt))) [ x ]
+ =	unboxExp t x
+
+llvmOfXPrim (MFun PFunForce) [ XVar (NSlot v i) (TPtr (TCon TyConObj)) ]
+ = do	var <- readSlot i
+	forceObj var
+
+
+llvmOfXPrim op args
+ = panic stage $ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n"
+	++ show op ++ "\n"
+	++ show args ++ "\n"
+
+--------------------------------------------------------------------------------
+
+mkOpFunc :: PrimOp -> (LlvmVar -> LlvmVar -> LlvmExpression)
+mkOpFunc op
+ = case op of
+	OpAdd	-> LlvmOp LM_MO_Add
+	OpSub	-> LlvmOp LM_MO_Sub
+	OpMul	-> LlvmOp LM_MO_Mul
+
+	OpEq	-> Compare LM_CMP_Eq
+	_	-> panic stage $ "mkOpFunc (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show op
+
+
+opResultType :: PrimOp -> LlvmVar -> LlvmType
+opResultType op var
+ = case op of
+	OpAdd	-> getVarType var
+	OpSub	-> getVarType var
+	OpMul	-> getVarType var
+
+	OpEq	-> i1
+	_	-> panic stage $ "opResultType (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show op
+
+--------------------------------------------------------------------------------
+
+boxExp :: Type -> Exp a -> LlvmM LlvmVar
+boxExp t (XLit lit@(LLit (LiteralFmt (LInt value) (UnboxedBits bits))))
+ = case bits of
+	32 -> boxInt32 $ i32LitVar value
+	64 -> boxInt64 $ i64LitVar value
+	_ -> panic stage $ "boxExp (" ++ show __LINE__ ++ ") with bits == " ++ show bits
+
+
+boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
+ = do	gname		<- newUniqueName "str"
+	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
+	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
+	boxAny		svar
+
+boxExp t@(TCon (TyConUnboxed tv)) var
+ = do	reg		<- llvmOfExp t var
+	boxAny		reg
+
+boxExp t x
+ = panic stage $ "boxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
+
+
+--------------------------------------------------------------------------------
+
+unboxExp :: Type -> Exp a -> LlvmM LlvmVar
+unboxExp t (XVar (NSlot _ i) (TPtr (TCon TyConObj)))
+ = do	reg		<- readSlot i
+	unboxAny	(toLlvmType t) reg
+
+unboxExp t x
+ = panic stage $ "unboxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
+
+
