@@ -31,11 +31,11 @@ llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (Litera
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
 
-llvmOfAssign dst@(XVar n@NAuto{} t@(TPtr (TCon TyConObj))) tc src
+llvmOfAssign dst@(XVar n@NAuto{} t) tc src
  | t == tc
  = do	reg		<- evalSrc tc src
 	alloc		<- newNamedReg (seaVar True $ varOfName n) $ toLlvmType t
-	addBlock	[ Assignment alloc (Alloca pObj 1)
+	addBlock	[ Assignment alloc (Alloca (toLlvmType t) 1)
 			, Store reg (pVarLift alloc) ]
 
 llvmOfAssign (XVar (NSlot v i) tv@(TPtr (TCon TyConObj))) tc src
@@ -87,6 +87,9 @@ evalSrc tc (XVar n@NAuto{} tv)
 evalSrc t@(TPtr (TCon TyConObj)) (XPrim op args)
  =	llvmOfXPrim op args
 
+evalSrc t@(TCon (TyConUnboxed tvar)) (XPrim op args)
+ = do	addComment $ "evalSrc (" ++ show __LINE__ ++ ") Type checking?"
+	llvmOfXPrim op args
 
 
 
