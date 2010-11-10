@@ -30,12 +30,16 @@ llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (Litera
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
 
+llvmOfAssign dst@(XVar n@NAuto{} t@(TPtr (TCon TyConObj))) tc (XVar (NSlot _ 0) tv)
+ | t == tc
+ = do	addBlock	[ Assignment (toLlvmVar (varOfName n) t) (Load localSlotBase) ]
 
+llvmOfAssign dst@(XVar n@NAuto{} t@(TPtr (TCon TyConObj))) tc (XVar (NSlot _ i) tv)
+ | t == tc
+ = do	reg		<- newUniqueReg $ pLift $ toLlvmType tc
+	addBlock	[ Assignment reg (GetElemPtr True localSlotBase [llvmWordLitVar i])
+			, Assignment (toLlvmVar (varOfName n) t) (Load reg) ]
 
-llvmOfAssign dst@(XVar n1@NAuto{} t1@(TPtr (TCon TyConObj))) tc src
- | t1 == tc
- = do	reg	<- evalSrc tc src
-	addBlock [ Assignment (toLlvmVar (varOfName n1) tc) (loadAddress reg) ]
 
 llvmOfAssign (XVar (NSlot v i) tv@(TPtr (TCon TyConObj))) tc src
  | tv == tc
@@ -50,11 +54,13 @@ llvmOfAssign (XVar v1@NCaf{} tv@(TPtr (TPtr (TCon TyConObj)))) tc src
 llvmOfAssign (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj))) tc src
  | tv == tc
  = do	reg		<- evalSrc tc src
-	addBlock	[ Store reg (pVarLift (toLlvmCafVar (varOfName v1) tv)) ]
+	dest		<- newUniqueReg $ toLlvmType tv
+	addBlock	[ Assignment dest (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) tv)))
+			, Store reg (pVarLift dest) ]
 
-llvmOfAssign xv@(XVar v1@NRts{} t1) tc src
+llvmOfAssign (XVar v@NRts{} tv) tc src
  = do	reg		<- evalSrc tc src
-	addBlock	[ Store reg (pVarLift (llvmVarOfXVar xv)) ]
+	addBlock	[ Store reg (pVarLift (toLlvmRtsVar (varOfName v) tv)) ]
 
 
 
@@ -67,28 +73,28 @@ llvmOfAssign a b c
 --------------------------------------------------------------------------------
 
 evalSrc :: Type -> Exp a -> LlvmM LlvmVar
-evalSrc t (XVar v2@NRts{} t2)
- | t == t2
- = do	src		<- newUniqueReg $ toLlvmType t
-	addBlock [ Assignment src (loadAddress (toLlvmCafVar (varOfName v2) t2)) ]
-	return src
+evalSrc tc (XVar v2@NRts{} t2@(TPtr (TPtr (TCon TyConObj))))
+ | tc == t2
+ = do	reg		<- newUniqueReg $ toLlvmType tc
+	addBlock	[ Assignment reg (loadAddress (toLlvmRtsVar (varOfName v2) t2)) ]
+	return		reg
 
-evalSrc t (XVar (NSlot _ 0) tv)
- | t == tv
- = do	reg		<- newUniqueNamedReg "slot.0" $ toLlvmType t
+evalSrc tc (XVar (NSlot _ 0) tv)
+ | tc == tv
+ = do	reg		<- newUniqueNamedReg "slot.0" $ toLlvmType tc
 	addBlock	[ Assignment reg (Load localSlotBase) ]
 	return		reg
 
-evalSrc t (XVar (NSlot _ n) tv)
- | t == tv
+evalSrc tc (XVar (NSlot _ n) tv)
+ | tc == tv
  , n > 0
- = do	reg		<- newUniqueNamedReg ("slot." ++ show n) $ toLlvmType t
+ = do	reg		<- newUniqueNamedReg ("slot." ++ show n) $ toLlvmType tc
 	addBlock	[ Assignment reg (GetElemPtr True localSlotBase [llvmWordLitVar n]) ]
 	return		reg
 
-evalSrc t (XVar n@NAuto{} tv)
- | t == tv
- = return $ toLlvmVar (varOfName n) t
+evalSrc tc (XVar n@NAuto{} tv)
+ | tc == tv
+ =	return $ toLlvmVar (varOfName n) tc
 
 evalSrc t@(TPtr (TCon TyConObj)) (XPrim op args)
  =	llvmOfXPrim op args
@@ -96,28 +102,28 @@ evalSrc t@(TPtr (TCon TyConObj)) (XPrim op args)
 
 
 
-evalSrc t (XVar n@NSuper{} tv)
- | t == tv
+evalSrc tc (XVar n@NSuper{} tv)
+ | tc == tv
  = panic stage $ "evalSrc (" ++ (show __LINE__) ++ ") :\n"
-	++ show t ++ "\n"
+	++ show tc ++ "\n"
 	++ show n ++ "\n"
 
-evalSrc t (XVar n@NCafPtr{} tv)
- | t == tv
+evalSrc tc (XVar n@NCafPtr{} tv)
+ | tc == tv
  = panic stage $ "evalSrc (" ++ (show __LINE__) ++ ") :\n"
-	++ show t ++ "\n"
+	++ show tc ++ "\n"
 	++ show n ++ "\n"
 
-evalSrc t (XVar n@NCaf{} tv)
- | t == tv
+evalSrc tc (XVar n@NCaf{} tv)
+ | tc == tv
  = panic stage $ "evalSrc (" ++ (show __LINE__) ++ ") :\n"
-	++ show t ++ "\n"
+	++ show tc ++ "\n"
 	++ show n ++ "\n"
 
 
 
-evalSrc t src
+evalSrc tc src
  = panic stage $ "evalSrc (" ++ (show __LINE__) ++ ") :\n"
-	++ show t ++ "\n"
+	++ show tc ++ "\n"
 	++ show src ++ "\n"
 

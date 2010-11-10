@@ -4,6 +4,7 @@
 module Llvm.Var
 	( toLlvmVar
 	, toLlvmCafVar
+	, toLlvmRtsVar
 	, llvmVarOfXVar
 	, isGlobalVar )
 where
@@ -36,6 +37,16 @@ toLlvmVar v t
 
 
 
+toLlvmCafVar :: Var -> Type -> LlvmVar
+toLlvmCafVar v t
+ = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
+
+
+toLlvmRtsVar :: Var -> Type -> LlvmVar
+toLlvmRtsVar v t
+ = LMGlobalVar (tail $ seaVar False v) (toLlvmType t) External Nothing Nothing False
+
+
 
 llvmVarOfXVar :: Exp a -> LlvmVar
 llvmVarOfXVar (XVar (NRts v) t)
@@ -44,13 +55,6 @@ llvmVarOfXVar (XVar (NRts v) t)
 llvmVarOfXVar exp
  = panic stage $ "llvmVarOfXVar (" ++ (show __LINE__) ++ ")\n"
 	++ show exp
-
-
-
-toLlvmCafVar :: Var -> Type -> LlvmVar
-toLlvmCafVar v t
- = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
-
 
 
 

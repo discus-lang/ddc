@@ -45,9 +45,9 @@ llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
 
 
 llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i) Unboxed)) ]
- = do	src		<- newUniqueReg (toLlvmType t)
-	next		<- newUniqueReg (toLlvmType t)
-	addBlock	[ Assignment src (loadAddress (toLlvmVar (varOfName v) t))
+ = do	src		<- newUniqueReg $ pLift $ toLlvmType t
+	next		<- newUniqueReg $ pLift $ toLlvmType t
+	addBlock	[ Assignment src (loadAddress (pVarLift (toLlvmRtsVar (varOfName v) t)))
 			, Assignment next (GetElemPtr True src [llvmWordLitVar i]) ]
 	return		next
 
@@ -56,10 +56,7 @@ llvmOfXPrim (MBox t@(TCon (TyConAbstract tt))) [ x ]
  =	boxExp t x
 
 llvmOfXPrim (MFun PFunForce) [ XVar (NSlot v i) (TPtr (TCon TyConObj)) ]
- = do	addComment $ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n"
-		++ "PFunForce\n"
-		++ show v ++ "\n"
-	var <- readSlot i
+ = do	var <- readSlot i
 	forceObj var
 
 
@@ -73,13 +70,11 @@ llvmOfXPrim op args
 
 boxExp :: Type -> Exp a -> LlvmM LlvmVar
 boxExp t (XLit lit@(LLit (LiteralFmt (LInt value) (UnboxedBits 32))))
- = do	addComment $ "boxing1 " ++ show t
-	boxInt32 $ i32LitVar value
+ =	boxInt32 $ i32LitVar value
 
 
 boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
- = do	addComment $ "boxing2 " ++ show t
-	gname	<- newUniqueName "str"
+ = do	gname	<- newUniqueName "str"
 	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
 	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
 	boxAny		svar
