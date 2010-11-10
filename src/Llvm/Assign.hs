@@ -8,6 +8,7 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
+import DDC.Sea.Pretty
 
 import Llvm
 import LlvmM
@@ -30,16 +31,12 @@ llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (Litera
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
 
-llvmOfAssign dst@(XVar n@NAuto{} t@(TPtr (TCon TyConObj))) tc (XVar (NSlot _ 0) tv)
+llvmOfAssign dst@(XVar n@NAuto{} t@(TPtr (TCon TyConObj))) tc src
  | t == tc
- = do	addBlock	[ Assignment (toLlvmVar (varOfName n) t) (Load localSlotBase) ]
-
-llvmOfAssign dst@(XVar n@NAuto{} t@(TPtr (TCon TyConObj))) tc (XVar (NSlot _ i) tv)
- | t == tc
- = do	reg		<- newUniqueReg $ pLift $ toLlvmType tc
-	addBlock	[ Assignment reg (GetElemPtr True localSlotBase [llvmWordLitVar i])
-			, Assignment (toLlvmVar (varOfName n) t) (Load reg) ]
-
+ = do	reg		<- evalSrc tc src
+	alloc		<- newNamedReg (seaVar True $ varOfName n) $ toLlvmType t
+	addBlock	[ Assignment alloc (Alloca pObj 1)
+			, Store reg (pVarLift alloc) ]
 
 llvmOfAssign (XVar (NSlot v i) tv@(TPtr (TCon TyConObj))) tc src
  | tv == tc
@@ -79,18 +76,9 @@ evalSrc tc (XVar v2@NRts{} t2@(TPtr (TPtr (TCon TyConObj))))
 	addBlock	[ Assignment reg (loadAddress (toLlvmRtsVar (varOfName v2) t2)) ]
 	return		reg
 
-evalSrc tc (XVar (NSlot _ 0) tv)
- | tc == tv
- = do	reg		<- newUniqueNamedReg "slot.0" $ toLlvmType tc
-	addBlock	[ Assignment reg (Load localSlotBase) ]
-	return		reg
-
 evalSrc tc (XVar (NSlot _ n) tv)
  | tc == tv
- , n > 0
- = do	reg		<- newUniqueNamedReg ("slot." ++ show n) $ toLlvmType tc
-	addBlock	[ Assignment reg (GetElemPtr True localSlotBase [llvmWordLitVar n]) ]
-	return		reg
+ =	readSlot n
 
 evalSrc tc (XVar n@NAuto{} tv)
  | tc == tv

@@ -370,8 +370,15 @@ branchLabel name
 --------------------------------------------------------------------------------
 
 llvmOfReturn :: Exp a -> LlvmM ()
+
+llvmOfReturn (XVar n@(NAuto v) t)
+ = do	addComment	$ "Return NAuto " ++ show v
+	reg		<- newUniqueReg $ toLlvmType t
+	addBlock	[ Assignment reg (loadAddress (toLlvmVar (varOfName n) t))
+			, Return (Just reg) ]
+
 llvmOfReturn (XVar n t)
- = do	addComment $ "Return type " ++ show t
+ = do	addComment $ "Return " ++ show n
 	addBlock [ Return (Just (toLlvmVar (varOfName n) t)) ]
 
 llvmOfReturn x

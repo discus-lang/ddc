@@ -15,6 +15,7 @@ module LlvmM
 	, newUniqueNamedReg
 	, newUniqueLabel
 	, newUniqueName
+	, newNamedReg
 
 	, initLlvmState
 
@@ -202,3 +203,9 @@ newUniqueName :: String -> LlvmM String
 newUniqueName name
  = do	u <- lift $ newUnique name
 	return $ show u
+
+newNamedReg :: String -> LlvmType -> LlvmM LlvmVar
+newNamedReg name t
+ =	return $ LMLocalVar (fakeUnique name) t
+
+
