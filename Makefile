@@ -78,6 +78,8 @@ nightly :
 	@echo
 	@ghc-pkg list | grep "QuickCheck\|regex-base\|regex-posix\|regex-compat\|haskell-src\|parsec\|buildbox"
 	@echo
+	@sh -c 'llc --version || exit 0'
+	@echo
 	@echo "------------------------------------------------------------------------------------"
 	@$(MAKE) cleantotal
 
