@@ -20,8 +20,6 @@ import Llvm.Util
 import Llvm.Var
 
 
-import Data.List			(intercalate)
-
 stage = "Llvm.Exp"
 
 llvmOfExp :: Type -> Exp a -> LlvmM LlvmVar
@@ -113,13 +111,6 @@ llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i)
 			, Assignment next (GetElemPtr True src [llvmWordLitVar i]) ]
 	return		next
 
-llvmOfXPrim (MOp op) args@[ l, r ]
- = do	let opType 	= opResultType op (llvmWordLitVar 1)
-	panic stage	$ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n    "
-				++ intercalate "\n    " (map show args)
-				++ "\n\n"
-				++ "opType : " ++ show opType
-				++ "\n\n"
 
 
 llvmOfXPrim (MBox t@(TCon _)) [ x ]
@@ -131,6 +122,12 @@ llvmOfXPrim (MUnbox t@(TCon (TyConUnboxed tt))) [ x ]
 llvmOfXPrim (MFun PFunForce) [ XVar (NSlot v i) (TPtr (TCon TyConObj)) ]
  = do	var <- readSlot i
 	forceObj var
+
+llvmOfXPrim (MApp PAppApply) (func:params)
+ = panic stage $ "llvmOfXPrim PAppApply (" ++ (show __LINE__) ++ ")\n"
+	++ "fun : " ++ show func ++ "\n"
+	++ "arg : " ++ show params ++ "\n"
+
 
 
 llvmOfXPrim op args
@@ -191,6 +188,13 @@ unboxExp :: Type -> Exp a -> LlvmM LlvmVar
 unboxExp t (XVar (NSlot _ i) (TPtr (TCon TyConObj)))
  = do	reg		<- readSlot i
 	unboxAny	(toLlvmType t) reg
+
+unboxExp t (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj)))
+ = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
+	r2		<- newUniqueNamedReg "r2" $ toLlvmType tv
+	addBlock	[ Assignment r1 (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) tv)))
+			, Assignment r2 (loadAddress r1) ]
+	unboxAny	(toLlvmType t) r2
 
 unboxExp t x
  = panic stage $ "unboxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
