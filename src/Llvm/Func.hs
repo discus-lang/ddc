@@ -2,19 +2,17 @@
 
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Func
-	( toLlvmFuncDecl
-	, llvmFunParam )
+	( toLlvmFuncDecl )
 where
 
+import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Sea.Pretty
 
 import Llvm
-import LlvmM
-import Llvm.Runtime
 import Llvm.Util
-import Llvm.Var
 
 
 stage = "Llvm.Func"
@@ -41,23 +39,17 @@ toLlvmFuncDecl linkage v t args
 
 
 toDeclParam :: Exp a -> LlvmParameter
-toDeclParam (XVar (NSlot v i) t)
+toDeclParam (XVar _ t)
  = (toLlvmType t, [])
 
+toDeclParam (XLit (LLit (LiteralFmt (LInt _) (UnboxedBits bits))))
+ = case bits of
+	32 -> (i32, [])
+	64 -> (i64, [])
+	_ -> panic stage $ "toDeclParam (" ++ show __LINE__ ++ ") " ++ show bits ++ " bits"
+
 toDeclParam x
- = panic stage $ "toDeclParam (" ++ (show __LINE__) ++ ") : " ++ show x
+ = panic stage $ "toDeclParam (" ++ (show __LINE__) ++ ") :\n" ++ show x ++ "\n\n"
 
-
-
-llvmFunParam :: Exp a -> LlvmM LlvmVar
-
-llvmFunParam (XVar (NSlot v i) _)
- = 	readSlot i
-
-llvmFunParam (XVar n t)
- =	return $ toLlvmVar (varOfName n) t
-
-llvmFunParam p
- = panic stage $ "(" ++ (show __LINE__) ++ ") llvmFunParam " ++ show p
 
 

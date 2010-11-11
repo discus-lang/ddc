@@ -2,7 +2,8 @@
 
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Exp
-	( llvmOfExp )
+	( llvmOfExp
+	, llvmFunParam )
 where
 
 import DDC.Base.DataFormat
@@ -54,6 +55,18 @@ llvmOfExp t@(TCon (TyConUnboxed tvar)) (XPrim (MOp op) [l, r])
 
 llvmOfExp t@(TCon (TyConUnboxed tvar)) (XPrim op args)
  =	llvmOfXPrim op args
+
+
+llvmOfExp t@(TCon (TyConUnboxed tdest)) v@(XVar xv (TCon (TyConUnboxed tv)))
+ | varName tdest == "Bool#" && varName tv == "Int32#"
+ = do	addComment $ "Int32 to Bool conversion : " ++ show v
+	newUniqueNamedReg "hello" $ toLlvmType t
+
+{-
+ =	panic stage $ "Erik (" ++ show __LINE__ ++ ")\n"
+		++ show tdest ++ "\n"
+		++ show tv ++ "\n\n"
+-}
 
 
 llvmOfExp tc (XVar n@NSuper{} tv)
@@ -200,3 +213,13 @@ unboxExp t x
  = panic stage $ "unboxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
 
 
+--------------------------------------------------------------------------------
+
+llvmFunParam :: Exp a -> LlvmM LlvmVar
+llvmFunParam exp@(XVar _ t) = llvmOfExp t exp
+
+llvmFunParam exp@(XLit (LLit (LiteralFmt (LInt i) (UnboxedBits bits))))
+ = case bits of
+	32 -> return $ i32LitVar i
+	64 -> return $ i64LitVar i
+	_ -> panic stage $ "toDeclParam (" ++ show __LINE__ ++ ") " ++ show bits ++ " bits"

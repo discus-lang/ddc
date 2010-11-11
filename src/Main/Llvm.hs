@@ -26,6 +26,7 @@ import qualified DDC.Config.Version	as Version
 import Llvm
 import LlvmM
 import Llvm.Assign
+import Llvm.Exp
 import Llvm.GhcReplace.Unique
 import Llvm.Invoke
 import Llvm.Runtime
@@ -347,19 +348,6 @@ llvmFunApply fptr typ args
  = do	params	<- mapM llvmFunParam args
 	addComment $ "llvmFunApply : " ++ show fptr
 	applyN fptr params
-
-
-
-llvmFunParam :: Exp a -> LlvmM LlvmVar
-
-llvmFunParam (XVar (NSlot v i) _)
- = 	readSlot i
-
-llvmFunParam (XVar n t)
- =	return $ toLlvmVar (varOfName n) t
-
-llvmFunParam p
- = panic stage $ "llvmFunParam (" ++ (show __LINE__) ++ ") " ++ show p
 
 
 
