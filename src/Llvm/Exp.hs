@@ -71,6 +71,10 @@ llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit (LiteralFmt (LInt i) (Un
  | varId v == VarIdPrim (TInt (UnboxedBits 32))
  =	boxInt32 $ i32LitVar i
 
+llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit (LiteralFmt (LInt i) (UnboxedBits 64))) ]
+ | varId v == VarIdPrim (TInt (UnboxedBits 64))
+ =	boxInt64 $ i64LitVar i
+
 llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) ftype@(TFun pt rt)):args)
  | rt == TPtr (TCon TyConObj)
  = do	let func	= toLlvmFuncDecl External fv rt args
@@ -94,19 +98,12 @@ llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i)
 			, Assignment next (GetElemPtr True src [llvmWordLitVar i]) ]
 	return		next
 
-
-
 llvmOfXPrim (MOp op) [l, r]
- = do	addComment $ "llvmOfXPrim (" ++ show __LINE__ ++ ") Type checking?"
-	lhs		<- llvmOfExp l
+ = do	lhs		<- llvmOfExp l
 	rhs		<- llvmOfExp r
 	result		<- newUniqueReg $ opResultType op lhs
 	addBlock	[ Assignment result (mkOpFunc op lhs rhs) ]
 	return		result
-
-
-
-
 
 llvmOfXPrim (MBox t@(TCon _)) [ x ]
  =	boxExp t x
@@ -118,11 +115,11 @@ llvmOfXPrim (MFun PFunForce) [ XVar (NSlot v i) (TPtr (TCon TyConObj)) ]
  = do	var <- readSlot i
 	forceObj var
 
-llvmOfXPrim (MApp PAppApply) (func:params)
- = panic stage $ "llvmOfXPrim PAppApply (" ++ (show __LINE__) ++ ")\n"
-	++ "fun : " ++ show func ++ "\n"
-	++ "arg : " ++ show params ++ "\n"
-
+llvmOfXPrim (MApp PAppApply) ((fptr@(XVar n t)):args)
+ = do	addComment $ "llvmOfXPrim PAppApply (" ++ (show __LINE__) ++ ")"
+	params	<- mapM llvmOfExp args
+	func	<- llvmOfExp fptr
+	applyN	func params
 
 
 llvmOfXPrim op args
