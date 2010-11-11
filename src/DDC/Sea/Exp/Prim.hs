@@ -15,7 +15,7 @@ import DDC.Var
 data	Prim
 	-- | Invoke a primitive arithmetic operator.
 	= MOp	PrimOp
-	
+
 	-- | Primitive field projections.
 	| MProj	PrimProj
 
@@ -24,16 +24,16 @@ data	Prim
 
 	-- | Call some other primitive function in the runtime system.
 	| MFun	PrimFun
-	
+
 	-- | Allocation of objects
 	| MAlloc PrimAlloc
-	
+
 	-- | Box some unboxed value, given the type of the unboxed version.
 	| MBox	Type
-	
+
 	-- | Unbox some boxed value, given the type of the unboxed version.
 	| MUnbox Type
-	
+
 	deriving (Show, Eq)
 
 
@@ -47,7 +47,7 @@ data PrimOp
 	| OpMul
 	| OpDiv
 	| OpMod
-	
+
 	-- comparison
 	| OpEq
 	| OpNeq
@@ -55,17 +55,17 @@ data PrimOp
 	| OpGe
 	| OpLt
 	| OpLe
-	
+
 	-- boolean
 	| OpAnd
 	| OpOr
 	deriving (Show, Eq)
-	
+
 
 -- | Primitive operators concerned with function application.
 data PrimApp
 	-- | Tail-call a super.
-	= PAppTailCall 
+	= PAppTailCall
 
 	-- | Call a super directly.
 	| PAppCall
@@ -75,7 +75,7 @@ data PrimApp
 
 	-- | Perform a general function application.
 	| PAppApply
-	
+
 	-- | Build a thunk containing a pointer to some super.
 	| PAppCurry Int		-- super arity. TODO: determine this from the type of the super.
 	deriving (Show, Eq)
@@ -83,11 +83,11 @@ data PrimApp
 
 -- | Allocation of objects.
 data PrimAlloc
-	-- | Allocate a fresh thunk object, 
+	-- | Allocate a fresh thunk object,
 	--   and fill in the super pointer, super arity, and number of args in the thunk.
-	= PAllocThunk Var Int Int
-	
-	-- | Allocate a fresh data object, 
+	= PAllocThunk Var Type Int Int
+
+	-- | Allocate a fresh data object,
 	--   and fill in the constructor tag and arity.
 	| PAllocData Var Int
 	deriving (Show, Eq)

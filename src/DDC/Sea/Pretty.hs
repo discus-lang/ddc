@@ -184,7 +184,7 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 	 -> let	-- Hack fixup windows file paths.
 		f'	= map (\z -> if z == '\\' then '/' else z) f
 	    in	ppr "  _CASEDEATH (\"" % f' % "\", " % l % ", " % c % ");\n"
-	 
+
 
 	ADefault [SGoto v]
 	 -> "  default: goto " % sV v % ";\n"
@@ -218,7 +218,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
   	XNil		-> ppr "@XNil"
 
 	-- variables
-	XVar name typ	
+	XVar name typ
 	 -> ifMode (elem PrettySeaTypes)
 		(parens $ ppr name % " :: " % ppr typ)
 		(ppr name)
@@ -265,7 +265,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XPrim (MApp f) (x : args)
 	 |  XVar _ _ <- x
 	 -> case f of
-		PAppTailCall	
+		PAppTailCall
 		 -> "@XTailCall " % x % " (" % ", " %!% args % ")"
 
 		PAppCall
@@ -283,9 +283,9 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	-- Primitive allocation functions.
 	XPrim (MAlloc prim) []
 	 -> case prim of
-		PAllocThunk f superArity argCount
+		PAllocThunk f _ superArity argCount
 	 	 -> "_allocThunk ((FunPtr) " % sV f % ", " % superArity % ", " % argCount % ")"
-	
+
 		PAllocData ctor ctorArity
 		 -> "_allocData (" % "_tag" % sV ctor % ", " % ctorArity % ")"
 
@@ -310,12 +310,12 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	-- Primitive boxing functions.
 	XPrim (MBox t) [x]
-	 | t == TCon (TyConUnboxed  $ Var.primTBool   Unboxed)  
+	 | t == TCon (TyConUnboxed  $ Var.primTBool   Unboxed)
 	 -> "_boxEnum(" % x % ")"
 
-	 | t == TCon (TyConAbstract $ Var.primTString Unboxed) 
+	 | t == TCon (TyConAbstract $ Var.primTString Unboxed)
 	 -> "Data_String_boxString(" % x % ")"
-	
+
 	 | otherwise
 	 -> "_box(" % t % ", " % x % ")"
 
@@ -330,7 +330,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 -- Lit ---------------------------------------------------------------------------------------------
 instance Pretty Lit PMode where
- ppr xx 
+ ppr xx
   = case xx of
 	LNull		-> ppr "_null"
 	LUnit 		-> ppr "_primUnit"
@@ -344,12 +344,12 @@ instance Pretty Type PMode where
   = case xx of
 	TVoid		-> ppr "void"
 
-	TFun [] tRes	 
+	TFun [] tRes
 	 -> "() -> " % tRes
 
 	TFun [tArg] tRes
 	 -> pprTypeArg tArg % " -> " % tRes
-	
+
 	TFun tsArgs tRes
 	 -> parens (punc ", " (map pprTypeArg tsArgs)) % " -> " % tRes
 
@@ -371,7 +371,7 @@ instance Pretty TyCon PMode where
 	TyConObj	-> ppr "Obj"
 	TyConAbstract v	-> ppr $ seaNameOfCtor v
 	TyConUnboxed  v -> ppr $ seaNameOfCtor v
-	
+
 
 
 -- | Get the Sea name of a type constructor name.
@@ -414,17 +414,17 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 
 -- Names ------------------------------------------------------------------------------------------
 instance Pretty Name PMode where
- ppr nn 
+ ppr nn
   = case nn of
 	NRts   v	-> ppr $ varName v
 	NSuper v	-> ppr $ seaVar False v
 	NAuto  v	-> ppr $ seaVar True  v
 	NSlot  _ i	-> "_S(" % i % ")"
 	NCafPtr v	-> ppr $  "*_ddcCAF_" ++ seaVar False v
-	NCaf    v	
+	NCaf    v
 	 | isJust (takeSeaNameOfVar v)	-> ppr $ seaVar False v
 	 | otherwise			-> ppr $ "_ddcCAF_" ++ seaVar False v
-	
+
 
 -- | Show the Sea name of a varaible.
 --   The first argument says whether the variable is local to the current supercombinator,
@@ -440,14 +440,14 @@ seaVar local v
 
 	-- Binding occurance has an explicit Sea name, so use that.
 	--	Used for calling foreign functions.
-	| name : _	<- [name |  ISeaName name 
+	| name : _	<- [name |  ISeaName name
 				 <- concat $ [varInfo bound | IBoundBy bound <- varInfo v]]
 	= name
 
 	| Var.varHasSymbols v
 	= seaModule (varModuleId v)
-	++ (if local 	then "_" ++ (pprStrPlain $ varId v) ++ "_" 
-			else "_") 
+	++ (if local 	then "_" ++ (pprStrPlain $ varId v) ++ "_"
+			else "_")
 	++ "_sym" ++ (Var.deSymString $ varName v)
 
 	-- If the variable is explicitly set as global use the given name.
@@ -465,7 +465,7 @@ seaVar local v
 	= seaModule (varModuleId v) ++ "_" ++ varName v
 
 
--- | Show a module id. 
+-- | Show a module id.
 seaModule :: ModuleId -> String
 seaModule m
  = case m of
