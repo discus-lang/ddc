@@ -2,8 +2,7 @@
 
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Exp
-	( llvmOfExp
-	, llvmFunParam )
+	( llvmOfExp )
 where
 
 import DDC.Base.DataFormat
@@ -23,75 +22,46 @@ import Llvm.Var
 
 stage = "Llvm.Exp"
 
-llvmOfExp :: Type -> Exp a -> LlvmM LlvmVar
-llvmOfExp tc (XVar v2@NRts{} t2@(TPtr (TPtr (TCon TyConObj))))
- | tc == t2
- = do	reg		<- newUniqueReg $ toLlvmType tc
+llvmOfExp :: Exp a -> LlvmM LlvmVar
+llvmOfExp (XVar v2@NRts{} t2@(TPtr t@(TPtr (TCon TyConObj))))
+ = do	reg		<- newUniqueReg $ toLlvmType t2
 	addBlock	[ Assignment reg (loadAddress (toLlvmRtsVar (varOfName v2) t2)) ]
 	return		reg
 
-llvmOfExp tc (XVar (NSlot _ n) tv)
- | tc == tv
+llvmOfExp (XVar (NSlot _ n) _)
  =	readSlot n
 
-llvmOfExp tc (XVar n@NAuto{} tv)
- | tc == tv
- = do	reg		<- newUniqueReg $ toLlvmType tc
-	addBlock	[ Assignment reg (loadAddress (toLlvmVar (varOfName n) tc)) ]
+llvmOfExp (XVar n@NAuto{} t)
+ = do	reg		<- newUniqueReg $ toLlvmType t
+	addBlock	[ Assignment reg (loadAddress (toLlvmVar (varOfName n) t)) ]
 	return		reg
 
-
-llvmOfExp t@(TPtr (TCon TyConObj)) (XPrim op args)
+llvmOfExp (XPrim op args)
  =	llvmOfXPrim op args
 
-llvmOfExp t@(TCon (TyConUnboxed tvar)) (XPrim (MOp op) [l, r])
- = do	addComment $ "llvmOfExp (" ++ show __LINE__ ++ ") Type checking?"
-	lhs		<- llvmOfExp t l
-	rhs		<- llvmOfExp t r
-	result		<- newUniqueReg $ opResultType op lhs
-	addBlock	[ Assignment result (mkOpFunc op lhs rhs) ]
-	return		result
+llvmOfExp (XLit (LLit (LiteralFmt (LInt i) (UnboxedBits bits))))
+ = case bits of
+	32 -> return $ i32LitVar i
+	64 -> return $ i64LitVar i
+	_ -> panic stage $ "toDeclParam (" ++ show __LINE__ ++ ") " ++ show bits ++ " bits"
 
 
-llvmOfExp t@(TCon (TyConUnboxed tvar)) (XPrim op args)
- =	llvmOfXPrim op args
-
-
-llvmOfExp t@(TCon (TyConUnboxed tdest)) v@(XVar xv (TCon (TyConUnboxed tv)))
- | varName tdest == "Bool#" && varName tv == "Int32#"
- = do	addComment $ "Int32 to Bool conversion : " ++ show v
-	newUniqueNamedReg "hello" $ toLlvmType t
-
-{-
- =	panic stage $ "Erik (" ++ show __LINE__ ++ ")\n"
-		++ show tdest ++ "\n"
-		++ show tv ++ "\n\n"
--}
-
-
-llvmOfExp tc (XVar n@NSuper{} tv)
- | tc == tv
+llvmOfExp (XVar n@NSuper{} tv)
  = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
-	++ show tc ++ "\n"
 	++ show n ++ "\n"
 
-llvmOfExp tc (XVar n@NCafPtr{} tv)
- | tc == tv
+llvmOfExp (XVar n@NCafPtr{} tv)
  = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
-	++ show tc ++ "\n"
 	++ show n ++ "\n"
 
-llvmOfExp tc (XVar n@NCaf{} tv)
- | tc == tv
+llvmOfExp (XVar n@NCaf{} tv)
  = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
-	++ show tc ++ "\n"
 	++ show n ++ "\n"
 
 
 
-llvmOfExp tc src
+llvmOfExp src
  = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
-	++ show tc ++ "\n"
 	++ show src ++ "\n"
 
 --------------------------------------------------------------------------------
@@ -105,7 +75,7 @@ llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) ftype@(TFun pt rt)):args)
  | rt == TPtr (TCon TyConObj)
  = do	let func	= toLlvmFuncDecl External fv rt args
 	addGlobalFuncDecl func
-	params		<- mapM llvmFunParam args
+	params		<- mapM llvmOfExp args
 	result		<- newUniqueNamedReg "result" pObj
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
 	return		result
@@ -123,6 +93,18 @@ llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i)
 	addBlock	[ Assignment src (loadAddress (pVarLift (toLlvmRtsVar (varOfName v) t)))
 			, Assignment next (GetElemPtr True src [llvmWordLitVar i]) ]
 	return		next
+
+
+
+llvmOfXPrim (MOp op) [l, r]
+ = do	addComment $ "llvmOfXPrim (" ++ show __LINE__ ++ ") Type checking?"
+	lhs		<- llvmOfExp l
+	rhs		<- llvmOfExp r
+	result		<- newUniqueReg $ opResultType op lhs
+	addBlock	[ Assignment result (mkOpFunc op lhs rhs) ]
+	return		result
+
+
 
 
 
@@ -188,7 +170,7 @@ boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
 	boxAny		svar
 
 boxExp t@(TCon (TyConUnboxed tv)) var
- = do	reg		<- llvmOfExp t var
+ = do	reg		<- llvmOfExp var
 	boxAny		reg
 
 boxExp t x
@@ -212,14 +194,3 @@ unboxExp t (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj)))
 unboxExp t x
  = panic stage $ "unboxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
 
-
---------------------------------------------------------------------------------
-
-llvmFunParam :: Exp a -> LlvmM LlvmVar
-llvmFunParam exp@(XVar _ t) = llvmOfExp t exp
-
-llvmFunParam exp@(XLit (LLit (LiteralFmt (LInt i) (UnboxedBits bits))))
- = case bits of
-	32 -> return $ i32LitVar i
-	64 -> return $ i64LitVar i
-	_ -> panic stage $ "toDeclParam (" ++ show __LINE__ ++ ") " ++ show bits ++ " bits"

@@ -345,7 +345,7 @@ genAltDefault _ def
 
 llvmFunApply :: LlvmVar -> Type -> [Exp a] -> LlvmM LlvmVar
 llvmFunApply fptr typ args
- = do	params	<- mapM llvmFunParam args
+ = do	params	<- mapM llvmOfExp args
 	addComment $ "llvmFunApply : " ++ show fptr
 	applyN fptr params
 
