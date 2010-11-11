@@ -10,8 +10,6 @@ import Main.Setup
 import Main.Sea
 import Main.Util
 
-import DDC.Base.DataFormat
-import DDC.Base.Literal
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -26,7 +24,6 @@ import qualified DDC.Config.Version	as Version
 import Llvm
 import LlvmM
 import Llvm.Assign
-import Llvm.Exp
 import Llvm.GhcReplace.Unique
 import Llvm.Invoke
 import Llvm.Runtime
@@ -342,39 +339,11 @@ genAltDefault _ def
 
 --------------------------------------------------------------------------------
 
-
-llvmFunApply :: LlvmVar -> Type -> [Exp a] -> LlvmM LlvmVar
-llvmFunApply fptr typ args
- = do	params	<- mapM llvmOfExp args
-	addComment $ "llvmFunApply : " ++ show fptr
-	applyN fptr params
-
-
-
 pFunctionVar :: Var -> LlvmVar
 pFunctionVar v
  = case isGlobalVar v of
 	True -> LMGlobalVar (seaVar False v) pFunction External Nothing ptrAlign False
 	False -> LMNLocalVar (seaVar True v) pFunction
-
-
-
-boxExp :: Type -> Exp a -> LlvmM LlvmVar
-boxExp t (XLit lit@(LLit (LiteralFmt (LInt value) (UnboxedBits 32))))
- = do	addComment $ "boxing1 " ++ show t
-	boxInt32 $ i32LitVar value
-
-
-boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
- = do	addComment $ "boxing2 " ++ show t
-	gname	<- newUniqueName "str"
-	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
-	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
-	boxAny		svar
-
-boxExp t x
- = panic stage $ "boxExp (" ++ (show __LINE__) ++ ") Unhandled :\n    " ++ show t ++ "\n    " ++ (show x)
-
 
 --------------------------------------------------------------------------------
 
@@ -401,76 +370,4 @@ llvmOfReturn (XVar n t)
 
 llvmOfReturn x
  = 	panic stage $ "llvmOfReturn (" ++ (show __LINE__) ++ ") " ++ (takeWhile (/= ' ') (show x))
-
---------------------------------------------------------------------------------
-
-primMapFunc
-	:: LlvmType
-	-> (LlvmVar -> LlvmVar -> LlvmExpression)
-	-> LlvmVar
-	-> Exp a
-	-> LlvmM LlvmVar
-
-primMapFunc t build sofar exp
- = do	val		<- llvmVarOfExp exp
-	dst		<- newUniqueNamedReg "prim.fold" t
-	addBlock	[ Assignment dst (build sofar val) ]
-	return		dst
-
-
-
-
-llvmOfPtrManip :: LlvmType -> Prim -> [Exp a] -> LlvmM LlvmVar
-llvmOfPtrManip t (MOp OpAdd) args
- = case args of
-	[l@(XVar n t), XLit (LLit (LiteralFmt (LInt i) Unboxed))]
-	 ->	do	addComment "llvmOfPtrManip"
-			src		<- newUniqueReg $ toLlvmType t
-			dst		<- newUniqueReg $ toLlvmType t
-			addBlock	[ Assignment src (loadAddress (toLlvmVar (varOfName n) t))
-					, Assignment dst (GetElemPtr True src [llvmWordLitVar i]) ]
-			return dst
-
-	_ ->	do	lift $ mapM_ (\a -> putStrLn ("\n    " ++ show a)) args
-			panic stage $ "llvmOfPtrManip (" ++ (show __LINE__) ++ ") Unhandled : "
-
-llvmOfPtrManip _ op _
- = panic stage $ "llvmOfPtrManip (" ++ (show __LINE__) ++ ") Unhandled : " ++ show op
-
---------------------------------------------------------------------------------
-
-llvmVarOfExp :: Exp a -> LlvmM LlvmVar
-llvmVarOfExp (XVar n t@TCon{})
- = do	addComment "llvmVarOfExp (XVar v Int32#)"
-	return	$ toLlvmVar (varOfName n) t
-
-llvmVarOfExp (XVar n t)
- = do	reg	<- newUniqueReg pObj
-	addBlock [ Comment ["llvmVarOfExp (XVar v t)"]
-		 , Assignment reg (Load (toLlvmVar (varOfName n) t)) ]
-	return	reg
-
-llvmVarOfExp (XLit (LLit (LiteralFmt (LInt i) Unboxed)))
- = do	reg	<- newUniqueReg i32
-	addBlock [ Comment ["llvmVarOfExp (XInt i)"]
-		 , Assignment reg (Load (llvmWordLitVar i)) ]
-	return	reg
-
-llvmVarOfExp x
- = panic stage $ "llvmVarOfExp (" ++ (show __LINE__) ++ ") : " ++ show x
-
-
-
-
-llvmOpOfPrim :: Prim -> (LlvmVar -> LlvmVar -> LlvmExpression)
-llvmOpOfPrim p
- = case p of
-	MOp OpAdd	-> LlvmOp LM_MO_Add
-	MOp OpSub	-> LlvmOp LM_MO_Sub
-	MOp OpMul	-> LlvmOp LM_MO_Mul
-
-	MOp OpEq	-> Compare LM_CMP_Eq
-	_		-> panic stage $ "llvmOpOfPrim (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show p
-
-
 
