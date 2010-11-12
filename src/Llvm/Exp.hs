@@ -75,19 +75,18 @@ llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit (LiteralFmt (LInt i) (Un
  | varId v == VarIdPrim (TInt (UnboxedBits 64))
  =	boxInt64 $ i64LitVar i
 
-llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) ftype@(TFun pt rt)):args)
- | rt == TPtr (TCon TyConObj)
- = do	let func	= toLlvmFuncDecl External fv rt args
+llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun _ rt)):args)
+ = do	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	params		<- mapM llvmOfExp args
-	result		<- newUniqueNamedReg "result" pObj
+	result		<- newUniqueNamedReg "result" $ toLlvmType rt
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
 	return		result
 
-llvmOfXPrim (MApp PAppCall) ((XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
- = do	let func	= toLlvmFuncDecl External fv rt []
+llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
+ = do	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
-	result		<- newUniqueNamedReg "result" pObj
+	result		<- newUniqueNamedReg "result" $ toLlvmType rt
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
 	return		result
 
