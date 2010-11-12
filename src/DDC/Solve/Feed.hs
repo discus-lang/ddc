@@ -120,12 +120,9 @@ feedType src tt
 
 		return cidT
 
-
-	-- For empty classes ther are no nodes, but create the class anyway so we have its cid
+	-- Empty classes have no nodes, but create the class anyway so we have its cid
 	TSum k []
-	 -> do	cidT		<- allocClass k src
-		addNode cidT src k $ NBot
-		return cidT
+	 -> 	allocClass k src
 
 	-- Add summations
 	-- TODO: all the nodes should be stored seprately.
