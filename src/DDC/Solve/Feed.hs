@@ -35,17 +35,26 @@ feedConstraint cc
 	-- Equality constraints. The LHS must be a variable.
  	CEq src (TVar k (UVar v1)) t2
 	 -> do
-		-- Lookup/create new class for the var on the left
-		-- There might already be a class for this var in the graph.
-		-- If not then create a new one.
-	 	cid1	<- ensureClassWithVar k src v1
-
 		-- feed the RHS into the graph.
 		cid2	<- feedType src t2
 
-		-- merge left and right hand sides.
-		mergeClasses [cid1, cid2]
-		return ()
+		-- We've got the class of the root node of the type, now we need to attach it
+		-- to the name of the variable on the left of the constraint.
+		--
+		-- If there is no existing class containing this var then we can add it directly
+		-- the one we just made, otherwise have have to merge the new and existing classes.
+		--
+		-- The first option is preferred, because we don't have to create a cid-cid
+		-- substitution (ie add a forward to the graph) for the merge.
+		mCid1	<- lookupCidOfVar v1
+		case mCid1 of
+		 Nothing	
+		  -> 	addAliasForClass cid2 k src v1
+
+		 Just cid1
+		  -> do	mergeClasses [cid1, cid2]
+			return ()
+
 
 	-- The slurper sometimes gives us :> Bot constraints,
 	--	ditch these right up front.
