@@ -94,7 +94,6 @@ feedConstraint cc
 		 $ "feedConstraint: can't feed " % cc % "\n"
 
 
-
 -- Types ------------------------------------------------------------------------------------------
 -- | Add a type to the graph, returning the cid of the root node.
 --   The type is converted to the node form on the way in.
@@ -125,9 +124,8 @@ feedType src tt
 		mapM_ (feedFetter src) fs2
 		
 		-- Add the body type.
-	 	cidT		<- feedType src t2
+	 	feedType src t2
 
-		return cidT
 
 	-- Empty classes have no nodes, but create the class anyway so we have its cid
 	TSum k []
@@ -136,16 +134,13 @@ feedType src tt
 	-- Add summations
 	-- TODO: all the nodes should be stored seprately.
 	TSum k ts
-	 -> do 	cidT		<- allocClass k src
-		cids		<- mapM (feedType src) ts
+	 -> do 	cids		<- mapM (feedType src) ts
 
 		-- TODO: Don't add sums to classes.
 --		mapM_ (addNode cidT src k . NCid) cids
 		
-		addNode cidT src k 
+		newNode src k 
 			$ NSum (Set.fromList cids)
-
-		return cidT
 
 
 	-- TFree's that we get from the constraint slurper may refer to types that are
@@ -167,7 +162,6 @@ feedType src tt
 		 -- type that we're refering to is in the defs table
 		 Just (ProbDef _ _ tDef)
 		  -> do	let tDef_trim	= trimClosureT $ flattenT tDef
-
 		  	tDef'		<- linkType [] src tDef_trim
 
 			-- we use addToClass here because we don't need to register effects and 
@@ -180,11 +174,8 @@ feedType src tt
 		 -- type must be in the graph
 		 Nothing
 		  -> do	t'		<- linkType [] src t
-
 			addNode	cid src	kClosure
 				$ NFree v1 t'
-
-			return cid
 
 	-- A closure term containing a type expression.
 	-- We allow full expressions like ''Int %r1'' in the constraints, but only
@@ -193,43 +184,27 @@ feedType src tt
 	 | Just (v1, t)	<- takeTFree tt
 	 -> do	cid	<- allocClass kClosure src
 		t'	<- linkType [] src $ trimClosureT t
-
 		addNode	cid src kClosure	
 			$ NFree v1 t'
 
-		return cid
-
 	-- Type applications.
 	TApp t1 t2
-	 -> do	let k	= kindOfType tt
-	 	cidT	<- allocClass k src
-	 	cid1	<- feedType src t1
+	 -> do 	cid1	<- feedType src t1
 		cid2	<- feedType src t2
-
-		addNode cidT src k
+		newNode src (kindOfType tt) 
 			$ NApp cid1 cid2
-
-		return cidT
-
+		
 	-- Plain constructors
 	TCon tc
-	 -> do	let k	= tyConKind tc
-		cidT	<- allocClass k src
-
-	 	addNode cidT src k 
+	 ->	newNode src (tyConKind tc)
 			$ NCon tc
-
-		return cidT
-
+			
 	-- Variables.
  	TVar k (UVar v)
-	 -> do 	cidT		<- ensureClassWithVar k src v 
-		return cidT
-
+	 -> 	ensureClassWithVar k src v 
 
 	TVar _ (UClass cid)
-	 -> do 	cidT'		<- sinkClassId cid
-		return cidT'
+	 ->	sinkClassId cid
 		
 	_  -> panic stage
 		( "feedType: cannot feed this type into the graph.\n"
@@ -238,16 +213,20 @@ feedType src tt
 
 
 -- | Add a node to the type graph, and activate the corresponding class.
-addNode :: ClassId
-	-> TypeSource
-	-> Kind
-	-> Node
-	-> SquidM ()
-	
+addNode :: ClassId -> TypeSource -> Kind -> Node -> SquidM ClassId
 addNode cid src kind node
  = do	addNodeToClass cid kind src node
 	activateClass cid
+	return cid
 
+
+-- | Create a new class in the graph, with the given node.
+newNode :: TypeSource -> Kind -> Node -> SquidM ClassId
+newNode src kind node
+ = do	cid	<- allocClass kind src
+	addNode cid src kind node
+	return cid
+	
 
 -- Fetters ----------------------------------------------------------------------------------------
 feedFetter 
@@ -334,13 +313,11 @@ addFetter src (FConstraint v ts)
 	-- add the fetter to the graph
 	let f	= FConstraint v ts'
 
-	modifyClass cidF
-	 $ \_ -> ClassFetter
+	updateClass True cidF
+	 $ ClassFetter
 	 	{ classId	= cidF
 		, classFetter	= f 
 		, classSource	= src }
-
-	activateClass cidF
 
 	-- work out what cids this constraint is acting on
 	let cids'	= map (\(TVar _ (UClass cid)) -> cid) ts'
@@ -367,14 +344,12 @@ addFetter src (FProj j v1 tDict tBind)
 			(TVar kDict $ UClass cidDict')
 			(TVar kBind $ UClass cidBind')
 	
-	modifyClass cidF
-	 $ \_ -> ClassFetter
+	updateClass True cidF
+	 $ ClassFetter
 	 	{ classId	= cidF
 		, classFetter	= f 
 		, classSource	= src }
-		
-	activateClass cidF
-	
+			
 	-- add a reference to the constraint to all those classes it is acting on
 	mapM	(\cid -> modifyClass cid
 			$ \c -> c { classFettersMulti = Set.insert cidF (classFettersMulti c) })
