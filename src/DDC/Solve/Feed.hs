@@ -47,6 +47,11 @@ feedConstraint cc
 		mergeClasses [cid1, cid2]
 		return ()
 
+	-- The slurper sometimes gives us :> Bot constraints,
+	--	ditch these right up front.
+	CMore _ _ (TSum _ [])
+	 -> 	return ()
+
 	-- TODO: Handle this differently
 	-- TODO  Check we don't have eq constraints for effects or closures.
 	CMore src t1 t2
