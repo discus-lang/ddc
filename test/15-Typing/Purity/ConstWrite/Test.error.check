@@ -1,13 +1,13 @@
 ddc: ERROR
 ./test/15-Typing/Purity/ConstWrite/Test.ds:13:18
         Conflicting region constraints.
-              constraint: Const %153
+              constraint: Const %152
          from the use of: addS2
                       at: ./test/15-Typing/Purity/ConstWrite/Test.ds:13:18
         
         
             conflicts with,
-              constraint: MutableT *235
+              constraint: MutableT *211
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/ConstWrite/Test.ds:15:16
         

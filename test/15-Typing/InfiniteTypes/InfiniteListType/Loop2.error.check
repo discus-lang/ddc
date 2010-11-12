@@ -2,5 +2,5 @@ ddc: ERROR
 ./test/15-Typing/InfiniteTypes/InfiniteListType/Loop2.ds:4:0
         Cannot construct infinite type for 'x'.
             via: 
-                *0 = Data.List.List %17 *0
+                *0 = Data.List.List %8 *0
 

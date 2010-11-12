@@ -1,9 +1,9 @@
 ddc: ERROR
 ./test/15-Typing/Purity/CannotPurifyWrite/Test.ds:5:9
-        Cannot purify effect `!WriteT *13'.
+        Cannot purify effect `!WriteT *12'.
         
               the use of: (:=)
-                 of type: !WriteT *13
+                 of type: !WriteT *12
                       at: ./test/15-Typing/Purity/CannotPurifyWrite/Test.ds:5:9
         
             conflicts with,

@@ -1,11 +1,11 @@
 ddc: ERROR
 ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
         Type mismatch during unification.
-            cannot match: *47 Unit
+            cannot match: *45 Unit
                     with: Unit
         
               the use of: (:)
-                 of type: *47 Unit
+                 of type: *45 Unit
                       at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
         
                 conflicts with, 
