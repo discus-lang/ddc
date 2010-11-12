@@ -7,6 +7,7 @@ module Type.Dump
 where
 import DDC.Main.Pretty
 import DDC.Solve.State
+import DDC.Type.Kind
 import Util
 import Data.Array.IO	
 import qualified Data.Map	as Map
@@ -57,8 +58,8 @@ dumpSub
 
 -- | pretty print an equivalence class
 instance Pretty Class PMode where
- ppr c 
-  = case c of
+ ppr cls
+  = case cls of
 	ClassUnallocated
 	 -> ppr "ClassUnallocated"
 
@@ -66,7 +67,7 @@ instance Pretty Class PMode where
 	 -> cid % " ==> " % cid' % "\n"
 	
 	ClassFetter { classFetter = f }
-	 	-> "+" % classId c % "\n"
+	 	-> "+" % classId cls % "\n"
 		%  "        " % f % "\n"
 		%  "\n\n"
 
@@ -74,43 +75,35 @@ instance Pretty Class PMode where
 	 -> "DELETED " % cls'
 
  	Class{}
-	 ->  	-- class id / name / kind 
-	    	classId c
-		% " :: " % classKind c % "\n"
+	 -> vcat
+	 	-- class id / name / kind 
+	   	$ (classId cls % " :: " % classKind cls)
 
 		-- unified type
-		%> (case classUnified c of
-			Nothing	-> ppr "-- not unified --\n"
-			Just t	-> ppr t % "\n")
-		% "\n"
+		: (case classUnified cls of
+			Nothing	-> []
+			Just t	-> ["     == " % ppr t, blank])
 
 		-- aliases
-		%> "-- aliases\n"
-		% (punc "\n"
-			$ map (\(v, loc) -> "        " %> (padL 20 v % loc)) 
-				$ Map.toList $ classAliases c)
-		% "\n\n"
+		++ ["     ~  " %> (padL 30 t %% i) | (t, i) <- Map.toList $ classAliases cls]
 
+		-- node types contributing to this class
+		++ (if isInjectiveKind (classKind cls)
+			then 	["     :> " %> (padL 30 t %% i) | (t, i) <- classTypeSources cls]
+			else 	["     =  " %> (padL 30 t %% i) | (t, i) <- classTypeSources cls])
 
 		-- class fetters
-		% (case Map.toList $ classFetters c of
-			[]	-> blank
-			_	-> "        -- fetters\n"
-				%> "\n" %!% (Map.toList $ classFetters c) % "\n\n")
+		++ (case Map.toList $ classFetters cls of
+			[]	-> []
+			_	-> map ppr $ Map.toList $ classFetters cls)
 	
 		-- multi-parameter type classes
-		% (if Set.null $ classFettersMulti c
-			then blank
-			else 	   "        -- fetters multi-parameter\n"
-				 % "        " % classFettersMulti c % "\n\n")
-		
-		-- node types contributing to this class
-		% "        -- nodes\n"
-		% (punc "\n\n"
-			$ map (\(t, i) -> "        " %> (t % "\n" % i))
-			$ classTypeSources c)
-		% "\n\n"
-	
+		++ (if Set.null $ classFettersMulti cls
+			then	[]
+			else	map ppr $ Set.toList $ classFettersMulti cls)
+			
+		++ [blank]
+
 
 prettyVMap 	m
 	= punc "\n"
