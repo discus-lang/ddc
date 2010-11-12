@@ -49,6 +49,7 @@ import qualified Data.Map	as Map
 -- | A node type.
 data Node
 	= NBot
+	| NCid		!ClassId
 	| NVar		!Var
 	| NCon		!TyCon
 	| NApp		!ClassId !ClassId
@@ -129,6 +130,9 @@ subNodeCidCid sub nn
 	NVar{}		-> nn
 	NCon{}		-> nn
 
+	NCid cid
+	 -> NCid  (fromMaybe cid  (Map.lookup cid sub))
+
 	NApp cid1 cid2
 	 -> NApp  (fromMaybe cid1 (Map.lookup cid1 sub))
 		  (fromMaybe cid2 (Map.lookup cid2 sub))
@@ -151,6 +155,7 @@ cidsOfNode :: Node -> Set ClassId
 cidsOfNode nn
  = case nn of
 	NBot		-> Set.empty
+	NCid cid	-> Set.singleton cid
 	NVar{}		-> Set.empty
 	NCon{}		-> Set.empty
 	NApp c1 c2	-> Set.fromList [c1, c2]
@@ -184,6 +189,7 @@ instance Pretty Node PMode where
  ppr nn
   = case nn of
 	NBot		-> ppr "NBot"
+	NCid cid	-> ppr cid
 	NVar v		-> ppr v
 	NCon tc		-> ppr tc
 	NApp cid1 cid2	-> parens $ cid1 <> cid2

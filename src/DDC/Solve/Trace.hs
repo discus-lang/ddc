@@ -321,6 +321,9 @@ getTypeOfNode kind node
 	NBot
 	 ->	return $ TSum kind []
 
+	NCid cid
+	 -> 	return $ TVar kind $ UClass cid
+
 	NVar v	
 	 -> 	return $ TVar kind $ UVar v
 	

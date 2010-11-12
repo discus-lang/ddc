@@ -129,6 +129,8 @@ feedType src tt
 		cids		<- mapM (feedType src) ts
 
 		-- TODO: Don't add sums to classes.
+--		mapM_ (addNode cidT src k . NCid) cids
+		
 		addNode cidT src k 
 			$ NSum (Set.fromList cids)
 

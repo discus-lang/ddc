@@ -56,6 +56,11 @@ sinkCidsInNodeIO classes nn
 	NVar{}		-> return nn
 	NCon{}		-> return nn
 
+	NCid cid
+	 -> do	cid'	<- sinkCidIO classes cid
+		return	$ NCid cid'
+
+
 	NApp cid1 cid2
 	 -> do	cid1'	<- sinkCidIO classes cid1
 		cid2'	<- sinkCidIO classes cid2
