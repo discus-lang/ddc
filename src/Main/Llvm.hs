@@ -339,14 +339,6 @@ genAltDefault _ def
 
 --------------------------------------------------------------------------------
 
-pFunctionVar :: Var -> LlvmVar
-pFunctionVar v
- = case isGlobalVar v of
-	True -> LMGlobalVar (seaVar False v) pFunction External Nothing ptrAlign False
-	False -> LMNLocalVar (seaVar True v) pFunction
-
---------------------------------------------------------------------------------
-
 -- LLVM does not allow implicit fall through to a label, so explicitly branch
 -- to the label immediately following.
 branchLabel :: String -> LlvmM ()

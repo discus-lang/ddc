@@ -19,7 +19,7 @@ module Llvm.Util
 	, ddcObj
 	, ddcThunk
 
-	, pFunction
+	, genericFunPtrType
 
 	, pObj
 	, structObj
@@ -119,8 +119,10 @@ nullObj :: LlvmVar
 nullObj = LMLitVar (LMNullLit pObj)
 
 
-pFunction :: LlvmType
-pFunction = LMPointer (LMFunction (LlvmFunctionDecl "dummy.function.name" Internal CC_Ccc LMVoid FixedArgs [] ptrAlign))
+-- | A generic function pointer which takes no parameters and returns void.
+-- Basically :    typedef void (*FunPtr) (void)
+genericFunPtrType :: LlvmType
+genericFunPtrType = LMPointer (LMFunction (LlvmFunctionDecl "dummy.function.name" Internal CC_Ccc LMVoid FixedArgs [] ptrAlign))
 
 
 thunk32 :: LlvmType
@@ -134,8 +136,8 @@ thunk32
 
 thunk64 :: LlvmType
 thunk64
- = LMStruct 	[ i32		-- tag
-		, pFunction 		-- function pointer
+ = LMStruct 	[ i32			-- tag
+		, genericFunPtrType 	-- function pointer
 		, i32			-- arity
 		, i32			-- args
 		, LMArray 0 pObj	-- Pointer to arguments
@@ -197,8 +199,18 @@ toLlvmType (TCon (TyConUnboxed v))
 	"Int64#"	-> i64
 	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
 
-toLlvmType (TFun r TVoid)
- = pFunction
+toLlvmType (TFun param ret)
+ = LMPointer (LMFunction (
+	LlvmFunctionDecl
+	"dummy.function.name"
+	Internal
+	CC_Ccc
+	(toLlvmType ret)
+	FixedArgs
+	(map (\t -> (toLlvmType t, [])) param)
+	ptrAlign
+	))
+
 
 toLlvmType t
  = panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : " ++ show t ++ "\n"

@@ -121,6 +121,10 @@ llvmOfXPrim (MApp PAppApply) ((fptr@(XVar n t)):args)
 	func	<- llvmOfExp fptr
 	applyN	func params
 
+llvmOfXPrim (MAlloc (PAllocThunk v t arity argc)) args
+ | length args == argc
+ =	allocThunk (toLlvmGlobalVar v t) arity argc
+
 
 llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n"

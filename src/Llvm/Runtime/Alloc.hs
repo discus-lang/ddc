@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
 module Llvm.Runtime.Alloc
 	( allocate
 	, allocThunk )
@@ -72,9 +73,9 @@ allocate bytes name typ
 allocThunk :: LlvmVar -> Int -> Int -> LlvmM LlvmVar
 allocThunk funvar arity args
  = do	addAlias	("struct.Thunk", ddcThunk)
-	addComment $	"allocThunk " ++ show funvar
+	addComment	$ "allocThunk " ++ getName funvar ++ " " ++ show arity ++ " " ++ show args
 	pThunk		<- allocate (sizeOfLlvmType structThunk + arity * sizeOfLlvmType pObj) "pthunk" pChar
-	addComment "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+	addComment	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
 
 	addComment $	"\noffsetOfIndex structThunk 0 : " ++ show (offsetOfIndex structThunk 0) ++
 			"\noffsetOfIndex structThunk 1 : " ++ show (offsetOfIndex structThunk 1) ++
@@ -86,31 +87,31 @@ allocThunk funvar arity args
 	addBlock	[ Assignment ptag (Cast LM_Bitcast pThunk pInt32)
 			, Store tagFixedThunk ptag ]
 	addComment	"-----------------------"
+	pFunSrc		<- newUniqueNamedReg "pFunSrc" (genericFunPtrType)
 	pDest		<- newUniqueNamedReg "pDest" pChar
-	pFunc		<- newUniqueNamedReg "pFunc" (pLift pFunction)
+	pFunDest	<- newUniqueNamedReg "pFunDest" (pLift genericFunPtrType)
 	addBlock	[ Assignment pDest (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 1)])
-			, Assignment pFunc (Cast LM_Bitcast pDest (pLift pFunction))
-			, Store funvar pFunc ]
+			, Assignment pFunSrc (Cast LM_Bitcast funvar genericFunPtrType)
+			, Assignment pFunDest (Cast LM_Bitcast pDest (pLift genericFunPtrType))
+			, Store pFunSrc pFunDest ]
 	addComment	"-----------------------"
 	pArity		<- newUniqueNamedReg "pArity" pChar
 	par		<- newUniqueReg pInt32
 	addBlock	[ Assignment pArity (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 2)])
-			, Assignment par (Cast LM_Bitcast pArity (pInt32))
+			, Assignment par (Cast LM_Bitcast pArity pInt32)
 			, Store (i32LitVar arity) par ]
 
 	addComment	"-----------------------"
 	pArgs		<- newUniqueNamedReg "pArgs" pChar
 	parg		<- newUniqueReg pInt32
-	addBlock	[ Assignment pArgs (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 2)])
-			, Assignment parg (Cast LM_Bitcast pArgs (pInt32))
+	addBlock	[ Assignment pArgs (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 3)])
+			, Assignment parg (Cast LM_Bitcast pArgs pInt32)
 			, Store (i32LitVar args) parg ]
 
-	addComment "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
-	ret		<- newUniqueReg pObj
+	ret		<- newUniqueNamedReg "allocated.thunk" pObj
 	addBlock	[ Assignment ret (Cast LM_Bitcast pThunk pObj) ]
+	addComment	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
 	return		ret
-
-
 
 
 -- | Round up to a multiple of 8.

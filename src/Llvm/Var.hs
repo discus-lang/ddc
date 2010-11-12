@@ -3,8 +3,10 @@
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Var
 	( toLlvmVar
+	, toLlvmGlobalVar
 	, toLlvmCafVar
 	, toLlvmRtsVar
+	, genericFunPtrVar
 	, llvmVarOfXVar
 	, isGlobalVar )
 where
@@ -24,17 +26,13 @@ stage = "Llvm.Var"
 
 -- | Convert a Sea Var (with a Type) to a typed LlvmVar.
 toLlvmVar :: Var -> Type -> LlvmVar
-toLlvmVar v t@(TFun r TVoid)
- = LMNLocalVar (seaVar True v) (toLlvmType t)
-
-toLlvmVar v t@(TFun _ _ )
- = panic stage $ "toLlvmVar (" ++ (show __LINE__) ++ ") type : " ++ show t
-
 toLlvmVar v t
  = case isGlobalVar v of
 	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
 	False -> LMNLocalVar (seaVar True v) (toLlvmType t)
 
+toLlvmGlobalVar v t
+ = LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
 
 
 toLlvmCafVar :: Var -> Type -> LlvmVar
@@ -55,6 +53,12 @@ llvmVarOfXVar (XVar (NRts v) t)
 llvmVarOfXVar exp
  = panic stage $ "llvmVarOfXVar (" ++ (show __LINE__) ++ ")\n"
 	++ show exp
+
+-- | Turn the given Var (really just a name of a function) into a genereric
+-- function pointer if type. See also genericFunPtrType.
+genericFunPtrVar :: Var -> LlvmVar
+genericFunPtrVar v
+ = LMGlobalVar (seaVar False v) genericFunPtrType External Nothing ptrAlign False
 
 
 
