@@ -3,12 +3,15 @@ module Llvm.Runtime.Boxing
 	( boxAny	, unboxAny
 
 	, boxEnum
+	, boxLit
 	, boxInt32	, unboxInt32
 	, boxInt64
 	, boxFloat32
 	, boxFloat64 )
 where
 
+import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Error
 
 import Llvm
@@ -103,8 +106,17 @@ boxEnum v@(LMLocalVar u _)
 		]
 	return	objptr
 
-boxEnum any
- = panic stage $ "boxEnum " ++ show any
+--------------------------------------------------------------------------------
+
+boxLit :: LiteralFmt -> LlvmM LlvmVar
+boxLit lit@(LiteralFmt (LInt _) (UnboxedBits _))
+ =	boxAny $ llvmVarOfLit lit
+
+boxLit (LiteralFmt (LString s) Unboxed)
+ = do	gname		<- newUniqueName "str"
+	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
+	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
+	boxString	svar
 
 --------------------------------------------------------------------------------
 

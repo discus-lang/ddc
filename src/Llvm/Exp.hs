@@ -9,8 +9,6 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
-import DDC.Var
-import DDC.Var.PrimId
 
 import Llvm
 import LlvmM
@@ -39,11 +37,8 @@ llvmOfExp (XVar n@NAuto{} t)
 llvmOfExp (XPrim op args)
  =	llvmOfXPrim op args
 
-llvmOfExp (XLit (LLit (LiteralFmt (LInt i) (UnboxedBits bits))))
- = case bits of
-	32 -> return $ i32LitVar i
-	64 -> return $ i64LitVar i
-	_ -> panic stage $ "toDeclParam (" ++ show __LINE__ ++ ") " ++ show bits ++ " bits"
+llvmOfExp (XLit (LLit lit))
+ = 	return $ llvmVarOfLit lit
 
 
 llvmOfExp (XVar n@NSuper{} tv)
@@ -67,13 +62,8 @@ llvmOfExp src
 --------------------------------------------------------------------------------
 
 llvmOfXPrim :: Prim -> [Exp a] -> LlvmM LlvmVar
-llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit (LiteralFmt (LInt i) (UnboxedBits 32))) ]
- | varId v == VarIdPrim (TInt (UnboxedBits 32))
- =	boxInt32 $ i32LitVar i
-
-llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit (LiteralFmt (LInt i) (UnboxedBits 64))) ]
- | varId v == VarIdPrim (TInt (UnboxedBits 64))
- =	boxInt64 $ i64LitVar i
+llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit litfmt) ]
+ =	boxLit litfmt
 
 llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun _ rt)):args)
  = do	let func	= funcDeclOfExp exp
@@ -156,18 +146,8 @@ opResultType op var
 --------------------------------------------------------------------------------
 
 boxExp :: Type -> Exp a -> LlvmM LlvmVar
-boxExp t (XLit lit@(LLit (LiteralFmt (LInt value) (UnboxedBits bits))))
- = case bits of
-	32 -> boxInt32 $ i32LitVar value
-	64 -> boxInt64 $ i64LitVar value
-	_ -> panic stage $ "boxExp (" ++ show __LINE__ ++ ") with bits == " ++ show bits
-
-
-boxExp t lit@(XLit (LLit (LiteralFmt (LString s) Unboxed)))
- = do	gname		<- newUniqueName "str"
-	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
-	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
-	boxAny		svar
+boxExp t (XLit lit@(LLit litfmt))
+ =	boxLit litfmt
 
 boxExp t@(TCon (TyConUnboxed tv)) var
  = do	reg		<- llvmOfExp var
@@ -175,7 +155,6 @@ boxExp t@(TCon (TyConUnboxed tv)) var
 
 boxExp t x
  = panic stage $ "boxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
-
 
 --------------------------------------------------------------------------------
 

@@ -5,6 +5,7 @@ module Llvm.Util
 	( llvmWordLitVar
 	, i32LitVar
 	, i64LitVar
+	, llvmVarOfLit
 
 	, loadAddress
 	, uniqueOfLlvmVar
@@ -38,6 +39,8 @@ module Llvm.Util
 	, ptrAlign )
 where
 
+import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Var
@@ -63,6 +66,11 @@ i64LitVar :: Integral a => a -> LlvmVar
 i64LitVar n = LMLitVar (LMIntLit (toInteger n) i64)
 
 
+llvmVarOfLit :: LiteralFmt -> LlvmVar
+llvmVarOfLit (LiteralFmt (LInt i) (UnboxedBits bits))
+ = case bits of
+	32	-> i32LitVar i
+	64	-> i64LitVar i
 
 
 uniqueOfLlvmVar :: LlvmVar -> Unique
