@@ -18,6 +18,7 @@ import DDC.Sea.Pretty
 import DDC.Var
 
 import Llvm
+import Llvm.Runtime.Object
 import Llvm.Util
 
 import Data.List					(isSuffixOf)

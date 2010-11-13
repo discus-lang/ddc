@@ -5,6 +5,7 @@ module Llvm.Runtime.Data where
 
 import Llvm
 import LlvmM
+import Llvm.Runtime.Object
 import Llvm.Util
 
 

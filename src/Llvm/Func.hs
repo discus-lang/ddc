@@ -7,6 +7,7 @@ import DDC.Sea.Exp
 import DDC.Sea.Pretty
 
 import Llvm
+import Llvm.Runtime.Object
 import Llvm.Util
 import Llvm.Var
 

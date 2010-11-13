@@ -1,7 +1,7 @@
 module Llvm.Runtime.Error where
 
 import Llvm
-import Llvm.Util
+import Llvm.Runtime.Object
 
 
 deathCase :: LlvmFunctionDecl

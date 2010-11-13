@@ -8,6 +8,7 @@ import DDC.Main.Error
 
 import Llvm
 import LlvmM
+import Llvm.Runtime.Object
 import Llvm.Runtime.Data
 import Llvm.Runtime.Tags
 import Llvm.Util
@@ -41,7 +42,7 @@ allocate bytes name typ
 	let count = i32LitVar $ roundUpBytes bytes
 
 	addBlock
-		[ Comment ["allocate " ++ show bytes]
+		[ Comment ["allocate " ++ show bytes ++ " bytes"]
 		, Branch entry
 		, MkLabel (uniqueOfLlvmVar entry)
 		, Assignment r0 (Load ddcHeapPtr)
@@ -73,8 +74,10 @@ allocate bytes name typ
 allocThunk :: LlvmVar -> Int -> Int -> LlvmM LlvmVar
 allocThunk funvar arity args
  = do	addAlias	("struct.Thunk", ddcThunk)
+	let size	= sizeOfLlvmType structThunk + arity * sizeOfLlvmType pObj
 	addComment	$ "allocThunk " ++ getName funvar ++ " " ++ show arity ++ " " ++ show args
-	pThunk		<- allocate (sizeOfLlvmType structThunk + arity * sizeOfLlvmType pObj) "pthunk" pChar
+
+	pThunk		<- allocate size "pthunk" pChar
 	addComment	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
 
 	addComment $	"\noffsetOfIndex structThunk 0 : " ++ show (offsetOfIndex structThunk 0) ++

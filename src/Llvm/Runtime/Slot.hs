@@ -8,6 +8,7 @@ import DDC.Main.Error
 
 import Llvm
 import LlvmM
+import Llvm.Runtime.Object
 import Llvm.Runtime.Data
 import Llvm.Util
 
