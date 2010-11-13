@@ -24,6 +24,8 @@ import qualified DDC.Config.Version	as Version
 import Llvm
 import LlvmM
 import Llvm.Assign
+import Llvm.Exp
+import Llvm.Func
 import Llvm.GhcReplace.Unique
 import Llvm.Invoke
 import Llvm.Runtime
@@ -36,6 +38,7 @@ import Util
 import qualified Data.Map		as Map
 
 import qualified Debug.Trace		as Debug
+
 
 stage = "Main.Llvm"
 
@@ -141,7 +144,6 @@ llvmOfSeaDecls (PSuper v p t ss)
 	llvmOfFunc ss
 	endFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map llvmOfParams p) Nothing)
-		-- (toLlvmFuncDecl linkage v t [])
 		(map (\ (v, _) -> "_p" ++ seaVar True v) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
@@ -236,9 +238,19 @@ llvmOfStmt stmt
 
 	-- LLVM is SSA so auto variables do not need to be declared.
 	SAuto v t	-> addComment $ "SAuto " ++ seaVar True v ++ " " ++ show t
-
+	SStmt exp	-> llvmOfSStmt exp
 	_
-	  -> panic stage $ "llvmOfStmt " ++ (take 150 $ show stmt)
+	  -> panic stage $ "llvmOfStmt " ++ show stmt
+
+
+--------------------------------------------------------------------------------
+
+llvmOfSStmt :: Exp a -> LlvmM ()
+llvmOfSStmt (XPrim (MApp PAppCall) (fexp:args))
+ = do	let func	= funcDeclOfExp fexp
+	addGlobalFuncDecl func
+	params		<- mapM llvmOfExp args
+	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) params []) ]
 
 --------------------------------------------------------------------------------
 
