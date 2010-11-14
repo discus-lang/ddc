@@ -44,7 +44,7 @@ data AbstractStruct
 					-- for 64 bit.
 
 -- | A structure defined by a list if AbstractStruct fields can be turned into
--- an LlvmStructDesc which gives the struct a name, an LlvmTyoe derived from
+-- an LlvmStructDesc which gives the struct a name, an LlvmType derived from
 -- the AbstractStruct list description (adding padding fields where needed)
 -- and a map from the field names to the (index, LlvmType) pair.
 
@@ -112,7 +112,7 @@ mkConcrete (n, accum) APadTo8If64
 
 
 
-
+-- | Turn an struct specified as an AbstractStruct list into an LlvmStructDesc.
 mkLlvmStructDesc :: String -> [AbstractStruct] -> LlvmStructDesc
 mkLlvmStructDesc name fields
  = do	let concrete = reverse $ snd $ foldl mkConcrete (0, []) fields
@@ -126,9 +126,14 @@ nameIndexType ps
 	Field n (i, t)	-> [ (n, (i, t)) ]
 	Pad _		-> []
 
+
+-- | Retrieve the struct's LlvmType from the LlvmStructDesc.
 llvmTypeOfStruct :: LlvmStructDesc -> LlvmType
 llvmTypeOfStruct (LlvmStructDesc _ t _) = t
 
+
+-- | Given and LlvmStructDesc and the name of a field within the LlvmStructDesc,
+-- retrieve a field's index with the struct and its LlvmType.
 structFieldLookup :: LlvmStructDesc -> String -> (Int, LlvmType)
 structFieldLookup (LlvmStructDesc name _ map) field
  = case Map.lookup field map of
@@ -138,6 +143,7 @@ structFieldLookup (LlvmStructDesc name _ map) field
 
 --------------------------------------------------------------------------------
 
+-- | Calculate the size in bytes of an LlvmType.
 sizeOfLlvmType :: LlvmType -> Int
 sizeOfLlvmType t
  = case t of
@@ -154,6 +160,8 @@ sizeOfLlvmType t
 	LMAlias (_, t)	-> sizeOfLlvmType t
 
 
+-- | Given an LlvmType containing a struct and an index, calculate the offset in
+-- bytes of the field with the specifide index within the struct.
 offsetOfIndex :: LlvmType -> Int -> Int
 offsetOfIndex _ 0 = 0
 offsetOfIndex typ i
