@@ -10,6 +10,7 @@ import Llvm
 import LlvmM
 import Llvm.Runtime.Object
 import Llvm.Runtime.Data
+import Llvm.Runtime.Struct
 import Llvm.Runtime.Tags
 import Llvm.Util
 

@@ -14,9 +14,6 @@ module Llvm.Util
 	, funcVarOfDecl
 	, nameOfFunDecl
 
-	, sizeOfLlvmType
-	, offsetOfIndex
-
 	, genericFunPtrType
 
 	, toLlvmType
