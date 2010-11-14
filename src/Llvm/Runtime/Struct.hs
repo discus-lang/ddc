@@ -98,7 +98,7 @@ mkConcrete (n, accum) APadTo8
 
 
 mkConcrete (n, accum) APadTo8If64
- | Config.pointerBytes == 4 && mod n 8 == 0
+ | Config.pointerBytes == 4
  =	(n, accum)
 
 
