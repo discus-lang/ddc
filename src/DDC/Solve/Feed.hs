@@ -131,17 +131,13 @@ feedType src tt
 	TSum k []
 	 -> 	allocClass k src
 
-	-- Add summations
-	-- TODO: all the nodes should be stored seprately.
+	-- Add summations. 
+	-- Each of the components is stored as its own node in the class.
 	TSum k ts
-	 -> do 	cids		<- mapM (feedType src) ts
-
-		-- TODO: Don't add sums to classes.
---		mapM_ (addNode cidT src k . NCid) cids
-		
-		newNode src k 
-			$ NSum (Set.fromList cids)
-
+	 -> do 	cidT	<- allocClass k src
+		cids	<- mapM (feedType src) ts
+		mapM_ (addNode cidT src k . NCid) cids
+		return cidT
 
 	-- TFree's that we get from the constraint slurper may refer to types that are
 	-- in the defs table, and not in the graph.

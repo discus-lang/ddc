@@ -154,7 +154,8 @@ traceFromCid' cid
 
 		-- Decend into other classes reachable from this one.
 		let cids	= Set.union (freeCids t) (classFettersMulti cls)
-		mapM_ traceFromCid $ Set.toList cids
+		cids'		<- liftM Set.fromList $ mapM sinkCid $ Set.toList cids
+		mapM_ traceFromCid $ Set.toList cids'
 
 	 -- A deleted class.
 	 ClassFetterDeleted _
@@ -322,7 +323,7 @@ getTypeOfNode kind node
 	 ->	return $ TSum kind []
 
 	NCid cid
-	 -> 	return $ TVar kind $ UClass cid
+	 -> 	loadSimpleType cid
 
 	NVar v	
 	 -> 	return $ TVar kind $ UVar v

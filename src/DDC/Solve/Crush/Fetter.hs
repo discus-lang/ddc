@@ -15,7 +15,6 @@ import DDC.Type
 import Data.Maybe
 import Shared.VarPrim
 import Control.Monad
-import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
@@ -172,19 +171,11 @@ purifyNodeOfClass
 	-> SquidM Bool		-- ^ Whether we changed the graph at all.
 
 purifyNodeOfClass cid fPure srcPure (node, srcNode)
-	| NSum cids	<- node
-	= do	
-		trace	$ ppr "    * purifyNodeOfClass: node is sum " % node % "\n"
-
-		let cidsList	= Set.toList cids
-		ks		<- mapM kindOfClass cidsList
-		let ts		= zipWith (\k c -> TVar k (UClass c)) ks cidsList
-
-		progress	<- zipWithM addFetter
-					(repeat $ TSI $ SICrushedFS cid fPure srcPure)
-					[FConstraint primPure [t] | t <- ts]
-
-		return $ or progress
+	| NCid cid'	<- node
+	= do	trace	$ ppr "     * purifyNodeOfClass: node is cid " % node % "\n"
+		kind	<- kindOfClass cid'
+		addFetter (TSI $ SICrushedFS cid fPure srcPure)
+			  (FConstraint primPure [TVar kind (UClass cid')])
 	
 	| isNApp node || isNCon node
 	= do	

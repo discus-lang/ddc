@@ -89,13 +89,13 @@ instance Pretty Class PMode where
 
 		-- node types contributing to this class
 		++ (if isInjectiveKind (classKind cls)
-			then 	["     :> " %> (padL 30 t %% i) | (t, i) <- classTypeSources cls]
-			else 	["     =  " %> (padL 30 t %% i) | (t, i) <- classTypeSources cls])
+			then 		["     :> " %> (padL 30 t %% i) | (t, i) <- classTypeSources cls]
+			else 		["     =  " %> (padL 30 t %% i) | (t, i) <- classTypeSources cls])
 
 		-- class fetters
 		++ (case Map.toList $ classFetters cls of
 			[]	-> []
-			_	-> map ppr $ Map.toList $ classFetters cls)
+			_	->	["     +  " %> (padL 30 t %% i) | (t, i) <- Map.toList $ classFetters cls])
 	
 		-- multi-parameter type classes
 		++ (if Set.null $ classFettersMulti cls
