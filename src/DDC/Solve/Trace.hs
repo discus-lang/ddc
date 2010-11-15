@@ -335,10 +335,6 @@ getTypeOfNode kind node
 	 -> do	t1	<- loadSimpleType cid1
 		t2	<- loadSimpleType cid2
 		return $ TApp t1 t2
-			
-	NSum cids
-	 -> do	ts	<- mapM loadSimpleType $ Set.toList cids
-		return $ TSum kind ts
 		
 	NScheme t
 	 -> do	t'	<- sinkCidsInType t

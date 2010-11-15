@@ -16,11 +16,6 @@ module DDC.Solve.Graph.Node
 	, isNVar
 	, isNCon
 	, isNApp
-	, isNSum
-
-	-- * (de)Construction
-	, makeNSum
-	, takeNSum
 
 	-- * Substitution.
 	, subNodeCidCid
@@ -53,7 +48,6 @@ data Node
 	| NVar		!Var
 	| NCon		!TyCon
 	| NApp		!ClassId !ClassId
-	| NSum		!(Set ClassId)
 
 	-- | Finished type schemes are added back to the type graph.
 	--	We want to keep them in the graph because closure terms in other types
@@ -76,7 +70,6 @@ isNBot :: Node -> Bool
 isNBot nn 
  = case nn of
 	NBot		-> True
-	NSum ss		-> Set.null ss
 	_		-> False
 
 -- | Check if a node is an NVar.
@@ -100,26 +93,6 @@ isNApp nn
 	NApp{}	-> True
 	_	-> False
 
-
--- | Check whether a node is an NSum.
-isNSum :: Node -> Bool
-isNSum nn	= isJust $ takeNSum nn
-
-
--- (de)Construction -------------------------------------------------------------------------------
--- | Make a new NSum containing these cids, or a NBot if the set is empty.
-makeNSum :: Set ClassId -> Node
-makeNSum cids
-	| Set.null cids	= NBot
-	| otherwise	= NSum cids
-
--- | Take the cids from an NSum.
-takeNSum :: Node -> Maybe (Set ClassId)
-takeNSum nn
- = case nn of
-	NSum cids	-> Just cids
-	_		-> Nothing
-	
 	
 -- Substitution -----------------------------------------------------------------------------------
 -- | Substitute cids for cids in some node
@@ -136,10 +109,7 @@ subNodeCidCid sub nn
 	NApp cid1 cid2
 	 -> NApp  (fromMaybe cid1 (Map.lookup cid1 sub))
 		  (fromMaybe cid2 (Map.lookup cid2 sub))
-	
-	NSum cids
-	 -> NSum $ Set.map (\cid -> fromMaybe cid (Map.lookup cid sub)) cids
-	
+		
 	NScheme t
 	 -> NScheme $ subCidCid_everywhere sub t
 	
@@ -159,7 +129,6 @@ cidsOfNode nn
 	NVar{}		-> Set.empty
 	NCon{}		-> Set.empty
 	NApp c1 c2	-> Set.fromList [c1, c2]
-	NSum cs		-> cs
 	NError{}	-> Set.empty
 	NScheme t	-> freeCids t
 	NFree _ t	-> freeCids t

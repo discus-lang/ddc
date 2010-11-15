@@ -21,7 +21,6 @@ import DDC.Main.Error
 import DDC.Type
 import Data.Array.IO
 import Control.Monad
-import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
 stage = "DDC.Solve.SinkIO"
@@ -65,13 +64,6 @@ sinkCidsInNodeIO classes nn
 	 -> do	cid1'	<- sinkCidIO classes cid1
 		cid2'	<- sinkCidIO classes cid2
 		return	$ NApp cid1' cid2'
-
-	NSum cids
-	 -> do	cids'	<- liftM Set.fromList 
-			$  mapM (sinkCidIO classes) 
-			$  Set.toList cids
-			
-		return	$ NSum cids'
 		
 	NScheme t
 	 -> do	t'	<- sinkCidsInTypeIO classes t
