@@ -1,19 +1,20 @@
-
--- All regions are assumed constant until proven mutable.
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+-- | All regions are assumed constant until proven mutable.
 --	This means that we can generalise type variables in scheme but find
 --	out they were actually are dangerous and non-generalisable later on.
 --
--- If we just instantiate bad type vars more than once they could potentially
---	become different types, which makes the system unsound.
+--      If we were to instantiate these wrongly-generalised vars more than once
+--      then they could potentially end up with diffent types, which makes
+--      the type system unsound.
 --
--- It would be better to do some back-tracking to recover from this, but instead
---	we just check for wrongly generalised type vars each time we do an
+--      It would be better to do some back-tracking to recover from this, but
+--      instead we just check for wrongly generalised type vars each time we do an
 --	instantiation and report an error asking for a type sig if there are problems.
 --
--- Type sigs are added to the graph before anything else, so we'll see the mutability
---	constraints during generaliation on the next time around.
+--      Type sigs are added to the graph before anything else, so we'll see the mutability
+--      constraints during generaliation on the next time around.
 -- 
-module Type.Check.SchemeDanger
+module DDC.Solve.Check.Late
 	( checkSchemes
 	, checkSchemeDangerCid
 	, checkSchemeDanger)
@@ -30,16 +31,12 @@ import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
-stage	= "Type.Check.SchemeDanger"
+stage	= "DDC.Solve.Check.Late"
 debug	= False
 trace s	= when debug $ traceM s
 
 
-checkSchemeDangerCid :: ClassId -> SquidM [Error]
-checkSchemeDangerCid cid
- = do	Just c	<- lookupClass cid
- 	checkSchemeDanger [] c
- 
+-- | Check all schemes in the graph.
 checkSchemes :: SquidM ()
 checkSchemes 
  = do	trace	$ ppr $ "*    checkSchemes\n"
@@ -48,14 +45,18 @@ checkSchemes
 	trace	$ ppr $ "*    done checking schemes\n"
 
 
+-- | Check for wrongly generalised dangerous type variables in the scheme in this class.
+checkSchemeDangerCid :: ClassId -> SquidM [Error]
+checkSchemeDangerCid cid
+ = do	Just c	<- lookupClass cid
+ 	checkSchemeDanger [] c
+
+ 
 -- Check that the regions above quantified dangerous vars haven't become mutable.
 checkSchemeDanger :: [Error] -> Class -> SquidM [Error]
 checkSchemeDanger errs c
-	| Class { classKind	= kValue 
-		, classId	= cid
-		, classUnified	= Just node }	<- c
-	, NScheme t 				<- node
-
+	| Class { classUnified	= Just node }	<- c
+	, NScheme t 	<- node
 	= do	trace 	$ "*   checkSchemeDanger\n"
 			% "    t = " % t % "\n"
 
@@ -86,16 +87,15 @@ checkSchemeDanger errs c
 	= return errs
  
 	
--- Produce an error if the region is mutable
+-- | Produce an error if the region is mutable
 checkDanger :: Class -> (Type, Type) -> SquidM (Maybe Error)
 checkDanger (Class 
-		{ classId 	= cidScheme
-		, classUnified 	= Just node })
+		{ classId 	= cidScheme })
 		( tRegion@(TVar kR (UClass cidR))
 		, t2)
 
 	| kR == kRegion
-	, TVar k (UVar varT)	<- t2
+	, TVar _ (UVar varT)	<- t2
 	= do 	mfMutableSrc	<- lookupMutable cidR
 		case mfMutableSrc of
 	 	 Nothing	-> return Nothing
@@ -116,17 +116,15 @@ checkDanger (Class
 	, TVar _ UClass{}	<- t2
 	= 	return Nothing
 	
-	
-checkDanger (Class { classUnified = t }) (t1, t2)
+checkDanger _ (t1, t2)
  = panic stage
 	$ "checkDanger: no match\n"
-	% "    c  = " % t	% "\n"
 	% "    t1 = " % t1	% "\n"
 	% "    t2 = " % t2	% "\n"
 	% "\n"
 	
 	
--- See if there is a Mutable fetter in this class
+-- | See if there is a Mutable fetter in this class
 lookupMutable 
 	:: ClassId 
 	-> SquidM (Maybe (Fetter, TypeSource))

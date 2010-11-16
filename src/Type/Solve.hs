@@ -10,8 +10,8 @@ import Type.Solve.Grind
 import Type.Solve.BindGroup
 import Type.Solve.Generalise
 import Type.Solve.Finalise
-import Type.Check.SchemeDanger
 import Type.Extract
+import DDC.Solve.Check.Late
 import DDC.Solve.Feed
 import DDC.Solve.Location
 import DDC.Solve.State

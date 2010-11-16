@@ -4,7 +4,7 @@ module Type.Solve.Finalise
 where
 import Type.Solve.Generalise
 import Type.Check.Main
-import Type.Check.SchemeDanger
+import DDC.Solve.Check.Late
 import DDC.Solve.Check.Instances
 import DDC.Solve.State
 import DDC.Constraint.Exp
