@@ -3,7 +3,8 @@
 -- | Functions dealing with the names of equivalence classes in the graph.
 module DDC.Solve.State.Naming
 	( instVar
-	, getCanonicalNameOfClass)
+	, getCanonicalNameOfClass
+	, getDisplayNameOfClass)
 where
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
@@ -13,11 +14,11 @@ import DDC.Type
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
+import Data.Maybe
 import Data.List
 import qualified Data.Map	as Map
 
 stage	= "DDC.Solve.State.Naming"
-
 
 -- | Instantiate a variable.
 instVar :: Var -> SquidM Var
@@ -59,7 +60,6 @@ instVar' var space mVarId
 getCanonicalNameOfClass :: ClassId -> SquidM Var
 getCanonicalNameOfClass !cid
  = do 	Just cls	<- lookupClass cid
-
 	case cls of
 	 ClassForward _ cid'
 	    -> getCanonicalNameOfClass cid'
@@ -82,7 +82,13 @@ getCanonicalNameOfClass !cid
 	
 	  | Map.null aliases
 	  -> panic stage $ "no name space for kind " % kind % "\n"
-	
+		
+	  -- The class has existing aliases, and one of them has a parent with 
+	  -- a real source position, so use that.
+	  | Just var	<- listToMaybe $ filter (isJust . takeSourcePosOfVar) 
+			$ Map.keys $ classAliases cls
+	  -> return var
+			
 	  -- The class existing aliases, so we can choose one to be the canonical name.
    	  | otherwise
 	  -> let classNameOrd v1 v2
@@ -98,4 +104,22 @@ getCanonicalNameOfClass !cid
 		$ "getCanonicalNameOfClass: class " % cid % "has no name."
 
 
+-- | Like getCanonicalNameOfClass, but choose a var with a real source position if at all
+--   possible. This can be different to the canonical name if a class had a previous
+--   canonical name, but no var with a real source position, but was later merged with
+--   one that does.
+getDisplayNameOfClass :: ClassId -> SquidM Var
+getDisplayNameOfClass cid
+ = do 	Just cls	<- lookupClass cid
+	case cls of
+	 ClassForward _ cid'
+	    -> getDisplayNameOfClass cid'
 
+	 Class	{}
+	  -- The class has existing aliases, and one of them has a parent with 
+	  -- a real source position, so use that.
+	  | Just var	<- listToMaybe $ filter (isJust . takeSourcePosOfVar) 
+			$ Map.keys $ classAliases cls
+	  -> return var
+
+	 _ -> getCanonicalNameOfClass cid

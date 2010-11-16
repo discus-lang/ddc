@@ -101,7 +101,7 @@ checkDanger (Class
 	 	 Nothing	-> return Nothing
 	 	 Just (fMutable, srcMutable)
 	  	  -> do
-			varScheme	<- getCanonicalNameOfClass cidScheme
+			varScheme	<- getDisplayNameOfClass cidScheme
 			Just tNode	<- takeShallowTypeOfCidAsSquid cidScheme
 			return	$ Just
 				$ ErrorLateConstraint

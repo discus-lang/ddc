@@ -6,7 +6,9 @@ module Type.Dump
 	, dumpSub)
 where
 import DDC.Main.Pretty
-import DDC.Solve.State
+import DDC.Solve.State.Base
+import DDC.Solve.State.Squid
+import DDC.Solve.State.Graph
 import DDC.Type.Kind
 import Util
 import Data.Array.IO	
