@@ -63,7 +63,7 @@ ptrAlign = Just Config.pointerBytes
 
 --------------------------------------------------------------------------------
 
-defThunk :: [AbstractStruct]
+defThunk :: [LlvmStructField]
 defThunk
  =	[ AField "tag" i32			-- tag
 	, APadTo8If64

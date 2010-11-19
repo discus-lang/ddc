@@ -34,7 +34,7 @@ testOne
 	putStrLn "    -----------------------------------"
 	mapM_ (showField structDesc) $ reverse $ foldl getNames [] abstract
 
-getNames :: [String] -> AbstractStruct -> [String]
+getNames :: [String] -> LlvmStructField -> [String]
 getNames accum (AField name _) = name : accum
 getNames accum _ = accum
 

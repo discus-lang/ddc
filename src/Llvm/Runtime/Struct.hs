@@ -8,7 +8,7 @@ module Llvm.Runtime.Struct
 	( sizeOfLlvmType
 	, offsetOfIndex
 
-	, AbstractStruct (..)
+	, LlvmStructField (..)
 	, LlvmStructDesc
 	, mkLlvmStructDesc
 	, llvmTypeOfStruct
@@ -27,14 +27,14 @@ import qualified Data.Map		as Map
 stage = "Llvm.Runtime.Struct"
 
 
--- | A structure can be defined as a list of AbstractStruct fields with optional
+-- | A structure can be defined as a list of LlvmStructField fields with optional
 -- padding to force the correct alignment.
 --
 -- The APadToX values only add padding if, due to previous fields in the struct,
 -- The next field would not start at the required byte offset.
 
 
-data AbstractStruct
+data LlvmStructField
 	= AField String LlvmType	-- Field name and type.
 	| APadTo2			-- Pad next field to a 2 byte offset.
 	| APadTo4			-- Pad next field to a 4 byte offset.
@@ -43,9 +43,9 @@ data AbstractStruct
 	| APadTo8If64			-- Pad next field to a 8 byte offset only
 					-- for 64 bit.
 
--- | A structure defined by a list if AbstractStruct fields can be turned into
+-- | A structure defined by a list if LlvmStructField fields can be turned into
 -- an LlvmStructDesc which gives the struct a name, an LlvmType derived from
--- the AbstractStruct list description (adding padding fields where needed)
+-- the LlvmStructField list description (adding padding fields where needed)
 -- and a map from the field names to the (index, LlvmType) pair.
 
 data LlvmStructDesc
@@ -69,7 +69,7 @@ llvmTypeOfPadded field
 	Pad t		-> t
 
 
-mkConcrete :: (Int, [PaddedStruct]) -> AbstractStruct -> (Int, [PaddedStruct])
+mkConcrete :: (Int, [PaddedStruct]) -> LlvmStructField -> (Int, [PaddedStruct])
 mkConcrete (n, accum) f@(AField name lt)
  =	(n + sizeOfLlvmType lt, Field name (length accum, lt) : accum)
 
@@ -112,8 +112,8 @@ mkConcrete (n, accum) APadTo8If64
 
 
 
--- | Turn an struct specified as an AbstractStruct list into an LlvmStructDesc.
-mkLlvmStructDesc :: String -> [AbstractStruct] -> LlvmStructDesc
+-- | Turn an struct specified as an LlvmStructField list into an LlvmStructDesc.
+mkLlvmStructDesc :: String -> [LlvmStructField] -> LlvmStructDesc
 mkLlvmStructDesc name fields
  = do	let concrete = reverse $ snd $ foldl mkConcrete (0, []) fields
 	LlvmStructDesc name
