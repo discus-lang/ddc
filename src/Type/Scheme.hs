@@ -86,17 +86,14 @@ generaliseType src varT tCore envCids
 	let tClean	= cleanType (Set.fromList tsParam) tPlug
 	tracell	$ "    tClean:\n" 		%> prettyTypeSplit tClean
 
-	let tReduce	= reduceContextT classInst tClean
-	tracell	$ "    tReduce:\n"		%> prettyTypeSplit tReduce
-
 	-- Mask effects and Const/Mutable/Local/Direct constraints on local regions.
 	-- 	Do this before adding foralls so we don't end up with quantified regions that
 	--	aren't present in the type scheme.
 	--
-	let rsVisible	= visibleRsT $ flattenT tReduce
+	let rsVisible	= visibleRsT $ flattenT tClean
 	tracell	$ "    rsVisible        = " 	% rsVisible
 
-	let tMskLocal	= maskLocalT rsVisible tReduce
+	let tMskLocal	= maskLocalT rsVisible tClean
 	tracell	$ "    tMskLocal:\n"		%> prettyTypeSplit tMskLocal
 
 	-- If we're generalising the type of a top level binding, 
@@ -130,8 +127,12 @@ generaliseType src varT tCore envCids
 	let tConstify	= addConstraints (constraintsOfFetters fsMore) tMskLocal
 	tracell	$ "    tConstify:\n" 		%> prettyTypeSplit tConstify
 
+
+	let tReduce	= reduceContextT classInst tConstify
+	tracell	$ "    tReduce:\n"		%> prettyTypeSplit tReduce
+
 	-- Check context for problems
-	checkContext src tConstify
+	checkContext src tReduce
 
 	-- Quantify free variables.
 	let vsFree	= filter (\v -> not $ varNameSpace v == NameValue)
