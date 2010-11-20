@@ -160,7 +160,7 @@ extractType_more final varT cid tPack
 	trace	$ "    tStrong\n"
 		%> prettyTypeSplit tStrong	% "\n\n"
 
-	-- Trim closures
+	-- Trim closures 
 	trace	$ ppr " -- trimming closures\n"	
 	let tTrim	
 		| isClosure tStrong	= trimClosureC tStrong
@@ -170,17 +170,14 @@ extractType_more final varT cid tPack
 
 	-- Cut loops through :> fetters in this type
 	trace	$ ppr " -- cutting loops\n"
-	let tCut	= cutLoopsT tTrim
+	let tCut	= packT $ cutLoopsT tTrim
 	trace	$ "    tCut:\n" 	%> prettyTypeSplit tCut % "\n\n"
 	
-	let tCutPack	= packT tCut
-	trace	$ "    tCutPack:\n"	%> prettyTypeSplit tCutPack % "\n\n"
-
-	extractType_final final varT cid tCutPack
+	extractType_final final varT cid tCut
 	
 extractType_final True varT cid tCutPack
  = do	
- 	-- plug classIds with vars
+ 	-- Plug classIds with vars
 	trace	$ ppr " -- plugging classids\n"
  	tPlug	<- plugClassIds Set.empty tCutPack
 	trace	$ "    tPlug:\n" 	%> prettyTypeSplit tPlug	% "\n\n"
