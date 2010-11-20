@@ -9,12 +9,12 @@ import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import DDC.Main.Error
-import DDC.Main.Pretty
 import Control.Monad.Identity
 import Data.Maybe
 import qualified Data.Set	as Set
 import Data.Set			(Set)
-import Debug.Trace
+-- import Debug.Trace
+-- import DDC.Main.Pretty
 
 stage = "DDC.Desguar.ToCore.Clean"
 
@@ -74,9 +74,9 @@ cleanT_up :: Set Var -> Type -> Identity Type
 cleanT_up env tt
 	| TVar k (UMore v tMore) 	<- tt
 	, not $ Set.member v env
-	= trace (pprStrPlain $ vcat 	[ "cleaning " % v 
-					, "env = " % env ])
-		$ return tMore -- return tMore
+	= {- trace (pprStrPlain $ vcat 	[ "cleaning " % v 
+					, "env = " % env ]) $ -}
+	  return tMore
 	
 	| otherwise
 	= return tt

@@ -329,8 +329,7 @@ desugarToCore
 	dumpCT DumpCore "core-source"       $ C.treeOfGlob cgSource
 	dumpCT DumpCore "core-source-clean" $ C.treeOfGlob cgSource_clean
 
-
-	return	( cgSource
+	return	( cgSource_clean
 		, cgHeader )
 
 

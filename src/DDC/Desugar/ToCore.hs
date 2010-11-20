@@ -7,7 +7,6 @@ import Util
 import DDC.Desugar.Pretty		()
 import DDC.Desugar.ToCore.Base
 import DDC.Desugar.ToCore.Exp
--- import DDC.Desugar.ToCore.Clean
 import DDC.Main.Error
 import DDC.Var
 import Type.ToCore			(toCoreT, toCoreK)
