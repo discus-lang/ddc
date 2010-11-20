@@ -40,8 +40,8 @@ bindGlob
 	:: ModuleId
 	-> String			-- ^ unique prefix to use for fresh vars.
 	-> Map Var [Var]		-- ^ a map of all the class constraints acting on a particular region.
-	-> Set Var			-- ^ the regions with global lifetime
-	-> Glob				-- ^ the module glob
+	-> Set Var			-- ^ the global regions that should be bound at top-level.
+	-> Glob				-- ^ the module glob.
 	-> Glob			
 
 bindGlob mod unique classMap rsGlobal tree
@@ -50,9 +50,9 @@ bindGlob mod unique classMap rsGlobal tree
 
 -- | Bind local region variables in this tree.
 bindM	:: ModuleId
-	-> Map Var [Var]
-	-> Set Var
-	-> Glob
+	-> Map Var [Var]		-- ^ Map of all constraints acting on a particular region.
+	-> Set Var			-- ^ the global regions that should be bound at top level.
+	-> Glob				-- ^ the module glob.
 	-> BindM Glob
 	
 bindM mod classMap rsGlobal glob
