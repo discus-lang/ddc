@@ -10,7 +10,7 @@ infix  5 ==, /=
 -- The class of types which support equality
 class Eq a where 
 
-	(==)	:: forall b %r1
+	(==)	:: forall b %r1 
 		.  a -> b -(!e1 $c1)> Bool %r1
 		:- !e1 = !ReadT a + !ReadT b
 		,  $c1 = ${x : a}

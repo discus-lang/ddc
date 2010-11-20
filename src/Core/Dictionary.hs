@@ -19,7 +19,7 @@ import qualified Data.Map		as Map
 import qualified Data.Foldable		as Foldable
 import qualified Debug.Trace
 
-stage		= "Core.Dictionary"
+stage		= "DDC.Core.Dictionary"
 debug		= False
 trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
@@ -163,7 +163,8 @@ rewriteAppX_withInstance env xxUse
 	-- Instantiate the type of the overloaded var with its type arguments.
 	--	This gives us the type that the overloaded var is being used at.
 	tFlatScheme	= flattenT $ infoOverloadedType infoOverloaded
-	Just tUseBody	= instantiateT tFlatScheme (tsUseTypeArgsPoly ++ tsUseTypeArgsWitness)
+	tUseBody	= fromMaybe (panic stage $ "can't instantiate " % tFlatScheme)
+			$ instantiateT tFlatScheme (tsUseTypeArgsPoly ++ tsUseTypeArgsWitness)
 
 	-- Get the type of the instance.
 	Just vInst	= lookup vUse (topClassInstMembers p)
@@ -276,13 +277,13 @@ subMatches (t1, t2)
 slurpQuantVarsT :: Type  -> ([(Var, Kind)], Type)
 slurpQuantVarsT tt
 	= slurpQuantVarsT' tt []
-	
-
-
 		
 slurpQuantVarsT' tt vsQuant
  = case tt of
 	TForall (BVar v1) k1 t2
+	 -> slurpQuantVarsT' t2 (vsQuant ++ [(v1, k1)])
+
+	TForall (BMore v1 _) k1 t2
 	 -> slurpQuantVarsT' t2 (vsQuant ++ [(v1, k1)])
 	
 	_ -> (vsQuant, tt)

@@ -1,0 +1,54 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import	Base
+	Base.Thunk
+	Data.Bool
+	DDC.Runtime.Store
+	DDC.Runtime.Alloc
+	Foreign.Ptr
+
+infix  5 ==, /=
+
+
+-- The class of types which support equality
+class Eq a where 
+
+	(==)	:: forall b %r1
+		.  a -> b -(!e1 $c1)> Bool %r1
+		:- !e1 = !ReadT a + !ReadT b
+		,  $c1 = ${x : a}
+		,  Shape2 a b
+
+	(/=)	:: forall b %r1 
+		.  a -> b -(!e1 $c1)> Bool %r1
+		:- !e1 = !ReadT a + !ReadT b
+		,  $c1 = ${x : a}
+		,  Shape2 a b
+
+
+foreign import "primInt32U_eq"	
+ primInt32U_eq	:: Int32# -> Int32# -> Bool#
+
+
+boxInt32 :: Int32# -> Int32
+boxInt32 u
+ = do	w	= primAlloc_dataRS 0# 4#
+	poke (castToPtrInt32 (peekDataRS_payload w)) u
+	w
+
+
+unboxInt32 :: Int32 -> Int32#
+unboxInt32 w
+ = do	w'	= force w
+	peekOn w (castToPtrInt32 (peekDataRS_payload w'))
+
+
+instance Eq Int32 where
+	(==)	= primInt32_eq
+
+primInt32_eq x y = boxBool (primInt32U_eq (unboxInt32 x) (unboxInt32 y))
+
+
+isEq :: Int32 -> Int32 -> Bool
+isEq x y	= x == y
+

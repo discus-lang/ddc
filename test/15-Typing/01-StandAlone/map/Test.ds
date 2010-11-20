@@ -1,0 +1,18 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Base
+import Base.Thunk
+
+data	SList a
+	= SNil
+	| SCons { 
+		x 	:: a;
+		xs	:: SList a; }
+
+-- | A spine-lazy map
+map 	:: (a -> b) -> SList a -> SList a
+map f SNil		= SNil
+map f (SCons x xs)	= SCons (f x) (map f xs)
+
+id x 	 = x
+thing () = map id SNil

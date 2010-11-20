@@ -14,7 +14,6 @@ import qualified Data.Map	as Map
 
 
 -- | Instantiate a type with a list of type arguments.
---   
 --   If there are more args than foralls at the front of the type then `Nothing`.
 --   We don't also check that the kinds match up along the way.
 --
@@ -29,7 +28,13 @@ instantiateT' sub t1 (t2 : ts)
 	| TForall (BVar v) k11 t12	<- t1
 	, t11 <- TVar k11 $ UVar v
 	= if t11 /= t2
-		then instantiateT' (Map.insert (TVar k11 $ UVar v) t2 sub) t12 ts
+		then instantiateT' (Map.insert t11 t2 sub) t12 ts
+		else instantiateT' sub t12 ts
+	
+	| TForall (BMore v tMore) k11 t12 <- t1
+	, t11 <- TVar k11 $ UMore v tMore
+	= if t11 /= t2
+		then instantiateT' (Map.insert t11 t2 sub) t12 ts
 		else instantiateT' sub t12 ts
 	
 	| TForall BNil _ t12		<- t1
