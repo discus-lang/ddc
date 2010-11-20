@@ -1,31 +1,18 @@
-{-# OPTIONS -no-implicit-prelude #-}
+-- This works if we don't do strengthening during Type.Extract
 
 import Base
-effect !Console :: !
+import Data.Numeric.Int32
+import System.Console
 
 -- succ is a first order function
--- succ :: Int -> Int
--- succ x = x + 1
-foreign import succ
-        :: forall %r0 %r1
-        .  Int32 %r0 -(!e0)> Int32 %r1
-        :- !e0 =  !Read %r0
+succ :: Int -> Int
+succ x = primInt32_add x 1
 
 -- appFive is a second order function
--- appFive g	= g 5
-foreign import appFive
-        :: forall t0 %r0 !e0 $c0
-        .  (Int32 %r0 -(!e0 $c0)> t0) -(!e0)> t0
-        :$ Thunk -> Obj;
+appFive g	= g 5
 
 -- succ2succ is a third order function
--- succ2succ f 	= succ (f succ)      
-foreign import succ2succ
-        :: forall %r0 %r1 %r2 %r3 !e1 !e2 $c0 $c1
-        .  ((Int32 %r2 -(!e2 $c0)> Int32 %r3) -(!e1 $c1)> Int32 %r0) -(!e0)> Int32 %r1
-        :- !e0 =  !Read %r0 + !e1
-        ,  !e2 :> !Read %r2
-        :$ Thunk -> Data;
+succ2succ f 	= succ (f succ)      
 
 
 -- perch is a fourth order function
@@ -39,34 +26,11 @@ perch p
 
 	5
 
-{-
-foreign import perch
-        :: forall %r0 %r1 %r2 %r3 !e1 $c0 $c1 $c2
-        .  (((Int32 %r3 -(!e1 $c0)> Int32 %r1) -(!e1 $c1)> Int32 %r1) -(!e2 $c2)> Int32 %r2) -(!e0)> Int32 %r0
-        :- !e0 =  !Read %r1 + !e1
-        ,  !e2 =  !e1 + !Read %r1
-        ,  !e1 :> !Read %r3
-
-foreign import perch
-        :: forall %r0 %r1 %r2 %r3 %r4 !e2 !e1 !e0 $c0 $c1 $c2
-        .  (((Int32 %r4 -(!e2 $c0)> Int32 %r2) -(!e2 $c1)> Int32 %r2) -(!e1 $c2)> Int32 %r3) -(!e0)> Int32 %r1
-        :- !e0 :> !e1 + !Read %r0
-        ,  !e1 :> !e2 + !Read %r2
-        ,  !e2 :> !Read %r4
-
--}
-
 
 -- ignores its argument and prints to the console.
-{-printSome f 
+printSome f 
  = do 	print "dude"
 	23
--}
-foreign import printSome
-        :: forall t0 %r0
-        .  t0 -(!e0)> Int32 %r0
-        :- !e0 =  !Console
-        :$ Obj -> Data;
         
 
 thing _ = perch printSome

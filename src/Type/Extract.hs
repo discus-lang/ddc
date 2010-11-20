@@ -106,9 +106,12 @@ extractType_fromClass final varT cid
 	
 extractType_pack final varT cid tTrace
  = do	-- Drag local more-than constraints into their use sites.
-	trace	$ ppr " -- dragging more-than constraints\n"	
-	let tDragged	= dragT Set.empty tTrace
-	trace	$ "  tDragged:\n" 	%> prettyTypeSplit tDragged % "\n\n"
+	-- TODO: We want to do separate dragging when we take out the
+	--       strengthener, but it's looping ATM so I've disabled it.
+--	trace	$ ppr " -- dragging more-than constraints\n"	
+--	let tDragged	= dragT Set.empty tTrace
+--	trace	$ "  tDragged:\n" 	%> prettyTypeSplit tDragged % "\n\n"
+	let tDragged	= tTrace
 
 	-- Pack the type into standard form.
 	--	If we hit any loops through the value type portion of the
@@ -138,6 +141,8 @@ extractType_pack final varT cid tTrace
 
 extractType_more final varT cid tPack
  = do	
+	-- This needs to die -------------------------------------------------------
+	
 	-- Strengthen more-than constraints. 
 	-- In a type like
 	--	fun 	:: ((a -(!e1)> b) -(!e2)> c)
@@ -147,6 +152,18 @@ extractType_more final varT cid tPack
 	--	the constraint on !e2 is listed as :> !{ Read %r1; !e1} but it can only
 	--	ever actually be = !{ Read %r1; !e1 } because it doesn't appear in a 
 	--	contra-variant position in the shape of the type.
+
+	-- BREAKAGE: The result from strengthing above is
+	--	fun 	:: ((a -(!e1)> b) -(!e2)> c)
+	--		:- !e1 :> !e2
+	--		,  !e2 =  !{ Read %r1; !e1 }
+	--
+	--	The trouble is that with higher order examples, the !e2 variable
+	--	can end up in a parameter position.
+	--
+	--	We can probably hack around this problem by converting all eq constraints
+	--	to more-than constraints in the feeder.
+	
 	trace	$ ppr " -- strengthening :> constraints\n"
 
 	-- first work out what effect and closure vars are are represent parameters
@@ -165,11 +182,17 @@ extractType_more final varT cid tPack
 	trace	$ "    tStrong\n"
 		%> prettyTypeSplit tStrong	% "\n\n"
 
+	-----------------------------------------------------------------------
+	let tHere	= tStrong	-- setting this to tPack makes Order5-2 test work,
+					-- but breaks the Prelude.
+	-----------------------------------------------------------------------
+
+
 	-- Trim closures 
 	trace	$ ppr " -- trimming closures\n"	
 	let tTrim	
-		| isClosure tStrong	= trimClosureC tStrong
-		| otherwise		= trimClosureT tStrong
+		| isClosure tHere	= trimClosureC tHere
+		| otherwise		= trimClosureT tHere
 
 	trace	$ "    tTrim:\n" 	%> prettyTypeSplit tTrim % "\n\n"
 
