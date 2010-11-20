@@ -16,20 +16,13 @@ module Llvm.Runtime.Object
 	, ppObj
 	, structObj
 	, structThunk
-	, pThunk
-
-	, defThunk )
+	, pStructThunk )
 where
-
-import DDC.Main.Error
 
 import Llvm
 import Llvm.Runtime.Struct
 
 import qualified Config.Config		as Config
-
-
-stage = "Llvm.Runtime.Object"
 
 
 -- Types and variables.
@@ -63,47 +56,21 @@ ptrAlign = Just Config.pointerBytes
 
 --------------------------------------------------------------------------------
 
-defThunk :: [LlvmStructField]
-defThunk
- =	[ AField "tag" i32			-- tag
-	, APadTo8If64
-	, AField "funptr" genericFunPtrType	-- function pointer
-	, AField "arity" i32			-- arity
-	, AField "argc" i32			-- arg count
-	, APadTo8If64
-	, AField "args" (LMArray 0 pObj) ]	-- array of arguments
-
-
---------------------------------------------------------------------------------
-
-thunk32 :: LlvmType
-thunk32
- = LMStruct 	[ i32			-- tag
-		, genericFunPtrType	-- function pointer
-		, i32			-- arity
-		, i32			-- args
-		, LMArray 0 pObj	-- Pointer to arguments
-		]
-
-thunk64 :: LlvmType
-thunk64
- = LMStruct 	[ i32			-- tag
-		, genericFunPtrType 	-- function pointer
-		, i32			-- arity
-		, i32			-- args
-		, LMArray 0 pObj	-- Pointer to arguments
-		]
-
-ddcThunk :: LlvmType
+ddcThunk :: LlvmStructDesc
 ddcThunk
- = case Config.pointerBytes of
-	4 -> thunk32
-	8 -> thunk64
-	_ -> panic stage $ "Config.pointerBytes == " ++ show Config.pointerBytes
+ =	mkLlvmStructDesc "Thunk"
+		[ AField "tag" i32			-- tag
+		, APadTo8If64
+		, AField "funptr" genericFunPtrType	-- function pointer
+		, AField "arity" i32			-- arity
+		, AField "argc" i32			-- arg count
+		, APadTo8If64
+		, AField "args" (LMArray 0 pObj) ]	-- array of arguments
+
 
 structThunk :: LlvmType
-structThunk = LMAlias ("struct.Thunk", ddcThunk)
+structThunk = llvmTypeOfStruct ddcThunk
 
-pThunk :: LlvmType
-pThunk = pLift structThunk
+pStructThunk :: LlvmType
+pStructThunk = pLift structThunk
 

@@ -14,8 +14,6 @@ module Llvm.Util
 	, funcVarOfDecl
 	, nameOfFunDecl
 
-	, genericFunPtrType
-
 	, toLlvmType
 	, typeOfString
 	, alignOfType

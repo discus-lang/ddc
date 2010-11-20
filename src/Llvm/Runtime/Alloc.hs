@@ -70,52 +70,39 @@ allocate bytes name typ
 			return	ptr
 
 
--- static inline Obj*	_allocThunk	(FunPtr	func,	UInt airity,	UInt args);
-
 allocThunk :: LlvmVar -> Int -> Int -> LlvmM LlvmVar
-allocThunk funvar arity args
- = do	addAlias	("struct.Thunk", ddcThunk)
+allocThunk funvar arity argc
+ = do	addAlias	("struct.Thunk", structThunk)
 	let size	= sizeOfLlvmType structThunk + arity * sizeOfLlvmType pObj
-	addComment	$ "allocThunk " ++ getName funvar ++ " " ++ show arity ++ " " ++ show args
+	addComment	$ "allocThunk " ++ getName funvar ++ " " ++ show arity ++ " " ++ show argc
 
-	pThunk		<- allocate size "pthunk" pChar
-	addComment	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+	pThunk		<- allocate size "pThunk" pStructThunk
 
-	addComment $	"\noffsetOfIndex structThunk 0 : " ++ show (offsetOfIndex structThunk 0) ++
-			"\noffsetOfIndex structThunk 1 : " ++ show (offsetOfIndex structThunk 1) ++
-			"\noffsetOfIndex structThunk 2 : " ++ show (offsetOfIndex structThunk 2) ++
-			"\noffsetOfIndex structThunk 3 : " ++ show (offsetOfIndex structThunk 3) ++
-			"\n"
+	storeStructRegValue ddcThunk pThunk "tag" tagFixedThunk
 
-	ptag		<- newUniqueNamedReg "ptag" pInt32
-	addBlock	[ Assignment ptag (Cast LM_Bitcast pThunk pInt32)
-			, Store tagFixedThunk ptag ]
-	addComment	"-----------------------"
 	pFunSrc		<- newUniqueNamedReg "pFunSrc" (genericFunPtrType)
-	pDest		<- newUniqueNamedReg "pDest" pChar
-	pFunDest	<- newUniqueNamedReg "pFunDest" (pLift genericFunPtrType)
-	addBlock	[ Assignment pDest (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 1)])
-			, Assignment pFunSrc (Cast LM_Bitcast funvar genericFunPtrType)
-			, Assignment pFunDest (Cast LM_Bitcast pDest (pLift genericFunPtrType))
-			, Store pFunSrc pFunDest ]
-	addComment	"-----------------------"
-	pArity		<- newUniqueNamedReg "pArity" pChar
-	par		<- newUniqueReg pInt32
-	addBlock	[ Assignment pArity (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 2)])
-			, Assignment par (Cast LM_Bitcast pArity pInt32)
-			, Store (i32LitVar arity) par ]
+	addBlock	[ Assignment pFunSrc (Cast LM_Bitcast funvar genericFunPtrType) ]
+	storeStructRegValue ddcThunk pThunk "funptr" pFunSrc
 
-	addComment	"-----------------------"
-	pArgs		<- newUniqueNamedReg "pArgs" pChar
-	parg		<- newUniqueReg pInt32
-	addBlock	[ Assignment pArgs (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 3)])
-			, Assignment parg (Cast LM_Bitcast pArgs pInt32)
-			, Store (i32LitVar args) parg ]
+	storeStructRegValue ddcThunk pThunk "arity" (i32LitVar arity)
+	storeStructRegValue ddcThunk pThunk "argc" (i32LitVar argc)
+
+	if argc > 0
+	  then panic stage "Need to initialize argc"
+	  else return ()
 
 	ret		<- newUniqueNamedReg "allocated.thunk" pObj
 	addBlock	[ Assignment ret (Cast LM_Bitcast pThunk pObj) ]
-	addComment	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
 	return		ret
+
+
+
+storeStructRegValue :: LlvmStructDesc -> LlvmVar -> String -> LlvmVar -> LlvmM ()
+storeStructRegValue desc struct field value
+ = do	let (indx, typ)	= structFieldLookup desc field
+	ptag		<- newUniqueNamedReg field (pLift typ)
+	addBlock	[ Assignment ptag (GetElemPtr True struct [i32LitVar 0, i32LitVar indx])
+			, Store value ptag ]
 
 
 -- | Round up to a multiple of 8.
