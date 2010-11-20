@@ -301,8 +301,6 @@ solveCs	(c:cs)
 			stateInst `modifyRef`
 				Map.insert vUse (InstanceLet vInst vInst tInstVs tScheme)
 
-			trace	$ "    -- inst vars = " % tInstVs % "\n"
-
 			-- The type will be added via a new constraint
 			solveNext
 				$  [CEq src (TVar kValue $ UVar vUse) tInst]

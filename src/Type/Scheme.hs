@@ -54,7 +54,7 @@ generaliseType src varT tCore envCids
 	--
 	let staticRs 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsT tFlat]
 
-	tracel	$ "    staticRs    = " 		% staticRs
+	tracel	$ "    staticRs           = " 	% staticRs
 
 	-- Can't generalise cids which are under mutable constructors.
 	-- ... if we generalise these classes then we could update an object at one 
@@ -72,7 +72,7 @@ generaliseType src varT tCore envCids
 			, Set.fromList staticRs
 			, Set.fromList staticRsDanger]
 
-	tracel	$ "    staticCids       = "	% staticCids
+	tracel	$ "    staticCids         = "	% staticCids
 
 
 	-- Rewrite non-static cids to the var for their equivalence class.
@@ -172,6 +172,8 @@ generaliseType src varT tCore envCids
 
 	mapM_ (checkSchemeAgainstSig tPlugged) pbSigs
 
+	-- We used the plugged type for checking against sigs,
+	-- but we're just returning the scheme type.
 	return	tScheme
 
 
