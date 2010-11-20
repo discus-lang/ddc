@@ -9,16 +9,6 @@ succ :: Int -> Int;
 succ x = x + 1;
 
 
-printSucc :: Int -> Int
-printSucc x
- = do	putStr $ show x
-	x
-
-sameType :: a -> a -> a
-sameType x y 
- = if True then x else y
-
-
 -- danio is a second order function
 danio g	= g 5;
 
