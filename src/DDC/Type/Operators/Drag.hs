@@ -44,22 +44,22 @@ dragT cidsNoDrag tt
 	
 
 dragCrs :: Set Type -> Constraints -> Constraints
-dragCrs cidsNoDrag (Constraints crsEq crsMore crsOther)
+dragCrs tsNoDrag (Constraints crsEq crsMore crsOther)
  = let	
 	-- Can't drag any constraints that appear on the right of eq constraints.
-	cidsEqRight	= Set.unions 
+	tsEqRight	= Set.unions 
 			$ map freeTClasses
 			$ Map.elems crsEq
 
 	-- Partition the :> constraints into the ones we're going to keep vs the ones
 	-- we're going to inline.
-	cidsLeave	= Set.union cidsNoDrag cidsEqRight
+	tsLeave	= Set.union tsNoDrag tsEqRight
 	(crsLeave, crsSub)
-			= Map.partitionWithKey (\k _ -> Set.member k cidsLeave)
+			= Map.partitionWithKey (\k _ -> Set.member k tsLeave)
 			$ crsMore
 
 	-- Inline constraints into the ones we're keeping.
-	crsLeave'	= Map.map (dragMore crsSub) crsLeave
+	crsLeave'	= Map.map (dragMore tsNoDrag crsSub) crsLeave
 				
    in{-	trace (pprStrPlain 
 		$ vcat	[ "tsSub   = " % crsSub
@@ -67,15 +67,18 @@ dragCrs cidsNoDrag (Constraints crsEq crsMore crsOther)
 	 $-} Constraints crsEq crsLeave' crsOther
 	
 
-dragMore :: Map Type Type -> Type -> Type
-dragMore tsSub t2
-	= transformT (dragVar tsSub) t2
+dragMore :: Set Type -> Map Type Type -> Type -> Type
+dragMore tsNoDrag tsSub t2
+	= transformT (dragVar tsNoDrag tsSub) t2
 	
-dragVar tsSub tt
+dragVar tsNoDrag tsSub tt
  = case tt of
-	(TVar k _)
- 	  |  Just tt'	<- Map.lookup tt tsSub
- 	  -> makeTSum k [tt, dragMore tsSub tt']
+	TVar k _
+	  |  not $ Set.member tt tsNoDrag
+ 	  ,  Just tt'	<- Map.lookup tt tsSub
+ 	  -> makeTSum k 
+		[ tt
+		, dragMore (Set.insert tt tsNoDrag) tsSub tt']
 
 	_ -> tt
 

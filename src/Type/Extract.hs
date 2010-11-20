@@ -108,10 +108,10 @@ extractType_pack final varT cid tTrace
  = do	-- Drag local more-than constraints into their use sites.
 	-- TODO: We want to do separate dragging when we take out the
 	--       strengthener, but it's looping ATM so I've disabled it.
---	trace	$ ppr " -- dragging more-than constraints\n"	
---	let tDragged	= dragT Set.empty tTrace
---	trace	$ "  tDragged:\n" 	%> prettyTypeSplit tDragged % "\n\n"
-	let tDragged	= tTrace
+	trace	$ ppr " -- dragging more-than constraints\n"	
+	let tDragged	= dragT Set.empty tTrace
+	trace	$ "  tDragged:\n" 	%> prettyTypeSplit tDragged % "\n\n"
+--	let tDragged	= tTrace
 
 	-- Pack the type into standard form.
 	--	If we hit any loops through the value type portion of the
