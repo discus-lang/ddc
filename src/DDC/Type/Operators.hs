@@ -15,6 +15,9 @@ module DDC.Type.Operators
 	-- * Cutting loops
 	, cutLoopsT
 
+	-- * Dragging
+	, dragT
+
 	-- * Elaboration
 	, elaborateRsT
 	, elaborateEffT
@@ -70,6 +73,7 @@ import DDC.Type.Operators.Beautify
 import DDC.Type.Operators.Context
 import DDC.Type.Operators.Crush
 import DDC.Type.Operators.CutLoops
+import DDC.Type.Operators.Drag
 import DDC.Type.Operators.Elaborate
 import DDC.Type.Operators.Finalise
 import DDC.Type.Operators.Fixup

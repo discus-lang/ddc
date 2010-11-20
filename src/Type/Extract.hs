@@ -105,11 +105,16 @@ extractType_fromClass final varT cid
 	
 	
 extractType_pack final varT cid tTrace
- = do	-- Pack the type into standard form.
+ = do	-- Drag local more-than constraints into their use sites.
+	trace	$ ppr " -- dragging more-than constraints\n"	
+	let tDragged	= dragT Set.empty tTrace
+	trace	$ "  tDragged:\n" 	%> prettyTypeSplit tDragged % "\n\n"
+		
+	-- Pack the type into standard form.
 	--	If we hit any loops through the value type portion of the
 	--	graph then mark then with TError constructors.
 	trace	$ ppr " -- packing into standard form\n"	
-	let tPack	= packAndMarkLoopsT tTrace
+	let tPack	= packAndMarkLoopsT tDragged
 
 	-- Look for TErrors in the packed type
 	let tsLoops	= [ (t1, t2) 
