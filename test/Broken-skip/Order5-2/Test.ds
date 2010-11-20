@@ -1,4 +1,7 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
+import Base
+effect !Console :: !
 
 -- succ is a first order function
 -- succ :: Int -> Int
@@ -25,7 +28,7 @@ foreign import succ2succ
         :$ Thunk -> Data;
 
 
--- tetra is a fourth order function
+-- perch is a fourth order function
 --    its argument is a third order function
 --    will apply this argument to a second order function
 perch p 
@@ -36,11 +39,35 @@ perch p
 
 	5
 
+{-
+foreign import perch
+        :: forall %r0 %r1 %r2 %r3 !e1 $c0 $c1 $c2
+        .  (((Int32 %r3 -(!e1 $c0)> Int32 %r1) -(!e1 $c1)> Int32 %r1) -(!e2 $c2)> Int32 %r2) -(!e0)> Int32 %r0
+        :- !e0 =  !Read %r1 + !e1
+        ,  !e2 =  !e1 + !Read %r1
+        ,  !e1 :> !Read %r3
+
+foreign import perch
+        :: forall %r0 %r1 %r2 %r3 %r4 !e2 !e1 !e0 $c0 $c1 $c2
+        .  (((Int32 %r4 -(!e2 $c0)> Int32 %r2) -(!e2 $c1)> Int32 %r2) -(!e1 $c2)> Int32 %r3) -(!e0)> Int32 %r1
+        :- !e0 :> !e1 + !Read %r0
+        ,  !e1 :> !e2 + !Read %r2
+        ,  !e2 :> !Read %r4
+
+-}
+
 
 -- ignores its argument and prints to the console.
-printSome f 
+{-printSome f 
  = do 	print "dude"
 	23
+-}
+foreign import printSome
+        :: forall t0 %r0
+        .  t0 -(!e0)> Int32 %r0
+        :- !e0 =  !Console
+        :$ Obj -> Data;
+        
 
 thing _ = perch printSome
 
