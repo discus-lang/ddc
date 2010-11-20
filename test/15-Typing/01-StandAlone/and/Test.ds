@@ -1,0 +1,11 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Base
+
+(&&) a b
+ = case a of 
+	False	-> False
+	_	-> case b of 
+			True	-> True
+			_	-> False
+
