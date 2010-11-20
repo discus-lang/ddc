@@ -109,7 +109,7 @@ extractType_pack final varT cid tTrace
 	trace	$ ppr " -- dragging more-than constraints\n"	
 	let tDragged	= dragT Set.empty tTrace
 	trace	$ "  tDragged:\n" 	%> prettyTypeSplit tDragged % "\n\n"
-		
+
 	-- Pack the type into standard form.
 	--	If we hit any loops through the value type portion of the
 	--	graph then mark then with TError constructors.

@@ -6,6 +6,7 @@ where
 import DDC.Type.Collect.FreeTVars
 import DDC.Type.Compounds
 import DDC.Type.Exp
+import DDC.Type.Transform
 import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Data.Set	as Set
@@ -67,14 +68,8 @@ dragCrs cidsNoDrag (Constraints crsEq crsMore crsOther)
 	
 
 dragMore :: Map Type Type -> Type -> Type
-dragMore tsSub t2@TVar{}
- 	= dragVar tsSub t2
-	
-dragMore tsSub (TSum k ts)
- 	= makeTSum k (map (dragVar tsSub) ts)
-
-dragMore _ t2
-	= t2
+dragMore tsSub t2
+	= transformT (dragVar tsSub) t2
 	
 dragVar tsSub tt
  = case tt of
