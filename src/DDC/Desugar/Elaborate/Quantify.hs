@@ -83,8 +83,9 @@ staticVarsFromSigsOfGlob
 staticVarsFromSigsOfGlob glob
  = let	(vssMaterial, errssMaterial)
 		= unzip
-		$ map (\p@PTypeSig{} 
-			-> let	Just v	= takeHead $ topTypeSigVars p
+		$ map (\p
+			-> let	PTypeSig{}	= p
+			   	Just v		= takeHead $ topTypeSigVars p
 			   in	materialRegionsT v (topTypeSigType p))
 		$ concat
 		$ Map.elems $ globTypeSigs glob

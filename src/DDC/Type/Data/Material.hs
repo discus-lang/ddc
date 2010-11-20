@@ -132,7 +132,8 @@ materialVarsOfType1 dataDefs (crs, tt)
 					$ Map.elems 
 					$ dataDefCtors dataDef
 
-			tsParamsInst	= map	(\(Just t) -> t) 
+			Just tsParamsInst	
+					= sequence
 					$ map	(flip instantiateT tsArgs)
 						ctorParams
 
@@ -182,9 +183,10 @@ immaterialVarsOfType1 dataDefs (crs, tt)
 				$ Map.elems 
 				$ dataDefCtors dataDef
 
-		tsParamsInst	= map	(\(Just t) -> t) 
-				$ map	(flip instantiateT tsArgs)
-					ctorParams
+		Just tsParamsInst	
+			= sequence
+			$ map	(flip instantiateT tsArgs)
+				ctorParams
 
 	  in	( Set.empty 
 		, zip (repeat crs) tsParamsInst)

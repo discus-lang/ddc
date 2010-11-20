@@ -100,7 +100,7 @@ toCoreP p
 	D.PClassDecl _ vClass cts sigs
 	 -> do	let sigs'	= [(v, toCoreT t) | (v, t) <- sigs]
 
-		let vks'	= map (\(T.TVar k (T.UVar v')) -> (v', k))
+		let vks'	= map (\tt -> let T.TVar k (T.UVar v') = tt in (v', k))
 				$ map toCoreT cts
 
 		return	[C.PClassDict vClass vks' sigs']

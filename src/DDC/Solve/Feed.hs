@@ -316,7 +316,7 @@ addFetter src (FConstraint v ts)
 		, classSource	= src }
 
 	-- work out what cids this constraint is acting on
-	let cids'	= map (\(TVar _ (UClass cid)) -> cid) ts'
+	let cids'	= map (\tt -> let TVar _ (UClass cid) = tt in cid) ts'
 	
 	-- add a reference to this constraint to all those classes
 	mapM	(\cid -> modifyClass cid

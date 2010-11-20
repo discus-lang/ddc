@@ -1,6 +1,6 @@
-{-# OPTIONS -fglasgow-exts -cpp #-}
+{-# OPTIONS  -cpp #-}
 {-# LINE 2 "src/Source/Lexer.x" #-}
- 
+{-# LANGUAGE BangPatterns, MagicHash #-}
 {-# OPTIONS 
 	-fno-warn-monomorphism-restriction 
 	-fno-warn-unused-binds

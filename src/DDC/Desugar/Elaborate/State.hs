@@ -75,11 +75,11 @@ solveConstraints constraints
 -- | Add a contraint to the state
 addConstraint :: Constraint -> ElabM ()
 addConstraint (Constraint _ v k)
- = do	state	<- get
+ = do	s	<- get
 
- 	case Map.lookup v (stateKinds state) of
+ 	case Map.lookup v (stateKinds s) of
 	 Nothing	
-	  -> do	let state'	= state { stateKinds = Map.insert v k (stateKinds state) }
+	  -> do	let state'	= s { stateKinds = Map.insert v k (stateKinds s) }
 	  	put state'
 		return	()
 		

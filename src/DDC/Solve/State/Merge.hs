@@ -50,7 +50,7 @@ mergeClasses cids_
 	Just cs	<- liftM sequence  $ mapM lookupClass cids
 			
 	-- Make sure all the classes have the same kind	
-	let ks	= map (\Class { classKind } -> classKind) cs
+	let ks	= map (\c -> let Class { classKind } = c in classKind) cs
 	
 	case nub ks of
 	 []		-> panic stage $ "mergeClasses: empty list"

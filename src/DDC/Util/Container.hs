@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-{-# OPTIONS -fglasgow-exts #-}
 
 -- | An interface to the common operations supported by all container types.
 module DDC.Util.Container

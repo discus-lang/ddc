@@ -109,17 +109,17 @@ initCSlurpS
 
 -- | Add a DatDef to the slurper state
 addDataDefToState :: DataDef -> CSlurpS -> CSlurpS
-addDataDefToState dataDef state
- = state	{ stateDataDefs	= Map.insert 
-					(dataDefName dataDef)
-					dataDef
-					(stateDataDefs state)
+addDataDefToState dataDef s
+ = s	{ stateDataDefs	= Map.insert 
+				(dataDefName dataDef)
+				dataDef
+				(stateDataDefs s)
 
-		, stateCtorData	= Map.union 
-					(stateCtorData state)
-					(Map.fromList $ zip
-						(Map.keys  $ dataDefCtors dataDef)
-						(repeat    $ dataDefName  dataDef)) }
+	, stateCtorData	= Map.union 
+				(stateCtorData s)
+				(Map.fromList $ zip
+					(Map.keys  $ dataDefCtors dataDef)
+					(repeat    $ dataDefName  dataDef)) }
 
 
 -- | Lookup the data type definition containing a given data constructor

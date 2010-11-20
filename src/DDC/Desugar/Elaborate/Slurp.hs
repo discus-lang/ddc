@@ -32,7 +32,8 @@ slurpConstraint pp
 	 -> [Constraint (KSSig sp) v k]
 
 	PClassDecl sp _ ts _
-	 -> map (\(TVar k (UVar v)) -> Constraint (KSClass sp) v (defaultKind v k)) ts
+	 -> map (\t -> 	let TVar k (UVar v)	= t
+			in   Constraint (KSClass sp) v (defaultKind v k)) ts
 
  	PData sp def@(DataDef{})
 	 -> let	k	= dataDefKind def

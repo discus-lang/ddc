@@ -138,7 +138,7 @@ slurpW	(WConLabel _ vCon lvs)
 	
 	-- Instantiate each of the vars in the data type.
 	vsInst		<- mapM newVarZ $ map fst vksParam
-	let ksInst	=  map (\(Just k) -> k) $ map (kindOfSpace . varNameSpace) vsInst
+	let Just ksInst	=  sequence $ map (kindOfSpace . varNameSpace) vsInst
 	let tsInst	=  zipWith TVar ksInst $ map UVar vsInst
 	
 	-- This is the type the pattern must be.

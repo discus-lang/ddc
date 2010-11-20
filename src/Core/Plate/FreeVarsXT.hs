@@ -8,15 +8,16 @@ module Core.Plate.FreeVarsXT
 	, takeTypeOfFree, isFreeT
 	, takeVarOfFree)
 where
-
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
+import DDC.Main.Error
 import Data.Map			(delete, unions, union, empty, singleton)
 import Util			hiding ((\\), delete, union)
 import qualified Data.Map 	as Map
 import qualified Data.Set	as Set
 
+stage = "Core.Plate.FreeVarsXT"
 
 -- | Holds a type or a kind.
 data FreeXT
@@ -58,9 +59,10 @@ instance FreeVarsXT Kind where
 instance FreeVarsXT Type where
  freeVarsXT tt
 	= Map.fromList
-	$ map (\t@(TVar _ b) 
-		-> let Just v = takeVarOfBound b 
-		   in  (v, FreeT t))
+	$ map (\t -> case t of
+			TVar _ b
+			 | Just v <- takeVarOfBound b 	->  (v, FreeT t)
+			_ -> panic stage $ "freeVarsXT: no match")
 	$ filter isSomeTVar
 	$ Set.toList
 	$ freeTVars tt

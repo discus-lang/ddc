@@ -3,13 +3,13 @@
 war_hs	= $(shell find tools/war -name "*.hs") $(shell find src/Util -name "*.hs")
 
 bin/war : $(war_hs)
-	$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -fglasgow-exts -threaded -fglasgow-exts \
+	$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -threaded  \
 		-isrc -itools/war --make tools/war/Main.hs -o bin/war
 
 # -- The new driver program (in development)
 war3_hs	= $(shell find tools/war3 -name "*.hs") $(shell find src/Util -name "*.hs")
 bin/war3 : $(war3_hs)
-	$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -fglasgow-exts -threaded -fglasgow-exts \
+	$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -threaded \
 		-isrc -itools/war3 --make tools/war3/Main.hs -o bin/war3
 
 

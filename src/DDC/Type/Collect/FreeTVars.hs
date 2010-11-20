@@ -11,6 +11,7 @@ module DDC.Type.Collect.FreeTVars
 	, freeTVars)
 where
 import DDC.Type.Exp
+import DDC.Type.Compounds
 import DDC.Type.Predicates
 import Data.Set			(Set)
 import qualified Data.Map 	as Map
@@ -33,7 +34,7 @@ freeTClassVars xx
 -- | Collect cids that appear in bound positions in this thing.
 freeCids :: FreeTVars a => a -> Set ClassId
 freeCids xx
-	= Set.map (\(TVar _ (UClass cid)) -> cid)
+	= Set.map (\t -> let Just cid = takeTClass t in cid)
 	$ Set.filter isTClass
 	$ freeTVars xx
 

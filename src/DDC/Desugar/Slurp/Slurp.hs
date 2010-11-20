@@ -103,7 +103,8 @@ slurpTree blessMain hTree sTree
 --
 makeMethodType vClass tsParam _ tSig
  = 	-- add a forall for each of the parameters of the type class
-   let	bksParam	= map (\(TVar k (UVar v)) -> (BVar v, k)) tsParam
+   let	bksParam	= map (\t -> let TVar k (UVar v) = t 
+ 				     in (BVar v, k)) tsParam
 
 	-- add the enclosing class constraint
    in	makeTForall_front bksParam

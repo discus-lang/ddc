@@ -49,7 +49,7 @@ checkInstances1 errs cls
 	
 checkFetter cls errs f@(FConstraint vClass tsArg)
  = do	trace	$ "*   checkFetter: checking " % f % "\n"
-	let cidsArg	= map (\(TVar _ (UClass cid)) -> cid) tsArg
+	let cidsArg	= map (\tt -> let TVar _ (UClass cid) = tt in cid) tsArg
 	
 	-- extract the types for the constraint params
 	Just tsArg_ex	<- liftM sequence

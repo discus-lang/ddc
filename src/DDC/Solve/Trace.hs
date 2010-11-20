@@ -455,14 +455,14 @@ runTraceAsSquid comp
  = do	graph		<- getsRef stateGraph
 	let classes	=  graphClass graph
 
-	let state	= TraceS
+	let s		= TraceS
 			{ stateClasses		= classes
 			, stateCidsVisited	= Set.empty
 			, stateAccEq		= Map.empty
 			, stateAccMore		= Map.empty
 			, stateAccOther		= Seq.empty }
 			
-	liftIO (evalStateT comp state)
+	liftIO (evalStateT comp s)
 
 
 	

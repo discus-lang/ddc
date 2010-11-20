@@ -256,7 +256,7 @@ prettyValuePos :: Var -> String
 prettyValuePos var
 	= fromMaybe "?"
 	$ liftM (Var.prettyPos)
-	$ liftM (\(IValueVar v) -> v)
+	$ liftM (\info -> let IValueVar v = info in v)
 	$ find  (=@= IValueVar{}) 
 	$ varInfo var
 
