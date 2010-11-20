@@ -46,7 +46,8 @@ dumpCT flag name sourceTree
  	when (elem flag ?args)
   	 (writeFile 
 		(?pathSourceBase ++ ".dump-" ++ name ++ ".dc")
-		(concat $ map (pprStr pprMode)
+		(pprStr pprMode
+			$ vcat
 			$ sourceTree))
 	
 	return ()

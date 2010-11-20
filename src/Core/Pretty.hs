@@ -41,7 +41,7 @@ instance Pretty Top PMode where
   = case xx of
 	PBind v e
 	 -> v % "\n"
-		% " =      " %> e  % ";\n"
+		% " =      " %> e  % ";\n\n"
 
 	PExtern v (TSum k []) tv
 	 | k == kValue
