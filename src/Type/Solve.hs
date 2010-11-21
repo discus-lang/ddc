@@ -21,7 +21,6 @@ import DDC.Constraint.Util
 import DDC.Constraint.Exp
 import DDC.Type.Data
 import DDC.Type
-import DDC.Var
 import DDC.Main.Error
 import Util
 import System.IO
@@ -66,7 +65,6 @@ solveFeedSig (ProbSig v sp mode tSig)
 	
 	trace	$ vcat
 		[ "### CSig  "	% v
-		, "    name:\n" %  (show $ varNameSpace v)
 		, "    tSig:\n" %> prettyTypeSplit tSig 
 		]
 
@@ -79,7 +77,7 @@ solveFeedSig (ProbSig v sp mode tSig)
 	-- 	as we're only using information in the sig for guiding 
 	-- 	projection resolution.
 	let tSig_body	= stripFWheresT tSig_inst
-	trace	$ "    tSig_body:\n" %> prettyTypeSplit tSig_body % "\n\n"
+--	trace	$ "    tSig_body:\n" %> prettyTypeSplit tSig_body % "\n\n"
 
 	-- Add the constraints to the graph and continue solving.
 	feedConstraint (CEq 	(TSV $ SVSig sp v)
