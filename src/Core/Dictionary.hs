@@ -183,8 +183,13 @@ rewriteAppX_withInstance env xxUse
 			$ unifyTT tInstBody tUseBody
 
 	-- BUGS: We're discarding constraints between effect and closure sums here...
-	subArgs		= [(v1, t2)	| (TVar _ (UVar v1), t2)	<- sub]
-
+	subArgs		= catMaybes
+			$ map (\tt -> case tt of
+					(TVar _ (UVar  v1),   t2)	-> Just (v1, t2)
+					(TVar _ (UMore v1 _), t2)	-> Just (v1, t2)
+					_				-> Nothing)
+			$ sub
+	
 	-- Look at the quantifiers on the front of the scheme for the instance
 	(vksQuant, _)	= slurpQuantVarsT tInstScheme
 	tsInstTypeArgsPoly		
