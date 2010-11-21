@@ -72,7 +72,7 @@ allocate bytes name typ
 
 allocThunk :: LlvmVar -> Int -> Int -> LlvmM LlvmVar
 allocThunk funvar arity argc
- = do	addAlias	("struct.Thunk", structThunk)
+ = do	addAlias	("struct.Thunk", llvmTypeOfStruct ddcThunk)
 	let size	= sizeOfLlvmType structThunk + arity * sizeOfLlvmType pObj
 	addComment	$ "allocThunk " ++ getName funvar ++ " " ++ show arity ++ " " ++ show argc
 
@@ -88,7 +88,7 @@ allocThunk funvar arity argc
 	storeStructRegValue ddcThunk pThunk "argc" (i32LitVar argc)
 
 	if argc > 0
-	  then panic stage "Need to initialize argc"
+	  then addComment "Thunk's args array does not need to be initialized."
 	  else return ()
 
 	ret		<- newUniqueNamedReg "allocated.thunk" pObj

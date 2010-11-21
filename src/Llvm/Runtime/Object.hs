@@ -69,7 +69,7 @@ ddcThunk
 
 
 structThunk :: LlvmType
-structThunk = llvmTypeOfStruct ddcThunk
+structThunk = LMAlias ("struct.Thunk", llvmTypeOfStruct ddcThunk)
 
 pStructThunk :: LlvmType
 pStructThunk = pLift structThunk
