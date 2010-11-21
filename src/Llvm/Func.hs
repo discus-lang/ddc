@@ -9,7 +9,6 @@ import DDC.Sea.Pretty
 import Llvm
 import Llvm.Runtime.Object
 import Llvm.Util
-import Llvm.Var
 
 
 funcDeclOfExp :: Exp a -> LlvmFunctionDecl
@@ -34,7 +33,7 @@ funcDeclOfExp (XVar (NSuper v) rt@(TPtr (TCon TyConObj)))
 funcDeclOfExp (XVar (NSuper v) t@(TFun at rt))
  = LlvmFunctionDecl {
 	decName = seaVar False v,
-	funcLinkage = if isGlobalVar v then External else Internal,
+	funcLinkage = External,
 	funcCc = CC_Ccc,
 	decReturnType = toLlvmType rt,
 	decVarargs = FixedArgs,

@@ -112,7 +112,8 @@ llvmOfXPrim (MApp PAppApply) ((fptr@(XVar n t)):args)
 
 llvmOfXPrim (MAlloc (PAllocThunk v t arity argc)) args
  | length args <= argc
- =	allocThunk (toLlvmGlobalVar v t) arity argc
+ = do	addGlobalFuncDecl $ funcDeclOfExp (XVar (NSuper v) t)
+	allocThunk (toLlvmGlobalVar v t) arity argc
 
 
 llvmOfXPrim op args
