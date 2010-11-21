@@ -20,6 +20,8 @@ import qualified Data.Set	as Set
 --
 --	We can also erase Const/Mutable Lazy/Direct constraints because these will be
 --	fulfilled by the letregion construct used to locally create the region.
+--	However, we 
+--
 --
 maskLocalT :: Set Type -> Type -> Type
 maskLocalT tsVis tt

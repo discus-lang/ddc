@@ -6,9 +6,11 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Collect.FreeTVars
 import DDC.Type.Pretty	()
 import Data.Set			(Set)
 import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 stage	= "DDC.Type.Collect.Visible"
 
@@ -22,9 +24,16 @@ stage	= "DDC.Type.Collect.Visible"
 visibleRsT :: Type -> Set Type
 visibleRsT tt
  = case tt of
-	TForall _ _ t	-> visibleRsT t
-	TConstrain t _  -> visibleRsT t
-	TSum _ ts	-> Set.unions $ map visibleRsT ts
+	TForall _ _ t	 -> visibleRsT t
+
+	-- Treat all vars in more-than constraints as visible.
+	TConstrain t crs 
+	 -> Set.unions 
+		( visibleRsT t
+		: (map freeTVars $ Map.elems $ crsMore crs))
+
+
+	TSum _ ts	 -> Set.unions $ map visibleRsT ts
 
 	TVar k _
 	 | k == kRegion	-> Set.singleton tt
