@@ -11,6 +11,7 @@ module Llvm.Runtime
 	, module Llvm.Runtime.Boxing
 	, module Llvm.Runtime.Data
 	, module Llvm.Runtime.Error
+	, module Llvm.Runtime.Main
 	, module Llvm.Runtime.Object
 	, module Llvm.Runtime.Slot
 	, module Llvm.Runtime.Struct
@@ -27,6 +28,7 @@ import Llvm.Runtime.Apply
 import Llvm.Runtime.Boxing
 import Llvm.Runtime.Data
 import Llvm.Runtime.Error
+import Llvm.Runtime.Main
 import Llvm.Runtime.Object
 import Llvm.Runtime.Slot
 import Llvm.Runtime.Struct

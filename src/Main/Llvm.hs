@@ -82,7 +82,7 @@ compileViaLlvm
 
 	outVerb $ ppr $ "  * Generating LLVM IR code\n"
 
-	llvmSource	<- evalStateT (outLlvm modName eTree pathSource) initLlvmState
+	llvmSource	<- evalStateT (outLlvm modName eTree pathSource importsExp modDefinesMainFn) initLlvmState
 
 	writeFile (?pathSourceBase ++ ".ddc.ll")
 			$ ppLlvmModule llvmSource
@@ -99,9 +99,11 @@ outLlvm
 	=> ModuleId
 	-> (Tree ())		-- sea source
 	-> FilePath		-- path of the source file
+	-> Map ModuleId [a]
+	-> Bool			-- is main module
 	-> LlvmM LlvmModule
 
-outLlvm moduleName eTree pathThis
+outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
  = do
 	-- Break up the sea into parts.
 	let 	([ 	_seaProtos, 		seaSupers
@@ -133,8 +135,9 @@ outLlvm moduleName eTree pathThis
 
 	mapM_		llvmOfSeaDecls $ eraseAnnotsTree $ seaCafInits ++ seaSupers
 
-	renderModule	comments
+	when modDefinesMainFn $ llvmMainModule moduleName (map fst $ Map.toList importsExp)
 
+	renderModule	comments
 
 
 llvmOfSeaDecls :: Top (Maybe a) -> LlvmM ()
