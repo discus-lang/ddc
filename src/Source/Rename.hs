@@ -765,9 +765,9 @@ instance Rename Type where
 	-- closure
 	TApp{}
 	 | Just (v, t)	<- takeTFree tt
-	 -> do	v'	<- lbindV_bound v
-	 	withLocalScope
-		 $  do	t'	<- rename t
+	 -> do	withLocalScope
+		 $  do	v'	<- lbindV_bound v
+	 		t'	<- rename t
 			let Just clo = makeTFree v' t'
 		 	return clo
 
