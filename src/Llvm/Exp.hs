@@ -111,7 +111,7 @@ llvmOfXPrim (MApp PAppApply) ((fptr@(XVar n t)):args)
 	applyN	func params
 
 llvmOfXPrim (MAlloc (PAllocThunk v t arity argc)) args
- | length args == argc
+ | length args <= argc
  =	allocThunk (toLlvmGlobalVar v t) arity argc
 
 

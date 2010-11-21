@@ -13,6 +13,7 @@ module Llvm.Runtime
 	, module Llvm.Runtime.Error
 	, module Llvm.Runtime.Object
 	, module Llvm.Runtime.Slot
+	, module Llvm.Runtime.Struct
 	, module Llvm.Runtime.Tags )
 where
 
@@ -28,6 +29,7 @@ import Llvm.Runtime.Data
 import Llvm.Runtime.Error
 import Llvm.Runtime.Object
 import Llvm.Runtime.Slot
+import Llvm.Runtime.Struct
 import Llvm.Runtime.Tags
 
 import Llvm.Util

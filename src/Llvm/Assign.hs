@@ -59,6 +59,16 @@ llvmOfAssign (XVar v@NRts{} tv) tc src
  = do	reg		<- llvmOfExp src
 	addBlock	[ Store reg (pVarLift (toLlvmRtsVar (varOfName v) tv)) ]
 
+llvmOfAssign (XArgThunk (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
+ = do	rsrc		<- llvmOfExp src
+	obj		<- readSlot ix
+	thunk		<- newUniqueReg $ pStructThunk
+	let indx	= fst $ structFieldLookup ddcThunk "args"
+	ptr		<- newUniqueReg $ pObj
+
+	addBlock	[ Assignment thunk (Cast LM_Bitcast obj pStructThunk)
+			, Assignment ptr (GetElemPtr True thunk [ i32LitVar 0, i32LitVar indx, i32LitVar i ])
+			, Store rsrc (pVarLift ptr) ]
 
 
 llvmOfAssign a b c
