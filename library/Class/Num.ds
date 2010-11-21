@@ -8,34 +8,36 @@ infixl 6 +, -
 
 class Num a where 
 
-	(+)	:: forall b c
+	(+)	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
 
-	(-)	:: forall b c
+	(-)	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
 
-	(*)	:: forall b c
+	(*)	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
 
-	negate 	:: forall b
-	 	.  a -(!ReadT a)> b
-		:- Shape2 a b
+	negate 	:: forall b !e1 $c1
+	 	.  a -(!e1)> b
+		:- !e1 :> !ReadT a
+		,  Shape2 a b
 
-	abs  	:: forall b
-		.  a -(!ReadT a)> b
-		:- Shape2 a b
+	abs  	:: forall b !e1 $c1
+		.  a -(!e1)> b
+		:- !e1 :> !ReadT a
+		,  Shape2 a b
 			
-	pow 	:: forall b c
+	pow 	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c

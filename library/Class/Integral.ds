@@ -7,26 +7,26 @@ infixl 7  `quot`, `rem`, `div`, `mod`
 
 class Integral a where
 
-	quot	:: forall b c
+	quot	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
 
-	rem	:: forall b c
+	rem	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
 
-	div	:: forall b c
+	div	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
 
-	mod	:: forall b c
+	mod	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
