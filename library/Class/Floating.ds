@@ -5,70 +5,70 @@ import Base
 
 class Floating a where
 
-	ftrunc	:: forall b
+	ftrunc	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	fround	:: forall b
+	fround	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	ffloor	:: forall b
+	ffloor	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	fmod	:: forall b c
+	fmod	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
 
-	fpow	:: forall b c
+	fpow	:: forall b c !e1 $c1
 		.  a -> b -(!e1 $c1)> c
-		:- !e1 = !ReadT a + !ReadT b
-		,  $c1 = ${x : a}
+		:- !e1 :> !ReadT a + !ReadT b
+		,  $c1 :> ${x : a}
 		,  Shape3 a b c
 
-	sqrt	:: forall b
+	sqrt	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	log	:: forall b
+	log	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	sin	:: forall b
+	sin	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	asin	:: forall b
+	asin	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	cos	:: forall b
+	cos	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	acos	:: forall b
+	acos	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	tan	:: forall b
+	tan	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 
-	atan	:: forall b
+	atan	:: forall b !e1
 		.  a -(!e1)> b
-		:- !e1 = !ReadT a
+		:- !e1 :> !ReadT a
 		,  Shape2 a b
 

@@ -5,15 +5,15 @@ import	Base
 
 class Foldable (t :: * -> *) where
 
-	foldr 	:: forall !e0 $c0 !e1 $c1 a b
+	foldr 	:: forall !e0 $c0 !e1 $c1 $c2 !e3 $c3 a b
 		.  (a -(!e0 $c0)> b -(!e1 $c1)> b) -> b -($c2)> t a -(!e3 $c3)> b
-		:- !e3 	= !ReadT (t a) + !e0 + !e1
-		,  $c3	= ${f : $c0} + ${acc : b}
-		,  $c2  = ${f : $c0}
+		:- !e3 	:> !ReadT (t a) + !e0 + !e1
+		,  $c3	:> ${f : $c0} + ${acc : b}
+		,  $c2  :> ${f : $c0}
 
-	foldl 	:: forall !e0 $c0 !e1 $c1 a b
+	foldl 	:: forall !e0 $c0 !e1 $c1 $c2 !e3 $c3 a b
 		.  (a -(!e0 $c0)> b -(!e1 $c1)> a) -> a -($c2)> t b -(!e3 $c3)> a
-		:- !e3 	= !ReadT (t b) + !e0 + !e1
-		,  $c3	= ${f : $c0} + ${acc : a}
-		,  $c2  = ${f : $c0}
+		:- !e3 	:> !ReadT (t b) + !e0 + !e1
+		,  $c3	:> ${f : $c0} + ${acc : a}
+		,  $c2  :> ${f : $c0}
 		

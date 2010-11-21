@@ -5,8 +5,9 @@ import	Data.String
 	Data.Numeric.Float32
 
 class Read a where
- 	read 	:: forall %r
-		.  String %r -(!Read %r)> a
+ 	read 	:: forall %r !e1
+		.  String %r -(!e1)> a
+		:- !e1 :> !Read %r
 
 foreign import "atof"
 	atof :: String# {read} -> Float32#

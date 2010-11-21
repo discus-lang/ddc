@@ -5,13 +5,13 @@ import	Base
 
 class Functor (f :: * -> *) where
 
-	map 	:: forall a b !e1 $c1
+	map 	:: forall a b !e1 $c1 !e2 $c2
 		.  (a -(!e1 $c1)> b) -> f a -(!e2 $c2)> f b
-		:- !e2 = !ReadT (f a) + !e1
-		,  $c2 = ${f : $c1}
+		:- !e2 :> !ReadT (f a) + !e1
+		,  $c2 :> ${f : $c1}
 		
 	-- hrm..
-	map_	:: forall a b !e1 $c1
+	map_	:: forall a b !e1 $c1 !e2 $c2
 		.  (a -(!e1 $c1)> b) -> f a -(!e2 $c2)> ()
-		:- !e2 = !ReadT (f a) + !e1
-		,  $c2 = ${f : $c1}
+		:- !e2 :> !ReadT (f a) + !e1
+		,  $c2 :> ${f : $c1}

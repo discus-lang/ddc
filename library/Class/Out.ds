@@ -6,5 +6,6 @@ import	Base
 
 -- A class to help print things to stdout untill we have real dictionary passing working.
 class Out a where
- out 	:: a -(!e1)> ()
-	:- !e1 = !ReadT a + !Console
+ out 	:: forall !e1
+	.  a -(!e1)> ()
+	:- !e1 :> !ReadT a + !Console
