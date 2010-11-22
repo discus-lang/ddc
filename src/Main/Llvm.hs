@@ -145,7 +145,7 @@ outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
 
 findMainType :: LlvmType -> Top () -> LlvmType
 findMainType _ (PSuper v _ t _)
- | seaVar False v == "Main_main"
+ | varName v == "main"
  = toLlvmType t
 
 findMainType t _
