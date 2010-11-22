@@ -1,4 +1,4 @@
-{-# OPTIONS -fno-warn-type-defaults #-}
+{-# OPTIONS -fno-warn-type-defaults -cpp #-}
 module Llvm.Runtime.Boxing
 	( boxAny	, unboxAny
 
@@ -30,14 +30,17 @@ boxAny any
  = case getVarType any of
 	LMInt 1			-> boxEnum any
 	LMInt 32		-> boxInt32 any
+	LMFloat			-> boxFloat32 any
+	LMDouble		-> boxFloat64 any
 	LMArray _ (LMInt 8)	-> boxString any
-	_			-> panic stage $ "boxAny " ++ show (getVarType any)
+	_			-> panic stage $ "boxAny " ++ show  any
 
 
 unboxAny :: LlvmType -> LlvmVar -> LlvmM LlvmVar
 unboxAny anyType any
  = case anyType of
 	LMInt 32	-> unboxInt32 any
+	LMFloat		-> unboxFloat32 any
 	_		-> panic stage $ "unboxAny " ++ show anyType
 
 --------------------------------------------------------------------------------
@@ -110,14 +113,17 @@ boxEnum v@(LMLocalVar u _)
 --------------------------------------------------------------------------------
 
 boxLit :: LiteralFmt -> LlvmM LlvmVar
-boxLit lit@(LiteralFmt (LInt _) (UnboxedBits _))
- =	boxAny $ llvmVarOfLit lit
-
 boxLit (LiteralFmt (LString s) Unboxed)
  = do	gname		<- newUniqueName "str"
 	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
 	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
 	boxString	svar
+
+boxLit lit@(LiteralFmt _ (UnboxedBits _))
+ =	boxAny $ llvmVarOfLit lit
+
+
+boxLit lit = panic stage $ "boxLit (" ++ show __LINE__ ++ ") " ++ show lit
 
 --------------------------------------------------------------------------------
 
@@ -143,8 +149,37 @@ boxInt64 i
  = panic stage "unimplemented"
 
 boxFloat32 :: LlvmVar -> LlvmM LlvmVar
-boxFloat32 f
- = panic stage "unimplemented"
+boxFloat32 f32
+ = do	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
+	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
+	fptr	<- newUniqueNamedReg "fptr" (pLift LMFloat)
+	objptr	<- allocate 8 "boxed" pObj
+	addBlock
+		[ Comment [ "boxFloat32 (" ++ show f32 ++ ")" ]
+		, Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
+		, Store (tagDataRS 1) iptr0
+		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
+		, Assignment fptr (Cast LM_Bitcast fptr (pLift LMFloat))
+		, Store f32 fptr
+		]
+	return	objptr
+
+unboxFloat32 :: LlvmVar -> LlvmM LlvmVar
+unboxFloat32 objptr
+ | getVarType objptr == pObj
+ = do	f32	<- newUniqueReg LMFloat
+	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
+	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
+	fptr	<- newUniqueNamedReg "fptr" (pLift LMFloat)
+	addBlock
+		[ Comment [ show f32 ++ " = unboxFloat32 (" ++ show objptr ++ ")" ]
+		, Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
+		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
+		, Assignment fptr (Cast LM_Bitcast iptr1 (pLift LMFloat))
+		, Assignment f32 (Load fptr)
+		]
+	return	f32
+
 
 boxFloat64 :: LlvmVar -> LlvmM LlvmVar
 boxFloat64 f

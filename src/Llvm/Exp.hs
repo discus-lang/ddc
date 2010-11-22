@@ -37,8 +37,20 @@ llvmOfExp (XVar n@NAuto{} t)
 llvmOfExp (XPrim op args)
  =	llvmOfXPrim op args
 
+llvmOfExp (XLit (LLit (LiteralFmt (LString s) Unboxed)))
+ = do	gname		<- newUniqueName "str"
+	let name	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
+	addGlobalVar	( name, Just (LMStaticStr s (typeOfString s)) )
+	reg		<- newUniqueReg pChar
+	addBlock	[ Assignment reg (GetElemPtr True (pVarLift name) [ i32LitVar 0, i32LitVar 0 ]) ]
+	return		reg
+
+
 llvmOfExp (XLit (LLit lit))
  = 	return $ llvmVarOfLit lit
+
+llvmOfExp (XLit LNull)
+ = 	return $ nullObj
 
 
 llvmOfExp (XVar n@NSuper{} tv)

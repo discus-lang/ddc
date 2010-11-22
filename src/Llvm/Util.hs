@@ -55,6 +55,14 @@ llvmVarOfLit (LiteralFmt (LInt i) (UnboxedBits bits))
 	32	-> i32LitVar i
 	64	-> i64LitVar i
 
+llvmVarOfLit (LiteralFmt (LFloat f) (UnboxedBits bits))
+ = case bits of
+	32	-> LMLitVar (LMFloatLit f LMFloat)
+	64	-> LMLitVar (LMFloatLit f LMDouble)
+
+llvmVarOfLit x
+ =	panic stage $ "llvmLitVar (" ++ show __LINE__ ++ ")\n" ++ show x
+
 
 uniqueOfLlvmVar :: LlvmVar -> Unique
 uniqueOfLlvmVar (LMLocalVar u LMLabel) = u
@@ -104,6 +112,13 @@ toLlvmType (TCon (TyConUnboxed v))
 	"Bool#"		-> i1
 	"Int32#"	-> i32
 	"Int64#"	-> i64
+	"Float32#"	-> LMFloat
+	"Float64#"	-> LMDouble
+	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
+
+toLlvmType (TCon (TyConAbstract v))
+ = case varName v of
+	"String#"	-> pChar
 	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
 
 toLlvmType (TFun param ret)
@@ -119,8 +134,7 @@ toLlvmType (TFun param ret)
 	))
 
 
-toLlvmType t
- = panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : " ++ show t ++ "\n"
+
 
 
 typeOfString :: String -> LlvmType
