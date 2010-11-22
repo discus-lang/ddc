@@ -135,9 +135,21 @@ outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
 
 	mapM_		llvmOfSeaDecls $ eraseAnnotsTree $ seaCafInits ++ seaSupers
 
-	when modDefinesMainFn $ llvmMainModule moduleName (map fst $ Map.toList importsExp)
+	let mainType	= foldl findMainType LMVoid seaSupers
+
+	when modDefinesMainFn
+			$ llvmMainModule moduleName (map fst $ Map.toList importsExp) mainType
 
 	renderModule	comments
+
+
+findMainType :: LlvmType -> Top () -> LlvmType
+findMainType _ (PSuper v _ t _)
+ | seaVar False v == "Main_main"
+ = toLlvmType t
+
+findMainType t _
+ = t
 
 
 llvmOfSeaDecls :: Top (Maybe a) -> LlvmM ()

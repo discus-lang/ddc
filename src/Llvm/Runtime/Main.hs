@@ -24,8 +24,9 @@ stage = "Llvm.Runtime.Main"
 llvmMainModule :: (?args :: [Arg.Arg])
 	=> ModuleId
 	-> [ModuleId]
+	-> LlvmType
 	-> LlvmM ()
-llvmMainModule modName importsExp
+llvmMainModule modName importsExp mainType
  = do	argc		<- newUniqueNamedReg "argc" i32
 	argv		<- newUniqueNamedReg "argv" $ pLift (pLift i8)
 	let params	= [ argc, argv ]
@@ -40,8 +41,8 @@ llvmMainModule modName importsExp
 	addComment	"Call Main_main."
 
 	if elem Arg.NoImplicitHandler ?args
-	  then callMainDirect modName
-	  else callMainWithHandler modName
+	  then callMainDirect modName mainType
+	  else callMainWithHandler modName mainType
 
 	addComment	"Clean up for the runtime."
 	runtimeCleanup
@@ -77,10 +78,12 @@ runtimeCleanup
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) [] []) ]
 
 
-callMainWithHandler :: ModuleId -> LlvmM ()
-callMainWithHandler modName
+--------------------------------------------------------------------------------
+
+callMainWithHandler :: ModuleId -> LlvmType -> LlvmM ()
+callMainWithHandler modName mainType
  = do	let main	= LlvmFunctionDecl (modNameOfId modName ++ "_main")
-					External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
+					External CC_Ccc mainType FixedArgs [(pObj, [])] ptrAlign
 	let thandle	= LlvmFunctionDecl "Control_Exception_topHandle"
 					External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
 	addGlobalFuncDecl main
@@ -90,13 +93,12 @@ callMainWithHandler modName
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl thandle) [r1] []) ]
 
 
-callMainDirect :: ModuleId -> LlvmM ()
-callMainDirect modName
+callMainDirect :: ModuleId -> LlvmType -> LlvmM ()
+callMainDirect modName mainType
  = do	let main	= LlvmFunctionDecl (modNameOfId modName ++ "_main")
-					External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
+					External CC_Ccc mainType FixedArgs [(pObj, [])] ptrAlign
 	let bunit	= LlvmFunctionDecl "Base_Unit"
 					External CC_Ccc pObj FixedArgs [] ptrAlign
-	addGlobalFuncDecl main
 	addGlobalFuncDecl bunit
 	r1		<- newUniqueReg pObj
 
