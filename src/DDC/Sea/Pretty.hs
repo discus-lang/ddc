@@ -40,7 +40,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	 | otherwise
 	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
-	    in  "data" <> v <> "where\n"
+	    in  "data" %% v %% "where\n"
 	 	% "{\n"
 	 	%> ("\n\n" %!% ctorsList % "\n")
 		% "}\n"
@@ -221,7 +221,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	-- variables
 	XVar name typ
-	 -> ifMode (elem PrettySeaTypes)
+	 -> pprIfMode (elem PrettySeaTypes)
 		(parens $ ppr name % " :: " % ppr typ)
 		(ppr name)
 

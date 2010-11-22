@@ -79,4 +79,5 @@ DDC_PACKAGES	:= \
 	-package haskell-src \
 	-package parsec \
 	-package QuickCheck \
-	-package buildbox
+	-package buildbox \
+	-package text

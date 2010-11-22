@@ -30,15 +30,15 @@ checkTypeI
 checkTypeI n tt env
  = if debugType
     then let !kind
-		= trace (setColumn (n*indenting) % vcat
-			[ ppr (replicate 70 '-') <> "Type" <> n
+		= trace (pprAtColumn (n*indenting) $ vcat
+			[ ppr (replicate 70 '-') %% "Type" %% n
 			, ppr tt ])
 		$ checkType_trace n tt env
 	 in trace 
-		(setColumn (n*indenting) % vcat 
+		(pprAtColumn (n*indenting) $ vcat 
 		[ "kind:   " 	% kind
 		, ppr tt
-		, "--" <> "Type" <> n <> ppr (replicate 70 '-')])
+		, "--" %% "Type" %% n %% ppr (replicate 70 '-')])
 		kind
    else	checkType_trace n tt env
 
@@ -209,15 +209,15 @@ checkKindI :: Int -> Kind -> Env -> (Kind, Super)
 checkKindI n kk env
  = if debugKind
     then let !super
-		= trace (setColumn (n*indenting) % vcat
-			[ ppr (replicate 70 '-') <> "Kind" <> n
+		= trace (pprAtColumn (n*indenting) $ vcat
+			[ ppr (replicate 70 '-') %% "Kind" %% n
 			, ppr kk])
 		$ checkKind_trace n kk env
 	 in trace 
-		(setColumn (n*indenting) % vcat 
+		(pprAtColumn (n*indenting) $ vcat 
 		[ "super:   " 	% super
 		, ppr kk
-		, "--" <> "Kind" <> n <> ppr (replicate 70 '-')])
+		, "--" %% "Kind" %% n %% ppr (replicate 70 '-')])
 		super
    else	checkKind_trace n kk env
 

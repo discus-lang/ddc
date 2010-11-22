@@ -90,18 +90,18 @@ checkExp' :: Int -> Exp -> Env -> (Exp, Type, EffectStore, ClosureStore)
 checkExp' n xx env
  = if debugExp
     then let result@(xx', t, eff, clo)	
-		= trace (setColumn (n*indenting) % vcat
-			[ ppr (replicate 70 '-') <> "Exp" <> n
+		= trace (pprAtColumn (n*indenting) $ vcat
+			[ ppr (replicate 70 '-') %% "Exp" %% n
 			, ppr xx ])
 		$ checkExp_trace n xx env
 
 	 in trace 
-		(setColumn (n*indenting) % vcat 
+		(pprAtColumn (n*indenting) $ vcat 
 		[ "type:   " 	% t
 		, "effect: "	% eff
 		, "closure:\n"	%> ppr clo
 		, ppr xx'
-		, "--" <> "Exp" <> n <> ppr (replicate 70 '-')])
+		, "--" %% "Exp" %% n %% ppr (replicate 70 '-')])
 		result
 
    else	checkExp_trace n xx env
@@ -137,7 +137,7 @@ checkExp_trace m xx env
 	 | varNameSpace v /= NameValue
 	 -> panic stage 
 		$ "checkExp: invalid namespace for variable." 
-		% v <> (show $ varNameSpace v)
+		% v %% (show $ varNameSpace v)
 	
 	 | otherwise
 	 , (t1', k)	<- checkTypeI n t1 env 
@@ -271,7 +271,7 @@ checkExp_trace m xx env
 	 | varNameSpace v1 /= NameValue
 	 -> panic stage
 		$ "checkExp invalid namespace for variable "
-		% v1 <> (show $ varNameSpace v1)
+		% v1 %% (show $ varNameSpace v1)
 		
 	 | otherwise
 	 , (t1', k1)			<- checkTypeI n t1 env

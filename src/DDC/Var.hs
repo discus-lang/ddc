@@ -107,12 +107,12 @@ pprVarSpaced v
 	 -> case varName v of
 	  	(v1:_)
  	 	 | not $ isAlpha v1	
-		 -> ifMode (elem PrettyTypeSpaces)
+		 -> pprIfMode (elem PrettyTypeSpaces)
 		 	("*" % (parens $ pprVarName v))
 			(parens $ pprVarName v)
 
 		 | otherwise		
-		 -> ifMode (elem PrettyTypeSpaces)
+		 -> pprIfMode (elem PrettyTypeSpaces)
 		 	("*" % pprVarName v)
 			(pprVarName v)
 
@@ -134,7 +134,7 @@ pprVarSpaced v
 
 -- | Pretty print a variable name, including its unique binder if requested.
 pprVarName v
- = ifMode (elem PrettyUnique)
+ = pprIfMode (elem PrettyUnique)
  	(varName v % "_" % varId v)
 	(ppr $ varName v)
 

@@ -142,7 +142,7 @@ pprType vsLocal tt
 	TVar k (UIndex ix) -> resultKind k % ix
 
 	TVar k (UMore v t)
-	 -> ifMode (elem PrettyCoreMore)
+	 -> pprIfMode (elem PrettyCoreMore)
 	 	(if k == kValue 
 			then	parens $ "*" % v % " :> " % pprType vsLocal t 
 			else	parens $       v % " :> " % pprType vsLocal t)
@@ -175,9 +175,9 @@ pprFunResult vsLocal tt
 
 
 -- | Pretty print a variable with its kind.
-pprVarKind :: Set Var -> Var -> Kind -> PrettyM PMode
+pprVarKind :: Set Var -> Var -> Kind -> Str
 pprVarKind vsLocal v k
- = ifMode 
+ = pprIfMode 
  	(elem PrettyTypeKinds)
 	(if kindOfSpace (varNameSpace v) == Just k
 		then pprVar vsLocal v
@@ -187,9 +187,9 @@ pprVarKind vsLocal v k
 
 
 -- | Pretty print a binder with its kind.
-pprBindKind :: Bind -> Kind -> PrettyM PMode
+pprBindKind :: Bind -> Kind -> Str
 pprBindKind bb k
- = ifMode 
+ = pprIfMode 
 	(\mode -> elem PrettyTypeKinds mode || interesting)
 	(pprBindWithKind True bb k)
 	(pprBindWithKind False bb k)
@@ -202,7 +202,7 @@ pprBindKind bb k
 	 = False
 	
 
-pprBindWithKind :: Bool -> Bind -> Kind -> PrettyM PMode
+pprBindWithKind :: Bool -> Bind -> Kind -> Str
 pprBindWithKind withKind bb k 
  = case bb of
 	BNil		-> "_ :: " % k
@@ -231,7 +231,7 @@ prettyTypeParens = pprTypeParens Set.empty
 
 
 -- | Pretty print a type with the fetters on their own lines.
-prettyTypeSplit :: Type	-> PrettyM PMode
+prettyTypeSplit :: Type	-> Str
 prettyTypeSplit	tt
  = case tt of
  	TForall{}
@@ -400,35 +400,35 @@ pprTyCon vsLocal p
 	 -> ppr "(->)"
 
 	TyConData { tyConName, tyConDataKind }	
-	  -> ifMode (elem PrettyTypeKinds)
+	  -> pprIfMode (elem PrettyTypeKinds)
  		(parens $ tyConName 
 			% " :: " 
 			% tyConDataKind)
 		(pprVar vsLocal tyConName)
 	
 	TyConEffect { tyConEffect, tyConEffectKind }
-	  -> ifMode (elem PrettyTypeKinds)
+	  -> pprIfMode (elem PrettyTypeKinds)
  		(parens $ tyConEffect 
 			% " :: " 
 			% tyConEffectKind)
 		(ppr tyConEffect)
 
 	TyConClosure { tyConClosure, tyConClosureKind }
-	  -> ifMode (elem PrettyTypeKinds)
+	  -> pprIfMode (elem PrettyTypeKinds)
  		(parens $ tyConClosure
 			% " :: " 
 			% tyConClosureKind)
 		(ppr tyConClosure)
 
 	TyConWitness { tyConWitness, tyConWitnessKind}	
-	 -> ifMode (elem PrettyTypeKinds)
+	 -> pprIfMode (elem PrettyTypeKinds)
  		(parens $ ppr tyConWitness 
 			% " :: " 
 			% tyConWitnessKind)
 		(ppr tyConWitness)
 
 	TyConElaborate { tyConElaborate, tyConElaborateKind}	
-	 -> ifMode (elem PrettyTypeKinds)
+	 -> pprIfMode (elem PrettyTypeKinds)
  		(parens $ ppr tyConElaborate 
 			% " :: " 
 			% tyConElaborateKind)

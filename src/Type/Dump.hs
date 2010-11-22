@@ -17,7 +17,7 @@ import qualified Data.Set	as Set
 
 
 -- | dump the type graph
-dumpGraph ::	SquidM (PrettyM PMode)
+dumpGraph :: SquidM Str
 dumpGraph
  = do
 	school		<- getsRef stateGraph
@@ -36,7 +36,7 @@ dumpGraph' acc (c:cs)
 		
 
 -- | dump scheme instantiations
-dumpInst :: 	SquidM String
+dumpInst :: SquidM String
 dumpInst
  = do 	-- Instantiations
 	mInst		<- getsRef stateInst

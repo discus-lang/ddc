@@ -161,7 +161,7 @@ instance Pretty Node PMode where
 	NCid cid	-> ppr cid
 	NVar v		-> ppr v
 	NCon tc		-> ppr tc
-	NApp cid1 cid2	-> parens $ cid1 <> cid2
+	NApp cid1 cid2	-> parens $ cid1 %% cid2
 	NScheme t	-> "NScheme " % t
 	NFree v t	-> "NFree " % v % " :: " % t
 	_		-> ppr $ show nn

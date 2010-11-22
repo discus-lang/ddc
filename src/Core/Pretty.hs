@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
-
 module Core.Pretty
 	(pprStr)
 where
@@ -66,7 +65,7 @@ instance Pretty Top PMode where
 
 	 | otherwise
 	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
-	    in  "data" <> v <> "where\n"
+	    in  "data" %% v %% "where\n"
 	 	% "{\n" 
 	 	%> (vvcat ctorsList % "\n")
 		% "}\n"
@@ -84,7 +83,7 @@ instance Pretty Top PMode where
 
 
 	PClassDict v vks sigs
-	 -> ("class " % v <> (punc " " $ map pprPClassDict_varKind vks) <> "where\n"
+	 -> ("class " % v %% (punc " " $ map pprPClassDict_varKind vks) %% "where\n"
 	 	% "{\n"
 		%> (";\n\n" %!% map (\(v, sig) -> v % "\n ::     " %> sig) sigs)
 		% "\n}\n")
@@ -99,7 +98,7 @@ instance Pretty Top PMode where
 			% "}\n\n")
 
 pprPClassDict_varKind (v, k)
-	= parens $ v <> "::" <> k
+	= parens $ v %% "::" %% k
 		
 	 
 -- Exp ----------------------------------------------------------------------------------------------
@@ -113,7 +112,7 @@ instance Pretty Exp PMode where
 	 -> "(" % pv v % " :: _)"
 
 	XVar v t
-	 -> ifMode (elem PrettyCoreTypes)
+	 -> pprIfMode (elem PrettyCoreTypes)
 	 	("(" % pv v % " :: " % t % ")")
 		(pv v)
 		

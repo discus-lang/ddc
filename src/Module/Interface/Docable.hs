@@ -17,7 +17,7 @@ import qualified Data.Map		as Map
 instance Docable ModuleId Str
  where	doc x	= DLeaf (ppr x)
 
-instance Docable (PrettyM mode) (PrettyM mode)
+instance Docable (StrMode mode) (StrMode mode)
  where	doc x	= DLeaf x	
 
 instance Docable (Doc Str) Str

@@ -12,14 +12,13 @@ module DDC.Main.Pretty
 where
 import DDC.Util.Pretty
 
-
 -- | The pretty printers for most data types take can look in PMode
 --   to determine what options to use.
 type PMode	
 	= [PrettyMode]
 
 -- | This is the type we usually use to represent printable text.
-type Str = PrettyM PMode
+type Str = StrMode [PrettyMode]
 
 -- | Pretty printing options that we support.
 data PrettyMode

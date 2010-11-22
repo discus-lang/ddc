@@ -13,106 +13,105 @@ import DDC.Type
 import DDC.Var
 import Data.Char		(isAlpha)
 
------
 stage	= "Source.Pretty"
+
+-- | A keyword followed by some semicolon terminated statements in braces.
+pprKeyBlock :: (Pretty a mode, Pretty b mode)
+	=> a -> [b] -> StrMode mode
+
+pprKeyBlock key ss
+	= key %  braces (nl %> vcat (map (% ";") ss))
+
+
+-- | A keyword followed by a space, then some semicolon terminated statements in braces.
+pprKeySpBlock :: (Pretty a mode, Pretty b mode)
+	=> a -> [b] -> StrMode mode
+
+pprKeySpBlock key ss
+	= key %% braces (nl %> vcat (map (% ";") ss))
+
 
 -- Top ---------------------------------------------------------------------------------------------
 instance Pretty (Top a) PMode where
  ppr xx
   = case xx of
-	PPragma _ es	 -> "pragma " % " " %!% es % ";\n"
-	PModule _ v	 -> "module " % v % ";\n"
+	PPragma _ es	 
+	 -> "pragma " % " " %!% es % ";"
 
-	PImportModule _ [m] -> "import " % m % ";\n"
+	PModule _ v
+	 -> "module " % v % ";"
+
+	PImportModule _ [m]
+	 -> "import " % m % ";"
 	
-	PImportModule _ xx
-	 -> "import " 
-		% "{\n"
-			%> (punc "\n" $ map (\x -> x % ";") xx)
-		% "\n}\n\n"
-		
-	PExport _ exs
-	 -> "export "
-	 	% "{\n"
-			%> punc ";\n" exs
-		% "\n}\n\n"
+	PImportModule _ ms
+	 -> pprKeyBlock "import " ms
+
+	PExport _ xx
+	 -> pprKeyBlock "export " xx
 		
 	PForeign _ f 
-	 -> "foreign " % f % ";\n\n"
+	 -> "foreign " % f % ";"
 	
-	-- types
 	PKindSig sp v k
 	 | resultKind k == kValue
-	 -> "data" 	<> v %>> " :: " % k % ";\n"
+	 -> "data" 	%% v %>> " :: " % k % ";"
 
 	 | resultKind k == kEffect
-	 -> "effect" 	<> v %>> " :: " % k % ";\n"
+	 -> "effect" 	%% v %>> " :: " % k % ";"
 	
 	 | otherwise 
-	 -> "type" 	<> v %>> " :: " % k % ";\n"
+	 -> "type" 	%% v %>> " :: " % k % ";"
 
 	PTypeSynonym sp v t
-         -> "type" <> v %>> " = " % prettyTypeSplit t % ";\n"
+         -> "type" 	%% v %>> " = " % prettyTypeSplit t % ";"
 
 	PData _ typeName vars [] 
-	 -> "data " % punc " " (typeName : vars) % ";\n\n"
+	 -> "data" 	%% punc " " (typeName : vars) % ";"
 
 	PData _ typeName vars ctors
-	 -> "data " % punc " " (typeName : vars) % "\n"
-		%> ("= "  % punc "\n\n| "(map ppr ctors) % ";")
-		%  "\n\n"
+	 -> "data " 	%% punc " " (typeName : vars) % nl
+			%> "= "  % punc (nlnl %% "| ") (map ppr ctors) % ";"
 
-	PRegion _ v	 -> "region " % v % ";\n"
+	PRegion _ v
+	 -> "region " % v % ";"
 
-	-- Classes
-	PClass _ v k	 -> "class " % v %>> " :: " % k % ";\n"
+	PClass _ v k
+	 -> "class " % v %>> " :: " % k % ";"
 
 	PClassDict _ c vks inh sigs
-	 -> "class " % c % " " % (punc " " $ map pprPClass_vk vks) % " where\n"
-		% "{\n"
-	 	%> ("\n\n" %!% 
-			(map (\(vs, t) -> punc ", " vs
-				% " :: " %> prettyTypeSplit t % ";") sigs)) % "\n"
-		% "}\n\n"
+	 -> pprKeyBlock ("class "	% c % " " % (punc " " $ map pprPClass_vk vks)    % " where" % nl)
+	  $ [punc ", " vs %% ":: " %> prettyTypeSplit t | (vs, t) <- sigs]
 
 	PClassInst _ v ts inh ss
-	 -> "instance " % v % " " % punc " " (map prettyTypeParens ts) % " where\n"
-		% "{\n"
-		%> ("\n\n" %!% 
-			(map 	(\s -> case s of 
-					SBindFun sp v pats alts
-					 -> ppr $ SBindFun sp v pats alts
-					_			
-  					 -> panic stage $ "pretty[Top]: malformed PClassInst\n")
-					
-				ss)
-			% "\n")
-		% "}\n\n"
+	 -> pprKeyBlock ("instance "	% v % " " % (punc " " $ map prettyTypeParens ts) % " where" % nl)
+	  	(map 	(\s -> case s of 
+				SBindFun sp v pats alts
+				  -> ppr $ SBindFun sp v pats alts
+				_ -> panic stage $ "pretty[Top]: malformed PClassInst\n")
+			ss)
 
-	-- Projections
 	PProjDict _ t ss
-	 -> "project " % t % " where\n"
-		% "{\n"
-		%> ("\n\n" %!% ss) % "\n"
-		% "}\n\n"
-	 
-	PStmt s		 -> ppr s % "\n\n"
-	
+	 -> pprKeyBlock ("project " % t % " where" % nl) ss
+
+	PStmt s	
+	 -> ppr s
+
 	PInfix _ mode prec syms
-	 -> mode % " " % prec % " " % ", " %!% (map infixNames syms) % " ;\n"
+	 -> mode % " " % prec % " " % ", " %!% (map infixNames syms) % ";"
 
 infixNames v
  = if isAlpha (head (varName v))
 	then "`" ++ varName v ++ "`"
 	else varName v
 
-pprPClass_vk :: (Var, Kind) -> PrettyM PMode
+pprPClass_vk :: (Var, Kind) -> Str
 pprPClass_vk (v, k)
  	| elem k [kValue, kRegion, kEffect, kClosure]
 	= ppr v
 	
 	| otherwise
-	= parens $ v <> "::" <> k
+	= parens $ v %% "::" %% k
 
 
 -- CtorDef ----------------------------------------------------------------------------------------
@@ -122,9 +121,9 @@ instance Pretty (CtorDef a) PMode where
 	, ctorDefFields	= fields }
   = case fields of
  	[] -> ppr name
-	fs -> name 	% " {\n"
-			%> ("\n" %!% (map pprStrPlain fs)) % "\n"
-			% "}"
+	fs -> name 	%% "{" % nl
+			%> (nl %!% (map pprStrPlain fs)) % nl
+			%  "}"
 
 -- DataField --------------------------------------------------------------------------------------
 instance Pretty (DataField a) PMode where
@@ -145,10 +144,10 @@ instance Pretty (Export a) PMode where
  ppr ex
   = case ex of
 	EValue _ v	-> ppr v
-	EType _ v	-> "type" <> v
-	ERegion _ v	-> "region" <> v
-	EEffect _ v	-> "effect" <> v
-	EClass _ v	-> "class" <> v
+	EType _ v	-> "type"   %% v
+	ERegion _ v	-> "region" %% v
+	EEffect _ v	-> "effect" %% v
+	EClass _ v	-> "class"  %% v
 
 
 -- Foreign -----------------------------------------------------------------------------------------
@@ -157,14 +156,14 @@ instance Pretty (Foreign a) PMode where
   = case ff of
  	OImport mS v tv mTo
 	 -> let pName	= case mS of  { Nothing -> ppr " "; Just s  -> ppr $ show s }
-		pTo	= case mTo of { Nothing -> ppr " "; Just to -> "\n:$ " % to }
+		pTo	= case mTo of { Nothing -> ppr " "; Just to -> nl % ":$" %% to }
 	    in 
 		"import " 
-			% pName	% "\n " 
-			% v 	%> ("\n:: " % prettyTypeSplit tv 	% pTo)
+			%  pName % nl
+			%% v 	 %> (nl %% "::" %% prettyTypeSplit tv  % pTo)
 
 	OImportUnboxedData name var knd
-	 -> "import data" <> show name <> var <> "::" <> knd
+	 -> "import data" %% show name %% var %% "::" %% knd
 
 
 -- InfixMode ---------------------------------------------------------------------------------------
@@ -181,27 +180,27 @@ instance Pretty (InfixMode a) PMode where
 instance Pretty (Exp a) PMode where
  ppr xx
   = case xx of
-  	XNil		 -> ppr "@XNil"
+  	XNil		-> ppr "@XNil"
+	XLit 	sp c	-> ppr c
+	XVar 	sp v	-> ppr v
 
-	XLit 	sp c	 -> ppr c
+	XProj 	sp x p	
+	 -> prettyXB x % p
 
-	XVar 	sp v	 -> ppr v
+	XProjT 	sp t p	
+	 -> "@XProjT " % prettyTypeParens t % " " % p
 
-	XProj 	sp x p	 -> prettyXB x % p
-	XProjT 	sp t p	 -> "@XProjT " % prettyTypeParens t % " " % p
+	XLet 	sp ss e	
+	 -> pprKeyBlock "let" ss %% "in" %% e
+	
+	XDo 	sp ss
+	 -> pprKeyBlock "do" ss 
 
-	XLet 	sp ss e
-	 -> "let {\n" 
-		%> ";\n" %!% ss
-		%  "\n} in " % e
-
-	XDo 	sp ss	 	-> "do {\n" %> "\n" %!% ss % "\n}"
-	XWhere  sp xx ss	-> xx % " where {\n" %> "\n" %!% ss % "\n"
-
+	XWhere  sp xx ss
+	 -> xx % pprKeyBlock "where" ss
+	
 	XCase 	sp co ca
-	 -> "case " % co % " of {\n" 
-	 	%> "\n\n" %!% ca
-		%  "\n}"
+	 -> pprKeySpBlock ("case" % co % " of ") ca
 
 	XLambdaPats sp ps e
 	 -> "\\" % " " %!% ps % " -> " % e
@@ -210,9 +209,9 @@ instance Pretty (Exp a) PMode where
 	 -> "\\" % j % " " % (punc " " $ map prettyXB xs)
 
 	XLambdaCase sp cs
-	 -> "\\case {\n"
-	 	%> "\n\n" %!% cs
-		%  "\n}"
+	 -> "\\case {" % nl
+	 	%> vvcat (map ppr cs)
+		%  nl % "}"
 
 	XApp 	sp e1 e2
 	 -> if orf e1 [isXVar, isXApp]
@@ -236,7 +235,7 @@ instance Pretty (Exp a) PMode where
 	XOp 		sp v	 -> "@XOp " % v
 	XDefix 		sp es	 -> "@XDefix " % es
  	XDefixApps 	sp es	 -> "@XDefixApps " % es
-	XAppSusp	sp x1 x2 -> "@XAppSusp " % x1 <> x2
+	XAppSusp	sp x1 x2 -> "@XAppSusp " % x1 %% x2
 
 	-- constructor sugar
 	XTuple sp xx		-> "(" % ", " %!% xx % ")"
@@ -414,32 +413,29 @@ instance Pretty (Stmt a) PMode where
  ppr xx
   = case xx of
 	SSig sp sigMode v t		
-	 -> v %> " " % sigMode %% t % ";"
+	 -> v %> " " % sigMode %% t
 
 	SStmt sp  x
-	 -> prettyX_naked x % ";"
+	 -> prettyX_naked x
 
 	SBindFun sp v [] [ADefault _ x]
 	 -> padL 8 v % " " 
-	 	%>> (spaceDown x) 
-	 	% " = " % prettyX_naked x 	
-		% ";"
+	 	%>> spaceDown x	% " = " % prettyX_naked x 	
 
 	SBindFun sp v ps [ADefault _ x]	
 	 -> v % " " % punc " " (map prettyWB ps)
-	  	%>> (spaceDown x) % "\n = " % prettyX_naked x 	
-	  	% ";"
+	  	%>> spaceDown x % " = " % prettyX_naked x 	
 
 	SBindFun sp v pats alts
 	 -> v % " " % punc " " (map prettyWB pats) % " {\n"
 	  	%> ("\n\n" %!% alts)
-	  	%  "\n}" % ";"
+	  	%  "\n}"
 	
 	SBindPat sp pat x
-	 -> pat %>> (spaceDown x) % " = " % prettyX_naked x % ";"
+	 -> pat %>> spaceDown x % " = " % prettyX_naked x
 	
 	SBindMonadic sp v x
-	 -> v <> "<-" <> x % ";"
+	 -> v %% "<-" %% x
 
 
 spaceDown xx

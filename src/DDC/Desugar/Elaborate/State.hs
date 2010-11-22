@@ -61,7 +61,7 @@ getKind v
  	case Map.lookup v kindMap of
 	 Just k		-> return k
 	 Nothing	-> panic stage
-	 		$ "getKind: no kind for " % v % "\n"
+	 		$ "getKind: no kind for" %% v
 
 
 -- | Solve these kind constraints and add the resulting kinds to the state.
@@ -92,5 +92,5 @@ addConstraint_unify v k k'
 	
 	| otherwise
 	= panic stage
-	$ "addConstraint_unify: can't unify kinds for" <> v <> parens k <> parens k'
+	$ "addConstraint_unify: can't unify kinds for" %% v %% parens k %% parens k'
 

@@ -66,7 +66,7 @@ modifyRef getRef fn
 
 -- Tracing ----------------------------------------------------------------------------------------
 -- | Add some stuff to the inferencer trace.
-traceM :: PrettyM PMode -> SquidM ()
+traceM :: Str -> SquidM ()
 traceM p
  = do	mHandle	<- gets stateTrace
 	i	<- getsRef stateTraceIndent

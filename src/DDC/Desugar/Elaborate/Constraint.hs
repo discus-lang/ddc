@@ -38,6 +38,6 @@ data Constraint
 	
 instance Pretty Constraint PMode where
  ppr (Constraint ks v k)	
- 	= padL 20 v <> "::" <> padL 40 k <> parens ks % ";\n"
+ 	= padL 20 v %% "::" %% padL 40 k %% parens ks % ";\n"
 	
 

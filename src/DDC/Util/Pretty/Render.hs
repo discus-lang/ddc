@@ -1,136 +1,84 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# LANGUAGE OverlappingInstances, IncoherentInstances #-}
 
 -- | Rendering of PrettyPrims to a string.
 module DDC.Util.Pretty.Render 
-	(render)
+	( renderWithMode
+	, nextTabStopCol)
 where
-
 import DDC.Util.Pretty.Base
-import Data.List
+import Data.Monoid
+import Data.Text.Lazy.Builder		(Builder)
+import qualified Data.Text.Lazy		as T
+import qualified Data.Text.Lazy.Builder	as B
 
--- | Render state.
-data RenderS
-	= RenderS
-	{ stateTabWidth		:: Int		-- ^ Current tab width.
-	, stateIndent		:: Int		-- ^ Current start of line, for indenting.
-	, stateCol		:: Int 		-- ^ Current column position of cursor
-	}
+-- | Render a pretty string in a given mode.
+renderWithMode :: mode -> StrMode mode -> String
+renderWithMode mode str	
+	= T.unpack $ B.toLazyText $ snd $ render mode 0 0 str
 
--- | Initial render state.
-initRenderS :: RenderS
-initRenderS
-	= RenderS
-	{ stateTabWidth		= 8
-	, stateIndent		= 0 
-	, stateCol		= 0 }
+(<>)		= mappend
+fromString	= B.fromLazyText . T.pack
+
+-- | Render a pretty string.
+render 	:: mode -> Int -> Int -> StrMode mode -> (Int, Builder)
+render mode colIndent col ss 
+ = let	down	= render mode colIndent
+   in case ss of
+	PBlank
+	 -> (col, mempty)
+
+	PString	str
+	 -> let	text	= T.pack str
+	    in	( col + (fromIntegral $ T.length text)
+		, B.fromLazyText text)
 	
+	PChar c	
+	 -> (col + 1, B.singleton c)
 
--- | Render a `PrettyPrim` as a string.
-render	:: PrettyPrim -> String
-render xx	
-	= render' initRenderS xx
+	PNewLine	
+	 -> let	pad	= fromString $ replicate colIndent ' '
+	    in	(colIndent, B.singleton '\n' <> pad) 
 
-render'	state xx
- 	= spaceTab state $ reduce state xx
+	PModal f
+	 -> down col (f mode)
 
-
--- | Reduce a PrettyPrim to some simpler ones in preparation for rendering.
-reduce 	:: RenderS -> PrettyPrim -> [PrettyPrim]
-reduce	state xx
- = case xx of
-	PNil			-> [PNil]
- 	PString	s		-> map PChar s
-	PChar c			-> [PChar c]
-	PList   zz@(PChar{} : _)-> zz
-
-	PList 	zz	
-	 -> [PChar '[']
-	 ++ concat (intersperse (map PChar ", ") $ map (reduce state) zz) 
-	 ++ [PChar ']']
-
-	PAppend ss		-> concatMap (reduce state) ss
+	PAppend []	
+	 -> (col, mempty)
 	
-	PIndent ss	
-	 ->   [ PTabAdd (stateTabWidth state)]
-	   ++ reduce state ss
-	   ++ [PTabAdd (- (stateTabWidth state))]
+	PAppend (s:strs)
+	 -> let (col1, str1)	 = down col s
+		(col2, strsRest) = down col1 (PAppend strs)
+	    in	(col2, str1 <> strsRest)
+
+	PShift str
+	 -> let	colNext	= nextTabStopCol col
+		pad	= replicate (colNext - col) ' '
+	    in	down col (PAppend [PString pad, str])
 	
-	PSetColumn{}		-> [xx]
-	 
-	PTabNext		-> [PTabNext]
-	PTabAdd{}		-> [xx]
-	PPadLeft  n c p		-> [PPadLeft n c  (PAppend $ reduce state p)]
-	PPadRight n c p		-> [PPadRight n c (PAppend $ reduce state p)]
+	PIndent str
+	 -> let	colNext	= nextTabStopCol (colIndent + 1)
+		pad	= replicate (colNext - col) ' '
+	    in	render mode colNext col
+			(PAppend [PString pad, str])
 	
-
--- | Render a pretty things as characters.
-spaceTab :: RenderS -> [PrettyPrim] -> String
-spaceTab state xx
- = case xx of
-	[]		-> []
-
-	PNil : xs	
-	 ->    spaceTab state xs
-
- 	PTabAdd i  :xs	
-	 -> let state'	= state
-	 		{ stateIndent	= stateIndent state + i }
-	    in spaceTab state' xs
-				
-
-	PTabNext : xs
-	 -> let tabHere	= stateCol state `div` stateTabWidth state
-	 	tabNext	= tabHere + 1 * stateTabWidth state
-		pad	= replicate (tabNext - stateCol state) ' '
-
-	 	state'	= state
-	 		{ stateCol	= tabNext }
-
-	   in	pad ++ spaceTab state' xs
-
-	PChar '\n' : PTabAdd i : xs
-	 -> spaceTab state (PTabAdd i : PChar '\n' : xs)
-
-	PChar '\n' : xs	
-	 -> let	pad	= replicate (stateIndent state) ' '
-	 	state'	= state
-	 		{ stateCol	= stateIndent state }
-
-	    in  '\n' : (pad ++ spaceTab state' xs)
-		
-	PChar x : xs
-	 -> let state'	= state
-	 		{ stateCol	= stateCol state + 1 }
-	    in  x : spaceTab state' xs
-
-	PAppend x : xs
-	 -> spaceTab state (x ++ xs)
-
-	PPadLeft n c p : xs
-	 -> let cs	= spaceTab state [p]
-		csLen	= length cs
-		colLen	= max csLen n
-		state'	= state { stateCol = stateCol state + colLen }
-	    in	cs ++ replicate (n - length cs) c ++ spaceTab state' xs
-	    
-	PPadRight n c p : xs
-	 -> let cs	= spaceTab state [p]
-		csLen	= length cs
-		colLen	= max csLen n
-		state'	= state { stateCol = stateCol state + colLen }
-	    in	replicate (n - length cs) c ++ cs ++ spaceTab state' xs
-
-	PSetColumn i : xs
-	 -> let	col	= stateIndent state
-		state'	= state { stateIndent = i }
-		pad	= if i > col
-			   then replicate (i - col) ' '
-			   else ""
-		
-	    in	pad ++ spaceTab state' xs
-
-	_ -> error "DDC.Util.Pretty.Render.spaceTab: no match. Should have been elimiated by reduce fn."
+	PSetColumn colNext str
+	 -> let	pad	= replicate (colNext - col) ' '
+ 	    in	render mode colNext colNext 
+			(PAppend [PString pad, str])
 	
+	PPadLeft _n _c str
+	 -> down col str
 	
-	
-	
+	PPadRight _n _c str
+	 -> down col str
+
+
+-- | If we're past the previous tabstop, then advance to the next one.
+nextTabStopCol :: Int -> Int
+nextTabStopCol col
+ = let	stop	= col `div` 8
+	slack	= col `mod` 8
+   in	if slack == 0
+		then stop * 8
+		else (stop + 1) * 8

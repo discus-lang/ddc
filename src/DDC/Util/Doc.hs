@@ -72,8 +72,8 @@ dNodeIfElems tag cont
 pprDocIndentedWithNewLines
 	:: forall mode
 	.  Int				-- ^ When >0, put newlines after nodes.
-	-> Doc (PrettyM mode) 		-- ^ `Doc` to pretty print.
-	-> PrettyM mode
+	-> Doc (StrMode mode) 		-- ^ `Doc` to pretty print.
+	-> StrMode mode
 
 pprDocIndentedWithNewLines depth dd
  = case dd of

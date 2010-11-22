@@ -89,7 +89,7 @@ data SourceValue
 	deriving (Show, Eq)
 
 instance Pretty SourceValue PMode where
- ppr (SVInst sp v)	= parens $ "SVInst" <> sp <> v
+ ppr (SVInst sp v)	= parens $ "SVInst" %% sp %% v
  ppr sv			= "SV " % vsp sv
 
 
@@ -188,10 +188,10 @@ instance Pretty SourceInfer PMode where
  ppr SIClassName		= ppr "SIClassName"
 
  ppr (SIPurifier cid eff effSrc f fSrc)		
-	= "SIPurifier" <> cid <> parens eff <> parens effSrc <> parens f <> parens fSrc
+	= "SIPurifier" %% cid %% parens eff %% parens effSrc %% parens f %% parens fSrc
 
- ppr (SICrushedFS cid iF src)	= "SICrushedFS" <> cid <> parens iF <> src
- ppr (SICrushedES cid  iF src)	= "SICrushedES" <> cid <> parens iF <> src
+ ppr (SICrushedFS cid iF src)	= "SICrushedFS" %% cid %% parens iF %% src
+ ppr (SICrushedES cid  iF src)	= "SICrushedES" %% cid %% parens iF %% src
  ppr (SIGenInst  v src)		= "SIGenInst "  %% v %% src
 
 
@@ -213,7 +213,7 @@ takeSourcePos ts
 	_	-> Nothing
 
 
-dispSourcePos :: TypeSource -> PrettyM PMode
+dispSourcePos :: TypeSource -> Str
 dispSourcePos ts
  = case takeSourcePos ts of
  	Just sp	-> ppr sp
@@ -227,7 +227,7 @@ dispSourcePos ts
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
 
-dispTypeSource :: Pretty tt PMode => tt -> TypeSource -> PrettyM PMode
+dispTypeSource :: Pretty tt PMode => tt -> TypeSource -> Str
 dispTypeSource tt ts
 	| TSV sv	<- ts
 	= dispSourceValue tt sv
@@ -251,7 +251,7 @@ dispTypeSource tt ts
 
 	
 -- | Show the source of a type error due to this reason
-dispSourceValue :: Pretty tt PMode => tt -> SourceValue -> PrettyM PMode
+dispSourceValue :: Pretty tt PMode => tt -> SourceValue -> Str
 dispSourceValue tt sv
  = case sv of
 	SVLambda sp 	
@@ -327,7 +327,7 @@ dispSourceValue tt sv
 		%  "              at: " % sp	% "\n"
 
 -- | Show the source of a type error due to this reason
-dispSourceEffect :: Pretty tt PMode => tt -> SourceEffect -> PrettyM PMode
+dispSourceEffect :: Pretty tt PMode => tt -> SourceEffect -> Str
 dispSourceEffect tt se
  = case se of
 	SEApp sp
@@ -377,7 +377,7 @@ dispSourceEffect tt se
 
 
 -- | Show the source of a type error due to this reason
-dispSourceUnify :: Pretty tt PMode => tt -> SourceUnify -> PrettyM PMode
+dispSourceUnify :: Pretty tt PMode => tt -> SourceUnify -> Str
 dispSourceUnify tt sv
  = case sv of
  	SUAltLeft sp 
@@ -420,7 +420,7 @@ dispSourceUnify tt sv
 --	The only possible source of these is instantiations of type schemes,
 --	or from crushing other fetters.
 --
-dispFetterSource :: Fetter -> TypeSource -> PrettyM PMode
+dispFetterSource :: Fetter -> TypeSource -> Str
 dispFetterSource f ts
 
 	-- For purity constraints, don't bother displaying the entire effect

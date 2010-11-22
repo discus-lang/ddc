@@ -11,5 +11,5 @@ compileExit :: IO a
 compileExit = exitWith ExitSuccess
 
 
-outVerb :: (?verbose :: Bool) => PrettyM PMode -> IO ()
+outVerb :: (?verbose :: Bool) => Str -> IO ()
 outVerb ss	= when ?verbose (putStr $ pprStrPlain ss)

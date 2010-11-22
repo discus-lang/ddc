@@ -1,4 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# LANGUAGE	MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances,
+		UndecidableInstances,  OverlappingInstances, IncoherentInstances #-}
 
 -- | Instances for simple types. 
 --	These are always printed the same way, independent of the mode.
@@ -16,28 +18,33 @@ import qualified Data.Set	as Set
 import Prelude			hiding (foldr)
 
 
-
 -- Base types -----------------------------------------------------------------
 instance Pretty () m where
  ppr ()	= ppr "()"
 
 instance Pretty Int m where
- ppr x	= plain $ PString $ show x
-
-instance Pretty Char m where
- ppr x	= plain $ PChar x
+ ppr x	= PString $ show x
 
 instance Pretty Bool m where
- ppr x	= plain $ PString $ show x
+ ppr x	= PString $ show x
 
 instance Pretty Integer m where
- ppr x	= plain $ PString $ show x
+ ppr x	= PString $ show x
 
 instance Pretty Float m where
- ppr x 	= plain $ PString $ show x
+ ppr x 	= PString $ show x
 
 instance Pretty Double m where
- ppr x 	= plain $ PString $ show x
+ ppr x 	= PString $ show x
+
+
+-- These two instances overlap,
+-- 	Incoherent instances chooses the first one for Strings.
+instance Pretty String m where
+ ppr x	= PString x
+
+instance Pretty a m => Pretty [a] m where
+ ppr xx	= brackets $ punc ", " (map ppr xx)
 
 
 -- Maybe ----------------------------------------------------------------------
@@ -50,14 +57,6 @@ instance Pretty a m => Pretty (Maybe a) m where
 instance (Pretty a m, Pretty b m) => Pretty (Either a b) m where
  ppr (Left x)	= "Left " % x
  ppr (Right x)	= "Right " % x
-
-
--- List -----------------------------------------------------------------------
-instance Pretty a m => Pretty [a] m where
- ppr xs
- 	= PrettyM (\m -> PList 	$ map (\x -> case ppr x of
-						PrettyM fx	-> fx m)
-				  xs)
 
 
 -- Sequence -------------------------------------------------------------------
@@ -91,7 +90,7 @@ instance (Pretty a m, Pretty b m)
 		$ punc ", " 
 		$ map (\(x, y) -> x % " := " % y)
 		$ Map.toList mm
- 
+
 
 -- Sets -----------------------------------------------------------------------
 instance (Pretty a m) 

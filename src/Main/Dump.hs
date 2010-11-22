@@ -30,12 +30,10 @@ dumpCG args fileBase flag name glob
 -- | Dump a source tree
 dumpST flag name sourceTree
  = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
-
  	when (elem flag ?args)
-  	 (writeFile 
+  	 $ writeFile 
 		(?pathSourceBase ++ ".dump-" ++ name ++ ".ds")
-		(concat $ map (pprStr pprMode)
-			$ sourceTree))
+		(pprStr pprMode	$ vvcat $ map ppr sourceTree)
 	
 	return ()
 

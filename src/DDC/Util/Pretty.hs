@@ -3,7 +3,7 @@
 -- | Pretty printer library.
 module DDC.Util.Pretty 
 	( Pretty	(..)
-	, PrettyM
+	, StrMode
 	, pprStr
 	, module DDC.Util.Pretty.Render 
 	, module DDC.Util.Pretty.Combinators
@@ -16,9 +16,9 @@ import DDC.Util.Pretty.Simple		()
 
 
 -- | Render a pretty thing as a string.
-pprStr 	:: Pretty a m
-	=> m -> a -> String
+pprStr 	:: Pretty a mode
+	=> mode -> a -> String
 
-pprStr mode x	
- = case ppr x of
- 	PrettyM f -> render $ f mode
+pprStr mode x
+	= renderWithMode mode $ ppr x
+	

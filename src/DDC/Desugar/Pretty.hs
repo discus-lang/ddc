@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-
 -- | Pretty printing for desugared source.
 module DDC.Desugar.Pretty
 	(stripAnnot)
@@ -60,18 +59,18 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	-- kind sigs
 	PKindSig nn v k
 	 | resultKind k == kValue	
-	 -> annot nn ("data" <> v <> "::" <> k % ";\n\n")
+	 -> annot nn ("data" %% v %% "::" %% k % ";\n\n")
 
  	 | resultKind k == kEffect
-  	 -> annot nn ("effect" <> v <> "::" <> k % "\n\n")
+  	 -> annot nn ("effect" %% v %% "::" %% k % "\n\n")
 
 	 | otherwise	
-	 -> annot nn ("type" <> v <> "::" <> k % ";\n\n")
+	 -> annot nn ("type" %% v %% "::" %% k % ";\n\n")
 
 	-- types
 	PTypeSynonym nn v t
 	 -> annot nn 
-		("type " <> v <> " = " % t % ";\n\n")
+		("type " %% v %% " = " % t % ";\n\n")
 
 	PRegion nn v
 	 -> annot nn
@@ -115,7 +114,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 pprPClassDict_varKind tt
  = case tt of
-	TVar k (UVar v)	-> parens $ v <> "::" <> k
+	TVar k (UVar v)	-> parens $ v %% "::" %% k
 	_		-> panic stage "pprPClassDict_varKind: no match\n"
 
 
