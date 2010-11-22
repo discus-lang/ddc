@@ -8,7 +8,6 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
-import DDC.Sea.Pretty
 
 import Llvm
 import LlvmM
@@ -31,12 +30,10 @@ llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (Litera
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
 
-llvmOfAssign dst@(XVar n@NAuto{} t) tc src
+llvmOfAssign (XVar (NAuto v) t) tc src
  | t == tc
  = do	reg		<- llvmOfExp src
-	alloc		<- newNamedReg (seaVar True $ varOfName n) $ toLlvmType t
-	addBlock	[ Assignment alloc (Alloca (toLlvmType t) 1)
-			, Store reg (pVarLift alloc) ]
+	addBlock	[ Store reg (pVarLift (toLlvmVar v t)) ]
 
 llvmOfAssign (XVar (NSlot v i) tv@(TPtr (TCon TyConObj))) tc src
  | tv == tc

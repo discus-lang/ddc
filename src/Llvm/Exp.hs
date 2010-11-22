@@ -50,7 +50,7 @@ llvmOfExp (XLit (LLit lit))
  = 	return $ llvmVarOfLit lit
 
 llvmOfExp (XLit LNull)
- = 	return $ nullObj
+ = 	return $ i32LitVar 0
 
 
 llvmOfExp (XVar n@NSuper{} tv)

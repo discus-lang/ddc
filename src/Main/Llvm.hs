@@ -239,14 +239,20 @@ llvmOfStmt stmt
 	SSwitch e a	-> llvmSwitch e a
 	SLabel l	-> branchLabel (seaVar False l)
 
-	-- LLVM is SSA so auto variables do not need to be declared.
-	SAuto v t	-> addComment $ "SAuto " ++ seaVar True v ++ " " ++ show t
+	-- LLVM is SSA bu SAuto variables can be reused, so we need to Alloca for them.
+	SAuto v t	-> llvmSAuto v t
 	SStmt exp	-> llvmOfSStmt exp
 	_
 	  -> panic stage $ "llvmOfStmt " ++ show stmt
 
 
 --------------------------------------------------------------------------------
+
+llvmSAuto :: Var -> Type -> LlvmM ()
+llvmSAuto v t
+ = do	reg		<- newNamedReg (seaVar True v) $ toLlvmType t
+	addBlock	[ Assignment reg (Alloca (toLlvmType t) 1) ]
+
 
 llvmOfSStmt :: Exp a -> LlvmM ()
 llvmOfSStmt (XPrim (MApp PAppCall) (fexp:args))
@@ -286,11 +292,11 @@ llvmSwitch e _
 
 genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
 genAltVars switchEnd alt@(ASwitch (XLit (LDataTag v)) [])
- | varName v == "True"
- =	return ((i32LitVar 1, switchEnd), alt)
-
- | varName v == "Unit"
- =	return ((i32LitVar 0, switchEnd), alt)
+ = case varName v of
+	"True"	-> return ((i32LitVar 1, switchEnd), alt)
+	"False"	-> return ((i32LitVar 0, switchEnd), alt)
+	"Unit"	-> return ((i32LitVar 0, switchEnd), alt)
+	_	-> panic stage $ "genAltVars (" ++ show __LINE__ ++ ")\n" ++ show v
 
 genAltVars _ alt@(ACaseSusp (XVar (NSlot v i) t) label)
  = do	lab	<- newUniqueLabel "susp"
