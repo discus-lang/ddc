@@ -67,7 +67,7 @@ instance Pretty Top PMode where
 	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
 	    in  "data" %% v %% "where\n"
 	 	% "{\n" 
-	 	%> (vvcat ctorsList % "\n")
+	 	%> (vsep ctorsList % "\n")
 		% "}\n"
 
 	PRegion v vts
@@ -190,7 +190,7 @@ instance Pretty Exp PMode where
 
 	XMatch alts
 	 -> "match {\n"
-		%> vvcat alts
+		%> vsep alts
 		% "\n"
 		% "}"
 

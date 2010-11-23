@@ -33,7 +33,7 @@ dumpST flag name sourceTree
  	when (elem flag ?args)
   	 $ writeFile 
 		(?pathSourceBase ++ ".dump-" ++ name ++ ".ds")
-		(pprStr pprMode	$ vvcat $ map ppr sourceTree)
+		(pprStr pprMode	$ vsep $ map ppr sourceTree)
 	
 	return ()
 

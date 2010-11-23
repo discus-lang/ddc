@@ -15,22 +15,6 @@ import Data.Char		(isAlpha)
 
 stage	= "Source.Pretty"
 
--- | A keyword followed by some semicolon terminated statements in braces.
-pprKeyBlock :: (Pretty a mode, Pretty b mode)
-	=> a -> [b] -> StrMode mode
-
-pprKeyBlock key ss
-	= key %  braces (nl %> vcat (map (% ";") ss) % nl)
-
-
--- | A keyword followed by a space, then some semicolon terminated statements in braces.
-pprKeySpBlock :: (Pretty a mode, Pretty b mode)
-	=> a -> [b] -> StrMode mode
-
-pprKeySpBlock key ss
-	= key %%  braces (nl %> vcat (map (% ";") ss) % nl)
-
-
 -- Top ---------------------------------------------------------------------------------------------
 instance Pretty (Top a) PMode where
  ppr xx
@@ -45,10 +29,10 @@ instance Pretty (Top a) PMode where
 	 -> "import " % m % ";"
 	
 	PImportModule _ ms
-	 -> pprKeyBlock "import " ms
+	 -> pprHeadBlock "import " ms
 
 	PExport _ xx
-	 -> pprKeyBlock "export " xx
+	 -> pprHeadBlock "export " xx
 		
 	PForeign _ f 
 	 -> "foreign " % f % ";"
@@ -80,11 +64,11 @@ instance Pretty (Top a) PMode where
 	 -> "class " % v %>> " :: " % k % ";"
 
 	PClassDict _ c vks inh sigs
-	 -> pprKeyBlock ("class "	% c % " " % (punc " " $ map pprPClass_vk vks)    % " where" % nl)
+	 -> pprHeadBlock ("class "	% c % " " % (punc " " $ map pprPClass_vk vks)    % " where" % nl)
 	  $ [punc ", " vs %% ":: " %> prettyTypeSplit t | (vs, t) <- sigs]
 
 	PClassInst _ v ts inh ss
-	 -> pprKeyBlock ("instance "	% v % " " % (punc " " $ map prettyTypeParens ts) % " where" % nl)
+	 -> pprHeadBlock ("instance "	% v % " " % (punc " " $ map prettyTypeParens ts) % " where" % nl)
 	  	(map 	(\s -> case s of 
 				SBindFun sp v pats alts
 				  -> ppr $ SBindFun sp v pats alts
@@ -92,7 +76,7 @@ instance Pretty (Top a) PMode where
 			ss)
 
 	PProjDict _ t ss
-	 -> pprKeyBlock ("project " % t % " where" % nl) ss
+	 -> pprHeadBlock ("project " % t % " where" % nl) ss
 
 	PStmt s	
 	 -> ppr s
@@ -191,16 +175,16 @@ instance Pretty (Exp a) PMode where
 	 -> "@XProjT " % prettyTypeParens t % " " % p
 
 	XLet 	sp ss e	
-	 -> pprKeyBlock "let" ss %% "in" %% e
+	 -> pprHeadBlock "let" ss %% "in" %% e
 	
 	XDo 	sp ss
-	 -> pprKeyBlock "do" ss 
+	 -> pprHeadBlock "do" ss 
 
 	XWhere  sp xx ss
-	 -> xx % pprKeyBlock "where" ss
+	 -> xx % pprHeadBlock "where" ss
 	
 	XCase 	sp co ca
-	 -> pprKeySpBlock ("case" % co % " of ") ca
+	 -> pprHeadBlock ("case" %% co %% "of ") ca
 
 	XLambdaPats sp ps e
 	 -> "\\" % " " %!% ps % " -> " % e
@@ -210,7 +194,7 @@ instance Pretty (Exp a) PMode where
 
 	XLambdaCase sp cs
 	 -> "\\case {" % nl
-	 	%> vvcat (map ppr cs)
+	 	%> vsep (map ppr cs)
 		%  nl % "}"
 
 	XApp 	sp e1 e2

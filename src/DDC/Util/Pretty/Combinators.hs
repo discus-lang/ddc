@@ -8,43 +8,48 @@
 
 -- | Combinators for forming new pretty things out of old ones.
 module DDC.Util.Pretty.Combinators 
-	( blank
-
+	(
 	-- * Primitive Combinators
+	  blank
+	, newline, nl, nlnl
 	, paste,  (%), (%%)
 	, punc,	  (%!%)
 	, indent, (%>)
 	, shift,  (%>>)
-	, vcat
-	, vvcat
-	
-	-- * Padding into columns.
-	, padRc,  padR
-	, padLc,  padL 
 
-	-- * New Lines
-	, newline, nl, nlnl
+	, hcat, hsep
+	, vcat, vsep
 
 	-- * Punctuation
 	, semi
+	, comma
+	, colon
 	, dot
+	, equals
 
 	-- * Parenthesis
 	, parens
 	, braces
 	, brackets
 	
+	-- * Padding into columns
+	, padRc,  padR
+	, padLc,  padL 
+	
 	-- * Optional printing
 	, pprIfMode
 	, pprWhen
 	
 	-- * Controlling printer state
-	, pprAtColumn)
+	, pprAtColumn
+	
+	-- * Utils for printing code
+	, pprHeadBlock)
 where
 import DDC.Util.Pretty.Base
 
 -- Operator precendences.
--- infixl 9 %!%
+infixl 9 %!%
 infixr 8 %>
 infixr 7 %
 infixr 7 %%
@@ -64,7 +69,6 @@ nl	= PNewLine
 nlnl	:: StrMode mode
 nlnl	= PAppend [PNewLine, PNewLine]
 
--- Paste ----------------------------------------------------------------------
 -- | Paste/append two pretty things together.
 paste 	:: (Pretty a mode, Pretty b mode)
 	=> a -> b -> StrMode mode
@@ -87,7 +91,6 @@ paste a b
 (%%) x y = x % PString " " % y
 
 
--- Punc -----------------------------------------------------------------------
 -- | Punctuate some pretty things with another.
 punc	:: (Pretty a mode, Pretty b mode)
 	=> a -> [b] -> StrMode mode
@@ -104,7 +107,6 @@ punc p (x1 : x2 : xs)	= x1 % p % punc p (x2 : xs)
 (%!%)	= punc
 
 
--- Indent ---------------------------------------------------------------------
 -- | Indent a pretty thing, consecutive lines are also indented.
 indent 	:: Pretty a mode => a -> StrMode mode
 indent a = PIndent (ppr a)
@@ -116,7 +118,6 @@ indent a = PIndent (ppr a)
 (%>) a b = PAppend [ppr a, PChar ' ', indent b]
 
 
--- Next ---------------------------------------------------------------------- 
 -- | Shift to the next tabstop.
 --	Consecutive lines return to the original tabstop.
 shift	:: Pretty a mode
@@ -132,20 +133,32 @@ shift a	= PShift (ppr a)
 (%>>) a b = PAppend [ppr a, PChar ' ', shift b]
 
 
+-- | List version of `%%`
+hcat	:: (Pretty [Char] mode, Pretty a mode) 
+	=> [a] -> StrMode mode
 
--- Concatenation --------------------------------------------------------------
--- | Same as (punc newline)
+hcat ps	= PAppend $ map ppr ps
+
+
+-- | Same as `(punc " ")`
+hsep	:: (Pretty [Char] mode, Pretty a mode) 
+	=> [a] -> StrMode mode
+
+hsep 	= punc " "
+
+
+-- | Same as `(punc newline)`
 vcat	:: (Pretty [Char] mode, Pretty a mode) 
 	=> [a] -> StrMode mode
 
 vcat ps	= punc newline ps
 
 
--- | Same as (punc (newline % newline))
-vvcat	:: (Pretty [Char] mode, Pretty a mode)
+-- | Same as `(punc (newline % newline))`
+vsep	:: (Pretty [Char] mode, Pretty a mode)
 	=> [a] -> StrMode mode
 
-vvcat ps = punc (newline % newline) ps
+vsep ps = punc (newline % newline) ps
 
 
 -- Padding --------------------------------------------------------------------
@@ -166,14 +179,15 @@ padLc n c x	= PPadLeft n c (ppr x)
 padL :: Pretty a mode => Int -> a -> StrMode mode
 padL n x	= padLc n ' ' x
 
+
 -- Punctuation ----------------------------------------------------------------
--- | A Semicolon
 semi	= PChar ';'
-
--- | A period
 dot	= PChar '.'
+comma	= PChar ','
+colon	= PChar ':'
+equals	= PChar '='
 
--- Wrapping -------------------------------------------------------------------
+-- Parenthesis ---------------------------------------------------------------
 -- | Wrap in parenthesis ().
 parens 	:: (Pretty [Char] mode, Pretty a mode) 
 	=> a -> StrMode mode
@@ -185,23 +199,15 @@ braces 	:: (Pretty [Char] mode, Pretty a mode)
 	=> a -> StrMode mode
 braces a	= "{" % a % "}"
 
--- | Braces block
--- @ 
---   {    line1
---        line2 }
--- @    
-{-
-bblock :: (Pretty [Char] mode, Pretty a mode)
 
-bblock 	ss
-	= "{" % nl %> vcat ss %% "}" % nl
--}
 -- | Wrap in brackets []
 brackets :: (Pretty [Char] mode, Pretty a mode)
  	=> a -> StrMode mode
 brackets a	= "[" % a % "]"
 
 
+
+-- Optional Printing ----------------------------------------------------------
 -- | Decide what to print based on the mode
 pprIfMode
 	:: forall a mode
@@ -232,3 +238,13 @@ pprWhen b x
 pprAtColumn :: Pretty a mode => Int -> a -> StrMode mode
 pprAtColumn col str
 	= PSetColumn col (ppr str)
+
+
+-- Combinators for code -------------------------------------------------------
+-- | A header followed by some semicolon terminated statements in braces.
+pprHeadBlock
+	:: (Pretty [Char] mode, Pretty a mode, Pretty b mode)
+	=> a -> [b] -> StrMode mode
+
+pprHeadBlock key ss
+	= key %%  braces (nl %> vcat (map (% ";") ss) % nl)
