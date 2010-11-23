@@ -1,7 +1,7 @@
 # Default build configuration.
-# 
+#
 #   This file is under version control.
-#   If you want to override these options then create a file make/config-override.deps 
+#   If you want to override these options then create a file make/config-override.deps
 #   and assign the appropdiate variables there.
 #
 
@@ -13,6 +13,12 @@ BUILDFLAVOUR	= distro
 
 # The name of the GHC to use when building.
 GHC		= ghc
+
+GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
+
+ifeq "$(GHC_VERSION)" "7"
+GHC_VERSION_FLAGS = -rtsopts
+endif
 
 # Number of jobs to use during make.
 THREADS		= 2

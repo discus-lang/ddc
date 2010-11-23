@@ -40,7 +40,7 @@ src_obj		=  $(patsubst %.hs,%.o,$(src_hs_existing))
 bin/ddc	: make/Makefile.deps $(src_obj)
 	@echo
 	@echo "* Linking ddc ---------------------------------------------------------------------"
-	$(GHC) -o bin/ddc $(GHC_FLAGS) $(DDC_PACKAGES) $(src_obj)
+	$(GHC) -o bin/ddc $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(src_obj)
 	@echo
 	
 	
