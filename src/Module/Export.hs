@@ -101,7 +101,11 @@ shouldExport vsNoExport mExports v
 	| otherwise
 	= True
 
--- Export all the top level things in this module
+
+-- | Export all the top level things in this module
+--   TODO: This is an epic hack that relies on some of the pretty printed desugared and core
+--         constructs being the same as the source. This interface file format is being replaced
+--         by the saner version in Module.Interface.
 exportAll 
 	:: ModuleId
 	-> (Var -> Type)	-- ^ a fn to get the type scheme of a top level binding
@@ -112,22 +116,22 @@ exportAll
 	-> (Var -> Bool)	-- ^ don't export these vars
 	-> String		-- ^ the interface file
 
-exportAll moduleName getType topNames ps psDesugared_ psCore export
+exportAll moduleName getType topNames psSource psDesugared_ psCore export
  = let	psDesugared	= map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared_
    in   pprStrPlain
 	$ vcat
 	[ ppr "-- Pragmas"
-	, vcat	[ppr p 	| p@(S.PPragma _ (S.XVar sp v : _)) <- ps
+	, vcat	[ppr p 	| p@(S.PPragma _ (S.XVar sp v : _)) <- psSource
 			, varName v == "LinkObjs" ]
 	, blank
 
 	, ppr "-- Module Imports"
-	, vcat	[ppr p	| p@S.PImportModule{} 	<- ps]
+	, vcat	[ppr p	| p@S.PImportModule{} 	<- psSource]
 	, blank
 
 
 	, ppr "-- Infix Operators"
-	, vcat	[ppr p	| p@S.PInfix{}		<- ps]
+	, vcat	[ppr p	| p@S.PInfix{}		<- psSource]
 	, blank
 
 	, ppr "-- Data Types"
@@ -149,7 +153,7 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	, blank
 	
 	, ppr "-- Effect"
-	, vcat	[ppr p	| p@(S.PKindSig _ v k)	<- ps
+	, vcat	[ppr p	| p@(S.PKindSig _ v k)	<- psSource
 			, T.resultKind k == T.kEffect ]
 	, blank
 
@@ -159,7 +163,7 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	, blank
 	
 	, ppr "-- Abstract Type Classes"
-	, vcat	[ ppr p	|  p@S.PClass{}		<- ps]
+	, vcat	[ ppr p	|  p@S.PClass{}		<- psSource]
 	, blank
 	
 	, ppr "-- Type Class Declarations"

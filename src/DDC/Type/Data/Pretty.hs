@@ -18,35 +18,28 @@ instance Pretty DataDef PMode where
 	, dataDefCtors	= ctors })
 
 	| Map.null ctors
-	= "data " 
-		% punc " " (v : map fst vks) 
-		% " where\n" 
-	%> vcat
-		[ "KIND       = " % dataDefKind def
+	= "data" %% hsep (v : map fst vks) %% "where" % nl
+	%> vcat	[ "KIND       = " % dataDefKind def
 		, "SEANAME    = " % dataDefSeaName def
 		, "MATERIAL   = " % dataDefMaterialVars def
 		, "IMMATERIAL = " % dataDefImmaterialVars def
 		, blank]
 
 	| otherwise
-	= "data " 
-		% punc " " (v : map fst vks) 
-		% " where\n" 
-	%> vcat
-		[ "KIND       = " % dataDefKind def
+	= "data" %% hsep (v : map fst vks) %% "where" % nl
+	%> vcat	[ "KIND       = " % dataDefKind def
 		, "MATERIAL   = " % dataDefMaterialVars def
 		, "IMMATERIAL = " % dataDefImmaterialVars def
-	   	, punc "\n" (Map.elems ctors)
+	   	, vsep $ Map.elems ctors
 		, blank]
+
 
 instance Pretty CtorDef PMode where
  ppr (CtorDef v t arity tag fs)
-  = v 	% "\n"
-	%> 	( ":: " % prettyTypeSplit t % "\n"
-		% "with { ARITY  = " % arity	% "\n"
-		% "     , TAG    = " % tag      % "\n"
-		% "     , FIELDS = " % fs 	% "\n"
-		% "}")
+  = v 	% nl %> ( "::" %% prettyTypeSplit t % nl
+		% vcat	[ "with { ARITY  = " % arity
+			, "     , TAG    = " % tag   
+			, "     , FIELDS = " % fs %% "}"])
 
 
 -- | Pretty print a data type definition in source syntax.
@@ -58,23 +51,16 @@ pprDataDefAsSource
 	, dataDefCtors	= ctors })
 
 	| Just name	<- dataDefSeaName def
-	= "foreign import data " 
-		% show name
-		% " " % vData
-		% " :: " 
-		% dataDefKind def
+	= "foreign import data" 
+		 %% show name %% vData %% "::" %% dataDefKind def
 	
 	| Map.null ctors
-	= "data " 
-		% vData 
-		% " " % (punc (ppr " ") (map ppr $ map fst vksParam)) 
+	= "data" %% vData %% hsep (map ppr $ map fst vksParam)
 
 	| otherwise
-	= "data " 
-		% vData 
-		% " " % (punc (ppr " ") (map ppr $ map fst vksParam)) 
-	%> ("\n= "
-		% (punc (ppr "\n| ") 
+	= "data" %% vData %% hsep (map ppr $ map fst vksParam)
+	%> (nl 	% "= "
+		% (punc (nl % "| ") 
 			$ map pprCtorDefAsSource 
 			$ Map.elems ctors))
 
@@ -86,19 +72,12 @@ pprCtorDefAsSource ctorDef
 	= ppr $ ctorDefName ctorDef
 
 	| otherwise
-	= (ctorDefName ctorDef)
-		% "\n"
-		%> ("{ " %
-			( punc "\n; " 
-			$ map pprField
-			$ fieldTypeLabels ctorDef)
-		% " }")
+	= pprHeadBlock (ctorDefName ctorDef)
+		$ map pprField
+		$ fieldTypeLabels ctorDef
 		
 	where	pprField (Nothing, 	t)	
 			= prettyTypeParens $ stripToBodyT t
 			
 		pprField (Just label,	t)	
-			= label % " :: " 
-			% (prettyTypeParens $ stripToBodyT t)
-
-
+			= label %% "::" %% (prettyTypeParens $ stripToBodyT t)

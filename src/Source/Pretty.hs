@@ -82,7 +82,7 @@ instance Pretty (Top a) PMode where
 	 -> ppr s
 
 	PInfix _ mode prec syms
-	 -> mode % " " % prec % " " % ", " %!% (map infixNames syms) % ";"
+	 -> mode % " " % prec %% ", " %!% (map infixNames syms) % " ;"
 
 infixNames v
  = if isAlpha (head (varName v))
