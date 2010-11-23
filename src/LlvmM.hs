@@ -22,6 +22,9 @@ module LlvmM
 	, startFunction
 	, endFunction
 
+	, setTags
+	, getTag
+
 	, renderModule )
 where
 
@@ -59,7 +62,10 @@ data LlvmState
 	, funcDecls	:: Map String LlvmFunctionDecl
 
 	-- | Functions defined in this module.
-	, functions	:: [LlvmFunction] }
+	, functions	:: [LlvmFunction]
+
+	-- | The constructor tags for the module.
+	, ctorTags	:: Map String Int }
 
 type LlvmM = StateT LlvmState IO
 
@@ -72,7 +78,8 @@ initLlvmState
 	, aliases	= Map.empty
 	, globVars	= []
 	, funcDecls	= Map.empty
-	, functions	= [] }
+	, functions	= []
+	, ctorTags	= Map.empty }
 
 
 addBlock :: [LlvmStatement] -> LlvmM ()
@@ -164,6 +171,33 @@ addGlobalFuncDecl fd
 					$ "The following two should match :"
 					++ "\n    " ++ show curr
 					++ "\n    " ++ show fd
+
+--------------------------------------------------------------------------------
+
+setTags :: [(String, Int)] -> LlvmM ()
+setTags lst
+ = do	state		<- get
+	let ctors	= ctorTags state
+	modify		$ \s -> s { ctorTags = foldl' insertTag ctors lst }
+
+insertTag :: Map String Int -> (String, Int) -> Map String Int
+insertTag map (name, value)
+ = case Map.lookup name map of
+	Nothing	-> Map.insert name value map
+	Just v	-> if value == v
+			then map
+			else panic stage
+				$ "Ctor name mismatch for '" ++ name ++ "' :"
+					++ "\n    " ++ show value
+					++ "\n    " ++ show v
+
+getTag :: String -> LlvmM Int
+getTag name
+ = do	state		<- get
+	let ctors	= ctorTags state
+	case Map.lookup name ctors of
+	  Just v	-> return v
+	  Nothing	-> panic stage $ "Can't find Ctor tag '" ++ name ++ "'."
 
 --------------------------------------------------------------------------------
 

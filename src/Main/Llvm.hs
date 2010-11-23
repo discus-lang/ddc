@@ -109,7 +109,7 @@ outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
 	let 	([ 	_seaProtos, 		seaSupers
 		 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
 		 ,	_seaData
-		 , 	_seaCtorDefs ],		junk)
+		 , 	seaCtorTags ],		junk)
 
 		 = partitionFs
 			[ (=@=) PProto{}, 	(=@=) PSuper{}
@@ -117,6 +117,8 @@ outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
 			, (=@=) PData{}
 			, (=@=) PCtorTag{} ]
 			eTree
+
+	setTags		$ map (\(PCtorTag s i) -> (s, i)) seaCtorTags
 
 	when (not $ null junk)
 		$ panic stage $ "junk sea bits = " ++ show junk ++ "\n"
@@ -304,11 +306,12 @@ llvmSwitch e _
 
 genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
 genAltVars switchEnd alt@(ASwitch (XLit (LDataTag v)) [])
- = case varName v of
-	"True"	-> return ((i32LitVar 1, switchEnd), alt)
-	"False"	-> return ((i32LitVar 0, switchEnd), alt)
-	"Unit"	-> return ((i32LitVar 0, switchEnd), alt)
-	_	-> panic stage $ "genAltVars (" ++ show __LINE__ ++ ")\n" ++ show v
+ = case seaVar False v of
+	"Base_Unit"	-> return ((i32LitVar 0, switchEnd), alt)
+	"Base_False"	-> return ((i32LitVar 0, switchEnd), alt)
+	"Base_True"	-> return ((i32LitVar 1, switchEnd), alt)
+	tag		-> do	value	<- getTag tag
+				return	((i32LitVar value, switchEnd), alt)
 
 genAltVars _ alt@(ACaseSusp (XVar (NSlot v i) t) label)
  = do	lab	<- newUniqueLabel "susp"
