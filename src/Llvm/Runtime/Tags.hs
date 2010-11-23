@@ -2,6 +2,7 @@
 
 module Llvm.Runtime.Tags
 	( tagBase
+	, tagBasePlus
 	, tagThunk
 	, tagData
 	, tagDataR
@@ -29,6 +30,12 @@ import Llvm.Util
 
 tagBase :: LlvmVar
 tagBase = i32LitVar 0
+
+
+-- tagBasePlus value is tagBase + x
+tagBasePlus :: Int -> LlvmVar
+tagBasePlus x = i32LitVar x
+
 
 tagThunk :: LlvmVar
 tagThunk = i32LitVar 0x11

@@ -1,8 +1,9 @@
 {-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
 
--- | Functions for defining DDC structs so that they can interact with the C
--- runtime. Struct definitions in the file need to be kept in sync with the
--- ones in runtime/Object.h.
+-- | Define DDC structs.
+-- These definitions need to be compatible across code compile compiled via the
+-- C backend and the LLVM backend. They need to be kept in sync with the ones
+-- in runtime/Object.h.
 
 module Llvm.Runtime.Object
 	( genericFunPtrType
@@ -10,13 +11,17 @@ module Llvm.Runtime.Object
 
 	, ddcObj
 	, ddcThunk
+	, ddcData
+
 	, nullObj
 
 	, pObj
 	, ppObj
 	, structObj
 	, structThunk
-	, pStructThunk )
+	, pStructThunk
+	, structData
+	, pStructData )
 where
 
 import Llvm
@@ -74,3 +79,18 @@ structThunk = LMAlias ("struct.Thunk", llvmTypeOfStruct ddcThunk)
 pStructThunk :: LlvmType
 pStructThunk = pLift structThunk
 
+--------------------------------------------------------------------------------
+
+ddcData :: LlvmStructDesc
+ddcData
+ =	mkLlvmStructDesc "Data"
+		[ AField "tag" i32			-- tag
+		, AField "arity" i32			-- arity
+		, AField "args" (LMArray 0 pObj) ]	-- array of arguments
+
+
+structData :: LlvmType
+structData = LMAlias ("struct.Data", llvmTypeOfStruct ddcData)
+
+pStructData :: LlvmType
+pStructData = pLift structData
