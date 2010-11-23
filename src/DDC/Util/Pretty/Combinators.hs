@@ -44,7 +44,8 @@ module DDC.Util.Pretty.Combinators
 	, pprAtColumn
 	
 	-- * Utils for printing code
-	, pprHeadBlock)
+	, pprHeadBlock
+	, pprHeadBlockSep)
 where
 import DDC.Util.Pretty.Base
 
@@ -247,4 +248,14 @@ pprHeadBlock
 	=> a -> [b] -> StrMode mode
 
 pprHeadBlock key ss
-	= key %%  braces (nl %> vcat (map (% ";") ss) % nl)
+	= key %  braces (nl %> vcat (map (% ";") ss) % nl)
+
+
+-- | A header followed by some semicolon terminated statements in braces, 
+--   with the statements separated by blank lines.
+pprHeadBlockSep
+	:: (Pretty [Char] mode, Pretty a mode, Pretty b mode)
+	=> a -> [b] -> StrMode mode
+
+pprHeadBlockSep key ss
+	= key %  braces (nl %> punc (nl % nl) (map (% ";") ss) % nl)
