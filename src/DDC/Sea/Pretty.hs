@@ -71,6 +71,9 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 	%> ("\n" %!% ss % "\n")
 	 % "}\n\n\n"
 
+	-- | Constructor tag name and value
+	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")\n"
+
 	-- Sea hackery.
 	PInclude s	-> "#include <" % s % ">\n"
 	PIncludeAbs s	-> "#include \"" % s % "\"\n"
@@ -79,7 +82,6 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PComment []	-> ppr "//\n"
 	PComment s	-> "// " % s % "\n"
 	PBlank		-> ppr "\n"
-	PHashDef s1 s2	-> "#define " %  padL 8 s1 %>> " " % s2 % "\n"
 
 	PMain mn ml withHandler
 	 ->	"int main (int argc, char** argv)\n"

@@ -56,6 +56,9 @@ data Top a
 		[Stmt a]			-- statements
 
 
+	-- | Constructor tag name and value
+	| PCtorTag	String Int		-- ^ Constructor name ane value.
+
 	-- cafs -----------------------
 	| PCafProto	Var Type		-- ^ The prototype for a CAF slot index.
 	| PCafSlot	Var Type		-- ^ A var which holds a CAF slot index.
@@ -64,7 +67,6 @@ data Top a
 
 	-- hackery --------------------
 	-- various hacky things that should probably be handled in a different way.
-	| PHashDef	String String		-- evil hash-def. Used to define constructor tags.
 	| PInclude	String			-- #include <...>
 	| PIncludeAbs	String			-- #include "..."
 
@@ -174,8 +176,8 @@ data Exp a
 
 	-- | Take a numbered field from some boxed data object.
 	| XArgData	(Exp a) Int
-	
-	-- | Take a numbered field from some thunk.		
+
+	-- | Take a numbered field from some thunk.
 	| XArgThunk	(Exp a) Int
 
 	-- | Take the tag of a boxed object.
@@ -190,13 +192,13 @@ data Exp a
 data Lit
 	-- | The null pointer.
 	= LNull
-	
+
 	-- | The boxed unit value.
 	| LUnit
-	
+
 	-- | The tag of a data constructor.
 	| LDataTag	Var
-	
+
 	-- | A literal of some primitve type like int or float.
 	| LLit		LiteralFmt
 	deriving (Show, Eq)

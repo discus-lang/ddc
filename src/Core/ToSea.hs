@@ -1,7 +1,7 @@
 
 -- | Convert CoreIR to Abstract-C
 module Core.ToSea
-	(toSeaTree) 
+	(toSeaTree)
 where
 import Data.Function
 import DDC.Main.Pretty
@@ -45,7 +45,7 @@ data SeaS
 	, stateDirectRegions	:: Set Var }
 
 type SeaM	= State SeaS
-	
+
 newVarN ::	NameSpace -> SeaM Var
 newVarN		space
  = do 	varBind		<- gets stateVarGen
@@ -67,32 +67,32 @@ slurpWitnessKind kk
  	T.KApp k (T.TVar kR (T.UVar r))
  	 | k	== T.kDirect
          , kR 	== T.kRegion
-	 -> modify $ \s -> s { stateDirectRegions 
+	 -> modify $ \s -> s { stateDirectRegions
 		 		= Set.insert r (stateDirectRegions s) }
 
 	_ -> return ()
 
 
 -- Tree -------------------------------------------------------------------------------------------
-toSeaTree 
+toSeaTree
 	:: String		-- ^ unique
 	-> Set Var		-- ^ Set of top-level vars which are known to be CAFs
 	-> Seq C.Top
 	-> Seq (E.Top ())
-	
+
 toSeaTree unique vsCafs cTree
   = evalState
   	(liftM join $ mapM toSeaP cTree)
 	SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
 		, stateCafVars		= vsCafs
 		, stateDirectRegions	= Set.empty }
-   
-    
+
+
 -- Top --------------------------------------------------------------------------------------------
 toSeaP :: C.Top -> SeaM (Seq (E.Top ()))
 toSeaP	xx
  = case xx of
-	
+
 	-- region
 	--	slurp witnesses on the way down
 	C.PRegion v vts
@@ -102,18 +102,18 @@ toSeaP	xx
 
 	C.PExtern{}
 	 ->	return Seq.empty
-	 	 
+
  	C.PBind v x
 	 -> do	let to		= C.superOpTypeX x
 		let to'		= toSeaT to
 
-		let (argTypes, resultType)	
+		let (argTypes, resultType)
 				= splitOpType to
 
 		-- split the RHS into its value args and expression
-	 	(argNames, exp)	
+	 	(argNames, exp)
 				<- splitSuper [] x
-		
+
 		sss'		<- mapM toSeaS $ slurpStmtsX exp
 		let ss'		= concat sss'
 		let argNTs	= zip argNames argTypes
@@ -136,7 +136,7 @@ toSeaP	xx
 	C.PData (T.DataDef
 			{ T.dataDefName		= v
 			, T.dataDefCtors	= ctors })
-	 -> do	
+	 -> do
 		-- Convert data type declaration
 		let ctors'	= Map.map toSeaCtorDef ctors
 	 	let dataDef	= E.PData v ctors'
@@ -144,18 +144,17 @@ toSeaP	xx
 		-- Make #defines for data constructor tags, and
 		--	sort them so they come out in the same order in the Sea
 		--	file as in the original source file.
-		let makeTagDef ctor@T.CtorDef{} 
-				= E.PHashDef 
-			 		("_tag"         ++ E.seaVar False (T.ctorDefName ctor))
-					("(_tagBase + " ++ show (T.ctorDefTag ctor) ++ ")")
+		let makeTagDef ctor@T.CtorDef{}
+				= E.PCtorTag
+			 		(E.seaVar False (T.ctorDefName ctor)) (T.ctorDefTag ctor)
 
-		let tagDefs	= map makeTagDef 
+		let tagDefs	= map makeTagDef
 				$ sortBy (compare `on` T.ctorDefTag)
 				$ Map.elems ctors
-								 
-	 	return		$ Seq.fromList 
+
+	 	return		$ Seq.fromList
 				$ dataDef : tagDefs
-	   		
+
 	_ ->	return Seq.empty
 
 
@@ -165,26 +164,26 @@ splitSuper accArgs xx
 
 	| C.XLam v t x eff clo	<- xx
 	= splitSuper (accArgs ++ [v]) x
-	
+
 	| C.XLAM v k x		<- xx
 	= do	slurpWitnessKind k
 		splitSuper accArgs x
 
 	| C.XTau t x		<- xx
 	= splitSuper accArgs x
-		
+
 	| C.XLocal v vts x	<- xx
 	= do	let ks	= map (T.kindOfType . snd) vts
 		mapM_ slurpWitnessKind ks
 		splitSuper accArgs x
-	
+
 	| otherwise
-	= return (accArgs, xx)	 
+	= return (accArgs, xx)
 
 
 
 -- CtorDef ----------------------------------------------------------------------------------------
-toSeaCtorDef :: T.CtorDef -> E.CtorDef 	
+toSeaCtorDef :: T.CtorDef -> E.CtorDef
 toSeaCtorDef (T.CtorDef vCtor tCtor arity tag fields)
  = let	tCtor'	= toSeaT tCtor
    in	E.CtorDef vCtor tCtor' arity tag fields
@@ -196,15 +195,15 @@ toSeaX		xx
  = case xx of
 	C.XVar v t
 	 -> do	vsCafs	<- gets stateCafVars
-		if Set.member v vsCafs 
+		if Set.member v vsCafs
 		 then return $ E.XVar (E.NCaf  v) (toSeaT t)
 		 else return $ E.XVar (E.NAuto v) (toSeaT t)
 
-	C.XTau    t x		
+	C.XTau    t x
 	 -> toSeaX x
 
 	-- slurp region witnesses on the way down
-	C.XLocal  v vts x	
+	C.XLocal  v vts x
 	 -> do	let ks	= map (T.kindOfType . snd) vts
 	 	mapM_ slurpWitnessKind ks
 	 	toSeaX x
@@ -223,28 +222,28 @@ toSeaX		xx
 	-- For these four we statically know that the thing we're calling is a supercombinator.
 	C.XPrim (C.MCall C.PrimCallTail)  (C.XVar vSuper tSuper : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
-		return	$ E.XPrim (E.MApp E.PAppTailCall) 
+		return	$ E.XPrim (E.MApp E.PAppTailCall)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
 	C.XPrim (C.MCall C.PrimCallSuper) (C.XVar vSuper tSuper : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
-	    	return	$ E.XPrim (E.MApp E.PAppCall) 
+	    	return	$ E.XPrim (E.MApp E.PAppCall)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
 	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) (C.XVar vSuper tSuper : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
-		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA) 
+		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
-	   
+
 	C.XPrim (C.MCall (C.PrimCallCurry superA)) (C.XVar vSuper tSuper : args)
 	 -> do	let xsValues = stripValues args
 		if  any isUnboxed xsValues
-                 then panic stage 
+                 then panic stage
 				$ "Partial application of function to unboxed args at "
  				% prettyPos vSuper
                  else
 		  do	args'	<- mapM toSeaX xsValues
-			return	$ E.XPrim (E.MApp $ E.PAppCurry superA) 
+			return	$ E.XPrim (E.MApp $ E.PAppCurry superA)
 					  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
 	-- For general application, the two things we're applying are boxed objects.
@@ -260,7 +259,7 @@ toSeaX		xx
 
 	-- the unboxing function is named after the result type
 	C.XPrim C.MUnbox [C.XPrimType r, x]
-	 -> do	let Just tResult= C.unboxedVersionOfBoxedType r 
+	 -> do	let Just tResult= C.unboxedVersionOfBoxedType r
 	 			$ C.checkedTypeOfOpenExp (stage ++ "toSeaX") x
 
 		x'	<- toSeaX x
@@ -276,11 +275,11 @@ toSeaX		xx
 	C.XLit litFmt@(LiteralFmt lit fmt)
 	 | dataFormatIsBoxed fmt
 	 -> panic stage $ "toSeaX[XLit]: can't convert boxed literal " % litFmt
-	 
+
 	 | otherwise
 	 -> return	$ E.XLit (E.LLit litFmt)
 
-	-- string constants are always applied to regions 
+	-- string constants are always applied to regions
 	C.XAPP (C.XLit litFmt@(LiteralFmt l@LString{} fmt)) (T.TVar k r)
 	 | k == T.kRegion
 	 -> return $ E.XLit (E.LLit litFmt)
@@ -291,11 +290,11 @@ toSeaX		xx
 	 -> let
 	 	parts		= C.flattenApps xx
 		(Left (C.XVar vF vT) : _)	= parts
-		
+
 	    in 	return	$ E.XVar (E.NAuto vF) $ toSeaT vT
-	 	
+
 	_ -> panic stage
-		$ "toSeaX: cannot convert expression to Sea IR.\n" 
+		$ "toSeaX: cannot convert expression to Sea IR.\n"
 		% "-----\n"
 		% xx					% "\n"
 
@@ -315,12 +314,12 @@ isUnboxed x
 --   lambdas in front of it due to lambda lifting.
 --
 --   eg:  s = /\ +w13 :: Mutable %r1
---            [** type] 
+--            [** type]
 --            do { ... }
 --
 --   The Sea code doesn't handle nested groups of statements, but we can flatten them
 --   all out into a single list here.
---	
+--
 --
 toSeaS	:: C.Stmt -> SeaM [E.Stmt ()]
 toSeaS xx
@@ -328,7 +327,7 @@ toSeaS xx
 	-- decend past type info
 	C.SBind b (C.XTau t x)
 	 -> toSeaS $ C.SBind b x
-	 
+
 	C.SBind b (C.XLAM v k x)
 	 -> toSeaS $ C.SBind b x
 
@@ -337,15 +336,15 @@ toSeaS xx
 
 
 	-- do
-	-- flatten out the initial statements and recursively bind the lhs 
+	-- flatten out the initial statements and recursively bind the lhs
 	--	to the last expression in the list.
 	C.SBind b (C.XDo ss)
 	 -> do  let Just ssInit			= takeInit ss
 	 	let Just (C.SBind Nothing x) 	= takeLast ss
-		
+
 		ssInit'	<- liftM concat $ mapM toSeaS ssInit
 		ssMore	<- toSeaS (C.SBind b x)
-		
+
 	    	return	$ ssInit' ++ ssMore
 
 	-- matches
@@ -355,7 +354,7 @@ toSeaS xx
 		let xT		= C.checkedTypeOfOpenExp (stage ++ ".toSeaS") x
 		let t		= toSeaT xT
 		let aaL		= map (assignLastA (E.XVar (E.NAuto var) t, t)) aa'
-		
+
 		return		[E.SMatch aaL]
 
 
@@ -363,7 +362,7 @@ toSeaS xx
 	 -> do	aa'		<- mapM (toSeaA Nothing) aa
 	    	return		[E.SMatch aa']
 
-	    
+
 	-- expressions
 	C.SBind (Just var) x
 	 -> do	x'		<- toSeaX $ C.slurpExpX x
@@ -380,11 +379,11 @@ toSeaA :: (Maybe C.Exp) -> C.Alt -> SeaM (E.Alt ())
 toSeaA	   mObjV xx
  = case xx of
 	C.AAlt [] x
-	 -> do	
+	 -> do
 	 	ss'		<- liftM concat
 				$  mapM toSeaS
 				$  slurpStmtsX x
-	 
+
 	    	return	$ E.ADefault ss'
 
 	C.AAlt gs x
@@ -394,16 +393,16 @@ toSeaA	   mObjV xx
 	    	ss'		<- liftM concat
 				$  mapM toSeaS
 				$  slurpStmtsX x
-		
+
 		return	$ E.AAlt gs' (ssFront ++ ss')
-				
-	
+
+
 
 
 -- Guard ------------------------------------------------------------------------------------------
 toSeaG	:: Maybe C.Exp 		-- match object
 	-> [E.Stmt ()] 		-- stmts to add to the front of this guard.
-	-> C.Guard 
+	-> C.Guard
 	-> SeaM ( [E.Stmt ()]	-- stmts to add to the front of the next guard.
 		,  Maybe (E.Guard ()))
 
@@ -415,12 +414,12 @@ toSeaG	mObjV ssFront gg
 	 -> do	-- work out the type of the RHS
 	 	let t		= C.checkedTypeOfOpenExp (stage ++ ".toSeaG") x
 		let t'		= toSeaT t
-	
+
 	  	-- convert the RHS expression into a sequence of stmts
 	 	ssRHS		<- liftM concat
 				$  mapM toSeaS
 				$  slurpStmtsX x
-		
+
 		-- if the guard expression is in a direct region then we don't need to check
 		--	for suspensions during the match
 		rhsIsDirect	<- isDirectType t
@@ -450,7 +449,7 @@ toSeaG	mObjV ssFront gg
 				let ssL		= assignLastSS (E.XVar name t', t') ssRHS
 				return	( []
 					, Just $ E.GCase spos False (ssFront ++ ssL) compX (E.XLit (E.LLit litFmt)))
-			  
+
 			-- match against constructor
 			| C.WCon sp v lvts	<- w
 			= do	name		<- liftM E.NAuto $ newVarN NameValue
@@ -461,9 +460,9 @@ toSeaG	mObjV ssFront gg
 
 				let ssL		= assignLastSS (E.XVar name t', t') ssRHS
 				return	( map (toSeaGL name) lvts
-					, Just $ E.GCase sp 
-							(not rhsIsDirect) 
-							(ssFront ++ ssL) 
+					, Just $ E.GCase sp
+							(not rhsIsDirect)
+							(ssFront ++ ssL)
 							compX (
 							(E.XLit (E.LDataTag v))))
 
@@ -481,17 +480,17 @@ isDirectType tt
 	| otherwise
 	= 	return False
 
-	
+
 isPatConst gg
  = case gg of
  	C.WLit{}	-> True
 	_		-> False
-	
+
 
 toSeaGL	nObj (label, var, t)
 	| C.LIndex i	<- label
-	= E.SAssign 
-		(E.XVar (E.NAuto var) (toSeaT t)) 
+	= E.SAssign
+		(E.XVar (E.NAuto var) (toSeaT t))
 		(toSeaT t)
 		(E.XArgData (E.XVar nObj (toSeaT t)) i)
 
@@ -513,14 +512,14 @@ toSeaSuperT tt	= toSeaT' False tt
 
 
 -- | Convert an operational type from core to equivalent Sea representation type.
---   In the Sea backend, functional values are represented as boxed thunks, so 
+--   In the Sea backend, functional values are represented as boxed thunks, so
 --   we convert all function types to the type of an anonymous boxed object.
 toSeaT :: T.Type -> E.Type
-toSeaT tt	= toSeaT' True tt 
+toSeaT tt	= toSeaT' True tt
 
 toSeaT' :: Bool -> T.Type -> E.Type
 toSeaT' repr tt
- = let down	= toSeaT' repr 
+ = let down	= toSeaT' repr
    in case tt of
 	T.TForall _ _ t		-> down t
 	T.TConstrain t _	-> down t
@@ -529,31 +528,31 @@ toSeaT' repr tt
 	 -> let result
 		 | Just tx		<- T.takeTData tt
 		 = toSeaT_data tx
-	
+
 		 | Just _		<- T.takeTFun tt
 		 , tsBits		<- T.flattenTFuns tt
 		 , Just tsArgs		<- takeInit tsBits
 		 , Just tResult		<- takeLast tsBits
-		 = if repr 
+		 = if repr
 			then E.tPtrObj
 			else E.TFun (map toSeaT tsArgs) (toSeaT tResult)
 
 
 		 | otherwise
 		 = E.tPtrObj
-		
+
 	    in result
 
 	T.TCon{}
 	 | Just tx		<- T.takeTData tt
 	 -> toSeaT_data tx
-	
-	T.TVar{}	
+
+	T.TVar{}
 	  -> E.tPtrObj
 
 	_ 	-> panic stage
 		$ "toSeaT: No match for " ++ show tt ++ "\n"
-	
+
 
 toSeaT_data tx
 	-- The unboxed void type is represented directly.
@@ -573,7 +572,7 @@ toSeaT_data tx
 	= E.TCon (E.TyConUnboxed v)
 
 	-- An abstract unboxed data type.
-	-- The are types like FILE which are defined by the system libraries, and will usually 
+	-- The are types like FILE which are defined by the system libraries, and will usually
 	-- be be referenced via a pointer.
 	-- TODO: To detect these we just check for the '#' characted in the type name, which pretty nasty.
 	--       We don't require the arg list to be empty because type constructors like (String# :: % -> *)
@@ -593,7 +592,7 @@ splitOpType :: T.Type -> ([E.Type], E.Type)
 splitOpType to
   = let	opParts		= T.flattenTFuns to
 	opParts'@(_:_)	= map toSeaT opParts
-		
+
 	argTypes	= init opParts'
 	resultType	= last opParts'
    in 	(argTypes, resultType)
@@ -602,7 +601,7 @@ splitOpType to
 -- | Throw away the type terms in this list of expressions.
 stripValues :: [C.Exp] -> [C.Exp]
 stripValues args
-	= catMaybes 
+	= catMaybes
 	$ map stripValues' args
 
 stripValues' a
@@ -613,10 +612,10 @@ stripValues' a
 
 	C.XPrimType _
 	 -> Nothing
-	 
+
 	_ -> Just a
-	 
-	
+
+
 -- | Assign the value of the stmt(s) in this list to the provided exp.
 assignLastSS :: (E.Exp (), E.Type) -> [E.Stmt ()] -> [E.Stmt ()]
 assignLastSS	xT    ss
@@ -624,7 +623,7 @@ assignLastSS	xT    ss
  	Just lastS	= takeLast ss
 
    in	firstSS ++ (assignLastS xT lastS)
-	
+
 
 assignLastS :: (E.Exp (), E.Type) -> E.Stmt () -> [E.Stmt ()]
 assignLastS xT@(aX, t) ss
@@ -634,7 +633,7 @@ assignLastS xT@(aX, t) ss
 	E.SSwitch       x aa	-> [E.SSwitch x (map (assignLastA xT) aa)]
 	E.SMatch 	aa	-> [E.SMatch (map (assignLastA xT) aa)]
 
-    
+
 assignLastA :: (E.Exp (), E.Type) -> E.Alt () -> E.Alt ()
 assignLastA xT aa
  = case aa of
@@ -665,7 +664,7 @@ toSeaPrimOp op
 	C.OpGe	-> E.OpGe
 	C.OpLt	-> E.OpLt
 	C.OpLe	-> E.OpLe
-	
+
 	-- boolean
 	C.OpAnd	-> E.OpAnd
 	C.OpOr	-> E.OpOr

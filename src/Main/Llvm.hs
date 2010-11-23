@@ -109,13 +109,13 @@ outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
 	let 	([ 	_seaProtos, 		seaSupers
 		 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
 		 ,	_seaData
-		 , 	_seaHashDefs ],		junk)
+		 , 	_seaCtorDefs ],		junk)
 
 		 = partitionFs
 			[ (=@=) PProto{}, 	(=@=) PSuper{}
 			, (=@=) PCafProto{},	(=@=) PCafSlot{},	(=@=) PCafInit{}
 			, (=@=) PData{}
-			, (=@=) PHashDef{} ]
+			, (=@=) PCtorTag{} ]
 			eTree
 
 	when (not $ null junk)
