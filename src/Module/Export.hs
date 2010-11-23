@@ -25,8 +25,6 @@ import qualified DDC.Desugar.Transform	as D
 import qualified DDC.Core.Exp		as C
 import qualified Core.OpType		as C
 
-
------
 stage	= "Module.Export"
 
 -- Make a .di interface file for this module.
@@ -117,32 +115,27 @@ exportAll
 exportAll moduleName getType topNames ps psDesugared_ psCore export
  = let	psDesugared	= map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared_
    in   pprStrPlain
-	$  "-- Imports\n"
-	++ (concat [pprStrPlain p | p@S.PImportModule{} 	<- ps])
-	++ "\n"
+	$ vcat
+	[ ppr "-- Pragmas"
+	, vcat	[ppr p 	| p@(S.PPragma _ (S.XVar sp v : _)) <- ps
+			, varName v == "LinkObjs" ]
+	, blank
 
-	++ "-- Pragmas\n"
-	++ (concat [pprStrPlain p 
-			| p@(S.PPragma _ (S.XVar sp v : _))	<- ps
-			, varName v == "LinkObjs" ])
+	, ppr "-- Module Imports"
+	, vcat	[ppr p	| p@S.PImportModule{} 	<- ps]
+	, blank
 
-	++ "\n"
 
-	++ "-- Infix\n"
-	++ (concat [pprStrPlain p | p@S.PInfix{}		<- ps])
-	++ "\n"
+	, ppr "-- Infix Operators"
+	, vcat	[ppr p	| p@S.PInfix{}		<- ps]
+	, blank
 
-	++ "-- Data\n"
-	++ (concat [pprStrPlain (D.PKindSig sp
-					(eraseModule vData)
-					k)
+	, ppr "-- Data Types"
+ 	, vcat	[ ppr (D.PKindSig sp (eraseModule vData) k)
 			| D.PKindSig sp vData k <- psDesugared
-			, T.resultKind k == T.kValue ])
-
-
-	++ (pprStrPlain
-		$ vcat
-		$ [ (pprDataDefAsSource
+			, T.resultKind k == T.kValue ]
+	
+	, vcat	[ (pprDataDefAsSource
 			$ T.DataDef 
 				(eraseModule vData) 
 				vSea
@@ -150,65 +143,55 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 				(Map.map eraseModule_ctor ctors)
 				vsMaterial
 				vsImmaterial)
-		    % ";\n"
-
-		  | D.PData sp (T.DataDef vData vSea vksData ctors vsMaterial vsImmaterial)
-		  <- psDesugared])
-
-	++ "\n"
-
-	++ "-- Effects\n"
-	++ (concat [pprStrPlain p 
-			| p@(S.PKindSig _ v k)	<- ps
-			, T.resultKind k == T.kEffect ])
-	++ "\n"
-
-	++ "-- Regions\n"
-	++ (concat [exportRegion moduleName p 
-			| p@(C.PRegion r vts)		<- psCore])
-	++ "\n\n"
+		    % ";"
+			| D.PData sp (T.DataDef vData vSea vksData ctors vsMaterial vsImmaterial)
+			<- psDesugared]
+	, blank
 	
-	++ "-- Classes\n"
-	++ (concat [pprStrPlain p 
-			| p@S.PClass{}		<- ps])
-	++ "\n"
-	
-	++ "-- Class declarations\n"
-	++ (concat [pprStrPlain p 
-			| p@D.PClassDecl{} 	<- psDesugared])
-	++ "\n"
+	, ppr "-- Effect"
+	, vcat	[ppr p	| p@(S.PKindSig _ v k)	<- ps
+			, T.resultKind k == T.kEffect ]
+	, blank
 
-	++ "-- Class instances\n"
-	++ (concat [pprStrPlain p 
-			| p@D.PClassInst{}	<- psDesugared])
-	++ "\n"
+	, ppr"-- Regions"
+	, vcat	[ exportRegion moduleName p 
+			| p@(C.PRegion r vts)	<- psCore]
+	, blank
 	
-	++ "-- Foreign imports\n"
-	++ (concat [pprStrPlain p 
-			| p@D.PExtern{}		<- psDesugared])
-	++ "\n"
+	, ppr "-- Abstract Type Classes"
+	, vcat	[ ppr p	|  p@S.PClass{}		<- ps]
+	, blank
+	
+	, ppr "-- Type Class Declarations"
+	, vcat	[ ppr p | p@D.PClassDecl{} 	<- psDesugared]
+	, blank
+
+	, ppr "-- Type Class Instances"
+	, vcat	[ ppr p | p@D.PClassInst{}	<- psDesugared]
+	, blank
+
+	, ppr "-- Projection dictionaries"
+	, vcat	[ exportProjDict p 	
+			| p@D.PProjDict{}	<- psDesugared]
+	
+	, ppr "-- Foreign imports"
+	, vcat [ ppr p 	| p@D.PExtern{}		<- psDesugared]
+	, blank
 
 	-- only export types for bindings that were in scope in the source, and
 	--	not lifted supers as well as they're not needed by the client module.
-	++ "-- Binds\n"
-	++ (concat [exportForeign v (getType v) (C.superOpTypeX x)
+ 	, ppr "-- Binding Types"
+	, vcat	[ exportForeign v (getType v) (C.superOpTypeX x)
 			| p@(C.PBind v x) <- psCore
-			, export (eraseVarModuleV moduleName v)])		
-
---	++ "-- Projection dictionaries\n"
-	++ (concat [exportProjDict p 	| p@D.PProjDict{}		
-					<- psDesugared])
-
-	++ "\n"
-
+			, export (eraseVarModuleV moduleName v)]
+	]
 
 -- | Erase a the module name from this var 
 eraseModule :: Var -> Var
-eraseModule v
-	= v	{ varModuleId = ModuleIdNil }
+eraseModule v	= v { varModuleId = ModuleIdNil }
 
 eraseModule_ctor def@T.CtorDef{}
-	= def	{ T.ctorDefName	= eraseModule (T.ctorDefName def) }
+	= def { T.ctorDefName	= eraseModule (T.ctorDefName def) }
 
 
  
@@ -222,11 +205,10 @@ exportForeign
 exportForeign v tv to
 	= pprStrPlain
 	$ "foreign import "
-	% pprStrPlain v { varModuleId = ModuleIdNil }
-	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTypeSplit $ T.beautifyLocalNamesT tv)
-		++ "\n:$ " ++ pprStrPlain to
-
-		++ ";\n\n")
+	% pprStrPlain v { varModuleId = ModuleIdNil } % nl
+	%> vcat	[ "::" %% (T.prettyTypeSplit $ T.beautifyLocalNamesT tv)
+		, ":$" %% to %% semi ]
+	% nl
 
 
 -- | export  a projection dictionary
@@ -236,18 +218,18 @@ exportProjDict (D.PProjDict _ t [])
 
 exportProjDict (D.PProjDict _ t ss)
  	= pprStrPlain
-	$ "project " % t % " where\n"
-	% "{\n"
-	%> "\n" %!% (map (\(D.SBind _ (Just v1) (D.XVar _ v2)) 
-			-> v1 %>> " = " % v2 { varModuleId = ModuleIdNil } % ";") ss)
-	% "\n}\n\n"
+	$ "project " % t % " where" % nl
+	% (braces
+ 	 	(nl %> vcat (map (\(D.SBind _ (Just v1) (D.XVar _ v2))
+					-> v1 %>> " = " % v2 { varModuleId = ModuleIdNil } % ";")
+					ss)))
 	
 -- | export a top level region decl
 exportRegion :: ModuleId -> C.Top -> String
 exportRegion mod (C.PRegion r vts)
 	| varModuleId r == ModuleIdNil
 	= pprStrPlain
-	$ "region " % mod % "." % r % ";" % "\n"
+	$ "region " % mod % "." % r % ";" % nl
 
 	| otherwise
 	= ""

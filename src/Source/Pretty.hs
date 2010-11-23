@@ -20,7 +20,7 @@ pprKeyBlock :: (Pretty a mode, Pretty b mode)
 	=> a -> [b] -> StrMode mode
 
 pprKeyBlock key ss
-	= key %  braces (nl %> vcat (map (% ";") ss))
+	= key %  braces (nl %> vcat (map (% ";") ss) % nl)
 
 
 -- | A keyword followed by a space, then some semicolon terminated statements in braces.
@@ -28,7 +28,7 @@ pprKeySpBlock :: (Pretty a mode, Pretty b mode)
 	=> a -> [b] -> StrMode mode
 
 pprKeySpBlock key ss
-	= key %% braces (nl %> vcat (map (% ";") ss))
+	= key %%  braces (nl %> vcat (map (% ";") ss) % nl)
 
 
 -- Top ---------------------------------------------------------------------------------------------

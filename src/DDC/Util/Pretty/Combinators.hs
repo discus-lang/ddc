@@ -9,21 +9,36 @@
 -- | Combinators for forming new pretty things out of old ones.
 module DDC.Util.Pretty.Combinators 
 	( blank
-	, newline, nl, nlnl
+
+	-- * Primitive Combinators
 	, paste,  (%), (%%)
 	, punc,	  (%!%)
 	, indent, (%>)
 	, shift,  (%>>)
 	, vcat
 	, vvcat
+	
+	-- * Padding into columns.
 	, padRc,  padR
 	, padLc,  padL 
+
+	-- * New Lines
+	, newline, nl, nlnl
+
+	-- * Punctuation
+	, semi
+	, dot
+
+	-- * Parenthesis
 	, parens
 	, braces
-
 	, brackets
+	
+	-- * Optional printing
 	, pprIfMode
 	, pprWhen
+	
+	-- * Controlling printer state
 	, pprAtColumn)
 where
 import DDC.Util.Pretty.Base
@@ -123,14 +138,14 @@ shift a	= PShift (ppr a)
 vcat	:: (Pretty [Char] mode, Pretty a mode) 
 	=> [a] -> StrMode mode
 
-vcat ps	= punc newline ps % newline
+vcat ps	= punc newline ps
 
 
 -- | Same as (punc (newline % newline))
 vvcat	:: (Pretty [Char] mode, Pretty a mode)
 	=> [a] -> StrMode mode
 
-vvcat ps = punc (newline % newline) ps % newline
+vvcat ps = punc (newline % newline) ps
 
 
 -- Padding --------------------------------------------------------------------
@@ -151,6 +166,12 @@ padLc n c x	= PPadLeft n c (ppr x)
 padL :: Pretty a mode => Int -> a -> StrMode mode
 padL n x	= padLc n ' ' x
 
+-- Punctuation ----------------------------------------------------------------
+-- | A Semicolon
+semi	= PChar ';'
+
+-- | A period
+dot	= PChar '.'
 
 -- Wrapping -------------------------------------------------------------------
 -- | Wrap in parenthesis ().

@@ -240,7 +240,7 @@ prettyTypeSplit	tt
 				$ catMaybes 
 				$ map (takeVarOfBind . fst) bks
 	    in	"forall " 
-			% punc " " (map (uncurry pprBindKind) bks) % "\n"
+			% punc " " (map (uncurry pprBindKind) bks) % nl
 	    		% ".  " 
 			% prettyTypeSplit_crs vsLocal tBody
 	 
@@ -267,9 +267,9 @@ prettyTypeSplit_crs vsLocal xx
 				TConstrain{}	-> parens $ pprType vsLocal' x
 				_		-> pprType vsLocal' x
 	
-	    in	down tBody % "\n"
+	    in	down tBody % nl
 	 	 % ":- "
-	 	 % (punc (ppr "\n,  ") $ 
+	 	 % (punc (nl % ",  ") $ 
 			(  [pprType vsLocal' t1 %> " =  " % pprType vsLocal' t2	
 				| (t1, t2) <- Map.toList $ crsEq crs]
 				
