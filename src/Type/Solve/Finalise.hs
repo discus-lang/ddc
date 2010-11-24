@@ -9,18 +9,16 @@ import DDC.Solve.Check.Instances
 import DDC.Solve.State
 import DDC.Constraint.Exp
 import Data.IORef
-
 import Util
 import qualified Data.Map	as Map
+import qualified Data.Sequence	as Seq
+import Data.Sequence		(Seq)
 
------
 debug	= True
 trace s	= when debug $ traceM s
 
-
------
 solveFinalise 
-	:: ([CTree] -> SquidM ())	-- the solveCs function from Type.Solve
+	:: (Seq CTree -> SquidM ())	-- the solveCs function from Type.Solve
 	-> Bool 			-- whether to require the main function to have
 					--	the type () -> ()
 	-> SquidM ()
@@ -38,7 +36,7 @@ solveFinalise solveCs blessMain
 	trace	$ "\n== Finalise ====================================================================\n"
 		% "     sGenLeftover   = " % sGenLeftover % "\n"
 	
-	solveCs [CGrind]
+	solveCs $ Seq.singleton CGrind
 
 	-- If grind adds errors to the state then don't do the generalisations.
 	errs	<- gotErrors
@@ -50,7 +48,7 @@ solveFinalise solveCs blessMain
 		-- When generalised schemes are added back to the graph we can end up with (var = ctor)
 		--	constraints in class queues which need to be pushed into the graph by another grind.
 		--
-		solveCs [CGrind]
+		solveCs $ Seq.singleton CGrind
 		return ()
 
 		

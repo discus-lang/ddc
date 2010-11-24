@@ -28,6 +28,8 @@ import DDC.Main.Arg		(Arg)
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Foldable	as Seq
+import qualified Data.Sequence	as Seq
+import Data.Sequence		(Seq)
 
 debug	= True
 trace s	= when debug $ traceM s
@@ -52,7 +54,7 @@ solveProblem args mTrace problem
 			$ concat 
 			$ Map.elems $ problemSigs problem
 
-		solveTree (Seq.toList $ problemConstraints problem)
+		solveTree (problemConstraints problem)
 			  (problemMainIsMain  problem))
 
 		solverState
@@ -89,7 +91,7 @@ solveFeedSig (ProbSig v sp _ tSig)
 --	This is called once we've created the initial state and added all the type signatures
 --	to the graph.
 solveTree
-	:: [CTree]		-- ^ Constraints to solve.
+	:: Seq CTree		-- ^ Constraints to solve.
 	-> Bool			-- ^ Whether to require "main" to have type () -> ().
 	-> SquidM ()
 
@@ -97,7 +99,8 @@ solveTree ctree blessMain
  = do
 	-- Slurp out the branch containment tree and add it to the state.
 	--	we use this to help determine which bindings are recursive.
-	stateContains `writesRef` (Map.unions $ map slurpContains ctree)
+	stateContains `writesRef` 
+		(Map.unions $ map slurpContains $ Seq.toList ctree)
 
 	-- Feed all the constraints into the graph, generalising types when needed.
 	solveCs ctree
@@ -107,9 +110,12 @@ solveTree ctree blessMain
 
 
 -- | Add some constraints to the type graph.
-solveCs :: [CTree] -> SquidM ()
-solveCs [] 	= return ()
-solveCs	(c:cs)
+solveCs :: Seq CTree -> SquidM ()
+solveCs cc
+ | Seq.null cc
+ = return ()
+
+ | c Seq.:< cs	<- Seq.viewl cc
  = case c of
 
 	-- Program Constraints --------------------------------------
@@ -129,7 +135,7 @@ solveCs	(c:cs)
 
 		-- consider the constraints from the branch next, 
 		--	and add a CLeave marker to rember when we're finished with it.
-		solveNext ((Seq.toList $ branchSub c) ++ [CLeave bind] ++ cs)
+		solveNext (branchSub c Seq.>< Seq.singleton (CLeave bind) Seq.>< cs)
 
 	-- A single equality constraint
 	CEq _ t1 t2
@@ -230,7 +236,7 @@ solveCs	(c:cs)
 	 -> do	-- If the grinder resolves a projection, it will return some
 		--	more constraints that need to be handled before continuing.
 		csMore	<- solveGrind
-	 	solveNext (csMore ++ cs)
+	 	solveNext (Seq.fromList csMore Seq.>< cs)
 
 	-- Instantiate the type of a lambda-bound variable.
 	--	There's nothing to really instantiate, just set the use type to the def type.
@@ -241,8 +247,8 @@ solveCs	(c:cs)
 			Map.insert vUse	(InstanceLambda vUse vInst Nothing)
 
 		solveNext
-			$ [CEq src (TVar kValue (UVar vUse)) (TVar kValue (UVar vInst))]
-			++ cs 
+		 $      (CEq src (TVar kValue (UVar vUse)) (TVar kValue (UVar vInst)))
+		 Seq.<| cs
 
 	-- Instantiate a type from a let binding.
 	--	It may or may not be generalised yet.
@@ -297,8 +303,9 @@ solveCs	(c:cs)
 
 			-- The type will be added via a new constraint
 			solveNext
-				$  [CEq src (TVar kValue $ UVar vUse) tInst]
-				++ cs
+			 $      (CEq src (TVar kValue $ UVar vUse) tInst)
+			 Seq.<|	cs
+			
 		 Nothing
 		  ->	return ()
 
@@ -313,8 +320,8 @@ solveCs	(c:cs)
 			Map.insert vUse (InstanceLetRec vUse vInst Nothing)
 
 		solveNext
-			$ [CEq src (TVar kValue $ UVar vUse) (TVar kValue $ UVar vInst)]
-			++ cs
+		 $ 	(CEq src (TVar kValue $ UVar vUse) (TVar kValue $ UVar vInst))
+		 Seq.<| cs
 
 	-- Some other constraint	
 	_ -> panic stage
@@ -324,7 +331,7 @@ solveCs	(c:cs)
 -- | If the solver state does not contain errors, 
 --	then continue solving these constraints, 
 --	otherwise bail out.
-solveNext :: [CTree] -> SquidM ()
+solveNext :: Seq CTree -> SquidM ()
 solveNext cs
  = do 	err	<- gets stateErrors
 	if isNil err
@@ -350,9 +357,9 @@ solveNext cs
 --		TInstLet, TInstLetRec or TInstLambda depending on how the var was bound.
 --
 solveCInst
-	:: [CTree]		-- ^ the constraints waiting to be solved
+	:: Seq CTree		-- ^ the constraints waiting to be solved
 	-> CTree		-- ^ the instantiation constraint we're working on.
-	-> SquidM [CTree]	-- ^ a possibly reordered list of constraints that we should
+	-> SquidM (Seq CTree)	-- ^ a possibly reordered list of constraints that we should
 				--	continue on solving.
 
 solveCInst cs c@(CInst _ vUse vInst)
@@ -423,7 +430,7 @@ solveCInst_simple
 	 || Map.member vInst (squidEnvCtorDefs env)
 	= do	
 --		trace	$ ppr "*   solveCInst_simple: Scheme is in graph.\n"
-		return	$ CGrind : (CInstLet src vUse vInst) : cs
+		return	$ Seq.fromList [CGrind, (CInstLet src vUse vInst)] Seq.>< cs
 
 	-- If	The var we're trying to instantiate is on our path
 	-- THEN	we're inside this branch.
@@ -436,9 +443,9 @@ solveCInst_simple
 		--	the toCore pass will use this to add the required type params
 		--	to this call.
 		case bind of
-			BLet{}		-> return $ (CInstLetRec src vUse vInst) : cs
-			BLambda{}	-> return $ (CInstLambda src vUse vInst) : cs
-			BDecon{}	-> return $ (CInstLambda src vUse vInst) : cs
+			BLet{}		-> return $ (CInstLetRec src vUse vInst) Seq.<| cs
+			BLambda{}	-> return $ (CInstLambda src vUse vInst) Seq.<| cs
+			BDecon{}	-> return $ (CInstLambda src vUse vInst) Seq.<| cs
 
 	| otherwise
 	= solveCInst_let cs c bindInst path
@@ -455,7 +462,6 @@ solveCInst_let
 
 	-- Work out the bindings in this ones group
 	mBindGroup	<- bindGroup vInst
-
 	solveCInst_find cs c bindInst path mBindGroup genSusp
 	
 
@@ -469,7 +475,7 @@ solveCInst_find
 	, not $ and $ map (\v -> Map.member v genSusp) $ Set.toList vsGroup
 	= do 	
 --		trace	$ ppr "*   solveCInst_find: Recursive binding.\n"
-		return	$ (CInstLetRec src vUse vInst) : cs
+		return	$ (CInstLetRec src vUse vInst) Seq.<| cs
 
 		
 	-- IF	There is a suspended generalisation
@@ -478,7 +484,7 @@ solveCInst_find
 	| Map.member vInst genSusp
 	= do	
 --		trace	$ ppr "*   solveCInst_find: Generalisation\n"
-		return	$ CGrind : (CInstLet src vUse vInst) : cs
+		return	$ CGrind Seq.<| (CInstLet src vUse vInst) Seq.<| cs
 			
 	-- The type we're trying to generalise is nowhere to be found. The branch for it
 	--	might be later on in the constraint list, but we need it now.
@@ -490,19 +496,17 @@ solveCInst_find
 --			% "    queue =\n" %> (", " %!% map ppr (c:cs)) % "\n\n"
 	
 		let floatBranch prev cc'
-			= case cc' of
-				(c@(CBranch { branchBind = BLet [vT] }) : cs')
-				 | vT == vInst
-				 -> c : (prev ++ cs')
+			= case Seq.viewl cc' of
+				c@(CBranch { branchBind = BLet [vT] }) Seq.:< cs'
+				 | vT == vInst	-> c Seq.<| (prev Seq.>< cs')
 				 
-				(c : cs') 
-				 -> floatBranch (prev ++ [c]) cs'
+				c Seq.:< cs'	-> floatBranch (prev Seq.|> c) cs'
 				 
-				[] -> panic stage
-				 	$ "floatBranch: can't find branch for " % vInst % "\n"
+				Seq.EmptyL 	-> panic stage
+				 		$ "floatBranch: can't find branch for " % vInst
 					
 		-- Reorder the constraints so the required branch is at the front
-		let csReordered	= floatBranch [] (cc:cs)
+		let csReordered	= floatBranch Seq.empty (cc Seq.<| cs)
 --		trace	$ "    queue' =\n" %> (", " %!% map ppr csReordered) % "\n\n"
 	
 		-- continue solving
