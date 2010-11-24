@@ -71,7 +71,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 	%> ("\n" %!% ss % "\n")
 	 % "}\n\n\n"
 
-	-- | Constructor tag name and value
+	-- Constructor tag name and value
 	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")\n"
 
 	-- Sea hackery.

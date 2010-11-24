@@ -491,8 +491,7 @@ solveCInst_find
 	-- 	Reorder the constraints to process that branch first before
 	--	we try the instantiation again.
 	| otherwise
-	= do	
-		let wanted c
+	= do	let wanted c
 		 	= case c of
 			   CBranch { branchBind = BLet [vT] }	-> vT == vInst
 			   _					-> False
