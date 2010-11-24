@@ -74,6 +74,7 @@ makeLinkCmd
 
 	= "gcc"
 	++ " -std=c99"
+	++ " -dead_strip"
 	++ " -m" ++ show pointerBits
 	++ " -o " ++ outFile
 
@@ -86,9 +87,6 @@ makeLinkCmd
 	++ (if elem StaticRuntime args 
 		then " " ++ pathRuntime ++ "/libddc-runtime.a"
 		else " " ++ pathRuntime ++ "/libddc-runtime.dylib")
-
 	++ " -lm"
-
 	++ " " ++ concat [" -L" ++ dir | dir <- extraLibDirs]
 	++ " " ++ concat [" -l" ++ lib | lib <- extraLibs]
-
