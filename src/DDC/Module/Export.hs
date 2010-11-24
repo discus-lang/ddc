@@ -25,7 +25,7 @@ import qualified DDC.Desugar.Transform	as D
 import qualified DDC.Core.Exp		as C
 import qualified Core.OpType		as C
 
-stage	= "Module.Export"
+stage	= "DDC.Module.Export"
 
 -- Make a .di interface file for this module.
 makeInterface 

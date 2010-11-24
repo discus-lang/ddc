@@ -45,17 +45,17 @@ data TypeSource
 	| TSI SourceInfer
 	deriving (Show, Eq)
 
+
 instance Pretty TypeSource PMode where
- ppr (TSNil str) = "TSNil " % ppr str
- ppr (TSV sv)	= "TSV " % ppr sv
- ppr (TSE se)	= "TSE " % ppr se
- ppr (TSC sc)	= "TSC " % ppr sc
- ppr (TSU su)	= "TSU " % ppr su
- ppr (TSM sm)	= "TSM " % ppr sm
- ppr (TSI si)	= "TSI " % ppr si
+ ppr (TSNil str) = "TSNil" %% ppr str
+ ppr (TSV sv)	 = "TSV"   %% ppr sv
+ ppr (TSE se)	 = "TSE"   %% ppr se
+ ppr (TSC sc)	 = "TSC"   %% ppr sc
+ ppr (TSU su)	 = "TSU"   %% ppr su
+ ppr (TSM sm)	 = "TSM"   %% ppr sm
+ ppr (TSI si)	 = "TSI"   %% ppr si
 
  
-
 -- | Sources of value constraints
 data SourceValue
 	= SVLambda	{ vsp :: SourcePos }			-- ^ Lambda expressions have function type
@@ -88,9 +88,10 @@ data SourceValue
 
 	deriving (Show, Eq)
 
+
 instance Pretty SourceValue PMode where
  ppr (SVInst sp v)	= parens $ "SVInst" %% sp %% v
- ppr sv			= "SV " % vsp sv
+ ppr sv			= "SV" %% vsp sv
 
 
 -- | Sources of effect constraints
@@ -124,6 +125,7 @@ data SourceClosure
 instance Pretty SourceClosure PMode where
  ppr sc		= "SE " % csp sc
 
+
 -- | Sources of unification constraints
 data SourceUnify
 	= SUAltLeft	{ usp :: SourcePos }			-- ^ All LHS of case alternatives must have same type.
@@ -136,6 +138,7 @@ data SourceUnify
 instance Pretty SourceUnify PMode where
  ppr su		= "SU " % usp su
 
+
 -- | Sources of other things (mostly to tag dictionaries)
 data SourceMisc
 	= SMGen		{ msp :: SourcePos, mVar :: Var }	-- ^ Used to tag source of generalisations due to let-bindings.
@@ -147,6 +150,7 @@ data SourceMisc
 
 instance Pretty SourceMisc PMode where
  ppr sm		= "SM " % msp sm
+
 
 -- | Sources of things added by the inferencer.
 data SourceInfer
@@ -217,16 +221,11 @@ dispSourcePos :: TypeSource -> Str
 dispSourcePos ts
  = case takeSourcePos ts of
  	Just sp	-> ppr sp
-
-	-- this shouldn't happen
-	Nothing	
-	 -> panic stage
-		("dispSourcePos: no source location in " % ts)
+	Nothing	-> panic stage $ "dispSourcePos: no source location in " % ts
 		
 
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
-
 dispTypeSource :: Pretty tt PMode => tt -> TypeSource -> Str
 dispTypeSource tt ts
 	| TSV sv	<- ts
@@ -244,135 +243,130 @@ dispTypeSource tt ts
 	| TSI (SICrushedES _ eff effSrc) <- ts
 	= dispTypeSource eff effSrc
 
-	-- hrm.. this shouldn't happen
 	| otherwise
-	= panic stage
-		("dispTypeSource: no match for " % ts % "\n")
+	= panic stage $ "dispTypeSource: no match for " % ts
 
 	
 -- | Show the source of a type error due to this reason
 dispSourceValue :: Pretty tt PMode => tt -> SourceValue -> Str
 dispSourceValue tt sv
  = case sv of
-	SVLambda sp 	
-		-> "lambda abstraction\n" 	
-		%  "              at: " % sp	% "\n"
+	SVLambda sp 
+		-> "lambda abstraction" 	
+		%! "              at: " % sp
 
-	SVApp sp	
-		-> "  function application\n"
-		%  "              at: " % sp	% "\n"
+	SVApp sp 
+		-> "  function application"
+		%! "              at: " % sp
 		
-
 	SVLiteral sp lit
-		-> "  literal value " % lit	% "\n"
-		%  "         of type: " % tt	% "\n"
-		%  "              at: " % sp	% "\n"
-		
+	 	-> "  literal value "   % lit
+		%! "         of type: " % tt
+		%! "              at: " % sp 
 		
 	SVDoLast sp
-		-> "  result of do expression\n"
-		%  "              at: " % sp	% "\n"
-		
+	 	-> "  result of do expression"
+		%! "              at: " % sp
 		
 	SVIfObj sp 
-		-> "  object of if-then-else expression\n"
-		%  "   which must be: Bool"	% "\n"
-		%  "              at: " % sp	% "\n"
-		
+		-> "  object of if-then-else expression"
+		%! "   which must be: Bool"
+		%! "              at: " % sp
 		
 	SVProj sp j
-	 -> let	cJ	= case j of
-	 			TJField v	-> TJField  v { varModuleId = ModuleIdNil }
-	 			TJFieldR v	-> TJFieldR v { varModuleId = ModuleIdNil }
-	 			TJIndex v	-> TJIndex  v { varModuleId = ModuleIdNil }
-	 			TJIndexR v	-> TJIndexR v { varModuleId = ModuleIdNil }
-
-	    in	   "      projection '" % cJ 	% "'\n"
-		%  "         of type: "	% tt	% "\n"
-		%  "              at: " % sp	% "\n"
+	 -> let	cJ = case j of
+	 		TJField v	-> TJField  v { varModuleId = ModuleIdNil }
+	 		TJFieldR v	-> TJFieldR v { varModuleId = ModuleIdNil }
+	 		TJIndex v	-> TJIndex  v { varModuleId = ModuleIdNil }
+	 		TJIndexR v	-> TJIndexR v { varModuleId = ModuleIdNil }
+	    in vcat
+		[ "      projection '" % cJ % "'"
+		, "         of type: " % tt	
+	 	, "              at: " % sp ]
 	
 	SVInst sp var
-		-> "      the use of: " % var 	% "\n"
-		%  "         of type: "	% tt	% "\n"
-		%  "              at: " % sp	% "\n"
+		-> "      the use of: " % var 
+		%! "         of type: " % tt
+		%! "              at: " % sp 
 		
 	SVLiteralMatch sp lit
-		-> "  match against literal value " % lit % "\n"
-		%  "         of type: " % tt	% "\n"
-		%  "              at: " % sp	% "\n"
+		-> "  match against literal value " % lit 
+		%! "         of type: " % tt
+		%! "              at: " % sp 
 		
 	SVMatchCtorArg sp
-		-> "  argument of constructor match\n" 
-		%  "         of type: " % tt	% "\n"
-		%  "              at: " % sp	% "\n"
+		-> ppr "  argument of constructor match"
+		%! "         of type: " % tt
+		%! "              at: " % sp 
 		
 	SVSig sp var
-		-> "  type signature for '" % var % "'\n"
-		%  "  which requires: " % tt	% "\n"
-		%  "              at: " % sp	% "\n"
+		-> "  type signature for '" % var % "'"
+		%! "  which requires: " % tt
+		%! "              at: " % sp 
 		
 	SVSigClass sp var
-		-> "  type signature for '" % var % "' in type-class definiton\n"
-		%  "              at: " % sp	% "\n"
+		-> "  type signature for '" % var % "' in type-class definiton"
+		%! "              at: " % sp
 		
 	SVSigExtern _ var
-		-> "  type of import '" % var % "'\n"
+		-> "  type of import '" % var % "'"
 		
 	SVCtorDef sp vData vCtor
-		-> "  definition of constructor '" % vCtor % "' of '" % vData % "'\n"
-		%  "              at: " % sp	% "\n"
+		-> "  definition of constructor '" % vCtor % "' of '" % vData % "'"
+		%! "              at: " % sp 
 		
 	SVCtorField sp vData vCtor vField
-		-> "  definition of field " % vField % " of '" % vCtor % "' in type '" % vData % "'\n"
-		%  "              at: " % sp	% "\n"
+		-> "  definition of field " % vField % " of '" % vCtor % "' in type '" % vData % "'"
+		%! "              at: " % sp 
+
 
 -- | Show the source of a type error due to this reason
 dispSourceEffect :: Pretty tt PMode => tt -> SourceEffect -> Str
 dispSourceEffect tt se
  = case se of
 	SEApp sp
-		-> "  effect from function application\n"
-		%  "          namely: " % tt 	% "\n"
-		%  "              at: " % sp 	% "\n"
+		-> "  effect from function application"
+		%! "          namely: " % tt
+		%! "              at: " % sp
 		
 	SEMatchObj sp
-		-> "  effect due to testing match object\n"
-		%  "          namely: " % tt 	% "\n"
-		%  "              at: " % sp 	% "\n"
+		-> "  effect due to inspecting discriminant"
+		%! "          namely: " % tt 
+		%! "              at: " % sp 
 		
 	SEMatch sp
-		-> "  effect of match alternative\n"
-		%  "          namely: " % tt	% "\n"
-		%  "              at: " % sp 	% "\n"
+		-> "  effect of match alternative"
+		%! "          namely: " % tt
+		%! "              at: " % sp 
 
 	SEDo sp
-		-> "  effect of do expression\n"
-		%  "          namely: " % tt 	% "\n"
-		%  "              at: " % sp 	% "\n"
+		-> "  effect of do expression"
+		%! "          namely: " % tt
+		%! "              at: " % sp
 
 	SEIfObj sp
-		-> "  effect due to testing if-then-else discriminant\n"
-		%  "              at: " % sp	% "\n"
+		-> "  effect due to testing if-then-else discriminant"
+		%! "              at: " % sp
 
 	SEIf sp
-		-> "  effect of if-then-else expression\n"
-		%  "          namely: " % tt 	% "\n"
-		%  "              at: " % sp 	% "\n"
+		-> "  effect of if-then-else expression"
+ 		%! "          namely: " % tt 
+		%! "              at: " % sp
 
 	SEProj sp
-		-> "  effect of field projection\n"
-		%  "          namely: " % tt 	% "\n"
-		%  "              at: " % sp	% "\n"
+		-> "  effect of field projection"
+		%! "          namely: " % tt 
+		%! "              at: " % sp 
 		
 	SEGuardObj sp
-		-> "  effect due to testing pattern guard\n"
-		%  "          namely: " % tt 	% "\n"
-		%  "              at: " % sp	% "\n"
+		-> "  effect due to testing pattern guard"
+		%! "          namely: " % tt
+		%! "              at: " % sp
 
 	SEGuards sp
-		-> "  effect of pattern guards\n"
-		%  "          namely: " % tt 	% "\n"
-		%  "              at: " % sp 	% "\n"
+		-> "  effect of pattern guards"
+		%! "          namely: " % tt
+		%! "              at: " % sp
 
 
 
@@ -381,25 +375,24 @@ dispSourceUnify :: Pretty tt PMode => tt -> SourceUnify -> Str
 dispSourceUnify tt sv
  = case sv of
  	SUAltLeft sp 
-	 	-> "alternatives"
-		%  "              at: " % sp	% "\n"
+		-> "alternatives"
+		%! "              at: " % sp
 		
 	SUAltRight sp
-		-> "result of alternatives"
-		%  "              at: " % sp	% "\n"
+		->  "result of alternatives"
+		%! "              at: " % sp
 
 	SUIfAlt sp
 		-> "alternatives of if-then-else expression"
-		%  "              at: " % sp	% "\n"
+		%! "              at: " % sp
 
 	SUGuards sp
-		-> "match against pattern\n"
-		%  "         at type: " % tt	% "\n"
-		%  "              at: " % sp	% "\n"
+		-> "match against pattern"
+		%! "         at type: " % tt
+		%! "              at: " % sp
 
 	SUBind _
 		-> ppr "binding"	
-
 
 
 -- Normalise ---------------------------------------------------------------------------------------
@@ -409,7 +402,6 @@ dispSourceUnify tt sv
 --	2) They tend to change when we modify the type inferencer, and we don't want to 
 --		have to update all the check files for inferencer tests every time this happens.
 --
-
 -- Could do this directly on the string, if we displayed an * infront of type variables..
 
 
@@ -428,24 +420,24 @@ dispFetterSource f ts
 	| FConstraint v _	<- f
 	, v == primPure
 	, TSV (SVInst sp var)	<- ts
-	= "      the use of: " % var	% "\n"
-	% "              at: " % sp	% "\n"
+	=  "      the use of: " % var
+	%! "              at: " % sp
 	
 	| FConstraint _ _	<- f
 	, TSV (SVInst sp var)	<- ts
-	= "      constraint: " % f	% "\n"
-	% " from the use of: " % var	% "\n"
-	% "              at: " % sp	% "\n"
+	=  "      constraint: " % f
+	%! " from the use of: " % var
+	%! "              at: " % sp
 
 	| TSV (SVInst sp var)	<- ts
-	= "      constraint: " % f 	% "\n"
-	% " from the use of: " % var	% "\n"
-	% "              at: " % sp	% "\n"
+	= "      constraint: " % f
+	%! " from the use of: " % var
+	%! "              at: " % sp
 
 	| TSV (SVSig  sp var) 	<- ts
-	= "      constraint: " % f	% "\n"
-	% " in type sig for: " % var	% "\n"
-	% "              at: " % sp	% "\n"
+	= "      constraint: " % f
+	%! " in type sig for: " % var
+	%! "              at: " % sp
 
 	| FConstraint _ _	<- f
 	, TSI (SICrushedFS _ f' src)	<- ts
@@ -453,15 +445,13 @@ dispFetterSource f ts
 
 	| FConstraint _ _				<- f
 	, TSI (SIPurifier _ eff effSrc fPure fPureSrc)	<- ts
-	= "       constraint: " % f				% "\n"
-	% "which purifies\n"
-	% dispTypeSource   eff effSrc
-	% "due to\n"
-	% dispFetterSource fPure fPureSrc
+	=  "       constraint: " % f
+	%! "which purifies"
+	%! dispTypeSource   eff effSrc
+	%! "due to"
+	%! dispFetterSource fPure fPureSrc
 	
 	-- hrm.. this shouldn't happen
 	| otherwise
-	= panic stage 
-		("dispFetterSource: no match for " % show ts % "\n")
-
+	= panic stage $ "dispFetterSource: no match for " % show ts
 

@@ -12,7 +12,7 @@ module DDC.Util.Pretty.Combinators
 	-- * Primitive Combinators
 	  blank
 	, newline, nl, nlnl
-	, paste,  (%), (%%)
+	, paste,  (%), (%%), (%!)
 	, punc,	  (%!%)
 	, indent, (%>)
 	, shift,  (%>>)
@@ -54,6 +54,7 @@ infixl 9 %!%
 infixr 8 %>
 infixr 7 %
 infixr 7 %%
+infixr 6 %!
 
 -- | An empty pretty thing.
 blank :: StrMode mode
@@ -90,6 +91,12 @@ paste a b
 	=> a -> b -> StrMode mode
 
 (%%) x y = x % PString " " % y
+
+-- | Paste with a newline
+(%!) 	:: (Pretty a mode, Pretty b mode)
+	=> a -> b -> StrMode mode
+
+(%!) x y = x % newline % y
 
 
 -- | Punctuate some pretty things with another.
