@@ -20,7 +20,7 @@ import qualified Data.Foldable			as Foldable
 import qualified DDC.Core.Glob			as C
 import qualified Type.Export			as T
 import qualified Type.Dump			as T
-import qualified Type.Solve			as T
+import qualified DDC.Solve			as T
 import qualified DDC.Solve.Interface.Problem	as T
 import qualified DDC.Solve.State		as T
 import qualified DDC.Solve.Error.Beautify	as T

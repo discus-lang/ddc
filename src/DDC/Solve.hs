@@ -1,9 +1,9 @@
+{-# OPTIONS -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
-
 -- | The top level of the constraint solver.
---	Takes a list of constraints and adds them to the solver state.
---
-module Type.Solve
+--   Takes a list of constraints and adds them to the solver state.
+--   TODO: Make this return a Solution insead of the raw Solver state
+module DDC.Solve
 	(squidSolve)
 where
 import Type.Solve.Grind
@@ -32,7 +32,6 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Solve"
 
-
 -- | Solve some type constraints.
 squidSolve 	
 	:: [Arg]		-- ^ Compiler args.
@@ -43,7 +42,7 @@ squidSolve
 squidSolve args mTrace problem
  = do
 	-- Create the initial solver state.
-	state		<- squidSInit args mTrace problem
+	solverState	<- squidSInit args mTrace problem
 		
 	-- Run the solver.
 	execStateT 
@@ -52,24 +51,22 @@ squidSolve args mTrace problem
 			$ concat 
 			$ Map.elems $ problemSigs problem
 
-		solveM args
-			(problemConstraints problem)
+		solveM	(problemConstraints problem)
 			(problemMainIsMain  problem))
-		state
+		solverState
 
 
 -- | Feed information from a type signature into the graph
 solveFeedSig :: ProbSig -> SquidM ()
-solveFeedSig (ProbSig v sp mode tSig)
+solveFeedSig (ProbSig v sp _ tSig)
  = do	Just vT	<- lookupSigmaVar v
 	
-	trace	$ vcat
-		[ "### CSig  "	% v
-		, "    tSig:\n" %> prettyTypeSplit tSig 
-		]
-
+	trace	$ "### CSig " % v % nl
+		%> ("::" %% prettyTypeSplit tSig)
+		% nlnl
+		
 	-- The signature itself is a type scheme, but we want to
-	--	add a fresh version to the graph so that it unifies
+	-- 	add a fresh version to the graph so that it unifies
 	--	with the other information in the graph.
 	tSig_inst	<- liftM fst $ instantiateWithFreshVarsT instVar tSig
 
@@ -77,22 +74,20 @@ solveFeedSig (ProbSig v sp mode tSig)
 	-- 	as we're only using information in the sig for guiding 
 	-- 	projection resolution.
 	let tSig_body	= stripFWheresT tSig_inst
---	trace	$ "    tSig_body:\n" %> prettyTypeSplit tSig_body % "\n\n"
 
-	-- Add the constraints to the graph and continue solving.
-	feedConstraint (CEq 	(TSV $ SVSig sp v)
+	-- Add the new constraints to the graph and continue solving.
+	feedConstraint $ CEq 	(TSV $ SVSig sp v)
 				(TVar kValue (UVar vT)) 
-				tSig_body)
+				tSig_body
 	return ()
 	   
 
 -- | Solve some type constraints (monadic version)
-solveM	:: [Arg] 		-- ^ compiler args.
-	-> [CTree]		-- ^ the type constraints to solve.
+solveM	:: [CTree]		-- ^ the type constraints to solve.
 	-> Bool			-- ^ whether to require "main" to have type () -> ().
 	-> SquidM ()
 
-solveM	args ctree blessMain	
+solveM	ctree blessMain	
  = do
 	-- Slurp out the branch containment tree
 	--	we use this to help determine which bindings are recursive.
@@ -133,40 +128,40 @@ solveCs	(c:cs)
 		solveNext (branchSub c ++ [CLeave bind] ++ cs)
 
 	-- A single equality constraint
-	CEq src t1 t2
+	CEq _ t1 t2
  	 -> do	trace	$ "### CEq  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % "\n"
 		feedConstraint c
 		solveNext cs
 	
 	-- Some type equality constraints
 	--	all the types ts are supposed to be equal. ]
-	CEqs src ts
+	CEqs _ ts
 	 -> do	trace	$ "### CEqs " % ts % "\n"
  	 	feedConstraint c
 		solveNext cs
 
 	-- A type inequality constraint
-	CMore src t1 t2
+	CMore _ t1 t2
  	 -> do	trace	$ "### CMore  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % "\n"
 		feedConstraint c
 		solveNext cs
 
 	-- A type class constraint.
-	CClass src v ts
+	CClass _ v ts
 	 -> do	trace	$ "### CClass " % v % " " % ts % "\n"
 	 	feedConstraint c
 		solveNext cs
 
 	-- A projection constraints
-	CProject src j vInst tDict tBind
+	CProject _ j vInst tDict tBind
 	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind	% "\n"
 		feedConstraint c
 		solveNext cs
 
 	-- A projection dictionary.
 	--	These are stashed in the solver state.
-	CDictProject src t vvs
-	 | Just (v, _, ts)	<- takeTData t
+	CDictProject _ t vvs
+	 | Just (v, _, _)	<- takeTData t
 	 -> do	-- trace $ "### CDictProj " % t % "\n"
 		stateProject `modifyRef` Map.insert v (t, vvs)
 		solveNext cs
@@ -176,7 +171,7 @@ solveCs	(c:cs)
 	--	We don't do this straight away though, incase we find out more about monomorphic
 	--	tyvars that might cause some projections to be resolved. Instead, we record
 	--	the fact that the var is safe to generalise in the GenSusp set.
-	CGen src t1@(TVar k (UVar v1))
+	CGen src t1@(TVar _ (UVar v1))
 	 -> do	trace	$ "### CGen  " % prettyTypeSplit t1 %  "\n"
 		stateGenSusp `modifyRef` Map.insert v1 src
 		solveNext cs
@@ -194,7 +189,7 @@ solveCs	(c:cs)
 	-- A CClassInst says that a type class has an instance at a partiular type.
 	--	These are stashed in the solver state. We'll use them later to 
 	--	discharge type class constraints in generalised type schemes.
-	CClassInst src v ts
+	CClassInst _ v ts
 	 -> do	-- trace	$ "### CClassInst " % v % " " % ts % "\n"
 		stateClassInst `modifyRef`
 			Map.alter
@@ -216,8 +211,6 @@ solveCs	(c:cs)
 	--	the path.
 	CLeave vs
 	 -> do	trace	$ "\n### CLeave " % vs % "\n"
-	 	path	<- gets statePath
---		trace	$ "    path = " % path 	% "\n"
 
 		-- We're leaving the branch, so pop ourselves off the path.
 	 	pathLeave vs
@@ -356,19 +349,16 @@ solveNext cs
 solveCInst
 	:: [CTree]		-- ^ the constraints waiting to be solved
 	-> CTree		-- ^ the instantiation constraint we're working on.
-	-> SquidM 
-		[CTree]		-- ^ a possibly reordered list of constraints that we should
+	-> SquidM [CTree]	-- ^ a possibly reordered list of constraints that we should
 				--	continue on solving.
 
-solveCInst 	cs c@(CInst src vUse vInst)
- = do
-	path		<- getsRef statePath
+solveCInst cs c@(CInst _ vUse vInst)
+ = do	path		<- getsRef statePath
 	sGenDone	<- getsRef stateGenDone
 	sDefs		<- liftM squidEnvDefs $ gets stateEnv
 	env		<- gets stateEnv
 	trace	$ vcat
 		[ "### CInst " % vUse % " <- " % vInst
---		, "    path          = " % path
 		, "    ctorDefs      = " % (Map.keys $ squidEnvCtorDefs env)
 		, "    got           = " % Map.member vInst (squidEnvCtorDefs env) ]
 
@@ -411,10 +401,10 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	 []	-> return ()
 	 (p:_)	-> graphInstantiatesAdd p bindInst
 
-	sGenDone	<- getsRef stateGenDone
-	sDefs		<- liftM squidEnvDefs $ gets stateEnv 
+	sGenDone'	<- getsRef stateGenDone
+	sDefs'		<- liftM squidEnvDefs $ gets stateEnv 
 
-	solveCInst_simple cs c bindInst path sGenDone sDefs env
+	solveCInst_simple cs c bindInst path sGenDone' sDefs' env
 	
 
 -- These are the easy cases...
@@ -454,8 +444,7 @@ solveCInst_simple
 -- If we're not inside the branch defining it, it must have been defined somewhere
 --	at this level. Build dependency graph so we can work out if we're on a recursive loop.
 solveCInst_let 
-	cs 
-	c@(CInst src vUse vInst)
+	cs c@(CInst _ _ vInst)
 	bindInst path
  = do
 	genSusp		<- getsRef stateGenSusp
@@ -468,9 +457,8 @@ solveCInst_let
 	
 
 solveCInst_find 
-	cs 
-	c@(CInst src vUse vInst)
-	bindInst path mBindGroup genSusp
+	cs cc@(CInst src vUse vInst)
+	_ _ mBindGroup genSusp
 	
 	-- If the binding to be instantiated is part of a recursive group and we're not ready
 	--	to generalise all the members yet, then we must be inside one of them.
@@ -499,20 +487,20 @@ solveCInst_find
 		trace	$ ppr "=== Reorder.\n"
 --			% "    queue =\n" %> (", " %!% map ppr (c:cs)) % "\n\n"
 	
-		let floatBranch prev cc
-			= case cc of
-				(c@(CBranch { branchBind = BLet [vT] }) : cs)
+		let floatBranch prev cc'
+			= case cc' of
+				(c@(CBranch { branchBind = BLet [vT] }) : cs')
 				 | vT == vInst
-				 -> c : (prev ++ cs)
+				 -> c : (prev ++ cs')
 				 
-				(c : cs) 
-				 -> floatBranch (prev ++ [c]) cs
+				(c : cs') 
+				 -> floatBranch (prev ++ [c]) cs'
 				 
 				[] -> panic stage
 				 	$ "floatBranch: can't find branch for " % vInst % "\n"
 					
 		-- Reorder the constraints so the required branch is at the front
-		let csReordered	= floatBranch [] (c:cs)
+		let csReordered	= floatBranch [] (cc:cs)
 	
 --		trace	$ "    queue' =\n" %> (", " %!% map ppr csReordered) % "\n\n"
 	
