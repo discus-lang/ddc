@@ -7,6 +7,7 @@ module DDC.Util.Pretty.Base
 	( Pretty 	(..)
 	, StrMode	(..))
 where
+import Data.Text.Lazy	(Text)
 
 -- | Class of things that can be pretty printed in a certain mode.
 --  Client modules can decide what the possible modes are.
@@ -28,6 +29,9 @@ data StrMode mode
 
 	-- | A literal string, this shouldn't contain newlines.
 	| PString String
+
+	-- | Some literal text, this shouldn't contain newlines
+	| PText  Text
 
 	-- | A literal character.
 	| PChar   Char

@@ -34,8 +34,8 @@ render mode colIndent col ss
 	 -> let	text	= T.pack str
 	    in	( col + (fromIntegral $ T.length text)
 		, B.fromLazyText text)
-
-	PChar c
+	
+	PChar c	
 	 -> (col + 1, B.singleton c)
 
 	PNewLine
@@ -68,10 +68,10 @@ render mode colIndent col ss
 	 -> let	pad	= replicate (colNext - col) ' '
  	    in	render mode colNext colNext
 			(PAppend [PString pad, str])
-
+	
 	PPadLeft _n _c str
 	 -> down col str
-
+	
 	PPadRight _n _c str
 	 -> down col str
 
