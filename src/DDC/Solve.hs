@@ -236,7 +236,7 @@ solveCs cc
 	 -> do	-- If the grinder resolves a projection, it will return some
 		--	more constraints that need to be handled before continuing.
 		csMore	<- solveGrind
-	 	solveNext (Seq.fromList csMore Seq.>< cs)
+	 	solveNext (csMore Seq.>< cs)
 
 	-- Instantiate the type of a lambda-bound variable.
 	--	There's nothing to really instantiate, just set the use type to the def type.
@@ -430,7 +430,7 @@ solveCInst_simple
 	 || Map.member vInst (squidEnvCtorDefs env)
 	= do	
 --		trace	$ ppr "*   solveCInst_simple: Scheme is in graph.\n"
-		return	$ Seq.fromList [CGrind, (CInstLet src vUse vInst)] Seq.>< cs
+		return	$ CGrind Seq.<| CInstLet src vUse vInst Seq.<| cs
 
 	-- If	The var we're trying to instantiate is on our path
 	-- THEN	we're inside this branch.

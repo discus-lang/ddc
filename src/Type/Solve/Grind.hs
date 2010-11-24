@@ -16,6 +16,8 @@ import DDC.Type.Exp
 import DDC.Var
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Set	as Set
+import qualified Data.Sequence	as Seq
+import Data.Sequence		(Seq)
 
 debug	= False
 stage	= "Type.Solve.Grind"
@@ -35,7 +37,7 @@ trace s = when debug $ traceM s
 --	continuing the grind. In this case the last constraint in the list will
 --	be another CGrind.
 --
-solveGrind :: SquidM [CTree]
+solveGrind :: SquidM (Seq CTree)
 solveGrind
  = do	-- if there are already errors in the state then don't start the grind.
  	errs		<- gets stateErrors
@@ -44,10 +46,9 @@ solveGrind
 		trace	$ ppr "-- Grind Start --------------------------------\n"
 	 	cs	<- solveGrindStep
 		trace	$ ppr "------------------------------------ Grind Stop\n"
-
 		return cs
 
-	 else return []
+	 else return Seq.empty
 		
 			
 solveGrindStep 
@@ -64,7 +65,7 @@ solveGrindStep
 	
 
 solveGrindStepWithActive active
- | null active	= return []
+ | null active	= return Seq.empty
  | otherwise
  = do
 	-- make sure all classes are unified
@@ -81,7 +82,7 @@ solveGrindStepWithActive active
 		$  mapM crushClass active
 
 	-- The new constraints
-	let qsMore	= concat qssMore
+	let qsMore	= join $ Seq.fromList qssMore
  	
 	-- split classes into the ones that made progress and the ones that
 	--	didn't. This is just for the trace stmt below.
@@ -101,13 +102,13 @@ solveGrindStepWithActive active
 	let next
 		-- if we've hit any errors then bail out now
 		| not $ null errs
-		= return []
+		= return Seq.empty
 
 		-- if we've crushed a projection and ended up with more constraints
 		--	then stop grinding for now, but ask to be resumed later when
 		--	new constraints are added.
-		| not $ null qsMore
-		= return (qsMore ++ [CGrind])
+		| not $ Seq.null qsMore
+		= return $ qsMore Seq.|> CGrind
 		
 		-- if we've made progress then keep going.
 		| or progressUnify || or progressCrush
@@ -115,13 +116,13 @@ solveGrindStepWithActive active
 		
 		-- no progress, all done.
 		| otherwise
-		= return []
+		= return Seq.empty
 		
 	next
 
 
 -- | Try to crush a class in the graph
-crushClass :: ClassId -> SquidM (Bool, [CTree])
+crushClass :: ClassId -> SquidM (Bool, Seq CTree)
 crushClass cid
  = lookupClass cid >>= \(Just cls)
  -> case cls of
@@ -141,37 +142,37 @@ crushClass cid
 	 -> do	progress_effect	<- crushEffectsInClass cid
 		progress_fetter	<- crushFettersInClass cid
 		return	( progress_effect || progress_fetter
-			, [])
+			, Seq.empty)
 		
 	 | isClosureKind k
 	 -> 	return	( False
-			, [])
+			, Seq.empty)
 	
 	 | isRegionKind k
 	 ->	return 	( False
-			, [])
+			, Seq.empty)
 	
 	 | otherwise
 	 -> do	progress_unify	<- crushUnifyInClass cid
 		progress_fetter	<- crushFettersInClass cid
 		return	( progress_unify || progress_fetter
-			, [])
+			, Seq.empty)
 
 	-- fetter classes
 	ClassFetterDeleted{}
 	 -> 	return 	( False
-			, [])
+			, Seq.empty)
 
 	ClassFetter { classFetter = f }
 	 | FProj{}	<- f
 	 -> do	mQsMore 	<- crushProjInClass cid
 		return	( isJust mQsMore
-			, join $ maybeToList mQsMore)
+			, Seq.fromList $ join $ maybeToList mQsMore)
 		
 	 | FConstraint v _	<- f
 	 , VarIdPrim pid	<- varId v
 	 , Var.FShape _		<- pid
 	 -> do	progress_shape	<- crushShapeInClass cid
 		return	( progress_shape
-			, [])
+			, Seq.empty)
 		
