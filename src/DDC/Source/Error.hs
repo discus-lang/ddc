@@ -244,7 +244,7 @@ instance Pretty Error PMode where
 	
  ppr (ErrorNotMethodOfClass vInst vClass)
 	= varErr vInst
-	$ quotes vInst % "is not a (visible) method of class" %% quotes vClass % "."
+	$ quotes vInst %% "is not a (visible) method of class" %% quotes vClass % "."
 
  ppr (ErrorQuantifiedMaterialVar vSig tSig vQuant)
   	= varErr vQuant
@@ -252,7 +252,7 @@ instance Pretty Error PMode where
 			%% "cannot be quantified because it is material in this type."
 	%! "Offending signature:"
 	%! blank
-	%! (indent $ prettyVTS vSig tSig)
+	%! (indent $ prettyVT vSig tSig)
 
  ppr (ErrorQuantifiedDangerousVar vDanger)
   	= varErr vDanger
@@ -260,12 +260,10 @@ instance Pretty Error PMode where
 	
 
 -- Utils ------------------------------------------------------------------------------------------	
-prettyVTS v t
- 	= indentSpace 4
-	$ "    " 
-		++ varName v 
-		++ "\n  :: "
-		++ (indentSpace 2 $ pprStrPlain $ prettyTypeSplit $ t)
+prettyVT v t
+ 	= "    " % varName v % nl
+	%> ("::" %% prettyTypeSplit t)
+
 
 varErr var str
 	= prettyPos var % newline

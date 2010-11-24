@@ -12,5 +12,4 @@ ddc: ERROR
           literal value "erk"
                  of type: String
                       at: ./test/15-Typing/Unification/Shape/Test.ds:7:8
-        
 

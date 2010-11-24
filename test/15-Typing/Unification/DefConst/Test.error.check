@@ -12,5 +12,4 @@ ddc: ERROR
           literal value "perch"
                  of type: String
                       at: ./test/15-Typing/Unification/DefConst/Test.ds:6:15
-        
 

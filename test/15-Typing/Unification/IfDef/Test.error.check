@@ -12,5 +12,4 @@ ddc: ERROR
               the use of: x
                  of type: Int32
                       at: ./test/15-Typing/Unification/IfDef/Test.ds:6:13
-        
 

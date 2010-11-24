@@ -12,7 +12,6 @@ ddc: ERROR
               the use of: (-)
                  of type: Int32
                       at: ./test/15-Typing/Unification/Shape2/Main.ds:5:25
-        
 
 ./test/15-Typing/Unification/Shape2/Main.ds:5:20
         Kind mismatch during unification.
