@@ -34,10 +34,15 @@ GHC_WARNINGS	:= \
 	-fwarn-missing-fields \
 	-fwarn-overlapping-patterns \
 	-fwarn-type-defaults \
-	-fwarn-monomorphism-restriction \
 	-fwarn-unused-binds \
 	-fno-warn-missing-methods \
 	-fwarn-unused-imports
+
+ifeq "$(GHC_VERSION)" "7"
+GHC_WARNINGS	:= \
+	$(GHC_WARNINGS) \
+	-fwarn-monomorphism-restriction
+endif
 
 # Warnings we should probably add.
 #	-fwarn-unused-matches			# we should probably enable this one0
