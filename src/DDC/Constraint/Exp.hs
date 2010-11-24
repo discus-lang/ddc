@@ -8,7 +8,7 @@ import DDC.Solve.Location
 import DDC.Type
 import DDC.Var
 import Data.Map			(Map)
-
+import Data.Sequence		(Seq)
 
 -- | The tree of type constraints.
 --   In most of these constraints, the first Type parameter should always be 
@@ -30,7 +30,7 @@ data	CTree
 	    branchBind	:: CBind		
 
 	    -- | sub constraints
-	  , branchSub	:: [CTree] }		
+	  , branchSub	:: Seq CTree }		
 
 	-- | A type signature from the source program.
 	--	These can contain partial information about the type of bound variable.

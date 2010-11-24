@@ -36,6 +36,7 @@ import qualified Desugar.Project		as D
 import qualified DDC.Desugar.Transform		as D
 import qualified Data.Map			as Map
 import qualified Data.Set			as Set
+import qualified Data.Foldable			as Seq
 
 
 -- Elaborate ---------------------------------------------------------------------------------------
@@ -167,11 +168,13 @@ desugarSlurpConstraints blessMain sTree hTree
 	dumpST	DumpDesugarSlurp "desugar-slurp" sTree'
 	
 	dumpS	DumpTypeConstraints "type-constraints"
-		$ (catInt "\n" $ map (pprStr pprMode) $ T.problemConstraints problem)
+		$ (catInt "\n" 	$ map (pprStr pprMode) 
+				$ Seq.toList $ T.problemConstraints problem)
 
 	when (not $ elem DebugNoConstraintSimplifier ?args)
 	 $ dumpS DumpTypeConstraints "type-constraints--simpified"
-		 $ (catInt "\n" $ map (pprStr pprMode) $ T.problemConstraints problem_simplified)
+		 $ (catInt "\n" $ map (pprStr pprMode) 
+				$ Seq.toList $ T.problemConstraints problem_simplified)
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
 		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem_simplified)

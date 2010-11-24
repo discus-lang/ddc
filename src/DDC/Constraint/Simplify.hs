@@ -26,18 +26,20 @@
 module DDC.Constraint.Simplify
 	(simplify)
 where
-import qualified DDC.Constraint.Trans	as Trans
+--import qualified DDC.Constraint.Trans	as Trans
 import DDC.Constraint.Exp
-import DDC.Type
 import DDC.Var
+import Data.Sequence			as Seq
+{-
+import DDC.Type
 import DDC.Util.FreeVars
 import DDC.Main.Error
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
-import qualified Data.Set		as Set
+-}
 import Util
 
-stage = "DDC.Constraint.Simplify"
+-- stage = "DDC.Constraint.Simplify"
 
 -- | Simplify some type constraints.
 --	This only changes the effect and closure constraints, and does some simple
@@ -48,11 +50,12 @@ stage = "DDC.Constraint.Simplify"
 simplify 
 	:: Set Var		-- ^ don't inline these vars. 
 				--	These are the ones needed by the Desugar -> Core transform.
-	-> [CTree]		-- ^ constraints to simplify
-	-> [CTree]		-- ^ simplified constraints
+	-> Seq CTree		-- ^ constraints to simplify
+	-> Seq CTree		-- ^ simplified constraints
 	
-simplify vsNeeded tree
- = let	
+simplify _ tree
+ = tree
+{-
  	-- collect up bound vars that can't be inlined because they appear
 	-- in the body of value type consraints.
 	vsInTypes	= collectNoInline tree
@@ -263,3 +266,4 @@ isValueTypeFromVar tt
 		
 	_	-> False
 
+-}

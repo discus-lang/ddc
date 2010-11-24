@@ -17,6 +17,7 @@ import DDC.Base.SourcePos
 import DDC.Var
 import Data.Map			(Map)
 import Data.Set			(Set)
+import Data.Sequence		(Seq)
 
 
 -- | A problem for the type inferencer.
@@ -61,7 +62,7 @@ data Problem
 	, problemMainIsMain	:: Bool
 		
 	  -- | Constraint tree from the module being compiled.
-	, problemConstraints	:: [CTree]
+	, problemConstraints	:: Seq CTree
 	
 	  -- | Type variables we need a solution for.
 	, problemTypeVarsPlease :: Set Var }

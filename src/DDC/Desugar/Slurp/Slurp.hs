@@ -15,6 +15,9 @@ import Util
 import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
+import qualified Data.Sequence	as Seq
+import qualified Data.Foldable	as Seq
+import Data.Sequence		(Seq)
 
 stage	= "DDC.Desugar.Slurp.Slurp"
 
@@ -69,7 +72,6 @@ slurpTree blessMain hTree sTree
 	((sTree', sConstraints, vsTopSource), state3)
 		= runState (slurpTreeM sTree) state2
 		
-		
 	-- problem for the type constraint solver
    	problem
 		= Problem
@@ -81,7 +83,7 @@ slurpTree blessMain hTree sTree
 		, problemValueToTypeVars   = stateVarType state3
 		, problemTopLevelTypeVars  = Set.union vsTopHeader vsTopSource
 		, problemMainIsMain	   = blessMain
-		, problemConstraints	   = hConstraints ++ sConstraints
+		, problemConstraints	   = hConstraints >< sConstraints
 		, problemTypeVarsPlease	   = stateTypesRequest state3 }
 
    in	(sTree', problem, stateErrors state3)
@@ -117,7 +119,7 @@ slurpTreeM
 	-> CSlurpM 
 		( Tree Annot2	-- the tree annotated with TREC variables linking it
 				--	with the constraints.
-		, [CTree]
+		, Seq CTree
 		, Set Var)	-- vars bound at top level
 
 slurpTreeM tree
@@ -135,11 +137,11 @@ slurpTreeM tree
 
 	-- Slurp out type constraints from the tree.
 	(tree', qss)	<- liftM unzip $ mapM slurpP psSorted
-	let qs		= concat qss
+	let qs		= join $ Seq.fromList qss
 	
 	-- pack all the bindings together.
 	let (qsBranch, qsRest)
-		= partition isCBranch qs
+			= partition isCBranch $ Seq.toList qs
 
 	let vsLet	= concat
 			$ map (\b -> case branchBind b of
@@ -147,55 +149,53 @@ slurpTreeM tree
 				_	-> [])
 			$ qsBranch
 
-	let qsFinal_let	= [CBranch 
+	let qsFinal_let	= Seq.singleton
+			$ CBranch 
 				{ branchBind 	= BLetGroup vsLet
-				, branchSub	= qsBranch }]
+				, branchSub	= Seq.fromList qsBranch }
 				
 	-- Sort the constraints into an order acceptable by the solver.
 	let qsFinal_rest
-		= partitionFsSort
+		= Seq.fromList
+		$ partitionFsSort
 			[ (=@=) CProject{}, (=@=) CClassInst{}
 			, (=@=) CSig{} ]
 			qsRest
-			
-	let qsFinal = qsFinal_rest ++ qsFinal_let
 	
 	return	( tree'
-	 	, qsFinal
+	 	, qsFinal_rest >< qsFinal_let
 		, Set.fromList vsLet)
 		
 		
 -- Top --------------------------------------------------------------------------------------------
 -- | Slurp out type constraints from a top level thing.
 slurpP 	:: Top Annot1	
-	-> CSlurpM (Top Annot2, [CTree])
+	-> CSlurpM (Top Annot2, Seq CTree)
 
 slurpP	(PImport _ ms)
  =	return	( PImport Nothing ms
-		, [])
+		, Seq.empty)
 
 slurpP	(PRegion _ v)
  =	return 	( PRegion Nothing v
-		, [])
+		, Seq.empty)
 
 slurpP	(PKindSig _ v k)
    =	return	( PKindSig Nothing v k
-		, [])
+		, Seq.empty)
  
 slurpP	(PSuperSig _ v k)
  =	return	( PSuperSig Nothing v k
-		, [])
+		, Seq.empty)
 		
 slurpP (PClassInst sp v ts ss)
- = do	
-	-- All the RHS of the statements are vars, so we don't get any useful constraints back
+ = do	-- All the RHS of the statements are vars, so we don't get any useful constraints back
 	(_, _, _, ss', _)
 			<- liftM unzip5
 			$  mapM slurpS ss
 
-
 	return	( PClassInst Nothing v ts ss'
-		, [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
+		, constraints [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
 
 slurpP	(PTypeSig sp sigMode vs tSig) 
  = do	forM_ vs 
@@ -206,7 +206,7 @@ slurpP	(PTypeSig sp sigMode vs tSig)
 			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
 		
 	return	( PTypeSig Nothing sigMode vs tSig
-		, [])
+		, Seq.empty)
 
 slurpP (PTypeSynonym{})
  = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"
@@ -214,7 +214,7 @@ slurpP (PTypeSynonym{})
 slurpP (PData _ dataDef)
  = do	modify 	$ addDataDefToState dataDef
 	return 	( PData Nothing dataDef
-		, [])
+		, Seq.empty)
 
 			
 slurpP	(PProjDict sp t ss)
@@ -227,7 +227,7 @@ slurpP	(PProjDict sp t ss)
 			$  mapM slurpS ss
 
 	return	( PProjDict Nothing t ss'
-		, [CDictProject (TSM $ SMProjDict sp) t (Map.fromList projVars)] )
+		, constraints [CDictProject (TSM $ SMProjDict sp) t (Map.fromList projVars)] )
 	
 slurpP (PBind sp v x)
  = do	(_, _, _, stmt', qs)
@@ -249,10 +249,10 @@ slurpP (PBind sp v x)
 		, qs )
 
 slurpP (PExtern _ v t tSea)
-	= return (PExtern Nothing v t tSea
-		 , [])
+ = 	return	( PExtern Nothing v t tSea
+		, Seq.empty)
 
 slurpP (PClassDecl _ vClass tsParam tsMethods)
-	= return ( PClassDecl Nothing vClass tsParam tsMethods
-		 , [])
+ = 	return	( PClassDecl Nothing vClass tsParam tsMethods
+		, Seq.empty)
 					

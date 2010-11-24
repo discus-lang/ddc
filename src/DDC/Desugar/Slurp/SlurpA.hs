@@ -7,6 +7,8 @@ import DDC.Desugar.Slurp.SlurpX
 import DDC.Type.Data.Base
 import DDC.Solve.Location
 import DDC.Var
+import Data.Sequence		(Seq)
+import qualified Data.Sequence	as Seq
 import Util
 
 stage	= "DDC.Desugar.Slurp.SlurpA"
@@ -33,14 +35,12 @@ slurpA	(AAlt sp gs x)
 	-- BUGS?: we're not using the guards, check this
 	
 	(cbindssGuards, mtsGuards, esGuards, _csGuards, gs', qssGuards)
-			<- liftM unzip6 $ mapM slurpG gs
+				<- liftM unzip6 $ mapM slurpG gs
 
 	-- slurp the RHS of the alternative
-	-- BUGS?: we're not using the closure
-	(tX, eX, _, x', qsX)
-			<- slurpX x
+	(tX, eX, _, x', qsX)	<- slurpX x
 
-	let qs	=
+	let qs	= constraints
 		[ CEqs  (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
 		, CMore (TSE $ SEGuards sp) eAlt $ makeTSum   kEffect  (eX : esGuards) ]
 
@@ -59,7 +59,7 @@ slurpA	(AAlt sp gs x)
 		, AAlt Nothing gs' x'
 		, CBranch
 			{ branchBind	= bind
-			, branchSub	= qs ++ (concat qssGuards) ++ qsX})
+			, branchSub	= qs >< (join $ Seq.fromList qssGuards) >< qsX } )
 
 
 -- Guards ------------------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ slurpG 	:: Guard Annot1
 		, Effect		-- effect of evaluting the guard.
 		, Closure		-- closure of guard.
 		, Guard Annot2		-- annotated guard.
-		, [CTree])		-- constraints.
+		, Seq CTree)		-- constraints.
 		
 slurpG	(GCase _ w)
  = do	
@@ -87,14 +87,11 @@ slurpG	(GCase _ w)
  	
 slurpG	(GExp sp w x)
  = do
-	eGuard	<- newTVarES "guard"
-
-	(cbindsW, tW, w', qsW) 
-		<- slurpW w
+	eGuard			<- newTVarES "guard"
+	(cbindsW, tW, w', qsW) 	<- slurpW w
 		
 	-- slurp the matched exp
-	(tX, eX, _, x', qsX)
-		<- slurpX x
+	(tX, eX, _, x', qsX)	<- slurpX x
 
 	-- make the effect of testing the case object
 	let effMatch
@@ -105,7 +102,7 @@ slurpG	(GExp sp w x)
 			-- otherwise we need to read the primary region
 			_	-> [TApp tHeadRead tX]
 
-	let qs = 
+	let qs = constraints
 		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 
 		, CMore	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum kEffect (eX : effMatch) ]
 
@@ -114,8 +111,8 @@ slurpG	(GExp sp w x)
 		, eGuard
 		, tEmpty
 		, GExp Nothing w' x'
-		, qsW ++ qsX ++ qs )
-		
+		, qsW >< qsX >< qs )
+
 
 -- Pat ---------------------------------------------------------------------------------------------
 slurpW	:: Pat Annot1
@@ -123,7 +120,7 @@ slurpW	:: Pat Annot1
 		( [(Var, Var)]		-- (value var, type var) of vars bound by pattern.
 		, Type			-- type of the pattern.
 		, Pat Annot2		-- annotatted pattern.
-		, [CTree])		-- constraints for each arg in the pattern.
+		, Seq CTree)		-- constraints for each arg in the pattern.
 
 slurpW	(WConLabel _ vCon lvs)
  = do	
@@ -155,7 +152,7 @@ slurpW	(WConLabel _ vCon lvs)
  	return	( catMaybes cBinds
 		, tPat
 		, WConLabel Nothing vCon lvs'
-		, (concat cTrees) )
+		, join $ Seq.fromList cTrees )
 		
 
 slurpW	(WLit sp litFmt)
@@ -189,7 +186,7 @@ slurpW	(WLit sp litFmt)
  	return	( []
 		, tD
 		, WLit (Just (tD, tE)) litFmt
-		, [CEq (TSV $ SVLiteralMatch sp litFmt) tD tLit])
+		, constraints [CEq (TSV $ SVLiteralMatch sp litFmt) tD tLit])
 
 
 slurpW	(WVar _ v)
@@ -198,7 +195,7 @@ slurpW	(WVar _ v)
 	return	( [(v, vT)]
 		, tBound
 		, WVar (Just (tBound, tPure)) v
-		, [])
+		, Seq.empty)
 	
 slurpW w
  = panic stage $ "slurpW: no match for " % show w % "\n"
@@ -211,7 +208,7 @@ slurpLV	:: Var				-- ^ Data constructor name.
 	-> CSlurpM 
 		( (Label Annot2, Var)	-- field label and orginal binding var
 		, Maybe (Var, Var)	-- original binding variable, and type var for that field.
-		, [CTree] )
+		, Seq CTree )
 
 -- A field label using a numeric index.	
 slurpLV vCtor tsParams (LIndex sp ix, vBind)
@@ -238,7 +235,7 @@ slurpLV vCtor tsParams (LIndex sp ix, vBind)
 
 		return	( (LVar Nothing v, v)
 			, Nothing
-			, [] )
+			, Seq.empty )
 
 	 -- Got the type of the field.
 	 -- The field type comes with the same outer forall quantifiers that 
@@ -247,7 +244,7 @@ slurpLV vCtor tsParams (LIndex sp ix, vBind)
 	  -> let Just tField_inst = instantiateT tField tsParams
 	     in	 return ( (LIndex Nothing ix, vBind)
 			, Just (vBind, vT)
-			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )
+			, constraints [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )
 
 
 slurpLV vCtor tsParams (LVar sp vField, vBind)
@@ -270,4 +267,4 @@ slurpLV vCtor tsParams (LVar sp vField, vBind)
  	  -> let Just tField_inst = instantiateT tField tsParams
 	     in	 return	( (LVar Nothing vField, vBind)
  			, Just (vBind, vT)
-			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )
+			, constraints [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )

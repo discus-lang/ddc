@@ -13,6 +13,7 @@ import DDC.Main.Error
 import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import qualified Data.Foldable	as Seq
 
 stage	= "DDC.Constraint.Util"
 
@@ -61,14 +62,14 @@ slurpContains' :: Maybe CBind -> CTree -> [ (CBind, CBind) ]
 slurpContains' mParent tree@(CBranch{})
 
 	| BNothing		<- boundVsT 
-	= catMap (slurpContains' mParent) (branchSub tree)
+	= catMap (slurpContains' mParent) (Seq.toList $ branchSub tree)
 
  	| Nothing		<- mParent
-	= catMap (slurpContains' (Just boundVsT)) (branchSub tree)
+	= catMap (slurpContains' (Just boundVsT)) (Seq.toList $ branchSub tree)
 	
 	| Just parent		<- mParent
 	= (parent, boundVsT) 
-	: catMap (slurpContains' (Just boundVsT)) (branchSub tree)
+	: catMap (slurpContains' (Just boundVsT)) (Seq.toList $ branchSub tree)
 	
 	where	boundVsT	= branchBind tree
 

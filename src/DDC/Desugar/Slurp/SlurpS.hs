@@ -8,6 +8,8 @@ import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
 import Util
 import qualified Util.Data.Map	as Map
+import qualified Data.Sequence	as Seq
+import Data.Sequence		(Seq)
 
 stage	= "DDC.Desugar.Slurp.SlurpS"
 
@@ -18,45 +20,43 @@ slurpS 	:: Stmt Annot1
 		, Effect	-- effect vars
 		, Closure	-- closure of this statement
 		, Stmt Annot2	-- annotated statement
-		, [CTree])	-- constraints
+		, Seq CTree)	-- constraints
 
 -- statements (bindings with out a bound var)
 slurpS 	(SBind sp Nothing e1)
  = do
-	tBind		<- newTVarD
+	tBind				<- newTVarD
+	(tX@TVar{}, eX, _, x1', qsX)	<- slurpX e1
 	
-	(tX@TVar{}, eX, _, x1', qsX)	
-			<- slurpX e1
-	
-	let qs	= 
+	let qs	= constraints
 		[ CEq  (TSU $ SUBind sp) tBind	$ tX ]
 
 	return	( tX
 		, eX
 		, tEmpty
 		, SBind (Just (tX, eX)) Nothing x1'
-		, [CBranch
+		, Seq.singleton
+			$ CBranch
 			{ branchBind	= BNothing
-			, branchSub	= qs ++ qsX }])
+			, branchSub	= qs >< qsX } )
 
 -- regular bindings
 slurpS	(SBind sp (Just v) e1)
  = do
-	tBind@(TVar _ (UVar vBindT))	<- lbindVtoT v
-	
- 	(tX@(TVar _ (UVar{})), eX, _, x1', qsX)	
-			<- slurpX e1
+	tBind@(TVar _ (UVar vBindT))		<- lbindVtoT v
+ 	(tX@(TVar _ (UVar{})), eX, _, x1', qsX)	<- slurpX e1
 
 	return	( tX
 		, eX
 		, tEmpty
 		, SBind (Just (tX, eX)) (Just v) x1'
-		, [CBranch
+		, Seq.singleton 
+			$ CBranch
 			{ branchBind	= BLet [vBindT]
 			, branchSub	
-			   	=  [ CEq  (TSU $ SUBind sp) tBind tX ]
-				++ qsX  
-				++ [ CGen (TSM $ SMGen sp v) tBind ] } ] )
+			   	=  constraints [ CEq  (TSU $ SUBind sp) tBind tX ]
+				>< qsX  
+				>< constraints [ CGen (TSM $ SMGen sp v) tBind ] } )
 
 -- type signatures
 slurpS	(SSig sp sigMode vs tSig)
@@ -74,7 +74,7 @@ slurpS	(SSig sp sigMode vs tSig)
 		, tPure
 		, tEmpty
 		, SSig Nothing sigMode vs tSig
-		, [])
+		, Seq.empty)
 
 slurpS	_
 	= panic stage

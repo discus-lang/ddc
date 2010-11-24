@@ -9,6 +9,8 @@ import DDC.Constraint.Exp
 import DDC.Constraint.Pretty	()
 import DDC.Type.Exp
 import DDC.Main.Error
+import qualified Data.Traversable	as Seq
+import Data.Sequence			(Seq)
 import Util
 
 stage	= "DDC.Constraint.Plate.Trans"
@@ -32,6 +34,9 @@ instance (Monad m, TransM m a) => TransM m [a] where
   = do	x'	<- transM table x
   	xs'	<- mapM (transM table) xs
 	return	$  x' : xs'
+
+instance (Monad m, TransM m a) => TransM m (Seq a) where
+ transM table mm	= Seq.mapM (transM table) mm
 
 
 -- CTree -------------------------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 -- | Utils used by the type constraint slurper.
 module DDC.Desugar.Slurp.Util
 	( traceM
+	, constraints, (><)
 	, newVarN
 	, newVarV, newVarVS
 	, newTVarD, newTVarDS
@@ -18,6 +19,7 @@ module DDC.Desugar.Slurp.Util
 	, wantTypeV
 	, wantTypeVs )
 where
+import DDC.Constraint.Exp
 import DDC.Desugar.Slurp.State
 import DDC.Solve.Error
 import DDC.Desugar.Exp
@@ -29,6 +31,8 @@ import DDC.Var
 import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import qualified Data.Sequence	as Seq
+import Data.Sequence		(Seq, (><))
 
 stage	= "Desugar.Slurp.Util"
 
@@ -37,7 +41,10 @@ stage	= "Desugar.Slurp.Util"
 traceM :: String -> CSlurpM ()
 traceM	  ss
  	= modify (\s -> s { stateTrace = (stateTrace s) ++ [ss] })
-	
+
+-- Construction -----------------------------------------------------------------------------------
+constraints :: [CTree] -> Seq CTree	
+constraints = Seq.fromList
 
 -- Variables --------------------------------------------------------------------------------------
 -- | Allocate a fresh variable in a given namespace.

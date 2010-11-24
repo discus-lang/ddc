@@ -9,6 +9,7 @@ import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Main.Pretty
 import qualified Data.Map	as Map
+import qualified Data.Foldable	as Seq
 
 padVar = padL 20
 
@@ -22,13 +23,13 @@ instance Pretty CTree PMode where
 	CBranch BNothing subs
 	 -> "BRANCH\n"
 	  % "{\n"
-		%> (vcat (map ppr subs))
+		%> (vcat $ Seq.toList subs)
 	  % "}"
 
 	CBranch binds subs
 	 -> "BRANCH" %% binds % "\n"
 	  % "{\n"
-		%> (vcat (map ppr subs))
+		%> (vcat $ Seq.toList subs)
 	  % "}"
 
 

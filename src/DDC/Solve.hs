@@ -27,6 +27,7 @@ import System.IO
 import DDC.Main.Arg		(Arg)
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
+import qualified Data.Foldable	as Seq
 
 debug	= True
 trace s	= when debug $ traceM s
@@ -51,7 +52,7 @@ solveProblem args mTrace problem
 			$ concat 
 			$ Map.elems $ problemSigs problem
 
-		solveTree (problemConstraints problem)
+		solveTree (Seq.toList $ problemConstraints problem)
 			  (problemMainIsMain  problem))
 
 		solverState
@@ -128,7 +129,7 @@ solveCs	(c:cs)
 
 		-- consider the constraints from the branch next, 
 		--	and add a CLeave marker to rember when we're finished with it.
-		solveNext (branchSub c ++ [CLeave bind] ++ cs)
+		solveNext ((Seq.toList $ branchSub c) ++ [CLeave bind] ++ cs)
 
 	-- A single equality constraint
 	CEq _ t1 t2
