@@ -20,7 +20,7 @@ import qualified DDC.Main.Arg		as Arg
 
 -- module
 import qualified Module.Interface.Docable ()
-import qualified Module.Export		as M
+import qualified DDC.Module.Export	as M
 import qualified Module.Interface.Export as MN
 import qualified DDC.Module.Scrape	as M
 

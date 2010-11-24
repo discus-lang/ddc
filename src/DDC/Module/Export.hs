@@ -1,5 +1,5 @@
-
-module Module.Export
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+module DDC.Module.Export
 	(makeInterface)
 where
 import Util
@@ -116,12 +116,12 @@ exportAll
 	-> (Var -> Bool)	-- ^ don't export these vars
 	-> String		-- ^ the interface file
 
-exportAll moduleName getType topNames psSource psDesugared_ psCore export
- = let	psDesugared	= map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared_
+exportAll moduleName getType _ psSource psDesugared_ psCore export
+ = let	psDesugared	= map (D.transformN (\_ -> Nothing :: Maybe ()) ) psDesugared_
    in   pprStrPlain
 	$ vcat
 	[ ppr "-- Pragmas"
-	, vcat	[ppr p 	| p@(S.PPragma _ (S.XVar sp v : _)) <- psSource
+	, vcat	[ppr p 	| p@(S.PPragma _ (S.XVar _ v : _)) <- psSource
 			, varName v == "LinkObjs" ]
 	, blank
 
@@ -149,18 +149,18 @@ exportAll moduleName getType topNames psSource psDesugared_ psCore export
 				vsMaterial
 				vsImmaterial)
 		    % ";"
-			| D.PData sp (T.DataDef vData vSea vksData ctors vsMaterial vsImmaterial)
+			| D.PData _ (T.DataDef vData vSea vksData ctors vsMaterial vsImmaterial)
 			<- psDesugared]
 	, blank
 	
 	, ppr "-- Effects"
-	, vcat	[ppr p	| p@(S.PKindSig _ v k)	<- psSource
+	, vcat	[ppr p	| p@(S.PKindSig _ _ k)	<- psSource
 			, T.resultKind k == T.kEffect ]
 	, blank
 
 	, ppr"-- Regions"
 	, vcat	[ exportRegion moduleName p 
-			| p@(C.PRegion r vts)	<- psCore]
+			| p@C.PRegion{}		<- psCore]
 	, blank
 	
 	, ppr "-- Abstract Type Classes"
@@ -188,7 +188,7 @@ exportAll moduleName getType topNames psSource psDesugared_ psCore export
 	--	not lifted supers as well as they're not needed by the client module.
  	, ppr "-- Binding Types"
 	, vsep	[ exportForeign v (getType v) (C.superOpTypeX x)
-			| p@(C.PBind v x) <- psCore
+			| C.PBind v x <- psCore
 			, export (eraseVarModuleV moduleName v)]
 	]
 
@@ -218,23 +218,22 @@ exportForeign v tv to
 
 -- | export  a projection dictionary
 exportProjDict :: D.Top a -> Str
-exportProjDict (D.PProjDict _ t [])
-	= blank
-
-exportProjDict (D.PProjDict _ t ss)
+exportProjDict (D.PProjDict _ t ss@(_:_))
  	= pprHeadBlock ("project " % t % " where" % nl)
 	[ v1 %>> " = " % v2 { varModuleId = ModuleIdNil }
 		| (D.SBind _ (Just v1) (D.XVar _ v2))	<- ss ]
 
+exportProjDict _ = blank
+
 	
 -- | export a top level region decl
 exportRegion :: ModuleId -> C.Top -> Str
-exportRegion mod (C.PRegion r vts)
+exportRegion m (C.PRegion r _)
 	| varModuleId r == ModuleIdNil
-	= "region " % mod % "." % r % ";" % nl
+	= "region " % m % "." % r % ";" % nl
 
-	| otherwise
-	= blank
+exportRegion _ _ = blank
+
 
 
 -- | erase module qualifiers from variables in this tree
