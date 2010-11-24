@@ -134,11 +134,12 @@ exportAll moduleName getType topNames psSource psDesugared_ psCore export
 	, vcat	[ppr p	| p@S.PInfix{}		<- psSource]
 	, blank
 
-	, ppr "-- Data Types"
+	, ppr "-- Abstract data types"
  	, vcat	[ ppr (D.PKindSig sp (eraseModule vData) k)
 			| D.PKindSig sp vData k <- psDesugared
 			, T.resultKind k == T.kValue ]
-	
+
+	, ppr "-- Data Types"
 	, vcat	[ (pprDataDefAsSource
 			$ T.DataDef 
 				(eraseModule vData) 
@@ -152,7 +153,7 @@ exportAll moduleName getType topNames psSource psDesugared_ psCore export
 			<- psDesugared]
 	, blank
 	
-	, ppr "-- Effect"
+	, ppr "-- Effects"
 	, vcat	[ppr p	| p@(S.PKindSig _ v k)	<- psSource
 			, T.resultKind k == T.kEffect ]
 	, blank
@@ -167,25 +168,26 @@ exportAll moduleName getType topNames psSource psDesugared_ psCore export
 	, blank
 	
 	, ppr "-- Type Class Declarations"
-	, vcat	[ ppr p | p@D.PClassDecl{} 	<- psDesugared]
+	, vsep	[ ppr p | p@D.PClassDecl{} 	<- psDesugared]
 	, blank
 
 	, ppr "-- Type Class Instances"
-	, vcat	[ ppr p | p@D.PClassInst{}	<- psDesugared]
+	, vsep	[ ppr p | p@D.PClassInst{}	<- psDesugared]
 	, blank
 
 	, ppr "-- Projection dictionaries"
-	, vcat	[ exportProjDict p 	
+	, vsep	[ exportProjDict p 	
 			| p@D.PProjDict{}	<- psDesugared]
+	, blank
 	
 	, ppr "-- Foreign imports"
-	, vcat [ ppr p 	| p@D.PExtern{}		<- psDesugared]
+	, vsep [ ppr p 	| p@D.PExtern{}		<- psDesugared]
 	, blank
 
 	-- only export types for bindings that were in scope in the source, and
 	--	not lifted supers as well as they're not needed by the client module.
  	, ppr "-- Binding Types"
-	, vcat	[ exportForeign v (getType v) (C.superOpTypeX x)
+	, vsep	[ exportForeign v (getType v) (C.superOpTypeX x)
 			| p@(C.PBind v x) <- psCore
 			, export (eraseVarModuleV moduleName v)]
 	]
@@ -212,31 +214,28 @@ exportForeign v tv to
 	% pprStrPlain v { varModuleId = ModuleIdNil } % nl
 	%> vcat	[ "::" %% (T.prettyTypeSplit $ T.beautifyLocalNamesT tv)
 		, ":$" %% to %% semi ]
-	% nl
 
 
 -- | export  a projection dictionary
-exportProjDict :: D.Top a -> String
+exportProjDict :: D.Top a -> Str
 exportProjDict (D.PProjDict _ t [])
-	= []
+	= blank
 
 exportProjDict (D.PProjDict _ t ss)
- 	= pprStrPlain
-	$ "project " % t % " where" % nl
-	% (braces
- 	 	(nl %> vcat (map (\(D.SBind _ (Just v1) (D.XVar _ v2))
-					-> v1 %>> " = " % v2 { varModuleId = ModuleIdNil } % ";")
-					ss)))
+ 	= pprHeadBlock ("project " % t % " where" % nl)
+	[ v1 %>> " = " % v2 { varModuleId = ModuleIdNil }
+		| (D.SBind _ (Just v1) (D.XVar _ v2))	<- ss ]
+
 	
 -- | export a top level region decl
-exportRegion :: ModuleId -> C.Top -> String
+exportRegion :: ModuleId -> C.Top -> Str
 exportRegion mod (C.PRegion r vts)
 	| varModuleId r == ModuleIdNil
-	= pprStrPlain
-	$ "region " % mod % "." % r % ";" % nl
+	= "region " % mod % "." % r % ";" % nl
 
 	| otherwise
-	= ""
+	= blank
+
 
 -- | erase module qualifiers from variables in this tree
 eraseVarModuleSourceTree
@@ -244,8 +243,7 @@ eraseVarModuleSourceTree
 	-> S.Tree SourcePos
 	-> S.Tree SourcePos
 	
-eraseVarModuleSourceTree
-	m tree
+eraseVarModuleSourceTree m tree
  =	S.trans (S.transTableId (\(x :: SourcePos) -> return x))
 		{ S.transVar	= \v -> return $ eraseVarModuleV m v 
 		, S.transType	= \t -> return $ T.transformV (eraseVarModuleV m) t 
@@ -258,8 +256,7 @@ eraseVarModuleDesugaredTree
 	-> D.Tree SourcePos
 	-> D.Tree SourcePos
 	
-eraseVarModuleDesugaredTree
-	m tree
+eraseVarModuleDesugaredTree m tree
  =	map 	(D.transZ (D.transTableId (\(x :: SourcePos) -> return x))
 			{ D.transV	= \v -> return $ eraseVarModuleV m v 
 			, D.transT	= \t -> return $ T.transformV (eraseVarModuleV m) t  })
@@ -267,6 +264,7 @@ eraseVarModuleDesugaredTree
 
 eraseVarModuleT m t
  	= T.transformV (eraseVarModuleV m) t
+
 
 eraseVarModuleV m v
  = if varModuleId v == m
