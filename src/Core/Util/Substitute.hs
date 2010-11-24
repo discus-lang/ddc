@@ -31,6 +31,12 @@ subTT sub tt
 	, Just t'		<- sub v
 	= substituteT (block v sub) t'
 
+{-
+	= case t' of
+		TVar _ (UVar v')
+		 | v == v'	-> tt
+		_		-> substituteT (block v sub) t'
+-}
 	| TVar k (UMore v tMore) <- tt
 	, Just t'		 <- sub	v
 	= substituteT (block v sub) t'

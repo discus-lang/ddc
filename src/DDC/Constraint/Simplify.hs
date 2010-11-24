@@ -1,5 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-
+{-# OPTIONS -Wnot #-}
 -- | Simplification of type constraints prior to solving.
 --	The constraints returned from slurping the desugared code contain a lot of intermediate
 --	bindings where the names aren't actually needed by the Desugar -> Core transform.
@@ -19,15 +19,16 @@ import DDC.Main.Error
 import DDC.Type
 import DDC.Var
 import DDC.Constraint.Pretty		()
-import Data.Set				(Set)
 import Data.Sequence			(Seq)
 import qualified Data.Sequence		as Seq
+import qualified Data.Foldable		as Seq
 import qualified Data.Map		as Map
 import Control.Monad
+import Util
 
 stage = "DDC.Constraint.Simplify"
 
-
+-- Simplify ---------------------------------------------------------------------------------------
 -- | Simplify some type constraints.
 simplify 
 	:: Set Var		-- ^ Wanted type vars that we must preserve, don't eliminate them.
@@ -37,6 +38,25 @@ simplify
 simplify wanted tree
  = let	table	= collect wanted (CBranch BNothing tree)
    in	reduce wanted table tree
+
+
+-- Reorder ----------------------------------------------------------------------------------------
+-- | Reorder constraints into a standard ordering.
+--   This only reorders constraints within the block.
+--   TODO: Putting all the INST constraints last might improve inference for projections,
+--         but I'm yet to find a concrete example.
+reorder	:: Seq CTree -> Seq CTree
+reorder cs
+ = let	([eqs, mores, gens], others)
+		= partitionFs
+			[ (=@=) CEq{},  (=@=) CMore{},    (=@=) CGen{} ]
+		$ Seq.toList cs
+		
+   in	join	$ Seq.fromList
+		[ Seq.fromList eqs
+ 		, Seq.fromList mores
+		, Seq.fromList others
+		, Seq.fromList gens ]
 
 
 -- Reduce -----------------------------------------------------------------------------------------
@@ -61,7 +81,9 @@ reduce1 wanted table cc
    in case cc of
 	CBranch{}	
 	 -> Seq.singleton 
-	  $ cc { branchSub = reduce wanted table $ branchSub cc }
+	  $ cc { branchSub 	= reorder
+				$ reduce wanted table 
+					$ branchSub cc }
 
 	-- Eq ---------------------------------------------
 	-- Ditch eq constraints that are being inlined.
