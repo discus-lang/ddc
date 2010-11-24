@@ -35,6 +35,10 @@ render mode colIndent col ss
 	    in	( col + (fromIntegral $ T.length text)
 		, B.fromLazyText text)
 	
+	PText text
+	 ->	( col + (fromIntegral $ T.length text)
+		, B.fromLazyText text)
+	
 	PChar c	
 	 -> (col + 1, B.singleton c)
 
@@ -68,12 +72,21 @@ render mode colIndent col ss
 	 -> let	pad	= replicate (colNext - col) ' '
  	    in	render mode colNext colNext
 			(PAppend [PString pad, str])
-	
-	PPadLeft _n _c str
-	 -> down col str
-	
-	PPadRight _n _c str
-	 -> down col str
+
+	PPadLeft n c str
+	 -> let	text	= T.pack $ renderWithMode mode str
+		len	= fromIntegral $ T.length text
+		padLen	= fromIntegral $ max 0 (n - len)
+		pad	= T.replicate padLen (T.singleton c)
+	    in	down col (PAppend [PText text, PText pad])
+
+	PPadRight n c str
+	 -> let	text	= T.pack $ renderWithMode mode str
+		len	= fromIntegral $ T.length text
+		padLen	= fromIntegral $ max 0 (n - len)
+		pad	= T.replicate padLen (T.singleton c)
+	    in	down col (PAppend [PText pad, PText text])
+
 
 
 -- | If we're past the previous tabstop, then advance to the next one.
