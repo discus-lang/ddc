@@ -19,19 +19,17 @@
 module Source.Defix
 	(defixP)
 where
-import Control.Monad.State.Strict
-import Util
 import Source.Exp
-import Source.Error
 import Source.Plate.Trans
 import Source.DefixApps
-import Data.Function
+import DDC.Source.Error
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Var
+import Util
+import Data.Function
 
------
-stage	= "Normal.Defix"
+stage	= "Source.Defix"
 
 type Annot	= SourcePos
 

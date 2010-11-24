@@ -19,8 +19,8 @@ module Source.Rename.State
 	, withModule
 	, uniquifyVarN)
 where
-import Source.Error
 import Util
+import DDC.Source.Error
 import DDC.Var
 import DDC.Main.Error
 import Shared.VarPrim		(getPrimVarBind)

@@ -11,7 +11,7 @@ module DDC.Desugar.Projections.Base
 	, freshenVar
 	, freshenCrsEq)
 where
-import Source.Error
+import DDC.Source.Error
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
 import DDC.Type

@@ -25,7 +25,7 @@
 module DDC.Desugar.Elaborate 
 	(elaborateTree)
 where
-import Source.Error
+import DDC.Source.Error
 import DDC.Desugar.Elaborate.Quantify
 import DDC.Desugar.Elaborate.EffClo
 import DDC.Desugar.Elaborate.Constraint

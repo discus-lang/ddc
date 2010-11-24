@@ -10,7 +10,7 @@ module Source.Desugar.Base
 	, newVarNI
 	, addError)
 where
-import Source.Error
+import DDC.Source.Error
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Var

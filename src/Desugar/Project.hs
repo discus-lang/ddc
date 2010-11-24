@@ -7,9 +7,9 @@ module Desugar.Project
 	, ProjTable
 	, slurpProjTable )
 where
-import Source.Error
 import Shared.VarPrim
 import Util
+import DDC.Source.Error
 import DDC.Desugar.Exp
 import DDC.Desugar.Bits
 import DDC.Desugar.Projections.Base

@@ -8,8 +8,8 @@ module Source.Rename.Binding
 	, lbindZ_topLevel )
 where
 import Source.Rename.State
-import Source.Error
 import Util
+import DDC.Source.Error
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var

@@ -1,6 +1,6 @@
-{-# OPTIONS  -cpp #-}
+{-# OPTIONS -XMagicHash -XBangPatterns -cpp #-}
 {-# LINE 2 "src/Source/Lexer.x" #-}
-{-# LANGUAGE BangPatterns, MagicHash #-}
+ 
 {-# OPTIONS 
 	-fno-warn-monomorphism-restriction 
 	-fno-warn-unused-binds
@@ -19,12 +19,12 @@ module Source.Lexer
 where
 import Source.Token
 import Source.TokenShow
-import Source.Error
-import Util
+import DDC.Source.Error
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import Data.Char	(isUpper)
+import Util
 
 #if __GLASGOW_HASKELL__ >= 603
 #include "ghcconfig.h"
@@ -720,10 +720,10 @@ alexIndexInt16OffAddr (AlexA# arr) off =
 #ifdef WORDS_BIGENDIAN
   narrow16Int# i
   where
-	!i    = word2Int# ((high `uncheckedShiftL#` 8#) `or#` low)
-	!high = int2Word# (ord# (indexCharOffAddr# arr (off' +# 1#)))
-	!low  = int2Word# (ord# (indexCharOffAddr# arr off'))
-	!off' = off *# 2#
+	i    = word2Int# ((high `uncheckedShiftL#` 8#) `or#` low)
+	high = int2Word# (ord# (indexCharOffAddr# arr (off' +# 1#)))
+	low  = int2Word# (ord# (indexCharOffAddr# arr off'))
+	off' = off *# 2#
 #else
   indexInt16OffAddr# arr off
 #endif
@@ -737,14 +737,14 @@ alexIndexInt32OffAddr (AlexA# arr) off =
 #ifdef WORDS_BIGENDIAN
   narrow32Int# i
   where
-   !i    = word2Int# ((b3 `uncheckedShiftL#` 24#) `or#`
+   i    = word2Int# ((b3 `uncheckedShiftL#` 24#) `or#`
 		     (b2 `uncheckedShiftL#` 16#) `or#`
 		     (b1 `uncheckedShiftL#` 8#) `or#` b0)
-   !b3   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 3#)))
-   !b2   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 2#)))
-   !b1   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 1#)))
-   !b0   = int2Word# (ord# (indexCharOffAddr# arr off'))
-   !off' = off *# 4#
+   b3   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 3#)))
+   b2   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 2#)))
+   b1   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 1#)))
+   b0   = int2Word# (ord# (indexCharOffAddr# arr off'))
+   off' = off *# 4#
 #else
   indexInt32OffAddr# arr off
 #endif

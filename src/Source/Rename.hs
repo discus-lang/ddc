@@ -16,9 +16,9 @@ import Source.Rename.Object
 import Source.Rename.Binding
 import Source.Util
 import Source.Slurp
-import Source.Error
 import Source.Exp
 import Util
+import DDC.Source.Error
 import DDC.Base.SourcePos
 import DDC.Util.FreeVars
 import DDC.Main.Error

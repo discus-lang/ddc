@@ -24,7 +24,7 @@ import DDC.Type
 import DDC.Var
 import Source.Pretty			()
 import qualified Source.Exp		as S
-import qualified Source.Error		as S
+import qualified DDC.Source.Error	as S
 import qualified DDC.Desugar.Bits	as D
 import qualified DDC.Desugar.Exp	as D
 import qualified DDC.Type.Data.Base	as T

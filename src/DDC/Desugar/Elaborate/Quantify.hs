@@ -2,13 +2,13 @@
 module DDC.Desugar.Elaborate.Quantify
 	(elabQuantifySigsInGlob)
 where
+import DDC.Source.Error
 import DDC.Desugar.Exp
 import DDC.Desugar.Glob
 import DDC.Base.SourcePos
 import DDC.Type
 import DDC.Var
 import DDC.Main.Error
-import Source.Error
 import Data.Maybe
 import Util
 import qualified Data.Set	as Set

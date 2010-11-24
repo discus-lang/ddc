@@ -10,9 +10,9 @@ module Main.Source
 	, desugar)
 where
 import Source.Exp
-import Source.Error
 import Main.Dump
 import Util
+import DDC.Source.Error
 import DDC.Desugar.Pretty		()
 import DDC.Base.SourcePos
 import DDC.Base.Literal

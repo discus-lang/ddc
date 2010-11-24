@@ -43,13 +43,13 @@ module Source.Lint
 	(lintTree)
 where
 import Source.Exp
-import Source.Error
-import Util
+import DDC.Source.Error
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var
+import Util
 import qualified Data.Set	as Set
 
 stage	= "Source.Lint"

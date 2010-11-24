@@ -1,7 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- Pretty printing of parse and renamer errors in the source program.
-module Source.Error
-	( Error(..))
+module DDC.Source.Error
+	(Error(..))
 where
 import Util
 import Source.Token
@@ -119,36 +119,28 @@ instance Pretty Error PMode where
 
  -- Parser Errors ------------------------------------------------------
  ppr (ErrorLayoutLeft tok)
- 	= ppr $ unlines
-	[ prettyTokenPos tok
-	, "    Layout error: Nested block starts to the left of the enclosing one."]
+ 	= tokErr tok
+	$ "Layout error: Nested block starts to the left of the enclosing one."
 
  ppr (ErrorLayoutNoBraceMatch tok)
- 	= ppr $ unlines
-	[ prettyTokenPos tok
-	, "    Layout error: Explicit close brace must match an explicit open brace."]
+ 	= tokErr tok
+	$ "Layout error: Explicit close brace must match an explicit open brace."
  
  ppr (ErrorLexicalStringTabs tok)
-	= ppr $ unlines
-	[ prettyTokenPos tok
-	, "    Lexer error: Literal string contains tab characters."]
+	= tokErr tok
+	$ "Lexer error: Literal string contains tab characters."
 
  ppr (ErrorLexicalEscape tok)
-	= ppr $ unlines
-	[ prettyTokenPos tok
-	, "    Lexer error: Unhandled escape sequence." ]
+	= tokErr tok
+	$ "Lexer error: Unhandled escape sequence."
 
  ppr (ErrorParse tok str)
- 	= ppr
-	$ unlines $
-	[ prettyTokenPos tok
-	, "    Parse error: " ++ str ]
+ 	= tokErr tok
+	$ "Parse error: " % str
 
  ppr (ErrorParsePos sp str)
- 	= ppr
-	$ unlines $
-	[ pprStrPlain sp
-	, "    Parse error: " ++ str ]
+ 	= spErr sp
+	$ "Parse error: " % str
 
  ppr (ErrorParseBefore tt)
 	| Just toks	<- sequence 
@@ -156,56 +148,52 @@ instance Pretty Error PMode where
 			$ take 10 tt
 
  	= let	Just t1	= takeHead tt
- 	  in	ppr $ unlines $ 
-		[ prettyTokenPos t1
-		, "    Parse error before: " ++ (catInt " " $ map Token.showSource toks) ++ " ..."]
+ 	  in	tokErr t1 
+		 $ "Parse error before: " % hsep (map Token.showSource toks) % " ..."
 		
 	| otherwise
-	= ppr "    Parse error at start of module"
+	= ppr $ indent "Parse error at start of module"
 
  ppr (ErrorParseEnd)
- 	= ppr $ unlines $ 
-	[ "    Parse error at end of input.\n" ]
+ 	= ppr $ indent "Parse error at end of input."
 
 
  -- Defixer Errors -----------------------------------------------------
  ppr (ErrorDefixNonAssoc vs)
   = let	Just v	= takeHead vs
-    in	prettyPos v % "\n"
-	% "    Precedence parsing error.\n"
-	% "      Cannot have multiple, adjacent, non-associative operators of the\n"
-	% "      same precedence in an infix expression.\n"
-	% "\n"
-	% "      Offending operators: " % ", " %!% (map varName vs) % "\n"
+    in	varErr v
+	 $  "Precedence parsing error."
+	 %! "Cannot have multiple, adjacent, non-associative operators of the"
+	 %! "same precedence in an infix expression."
+	 %! blank
+	 %! "    Offending operators: " % punc ", " (map varName vs)
 
  ppr (ErrorDefixMixedAssoc vs)
   = let	Just v	= takeHead vs
-    in	prettyPos v % "\n"
-	% "    Precedence parsing error.\n"
-	% "      Cannot have operators of same precedence but with differing\n"
-	% "      associativities in an infix expression.\n"
-	% "\n"
-	% "      Offending operators: " % ", " %!% (map varName vs) % "\n"
+    in	varErr v
+	 $  "Precedence parsing error."
+	 %! "Cannot have operators of same precedence but with differing"
+	 %! "associativities in an infix expression."
+	 %! blank
+	 %! "    Offending operators: " % punc "," (map varName vs)
 
 
  -- Renamer Errors ------------------------------------------------------------
  ppr err@(ErrorUndefinedVar{})
-	= prettyPos (eUndefined err)								% "\n"
-	% "     Undefined " 
-		% (shortNameOfSpace $ varNameSpace (eUndefined err))
-		% " variable '" % eUndefined err % "'.\n"
+	= varErr (eUndefined err)
+	$ "Undefined" 	%% (shortNameOfSpace $ varNameSpace (eUndefined err))
+			%% "variable" %% quotes (eUndefined err) % "."
 
  ppr err@(ErrorShadowForall{})
-	= prettyPos (eShadowVar err)								% "\n"
-	% "     Shadowed type variable '" % eShadowVar err  
-	% "' in 'forall' quantifier.\n"
+	= varErr (eShadowVar err)
+	$ "Shadowed type variable" 
+			%% quotes (eShadowVar err)
+			%% "in forall quantifier."
 
  ppr err@(ErrorRedefinedVar{})
-	= prettyPos (eRedefined err)								% "\n"
-	% "     Redefined "
-		% thing % " '"
-		% varName (eRedefined err) % "'\n"
-	% "      first defined at: " 	% prettyPos (eFirstDefined err) 			% "\n"
+	= varErr (eRedefined err)
+	$  "Redefined" %% quotes thing 	%% quotes (varName (eRedefined err))
+	%! "    first defined at:"	%% prettyPos (eFirstDefined err)
 
 	where var = eFirstDefined err
 	      thing 
@@ -218,59 +206,57 @@ instance Pretty Error PMode where
 		= ppr "type constructor"
 		
 		| otherwise
-		= (shortNameOfSpace $ varNameSpace var) % " variable"
+		= (shortNameOfSpace $ varNameSpace var) %% "variable"
 
  ppr err@(ErrorAmbiguousVar{})
-	= prettyPos (eBoundVar err)								% "\n"
-	% "     Ambiguous occurrence of '" % eBoundVar err % "'\n"
-	% "      could be any of: " % ", " %!% map ppr (eBindingVars err)			% "\n"
+	= varErr (eBoundVar err)
+	$ "Ambiguous occurrence of" %% quotes (eBoundVar err)
+	% "    could be any of: " % punc ", " (eBindingVars err)
 
 
  -- Lint Errors ---------------------------------------------------------------
  ppr err@(ErrorSigLacksBinding{})
-	= prettyPos (eSigVar err)								% "\n"
-	% "     Type signature for '" 	% varWithoutModuleId (eSigVar err) 
-					% "' lacks accompanying binding."			% "\n"
+	= varErr (eSigVar err)
+	$  "Type signature for" %% quotes (varWithoutModuleId (eSigVar err))
+	%% "lacks accompanying binding."
 
 
  -- Desugarer Errors ----------------------------------------------------------
  ppr err@(ErrorProjectRedefDataField{})
-	= prettyPos (eRedefined err)								% "\n"
-	% "     Projection '"	% eFirstDefined err % "' over data type '" % eDataVar err 	% "'\n"
-	% "      collides with a field name at: "	% prettyPos (eFirstDefined err)		% "\n"
+	= varErr (eRedefined err)
+	$  "Projection"	%% quotes (eFirstDefined err) 
+			%% "over data type" %% quotes (eDataVar err)
+	%! "    collides with a field name at: " % prettyPos (eFirstDefined err)
 
  ppr err@(ErrorRedefClassInst{})
-	= prettyPos (eRedefined err)								% "\n"
-	% "     Instance '"	% varName (eFirstDefined err)
-	%						"' of class '" % varName (eClass err) 	% "'\n"
-	% "      first defined at: "	% prettyPos (eFirstDefined err) 			% "\n"
-	% "      redefined at    : "	% prettyPos (eRedefined err)				% "'\n"
+	= varErr (eRedefined err)
+	$  "Instance"	%% quotes (varName (eFirstDefined err))
+			%% "of class" %% quotes (varName (eClass err))
+	%! "    first defined at: " % prettyPos (eFirstDefined err) 
+	%! "     is redefined at: " % prettyPos (eRedefined err)
 
  ppr (ErrorBindingAirity var1 airity1 var2 airity2)
- 	= prettyPos var1 % "\n"
-	% "    Bindings for '" % var1 % "' have a differing number of arguments.\n"
-	% "\n"
-	% "    binding at " % prettyPos var1 % " has " % airity1 % " arguments\n"
-	% "           but " % prettyPos var2 % " has " % airity2 % "\n"
+ 	= varErr var1 
+	$  "Bindings for" %% quotes var1 %% "have a differing number of arguments."
+	%! blank
+	%! "  the binding at" %% prettyPos var1 %% "has" %% airity1 %% "arguments"
+	%! "             but" %% prettyPos var2 %% "has" %% airity2
 	
  ppr (ErrorNotMethodOfClass vInst vClass)
-	= prettyPos vInst % "\n"
-	% "    '" % vInst % "' is not a (visible) method of class '" % vClass % "'.\n"
+	= varErr vInst
+	$ quotes vInst % "is not a (visible) method of class" %% quotes vClass % "."
 
  ppr (ErrorQuantifiedMaterialVar vSig tSig vQuant)
   	= varErr vQuant
-	[ "    Variable '" 
-			% varWithoutModuleId vQuant 
-			% "' cannot be quantified because it is material in this type."
-	, ppr "    Offending signature:"
-	, blank
-	, indent $ ppr $ prettyVTS vSig tSig ]
+	$  "Variable" 	%% quotes (varWithoutModuleId vQuant)
+			%% "cannot be quantified because it is material in this type."
+	%! "Offending signature:"
+	%! blank
+	%! (indent $ prettyVTS vSig tSig)
 
-
- ppr (ErrorQuantifiedDangerousVar v)
-  	= vcat
-	[ ppr $ prettyPos v
-	, "    Variable '" % v % "' cannot be quantified because it is dangerous in this type." ]
+ ppr (ErrorQuantifiedDangerousVar vDanger)
+  	= varErr vDanger
+	$ "Variable" %% quotes vDanger %% "cannot be quantified because it is dangerous in this type."
 	
 
 -- Utils ------------------------------------------------------------------------------------------	
@@ -281,10 +267,15 @@ prettyVTS v t
 		++ "\n  :: "
 		++ (indentSpace 2 $ pprStrPlain $ prettyTypeSplit $ t)
 
-varErr var ls
+varErr var str
 	= prettyPos var % newline
-	% (indent $ vcat ls)
+	% indent str
 
+tokErr tok str
+	= prettyTokenPos tok % newline
+	% indent str
 
+spErr sp str
+	= sp % newline % indent str
 
 

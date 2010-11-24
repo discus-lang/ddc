@@ -18,12 +18,12 @@ module Source.Lexer
 where
 import Source.Token
 import Source.TokenShow
-import Source.Error
-import Util
+import DDC.Source.Error
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import Data.Char	(isUpper)
+import Util
 }
 
 %wrapper "posn"
