@@ -1,6 +1,7 @@
 ddc: ERROR
 ./test/14-Desugar/T146-InstanceRedef/Test.ds:8:14
-     Instance 'Whatever' of class 'Show'
-      first defined at: ./test/14-Desugar/T146-InstanceRedef/Test.ds:4:14
-      redefined at    : ./test/14-Desugar/T146-InstanceRedef/Test.ds:8:14'
+        Duplicate instance  'Show' 'Whatever'
+        
+            first defined at: ./test/14-Desugar/T146-InstanceRedef/Test.ds:4:14
+             is redefined at: ./test/14-Desugar/T146-InstanceRedef/Test.ds:8:14
 

@@ -1,31 +1,46 @@
 ddc: ERROR
 ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:5:0
-    Bindings for 'Merge.fun3' have a differing number of arguments.
-
-    binding at ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:5:0 has 2 arguments
-           but ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:6:0 has 1
+        Bindings for 'Merge.fun3' have a differing number of arguments.
+        
+          the binding at: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:5:0
+                     has: 2 arguments
+        
+                     but: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:6:0
+                     has: 1
 
 ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:31:16
-    Bindings for 'Merge.fun9' have a differing number of arguments.
-
-    binding at ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:31:16 has 1 arguments
-           but ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:32:16 has 2
+        Bindings for 'Merge.fun9' have a differing number of arguments.
+        
+          the binding at: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:31:16
+                     has: 1 arguments
+        
+                     but: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:32:16
+                     has: 2
 
 ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:24:8
-    Bindings for 'Merge.dude1' have a differing number of arguments.
-
-    binding at ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:24:8 has 1 arguments
-           but ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:25:8 has 2
+        Bindings for 'Merge.dude1' have a differing number of arguments.
+        
+          the binding at: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:24:8
+                     has: 1 arguments
+        
+                     but: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:25:8
+                     has: 2
 
 ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:19:8
-    Bindings for 'Merge.fun5' have a differing number of arguments.
-
-    binding at ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:19:8 has 1 arguments
-           but ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:20:8 has 2
+        Bindings for 'Merge.fun5' have a differing number of arguments.
+        
+          the binding at: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:19:8
+                     has: 1 arguments
+        
+                     but: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:20:8
+                     has: 2
 
 ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:14:8
-    Bindings for 'Class.Show.show' have a differing number of arguments.
-
-    binding at ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:14:8 has 1 arguments
-           but ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:15:8 has 2
+        Bindings for 'Class.Show.show' have a differing number of arguments.
+        
+          the binding at: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:14:8
+                     has: 1 arguments
+        
+                     but: ./test/14-Desugar/Patterns/MergingBindings/Merge.ds:15:8
+                     has: 2
 

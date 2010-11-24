@@ -163,19 +163,21 @@ instance Pretty Error PMode where
   = let	Just v	= takeHead vs
     in	varErr v
 	 $  "Precedence parsing error."
+	 %! blank
 	 %! "Cannot have multiple, adjacent, non-associative operators of the"
 	 %! "same precedence in an infix expression."
 	 %! blank
-	 %! "    Offending operators: " % punc ", " (map varName vs)
+	 %! "Offending operators: " % punc ", " (map varName vs)
 
  ppr (ErrorDefixMixedAssoc vs)
   = let	Just v	= takeHead vs
     in	varErr v
 	 $  "Precedence parsing error."
+	 %! blank
 	 %! "Cannot have operators of same precedence but with differing"
 	 %! "associativities in an infix expression."
 	 %! blank
-	 %! "    Offending operators: " % punc "," (map varName vs)
+	 %! "Offending operators: " % punc "," (map varName vs)
 
 
  -- Renamer Errors ------------------------------------------------------------
@@ -192,7 +194,7 @@ instance Pretty Error PMode where
 
  ppr err@(ErrorRedefinedVar{})
 	= varErr (eRedefined err)
-	$  "Redefined" %% quotes thing 	%% quotes (varName (eRedefined err))
+	$  "Redefined" %% thing 	%% quotes (varName (eRedefined err))
 	%! "    first defined at:"	%% prettyPos (eFirstDefined err)
 
 	where var = eFirstDefined err
@@ -230,8 +232,10 @@ instance Pretty Error PMode where
 
  ppr err@(ErrorRedefClassInst{})
 	= varErr (eRedefined err)
-	$  "Instance"	%% quotes (varName (eFirstDefined err))
-			%% "of class" %% quotes (varName (eClass err))
+	$  "Duplicate instance "
+			%% quotes (varName (eClass err))
+			%% quotes (varName (eFirstDefined err))
+	%! blank
 	%! "    first defined at: " % prettyPos (eFirstDefined err) 
 	%! "     is redefined at: " % prettyPos (eRedefined err)
 
@@ -239,8 +243,11 @@ instance Pretty Error PMode where
  	= varErr var1 
 	$  "Bindings for" %% quotes var1 %% "have a differing number of arguments."
 	%! blank
-	%! "  the binding at" %% prettyPos var1 %% "has" %% airity1 %% "arguments"
-	%! "             but" %% prettyPos var2 %% "has" %% airity2
+	%! "  the binding at:" %% prettyPos var1
+	%! "             has:" %% airity1 %% "arguments"
+	%! blank
+	%! "             but:" %% prettyPos var2
+	%! "             has:" %% airity2
 	
  ppr (ErrorNotMethodOfClass vInst vClass)
 	= varErr vInst
@@ -250,9 +257,9 @@ instance Pretty Error PMode where
   	= varErr vQuant
 	$  "Variable" 	%% quotes (varWithoutModuleId vQuant)
 			%% "cannot be quantified because it is material in this type."
-	%! "Offending signature:"
 	%! blank
-	%! (indent $ prettyVT vSig tSig)
+	%! "Offending signature:"
+	%! prettyVT vSig tSig
 
  ppr (ErrorQuantifiedDangerousVar vDanger)
   	= varErr vDanger

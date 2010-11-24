@@ -1,21 +1,21 @@
 ddc: ERROR
 ./test/13-Renamer/RedefinedVar/Main.ds:9:11
-     Redefined data constructor 'Foo'
-      first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:8:11
+        Redefined data constructor 'Foo'
+            first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:8:11
 
 ./test/13-Renamer/RedefinedVar/Main.ds:12:17
-     Redefined data constructor 'Baz'
-      first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:12:11
+        Redefined data constructor 'Baz'
+            first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:12:11
 
 ./test/13-Renamer/RedefinedVar/Main.ds:16:5
-     Redefined type constructor 'Frob'
-      first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:15:5
+        Redefined type constructor 'Frob'
+            first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:15:5
 
 ./test/13-Renamer/RedefinedVar/Main.ds:22:13
-     Redefined value variable 'x'
-      first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:22:11
+        Redefined value variable 'x'
+            first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:22:11
 
 ./test/13-Renamer/RedefinedVar/Main.ds:26:30
-     Redefined value variable 'xx'
-      first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:26:27
+        Redefined value variable 'xx'
+            first defined at: ./test/13-Renamer/RedefinedVar/Main.ds:26:27
 

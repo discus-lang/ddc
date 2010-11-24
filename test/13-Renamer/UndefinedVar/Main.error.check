@@ -1,7 +1,7 @@
 ddc: ERROR
 ./test/13-Renamer/UndefinedVar/Main.ds:6:16
-     Undefined value variable 'y'.
+        Undefined value variable 'y'.
 
 ./test/13-Renamer/UndefinedVar/Main.ds:9:15
-     Undefined value variable 'z'.
+        Undefined value variable 'z'.
 

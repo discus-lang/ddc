@@ -1,7 +1,7 @@
 ddc: ERROR
 ./test/13-Renamer/T92-InstanceOfUnknownClass/Main.ds:4:9
-     Undefined class variable 'Wibble'.
+        Undefined class variable 'Wibble'.
 
 ./test/13-Renamer/T92-InstanceOfUnknownClass/Main.ds:5:1
-     Undefined value variable 'foo'.
+        Undefined value variable 'foo'.
 
