@@ -2,17 +2,17 @@ ddc: ERROR
 ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
         Conflicting region constraints.
         
-              constraint: Const %60
+              constraint: Const %33
         which purifies
               the use of: (*)
-                 of type: (213 214)
+                 of type: (239 240)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:25
         due to
               the use of: mapL
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
         
             conflicts with,
-              constraint: MutableT *274
+              constraint: MutableT *272
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:7:21
 

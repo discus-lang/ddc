@@ -1,11 +1,11 @@
 ddc: ERROR
-./test/15-Typing/Unification/FunLess/Test.ds:6:10
+./test/15-Typing/Unification/FunLess/Test.ds:6:15
         Kind mismatch during unification.
-            cannot match: $ -> *
-                    with: % -> *
+            cannot match: % -> *
+                    with: $ -> *
 
-./test/15-Typing/Unification/FunLess/Test.ds:6:10
+./test/15-Typing/Unification/FunLess/Test.ds:6:15
         Kind mismatch during unification.
-            cannot match: $
-                    with: %
+            cannot match: %
+                    with: $
 
