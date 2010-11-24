@@ -8,7 +8,6 @@ where
 
 -- main stages
 import Main.Setup
-import Main.Error
 import Main.Util
 import Main.Sea
 import Main.Llvm
@@ -23,6 +22,7 @@ import qualified Module.Interface.Docable ()
 import qualified DDC.Module.Export	as M
 import qualified Module.Interface.Export as MN
 import qualified DDC.Module.Scrape	as M
+import DDC.Module.Error
 
 -- source
 import qualified Source.Exp		as S
@@ -112,7 +112,7 @@ compileFile_parse
 	let pathRelative	=  "./" ++ makeRelative dirWorking pathSource
 	
    	exitWithUserError (setupArgs setup) 
-   		[pathRelative % "\n    Source file is empty.\n"]
+   		[pathRelative % nl % indent "Source file is empty."]
 
  | otherwise
  = do	let ?args		= setupArgs setup

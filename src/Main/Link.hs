@@ -4,10 +4,10 @@ module Main.Link
 where
 import Main.BuildFile
 import Main.Setup
-import Main.Error
 import Util
 import System.Exit
 import System.Cmd
+import DDC.Module.Error
 import DDC.Main.Error
 import DDC.Main.Pretty
 import System.Directory 	(doesDirectoryExist)

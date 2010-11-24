@@ -7,7 +7,7 @@ import Main.Setup
 import Main.Compile
 import Main.Init
 import Main.Make
-import Main.Error
+import DDC.Module.Error
 import DDC.Module.Scrape
 import DDC.Module.ScrapeGraph
 import DDC.Main.Pretty

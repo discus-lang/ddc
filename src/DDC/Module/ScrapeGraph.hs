@@ -5,12 +5,12 @@ module DDC.Module.ScrapeGraph
 	, scrapeRecursive
         , propagateNeedsRebuild)
 where
+import DDC.Module.Error
 import DDC.Module.Scrape
 import DDC.Main.Arg
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
-import Main.Error
 import Main.Setup
 import Util
 import System.Exit
@@ -138,18 +138,21 @@ scrapeGraphInsert
 scrapeGraphInsert args m s sg
  = do	case cyclicImport m s sg of
 
- 	 Nothing	-> return $! Map.insert m s sg
+ 	 Nothing	
+ 	  -> return $! Map.insert m s sg
 
-	 Just [mc]	-> exitWithUserError args
-			 [ ErrorRecursiveModules
-			 $ pprStrPlain
-                         $ "Module '" % mc % "' imports itself."]
+	 Just [mc]
+	  -> exitWithUserError args
+		 [ ErrorRecursiveModules
+		 	$ pprStrPlain
+                 	$ "Module '" % mc % "' imports itself."]
 
-	 Just c		-> exitWithUserError args
-			 [ ErrorRecursiveModules
-			 $ pprStrPlain
-			 $ "Module import graph has cycle : "
-			 % punc " -> " (map ppr (head c : reverse c))]
+	 Just c
+	  -> exitWithUserError args
+		[ ErrorRecursiveModules
+			$ pprStrPlain
+			$ "Module import graph has cycle: "
+	 		% punc " -> " (map ppr (head c : reverse c))]
 
 
 -- | Checks to see if adding the Module to the ScrapeGraph would result in a

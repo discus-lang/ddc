@@ -8,7 +8,7 @@ import Util.Graph.Deps
 import Main.Setup
 import Main.Compile
 import Main.Link
-import Main.Error
+import DDC.Module.Error
 import DDC.Module.Scrape
 import DDC.Module.ScrapeGraph
 import DDC.Var

@@ -2,12 +2,12 @@
 module Main.Init
 	( verbLocateRunLib )
 where
-import Main.Error
-import Util
-import Util.System.Directory
+import DDC.Module.Error
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Main.Arg		(Arg)
+import Util
+import Util.System.Directory
 import qualified DDC.Main.Arg	as Arg
 
 
