@@ -74,7 +74,6 @@ makeLinkCmd
 
 	= "gcc"
 	++ " -std=c99"
-	++ " -dead_strip"
 	++ " -m" ++ show pointerBits
 	++ " -o " ++ outFile
 
@@ -90,3 +89,9 @@ makeLinkCmd
 	++ " -lm"
 	++ " " ++ concat [" -L" ++ dir | dir <- extraLibDirs]
 	++ " " ++ concat [" -l" ++ lib | lib <- extraLibs]
+
+	-- We can strip out unused functions from the prelude, 
+	-- provided we leave stuff that the RTS calls back on.
+	++ " -Xlinker -dead_strip"
+	++ " -Xlinker -exported_symbol" ++ " -Xlinker _Base_ExceptionCaseNoMatch"
+
