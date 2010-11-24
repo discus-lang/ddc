@@ -76,6 +76,8 @@ nightly :
 	@echo
 	@$(GHC) --version
 	@echo
+	@alex --version
+	@echo
 	@ghc-pkg list | grep "QuickCheck\|regex-base\|regex-posix\|regex-compat\|haskell-src\|parsec\|buildbox\|text"
 	@echo
 	@sh -c 'llc --version || exit 0'
