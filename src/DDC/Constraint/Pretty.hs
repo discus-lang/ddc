@@ -21,20 +21,15 @@ instance Pretty CTree PMode where
 	 -> ppr "NIL"
 
 	CBranch BNothing subs
-	 -> "BRANCH\n"
-	  % "{\n"
-		%> (vcat $ Seq.toList subs)
-	  % "}"
+	 -> pprHeadBlock ("BRANCH" % nl) 
+		$ Seq.toList subs
 
 	CBranch binds subs
-	 -> "BRANCH" %% binds % "\n"
-	  % "{\n"
-		%> (vcat $ Seq.toList subs)
-	  % "}"
-
-
+	 -> pprHeadBlock ("BRANCH" %% binds % nl) 
+		$ Seq.toList subs
+	
 	CSig	_ v t
-	 -> "SIG  " % v % "\n" %> prettyTypeSplit t
+	 -> "SIG  " % v % nl %> prettyTypeSplit t
 
 	CEq 	_ v t	
 	 -> padVar v 	%% "= " %% prettyTypeSplit t
@@ -52,10 +47,8 @@ instance Pretty CTree PMode where
 	 -> "PROJECT " % tp % " " % vInst % " " % tDict %% tBind
 
 	CDictProject _ t vs
-	 -> "DICTPROJECT    " % t % "\n"
-	 	% "{\n"
-		%> ("\n" %!% map (\(v1, v2) -> v1 %>> " = " % v2 % ";") (Map.toList vs) % "\n")
-		% "}"
+	 -> pprHeadBlock ("DICTPROJECT    " % t)
+		[ v1 %>> " = " % v2 | (v1, v2)	<- Map.toList vs ]
 	
 	CClassInst _ v ts
 	 -> "CLASSINST " % v % " " % ts
@@ -81,8 +74,6 @@ instance Pretty CTree PMode where
 
 	CInstLetRec _ v1 v2
 	 -> "INSTLETREC " % v1 %% v2
-	 
-	 
 
 
 -- CBind ------------------------------------------------------------------------------------------
@@ -94,3 +85,4 @@ instance Pretty CBind PMode where
 	BLetGroup vs	-> punc " " (ppr "LETGROUP" 	: map ppr vs)
 	BLambda	  vs 	-> punc " " (ppr "LAMBDA"	: map ppr vs)
   	BDecon 	  vs  	-> punc " " (ppr "DECON"	: map ppr vs)
+
