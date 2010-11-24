@@ -466,7 +466,7 @@ solveCInst_let
 	
 
 solveCInst_find 
-	cs cc@(CInst src vUse vInst)
+	cs cInst@(CInst src vUse vInst)
 	_ _ mBindGroup genSusp
 	
 	-- If the binding to be instantiated is part of a recursive group and we're not ready
@@ -492,22 +492,16 @@ solveCInst_find
 	--	we try the instantiation again.
 	| otherwise
 	= do	
---		trace	$ ppr "=== Reorder.\n"
---			% "    queue =\n" %> (", " %!% map ppr (c:cs)) % "\n\n"
-	
-		let floatBranch prev cc'
-			= case Seq.viewl cc' of
-				c@(CBranch { branchBind = BLet [vT] }) Seq.:< cs'
-				 | vT == vInst	-> c Seq.<| (prev Seq.>< cs')
-				 
-				c Seq.:< cs'	-> floatBranch (prev Seq.|> c) cs'
-				 
-				Seq.EmptyL 	-> panic stage
-				 		$ "floatBranch: can't find branch for " % vInst
-					
-		-- Reorder the constraints so the required branch is at the front
-		let csReordered	= floatBranch Seq.empty (cc Seq.<| cs)
---		trace	$ "    queue' =\n" %> (", " %!% map ppr csReordered) % "\n\n"
-	
-		-- continue solving
-		return	csReordered
+		let wanted c
+		 	= case c of
+			   CBranch { branchBind = BLet [vT] }	-> vT == vInst
+			   _					-> False
+		
+		-- break the remaining constraints on the one that we want
+		let (first, second)	= Seq.breakl wanted cs
+		
+		-- shift the one we want to the front of the queue.
+		case Seq.viewl second of
+		 Seq.EmptyL	      -> panic stage $ "floatBranch: can't find branch for " % vInst
+		 cWant Seq.:< csRest  -> return $ cWant Seq.<| cInst Seq.<| first Seq.>< csRest
+
