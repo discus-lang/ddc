@@ -4,7 +4,7 @@
 --   Takes a list of constraints and adds them to the solver state.
 --   TODO: Make this return a Solution insead of the raw Solver state
 module DDC.Solve
-	(squidSolve)
+	(solveProblem)
 where
 import Type.Solve.Grind
 import Type.Solve.BindGroup
@@ -32,14 +32,14 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Solve"
 
--- | Solve some type constraints.
-squidSolve 	
+-- | Solve a typing problem.
+solveProblem	
 	:: [Arg]		-- ^ Compiler args.
 	-> Maybe Handle		-- ^ Write the debug trace to this file handle (if set).
 	-> Problem		-- ^ Typing problem to solve.
 	-> IO SquidS		-- ^ The final solver state.
 
-squidSolve args mTrace problem
+solveProblem args mTrace problem
  = do
 	-- Create the initial solver state.
 	solverState	<- squidSInit args mTrace problem
@@ -51,8 +51,9 @@ squidSolve args mTrace problem
 			$ concat 
 			$ Map.elems $ problemSigs problem
 
-		solveM	(problemConstraints problem)
-			(problemMainIsMain  problem))
+		solveTree (problemConstraints problem)
+			  (problemMainIsMain  problem))
+
 		solverState
 
 
@@ -80,16 +81,20 @@ solveFeedSig (ProbSig v sp _ tSig)
 				(TVar kValue (UVar vT)) 
 				tSig_body
 	return ()
-	   
 
--- | Solve some type constraints (monadic version)
-solveM	:: [CTree]		-- ^ the type constraints to solve.
-	-> Bool			-- ^ whether to require "main" to have type () -> ().
+	   
+-- Solve Tree -------------------------------------------------------------------------------------
+-- | Solve a tree of constraints.
+--	This is called once we've created the initial state and added all the type signatures
+--	to the graph.
+solveTree
+	:: [CTree]		-- ^ Constraints to solve.
+	-> Bool			-- ^ Whether to require "main" to have type () -> ().
 	-> SquidM ()
 
-solveM	ctree blessMain	
+solveTree ctree blessMain	
  = do
-	-- Slurp out the branch containment tree
+	-- Slurp out the branch containment tree and add it to the state.
 	--	we use this to help determine which bindings are recursive.
 	stateContains `writesRef` (Map.unions $ map slurpContains ctree)
 
@@ -101,15 +106,13 @@ solveM	ctree blessMain
 
 
 -- | Add some constraints to the type graph.
-solveCs :: [CTree] 		-- ^ the constraints to add.
-	-> SquidM ()
-
+solveCs :: [CTree] -> SquidM ()
 solveCs [] 	= return ()
 solveCs	(c:cs)
  = case c of
 
 	-- Program Constraints --------------------------------------
-	--	The following sorts of constraints are produced by running
+	--	The following constraints are produced by running
 	--	the constraint slurper over the program, and are passed
 	--	into the solver from the main compiler pipeline.
 	
@@ -117,7 +120,7 @@ solveCs	(c:cs)
 	--	with a particular binding in the original program
 	CBranch{}
 	 -> do	traceIE
-	 	trace	$ "\n### Branch" % "\n"
+	 	trace	$ "### Branch" % nl
 
 		-- record that we've entered this branch
 		let bind	= branchBind c
@@ -129,7 +132,7 @@ solveCs	(c:cs)
 
 	-- A single equality constraint
 	CEq _ t1 t2
- 	 -> do	trace	$ "### CEq  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % "\n"
+ 	 -> do	trace	$ "### CEq  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % nl
 		feedConstraint c
 		solveNext cs
 	
@@ -142,24 +145,26 @@ solveCs	(c:cs)
 
 	-- A type inequality constraint
 	CMore _ t1 t2
- 	 -> do	trace	$ "### CMore  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % "\n"
+ 	 -> do	trace	$ "### CMore  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % nl
 		feedConstraint c
 		solveNext cs
 
 	-- A type class constraint.
 	CClass _ v ts
-	 -> do	trace	$ "### CClass " % v % " " % ts % "\n"
+	 -> do	trace	$ "### CClass " % v % " " % ts % nl
 	 	feedConstraint c
 		solveNext cs
 
 	-- A projection constraints
 	CProject _ j vInst tDict tBind
-	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind	% "\n"
+	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind	% nl
 		feedConstraint c
 		solveNext cs
 
 	-- A projection dictionary.
 	--	These are stashed in the solver state.
+	--	TODO: The should really be given as part of the typing problem,
+	--	      and not packaged up into the tree of constraints.
 	CDictProject _ t vvs
 	 | Just (v, _, _)	<- takeTData t
 	 -> do	-- trace $ "### CDictProj " % t % "\n"
@@ -172,7 +177,7 @@ solveCs	(c:cs)
 	--	tyvars that might cause some projections to be resolved. Instead, we record
 	--	the fact that the var is safe to generalise in the GenSusp set.
 	CGen src t1@(TVar _ (UVar v1))
-	 -> do	trace	$ "### CGen  " % prettyTypeSplit t1 %  "\n"
+	 -> do	trace	$ "### CGen  " % prettyTypeSplit t1 % nl
 		stateGenSusp `modifyRef` Map.insert v1 src
 		solveNext cs
 
@@ -190,10 +195,10 @@ solveCs	(c:cs)
 	--	These are stashed in the solver state. We'll use them later to 
 	--	discharge type class constraints in generalised type schemes.
 	CClassInst _ v ts
-	 -> do	-- trace	$ "### CClassInst " % v % " " % ts % "\n"
+	 -> do	-- trace	$ "### CClassInst " % v % " " % ts % nl
 		stateClassInst `modifyRef`
-			Map.alter
-				(\mis -> case mis of
+		 Map.alter
+			(\mis -> case mis of
 					Nothing	-> Just [FConstraint v ts]
 					Just is	-> Just (FConstraint v ts : is)) 
 				v
@@ -201,16 +206,14 @@ solveCs	(c:cs)
 	
 	
 	-- Internal constraints -------------------------------------	
-	--	The following sorts of constraints are produced by the 
-	--	solver itself. They are reminders to do things in the future,
-	--	and are not present in the "program constraints" that are
-	--	passed in by the main compiler pipeline.
+	--	The following constraints are produced by the solver itself.
+	--	They are reminders to do things in the future, and are not present in
+	--	the "program constraints" that are slurped directly from the source code.
 
 	-- A CLeave says that we've processed all the constraints from a particular
-	--	branch. This reminds us that to pop vars bound in that branch off
-	--	the path.
+	--	branch. This reminds us that to pop vars bound in that branch off the path.
 	CLeave vs
-	 -> do	trace	$ "\n### CLeave " % vs % "\n"
+	 -> do	trace	$ "\n### CLeave " % vs % nl
 
 		-- We're leaving the branch, so pop ourselves off the path.
 	 	pathLeave vs
@@ -218,18 +221,20 @@ solveCs	(c:cs)
 
 		solveNext cs	 
 
+	-- A grind tries to resolve unifictions, and crush compound constraints into
+	-- smaller pieces. The solver state contains a list of equivalence class ids
+	-- that contain constraints the grinder is interested in.
 	-- Do a grind to resolve unifications and crush fetters and effects.
 	CGrind	
-	 -> do	
-		-- If the grinder resolves a projection, it will return some
+	 -> do	-- If the grinder resolves a projection, it will return some
 		--	more constraints that need to be handled before continuing.
 		csMore	<- solveGrind
 	 	solveNext (csMore ++ cs)
 
-	-- Instantiate a type from a lambda binding
+	-- Instantiate the type of a lambda-bound variable.
 	--	There's nothing to really instantiate, just set the use type to the def type.
 	CInstLambda src vUse vInst
-	 -> do	trace	$ "### CInstLambda " % vUse % " " % vInst % "\n"
+	 -> do	trace	$ "### CInstLambda " % vUse % " " % vInst % nl
 
 		stateInst `modifyRef` 
 			Map.insert vUse	(InstanceLambda vUse vInst Nothing)
@@ -242,13 +247,10 @@ solveCs	(c:cs)
 	--	It may or may not be generalised yet.
 	CInstLet src vUse vInst
 	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% "\n"
-
 		defs		<- liftM squidEnvDefs $ gets stateEnv		
---		trace	$ "*** defs = " % Map.keys defs
 		
 		genDone		<- getsRef stateGenDone
 		env		<- gets stateEnv
-
 		let getScheme
 			-- The scheme is in our table of external definitions
 			| Just (ProbDef _ _ tt)	<- Map.lookup vInst defs
@@ -358,9 +360,9 @@ solveCInst cs c@(CInst _ vUse vInst)
 	sDefs		<- liftM squidEnvDefs $ gets stateEnv
 	env		<- gets stateEnv
 	trace	$ vcat
-		[ "### CInst " % vUse % " <- " % vInst
-		, "    ctorDefs      = " % (Map.keys $ squidEnvCtorDefs env)
-		, "    got           = " % Map.member vInst (squidEnvCtorDefs env) ]
+		[ "### CInst " % vUse % " <- " % vInst ]
+--		, "    ctorDefs      = " % (Map.keys $ squidEnvCtorDefs env)
+--		, "    got           = " % Map.member vInst (squidEnvCtorDefs env) ]
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
 	let bindInst 
@@ -388,7 +390,7 @@ solveCInst cs c@(CInst _ vUse vInst)
 			BLet _		-> BLet    [vInst]					
 			BLetGroup _	-> BLet    [vInst]
 
-	trace	$ "    bindInst      = " % bindInst					% "\n\n"
+--	trace	$ "    bindInst      = " % bindInst % nlnl
 	
 	-- Record the current branch depends on the one being instantiated
 	-- 	Only record instances of Let bound vars, cause these are the ones we care
@@ -419,7 +421,7 @@ solveCInst_simple
 	 || Map.member vInst sDefs
 	 || Map.member vInst (squidEnvCtorDefs env)
 	= do	
-		trace	$ ppr "*   solveCInst_simple: Scheme is in graph.\n"
+--		trace	$ ppr "*   solveCInst_simple: Scheme is in graph.\n"
 		return	$ CGrind : (CInstLet src vUse vInst) : cs
 
 	-- If	The var we're trying to instantiate is on our path
@@ -427,7 +429,7 @@ solveCInst_simple
 	| (bind : _)	<- filter (\b -> (not $ b =@= BLetGroup{})
 				      && (elem vInst $ takeCBindVs b)) path
 	= do	
-		trace	$ ppr "*   solceCInst_simple: Inside this branch\n"
+--		trace	$ ppr "*   solceCInst_simple: Inside this branch\n"
 
 		-- check how this var was bound and build the appropriate InstanceInfo
 		--	the toCore pass will use this to add the required type params
@@ -448,7 +450,7 @@ solveCInst_let
 	bindInst path
  = do
 	genSusp		<- getsRef stateGenSusp
-	trace	$ "    genSusp       = " % genSusp	% "\n\n"
+--	trace	$ "    genSusp       = " % genSusp	% "\n\n"
 
 	-- Work out the bindings in this ones group
 	mBindGroup	<- bindGroup vInst
@@ -465,7 +467,7 @@ solveCInst_find
 	| Just vsGroup	<- mBindGroup
 	, not $ and $ map (\v -> Map.member v genSusp) $ Set.toList vsGroup
 	= do 	
-		trace	$ ppr "*   solveCInst_find: Recursive binding.\n"
+--		trace	$ ppr "*   solveCInst_find: Recursive binding.\n"
 		return	$ (CInstLetRec src vUse vInst) : cs
 
 		
@@ -474,8 +476,7 @@ solveCInst_find
 	-- THEN	generalise it and use that scheme for the instantiation
 	| Map.member vInst genSusp
 	= do	
-		trace	$ ppr "*   solveCInst_find: Generalisation\n"
-
+--		trace	$ ppr "*   solveCInst_find: Generalisation\n"
 		return	$ CGrind : (CInstLet src vUse vInst) : cs
 			
 	-- The type we're trying to generalise is nowhere to be found. The branch for it
@@ -484,7 +485,7 @@ solveCInst_find
 	--	we try the instantiation again.
 	| otherwise
 	= do	
-		trace	$ ppr "=== Reorder.\n"
+--		trace	$ ppr "=== Reorder.\n"
 --			% "    queue =\n" %> (", " %!% map ppr (c:cs)) % "\n\n"
 	
 		let floatBranch prev cc'
@@ -501,9 +502,7 @@ solveCInst_find
 					
 		-- Reorder the constraints so the required branch is at the front
 		let csReordered	= floatBranch [] (cc:cs)
-	
 --		trace	$ "    queue' =\n" %> (", " %!% map ppr csReordered) % "\n\n"
 	
 		-- continue solving
 		return	csReordered
-

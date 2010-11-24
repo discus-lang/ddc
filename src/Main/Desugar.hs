@@ -196,7 +196,7 @@ desugarSolveConstraints problem
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
 		
  	state	<- {-# SCC "solveSquid/solve" #-} 
-		   T.squidSolve ?args hTrace problem
+		   T.solveProblem ?args hTrace problem
 
 	-- dump out the type graph
 	--	do this before bailing on errors so we can see what's gone wrong.
