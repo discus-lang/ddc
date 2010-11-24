@@ -8,6 +8,7 @@ import DDC.Main.Pretty
 import DDC.Main.Arg		(Arg)
 import Util
 import Util.System.Directory
+import System.Directory
 import qualified DDC.Main.Arg	as Arg
 
 
@@ -49,8 +50,11 @@ verbLocateRunLib verbose args
 	 $ exitWithUserError args
 		[ ErrorCantFindLibrary pathLibrary_test ]
 			
-	let Just pathRuntime	= mPathRuntime
-	let Just pathLibrary	= mPathLibrary
+	let Just pathRuntime_	= mPathRuntime
+	let Just pathLibrary_	= mPathLibrary
+	
+	pathRuntime	<- canonicalizePath pathRuntime_
+	pathLibrary	<- canonicalizePath pathLibrary_
 	
 	when verbose
 	 $ do	putStr	$ pprStrPlain

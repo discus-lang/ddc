@@ -75,17 +75,19 @@ scrapeSourceFile
 	-> IO (Maybe Scrape)
 	
 scrapeSourceFile shouldImportPrelude pathSource_
- = do	pathSource	<- canonicalizePath pathSource_
-	exists		<- doesFileExist pathSource
+ = do	exists		<- doesFileExist pathSource_
 
 	if not exists
 	 then do
 		dirWorking	 <- getCurrentDirectory
 		let pathRelative = makeRelative dirWorking pathSource_
+
 		hPutStrLn stderr $ "ddc error: File '" ++ pathRelative ++ "' does not exist.\n"
 		System.exitFailure
 
-	 else	liftM Just $ scrapeModuleFromFile Nothing shouldImportPrelude pathSource
+	 else do
+		pathSource	<- canonicalizePath pathSource_
+		liftM Just $ scrapeModuleFromFile Nothing shouldImportPrelude pathSource
 
 	
 -- | Find a module based on its name, and scrape out some info about it.
