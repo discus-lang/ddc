@@ -1,8 +1,7 @@
 ddc: ERROR
 ./test/15-Typing/Main/T100-MainType/Foo.ds:3:0
         The type of main must be a function,
-        
         but it was inferred to be:
             main
-              :: Unit
+                :: Unit
 

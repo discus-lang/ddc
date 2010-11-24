@@ -1,15 +1,13 @@
 ddc: ERROR
 ./test/15-Typing/Closure/LateMutable/Main.ds:25:8
         
-        I naively assumed that 'box' was constant,
-        and thus safe to generalise.
-        Recent statements have yielded new constraints,
-        alas, I was mistaken.
+        I naively assumed that 'box' was constant, and thus safe to generalise.
+        Recent statements have yielded new constraints, alas I was mistaken.
         
         I was using:
             box
-              :: forall t0
-              .  Main.Box %153 (Data.List.List %162 t0)
+                :: forall t0
+                .  Main.Box %153 (Data.List.List %162 t0)
         
         But then I found the
               constraint: Mutable %153

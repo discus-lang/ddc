@@ -1,10 +1,9 @@
 ddc: ERROR
 ./test/15-Typing/Main/MainString/Main.ds:4:0
         The type of main must be a function,
-        
         but it was inferred to be:
             main
-              :: String %r0
-              :- Const %r0
-              ,  Direct %r0
+                :: String %r0
+                :- Const %r0
+                ,  Direct %r0
 

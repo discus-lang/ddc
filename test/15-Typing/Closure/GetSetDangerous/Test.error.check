@@ -12,5 +12,4 @@ ddc: ERROR
           literal value "a"
                  of type: String
                       at: ./test/15-Typing/Closure/GetSetDangerous/Test.ds:28:14
-        
 

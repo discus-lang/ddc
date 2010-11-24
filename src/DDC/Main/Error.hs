@@ -78,7 +78,7 @@ dieWithUserError
 	-> a
 
 dieWithUserError  errs
-	= error	(pprStrPlain $ "ERROR\n" % (punc "\n" errs))
+	= error	$ pprStrPlain $ "ERROR" % nl % vsep errs % nl
 
 	
 -- | Handle a compile time error in the user program in an orderly way.
@@ -96,7 +96,7 @@ exitWithUserError args errs
  = case [e | e@StopErrors{} <- args] of
   	(StopErrors [file] : _)
 	 -> do 	writeFile file 
-			(pprStrPlain $ punc "\n" errs)
+		 $ pprStrPlain (vsep errs % nl)
 			
 		exitWith ExitSuccess
 		

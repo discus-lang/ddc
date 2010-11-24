@@ -12,5 +12,4 @@ ddc: ERROR
           type signature for 'Test.example'
           which requires: Unit
                       at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:3:8
-        
 

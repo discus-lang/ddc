@@ -1,6 +1,6 @@
 ddc: ERROR
 ./test/15-Typing/Purity/CannotPurifyWrite/Test.ds:5:9
-        Cannot purify effect `!WriteT *13'.
+        Cannot purify effect '!WriteT *13'.
         
               the use of: (:=)
                  of type: !WriteT *13
@@ -9,5 +9,4 @@ ddc: ERROR
             conflicts with,
               the use of: suspend2
                       at: ./test/15-Typing/Purity/CannotPurifyWrite/Test.ds:5:12
-        
 

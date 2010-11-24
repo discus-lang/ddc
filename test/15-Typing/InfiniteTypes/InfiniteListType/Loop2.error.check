@@ -1,6 +1,6 @@
 ddc: ERROR
 ./test/15-Typing/InfiniteTypes/InfiniteListType/Loop2.ds:4:0
         Cannot construct infinite type for 'x'.
-            via: 
+            via:
                 *0 = Data.List.List %8 *0
 

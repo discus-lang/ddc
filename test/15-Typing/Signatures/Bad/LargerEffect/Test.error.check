@@ -2,18 +2,17 @@ ddc: ERROR
 ./test/15-Typing/Signatures/Bad/LargerEffect/Test.ds:2:8
         Inferred type:
             succ
-              :: forall %r0 %r2 %r1
-              .  Int32 %r0 -> Int32 %r2 -(!e0 $c0)> Int32 %r1
-              :- !e0 =  !Read %r2 + !Read %r0
-              ,  $c0 =  ${Test.x : %r0}
+                :: forall %r0 %r2 %r1
+                .  Int32 %r0 -> Int32 %r2 -(!e0 $c0)> Int32 %r1
+                :- !e0   =  !Read %r2 + !Read %r0
+                ,  $c0   =  ${Test.x : %r0}
         
         Is bigger than signature:
             succ
-              :: forall %r0 %r2 %r1
-              .  Int32 %r0 -> Int32 %r2 -(!e0 $c0)> Int32 %r1
-              :- !e0 =  !Read %r0
-              ,  $c0 =  ${xDE494 : %r0}
+                :: forall %r0 %r2 %r1
+                .  Int32 %r0 -> Int32 %r2 -(!e0 $c0)> Int32 %r1
+                :- !e0   =  !Read %r0
+                ,  $c0   =  ${xDE494 : %r0}
         
         Because  !Read %r2 + !Read %r0  does not match  !Read %r0
-        
 

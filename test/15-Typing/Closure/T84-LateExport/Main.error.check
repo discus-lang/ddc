@@ -1,15 +1,13 @@
 ddc: ERROR
 ./test/15-Typing/Closure/T84-LateExport/Main.ds:5:8
         
-        I naively assumed that 'ref' was constant,
-        and thus safe to generalise.
-        Recent statements have yielded new constraints,
-        alas, I was mistaken.
+        I naively assumed that 'ref' was constant, and thus safe to generalise.
+        Recent statements have yielded new constraints, alas I was mistaken.
         
         I was using:
             ref
-              :: forall t0
-              .  Ref %106 (t0 -> t0)
+                :: forall t0
+                .  Ref %106 (t0 -> t0)
         
         But then I found the
               constraint: Mutable %106

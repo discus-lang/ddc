@@ -12,5 +12,4 @@ ddc: ERROR
           literal value ac32
                  of type: Char32
                       at: ./test/15-Typing/Closure/LateSig/LateSig.ds:15:20
-        
 

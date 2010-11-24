@@ -86,7 +86,7 @@ instance Pretty Error PMode where
  		{ eVar		= var 
 		, eLoops	= tsLoops })
 	= varErr var 
-	$  "Cannot construct infinite type for '" % var % "'."
+	$  "Cannot construct infinite type for" %% quotes var % "."
 	%! "    via:" 
 	%! indent (vcat [ t1 %% "=" %% t2 | (t1, t2) <- tsLoops ])
 
@@ -105,7 +105,7 @@ instance Pretty Error PMode where
  		{ eProj		= p
 		, eConstructor	= t })
 	= projErr p
-	$ "Type '" % t	% "' has no projections defined for it."
+	$ "Type" %% quotes t %% "has no projections defined for it."
 
 
  ppr (ErrorFieldNotPresent 
@@ -113,7 +113,7 @@ instance Pretty Error PMode where
 		, eConstructor	= tt })
 	| Just (v, _, _)	<- takeTData tt
 	= projErr p
-	$ "Type '" % v 	% "' has no projection named '" % p % "'"
+	$ "Type" %% quotes v %% "has no projection named" %% quotes p
 	
  ppr (ErrorAmbiguousProjection
  		{ eProj		= p })
@@ -129,9 +129,10 @@ instance Pretty Error PMode where
 		, eFetterSource	= fSource })
 		
 	= tsErr eSource
-	$  "Cannot purify effect `" % e % "'."
+	$  "Cannot purify effect" %% quotes e % "."
 	%! blank
 	%! dispTypeSource   e eSource 
+	%! blank
 	%! "    conflicts with,"
 	%! dispFetterSource f fSource 
 
@@ -144,6 +145,7 @@ instance Pretty Error PMode where
 		, eFetterSource2 = fSource2})
 	= tsErr fSource1
 	$  "Conflicting region constraints."
+	%! blank
 	%! dispFetterSource f1 fSource1
 	%! blank
 	%! "    conflicts with,"
@@ -159,19 +161,18 @@ instance Pretty Error PMode where
 		
 	= varErr v
 	$  blank
-	%! "I naively assumed that '" % v % "' was constant,"
-	%! "and thus safe to generalise."
-	%! "Recent statements have yielded new constraints,"
-	%! "alas, I was mistaken."
+	%! "I naively assumed that" %% quotes v %% "was constant, and thus safe to generalise."
+	%! "Recent statements have yielded new constraints, alas I was mistaken."
 	%! blank
 	%! "I was using:"
-	%! prettyVTS (v, scheme)
+	%! prettyVT v scheme
 	%! blank
 	%! "But then I found the"
 	%! dispFetterSource fMutable srcMutable
-	%! "This means that '" % varDanger % "' was not safe to generalise in the first place."
 	%! blank
-	%! "Please add a type signature for '" % v % "' which provides this mutability"
+	%! "This means that" %% quotes varDanger %% "was not safe to generalise in the first place."
+	%! blank
+	%! "Please add a type signature for" %% quotes v %% "which provides this mutability"
 	%! "constraint so I can see it earlier. Sorry."
 
 
@@ -180,9 +181,9 @@ instance Pretty Error PMode where
  		{ eScheme	= (v, scheme) })
 		
 	= varErr v
-	$  "The type of main must be a function,\n"
+	$  "The type of main must be a function,"
 	%! "but it was inferred to be:"
-	%! prettyVTS (v, scheme)
+	%! prettyVT v scheme
 
 
  -- A CAF has effects that can't be masked.
@@ -205,10 +206,10 @@ instance Pretty Error PMode where
 		, eSigBadContext	= mBadContext })
 	= spErr sp
 	$ "Inferred type:"
-	%! prettyVTS (v, tScheme)
+	%! prettyVT v tScheme
 	%! blank
 	%! strMode
-	%! prettyVTS (v, tSig)
+	%! prettyVT v tSig
 	%! blank
 	%! (vcat $ catMaybes
 		[ strBadType    mBadType
@@ -240,11 +241,9 @@ instance Pretty Error PMode where
 
 
 -- Utils ------------------------------------------------------------------------------------------
-prettyVTS (v, t)
- 	= "    " 
-	% varName v 
-	% nl % ":: "
-	% prettyTypeSplit t
+prettyVT v t
+ 	= "    " % varName v % nl
+	%> ("::" %% prettyTypeSplit t)
 
 
 -- | Pretty print the location of the value var that corresponds to this typevar.

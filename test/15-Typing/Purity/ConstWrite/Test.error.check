@@ -5,10 +5,8 @@ ddc: ERROR
          from the use of: addS2
                       at: ./test/15-Typing/Purity/ConstWrite/Test.ds:13:18
         
-        
             conflicts with,
               constraint: MutableT *211
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/ConstWrite/Test.ds:15:16
-        
 

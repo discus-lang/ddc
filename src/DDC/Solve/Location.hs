@@ -445,7 +445,7 @@ dispFetterSource f ts
 
 	| FConstraint _ _				<- f
 	, TSI (SIPurifier _ eff effSrc fPure fPureSrc)	<- ts
-	=  "       constraint: " % f
+	=  "      constraint: " % f
 	%! "which purifies"
 	%! dispTypeSource   eff effSrc
 	%! "due to"

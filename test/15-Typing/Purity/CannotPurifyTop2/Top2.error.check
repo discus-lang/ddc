@@ -1,6 +1,6 @@
 ddc: ERROR
 ./test/15-Typing/Purity/CannotPurifyTop2/Top2.ds:3:36
-        Cannot purify effect `System.Console.!Console'.
+        Cannot purify effect 'System.Console.!Console'.
         
               the use of: print
                  of type: System.Console.!Console
@@ -9,5 +9,4 @@ ddc: ERROR
             conflicts with,
               the use of: mapL
                       at: ./test/15-Typing/Purity/CannotPurifyTop2/Top2.ds:3:19
-        
 
