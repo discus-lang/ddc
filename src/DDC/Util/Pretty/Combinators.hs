@@ -51,11 +51,20 @@ where
 import DDC.Util.Pretty.Base
 
 -- Operator precendences.
-infixl 9 %!%
-infixr 8 %>
-infixr 7 %
-infixr 7 %%
-infixr 6 %!
+-- same as ^
+infixl 8 %!%
+
+-- same as && 
+infixr 3 %
+infixr 3 %%
+
+-- same as >> and >>=
+infixr 2 %>
+infixr 2 %>>
+
+-- same as =<<
+infixr 1 %!
+
 
 -- | An empty pretty thing.
 blank :: StrMode mode
@@ -263,7 +272,7 @@ pprHeadBlock
 	=> a -> [b] -> StrMode mode
 
 pprHeadBlock key ss
-	= key %  braces (nl %> vcat (map (% ";") ss) % nl)
+	= key %  braces ((nl %> vcat (map (% ";") ss)) % nl)
 
 
 -- | A header followed by some semicolon terminated statements in braces, 
@@ -273,4 +282,4 @@ pprHeadBlockSep
 	=> a -> [b] -> StrMode mode
 
 pprHeadBlockSep key ss
-	= key %  braces (nl %> punc (nl % nl) (map (% ";") ss) % nl)
+	= key %  braces ((nl %> punc (nl % nl) (map (% ";") ss)) % nl)

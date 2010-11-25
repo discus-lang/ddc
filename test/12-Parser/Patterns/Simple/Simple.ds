@@ -1,7 +1,7 @@
 
 -- Check pattern desugaring.
 --
-
+{-
 -- check list sugar is being resolved properly.
 map2 f xx
  = case xx of 
@@ -20,19 +20,19 @@ sumTuples xx
 
 	| ((x1, y1) : xs) 	<- xx	
 	= x1 + y1 + sumTuples xs
-	
+
 -- check matching against literal values
 listPairs xx
  	| a : 5 : xs	<- xx 	
 	=  (a, 5) : listPairs (23 : xs)
 	
 	\= []
-
+-}
 -- check matching against unboxed data
 unboxed xx
 	| 1#		<- xx
 	= 0#
-	
+{-	
 -- check list and tuple sugar is being resolved.
 listPairTuples xx
  	| (x1, x2) : ('a', y2) : xs	<- xx
@@ -92,4 +92,4 @@ data Thing3 a b c
 thing10 x
  = case x of
  	Thing x y z	-> (x, y, z)
-
+-}

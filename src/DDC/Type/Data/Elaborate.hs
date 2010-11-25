@@ -5,7 +5,6 @@ module DDC.Type.Data.Elaborate
 	( elaborateDataDefs
 	, elaborateDataDef)
 where
-import Core.Pretty		()
 import DDC.Type.Data.Base
 import DDC.Type.Data.CtorType
 import DDC.Type.Data.Material
@@ -14,6 +13,7 @@ import DDC.Var
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat
+import DDC.Core.Pretty		()
 import Util.Data.List
 import Data.Traversable		(mapM)
 import Data.Map			(Map)

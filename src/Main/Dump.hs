@@ -18,12 +18,22 @@ dumpCG args fileBase flag name glob
  = do	let pprMode	= catMaybes $ map takePrettyModeOfArg args
 
  	when (elem flag args)
-  	 (writeFile 
+  	 $ writeFile 
 		(fileBase ++ ".dump-" ++ name ++ ".dc")
-		(catInt "\n"
-			$ map (pprStr pprMode)
-			$ C.treeOfGlob glob))
+		(pprStr pprMode (punc (semi % nlnl % nl) (C.treeOfGlob glob) % nl))
 	
+	return ()
+
+
+-- | Dump a core tree
+dumpCT flag name sourceTree
+ = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
+
+ 	when (elem flag ?args)
+  	 $ writeFile 
+		(?pathSourceBase ++ ".dump-" ++ name ++ ".dc")
+		(pprStr pprMode (punc (semi % nlnl % nl) sourceTree % nl))
+
 	return ()
 
 
@@ -37,18 +47,6 @@ dumpST flag name sourceTree
 	
 	return ()
 
--- | Dump a core
-dumpCT flag name sourceTree
- = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
-
- 	when (elem flag ?args)
-  	 (writeFile 
-		(?pathSourceBase ++ ".dump-" ++ name ++ ".dc")
-		(pprStr pprMode
-			$ vcat
-			$ sourceTree))
-	
-	return ()
 
 -- | Dump a string
 dumpS flag name str

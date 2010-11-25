@@ -10,9 +10,9 @@ module Core.Util.Slurp
 	, slurpBoundVarsW
 	, dropXTau)
 where
-import Core.Pretty		()
 import Type.Util
 import DDC.Main.Error
+import DDC.Core.Pretty		()
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Type.Data.Base

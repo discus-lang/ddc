@@ -631,6 +631,6 @@ effectOfMatchAgainst tt
 	Just (_, _, [])
 	  -> tPure
 	
-	_ 	-> panic stage
-		$  "effectOfMatchAgainst: " % tt
+	_ -> panic stage
+	  $  "effectOfMatchAgainst: " % quotes tt %% "is not a data type"
 
