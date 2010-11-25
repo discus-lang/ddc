@@ -5,12 +5,12 @@ import Util
 import System.Cmd
 import System.Exit
 import System.Directory
+import System.FilePath
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import qualified DDC.Main.Arg	as Arg
 import qualified Config.Config	as Config
 
------
 stage	= "Sea.Invoke"
 
 -- | Invoke the external C compiler to compile this source program.
@@ -31,7 +31,7 @@ invokeSeaCompiler
 	importDirs
 	extraFlags
  = do
-	pathSourceBase'	<- canonicalizePath pathSourceBase
+	pathSourceBase'	<- liftM dropExtension $ canonicalizePath (pathSourceBase ++ ".ds")
 	pathRuntime'	<- canonicalizePath pathRuntime
 	pathLibrary'	<- canonicalizePath pathLibrary
 	importDirs'	<- mapM canonicalizePath $ nub importDirs
