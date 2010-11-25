@@ -9,6 +9,7 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
+import DDC.Sea.Pretty
 
 import Llvm
 import LlvmM
@@ -44,6 +45,17 @@ llvmOfExp (XLit (LLit (LiteralFmt (LString s) Unboxed)))
 	reg		<- newUniqueReg pChar
 	addBlock	[ Assignment reg (GetElemPtr True (pVarLift name) [ i32LitVar 0, i32LitVar 0 ]) ]
 	return		reg
+
+llvmOfExp (XArgData (XVar (NSlot _ n) _) i)
+ = do	let indx        = fst $ structFieldLookup ddcData "args"
+	pobj		<- readSlot n
+	pdata		<- newUniqueNamedReg "pdata" pStructData
+	args		<- newUniqueReg ppObj
+	ret		<- newUniqueReg pObj
+	addBlock	[ Assignment pdata (Cast LM_Bitcast pobj pStructData)
+			, Assignment args (GetElemPtr True pdata [ i32LitVar 0, i32LitVar indx, i32LitVar i ])
+			, Assignment ret (Load args) ]
+	return		ret
 
 
 llvmOfExp (XLit (LLit lit))
@@ -126,6 +138,10 @@ llvmOfXPrim (MAlloc (PAllocThunk v t arity argc)) args
  | length args <= argc
  = do	addGlobalFuncDecl $ funcDeclOfExp (XVar (NSuper v) t)
 	allocThunk (toLlvmGlobalVar v t) arity argc
+
+llvmOfXPrim (MAlloc (PAllocData v arity)) []
+ = do	tag	<- getTag $ seaVar False v
+	allocData tag arity
 
 
 llvmOfXPrim op args

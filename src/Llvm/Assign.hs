@@ -67,6 +67,17 @@ llvmOfAssign (XArgThunk (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
 			, Assignment ptr (GetElemPtr True thunk [ i32LitVar 0, i32LitVar indx, i32LitVar i ])
 			, Store rsrc (pVarLift ptr) ]
 
+llvmOfAssign (XArgData (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
+ = do	rsrc		<- llvmOfExp src
+	obj		<- readSlot ix
+	pdata		<- newUniqueReg $ pStructData
+	let indx	= fst $ structFieldLookup ddcData "args"
+	ptr		<- newUniqueReg $ pObj
+
+	addBlock	[ Assignment pdata (Cast LM_Bitcast obj pStructData)
+			, Assignment ptr (GetElemPtr True pdata [ i32LitVar 0, i32LitVar indx, i32LitVar i ])
+			, Store rsrc (pVarLift ptr) ]
+
 
 llvmOfAssign a b c
  = panic stage $ "llvmOfAssign (" ++ (show __LINE__) ++ ") Unhandled : \n"

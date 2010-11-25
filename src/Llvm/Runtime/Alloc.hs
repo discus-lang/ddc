@@ -1,7 +1,8 @@
 {-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
 module Llvm.Runtime.Alloc
 	( allocate
-	, allocThunk )
+	, allocThunk
+	, allocData )
 where
 
 import DDC.Main.Error
@@ -93,6 +94,22 @@ allocThunk funvar arity argc
 
 	ret		<- newUniqueNamedReg "allocated.thunk" pObj
 	addBlock	[ Assignment ret (Cast LM_Bitcast pThunk pObj) ]
+	return		ret
+
+
+allocData :: Int -> Int -> LlvmM LlvmVar
+allocData tag arity
+ = do	addAlias	("struct.Data", llvmTypeOfStruct ddcData)
+	let size	= sizeOfLlvmType structData + arity * sizeOfLlvmType pObj
+	addComment	$ "allocData " ++ show tag ++ " " ++ show arity
+
+	pData		<- allocate size "pData" pStructData
+
+	storeStructRegValue ddcData pData "tag" (tagBasePlus tag)
+	storeStructRegValue ddcData pData "arity" (i32LitVar arity)
+
+	ret		<- newUniqueNamedReg "allocated.data" pObj
+	addBlock	[ Assignment ret (Cast LM_Bitcast pData pObj) ]
 	return		ret
 
 
