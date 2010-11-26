@@ -19,20 +19,27 @@ import qualified Data.Map		as Map
 data Table
 	= Table 
 	{ tableEq	:: Map Type Type 
-	, tableMore	:: Map Type Type }
+	, tableMore	:: Map Type Type
+	, tableNoInline	:: Set Type }
 
 instance Monoid Table where
- mempty	= Table Map.empty Map.empty
+ mempty	= Table Map.empty Map.empty Set.empty
 
- mappend (Table eq1 more1) (Table eq2 more2)
-	= Table (Map.union eq1 eq2) (Map.union more1 more2)
-
+ mappend (Table eq1 more1 noInline1) (Table eq2 more2 noInline2)
+  = let	noInline	= Set.union noInline1 noInline2 
+	eq		= foldr Map.delete (Map.union eq1   eq2)   $ Set.toList noInline
+	more		= foldr Map.delete (Map.union more1 more2) $ Set.toList noInline
+    in	Table eq more noInline
+		
+		
+singleNoInline :: Type -> Table
+singleNoInline t1 = Table Map.empty Map.empty (Set.singleton t1)	
+		
 singleEq   :: Type -> Type -> Table
-singleEq t1 t2 	= tableMore `seq` Table (Map.singleton t1 t2) Map.empty 
+singleEq t1 t2 	= tableMore `seq` Table (Map.singleton t1 t2) Map.empty Set.empty
 
 -- singleMore :: Type -> Type -> Table
 -- singleMore t1 t2 = Table Map.empty (Map.singleton t1 t2)
-
 
 
 -- | Collect up a table of bindings that can be safely inlined.
@@ -53,5 +60,7 @@ collect wanted cc
 
 	CEq _	t1 t2@TVar{}	
 	 | doNotWant t1 		-> singleEq t1 t2
+
+	CInst _ v _			-> singleNoInline (TVar kValue (UVar v))
 
 	_				-> mempty

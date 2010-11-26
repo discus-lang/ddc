@@ -117,9 +117,15 @@ reduce1 wanted table cc
 	  $ CMore src t1 (subEq t2)
 
 
+	-- Project ----------------------------------------
+	CProject src j v t1 t2	
+	 -> Seq.singleton
+	 $  CProject src j v (subEq t1) (subEq t2)
+
+
+	-- Gen -------------------------------------------
 	CInst{}			-> Seq.singleton cc
 	CGen{}			-> Seq.singleton cc
-	CProject{}		-> Seq.singleton cc
 	
 	-- TODO: these should really go into the solver Problem
 	--	 instead of being their own constraints.
