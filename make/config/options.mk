@@ -47,7 +47,7 @@ GHC_WARNINGS	:= \
 	$(GHC_WARNINGS) \
 	-fwarn-monomorphism-restriction \
 	-fwarn-unrecognised-pragmas \
-	-fspec-constr-count=15
+	-fno-spec-constr
 endif
 
 
