@@ -3,7 +3,7 @@
 
 #include "Types.h"
 #include "Object.h"
-#include "Profile.h"
+#include "Debug/Profile.h"
 
 #include <stdio.h>
 
