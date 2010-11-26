@@ -160,20 +160,45 @@ mkOpFunc op
 	OpAdd	-> LlvmOp LM_MO_Add
 	OpSub	-> LlvmOp LM_MO_Sub
 	OpMul	-> LlvmOp LM_MO_Mul
+	OpDiv	-> LlvmOp LM_MO_SDiv
+	OpMod	-> LlvmOp LM_MO_SRem
 
+	-- Comparison.
 	OpEq	-> Compare LM_CMP_Eq
-	_	-> panic stage $ "mkOpFunc (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show op
+	OpNeq	-> Compare LM_CMP_Ne
+
+	-- Use the signed versions of these for now. However, LLVM also has
+	-- unsigned comparision for operating on unsigned values.
+	OpGt	-> Compare LM_CMP_Sgt
+	OpGe	-> Compare LM_CMP_Sge
+	OpLt	-> Compare LM_CMP_Slt
+	OpLe	-> Compare LM_CMP_Sle
+
+	-- boolean
+	OpAnd	-> LlvmOp LM_MO_And
+	OpOr	-> LlvmOp LM_MO_Or
+
+	-- Not a binary operatior. Needs to be handled elsewhere.
+	OpNeg	-> panic stage $ "mkOpFunc (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show op
 
 
 opResultType :: PrimOp -> LlvmVar -> LlvmType
 opResultType op var
  = case op of
-	OpAdd	-> getVarType var
-	OpSub	-> getVarType var
-	OpMul	-> getVarType var
-
+	-- comparison
 	OpEq	-> i1
-	_	-> panic stage $ "opResultType (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show op
+	OpNeq	-> i1
+	OpGt	-> i1
+	OpGe	-> i1
+	OpLt	-> i1
+	OpLe	-> i1
+
+	-- boolean
+	OpAnd	-> i1
+	OpOr	-> i1
+
+	-- normal operators like OpNeg, OpAdd, OpSub etc
+	_	-> getVarType var
 
 --------------------------------------------------------------------------------
 
