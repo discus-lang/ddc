@@ -14,7 +14,6 @@
 
 #include <string.h>
 
-
 // For debugging.
 //	_DDC_TRACE_GC is set in Config.h
 
@@ -50,19 +49,18 @@ void	_collectInit (size_t maxGCSlots)
 // Perform a collection on on this heap.
 //	This is a simple Cheney-scan collection.
 void	_collectHeap
-		( Word8*	heapBase	// Start of the from space.
-		, Word8*	heapPtr		// Where the next object would be allocated.
-		, Word8*	UNUSED (heapMax) 	// Last byte of the from space.
-
-		, Word8*	heapBackBase	// Start of the to space.
-		, Word8**	heapBackPtr)	// This is set to where the next object would be allocated
-						//	in the to space, after the live data has been copied across.
+		( Word8*  heapBase		// Start of the from-space.
+		, Word8*  heapPtr		// Where the next object would be allocated.
+		, Word8*  UNUSED (heapMax) 	// Last byte of the from-space.
+		, Word8*  heapBackBase		// Start of the to-space.
+		, Word8** heapBackPtr)		// This is set to where the next object would be allocated
+						//	in the to-space, after the live data has been copied across.
 {
-	// Debugging
+	// Tracing setup.
 	_TRACES(char	fileName[80]);
 	_TRACES(snprintf (fileName, 80, "ddc-rts.trace.collect.%04lu", _gcCount));
-	_TRACES(_traceFile	= fopen (fileName, "w"));
-
+	_TRACES(_traceFile = fopen (fileName, "w"));
+	
 	_TRACE ("------------------------------------------------------------------------------------------------ collectHeap\n");
 	_TRACE ("  heapBase     = %p\n", heapBase);
 	_TRACE ("  heapPtr      = %p\n", heapPtr);
@@ -75,20 +73,21 @@ void	_collectHeap
 	_DEBUG (_lintHeap  (heapBase, heapPtr));
 	_DEBUG (_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBase, heapPtr));
 
-	// -------
+
 	// Reset the toPtr
 	*heapBackPtr	= heapBackBase;
 
-	// Evacuate all the root objects to the toHeap.
+	// Copy all the root objects to the to-space..
 	_evacuateRoots	( heapBase
 			, heapPtr
 			, heapBackPtr);
 
-	// Scan
-	_scanHeap	(heapBackBase, heapBackPtr);
+	// Recursively follow pointers in to-space, 
+	//	copying out any reachable objects in the from-space.
+	_scanHeap (heapBackBase, heapBackPtr);
 
 
-	// Debugging
+	// More tracing.
 	_TRACE ("-------------------------------------------------------------------------------------- collect Heap done\n");
 	_TRACES(fprintf(_traceFile, "  newSize = %u\n", (size_t)(*heapBackPtr - heapBackBase)));
 	_TRACES(_dumpState (_traceFile));
@@ -106,35 +105,34 @@ void	_collectHeap
 }
 
 
-// Evacuate all the object which are reachable from the heap slot stack
+// Recursively follow pointers in the to-space,
+//	copying out any reachable objects in the from-space.
 void	_evacuateRoots
-		( Word8*	UNUSED (heapBase)
-		, Word8*	UNUSED  (heapPtr)
-		, Word8** 	toPtr )
+		( Word8*  UNUSED (heapBase)
+		, Word8*  UNUSED (heapPtr)
+		, Word8** toPtr )
 {
-	// Debugging
 	_TRACE("-------------------------------------------------------------------\n");
 	_TRACE("--- Evacuating Roots\n");
 	_TRACE("-------------------------------------------------------------------\n");
 
-	Obj** ptr	 = _ddcSlotBase;
-	while (ptr < _ddcSlotPtr)
-	{
-		if (*ptr != 0)
-			*ptr	= _evacuateObj  ( *ptr, toPtr );
+	Obj** ptr = _ddcSlotBase;
 
+	// Every object directly reachable from the slock stack is a root.
+	while (ptr < _ddcSlotPtr) {
+		if (*ptr != 0)
+			*ptr = _evacuateObj  (*ptr, toPtr);
 		ptr++;
 	}
-
 }
 
-// Evacuate a single object and update the toPtr to point
-//	to the word _after_ the new copy.
+
+// Evacuate a single object
+//	and update the toPtr to point to the word _after_ the new copy.
 Obj*	_evacuateObj
 		( Obj*		obj
 		, Word8**	toPtr)
 {
-	// Debugging
 	_TRACE("--- evacuateObj\n");
 	_TRACE("    obj     = %p\n", obj);
 	_TRACE("    toPtr   = %p\n", *toPtr);
@@ -143,14 +141,11 @@ Obj*	_evacuateObj
 	_DEBUG(assert(obj != 0));
 	_DEBUG(assert(toPtr != 0));
 
-	enum _ObjType
-		objType		= _objType (obj);
+	enum _ObjType objType	= _objType (obj);
 
 #if _DDC_DEBUG_GC
 	bool	anchored	= _objIsAnchored (obj);
-	if (objType == _ObjTypeForward
-		 || !anchored)
-	{
+	if (objType == _ObjTypeForward || !anchored) {
 		if (obj < (Obj*)_ddcHeapBase)
 			_PANIC ("Obj %p to be evacuated lies before start of heap.\n", obj);
 
@@ -160,46 +155,58 @@ Obj*	_evacuateObj
 #endif
 
 	// If this object is a broken heart then return the forwarding pointer.
+	//   We have a "broken heart" because the object we were expecting to be here
+	//   has aready been copied out to the to-space. The old header in the from-space
+	//   will have been over-written by the address of where it is now in the to-space.
 	if (objType == _ObjTypeForward) {
-		_TRACE("BROKEN-HEART\n");
-		_TRACE("\n\n");
+		_TRACE("BROKEN-HEART\n\n\n");
 
-		Obj*	objR	= _readBrokenHeart (obj);
+		// Get the address in the to-space of where the object is now.
+		Obj* objR 	= _readBrokenHeart (obj);
 
 #if _DDC_DEBUG_GC
-		if (_objType (objR) == _ObjTypeForward)
-		{
+		// If the thing the forwarding address points to is also a forwarding
+		// address then we're screwed. Following it could put us in an endless loop.
+		if (_objType (objR) == _ObjTypeForward) {
 			_ERROR ("Forwarded object is also a forward.\n");
 			_ERROR ("  obj  = %p\n", obj);
 			_ERROR ("  objR = %p\n", objR);
 		}
+		assert (_objType (objR) != _ObjTypeForward);
 #endif
-		_DEBUG(assert (_objType (objR) != _ObjTypeForward));
-
 		return objR;
 	}
 
 	else {
 		// If the object is anchored then leave it alone.
-		//	These are allocated outside of the regular heap,
-		//	and are outside our juristiction.
+		//	Anchored objects are allocated outside of the DDC heap, and are thus
+		//	out of our juristiction.
 		if (_objIsAnchored (obj)) {
-			_TRACE("ANCHORED\n");
-			_TRACE("\n\n");
+			_TRACE("ANCHORED\n\n\n");
 			return	obj;
 		}
 
-		// Otherwise, copy the object to the toHeap.
+		// Otherwise it's one of ours, so copy it to the to-heap.
+
+		// The size of the whole object.
 		size_t	size	= _objSize (obj);
+
+		// Where we're going to copy it to in the to-hea.
 		Obj*	newObj	= (Obj*) *toPtr;
 
+		// Copy the sucker.
 		memcpy (newObj, obj, size);
+
+		// Advance the to-pointer to point to the first word of where
+		// the next objet is going to be.
 		*toPtr += size;
 
 		_PROFILE_GC (copyCount++);
 		_PROFILE_GC (copyBytes += size);
 
 		// Leave a broken-heart behind.
+		//	This says where we've copied the object to, so if we come back
+		//	here again then we'll know where it's gone.
 		_writeBrokenHeart (obj, newObj);
 
 		_TRACES(_printObjP (_traceFile, obj));
@@ -211,15 +218,15 @@ Obj*	_evacuateObj
 }
 
 
-// Scan functions ----------------------------------------------------------------------------------
-//	There is one of these for each sort of object in the heap.
+// Scan functions -------------------------------------------------------------
+//	"Scanning" means to look at the other objects this one points to
+//	and also copy those to the to-space.
+//
+//	There is one scan function for each sort of object in the heap.
 
-
-// Scan a thunk
+// Scan a thunk.
 static inline
-void	_scanThunk
-		( Obj*		obj
-		, Word8**	toPtr)
+void	_scanThunk ( Obj* obj, Word8** toPtr)
 {
 	_TRACE("--- scanThunk %p\n", obj);
 	_TRACES(_printObjP (_traceFile , obj));
@@ -231,11 +238,9 @@ void	_scanThunk
 }
 
 
-// Scan a regular data object
+// Scan a regular data object.
 static inline
-void	_scanData
-		( Obj*		obj
-		, Word8**	toPtr)
+void	_scanData (Obj* obj, Word8** toPtr)
 {
 	_TRACE("--- scanData\n");
 
@@ -247,9 +252,7 @@ void	_scanData
 
 // Scan a data object with mixed pointer and non-pointer data
 static inline
-void	_scanDataM
-		( Obj*		obj
-		, Word8**	toPtr)
+void	_scanDataM (Obj* obj, Word8** toPtr)
 {
 	_TRACE("--- scanDataM\n");
 
@@ -263,9 +266,7 @@ void	_scanDataM
 
 // Scan a suspension or indirection
 static inline
-void	_scanSusp
-		( Obj*		obj
-		, Word8**	toPtr)
+void	_scanSusp (Obj* obj, Word8** toPtr)
 {
 	_TRACE("--- scanSusp %p\n", obj);
 	_TRACES(_printObjP (_traceFile, obj));
@@ -274,19 +275,15 @@ void	_scanSusp
 	uint32_t	tag	= _getObjTag (obj);
 
 	// Object is a zero airity suspension.
-	//	The function ptr for these is stored directly in the obj field
-	//	and is not an object we need to evacuate.
-	//
+	//	The function ptr for these is stored directly in the obj field.
+	//	This is a code pointer, and not an object we need to evacuate.
 	if ( tag == _tagSusp
-	  && susp ->arity == 0)
-	{
+	  && susp ->arity == 0) {
 		// do nothing
-
 	}
 
 	// Object is a regular suspension, carry on scanning.
-	else if (tag == _tagSusp)
-	{
+	else if (tag == _tagSusp) {
 		_TRACE("    SUSPENSION\n");
 
 		susp ->obj	= _evacuateObj (susp ->obj, toPtr);
@@ -294,8 +291,7 @@ void	_scanSusp
 			susp->a[i]	= _evacuateObj (susp ->a[i], toPtr);
 	}
 
-	else if (tag == _tagIndir)
-	{
+	else if (tag == _tagIndir) {
 		_TRACE("    INDIRECTION gonna evac %p\n", susp ->obj);
 		susp ->obj	= _evacuateObj (susp ->obj, toPtr);
 	}
@@ -309,11 +305,10 @@ void	_scanSusp
 }
 
 
-// Scan an object.
-//	This checks the tag and calls a more specific scan function for that object.
-void	_scanObj
-		( Obj*		obj
-		, Word8**	toPtr)
+// Scan an arbitrary object.
+//	This examines the tag of the object to determine what sort it is, then calls
+//	the scan function specific to that object.
+void	_scanObj (Obj* obj, Word8** toPtr)
 {
 	_TRACE("------------------- scan %p\n", obj);
 	_TRACE("    obj   = %p\n", obj);
@@ -344,13 +339,11 @@ void	_scanObj
 	 case _ObjTypeSuspIndir: _scanSusp  (obj, toPtr);	break;
 
 	 default:
-	 	_PANIC("Object has header\n");
+	 	_PANIC("Object has invalid header\n");
 
 	}
 
-	_TRACE("------------------- scan %p end\n", obj);
-	_TRACE("\n");
-
+	_TRACE("------------------- scan %p end\n\n", obj);
 }
 
 
@@ -396,9 +389,7 @@ void	_scanHeap
 
 #if !defined(SPLIT_POINTERS)
 // 32 bit system
-void	_writeBrokenHeart
-		( Obj* obj
-		, Obj* newObj)
+void	_writeBrokenHeart (Obj* obj, Obj* newObj)
 {
 	_DEBUG(assert(obj    != 0));
 	_DEBUG(assert(newObj != 0));
@@ -407,8 +398,7 @@ void	_writeBrokenHeart
 	objPtr[0]	= (SizePtr)newObj;
 }
 
-Obj*	_readBrokenHeart
-		(Obj* obj)
+Obj*	_readBrokenHeart (Obj* obj)
 {
 	_DEBUG(assert(obj   != 0));
 
@@ -421,9 +411,7 @@ Obj*	_readBrokenHeart
 
 #else
 // 64 bit big-endian system
-void	_writeBrokenHeart
-		( Obj* obj
-		, Obj* newObj)
+void	_writeBrokenHeart (Obj* obj, Obj* newObj)
 {
 	_DEBUG(assert(obj    != 0));
 	_DEBUG(assert(newObj != 0));
@@ -437,8 +425,7 @@ void	_writeBrokenHeart
 	objPtr[1]	= ptrH;			// HIGH half comes after
 }
 
-Obj*	_readBrokenHeart
-		(Obj* obj)
+Obj*	_readBrokenHeart (Obj* obj)
 {
 	_DEBUG(assert(obj != 0));
 
