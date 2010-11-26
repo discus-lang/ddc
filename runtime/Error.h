@@ -3,11 +3,10 @@
 //	They all have the ((noreturn)) attribute so GCC can generate
 //	better code for the enclosing function.
 
-#ifndef _DDC_Death
-#define _DDC_Death
+#ifndef _DDC_Error
+#define _DDC_Error
 
-#include "Types.h"
-
+#include "Runtime.h"
 
 void	_deathCase
 		(const char* moduleName, int line, int column)
@@ -34,7 +33,5 @@ void	_panicSlotUnderflow (void)
 void	_panicCorruption (void)
 		__attribute__((noreturn));
 
-
-#include "Error.ci"
 
 #endif

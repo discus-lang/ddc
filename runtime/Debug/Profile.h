@@ -1,16 +1,14 @@
 
 // Types and functions used by the RTS profiler.
 //
-#ifndef _DDC_Profile
-#define _DDC_Profile
+#ifndef _DDC_Debug_Profile
+#define _DDC_Debug_Profile
+
+#include "../Runtime.h"
+#include "../Apply.h"
 
 #include <stdio.h>
 #include <sys/times.h>
-
-#include "Types.h"
-#include "Apply.h"
-#include "Config.h"
-
 
 // Helper macros ----------------------------------------------------------------------------------
 //	These only produce run their argument code if the corresponding profiling

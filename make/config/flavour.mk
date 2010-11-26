@@ -12,7 +12,7 @@ GCC_FLAGS	:= -std=c99 -O3 -Wundef
 # -- Development Compile (fastest compile)
 else ifeq "$(BuildFlavour)" "devel"
 GHC_FLAGS	:= -O0 $(GHC_VERSION_FLAGS) $(GHC_WARNINGS) $(GHC_LANGUAGE)
-GCC_FLAGS	:= -std=c99 -O3 -Wall -Wextra
+GCC_FLAGS	:= -std=c99 -O3 -Wall -Wextra -Werror
 
 # -- Debug compile
 else ifeq "$(BuildFlavour)" "devel_debug"

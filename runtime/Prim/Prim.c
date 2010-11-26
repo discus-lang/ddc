@@ -1,15 +1,6 @@
 
-#include "Prim.h"
 #include "../Runtime.h"
-#include "../Apply.h"
-#include "../Object.h"
-#include "../Util.h"
-
-#include "../Storage/Collect.h"
-#include "../Storage/Collect.ci"
-
-#include "../Storage/Alloc.h"
-#include "../Storage/Alloc.ci"
+#include "../Runtime.ci"
 
 #include <stdio.h>
 #include <stdlib.h>

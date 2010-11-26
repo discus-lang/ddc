@@ -1,22 +1,13 @@
 
-#include <string.h>
-#include "Prim.h"
-
-#include "../Force.h"
-
-#include "../Storage/Collect.h"
-#include "../Storage/Collect.ci"
-
-#include "../Storage/Alloc.h"
-#include "../Storage/Alloc.ci"
-
+#include "../Runtime.h"
 #include "ArrayU.ci"
 
+#include <string.h>
 #include <stdio.h>
+
 
 // Should be defined in Base/Exception.ts
 Obj*	Base_ExceptionArrayBounds (Obj* size, Obj* index);
-
 
 
 // -- new

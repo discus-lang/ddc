@@ -1,15 +1,10 @@
 
+#include "../Runtime.h"
+#include "../Runtime.ci"
+
 #include <string.h>
-#include "Prim.h"
-#include "../Force.h"
-
-#include "../Storage/Collect.h"
-#include "../Storage/Collect.ci"
-
-#include "../Storage/Alloc.h"
-#include "../Storage/Alloc.ci"
-
 #include <stdio.h>
+
 
 // Should be defined in Base/Exception.ts
 extern Obj* Base_ExceptionArrayBounds (Obj* size, Obj* index);

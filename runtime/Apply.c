@@ -1,22 +1,11 @@
 
 // Apply some more arguments to a thunk that represents a partial application.
-
-#include "Object.h"
-#include "Apply.h"
-#include "Profile.h"
-#include "Storage/Alloc.h"
-#include "Macro.h"
-#include "Error.h"
-#include "Storage/Collect.h"
-#include "Lint.h"
-
+#include "Runtime.h"
 #include "Eval.ci"
+#include "Storage/Alloc.ci"
 
 #include <assert.h>
 #include <stdlib.h>
-
-#include "Storage/Collect.ci"
-#include "Storage/Alloc.ci"
 
 // Functions to apply extra arguments to a thunk / activation record.
 //	If the number of extra arguments gives us enough to call supercominator
@@ -25,7 +14,6 @@
 //
 //	TODO: 	When adding more args, build a bigger object instead of copying 
 //		one which holds slack space.
-
 
 // Apply another argument to a thunk.
 Obj*	_apply1		(Obj* obj, Obj* x1)

@@ -1,24 +1,49 @@
+
 // This is the top-level header file
 //	All C programs produced by DDC include this header.
+//	The also need Storage/Alloc.ci to get the allocator inlines.
+//
+// TODO: Don't export internal RTS symbols to the client module.
+//       We want to split this into the "external" and "internal" visible bits.
 //
 #ifndef _DDC_Runtime
 #define _DDC_Runtime
 
-#include "Storage/Collect.h"
-#include "Storage/Alloc.h"
-#include "Apply.h"
-#include "Context.h"
-#include "Error.h"
-#include "Force.h"
+// C utils
+#include "Util.h"
+
+// Runtime configuration
+#include "Config.h"
+
+// Macros expanding to runtime system magic.
 #include "Macro.h"
-#include "Prim.h"
-#include "Profile.h"
-#include "State.h"
+
+// Object types.
 #include "Types.h"
+#include "Object.h"
+
+// Error handling.
+#include "Error.h"
+
+// Runtime debugging and profilng.
+#include "Debug.h"
+
+// Runtime state, including heap and GC slot stack.
+#include "State.h"
+
+// The storage managed.
+#include "Storage.h"
+
+// Context stack for handling exceptions.
+#include "Context.h"
+
+// Application functions.
+#include "Apply.h"
+
+// Primitive functions.
+#include "Prim.h"
+
+// The top level entry point.
 #include "Main.h"
-#include "Dump.h"
-#include "Storage/Collect.ci"
-#include "Storage/Alloc.ci"
 
 #endif
-

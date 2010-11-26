@@ -2,6 +2,7 @@
 #ifndef _DDC_Main
 #define	_DDC_Main
 
+#include "Runtime.h"
 
 // Initialise the DDC runtime system.
 void	_ddcRuntimeInit 	

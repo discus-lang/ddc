@@ -1,12 +1,26 @@
-
 // These are all the macros that the DDC generated code uses
 
 #ifndef _DDC_Macro
 #define _DDC_Macro
 
-#include "Types.h"
-#include "Force.h"
+// -- RTS Errors --------------------------------------------------------------
+#define _PANIC(format, ...) \
+	{ \
+		fprintf (stderr, "DDC RTS PANIC: %s:%d > ", __FILE__, __LINE__); \
+		fprintf (stderr, format, ##__VA_ARGS__); \
+		fprintf (stderr, "\n\n"); \
+		_dumpPanic(); \
+		abort(); \
+	}
+		
+#define _ERROR(format, ...) \
+	{ \
+		fprintf (stderr, "DDC RTS ERROR: %s:%d > ", __FILE__, __LINE__); \
+		fprintf (stderr, format, ##__VA_ARGS__); \
+	}
 
+
+// -- Inspecting Objects -------------------------------------------------------
 // Extract an constructor argument froma data object.
 #define _DARG(data,i)	(((Data*)data) ->a[i])
 
@@ -25,6 +39,52 @@
 	(_boxRef ( _force(exp) \
 		 , &(((struct type*)_force(exp)) ->label) ) )
 
+
+// -- GC Slot stack -----------------------------------------------------------
+// Get a pointer from the GC stack, indexed relative to the current frame.
+#define _S(index)	_localSlotBase [index]
+
+// Take the name of a CAF pointer.
+//   This points to the slot in the slot stack that holds the pointer
+//   to the real object.
+#define	_CAFPTR(name)	_ddcCAF_##name
+
+// Take the pointer of the CAF object with this name.
+//   As the pointer to the actual object is held on the slot stack, 
+//   we have to dereference this one to get at it.
+#define _CAF(name)	*_ddcCAF_##name
+
+
+// Push some slots on the GC stack.
+//	We also have to set them to zero incase the GC is activated
+//	before they are initialised.
+#if _DDC_PROFILE_SLOT
+#  define _ENTER(countS) \
+		Obj** _localSlotBase = _ddcSlotPtr;\
+		_ddcSlotPtr	+= countS; \
+		if (_ddcSlotPtr >= _ddcSlotMax)\
+			_panicOutOfSlots();\
+		for (uint32_t _i = 0; _i < countS; _i++)\
+			_localSlotBase [_i]	= 0; \
+		if (_ddcSlotPtr > _ddcProfile ->slot.highWater) \
+			_ddcProfile ->slot.highWater = _ddcSlotPtr;
+#else
+#  define _ENTER(countS) \
+		Obj** _localSlotBase = _ddcSlotPtr;\
+		_ddcSlotPtr	+= countS; \
+		if (_ddcSlotPtr >= _ddcSlotMax)\
+			_panicOutOfSlots();\
+		for (uint32_t _i = 0; _i < countS; _i++)\
+			_localSlotBase [_i]	= 0;
+#endif
+
+
+// Pop some slots from the GC stack.
+#define _LEAVE(countS) \
+		_ddcSlotPtr	= _localSlotBase;
+
+
+// -- Laziness ----------------------------------------------------------------
 // Force this object.
 //	The result is guarantee not to be a suspension.
 #define _FORCE(v)	(_force(v))
@@ -32,6 +92,8 @@
 // Follow an indirection.
 #define _FOLLOW(v)	(((SuspIndir*)v) ->obj)
 
+
+// -- Pattern Matching --------------------------------------------------------
 // These case alternatives are added to all statements that switch
 //	on the tag of a data object. If the data object is a suspension
 //	then it is forced or followed, then control continues from the
@@ -55,8 +117,8 @@
 	_deathCase (__func__, 0, 0);
 
 
-// DDC.Store macros -------------------------------------------------------------------------------
 
+// DDC.Store macros -------------------------------------------------------------------------------
 // These are used in the source code for the DDC.Store library
 #define _PEEK(ptr)		*(ptr)
 #define _PEEKON(ignored,ptr)	*(ptr)
@@ -64,6 +126,4 @@
 #define _POKEON(ignored,ptr,x)	(*ptr = x) 
 #define	_PLUSPTR(ptr,offset)	(ptr + offset)
 
-
 #endif
-

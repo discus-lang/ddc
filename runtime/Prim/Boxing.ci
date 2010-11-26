@@ -1,12 +1,8 @@
 
-#include "../Profile.h"
-#include "../Force.h"
-#include "../Storage/Alloc.h"
-#include "../Macro.h"
-#include "../Object.h"
-#include "../State.h"
+#ifndef _DDC_Prim_Boxing_ci
+#define _DDC_Prim_Boxing_ci
 
-#include "../Storage/Collect.ci"
+#include "../Runtime.h"
 #include "../Storage/Alloc.ci"
 
 // ----- Macros
@@ -105,5 +101,8 @@ Obj*	primProjFieldR (Obj* obj, Int32 ix)
 	Data* data	= (Data*)obj;
 	return	_boxRef (obj, &(data ->a[ix]));
 }
+
+
+#endif
 
 

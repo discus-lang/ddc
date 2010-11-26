@@ -1,7 +1,8 @@
-#ifndef _DDC_State
-#define _DDC_State
+#ifndef _DDC_State_h
+#define _DDC_State_h
 
 #include "Types.h"
+#include "Object.h"
 #include "Profile.h"
 
 #include <stdio.h>

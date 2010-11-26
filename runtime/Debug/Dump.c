@@ -1,11 +1,6 @@
 
-#include "Dump.h"
-#include "Object.h"
-#include "State.h"
-#include "Storage/Collect.h"
-#include "Macro.h"
-#include "Error.ci"
-
+#include "../Runtime.h"
+#include <stdlib.h>
 
 // Dump the whole RTS state to a file.
 //	Then abort the program.

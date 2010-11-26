@@ -1,6 +1,5 @@
 
-#include "Profile.h"
-#include "State.h"
+#include "Runtime.h"
 
 // Load the static config hash defines into the RTS's config data structure
 void	_ddcConfigSetup ()

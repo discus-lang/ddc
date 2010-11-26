@@ -1,14 +1,7 @@
 
-#include "Prim.h"
-#include "../Util.h"
-
-#include "../Storage/Collect.h"
-#include "../Storage/Collect.ci"
-
-#include "../Storage/Alloc.h"
+#include "../Runtime.h"
 #include "../Storage/Alloc.ci"
 
-#include "../Dump.h"
 
 Int32	primRuntime_slotUsage (Obj* UNUSED (x))
 {

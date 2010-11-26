@@ -1,16 +1,8 @@
 
-#include "Prim.h"
-#include "../Macro.h"
-#include "../Profile.h"
-#include "../Force.h"
-
-#include "../Storage/Collect.h"
-#include "../Storage/Collect.ci"
-
-#include "../Storage/Alloc.h"
+#include "../Runtime.h"
 #include "../Storage/Alloc.ci"
-
 #include <string.h>
+
 
 Obj* 	_boxRef (Obj* obj_, void* field)
 {

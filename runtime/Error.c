@@ -1,14 +1,11 @@
 // -- Error handling
 
+#include "Runtime.h"
+#include "Runtime.ci"
+
 #include <stddef.h>
 #include <inttypes.h>
 #include <string.h>
-
-#include "Error.h"
-#include "Prim.h"
-
-#include "Storage/Collect.ci"
-#include "Storage/Alloc.ci"
 
 
 // User errors -------------------------------------------------------------------------------------
@@ -54,7 +51,7 @@ void	_deathCase (const char* moduleName, Int32 line, Int32 column)
 void	_panicOutOfHeap (size_t allocCount, size_t heapSize)
 {
 	fprintf (stderr, "*** DDC RTS PANIC! Out of heap space.\n");
-	fprintf (stderr, "        current (full) heap size: %" PRId64 " bytes\n", heapSize);
+	fprintf (stderr, "        current (full) heap size: %" PRId64 " bytes\n", (uint64_t)heapSize);
 	fprintf (stderr, "      could not allocate another: %zu bytes\n",   allocCount);
 	abort();
 }

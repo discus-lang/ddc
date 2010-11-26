@@ -4,7 +4,8 @@
 runtime_c = \
 	$(shell ls runtime/*.c) \
 	$(shell find runtime/Prim -name "*.c") \
-	$(shell find runtime/Storage -name "*.c")
+	$(shell find runtime/Storage -name "*.c") \
+	$(shell find runtime/Debug -name "*.c")
 
 runtime_dep	= $(patsubst %.c,%.dep,$(runtime_c))
 runtime_o	= $(patsubst %.c,%.o,$(runtime_c))

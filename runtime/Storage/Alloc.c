@@ -1,12 +1,5 @@
 
-#include "../Object.h"
-#include "Alloc.h"
-#include "../Profile.h"
-#include "../State.h"
-#include "../Macro.h"
-#include "../Lint.h"
-#include "../Error.h"
-#include "Collect.h"
+#include "../Runtime.h"
 
 #include <stdlib.h>
 #include <stdio.h>

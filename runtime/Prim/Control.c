@@ -1,11 +1,5 @@
 
-#include "../Prim.h"
-#include "../Context.h"
-#include "../Util.h"
-
-#include "../Storage/Collect.h"
-#include "../Storage/Collect.ci"
-
+#include "../Runtime.h"
 
 // ----- Control
 Obj*	primControl_while

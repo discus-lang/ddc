@@ -1,16 +1,10 @@
 
 // Utils for determining the layout of objects in the heap.
-
+#include "Runtime.h"
 #include <stddef.h>
 #include <string.h>
 #include <ctype.h>
-
-#include "Object.h"
-#include "Error.h"
-#include "Storage/Collect.h"
-
-#include "Macro.h"
-
+#include <stdlib.h>
 
 // Determine the type of this object.
 enum _ObjType

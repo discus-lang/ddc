@@ -1,16 +1,7 @@
 
 // The Garbage Collector.
-
-#include "../Object.h"
-#include "../Prim.h"
-#include "../Lint.h"
-#include "../Macro.h"
-#include "../Dump.h"
-#include "../Error.h"
-#include "../Util.h"
-
+#include "../Runtime.h"
 #include "Alloc.ci"
-#include "Collect.h"
 
 #include <string.h>
 

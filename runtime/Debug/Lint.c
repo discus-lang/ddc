@@ -1,9 +1,6 @@
 
-#include "Lint.h"
-#include "Object.h"
-#include "Error.h"
-#include "Macro.h"
-
+#include "../Runtime.h"
+#include <stdlib.h>
 
 // If tracing is turned on then print the provided string to the trace file,
 //	otherwise do nothing.

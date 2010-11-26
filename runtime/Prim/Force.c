@@ -1,14 +1,5 @@
 
-#include "Macro.h"
-#include "Force.h"
-#include "Profile.h"
-#include "Storage/Collect.h"
-#include "Object.h"
-#include "Lint.h"
-#include "State.h"
-
-#include "Storage/Collect.ci"
-
+#include "../Runtime.h"
 
 // If this object is a suspended application, then force it.
 Obj*	_force (Obj* obj)

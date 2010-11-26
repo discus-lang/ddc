@@ -1,6 +1,6 @@
 
-#include "Context.h"
-#include "State.h"
+#include "Runtime.h"
+#include <stdlib.h>
 
 // _contextSetup
 //	Sets up the context stack ready for a call to setjmp()

@@ -1,11 +1,6 @@
 
-#include "Prim.h"
-
-#include "../Storage/Collect.h"
-#include "../Storage/Collect.ci"
-
-#include "../Storage/Alloc.h"
-#include "../Storage/Alloc.ci"
+#include "../Runtime.h"
+#include "../Runtime.ci"
 
 // ----- Suspend
 Obj*	primSuspend0 (void* f)

@@ -1,8 +1,7 @@
 // Global state for the runtime system
 //	All the global state variables are defined in this file.
 //
-#include "State.h"
-
+#include "Runtime.h"
 
 // Profiling information
 //	We maintain a global pointer to the profiling data structure,

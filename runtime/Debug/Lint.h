@@ -1,9 +1,8 @@
 
-#ifndef _DDC_Lint
-#define _DDC_Lint
+#ifndef _DDC_Debug_Lint
+#define _DDC_Debug_Lint
 
-#include "Object.h"
-
+#include "../Runtime.h"
 
 // Trace through the heap looking for malformed objects or bad pointers.
 //	Panics and stops the program if it finds any problems.

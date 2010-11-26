@@ -1,11 +1,6 @@
 
 #include "../Runtime.h"
-#include "../Prim.h"
-#include "../Context.h"
-#include "../Profile.h"
-
-#include "../Storage/Collect.h"
-#include "../Storage/Collect.ci"
+#include <stdlib.h>
 
 // primTry
 //	primTry :: (() -> a) -> (Exception -> a) -> a

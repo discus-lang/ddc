@@ -341,7 +341,7 @@ makeSeaHeader eTree pathThis pathImports extraIncludes
 		++	[ PHackery ("#ifndef _inc" ++ defTag ++ "\n")
 			, PHackery ("#define _inc" ++ defTag ++ "\n\n")
 			, PInclude "runtime/Runtime.h"
-			, PInclude "runtime/Prim.h" ]
+			, PInclude "runtime/Runtime.ci" ]
 
 		++ modIncludes pathImports
 		++ (map PInclude extraIncludes)

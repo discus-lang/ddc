@@ -1,13 +1,9 @@
 
-#ifndef _Trauma_Prim_ArrayU
-#define _Trauma_Prim_ArrayU
+#ifndef _DDC_Prim_ArrayU_ci
+#define _DDC_Prim_ArrayU_ci
 
-#include "../Profile.h"
-#include "../Force.h"
-#include "../Storage/Alloc.h"
-#include "../Macro.h"
-#include "../Object.h"
-#include "../State.h"
+#include "../Runtime.h"
+#include "../Runtime.ci"
 
 struct ArrayU_Int_Payload {
 	uint32_t	elemCount;
@@ -41,6 +37,5 @@ static inline Obj* primArrayInt32_poke
 
 	return _primUnit;
 }
-
 
 #endif

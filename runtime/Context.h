@@ -7,10 +7,7 @@
 #ifndef _DDC_Context
 #define _DDC_Context
 
-#include "Object.h"
 #include "Runtime.h"
-#include "Prim.h"
-#include "State.h"
 #include <setjmp.h>
 
 // Magic numbers used by the function that throws an exception to tell
@@ -66,7 +63,5 @@ static inline void _contextBreak ()
 static inline void _contextAgain (int ret)
 	{ _contextRestore (ret); }
 
-
-#include "Context.ci"
 
 #endif

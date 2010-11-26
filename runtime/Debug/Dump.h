@@ -1,12 +1,11 @@
-
 // Dump the state of the runtime system and/or heap.
 //	Used for debugging the runtime system, 
 //	not usually called from the user program.
 //
-#ifndef _DDC_Dump
-#define _DDC_Dump
+#ifndef _DDC_Debug_Dump
+#define _DDC_Debug_Dump
 
-#include "Object.h"
+#include "../Runtime.h"
 #include <stdio.h>
 
 // Dump the whole RTS state to a file.
