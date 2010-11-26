@@ -1,0 +1,8 @@
+
+import Data.List
+
+list :: [Int]
+list = (Cons 1 (Cons 1 Nil)  --  Missing close paren on this line.
+
+a :: Int
+a = 42
