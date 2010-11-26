@@ -152,7 +152,7 @@ boxLit :: LiteralFmt -> LlvmM LlvmVar
 boxLit (LiteralFmt (LString s) Unboxed)
  = do	gname		<- newUniqueName "str"
 	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
-	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
+	addGlobalVar	( svar, Just (LMStaticStr (escapeString s) (typeOfString s)) )
 	boxString	svar
 
 boxLit lit@(LiteralFmt _ (UnboxedBits _))

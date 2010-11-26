@@ -18,6 +18,8 @@ module Llvm.Util
 	, typeOfString
 	, alignOfType
 
+	, escapeString
+
 	, pChar
 	, ppChar
 	, pInt32 )
@@ -32,6 +34,9 @@ import DDC.Var
 import Llvm
 import Llvm.GhcReplace.Unique
 import Llvm.Runtime.Object
+
+import Data.Char
+import Text.Printf
 
 
 stage = "Llvm.Util"
@@ -134,9 +139,6 @@ toLlvmType (TFun param ret)
 	))
 
 
-
-
-
 typeOfString :: String -> LlvmType
 typeOfString s = LMArray (length s + 1) i8
 
@@ -144,3 +146,15 @@ alignOfType :: Type -> Maybe Int
 alignOfType (TPtr _) = ptrAlign
 alignOfType _ = Nothing
 
+--------------------------------------------------------------------------------
+
+escapeString :: String -> String
+escapeString ('\"':ss) = "\\22" ++ escapeString ss
+
+escapeString (s:ss)
+ | isPrint s
+ = s : escapeString ss
+
+escapeString (s:ss) = (printf "\\%02x" (ord s)) ++ escapeString ss
+
+escapeString [] = []
