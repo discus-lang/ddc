@@ -43,7 +43,7 @@ pfold (ac, af) ((c, f):t)  = pfold (sc, sf) t
 	sf = max af f
 
 permut n 	= foldr perm [[1..n]] [2..n] 
-perm x lst 	= concatL $ mapL (\l -> take x $ iterate (rotate x) l) lst
+perm x lst 	= concatL $ mapL (\l -> take x $ iterateL (rotate x) l) lst
 
 main ()
  = do	n	= 8

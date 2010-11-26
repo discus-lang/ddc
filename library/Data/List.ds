@@ -13,7 +13,7 @@ export
 	equalsBy; 
 	
 	-- Building Lists
-	replicate; iterate;
+	replicate; iterateL;
 	
 	-- List Transformations 
 	map; mapL; for; for_; 
@@ -168,8 +168,8 @@ replicate i x	= x : replicate (i - 1) x
 
 -- | Keep applying this function to a value and return an infinite
 --   list of the results.
-iterate :: (a -> a) -> a -> [a]
-iterate f x 	= x : iterate @ f (f @ x)
+iterateL :: (a -> a) -> a -> [a]
+iterateL f x 	= x : iterateL @ f (f @ x)
 
 
 -- Mapping --------------------------------------------------------------------
