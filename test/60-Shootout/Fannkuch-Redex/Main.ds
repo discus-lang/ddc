@@ -1,0 +1,60 @@
+
+{- The Computer Language Shootout
+   http://shootout.alioth.debian.org/
+
+   contributed by Ben Lippmeier
+   adapted from Clean code 
+     transliterated from Miha Vučkovič's Haskell program
+-}
+
+flop (2:x1:t) 			= x1:2:t
+flop (3:x1:x2:t) 		= x2:x1:3:t
+flop (4:x1:x2:x3:t)		= x3:x2:x1:4:t
+flop (5:x1:x2:x3:x4:t)		= x4:x3:x2:x1:5:t
+flop (6:x1:x2:x3:x4:x5:t)	= x5:x4:x3:x2:x1:6:t
+flop (7:x1:x2:x3:x4:x5:x6:t)	= x6:x5:x4:x3:x2:x1:7:t
+
+flop lst@(h:_) 
+ = do	flop' 0 t r	= (t, r)
+	flop' n (h:t) r	= flop' (n-1) t (h:r)
+	xx ()		= flop' h lst (fst @ (xx @ ()))	
+	snd (xx @ ())
+
+
+flopS (1:_)	 	= 0
+flopS lst 		= 1 + flopS (flop lst)
+
+
+rotate n (h:t)		= rotate' (n-1) t 
+ where	rotate' 0 l 	= h : l
+	rotate' n (f:t) = Cons f (rotate' (n-1) t)
+
+
+checksum :: Int -> Int -> Int
+checksum i f
+   | mod i 2 == 0 	= f
+   | True 		= -f
+
+
+pfold :: (Int, Int) -> [(Int, Int)] -> (Int, Int)
+pfold r [] 		   = r
+pfold (ac, af) ((c, f):t)  = pfold (sc, sf) t 
+ where 	sc = ac + c
+	sf = max af f
+
+permut n 	= foldr perm [[1..n]] [2..n] 
+perm x lst 	= concatL $ mapL (\l -> take x $ iterate (rotate x) l) lst
+
+main ()
+ = do	n	= 6
+
+	(chksm, mflops) 
+		= pfold (0,0) 
+		$ mapL (\(i, p) -> let flops = flopS p 
+				   in  (checksum i flops, flops)) 
+		$ zipL [0..] (permut n)
+
+   	putStr $ show chksm % "\nPfannkuchen(" % show n % ") = " % show mflops % "\n"
+
+
+

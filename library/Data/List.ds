@@ -13,7 +13,7 @@ export
 	equalsBy; 
 	
 	-- Building Lists
-	replicate; iterateL;
+	replicate; iterate;
 	
 	-- List Transformations 
 	map; mapL; for; for_; 
@@ -21,6 +21,7 @@ export
 	reverse; intersperse; 
 	intercalate; 
 	partition;
+	zip; zipL;
 		
 	-- Folds 
 	foldl1; foldr1; 
@@ -167,9 +168,8 @@ replicate i x	= x : replicate (i - 1) x
 
 -- | Keep applying this function to a value and return an infinite
 --   list of the results.
-iterateL :: (a -> a) -> a -> [a]
-iterateL f a	
-	= a : iterateL@ f (f a)
+iterate :: (a -> a) -> a -> [a]
+iterate f x 	= x : iterate @ f (f @ x)
 
 
 -- Mapping --------------------------------------------------------------------
@@ -274,6 +274,14 @@ partition p xs = foldr (select p) ([],[]) xs
 		| p x       = (x:ts,fs)
 		| otherwise = (ts, x:fs)
 
+
+zip []       _		= []
+zip _	     []		= []
+zip (x : xs) (y : ys)	= (x, y) : zip xs ys
+
+zipL []      _		= []
+zipL _       []		= []
+zipL (x : xs) (y : ys)	= (x, y) : (zipL @ xs ys)
 
 -- Folding --------------------------------------------------------------------
 instance Foldable (List %r) where
