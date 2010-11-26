@@ -1,74 +1,86 @@
+-- BUGS: This program dies with OOM when maxDepth is set over 15.
 
-data Tree %r
+{- The Computer Language Shootout
+   http://shootout.alioth.debian.org/
+
+   contributed by Ben Lippmeier
+   adapted from Clean code 
+     contributed by Isaac Gouy (Clean novice)
+     corrected by John van Groningen
+-}
+
+-- | The type of binary trees.
+data Tree
 	= Leaf
-	| Node (Int %r) (Tree %r) (Tree %r);
-	
-min' ()		= 4;
+	| Node Int Tree Tree
+
+
+minDepth = 4
+maxDepth = 15
+
 	
 main ()
- = do {
- 	max'	= 14;
+ = do	-- 1. Allocate a binary tree to stretch memory, check it exists, then deallocate it.
+	--    For us "deallocate" means leave it to the garbage collector.
+	stretchDepth	= maxDepth + 1
+	stretchTree	= makeTree 0# (unboxInt32 stretchDepth)
+	showItemCheck "stretch" stretchTree stretchDepth
 
-	stretchTree
-		= make 0# (unboxInt32 (max' + 1));
+	-- 2. Allocate a long lived tree that will live while the following trees are created.
+	longLivedTree	= makeTree 0# (unboxInt32 maxDepth)
+
+	-- 3. Allocate, walk and deallocate many binary trees.
+	depthLoop minDepth maxDepth
 	
-	print	$ "stretch tree of depth " 	% show (max' + 1) 
-		% "\t check: " 			% show (boxInt32 (itemCheck stretchTree))
-		% "\n";
+	-- 4. Check that the long lived tree still exists.
+	showItemCheck "long lived" longLivedTree maxDepth
 
-	longLivedTree
-		= make 0# (unboxInt32 max');
 
-	depthLoop (min' ()) max';
+showItemCheck :: String -> Tree -> Int -> ()
+showItemCheck name tree depth
+ = 	print	$ name %% "tree of depth " 	% show depth
+		% "\t check: " 			% show (boxInt32 (itemCheck tree))
+		% "\n"
 
-	print	$ "long lived tree of depth " 	% show max'
-		% "\t check: "			% show (boxInt32 (itemCheck longLivedTree))
-		% "\n";
-	
- };
- 		
+
+showCheck :: Int -> Int -> Int -> ()
+showCheck num depth check
+ = 	print 	$ show num % "\t trees of depth " % show depth
+		% "\t check: " % show check 
+		% "\n"
+
+
+depthLoop :: Int -> Int -> ()	
 depthLoop d m
- = match {
- 	| d <= m
-	= do {	n	= pow 2  (m - d + (min' ()));
-		print 	$ (show (2 * n)) % "\t trees of depth " % show d 
-			% "\t check: " % show (sumLoop (unboxInt32 n) (unboxInt32 d) 0#) 
-			% "\n";
-			
-		depthLoop (d + 2) m;
-	};
+ | d > m	= ()
+ \= do	n	= pow 2 (m - d + minDepth);
+	check	= sumLoop (unboxInt32 n) (unboxInt32 d) 0#
+	showCheck n d check
+	depthLoop (d + 2) m
 
-	\= ();
- };
 
+sumLoop :: Int# -> Int# -> Int# -> Int
 sumLoop k d acc
- = match {
- 	| true# <- primInt32U_eq k 0#	= boxInt32 acc;
+ | true# <- primInt32U_eq k 0#	
+ = boxInt32 acc
 
-	\= do {
-		c	= itemCheck (make k d);
-		c'	= itemCheck (make (0# - 1# * k) d);
-		sumLoop (k - 1#) d (acc + c + c');
-	};
- };
+ \= do	check	= itemCheck (makeTree k d)
+	check'	= itemCheck (makeTree (0# - 1# * k) d)
+	sumLoop (k - 1#) d (acc + check + check')
 
-make i d
- = match {
- 	| true# <- primInt32U_eq d 0#
-	= Leaf;
+
+makeTree :: Int# -> Int# -> Tree
+makeTree i 0#	= Leaf
+makeTree i d	
+ | true# <- primInt32U_eq d 0#
+ = Leaf
 	
-	\= Node (boxInt32 i) 
-		(make ((2# * i) - 1#)	(d - 1#)) 
-		(make  (2# * i)	(d - 1#));
- };
+ \= Node (boxInt32 i) 
+	(makeTree ((2# * i) - 1#) (d - 1#))
+	(makeTree  (2# * i)	  (d - 1#))
 
-itemCheck xx
- = case xx of {
- 	Leaf		-> 0#;
-	Node x l r	-> (unboxInt32 x) + itemCheck l - itemCheck r;
- };
- 
- 
-	
 
+itemCheck :: Tree -> Int#
+itemCheck Leaf		= 0#
+itemCheck (Node x l r)	= unboxInt32 x + itemCheck l - itemCheck r
 
