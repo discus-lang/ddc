@@ -15,12 +15,11 @@
 #include <stdio.h>
 
 // Heap Allocations --------------------------------------------------------------------------------
-
 // Allocate some space in the heap.
 //	This just makes the space, the caller is responsible for building
 //	a valid object and adding the header.
 static inline
-void*	_alloc		(size_t byteCount)
+void*	_alloc (size_t byteCount)
 {
 #if _DDC_DEBUG
 	// Avoid allocating object of a size that will mis-align the heap.
@@ -44,10 +43,10 @@ void*	_alloc		(size_t byteCount)
 
 
 // Allocate a thunk object.
-//	TODO: 	This makes an object big enough to hold the full airity,
-//		even though only some args are used.
+//  TODO: This makes an object big enough to hold the full airity,
+//	  even though only some args are used.
 static inline
-Obj*	_allocThunk	(FunPtr func, uint32_t arity, uint32_t args)
+Obj*	_allocThunk (FunPtr func, uint32_t arity, uint32_t args)
 {
 	size_t	size	= sizeof(Thunk) + sizeof(Obj*) * arity;
 	Thunk*	thunk	= (Thunk*)_alloc (size);
@@ -65,21 +64,21 @@ Obj*	_allocThunk	(FunPtr func, uint32_t arity, uint32_t args)
 
 
 // Copy a thunk object.
-//	We need to do this when we add extra arguments to a partial application.
-//	TODO: 	Make the caller build a new object of the correct size,
-//		which would save the copy from becoming dead straight away.
+// We need to do this when we add extra arguments to a partial application.
+// TODO: Make the caller build a new object of the correct size,
+//	 which would save the copy from becoming dead straight away.
 static inline
-Thunk*	_copyThunk	(Thunk* thunk)
+Thunk*	_copyThunk (Thunk* thunk)
 {
 	_ENTER(1);
 	_S(0)		= (Obj*)thunk;
 
 	// Work out the size of the object to be copied, and allocate a new one
-	size_t	size	= sizeof(Thunk) + sizeof(Obj*) * thunk ->arity;
-	Thunk*	thunkC	= (Thunk*)_alloc (size);
+	size_t	size		= sizeof(Thunk) + sizeof(Obj*) * thunk ->arity;
+	Thunk*	thunkC		= (Thunk*)_alloc (size);
 
 	// Copy across all the parts
-	Thunk*	thunk1	= (Thunk*)_S(0);
+	Thunk*	thunk1		= (Thunk*)_S(0);
 	thunkC ->tagFlags	= thunk1 ->tagFlags;
 	thunkC ->func		= thunk1 ->func;
 	thunkC ->arity		= thunk1 ->arity;
@@ -98,9 +97,7 @@ Thunk*	_copyThunk	(Thunk* thunk)
 
 // Allocate a data object.
 static inline
-Obj*	_allocData
-		( uint32_t tag
-		, uint32_t arity)
+Obj*	_allocData (uint32_t tag, uint32_t arity)
 {
 	size_t	size	= sizeof(Data) + sizeof(Obj*) * arity;
 	Data*	data	= (Data*)_alloc (size);
@@ -117,13 +114,15 @@ Obj*	_allocData
 
 // Allocate a raw data object.
 static inline
-Obj*	_allocDataR	(uint32_t tag, uint32_t dataSize)
+Obj*	_allocDataR (uint32_t tag, uint32_t dataSize)
 {
-	size_t	size	= sizeof(DataR)
-			+ dataSize;
+	// The size of the whole object, in bytes.
+	size_t	size	= sizeof(DataR)	+ dataSize;
 
+	// Allocate the object.
 	DataR*	data	= (DataR*)_alloc (size);
 
+	// Write the tag and size fields in the header.
 	data ->tagFlags	= (tag << 8) | _ObjFixedDataR;
 	data ->size	= size;
 
@@ -136,16 +135,19 @@ Obj*	_allocDataR	(uint32_t tag, uint32_t dataSize)
 
 // Allocate a small, raw data object.
 static inline
-Obj*	_allocDataRS	(uint32_t tag, uint32_t dataSize)
+Obj*	_allocDataRS (uint32_t tag, uint32_t dataSize)
 {
+	// The size of the data in words.
 	size_t	dataSizeWords
 			= dataSize / 4;
 
-	size_t	size	= sizeof(DataRS)
-			+ dataSize;
+	// The size of the whole object, in bytes.
+	size_t	size	= sizeof(DataRS) + dataSize;
 
+	// Allocate the object.
 	DataRS*	data	= (DataRS*)_alloc (size);
 
+	// Write the tag in the header.
 	data ->tagFlags	= (tag << 8) | _ObjModeDataRS | (dataSizeWords << 4);
 
 	_PROFILE_ALLOC (dataRawSmall.count++);
@@ -158,18 +160,21 @@ Obj*	_allocDataRS	(uint32_t tag, uint32_t dataSize)
 // Allocate a mixed data object.
 static inline
 Obj*	_allocDataM
-		( uint32_t tag
-		, uint32_t ptrCount		// the number of pointers appearing at the start of the object
+		( uint32_t tag		// constructor tag.
+		, uint32_t ptrCount	// the number of pointers appearing at the start of the object
 		, uint32_t dataSize)	// the size of the trailing data.
 					//	this needs to be a valid size, so the new object will
 					//	not misalign the heap.
 {
+	// The size of the whole object
 	size_t	size	= sizeof(DataM)
 			+ ptrCount * sizeof (Obj*)
 			+ dataSize;
 
+	// Allocate the object.
 	DataM*	data	= (DataM*)_alloc (size);
 
+	// Write the header.
 	data ->tagFlags	= (tag << 8) | _ObjFixedDataM;
 	data ->size	= size;
 	data ->ptrCount	= 0;
@@ -183,14 +188,18 @@ Obj*	_allocDataM
 
 // Allocate a suspension
 static inline
-Obj*	_allocSusp	(Obj* thunk, uint32_t args)
+Obj*	_allocSusp (Obj* thunk, uint32_t args)
 {
 	_ENTER(1);
 	_S(0)	= thunk;
 
+	// Size of the whole object.
 	size_t		size	= sizeof (SuspIndir) + sizeof(Obj*) * args;
+
+	// Allocate the object.
 	SuspIndir*	susp	= (SuspIndir*)_alloc (size);
 
+	// Write the header.
 	susp ->tagFlags	= (_tagSusp << 8) | _ObjFixedSuspIndir;
 	susp ->obj	= _S(0);
 	susp ->arity	= args;
@@ -204,9 +213,9 @@ Obj*	_allocSusp	(Obj* thunk, uint32_t args)
 
 
 // External Allocations ----------------------------------------------------------------------------
-
 // These function allocate space in the external, C heap.
 // They won't be moved around by the GC, but need to be freed manually.
+// TODO: We should do a mark/sweep to reclaim these automatically.
 
 // Allocate an anchored data object.
 static inline
@@ -217,9 +226,13 @@ Obj*	_allocData_anchored
 	// TODO: The GC doesn't handler ptrs in anchored objects yet.
 	assert (arity == 0);
 
+	// The size of the whole object.
 	size_t	size	= sizeof(Data) + sizeof(Obj*) * arity;
+
+	// Allocate the object in the C heap.
 	Data*	data	= (Data*)malloc(size);
 
+	// Write the header.
 	data ->tagFlags	= (tag << 8) | _ObjFixedData | _ObjFlagAnchored;
 	data ->arity	= arity;
 
@@ -235,11 +248,13 @@ static inline
 Obj*	_allocDataR_anchored
 		(uint32_t tag, uint32_t dataSize)
 {
-	size_t	size	= sizeof(DataR)
-			+ dataSize;
+	// The size of the whole object.
+	size_t	size	= sizeof(DataR)	+ dataSize;
 
+	// Allocate the object in the C heap.
 	DataR*	data	= (DataR*)malloc (size);
 
+	// Write the header.
 	data ->tagFlags	= (tag << 8) | _ObjFixedDataR | _ObjFlagAnchored;
 	data ->size	= size;
 
@@ -248,6 +263,5 @@ Obj*	_allocDataR_anchored
 
 	return (Obj*)data;
 }
-
 
 #endif
