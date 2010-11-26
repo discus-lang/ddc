@@ -46,7 +46,7 @@ permut n 	= foldr perm [[1..n]] [2..n]
 perm x lst 	= concatL $ mapL (\l -> take x $ iterate (rotate x) l) lst
 
 main ()
- = do	n	= 6
+ = do	n	= 8
 
 	(chksm, mflops) 
 		= pfold (0,0) 
