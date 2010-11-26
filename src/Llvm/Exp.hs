@@ -57,6 +57,13 @@ llvmOfExp (XArgData (XVar (NSlot _ n) _) i)
 			, Assignment ret (Load args) ]
 	return		ret
 
+llvmOfExp (XVar v@NCafPtr{} tv)
+ = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
+	r2		<- newUniqueNamedReg "r2" $ toLlvmType tv
+	addBlock	[ Assignment r1 (loadAddress (pVarLift (toLlvmCafVar (varOfName v) tv)))
+			, Assignment r2 (loadAddress r1) ]
+	return		r2
+
 
 llvmOfExp (XLit (LLit lit))
  = 	return $ llvmVarOfLit lit
@@ -66,10 +73,6 @@ llvmOfExp (XLit LNull)
 
 
 llvmOfExp (XVar n@NSuper{} tv)
- = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
-	++ show n ++ "\n"
-
-llvmOfExp (XVar n@NCafPtr{} tv)
  = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
 	++ show n ++ "\n"
 
