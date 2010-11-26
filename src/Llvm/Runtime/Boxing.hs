@@ -195,7 +195,7 @@ boxFloat32 f32
 		, Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
 		, Store (tagDataRS 1) iptr0
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
-		, Assignment fptr (Cast LM_Bitcast fptr (pLift LMFloat))
+		, Assignment fptr (Cast LM_Bitcast iptr1 (pLift LMFloat))
 		, Store f32 fptr
 		]
 	return	objptr
