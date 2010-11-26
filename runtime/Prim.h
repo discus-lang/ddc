@@ -78,5 +78,5 @@ Int32	primRuntime_slotUsage		(Obj* x);
 Obj*	primRuntime_printObj		(Obj* x);
 
 
-#endif _DDC_Prim_h
+#endif
 
