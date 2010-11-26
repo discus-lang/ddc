@@ -1,13 +1,13 @@
 
 #include "../Profile.h"
 #include "../Force.h"
-#include "../Alloc.h"
+#include "../Storage/Alloc.h"
 #include "../Macro.h"
 #include "../Object.h"
 #include "../State.h"
 
-#include "../Collect.ci"
-#include "../Alloc.ci"
+#include "../Storage/Collect.ci"
+#include "../Storage/Alloc.ci"
 
 // ----- Macros
 //

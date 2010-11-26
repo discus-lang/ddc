@@ -4,10 +4,10 @@
 #include "Object.h"
 #include "Apply.h"
 #include "Profile.h"
-#include "Alloc.h"
+#include "Storage/Alloc.h"
 #include "Macro.h"
 #include "Error.h"
-#include "Collect.h"
+#include "Storage/Collect.h"
 #include "Lint.h"
 
 #include "Eval.ci"
@@ -15,8 +15,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "Collect.ci"
-#include "Alloc.ci"
+#include "Storage/Collect.ci"
+#include "Storage/Alloc.ci"
 
 // Functions to apply extra arguments to a thunk / activation record.
 //	If the number of extra arguments gives us enough to call supercominator

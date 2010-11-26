@@ -4,7 +4,7 @@
 #ifndef _DDC_Alloc
 #define _DDC_Alloc
 
-#include "Object.h"
+#include "../Object.h"
 
 // Initialise the allocation system.
 //	and allocate the heap.

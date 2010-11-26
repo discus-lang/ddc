@@ -2,7 +2,6 @@
 // The Garbage Collector.
 
 #include "Object.h"
-#include "Collect.h"
 #include "Prim.h"
 #include "Lint.h"
 #include "Macro.h"
@@ -10,7 +9,8 @@
 #include "Error.h"
 #include "Util.h"
 
-#include "Alloc.ci"
+#include "Storage/Alloc.ci"
+#include "Storage/Collect.h"
 
 #include <string.h>
 

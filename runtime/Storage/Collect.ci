@@ -4,11 +4,11 @@
 
 #include <stdlib.h>
 
-#include "Macro.h"
-#include "Profile.h"
-#include "State.h"
-#include "Error.h"
-#include "Lint.h"
+#include "../Macro.h"
+#include "../Profile.h"
+#include "../State.h"
+#include "../Error.h"
+#include "../Lint.h"
 
 // Get a pointer from the GC stack, indexed relative to the current frame.
 #define _S(index)	_localSlotBase [index]

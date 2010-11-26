@@ -2,15 +2,15 @@
 #include "Types.h"
 #include "Prim.h"
 #include "Profile.h"
-#include "Alloc.h"
+#include "Storage/Alloc.h"
 #include "Context.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 
-#include "Collect.ci"
-#include "Alloc.ci"
+#include "Storage/Collect.ci"
+#include "Storage/Alloc.ci"
 
 
 // Initialise the DDC runtime system.

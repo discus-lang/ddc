@@ -4,9 +4,9 @@
 #include "Profile.h"
 #include "State.h"
 #include "Macro.h"
-#include "Collect.h"
 #include "Lint.h"
 #include "Error.h"
+#include "Storage/Collect.h"
 
 #include <stdlib.h>
 #include <stdio.h>

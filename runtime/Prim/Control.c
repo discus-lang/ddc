@@ -3,8 +3,8 @@
 #include "../Context.h"
 #include "../Util.h"
 
-#include "../Collect.h"
-#include "../Collect.ci"
+#include "../Storage/Collect.h"
+#include "../Storage/Collect.ci"
 
 
 // ----- Control

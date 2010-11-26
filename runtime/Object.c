@@ -7,7 +7,7 @@
 
 #include "Object.h"
 #include "Error.h"
-#include "Collect.h"
+#include "Storage/Collect.h"
 
 #include "Macro.h"
 

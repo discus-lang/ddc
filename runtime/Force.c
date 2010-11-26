@@ -2,12 +2,12 @@
 #include "Macro.h"
 #include "Force.h"
 #include "Profile.h"
-#include "Collect.h"
+#include "Storage/Collect.h"
 #include "Object.h"
 #include "Lint.h"
 #include "State.h"
 
-#include "Collect.ci"
+#include "Storage/Collect.ci"
 
 
 // If this object is a suspended application, then force it.

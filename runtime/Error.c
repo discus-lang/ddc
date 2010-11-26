@@ -7,8 +7,8 @@
 #include "Error.h"
 #include "Prim.h"
 
-#include "Collect.ci"
-#include "Alloc.ci"
+#include "Storage/Collect.ci"
+#include "Storage/Alloc.ci"
 
 
 // User errors -------------------------------------------------------------------------------------

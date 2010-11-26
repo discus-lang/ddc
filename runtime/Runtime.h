@@ -4,8 +4,8 @@
 #ifndef _DDC_Runtime
 #define _DDC_Runtime
 
-#include "Collect.h"
-#include "Alloc.h"
+#include "Storage/Collect.h"
+#include "Storage/Alloc.h"
 #include "Apply.h"
 #include "Context.h"
 #include "Error.h"
@@ -17,9 +17,8 @@
 #include "Types.h"
 #include "Main.h"
 #include "Dump.h"
-
-#include "Collect.ci"
-#include "Alloc.ci"
+#include "Storage/Collect.ci"
+#include "Storage/Alloc.ci"
 
 #endif
 

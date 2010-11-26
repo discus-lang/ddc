@@ -4,11 +4,11 @@
 #include "../Profile.h"
 #include "../Force.h"
 
-#include "../Collect.h"
-#include "../Collect.ci"
+#include "../Storage/Collect.h"
+#include "../Storage/Collect.ci"
 
-#include "../Alloc.h"
-#include "../Alloc.ci"
+#include "../Storage/Alloc.h"
+#include "../Storage/Alloc.ci"
 
 #include <string.h>
 

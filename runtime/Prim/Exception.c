@@ -4,8 +4,8 @@
 #include "../Context.h"
 #include "../Profile.h"
 
-#include "../Collect.h"
-#include "../Collect.ci"
+#include "../Storage/Collect.h"
+#include "../Storage/Collect.ci"
 
 // primTry
 //	primTry :: (() -> a) -> (Exception -> a) -> a

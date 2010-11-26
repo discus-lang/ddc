@@ -2,7 +2,7 @@
 #include "Dump.h"
 #include "Object.h"
 #include "State.h"
-#include "Collect.h"
+#include "Storage/Collect.h"
 #include "Macro.h"
 #include "Error.ci"
 

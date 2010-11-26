@@ -3,7 +3,7 @@
 #ifndef _DDC_Collect
 #define _DDC_Collect
 
-#include "Object.h"
+#include "../Object.h"
 
 // Allocate and initialise the current GC slot stack.
 void	_collectInit

@@ -4,7 +4,7 @@
 
 #include "../Profile.h"
 #include "../Force.h"
-#include "../Alloc.h"
+#include "../Storage/Alloc.h"
 #include "../Macro.h"
 #include "../Object.h"
 #include "../State.h"

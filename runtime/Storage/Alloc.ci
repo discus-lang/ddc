@@ -2,14 +2,14 @@
 #ifndef _DDC_Alloc_I
 #define _DDC_Alloc_I
 
-#include "Config.h"
+#include "../Config.h"
 #include "Alloc.h"
-#include "Profile.h"
-#include "State.h"
-#include "Macro.h"
+#include "../Profile.h"
+#include "../State.h"
+#include "../Macro.h"
+#include "../Object.h"
+#include "../Lint.h"
 #include "Collect.h"
-#include "Object.h"
-#include "Lint.h"
 
 #include <stdlib.h>
 #include <stdio.h>
