@@ -36,8 +36,8 @@ void	_allocCollect
 #if 	_DDC_PROFILE_GC
 	_ddcProfileMutatorEnd();
 	_ddcProfileCollectorStart();
-	allocBytes	+= heapUsageStart - _ddcProfile ->gc.lastCompactionSize
 #endif
+	_PROFILE_GC (allocBytes	+= heapUsageStart - _ddcProfile ->gc.lastCompactionSize);
 
 	// Copy out the live data to the new heap.
 	_collectHeap
