@@ -38,16 +38,16 @@ GHC_WARNINGS	:= \
 
 
 # -- Warnings for GHC 7.0.1
-#    -fspec-constr-count is to try and shut up internal compiler warnings in 7.0.1,
-#       which doesn't seem to work. This should be fixed in 7.0.2, then we can disable it.
-#    -fno-warn-deprecations is because the alex generated files includes -fglagsow-exts
+#
+#    -fspec-constr-count is just to shut up internal compiler warnings in 7.0.1,
+#        I don't know how many specilisations we actually need.
 #
 ifeq "$(GHC_VERSION)" "7"
 GHC_WARNINGS	:= \
 	$(GHC_WARNINGS) \
 	-fwarn-monomorphism-restriction \
 	-fwarn-unrecognised-pragmas \
-	-fspec-constr-count=10
+	-fspec-constr-count=15
 endif
 
 

@@ -1,5 +1,3 @@
-{-# OPTIONS -O2 #-}
-
 module Source.Parser.Pattern
 	( pPat, pPat2, pPat1
 	, pDotLabel)

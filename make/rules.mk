@@ -13,7 +13,7 @@ include make/config/target.mk
 
 %.o : %.hs
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -isrc $(GHC_INCDIRS) -c $<
+	$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -isrc $(GHC_INCDIRS) -c $<
 
 
 %.hi-boot : %.hs-boot %.o-boot

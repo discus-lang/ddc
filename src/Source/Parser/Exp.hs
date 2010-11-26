@@ -1,5 +1,3 @@
-{-# OPTIONS -O2 #-}
-
 module Source.Parser.Exp
 	( pExp, pExp1, pExpRHS
 	, pStmt, pStmt_bind, pStmt_sig, pStmt_sigBind)

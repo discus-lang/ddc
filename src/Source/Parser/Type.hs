@@ -1,5 +1,3 @@
-{-# OPTIONS -O2 #-}
-
 module Source.Parser.Type
 	( pSuper
 	, pKind
