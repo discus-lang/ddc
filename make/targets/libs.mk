@@ -5,11 +5,11 @@ libs	: library/Graphics.di
 
 library/Prelude.di library/Graphics.di : bin/ddc
 	@echo "* Building base libraries ----------------------------------------------------------"
-	bin/ddc -O -build library/Prelude.ds
+	@bin/ddc -O -build library/Prelude.ds
 	@touch library/Prelude.di
 
 	@echo
-	bin/ddc -O -build library/Graphics.ds
+	@bin/ddc -O -build library/Graphics.ds
 	@touch library/Graphics.di
 	@echo
 

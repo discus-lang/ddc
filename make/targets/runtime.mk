@@ -13,12 +13,13 @@ runtime_o	= $(patsubst %.c,%.o,$(runtime_c))
 runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 	@echo
 	@echo "* Linking $@"
-	$(GCC_LINK_SHARED) -o $@ $^
+	@$(GCC_LINK_SHARED) -o $@ $^
 	@echo
 
 runtime/libddc-runtime.a  : $(runtime_o)
-	@echo "* Building $@"
-	ar r $@ $^
+	@echo
+	@echo "* Linking $@"
+	@ar r $@ $^
 	@echo
 
 

@@ -19,7 +19,7 @@ src_hs_all	+= $(src_alex_hs)
 # -- use the $(Target) from make/config.mk to decide which ddc config file to use
 src/Config/Config.hs : src/Config/Config.hs.$(Target)
 	@echo "* Using configuration" $^
-	cp $^ $@
+	@cp $^ $@
 	@echo
 
 # -- Dependencies -------------------------------------------------------------
@@ -39,8 +39,8 @@ src_obj		=  $(patsubst %.hs,%.o,$(src_hs_existing))
 
 bin/ddc	: make/Makefile.deps $(src_obj)
 	@echo
-	@echo "* Linking ddc ---------------------------------------------------------------------"
-	$(GHC) -o bin/ddc $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(src_obj)
+	@echo "* Linking ddc"
+	@$(GHC) -o bin/ddc $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(src_obj)
 	@echo
 	
 	

@@ -3,7 +3,8 @@
 war_hs	= $(shell find tools/war -name "*.hs") $(shell find src/Util -name "*.hs")
 
 bin/war : $(war_hs)
-	$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -threaded  \
+	@echo "* Building war test driver ---------------------------------------------------------"
+	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -threaded  \
 		-isrc -itools/war --make tools/war/Main.hs -o bin/war
 
 # -- The new driver program (in development)
