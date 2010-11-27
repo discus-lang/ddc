@@ -119,6 +119,7 @@ toLlvmType (TCon (TyConUnboxed v))
 	"Int64#"	-> i64
 	"Float32#"	-> LMFloat
 	"Float64#"	-> LMDouble
+	"String#"	-> LMPointer i8
 	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
 
 toLlvmType (TCon (TyConAbstract v))
