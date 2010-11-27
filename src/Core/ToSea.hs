@@ -1,7 +1,7 @@
 
 -- | Convert CoreIR to Abstract-C
 module Core.ToSea
-	(toSeaTree)
+	(toSeaGlobs)
 where
 import Data.Function
 import DDC.Main.Pretty
@@ -14,9 +14,11 @@ import Data.Sequence			(Seq)
 import Data.Traversable			(mapM)
 import Util				hiding (mapM)
 import Prelude				hiding (mapM)
+import qualified Core.ToSea.Sequence	as C
 import qualified Core.Util		as C
 import qualified DDC.Core.OpType	as C
 import qualified Shared.VarPrim		as Var
+import qualified DDC.Core.Glob		as C
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T
@@ -74,18 +76,76 @@ slurpWitnessKind kk
 
 
 -- Tree -------------------------------------------------------------------------------------------
-toSeaTree
+toSeaGlobs
 	:: String		-- ^ unique
-	-> Set Var		-- ^ Set of top-level vars which are known to be CAFs
-	-> Seq C.Top
+	-> C.Glob 		-- ^ header glob
+	-> C.Glob		-- ^ module glob
+	-> (Seq (E.Top ()), Seq (E.Top ()))
+
+toSeaGlobs unique cgHeader cgModule
+  = let	
+	-- Determine the order we need to initialise the CAFs in.
+	-- Mutually recursive CAFs don't work.
+	eCafOrder	= C.slurpCafInitSequence cgModule
+    in	case eCafOrder of
+	 Left vsRecursive
+	  -> panic stage {-exitWithUserError ?args-}
+	 	$ ["Values may not be mutually recursive.\n"
+		% "     offending variables: " % vsRecursive % "\n\n"]
+
+	 Right vsCafOrdering
+	  -> toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
+
+toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
+ = let
+	-- Partition the bindings into CAFs and non-CAFs 
+	cgModule_binds = C.globBind cgModule
+	(  cgModule_binds_cafs
+	     , cgModule_binds_nonCafs)	
+			= Map.partition C.isCafP cgModule_binds
+				
+	-- Order the CAFs by the given CAF initilization order.
+	cgModule_binds_orderedCafs
+		= foldl' (\psCafs v
+			    -> let  Just pCaf	= Map.lookup v cgModule_binds_cafs
+			       in   psCafs Seq.|> pCaf)
+		   	Seq.empty
+			vsCafOrdering
+		
+	-- All the bindings with ordered CAFs out the front.
+	cModule_binds_ordered
+		=      cgModule_binds_orderedCafs 
+		Seq.>< (Seq.fromList $ Map.elems cgModule_binds_nonCafs)
+			
+	cModule_nobinds	= C.seqOfGlob (cgModule { C.globBind = Map.empty })
+
+	cModule'	=      cModule_binds_ordered 
+			Seq.>< cModule_nobinds
+
+	-- For the toSea transform we need to know which bindings are CAFs
+	vsCafs		= Set.union 
+				(Set.fromList 	$ Map.keys cgModule_binds_cafs)
+				(Set.fromList 	$ Map.keys 
+						$ Map.filter C.isCafP 
+						$ C.globExtern cgHeader)
+
+	esHeader	= toSeaTree (unique ++ "S") vsCafs $ C.seqOfGlob cgHeader
+	esModule	= toSeaTree (unique ++ "H") vsCafs cModule'
+
+   in	(esHeader, esModule)
+
+
+toSeaTree 
+	:: String		-- ^ unique
+	-> Set Var		-- ^ vars that are known to be CAFs.
+	-> Seq C.Top 		-- ^ sequence of tops to convert.
 	-> Seq (E.Top ())
 
-toSeaTree unique vsCafs cTree
-  = evalState
-  	(liftM join $ mapM toSeaP cTree)
-	SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
-		, stateCafVars		= vsCafs
-		, stateDirectRegions	= Set.empty }
+toSeaTree unique vsCafs ps	
+ = evalState 	(liftM join $ mapM toSeaP ps)
+		SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
+			, stateCafVars		= vsCafs
+			, stateDirectRegions	= Set.empty }
 
 
 -- Top --------------------------------------------------------------------------------------------

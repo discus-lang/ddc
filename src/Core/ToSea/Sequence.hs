@@ -25,7 +25,7 @@ import qualified Shared.VarUtil	as Var
 --
 slurpCafInitSequence 
 	:: Glob 
-	-> IO (Either [Var] [Var])
+	-> Either [Var] [Var]
 
 slurpCafInitSequence cgSource
  = let	psBinds	= Map.elems $ globBind cgSource
@@ -45,7 +45,7 @@ slurpCafInitSequence cgSource
 				, Set.member v (graphReachable deps [v]) ]
 
    in	if not $ isNil recCafs
-	  then return $ Left recCafs
+	  then Left recCafs
 	  else sequenceCafsTree2 deps cafVars
 	
 sequenceCafsTree2 deps cafVars
@@ -56,7 +56,7 @@ sequenceCafsTree2 deps cafVars
 	initSeq	= [v	| v	<- graphSequence deps Set.empty cafVars
 			, elem v cafVars]
 
-  in	return $ Right initSeq
+  in	Right initSeq
 	
 
 -- | Slurps out the list of value variables which are free in

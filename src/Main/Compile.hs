@@ -420,7 +420,7 @@ compileFile_parse
 	-- Convert to Sea code ------------------------------------------------
 	outVerb $ ppr $ "  * Convert to Sea IR\n"
 
-	(eSea, eHeader)	
+	(eHeader, eSea)	
 	 <- SC.coreToSea "TE" cgHeader cgModule
 
 	------------------------------------------------------------------------

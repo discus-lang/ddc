@@ -19,11 +19,8 @@ module Main.Core
 	, coreCurry
 	, coreToSea)
 where
-import Core.Util
-import Core.ToSea.Sequence
 import Main.Dump
 import DDC.Main.Pretty
-import DDC.Main.Error
 import DDC.Main.Arg
 import DDC.Core.Glob
 import DDC.Core.Check			(checkGlobs)
@@ -37,7 +34,7 @@ import DDC.Core.Simplify
 import Core.Lift			(lambdaLiftGlob)
 import Core.LabelIndex			(labelIndexGlob)
 import Core.Curry			(curryGlob)
-import Core.ToSea			(toSeaTree)
+import Core.ToSea			(toSeaGlobs)
 import DDC.Core.Exp
 import Core.Plate.Trans
 import Data.Foldable			(foldr)
@@ -46,9 +43,6 @@ import Prelude				hiding (foldr)
 import qualified Core.Snip		as Snip
 import qualified DDC.Sea.Exp		as E
 import qualified Sea.Util		as E
-import qualified Data.Map		as Map
-import qualified Data.Set		as Set
-import qualified Data.Sequence		as Seq
 
 
 -- | A consistent interface for Core Stages.
@@ -282,7 +276,7 @@ coreCurry cgHeader cgModule
 ---------------------------------------------------------------------------------------------------
 -- | Convert Core-IR to Abstract-C
 coreToSea	
-	:: (?args	    :: [Arg])
+	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> String			-- ^ Unique.
 	-> Glob				-- ^ Header glob.
@@ -291,61 +285,16 @@ coreToSea
 		, E.Tree ())		-- sea header tree
 
 coreToSea unique cgHeader cgModule
- = do	eCafOrder	<- slurpCafInitSequence cgModule
-
-	case eCafOrder of
-	 Left vsRecursive
-	  -> exitWithUserError ?args
-	 	$ ["Values may not be mutually recursive.\n"
-		% "     offending variables: " % vsRecursive % "\n\n"]
-
-	 Right vsCafOrdering
-	  -> coreToSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
-
-coreToSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
- = do
-	-- Partition the bindings into CAFs and non-CAFs 
-	let cgModule_binds = globBind cgModule
-	let (  cgModule_binds_cafs
-	     , cgModule_binds_nonCafs)	
-			= Map.partition isCafP cgModule_binds
-				
-	-- Order the CAFs by the given CAF initilization order.
-	let cgModule_binds_orderedCafs
-		= foldl' (\psCafs v
-			    -> let  Just pCaf	= Map.lookup v cgModule_binds_cafs
-			       in   psCafs Seq.|> pCaf)
-		   	Seq.empty
-			vsCafOrdering
-		
-	-- All the bindings with ordered CAFs out the front.
-	let cModule_binds_ordered
-		=      cgModule_binds_orderedCafs 
-		Seq.>< (Seq.fromList $ Map.elems cgModule_binds_nonCafs)
-			
-	let cModule_nobinds	
-		= seqOfGlob (cgModule { globBind = Map.empty })
-
-	let cModule'		
-		=      cModule_binds_ordered 
-		Seq.>< cModule_nobinds
-
-	-- For the toSea transform we need to know which bindings are CAFs
-	let vsCafs	= Set.union 
-				(Set.fromList $ Map.keys cgModule_binds_cafs)
-				(Set.fromList $ Map.keys $ Map.filter isCafP $ globExtern cgHeader)
-	
-	dumpS DumpSea "sea--vsCafs"  $ pprStrPlain $ ppr vsCafs
+ = do	
+	let (esHeader, esModule) 
+			= toSeaGlobs unique cgHeader cgModule
 	
 	-- conversion
-	let eTree	= toSeaTree (unique ++ "S") vsCafs cModule'
-	let eTree_list	= foldr (:) [] eTree
-	dumpET DumpSea "sea--source" $ E.eraseAnnotsTree eTree_list
+	let esHeader_list = foldr (:) [] esHeader
+	dumpET DumpSea "sea--header" $ E.eraseAnnotsTree esHeader_list
 
-	let eHeader	 = toSeaTree (unique ++ "H") vsCafs $ seqOfGlob cgHeader
-	let eHeader_list = foldr (:) [] eHeader
-	dumpET DumpSea "sea--header" $ E.eraseAnnotsTree eHeader_list
+	let esModule_list = foldr (:) [] esModule
+	dumpET DumpSea "sea--source" $ E.eraseAnnotsTree esModule_list
 
- 	return (  eTree_list, eHeader_list)
-		
+ 	return (esHeader_list, esModule_list)
 

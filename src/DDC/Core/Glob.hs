@@ -9,6 +9,7 @@ module DDC.Core.Glob
 	, seqOfGlob
 	, bindingArityFromGlob 
 	, typeFromGlob
+	, opTypeFromGlob
 	, varIsBoundAtTopLevelInGlob
 	, mapBindsOfGlob
 	, mapBindsOfGlobM
@@ -22,6 +23,7 @@ import DDC.Core.Exp
 import DDC.Type
 import DDC.Type.Data.Base
 import DDC.Var
+import qualified Shared.VarPrim as Var
 import Data.Maybe
 import Data.Map			(Map)
 import Data.Sequence		(Seq, (><))
@@ -237,6 +239,28 @@ typeFromGlob v glob
 	| otherwise
 	= Nothing
 
+
+-- | Get the operational type of some top level thing.
+opTypeFromGlob :: Var -> Glob -> Maybe Type
+opTypeFromGlob v glob
+	-- External decls are already annotated with their types.
+	| Just pp@PExtern{}	<- Map.lookup v (globExtern glob)
+	= Just $ topExternOpType pp
+
+	-- If we can slurp out the type directly from its annots then use that, 
+	--	otherwise we'll have to reconstruct it manually.
+	| Just pp@PBind{}	<- Map.lookup v (globBind glob)
+	= Just $ superOpTypeP pp
+
+	-- Var is a data constructor.	
+	| Just ctor@CtorDef{}	<- Map.lookup v (globDataCtors glob)
+	= Just 	$ makeTFunsPureEmpty 
+		$ replicate (ctorDefArity ctor + 1) 
+		$ makeTData Var.primTData kValue []
+		
+	| otherwise
+	= Nothing
+	
 
 -- | Check if a value variable is bound at top-level in this `Glob`.
 --	Since we know it is a value var we don't have to check 
