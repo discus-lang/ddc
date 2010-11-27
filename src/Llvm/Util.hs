@@ -122,11 +122,6 @@ toLlvmType (TCon (TyConUnboxed v))
 	"String#"	-> LMPointer i8
 	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
 
-toLlvmType (TCon (TyConAbstract v))
- = case varName v of
-	"String#"	-> pChar
-	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
-
 toLlvmType (TFun param ret)
  = LMPointer (LMFunction (
 	LlvmFunctionDecl
