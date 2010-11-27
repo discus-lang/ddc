@@ -37,19 +37,26 @@ stage	= "Core.ToSea"
 -- State ------------------------------------------------------------------------------------------
 data SeaS
 	= SeaS
-	{ -- variable name generator
+	{ -- | variable name generator
 	  stateVarGen		:: VarId
 
-	  -- top level vars known to be CAFs
+	  -- | top level vars known to be CAFs
 	, stateCafVars		:: Set Var
 
-	  -- regions known to be direct
-	, stateDirectRegions	:: Set Var }
+	  -- | regions known to be direct
+	, stateDirectRegions	:: Set Var 
+	
+	 -- | the original header glob
+	, stateHeaderGlob	:: C.Glob
+
+	  -- | the original module glob.
+	, stateModuleGlob	:: C.Glob
+	}
 
 type SeaM	= State SeaS
 
-newVarN ::	NameSpace -> SeaM Var
-newVarN		space
+newVarN :: NameSpace -> SeaM Var
+newVarN	space
  = do 	varBind		<- gets stateVarGen
 	let varBind'	= incVarId varBind
 	modify (\s -> s { stateVarGen = varBind' })
@@ -74,6 +81,16 @@ slurpWitnessKind kk
 
 	_ -> return ()
 
+-- | Get the operational type of some top level variable.
+getOpTypeOfVar :: Var -> SeaM (Maybe T.Type)
+getOpTypeOfVar v
+ = do	cgHeader	<- gets stateHeaderGlob
+	cgModule	<- gets stateModuleGlob
+	
+	return	$ takeFirstJust 
+		[ C.opTypeFromGlob v cgHeader
+		, C.opTypeFromGlob v cgModule ]
+	
 
 -- Tree -------------------------------------------------------------------------------------------
 toSeaGlobs
@@ -129,8 +146,11 @@ toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
 						$ Map.filter C.isCafP 
 						$ C.globExtern cgHeader)
 
-	esHeader	= toSeaTree (unique ++ "S") vsCafs $ C.seqOfGlob cgHeader
-	esModule	= toSeaTree (unique ++ "H") vsCafs cModule'
+	esHeader	= toSeaTree (unique ++ "S") vsCafs cgHeader cgModule 
+				$ C.seqOfGlob cgHeader
+
+	esModule	= toSeaTree (unique ++ "H") vsCafs cgHeader cgModule
+				cModule'
 
    in	(esHeader, esModule)
 
@@ -138,14 +158,18 @@ toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
 toSeaTree 
 	:: String		-- ^ unique
 	-> Set Var		-- ^ vars that are known to be CAFs.
+	-> C.Glob		-- ^ original header glob
+	-> C.Glob		-- ^ original module glob
 	-> Seq C.Top 		-- ^ sequence of tops to convert.
 	-> Seq (E.Top ())
 
-toSeaTree unique vsCafs ps	
+toSeaTree unique vsCafs cgHeader cgModule ps	
  = evalState 	(liftM join $ mapM toSeaP ps)
 		SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
 			, stateCafVars		= vsCafs
-			, stateDirectRegions	= Set.empty }
+			, stateDirectRegions	= Set.empty 
+			, stateHeaderGlob	= cgHeader
+			, stateModuleGlob	= cgModule }
 
 
 -- Top --------------------------------------------------------------------------------------------
@@ -254,7 +278,8 @@ toSeaX	:: C.Exp -> SeaM (E.Exp ())
 toSeaX		xx
  = case xx of
 	C.XVar v t
-	 -> do	vsCafs	<- gets stateCafVars
+	 -> do	-- Get the operational type of the var.
+		vsCafs	<- gets stateCafVars
 		if Set.member v vsCafs
 		 then return $ E.XVar (E.NCaf  v) (toSeaT t)
 		 else return $ E.XVar (E.NAuto v) (toSeaT t)
@@ -280,23 +305,32 @@ toSeaX		xx
 
 	-- function calls
 	-- For these four we statically know that the thing we're calling is a supercombinator.
-	C.XPrim (C.MCall C.PrimCallTail)  (C.XVar vSuper tSuper : args)
-	 -> do	args'	<- mapM toSeaX $ stripValues args
+	-- Note that if the resulting variables refer to supercombinators, their operational
+	--   types contain function constructors. To make these we need the correct arity.
+	--   We call getOpTypeVar, which inspects the original definition of each super for
+	--   locally defined ones, or returns the operational type from the interface files 
+	--   for imported ones.
+	C.XPrim (C.MCall C.PrimCallTail)  (C.XVar vSuper _ : args)
+	 -> do	args'		<- mapM toSeaX $ stripValues args
+		Just tSuper	<- getOpTypeOfVar vSuper
 		return	$ E.XPrim (E.MApp E.PAppTailCall)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
-	C.XPrim (C.MCall C.PrimCallSuper) (C.XVar vSuper tSuper : args)
-	 -> do	args'	<- mapM toSeaX $ stripValues args
+	C.XPrim (C.MCall C.PrimCallSuper) (C.XVar vSuper _ : args)
+	 -> do	args'		<- mapM toSeaX $ stripValues args
+		Just tSuper	<- getOpTypeOfVar vSuper
 	    	return	$ E.XPrim (E.MApp E.PAppCall)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
-	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) (C.XVar vSuper tSuper : args)
+	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) (C.XVar vSuper _ : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
+		Just tSuper	<- getOpTypeOfVar vSuper
 		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
-	C.XPrim (C.MCall (C.PrimCallCurry superA)) (C.XVar vSuper tSuper : args)
-	 -> do	let xsValues = stripValues args
+	C.XPrim (C.MCall (C.PrimCallCurry superA)) (C.XVar vSuper _ : args)
+	 -> do	Just tSuper	<- getOpTypeOfVar vSuper
+		let xsValues = stripValues args
 		if  any isUnboxed xsValues
                  then panic stage
 				$ "Partial application of function to unboxed args at "
