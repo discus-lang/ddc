@@ -38,21 +38,21 @@ toSeaGlobs
 	:: String		-- ^ unique
 	-> C.Glob 		-- ^ header glob
 	-> C.Glob		-- ^ module glob
-	-> (Seq (E.Top ()), Seq (E.Top ()))
-
+	-> Either
+		[Var]					-- recursive caf variables.
+		(Seq (E.Top ()), Seq (E.Top ()))	-- the converted tops
+		
 toSeaGlobs unique cgHeader cgModule
   = let	
 	-- Determine the order we need to initialise the CAFs in.
 	-- Mutually recursive CAFs don't work.
 	eCafOrder	= C.slurpCafInitSequence cgModule
     in	case eCafOrder of
-	 Left vsRecursive
-	  -> panic stage {-exitWithUserError ?args-}
-	 	$ ["Values may not be mutually recursive.\n"
-		% "     offending variables: " % vsRecursive % "\n\n"]
+	 Left vsRecursive 
+	  -> Left vsRecursive
 
 	 Right vsCafOrdering
-	  -> toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
+	  -> Right $ toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
 
 toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
  = let
@@ -369,8 +369,6 @@ toSeaS xx
 	C.SBind b (C.XLocal _ _ x)
 	 -> toSeaS $ C.SBind b x
 
-
-	-- do
 	-- flatten out the initial statements and recursively bind the lhs
 	--	to the last expression in the list.
 	C.SBind b (C.XDo ss)
@@ -430,8 +428,6 @@ toSeaA	   mObjV xx
 				$  slurpStmtsX x
 
 		return	$ E.AAlt gs' (ssFront ++ ss')
-
-
 
 
 -- Guard ------------------------------------------------------------------------------------------

@@ -20,6 +20,7 @@ module Main.Core
 	, coreToSea)
 where
 import Main.Dump
+import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Main.Arg
 import DDC.Core.Glob
@@ -286,15 +287,20 @@ coreToSea
 
 coreToSea unique cgHeader cgModule
  = do	
-	let (esHeader, esModule) 
-			= toSeaGlobs unique cgHeader cgModule
-	
-	-- conversion
-	let esHeader_list = foldr (:) [] esHeader
-	dumpET DumpSea "sea--header" $ E.eraseAnnotsTree esHeader_list
+	let result = toSeaGlobs unique cgHeader cgModule
+	case result of
+	 Left vsRecursive
+	  -> exitWithUserError ?args
+	 	$ ["Values may not be mutually recursive.\n"
+		% "     offending variables: " % vsRecursive % "\n\n"]
 
-	let esModule_list = foldr (:) [] esModule
-	dumpET DumpSea "sea--source" $ E.eraseAnnotsTree esModule_list
+	 Right (esHeader, esModule) 
+	  -> do	
+		let esHeader_list = foldr (:) [] esHeader
+		dumpET DumpSea "sea--header" $ E.eraseAnnotsTree esHeader_list
 
- 	return (esHeader_list, esModule_list)
+		let esModule_list = foldr (:) [] esModule
+		dumpET DumpSea "sea--source" $ E.eraseAnnotsTree esModule_list
+
+ 		return (esHeader_list, esModule_list)
 
