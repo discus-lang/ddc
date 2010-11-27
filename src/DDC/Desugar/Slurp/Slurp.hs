@@ -79,7 +79,7 @@ slurpTree blessMain hTree sTree
 		, problemDataDefs	   = Map.fromList [(dataDefName def, def) | PData _ def        <- tree ]
 		, problemSigs		   = stateSlurpSigs state3
 		, problemProjDicts	   = Map.empty	-- TODO: add proj dicts
-		, problemClassInst	   = Map.empty	-- TODO: add class instances
+		, problemClassInst	   = stateSlurpClassInst state3
 		, problemValueToTypeVars   = stateVarType state3
 		, problemTopLevelTypeVars  = Set.union vsTopHeader vsTopSource
 		, problemMainIsMain	   = blessMain
@@ -158,7 +158,7 @@ slurpTreeM tree
 	let qsFinal_rest
 		= Seq.fromList
 		$ partitionFsSort
-			[ (=@=) CProject{}, (=@=) CClassInst{}
+			[ (=@=) CProject{}
 			, (=@=) CSig{} ]
 			qsRest
 	
@@ -190,15 +190,22 @@ slurpP	(PSuperSig _ v k)
 		
 slurpP (PClassInst sp v ts ss)
  = do	-- All the RHS of the statements are vars, so we don't get any useful constraints back
-	(_, _, _, ss', _)
-			<- liftM unzip5
-			$  mapM slurpS ss
+	(_, _, _, ss', _) <- liftM unzip5 $  mapM slurpS ss
+
+	-- Add the instance to the state.
+	modify $ \s -> s { 
+		stateSlurpClassInst
+		 	= Map.unionWith (++)
+ 					(stateSlurpClassInst s)
+			 		(Map.singleton v [ProbClassInst v sp ts]) }
 
 	return	( PClassInst Nothing v ts ss'
-		, constraints [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
+		, Seq.empty )
 
 slurpP	(PTypeSig sp sigMode vs tSig) 
- = do	forM_ vs 
+ = do
+	-- Add the sigs to the state.
+	forM_ vs 
 	 $ \v -> do	
 		TVar _ (UVar vT) <- lbindVtoT v
 		let sig	= ProbSig v sp sigMode tSig

@@ -77,10 +77,7 @@ instance Monad m => TransM m CTree where
 			
 	CDictProject ts t mv
 	 -> liftM3 CDictProject (return ts) (down t) (return mv)
-		
-	CClassInst ts v tt
-	 -> liftM3 CClassInst   (return ts) (return v) (down tt)
-			
+					
 	-- don't handle constructors used internally by the solver
 	_ -> panic stage
 		$ "transM/CTree: no match for " % xx % "\n"

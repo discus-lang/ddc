@@ -48,6 +48,9 @@ data SquidEnv
 	
 	-- | Map of type var to type sigs
 	, squidEnvSigs		:: Map Var [ProbSig]
+	
+	-- | Map of class name to instances for that class
+	, squidEnvClassInst	:: Map Var [Fetter]
 	}
 
 
@@ -138,13 +141,7 @@ data SquidS
 	-- | When projections are resolved, Crush.Proj adds an entry to this table mapping the tag
 	--	var in the constraint to the instantiation var. We need this in Desugar.ToCore to rewrite
 	--	projections to the appropriate function call.
-	, stateProjectResolve	:: IORef (Map Var Var)
-									
-	-- | Instances for type classses
-	--	class name -> instances for this class.
-	--   eg Num	   -> [Num (Int %_), Num (Int32# %_)]
-	, stateClassInst	:: IORef (Map Var [Fetter]) }
-
+	, stateProjectResolve	:: IORef (Map Var Var) }
 
 -- | build an initial solver state
 squidSInit 
@@ -180,12 +177,20 @@ squidSInit args mTrace problem
 				, ctorDef	<- Map.elems $ dataDefCtors dataDef
 				, ctorNameT	<- maybeToList $ Map.lookup (ctorDefName ctorDef) 
 							(problemValueToTypeVars problem) ]
+
+	-- We need to pass the map of instances to operators from DDC.Type,
+	-- and don't want to give knowledge about Problem. For this reason we
+	-- convert the form of the incoming instances.
+	let classInst	= Map.map (map (\(ProbClassInst v _ ts) -> FConstraint v ts))
+			$ problemClassInst problem
+
 	let squidEnv
 		= SquidEnv
 		{ squidEnvDataDefs	= problemDataDefs problem
 		, squidEnvCtorDefs	= ctorDataMap 
 		, squidEnvDefs		= problemDefs problem 
-		, squidEnvSigs		= problemSigs problem }
+		, squidEnvSigs		= problemSigs problem
+		, squidEnvClassInst	= classInst }
 			
 	-- The type graph
 	graph		<- makeEmptyGraph
@@ -202,7 +207,6 @@ squidSInit args mTrace problem
 	refQuantVs	<- liftIO $ newIORef Set.empty
 	refProject	<- liftIO $ newIORef Map.empty
 	refProjResolve	<- liftIO $ newIORef Map.empty
-	refClassInst	<- liftIO $ newIORef Map.empty
 
    	return	SquidS
 		{ stateTrace		= mTrace
@@ -225,6 +229,5 @@ squidSInit args mTrace problem
 		, stateQuantifiedVarsKM	= refQuantVsKM
 		, stateQuantifiedVars	= refQuantVs
 		, stateProject		= refProject
-		, stateProjectResolve	= refProjResolve
-		, stateClassInst	= refClassInst }
+		, stateProjectResolve	= refProjResolve }
 

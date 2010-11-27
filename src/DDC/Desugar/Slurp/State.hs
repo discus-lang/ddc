@@ -72,16 +72,22 @@ data	CSlurpS
 	--	convert the desugared code to core.
 	, stateTypesRequest	:: Set Var
 
+	-- | Maps value vars to type vars, v -> sigma_v
+	, stateVarType		:: Map Var Var 
+
 	-- | Types defined via by a foreign import.
 	, stateSlurpDefs	:: Map Var Type
 
 	-- | Type signatures
 	, stateSlurpSigs	:: Map Var [ProbSig]
+	
+	-- | Type class instances
+	, stateSlurpClassInst	:: Map Var [ProbClassInst]
+	
+	-- | Projection dictionaries
+	, stateSlurpProjDict	:: Map Var [ProbProjDict ] }
 
-	-- | Maps value vars to type vars, v -> sigma_v
-	, stateVarType		:: Map Var Var }
-	
-	
+
 -- | The initial constraint slurper state.
 initCSlurpS 	:: CSlurpS
 initCSlurpS 
@@ -102,9 +108,11 @@ initCSlurpS
 	, stateDataDefs		= Map.empty
 	, stateCtorData		= Map.empty
 	, stateTypesRequest	= Set.empty
+	, stateVarType		= Map.empty 
 	, stateSlurpDefs 	= Map.empty
 	, stateSlurpSigs	= Map.empty
-	, stateVarType		= Map.empty }
+	, stateSlurpClassInst	= Map.empty
+	, stateSlurpProjDict	= Map.empty }
 
 
 -- | Add a DatDef to the slurper state

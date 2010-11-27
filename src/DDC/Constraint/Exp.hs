@@ -5,7 +5,7 @@ module	DDC.Constraint.Exp
 	, CBind(..) )
 where
 import DDC.Solve.Location
-import DDC.Type
+import DDC.Type.Exp
 import DDC.Var
 import Data.Map			(Map)
 import Data.Sequence		(Seq)
@@ -76,12 +76,6 @@ data	CTree
 		TypeSource 		--  source position
 		Type 			--  type of projection
 		(Map Var Var)		--  map of field label to name of instance function.
-
-	-- | Says that a type class has a certain instance.
-	| CClassInst	
-		TypeSource		--  source position
-		Var 			--  var of type class
-		[Type]			--  type parameters of class
 
 
 	--------------

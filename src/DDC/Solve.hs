@@ -197,19 +197,6 @@ solveCs cc
 	CInst{}	
 	 -> do	cs'	<- solveCInst cs c
 	 	solveNext cs'
-
-	-- A CClassInst says that a type class has an instance at a partiular type.
-	--	These are stashed in the solver state. We'll use them later to 
-	--	discharge type class constraints in generalised type schemes.
-	CClassInst _ v ts
-	 -> do	-- trace	$ "### CClassInst " % v % " " % ts % nl
-		stateClassInst `modifyRef`
-		 Map.alter
-			(\mis -> case mis of
-					Nothing	-> Just [FConstraint v ts]
-					Just is	-> Just (FConstraint v ts : is)) 
-				v
-		solveNext cs
 	
 	
 	-- Internal constraints -------------------------------------	

@@ -219,7 +219,8 @@ extractType_final False varT cid tTrim
 extractType_reduce varT cid tFinal
  = do	
 	-- Reduce context
-	classInst	<- getsRef stateClassInst
+	classInst	<- liftM squidEnvClassInst
+			$  gets  stateEnv
 
 	let tReduced	
 		= {-# SCC "extract/redude" #-}

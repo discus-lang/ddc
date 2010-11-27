@@ -129,7 +129,6 @@ reduce1 wanted table cc
 	
 	-- TODO: these should really go into the solver Problem
 	--	 instead of being their own constraints.
-	CClassInst{}		-> Seq.singleton cc
 	CDictProject{}		-> Seq.singleton cc
 	
 	_			-> panic stage $ "reduce1: no match for" %% cc

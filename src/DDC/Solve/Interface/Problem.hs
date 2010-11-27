@@ -8,11 +8,10 @@ module DDC.Solve.Interface.Problem
 	, ProbProjDict	(..)
 	, ProbClassInst	(..))
 where
-import DDC.Solve.Location
 import DDC.Constraint.Exp
 import DDC.Type.Data
 import DDC.Type.SigMode
-import DDC.Type
+import DDC.Type.Exp
 import DDC.Base.SourcePos
 import DDC.Var
 import Data.Map			(Map)
@@ -89,7 +88,7 @@ data ProbSig
 data ProbProjDict
 	= ProbProjDict
 	{ probProjDictVar	:: Var
-	, probProjDictSrc	:: TypeSource
+	, probProjDictSrc	:: SourcePos
 	, probProjDictFuns	:: Map Var Var }
 	
 
@@ -97,6 +96,6 @@ data ProbProjDict
 data ProbClassInst
 	= ProbClassInst
 	{ probClassInstVar	:: Var
-	, probClassInstSrc	:: TypeSource
+	, probClassInstSrc	:: SourcePos
 	, probClassInstTypeArgs	:: [Type] }
 

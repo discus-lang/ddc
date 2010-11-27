@@ -50,9 +50,6 @@ instance Pretty CTree PMode where
 	 -> pprHeadBlock ("DICTPROJECT    " % t)
 		[ v1 %>> " = " % v2 | (v1, v2)	<- Map.toList vs ]
 	
-	CClassInst _ v ts
-	 -> "CLASSINST " % v % " " % ts
-
 	CInst _ v1 v2
 	 -> padVar v1	%% "<- INST" %% v2
 	 

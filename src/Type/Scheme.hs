@@ -81,8 +81,8 @@ generaliseType src varT tCore envCids
 
 	-- Clean empty effect and closure classes that aren't ports.
 	let tsParam	=  slurpParamClassVarsT_constrainForm tPlug
-	classInst	<- getsRef stateClassInst
-
+	classInst	<- liftM squidEnvClassInst $ gets stateEnv
+	
 	let tClean	= cleanType (Set.fromList tsParam) tPlug
 	tracell	$ "    tClean:\n" 		%> prettyTypeSplit tClean
 

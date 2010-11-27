@@ -63,7 +63,7 @@ checkFetter cls errs f@(FConstraint vClass tsArg)
 	trace	$ "    f' = " % f'	% "\n"
 
 	-- see if we have an instance for this constraint.
-	classInst	<- getsRef stateClassInst
+	classInst	<- liftM squidEnvClassInst $ gets stateEnv
 
 	let (result :: SquidM [Error])
 		-- these aren't type class constraints, so aren't a problem.

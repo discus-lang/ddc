@@ -26,7 +26,7 @@ import qualified Data.Sequence	as Seq
 -- | Reduce the context of this type using the provided map of instance definitions.
 reduceContextT 
 	:: Map Var [Fetter]	-- (class var -> instances) for this class
-	-> Type			-- the type to reduce  
+	-> Type			 -- the type to reduce  
 	-> Type
 	
 reduceContextT classInst tt
