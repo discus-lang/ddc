@@ -63,6 +63,7 @@ type CoreStage
 	-> IO Glob
 
 
+---------------------------------------------------------------------------------------------------
 -- | Tidy up after conversion to core.
 --   The Desugar -> Core conversion doesn't produce very nice code.
 coreTidy :: CoreStage
@@ -72,6 +73,7 @@ coreTidy stage args base unique cgHeader cgModule
 	return	cgModule_tidy
 
 
+---------------------------------------------------------------------------------------------------
 -- | Bind local regions.
 coreBind
 	:: ModuleId
@@ -92,6 +94,7 @@ coreBind modId classMap rsGlobal
 	return cgModule'
 
 
+---------------------------------------------------------------------------------------------------
 -- | Convert to A-Normal form.
 coreSnip
 	:: (?args	:: [Arg])
@@ -119,6 +122,7 @@ coreSnip stage unique cgHeader cgModule
 
 
 
+---------------------------------------------------------------------------------------------------
 -- | Resolve calls to overloaded functions.
 coreDictionary
 	:: (?args	:: [Arg])
@@ -136,6 +140,7 @@ coreDictionary cgHeader cgModule
 	return	cgModule'
 	
 	
+---------------------------------------------------------------------------------------------------
 -- | Thread through witness variables.
 coreThread
 	:: (?args :: [Arg])
@@ -154,6 +159,7 @@ coreThread cgHeader cgModule
 	return cgModule'
 	
 
+---------------------------------------------------------------------------------------------------
 -- | Identify primitive operations.
 corePrim
 	:: (?args ::	[Arg])
@@ -170,6 +176,7 @@ corePrim cgHeader cgModule
 	return cgModule'
 
 
+---------------------------------------------------------------------------------------------------
 -- | Do core simplification
 coreSimplify
 	:: (?args :: [Arg])
@@ -191,6 +198,7 @@ coreSimplify unique cgHeader cgModule
 	return	cgModule'
 	
 
+---------------------------------------------------------------------------------------------------
 -- | Check the tree for syntactic problems that won't be caught by type checking.
 coreLint
 	:: (?args :: 	[Arg])
@@ -209,6 +217,7 @@ coreLint stage cgHeader cgModule
 	return cgModule'
 
 
+---------------------------------------------------------------------------------------------------
 -- | Lift nested functions to top level.
 coreLambdaLift
 	:: (?args :: [Arg])	
@@ -230,6 +239,7 @@ coreLambdaLift cgHeader cgModule
 		, vsNewLambdaLifted)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Prepare for conversion to Sea.
 corePrep :: CoreStage
 corePrep stage args base unique cgHeader cgModule
@@ -254,6 +264,7 @@ corePrep stage args base unique cgHeader cgModule
 	return	cgModule_snipped
 
 
+---------------------------------------------------------------------------------------------------
 -- | Identify partial applications and insert calls to explicitly create and apply thunks.
 coreCurry
 	:: (?args :: [Arg])
@@ -267,7 +278,8 @@ coreCurry cgHeader cgModule
 	dumpCT DumpCoreCurry "core-curry" 		$ treeOfGlob cgModule'
 	return	cgModule'
 
-			
+
+---------------------------------------------------------------------------------------------------
 -- | Convert Core-IR to Abstract-C
 coreToSea	
 	:: (?args	    :: [Arg])
