@@ -48,10 +48,7 @@ instance Monad m => TransM m CTree where
 	
 	CBranch bb bs
 	 -> liftM2 CBranch (return bb) (down bs)
-		
-	CSig ts t1 t2
-	 -> liftM3 CSig    (return ts) (down t1) (down t2)
-	
+			
 	CEq ts t1 t2
 	 -> liftM3 CEq	   (return ts) (down t1) (down t2)
 		
@@ -60,10 +57,7 @@ instance Monad m => TransM m CTree where
 	
 	CMore ts t1 t2
 	 -> liftM3 CMore   (return ts) (down t1) (down t2)
-	
-	CClass ts v tt
-	 -> liftM3 CClass  (return ts) (return v) (down tt)
-			
+				
 	CProject ts j v t1 t2
  	 -> do 	t1'	<- down t1
 		t2'	<- down t2

@@ -158,8 +158,7 @@ slurpTreeM tree
 	let qsFinal_rest
 		= Seq.fromList
 		$ partitionFsSort
-			[ (=@=) CProject{}
-			, (=@=) CSig{} ]
+			[ (=@=) CProject{} ]
 			qsRest
 	
 	return	( tree'

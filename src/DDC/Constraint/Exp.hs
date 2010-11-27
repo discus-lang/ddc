@@ -32,10 +32,6 @@ data	CTree
 	    -- | sub constraints
 	  , branchSub	:: Seq CTree }		
 
-	-- | A type signature from the source program.
-	--	These can contain partial information about the type of bound variable.
-	| CSig		TypeSource Type Type	
-
 	-- | A type equality constraint.
 	| CEq		TypeSource Type Type
 
@@ -47,9 +43,6 @@ data	CTree
 	-- | Type inequality (t1 :> t2)
 	| CMore		TypeSource Type Type
 
-	-- | A type-class constraint.
-	| CClass	TypeSource Var [Type]
-
 	-- | A projection constraint.
 	| CProject	TypeSource 	--  source of the constraint.
 			TProj		--  the sort of projection.
@@ -59,8 +52,8 @@ data	CTree
 			Type		--  type to unify the type of the instance function once 
 			 		--	it has been determined.
 			
-	-- | An instantiate of a type scheme. The solver will have to wait until the scheme
-	--	is available before it can resolve this projection.
+	-- | Instantiate a type scheme. 
+	--   The solver must wait until the scheme is available before it can can instantiate it.
 	| CInst		TypeSource 
 				Var 	--  type var to equate with the instantiated type.
 				Var	--  type var of the scheme to instantiate.

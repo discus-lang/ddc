@@ -156,12 +156,6 @@ solveCs cc
 		feedConstraint c
 		solveNext cs
 
-	-- A type class constraint.
-	CClass _ v ts
-	 -> do	trace	$ "### CClass " % v % " " % ts % nl
-	 	feedConstraint c
-		solveNext cs
-
 	-- A projection constraints
 	CProject _ j vInst tDict tBind
 	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind	% nl

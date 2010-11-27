@@ -28,9 +28,6 @@ instance Pretty CTree PMode where
 	 -> pprHeadBlock ("BRANCH" %% binds % nl) 
 		$ Seq.toList subs
 	
-	CSig	_ v t
-	 -> "SIG  " % v % nl %> prettyTypeSplit t
-
 	CEq 	_ v t	
 	 -> padVar v 	%% "= " %% prettyTypeSplit t
 
@@ -40,9 +37,6 @@ instance Pretty CTree PMode where
 	CMore	_ v t
 	 -> padVar v	%% ":>" %% prettyTypeSplit t
 	
-	CClass	_ v ts
-	 -> "CLASS " % v %% ts
-
 	CProject _ tp vInst tDict tBind
 	 -> "PROJECT " % tp % " " % vInst % " " % tDict %% tBind
 

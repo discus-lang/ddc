@@ -74,15 +74,6 @@ feedConstraint cc
 		mergeClasses cids
 		return ()
 
-	-- Signatures behave the same way as plain equality constraints.
-	CSig src t1@TVar{} t2
-	 -> 	feedConstraint (CEq src t1 t2)
-
-	-- Class constraints
-	CClass src vC ts
-	 -> do	addFetter src (FConstraint vC ts)
-		return ()
-
 	-- Projection constraints.
 	CProject src j v1 tDict tBind
 	 -> do	addFetter src (FProj j v1 tDict tBind)
