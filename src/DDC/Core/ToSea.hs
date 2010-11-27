@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Convert CoreIR to Abstract-C
 module DDC.Core.ToSea
 	(toSeaGlobs)
@@ -178,7 +178,7 @@ toSeaP	xx
 
 	-- region
 	--	slurp witnesses on the way down
-	C.PRegion v vts
+	C.PRegion _ vts
 	 -> do	let ks	= map (T.kindOfType . snd) vts
 	 	mapM_ slurpWitnessKind ks
 	 	return Seq.empty
@@ -194,10 +194,10 @@ toSeaP	xx
 				= splitOpType to
 
 		-- split the RHS into its value args and expression
-	 	(argNames, exp)
+	 	(argNames, x')
 				<- splitSuper [] x
 
-		sss'		<- mapM toSeaS $ slurpStmtsX exp
+		sss'		<- mapM toSeaS $ slurpStmtsX x'
 		let ss'		= concat sss'
 		let argNTs	= zip argNames argTypes
 
@@ -245,17 +245,17 @@ toSeaP	xx
 splitSuper :: [Var] -> C.Exp -> SeaM ([Var], C.Exp)
 splitSuper accArgs xx
 
-	| C.XLam v t x eff clo	<- xx
+	| C.XLam v _ x _ _	<- xx
 	= splitSuper (accArgs ++ [v]) x
 
-	| C.XLAM v k x		<- xx
+	| C.XLAM _ k x		<- xx
 	= do	slurpWitnessKind k
 		splitSuper accArgs x
 
-	| C.XTau t x		<- xx
+	| C.XTau _ x		<- xx
 	= splitSuper accArgs x
 
-	| C.XLocal v vts x	<- xx
+	| C.XLocal _ vts x	<- xx
 	= do	let ks	= map (T.kindOfType . snd) vts
 		mapM_ slurpWitnessKind ks
 		splitSuper accArgs x
@@ -283,17 +283,17 @@ toSeaX		xx
 		 then return $ E.XVar (E.NCaf  v) (toSeaT t)
 		 else return $ E.XVar (E.NAuto v) (toSeaT t)
 
-	C.XTau    t x
+	C.XTau _ x
 	 -> toSeaX x
 
 	-- slurp region witnesses on the way down
-	C.XLocal  v vts x
+	C.XLocal  _ vts x
 	 -> do	let ks	= map (T.kindOfType . snd) vts
 	 	mapM_ slurpWitnessKind ks
 	 	toSeaX x
 
 	-- slurp region witnesses on the way down
-	C.XLAM v k x
+	C.XLAM _ k x
 	 -> do 	slurpWitnessKind k
 	 	toSeaX x
 
@@ -365,7 +365,7 @@ toSeaX		xx
 
 
 	-- non string constants
-	C.XLit litFmt@(LiteralFmt lit fmt)
+	C.XLit litFmt@(LiteralFmt _ fmt)
 	 | dataFormatIsBoxed fmt
 	 -> panic stage $ "toSeaX[XLit]: can't convert boxed literal " % litFmt
 
@@ -373,7 +373,7 @@ toSeaX		xx
 	 -> return	$ E.XLit (E.LLit litFmt)
 
 	-- string constants are always applied to regions
-	C.XAPP (C.XLit litFmt@(LiteralFmt l@LString{} fmt)) (T.TVar k r)
+	C.XAPP (C.XLit litFmt@(LiteralFmt LString{} _)) (T.TVar k _)
 	 | k == T.kRegion
 	 -> return $ E.XLit (E.LLit litFmt)
 
@@ -418,13 +418,13 @@ toSeaS	:: C.Stmt -> SeaM [E.Stmt ()]
 toSeaS xx
  = case xx of
 	-- decend past type info
-	C.SBind b (C.XTau t x)
+	C.SBind b (C.XTau _ x)
 	 -> toSeaS $ C.SBind b x
 
-	C.SBind b (C.XLAM v k x)
+	C.SBind b (C.XLAM _ _ x)
 	 -> toSeaS $ C.SBind b x
 
-	C.SBind b (C.XLocal v vts x)
+	C.SBind b (C.XLocal _ _ x)
 	 -> toSeaS $ C.SBind b x
 
 
@@ -451,7 +451,7 @@ toSeaS xx
 		return		[E.SMatch aaL]
 
 
-	C.SBind Nothing	x@(C.XMatch aa)
+	C.SBind Nothing	(C.XMatch aa)
 	 -> do	aa'		<- mapM (toSeaA Nothing) aa
 	    	return		[E.SMatch aa']
 
@@ -499,8 +499,7 @@ toSeaG	:: Maybe C.Exp 		-- match object
 	-> SeaM ( [E.Stmt ()]	-- stmts to add to the front of the next guard.
 		,  Maybe (E.Guard ()))
 
-
-toSeaG	mObjV ssFront gg
+toSeaG	_ ssFront gg
  = case gg of
 
 	C.GExp w x
@@ -525,13 +524,13 @@ toSeaG	mObjV ssFront gg
 					, Nothing)
 
 			-- the Sea language can't match against boxed literals
-			| C.WLit _ litFmt@(LiteralFmt lit fmt)	<- w
+			| C.WLit _ (LiteralFmt _ fmt)	<- w
 			, dataFormatIsBoxed fmt
 			= panic stage 	$ "toSeaG: can't match against boxed data: " % show fmt % "\n"
 					% "   when converting guard: " % gg
 
 			-- match against an unboxed literal value
-			| C.WLit spos litFmt@(LiteralFmt lit fmt)	<- w
+			| C.WLit spos litFmt@(LiteralFmt _ fmt)	<- w
 			, dataFormatIsUnboxed fmt
 			= do	name	<- liftM E.NAuto $ newVarN NameValue
 
@@ -558,6 +557,9 @@ toSeaG	mObjV ssFront gg
 							(ssFront ++ ssL)
 							compX (
 							(E.XLit (E.LDataTag v))))
+							
+			| otherwise
+			= panic stage $ "toSeaG: no match"
 
 		result
 
@@ -565,7 +567,7 @@ toSeaG	mObjV ssFront gg
 -- check if this type is in a direct region
 isDirectType :: T.Type -> SeaM Bool
 isDirectType tt
-	| Just (v, k, T.TVar kR (T.UVar vR) : _)	<- T.takeTData tt
+	| Just (_, _, T.TVar kR (T.UVar vR) : _)	<- T.takeTData tt
 	, kR == T.kRegion
 	= do	directRegions	<- gets stateDirectRegions
 	 	return	$ Set.member vR directRegions
@@ -587,12 +589,15 @@ toSeaGL	nObj (label, var, t)
 		(toSeaT t)
 		(E.XArgData (E.XVar nObj (toSeaT t)) i)
 
+	| otherwise
+	= panic stage $ "toSeaGL: no match"
+	
 
 -- | Decend into XLocal and XDo and slurp out the contained lists of statements.
 slurpStmtsX :: C.Exp -> [C.Stmt]
 slurpStmtsX xx
  = case xx of
- 	C.XLocal v vs x	-> slurpStmtsX x
+ 	C.XLocal _ _ x	-> slurpStmtsX x
 	C.XDo ss	-> ss
 	_		-> []
 
@@ -699,7 +704,7 @@ stripValues args
 
 stripValues' a
  = case a of
-	C.XVar v t
+	C.XVar v _
 	 |  varNameSpace v /= NameValue
 	 -> Nothing
 
@@ -725,7 +730,8 @@ assignLastS xT@(aX, t) ss
 	E.SAssign 	x _ _ 	-> [ss] ++ [E.SAssign aX t x]
 	E.SSwitch       x aa	-> [E.SSwitch x (map (assignLastA xT) aa)]
 	E.SMatch 	aa	-> [E.SMatch (map (assignLastA xT) aa)]
-
+	_			-> panic stage $ "assignLastS: no match"
+	
 
 assignLastA :: (E.Exp (), E.Type) -> E.Alt () -> E.Alt ()
 assignLastA xT aa
@@ -733,6 +739,7 @@ assignLastA xT aa
  	E.ASwitch x ss		-> E.ASwitch x	(assignLastSS xT ss)
 	E.ADefault ss		-> E.ADefault	(assignLastSS xT ss)
 	E.AAlt gs ss		-> E.AAlt gs	(assignLastSS xT ss)
+	_			-> panic stage $ "assignLastA: no match"
 
 
 
