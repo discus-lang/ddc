@@ -34,7 +34,7 @@ import DDC.Core.Simplify
 import Core.Lift			(lambdaLiftGlob)
 import Core.LabelIndex			(labelIndexGlob)
 import Core.Curry			(curryGlob)
-import Core.ToSea			(toSeaGlobs)
+import DDC.Core.ToSea			(toSeaGlobs)
 import DDC.Core.Exp
 import Core.Plate.Trans
 import Data.Foldable			(foldr)

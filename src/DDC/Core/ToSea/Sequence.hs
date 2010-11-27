@@ -1,11 +1,11 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Determine the depdendency order for CAFs.
---	In the Sea code we need to initialise them in order, 
---	as we don't support recursive ones.
+--   In the Sea code we need to initialise them in order, 
+--   as we don't support recursive ones.
 --
 --   TODO: Dont' slurp free vars if not a CAF, too slow.
 --
-module Core.ToSea.Sequence
+module DDC.Core.ToSea.Sequence
 	(slurpCafInitSequence)
 where
 import Core.Util
@@ -19,10 +19,10 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Shared.VarUtil	as Var
 
+
 -- | For the CAFs in a tree, give a dependency ordering suitable for initialisation.
---	Left [Var] 	mututally recursive CAF vars (error)
+--	Left  [Var] 	mututally recursive CAF vars (error)
 --	Right [Var] 	valid sequential dependency order
---
 slurpCafInitSequence 
 	:: Glob 
 	-> Either [Var] [Var]
@@ -36,8 +36,8 @@ slurpCafInitSequence cgSource
 		$ globBind cgSource
 		
 	-- Work out which top level bindings are cafs.
-	cafVars		= [v 	| p@(PBind v x) <- psBinds
-				, isCafP p ]
+	cafVars	= [v 	| p@(PBind v _) <- psBinds
+			, isCafP p ]
 			
 	-- Check that the cafs are not recursively defined,
 	--	our Sea level implementation does not handle this.
@@ -49,8 +49,7 @@ slurpCafInitSequence cgSource
 	  else sequenceCafsTree2 deps cafVars
 	
 sequenceCafsTree2 deps cafVars
- = let
- 	-- Work out an appropriate initialisation order for cafs
+ = let 	-- Determine an appropriate initialisation order for cafs
 	--	we can't call a caf if it references other which
 	--	are not yet initialisd.
 	initSeq	= [v	| v	<- graphSequence deps Set.empty cafVars
@@ -61,11 +60,10 @@ sequenceCafsTree2 deps cafVars
 
 -- | Slurps out the list of value variables which are free in
 --   each top level binding in a tree.
--- 
 slurpSuperDepsOfPBind :: Top -> [Var]
 slurpSuperDepsOfPBind pp
  = case pp of
- 	PBind v x	-> slurpDepsX x
+ 	PBind _ x	-> slurpDepsX x
 	_ 		-> error "Core.Sequence: slurpSuperDepsOfPBind not PBind"
 
 slurpDepsX xx

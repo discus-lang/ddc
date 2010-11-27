@@ -1,23 +1,23 @@
 
 -- | Convert CoreIR to Abstract-C
-module Core.ToSea
+module DDC.Core.ToSea
 	(toSeaGlobs)
 where
-import Data.Function
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Var
+import Data.Function
 import Shared.VarUtil			(prettyPos)
 import Data.Sequence			(Seq)
 import Data.Traversable			(mapM)
 import Util				hiding (mapM)
 import Prelude				hiding (mapM)
-import qualified Core.ToSea.Sequence	as C
 import qualified Core.Util		as C
-import qualified DDC.Core.OpType	as C
 import qualified Shared.VarPrim		as Var
+import qualified DDC.Core.ToSea.Sequence as C
+import qualified DDC.Core.OpType	as C
 import qualified DDC.Core.Glob		as C
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T
@@ -31,8 +31,7 @@ import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Data.Sequence		as Seq
 
-stage	= "Core.ToSea"
-
+stage	= "DDC.Core.ToSea"
 
 -- State ------------------------------------------------------------------------------------------
 data SeaS
