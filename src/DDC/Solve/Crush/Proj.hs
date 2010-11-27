@@ -70,7 +70,7 @@ crushProjInClass cid
 		trace	$ "    object type (tObj)               = " % tObj	% "\n"
 
 		-- Grab the map of projection dictionaries from the state
-		projectDicts	<- getsRef stateProject
+		projectDicts	<- liftM squidEnvProjDict $ gets stateEnv
 
 		crushProj_withObj cid src fProj tObj projectDicts
 
@@ -106,7 +106,7 @@ crushProj_withObj cid src
 	| Just (vCon, _, _)	<- takeTData tObj
 	, Just vsDict		<- Map.lookup vCon projectDicts
 	= do	trace $ ppr "    -- We've got a projection dictionary.\n"
-		crushProj_withDict cid src fProj tObj (snd vsDict)
+		crushProj_withDict cid src fProj tObj vsDict
 
 	-- Functions don't have projections yet, there's no source syntax to define it.
 	--	We might add them later, but for now this is a type error.

@@ -6,7 +6,6 @@ module DDC.Desugar.Slurp.Slurp
 where
 import DDC.Desugar.Slurp.Base
 import DDC.Desugar.Slurp.SlurpS
-import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
 import DDC.Var
 import DDC.Type			()
@@ -76,15 +75,15 @@ slurpTree blessMain hTree sTree
    	problem
 		= Problem
 		{ problemDefs		   = defMap
-		, problemDataDefs	   = Map.fromList [(dataDefName def, def) | PData _ def        <- tree ]
-		, problemSigs		   = stateSlurpSigs state3
-		, problemProjDicts	   = Map.empty	-- TODO: add proj dicts
+		, problemDataDefs	   = Map.fromList [(dataDefName def, def) | PData _ def <- tree ]
+		, problemSigs		   = stateSlurpSigs      state3
+		, problemProjDicts	   = stateSlurpProjDict  state3
 		, problemClassInst	   = stateSlurpClassInst state3
-		, problemValueToTypeVars   = stateVarType state3
+		, problemValueToTypeVars   = stateVarType        state3
 		, problemTopLevelTypeVars  = Set.union vsTopHeader vsTopSource
 		, problemMainIsMain	   = blessMain
 		, problemConstraints	   = hConstraints >< sConstraints
-		, problemTypeVarsPlease	   = stateTypesRequest state3 }
+		, problemTypeVarsPlease	   = stateTypesRequest   state3 }
 
    in	(sTree', problem, stateErrors state3)
 
@@ -111,7 +110,6 @@ makeMethodType vClass tsParam _ tSig
 	-- add the enclosing class constraint
    in	makeTForall_front bksParam
 		$ pushConstraintsOther [FConstraint vClass tsParam] tSig
-
 
 
 slurpTreeM 
@@ -195,8 +193,8 @@ slurpP (PClassInst sp v ts ss)
 	modify $ \s -> s { 
 		stateSlurpClassInst
 		 	= Map.unionWith (++)
- 					(stateSlurpClassInst s)
-			 		(Map.singleton v [ProbClassInst v sp ts]) }
+ 				(stateSlurpClassInst s)
+			 	(Map.singleton v [ProbClassInst v sp ts]) }
 
 	return	( PClassInst Nothing v ts ss'
 		, Seq.empty )
@@ -224,16 +222,23 @@ slurpP (PData _ dataDef)
 
 			
 slurpP	(PProjDict sp t ss)
- = do 	let projVars	= [ (vField, vImpl)
+ = do 	let vsProjInst	= Map.fromList
+			$ [ (vField, vImpl)
 				| SBind _ (Just vField) (XVar _ vImpl) <-  ss]
 
 	-- All the RHS of the statements are vars, so we don't get any useful constraints back
-	(_, _, _, ss', _)
-			<- liftM unzip5
-			$  mapM slurpS ss
+	(_, _, _, ss', _) <- liftM unzip5 $  mapM slurpS ss
+
+	let Just (vCtor, _, _) = takeTData t
+
+	modify $ \s -> s {
+		stateSlurpProjDict
+			= Map.unionWith (++)
+				(stateSlurpProjDict s)
+				(Map.singleton vCtor [ProbProjDict vCtor sp vsProjInst]) }
 
 	return	( PProjDict Nothing t ss'
-		, constraints [CDictProject (TSM $ SMProjDict sp) t (Map.fromList projVars)] )
+		, Seq.empty )
 	
 slurpP (PBind sp v x)
  = do	(_, _, _, stmt', qs)

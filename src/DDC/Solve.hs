@@ -162,16 +162,6 @@ solveCs cc
 		feedConstraint c
 		solveNext cs
 
-	-- A projection dictionary.
-	--	These are stashed in the solver state.
-	--	TODO: The should really be given as part of the typing problem,
-	--	      and not packaged up into the tree of constraints.
-	CDictProject _ t vvs
-	 | Just (v, _, _)	<- takeTData t
-	 -> do	-- trace $ "### CDictProj " % t % "\n"
-		stateProject `modifyRef` Map.insert v (t, vvs)
-		solveNext cs
-
 	-- A Gen marks the end of all the constraints from a particular binding.
 	--	Once we've seen one we know it's safe to generalise the contained variable.
 	--	We don't do this straight away though, incase we find out more about monomorphic

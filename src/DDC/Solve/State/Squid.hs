@@ -51,6 +51,9 @@ data SquidEnv
 	
 	-- | Map of class name to instances for that class
 	, squidEnvClassInst	:: Map Var [Fetter]
+	
+	-- | Map of constructor name to projections for that constructor.
+	, squidEnvProjDict	:: Map Var (Map Var Var)
 	}
 
 
@@ -133,10 +136,6 @@ data SquidS
 	-- | We sometimes need just a set of quantified vars, 
 	--	and maintaining this separately from the above stateQuanfiedVarsFM is faster.
 	, stateQuantifiedVars	:: IORef (Set Var)
-									
-	-- | The projection dictionaries
-	--	ctor name -> (type, field var -> implemenation var)
-	, stateProject		:: IORef (Map Var (Type, Map Var Var))
 	
 	-- | When projections are resolved, Crush.Proj adds an entry to this table mapping the tag
 	--	var in the constraint to the instantiation var. We need this in Desugar.ToCore to rewrite
@@ -184,13 +183,17 @@ squidSInit args mTrace problem
 	let classInst	= Map.map (map (\(ProbClassInst v _ ts) -> FConstraint v ts))
 			$ problemClassInst problem
 
+	let projDict	= Map.map (Map.unions . map (\(ProbProjDict v _ vsProj) -> vsProj))
+			$ problemProjDicts problem
+
 	let squidEnv
 		= SquidEnv
 		{ squidEnvDataDefs	= problemDataDefs problem
 		, squidEnvCtorDefs	= ctorDataMap 
 		, squidEnvDefs		= problemDefs problem 
 		, squidEnvSigs		= problemSigs problem
-		, squidEnvClassInst	= classInst }
+		, squidEnvClassInst	= classInst
+		, squidEnvProjDict	= projDict }
 			
 	-- The type graph
 	graph		<- makeEmptyGraph
@@ -205,7 +208,6 @@ squidSInit args mTrace problem
 	refGenInst	<- liftIO $ newIORef Map.empty
 	refQuantVsKM	<- liftIO $ newIORef Map.empty
 	refQuantVs	<- liftIO $ newIORef Set.empty
-	refProject	<- liftIO $ newIORef Map.empty
 	refProjResolve	<- liftIO $ newIORef Map.empty
 
    	return	SquidS
@@ -228,6 +230,5 @@ squidSInit args mTrace problem
 		, stateInst		= refGenInst
 		, stateQuantifiedVarsKM	= refQuantVsKM
 		, stateQuantifiedVars	= refQuantVs
-		, stateProject		= refProject
 		, stateProjectResolve	= refProjResolve }
 
