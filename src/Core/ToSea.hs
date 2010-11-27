@@ -15,7 +15,7 @@ import Data.Traversable			(mapM)
 import Util				hiding (mapM)
 import Prelude				hiding (mapM)
 import qualified Core.Util		as C
-import qualified Core.OpType		as C
+import qualified DDC.Core.OpType	as C
 import qualified Shared.VarPrim		as Var
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T

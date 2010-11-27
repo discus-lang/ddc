@@ -14,15 +14,15 @@ module DDC.Core.Glob
 	, mapBindsOfGlobM
 	, mapBindsOfGlobM_)
 where
-import Core.OpType
 import Core.Util.Slurp
-import Data.Maybe
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Core.OpType
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Type.Data.Base
 import DDC.Var
+import Data.Maybe
 import Data.Map			(Map)
 import Data.Sequence		(Seq, (><))
 import Data.Foldable		(foldr)

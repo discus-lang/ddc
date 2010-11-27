@@ -1,8 +1,10 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module	Core.OpType
-	( slurpSuperAritiesP
-	, superOpTypeP
-	, superOpTypeX )
+-- | Taking arities and operational types.
+module	DDC.Core.OpType
+	( superOpTypeP
+	, superOpTypeX 
+	, slurpSuperAritiesP)
 where
 import Util
 import DDC.Main.Error
@@ -14,31 +16,7 @@ import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
 import {-# SOURCE #-} DDC.Core.Check.Exp
 
-stage = "Core.OpType"
-
--- | Slurp the name and arity from this top level thing.
-slurpSuperAritiesP :: Top -> Map Var Int
-slurpSuperAritiesP pp
- = case pp of
-	PExtern v tv tOperational
-	 -> let arity	= (length $ flattenTFuns tOperational) - 1
-	    in	Map.singleton v arity
-
-	PBind   v x
-	 -> let	tOperational	= superOpTypeX x
-		arity		= (length $ flattenTFuns tOperational) - 1
-	    in  Map.singleton v arity
-
-	PData def
-	 -> Map.unions 
-	 $  map slurpSuperArityCtorDef 
-	 $  Map.elems $ dataDefCtors def
-			
-	_ -> Map.empty
-
-slurpSuperArityCtorDef :: CtorDef -> Map Var Int
-slurpSuperArityCtorDef (CtorDef vCtor tCtor arity tag fields)
-	= Map.singleton vCtor arity
+stage = "DDC.Core.OpType"
 
 
 -- | Work out the operational type of a supercombinator.
@@ -53,13 +31,13 @@ slurpSuperArityCtorDef (CtorDef vCtor tCtor arity tag fields)
 superOpTypeP ::	 Top -> Type
 superOpTypeP	pp
  = case pp of
- 	PBind v x
+ 	PBind _ x
 	 -> let	parts	= superOpType' x
 	    in	makeTFunsPureEmpty parts
 
 	-- external functions and ctors carry their operational
 	--	types around with them.
-	PExtern v tv to	-> to
+	PExtern _ _ to	-> to
 
 	_ 	-> panic stage 
 		$ "superOpTypeP: no match for " % show pp % "\n"
@@ -73,14 +51,14 @@ superOpTypeX xx
 superOpType'	xx
  = case xx of
 	-- skip over type information
-	XLAM    v k x	-> superOpType' x
+	XLAM    _ _ x	-> superOpType' x
 
 	-- slurp off parameter types
- 	XLam v t x eff clo 
+ 	XLam _ t x _ _
 	 -> superOpTypePart t :  superOpType' x
 
 	-- take the type of the body of the super from the XTau enclosing it.
-	XTau	t x	-> [superOpTypePart t]
+	XTau	t _	-> [superOpTypePart t]
 	
 	-- there's no XTau enclosing the body, so we'll have to reconstruct
 	--	the type for it manually.
@@ -92,16 +70,16 @@ superOpTypePart	tt
 	TNil			-> TNil
 
 	-- skip over constraints
-	TForall v k t		-> superOpTypePart t
-	TConstrain t crs	-> superOpTypePart t
+	TForall _ _ t		-> superOpTypePart t
+	TConstrain t _		-> superOpTypePart t
 
 	-- an unboxed var of airity zero, eg Int32#
-	TCon (TyConData name kind _)
+	TCon (TyConData name _ _)
 	 | isUnboxedT tt
 	 -> makeTData name kValue []
 
 	-- a tycon of arity zero, eg Unit
-	TCon (TyConData name kind _)
+	TCon TyConData{}
 	 -> makeTData Var.primTData kValue []
 
 	TApp{}
@@ -113,12 +91,12 @@ superOpTypePart	tt
 		 = makeTData v k (map superOpTypePart ts)
 
 		 -- an unboxed tycon of some aritity, eg String#
-		 | Just (v, k, ts)	<- takeTData tt
+		 | Just (v, k, _)	<- takeTData tt
 		 , isUnboxedT tt
 		 = makeTData v k []
 
 		 -- boxed types are just 'Data'
-		 | Just (v, k, ts)	<- takeTData tt
+		 | Just (_, k, _)	<- takeTData tt
 		 = makeTData Var.primTData k []
 			
 		 -- all function objects are considered to be 'Thunk'
@@ -137,3 +115,28 @@ superOpTypePart	tt
 	_	-> panic stage
 		$  "superOpTypePart: no match for " % show tt % "\n"
 
+
+
+-- | Slurp the name and arity from this top level thing.
+slurpSuperAritiesP :: Top -> Map Var Int
+slurpSuperAritiesP pp
+ = case pp of
+	PExtern v _ tOperational
+	 -> let arity	= (length $ flattenTFuns tOperational) - 1
+	    in	Map.singleton v arity
+
+	PBind   v x
+	 -> let	tOperational	= superOpTypeX x
+		arity		= (length $ flattenTFuns tOperational) - 1
+	    in  Map.singleton v arity
+
+	PData def
+	 -> Map.unions 
+	 $  map slurpSuperArityCtorDef 
+	 $  Map.elems $ dataDefCtors def
+			
+	_ -> Map.empty
+
+slurpSuperArityCtorDef :: CtorDef -> Map Var Int
+slurpSuperArityCtorDef (CtorDef vCtor _ arity _ _)
+	= Map.singleton vCtor arity

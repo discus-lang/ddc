@@ -22,8 +22,8 @@ import qualified DDC.Type.Data		as T
 import qualified DDC.Type.Transform	as T
 import qualified DDC.Desugar.Exp	as D
 import qualified DDC.Desugar.Transform	as D
+import qualified DDC.Core.OpType	as C
 import qualified DDC.Core.Exp		as C
-import qualified Core.OpType		as C
 
 stage	= "DDC.Module.Export"
 
