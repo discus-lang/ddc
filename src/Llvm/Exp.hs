@@ -92,13 +92,31 @@ llvmOfXPrim :: Prim -> [Exp a] -> LlvmM LlvmVar
 llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit litfmt) ]
  =	boxLit litfmt
 
-llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun _ rt)):args)
+llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun at rt)):[])
+ | length at >= 0
+ = do	-- This is a little bodgy. The prototype of the super has can have more
+	-- than one parameter, but it is passed a parameter list that is empty.
+	let func	= funcDeclOfExp (XVar (NSuper fv) (TFun [] rt))
+	addGlobalFuncDecl func
+	result		<- newUniqueNamedReg "result" $ toLlvmType rt
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
+	return		result
+
+
+llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun at rt)):args)
+ | length at == length args
  = do	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	params		<- mapM llvmOfExp args
 	result		<- newUniqueNamedReg "result" $ toLlvmType rt
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
 	return		result
+
+ | otherwise
+ =	panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")"
+		++ "\n    types : " ++ show at
+		++ "\n    args  : " ++ show args
+
 
 llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
  = do	let func	= funcDeclOfExp exp
