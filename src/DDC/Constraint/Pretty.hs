@@ -8,10 +8,11 @@ where
 import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Main.Pretty
+import Util.Data.List
 import qualified Data.Map	as Map
 import qualified Data.Foldable	as Seq
 
-padVar = padL 20
+padVar	= padL 20
 
 -- CTree ------------------------------------------------------------------------------------------
 instance Pretty CTree PMode where
@@ -30,9 +31,11 @@ instance Pretty CTree PMode where
 	
 	CEq 	_ v t	
 	 -> padVar v 	%% "= " %% prettyTypeSplit t
-
+	
 	CEqs 	_ ts
-	 -> punc " =  " $ map padVar ts
+	 -> let	Just tsI	= takeInit ts
+		Just tL		= takeLast ts
+	    in	(punc " =  " $ map padVar tsI) %% "=" %% tL
 	
 	CMore	_ v t
 	 -> padVar v	%% ":>" %% prettyTypeSplit t
