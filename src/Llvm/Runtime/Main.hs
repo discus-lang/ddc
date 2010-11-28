@@ -32,7 +32,7 @@ llvmMainModule modName importsExp mainType
 	let params	= [ argc, argv ]
 	startFunction
 
-	initRunTime	params
+	initRunTime	$ params ++ [ i32LitVar 0, i32LitVar 0, i32LitVar 0 ]
 	addComment	"Call init functions of all used modules."
 
 	mapM_		callModInitFns importsExp
