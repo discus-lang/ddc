@@ -34,10 +34,15 @@ void	_ddcRuntimeInit
 		, &initSlotStackSize
 		, &initHeapSize);
 
-	// Default the size of stacks and heap if they haven't been specified.
-	if (initContextStackSize == 0)	initContextStackSize	= 50;
-	if (initSlotStackSize	 == 0)	initSlotStackSize	= 100000;
-	if (initHeapSize	 == 0)	initHeapSize		= 10000000;
+	// Set the default size of heaps and stacks if they haven't been specified.
+	if (initHeapSize  == 0)	
+		initHeapSize 		= _DDC_DEFAULT_HEAPSIZE;
+
+	if (initSlotStackSize == 0)
+		initSlotStackSize	= _DDC_DEFAULT_SLOTSTACKSIZE;
+
+	if (initContextStackSize == 0)
+		initContextStackSize	= _DDC_DEFAULT_CONTEXTSTACKSIZE;
 
 	// ----- 
 	if (verbose) {
@@ -124,7 +129,6 @@ void	_ddcParseArgs
 			continue;
 			
 		// ----- Accept RTS options
-
 		if 	(   strcmp (argv[i], "-help")	== 0
 			 || strcmp (argv[i], "--help")	== 0
 			 || strcmp (argv[i], "-h")	== 0) 

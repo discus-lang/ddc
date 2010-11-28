@@ -6,6 +6,15 @@
 
 #define _DDC_VERSION "DDC Runtime System"
 
+// -- Defaults ----------------------------------------------------------------
+//	Default size of heaps, and stacks. Can be overridden by +RTS flags.
+//	We're setting the default heap size to 100 megs because the runtime
+//	can't grow the heap when it runs out yet.
+//
+#define _DDC_DEFAULT_HEAPSIZE		100000000
+#define _DDC_DEFAULT_SLOTSTACKSIZE	100000
+#define _DDC_DEFAULT_CONTEXTSTACKSIZE	50
+
 
 // -- Profiling ---------------------------------------------------------------
 //	Set these to 1/0 to enable/disable profiling of that system.

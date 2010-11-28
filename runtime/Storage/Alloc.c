@@ -67,6 +67,6 @@ void	_allocCollect
 	// 	collection won't be able to complete, so we're screwed.
 	// TODO: instead of just panicing we should grow the heap.
 	if (_ddcHeapPtr + byteCount > _ddcHeapMax)
-		_panicOutOfHeap (byteCount, (UInt64)(_ddcHeapMax - _ddcHeapBase));
+		_panicOutOfHeap (byteCount, (UInt64)(_ddcHeapMax - _ddcHeapBase + 1));
 }
 
