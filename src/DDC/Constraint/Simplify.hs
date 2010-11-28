@@ -7,6 +7,9 @@
 --	present in the constraints end up in the type graph, so it's better to eliminate them
 --	during a pre-solver phase before loading them into the graph.
 --
+--	In all cases the programs should compile with and without this simplifier, and you 
+--	can disable it on the command line with the -debug-no-constraint-simplifier compiler flag.
+--
 -- 	We must keep bindings for wanted variables because the Desugar -> Core transform needs them.
 -- 
 module DDC.Constraint.Simplify
