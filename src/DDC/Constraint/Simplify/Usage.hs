@@ -5,7 +5,8 @@ module DDC.Constraint.Simplify.Usage
 	( UseSide	(..)
 	, Usage		(..)
 	, UseMap	(..)
-	, slurpUsage)
+	, slurpUsage
+	, singleton)
 where
 import DDC.Constraint.Util
 import DDC.Constraint.Exp
@@ -31,8 +32,11 @@ data UseSide
 	
 -- | How a constrained type variable is used.
 data Usage
+	-- | Is wanted by the Desugar -> Core translation.
+	= UsedWanted
+
 	-- | Appears in an eq constraint.
-	= UsedEq UseSide
+	| UsedEq UseSide
 	
 	-- | Appears in a more-than constraint.
 	| UsedMore UseSide
@@ -59,23 +63,6 @@ instance Pretty Usage PMode where
 data UseMap
 	= UseMap (Map Type (Map Usage Int))
 
-singleton' :: Type -> Usage -> UseMap
-singleton' t usage
-	= UseMap $ Map.singleton t (Map.singleton usage 1)
-
-singleton :: Usage -> Type -> UseMap
-singleton = flip singleton'
-
-usedTVars'  :: Type -> Usage -> UseMap
-usedTVars' t usage
-	= mconcat 
-	$ map (singleton usage)
-	$ Set.toList 
-	$ freeTVars t
-
-usedTVars :: Usage -> Type -> UseMap
-usedTVars = flip usedTVars'
-
 
 instance Monoid UseMap where
  mempty	
@@ -88,17 +75,40 @@ instance Monoid UseMap where
 
 instance Pretty UseMap PMode where
 	ppr (UseMap mp)
-	 = vcat [padL 20 v %% use 
+	 = vcat [padL 30 v %% use 
 			| (v, use) <- Map.toList mp]
+
+
+singleton :: Usage -> Type -> UseMap
+singleton = flip singleton'
+
+singleton' :: Type -> Usage -> UseMap
+singleton' t@(TVar k _) usage
+	-- we don't care about constraints on region vars.
+	| isRegionKind k	= mempty
+	| otherwise		= UseMap $ Map.singleton t (Map.singleton usage 1)
+
+singleton' _ _
+	= panic stage 
+	$ "singleton: only type vars can be used on the left of a constraint"
+
+
+usedTVars :: Usage -> Type -> UseMap
+usedTVars = flip usedTVars'
+
+usedTVars'  :: Type -> Usage -> UseMap
+usedTVars' t usage
+	= mconcat 
+	$ map (singleton usage)
+	$ Set.toList 
+	$ freeTVars t
+
 
 
 -- slurpUsage -------------------------------------------------------------------------------------
 -- | Slurps usage information from a constraint tree.
 --	The result maps type vars to how many time each sort of usage appears.
-slurpUsage 
-	:: CTree 
-	-> UseMap
-
+slurpUsage :: CTree -> UseMap
 slurpUsage cc
  = case cc of
 	CBranch bs subs

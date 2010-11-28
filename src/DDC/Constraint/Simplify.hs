@@ -19,8 +19,11 @@ import DDC.Constraint.Simplify.Usage
 import DDC.Constraint.Simplify.Reduce
 import DDC.Constraint.Simplify.Collect
 import DDC.Constraint.Exp
+import DDC.Type
 import DDC.Var
 import DDC.Constraint.Pretty		()
+import Data.Monoid
+import qualified Data.Set		as Set
 import Util
 
 -- | Simplify some type constraints.
@@ -30,7 +33,11 @@ simplify
 	-> (CTree, UseMap)	-- ^ Simplified constraints, and usage map for dumping.
 	
 simplify wanted tree
- = let	usage	= slurpUsage tree
+ = let	usage	= mconcat
+		$ slurpUsage tree
+		: [singleton UsedWanted $ TVar kValue (UVar v) 
+					| v <- Set.toList wanted]
+
 	table	= collect wanted tree
 	tree'	= reduce wanted table tree
    in	(tree', usage)
