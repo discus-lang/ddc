@@ -2,25 +2,6 @@
 #include "../Runtime.h"
 #include <stdlib.h>
 
-// If tracing is turned on then print the provided string to the trace file,
-//	otherwise do nothing.
-#if	_DDC_TRACE_GC
-static inline void _TRACE (const char* format, ...)
-{
-	va_list	ap;
-
-	va_start (ap, format);
-	vfprintf (_traceFile, format, ap);
-	va_end(ap);
-}
-
-#	define _TRACES(s)	s;
-
-#else
-#	define _TRACE(x,...)
-#	define _TRACES(s)
-#endif
-
 
 // Trace through the heap looking for malformed objects or bad pointers.
 //	Panics and stops the program if it finds any problems.
@@ -29,10 +10,6 @@ void	_lintHeap
 		, Word8* top)		// The word _after_ the last one in the last allocated object.
 
 {
-	_TRACE("* lintHeap ------------------------------------------------------------------------- lintHeap\n");
-	_TRACE("  base = %p\n", base);
-	_TRACE("  top  = %p\n", top);
-
 	Word8*	ptr	= base;
 	while (ptr < top)
 	{
@@ -46,8 +23,7 @@ void	_lintHeap
 			_PANIC ("_lintHeap: Obj %p is a Forward can't lint a heap containing forwards.\n", obj);
 
 		// Check known object type.
-		if (objType == _ObjTypeUnknown)
-		{
+		if (objType == _ObjTypeUnknown) {
 			_ERROR ("_lintHeap: unknown object type\n");
 			_ERROR ("  obj      = %p\n", 	obj);
 			_ERROR ("  tagFlags = 0x%02x\n", obj ->tagFlags);
@@ -63,14 +39,10 @@ void	_lintHeap
 		 case _ObjTypeDataRS:	break;
 
 		 default:		_PANIC ("Bad object type\n");
-
 		}
 
 		ptr	+= _objSize (obj);
 	}
-
-	_TRACE ("  Heap looks OK --------------------------------------------------------------------\n");
-	_TRACE ("\n\n");
 }
 
 
@@ -92,22 +64,13 @@ void	_lintSlots
 		, Word8* 	heapBase
 		, Word8*	heapTop)
 {
-	_TRACE("lintSlots ------------------------------------------------------------------- lintSlots\n");
-	_TRACE("  slotBase = %p\n", slotBase);
-	_TRACE("  slotPtr  = %p\n", slotPtr);
-	_TRACE("  s0       = %p\n", *slotPtr);
-
 	Obj**	ptr	= slotBase;
-	while (ptr < slotPtr)
-	{
+	while (ptr < slotPtr) {
 		if (*ptr != 0)
 			_lintObjPtr (*ptr, heapBase, heapTop);
 
 		ptr++;
 	}
-
-	_TRACE ("  Slots look OK --------------------------------------------------------------------\n");
-	_TRACE ("\n\n");
 }
 
 
@@ -120,10 +83,8 @@ void	_lintObjPtr
 	enum _ObjType
 		objType		= _objType (obj);
 
-	if (!_objIsAnchored (obj))
-	{
-		if (obj < (Obj*)base)
-		{
+	if (!_objIsAnchored (obj)) {
+		if (obj < (Obj*)base) {
 			_ERROR ("Object lies before start of heap.\n");
 			_ERROR ("  obj        = %p\n", obj);
 			_ERROR ("  heapBase   = %p\n", base);
@@ -131,8 +92,7 @@ void	_lintObjPtr
 			_panicCorruption();
 		}
 
-		if (obj > (Obj*)top)
-		{
+		if (obj > (Obj*)top) {
 			_ERROR ("Object starts after end of heap.\n");
 			_ERROR ("  obj        = %p\n", obj);
 			_ERROR ("  heapBase   = %p\n", base);
@@ -140,8 +100,7 @@ void	_lintObjPtr
 			_panicCorruption();
 		}
 
-		if ((Word8*)obj + _objSize (obj) > (Word8*)top)
-		{
+		if ((Word8*)obj + _objSize (obj) > (Word8*)top) {
 			_ERROR ("Object spills off the end of the heap.\n");
 			_ERROR ("  obj        = %p\n", obj);
 			_ERROR ("  size       = %zu\n", _objSize(obj));
@@ -152,16 +111,14 @@ void	_lintObjPtr
 		}
 	}
 
-	if (objType == _ObjTypeUnknown)
-	{
+	if (objType == _ObjTypeUnknown) {
 		_ERROR ("Object type is Unknown.\n");
 		_ERROR ("  obj        = %p\n", obj);
 		_ERROR ("  tagFlags   = 0x%08x", obj ->tagFlags);
 		_panicCorruption();
 	}
 
-	if (objType == _ObjTypeForward)
-	{
+	if (objType == _ObjTypeForward) {
 		_ERROR ("Object is a Forward.\n");
 		_ERROR ("  obj        = %p\n", obj);
 		_panicCorruption();
@@ -193,12 +150,9 @@ void	_lintSusp
 	SuspIndir* susp	= (SuspIndir*) obj;
 
 	if (_getObjTag(obj) == _tagIndir)
-	{
 		_lintObjPtr (susp ->obj, base, top);
-	}
 
-	else if (_getObjTag(obj) == _tagSusp)
-	{
+	else if (_getObjTag(obj) == _tagSusp) {
 		_lintObjPtr (susp ->obj, base, top);
 
 		for (uint32_t i = 0; i < susp->arity; i++)

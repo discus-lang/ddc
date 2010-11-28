@@ -4,7 +4,7 @@
 #ifndef _DDC_Config
 #define _DDC_Config
 
-#define _DDC_VERSION "DDC Runtime System"
+#define _DDC_VERSION "DDC Runtime System v0.1.2"
 
 // -- Defaults ----------------------------------------------------------------
 //	Default size of heaps, and stacks. Can be overridden by +RTS flags.
@@ -28,32 +28,20 @@
 #define _DDC_PROFILE_BOXING	0
 #define _DDC_PROFILE_APPLY	0
 
+
+// -- Debugging ---------------------------------------------------------------
+// 	Turn on lots of expensive consitency checks.
+#define _DDC_DEBUG	0
+
+#if _DDC_DEBUG 
+# define _DEBUG(x)	x
+#else
+# define _DEBUG(x)
+#endif
+
+// ----------------------------------------------------------------------------
+// Load the config defines into the runtime state.
 void	_ddcConfigSetup();
 
 
-// -- Debugging ---------------------------------------------------------------
-// These can be useful when you get desperate.
-// TODO: Unify these various options into a single DEBUG option that turns
-//	 on all possible consistency checks. If the RTS is crashing then
-//	 we'll want to turn on all the options anyway.
-
-// Do some consistency checks (0/1)
-#define _DDC_DEBUG		0
-
-// ---- 
-#if _DDC_DEBUG 
-# define _DEBUG(x)	x
-# define _DDC_DEBUG_GC	1
-#else
-# define _DEBUG(x)
-# define _DDC_DEBUG_GC  0
 #endif
-
-
-// -- Tracing -----------------------------------------------------------------
-// Spew lots of tracing info to the console
-// #define	_DDC_TRACE
-#define _DDC_TRACE_GC		0
-
-#endif
-
