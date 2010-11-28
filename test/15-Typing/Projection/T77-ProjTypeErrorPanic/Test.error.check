@@ -2,7 +2,7 @@ ddc: ERROR
 ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:3:8
         Type mismatch during unification.
             cannot match: Unit
-                    with: *70 *30
+                    with: *75 *33
         
           type signature for 'Test.example'
           which requires: Unit
@@ -10,6 +10,6 @@ ddc: ERROR
         
                 conflicts with, 
               the use of: (:)
-                 of type: *70 *30
+                 of type: *75 *33
                       at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
 
