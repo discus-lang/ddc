@@ -8,10 +8,11 @@
 
 // -- Defaults ----------------------------------------------------------------
 //	Default size of heaps, and stacks. Can be overridden by +RTS flags.
-//	We're setting the default heap size to 100 megs because the runtime
-//	can't grow the heap when it runs out yet.
+//	We're setting the default heap size to just 1 meg to smoke out
+//	any lurking GC bugs. In future the heap should grow dynamically 
+//	depending how it is being used.
 //
-#define _DDC_DEFAULT_HEAPSIZE		100000000
+#define _DDC_DEFAULT_HEAPSIZE		1000000
 #define _DDC_DEFAULT_SLOTSTACKSIZE	100000
 #define _DDC_DEFAULT_CONTEXTSTACKSIZE	50
 
