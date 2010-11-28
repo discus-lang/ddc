@@ -2,41 +2,44 @@
 module DDC.Constraint.Simplify.Reduce
 	(reduce)
 where
+import DDC.Constraint.Simplify.Usage
 import DDC.Constraint.Simplify.Collect
 import DDC.Constraint.Util
 import DDC.Constraint.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
-import DDC.Var
 import DDC.Constraint.Pretty		()
 import Data.Sequence			(Seq)
 import qualified Data.Sequence		as Seq
 import qualified Data.Foldable		as Seq
 import qualified Data.Map		as Map
+-- import qualified Debug.Trace
 import Control.Monad
 import Util
 
-stage = "DDC.Constraint.Simplify"
+stage		= "DDC.Constraint.Simplify"
+-- debug		= True
+-- trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -- | The reduce phase does the actual inlining and simplification.
-reduce 	:: Set Var		-- ^ wanted vars
+reduce 	:: UseMap		-- ^ map of how vars are used.
 	-> Table		-- ^ table of things to inline
 	-> CTree
 	-> CTree
 
-reduce wanted table tree
+reduce usage table tree
 	= makeCBranch BNothing
-	$ reduce1 wanted table tree
+	$ reduce1 usage table tree
 
 
 -- | Reduce a single constraint
-reduce1 :: Set Var		-- ^ wanted vars.
+reduce1 :: UseMap		-- ^ map of how vars are used.
 	-> Table		-- ^ table of things to inline.
 	-> CTree
 	-> Seq CTree
 
-reduce1 wanted table cc
+reduce1 usage table cc
  = let	subEq	= subTT_noLoops (tableEq table)
    in case cc of
 	CBranch bind subs
@@ -44,12 +47,18 @@ reduce1 wanted table cc
 	  $ makeCBranch bind 
 	  $ reorder 
 	  $ join
-	  $ fmap (reduce1 wanted table) subs
+	  $ fmap (reduce1 usage table) subs
 
 	-- Eq ---------------------------------------------
 	-- Ditch eq constraints that are being inlined.
 	CEq _ t1 _
 	 |  Map.member t1 $ tableEq table
+	 -> Seq.empty
+
+	-- Ditch v1=v2 constraints when either of the vars are only used once.
+	CEq _ t1@TVar{} t2@TVar{}
+	 |   usedJustOnceInEq usage t1 
+	  || usedJustOnceInEq usage t2
 	 -> Seq.empty
 
 	CEq src t1 t2				

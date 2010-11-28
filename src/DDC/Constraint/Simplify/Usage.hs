@@ -6,7 +6,9 @@ module DDC.Constraint.Simplify.Usage
 	, Usage		(..)
 	, UseMap	(..)
 	, slurpUsage
-	, singleton)
+	, singleton
+	, usedIsWanted
+	, usedJustOnceInEq)
 where
 import DDC.Constraint.Util
 import DDC.Constraint.Exp
@@ -87,9 +89,10 @@ singleton' t@(TVar k _) usage
 	| isRegionKind k	= mempty
 	| otherwise		= UseMap $ Map.singleton t (Map.singleton usage 1)
 
-singleton' _ _
+singleton' t1 _
 	= panic stage 
-	$ "singleton: only type vars can be used on the left of a constraint"
+	$  "singleton: only type vars can be used on the left of a constraint"
+	%! "    offending type = " % t1
 
 
 usedTVars :: Usage -> Type -> UseMap
@@ -102,6 +105,27 @@ usedTVars' t usage
 	$ Set.toList 
 	$ freeTVars t
 
+
+-- | Var is wanted by the Desugar -> Core transform.
+usedIsWanted :: UseMap -> Type -> Bool
+usedIsWanted (UseMap mp) t1
+	= maybe False
+		(Map.member UsedWanted)
+		(Map.lookup t1 mp)
+		
+
+-- | Var is only used once, in an eq constraint.
+usedJustOnceInEq :: UseMap -> Type -> Bool
+usedJustOnceInEq (UseMap mp) t1
+ = let	hasSize1 mm = case Map.toList mm of 
+			[_]	-> True
+			_	-> False
+			
+   in	maybe	False
+		(\used ->  (hasSize1 used)
+			&& ( (Map.lookup (UsedEq OnRight) used == Just 1)
+		          || (Map.lookup (UsedEq OnLeft)  used == Just 1)))
+		(Map.lookup t1 mp)
 
 
 -- slurpUsage -------------------------------------------------------------------------------------
@@ -127,8 +151,8 @@ slurpUsage cc
 
 	CProject _ _ _ t1 t2
 	 -> mappend
-		(singleton UsedProject t1)
-		(singleton UsedProject t2)
+		(usedTVars UsedProject t1)
+		(usedTVars UsedProject t2)
 
 	CInst _ t1 t2
 	 -> mappend

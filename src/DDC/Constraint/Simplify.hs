@@ -39,7 +39,7 @@ simplify wanted tree
 					| v <- Set.toList wanted]
 
 	table	= collect wanted tree
-	tree'	= reduce wanted table tree
+	tree'	= reduce usage table tree
    in	(tree', usage)
 
 
