@@ -9,8 +9,11 @@
 
 // Initialise the DDC runtime system.
 void	_ddcRuntimeInit 
-		( int argc
-		, char** argv)
+		( int 		argc
+		, char** 	argv
+		, Word64	startHeapSize
+		, Word64	startSlotStackSize
+		, Word64	startContextStackSize)
 {
 	// Stash our args
 	_ddcArgCount	= argc - 1;
@@ -21,20 +24,23 @@ void	_ddcRuntimeInit
 	_ddcConfigSetup ();
 
 	// Parse RTS args.
+	// Command line args that set the size of heaps and stacks override
+	// whatever numbers were passed in by the caller.
 	bool	verbose			= false;
-	Word64	initContextStackSize	= 0;
-	Word64	initSlotStackSize	= 0;
-	Word64	initHeapSize		= 0;
+	Word64	initHeapSize		= startHeapSize;
+	Word64	initSlotStackSize	= startSlotStackSize;
+	Word64	initContextStackSize	= startContextStackSize;
 	
 	_ddcParseArgs 
 		( argc
 		, argv
 		, &verbose
-		, &initContextStackSize
+		, &initHeapSize
 		, &initSlotStackSize
-		, &initHeapSize);
+		, &initContextStackSize);
 
-	// Set the default size of heaps and stacks if they haven't been specified.
+	// Set the default size of heaps and stacks if they haven't been specified
+	// by either the caller or on the command line.
 	if (initHeapSize  == 0)	
 		initHeapSize 		= _DDC_DEFAULT_HEAPSIZE;
 
@@ -48,29 +54,25 @@ void	_ddcRuntimeInit
 	if (verbose) {
 		printf ("* %s starting up...\n", _DDC_VERSION);
 		printf ("  options:\n");
-		printf ("    InitContextStackSize %" PRId64 "\n", initContextStackSize);
-		printf ("    InitSlotStackSize    %" PRId64 "\n", initSlotStackSize);
 		printf ("    InitHeapSize         %" PRId64 "\n", initHeapSize);
+		printf ("    InitSlotStackSize    %" PRId64 "\n", initSlotStackSize);
+		printf ("    InitContextStackSize %" PRId64 "\n", initContextStackSize);
 		printf ("\n");
 		printf ("  * Creating stacks and heap.\n");
 	}
 	
-
 	// Create stacks and heap.
 	_contextInit 	(initContextStackSize);
 	_collectInit	(initSlotStackSize);
 	_allocInit	(initHeapSize);
-
 
 	// Alloc atoms that are owned by the RTS.
 	_primUnit	= _allocData_anchored (0, 0);
 	_primTrue	= _allocData_anchored (1, 0);
 	_primFalse	= _allocData_anchored (0, 0);
 	
-
 	// Dump trace to stdout.
 	_ddcTraceFile	= stdout;
-
 
 	// Tell the GC profiler we're starting the mutator now.
 #if _DDC_PROFILE_GC
@@ -80,7 +82,6 @@ void	_ddcRuntimeInit
 	// -----
 	if (verbose) 
 		printf ("  * Entering mutator.\n");
-	
 }
 
 
@@ -107,9 +108,9 @@ void	_ddcParseArgs
 		( int 		argc
 		, char**	argv
 		, bool*		outVerbose
-		, Word64*	outContextStackSize
+		, Word64*	outHeapSize
 		, Word64*	outSlotStackSize
-		, Word64*	outHeapSize)
+		, Word64*	outContextStackSize)
 {
 	bool	enable	= false;
 	for (int i = 1; i < argc; i++) {

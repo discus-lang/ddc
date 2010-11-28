@@ -73,15 +73,22 @@ makeModuleInitVar mid
 -- Main -------------------------------------------------------------------------------------------
 -- | Make code that initialises each module and calls the main function.
 mainTree
-	:: ModuleId	-- ^ The module holding the Disciple main function
-	-> [ModuleId]	-- ^ list of modules in this program
-	-> Bool		-- ^ Whether to wrap the Disciple main fn in a top-level exception handler.
+	:: ModuleId		-- ^ The module holding the Disciple main function
+	-> [ModuleId]		-- ^ list of modules in this program
+	-> Bool			-- ^ Whether to wrap the Disciple main fn in a top-level exception handler.
+	-> Maybe Integer	-- ^ Starting size of heap, 		or Nothing for default.
+	-> Maybe Integer	-- ^ Starting size of slot stack, 	or Nothing for default.
+	-> Maybe Integer	-- ^ Starting size of context stack, 	or Nothing for default.
 	-> Tree ()
 
 mainTree midMain midsImported withHandler
+ 	 mHeapSize mSlotStackSize mContextStackSize
+
  = let	ModuleId [mainModuleName]	= midMain
    in	[ PMain mainModuleName
 		(map (\m -> "_" ++ (varName $ makeModuleInitVar m)) midsImported)
-		withHandler]
-
+		withHandler
+		mHeapSize
+		mSlotStackSize
+		mContextStackSize ]
 

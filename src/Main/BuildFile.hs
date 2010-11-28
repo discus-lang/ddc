@@ -34,21 +34,34 @@ data Build
 	, buildExtraCCFlags	:: [String]
 	
 	  -- Extra flags to pass to the linker
-	, buildExtraLDFlags	:: [String] }
+	, buildExtraLDFlags	:: [String] 
+	
+ 	  -- Starting heap size for compiled program, or Nothing for default.
+	, buildStartHeapSize		:: Maybe Integer
+	
+	  -- Starting slot stack size of compiled program, or Nothing for default.
+	, buildStartSlotStackSize 	:: Maybe Integer
+	
+	  -- Starting context stack size of compiled program, or Nothing for default.
+	, buildStartContextStackSize	:: Maybe Integer }
+	
 	deriving (Show)
 
 
 -- | An empty build spec
 buildZero
 	= Build
-	{ buildExtraDDCArgs	= []
-	, buildExtraLinkLibs	= []
-	, buildExtraLinkLibDirs	= []
-	, buildExtraLinkObjs	= []
-	, buildExtraCCFlags	= []
-	, buildExtraLDFlags	= [] }
+	{ buildExtraDDCArgs		= []
+	, buildExtraLinkLibs		= []
+	, buildExtraLinkLibDirs		= []
+	, buildExtraLinkObjs		= []
+	, buildExtraCCFlags		= []
+	, buildExtraLDFlags		= [] 
+	, buildStartHeapSize		= Nothing
+	, buildStartSlotStackSize	= Nothing
+	, buildStartContextStackSize	= Nothing }
 
--- | Add the info from two builds together
+-- | Add the info from two builds together, preferring info from the second.
 buildAdd b1 b2
 	= Build
 	{ buildExtraDDCArgs	= buildExtraDDCArgs  	b1 ++ buildExtraDDCArgs 	b2
@@ -56,7 +69,20 @@ buildAdd b1 b2
 	, buildExtraLinkLibDirs	= buildExtraLinkLibDirs b1 ++ buildExtraLinkLibDirs	b2
 	, buildExtraLinkObjs	= buildExtraLinkObjs 	b1 ++ buildExtraLinkObjs	b2
 	, buildExtraCCFlags	= buildExtraCCFlags  	b1 ++ buildExtraCCFlags 	b2
-	, buildExtraLDFlags	= buildExtraLDFlags  	b1 ++ buildExtraLDFlags 	b2 }
+	, buildExtraLDFlags	= buildExtraLDFlags  	b1 ++ buildExtraLDFlags 	b2 
+
+	, buildStartHeapSize		
+		= takeFirstJust [ buildStartHeapSize b1
+				, buildStartHeapSize b2]
+
+	, buildStartSlotStackSize
+		= takeFirstJust [ buildStartSlotStackSize b1
+				, buildStartSlotStackSize b2]
+
+	, buildStartContextStackSize
+		= takeFirstJust [ buildStartContextStackSize b1
+				, buildStartContextStackSize b2]
+	}
 	
 	
 verbLoadBuildFile :: Bool -> FilePath -> IO (Maybe Build)
@@ -89,14 +115,10 @@ loadBuildFile pathBuild
 
 
 -- | Parse lines from the build file, adding them to the build info
-parseSections 
-	:: FilePath -> [String]	-> Build -> Build
-
-parseSections pathBuild [] build 
-	= build
-	
+parseSections :: FilePath -> [String]	-> Build -> Build
+parseSections pathBuild [] build = build
 parseSections pathBuild ss build
- = let	(build1, ssRest)	= parseSection pathBuild ss
+ = let	(build1, ssRest)	 = parseSection pathBuild ss
    in	parseSections pathBuild ssRest (buildAdd build build1) 
    
 
@@ -130,6 +152,21 @@ parseSection pathBuild (s : ss)
 	, (words, ssRest)	<- chopSection (s : ss)
 	= ( buildZero { buildExtraLinkObjs  = words }
 	  , ssRest)		
+
+	| isPrefixOf "start-heap-size:" s
+	, ([str], ssRest)	<- chopSection (s : ss)
+	= ( buildZero { buildStartHeapSize	= Just $ read str }
+	  , ssRest)
+
+	| isPrefixOf "start-slot-stack-size:" s
+	, ([str], ssRest)	<- chopSection (s : ss)
+	= ( buildZero { buildStartSlotStackSize	= Just $ read str }
+	  , ssRest)
+
+	| isPrefixOf "start-context-stack-size:" s
+	, ([str], ssRest)	<- chopSection (s : ss)
+	= ( buildZero { buildStartContextStackSize = Just $ read str }
+	  , ssRest)
 
 	| otherwise
 	= panic stage $ ppr

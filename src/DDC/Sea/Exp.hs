@@ -83,7 +83,16 @@ data Top a
 		  -- | Whether to wrap the Disciple main fn in the top-level
 		  --   exception handler from the prelude.
 		  --   TODO: Handle this in the desugarer in instead.
-		, topDefaultHandler	:: Bool}
+		, topDefaultHandler	:: Bool
+		
+		  -- | Starting size of heap,          or Nothing for default.
+		, topStartHeapSize		:: Maybe Integer
+
+		  -- | Starting size of slot stack,    or Nothing for default.
+		, topStartSlotStackSize		:: Maybe Integer
+
+		  -- | STarting size of context stack, or Nothing for default.
+		, topStartContextStackSize	:: Maybe Integer }
 
 	| PComment	String
 	| PBlank

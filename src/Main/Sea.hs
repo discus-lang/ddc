@@ -3,7 +3,6 @@
 -- | Wrappers for compiler stages dealing with Sea code.
 module Main.Sea
 	( compileViaSea
-
 	, seaSub
 	, seaCtor
 	, seaThunking
@@ -11,32 +10,18 @@ module Main.Sea
 	, seaSlot
 	, seaFlatten
 	, seaInit
-
 	, makeSeaHeader )
 where
-
--- main stages
 import Main.Setup
 import Main.BuildFile
 import Main.Dump
 import Main.Util
-
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
-
-import qualified DDC.Module.Scrape	as M
-import qualified DDC.Main.Arg		as Arg
-import qualified DDC.Core.Glob		as C
-import qualified DDC.Config.Version	as Version
-
--- sea
-import qualified Sea.Util		as E
-
 import DDC.Sea.Exp
 import Sea.Util
 import Sea.Invoke
-
 import Sea.Sub		(subTree)
 import Sea.Ctor		(expandCtorTree)
 import Sea.Proto	(addSuperProtosTree)
@@ -45,11 +30,13 @@ import Sea.Force	(forceTree)
 import Sea.Slot		(slotTree)
 import Sea.Flatten	(flattenTree)
 import DDC.Sea.Init	(initTree, mainTree)
-
 import Util
-
--- haskell
 import Data.Char
+import qualified DDC.Module.Scrape	as M
+import qualified DDC.Main.Arg		as Arg
+import qualified DDC.Core.Glob		as C
+import qualified DDC.Config.Version	as Version
+import qualified Sea.Util		as E
 import qualified Data.Map		as Map
 
 
@@ -90,16 +77,20 @@ compileViaSea
 	-- If this module binds the top level main function
 	--	then append RTS initialisation code.
 	seaSourceInit
-		<- if modDefinesMainFn && blessMain
-			then do mainCode <- seaMain
-						(map fst $ Map.toList importsExp)
-						modName
+	 <- if modDefinesMainFn && blessMain
+	     then do
+		let mainCode = mainTree 
+				modName
+				(map fst $ Map.toList importsExp)
+				(not     $ elem Arg.NoImplicitHandler ?args)
+				(join    $ liftM buildStartHeapSize         $ M.scrapeBuild sRoot)
+				(join    $ liftM buildStartSlotStackSize    $ M.scrapeBuild sRoot)
+				(join    $ liftM buildStartContextStackSize $ M.scrapeBuild sRoot)
 
-				return 	$ seaSource
-					++ (catInt "\n" $ map pprStrPlain
-							$ E.eraseAnnotsTree mainCode)
+		return 	$ seaSource
+			++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
 
-			else 	return  $ seaSource
+	     else return seaSource
 
 	-- Write C files ------------------------------------------------------
 	outVerb $ ppr $ "  * Write C files\n"
@@ -351,19 +342,3 @@ makeSeaHeader eTree pathThis pathImports extraIncludes
 		++ [ PBlank ]	++ seaProtos
 		++ [ PHackery "\n#endif\n\n" ]
 	catMap pprStrPlain $ eraseAnnotsTree hdr
-
-
--- | Add main module entry point code.
-seaMain	:: (?args :: [Arg.Arg])
-	=> [ModuleId]
-	-> ModuleId
-	-> IO (Tree ())
-
-seaMain imports mainModule
-	= return $ mainTree mainModule imports
-			(not $ elem Arg.NoImplicitHandler ?args)
-
-
-
-
-

@@ -7,7 +7,10 @@
 // Initialise the DDC runtime system.
 void	_ddcRuntimeInit 	
 		( int argc
-		, char** argv);
+		, char** argv
+		, Word64	startHeapSize
+		, Word64	startSlotStackSize
+		, Word64	startContextStackSize);
 
 // Shutdown the runtime system, and emit profiling information if need be.
 void	_ddcRuntimeCleanup ();
@@ -17,9 +20,9 @@ void	_ddcParseArgs
 		( int 		argc
 		, char**	argv
 		, bool*		outVerbose
-		, Word64*	outContextStackSize
+		, Word64*	outHeapSize
 		, Word64*	outSlotStackSize
-		, Word64*	outHeapSize);
+		, Word64*	outContextStackSize);
 
 // Check that the profiling options requested have actually been built into this system.		
 void	_ddcCheckProfileBuilt

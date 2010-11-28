@@ -83,23 +83,30 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PComment s	-> "// " % s % "\n"
 	PBlank		-> ppr "\n"
 
-	PMain mn ml withHandler
-	 ->	"int main (int argc, char** argv)\n"
-	  %	"{\n"
-	  %	"\t_ddcRuntimeInit(argc, argv);\n\n"
-	  %	"\n"
-	  %!%	(map (\mname -> "\t" ++ mname ++ "();") ml)
-	  %	"\n\n"
-	  %	"\t_ddcInitModule_" % mn % "();\n"
-	  %	"\n"
-          %     (if withHandler
-			then "\tControl_Exception_topHandle(_allocThunk((FunPtr) " % mn % "_main, 1, 0));\n"
-			else ppr "\tMain_main(Base_Unit());")
-	  %	"\n"
-	  %	"\t_ddcRuntimeCleanup();\n"
-	  %	"\n"
-	  %	"\treturn 0;\n"
-	  %	"}\n"
+	PMain mn ml withHandler mHeapSize mSlotStackSize mContextStackSize
+	 -> let	heapSize	 = fromMaybe 0 mHeapSize
+		slotStackSize	 = fromMaybe 0 mSlotStackSize
+		contextStackSize = fromMaybe 0 mContextStackSize
+	    in	
+		"int main (int argc, char** argv)\n"
+	  	%	"{\n"
+	  	%	"\t_ddcRuntimeInit(argc, argv, " 
+				%% heapSize 		%% ", "
+				%% slotStackSize	%% ", "
+				%% contextStackSize	%% ");\n\n"
+	  	%	"\n"
+	  	%!%	(map (\mname -> "\t" ++ mname ++ "();") ml)
+	  	%	"\n\n"
+	  	%	"\t_ddcInitModule_" % mn % "();\n"
+	  	%	"\n"
+          	%     (if withHandler
+				then "\tControl_Exception_topHandle(_allocThunk((FunPtr) " % mn % "_main, 1, 0));\n"
+				else ppr "\tMain_main(Base_Unit());")
+	  	%	"\n"
+	  	%	"\t_ddcRuntimeCleanup();\n"
+	  	%	"\n"
+	  	%	"\treturn 0;\n"
+	  	%	"}\n"
 
 -- CtorDef --------------------------------------------------------------------------------------------
 instance Pretty CtorDef PMode where
