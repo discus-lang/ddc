@@ -257,6 +257,7 @@ llvmOfStmt stmt
 	-- LLVM is SSA bu SAuto variables can be reused, so we need to Alloca for them.
 	SAuto v t	-> llvmSAuto v t
 	SStmt exp	-> llvmOfSStmt exp
+	SCaseFail	-> caseDeath "?" 0 0
 	_
 	  -> panic stage $ "llvmOfStmt (" ++ show __LINE__ ++ ")\n\n" ++ show stmt ++ "\n"
 
@@ -276,18 +277,22 @@ llvmOfSStmt (XPrim (MApp PAppCall) (fexp:args))
 	params		<- mapM llvmOfExp args
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) params []) ]
 
-
 llvmOfSStmt x
- = panic stage $ "llvmOfSStmt (" ++ show __LINE__ ++ ")" ++ show x
+ = panic stage $ "llvmOfSStmt:" ++ show __LINE__ ++ "\n\n" ++ show x ++ "\n"
 
 --------------------------------------------------------------------------------
 
 llvmOfSIf :: Exp a -> [Stmt a] -> LlvmM ()
 llvmOfSIf exp@XPrim{} stmts
--- = do	reg	<- llvmOfExp exp
- = panic stage $ "llvmOfSIf (" ++ show __LINE__ ++ ")"
-
-
+ = do	true	<- llvmOfExp exp
+	bTrue	<- newUniqueLabel "bt"
+	bFalse	<- newUniqueLabel "bf"
+	addBlock
+		[ BranchIf true bTrue bFalse
+		, MkLabel (uniqueOfLlvmVar bTrue) ]
+	llvmOfFunc stmts
+	addBlock
+		[ MkLabel (uniqueOfLlvmVar bFalse) ]
 
 --------------------------------------------------------------------------------
 
@@ -394,22 +399,27 @@ genAltDefault label (ADefault ss)
 	mapM_ llvmOfStmt ss
 
 genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
- = do	addGlobalFuncDecl deathCase
-
-	gname	<- newUniqueName "str.src.file"
-	let name = LMGlobalVar gname (typeOfString n) Internal Nothing ptrAlign True
-	addGlobalVar ( name, Just (LMStaticStr n (typeOfString n)) )
-	pstr	<- newUniqueNamedReg "pstr" pChar
-
-	addBlock
-		[ MkLabel (uniqueOfLlvmVar label)
-		, Assignment pstr (GetElemPtr True (pVarLift name) [llvmWordLitVar 0, llvmWordLitVar 0])
-		, Expr (Call StdCall (funcVarOfDecl deathCase) [pstr, i32LitVar l, i32LitVar c] [])
-		, Unreachable
-		]
+ = do	addBlock [ MkLabel (uniqueOfLlvmVar label) ]
+	caseDeath n l c
 
 genAltDefault _ def
  =	panic stage $ "getAltDefault (" ++ (show __LINE__) ++ ") : " ++ show def
+
+
+caseDeath :: String -> Int -> Int -> LlvmM ()
+caseDeath file line column
+ = do	addGlobalFuncDecl deathCase
+
+	gname	<- newUniqueName "str.src.file"
+	let name = LMGlobalVar gname (typeOfString file) Internal Nothing ptrAlign True
+	addGlobalVar ( name, Just (LMStaticStr file (typeOfString file)) )
+	pstr	<- newUniqueNamedReg "pstr" pChar
+
+	addBlock
+		[ Assignment pstr (GetElemPtr True (pVarLift name) [llvmWordLitVar 0, llvmWordLitVar 0])
+		, Expr (Call StdCall (funcVarOfDecl deathCase) [pstr, i32LitVar line, i32LitVar column] [])
+		, Unreachable
+		]
 
 --------------------------------------------------------------------------------
 

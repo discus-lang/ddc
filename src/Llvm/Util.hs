@@ -68,6 +68,9 @@ llvmVarOfLit (LiteralFmt (LFloat f) (UnboxedBits bits))
 llvmVarOfLit (LiteralFmt (LChar c) (UnboxedBits 32))
  =	i32LitVar $ ord c
 
+llvmVarOfLit (LiteralFmt (LBool b) Unboxed)
+ =	 LMLitVar (LMIntLit (if b then 1 else 0) i1)
+
 llvmVarOfLit x
  =	panic stage $ "llvmLitVar (" ++ show __LINE__ ++ ")\n" ++ show x
 
