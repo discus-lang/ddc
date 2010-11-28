@@ -7,10 +7,10 @@ ddc: ERROR
         I was using:
             ref
                 :: forall t0
-                .  Ref %115 (t0 -> t0)
+                .  Ref %107 (t0 -> t0)
         
         But then I found the
-              constraint: Mutable %115
+              constraint: Mutable %107
          from the use of: (#=)
                       at: ./test/15-Typing/Closure/T84-LateExport/Main.ds:7:16
         

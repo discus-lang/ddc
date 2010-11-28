@@ -7,10 +7,10 @@ ddc: ERROR
         I was using:
             box
                 :: forall t0
-                .  Main.Box %164 (Data.List.List %173 t0)
+                .  Main.Box %153 (Data.List.List %162 t0)
         
         But then I found the
-              constraint: Mutable %164
+              constraint: Mutable %153
          from the use of: (#=)
                       at: ./test/15-Typing/Closure/LateMutable/Main.ds:27:16
         
