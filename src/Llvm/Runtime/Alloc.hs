@@ -133,7 +133,7 @@ allocDataRS dataSize pType
 	payload		<- newUniqueNamedReg "payload" pType
 	ret		<- newUniqueNamedReg "allocated.DataRS" pObj
 
-	addBlock	[ Assignment ptr (GetElemPtr True pDataRS [i32LitVar 0, i32LitVar $ fst $ structFieldLookup ddcDataRS "payload" ])
+	addBlock	[ Assignment ptr (GetElemPtr True pDataRS [i32LitVar 0, i32LitVar $ fst $ structFieldLookup ddcDataRS "payload", i32LitVar 0 ])
 			, Assignment payload (Cast LM_Bitcast ptr pType)
 			, Assignment ret (Cast LM_Bitcast pDataRS pObj) ]
 	return		(ret, payload)

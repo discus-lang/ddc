@@ -229,9 +229,19 @@ boxInt64 int64
 
 
 unboxInt64 :: LlvmVar -> LlvmM LlvmVar
-unboxInt64 i
- = panic stage "unimplemented"
-
+unboxInt64 objptr
+ | getVarType objptr == pObj
+ = do	pDataRS	<- newUniqueReg pStructDataRS
+	ptr	<- newUniqueReg pChar
+	i64ptr	<- newUniqueReg (LMPointer i64)
+	int64	<- newUniqueReg i64
+	addBlock
+		[ Assignment pDataRS (Cast LM_Bitcast objptr pStructDataRS)
+		, Assignment ptr (GetElemPtr True pDataRS [i32LitVar 0, i32LitVar $ fst $ structFieldLookup ddcDataRS "payload", i32LitVar 0 ])
+		, Assignment i64ptr (Cast LM_Bitcast ptr (LMPointer i64))
+		, Assignment int64 (Load i64ptr)
+		]
+	return	int64
 
 --------------------------------------------------------------------------------
 
@@ -245,6 +255,17 @@ boxFloat64 f64
 	return	objptr
 
 unboxFloat64 :: LlvmVar -> LlvmM LlvmVar
-unboxFloat64 f
- = panic stage "unimplemented"
+unboxFloat64  objptr
+ | getVarType objptr == pObj
+ = do	pDataRS	<- newUniqueReg pStructDataRS
+	ptr	<- newUniqueReg pChar
+	f64ptr	<- newUniqueReg (LMPointer LMDouble)
+	f64	<- newUniqueReg LMDouble
+	addBlock
+		[ Assignment pDataRS (Cast LM_Bitcast objptr pStructDataRS)
+		, Assignment ptr (GetElemPtr True pDataRS [i32LitVar 0, i32LitVar $ fst $ structFieldLookup ddcDataRS "payload", i32LitVar 0 ])
+		, Assignment f64ptr (Cast LM_Bitcast ptr (LMPointer LMDouble))
+		, Assignment f64 (Load f64ptr)
+		]
+	return	f64
 
