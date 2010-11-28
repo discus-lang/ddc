@@ -2,17 +2,17 @@ ddc: ERROR
 ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:9:23
         Conflicting region constraints.
         
-              constraint: Const %106
+              constraint: Const %102
         which purifies
               the use of: succ
-                 of type: !Read %163
+                 of type: !Read %159
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:9:18
         due to
               the use of: suspend1
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:9:23
         
             conflicts with,
-              constraint: MutableT *180
+              constraint: MutableT *175
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:10:16
 
