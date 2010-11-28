@@ -2,7 +2,8 @@
 module Llvm.Runtime.Alloc
 	( allocate
 	, allocThunk
-	, allocData )
+	, allocData
+	, allocDataRS )
 where
 
 import DDC.Main.Error
@@ -113,6 +114,31 @@ allocData tag arity
 	return		ret
 
 
+allocDataRS :: Int -> LlvmType -> LlvmM (LlvmVar, LlvmVar)
+allocDataRS dataSize pType
+ = do	addAlias	("struct.DataRS", llvmTypeOfStruct ddcDataRS)
+
+	let size	= roundUpBytes (sizeOfLlvmType structDataRS + dataSize)
+	let dataWords	= dataSize `div` 4
+	let tagValue 	= (dataWords * 16) + objModeDataRS
+	let tag		= tagBasePlus tagValue
+
+	addComment	$ "allocDataRS " ++ show tagValue ++ " " ++ show dataSize ++ " " ++ show pType
+
+	pDataRS		<- allocate size "pDataRS" pStructDataRS
+
+	storeStructRegValue ddcDataRS pDataRS "tag" tag
+
+	ptr		<- newUniqueReg pChar
+	payload		<- newUniqueNamedReg "payload" pType
+	ret		<- newUniqueNamedReg "allocated.DataRS" pObj
+
+	addBlock	[ Assignment ptr (GetElemPtr True pDataRS [i32LitVar 0, i32LitVar $ fst $ structFieldLookup ddcDataRS "payload" ])
+			, Assignment payload (Cast LM_Bitcast ptr pType)
+			, Assignment ret (Cast LM_Bitcast pDataRS pObj) ]
+	return		(ret, payload)
+
+--------------------------------------------------------------------------------
 
 storeStructRegValue :: LlvmStructDesc -> LlvmVar -> String -> LlvmVar -> LlvmM ()
 storeStructRegValue desc struct field value

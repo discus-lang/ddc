@@ -16,8 +16,9 @@ import DDC.Main.Error
 
 import Llvm
 import LlvmM
-import Llvm.Runtime.Object
 import Llvm.Runtime.Alloc
+import Llvm.Runtime.Object
+import Llvm.Runtime.Struct
 import Llvm.Runtime.Tags
 import Llvm.Util
 
@@ -30,6 +31,7 @@ boxAny any
  = case getVarType any of
 	LMInt 1			-> boxBool any
 	LMInt 32		-> boxInt32 any
+	LMInt 64		-> boxInt64 any
 	LMFloat			-> boxFloat32 any
 	LMDouble		-> boxFloat64 any
 	LMArray _ (LMInt 8)	-> boxString any
@@ -41,7 +43,9 @@ unboxAny anyType any
  = case anyType of
 	LMInt 1		-> unboxBool any
 	LMInt 32	-> unboxInt32 any
+	LMInt 64	-> unboxInt64 any
 	LMFloat		-> unboxFloat32 any
+	LMDouble	-> unboxFloat64 any
 	_		-> panic stage $ "unboxAny " ++ show anyType
 
 --------------------------------------------------------------------------------
@@ -180,10 +184,6 @@ boxString s
 
 --------------------------------------------------------------------------------
 
-boxInt64 :: LlvmVar -> LlvmM LlvmVar
-boxInt64 i
- = panic stage "unimplemented"
-
 boxFloat32 :: LlvmVar -> LlvmM LlvmVar
 boxFloat32 f32
  = do	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
@@ -216,8 +216,35 @@ unboxFloat32 objptr
 		]
 	return	f32
 
+--------------------------------------------------------------------------------
+
+boxInt64 :: LlvmVar -> LlvmM LlvmVar
+boxInt64 int64
+ = do	addComment $ "boxInt64 (" ++ show int64 ++ ")"
+	(objptr, dptr)
+		<- allocDataRS (sizeOfLlvmType i64) (pLift i64)
+	addBlock
+		[ Store int64 dptr ]
+	return	objptr
+
+
+unboxInt64 :: LlvmVar -> LlvmM LlvmVar
+unboxInt64 i
+ = panic stage "unimplemented"
+
+
+--------------------------------------------------------------------------------
 
 boxFloat64 :: LlvmVar -> LlvmM LlvmVar
-boxFloat64 f
+boxFloat64 f64
+ = do	addComment $ "boxFloat64 (" ++ show f64 ++ ")"
+	(objptr, dptr)
+		<- allocDataRS (sizeOfLlvmType LMDouble) (pLift LMDouble)
+	addBlock
+		[ Store f64 dptr ]
+	return	objptr
+
+unboxFloat64 :: LlvmVar -> LlvmM LlvmVar
+unboxFloat64 f
  = panic stage "unimplemented"
 
