@@ -5,6 +5,7 @@ module DDC.Module.Scrape
 	, scrapeSourceModule)
 where
 import Main.BuildFile
+import Main.Util
 import Source.Parser.Base
 import Source.Parser.Module
 import Source.Lexer
@@ -138,7 +139,7 @@ scrapeModuleFromFile mModuleNameSearchedFor shouldImportPrelude filePath_
 	mBuild		<- loadBuildFile  buildFile
 
 	-- Read the source file.
-	source	<- readFile filePath
+	source	<- readUtf8File filePath
 
 	let sourceLines_noComments
 		= lines $ dropStrComments source

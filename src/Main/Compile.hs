@@ -93,7 +93,7 @@ compileFile setup scrapes sModule blessMain
 			% "\n"
 			
 	-- Load the source file
-	sSource		<- readFile filePath
+	sSource		<- readUtf8File filePath
 
 	compileFile_parse 
 		setup scrapes sRoot sModule
