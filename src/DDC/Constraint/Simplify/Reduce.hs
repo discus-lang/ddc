@@ -21,11 +21,11 @@ stage = "DDC.Constraint.Simplify"
 -- | The reduce phase does the actual inlining and simplification.
 reduce 	:: Set Var		-- ^ wanted vars
 	-> Table		-- ^ table of things to inline
-	-> Seq CTree
-	-> Seq CTree
+	-> CTree
+	-> CTree
 
-reduce wanted table cs
-	= join $ fmap (reduce1 wanted table) cs
+reduce wanted table tree
+	= CBranch BNothing $ reduce1 wanted table tree
 
 
 -- | Reduce a single constraint
@@ -40,7 +40,7 @@ reduce1 wanted table cc
 	CBranch{}	
 	 -> Seq.singleton 
 	  $ cc { branchSub 	= reorder
-				$ reduce wanted table 
+				$ join 	$ fmap (reduce1 wanted table)
 					$ branchSub cc }
 
 	-- Eq ---------------------------------------------

@@ -82,7 +82,7 @@ slurpTree blessMain hTree sTree
 		, problemValueToTypeVars   = stateVarType        state3
 		, problemTopLevelTypeVars  = Set.union vsTopHeader vsTopSource
 		, problemMainIsMain	   = blessMain
-		, problemConstraints	   = hConstraints >< sConstraints
+		, problemConstraints	   = CBranch BNothing $ hConstraints >< sConstraints
 		, problemTypeVarsPlease	   = stateTypesRequest   state3 }
 
    in	(sTree', problem, stateErrors state3)

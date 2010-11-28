@@ -91,19 +91,19 @@ solveFeedSig (ProbSig v sp _ tSig)
 --	This is called once we've created the initial state and added all the type signatures
 --	to the graph.
 solveTree
-	:: Seq CTree		-- ^ Constraints to solve.
+	:: CTree		-- ^ Constraints to solve, needs to have an outer CBranch Nothing.
 	-> Bool			-- ^ Whether to require "main" to have type () -> ().
 	-> SquidM ()
 
-solveTree ctree blessMain	
+solveTree (CBranch BNothing cs) blessMain	
  = do
 	-- Slurp out the branch containment tree and add it to the state.
 	--	we use this to help determine which bindings are recursive.
 	stateContains `writesRef` 
-		(Map.unions $ map slurpContains $ Seq.toList ctree)
+		(Map.unions $ map slurpContains $ Seq.toList cs)
 
 	-- Feed all the constraints into the graph, generalising types when needed.
-	solveCs ctree
+	solveCs cs
 
 	-- Generalise left-over types and check for errors.
 	solveFinalise solveCs blessMain

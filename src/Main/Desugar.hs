@@ -36,7 +36,6 @@ import qualified Desugar.Project		as D
 import qualified DDC.Desugar.Transform		as D
 import qualified Data.Map			as Map
 import qualified Data.Set			as Set
-import qualified Data.Foldable			as Seq
 
 
 -- Elaborate ---------------------------------------------------------------------------------------
@@ -154,27 +153,32 @@ desugarSlurpConstraints blessMain sTree hTree
 	-- This tidies up the constraints before solving, which makes the final
 	-- constraints easier to read. It's also a small performance boost,
 	-- but is otherwise an optional pass.
-	let problem_simplified
+	let (problem_simplified, mUsage)
 		| elem DebugNoConstraintSimplifier ?args
-		= problem
+		= (problem, Nothing)
 		
 		| otherwise
-		= problem { T.problemConstraints 
+		= let	(simplified, usage)
 				= T.simplify 	(T.problemTypeVarsPlease problem)
-						(T.problemConstraints    problem) }
+						(T.problemConstraints    problem)
+		  in	( problem { T.problemConstraints = simplified }
+			, Just usage )
 
 	-- dumping.
 	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 	dumpST	DumpDesugarSlurp "desugar-slurp" sTree'
 	
 	dumpS	DumpTypeConstraints "type-constraints"
-		$ (catInt "\n" 	$ map (pprStr pprMode) 
-				$ Seq.toList $ T.problemConstraints problem)
+		$ pprStr pprMode  $ T.problemConstraints problem
 
 	when (not $ elem DebugNoConstraintSimplifier ?args)
-	 $ dumpS DumpTypeConstraints "type-constraints--simpified"
-		 $ (catInt "\n" $ map (pprStr pprMode) 
-				$ Seq.toList $ T.problemConstraints problem_simplified)
+	 $ do	dumpS DumpTypeConstraints "type-constraints--simpified"
+		 $ pprStr pprMode $ T.problemConstraints problem_simplified
+
+		let Just usage	= mUsage
+		dumpS DumpTypeConstraints "type-constraints--usage"
+		 $ (pprStr pprMode usage)
+
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
 		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem_simplified)

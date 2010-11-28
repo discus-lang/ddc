@@ -15,25 +15,25 @@
 module DDC.Constraint.Simplify
 	(simplify)
 where
+import DDC.Constraint.Simplify.Usage
 import DDC.Constraint.Simplify.Reduce
 import DDC.Constraint.Simplify.Collect
 import DDC.Constraint.Exp
 import DDC.Var
 import DDC.Constraint.Pretty		()
-import Data.Sequence			(Seq)
 import Util
-
-
 
 -- | Simplify some type constraints.
 simplify 
 	:: Set Var		-- ^ Wanted type vars that we must preserve, don't eliminate them.
-	-> Seq CTree		-- ^ Constraints to simplify
-	-> Seq CTree		-- ^ Simplified constraints
+	-> CTree		-- ^ Constraints to simplify
+	-> (CTree, UseMap)	-- ^ Simplified constraints, and usage map for dumping.
 	
 simplify wanted tree
- = let	table	= collect wanted (CBranch BNothing tree)
-   in	reduce wanted table tree
+ = let	usage	= slurpUsage tree
+	table	= collect wanted tree
+	tree'	= reduce wanted table tree
+   in	(tree', usage)
 
 
 

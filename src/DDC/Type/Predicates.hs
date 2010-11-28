@@ -3,6 +3,7 @@
 module DDC.Type.Predicates 
 	( -- * Single constructors.
 	  isTBot
+	, isTVar
 	, isTApp
 	, isTClass
 	, isFConstraint
@@ -24,6 +25,12 @@ isTBot tt
 	TSum _ []	-> True
 	_		-> False
 
+isTVar :: Type -> Bool
+isTVar tt
+ = case tt of
+	TVar{}		-> True
+	_		-> False
+	
 
 isTApp :: Type -> Bool
 isTApp tt
