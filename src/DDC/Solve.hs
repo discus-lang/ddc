@@ -142,13 +142,6 @@ solveCs cc
  	 -> do	trace	$ "### CEq  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % nl
 		feedConstraint c
 		solveNext cs
-	
-	-- Some type equality constraints
-	--	all the types ts are supposed to be equal. ]
-	CEqs _ ts
-	 -> do	trace	$ "### CEqs " % ts % "\n"
- 	 	feedConstraint c
-		solveNext cs
 
 	-- A type inequality constraint
 	CMore _ t1 t2

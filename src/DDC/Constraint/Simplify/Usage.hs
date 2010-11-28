@@ -14,7 +14,6 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type
 import Data.Monoid
-import Data.List
 import Data.Map			(Map)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -120,14 +119,6 @@ slurpUsage cc
 	 -> mappend
 		(singleton (UsedEq OnLeft)  t1)
 		(usedTVars (UsedEq OnRight) t2)
-
-	CEqs _ ts
-	 -> let (tsTVars, tsOthers)
-			= partition isTVar ts
-			
-	    in	mappend
-		 (mconcat $ map (singleton (UsedEq OnLeft))  tsTVars)
-		 (mconcat $ map (usedTVars (UsedEq OnRight)) tsOthers)
 
 	CMore _ t1 t2
 	 -> mappend

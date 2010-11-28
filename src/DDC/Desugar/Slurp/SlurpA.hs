@@ -41,8 +41,8 @@ slurpA	(AAlt sp gs x)
 	(tX, eX, _, x', qsX)	<- slurpX x
 
 	let qs	= constraints
-		[ CEqs  (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
-		, CMore (TSE $ SEGuards sp) eAlt $ makeTSum   kEffect  (eX : esGuards) ]
+		$  makeCEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
+		++ [CMore (TSE $ SEGuards sp) eAlt $ makeTSum   kEffect  (eX : esGuards)]
 
 	let cbindsGuards	= concat cbindssGuards
 	let bind 

@@ -52,20 +52,6 @@ reduce1 wanted table cc
 	CEq src t1 t2				
 	 -> Seq.singleton   $ CEq src t1 (subEq t2)
 
-	-- Eqs --------------------------------------------
-	-- Ditch single equalities.
-	CEqs _ [_]
-	 -> Seq.empty
-
-	-- Ditch equalities that are being inlined
-	CEqs _ 	[t1, TVar{}]
-	 | Map.member t1 $ tableEq table	
-	 -> Seq.empty
-
-	CEqs src ts
-	 -> Seq.singleton
-	 $  CEqs src (map subEq ts)
-
 	-- More -------------------------------------------
 	-- Ditch  :> 0 constrints
 	CMore _ _ (TSum _ [])	-> Seq.empty

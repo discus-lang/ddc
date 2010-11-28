@@ -35,8 +35,8 @@ instance Monoid Table where
 singleNoInline :: Type -> Table
 singleNoInline t1 = Table Map.empty Map.empty (Set.singleton t1)	
 		
-singleEq   :: Type -> Type -> Table
-singleEq t1 t2 	= tableMore `seq` Table (Map.singleton t1 t2) Map.empty Set.empty
+-- singleEq   :: Type -> Type -> Table
+-- singleEq t1 t2 	= tableMore `seq` Table (Map.singleton t1 t2) Map.empty Set.empty
 
 -- singleMore :: Type -> Type -> Table
 -- singleMore t1 t2 = Table Map.empty (Map.singleton t1 t2)
@@ -48,18 +48,15 @@ collect :: Set Var
 	-> Table
 
 collect wanted cc
- = let	doNotWant (TVar _ (UVar v))	= not $ Set.member v wanted
-	doNotWant _			= True
+ = let	--doNotWant (TVar _ (UVar v))	= not $ Set.member v wanted
+	--doNotWant _			= True
 
    in case cc of
 	CBranch{}
 	 -> mconcat $ map (collect wanted) $ Seq.toList $ branchSub cc
 
-	CEqs _ 	[t1, t2@TVar{}]
-	 | doNotWant t1			-> singleEq t1 t2
-
-	CEq _	t1 t2@TVar{}	
-	 | doNotWant t1 		-> singleEq t1 t2
+--	CEq _	t1 t2@TVar{}	
+--	 | doNotWant t1 		-> singleEq t1 t2
 
 	CInst _ v _			-> singleNoInline (TVar kValue (UVar v))
 

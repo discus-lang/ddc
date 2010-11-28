@@ -32,6 +32,13 @@ feedConstraint :: CTree -> SquidM ()
 feedConstraint cc
  = trace ("feedConstraint\n" %> cc % "\n\n") >>
    case cc of
+	CEq src (TVar k1 (UVar v1)) (TVar k2 (UVar v2))
+	 -> do	cid1	<- ensureClassWithVar k1 src v1
+		cid2	<- ensureClassWithVar k2 src v2
+		mergeClasses [cid1, cid2]
+		return ()
+
+
 	-- Equality constraints. The LHS must be a variable.
  	CEq src (TVar k (UVar v1)) t2
 	 -> do
@@ -65,13 +72,6 @@ feedConstraint cc
 	-- TODO  Check we don't have eq constraints for effects or closures.
 	CMore src t1 t2
 	 -> do	feedConstraint (CEq src t1 t2)
-		return ()
-
-	-- Multiple equality.
-	-- Feed them all into the graph and merge the root classes.
-	CEqs src ts
-	 -> do	cids		<- mapM (feedType src) ts
-		mergeClasses cids
 		return ()
 
 	-- Projection constraints.

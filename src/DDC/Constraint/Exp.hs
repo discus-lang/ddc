@@ -34,11 +34,6 @@ data	CTree
 	-- | A type equality constraint.
 	| CEq		TypeSource Type Type
 
-	-- | Some type equalities. 
-	--   All the types in the list are to be taken as equal, which saves having to write
-	--   a large number of CEq constraints. The first one should be a TVar
-	| CEqs		TypeSource [Type]
-
 	-- | Type inequality (t1 :> t2)
 	| CMore		TypeSource Type Type
 

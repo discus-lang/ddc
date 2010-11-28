@@ -135,11 +135,12 @@ slurpX	(XMatch sp (Just obj) alts)
 	(tsAltsLHS, tsAltsRHS, esAlts, _, alts', qsAlts)	
 			<- liftM unzip6 $ mapM slurpA alts
 
-	let qsMatch	= constraints
-		[ CEqs   (TSU $ SUAltLeft sp)	(tObj : tsAltsLHS)
-		, CEqs   (TSU $ SUAltRight sp)	(tRHS : tsAltsRHS)
-		, CMore  (TSE $ SEMatchObj sp)	eMatch	$ TApp tHeadRead tObj
-		, CMore  (TSE $ SEMatch sp) 	eX	$ makeTSum kEffect  ([eObj, eMatch] ++ esAlts) ]
+	let qsMatch	
+		=  constraints
+	  	$  makeCEqs (TSU $ SUAltLeft  sp) (tObj : tsAltsLHS)
+		++ makeCEqs (TSU $ SUAltRight sp) (tRHS : tsAltsRHS)
+		++ [ CMore  (TSE $ SEMatchObj sp) eMatch	$ TApp tHeadRead tObj
+		   , CMore  (TSE $ SEMatch sp) eX $ makeTSum kEffect  ([eObj, eMatch] ++ esAlts) ]
 
 	wantTypeV vObj
 
@@ -161,10 +162,11 @@ slurpX	(XMatch sp Nothing alts)
 	(altsTP, altsTX, altsEs, _, alts', altsQs)	
 			<- liftM unzip6 $ mapM slurpA alts
 	
-	let matchQs	= constraints
-		[ CEqs (TSU $ SUAltLeft sp)	(tLHS 	: altsTP)
-		, CEqs (TSU $ SUAltRight sp)	(tRHS	: altsTX)
-		, CMore  (TSE $ SEMatch sp)	eMatch	$ makeTSum kEffect altsEs ]
+	let matchQs	
+		=  constraints
+		$  makeCEqs (TSU $ SUAltLeft sp)  (tLHS : altsTP)
+		++ makeCEqs (TSU $ SUAltRight sp) (tRHS	: altsTX)
+		++ [CMore   (TSE $ SEMatch sp) eMatch	$ makeTSum kEffect altsEs ]
 				  
 	return	( tRHS
 		, eMatch
@@ -293,11 +295,10 @@ slurpX	(XIfThenElse sp xObj xThen xElse)
 	(tElse, eElse, _, xElse', qsElse) <- slurpX xElse
 	
 	let qs	= constraints
-		[ CEq   (TSV $ SVIfObj sp)	tObj	$ tBool
-		, CEqs  (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse])
-		
-		, CMore (TSE $ SEIfObj sp)	eTest 	$ TApp tHeadRead tObj
-		, CMore (TSE $ SEIf sp)		eX	$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
+		$  [ CEq     (TSV $ SVIfObj sp)	tObj	$ tBool]
+		++ (makeCEqs (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse]))
+		++ [ CMore   (TSE $ SEIfObj sp)	eTest 	$ TApp tHeadRead tObj
+		   , CMore   (TSE $ SEIf sp) eX		$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
 		
 	wantTypeV vObj
 		

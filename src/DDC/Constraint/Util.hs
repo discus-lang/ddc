@@ -3,11 +3,14 @@
 -- | Bits and pieces for dealing with type constraints.
 module DDC.Constraint.Util
 	( isCBranch
+	, makeCEqs
 	, takeCBindVs
 	, mergeCBinds
 	, slurpContains)
 where
 import DDC.Constraint.Exp
+import DDC.Solve.Location
+import DDC.Type
 import DDC.Var
 import DDC.Main.Error
 import Util
@@ -23,7 +26,15 @@ isCBranch b
  = case b of
  	CBranch{}	-> True
 	_		-> False
-	
+
+-- | For some types [t1, t2, t3 ...] make constraints t1 = t2, t1 = t2, t1 = t3 ...
+--   The first type must be a TVar else panic.
+makeCEqs :: TypeSource -> [Type] -> [CTree]
+makeCEqs src tt
+ = case tt of
+	t1@TVar{}: tsRest	-> [CEq src t1 t | t <- tsRest]
+	_			-> panic stage $ "makeCEqs: no match"
+
 	
 -- | Take all the variables bound by term that this constraint branch is of.
 takeCBindVs :: CBind -> [Var]
