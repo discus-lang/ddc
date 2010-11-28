@@ -6,6 +6,7 @@ import DDC.Constraint.Simplify.Usage
 import DDC.Constraint.Simplify.Collect
 import DDC.Constraint.Util
 import DDC.Constraint.Exp
+import DDC.Solve.Location
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
@@ -41,18 +42,31 @@ reduce1 :: UseMap		-- ^ map of how vars are used.
 
 reduce1 usage table cc
  = let	subEq	= subTT_noLoops (tableEq table)
+	subEqV v
+	 = case Map.lookup (TVar kValue (UVar v)) (tableEq table) of
+		Just (TVar _ (UVar v'))	-> v'
+		_			-> v
+
+	subEqBind bb	
+	 = case bb of
+		BNothing	-> BNothing
+		BLetGroup vs	-> BLetGroup 	$ map subEqV vs
+		BLet    vs	-> BLet		$ map subEqV vs
+		BLambda vs	-> BLambda	$ map subEqV vs
+		BDecon  vs	-> BDecon	$ map subEqV vs
+
    in case cc of
 	CBranch bind subs
 	 -> Seq.singleton 
-	  $ makeCBranch bind 
+	  $ makeCBranch (subEqBind bind)
 	  $ reorder 
 	  $ join
 	  $ fmap (reduce1 usage table) subs
 
 	-- Eq ---------------------------------------------
-	-- Ditch eq constraints that are being inlined.
-	CEq _ t1 _
-	 |  Map.member t1 $ tableEq table
+	-- Ditch trivial eq constraints
+	CEq _ (TVar _ v1) (TVar _ v2)
+	 | v1 == v2
 	 -> Seq.empty
 
 	-- Ditch v1=v2 constraints when either of the vars are only used once.
@@ -61,8 +75,10 @@ reduce1 usage table cc
 	  || usedJustOnceInEq usage t2
 	 -> Seq.empty
 
+	-- If we've substituted into an outermost variable we may have ended
+	-- up with a boring v1 = v1 constraint, so ditch that out early.
 	CEq src t1 t2				
-	 -> Seq.singleton   $ CEq src t1 (subEq t2)
+	 -> mkCEq1 src (subEq t1) (subEq t2)
 
 	-- More -------------------------------------------
 	-- Ditch  :> 0 constrints
@@ -84,6 +100,13 @@ reduce1 usage table cc
 	CGen{}			-> Seq.singleton cc
 		
 	_			-> panic stage $ "reduce1: no match for" %% cc
+
+
+mkCEq1 :: TypeSource -> Type -> Type -> Seq CTree
+mkCEq1 _ (TVar _ v1) (TVar _ v2)
+	| v1 == v2	= Seq.empty
+	
+mkCEq1 src t1 t2	= Seq.singleton $ CEq src t1 t2
 
 
 -- Reorder ----------------------------------------------------------------------------------------

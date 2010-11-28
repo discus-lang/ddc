@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# OPTIONS -Wnot #-}
 module DDC.Constraint.Simplify.Collect
 	( Table (..)
 	, collect)
@@ -6,12 +7,18 @@ where
 import DDC.Constraint.Simplify.Usage
 import DDC.Constraint.Exp
 import DDC.Type
+import DDC.Main.Pretty
 import Data.Monoid
 import Data.Set				(Set)
 import Data.Map				(Map)
 import qualified Data.Foldable		as Seq
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
+import qualified Debug.Trace
+
+stage		= "DDC.Constraint.Collect"
+debug		= True
+trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 
 -- Collect ----------------------------------------------------------------------------------------
@@ -56,19 +63,17 @@ collect usage cc
 	CBranch{}
 	 -> mconcat $ map (collect usage) $ Seq.toList $ branchSub cc
 
-	-- inline  v1 = v2  renames.
+	-- inline  v1 = v2 renames from the right.
 	CEq _   t1@TVar{} t2@TVar{}
 	 | doNotWant t2
-	 , [(UsedEq OnLeft, 1), (UsedEq OnRight, 1)] 
-		<- lookupUsage t1 usage
-	 -> singleEq t1 t2
-
-	 | doNotWant t1
-	 , [(UsedEq OnLeft, 1), (UsedEq OnRight, 1)] 
-		<- lookupUsage t2 usage
 	 -> singleEq t2 t1
 
+	-- inline  v1 = v2 renames from the left.
+	CEq _   t1@TVar{} t2@TVar{}
+	 | doNotWant t1
+	 -> singleEq t1 t2
 
-	CInst _ v _			-> singleNoInline (TVar kValue (UVar v))
+	CInst _ v _
+	  -> singleNoInline (TVar kValue (UVar v))
 
-	_				-> mempty
+	_ -> mempty
