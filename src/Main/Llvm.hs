@@ -252,12 +252,13 @@ llvmOfStmt stmt
 	SReturn v	-> llvmOfReturn v
 	SSwitch e a	-> llvmSwitch e a
 	SLabel l	-> branchLabel (seaVar False l)
+	SIf e s		-> llvmOfSIf e s
 
 	-- LLVM is SSA bu SAuto variables can be reused, so we need to Alloca for them.
 	SAuto v t	-> llvmSAuto v t
 	SStmt exp	-> llvmOfSStmt exp
 	_
-	  -> panic stage $ "llvmOfStmt " ++ show stmt
+	  -> panic stage $ "llvmOfStmt (" ++ show __LINE__ ++ ")\n\n" ++ show stmt ++ "\n"
 
 
 --------------------------------------------------------------------------------
@@ -275,14 +276,35 @@ llvmOfSStmt (XPrim (MApp PAppCall) (fexp:args))
 	params		<- mapM llvmOfExp args
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) params []) ]
 
+
+llvmOfSStmt x
+ = panic stage $ "llvmOfSStmt (" ++ show __LINE__ ++ ")" ++ show x
+
+--------------------------------------------------------------------------------
+
+llvmOfSIf :: Exp a -> [Stmt a] -> LlvmM ()
+llvmOfSIf exp@XPrim{} stmts
+-- = do	reg	<- llvmOfExp exp
+ = panic stage $ "llvmOfSIf (" ++ show __LINE__ ++ ")"
+
+
+
 --------------------------------------------------------------------------------
 
 llvmSwitch :: Exp a -> [Alt a] -> LlvmM ()
-llvmSwitch (XTag (XVar (NSlot v i) tPtrObj)) alt
- = do	addComment	$ "llvmSwitch : " ++ seaVar False v
-	reg		<- readSlot i
-	tag		<- getObjTag reg
-	addComment	"-------------------------"
+llvmSwitch (XTag xv@(XVar _ t)) alt
+ | t == TPtr (TCon TyConObj)
+ = do	addComment	$ "llvmSwitch : " ++ show xv
+	reg		<-llvmOfExp xv
+	doSwitch	reg alt
+
+llvmSwitch e _
+ = 	panic stage $ "llvmSwitch (" ++ (show __LINE__) ++ ") : " ++ show e
+
+
+doSwitch :: LlvmVar -> [Alt a] -> LlvmM ()
+doSwitch reg alt
+ = do	tag		<- getObjTag reg
 
 	switchEnd	<- newUniqueLabel "switch.end"
 	switchDef	<- newUniqueLabel "switch.default"
@@ -300,9 +322,8 @@ llvmSwitch (XTag (XVar (NSlot v i) tPtrObj)) alt
 
 	addBlock	[ MkLabel (uniqueOfLlvmVar switchEnd) ]
 
-llvmSwitch e _
- = 	panic stage $ "llvmSwitch (" ++ (show __LINE__) ++ ") : " ++ show e
 
+--------------------------------------------------------------------------------
 
 genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
 genAltVars switchEnd alt@(ASwitch (XLit (LDataTag v)) [])
@@ -313,11 +334,11 @@ genAltVars switchEnd alt@(ASwitch (XLit (LDataTag v)) [])
 	tag		-> do	value	<- getTag tag
 				return	((i32LitVar value, switchEnd), alt)
 
-genAltVars _ alt@(ACaseSusp (XVar (NSlot v i) t) label)
+genAltVars _ alt@(ACaseSusp (XVar _ t) label)
  = do	lab	<- newUniqueLabel "susp"
 	return	((tagSusp, lab), alt)
 
-genAltVars _ alt@(ACaseIndir (XVar (NSlot v i) t) label)
+genAltVars _ alt@(ACaseIndir (XVar _ t) label)
  = do	lab	<- newUniqueLabel "indir"
 	return	((tagIndir, lab), alt)
 
@@ -330,21 +351,38 @@ genAltVars _ x
 
 genAltBlock :: ((LlvmVar, LlvmVar), Alt a) -> LlvmM ()
 genAltBlock ((_, lab), ACaseSusp (XVar (NSlot v i) t) label)
- = do	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
+ = do	addComment $ "genAltBlock " ++ show __LINE__
+	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- readSlot i
 	forced		<- forceObj obj
 	writeSlot	forced i
 	addBlock	[ Branch lab ]
 
 genAltBlock ((_, lab), ACaseIndir (XVar (NSlot v i) t) label)
- = do	addBlock [ MkLabel (uniqueOfLlvmVar lab) ]
+ = do	addComment $ "genAltBlock " ++ show __LINE__
+	addBlock [ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- readSlot i
 	followed	<- followObj obj
 	writeSlot	followed i
 	addBlock	[ Branch lab ]
 
+genAltBlock ((_, lab), ACaseSusp exp@(XVar n@NCafPtr{} t) label)
+ = do	addComment $ "genAltBlock " ++ show __LINE__
+	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
+	obj		<- llvmOfExp exp
+	forced		<- forceObj obj
+	addBlock	[ Branch lab ]
+
+genAltBlock ((_, lab), ACaseIndir exp@(XVar n@NCafPtr{} t) label)
+ = do	addComment $ "genAltBlock " ++ show __LINE__
+	addBlock [ MkLabel (uniqueOfLlvmVar lab) ]
+	obj		<- llvmOfExp exp
+	followed	<- followObj obj
+	addBlock	[ Branch lab ]
+
 genAltBlock ((_, lab), ASwitch (XLit (LDataTag _)) [])
- =	addBlock [ Branch lab ]
+ = do	addComment $ "genAltBlock " ++ show __LINE__
+	addBlock [ Branch lab ]
 
 genAltBlock ((_, lab), x)
  =	panic stage $ "getAltBlock (" ++ (show __LINE__) ++ ") : " ++ show x
