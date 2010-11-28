@@ -7,7 +7,6 @@ where
 import DDC.Solve.Location
 import DDC.Type.Exp
 import DDC.Var
-import Data.Map			(Map)
 import Data.Sequence		(Seq)
 
 -- | The tree of type constraints.
@@ -64,12 +63,6 @@ data	CTree
 	--	its type.
 	| CGen		TypeSource Type
 
-	-- | Carries a projection dictionary.
-	| CDictProject	
-		TypeSource 		--  source position
-		Type 			--  type of projection
-		(Map Var Var)		--  map of field label to name of instance function.
-
 
 	--------------
 	-- These constraints are used internally by the solver.
@@ -96,7 +89,6 @@ data	CTree
 	-- (used internally to solver).
 	--	A marker to remind us to instantiate a letrec-bound variabe.
 	| CInstLetRec		TypeSource Var Var
-
 	deriving (Show)
 
 

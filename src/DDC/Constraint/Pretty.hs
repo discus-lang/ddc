@@ -9,7 +9,6 @@ import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Main.Pretty
 import Util.Data.List
-import qualified Data.Map	as Map
 import qualified Data.Foldable	as Seq
 
 padVar	= padL 20
@@ -42,10 +41,6 @@ instance Pretty CTree PMode where
 	
 	CProject _ tp vInst tDict tBind
 	 -> "PROJECT " % tp % " " % vInst % " " % tDict %% tBind
-
-	CDictProject _ t vs
-	 -> pprHeadBlock ("DICTPROJECT    " % t)
-		[ v1 %>> " = " % v2 | (v1, v2)	<- Map.toList vs ]
 	
 	CInst _ v1 v2
 	 -> padVar v1	%% "<- INST" %% v2

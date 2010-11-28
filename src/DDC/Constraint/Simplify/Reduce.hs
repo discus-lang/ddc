@@ -84,11 +84,7 @@ reduce1 wanted table cc
 	-- Gen -------------------------------------------
 	CInst{}			-> Seq.singleton cc
 	CGen{}			-> Seq.singleton cc
-	
-	-- TODO: these should really go into the solver Problem
-	--	 instead of being their own constraints.
-	CDictProject{}		-> Seq.singleton cc
-	
+		
 	_			-> panic stage $ "reduce1: no match for" %% cc
 
 

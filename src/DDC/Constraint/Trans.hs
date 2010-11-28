@@ -68,9 +68,6 @@ instance Monad m => TransM m CTree where
 	
 	CGen ts t
 	 -> liftM2 CGen (return ts) (down t)
-			
-	CDictProject ts t mv
-	 -> liftM3 CDictProject (return ts) (down t) (return mv)
 					
 	-- don't handle constructors used internally by the solver
 	_ -> panic stage
