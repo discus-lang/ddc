@@ -6,6 +6,7 @@ module DDC.Constraint.Simplify.Usage
 	, Usage		(..)
 	, UseMap	(..)
 	, slurpUsage
+	, lookupUsage
 	, singleton
 	, usedIsWanted
 	, usedJustOnceInEq)
@@ -15,7 +16,9 @@ import DDC.Constraint.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type
+import Control.Monad
 import Data.Monoid
+import Data.Maybe
 import Data.Map			(Map)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -104,6 +107,11 @@ usedTVars' t usage
 	$ map (singleton usage)
 	$ Set.toList 
 	$ freeTVars t
+
+-- | Lookup the usage for some var
+lookupUsage :: Type -> UseMap -> [(Usage, Int)]
+lookupUsage t1 (UseMap mp) 
+	= fromMaybe [] $ liftM Map.toList $ Map.lookup t1 mp
 
 
 -- | Var is wanted by the Desugar -> Core transform.

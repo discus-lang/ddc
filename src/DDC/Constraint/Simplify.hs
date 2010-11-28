@@ -38,7 +38,7 @@ simplify wanted tree
 		: [singleton UsedWanted $ TVar kValue (UVar v) 
 					| v <- Set.toList wanted]
 
-	table	= collect wanted tree
+	table	= collect usage tree
 	tree'	= reduce usage table tree
    in	(tree', usage)
 
