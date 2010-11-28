@@ -3,6 +3,8 @@
 -- | Bits and pieces for dealing with type constraints.
 module DDC.Constraint.Util
 	( isCBranch
+	, isCTreeNil
+	, makeCBranch
 	, makeCEqs
 	, takeCBindVs
 	, mergeCBinds
@@ -17,6 +19,8 @@ import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Foldable	as Seq
+import qualified Data.Sequence	as Seq
+import Data.Sequence		(Seq)
 
 stage	= "DDC.Constraint.Util"
 
@@ -26,6 +30,26 @@ isCBranch b
  = case b of
  	CBranch{}	-> True
 	_		-> False
+
+isCTreeNil :: CTree -> Bool
+isCTreeNil b
+ = case b of
+	CTreeNil	-> True
+	_		-> False
+	
+
+makeCBranch :: CBind -> Seq CTree -> CTree
+makeCBranch bind cs
+	| Seq.null cs
+	= CTreeNil
+
+	| BNothing	 <- bind
+	, [cc@CBranch{}] <- Seq.toList cs
+	= cc
+
+	| otherwise
+	= CBranch bind $ Seq.filter (not . isCTreeNil) cs
+	
 
 -- | For some types [t1, t2, t3 ...] make constraints t1 = t2, t1 = t2, t1 = t3 ...
 --   The first type must be a TVar else panic.

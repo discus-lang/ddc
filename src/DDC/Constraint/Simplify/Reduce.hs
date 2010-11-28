@@ -3,6 +3,7 @@ module DDC.Constraint.Simplify.Reduce
 	(reduce)
 where
 import DDC.Constraint.Simplify.Collect
+import DDC.Constraint.Util
 import DDC.Constraint.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -25,7 +26,8 @@ reduce 	:: Set Var		-- ^ wanted vars
 	-> CTree
 
 reduce wanted table tree
-	= CBranch BNothing $ reduce1 wanted table tree
+	= makeCBranch BNothing
+	$ reduce1 wanted table tree
 
 
 -- | Reduce a single constraint
@@ -37,11 +39,12 @@ reduce1 :: Set Var		-- ^ wanted vars.
 reduce1 wanted table cc
  = let	subEq	= subTT_noLoops (tableEq table)
    in case cc of
-	CBranch{}	
+	CBranch bind subs
 	 -> Seq.singleton 
-	  $ cc { branchSub 	= reorder
-				$ join 	$ fmap (reduce1 wanted table)
-					$ branchSub cc }
+	  $ makeCBranch bind 
+	  $ reorder 
+	  $ join
+	  $ fmap (reduce1 wanted table) subs
 
 	-- Eq ---------------------------------------------
 	-- Ditch eq constraints that are being inlined.
