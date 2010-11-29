@@ -88,6 +88,11 @@ reduce1 usage table cc
 	-- Ditch  :> 0 constrints
 	CMore _ _ (TSum _ [])	-> Seq.empty
 
+	-- Ditch  :> constraints that we're inlining as Eqs.
+	CMore _ t1 _
+	 | Map.member t1 (tableEq table)
+	 -> Seq.empty
+
 	CMore src t1 t2		
 	 -> Seq.singleton 
 	  $ CMore src t1 (subEq t2)
