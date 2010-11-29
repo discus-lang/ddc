@@ -277,6 +277,10 @@ llvmOfSStmt (XPrim (MApp PAppCall) (fexp:args))
 	params		<- mapM llvmOfExp args
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) params []) ]
 
+llvmOfSStmt x@(XPrim op@(MApp PAppApply) args)
+ = do	_		<- llvmOfExp x
+	addComment	"Ignore last value."
+
 llvmOfSStmt x
  = panic stage $ "llvmOfSStmt:" ++ show __LINE__ ++ "\n\n" ++ show x ++ "\n"
 
