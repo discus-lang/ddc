@@ -12,7 +12,7 @@
 		_dumpPanic(); \
 		abort(); \
 	}
-		
+
 #define _ERROR(format, ...) \
 	{ \
 		fprintf (stderr, "DDC RTS ERROR: %s:%d > ", __FILE__, __LINE__); \
@@ -50,7 +50,7 @@
 #define	_CAFPTR(name)	_ddcCAF_##name
 
 // Take the pointer of the CAF object with this name.
-//   As the pointer to the actual object is held on the slot stack, 
+//   As the pointer to the actual object is held on the slot stack,
 //   we have to dereference this one to get at it.
 #define _CAF(name)	*_ddcCAF_##name
 
@@ -122,8 +122,21 @@
 // These are used in the source code for the DDC.Store library
 #define _PEEK(ptr)		*(ptr)
 #define _PEEKON(ignored,ptr)	*(ptr)
-#define _POKE(ptr,x)		(*ptr = x) 
-#define _POKEON(ignored,ptr,x)	(*ptr = x) 
+#define _POKE(ptr,x)		(*ptr = x)
+#define _POKEON(ignored,ptr,x)	(*ptr = x)
 #define	_PLUSPTR(ptr,offset)	(ptr + offset)
+
+
+// Cast macros ------------------------------------------------------------------------------------
+// These are used in the source code for the Foreign.Ptr library
+#define _castToPtrWord8(ptr)	((Word8 *) (ptr))
+#define _castToPtrWord32(ptr)	((Word32 *) (ptr))
+#define _castToPtrWord64(ptr)	((Word64 *) (ptr))
+#define _castToPtrInt32(ptr)	((Int32 *) (ptr))
+#define _castToPtrInt64(ptr)	((Int64 *) (ptr))
+#define _castToPtrFloat32(ptr)	((Float32 *) (ptr))
+#define _castToPtrFloat64(ptr)	((Float64 *) (ptr))
+#define _castToPtrChar32(ptr)	((Char32 *) (ptr))
+
 
 #endif

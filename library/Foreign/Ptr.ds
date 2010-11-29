@@ -42,42 +42,42 @@ foreign import "_POKEON"
 -- TODO: If we had better support for inline type annots then we
 --       wouldn't need these.
 
-foreign import "(Word8 *)"
+foreign import "_castToPtrWord8"
  castToPtrWord8
  	:: forall a
 	.  Ptr# a -> Ptr# Word8#
 
-foreign import "(Word32 *)"
+foreign import "_castToPtrWord32"
  castToPtrWord32
  	:: forall a
 	.  Ptr# a -> Ptr# Word32#
 
-foreign import "(Word64 *)"
+foreign import "_castToPtrWord64"
  castToPtrWord64
  	:: forall a
 	.  Ptr# a -> Ptr# Word64#
 
-foreign import "(Int32 *)"
+foreign import "_castToPtrInt32"
  castToPtrInt32
  	:: forall a
 	.  Ptr# a -> Ptr# Int32#
 
-foreign import "(Int64 *)"
+foreign import "_castToPtrInt64"
  castToPtrInt64
  	:: forall a
 	.  Ptr# a -> Ptr# Int64#
 
-foreign import "(Float32 *)"
+foreign import "_castToPtrFloat32"
  castToPtrFloat32
  	:: forall a
 	.  Ptr# a -> Ptr# Float32#
 
-foreign import "(Float64 *)"
+foreign import "_castToPtrFloat64"
  castToPtrFloat64
  	:: forall a
 	.  Ptr# a -> Ptr# Float64#
 
-foreign import "(Char32 *)"
+foreign import "_castToPtrChar32"
  castToPtrChar32
- 	:: forall a 
+ 	:: forall a
  	.  Ptr# a -> Ptr# Char32#
