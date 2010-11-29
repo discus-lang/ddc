@@ -138,6 +138,13 @@ llvmOfXPrim (MFun PFunForce) [ XVar (NSlot v i) (TPtr (TCon TyConObj)) ]
  = do	var <- readSlot i
 	forceObj var
 
+llvmOfXPrim (MFun PFunForce) [ XVar v@NCafPtr{} tv@(TPtr (TCon TyConObj)) ]
+ = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
+	r2		<- newUniqueNamedReg "r2" $ toLlvmType tv
+	addBlock	[ Assignment r1 (loadAddress (pVarLift (toLlvmCafVar (varOfName v) tv)))
+			, Assignment r2 (loadAddress r1) ]
+	forceObj	r2
+
 llvmOfXPrim (MApp PAppApply) ((fptr@(XVar n t)):args)
  = do	addComment $ "llvmOfXPrim PAppApply (" ++ (show __LINE__) ++ ")"
 	params	<- mapM llvmOfExp args
