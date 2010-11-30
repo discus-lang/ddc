@@ -1,15 +1,13 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-module Util.Data.List.Split
+module Data.List.Split
 	( test_UtilDataListSplit
-	, splitWhenLeft, chopWhenLeft
-	, splitOnLeft, chopOnLeft
+	, splitWhenLeft,  chopWhenLeft
+	, splitOnLeft,    chopOnLeft
 	, splitWhenRight, chopWhenRight
-	, splitOnRight, chopOnRight
+	, splitOnRight,   chopOnRight
 	, breakOns
-	, breakWhens)
-	
+	, breakWhens)	
 where
-
 import Util.Test.Check
 import Data.List
 

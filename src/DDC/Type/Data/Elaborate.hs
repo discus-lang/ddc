@@ -14,7 +14,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Core.Pretty		()
-import Util.Data.List
+import Data.ListUtil
 import Data.Traversable		(mapM)
 import Data.Map			(Map)
 import qualified Shared.VarPrim	as Var

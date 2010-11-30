@@ -39,7 +39,7 @@ import System.IO
 import Control.Monad.State.Strict
 import qualified DDC.Main.Arg	as Arg
 import qualified Data.Set	as Set
-import qualified Util.Data.Map	as Map
+import qualified Data.MapUtil	as Map
 import Util
 
 stage	= "DDC.Solve.State.Base"

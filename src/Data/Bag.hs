@@ -1,7 +1,7 @@
 -- |	A fast bag of unsorted things.
 --	For fast insert, union and take1
 --	For when you simply don't care about ordering.
-module Util.Data.Bag
+module Data.Bag
 	( Bag (Nil)
 	, empty
 	, singleton
@@ -17,7 +17,6 @@ module Util.Data.Bag
 	, fromList)
 
 where
-
 import Prelude	hiding (map, mapM)
 import qualified Data.List as List
 

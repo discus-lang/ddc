@@ -262,7 +262,7 @@ outSea
 		 ,      _seaData
 		 , 	_seaPCtorTag ], junk)
 
-		 = partitionFs
+		 = partitionBy
 			[ (=@=) PProto{}, 	(=@=) PSuper{}
 			, (=@=) PCafProto{},	(=@=) PCafSlot{},	(=@=) PCafInit{}
 			, (=@=) PData{}
@@ -323,7 +323,7 @@ makeSeaHeader :: (Tree ()) -> String -> [String] -> [String] -> String
 makeSeaHeader eTree pathThis pathImports extraIncludes
  = do		-- Break up the sea into Header/Code parts.
 	let 	([ seaProtos, seaCafProtos, seaCtorTag ], _junk)
-		 = partitionFs
+		 = partitionBy
 			[ (=@=) PProto{}, (=@=) PCafProto{}, (=@=) PCtorTag{} ]
 			eTree
 	let defTag	= makeIncludeDefTag pathThis

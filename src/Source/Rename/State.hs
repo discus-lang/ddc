@@ -24,7 +24,7 @@ import DDC.Source.Error
 import DDC.Var
 import DDC.Main.Error
 import Shared.VarPrim		(getPrimVarBind)
-import qualified Util.Data.Map	as Map
+import qualified Data.MapUtil	as Map
 
 -----
 stage = "Source.Rename.State"

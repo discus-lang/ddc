@@ -5,7 +5,7 @@ module Source.Slurp
 	, slurpKinds
 	, slurpTopNames )
 where
-import Util.Data.Maybe
+import Data.MaybeUtil
 import Util
 import Source.Exp
 import DDC.Main.Error

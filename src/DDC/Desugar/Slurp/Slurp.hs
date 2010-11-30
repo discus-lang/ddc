@@ -11,8 +11,7 @@ import DDC.Var
 import DDC.Type			()
 import DDC.Type.Data
 import Util
-import qualified Data.Map	as Map
-import qualified Util.Data.Map	as Map
+import qualified Data.MapUtil	as Map
 import qualified Data.Set	as Set
 import qualified Data.Sequence	as Seq
 import qualified Data.Foldable	as Seq
@@ -124,7 +123,7 @@ slurpTreeM tree
  = do
 	-- sort the top level things so that data definitions go through before their uses.
 	let psSorted	
-		= partitionFsSort
+		= partitionBySort
 			[ (=@=) PRegion{}, 	(=@=) PData{}
 			, (=@=) PSuperSig{},	(=@=) PClassDecl{}
 			, (=@=) PImport{},	(=@=) PExtern{}
@@ -155,7 +154,7 @@ slurpTreeM tree
 	-- Sort the constraints into an order acceptable by the solver.
 	let qsFinal_rest
 		= Seq.fromList
-		$ partitionFsSort
+		$ partitionBySort
 			[ (=@=) CProject{} ]
 			qsRest
 	

@@ -31,8 +31,7 @@ import Data.Foldable		(foldr)
 import Data.Traversable		(mapM)
 import Control.Monad		hiding (mapM)
 import Prelude			hiding (foldr, mapM)
-import qualified Data.Map	as Map
-import qualified Util.Data.Map	as Map
+import qualified Data.MapUtil	as Map
 import qualified Data.Sequence	as Seq
 import {-# SOURCE #-} DDC.Core.Check.Exp
 

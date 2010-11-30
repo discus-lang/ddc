@@ -1,8 +1,8 @@
 module Util
 	( module Control.Monad.State.Strict
-	, module Util.Data.Tuple
-	, module Util.Data.List
-	, module Util.Data.Maybe
+	, module Data.TupleUtil
+	, module Data.ListUtil
+	, module Data.MaybeUtil
 	, module Util.Control.Monad
 	, module Util.Tunnel
 	, module Util.Pretty
@@ -12,12 +12,11 @@ module Util
 	, (=@=)
 	, orf)
 where
-
 import Control.Monad.State.Strict
-import Util.Data.Tuple
-import Util.Data.List
-import Util.Data.Maybe
-import Util.Data.WorkGraph
+import Data.TupleUtil
+import Data.ListUtil
+import Data.MaybeUtil
+import Data.WorkGraph
 import Util.Control.Monad
 import Util.Tunnel
 import Util.Pretty

@@ -4,8 +4,8 @@ module Util.Options
 	( parseOptions)
 where
 import Util	((=@=))
-import Util.Data.Either
-import Util.Data.List
+import Data.EitherUtil
+import Data.ListUtil
 import Util.Options.Token
 import Util.Options.Option
 
@@ -21,7 +21,7 @@ munch 	:: [Option a]  		-- ^ Accepted options
 	-> ([String], [a])	-- ^ errors, parsed options
 
 munch	 options	toks
- 	= gatherEither $ munchTokens options toks
+ 	= partitionEither $ munchTokens options toks
 
 -- | Convert some tokens to options
 munchTokens 

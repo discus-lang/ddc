@@ -24,7 +24,7 @@ import qualified DDC.Core.Glob		as C
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 import qualified Data.Sequence		as Seq
-import qualified Util.Data.Map		as Map
+import qualified Data.MapUtil		as Map
 
 stage	= "Module.Interface.Export"
 

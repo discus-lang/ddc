@@ -1,6 +1,6 @@
 -- | Work graphs
 --		
-module Util.Data.WorkGraph 
+module Data.WorkGraph 
 	( test_UtilDataWorkGraph
 	, WorkGraph(..)
 	, WorkNode (..)
@@ -13,18 +13,14 @@ module Util.Data.WorkGraph
 	, takeWorkPrefNot
 	, deleteRootNode)
 where
-
-import Util.Data.BackGraph
+import Data.BackGraph
 import Util.Test.Check
-
-import Prelude			hiding (null, lookup)
-import Data.List 		hiding (null, lookup)
-
 import qualified Data.Set 	as Set
-import Data.Set			(Set)
-
 import qualified Data.Map 	as Map
 import Data.Map			(Map)
+import Data.Set			(Set)
+import Prelude			hiding (null, lookup)
+import Data.List 		hiding (null, lookup)
 
 test_UtilDataWorkGraph
 	= [test_fromBackNodes_coverage]
@@ -73,7 +69,7 @@ fromBackNodes
 fromBackNodes nodes
  	= foldr addBackNode empty nodes
 
--- @ Check we can always make the graph
+-- | Check we can always make the graph
 test_fromBackNodes_coverage
 	= testBool "fromBackNodes_coverage"
 	$ \((BackGraph nodes) :: BackGraph Int)

@@ -1,5 +1,6 @@
 
-module Util.Data.Tuple
+-- | Bonus utils for working with `Tuple`s.
+module Data.TupleUtil
 	( t5App, t5_1, t5_2, t5_3, t5_4, t5_5
 	, t4App, t4_1, t4_2, t4_3, t4_4
 	, t3App, t3_1, t3_2, t3_3
@@ -7,6 +8,7 @@ module Util.Data.Tuple
 
 where
 
+-- 5-Tuples.
 t5App	(f,   g,   h,   i,   j)   a
  =	(f a, g a, h a, i a, j a)
 
@@ -17,7 +19,7 @@ t5_4	(a, b, c, d, e)	= d
 t5_5	(a, b, c, d, e)	= e
 
 
------
+-- 4-Tuples.
 t4App	(f,   g,   h,   i)   a
  =	(f a, g a, h a, i a)
 
@@ -27,7 +29,7 @@ t4_3	(a, b, c, d)	= c
 t4_4	(a, b, c, d)	= d
 
 
------
+-- 3-Tuples.
 t3App	(f,   g,   d)	a
  = 	(f a, g a, d a)
  
@@ -36,7 +38,7 @@ t3_2	(a, b, c)	= b
 t3_3	(a, b, c)	= c
 
 
------
+-- 2-Tuples.
 t2App	(f,   g)	a
  = 	(f a, g a)
  

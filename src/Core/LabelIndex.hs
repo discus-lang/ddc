@@ -9,7 +9,7 @@ import DDC.Core.Exp
 import DDC.Core.Glob
 import DDC.Type.Data
 import DDC.Var
-import Util.Data.Maybe
+import Data.MaybeUtil
 import qualified Data.Map	as Map
 
 

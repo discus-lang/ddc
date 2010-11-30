@@ -1,27 +1,15 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Dropping / Deleting elements in lists
-module Util.Data.List.Drop 
- 	( nubF, elemF
+module Data.List.Drop 
+ 	( elemBy
 	, dropIx
  	, dropWhen)
 where
-
 import Data.List
 
--- | General nub function, using this equality test
-nubF ::	(a -> a -> Bool) -> [a] -> [a]
-nubF f	xx
- 	= nubF' f xx []
-	
-nubF' _ [] acc	= reverse acc
-nubF' f (x:xs) acc
-	| elemF f x acc	= nubF' f xs acc
-	| otherwise	= nubF' f xs (x:acc)
-
-
 -- | General elem function, using this equality test.
-elemF :: (a -> a -> Bool) -> a -> [a] -> Bool
-elemF	 f e xs
+elemBy :: (a -> a -> Bool) -> a -> [a] -> Bool
+elemBy f e xs
  = case find (\x -> f e x) xs of
  	Nothing	-> False
 	Just _	-> True

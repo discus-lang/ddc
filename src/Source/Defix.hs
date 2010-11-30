@@ -193,11 +193,11 @@ defaultFix
 --- | Get the prec / assoc for this var from the table.
 getPrec  :: [FixDef a] -> Var -> Int
 getPrec  fixTable v
-	= fst $ fromMaybe defaultFix $ lookupF ((==) `on` varName) v fixTable
+	= fst $ fromMaybe defaultFix $ lookupBy ((==) `on` varName) v fixTable
 
 getAssoc :: [FixDef a] -> Var -> InfixMode a
 getAssoc fixTable v	
 	| otherwise
-	= snd $ fromMaybe defaultFix $ lookupF ((==) `on` varName) v fixTable
+	= snd $ fromMaybe defaultFix $ lookupBy ((==) `on` varName) v fixTable
 
 

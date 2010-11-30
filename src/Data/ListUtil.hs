@@ -1,9 +1,11 @@
-module Util.Data.List
+
+-- | Bonus utils for working with lists.
+module Data.ListUtil
 	( module Data.List
-	, module Util.Data.List.Drop
-	, module Util.Data.List.Shuffle
-	, module Util.Data.List.Select
-	, module Util.Data.List.Split
+	, module Data.List.Drop
+	, module Data.List.Shuffle
+	, module Data.List.Select
+	, module Data.List.Split
 	, test_UtilDataList
 
 	-- contractions
@@ -39,12 +41,10 @@ module Util.Data.List
 	, milk)	
 where
 import Data.List
-import Util.Data.List.Drop
-import Util.Data.List.Shuffle
-import Util.Data.List.Select
-import Util.Data.List.Split
-
-
+import Data.List.Drop
+import Data.List.Shuffle
+import Data.List.Select
+import Data.List.Split
 
 test_UtilDataList
  = 	test_UtilDataListShuffle

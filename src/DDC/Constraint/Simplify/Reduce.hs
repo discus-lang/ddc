@@ -33,6 +33,10 @@ reduce usage table tree
 	= makeCBranch BNothing
 	$ reduce1 usage table tree
 
+-- make this advance through a cons-list dropping out unwanted constraints.
+-- use IORef to do the substitutions, then eat up IORefs in a separate pass.
+--- should be easy to make the second traversal be sequential, deepseqing the constraint list.
+
 
 -- | Reduce a single constraint
 reduce1 :: UseMap		-- ^ map of how vars are used.
@@ -117,8 +121,7 @@ mkCEq1 src t1 t2	= Seq.singleton $ CEq src t1 t2
 reorder	:: Seq CTree -> Seq CTree
 reorder cs
  = let	([eqs, mores, gens], others)
-		= partitionFs
-			[ (=@=) CEq{},  (=@=) CMore{},    (=@=) CGen{} ]
+		= partitionBy [(=@=) CEq{}, (=@=) CMore{}, (=@=) CGen{}]
 		$ Seq.toList cs
 		
    in	join	$ Seq.fromList

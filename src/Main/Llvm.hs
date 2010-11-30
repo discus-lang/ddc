@@ -111,7 +111,7 @@ outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
 		 ,	_seaData
 		 , 	seaCtorTags ],		junk)
 
-		 = partitionFs
+		 = partitionBy
 			[ (=@=) PProto{}, 	(=@=) PSuper{}
 			, (=@=) PCafProto{},	(=@=) PCafSlot{},	(=@=) PCafInit{}
 			, (=@=) PData{}

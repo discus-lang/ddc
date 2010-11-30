@@ -7,7 +7,7 @@ import DDC.Desugar.Slurp.SlurpX
 import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
 import Util
-import qualified Util.Data.Map	as Map
+import qualified Data.MapUtil	as Map
 import qualified Data.Sequence	as Seq
 import Data.Sequence		(Seq)
 

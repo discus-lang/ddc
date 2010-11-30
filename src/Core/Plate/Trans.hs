@@ -531,7 +531,7 @@ instance Monad m => TransM m Stmt where
  transZM table s
   = case s of
 	SBind mV x
-	 -> do	mV'		<- liftMaybe (followV_bind table) mV
+	 -> do	mV'		<- liftToMaybe (followV_bind table) mV
 		x'		<- followX table x
 		transS table	$ SBind mV' x'
 		

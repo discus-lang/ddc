@@ -24,7 +24,7 @@ import DDC.Type.SigMode
 import DDC.Var
 import DDC.Util.FreeVars
 import qualified Data.Set		as Set
-import qualified Util.Data.Map		as Map
+import qualified Data.MapUtil		as Map
 import qualified Shared.VarUtil		as Var
 
 stage	= "Desugar.Project"
@@ -479,7 +479,7 @@ slurpProjTable tree
 		Just (vCon, _, _)
 		 -> (vCon, (t, Map.fromList $ catMaybes $ map projDictS ss))
 
-	projTable	= Map.gather 
+	projTable	= Map.collate 
 			$ map packProjDict projDictPs
  in 	projTable
 

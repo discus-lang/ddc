@@ -15,7 +15,7 @@ import Llvm.Util
 
 import qualified DDC.Main.Arg		as Arg
 
-import Util.Data.List
+import Data.ListUtil
 
 
 stage = "Llvm.Runtime.Main"

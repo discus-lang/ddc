@@ -18,7 +18,7 @@ import Control.Monad.Trans
 import qualified Data.Sequence	as Seq
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import Util.Data.List
+import Data.ListUtil
 
 stage	= "DDC.Solve.Merge"
 debug	= False

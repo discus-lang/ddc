@@ -11,8 +11,8 @@ import Control.Concurrent
 import System.Exit
 import System.IO
 import Data.Set				(Set)
-import Util.Data.WorkGraph		(WorkGraph)
-import qualified Util.Data.WorkGraph	as WorkGraph
+import Data.WorkGraph			(WorkGraph)
+import qualified Data.WorkGraph		as WorkGraph
 import qualified Data.Set		as Set
 
 

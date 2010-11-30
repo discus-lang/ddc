@@ -17,8 +17,8 @@ module DDC.Type.Transform
 where
 import DDC.Type.Exp
 import DDC.Var
-import Util.Data.Bag		(Bag)
-import qualified Util.Data.Bag 	as Bag
+import Data.Bag			(Bag)
+import qualified Data.Bag 	as Bag
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import Util

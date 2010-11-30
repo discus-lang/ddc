@@ -287,7 +287,7 @@ bindXDo shared xx@(XDo ss)
 	--	on of our statements. These are the vars that get bound right here.
 	--
 	let expand (i, vSet)	= [ (v, i)	| v <- Set.toList vSet ]
-	let vsUsage		= gather $ catMap expand ivsFree_up
+	let vsUsage		= collate $ catMap expand ivsFree_up
 
 	-- these are the regions which are used in multiple statements
 	let vsSplit		= [ v	| (v, uses)	<- vsUsage

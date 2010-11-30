@@ -1,20 +1,19 @@
 
-module Util.Data.BackGraph 
+module Data.BackGraph 
 	( BackGraph (..)
 	, BackNode  (..)
 	, testBackGraph )
 where
-
 import Util.Test.Check
 import Control.Monad
 import Data.List
 import Data.Map		(Map)
 import qualified Data.Map as Map
 
--- A backwards work graph.
+
+-- | A backwards work graph.
 --	The nodes contain lists of parent jobs to be finished
 --	before this one can be started.
---
 data BackGraph k  
 	= BackGraph (Map k (BackNode k))
 	deriving Show

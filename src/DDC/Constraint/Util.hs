@@ -89,7 +89,7 @@ slurpContains :: CTree -> Map CBind (Set CBind)
 slurpContains tree
 	= Map.fromList 
 	$ map (\(v, vs) -> (v, Set.fromList vs))
-	$ gather
+	$ collate
 	$ slurpContains' Nothing tree
 
 

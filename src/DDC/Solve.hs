@@ -25,7 +25,7 @@ import DDC.Main.Error
 import Util
 import System.IO
 import DDC.Main.Arg		(Arg)
-import qualified Util.Data.Map	as Map
+import qualified Data.MapUtil	as Map
 import qualified Data.Set	as Set
 import qualified Data.Foldable	as Seq
 import qualified Data.Sequence	as Seq

@@ -21,7 +21,7 @@ import Prelude				hiding (mapM)
 import Control.Monad.State.Strict	hiding (mapM, forM)
 import qualified Data.Map		as Map
 import Util.Control.Monad
-import Util.Data.List
+import Data.ListUtil
 
 -- | Monadic transforms of desugared expressions.
 --   They can also change the type of the annotation along the way.

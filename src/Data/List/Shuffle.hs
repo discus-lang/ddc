@@ -1,13 +1,11 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Sorting and Shuffling
-module Util.Data.List.Shuffle
+module Data.List.Shuffle
 	( test_UtilDataListShuffle
 	, rotate
-	, partitionFs
-	, partitionFsSort)
-	
+	, partitionBy
+	, partitionBySort)	
 where
-
 import Data.List
 import Data.Maybe
 import Util.Test.Check
@@ -47,37 +45,34 @@ test_rotate_inv
 
 -- | Separate out this list into bins. 
 --   An element goes in the bin if it matches the corresponding predicate.
-
-partitionFs :: 	[(a -> Bool)] -> [a] -> ([[a]], [a])
-partitionFs 	fs xx 
- = let	(bins, rest)	= mapAccumL (partitionFs1 fs) (replicate (length fs) []) xx
+partitionBy :: 	[(a -> Bool)] -> [a] -> ([[a]], [a])
+partitionBy fs xx 
+ = let	(bins, rest)	= mapAccumL (partitionBy1 fs) (replicate (length fs) []) xx
    in	( map reverse bins
         , catMaybes rest)
 	
 -- | Place an element on the head of the bin which matches the corresponding predicate
 --	If no bins match the element goes on the floor.
-
-partitionFs1 :: [(a -> Bool)] -> [[a]] -> a -> ([[a]], Maybe a)
-
-partitionFs1 fs bins x 
-	= partitionFs1' fs [] bins x
+partitionBy1 :: [(a -> Bool)] -> [[a]] -> a -> ([[a]], Maybe a)
+partitionBy1 fs bins x 
+	= partitionBy1' fs [] bins x
 
 -- no predicates matched, drop the element on the floor
-partitionFs1'  []      binPrev []	x
+partitionBy1'  []      binPrev []	x
 	= (binPrev, Just x)
 
 -- ran out of functions before we ran out of bins
 --	just say we couldn't match anything
-partitionFs1'	[]	binPrev binsRest 	x
+partitionBy1'	[]	binPrev binsRest 	x
 	= ( binPrev ++ binsRest
 	  , Just x)	
 
 -- ran out of bins before we ran out of functions
 --	just make a new bin and carry on
-partitionFs1'  ff  	binPrev []  	x
-	= partitionFs1' ff binPrev [[]] x
+partitionBy1'  ff  	binPrev []  	x
+	= partitionBy1' ff binPrev [[]] x
 
-partitionFs1'  (f:fs)  binPrev (bin:binRest)  x
+partitionBy1'  (f:fs)  binPrev (bin:binRest)  x
 
 	-- predicate matched, place the element in the current bin
 	| f x
@@ -86,13 +81,13 @@ partitionFs1'  (f:fs)  binPrev (bin:binRest)  x
 	
 	-- predicate failed, move on to the next bin.
 	| otherwise
-	= partitionFs1' fs (binPrev ++ [bin]) binRest x
+	= partitionBy1' fs (binPrev ++ [bin]) binRest x
 
 
--- | Do a partitionFs then concat the results together into a single list.
-partitionFsSort :: [(a -> Bool)] -> [a] -> [a]
-partitionFsSort fs xx
- = let	(bins, rest)	= partitionFs fs xx
+-- | Do a partitionBy then concat the results together into a single list.
+partitionBySort :: [(a -> Bool)] -> [a] -> [a]
+partitionBySort fs xx
+ = let	(bins, rest)	= partitionBy fs xx
    in	(concat bins ++ rest)
 
 

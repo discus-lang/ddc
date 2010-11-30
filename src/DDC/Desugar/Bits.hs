@@ -31,7 +31,7 @@ import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import Data.Set				(Set)
 import Data.Map				(Map)
-import Util.Data.List
+import Data.ListUtil
 import Control.Monad.State.Strict
 
 
