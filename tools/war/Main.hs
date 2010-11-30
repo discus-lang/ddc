@@ -16,12 +16,12 @@ import System.Exit
 import System.IO
 import Control.Monad.Reader
 import Control.Concurrent
-import Util.Data.BackGraph		(BackNode(..))
-import Util.Data.WorkGraph		(WorkGraph)
-import qualified Util.Data.WorkGraph	as WorkGraph
-import qualified Data.Map		as Map
-import Util.Options			as Options
-import Util.Options.Help		as Options
+import Data.BackGraph		(BackNode(..))
+import Data.WorkGraph		(WorkGraph)
+import qualified Data.WorkGraph	as WorkGraph
+import qualified Data.Map	as Map
+import Util.Options		as Options
+import Util.Options.Help	as Options
 
 
 -- Main -------------------------------------------------------------------------------------------

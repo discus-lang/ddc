@@ -9,8 +9,7 @@ import War
 import Command
 import Config
 import Timing
-import Data.List
-import Util.Data.List
+import Data.ListUtil
 import Control.Monad.Error
 import qualified System.Cmd	as System.Cmd
 import System.FilePath

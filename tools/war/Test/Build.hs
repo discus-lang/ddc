@@ -8,7 +8,7 @@ where
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
-import Util.Data.List
+import Data.ListUtil
 import War
 import Command
 import Config

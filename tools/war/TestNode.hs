@@ -9,11 +9,10 @@ module TestNode
 	, chainTests
 	, chainNodes)
 where
-
 import Config
 import Test
+import Data.ListUtil
 
-import Util.Data.List
 
 -- | An identifier for a way'd test.
 type TestId	= (Test, Way)
