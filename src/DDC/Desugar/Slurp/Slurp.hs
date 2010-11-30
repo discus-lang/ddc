@@ -13,9 +13,8 @@ import DDC.Type.Data
 import Util
 import qualified Data.MapUtil	as Map
 import qualified Data.Set	as Set
-import qualified Data.Sequence	as Seq
-import qualified Data.Foldable	as Seq
-import Data.Sequence		(Seq)
+import qualified Data.Bag	as Bag
+import Data.Bag			(Bag)
 
 stage	= "DDC.Desugar.Slurp.Slurp"
 
@@ -81,7 +80,7 @@ slurpTree blessMain hTree sTree
 		, problemValueToTypeVars   = stateVarType        state3
 		, problemTopLevelTypeVars  = Set.union vsTopHeader vsTopSource
 		, problemMainIsMain	   = blessMain
-		, problemConstraints	   = CBranch BNothing $ hConstraints >< sConstraints
+		, problemConstraints	   = CBranch BNothing $ Bag.toList (hConstraints >< sConstraints)
 		, problemTypeVarsPlease	   = stateTypesRequest   state3 }
 
    in	(sTree', problem, stateErrors state3)
@@ -116,7 +115,7 @@ slurpTreeM
 	-> CSlurpM 
 		( Tree Annot2	-- the tree annotated with TREC variables linking it
 				--	with the constraints.
-		, Seq CTree
+		, Bag CTree
 		, Set Var)	-- vars bound at top level
 
 slurpTreeM tree
@@ -134,11 +133,11 @@ slurpTreeM tree
 
 	-- Slurp out type constraints from the tree.
 	(tree', qss)	<- liftM unzip $ mapM slurpP psSorted
-	let qs		= join $ Seq.fromList qss
+	let qs		= Bag.concat qss
 	
 	-- pack all the bindings together.
 	let (qsBranch, qsRest)
-			= partition isCBranch $ Seq.toList qs
+			= partition isCBranch $ Bag.toList qs
 
 	let vsLet	= concat
 			$ map (\b -> case branchBind b of
@@ -146,14 +145,14 @@ slurpTreeM tree
 				_	-> [])
 			$ qsBranch
 
-	let qsFinal_let	= Seq.singleton
+	let qsFinal_let	= Bag.singleton
 			$ CBranch 
 				{ branchBind 	= BLetGroup vsLet
-				, branchSub	= Seq.fromList qsBranch }
+				, branchSub	= qsBranch }
 				
 	-- Sort the constraints into an order acceptable by the solver.
 	let qsFinal_rest
-		= Seq.fromList
+		= Bag.fromList
 		$ partitionBySort
 			[ (=@=) CProject{} ]
 			qsRest
@@ -166,23 +165,23 @@ slurpTreeM tree
 -- Top --------------------------------------------------------------------------------------------
 -- | Slurp out type constraints from a top level thing.
 slurpP 	:: Top Annot1	
-	-> CSlurpM (Top Annot2, Seq CTree)
+	-> CSlurpM (Top Annot2, Bag CTree)
 
 slurpP	(PImport _ ms)
  =	return	( PImport Nothing ms
-		, Seq.empty)
+		, Bag.empty)
 
 slurpP	(PRegion _ v)
  =	return 	( PRegion Nothing v
-		, Seq.empty)
+		, Bag.empty)
 
 slurpP	(PKindSig _ v k)
    =	return	( PKindSig Nothing v k
-		, Seq.empty)
+		, Bag.empty)
  
 slurpP	(PSuperSig _ v k)
  =	return	( PSuperSig Nothing v k
-		, Seq.empty)
+		, Bag.empty)
 		
 slurpP (PClassInst sp v ts ss)
  = do	-- All the RHS of the statements are vars, so we don't get any useful constraints back
@@ -196,7 +195,7 @@ slurpP (PClassInst sp v ts ss)
 			 	(Map.singleton v [ProbClassInst v sp ts]) }
 
 	return	( PClassInst Nothing v ts ss'
-		, Seq.empty )
+		, Bag.empty )
 
 slurpP	(PTypeSig sp sigMode vs tSig) 
  = do
@@ -209,7 +208,7 @@ slurpP	(PTypeSig sp sigMode vs tSig)
 			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
 		
 	return	( PTypeSig Nothing sigMode vs tSig
-		, Seq.empty)
+		, Bag.empty)
 
 slurpP (PTypeSynonym{})
  = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"
@@ -217,7 +216,7 @@ slurpP (PTypeSynonym{})
 slurpP (PData _ dataDef)
  = do	modify 	$ addDataDefToState dataDef
 	return 	( PData Nothing dataDef
-		, Seq.empty)
+		, Bag.empty)
 
 			
 slurpP	(PProjDict sp t ss)
@@ -237,7 +236,7 @@ slurpP	(PProjDict sp t ss)
 				(Map.singleton vCtor [ProbProjDict vCtor sp vsProjInst]) }
 
 	return	( PProjDict Nothing t ss'
-		, Seq.empty )
+		, Bag.empty )
 	
 slurpP (PBind sp v x)
  = do	(_, _, _, stmt', qs)
@@ -260,9 +259,9 @@ slurpP (PBind sp v x)
 
 slurpP (PExtern _ v t tSea)
  = 	return	( PExtern Nothing v t tSea
-		, Seq.empty)
+		, Bag.empty)
 
 slurpP (PClassDecl _ vClass tsParam tsMethods)
  = 	return	( PClassDecl Nothing vClass tsParam tsMethods
-		, Seq.empty)
+		, Bag.empty)
 					

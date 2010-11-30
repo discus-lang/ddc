@@ -7,7 +7,6 @@ where
 import DDC.Solve.Location
 import DDC.Type.Exp
 import DDC.Var
-import Data.Sequence		(Seq)
 
 -- | The tree of type constraints.
 --   In most of these constraints, the first Type parameter should always be 
@@ -29,7 +28,7 @@ data	CTree
 	    branchBind	:: CBind		
 
 	    -- | sub constraints
-	  , branchSub	:: Seq CTree }		
+	  , branchSub	:: [CTree] }		
 
 	-- | A type equality constraint.
 	| CEq		TypeSource Type Type

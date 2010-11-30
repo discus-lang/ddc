@@ -10,12 +10,11 @@ import DDC.Solve.Location
 import DDC.Var
 import DDC.Base.DataFormat
 import Control.Monad
-import Data.Sequence		(Seq)
+import Data.Bag			(Bag)
 import Util			(unzip6, unzip5, takeLast, catMap)
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
-import qualified Data.Sequence	as Seq
-import qualified Data.Foldable	as Seq
+import qualified Data.Bag	as Bag
 
 stage	= "DDC.Desugar.Slurp.SlurpX"
 
@@ -26,7 +25,7 @@ slurpX	:: Exp Annot1
 		, Effect	-- effect of expression.
 		, Closure	-- closure of expression.
 		, Exp Annot2	-- annotated exp.
-		, Seq CTree)	-- constraints.
+		, Bag CTree)	-- constraints.
 
 
 -- Lam ------------------------------------------------------------------------
@@ -58,7 +57,7 @@ slurpX	xx@(XLambda sp vBound xBody)
 	let tsClo	= tsCloFree ++ tsProjTags
 
 	-- the constraints
-	let qs	= constraints
+	let qs	= 
 		[ CEq   (TSV $ SVLambda sp) tX	$ makeTFun tBound tBody eBody cX
 		, CMore (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
  	
@@ -67,15 +66,15 @@ slurpX	xx@(XLambda sp vBound xBody)
 	-- 	and saves indenting in the constraint file.
 	let qs' = case xBody of
 		XLambda{}
-		  -> let [branch2]	= Seq.toList qsBody
-		     in	 Seq.singleton $ CBranch
+		  -> let [branch2]	= Bag.toList qsBody
+		     in	 Bag.singleton $ CBranch
 		     		{ branchBind 	= mergeCBinds (BLambda [vBoundT]) (branchBind branch2)
-				, branchSub  	= qs >< branchSub branch2 }
+				, branchSub  	= qs ++ branchSub branch2 }
 				
 		_
-		 -> Seq.singleton $ CBranch
+		 -> Bag.singleton $ CBranch
 		 		{ branchBind 	= BLambda [vBoundT]
-				, branchSub  	= qs >< qsBody }
+				, branchSub  	= qs ++ Bag.toList qsBody }
 	
 	
 	-- we'll be wanting to annotate these vars with TECs when we convert to core.
@@ -148,7 +147,7 @@ slurpX	(XMatch sp (Just obj) alts)
 		, eX
 		, tEmpty
 		, XMatch (Just (tRHS, eX)) (Just obj') alts'
-		, qsMatch >< qsObj >< Seq.fromList qsAlts)
+		, qsMatch >< qsObj >< Bag.fromList qsAlts)
 
 
 slurpX	(XMatch sp Nothing alts)
@@ -172,7 +171,7 @@ slurpX	(XMatch sp Nothing alts)
 		, eMatch
 		, tEmpty
 		, XMatch (Just (tRHS, eMatch)) Nothing alts'
-		, matchQs >< Seq.fromList altsQs)
+		, matchQs >< Bag.fromList altsQs)
 
 
 -- Lit ------------------------------------------------------------------------
@@ -238,7 +237,7 @@ slurpX	(XDo sp stmts)
 	boundTVs	<- mapM getVtoT boundVs
 
 	let Just tLast	= takeLast tsStmts
-	let qsStmts	= join $ Seq.fromList qssStmts
+	let qsStmts	= Bag.concat qssStmts
 
 
 	-- Signal that we're leaving the scope of all the let bindings in this block
@@ -250,20 +249,19 @@ slurpX	(XDo sp stmts)
 		| otherwise
 		= []
 
-	let vsBind	= catMap letBindsC $ Seq.toList qsStmts
+	let vsBind	= catMap letBindsC $ Bag.toList qsStmts
 	let bindLeave	= case vsBind of
 				[]	-> BNothing
 				_	-> BLetGroup vsBind
 			
 	-- The type for this expression is the type of the last statement.
-	let qs	= Seq.singleton 
+	let qs	= Bag.singleton 
 		$ CBranch 
 		{ branchBind	= bindLeave
-		, branchSub	
-			= constraints
-		   	[ CEq   (TSV $ SVDoLast sp) tX 	$ tLast
+		, branchSub	= 
+			[ CEq   (TSV $ SVDoLast sp) tX 	$ tLast
 			, CMore (TSE $ SEDo sp)	eX 	$ makeTSum  kEffect  esStmts ]
-		   	>< qsStmts }
+		   	++ Bag.toList qsStmts }
 
 	wantTypeVs boundTVs
 

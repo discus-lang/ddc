@@ -8,6 +8,7 @@ module Data.Bag
 	, empty
 	, singleton
 	, snoc
+	, takeHead
 	, append
 	, appendList
 	, concat
@@ -69,6 +70,9 @@ snoc bag
 	BagList (x:xs) b2
 	 -> (Just x, xs `appendList` b2)
 
+
+takeHead :: Bag a -> Maybe a
+takeHead = fst . snoc
 
 -- | O(1)
 {-# INLINE append #-}

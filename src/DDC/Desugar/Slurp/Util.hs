@@ -28,11 +28,12 @@ import DDC.Main.Pretty
 import DDC.Type
 import DDC.Type.Data
 import DDC.Var
+import Data.Monoid
 import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import qualified Data.Sequence	as Seq
-import Data.Sequence		(Seq, (><))
+import qualified Data.Bag	as Bag
+import Data.Bag			(Bag)
 
 stage	= "Desugar.Slurp.Util"
 
@@ -43,8 +44,12 @@ traceM	  ss
  	= modify (\s -> s { stateTrace = (stateTrace s) ++ [ss] })
 
 -- Construction -----------------------------------------------------------------------------------
-constraints :: [CTree] -> Seq CTree	
-constraints = Seq.fromList
+constraints :: [CTree] -> Bag CTree	
+constraints = Bag.fromList
+
+(><) :: Bag a -> Bag a -> Bag a
+{-# INLINE (><) #-}
+(><) = mappend
 
 -- Variables --------------------------------------------------------------------------------------
 -- | Allocate a fresh variable in a given namespace.

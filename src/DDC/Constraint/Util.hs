@@ -18,9 +18,6 @@ import DDC.Main.Error
 import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import qualified Data.Foldable	as Seq
-import qualified Data.Sequence	as Seq
-import Data.Sequence		(Seq)
 
 stage	= "DDC.Constraint.Util"
 
@@ -38,17 +35,17 @@ isCTreeNil b
 	_		-> False
 	
 
-makeCBranch :: CBind -> Seq CTree -> CTree
+makeCBranch :: CBind -> [CTree] -> CTree
 makeCBranch bind cs
-	| Seq.null cs
+	| null cs
 	= CTreeNil
 
 	| BNothing	 <- bind
-	, [cc@CBranch{}] <- Seq.toList cs
+	, [cc@CBranch{}] <- cs
 	= cc
 
 	| otherwise
-	= CBranch bind $ Seq.filter (not . isCTreeNil) cs
+	= CBranch bind $ filter (not . isCTreeNil) cs
 	
 
 -- | For some types [t1, t2, t3 ...] make constraints t1 = t2, t1 = t2, t1 = t3 ...
@@ -97,14 +94,14 @@ slurpContains' :: Maybe CBind -> CTree -> [ (CBind, CBind) ]
 slurpContains' mParent tree@(CBranch{})
 
 	| BNothing		<- boundVsT 
-	= catMap (slurpContains' mParent) (Seq.toList $ branchSub tree)
+	= catMap (slurpContains' mParent) (branchSub tree)
 
  	| Nothing		<- mParent
-	= catMap (slurpContains' (Just boundVsT)) (Seq.toList $ branchSub tree)
+	= catMap (slurpContains' (Just boundVsT)) (branchSub tree)
 	
 	| Just parent		<- mParent
 	= (parent, boundVsT) 
-	: catMap (slurpContains' (Just boundVsT)) (Seq.toList $ branchSub tree)
+	: catMap (slurpContains' (Just boundVsT)) (branchSub tree)
 	
 	where	boundVsT	= branchBind tree
 

@@ -8,8 +8,8 @@ import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
 import Util
 import qualified Data.MapUtil	as Map
-import qualified Data.Sequence	as Seq
-import Data.Sequence		(Seq)
+import qualified Data.Bag	as Bag
+import Data.Bag			(Bag)
 
 stage	= "DDC.Desugar.Slurp.SlurpS"
 
@@ -20,7 +20,7 @@ slurpS 	:: Stmt Annot1
 		, Effect	-- effect vars
 		, Closure	-- closure of this statement
 		, Stmt Annot2	-- annotated statement
-		, Seq CTree)	-- constraints
+		, Bag CTree)	-- constraints
 
 -- statements (bindings with out a bound var)
 slurpS 	(SBind sp Nothing e1)
@@ -28,17 +28,16 @@ slurpS 	(SBind sp Nothing e1)
 	tBind				<- newTVarD
 	(tX@TVar{}, eX, _, x1', qsX)	<- slurpX e1
 	
-	let qs	= constraints
-		[ CEq  (TSU $ SUBind sp) tBind	$ tX ]
+	let qs = [ CEq  (TSU $ SUBind sp) tBind	$ tX ]
 
 	return	( tX
 		, eX
 		, tEmpty
 		, SBind (Just (tX, eX)) Nothing x1'
-		, Seq.singleton
+		, Bag.singleton
 			$ CBranch
 			{ branchBind	= BNothing
-			, branchSub	= qs >< qsX } )
+			, branchSub	= qs ++ Bag.toList qsX } )
 
 -- regular bindings
 slurpS	(SBind sp (Just v) e1)
@@ -50,13 +49,12 @@ slurpS	(SBind sp (Just v) e1)
 		, eX
 		, tEmpty
 		, SBind (Just (tX, eX)) (Just v) x1'
-		, Seq.singleton 
+		, Bag.singleton 
 			$ CBranch
 			{ branchBind	= BLet [vBindT]
 			, branchSub	
-			   	=  constraints [ CEq  (TSU $ SUBind sp) tBind tX ]
-				>< qsX  
-				>< constraints [ CGen (TSM $ SMGen sp v) tBind ] } )
+			   	=  [ CEq  (TSU $ SUBind sp) tBind tX ]
+				++ Bag.toList (qsX >< (Bag.singleton (CGen (TSM $ SMGen sp v) tBind))) })
 
 -- type signatures
 slurpS	(SSig sp sigMode vs tSig)
@@ -74,7 +72,7 @@ slurpS	(SSig sp sigMode vs tSig)
 		, tPure
 		, tEmpty
 		, SSig Nothing sigMode vs tSig
-		, Seq.empty)
+		, Bag.empty)
 
 slurpS	_
 	= panic stage

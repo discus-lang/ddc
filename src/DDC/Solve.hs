@@ -103,7 +103,7 @@ solveTree (CBranch BNothing cs) blessMain
 		(Map.unions $ map slurpContains $ Seq.toList cs)
 
 	-- Feed all the constraints into the graph, generalising types when needed.
-	solveCs cs
+	solveCs $ Seq.fromList cs
 
 	-- Generalise left-over types and check for errors.
 	solveFinalise solveCs blessMain
@@ -135,7 +135,10 @@ solveCs cc
 
 		-- consider the constraints from the branch next, 
 		--	and add a CLeave marker to rember when we're finished with it.
-		solveNext (branchSub c Seq.>< Seq.singleton (CLeave bind) Seq.>< cs)
+		solveNext 
+			$ 	(Seq.fromList $ branchSub c)
+			Seq.><  Seq.singleton (CLeave bind) 
+			Seq.><  cs
 
 	-- A single equality constraint
 	CEq _ t1 t2

@@ -11,12 +11,8 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
 import DDC.Constraint.Pretty		()
-import Data.Sequence			(Seq)
-import qualified Data.Sequence		as Seq
-import qualified Data.Foldable		as Seq
 import qualified Data.Map		as Map
 -- import qualified Debug.Trace
-import Control.Monad
 import Util
 
 stage		= "DDC.Constraint.Simplify"
@@ -31,7 +27,7 @@ reduce 	:: UseMap		-- ^ map of how vars are used.
 
 reduce usage table tree
 	= makeCBranch BNothing
-	$ reduce1 usage table tree
+	$ maybeToList $ reduce1 usage table tree
 
 -- make this advance through a cons-list dropping out unwanted constraints.
 -- use IORef to do the substitutions, then eat up IORefs in a separate pass.
@@ -42,7 +38,7 @@ reduce usage table tree
 reduce1 :: UseMap		-- ^ map of how vars are used.
 	-> Table		-- ^ table of things to inline.
 	-> CTree
-	-> Seq CTree
+	-> Maybe CTree
 
 reduce1 usage table cc
  = let	subEq	= subTT_noLoops (tableEq table)
@@ -61,23 +57,23 @@ reduce1 usage table cc
 
    in case cc of
 	CBranch bind subs
-	 -> Seq.singleton 
+	 -> Just  
 	  $ makeCBranch (subEqBind bind)
 	  $ reorder 
-	  $ join
-	  $ fmap (reduce1 usage table) subs
+	  $ catMaybes 
+	  $ map (reduce1 usage table) subs
 
 	-- Eq ---------------------------------------------
 	-- Ditch trivial eq constraints
 	CEq _ (TVar _ v1) (TVar _ v2)
 	 | v1 == v2
-	 -> Seq.empty
+	 -> Nothing
 
 	-- Ditch v1=v2 constraints when either of the vars are only used once.
 	CEq _ t1@TVar{} t2@TVar{}
 	 |   usedJustOnceInEq usage t1 
 	  || usedJustOnceInEq usage t2
-	 -> Seq.empty
+	 -> Nothing
 
 	-- If we've substituted into an outermost variable we may have ended
 	-- up with a boring v1 = v1 constraint, so ditch that out early.
@@ -86,36 +82,35 @@ reduce1 usage table cc
 
 	-- More -------------------------------------------
 	-- Ditch  :> 0 constrints
-	CMore _ _ (TSum _ [])	-> Seq.empty
+	CMore _ _ (TSum _ [])	
+	 -> Nothing
 
 	-- Ditch  :> constraints that we're inlining as Eqs.
 	CMore _ t1 _
 	 | Map.member t1 (tableEq table)
-	 -> Seq.empty
+	 -> Nothing
 
 	CMore src t1 t2		
-	 -> Seq.singleton 
-	  $ CMore src t1 (subEq t2)
+	 -> Just $ CMore src t1 (subEq t2)
 
 
 	-- Project ----------------------------------------
 	CProject src j v t1 t2	
-	 -> Seq.singleton
-	 $  CProject src j v (subEq t1) (subEq t2)
+	 -> Just $  CProject src j v (subEq t1) (subEq t2)
 
 
 	-- Gen -------------------------------------------
-	CInst{}			-> Seq.singleton cc
-	CGen{}			-> Seq.singleton cc
+	CInst{}	-> Just cc
+	CGen{}	-> Just cc
 		
-	_			-> panic stage $ "reduce1: no match for" %% cc
+	_	-> panic stage $ "reduce1: no match for" %% cc
 
 
-mkCEq1 :: TypeSource -> Type -> Type -> Seq CTree
+mkCEq1 :: TypeSource -> Type -> Type -> Maybe CTree
 mkCEq1 _ (TVar _ v1) (TVar _ v2)
-	| v1 == v2	= Seq.empty
+	| v1 == v2	= Nothing
 	
-mkCEq1 src t1 t2	= Seq.singleton $ CEq src t1 t2
+mkCEq1 src t1 t2	= Just $ CEq src t1 t2
 
 
 -- Reorder ----------------------------------------------------------------------------------------
@@ -123,14 +118,12 @@ mkCEq1 src t1 t2	= Seq.singleton $ CEq src t1 t2
 --   This only reorders constraints within the block.
 --   TODO: Putting all the INST constraints last might improve inference for projections,
 --         but I'm yet to find a concrete example.
-reorder	:: Seq CTree -> Seq CTree
+reorder	:: [CTree] -> [CTree]
 reorder cs
  = let	([eqs, mores, gens], others)
-		= partitionBy [(=@=) CEq{}, (=@=) CMore{}, (=@=) CGen{}]
-		$ Seq.toList cs
+		= partitionBy [(=@=) CEq{}, (=@=) CMore{}, (=@=) CGen{}] cs
 		
-   in	join	$ Seq.fromList
-		[ Seq.fromList eqs
- 		, Seq.fromList mores
-		, Seq.fromList others
-		, Seq.fromList gens ]
+   in	concat	[ eqs
+ 		, mores
+		, others
+		, gens ]

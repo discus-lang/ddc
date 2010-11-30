@@ -7,8 +7,8 @@ import DDC.Desugar.Slurp.SlurpX
 import DDC.Type.Data.Base
 import DDC.Solve.Location
 import DDC.Var
-import Data.Sequence		(Seq)
-import qualified Data.Sequence	as Seq
+import Data.Bag			(Bag)
+import qualified Data.Bag	as Bag
 import Util
 
 stage	= "DDC.Desugar.Slurp.SlurpA"
@@ -40,8 +40,7 @@ slurpA	(AAlt sp gs x)
 	-- slurp the RHS of the alternative
 	(tX, eX, _, x', qsX)	<- slurpX x
 
-	let qs	= constraints
-		$  makeCEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
+	let qs	=  makeCEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
 		++ [CMore (TSE $ SEGuards sp) eAlt $ makeTSum   kEffect  (eX : esGuards)]
 
 	let cbindsGuards	= concat cbindssGuards
@@ -59,7 +58,7 @@ slurpA	(AAlt sp gs x)
 		, AAlt Nothing gs' x'
 		, CBranch
 			{ branchBind	= bind
-			, branchSub	= qs >< (join $ Seq.fromList qssGuards) >< qsX } )
+			, branchSub	= qs ++ (Bag.toList $ Bag.concat qssGuards >< qsX) } )
 
 
 -- Guards ------------------------------------------------------------------------------------------
@@ -70,7 +69,7 @@ slurpG 	:: Guard Annot1
 		, Effect		-- effect of evaluting the guard.
 		, Closure		-- closure of guard.
 		, Guard Annot2		-- annotated guard.
-		, Seq CTree)		-- constraints.
+		, Bag CTree)		-- constraints.
 		
 slurpG	(GCase _ w)
  = do	
@@ -120,7 +119,7 @@ slurpW	:: Pat Annot1
 		( [(Var, Var)]		-- (value var, type var) of vars bound by pattern.
 		, Type			-- type of the pattern.
 		, Pat Annot2		-- annotatted pattern.
-		, Seq CTree)		-- constraints for each arg in the pattern.
+		, Bag CTree)		-- constraints for each arg in the pattern.
 
 slurpW	(WConLabel _ vCon lvs)
  = do	
@@ -152,7 +151,7 @@ slurpW	(WConLabel _ vCon lvs)
  	return	( catMaybes cBinds
 		, tPat
 		, WConLabel Nothing vCon lvs'
-		, join $ Seq.fromList cTrees )
+		, Bag.concat cTrees )
 		
 
 slurpW	(WLit sp litFmt)
@@ -195,7 +194,7 @@ slurpW	(WVar _ v)
 	return	( [(v, vT)]
 		, tBound
 		, WVar (Just (tBound, tPure)) v
-		, Seq.empty)
+		, Bag.empty)
 	
 slurpW w
  = panic stage $ "slurpW: no match for " % show w % "\n"
@@ -208,7 +207,7 @@ slurpLV	:: Var				-- ^ Data constructor name.
 	-> CSlurpM 
 		( (Label Annot2, Var)	-- field label and orginal binding var
 		, Maybe (Var, Var)	-- original binding variable, and type var for that field.
-		, Seq CTree )
+		, Bag CTree )
 
 -- A field label using a numeric index.	
 slurpLV vCtor tsParams (LIndex sp ix, vBind)
@@ -235,7 +234,7 @@ slurpLV vCtor tsParams (LIndex sp ix, vBind)
 
 		return	( (LVar Nothing v, v)
 			, Nothing
-			, Seq.empty )
+			, Bag.empty )
 
 	 -- Got the type of the field.
 	 -- The field type comes with the same outer forall quantifiers that 
