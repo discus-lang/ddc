@@ -68,10 +68,6 @@ llvmOfExp (XVar v@NCafPtr{} tv)
 llvmOfExp (XLit (LLit lit))
  = 	return $ llvmVarOfLit lit
 
-llvmOfExp (XLit LNull)
- = 	return $ i32LitVar 0
-
-
 llvmOfExp (XVar n@NSuper{} tv)
  = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
 	++ show n ++ "\n"

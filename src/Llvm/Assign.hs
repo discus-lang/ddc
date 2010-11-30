@@ -27,8 +27,13 @@ llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
 llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (LiteralFmt (LInt 0) Unboxed)))
  | t1 == t
  = do	dst		<- newUniqueReg $ pLift $ toLlvmType t1
+	addComment	$ "Assigning (LInt 0) to a pointer!!"
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
+
+llvmOfAssign dst typ (XLit LNull)
+ =	assignNull dst typ
+
 
 llvmOfAssign (XVar (NAuto v) t) tc src
  | t == tc
@@ -85,3 +90,23 @@ llvmOfAssign a b c
 	++ {- take 150 -} (show b) ++ "\n"
 	++ {- take 150 -} (show c) ++ "\n"
 
+--------------------------------------------------------------------------------
+
+assignNull :: Exp a -> Type -> LlvmM ()
+assignNull (XVar (NSlot v i) tv@(TPtr _)) (TPtr _)
+ =	writeSlot	(LMLitVar (LMNullLit (toLlvmType tv))) i
+
+assignNull (XVar v@NCafPtr{} t@(TPtr _)) (TPtr _)
+ = do	dst		<- newUniqueReg $ pLift $ toLlvmType t
+	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v) t)))
+			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
+
+assignNull (XVar v@NCaf{} t@(TPtr _)) (TPtr _)
+ = do	dst		<- newUniqueReg $ pLift $ toLlvmType t
+	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v) t)))
+			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
+
+assignNull xv t
+ = panic stage $ "assignNull (" ++ (show __LINE__) ++ ") Unhandled : \n\n"
+	++ show xv ++ "\n\n"
+	++ show t ++ "\n\n"
