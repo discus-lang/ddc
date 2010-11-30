@@ -1,157 +1,132 @@
--- |	A fast bag of unsorted things.
---	For fast insert, union and take1
---	For when you simply don't care about ordering.
+{-# LANGUAGE BangPatterns #-}
+-- | Bags supply constant time append at the cost of O(n) head and tail.
+--   They're equivalent to "append lists". No effort is made to keep
+--   the structure balanced. The intent is that you add a pile of things
+--   to a bag then convert it to a list or some other stucture.
 module Data.Bag
-	( Bag (Nil)
+	( Bag
 	, empty
 	, singleton
-	, insert
-	, take1
-	, mustTake1
-	, union
-	, unions
-	, unionList
+	, snoc
+	, append
+	, appendList
+	, concat
 	, map
-	, mapM
-	, toList
-	, fromList)
+	, fromList
+	, toList)
 
 where
-import Prelude	hiding (map, mapM)
-import qualified Data.List as List
+import Data.Monoid
+import Prelude			hiding (map, concat)
+import qualified Data.List	as List
 
 data Bag a
-	= Nil
-	| Node1  a  	 (Bag a)
-	| NodeB  (Bag a) (Bag a)	-- invariant: first bag is never Nil
-	| NodeL  [a]     (Bag a)	-- invariant: list is never []
+	= BagNil
+	| BagCons  a       (Bag a)
+	| BagApp   (Bag a) (Bag a)
+	| BagList  [a]     (Bag a)
 	deriving (Show)
+
+
+instance Monoid (Bag a) where
+	mempty		= empty
+	mappend		= append
+	mconcat		= concat
 	
 	
 -- | O(1)
-empty :: 	Bag a	
-empty		= Nil
+{-# INLINE empty #-}
+empty :: Bag a	
+empty = BagNil
 
 
 -- | O(1)
-singleton :: 	a -> Bag a
-singleton x 	= Node1 x Nil
-
--- | O(1)
-insert ::	a -> Bag a -> Bag a
-insert x bag	= Node1 x bag
+{-# INLINE singleton #-}
+singleton :: a -> Bag a
+singleton x  = BagCons x BagNil
 	
 
--- | Try and take a single thing from this bag
-take1 ::	Bag a -> (Maybe a, Bag a)
-take1 bag
+-- | Take the first element from a bag.
+snoc ::	Bag a -> (Maybe a, Bag a)
+snoc bag
  = case bag of
- 	Nil		
+ 	BagNil		
 	 -> (Nothing, bag)
 
-	Node1 x bag'	
+	BagCons x bag'	
 	 -> (Just x, bag')
 
-	NodeB b1 b2	
-	 -> let	(mx, b1')	= take1 b1
-	    in	(mx, b1' `union` b2)
-
-	NodeL (x:xs) b2
-	 -> (Just x, xs `unionList` b2)
-
-
--- | Take a single thing from this bag.
-mustTake1 ::	Bag a -> (# a, Bag a #)
-mustTake1	bag
- = case bag of
- 	Nil	-> error "Bag.mustTake1: empty bag"
+	BagApp BagNil b2
+	 -> snoc b2
 	
-	Node1 x bag'
-	 -> (# x, bag' #)
-	 
-	NodeB b1 b2 
-	 -> case mustTake1 b1 of
-	 	(# x, b1' #) -> (# x, b1' `union` b2 #)
-	 
-	NodeL (x:xs) b2
-	 -> (# x, xs `unionList` b2 #)
+	BagApp b1 b2	
+	 -> case snoc b1 of
+		(mx, b1')	-> (mx, b1' `append` b2)
 
-	
+	BagList [] b2
+	 -> snoc b2
+
+	BagList (x:xs) b2
+	 -> (Just x, xs `appendList` b2)
+
+
 -- | O(1)
-union :: Bag a -> Bag a -> Bag a
-union b1 b2
- 	| Nil		<- b1
-	= b2
-	
-	| Nil		<- b2
-	= b1
-	
-	| otherwise
-	= NodeB b1 b2
+{-# INLINE append #-}
+append :: Bag a -> Bag a -> Bag a
+append BagNil b2	= b2
+append b1     BagNil	= b1
+append b1     b2	= BagApp b1 b2
+
+
+-- | O(1)
+{-# INLINE appendList #-}
+appendList :: [a] -> Bag a -> Bag a
+appendList xx b1
+ = case xx of
+ 	[]	-> b1
+	_	-> BagList xx b1
 
 
 -- | O(length bb)
-unions ::	[Bag a] -> Bag a
-unions		bb
+concat :: [Bag a] -> Bag a
+concat bb
  = case bb of
- 	[]	-> Nil
-	(x:xs)	-> x `union` (unions xs)
+	[]	-> BagNil
+	x : xs	-> x `append` (concat xs)
 
-	
--- | O(1)
-unionList ::	[a] -> Bag a -> Bag a
-unionList	xx b1
+
+
+
+-- | O(n)
+map ::	(a -> b) -> Bag a -> Bag b
+map f b1
+ = case b1 of
+ 	BagNil		-> BagNil
+	BagCons x b2	-> BagCons (f x) 	   (map f b2)
+	BagApp  b1 b2	-> BagApp  (map f b1)      (map f b2)
+	BagList xx b2	-> BagList (List.map f xx) (map f b2)
+
+
+-- | O(1) Convert a list to a Bag.
+{-# INLINE fromList #-}
+fromList :: [a] -> Bag a
+fromList xx
  = case xx of
- 	[]	-> b1
-	_	-> NodeL xx b1
-		
-	
--- | O(n)
-map ::		(a -> b) -> Bag a -> Bag b
-map	f b1
- = case b1 of
- 	Nil		-> Nil
-	Node1 x b2	-> Node1 (f x) 		 (map f b2)
-	NodeB b1 b2	-> NodeB (map f b1) 	 (map f b2)
-	NodeL xx b2	-> NodeL (List.map f xx) (map f b2)
-	
+ 	[]		-> BagNil
+	_		-> BagList xx BagNil
 
--- | O(n)
-mapM :: Monad m =>  (a -> m b) -> Bag a -> m (Bag b)
-mapM	f b1 
- = case b1 of
- 	Nil		-> return Nil
-
-	Node1 x b2	
-	 -> do	x'	<- f x
-	 	b2'	<- mapM f b2
-		return	$ Node1 x' b2'
-		
-	NodeB b1 b2
-	 -> do	b1'	<- mapM f b1
-	 	b2'	<- mapM f b2
-		return	$  NodeB b1' b2'
-		
-	NodeL xx b2
-	 -> do	xx'	<- sequence $ List.map f xx
-	 	b2'	<- mapM f b2
-		return	$ NodeL xx' b2'
-		
 
 -- | O(n)				
 toList :: Bag a -> [a]
 toList	bb
- = case bb of
- 	Nil		-> []
-	Node1 x b2	-> x : toList b2
-	NodeB b1 b2	-> toList b1 ++ toList b2
-	NodeL xx b2	-> xx ++ toList b2
-	
+ = go bb [] []
+ where 	go bag !rest !acc
+	 = case bag of
+		BagNil		
+		 -> case rest of
+			[]		-> reverse acc
+			r : rest'	-> go r rest' acc
 
-fromList :: [a] -> Bag a
-fromList xx
- = case xx of
- 	[]		-> Nil
-	_		-> NodeL xx Nil
-	
-	
+		BagCons	x  b2	-> go b2  rest        (x:acc)
+		BagApp  b1 b2	-> go b1  (b2 : rest) acc
+		BagList xs b2   -> go b2  rest        (reverse xs ++ acc)     

@@ -17,8 +17,8 @@ module DDC.Type.Transform
 where
 import DDC.Type.Exp
 import DDC.Var
-import Data.Bag			(Bag)
-import qualified Data.Bag 	as Bag
+-- import Data.Bag			(Bag)
+-- import qualified Data.Bag 	as Bag
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import Util
@@ -113,14 +113,14 @@ instance (Monad m, TransM m a)
  transZM table xx	
  	 = mapM (transZM table) xx
  
-
+{-
 instance (Monad m, TransM m a)
 	=> TransM m (Bag a) where
  transZM table xx
  	= liftM Bag.fromList
 	$ (transZM table)
 	$ Bag.toList xx
-
+-}
 
 instance (Monad m, TransM m a, Ord a)
 	=> TransM m (Set a) where
