@@ -106,6 +106,11 @@ assignNull (XVar v@NCaf{} t@(TPtr _)) (TPtr _)
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v) t)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
 
+assignNull (XVar (NAuto v) t) tc@(TCon (TyConUnboxed _))
+ | t == tc
+ =	addBlock	[ Store (i32LitVar 0) (pVarLift (toLlvmVar v t)) ]
+
+
 assignNull xv t
  = panic stage $ "assignNull (" ++ (show __LINE__) ++ ") Unhandled : \n\n"
 	++ show xv ++ "\n\n"
