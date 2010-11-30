@@ -36,6 +36,8 @@ import Llvm
 import Llvm.GhcReplace.Unique
 import Llvm.Util
 
+import Data.Char
+
 import qualified Data.Map		as Map
 
 
@@ -160,7 +162,8 @@ addAlias (name, typ)
 
 addGlobalFuncDecl :: LlvmFunctionDecl -> LlvmM ()
 addGlobalFuncDecl fd
- = do	state		<- get
+ = do	checkFnName	$ nameOfFunDecl fd
+	state		<- get
 	let map		= funcDecls state
 	let name	= nameOfFunDecl fd
 	case Map.lookup name map of
@@ -171,6 +174,22 @@ addGlobalFuncDecl fd
 					$ "The following two should match :"
 					++ "\n    " ++ show curr
 					++ "\n    " ++ show fd
+
+
+checkFnName :: String -> LlvmM ()
+checkFnName fname
+ = do	when (length fname == 0 || not ( checkName True fname))
+		$ panic stage $ "\nBad function name '" ++ fname ++ "'\n"
+	return ()
+
+checkName :: Bool -> String -> Bool
+checkName ok [] = ok
+checkName ok (s:ss)
+ | isAlphaNum s || s == '_'
+ = checkName ok ss
+
+ | otherwise
+ = False
 
 --------------------------------------------------------------------------------
 
