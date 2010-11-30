@@ -64,6 +64,11 @@ llvmOfExp (XVar v@NCafPtr{} tv)
 			, Assignment r2 (loadAddress r1) ]
 	return		r2
 
+llvmOfExp (XVar v@NCaf{} tv@(TCon (TyConUnboxed _)))
+ = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
+	addBlock	[ Comment [ stage ++ " " ++ show __LINE__ ++ " " ++ show tv ]
+			, Assignment r1 (loadAddress (toLlvmCafVar (varOfName v) tv)) ]
+	return		r1
 
 llvmOfExp (XLit (LLit lit))
  = 	return $ llvmVarOfLit lit
@@ -71,12 +76,6 @@ llvmOfExp (XLit (LLit lit))
 llvmOfExp (XVar n@NSuper{} tv)
  = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
 	++ show n ++ "\n"
-
-llvmOfExp (XVar n@NCaf{} tv)
- = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
-	++ show n ++ "\n"
-
-
 
 llvmOfExp src
  = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
@@ -104,6 +103,13 @@ llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun at rt)):args)
 
 
 llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
+ = do	let func	= funcDeclOfExp exp
+	addGlobalFuncDecl func
+	result		<- newUniqueNamedReg "result" $ toLlvmType rt
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
+	return		result
+
+llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TCon (TyConUnboxed tv))):[])
  = do	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	result		<- newUniqueNamedReg "result" $ toLlvmType rt
@@ -158,8 +164,8 @@ llvmOfXPrim (MAlloc (PAllocData v arity)) []
 
 
 llvmOfXPrim op args
- = panic stage $ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n"
-	++ show op ++ "\n"
+ = panic stage $ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n\n"
+	++ show op ++ "\n\n"
 	++ show args ++ "\n"
 
 --------------------------------------------------------------------------------

@@ -208,8 +208,7 @@ allocForParam (v, t)
 
 
 llvmOfSeaGlobal :: Top (Maybe a) -> LMGlobal
-llvmOfSeaGlobal (PCafSlot v t)
- | t == TPtr (TCon TyConObj)
+llvmOfSeaGlobal (PCafSlot v t@(TPtr (TCon TyConObj)))
  =	let	tt = pLift $ toLlvmType t
 		var = LMGlobalVar
 			("_ddcCAF_" ++ seaVar False v)	-- Variable name
@@ -220,11 +219,30 @@ llvmOfSeaGlobal (PCafSlot v t)
 			False				-- LMConst
 	in (var, Just (LMStaticLit (LMNullLit tt)))
 
- | otherwise
- = panic stage $ "llvmOfSeaGlobal on : \n\tVar  : " ++ seaVar False v ++ "\n\tType : " ++ show t
+llvmOfSeaGlobal (PCafSlot v t@(TCon (TyConUnboxed tv)))
+ =	let	tt = toLlvmType t
+		var = LMGlobalVar
+			("_ddcCAF_" ++ seaVar False v)
+			tt
+			ExternallyVisible
+			Nothing
+			ptrAlign
+			False
+	in (var, Just (LMStaticLit (initLiteral tt)))
 
 llvmOfSeaGlobal x
- = panic stage $ "llvmOfSeaGlobal on : " ++ show x
+ = panic stage $ "llvmOfSeaGlobal (" ++ show __LINE__ ++ ")\n\n"
+		++ show x ++ "\n"
+
+
+initLiteral :: LlvmType -> LlvmLit
+initLiteral t
+ = case t of
+	LMPointer _	-> LMNullLit t
+	LMInt _		-> LMIntLit 0 t
+	LMFloat		-> LMFloatLit 0.0 t
+	LMDouble	-> LMFloatLit 0.0 t
+
 
 moduleGlobals :: [LMGlobal]
 moduleGlobals

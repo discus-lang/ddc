@@ -84,10 +84,16 @@ llvmOfAssign (XArgData (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
 			, Store rsrc (pVarLift ptr) ]
 
 
+llvmOfAssign (XVar v1@NCaf{} tv) tc@(TCon (TyConUnboxed _)) src
+ | tv == tc
+ = do	reg		<- llvmOfExp src
+	addBlock	[ Store reg (pVarLift (toLlvmCafVar (varOfName v1) tv)) ]
+
+
 llvmOfAssign a b c
- = panic stage $ "llvmOfAssign (" ++ (show __LINE__) ++ ") Unhandled : \n"
-	++ {- take 150 -} (show a) ++ "\n"
-	++ {- take 150 -} (show b) ++ "\n"
+ = panic stage $ "llvmOfAssign (" ++ (show __LINE__) ++ ") Unhandled : \n\n"
+	++ {- take 150 -} (show a) ++ "\n\n"
+	++ {- take 150 -} (show b) ++ "\n\n"
 	++ {- take 150 -} (show c) ++ "\n"
 
 --------------------------------------------------------------------------------
