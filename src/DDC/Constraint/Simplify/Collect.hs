@@ -74,10 +74,10 @@ collect usage cc
 	 -> singleEq t1 t2
 
 	-- 
-	CMore _ t1@TVar{} t2
+{-	CMore _ t1@TVar{} t2
 	 | [(UsedMore OnLeft, 1), (UsedMore OnRight, 1)] <- lookupUsage t1 usage
 	 -> singleEq t1 t2
-
+-}
 	CInst _ v _
 	  -> singleNoInline (TVar kValue (UVar v))
 
