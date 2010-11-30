@@ -2,7 +2,8 @@
 {-# OPTIONS -Wnot #-}
 module DDC.Constraint.Simplify.Collect
 	( Table (..)
-	, collect)
+	, collect
+	, applyNoInline)
 where
 import DDC.Constraint.Simplify.Usage
 import DDC.Constraint.Exp
@@ -29,15 +30,28 @@ data Table
 	, tableMore	:: Map Type Type
 	, tableNoInline	:: Set Type }
 
+
+-- combining tables like this is death to performance.
+-- runtime becomes O(c*i)
+--	c = #constraints 
+--	i = #insts
+
 instance Monoid Table where
  mempty	= Table Map.empty Map.empty Set.empty
 
  mappend (Table eq1 more1 noInline1) (Table eq2 more2 noInline2)
   = let	noInline	= Set.union noInline1 noInline2 
-	eq		= foldr Map.delete (Map.union eq1   eq2)   $ Set.toList noInline
-	more		= foldr Map.delete (Map.union more1 more2) $ Set.toList noInline
+	eq		= Map.union eq1   eq2
+	more		= Map.union more1 more2
     in	Table eq more noInline
 		
+		
+applyNoInline :: Table -> Table
+applyNoInline (Table eqs mores noInlines)
+ = let	nis	= Set.toList noInlines
+	eqs'	= foldr Map.delete eqs nis
+	mores'	= foldr Map.delete mores nis
+   in	Table eqs' mores' noInlines
 		
 singleNoInline :: Type -> Table
 singleNoInline t1 = Table Map.empty Map.empty (Set.singleton t1)	
