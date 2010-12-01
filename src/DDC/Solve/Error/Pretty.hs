@@ -252,7 +252,7 @@ prettyValuePos var
 	= fromMaybe "?"
 	$ liftM (Var.prettyPos)
 	$ liftM (\info -> let IValueVar v = info in v)
-	$ find  (=@= IValueVar{}) 
+	$ find  isIValueVar
 	$ varInfo var
 
 
@@ -260,7 +260,7 @@ prettyValuePos var
 getVSP :: Var -> SourcePos
 getVSP	 var
  = let	Just (ISourcePos pos)
-		= find ((=@=) ISourcePos{})
+		= find isISourcePos
 		$ varInfo var
 		
    in	pos

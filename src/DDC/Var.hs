@@ -9,7 +9,14 @@ module DDC.Var
 	, module DDC.Var.NameSpace
 	, module DDC.Var.ModuleId
 	, Var 		(..)
+
 	, VarInfo	(..)
+	, isISourcePos
+	, isIBoundBy
+	, isIValueVar
+	, isISeaName
+	, isISeaGlobal
+
 	, varWithName
 	, varWithoutModuleId
 	, varsMatchByName
@@ -46,12 +53,27 @@ data Var =
 --	because not every var has all the info, and we want to keep the size of the 
 --	runtime object down.
 data VarInfo
-	= ISourcePos	SourcePos		-- ^ Where this var appears in the source program.
-	| IBoundBy	Var			-- ^ The binding occurance of this var.
-	| IValueVar	Var			-- ^ Type varible, then this gives the value variable.
-	| ISeaName	String			-- ^ Variable name to use when outputting Sea code.
-        | ISeaGlobal	Bool			-- ^ Is the variable global in the output Sea code.
+	= ISourcePos	!SourcePos		-- ^ Where this var appears in the source program.
+	| IBoundBy	!Var			-- ^ The binding occurance of this var.
+	| IValueVar	!Var			-- ^ Type varible, then this gives the value variable.
+	| ISeaName	!String			-- ^ Variable name to use when outputting Sea code.
+        | ISeaGlobal	!Bool			-- ^ Is the variable global in the output Sea code.
 	deriving (Show)
+
+isISourcePos 	ISourcePos{}	= True
+isISourcePos 	_		= False
+
+isIBoundBy 	IBoundBy{}	= True
+isIBoundBy	_		= False
+
+isIValueVar	IValueVar{}	= True
+isIValueVar	_		= False
+
+isISeaName	ISeaName{}	= True
+isISeaName	_		= False
+
+isISeaGlobal	ISeaGlobal{}	= True
+isISeaGlobal	_		= False
 
 
 -- | Create a new variable with this name.

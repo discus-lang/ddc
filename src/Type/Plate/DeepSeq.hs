@@ -4,7 +4,7 @@ module Type.Plate.DeepSeq where
 
 import DDC.Type.Exp
 import DDC.Var
-import Util.Control.DeepSeq
+import Control.DeepSeq
 
 instance DeepSeq Var
 instance DeepSeq ClassId

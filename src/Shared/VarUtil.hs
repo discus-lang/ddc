@@ -61,13 +61,13 @@ prettyPos :: Var	-> String
 prettyPos var
  	= fromMaybe "?"
 	$ liftM (\(ISourcePos sp) -> pprStrPlain sp)
-	$ find (=@= ISourcePos{}) 
+	$ find isISourcePos
 	$ varInfo var 
 
 varPos :: Var	-> SourcePos
 varPos var
  = do	let Just pos	= liftM (\(ISourcePos sp) -> sp)
-			$ find (=@= ISourcePos{})
+			$ find isISourcePos
 			$ varInfo var
 	pos
 
@@ -77,7 +77,7 @@ prettyPosBound :: Var	-> String
 prettyPosBound var
 	= fromMaybe "?"
 	$ liftM (\(IBoundBy v) -> prettyPos v)
-	$ find (=@= IBoundBy{})
+	$ find isIBoundBy
 	$ varInfo var
 
 
@@ -130,7 +130,7 @@ isCtorName var
 
 -- | Dummy vars introduced by the compiler won't have SourcePos's
 isDummy	   var	
-	= not $ any (=@= ISourcePos{}) 		 
+	= not $ any isISourcePos
 	$ varInfo var	
 	
 

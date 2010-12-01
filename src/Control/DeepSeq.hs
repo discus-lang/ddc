@@ -8,7 +8,7 @@
 --	Instances of `DeepSeq` are provided for Prelude types.  Other
 --	instances must be supplied by users of this module.
 
-module Util.Control.DeepSeq
+module Control.DeepSeq
 where
 
 class  DeepSeq a  where
