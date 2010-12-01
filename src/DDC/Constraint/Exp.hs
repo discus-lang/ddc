@@ -7,6 +7,7 @@ where
 import DDC.Solve.Location
 import DDC.Type.Exp
 import DDC.Var
+import Control.DeepSeq
 
 -- | The tree of type constraints.
 --   In most of these constraints, the first Type parameter should always be 
@@ -85,6 +86,13 @@ data	CTree
 	--	A marker to remind us to instantiate a letrec-bound variabe.
 	| CInstLetRec	!TypeSource !Var !Var
 	deriving (Show)
+
+
+instance DeepSeq CTree where
+ deepSeq tt y
+  = case tt of
+	CBranch _bind tree 	-> deepSeq tree $! y
+	_			-> y
 
 
 -- CBind ------------------------------------------------------------------------------------------

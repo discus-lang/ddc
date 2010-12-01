@@ -13,6 +13,7 @@ import DDC.Main.Error
 import DDC.Base.SourcePos
 import DDC.Var
 import Data.IORef
+import Control.DeepSeq
 import System.IO				(hFlush)
 import Util					hiding (null, elem)
 import qualified DDC.Type			as T
@@ -187,8 +188,9 @@ desugarSlurp blessMain sTree hTree
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
 		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem_simplified)
 	
-	return	( sTree'
-		, problem_simplified)
+	return	$ deepSeq (T.problemConstraints problem_simplified)
+		$ ( sTree'
+		  , problem_simplified)
 	
 	
 -- Solve -------------------------------------------------------------------------------------------

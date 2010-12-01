@@ -14,6 +14,7 @@ import DDC.Solve.State
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var
+import Control.DeepSeq
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Sequence	as Seq
@@ -43,11 +44,11 @@ squidExport vsTypesPlease
 	mapProjResolve	<- getsRef stateProjectResolve
 
 	return 	$ Solution
-	 	{ solutionCanon			= mapCanon
+	 	{ solutionCanon			= strict mapCanon
 		, solutionTypes			= mapTypes
 		, solutionInstanceInfo		= mapInst
-		, solutionRegionClasses		= mapRegionCls
-		, solutionProjResolution	= mapProjResolve }
+		, solutionRegionClasses		= strict mapRegionCls
+		, solutionProjResolution	= strict mapProjResolve }
 
 
 -- | Export a map giving the canonical names for each variable.
@@ -66,7 +67,7 @@ exportTypes vsTypesPlease
 			return	(v, mT))
 		$ Set.toList vsTypesPlease
 
-	return	$ Map.fromList vts
+	return	$! deepSeq vts (Map.fromList vts)
 
 
 -- | Export the type for this variable.
@@ -105,7 +106,8 @@ exportType t
 		| otherwise		= tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTypeSplit tTrim	% "\n\n"
-	return $ tTrim		
+
+	return tTrim	
  
 
 exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
@@ -114,7 +116,7 @@ exportMaybeType mt
  	Nothing	-> return Nothing
 	Just t 
 	 -> do	t'	<- exportType t
-	 	return	$ Just t'
+	 	return	(Just t')
 
 		
 -- | Build a map of all the instantiations

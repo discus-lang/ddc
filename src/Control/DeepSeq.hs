@@ -10,6 +10,9 @@
 
 module Control.DeepSeq
 where
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 
 class  DeepSeq a  where
     deepSeq :: a -> b -> b
@@ -46,24 +49,26 @@ instance  (DeepSeq a, DeepSeq b) => DeepSeq (Either a b)  where
 
 instance  (DeepSeq a) => DeepSeq [a]  where
     deepSeq []     y = y
-    deepSeq (x:xs) y = deepSeq x $ deepSeq xs y
+    deepSeq (x:xs) y = deepSeq x $! deepSeq xs y
 
 instance  (DeepSeq a,DeepSeq b) => DeepSeq (a,b)  where
-    deepSeq (a,b)           y = deepSeq a $ deepSeq b y
+    deepSeq (a,b)           y = deepSeq a $! deepSeq b y
 
 instance  (DeepSeq a,DeepSeq b,DeepSeq c) => DeepSeq (a,b,c)  where
-    deepSeq (a,b,c)         y = deepSeq a $ deepSeq b $ deepSeq c y
+    deepSeq (a,b,c)         y = deepSeq a $! deepSeq b $! deepSeq c y
 
 instance  (DeepSeq a,DeepSeq b,DeepSeq c,DeepSeq d) => DeepSeq (a,b,c,d) where
-    deepSeq (a,b,c,d)       y = deepSeq a $ deepSeq b $ deepSeq c $ deepSeq d y
+    deepSeq (a,b,c,d)       y = deepSeq a $! deepSeq b $! deepSeq c $! deepSeq d y
 
 instance  (DeepSeq a,DeepSeq b,DeepSeq c,DeepSeq d,DeepSeq e) => DeepSeq (a,b,c,d,e)  where
-    deepSeq (a,b,c,d,e)     y = deepSeq a $ deepSeq b $ deepSeq c $ deepSeq d $ deepSeq e y
+    deepSeq (a,b,c,d,e)     y = deepSeq a $! deepSeq b $! deepSeq c $! deepSeq d $! deepSeq e y
 
 instance  (DeepSeq a,DeepSeq b,DeepSeq c,DeepSeq d,DeepSeq e,DeepSeq f) => DeepSeq (a,b,c,d,e,f)  where
-    deepSeq (a,b,c,d,e,f)   y = deepSeq a $ deepSeq b $ deepSeq c $ deepSeq d $ deepSeq e $ deepSeq f y
+    deepSeq (a,b,c,d,e,f)   y = deepSeq a $! deepSeq b $! deepSeq c $! deepSeq d $! deepSeq e $! deepSeq f y
 
 instance  (DeepSeq a,DeepSeq b,DeepSeq c,DeepSeq d,DeepSeq e,DeepSeq f,DeepSeq g) => DeepSeq (a,b,c,d,e,f,g)  where
-    deepSeq (a,b,c,d,e,f,g) y = deepSeq a $ deepSeq b $ deepSeq c $ deepSeq d $ deepSeq e $ deepSeq f $ deepSeq g y
+    deepSeq (a,b,c,d,e,f,g) y = deepSeq a $! deepSeq b $! deepSeq c $! deepSeq d $! deepSeq e $! deepSeq f $! deepSeq g y
 
+instance (DeepSeq a, DeepSeq b) => DeepSeq (Map a b) where
+    deepSeq mm y	= deepSeq (Map.toList mm) y
 

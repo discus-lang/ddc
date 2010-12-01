@@ -1,6 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Type
 	( module DDC.Type.Exp
+	, module DDC.Type.DeepSeq
 	, module DDC.Type.Bits
 	, module DDC.Type.Predicates
 	, module DDC.Type.Compounds
@@ -15,6 +16,7 @@ module DDC.Type
 	, module DDC.Type.Collect)
 where
 import DDC.Type.Exp
+import DDC.Type.DeepSeq		()
 import DDC.Type.Bits
 import DDC.Type.Predicates
 import DDC.Type.Compounds

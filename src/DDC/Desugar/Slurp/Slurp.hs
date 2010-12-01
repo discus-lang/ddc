@@ -10,6 +10,7 @@ import DDC.Solve.Interface.Problem
 import DDC.Var
 import DDC.Type			()
 import DDC.Type.Data
+import Control.DeepSeq
 import Util
 import qualified Data.MapUtil	as Map
 import qualified Data.Set	as Set
@@ -68,7 +69,7 @@ slurpTree blessMain hTree sTree
 
 	((sTree', sConstraints, vsTopSource), state3)
 		= runState (slurpTreeM sTree) state2
-		
+				
 	-- problem for the type constraint solver
    	problem
 		= Problem
@@ -80,7 +81,7 @@ slurpTree blessMain hTree sTree
 		, problemValueToTypeVars   = stateVarType        state3
 		, problemTopLevelTypeVars  = Set.union vsTopHeader vsTopSource
 		, problemMainIsMain	   = blessMain
-		, problemConstraints	   = CBranch BNothing $ Bag.toList (hConstraints >< sConstraints)
+		, problemConstraints	   = CBranch BNothing $ strict $ Bag.toList (hConstraints >< sConstraints)
 		, problemTypeVarsPlease	   = stateTypesRequest   state3 }
 
    in	(sTree', problem, stateErrors state3)

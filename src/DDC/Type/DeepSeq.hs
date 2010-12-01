@@ -1,6 +1,6 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | DeepSeq on Type expressions.
-module Type.Plate.DeepSeq where
+module DDC.Type.DeepSeq where
 
 import DDC.Type.Exp
 import DDC.Var
@@ -36,6 +36,7 @@ instance DeepSeq KiCon where
 instance DeepSeq Bind where
  deepSeq xx y
   = case xx of
+	BNil{}				-> y
 	BVar 		v		-> deepSeq v y
 	BMore 		v t		-> deepSeq v $! deepSeq t y
 
@@ -49,8 +50,9 @@ instance DeepSeq Type where
 	TSum		k ts		-> deepSeq k  $! deepSeq ts y
 	TCon		c		-> deepSeq c y
 	TVar		k v		-> deepSeq k  $! deepSeq v y
-	TError		k err		-> deepSeq k y
-	
+	TError		k _		-> deepSeq k y
+	TConstrain	t crs		-> deepSeq t  $! deepSeq crs y
+
 
 instance DeepSeq Bound where
  deepSeq uu y
@@ -61,13 +63,20 @@ instance DeepSeq Bound where
 	UClass		c		-> deepSeq c y
 
 
+instance DeepSeq Constraints where
+ deepSeq (Constraints eqs mores others) y
+	= deepSeq eqs $! deepSeq mores $! deepSeq others y
+
+
 instance DeepSeq TyCon where
  deepSeq xx y
   = case xx of
 	TyConFun 			-> y
 	TyConData 	n k _		-> deepSeq n $! deepSeq k y
 	TyConWitness 	c k		-> deepSeq c $! deepSeq k y
-	
+	TyConEffect{}			-> y
+	TyConClosure{}			-> y
+	TyConElaborate{}		-> y
 
 instance DeepSeq TyConWitness where
  deepSeq xx y
