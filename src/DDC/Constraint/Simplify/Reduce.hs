@@ -78,7 +78,7 @@ reduce1 usage table cc
 	-- If we've substituted into an outermost variable we may have ended
 	-- up with a boring v1 = v1 constraint, so ditch that out early.
 	CEq src t1 t2				
-	 -> mkCEq1 src (subEq t1) (subEq t2)
+	 -> {-# SCC "SUBEQ" #-} mkCEq1 src (subEq t1) (subEq t2)
 
 	-- More -------------------------------------------
 	-- Ditch  :> 0 constrints
@@ -91,7 +91,7 @@ reduce1 usage table cc
 	 -> Nothing
 
 	CMore src t1 t2		
-	 -> Just $ CMore src t1 (subEq t2)
+	 -> {-# SCC "SUBMORE" #-} Just $ CMore src t1 (subEq t2)
 
 
 	-- Project ----------------------------------------
@@ -121,7 +121,7 @@ mkCEq1 src t1 t2	= Just $ CEq src t1 t2
 reorder	:: [CTree] -> [CTree]
 reorder cs
  = let	([eqs, mores, gens], others)
-		= partitionBy [(=@=) CEq{}, (=@=) CMore{}, (=@=) CGen{}] cs
+		= partitionBy [isCEq, isCMore, isCGen] cs
 		
    in	concat	[ eqs
  		, mores

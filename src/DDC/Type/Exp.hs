@@ -81,30 +81,30 @@ data Type
 	= TNil
 
 	-- | A bound occurrence of a variable.
-	| TVar     	Kind 	Bound
+	| TVar     	!Kind 	!Bound
 
 	-- | A type constructor.
-	| TCon		TyCon
+	| TCon		!TyCon
 
 	-- | A type summation \/ least upper bound.
 	--   Used for joining effect, closure, and witness types.
 	--   If there are no elements in the list this means 'bottom'.
-	| TSum		Kind 	[Type]
+	| TSum		!Kind 	![Type]
 
 	-- | Type application.
-	| TApp		Type	Type
+	| TApp		!Type	!Type
 
 	-- | Universal quantification.
-	| TForall	Bind 	Kind	Type
+	| TForall	!Bind 	!Kind	!Type
 
 	-- | Constrained types.
 	--   Used in the solver only. When converting to core we add type class contexts
 	--   as kinds using TForall, and more-than contraints as bounded quantification.
-	| TConstrain	Type	Constraints
+	| TConstrain	!Type	!Constraints
 			
 	-- | Used in the solver only.
 	--   Represents an error in the type.
-	| TError	Kind	TypeError
+	| TError	!Kind	!TypeError
 	deriving (Show, Eq)
 
 
@@ -114,10 +114,10 @@ data Bind
 	= BNil
 
 	-- | Unbounded quantification.
-	| BVar	Var
+	| BVar	!Var
 	
 	-- | Bounded quantification. Type of bound variable must be more-than the given constraint.
-	| BMore	Var Type
+	| BMore	!Var !Type
 	deriving (Show, Eq)
 
 
@@ -125,21 +125,21 @@ data Bind
 --	These can have several forms depending on where we're using them.
 data Bound
 	-- | A regular variable.
-	= UVar		Var
+	= UVar		!Var
 
 	-- | Used in core types only. 
 	--   A type variable with an embedded more-than constraint. 
 	--   It will have been bound by a `BMore` in an enclosing scope.
-	| UMore		Var Type
+	| UMore		!Var !Type
 
 	-- | Used in the kinds of witness constructors only.
 	--   A de Bruijn index.
-	| UIndex 	Int
+	| UIndex 	!Int
 
 	-- | Used in the solver only.
 	--   A reference to some equivalence class in the type graph.
 	--   Also known as a meta type variable.
-	| UClass 	ClassId
+	| UClass 	!ClassId
 	deriving (Show, Eq)
 
 
@@ -174,21 +174,21 @@ data TypeError
 data Fetter
 
 	-- | A type class constraint.
-	= FConstraint	Var	[Type]
+	= FConstraint	!Var	![Type]
 
 	-- | t1 is equal to t2, and must be represented as a TVar or TClass.
-	| FWhere	Type	Type
+	| FWhere	!Type	!Type
 
 	-- | t1 is more than t2, and must be represented as a TVar or TClass.
-	| FMore		Type	Type
+	| FMore		!Type	!Type
 
 	-- | A projection constraint.
 	--   TODO: refactor this into a special constructor, and make FConstraint
 	--	   above take that constructor instead of a plain var.
-	| FProj		TProj	
-			Var 	-- var to tie the instantiated projection function to.
-			Type 	-- type of the dictionary to choose the projection from.
-			Type 	-- type to unify the projection function with, once it's resolved.
+	| FProj		!TProj	
+			!Var 	-- var to tie the instantiated projection function to.
+			!Type 	-- type of the dictionary to choose the projection from.
+			!Type 	-- type to unify the projection function with, once it's resolved.
 				
 	deriving (Show, Eq, Ord)
 

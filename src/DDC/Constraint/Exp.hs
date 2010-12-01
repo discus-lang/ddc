@@ -25,37 +25,38 @@ data	CTree
 	--	then these will be present in the branchBind field.
 	| CBranch  
 	  { -- | vars bound by this branch.
-	    branchBind	:: CBind		
+	    branchBind	:: !CBind		
 
 	    -- | sub constraints
-	  , branchSub	:: [CTree] }		
+	  , branchSub	:: ![CTree] }		
 
 	-- | A type equality constraint.
-	| CEq		TypeSource Type Type
+	| CEq		!TypeSource !Type !Type
 
 	-- | Type inequality (t1 :> t2)
-	| CMore		TypeSource Type Type
+	| CMore		!TypeSource !Type !Type
 
 	-- | A projection constraint.
-	| CProject	TypeSource 	--  source of the constraint.
-			TProj		--  the sort of projection.
-			Var 		--  type variable to tie to the projection function.
-			Type 		--  the type that guides what projection dictionary to use,
+	| CProject	!TypeSource 	--  source of the constraint.
+			!TProj		--  the sort of projection.
+			!Var 		--  type variable to tie to the projection function.
+			!Type 		--  the type that guides what projection dictionary to use,
 					--	that is, the type of the object being projection.
-			Type		--  type to unify the type of the instance function once 
+			!Type		--  type to unify the type of the instance function once 
 			 		--	it has been determined.
 			
 	-- | Instantiate a type scheme. 
 	--   The solver must wait until the scheme is available before it can can instantiate it.
-	| CInst		TypeSource 
-				Var 	--  type var to equate with the instantiated type.
-				Var	--  type var of the scheme to instantiate.
+	| CInst		!TypeSource 
+			!Var 	--  type var to equate with the instantiated type.
+			!Var	--  type var of the scheme to instantiate.
 
 	-- | Generalise a type scheme.
 	--	When we hit this one we know that all the constraints from the bound 
 	--	variable have been added to the graph and that it's now safe to generalise
 	--	its type.
-	| CGen		TypeSource Type
+	| CGen		!TypeSource
+			!Type
 
 
 	--------------
@@ -66,7 +67,7 @@ data	CTree
 	-- (used internaly to solver).
 	--	A marker to remind the solver to leave a branch because all the constraints from
 	--	it have now been added to the graph.
-	| CLeave	CBind
+	| CLeave	!CBind
 
 	-- (used internally to solver).
 	--	A marker that triggers a grind (reduction) of the graph.
@@ -74,15 +75,15 @@ data	CTree
 
 	-- (used internally to solver).
 	--	A marker to remind us to instantiate a lambda-bound variabe.
-	| CInstLambda		TypeSource Var Var
+	| CInstLambda	!TypeSource !Var !Var
 
 	-- (used internally to solver).
 	--	A marker to remind us to instantiate a let-bound variabe.
-	| CInstLet		TypeSource Var Var
+	| CInstLet	!TypeSource !Var !Var
 
 	-- (used internally to solver).
 	--	A marker to remind us to instantiate a letrec-bound variabe.
-	| CInstLetRec		TypeSource Var Var
+	| CInstLetRec	!TypeSource !Var !Var
 	deriving (Show)
 
 

@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# OPTIONS -O2 #-}
 
 -- | Variable binding identifiers.
 module DDC.Var.VarId
@@ -14,15 +15,43 @@ import DDC.Main.Pretty
 -- | A variable binding identifier gives a variable its unique identity.
 data VarId
 	-- | A regular user-defined var.
-	= VarId     String Int
+	= VarId     !String !Int
 
 	-- | A primitive variable, which as special meaning to the compiler.
-	| VarIdPrim PrimId
+	| VarIdPrim !PrimId
 
 	-- | Variable id not set. Before being processed by the renamer most variables will have this.
 	| VarIdNil
-	deriving (Show, Eq, Ord)
-	
+	deriving (Show)
+
+instance Eq VarId where
+ {-# INLINE (==) #-}
+ (==) (VarId s1 i1) (VarId s2 i2)
+	| i1 == i2			= s1 == s2
+	| otherwise			= False
+
+ (==) (VarIdPrim p1) (VarIdPrim p2)	= p1 == p2
+ (==) VarIdNil       VarIdNil           = True
+ (==) _ _				= False
+
+
+instance Ord VarId where
+ {-# INLINE compare #-}
+ compare (VarId s1 i1) (VarId s2 i2)
+	| i1 < i2	= LT
+	| i1 > i2	= GT
+	| s1 < s2	= LT
+	| s1 > s2	= GT
+	| otherwise	= EQ
+
+ compare (VarIdPrim p1) (VarIdPrim p2)	= compare p1 p2
+ compare VarIdPrim{}    VarId{}		= LT
+ compare VarId{}        VarIdPrim{} 	= GT
+ compare VarIdNil       VarIdNil        = EQ
+ compare VarIdNil       _               = LT
+ compare _              VarIdNil        = GT
+
+
 
 instance Pretty VarId PMode where
  ppr b
@@ -46,6 +75,7 @@ takeDataFormatOfVarId vid
 
 -- | Increment a VarId to the next one.
 incVarId :: VarId -> VarId
+{-# INLINE incVarId #-}
 incVarId b
  = case b of
  	VarId s i	-> VarId s (i + 1)

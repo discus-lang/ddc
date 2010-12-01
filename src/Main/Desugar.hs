@@ -51,7 +51,7 @@ desugarElaborate
 		, Map Var T.Kind)
 
 desugarElaborate unique dgHeader dgModule
- = {-# SCC "Desugar/elaborate" #-}
+ = {-# SCC "D/elaborate" #-}
    do	
 	let (dgHeader', dgModule', constraints, kindMap, errors)
 		= D.elaborateTree unique dgHeader dgModule
@@ -89,7 +89,7 @@ desugarProjectEta
 	-> IO	(D.Tree SourcePos)
 	
 desugarProjectEta unique sourceTree
- = {-# SCC "Desugar/projectEta" #-}
+ = {-# SCC "D/projectEta" #-}
    do
 	let sourceTree'	= D.projectEtaExpandTree unique sourceTree
 	
@@ -110,7 +110,7 @@ desugarProject
 		, D.ProjTable )
 
 desugarProject unique modName headerTree sourceTree
- = {-# SCC "Desugar/project" #-}
+ = {-# SCC "D/project" #-}
    do
 	-- Snip down projection dictionaries and add default projections.
  	let (sourceTree', errors)
@@ -145,7 +145,7 @@ desugarSlurp
 desugarSlurp blessMain sTree hTree
  = do
 	let (sTree', problem, errs)	
-		= {-# SCC "Desugar/slurp/slurp" #-}
+		= {-# SCC "D/slurp/slurp" #-}
 		  D.slurpTree blessMain hTree sTree
 
 	-- handle errors arrising from constraint slurping
@@ -162,7 +162,7 @@ desugarSlurp blessMain sTree hTree
 		
 		| otherwise
 		= let	(simplified, usage)
-				= {-# SCC "Desugar/slurp/simplify" #-}
+				= {-# SCC "D/slurp/simplify" #-}
 				  T.simplify 	(T.problemTypeVarsPlease problem)
 						(T.problemConstraints    problem)
 		  in	( problem { T.problemConstraints = simplified }
@@ -199,14 +199,14 @@ desugarSolve
 	-> IO T.Solution
 	
 desugarSolve problem
- = {-# SCC "Desugar/solve" #-}
+ = {-# SCC "D/solve" #-}
    do
 	-- The solver state gets dumped in real-time so we can see
 	--	what's gone wrong if it crashes mid-stream.
 
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
 		
- 	state	<- {-# SCC "Desugar/solve/solve" #-} 
+ 	state	<- {-# SCC "D/solve/solve" #-} 
 		   T.solveProblem ?args hTrace problem
 
 	-- dump out the type graph
@@ -254,7 +254,7 @@ desugarSolveConstraints2
 
 	-- extract out the stuff we'll need for conversion to core.
 	(solution, state2)	
-		<- {-# SCC "Desugar/solve/export" #-} runStateT 
+		<- {-# SCC "D/solve/export" #-} runStateT 
 			(T.squidExport vsTypesPlease) state
 
 	-- flush the trace output to make sure it's written to the file.
@@ -325,7 +325,7 @@ desugarToCore
 	projTable
 	solution
 
- = {-# SCC "Desugar/toCore" #-} 
+ = {-# SCC "D/toCore" #-} 
    do 	let toCoreGlob'
 		= D.toCoreTree 
 			mapValueToTypeVars

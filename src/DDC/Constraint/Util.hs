@@ -2,8 +2,12 @@
 
 -- | Bits and pieces for dealing with type constraints.
 module DDC.Constraint.Util
-	( isCBranch
-	, isCTreeNil
+	( isCTreeNil
+	, isCBranch
+	, isCEq
+	, isCMore
+	, isCProject
+	, isCGen
 	, makeCBranch
 	, makeCEqs
 	, takeCBindVs
@@ -21,19 +25,45 @@ import qualified Data.Set	as Set
 
 stage	= "DDC.Constraint.Util"
 
--- | Check if this is a branch in the constraint tree.
-isCBranch :: CTree -> Bool
-isCBranch b
- = case b of
- 	CBranch{}	-> True
-	_		-> False
-
+-- Predicates -----------------------------------------------------------------
 isCTreeNil :: CTree -> Bool
 isCTreeNil b
  = case b of
 	CTreeNil	-> True
 	_		-> False
 	
+
+isCBranch :: CTree -> Bool
+isCBranch b
+ = case b of
+ 	CBranch{}	-> True
+	_		-> False
+
+isCEq :: CTree -> Bool
+isCEq b
+ = case b of
+	CEq{}		-> True
+	_		-> False
+
+isCMore :: CTree -> Bool
+isCMore b
+ = case b of
+	CMore{}		-> True
+	_		-> False
+
+isCProject :: CTree -> Bool
+isCProject b
+ = case b of
+	CProject{}	-> True
+	_		-> False
+
+isCGen :: CTree -> Bool
+isCGen b
+ = case b of
+	CGen{}		-> True
+	_		-> False
+	
+
 
 makeCBranch :: CBind -> [CTree] -> CTree
 makeCBranch bind cs

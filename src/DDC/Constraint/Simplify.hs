@@ -33,13 +33,18 @@ simplify
 	-> (CTree, UseMap)	-- ^ Simplified constraints, and usage map for dumping.
 	
 simplify wanted tree
- = let	usage	= mconcat
+ = let	usage	= {-# SCC "Desugar/slurp/simplify/usage" #-}
+		  mconcat
 		$ slurpUsage tree
 		: [singleton UsedWanted $ TVar kValue (UVar v) 
 					| v <- Set.toList wanted]
 
-	table	= applyNoInline $ collect usage tree
-	tree'	= reduce usage table tree
+	table	= {-# SCC "Desugar/slurp/simplify/collect" #-}
+		  applyNoInline $ collect usage tree
+
+	tree'	= {-# SCC "Desugar/slurp/simplify/reduce" #-}
+	          reduce usage table tree
+
    in	(tree', usage)
 
 

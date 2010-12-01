@@ -154,7 +154,7 @@ slurpTreeM tree
 	let qsFinal_rest
 		= Bag.fromList
 		$ partitionBySort
-			[ (=@=) CProject{} ]
+			[ isCProject ]
 			qsRest
 	
 	return	( tree'
