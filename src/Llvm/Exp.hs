@@ -103,7 +103,7 @@ llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun at rt)):args)
 
 
 llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
- = do	addComment	$ "TODO: " ++ stage ++ " " ++ show __LINE__ ++ " the type is wrong. Generatring llvm code anyway."
+ = do	addComment	$ "TODO: " ++ stage ++ ":" ++ show __LINE__ ++ " the type is wrong. Generating llvm code anyway."
 	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	result		<- newUniqueNamedReg "result" $ toLlvmType rt
@@ -111,7 +111,8 @@ llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[]
 	return		result
 
 llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TCon (TyConUnboxed tv))):[])
- = do	let func	= funcDeclOfExp exp
+ = do	addComment	$ "TODO: " ++ stage ++ ":" ++ show __LINE__ ++ " the type is wrong. Generating llvm code anyway."
+	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	result		<- newUniqueNamedReg "result" $ toLlvmType rt
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
