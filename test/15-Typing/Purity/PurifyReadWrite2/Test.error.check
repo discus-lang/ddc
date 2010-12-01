@@ -5,7 +5,7 @@ ddc: ERROR
               constraint: Const %31
         which purifies
               the use of: (*)
-                 of type: (242 243)
+                 of type: (240 241)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:25
         due to
               the use of: mapL

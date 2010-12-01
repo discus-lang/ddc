@@ -2,13 +2,13 @@ ddc: ERROR
 ./test/15-Typing/Signatures/Bad/SmallerEffect/Test.ds:2:8
         Inferred type:
             thing
-                :: forall %r2 %r0
+                :: forall %r0 %r2
                 .  Int32 %r0 -> Int32 %r2 -($c0)> Int32 %r0
                 :- $c0   =  ${Test.x : %r0}
         
         Is smaller than signature:
             thing
-                :: forall %r2 %r0 %r1
+                :: forall %r1 %r2 %r0
                 .  Int32 %r1 -> Int32 %r2 -(!e0 $c0)> Int32 %r0
                 :- !e0   =  !Read %r1
                 ,  $c0   =  ${xDE494 : %r1}
