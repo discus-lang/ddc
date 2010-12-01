@@ -5,12 +5,15 @@
 --
 module Core.Util.Bits
 	( isXApp
+	, isXAPP
 	, isXLambda
 	, isXLAMBDA
 	, isXTau
 	, isXMatch
 	, isXDo
 	, isXLocal
+	, isXVar
+	
 	, isCafP 
 	, isFunctionX
 	, stripXTau
@@ -45,13 +48,29 @@ isXApp x
 	[ x =@= XAPP{}
 	, x =@= XApp{} ]
 
+isXAPP	  XAPP{}	= True
+isXAPP	  _		= False
+	
+isXLambda XLam{}	= True
+isXLambda _		= False
 
-isXLambda x	= x =@= XLam{}
-isXLAMBDA x	= x =@= XLAM{}
-isXTau x	= x =@= XTau{}
-isXMatch x	= x =@= XMatch{}
-isXDo x		= x =@= XDo{}
-isXLocal x	= x =@= XLocal{}
+isXLAMBDA XLAM{}	= True
+isXLAMBDA _		= False
+
+isXTau	  XTau{}	= True
+isXTau	  _		= False
+
+isXMatch  XMatch{}	= True
+isXMatch  _		= False
+
+isXDo     XDo{}		= True
+isXDo     _		= False
+
+isXLocal  XLocal{}	= True
+isXLocal  _		= False
+
+isXVar	  XVar{}	= True
+isXVar	  _		= False
 
 -- FFS XTaus were never a good idea.
 stripXTau xx
