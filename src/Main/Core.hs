@@ -63,7 +63,8 @@ type CoreStage
 --   The Desugar -> Core conversion doesn't produce very nice code.
 coreTidy :: CoreStage
 coreTidy stage args base unique cgHeader cgModule
- = do	let cgModule_tidy	= fst $ simplifyPassTidy unique cgHeader cgModule
+ = {-# SCC "Core/tidy" #-}
+   do	let cgModule_tidy	= fst $ simplifyPassTidy unique cgHeader cgModule
  	dumpCG args base DumpCoreTidy stage cgModule_tidy
 	return	cgModule_tidy
 
@@ -80,8 +81,8 @@ coreBind
 	
 coreBind modId classMap rsGlobal 
 	 stage args base unique cgHeader cgModule
- = do
- 	let cgModule' 
+ = {-# SCC "Core/bind" #-}
+   do	let cgModule' 
 		= bindGlob modId unique classMap rsGlobal 
 		$ mapBindsOfGlob blockP cgModule
 	
@@ -101,8 +102,8 @@ coreSnip
 	-> IO Glob
 	
 coreSnip stage unique cgHeader cgModule
- = do	
-	-- snip exprs out of fn arguments
+ = {-# SCC "Core/snip" #-} 
+   do	-- snip exprs out of fn arguments
 	let snipTable	= Snip.Table
 			{ Snip.tableHeaderGlob		= cgHeader
 			, Snip.tableModuleGlob		= cgModule
@@ -127,7 +128,8 @@ coreDictionary
 	-> IO Glob
 
 coreDictionary cgHeader cgModule
- = do	let cgModule'	= dictGlob cgHeader cgModule
+ = {-# SCC "Core/dict" #-}
+   do	let cgModule'	= dictGlob cgHeader cgModule
 
  	dumpCT DumpCoreDict "core-dict"
 		$ treeOfGlob cgModule'
@@ -145,8 +147,8 @@ coreThread
 	-> IO Glob
 	
 coreThread cgHeader cgModule
- = do	let cgModule'	= {-# SCC "Core.Thread" #-} 
- 			  threadGlob cgHeader cgModule
+ = {-# SCC "Core/thread" #-}
+   do	let cgModule' = threadGlob cgHeader cgModule
  
  	dumpCT DumpCoreThread "core-thread" 
 		$ treeOfGlob cgModule'
@@ -164,9 +166,11 @@ corePrim
 	-> IO Glob
 	
 corePrim cgHeader cgModule
- = do	let cgModule'	= primGlob cgModule
+ = {-# SCC "Core/prim" #-}
+   do	let cgModule'	= primGlob cgModule
 
- 	dumpCT DumpCorePrim "core-prim" 	$ treeOfGlob cgModule'
+ 	dumpCT DumpCorePrim "core-prim"
+		$ treeOfGlob cgModule'
 
 	return cgModule'
 
@@ -179,7 +183,8 @@ coreSimplify
 	=> String -> Glob -> Glob -> IO Glob
 	
 coreSimplify unique cgHeader cgModule
- = do	let (cgModule', statss)
+ = {-# SCC "Core/simplify" #-}
+   do	let (cgModule', statss)
  		= fixSimplifierPass simplifyPassAll unique cgHeader cgModule
 
 	when (elem Verbose ?args)
@@ -204,7 +209,8 @@ coreLint
 	-> IO Glob
 	
 coreLint stage cgHeader cgModule
- = do	let cgModule'	= checkGlobs ("Compile.coreLint." ++ stage) cgHeader cgModule 
+ = {-# SCC "Core/lint" #-}
+   do	let cgModule'	= checkGlobs ("Compile.coreLint." ++ stage) cgHeader cgModule 
 
 	dumpCT DumpCoreLint stage 		
 		$ treeOfGlob cgModule'		
@@ -223,8 +229,8 @@ coreLambdaLift
 		, Set Var)		-- the vars of the new bindings.
 	
 coreLambdaLift cgHeader cgModule
- = do	
- 	let (cgModule', vsNewLambdaLifted)
+ = {-# SCC "Core/lift" #-}
+   do	let (cgModule', vsNewLambdaLifted)
 		= lambdaLiftGlob cgHeader cgModule
 					
 	dumpCT DumpCoreLift "core-lift" 		$ treeOfGlob cgModule'
@@ -238,7 +244,8 @@ coreLambdaLift cgHeader cgModule
 -- | Prepare for conversion to Sea.
 corePrep :: CoreStage
 corePrep stage args base unique cgHeader cgModule
- = do	let eatXTau	= transformX 
+ = {-# SCC "Core/prep" #-}
+   do	let eatXTau	= transformX 
 			$ \xx -> case xx of 
 					XTau _ x -> x
 					_	 -> xx				
@@ -267,7 +274,8 @@ coreCurry
 	=> Glob -> Glob -> IO Glob
 
 coreCurry cgHeader cgModule
- = do	let optTailCall	= elem OptTailCall ?args
+ = {-# SCC "Core/curry" #-}
+   do	let optTailCall	= elem OptTailCall ?args
 	let cgModule'	= curryGlob optTailCall cgHeader cgModule
 
 	dumpCT DumpCoreCurry "core-curry" 		$ treeOfGlob cgModule'
@@ -286,8 +294,8 @@ coreToSea
 		, E.Tree ())		-- sea header tree
 
 coreToSea unique cgHeader cgModule
- = do	
-	let result = toSeaGlobs unique cgHeader cgModule
+ = {-# SCC "Core/toSea" #-}
+   do	let result = toSeaGlobs unique cgHeader cgModule
 	case result of
 	 Left vsRecursive
 	  -> exitWithUserError ?args

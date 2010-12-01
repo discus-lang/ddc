@@ -33,8 +33,8 @@ main
 -- | Run the compiler proper.
 ddc :: [String] -> IO ()
 ddc argStrs
- = do
-	-- check args
+ = {-# SCC "Main/ddc" #-}
+   do	-- check args
 	let args	= Arg.parse argStrs
 	let verbose	= any (== Arg.Verbose) args
 
@@ -121,7 +121,8 @@ ddc argStrs
 
 -- | Do a regular compile.
 ddcCompile args verbose setup files
- = do 	-- use the directories containing the files to be compiled as extra import dirs
+ = {-# SCC "Main/compile" #-}
+   do 	-- use the directories containing the files to be compiled as extra import dirs
 	let impDirs	= map (\p -> if null p then "." else p)
 			$ map System.takeDirectory files
 
@@ -131,16 +132,18 @@ ddcCompile args verbose setup files
 				++ [Arg.ImportDirs impDirs] }
 
 	-- scrape the root modules
-	Just roots	<- liftM sequence 
+	Just roots	<- {-# SCC "Main/scrape/roots" #-}
+			   liftM sequence 
 			$  mapM (scrapeSourceFile True) files 
 
 	-- scrape all modules reachable from the roots
-	graph		<- scrapeRecursive args setup' roots
+	graph		<- {-# SCC "Main/scrape/graph" #-}
+			   scrapeRecursive args setup' roots
 
 	-- during a plain compile, all the dependencies should already be up-to-date
 	-- if they're not then complain.
 	let graph_noRoots 
-			= foldr Map.delete graph 
+			= foldl' (flip Map.delete) graph 
 			$ map scrapeModuleName roots
 		
 	let scrapeDirty

@@ -45,7 +45,8 @@ parse 	:: (?args :: [Arg]
 			
 parse	fileName
 	source
- = do	
+ = {-# SCC "Source/parse" #-}
+   do	
 	-- lex the source file
 	let (toksSource, toksPragma)
 		= scanModuleWithOffside source
@@ -94,11 +95,9 @@ sourceSlurpFixTable
 	:: Tree SourcePos		-- source and header parse tree
 	-> IO [FixDef SourcePos]	-- fixity table
 		
-sourceSlurpFixTable
-	sTree
- = do
-	let fixTable	= slurpFixTable sTree
-	return	fixTable
+sourceSlurpFixTable sTree
+ = {-# SCC "Source/slurpFixTable" #-}
+   return $ slurpFixTable sTree
 
 
 -- | Slurp out table of bindings to inline
@@ -106,10 +105,8 @@ sourceSlurpInlineVars
 	:: Tree SourcePos
 	-> IO [Var]
 	
-sourceSlurpInlineVars 
-	sTree
- = 
- 	return	$ catMap
+sourceSlurpInlineVars  sTree
+ = 	return	$ catMap
 			(\p -> case p of
  				PPragma _ [XVar sp v, XList _ xs]
 				 | varName v == "Inline"
@@ -128,10 +125,9 @@ defix	:: (?args :: [Arg]
 	-> [FixDef SourcePos]		-- fixity table
 	-> IO (Tree SourcePos)		-- defixed parse tree, will have no more XInfix nodes.
 	
-defix	sParsed
-	fixTable
- = do
- 	let (sDefixed, errss)
+defix sParsed fixTable
+ = {-# SCC "Source/defix" #-}
+   do	let (sDefixed, errss)
 			= unzip
 			$ map (defixP fixTable)
 			$ sParsed
@@ -160,9 +156,9 @@ rename	:: (?args :: [Arg]
 	-> IO 	[(ModuleId, Tree SourcePos)]
 
 
-rename	mTrees
- = do
-	let (mTrees', state')
+rename mTrees
+ = {-# SCC "Source/rename" #-}
+   do	let (mTrees', state')
 		= runState (S.renameTrees mTrees)
 		$ S.initRenameS
 
@@ -202,7 +198,8 @@ lint 	:: (?args :: [Arg])
 	-> IO (Tree SourcePos, Tree SourcePos)
 
 lint hTree sTree
- = do	let (hTree_ok, hErrs)	= runState (lintTree hTree) []
+ = {-# SCC "Source/lint" #-}
+   do	let (hTree_ok, hErrs)	= runState (lintTree hTree) []
 	let (sTree_ok, sErrs)	= runState (lintTree sTree) []
 	
 	let errs = hErrs ++ sErrs
@@ -225,8 +222,8 @@ desugar
 		, D.Tree SourcePos)
 	
 desugar unique kinds hTree sTree
- = do
-	let kindMap	= Map.fromList kinds
+ = {-# SCC "Source/desugar" #-}
+   do	let kindMap	= Map.fromList kinds
 	let (hTree', sTree', errors)	
 			= rewriteTree unique kindMap hTree sTree
 			

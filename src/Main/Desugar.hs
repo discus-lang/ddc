@@ -2,8 +2,8 @@ module Main.Desugar
 	( desugarElaborate
 	, desugarProjectEta
 	, desugarProject
-	, desugarSlurpConstraints
-	, desugarSolveConstraints
+	, desugarSlurp
+	, desugarSolve
 	, desugarToCore )
 where
 import Main.Dump
@@ -51,7 +51,8 @@ desugarElaborate
 		, Map Var T.Kind)
 
 desugarElaborate unique dgHeader dgModule
- = do	
+ = {-# SCC "Desugar/elaborate" #-}
+   do	
 	let (dgHeader', dgModule', constraints, kindMap, errors)
 		= D.elaborateTree unique dgHeader dgModule
 		
@@ -88,7 +89,8 @@ desugarProjectEta
 	-> IO	(D.Tree SourcePos)
 	
 desugarProjectEta unique sourceTree
- = do
+ = {-# SCC "Desugar/projectEta" #-}
+   do
 	let sourceTree'	= D.projectEtaExpandTree unique sourceTree
 	
 	dumpST DumpDesugarProject "desugar-project-eta"
@@ -108,7 +110,8 @@ desugarProject
 		, D.ProjTable )
 
 desugarProject unique modName headerTree sourceTree
- = do
+ = {-# SCC "Desugar/project" #-}
+   do
 	-- Snip down projection dictionaries and add default projections.
  	let (sourceTree', errors)
 		= D.projectTree unique modName headerTree sourceTree 
@@ -130,7 +133,7 @@ desugarProject unique modName headerTree sourceTree
 	
 	
 -- Constraints -------------------------------------------------------------------------------------
-desugarSlurpConstraints 	
+desugarSlurp	
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Bool						-- whether to require main fn to have type () -> ()
@@ -139,11 +142,11 @@ desugarSlurpConstraints
 	-> IO	( (D.Tree (Maybe (T.Type, T.Effect)))	-- source tree with type and effect annotations
 		, T.Problem)				-- problem for contraint solver
 				
-desugarSlurpConstraints blessMain sTree hTree
- = {-# SCC "slurpC" #-}
-   do
+desugarSlurp blessMain sTree hTree
+ = do
 	let (sTree', problem, errs)	
-		= D.slurpTree blessMain hTree sTree
+		= {-# SCC "Desugar/slurp/slurp" #-}
+		  D.slurpTree blessMain hTree sTree
 
 	-- handle errors arrising from constraint slurping
 	when (not $ null errs)
@@ -159,7 +162,8 @@ desugarSlurpConstraints blessMain sTree hTree
 		
 		| otherwise
 		= let	(simplified, usage)
-				= T.simplify 	(T.problemTypeVarsPlease problem)
+				= {-# SCC "Desugar/slurp/simplify" #-}
+				  T.simplify 	(T.problemTypeVarsPlease problem)
 						(T.problemConstraints    problem)
 		  in	( problem { T.problemConstraints = simplified }
 			, Just usage )
@@ -188,21 +192,21 @@ desugarSlurpConstraints blessMain sTree hTree
 	
 	
 -- Solve -------------------------------------------------------------------------------------------
-desugarSolveConstraints
+desugarSolve
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> T.Problem		-- ^ Problem for type constraint solver.
 	-> IO T.Solution
 	
-desugarSolveConstraints problem
- = {-# SCC "solveSquid" #-}
+desugarSolve problem
+ = {-# SCC "Desugar/solve" #-}
    do
 	-- The solver state gets dumped in real-time so we can see
 	--	what's gone wrong if it crashes mid-stream.
 
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
 		
- 	state	<- {-# SCC "solveSquid/solve" #-} 
+ 	state	<- {-# SCC "Desugar/solve/solve" #-} 
 		   T.solveProblem ?args hTrace problem
 
 	-- dump out the type graph
@@ -250,7 +254,7 @@ desugarSolveConstraints2
 
 	-- extract out the stuff we'll need for conversion to core.
 	(solution, state2)	
-		<- {-# SCC "solveSquid/export" #-} runStateT 
+		<- {-# SCC "Desugar/solve/export" #-} runStateT 
 			(T.squidExport vsTypesPlease) state
 
 	-- flush the trace output to make sure it's written to the file.
@@ -321,7 +325,7 @@ desugarToCore
 	projTable
 	solution
 
- = {-# SCC "toCore" #-} 
+ = {-# SCC "Desugar/toCore" #-} 
    do 	let toCoreGlob'
 		= D.toCoreTree 
 			mapValueToTypeVars

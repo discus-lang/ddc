@@ -59,8 +59,8 @@ compileViaSea
 compileViaSea
 	setup modName eInit pathSource importDirs includeFilesHere importsExp
 	modDefinesMainFn sRoot scrapes_noRoot blessMain
- = do
-	let ?args		= setupArgs setup
+ = {-# SCC "Sea/compile" #-}
+    do	let ?args		= setupArgs setup
 
 	-- Generate C source code ---------------------------------------------
 	outVerb $ ppr $ "  * Generate C source code\n"
@@ -118,16 +118,14 @@ compileViaSea
 	return modDefinesMainFn
 
 -- | Substitute trivial x1 = x2 bindings
-seaSub
-	:: (?args :: [Arg.Arg]
+seaSub	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
 
 seaSub tree
- = do
- 	let tree'
-		= subTree tree
+ = {-# SCC "Sea/sub" #-}
+   do 	let tree' = subTree tree
 
 	dumpET Arg.DumpSeaSub "sea-sub"
 		$ eraseAnnotsTree tree'
@@ -136,15 +134,14 @@ seaSub tree
 
 
 -- | Expand code for data constructors.
-seaCtor
-	:: (?args :: [Arg.Arg]
+seaCtor	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
 
 seaCtor eTree
- = do
-	let eExpanded	= addSuperProtosTree
+ = {-# SCC "Sea/ctor" #-}
+   do	let eExpanded	= addSuperProtosTree
 			$ expandCtorTree
 			$ eTree
 
@@ -162,8 +159,8 @@ seaThunking
 	-> IO (Tree ())
 
 seaThunking eTree
- = do
-	let tree'	= thunkTree eTree
+ = {-# SCC "Sea/thunking" #-}
+   do	let tree'	= thunkTree eTree
 	dumpET Arg.DumpSeaThunk "sea-thunk"
 		$ eraseAnnotsTree tree'
 
@@ -178,8 +175,8 @@ seaForce
 	-> IO (Tree ())
 
 seaForce eTree
- = do
-	let tree'	= forceTree eTree
+ = {-# SCC "Sea/force" #-}
+   do	let tree'	= forceTree eTree
 	dumpET Arg.DumpSeaForce "sea-force"
 		$ eraseAnnotsTree tree'
 
@@ -197,8 +194,8 @@ seaSlot
 	-> IO (Tree ())
 
 seaSlot	eTree eHeader cgHeader cgSource
- = do
- 	let tree'	= slotTree eTree eHeader cgHeader cgSource
+ = {-# SCC "Sea/slot" #-}
+   do	let tree'	= slotTree eTree eHeader cgHeader cgSource
 	dumpET Arg.DumpSeaSlot "sea-slot"
 		$ eraseAnnotsTree tree'
 
@@ -214,7 +211,8 @@ seaFlatten
 	-> IO (Tree ())
 
 seaFlatten unique eTree
- = do	let tree'	= flattenTree unique eTree
+ = {-# SCC "Sea/flatten" #-}
+   do	let tree'	= flattenTree unique eTree
 	dumpET Arg.DumpSeaFlatten "sea-flatten"
 		$ eraseAnnotsTree tree'
 
@@ -222,15 +220,15 @@ seaFlatten unique eTree
 
 
 -- | Add module initialisation code
-seaInit
-	:: (?args :: [Arg.Arg]
+seaInit	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> ModuleId
 	-> (Tree ())
 	-> IO (Tree ())
 
 seaInit moduleName eTree
- = do 	let tree'	= initTree moduleName eTree
+ = {-# SCC "Sea/init" #-}
+   do 	let tree'	= initTree moduleName eTree
  	dumpET Arg.DumpSeaInit "sea-init"
 		$ eraseAnnotsTree tree'
 
@@ -248,15 +246,14 @@ outSea
 	-> IO	( String
 		, String )
 
-outSea
-	moduleName
+outSea	moduleName
 	eTree
 	pathThis
 	pathImports
 	extraIncludes
 
- = do
-	-- Break up the sea into Header/Code parts.
+ = {-# SCC "Sea/out" #-}
+   do	-- Break up the sea into Header/Code parts.
 	let 	([ 	_seaProtos, 		seaSupers
 		 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
 		 ,      _seaData

@@ -68,7 +68,8 @@ compileFile
 	-> IO Bool			-- ^ true if the module defines the main function
 
 compileFile setup scrapes sModule blessMain
- = do 	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
+ = {-# SCC "Main/compileFile" #-}
+   do 	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
 
 	-- Decide on module names  ---------------------------------------------
 	let Just sRoot	= Map.lookup sModule scrapes
@@ -115,7 +116,8 @@ compileFile_parse
    		[pathRelative % nl % indent "Source file is empty."]
 
  | otherwise
- = do	let ?args		= setupArgs setup
+ = {-# SCC "Main/compileFile_parse" #-}
+   do	let ?args		= setupArgs setup
 	let args		= setupArgs setup
 	let ?verbose		= elem Arg.Verbose ?args
 
@@ -141,9 +143,11 @@ compileFile_parse
 		return	(mod, tree)
 		
 	let scrapes_noRoot	= Map.delete (M.scrapeModuleName sRoot) scrapes 
-	importsExp		<- liftM Map.fromList
-				$ mapM loadInterface 
-				$ Map.toList scrapes_noRoot
+
+	importsExp		<- {-# SCC "Main/load" #-}
+				   liftM Map.fromList
+				$  mapM loadInterface 
+				$  Map.toList scrapes_noRoot
 
 	Dump.dumpST 	Arg.DumpSourceParse "source-parse--header" 
 		(concat $ Map.elems importsExp)
@@ -152,10 +156,11 @@ compileFile_parse
 	-- Parse the source file ----------------------------------------------
 	outVerb $ ppr $ "  * Source: Parse\n"
 	(sParsed, pragmas)	
-			<- {-# SCC "Main.parsed" #-} SS.parse pathSourceRelative sSource
+			<- SS.parse pathSourceRelative sSource
 
 	-- Slurp out pragmas
-	let pragmas	= Pragma.slurpPragmaTree sParsed
+	let pragmas	= {-# SCC "Main/compileFile_parse/pragmas" #-}
+			  Pragma.slurpPragmaTree sParsed
 
 	------------------------------------------------------------------------
 	-- Source Stages
@@ -164,12 +169,9 @@ compileFile_parse
 	-- Rename variables and add uniqueBinds -------------------------------
 	outVerb $ ppr $ "  * Source: Rename\n"
 	((_, sRenamed) : modHeaderRenamedTs)
-			<- {-# SCC "Main.renamed" #-}
-			   SS.rename
-				$ (modName, sParsed) : Map.toList importsExp
+			<- SS.rename $ (modName, sParsed) : Map.toList importsExp
 	
-	let hRenamed	= concat 
-			$ [tree	| (mod, tree) <- modHeaderRenamedTs ]
+	let hRenamed	= concat [tree	| (mod, tree) <- modHeaderRenamedTs ]
 
 
 	-- If this module is Main.hs then require it to contain the main function.
@@ -254,7 +256,7 @@ compileFile_parse
 	outVerb $ ppr $ "  * Desugar: Slurp\n"
 
 	(sTagged, problem)
-			<- SD.desugarSlurpConstraints
+			<- SD.desugarSlurp
 				blessMain
 				dProg_project
 				hElab
@@ -267,7 +269,7 @@ compileFile_parse
 
 	-- Solve type constraints ---------------------------------------------
 	outVerb $ ppr "  * Type: Solve\n"
-	solution	<- SD.desugarSolveConstraints problem
+	solution	<- SD.desugarSolve problem
 
 	-- !! Early exit on StopType
 	when (elem Arg.StopType ?args)
