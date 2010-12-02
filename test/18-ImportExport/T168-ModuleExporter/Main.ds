@@ -3,4 +3,4 @@ import Data.List
 -- Foo adds new projection (count) over Data.List.
 import Foo
 
-main () = println $ show $ [ 1 .. 4] .count
+main () = println $ show $ [ 2, 4 .. 8] .count

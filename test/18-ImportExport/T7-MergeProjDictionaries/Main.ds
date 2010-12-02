@@ -1,0 +1,9 @@
+
+import Foo
+
+project List where
+	rrev xx = reverse xx
+
+main ()
+ = do	println $ show $ [1, 2, 3] .rrev
+	println $ show $ [1, 2, 3] .count
