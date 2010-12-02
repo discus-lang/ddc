@@ -1,0 +1,6 @@
+
+isZeroA :: Int -> Bool
+isZeroA = 0 ==
+
+main ()
+ = println $ show $ map isZeroA [ -1, 0 , 1 ]
