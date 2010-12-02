@@ -171,7 +171,7 @@ pExp1'
 		pTok K.And
 		t	<- pCParen pType_body
 		return	$ XProjT (spV field) t (JField (spV field) field))
-			
+
   <|>	-- VAR/CON
 	do	var	<- pOfSpace NameValue $ pQualified pVarCon
 		return	$ XVar (spV var) var
@@ -336,7 +336,7 @@ pLCQual :: Parser (LCQual SP)
 pLCQual
  =	-- LET VAR ...
 	do	pTok K.Let
-                ss	<- pCParen (Parsec.sepEndBy1 pLCQualLet pSemis)
+                ss	<- Parsec.sepEndBy1 pLCQualLet pSemis
                 return	$ LCLet ss
 
  <|> 	-- PAT <- EXP
@@ -495,8 +495,8 @@ pStmt_bindPat2 pat
 -- | Parse a type sig (only)
 pStmt_sig :: Parser (Stmt SP)
 pStmt_sig
- = Parsec.sepBy1 (pOfSpace NameValue pVar) (pTok K.Comma) 
- >>= \vars 
+ = Parsec.sepBy1 (pOfSpace NameValue pVar) (pTok K.Comma)
+ >>= \vars
  -> 	do 	ht	<- pTok K.HasTypeMatch
 	   	typ	<- pType <?> "a type for " ++ quotVars vars
 	   	return	$ SSig (spTP ht) SigModeMatch vars typ
@@ -508,7 +508,7 @@ pStmt_sig
  <|>	do 	ht	<- pTok K.HasTypeLess
 	   	typ	<- pType <?> "a type for " ++ quotVars vars
 	   	return	$ SSig (spTP ht) SigModeLess vars typ
-	
+
  <|>	do 	ht	<- pTok K.HasTypeMore
 	   	typ	<- pType <?> "a type for " ++ quotVars vars
 	   	return	$ SSig (spTP ht) SigModeMore vars typ

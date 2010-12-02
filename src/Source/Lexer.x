@@ -280,8 +280,8 @@ scanModuleWithOffside str
 		= partition isTokPragma toks
 
 	toksSourceOffside
-		= (flip offside) [] 	-- apply the offside rule
-		$ addStarts toksSource	-- add BlockStart / LineStart tokens in preparation for offside rule
+		= (flip offside) [] 		-- apply the offside rule
+		$ addStarts toksSource 0	-- add BlockStart / LineStart tokens in preparation for offside rule
 
   in	( toksSourceOffside
 	, toksPragma)
@@ -412,78 +412,86 @@ breakModuleStr str
 -- addStarts ---------------------------------------------------------------------------------------
 -- | Add block and line start tokens to this stream.
 --	This is lifted straight from the Haskell98 report.
-addStarts :: [TokenP] -> [TokenP]
-addStarts ts
+addStarts :: [TokenP] -> Int -> [TokenP]
+addStarts ts listNestCount
  = case forward ts of
 
 	-- if the first lexeme of a module is not '{' then start a new block
  	(t1 : tsRest)
 	  |  not $ or $ map (isToken t1) [CBra]
-	  -> StartBlock (tokenColumn t1) : addStarts' (t1 : tsRest)
+	  -> StartBlock (tokenColumn t1) : addStarts' (t1 : tsRest) listNestCount
 
 	  | otherwise
-	  -> addStarts' (t1 : tsRest)
+	  -> addStarts' (t1 : tsRest) listNestCount
 
 	-- empty file
 	[]	-> []
 
 
-addStarts'  :: [TokenP] -> [TokenP]
-addStarts' []	= []
+addStarts'  :: [TokenP] -> Int -> [TokenP]
+addStarts' [] _	= []
 
 addStarts'
 	( t1@TokenP { token = Foreign }
 	: t2@TokenP { token = Import }
-	: ts)
-	= t1 : t2 : addStarts' ts
+	: ts) listNestCount
+	= t1 : t2 : addStarts' ts listNestCount
 
-addStarts' (t1 : ts)
+addStarts' (t1 : ts) listNestCount
 
 	-- We're starting a block
-	| isBlockStart t1
+	| isBlockStart t1 listNestCount
 	, []		<- forward ts
 	= t1 : [StartBlock 0]
 
-	| isBlockStart t1
+	| isBlockStart t1 listNestCount
 	, t2 : tsRest	<- forward ts
 	, not $ isToken t2 CBra
 	= t1	: StartBlock (tokenColumn t2)
-		: addStarts' (t2 : tsRest)
+		: addStarts' (t2 : tsRest) listNestCount
+
+	-- check for start of list
+	| isToken t1 SBra
+	= t1 : addStarts' ts (listNestCount + 1)
+
+	-- check for end of list
+	| isToken t1 SKet
+	= t1 : addStarts' ts (listNestCount - 1)
 
 	-- check for start of new line
 	| isToken t1 NewLine
 	, t2 : tsRest	<- forward ts
 	, not $ isToken t2 CBra
-	= StartLine (tokenColumn t2) : addStarts' (t2 : tsRest)
+	= StartLine (tokenColumn t2) : addStarts' (t2 : tsRest) listNestCount
 
 	-- eat up trailine newlines
 	| isToken t1 NewLine
-	= addStarts' ts
+	= addStarts' ts listNestCount
 
 	-- a regular token
 	| otherwise
-	= t1 : addStarts' ts
+	= t1 : addStarts' ts listNestCount
 
 isToken :: TokenP -> Token -> Bool
 isToken TokenP { token = tok } t2	= tok == t2
 isToken _ _				= False
 
 -- check if a token is one that starts a block of statements.
-isBlockStart :: TokenP -> Bool
-isBlockStart TokenP { token = tok }
+isBlockStart :: TokenP -> Int -> Bool
+isBlockStart TokenP { token = tok } listNestCount
  = case tok of
  	Do		-> True
 	Of		-> True
 	Where		-> True
 	With		-> True
-	Let		-> True
+	Let		-> listNestCount < 1
 	Catch		-> True
 	Match		-> True
 	Import		-> True
 	Export		-> True
 	_		-> False
 
-isBlockStart _
+isBlockStart _ _
 	= False
 
 -- scan forward through the stream to get to the next non-newline token
@@ -509,10 +517,10 @@ type Context	= Int
 offside	:: [TokenP] -> [Context] -> [TokenP]
 
 offside ts ms
- = {- trace ( pprStr
-  	 $ "offside: \n"
- 	 % "   ts = " % take 10 ts % "\n"
-	 % "   ms = " % take 10 ms % "\n") $ -}
+ = {- trace (
+  	 "offside: \n"
+ 	 ++ "   ts = " ++ show ts ++ "\n"
+	 ++ "   ms = " ++ show ms ++ "\n") $ -}
 	offside' ts ms
 
 -- avoid starting a new statement if the first token on the line is an '=', ',' or '->'
