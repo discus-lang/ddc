@@ -157,16 +157,15 @@ desugarSlurp blessMain sTree hTree
 	-- This tidies up the constraints before solving, which makes the final
 	-- constraints easier to read. It's also a small performance boost,
 	-- but is otherwise an optional pass.
-	let (problem_simplified, mUsage)
-		| elem DebugNoConstraintSimplifier ?args
-		= (problem, Nothing)
-		
-		| otherwise
-		= let	(simplified, usage)
-				= {-# SCC "D/slurp/simplify" #-}
-				  T.simplify 	(T.problemTypeVarsPlease problem)
-						(T.problemConstraints    problem)
-		  in	( problem { T.problemConstraints = simplified }
+	(problem_simplified, mUsage)
+	 <- if elem DebugNoConstraintSimplifier ?args
+	     then return (problem, Nothing)
+	     else do
+		(simplified, usage)
+		 <- {-# SCC "D/slurp/simplify" #-}
+			  T.simplify 	(T.problemTypeVarsPlease problem)
+					(T.problemConstraints    problem)
+		return  ( problem { T.problemConstraints = simplified }
 			, Just usage )
 
 	-- dumping.

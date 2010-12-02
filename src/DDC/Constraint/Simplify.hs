@@ -30,22 +30,23 @@ import Util
 simplify 
 	:: Set Var		-- ^ Wanted type vars that we must preserve, don't eliminate them.
 	-> CTree		-- ^ Constraints to simplify
-	-> (CTree, UseMap)	-- ^ Simplified constraints, and usage map for dumping.
+	-> IO (CTree, UseMap)	-- ^ Simplified constraints, and usage map for dumping.
 	
 simplify wanted tree
- = let	usage	= {-# SCC "Desugar/slurp/simplify/usage" #-}
+ = do	let usage
+		= {-# SCC "Desugar/slurp/simplify/usage" #-}
 		  mconcat
 		$ slurpUsage tree
 		: [singleton UsedWanted $ TVar kValue (UVar v) 
 					| v <- Set.toList wanted]
 
-	table	= {-# SCC "Desugar/slurp/simplify/collect" #-}
-		  applyNoInline $ collect usage tree
+	table	<- {-# SCC "Desugar/slurp/simplify/collect" #-}
+		  liftM applyNoInline $ collect usage tree
 
-	tree'	= {-# SCC "Desugar/slurp/simplify/reduce" #-}
-	          reduce usage table tree
+	let tree'	= {-# SCC "Desugar/slurp/simplify/reduce" #-}
+	          	  reduce usage table tree
 
-   in	(tree', usage)
+	return (tree', usage)
 
 
 

@@ -9,6 +9,9 @@ import DDC.Constraint.Simplify.Usage
 import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Main.Pretty
+import Control.Monad
+import Data.Hashable
+import Data.HashTable
 import Data.Monoid
 import Data.Set				(Set)
 import Data.Map				(Map)
@@ -66,7 +69,7 @@ singleEq t1 t2 	= tableMore `seq` Table (Map.singleton t1 t2) Map.empty Set.empt
 -- | Collect up a table of bindings that can be safely inlined.
 collect :: UseMap
 	-> CTree
-	-> Table
+	-> IO Table
 
 collect usage cc
  = let doNotWant t 
@@ -75,17 +78,19 @@ collect usage cc
 
    in case cc of
 	CBranch{}
-	 -> mconcat $ map (collect usage) $ Seq.toList $ branchSub cc
+	 -> liftM mconcat 
+		$ mapM (collect usage)
+		$ Seq.toList $ branchSub cc
 
 	-- inline  v1 = v2 renames from the right.
 	CEq _   t1@TVar{} t2@TVar{}
 	 | doNotWant t2
-	 -> singleEq t2 t1
+	 -> return $ singleEq t2 t1
 
 	-- inline  v1 = v2 renames from the left.
 	CEq _   t1@TVar{} t2@TVar{}
 	 | doNotWant t1
-	 -> singleEq t1 t2
+	 -> return $ singleEq t1 t2
 
 	-- 
 {-	CMore _ t1@TVar{} t2
@@ -93,6 +98,6 @@ collect usage cc
 	 -> singleEq t1 t2
 -}
 	CInst _ v _
-	  -> singleNoInline (TVar kValue (UVar v))
+	  -> return $ singleNoInline (TVar kValue (UVar v))
 
-	_ -> mempty
+	_ -> return $ mempty
