@@ -1,9 +1,9 @@
 
-{ 
-{-# OPTIONS 
-	-fno-warn-monomorphism-restriction 
+{
+{-# OPTIONS
+	-fno-warn-monomorphism-restriction
 	-fno-warn-unused-binds
-	-fno-warn-incomplete-record-updates 
+	-fno-warn-incomplete-record-updates
 	-O2 #-}
 
 module Source.Lexer
@@ -12,7 +12,7 @@ module Source.Lexer
 	, scan
 	, scanModuleWithOffside
 	, showSource
-	, sourceTokens 
+	, sourceTokens
 	, alexScanTokens)
 
 where
@@ -53,7 +53,7 @@ tokens :-
  \- \- \-*		{ ptag CommentLineStart		}
  \{ \-			{ ptag CommentBlockStart	}
  \- \}			{ ptag CommentBlockEnd		}
- 
+
 -- This is required to fix lexing of things like "{-\n=-}".
 -- This may be working around an Alex bug.
  \= \- \}		{ ptag CommentBlockEnd		}
@@ -66,7 +66,7 @@ tokens :-
  import			{ ptag Import			}
  export			{ ptag Export			}
 
- module			{ ptag Module			} 
+ module			{ ptag Module			}
  elaborate		{ ptag Elaborate		}
  const			{ ptag Const			}
  mutable		{ ptag Mutable			}
@@ -114,7 +114,7 @@ tokens :-
  true\#			{ ptag (mkLit (LBool True)  Unboxed) }
  false\#		{ ptag (mkLit (LBool False) Unboxed) }
 
- \:\:			{ ptag HasTypeMatch		} 
+ \:\:			{ ptag HasTypeMatch		}
  \=\:			{ ptag HasTypeExact		}
  \<\:			{ ptag HasTypeLess		}
  \:\>			{ ptag HasTypeMore		}
@@ -125,7 +125,7 @@ tokens :-
  \-\>			{ ptag RightArrow		}
  \=\>			{ ptag RightArrowEquals		}
  \$\>			{ ptag HoldsMono		}
- 
+
  \(\)			{ ptag Unit			}
  \.\.			{ ptag DotDot			}
 
@@ -160,13 +160,13 @@ tokens :-
 
  \{			{ ptag CBra			}
  \}			{ ptag CKet			}
- 
+
  \(			{ ptag RBra			}
  \)			{ ptag RKet			}
 
  \[			{ ptag SBra			}
  \]			{ ptag SKet			}
- 
+
  \\			{ ptag BackSlash		}
  \`			{ ptag BackTick			}
  \=			{ ptag Equals			}
@@ -180,17 +180,17 @@ tokens :-
  @moduleSpec @nameSpaceQual $lower $var*
  			{ ptags (\s -> Var   s) 	}
 
- @moduleSpec @nameSpaceQual $upper $var* \#?	 
+ @moduleSpec @nameSpaceQual $upper $var* \#?
  			{ ptags (\s -> Con   s) 	}
 
  \_ $var*		{ ptags (\s -> case s of (x:xs) -> VarField xs)	}
 
  $sym+  $sym*		{ ptags (\s -> Symbol s)	}
 
- 
+
 
  \" (@escDoubleQuote | (. # \"))* \"\#	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 2 s)) Unboxed) }
- \" (@escDoubleQuote | (. # \"))* \" 	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 1 s)) Boxed) }	
+ \" (@escDoubleQuote | (. # \"))* \" 	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 1 s)) Boxed) }
 
  $digit+ \. $digit+ \# f $digit*	{ ptags (\s -> makeLiteralUB 'f' LFloat s) }
  $digit+ \. $digit+ \# 			{ ptags (\s -> mkLit (LFloat $ read $ dropLast 1 s) Unboxed) }
@@ -214,7 +214,7 @@ tokens :-
  .					{ ptags (\s -> Junk s)			}
 
 
-{ 
+{
 
 ----------------------------------------------------------------------------------------------------
 
@@ -229,7 +229,7 @@ dropLast n str
 -- | Rag a generated token with its position
 ptags :: (String -> Token) -> AlexPosn -> String -> TokenP
 ptags 	  tokf (AlexPn _ l c)	s
- = TokenP 
+ = TokenP
  	{ token		= (tokf s)
 	, tokenFile	= "unknown"
 	, tokenLine 	= l
@@ -268,11 +268,11 @@ mkLit lit fmt	= Literal $ LiteralFmt lit fmt
 -- This is the top level of the scanner
 -- Add a newline to help ourselves out
 
-scanModuleWithOffside 
-	:: String 
+scanModuleWithOffside
+	:: String
 	-> ( [TokenP]		-- source tokens
 	   , [TokenP] )		-- pragma tokens
-	
+
 scanModuleWithOffside str
  = let	toks		= scan str
 
@@ -282,12 +282,12 @@ scanModuleWithOffside str
 	toksSourceOffside
 		= (flip offside) [] 	-- apply the offside rule
 		$ addStarts toksSource	-- add BlockStart / LineStart tokens in preparation for offside rule
-		
+
   in	( toksSourceOffside
 	, toksPragma)
-	
+
 scan :: String -> [TokenP]
-scan ss	
+scan ss
 	= breakModules 		-- detect module names, and break into projections if required
 	$ dropTokComments 	-- remove comments
 	$ alexScanTokens ss
@@ -299,7 +299,7 @@ isTokPragma tok
  = case tok of
 	TokenP { token = CommentPragma _ }	-> True
 	_					-> False
-			
+
 lexOffside :: String -> String
 lexOffside ss = sourceTokens $ scan ss
 
@@ -313,7 +313,7 @@ dropTokComments	(t@TokenP { token = tok } : xs)
 
 	| CommentBlockStart	<- tok
 	= dropTokComments $ dropTokCommentBlock xs
-	
+
 	| otherwise
 	= t : dropTokComments xs
 
@@ -333,7 +333,7 @@ dropTokCommentBlock	(t@TokenP { token = tok } : xs)
 -- dropStrComments --------------------------------------------------------------------------------
 -- | When parsing the module import list when doing a recursive build
 --	we want to drop comments in the source file directly.
---	This makes the file easier to parse, but we also loose token position information, 
+--	This makes the file easier to parse, but we also loose token position information,
 --	so we don't use it when parsing the file proper.
 --
 dropStrComments :: String -> String
@@ -351,7 +351,7 @@ dropStrCommentBlock xx
 	('{':'-':xs)	-> dropStrCommentBlock $ dropStrCommentBlock xs
 	('-':'}':xs)	-> xs
 	(x:xs)		-> dropStrCommentBlock xs
- 	
+
 
 -- breakModules ------------------------------------------------------------------------------------
 -- | Break module qualifiers off var and con tokens
@@ -367,10 +367,10 @@ breakModules' tok@(TokenP { token = tt })
 	   _	-> [ tok { token = ModuleName mods}
 		   , tok { token = Dot }
 		   , tok { token = Var name } ]
-	
+
 	| Con str	<- tt
 	, (mods, name)	<- breakModuleStr str
-	= case mods of 
+	= case mods of
 	   [] 	-> [tok]
 	   _	-> [ tok { token = ModuleName mods}
 		   , tok { token = Dot }
@@ -381,18 +381,18 @@ breakModules' t
 
 -- Break module qualifiers off this variable name
 breakModuleStr
-	:: String		-- ^ variable name 
+	:: String		-- ^ variable name
 	-> ([String], String)	--   qualifiers and base name
 
-breakModuleStr str	
+breakModuleStr str
 	| bits		<- breakOns '.' str
 
 	-- at least one qualifier
- 	, length bits > 1			
+ 	, length bits > 1
 
-	-- lexer sanity 
+	-- lexer sanity
 	--	not more than one consecutive dot.
-	, minimum (map length bits) > 0	
+	, minimum (map length bits) > 0
 
 	-- peel of the front bits that look like module qualifiers
 	, Just front	<- takeInit bits
@@ -404,10 +404,10 @@ breakModuleStr str
 	--	ie not   Module.var1.var2
 	, length bits == length moduleBits + 1
 	= (moduleBits, back)
-	
+
 	| otherwise
 	= ([], str)
-	
+
 
 -- addStarts ---------------------------------------------------------------------------------------
 -- | Add block and line start tokens to this stream.
@@ -420,10 +420,10 @@ addStarts ts
  	(t1 : tsRest)
 	  |  not $ or $ map (isToken t1) [CBra]
 	  -> StartBlock (tokenColumn t1) : addStarts' (t1 : tsRest)
-	
+
 	  | otherwise
 	  -> addStarts' (t1 : tsRest)
-	  	
+
 	-- empty file
 	[]	-> []
 
@@ -431,9 +431,9 @@ addStarts ts
 addStarts'  :: [TokenP] -> [TokenP]
 addStarts' []	= []
 
-addStarts' 
-	( t1@TokenP { token = Foreign } 
-	: t2@TokenP { token = Import } 
+addStarts'
+	( t1@TokenP { token = Foreign }
+	: t2@TokenP { token = Import }
 	: ts)
 	= t1 : t2 : addStarts' ts
 
@@ -443,11 +443,11 @@ addStarts' (t1 : ts)
 	| isBlockStart t1
 	, []		<- forward ts
 	= t1 : [StartBlock 0]
-	
+
 	| isBlockStart t1
 	, t2 : tsRest	<- forward ts
 	, not $ isToken t2 CBra
-	= t1	: StartBlock (tokenColumn t2) 
+	= t1	: StartBlock (tokenColumn t2)
 		: addStarts' (t2 : tsRest)
 
 	-- check for start of new line
@@ -493,7 +493,7 @@ forward (t1:ts)
 	| TokenP { token = tok }	<- t1
 	, NewLine			<- tok
 	= forward ts
-	
+
 	| otherwise
 	= t1 : ts
 
@@ -509,7 +509,7 @@ type Context	= Int
 offside	:: [TokenP] -> [Context] -> [TokenP]
 
 offside ts ms
- = {- trace ( pprStr 
+ = {- trace ( pprStr
   	 $ "offside: \n"
  	 % "   ts = " % take 10 ts % "\n"
 	 % "   ms = " % take 10 ms % "\n") $ -}
@@ -525,7 +525,7 @@ offside ts ms
 --		| guard2
 --		= exp2
 offside' (t1@(StartLine n) : t2 : ts) (m : ms)
-	| isToken t2 Equals || isToken t2 Comma || isToken t2 RightArrow 
+	| isToken t2 Equals || isToken t2 Comma || isToken t2 RightArrow
 	= offside (t2 : ts) (m : ms)
 
 -- line start
@@ -537,7 +537,7 @@ offside' (t@(StartLine n) : ts) (m : ms)
 	-- end a block
 	-- we keep the StartLine token in the recursion in case we're ending multiple blocks
 	-- difference from Haskell98: add a semicolon as well
-	
+
 	| n < m		= newSemiColon ts : newCKet ts : offside (t : ts) ms
 
 	-- indented continuation of this statement
@@ -545,34 +545,34 @@ offside' (t@(StartLine n) : ts) (m : ms)
 	= offside ts (m : ms)
 
 -- block start
-offside' (t@(StartBlock n) : ts) mm 
-	
+offside' (t@(StartBlock n) : ts) mm
+
 	-- enter into a nested context
 	| m : ms	<- mm
 	, n > m
 	= newCBra ts : offside ts (n : m : ms)
-	
+
 	-- enter into an initial context (at top level)
 	| []		<- mm
-	, n > 0	
+	, n > 0
 	= newCBra ts : offside ts (n : [])
-	
+
 
 	-- new context cannot be less indented than outer one
-	-- This case should never happen. 
+	-- This case should never happen.
 	--	There is no lexeme to start a new context at the end of the file
 	| []		<- forward ts
 	= panic stage
 	$ "offside: Tried to open a new context at the end of the file."
-	
+
 	-- new context starts less than the current one
 	| tNext : _	<- forward ts
 	= dieWithUserError [ErrorLayoutLeft tNext]
-			
+
 	-- an empty block
 	| otherwise
 	= newCBra ts : newCKet ts : offside (StartLine n : ts) mm
-	
+
 
 -- pop contexts from explicit close braces
 offside' (t@TokenP { token = CKet } : ts) mm
@@ -580,14 +580,14 @@ offside' (t@TokenP { token = CKet } : ts) mm
 	-- make sure that explict open braces match explicit close braces
 	| 0 : ms	<- mm
 	= t : offside ts ms
-	
+
 	-- nup
 	| tNext : _	<- forward ts
 	= dieWithUserError [ErrorLayoutNoBraceMatch tNext]
 
 -- push contexts for explicit open braces
 offside' (t@TokenP { token = CBra } : ts) ms
-	
+
 	= t : offside ts (0 : ms)
 
 -- i'm totally ignoring the rule that inserts
@@ -600,19 +600,19 @@ offside' [] []		= []
 -- close off remaining contexts once we've reached the end of the stream.
 offside' [] (m : ms)	= newCKet [] : offside [] ms
 
-	
+
 -- When generating new source tokens, take the position from the first non-newline token in this list
 newCBra :: [TokenP] -> TokenP
 newCBra ts	= (takeTok ts) { token = CBra }
 
 newCKet :: [TokenP] -> TokenP
-newCKet	ts	= (takeTok ts) { token = CKet } 
+newCKet	ts	= (takeTok ts) { token = CKet }
 
 newSemiColon :: [TokenP] -> TokenP
 newSemiColon ts = (takeTok ts) 	{ token = SemiColon }
 
 takeTok :: [TokenP] -> TokenP
-takeTok tt 
+takeTok tt
  = case forward tt of
  	[]	-> TokenP { token = Junk "", tokenFile = [], tokenLine = 0, tokenColumn = 0}
 	(t:_)	-> t
