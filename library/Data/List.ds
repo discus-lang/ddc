@@ -4,7 +4,7 @@ module 	Data.List
 export	
 {	-- Basic Functions 
  	(:); (++);
-	head; tail; last; 
+	head; tail; init; last; 
 	length;
 	
 	-- Predicates on lists
@@ -119,6 +119,13 @@ head (x:xs)	= x
 -- | Take the elements after the first one.
 tail ::	[a] -> [a]
 tail (x:xs)	= xs
+
+
+-- | Take all but the last elements from a list.
+init :: [a] -> [a]
+init (x:xs)            =  init' x xs
+  where init' _ []     = []
+        init' y (z:zs) = y : init' z zs
 
 
 -- | Take the last element from a list.

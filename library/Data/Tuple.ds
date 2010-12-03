@@ -3,10 +3,8 @@
 module	Data.Tuple
 import	Base
 
-fst (a, b)	= a
-snd (a, b)	= b
 
--- tuple2
+-- Tuple2 ---------------------------------------------------------------------
 data Tuple2 a b
 	= Tuple2  { 
 		x1	:: a;
@@ -14,8 +12,32 @@ data Tuple2 a b
 	}
 
 
+-- | Take the first element of a pair.
+fst :: (a, b) -> a
+fst (a, b)	= a
 
--- tuple3
+
+-- | Take the second element of a pair.
+snd :: (a, b) -> b
+snd (a, b)	= b
+
+
+-- | Convert an uncurried funtion to a curried function.
+curry :: ((a, b) -> c) -> a -> b -> c
+curry f x y	= f (x, y)
+
+
+-- | Convert a curried function to an uncurried function.
+uncurry :: (a -> b -> c) -> ((a, b) -> c)
+uncurry f p	= f (fst p) (snd p)
+
+
+-- | Swap the components of a pair.
+swap :: (a,b) -> (b,a)
+swap (a, b)	= (b, a)
+
+
+-------------------------------------------------------------------------------
 data Tuple3 a b c
 	= Tuple3  {
 		x1	:: a;
@@ -23,7 +45,7 @@ data Tuple3 a b c
 		x3	:: c;
 	}
 
--- tuple4
+
 data Tuple4 a b c d
 	= Tuple4  {
 		x1	:: a;
@@ -32,7 +54,7 @@ data Tuple4 a b c d
 		x4	:: d;
 	}
 
--- tuple5
+
 data Tuple5 a b c d e
 	= Tuple5  {
 		x1	:: a;
@@ -43,7 +65,6 @@ data Tuple5 a b c d e
 	}
 
 
--- tuple6
 data Tuple6 a b c d e f
 	= Tuple6  {
 		x1	:: a;
