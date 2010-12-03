@@ -41,14 +41,14 @@ toSeaGlobs
 	-> Either
 		[Var]					-- recursive caf variables.
 		(Seq (E.Top ()), Seq (E.Top ()))	-- the converted tops
-		
+
 toSeaGlobs unique cgHeader cgModule
-  = let	
+  = let
 	-- Determine the order we need to initialise the CAFs in.
 	-- Mutually recursive CAFs don't work.
 	eCafOrder	= C.slurpCafInitSequence cgModule
     in	case eCafOrder of
-	 Left vsRecursive 
+	 Left vsRecursive
 	  -> Left vsRecursive
 
 	 Right vsCafOrdering
@@ -56,12 +56,12 @@ toSeaGlobs unique cgHeader cgModule
 
 toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
  = let
-	-- Partition the bindings into CAFs and non-CAFs 
+	-- Partition the bindings into CAFs and non-CAFs
 	cgModule_binds = C.globBind cgModule
 	(  cgModule_binds_cafs
-	     , cgModule_binds_nonCafs)	
+	     , cgModule_binds_nonCafs)
 			= Map.partition C.isCafP cgModule_binds
-				
+
 	-- Order the CAFs by the given CAF initilization order.
 	cgModule_binds_orderedCafs
 		= foldl' (\psCafs v
@@ -69,25 +69,25 @@ toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
 			       in   psCafs Seq.|> pCaf)
 		   	Seq.empty
 			vsCafOrdering
-		
+
 	-- All the bindings with ordered CAFs out the front.
 	cModule_binds_ordered
-		=      cgModule_binds_orderedCafs 
+		=      cgModule_binds_orderedCafs
 		Seq.>< (Seq.fromList $ Map.elems cgModule_binds_nonCafs)
-			
+
 	cModule_nobinds	= C.seqOfGlob (cgModule { C.globBind = Map.empty })
 
-	cModule'	=      cModule_binds_ordered 
+	cModule'	=      cModule_binds_ordered
 			Seq.>< cModule_nobinds
 
 	-- For the toSea transform we need to know which bindings are CAFs
-	vsCafs		= Set.union 
+	vsCafs		= Set.union
 				(Set.fromList 	$ Map.keys cgModule_binds_cafs)
-				(Set.fromList 	$ Map.keys 
-						$ Map.filter C.isCafP 
+				(Set.fromList 	$ Map.keys
+						$ Map.filter C.isCafP
 						$ C.globExtern cgHeader)
 
-	esHeader	= toSeaTree (unique ++ "S") vsCafs cgHeader cgModule 
+	esHeader	= toSeaTree (unique ++ "S") vsCafs cgHeader cgModule
 				$ C.seqOfGlob cgHeader
 
 	esModule	= toSeaTree (unique ++ "H") vsCafs cgHeader cgModule
@@ -96,7 +96,7 @@ toSeaGlob_withCafOrdering unique cgHeader cgModule vsCafOrdering
    in	(esHeader, esModule)
 
 
-toSeaTree 
+toSeaTree
 	:: String		-- ^ unique
 	-> Set Var		-- ^ vars that are known to be CAFs.
 	-> C.Glob		-- ^ original header glob
@@ -104,11 +104,11 @@ toSeaTree
 	-> Seq C.Top 		-- ^ sequence of tops to convert.
 	-> Seq (E.Top ())
 
-toSeaTree unique vsCafs cgHeader cgModule ps	
+toSeaTree unique vsCafs cgHeader cgModule ps
  = evalState 	(liftM join $ mapM toSeaP ps)
 		SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
 			, stateCafVars		= vsCafs
-			, stateDirectRegions	= Set.empty 
+			, stateDirectRegions	= Set.empty
 			, stateHeaderGlob	= cgHeader
 			, stateModuleGlob	= cgModule }
 
@@ -249,7 +249,7 @@ toSeaX		xx
 	-- Note that if the resulting variables refer to supercombinators, their operational
 	--   types contain function constructors. To make these we need the correct arity.
 	--   We call getOpTypeVar, which inspects the original definition of each super for
-	--   locally defined ones, or returns the operational type from the interface files 
+	--   locally defined ones, or returns the operational type from the interface files
 	--   for imported ones.
 	C.XPrim (C.MCall C.PrimCallTail)  (C.XVar vSuper _ : args)
 	 -> do	args'		<- mapM toSeaX $ stripValues args
@@ -260,8 +260,15 @@ toSeaX		xx
 	C.XPrim (C.MCall C.PrimCallSuper) (C.XVar vSuper _ : args)
 	 -> do	args'		<- mapM toSeaX $ stripValues args
 		Just tSuper	<- getOpTypeOfVar vSuper
+		-- We're constructing an NSuper which should have a TFun _ _ type.
+		-- If what we have is not a TFun then assume that the type we have
+		-- is what the NSuper is supposed to return and that the NSuper
+		-- takes zero parameters.
+		let stype	= case toSeaSuperT tSuper of
+					E.TFun at rt	-> E.TFun at rt
+					other		-> E.TFun [] other
 	    	return	$ E.XPrim (E.MApp E.PAppCall)
-				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
+				  (E.XVar (E.NSuper vSuper) stype : args')
 
 	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) (C.XVar vSuper _ : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
@@ -495,7 +502,7 @@ toSeaG	_ ssFront gg
 							(ssFront ++ ssL)
 							compX (
 							(E.XLit (E.LDataTag v))))
-							
+
 			| otherwise
 			= panic stage $ "toSeaG: no match"
 
@@ -529,7 +536,7 @@ toSeaGL	nObj (label, var, t)
 
 	| otherwise
 	= panic stage $ "toSeaGL: no match"
-	
+
 
 -- | Decend into XLocal and XDo and slurp out the contained lists of statements.
 slurpStmtsX :: C.Exp -> [C.Stmt]
@@ -559,7 +566,7 @@ assignLastS xT@(aX, t) ss
 	E.SSwitch       x aa	-> [E.SSwitch x (map (assignLastA xT) aa)]
 	E.SMatch 	aa	-> [E.SMatch (map (assignLastA xT) aa)]
 	_			-> panic stage $ "assignLastS: no match"
-	
+
 
 assignLastA :: (E.Exp (), E.Type) -> E.Alt () -> E.Alt ()
 assignLastA xT aa
