@@ -31,6 +31,7 @@ import DDC.Var.VarId
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
+import Data.Hashable
 import Data.Char
 import Util
 
@@ -103,6 +104,12 @@ instance Ord Var where
   = case compare (varId v1) (varId v2) of
 	EQ	-> compare (varModuleId v1) (varModuleId v2)
 	ord'	-> ord'
+
+
+-- | Hashing of variables.
+instance Hashable Var where
+ {-# INLINE hash #-}
+ hash var = hash $ varId var
 
 
 -- | Pretty print a variable.

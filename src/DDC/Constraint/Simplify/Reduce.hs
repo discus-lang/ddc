@@ -11,7 +11,6 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
 import DDC.Constraint.Pretty		()
-import qualified Data.Map		as Map
 -- import qualified Debug.Trace
 import Util
 
@@ -23,85 +22,84 @@ stage		= "DDC.Constraint.Simplify"
 reduce 	:: UseMap		-- ^ map of how vars are used.
 	-> Table		-- ^ table of things to inline
 	-> CTree
-	-> CTree
+	-> IO CTree
 
 reduce usage table tree
-	= makeCBranch BNothing
-	$ maybeToList $ reduce1 usage table tree
-
--- make this advance through a cons-list dropping out unwanted constraints.
--- use IORef to do the substitutions, then eat up IORefs in a separate pass.
---- should be easy to make the second traversal be sequential, deepseqing the constraint list.
-
+ = do	ls	<- reduce1 usage table tree
+	return	$ makeCBranch BNothing $ maybeToList ls
 
 -- | Reduce a single constraint
 reduce1 :: UseMap		-- ^ map of how vars are used.
 	-> Table		-- ^ table of things to inline.
 	-> CTree
-	-> Maybe CTree
+	-> IO (Maybe CTree)
 
 reduce1 usage table cc
- = let	subEq	= subTT_noLoops (tableEq table)
-	subEqV v
-	 = case Map.lookup (TVar kValue (UVar v)) (tableEq table) of
-		Just (TVar _ (UVar v'))	-> v'
-		_			-> v
-
-	subEqBind bb	
+ = let	subEq t  	= return t	-- = subTT_noLoops (tableEq table)
+--	subEqV v 	= return v
+	
+	subEqBind bb	= return bb
+{-
 	 = case bb of
 		BNothing	-> BNothing
 		BLetGroup vs	-> BLetGroup 	$ map subEqV vs
 		BLet    vs	-> BLet		$ map subEqV vs
 		BLambda vs	-> BLambda	$ map subEqV vs
 		BDecon  vs	-> BDecon	$ map subEqV vs
-
+-}
    in case cc of
 	CBranch bind subs
-	 -> Just  
-	  $ makeCBranch (subEqBind bind)
-	  $ reorder 
-	  $ catMaybes 
-	  $ map (reduce1 usage table) subs
+	 -> do	ls	<- mapM (reduce1 usage table) subs
+		bind'	<- subEqBind bind
+		return	$ Just 
+			$ makeCBranch bind'
+			$ reorder
+			$ catMaybes ls
 
 	-- Eq ---------------------------------------------
 	-- Ditch trivial eq constraints
 	CEq _ (TVar _ v1) (TVar _ v2)
 	 | v1 == v2
-	 -> Nothing
+	 -> return Nothing
 
 	-- Ditch v1=v2 constraints when either of the vars are only used once.
 	CEq _ t1@TVar{} t2@TVar{}
 	 |   usedJustOnceInEq usage t1 
 	  || usedJustOnceInEq usage t2
-	 -> Nothing
+	 -> return Nothing
 
 	-- If we've substituted into an outermost variable we may have ended
 	-- up with a boring v1 = v1 constraint, so ditch that out early.
 	CEq src t1 t2				
-	 -> {-# SCC "SUBEQ" #-} mkCEq1 src (subEq t1) (subEq t2)
+	 -> do	t1'	<- subEq t1
+		t2'	<- subEq t2
+		return	$ mkCEq1 src t1' t2'
 
 	-- More -------------------------------------------
 	-- Ditch  :> 0 constrints
 	CMore _ _ (TSum _ [])	
-	 -> Nothing
+	 -> return Nothing
 
 	-- Ditch  :> constraints that we're inlining as Eqs.
-	CMore _ t1 _
+{-	CMore _ t1 _
 	 | Map.member t1 (tableEq table)
-	 -> Nothing
-
+	 -> return Nothing
+-}
 	CMore src t1 t2		
-	 -> {-# SCC "SUBMORE" #-} Just $ CMore src t1 (subEq t2)
+	 -> do	t2'	<- subEq t2
+		return $ Just $ CMore src t1 t2'
 
 
 	-- Project ----------------------------------------
 	CProject src j v t1 t2	
-	 -> Just $  CProject src j v (subEq t1) (subEq t2)
+	 -> do	t1'	<- subEq t1
+		t2'	<- subEq t2
+		return $ Just $ CProject src j v t1' t2'
 
 
 	-- Gen -------------------------------------------
-	CInst{}	-> Just cc
-	CGen{}	-> Just cc
+	CInst{}	-> return $ Just cc
+	CGen{}	-> return $ Just cc
 		
 	_	-> panic stage $ "reduce1: no match for" %% cc
 

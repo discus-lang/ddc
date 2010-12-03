@@ -10,7 +10,7 @@ where
 import DDC.Var.PrimId
 import DDC.Base.DataFormat
 import DDC.Main.Pretty
-
+import Data.Hashable
 
 -- | A variable binding identifier gives a variable its unique identity.
 data VarId
@@ -51,6 +51,12 @@ instance Ord VarId where
  compare VarIdNil       _               = LT
  compare _              VarIdNil        = GT
 
+
+instance Hashable VarId where
+ {-# INLINE hash #-}
+ hash (VarId _ int)	= hash int
+ hash (VarIdPrim pid)	= hash pid
+ hash VarIdNil		= 0
 
 
 instance Pretty VarId PMode where

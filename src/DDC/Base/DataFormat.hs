@@ -8,7 +8,7 @@ module DDC.Base.DataFormat
 	, dataFormatBoxedOfUnboxed
 	, dataFormatUnboxedOfBoxed)
 where
-
+import Data.Hashable
 
 -- | The data format of a primitive value.
 --	The 'Bits' versions are used for Int32, Int64 etc.
@@ -19,6 +19,16 @@ data DataFormat
 	| UnboxedBits	Int
 	deriving (Show, Eq, Ord)
 
+
+instance Hashable DataFormat where
+ {-# INLINE hash #-}
+ hash fmt 
+  = case fmt of
+	Boxed			-> hashInt 1
+	BoxedBits bits		-> hashInt 2 + hash bits
+	Unboxed			-> hashInt 3
+	UnboxedBits bits	-> hashInt 4 + hash bits
+	
 
 -- | Check whether this data format corresponds to an unboxed value
 dataFormatIsUnboxed :: DataFormat -> Bool

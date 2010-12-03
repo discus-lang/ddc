@@ -41,10 +41,10 @@ simplify wanted tree
 					| v <- Set.toList wanted]
 
 	table	<- {-# SCC "Desugar/slurp/simplify/collect" #-}
-		  liftM applyNoInline $ collect usage tree
+		   collect usage tree
 
-	let tree'	= {-# SCC "Desugar/slurp/simplify/reduce" #-}
-	          	  reduce usage table tree
+	tree'	<- {-# SCC "Desugar/slurp/simplify/reduce" #-}
+		   reduce usage table tree
 
 	return (tree', usage)
 
