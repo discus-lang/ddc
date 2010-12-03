@@ -13,7 +13,7 @@ ddc: ERROR
                 :: forall %r1 %r2 %r0
                 .  Int32 %r1 -> Int32 %r0 -(!e0 $c0)> Int32 %r2
                 :- !e0   =  !Read %r1 + !Read %r0
-                ,  $c0   =  ${xDE493 : %r1}
+                ,  $c0   =  ${xDE501 : %r1}
         
         Unexpected constraint:  Const Test.%r1
 

@@ -15,9 +15,9 @@ ddc: ERROR
                 :: forall %r0 %r1 %r2 %r3 %r4
                 .  Data.Array.Array %r0 (Int32 %r1) -> Int32 %r2 -($c0)> Int32 %r3 -($c1)> Int32 %r4 -(!e0 $c2)> Unit
                 :- !e0   =  !Read %r0 + !Read %r1 + !Read %r4 + !Write %r1
-                ,  $c2   =  ${xDE513 : %r0} + ${xDE513 : %r1} + ${xDE514 : %r2} + ${xDE515 : %r3}
-                ,  $c1   =  ${xDE513 : %r0} + ${xDE513 : %r1} + ${xDE514 : %r2}
-                ,  $c0   =  ${xDE513 : %r0} + ${xDE513 : %r1}
+                ,  $c2   =  ${xDE521 : %r0} + ${xDE521 : %r1} + ${xDE522 : %r2} + ${xDE523 : %r3}
+                ,  $c1   =  ${xDE521 : %r0} + ${xDE521 : %r1} + ${xDE522 : %r2}
+                ,  $c0   =  ${xDE521 : %r0} + ${xDE521 : %r1}
                 ,  Mutable %r1
         
         Because  !Read %r4 + !Read %r3 + !Read %r0 + !Read %r1 + !Write %r1 + !Read %r2  does not match  !Read %r0 + !Read %r1 + !Read %r4 + !Write %r1
