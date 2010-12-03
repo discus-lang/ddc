@@ -8,12 +8,12 @@
 -- TODO: This is mostly done, but we still need to print out the initial sequence.
 --
 main ()
- = do	[strN]	= getArgs ()
+ = case getArgs () of
+ 	[strN]		-> run (read strN)
+	_		-> run 1000
 	
-	n :: Int32
-	n 	= read strN
-
-	g = unfold  "TWO"   "IUB ambiguity codes"    (n*3) (mkCacher $ cdfize iubs) 42
+run n
+ = do	g = unfold  "TWO"   "IUB ambiguity codes"    (n*3) (mkCacher $ cdfize iubs) 42
 	unfold      "THREE" "Homo sapiens frequency" (n*5) (mkCacher $ cdfize homs) g
 	
 
