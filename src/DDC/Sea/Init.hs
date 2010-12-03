@@ -6,7 +6,7 @@
 --   TODO: As we know that CAFs are pure, we could suspended their evaluation
 --         so there is no pause at startup time. This is especially important
 --         if evaluation of one of the CAFs does not terminate.
---       
+--
 module DDC.Sea.Init
 	( initTree
 	, mainTree )
@@ -26,9 +26,9 @@ initTree
 	-> Tree ()
 
 initTree mid cTree
- = let 	
+ = let
 	-- Make code that initialises the top-level caf var.
-	initCafSS	= catMap makeInitCaf 
+	initCafSS	= catMap makeInitCaf
 			$ [ (v, t) 	| PCafSlot v t <- cTree]
 
 	-- The function to call to intialise the module.
@@ -50,16 +50,16 @@ makeInitCaf (v, t)
 
 	-- Allocate the slot at the top of the stack for this CAF.
    in	[ SAssign (XVar (NCaf v) ppObj) ppObj $ XVar nSlotPtr ppObj
-	, SAssign xSlotPtr                 pObj  $ XPrim (MOp OpAdd) [xSlotPtr, xInt 1]
+	, SAssign xSlotPtr               pObj $ XPrim (MOp OpAdd) [xSlotPtr, xInt 1]
 
-	-- Assign the new slot to zero, then call the function that computes the CAF.
+	-- Assign NULL to the new slot, then call the function that computes the CAF.
 	-- We want to set the slot to zero while we're computing the CAF incase
 	-- it tries to recursively call itself.
-	, SAssign (XVar (NCafPtr v) pObj) pObj      $ xInt 0
-	, SAssign (XVar (NCafPtr v) pObj) pObj      $ XPrim (MApp $ PAppCall) [XVar (NSuper v) t] ]
+	, SAssign (XVar (NCafPtr v) pObj) pObj $ xNull
+	, SAssign (XVar (NCafPtr v) pObj) pObj $ XPrim (MApp PAppCall) [ XVar (NSuper v) (TFun [] t)] ]
 
  | otherwise
- = 	[ SAssign (XVar (NCaf v) t) t $ XPrim (MApp PAppCall) [XVar (NSuper v) t] ]
+ = 	[ SAssign (XVar (NCaf v) t) t $ XPrim (MApp PAppCall) [ XVar (NSuper v) (TFun [] t)] ]
 
 
 -- | Make the var of the function we should use to initialise a module.
