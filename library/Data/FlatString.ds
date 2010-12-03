@@ -1,5 +1,6 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+-- | TODO: Make the API the similar to Haskell ByteStrings.
 module 	Data.FlatString
 
 export	flatString_copy
@@ -7,6 +8,8 @@ export	flatString_copy
 import 	Data.Numeric.Int32
  	Data.StringU
  	Data.Char
+	Data.Maybe
+	Data.Tuple
  	Class.Copy
 	DDC.Runtime.Alloc
 	Foreign.C.String
@@ -14,13 +17,15 @@ import 	Data.Numeric.Int32
  	Base
 
 project FlatString 
- with {	box; unsafeUnbox; new;
+ with {	box; unsafeUnbox; new; empty;
 	maxLengthU; lengthU; setLengthU; 
  	maxLength;  length;  setLength;
 	index; 
 	charsLeft;
 	append; 
-	slice }
+	slice; 
+	unfoldrN; }
+
 
 
 -- Instances ------------------------------------------------------------------	
@@ -53,7 +58,6 @@ box strU
 unsafeUnbox :: FlatString %r1 -> String# %r1
 unsafeUnbox str@(FlatString)
  	= castPtrWord8ToString (plusPtr (peekDataR_payload str) 8#)
-
 
 -- | Apply a function to a copy of the unboxed String contained
 --   in a FlatString. This String is copied out to the C heap before,
@@ -106,6 +110,9 @@ new length
 	poke   (castToPtrInt32 (plusPtr payload 4#)) 0#
 	
 	str
+
+empty :: FlatString
+empty	= new 0
 
 
 -- Field Accessors ------------------------------------------------------------
@@ -198,3 +205,44 @@ slice str start len
 	memcpy dst src lenU
 	
 	str'
+
+
+-----------------------------------------------------------------
+-- | /O(n)/ Like 'unfoldr', 'unfoldrN' builds a ByteString from a seed
+--   value.  However, the length of the result is limited by the first
+--   argument to 'unfoldrN'.  This function is more efficient than 'unfoldr'
+--   when the maximum length of the result is known.
+--
+--   The following equation relates 'unfoldrN' and 'unfoldr':
+--
+--   > snd (unfoldrN n f s) == take n (unfoldr f s)
+--
+unfoldrN :: Int -> (a -> Maybe (Char32, a)) -> a -> (FlatString, Maybe a)
+unfoldrN len f x0
+ | len < 0	= (new&{FlatString} 0, Just x0)
+ | otherwise 
+ = do	str	= new&{FlatString} len
+	setLength&{FlatString} str len
+
+	fill x n
+ 	 = case f x of
+	    Nothing      -> Nothing
+	    Just (c, x') 
+	     -> if n == len
+		 then Just x
+		 else do
+			update str n c
+			fill x' (n + 1)
+
+	(str, fill x0 0)
+
+
+-- | We should really handle this via a type class.
+update :: FlatString -> Int -> Char32 -> ()
+update str n c
+ = do 	pokeOn	(unsafeUnbox&{FlatString} str)
+		(plusPtr (peekDataR_payload str) (8# + unboxInt32 n))  
+		(primWord32U_takeLow8U (unboxChar32 c))
+	()
+
+

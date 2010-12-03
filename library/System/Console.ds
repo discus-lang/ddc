@@ -26,6 +26,12 @@ foreign import	"fputs"
 putStr :: String -> ()
 putStr ss = print ss
 
+
+-- | Print a string to the console, with a newline.
+putStrLn :: String -> ()
+putStrLn ss = print (ss % "\n")
+
+
 -- | Print a string to the console.
 --	This will become polymorphic when type classes are finished
 print :: String -> ()

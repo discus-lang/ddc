@@ -129,14 +129,18 @@
 
 // Cast macros ------------------------------------------------------------------------------------
 // These are used in the source code for the Foreign.Ptr library
-#define _castToPtrWord8(ptr)	((Word8 *) (ptr))
-#define _castToPtrWord32(ptr)	((Word32 *) (ptr))
-#define _castToPtrWord64(ptr)	((Word64 *) (ptr))
-#define _castToPtrInt32(ptr)	((Int32 *) (ptr))
-#define _castToPtrInt64(ptr)	((Int64 *) (ptr))
+#define _castToPtrWord8(ptr)	((Word8   *) (ptr))
+#define _castToPtrWord32(ptr)	((Word32  *) (ptr))
+#define _castToPtrWord64(ptr)	((Word64  *) (ptr))
+#define _castToPtrInt32(ptr)	((Int32   *) (ptr))
+#define _castToPtrInt64(ptr)	((Int64   *) (ptr))
 #define _castToPtrFloat32(ptr)	((Float32 *) (ptr))
 #define _castToPtrFloat64(ptr)	((Float64 *) (ptr))
-#define _castToPtrChar32(ptr)	((Char32 *) (ptr))
+#define _castToPtrChar32(ptr)	((Char32  *) (ptr))
 
+#define _castToWord8(x)		((Word8) (x))
+#define _castToWord16(x)	((Word16)(x))
+#define _castToWord32(x)	((Word32)(x))
+#define _castToWord64(x)	((Word64)(x))
 
 #endif

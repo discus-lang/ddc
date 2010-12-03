@@ -16,3 +16,13 @@ foreign import "free"
 foreign import "malloc"
  malloc :: Int32# -> String#
 
+
+-- Conversions ----------------------------------------------------------------
+foreign import "atoi"
+ atoi	:: String# {read} -> Int32#
+
+foreign import "atol"
+ atol	:: String# {read} -> Int64#
+
+foreign import "atof"
+ atof	:: String# {read} -> Float64#

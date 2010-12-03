@@ -32,7 +32,7 @@ foreign import "_POKE"
 --   TODO: This is just a macro in C land, so we can't partially apply it.
 foreign import "_POKEON"
  pokeOn	:: forall (t :: % -> *) a
-	.  t %r1 -> Ptr# a -> a -(!e1)> ()
+	.  t %r1 -> Ptr# a -> a -(!e1)> Void#
 	:- !e1 = !Write %r1
 	,  Mutable %r1
 	:$ Obj -> Obj -> Obj -> Obj

@@ -19,9 +19,6 @@ instance Read Float where
  	SChunk fs	-> boxFloat32 (atof fs.unsafeUnbox)
 
 	
-foreign import "atoi"
- atoi :: String# {read} -> Int32#
-	
 instance Read Int where
  read ss	
   = case (copy ss).force of

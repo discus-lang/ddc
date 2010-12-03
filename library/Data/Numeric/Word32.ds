@@ -13,6 +13,20 @@ import	DDC.Runtime.Store
 	Class.Integral
 	Base.Thunk
 
+-- Conversion -----------------------------------------------------------------
+foreign import "_castToWord32"
+ primWord32U_fromWord8	:: Word8#  -> Word32#
+
+foreign import "_castToWord32"
+ primWord32U_fromWord16	:: Word16# -> Word32#
+
+
+foreign import "_castToWord8"
+ primWord32U_takeLow8U 	:: Word32# -> Word8#
+
+foreign import "_castToWord16"
+ primWord32U_takeLow16U	:: Word32# -> Word16#
+
 
 -- Boxing ---------------------------------------------------------------------
 boxWord32 :: Word32# -> Word32
