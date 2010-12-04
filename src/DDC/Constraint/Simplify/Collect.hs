@@ -38,6 +38,7 @@ insertConstraint
 	-> Var -> Type
 	-> IO ()
 
+{-# INLINE insertConstraint #-}
 insertConstraint table proj var t
  = do	blocked	<- liftM isJust
 		$ Hash.lookup (tableBlocked table) var
@@ -47,14 +48,20 @@ insertConstraint table proj var t
 	 else do
 		Hash.insert (tableBlocked table) var ()
 		Hash.insert (proj table)         var t
-	
+
+
+insertEq :: Table -> Var -> Type -> IO ()
+{-# INLINE insertEq #-}
 insertEq   table var t = insertConstraint table tableEq   var t
+
+
 -- insertMore table var t = insertConstraint table tableMore var t
 
 
 -- | Remember that we cannot inline this variable,
 --   and kick out any constraints we have already collected for it.
 blockConstraint :: Table -> Var -> IO ()
+{-# INLINE blockConstraint #-}
 blockConstraint table var
  = do	Hash.insert (tableBlocked table) var ()
 	Hash.delete (tableEq   table) var
@@ -89,6 +96,7 @@ collectTree
 collectTree usage table cc
  = let	-- Check that some TVar is not in the wanted set.
 	-- If it's wanted then we can't inline it, otherwise we'll lose the name.
+	{-# INLINE doNotWant #-}
 	doNotWant t 
 		= not $ elem UsedWanted $ map fst
 		$ lookupUsage t usage
