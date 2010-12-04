@@ -93,22 +93,21 @@ collectTree
 	-> CTree	-- ^ Tree of constraints we're walking over.
 	-> IO ()
 
-collectTree usage table cc
- = let	-- Check that some TVar is not in the wanted set.
+collectTree uses table cc
+ = let	-- Check whether some TVar is wanted by the Desugar->Core transform.
 	-- If it's wanted then we can't inline it, otherwise we'll lose the name.
-	{-# INLINE doNotWant #-}
-	doNotWant t 
-		= not $ elem UsedWanted $ map fst
-		$ lookupUsage t usage
+	{-# INLINE isWanted #-}
+	isWanted t	= usedIsWanted uses t
 
    in case cc of
 	CBranch{}
-	 -> mapM_ (collectTree usage table) $ branchSub cc
+	 -> mapM_ (collectTree uses table) $ branchSub cc
 	
 	-- inline  v1 = v2 renames from the left
 	CEq _   t1@(TVar _ (UVar v)) t2@TVar{}
-	 | doNotWant t1
-	 -> insertEq table v t2
+	 -> do	wanted	<- isWanted t1
+		when (not wanted)
+		 $ insertEq table v t2
 
 {-	-- inline  v1 = v2 renames from the left.
 	CEq _   t1@(TVar _ (UVar v)) t2@TVar{}

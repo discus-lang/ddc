@@ -68,11 +68,11 @@ reduce1 usage table cc
 	 -> return Nothing
 
 	-- Ditch v1=v2 constraints when either of the vars are only used once.
-	CEq _ t1@TVar{} t2@TVar{}
+{-	CEq _ t1@TVar{} t2@TVar{}
 	 |   usedJustOnceInEq usage t1 
 	  || usedJustOnceInEq usage t2
 	 -> return Nothing
-
+-}
 	-- If we've substituted into an outermost variable we may have ended
 	-- up with a boring v1 = v1 constraint, so ditch that out early.
 	CEq src t1 t2				

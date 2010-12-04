@@ -1,28 +1,32 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-
+{-# OPTIONS -Wnot #-}
 -- | Analyse how constrained variables are used.
 module DDC.Constraint.Simplify.Usage
 	( UseSide	(..)
 	, Usage		(..)
 	, UseMap	(..)
+	, emptyUsage
 	, slurpUsage
 	, lookupUsage
-	, singleton
-	, usedIsWanted
-	, usedJustOnceInEq)
+	, addUsage
+	, usedIsWanted)
 where
 import DDC.Constraint.Util
 import DDC.Constraint.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type
+import DDC.Var
 import Control.Monad
 import Data.Monoid
 import Data.Maybe
+import Data.Hashable
+import Data.HashTable		(HashTable)
 import Data.Map			(Map)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Foldable	as Seq
+import qualified Data.HashTable	as Hash
 
 stage	= "DDC.Constraint.Simplify.Usage"
 
@@ -65,66 +69,62 @@ instance Pretty Usage PMode where
 -- UseMap -----------------------------------------------------------------------------------------
 -- | Maps type vars to how many times each sort of usage appears.
 data UseMap
-	= UseMap (Map Type (Map Usage Int))
+	= UseMap 
+	{ useTable	:: HashTable Var (Map Usage Int) }
 
 
-instance Monoid UseMap where
- mempty	
-  	= UseMap $ Map.empty
+-- | Empty usage map
+emptyUsage :: IO UseMap 
+emptyUsage 
+ = do	table	<- Hash.new (==) hash
+	return	$ UseMap table
+	
 
- mappend (UseMap mx) (UseMap my)
-  	= UseMap
-	$ Map.unionWith (Map.unionWith (+)) mx my
+-- | Add a single usage to the use map.
+--   The Type must be a TVar.
+addUsage :: UseMap -> Usage -> Type -> IO ()
+addUsage used@(UseMap mp) usage (TVar _ (UVar v))
+ = do	-- get the usages we already have for this var.
+	val	<- liftM (fromMaybe Map.empty) 
+		$  Hash.lookup mp v
+	
+	-- update the table with the new usage information.
+	Hash.update mp v
+		$ Map.unionWith (+) val
+		$ Map.singleton usage 1
 
+	return ()
 
-instance Pretty UseMap PMode where
-	ppr (UseMap mp)
-	 = vcat [padL 30 v %% use 
-			| (v, use) <- Map.toList mp]
-
-
-singleton :: Usage -> Type -> UseMap
-singleton = flip singleton'
-
-singleton' :: Type -> Usage -> UseMap
-singleton' t@(TVar k _) usage
-	-- we don't care about constraints on region vars.
-	| isRegionKind k	= mempty
-	| otherwise		= UseMap $ Map.singleton t (Map.singleton usage 1)
-
-singleton' t1 _
-	= panic stage 
-	$  "singleton: only type vars can be used on the left of a constraint"
-	%! "    offending type = " % t1
-
-
-usedTVars :: Usage -> Type -> UseMap
-usedTVars = flip usedTVars'
-
-usedTVars'  :: Type -> Usage -> UseMap
-usedTVars' t usage
-	= mconcat 
-	$ map (singleton usage)
-	$ Set.toList 
+-- | Add all the free variables of this type as a particular usage
+addUsageFree :: UseMap -> Usage -> Type -> IO ()
+addUsageFree used usage t
+	= mapM_ (addUsage used usage) 
+	$ Set.toList
 	$ freeTVars t
 
--- | Lookup the usage for some var
-lookupUsage :: Type -> UseMap -> [(Usage, Int)]
-lookupUsage t1 (UseMap mp) 
-	= fromMaybe [] $ liftM Map.toList $ Map.lookup t1 mp
+	
+-- | Lookup the usage for some type.
+--   The type must be a TVar.
+lookupUsage :: UseMap -> Type -> IO (Map Usage Int)
+lookupUsage (UseMap mp) (TVar _ (UVar v))
+  	= liftM (fromMaybe Map.empty)
+	$ Hash.lookup mp v
+	
 
+-- | Check whether a type var is wanted by the Desugar -> Core transform.
+usedIsWanted :: UseMap -> Type -> IO Bool
+usedIsWanted (UseMap mp) (TVar _ (UVar v))
+ = do	mUsage	<- Hash.lookup mp v
+	case mUsage of
+	 Nothing	-> return $ False
+	 Just uses	-> return $ Map.member UsedWanted uses
 
--- | Var is wanted by the Desugar -> Core transform.
-usedIsWanted :: UseMap -> Type -> Bool
-usedIsWanted (UseMap mp) t1
-	= maybe False
-		(Map.member UsedWanted)
-		(Map.lookup t1 mp)
-		
 
 -- | Var is only used once, in an eq constraint.
-usedJustOnceInEq :: UseMap -> Type -> Bool
-usedJustOnceInEq (UseMap mp) t1
+-- usedJustOnceInEq :: UseMap -> Type -> Bool
+-- usedJustOnceInEq (UseMap mp) t1
+--	= undefined
+{-
  = let	hasSize1 mm = case Map.toList mm of 
 			[_]	-> True
 			_	-> False
@@ -134,49 +134,44 @@ usedJustOnceInEq (UseMap mp) t1
 			&& ( (Map.lookup (UsedEq OnRight) used == Just 1)
 		          || (Map.lookup (UsedEq OnLeft)  used == Just 1)))
 		(Map.lookup t1 mp)
-
+-}
 
 -- slurpUsage -------------------------------------------------------------------------------------
--- | Slurps usage information from a constraint tree.
---	The result maps type vars to how many time each sort of usage appears.
-slurpUsage :: CTree -> UseMap
-slurpUsage cc
+-- | Slurp usage information from a constraint tree into the given usage map.
+slurpUsage :: UseMap -> CTree -> IO ()
+slurpUsage uses cc
  = case cc of
-	CBranch bs subs
-	 -> mconcat
-		$ slurpUsageFromCBind bs
-		: (map slurpUsage $ Seq.toList subs)
+	CBranch binds subs
+	 -> do	slurpUsageFromCBind uses binds
+		mapM_ (slurpUsage uses) $ Seq.toList subs
+		
 		
 	CEq _ t1@TVar{} t2
-	 -> mappend
-		(singleton (UsedEq OnLeft)  t1)
-		(usedTVars (UsedEq OnRight) t2)
+	 -> do	addUsage     uses (UsedEq OnLeft)    t1
+		addUsageFree uses (UsedEq OnRight)   t2
+		
 
 	CMore _ t1 t2
-	 -> mappend
-		(singleton (UsedMore OnLeft)  t1)
-		(usedTVars (UsedMore OnRight) t2)
+	 -> do	addUsage     uses (UsedMore OnLeft)  t1
+		addUsageFree uses (UsedMore OnRight) t2
 
 	CProject _ _ _ t1 t2
-	 -> mappend
-		(usedTVars UsedProject t1)
-		(usedTVars UsedProject t2)
-
-	CInst _ t1 t2
-	 -> mappend
-		(singleton (UsedInst OnLeft)  $ TVar kValue (UVar t1))
-		(singleton (UsedInst OnRight) $ TVar kValue (UVar t2))
+	 -> do	addUsageFree uses UsedProject t1
+		addUsageFree uses UsedProject t2
 		
+	CInst _ t1 t2
+	 -> do	addUsage     uses (UsedInst OnLeft)  $ TVar kValue (UVar t1)
+		addUsage     uses (UsedInst OnRight) $ TVar kValue (UVar t2)
+			
 	CGen _ t1
-	 -> 	singleton UsedGen t1
+	 -> do	addUsage     uses UsedGen t1
 
 	_ -> panic stage $ "slurpUsage: no match"
 
 		
-slurpUsageFromCBind :: CBind -> UseMap
-slurpUsageFromCBind cbind
-	= mconcat
-	$ map (singleton UsedBranchBind)
-	$ map (\v -> TVar kValue (UVar v))
-	$ takeCBindVs cbind
+slurpUsageFromCBind :: UseMap -> CBind -> IO ()
+slurpUsageFromCBind uses cbind
+ =	mapM_ (addUsage uses UsedBranchBind) 
+		$ map (\v -> TVar kValue (UVar v))
+		$ takeCBindVs cbind
 

@@ -179,10 +179,10 @@ desugarSlurp blessMain sTree hTree
 	 $ do	dumpS DumpTypeConstraints "type-constraints--simpified"
 		 $ pprStr pprMode $ T.problemConstraints problem_simplified
 
-		let Just usage	= mUsage
+{-		let Just usage	= mUsage
 		dumpS DumpTypeConstraints "type-constraints--usage"
 		 $ (pprStr pprMode usage)
-
+-}
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
 		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem_simplified)

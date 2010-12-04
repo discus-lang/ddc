@@ -22,7 +22,6 @@ import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Var
 import DDC.Constraint.Pretty		()
-import Data.Monoid
 import qualified Data.Set		as Set
 import Util
 
@@ -33,12 +32,13 @@ simplify
 	-> IO (CTree, UseMap)	-- ^ Simplified constraints, and usage map for dumping.
 	
 simplify wanted tree
- = do	let usage
-		= {-# SCC "Desugar/slurp/simplify/usage" #-}
-		  mconcat
-		$ slurpUsage tree
-		: [singleton UsedWanted $ TVar kValue (UVar v) 
-					| v <- Set.toList wanted]
+ = do	usage	<- emptyUsage
+
+	mapM_ (addUsage usage UsedWanted)
+		[ TVar kValue (UVar v)
+		| v <- Set.toList wanted ]
+
+	slurpUsage usage tree
 
 	table	<- {-# SCC "Desugar/slurp/simplify/collect" #-}
 		   collect usage tree
