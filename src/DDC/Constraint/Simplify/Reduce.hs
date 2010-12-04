@@ -11,6 +11,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
 import DDC.Constraint.Pretty		()
+import qualified Data.HashTable		as Hash
 -- import qualified Debug.Trace
 import Util
 
@@ -35,18 +36,22 @@ reduce1 :: UseMap		-- ^ map of how vars are used.
 	-> IO (Maybe CTree)
 
 reduce1 usage table cc
- = let	subEq t  	= return t	-- = subTT_noLoops (tableEq table)
---	subEqV v 	= return v
+ = let	subEq	= subHashVT_noLoops (tableEq table)
+
+	subEqV v
+	 = do	mT	<- Hash.lookup (tableEq table) v
+		case mT of
+		 Just (TVar _ (UVar v')) -> return v'
+		 _		         -> return v
 	
-	subEqBind bb	= return bb
-{-
+	subEqBind bb
 	 = case bb of
-		BNothing	-> BNothing
-		BLetGroup vs	-> BLetGroup 	$ map subEqV vs
-		BLet    vs	-> BLet		$ map subEqV vs
-		BLambda vs	-> BLambda	$ map subEqV vs
-		BDecon  vs	-> BDecon	$ map subEqV vs
--}
+		BNothing	-> return BNothing
+		BLetGroup vs	-> liftM BLetGroup $ mapM subEqV vs
+		BLet    vs	-> liftM BLet      $ mapM subEqV vs
+		BLambda vs	-> liftM BLambda   $ mapM subEqV vs
+		BDecon  vs	-> liftM BDecon	   $ mapM subEqV vs
+
    in case cc of
 	CBranch bind subs
 	 -> do	ls	<- mapM (reduce1 usage table) subs

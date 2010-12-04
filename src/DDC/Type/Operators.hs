@@ -62,6 +62,7 @@ module DDC.Type.Operators
 	, subVT_everywhere
 	, subVV_everywhere
 	, subCidCid_everywhere
+	, subHashVT_noLoops
 	
 	-- * Trimming closures
  	, trimClosureT
@@ -85,4 +86,5 @@ import DDC.Type.Operators.Pack
 import DDC.Type.Operators.Quantify
 import DDC.Type.Operators.Strip
 import DDC.Type.Operators.Substitute
+import DDC.Type.Operators.SubHash
 import DDC.Type.Operators.Trim

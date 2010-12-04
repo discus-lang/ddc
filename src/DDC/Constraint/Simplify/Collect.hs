@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-{-# OPTIONS -Wnot #-}
 module DDC.Constraint.Simplify.Collect
 	( Table (..)
 	, collect)
@@ -8,68 +7,58 @@ import DDC.Constraint.Simplify.Usage
 import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Var
-import DDC.Main.Pretty
-import DDC.Main.Error
 import Control.Monad
 import Data.Hashable
-import Data.Monoid
-import Data.Set				(Set)
-import Data.Map				(Map)
+import Data.MaybeUtil
 import Data.HashTable			(HashTable)
 import qualified Data.HashTable		as Hash
-import qualified Data.Foldable		as Seq
-import qualified Data.Set		as Set
-import qualified Data.Map		as Map
-import qualified Debug.Trace
-
-stage		= "DDC.Constraint.Collect"
-debug		= True
-trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 
 -- Table ------------------------------------------------------------------------------------------
 -- | A table of bindings that can be safely inlined.
---   If the value is Nothing this means we cannot inine the constraint.
 data Table
 	= Table 
-	{ tableEq	:: HashTable Var (Maybe Type)
-	, tableMore	:: HashTable Var (Maybe Type) }
+	{ -- | Equality contraints to inline.
+	  tableEq	:: HashTable Var Type
+	
+	  -- | More-than constraints to inline.
+	, tableMore	:: HashTable Var Type
+
+	  -- | Table of constraint vars that we cannot inline because the left is a wanted
+	  --   variable. We keep this information separate, instead of folding it into the 
+	  --   above tables, so we can pass those directly to the type substitutor later.
+	, tableBlocked	:: HashTable Var () }
 
 
--- | Insert an eq constraint into the table.
+-- | Provided a constraint variable is not in the noSub table, then remember that 
+--   we want to inline it, otherwise drop it on the floor.
 insertConstraint
-	:: HashTable Var (Maybe Type)
+	:: Table
+	-> (Table -> HashTable Var Type)
 	-> Var -> Type
 	-> IO ()
 
-insertConstraint table var t
- = do	mval	<- Hash.lookup table var
-	case mval of 
-	 -- insert new constraint.
-	 Nothing	-> Hash.insert table var (Just t)
+insertConstraint table proj var t
+ = do	blocked	<- liftM isJust
+		$ Hash.lookup (tableBlocked table) var
 	
-	 -- cannot inine this, drop it on the floor.
-	 Just Nothing	-> return ()
+	if blocked 
+	 then return ()
+	 else do
+		Hash.insert (tableBlocked table) var ()
+		Hash.insert (proj table)         var t
 	
-	 -- we can't hold multiple constraints in the table.
-	 Just (Just _)	-> Hash.insert table var Nothing
-	
-insertEq   table var t = insertConstraint (tableEq   table) var t
-insertMore table var t = insertConstraint (tableMore table) var t
+insertEq   table var t = insertConstraint table tableEq   var t
+-- insertMore table var t = insertConstraint table tableMore var t
 
 
--- | Kick out any existing constraint and set the entry to Nothing so more more are added.
-blockConstraint
-	:: HashTable Var (Maybe Type)
-	-> Var
-	-> IO ()
-
+-- | Remember that we cannot inline this variable,
+--   and kick out any constraints we have already collected for it.
+blockConstraint :: Table -> Var -> IO ()
 blockConstraint table var
- = do	Hash.insert table var Nothing
-
-blockCrs  table	v
- = do	blockConstraint (tableEq table)   v
-	blockConstraint (tableMore table) v
+ = do	Hash.insert (tableBlocked table) var ()
+	Hash.delete (tableEq   table) var
+	Hash.delete (tableMore table) var
 
 
 -- Collect ----------------------------------------------------------------------------------------
@@ -78,22 +67,29 @@ collect :: UseMap
 	-> IO Table
 
 collect usage cc
- = do	eqs		<- Hash.new (==) hash
-	mores		<- Hash.new (==) hash
-	let table	= Table eqs mores
+ = do	-- create the initial tabe.
+	table	<- liftM3 Table 
+			(Hash.new (==) hash)
+			(Hash.new (==) hash)
+			(Hash.new (==) hash)
+
+	-- collect inlinable constraints from the tree.
 	collectTree usage table cc
+
 	return table
 	
 
 -- | Collect up a table of bindings that can be safely inlined.
 collectTree 
-	:: UseMap
-	-> Table
-	-> CTree
+	:: UseMap	-- ^ Map of how constrained variables are used.
+	-> Table	-- ^ Table of inlinable constraints to add to.
+	-> CTree	-- ^ Tree of constraints we're walking over.
 	-> IO ()
 
 collectTree usage table cc
- = let doNotWant t 
+ = let	-- Check that some TVar is not in the wanted set.
+	-- If it's wanted then we can't inline it, otherwise we'll lose the name.
+	doNotWant t 
 		= not $ elem UsedWanted $ map fst
 		$ lookupUsage t usage
 
@@ -101,21 +97,21 @@ collectTree usage table cc
 	CBranch{}
 	 -> mapM_ (collectTree usage table) $ branchSub cc
 	
-	-- inline  v1 = v2 renames from the right.
-	CEq _   t1@(TVar _ (UVar v)) t2@TVar{}
-	 | doNotWant t2
-	 -> insertEq table v t2
-
-	-- inline  v1 = v2 renames from the left.
+	-- inline  v1 = v2 renames from the left
 	CEq _   t1@(TVar _ (UVar v)) t2@TVar{}
 	 | doNotWant t1
 	 -> insertEq table v t2
 
+{-	-- inline  v1 = v2 renames from the left.
+	CEq _   t1@(TVar _ (UVar v)) t2@TVar{}
+	 | doNotWant t1
+	 -> insertEq table v t2
+-}
 {-	CMore _ t1@TVar{} t2
 	 | [(UsedMore OnLeft, 1), (UsedMore OnRight, 1)] <- lookupUsage t1 usage
 	 -> singleEq t1 t2
 -}
 	CInst _ v _
-	  -> blockCrs table v
+	  -> blockConstraint table v
 	
 	_ -> return ()
