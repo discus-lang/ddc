@@ -1,6 +1,9 @@
 
-isZeroA :: Int -> Bool
 isZeroA = 0 ==
 
+test a = (a * 2) *
+
 main ()
- = println $ show $ map isZeroA [ -1, 0 , 1 ]
+ = do	println $ show $ map isZeroA [ -1, 0 , 1 ]
+	println $ show $ map (3*) [0 .. 5]
+	println $ show $ map (test 2) [1 .. 3]
