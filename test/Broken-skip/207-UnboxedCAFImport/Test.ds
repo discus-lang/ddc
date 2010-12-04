@@ -1,0 +1,17 @@
+{-      # OPTIONS -no-implicit-prelude # -}
+
+export	unboxedOneInt32
+	unboxedOneFloat64
+	unboxedOneInt64
+
+import Data.Numeric.Float64
+import Data.Numeric.Int64
+
+unboxedOneInt32 :: Int32#
+unboxedOneInt32 = 1#
+
+unboxedOneFloat64 :: Float64#
+unboxedOneFloat64 = 1.0#f64
+
+unboxedOneInt64 :: Int64#
+unboxedOneInt64 = 42#i64
