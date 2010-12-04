@@ -16,7 +16,7 @@ stage = "Llvm.Stage"
 
 
 funcDeclOfExp :: Exp a -> LlvmFunctionDecl
-funcDeclOfExp (XVar (NSuper v) rt@(TPtr (TCon TyConObj)))
+funcDeclOfExp (XVar (NSuper v) t@(TFun at rt))
  = LlvmFunctionDecl {
 	--  Unique identifier of the function
 	decName = seaVar False v,
@@ -29,30 +29,8 @@ funcDeclOfExp (XVar (NSuper v) rt@(TPtr (TCon TyConObj)))
 	--  Indicates if this function uses varargs
 	decVarargs = FixedArgs,
 	--  Parameter types and attributes
-	decParams = [],
-	--  Function align value, must be power of 2
-	funcAlign = ptrAlign
-	}
-
-funcDeclOfExp (XVar (NSuper v) t@(TFun at rt))
- = LlvmFunctionDecl {
-	decName = seaVar False v,
-	funcLinkage = External,
-	funcCc = CC_Ccc,
-	decReturnType = toLlvmType rt,
-	decVarargs = FixedArgs,
 	decParams = map (\t -> (toLlvmType t, [])) at,
-	funcAlign = ptrAlign
-	}
-
-funcDeclOfExp (XVar (NSuper v) rt@(TCon (TyConUnboxed _)))
- = LlvmFunctionDecl {
-	decName = seaVar False v,
-	funcLinkage = External,
-	funcCc = CC_Ccc,
-	decReturnType = toLlvmType rt,
-	decVarargs = FixedArgs,
-	decParams = [],
+	--  Function align value, must be power of 2
 	funcAlign = ptrAlign
 	}
 

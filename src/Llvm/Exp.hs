@@ -101,22 +101,10 @@ llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun at rt)):args)
 		++ "\n    types : " ++ show at
 		++ "\n    args  : " ++ show args
 
-
-llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TPtr (TCon TyConObj))):[])
- = do	addComment	$ "TODO: " ++ stage ++ ":" ++ show __LINE__ ++ " the type is wrong. Generating llvm code anyway."
-	let func	= funcDeclOfExp exp
-	addGlobalFuncDecl func
-	result		<- newUniqueNamedReg "result" $ toLlvmType rt
-	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
-	return		result
-
-llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt@(TCon (TyConUnboxed tv))):[])
- = do	addComment	$ "TODO: " ++ stage ++ ":" ++ show __LINE__ ++ " the type is wrong. Generating llvm code anyway."
-	let func	= funcDeclOfExp exp
-	addGlobalFuncDecl func
-	result		<- newUniqueNamedReg "result" $ toLlvmType rt
-	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
-	return		result
+llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt):_)
+ = panic stage	$ "Bad type for NSuper:\n"
+			++ "NSuper : " ++ show fv ++ "\n"
+			++ "Type   : " ++ show rt ++ "\n\n"
 
 llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i) Unboxed)) ]
  = do	src		<- newUniqueReg $ pLift $ toLlvmType t
