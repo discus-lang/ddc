@@ -11,7 +11,6 @@ import DDC.Var
 import DDC.Main.Error
 import Control.Monad
 import Data.HashTable
-import Data.Maybe
 import Data.Set			(Set)
 import qualified Data.Set	as Set
 import qualified Data.HashTable	as Hash
@@ -45,11 +44,15 @@ subVT table vsSubbed tt
 	TVar _ u
 	 -> case u of
 		UVar v
-		 | Set.member v vsSubbed
-		 -> panic stage $ "subVT: recursive substitution"
-		 
-		 | otherwise
-		 -> liftM (fromMaybe tt) $ Hash.lookup table v 
+		 -> do	mRight	<- Hash.lookup table v
+			case mRight of
+			 Nothing	-> return tt
+			 Just right	
+			  | Set.member v vsSubbed
+			  -> panic stage $ "subVT: recursive substitution"
+		
+			  | otherwise
+			  -> subVT table (Set.insert v vsSubbed) right
 
 		UMore{}		-> panic stage $ "subVT: not finished"
 		UIndex{}	-> return tt
