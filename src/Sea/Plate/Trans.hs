@@ -124,16 +124,6 @@ instance Monad m => TransM m a1 a2 Top where
 	PCtorTag n i
 	 ->	transP table	$ PCtorTag n i
 
-	-- hackery
-	PInclude s
-	 ->	transP table	$ PInclude s
-
-	PIncludeAbs s
-	 ->	transP table	$ PIncludeAbs s
-
-	PHackery s
-	 ->	transP table	$ PHackery s
-
 	PMain mn ml handler ms1 ms2 ms3
 	 ->	transP table	$ PMain mn ml handler ms1 ms2 ms3
 

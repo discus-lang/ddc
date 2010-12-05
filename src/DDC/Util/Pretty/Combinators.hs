@@ -32,6 +32,7 @@ module DDC.Util.Pretty.Combinators
 	, braces
 	, brackets
 	, quotes
+	, dquotes
 	
 	-- * Padding into columns
 	, padRc,  padR
@@ -229,6 +230,11 @@ quotes  :: (Pretty [Char] mode, Pretty a mode)
  	=> a -> StrMode mode
 quotes a	= "'" % a % "'"
 
+
+-- | Wrap in dobule quotes \" \"
+dquotes  :: (Pretty [Char] mode, Pretty a mode)
+ 	=> a -> StrMode mode
+dquotes a	= "\"" % a % "\""
 
 
 

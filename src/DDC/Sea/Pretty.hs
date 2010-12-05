@@ -76,10 +76,6 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")"
 
 	-- Sea hackery.
-	PInclude s	-> "#include <" % s % ">"
-	PIncludeAbs s	-> "#include \"" % s % "\""
-	PHackery []	-> ppr "\n"
-	PHackery s	-> ppr s
 	PComment []	-> ppr "//\n"
 	PComment s	-> "// " % s % "\n"
 	PBlank		-> ppr "\n"

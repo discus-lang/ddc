@@ -1,9 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Abstract C expressions.
---   TODO: This is a mess.
---	   Most of these types have too many constructors that do basically
---	   the same thing. We should try and reduce the size of these types.
 module DDC.Sea.Exp
 	( module DDC.Sea.Exp.Prim
 	, module DDC.Sea.Exp.Type
@@ -37,6 +34,12 @@ data Top a
 	-- | A missing thing \/ hole (used for debugging).
 	= PNil
 
+	-- | Inject a comment into the Sea file.
+	| PComment	String
+
+	-- | Inject a blank line into the Sea file, to make it easier to read.
+	| PBlank
+
 	-- | Data type definition.
 	| PData
 		Var				--  Type constructor name.
@@ -65,16 +68,9 @@ data Top a
 	| PCafInit	Var Type [Stmt a]	-- ^ CAF initialisation code.
 
 
-	-- hackery --------------------
-	-- various hacky things that should probably be handled in a different way.
-	| PInclude	String			-- #include <...>
-	| PIncludeAbs	String			-- #include "..."
-
-	| PHackery	String			-- string is inlined straight into the output file
-
-	-- C main function.
+	-- | The program entry point.
 	| PMain
-		{ -- | Name of the module containin the C main function.
+		{ -- | Name of the module containis the C main function.
 		  topMainModuleName	:: String
 
 		  -- | Names of modules imported by the main module.
@@ -94,8 +90,6 @@ data Top a
 		  -- | STarting size of context stack, or Nothing for default.
 		, topStartContextStackSize	:: Maybe Integer }
 
-	| PComment	String
-	| PBlank
 	deriving (Show, Eq)
 
 
