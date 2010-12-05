@@ -32,9 +32,14 @@ sVL  v		= ppr $ seaVar True v
 instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
  ppr xx
   = case xx of
-	PNil	 
-	 -> panic stage "ppr[Sea.Exp]: got pNil"
-	
+	PNil	 	-> panic stage "ppr[Sea.Exp]: got pNil"
+
+	-- Comments
+	PComment []	-> ppr "//"
+	PComment s	-> "// " % s % ""
+	PBlank		-> ppr "\n"
+
+	-- Data type declarations.
 	PData v ctors
 	 | Map.null ctors
 	 -> "data" %% ppr v % ";"
@@ -44,9 +49,12 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	    in  pprHeadBlock ("data" %% v %% "where" % nl)
 			ctorsList
 
-	-- supers
+	-- Constructor tag name and value
+	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")"
+
+	-- Supercombinators
 	PProto v argTypes resultType
-	 -> resultType %>> sVn 8 v %>> parens (punc ", " argTypes) % ";"
+	 -> resultType %>> sVn 40 v %>> parens (punc ", " argTypes) % ";"
 
 	PSuper vName vtsArgs tResult stmts
 	 -> pprHeadBlock 
@@ -56,7 +64,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 		stmts
 	 % nl
 
-	-- cafs
+	-- CAFs
 	PCafProto v t
 	 | not $ typeIsBoxed t	-> nl
 	 | otherwise		-> "extern" %% t %>> " *_ddcCAF_" % sV v % ";"
@@ -65,45 +73,50 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 | not $ typeIsBoxed t	-> t %>> " _ddcCAF_"  % sV v % " = 0;"
 	 | otherwise		-> t %>> " *_ddcCAF_" % sV v % " = 0;"
 
+	PCafInit v _ stmts
+	 -> pprHeadBlock
+		("void " %>> "_ddcInitCAF_" % sV v %>> "()")
+		stmts
+	 % nl
 
-	PCafInit v _ ss
-	 -> "void " %>> "_ddcInitCAF_" % sV v %>> "()\n"
-	 % "{\n"
-	 	%> ("\n" %!% ss % "\n")
-	 % "}\n\n\n"
+	-- main entry point.
+	PMain mainModuleName modulesImported withHandler 
+		mHeapSize mSlotStackSize mContextStackSize
 
-	-- Constructor tag name and value
-	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")"
-
-	-- Sea hackery.
-	PComment []	-> ppr "//\n"
-	PComment s	-> "// " % s % "\n"
-	PBlank		-> ppr "\n"
-
-	PMain mn ml withHandler mHeapSize mSlotStackSize mContextStackSize
 	 -> let	heapSize	 = fromMaybe 0 mHeapSize
 		slotStackSize	 = fromMaybe 0 mSlotStackSize
 		contextStackSize = fromMaybe 0 mContextStackSize
-	    in	
-		"int main (int argc, char** argv)\n"
-	  	%	"{\n"
-	  	%	"\t_ddcRuntimeInit(argc, argv, " 
-				%% heapSize 		%% ", "
-				%% slotStackSize	%% ", "
-				%% contextStackSize	%% ");\n\n"
-	  	%	"\n"
-	  	%!%	(map (\mname -> "\t" ++ mname ++ "();") ml)
-	  	%	"\n\n"
-	  	%	"\t_ddcInitModule_" % mn % "();\n"
-	  	%	"\n"
-          	%     (if withHandler
-				then "\tControl_Exception_topHandle(_allocThunk((FunPtr) " % mn % "_main, 1, 0));\n"
-				else ppr "\tMain_main(Base_Unit());")
-	  	%	"\n"
-	  	%	"\t_ddcRuntimeCleanup();\n"
-	  	%	"\n"
-	  	%	"\treturn 0;\n"
-	  	%	"}\n"
+
+	    in	"int main (int argc, char** argv)" % nl
+	 	% "{" % nl
+		% (indent $ vcat
+			[ ppr "// Initialise the runtime system"
+			, "_ddcRuntimeInit(argc, argv," 
+				%% heapSize 		% ","
+				%% slotStackSize	% ","
+				%% contextStackSize	% ");"
+			, blank
+
+			, ppr "// Initialise all the imported modules"
+			, vcat [ fn % "();" | fn <- modulesImported ]
+			, blank
+			
+			, ppr "// Initialise the main module"
+			, "_ddcInitModule_" % mainModuleName % "();"
+			, blank
+			
+			, ppr "// Run the client program"
+			, if withHandler
+				then ppr $ "Control_Exception_topHandle(_allocThunk((FunPtr) " 
+						% mainModuleName % "_main, 1, 0));"
+				else ppr $ "Main_main(Base_Unit());"
+			 , blank
+			
+			, ppr "// Shut down the runtime system"
+			, ppr "_ddcRuntimeCleanup();"
+			, blank
+			, ppr "return 0;" ])
+		% nl % "}"
 
 -- CtorDef --------------------------------------------------------------------------------------------
 instance Pretty CtorDef PMode where
