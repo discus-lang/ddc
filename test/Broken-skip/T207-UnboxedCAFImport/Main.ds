@@ -1,4 +1,3 @@
-{-      # OPTIONS -no-implicit-prelude # -}
 
 import Test
 
