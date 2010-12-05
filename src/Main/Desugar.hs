@@ -26,6 +26,7 @@ import qualified DDC.Solve.Interface.Problem	as T
 import qualified DDC.Solve.State		as T
 import qualified DDC.Solve.Error.Beautify	as T
 import qualified DDC.Constraint.Simplify	as T
+import qualified DDC.Constraint.Simplify.Usage	as T
 import qualified DDC.Desugar.Glob		as D
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Desugar.ToCore		as D
@@ -37,6 +38,7 @@ import qualified Desugar.Project		as D
 import qualified DDC.Desugar.Transform		as D
 import qualified Data.Map			as Map
 import qualified Data.Set			as Set
+import qualified Data.HashTable			as Hash
 
 
 -- Elaborate ---------------------------------------------------------------------------------------
@@ -179,10 +181,12 @@ desugarSlurp blessMain sTree hTree
 	 $ do	dumpS DumpTypeConstraints "type-constraints--simpified"
 		 $ pprStr pprMode $ T.problemConstraints problem_simplified
 
-{-		let Just usage	= mUsage
+		let Just (T.UseMap hashTable)	= mUsage
+		usageMap	<- Hash.toList hashTable
 		dumpS DumpTypeConstraints "type-constraints--usage"
-		 $ (pprStr pprMode usage)
--}
+		 $ (pprStr pprMode 
+			$ vcat [ padL 30 v %% uses | (v, uses) <- usageMap ])
+
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
 		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem_simplified)

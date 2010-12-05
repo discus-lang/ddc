@@ -12,6 +12,7 @@ import Data.Hashable
 import Data.MaybeUtil
 import Data.HashTable			(HashTable)
 import qualified Data.HashTable		as Hash
+import qualified Data.Map		as Map
 
 
 -- Table ------------------------------------------------------------------------------------------
@@ -50,11 +51,11 @@ insertConstraint table proj var t
 		Hash.insert (proj table)         var t
 
 
-insertEq :: Table -> Var -> Type -> IO ()
+insertEq   :: Table -> Var -> Type -> IO ()
 {-# INLINE insertEq #-}
 insertEq   table var t = insertConstraint table tableEq   var t
 
-
+-- insertMore :: Table -> Var -> Type -> IO ()
 -- insertMore table var t = insertConstraint table tableMore var t
 
 
@@ -108,16 +109,21 @@ collectTree uses table cc
 	 -> do	wanted	<- isWanted t1
 		when (not wanted)
 		 $ insertEq table v t2
-
-{-	-- inline  v1 = v2 renames from the left.
-	CEq _   t1@(TVar _ (UVar v)) t2@TVar{}
-	 | doNotWant t1
-	 -> insertEq table v t2
+{-
+	-- inline  v1 = v2 renames from the left.
+	CEq _   t1@TVar{} t2@(TVar _ (UVar v))
+	 -> do	wanted  <- isWanted t2
+		when (not wanted)
+		 $ insertEq table v t1
 -}
-{-	CMore _ t1@TVar{} t2
-	 | [(UsedMore OnLeft, 1), (UsedMore OnRight, 1)] <- lookupUsage t1 usage
-	 -> singleEq t1 t2
--}
+	CMore _ t1@(TVar _ (UVar v)) t2
+	 -> do	usage	<- lookupUsage uses t1
+		case Map.toList usage of
+		 [(UsedMore OnLeft, 1), (UsedMore OnRight, 1)]
+		   -> insertEq table v t2
+		 
+		 _ -> return ()
+		
 	CInst _ v _
 	  -> blockConstraint table v
 	

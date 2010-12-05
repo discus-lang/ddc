@@ -86,12 +86,18 @@ reduce1 usage table cc
 	 -> return Nothing
 
 	-- Ditch  :> constraints that we're inlining as Eqs.
-{-	CMore _ t1 _
-	 | Map.member t1 (tableEq table)
-	 -> return Nothing
--}
+{-	CMore src t1@(TVar _ (UVar v)) t2
+	 -> do	has	<- Hash.lookup (tableEq table) v
+		case has of
+		 Just _	-> return Nothing
+		 Nothing 
+		  -> do	t1'	<- subEq t1
+			t2'	<- subEq t2
+			return	$ Just $ CMore src t1' t2'
+-}			
 	CMore src t1 t2		
-	 -> do	t2'	<- subEq t2
+	 -> do	-- t1'	<- subEq t1
+		t2'	<- subEq t2
 		return $ Just $ CMore src t1 t2'
 
 
