@@ -120,22 +120,6 @@ usedIsWanted (UseMap mp) (TVar _ (UVar v))
 	 Just uses	-> return $ Map.member UsedWanted uses
 
 
--- | Var is only used once, in an eq constraint.
--- usedJustOnceInEq :: UseMap -> Type -> Bool
--- usedJustOnceInEq (UseMap mp) t1
---	= undefined
-{-
- = let	hasSize1 mm = case Map.toList mm of 
-			[_]	-> True
-			_	-> False
-			
-   in	maybe	False
-		(\used ->  (hasSize1 used)
-			&& ( (Map.lookup (UsedEq OnRight) used == Just 1)
-		          || (Map.lookup (UsedEq OnLeft)  used == Just 1)))
-		(Map.lookup t1 mp)
--}
-
 -- slurpUsage -------------------------------------------------------------------------------------
 -- | Slurp usage information from a constraint tree into the given usage map.
 slurpUsage :: UseMap -> CTree -> IO ()

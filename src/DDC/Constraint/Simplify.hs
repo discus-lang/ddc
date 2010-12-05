@@ -47,7 +47,3 @@ simplify wanted tree
 		   reduce usage table tree
 
 	return (tree', usage)
-
-
-
-

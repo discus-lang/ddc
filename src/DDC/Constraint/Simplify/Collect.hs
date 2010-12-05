@@ -4,6 +4,7 @@ module DDC.Constraint.Simplify.Collect
 	, collect)
 where
 import DDC.Constraint.Simplify.Usage
+import DDC.Constraint.Pretty		()
 import DDC.Constraint.Exp
 import DDC.Type
 import DDC.Var
@@ -105,17 +106,17 @@ collectTree uses table cc
 	 -> mapM_ (collectTree uses table) $ branchSub cc
 	
 	-- inline  v1 = v2 renames from the left
-	CEq _   t1@(TVar _ (UVar v)) t2@TVar{}
-	 -> do	wanted	<- isWanted t1
-		when (not wanted)
-		 $ insertEq table v t2
-{-
-	-- inline  v1 = v2 renames from the left.
-	CEq _   t1@TVar{} t2@(TVar _ (UVar v))
-	 -> do	wanted  <- isWanted t2
-		when (not wanted)
-		 $ insertEq table v t1
--}
+	CEq _   t1@(TVar _ (UVar v1)) t2@(TVar _ (UVar v2))
+	 -> do	t1Wanted	<- isWanted t1
+		t2Wanted	<- isWanted t2
+		
+		let result
+			| not t1Wanted	= insertEq table v1 t2
+			| not t2Wanted	= insertEq table v2 t1
+			| otherwise	= return ()
+			
+		result
+
 	CMore _ t1@(TVar _ (UVar v)) t2
 	 -> do	usage	<- lookupUsage uses t1
 		case Map.toList usage of
@@ -127,4 +128,4 @@ collectTree uses table cc
 	CInst _ v _
 	  -> blockConstraint table v
 	
-	_ -> return ()
+	_ ->	return ()

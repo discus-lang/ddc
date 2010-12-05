@@ -10,14 +10,10 @@ import DDC.Solve.Location
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
-import DDC.Constraint.Pretty		()
 import qualified Data.HashTable		as Hash
--- import qualified Debug.Trace
 import Util
 
 stage		= "DDC.Constraint.Simplify"
--- debug		= True
--- trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -- | The reduce phase does the actual inlining and simplification.
 reduce 	:: UseMap		-- ^ map of how vars are used.
@@ -67,12 +63,6 @@ reduce1 usage table cc
 	 | v1 == v2
 	 -> return Nothing
 
-	-- Ditch v1=v2 constraints when either of the vars are only used once.
-{-	CEq _ t1@TVar{} t2@TVar{}
-	 |   usedJustOnceInEq usage t1 
-	  || usedJustOnceInEq usage t2
-	 -> return Nothing
--}
 	-- If we've substituted into an outermost variable we may have ended
 	-- up with a boring v1 = v1 constraint, so ditch that out early.
 	CEq src t1 t2				
@@ -117,9 +107,11 @@ reduce1 usage table cc
 
 mkCEq1 :: TypeSource -> Type -> Type -> Maybe CTree
 mkCEq1 _ (TVar _ v1) (TVar _ v2)
-	| v1 == v2	= Nothing
+	| v1 == v2
+	= Nothing
 	
-mkCEq1 src t1 t2	= Just $ CEq src t1 t2
+mkCEq1 src t1 t2	
+	= Just $ CEq src t1 t2
 
 
 -- Reorder ----------------------------------------------------------------------------------------

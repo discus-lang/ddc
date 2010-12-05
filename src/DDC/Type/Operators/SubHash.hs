@@ -19,8 +19,6 @@ stage	= "DDC.Type.Operators.SubHash"
 
 -- | Substitute variables for types in some type.
 --   Recursive substutions cause 'panic'.
---   TODO: This does naieve substitution, using IORefs to propaagate substitutions
---         would be faster in the general case.
 --   TODO: finsih for UMore, TForall and TConstrain 
 subHashVT_noLoops
 	:: HashTable Var Type
