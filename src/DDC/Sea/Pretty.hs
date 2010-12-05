@@ -18,7 +18,7 @@ import qualified Data.Map	as Map
 import Data.Function
 import Util
 
-stage	= "Sea.Pretty"
+stage	= "DDC.Sea.Pretty"
 
 -- Show global sea vars
 sV  v		= ppr $ seaVar False v
@@ -32,37 +32,38 @@ sVL  v		= ppr $ seaVar True v
 instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
  ppr xx
   = case xx of
-	PNil	 		-> ppr $ "$PNil\n"
-
+	PNil	 
+	 -> panic stage "ppr[Sea.Exp]: got pNil"
+	
 	PData v ctors
 	 | Map.null ctors
-	 -> "data " % " " % ppr v % ";\n"
+	 -> "data" %% ppr v % ";"
 
 	 | otherwise
 	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
-	    in  "data" %% v %% "where\n"
-	 	% "{\n"
-	 	%> ("\n\n" %!% ctorsList % "\n")
-		% "}\n"
+	    in  pprHeadBlock ("data" %% v %% "where" % nl)
+			ctorsList
 
 	-- supers
 	PProto v argTypes resultType
-	 -> resultType %>> sVn 8 v %>> "(" % ", " %!% argTypes % ");\n"
+	 -> resultType %>> sVn 8 v %>> parens (punc ", " argTypes) % ";"
 
-	PSuper v vts rt ss
-	 -> rt %>> sV v %>>"(" % ", " %!% (map (\(av, at) -> at % " " % sVL av) vts) % ")" % "\n"
-	  % "{\n"
-	  	%> ("\n" %!% ss % "\n")
-	  % "}\n\n\n"
+	PSuper vName vtsArgs tResult stmts
+	 -> pprHeadBlock 
+		(tResult %>> sV vName 
+			 %>> parens (punc ", " [at %% sVL av | (av, at) <- vtsArgs])
+			 %  nl)
+		stmts
+	 % nl
 
 	-- cafs
 	PCafProto v t
-	 | not $ typeIsBoxed t	 -> ppr "\n"
-	 | otherwise		-> "extern " % t % " " %>> "*_ddcCAF_" % sV v % ";\n\n"
+	 | not $ typeIsBoxed t	-> nl
+	 | otherwise		-> "extern" %% t %>> " *_ddcCAF_" % sV v % ";"
 
 	PCafSlot  v t
-	 | not $ typeIsBoxed t	-> t % " " %>>  "_ddcCAF_" % sV v % " = 0;\n"
-	 | otherwise		-> t % " " %>> "*_ddcCAF_" % sV v % " = 0;\n"
+	 | not $ typeIsBoxed t	-> t %>> " _ddcCAF_"  % sV v % " = 0;"
+	 | otherwise		-> t %>> " *_ddcCAF_" % sV v % " = 0;"
 
 
 	PCafInit v _ ss
@@ -72,11 +73,11 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 % "}\n\n\n"
 
 	-- Constructor tag name and value
-	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")\n"
+	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")"
 
 	-- Sea hackery.
-	PInclude s	-> "#include <" % s % ">\n"
-	PIncludeAbs s	-> "#include \"" % s % "\"\n"
+	PInclude s	-> "#include <" % s % ">"
+	PIncludeAbs s	-> "#include \"" % s % "\""
 	PHackery []	-> ppr "\n"
 	PHackery s	-> ppr s
 	PComment []	-> ppr "//\n"

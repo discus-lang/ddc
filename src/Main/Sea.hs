@@ -284,8 +284,8 @@ outSea	moduleName
 		++ [PBlank]	++ seaSupers
 
 	let seaCodeS
-		= catMap pprStrPlain
-			$ eraseAnnotsTree seaCode
+		= pprStrPlain
+		$ vcat $ eraseAnnotsTree seaCode
 
 	--
 	return	( seaHeaderS
@@ -323,19 +323,19 @@ makeSeaHeader eTree pathThis pathImports extraIncludes
 		 = partitionBy
 			[ (=@=) PProto{}, (=@=) PCafProto{}, (=@=) PCtorTag{} ]
 			eTree
+
 	let defTag	= makeIncludeDefTag pathThis
-	let hdr
-		= makeComments pathThis
-		++	[ PHackery ("#ifndef _inc" ++ defTag ++ "\n")
-			, PHackery ("#define _inc" ++ defTag ++ "\n\n")
-			, PInclude "runtime/Runtime.h"
-			, PInclude "runtime/Runtime.ci" ]
 
-		++ modIncludes pathImports
-		++ (map PInclude extraIncludes)
+	pprStrPlain
+	 $ vcat	[ "#ifndef _inc" % defTag
+		, "#define _inc" % defTag 
+		, ppr "#include <runtime/Runtime.h>"
+		, ppr "#include <runtime/Runtime.ci>"
+		, vcat $ eraseAnnotsTree $ modIncludes pathImports
+		, vcat [ "#include <" % inc % ">" | inc <- extraIncludes]
+		, vcat $ eraseAnnotsTree $ seaCtorTag
+		, vcat $ eraseAnnotsTree $ seaCafProtos
+		, vcat $ eraseAnnotsTree $ seaProtos
+		, ppr "#endif"
+		, blank ]
 
-		++ [ PBlank ]	++ seaCtorTag
-		++ [ PBlank ]	++ seaCafProtos
-		++ [ PBlank ]	++ seaProtos
-		++ [ PHackery "\n#endif\n\n" ]
-	catMap pprStrPlain $ eraseAnnotsTree hdr
