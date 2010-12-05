@@ -2,5 +2,5 @@ ddc: ERROR
 ./test/15-Typing/InfiniteTypes/LoopsThroughClosures/Loop1.ds:32:0
         Cannot construct infinite type for 'captId'.
             via:
-                *40 = *40 -(!141 $136)> *40
+                *33 = *33 -(!120 $115)> *33
 
