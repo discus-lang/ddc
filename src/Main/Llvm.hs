@@ -136,6 +136,9 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn
 			, "" ]
 
 	addAlias	("struct.Obj", ddcObj)
+	addAlias	("struct.Data", llvmTypeOfStruct ddcData)
+	addAlias	("struct.DataRS", llvmTypeOfStruct ddcDataRS)
+	addAlias	("struct.Thunk", llvmTypeOfStruct ddcThunk)
 
 	mapM_		addGlobalVar
 				$ moduleGlobals
@@ -360,12 +363,8 @@ doSwitch reg alt
 
 genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
 genAltVars switchEnd alt@(ASwitch (XLit (LDataTag v)) [])
- = case seaVar False v of
-	"Base_Unit"	-> return ((i32LitVar 0, switchEnd), alt)
-	"Base_False"	-> return ((i32LitVar 0, switchEnd), alt)
-	"Base_True"	-> return ((i32LitVar 1, switchEnd), alt)
-	tag		-> do	value	<- getTag tag
-				return	((i32LitVar value, switchEnd), alt)
+ = do	value	<- getTag $ seaVar False v
+	return	((i32LitVar value, switchEnd), alt)
 
 genAltVars _ alt@(ACaseSusp (XVar _ t) label)
  = do	lab	<- newUniqueLabel "susp"
