@@ -55,6 +55,7 @@ compileViaLlvm
 	=> Setup			-- ^ Compile setup.
 	-> ModuleId			-- ^ Module to compile, must also be in the scrape graph.
 	-> Tree ()			-- ^ The Tree for the module.
+	-> Tree ()			-- ^ The constructor tags for imported modules.
 	-> FilePath			-- ^ FilePath of source file.
 	-> [FilePath]			-- ^ C import directories.
 	-> [FilePath]			-- ^ C include files.
@@ -67,7 +68,7 @@ compileViaLlvm
 	-> IO Bool
 
 compileViaLlvm
-	setup modName eTree pathSource importDirs includeFilesHere importsExp
+	setup modName eTree eCtorTags pathSource importDirs includeFilesHere importsExp
 	modDefinesMainFn sRoot scrapes_noRoot blessMain
  = do
 	let ?args		= setupArgs setup
@@ -82,7 +83,7 @@ compileViaLlvm
 
 	outVerb $ ppr $ "  * Generating LLVM IR code\n"
 
-	llvmSource	<- evalStateT (outLlvm modName eTree pathSource importsExp modDefinesMainFn) initLlvmState
+	llvmSource	<- evalStateT (outLlvm modName eTree eCtorTags pathSource importsExp modDefinesMainFn) initLlvmState
 
 	writeFile (?pathSourceBase ++ ".ddc.ll")
 			$ ppLlvmModule llvmSource
@@ -98,12 +99,13 @@ outLlvm
 	:: (?args :: [Arg.Arg])
 	=> ModuleId
 	-> (Tree ())		-- sea source
+	-> (Tree ())		-- import Ctor tags
 	-> FilePath		-- path of the source file
 	-> Map ModuleId [a]
 	-> Bool			-- is main module
 	-> LlvmM LlvmModule
 
-outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
+outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn
  = do
 	-- Break up the sea into parts.
 	let 	([ 	_seaProtos, 		seaSupers
@@ -117,6 +119,10 @@ outLlvm moduleName eTree pathThis importsExp modDefinesMainFn
 			, (=@=) PData{}
 			, (=@=) PCtorTag{} ]
 			eTree
+
+	setTags		$ concatMap (\(PData a b) ->
+				map (\ (v, c) -> (seaVar False v, ctorDefTag c)) $ Map.toList b)
+			$ filter ((=@=) PData{}) eCtorTags
 
 	setTags		$ map (\(PCtorTag s i) -> (s, i)) seaCtorTags
 

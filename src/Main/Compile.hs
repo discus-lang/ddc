@@ -474,7 +474,7 @@ compileFile_parse
 	-- a single parameter.
 	if elem Arg.ViaLLVM ?args
 	  then compileViaLlvm
-		setup modName eInit pathSource importDirs includeFilesHere importsExp
+		setup modName eInit eHeader pathSource importDirs includeFilesHere importsExp
 		modDefinesMainFn sRoot scrapes_noRoot blessMain
 	  else compileViaSea
 		setup modName eInit pathSource importDirs includeFilesHere importsExp
