@@ -37,7 +37,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	-- Comments
 	PComment []	-> ppr "//"
 	PComment s	-> "// " % s % ""
-	PBlank		-> ppr "\n"
+	PBlank		-> nl
 
 	-- Data type declarations.
 	PData v ctors
@@ -46,7 +46,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	 | otherwise
 	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
-	    in  pprHeadBlock ("data" %% v %% "where" % nl)
+	    in  pprHeadBraces ("data" %% v %% "where" % nl)
 			ctorsList
 
 	-- Constructor tag name and value
@@ -57,7 +57,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> resultType %>> sVn 40 v %>> parens (punc ", " argTypes) % ";"
 
 	PSuper vName vtsArgs tResult stmts
-	 -> pprHeadBlock 
+	 -> pprHeadBraces 
 		(tResult %>> sV vName 
 			 %>> parens (punc ", " [at %% sVL av | (av, at) <- vtsArgs])
 			 %  nl)
@@ -74,7 +74,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 | otherwise		-> t %>> " *_ddcCAF_" % sV v % " = 0;"
 
 	PCafInit v _ stmts
-	 -> pprHeadBlock
+	 -> pprHeadBraces
 		("void " %>> "_ddcInitCAF_" % sV v %>> "()")
 		stmts
 	 % nl
@@ -123,10 +123,10 @@ instance Pretty CtorDef PMode where
  ppr xx
   = case xx of
   	CtorDef v t arity tag fs
- 	 -> v 	% "\n"
-		%> 	( ":: " % ppr t % "\n"
-			% "with { ARITY  = " % arity	% "\n"
- 			% "     , TAG    = " % tag      % "\n"
+ 	 -> v 	% nl
+		%> 	( ":: " % ppr t % nl
+			% "with { ARITY  = " % arity	% nl
+ 			% "     , TAG    = " % tag      % nl
 			% "     , FIELDS = " % fs 	% "}")
 
 
@@ -155,22 +155,17 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SGoto v			-> "goto " % sV v % ";"
 
 	SSwitch x aa
-	 -> "switch (" % x % ") {\n"
-	    % punc "\n" aa
-	    % "}"
+	 -> pprHeadBraces ("switch" %% parens x % " ") aa
 
 	SMatch aa
-	 -> "match {\n"
-	    % punc "\n" aa
-	    % "}"
-
+	 -> pprHeadBraces "match" aa
+	
 	SIf xExp ssThen
-	 -> "if (" % xExp % ") {\n"
-		%> punc "\n" ssThen
-		% "\n}\n"
-
+	 -> pprHeadBraces ("if" %% parens xExp) ssThen
+	
 	SCaseFail
 	 -> ppr "_CASEFAIL;"
+
 
 -- Alt ---------------------------------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
@@ -178,41 +173,36 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
   = case xx of
 	AAlt gs ss
 	 -> "  alt:  "
-	 %> ("\n" %!% gs % "\nthen {\n" %> ("\n" %!% ss) % "\n}\n")
-	 % "\n\n"
-
+	 %> (vcat gs % nl % "then" % brackets (vcat ss))
+	 % nlnl
+	
 	ASwitch g []
-	 -> "  case " % g % ": break;\n"
+	 -> "  case" %% g % ": break;"
 
 	ASwitch g [SGoto v]
-	 -> "  case " % g % ": goto " % sV v % ";\n"
+	 -> "  case" %% g % ": goto " % sV v % ";"
 
 	ASwitch g ss
-	 -> "  case " % g % ": {\n"
-		%> ("\n" %!% ss % "\n"
-		%  "break;\n")
-	  % "  }\n"
-
+	 -> pprHeadBraces ("  case " % g % ":")
+	 	(map ppr ss ++ [ppr "break"])
+	
 	ACaseSusp x l
-	 -> "  _CASESUSP (" % x % ", " % "_" % l % ");\n"
+	 -> "  _CASESUSP (" % x % ", " % "_" % l % ");"
 
 	ACaseIndir x l
-	 -> "  _CASEINDIR (" % x % ", " % "_" % l % ");\n"
+	 -> "  _CASEINDIR (" % x % ", " % "_" % l % ");"
 
 	ACaseDeath (SourcePos (f, l, c))
 	 -> let	-- Hack fixup windows file paths.
 		f'	= map (\z -> if z == '\\' then '/' else z) f
-	    in	ppr "  _CASEDEATH (\"" % f' % "\", " % l % ", " % c % ");\n"
-
+	    in	ppr "  _CASEDEATH (\"" % f' % "\", " % l % ", " % c % ");"
 
 	ADefault [SGoto v]
-	 -> "  default: goto " % sV v % ";\n"
+	 -> "  default: goto " % sV v % ";"
 
 	ADefault ss
-	 -> "  default: {\n"
-	 	%> ("\n" %!% ss % "\n"
-		%   "break;\n")
-	  % "  }\n"
+	 -> pprHeadBraces ("  default:")
+		(map ppr ss ++ [ppr "block"])
 
 
 -- Guard -------------------------------------------------------------------------------------------
@@ -220,14 +210,12 @@ instance Pretty a PMode => Pretty (Guard (Maybe a)) PMode where
  ppr gg
   = case gg of
   	GCase _ True ss x1 x2
-	 -> "guard {\n"
-	 %> ("\n" %!% ss % "\n") % "}\n"
-	 %  "compareLazy " % x1 % " with " % x2 % ";\n";
+	 -> pprHeadBraces "guard" ss	
+	 %  "compareLazy"    %% x1 % " with " % x2 % ";";
 
   	GCase _ False ss x1 x2
-	 -> "guard {\n"
-	 %> ("\n" %!% ss % "\n") % "}\n"
-	 %  "compareDirect " % x1 % " with " % x2 % ";\n";
+	 -> pprHeadBraces "guard" ss
+	 %  "compareDirect"  %% x1 % " with " % x2 % ";";
 
 
 -- Exp ---------------------------------------------------------------------------------------------
@@ -263,22 +251,22 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	XPrim (MOp f) [x1, x2]
 	 -> case f of
-	 	OpAdd	-> "(" % x1 % " + "	% x2 % ")"
-		OpSub	-> "(" % x1 % " - "	% x2 % ")"
-		OpMul	-> "(" % x1 % " * "	% x2 % ")"
-		OpDiv	-> "(" % x1 % " / "	% x2 % ")"
-		OpMod	-> "(" % x1 % " % "	% x2 % ")"
-	 	OpEq	-> "(" % x1 % " == "	% x2 % ")"
-		OpNeq	-> "(" % x1 % " != "	% x2 % ")"
+	 	OpAdd	-> parens $ x1 % " + "	% x2
+		OpSub	-> parens $ x1 % " - "	% x2
+		OpMul	-> parens $ x1 % " * "	% x2
+		OpDiv	-> parens $ x1 % " / "	% x2
+		OpMod	-> parens $ x1 % " % "	% x2
+	 	OpEq	-> parens $ x1 % " == "	% x2
+		OpNeq	-> parens $ x1 % " != "	% x2
 
-	 	OpGt	-> "(" % x1 % " > "	% x2 % ")"
-	 	OpLt	-> "(" % x1 % " < "	% x2 % ")"
-	 	OpGe	-> "(" % x1 % " >= "	% x2 % ")"
-	 	OpLe	-> "(" % x1 % " <= "	% x2 % ")"
+	 	OpGt	-> parens $ x1 % " > "	% x2
+	 	OpLt	-> parens $ x1 % " < "	% x2
+	 	OpGe	-> parens $ x1 % " >= "	% x2
+	 	OpLe	-> parens $ x1 % " <= "	% x2
 
-		OpAnd	-> "(" % x1 % " && "	% x2 % ")"
-		OpOr	-> "(" % x1 % " || "	% x2 % ")"
-		_	-> panic stage ("ppr[Exp]: no match for " % show xx)
+		OpAnd	-> parens $ x1 % " && "	% x2
+		OpOr	-> parens $ x1 % " || "	% x2
+		_	-> panic stage $ "ppr[Exp]: no match for " % show xx
 
 	-- Primitive function application operators.
 	XPrim (MApp f) (x : args)
@@ -376,6 +364,7 @@ instance Pretty Type PMode where
 
 	TCon tc		-> ppr tc
 
+
 pprTypeArg :: Type -> Str
 pprTypeArg tt
  = case tt of
@@ -405,8 +394,8 @@ seaNameOfCtor var
 
  	| otherwise
 	= panic stage
-	$  "getSeaName: no sea name for TCon " % var % "\n"
-	%  "  info = " % show (varInfo var) % "\n"
+	$  "getSeaName: no sea name for TCon " % var % nl
+	%  "  info = " % show (varInfo var) % nl
 
 
 -- Literals ---------------------------------------------------------------------------------------
