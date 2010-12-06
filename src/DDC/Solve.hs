@@ -65,8 +65,8 @@ solveFeedSig :: ProbSig -> SquidM ()
 solveFeedSig (ProbSig v sp _ tSig)
  = do	Just vT	<- lookupSigmaVar v
 	
-	trace	$ "### CSig " % v % nl
-		%> ("::" %% prettyTypeSplit tSig)
+	trace	$ "### CSig " % v
+		%> (indent $ nl % "::" %% prettyTypeSplit tSig)
 		% nlnl
 		
 	-- The signature itself is a type scheme, but we want to
@@ -142,13 +142,13 @@ solveCs cc
 
 	-- A single equality constraint
 	CEq _ t1 t2
- 	 -> do	trace	$ "### CEq  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % nl
+ 	 -> do	trace	$ "### CEq  " % padL 20 t1 % (" = " %> prettyTypeSplit t2) % nl
 		feedConstraint c
 		solveNext cs
 
 	-- A type inequality constraint
 	CMore _ t1 t2
- 	 -> do	trace	$ "### CMore  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % nl
+ 	 -> do	trace	$ "### CMore  " % padL 20 t1 % (" = " %> prettyTypeSplit t2) % nl
 		feedConstraint c
 		solveNext cs
 
@@ -187,7 +187,7 @@ solveCs cc
 	-- A CLeave says that we've processed all the constraints from a particular
 	--	branch. This reminds us that to pop vars bound in that branch off the path.
 	CLeave vs
-	 -> do	trace	$ "\n### CLeave " % vs % nl
+	 -> do	trace	$ "### CLeave " % vs % nl
 
 		-- We're leaving the branch, so pop ourselves off the path.
 	 	pathLeave vs
@@ -220,7 +220,7 @@ solveCs cc
 	-- Instantiate a type from a let binding.
 	--	It may or may not be generalised yet.
 	CInstLet src vUse vInst
-	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% "\n"
+	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% nl
 		defs		<- liftM squidEnvDefs $ gets stateEnv		
 		
 		genDone		<- getsRef stateGenDone
@@ -281,7 +281,7 @@ solveCs cc
 	--	Once again, there's nothing to actually instantiate, but we record the 
 	--	instance info so Desugar.ToCore knows how to translate the call.
 	CInstLetRec src vUse vInst
-	 -> do	trace	$ "### CInstLetRec " % vUse % " " % vInst % "\n"
+	 -> do	trace	$ "### CInstLetRec " % vUse % " " % vInst % nl
 
 		stateInst `modifyRef` 
 			Map.insert vUse (InstanceLetRec vUse vInst Nothing)
@@ -304,9 +304,9 @@ solveNext cs
 	if isNil err
 	 then 	solveCs cs
 	 else do
-	 	trace	$ "\n"
-	 		% "#####################################################\n"
-	 		% "### solveNext: Errors detected, bailing out\n\n"
+	 	trace	$ nl
+	 		% "#####################################################" % nl
+	 		% "### solveNext: Errors detected, bailing out" % nlnl
 			
 		return ()
 
@@ -335,7 +335,7 @@ solveCInst cs c@(CInst _ vUse vInst)
 	sDefs		<- liftM squidEnvDefs $ gets stateEnv
 	env		<- gets stateEnv
 	trace	$ vcat
-		[ "### CInst " % vUse % " <- " % vInst ]
+		[ "### CInst " % vUse % " <- " % vInst % nl]
 --		, "    ctorDefs      = " % (Map.keys $ squidEnvCtorDefs env)
 --		, "    got           = " % Map.member vInst (squidEnvCtorDefs env) ]
 
@@ -396,7 +396,7 @@ solveCInst_simple
 	 || Map.member vInst sDefs
 	 || Map.member vInst (squidEnvCtorDefs env)
 	= do	
---		trace	$ ppr "*   solveCInst_simple: Scheme is in graph.\n"
+--		trace	$ ppr "*   solveCInst_simple: Scheme is in graph." % nl
 		return	$ CGrind Seq.<| CInstLet src vUse vInst Seq.<| cs
 
 	-- If	The var we're trying to instantiate is on our path
@@ -404,7 +404,7 @@ solveCInst_simple
 	| (bind : _)	<- filter (\b -> (not $ b =@= BLetGroup{})
 				      && (elem vInst $ takeCBindVs b)) path
 	= do	
---		trace	$ ppr "*   solceCInst_simple: Inside this branch\n"
+--		trace	$ ppr "*   solceCInst_simple: Inside this branch" % nl
 
 		-- check how this var was bound and build the appropriate InstanceInfo
 		--	the toCore pass will use this to add the required type params
@@ -425,7 +425,7 @@ solveCInst_let
 	bindInst path
  = do
 	genSusp		<- getsRef stateGenSusp
---	trace	$ "    genSusp       = " % genSusp	% "\n\n"
+--	trace	$ "    genSusp       = " % genSusp	% nlnl
 
 	-- Work out the bindings in this ones group
 	mBindGroup	<- bindGroup vInst
@@ -441,7 +441,7 @@ solveCInst_find
 	| Just vsGroup	<- mBindGroup
 	, not $ and $ map (\v -> Map.member v genSusp) $ Set.toList vsGroup
 	= do 	
---		trace	$ ppr "*   solveCInst_find: Recursive binding.\n"
+--		trace	$ ppr "*   solveCInst_find: Recursive binding." % nl
 		return	$ (CInstLetRec src vUse vInst) Seq.<| cs
 
 		
@@ -450,7 +450,7 @@ solveCInst_find
 	-- THEN	generalise it and use that scheme for the instantiation
 	| Map.member vInst genSusp
 	= do	
---		trace	$ ppr "*   solveCInst_find: Generalisation\n"
+--		trace	$ ppr "*   solveCInst_find: Generalisation" % nl
 		return	$ CGrind Seq.<| (CInstLet src vUse vInst) Seq.<| cs
 			
 	-- The type we're trying to generalise is nowhere to be found. The branch for it

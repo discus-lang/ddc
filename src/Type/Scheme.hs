@@ -23,92 +23,88 @@ import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
 debug	 	= True
-trace s	 	= when debug $ traceM s
-tracel s 	= when debug $ traceM (s % "\n")
-tracell s 	= when debug $ traceM (s % "\n\n")
+-- trace s	= when debug $ traceM s
+tracel s 	= when debug $ traceM (s % nl)
+tracell s 	= when debug $ traceM (s % nlnl)
 
 -- | Generalise a type
 generaliseType
-	:: TypeSource		-- source of variable definition
-	-> Var 			-- binding variable of the type being generalised
-	-> Type			-- the type to generalise
-	-> Set ClassId		-- the classIds which must remain fixed (non general)
+	:: TypeSource		-- ^ Source of variable definition.
+	-> Var 			-- ^ Binding variable of the type being generalised.
+	-> Type			-- ^ Type to generalise.
+	-> Set ClassId		-- ^ Classids in environment that must remain monomorphic.
 	-> SquidM Type
 
-generaliseType src varT tCore envCids
+generaliseType src varT tCore cidsEnv
+ = traceI 
+ $ do	tracel	$ "*** Scheme.generaliseType "	% varT
+	generaliseType' src varT tCore cidsEnv
+
+
+generaliseType' src varT tCore cidsEnv
  = do	args	<- gets stateArgs
-	trace	$ vcat
-		[ "*** Scheme.generaliseType "	% varT
-		, "    tCore:\n"		%> prettyTypeSplit tCore
-		, blank
-		, "    envCids          = "	% envCids
-		, blank]
+	tracell $ "-- type"		%! prettyTypeSplit tCore
 
-	-- flatten out the scheme so its easier for staticRs.. to deal with
-	let tFlat	= flattenT tCore
-	tracell $ "    tFlat:\n"		%> prettyTypeSplit tFlat
-
-	-- Work out which cids can't be generalised in this type.
-	-- 	Can't generalise regions in non-functions.
-	--	... some data object is in the same region every time you use it.
-	--
-	let staticRs 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsT tFlat]
-
-	tracel	$ "    staticRs           = " 	% staticRs
+	-- Determine monomorphic vars -----------------------------------------
+	-- TODO: determination of material cids is currently broken.
+	let cidsMaterial
+		= [cid 	| TVar k (UClass cid) <- Set.toList 	
+			$ staticRsT $ flattenT tCore]
 
 	-- Can't generalise cids which are under mutable constructors.
-	-- ... if we generalise these classes then we could update an object at one 
-	-- 	type and read it at another, violating soundness.
-	let staticRsDanger	= if Set.member Arg.DebugGeneraliseDangerousVars args
-					then []
-					else dangerousCidsT tCore
-
-	tracel	$ "    staticRsDanger     = " 	% staticRsDanger
+	let cidsDangerous
+		= if Set.member Arg.DebugGeneraliseDangerousVars args
+			then []
+			else dangerousCidsT tCore
 
 	-- These are all the cids we can't generalise
-	let staticCids		
+	let staticCids
 		= Set.unions
-			[ envCids
-			, Set.fromList staticRs
-			, Set.fromList staticRsDanger]
-
-	tracel	$ "    staticCids         = "	% staticCids
+		[ cidsEnv			-- can't generalise cids in the environment
+		, Set.fromList cidsMaterial	-- can't generalise material cids.
+		, Set.fromList cidsDangerous]	-- can't generalise dangerous cids.
 
 
+	-- Plug ---------------------------------------------------------------
 	-- Rewrite non-static cids to the var for their equivalence class.
-	tPlug			<- plugClassIds staticCids tCore
-	tracell	$ "    tPlug:\n"		%> prettyTypeSplit tPlug
+	tPlug		<- plugClassIds staticCids tCore
+	tracell	$ "-- plugged"  	%! prettyTypeSplit tPlug
+	tracel	$ "   cidsEnv        = " % cidsEnv
+	tracel	$ "   cidsMaterial   = " % cidsMaterial
+	tracell	$ "   cidsDangerous  = " % cidsDangerous
 
-	-- Clean empty effect and closure classes that aren't ports.
-	let tsParam	=  slurpParamClassVarsT_constrainForm tPlug
+
+	-- Clean --------------------------------------------------------------
+	-- We tend to end up with lots of intermediate effect and closure variables
+	-- that are otherwise unconstrained. Might as well default them to bottom.
+	let tsParam	=  slurpParamClassVarsT tPlug
 	classInst	<- liftM squidEnvClassInst $ gets stateEnv
 	
 	let tClean	= cleanType (Set.fromList tsParam) tPlug
-	tracell	$ "    tClean:\n" 		%> prettyTypeSplit tClean
+	tracell	$ "-- cleaned" 		%! prettyTypeSplit tClean
 
-	-- Mask effects and Const/Mutable/Local/Direct constraints on local regions.
-	-- 	Do this before adding foralls so we don't end up with quantified regions that
-	--	aren't present in the type scheme.
-	--
+
+	-- Mask ---------------------------------------------------------------
+	-- Mask effects and constraints on non-observable regions.
 	let rsVisible	= visibleRsT $ flattenT tClean
-	tracell	$ "    rsVisible        = " 	% rsVisible
-
 	let tMskLocal	= maskLocalT rsVisible tClean
-	tracell	$ "    tMskLocal:\n"		%> prettyTypeSplit tMskLocal
+	tracell	$ "-- masked" 		%! prettyTypeSplit tMskLocal
 
-	-- If we're generalising the type of a top level binding, 
-	--	and if any of its free regions are unconstraind,
-	--	then make them constant.
+
+	-- Default ------------------------------------------------------------
+	-- If we're generalising the type of a top level binding, then default
+	-- any regions to direct and const. 
+	-- TODO: pass in whether it's top level as a parameter instead of getting
+	--       it from the solver state like this.
 	vsBoundTop	<- getsRef stateVsBoundTopLevel
 
 	let isTopLevel	= Set.member varT vsBoundTop
-	tracell	$ "    isTopLevel       = " 	% isTopLevel
 
 	let rsMskLocal	= Set.toList $ freeTClasses tMskLocal
 	let fsMskLocal	= case tMskLocal of
 				TConstrain _ crs	-> fettersOfConstraints crs
 				_			-> []
-	
+
 	let fsMore
 		| isTopLevel
 		=  [ FConstraint primConst [tR]
@@ -125,26 +121,31 @@ generaliseType src varT tCore envCids
 		= []
 		
 	let tConstify	= addConstraints (constraintsOfFetters fsMore) tMskLocal
-	tracell	$ "    tConstify:\n" 		%> prettyTypeSplit tConstify
+	tracell	$ "-- defaulted" 	%! prettyTypeSplit tConstify
 
-
+	-- Reduce -------------------------------------------------------------
+	-- Remove type class constraints for instanes that we know about.
+	-- TODO: This is duplicated in extract. Why are we doing it again?
 	let tReduce	= reduceContextT classInst tConstify
-	tracell	$ "    tReduce:\n"		%> prettyTypeSplit tReduce
+	tracell	$ "-- reduced"		%! prettyTypeSplit tReduce
 
-	-- Check context for problems
+	-- Check context for unknown instances or constraint conflicts.
 	checkContext src tReduce
 
-	-- Quantify free variables.
+	-- Quantify -----------------------------------------------------------
+	-- Add forall quantifiers for free variables that don't otherwise
+	-- need to remain monomorphic.
+
 	let vsFree	= filter (\v -> not $ varNameSpace v == NameValue)
 			$ filter (\v -> not $ Var.isCtorName v)
 			$ Var.sortForallVars
 			$ Set.toList $ freeVars tConstify
 
 	let vksFree	= map 	 (\v -> (v, let Just k = kindOfSpace $ varNameSpace v in k)) $ vsFree
-	tracell	$ "    vksFree          = " 	% vksFree
-
 	let tScheme	= quantifyVarsT vksFree tConstify
-	tracell	$ "    tScheme:\n"		%> prettyTypeSplit tScheme
+
+	tracell	$ "-- quantified"	%! prettyTypeSplit tScheme
+	tracell	$ "   vksFree        = " 	% vksFree
 
 	-- Remember which vars are quantified
 	--	we can use this information later to clean out non-port effect and closure vars
@@ -157,19 +158,23 @@ generaliseType src varT tCore envCids
 	let (vkbsFree	:: [(Var, (Kind, Maybe Type))])
 		= map (\(v, k) -> (v, (k, Map.lookup v vtsMore))) vksFree
 
+	-- TODO: Stashing quantified vars in the state feels very hacky.
+	--       think of a cleaner way to manage this.
 	stateQuantifiedVarsKM 	`modifyRef` Map.union (Map.fromList vkbsFree)
 	stateQuantifiedVars	`modifyRef` Set.union (Set.fromList vsFree) 
 
-	-- Check generalised scheme any sigs we have for it.
+	-- Check --------------------------------------------------------------
+	-- Check the inferred type against any signatures that we have for it.
+
+	-- See what sigs we have.
 	pbSigs		<- liftM (join . maybeToList . Map.lookup varT) 
 			$  liftM squidEnvSigs
 			$  gets  stateEnv 
 	
-	-- Signature checking only works on finalised types,
-	-- without embeded meta variables.
+	-- Signature checking only works on finalised types, without embeded meta variables.
 	vsQuant		<- getsRef stateQuantifiedVars
 	tPlugged	<- plugClassIds Set.empty tScheme
-	tracell	$ "    tPlugged:\n"		%> prettyTypeSplit tPlugged
+	tracell	$ "-- pluged for sig check" %! prettyTypeSplit tPlugged
 
 	mapM_ (checkSchemeAgainstSig tPlugged) pbSigs
 
@@ -188,11 +193,10 @@ slurpFetters tt
 
 
 -- | Empty effect and closure eq-classes which do not appear in the environment or 
---	a contra-variant position in the type can never be anything but _|_,
---	so we can safely erase them now.
+--   a contra-variant position in the type can never be anything but _|_,
+--   so we can safely erase them now.
 --
---   TODO:
---	We need to run the cleaner twice to handle types like this:
+--   TODO: We need to run the cleaner twice to handle types like this:
 --		a -(!e1)> b
 --		:- !e1 = !{ !e2 .. !en }
 --

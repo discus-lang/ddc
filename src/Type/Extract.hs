@@ -18,9 +18,11 @@ import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 		
-stage	= "Type.Extract"
-debug	= True
-trace s	= when debug $ traceM s
+stage		= "Type.Extract"
+debug		= True
+tracel  s 	= when debug $ traceM (s % nl)
+tracell s 	= when debug $ traceM (s % nlnl)
+
 
 -- | Extract a type from the graph and pack it into standard form.
 --	This is the same as extractType, but takes the cid of the type instead of its var.
@@ -31,7 +33,7 @@ extractTypeCid
 
 extractTypeCid final cid
  = do	v	<- getCanonicalNameOfClass cid
- 	extractType final v
+	extractType final v
 
 
 -- | Extract a type from the graph and pack it into standard form.
@@ -41,8 +43,12 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
- = do	env	<- gets stateEnv
+ = traceI
+ $ do	tracel $ "*** extractType " %% varT % nl
+	extractType_withEnv final varT
 
+extractType_withEnv final varT
+ = do	env	<- gets stateEnv
 	let result
 	 	-- If this var is in the defs table then it was imported from an external
 	 	--	interface (or is a generated constructor function), so we can just return it directly.
@@ -57,9 +63,9 @@ extractType final varT
 
 	result
 
+
 extractType_findClass final varT
- = do	
-	-- try and find the equivalence class that corresponds to this var.
+ = do	-- try and find the equivalence class that corresponds to this var.
  	mCid	<- lookupCidOfVar varT
 	case mCid of
 	 Just cid	
@@ -69,25 +75,15 @@ extractType_findClass final varT
 	 --	something that doens't exist in the graph. bad news, dude.
 	 Nothing	
 	  -> freakout stage
-		 ("extractType: no classId defined for variable " % (varT, varId varT) % "\n")
+		 ("extractType: no classId defined for variable " % (varT, varId varT) % nl)
 		$ return Nothing
 
-extractType_fromClass final varT cid
- = do 	
-	-- trace out all the equivalence classes reachable from this one, and build
-	--	the initial type where each eq class is listed as its own fetter.
-	--	If there is no fetter shown for a particular classid then it can be 
-	--	asssumed to be Bot.
-	--
-	--	eg  *1	:- *1 = *2 -(!5 $6)> *3
-	--		,  *2 :> Int %8
-	--		,  *3 :> Unit
-	--		,  !5 :> Read %8
-	--
-	trace	$ ppr " -- tracing type from the graph\n"
- 	tTrace	<- {-# SCC "extract/trace" #-} traceTypeAsSquid cid
-	trace	$ "    tTrace:\n" 	%> prettyTypeSplit tTrace	% "\n\n"
 
+extractType_fromClass final varT cid
+ = do 	-- Trace ------------------------------------------
+	-- Trace out all the equivalence classes reachable from this one.
+ 	tTrace	<- traceTypeAsSquid cid
+	tracell	$ "-- traced" 		%! prettyTypeSplit tTrace
 
 	-- For simple vars, applying the packer and flattener etc won't do anything,
 	-- so skip all that stuff to avoid spamming the trace logs.
@@ -105,23 +101,22 @@ extractType_fromClass final varT cid
 	
 	
 extractType_pack final varT cid tTrace
- = do	-- Drag local more-than constraints into their use sites.
-	trace	$ ppr " -- dragging more-than constraints\n"	
+ = do	-- Drag ------------------------------------------
+	-- drag local more-than constraints into their use sites.
 	let tDragged	= dragT Set.empty tTrace
-	trace	$ "  tDragged:\n" 	%> prettyTypeSplit tDragged % "\n\n"
+	tracell	$ "-- dragged" 		%! prettyTypeSplit tDragged
 
-	-- Pack the type into standard form.
-	--	If we hit any loops through the value type portion of the
-	--	graph then mark then with TError constructors.
-	trace	$ ppr " -- packing into standard form\n"	
+	-- Pack -------------------------------------------
+	-- Pack the type into standard form. If we hit any loops through the
+	-- value type portion of the graph then mark then with TError constructors.
 	let tPack	= packAndMarkLoopsT tDragged
 
-	-- Look for TErrors in the packed type
-	let tsLoops	= [ (t1, t2) 
-				| TError _ (TypeErrorLoop t1 t2) 
-				<- collectTErrors tPack ]
+	-- Look for TErrors in the packed type. These mark recursive value type
+	-- constraints, and we "cannot construct infinite types."
+	let tsLoops	= [ (t1, t2) 	| TError _ (TypeErrorLoop t1 t2) 
+					<- collectTErrors tPack ]
 
-	trace	$ "    tPack:\n" 	%> prettyTypeSplit tPack % "\n\n"
+	tracell	$ "-- packed" 		%! prettyTypeSplit tPack
 	
 	if (isNil tsLoops)
 	 -- no graphical data, ok to continue.
@@ -136,10 +131,9 @@ extractType_pack final varT cid tTrace
 
 		return $ Just $ TError kValue TypeError
 
+
 extractType_more final varT cid tPack
- = do	
-	-- This needs to die -------------------------------------------------------
-	
+ = do	-- This needs to die -------------------------------------------------------
 	-- Strengthen more-than constraints. 
 	-- In a type like
 	--	fun 	:: ((a -(!e1)> b) -(!e2)> c)
@@ -157,76 +151,71 @@ extractType_more final varT cid tPack
 	--
 	--	The trouble is that with higher order examples, the !e2 variable
 	--	can end up in a parameter position.
-	--
-	--	We can probably hack around this problem by converting all eq constraints
-	--	to more-than constraints in the feeder.
-	
-	trace	$ ppr " -- strengthening :> constraints\n"
-
-	-- first work out what effect and closure vars are are represent parameters
-	--	(are in a contravariant branch \/ to the left of a function arrow)
+	--	
+	-- first determine what effect and closure vars are are represent parameters
+	-- (are in a contravariant branch \/ to the left of a function arrow)
 	let tsParam	
 		= catMaybes
 		$ map (\t -> case t of
 				TVar kE (UClass cid) | kE == kEffect   -> Just t
 				TVar kC (UClass cid) | kC == kClosure	-> Just t
 				_				-> Nothing)
-		$ slurpParamClassVarsT_constrainForm tPack
+		$ slurpParamClassVarsT tPack
 	
 	tStrong	<- strengthenT (Set.fromList tsParam) tPack
-
-	trace	$ "    tsParam   = " % tsParam	% "\n"
-	trace	$ "    tStrong\n"
-		%> prettyTypeSplit tStrong	% "\n\n"
+	tracell	$ "-- strengthened"	%! prettyTypeSplit tStrong
 
 	-----------------------------------------------------------------------
 	let tHere	= tStrong	-- setting this to tPack makes Order5-2 test work,
 					-- but breaks the Prelude.
+--	let tHere	= tPack
 	-----------------------------------------------------------------------
 
-	-- Trim closures 
-	trace	$ ppr " -- trimming closures\n"	
+	-- Trim closures ------------------------------------------------------
+	-- The extracted types tend to contain lots of boring closure information
+	-- that isn't relavent to further stages. Trim that out now.
 	let tTrim	
 		| isClosure tHere	= trimClosureC tHere
 		| otherwise		= trimClosureT tHere
 
-	trace	$ "    tTrim:\n" 	%> prettyTypeSplit tTrim % "\n\n"
+	tracell	$ "-- trimmed closures"	%! prettyTypeSplit tTrim
 
-	-- Cut loops through :> fetters in this type
-	trace	$ ppr " -- cutting loops\n"
+	-- Cut loops ----------------------------------------------------------
+	-- Effect constraints for recursive functions will tend to be recursive,
+	-- but we can use some identities of :> to cut those loops.
 	let tCut	= packT $ cutLoopsT tTrim
-	trace	$ "    tCut:\n" 	%> prettyTypeSplit tCut % "\n\n"
+	tracell	$ "-- cut loops"	%! prettyTypeSplit tCut
 	
 	extractType_final final varT cid tCut
+
 	
 extractType_final True varT cid tCutPack
- = do	
- 	-- Plug classIds with vars
-	trace	$ ppr " -- plugging classids\n"
- 	tPlug	<- plugClassIds Set.empty tCutPack
-	trace	$ "    tPlug:\n" 	%> prettyTypeSplit tPlug	% "\n\n"
+ = do	-- Plug classIds ------------------------------------------------------
+	-- Replace meta variables in positions we're about to generalise with 
+	-- real variable names from the corresponding equivalence classes.
+ 	tPlug		<- plugClassIds Set.empty tCutPack
+	tracell	$ "-- plugged"  	%! prettyTypeSplit tPlug
  
-	-- close off never-quantified effect and closure vars
+	-- Finalise -----------------------------------------------------------
+	-- Close off never-quantified effect and closure vars
  	quantVars	<- getsRef stateQuantifiedVars
  	let tFinal	= finaliseT quantVars True tPlug
-	
-	trace	$ "    tFinal:\n" 	%> prettyTypeSplit tFinal	% "\n\n"
+	tracell	$ "-- finalised"  	%! prettyTypeSplit tFinal
+
 	extractType_reduce varT cid tFinal
 	
 extractType_final False varT cid tTrim
-	= extractType_reduce varT cid tTrim
+ = 	extractType_reduce varT cid tTrim
+
 
 extractType_reduce varT cid tFinal
- = do	
-	-- Reduce context
+ = do	-- Reduce context -----------------------------------------------------
+	-- Remove type class constraints for instances that we know about.
 	classInst	<- liftM squidEnvClassInst
-			$  gets  stateEnv
+			$  gets stateEnv
 
-	let tReduced	
-		= {-# SCC "extract/redude" #-}
-		  reduceContextT classInst tFinal
-
-	trace	$ " -- reducing context\n"
-		% "    tReduced:\n" 	%> prettyTypeSplit tReduced % "\n\n"
+	let tReduced	= reduceContextT classInst tFinal
+	tracell	$ "-- reduced context"	%! prettyTypeSplit tReduced
 
 	return	$ Just tReduced
+

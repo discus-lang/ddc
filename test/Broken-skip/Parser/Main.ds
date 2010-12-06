@@ -111,7 +111,7 @@ sepBy1 pTok pSep
 test	= ['a', 'v', 'a', 'v', 'a', 'b']
 test2	= ['a', 'a', 'a', 'a', 'a', 'a']
 
-pTest
+pTest ()
  =   do	_	<- sepBy1 (pChar 'a') (pChar 'v')
  	_	<- pChar 'b'
 	pReturn	()
@@ -122,11 +122,10 @@ pTest
  <|> do	_	<- many1 (pChar 'a')
 	pReturn ()
  	
-
-	
 main ()
- = do	putStr	$ show test2 % "\n"
-	result	= runParser pTest test
+ = do	putStrLn $ "here"
+	putStr	 $ show test2 % "\n"
+	result	= runParser (pTest ()) test
 	
 	putStr	$ show (isSuccess result) % "\n"
 

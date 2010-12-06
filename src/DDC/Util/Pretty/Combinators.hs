@@ -14,7 +14,7 @@ module DDC.Util.Pretty.Combinators
 	, newline, nl, nlnl
 	, paste,  (%), (%%), (%!)
 	, punc,	  (%!%)
-	, indent, (%>)
+	, indent, (%>), (%!>)
 	, shift,  (%>>)
 
 	, hcat, hsep
@@ -62,6 +62,7 @@ infixr 3 %%
 
 -- same as >> and >>=
 infixr 2 %>
+infixr 2 %!>
 infixr 2 %>>
 
 -- same as =<<
@@ -136,6 +137,13 @@ indent a = PIndent (ppr a)
 	=> a -> b -> StrMode mode
 
 (%>) a b = PAppend [ppr a, PChar ' ', indent b]
+
+
+-- | Indent a thing to the right of another, after a newline.
+(%!>) 	:: (Pretty a mode, Pretty b mode) 
+	=> a -> b -> StrMode mode
+
+(%!>) a b = PAppend [ppr a, PNewLine, indent b]
 
 
 -- | Shift to the next tabstop.

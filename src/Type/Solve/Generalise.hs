@@ -16,8 +16,10 @@ import Util.Graph.Deps
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
-debug	= True
-trace s	= when debug $ traceM s
+debug		= True
+trace s	 	= when debug $ traceM s
+tracel s 	= when debug $ traceM (s % nl)
+
 
 -- | Extract and generalise the binding group containing this variable, and return
 --	the type scheme for this variable.
@@ -28,9 +30,11 @@ trace s	= when debug $ traceM s
 solveGeneralise :: TypeSource -> Var -> SquidM Type
 solveGeneralise	src vGen
  = do
-	trace	$ "\n"
-		% "=============================================================\n"
-		% "=== Generalise " % vGen % "\n"
+	trace	$ vcat
+		[ blank
+		, ppr "============================================================="
+		, "=== Generalise " % vGen
+		, blank ]
 
 	-- We now need to work out if this binding is a member of a mutually recursive group.
 	--	If we're generalising one member, then constraints from all other members should
@@ -47,8 +51,10 @@ solveGeneralise	src vGen
 	-- Generalise the group of bindings
 	tsGen		<- solveGeneralise_group src vsGroup_sorted
 	
-	trace	$ "=== Generalise " % vGen % " done\n"
-		% "=============================================================\n"
+	trace	$ vcat
+		[ blank
+		, "=== Generalise " % vGen % " done"
+		, ppr "=============================================================" ]
 
 	-- Return the type that was requested by the caller
 	let Just tGen	= takeHead tsGen
@@ -65,7 +71,7 @@ solveGeneralise_group
 solveGeneralise_group src vsGen@(vGen : vsGenRest)
  = do
 	genSusp		<- getsRef stateGenSusp
-	trace	$ "    genSusp    = " % genSusp	% "\n"
+--	trace	$ "    genSusp    = " % genSusp	% nl
 
 	-- We first need to work out the types for all the free variables in the bind group.
 	--	This can't be done statically before type inference starts because we wont know what
@@ -106,9 +112,11 @@ solveGeneralise_group src vsGen@(vGen : vsGenRest)
 	-- The free variables are the ones that were instantiated minus the ones that were bound.
 	let vsEnv	= vsInst \\ vsBound
 				
-	trace	$ "    vsBound    = " % vsBound		% "\n"
-		% "    vsInst     = " % vsInst		% "\n"
-		% "    vsEnv      = " % vsEnv		% "\n"
+	trace	$ vcat
+		[ "    vsBound    = " % vsBound
+		, "    vsInst     = " % vsInst
+		, "    vsEnv      = " % vsEnv
+		, blank ]
 	
 
 	-- Extract the types for the free variables.
@@ -123,7 +131,7 @@ solveGeneralise_group src vsGen@(vGen : vsGenRest)
 	-- Collect up the cids free in in the environment.
 	--	These cids are fixed during the generalisation.
 	let cidsEnv	= Set.unions $ map freeCids tsEnv
-	trace	$ "    cidsEnv    = " % cidsEnv		% "\n"
+	tracel	$ "    cidsEnv    = " % cidsEnv
 
 	-- Extract and generalise the types for all of the members of the binding group
 	tsScheme	<- mapM (solveGeneralise_single src cidsEnv) vsGen

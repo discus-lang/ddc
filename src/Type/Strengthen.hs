@@ -21,7 +21,7 @@
 --
 module Type.Strengthen
 	( strengthenT
-	, slurpParamClassVarsT_constrainForm)
+	, slurpParamClassVarsT)
 where
 import Util
 import DDC.Solve.State
@@ -90,25 +90,25 @@ strengthenFs tsParam fsEq fMore
 --	   We really need to inspect the definition of data types to determine
 --	   which positions correspond to parameters.
 --
-slurpParamClassVarsT_constrainForm :: Type -> [Type]
-slurpParamClassVarsT_constrainForm tt
+slurpParamClassVarsT :: Type -> [Type]
+slurpParamClassVarsT tt
  = case tt of
-	TForall b k t		-> slurpParamClassVarsT_constrainForm t
-	TConstrain t crs 	-> slurpParamClassVarsT_constrainForm t
+	TForall b k t		-> slurpParamClassVarsT t
+	TConstrain t crs 	-> slurpParamClassVarsT t
 
 	TApp t1 t2
 	  | Just (t11, t12, eff, clo)	<- takeTFun tt
 	  -> (Set.toList $ freeTClassVars t11) 
-	     ++ slurpParamClassVarsT_constrainForm t12
+	     ++ slurpParamClassVarsT t12
 	
 	  | Just _	<- takeTData tt
 	  -> []
 	
 	  | otherwise
-	  -> slurpParamClassVarsT_constrainForm t1 ++ slurpParamClassVarsT_constrainForm t2
+	  -> slurpParamClassVarsT t1 ++ slurpParamClassVarsT t2
 	
 	
-	TSum _ ts	-> concat $ map slurpParamClassVarsT_constrainForm ts
+	TSum _ ts	-> concat $ map slurpParamClassVarsT ts
 	TVar{}		-> []
 	TCon{}		-> []
 	TError{}	-> []	
