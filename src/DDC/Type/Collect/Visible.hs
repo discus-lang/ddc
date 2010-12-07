@@ -34,10 +34,7 @@ visibleRsT tt
 
 	TForall _ _ t	-> visibleRsT t
 
-	// 
 	TConstrain t crs 
---	 -> visibleRsT t
-	
 	 -> Set.unions 
 		( visibleRsT t
 		: (map freeTVars $ Map.elems $ crsMore crs))
