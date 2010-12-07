@@ -12,11 +12,13 @@ module Llvm.Runtime.Object
 	, ddcObj
 	, ddcThunk
 	, ddcData
+	, ddcDataM
 	, ddcDataRS
 
 	, structObj
 	, structThunk
 	, structData
+	, structDataM
 	, structDataRS
 
 	, nullObj
@@ -25,10 +27,12 @@ module Llvm.Runtime.Object
 	, ppObj
 	, pStructThunk
 	, pStructData
+	, pStructDataM
 	, pStructDataRS
 
 	, objModeForward
 	, objModeFixed
+	, objFixedDataM
 	, objModeDataRS )
 where
 
@@ -105,6 +109,24 @@ pStructData = pLift structData
 
 --------------------------------------------------------------------------------
 
+ddcDataM :: LlvmStructDesc
+ddcDataM
+ =	mkLlvmStructDesc "DataM"
+		[ AField "tag" i32
+		, APadTo8If64
+		, AField "size" i32
+		, AField "ptrCount" i32
+		, AField "payload" (LMArray 0 i8) ]
+
+
+structDataM :: LlvmType
+structDataM = LMAlias ("struct.DataM", llvmTypeOfStruct ddcData)
+
+pStructDataM :: LlvmType
+pStructDataM = pLift structDataM
+
+--------------------------------------------------------------------------------
+
 ddcDataRS :: LlvmStructDesc
 ddcDataRS
  =	mkLlvmStructDesc "DataRS"
@@ -113,7 +135,7 @@ ddcDataRS
 
 
 structDataRS :: LlvmType
-structDataRS = LMAlias ("struct.DataRS", llvmTypeOfStruct ddcData)
+structDataRS = LMAlias ("struct.DataRS", llvmTypeOfStruct ddcDataRS)
 
 pStructDataRS :: LlvmType
 pStructDataRS = pLift structDataRS
@@ -126,5 +148,9 @@ objModeForward	= 0x00
 objModeFixed :: Int
 objModeFixed	= 0x01
 
+objFixedDataM :: Int
+objFixedDataM = 0x41
+
 objModeDataRS :: Int
 objModeDataRS = 0x03
+

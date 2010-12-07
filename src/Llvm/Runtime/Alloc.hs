@@ -3,6 +3,7 @@ module Llvm.Runtime.Alloc
 	( allocate
 	, allocThunk
 	, allocData
+	, allocDataM
 	, allocDataRS )
 where
 
@@ -111,6 +112,25 @@ allocData tag arity
 
 	ret		<- newUniqueNamedReg "allocated.data" pObj
 	addBlock	[ Assignment ret (Cast LM_Bitcast pData pObj) ]
+	return		ret
+
+
+allocDataM :: Int -> Int -> Int -> LlvmM LlvmVar
+allocDataM tag dataSize ptrCount
+ = do	addAlias	("struct.DataM", llvmTypeOfStruct ddcData)
+	let size	= sizeOfLlvmType structDataM + ptrCount * sizeOfLlvmType pObj + roundUpBytes dataSize
+	addComment	$ "allocDataM " ++ show tag ++ " " ++ show dataSize ++ " " ++ show ptrCount
+
+	let tagValue 	= (dataSize * 256) + objFixedDataM
+
+	pDataM		<- allocate size "pDataM" pStructDataM
+
+	storeStructRegValue ddcDataM pDataM "tag" (tagBasePlus tagValue)
+	storeStructRegValue ddcDataM pDataM "size" (i32LitVar size)
+	storeStructRegValue ddcDataM pDataM "ptrCount" (i32LitVar 0)
+
+	ret		<- newUniqueNamedReg "allocated.data" pObj
+	addBlock	[ Assignment ret (Cast LM_Bitcast pDataM pObj) ]
 	return		ret
 
 
