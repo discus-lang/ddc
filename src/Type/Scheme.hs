@@ -89,7 +89,7 @@ generaliseType' src varT tCore cidsEnv
 	let rsVisible	= visibleRsT $ flattenT tClean
 	let tMskLocal	= maskLocalT rsVisible tClean
 	tracell	$ "-- masked" 		%! prettyTypeSplit tMskLocal
-
+	tracell $ "   rsVisible = " % rsVisible
 
 	-- Default ------------------------------------------------------------
 	-- If we're generalising the type of a top level binding, then default

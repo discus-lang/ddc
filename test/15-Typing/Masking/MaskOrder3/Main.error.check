@@ -1,0 +1,12 @@
+ddc: ERROR
+./test/15-Typing/Masking/MaskOrder3/Main.ds:16:8
+        Cannot purify effect '!Write %216'.
+        
+              the use of: fun
+                 of type: !Write %216
+                      at: ./test/15-Typing/Masking/MaskOrder3/Main.ds:16:8
+        
+            conflicts with,
+              the use of: suspend1
+                      at: ./test/15-Typing/Masking/MaskOrder3/Main.ds:17:28
+

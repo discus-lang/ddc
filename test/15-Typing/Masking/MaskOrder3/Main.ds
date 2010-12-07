@@ -1,0 +1,19 @@
+
+
+-- | Thus function takes a parameter function that it passed a worker that 
+--   updates some local state when it's called.
+fun f
+ = do	x 	= 0
+	bump () = do { x += 1; copy x }
+	f bump
+	()
+
+
+-- This prints a different value depending on whether the first call to "g" 
+-- is suspended. We should get an error if we try to do so.
+main ()
+ = do 	b	= False
+	fun $ \g -> do
+		y	= g @ ()
+		z	= if b then y else 5
+		putStrLn $ show $ g () + z

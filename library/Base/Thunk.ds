@@ -3,6 +3,8 @@
 module Base.Thunk
 import Base
 
+-- Printing -------------------------------------------------------------------
+-- TODO: Move these print functions somewhere else.
 foreign import "primPrintThunk"
  printThunk 
 	:: forall a
@@ -16,15 +18,16 @@ foreign import  "primPrintData"
 	.  a -> ()
 	:$ Obj -> Obj;
 
-
+-- Suspend --------------------------------------------------------------------
 foreign import "primSuspend1"
- suspend1 
+ suspend1
 	:: forall a b !e1 $c0
 	.  (a -(!e1 $c0)> b) -> a -($c1)> b
 	:- $c1	= ${f : $c0}
 	,  Pure  !e1
 	,  LazyH b
 	:$ Obj -> Obj -> Obj
+
 
 foreign import "primSuspend2"
  suspend2
@@ -66,6 +69,26 @@ foreign import "primSuspend4"
 	:$ Obj -> Obj -> Obj -> Obj -> Obj -> Obj;
 
 
+-- Unsafe Suspend -------------------------------------------------------------
+--   Unsafe suspension functions do not require their arguments to be pure.
+--
+--   Use of unsafe suspension can cause programs to have a different meaning
+--   depending on the order of evaluation, which can change during optimisation.
+--
+--   We must include the LazyH constraint, as this tells the code generator
+--   that the returned object might be a thunk.
+--
+
+foreign import "primSuspend1"
+ unsafeSuspend	
+	:: forall a b !e1 $c0
+	.  (a -(!e1 $c0)> b) -> a -($c1)> b
+	:- $c1	= ${f : $c0}
+	,  LazyH b
+	:$ Obj -> Obj -> Obj
+
+
+-- Forcing --------------------------------------------------------------------
 foreign import "_force"
  force 
  	:: forall a.  a -> a

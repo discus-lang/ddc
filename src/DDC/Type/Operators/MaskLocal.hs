@@ -14,14 +14,12 @@ import qualified Data.Set	as Set
 
 
 -- | Mask effects on local regions.
--- 	At generalisation time, if a region is not present in the type or closure of a
--- 	function then is local to that function and all effects involving that region 
--- 	can be erased from the type.
+--   At generalisation time, if a region is not present in the type or closure of a
+--   function then is local to that function and all effects involving that region 
+--   can be erased from the type.
 --
---	We can also erase Const/Mutable Lazy/Direct constraints because these will be
---	fulfilled by the letregion construct used to locally create the region.
---	However, we 
---
+--   We can also erase Const/Mutable Lazy/Direct constraints because these will be
+--   fulfilled by the letregion construct used to locally create the region.
 --
 maskLocalT :: Set Type -> Type -> Type
 maskLocalT tsVis tt
