@@ -39,6 +39,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Predicates
 import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Var
@@ -119,8 +120,12 @@ trimClosureT_trace config quant rsData tt
 	 -> TForall b k (down t)
 	
 	TConstrain tBody (Constraints crsEq crsMore crsOther)
-	 -> let	crsEq'		= Map.mapWithKey (trimClosureT_tt config quant rsData) crsEq
-		crsMore'	= Map.mapWithKey (trimClosureT_tt config quant rsData) crsMore
+	 -> let	crsEq'		= Map.filter (not . isTBot)
+				$ Map.mapWithKey (trimClosureT_tt config quant rsData) crsEq
+
+		crsMore'	= Map.filter (not . isTBot)
+				$ Map.mapWithKey (trimClosureT_tt config quant rsData) crsMore
+
 		crs'		= Constraints crsEq' crsMore' crsOther
 	    in	addConstraints crs' tBody
 
@@ -208,8 +213,13 @@ trimClosureC_step config quant rsData cc
 	-- Trim constraints.
 	TConstrain t Constraints { crsEq, crsMore }
 	 -> let	t'		= trimClosureC' config quant rsData t
-		crsEq'		= Map.mapWithKey (\_ t2 -> trimClosureT' config quant rsData t2) crsEq
-		crsMore'	= Map.mapWithKey (\_ t2 -> trimClosureT' config quant rsData t2) crsMore
+
+		crsEq'		= Map.filter (not . isTBot)
+				$ Map.mapWithKey (\_ t2 -> trimClosureT' config quant rsData t2) crsEq
+
+		crsMore'	= Map.filter (not . isTBot)
+				$ Map.mapWithKey (\_ t2 -> trimClosureT' config quant rsData t2) crsMore
+
 	    in	addConstraints (Constraints crsEq' crsMore' []) t'
 
 	-- When we see a forall then add the bound variables to the remembered set.
@@ -301,8 +311,17 @@ trimClosureC_t config tag quant rsData tt
 
 	-- Trim constraints.
 	TConstrain tBody (Constraints crsEq crsMore crsOther)
-	 -> let	crsEq'		= Map.fromList $ mapMaybe (trimClosureC_tt config quant rsData) $ Map.toList crsEq
-		crsMore'	= Map.fromList $ mapMaybe (trimClosureC_tt config quant rsData) $ Map.toList crsMore
+	 -> let	crsEq'		= Map.filter (not . isTBot)
+				$ Map.fromList 
+				$ mapMaybe (trimClosureC_tt config quant rsData)
+				$ Map.toList crsEq
+
+
+		crsMore'	= Map.filter (not . isTBot)
+				$ Map.fromList
+				$ mapMaybe (trimClosureC_tt config quant rsData)
+				$ Map.toList crsMore
+
 		crs		= Constraints crsEq' crsMore' crsOther
 	    	cBits		= down tBody
 	    in	map (addConstraints crs) cBits
