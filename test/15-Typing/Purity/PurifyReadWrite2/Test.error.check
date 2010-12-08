@@ -5,14 +5,14 @@ ddc: ERROR
               constraint: Const %41
         which purifies
               the use of: (*)
-                 of type: (232 233)
+                 of type: (231 232)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:25
         due to
               the use of: mapL
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
         
             conflicts with,
-              constraint: MutableT *267
+              constraint: MutableT *266
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:7:21
 
