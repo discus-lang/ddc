@@ -129,8 +129,8 @@ packTypeCrsSub' config crsEq subbed tt
 
 		-- Restrict equality constraints to only those that might be reachable from
 		--	the body of the type. Remember that packing is done on types
-		--	in both weak and non-weak forms, and with and without
-		--	embedded ClassIds. Also drop boring constraints while we're here.
+		--	in both weak and non-weak forms, and with and without embedded ClassIds.
+		--	Also drop boring constraints while we're here.
 		freeClassVars	 = freeTClassVars t'
 		
 		crsEq2_restrict	 
@@ -156,19 +156,25 @@ packTypeCrsSub' config crsEq subbed tt
 
 
 	TApp{}
-	 -- for a closure like  v1 : v2 : TYPE, 
-	 --	the type is really a part of v1. The fact that it also came from v2
-	 --	doesn't matter. The variables are just for doccumentaiton anyway.
+	 -- rewrite (TFree_v1 (TFree_v2 : TYPE))
+	 --     ==> (TFree_v1 : TYPE)
+	 --   Only the outer-most variable matters in the core IR.
 	 | Just (v1, t1)	<- takeTFree tt
 	 , Just (_,  t2)	<- takeTFree t1
 	 , Just clo		<- makeTFree v1 t2
 	 -> packTypeCrsSub config crsEq subbed clo
 
+	 -- rewrite (TFree_v1 (t1 :- CRS))
+	 --     ==> (TFree_v1 t1  :- CRS)
 	 | Just (v1, t1)	<- takeTFree tt
 	 , TConstrain t crs	<- t1
 	 , Just clo		<- makeTFree v1 t
 	 -> TConstrain clo crs
 	
+	 -- rewrite (TFree_v1 (t1 + t2 + ...))
+	 --      ==> TFree_v1 t1 + TFree_v1 t2 + ...
+	 --   We could perhaps rewrite this the other way, but expanding
+	 --   out to indiidual terms seems simpler.
 	 | Just (v1, t1)	<- takeTFree tt
 	 , TSum k ts		<- t1
 	 , k == kClosure
