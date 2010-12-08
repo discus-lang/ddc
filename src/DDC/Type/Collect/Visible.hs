@@ -4,6 +4,7 @@ module DDC.Type.Collect.Visible
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Type.Kind
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Collect.FreeTVars
@@ -17,15 +18,17 @@ stage	= "DDC.Type.Collect.Visible"
 
 -- | Collect the list of regions that are visible (observable) in a type.
 --
---   These are the regions who's effects cannot be masked because the evaluation
---   of the function affects them in a visible way.
+--   Effects on visible regions cannot be masked because the evaluation of the
+--   function affects them in a way that is visible to the calling context.
 --
---   We can't just call freeVarsT, because we don't want to get region vars present
---   in the effect portion of the type.
+--   When effects and closures are given as constraints, inlined into the body,
+--   the visible regions are the ones in the body of the type, as well as in the 
+--   closure constraints.
 --
---   TODO: We really want just the material vars, replace this function
---         when material/immaterial var checking works.
--- 
+--   NOTE: The closures should have already been trimmed for this to work, 
+--         otherwise we'll end up counting immaterial variables in closure
+--         of first order functions as visible (which they're not)
+--
 visibleRsT :: Type -> Set Type
 visibleRsT tt
  = case tt of
@@ -35,12 +38,14 @@ visibleRsT tt
 	TForall _ _ t	-> visibleRsT t
 
 	TConstrain t crs 
-	 -> Set.unions 
-		( visibleRsT t
-		: (map freeTVars $ Map.elems $ crsMore crs))
-
-
-	TSum _ ts	 -> Set.unions $ map visibleRsT ts
+	 -> Set.unions
+		$ visibleRsT t
+		: [ freeTVars t2	
+			| (t1, t2) <- Map.toList $ crsMore crs
+			, isClosure t1 ]
+				
+	TSum _ ts	
+	 -> Set.unions $ map visibleRsT ts
 
 	TVar k _
 	 | k == kRegion	-> Set.singleton tt
