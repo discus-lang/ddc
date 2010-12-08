@@ -126,11 +126,11 @@ generaliseType' src varT tCore cidsEnv
 	-- Reduce -------------------------------------------------------------
 	-- Remove type class constraints for instanes that we know about.
 	-- TODO: This is duplicated in extract. Why are we doing it again?
-	let tReduce	= reduceContextT classInst tConstify
-	tracell	$ "-- reduced"		%! prettyTypeSplit tReduce
+	let tReduced	= reduceContextT classInst tConstify
+	tracell	$ "-- reduced"		%! prettyTypeSplit tReduced
 
 	-- Check context for unknown instances or constraint conflicts.
-	checkContext src tReduce
+	checkContext src tReduced
 
 	-- Quantify -----------------------------------------------------------
 	-- Add forall quantifiers for free variables that don't otherwise
@@ -139,10 +139,10 @@ generaliseType' src varT tCore cidsEnv
 	let vsFree	= filter (\v -> not $ varNameSpace v == NameValue)
 			$ filter (\v -> not $ Var.isCtorName v)
 			$ Var.sortForallVars
-			$ Set.toList $ freeVars tConstify
+			$ Set.toList $ freeVars tReduced
 
 	let vksFree	= map 	 (\v -> (v, let Just k = kindOfSpace $ varNameSpace v in k)) $ vsFree
-	let tScheme	= quantifyVarsT vksFree tConstify
+	let tScheme	= quantifyVarsT vksFree tReduced
 
 	tracell	$ "-- quantified"	%! prettyTypeSplit tScheme
 	tracell	$ "   vksFree        = " 	% vksFree
