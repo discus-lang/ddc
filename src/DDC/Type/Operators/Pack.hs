@@ -92,20 +92,21 @@ packTypeCrsSub
 	-> Type				-- ^ type to pack into.
 	-> Type
 
-packTypeCrsSub config crsEq subbed tt
- = let tt'	= packTypeCrsSub' config crsEq subbed tt
-   in  trace 	( "packTypeCrsSub " % subbed % "\n" 
+packTypeCrsSub config crsEq vsSubbed tt
+ = let tt'	= packTypeCrsSub' config crsEq vsSubbed tt
+   in  trace 	( "packTypeCrsSub " % vsSubbed % "\n" 
 		% "    tt  = " % tt 	% "\n"
 		% "    tt' = " % tt'	% "\n")
 		tt'
 
-packTypeCrsSub' config crsEq subbed tt
- = case tt of
+packTypeCrsSub' config crsEq vsSubbed tt
+ = let downT	= packTypeCrsSub config crsEq vsSubbed
+   in  case tt of
 	TNil -> panic stage $ "packType: no match for TNil"
 
 	-- decend into foralls
 	TForall v k t
-	 -> TForall v k $ packTypeCrsSub config crsEq subbed t
+	 -> TForall v k $ packTypeCrsSub config crsEq vsSubbed t
 
 	TConstrain (TForall b k t) crs
 	 -> TForall b k (addConstraints crs t)
@@ -119,13 +120,13 @@ packTypeCrsSub' config crsEq subbed tt
 		crsEq_all	= Map.union crsEq crsEq2
 		
 		-- pack equality constraints into the body of the type.
-		t'		= packTypeCrsSub config crsEq_all subbed t
+		t'		= packTypeCrsSub config crsEq_all vsSubbed t
 
 		-- pack equality constraints into the other sorts of constraints
 		config_subEffClo = config { configSubForEffClo = True }
 
-		crsMore2'	= Map.map (packTypeCrsSub  config_subEffClo crsEq_all subbed) crsMore2
-		crsOther2'	=     map (packTypeCrsSubF config_subEffClo crsEq_all subbed) crsOther2
+		crsMore2'	= Map.map (packTypeCrsSub  config_subEffClo crsEq_all vsSubbed) crsMore2
+		crsOther2'	=     map (packTypeCrsSubF config_subEffClo crsEq_all vsSubbed) crsOther2
 
 		-- Restrict equality constraints to only those that might be reachable from
 		--	the body of the type. Remember that packing is done on types
@@ -141,7 +142,7 @@ packTypeCrsSub' config crsEq subbed tt
 			
 		-- pack equality constraints into the others.							
 		crsEq2_restrict' 
-			= Map.map (packTypeCrsSub config_subEffClo crsEq_all subbed) crsEq2_restrict
+			= Map.map (packTypeCrsSub config_subEffClo crsEq_all vsSubbed) crsEq2_restrict
 
 		-- the final constraints
 		crs'	= Constraints crsEq2_restrict' crsMore2' (nub crsOther2')
@@ -151,8 +152,7 @@ packTypeCrsSub' config crsEq subbed tt
 	-- TODO: I'm pretty sure this makeTSum give us at least O(n^2) complexity.
 	--	 It'd be better to accumulate a set of effects on the way down.
 	TSum k ts
-	 -> let ts'	= map (packTypeCrsSub config crsEq subbed) ts
-	    in	makeTSum k ts'
+	 -> makeTSum k $ map downT ts
 
 
 	TApp{}
@@ -162,7 +162,7 @@ packTypeCrsSub' config crsEq subbed tt
 	 | Just (v1, t1)	<- takeTFree tt
 	 , Just (_,  t2)	<- takeTFree t1
 	 , Just clo		<- makeTFree v1 t2
-	 -> packTypeCrsSub config crsEq subbed clo
+	 -> downT clo
 
 	 -- rewrite (TFree_v1 (t1 :- CRS))
 	 --     ==> (TFree_v1 t1  :- CRS)
@@ -178,16 +178,14 @@ packTypeCrsSub' config crsEq subbed tt
 	 | Just (v1, t1)	<- takeTFree tt
 	 , TSum k ts		<- t1
 	 , k == kClosure
-	 -> TSum k $ map (packTypeCrsSub config crsEq subbed)
+	 -> TSum k $ map downT
 	 	   $ map (makeTFreeBot v1) ts
 	
 	TApp t1 t2
-	 -> let	t1'	= packTypeCrsSub config crsEq subbed t1
-		t2'	= packTypeCrsSub config crsEq subbed t2
-	    in	TApp t1' t2'
+	 -> TApp (downT t1) (downT t2)
 	
 	TCon{}		-> tt
-	TVar   k _	-> packTypeCrsClassVar config crsEq subbed tt k	
+	TVar   k _	-> packTypeCrsClassVar config crsEq vsSubbed tt k	
 	TError{}	-> tt
 
 
@@ -200,14 +198,14 @@ packTypeCrsClassVar
 	-> Kind			-- ^ kind of the type variable
 	-> Type
 
-packTypeCrsClassVar config crsEq subbed tt k
+packTypeCrsClassVar config crsEq vsSubbed tt k
 	-- if we're not substituting for effects or closures, then don't
 	| k == kEffect || k == kClosure
 	, not $ configSubForEffClo config
 	= tt
 
 	-- we've already substituted for this var on the same path
-	| Set.member tt subbed
+	| Set.member tt vsSubbed
 	= if k == kEffect || k == kClosure
 
 		-- for effect and closure constraint's that's ok. 
@@ -215,12 +213,12 @@ packTypeCrsClassVar config crsEq subbed tt k
 		then tt
 
 		-- we don't support recursive value types.
-		else packTypeCrsClassVar_loop config crsEq subbed tt k
+		else packTypeCrsClassVar_loop config crsEq vsSubbed tt k
 		
 	 -- do the substitution
 	 | otherwise
 	 = case Map.lookup tt crsEq of
-		Just t		-> packTypeCrsSub config crsEq (Set.insert tt subbed) t
+		Just t		-> packTypeCrsSub config crsEq (Set.insert tt vsSubbed) t
 		Nothing		-> tt
 
 
@@ -256,15 +254,15 @@ packTypeCrsSubF
 	-> Fetter		-- ^ fetter to pack into
 	-> Fetter
 
-packTypeCrsSubF config crsEq subbed ff
+packTypeCrsSubF config crsEq vsSubbed ff
  = case ff of
 	FConstraint v ts
-	 -> let	ts'	= map (packTypeCrsSub config crsEq subbed) ts
+	 -> let	ts'	= map (packTypeCrsSub config crsEq vsSubbed) ts
 	    in	FConstraint v ts'
 	
 	FProj tProj vInst t1 t2
-	 -> let	t1'	= packTypeCrsSub config crsEq subbed t1
-		t2'	= packTypeCrsSub config crsEq subbed t2
+	 -> let	t1'	= packTypeCrsSub config crsEq vsSubbed t1
+		t2'	= packTypeCrsSub config crsEq vsSubbed t2
 	    in	FProj tProj vInst t1' t2'
 	
 	_ -> panic stage
