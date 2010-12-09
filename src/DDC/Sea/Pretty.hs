@@ -57,8 +57,8 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> resultType %>> sVn 40 v %>> parens (punc ", " argTypes) % ";"
 
 	PSuper vName vtsArgs tResult stmts
-	 -> pprHeadBraces 
-		(tResult %>> sV vName 
+	 -> pprHeadBraces
+		(tResult %>> sV vName
 			 %>> parens (punc ", " [at %% sVL av | (av, at) <- vtsArgs])
 			 %  nl)
 		stmts
@@ -80,7 +80,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 % nl
 
 	-- main entry point.
-	PMain mainModuleName modulesImported withHandler 
+	PMain mainModuleName modulesImported withHandler
 		mHeapSize mSlotStackSize mContextStackSize
 
 	 -> let	heapSize	 = fromMaybe 0 mHeapSize
@@ -91,7 +91,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 	% "{" % nl
 		% (indent $ vcat
 			[ ppr "// Initialise the runtime system"
-			, "_ddcRuntimeInit(argc, argv," 
+			, "_ddcRuntimeInit(argc, argv,"
 				%% heapSize 		% ","
 				%% slotStackSize	% ","
 				%% contextStackSize	% ");"
@@ -100,18 +100,18 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 			, ppr "// Initialise all the imported modules"
 			, vcat [ fn % "();" | fn <- modulesImported ]
 			, blank
-			
+
 			, ppr "// Initialise the main module"
 			, "_ddcInitModule_" % mainModuleName % "();"
 			, blank
-			
+
 			, ppr "// Run the client program"
 			, if withHandler
-				then ppr $ "Control_Exception_topHandle(_allocThunk((FunPtr) " 
+				then ppr $ "Control_Exception_topHandle(_allocThunk((FunPtr) "
 						% mainModuleName % "_main, 1, 0));"
 				else ppr $ "Main_main(Base_Unit());"
 			 , blank
-			
+
 			, ppr "// Shut down the runtime system"
 			, ppr "_ddcRuntimeCleanup();"
 			, blank
@@ -159,12 +159,12 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 
 	SMatch aa
 	 -> pprHeadBraces "match" aa
-	
+
 	SIf xExp ssThen
 	 -> pprHeadBraces ("if" %% parens xExp) ssThen
-	
-	SCaseFail
-	 -> ppr "_CASEFAIL;"
+
+	SCaseFail (SourcePos (f, l, c))
+	 -> ppr "_CASEFAIL (\"" % windowsPathFix f % "\", " % l % ", " % c % ");"
 
 
 -- Alt ---------------------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 	 -> "  alt:  "
 	 %> (vcat gs % nl % "then" % brackets (vcat ss))
 	 % nlnl
-	
+
 	ASwitch g []
 	 -> "  case" %% g % ": break;"
 
@@ -185,7 +185,7 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 	ASwitch g ss
 	 -> pprHeadBraces ("  case " % g % ":")
 	 	(map ppr ss ++ [ppr "break"])
-	
+
 	ACaseSusp x l
 	 -> "  _CASESUSP (" % x % ", " % "_" % l % ");"
 
@@ -193,9 +193,7 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 	 -> "  _CASEINDIR (" % x % ", " % "_" % l % ");"
 
 	ACaseDeath (SourcePos (f, l, c))
-	 -> let	-- Hack fixup windows file paths.
-		f'	= map (\z -> if z == '\\' then '/' else z) f
-	    in	ppr "  _CASEDEATH (\"" % f' % "\", " % l % ", " % c % ");"
+	 -> ppr "  _CASEDEATH (\"" % windowsPathFix f % "\", " % l % ", " % c % ");"
 
 	ADefault [SGoto v]
 	 -> "  default: goto " % sV v % ";"
@@ -210,7 +208,7 @@ instance Pretty a PMode => Pretty (Guard (Maybe a)) PMode where
  ppr gg
   = case gg of
   	GCase _ True ss x1 x2
-	 -> pprHeadBraces "guard" ss	
+	 -> pprHeadBraces "guard" ss
 	 %  "compareLazy"    %% x1 % " with " % x2 % ";";
 
   	GCase _ False ss x1 x2
@@ -481,3 +479,6 @@ seaModule m
 	ModuleId ns	-> (catInt "_" $ ns)
 
 
+-- Hack fixup windows file paths.
+windowsPathFix :: String -> String
+windowsPathFix f = map (\z -> if z == '\\' then '/' else z) f

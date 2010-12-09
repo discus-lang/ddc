@@ -96,7 +96,7 @@ flattenG
 	( ixGuard	-- index of this guard
 	 , g)		-- the guard
 
-	| GCase _ isLazy ss x1 x2@(XLit (LLit litFmt)) 	<- g
+	| GCase spos isLazy ss x1 x2@(XLit (LLit litFmt)) 	<- g
 	, LiteralFmt lit fmt			<- litFmt
 	= do
 		let lName	= "a" ++ show ixAlt ++ "g" ++ show ixGuard
@@ -110,7 +110,7 @@ flattenG
 
 			-- otherwise die and emit a non-exhaustive case match error
 			| otherwise
-			= [SCaseFail]
+			= [SCaseFail spos]
 
 		let stmts
 			| LiteralFmt (LString _) Unboxed <- litFmt

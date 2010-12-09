@@ -80,7 +80,7 @@ data Top a
 		  --   exception handler from the prelude.
 		  --   TODO: Handle this in the desugarer in instead.
 		, topDefaultHandler	:: Bool
-		
+
 		  -- | Starting size of heap,          or Nothing for default.
 		, topStartHeapSize		:: Maybe Integer
 
@@ -133,7 +133,7 @@ data Stmt a
 	| SIf		(Exp a) [Stmt a]	-- If-then-else expression.
 
 	| SSwitch	(Exp a) [Alt a]		-- Switch on an expression.
-	| SCaseFail
+	| SCaseFail	SourcePos
 	deriving (Show, Eq)
 
 

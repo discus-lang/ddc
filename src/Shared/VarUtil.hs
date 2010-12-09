@@ -34,11 +34,11 @@ newVarN	space
  = do	vid		<- get
 	let vid'	= incVarId vid
 	put vid'
-	
+
 	let var		= (varWithName $ pprStrPlain vid)
 			{ varId		= vid
 			, varNameSpace	= space }
-	
+
 	return var
 
 
@@ -52,24 +52,26 @@ newVarNS	space	     str
 -- | Allocate a fresh variable named after some string, with info.
 newVarNI ::	NameSpace -> [VarInfo]	-> VarGenM Var
 newVarNI	space	     info
- = do 	var	<- newVarN space 
+ = do 	var	<- newVarN space
 	return	var { varInfo = info }
-	
-	
+
+
 -- Pretty print the source position of this variable.
 prettyPos :: Var	-> String
 prettyPos var
  	= fromMaybe "?"
 	$ liftM (\(ISourcePos sp) -> pprStrPlain sp)
 	$ find isISourcePos
-	$ varInfo var 
+	$ varInfo var
 
 varPos :: Var	-> SourcePos
 varPos var
- = do	let Just pos	= liftM (\(ISourcePos sp) -> sp)
+ = do	let pos	= liftM (\(ISourcePos sp) -> sp)
 			$ find isISourcePos
 			$ varInfo var
-	pos
+	case pos of
+	  Just p	-> p
+	  Nothing	-> SourcePos ("?", 0, 0)
 
 
 -- Pretty print the source position of the bounding occurance of this variable.
@@ -96,7 +98,7 @@ sortForallVars	  vs
 -- | Check whether the name of this var contains symbols that the
 --	C compiler won't like.
 varHasSymbols :: Var -> Bool
-varHasSymbols var 
+varHasSymbols var
  	= not $ null $ filter isSymbol $ varName var
 
 
@@ -107,34 +109,34 @@ takeSeaNameOfBindingVar var
 	, seaNames	<- [ name | ISeaName name	<- varInfo vBinding ]
 	, n : _		<- seaNames
 	= Just n
-	
+
 	| otherwise
 	= Nothing
-	
+
 -- | Check if this char is a symbol
 --	everything except alpha, numeric, and '_' is a symbol.
 isSymbol :: Char -> Bool
 isSymbol c
 	| isAlphaNum c 	= False
 	| c == '_'	= False
-	| otherwise	= True	
+	| otherwise	= True
 
 
 -- | Check if this var as the name of a constructor.
 --	Constructors start with an uppercase latter.
 isCtorName :: Var -> Bool
-isCtorName var 
+isCtorName var
 	= isUpper n
 	where (n:_)	= varName var
 
 
 -- | Dummy vars introduced by the compiler won't have SourcePos's
-isDummy	   var	
+isDummy	   var
 	= not $ any isISourcePos
-	$ varInfo var	
-	
+	$ varInfo var
 
--- | Rewrite symbolic chars in a string 
+
+-- | Rewrite symbolic chars in a string
 deSymString :: String -> String
 deSymString s
  = catMap (\c -> fromMaybe [c] (Map.lookup c deSymSub)) s

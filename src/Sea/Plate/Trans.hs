@@ -198,8 +198,8 @@ instance Monad m => TransM m a1 a2 Stmt where
 
 		transS table	$ SIf x' ssThen3
 
-	SCaseFail
-	 ->	transS table	$ SCaseFail
+	SCaseFail pos
+	 ->	transS table	$ SCaseFail pos
 
 
 -- Name --------------------------------------------------------------------------------------------

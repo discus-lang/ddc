@@ -113,8 +113,8 @@
 	default: _deathCase (file, line, col);
 
 // Emit a non-exaustive case match error.
-#define _CASEFAIL \
-	_deathCase (__func__, 0, 0);
+#define _CASEFAIL(file,line,col) \
+	_deathCase (file, line, col);
 
 
 

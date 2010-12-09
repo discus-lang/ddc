@@ -284,7 +284,7 @@ llvmOfStmt stmt
 	-- LLVM is SSA bu SAuto variables can be reused, so we need to Alloca for them.
 	SAuto v t	-> llvmSAuto v t
 	SStmt exp	-> llvmOfSStmt exp
-	SCaseFail	-> caseDeath "?" 0 0
+	SCaseFail pos	-> caseFail pos
 	_
 	  -> panic stage $ "llvmOfStmt (" ++ show __LINE__ ++ ")\n\n" ++ show stmt ++ "\n"
 
@@ -310,6 +310,10 @@ llvmOfSStmt x@(XPrim op@(MApp PAppApply) args)
 
 llvmOfSStmt x
  = panic stage $ "llvmOfSStmt:" ++ show __LINE__ ++ "\n\n" ++ show x ++ "\n"
+
+
+caseFail :: SourcePos -> LlvmM ()
+caseFail (SourcePos (n,l,c)) = caseDeath n l c
 
 --------------------------------------------------------------------------------
 
