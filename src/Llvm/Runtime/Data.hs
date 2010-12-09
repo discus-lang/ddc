@@ -41,6 +41,10 @@ force :: LlvmFunctionDecl
 force = LlvmFunctionDecl "_force" External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
 
 
+boxRef :: LlvmFunctionDecl
+boxRef = LlvmFunctionDecl "_boxRef" External CC_Ccc pObj FixedArgs [(pObj, []), (pChar, [])] ptrAlign
+
+
 forceObj :: LlvmVar -> LlvmM LlvmVar
 forceObj orig
  = do	addGlobalFuncDecl force

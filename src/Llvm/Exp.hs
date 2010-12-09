@@ -10,6 +10,8 @@ import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Sea.Pretty
+import DDC.Var
+import DDC.Var.PrimId
 
 import Llvm
 import LlvmM
@@ -87,14 +89,11 @@ llvmOfXPrim :: Prim -> [Exp a] -> LlvmM LlvmVar
 llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit litfmt) ]
  =	boxLit litfmt
 
-llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) (TFun at rt)):args)
+llvmOfXPrim (MApp PAppCall) exp@((XVar (NSuper fv) (TFun at rt)):args)
  | length at == length args
- = do	let func	= funcDeclOfExp exp
-	addGlobalFuncDecl func
-	params		<- mapM llvmOfExp args
-	result		<- newUniqueNamedReg "result" $ toLlvmType rt
-	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
-	return		result
+ = case varId fv of
+	VarIdPrim prim	-> primCall prim exp
+	_		-> funCall exp
 
  | otherwise
  =	panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")"
@@ -157,6 +156,23 @@ llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n\n"
 	++ show op ++ "\n\n"
 	++ show args ++ "\n"
+
+--------------------------------------------------------------------------------
+
+funCall :: [Exp a] -> LlvmM LlvmVar
+funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
+ = do	let func	= funcDeclOfExp exp
+	addGlobalFuncDecl func
+	params		<- mapM llvmOfExp args
+	result		<- newUniqueNamedReg "result" $ toLlvmType rt
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
+	return		result
+
+primCall :: PrimId -> [Exp a] -> LlvmM LlvmVar
+primCall primId exp@((XVar (NSuper fv) (TFun at rt)):args)
+ = do	case primId of
+	  VProjFieldR	-> primProjFieldR args
+	  _		-> funCall exp
 
 --------------------------------------------------------------------------------
 
@@ -236,3 +252,29 @@ unboxExp t (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj)))
 unboxExp t x
  = panic stage $ "unboxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
 
+
+--------------------------------------------------------------------------------
+
+primProjFieldR :: [Exp a] -> LlvmM LlvmVar
+primProjFieldR args@[exp@(XVar v (TPtr (TCon TyConObj))), XLit (LLit (LiteralFmt (LInt index) (UnboxedBits 32)))]
+ = do	addComment	$ "primProjFieldR " ++ show args
+
+	addGlobalFuncDecl boxRef
+
+	let boxFun	= LMGlobalVar "_boxRef" (LMFunction boxRef) External Nothing Nothing True
+	let field	= fst $ structFieldLookup ddcData "args"
+
+	pdata		<- newUniqueNamedReg "pdata" pStructData
+	pi		<- newUniqueReg ppObj
+	pc		<- newUniqueReg pChar
+	bref		<- newUniqueReg pObj
+	result		<- newUniqueReg pObj
+
+	pobj		<- llvmOfExp exp
+
+	addBlock	[ Assignment pdata (Cast LM_Bitcast pobj pStructData)
+			, Assignment pi (GetElemPtr True pdata [i32LitVar 0, i32LitVar field, i32LitVar index])
+			, Assignment pc (Cast LM_Bitcast pi pChar)
+			, Assignment bref (Call StdCall boxFun [pobj, pc] [])
+			, Assignment result (Cast LM_Bitcast bref pObj) ]
+	return		result
