@@ -1,0 +1,54 @@
+-----
+-- 	Checks progagation of effect and closure information via data types
+--	containing functions.
+--
+--	If a data object containing a function is updated with new functions then
+--	the effect and closure info should be the sum of all effect/closure of the functions.
+--
+
+export	runTest
+
+data FunBox %r1 a !e1 $c1
+	= FunBox {
+		fun :: a -(!e1 $c1)> a;
+	}
+
+thing	= 5
+oldFun  = \x -> x + 1
+newFun	= \x -> do { print (show (x + thing)); x; }
+
+
+
+-- box is created with a function that just does a read,
+--	but then updated to hold a function that has a console effect as well.
+--	The new function also references 'thing'
+
+box	:: FunBox %r1 Int !e1 $c1
+	:- Mutable %r1
+
+box	= FunBox oldFun
+
+
+
+runTest ()
+ = do
+	box#fun	#= newFun
+	()
+
+
+-- same idea, but return a tuple of functions that perform the operations.
+makeBox2 () ()
+ = do
+	box2	:: FunBox %r1 Int !e1 $c1
+		:- Mutable %r1
+
+ 	box2		= FunBox oldFun
+
+	hackBox	()	= box2#fun #= newFun
+	runBox ()	= box2.fun 5
+
+	fun2 ()		= (box2, hackBox, runBox)
+
+	fun2;
+
+gotBox = makeBox2 () () ()

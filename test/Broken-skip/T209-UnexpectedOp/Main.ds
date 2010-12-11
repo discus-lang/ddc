@@ -1,0 +1,21 @@
+import Test
+
+main () = runTest ()
+
+
+-- same idea, but return a tuple of functions that perform the operations.
+makeBox2 () ()
+ = do
+	box2	:: FunBox %r1 Int !e1 $c1
+		:- Mutable %r1
+
+ 	box2		= FunBox oldFun
+
+	hackBox	()	= box2#fun #= newFun
+	runBox ()	= box2.fun 5
+
+	fun2 ()		= (box2, hackBox, runBox)
+
+	fun2;
+
+gotBox = makeBox2 () () ()
