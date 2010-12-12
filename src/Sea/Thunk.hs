@@ -202,14 +202,14 @@ expandCallApp
 	:: Exp ()
 	-> ExM ([Stmt ()], Exp ())
 
-expandCallApp x@(XPrim (MApp (PAppCallApp superA)) ((XVar f _) : args))
+expandCallApp x@(XPrim (MApp (PAppCallApp superA)) ((XVar f t) : args))
  = do 	tmp	<- liftM NAuto $ newVar Nothing
 	let (callArgs, appArgs)
 			= splitAt superA args
 
  	let callSS	= [ SAssign 	(XVar tmp tPtrObj)
 					tPtrObj
-					(XPrim (MApp PAppCall) ((XVar f (TFun [] tPtrObj)) : callArgs)) ]
+					(XPrim (MApp PAppCall) ((XVar f t) : callArgs)) ]
 
 	(appSS, lastX)	<- expandApply 	(XPrim 	(MApp PAppApply)
 						(XVar tmp tPtrObj : appArgs))

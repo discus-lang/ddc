@@ -90,20 +90,15 @@ llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit litfmt) ]
  =	boxLit litfmt
 
 llvmOfXPrim (MApp PAppCall) exp@((XVar (NSuper fv) (TFun at rt)):args)
- | length at == length args
  = case varId fv of
 	VarIdPrim prim	-> primCall prim exp
 	_		-> funCall exp
 
- | otherwise
- =	panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")"
-		++ "\n    types : " ++ show at
-		++ "\n    args  : " ++ show args
-
-llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) rt):_)
- = panic stage	$ "Bad type for NSuper:\n"
+llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) ft):_)
+ =	-- The type ft should be 'TFun _ _'. This is a bug in an earlier stage of the compiler.
+	panic stage	$ "Bad type for NSuper:\n"
 			++ "NSuper : " ++ show fv ++ "\n"
-			++ "Type   : " ++ show rt ++ "\n\n"
+			++ "Type   : " ++ show ft ++ "\n\n"
 
 llvmOfXPrim (MOp OpAdd) [XVar v@NRts{} (TPtr t), XLit (LLit (LiteralFmt (LInt i) Unboxed)) ]
  = do	src		<- newUniqueReg $ pLift $ toLlvmType t
@@ -161,6 +156,7 @@ llvmOfXPrim op args
 
 funCall :: [Exp a] -> LlvmM LlvmVar
 funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
+ | length at == length args
  = do	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	params		<- mapM llvmOfExp args
@@ -168,11 +164,28 @@ funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
 	return		result
 
+ | otherwise
+ = panic stage $ "funCall (" ++ show __LINE__ ++ ")"
+		++ "\n    fv   : " ++ show fv
+		++ "\n    rt   : " ++ show rt
+		++ "\n    at   : " ++ show at
+		++ "\n    argc : " ++ show (length args)
+		++ "\n    argv : " ++ show args
+
 primCall :: PrimId -> [Exp a] -> LlvmM LlvmVar
 primCall primId exp@((XVar (NSuper fv) (TFun at rt)):args)
- = do	case primId of
-	  VProjFieldR	-> primProjFieldR args
-	  _		-> funCall exp
+ | length at == length args
+ = case primId of
+	VProjFieldR	-> primProjFieldR args
+	_		-> funCall exp
+
+ | otherwise
+ = panic stage $ "primCall (" ++ show __LINE__ ++ ")"
+		++ "\n    fv   : " ++ show fv
+		++ "\n    rt   : " ++ show rt
+		++ "\n    at   : " ++ show at
+		++ "\n    argc : " ++ show (length args)
+		++ "\n    argv : " ++ show args
 
 --------------------------------------------------------------------------------
 
