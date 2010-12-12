@@ -86,8 +86,8 @@ testBuild test@(TestBuild mainDS) way
 heapLimit :: String
 heapLimit
  = case pointerSize of
-	32	-> "30M"	-- Megabytes
-	64	-> "60M"
+	32	-> "40M"	-- Megabytes
+	64	-> "80M"
 
 
 pointerSize :: Int
