@@ -20,9 +20,15 @@ stage	= "DDC.Core.ToSea.Type"
 
 -- | Convert an operational type from the core to the equivalent Sea type.
 --   For functional types, we convert the types of the arguments as usual.
-toSeaSuperT :: T.Type -> E.Type
-toSeaSuperT tt	= toSeaT' False tt
 
+-- The returned type should always be TFun _ _. If what we have is not a TFun
+-- then assume that the type we have is what the NSuper is supposed to return
+-- and that the NSuper takes zero parameters.
+toSeaSuperT :: T.Type -> E.Type
+toSeaSuperT tt
+ = case toSeaT' False tt of
+	E.TFun at rt	-> E.TFun at rt
+	other		-> E.TFun [] other
 
 -- | Convert an operational type from core to equivalent Sea representation type.
 --   In the Sea backend, functional values are represented as boxed thunks, so

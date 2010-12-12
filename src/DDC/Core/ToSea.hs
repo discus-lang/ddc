@@ -260,15 +260,8 @@ toSeaX		xx
 	C.XPrim (C.MCall C.PrimCallSuper) (C.XVar vSuper _ : args)
 	 -> do	args'		<- mapM toSeaX $ stripValues args
 		Just tSuper	<- getOpTypeOfVar vSuper
-		-- We're constructing an NSuper which should have a TFun _ _ type.
-		-- If what we have is not a TFun then assume that the type we have
-		-- is what the NSuper is supposed to return and that the NSuper
-		-- takes zero parameters.
-		let stype	= case toSeaSuperT tSuper of
-					E.TFun at rt	-> E.TFun at rt
-					other		-> E.TFun [] other
 	    	return	$ E.XPrim (E.MApp E.PAppCall)
-				  (E.XVar (E.NSuper vSuper) stype : args')
+				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
 	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) (C.XVar vSuper _ : args)
 	 -> do	args'	<- mapM toSeaX $ stripValues args
