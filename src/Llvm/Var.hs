@@ -18,6 +18,7 @@ import DDC.Sea.Pretty
 import DDC.Var
 
 import Llvm
+import LlvmM
 import Llvm.Runtime.Object
 import Llvm.Util
 
@@ -36,9 +37,16 @@ toLlvmGlobalVar v t
  = LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
 
 
-toLlvmCafVar :: Var -> Type -> LlvmVar
+toLlvmCafVar :: Var -> Type -> LlvmM LlvmVar
 toLlvmCafVar v t
- = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
+ = do	let lvar = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
+	mId	<- getModuleId
+	if mId == varModuleId v
+	  then return lvar
+	  else
+	    do	-- Not sure why double lift is required here!
+		addGlobalVar (pVarLift (pVarLift lvar), Nothing)
+		return lvar
 
 
 toLlvmRtsVar :: Var -> Type -> LlvmVar
@@ -56,7 +64,7 @@ llvmVarOfXVar exp
 	++ show exp
 
 -- | Turn the given Var (really just a name of a function) into a genereric
--- function pointer if type. See also genericFunPtrType.
+-- function pointer of type genericFunPtrType.
 genericFunPtrVar :: Var -> LlvmVar
 genericFunPtrVar v
  = LMGlobalVar (seaVar False v) genericFunPtrType External Nothing ptrAlign False

@@ -83,7 +83,7 @@ compileViaLlvm
 
 	outVerb $ ppr $ "  * Generating LLVM IR code\n"
 
-	llvmSource	<- evalStateT (outLlvm modName eTree eCtorTags pathSource importsExp modDefinesMainFn) initLlvmState
+	llvmSource	<- evalStateT (outLlvm modName eTree eCtorTags pathSource importsExp modDefinesMainFn) $ initLlvmState modName
 
 	writeFile (?pathSourceBase ++ ".ddc.ll")
 			$ ppLlvmModule llvmSource

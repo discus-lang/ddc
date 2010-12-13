@@ -25,10 +25,13 @@ module LlvmM
 	, setTags
 	, getTag
 
+	, getModuleId
+
 	, renderModule )
 where
 
 import DDC.Main.Error
+import DDC.Var.ModuleId
 
 import Util
 
@@ -55,11 +58,14 @@ data LlvmState
 	{ tmpReg	:: Maybe LlvmVar
 	, tmpBlocks	:: [[LlvmStatement]]
 
+	-- | The module Id of the current module.
+	, moduleId	:: ModuleId
+
 	-- | Aliases used in the module.
 	, aliases	:: Map String LlvmType
 
 	-- | Global variables for the module.
-	, globVars	:: [LMGlobal]
+	, globVars	:: Map String LMGlobal
 	-- | Forward declarations of external functions.
 	, funcDecls	:: Map String LlvmFunctionDecl
 
@@ -72,13 +78,14 @@ data LlvmState
 type LlvmM = StateT LlvmState IO
 
 
-initLlvmState :: LlvmState
-initLlvmState
+initLlvmState :: ModuleId -> LlvmState
+initLlvmState modId
  = LS	{ tmpReg	= Nothing
 	, tmpBlocks	= []
 
+	, moduleId	= modId
 	, aliases	= Map.empty
-	, globVars	= []
+	, globVars	= Map.empty
 	, funcDecls	= Map.empty
 	, functions	= []
 	, ctorTags	= Map.empty }
@@ -109,9 +116,19 @@ addComment text
 
 
 addGlobalVar :: LMGlobal -> LlvmM ()
-addGlobalVar gvar
- = do	state	<- get
-	modify $ \s -> s { globVars = gvar : (globVars state) }
+addGlobalVar (gvar, init)
+ = do	state		<- get
+	let map		= globVars state
+	let name	= getPlainName gvar
+	case Map.lookup name map of
+	  Nothing	-> modify $ \s -> s { globVars = Map.insert name (gvar, init) map }
+	  Just (cur, _)	-> if cur == gvar
+				then return ()
+				else panic stage
+					$ "The following two should match :"
+					++ "\n    " ++ show cur
+					++ "\n    " ++ show gvar
+
 
 
 currentReg :: LlvmM LlvmVar
@@ -218,13 +235,18 @@ getTag name
 	  Just v	-> return v
 	  Nothing	-> panic stage $ "Can't find Ctor tag '" ++ name ++ "'."
 
+getModuleId :: LlvmM ModuleId
+getModuleId
+ = do	state	<- get
+	return	$ moduleId state
+
 --------------------------------------------------------------------------------
 
 renderModule :: [LMString] ->  LlvmM LlvmModule
 renderModule comments
  = do	state		<- get
-	let globals	= globVars state
 	let taliases	= Map.toList $ aliases state
+	let globals	= map snd $ Map.toList $ globVars state
 	let fdecls	= map snd $ Map.toList $ funcDecls state
 	return	$ LlvmModule comments taliases globals fdecls
 				$ reverse $ functions state

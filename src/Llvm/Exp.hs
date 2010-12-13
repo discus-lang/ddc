@@ -62,14 +62,16 @@ llvmOfExp (XArgData (XVar (NSlot _ n) _) i)
 llvmOfExp (XVar v@NCafPtr{} tv)
  = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
 	r2		<- newUniqueNamedReg "r2" $ toLlvmType tv
-	addBlock	[ Assignment r1 (loadAddress (pVarLift (toLlvmCafVar (varOfName v) tv)))
+	cv		<- toLlvmCafVar (varOfName v) tv
+	addBlock	[ Assignment r1 (loadAddress (pVarLift cv))
 			, Assignment r2 (loadAddress r1) ]
 	return		r2
 
 llvmOfExp (XVar v@NCaf{} tv@(TCon (TyConUnboxed _)))
  = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
+	cv		<- toLlvmCafVar (varOfName v) tv
 	addBlock	[ Comment [ stage ++ " " ++ show __LINE__ ++ " " ++ show tv ]
-			, Assignment r1 (loadAddress (toLlvmCafVar (varOfName v) tv)) ]
+			, Assignment r1 (loadAddress cv) ]
 	return		r1
 
 llvmOfExp (XLit (LLit lit))
@@ -127,7 +129,8 @@ llvmOfXPrim (MFun PFunForce) [ XVar (NSlot v i) (TPtr (TCon TyConObj)) ]
 llvmOfXPrim (MFun PFunForce) [ XVar v@NCafPtr{} tv@(TPtr (TCon TyConObj)) ]
  = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
 	r2		<- newUniqueNamedReg "r2" $ toLlvmType tv
-	addBlock	[ Assignment r1 (loadAddress (pVarLift (toLlvmCafVar (varOfName v) tv)))
+	cv		<- toLlvmCafVar (varOfName v) tv
+	addBlock	[ Assignment r1 (loadAddress (pVarLift cv))
 			, Assignment r2 (loadAddress r1) ]
 	forceObj	r2
 
@@ -258,7 +261,8 @@ unboxExp t (XVar (NSlot _ i) (TPtr (TCon TyConObj)))
 unboxExp t (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj)))
  = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
 	r2		<- newUniqueNamedReg "r2" $ toLlvmType tv
-	addBlock	[ Assignment r1 (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) tv)))
+	cv		<- toLlvmCafVar (varOfName v1) tv
+	addBlock	[ Assignment r1 (loadAddress (pVarLift cv))
 			, Assignment r2 (loadAddress r1) ]
 	unboxAny	(toLlvmType t) r2
 

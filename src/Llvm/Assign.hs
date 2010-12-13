@@ -27,8 +27,9 @@ llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
 llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (LiteralFmt (LInt 0) Unboxed)))
  | t1 == t
  = do	dst		<- newUniqueReg $ pLift $ toLlvmType t1
+	cv		<- toLlvmCafVar (varOfName v1) t1
 	addComment	$ "Assigning (LInt 0) to a pointer!!"
-	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) t1)))
+	addBlock	[ Assignment dst (loadAddress (pVarLift cv))
 			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
 
 llvmOfAssign dst typ (XLit LNull)
@@ -48,13 +49,15 @@ llvmOfAssign (XVar (NSlot v i) tv@(TPtr (TCon TyConObj))) tc src
 llvmOfAssign (XVar v1@NCaf{} tv@(TPtr (TPtr (TCon TyConObj)))) tc src
  | tv == tc
  = do	reg		<- llvmOfExp src
-	addBlock	[ Store reg (pVarLift (toLlvmCafVar (varOfName v1) tv)) ]
+	cv		<- toLlvmCafVar (varOfName v1) tv
+	addBlock	[ Store reg (pVarLift cv) ]
 
 llvmOfAssign (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj))) tc src
  | tv == tc
  = do	reg		<- llvmOfExp src
 	dest		<- newUniqueReg $ toLlvmType tv
-	addBlock	[ Assignment dest (loadAddress (pVarLift (toLlvmCafVar (varOfName v1) tv)))
+	cv		<- toLlvmCafVar (varOfName v1) tv
+	addBlock	[ Assignment dest (loadAddress (pVarLift cv))
 			, Store reg (pVarLift dest) ]
 
 llvmOfAssign (XVar v@NRts{} tv) tc src
@@ -87,7 +90,8 @@ llvmOfAssign (XArgData (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
 llvmOfAssign (XVar v1@NCaf{} tv) tc@(TCon (TyConUnboxed _)) src
  | tv == tc
  = do	reg		<- llvmOfExp src
-	addBlock	[ Store reg (pVarLift (toLlvmCafVar (varOfName v1) tv)) ]
+	cv		<- toLlvmCafVar (varOfName v1) tv
+	addBlock	[ Store reg (pVarLift cv) ]
 
 
 llvmOfAssign a b c
@@ -104,12 +108,14 @@ assignNull (XVar (NSlot v i) tv@(TPtr _)) (TPtr _)
 
 assignNull (XVar v@NCafPtr{} t@(TPtr _)) (TPtr _)
  = do	dst		<- newUniqueReg $ pLift $ toLlvmType t
-	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v) t)))
+	cv		<- toLlvmCafVar (varOfName v) t
+	addBlock	[ Assignment dst (loadAddress (pVarLift cv))
 			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
 
 assignNull (XVar v@NCaf{} t@(TPtr _)) (TPtr _)
  = do	dst		<- newUniqueReg $ pLift $ toLlvmType t
-	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar (varOfName v) t)))
+	cv		<- toLlvmCafVar (varOfName v) t
+	addBlock	[ Assignment dst (loadAddress (pVarLift cv))
 			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
 
 assignNull (XVar (NAuto v) t) tc@(TCon (TyConUnboxed _))
