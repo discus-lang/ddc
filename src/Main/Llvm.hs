@@ -336,15 +336,7 @@ llvmSwitch (XTag xv@(XVar _ t)) alt
  | t == TPtr (TCon TyConObj)
  = do	addComment	$ "llvmSwitch : " ++ show xv
 	reg		<-llvmOfExp xv
-	doSwitch	reg alt
-
-llvmSwitch e _
- = 	panic stage $ "llvmSwitch (" ++ (show __LINE__) ++ ") : " ++ show e
-
-
-doSwitch :: LlvmVar -> [Alt a] -> LlvmM ()
-doSwitch reg alt
- = do	tag		<- getObjTag reg
+	tag		<- getObjTag reg
 
 	switchEnd	<- newUniqueLabel "switch.end"
 	switchDef	<- newUniqueLabel "switch.default"
@@ -363,6 +355,9 @@ doSwitch reg alt
 	addBlock	[ MkLabel (uniqueOfLlvmVar switchEnd) ]
 
 
+llvmSwitch e _
+ = 	panic stage $ "llvmSwitch (" ++ (show __LINE__) ++ ") : " ++ show e
+
 --------------------------------------------------------------------------------
 
 genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
@@ -371,11 +366,11 @@ genAltVars switchEnd alt@(ASwitch (XLit (LDataTag v)) [])
 	return	((i32LitVar value, switchEnd), alt)
 
 genAltVars _ alt@(ACaseSusp (XVar _ t) label)
- = do	lab	<- newUniqueLabel "susp"
+ = do	lab	<- newUniqueLabel "switch.susp"
 	return	((tagSusp, lab), alt)
 
 genAltVars _ alt@(ACaseIndir (XVar _ t) label)
- = do	lab	<- newUniqueLabel "indir"
+ = do	lab	<- newUniqueLabel "switch.indir"
 	return	((tagIndir, lab), alt)
 
 genAltVars _ (ADefault _)
@@ -387,38 +382,46 @@ genAltVars _ x
 
 genAltBlock :: ((LlvmVar, LlvmVar), Alt a) -> LlvmM ()
 genAltBlock ((_, lab), ACaseSusp (XVar (NSlot v i) t) label)
- = do	addComment $ "genAltBlock " ++ show __LINE__
+ = do	addComment	$ "genAltBlock " ++ show __LINE__
 	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- readSlot i
 	forced		<- forceObj obj
 	writeSlot	forced i
-	addBlock	[ Branch lab ]
+	branchVar	label
 
 genAltBlock ((_, lab), ACaseIndir (XVar (NSlot v i) t) label)
- = do	addComment $ "genAltBlock " ++ show __LINE__
-	addBlock [ MkLabel (uniqueOfLlvmVar lab) ]
+ = do	addComment	$ "genAltBlock " ++ show __LINE__
+	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- readSlot i
 	followed	<- followObj obj
 	writeSlot	followed i
-	addBlock	[ Branch lab ]
+	branchVar	label
 
 genAltBlock ((_, lab), ACaseSusp exp@(XVar n@NCafPtr{} t) label)
- = do	addComment $ "genAltBlock " ++ show __LINE__
+ = do	addComment	$ "genAltBlock " ++ show __LINE__
 	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- llvmOfExp exp
 	forced		<- forceObj obj
-	addBlock	[ Branch lab ]
+	cv		<- toLlvmCafVar (varOfName n) t
+	dest		<- newUniqueReg $ toLlvmType t
+	addBlock	[ Assignment dest (loadAddress (pVarLift cv))
+			, Store forced (pVarLift dest) ]
+	branchVar	label
 
 genAltBlock ((_, lab), ACaseIndir exp@(XVar n@NCafPtr{} t) label)
- = do	addComment $ "genAltBlock " ++ show __LINE__
-	addBlock [ MkLabel (uniqueOfLlvmVar lab) ]
+ = do	addComment	$ "genAltBlock " ++ show __LINE__
+	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- llvmOfExp exp
 	followed	<- followObj obj
-	addBlock	[ Branch lab ]
+	cv		<- toLlvmCafVar (varOfName n) t
+	dest		<- newUniqueReg $ toLlvmType t
+	addBlock	[ Assignment dest (loadAddress (pVarLift cv))
+			, Store followed (pVarLift dest) ]
+	branchVar	label
 
 genAltBlock ((_, lab), ASwitch (XLit (LDataTag _)) [])
- = do	addComment $ "genAltBlock " ++ show __LINE__
-	addBlock [ Branch lab ]
+ = do	addComment	$ "genAltBlock " ++ show __LINE__
+	addBlock	[ Branch lab ]
 
 genAltBlock ((_, lab), x)
  =	panic stage $ "getAltBlock (" ++ (show __LINE__) ++ ") : " ++ show x
@@ -426,12 +429,12 @@ genAltBlock ((_, lab), x)
 
 genAltDefault :: LlvmVar -> Alt a -> LlvmM ()
 genAltDefault label (ADefault ss)
- = do	addBlock [ MkLabel (uniqueOfLlvmVar label) ]
-	mapM_ llvmOfStmt ss
+ = do	addBlock	[ MkLabel (uniqueOfLlvmVar label) ]
+	mapM_		llvmOfStmt ss
 
 genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
- = do	addBlock [ MkLabel (uniqueOfLlvmVar label) ]
-	caseDeath n l c
+ = do	addBlock	[ MkLabel (uniqueOfLlvmVar label) ]
+	caseDeath	n l c
 
 genAltDefault _ def
  =	panic stage $ "getAltDefault (" ++ (show __LINE__) ++ ") : " ++ show def
@@ -460,6 +463,11 @@ branchLabel :: String -> LlvmM ()
 branchLabel name
  = do	let label = fakeUnique name
 	addBlock [ Branch (LMLocalVar label LMLabel), MkLabel label ]
+
+branchVar :: Var -> LlvmM ()
+branchVar var
+ = do	let label	= (LMLocalVar (fakeUnique (seaVar False var)) LMLabel)
+	addBlock	[ Branch label ]
 
 --------------------------------------------------------------------------------
 
