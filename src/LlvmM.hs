@@ -157,9 +157,24 @@ endFunction funcDecl funcArgs funcAttrs funcSect
 				  _		-> [Return Nothing] : fblks
 
 	let func	= LlvmFunction funcDecl funcArgs funcAttrs funcSect
-				[ LlvmBlock (fakeUnique "entry") blks ]
+				$ blockify (LlvmBlock (fakeUnique "entry") blks)
 
 	modify $ \s -> s { functions = func : (functions s) }
+
+
+blockify :: LlvmBlock -> [LlvmBlock]
+blockify (LlvmBlock id stmts)
+ = case chopWhenLeft isLabel stmts of
+	head : tail -> LlvmBlock id head : map convBlock tail
+	_ -> error "Ooops!"
+
+isLabel :: LlvmStatement -> Bool
+isLabel (MkLabel _) = True
+isLabel _ = False
+
+convBlock :: [LlvmStatement] -> LlvmBlock
+convBlock ((MkLabel id):tail) = LlvmBlock id tail
+convBlock _ = error "convBlock"
 
 --------------------------------------------------------------------------------
 
