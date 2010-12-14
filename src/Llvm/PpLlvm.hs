@@ -296,7 +296,7 @@ ppPhi tp preds =
 
 ppSwitch :: LlvmVar -> LlvmVar -> [(LlvmVar,LlvmVar)] -> Doc
 ppSwitch scrut dflt targets =
-  let ppTarget  (val, lab) = texts val <> comma <+> texts lab
+  let ppTarget  (val, lab) = text "\n" <> (nest 4 $ texts val <> comma <+> texts lab)
       ppTargets  xs        = brackets $ vcat (map ppTarget xs)
   in text "switch" <+> texts scrut <> comma <+> texts dflt
         <+> ppTargets targets
@@ -306,7 +306,7 @@ ppAsm :: LMString -> LMString -> LlvmType -> [LlvmVar] -> Bool -> Bool -> Doc
 ppAsm asm constraints rty vars sideeffect alignstack =
   let asm'  = doubleQuotes $ ftext asm
       cons  = doubleQuotes $ ftext constraints
-      rty'  = texts rty 
+      rty'  = texts rty
       vars' = lparen <+> ppCommaJoin vars <+> rparen
       side  = if sideeffect then text "sideeffect" else empty
       align = if alignstack then text "alignstack" else empty
