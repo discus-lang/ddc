@@ -126,7 +126,7 @@ boxEnum enum
 	addBlock
 		[ Comment [ "boxEnum (" ++ show enum ++ ")" ]
 		, Assignment shifted (LlvmOp LM_MO_Shl enum (i32LitVar 8))
-		, Assignment tag (LlvmOp LM_MO_Or shifted tagData)
+		, Assignment tag (LlvmOp LM_MO_Or shifted (tagData 0))
 		, Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
 		, Store tag iptr0
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])

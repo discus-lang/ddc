@@ -107,7 +107,7 @@ allocData tag arity
 
 	pData		<- allocate size "pData" pStructData
 
-	storeStructRegValue ddcData pData "tag" (tagBasePlus tag)
+	storeStructRegValue ddcData pData "tag" (tagData tag)
 	storeStructRegValue ddcData pData "arity" (i32LitVar arity)
 
 	ret		<- newUniqueNamedReg "allocated.data" pObj

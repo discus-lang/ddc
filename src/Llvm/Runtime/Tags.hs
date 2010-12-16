@@ -40,8 +40,8 @@ tagBasePlus x = i32LitVar x
 tagThunk :: LlvmVar
 tagThunk = i32LitVar 0x11
 
-tagData :: LlvmVar
-tagData = i32LitVar 0x21
+tagData :: Int -> LlvmVar
+tagData tag = i32LitVar (objFixedData + (shiftL tag 8))
 
 tagDataR :: LlvmVar
 tagDataR = i32LitVar 0x31
@@ -70,3 +70,6 @@ objModeDataRS :: Int
 --objModeFixed	= 0x01
 objModeDataRS	= 0x03
 
+
+objFixedData :: Int
+objFixedData	= 0x21
