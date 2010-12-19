@@ -1,0 +1,124 @@
+
+module DDC.Type.Exp
+
+import DDC.Base.Name
+import DDC.Type.Exp.KiCon
+import DDC.Type.Exp.TyCon
+
+
+-- Names ----------------------------------------------------------------------
+-- | Binding occurrence of a variable.
+data Bind
+	= BVar Name
+
+-- | Bound occurrence of a variable.
+data Bound
+	= UVar Name
+
+	
+-- Super ----------------------------------------------------------------------
+data Super
+	-- | @(+)@ Prop. The superkind of witness types.
+	--   eg: @MkConst %r1 :: Const %r1 :: +@
+	= SProp			
+
+	-- | @([])@ Box. The superkind of non-witness types.
+	--   eg: @5 :: Int :: * :: []@
+	| SBox			
+	
+	-- | Superkind functions. The left is always a (non-super) kind.
+	| SFun	Kind	Super	
+
+
+-- Kind -----------------------------------------------------------------------
+data Kind
+	-- | Missing or as-yet-unknown kind information.
+	= KNil
+
+	-- | A kind constructor.
+	| KCon		KiCon	Super
+
+	-- | Dependent kind abstraction. Equivalent to @(PI (a : k1). k2)@.
+	--   We use the de Bruijn representation for these, so the body uses `TIndex` to 
+	--   refer to the parameter type, instead of named variables.
+	| KFun		Kind	Kind
+
+	-- | Dependent kind application.
+	| KApp		Kind	Type
+
+	-- | Sum of witness kinds. This always has superkind @(+)@.
+	--   Used for joining witness kinds, like `+{ Const %r1; DeepConst a }`
+	| KSum		[Kind]
+
+
+-- TyCon ----------------------------------------------------------------------
+-- | Type constructors.
+data TyCon
+	-- | Function type constructor.
+	= TyConFun
+
+	-- | A data type constructor.
+	| TyConData 
+		{ name 		:: Name
+		; kind		:: Kind }	
+
+	-- | An effect type constructor.
+	| TyConEffect
+		{ tyConEffect	:: TyConEffect
+		; kind		:: Kind }
+
+	-- | A closure type constructor.
+	| TyConClosure
+		{ tyConClosure	:: TyConClosure
+		; kind		:: Kind }
+
+	-- | A witness type constructor.
+	| TyConWitness
+		{ tyConWitness	:: TyConWitness
+		; kind		:: Kind }
+
+	-- | An elaboration of some other type. 
+	--   These are desugared in Type.Util.Elaborate
+	| TyConElaborate
+		{ tyConElaborate :: TyConElaborate
+		; kind		:: Kind }
+	
+
+-- Type -----------------------------------------------------------------------
+data Type
+	-- | Missing or as-yet-unknown type information. 
+	= TNil
+
+	-- | A bound occurrence of a variable.
+	| TVar     	Kind	Bound
+
+	-- | A type constructor.
+	| TCon		TyCon
+
+	-- | A type summation \/ least upper bound.
+	--   Used for joining effect, closure, and witness types.
+	--   If there are no elements in the list this means 'bottom'.
+	| TSum		Kind 	[Type]
+
+	-- | Type application.
+	| TApp		Type	Type
+
+	-- | Universal quantification.
+	| TForall	Bind 	Kind	Type
+
+	-- | Constrained types.
+	--   Used in the solver only. When converting to core we add type class contexts
+	--   as kinds using TForall, and more-than contraints as bounded quantification.
+	| TConstrain	Type	Constraints
+				
+
+-- Constraint -----------------------------------------------------------------
+data Constraint
+	= CClass	Bound	[Type]
+	| CMore		Bound	Type
+	| CEq		Bind	Type
+
+data Constraints
+	 = Constraints [Constraint]
+
+

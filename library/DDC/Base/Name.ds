@@ -1,0 +1,8 @@
+
+module DDC.Base.Name
+
+
+data Name
+	= Name 
+	{ string	:: String
+	; unique	:: Int }

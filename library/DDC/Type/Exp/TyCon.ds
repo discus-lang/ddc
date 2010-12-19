@@ -1,0 +1,67 @@
+
+module DDC.Type.Exp.TyCon
+import DDC.Base.Name
+
+-- TyConEffect ------------------------------------------------------------------------------------
+-- | Effect type constructors.
+data TyConEffect
+	-- | Some user defined top-level effect.
+	= TyConEffectTop  Name
+	
+	-- Baked in effect constructors.
+	| TyConEffectRead
+	| TyConEffectHeadRead
+	| TyConEffectDeepRead
+	| TyConEffectWrite
+	| TyConEffectDeepWrite
+
+
+-- TyConClosure -----------------------------------------------------------------------------------
+-- | Closure type constructors.
+--   These aren't defined by the user, they're all builtin.
+data TyConClosure
+
+	-- | Lift a value type or region to a closure term. 
+	= TyConClosureFreeType 	 Name
+
+	-- | Lift a region to a closure term. 
+	| TyConClosureFreeRegion Name
+
+	-- | Tag a closure with a variable.
+	| TyConClosureFree 	 Name
+	
+	-- | Marks a variable as being dangerous.
+	| TyConClosureDanger
+	
+
+-- TyConWitness -----------------------------------------------------------------------------------
+-- | Witness type constructors.
+data TyConWitness
+	-- | Make a witness of some user-defined data type class.
+	--   This is used in an intermediate stage in the core language, before we've
+	--   introduced dictionary parameters. The var is the name of the class, like Eq,
+	--   and the constructor is pretty printed like MkEq.
+	= TyConWitnessMkVar Name
+		
+	-- Builtin witness constructors.
+	| TyConWitnessMkConst		
+	| TyConWitnessMkDeepConst
+	| TyConWitnessMkMutable	
+	| TyConWitnessMkDeepMutable
+	| TyConWitnessMkLazy		
+	| TyConWitnessMkHeadLazy
+	| TyConWitnessMkDirect
+	| TyConWitnessMkPurify
+	| TyConWitnessMkPure
+	| TyConWitnessMkEmpty
+
+
+-- TyConElaborate ---------------------------------------------------------------------------------	
+-- | Helps with defining foreign function interfaces.
+--	Used in source types only. 
+--	Desuared before type inference.
+data TyConElaborate
+	= TyConElaborateRead		-- ^ Read from a type.
+	| TyConElaborateWrite		-- ^ Write to a type.
+	| TyConElaborateModify		-- ^ Read and write to a type.
+

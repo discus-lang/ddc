@@ -1,0 +1,40 @@
+
+module DDC.Type.Exp.KiCon
+import DDC.Base.Name
+
+-- | Kind constructors.
+data KiCon
+	-- | A kind constructor defined in the source program.
+	--	These aren't interpreted in any special way by the compiler.
+	= KiCon Name
+
+	-- Atomic kinds.
+	| KiConBox			-- ^ The super-kind of non-witness types.
+					--   Kinds lile * and ! are sub-kinds of this one.
+					--   Used for the kind of   $Danger :: [] -> $
+
+	| KiConValue			-- ^ The kind of data (value) types.
+	| KiConRegion			-- ^ The kind of region types.
+	| KiConEffect			-- ^ The kind of effect types.
+	| KiConClosure			-- ^ The kind of closure types.
+
+	-- Constancy of regions.
+	| KiConConst			-- ^ Constancy for a single region.
+	| KiConDeepConst		-- ^ Constancy for all the regions in a type.
+
+	-- Mutability of regions.
+	| KiConMutable			-- ^ Mutability for a single region.
+	| KiConDeepMutable		-- ^ Mutability for all the regions in a type.
+
+	-- Region might contain thunks.
+	| KiConLazy			-- ^ Thunks may appear a single region.
+	| KiConHeadLazy			-- ^ Thunks may appear in the primary (head) region of a type.
+
+	-- Region does not contain thunks.
+	| KiConDirect			-- ^ Absence of thunks for a single region.
+		
+	-- | Given effect is pure.
+	| KiConPure
+	
+	-- | Given closure is empty.
+	| KiConEmpty
