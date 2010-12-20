@@ -1,0 +1,20 @@
+
+data Name
+	= Name 
+	{ string	:: String
+	; unique	:: Int }
+
+data Bind
+	= BVar Name
+
+class Pretty a where
+	ppr 	:: forall a !e1 %r1
+		.  a -(!e1)> String %r1
+		:- !e1 :> !ReadT a
+		
+instance Pretty Name where
+ ppr (Name str unique)	= str
+
+
+pprB :: Bind -> String
+pprB (BVar n)	= ppr n
