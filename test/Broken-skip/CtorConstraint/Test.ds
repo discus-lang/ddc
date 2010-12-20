@@ -7,6 +7,8 @@ data Name
 data Bind
 	= BVar Name
 
+-- This breaks because 'a' is quantified locally, 
+-- so we end up with an ambiguous constraint for the outer 'a'.
 class Pretty a where
 	ppr 	:: forall a !e1 %r1
 		.  a -(!e1)> String %r1
