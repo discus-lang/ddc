@@ -1,0 +1,76 @@
+
+module DDC.Type.Builtin
+import DDC.Type.Exp
+
+-- Kind Constructors ------------------------------------------------------------------------------
+-- Atomic kind constructors.
+kBox		= KCon KiConBox		SBox
+kValue		= KCon KiConValue	SBox
+kRegion		= KCon KiConRegion	SBox
+kEffect		= KCon KiConEffect	SBox
+kClosure	= KCon KiConClosure	SBox
+
+
+-- Witness kind constructors.
+kConst		= KCon KiConConst
+		$ SFun kRegion  SProp
+
+kDeepConst	= KCon KiConDeepConst
+		$ SFun kValue   SProp
+
+kMutable	= KCon KiConMutable
+		$ SFun kRegion  SProp
+
+kDeepMutable	= KCon KiConDeepMutable	
+		$ SFun kValue   SProp
+
+kLazy		= KCon KiConLazy
+		$ SFun kRegion  SProp
+
+kHeadLazy	= KCon KiConHeadLazy
+		$ SFun kValue   SProp
+
+kDirect		= KCon KiConDirect
+		$ SFun kRegion  SProp
+
+kPure		= KCon KiConPure
+		$ SFun kEffect  SProp
+
+kEmpty		= KCon KiConEmpty
+		$ SFun kClosure SProp
+
+-- Type Constructors -------------------------------------------------------------------------
+tBot k		= TSum k	[]
+tPure		= TSum kEffect  []
+tEmpty		= TSum kClosure []
+
+
+-- Effect type constructors
+tRead		= TCon $ TyConEffect TyConEffectRead
+		$ KFun kRegion kEffect
+
+tDeepRead	= TCon $ TyConEffect TyConEffectDeepRead
+		$ KFun kValue kEffect
+
+tHeadRead	= TCon $ TyConEffect TyConEffectHeadRead
+		$ KFun kValue kEffect
+
+tWrite		= TCon $ TyConEffect TyConEffectWrite
+		$ KFun kRegion kEffect
+
+tDeepWrite	= TCon $ TyConEffect TyConEffectDeepWrite
+		$ KFun kValue kEffect
+
+
+-- Closure type constructors
+tFree v		= TCon $ TyConClosure (TyConClosureFree v) 
+		$ KFun kClosure kClosure
+
+tFreeType v	= TCon $ TyConClosure (TyConClosureFreeType v) 
+		$ KFun kValue kClosure
+
+tFreeRegion v	= TCon $ TyConClosure (TyConClosureFreeRegion v) 
+		$ KFun kRegion kClosure
+		
+tDanger 	= TCon $ TyConClosure TyConClosureDanger
+		$ KFun kRegion (KFun kBox kClosure)
