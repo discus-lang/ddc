@@ -4,7 +4,7 @@ import DDC.Type.Builtin
 
 
 main ()
- = do	putStrLn $ pprK kValue
-	putStrLn $ pprK (KFun kRegion (KFun kRegion kValue))
-	putStrLn $ pprK (KFun (KFun kRegion kRegion) kValue)
+ = do	putStrLn $ ppr kValue
+	putStrLn $ ppr (KFun kRegion (KFun kRegion kValue))
+	putStrLn $ ppr (KFun (KFun kRegion kRegion) kValue)
 

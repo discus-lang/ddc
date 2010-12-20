@@ -2,66 +2,71 @@
 module DDC.Type.Pretty
 import DDC.Type.Exp
 
--- Name -----------------------------------------------------------------------
-pprN :: Name -> String
-pprN n		= n.string
+class Pretty a where
+ ppr 	:: forall !e1 %r1
+	.  a -(!e1)> String %r1
+	:- !e1 :> !ReadT a
+		
 
+-- Name -----------------------------------------------------------------------
+instance Pretty Name where
+ ppr (Name str _)	= str
 
 -- Bind -----------------------------------------------------------------------
-pprB :: Bind -> String
-pprB (BVar n)	= pprN n
+instance Pretty Bind where
+ ppr (BVar name)	= ppr name
 
 
 -- Bound ----------------------------------------------------------------------
-pprU :: Bound -> String
-pprU (UVar n)	= pprN n
+instance Pretty Bound where
+ ppr (UVar name)	= ppr name
 
 
 -- Super ---------------------------------------------------------------------
-pprS :: Super -> String
-pprS ss
+instance Pretty Super where
+ ppr ss
   = case ss of
 	SProp		-> "+"
 	SBox		-> "[]"
-	SFun k1 s2	-> pprLeftK k1 % " -> " % pprS s2
+	SFun k1 s2	-> pprLeftK k1 % " -> " % ppr s2
 
 
 -- KiCon ---------------------------------------------------------------------
-pprKC :: KiCon -> String
-pprKC kc
+instance Pretty KiCon where
+ ppr kc
   = case kc of
-	KiCon name			-> pprN name
-	KiConBox			-> "[]"
-	KiConValue			-> "*"
-	KiConRegion			-> "%"
-	KiConEffect			-> "!"
-	KiConClosure			-> "$"
-	KiConMutable			-> "Mutable"
-	KiConDeepMutable		-> "DeepMutable"
-	KiConConst			-> "Const"
-	KiConDeepConst			-> "DeepConst"
-	KiConLazy			-> "Lazy"
-	KiConHeadLazy			-> "HeadLazy"
-	KiConDirect			-> "Direct"
-	KiConPure			-> "Pure"
-	KiConEmpty			-> "Empty"
+	KiCon name	 -> copy (ppr name)		-- BUGS WORKAROUND
+	KiConBox	 -> "[]"
+	KiConValue	 -> "*"
+	KiConRegion	 -> "%"
+	KiConEffect	 -> "!"
+	KiConClosure	 -> "$"
+	KiConMutable	 -> "Mutable"
+	KiConDeepMutable -> "DeepMutable"
+	KiConConst	 -> "Const"
+	KiConDeepConst	 -> "DeepConst"
+	KiConLazy	 -> "Lazy"
+	KiConHeadLazy	 -> "HeadLazy"
+	KiConDirect	 -> "Direct"
+	KiConPure	 -> "Pure"
+	KiConEmpty	 -> "Empty"
 
 
 -- Kind -----------------------------------------------------------------------
-pprK :: Kind -> String
-pprK kk
- = case kk of
+instance Pretty Kind where
+ ppr kk
+  = case kk of
 	KNil		-> "{- KNil -}"
-	KCon kc		-> pprKC kc
-	KFun k1 k2	-> pprLeftK k1 %% "->" %% pprK k2
-	KApp k1 t2	-> pprK k1 %% pprT t2
+	KCon kc		-> ppr kc
+	KFun k1 k2	-> pprLeftK k1 %% "->" %% ppr k2
+	KApp k1 t2	-> ppr k1 %% pprT t2
 
 pprLeftK :: Kind -> String
 pprLeftK kk
  = case kk of
-	KFun{}		-> parens $ pprK kk
-	KApp{}		-> parens $ pprK kk
-	_		-> pprK kk
+	KFun{}		-> parens $ ppr kk
+	KApp{}		-> parens $ ppr kk
+	_		-> ppr kk
 
 
 -- Type -----------------------------------------------------------------------
