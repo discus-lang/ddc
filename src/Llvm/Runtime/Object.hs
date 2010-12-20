@@ -14,21 +14,24 @@ module Llvm.Runtime.Object
 	, ddcData
 	, ddcDataM
 	, ddcDataRS
+	, ddcSuspIndir
 
 	, structObj
 	, structThunk
 	, structData
 	, structDataM
 	, structDataRS
-
-	, nullObj
+	, structSuspIndir
 
 	, pObj
-	, ppObj
 	, pStructThunk
 	, pStructData
 	, pStructDataM
 	, pStructDataRS
+	, pStructSuspIndir
+
+	, nullObj
+	, ppObj
 
 	, objModeForward
 	, objModeFixed
@@ -139,6 +142,22 @@ structDataRS = LMAlias ("struct.DataRS", llvmTypeOfStruct ddcDataRS)
 
 pStructDataRS :: LlvmType
 pStructDataRS = pLift structDataRS
+
+--------------------------------------------------------------------------------
+
+ddcSuspIndir :: LlvmStructDesc
+ddcSuspIndir
+ =	mkLlvmStructDesc "SuspIndir"
+		[ AField "tag" i32
+		, AField "arity" i32
+		, AField "obj" pObj
+		, AField "a" (LMArray 0 pObj) ]
+
+structSuspIndir :: LlvmType
+structSuspIndir = LMAlias ("struct.SuspIndir", llvmTypeOfStruct ddcSuspIndir)
+
+pStructSuspIndir :: LlvmType
+pStructSuspIndir = pLift structSuspIndir
 
 --------------------------------------------------------------------------------
 
