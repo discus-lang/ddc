@@ -27,6 +27,7 @@ filthyGlobalInt = unsafePerformIO $ newIORef 0
 
 -- | Filthily generate a fresh variable.
 newVarIO :: NameSpace -> IO Var
+{-# NOINLINE newVarIO #-}
 newVarIO space 
  = do	ix	<- readIORef filthyGlobalInt
 	writeIORef filthyGlobalInt (ix + 1)
@@ -37,6 +38,7 @@ newVarIO space
 
 -- | Filtily generate fresh variable.
 newVar :: NameSpace -> Var
+{-# NOINLINE newVar #-}
 newVar space
  	= unsafePerformIO $ newVarIO space
 
