@@ -82,8 +82,10 @@ milkVarsOfType milkFun tt
 		ds'		= nub $ concat dss'
 
 		-- If no new vars or elems were addeed in this round then we're done.
+		-- We can't just check ds == ds' because sometimes the elements oscillate
+		-- between different orders without adding any new ones.
 	  in	if   (vs  == vs') 
-		  && (ds  == ds')
+		  && (and $ [elem d ds' | d <- ds])
 			then vs
 			else go vs' ds'
 
