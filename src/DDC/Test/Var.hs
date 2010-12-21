@@ -1,9 +1,22 @@
 {-# OPTIONS -O0 #-}
+-- This -O0 is needed to prevent bindings being lifted out of newVarIO. 
+-- Don't remove it or you'll break the unit tests.
+
 -- | This module is NOT to be used DDC proper -- for unit testing only.
 --   It uses `unsafePerformIO` under the covers to generate fresh variables.
 --
---   Commonly used variable names.
+--   In the real compiler the renamer generates the uniqueIds, but for unit testing we
+--   want the uniqueIds to appear magically without running the renamer.
+--   The renaming is faked by using a top level fresh name generator, but this working
+--   depends on the name creation functions not being inlined, and bindings not being
+--   lifted out of them. It's a brutal hack, but that's ok in the test framework.
 --
+--   Don't import this code into DDC proper as the uniqueIds you get depend on the order
+--   in which the variables are accessed -- which makes them different depending
+--   on how the code is compiled and what debugging dumps you ask for. GHC has exactly
+--   this issue, because it uses filthy uniqueId generation throughout -- a mistake
+--   we don't want to repeat.
+-- 
 module DDC.Test.Var
 	( module DDC.Var
 	, newVarIO, newVar
