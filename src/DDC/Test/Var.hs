@@ -45,18 +45,23 @@ newVar space
 
 -- Creation of variables in specific namespaces.
 varV :: String -> Var
+{-# NOINLINE varV #-}
 varV str	= (newVar NameValue)  { varName = str }
 
 varT :: String -> Var
+{-# NOINLINE varT #-}
 varT str	= (newVar NameType)   { varName = str }
 
 varR :: String -> Var
+{-# NOINLINE varR #-}
 varR str	= (newVar NameRegion) { varName = str }
 
 varE :: String -> Var
+{-# NOINLINE varE #-}
 varE str	= (newVar NameEffect) { varName = str }
 
 varC :: String -> Var
+{-# NOINLINE varC #-}
 varC str	= (newVar NameClosure) { varName = str }
 
 
