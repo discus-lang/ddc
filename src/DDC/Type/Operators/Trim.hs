@@ -29,7 +29,9 @@
 -- 
 -- 
 module DDC.Type.Operators.Trim
-	( trimClosureT
+	( Config(..)
+	
+	, trimClosureT
 	, trimClosureNoDangerT
 
 	, trimClosureC

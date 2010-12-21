@@ -12,6 +12,7 @@ import DDC.Solve.State
 import DDC.Solve.Trace
 import DDC.Solve.Interface.Problem
 import DDC.Main.Error
+import DDC.Type.Simplify
 import DDC.Type.Data
 import DDC.Type
 import DDC.Var
@@ -101,7 +102,13 @@ extractType_fromClass final varT cid
 	
 	
 extractType_pack final varT cid tTrace
- = do	-- Drag ------------------------------------------
+ = do	-- Simplify --------------------------------------
+	-- This is the new type simplifier, it's not finished yet.
+	let tSimplified	= simplifyT tTrace 
+	tracell	$ "-- simplified"	%! prettyTypeSplit tSimplified
+	
+	
+	-- Drag ------------------------------------------
 	-- drag local more-than constraints into their use sites.
 	let tDragged	= dragT Set.empty tTrace
 	tracell	$ "-- dragged" 		%! prettyTypeSplit tDragged

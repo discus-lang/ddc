@@ -100,15 +100,15 @@ materialVarsOfType1
 
 materialVarsOfType1 dataDefs (crs, tt)
 
-	-- Plain region and value vars are always material.
+	-- Plain region, value and closure vars are always material.
 	| TVar k b	<- tt
-	, isRegionKind k || isValueKind k	
+	, isRegionKind k || isValueKind k || isClosureKind k
 	, Just v	<- takeVarOfBound b
 	= (Set.singleton v, [])
 
-	-- Effect and closure vars are always immaterial
+	-- Effect vars are always immaterial
 	| TVar k _	<- tt
-	, isEffectKind k || isClosureKind k	
+	, isEffectKind k
 	= (Set.empty, [])
 	
 	-- 
@@ -142,8 +142,9 @@ materialVarsOfType1 dataDefs (crs, tt)
 	
 		_	-> panic stage $ "materialVarsOfType: no primary region var"
 	
-	| Just {}		<- takeTFun tt
-	= (Set.empty, [])
+	| Just (_, _, _, c1@(TVar _ (UVar vC1)))	<- takeTFun tt
+	, isClosure c1
+	= (Set.singleton vC1, [])
 	
 
 	| otherwise
@@ -161,14 +162,14 @@ immaterialVarsOfType1
 
 immaterialVarsOfType1 dataDefs (crs, tt)
 
-	-- Plain region and value vars are always material.
+	-- Plain region, value and closure vars are always material.
 	| TVar k _	<- tt
-	, isRegionKind k || isValueKind k	
+	, isRegionKind k || isValueKind k || isClosureKind k
 	= (Set.empty, [])
 
-	-- Effect and closure vars are always immaterial
+	-- Effect vars are always immaterial
 	| TVar k b	<- tt
-	, isEffectKind k || isClosureKind k	
+	, isEffectKind k 
 	, Just v	<- takeVarOfBound b
 	= (Set.singleton v, [])
 	
@@ -188,14 +189,15 @@ immaterialVarsOfType1 dataDefs (crs, tt)
 			$ map	(flip instantiateT tsArgs)
 				ctorParams
 
-	  in	( Set.empty 
+	  in	( Set.empty
 		, zip (repeat crs) tsParamsInst)
 	
-	| Just (t1, t2, eff@TVar{}, clo@TVar{}) <- takeTFun tt
+	| Just (t1, t2, eff@TVar{}, _) <- takeTFun tt
 	= let	vsImmaterial 	= Set.filter (not . Var.isCtorName)
-				$ Set.unions $ map freeVars [t1, t2, eff, clo]
+				$ Set.unions $ map freeVars [t1, t2, eff]
 
-	  in	(vsImmaterial, [])
+	  in	trace ("immaterial " %% tt %% vsImmaterial)
+		$ (vsImmaterial, [])
 
 	| Just {} <- takeTFun tt
 	= panic stage $ "immaterialVarsOfType1: no eff or closure var on function type"
