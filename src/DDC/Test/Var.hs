@@ -21,6 +21,7 @@ import DDC.Var
 
 -- | Filthy uniquiId generator for fresh variables.
 filthyGlobalInt :: IORef Int
+{-# NOINLINE filthyGlobalInt #-}
 filthyGlobalInt = unsafePerformIO $ newIORef 0
 
 
