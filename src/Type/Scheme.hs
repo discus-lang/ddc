@@ -132,6 +132,7 @@ generaliseType' src varT tCore cidsEnv
 	-- Check context for unknown instances or constraint conflicts.
 	checkContext src tReduced
 
+
 	-- Quantify -----------------------------------------------------------
 	-- Add forall quantifiers for free variables that don't otherwise
 	-- need to remain monomorphic.
@@ -162,6 +163,7 @@ generaliseType' src varT tCore cidsEnv
 	--       think of a cleaner way to manage this.
 	stateQuantifiedVarsKM 	`modifyRef` Map.union (Map.fromList vkbsFree)
 	stateQuantifiedVars	`modifyRef` Set.union (Set.fromList vsFree) 
+
 
 	-- Check --------------------------------------------------------------
 	-- Check the inferred type against any signatures that we have for it.

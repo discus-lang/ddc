@@ -5,6 +5,7 @@ module DDC.Type.Exp.ClassId
 	(ClassId(..))
 where
 import Data.Ix
+import Data.Hashable
 
 
 -- | A unique identifier for a type equivalence class.
@@ -19,4 +20,5 @@ instance Ix ClassId where
  inRange   (ClassId a, ClassId b) (ClassId x)	= inRange (a, b) x
  rangeSize (ClassId a, ClassId b)		= rangeSize (a, b)
  
-
+instance Hashable ClassId where
+ hash 	(ClassId cid)				= hashInt cid

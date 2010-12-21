@@ -26,6 +26,7 @@ import DDC.Type.Exp.ClassId
 import DDC.Type.Exp.KiCon
 import DDC.Type.Exp.TyCon
 import DDC.Var
+import Data.Hashable
 import Data.Map		(Map)
 
 -- Superkinds -------------------------------------------------------------------------------------
@@ -222,6 +223,15 @@ instance Ord Type where
 	$ "compare: can't compare type for ordering\n"
 	% "    t1 = " % show t1	% "\n"
 	% "    t2 = " % show t2 % "\n"
+
+
+instance Hashable Bound where
+ hash bb
+  = case bb of
+	UVar   v	-> hashInt 1 + hash v
+	UMore  v _	-> hashInt 2 + hash v
+	UIndex ix	-> hashInt 3 + hash ix
+	UClass cid	-> hashInt 4 + hash cid
 
 
 instance Ord Bound where

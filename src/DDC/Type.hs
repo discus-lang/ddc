@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# OPTIONS -Wnot #-}
 module DDC.Type
 	( module DDC.Type.Exp
 	, module DDC.Type.DeepSeq
@@ -13,7 +14,8 @@ module DDC.Type
 	, module DDC.Type.Equiv
 	, module DDC.Type.Subsumes
 	, module DDC.Type.Operators
-	, module DDC.Type.Collect)
+	, module DDC.Type.Collect
+	, module DDC.Type.Simplify)
 where
 import DDC.Type.Exp
 import DDC.Type.DeepSeq		()
@@ -29,3 +31,4 @@ import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Type.Operators
 import DDC.Type.Collect
+import DDC.Type.Simplify
