@@ -1,4 +1,4 @@
-
+{-# OPTIONS -O0 #-}
 -- | This module is NOT to be used DDC proper -- for unit testing only.
 --   It uses `unsafePerformIO` under the covers to generate fresh variables.
 --
