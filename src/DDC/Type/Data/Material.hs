@@ -83,7 +83,7 @@ milkVarsOfType milkFun tt
 
 		-- If no new vars or elems were addeed in this round then we're done.
 	  in	if   (vs  == vs') 
-		  && (length ds   == length ds')
+		  && (ds  == ds')
 			then vs
 			else go vs' ds'
 
@@ -189,14 +189,16 @@ immaterialVarsOfType1 dataDefs (crs, tt)
 			$ map	(flip instantiateT tsArgs)
 				ctorParams
 
-	  in	( Set.empty
-		, zip (repeat crs) tsParamsInst)
+	  in	trace (vcat	[ "immaterial data " %% tt
+				, "tsParamsInst = " %% tsParamsInst ])
+		$ ( Set.empty
+		  , zip (repeat crs) tsParamsInst)
 	
 	| Just (t1, t2, eff@TVar{}, _) <- takeTFun tt
 	= let	vsImmaterial 	= Set.filter (not . Var.isCtorName)
 				$ Set.unions $ map freeVars [t1, t2, eff]
 
-	  in	trace ("immaterial " %% tt %% vsImmaterial)
+	  in	trace ("immaterial fun " %% tt %% vsImmaterial)
 		$ (vsImmaterial, [])
 
 	| Just {} <- takeTFun tt

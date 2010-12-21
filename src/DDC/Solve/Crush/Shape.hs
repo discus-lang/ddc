@@ -182,11 +182,15 @@ mergeMaterial srcCrushed (mm, kind, cids)
 	| isRegionKind kind
 	= return ()
 	
+	| isClosureKind kind
+	= do	mergeClasses cids
+		return ()
+	
 	| isValueKind kind
 	= addShapeFetter srcCrushed cids
 	
 	| otherwise
-	= panic stage $ "mergeMaterial: no match"
+	= panic stage $ "mergeMaterial: no match for " % (mm, kind, cids)
 	
 	
 -- | Add a shape fetter to constrain all these classes.
