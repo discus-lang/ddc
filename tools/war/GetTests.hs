@@ -26,6 +26,8 @@ getTestsInDir config dirPath
 				       && (not $ isInfixOf "skip-"  name))
 				filesAll
 
+	let gotMainStdoutCheck	= any (isSuffixOf "/Main.stdout.check") files
+
 
 	-- | If we have a Main.hs, then compile and run that.
 	--
@@ -37,6 +39,19 @@ getTestsInDir config dirPath
 						(NoShow (\c -> case c of 
 							ExitSuccess   -> True
 							ExitFailure _ -> False))]
+
+	let testsStdout
+		| gotMainStdoutCheck
+		, gotMainHS
+		, Just nodeLast		<- takeLast testsHaskellBuildRun
+		, tLast			<- testOfNode nodeLast
+		= [node1 (TestDiff	(dirPath ++ "/Main.stdout.check")
+					(dirPath ++ "/Main.stdout"))
+			[tLast]]
+		  
+		| otherwise
+		= []
+
 
 	-- | If we have a Main.sh, then run that
 	--	If we have a Main.error.check, we're expecing the script to fail.
@@ -87,8 +102,7 @@ getTestsInDir config dirPath
 
 	-- If we ran an executable, and we have a stdout check file
 	--	then check the executable's output against it
-	let gotMainStdoutCheck	= any (isSuffixOf "/Main.stdout.check") files
-	let testsStdout
+	let testsStdout2
 		| gotMainStdoutCheck
 		, Just nodeLast		<- takeLast testsBuildRun
 		, tLast			<- testOfNode nodeLast
@@ -151,7 +165,9 @@ getTestsInDir config dirPath
 			, testsShell,		testsShellError
 			, testsCompile,		testsCompileError
 			, testsCompileWarn
-			, testsStdout,		testsHaskellBuildRun]
+			, testsStdout
+			, testsStdout2
+			, testsHaskellBuildRun]
 
 	let testsHereExpanded
 		= expandWays (configWays config) testsAllWays
