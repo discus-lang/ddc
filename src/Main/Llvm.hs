@@ -139,6 +139,7 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn
 	addAlias	("struct.Data", llvmTypeOfStruct ddcData)
 	addAlias	("struct.DataRS", llvmTypeOfStruct ddcDataRS)
 	addAlias	("struct.Thunk", llvmTypeOfStruct ddcThunk)
+	addAlias	("struct.SuspIndir", llvmTypeOfStruct ddcSuspIndir)
 
 	mapM_		addGlobalVar
 				$ moduleGlobals

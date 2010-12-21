@@ -6,6 +6,7 @@ module Llvm.Runtime.Data where
 import Llvm
 import LlvmM
 import Llvm.Runtime.Object
+import Llvm.Runtime.Struct
 import Llvm.Util
 
 
@@ -57,12 +58,13 @@ forceObj orig
 followObj :: LlvmVar -> LlvmM LlvmVar
 followObj orig
  = do	addComment $ "followObj " ++ show orig
-	r0 	<- newUniqueReg pObj
+	let index = fst $ structFieldLookup ddcSuspIndir "obj"
+	r0 	<- newUniqueReg pStructSuspIndir
 	r1	<- newUniqueReg ppObj
 	r2	<- newUniqueReg pObj
 	addBlock
-		[ Assignment r0 (GetElemPtr False orig [llvmWordLitVar 2])
-		, Assignment r1 (Cast LM_Bitcast r0 ppObj)
+		[ Assignment r0 (Cast LM_Bitcast orig pStructSuspIndir)
+		, Assignment r1 (GetElemPtr False r0 [i32LitVar 0, i32LitVar index])
 		, Assignment r2 (Load r1) ]
 	return	r2
 
