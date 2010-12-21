@@ -63,7 +63,7 @@ data Usage
 	deriving (Eq, Ord, Show)
 
 instance Pretty Usage PMode where
-	ppr uu	= ppr $ show uu
+ ppr uu	= ppr $ show uu
 
 
 -- UseMap -----------------------------------------------------------------------------------------

@@ -19,6 +19,7 @@ module DDC.Type.Compounds
 	, takeVarOfBound
 	, takeVarOfType
 	, takeBoundOfType
+	, takeBoundKindOfType
 
 	  -- * Varish things
 	, takeTClass
@@ -198,6 +199,15 @@ takeBoundOfType :: Type -> Maybe Bound
 takeBoundOfType tt
  = case tt of
 	TVar _ uu	-> Just uu
+	_		-> Nothing
+
+
+-- | Take the `Bound` of a `Type`, if any.
+--   The `Type` should be a `TVar`.
+takeBoundKindOfType :: Type -> Maybe (Bound, Kind)
+takeBoundKindOfType tt
+ = case tt of
+	TVar k uu	-> Just (uu, k)
 	_		-> Nothing
 	
 	

@@ -36,6 +36,33 @@ pprBind vsLocal bb
 	BMore v t	-> "(" % pprVar vsLocal v % " :> " % pprType vsLocal t % ")"
 
 
+-- Bound ------------------------------------------------------------------------------------------
+instance Pretty Bound PMode where
+ ppr uu 
+  = case uu of
+	UVar v		-> ppr v
+	UClass c	-> ppr c
+	UIndex ix	-> ppr ix
+	UMore v t	-> parens $ v %% ":>" %% t
+
+pprBoundWithKind :: Set Var -> Bound -> Kind -> Str
+pprBoundWithKind vsLocal uu k
+ = case uu of
+	UVar v		-> pprVarKind vsLocal v k 
+	UClass c	-> resultKind k % c
+	UIndex ix 	-> resultKind k % ix
+
+	UMore v t
+	 -> pprIfMode (elem PrettyCoreMore)
+	 	(if k == kValue 
+			then	parens $ "*" % v % " :> " % pprType vsLocal t 
+			else	parens $       v % " :> " % pprType vsLocal t)
+			
+		(if k == kValue
+			then	"*" % v
+			else	      ppr v)
+
+
 -- Type --------------------------------------------------------------------------------------------
 instance Pretty Type PMode where
   ppr = pprType Set.empty
@@ -136,21 +163,9 @@ pprType vsLocal tt
 
 	TCon tycon	
 	 -> pprTyCon vsLocal tycon
-
-	TVar k (UVar v)	   -> pprVarKind vsLocal v k 
-	TVar k (UClass c)  -> resultKind k % c
-	TVar k (UIndex ix) -> resultKind k % ix
-
-	TVar k (UMore v t)
-	 -> pprIfMode (elem PrettyCoreMore)
-	 	(if k == kValue 
-			then	parens $ "*" % v % " :> " % pprType vsLocal t 
-			else	parens $       v % " :> " % pprType vsLocal t)
-			
-		(if k == kValue
-			then	"*" % v
-			else	      ppr v)
-
+	
+	TVar k u	   -> pprBoundWithKind vsLocal u k 
+	
 	TError k _	-> "@TError" % k % "..."
 
 
