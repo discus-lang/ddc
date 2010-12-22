@@ -128,6 +128,7 @@ toLlvmType (TCon (TyConUnboxed v))
 	"String#"	-> LMPointer i8
 	"Word8#"	-> i8
 	"Word32#"	-> i32
+	"Char32#"	-> i32
 	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
 
 toLlvmType (TFun param ret)
