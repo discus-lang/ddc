@@ -8,7 +8,7 @@ main
  = do	text <- readFile "test/18-ImportExport/T210-CtorOrder/A.di"
 	case extract text of
 	  "ABC"	-> putStrLn "Ok"
-	  _	-> exitFailure
+	  str	-> do { putStrLn str ; exitFailure }
 
 
 extract :: String -> String
