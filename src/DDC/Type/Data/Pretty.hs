@@ -61,7 +61,6 @@ pprDataDefAsSource
 	= "data" %% vData %% hsep (map ppr $ map fst vksParam)
 	%> (nl 	% "= "
 		% (punc (nl % "| ")
-			$ reverse
 			$ map pprCtorDefAsSource
 			$ Map.elems ctors))
 
