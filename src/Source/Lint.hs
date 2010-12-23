@@ -50,6 +50,8 @@ import DDC.Main.Error
 import DDC.Type
 import DDC.Var
 import Util
+
+import Data.Char
 import qualified Data.Set	as Set
 
 stage	= "Source.Lint"
@@ -181,6 +183,16 @@ instance Lint (Export SourcePos) where
  lint e	= return e
 	
 instance Lint (Foreign SourcePos) where
+ lint f@(OImport (Just cName) _ _ _)
+   = if isValidIdentifier cName
+	then return f
+	else death f $ "Foreign name '" ++ cName ++ "' is not a valid identifier."
+
+ lint f@(OImportUnboxedData cName _ _)
+   = if isValidIdentifier cName
+	then return f
+	else death f $ "Foreign name '" ++ cName ++ "' is not a valid identifier."
+
  lint f = return f
 
 instance Lint (CtorDef SourcePos) where
@@ -188,6 +200,14 @@ instance Lint (CtorDef SourcePos) where
 
 instance Lint (DataField SourcePos) where
  lint f = return f
+
+
+-----
+isValidIdentifier :: String -> Bool
+isValidIdentifier [] = False
+
+isValidIdentifier (s:ss)
+ = (s == '_' || isAlpha s) && all (\s -> isAlphaNum s || s == '_') ss
 
 -- Stmt --------------------------------------------------------------------------------------------
 instance Lint (Stmt SourcePos) where
