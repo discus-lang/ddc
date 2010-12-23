@@ -77,7 +77,7 @@ getObjTag obj
 	addBlock
 		[ Assignment r0 (GetElemPtr False obj [llvmWordLitVar 0, i32LitVar 0])
 		, Assignment r1 (Load r0)
-		, Assignment val (LlvmOp LM_MO_AShr r1 (i32LitVar 8))
+		, Assignment val (LlvmOp LM_MO_LShr r1 (i32LitVar 8))
 		]
 	return	val
 
