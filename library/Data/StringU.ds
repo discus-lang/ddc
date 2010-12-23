@@ -8,10 +8,10 @@ import	Base
 	DDC.Runtime.Store
 
 --- Casting -------------------------------------------------------------------
-foreign import "(Word8 *)"
+foreign import "_castToPtrWord8"
  castStringToPtrWord8 :: String# %r1 -> Ptr# Word8#
 
-foreign import "(String)"
+foreign import "_castToString"
  castPtrWord8ToString :: Ptr# Word8# -> String# %r1
 
 
@@ -22,5 +22,5 @@ foreign import "(String)"
 stringU_danger_index :: String# -> Int# -> Char32#
 stringU_danger_index str pos
  = do	ptr	= castStringToPtrWord8 str
- 	w	= peek (plusPtr ptr pos) 
+ 	w	= peek (plusPtr ptr pos)
 	promote_word8ToChar32 w

@@ -7,7 +7,7 @@ pragma cc_includes
 
 effect !Network :: !
 
-foreign import "(void *)"
+foreign import "_castToPtrVoid"
  unsafe_castToVoidPtr
  	:: a -> Ptr# Void#
 
@@ -18,7 +18,7 @@ foreign import "malloc"
 
 
 foreign import "primConnect"
- connect 
+ connect
  	:: String# {read}
  	-> Int32#  {read}
 	-(!Network)> Int32#
@@ -28,7 +28,7 @@ foreign import "send"
  	-> Ptr# Void# {write}	-- buffer
 	-> Int32# 		-- length
 	-> Int32#		-- flags
-	-(!Network)> Int32#	-- count of chars send, or -1 on error	
+	-(!Network)> Int32#	-- count of chars send, or -1 on error
 
 
 foreign import "recv"

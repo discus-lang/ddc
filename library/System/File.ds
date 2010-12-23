@@ -20,27 +20,27 @@ foreign import "stderr" stderr :: Ptr# File#
 foreign import "SEEK_SET"
  file_SEEK_SET :: Int32#
 
-foreign import "SEEK_CUR" 
+foreign import "SEEK_CUR"
  file_SEEK_CUR :: Int32#
 
-foreign import "SEEK_END" 
+foreign import "SEEK_END"
  file_SEEK_END :: Int32#
 
 ----------------------------------------------------------------------------------------------------
 foreign import "fopen"
- fopenU ::  	String# {read} 		-- fileName 
+ fopenU ::  	String# {read} 		-- fileName
 	-> 	String# {read}		-- mode
 	-(!e1)> Ptr# File#
  	:- !e1 = !File
 
 foreign import "fread"
- freadU :: 	String# 	{write}	-- buffer to write into 
+ freadU :: 	String# 	{write}	-- buffer to write into
 	-> 	Int32# 		{read}	-- size of member
 	-> 	Int32# 		{read}	-- number of members to read
 	-> 	Ptr# File#  	{read}	-- file to read from
 	-(!e)>	Int32#	 		-- number of members read
 	:- !e = !File
-	
+
 
 
 foreign import "fseek"
@@ -73,8 +73,8 @@ foreign import "feof"
 -- Don't use this for casting pointers as its guaranteed to be
 -- wrong for 64 bit systems (from Captain Obvious).
 
-foreign import  "(Int32)"
- unsafe_castToInt32U 
+foreign import  "_castToInt32"
+ unsafe_castToInt32U
  	:: forall a
 	.  a -> Int32#;
 
@@ -82,7 +82,7 @@ foreign import  "(Int32)"
 -- Function that can actually be used in Disciple programs.
 
 -- | open a file
-try_file_open 
+try_file_open
 	:: String 		-- ^ file name
 	-> String 		-- ^ fopen mode string
 	-> Ptr# File#
@@ -92,7 +92,7 @@ try_file_open name mode
  , SChunk mode_flat	<- (copy mode).force
  = fopenU (name_flat.unsafeUnbox) (mode_flat.unsafeUnbox)
 
-file_open 
+file_open
 	:: String 		-- ^ file name
 	-> String 		-- ^ fopen mode string
 	-> Ptr# File#
@@ -103,7 +103,7 @@ file_open name mode = do
 --		recurisve modules through Control.Exception, sigh
 
 		false#	-> ()
-		
+
 	file
 
 
@@ -114,8 +114,8 @@ file_length name
 
  	fseekU file 0# file_SEEK_END
 	boxInt32 (ftellU file)
- 
- 
+
+
 -- | read the contents of the file at this path
 file_read :: String -> Maybe String
 file_read name = do

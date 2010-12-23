@@ -17,21 +17,21 @@ effect !Environment :: !
 
 foreign import "_ddcArgCount"
  argCountU :: Int32#
- 
+
 argCount = boxInt32 argCountU
- 
- 
+
+
 foreign import "primArgValue"
  getArgValueU :: Int32# -> String#
 
-getArgValue ix 
+getArgValue ix
  = boxString (getArgValueU (unboxInt32 ix))
 
 
 foreign import "getenv"
  getEnvU :: String# -> String#
 
-foreign import "(void *)"
+foreign import "_castToPtrVoid"
  castStringToVoidPtr
  	:: String# -> Ptr# Void#
 
