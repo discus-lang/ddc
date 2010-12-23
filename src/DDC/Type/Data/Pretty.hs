@@ -8,6 +8,9 @@ import DDC.Type.Pretty
 import DDC.Type.Data.Base
 import DDC.Type.Operators.Strip
 import DDC.Main.Pretty
+
+import Data.Function
+import Data.List
 import qualified Data.Map	as Map
 	
 
@@ -62,6 +65,7 @@ pprDataDefAsSource
 	%> (nl 	% "= "
 		% (punc (nl % "| ")
 			$ map pprCtorDefAsSource
+			$ sortBy (compare `on` ctorDefTag)
 			$ Map.elems ctors))
 
 
