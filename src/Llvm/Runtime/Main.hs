@@ -25,14 +25,17 @@ llvmMainModule :: (?args :: [Arg.Arg])
 	=> ModuleId
 	-> [ModuleId]
 	-> LlvmType
+	-> Integer
+	-> Integer
+	-> Integer
 	-> LlvmM ()
-llvmMainModule modName importsExp mainType
+llvmMainModule modName importsExp mainType heapSize slotStackSize ctxStackSize
  = do	argc		<- newUniqueNamedReg "argc" i32
 	argv		<- newUniqueNamedReg "argv" $ pLift (pLift i8)
 	let params	= [ argc, argv ]
 	startFunction
 
-	initRunTime	$ params ++ [ i32LitVar 0, i32LitVar 0, i32LitVar 0 ]
+	initRunTime	$ params ++ [ i64LitVar heapSize, i64LitVar slotStackSize, i64LitVar ctxStackSize ]
 	addComment	"Call init functions of all used modules."
 
 	mapM_		callModInitFns importsExp

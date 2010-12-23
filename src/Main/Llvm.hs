@@ -6,6 +6,7 @@ module Main.Llvm
 where
 
 -- main stages
+import Main.BuildFile
 import Main.Setup
 import Main.Sea
 import Main.Util
@@ -71,7 +72,11 @@ compileViaLlvm
 	setup modName eTree eCtorTags pathSource importDirs includeFilesHere importsExp
 	modDefinesMainFn sRoot scrapes_noRoot blessMain
  = do
-	let ?args		= setupArgs setup
+	let	?args		= setupArgs setup
+
+	let	heapSize	= getValue buildStartHeapSize		sRoot
+	let	slotStackSize	= getValue buildStartSlotStackSize	sRoot
+	let	ctxStackSize	= getValue buildStartContextStackSize	sRoot
 
 	outVerb $ ppr $ "  * Write C header\n"
 	writeFile (?pathSourceBase ++ ".ddc.h")
@@ -83,7 +88,9 @@ compileViaLlvm
 
 	outVerb $ ppr $ "  * Generating LLVM IR code\n"
 
-	llvmSource	<- evalStateT (outLlvm modName eTree eCtorTags pathSource importsExp modDefinesMainFn) $ initLlvmState modName
+	llvmSource	<- evalStateT
+				(outLlvm modName eTree eCtorTags pathSource importsExp modDefinesMainFn heapSize slotStackSize ctxStackSize)
+				$ initLlvmState modName
 
 	writeFile (?pathSourceBase ++ ".ddc.ll")
 			$ ppLlvmModule llvmSource
@@ -92,6 +99,13 @@ compileViaLlvm
 	invokeLlvmAssembler ?pathSourceBase []
 
 	return modDefinesMainFn
+
+
+getValue :: (Build -> Maybe Integer) -> M.Scrape -> Integer
+getValue func scrape
+ = case M.scrapeBuild scrape of
+	Nothing -> 0
+	Just build -> fromMaybe 0 $ func build
 
 
 -- | Create LLVM source files
@@ -103,9 +117,12 @@ outLlvm
 	-> FilePath		-- path of the source file
 	-> Map ModuleId [a]
 	-> Bool			-- is main module
+	-> Integer
+	-> Integer
+	-> Integer
 	-> LlvmM LlvmModule
 
-outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn
+outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn heapSize slotStackSize ctxStackSize
  = do
 	-- Break up the sea into parts.
 	let 	([ 	_seaProtos, 		seaSupers
@@ -150,7 +167,7 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn
 	let mainType	= foldl findMainType LMVoid seaSupers
 
 	when modDefinesMainFn
-			$ llvmMainModule moduleName (map fst $ Map.toList importsExp) mainType
+			$ llvmMainModule moduleName (map fst $ Map.toList importsExp) mainType heapSize slotStackSize ctxStackSize
 
 	renderModule	comments
 
