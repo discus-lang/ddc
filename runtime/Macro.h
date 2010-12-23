@@ -137,10 +137,15 @@
 #define _castToPtrFloat32(ptr)	((Float32 *) (ptr))
 #define _castToPtrFloat64(ptr)	((Float64 *) (ptr))
 #define _castToPtrChar32(ptr)	((Char32  *) (ptr))
+#define _castToPtrVoid(ptr)	((void  *) (ptr))
 
 #define _castToWord8(x)		((Word8) (x))
 #define _castToWord16(x)	((Word16)(x))
 #define _castToWord32(x)	((Word32)(x))
 #define _castToWord64(x)	((Word64)(x))
+
+#define _castToInt32(x)		((Int32)(x))
+#define _castToString(ptr)	((String) (ptr))
+#define _castToChar32(x)	((Char32)(x))
 
 #endif
