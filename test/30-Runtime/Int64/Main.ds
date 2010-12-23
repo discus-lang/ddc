@@ -3,8 +3,8 @@
 import System.Console
 import Data.Numeric.Int64
 
-foreign import "1"
-	unboxedOneInt64 :: Int64#
+unboxedOneInt64 :: Int64#
+unboxedOneInt64 = 1#i64
 
 main () = do
 	a = boxInt64 unboxedOneInt64

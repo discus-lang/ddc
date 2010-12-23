@@ -3,8 +3,8 @@
 import System.Console
 import Data.Numeric.Float64
 
-foreign import "1.0"
-	unboxedOneFloat64 :: Float64#
+unboxedOneFloat64 :: Float64#
+unboxedOneFloat64 = 1.0#f64
 
 main () = do
 	a = boxFloat64 unboxedOneFloat64
