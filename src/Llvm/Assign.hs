@@ -8,6 +8,7 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
+import DDC.Var
 
 import Llvm
 import LlvmM
@@ -118,9 +119,13 @@ assignNull (XVar v@NCaf{} t@(TPtr _)) (TPtr _)
 	addBlock	[ Assignment dst (loadAddress (pVarLift cv))
 			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
 
-assignNull (XVar (NAuto v) t) tc@(TCon (TyConUnboxed _))
+assignNull (XVar (NAuto v) t) tc@(TCon (TyConUnboxed tv))
  | t == tc
- =	addBlock	[ Store (i32LitVar 0) (pVarLift (toLlvmVar v t)) ]
+ =	let zero = case varName tv of
+			"Int32#"	-> i32LitVar 0
+			"Bool#"		-> LMLitVar (LMIntLit (toInteger 0) i1)
+
+	in addBlock	[ Store zero (pVarLift (toLlvmVar v t)) ]
 
 
 assignNull xv t
