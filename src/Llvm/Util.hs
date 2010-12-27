@@ -114,22 +114,9 @@ pInt32 = LMPointer i32
 
 -- | Convert a Sea type to an LlvmType.
 toLlvmType :: Type -> LlvmType
-toLlvmType (TPtr t)		= LMPointer (toLlvmType t)
-toLlvmType (TCon TyConObj)	= structObj
-toLlvmType TVoid		= LMVoid
-
-toLlvmType (TCon (TyConUnboxed v))
- = case varName v of
-	"Bool#"		-> i1
-	"Int32#"	-> i32
-	"Int64#"	-> i64
-	"Float32#"	-> LMFloat
-	"Float64#"	-> LMDouble
-	"String#"	-> LMPointer i8
-	"Word8#"	-> i8
-	"Word32#"	-> i32
-	"Char32#"	-> i32
-	name		-> panic stage $ "toLlvmType (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
+toLlvmType (TPtr t)	= LMPointer (toLlvmType t)
+toLlvmType (TCon con)	= toLlvmTypeCon con
+toLlvmType TVoid	= LMVoid
 
 toLlvmType (TFun param ret)
  = LMPointer (LMFunction (
@@ -142,6 +129,28 @@ toLlvmType (TFun param ret)
 	(map (\t -> (toLlvmType t, [])) param)
 	ptrAlign
 	))
+
+
+toLlvmTypeCon :: TyCon -> LlvmType
+toLlvmTypeCon TyConObj = structObj
+
+toLlvmTypeCon (TyConUnboxed v)
+ = case varName v of
+	"Bool#"		-> i1
+	"Int32#"	-> i32
+	"Int64#"	-> i64
+	"Float32#"	-> LMFloat
+	"Float64#"	-> LMDouble
+	"String#"	-> LMPointer i8
+	"Word8#"	-> i8
+	"Word32#"	-> i32
+	"Char32#"	-> i32
+	name		-> panic stage $ "toLlvmTypeTcon (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
+
+toLlvmTypeCon (TyConAbstract v)
+ = case varName v of
+	"String#"	-> LMPointer i8
+	name		-> panic stage $ "toLlvmTypeCon (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
 
 
 typeOfString :: String -> LlvmType
