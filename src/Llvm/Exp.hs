@@ -43,7 +43,7 @@ llvmOfExp (XPrim op args)
 llvmOfExp (XLit (LLit (LiteralFmt (LString s) Unboxed)))
  = do	gname		<- newUniqueName "str"
 	let name	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
-	addGlobalVar	( name, Just (LMStaticStr s (typeOfString s)) )
+	addGlobalVar	( name, Just (LMStaticStr (escapeString s) (typeOfString s)) )
 	reg		<- newUniqueReg pChar
 	addBlock	[ Assignment reg (GetElemPtr True (pVarLift name) [ i32LitVar 0, i32LitVar 0 ]) ]
 	return		reg

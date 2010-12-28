@@ -145,12 +145,12 @@ toLlvmTypeCon (TyConUnboxed v)
 	"Word8#"	-> i8
 	"Word32#"	-> i32
 	"Char32#"	-> i32
-	name		-> panic stage $ "toLlvmTypeTcon (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
+	name		-> panic stage $ "toLlvmTypeCon (" ++ (show __LINE__) ++ ") : " ++ name ++ "\n"
 
 toLlvmTypeCon (TyConAbstract v)
  = case varName v of
 	"String#"	-> LMPointer i8
-	name		-> panic stage $ "toLlvmTypeCon (" ++ (show __LINE__) ++ ") : unboxed " ++ name ++ "\n"
+	name		-> panic stage $ "toLlvmTypeCon (" ++ (show __LINE__) ++ ") : " ++ name ++ "\n"
 
 
 typeOfString :: String -> LlvmType
