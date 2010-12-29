@@ -5,6 +5,7 @@ module DDC.Core.Exp.Prim
 	, PrimOp	(..))
 where
 import DDC.Base.PrimType
+import DDC.Base.PrimOp
 
 -- | Primitive functions.
 --   These are polymorphic primitives that we deal with directly in the core language.
@@ -49,30 +50,3 @@ data PrimCall
 	-- | Build a thunk with this arity
 	| PrimCallCurry		Int
 	deriving (Show, Eq)
-	
-
--- | Primitive polymorphic operators.
---	These are things we might want to handle specially during core rewrites.
---	If we had a proper rule rewriting system we could handle these more generally.
-data PrimOp
-	-- arithmetic
-	= OpNeg
-	| OpAdd
-	| OpSub
-	| OpMul
-	| OpDiv
-	| OpMod
-
-	-- comparison
-	| OpEq
-	| OpNeq
-	| OpGt
-	| OpGe
-	| OpLt
-	| OpLe
-	
-	-- boolean
-	| OpAnd
-	| OpOr
-	deriving (Show, Eq)
-

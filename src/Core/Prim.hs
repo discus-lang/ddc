@@ -18,6 +18,7 @@ import DDC.Core.Glob
 import DDC.Core.Check.Exp
 import DDC.Type
 import DDC.Var
+import DDC.Base.PrimOp
 import qualified Debug.Trace
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
@@ -43,9 +44,7 @@ tableZero
 
 -- | If this is a witness to constness of a region or type, or purity of an effect
 --	then slurp it into the table.
-slurpWitnessKind 
-	:: Table -> Kind -> Table
-	
+slurpWitnessKind :: Table -> Kind -> Table
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
@@ -57,8 +56,8 @@ slurpWitnessKind tt kk
 
 	_ -> tt
 
--- Prim --------------------------------------------------------------------------------------------
 
+-- Prim --------------------------------------------------------------------------------------------
 -- Identify primitive operations
 --	Tree should be in snipped form
 primGlob :: Glob -> Glob
@@ -144,10 +143,7 @@ primG tt (GExp ws x)
 
 -- Identify a primitive operation in this statement
 --	We go via statements in snipped form so its easy to identify the entire application expression
-
---	TODO: 	fix this for over-application
---		need to split off some of the args
-
+--	TODO: 	fix this for over-application. need to split off some of the args
 primS :: Table -> Stmt -> (Table, Stmt)
 primS tt ss
  = case ss of
@@ -186,7 +182,7 @@ primX1 tt xx
 	-- look for functions in the prim table
  	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts
-	, Just operator				<- Map.lookup (varName v) primFuns
+	, Just operator				<- readPrimOp (varName v)
 	= XPrim (MOp operator) psArgs
 	
 	-- look for functions who's arguments can be unboxed
@@ -210,6 +206,7 @@ primX1 tt xx
 	| otherwise		
 	= xx
 
+
 -- | Perform these actions on this list of expressions
 doActions :: Table -> [Action] -> [Exp] -> [Exp]
 doActions tt (Discard:as) (x:xs)
@@ -225,7 +222,6 @@ doActions tt (Unbox:as) (x:xs)
  	Just (_, _, [tR@(TVar _ (UVar vR))])
 		= takeTData tX
  		
-
 	x'	| Set.member vR (tableDirectRegions tt) 
 		= XPrim MUnbox [XPrimType tR, x] 
 			: doActions tt as xs
@@ -234,13 +230,10 @@ doActions tt (Unbox:as) (x:xs)
 		= XPrim MUnbox [XPrimType tR, XPrim MForce [x]] 
 			: doActions tt as xs
 
-   in	trace	( "doActions: Unbox\n"
-		% "    x    = " % x 	% "\n"
-		% "    tX   = " % tX	% "\n")
-		$ x'
+   in	x'
 
-doActions _ _ xs
-	= xs
+doActions _ _ xs = xs
+
 
 -- | Flatten an application into its component parts, left to right
 flattenAppsEff :: Exp -> Maybe [Exp]
@@ -249,6 +242,49 @@ flattenAppsEff xx
  	XApp{}	-> Just $ splitAppsUsingPrimType xx
 	XAPP{}	-> Just $ splitAppsUsingPrimType xx
 	_	-> Nothing
+
+
+-- Detection --------------------------------------------------------------------------------------
+-- Detection of uses of primitive functions in the core program.
+
+-- | Is this the name of a fn that unboxes a value of primitive type.
+isBoxFunctionV :: Var -> Bool
+isBoxFunctionV v
+ = elem	(varName v)
+ 	[ "boxInt32"
+	, "boxFloat32"
+	, "boxInt64"
+	, "boxFloat64"
+ 	, "boxWord32"
+	, "boxWord64" ]
+
+
+-- | Is this the name of a fn that unboxes a value of primitive type.
+isUnboxFunctionV :: Var -> Bool
+isUnboxFunctionV v
+ =  elem (varName v)
+ 	[ "unboxInt32"
+	, "unboxFloat32"
+	, "unboxInt64"
+	, "unboxFloat64"
+	, "unboxWord32"
+	, "unboxWord64" ]
+
+
+-- | Primitive operators in the source language have names like "primWord32U_neg"
+--   This splits off the "_neg" part and returns the associated `PrimOp` (ie `OpNeg`).
+readPrimOp :: String -> Maybe PrimOp
+readPrimOp str
+ 	| Just typeOpName		<- stripPrefix "prim" str
+	, (typeName, _ : opName)	<- break (== '_') typeOpName
+	, elem typeName [ "PtrVoid"
+			, "Word32U",  "Word64U"
+			, "Int32U",   "Int64U"
+			, "Float32U", "Float64U"]
+	= readPrimOpName opName
+
+	| otherwise
+	= Nothing
 
 
 ----------------------------------------------------------------------------------------------------
@@ -293,126 +329,4 @@ unboxableFuns
 	, ("primFloat32_gt",	(OpGt,  opD3U2))
 	, ("primFloat32_le",	(OpLe,  opD3U2)) 
 	, ("primFloat32_ge",	(OpGe,  opD3U2)) ]
-
-
-
--- | Is this the name of a fn that unboxes a value of primitive type.
-isBoxFunctionV :: Var -> Bool
-isBoxFunctionV v
- = elem	(varName v)
- 	[ "boxInt32"
-	, "boxFloat32"
-	, "boxInt64"
-	, "boxFloat64"
- 	, "boxWord32"
-	, "boxWord64" ]
-
-
--- | Is this the name of a fn that unboxes a value of primitive type.
-isUnboxFunctionV :: Var -> Bool
-isUnboxFunctionV v
- =  elem (varName v)
- 	[ "unboxInt32"
-	, "unboxFloat32"
-	, "unboxInt64"
-	, "unboxFloat64"
-	, "unboxWord32"
-	, "unboxWord64" ]
-
-
--- | Frimitive functions
-primFuns :: Map String PrimOp
-primFuns 
- = Map.fromList
-
-	-- unboxed ptr functions
-	[ ("primPtrVoid_eq",	OpEq)
-
-	-- Word32U
-	, ("primWord32U_neg",	OpNeg) 
-	, ("primWord32U_add",	OpAdd)
-	, ("primWord32U_sub",	OpSub)
-	, ("primWord32U_mul",	OpMul)
-	, ("primWord32U_div",	OpDiv)
-	, ("primWord32U_mod",	OpMod)
-
-	, ("primWord32U_eq",	OpEq)
-	, ("primWord32U_neq",	OpNeq)
-	, ("primWord32U_gt",	OpGt)
-	, ("primWord32U_ge",	OpGe)
-	, ("primWord32U_lt",	OpLt)
-	, ("primWord32U_le",	OpLe) 
-
-	-- Word64U
-	, ("primWord64U_neg",	OpNeg) 
-	, ("primWord64U_add",	OpAdd)
-	, ("primWord64U_sub",	OpSub)
-	, ("primWord64U_mul",	OpMul)
-	, ("primWord64U_div",	OpDiv)
-	, ("primWord64U_mod",	OpMod)
-
-	, ("primWord64U_eq",	OpEq)
-	, ("primWord64U_neq",	OpNeq)
-	, ("primWord64U_gt",	OpGt)
-	, ("primWord64U_ge",	OpGe)
-	, ("primWord64U_lt",	OpLt)
-	, ("primWord64U_le",	OpLe) 
-
-	-- Int32U
- 	, ("primInt32U_neg",	OpNeg)
-	, ("primInt32U_add",	OpAdd)
-	, ("primInt32U_sub",	OpSub)
-	, ("primInt32U_mul",	OpMul) 
-	, ("primInt32U_div",	OpDiv)
-	, ("primInt32U_mod",	OpMod)
-
-	, ("primInt32U_eq",	OpEq)
-	, ("primInt32U_neq",	OpNeq)
-	, ("primInt32U_gt",	OpGt)
-	, ("primInt32U_ge",	OpGe)
-	, ("primInt32U_lt",	OpLt)
-	, ("primInt32U_le",	OpLe) 
-
-	-- Int64U
- 	, ("primInt64U_neg",	OpNeg)
-	, ("primInt64U_add",	OpAdd)
-	, ("primInt64U_sub",	OpSub)
-	, ("primInt64U_mul",	OpMul) 
-	, ("primInt64U_div",	OpDiv)
-	, ("primInt64U_mod",	OpMod)
-
-	, ("primInt64U_eq",	OpEq)
-	, ("primInt64U_neq",	OpNeq)
-	, ("primInt64U_gt",	OpGt)
-	, ("primInt64U_ge",	OpGe)
-	, ("primInt64U_lt",	OpLt)
-	, ("primInt64U_le",	OpLe) 
-
-	-- Float32U
-	, ("primFloat32U_neg",	OpNeg)
-	, ("primFloat32U_add",	OpAdd)
-	, ("primFloat32U_sub",	OpSub)
-	, ("primFloat32U_mul",	OpMul) 
-	, ("primFloat32U_div",	OpDiv)
-
-	, ("primFloat32U_eq",	OpEq)
-	, ("primFloat32U_neq",	OpNeq)
-	, ("primFloat32U_gt",	OpGt)
-	, ("primFloat32U_ge",	OpGe)
-	, ("primFloat32U_lt",	OpLt)
-	, ("primFloat32U_le",	OpLe) 
-
-	-- Float64U
-	, ("primFloat64U_neg",	OpNeg)
-	, ("primFloat64U_add",	OpAdd)
-	, ("primFloat64U_sub",	OpSub)
-	, ("primFloat64U_mul",	OpMul) 
-	, ("primFloat64U_div",	OpDiv)
-
-	, ("primFloat64U_eq",	OpEq)
-	, ("primFloat64U_neq",	OpNeq)
-	, ("primFloat64U_gt",	OpGt)
-	, ("primFloat64U_ge",	OpGe)
-	, ("primFloat64U_lt",	OpLt)
-	, ("primFloat64U_le",	OpLe) ]
 

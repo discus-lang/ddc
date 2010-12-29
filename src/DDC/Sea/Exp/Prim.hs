@@ -8,6 +8,7 @@ module DDC.Sea.Exp.Prim
 	, PrimProj	(..)
 	, PrimFun	(..))
 where
+import DDC.Base.PrimOp
 import DDC.Sea.Exp.Type
 import DDC.Var
 
@@ -34,31 +35,6 @@ data	Prim
 	-- | Unbox some boxed value, given the type of the unboxed version.
 	| MUnbox Type
 
-	deriving (Show, Eq)
-
-
--- | Primitive operators.
---   We expect the backend to be able to implement these directly.
-data PrimOp
-	-- arithmetic
-	= OpNeg
-	| OpAdd
-	| OpSub
-	| OpMul
-	| OpDiv
-	| OpMod
-
-	-- comparison
-	| OpEq
-	| OpNeq
-	| OpGt
-	| OpGe
-	| OpLt
-	| OpLe
-
-	-- boolean
-	| OpAnd
-	| OpOr
 	deriving (Show, Eq)
 
 
