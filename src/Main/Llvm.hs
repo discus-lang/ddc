@@ -93,7 +93,7 @@ compileViaLlvm
 				$ initLlvmState modName
 
 	writeFile (?pathSourceBase ++ ".ddc.ll")
-			$ ppLlvmModule llvmSource
+			$ pprStrPlain $ ppLlvmModule llvmSource
 
 	invokeLlvmCompiler ?pathSourceBase []
 	invokeLlvmAssembler ?pathSourceBase []

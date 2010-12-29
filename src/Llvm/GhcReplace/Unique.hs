@@ -12,6 +12,7 @@ module Llvm.GhcReplace.Unique
 import Control.Concurrent.MVar
 import System.IO.Unsafe (unsafePerformIO)
 import Llvm.GhcReplace.Pretty
+import DDC.Util.Pretty.Base
 
 -- | An abstract unique object.  Objects of type 'Unique' may be
 -- compared for equality and ordering and hashed into 'Int'.
@@ -44,5 +45,5 @@ instance Show Unique where
     show (UniqueStr s) = s
 
 pprUnique :: Unique -> Doc
-pprUnique u = show u
+pprUnique u = ppr $ show u
 

@@ -4,51 +4,48 @@
 
 module Llvm.GhcReplace.Pretty where
 
-type Doc = String
+import DDC.Main.Pretty
+import DDC.Util.Pretty.Base
+import DDC.Util.Pretty.Combinators()
+
+type Doc = StrMode [PrettyMode]
 
 infixl 6 <>
 infixl 6 <+>
 infixl 5 $$, $+$
 
 (<+>)  :: Doc -> Doc -> Doc     -- Beside, separated by space
-(<+>) a b = a ++ " " ++ b
+(<+>) a b = a %% b
 
 (<>)   :: Doc -> Doc -> Doc     -- Beside
-(<>) a b = a ++ b
+(<>) a b = a % b
 
 ($$)   :: Doc -> Doc -> Doc     -- Above; if there is no
                                 -- overlap it "dovetails" the two
 ($$) = prettyLineJoin
 
 ($+$) :: Doc -> Doc -> Doc
-($+$) = prettyLineJoin
+($+$) a b = a % nl % b
 
 text :: String -> Doc
-text = id
+text s = ppr s
 
 empty, lparen, rparen, space, equals :: Doc
-empty = ""
-space = " "
-rparen = ")"
-lparen = "("
-equals = "="
+empty = PBlank
+space = PChar ' '
+rparen = PChar ')'
+lparen = PChar '('
+equals = PChar '='
 
-semi, colon, comma, lbrace, rbrace :: Doc
-semi  = ";"
-colon = ":"
-comma = ","
-lbrace = "{"
-rbrace = "}"
-
+lbrace, rbrace :: Doc
+lbrace = PChar '{'
+rbrace = PChar '}'
 
 doubleQuotes :: Doc -> Doc
-doubleQuotes p  = "\"" <> p <> "\""
-
-brackets :: Doc -> Doc
-brackets p = "[" <> p <> "]"
+doubleQuotes = dquotes
 
 ftext :: String -> Doc
-ftext fs = fs
+ftext fs = ppr fs
 
 hcat :: [Doc] -> Doc          -- List version of <>
 hcat = foldr (<>)  empty
@@ -57,24 +54,16 @@ vcat :: [Doc] -> Doc          -- List version of $$
 vcat = foldr ($$)  empty
 
 int :: Int -> Doc
-int i = show i
+int i = ppr i
 
-nest :: Int -> Doc -> Doc
-nest n s
- =  let indent = replicate n ' '
-    in unlines
-         $ map (indent ++)
-         $ filter (\l -> length l > 0)
-         $ lines s
+nest :: Doc -> Doc
+nest s = indent s
 
 --------------------------------------------------------------------------------
 -- The following weren't in the original Llvm.GhcReplace.Pretty module.
 
 prettyLineJoin :: Doc -> Doc -> Doc
-prettyLineJoin a b
- = case (length a > 0, length b > 0) of
-     (True, True) -> a ++ "\n" ++ b
-     (True, False) -> a
-     (False, True) -> b
-     (False, False) -> ""
-
+prettyLineJoin PBlank PBlank = PBlank
+prettyLineJoin a PBlank = a
+prettyLineJoin PBlank b = b
+prettyLineJoin a b = a % nl % b

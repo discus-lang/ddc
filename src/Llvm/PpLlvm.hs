@@ -27,6 +27,7 @@ import Llvm.AbsSyn
 import Llvm.Types
 
 import Data.List ( intersperse )
+import DDC.Util.Pretty.Combinators  (brackets, colon, comma, semi)
 import Llvm.GhcReplace.Pretty
 import Llvm.GhcReplace.Unique
 
@@ -142,7 +143,7 @@ ppLlvmBlocks blocks = vcat $ map ppLlvmBlock blocks
 ppLlvmBlock :: LlvmBlock -> Doc
 ppLlvmBlock (LlvmBlock blockId stmts)
   = ppLlvmStatement (MkLabel blockId)
-        $+$ nest 4 (vcat $ map ppLlvmStatement stmts)
+        $+$ nest (vcat $ map ppLlvmStatement stmts)
 
 
 -- | Print out an LLVM statement.
@@ -292,8 +293,8 @@ ppPhi tp preds =
 
 ppSwitch :: LlvmVar -> LlvmVar -> [(LlvmVar,LlvmVar)] -> Doc
 ppSwitch scrut dflt targets =
-  let ppTarget  (val, lab) = text "\n" <> (nest 4 $ texts val <> comma <+> texts lab)
-      ppTargets  xs        = brackets $ vcat (map ppTarget xs)
+  let ppTarget  (val, lab) = nest $ texts val <> comma <+> texts lab
+      ppTargets  xs        = text "[" $$ vcat (map ppTarget xs) $$ text "]"
   in text "switch" <+> texts scrut <> comma <+> texts dflt
         <+> ppTargets targets
 
