@@ -197,12 +197,12 @@ prettyExpB x
 instance Pretty Prim PMode where
  ppr xx 
   = case xx of
-	MForce 		 -> ppr "prim{Force}"
-	MBox		 -> ppr "prim{Box}"
-	MUnbox		 -> ppr "prim{Unbox}"
-	MOp op		 -> ppr "prim{" % op % "}"
-	MConvert pt1 pt2 -> ppr "prim{Convert|" % pt1 % "|" % pt2 % "}"
-	MCall call	 -> ppr call
+	MForce 		-> ppr "prim{Force}"
+	MBox		-> ppr "prim{Box}"
+	MUnbox		-> ppr "prim{Unbox}"
+	MOp op		-> ppr "prim{" % op % "}"
+	MCast pt1 pt2	-> ppr "prim{Cast_" % pt1 % "_" % pt2 % "}"
+	MCall call	-> ppr call
 
 
 -- PrimCall ----------------------------------------------------------------------------------------

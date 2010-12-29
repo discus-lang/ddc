@@ -242,7 +242,12 @@ toSeaX		xx
 	-- arithmetic operators
 	C.XPrim (C.MOp op) xs
 	 -> do	args	<- mapM toSeaX $ stripValues xs
-		return	$ E.XPrim (E.MOp $ toSeaPrimOp op) args
+		return	$ E.XPrim (E.MOp op) args
+
+	-- casting
+	C.XPrim (C.MCast pt1 pt2) xs
+	 -> do	args	<- mapM toSeaX $ stripValues xs
+		return	$ E.XPrim (E.MCast pt1 pt2) args
 
 	-- function calls
 	-- For these four we statically know that the thing we're calling is a supercombinator.
@@ -568,32 +573,4 @@ assignLastA xT aa
 	E.ADefault ss		-> E.ADefault	(assignLastSS xT ss)
 	E.AAlt gs ss		-> E.AAlt gs	(assignLastSS xT ss)
 	_			-> panic stage $ "assignLastA: no match"
-
-
-
--- | Convert a core operator to a sea operator.
---   TODO: This is just a 1:1 conversion, maybe we should use the same type,
---         or represent all primops in the core language as just function calls.
-toSeaPrimOp :: C.PrimOp -> E.PrimOp
-toSeaPrimOp op
- = case op of
-	-- arithmetic
-	C.OpNeg -> E.OpNeg
- 	C.OpAdd	-> E.OpAdd
-	C.OpSub	-> E.OpSub
-	C.OpMul	-> E.OpMul
-	C.OpDiv	-> E.OpDiv
-	C.OpMod	-> E.OpMod
-
-	-- comparison
-	C.OpEq	-> E.OpEq
-	C.OpNeq	-> E.OpNeq
-	C.OpGt	-> E.OpGt
-	C.OpGe	-> E.OpGe
-	C.OpLt	-> E.OpLt
-	C.OpLe	-> E.OpLe
-
-	-- boolean
-	C.OpAnd	-> E.OpAnd
-	C.OpOr	-> E.OpOr
 

@@ -11,6 +11,7 @@ import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.SourcePos
 import DDC.Base.Literal
+import DDC.Base.Prim.PrimType
 import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
@@ -331,7 +332,12 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 | otherwise
 	 -> "_unboxDirect(" % t % ", " % x % ")"
 
+	-- Casting
+	XPrim (MCast _ pt2) [x]
+	 -> parens (pprPrimType pt2) % x
+
 	_ -> panic stage ("ppr[Exp]: no match for " % show xx)
+
 
 -- Lit ---------------------------------------------------------------------------------------------
 instance Pretty Lit PMode where
@@ -368,6 +374,24 @@ pprTypeArg tt
  = case tt of
 	TFun{}	-> parens $ ppr tt
 	_	-> ppr tt
+
+
+-- PrimType ---------------------------------------------------------------------------------------
+-- | Pretty print a `PrimType` in Sea syntax.
+pprPrimType :: PrimType -> Str
+pprPrimType pt
+ = case pt of
+	PrimTypeWord  (Width w)			-> "Word"  % w
+	PrimTypeInt   (Width w)			-> "Int"   % w
+	PrimTypeFloat (Width w)			-> "Float" % w
+
+	PrimTypePtr   (ptn@PrimTypeWord{})	-> ptn % "*"
+	PrimTypePtr   (ptn@PrimTypeInt{})	-> ptn % "*"
+	PrimTypePtr   (ptn@PrimTypeFloat{})	-> ptn % "*"
+	
+	_	-> panic stage
+		$ "pprPrimType: not printing unexpected primType."
+	
 
 
 -- TyCon ------------------------------------------------------------------------------------------

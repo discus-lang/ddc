@@ -85,10 +85,10 @@ instance Pretty Width PMode where
 instance Pretty PrimType PMode where
  ppr pt
   = case pt of
-	PrimTypePtr pt'		-> "Ptr"    %% pprPrimTypeParens pt'
-	PrimTypeWord  (Width w)	-> "Word:"  %  w
-	PrimTypeInt   (Width w)	-> "Int:"   %  w
-	PrimTypeFloat (Width w) -> "Float:" %  w
+	PrimTypePtr pt'		-> "PtrU"   %% pprPrimTypeParens pt'
+	PrimTypeWord  (Width w)	-> "Word"   %  w % "U"
+	PrimTypeInt   (Width w)	-> "Int"    %  w % "U"
+	PrimTypeFloat (Width w) -> "Float"  %  w % "U"
 
 pprPrimTypeParens pt
  = case pt of

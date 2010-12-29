@@ -3,10 +3,16 @@
 module DDC.Core.Exp.Prim
 	( Prim 		(..)
 	, PrimCall	(..)
-	, PrimOp	(..))
+	, PrimOp	(..)
+	, takeTypeOfPrimType)
 where
 import DDC.Base.Prim.PrimType
 import DDC.Base.Prim.PrimOp
+import DDC.Type
+import DDC.Base.DataFormat
+import Shared.VarPrim
+
+
 
 -- | Primitive functions.
 --   These are polymorphic primitives that we deal with directly in the core language.
@@ -25,9 +31,9 @@ data Prim
 	-- | Invoke a primitive operator.
 	| MOp		PrimOp
 	
-	-- | Conversion between numeric types.
-	--   The vars should be type constructors 
-	| MConvert	PrimType PrimType
+	-- | Conversion between numeric types,
+	--   and casting between pointers to numeric types of the same width.
+	| MCast		PrimType  PrimType
 	
 	-- | Some function-call related thing.
 	| MCall 	PrimCall
@@ -51,3 +57,15 @@ data PrimCall
 	-- | Build a thunk with this arity
 	| PrimCallCurry		Int
 	deriving (Show, Eq)
+
+
+-- | Take the `Type` of a `PrimType`
+takeTypeOfPrimType :: PrimType -> Maybe Type
+takeTypeOfPrimType pt
+ = case pt of
+	PrimTypeWord  (Width w)	-> Just $ makeTData (primTWord  (UnboxedBits w)) kValue []
+	PrimTypeInt   (Width w)	-> Just $ makeTData (primTInt   (UnboxedBits w)) kValue []
+	PrimTypeFloat (Width w)	-> Just $ makeTData (primTFloat (UnboxedBits w)) kValue []
+	_			-> Nothing
+
+

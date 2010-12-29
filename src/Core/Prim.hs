@@ -19,6 +19,7 @@ import DDC.Core.Check.Exp
 import DDC.Type
 import DDC.Var
 import DDC.Base.Prim.PrimOp
+import DDC.Base.Prim.PrimCast
 import qualified Debug.Trace
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
@@ -185,6 +186,12 @@ primX1 tt xx
 	, Just operator				<- readPrimOp (varName v)
 	= XPrim (MOp operator) psArgs
 	
+	-- look for valid casts
+	| Just parts				<- flattenAppsEff xx
+	, (XVar v t : psArgs)			<- parts
+	, Just (pt1, pt2)			<- readPrimCast (varName v)
+	= XPrim (MCast pt1 pt2) psArgs
+		
 	-- look for functions who's arguments can be unboxed
  	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts

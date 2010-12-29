@@ -58,6 +58,13 @@ checkPrim n pp xs env
 	(MOp op, _)
 	 -> checkPrimOpApp (n+1) op xs env 
 
+	(MCast pt1 pt2, [x])
+		|  (x', tX, eff, clo)	<- checkExp' (n+1) x env
+		,  Just t1		<- takeTypeOfPrimType pt1
+		,  Just t2		<- takeTypeOfPrimType pt2
+		,  tX == t1
+		-> ([x'], t2, eff, clo)
+			
 	-- TODO: This was never a good idea. Just use regular application.
 	(MCall _, _)
 	 | Just x'		<- buildAppUsingPrimType xs
@@ -215,5 +222,6 @@ splitLiteralVarBind (VarIdPrim pid)
 
 splitLiteralVarBind _
  	= Nothing
+
 
 

@@ -14,6 +14,15 @@ import	DDC.Runtime.Store
 	Base.Thunk
 
 
+-- Casting --------------------------------------------------------------------
+foreign import primCast_Int64U_Int8U		:: Int64# -> Int8#
+foreign import primCast_Int64U_Int16U		:: Int64# -> Int16#
+foreign import primCast_Int64U_Int32U		:: Int64# -> Int32#
+
+foreign import primCast_Int64U_Word64U		:: Int64# -> Word64#
+foreign import primCast_Int64U_Float64U		:: Int64# -> Float64#
+
+
 -- Boxing ---------------------------------------------------------------------
 boxInt64 :: Int64# -> Int64
 boxInt64 u

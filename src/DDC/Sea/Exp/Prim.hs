@@ -9,6 +9,7 @@ module DDC.Sea.Exp.Prim
 	, PrimFun	(..))
 where
 import DDC.Base.Prim.PrimOp
+import DDC.Base.Prim.PrimType
 import DDC.Sea.Exp.Type
 import DDC.Var
 
@@ -34,6 +35,9 @@ data	Prim
 
 	-- | Unbox some boxed value, given the type of the unboxed version.
 	| MUnbox Type
+
+	-- | Convert numeric types, or cast between pointer types.
+	| MCast  PrimType PrimType
 
 	deriving (Show, Eq)
 

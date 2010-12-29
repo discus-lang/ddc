@@ -242,7 +242,7 @@ update :: FlatString -> Int -> Char32 -> ()
 update str n c
  = do 	pokeOn	(unsafeUnbox&{FlatString} str)
 		(plusPtr (peekDataR_payload str) (8# + unboxInt32 n))  
-		(primWord32U_takeLow8U (unboxChar32 c))
+		(primCast_Word32U_Word8U (unboxChar32 c))
 	()
 
 

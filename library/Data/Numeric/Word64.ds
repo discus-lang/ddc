@@ -14,6 +14,15 @@ import	DDC.Runtime.Store
 	Base.Thunk
 
 
+-- Casting --------------------------------------------------------------------
+foreign import primCast_Word64U_Word8U		:: Word64# -> Word8#
+foreign import primCast_Word64U_Word16U		:: Word64# -> Word16#
+foreign import primCast_Word64U_Word32U		:: Word64# -> Word32#
+
+foreign import primCast_Word64U_Int64U		:: Word64# -> Int64#
+foreign import primCast_Word64U_Float64U	:: Word64# -> Float64#
+
+
 -- Boxing ---------------------------------------------------------------------
 boxWord64 :: Word64# -> Word64
 boxWord64 u

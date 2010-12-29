@@ -15,6 +15,13 @@ import 	Base
 pragma	cc_includes ["math.h"]
 
 
+-- Casting --------------------------------------------------------------------
+foreign import primCast_Float32U_Float64U	:: Float32# -> Float64#
+
+foreign import primCast_Float32U_Word32U	:: Float32# -> Word32#
+foreign import primCast_Float32U_Int32U		:: Float32# -> Int32#
+
+
 -- Boxing ---------------------------------------------------------------------
 boxFloat32 :: Float32# -> Float32
 boxFloat32 u

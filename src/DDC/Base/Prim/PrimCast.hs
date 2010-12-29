@@ -30,7 +30,7 @@ readPrimCast str
 --   These are the numeric types, and (single) pointers to them.
 readCastableType :: String -> Maybe PrimType
 readCastableType str
- 	| Just strPtr	<- stripPrefix "Ptr" str
+ 	| Just strPtr	<- stripPrefix "PtrU" str
 	, Just ptNum	<- readCastableTypeNum strPtr
 	= Just $ PrimTypePtr ptNum
 	

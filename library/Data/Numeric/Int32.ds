@@ -14,6 +14,15 @@ import	DDC.Runtime.Store
 	Base.Thunk
 
 
+-- Casting --------------------------------------------------------------------
+foreign import primCast_Int32U_Int8U		:: Int32# -> Int8#
+foreign import primCast_Int32U_Int16U		:: Int32# -> Int16#
+foreign import primCast_Int32U_Int64U		:: Int32# -> Int64#
+
+foreign import primCast_Int32U_Word32U		:: Int32# -> Word32#
+foreign import primCast_Int32U_Float32U		:: Int32# -> Float32#
+
+
 -- Boxing ---------------------------------------------------------------------
 boxInt32 :: Int32# -> Int32
 boxInt32 u
