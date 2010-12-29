@@ -8,11 +8,3 @@ type FastString = String
 
 unpackFS :: FastString -> String
 unpackFS = id
-
-lengthFS :: FastString -> Int
-lengthFS = length
-
-type LitString = String
-
-mkFastString :: String -> FastString
-mkFastString s = s
