@@ -1,11 +1,12 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 module DDC.Core.Exp.Prim
 	( Prim 		(..)
 	, PrimCall	(..)
 	, PrimOp	(..))
 where
-import DDC.Base.PrimType
-import DDC.Base.PrimOp
+import DDC.Base.Prim.PrimType
+import DDC.Base.Prim.PrimOp
 
 -- | Primitive functions.
 --   These are polymorphic primitives that we deal with directly in the core language.

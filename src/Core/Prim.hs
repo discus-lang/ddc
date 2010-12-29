@@ -18,7 +18,7 @@ import DDC.Core.Glob
 import DDC.Core.Check.Exp
 import DDC.Type
 import DDC.Var
-import DDC.Base.PrimOp
+import DDC.Base.Prim.PrimOp
 import qualified Debug.Trace
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
@@ -269,22 +269,6 @@ isUnboxFunctionV v
 	, "unboxFloat64"
 	, "unboxWord32"
 	, "unboxWord64" ]
-
-
--- | Primitive operators in the source language have names like "primWord32U_neg"
---   This splits off the "_neg" part and returns the associated `PrimOp` (ie `OpNeg`).
-readPrimOp :: String -> Maybe PrimOp
-readPrimOp str
- 	| Just typeOpName		<- stripPrefix "prim" str
-	, (typeName, _ : opName)	<- break (== '_') typeOpName
-	, elem typeName [ "PtrVoid"
-			, "Word32U",  "Word64U"
-			, "Int32U",   "Int64U"
-			, "Float32U", "Float64U"]
-	= readPrimOpName opName
-
-	| otherwise
-	= Nothing
 
 
 ----------------------------------------------------------------------------------------------------

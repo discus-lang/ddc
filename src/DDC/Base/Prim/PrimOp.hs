@@ -1,10 +1,12 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module DDC.Base.PrimOp
+module DDC.Base.Prim.PrimOp
 	( PrimOp(..)
+	, primOpNames
 	, readPrimOpName
-	, primOpNames)
+	, readPrimOp )
 where
+import Data.List
 
 -- | Primitive polymorphic operators. 
 --   We expect the backend to be able to implement these directly.
@@ -57,3 +59,22 @@ primOpNames
 	-- boolean
 	, ("and",	OpAnd)
 	, ("or",	OpOr) ]
+
+
+-- | Primitive operators in the source language have names like "primWord32U_neg"
+--   This splits off the "_neg" part and returns the associated `PrimOp` (ie `OpNeg`).
+readPrimOp :: String -> Maybe PrimOp
+readPrimOp str
+ 	| Just typeOpName		<- stripPrefix "prim" str
+	, (typeName, _ : opName)	<- break (== '_') typeOpName
+	, elem typeName [ "PtrVoid"
+			, "Word32U",  "Word64U"
+			, "Int32U",   "Int64U"
+			, "Float32U", "Float64U"]
+	= readPrimOpName opName
+
+	| otherwise
+	= Nothing
+
+
+

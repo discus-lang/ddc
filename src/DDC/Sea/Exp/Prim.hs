@@ -8,7 +8,7 @@ module DDC.Sea.Exp.Prim
 	, PrimProj	(..)
 	, PrimFun	(..))
 where
-import DDC.Base.PrimOp
+import DDC.Base.Prim.PrimOp
 import DDC.Sea.Exp.Type
 import DDC.Var
 
