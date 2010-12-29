@@ -42,7 +42,7 @@ module Llvm (
         -- * Pretty Printing
         ppLlvmModule, ppLlvmComments, ppLlvmComment, ppLlvmGlobals,
         ppLlvmGlobal, ppLlvmFunctionDecls, ppLlvmFunctionDecl, ppLlvmFunctions,
-        ppLlvmFunction, ppLlvmAlias, ppLlvmAliases, llvmSDoc
+        ppLlvmFunction, ppLlvmAlias, ppLlvmAliases
 
     ) where
 

@@ -19,9 +19,6 @@ module Llvm.PpLlvm (
     ppLlvmFunctions,
     ppLlvmFunction,
 
-    -- * Utility functions
-    llvmSDoc
-
     ) where
 
 #include "HsVersions.h"
@@ -31,7 +28,6 @@ import Llvm.Types
 
 import Data.List ( intersperse )
 import Llvm.GhcReplace.Pretty
-import qualified Llvm.GhcReplace.Outputable as Out
 import Llvm.GhcReplace.Unique
 
 --------------------------------------------------------------------------------
@@ -157,7 +153,7 @@ ppLlvmStatement stmt
         Branch      target        -> ppBranch target
         BranchIf    cond ifT ifF  -> ppBranchIf cond ifT ifF
         Comment     comments      -> ppLlvmComments comments
-        MkLabel     label         -> (llvmSDoc $ pprUnique label) <> colon
+        MkLabel     label         -> (pprUnique label) <> colon
         Store       value ptr     -> ppStore value ptr
         Switch      scrut def tgs -> ppSwitch scrut def tgs
         Return      result        -> ppReturn result
@@ -322,11 +318,6 @@ ppCommaJoin strs = hcat $ intersperse comma (map texts strs)
 
 ppSpaceJoin :: (Show a) => [a] -> Doc
 ppSpaceJoin strs = hcat $ intersperse space (map texts strs)
-
--- | Convert SDoc to Doc
-llvmSDoc :: Out.SDoc -> Doc
-llvmSDoc d
-	= Out.withPprStyleDoc (Out.mkCodeStyle Out.CStyle) d
 
 -- | Showable to Doc
 texts :: (Show a) => a -> Doc
