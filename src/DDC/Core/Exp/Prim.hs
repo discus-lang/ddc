@@ -4,6 +4,7 @@ module DDC.Core.Exp.Prim
 	, PrimCall	(..)
 	, PrimOp	(..))
 where
+import DDC.Base.PrimType
 
 -- | Primitive functions.
 --   These are polymorphic primitives that we deal with directly in the core language.
@@ -21,6 +22,10 @@ data Prim
 
 	-- | Invoke a primitive operator.
 	| MOp		PrimOp
+	
+	-- | Conversion between numeric types.
+	--   The vars should be type constructors 
+	| MConvert	PrimType PrimType
 	
 	-- | Some function-call related thing.
 	| MCall 	PrimCall

@@ -406,9 +406,10 @@ instance Monad m => TransM m Prim where
  transZM table tt
   = case tt of
 	MForce		-> transM table tt
-	MBox 		-> transM table	tt
+	MBox 		-> transM table tt
 	MUnbox		-> transM table tt
 	MOp op 		-> transM table tt
+	MConvert{}	-> transM table tt
 	MCall{}		-> transM table tt
 
 		
