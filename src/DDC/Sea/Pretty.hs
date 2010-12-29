@@ -66,7 +66,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	-- CAFs
 	PCafProto v t
-	 | not $ typeIsBoxed t	-> nl
+	 | not $ typeIsBoxed t	-> "extern" %% t %>> " _ddcCAF_" % sV v % ";"
 	 | otherwise		-> "extern" %% t %>> " *_ddcCAF_" % sV v % ";"
 
 	PCafSlot  v t
