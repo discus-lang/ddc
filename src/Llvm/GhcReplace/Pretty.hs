@@ -4,8 +4,6 @@
 
 module Llvm.GhcReplace.Pretty where
 
-import Llvm.GhcReplace.FastString
-
 type Doc = String
 
 infixl 6 <>
@@ -49,7 +47,7 @@ doubleQuotes p  = "\"" <> p <> "\""
 brackets :: Doc -> Doc
 brackets p = "[" <> p <> "]"
 
-ftext :: FastString -> Doc
+ftext :: String -> Doc
 ftext fs = fs
 
 hcat :: [Doc] -> Doc          -- List version of <>

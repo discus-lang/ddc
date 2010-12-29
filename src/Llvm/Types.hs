@@ -12,7 +12,6 @@ import Data.Char
 import Numeric
 
 import Llvm.GhcReplace.Constants
-import Llvm.GhcReplace.FastString
 import Llvm.GhcReplace.Unique
 
 -- from NCG
@@ -25,7 +24,7 @@ import Llvm.GhcReplace.PprBase
 -- | A global mutable variable. Maybe defined or external
 type LMGlobal = (LlvmVar, Maybe LlvmStatic)
 -- | A String in LLVM
-type LMString = FastString
+type LMString = String
 
 -- | A type alias
 type LlvmAlias = (LMString, LlvmType)
@@ -69,7 +68,7 @@ instance Show LlvmType where
                         _otherwise                -> ""
       in show r ++ " (" ++ args ++ varg' ++ ")"
 
-  show (LMAlias (s,_)) = "%" ++ unpackFS s
+  show (LMAlias (s,_)) = "%" ++ s
 
 -- | An LLVM section definition. If Nothing then let LLVM decide the section
 type LMSection = Maybe LMString
@@ -133,10 +132,10 @@ data LlvmStatic
   | LMSub LlvmStatic LlvmStatic        -- ^ Constant subtraction operation
 
 instance Show LlvmStatic where
-  show (LMComment       s) = "; " ++ unpackFS s
+  show (LMComment       s) = "; " ++ s
   show (LMStaticLit   l  ) = show l
   show (LMUninitType    t) = show t ++ " undef"
-  show (LMStaticStr   s t) = show t ++ " c\"" ++ unpackFS s ++ "\\00\""
+  show (LMStaticStr   s t) = show t ++ " c\"" ++ s ++ "\\00\""
 
   show (LMStaticArray d t)
       = let struc = case d of
@@ -201,9 +200,9 @@ getName v@(LMLitVar    _          ) = getPlainName v
 -- | Return the variable name or value of the 'LlvmVar'
 -- in a plain textual representation (e.g. @x@, @y@ or @42@).
 getPlainName :: LlvmVar -> String
-getPlainName (LMGlobalVar x _ _ _ _ _) = unpackFS x
+getPlainName (LMGlobalVar x _ _ _ _ _) = x
 getPlainName (LMLocalVar  x _        ) = show x
-getPlainName (LMNLocalVar x _        ) = unpackFS x
+getPlainName (LMNLocalVar x _        ) = x
 getPlainName (LMLitVar    x          ) = getLit x
 
 -- | Print a literal value. No type.
@@ -376,7 +375,7 @@ instance Show LlvmFunctionDecl where
           align = case a of
                        Just a' -> " align " ++ show a'
                        Nothing -> ""
-      in show l ++ " " ++ show c ++ " " ++ show r ++ " @" ++ unpackFS n ++
+      in show l ++ " " ++ show c ++ " " ++ show r ++ " @" ++ n ++
              "(" ++ args ++ varg' ++ ")" ++ align
 
 type LlvmFunctionDecls = [LlvmFunctionDecl]
