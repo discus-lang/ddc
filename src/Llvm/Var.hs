@@ -38,14 +38,25 @@ toLlvmGlobalVar v t
 
 
 toLlvmCafVar :: Var -> Type -> LlvmM LlvmVar
+toLlvmCafVar v t@(TPtr _)
+ = do	let lvar = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
+	mId	<- getModuleId
+	if mId == varModuleId v
+	  then return lvar
+	  else
+	    do	-- TODO : Need double lift here because the LLVM pretty printer
+		-- lowers globals during code gen. This should be fixed by
+		-- removing the pLower in the code gen.
+		addGlobalVar (pVarLift (pVarLift lvar), Nothing)
+		return lvar
+
 toLlvmCafVar v t
  = do	let lvar = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
 	mId	<- getModuleId
 	if mId == varModuleId v
 	  then return lvar
 	  else
-	    do	-- Not sure why double lift is required here!
-		addGlobalVar (pVarLift (pVarLift lvar), Nothing)
+	    do	addGlobalVar (pVarLift lvar, Nothing)
 		return lvar
 
 
