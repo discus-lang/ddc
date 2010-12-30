@@ -1,5 +1,5 @@
 
-main  = s k k 
+test  = s k k
 
 s f g x = f x (g x)
 
