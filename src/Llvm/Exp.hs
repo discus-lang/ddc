@@ -198,10 +198,16 @@ mkOpFunc varType op
 	(_	,	OpAdd)	-> LlvmOp LM_MO_Add
 	(_	,	OpSub)	-> LlvmOp LM_MO_Sub
 	(_	,	OpMul)	-> LlvmOp LM_MO_Mul
-	(_	,	OpDiv)	-> LlvmOp LM_MO_SDiv
-	(_	,	OpMod)	-> LlvmOp LM_MO_SRem
 
-	-- Int comparison.
+	-- Integer difision and remainder.
+	(LMInt _,	OpDiv)	-> LlvmOp LM_MO_SDiv
+	(LMInt _,	OpMod)	-> LlvmOp LM_MO_SRem
+
+	-- Float difision and remainder.
+	(_	,	OpDiv)	-> LlvmOp LM_MO_FDiv
+	(_	,	OpMod)	-> LlvmOp LM_MO_FRem
+
+	-- Integer comparison.
 	(LMInt _,	OpEq)	-> Compare LM_CMP_Eq
 	(LMInt _,	OpNeq)	-> Compare LM_CMP_Ne
 
