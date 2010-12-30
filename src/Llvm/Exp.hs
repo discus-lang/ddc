@@ -113,7 +113,7 @@ llvmOfXPrim (MOp op) [l, r]
  = do	lhs		<- llvmOfExp l
 	rhs		<- llvmOfExp r
 	result		<- newUniqueReg $ opResultType op lhs
-	addBlock	[ Assignment result (mkOpFunc op lhs rhs) ]
+	addBlock	[ Assignment result (mkOpFunc (getVarType lhs) op lhs rhs) ]
 	return		result
 
 llvmOfXPrim (MBox t@(TCon _)) [ x ]
@@ -192,32 +192,41 @@ primCall primId exp@((XVar (NSuper fv) (TFun at rt)):args)
 
 --------------------------------------------------------------------------------
 
-mkOpFunc :: PrimOp -> (LlvmVar -> LlvmVar -> LlvmExpression)
-mkOpFunc op
- = case op of
-	OpAdd	-> LlvmOp LM_MO_Add
-	OpSub	-> LlvmOp LM_MO_Sub
-	OpMul	-> LlvmOp LM_MO_Mul
-	OpDiv	-> LlvmOp LM_MO_SDiv
-	OpMod	-> LlvmOp LM_MO_SRem
+mkOpFunc :: LlvmType -> PrimOp -> (LlvmVar -> LlvmVar -> LlvmExpression)
+mkOpFunc varType op
+ = case (varType, op) of
+	(_	,	OpAdd)	-> LlvmOp LM_MO_Add
+	(_	,	OpSub)	-> LlvmOp LM_MO_Sub
+	(_	,	OpMul)	-> LlvmOp LM_MO_Mul
+	(_	,	OpDiv)	-> LlvmOp LM_MO_SDiv
+	(_	,	OpMod)	-> LlvmOp LM_MO_SRem
 
-	-- Comparison.
-	OpEq	-> Compare LM_CMP_Eq
-	OpNeq	-> Compare LM_CMP_Ne
+	-- Int comparison.
+	(LMInt _,	OpEq)	-> Compare LM_CMP_Eq
+	(LMInt _,	OpNeq)	-> Compare LM_CMP_Ne
 
 	-- Use the signed versions of these for now. However, LLVM also has
 	-- unsigned comparision for operating on unsigned values.
-	OpGt	-> Compare LM_CMP_Sgt
-	OpGe	-> Compare LM_CMP_Sge
-	OpLt	-> Compare LM_CMP_Slt
-	OpLe	-> Compare LM_CMP_Sle
+	(LMInt _, 	OpGt)	-> Compare LM_CMP_Sgt
+	(LMInt _, 	OpGe)	-> Compare LM_CMP_Sge
+	(LMInt _, 	OpLt)	-> Compare LM_CMP_Slt
+	(LMInt _, 	OpLe)	-> Compare LM_CMP_Sle
+
+	-- Float comparison.
+	(_	,	OpEq)	-> Compare LM_CMP_Feq
+	(_	,	OpNeq)	-> Compare LM_CMP_Fne
+
+	(_	,	OpGt)	-> Compare LM_CMP_Fgt
+	(_	, 	OpGe)	-> Compare LM_CMP_Fge
+	(_	, 	OpLt)	-> Compare LM_CMP_Flt
+	(_	, 	OpLe)	-> Compare LM_CMP_Fle
 
 	-- boolean
-	OpAnd	-> LlvmOp LM_MO_And
-	OpOr	-> LlvmOp LM_MO_Or
+	(_	,	OpAnd)	-> LlvmOp LM_MO_And
+	(_	,	OpOr)	-> LlvmOp LM_MO_Or
 
 	-- Not a binary operatior. Needs to be handled elsewhere.
-	OpNeg	-> panic stage $ "mkOpFunc (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show op
+	(_	,	OpNeg)	-> panic stage $ "mkOpFunc (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show op
 
 
 opResultType :: PrimOp -> LlvmVar -> LlvmType
