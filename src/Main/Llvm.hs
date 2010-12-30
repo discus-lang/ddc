@@ -490,16 +490,10 @@ branchVar var
 --------------------------------------------------------------------------------
 
 llvmOfReturn :: Exp a -> LlvmM ()
-
-llvmOfReturn (XVar n@(NAuto v) t)
- = do	addComment	$ "Return NAuto " ++ show v
-	reg		<- newUniqueReg $ toLlvmType t
-	addBlock	[ Assignment reg (loadAddress (toLlvmVar (varOfName n) t))
-			, Return (Just reg) ]
-
-llvmOfReturn (XVar n t)
- = do	addComment $ "Return " ++ show n
-	addBlock [ Return (Just (toLlvmVar (varOfName n) t)) ]
+llvmOfReturn exp@XVar{}
+ = do	addComment	$ "Return NCafPtr " ++ show exp
+	reg		<- llvmOfExp exp
+	addBlock	[ Return (Just reg) ]
 
 llvmOfReturn x
  = 	panic stage $ "llvmOfReturn (" ++ (show __LINE__) ++ ") " ++ (takeWhile (/= ' ') (show x))
