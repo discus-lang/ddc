@@ -199,11 +199,11 @@ mkOpFunc varType op
 	(_	,	OpSub)	-> LlvmOp LM_MO_Sub
 	(_	,	OpMul)	-> LlvmOp LM_MO_Mul
 
-	-- Integer difision and remainder.
+	-- Integer division and remainder.
 	(LMInt _,	OpDiv)	-> LlvmOp LM_MO_SDiv
 	(LMInt _,	OpMod)	-> LlvmOp LM_MO_SRem
 
-	-- Float difision and remainder.
+	-- Float division and remainder.
 	(_	,	OpDiv)	-> LlvmOp LM_MO_FDiv
 	(_	,	OpMod)	-> LlvmOp LM_MO_FRem
 
