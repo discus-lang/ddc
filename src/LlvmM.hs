@@ -2,9 +2,7 @@ module LlvmM
 	( LlvmState
 	, LlvmM
 	, addBlock
-	, addBlockResult
 	, addComment
-	, currentReg
 
 	, addAlias
 
@@ -49,14 +47,12 @@ stage = "LlvmM"
 
 data LlvmState
 	= LS
-	-- Two temporary variables to hold the current 'of interest' register
-	-- and a list of blocks of statements. The blocks of statements are
-	-- pushed onto the head of the list and when all statements for a
-	-- function are available, the list of blocks is reversed and
-	-- concatenated to produce a list of statements, which can then be
-	-- pushed onto the functions list below.
-	{ tmpReg	:: Maybe LlvmVar
-	, tmpBlocks	:: [[LlvmStatement]]
+	-- Temporary variable to hold the current  list of blocks of statements.
+	-- The blocks of statements are pushed onto the head of the list and
+	-- when all statements for a function are available, the list of blocks
+	-- is reversed and concatenated to produce a list of statements, which
+	-- can then be pushed onto the functions list below.
+	{ tmpBlocks	:: [[LlvmStatement]]
 
 	-- | The module Id of the current module.
 	, moduleId	:: ModuleId
@@ -80,8 +76,7 @@ type LlvmM = StateT LlvmState IO
 
 initLlvmState :: ModuleId -> LlvmState
 initLlvmState modId
- = LS	{ tmpReg	= Nothing
-	, tmpBlocks	= []
+ = LS	{ tmpBlocks	= []
 
 	, moduleId	= modId
 	, aliases	= Map.empty
@@ -95,24 +90,14 @@ addBlock :: [LlvmStatement] -> LlvmM ()
 addBlock code
  = do	state	<- get
 	modify $ \s -> s
-		{ tmpReg = Nothing
-		, tmpBlocks = code : tmpBlocks state }
-
-
-addBlockResult :: LlvmVar -> [LlvmStatement] -> LlvmM ()
-addBlockResult result code
- = do	state	<- get
-	modify $ \s -> s
-		{ tmpReg = Just result
-		, tmpBlocks = code : tmpBlocks state }
+		{ tmpBlocks = code : tmpBlocks state }
 
 
 addComment :: LMString -> LlvmM ()
 addComment text
  = do	state	<- get
 	modify $ \s -> s
-		{ tmpReg = tmpReg state
-		, tmpBlocks = [Comment (lines text)] : tmpBlocks state }
+		{ tmpBlocks = [Comment (lines text)] : tmpBlocks state }
 
 
 addGlobalVar :: LMGlobal -> LlvmM ()
@@ -129,16 +114,9 @@ addGlobalVar (gvar, init)
 					++ "\n    " ++ show gvar
 
 
-
-currentReg :: LlvmM LlvmVar
-currentReg
- = do	state	<- get
-	return $ fromJust $ tmpReg state
-
-
 startFunction :: LlvmM ()
 startFunction
- =	modify $ \s -> s { tmpReg = Nothing, tmpBlocks = [] }
+ =	modify $ \s -> s { tmpBlocks = [] }
 
 
 endFunction :: LlvmFunctionDecl -> [LMString] -> [LlvmFuncAttr] -> LMSection -> LlvmM ()
