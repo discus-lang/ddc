@@ -14,67 +14,46 @@ import	DDC.Runtime.Store
 	Base.Thunk
 
 
--- Casting --------------------------------------------------------------------
+-- Builtin Primitives ---------------------------------------------------------
+-- There aren't any corresponding C functions for these.
+-- They're implemented directly by the core language and backends.
+
+-- Casting 
 foreign import primCast_Word64U_Word8U		:: Word64# -> Word8#
 foreign import primCast_Word64U_Word16U		:: Word64# -> Word16#
 foreign import primCast_Word64U_Word32U		:: Word64# -> Word32#
-
 foreign import primCast_Word64U_Int64U		:: Word64# -> Int64#
 foreign import primCast_Word64U_Float64U	:: Word64# -> Float64#
+
+-- Arithmetic
+foreign import primWord64U_neg 			:: Word64# -> Word64#
+foreign import primWord64U_add 			:: Word64# -> Word64# -> Word64#
+foreign import primWord64U_sub 			:: Word64# -> Word64# -> Word64#
+foreign import primWord64U_mul 			:: Word64# -> Word64# -> Word64#
+foreign import primWord64U_div 			:: Word64# -> Word64# -> Word64#
+foreign import primWord64U_mod 			:: Word64# -> Word64# -> Word64#
+
+-- Comparisons
+foreign import primWord64U_eq			:: Word64# -> Word64# -> Bool#
+foreign import primWord64U_neq			:: Word64# -> Word64# -> Bool#
+foreign import primWord64U_gt			:: Word64# -> Word64# -> Bool#
+foreign import primWord64U_ge			:: Word64# -> Word64# -> Bool#
+foreign import primWord64U_lt			:: Word64# -> Word64# -> Bool#
+foreign import primWord64U_le			:: Word64# -> Word64# -> Bool#
 
 
 -- Boxing ---------------------------------------------------------------------
 boxWord64 :: Word64# -> Word64
 boxWord64 u
  = do	w	= primAlloc_dataRS 0# 8#
-	poke (castToPtrWord64 (peekDataRS_payload w)) u
+	poke (peekDataRS_payload w) u
 	w
 
 
 unboxWord64 :: Word64 -> Word64#
 unboxWord64 w
  = do	w'	= force w
-	peekOn w (castToPtrWord64 (peekDataRS_payload w'))
-
-
--- Arithmetic -----------------------------------------------------------------
-foreign import "primWord64U_neg"
- primWord64U_neg :: Word64# -> Word64#
-
-foreign import "primWord64U_add"
- primWord64U_add :: Word64# -> Word64# -> Word64#
-
-foreign import "primWord64U_sub"
- primWord64U_sub :: Word64# -> Word64# -> Word64#
-
-foreign import "primWord64U_mul"
- primWord64U_mul :: Word64# -> Word64# -> Word64#
-
-foreign import "primWord64U_div"
- primWord64U_div :: Word64# -> Word64# -> Word64#
-
-foreign import "primWord64U_mod"
- primWord64U_mod :: Word64# -> Word64# -> Word64#
-
-
--- Comparisons ----------------------------------------------------------------
-foreign import "primWord64U_eq"	
- primWord64U_eq	:: Word64# -> Word64# -> Bool#
-
-foreign import "primWord64U_neq"	
- primWord64U_neq :: Word64# -> Word64# -> Bool#
-
-foreign import "primWord64U_gt"	
- primWord64U_gt	:: Word64# -> Word64# -> Bool#
-
-foreign import "primWord64U_ge"	
- primWord64U_ge	:: Word64# -> Word64# -> Bool#
-
-foreign import "primWord64U_lt"	
- primWord64U_lt	:: Word64# -> Word64# -> Bool#
-
-foreign import "primWord64U_le"	
- primWord64U_le	:: Word64# -> Word64# -> Bool#
+	peekOn w (peekDataRS_payload w')
 
 
 -- Unboxed Instances ----------------------------------------------------------
@@ -131,7 +110,7 @@ instance Copy Word64 where
 instance Updatable Word64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrWord64 (peekDataRS_payload w1')) (unboxWord64 w2)
+		pokeOn w1 (peekDataRS_payload w1') (unboxWord64 w2)
 		()
 
 

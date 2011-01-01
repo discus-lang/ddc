@@ -5,7 +5,8 @@ module 	Data.FlatString
 
 export	flatString_copy
 
-import 	Data.Numeric.Int32
+import	Data.Numeric.Word8
+	Data.Numeric.Int32
  	Data.StringU
  	Data.Char
 	Data.Maybe
@@ -34,14 +35,14 @@ instance Copy FlatString where
 
 -- Boxing --------------------------------------------------------------------
 -- | Create a new FlatString and copy the source into it.
-box :: String# %r1 -> FlatString %r2
+box :: Ptr# (String# %r1) -> FlatString %r2
 box strU
  = do	-- make a new string for the destination
  	len	= strlen strU
 	str	= new&{FlatString} (boxInt32 (len + 1#))
 
 	-- copy the source into it
-	dest	= castPtrWord8ToString (plusPtr (peekDataR_payload str) 8#)
+	dest	= coercePtr (plusPtr (peekDataR_payload str) 8#)
 	strcpy dest strU
 
 	str.setLengthU len
@@ -55,9 +56,9 @@ box strU
 --           the returned pointer. Don't hold onto the pointer across a
 --           a potential allocation.
 --
-unsafeUnbox :: FlatString %r1 -> String# %r1
+unsafeUnbox :: FlatString %r1 -> Ptr# (String# %r1)
 unsafeUnbox str@(FlatString)
- 	= castPtrWord8ToString (plusPtr (peekDataR_payload str) 8#)
+ 	= coercePtr (plusPtr (peekDataR_payload str) 8#)
 
 -- | Apply a function to a copy of the unboxed String contained
 --   in a FlatString. This String is copied out to the C heap before,
@@ -98,16 +99,16 @@ new length
 	str 	:: FlatString %r
 	str	= primAlloc_dataR 0# len_payload
 
-	payload	= peekDataR_payload str
+	payload = peekDataR_payload str
 
 	-- clear out the payload
-	memset (castPtrWord8ToString payload) 0# len_payload
+	memset (coercePtr payload) 0# len_payload
  
 	-- write the maxLength
-	poke   (castToPtrInt32 payload) len
+	poke   payload len
 
 	-- write the length
-	poke   (castToPtrInt32 (plusPtr payload 4#)) 0#
+	poke   (coercePtr (plusPtr (coercePtr payload) 4#)) 0#
 	
 	str
 
@@ -119,15 +120,14 @@ empty	= new 0
 -- | Get the maximum number of charaters that can be stored in a FlatString.
 maxLengthU :: FlatString -> Int32#
 maxLengthU str@(FlatString)
- = do	payload = peekDataR_payload str
-	peek (castToPtrInt32 payload)
+ =	peek (peekDataR_payload str)
 
 
 -- | Get the number of charaters currently stored in a FlatString.
 lengthU :: FlatString -> Int32#
 lengthU str@(FlatString)
  = do	payload	= peekDataR_payload str
-	peek (castToPtrInt32 (plusPtr payload 4#))
+	peek (coercePtr (plusPtr payload 4#))
 
 
 -- | Set the current length of the string
@@ -138,7 +138,7 @@ lengthU str@(FlatString)
 setLengthU :: FlatString -> Int32# -> ()
 setLengthU str@(FlatString) len
  = do	payload	= peekDataR_payload str
-	poke (castToPtrInt32 (plusPtr payload 4#)) len
+	poke (coercePtr (plusPtr payload 4#)) len
 	()
 
 
@@ -171,7 +171,7 @@ index str ix
  	payload	= peekDataR_payload str
 	w8	= peek (plusPtr payload (8#i32 + ixU))
 	
-	boxChar32 (promote_word8ToChar32 w8)
+	boxChar32 (primCast_Word8U_Word32U w8)
 
 
 -- | Get how many charaters there are still available in a FlatString.
@@ -200,8 +200,8 @@ slice str start len
 	
 	startU	= unboxInt32 start
 	lenU	= unboxInt32 len
-	dst	= castStringToPtrWord8 (unsafeUnbox str')
-	src	= plusPtr (castStringToPtrWord8 (unsafeUnbox str)) startU
+	dst	= coercePtr (unsafeUnbox str')
+	src	= plusPtr   (coercePtr (unsafeUnbox str)) startU
 	memcpy dst src lenU
 	
 	str'
@@ -240,7 +240,8 @@ unfoldrN len f x0
 -- | We should really handle this via a type class.
 update :: FlatString -> Int -> Char32 -> ()
 update str n c
- = do 	pokeOn	(unsafeUnbox&{FlatString} str)
+ = do 	pokeOnPtr
+		(unsafeUnbox&{FlatString} str)
 		(plusPtr (peekDataR_payload str) (8# + unboxInt32 n))  
 		(primCast_Word32U_Word8U (unboxChar32 c))
 	()

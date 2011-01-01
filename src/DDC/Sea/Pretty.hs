@@ -332,9 +332,21 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 | otherwise
 	 -> "_unboxDirect(" % t % ", " % x % ")"
 
-	-- Casting
-	XPrim (MCast _ pt2) [x]
-	 -> parens (pprPrimType pt2) % x
+	-- Casting between numeric types.
+	XPrim (MCast pt1 pt2) [x]
+	 -> "_CAST"
+		% "("  % pprPrimType pt1
+		% ", " % pprPrimType pt2
+		% ", " % x
+		% ")"
+
+	-- Coercion between pointer types
+	XPrim (MCoercePtr t1 t2) [x]
+	 -> "_COERCEPTR" 
+		% "("  % t1
+		% ", " % t2
+		% ", " % x
+		% ")"
 
 	_ -> panic stage ("ppr[Exp]: no match for " % show xx)
 
@@ -381,17 +393,10 @@ pprTypeArg tt
 pprPrimType :: PrimType -> Str
 pprPrimType pt
  = case pt of
-	PrimTypeWord  (Width w)			-> "Word"  % w
-	PrimTypeInt   (Width w)			-> "Int"   % w
-	PrimTypeFloat (Width w)			-> "Float" % w
-
-	PrimTypePtr   (ptn@PrimTypeWord{})	-> ptn % "*"
-	PrimTypePtr   (ptn@PrimTypeInt{})	-> ptn % "*"
-	PrimTypePtr   (ptn@PrimTypeFloat{})	-> ptn % "*"
-	
-	_	-> panic stage
-		$ "pprPrimType: not printing unexpected primType."
-	
+	PrimTypePtr		-> ppr "Ptr"
+	PrimTypeWord  (Width w)	-> "Word"  % w
+	PrimTypeInt   (Width w)	-> "Int"   % w
+	PrimTypeFloat (Width w)	-> "Float" % w	
 
 
 -- TyCon ------------------------------------------------------------------------------------------
@@ -401,7 +406,6 @@ instance Pretty TyCon PMode where
 	TyConObj	-> ppr "Obj"
 	TyConAbstract v	-> ppr $ seaNameOfCtor v
 	TyConUnboxed  v -> ppr $ seaNameOfCtor v
-
 
 
 -- | Get the Sea name of a type constructor name.

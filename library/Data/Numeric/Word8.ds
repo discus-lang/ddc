@@ -1,0 +1,41 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+module 	Data.Numeric.Word8
+
+import	DDC.Runtime.Store
+	DDC.Runtime.Alloc
+	Foreign.Ptr
+	Class.Eq
+	Class.Ord
+	Class.Copy
+	Class.Update
+	Class.Num
+	Class.Integral
+	Base.Thunk
+
+
+-- Builtin Primitives ---------------------------------------------------------
+-- There aren't any corresponding C functions for these.
+-- They're implemented directly by the core language and backends.
+
+-- Casting
+foreign import primCast_Word8U_Word16U		:: Word8# -> Word16#
+foreign import primCast_Word8U_Word32U		:: Word8# -> Word32#
+foreign import primCast_Word8U_Word64U		:: Word8# -> Word64#
+foreign import primCast_Word8U_Int8U		:: Word8# -> Int8#
+
+-- Arithmetic 
+foreign import primWord32U_neg			:: Word8# -> Word8#
+foreign import primWord32U_add			:: Word8# -> Word8# -> Word8#
+foreign import primWord32U_sub 			:: Word8# -> Word8# -> Word8#
+foreign import primWord32U_mul 			:: Word8# -> Word8# -> Word8#
+foreign import primWord32U_div			:: Word8# -> Word8# -> Word8#
+foreign import primWord32U_mod			:: Word8# -> Word8# -> Word8#
+
+-- Comparisons
+foreign import primWord32U_eq			:: Word8# -> Word8# -> Bool#
+foreign import primWord32U_neq			:: Word8# -> Word8# -> Bool#
+foreign import primWord32U_gt			:: Word8# -> Word8# -> Bool#
+foreign import primWord32U_ge			:: Word8# -> Word8# -> Bool#
+foreign import primWord32U_lt			:: Word8# -> Word8# -> Bool#
+foreign import primWord32U_le			:: Word8# -> Word8# -> Bool#

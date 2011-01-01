@@ -15,116 +15,79 @@ import 	Base
 pragma	cc_includes ["math.h"]
 
 
--- Casting --------------------------------------------------------------------
-foreign import primCast_Float32U_Float64U	:: Float32# -> Float64#
+-- Builtin Primitives ---------------------------------------------------------
+-- There aren't any corresponding C functions for these.
+-- They're implemented directly by the core language and backends.
 
+-- Casting
+foreign import primCast_Float32U_Float64U	:: Float32# -> Float64#
 foreign import primCast_Float32U_Word32U	:: Float32# -> Word32#
 foreign import primCast_Float32U_Int32U		:: Float32# -> Int32#
+
+-- Arithmetic
+foreign import primFloat32U_neg			:: Float32# -> Float32#
+foreign import primFloat32U_add			:: Float32# -> Float32# -> Float32#
+foreign import primFloat32U_sub			:: Float32# -> Float32# -> Float32#
+foreign import primFloat32U_mul			:: Float32# -> Float32# -> Float32#
+foreign import primFloat32U_div			:: Float32# -> Float32# -> Float32#
+
+-- Comparison 
+foreign import primFloat32U_eq			:: Float32# -> Float32# -> Bool#
+foreign import primFloat32U_neq			:: Float32# -> Float32# -> Bool#
+foreign import primFloat32U_gt			:: Float32# -> Float32# -> Bool#
+foreign import primFloat32U_ge			:: Float32# -> Float32# -> Bool#
+foreign import primFloat32U_lt			:: Float32# -> Float32# -> Bool#
+foreign import primFloat32U_le			:: Float32# -> Float32# -> Bool#
+
+
+-- External Primitives --------------------------------------------------------
+-- These are implemented by the C math library and/or as intrinsic
+-- functions in the backends.
+
+-- Arithmetic 
+foreign import "fabsf"	primFloat32U_abs  	:: Float32# -> Float32#
+
+-- Trig 
+foreign import "sinf"	primFloat32U_sin	:: Float32# -> Float32#
+foreign import "asinf"	primFloat32U_asin	:: Float32# -> Float32#
+foreign import "cosf"	primFloat32U_cos	:: Float32# -> Float32#
+foreign import "acosf"	primFloat32U_acos	:: Float32# -> Float32#
+foreign import "tanf"	primFloat32U_tan	:: Float32# -> Float32#
+foreign import "atanf"	primFloat32U_atan	:: Float32# -> Float32#
+
+
+-- Utils
+foreign import "truncf"	primFloat32U_ftrunc	:: Float32# -> Float32#
+foreign import "roundf"	primFloat32U_fround	:: Float32# -> Float32#
+foreign import "floorf"	primFloat32U_ffloor	:: Float32# -> Float32#
+foreign import "fmodf"	primFloat32U_fmod	:: Float32# -> Float32# -> Float32#
+foreign import "powf"	primFloat32U_fpow	:: Float32# -> Float32# -> Float32#
+foreign import "sqrtf"	primFloat32U_sqrt	:: Float32# -> Float32#
+foreign import "logf"	primFloat32U_log	:: Float32# -> Float32#
 
 
 -- Boxing ---------------------------------------------------------------------
 boxFloat32 :: Float32# -> Float32
 boxFloat32 u
  = do	w	= primAlloc_dataRS 0# 4#
-	poke (castToPtrFloat32 (peekDataRS_payload w)) u
+	poke (peekDataRS_payload w) u
 	w
 
 
 unboxFloat32 :: Float32 -> Float32#
 unboxFloat32 w
  = do	w'	= force w
-	peekOn w (castToPtrFloat32 (peekDataRS_payload w'))
+	peekOn w (peekDataRS_payload w')
 
 
 -- Conversion -----------------------------------------------------------------
+-- TODO: rewrite these directly in Disciple.
+
 foreign import "primFloat32_toFloat"
  toFloat	:: Int32{read}   -> Float32
 
 foreign import "primFloat32_truncate"
  truncate	:: Float32{read} -> Int32
-
-
--- Arithmetic -----------------------------------------------------------------
-foreign import "primFloat32U_neg"
- primFloat32U_neg	:: Float32# -> Float32#
-
-foreign import "fabsf"
- primFloat32U_abs  	:: Float32# -> Float32#
-
-foreign import "primFloat32U_add"
- primFloat32U_add	:: Float32# -> Float32# -> Float32#
-
-foreign import "primFloat32U_sub"
- primFloat32U_sub	:: Float32# -> Float32# -> Float32#
-
-foreign import "primFloat32U_mul"
- primFloat32U_mul	:: Float32# -> Float32# -> Float32#
-
-foreign import "primFloat32U_div"
- primFloat32U_div	:: Float32# -> Float32# -> Float32#
-
-
--- Comparisons ----------------------------------------------------------------
-foreign import "primFloat32U_eq"
- primFloat32U_eq	:: Float32# -> Float32# -> Bool#
-
-foreign import "primFloat32U_neq"
- primFloat32U_neq	:: Float32# -> Float32# -> Bool#
-
-foreign import "primFloat32U_gt"
- primFloat32U_gt	:: Float32# -> Float32# -> Bool#
-
-foreign import "primFloat32U_ge"
- primFloat32U_ge	:: Float32# -> Float32# -> Bool#
-
-foreign import "primFloat32U_lt"
- primFloat32U_lt	:: Float32# -> Float32# -> Bool#
-
-foreign import "primFloat32U_le"
- primFloat32U_le	:: Float32# -> Float32# -> Bool#
-
-
--- Trig -----------------------------------------------------------------------
-foreign import "sinf"
- primFloat32U_sin	:: Float32# -> Float32#
-
-foreign import "asinf"
- primFloat32U_asin	:: Float32# -> Float32#
-
-foreign import "cosf"
- primFloat32U_cos	:: Float32# -> Float32#
- 
-foreign import "acosf"
- primFloat32U_acos	:: Float32# -> Float32#
-
-foreign import "tanf"
- primFloat32U_tan	:: Float32# -> Float32#
- 
-foreign import "atanf"
- primFloat32U_atan	:: Float32# -> Float32#
-
-
--- Utils ----------------------------------------------------------------------
-foreign import "truncf"
- primFloat32U_ftrunc	:: Float32# -> Float32#
-
-foreign import "roundf"
- primFloat32U_fround	:: Float32# -> Float32#
-
-foreign import "floorf"
- primFloat32U_ffloor	:: Float32# -> Float32#
-
-foreign import "fmodf"
- primFloat32U_fmod	:: Float32# -> Float32# -> Float32#
-
-foreign import "powf"
- primFloat32U_fpow	:: Float32# -> Float32# -> Float32#
-
-foreign import "sqrtf"
- primFloat32U_sqrt	:: Float32# -> Float32#
-
-foreign import "logf"
- primFloat32U_log	:: Float32# -> Float32#
 
 
 -- Unboxed Instances ----------------------------------------------------------
@@ -189,8 +152,8 @@ instance Ord Float32 where
 	min x y		= if x <= y then x else y
 	max x y		= if x >= y then x else y
 
--- Note: The primFloat32* functions shouldn't be inlined because Core.Prim
---       needs these specific names for our pretend cross-module inlining setup.
+-- Note: The primFloat32* functions shouldn't be inlined into these defs
+-- 	because Core.Prim needs these specific names for our pretend cross-module inlining setup.
 primFloat32_gt x y	= boxBool   (primFloat32U_gt  (unboxFloat32 x) (unboxFloat32 y))
 primFloat32_lt x y	= boxBool   (primFloat32U_lt  (unboxFloat32 x) (unboxFloat32 y))
 primFloat32_ge x y	= boxBool   (primFloat32U_ge  (unboxFloat32 x) (unboxFloat32 y))
@@ -204,12 +167,12 @@ instance Copy Float32 where
 instance Updatable Float32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrFloat32 (peekDataRS_payload w1')) (unboxFloat32 w2)
+		pokeOn w1 (peekDataRS_payload w1') (unboxFloat32 w2)
 		()
 
 
--- Note: The primFloat32* functions shouldn't be inlined because Core.Prim
---       needs these specific names for our pretend cross-module inlining setup.
+-- Note: The primFloat32* functions shouldn't be inlined into these defs
+--	because Core.Prim needs these specific names for our pretend cross-module inlining setup.
 instance Num Float32 where
 	negate x 	= boxFloat32 (primFloat32U_neg (unboxFloat32 x))
 	abs x		= boxFloat32 (primFloat32U_abs (unboxFloat32 x))

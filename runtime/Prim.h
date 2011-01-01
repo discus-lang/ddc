@@ -69,9 +69,9 @@ Obj*	primSuspend4			(Obj* f, Obj* x1, Obj* x2, Obj *x3, Obj *x4);
 
 // -- Prim.c
 Obj*	primRefUpdate			(Obj* ref, Obj* x);
-Int32	primConnect			(String hostname, Int32 port);
+Int32	primConnect			(String* hostname, Int32 port);
 Int32	primArgCount			(Obj* x);
-String	primArgValue			(Int32 x);
+String*	primArgValue			(Int32 x);
 
 // -- Runtime.c
 Int32	primRuntime_slotUsage		(Obj* x);

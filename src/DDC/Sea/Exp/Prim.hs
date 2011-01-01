@@ -36,8 +36,12 @@ data	Prim
 	-- | Unbox some boxed value, given the type of the unboxed version.
 	| MUnbox Type
 
-	-- | Convert numeric types, or cast between pointer types.
+	-- | Casting between numeric types.
 	| MCast  PrimType PrimType
+
+	-- | Coersion between pointer types.
+	--   The arguments give the type of the pointed-to data.
+	| MCoercePtr Type Type
 
 	deriving (Show, Eq)
 

@@ -191,6 +191,15 @@ primX1 tt xx
 	, (XVar v t : psArgs)			<- parts
 	, Just (pt1, pt2)			<- readPrimCast (varName v)
 	= XPrim (MCast pt1 pt2) psArgs
+	
+	-- look for pointer coersion 
+	| Just parts				<- flattenAppsEff xx
+	, (XVar v t 
+		: XPrimType t1 : XPrimType t2 
+		: psArgs)			<- parts
+	, varName v == "coercePtr"
+	= XPrim (MCoercePtr t1 t2) psArgs
+	
 		
 	-- look for functions who's arguments can be unboxed
  	| Just parts				<- flattenAppsEff xx

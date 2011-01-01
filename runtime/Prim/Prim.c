@@ -114,7 +114,7 @@ Obj*	primFloat64_truncate (Obj* x_)
 #include <string.h>
 #include <sys/socket.h>
 
-Int32	primConnect	(String hostName, Int32 port)
+Int32	primConnect	(String* hostName, Int32 port)
 {
 	// resolve host name
 	struct hostent* hostInfo
@@ -151,7 +151,7 @@ Int32	primArgCount	(Obj* UNUSED (unit))
 	return _ddcArgCount;
 }
 
-String	primArgValue 	(Int32 ix)
+String*	primArgValue 	(Int32 ix)
 {
 	assert (ix >= 0 && ix <= _ddcArgCount);
 	return	_ddcArgValue[ix];

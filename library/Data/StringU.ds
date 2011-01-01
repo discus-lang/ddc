@@ -2,25 +2,12 @@
 
 module	Data.StringU
 import	Base
-	Class.Promote
-	Class.Num
 	Foreign.Ptr
 	DDC.Runtime.Store
 
---- Casting -------------------------------------------------------------------
-foreign import "_castToPtrWord8"
- castStringToPtrWord8 :: String# %r1 -> Ptr# Word8#
 
-foreign import "_castToString"
- castPtrWord8ToString :: Ptr# Word8# -> String# %r1
-
-
--- Functions defined in the RTS -----------------------------------------------
--- | Get a single charater from this string.
---   DANGER: the array bounds is not checked.
---
-stringU_danger_index :: String# -> Int# -> Char32#
-stringU_danger_index str pos
- = do	ptr	= castStringToPtrWord8 str
- 	w	= peek (plusPtr ptr pos)
-	promote_word8ToChar32 w
+-- | Get a single character from a string.
+unsafeIndexStringU :: Ptr# (String# %r1) -> Int# -> Word8#
+unsafeIndexStringU str pos
+ = do	ptr8	= coercePtr str
+	peekOnPtr str (plusPtr ptr8 pos)

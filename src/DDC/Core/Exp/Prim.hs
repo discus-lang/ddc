@@ -13,7 +13,6 @@ import DDC.Base.DataFormat
 import Shared.VarPrim
 
 
-
 -- | Primitive functions.
 --   These are polymorphic primitives that we deal with directly in the core language.
 --   Exposing these makes it easier to perform rewrites. If we had a proper rule rewriting
@@ -31,9 +30,20 @@ data Prim
 	-- | Invoke a primitive operator.
 	| MOp		PrimOp
 	
-	-- | Conversion between numeric types,
-	--   and casting between pointers to numeric types of the same width.
+	-- | Casting between primitive types,
+	--   eg between Int32# and Float32#.
 	| MCast		PrimType  PrimType
+	
+	-- | Coercion between unboxed pointer types.
+	--   eg between (Ptr# (String %r1)) and (Ptr# Word8#)
+	--   The arguments give the type of the pointed-to data.
+	| MCoercePtr	Type	  Type
+	
+	-- | Coercion betweeen (Ptr# a) and Addr#
+	| MCoercePtrToAddr Type
+	
+	-- | Coercion between Addr# and (Ptr# a)
+	| MCoerceAddrToPtr Type
 	
 	-- | Some function-call related thing.
 	| MCall 	PrimCall

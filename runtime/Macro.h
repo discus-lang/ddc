@@ -117,35 +117,16 @@
 	_deathCase (file, line, col);
 
 
-
-// DDC.Store macros -------------------------------------------------------------------------------
-// These are used in the source code for the DDC.Store library
-#define _PEEK(ptr)		*(ptr)
-#define _PEEKON(ignored,ptr)	*(ptr)
-#define _POKE(ptr,x)		(*ptr = x)
-#define _POKEON(ignored,ptr,x)	(*ptr = x)
+// Pointers and Casting  ------------------------------------------------------
 #define	_PLUSPTR(ptr,offset)	(ptr + offset)
 
+#define _PEEK(ptr)		*(ptr)
+#define _PEEKON(ignored,ptr)	*(ptr)
 
-// Cast macros ------------------------------------------------------------------------------------
-// These are used in the source code for the Foreign.Ptr library
-#define _castToPtrWord8(ptr)	((Word8   *) (ptr))
-#define _castToPtrWord32(ptr)	((Word32  *) (ptr))
-#define _castToPtrWord64(ptr)	((Word64  *) (ptr))
-#define _castToPtrInt32(ptr)	((Int32   *) (ptr))
-#define _castToPtrInt64(ptr)	((Int64   *) (ptr))
-#define _castToPtrFloat32(ptr)	((Float32 *) (ptr))
-#define _castToPtrFloat64(ptr)	((Float64 *) (ptr))
-#define _castToPtrChar32(ptr)	((Char32  *) (ptr))
-#define _castToPtrVoid(ptr)	((void  *) (ptr))
+#define _POKE(ptr,x)		(*ptr = x)
+#define _POKEON(ignored,ptr,x)	(*ptr = x)
 
-#define _castToWord8(x)		((Word8) (x))
-#define _castToWord16(x)	((Word16)(x))
-#define _castToWord32(x)	((Word32)(x))
-#define _castToWord64(x)	((Word64)(x))
-
-#define _castToInt32(x)		((Int32)(x))
-#define _castToString(ptr)	((String) (ptr))
-#define _castToChar32(x)	((Char32)(x))
+#define _CAST(t1,t2,x)		(t2)(x)
+#define _COERCEPTR(t1,t2,x)	(t2*)(x)
 
 #endif

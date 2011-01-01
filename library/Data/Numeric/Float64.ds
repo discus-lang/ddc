@@ -15,117 +15,77 @@ import	Base
 pragma	cc_includes ["math.h"]
 
 
--- Casting --------------------------------------------------------------------
-foreign import primCast_Float64U_Float32U	:: Float64# -> Float32#
+-- Builtin Primitives ---------------------------------------------------------
+-- There aren't any corresponding C functions for these.
+-- They're implemented directly by the core language and backends.
 
+-- Casting
+foreign import primCast_Float64U_Float32U	:: Float64# -> Float32#
 foreign import primCast_Float64U_Word64U	:: Float64# -> Word64#
 foreign import primCast_Float64U_Int64U		:: Float64# -> Int64#
+
+-- Arithmetic
+foreign import primFloat64U_neg			:: Float64# -> Float64#
+foreign import primFloat64U_add			:: Float64# -> Float64# -> Float64#
+foreign import primFloat64U_sub			:: Float64# -> Float64# -> Float64#
+foreign import primFloat64U_mul			:: Float64# -> Float64# -> Float64#
+foreign import primFloat64U_div			:: Float64# -> Float64# -> Float64#
+
+-- Comparisons
+foreign import primFloat64U_eq			:: Float64# -> Float64# -> Bool#
+foreign import primFloat64U_neq			:: Float64# -> Float64# -> Bool#
+foreign import primFloat64U_gt			:: Float64# -> Float64# -> Bool#
+foreign import primFloat64U_ge			:: Float64# -> Float64# -> Bool#
+foreign import primFloat64U_lt			:: Float64# -> Float64# -> Bool#
+foreign import primFloat64U_le			:: Float64# -> Float64# -> Bool#
+
+
+-- External Primitives --------------------------------------------------------
+-- These are implemented by the C math library and/or as intrinsic
+-- functions in the backends.
+
+-- Arithmetic 
+foreign import "fabs"	primFloat64U_abs  	:: Float64# -> Float64#
+
+-- Trig 
+foreign import "sin"	primFloat64U_sin	:: Float64# -> Float64#
+foreign import "asin"	primFloat64U_asin	:: Float64# -> Float64#
+foreign import "cos"	primFloat64U_cos	:: Float64# -> Float64#
+foreign import "acos"	primFloat64U_acos	:: Float64# -> Float64#
+foreign import "tan"	primFloat64U_tan	:: Float64# -> Float64#
+foreign import "atan"	primFloat64U_atan	:: Float64# -> Float64#
+
+-- Utils 
+foreign import "trunc"	primFloat64U_ftrunc	:: Float64# -> Float64#
+foreign import "round"	primFloat64U_fround	:: Float64# -> Float64#
+foreign import "floor"	primFloat64U_ffloor	:: Float64# -> Float64#
+foreign import "fmod"	primFloat64U_fmod	:: Float64# -> Float64# -> Float64#
+foreign import "pow"	primFloat64U_fpow	:: Float64# -> Float64# -> Float64#
+foreign import "sqrt"	primFloat64U_sqrt	:: Float64# -> Float64#
+foreign import "log"	primFloat64U_log	:: Float64# -> Float64#
 
 
 -- Boxing ---------------------------------------------------------------------
 boxFloat64 :: Float64# -> Float64
 boxFloat64 u
  = do	w	= primAlloc_dataRS 0# 8#
-	poke (castToPtrFloat64 (peekDataRS_payload w)) u
+	poke (peekDataRS_payload w) u
 	w
 
 
 unboxFloat64 :: Float64 -> Float64#
 unboxFloat64 w
  = do	w'	= force w
-	peekOn w (castToPtrFloat64 (peekDataRS_payload w'))
+	peekOn w (peekDataRS_payload w')
 
 
 -- Conversion -----------------------------------------------------------------
+-- TODO: rewrite these directly in Disciple.
 foreign import "primFloat64_toFloat"
  toFloat64	:: Int64{read}   -> Float64
 
 foreign import "primFloat64_truncate"
  truncate64	:: Float64{read} -> Int64
-
-
-
--- Arithmetic -----------------------------------------------------------------
-foreign import "primFloat64U_neg"
- primFloat64U_neg	:: Float64# -> Float64#
-
-foreign import "fabs"
- primFloat64U_abs  	:: Float64# -> Float64#
-
-foreign import "primFloat64U_add"
- primFloat64U_add	:: Float64# -> Float64# -> Float64#
-
-foreign import "primFloat64U_sub"
- primFloat64U_sub	:: Float64# -> Float64# -> Float64#
-
-foreign import "primFloat64U_mul"
- primFloat64U_mul	:: Float64# -> Float64# -> Float64#
-
-foreign import "primFloat64U_div"
- primFloat64U_div	:: Float64# -> Float64# -> Float64#
-
-
--- Comparisons ----------------------------------------------------------------
-foreign import "primFloat64U_eq"
- primFloat64U_eq	:: Float64# -> Float64# -> Bool#
-
-foreign import "primFloat64U_neq"
- primFloat64U_neq	:: Float64# -> Float64# -> Bool#
-
-foreign import "primFloat64U_gt"
- primFloat64U_gt	:: Float64# -> Float64# -> Bool#
-
-foreign import "primFloat64U_ge"
- primFloat64U_ge	:: Float64# -> Float64# -> Bool#
-
-foreign import "primFloat64U_lt"
- primFloat64U_lt	:: Float64# -> Float64# -> Bool#
-
-foreign import "primFloat64U_le"
- primFloat64U_le	:: Float64# -> Float64# -> Bool#
-
-
--- Trig -----------------------------------------------------------------------
-foreign import "sin"
- primFloat64U_sin	:: Float64# -> Float64#
-
-foreign import "asin"
- primFloat64U_asin	:: Float64# -> Float64#
-
-foreign import "cos"
- primFloat64U_cos	:: Float64# -> Float64#
- 
-foreign import "acos"
- primFloat64U_acos	:: Float64# -> Float64#
-
-foreign import "tan"
- primFloat64U_tan	:: Float64# -> Float64#
- 
-foreign import "atan"
- primFloat64U_atan	:: Float64# -> Float64#
-
-
--- Utils ----------------------------------------------------------------------
-foreign import "trunc"
- primFloat64U_ftrunc	:: Float64# -> Float64#
-
-foreign import "round"
- primFloat64U_fround	:: Float64# -> Float64#
-
-foreign import "floor"
- primFloat64U_ffloor	:: Float64# -> Float64#
-
-foreign import "fmod"
- primFloat64U_fmod	:: Float64# -> Float64# -> Float64#
-
-foreign import "pow"
- primFloat64U_fpow	:: Float64# -> Float64# -> Float64#
-
-foreign import "sqrt"
- primFloat64U_sqrt	:: Float64# -> Float64#
-
-foreign import "log"
- primFloat64U_log	:: Float64# -> Float64#
 
 
 -- Unboxed Instances ----------------------------------------------------------
@@ -198,7 +158,7 @@ instance Copy Float64 where
 instance Updatable Float64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrFloat64 (peekDataRS_payload w1')) (unboxFloat64 w2)
+		pokeOn w1 (peekDataRS_payload w1') (unboxFloat64 w2)
 		()
 
 

@@ -14,7 +14,7 @@ extern _Profile* 	_ddcProfile;
 
 // Command line args
 extern Int32		_ddcArgCount;
-extern String*		_ddcArgValue;
+extern String**		_ddcArgValue;
 
 
 // Heap pointers

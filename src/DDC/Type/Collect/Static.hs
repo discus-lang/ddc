@@ -6,7 +6,8 @@
 --         to add tests that check the valididity of closure trimming.
 --
 module DDC.Type.Collect.Static
-	( staticRsT
+	( staticTsUnboxedT
+	, staticRsT
 	, staticRsDataT
 	, staticRsClosureT
 	, materialRsT)
@@ -14,8 +15,10 @@ where
 import DDC.Type.Exp
 import DDC.Type.Kind
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.Builtin
 import DDC.Type.Pretty		()
+import DDC.Type.Collect.FreeTVars
 import DDC.Main.Error
 import DDC.Main.Pretty
 import Data.Set			(Set)
@@ -23,6 +26,16 @@ import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
 stage	= "DDC.Type.Collect.Static"
+
+-- | Collect the set of value type variables that cannot be generalised
+--   because they appear in unboxed types (like with Ptr# a).
+staticTsUnboxedT  :: Type -> Set Type
+staticTsUnboxedT tt
+ 	| isUnboxedT tt
+	= freeTVars tt
+
+	| otherwise
+	= Set.empty
 
 -- | Collect the set of regions that are non-generalisable in a type.
 --   This function uses the materiality information present in the data
@@ -35,7 +48,6 @@ stage	= "DDC.Type.Collect.Static"
 staticRsT  :: Type -> Set Type
 staticRsT tt
  	= Set.union (staticRsDataT tt) (staticRsClosureT tt)
-
 
 
 -- | Get the set of regions that are non-generalisable because they are

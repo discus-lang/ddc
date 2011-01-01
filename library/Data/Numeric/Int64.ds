@@ -14,67 +14,46 @@ import	DDC.Runtime.Store
 	Base.Thunk
 
 
--- Casting --------------------------------------------------------------------
+-- Builtin Primitives ---------------------------------------------------------
+-- There aren't any corresponding C functions for these.
+-- They're implemented directly by the core language and backends.
+
+-- Casting 
 foreign import primCast_Int64U_Int8U		:: Int64# -> Int8#
 foreign import primCast_Int64U_Int16U		:: Int64# -> Int16#
 foreign import primCast_Int64U_Int32U		:: Int64# -> Int32#
-
 foreign import primCast_Int64U_Word64U		:: Int64# -> Word64#
 foreign import primCast_Int64U_Float64U		:: Int64# -> Float64#
+
+-- Arithmetic
+foreign import primInt64U_neg			:: Int64# -> Int64#
+foreign import primInt64U_add			:: Int64# -> Int64# -> Int64#
+foreign import primInt64U_sub			:: Int64# -> Int64# -> Int64#
+foreign import primInt64U_mul			:: Int64# -> Int64# -> Int64#
+foreign import primInt64U_div			:: Int64# -> Int64# -> Int64#
+foreign import primInt64U_mod			:: Int64# -> Int64# -> Int64#
+
+-- Comparisons
+foreign import primInt64U_eq			:: Int64# -> Int64# -> Bool#
+foreign import primInt64U_neq			:: Int64# -> Int64# -> Bool#
+foreign import primInt64U_gt			:: Int64# -> Int64# -> Bool#
+foreign import primInt64U_ge			:: Int64# -> Int64# -> Bool#
+foreign import primInt64U_lt			:: Int64# -> Int64# -> Bool#
+foreign import primInt64U_le			:: Int64# -> Int64# -> Bool#
 
 
 -- Boxing ---------------------------------------------------------------------
 boxInt64 :: Int64# -> Int64
 boxInt64 u
  = do	w	= primAlloc_dataRS 0# 8#
-	poke (castToPtrInt64 (peekDataRS_payload w)) u
+	poke (peekDataRS_payload w) u
 	w
 
 
 unboxInt64 :: Int64 -> Int64#
 unboxInt64 w
  = do	w'	= force w
-	peekOn w (castToPtrInt64 (peekDataRS_payload w'))
-
-
--- Arithmetic -----------------------------------------------------------------
-foreign import "primInt64U_neg"
- primInt64U_neg :: Int64# -> Int64#
-
-foreign import "primInt64U_add"
- primInt64U_add :: Int64# -> Int64# -> Int64#
-
-foreign import "primInt64U_sub"
- primInt64U_sub :: Int64# -> Int64# -> Int64#
-
-foreign import "primInt64U_mul"
- primInt64U_mul :: Int64# -> Int64# -> Int64#
-
-foreign import "primInt64U_div"
- primInt64U_div :: Int64# -> Int64# -> Int64#
-
-foreign import "primInt64U_mod"
- primInt64U_mod :: Int64# -> Int64# -> Int64#
-
-
--- Comparisons ----------------------------------------------------------------
-foreign import "primInt64U_eq"	
- primInt64U_eq	:: Int64# -> Int64# -> Bool#
-
-foreign import "primInt64U_neq"	
- primInt64U_neq :: Int64# -> Int64# -> Bool#
-
-foreign import "primInt64U_gt"	
- primInt64U_gt	:: Int64# -> Int64# -> Bool#
-
-foreign import "primInt64U_ge"	
- primInt64U_ge	:: Int64# -> Int64# -> Bool#
-
-foreign import "primInt64U_lt"	
- primInt64U_lt	:: Int64# -> Int64# -> Bool#
-
-foreign import "primInt64U_le"	
- primInt64U_le	:: Int64# -> Int64# -> Bool#
+	peekOn w (peekDataRS_payload w')
 
 
 -- Unboxed Instances ----------------------------------------------------------
@@ -135,7 +114,7 @@ instance Copy Int64 where
 instance Updatable Int64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrInt64 (peekDataRS_payload w1')) (unboxInt64 w2)
+		pokeOn w1 (peekDataRS_payload w1') (unboxInt64 w2)
 		()
 
 

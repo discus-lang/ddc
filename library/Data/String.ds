@@ -48,7 +48,7 @@ infixr 7 %%
 
 -- Boxing ---------------------------------------------------------------------
 -- | Box a string
-boxString :: String# -> String
+boxString :: Ptr# String# -> String
 boxString strU
 	= SChunk (box&{FlatString} strU)
 

@@ -10,8 +10,8 @@
 _Profile*	_ddcProfile	= 0;
 
 // A stash of the command args
-Int32	_ddcArgCount		= 0;
-String*	_ddcArgValue		= 0;
+Int32		_ddcArgCount		= 0;
+String**	_ddcArgValue		= 0;
 
 
 // The Heap -------------------------------------------------------------------

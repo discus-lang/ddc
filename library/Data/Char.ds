@@ -5,13 +5,18 @@ module	Data.Char
 import	Base
 	Data.Numeric.Word32
 
-foreign import "_boxChar32"
- boxChar32	:: Char32#{read} -> Char
-		:$ Char32# -> Obj
-		
-foreign import "_unboxChar32"
- unboxChar32	:: Char {read} -> Word32#
-		:$ Obj -> Word32#
+
+-- Boxing ---------------------------------------------------------------------
+boxChar32 :: Word32# -> Char32
+boxChar32 u
+ = do	w	= primAlloc_dataRS 0# 4#
+	poke (peekDataRS_payload w) u
+	w
+
+unboxChar32 :: Char32 -> Word32#
+unboxChar32 w
+ = do	w'	= force w
+	peekOn w (peekDataRS_payload w')
 
 		
 instance Eq Char where

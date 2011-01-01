@@ -64,6 +64,12 @@ checkPrim n pp xs env
 		,  Just t2		<- takeTypeOfPrimType pt2
 		,  tX == t1
 		-> ([x'], t2, eff, clo)
+	
+	(MCoercePtr t1 t2, [x])
+		| (x', tX, eff, clo)	<- checkExp' (n+1) x env
+		, tX == makeTData primTPtrU (kValue `KFun` kValue) [t1]
+		, tY <- makeTData primTPtrU (kValue `KFun` kValue) [t2]
+		-> ([x'], tY, eff, clo)
 			
 	-- TODO: This was never a good idea. Just use regular application.
 	(MCall _, _)

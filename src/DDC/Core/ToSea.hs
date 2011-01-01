@@ -249,6 +249,13 @@ toSeaX		xx
 	 -> do	args	<- mapM toSeaX $ stripValues xs
 		return	$ E.XPrim (E.MCast pt1 pt2) args
 
+	-- coersion between pointer types
+	C.XPrim (C.MCoercePtr t1 t2) xs
+	 -> do	let t1'	=  toSeaT t1
+		let t2'	=  toSeaT t2
+		args	<- mapM toSeaX $ stripValues xs
+		return	$ E.XPrim (E.MCoercePtr t1' t2') args
+		
 	-- function calls
 	-- For these four we statically know that the thing we're calling is a supercombinator.
 	-- Note that if the resulting variables refer to supercombinators, their operational

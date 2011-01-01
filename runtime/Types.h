@@ -44,8 +44,9 @@ typedef char			Char8;
 typedef uint32_t		Char32;
 
 // Strings
-//	Null terminated C-strings.
-typedef char*			String;
+//	Null terminated C-strings, treated as an abstract type.
+//	(Ptr String) in Disciple == (char*) in C.
+typedef char			String;
 
 
 // For machines with 32 bit pointers

@@ -405,12 +405,15 @@ transXM2 table xx
 instance Monad m => TransM m Prim where
  transZM table tt
   = case tt of
-	MForce		-> transM table tt
-	MBox 		-> transM table tt
-	MUnbox		-> transM table tt
-	MOp op 		-> transM table tt
-	MCast{}		-> transM table tt
-	MCall{}		-> transM table tt
+	MForce			-> transM table tt
+	MBox 			-> transM table tt
+	MUnbox			-> transM table tt
+	MOp op 			-> transM table tt
+	MCast{}			-> transM table tt
+	MCoercePtr{}		-> transM table tt
+	MCoerceAddrToPtr{}	-> transM table tt
+	MCoercePtrToAddr{}	-> transM table tt
+	MCall{}			-> transM table tt
 
 		
 instance Monad m => TransM m Type where

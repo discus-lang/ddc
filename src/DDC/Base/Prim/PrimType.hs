@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
--- | Primitive, unboxed types.
+-- | Primitive unboxed types.
 module DDC.Base.Prim.PrimType
 	( Width		(..)
 	, PrimType	(..)
@@ -11,18 +11,22 @@ module DDC.Base.Prim.PrimType
 where
 import DDC.Main.Pretty
 
+
 -- | Width, in bits, of a primitive value.
 data Width
 	= Width Int
 	deriving (Eq, Show, Ord)
 
 
--- | The type of a primitive machine value.
---   TODO: We'll want to add packed vector types to this in the future.
+-- | Primitive unboxed types that are probably implemented directly by the
+--   hardware. Values of different `PrimTypes` may be stored in different 
+--   registers, and/or require explicit coersion instructions to convert
+--   between them.
+--
 data PrimType
 	
 	-- | A pointer to something else.
-	= PrimTypePtr	PrimType
+	= PrimTypePtr
 
 	-- | An unsigned integer.
 	| PrimTypeWord	Width
@@ -53,7 +57,8 @@ isPrimTypeNum pt
 	_		-> False
 
 
--- | Take the width of a `PrimType`, if any.
+-- | Take the width of a numeric `PrimType`.
+--   Returns `Nothing` if it's a `PrimTypePtr`.
 takeWidthOfPrimType :: PrimType -> Maybe Width
 takeWidthOfPrimType pt
  = case pt of
@@ -67,14 +72,11 @@ takeWidthOfPrimType pt
 primTypesHaveSameShape :: PrimType -> PrimType -> Bool
 primTypesHaveSameShape pt1 pt2
  = case (pt1, pt2) of
-	(PrimTypeWord  _, PrimTypeWord  _)	-> True
-	(PrimTypeInt   _, PrimTypeInt   _)	-> True
-	(PrimTypeFloat _, PrimTypeFloat _)	-> True
-
-	(PrimTypePtr   pt1', PrimTypePtr pt2')	
-	  -> primTypesHaveSameShape pt1' pt2'
-	
-	_ -> False
+	(PrimTypeWord{},  PrimTypeWord{})	-> True
+	(PrimTypeInt{},	  PrimTypeInt{})	-> True
+	(PrimTypeFloat{}, PrimTypeFloat{})	-> True
+	(PrimTypePtr{},   PrimTypePtr{})	-> True
+	_ 					-> False
 	
 
 -- Pretty -----------------------------------------------------------------------------------------
@@ -85,14 +87,7 @@ instance Pretty Width PMode where
 instance Pretty PrimType PMode where
  ppr pt
   = case pt of
-	PrimTypePtr pt'		-> "PtrU"   %% pprPrimTypeParens pt'
+	PrimTypePtr		-> ppr "PtrU"
 	PrimTypeWord  (Width w)	-> "Word"   %  w % "U"
 	PrimTypeInt   (Width w)	-> "Int"    %  w % "U"
 	PrimTypeFloat (Width w) -> "Float"  %  w % "U"
-
-pprPrimTypeParens pt
- = case pt of
-	PrimTypePtr pt' 	-> parens pt'
-	_			-> ppr pt
-
-

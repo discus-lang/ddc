@@ -2,7 +2,6 @@
 module Foreign.C.StdLib
 import	Base
 	DDC.Runtime.Store
-	Class.Promote
 	Class.Num
 
 pragma	cc_includes ["stdlib.h"]
@@ -11,18 +10,18 @@ pragma	cc_includes ["stdlib.h"]
 --       instead of a String. It'd also be nice if we had a store effect
 --       instead of having to use modify, which requires a witness of mutability.
 foreign import "free"
- free   :: String# {modify} -> Void#
+ free   :: Ptr# String# {modify}  -> Void#
 
 foreign import "malloc"
- malloc :: Int32# -> String#
+ malloc :: Int32# -> Ptr# String#
 
 
 -- Conversions ----------------------------------------------------------------
 foreign import "atoi"
- atoi	:: String# {read} -> Int32#
+ atoi	:: Ptr# String# {read} -> Int32#
 
 foreign import "atol"
- atol	:: String# {read} -> Int64#
+ atol	:: Ptr# String# {read} -> Int64#
 
 foreign import "atof"
- atof	:: String# {read} -> Float64#
+ atof	:: Ptr# String# {read} -> Float64#

@@ -14,67 +14,46 @@ import	DDC.Runtime.Store
 	Base.Thunk
 
 
--- Casting --------------------------------------------------------------------
+-- Builtin Primitives ---------------------------------------------------------
+-- There aren't any corresponding C functions for these.
+-- They're implemented directly by the core language and backends.
+
+-- Casting
 foreign import primCast_Int32U_Int8U		:: Int32# -> Int8#
 foreign import primCast_Int32U_Int16U		:: Int32# -> Int16#
 foreign import primCast_Int32U_Int64U		:: Int32# -> Int64#
-
 foreign import primCast_Int32U_Word32U		:: Int32# -> Word32#
 foreign import primCast_Int32U_Float32U		:: Int32# -> Float32#
+
+-- Arithmetic
+foreign import primInt32U_neg 			:: Int32# -> Int32#
+foreign import primInt32U_add			:: Int32# -> Int32# -> Int32#
+foreign import primInt32U_sub			:: Int32# -> Int32# -> Int32#
+foreign import primInt32U_mul			:: Int32# -> Int32# -> Int32#
+foreign import primInt32U_div			:: Int32# -> Int32# -> Int32#
+foreign import primInt32U_mod			:: Int32# -> Int32# -> Int32#
+
+-- Comparisons 
+foreign import primInt32U_eq			:: Int32# -> Int32# -> Bool#
+foreign import primInt32U_neq			:: Int32# -> Int32# -> Bool#
+foreign import primInt32U_gt			:: Int32# -> Int32# -> Bool#
+foreign import primInt32U_ge			:: Int32# -> Int32# -> Bool#
+foreign import primInt32U_lt			:: Int32# -> Int32# -> Bool#
+foreign import primInt32U_le			:: Int32# -> Int32# -> Bool#
 
 
 -- Boxing ---------------------------------------------------------------------
 boxInt32 :: Int32# -> Int32
 boxInt32 u
  = do	w	= primAlloc_dataRS 0# 4#
-	poke (castToPtrInt32 (peekDataRS_payload w)) u
+	poke (peekDataRS_payload w) u
 	w
 
 
 unboxInt32 :: Int32 -> Int32#
 unboxInt32 w
  = do	w'	= force w
-	peekOn w (castToPtrInt32 (peekDataRS_payload w'))
-
-
--- Arithmetic ----------------------------------------------------------------
-foreign import "primInt32U_neg"
- primInt32U_neg :: Int32# -> Int32#
-
-foreign import "primInt32U_add"
- primInt32U_add	:: Int32# -> Int32# -> Int32#
-
-foreign import "primInt32U_sub"
- primInt32U_sub	:: Int32# -> Int32# -> Int32#
-
-foreign import "primInt32U_mul"
- primInt32U_mul	:: Int32# -> Int32# -> Int32#
-
-foreign import "primInt32U_div"
- primInt32U_div	:: Int32# -> Int32# -> Int32#
- 
-foreign import "primInt32U_mod"
- primInt32U_mod	:: Int32# -> Int32# -> Int32#
-
-
--- Comparisons ----------------------------------------------------------------
-foreign import "primInt32U_eq"	
- primInt32U_eq	:: Int32# -> Int32# -> Bool#
-
-foreign import "primInt32U_neq"	
- primInt32U_neq	:: Int32# -> Int32# -> Bool#
-
-foreign import "primInt32U_gt"	
- primInt32U_gt	:: Int32# -> Int32# -> Bool#
-
-foreign import "primInt32U_ge"	
- primInt32U_ge	:: Int32# -> Int32# -> Bool#
-
-foreign import "primInt32U_lt"	
- primInt32U_lt	:: Int32# -> Int32# -> Bool#
-
-foreign import "primInt32U_le"	
- primInt32U_le	:: Int32# -> Int32# -> Bool#
+	peekOn w (peekDataRS_payload w')
 
 
 -- Unboxed Instances ----------------------------------------------------------
@@ -147,7 +126,7 @@ instance Copy Int32 where
 instance Updatable Int32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (castToPtrInt32 (peekDataRS_payload w1')) (unboxInt32 w2)
+		pokeOn w1 (peekDataRS_payload w1') (unboxInt32 w2)
 		()
 
 

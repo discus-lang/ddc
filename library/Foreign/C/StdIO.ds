@@ -1,0 +1,81 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Base
+import Data.String
+import Data.Maybe
+import Foreign.Ptr
+
+-- | The effect of functions that access the file system.
+effect !File	:: !
+
+-- | A foreign file handle.
+foreign import data "FILE" File# :: *
+
+
+-- Streams --------------------------------------------------------------------
+-- | Standard output.
+foreign import "stdout" stdout :: Ptr# File#
+
+-- | Standard input.
+foreign import "stdin"  stdin  :: Ptr# File#
+
+-- | Standard error.
+foreign import "stderr" stderr :: Ptr# File#
+
+
+-- Position Constants ---------------------------------------------------------
+-- | Beginning of file.
+foreign import "SEEK_SET"
+ file_SEEK_SET :: Int32#
+
+-- | Current position in file.
+foreign import "SEEK_CUR"
+ file_SEEK_CUR :: Int32#
+
+-- | End of file.
+foreign import "SEEK_END"
+ file_SEEK_END :: Int32#
+
+
+-------------------------------------------------------------------------------
+foreign import "fopen"
+ fopenU	::  	Ptr# String#	{read}	-- ^ File name.
+	-> 	Ptr# String#	{read}	-- ^ Mode.
+	-(!e)>	Addr#			-- ^ Either 0 or a (Ptr# File#).
+	:- !e = !File
+
+
+foreign import "fread"
+ freadU :: 	Ptr# String# 	{write}	-- ^ Buffer to write into.
+	-> 	Int32# 			-- ^ Size of member.
+	-> 	Int32#			-- ^ Number of members to read.
+	-> 	Ptr# File#  	{read}	-- ^ File to read from.
+	-(!e)>	Int32#	 		-- ^ Number of members read.
+	:- !e = !File
+
+
+foreign import "fseek"
+ fseekU	::	Ptr# File# 	{read}	-- ^ File handle.
+	-> 	Int32#			-- ^ Offset
+	-> 	Int32#			-- ^ Whence SEEK_SET, SEEK_END or SEEK_CUR
+	-(!e)> 	Int32#			-- ^ 0 on success, -1 on fail and set errno
+	:- !e = !File
+
+
+foreign import  "ftell"
+ ftellU	:: 	Ptr# File#	{read}	-- ^ File handle.
+	-(!e)>	Int32#			-- ^ Position in file
+	:- !e = !File
+
+
+foreign import	"fputs"
+ fputsU ::	Ptr# String#	{read}	-- ^ String to write to file.
+ 	-> 	Ptr# File#	{read} 	-- ^ File handle.
+ 	-(!e)>	Int32#
+	:- !e = !File
+
+
+foreign import "feof"
+ feofU ::	Ptr# File#	{read}	-- ^ File.
+ 	-(!e)>	Int32#			-- ^ Nonzero if at EOF.
+	:- !e = !File

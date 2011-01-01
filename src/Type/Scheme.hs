@@ -46,10 +46,17 @@ generaliseType' src varT tCore cidsEnv
 	tracell $ "-- type"		%! prettyTypeSplit tCore
 
 	-- Determine monomorphic vars -----------------------------------------
+	let tFlat	= flattenT tCore
+
 	-- TODO: determination of material cids is currently broken.
 	let cidsMaterial
 		= [cid 	| TVar k (UClass cid) <- Set.toList 	
-			$ staticRsT $ flattenT tCore]
+			$ staticRsT tFlat ]
+
+	-- Can't generalise cids which are in unboxed types.
+	let cidsUnboxed	
+		= [cid	| TVar k (UClass cid) <- Set.toList
+			$ staticTsUnboxedT tFlat ]
 
 	-- Can't generalise cids which are under mutable constructors.
 	let cidsDangerous
@@ -62,6 +69,7 @@ generaliseType' src varT tCore cidsEnv
 		= Set.unions
 		[ cidsEnv			-- can't generalise cids in the environment
 		, Set.fromList cidsMaterial	-- can't generalise material cids.
+		, Set.fromList cidsUnboxed	-- can't generalise unboxed cids.
 		, Set.fromList cidsDangerous]	-- can't generalise dangerous cids.
 
 
