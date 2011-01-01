@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 
 -- | Functions for defining DDC structs so that they can interact with the C
 -- runtime. Struct definitions in the file need to be kept in sync with the
@@ -118,7 +118,7 @@ mkLlvmStructDesc name fields
  = do	let concrete = reverse $ snd $ foldl mkConcrete (0, []) fields
 	LlvmStructDesc name
 		(LMStruct (map llvmTypeOfPadded concrete))
-		(Map.fromList (concat (map nameIndexType concrete)))
+		(Map.fromList (concatMap nameIndexType concrete))
 
 nameIndexType :: PaddedStruct -> [ (String, (Int, LlvmType)) ]
 nameIndexType ps
@@ -154,8 +154,8 @@ sizeOfLlvmType t
 	LMFloat128	-> 16
 	LMPointer _	-> Config.pointerBytes
 	LMArray n t	-> n * sizeOfLlvmType t
-	LMLabel		-> panic stage $ "sizeOfLlvmType LMLabel"
-	LMVoid		-> panic stage $ "sizeOfLlvmType LMVoid"
+	LMLabel		-> panic stage "sizeOfLlvmType LMLabel"
+	LMVoid		-> panic stage "sizeOfLlvmType LMVoid"
 	LMStruct t	-> sum $ map sizeOfLlvmType t
 	LMAlias (_, t)	-> sizeOfLlvmType t
 
@@ -167,8 +167,8 @@ offsetOfIndex _ 0 = 0
 offsetOfIndex typ i
  | i > 0
  = case typ of
-	LMLabel		-> panic stage $ "offsetOfIndex LMLabel"
-	LMVoid		-> panic stage $ "offsetOfIndex LMVoid"
+	LMLabel		-> panic stage "offsetOfIndex LMLabel"
+	LMVoid		-> panic stage "offsetOfIndex LMVoid"
 	LMStruct t	-> sum $ take i $ map sizeOfLlvmType t
 	LMAlias (_, t)	-> offsetOfIndex t i
 	_		-> 0

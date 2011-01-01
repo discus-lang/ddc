@@ -56,8 +56,7 @@ boxInt32 int32
 	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
 	objptr	<- allocate 8 "boxed" pObj
 	addBlock
-		[ Comment [ "boxInt32 (" ++ show int32 ++ ")" ]
-		, Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
+		[ Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
 		, Store (tagDataRS 1) iptr0
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
 		, Store int32 iptr1
@@ -72,8 +71,7 @@ unboxInt32 objptr
 	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
 	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
 	addBlock
-		[ Comment [ show int32 ++ " = unboxInt32 (" ++ show objptr ++ ")" ]
-		, Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
+		[ Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
 		, Assignment int32 (Load iptr1)
 		]
@@ -84,8 +82,7 @@ unboxInt32 objptr
  = do	optr0	<- newUniqueNamedReg "optr0" ppObj
 	optr1	<- newUniqueNamedReg "optr1" pObj
 	addBlock
-		[ Comment [ show optr1 ++ " = unboxInt32 (" ++ show objptr ++ ")" ]
-		, Assignment optr0 (Load objptr)
+		[ Assignment optr0 (Load objptr)
 		, Assignment optr1 (Load optr0)
 		]
 	unboxInt32 optr1
@@ -124,8 +121,7 @@ boxEnum enum
 	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
 	objptr	<- allocate 8 "boxed" pObj
 	addBlock
-		[ Comment [ "boxEnum (" ++ show enum ++ ")" ]
-		, Assignment shifted (LlvmOp LM_MO_Shl enum (i32LitVar 8))
+		[ Assignment shifted (LlvmOp LM_MO_Shl enum (i32LitVar 8))
 		, Assignment tag (LlvmOp LM_MO_Or shifted (tagData 0))
 		, Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
 		, Store tag iptr0
@@ -141,8 +137,7 @@ unboxEnum objptr
 	int32	<- newUniqueReg i32
 	enum	<- newUniqueReg i32
 	addBlock
-		[ Comment [ show enum ++ " = unboxBool (" ++ show objptr ++ ")" ]
-		, Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
+		[ Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
 		, Assignment int32 (Load iptr0)
 		, Assignment enum (LlvmOp LM_MO_LShr int32 (i32LitVar 8)) ]
 	return	enum
@@ -191,8 +186,7 @@ boxFloat32 f32
 	fptr	<- newUniqueNamedReg "fptr" (pLift LMFloat)
 	objptr	<- allocate 8 "boxed" pObj
 	addBlock
-		[ Comment [ "boxFloat32 (" ++ show f32 ++ ")" ]
-		, Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
+		[ Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
 		, Store (tagDataRS 1) iptr0
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
 		, Assignment fptr (Cast LM_Bitcast iptr1 (pLift LMFloat))
@@ -208,8 +202,7 @@ unboxFloat32 objptr
 	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
 	fptr	<- newUniqueNamedReg "fptr" (pLift LMFloat)
 	addBlock
-		[ Comment [ show f32 ++ " = unboxFloat32 (" ++ show objptr ++ ")" ]
-		, Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
+		[ Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
 		, Assignment fptr (Cast LM_Bitcast iptr1 (pLift LMFloat))
 		, Assignment f32 (Load fptr)
@@ -220,8 +213,7 @@ unboxFloat32 objptr
 
 boxInt64 :: LlvmVar -> LlvmM LlvmVar
 boxInt64 int64
- = do	addComment $ "boxInt64 (" ++ show int64 ++ ")"
-	(objptr, dptr)
+ = do	(objptr, dptr)
 		<- allocDataRS (sizeOfLlvmType i64) (pLift i64)
 	addBlock
 		[ Store int64 dptr ]
@@ -247,8 +239,7 @@ unboxInt64 objptr
 
 boxFloat64 :: LlvmVar -> LlvmM LlvmVar
 boxFloat64 f64
- = do	addComment $ "boxFloat64 (" ++ show f64 ++ ")"
-	(objptr, dptr)
+ = do	(objptr, dptr)
 		<- allocDataRS (sizeOfLlvmType LMDouble) (pLift LMDouble)
 	addBlock
 		[ Store f64 dptr ]

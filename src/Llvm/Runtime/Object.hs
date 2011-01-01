@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 
 -- | Define DDC structs.
 -- These definitions need to be compatible across code compile compiled via the
@@ -31,12 +31,7 @@ module Llvm.Runtime.Object
 	, pStructSuspIndir
 
 	, nullObj
-	, ppObj
-
-	, objModeForward
-	, objModeFixed
-	, objFixedDataM
-	, objModeDataRS )
+	, ppObj )
 where
 
 import Llvm
@@ -158,18 +153,3 @@ structSuspIndir = LMAlias ("struct.SuspIndir", llvmTypeOfStruct ddcSuspIndir)
 
 pStructSuspIndir :: LlvmType
 pStructSuspIndir = pLift structSuspIndir
-
---------------------------------------------------------------------------------
-
-objModeForward :: Int
-objModeForward	= 0x00
-
-objModeFixed :: Int
-objModeFixed	= 0x01
-
-objFixedDataM :: Int
-objFixedDataM = 0x41
-
-objModeDataRS :: Int
-objModeDataRS = 0x03
-

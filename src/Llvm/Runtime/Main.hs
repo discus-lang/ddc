@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 
 module Llvm.Runtime.Main
 	( llvmMainModule )
@@ -43,7 +43,7 @@ llvmMainModule modName importsExp mainType heapSize slotStackSize ctxStackSize
 
 	addComment	"Call Main_main."
 
-	if elem Arg.NoImplicitHandler ?args
+	if Arg.NoImplicitHandler `elem` ?args
 	  then callMainDirect modName mainType
 	  else callMainWithHandler modName mainType
 
@@ -67,7 +67,7 @@ initRunTime params
 
 callModInitFns :: ModuleId -> LlvmM ()
 callModInitFns mid
- = do	let func	= LlvmFunctionDecl ("_ddcInitModule_" ++ (modNameOfId mid))
+ = do	let func	= LlvmFunctionDecl ("_ddcInitModule_" ++ modNameOfId mid)
 					External CC_Ccc LMVoid FixedArgs [] ptrAlign
 	addGlobalFuncDecl func
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) [] []) ]
@@ -112,7 +112,7 @@ callMainDirect modName mainType
 
 modNameOfId :: ModuleId -> String
 modNameOfId (ModuleId mid)
- =	(catInt "_" mid)
+ =	catInt "_" mid
 
 modNameOfId _
- =	panic stage $ "makeInitVar: no match"
+ =	panic stage "makeInitVar: no match"

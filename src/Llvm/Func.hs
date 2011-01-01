@@ -1,4 +1,5 @@
-{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+{-# LANGUAGE CPP #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 module Llvm.Func
 	( funcDeclOfExp )
 where

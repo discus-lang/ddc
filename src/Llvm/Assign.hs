@@ -4,8 +4,6 @@ module Llvm.Assign
 	(llvmOfAssign)
 where
 
-import DDC.Base.DataFormat
-import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Var
@@ -23,15 +21,6 @@ stage = "Llvm.Assign"
 debug = True
 
 llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
-
--- Special case NULL pointer assignment
-llvmOfAssign (XVar v1@NCafPtr{} t1) t@(TPtr (TCon TyConObj)) (XLit (LLit (LiteralFmt (LInt 0) Unboxed)))
- | t1 == t
- = do	dst		<- newUniqueReg $ pLift $ toLlvmType t1
-	cv		<- toLlvmCafVar (varOfName v1) t1
-	addComment	$ "Assigning (LInt 0) to a pointer!!"
-	addBlock	[ Assignment dst (loadAddress (pVarLift cv))
-			, Store (LMLitVar (LMNullLit (toLlvmType t1))) dst ]
 
 llvmOfAssign dst typ (XLit LNull)
  =	assignNull dst typ
@@ -68,9 +57,9 @@ llvmOfAssign (XVar v@NRts{} tv) tc src
 llvmOfAssign (XArgThunk (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
  = do	rsrc		<- llvmOfExp src
 	obj		<- readSlot ix
-	thunk		<- newUniqueReg $ pStructThunk
+	thunk		<- newUniqueReg pStructThunk
 	let indx	= fst $ structFieldLookup ddcThunk "args"
-	ptr		<- newUniqueReg $ pObj
+	ptr		<- newUniqueReg pObj
 
 	addBlock	[ Assignment thunk (Cast LM_Bitcast obj pStructThunk)
 			, Assignment ptr (GetElemPtr True thunk [ i32LitVar 0, i32LitVar indx, i32LitVar i ])
@@ -79,9 +68,9 @@ llvmOfAssign (XArgThunk (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
 llvmOfAssign (XArgData (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
  = do	rsrc		<- llvmOfExp src
 	obj		<- readSlot ix
-	pdata		<- newUniqueReg $ pStructData
+	pdata		<- newUniqueReg pStructData
 	let indx	= fst $ structFieldLookup ddcData "args"
-	ptr		<- newUniqueReg $ pObj
+	ptr		<- newUniqueReg pObj
 
 	addBlock	[ Assignment pdata (Cast LM_Bitcast obj pStructData)
 			, Assignment ptr (GetElemPtr True pdata [ i32LitVar 0, i32LitVar indx, i32LitVar i ])
@@ -96,10 +85,10 @@ llvmOfAssign (XVar v1@NCaf{} tv) tc@(TCon (TyConUnboxed _)) src
 
 
 llvmOfAssign a b c
- = panic stage $ "llvmOfAssign (" ++ (show __LINE__) ++ ") Unhandled : \n\n"
-	++ {- take 150 -} (show a) ++ "\n\n"
-	++ {- take 150 -} (show b) ++ "\n\n"
-	++ {- take 150 -} (show c) ++ "\n"
+ = panic stage $ "llvmOfAssign (" ++ show __LINE__ ++ ") Unhandled : \n\n"
+	++ {- take 150 -} show a ++ "\n\n"
+	++ {- take 150 -} show b ++ "\n\n"
+	++ {- take 150 -} show c ++ "\n"
 
 --------------------------------------------------------------------------------
 
@@ -129,6 +118,6 @@ assignNull (XVar (NAuto v) t) tc@(TCon (TyConUnboxed tv))
 
 
 assignNull xv t
- = panic stage $ "assignNull (" ++ (show __LINE__) ++ ") Unhandled : \n\n"
+ = panic stage $ "assignNull (" ++ show __LINE__ ++ ") Unhandled : \n\n"
 	++ show xv ++ "\n\n"
 	++ show t ++ "\n\n"

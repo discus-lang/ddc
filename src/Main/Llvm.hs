@@ -1,4 +1,5 @@
-{-# OPTIONS -fno-warn-unused-binds -fno-warn-type-defaults -cpp #-}
+{-# LANGUAGE CPP #-}
+{-# OPTIONS -fno-warn-unused-binds -fno-warn-type-defaults #-}
 
 -- | Wrappers for compiler stages dealing with LLVM code.
 module Main.Llvm
@@ -78,7 +79,7 @@ compileViaLlvm
 	let	slotStackSize	= getValue buildStartSlotStackSize	sRoot
 	let	ctxStackSize	= getValue buildStartContextStackSize	sRoot
 
-	outVerb $ ppr $ "  * Write C header\n"
+	outVerb $ ppr "  * Write C header\n"
 	writeFile (?pathSourceBase ++ ".ddc.h")
 		$ makeSeaHeader
 			eTree
@@ -86,7 +87,7 @@ compileViaLlvm
 			(map (fromJust . M.scrapePathHeader) $ Map.elems scrapes_noRoot)
 			includeFilesHere
 
-	outVerb $ ppr $ "  * Generating LLVM IR code\n"
+	outVerb $ ppr "  * Generating LLVM IR code\n"
 
 	llvmSource	<- evalStateT
 				(outLlvm modName eTree eCtorTags pathSource importsExp modDefinesMainFn heapSize slotStackSize ctxStackSize)
@@ -112,8 +113,8 @@ getValue func scrape
 outLlvm
 	:: (?args :: [Arg.Arg])
 	=> ModuleId
-	-> (Tree ())		-- sea source
-	-> (Tree ())		-- import Ctor tags
+	-> Tree ()		-- sea source
+	-> Tree ()		-- import Ctor tags
 	-> FilePath		-- path of the source file
 	-> Map ModuleId [a]
 	-> Bool			-- is main module
@@ -139,11 +140,11 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn heapSize
 
 	setTags		$ concatMap (\(PData a b) ->
 				map (\ (v, c) -> (seaVar False v, ctorDefTag c)) $ Map.toList b)
-			$ filter ((=@=) PData{}) eCtorTags
+			$ filter (PData{} =@=) eCtorTags
 
 	setTags		$ map (\(PCtorTag s i) -> (s, i)) seaCtorTags
 
-	when (not $ null junk)
+	unless (null junk)
 		$ panic stage $ "junk sea bits = " ++ show junk ++ "\n"
 
 	-- Build the LLVM code
@@ -160,7 +161,7 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn heapSize
 
 	mapM_		addGlobalVar
 				$ moduleGlobals
-				++ (map llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
+				++ map llvmOfSeaGlobal (eraseAnnotsTree seaCafSlots)
 
 	mapM_		llvmOfSeaDecls $ eraseAnnotsTree $ seaCafInits ++ seaSupers
 
@@ -303,9 +304,7 @@ llvmOfStmt stmt
 	SAuto v t	-> llvmSAuto v t
 	SStmt exp	-> llvmOfSStmt exp
 	SCaseFail pos	-> caseFail pos
-	_
-	  -> panic stage $ "llvmOfStmt (" ++ show __LINE__ ++ ")\n\n" ++ show stmt ++ "\n"
-
+	_		-> panic stage $ "llvmOfStmt (" ++ show __LINE__ ++ ")\n\n" ++ show stmt ++ "\n"
 
 --------------------------------------------------------------------------------
 
@@ -352,8 +351,7 @@ llvmOfSIf exp@XPrim{} stmts
 llvmSwitch :: Exp a -> [Alt a] -> LlvmM ()
 llvmSwitch (XTag xv@(XVar _ t)) alt
  | t == TPtr (TCon TyConObj)
- = do	addComment	$ "llvmSwitch : " ++ show xv
-	reg		<-llvmOfExp xv
+ = do	reg		<-llvmOfExp xv
 	tag		<- getObjTag reg
 
 	switchEnd	<- newUniqueLabel "switch.end"
@@ -374,7 +372,7 @@ llvmSwitch (XTag xv@(XVar _ t)) alt
 
 
 llvmSwitch e _
- = 	panic stage $ "llvmSwitch (" ++ (show __LINE__) ++ ") : " ++ show e
+ = 	panic stage $ "llvmSwitch (" ++ show __LINE__ ++ ") : " ++ show e
 
 --------------------------------------------------------------------------------
 
@@ -392,32 +390,29 @@ genAltVars _ alt@(ACaseIndir (XVar _ t) label)
 	return	((tagIndir, lab), alt)
 
 genAltVars _ (ADefault _)
- = panic stage $ "getAltVars (" ++ (show __LINE__) ++ ") : found ADefault."
+ = panic stage $ "getAltVars (" ++ show __LINE__ ++ ") : found ADefault."
 
 genAltVars _ x
- = panic stage $ "getAltVars (" ++ (show __LINE__) ++ ") : found " ++ show x
+ = panic stage $ "getAltVars (" ++ show __LINE__ ++ ") : found " ++ show x
 
 
 genAltBlock :: ((LlvmVar, LlvmVar), Alt a) -> LlvmM ()
 genAltBlock ((_, lab), ACaseSusp (XVar (NSlot v i) t) label)
- = do	addComment	$ "genAltBlock " ++ show __LINE__
-	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
+ = do	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- readSlot i
 	forced		<- forceObj obj
 	writeSlot	forced i
 	branchVar	label
 
 genAltBlock ((_, lab), ACaseIndir (XVar (NSlot v i) t) label)
- = do	addComment	$ "genAltBlock " ++ show __LINE__
-	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
+ = do	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- readSlot i
 	followed	<- followObj obj
 	writeSlot	followed i
 	branchVar	label
 
 genAltBlock ((_, lab), ACaseSusp exp@(XVar n@NCafPtr{} t) label)
- = do	addComment	$ "genAltBlock " ++ show __LINE__
-	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
+ = do	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- llvmOfExp exp
 	forced		<- forceObj obj
 	cv		<- toLlvmCafVar (varOfName n) t
@@ -427,8 +422,7 @@ genAltBlock ((_, lab), ACaseSusp exp@(XVar n@NCafPtr{} t) label)
 	branchVar	label
 
 genAltBlock ((_, lab), ACaseIndir exp@(XVar n@NCafPtr{} t) label)
- = do	addComment	$ "genAltBlock " ++ show __LINE__
-	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
+ = do	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
 	obj		<- llvmOfExp exp
 	followed	<- followObj obj
 	cv		<- toLlvmCafVar (varOfName n) t
@@ -438,11 +432,10 @@ genAltBlock ((_, lab), ACaseIndir exp@(XVar n@NCafPtr{} t) label)
 	branchVar	label
 
 genAltBlock ((_, lab), ASwitch (XLit (LDataTag _)) [])
- = do	addComment	$ "genAltBlock " ++ show __LINE__
-	addBlock	[ Branch lab ]
+ =	addBlock	[ Branch lab ]
 
 genAltBlock ((_, lab), x)
- =	panic stage $ "getAltBlock (" ++ (show __LINE__) ++ ") : " ++ show x
+ =	panic stage $ "getAltBlock (" ++ show __LINE__ ++ ") : " ++ show x
 
 
 genAltDefault :: LlvmVar -> Alt a -> LlvmM ()
@@ -455,7 +448,7 @@ genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
 	caseDeath	n l c
 
 genAltDefault _ def
- =	panic stage $ "getAltDefault (" ++ (show __LINE__) ++ ") : " ++ show def
+ =	panic stage $ "getAltDefault (" ++ show __LINE__ ++ ") : " ++ show def
 
 
 caseDeath :: String -> Int -> Int -> LlvmM ()
@@ -491,10 +484,9 @@ branchVar var
 
 llvmOfReturn :: Exp a -> LlvmM ()
 llvmOfReturn exp@XVar{}
- = do	addComment	$ "Return NCafPtr " ++ show exp
-	reg		<- llvmOfExp exp
+ = do	reg		<- llvmOfExp exp
 	addBlock	[ Return (Just reg) ]
 
 llvmOfReturn x
- = 	panic stage $ "llvmOfReturn (" ++ (show __LINE__) ++ ") " ++ (takeWhile (/= ' ') (show x))
+ = 	panic stage $ "llvmOfReturn (" ++ show __LINE__ ++ ") " ++ takeWhile (/= ' ') (show x)
 

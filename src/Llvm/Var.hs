@@ -1,4 +1,5 @@
-{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+{-# LANGUAGE CPP #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Var
@@ -29,9 +30,9 @@ stage = "Llvm.Var"
 -- | Convert a Sea Var (with a Type) to a typed LlvmVar.
 toLlvmVar :: Var -> Type -> LlvmVar
 toLlvmVar v t
- = case isGlobalVar v of
-	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
-	False -> LMNLocalVar (seaVar True v) (toLlvmType t)
+ = if isGlobalVar v
+	then LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
+	else LMNLocalVar (seaVar True v) (toLlvmType t)
 
 toLlvmGlobalVar v t
  = LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
@@ -71,7 +72,7 @@ llvmVarOfXVar (XVar (NRts v) t)
  = LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
 
 llvmVarOfXVar exp
- = panic stage $ "llvmVarOfXVar (" ++ (show __LINE__) ++ ")\n"
+ = panic stage $ "llvmVarOfXVar (" ++ show __LINE__ ++ ")\n"
 	++ show exp
 
 -- | Turn the given Var (really just a name of a function) into a genereric
@@ -91,7 +92,7 @@ isGlobalVar v
 
  | file : _	<- [sfile | ISourcePos (SourcePos (sfile, _, _))
 		<-  concat [varInfo bound | IBoundBy bound <- varInfo v]]
- = isSuffixOf ".di" file
+ = ".di" `isSuffixOf` file
 
  | otherwise
  = False

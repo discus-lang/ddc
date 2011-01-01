@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 module Llvm.Runtime.Alloc
 	( allocate
 	, allocThunk
@@ -16,6 +16,8 @@ import Llvm.Runtime.Data
 import Llvm.Runtime.Struct
 import Llvm.Runtime.Tags
 import Llvm.Util
+
+import Control.Monad		(when)
 
 stage = "Llvm.Runtime.Alloc"
 
@@ -83,16 +85,15 @@ allocThunk funvar arity argc
 
 	storeStructRegValue ddcThunk pThunk "tag" tagFixedThunk
 
-	pFunSrc		<- newUniqueNamedReg "pFunSrc" (genericFunPtrType)
+	pFunSrc		<- newUniqueNamedReg "pFunSrc" genericFunPtrType
 	addBlock	[ Assignment pFunSrc (Cast LM_Bitcast funvar genericFunPtrType) ]
 	storeStructRegValue ddcThunk pThunk "funptr" pFunSrc
 
 	storeStructRegValue ddcThunk pThunk "arity" (i32LitVar arity)
 	storeStructRegValue ddcThunk pThunk "argc" (i32LitVar argc)
 
-	if argc > 0
-	  then addComment "Thunk's args array does not need to be initialized."
-	  else return ()
+	when (argc > 0)
+	  $ addComment "Thunk's args array does not need to be initialized."
 
 	ret		<- newUniqueNamedReg "allocated.thunk" pObj
 	addBlock	[ Assignment ret (Cast LM_Bitcast pThunk pObj) ]

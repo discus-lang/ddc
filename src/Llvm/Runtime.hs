@@ -43,9 +43,7 @@ stage = "Llvm.Runtime"
 -- at the start of a function.
 runtimeEnter :: Int -> LlvmM ()
 runtimeEnter 0
- = addBlock $	[ Comment ["_ENTER (0)"]
-		, Comment ["---------------------------------------------------------------"]
-		]
+ = addComment "_ENTER (0)"
 
 runtimeEnter count
  = do	let enter1	= LMNLocalVar "enter.1" ppObj
@@ -54,7 +52,7 @@ runtimeEnter count
 	let epanic	= fakeUnique "enter.panic"
 	let egood	= fakeUnique "enter.good"
 	addGlobalFuncDecl panicOutOfSlots
-	addBlock $
+	addBlock
 		[ Comment ["_ENTER (" ++ show count ++ ")"]
 		, Assignment localSlotBase (Load ddcSlotPtr)
 		, Assignment enter1 (GetElemPtr True localSlotBase [llvmWordLitVar count])
@@ -70,25 +68,19 @@ runtimeEnter count
 		, Comment ["----- Slot initialization -----"]
 		]
 	slotInit egood count
-	addBlock [ Comment ["---------------------------------------------------------------"] ]
+	addComment "---------------------------------------------------------------"
 
 
 -- | Generate LLVM code that releases the required number of GC slots
 -- at the start of a function.
 runtimeLeave :: Int -> LlvmM ()
 runtimeLeave 0
- = addBlock
-	[ Comment ["---------------------------------------------------------------"]
-	, Comment ["_LEAVE (0)"]
-	, Comment ["---------------------------------------------------------------"]
-	]
+ = addComment "_LEAVE (0)"
 
 runtimeLeave count
  = addBlock
-	[ Comment ["---------------------------------------------------------------"]
-	, Comment ["_LEAVE (" ++ show count ++ ")"]
+	[ Comment [ "_LEAVE (" ++ show count ++ ")" ]
 	, Store localSlotBase ddcSlotPtr
-	, Comment ["---------------------------------------------------------------"]
 	]
 
 
@@ -114,11 +106,11 @@ slotInit initstart n
 	let indexNext	= LMNLocalVar "init.index.next" llvmWord
 	let initdone	= LMNLocalVar "init.done" i1
 	let target		= LMNLocalVar "init.target" ppObj
-	addBlock $
+	addBlock
 		[ Branch (LMLocalVar initloop LMLabel)
 
 		, MkLabel initloop
-		, Assignment index (Phi llvmWord [((llvmWordLitVar (0 :: Int)), (LMLocalVar initstart LMLabel)), (indexNext, (LMLocalVar initloop LMLabel))])
+		, Assignment index (Phi llvmWord [(llvmWordLitVar (0 :: Int), LMLocalVar initstart LMLabel), (indexNext, LMLocalVar initloop LMLabel)])
 
 		, Assignment target (GetElemPtr False localSlotBase [index])
 		, Store nullObj target

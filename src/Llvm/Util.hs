@@ -1,4 +1,5 @@
-{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+{-# LANGUAGE CPP #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Util
@@ -145,12 +146,12 @@ toLlvmTypeCon (TyConUnboxed v)
 	"Word8#"	-> i8
 	"Word32#"	-> i32
 	"Char32#"	-> i32
-	name		-> panic stage $ "toLlvmTypeCon (" ++ (show __LINE__) ++ ") : " ++ name ++ "\n"
+	name		-> panic stage $ "toLlvmTypeCon (" ++ show __LINE__ ++ ") : " ++ name ++ "\n"
 
 toLlvmTypeCon (TyConAbstract v)
  = case varName v of
 	"String#"	-> LMPointer i8
-	name		-> panic stage $ "toLlvmTypeCon (" ++ (show __LINE__) ++ ") : " ++ name ++ "\n"
+	name		-> panic stage $ "toLlvmTypeCon (" ++ show __LINE__ ++ ") : " ++ name ++ "\n"
 
 
 typeOfString :: String -> LlvmType
@@ -169,6 +170,6 @@ escapeString (s:ss)
  | isPrint s
  = s : escapeString ss
 
-escapeString (s:ss) = (printf "\\%02x" (ord s)) ++ escapeString ss
+escapeString (s:ss) = printf "\\%02x" (ord s) ++ escapeString ss
 
 escapeString [] = []

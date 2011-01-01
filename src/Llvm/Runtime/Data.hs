@@ -72,7 +72,7 @@ followObj orig
 getObjTag :: LlvmVar -> LlvmM LlvmVar
 getObjTag obj
  = do	r0	<- newUniqueReg $ pLift i32
-	r1	<- newUniqueReg $ i32
+	r1	<- newUniqueReg i32
 	val	<- newUniqueNamedReg "tag.val" i32
 	addBlock
 		[ Assignment r0 (GetElemPtr False obj [llvmWordLitVar 0, i32LitVar 0])

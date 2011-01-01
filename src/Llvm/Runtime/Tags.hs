@@ -3,15 +3,16 @@
 module Llvm.Runtime.Tags
 	( tagBase
 	, tagBasePlus
-	, tagThunk
 	, tagData
 	, tagDataR
-	, tagDataM
 	, tagSuspIndir
 	, tagDataRS
 	, tagIndir
 	, tagSusp
 	, tagFixedThunk
+
+	, objModeDataRS
+	, objFixedDataM
 	)
 where
 
@@ -36,18 +37,11 @@ tagBase = i32LitVar 0
 tagBasePlus :: Int -> LlvmVar
 tagBasePlus x = i32LitVar x
 
-
-tagThunk :: LlvmVar
-tagThunk = i32LitVar 0x11
-
 tagData :: Int -> LlvmVar
-tagData tag = i32LitVar (objFixedData + (shiftL tag 8))
+tagData tag = i32LitVar (objFixedData + tag * 256)
 
 tagDataR :: LlvmVar
 tagDataR = i32LitVar 0x31
-
-tagDataM :: LlvmVar
-tagDataM = i32LitVar 0x41
 
 tagSuspIndir :: LlvmVar
 tagSuspIndir = i32LitVar 0x51
@@ -70,6 +64,10 @@ objModeDataRS :: Int
 --objModeFixed	= 0x01
 objModeDataRS	= 0x03
 
-
 objFixedData :: Int
 objFixedData	= 0x21
+
+objFixedDataM :: Int
+objFixedDataM = 0x41
+
+

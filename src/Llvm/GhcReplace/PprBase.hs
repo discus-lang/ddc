@@ -10,7 +10,7 @@ import Data.Word
 doubleToBytes :: Double -> [Int]
 doubleToBytes d
    = runST (do
-        arr <- newArray_ ((0::Int),7)
+        arr <- newArray_ (0::Int, 7)
         writeArray arr 0 d
         arr <- castDoubleToWord8Array arr
         i0 <- readArray arr 0

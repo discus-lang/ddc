@@ -1,4 +1,5 @@
-{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults -cpp #-}
+{-# LANGUAGE CPP #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 
 -- | Helpers for converting Sea to LLVM code.
 module Llvm.Exp
@@ -70,19 +71,18 @@ llvmOfExp (XVar v@NCafPtr{} tv)
 llvmOfExp (XVar v@NCaf{} tv@(TCon (TyConUnboxed _)))
  = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
 	cv		<- toLlvmCafVar (varOfName v) tv
-	addBlock	[ Comment [ stage ++ " " ++ show __LINE__ ++ " " ++ show tv ]
-			, Assignment r1 (loadAddress cv) ]
+	addBlock	[ Assignment r1 (loadAddress cv) ]
 	return		r1
 
 llvmOfExp (XLit (LLit lit))
  = 	return $ llvmVarOfLit lit
 
 llvmOfExp (XVar n@NSuper{} tv)
- = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
+ = panic stage $ "llvmOfExp (" ++ show __LINE__ ++ ") :\n"
 	++ show n ++ "\n"
 
 llvmOfExp src
- = panic stage $ "llvmOfExp (" ++ (show __LINE__) ++ ") :\n"
+ = panic stage $ "llvmOfExp (" ++ show __LINE__ ++ ") :\n"
 	++ show src ++ "\n"
 
 --------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ llvmOfXPrim :: Prim -> [Exp a] -> LlvmM LlvmVar
 llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit litfmt) ]
  =	boxLit litfmt
 
-llvmOfXPrim (MApp PAppCall) exp@((XVar (NSuper fv) (TFun at rt)):args)
+llvmOfXPrim (MApp PAppCall) exp@(XVar (NSuper fv) (TFun at rt):args)
  = case varId fv of
 	VarIdPrim prim	-> primCall prim exp
 	_		-> funCall exp
@@ -135,8 +135,7 @@ llvmOfXPrim (MFun PFunForce) [ XVar v@NCafPtr{} tv@(TPtr (TCon TyConObj)) ]
 	forceObj	r2
 
 llvmOfXPrim (MApp PAppApply) ((fptr@(XVar n t)):args)
- = do	addComment $ "llvmOfXPrim PAppApply (" ++ (show __LINE__) ++ ")"
-	params	<- mapM llvmOfExp args
+ = do	params	<- mapM llvmOfExp args
 	func	<- llvmOfExp fptr
 	applyN	func params
 
@@ -151,7 +150,7 @@ llvmOfXPrim (MAlloc (PAllocData v arity)) []
 
 
 llvmOfXPrim op args
- = panic stage $ "llvmOfXPrim (" ++ (show __LINE__) ++ ")\n\n"
+ = panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")\n\n"
 	++ show op ++ "\n\n"
 	++ show args ++ "\n"
 
@@ -176,7 +175,7 @@ funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
 		++ "\n    argv : " ++ show args
 
 primCall :: PrimId -> [Exp a] -> LlvmM LlvmVar
-primCall primId exp@((XVar (NSuper fv) (TFun at rt)):args)
+primCall primId exp@(XVar (NSuper fv) (TFun at rt):args)
  | length at == length args
  = case primId of
 	VProjFieldR	-> primProjFieldR args
@@ -192,7 +191,7 @@ primCall primId exp@((XVar (NSuper fv) (TFun at rt)):args)
 
 --------------------------------------------------------------------------------
 
-mkOpFunc :: LlvmType -> PrimOp -> (LlvmVar -> LlvmVar -> LlvmExpression)
+mkOpFunc :: LlvmType -> PrimOp -> LlvmVar -> LlvmVar -> LlvmExpression
 mkOpFunc varType op
  = case (varType, op) of
 	(_	,	OpAdd)	-> LlvmOp LM_MO_Add
@@ -232,7 +231,7 @@ mkOpFunc varType op
 	(_	,	OpOr)	-> LlvmOp LM_MO_Or
 
 	-- Not a binary operatior. Needs to be handled elsewhere.
-	(_	,	OpNeg)	-> panic stage $ "mkOpFunc (" ++ (show __LINE__) ++ ") : Unhandled op : " ++ show op
+	(_	,	OpNeg)	-> panic stage $ "mkOpFunc (" ++ show __LINE__ ++ ") : Unhandled op : " ++ show op
 
 
 opResultType :: PrimOp -> LlvmVar -> LlvmType
@@ -264,7 +263,7 @@ boxExp t@(TCon (TyConUnboxed tv)) var
 	boxAny		reg
 
 boxExp t x
- = panic stage $ "boxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
+ = panic stage $ "boxExp (" ++ show __LINE__ ++ ") :\n    " ++ show t ++ "\n    " ++ show x
 
 --------------------------------------------------------------------------------
 
@@ -282,16 +281,14 @@ unboxExp t (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj)))
 	unboxAny	(toLlvmType t) r2
 
 unboxExp t x
- = panic stage $ "unboxExp (" ++ (show __LINE__) ++ ") :\n    " ++ show t ++ "\n    " ++ (show x)
+ = panic stage $ "unboxExp (" ++ show __LINE__ ++ ") :\n    " ++ show t ++ "\n    " ++ show x
 
 
 --------------------------------------------------------------------------------
 
 primProjFieldR :: [Exp a] -> LlvmM LlvmVar
 primProjFieldR args@[exp@(XVar v (TPtr (TCon TyConObj))), XLit (LLit (LiteralFmt (LInt index) (UnboxedBits 32)))]
- = do	addComment	$ "primProjFieldR " ++ show args
-
-	addGlobalFuncDecl boxRef
+ = do	addGlobalFuncDecl boxRef
 
 	let boxFun	= LMGlobalVar "_boxRef" (LMFunction boxRef) External Nothing Nothing True
 	let field	= fst $ structFieldLookup ddcData "args"

@@ -96,7 +96,7 @@ addBlock code
  = do	state	<- get
 	modify $ \s -> s
 		{ tmpReg = Nothing
-		, tmpBlocks = code : (tmpBlocks state) }
+		, tmpBlocks = code : tmpBlocks state }
 
 
 addBlockResult :: LlvmVar -> [LlvmStatement] -> LlvmM ()
@@ -104,7 +104,7 @@ addBlockResult result code
  = do	state	<- get
 	modify $ \s -> s
 		{ tmpReg = Just result
-		, tmpBlocks = code : (tmpBlocks state) }
+		, tmpBlocks = code : tmpBlocks state }
 
 
 addComment :: LMString -> LlvmM ()
@@ -112,7 +112,7 @@ addComment text
  = do	state	<- get
 	modify $ \s -> s
 		{ tmpReg = tmpReg state
-		, tmpBlocks = [Comment (lines text)] : (tmpBlocks state) }
+		, tmpBlocks = [Comment (lines text)] : tmpBlocks state }
 
 
 addGlobalVar :: LMGlobal -> LlvmM ()
@@ -122,9 +122,8 @@ addGlobalVar (gvar, init)
 	let name	= getPlainName gvar
 	case Map.lookup name map of
 	  Nothing	-> modify $ \s -> s { globVars = Map.insert name (gvar, init) map }
-	  Just (cur, _)	-> if cur == gvar
-				then return ()
-				else panic stage
+	  Just (cur, _)	-> unless (cur == gvar)
+				$ panic stage
 					$ "The following two should match :"
 					++ "\n    " ++ show cur
 					++ "\n    " ++ show gvar
@@ -159,7 +158,7 @@ endFunction funcDecl funcArgs funcAttrs funcSect
 	let func	= LlvmFunction funcDecl funcArgs funcAttrs funcSect
 				$ blockify (LlvmBlock (fakeUnique "entry") blks)
 
-	modify $ \s -> s { functions = func : (functions s) }
+	modify $ \s -> s { functions = func : functions s }
 
 
 blockify :: LlvmBlock -> [LlvmBlock]
@@ -173,7 +172,7 @@ isLabel (MkLabel _) = True
 isLabel _ = False
 
 convBlock :: [LlvmStatement] -> LlvmBlock
-convBlock ((MkLabel id):tail) = LlvmBlock id tail
+convBlock (MkLabel id:tail) = LlvmBlock id tail
 convBlock _ = error "convBlock"
 
 --------------------------------------------------------------------------------
@@ -184,9 +183,8 @@ addAlias (name, typ)
 	let map		= aliases state
 	case Map.lookup name map of
 	  Nothing	-> modify $ \s -> s { aliases = Map.insert name typ map }
-	  Just curr	-> if curr == typ
-				then return ()
-				else panic stage
+	  Just curr	-> unless (curr == typ)
+				$ panic stage
 					$ "The following two should match :"
 					++ "\n    " ++ show curr
 					++ "\n    " ++ show typ
@@ -200,9 +198,8 @@ addGlobalFuncDecl fd
 	let name	= nameOfFunDecl fd
 	case Map.lookup name map of
 	  Nothing	-> modify $ \s -> s { funcDecls = Map.insert name fd map }
-	  Just curr	-> if curr == fd
-				then return ()
-				else panic stage
+	  Just curr	-> unless (curr == fd)
+				$ panic stage
 					$ "The following two should match :"
 					++ "\n    " ++ show curr
 					++ "\n    " ++ show fd
@@ -210,7 +207,7 @@ addGlobalFuncDecl fd
 
 checkFnName :: String -> LlvmM ()
 checkFnName fname
- = do	when (length fname == 0 || not ( checkName True fname))
+ = do	when (null fname || not (checkName True fname))
 		$ panic stage $ "\nBad function name '" ++ fname ++ "'\n"
 	return ()
 
