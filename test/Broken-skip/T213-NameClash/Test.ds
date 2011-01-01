@@ -1,0 +1,24 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import	Base
+	Data.Numeric.Int32
+
+-- An array of unboxed ints
+data ArrayU %r a
+
+foreign import "primArrayU_Int_set"
+ arrayUI_set :: ArrayU (Int{write}) {read} -> Int{read} -> Int -> ()
+
+-- A fast, unchecked write to an array.
+foreign import "primArrayInt32_poke"
+ arrayUI_poke
+ 	:: forall %r1 %r2 %r3 %r4
+	.  ArrayU %r1 (Int %r2) -> Int32# -($c1)> Int32# -(!e2 $c2)> ()
+	:- $c1 = ${a : ArrayU %r1 (Int %r2)}
+	,  $c2 = ${a : ArrayU %r1 (Int %r2)} + ${ix : Int32#}
+	,  !e2 = !Read %r1 + !Write %r2 + !Read %r3 + !Read %r4
+	,  Mutable %r2
+	:$ Obj -> Int32# -> Int32# -> Obj
+
+arrayUI_poke array i x = arrayUI_set i x
+
