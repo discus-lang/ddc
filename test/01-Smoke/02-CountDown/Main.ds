@@ -4,14 +4,14 @@ import Base
 import Data.Numeric.Int32
 
 
-foreign import "printf"
- printf :: String#{read} -> Int#
+foreign import "puts"
+ puts :: String#{read} -> Int#
 
 countDown n
  = if n == 0
-	then printf "Done!\n"#
+	then puts "Done!\n"#
 	else countDown (n - 1)
 
-main () 
+main ()
  = do	countDown 100
 	()
