@@ -15,7 +15,8 @@ module DDC.Type
 	, module DDC.Type.Subsumes
 	, module DDC.Type.Operators
 	, module DDC.Type.Collect
-	, module DDC.Type.Simplify)
+	, module DDC.Type.Simplify
+	, module DDC.Type.Boxing)
 where
 import DDC.Type.Exp
 import DDC.Type.DeepSeq		()
@@ -32,3 +33,4 @@ import DDC.Type.Subsumes
 import DDC.Type.Operators
 import DDC.Type.Collect
 import DDC.Type.Simplify
+import DDC.Type.Boxing

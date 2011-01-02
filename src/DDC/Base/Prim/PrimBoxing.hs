@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Primitive boxing functions.
 module DDC.Base.Prim.PrimBoxing
 	( readPrimBoxing
@@ -32,5 +32,6 @@ readPrimUnboxing str
 	"unboxInt64"	-> Just $ PrimTypeInt   $ Width 64
 	"unboxFloat32"	-> Just $ PrimTypeFloat $ Width 32
 	"unboxFloat64"	-> Just $ PrimTypeFloat $ Width 64
+	_		-> Nothing
 	
 	

@@ -104,11 +104,19 @@ curryX	env vsTailCall xx
 		Left XPrim{}   : _	-> xx
 
 		-- Application of a real function.
-		Left xF@XVar{} : args	
-		 -> let Just xx'	= makeCall env vsTailCall xF args
-		    in  xx'
-
-		_			-> panic stage $ "curryX: no match"
+		Left xF@XVar{} : args
+		 | Just xx'		<- makeCall env vsTailCall xF args
+		 -> xx'
+		
+		-- Type appliations of a plain variable (not a function)
+		Left xF@XVar{} : args
+		 | []	<- [x | Left x <- args]
+		 -> xx
+		
+		-- Oh oh..
+		parts	-> panic stage 
+			$ "curryX: this looks like a function application but I dunno how to make the call"
+		 	% parts
 		
 	
 	-- uh oh..			

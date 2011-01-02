@@ -237,9 +237,6 @@ toSeaX		xx
 	C.XLAM _ k x
 	 -> do 	slurpWitnessKind k
 	 	toSeaX x
-
-	C.XApp{}
-	 -> toSeaApps [x | Left x <- C.flattenApps xx]
 	
 	-- non string constants
 	C.XLit litFmt@(LiteralFmt _ fmt)
@@ -254,14 +251,15 @@ toSeaX		xx
 	 | k == T.kRegion
 	 -> return $ E.XLit (E.LLit litFmt)
 
-	-- An application to type/region/effects only
-	--	we can just discard the TRE applications and keep the value.
-	C.XAPP{}
-	 -> let
-	 	parts		= C.flattenApps xx
-		(Left (C.XVar vF vT) : _)	= parts
+	C.XApp{}
+	 -> toSeaApps [x | Left x <- C.flattenApps xx]
 
-	    in 	return	$ E.XVar (E.NAuto vF) $ toSeaT vT
+	C.XAPP{}
+	 -> toSeaApps [x | Left x <- C.flattenApps xx]
+
+	-- call a zero-arity constructor
+	C.XPrim{}
+	 -> toSeaApps [xx]
 
 	_ -> panic stage
 		$ "toSeaX: cannot convert expression to Sea IR.\n"
@@ -335,16 +333,16 @@ toSeaApps parts
 
 	-- boxing
 	C.XPrim C.MBox{} t : args
-	 -> do	let [tUnboxed, _tBoxed]	=  T.flattenTFuns t
-		args'			<- mapM toSeaX args
-		return	$ E.XPrim 
+	 | [tUnboxed, _tBoxed]	<- T.flattenTFuns $ T.stripToBodyT t
+	 -> do	args'		<- mapM toSeaX args
+	 	return	$ E.XPrim 
 				(E.MBox (toSeaT tUnboxed))
 				args'
 				
 	-- the unboxing function is named after the result type
 	C.XPrim C.MUnbox{} t : args
-	 -> do	let [_tBoxed, tUnboxed]	=  T.flattenTFuns t
-		args'			<- mapM toSeaX args
+	 | [_tBoxed, tUnboxed]	<- T.flattenTFuns $ T.stripToBodyT t
+	 -> do	args'		<- mapM toSeaX args
 		return	$ E.XPrim
 				(E.MUnbox $ toSeaT tUnboxed)
 				args'
@@ -354,7 +352,11 @@ toSeaApps parts
 	 -> do	args'	<- mapM toSeaX args
 	 	return	$ E.XPrim (E.MFun E.PFunForce) args'
 	
-	_ -> panic stage $ "toSeaApps: no match for " % parts
+	-- A plain variable that had some type applications applied to it.
+	[C.XVar v t]
+	 -> return $ E.XVar (E.NAuto v) (toSeaT t)
+	
+	_ -> panic stage $ "toSeaApps: no match for " % pprStr [PrettyCoreTypes] parts
 
 
 isUnboxed :: C.Exp -> Bool

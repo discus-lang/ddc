@@ -42,7 +42,6 @@ import Data.Maybe
 import Util
 import Shared.VarUtil				(isDummy, varPos)
 import qualified DDC.Type			as T
-import qualified DDC.Type.Boxing		as T
 import qualified DDC.Desugar.Transform		as D
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Core.Exp			as C
@@ -329,22 +328,26 @@ toCoreG vsBound mObj gg
 		 Nothing	-> return $ C.GExp w' x
 		
 	| D.GExp _ w x		<- gg
-	, Just (_, tObj)	<- mObj
 	= do	(w', mustUnbox)	<- toCoreW w
 	 	x'		<- toCoreX vsBound x
 
-		let Just tUnboxed	= T.takeUnboxedOfBoxedType tObj
-		let Just ptUnboxed	= C.takePrimTypeOfType tUnboxed
-		let Just tUnboxFn'	= T.tUnboxFn tObj
-
-		let xUnboxDiscrim tR
-		  	=        (C.XPrim (C.MUnbox ptUnboxed) tUnboxFn') 
-		  	`C.XAPP` tR
-		  	`C.XApp` ((C.XPrim C.MForce (T.tForceFn tObj)) `C.XApp` x')
 		
 		-- All literal matching in core is unboxed, so we must unbox the match object if need be.
 		case mustUnbox of
-		 Just tR	-> return $ C.GExp w' (xUnboxDiscrim tR)
+		 Just tLit	
+		  -> let Just (_, _, [tR]) = T.takeTData tLit
+			 Just tUnboxed	   = T.takeUnboxedOfBoxedType tLit
+			 Just ptUnboxed	   = C.takePrimTypeOfType tUnboxed
+			 Just tUnboxFn'	   = T.tUnboxFn tLit
+
+			 xUnboxDiscrim tR
+		  		=        (C.XPrim (C.MUnbox ptUnboxed) tUnboxFn') 
+		  		`C.XAPP` tR
+		  		`C.XApp` ((C.XPrim C.MForce (T.tForceFn tLit)) `C.XApp` x')
+
+		     in  return $ C.GExp w' (xUnboxDiscrim tR)
+
+
 		 Nothing	-> return $ C.GExp w' x'
 
  	| otherwise
@@ -357,8 +360,8 @@ toCoreG vsBound mObj gg
 -- | Patterns
 toCoreW :: D.Pat Annot
 	-> CoreM 
-		( C.Pat
-		, Maybe T.Type)	-- whether to unbox the RHS, and from what region
+		( C.Pat		-- transformed pattern.
+		, Maybe T.Type)	-- whether to unbox the RHS, and what type it has.
 	
 toCoreW ww
 	| D.WConLabel _ v lvs	<- ww
@@ -379,19 +382,16 @@ toCoreW ww
 	, kV == T.kValue
 
 	, dataFormatIsBoxed fmt
-	= do	mT	<- liftM (liftM T.stripToBodyT)
-	 		$  lookupType vT
-	 
-		-- work out what region the value to match against is in
+	= do	-- work out what region the value to match against is in
 		--	we pass this back up to toCoreG so it knows to do the unboxing.
-	 	let Just tLit		= mT
-		let Just (_, _, r : _)	= T.takeTData tLit
+		Just tLit	<- liftM (liftM T.stripToBodyT)
+	 			$  lookupType vT
 
 		-- get the unboxed version of this data format.
 	 	let Just fmt_unboxed	= dataFormatUnboxedOfBoxed fmt
 	
 	 	return	( C.WLit (varPos vT) (LiteralFmt lit fmt_unboxed)
-			, Just r)
+			, Just tLit)
 	
 	-- match against unboxed literal
 	--	we can do this directly.

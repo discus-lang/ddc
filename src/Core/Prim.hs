@@ -16,6 +16,7 @@ import Core.Util
 import Util
 import DDC.Core.Exp
 import DDC.Core.Glob
+import DDC.Core.Check
 import DDC.Type
 import DDC.Var
 import DDC.Base.Prim.PrimOp
@@ -175,7 +176,7 @@ primX1' tt xx parts
 		else buildApp
 			$ Left (XPrim (MUnbox pt) t) 
 			: Right tR 
-			: Left (XApp (XPrim MForce (error "Core.Prim: need type of force")) x)
+			: Left (XApp (XPrim MForce (tForceFn (checkedTypeOfExp "Core.Prim.primX1" x))) x)
 			: []
 
 	-- primitive arithmetic operators

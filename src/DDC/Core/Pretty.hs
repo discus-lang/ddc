@@ -150,11 +150,14 @@ instance Pretty Exp PMode where
 
 	XApp e1 e2
 	 -> let	pprAppLeft x 
-	 	  | x =@= XVar{} || isXApp x	= ppr x
+	 	  | x =@= XVar{} 
+			|| x =@= XPrim{}
+			|| isXApp x		= ppr x
 		  | otherwise			= parens x
 
 		pprAppRight x
-		  | x =@= XVar{} 		= " " % x
+		  | x =@= XVar{}
+			|| x =@= XPrim{}	= " " % x
 		  | otherwise			= nl  %> prettyExpB x
 
 	    in	pprAppLeft e1 % pprAppRight e2

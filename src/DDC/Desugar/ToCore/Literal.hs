@@ -1,10 +1,9 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Conversion of literal values.
 module DDC.Desugar.ToCore.Literal
 	(toCoreXLit)
 where
 import DDC.Desugar.ToCore.Base
-import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.Literal
 import DDC.Base.DataFormat
@@ -22,7 +21,7 @@ toCoreXLit :: T.Type -> D.Exp Annot -> C.Exp
 toCoreXLit tt xLit
  	= toCoreXLit' (T.stripToBodyT tt) xLit
 
-toCoreXLit' tt xLit@(D.XLit _ litfmt@(LiteralFmt lit fmt))
+toCoreXLit' tt (D.XLit _ litfmt@(LiteralFmt lit fmt))
 
 	-- raw unboxed strings need their region applied
 	| LString _	<- lit
@@ -43,7 +42,7 @@ toCoreXLit' tt xLit@(D.XLit _ litfmt@(LiteralFmt lit fmt))
 
 		Just fmtUnboxed	  = dataFormatUnboxedOfBoxed fmt
 		tBoxed		  = tt
-		Just tUnboxed	  = error ("Literal.hs: tUnboxed")
+		Just tUnboxed	  = T.takeUnboxedOfBoxedType tBoxed
 		tFun		  = T.makeTFun tUnboxed tBoxed (T.TApp T.tRead tR) T.tEmpty
 
 	  in	C.XApp	(C.XVar  primBoxString tFun) 
@@ -51,21 +50,16 @@ toCoreXLit' tt xLit@(D.XLit _ litfmt@(LiteralFmt lit fmt))
 
 	-- the other unboxed literals have kind *, 
 	--	so we can just pass them to the the boxing primitive directly.
-	| Just (_, _, [tR]) <- T.takeTData tt
+	| otherwise
 	= let	Just fmtUnboxed	= dataFormatUnboxedOfBoxed fmt
 		tBoxed		= tt
-		tUnboxed	= error ("Literal.hs: tUnboxed")
+		Just tUnboxed	= T.takeUnboxedOfBoxedType tBoxed
 		Just ptUnboxed	= C.takePrimTypeOfType tUnboxed
 		tFun		= T.makeTFun tUnboxed tBoxed T.tPure T.tEmpty
 		
 	  in	C.XApp	(C.XPrim (C.MBox ptUnboxed) tFun)
 			(C.XLit $ LiteralFmt lit fmtUnboxed)
-				
-	| otherwise
-	= panic stage
-		$ "toCoreLitX: no match\n"
-		% "   tLit   = " % show tt	% "\n"
-		% "   xLit   = " % show xLit	% "\n"
+	
 
 toCoreXLit' _ _
 	= panic stage
