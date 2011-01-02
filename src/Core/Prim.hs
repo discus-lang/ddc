@@ -175,7 +175,7 @@ primX1' tt xx parts
 		else buildApp
 			$ Left (XPrim (MUnbox pt) t) 
 			: Right tR 
-			: Left (XApp (XPrim MForce (error "need type of force")) x)
+			: Left (XApp (XPrim MForce (error "Core.Prim: need type of force")) x)
 			: []
 
 	-- primitive arithmetic operators

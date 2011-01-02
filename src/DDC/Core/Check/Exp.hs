@@ -125,6 +125,7 @@ checkExp_trace m xx env
 		, ppr "    There is no annotation, and the variable is not in the environment."
 		, "During: "	% envCaller env]
 
+
 	-- TODO: Check type annotation matches the one from the environment.
 	XVar v t1
 {-	 | envClosed env
@@ -171,6 +172,15 @@ checkExp_trace m xx env
 		, Eff.pure
 		, clos)
 
+	-- Primitive operator.
+	XPrim prim t1
+	 -> let	(t1', k) = checkTypeI n t1 env
+	    in	k `seq`
+		 ( XPrim prim t1'
+		 , t1'
+		 , Eff.pure
+		 , Clo.empty)
+	
 
 	-- Literal values.
 	-- HACK: We handle applications of string literals to their regions directly
@@ -416,16 +426,6 @@ checkExp_trace m xx env
 		, eff_masked
 		, clo)
 
-	-- Primitive operator.
-	XPrim{}	
-	 -> error "fix checking prim funs"
-
-{-	 | (xs', t1, eff, clo)	<- checkPrim n prim xs env
-	 ->	( XPrim prim xs'
-		, t1
-		, eff
-		, clo)
--}
 	-- Type annotation
 	XTau tAnnot x
 	 | (tAnnot', kAnnot)	<- checkTypeI n tAnnot env

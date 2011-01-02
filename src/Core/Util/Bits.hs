@@ -26,9 +26,9 @@ module Core.Util.Bits
 	
 	-- application
 	, buildApp
+	, flattenAPPs
 	, flattenApps
-	, flattenAppsE
-	, unflattenAppsE
+	, unflattenApps
 	, splitApps
 
 	-- lambda		
@@ -167,11 +167,11 @@ takeVarOfStmt ss
 
 
 -- Application -------------------------------------------------------------------------------------
--- | Flatten an expression application into a list
-flattenApps :: Exp -> [Either Exp Type]
-flattenApps xx
+-- | Flatten outermost type applications in an expression.
+flattenAPPs :: Exp -> [Either Exp Type]
+flattenAPPs xx
 	| XAPP x t	<- xx
-	= flattenApps x ++ [Right t]
+	= flattenAPPs x ++ [Right t]
 
 	| otherwise
 	= [Left xx]
@@ -198,35 +198,33 @@ buildApp' xx
 	| otherwise
 	= Nothing
 
--- | Flatten type and value applications.
---   For value applications we get the expression and effect cause by that application.
---   For type  applications we just get the type.
-flattenAppsE ::	Exp -> [Either Exp Type]
-flattenAppsE x
+-- | Flatten type and value applications of an expression.
+flattenApps ::	Exp -> [Either Exp Type]
+flattenApps x
 	| XApp e1 e2	<- x
-	= flattenAppsE e1 ++ [Left e2]
+	= flattenApps e1 ++ [Left e2]
 
 	| XAPP  x t		<- x
-	= flattenAppsE x ++ [Right t]
+	= flattenApps x  ++ [Right t]
 
 	| otherwise
 	= [Left x]
 	
 	
 -- | Build some type/value applications
-unflattenAppsE :: [Either Exp Type] -> Exp
-unflattenAppsE	xx
+unflattenApps :: [Either Exp Type] -> Exp
+unflattenApps	xx
 	
 	| x1:x2:xs	<- xx
 	, Left e1	<- x1
 	, Left e2	<- x2
-	= unflattenAppsE 
+	= unflattenApps
 	$ [Left $ XApp e1 e2] ++ xs
 	
 	| x1:x2:xs	<- xx
 	, Left  e1	<- x1
 	, Right e2	<- x2
-	= unflattenAppsE 
+	= unflattenApps
 	$ [Left $ XAPP e1 e2] ++ xs
 	
 	| x1:[]		<- xx

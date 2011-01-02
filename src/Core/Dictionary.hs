@@ -74,7 +74,7 @@ rewriteAppX env xx
  	-- Flatten the application expression so we can get at the var of 
 	--	the function being applied.
 	| (Left (XVar vOverloaded tOverloaded) : xsArgs)
-		<- flattenAppsE xx
+		<- flattenApps xx
 	
 	-- See if the var being applied is defined in one of the type class
 	--	declarations. If it is then we have to rewrite the application.
@@ -203,7 +203,7 @@ rewriteAppX_withInstance env xxUse
 	(ksContext, _)			= slurpContextT  tInstPoly
 	Just tsInstTypeArgsWitness 	= sequence $ map inventWitnessOfKind ksContext
 
-	xxInst		= unflattenAppsE 
+	xxInst		= unflattenApps 
 			$  Left (XVar vInst tInstScheme)
 			:  [Right t	| t <- tsInstTypeArgsPoly]
 			++ [Right t	| t <- tsInstTypeArgsWitness]
