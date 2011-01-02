@@ -88,7 +88,7 @@ boundUseX level xx
  	XLAM bind k x		-> boundUseX level x
 	XAPP x t		-> boundUseX level x
 	XTau vts x		-> boundUseX level x
-	
+	XPrim{}			-> return ()
 	XLam v t x eff clo	-> boundUseX (level + 1) x
 
 	-- a use of a var directly inside an unbox
