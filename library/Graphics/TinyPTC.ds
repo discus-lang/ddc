@@ -7,7 +7,7 @@ pragma cc_includes
 effect !Graphics	:: !;
 	
 foreign import "ptc_open"
- ptcOpen 	:: String# {read} -> Int32# -> Int32# -(!Graphics)> Int32#;
+ ptcOpen 	:: Ptr# String# {read} -> Int32# -> Int32# -(!Graphics)> Int32#;
 		
 foreign import "ptc_close"
  ptcClose	:: Void# -(!Graphics)> Void#;
