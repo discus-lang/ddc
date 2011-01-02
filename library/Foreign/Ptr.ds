@@ -64,5 +64,5 @@ foreign import "_POKEON"
 foreign import  coercePtr	:: forall a b. Ptr# a -> Ptr# b
 foreign import 	coercePtrToAddr	:: forall a.   Ptr# a -> Addr#
 foreign import 	coerceAddrToPtr	:: forall a.   Addr# -> Ptr# a
-	
+
 

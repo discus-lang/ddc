@@ -11,7 +11,7 @@ import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.SourcePos
 import DDC.Base.Literal
-import DDC.Base.Prim.PrimType
+import DDC.Base.Prim
 import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
@@ -336,7 +336,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> "_unboxDirect(" % t % ", " % x % ")"
 
 	-- Casting between numeric types.
-	XPrim (MCast pt1 pt2) [x]
+	XPrim (MCast (PrimCast pt1 pt2)) [x]
 	 -> "_CAST"
 		% "("  % pprPrimType pt1
 		% ", " % pprPrimType pt2
@@ -344,10 +344,24 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		% ")"
 
 	-- Coercion between pointer types
-	XPrim (MCoercePtr t1 t2) [x]
-	 -> "_COERCEPTR" 
+	XPrim (MCoerce (PrimCoercePtr t1 t2)) [x]
+	 -> "_COERCE_PTR" 
 		% "("  % t1
 		% ", " % t2
+		% ", " % x
+		% ")"
+
+	-- Coercion between pointer types
+	XPrim (MCoerce (PrimCoerceAddrToPtr t1)) [x]
+	 -> "_COERCE_ADDR_TO_PTR" 
+		% "("  % t1
+		% ", " % x
+		% ")"
+
+	-- Coercion between pointer types
+	XPrim (MCoerce (PrimCoercePtrToAddr t1)) [x]
+	 -> "_COERCE_PTR_TO_ADDR" 
+		% "("  % t1
 		% ", " % x
 		% ")"
 

@@ -271,6 +271,27 @@ toSeaX		xx
 toSeaApps :: [C.Exp] -> SeaM (E.Exp ())
 toSeaApps parts
  = case parts of
+	-- forcing
+	C.XPrim (C.MForce) _ : args
+	 -> do	args'	<- mapM toSeaX args
+	 	return	$ E.XPrim (E.MFun E.PFunForce) args'
+
+	-- boxing
+	C.XPrim C.MBox{} t : args
+	 | [tUnboxed, _tBoxed]	<- T.flattenTFuns $ T.stripToBodyT t
+	 -> do	args'		<- mapM toSeaX args
+	 	return	$ E.XPrim 
+				(E.MBox (toSeaT tUnboxed))
+				args'
+				
+	-- the unboxing function is named after the result type
+	C.XPrim C.MUnbox{} t : args
+	 | [_tBoxed, tUnboxed]	<- T.flattenTFuns $ T.stripToBodyT t
+	 -> do	args'		<- mapM toSeaX args
+		return	$ E.XPrim
+				(E.MUnbox $ toSeaT tUnboxed)
+				args'
+
 	-- arithmetic operators
 	C.XPrim (C.MOp _ op) _ : args
 	 -> do	args'	<- mapM toSeaX args
@@ -279,14 +300,24 @@ toSeaApps parts
 	-- casting
 	C.XPrim (C.MCast (PrimCast pt1 pt2)) _ : args
 	 -> do	args'	<- mapM toSeaX args
-		return	$ E.XPrim (E.MCast pt1 pt2) args'
+		return	$ E.XPrim (E.MCast (PrimCast pt1 pt2)) args'
 
 	-- coersion between pointer types
 	C.XPrim (C.MCoerce (PrimCoercePtr t1 t2)) _ : args
 	 -> do	let t1'	=  toSeaT t1
 		let t2'	=  toSeaT t2
 		args'	<- mapM toSeaX args
-		return	$ E.XPrim (E.MCoercePtr t1' t2') args'
+		return	$ E.XPrim (E.MCoerce (PrimCoercePtr t1' t2')) args'
+
+	C.XPrim (C.MCoerce (PrimCoerceAddrToPtr t1)) _ : args
+	 -> do	let t1'	=  toSeaT t1
+		args'	<- mapM toSeaX args
+		return	$ E.XPrim (E.MCoerce (PrimCoerceAddrToPtr t1')) args'
+
+	C.XPrim (C.MCoerce (PrimCoercePtrToAddr t1)) _ : args
+	 -> do	let t1'	=  toSeaT t1
+		args'	<- mapM toSeaX args
+		return	$ E.XPrim (E.MCoerce (PrimCoercePtrToAddr t1')) args'
 		
 	-- function calls
 	-- For these four we statically know that the thing we're calling is a supercombinator.
@@ -331,27 +362,6 @@ toSeaApps parts
 	    	return	$ E.XPrim 
 				(E.MApp $ E.PAppApply) 
 				(xFun' : args')
-
-	-- boxing
-	C.XPrim C.MBox{} t : args
-	 | [tUnboxed, _tBoxed]	<- T.flattenTFuns $ T.stripToBodyT t
-	 -> do	args'		<- mapM toSeaX args
-	 	return	$ E.XPrim 
-				(E.MBox (toSeaT tUnboxed))
-				args'
-				
-	-- the unboxing function is named after the result type
-	C.XPrim C.MUnbox{} t : args
-	 | [_tBoxed, tUnboxed]	<- T.flattenTFuns $ T.stripToBodyT t
-	 -> do	args'		<- mapM toSeaX args
-		return	$ E.XPrim
-				(E.MUnbox $ toSeaT tUnboxed)
-				args'
-
-	-- forcing
-	C.XPrim (C.MForce) _ : args
-	 -> do	args'	<- mapM toSeaX args
-	 	return	$ E.XPrim (E.MFun E.PFunForce) args'
 	
 	-- A plain variable that had some type applications applied to it.
 	[C.XVar v t]

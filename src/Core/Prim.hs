@@ -196,6 +196,15 @@ primX1' tt xx parts
 	 -> buildApp [ Left (XPrim (MCoerce (PrimCoercePtr t1 t2)) t)
 		     , Right t1, Right t2, Left x]
 
+	[Left (XVar v t), Right t1, Left x]
+	 | varName v == "coercePtrToAddr"
+	 -> buildApp [ Left (XPrim (MCoerce (PrimCoercePtrToAddr t1)) t)
+		     , Right t1, Left x]
+
+	 | varName v == "coerceAddrToPtr"
+	 -> buildApp [ Left (XPrim (MCoerce (PrimCoerceAddrToPtr t1)) t)
+		     , Right t1, Left x]
+
 	-- not a primitive function.
 	_ -> Just xx
 

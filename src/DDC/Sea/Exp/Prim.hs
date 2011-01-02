@@ -8,45 +8,46 @@ module DDC.Sea.Exp.Prim
 	, PrimProj	(..)
 	, PrimFun	(..))
 where
-import DDC.Base.Prim.PrimOp
-import DDC.Base.Prim.PrimType
+import DDC.Base.Prim
 import DDC.Sea.Exp.Type
 import DDC.Var
 
 -- | Primitive operators implemented directly in the C language or runtime system.
+--   TODO: Merge this with DDC.Core.Exp.Prim
 data	Prim
-	-- | Invoke a primitive arithmetic operator.
-	= MOp	PrimOp
-
-	-- | Primitive field projections.
-	| MProj	PrimProj
-
-	-- | Primitive operators concerned with function application.
-	| MApp  PrimApp
-
-	-- | Call some other primitive function in the runtime system.
-	| MFun	PrimFun
-
-	-- | Allocation of objects
-	| MAlloc PrimAlloc
-
 	-- | Box some unboxed value, given the type of the unboxed version.
-	| MBox	Type
+	= MBox		Type
 
 	-- | Unbox some boxed value, given the type of the unboxed version.
-	| MUnbox Type
+	| MUnbox	Type
+
+	-- | Invoke a primitive arithmetic operator.
+	| MOp		PrimOp
 
 	-- | Casting between numeric types.
-	| MCast  PrimType PrimType
+	| MCast		PrimCast
 
 	-- | Coersion between pointer types.
 	--   The arguments give the type of the pointed-to data.
-	| MCoercePtr Type Type
+	| MCoerce	(PrimCoerce Type)
 
+	-- | Primitive operators concerned with function application.
+	--   TODO: Change this to use PrimCall
+	| MApp		PrimApp
+	
+	-- | Primitive field projections.
+	| MProj		PrimProj
+
+	-- | Call some other primitive function in the runtime system.
+	| MFun		PrimFun
+
+	-- | Allocation of objects
+	| MAlloc	PrimAlloc
 	deriving (Show, Eq)
 
 
 -- | Primitive operators concerned with function application.
+--   TODO: Merge this with PrimCall
 data PrimApp
 	-- | Tail-call a super.
 	= PAppTailCall

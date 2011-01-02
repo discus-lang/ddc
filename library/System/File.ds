@@ -23,7 +23,7 @@ openFile name mode
 
 		false#	-> ()
 
-	primAddrU_toPtrU addr
+	coerceAddrToPtr addr
 
 openFile_addr :: String -> String -> Addr#
 openFile_addr name mode

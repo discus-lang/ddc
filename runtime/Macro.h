@@ -117,16 +117,19 @@
 	_deathCase (file, line, col);
 
 
-// Pointers and Casting  ------------------------------------------------------
+// Primitives for pointers casting and coersion -------------------------------
 #define	_PLUSPTR(ptr,offset)	(ptr + offset)
 
-#define _PEEK(ptr)		*(ptr)
-#define _PEEKON(ignored,ptr)	*(ptr)
+#define _PEEK(ptr)			*(ptr)
+#define _PEEKON(ignored,ptr)		*(ptr)
 
-#define _POKE(ptr,x)		(*ptr = x)
-#define _POKEON(ignored,ptr,x)	(*ptr = x)
+#define _POKE(ptr,x)			(*ptr = x)
+#define _POKEON(ignored,ptr,x)		(*ptr = x)
 
-#define _CAST(t1,t2,x)		(t2)(x)
-#define _COERCEPTR(t1,t2,x)	(t2*)(x)
+#define _CAST(t1,t2,x)			(t2)(x)
+
+#define _COERCE_PTR(t1,t2,x)		((t2)*)(x)
+#define _COERCE_PTR_TO_ADDR(t1,x)	(Addr)(x)
+#define _COERCE_ADDR_TO_PTR(t1,x)	((t1)*)(x)
 
 #endif
