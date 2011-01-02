@@ -4,6 +4,12 @@
 import	Base
 import	Base.Thunk
 
+import	Foreign.Ptr
+
+import	DDC.Runtime
+import	DDC.Runtime.Alloc
+import	DDC.Runtime.Store
+
 import	Class.Copy
 import	Class.Eq
 import	Class.Foldable
@@ -12,9 +18,12 @@ import	Class.Monad
 import	Class.Num
 import	Class.Ord
 import	Class.Out
-import	Class.Promote
 import	Class.Read
 import	Class.Show
+import	Class.Show.Base
+import	Class.Show.Numeric
+import	Class.Show.List
+import	Class.Show.Other
 import	Class.Update
 
 import	Control.Exception
@@ -22,8 +31,10 @@ import	Control.Imperative
 	
 import	Data.Bool
 import	Data.BoolU
+import	Data.Numeric.Addr
 import	Data.Numeric.Int32
 import	Data.Numeric.Int64
+import	Data.Numeric.Word8
 import  Data.Numeric.Word32
 import	Data.Numeric.Word64
 import	Data.Numeric.Float32
@@ -36,17 +47,12 @@ import	Data.FlatString
 import	Data.Function
 import	Data.List
 import	Data.Maybe
-import	Data.Ptr
 import	Data.Ref
 import	Data.Set
 import	Data.String
 import	Data.StringU
 import	Data.Tuple
-		
-import	DDC.Runtime
-import	DDC.Runtime.Alloc
-import	DDC.Runtime.Store
-		
+				
 import	Math.Constants
 import	Math.Matrix33
 import 	Math.Util

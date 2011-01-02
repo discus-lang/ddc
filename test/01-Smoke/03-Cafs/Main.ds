@@ -3,8 +3,8 @@
 import Base
 import Data.Numeric.Int32
 
-foreign import "puts"
- puts :: String#{read} -> Int#
+foreign import "printf"
+ printf :: String#{read} -> Int#
 
 one	= 1
 zero	= 0
