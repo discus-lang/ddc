@@ -187,9 +187,9 @@ primX1' tt xx parts
 		: psArgs
 	
 	-- primitive casting
-	[Left (XVar v t), Right x]
+	[Left (XVar v t), Left x]
 	 | Just (pt1, pt2)	<- readPrimCast (varName v)
-	 -> buildApp [Left (XPrim (MCast pt1 pt2) t), Right x]
+	 -> buildApp [Left (XPrim (MCast pt1 pt2) t), Left x]
 	
 	-- primitive pointer coercion
 	[Left (XVar v t), Right t1, Right t2, Left x]
