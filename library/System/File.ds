@@ -1,6 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 import Base
+import Data.Numeric.Addr
 import Data.String
 import Data.Maybe
 import Foreign.Ptr
@@ -16,13 +17,13 @@ openFile
 openFile name mode 
  = do	addr	= openFile_addr name mode
 
-	case primAddr_isNull addr of
+	case primAddrU_isZero addr of
 --		true#	-> error ("file_open: Can't open file " % name)
 --		recurisve modules through Control.Exception, sigh
 
 		false#	-> ()
 
-	primAddr_toPtrU addr
+	primAddrU_toPtrU addr
 
 openFile_addr :: String -> String -> Addr#
 openFile_addr name mode

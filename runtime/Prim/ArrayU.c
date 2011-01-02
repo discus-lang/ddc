@@ -129,7 +129,7 @@ Obj*	primArrayU_Int_dump
 	Int32*	payload		= (Int32*)(array ->payload);
 	Int32*	elems		= (Int32*)(array ->payload + sizeof (Int32));
 
-	UInt32	elemCount	= payload [0];
+	Word32	elemCount	= payload [0];
 
 	uint32_t i;
 	printf ("--- arrayU, size = %d\n", elemCount);

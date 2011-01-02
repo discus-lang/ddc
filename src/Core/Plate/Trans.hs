@@ -407,9 +407,7 @@ instance Monad m => TransM m Prim where
 	MUnbox{}		-> transM table tt
 	MOp{}			-> transM table tt
 	MCast{}			-> transM table tt
-	MCoercePtr{}		-> transM table tt
-	MCoerceAddrToPtr{}	-> transM table tt
-	MCoercePtrToAddr{}	-> transM table tt
+	MCoerce{}		-> transM table tt
 	MCall{}			-> transM table tt
 
 		

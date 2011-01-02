@@ -4,6 +4,7 @@ module DDC.Core.Pretty
 where
 import DDC.Main.Pretty
 import DDC.Core.Exp
+import DDC.Base.Prim
 import DDC.Type
 import DDC.Type.Data.Pretty	()
 import DDC.Var
@@ -212,19 +213,12 @@ instance Pretty Prim PMode where
 	MOp    pt op
 	 -> ppr "prim{" % op 		% brackets pt % "}"
 
-	MCast pt1 pt2
+	MCast (PrimCast pt1 pt2)
 	 -> ppr "prim{Cast"	  	% brackets (pt1 % "|" % pt2) % "}"
 
-	MCoercePtr t1  t2
-	 -> ppr "prim{CoercePtr"	% brackets (t1  % "|" % t2)  % "}"
-
-	MCoercePtrToAddr t1
-	 -> ppr "prim{CoercePtrToAddr" 	% brackets t1 % "}"
-
-	MCoerceAddrToPtr t1
-	 -> ppr "prim{CoerceAddrToPtr"	% brackets t1 % "}"
-
+	MCoerce coerce			-> ppr coerce
 	MCall call			-> ppr call
+
 
 
 -- PrimCall ----------------------------------------------------------------------------------------
@@ -241,6 +235,20 @@ instance Pretty PrimCall PMode where
 -- PrimOp ------------------------------------------------------------------------------------------
 instance Pretty PrimOp PMode where
  ppr xx	= ppr $ show xx
+
+
+-- PrimCoerce -------------------------------------------------------------------------------------
+instance Pretty (PrimCoerce Type) PMode where
+ ppr xx 
+  = case xx of
+	PrimCoercePtr t1 t2
+	 -> ppr "prim{CoercePtr"	% brackets (t1  % "|" % t2)  % "}"
+
+	PrimCoercePtrToAddr t1
+	 -> ppr "prim{CoercePtrToAddr" 	% brackets t1 % "}"
+
+	PrimCoerceAddrToPtr t1
+	 -> ppr "prim{CoerceAddrToPtr"	% brackets t1 % "}"
 
 
 -- Stmt --------------------------------------------------------------------------------------------

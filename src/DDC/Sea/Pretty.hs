@@ -243,11 +243,14 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XLit lit	-> ppr lit
 
 	-- Primitives ---------------------------------------------------------
-	-- Primitive arithmetic operators.
+	-- unary arithmetic operators.
 	XPrim (MOp f) [x1]
-	 |  f == OpNeg
-	 -> "-(" % x1 % ")"
+	 -> case f of
+		OpNeg	 -> "-(" % x1 % ")"
+		OpIsZero -> parens $ x1 % " == 0"
+		_	 -> panic stage $ "ppr[Exp]: no match for " % show xx
 
+	-- binary arithmetic operators.
 	XPrim (MOp f) [x1, x2]
 	 -> case f of
 	 	OpAdd	-> parens $ x1 % " + "	% x2
@@ -393,7 +396,7 @@ pprTypeArg tt
 pprPrimType :: PrimType -> Str
 pprPrimType pt
  = case pt of
-	PrimTypePtr		-> ppr "Ptr"
+	PrimTypeAddr		-> ppr "Addr"
 	PrimTypeWord  (Width w)	-> "Word"  % w
 	PrimTypeInt   (Width w)	-> "Int"   % w
 	PrimTypeFloat (Width w)	-> "Float" % w	

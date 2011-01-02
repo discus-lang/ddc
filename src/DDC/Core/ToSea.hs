@@ -9,6 +9,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.Literal
+import DDC.Base.Prim
 import DDC.Var
 import Data.Function
 import Shared.VarUtil			(prettyPos)
@@ -276,12 +277,12 @@ toSeaApps parts
 		return	$ E.XPrim (E.MOp op) args'
 		
 	-- casting
-	C.XPrim (C.MCast pt1 pt2) _ : args
+	C.XPrim (C.MCast (PrimCast pt1 pt2)) _ : args
 	 -> do	args'	<- mapM toSeaX args
 		return	$ E.XPrim (E.MCast pt1 pt2) args'
 
 	-- coersion between pointer types
-	C.XPrim (C.MCoercePtr t1 t2) _ : args
+	C.XPrim (C.MCoerce (PrimCoercePtr t1 t2)) _ : args
 	 -> do	let t1'	=  toSeaT t1
 		let t2'	=  toSeaT t2
 		args'	<- mapM toSeaX args

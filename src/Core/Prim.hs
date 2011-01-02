@@ -19,9 +19,7 @@ import DDC.Core.Glob
 import DDC.Core.Check
 import DDC.Type
 import DDC.Var
-import DDC.Base.Prim.PrimOp
-import DDC.Base.Prim.PrimCast
-import DDC.Base.Prim.PrimBoxing
+import DDC.Base.Prim
 import qualified Data.Set		as Set
 
 
@@ -189,14 +187,14 @@ primX1' tt xx parts
 	
 	-- primitive casting
 	[Left (XVar v t), Left x]
-	 | Just (pt1, pt2)	<- readPrimCast (varName v)
-	 -> buildApp [Left (XPrim (MCast pt1 pt2) t), Left x]
+	 | Just cast		<- readPrimCast (varName v)
+	 -> buildApp [Left (XPrim (MCast cast) t), Left x]
 	
 	-- primitive pointer coercion
 	[Left (XVar v t), Right t1, Right t2, Left x]
 	 | varName v == "coercePtr"
-	 -> buildApp [Left (XPrim (MCoercePtr t1 t2) t), Right t1, Right t2, Left x]
-
+	 -> buildApp [ Left (XPrim (MCoerce (PrimCoercePtr t1 t2)) t)
+		     , Right t1, Right t2, Left x]
 
 	-- not a primitive function.
 	_ -> Just xx

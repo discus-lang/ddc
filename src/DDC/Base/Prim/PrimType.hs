@@ -4,10 +4,9 @@
 module DDC.Base.Prim.PrimType
 	( Width		(..)
 	, PrimType	(..)
-	, isPrimTypePtr
-	, isPrimTypeNum
 	, takeWidthOfPrimType
-	, primTypesHaveSameShape)
+	, primTypesHaveSameShape
+	, readPrimType)
 where
 import DDC.Main.Pretty
 
@@ -25,8 +24,10 @@ data Width
 --
 data PrimType
 	
-	-- | A pointer to something else.
-	= PrimTypePtr
+	-- | An address with enough precision to access any byte in the process.
+	--   We don't call this a pointer, because it might not point to well
+	--   formed data (eg it might be zero).
+	= PrimTypeAddr
 
 	-- | An unsigned integer.
 	| PrimTypeWord	Width
@@ -39,30 +40,12 @@ data PrimType
 	deriving (Eq, Show)
 
 
--- | Check if a `PrimType` is a `Ptr`.
-isPrimTypePtr :: PrimType -> Bool
-isPrimTypePtr pt
- = case pt of
-	PrimTypePtr{}	-> True
-	_		-> False
-
-
--- | Check if a `PrimType` is a `Word`, `Int` or `Float`.
-isPrimTypeNum :: PrimType -> Bool
-isPrimTypeNum pt
- = case pt of
-	PrimTypeWord{}	-> True
-	PrimTypeInt{}	-> True
-	PrimTypeFloat{}	-> True
-	_		-> False
-
-
 -- | Take the width of a numeric `PrimType`.
---   Returns `Nothing` if it's a `PrimTypePtr`.
+--   `PrimTypeAddr` don't have a width.
 takeWidthOfPrimType :: PrimType -> Maybe Width
 takeWidthOfPrimType pt
  = case pt of
-	PrimTypePtr{}	-> Nothing
+	PrimTypeAddr{}	-> Nothing
 	PrimTypeWord  w	-> Just w
 	PrimTypeInt   w	-> Just w
 	PrimTypeFloat w	-> Just w
@@ -72,11 +55,34 @@ takeWidthOfPrimType pt
 primTypesHaveSameShape :: PrimType -> PrimType -> Bool
 primTypesHaveSameShape pt1 pt2
  = case (pt1, pt2) of
+	(PrimTypeAddr,    PrimTypeAddr)		-> True
 	(PrimTypeWord{},  PrimTypeWord{})	-> True
 	(PrimTypeInt{},	  PrimTypeInt{})	-> True
 	(PrimTypeFloat{}, PrimTypeFloat{})	-> True
-	(PrimTypePtr{},   PrimTypePtr{})	-> True
 	_ 					-> False
+	
+
+-- Read -------------------------------------------------------------------------------------------	
+-- | Read the module name of an unboxed `PrimType`, eg "Word32U" (ending in U).
+--   This only works for widths that are supported by the runtime system and backends.
+readPrimType :: String -> Maybe PrimType
+readPrimType str
+ = case str of
+	"AddrU"		-> Just $ PrimTypeAddr
+
+	"Word8U"	-> Just $ PrimTypeWord  $ Width 8
+	"Word16U"	-> Just $ PrimTypeWord  $ Width 16
+	"Word32U"	-> Just $ PrimTypeWord  $ Width 32
+	"Word64U"	-> Just $ PrimTypeWord  $ Width 64
+
+	"Int8U"		-> Just $ PrimTypeInt   $ Width 8
+	"Int16U"	-> Just $ PrimTypeInt   $ Width 16
+	"Int32U"	-> Just $ PrimTypeInt   $ Width 32
+	"Int64U"	-> Just $ PrimTypeInt   $ Width 64
+
+	"Float32U"	-> Just $ PrimTypeFloat $ Width 32
+	"Float64U"	-> Just $ PrimTypeFloat $ Width 64
+	_		-> Nothing
 	
 
 -- Pretty -----------------------------------------------------------------------------------------
@@ -87,7 +93,7 @@ instance Pretty Width PMode where
 instance Pretty PrimType PMode where
  ppr pt
   = case pt of
-	PrimTypePtr		-> ppr "PtrU"
+	PrimTypeAddr		-> ppr "AddrU"
 	PrimTypeWord  (Width w)	-> "Word"   %  w % "U"
 	PrimTypeInt   (Width w)	-> "Int"    %  w % "U"
 	PrimTypeFloat (Width w) -> "Float"  %  w % "U"

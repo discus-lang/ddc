@@ -18,6 +18,9 @@ data PrimOp
 	| OpDiv
 	| OpMod
 
+	-- tests
+	| OpIsZero
+
 	-- comparison
 	| OpEq
 	| OpNeq
@@ -38,7 +41,7 @@ readPrimOp :: String -> Maybe (PrimOp, PrimType)
 readPrimOp str
  	| Just typeOpName		<- stripPrefix "prim" str
 	, (typeName, _ : opName)	<- break (== '_') typeOpName
-	, Just pt			<- lookup typeName primOpTypeNames
+	, Just pt			<- readPrimType typeName
 	, Just op			<- lookup opName   primOpNames
 	= Just (op, pt)
 
@@ -57,6 +60,9 @@ primOpNames
 	, ("div",	OpDiv)
 	, ("mod",	OpMod)
 
+	-- tests
+	, ("isZero",	OpIsZero)
+	
 	-- comparison
 	, ("eq",	OpEq)
 	, ("neq",	OpNeq)
@@ -69,13 +75,3 @@ primOpNames
 	, ("and",	OpAnd)
 	, ("or",	OpOr) ]
 
-
--- | Types that we have primops for.
---   TODO: Merge this with types in PrimBoxing.
-primOpTypeNames
- = 	[ ("Word32U",	PrimTypeWord  $ Width 32)
-	, ("Word64U",	PrimTypeWord  $ Width 64)
-	, ("Int32U",	PrimTypeInt   $ Width 32)
-	, ("Int64U",	PrimTypeInt   $ Width 64)
-	, ("Float32U",	PrimTypeFloat $ Width 32)
-	, ("Float64U",	PrimTypeFloat $ Width 64) ]
