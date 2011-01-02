@@ -93,21 +93,24 @@ curryX	env vsTailCall xx
 		lastS'		= curryS env vsTailCall lastS
 
 	  in	XDo (initSS' ++ [lastS'])
-			
+		
+	-- Applications.
+	| (xx =@= XAPP{}) || (xx =@= XApp{})
+	= case flattenApps xx of
+		-- Application of a literal.
+		Left XLit{}    : _	-> xx
 
-	-- Application to a literal
-	| XAPP XLit{} (TVar kR _)	<- xx
-	, kR == kRegion
-	= xx
+		-- Application of a primitive function.
+		Left XPrim{}   : _	-> xx
+
+		-- Application of a real function.
+		Left xF@XVar{} : args	
+		 -> let Just xx'	= makeCall env vsTailCall xF args
+		    in  xx'
+
+		_			-> panic stage $ "curryX: no match"
+		
 	
-	-- Found a function application
-	--	split out its arguments and make the call.	
-	| (xx =@= XAPP{})
-	  || (xx =@= XApp{})
-	  
-	= let	Left xF : args	= flattenApps xx
-	  in	fromMaybe xx	$ makeCall env vsTailCall xF args
-
 	-- uh oh..			
 	| otherwise	
 	= panic stage
