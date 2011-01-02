@@ -22,23 +22,23 @@ data Prim
 	= MForce
 
 	-- | Box some value.
-	| MBox		PrimType
+	| MBox		!PrimType
 	
 	-- | Unbox some value.
-	| MUnbox	PrimType
+	| MUnbox	!PrimType
 
 	-- | A primitive comparison, numeric, or logic operator.
-	| MOp		PrimType  PrimOp
+	| MOp		!PrimType	!PrimOp
 	
 	-- | Casting between primitive types,
 	--   eg between Int32# and Float32#.
-	| MCast		PrimCast
+	| MCast		!PrimCast
 	
 	-- | Coercion between unboxed pointer types.
-	| MCoerce	(PrimCoerce Type)
+	| MCoerce	!(PrimCoerce Type)
 		
 	-- | Call a function / supercombinator.
-	| MCall 	PrimCall
+	| MCall 	!PrimCall
 	deriving (Show, Eq)
 
 

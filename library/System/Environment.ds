@@ -1,4 +1,5 @@
 {-# OPTIONS -no-implicit-prelude #-}
+import Data.Numeric.Addr
 import Data.Numeric.Int32
 import Data.String
 import Data.StringU
@@ -11,43 +12,44 @@ export	getArgs
 	argCount
 	getArgValue
 
-
 effect !Environment :: !
 
-
+-- | Number of arguments accepted on the command line.
 foreign import "_ddcArgCount"
  argCountU :: Int32#
 
 argCount = boxInt32 argCountU
 
 
+-- | Get the value of a command line argument.
 foreign import "primArgValue"
- getArgValueU :: Int32# -> String#
+ getArgValueU 	:: Int32# -(!e1)> Ptr# String#
+		:- !e1	= !Environment
 
 getArgValue ix
  = boxString (getArgValueU (unboxInt32 ix))
 
 
+-- | Get an environment variable.
 foreign import "getenv"
- getEnvU :: String# -> String#
-
-foreign import "_castToPtrVoid"
- castStringToVoidPtr
- 	:: String# -> Ptr# Void#
+ getEnvU	:: Ptr# String# {read} 		-- name of variable.
+		-> Addr#			-- either zero or a pointer to a string.
 
 
-getEnv :: String -(!e1)>  Maybe String :- !e1 = !Environment
+getEnv 	:: String -> Maybe String
 getEnv name
  | SChunk flat_name	<- (copy name).force
- = do	s = getEnvU flat_name.unsafeUnbox
-	case primPtrVoid_eq (castStringToVoidPtr s) primPtrVoid_null of
-         false# -> Just (SChunk (box&{FlatString} s))
-         true# -> Nothing
+ = do	s	= getEnvU flat_name.unsafeUnbox
+	case primAddrU_isZero s of
+ 	 true#  -> Nothing
+	 false# -> Just (SChunk (box&{FlatString} (coerceAddrToPtr s)))
 
-getArgs :: Unit -(!e1)> [String] :- !e1 = !Environment
+
+getArgs :: () -> [String]
 getArgs ()
  = map getArgValue [ 1 .. argCount ]
 
-getProgName :: Unit -(!e1)> String :- !e1 = !Environment
+
+getProgName :: () -> String
 getProgName ()
  = getArgValue 0

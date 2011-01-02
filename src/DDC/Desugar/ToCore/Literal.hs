@@ -44,7 +44,10 @@ toCoreXLit' tt (D.XLit _ litfmt@(LiteralFmt lit fmt))
 		Just fmtUnboxed	  = dataFormatUnboxedOfBoxed fmt
 		tBoxed		  = tt
 		Just tUnboxed	  = T.takeUnboxedOfBoxedType tBoxed
-		tFun		  = T.makeTFun tUnboxed tBoxed (T.TApp T.tRead tR) T.tEmpty
+		tFun		  = T.makeTFun 	(T.tPtrU `T.TApp` tUnboxed)
+						tBoxed
+						(T.TApp T.tRead tR)
+						T.tEmpty
 
 	  in	C.XApp	(C.XVar  primBoxString tFun) 
 			(C.XAPP  (C.XLit $ LiteralFmt lit fmtUnboxed) tR)

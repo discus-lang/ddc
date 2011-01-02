@@ -3,7 +3,6 @@
 import	Base
 import	Base.Thunk
 
-import	Foreign.Addr
 import	Foreign.Ptr
 
 import	DDC.Runtime
@@ -31,6 +30,7 @@ import	Control.Imperative
 	
 import	Data.Bool
 import	Data.BoolU
+import	Data.Numeric.Addr
 import	Data.Numeric.Int32
 import	Data.Numeric.Int64
 import	Data.Numeric.Word8
