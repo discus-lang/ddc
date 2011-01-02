@@ -83,6 +83,7 @@ tForceFn tVal 	= makeTFun tVal tVal tPure tEmpty
 tUnboxFn :: Type -> Maybe Type
 tUnboxFn tBoxed
 
+	-- Handle string unboxing separately.
 	| TApp (TCon tcBoxed) tR	<- tBoxed
 	, Just tcBoxed == tcString Boxed
 	, Just (TApp (TCon tcUnboxed) _) <- takeUnboxedOfBoxedType tBoxed

@@ -42,6 +42,7 @@ import Data.Maybe
 import Util
 import Shared.VarUtil				(isDummy, varPos)
 import qualified DDC.Type			as T
+import qualified DDC.Type.Boxing		as T
 import qualified DDC.Desugar.Transform		as D
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Core.Exp			as C
@@ -314,31 +315,36 @@ toCoreG vsBound mObj gg
 	= do	(w', mustUnbox)	<- toCoreW w
 
 		let x			= C.XVar vObj tObj
-		let Just tUnboxed	= takeUnboxedOfBoxedType tObj
-		let Just ptUnboxed	= takePrimTypeOfType tUnboxed
-		let Just tUnboxFn	= error ("need type of unboxing function")
+		let Just tUnboxed	= T.takeUnboxedOfBoxedType tObj
+		let Just ptUnboxed	= C.takePrimTypeOfType tUnboxed
+		let Just tUnboxFn'	= T.tUnboxFn tObj
 
-		let xUnboxDiscrim
-		  	=        (C.XPrim (C.MUnbox ptUnboxed) tUnboxFn) 
+		let xUnboxDiscrim tR
+		  	=        (C.XPrim (C.MUnbox ptUnboxed) tUnboxFn') 
 		  	`C.XAPP` tR
-		  	`C.XApp` ((C.XPrim (C.MForce) tForceFn) `C.XApp` x)
-					tR[C.XPrimType r, C.XPrim C.MForce [x]])
-			= 
+		  	`C.XApp` ((C.XPrim C.MForce (T.tForceFn tObj)) `C.XApp` x)
+
 		case mustUnbox of
-		 Just tR	
-		  -> return 
-		  $  C.GExp w' 
-
-
+		 Just tR	-> return $ C.GExp w' (xUnboxDiscrim tR)
 		 Nothing	-> return $ C.GExp w' x
 		
 	| D.GExp _ w x		<- gg
+	, Just (_, tObj)	<- mObj
 	= do	(w', mustUnbox)	<- toCoreW w
 	 	x'		<- toCoreX vsBound x
+
+		let Just tUnboxed	= T.takeUnboxedOfBoxedType tObj
+		let Just ptUnboxed	= C.takePrimTypeOfType tUnboxed
+		let Just tUnboxFn'	= T.tUnboxFn tObj
+
+		let xUnboxDiscrim tR
+		  	=        (C.XPrim (C.MUnbox ptUnboxed) tUnboxFn') 
+		  	`C.XAPP` tR
+		  	`C.XApp` ((C.XPrim C.MForce (T.tForceFn tObj)) `C.XApp` x')
 		
 		-- All literal matching in core is unboxed, so we must unbox the match object if need be.
 		case mustUnbox of
-		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XPrimType r, C.XPrim C.MForce [x']])
+		 Just tR	-> return $ C.GExp w' (xUnboxDiscrim tR)
 		 Nothing	-> return $ C.GExp w' x'
 
  	| otherwise

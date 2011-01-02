@@ -6,14 +6,12 @@
 --
 module DDC.Test.Type
 	( module DDC.Type
-	, vInt, tInt
+	, vInt
 	, tFun )
 where
-import DDC.Test.Var
 import DDC.Type
+import DDC.Base.DataFormat
+import Shared.VarPrim
 
-
-vInt	= varT "Int"
-tInt tR	= makeTData vInt (makeKFuns [kRegion] kValue) [tR]
-
+vInt	= primTInt Boxed
 tFun 	= makeTFun
