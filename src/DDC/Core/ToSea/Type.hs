@@ -129,7 +129,4 @@ stripValues' a
 	 |  varNameSpace v /= NameValue
 	 -> Nothing
 
-	C.XPrimType _
-	 -> Nothing
-
 	_ -> Just a

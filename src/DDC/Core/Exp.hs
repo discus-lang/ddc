@@ -81,11 +81,14 @@ data Exp
 	-- | A place holder for a missing expresion, used during debugging.
 	= XNil
 
-	-- | A variable with its type.
-	| XVar		Var	Type
-
 	-- | A literal value.
 	| XLit		LiteralFmt
+
+	-- | A primitive function.
+	| XPrim		Prim	Type
+
+	-- | A variable with its type.
+	| XVar		Var	Type
 
 	-- | Type abstraction.
 	| XLAM		Bind 	Kind	Exp
@@ -99,22 +102,14 @@ data Exp
 	-- | Value application.
 	| XApp		Exp	Exp
 
-	-- | Do expression, contains stmts to execute.
+	-- | Somee statements to execute in order.
 	| XDo		[Stmt]
 
 	-- | Matching and branching.
 	| XMatch	[Alt]
 
-	-- | Introduce a local region (letregion)
+	-- | Introduce a local region.
 	| XLocal	Var	[(Var, Type)] Exp
-
-	-- | Call some primitive function.
-	--   TODO: Dump the Exp list and just use regular applicaton.
-	| XPrim		Prim 	[Exp]
-
-	-- | Hacks, used in the exp list in an XPrim only.
-	--   TODO: Refactor XPrim into real applications.
-	| XPrimType	Type
 
 	-- | A type annotation.
 	| XTau		Type	Exp

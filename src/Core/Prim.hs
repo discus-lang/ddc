@@ -7,30 +7,20 @@
 --	We also do some pretend cross-module inlining for critical aritmetic operations
 --	where we really want to expose the box\/unbox pairs to the simplifier.
 --
+--	TODO: Erase forcings on Direct objects in a separate pass.
+--
 module Core.Prim
 	(primGlob)
 where
 import Core.Util
 import Util
-import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Core.Glob
-import DDC.Core.Check.Exp
 import DDC.Type
 import DDC.Var
 import DDC.Base.Prim.PrimOp
 import DDC.Base.Prim.PrimCast
-import qualified Debug.Trace
-import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-
-stage	= "Core.Prim"
-
-debug	= False
-trace ss x
- = if debug 
- 	then Debug.Trace.trace (pprStrPlain ss) x
-  	else x
 
 
 -- Table -------------------------------------------------------------------------------------------
@@ -80,6 +70,9 @@ primP tt pp
 primX :: Table -> Exp -> (Table, Exp)
 primX tt xx
  = case xx of
+	XVar{}			-> (tt, xx)
+	XPrim{}			-> (tt, xx)
+
 	-- check for direct regions on the way down
  	XLAM b k x	
 	 -> let tt2		= slurpWitnessKind tt k
@@ -98,8 +91,6 @@ primX tt xx
 	 -> let (tt', x')	= primX tt x
 	    in  (tt', XLam v t x' eff clo)
 
-	XVar{}			-> (tt, xx)
-	
 	XDo ss
 	 -> let	(tt', ss')	= mapAccumL primS tt ss
 	    in  (tt', XDo ss')
@@ -121,11 +112,6 @@ primX tt xx
 	        (tt3, x2')	= primX tt2 x2
 	    in	(tt3, XApp x1' x2')
 
-	XPrim p xs
-	 -> let (tt', xs')	= mapAccumL primX tt xs
-	    in	(tt', XPrim p xs')
-
-	XPrimType{}		-> (tt, xx)
 
 	XLit{}			-> (tt, xx)
 
@@ -150,77 +136,115 @@ primS tt ss
  = case ss of
 	-- enter into XTau
 	SBind mV (XTau t x)	
-	 -> let x2		= primX1 tt x
+	 -> let Just x2		= primX1 tt x
 		(tt3, x3)	= primX tt x2
 	    in	(tt3, SBind mV (XTau t x3))
 	 
  	SBind mV x		
-	 -> let x2		= primX1 tt x
+	 -> let Just x2		= primX1 tt x
 		(tt3, x3)	= primX tt x2
 
 	    in  (tt3, SBind mV x3)
 
 -- do the flat rewrite
+primX1 :: Table -> Exp -> Maybe Exp
 primX1 tt xx
-	-- direct use of boxing function
-	| Just parts				<- flattenAppsEff xx
-	, (XVar v t : psArgs)			<- parts
-	, isBoxFunctionV v
-	= XPrim MBox psArgs
+ 	| isXApp xx || isXAPP xx	= primX1' tt xx (flattenApps xx)
+ 	| otherwise			= Just xx
+	
+primX1' tt xx parts
+ = case parts of
+ 	-- direct use of boxing function
+ 	Left (XVar v t) : psArgs
+	 | isBoxFunctionV v
+	 -> buildApp
+		$ (Left $ XPrim MBox t)
+		: psArgs
 
 	-- direct use of unboxing function
-	| Just parts				<- flattenAppsEff xx
-	, XVar v t : psArgs@[XPrimType tR@(TVar kR (UVar vR)), x] 	<- parts
-	, kR	== kRegion			
-	, isUnboxFunctionV v
-	= if Set.member vR (tableDirectRegions tt) 
-		then XPrim MUnbox psArgs
+	-- note that we must force non-direct objects before unboxing them.
+	Left (XVar v t) : psArgs@[Right tR@(TVar kR (UVar vR)), Left x]
+	 | kR	== kRegion			
+	 , isUnboxFunctionV v
+	 -> if Set.member vR (tableDirectRegions tt) 
+		then buildApp
+			$ Left (XPrim MUnbox t)
+			: psArgs
 
-		-- have to force non-direct objects before unboxing them
-		else XPrim MUnbox [XPrimType tR, XPrim MForce [x]]
+		else buildApp
+			$ Left (XPrim MUnbox t) 
+			: Right tR 
+			: Left (XApp (XPrim MForce (error "need type of force")) x)
+			: []
+
+	-- primitive arithmetic operators
+	Left (XVar v t) : psArgs
+	 | Just operator	<- readPrimOp (varName v)
+	 -> buildApp 
+		$ Left (XPrim (MOp operator) t)
+		: psArgs
+	
+	-- primitive casting
+	[Left (XVar v t), Right x]
+	 | Just (pt1, pt2)	<- readPrimCast (varName v)
+	 -> buildApp [Left (XPrim (MCast pt1 pt2) t), Right x]
+	
+	-- primitive pointer coercion
+	[Left (XVar v t), Right t1, Right t2, Left x]
+	 | varName v == "coercePtr"
+	 -> buildApp [Left (XPrim (MCoercePtr t1 t2) t), Right t1, Right t2, Left x]
 
 
-	-- look for functions in the prim table
- 	| Just parts				<- flattenAppsEff xx
-	, (XVar v t : psArgs)			<- parts
-	, Just operator				<- readPrimOp (varName v)
-	= XPrim (MOp operator) psArgs
+	-- not a primitive function.
+	_ -> Just xx
+
+
+-- Detection --------------------------------------------------------------------------------------
+-- | Is this the name of a fn that unboxes a value of primitive type.
+isBoxFunctionV :: Var -> Bool
+isBoxFunctionV v
+ = elem	(varName v)
+ 	[ "boxInt32"
+	, "boxFloat32"
+	, "boxInt64"
+	, "boxFloat64"
+ 	, "boxWord32"
+	, "boxWord64" ]
+
+
+-- | Is this the name of a fn that unboxes a value of primitive type.
+isUnboxFunctionV :: Var -> Bool
+isUnboxFunctionV v
+ =  elem (varName v)
+ 	[ "unboxInt32"
+	, "unboxFloat32"
+	, "unboxInt64"
+	, "unboxFloat64"
+	, "unboxWord32"
+	, "unboxWord64" ]
+
+
+----------------------------------------------------------------------------------------------------
+-- Poor man's cross module inliner.
+--   Says what to do with the arguments of a function.
+--   We tend to ignore type arguments, and unbox boxed values.
+
+	-- look for binary functions who's arguments can be unboxed
+	-- This basically does fake inlining of these functions.
+{-	[Left (XVar v t), Right t1, Right t2, Left x1, Left x2]
+	 | Just (operator, actions)		<- Map.lookup (varName v) unboxableFuns
+	 , tResult				<- checkedTypeOfOpenExp (stage ++ ".primX") xx
+	 , Just (vResult, _, tsResult)		<- takeTData tResult
+	 , 
 	
-	-- look for valid casts
-	| Just parts				<- flattenAppsEff xx
-	, (XVar v t : psArgs)			<- parts
-	, Just (pt1, pt2)			<- readPrimCast (varName v)
-	= XPrim (MCast pt1 pt2) psArgs
-	
-	-- look for pointer coersion 
-	| Just parts				<- flattenAppsEff xx
-	, (XVar v t 
-		: XPrimType t1 : XPrimType t2 
-		: psArgs)			<- parts
-	, varName v == "coercePtr"
-	= XPrim (MCoercePtr t1 t2) psArgs
-	
-		
-	-- look for functions who's arguments can be unboxed
- 	| Just parts				<- flattenAppsEff xx
-	, (XVar v t : psArgs)			<- parts
-	, Just (operator, actions)		<- Map.lookup (varName v) unboxableFuns
-	, tResult				<- checkedTypeOfOpenExp (stage ++ ".primX") xx
-	, Just (vResult, _, tsResult)		<- takeTData tResult
-	, length psArgs == length actions
-	= trace ( "primX:\n"
-		% "    xx      = " % xx 	% "\n"
-		% "    parts   = " % parts	% "\n"
-		% "    tResult = " % tResult	% "\n") 
-	   $ let	
+	 -> buildApp 
+		$ Left (XPrim 
 		-- apply the actions to the arguments
 		psArgs'	= doActions tt actions psArgs
 		
 		-- generate the primitive 
 	   in	XPrim MBox (map XPrimType tsResult ++ [XPrim (MOp operator) psArgs'])
-	
-	| otherwise		
-	= xx
+
 
 
 -- | Perform these actions on this list of expressions
@@ -251,46 +275,6 @@ doActions tt (Unbox:as) (x:xs)
 doActions _ _ xs = xs
 
 
--- | Flatten an application into its component parts, left to right
-flattenAppsEff :: Exp -> Maybe [Exp]
-flattenAppsEff xx
- = case xx of
- 	XApp{}	-> Just $ splitAppsUsingPrimType xx
-	XAPP{}	-> Just $ splitAppsUsingPrimType xx
-	_	-> Nothing
-
-
--- Detection --------------------------------------------------------------------------------------
--- Detection of uses of primitive functions in the core program.
-
--- | Is this the name of a fn that unboxes a value of primitive type.
-isBoxFunctionV :: Var -> Bool
-isBoxFunctionV v
- = elem	(varName v)
- 	[ "boxInt32"
-	, "boxFloat32"
-	, "boxInt64"
-	, "boxFloat64"
- 	, "boxWord32"
-	, "boxWord64" ]
-
-
--- | Is this the name of a fn that unboxes a value of primitive type.
-isUnboxFunctionV :: Var -> Bool
-isUnboxFunctionV v
- =  elem (varName v)
- 	[ "unboxInt32"
-	, "unboxFloat32"
-	, "unboxInt64"
-	, "unboxFloat64"
-	, "unboxWord32"
-	, "unboxWord64" ]
-
-
-----------------------------------------------------------------------------------------------------
--- Poor man's cross module inliner.
---   Says what to do with the arguments of a function.
---   We tend to ignore type arguments, and unbox boxed values.
 
 -- Whether to ignore or unbox the argument
 data Action
@@ -329,4 +313,4 @@ unboxableFuns
 	, ("primFloat32_gt",	(OpGt,  opD3U2))
 	, ("primFloat32_le",	(OpLe,  opD3U2)) 
 	, ("primFloat32_ge",	(OpGe,  opD3U2)) ]
-
+-}

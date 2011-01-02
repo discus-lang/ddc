@@ -30,8 +30,6 @@ module Core.Util.Bits
 	, flattenAppsE
 	, unflattenAppsE
 	, splitApps
-	, splitAppsUsingPrimType
-	, buildAppUsingPrimType
 
 	-- lambda		
 	, chopLambdas
@@ -248,27 +246,6 @@ splitApps xx
 		
 	_ -> [Left xx]
 	
--- hacks
-splitAppsUsingPrimType :: Exp -> [Exp]
-splitAppsUsingPrimType xx
- = case xx of
- 	XAPP e1 e2
-	 -> splitAppsUsingPrimType e1 ++ [XPrimType e2]
-	
-	XApp e1 e2
-	 -> splitAppsUsingPrimType e1 ++ [e2]
-		
-	_ -> [xx]
-	
-buildAppUsingPrimType :: [Exp] -> Maybe Exp
-buildAppUsingPrimType xx
- = let	convert x
-	 = case x of
-		XPrimType t 	-> Right t
-		_		-> Left  x
-		
-	xx'	= map convert xx
-   in	buildApp xx'
 	
 -- Lambda ------------------------------------------------------------------------------------------
 -- | Chop the outer set of lambdas off a lambda expression and return the var-scheme pairs.

@@ -104,6 +104,9 @@ floatBindsX level share tt xx
 	
 			Nothing		-> (tt, XVar v t)
 
+	XPrim{}
+	 -> 	(tt, xx)
+	
 
 	XLam v t x eff clo	
 	 -> let -- increase the level number when we pass through a value lambda
@@ -139,11 +142,6 @@ floatBindsX level share tt xx
 	        (tt3, x2')	= floatBindsX level share tt2 x2
 	    in	(tt3, XApp x1' x2')
 
-	XPrim p xs
-	 -> let (tt', xs')	= mapAccumL (floatBindsX level share) tt xs
-	    in	(tt', XPrim p xs')
-
-	XPrimType{}			-> (tt, xx)
 
 	XLit{}			-> (tt, xx)
 
@@ -207,13 +205,13 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 
 	-- remember forcings that we haven't seen before
 	-- hrm.. this leaves them where they are and never carries them down into match stmts..
-	| XPrim MForce [XVar v2 _]	<- xBind
+	| XApp (XPrim MForce _) (XVar v2 _)	<- xBind
 	, Nothing		<- Map.lookup v2 (shareForcings share)
 	= let	share'		= share { shareForcings = Map.insert v2 vBind (shareForcings share) }
 	  in	(share', table, [SBind (Just vBind) xBind])
 	  
 	-- replace calls to force with ones that we've seen before
-	| XPrim MForce [XVar v2 _]	<- xBind
+	| XApp (XPrim MForce _) (XVar v2 _)	<- xBind
 	, Just v3	<- Map.lookup v2 (shareForcings share)
 	= let 	share'	= share { shareVarSub   = Map.insert vBind v3 (shareVarSub share) }
 		table'	= (tableStats_ ## statsSharedForcings_ <#> \s -> vBind : s) table	
@@ -221,7 +219,7 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 	  
 	-- remember unboxings we haven't seen before
 	-- only move pure unboxings for now.
-	| XPrim MUnbox [XPrimType (TVar kR (UVar vR)), XVar v2 _]	<- xBind
+	| [Left (XPrim MUnbox _), Right (TVar kR (UVar vR)), Left (XVar v2 _)]	<- flattenApps xBind
 	, kR	== kRegion
 	, Nothing	 <- Map.lookup v2 (shareUnboxings share)
 	, Set.member vR (tableConstRegions table)
@@ -229,7 +227,7 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 	  in	(share', table, [SBind (Just vBind) xBind])
 	  
 	-- replace calls to unbox with ones we've seen before
-	| XPrim MUnbox [XPrimType (TVar kR (UVar vR1)), XVar v2 _]	<- xBind
+	| [Left (XPrim MUnbox _), Right (TVar kR (UVar vR1)), Left (XVar v2 _)]	<- flattenApps xBind
 	, kR	== kRegion
 	, Just (v3, vR2) <- Map.lookup v2 (shareUnboxings share)
 	, vR1 == vR2

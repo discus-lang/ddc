@@ -73,10 +73,16 @@ instance FreeVarsXT Exp where
   = case xx of
 	XNil		-> empty
 	
- 	XVar	v t	
+ 	XVar v t	
 	 -> unions
 	 	[ singleton v $ FreeX xx
 		, freeVarsXT t ]
+
+	XPrim m t
+	 -> unions
+	 	[ freeVarsXT m
+		, freeVarsXT t ]
+
 
 	XLAM b k e
 	 -> let Just v	= takeVarOfBind b
@@ -124,13 +130,7 @@ instance FreeVarsXT Exp where
 	XLit{}
 	 -> empty
 	
-	XPrim m xs
-	 -> unions
-	 	[ freeVarsXT m
-		, unions $ map freeVarsXT xs ]
 
-	XPrimType t
-	 -> freeVarsXT t
 
 boundByS :: Stmt -> Set Var
 boundByS x

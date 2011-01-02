@@ -4,6 +4,7 @@ module DDC.Core.Simplify.Boxing
 	, simplifyUnboxBoxX)
 where
 import DDC.Core.Exp
+import Core.Util
 
 data RuleBoxing
 	= RuleBoxingUnboxBox
@@ -16,18 +17,21 @@ simplifyUnboxBoxX
 	=> (RuleBoxing -> m ()) -> Exp -> m Exp
 
 simplifyUnboxBoxX count xx
- = case xx of 
 
 	-- unbox/box
- 	XPrim MUnbox [r1, XPrim MBox [r2, x]]
-		| r1 == r2	
-		-> do	count RuleBoxingUnboxBox
-			return x
-		
+	| [Left (XPrim MUnbox _), Right r1, Left x1]	<- flattenApps xx
+	, [Left (XPrim MBox   _), Right r2, Left x2]	<- flattenApps x1
+	, r1 == r2
+	= do	count RuleBoxingUnboxBox
+		return x2
+				
 	-- unbox/force/box
-	XPrim MUnbox [r1, XPrim MForce [XPrim MBox [r2, x]]]
-		| r1 == r2
-		-> do	count RuleBoxingUnboxForceBox
-			return x
-		
-	_	-> return xx
+	| [Left (XPrim MUnbox _),  Right r1, Left x1]	<- flattenApps xx
+	, [Left (XPrim MForce _),  Left x2]		<- flattenApps x1
+	, [Left (XPrim MBox _),    Right r2, Left x3]	<- flattenApps x2
+	, r1 == r2
+	= do	count RuleBoxingUnboxForceBox
+		return x3
+	
+	| otherwise
+	= return xx

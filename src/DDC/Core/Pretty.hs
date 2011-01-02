@@ -95,6 +95,11 @@ instance Pretty Exp PMode where
 	 -> pprIfMode (elem PrettyCoreTypes)
 	 	(parens (pv v %% "::" %% t))
 		(pv v)
+
+	XPrim m t
+	 -> pprIfMode (elem PrettyCoreTypes)
+	 	(parens (ppr m %% "::" %% t))
+		(ppr m)
 		
 	XLAM v k e
 	 | prettyFoldXLAM
@@ -172,11 +177,6 @@ instance Pretty Exp PMode where
 				%% "in"
 			%! x
 	 
-	XPrim m args
-	 -> m %> (hsep $ map prettyExpB args)
-
-	XPrimType t
-	 -> prettyTypeParens t
 
 
 spaceApp xx
@@ -188,8 +188,8 @@ spaceApp xx
 prettyExpB x
  = case x of
 	XVar{}		-> ppr x
+	XPrim{}		-> ppr x
 	XLit{}		-> ppr x
-	XPrimType t	-> prettyTypeParens t
 	_		-> parens x
 
 
@@ -214,18 +214,18 @@ instance Pretty Prim PMode where
 	MCoerceAddrToPtr t1
 	 -> ppr "prim{CoerceAddrToPtr"	% brackets t1 % "}"
 
-	MCall      call		-> ppr call
+	MCall call			-> ppr call
 
 
 -- PrimCall ----------------------------------------------------------------------------------------
 instance Pretty PrimCall PMode where
  ppr xx
   = case xx of
-	PrimCallTail  		-> ppr "prim{TailCall}"	
-	PrimCallSuper		-> ppr "prim{SuperCall}"
-	PrimCallSuperApply i	-> ppr "prim{SuperApply " % i % "}"
-	PrimCallApply		-> ppr "prim{Apply} "
-	PrimCallCurry i		-> ppr "prim{Curry " % i % "}"
+	PrimCallTail  v 	-> ppr "prim{TailCall}"		%% v
+	PrimCallSuper v		-> ppr "prim{SuperCall}"	%% v
+	PrimCallSuperApply v i	-> ppr "prim{SuperApply " % i % "}" %% v
+	PrimCallCurry v i	-> ppr "prim{Curry " % i % "}"	%% v
+	PrimCallApply v		-> ppr "prim{Apply}" 		%% v
 	
 
 -- PrimOp ------------------------------------------------------------------------------------------

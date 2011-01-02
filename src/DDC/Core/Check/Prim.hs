@@ -2,6 +2,10 @@
 
 -- | Checking applications of primitive functions.
 module DDC.Core.Check.Prim
+	()
+where
+
+{-	
 	( checkPrim
 	, unboxedVersionOfBoxedType
 	, boxedVersionOfUnboxedType)
@@ -229,5 +233,4 @@ splitLiteralVarBind (VarIdPrim pid)
 splitLiteralVarBind _
  	= Nothing
 
-
-
+-}

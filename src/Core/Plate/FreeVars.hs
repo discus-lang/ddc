@@ -29,6 +29,8 @@ instance FreeVars Exp where
 	 	[ singleton v
 		, freeVars t ]
 
+	XPrim _ t	-> freeVars t
+
 	XLAM b k e
 	 -> let Just v	= takeVarOfBind b
 	    in  unions 	[ freeVars k
@@ -75,13 +77,7 @@ instance FreeVars Exp where
 	XLit{}
 	 -> empty
 	
-	XPrim m xs
-	 -> unions
-	 	[ freeVars m
-		, unions $ map freeVars xs ]
 
-	XPrimType t
-	 -> freeVars t
 
 
 boundByS ::	Stmt	-> Set Var

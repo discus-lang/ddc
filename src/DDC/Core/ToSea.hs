@@ -23,7 +23,6 @@ import qualified DDC.Core.Glob		as C
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T
-import qualified DDC.Core.Check.Prim	as C
 import qualified DDC.Core.Check.Exp	as C
 import qualified DDC.Sea.Exp  		as E
 import qualified DDC.Sea.Pretty		as E
@@ -239,85 +238,9 @@ toSeaX		xx
 	 -> do 	slurpWitnessKind k
 	 	toSeaX x
 
-	-- arithmetic operators
-	C.XPrim (C.MOp op) xs
-	 -> do	args	<- mapM toSeaX $ stripValues xs
-		return	$ E.XPrim (E.MOp op) args
-
-	-- casting
-	C.XPrim (C.MCast pt1 pt2) xs
-	 -> do	args	<- mapM toSeaX $ stripValues xs
-		return	$ E.XPrim (E.MCast pt1 pt2) args
-
-	-- coersion between pointer types
-	C.XPrim (C.MCoercePtr t1 t2) xs
-	 -> do	let t1'	=  toSeaT t1
-		let t2'	=  toSeaT t2
-		args	<- mapM toSeaX $ stripValues xs
-		return	$ E.XPrim (E.MCoercePtr t1' t2') args
-		
-	-- function calls
-	-- For these four we statically know that the thing we're calling is a supercombinator.
-	-- Note that if the resulting variables refer to supercombinators, their operational
-	--   types contain function constructors. To make these we need the correct arity.
-	--   We call getOpTypeVar, which inspects the original definition of each super for
-	--   locally defined ones, or returns the operational type from the interface files
-	--   for imported ones.
-	C.XPrim (C.MCall C.PrimCallTail)  (C.XVar vSuper _ : args)
-	 -> do	args'		<- mapM toSeaX $ stripValues args
-		Just tSuper	<- getOpTypeOfVar vSuper
-		return	$ E.XPrim (E.MApp E.PAppTailCall)
-				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
-
-	C.XPrim (C.MCall C.PrimCallSuper) (C.XVar vSuper _ : args)
-	 -> do	args'		<- mapM toSeaX $ stripValues args
-		Just tSuper	<- getOpTypeOfVar vSuper
-	    	return	$ E.XPrim (E.MApp E.PAppCall)
-				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
-
-	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) (C.XVar vSuper _ : args)
-	 -> do	args'	<- mapM toSeaX $ stripValues args
-		Just tSuper	<- getOpTypeOfVar vSuper
-		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA)
-				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
-
-	C.XPrim (C.MCall (C.PrimCallCurry superA)) (C.XVar vSuper _ : args)
-	 -> do	Just tSuper	<- getOpTypeOfVar vSuper
-		let xsValues = stripValues args
-		if  any isUnboxed xsValues
-                 then panic stage
-				$ "Partial application of function to unboxed args at "
- 				% prettyPos vSuper
-                 else
-		  do	args'	<- mapM toSeaX xsValues
-			return	$ E.XPrim (E.MApp $ E.PAppCurry superA)
-					  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
-
-	-- For general application, the two things we're applying are boxed objects.
-	C.XPrim (C.MCall C.PrimCallApply) xs
-	 -> do	args	<- mapM toSeaX $ stripValues xs
-	    	return	$ E.XPrim (E.MApp $ E.PAppApply) args
-
-	-- boxing
-	C.XPrim C.MBox [_, x]
-	 -> do	let t	= C.checkedTypeOfOpenExp (stage ++ "toSeaX") x
-		x'	<- toSeaX x
-		return	$ E.XPrim (E.MBox $ toSeaT t) [x']
-
-	-- the unboxing function is named after the result type
-	C.XPrim C.MUnbox [C.XPrimType r, x]
-	 -> do	let Just tResult= C.unboxedVersionOfBoxedType r
-	 			$ C.checkedTypeOfOpenExp (stage ++ "toSeaX") x
-
-		x'	<- toSeaX x
-		return	$ E.XPrim (E.MUnbox $ toSeaT tResult) [x']
-
-	-- forcing
-	C.XPrim (C.MForce) [x]
-	 -> do	x'	<- toSeaX x
-	 	return	$ E.XPrim (E.MFun E.PFunForce) [x']
-
-
+	C.XApp{}
+	 -> toSeaApps [x | Left x <- C.flattenApps xx]
+	
 	-- non string constants
 	C.XLit litFmt@(LiteralFmt _ fmt)
 	 | dataFormatIsBoxed fmt
@@ -344,6 +267,94 @@ toSeaX		xx
 		$ "toSeaX: cannot convert expression to Sea IR.\n"
 		% "-----\n"
 		% xx					% "\n"
+
+
+toSeaApps :: [C.Exp] -> SeaM (E.Exp ())
+toSeaApps parts
+ = case parts of
+	-- arithmetic operators
+	C.XPrim (C.MOp op) _ : args
+	 -> do	args'	<- mapM toSeaX args
+		return	$ E.XPrim (E.MOp op) args'
+		
+	-- casting
+	C.XPrim (C.MCast pt1 pt2) _ : args
+	 -> do	args'	<- mapM toSeaX args
+		return	$ E.XPrim (E.MCast pt1 pt2) args'
+
+	-- coersion between pointer types
+	C.XPrim (C.MCoercePtr t1 t2) _ : args
+	 -> do	let t1'	=  toSeaT t1
+		let t2'	=  toSeaT t2
+		args'	<- mapM toSeaX args
+		return	$ E.XPrim (E.MCoercePtr t1' t2') args'
+		
+	-- function calls
+	-- For these four we statically know that the thing we're calling is a supercombinator.
+	-- Note that if the resulting variables refer to supercombinators, their operational
+	--   types contain function constructors. To make these we need the correct arity.
+	--   We call getOpTypeVar, which inspects the original definition of each super for
+	--   locally defined ones, or returns the operational type from the interface files
+	--   for imported ones.
+	C.XPrim (C.MCall (C.PrimCallTail vSuper)) _ : args
+	 -> do	args'		<- mapM toSeaX args
+		Just tSuper	<- getOpTypeOfVar vSuper
+		return	$ E.XPrim (E.MApp E.PAppTailCall)
+				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
+
+	C.XPrim (C.MCall (C.PrimCallSuper vSuper)) _ : args
+	 -> do	args'		<- mapM toSeaX args
+		Just tSuper	<- getOpTypeOfVar vSuper
+	    	return	$ E.XPrim (E.MApp E.PAppCall)
+				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
+
+	C.XPrim (C.MCall (C.PrimCallSuperApply vSuper superA)) _ : args
+	 -> do	args'		<- mapM toSeaX args
+		Just tSuper	<- getOpTypeOfVar vSuper
+		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA)
+				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
+
+	C.XPrim (C.MCall (C.PrimCallCurry vSuper superA)) _ : args
+	 -> do	Just tSuper	<- getOpTypeOfVar vSuper
+		if  any isUnboxed args
+                 then panic stage
+				$ "Partial application of function to unboxed args at "
+ 				% prettyPos vSuper
+                 else
+		  do	args'	<- mapM toSeaX args
+			return	$ E.XPrim (E.MApp $ E.PAppCurry superA)
+					  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
+
+	-- For general application, the two things we're applying are boxed objects.
+	C.XPrim (C.MCall (C.PrimCallApply var)) t : args
+	 -> do	xFun'		<- toSeaX (C.XVar var t) 
+		args'		<- mapM toSeaX args
+	    	return	$ E.XPrim 
+				(E.MApp $ E.PAppApply) 
+				(xFun' : args')
+
+	-- boxing
+	C.XPrim C.MBox t : args
+	 -> do	let [tUnboxed, _tBoxed]	=  T.flattenTFuns t
+		args'			<- mapM toSeaX args
+		return	$ E.XPrim 
+				(E.MBox (toSeaT tUnboxed))
+				args'
+				
+	-- the unboxing function is named after the result type
+	C.XPrim C.MUnbox t : args
+	 -> do	let [_tBoxed, tUnboxed]	=  T.flattenTFuns t
+		args'			<- mapM toSeaX args
+		return	$ E.XPrim
+				(E.MUnbox $ toSeaT tUnboxed)
+				args'
+
+	-- forcing
+	C.XPrim (C.MForce) _ : args
+	 -> do	args'	<- mapM toSeaX args
+	 	return	$ E.XPrim (E.MFun E.PFunForce) args'
+	
+	_ -> panic stage $ "toSeaApps: no match for " % parts
 
 
 isUnboxed :: C.Exp -> Bool

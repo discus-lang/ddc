@@ -6,7 +6,6 @@ module Core.Curry
 where
 import Core.Util
 import Util
-import DDC.Var.NameSpace
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
@@ -106,8 +105,7 @@ curryX	env vsTailCall xx
 	| (xx =@= XAPP{})
 	  || (xx =@= XApp{})
 	  
-	= let	parts		= splitAppsUsingPrimType xx
-		(xF:args)	= parts
+	= let	Left xF : args	= flattenApps xx
 	  in	fromMaybe xx	$ makeCall env vsTailCall xF args
 
 	-- uh oh..			
@@ -141,14 +139,11 @@ makeCall
 	:: Env			
 	-> Set Var		-- ^ Names of supers that can be tailcalled from here
 	-> Exp			-- ^ Call this function (must be an XVar)
-	-> [Exp] 		-- ^ Args to function.
+	-> [Either Exp Type] 	-- ^ args to function
 	-> Maybe Exp
 
 makeCall env vsTailCall xF@(XVar vF tF) args
- = let	callArity	= length	
-			$ filter (\x -> x == True)
-			$ map isValueArg 
-			$ args
+ = let	callArity	= length [ x | Left x <- args]
 			
 	result
  	 -- Function is a top-level super.
@@ -174,11 +169,11 @@ makeCall env vsTailCall xF args
 
 -- | We've got a top-level supercombinator that we can call directly.
 makeSuperCall 
-	:: Exp 		-- ^ Name of super being called.	(must be an XVar)
-	-> Set Var	-- ^ Supers that can be tail called.
-	-> [Exp] 	-- ^ Arguments to super.
-	-> Int 		-- ^ Number of args in the call.
-	-> Int 		-- ^ Number of args needed by the super.
+	:: Exp 			-- ^ Name of super being called.	(must be an XVar)
+	-> Set Var		-- ^ Supers that can be tail called.
+	-> [Either Exp Type] 	-- ^ Arguments to super.
+	-> Int 			-- ^ Number of args in the call.
+	-> Int 			-- ^ Number of args needed by the super.
 	-> Maybe Exp
 
 makeSuperCall 
@@ -196,29 +191,29 @@ makeSuperCall
 	-- 	for a tail-call. 
  	| callArity == superArity
 	, Set.member vF tailCallMe
-	= Just $ XPrim (MCall PrimCallTail) (xF : args)
+	= buildApp $ (Left $ XPrim (MCall (PrimCallTail vF)) tF) : args
 
 	-- We're not able to do a tail call, but we've still got the right number
 	--	of arguments, so we can call the super directly.
 	| callArity == superArity
-	= Just $ XPrim (MCall PrimCallSuper) (xF : args)
+	= buildApp $ (Left $ XPrim (MCall (PrimCallSuper vF)) tF) : args
 
 	-- We haven't got enough args to call the super yet, we'll have to build
 	--	a thunk and wait for more.
 	| callArity <  superArity
-	= Just $ XPrim (MCall $ PrimCallCurry superArity) (xF : args)
+	= buildApp $ (Left $ XPrim (MCall (PrimCallCurry vF superArity)) tF) : args
 
 	-- We've got more args than the super will accept.
 	--	For this case to be well typed, the super must be returning a thunk.
 	--	XCallApp instructs the runtime system to call the super to get the thunk
 	--	and then apply the rest of the arguments to it.
 	| callArity > superArity
-	= Just $ XPrim (MCall $ PrimCallSuperApply superArity) (xF : args)
+	= buildApp $ (Left $ XPrim (MCall (PrimCallSuperApply vF superArity)) tF) : args
    	
 	
 -- | Apply a thunk to a value to get the result.
-makeThunkCall :: Exp -> [Exp]  -> Int -> Maybe Exp
-makeThunkCall xF args callArity
+makeThunkCall :: Exp -> [Either Exp Type] -> Int -> Maybe Exp
+makeThunkCall xF@(XVar vF tF) args callArity
 
 	-- If there were only type applications, but no values being applied, 
 	--	then the callAirity is zero and there is no associated call at Sea level.
@@ -227,21 +222,5 @@ makeThunkCall xF args callArity
 	
 	-- Otherwise we have actual arguments being applied to a thunk.
 	| otherwise
-	= Just $ XPrim (MCall $ PrimCallApply) (xF : args)
+	= buildApp $ (Left $ XPrim (MCall (PrimCallApply vF)) tF) : args
 
-
--- | Checks if this expression represents a value, instead of a type.
-isValueArg :: Exp -> Bool
-isValueArg xx
- = case xx of
- 	XVar v t
-	 | varNameSpace v == NameValue	-> True
-
-	XLit{}		-> True
-	XAPP x t	-> isValueArg x
-	XPrim{}		-> True
-	XPrimType{}	-> False
-	
-	_ 	-> panic stage 
-		$ "isValueArg: unexpected arg in function application " % xx 
-	

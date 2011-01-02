@@ -10,6 +10,7 @@ import DDC.Base.Prim.PrimType
 import DDC.Base.Prim.PrimOp
 import DDC.Type
 import DDC.Base.DataFormat
+import DDC.Var
 import Shared.VarPrim
 
 
@@ -22,13 +23,13 @@ data Prim
 	= MForce
 
 	-- | Box some value.
-	| MBox
+	| MBox		PrimType
 	
 	-- | Unbox some value.
-	| MUnbox
+	| MUnbox	PrimType
 
-	-- | Invoke a primitive operator.
-	| MOp		PrimOp
+	-- | A primitive comparison, numeric, or bitwise logic operator.
+	| MOp		PrimType  PrimOp
 	
 	-- | Casting between primitive types,
 	--   eg between Int32# and Float32#.
@@ -40,12 +41,14 @@ data Prim
 	| MCoercePtr	Type	  Type
 	
 	-- | Coercion betweeen (Ptr# a) and Addr#
+	--   The argument gives the type of the pointed-to data.
 	| MCoercePtrToAddr Type
 	
 	-- | Coercion between Addr# and (Ptr# a)
+	--   The argument gives the type of the pointed-to data.
 	| MCoerceAddrToPtr Type
 	
-	-- | Some function-call related thing.
+	-- | Call a function / supercombinator.
 	| MCall 	PrimCall
 	deriving (Show, Eq)
 
@@ -53,19 +56,19 @@ data Prim
 -- | Primitive ways of invoking a function.
 data PrimCall
 	-- | Tailcall a supercombinator.
-	= PrimCallTail
+	= PrimCallTail		Var
 
 	-- | Call a supercombinator.
-	| PrimCallSuper
+	| PrimCallSuper 	Var
 
 	-- | Call a supercombinator then apply the resulting thunk with this arity.
-	| PrimCallSuperApply	Int
-
-	-- | Apply a thunk.
-	| PrimCallApply
+	| PrimCallSuperApply	Var	Int
 
 	-- | Build a thunk with this arity
-	| PrimCallCurry		Int
+	| PrimCallCurry		Var	Int
+
+	-- | Apply a thunk.
+	| PrimCallApply		Var
 	deriving (Show, Eq)
 
 

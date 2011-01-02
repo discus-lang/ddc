@@ -74,6 +74,7 @@ instance Monad m => TransEnv TransEnvCore m env Exp where
 	 =<< case xx' of
 		XNil			-> return xx'
 		XVar   v  t		-> liftM2 XVar      (down v)   (down t)
+		XPrim  p  t		-> liftM2 XPrim     (return p) (down t)
 		XLit{}			-> return xx'
 		XLAM   b k x		-> liftM3 XLAM      (down b)   (down k)  (down x)
 		XAPP   x t		-> liftM2 XAPP      (down x)   (down t)
@@ -82,8 +83,6 @@ instance Monad m => TransEnv TransEnvCore m env Exp where
 		XDo    ss		-> liftM  XDo       (down ss)
 		XMatch alts		-> liftM  XMatch    (down alts)
 		XLocal v  vts x		-> liftM3 XLocal    (down v)   (down vts) (down x)
-		XPrim  p  xs		-> liftM2 XPrim     (return p) (down xs)
-		XPrimType t      	-> liftM  XPrimType (down t)
 		XTau   t  x		-> liftM2 XTau	    (down t)   (down x)
 
 -- Stmt

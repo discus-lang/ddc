@@ -9,6 +9,7 @@ module Core.BoundUse
 	, boundUseP
 	, boundUseX)
 where
+import Core.Util
 import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Core.Glob
@@ -90,6 +91,14 @@ boundUseX level xx
 	
 	XLam v t x eff clo	-> boundUseX (level + 1) x
 
+	-- a use of a var directly inside an unbox
+	XApp{}
+	 |  Left (XPrim MUnbox _) 
+		: Right tX 
+	  	: Left  (XVar v t)
+	  	: []		<- flattenApps xx
+	 -> addUse v (UseUnbox level)
+
 	XApp x1 x2
 	 -> do	boundUseX level x1
 	 	boundUseX level x2
@@ -102,13 +111,7 @@ boundUseX level xx
 	-- a regular use of a bound variable
 	XVar v t		
 	 -> 	addUse v (Use level)
-
-	-- a use of a var directly inside an unbox
-	XPrim MUnbox [r, XVar v t]
-	 -> 	addUse v (UseUnbox level)
 	
-	XPrim p xs		-> mapM_ (boundUseX level) xs
-	XPrimType{}		-> return ()
 
 	
 -- | Examine var usage in this stmt.

@@ -212,7 +212,6 @@ transTableId
 	, decendK	= True }
 
 -----
-followXs table xs	= mapM (followX table) xs
 followX  table x	
  | decendX table	= transZM table x
  | otherwise		= return x
@@ -343,6 +342,11 @@ transXM2 table xx
 		t'		<- followT table t
 	 	transX table	$ XVar v' t'
 
+	XPrim m t
+	 -> do	m'		<- transZM table m
+		t'		<- followT table t
+		transX table	$ XPrim m' t'
+
 	XLAM v k x
 	 -> do	v'		<- followB_bind table v
 	 	k'		<- followK table k
@@ -392,14 +396,7 @@ transXM2 table xx
 	 	x'		<- followX  table x
 		transX table	$ XLocal v' vts' x'
 
-	XPrim m aa
-	 -> do	m'		<- transZM table m
-	 	aa'		<- followXs table aa
-		transX table	$ XPrim m' aa'
 
-	XPrimType t
-	 -> do	t'		<- transZM table t
-		transX table	$ XPrimType t'
 		
 
 instance Monad m => TransM m Prim where

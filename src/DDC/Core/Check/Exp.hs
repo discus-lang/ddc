@@ -19,7 +19,7 @@ import DDC.Core.Glob
 import DDC.Core.Exp
 import DDC.Core.Check.Base
 import DDC.Core.Check.Env
-import DDC.Core.Check.Prim
+-- import DDC.Core.Check.Prim
 import DDC.Core.Check.Type
 import DDC.Base.Literal
 import DDC.Base.DataFormat
@@ -417,13 +417,15 @@ checkExp_trace m xx env
 		, clo)
 
 	-- Primitive operator.
-	XPrim  prim xs	
-	 | (xs', t1, eff, clo)	<- checkPrim n prim xs env
+	XPrim{}	
+	 -> error "fix checking prim funs"
+
+{-	 | (xs', t1, eff, clo)	<- checkPrim n prim xs env
 	 ->	( XPrim prim xs'
 		, t1
 		, eff
 		, clo)
-
+-}
 	-- Type annotation
 	XTau tAnnot x
 	 | (tAnnot', kAnnot)	<- checkTypeI n tAnnot env

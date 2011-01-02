@@ -37,22 +37,28 @@ toCoreXLit' tt xLit@(D.XLit _ litfmt@(LiteralFmt lit fmt))
 	--	so we need to apply the region to the unboxed literal
 	--	when building the boxed version.
 	| LString _	<- lit
-	, Boxed	<- fmt
+	, Boxed		<- fmt
 	= let	Just (_, _, [tR]) = T.takeTData tt
-		Just fmtUnboxed		= dataFormatUnboxedOfBoxed fmt
-	  in	C.XPrim C.MBox 
-			[ C.XPrimType tR
-			, C.XAPP (C.XLit (LiteralFmt lit fmtUnboxed)) tR]
 
+		Just fmtUnboxed	  = dataFormatUnboxedOfBoxed fmt
+		tBoxed		  = tt
+		Just tUnboxed	  = error ("Literal.hs: tUnboxed")
+		tFun		  = T.makeTFun tUnboxed tBoxed T.tPure T.tEmpty
+
+	  in	C.XApp	(C.XPrim C.MBox tFun) 
+			(C.XAPP  (C.XLit $ LiteralFmt lit fmtUnboxed) tR)
 
 	-- the other unboxed literals have kind *, 
 	--	so we can just pass them to the the boxing primitive directly.
 	| Just (_, _, [tR]) <- T.takeTData tt
-	= let	Just fmtUnboxed		= dataFormatUnboxedOfBoxed fmt
-	  in	C.XPrim C.MBox 
-			[ C.XPrimType tR
-			, C.XLit $ LiteralFmt lit fmtUnboxed]
+	= let	Just fmtUnboxed	= dataFormatUnboxedOfBoxed fmt
+		tBoxed		= tt
+		tUnboxed	= error ("Literal.hs: tUnboxed")
+		tFun		= T.makeTFun tUnboxed tBoxed T.tPure T.tEmpty
 		
+	  in	C.XApp	(C.XPrim C.MBox tFun)
+			(C.XLit $ LiteralFmt lit fmtUnboxed)
+				
 	| otherwise
 	= panic stage
 		$ "toCoreLitX: no match\n"
