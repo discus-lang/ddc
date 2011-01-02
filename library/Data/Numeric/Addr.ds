@@ -1,0 +1,12 @@
+{-# OPTIONS -no-implicit-prelude #-}
+module 	Data.Numeric.Addr
+import	Base
+
+foreign import primAddrU_isZero		:: Addr# -> Bool#
+
+foreign import primAddrU_eq		:: Addr# -> Addr# -> Bool#
+foreign import primAddrU_neq		:: Addr# -> Addr# -> Bool#
+foreign import primAddrU_gt		:: Addr# -> Addr# -> Bool#
+foreign import primAddrU_ge		:: Addr# -> Addr# -> Bool#
+foreign import primAddrU_lt		:: Addr# -> Addr# -> Bool#
+foreign import primAddrU_le		:: Addr# -> Addr# -> Bool#
