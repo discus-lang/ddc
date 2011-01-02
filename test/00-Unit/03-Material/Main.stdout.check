@@ -1,4 +1,4 @@
-data Int %r1 where
+data Base.Int %r1 where
         KIND       = % -> *
         MATERIAL   = Just {%r1}
         IMMATERIAL = Just {}

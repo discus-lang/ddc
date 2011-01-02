@@ -6,7 +6,7 @@
 --
 module DDC.Test.Type
 	( module DDC.Type
-	, vInt
+	, vInt, tInt'
 	, tFun )
 where
 import DDC.Type
@@ -14,4 +14,5 @@ import DDC.Base.DataFormat
 import Shared.VarPrim
 
 vInt	= primTInt Boxed
+tInt'	= TApp (tInt Boxed)
 tFun 	= makeTFun

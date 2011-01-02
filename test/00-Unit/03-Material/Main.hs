@@ -21,8 +21,8 @@ dataDefs
 	
 	, createDataDef
 		(varT "IntFun")	[r1, r2, r3, r4, e1, c1]
-		[ (varV "SInt",	[tInt r1]) 
-		, (varV "SFun", [tFun (tInt r3) (tInt r4) e1 c1]) ]
+		[ (varV "SInt",	[tInt' r1]) 
+		, (varV "SFun", [tFun (tInt' r3) (tInt' r4) e1 c1]) ]
 
 	, createDataDef
 		(varT "FunOrder2") [r1, a1, a2, a3, c1, e1, c2, e2]
