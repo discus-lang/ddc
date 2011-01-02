@@ -219,7 +219,7 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 	  
 	-- remember unboxings we haven't seen before
 	-- only move pure unboxings for now.
-	| [Left (XPrim MUnbox _), Right (TVar kR (UVar vR)), Left (XVar v2 _)]	<- flattenApps xBind
+	| [Left (XPrim MUnbox{} _), Right (TVar kR (UVar vR)), Left (XVar v2 _)] <- flattenApps xBind
 	, kR	== kRegion
 	, Nothing	 <- Map.lookup v2 (shareUnboxings share)
 	, Set.member vR (tableConstRegions table)
@@ -227,7 +227,7 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 	  in	(share', table, [SBind (Just vBind) xBind])
 	  
 	-- replace calls to unbox with ones we've seen before
-	| [Left (XPrim MUnbox _), Right (TVar kR (UVar vR1)), Left (XVar v2 _)]	<- flattenApps xBind
+	| [Left (XPrim MUnbox{} _), Right (TVar kR (UVar vR1)), Left (XVar v2 _)]	<- flattenApps xBind
 	, kR	== kRegion
 	, Just (v3, vR2) <- Map.lookup v2 (shareUnboxings share)
 	, vR1 == vR2

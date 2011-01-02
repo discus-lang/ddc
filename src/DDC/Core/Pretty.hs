@@ -197,13 +197,20 @@ prettyExpB x
 instance Pretty Prim PMode where
  ppr xx 
   = case xx of
-	MForce		-> ppr "prim{Force}"
-	MBox		-> ppr "prim{Box}"
-	MUnbox		-> ppr "prim{Unbox}"
-	MOp op		-> ppr "prim{" % op % "}"
+	MForce		
+	 -> ppr "prim{Force}"
+
+	MBox   pt	
+	 -> ppr "prim{Box" 		% brackets pt % "}"
+
+	MUnbox pt	
+	 -> ppr "prim{Unbox"		% brackets pt % "}"
+
+	MOp    pt op
+	 -> ppr "prim{" % op 		% brackets pt % "}"
 
 	MCast pt1 pt2
-	 -> ppr "prim{Cast" 	 	% brackets (pt1 % "|" % pt2) % "}"
+	 -> ppr "prim{Cast"	  	% brackets (pt1 % "|" % pt2) % "}"
 
 	MCoercePtr t1  t2
 	 -> ppr "prim{CoercePtr"	% brackets (t1  % "|" % t2)  % "}"

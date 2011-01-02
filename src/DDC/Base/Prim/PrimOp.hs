@@ -2,10 +2,9 @@
 
 module DDC.Base.Prim.PrimOp
 	( PrimOp(..)
-	, primOpNames
-	, readPrimOpName
 	, readPrimOp )
 where
+import DDC.Base.Prim.PrimType
 import Data.List
 
 -- | Primitive polymorphic operators. 
@@ -33,12 +32,22 @@ data PrimOp
 	deriving (Show, Eq)
 
 
+-- | Primitive operators in the source language have names like "primWord32U_neg"
+--   This splits off the "_neg" part and returns the associated `PrimOp` (ie `OpNeg`).
+readPrimOp :: String -> Maybe (PrimOp, PrimType)
+readPrimOp str
+ 	| Just typeOpName		<- stripPrefix "prim" str
+	, (typeName, _ : opName)	<- break (== '_') typeOpName
+	, Just pt			<- lookup typeName primOpTypeNames
+	, Just op			<- lookup opName   primOpNames
+	= Just (op, pt)
+
+	| otherwise
+	= Nothing
+
+
 -- | Primitive operators in the source language have names like "primWord32U_neg".
 --   This converts the "neg" part to the `PrimOp` it refers to.
-readPrimOpName :: String -> Maybe PrimOp
-readPrimOpName str
-	= lookup str primOpNames
-
 primOpNames
 	-- arithmetic
  =	[ ("neg",	OpNeg)
@@ -61,20 +70,12 @@ primOpNames
 	, ("or",	OpOr) ]
 
 
--- | Primitive operators in the source language have names like "primWord32U_neg"
---   This splits off the "_neg" part and returns the associated `PrimOp` (ie `OpNeg`).
-readPrimOp :: String -> Maybe PrimOp
-readPrimOp str
- 	| Just typeOpName		<- stripPrefix "prim" str
-	, (typeName, _ : opName)	<- break (== '_') typeOpName
-	, elem typeName [ "PtrVoid"
-			, "Word32U",  "Word64U"
-			, "Int32U",   "Int64U"
-			, "Float32U", "Float64U"]
-	= readPrimOpName opName
-
-	| otherwise
-	= Nothing
-
-
-
+-- | Types that we have primops for.
+--   TODO: Merge this with types in PrimBoxing.
+primOpTypeNames
+ = 	[ ("Word32U",	PrimTypeWord  $ Width 32)
+	, ("Word64U",	PrimTypeWord  $ Width 64)
+	, ("Int32U",	PrimTypeInt   $ Width 32)
+	, ("Int64U",	PrimTypeInt   $ Width 64)
+	, ("Float32U",	PrimTypeFloat $ Width 32)
+	, ("Float64U",	PrimTypeFloat $ Width 64) ]

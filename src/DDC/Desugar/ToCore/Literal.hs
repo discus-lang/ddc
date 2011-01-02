@@ -8,6 +8,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.Literal
 import DDC.Base.DataFormat
+import Shared.VarPrim
 import qualified DDC.Type			as T
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Core.Exp			as C
@@ -43,9 +44,9 @@ toCoreXLit' tt xLit@(D.XLit _ litfmt@(LiteralFmt lit fmt))
 		Just fmtUnboxed	  = dataFormatUnboxedOfBoxed fmt
 		tBoxed		  = tt
 		Just tUnboxed	  = error ("Literal.hs: tUnboxed")
-		tFun		  = T.makeTFun tUnboxed tBoxed T.tPure T.tEmpty
+		tFun		  = T.makeTFun tUnboxed tBoxed (T.TApp T.tRead tR) T.tEmpty
 
-	  in	C.XApp	(C.XPrim C.MBox tFun) 
+	  in	C.XApp	(C.XVar  primBoxString tFun) 
 			(C.XAPP  (C.XLit $ LiteralFmt lit fmtUnboxed) tR)
 
 	-- the other unboxed literals have kind *, 
@@ -54,9 +55,10 @@ toCoreXLit' tt xLit@(D.XLit _ litfmt@(LiteralFmt lit fmt))
 	= let	Just fmtUnboxed	= dataFormatUnboxedOfBoxed fmt
 		tBoxed		= tt
 		tUnboxed	= error ("Literal.hs: tUnboxed")
+		Just ptUnboxed	= C.takePrimTypeOfType tUnboxed
 		tFun		= T.makeTFun tUnboxed tBoxed T.tPure T.tEmpty
 		
-	  in	C.XApp	(C.XPrim C.MBox tFun)
+	  in	C.XApp	(C.XPrim (C.MBox ptUnboxed) tFun)
 			(C.XLit $ LiteralFmt lit fmtUnboxed)
 				
 	| otherwise

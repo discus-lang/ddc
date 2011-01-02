@@ -4,20 +4,20 @@ module DDC.Core.Exp.Prim
 	( Prim 		(..)
 	, PrimCall	(..)
 	, PrimOp	(..)
-	, takeTypeOfPrimType)
+	, takeTypeOfPrimType
+	, takePrimTypeOfType)
 where
 import DDC.Base.Prim.PrimType
 import DDC.Base.Prim.PrimOp
 import DDC.Type
 import DDC.Base.DataFormat
 import DDC.Var
+import DDC.Var.PrimId
 import Shared.VarPrim
 
 
 -- | Primitive functions.
---   These are polymorphic primitives that we deal with directly in the core language.
---   Exposing these makes it easier to perform rewrites. If we had a proper rule rewriting
---   system we could handle them more generally.
+--   TODO: Abstract this over the `Type` so we can use it for the Sea language as well.
 data Prim
 	-- | Force the outer constructor of an expression.
 	= MForce
@@ -81,4 +81,14 @@ takeTypeOfPrimType pt
 	PrimTypeFloat (Width w)	-> Just $ makeTData (primTFloat (UnboxedBits w)) kValue []
 	_			-> Nothing
 
+-- | Take the `PrimType` of an unboxed `Type`.
+takePrimTypeOfType :: Type -> Maybe PrimType
+takePrimTypeOfType tt
+	| Just (v, _, [])	<- takeTData tt
+	= case varId v of
+		VarIdPrim (TWord  (UnboxedBits w))	-> Just $ PrimTypeWord  (Width w)
+		VarIdPrim (TInt   (UnboxedBits w))	-> Just $ PrimTypeInt   (Width w)
+		VarIdPrim (TFloat (UnboxedBits w))	-> Just $ PrimTypeFloat (Width w)
+		_					-> Nothing
 
+	| otherwise		= Nothing

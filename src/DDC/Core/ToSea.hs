@@ -273,7 +273,7 @@ toSeaApps :: [C.Exp] -> SeaM (E.Exp ())
 toSeaApps parts
  = case parts of
 	-- arithmetic operators
-	C.XPrim (C.MOp op) _ : args
+	C.XPrim (C.MOp _ op) _ : args
 	 -> do	args'	<- mapM toSeaX args
 		return	$ E.XPrim (E.MOp op) args'
 		
@@ -334,7 +334,7 @@ toSeaApps parts
 				(xFun' : args')
 
 	-- boxing
-	C.XPrim C.MBox t : args
+	C.XPrim C.MBox{} t : args
 	 -> do	let [tUnboxed, _tBoxed]	=  T.flattenTFuns t
 		args'			<- mapM toSeaX args
 		return	$ E.XPrim 
@@ -342,7 +342,7 @@ toSeaApps parts
 				args'
 				
 	-- the unboxing function is named after the result type
-	C.XPrim C.MUnbox t : args
+	C.XPrim C.MUnbox{} t : args
 	 -> do	let [_tBoxed, tUnboxed]	=  T.flattenTFuns t
 		args'			<- mapM toSeaX args
 		return	$ E.XPrim

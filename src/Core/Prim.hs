@@ -20,6 +20,7 @@ import DDC.Type
 import DDC.Var
 import DDC.Base.Prim.PrimOp
 import DDC.Base.Prim.PrimCast
+import DDC.Base.Prim.PrimBoxing
 import qualified Data.Set		as Set
 
 
@@ -156,32 +157,32 @@ primX1' tt xx parts
  = case parts of
  	-- direct use of boxing function
  	Left (XVar v t) : psArgs
-	 | isBoxFunctionV v
+	 | Just pt	<- readPrimBoxing (varName v)
 	 -> buildApp
-		$ (Left $ XPrim MBox t)
+		$ (Left $ XPrim (MBox pt) t)
 		: psArgs
 
 	-- direct use of unboxing function
 	-- note that we must force non-direct objects before unboxing them.
 	Left (XVar v t) : psArgs@[Right tR@(TVar kR (UVar vR)), Left x]
 	 | kR	== kRegion			
-	 , isUnboxFunctionV v
+	 , Just pt	<- readPrimUnboxing (varName v)
 	 -> if Set.member vR (tableDirectRegions tt) 
 		then buildApp
-			$ Left (XPrim MUnbox t)
+			$ Left (XPrim (MUnbox pt) t)
 			: psArgs
 
 		else buildApp
-			$ Left (XPrim MUnbox t) 
+			$ Left (XPrim (MUnbox pt) t) 
 			: Right tR 
 			: Left (XApp (XPrim MForce (error "need type of force")) x)
 			: []
 
 	-- primitive arithmetic operators
 	Left (XVar v t) : psArgs
-	 | Just operator	<- readPrimOp (varName v)
+	 | Just (op, pt)	<- readPrimOp (varName v)
 	 -> buildApp 
-		$ Left (XPrim (MOp operator) t)
+		$ Left (XPrim (MOp pt op) t)
 		: psArgs
 	
 	-- primitive casting
@@ -199,118 +200,4 @@ primX1' tt xx parts
 	_ -> Just xx
 
 
--- Detection --------------------------------------------------------------------------------------
--- | Is this the name of a fn that unboxes a value of primitive type.
-isBoxFunctionV :: Var -> Bool
-isBoxFunctionV v
- = elem	(varName v)
- 	[ "boxInt32"
-	, "boxFloat32"
-	, "boxInt64"
-	, "boxFloat64"
- 	, "boxWord32"
-	, "boxWord64" ]
 
-
--- | Is this the name of a fn that unboxes a value of primitive type.
-isUnboxFunctionV :: Var -> Bool
-isUnboxFunctionV v
- =  elem (varName v)
- 	[ "unboxInt32"
-	, "unboxFloat32"
-	, "unboxInt64"
-	, "unboxFloat64"
-	, "unboxWord32"
-	, "unboxWord64" ]
-
-
-----------------------------------------------------------------------------------------------------
--- Poor man's cross module inliner.
---   Says what to do with the arguments of a function.
---   We tend to ignore type arguments, and unbox boxed values.
-
-	-- look for binary functions who's arguments can be unboxed
-	-- This basically does fake inlining of these functions.
-{-	[Left (XVar v t), Right t1, Right t2, Left x1, Left x2]
-	 | Just (operator, actions)		<- Map.lookup (varName v) unboxableFuns
-	 , tResult				<- checkedTypeOfOpenExp (stage ++ ".primX") xx
-	 , Just (vResult, _, tsResult)		<- takeTData tResult
-	 , 
-	
-	 -> buildApp 
-		$ Left (XPrim 
-		-- apply the actions to the arguments
-		psArgs'	= doActions tt actions psArgs
-		
-		-- generate the primitive 
-	   in	XPrim MBox (map XPrimType tsResult ++ [XPrim (MOp operator) psArgs'])
-
-
-
--- | Perform these actions on this list of expressions
-doActions :: Table -> [Action] -> [Exp] -> [Exp]
-doActions tt (Discard:as) (x:xs)
-	= doActions tt as xs
-
-doActions tt (Ignore:as) (x:xs)
-	= x : doActions tt as xs
-	
-doActions tt (Unbox:as) (x:xs)
-
- = let	tX	= checkedTypeOfOpenExp (stage ++ ".doActions") x
-
- 	Just (_, _, [tR@(TVar _ (UVar vR))])
-		= takeTData tX
- 		
-	x'	| Set.member vR (tableDirectRegions tt) 
-		= XPrim MUnbox [XPrimType tR, x] 
-			: doActions tt as xs
-		
-		| otherwise
-		= XPrim MUnbox [XPrimType tR, XPrim MForce [x]] 
-			: doActions tt as xs
-
-   in	x'
-
-doActions _ _ xs = xs
-
-
-
--- Whether to ignore or unbox the argument
-data Action
-	= Ignore
-	| Discard
-	| Unbox
-	deriving (Show, Eq)
-
-opD3U2	= [Discard, Discard, Discard, Unbox, Unbox]
-
-
--- Functions who's arguments can be unboxed.
--- These functions must have these specific names in the prelude.
-unboxableFuns :: Map String (PrimOp, [Action])
-unboxableFuns
- = Map.fromList
-	[ ("&&",		(OpAnd,	opD3U2))
-	, ("||",		(OpOr,	opD3U2))
-
-	, ("primInt32_add",	(OpAdd, opD3U2))
-	, ("primInt32_sub",	(OpSub, opD3U2))
-	, ("primInt32_mul",	(OpMul, opD3U2)) 
-	, ("primInt32_eq",	(OpEq,  opD3U2))
-	, ("primInt32_neq",	(OpNeq, opD3U2))
-	, ("primInt32_lt",	(OpLt,  opD3U2))
-	, ("primInt32_gt",	(OpGt,  opD3U2))
-	, ("primInt32_le",	(OpLe,  opD3U2)) 
-	, ("primInt32_ge",	(OpGe,  opD3U2)) 
-
-	, ("primFloat32_add",	(OpAdd, opD3U2))
-	, ("primFloat32_sub",	(OpSub, opD3U2))
-	, ("primFloat32_mul",	(OpMul, opD3U2)) 
-	, ("primFloat32_eq",	(OpEq,  opD3U2))
-	, ("primFloat32_neq",	(OpNeq, opD3U2))
-	, ("primFloat32_lt",	(OpLt,  opD3U2))
-	, ("primFloat32_gt",	(OpGt,  opD3U2))
-	, ("primFloat32_le",	(OpLe,  opD3U2)) 
-	, ("primFloat32_ge",	(OpGe,  opD3U2)) ]
--}

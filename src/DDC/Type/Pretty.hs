@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# LANGUAGE NamedFieldPuns #-}
 -- | Pretty printer for type expressions.
 module DDC.Type.Pretty
 	( prettyTypeParens

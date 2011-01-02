@@ -284,7 +284,7 @@ slurpX	(XIfThenElse sp xObj xThen xElse)
 
 	-- The case object must be a Bool
 	tR		<- newTVarR
-	let tBool	= makeTData (primTBool Boxed) (KFun kRegion kValue) [tR]
+	let tBool'	= makeTData (primTBool Boxed) (KFun kRegion kValue) [tR]
 
 	-- Slurp the THEN expression.
 	(tThen, eThen, _, xThen', qsThen) <- slurpX xThen
@@ -293,7 +293,7 @@ slurpX	(XIfThenElse sp xObj xThen xElse)
 	(tElse, eElse, _, xElse', qsElse) <- slurpX xElse
 	
 	let qs	= constraints
-		$  [ CEq     (TSV $ SVIfObj sp)	tObj	$ tBool]
+		$  [ CEq     (TSV $ SVIfObj sp)	tObj	$ tBool']
 		++ (makeCEqs (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse]))
 		++ [ CMore   (TSE $ SEIfObj sp)	eTest 	$ TApp tHeadRead tObj
 		   , CMore   (TSE $ SEIf sp) eX		$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]

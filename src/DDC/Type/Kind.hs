@@ -1,5 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-
+{-# LANGUAGE NamedFieldPuns #-}
 -- | Utils concerning kinds
 module DDC.Type.Kind
 	( -- * Namespaces

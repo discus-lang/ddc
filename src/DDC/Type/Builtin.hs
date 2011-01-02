@@ -13,17 +13,23 @@ module DDC.Type.Builtin
 	, kPure
 	, kEmpty
 	
-	-- * Bottom effect and closure
-	, tBot, tPure, tEmpty
+	-- * Bottom
+	, tBot
 
-	-- * Effect constructors
+	-- * Data types
+	, tPtrU
+	, tBool, tWord, tInt, tFloat, tChar
+
+	-- * Effects
+	, tPure
 	, tRead,  tDeepRead, tHeadRead
 	, tWrite, tDeepWrite
 	
-	-- * Closure constructors
+	-- * Closure types
+	, tEmpty
 	, tFree, tFreeType, tFreeRegion, tDanger
 	
-	-- * Witness type constructors
+	-- * Witness types
 	, tMkConst,   tMkDeepConst
 	, tMkMutable, tMkDeepMutable
 	, tMkLazy,    tMkHeadLazy
@@ -35,7 +41,8 @@ module DDC.Type.Builtin
 	, tElaborateWrite
 	, tElaborateModify
 	
-	-- * Plain constructors for primitive types
+	-- * Type constructors
+	, tcPtrU
 	, tcBool
 	, tcWord
 	, tcInt
@@ -57,15 +64,16 @@ import DDC.Var
 import Control.Monad
 
 
--- Kind Constructors ------------------------------------------------------------------------------
--- Atomic kind constructors.
+-- Kinds  -----------------------------------------------------------------------------------------
+
+-- Atomic kinds -------------------------------------------
 kBox		= KCon KiConBox		SBox
 kValue		= KCon KiConValue	SBox
 kRegion		= KCon KiConRegion	SBox
 kEffect		= KCon KiConEffect	SBox
 kClosure	= KCon KiConClosure	SBox
 
--- Witness kind constructors.
+-- Witness kinds ------------------------------------------
 kConst		= KCon KiConConst
 		$ SFun kRegion  SProp
 
@@ -93,13 +101,21 @@ kPure		= KCon KiConPure
 kEmpty		= KCon KiConEmpty
 		$ SFun kClosure SProp
 
--- Type Constructors -------------------------------------------------------------------------
+
+-- Types ------------------------------------------------------------------------------------------
 tBot k		= TSum k	[]
+
+-- Value types --------------------------------------------
+tPtrU		= TCon $ tcPtrU
+tBool   fmt	= TCon $ tcBool   fmt
+tInt    fmt	= TCon $ tcInt    fmt
+tWord   fmt	= TCon $ tcWord   fmt
+tFloat  fmt	= TCon $ tcFloat  fmt
+tChar   fmt	= TCon $ tcChar   fmt
+
+-- Effect types -------------------------------------------
 tPure		= TSum kEffect  []
-tEmpty		= TSum kClosure []
 
-
--- Effect type constructors
 tRead		= TCon $ TyConEffect TyConEffectRead
 		$ KFun kRegion kEffect
 
@@ -116,7 +132,9 @@ tDeepWrite	= TCon $ TyConEffect TyConEffectDeepWrite
 		$ KFun kValue kEffect
 
 
--- Closure type constructors
+-- Closure types ------------------------------------------
+tEmpty		= TSum kClosure []
+
 tFree v		= TCon $ TyConClosure (TyConClosureFree v) 
 		$ KFun kClosure kClosure
 
@@ -130,7 +148,7 @@ tDanger 	= TCon $ TyConClosure TyConClosureDanger
 		$ KFun kRegion (KFun kBox kClosure)
 
 
--- Witness type constructors 
+-- Witness types ------------------------------------------
 tMkConst	= TCon $ TyConWitness TyConWitnessMkConst	
 		$ KFun kRegion (KApp kConst		(TVar kRegion $ UIndex 0))
 
@@ -160,7 +178,7 @@ tMkPurify	= TCon $ TyConWitness TyConWitnessMkPurify
 tMkPure		= TCon $ TyConWitness TyConWitnessMkPure
 		$ KFun kEffect (KApp kPure (TVar kEffect $ UIndex 0))
 		
--- Elaboration constructors
+-- Elaboration constructors -------------------------------
 tElaborateRead  = TCon $ TyConElaborate TyConElaborateRead
 		$ KFun kValue kValue
 
@@ -171,30 +189,27 @@ tElaborateModify = TCon $ TyConElaborate TyConElaborateModify
 		$ KFun kValue kValue
 
 
+
+-- Type Constructors  -----------------------------------------------------------------------------
+
+tcPtrU :: TyCon
+tcPtrU	= TyConData primTPtrU (kValue `KFun` kValue) Nothing
+
 -- | Get the type constructor for a bool of this format.
---	The format needs to be `Unboxed` or `Boxed`.
-tcBool :: DataFormat -> Maybe TyCon
-tcBool fmt
- = case fmt of
-	Unboxed		-> Just $ TyConData (primTBool fmt) kValue Nothing
-	Boxed		-> Just $ TyConData (primTBool fmt) (KFun kRegion kValue) Nothing
-	_		-> Nothing
-	
+tcBool :: DataFormat -> TyCon
+tcBool	= tcTyDataBits primTBool
 	
 -- | Get the type constructor of a word of this format.
 tcWord  :: DataFormat -> TyCon
 tcWord 	= tcTyDataBits primTWord
 
-
 -- | Get the type constructor of an int of this format.
 tcInt   :: DataFormat -> TyCon
 tcInt	= tcTyDataBits primTInt
 
-
 -- | Get the type constructor of a float of this format.
 tcFloat :: DataFormat -> TyCon
 tcFloat	= tcTyDataBits primTFloat
-
 
 -- | Get the type constructor of a char of this format.
 tcChar  :: DataFormat -> TyCon
@@ -223,7 +238,7 @@ tcString fmt
 tyConOfLiteralFmt :: LiteralFmt -> Maybe TyCon
 tyConOfLiteralFmt (LiteralFmt lit fmt)
  = case (lit, fmt) of
- 	(LBool _, 	fmt')	-> tcBool   fmt'
+ 	(LBool _, 	fmt')	-> Just $ tcBool   fmt'
 	(LWord _, 	fmt')	-> Just $ tcWord   fmt'
 	(LInt _,	fmt')	-> Just $ tcInt    fmt'
 	(LFloat _,	fmt')	-> Just $ tcFloat  fmt'
@@ -241,7 +256,7 @@ typeOfLiteral litfmt
 tyconOfLiteral :: LiteralFmt -> Maybe TyCon
 tyconOfLiteral (LiteralFmt lit fmt)
  = case lit of
-	LBool _		-> tcBool   fmt
+	LBool _		-> Just $ tcBool   fmt
 	LWord _		-> Just $ tcWord   fmt
 	LInt _		-> Just $ tcInt    fmt
 	LFloat _	-> Just $ tcFloat  fmt

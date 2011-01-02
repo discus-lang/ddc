@@ -2,7 +2,8 @@
 
 -- | Primitive variable identifiers.
 module DDC.Var.PrimId 
-	(PrimId	(..))
+	( PrimId	(..)
+	, splitPrimIdWithDataFormat)
 where
 import DDC.Base.DataFormat
 import Data.Hashable
@@ -54,7 +55,7 @@ data PrimId
 	| VSuspend Int
 	| VProjField
 	| VProjFieldR
-	
+		
 	-- For desugaring bulk collection indexing
 	| VIndex 	
 	| VIndexR
@@ -95,6 +96,8 @@ data PrimId
 
 	-- For desugaring literal pattern matches
 	| VEq
+
+	| VBoxString
 	deriving (Eq, Show, Ord)
 
 
@@ -163,4 +166,19 @@ instance Hashable PrimId where
 	VConcatMapL		-> hashInt 52
 	VBind			-> hashInt 53
 	VEq			-> hashInt 54
+	VBoxString		-> hashInt 55
 
+
+-- | For PrimIds that contain a `DataFormat`, split them 
+--   into the constructor and said format.
+splitPrimIdWithDataFormat :: PrimId -> Maybe (DataFormat -> PrimId, DataFormat)
+splitPrimIdWithDataFormat pid
+ = case pid of
+	TBool	fmt	-> Just (TBool,   fmt)
+	TWord	fmt	-> Just (TWord,   fmt)
+	TInt	fmt	-> Just (TInt,    fmt)
+	TFloat 	fmt	-> Just (TFloat,  fmt)
+	TChar	fmt	-> Just (TChar,   fmt)
+	TString fmt	-> Just (TString, fmt)
+	_		-> Nothing
+	

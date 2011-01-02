@@ -93,7 +93,7 @@ boundUseX level xx
 
 	-- a use of a var directly inside an unbox
 	XApp{}
-	 |  Left (XPrim MUnbox _) 
+	 |  Left (XPrim MUnbox{} _) 
 		: Right tX 
 	  	: Left  (XVar v t)
 	  	: []		<- flattenApps xx

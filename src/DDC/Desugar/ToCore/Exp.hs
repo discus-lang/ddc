@@ -310,12 +310,26 @@ toCoreG :: Set Var			-- ^ Set of type variables bound in the environment
 
 toCoreG vsBound mObj gg
 	| D.GCase _ w		<- gg
-	, Just (objV, objT)	<- mObj
+	, Just (vObj, tObj)	<- mObj
 	= do	(w', mustUnbox)	<- toCoreW w
 
-		let x		= C.XVar objV objT
+		let x			= C.XVar vObj tObj
+		let Just tUnboxed	= takeUnboxedOfBoxedType tObj
+		let Just ptUnboxed	= takePrimTypeOfType tUnboxed
+		let Just tUnboxFn	= error ("need type of unboxing function")
+
+		let xUnboxDiscrim
+		  	=        (C.XPrim (C.MUnbox ptUnboxed) tUnboxFn) 
+		  	`C.XAPP` tR
+		  	`C.XApp` ((C.XPrim (C.MForce) tForceFn) `C.XApp` x)
+					tR[C.XPrimType r, C.XPrim C.MForce [x]])
+			= 
 		case mustUnbox of
-		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XPrimType r, C.XPrim C.MForce [x]])
+		 Just tR	
+		  -> return 
+		  $  C.GExp w' 
+
+
 		 Nothing	-> return $ C.GExp w' x
 		
 	| D.GExp _ w x		<- gg

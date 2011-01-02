@@ -1,9 +1,7 @@
 {-# OPTIONS -O2 #-}
 
-
 -- | These are the variables that have a special meaning to the compiler.
---	They all need to be defined in the base libraries or runtime system.
-
+--   They all need to be defined in the base libraries or runtime system.
 module Shared.VarPrim
 where
 import Util
@@ -19,7 +17,7 @@ primTData	= primVar 	NameType	"Base.Data"			TData
 primTThunk	= primVar	NameType	"Base.Thunk"			TThunk
 	
 			
--- Primitive Type Variables ------------------------------------------------------------------------
+-- Type Constructors ------------------------------------------------------------------------
 primTVoidU	= primVarI	NameType	"Base.Void#"			TVoidU		[ISeaName "void"]
 primTPtrU	= primVarI	NameType	"Base.Ptr#"			TPtrU		[ISeaName "Ptr"]
 
@@ -57,7 +55,10 @@ primEmpty	= primVar NameClass	"Base.Empty"				FEmpty
 
 
 -- Values ------------------------------------------------------------------------------------------
+-- from Base
 primUnit	= primVar NameValue	"Base.Unit"				VUnit
+primTrue	= primVar NameValue 	"Base.True"				VTrue
+primFalse	= primVar NameValue	"Base.False"				VFalse
 
 primProjField	= primVarI NameValue	"Base.primProjField"			VProjField
 					[ ISeaName "primProjField"]
@@ -65,59 +66,63 @@ primProjField	= primVarI NameValue	"Base.primProjField"			VProjField
 primProjFieldR	= primVarI NameValue	"Base.primProjFieldR"			VProjFieldR
 					[ ISeaName "primProjFieldR"]
 
-primIndex	= primVarI NameValue	"Data.Array.index"			VIndex
-					[ISeaName "primArray_index"]
-					
-primIndexR	= primVarI NameValue	"Data.Array.indexR"			VIndexR
-					[ISeaName "primArray_indexR"]
-
-primSuspend i	= primVarI NameValue	("Base.Thunk.suspend" ++ show i) 	(VSuspend i) 
+primSuspend i	= primVarI NameValue	("Base.Thunk.suspend" ++ show i) 	(VSuspend i)	
 					[ISeaName ("primSuspend" ++ show i)]
 
-primNegate	= primVar NameValue	"Class.Num.negate"			VNegate
+primExceptionBreak
+		= primVar NameValue	"Base.ExceptionBreak"			VExceptionBreak	
 
-primTrue	= primVar NameValue 	"Base.True"				VTrue
-primFalse	= primVar NameValue	"Base.False"				VFalse
+-- From Class.Monad
+primBind	= primVar NameValue	"Class.Monad.>>="			VBind
 
-primTuple i	= primVar NameValue	("Data.Tuple.Tuple" ++ show i) 		(VTuple i)
+-- From Class.Eq
+primEq		= primVar NameValue	"Class.Eq.=="				VEq
 
-primNil		= primVar NameValue	"Data.List.Nil"				VNil	
-primCons	= primVar NameValue	"Data.List.Cons"			VCons	
-primAppend	= primVar NameValue	"Data.List.Append"			VAppend	
-primRange	= primVar NameValue	"Data.List.rangeInt" 			VRange
-primRangeL	= primVar NameValue	"Data.List.rangeIntL"			VRangeL
-
-primRangeStep	= primVar NameValue	"Data.List.rangeIntStep" 		VRangeIntStep
-primRangeStepL	= primVar NameValue	"Data.List.rangeIntStepL"		VRangeIntStepL
-primRangeInfStepL = primVar NameValue	"Data.List.rangeInfIntStepL"		VRangeInfIntStepL
-
-primRangeInfL	= primVar NameValue	"Data.List.rangeInfIntL"		VRangeInfL
-primConcatMap	= primVar NameValue	"Data.List.concatMap"			VConcatMap
-primConcatMapL	= primVar NameValue	"Data.List.concatMapL"			VConcatMapL
-
-primStrCmp	= primVarI NameValue	"Data.Array.indexR"			VIndexR
-					[ISeaName "primArray_indexR"]
-
+-- From Control.Exception
 primThrow	= primVarI NameValue	"Control.Exception.primThrow"		VThrow
 					[ISeaName ("primException_throw")]
 
 primTry		= primVarI NameValue	"Control.Exception.primTry"		VTry
 					[ISeaName ("primException_try")]
 
-primExceptionBreak
-		= primVar NameValue	"Base.ExceptionBreak"			VExceptionBreak	
 
 primGateLoop	= primVar NameValue	"Control.Exception.gateLoop"		VGateLoop
 
+-- From Control.Imperative
 primWhile	= primVar NameValue	"Control.Imperative.while"		VWhile	
 
-primBind	= primVar NameValue	"Class.Monad.>>="			VBind
+-- From Data.String
+primBoxString	= primVar  NameValue	"Data.String"				VBoxString
 
-primEq	= primVar NameValue	"Class.Eq.=="			VEq
+-- From Data.Array
+primIndex	= primVarI NameValue	"Data.Array.index"			VIndex
+					[ISeaName "primArray_index"]
+					
+primIndexR	= primVarI NameValue	"Data.Array.indexR"			VIndexR
+					[ISeaName "primArray_indexR"]
+
+-- From Class.Num
+primNegate	= primVar NameValue	"Class.Num.negate"			VNegate
+
+-- From Data.Tuple
+primTuple i	= primVar NameValue	("Data.Tuple.Tuple" ++ show i) 		(VTuple i)
+
+-- From Data.List
+primNil		= primVar NameValue	"Data.List.Nil"				VNil	
+primCons	= primVar NameValue	"Data.List.Cons"			VCons	
+primAppend	= primVar NameValue	"Data.List.Append"			VAppend	
+primRange	= primVar NameValue	"Data.List.rangeInt" 			VRange
+primRangeL	= primVar NameValue	"Data.List.rangeIntL"			VRangeL
+primRangeStep	= primVar NameValue	"Data.List.rangeIntStep" 		VRangeIntStep
+primRangeStepL	= primVar NameValue	"Data.List.rangeIntStepL"		VRangeIntStepL
+primRangeInfStepL = primVar NameValue	"Data.List.rangeInfIntStepL"		VRangeInfIntStepL
+primRangeInfL	= primVar NameValue	"Data.List.rangeInfIntL"		VRangeInfL
+primConcatMap	= primVar NameValue	"Data.List.concatMap"			VConcatMap
+primConcatMapL	= primVar NameValue	"Data.List.concatMapL"			VConcatMapL
+
 
 
 -- Utils -------------------------------------------------------------------------------------------
-
 -- | Create a primitive variable
 primVar :: NameSpace -> String -> PrimId -> Var
 primVar space name pid
@@ -235,7 +240,8 @@ renamePrimVar_values
 	, ("concatMap",		VConcatMap)
 	, ("concatMapL",	VConcatMapL)
 	, (">>=",		VBind)
-	, ("==",		VEq)]
+	, ("==",		VEq)
+	, ("boxString",		VBoxString) ]
 
 	
 renamePrimVar_type :: String -> Maybe VarId
@@ -331,4 +337,22 @@ renamePrimVar_classes
 	, ("Pure",		FPure)
 	, ("Empty",		FEmpty) ]
 		
-	
+---------------------------------------------------------------------------------------------------
+varOfPrimIdWithDataFormat :: PrimId -> Maybe Var
+varOfPrimIdWithDataFormat pid
+ = case pid of
+	TBool   fmt	-> Just $ primTBool   fmt
+	TWord   fmt	-> Just $ primTWord   fmt
+	TInt    fmt	-> Just $ primTInt    fmt
+	TFloat  fmt	-> Just $ primTFloat  fmt
+	TChar   fmt	-> Just $ primTChar   fmt
+	TString fmt	-> Just $ primTString fmt
+	_		-> Nothing
+
+
+
+
+
+
+
+
