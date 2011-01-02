@@ -15,13 +15,13 @@ import 	Class.Show
 
 -- Imports --------------------------------------------------------------------
 foreign import "snprintf"
-	show_danger_snprintf :: String# -> Int32# -> String# -> a -> ()
+	show_danger_snprintf :: Ptr# String# -> Int32# -> Ptr# String# -> a -> ()
 
 foreign import "primInt64_toString"
- 	primInt64_toString :: Int64# -> String# -> Int64# -> ()
+ 	primInt64_toString   :: Int64# -> Ptr# String# -> Int64# -> ()
 
 foreign import "primWord64_toString"
- 	primWord64_toString :: Word64# -> String# -> Int64# -> ()
+ 	primWord64_toString  :: Word64# -> Ptr# String# -> Int64# -> ()
 
 
 -- Conversions ----------------------------------------------------------------

@@ -128,8 +128,8 @@
 
 #define _CAST(t1,t2,x)			(t2)(x)
 
-#define _COERCE_PTR(t1,t2,x)		((t2)*)(x)
+#define _COERCE_PTR(t1,t2,x)		(t2*)(x)
 #define _COERCE_PTR_TO_ADDR(t1,x)	(Addr)(x)
-#define _COERCE_ADDR_TO_PTR(t1,x)	((t1)*)(x)
+#define _COERCE_ADDR_TO_PTR(t1,x)	(t1*)(x)
 
 #endif

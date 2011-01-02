@@ -185,14 +185,21 @@ slurpX	(XLit sp litFmt)
 		, tyConDataKind = tcKind }
 		= tyConOfLiteralFmt litFmt
 
-	-- if the literal type needs a region var then make a fresh one
-	let tLitM	
+	let tLitM
+		-- unboxed numeric literals don't need region variables.
 		| tcKind	== kValue
 		= return $ makeTData tcVar tcKind []
 
+		-- unboxed string literals are special because they
+		-- actually have type (Ptr# (String# %r1))
+		| tcVar		== primTString Unboxed
+		= do	vR	<- newVarN NameRegion
+			return	$ (tPtrU `TApp` makeTData tcVar tcKind [TVar kRegion $ UVar vR])
+
+		-- boxed numeric literals need region vars
 		| tcKind	== KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
-		 	return	$ makeTData tcVar tcKind [TVar kRegion $ UVar vR]
+			return	$ makeTData tcVar tcKind [TVar kRegion $ UVar vR]
 			
 		| otherwise
 		= panic stage $ "tLitM: no match"

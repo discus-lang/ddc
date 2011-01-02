@@ -19,7 +19,6 @@ import DDC.Core.Glob
 import DDC.Core.Exp
 import DDC.Core.Check.Base
 import DDC.Core.Check.Env
--- import DDC.Core.Check.Prim
 import DDC.Core.Check.Type
 import DDC.Base.Literal
 import DDC.Base.DataFormat
@@ -187,10 +186,10 @@ checkExp_trace m xx env
 	--       so we don't have to come up with its actual type scheme. Doing this
 	--       would require a unique region variable...
 	XAPP (XLit (LiteralFmt LString{} Unboxed)) (TVar k r)
-	 | k == kRegion
+	 | k 	  	== kRegion
 	 , Just tc	<- tcString Unboxed
 	 ->	( xx
-		, TApp (TCon tc) (TVar kRegion r)
+		, tPtrU `TApp` (TCon tc `TApp` TVar kRegion r)
 		, Eff.pure
 		, Clo.empty)
 

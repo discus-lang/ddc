@@ -17,7 +17,7 @@ foreign import "usleep"
 -- TODO: we really want a way to change the !File to a !Console effect...
 foreign import	"fputs"
  fputsU_console 
- 	::	String#		{read}	-- string to write to file
+ 	::	Ptr# String#	{read}	-- string to write to file
  	-> 	Ptr# File#	{read} 	-- file handle
  	-(!e)>	Int
 	:- !e = !Console

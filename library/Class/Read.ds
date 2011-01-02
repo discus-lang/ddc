@@ -3,20 +3,19 @@
 module	Class.Read
 import	Data.String
 	Data.Numeric.Float32
+	Data.Numeric.Float64
+	Foreign.C.StdLib
 
 class Read a where
  	read 	:: forall %r !e1
 		.  String %r -(!e1)> a
 		:- !e1 :> !Read %r
-
-foreign import "atof"
-	atof :: String# {read} -> Float32#
 	
 -- BUGS: atof produces a double, not a float, but it's auto type-cast in the c code
 instance Read Float where
  read ss	
   = case (copy ss).force of
- 	SChunk fs	-> boxFloat32 (atof fs.unsafeUnbox)
+ 	SChunk fs	-> boxFloat32 (primCast_Float64U_Float32U (atof fs.unsafeUnbox))
 
 	
 instance Read Int where

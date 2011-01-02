@@ -26,7 +26,8 @@ toCoreXLit' tt (D.XLit _ litfmt@(LiteralFmt lit fmt))
 	-- raw unboxed strings need their region applied
 	| LString _	<- lit
 	, Unboxed	<- fmt
-	= let	Just (_, _, [tR]) = T.takeTData tt
+	= let	Just (_, _, [tStr]) 	= T.takeTData tt
+		Just (_, _, [tR])	= T.takeTData tStr
 	  in	C.XAPP (C.XLit litfmt) tR
 
 	-- other unboxed literals have kind *, so there is nothing more to do
