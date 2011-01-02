@@ -92,7 +92,7 @@ primGateLoop	= primVar NameValue	"Control.Exception.gateLoop"		VGateLoop
 primWhile	= primVar NameValue	"Control.Imperative.while"		VWhile	
 
 -- From Data.String
-primBoxString	= primVar  NameValue	"Data.String"				VBoxString
+primBoxString	= primVar  NameValue	"Data.String.boxString"			VBoxString
 
 -- From Data.Array
 primIndex	= primVarI NameValue	"Data.Array.index"			VIndex

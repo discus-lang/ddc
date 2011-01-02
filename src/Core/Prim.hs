@@ -156,6 +156,7 @@ primX1 tt xx
 	
 primX1' tt xx parts
  = case parts of
+
  	-- direct use of boxing function
  	Left (XVar v t) : psArgs
 	 | Just pt	<- readPrimBoxing (varName v)
