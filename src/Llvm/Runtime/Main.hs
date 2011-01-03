@@ -24,12 +24,11 @@ stage = "Llvm.Runtime.Main"
 llvmMainModule :: (?args :: [Arg.Arg])
 	=> ModuleId
 	-> [ModuleId]
-	-> LlvmType
 	-> Integer
 	-> Integer
 	-> Integer
 	-> LlvmM ()
-llvmMainModule modName importsExp mainType heapSize slotStackSize ctxStackSize
+llvmMainModule modName importsExp heapSize slotStackSize ctxStackSize
  = do	argc		<- newUniqueNamedReg "argc" i32
 	argv		<- newUniqueNamedReg "argv" $ pLift (pLift i8)
 	let params	= [ argc, argv ]
@@ -44,8 +43,8 @@ llvmMainModule modName importsExp mainType heapSize slotStackSize ctxStackSize
 	addComment	"Call Main_main."
 
 	if Arg.NoImplicitHandler `elem` ?args
-	  then callMainDirect modName mainType
-	  else callMainWithHandler modName mainType
+	  then callMainDirect modName
+	  else callMainWithHandler modName
 
 	addComment	"Clean up for the runtime."
 	runtimeCleanup
@@ -83,10 +82,10 @@ runtimeCleanup
 
 --------------------------------------------------------------------------------
 
-callMainWithHandler :: ModuleId -> LlvmType -> LlvmM ()
-callMainWithHandler modName mainType
+callMainWithHandler :: ModuleId -> LlvmM ()
+callMainWithHandler modName
  = do	let main	= LlvmFunctionDecl (modNameOfId modName ++ "_main")
-					External CC_Ccc mainType FixedArgs [(pObj, [])] ptrAlign
+					External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
 	let thandle	= LlvmFunctionDecl "Control_Exception_topHandle"
 					External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
 	addGlobalFuncDecl main
@@ -96,10 +95,10 @@ callMainWithHandler modName mainType
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl thandle) [r1] []) ]
 
 
-callMainDirect :: ModuleId -> LlvmType -> LlvmM ()
-callMainDirect modName mainType
+callMainDirect :: ModuleId -> LlvmM ()
+callMainDirect modName
  = do	let main	= LlvmFunctionDecl (modNameOfId modName ++ "_main")
-					External CC_Ccc mainType FixedArgs [(pObj, [])] ptrAlign
+					External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
 	let bunit	= LlvmFunctionDecl "Base_Unit"
 					External CC_Ccc pObj FixedArgs [] ptrAlign
 	addGlobalFuncDecl bunit
@@ -115,4 +114,4 @@ modNameOfId (ModuleId mid)
  =	catInt "_" mid
 
 modNameOfId _
- =	panic stage "makeInitVar: no match"
+ =	panic stage "modNameOfId: no match"

@@ -165,21 +165,10 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn heapSize
 
 	mapM_		llvmOfSeaDecls $ eraseAnnotsTree $ seaCafInits ++ seaSupers
 
-	let mainType	= foldl findMainType LMVoid seaSupers
-
 	when modDefinesMainFn
-			$ llvmMainModule moduleName (map fst $ Map.toList importsExp) mainType heapSize slotStackSize ctxStackSize
+			$ llvmMainModule moduleName (map fst $ Map.toList importsExp) heapSize slotStackSize ctxStackSize
 
 	renderModule	comments
-
-
-findMainType :: LlvmType -> Top () -> LlvmType
-findMainType _ (PSuper v _ t _)
- | varName v == "main"
- = toLlvmType t
-
-findMainType t _
- = t
 
 
 llvmOfSeaDecls :: Top (Maybe a) -> LlvmM ()
