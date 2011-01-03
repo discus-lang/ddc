@@ -1,0 +1,36 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+-- | Bindings for functions in sys/socket.h
+module	Foreign.C.SysSocket
+import	System.File
+
+pragma cc_includes
+	[ "sys/types.h", "sys/socket.h" ]
+
+effect	!Socket :: !
+
+-- | This function is in the runtime system, and wraps the real connect function.
+foreign import "primConnect"
+ connect
+ 	:: String# {read}
+ 	-> Int32#  {read}
+	-(!Socket)> Int32#
+
+
+-- | TODO: It'd be better to make these work on some sort of array type, 
+--         instead of assuming the buffer contains a string.
+foreign import "send"
+ send	:: Int32# {read}	-- handle
+ 	-> Ptr# String# {write}	-- buffer
+	-> Int32# 		-- length
+	-> Int32#		-- flags
+	-(!Socket)> Int32#	-- count of chars send, or -1 on error
+
+
+foreign import "recv"
+ recv	:: Int32#  {read}	-- socket
+ 	-> Ptr# String# {write}	-- buffer
+	-> Int32#  {read}	-- length of buff, max length of message
+	-> Int32#  {read}	-- flags
+	-(!Socket)> Int32#	-- size of message read
+

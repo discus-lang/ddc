@@ -1,9 +1,11 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
-import Data.String
-import Data.Maybe
-import Foreign.Ptr
+-- | Bindings for functions in stdio.h
+module	Foreign.C.StdIO
+import	Base
+	Data.String
+	Data.Maybe
+	Foreign.Ptr
 
 -- | The effect of functions that access the file system.
 effect !File	:: !

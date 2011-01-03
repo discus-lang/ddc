@@ -1,5 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
-module Foreign.C.StdLib
+
+-- | Bindings for functions in stdlib.h
+module	Foreign.C.StdLib
 import	Base
 	DDC.Runtime.Store
 	Class.Num

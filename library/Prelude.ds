@@ -4,6 +4,10 @@ import	Base
 import	Base.Thunk
 
 import	Foreign.Ptr
+import	Foreign.C.String
+import	Foreign.C.StdIO
+import	Foreign.C.StdLib
+import	Foreign.C.SysSocket
 
 import	DDC.Runtime
 import	DDC.Runtime.Alloc
@@ -61,4 +65,3 @@ import	Math.Vec3
 import	System.Console
 import	System.Environment
 import	System.File
-import 	System.Network

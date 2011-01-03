@@ -1,12 +1,13 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 -- | Bindings for functions in string.h
-module Foreign.C.String
+module 	Foreign.C.String
 import	Base
 	DDC.Runtime.Store
 	Class.Num
 
 pragma	cc_includes ["string.h"]
+
 
 -- Mem functions --------------------------------------------------------------
 -- | Copy bytes from the second string into the first.

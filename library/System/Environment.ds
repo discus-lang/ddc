@@ -1,4 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
+
+-- | Accessing the system environment.
+module System.Environment
 import Data.Numeric.Addr
 import Data.Numeric.Int32
 import Data.String
