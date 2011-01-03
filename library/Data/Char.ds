@@ -1,7 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+-- A character is a 32bit unicode point.
 module	Data.Char
-
 import	Base
 	Data.Numeric.Word32
 
@@ -18,7 +18,8 @@ unboxChar32 w
  = do	w'	= force w
 	peekOn w (peekDataRS_payload w')
 
-		
+
+-- Instances ------------------------------------------------------------------		
 instance Eq Char where
  (==) a b	= unboxChar32 a == unboxChar32 b
 

@@ -1,6 +1,9 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
--- | TODO: Make the API the similar to Haskell ByteStrings.
+
+-- | A FlatString holds a chunk of UTF8 in a heap allocated object.
+--   TODO: Make the API the similar to Haskell ByteStrings.
+--
 module 	Data.FlatString
 
 export	flatString_copy
@@ -28,13 +31,15 @@ project FlatString
 	unfoldrN; }
 
 
-
 -- Instances ------------------------------------------------------------------	
 instance Copy FlatString where
  copy	= flatString_copy
 
+
 -- Boxing --------------------------------------------------------------------
--- | Create a new FlatString and copy the source into it.
+-- | Create a new FlatString and copy some data into it.
+--   TODO: Make a new new function that fills the string directly, 
+--         without needing to zero it out first.
 box :: Ptr# (String# %r1) -> FlatString %r2
 box strU
  = do	-- make a new string for the destination
@@ -60,6 +65,7 @@ unsafeUnbox :: FlatString %r1 -> Ptr# (String# %r1)
 unsafeUnbox str@(FlatString)
  	= coercePtr (plusPtr (peekDataR_payload str) 8#)
 
+
 -- | Apply a function to a copy of the unboxed String contained
 --   in a FlatString. This String is copied out to the C heap before,
 --   so it's ok if the function invokes the GC. The string is freed 
@@ -76,12 +82,12 @@ withStringU fs fun
 	free tmp
 -}
 
+
 -- Constructors ---------------------------------------------------------------
 -- | Create a new string with the given length, and fill it will null charaters.
 new :: Int32 -> FlatString
 new length
- = do 
-	-- make sure to include space for the nul char on the end.
+ = do 	-- make sure to include space for the nul char on the end.
 	len		= unboxInt32 length
  	len_nul		= len + 1#
 
@@ -112,18 +118,22 @@ new length
 	
 	str
 
+
+-- | Create a new `FlatString` of length 0.
 empty :: FlatString
 empty	= new 0
 
 
 -- Field Accessors ------------------------------------------------------------
 -- | Get the maximum number of charaters that can be stored in a FlatString.
+--   TODO: Make this return a Word32#
 maxLengthU :: FlatString -> Int32#
 maxLengthU str@(FlatString)
  =	peek (peekDataR_payload str)
 
 
 -- | Get the number of charaters currently stored in a FlatString.
+--   TODO: Make this return a Word32#
 lengthU :: FlatString -> Int32#
 lengthU str@(FlatString)
  = do	payload	= peekDataR_payload str
@@ -152,7 +162,7 @@ setLength :: FlatString -> Int32 -> ()
 setLength fs l = setLengthU fs (unboxInt32 l)
 
 
--- | Copy this FlatString
+-- | Copy a `FlatString`.
 flatString_copy :: FlatString %r1 -> FlatString %r2
 flatString_copy str@(FlatString)
  = do	len	= str.length
@@ -163,7 +173,8 @@ flatString_copy str@(FlatString)
 
 
 -- Utils ----------------------------------------------------------------------
--- | Take a character from this FlatString
+-- | Take a character from this FlatString.
+--   TODO: make this take a Word32.
 index :: FlatString -> Int32 -> Char32
 index str ix
  | ix < str.length
@@ -175,6 +186,7 @@ index str ix
 
 
 -- | Get how many charaters there are still available in a FlatString.
+--   TODO: make this take a Word32.
 charsLeft :: FlatString -> Int32
 charsLeft fs
  = boxInt32 (maxLengthU fs - lengthU fs)
@@ -189,6 +201,7 @@ append fs1@(FlatString) fs2@(FlatString)
 
 
 -- | Take a range of characters from a FlatString.
+--   TODO: make these take Word32s.
 slice 	:: FlatString
 	-> Int32	-- ^ Starting index
 	-> Int32	-- ^ Length.

@@ -1,13 +1,21 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+-- | In theory, an unboxed string is a pointer to some UTF8 in memory.
+--
+--   In practice we only handle C style null terminated strings. However, 
+--   we've made the return type of the primitive indexing function a Word32#,
+--   so extending it to handle real UTF8 should be straightforward.
+--
 module	Data.StringU
 import	Base
 	Foreign.Ptr
+	Data.Numeric.Word8
 	DDC.Runtime.Store
 
 
 -- | Get a single character from a string.
-unsafeIndexStringU :: Ptr# (String# %r1) -> Int# -> Word8#
+--   TODO: make the index a Word#
+unsafeIndexStringU :: Ptr# (String# %r1) -> Int# -> Word32#
 unsafeIndexStringU str pos
  = do	ptr8	= coercePtr str
-	peekOnPtr str (plusPtr ptr8 pos)
+	primCast_Word8U_Word32U (peekOnPtr str (plusPtr ptr8 pos))
