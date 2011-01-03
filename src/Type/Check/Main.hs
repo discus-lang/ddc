@@ -40,10 +40,12 @@ checkMain' vMainT tMain tt
 	 | Just (TVar kV _, _, eff, clo)	<- takeTFun tt
 	 , kV == kValue		
 	 -> return ()
-	
-	 | Just (t1, _, eff, clo)		<- takeTFun tt
+
+	 | Just (t1, t2, eff, clo)		<- takeTFun tt
 	 , Just (v1, _, _)			<- takeTData t1
+	 , Just (v2, _, _)			<- takeTData t2
 	 , v1 == primTUnit
+	 , v2 == primTUnit
 	 -> return ()
 		 
 	_ -> addErrors [ErrorWrongMainType { eScheme = (vMainT, tMain) }]
