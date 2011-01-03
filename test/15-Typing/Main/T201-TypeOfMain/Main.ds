@@ -1,0 +1,8 @@
+-- The 'main' function should have a type of:
+--
+--     main :: () -> ()
+
+-- main () = head [ 1#, 2#, 3# ]
+
+-- This should also fail but currently doesn't.
+main () = [ 1, 2, 3 ]

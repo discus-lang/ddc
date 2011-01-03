@@ -1,0 +1,9 @@
+ddc: ERROR
+./test/15-Typing/Main/T201-TypeOfMain/Main.ds:8:0
+        The program's main function must be of type:
+            main :: Unit -> Unit
+        but it was inferred to be:
+            main
+                :: forall %r1 %r0
+                .  Unit -> Data.List.List %r0 (Int32 %r1)
+
