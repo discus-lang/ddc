@@ -1,0 +1,8 @@
+
+va = 0 : vb
+
+vb = 1 : vc
+
+vc = 2 : va
+
+main () = println $ show $ take 10 va

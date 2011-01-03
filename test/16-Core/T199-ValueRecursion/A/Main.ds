@@ -1,0 +1,6 @@
+
+flip = 1 : flop
+
+flop = 0 : flip
+
+main () = println $ show $ take 10 flip

@@ -1,0 +1,6 @@
+ddc: ERROR
+Values may not be mutually recursive.
+     offending variables: [Main.va, Main.vb, Main.vc]
+
+
+

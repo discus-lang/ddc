@@ -128,26 +128,26 @@ propagateNeedsRebuild graph
 -- | A replacement for Map.insert for the ScrapeGraph.
 --   This replacement detectd cycles in the import graph as modules are
 --   inserted.
-scrapeGraphInsert 
-	:: [Arg] 
+scrapeGraphInsert
+	:: [Arg]
 	-> ModuleId
-	-> Scrape 
-	-> ScrapeGraph 
+	-> Scrape
+	-> ScrapeGraph
 	-> IO ScrapeGraph
 
 scrapeGraphInsert args m s sg
- = do	case cyclicImport m s sg of
+ = case cyclicImport m s sg of
 
- 	 Nothing	
+	Nothing
  	  -> return $! Map.insert m s sg
 
-	 Just [mc]
+	Just [mc]
 	  -> exitWithUserError args
 		 [ ErrorRecursiveModules
 		 	$ pprStrPlain
                  	$ "Module '" % mc % "' imports itself."]
 
-	 Just c
+	Just c
 	  -> exitWithUserError args
 		[ ErrorRecursiveModules
 			$ pprStrPlain
@@ -161,16 +161,15 @@ scrapeGraphInsert args m s sg
 --   of modules that constitue a cycle, otherwise return Nothing.
 cyclicImport :: ModuleId -> Scrape -> ScrapeGraph -> Maybe [ModuleId]
 cyclicImport m s sp
- = do	if elem m $ scrapeImported s
-	 then Just [m]
-	 else listToMaybe
+ = if elem m $ scrapeImported s
+	then Just [m]
+	else listToMaybe
 		$ catMaybes
 		$ map (\m' -> cyclicImportR m [m] m' sp)
 		$ scrapeImported s
 
 cyclicImportR mx cycle' m sp
- = do	let imports	= concat
-			$ map scrapeImported
+ = do	let imports	= concatMap scrapeImported
                         $ catMaybes [Map.lookup m sp]
 	if elem mx imports
 	 then Just (m : cycle')
