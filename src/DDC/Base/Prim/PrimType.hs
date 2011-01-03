@@ -19,7 +19,7 @@ data Width
 
 -- | Primitive unboxed types that are probably implemented directly by the
 --   hardware. Values of different `PrimTypes` may be stored in different
---   classes of registers and/or require explicit coersion instructions to
+--   classes of registers and/or require explicit casting instructions to
 --   convert between them.
 data PrimType
 	
