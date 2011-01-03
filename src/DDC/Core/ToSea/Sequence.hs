@@ -42,7 +42,7 @@ slurpCafInitSequence cgSource
 	-- Check that the cafs are not recursively defined,
 	--	our Sea level implementation does not handle this.
 	recCafs		= [v	| v		<- cafVars
-				, Set.member v (graphReachable deps [v]) ]
+				, Set.member v (graphReachable1_nr deps v) ]
 
    in	if not $ isNil recCafs
 	  then Left recCafs

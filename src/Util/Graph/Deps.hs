@@ -31,16 +31,16 @@ graphReachableS' deps toVisit visited
 	    in	graphReachableS' deps toVisit' visited'
 
 
--- elements reachable from this one, 
+-- elements reachable from this one,
 --	non-reflexative - so the starting element isn't considered to be reachable from itself.
 --
-graphReachable1_nr 
+graphReachable1_nr
 	:: Ord a
-	=> Map a (Set a) -> a -> Set a
-	
+	=> Map a [a] -> a -> Set a
+
 graphReachable1_nr deps start
  = let	Just toVisit	= Map.lookup start deps
-   in	graphReachableS deps toVisit
+   in	graphReachable' deps Set.empty toVisit
 
 
 
@@ -48,7 +48,7 @@ graphReachable1_nr deps start
 -- graphReachable
 --	Works out all nodes in a graph reachable from a certain node.
 --	-- BUGS: pretty sure this is wrong.
-graphReachable 
+graphReachable
 	:: Ord a
 	=> Map a [a] -> [a] -> Set a
 
@@ -59,14 +59,14 @@ graphReachable' deps visited []	= visited
 graphReachable' deps visited (x:xs)
  	| Set.member x visited
  	= graphReachable' deps visited xs
-	
+
 	| otherwise
 	= let	step	= fromMaybe [] (Map.lookup x deps)
-	  in 	graphReachable' 
+	  in 	graphReachable'
 	  		deps
-		  	(Set.union visited (Set.fromList step))
+		  	(Set.insert x visited)
 			(xs ++ step)
-			
+
 
 -- |	Do a depencency walk over a graph.
 --
