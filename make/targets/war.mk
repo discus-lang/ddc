@@ -65,6 +65,8 @@ cleanWar :
 		-o	-name "*.o"     \
 		-o	-name "*.ddc.c" \
 		-o	-name "*.ddc.h" \
+		-o	-name "*.ddc.ll" \
+		-o	-name "*.ddc.s" \
 		-o	-type f -name "*.bin" \
 		-o	-name "*.out"   \
 		-o 	-name "*.diff"  \

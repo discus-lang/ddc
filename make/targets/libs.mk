@@ -28,5 +28,7 @@ cleanLibrary :
 		-o	-name "*.di-new" \
 		-o	-name "*.ddc.c" \
 		-o	-name "*.ddc.h" \
+		-o	-name "*.ddc.ll" \
+		-o	-name "*.ddc.s" \
 		-o	-name "*.dump-*"  \
 		-follow | xargs -n 1 rm -f
