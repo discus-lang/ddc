@@ -142,15 +142,9 @@ toLlvmTypeCon (TyConUnboxed v)
 	"Int64#"	-> i64
 	"Float32#"	-> LMFloat
 	"Float64#"	-> LMDouble
-	"String#"	-> LMPointer i8
+	"String#"	-> i8
 	"Word8#"	-> i8
 	"Word32#"	-> i32
-	"Char32#"	-> i32
-	name		-> panic stage $ "toLlvmTypeCon (" ++ show __LINE__ ++ ") : " ++ name ++ "\n"
-
-toLlvmTypeCon (TyConAbstract v)
- = case varName v of
-	"String#"	-> LMPointer i8
 	name		-> panic stage $ "toLlvmTypeCon (" ++ show __LINE__ ++ ") : " ++ name ++ "\n"
 
 
