@@ -7,4 +7,5 @@ foreign import "puts"
  puts :: String#{read} -> Int#
 
 main ()
-	= puts "Loaded numeric libs ok\n"#
+ = do	puts "Loaded numeric libs ok\n"#
+	()
