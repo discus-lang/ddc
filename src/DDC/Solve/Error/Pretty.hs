@@ -181,7 +181,8 @@ instance Pretty Error PMode where
  		{ eScheme	= (v, scheme) })
 		
 	= varErr v
-	$  "The type of main must be a function,"
+	$  "The program's main function must be of type:"
+	%! "    main :: Unit -> Unit"
 	%! "but it was inferred to be:"
 	%! prettyVT v scheme
 
