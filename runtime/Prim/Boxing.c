@@ -3,6 +3,9 @@
 #include "../Storage/Alloc.ci"
 #include <string.h>
 
+// NOTE: These boxing functions are defined here for use by the runtime system
+//       and external C glue code only. The compiled Disciple programs treat 
+//       boxing and unboxing as primitives and expand out their own code for it.
 
 Obj* 	_boxRef (Obj* obj_, void* field)
 {

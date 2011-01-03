@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+// TODO: Most of these prim function should be implemented in Disciple libraries instead.
+
 // ----- Evil globals
 //
 Obj*	_primUnit	= 0;

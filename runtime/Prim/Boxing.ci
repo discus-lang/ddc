@@ -5,10 +5,11 @@
 #include "../Runtime.h"
 #include "../Storage/Alloc.ci"
 
-// ----- Macros
-//
-// 	 macros + token pasting == polymorphism.
-//
+// NOTE: These boxing functions are defined here for use by the runtime system
+//       and external C glue code only. The compiled Disciple programs treat 
+//       boxing and unboxing as primitives and expand out their own code for it.
+
+// -- macros + token pasting == polymorphism.
 #define MAKE_BOXFUN(Type,TypeSize) \
 	static inline \
 	Obj* _box##Type (Type v) \
@@ -45,22 +46,33 @@
 
 
 // -- Boxing Functions
+//    Pack smaller values into larger objects to keep the objects aligned.
 MAKE_BOXFUN (Word8,	sizeof(Word32));
+MAKE_BOXFUN (Word16,	sizeof(Word32));
 MAKE_BOXFUN (Word32,    sizeof(Word32));
 MAKE_BOXFUN (Word64,    sizeof(Word64));
+
+MAKE_BOXFUN (Int8,	sizeof(Int32));
+MAKE_BOXFUN (Int16,	sizeof(Int32));
 MAKE_BOXFUN (Int32,	sizeof(Int32));
 MAKE_BOXFUN (Int64,	sizeof(Int64));
+
 MAKE_BOXFUN (Float32,	sizeof(Float32));
 MAKE_BOXFUN (Float64,	sizeof(Float64));
-MAKE_BOXFUN (Char32,	sizeof(Word32));
 
 // -- Unboxing Functions
+MAKE_GETFUN (Word8)
+MAKE_GETFUN (Word16)
 MAKE_GETFUN (Word32)
+MAKE_GETFUN (Word64)
+
+MAKE_GETFUN (Int8);
+MAKE_GETFUN (Int16);
 MAKE_GETFUN (Int32);
 MAKE_GETFUN (Int64);
+
 MAKE_GETFUN (Float32);
 MAKE_GETFUN (Float64);
-MAKE_GETFUN (Char32);
 
 
 // Enum

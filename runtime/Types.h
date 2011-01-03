@@ -35,17 +35,10 @@ typedef int64_t			Int64;
 typedef float			Float32;
 typedef double			Float64;
 
-// Characters
-//	We intend to use Char32 for unicode characters,
-//	but they're not implemented yet
-typedef char			Char8;
-typedef uint32_t		Char32;
-
 // Strings
 //	Null terminated C-strings, treated as an abstract type.
 //	(Ptr String) in Disciple == (char*) in C.
 typedef char			String;
-
 
 // For machines with 32 bit pointers
 #if BITS == 32

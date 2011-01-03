@@ -5,6 +5,8 @@
 #include "../Runtime.h"
 #include "../Runtime.ci"
 
+// TODO: Ditch this code and implement it in a Disciple library.
+
 struct ArrayU_Int_Payload {
 	uint32_t	elemCount;
 	Int32		elem[];

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
+// TODO: Ditch this code and implement it in a Disciple library.
 
 // Should be defined in Base/Exception.ts
 extern Obj* Base_ExceptionArrayBounds (Obj* size, Obj* index);
