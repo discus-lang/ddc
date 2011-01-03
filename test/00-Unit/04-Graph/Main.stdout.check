@@ -1,0 +1,13 @@
+
+Acyclic graph: [(0,[1,2,4]),(1,[2,3]),(2,[3]),(3,[7]),(4,[5]),(5,[6]),(6,[7]),(7,[8]),(8,[])]
+reachable     0 : [0,1,2,3,4,5,6,7,8]
+reachable     1 : [1,2,3,7,8]
+reachable1_nr 0 : [1,2,3,4,5,6,7,8]
+reachable1_nr 1 : [2,3,7,8]
+
+Cyclic graph : [(1,[2,3]),(2,[3]),(3,[2])]
+reachable     1 : [1,2,3]
+reachable     2 : [2,3]
+reachable1_nr 1 : [2,3]
+reachable1_nr 2 : [2,3]
+
