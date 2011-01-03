@@ -6,11 +6,11 @@ import Control
 import Update
 import Plan
 import Display
+
 import Graphics.Frame
 import Graphics.Window
-
-import System.Network
 import System.Environment
+import Foreign.C.SysSocket
 import Util
 
 debug_recv	= False
@@ -117,7 +117,7 @@ recvServer link
 	buf	:: FlatString %r :- Mutable %r
 	buf	= new&{FlatString} 4096
 	msgLen	= recv 	(unboxInt32 link.socket) 
-			(unsafe_castToVoidPtr (buf.unsafeUnbox)) 
+			(buf.unsafeUnbox)
 			1024# 
 			0#
 
@@ -151,7 +151,7 @@ sendCommand sock (MsgCommand Nothing Nothing)
 sendCommand sock cc
  | SChunk fs	<- (showMsgCommand cc) .force
  = do 	send 	(unboxInt32 sock)
-		(unsafe_castToVoidPtr (fs.unsafeUnbox))
+		(fs.unsafeUnbox)
 		(unboxInt32 (fs.length))
 		0#
 	()

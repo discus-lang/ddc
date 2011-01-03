@@ -12,25 +12,25 @@ effect	!Socket :: !
 -- | This function is in the runtime system, and wraps the real connect function.
 foreign import "primConnect"
  connect
- 	:: String# {read}
- 	-> Int32#  {read}
+ 	:: Ptr# String#	{read}	-- address to connect to
+ 	-> Int32#		
 	-(!Socket)> Int32#
 
 
 -- | TODO: It'd be better to make these work on some sort of array type, 
 --         instead of assuming the buffer contains a string.
 foreign import "send"
- send	:: Int32# {read}	-- handle
- 	-> Ptr# String# {write}	-- buffer
+ send	:: Int32# 		-- handle
+ 	-> Ptr# String# {read}	-- buffer
 	-> Int32# 		-- length
 	-> Int32#		-- flags
 	-(!Socket)> Int32#	-- count of chars send, or -1 on error
 
 
 foreign import "recv"
- recv	:: Int32#  {read}	-- socket
+ recv	:: Int32#		-- socket
  	-> Ptr# String# {write}	-- buffer
-	-> Int32#  {read}	-- length of buff, max length of message
-	-> Int32#  {read}	-- flags
+	-> Int32#		-- length of buff, max length of message
+	-> Int32#		-- flags
 	-(!Socket)> Int32#	-- size of message read
 
