@@ -18,15 +18,14 @@ data Width
 
 
 -- | Primitive unboxed types that are probably implemented directly by the
---   hardware. Values of different `PrimTypes` may be stored in different 
---   registers, and/or require explicit coersion instructions to convert
---   between them.
---
+--   hardware. Values of different `PrimTypes` may be stored in different
+--   classes of registers and/or require explicit coersion instructions to
+--   convert between them.
 data PrimType
 	
-	-- | An address with enough precision to access any byte in the process.
-	--   We don't call this a pointer, because it might not point to well
-	--   formed data (eg it might be zero).
+	-- | An address with enough precision to access any byte in the
+	--   process. We don't call this a pointer, because it might not
+	--   point to well formed data (eg it might be zero).
 	= PrimTypeAddr
 
 	-- | An unsigned integer.
