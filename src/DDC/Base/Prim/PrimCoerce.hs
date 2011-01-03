@@ -11,7 +11,7 @@ where
 data PrimCoerce ty
 
 	-- | Coercion between unboxed pointer types.
-	--   eg between (Ptr# (String %r1)) and (Ptr# Word8#)
+	--   eg between (Ptr# (String# %r1)) and (Ptr# Word8#)
 	--   The arguments give the type of the pointed-to data.
 	= PrimCoercePtr	ty ty
 	
