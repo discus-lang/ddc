@@ -30,7 +30,7 @@ putStrT :: String -> T ()
 putStrT   = encap1 putStr
 
 readFileT :: String -> T (Maybe String)
-readFileT = encap1 file_read
+readFileT = encap1 readFile
 
 main ()
  = runT (readFileT "foo" `bindT` \(Just x) ->
