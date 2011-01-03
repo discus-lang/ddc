@@ -10,7 +10,9 @@ nonexistant	= "test/40-Library/File/DoesNotExist.data";
 main () = topHandle prog;
 
 prog ()
- = do 	print	$ "length = " % show (file_length name) % "\n"
+ = do	case file_length name of
+	 Nothing	-> print "failed\n"
+	 Just len	-> print $ "length = " % show len % "\n"
 
 	case file_read name of
 	 Nothing 	-> print "failed\n"

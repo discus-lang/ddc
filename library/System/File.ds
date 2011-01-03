@@ -8,24 +8,14 @@ import Foreign.Ptr
 import Foreign.C.StdIO
 
 
--- | Open a file.
-openFile
+-- | Try to open a file.
+--   If the file can be opened then returns the address of the FILE#.
+--   Otherwise returns 0#.
+openFile_addr 
 	:: String 		-- ^ File name.
 	-> String 		-- ^ fopen mode string.
-	-> Ptr# File#
+	-> Addr#
 
-openFile name mode 
- = do	addr	= openFile_addr name mode
-
-	case primAddrU_isZero addr of
---		true#	-> error ("file_open: Can't open file " % name)
---		recurisve modules through Control.Exception, sigh
-
-		false#	-> ()
-
-	coerceAddrToPtr addr
-
-openFile_addr :: String -> String -> Addr#
 openFile_addr name mode
 	| SChunk name_flat	<- (copy name).force
 	, SChunk mode_flat	<- (copy mode).force
@@ -33,29 +23,39 @@ openFile_addr name mode
 
 
 -- | Get the length of the file with this path.
-file_length :: String -> Int
+--   If the file can't be opened then `Nothing`.
+file_length :: String -> Maybe Int
 file_length name
- = do 	file	= openFile name "r+"
-
- 	fseekU file 0# file_SEEK_END
-	boxInt32 (ftellU file)
+ = do 	addr	= openFile_addr name "r+"
+	case primAddrU_isZero addr of
+	 true#  -> Nothing
+	 false# -> do
+		file	= coerceAddrToPtr addr
+		fseekU file 0# file_SEEK_END
+		Just (boxInt32 (ftellU file))
 
 
 -- | Read the contents of the file at this path.
+--   If the file can't be opened then `Nothing`.
 file_read :: String -> Maybe String
 file_read name
- = do	file	= openFile name "r+"
+ = do	addr	= openFile_addr name "r+"
 
-	fseekU file 0# file_SEEK_END
-	len 	= boxInt32 (ftellU file)
+	case primAddrU_isZero addr of
+	 true#	-> Nothing
+	 false# -> do
+		file	= coerceAddrToPtr addr
 		
-	fs	= new&{FlatString} len
-	fseekU file 0# file_SEEK_SET
-	len'	= freadU (fs.unsafeUnbox) (unboxInt32 len) 1# file
+		fseekU file 0# file_SEEK_END
+		len 	= boxInt32 (ftellU file)
+		
+		fs	= new&{FlatString} len
+		fseekU file 0# file_SEEK_SET
+		len'	= freadU (fs.unsafeUnbox) (unboxInt32 len) 1# file
 
-	if (boxInt32 len') /= 1 && boxInt32 (feofU file) /= 0
-	 then Nothing
-	 else do
-		fs.setLength len
-		Just (SChunk fs)
+		if (boxInt32 len') /= 1 && boxInt32 (feofU file) /= 0
+	 	 then Nothing
+	 	 else do
+			fs.setLength len
+			Just (SChunk fs)
 
