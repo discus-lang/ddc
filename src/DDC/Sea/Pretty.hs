@@ -455,7 +455,7 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 	(LInt i,    UnboxedBits _)	-> ppr i
 	(LFloat f,  UnboxedBits _)	-> ppr f
 
-	(LChar c,   Unboxed)		-> ppr $ show c
+	(LChar c,   UnboxedBits 32)	-> ppr $ show c
 	(LString s, Unboxed)		-> ppr $ show s
 
 	-- All unboxed literals from the Disciple source program are defaulted

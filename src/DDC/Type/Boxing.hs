@@ -37,7 +37,7 @@ takeUnboxedOfBoxedType tt
 
 		V.TChar{}
 		 | Just tc'	<- tcChar fmtUnboxed
-		 -> Just $ TCon tc
+		 -> Just $ TCon tc'
 
 		V.TString{} 	
 		 |  Just tc'	<- tcString fmtUnboxed

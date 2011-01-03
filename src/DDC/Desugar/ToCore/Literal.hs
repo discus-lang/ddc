@@ -4,7 +4,6 @@ module DDC.Desugar.ToCore.Literal
 	(toCoreXLit)
 where
 import DDC.Desugar.ToCore.Base
-import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.Literal
 import DDC.Base.DataFormat
@@ -12,7 +11,6 @@ import Shared.VarPrim
 import qualified DDC.Type			as T
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Core.Exp			as C
-import Data.Maybe
 
 stage		= "DDC.Desugar.ToCore.Literal"
 
@@ -60,8 +58,7 @@ toCoreXLit' tt (D.XLit _ litfmt@(LiteralFmt lit fmt))
 	= let	Just fmtUnboxed	= dataFormatUnboxedOfBoxed fmt
 		tBoxed		= tt
 		Just tUnboxed	= T.takeUnboxedOfBoxedType tBoxed
-		ptUnboxed	= fromMaybe (panic stage $ "failed on " % tUnboxed)
-				$ C.takePrimTypeOfType tUnboxed
+		Just ptUnboxed	= C.takePrimTypeOfType tUnboxed
 		tFun		= T.makeTFun tUnboxed tBoxed T.tPure T.tEmpty
 		
 	  in	C.XApp	(C.XPrim (C.MBox ptUnboxed) tFun)

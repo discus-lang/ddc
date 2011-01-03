@@ -222,13 +222,15 @@ tcTyDataBits mkVar fmt
 
 -- Characters and Strings ---------------------------------
 -- | Get the type constructor of a char of this format.
---   This gives either Char32 or Word32#, for Boxed and Unboxed character respectively.
+--   This gives either Char32 or Word32#,
+--	for (BoxedBits 32) and (UnboxedBits 32) formats respectively.
 --   Other formats yield `Nothing`.
 tcChar  :: DataFormat -> Maybe TyCon
 tcChar fmt
  = case fmt of
-	Unboxed		-> Just $ TyConData (primTWord (UnboxedBits 32)) kValue Nothing
-	Boxed		-> Just $ TyConData (primTChar (BoxedBits   32)) (KFun kRegion kValue) Nothing
+	UnboxedBits 32	-> Just $ TyConData (primTWord (UnboxedBits 32)) kValue Nothing
+	BoxedBits   32	-> Just $ TyConData (primTChar (BoxedBits   32)) (KFun kRegion kValue) Nothing
+
 	_		-> Nothing
 	
 

@@ -205,11 +205,11 @@ tokens :-
  $digit+    i $digit*			{ ptags (\s -> makeLiteralB  'i' LInt s) }
  $digit+				{ ptags (\s -> mkLit (LInt $ read s) Boxed) }
 
- \'\\n\' \#				{ ptags (\s -> mkLit (LChar $ read $ dropLast 1 s) Unboxed) }
- \' . \' \#				{ ptags (\s -> mkLit (LChar $ read $ dropLast 1 s) Unboxed) }
+ \'\\n\' \#				{ ptags (\s -> mkLit (LChar $ read $ dropLast 1 s) (UnboxedBits 32)) }
+ \' . \' \#				{ ptags (\s -> mkLit (LChar $ read $ dropLast 1 s) (UnboxedBits 32)) }
 
- \'\\n\'				{ ptags (\s -> mkLit (LChar $ read s) Boxed) }
- \' . \'				{ ptags (\s -> mkLit (LChar $ read s) Boxed) }
+ \'\\n\'				{ ptags (\s -> mkLit (LChar $ read s) (BoxedBits 32)) }
+ \' . \'				{ ptags (\s -> mkLit (LChar $ read s) (BoxedBits 32)) }
 
  .					{ ptags (\s -> Junk s)			}
 

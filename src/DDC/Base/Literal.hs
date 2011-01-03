@@ -55,8 +55,8 @@ instance Pretty LiteralFmt PMode where
 	(Unboxed,  	LFloat f)	-> f % "#f"
 	(UnboxedBits b,	LFloat f)	-> f % "#f" % show b
 	
-	(Boxed, 	LChar c)        -> ppr $ show c
-	(Unboxed,       LChar c)        -> ppr $ show c % "#"
+	(BoxedBits 32,	 LChar c) 	-> ppr $ show c
+	(UnboxedBits 32, LChar c) 	-> ppr $ show c % "#"
 
 	(Boxed, 	LString s)      -> ppr $ show s
 	(Unboxed,	LString s)      -> show s % "#"
