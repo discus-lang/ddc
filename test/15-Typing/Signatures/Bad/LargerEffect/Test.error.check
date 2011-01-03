@@ -12,7 +12,7 @@ ddc: ERROR
                 :: forall %r1 %r0 %r2
                 .  Int32 %r0 -> Int32 %r2 -(!e0 $c0)> Int32 %r1
                 :- !e0   =  !Read %r0
-                ,  $c0   =  ${xDE502 : %r0}
+                ,  $c0   =  ${xDE618 : %r0}
         
         Because  !Read %r2 + !Read %r0  does not match  !Read %r0
 
