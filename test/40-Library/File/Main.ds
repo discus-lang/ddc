@@ -10,18 +10,18 @@ nonexistant	= "test/40-Library/File/DoesNotExist.data";
 main () = topHandle prog;
 
 prog ()
- = do	case file_length name of
+ = do	case fileSize name of
 	 Nothing	-> print "failed\n"
 	 Just len	-> print $ "length = " % show len % "\n"
 
-	case file_read name of
+	case readFile name of
 	 Nothing 	-> print "failed\n"
 	 Just ss	-> print $ "data = " % ss % "\n"
 
-	case file_read empty of
+	case readFile empty of
 	 Nothing 	-> print "failed\n"
 	 Just ss	-> print $ "data = " % ss % "\n"
 
-	case file_read nonexistant of
+	case readFile nonexistant of
 	 Nothing 	-> print "ok\n"
 	 Just ss	-> print "failed\n"

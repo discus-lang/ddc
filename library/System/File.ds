@@ -22,10 +22,10 @@ openFile_addr name mode
 	= fopenU (name_flat.unsafeUnbox) (mode_flat.unsafeUnbox)
 
 
--- | Get the length of the file with this path.
+-- | Get the physical length of a file in 8-bit bytes.
 --   If the file can't be opened then `Nothing`.
-file_length :: String -> Maybe Int
-file_length name
+fileSize :: String -> Maybe Int
+fileSize name
  = do 	addr	= openFile_addr name "r+"
 	case primAddrU_isZero addr of
 	 true#  -> Nothing
@@ -37,8 +37,8 @@ file_length name
 
 -- | Read the contents of the file at this path.
 --   If the file can't be opened then `Nothing`.
-file_read :: String -> Maybe String
-file_read name
+readFile :: String -> Maybe String
+readFile name
  = do	addr	= openFile_addr name "r+"
 
 	case primAddrU_isZero addr of
