@@ -52,16 +52,16 @@ instance Pretty LiteralFmt PMode where
 	(Boxed,   	LFloat f)	-> ppr f
 	(BoxedBits b,	LFloat f)	-> f % "f"  % show b
 	(Unboxed,  	LFloat f)	-> f % "#f"
-	(UnboxedBits b,	LFloat f)	-> f % "#i" % show b
+	(UnboxedBits b,	LFloat f)	-> f % "#f" % show b
 	
 	(Boxed, 	LChar c)        -> ppr $ show c
-	(BoxedBits b,	LChar c)        -> c % "c" % show b
 	(Unboxed,       LChar c)        -> ppr $ show c % "#"
-	(UnboxedBits _,	LChar c)        -> show c % "#"
 
 	(Boxed, 	LString s)      -> ppr $ show s
 	(Unboxed,	LString s)      -> show s % "#"
 	
+	-- Literals don't exist in all the possible `DataFormat`s.
+	-- For example, there is no String32# or Char32# format.
 	_  	-> panic stage
 		$  "showFormatLiteral: bad combination of format and literal value\n"
 		%  "    format  = " % show fmt % "\n"

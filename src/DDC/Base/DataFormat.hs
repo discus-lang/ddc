@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
--- | The data format of a primitive value.
+-- | The data format of a literal value.
 module DDC.Base.DataFormat
 	( DataFormat (..)
 	, dataFormatIsBoxed
@@ -10,12 +10,25 @@ module DDC.Base.DataFormat
 where
 import Data.Hashable
 
--- | The data format of a primitive value.
---	The 'Bits' versions are used for Int32, Int64 etc.
+-- | The data format of a literal value.
+--   The 'Bits' versions are used for Int32, Int64 etc.
+--
+--   Note that `DataFormat` doesn't correspond exactly to `PrimType`, because
+--   we can have literals which are Unboxed LStrings or (Unboxed 32) LChars 
+--   but these aren't primitive to the machine.
+--
 data DataFormat
+
+	-- | Some generically boxed literal (like for String)
 	= Boxed
+	
+	-- | Some boxed value with a given width (like Word32)
 	| BoxedBits	Int
+
+	-- | Some generically unboxed literal (like for String#)
 	| Unboxed
+	
+	-- | Some unboxed value with a given width (like Word32#)
 	| UnboxedBits	Int
 	deriving (Show, Eq, Ord)
 
@@ -48,7 +61,8 @@ dataFormatIsBoxed fmt
 	_		-> False
 
 
--- | Convert a boxed data format to the unboxed version
+-- | Convert a boxed data format to the unboxed version, 
+--   or `Nothing` if it isn't.
 dataFormatBoxedOfUnboxed :: DataFormat -> Maybe DataFormat
 dataFormatBoxedOfUnboxed fmt
  = case fmt of
@@ -57,7 +71,8 @@ dataFormatBoxedOfUnboxed fmt
 	_			-> Nothing
 
 
--- | Convert an unboxed data format to the boxed version
+-- | Convert an unboxed data format to the boxed version, 
+--   or `Nothing` if it isn't.
 dataFormatUnboxedOfBoxed :: DataFormat -> Maybe DataFormat
 dataFormatUnboxedOfBoxed fmt
  = case fmt of

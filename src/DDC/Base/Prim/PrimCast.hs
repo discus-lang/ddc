@@ -18,6 +18,7 @@ where
 import DDC.Base.Prim.PrimType
 import Data.List
 
+
 -- | Casting between different numeric types.
 data PrimCast
 	= PrimCast PrimType PrimType

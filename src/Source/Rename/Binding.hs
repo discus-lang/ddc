@@ -121,7 +121,9 @@ findBindingVars space name
 		
 	findBindingVars_withScopes space name scopes
 
--- Type names are being automagically renamed until we implement real type synonyms.
+-- TODO: We're currently automagically renaming plain types like Word, Int and Float to 
+--       the 32 bit versions, where we should really make these separate abstract types.
+--       Char should be a type synonym for Char32, because it's always that width.
 findBindingVars_withScopes space name scopes
 	| NameType	<- space
 	= let again name' = findBindingVars_withScopes space name' scopes
@@ -134,7 +136,6 @@ findBindingVars_withScopes space name scopes
 		"Word#"	-> again "Word32#"
 		"Int#"	-> again "Int32#"
 		"Float#"-> again "Float32#"
-		"Char#"	-> again "Char32#"
 	
 		_	-> findBindingVars' space name scopes
 		

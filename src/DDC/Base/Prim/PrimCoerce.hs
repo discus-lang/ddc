@@ -4,6 +4,7 @@ module DDC.Base.Prim.PrimCoerce
 	(PrimCoerce(..))
 where
 
+
 -- | Coercion between pointer types.
 --   We keep the types abstract instead of using `PrimType` because the latter
 --   only contains raw address types, not pointers to typed data.

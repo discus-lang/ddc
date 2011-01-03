@@ -17,8 +17,7 @@ module DDC.Type.Builtin
 	, tBot
 
 	-- * Data types
-	, tPtrU
-	, tBool, tWord, tInt, tFloat, tChar
+	, tPtrU, tBool, tWord, tInt, tFloat
 
 	-- * Effects
 	, tPure
@@ -52,16 +51,13 @@ module DDC.Type.Builtin
 	, tcString
 
 	-- * Getting types of literals
-	, tyConOfLiteralFmt
-	, typeOfLiteral
-	, tyconOfLiteral )
+	, tyConOfLiteralFmt)
 where
 import Shared.VarPrim
 import DDC.Base.Literal
 import DDC.Base.DataFormat
 import DDC.Type.Exp
 import DDC.Var
-import Control.Monad
 
 
 -- Kinds  -----------------------------------------------------------------------------------------
@@ -107,11 +103,12 @@ tBot k		= TSum k	[]
 
 -- Value types --------------------------------------------
 tPtrU		= TCon $ tcPtrU
+
 tBool   fmt	= TCon $ tcBool   fmt
 tInt    fmt	= TCon $ tcInt    fmt
 tWord   fmt	= TCon $ tcWord   fmt
 tFloat  fmt	= TCon $ tcFloat  fmt
-tChar   fmt	= TCon $ tcChar   fmt
+
 
 -- Effect types -------------------------------------------
 tPure		= TSum kEffect  []
@@ -195,6 +192,7 @@ tElaborateModify = TCon $ TyConElaborate TyConElaborateModify
 tcPtrU :: TyCon
 tcPtrU	= TyConData primTPtrU (kValue `KFun` kValue) Nothing
 
+-- Numeric types ------------------------------------------
 -- | Get the type constructor for a bool of this format.
 tcBool :: DataFormat -> TyCon
 tcBool	= tcTyDataBits primTBool
@@ -211,10 +209,6 @@ tcInt	= tcTyDataBits primTInt
 tcFloat :: DataFormat -> TyCon
 tcFloat	= tcTyDataBits primTFloat
 
--- | Get the type constructor of a char of this format.
-tcChar  :: DataFormat -> TyCon
-tcChar	= tcTyDataBits primTChar
-
 
 -- | Make the type constructor of something of this format.
 tcTyDataBits :: (DataFormat -> Var) -> DataFormat -> TyCon
@@ -224,9 +218,23 @@ tcTyDataBits mkVar fmt
 	BoxedBits _	-> TyConData (mkVar fmt) (KFun kRegion kValue) Nothing
 	Unboxed		-> TyConData (mkVar fmt) kValue Nothing
 	UnboxedBits _	-> TyConData (mkVar fmt) kValue Nothing
+
+
+-- Characters and Strings ---------------------------------
+-- | Get the type constructor of a char of this format.
+--   This gives either Char32 or Word32#, for Boxed and Unboxed character respectively.
+--   Other formats yield `Nothing`.
+tcChar  :: DataFormat -> Maybe TyCon
+tcChar fmt
+ = case fmt of
+	Unboxed		-> Just $ TyConData (primTWord (UnboxedBits 32)) kValue Nothing
+	Boxed		-> Just $ TyConData (primTChar (BoxedBits   32)) (KFun kRegion kValue) Nothing
+	_		-> Nothing
 	
 
 -- | Get the type constructor of a string of this format.
+--   This gives either String or String#. Other formats yield `Nothing`.
+--   Note that we actually pass unboxed strings around as (Ptr# (String# %r1)).
 tcString :: DataFormat -> Maybe TyCon
 tcString fmt
  = case fmt of
@@ -234,7 +242,10 @@ tcString fmt
 	Boxed		-> Just $ TyConData (primTString fmt) (KFun kRegion kValue) Nothing
 	_		-> Nothing
 
--- | Get the type constructor used to represent some literal value
+	
+-- Utils --------------------------------------------------
+-- | Get the type constructor used to represent some literal value.
+--   This gives `Nothing` for invalid literal formats like (Boxed 32) LStrings.
 tyConOfLiteralFmt :: LiteralFmt -> Maybe TyCon
 tyConOfLiteralFmt (LiteralFmt lit fmt)
  = case (lit, fmt) of
@@ -242,25 +253,7 @@ tyConOfLiteralFmt (LiteralFmt lit fmt)
 	(LWord _, 	fmt')	-> Just $ tcWord   fmt'
 	(LInt _,	fmt')	-> Just $ tcInt    fmt'
 	(LFloat _,	fmt')	-> Just $ tcFloat  fmt'
-	(LChar _,	fmt')	-> Just $ tcChar   fmt'
+	(LChar _,	fmt')	-> tcChar   fmt'
 	(LString _,	fmt')	-> tcString fmt'
-
-
--- | Get the type associated with a literal value.
-typeOfLiteral :: LiteralFmt -> Maybe Type
-typeOfLiteral litfmt
-	= liftM TCon (tyconOfLiteral litfmt)
-
-
--- | Get the type constructor associated with a literal value.
-tyconOfLiteral :: LiteralFmt -> Maybe TyCon
-tyconOfLiteral (LiteralFmt lit fmt)
- = case lit of
-	LBool _		-> Just $ tcBool   fmt
-	LWord _		-> Just $ tcWord   fmt
-	LInt _		-> Just $ tcInt    fmt
-	LFloat _	-> Just $ tcFloat  fmt
-	LChar _		-> Just $ tcChar   fmt
-	LString _	-> tcString fmt
 
 

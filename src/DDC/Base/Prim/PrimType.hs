@@ -40,7 +40,7 @@ data PrimType
 
 
 -- | Take the width of a numeric `PrimType`.
---   `PrimTypeAddr` don't have a width.
+--   We treat `PrimTypeAddr` as abstract, so it doesn't have a width.
 takeWidthOfPrimType :: PrimType -> Maybe Width
 takeWidthOfPrimType pt
  = case pt of
