@@ -4,11 +4,8 @@
 import	Base
 import	Base.Thunk
 
-import	Foreign.Ptr
-
-import	DDC.Runtime
-import	DDC.Runtime.Alloc
-import	DDC.Runtime.Store
+import	Control.Exception
+import	Control.Imperative
 
 import	Class.Copy
 import	Class.Eq
@@ -25,9 +22,6 @@ import	Class.Show.Numeric
 import	Class.Show.List
 import	Class.Show.Other
 import	Class.Update
-
-import	Control.Exception
-import	Control.Imperative
 	
 import	Data.Bool
 import	Data.BoolU
@@ -52,17 +46,29 @@ import	Data.Set
 import	Data.String
 import	Data.StringU
 import	Data.Tuple
-				
+
+
+-- TODO: Kick the following out of the Prelude
 import	Math.Constants
 import	Math.Matrix33
 import 	Math.Util
 import	Math.Vec2
 import	Math.Vec3
+
+import	Foreign.Ptr
+import	Foreign.C.String
+import	Foreign.C.StdIO
+import	Foreign.C.StdLib
+import	Foreign.C.SysSocket
+
+import	DDC.Runtime
+import	DDC.Runtime.Alloc
+import	DDC.Runtime.Store
 	
 import	System.Console
 import	System.Environment
 import	System.File
-import 	System.Network
+
 
 main ()
  = putStr "The prelude loads explicitly.\n"

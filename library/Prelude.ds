@@ -1,17 +1,17 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+-- Disciple Prelude.
+-- TODO: Not all this stuff should actually be in the Prelude, but we're 
+--       building it all to avoid races when running tests in parallel.
+--       We can fix this when we fix the races in the war test driver.
+--       The Foreign, DDC.Runtime, Math and System stuff shouldn't really
+--       be in the Prelude.
+
 import	Base
 import	Base.Thunk
 
-import	Foreign.Ptr
-import	Foreign.C.String
-import	Foreign.C.StdIO
-import	Foreign.C.StdLib
-import	Foreign.C.SysSocket
-
-import	DDC.Runtime
-import	DDC.Runtime.Alloc
-import	DDC.Runtime.Store
+import	Control.Exception
+import	Control.Imperative
 
 import	Class.Copy
 import	Class.Eq
@@ -28,9 +28,6 @@ import	Class.Show.Numeric
 import	Class.Show.List
 import	Class.Show.Other
 import	Class.Update
-
-import	Control.Exception
-import	Control.Imperative
 	
 import	Data.Bool
 import	Data.BoolU
@@ -55,12 +52,24 @@ import	Data.Set
 import	Data.String
 import	Data.StringU
 import	Data.Tuple
-				
+
+
+-- TODO: Kick the following out of the Prelude
 import	Math.Constants
 import	Math.Matrix33
 import 	Math.Util
 import	Math.Vec2
 import	Math.Vec3
+
+import	Foreign.Ptr
+import	Foreign.C.String
+import	Foreign.C.StdIO
+import	Foreign.C.StdLib
+import	Foreign.C.SysSocket
+
+import	DDC.Runtime
+import	DDC.Runtime.Alloc
+import	DDC.Runtime.Store
 	
 import	System.Console
 import	System.Environment
