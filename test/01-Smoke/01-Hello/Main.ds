@@ -4,10 +4,10 @@
 -- initialise its modules.
 import Base
 
-foreign import "printf"
- printf :: String#{read} -> Int#
+foreign import "puts"
+ puts :: Ptr# String# {read} -> Int#
 
-main () 
- = do	printf "Hello World\n"#
+main ()
+ = do	puts "Hello World\n"#
 	()
 

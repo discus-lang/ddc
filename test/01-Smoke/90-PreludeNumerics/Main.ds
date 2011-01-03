@@ -3,8 +3,10 @@
 import Data.Numeric.Int32
 import Data.Numeric.Float32
 
-foreign import "printf"
- printf :: String#{read} -> Int#
+foreign import "puts"
+ puts :: Ptr# String#{read} -> Int#
 
 main ()
-	= printf "Loaded numeric libs ok\n"#
+ = do	puts "Loaded numeric libs ok\n"#
+	()
+
