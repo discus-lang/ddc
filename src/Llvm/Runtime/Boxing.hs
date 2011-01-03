@@ -34,7 +34,7 @@ boxAny any
 	LMInt 64		-> boxInt64 any
 	LMFloat			-> boxFloat32 any
 	LMDouble		-> boxFloat64 any
-	LMArray _ (LMInt 8)	-> boxString any
+	-- LMArray _ (LMInt 8)	-> boxString any
 	_			-> panic stage $ "boxAny " ++ show  any
 
 
@@ -148,34 +148,11 @@ unboxEnum objptr
 --------------------------------------------------------------------------------
 
 boxLit :: LiteralFmt -> LlvmM LlvmVar
-boxLit (LiteralFmt (LString s) Unboxed)
- = do	gname		<- newUniqueName "str"
-	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
-	addGlobalVar	( svar, Just (LMStaticStr (escapeString s) (typeOfString s)) )
-	boxString	svar
-
 boxLit lit@(LiteralFmt _ (UnboxedBits _))
  =	boxAny $ llvmVarOfLit lit
 
 
 boxLit lit = panic stage $ "boxLit (" ++ show __LINE__ ++ ") " ++ show lit
-
---------------------------------------------------------------------------------
-
-dataStringBoxString :: LlvmFunctionDecl
-dataStringBoxString = LlvmFunctionDecl "Data_String_boxString" External CC_Ccc pObj FixedArgs [(pChar, [])] ptrAlign
-
-boxString :: LlvmVar -> LlvmM LlvmVar
-boxString str@(LMGlobalVar name (LMArray _ (LMInt 8)) _ Nothing _ True)
- = do	addGlobalFuncDecl dataStringBoxString
-	pstr		<- newUniqueNamedReg "pstr" (pLift i8)
-	result		<- newUniqueNamedReg "result" pObj
-	addBlock	[ Assignment pstr (GetElemPtr True (pVarLift str) [llvmWordLitVar 0, llvmWordLitVar 0])
-			, Assignment result (Call StdCall (funcVarOfDecl dataStringBoxString) [pstr] []) ]
-	return		result
-
-boxString s
- =	panic stage $ "boxString " ++ show s
 
 --------------------------------------------------------------------------------
 
