@@ -180,6 +180,7 @@ slurpX	(XMatch sp Nothing alts)
 slurpX	(XLit sp litFmt)
  = do	
  	tX@(TVar _ (UVar vT))	<- newTVarDS "lit"
+	eX			<- newTVarES "lit"
 
 	-- work out the type of this literal
 	let TyConData 
@@ -189,33 +190,49 @@ slurpX	(XLit sp litFmt)
 		$ tyConOfLiteralFmt litFmt
 
 	let tLitM
-		-- unboxed numeric literals don't need region variables.
-		| tcKind	== kValue
-		= return $ makeTData tcVar tcKind []
-
 		-- unboxed string literals are special because they
 		-- actually have type (Ptr# (String# %r1))
 		| tcVar		== primTString Unboxed
 		= do	vR	<- newVarN NameRegion
-			return	$ (tPtrU `TApp` makeTData tcVar tcKind [TVar kRegion $ UVar vR])
+			return	( tPtrU `TApp` makeTData tcVar tcKind [TVar kRegion $ UVar vR]
+				, tPure)
+				
+		-- Creating a boxed string calls the Disciple 'boxString'
+		-- function on the unboxed string embedded in the object file.
+		-- This copies said unboxed string, which causes a read effect.
+		-- TODO: As we know literal strings are constant, we could use
+		--       a different version of boxString and remove the need
+		--       for this read effect.
+		| tcVar		== primTString Boxed
+		= do	vR	<- newVarN NameRegion
+			let tR	= TVar kRegion $ UVar vR
+			return	( makeTData tcVar tcKind [tR]
+				, tRead `TApp` tR)
+
+		-- unboxed numeric literals don't need region variables.
+		| tcKind	== kValue
+		= return 	( makeTData tcVar tcKind []
+				, tPure)
 
 		-- boxed numeric literals need region vars
 		| tcKind	== KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
-			return	$ makeTData tcVar tcKind [TVar kRegion $ UVar vR]
+			return	( makeTData tcVar tcKind [TVar kRegion $ UVar vR]
+				, tPure)
 			
 		| otherwise
 		= panic stage $ "tLitM: no match"
 
-	tLit	<- tLitM
+	(tLit, eLit)	<- tLitM
 	
 	let qs 	= constraints
-	 	[ CEq (TSV $ SVLiteral sp litFmt) tX tLit]
+	 	[ CEq (TSV $ SVLiteral sp litFmt) tX tLit
+		, CEq (TSV $ SVLiteral sp litFmt) eX eLit ]
 
 	wantTypeV vT
 		
 	return	( tX
-		, tPure
+		, eX
 		, tEmpty
 	  	, XLit (Just (tX, tPure)) litFmt
 		, qs)
