@@ -181,8 +181,8 @@ instance Num Float32 where
 	(*) 		= primFloat32_mul
 
 primFloat32_add	x y	= boxFloat32 (primFloat32U_add (unboxFloat32 x) (unboxFloat32 y))
-primFloat32_sub	x y 	= boxFloat32 (primFloat32U_add (unboxFloat32 x) (unboxFloat32 y))
-primFloat32_mul	x y	= boxFloat32 (primFloat32U_add (unboxFloat32 x) (unboxFloat32 y))
+primFloat32_sub	x y 	= boxFloat32 (primFloat32U_sub (unboxFloat32 x) (unboxFloat32 y))
+primFloat32_mul	x y	= boxFloat32 (primFloat32U_mul (unboxFloat32 x) (unboxFloat32 y))
 
 
 instance Fractional Float32 where
