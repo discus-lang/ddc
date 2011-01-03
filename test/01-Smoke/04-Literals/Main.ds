@@ -1,0 +1,15 @@
+
+-- Char and String literals are handled a bit specially by the compiler, 
+-- because unlike the others they're not also PrimTypes.
+
+effect !Console	:: !
+
+foreign import "putchar" putChar :: Word32# -(!Console)> Int32#
+foreign import "puts"    putStr  :: Ptr# String#{read} -(!Console)> Int#
+
+main ()
+ = do	putChar 'G'#
+	putChar 'G'#
+
+	putStr  "sup"#
+	()

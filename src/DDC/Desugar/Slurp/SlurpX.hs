@@ -9,12 +9,14 @@ import DDC.Desugar.Slurp.Base
 import DDC.Solve.Location
 import DDC.Var
 import DDC.Base.DataFormat
+import DDC.Main.Pretty
 import Control.Monad
 import Data.Bag			(Bag)
 import Util			(unzip6, unzip5, takeLast, catMap)
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
 import qualified Data.Bag	as Bag
+import Data.Maybe
 
 stage	= "DDC.Desugar.Slurp.SlurpX"
 
@@ -180,10 +182,11 @@ slurpX	(XLit sp litFmt)
  	tX@(TVar _ (UVar vT))	<- newTVarDS "lit"
 
 	-- work out the type of this literal
-	let Just TyConData 
+	let TyConData 
 		{ tyConName 	= tcVar
 		, tyConDataKind = tcKind }
-		= tyConOfLiteralFmt litFmt
+		= fromMaybe (panic stage $ "slurpX: no type for literal " % show litFmt)
+		$ tyConOfLiteralFmt litFmt
 
 	let tLitM
 		-- unboxed numeric literals don't need region variables.

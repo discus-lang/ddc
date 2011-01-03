@@ -3,7 +3,8 @@
 -- | Representation of literal values.
 module DDC.Base.Literal
 	( Literal    (..)
-	, LiteralFmt (..))
+	, LiteralFmt (..)
+	, defaultLiteralFmt)
 where
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -82,3 +83,25 @@ instance Pretty Literal PMode where
 	LChar   c	-> ppr $ show c
 	LString s	-> ppr $ show s
 
+
+
+-- | Default literals to the machine type.
+--   TODO: From the source language, the plain Word Int Float types should be abstract,
+--         because the widths can change on a machine-to-machine basis.
+--
+--         In the compiler however, we should default them to an appropriate width
+--         depending on what platform we're on.
+--         
+defaultLiteralFmt :: LiteralFmt -> LiteralFmt
+defaultLiteralFmt litFmt@(LiteralFmt lit fmt)
+ = case (lit, fmt) of
+	(LWord _,  Boxed)	-> LiteralFmt lit (BoxedBits   32)
+	(LWord _,  Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
+
+	(LInt _,   Boxed)	-> LiteralFmt lit (BoxedBits   32)
+	(LInt _,   Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
+
+	(LFloat _, Boxed)	-> LiteralFmt lit (BoxedBits   32)
+	(LFloat _, Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
+	_			-> litFmt
+	

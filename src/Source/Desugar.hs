@@ -1,9 +1,11 @@
 
--- Source.Desugar
---	This is the pre type inference desugarer.
---	Desugaring before the inferencer makes the error messages not as good, 
---	but the constraint slurper a lot smaller.
---   
+-- | This is the pre type inference desugarer.
+--   Desugaring before the inferencer makes the error messages not as good, 
+--   but the constraint slurper much easier to write.
+--
+--   We also default the formats of unsized literals liek '5' to a format 
+--   suitable for the platform (like Int32).
+--
 module Source.Desugar
 	( rewriteTree
 	, rewrite
@@ -16,7 +18,6 @@ import Source.Desugar.Patterns
 import Source.Desugar.MergeBindings
 import Shared.VarPrim
 import DDC.Base.SourcePos
-import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Type.Data.CtorType
@@ -488,24 +489,6 @@ rewriteLetStmts sp ss x_body'
 
 	return	$ D.XDo	sp ssX_merged
 
-
-
--- Default literals to the machine type
---	This should really look out type bindings like
---	type Int = Int32 
---	instead of being hard-wired like this
-defaultLiteralFmt :: LiteralFmt -> LiteralFmt
-defaultLiteralFmt litFmt@(LiteralFmt lit fmt)
- = case (lit, fmt) of
-	(LWord _,  Boxed)	-> LiteralFmt lit (BoxedBits   32)
-	(LWord _,  Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
-	(LInt _,   Boxed)	-> LiteralFmt lit (BoxedBits   32)
-	(LInt _,   Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
-	(LFloat _, Boxed)	-> LiteralFmt lit (BoxedBits   32)
-	(LFloat _, Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
-	(LChar _,  Boxed)	-> LiteralFmt lit (BoxedBits   32)
-	(LChar _,  Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
-	_			-> litFmt
 
 -- Proj ---------------------------------------------------------------------------------------------
 instance Rewrite (S.Proj SourcePos) (D.Proj Annot) where

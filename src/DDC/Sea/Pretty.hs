@@ -446,7 +446,6 @@ seaNameOfCtor var
 pprLiteralFmt :: LiteralFmt -> Str
 pprLiteralFmt litfmt@(LiteralFmt lit fmt)
  = case (lit, fmt) of
-
  	(LBool b, Unboxed)
 	 -> case b of
 	 	True	-> ppr "true"
@@ -456,10 +455,14 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 	(LInt i,    UnboxedBits _)	-> ppr i
 	(LFloat f,  UnboxedBits _)	-> ppr f
 
+	(LChar c,   Unboxed)		-> ppr $ show c
+	(LString s, Unboxed)		-> ppr $ show s
+
+	-- All unboxed literals from the Disciple source program are defaulted
+	-- to have a specific size, like Int32. However, the Sea stages themselves
+	-- can introduce unsized integers for various counters and offsets.
 	(LInt i,    Unboxed)		-> ppr i
 
-	(LChar c,   UnboxedBits _)	-> ppr $ show c
-	(LString s, Unboxed)		-> ppr $ show s
 	_ -> panic stage $ "pprLiteralFmt: no match for " % show litfmt
 
 
