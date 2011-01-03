@@ -1,6 +1,7 @@
 ddc: ERROR
 ./test/15-Typing/Main/MainString/Main.ds:4:0
-        The type of main must be a function,
+        The program's main function must be of type:
+            main :: Unit -> Unit
         but it was inferred to be:
             main
                 :: String %r0
