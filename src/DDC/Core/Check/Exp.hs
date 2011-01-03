@@ -267,11 +267,11 @@ checkExp_trace m xx env
 		
 		_ -> panic stage $ vcat
 			[ ppr "Type mismatch in (value/type) application."
-			, "During:\n"		 %> envCaller env, blank
-			, "Cannot apply type:\n" %> t2,  blank
-			, "     of kind:\n"	 %> k2', blank
-			, "to expression:\n" 	 %> xx,	 blank
-			, "with type:\n"	 %> t1,	 blank]
+			, "During:"		%!> envCaller env,	blank
+			, "Cannot apply type:"	%!> t2,			blank
+			, "     of kind:"	%!> k2',		blank
+			, "to expression:" 	%!> xx,			blank
+			, "with type:"		%!> t1,			blank]
 			
 
 	-- Value abstraction
@@ -316,21 +316,21 @@ checkExp_trace m xx env
 		 | not $ isSubsumes effSubs 
 		 = panic stage $ vcat
 			[ ppr "Effect mismatch in lambda abstraction."
-			, "During:\n"				%> envCaller env, blank
-			, "Effect of body:\n" 			%> eff2,	blank
-			, "with closure:\n"			%> clo2_masked,	blank
-			, "visible vars:\n"			%> vsVisible,	blank
-			, "masked effect:\n"			%> eff2_masked,	blank
-			, "does not match effect annotation:\n"	%> effAnn_crushed, blank
-			, "in expression:\n"			%> xx,		blank]
+			, "During:"				%!> envCaller env,	blank
+			, "Effect of body:" 			%!> eff2,		blank
+			, "with closure:"			%!> clo2_masked,	blank
+			, "visible vars:"			%!> vsVisible,		blank
+			, "masked effect:"			%!> eff2_masked,	blank
+			, "does not match effect annotation:"	%!> effAnn_crushed,	blank
+			, "in expression:"			%!> xx,			blank]
 		
 		 | not $ isSubsumes cloSubs
 		 = panic stage $ vcat
 			[ ppr "Closure mismatch in lambda abstraction."
-			, "During:\n"		 		%> envCaller env, blank
-			, "Closure of abstraction:\n"	 	%> clo2_masked,	blank
-			, "is not less than annotation:\n" 	%> show cloAnn,	blank
-			, "in expression:\n"			%> xx,		blank]
+			, "During:"		 		%!> envCaller env,	blank
+			, "Closure of abstraction:"	 	%!> clo2_masked,	blank
+			, "is not less than annotation:" 	%!> show cloAnn,	blank
+			, "in expression:"			%!> xx,			blank]
 
 		 -- We've just shown that the reconstructed effect and closures are subsumed by
 		 -- those on the annots. The annots are sometimes larger than needed due to
@@ -362,7 +362,7 @@ checkExp_trace m xx env
 		  NoSubsumes s1 s2
 		   -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "During:\n"		 		%> envCaller env, blank
+			, "During:"		 		%!> envCaller env, blank
 			, "  cannot apply function of type: " 	% t1',	blank
 			, "            to argument of type: " 	% t2',	blank
 			, ppr "   because",				blank
@@ -373,11 +373,11 @@ checkExp_trace m xx env
 		
 	     _ -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "During:\n"		 		%> envCaller env, blank
+			, "During:"		 		%!> envCaller env, blank
 			, "  cannot apply non-function type: " 	% t1',	blank
 			, "             to argument of type: "	% t2',	blank
 			, blank
-			, " in application: " % xx]
+			, " in application: " 			% xx]
 
 	-- Do expression.
 	XDo ss
@@ -439,10 +439,10 @@ checkExp_trace m xx env
 			
 		else panic stage $ vcat
 			[ ppr "Type error in type annotation.",			blank
-			, "During:\n"		 		%> envCaller env, blank
-			, "  Reconstructed type:\n"		%> tExp',	blank
-			, "  does not match annotation:\n"	%> tAnnot,	blank
-			, "  on expression:\n"			%> xx]
+			, "During:"		 		%!> envCaller env, blank
+			, "  Reconstructed type:"		%!> tExp',	blank
+			, "  does not match annotation:"	%!> tAnnot,	blank
+			, "  on expression:"			%!> xx]
 		
 	_ -> panic stage 
 		$ vcat 	[ ppr "checkExp: no match for:"
