@@ -148,6 +148,12 @@ llvmOfXPrim (MAlloc (PAllocData v arity)) []
  = do	tag	<- getTag $ seaVar False v
 	allocData tag arity
 
+llvmOfXPrim (MOp OpNeg) [arg]
+ = do	exp		<- llvmOfExp arg
+	let typ		= getVarType exp
+	r0		<- newUniqueReg typ
+	addBlock	[ Assignment r0 (mkOpFunc typ OpSub (zeroLiteral typ) exp) ]
+	return		r0
 
 llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")\n\n"
@@ -251,6 +257,15 @@ opResultType op var
 
 	-- normal operators like OpNeg, OpAdd, OpSub etc
 	_	-> getVarType var
+
+
+zeroLiteral :: LlvmType -> LlvmVar
+zeroLiteral typ
+ = case typ of
+	LMInt 32	-> i32LitVar 0
+	LMInt 64	-> i64LitVar 0
+	LMFloat		-> LMLitVar (LMFloatLit 0.0 LMFloat)
+	LMDouble	-> LMLitVar (LMFloatLit 0.0 LMDouble)
 
 --------------------------------------------------------------------------------
 
