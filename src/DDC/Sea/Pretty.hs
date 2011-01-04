@@ -117,7 +117,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 			, ppr "_ddcRuntimeCleanup();"
 			, blank
 			, ppr "return 0;" ])
-		% nl % "}"
+		% nl % "}" % nl
 
 -- CtorDef --------------------------------------------------------------------------------------------
 instance Pretty CtorDef PMode where
