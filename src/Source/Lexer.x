@@ -28,7 +28,8 @@ import Util
 
 %wrapper "posn"
 
-$digit	= 0-9
+$digit		= [0-9]
+$hexdigit	= [0-9a-f]
 
 $upper	= [A-Z]
 $lower  = [a-z]
@@ -191,6 +192,14 @@ tokens :-
 
  \" (@escDoubleQuote | (. # \"))* \"\#	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 2 s)) Unboxed) }
  \" (@escDoubleQuote | (. # \"))* \" 	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 1 s)) Boxed) }
+
+ 0x $hexdigit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ 0x $hexdigit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ 0x $hexdigit+ \# 			{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
+
+ 0x $hexdigit+ i $digit*		{ ptags (\s -> makeLiteralB 'i' LInt s) }
+ 0x $hexdigit+ u $digit*		{ ptags (\s -> makeLiteralB 'u' LWord s) }
+ 0x $hexdigit+				{ ptags (\s -> mkLit (LInt $ read s) Boxed) }
 
  $digit+ \. $digit+ \# f $digit*	{ ptags (\s -> makeLiteralUB 'f' LFloat s) }
  $digit+ \. $digit+ \# 			{ ptags (\s -> mkLit (LFloat $ read $ dropLast 1 s) Unboxed) }
