@@ -8,6 +8,8 @@ where
 
 import DDC.Base.DataFormat
 import DDC.Base.Literal
+import DDC.Base.Prim.PrimCast
+import DDC.Base.Prim.PrimType
 import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Sea.Pretty
@@ -155,10 +157,38 @@ llvmOfXPrim (MOp OpNeg) [arg]
 	addBlock	[ Assignment r0 (mkOpFunc typ OpSub (zeroLiteral typ) exp) ]
 	return		r0
 
+llvmOfXPrim (MCast pcast) [arg]
+ = do	exp		<- llvmOfExp arg
+	let (castop, typ)
+			= intCastOp pcast
+	r0		<- newUniqueReg typ
+	addBlock	[ Assignment r0 (Cast castop exp typ) ]
+	return		r0
+
 llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")\n\n"
 	++ show op ++ "\n\n"
 	++ show args ++ "\n"
+
+--------------------------------------------------------------------------------
+
+intCastOp :: PrimCast -> (LlvmCastOp, LlvmType)
+intCastOp pc@(PrimCast (PrimTypeWord (Width srcw)) (PrimTypeWord (Width destw)))
+ | srcw < destw
+ = (LM_Zext, LMInt destw)
+
+ | otherwise
+ = (LM_Trunc, LMInt destw)
+
+intCastOp pc@(PrimCast (PrimTypeInt (Width srcw)) (PrimTypeInt (Width destw)))
+ | srcw < destw
+ = (LM_Sext, LMInt destw)
+
+ | otherwise
+ = (LM_Trunc, LMInt destw)
+
+intCastOp pc
+ = panic stage $ "intCastOp (" ++ show __LINE__ ++ ") " ++ show pc
 
 --------------------------------------------------------------------------------
 
@@ -258,15 +288,6 @@ opResultType op var
 	-- normal operators like OpNeg, OpAdd, OpSub etc
 	_	-> getVarType var
 
-
-zeroLiteral :: LlvmType -> LlvmVar
-zeroLiteral typ
- = case typ of
-	LMInt 32	-> i32LitVar 0
-	LMInt 64	-> i64LitVar 0
-	LMFloat		-> LMLitVar (LMFloatLit 0.0 LMFloat)
-	LMDouble	-> LMLitVar (LMFloatLit 0.0 LMDouble)
-
 --------------------------------------------------------------------------------
 
 boxExp :: Type -> Exp a -> LlvmM LlvmVar
@@ -298,6 +319,15 @@ unboxExp t (XVar v1@NCafPtr{} tv@(TPtr (TCon TyConObj)))
 unboxExp t x
  = panic stage $ "unboxExp (" ++ show __LINE__ ++ ") :\n    " ++ show t ++ "\n    " ++ show x
 
+--------------------------------------------------------------------------------
+
+zeroLiteral :: LlvmType -> LlvmVar
+zeroLiteral typ
+ = case typ of
+	LMInt 32	-> i32LitVar 0
+	LMInt 64	-> i64LitVar 0
+	LMFloat		-> LMLitVar (LMFloatLit 0.0 LMFloat)
+	LMDouble	-> LMLitVar (LMFloatLit 0.0 LMDouble)
 
 --------------------------------------------------------------------------------
 
