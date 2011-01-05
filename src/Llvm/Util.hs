@@ -58,19 +58,28 @@ i64LitVar n = LMLitVar (LMIntLit (toInteger n) i64)
 llvmVarOfLit :: LiteralFmt -> LlvmVar
 llvmVarOfLit (LiteralFmt (LInt i) (UnboxedBits bits))
  = case bits of
+	8	-> LMLitVar (LMIntLit (toInteger i) i8)
+	16	-> LMLitVar (LMIntLit (toInteger i) i16)
 	32	-> i32LitVar i
 	64	-> i64LitVar i
+
+llvmVarOfLit (LiteralFmt (LWord w) (UnboxedBits bits))
+ = case bits of
+	8	-> LMLitVar (LMIntLit (toInteger w) i8)
+	16	-> LMLitVar (LMIntLit (toInteger w) i16)
+	32	-> i32LitVar w
+	64	-> i64LitVar w
 
 llvmVarOfLit (LiteralFmt (LFloat f) (UnboxedBits bits))
  = case bits of
 	32	-> LMLitVar (LMFloatLit f LMFloat)
 	64	-> LMLitVar (LMFloatLit f LMDouble)
 
-llvmVarOfLit (LiteralFmt (LChar c) (UnboxedBits 32))
- =	i32LitVar $ ord c
-
 llvmVarOfLit (LiteralFmt (LBool b) Unboxed)
  =	 LMLitVar (LMIntLit (if b then 1 else 0) i1)
+
+llvmVarOfLit (LiteralFmt (LChar c) (UnboxedBits 32))
+ =	i32LitVar $ ord c
 
 llvmVarOfLit x
  =	panic stage $ "llvmLitVar (" ++ show __LINE__ ++ ")\n" ++ show x
@@ -145,8 +154,13 @@ toLlvmTypeCon (TyConUnboxed v)
 	"String#"	-> i8
 	"Word8#"	-> i8
 	"Word32#"	-> i32
+	"Word64#"	-> i64
 	name		-> panic stage $ "toLlvmTypeCon (" ++ show __LINE__ ++ ") : " ++ name ++ "\n"
 
+toLlvmTypeCon (TyConAbstract v)
+ = case varName v of
+	"String#"	-> i8
+	name		-> panic stage $ "toLlvmTypeCon (" ++ show __LINE__ ++ ") : " ++ name ++ "\n"
 
 typeOfString :: String -> LlvmType
 typeOfString s = LMArray (length s + 1) i8
