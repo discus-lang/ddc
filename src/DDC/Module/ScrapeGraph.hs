@@ -29,7 +29,8 @@ scrapeRecursive
 	-> IO ScrapeGraph		-- graph of modules reachable from, this one
 
 scrapeRecursive args setup roots
- = let	graph	= Map.fromList [ (scrapeModuleName s, s) | s <- roots]
+ = {-# SCC "scrapeRecursive" #-}
+   let	graph	= Map.fromList [ (scrapeModuleName s, s) | s <- roots]
 
 	-- each child carries the scrape of the module that imported it.
 	--	this is used for error reporting incase we can't find the child
@@ -81,7 +82,8 @@ scrapeRecursive' args setup graph ((sParent, v):vs)
 -- | Invert the ScrapeGraph to create a dependency graph.
 dependencyGraph :: ScrapeGraph -> Map ModuleId (Bool, [ModuleId])
 dependencyGraph graph
- = do	let x = foldl' builder Map.empty
+ = {-# SCC "dependencyGraph" #-}
+   do	let x = foldl' builder Map.empty
 			$ concat
 			$ map (\ (k, v) -> map (\i -> (i, needsRebuild' i, k)) (scrapeImported v))
 			$ Map.toList graph
@@ -104,7 +106,8 @@ needsRebuild
 	-> [ModuleId]
 
 needsRebuild force graph accum modBuild
- = do	case (force, Map.lookup modBuild graph) of
+ = {-# SCC "needsRebuild" #-}
+   do	case (force, Map.lookup modBuild graph) of
  	  (_, Nothing) -> accum
 	  (True, Just (_, deps))	-> foldl' (needsRebuild True graph) (deps ++ accum) deps
 	  (False, Just (True, deps)) 	-> foldl' (needsRebuild True graph) (deps ++ accum) deps
@@ -115,13 +118,14 @@ needsRebuild force graph accum modBuild
 --   flag as needed.
 propagateNeedsRebuild :: ScrapeGraph -> ScrapeGraph
 propagateNeedsRebuild graph
- = 	let	depGraph	= dependencyGraph graph
-		rebuilds	= nub
- 				$ foldl' (needsRebuild False depGraph) []
-				$ map fst
-				$ Map.toList depGraph
+ = {-# SCC "propagateNeedsRebuild" #-}
+   let	depGraph	= dependencyGraph graph
+	rebuilds	= nub
+ 			$ foldl' (needsRebuild False depGraph) []
+			$ map fst
+			$ Map.toList depGraph
 
-	in foldl' (\ g k -> Map.adjust (\v -> v { scrapeNeedsRebuild = True }) k g) graph rebuilds
+   in foldl' (\ g k -> Map.adjust (\v -> v { scrapeNeedsRebuild = True }) k g) graph rebuilds
 
 
 
@@ -136,7 +140,8 @@ scrapeGraphInsert
 	-> IO ScrapeGraph
 
 scrapeGraphInsert args m s sg
- = case cyclicImport m s sg of
+ = {-# SCC "scrapeGraphImport" #-}
+   case cyclicImport m s sg of
 
 	Nothing
  	  -> return $! Map.insert m s sg
@@ -161,7 +166,8 @@ scrapeGraphInsert args m s sg
 --   of modules that constitue a cycle, otherwise return Nothing.
 cyclicImport :: ModuleId -> Scrape -> ScrapeGraph -> Maybe [ModuleId]
 cyclicImport m s sp
- = if elem m $ scrapeImported s
+ = {-# SCC "cyclicImport" #-}
+   if elem m $ scrapeImported s
 	then Just [m]
 	else listToMaybe
 		$ catMaybes
