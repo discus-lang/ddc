@@ -132,4 +132,17 @@
 #define _COERCE_PTR_TO_ADDR(t1,x)	(Addr)(x)
 #define _COERCE_ADDR_TO_PTR(t1,x)	(t1*)(x)
 
+
+// Macros for adding 64 bit signed/unsigned literals ---------------------------
+
+#if	(BITS == 64)
+#define _DDC_INT64_LITERAL(x)		x##l
+#define _DDC_UINT64_LITERAL(x)		x##ul
+#elif	(BITS == 32)
+#define _DDC_INT64_LITERAL(x)		x##ll
+#define _DDC_UINT64_LITERAL(x)		x##ull
+#else
+#error "BITS is not defined."
+#endif
+
 #endif

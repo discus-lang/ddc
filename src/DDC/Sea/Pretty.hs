@@ -345,7 +345,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	-- Coercion between pointer types
 	XPrim (MCoerce (PrimCoercePtr t1 t2)) [x]
-	 -> "_COERCE_PTR" 
+	 -> "_COERCE_PTR"
 		% "("  % t1
 		% ", " % t2
 		% ", " % x
@@ -353,14 +353,14 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	-- Coercion between pointer types
 	XPrim (MCoerce (PrimCoerceAddrToPtr t1)) [x]
-	 -> "_COERCE_ADDR_TO_PTR" 
+	 -> "_COERCE_ADDR_TO_PTR"
 		% "("  % t1
 		% ", " % x
 		% ")"
 
 	-- Coercion between pointer types
 	XPrim (MCoerce (PrimCoercePtrToAddr t1)) [x]
-	 -> "_COERCE_PTR_TO_ADDR" 
+	 -> "_COERCE_PTR_TO_ADDR"
 		% "("  % t1
 		% ", " % x
 		% ")"
@@ -413,7 +413,7 @@ pprPrimType pt
 	PrimTypeAddr		-> ppr "Addr"
 	PrimTypeWord  (Width w)	-> "Word"  % w
 	PrimTypeInt   (Width w)	-> "Int"   % w
-	PrimTypeFloat (Width w)	-> "Float" % w	
+	PrimTypeFloat (Width w)	-> "Float" % w
 
 
 -- TyCon ------------------------------------------------------------------------------------------
@@ -451,8 +451,12 @@ pprLiteralFmt litfmt@(LiteralFmt lit fmt)
 	 	True	-> ppr "true"
 		False	-> ppr "false"
 
+	(LWord i,   UnboxedBits 64)	-> "_DDC_UINT64_LITERAL (" % ppr i % ")"
+	(LInt i,    UnboxedBits 64)	-> "_DDC_INT64_LITERAL (" % ppr i % ")"
+
 	(LWord i,   UnboxedBits _)	-> ppr i
 	(LInt i,    UnboxedBits _)	-> ppr i
+
 	(LFloat f,  UnboxedBits _)	-> ppr f
 
 	(LChar c,   UnboxedBits 32)	-> ppr $ show c
