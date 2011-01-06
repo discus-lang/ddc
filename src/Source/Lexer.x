@@ -30,6 +30,8 @@ import Util
 
 $digit		= [0-9]
 $hexdigit	= [0-9a-f]
+$octdigit	= [0-7]
+$bindigit	= [0-1]
 
 $upper	= [A-Z]
 $lower  = [a-z]
@@ -193,6 +195,22 @@ tokens :-
  \" (@escDoubleQuote | (. # \"))* \"\#	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 2 s)) Unboxed) }
  \" (@escDoubleQuote | (. # \"))* \" 	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 1 s)) Boxed) }
 
+ 0b $bindigit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ 0b $bindigit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ 0b $bindigit+ \# 			{ ptags (\s -> mkLit (LInt $ readBinWrap $ dropLast 1 s) Unboxed) }
+
+ 0b $bindigit+ i $digit*		{ ptags (\s -> makeLiteralB 'i' LInt s) }
+ 0b $bindigit+ u $digit*		{ ptags (\s -> makeLiteralB 'u' LWord s) }
+ 0b $bindigit+				{ ptags (\s -> mkLit (LInt $ readBinWrap s) Boxed) }
+
+ 0o $octdigit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ 0o $octdigit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ 0o $octdigit+ \# 			{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
+
+ 0o $octdigit+ i $digit*		{ ptags (\s -> makeLiteralB 'i' LInt s) }
+ 0o $octdigit+ u $digit*		{ ptags (\s -> makeLiteralB 'u' LWord s) }
+ 0o $octdigit+				{ ptags (\s -> mkLit (LInt $ read s) Boxed) }
+
  0x $hexdigit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
  0x $hexdigit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
  0x $hexdigit+ \# 			{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
@@ -254,24 +272,31 @@ ptag	 tok (AlexPn _ l c) s
 	, tokenColumn	= c }
 
 -- makeLiteral -------------------------------------------------------------------------------------
-makeLiteralUB :: Read a => Char -> (a -> Literal) -> String -> Token
+makeLiteralUB :: (Num a, Read a) => Char -> (a -> Literal) -> String -> Token
 makeLiteralUB spec con ss
 	| (num, '#':spec':bits)	<- splitOnLeft '#' ss
 	, spec == spec'
 	= case bits of
- 	   []	-> mkLit (con $ read num) Unboxed
-	   _	-> mkLit (con $ read num) (UnboxedBits $ read bits)
+ 	   []	-> mkLit (con $ readBinWrap num) Unboxed
+	   _	-> mkLit (con $ readBinWrap num) (UnboxedBits $ read bits)
 
-makeLiteralB :: Read a => Char -> (a -> Literal) -> String -> Token
+makeLiteralB :: (Num a, Read a) => Char -> (a -> Literal) -> String -> Token
 makeLiteralB spec con ss
  	| (num, spec':bits)	<- splitOnLeft spec ss
 	, spec == spec'
 	= case bits of
-	   []	-> mkLit (con $ read num) Boxed
-	   _	-> mkLit (con $ read num) (BoxedBits $ read bits)
+	   []	-> mkLit (con $ readBinWrap num) Boxed
+	   _	-> mkLit (con $ readBinWrap num) (BoxedBits $ read bits)
 
 mkLit :: Literal -> DataFormat -> Token
 mkLit lit fmt	= Literal $ LiteralFmt lit fmt
+
+readBinWrap :: (Num a, Read a) => String -> a
+readBinWrap ('0' : 'b' : rest)
+ = foldl' (\ acc b -> if b then 2 * acc + 1 else 2 * acc) 0
+	$ map (/= '0') rest
+
+readBinWrap num = read num
 
 -- scan --------------------------------------------------------------------------------------------
 -- This is the top level of the scanner
