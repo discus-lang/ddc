@@ -99,7 +99,8 @@ scrapeSourceModule
 	-> IO (Maybe Scrape)
 
 scrapeSourceModule impDirs shouldImportPrelude modName
- = do	
+ =  {-# SCC "scrapeSourceModule" #-}
+    do
 	-- Look for the module in a dir matching it's name.
 	-- eg, it the module is     SomeLib.SomeThing.ModuleName
 	--     then look for it in  <some import dir>/SomeLib/SomeThing/ModuleName
@@ -124,7 +125,8 @@ scrapeModuleFromFile
 	-> IO Scrape
 	
 scrapeModuleFromFile mModuleNameSearchedFor shouldImportPrelude filePath_
- = do	filePath	<- canonicalizePath filePath_
+ = {-# SCC "scrapeModuleFromFile" #-}
+   do	filePath	<- canonicalizePath filePath_
 	exists		<- doesFileExist filePath
 	when (not exists)
 	 $ panic stage $ "scrapeModuleFromFile: no such file " ++ filePath
