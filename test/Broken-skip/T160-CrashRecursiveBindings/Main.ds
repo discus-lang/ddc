@@ -1,13 +1,28 @@
 
--- Find the sum of all the even-valued terms in the Fibonacci sequence which do not exceed one million.
--- Taken from the Haskell Wiki
-maxN	= 10000
+-- This contains a recursive binding:
+--
+--    recBindA -> recBindB -> recBindC -> recBindA
+--
+-- With eager evalution this will cause an infinite loop.
+-- The compiler should detect this an print an error.
+--
+-- In the test module there is a similar version fo this that uses a suspension
+-- to make the infinite recursion lazy.
+
+import Test
+
+recBindA :: Int -> [Int]
+recBindA x
+ = recBindB x
+
+recBindB :: Int -> [Int]
+recBindB x
+ = recBindC x
+   where recBindC x = x : recBindA x
+
 main ()
- = do	println $ show solution1
-
-even x = x `mod` 2 == 0
-
-solution1 
-  = sum [ x 	| x <- takeWhile ((<=) maxN) fibs
-              		, even x]
-  where	fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
+ = do
+	println "First the lazy version."
+	println (show (take 10 (recBindAL 1)))
+	println "Now try the eager version."
+	println (show (take 10 (recBindA 1)))

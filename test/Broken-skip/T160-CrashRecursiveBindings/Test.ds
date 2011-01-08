@@ -1,0 +1,13 @@
+
+-- See Main.ds in same directory for more info.
+
+export recBindAL
+
+recBindAL :: Int -> [Int]
+recBindAL x
+ = recBindBL x
+
+recBindBL :: Int -> [Int]
+recBindBL x
+ = recBindCL x
+   where recBindCL x = x : recBindAL @ x
