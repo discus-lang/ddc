@@ -58,7 +58,7 @@ toCoreXLit' tt (D.XLit _ litfmt@(LiteralFmt lit fmt))
 	= let	Just fmtUnboxed	= dataFormatUnboxedOfBoxed fmt
 		tBoxed		= tt
 		Just tUnboxed	= T.takeUnboxedOfBoxedType tBoxed
-		Just ptUnboxed	= C.takePrimTypeOfType tUnboxed
+		Just ptUnboxed	= T.takePrimTypeOfType tUnboxed
 		tFun		= T.makeTFun tUnboxed tBoxed T.tPure T.tEmpty
 		
 	  in	C.XApp	(C.XPrim (C.MBox ptUnboxed) tFun)

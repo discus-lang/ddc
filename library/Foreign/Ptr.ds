@@ -2,30 +2,25 @@
 module Foreign.Ptr
 import Base
 
-
 -- Pointer Arithmetic ---------------------------------------------------------
--- TODO: make this a primitive.
-foreign import "_PLUSPTR"
- plusPtr  :: Ptr# Word8# -> Int# -> Ptr# Word8#
+foreign import plusPtr 
+	:: Ptr# Word8# -> Int# -> Ptr# Word8#
 
 
 -- Peeking and Poking ---------------------------------------------------------
--- TODO: these should really be primitives.
-
 -- | Read a value from the address given by a pointer.
-foreign import "_PEEK"
- peek	:: forall a. Ptr# a -> a
+foreign import peek
+	:: forall a. Ptr# a -> a
 
 
 -- | Like `peek` but assign a read effect to the region holding the given object.
-foreign import "_PEEKON"
- peekOn	:: forall (t :: % -> *) a
+foreign import peekOn
+	:: forall (t :: % -> *) a
 	.  t %r1 -> Ptr# a -(!e1)> a
 	:- !e1 = !Read %r1
 	:$ Obj -> Obj -> Obj
 
-foreign import "_PEEKON"
- peekOnPtr
+foreign import peekOnPtr
 	:: forall (t :: % -> *) a
 	.  Ptr# (t %r1) -> Ptr# a -(!e1)> a
 	:- !e1 = !Read %r1
@@ -33,20 +28,19 @@ foreign import "_PEEKON"
 
 
 -- | Write a value to the address given by a pointer.
-foreign import "_POKE"
- poke	:: forall a. Ptr# a -> a -> Void#
+foreign import poke
+	:: forall a. Ptr# a -> a -> Void#
 
 
 -- | Like `poke` but assign a write effect to the region holding the given object.
-foreign import "_POKEON"
- pokeOn	:: forall (t :: % -> *) a
+foreign import pokeOn
+	:: forall (t :: % -> *) a
 	.  t %r1 -> Ptr# a -> a -(!e1)> Void#
 	:- !e1 = !Write %r1
 	,  Mutable %r1
 	:$ Obj -> Obj -> Obj -> Obj
 
-foreign import "_POKEON"
- pokeOnPtr 
+foreign import pokeOnPtr 
 	:: forall (t :: % -> *) a
 	.  Ptr# (t %r1) -> Ptr# a -> a -(!e1)> Void#
 	:- !e1 = !Write %r1

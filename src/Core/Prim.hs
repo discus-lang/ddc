@@ -8,6 +8,7 @@
 --	where we really want to expose the box\/unbox pairs to the simplifier.
 --
 --	TODO: Erase forcings on Direct objects in a separate pass.
+--      TODO: Check for the correct module name as well in primfun detection.
 --
 module Core.Prim
 	(primGlob)
@@ -181,9 +182,7 @@ primX1' tt xx parts
 	-- primitive arithmetic operators
 	Left (XVar v t) : psArgs
 	 | Just (op, pt)	<- readPrimOp (varName v)
-	 -> buildApp 
-		$ Left (XPrim (MOp pt op) t)
-		: psArgs
+	 -> buildApp $ Left (XPrim (MOp pt op) t) : psArgs
 	
 	-- primitive casting
 	[Left (XVar v t), Left x]
@@ -191,22 +190,42 @@ primX1' tt xx parts
 	 -> buildApp [Left (XPrim (MCast cast) t), Left x]
 	
 	-- primitive pointer coercion
-	[Left (XVar v t), Right t1, Right t2, Left x]
+	-- TODO: rewrite this less verbosely
+	Left (XVar v t) : Right t1 : Right t2 : psArgs
 	 | varName v == "coercePtr"
-	 -> buildApp [ Left (XPrim (MCoerce (PrimCoercePtr t1 t2)) t)
-		     , Right t1, Right t2, Left x]
+	 -> buildApp $ Left (XPrim (MCoerce (PrimCoercePtr t1 t2)) t) : Right t1 : Right t2 : psArgs
 
-	[Left (XVar v t), Right t1, Left x]
+	Left (XVar v t) : Right t1 : psArgs
 	 | varName v == "coercePtrToAddr"
-	 -> buildApp [ Left (XPrim (MCoerce (PrimCoercePtrToAddr t1)) t)
-		     , Right t1, Left x]
+	 -> buildApp $ Left (XPrim (MCoerce (PrimCoercePtrToAddr t1)) t) : Right t1 : psArgs
 
 	 | varName v == "coerceAddrToPtr"
-	 -> buildApp [ Left (XPrim (MCoerce (PrimCoerceAddrToPtr t1)) t)
-		     , Right t1, Left x]
+	 -> buildApp $ Left (XPrim (MCoerce (PrimCoerceAddrToPtr t1)) t) : Right t1 : psArgs
+
+	-- primitive pointer operations
+	-- TODO: rewrite this less verbosely
+	Left (XVar v t) : psArgs
+	 | varName v == "plusPtr"
+	 -> buildApp $ Left (XPrim (MPtr PrimPtrPlus) t) : psArgs
+
+	Left (XVar v t) : Right t1 : psArgs
+	 | varName v == "peek", Just pt1 <- takePrimTypeOfType t1
+	 -> buildApp $ Left (XPrim (MPtr (PrimPtrPeek pt1)) t) : Right t1 : psArgs
+
+	 | varName v == "poke", Just pt1 <- takePrimTypeOfType t1
+	 -> buildApp $ Left (XPrim (MPtr (PrimPtrPoke pt1)) t) : Right t1 : psArgs
+
+	Left (XVar v t) : Right t1 : Right t2 : Right r3 : psArgs
+	 | elem (varName v) ["peekOn", "peekOnPtr"]
+	 , Just pt2 <- takePrimTypeOfType t2 
+	 -> buildApp $ Left (XPrim (MPtr (PrimPtrPeekOn pt2)) t) : Right t1 : Right t2 : Right r3 : psArgs
+
+	Left (XVar v t) : Right t1 : Right t2 : Right r3 : Right w4 : psArgs
+	 | elem (varName v) ["pokeOn", "pokeOnPtr"]
+	 , Just pt3 <- takePrimTypeOfType t2
+	 -> buildApp $ Left (XPrim (MPtr (PrimPtrPokeOn pt3)) t) : Right t1 : Right t2 : Right r3 : Right w4 : psArgs
 
 	-- not a primitive function.
 	_ -> Just xx
-
 
 

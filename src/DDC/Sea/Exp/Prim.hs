@@ -31,6 +31,9 @@ data	Prim
 	--   The arguments give the type of the pointed-to data.
 	| MCoerce	(PrimCoerce Type)
 
+	-- | Pointer operations
+	| MPtr		PrimPtr
+
 	-- | Primitive operators concerned with function application.
 	--   TODO: Change this to use PrimCall
 	| MApp		PrimApp

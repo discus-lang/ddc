@@ -303,6 +303,7 @@ toSeaApps parts
 		return	$ E.XPrim (E.MCast (PrimCast pt1 pt2)) args'
 
 	-- coersion between pointer types
+	-- converting these is a hassle because they contain Type.Exps
 	C.XPrim (C.MCoerce (PrimCoercePtr t1 t2)) _ : args
 	 -> do	let t1'	=  toSeaT t1
 		let t2'	=  toSeaT t2
@@ -318,6 +319,11 @@ toSeaApps parts
 	 -> do	let t1'	=  toSeaT t1
 		args'	<- mapM toSeaX args
 		return	$ E.XPrim (E.MCoerce (PrimCoercePtrToAddr t1')) args'
+
+	-- pointer ops
+	C.XPrim (C.MPtr prim) _ : args
+	 -> do	args'	<- mapM toSeaX args
+		return	$ E.XPrim (E.MPtr prim) args'
 		
 	-- function calls
 	-- For these four we statically know that the thing we're calling is a supercombinator.

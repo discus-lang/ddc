@@ -201,24 +201,14 @@ prettyExpB x
 instance Pretty Prim PMode where
  ppr xx 
   = case xx of
-	MForce		
-	 -> ppr "prim{Force}"
-
-	MBox   pt	
-	 -> ppr "prim{Box" 		% brackets pt % "}"
-
-	MUnbox pt	
-	 -> ppr "prim{Unbox"		% brackets pt % "}"
-
-	MOp    pt op
-	 -> ppr "prim{" % op 		% brackets pt % "}"
-
-	MCast (PrimCast pt1 pt2)
-	 -> ppr "prim{Cast"	  	% brackets (pt1 % "|" % pt2) % "}"
-
-	MCoerce coerce			-> ppr coerce
-	MCall call			-> ppr call
-
+	MForce			-> ppr "prim{Force}"
+	MBox   pt		-> ppr "prim{Box" 		% brackets pt % "}"
+	MUnbox pt		-> ppr "prim{Unbox"		% brackets pt % "}"
+	MOp    pt op		-> ppr "prim{" % op 		% brackets pt % "}"
+	MCast (PrimCast pt1 pt2)-> ppr "prim{Cast"	  	% brackets (pt1 % "|" % pt2) % "}"
+	MCoerce coerce		-> ppr coerce
+	MPtr    ptr		-> ppr ptr
+	MCall call		-> ppr call
 
 
 -- PrimCall ----------------------------------------------------------------------------------------
@@ -241,14 +231,20 @@ instance Pretty PrimOp PMode where
 instance Pretty (PrimCoerce Type) PMode where
  ppr xx 
   = case xx of
-	PrimCoercePtr t1 t2
-	 -> ppr "prim{CoercePtr"	% brackets (t1  % "|" % t2)  % "}"
+	PrimCoercePtr t1 t2	-> ppr "prim{CoercePtr"	% brackets (t1  % "|" % t2)  % "}"
+	PrimCoercePtrToAddr t1	-> ppr "prim{CoercePtrToAddr" 	% brackets t1 % "}"
+	PrimCoerceAddrToPtr t1	-> ppr "prim{CoerceAddrToPtr"	% brackets t1 % "}"
 
-	PrimCoercePtrToAddr t1
-	 -> ppr "prim{CoercePtrToAddr" 	% brackets t1 % "}"
 
-	PrimCoerceAddrToPtr t1
-	 -> ppr "prim{CoerceAddrToPtr"	% brackets t1 % "}"
+-- PrimPtr ----------------------------------------------------------------------------------------
+instance Pretty PrimPtr PMode where
+ ppr xx
+  = case xx of
+	PrimPtrPlus		-> ppr "prim{PtrPlus}"
+	PrimPtrPeek   t1	-> ppr "prim{PtrPeek" 	% brackets t1 % "}"
+	PrimPtrPeekOn t1	-> ppr "prim{PtrPeekOn" % brackets t1 % "}"
+	PrimPtrPoke   t1	-> ppr "prim{PtrPoke" 	% brackets t1 % "}"
+	PrimPtrPokeOn t1	-> ppr "prim{PtrPokeOn" % brackets t1 % "}"
 
 
 -- Stmt --------------------------------------------------------------------------------------------

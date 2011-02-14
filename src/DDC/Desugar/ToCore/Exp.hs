@@ -315,7 +315,7 @@ toCoreG vsBound mObj gg
 
 		let x			= C.XVar vObj tObj
 		let Just tUnboxed	= T.takeUnboxedOfBoxedType tObj
-		let Just ptUnboxed	= C.takePrimTypeOfType tUnboxed
+		let Just ptUnboxed	= T.takePrimTypeOfType tUnboxed
 		let Just tUnboxFn'	= T.tUnboxFn tObj
 
 		let xUnboxDiscrim tR
@@ -337,7 +337,7 @@ toCoreG vsBound mObj gg
 		 Just tLit	
 		  -> let Just (_, _, [tR]) = T.takeTData tLit
 			 Just tUnboxed	   = T.takeUnboxedOfBoxedType tLit
-			 Just ptUnboxed	   = C.takePrimTypeOfType tUnboxed
+			 Just ptUnboxed	   = T.takePrimTypeOfType tUnboxed
 			 Just tUnboxFn'	   = T.tUnboxFn tLit
 
 			 xUnboxDiscrim tR

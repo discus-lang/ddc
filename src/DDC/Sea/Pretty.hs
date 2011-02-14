@@ -345,25 +345,34 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	-- Coercion between pointer types
 	XPrim (MCoerce (PrimCoercePtr t1 t2)) [x]
-	 -> "_COERCE_PTR"
-		% "("  % t1
-		% ", " % t2
-		% ", " % x
-		% ")"
+	 -> "_COERCE_PTR" % (t1, t2, x)
 
 	-- Coercion between pointer types
 	XPrim (MCoerce (PrimCoerceAddrToPtr t1)) [x]
-	 -> "_COERCE_ADDR_TO_PTR"
-		% "("  % t1
-		% ", " % x
-		% ")"
+	 -> "_COERCE_ADDR_TO_PTR" % (t1, x)
 
 	-- Coercion between pointer types
 	XPrim (MCoerce (PrimCoercePtrToAddr t1)) [x]
-	 -> "_COERCE_PTR_TO_ADDR"
-		% "("  % t1
-		% ", " % x
-		% ")"
+	 -> "_COERCE_PTR_TO_ADDR" % (t1, x)
+
+	-- Pointer addition
+	XPrim (MPtr PrimPtrPlus) [x1, x2]
+	 -> "_PLUSPTR" % (x1, x2)
+
+	-- Pointer Poking.
+	XPrim (MPtr (PrimPtrPokeOn _)) [x1, x2, x3]
+	 -> "_POKEON" % (x1, x2, x3)
+
+	XPrim (MPtr (PrimPtrPoke _))   [x1, x2]
+	 -> "_POKE" % (x1, x2)
+
+	-- Pointer peeking
+	XPrim (MPtr (PrimPtrPeekOn _)) [x1, x2]
+	 -> "_PEEKON" % (x1, x2)
+
+	XPrim (MPtr (PrimPtrPeek _))   [x1]
+	 -> "_PEEK" % parens x1
+	
 
 	_ -> panic stage ("ppr[Exp]: no match for " % show xx)
 

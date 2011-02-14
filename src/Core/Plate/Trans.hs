@@ -408,6 +408,7 @@ instance Monad m => TransM m Prim where
 	MOp{}			-> transM table tt
 	MCast{}			-> transM table tt
 	MCoerce{}		-> transM table tt
+	MPtr{}			-> transM table tt
 	MCall{}			-> transM table tt
 
 		
