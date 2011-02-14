@@ -9,6 +9,7 @@ where
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Base.Prim.PrimCast
+import DDC.Base.Prim.PrimCoerce
 import DDC.Base.Prim.PrimType
 import DDC.Main.Error
 import DDC.Sea.Exp
@@ -163,6 +164,13 @@ llvmOfXPrim (MCast pcast) [arg]
 			= intCastOp pcast
 	r0		<- newUniqueReg typ
 	addBlock	[ Assignment r0 (Cast castop exp typ) ]
+	return		r0
+
+llvmOfXPrim (MCoerce (PrimCoercePtr _ tdest)) [arg]
+ = do	exp		<- llvmOfExp arg
+	let typ		= pLift $ toLlvmType tdest
+	r0		<- newUniqueReg typ
+	addBlock	[ Assignment r0 (Cast LM_Bitcast exp typ) ]
 	return		r0
 
 llvmOfXPrim op args
