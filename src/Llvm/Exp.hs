@@ -10,6 +10,7 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Base.Prim.PrimCast
 import DDC.Base.Prim.PrimCoerce
+import DDC.Base.Prim.PrimPtr
 import DDC.Base.Prim.PrimType
 import DDC.Main.Error
 import DDC.Sea.Exp
@@ -172,6 +173,21 @@ llvmOfXPrim (MCoerce (PrimCoercePtr _ tdest)) [arg]
 	r0		<- newUniqueReg typ
 	addBlock	[ Assignment r0 (Cast LM_Bitcast exp typ) ]
 	return		r0
+
+llvmOfXPrim (MPtr PrimPtrPlus) [ arg1@(XVar _ t1@(TPtr _)), arg2@(XVar _ (TCon (TyConUnboxed v2))) ]
+ | varName v2 == "Int32#"
+ = do	ptr		<- llvmOfExp arg1
+	int		<- llvmOfExp arg2
+	r0		<- newUniqueReg $ toLlvmType t1
+	addBlock	[ Assignment r0 (GetElemPtr True ptr [int]) ]
+	return		r0
+
+llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeWord (Width w)))) [ _, arg2@(XVar _ t2@(TPtr _)) ]
+ = do	ptr		<- llvmOfExp arg2
+	r0		<- newUniqueReg $ LMInt w
+	addBlock	[ Assignment r0 (Load ptr) ]
+	return		r0
+
 
 llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")\n\n"
