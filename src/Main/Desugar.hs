@@ -34,7 +34,7 @@ import qualified DDC.Desugar.ToCore.Clean	as D
 import qualified DDC.Desugar.Elaborate		as D
 import qualified DDC.Desugar.ProjectEta		as D
 import qualified DDC.Desugar.Slurp.Slurp	as D
-import qualified Desugar.Project		as D
+import qualified DDC.Desugar.Project		as D
 import qualified DDC.Desugar.Transform		as D
 import qualified Data.Map			as Map
 import qualified Data.Set			as Set

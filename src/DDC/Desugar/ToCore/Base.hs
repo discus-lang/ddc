@@ -16,7 +16,7 @@ import DDC.Main.Pretty
 import DDC.Solve.Interface.Solution
 import DDC.Type
 import DDC.Var
-import Desugar.Project			(ProjTable)
+import DDC.Desugar.Project		(ProjTable)
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
 import qualified Type.ToCore		as T
