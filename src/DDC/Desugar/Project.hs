@@ -78,19 +78,16 @@ projectTreeM modName headerTree tree
 	return treeProjDict
 
 
-
-
--- | Make sure there is a projection dictionary for each data type.
+-- Add Projection Dictionaries --------------------------------------------------------------------
+-- | Ensure there is a projection dictionary for each data type.
 --   If one doesn't exist, then make a new one. 
---   This dictionary will be filled with the default projections by 
---   addProjDictFunTree.
+--   This dictionary will be filled with the default projections by addProjDictFunTree.
 addProjDictDataTree
 	:: Tree Annot
 	-> ProjectM (Tree Annot)
  
 addProjDictDataTree tree
- = do
- 	-- Slurp out all the available projection dictionaries.
+ = do 	-- Slurp out all the available projection dictionaries.
 	let projMap	
 		= Map.fromList
 		$ catMaybes
@@ -105,32 +102,31 @@ addProjDictDataTree tree
 	-- If there is no projection dictionary for a given data type
 	--	then make a new empty one. Add new dictionary straight after the data def
 	--	to make life easier for the type inference constraint reordering.
-	return	$ catMap (addProjDataP projMap) tree
+	return	$ catMap (addProjDictDataP projMap) tree
 	
 
-addProjDataP projMap p
- = case p of
-	PData sp 
-	 (DataDef 
-		{ dataDefName 	= v 
-		, dataDefParams	= vks
-		, dataDefCtors	= ctors })
- 	 -> case Map.lookup v projMap of
-		Nothing	-> [p, PProjDict sp 
-					(makeTData v (makeKFuns (map snd vks) kValue) 
-								(map varToTBot $ map fst vks))
-								[]]
-		Just _	-> [p]
-		
-	_		-> [p]
+addProjDictDataP projMap p
+ 	| PData sp (DataDef 
+			{ dataDefName 	= v 
+				, dataDefParams	= vks
+				, dataDefCtors	= ctors }) <- p
+ 	, Nothing	<- Map.lookup v projMap
+ 	= [p, PProjDict sp 
+		(makeTData v 	(makeKFuns (map snd vks) kValue) 
+				(map varToTBot $ map fst vks))
+				[]]
+	
+	| otherwise
+	= [p]
 
 varToTBot v
 	= tBot (let Just k = kindOfSpace $ varNameSpace v in k) 
 	
 
+-- Add Default Projections ------------------------------------------------------------------------
 -- | Add default field projections to dictionaries for data types.
---	Abstract data types with no constructors don't have fields,
---	so don't need default field projections.
+--   Abstract data types with no constructors don't have fields,
+--   so don't need default field projections.
 addProjDictFunsTree 
 	:: Map Var DataDef	-- ^ Map of type constructor name to data type def.
 	-> Tree Annot		-- ^ The tree to desugar.
@@ -177,11 +173,12 @@ addProjDictFunsP dataMap p
  =	return p
 
 
+-- | Make a projection function for a particular field.
 makeProjFun 
-	:: SourcePos 
-	-> Type
-	-> DataDef
-	-> Var 
+	:: SourcePos 		-- ^ Source position to assign to the new function.
+	-> Type			-- ^ Type being projected.
+	-> DataDef		-- ^ Data definition of type.
+	-> Var 			-- ^ Name of field to project.
 	-> ProjectM [Stmt Annot]
 
 makeProjFun sp tData dataDef fieldV
@@ -256,35 +253,33 @@ makeProjR_fun sp tData dataDef vField
 				$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
 				% "  tData = " % show tData			% "\n"
 
-	return	$ 	[ SSig  sp SigModeMatch [funV]
-				(makeTFun tData (makeTData 
-							primTRef 
-							(KFun kRegion (KFun kValue kValue))
-							[TVar kRegion rData, resultT]) 
-						tPure
-						tEmpty)
+	return	[ SSig  sp SigModeMatch [funV]
+			(makeTFun tData (makeTData 
+						primTRef 
+						(KFun kRegion (KFun kValue kValue))
+						[TVar kRegion rData, resultT]) 
+					tPure
+					tEmpty)
 
 
-			, SBind sp (Just funV) 
-				(XLambda sp vObj
-					(XMatch sp (Just (XVar sp vObj)) alts))]
+		, SBind sp (Just funV) 
+			(XLambda sp vObj
+				(XMatch sp (Just (XVar sp vObj)) alts))]
 
 				
 makeProjR_alt sp objV fieldV ctor
  = do	let vCon	= ctorDefName ctor
-	
 	let (mFieldIx :: Maybe Int)
 		= Map.lookup fieldV $ ctorDefFields ctor
-			
+
 	return
 	 $ case mFieldIx of
-	 	Just ix	-> Just
-			$ AAlt sp
-				[ GCase sp (WConLabel sp vCon []) ]
-				(XApp sp 	(XApp sp 	(XVar sp primProjFieldR) 
-						 		(XVar sp objV))
-						(XLit sp (LiteralFmt (LInt $ fromIntegral ix) (UnboxedBits 32))))
+	    Just ix	
+	     -> Just $ AAlt sp
+			[ GCase sp (WConLabel sp vCon []) ]
+			(XApp sp (XApp sp (XVar sp primProjFieldR) 
+					 	   (XVar sp objV))
+				 (XLit sp (LiteralFmt (LInt $ fromIntegral ix) 
+					              (UnboxedBits 32))))
 				
-		Nothing	-> Nothing
- 
-
+	    Nothing	-> Nothing
