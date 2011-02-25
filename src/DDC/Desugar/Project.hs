@@ -50,13 +50,13 @@ projectTreeM
 	-> ProjectM (Tree Annot)
 projectTreeM modName headerTree tree
  = do
-	-- | Slurp out all the data defs
+	-- Slurp out all the data defs
 	let dataMap	= Map.fromList
 			$ [(dataDefName def, def) 	
 				| p@(PData _ def) 
 				<- tree ++ headerTree]
 
-	-- | Slurp out the class dictionaries.
+	-- Slurp out the class dictionaries.
 	let classDicts	= Map.fromList
 			$ [(v, p)	
 				| p@(PClassDecl _ v ts vts)
