@@ -11,7 +11,7 @@ import DDC.Main.Error
 import DDC.Var
 import Type.ToCore			(toCoreT, toCoreK)
 import Type.Export			(Solution(..))
-import DDC.Desugar.Project		(ProjTable)
+import DDC.Desugar.Projections.ProjTable (ProjTable)
 import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T
 import qualified DDC.Core.Exp 		as C
