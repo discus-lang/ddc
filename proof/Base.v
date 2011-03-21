@@ -1,4 +1,5 @@
 
+Require Export Cases.
 
 Inductive bool : Type :=
  | true  : bool

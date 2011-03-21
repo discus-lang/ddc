@@ -5,6 +5,11 @@ Inductive name : Type :=
  Name : nat -> name.
 
 
+Notation nA := (Name 0).
+Notation nB := (Name 1).
+Notation nC := (Name 2).
+
+
 Definition beq_name n1 n2 := 
  match (n1, n2) with 
   (Name x1, Name x2) => beq_nat x1 x2
