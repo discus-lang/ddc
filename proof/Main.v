@@ -3,6 +3,7 @@ Require Import Base.
 Require Import Name.
 Require Import Exp.
 Require Import Ty.
+Require Import Context.
 
 (* evaluation *********************************************)
 Inductive STEP : exp -> exp -> Prop := 
@@ -24,10 +25,15 @@ Inductive STEP : exp -> exp -> Prop :=
     ->  STEP  (XApp v1 t2) (XApp v1 t2').
 
 
-Example xIdA := XLam nA tA (XVar nA).
 
-Lemma example_step1 : STEP (XApp xIdA (XAtom nB)) (XAtom nB).
-Proof. unfold xIdA. apply EVAppAbs. auto. Qed.
+(* example expressions ************************************)
+Example xId_A := XLam nA tA (XVar nA).
+Example xK_AB := XLam nA tA (XLam nB tB (XVar nA)). 
+
+Lemma example_step1 : STEP (XApp xId_A (XAtom nB)) (XAtom nB).
+Proof. unfold xId_A. apply EVAppAbs. auto. Qed.
+
+
 
 
 

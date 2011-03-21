@@ -1,6 +1,7 @@
 
 Require Export Cases.
 
+(* bool ***************************************************)
 Inductive bool : Type :=
  | true  : bool
  | false : bool.
@@ -51,3 +52,12 @@ Proof.
    simpl. intro eq. apply IHn1 in eq. rewrite -> eq. tauto.
 Qed.
 
+
+(* maybe **************************************************)
+Inductive maybe (a : Type) :=
+ | nothing  : maybe a
+ | just     : a -> maybe a.
+
+Implicit Arguments nothing [[a]].
+Implicit Arguments just    [[a]].
+ 
