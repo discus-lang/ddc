@@ -1,6 +1,4 @@
 
-Module Bool.
-
 
 Inductive bool : Type :=
  | true  : bool
@@ -51,6 +49,4 @@ Proof.
    simpl. intro contra. inversion contra.
    simpl. intro eq. apply IHn1 in eq. rewrite -> eq. tauto.
 Qed.
-
-End Bool.
 
