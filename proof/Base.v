@@ -54,10 +54,10 @@ Qed.
 
 
 (* maybe **************************************************)
-Inductive maybe (a : Type) :=
- | nothing  : maybe a
- | just     : a -> maybe a.
+Inductive option (a : Type) :=
+ | none  : option a
+ | some  : a -> option a.
 
-Implicit Arguments nothing [[a]].
-Implicit Arguments just    [[a]].
+Implicit Arguments none [[a]].
+Implicit Arguments some [[a]].
  

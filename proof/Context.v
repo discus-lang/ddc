@@ -2,27 +2,28 @@
 Require Import Base.
 Require Import Name.
 
+
 Definition partial_map (A:Type) 
- := name -> maybe A.
+ := name -> option A.
 
 
 (* An empty typing context *)
 Definition empty {A:Type} : partial_map A 
- := (fun _ => nothing A).
+ := fun _ => none.
 
 
 (* Extend a typing context *)
 Definition extend {A:Type} (rest:partial_map A) (x:name) (T:A)
  := fun x' 
  => if beq_name x x'
-       then @just A T
+       then some T
        else rest x'.
 
 
 (* An extended contexted contains the member we extended it with *)
 Lemma extend_eq 
  : forall A (ctx: partial_map A) x T
- , (extend ctx x T) x = @just A T.
+ , (extend ctx x T) x = some T.
 Proof.
  intros. unfold extend. 
  rewrite <- beq_name_refl. tauto.
