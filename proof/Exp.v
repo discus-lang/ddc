@@ -5,7 +5,6 @@ Require Export Cases.
 
 (* expressions *******************************************)
 Inductive exp : Type :=
-  | XAtom : name -> exp
   | XVar  : name -> exp
   | XLam  : name -> ty  -> exp -> exp
   | XApp  : exp  -> exp -> exp.
@@ -13,16 +12,14 @@ Inductive exp : Type :=
 
 Tactic Notation "exp_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "XAtom"
-  | Case_aux c "XVar" 
+  [ Case_aux c "XVar" 
   | Case_aux c "XLam"
   | Case_aux c "XApp" ]. 
 
 
 (* values **************************************************)
 Inductive VALUE : exp -> Prop :=
- | VALUE_XAtom : forall x,     VALUE (XAtom x)
- | VALUE_XLam  : forall x T t, VALUE (XLam x T t).
+ | VALUE_XLam  : forall x T t, VALUE (XLam  x T t).
 
 Hint Constructors VALUE.
 
@@ -32,9 +29,6 @@ Hint Constructors VALUE.
 
 Fixpoint subst (n : name) (s : exp) (t : exp) : exp :=
   match t with
-    |  XAtom _
-    => t
-
     |  XVar n'      
     => if beq_name n n' then s else t
 

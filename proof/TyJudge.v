@@ -1,9 +1,9 @@
 
-Require Import Base.
-Require Import Name.
-Require Import Context.
-Require Import Ty.
-Require Import Exp.
+Require Export Base.
+Require Export Name.
+Require Export Context.
+Require Export Ty.
+Require Export Exp.
 
 Definition tyenv := partial_map ty.
 
@@ -24,42 +24,19 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
    -> TYPE env t2 T11
    -> TYPE env (XApp t1 t2) T12.
 
+Tactic Notation "TYPE_cases" tactic(first) ident(c) :=
+ first;
+ [ Case_aux c "TYVar"
+ | Case_aux c "TYLam"
+ | Case_aux c "TYApp"].
+
 Hint Constructors TYPE.
+Hint Unfold  beq_name beq_nat extend.
+Hint Resolve extend_eq. 
 
 
-Example type_example1 
- : TYPE empty (XLam nA tA (XVar nA)) (TFun tA tA).
-Proof. auto. Qed.
 
 
-Example type_example2 
- : TYPE empty 
-        (XLam nA tA 
-         (XLam nB (TFun tA tA)
-          (XApp (XVar nB) (XApp (XVar nB) (XVar nA)))))
-        (TFun tA (TFun (TFun tA tA) tA)).
-Proof.
- apply TYLam.  apply TYLam.
- eapply TYApp. apply TYVar. apply extend_eq. 
- eapply TYApp. apply TYVar. apply extend_eq. 
- eapply TYVar. unfold extend. simpl. tauto.
-Qed.
 
 
-Example type_nonexample1
- : ~exists T 
- , TYPE empty 
-        (XLam nA tA
-         (XLam nB tB
-          (XApp (XVar nA) (XVar nB))))
-        T.
-Proof. 
- intros C. destruct C.
- inversion H.  subst. clear H.
- inversion H5. subst. clear H5.
- inversion H4. subst. clear H4.
- inversion H2. subst. clear H2.
- inversion H5. subst. clear H5.
- unfold extend in H1. simpl in H1.
- inversion H1.
-Qed.
+ 

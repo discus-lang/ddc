@@ -1,5 +1,5 @@
 
-Require Import Base.
+Require Export Base.
 
 Inductive name : Type :=
  Name : nat -> name.
