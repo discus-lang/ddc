@@ -39,7 +39,7 @@ Proof.
 Qed.
 
 
-Theorem beq_nat_eq
+Theorem true_nat_eq
  : forall n1 n2 : nat
  , true = beq_nat n1 n2 -> n1 = n2.
 Proof.
@@ -50,6 +50,48 @@ Proof.
   intros n2. destruct n2.
    simpl. intro contra. inversion contra.
    simpl. intro eq. apply IHn1 in eq. rewrite -> eq. tauto.
+Qed.
+
+
+Theorem eq_nat_true
+ : forall n1 n2 : nat
+ , n1 = n2 -> true = beq_nat n1 n2.
+Proof.
+ induction n1.
+ destruct n2. tauto.
+ simpl. intro. inversion H.
+ intro n2. destruct n2.
+ simpl. intro C. inversion C.
+ intro. inversion H. simpl. apply beq_nat_refl.
+Qed.
+
+
+Theorem false_nat_neq
+ : forall n1 n2 : nat
+ , false = beq_nat n1 n2 -> n1 <> n2.
+Proof.
+ induction n1.
+ destruct n2.
+  simpl. intro. inversion H.
+  auto.
+  intro n2. destruct n2.
+   simpl. intro eq. unfold not. intro. inversion H.
+   simpl. intro neq. apply IHn1 in neq. unfold not.
+   intro. unfold not in neq. inversion H. rewrite H1 in neq.
+   auto.
+Qed.
+
+
+Theorem neq_nat_false
+ : forall n1 n2 : nat
+ , n1 <> n2 -> false = beq_nat n1 n2.
+Proof.
+ induction n1.
+ destruct n2.
+ tauto.
+ simpl. tauto.
+ intro n2. destruct n2.
+ tauto. simpl. auto.
 Qed.
 
 
