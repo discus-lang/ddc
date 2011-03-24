@@ -1,5 +1,7 @@
+(* Basic definitions shared by all modules *)
 
 Require Export Cases.
+
 
 (* bool ***************************************************)
 Inductive bool : Type :=
@@ -7,6 +9,16 @@ Inductive bool : Type :=
  | false : bool.
 
 
+(* maybe **************************************************)
+Inductive option (a : Type) :=
+ | none  : option a
+ | some  : a -> option a.
+
+Implicit Arguments none [[a]].
+Implicit Arguments some [[a]].
+
+
+(* nat ****************************************************)
 Fixpoint beq_nat (n m : nat) : bool :=
  match n, m with
  | O, O       => true
@@ -22,8 +34,8 @@ Theorem beq_nat_refl
 Proof.
  intros. 
  induction n.
-  tauto.
-  simpl. tauto. 
+  simpl. trivial.
+  simpl. assumption. 
 Qed.
 
 
@@ -32,10 +44,12 @@ Theorem beq_nat_sym
  , beq_nat n1 n2 = beq_nat n2 n1.
 Proof. 
  induction n1.
- intro n2. destruct n2.
-  tauto. tauto.
-  intro. destruct n2. tauto.
-  simpl. auto.
+  intro n2. destruct n2.
+   trivial.
+   simpl. trivial.
+  intro. destruct n2.
+   simpl. trivial.
+   simpl. apply IHn1.
 Qed.
 
 
@@ -44,12 +58,12 @@ Theorem true_nat_eq
  , true = beq_nat n1 n2 -> n1 = n2.
 Proof.
  induction n1.
- destruct n2.
-  simpl. tauto.
-  simpl. intro contra. inversion contra.
-  intros n2. destruct n2.
+  destruct n2.
+   simpl. auto.
    simpl. intro contra. inversion contra.
-   simpl. intro eq. apply IHn1 in eq. rewrite -> eq. tauto.
+  intro n2. destruct n2.
+   simpl. intro contra. inversion contra.
+   simpl. auto.
 Qed.
 
 
@@ -58,11 +72,12 @@ Theorem eq_nat_true
  , n1 = n2 -> true = beq_nat n1 n2.
 Proof.
  induction n1.
- destruct n2. tauto.
- simpl. intro. inversion H.
- intro n2. destruct n2.
- simpl. intro C. inversion C.
- intro. inversion H. simpl. apply beq_nat_refl.
+  destruct n2.
+   auto.
+   simpl. intro. inversion H.
+  intro. destruct n2.
+   simpl. intro. inversion H.
+   simpl. intro. inversion H. apply beq_nat_refl.
 Qed.
 
 
@@ -71,14 +86,13 @@ Theorem false_nat_neq
  , false = beq_nat n1 n2 -> n1 <> n2.
 Proof.
  induction n1.
- destruct n2.
-  simpl. intro. inversion H.
-  auto.
+  destruct n2.
+   simpl. intro. inversion H.
+   simpl. intro. unfold not. intro. inversion H0.
   intro n2. destruct n2.
-   simpl. intro eq. unfold not. intro. inversion H.
-   simpl. intro neq. apply IHn1 in neq. unfold not.
-   intro. unfold not in neq. inversion H. rewrite H1 in neq.
-   auto.
+   simpl. intro. unfold not. intro. inversion H0.
+   simpl. intro. apply IHn1 in H. contradict H.
+    inversion H. subst. trivial. 
 Qed.
 
 
@@ -87,19 +101,12 @@ Theorem neq_nat_false
  , n1 <> n2 -> false = beq_nat n1 n2.
 Proof.
  induction n1.
- destruct n2.
- tauto.
- simpl. tauto.
- intro n2. destruct n2.
- tauto. simpl. auto.
+  destruct n2.
+   intro. contradict H. trivial.
+   simpl. intro. trivial.
+  intro n2. destruct n2.
+   intro. simpl. trivial.
+   intro. simpl. apply IHn1. contradict H. subst. trivial.
 Qed.
 
 
-(* maybe **************************************************)
-Inductive option (a : Type) :=
- | none  : option a
- | some  : a -> option a.
-
-Implicit Arguments none [[a]].
-Implicit Arguments some [[a]].
- 
