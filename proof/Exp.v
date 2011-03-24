@@ -56,6 +56,8 @@ Definition closed (t:exp)
  := forall x, ~(freeX x t).
 
 
+(* If a variable is free is a lambda expression, then we know 
+   it's not the variable being bound. *)
 Lemma nocapture_lam
  : forall x y T t
  , freeX x (XLam y T t) -> x <> y.
@@ -65,12 +67,14 @@ Proof.
 Qed.
 
 
-(* freshness **********************************************)
+(* freshness **********************************************
+   This is used to check that a term does not bind a particular
+   variable, to help ward against variable capture issues  *)
+
 Inductive freshX : name -> exp -> Prop :=
  | FreshX_var
    :  forall n1 n2
-   ,  n1 <> n2 
-   -> freshX n1 (XVar n2)
+   ,  freshX n1 (XVar n2)
 
  | FreshX_lam
    :  forall n1 n2 T t11

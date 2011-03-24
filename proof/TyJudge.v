@@ -90,10 +90,7 @@ Proof.
 Qed.
 
 
-(* TODO: The freshX predicate requires z not to appear
-         at all in t1. Weaken just to avoid capture by lambda
-         in t1.
-*)
+
 Lemma subst_value_value
  :  forall env x val t1 T1 T2
  ,  (forall z, freeX z val -> freshX z t1)
