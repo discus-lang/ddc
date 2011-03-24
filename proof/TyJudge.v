@@ -53,7 +53,7 @@ Proof.
  Case "XLam".
   inversion H1. subst.
   apply IHfreeX in H7. 
-  rewrite extend_neq in H7. auto.
+  rewrite extend_neq in H7. assumption.
   assumption.
  Case "XApp/app1". 
   inversion H0. subst.
@@ -76,21 +76,17 @@ Proof.
  generalize dependent env'.
  induction H; intros.
  Case "XVar".
-  apply TYVar.
-  rewrite <- H0.
-  assumption. auto.
+  apply TYVar. rewrite <- H0. assumption. apply FreeX_var.
  Case "XLam".
-  apply TYLam.
-  eapply IHTYPE.
+  apply TYLam. apply IHTYPE.
   intros.
-  unfold extend.
-  remember (beq_name x x0) as e. destruct e.
-  trivial.
-  eapply H0.
-  eapply FreeX_lam.
-  apply false_name_neq. assumption. assumption.
+  unfold extend. remember (beq_name x x0) as e. destruct e.
+   trivial.
+   eapply H0. eapply FreeX_lam. apply false_name_neq. assumption.
+   assumption.
  Case "XApp".
-  eapply TYApp. eauto. eauto.
+  eapply TYApp.
+   eauto. eauto.
 Qed.
 
 
@@ -126,28 +122,28 @@ Proof.
   simpl. remember (beq_name x y) as e. destruct e.
   SCase "x=y".
    apply true_name_eq in Heqe. subst.
-   eapply tyenv_invariance. eauto.
-   intros. apply extend_neq.
-   apply nocapture_lam in H2.
-   apply sym_not_equal in H2. assumption.
+   eapply tyenv_invariance.
+    apply H0.
+    intros. apply extend_neq.
+     apply nocapture_lam in H2. apply sym_not_equal in H2. assumption.
   SCase "x<>y".
    apply false_name_neq in Heqe.
    inversion H0. subst.
    apply TYLam. apply IHt1. 
-   intros. apply H in H2. inversion H2. subst. assumption.
-   rewrite extend_swap. assumption.
-   apply sym_not_equal. assumption.
-   eapply tyenv_invariance. eauto.
-   intros. apply H in H2. inversion H2. subst.
-   rewrite -> extend_neq. trivial.
-   apply sym_not_equal. assumption.
+    intros. apply H in H2. inversion H2. subst. assumption.
+    rewrite extend_swap.
+     assumption.
+     apply sym_not_equal. assumption.
+    eapply tyenv_invariance.
+     apply H1.
+     intros. apply H in H2. inversion H2. subst.
+      rewrite -> extend_neq. trivial. apply sym_not_equal. assumption.
  Case "XApp".
-   intros. simpl.
-   inversion H0. subst.
+   intros. simpl. inversion H0. subst.
    eapply TYApp.
    eapply IHt1_1 in H5. apply H5. 
-    intros. apply H in H2. inversion H2. auto. assumption.
+    intros. apply H in H2. inversion H2. subst. assumption. assumption.
    eapply IHt1_2 in H7. apply H7.
-    intros. apply H in H2. inversion H2. auto. assumption.
+    intros. apply H in H2. inversion H2. subst. assumption. assumption.
 Qed.
 

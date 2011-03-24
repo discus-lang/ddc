@@ -56,6 +56,14 @@ Definition closed (t:exp)
  := forall x, ~(freeX x t).
 
 
+Lemma nocapture_lam
+ : forall x y T t
+ , freeX x (XLam y T t) -> x <> y.
+Proof.
+ intros. inversion H. subst.
+ apply sym_not_equal. assumption.
+Qed.
+
 
 (* freshness **********************************************)
 Inductive freshX : name -> exp -> Prop :=
