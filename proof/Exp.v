@@ -17,13 +17,6 @@ Tactic Notation "exp_cases" tactic(first) ident(c) :=
   | Case_aux c "XApp" ]. 
 
 
-(* values **************************************************)
-Inductive VALUE : exp -> Prop :=
- | VALUE_XLam  : forall x T t, VALUE (XLam  x T t).
-
-Hint Constructors VALUE.
-
-
 (* free variables *****************************************)
 Inductive freeX : name -> exp -> Prop :=
  | FreeX_var
@@ -54,6 +47,23 @@ Hint Constructors freeX.
 
 Definition closed (t:exp) 
  := forall x, ~(freeX x t).
+
+
+(* values **************************************************)
+Inductive VALUE : exp -> Prop :=
+ | VALUE_XLam  
+    : forall x T t
+    , closed (XLam x T t) -> VALUE (XLam  x T t).
+
+Hint Constructors VALUE.
+
+
+Lemma values_are_closed
+ : forall t
+ , VALUE t -> closed t.
+Proof.
+ intros. inversion H. subst. assumption.
+Qed.
 
 
 (* If a variable is free is a lambda expression, then we know 
