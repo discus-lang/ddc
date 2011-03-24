@@ -11,6 +11,7 @@ Theorem preservation
 Proof.
  intros env t t' T Htype Hstep.
  generalize dependent t'.
+ generalize dependent T.
  induction t.
  Case "XVar". 
   intros. inversion Hstep.
@@ -18,16 +19,21 @@ Proof.
   intros. inversion Hstep.
  Case "XApp".
   intros. inversion Hstep. subst.
-  inversion H0. subst.
   SCase "EVAppAbs".
-   inversion H4. subst.
+   inversion Htype. subst.
    eapply subst_value_value.
-   apply values_are_closed in H5.
-   unfold closed in H5.
-   intro. specialize H5 with z.
-   intro. tauto.
-   apply H3. assumption.
+   apply values_are_closed in H2.
+   unfold closed in H2.
+   intro. specialize H2 with z. intro. tauto.
+   inversion H3. apply H1.
+   assumption.
   SCase "EVApp1". subst.
-   apply IHt1.
-   subst. eapply TYApp.
-   
+   inversion Htype.
+   eapply TYApp. subst.
+    apply IHt1. apply H3. assumption. assumption.
+  SCase "EVApp2". subst.
+   inversion Htype.
+   eapply TYApp. subst.
+    apply H4. subst.
+   apply IHt2. assumption. assumption.
+Qed.   
