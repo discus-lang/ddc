@@ -53,6 +53,7 @@ Proof.
 Qed.
 
 
+(* Equality of nats ***************************************)
 Theorem true_nat_eq
  : forall n1 n2 : nat
  , true = beq_nat n1 n2 -> n1 = n2.
