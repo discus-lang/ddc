@@ -1,6 +1,7 @@
 (* typing contexts *)
 Require Import Base.
 Require Import Name.
+Require Import FunctionalExtensionality.
 
 
 Definition partial_map (A:Type) 
@@ -26,7 +27,7 @@ Lemma extend_eq
  , (extend ctx x T) x = some T.
 Proof.
  intros. unfold extend. 
- rewrite <- beq_name_refl. tauto.
+ rewrite <- beq_name_refl. trivial.
 Qed.
 
 
@@ -38,7 +39,8 @@ Lemma extend_neq
 Proof. 
  intros. unfold extend.
  remember (beq_name x2 x1) as e. destruct e.
- apply true_name_eq in Heqe. subst. tauto. trivial.
+ apply true_name_eq in Heqe. subst. contradict H. trivial.
+ trivial.
 Qed.
 
 
@@ -47,10 +49,14 @@ Lemma extend_swap
  :   forall A (ctx: partial_map A) x T1 y T2
  ,   x <> y
  ->  (extend (extend ctx x T1) y T2) = (extend (extend ctx y T2) x T1).
-Proof. admit. Qed.
-
-
-
-
-
-
+Proof. 
+ intros.
+ apply functional_extensionality. intro.
+ unfold extend.
+ remember (beq_name y x0) as e1.
+ remember (beq_name x x0) as e2.
+ destruct e1. destruct e2.
+  apply true_name_eq in Heqe1.
+  apply true_name_eq in Heqe2. subst. contradict H. trivial.
+  trivial. trivial.
+Qed.

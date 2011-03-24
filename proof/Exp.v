@@ -56,15 +56,6 @@ Definition closed (t:exp)
  := forall x, ~(freeX x t).
 
 
-Lemma nocapture_lam
- :  forall x y t T
- ,  freeX x (XLam y T t) -> x <> y.
-Proof.
- intros.
- inversion H. subst.
- unfold not. unfold not in H3. intro. auto.
-Qed.
-
 
 (* freshness **********************************************)
 Inductive freshX : name -> exp -> Prop :=
@@ -86,9 +77,7 @@ Inductive freshX : name -> exp -> Prop :=
    -> freshX n1 (XApp t11 t12).
 
 
-(* substitution *******************************************)
-(* TODO: only works for s closed *)
-
+(* Substitution *******************************************)
 Fixpoint subst (n : name) (s : exp) (t : exp) : exp :=
   match t with
     |  XVar n'      
