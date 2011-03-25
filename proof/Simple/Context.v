@@ -32,8 +32,8 @@ Lemma extend_eq
  : forall A (ctx: partial_map A) x T
  , (extend ctx x T) x = some T.
 Proof.
- intros. unfold extend. 
- rewrite <- beq_name_refl. trivial.
+ intros. unfold extend.  
+ rewrite <- beq_name_refl. auto.
 Qed.
 
 Hint Resolve extend_eq.
@@ -49,8 +49,7 @@ Lemma extend_neq
 Proof. 
  intros. unfold extend.
  remember (beq_name x2 x1) as e. destruct e.
- apply true_name_eq in Heqe. subst. contradict H. trivial.
- trivial.
+ apply true_name_eq in Heqe. subst. contradict H. auto. auto.
 Qed.
 
 Hint Resolve extend_neq.

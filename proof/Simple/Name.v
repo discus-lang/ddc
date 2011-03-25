@@ -30,6 +30,8 @@ Proof.
  intros. destruct n. unfold beq_name. apply beq_nat_refl.
 Qed.
 
+Hint Resolve beq_name_refl.
+
 
 (* Equality of names *************************************)
 Theorem beq_name_sym

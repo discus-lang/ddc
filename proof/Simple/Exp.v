@@ -37,8 +37,7 @@ Lemma nocapture_lam
  : forall x y T t
  , freeX x (XLam y T t) -> x <> y.
 Proof.
- intros. inversion H. subst.
- apply sym_not_equal. assumption.
+ intros. inversion H. subst. auto.
 Qed.
 
 
@@ -52,8 +51,7 @@ Theorem closed_var_not
  , ~(closed (XVar n)).
 Proof.
  intro. unfold not. intro.
- unfold closed in H.
- specialize H with n. contradict H. apply FreeX_var.
+ unfold closed in H. specialize H with n. auto. 
 Qed.
 
 
@@ -75,7 +73,7 @@ Proof.
  unfold closed. intros. unfold not. intro.
  unfold closed in H.  specialize H  with x.
  unfold closed in H0. specialize H0 with x.
- inversion H1. subst. auto. subst. auto.
+ inversion H1. auto. auto.
 Qed.
 
 
@@ -92,9 +90,8 @@ Lemma values_are_closed
  : forall t
  , value t -> closed t.
 Proof.
- intros. inversion H. subst. assumption.
+ intros. inversion H. auto.
 Qed.
-
 
 
 (* freshness **********************************************

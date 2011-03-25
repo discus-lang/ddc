@@ -18,3 +18,5 @@ Inductive STEP : exp -> exp -> Prop :=
     ,   value v1
     ->  STEP  t2 t2'
     ->  STEP  (XApp v1 t2) (XApp v1 t2').
+
+Hint Constructors STEP.
