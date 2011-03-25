@@ -5,8 +5,56 @@ Require Export Ty.
 (* expressions *******************************************)
 Inductive exp : Type :=
   | XVar  : name -> exp
+
   | XLam  : name -> ty  -> exp -> exp
-  | XApp  : exp  -> exp -> exp.
+  | XApp  : exp  -> exp -> exp
+
+  | XLAM  : name -> exp  -> exp
+  | XAPP  : exp  -> ty   -> exp.
+
+
+(* Substitution of Types in Exps *************************)
+Fixpoint substTX (x : name) (S : ty)  (t : exp) : exp := 
+  match t with
+    |  XVar _ => t
+
+    |  XLam x' T1 t2
+    => XLam x' (substTT x S T1) (substTX x S t2)
+
+    |  XApp t1 t2
+    => XApp (substTX x S t1) (substTX x S t2)
+
+    |  XLAM x' t1
+    => if beq_name x x'
+        then XLAM x' t1
+        else XLAM x' (substTX x S t1)
+
+    |  XAPP t1 T2
+    => XAPP (substTX x S t1) (substTT x S T2)
+  end.
+
+
+
+(* Substitution of Exps in Exps **************************)
+Fixpoint substXX (x : name) (s : exp) (t : exp) : exp :=
+  match t with
+    |  XVar x'      
+    => if beq_name x x' then s else t
+
+    |  XLam x' T t1
+    => if beq_name x x'
+        then XLam x' T t1
+        else XLam x' T (substXX x s t1)  
+
+    |  XApp t1 t2 
+    => XApp (substXX x s t1) (substXX x s t2)
+
+    |  XLAM x' t1
+    => XLAM x' (substXX x s t1)
+
+    |  XAPP t1 T2
+    => XAPP (substXX x s t1) T2
+  end.
 
 
 (* free variables *****************************************)
@@ -16,7 +64,7 @@ Inductive freeX : name -> exp -> Prop :=
 
  | FreeX_lam
    :  forall x y T11 t12
-   ,  y <> x
+   ,  y <> x 
    -> freeX x t12
    -> freeX x (XLam y T11 t12)
 
@@ -26,10 +74,25 @@ Inductive freeX : name -> exp -> Prop :=
 
  | FreeX_app2 
    :  forall x t1 t2
-   ,  freeX x t2 -> freeX x (XApp t1 t2).
+   ,  freeX x t2 -> freeX x (XApp t1 t2)
+
+ | FreeX_LAM
+   :  forall x y t12 
+   ,  y <> x
+   -> freeX x t12
+   -> freeX x (XLAM y t12)
+
+ | FreeX_APP1
+   :  forall x t1 T2
+   ,  freeT x T2 -> freeX x (XAPP t1 T2)
+
+ | FreeX_APP2
+   :  forall x t1 T2
+   ,  freeX x t1 -> freeX x (XAPP t1 T2).
 
 Hint Constructors freeX.
 Hint Resolve FreeX_var.
+
 
 (* If a variable is free is a lambda expression, then we know 
    it's not the variable being bound. *)
@@ -81,7 +144,11 @@ Qed.
 Inductive value : exp -> Prop :=
  | Value_lam  
     : forall x T t
-    , closed (XLam x T t) -> value (XLam  x T t).
+    , closed (XLam x T t) -> value (XLam  x T t)
+
+ | Value_LAM
+    : forall x t
+    , closed (XLAM x t)   -> value (XLAM x t).
 
 Hint Constructors value.
 
@@ -90,7 +157,9 @@ Lemma values_are_closed
  : forall t
  , value t -> closed t.
 Proof.
- intros. inversion H. auto.
+ intros. inversion H.
+ Case "XLam". auto.
+ Case "XLAM". auto.
 Qed.
 
 
@@ -118,17 +187,3 @@ Inductive freshX : name -> exp -> Prop :=
 Hint Constructors freshX.
 
 
-(* Substitution *******************************************)
-Fixpoint subst (n : name) (s : exp) (t : exp) : exp :=
-  match t with
-    |  XVar n'      
-    => if beq_name n n' then s else t
-
-    |  XLam n' T x1
-    => if beq_name n n'
-        then XLam n' T x1
-        else XLam n' T (subst n s x1)  
-
-    |  XApp x1 x2 
-    => XApp (subst n s x1) (subst n s x2)
-  end.
