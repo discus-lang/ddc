@@ -4,7 +4,7 @@ Require Export Exp.
 Inductive STEP : exp -> exp -> Prop := 
   | EVAppAbs 
     :   forall x T t12 v2 
-    ,   VALUE v2 
+    ,   value v2 
     ->  STEP  (XApp (XLam x T t12) v2)
               (subst x v2 t12)
 
@@ -15,6 +15,6 @@ Inductive STEP : exp -> exp -> Prop :=
 
   | EVApp2
     :   forall v1 t2 t2'
-    ,   VALUE v1
+    ,   value v1
     ->  STEP  t2 t2'
     ->  STEP  (XApp v1 t2) (XApp v1 t2').

@@ -1,20 +1,12 @@
 
 Require Export Name.
 Require Export Ty.
-Require Export Cases.
 
 (* expressions *******************************************)
 Inductive exp : Type :=
   | XVar  : name -> exp
   | XLam  : name -> ty  -> exp -> exp
   | XApp  : exp  -> exp -> exp.
-
-
-Tactic Notation "exp_cases" tactic(first) ident(c) :=
-  first;
-  [ Case_aux c "XVar" 
-  | Case_aux c "XLam"
-  | Case_aux c "XApp" ]. 
 
 
 (* free variables *****************************************)
@@ -36,34 +28,7 @@ Inductive freeX : name -> exp -> Prop :=
    :  forall x t1 t2
    ,  freeX x t2 -> freeX x (XApp t1 t2).
 
-Tactic Notation "freeX_cases" tactic(first) ident(c) :=
-  first;
-  [ Case_aux c "FreeX_var"
-  | Case_aux c "FreeX_lam"
-  | Case_aux c "FreeX_app1"
-  | Case_aux c "FreeX_app2"].
-
 Hint Constructors freeX.
-
-Definition closed (t:exp) 
- := forall x, ~(freeX x t).
-
-
-(* values **************************************************)
-Inductive VALUE : exp -> Prop :=
- | VALUE_XLam  
-    : forall x T t
-    , closed (XLam x T t) -> VALUE (XLam  x T t).
-
-Hint Constructors VALUE.
-
-
-Lemma values_are_closed
- : forall t
- , VALUE t -> closed t.
-Proof.
- intros. inversion H. subst. assumption.
-Qed.
 
 
 (* If a variable is free is a lambda expression, then we know 
@@ -75,6 +40,61 @@ Proof.
  intros. inversion H. subst.
  apply sym_not_equal. assumption.
 Qed.
+
+
+(* closed *************************************************)
+Definition closed (t:exp) 
+ := forall x, ~(freeX x t).
+
+
+Theorem closed_var_not
+ : forall n
+ , ~(closed (XVar n)).
+Proof.
+ intro. unfold not. intro.
+ unfold closed in H.
+ specialize H with n. contradict H. apply FreeX_var.
+Qed.
+
+
+Theorem closed_lam
+ : forall x T t 
+ , closed t -> closed (XLam x T t).
+Proof. 
+ intros. unfold closed. intros. unfold not. intro.
+ inversion H0. subst.
+ unfold closed in H. apply H in H6. assumption.
+Qed.
+
+
+Theorem closed_app
+ : forall t1 t2
+ , closed t1 -> closed t2 -> closed (XApp t1 t2).
+Proof. 
+ intros.
+ unfold closed. intros. unfold not. intro.
+ unfold closed in H.  specialize H  with x.
+ unfold closed in H0. specialize H0 with x.
+ inversion H1. subst. auto. subst. auto.
+Qed.
+
+
+(* values **************************************************)
+Inductive value : exp -> Prop :=
+ | Value_lam  
+    : forall x T t
+    , closed (XLam x T t) -> value (XLam  x T t).
+
+Hint Constructors value.
+
+
+Lemma values_are_closed
+ : forall t
+ , value t -> closed t.
+Proof.
+ intros. inversion H. subst. assumption.
+Qed.
+
 
 
 (* freshness **********************************************
@@ -97,6 +117,8 @@ Inductive freshX : name -> exp -> Prop :=
    ,  freshX n1 t11
    -> freshX n1 t12
    -> freshX n1 (XApp t11 t12).
+
+Hint Constructors freshX.
 
 
 (* Substitution *******************************************)

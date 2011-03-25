@@ -1,4 +1,4 @@
-
+(* Examples of typing judgements *)
 
 Require Import TyJudge.
 

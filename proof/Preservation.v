@@ -2,7 +2,9 @@
 Require Import TyJudge.
 Require Import EvJudge.
 
-
+(* When a well typed term transitions to the next state, 
+   its type is perserved.
+ *)
 Theorem preservation
  :  forall env t t' T
  ,  TYPE env t  T

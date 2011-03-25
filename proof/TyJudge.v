@@ -24,19 +24,12 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
    -> TYPE env t2 T11
    -> TYPE env (XApp t1 t2) T12.
 
-Tactic Notation "TYPE_cases" tactic(first) ident(c) :=
- first;
- [ Case_aux c "TYVar"
- | Case_aux c "TYLam"
- | Case_aux c "TYApp"].
-
 Hint Constructors TYPE.
-Hint Unfold  beq_name beq_nat extend.
-Hint Resolve extend_eq. 
 
 
 (* A well typed expression with a free variable
-   has that variable in the type environment.  *)
+   has that variable in the type environment.  
+ *)
 Lemma tyenv_contains_free_vars
  :  forall x t T env
  ,  freeX x t
@@ -65,7 +58,8 @@ Qed.
 
 
 (* We can ignore elements of the type environment if that
-   variable is not free in the expresison being checked. *)
+   variable is not free in the expresison being checked. 
+ *)
 Lemma tyenv_invariance 
  : forall env env' t T
  ,  TYPE env t T
@@ -90,7 +84,49 @@ Proof.
 Qed.
 
 
+(* If well typed term is closed, when we can also check it in
+   an empty type environment.
+ *)
+Theorem check_closed_in_empty
+ : forall env t T 
+ , closed t -> TYPE env t T -> TYPE empty t T.
+Proof.
+ intros.
+ eapply tyenv_invariance.
+ apply H0.
+ intros. contradict H1. unfold closed in H. apply H.
+Qed.
 
+
+(* If we can check a term in an empty environment, then it is closed.
+   This is helpful when substituting values into terms, because the 
+   substitution of closed values cannot cause variable capture probles.
+ *)
+Theorem check_empty_is_closed
+ : forall t T
+ , TYPE empty t T -> closed t.
+Proof.
+ intros t T.
+ generalize T.
+ induction t.
+ Case "XVar".
+  intros. inversion H. subst. unfold empty in H2. inversion H2.
+ Case "XLam".
+  intros. inversion H. subst.
+  unfold closed. intro.
+  unfold not. intro.
+  eapply tyenv_contains_free_vars with (x:=x) in H.
+  inversion H. inversion H1. assumption.
+ Case "XApp".
+  intros. inversion H. subst.
+  apply closed_app.
+  eapply IHt1. apply H3.
+  eapply IHt2. apply H5.
+Qed.
+
+
+(* Substitution of values in values preserves typing.
+ *)
 Lemma subst_value_value
  :  forall env x val t1 T1 T2
  ,  (forall z, freeX z val -> freshX z t1)

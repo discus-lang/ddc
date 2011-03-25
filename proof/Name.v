@@ -19,6 +19,8 @@ Definition beq_name n1 n2 :=
   (Name x1, Name x2) => beq_nat x1 x2
  end.
 
+Hint Unfold beq_name.
+
 
 (* Reflexivity of name equality *)
 Theorem beq_name_refl 
