@@ -13,10 +13,11 @@ module DDC.Type.Data.Base
 	, fieldTypeLabels
 	
 	, Materiality(..)
-	, combineMateriality
-	, contextualiseMateriality
-	, paramMaterialityOfDataDef
-	, paramMaterialityOfFun)
+--	, combineMateriality
+--	, contextualiseMateriality
+	, paramMaterialityOfDataDef)
+--	, paramMaterialityOfFun)
+
 where
 import DDC.Type.Builtin
 import DDC.Type.Exp
@@ -177,8 +178,9 @@ data Materiality
 	-- | Variable is only used a material position. If the type we're talking about
 	--   is a value or region type then this means ``Strongly'' material, whereas if
 	--   it's a closure type it's ``Weakly'' material.
-	| MaterialHas
-
+--	| MaterialHas
+	| MaterialStrong
+	
 	-- | Variable is used in both a material and immaterial position.
 	| MaterialMixed
 	deriving (Eq, Show)
@@ -186,7 +188,7 @@ data Materiality
 instance Pretty Materiality PMode where
  ppr mat	= ppr $ show mat
 
-
+{-
 -- | Compute the resulting materiality when the same variable has multiple occurrences.
 --   This is the l.u.b over the following order:
 --
@@ -236,7 +238,7 @@ contextualiseMateriality m1 m2
 	(_,		 MaterialMixed)		-> MaterialMixed
 	
 	(MaterialStrong, MaterialStrong)	-> MaterialStrong
-
+-}
 
 -- | Get a list giving the materiality of each of the parameter variables
 --   of a given data type.
@@ -256,6 +258,6 @@ paramMaterialityOfDataDef dataDef
  | otherwise
  = Nothing
 
-paramMaterialityOfFun
-	= [MaterialNot, MaterialNot, MaterialNot, MaterialIs]
+-- paramMaterialityOfFun
+--	= [MaterialNot, MaterialNot, MaterialNot, MaterialIs]
 
