@@ -2,12 +2,36 @@
 Require Export Name.
 
 
-(* types **************************************************)
+(* Types **************************************************)
 Inductive ty : Type :=
  | TCon    : name -> ty
  | TVar    : name -> ty
  | TForall : name -> ty -> ty
  | TFun    : ty   -> ty -> ty.
+
+
+(* Free variables *****************************************)
+Inductive freeT : name -> ty -> Prop :=
+ | FreeT_var
+   :  forall x, freeT x (TVar x)
+
+ | FreeT_forall
+   :  forall x1 x2 t1
+   ,  x1 <> x2
+   -> freeT x1 t1
+   -> freeT x1 (TForall x2 t1)
+
+ | FreeT_fun1
+   :  forall x T1 T2
+   ,  freeT x T1 -> freeT x (TFun T1 T2)
+
+ | FreeT_fun2 
+   :  forall x T1 T2
+   ,  freeT x T2 -> freeT x (TFun T1 T2).
+
+
+Hint Constructors freeT.
+Hint Resolve FreeT_var.
 
 
 (* Substitution of Types in Types *************************)
@@ -27,31 +51,6 @@ Fixpoint substTT (x : name) (S : ty) (T : ty) : ty :=
     |  TFun T1 T2 
     => TFun (substTT x S T1) (substTT x S T2)
   end.
-
-
-(* free variables *****************************************)
-Inductive freeT : name -> ty -> Prop :=
- | FreeT_var
-   :  forall x, freeT x (TVar x)
-
- | FreeT_forall
-   :  forall x1 x2 t1
-   ,  x1 <> x2
-   -> freeT x1 t1
-   -> freeT x1 (TForall x2 t1)
-
- | FreeT_fun1
-   :  forall x T1 T2
-   ,  freeT x T1
-   -> freeT x (TFun T1 T2)
-
- | FreeT_fun2
-   :  forall x T1 T2
-   ,  freeT x T2
-   -> freeT x (TFun T1 T2).
-
-Hint Constructors freeT.
-Hint Resolve FreeT_var.
 
 
 (* examples ***********************************************)

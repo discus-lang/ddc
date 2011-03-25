@@ -2,7 +2,7 @@
 Require Export Name.
 Require Export Ty.
 
-(* expressions *******************************************)
+(* expressions ********************************************)
 Inductive exp : Type :=
   | XVar  : name -> exp
 
@@ -11,6 +11,70 @@ Inductive exp : Type :=
 
   | XLAM  : name -> exp  -> exp
   | XAPP  : exp  -> ty   -> exp.
+
+
+(* Free variables *****************************************)
+Inductive freeX : name -> exp -> Prop :=
+ | FreeX_var
+   : forall n, freeX n (XVar n)
+
+ | FreeX_lam
+   :  forall x y T11 t12
+   ,  y <> x 
+   -> freeX x t12
+   -> freeX x (XLam y T11 t12)
+
+ | FreeX_app1
+   :  forall x t1 t2
+   ,  freeX x t1 -> freeX x (XApp t1 t2)
+
+ | FreeX_app2
+   :  forall x t1 t2
+   ,  freeX x t2 -> freeX x (XApp t1 t2)
+
+ | FreeX_LAM
+   :  forall x y t12 
+   ,  y <> x
+   -> freeX x t12
+   -> freeX x (XLAM y t12)
+
+ | FreeX_APP1
+   :  forall x t1 T2
+   ,  freeX x t1
+   -> freeX x (XAPP t1 T2)
+
+ | FreeX_APP2
+   :  forall x t1 T2
+   ,  freeT x T2
+   -> freeX x (XAPP t1 T2).
+
+
+Hint Constructors freeX.
+Hint Resolve FreeX_var.
+
+
+(* freshness **********************************************
+   This is used to check that a term does not bind a particular
+   variable, to help ward against variable capture issues  *)
+
+Inductive freshX : name -> exp -> Prop :=
+ | FreshX_var
+   :  forall n1 n2
+   ,  freshX n1 (XVar n2)
+
+ | FreshX_lam
+   :  forall n1 n2 T t11
+   ,  n1 <> n2 
+   -> freshX n1 t11 
+   -> freshX n1 (XLam n2 T t11)
+
+ | FreshX_app
+   :  forall n1 t11 t12
+   ,  freshX n1 t11
+   -> freshX n1 t12
+   -> freshX n1 (XApp t11 t12).
+
+Hint Constructors freshX.
 
 
 (* Substitution of Types in Exps *************************)
@@ -32,7 +96,6 @@ Fixpoint substTX (x : name) (S : ty)  (t : exp) : exp :=
     |  XAPP t1 T2
     => XAPP (substTX x S t1) (substTT x S T2)
   end.
-
 
 
 (* Substitution of Exps in Exps **************************)
@@ -57,43 +120,7 @@ Fixpoint substXX (x : name) (s : exp) (t : exp) : exp :=
   end.
 
 
-(* free variables *****************************************)
-Inductive freeX : name -> exp -> Prop :=
- | FreeX_var
-   : forall n, freeX n (XVar n)
-
- | FreeX_lam
-   :  forall x y T11 t12
-   ,  y <> x 
-   -> freeX x t12
-   -> freeX x (XLam y T11 t12)
-
- | FreeX_app1
-   :  forall x t1 t2
-   ,  freeX x t1 -> freeX x (XApp t1 t2)
-
- | FreeX_app2 
-   :  forall x t1 t2
-   ,  freeX x t2 -> freeX x (XApp t1 t2)
-
- | FreeX_LAM
-   :  forall x y t12 
-   ,  y <> x
-   -> freeX x t12
-   -> freeX x (XLAM y t12)
-
- | FreeX_APP1
-   :  forall x t1 T2
-   ,  freeT x T2 -> freeX x (XAPP t1 T2)
-
- | FreeX_APP2
-   :  forall x t1 T2
-   ,  freeX x t1 -> freeX x (XAPP t1 T2).
-
-Hint Constructors freeX.
-Hint Resolve FreeX_var.
-
-
+(* noncapturing *******************************************)
 (* If a variable is free is a lambda expression, then we know 
    it's not the variable being bound. *)
 Lemma nocapture_lam
@@ -136,7 +163,7 @@ Proof.
  unfold closed. intros. unfold not. intro.
  unfold closed in H.  specialize H  with x.
  unfold closed in H0. specialize H0 with x.
- inversion H1. auto. auto.
+ inversion H1; subst; tauto.
 Qed.
 
 
@@ -161,29 +188,5 @@ Proof.
  Case "XLam". auto.
  Case "XLAM". auto.
 Qed.
-
-
-(* freshness **********************************************
-   This is used to check that a term does not bind a particular
-   variable, to help ward against variable capture issues  *)
-
-Inductive freshX : name -> exp -> Prop :=
- | FreshX_var
-   :  forall n1 n2
-   ,  freshX n1 (XVar n2)
-
- | FreshX_lam
-   :  forall n1 n2 T t11
-   ,  n1 <> n2 
-   -> freshX n1 t11 
-   -> freshX n1 (XLam n2 T t11)
-
- | FreshX_app
-   :  forall n1 t11 t12
-   ,  freshX n1 t11
-   -> freshX n1 t12
-   -> freshX n1 (XApp t11 t12).
-
-Hint Constructors freshX.
 
 
