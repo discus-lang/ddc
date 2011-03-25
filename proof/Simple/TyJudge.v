@@ -39,21 +39,19 @@ Proof.
  intros.
  generalize dependent env.
  generalize dependent T.
- induction H ; intros.
+ induction H; intros.
  Case "XVar".
-  inversion H0. subst.
-  exists T. assumption.
+  inversion H0. subst. exists T. auto.
  Case "XLam".
   inversion H1. subst.
-  apply IHfreeX in H7. 
-  rewrite extend_neq in H7. assumption.
-  assumption.
+  apply IHfreeX in H7.  
+  rewrite extend_neq in H7; auto.
  Case "XApp/app1". 
   inversion H0. subst.
-  eapply IHfreeX. apply H4.
+  eapply IHfreeX. eauto.
  Case "XApp/app2".
   inversion H0. subst.
-  eapply IHfreeX. apply H6.
+  eapply IHfreeX. eauto.
 Qed.
 
 
@@ -70,17 +68,13 @@ Proof.
  generalize dependent env'.
  induction H; intros.
  Case "XVar".
-  apply TYVar. rewrite <- H0. assumption. apply FreeX_var.
+  apply TYVar. rewrite <- H0; auto.
  Case "XLam".
   apply TYLam. apply IHTYPE.
-  intros.
-  unfold extend. remember (beq_name x x0) as e. destruct e.
-   trivial.
-   eapply H0. eapply FreeX_lam. apply false_name_neq. assumption.
-   assumption.
+  intros. unfold extend.
+  remember (beq_name x x0) as e. destruct e; auto.
  Case "XApp".
-  eapply TYApp.
-   eauto. eauto.
+  eapply TYApp; eauto.
 Qed.
 
 
@@ -93,8 +87,8 @@ Theorem check_closed_in_empty
 Proof.
  intros.
  eapply tyenv_invariance.
- apply H0.
- intros. contradict H1. unfold closed in H. apply H.
+  eauto. 
+  intros. contradict H1. eauto.
 Qed.
 
 
@@ -109,7 +103,8 @@ Proof.
  intros.
  unfold closed. intro. unfold not. intro.
  eapply tyenv_contains_free_vars in H.
- destruct H. unfold empty in H. inversion H. apply H0.
+  destruct H. unfold empty in H. inversion H.
+  eauto.
 Qed.
 
 

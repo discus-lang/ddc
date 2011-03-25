@@ -53,6 +53,8 @@ Proof.
  intro. apply true_nat_eq in H. subst. trivial.
 Qed.
 
+Hint Resolve true_name_eq.
+
 
 Theorem eq_name_true
  : forall n1 n2
@@ -74,6 +76,7 @@ Proof.
  rewrite <- beq_name_refl. unfold not. intro. inversion H.
 Qed.
 
+Hint Resolve false_name_neq.
 
 Theorem neq_name_false
  : forall n1 n2

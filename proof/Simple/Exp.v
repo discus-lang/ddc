@@ -29,7 +29,7 @@ Inductive freeX : name -> exp -> Prop :=
    ,  freeX x t2 -> freeX x (XApp t1 t2).
 
 Hint Constructors freeX.
-
+Hint Resolve FreeX_var.
 
 (* If a variable is free is a lambda expression, then we know 
    it's not the variable being bound. *)

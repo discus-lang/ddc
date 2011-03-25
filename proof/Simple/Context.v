@@ -13,6 +13,8 @@ Definition partial_map (A:Type)
 Definition empty {A:Type} : partial_map A 
  := fun _ => none.
 
+Hint Unfold empty.
+
 
 (* Extend a typing context *)
 Definition extend {A:Type} (rest:partial_map A) (x:name) (T:A)
