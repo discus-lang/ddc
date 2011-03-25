@@ -121,45 +121,45 @@ Proof.
  generalize dependent env.
  generalize dependent T1.
  induction t1.
+
  Case "XVar".
   intros. simpl. rename n into y.
   remember (beq_name x y) as e. destruct e.
   SCase "x=y".
    apply true_name_eq in Heqe. subst.
    inversion H0. subst.
-   rewrite extend_eq in H4. inversion H4. subst. assumption.
+   rewrite extend_eq in H4. inversion H4. subst. eauto.
   SCase "x<>y".
+   apply false_name_neq in Heqe.
    apply TYVar.
    inversion H0. subst.
-   apply false_name_neq in Heqe.
-   rewrite extend_neq in H4. assumption. assumption.
+   rewrite extend_neq in H4; auto.
+
  Case "XLam".
   intros. rename n into y.
   simpl. remember (beq_name x y) as e. destruct e.
   SCase "x=y".
    apply true_name_eq in Heqe. subst.
    eapply tyenv_invariance.
-    apply H0.
-    intros. apply extend_neq.
-     apply nocapture_lam in H2. apply sym_not_equal in H2. assumption.
+    eauto.
+    intros. apply extend_neq. apply nocapture_lam in H2. auto. 
   SCase "x<>y".
    apply false_name_neq in Heqe.
    inversion H0. subst.
    apply TYLam. apply IHt1. 
-    intros. apply H in H2. inversion H2. subst. assumption.
-    rewrite extend_swap.
-     assumption.
-     apply sym_not_equal. assumption.
+    intros. apply H in H2. inversion H2. subst. auto.
+    rewrite extend_swap; auto.
     eapply tyenv_invariance.
-     apply H1.
-     intros. apply H in H2. inversion H2. subst.
-      rewrite -> extend_neq. trivial. apply sym_not_equal. assumption.
+     eauto.
+     intros. apply H in H2. inversion H2. subst. eauto.
+      rewrite -> extend_neq; auto. 
+
  Case "XApp".
    intros. simpl. inversion H0. subst.
    eapply TYApp.
-   eapply IHt1_1 in H5. apply H5. 
-    intros. apply H in H2. inversion H2. subst. assumption. assumption.
-   eapply IHt1_2 in H7. apply H7.
-    intros. apply H in H2. inversion H2. subst. assumption. assumption.
+   eapply IHt1_1 in H5. eauto. 
+    intros. apply H in H2. inversion H2. subst. auto. auto.
+   eapply IHt1_2 in H7. eauto.
+    intros. apply H in H2. inversion H2. subst. auto. auto.
 Qed.
 

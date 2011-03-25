@@ -74,5 +74,5 @@ Proof.
   apply true_name_eq in Heqe2. subst. contradict H. trivial.
   trivial. trivial.
 Qed.
-
+ 
 Hint Resolve extend_swap.
