@@ -104,8 +104,8 @@ extractType_fromClass final varT cid
 extractType_pack final varT cid tTrace
  = do	-- Simplify --------------------------------------
 	-- This is the new type simplifier, it's not finished yet.
---	let tSimplified	= simplifyT tTrace 
---	tracell	$ "-- simplified"	%! prettyTypeSplit tSimplified
+	let tSimplified	= simplifyT tTrace 
+	tracell	$ "-- simplified"	%! prettyTypeSplit tSimplified
 	
 	
 	-- Drag ------------------------------------------

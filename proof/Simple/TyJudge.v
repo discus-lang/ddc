@@ -106,22 +106,10 @@ Theorem check_empty_is_closed
  : forall t T
  , TYPE empty t T -> closed t.
 Proof.
- intros t T.
- generalize T.
- induction t.
- Case "XVar".
-  intros. inversion H. subst. unfold empty in H2. inversion H2.
- Case "XLam".
-  intros. inversion H. subst.
-  unfold closed. intro.
-  unfold not. intro.
-  eapply tyenv_contains_free_vars with (x:=x) in H.
-  inversion H. inversion H1. assumption.
- Case "XApp".
-  intros. inversion H. subst.
-  apply closed_app.
-  eapply IHt1. apply H3.
-  eapply IHt2. apply H5.
+ intros.
+ unfold closed. intro. unfold not. intro.
+ eapply tyenv_contains_free_vars in H.
+ destruct H. unfold empty in H. inversion H. apply H0.
 Qed.
 
 

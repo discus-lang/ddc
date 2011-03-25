@@ -13,7 +13,10 @@ module DDC.Type.Data.Base
 	, fieldTypeLabels
 	
 	, Materiality(..)
-	, paramMaterialityOfDataDef)
+	, combineMateriality
+	, contextualiseMateriality
+	, paramMaterialityOfDataDef
+	, paramMaterialityOfFun)
 where
 import DDC.Type.Builtin
 import DDC.Type.Exp
@@ -159,7 +162,7 @@ fieldTypeLabels ctorDef
 
 
 -- Materiality ------------------------------------------------------------------------------------
-
+--
 -- | Describes how a parameter variable of the data type is used
 --   in the constructors of its definition.
 data Materiality
@@ -171,9 +174,10 @@ data Materiality
 	--   a function.
 	| MaterialNot
 
-	-- | Variable is only used a material position, so we're likely to get 
-	--   objects of the corresponding type being allocated into the heap.
-	| MaterialStrong
+	-- | Variable is only used a material position. If the type we're talking about
+	--   is a value or region type then this means ``Strongly'' material, whereas if
+	--   it's a closure type it's ``Weakly'' material.
+	| MaterialHas
 
 	-- | Variable is used in both a material and immaterial position.
 	| MaterialMixed
@@ -181,6 +185,58 @@ data Materiality
 
 instance Pretty Materiality PMode where
  ppr mat	= ppr $ show mat
+
+
+-- | Compute the resulting materiality when the same variable has multiple occurrences.
+--   This is the l.u.b over the following order:
+--
+--   @
+--           Mixed
+--        Has      Not
+--           Absent
+--   @
+--       
+combineMateriality :: Materiality -> Materiality -> Materiality
+combineMateriality m1 m2
+ = case (m1, m2) of
+	(MaterialAbsent, _)			-> m2
+	(_,              MaterialAbsent)	-> m1
+
+	(MaterialMixed, _)			-> MaterialMixed
+	(_             , MaterialMixed)		-> MaterialMixed
+	
+	(MaterialStrong, MaterialStrong)	-> MaterialStrong
+	(MaterialNot,    MaterialNot)		-> MaterialNot
+
+	(MaterialStrong, MaterialNot)		-> MaterialMixed
+	(MaterialNot,    MaterialStrong)	-> MaterialMixed
+
+
+-- | For a type like (Int %r1 -> Int %r2), even though %r1 is strongly material
+--   in Int %r1, in the function type it is in an immaterial context, so is
+--   immaterial in the overall function type. g.l.b over the following order:
+--
+--   @
+--            Has     
+--           Mixed
+--            Not
+--           Absent
+--   @ 
+--        
+contextualiseMateriality :: Materiality -> Materiality -> Materiality
+contextualiseMateriality m1 m2
+ = case (m1, m2) of
+	(MaterialAbsent, _)			-> MaterialAbsent
+	(_,              MaterialAbsent)	-> MaterialAbsent
+	
+	(MaterialNot,    _)			-> MaterialNot
+	(_,              MaterialNot)		-> MaterialNot
+
+	(MaterialMixed, _)			-> MaterialMixed
+	(_,		 MaterialMixed)		-> MaterialMixed
+	
+	(MaterialStrong, MaterialStrong)	-> MaterialStrong
+
 
 -- | Get a list giving the materiality of each of the parameter variables
 --   of a given data type.
@@ -199,4 +255,7 @@ paramMaterialityOfDataDef dataDef
 
  | otherwise
  = Nothing
+
+paramMaterialityOfFun
+	= [MaterialNot, MaterialNot, MaterialNot, MaterialIs]
 

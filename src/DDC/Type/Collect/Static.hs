@@ -52,7 +52,7 @@ staticRsT tt
 
 -- | Get the set of regions that are non-generalisable because they are
 --   material in this type. 
---   TODO: This is wrong.
+--   TODO: This is wrong. use freeMateriality utils instead.
 staticRsDataT :: Type -> Set Type
 staticRsDataT tt
  = case tt of
@@ -127,6 +127,7 @@ staticRsClosureT tt
 -- | Compute the material vars in a type
 --   TODO: This isn't finished.
 --         All vars in a data type are taken to be material.
+--         Use freeMaterialityUtils instead.
 materialRsT :: Type -> Set Type
 materialRsT tt
 	= materialRsWithCrs emptyConstraints tt
