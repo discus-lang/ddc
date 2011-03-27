@@ -13,6 +13,7 @@ Inductive ty : Type :=
  | TForall : name -> ty -> ty
  | TFun    : ty   -> ty -> ty.
 
+
 (* Free variables *****************************************)
 Inductive freeT : name -> ty -> Prop :=
  | FreeT_var

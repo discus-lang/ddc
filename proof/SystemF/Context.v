@@ -1,4 +1,6 @@
-(* Typing contexts. *)
+(* Typing contexts.
+   NOTE: We can use this for the store typing as well, 
+         extend names with a location namespace. *)
 
 Require Import Base.
 Require Import Name.

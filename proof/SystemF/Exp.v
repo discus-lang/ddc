@@ -2,25 +2,32 @@
 Require Export Name.
 Require Export Ty.
 
-(* expressions ********************************************)
+
+(* Expressions ******************************************************)
 Inductive exp : Type :=
   | XVar  : name -> exp
 
-  | XLam  : name -> ty  -> exp -> exp
-  | XApp  : exp  -> exp -> exp
+  | XLam  : name -> ty   -> exp -> exp
+  | XApp  : exp  -> exp  -> exp
 
   | XLAM  : name -> exp  -> exp
   | XAPP  : exp  -> ty   -> exp.
 
+Hint Constructors exp.
 
-(* Free variables *****************************************)
+
+(* Free variables ***************************************************
+   This is defined on names, so we can ask for just the names in a
+   particular namespace.
+ *)
 Inductive freeX : name -> exp -> Prop :=
  | FreeX_var
-   : forall n, freeX n (XVar n)
+   : forall n
+   , freeX n (XVar n)
 
  | FreeX_lam
    :  forall x y T11 t12
-   ,  y <> x 
+   ,  x <> y
    -> freeX x t12
    -> freeX x (XLam y T11 t12)
 
@@ -34,7 +41,7 @@ Inductive freeX : name -> exp -> Prop :=
 
  | FreeX_LAM
    :  forall x y t12 
-   ,  y <> x
+   ,  x <> y
    -> freeX x t12
    -> freeX x (XLAM y t12)
 
@@ -48,31 +55,30 @@ Inductive freeX : name -> exp -> Prop :=
    ,  freeT x T2
    -> freeX x (XAPP t1 T2).
 
-
 Hint Constructors freeX.
 Hint Resolve FreeX_var.
 
 
 (* Freshness **********************************************
    This is used to check that a term does not bind a particular
-   variable, to help ward against variable capture issues  *)
-
+   name, to help ward against variable capture issues.
+ *)
 Inductive freshX : name -> exp -> Prop :=
  | FreshX_var
-   :  forall n1 n2
-   ,  freshX n1 (XVar n2)
+   :  forall x by
+   ,  freshX x (XVar by)
 
  | FreshX_lam
-   :  forall n1 n2 T t11
-   ,  n1 <> n2 
-   -> freshX n1 t11 
-   -> freshX n1 (XLam n2 T t11)
+   :  forall x y T t11
+   ,  x <> y
+   -> freshX x t11 
+   -> freshX x (XLam y T t11)
 
  | FreshX_app
-   :  forall n1 t11 t12
-   ,  freshX n1 t11
-   -> freshX n1 t12
-   -> freshX n1 (XApp t11 t12).
+   :  forall x t11 t12
+   ,  freshX x t11
+   -> freshX x t12
+   -> freshX x (XApp t11 t12).
 
 Hint Constructors freshX.
 

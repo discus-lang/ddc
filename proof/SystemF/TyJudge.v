@@ -5,21 +5,32 @@ Require Export Context.
 Require Export Ty.
 Require Export Exp.
 
+
 (* Type environment contains types of free value vars *)
 Definition tyenv := partial_map ty.
+
 
 (* Kind environment contains kinds of free type vars *)
 Definition kienv := partial_map ki.
 
+(* Check well formdness of types. 
+   Regular System-F isn't higher kinded, so we just need to check
+   that all the type variables are in the correct namespace.
+ *)
+
+
+(* Check well typeness of terms. *)
 Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
  | TYVar 
    :  forall kenv tenv x T
-   ,  tenv x = some T
+   ,  space_of_name x = SpaceValue
+   -> tenv x = some T
    -> TYPE kenv tenv (XVar x) T
 
  | TYLam 
    :  forall kenv tenv x T11 T12 t12
-   ,  TYPE kenv (extend tenv x T11) t12 T12
+   ,  space_of_name x = SpaceValue
+   -> TYPE kenv (extend tenv x T11) t12 T12
    -> TYPE kenv tenv                (XLam x T11 t12) (TFun T11 T12)
 
  | TYApp 
@@ -30,7 +41,8 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
 
  | TYLAM
    :  forall kenv tenv a t12 T12
-   ,  TYPE (extend kenv a KStar) tenv t12 T12 
+   ,  space_of_name a = SpaceType
+   -> TYPE (extend kenv a KStar) tenv t12 T12 
    -> TYPE kenv tenv (XLAM a t12) (TForall a T12)
 
  | TYAPP
@@ -41,15 +53,13 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
-(* A well typed expression with a free type variable
-   has that vari *)
-
-(* A well typed expression with a free value variable
-   has that variable in the type environment.  
+(* If a well typed expression has a free value variable, 
+   then that variable appears in the type environment.
  *)
 Lemma tyenv_contains_free_valvars
  :  forall x t T kenv tenv
  ,  freeX x t
+ -> space_of_name x = SpaceValue
  -> TYPE kenv tenv t T
  -> (exists T', tenv x = some T').
 Proof.
@@ -59,25 +69,27 @@ Proof.
  generalize dependent T.
  induction H; intros.
  Case "XVar".
-  inversion H0. subst. exists T. auto.
+  inversion H1. subst. exists T. auto.
  Case "XLam".
-  inversion H1. subst.
-  apply IHfreeX in H8.  
-  rewrite extend_neq in H8; auto.
+  inversion H2. subst.
+  apply IHfreeX in H10.  
+  rewrite extend_neq in H10; auto. auto.
  Case "XApp/app1". 
-  inversion H0. subst.
-  eapply IHfreeX. eauto.
- Case "XApp/app2".
-  inversion H0. subst.
-  eapply IHfreeX. eauto.
- Case "XLAM".
   inversion H1. subst.
-  apply IHfreeX in H7. auto.
+  eapply IHfreeX. eauto. eauto.
+ Case "XApp/app2".
+  inversion H1. subst.
+  eapply IHfreeX. eauto. eauto.
+ Case "XLAM".
+  inversion H2. subst.
+  apply IHfreeX in H9. auto. auto.
  Case "XAPP/APP1".
-  inversion H0. subst.
-  eapply IHfreeX. eauto.
+  inversion H1. subst.
+  eapply IHfreeX. auto. eauto.
  Case "XApp/APP2".
-  inversion H0. subst.
+  inversion H1. subst.
+  inversion H6. subst.
+  
   inversion H. subst.
   
   ea
