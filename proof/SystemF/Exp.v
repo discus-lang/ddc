@@ -53,7 +53,7 @@ Hint Constructors freeX.
 Hint Resolve FreeX_var.
 
 
-(* freshness **********************************************
+(* Freshness **********************************************
    This is used to check that a term does not bind a particular
    variable, to help ward against variable capture issues  *)
 

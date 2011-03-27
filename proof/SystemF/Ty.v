@@ -1,6 +1,10 @@
 
 Require Export Name.
 
+(* Kinds **************************************************)
+Inductive ki : Type :=
+ | KStar   : ki.
+
 
 (* Types **************************************************)
 Inductive ty : Type :=
@@ -8,7 +12,6 @@ Inductive ty : Type :=
  | TVar    : name -> ty
  | TForall : name -> ty -> ty
  | TFun    : ty   -> ty -> ty.
-
 
 (* Free variables *****************************************)
 Inductive freeT : name -> ty -> Prop :=

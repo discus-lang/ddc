@@ -35,6 +35,12 @@ Inductive bool : Type :=
  | true  : bool
  | false : bool.
 
+Definition band (x y : bool) : bool :=
+ match x, y with
+  | true, true  => true
+  | _,    _     => false
+ end.
+
 
 (* maybe **************************************************)
 Inductive option (a : Type) :=

@@ -5,54 +5,86 @@ Require Export Context.
 Require Export Ty.
 Require Export Exp.
 
+(* Type environment contains types of free value vars *)
 Definition tyenv := partial_map ty.
 
-Inductive TYPE : tyenv -> exp -> ty -> Prop :=
+(* Kind environment contains kinds of free type vars *)
+Definition kienv := partial_map ki.
+
+Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
  | TYVar 
-   :  forall env x T
-   ,  env x = some T
-   -> TYPE env (XVar x) T
+   :  forall kenv tenv x T
+   ,  tenv x = some T
+   -> TYPE kenv tenv (XVar x) T
 
  | TYLam 
-   :  forall env x T11 T12 t12
-   ,  TYPE (extend env x T11) t12 T12
-   -> TYPE env                (XLam x T11 t12) (TFun T11 T12)
+   :  forall kenv tenv x T11 T12 t12
+   ,  TYPE kenv (extend tenv x T11) t12 T12
+   -> TYPE kenv tenv                (XLam x T11 t12) (TFun T11 T12)
 
  | TYApp 
-   :  forall env t1 t2 T11 T12
-   ,  TYPE env t1 (TFun T11 T12)
-   -> TYPE env t2 T11
-   -> TYPE env (XApp t1 t2) T12.
+   :  forall kenv tenv t1 t2 T11 T12
+   ,  TYPE kenv tenv t1 (TFun T11 T12)
+   -> TYPE kenv tenv t2 T11
+   -> TYPE kenv tenv (XApp t1 t2) T12
+
+ | TYLAM
+   :  forall kenv tenv a t12 T12
+   ,  TYPE (extend kenv a KStar) tenv t12 T12 
+   -> TYPE kenv tenv (XLAM a t12) (TForall a T12)
+
+ | TYAPP
+   :  forall kenv tenv a T11 t1 T2
+   ,  TYPE kenv tenv t1 (TForall a T11)
+   -> TYPE kenv tenv (XAPP t1 T2) (substTT a T2 T11). 
 
 Hint Constructors TYPE.
 
 
-(* A well typed expression with a free variable
+(* A well typed expression with a free type variable
+   has that vari *)
+
+(* A well typed expression with a free value variable
    has that variable in the type environment.  
  *)
-Lemma tyenv_contains_free_vars
- :  forall x t T env
+Lemma tyenv_contains_free_valvars
+ :  forall x t T kenv tenv
  ,  freeX x t
- -> TYPE env t T
- -> (exists T', env x = some T').
+ -> TYPE kenv tenv t T
+ -> (exists T', tenv x = some T').
 Proof.
  intros.
- generalize dependent env.
+ generalize dependent kenv.
+ generalize dependent tenv.
  generalize dependent T.
  induction H; intros.
  Case "XVar".
   inversion H0. subst. exists T. auto.
  Case "XLam".
   inversion H1. subst.
-  apply IHfreeX in H7.  
-  rewrite extend_neq in H7; auto.
+  apply IHfreeX in H8.  
+  rewrite extend_neq in H8; auto.
  Case "XApp/app1". 
   inversion H0. subst.
   eapply IHfreeX. eauto.
  Case "XApp/app2".
   inversion H0. subst.
   eapply IHfreeX. eauto.
+ Case "XLAM".
+  inversion H1. subst.
+  apply IHfreeX in H7. auto.
+ Case "XAPP/APP1".
+  inversion H0. subst.
+  eapply IHfreeX. eauto.
+ Case "XApp/APP2".
+  inversion H0. subst.
+  inversion H. subst.
+  
+  ea
+
 Qed.
+
+
 
 
 (* We can ignore elements of the type environment if that
