@@ -111,12 +111,40 @@ Hint Constructors TYPE.
  *)
 Lemma kienv_contains_free_tyvars
  :  forall a t T kenv tenv
- ,  freeX a t 
+ ,  TYPE kenv tenv t T
  -> space_of_name a = SType
- -> TYPE kenv tenv t T
+ -> freeX a t 
  -> (exists K', kenv a = some K').
-Proof. admit. Qed.
+Proof. 
+ intros.
+ generalize dependent kenv.
+ generalize dependent tenv.
+ generalize dependent T.
+ induction t.
+ Case "XVar".
+  intros. inversion H1. subst.
+  inversion H. subst. rewrite H0 in H3. inversion H3.
+ Case "XLam".
+  intros. inversion H1. subst.
+  inversion H. subst.
+  eapply IHt. auto. eauto.
+ Case "XApp".
+  intros. inversion H. subst.
+  inversion H1.
+   subst. apply IHt1 in H6. auto. auto.
+   subst. apply IHt2 in H8. auto. auto.
+ Case "XLAM".
+  intros. inversion H1. subst.
+  inversion H. subst.
+  apply IHt in H10. destruct H10. exists x.
+  rewrite extend_neq in H2. auto. auto. auto.
+ Case "XAPP".
+  intros.  inversion H1.
+  subst. inversion H. subst. eapply IHt. auto. eauto.
+  subst. inversion H. subst. 
 
+  admit. (* **************** FINISH ME ***********)
+Qed.
 
 (* If a well typed expression has a free value variable, 
    then that variable appears in the type environment.
