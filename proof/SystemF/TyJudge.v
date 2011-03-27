@@ -106,6 +106,17 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
 
 Hint Constructors TYPE.
 
+(* If a well formed expresion has a free kind variable, 
+   then that variable appears in the kind environment.
+ *)
+Lemma kienv_contains_free_tyvars
+ :  forall a t T kenv tenv
+ ,  freeX a t 
+ -> space_of_name a = SType
+ -> TYPE kenv tenv t T
+ -> (exists K', kenv a = some K').
+Proof. admit. Qed.
+
 
 (* If a well typed expression has a free value variable, 
    then that variable appears in the type environment.
@@ -147,21 +158,14 @@ Proof.
   auto.
 Qed.
 
-Definition freeX_type a t
- := space_of_name a = SType -> freeX a t.
-Hint Unfold freeX_type.
-
-Definition freeX_value x t
- := space_of_name x = SValue -> freeX x t.
-Hint Unfold freeX_value.
-
 
 (* We can check a type with a larger kind environment, 
    and get the same kind. *)
 Lemma kienv_invariance
  :  forall kenv kenv' T K
  ,  KIND kenv  T K
- -> (forall a, freeT a T -> kenv a = kenv' a)
+ -> (forall a, space_of_name a = SType
+            -> freeT a T -> kenv a = kenv' a)
  -> KIND kenv' T K.
 Proof.
  intros.
@@ -171,7 +175,7 @@ Proof.
   auto.
  Case "TVar".
   eapply KIVar. auto. rewrite <- H1.
-  eauto. auto.
+  eauto. auto. auto.
  Case "TForall".
   apply KIForall. auto.
   apply IHKIND.
@@ -189,8 +193,10 @@ Qed.
 Lemma tyenv_invariance 
  :  forall tenv tenv' kenv kenv' t T
  ,  TYPE kenv tenv t T
- -> (forall a, freeX_type  a t -> kenv a = kenv' a)
- -> (forall x, freeX_value x t -> tenv x = tenv' x)
+ -> (forall a, space_of_name a = SType  
+            -> freeX a t -> kenv a = kenv' a)
+ -> (forall x, space_of_name x = SValue
+            -> freeX x t -> tenv x = tenv' x)
  -> TYPE kenv' tenv' t T.
 Proof.
  intros.
@@ -199,44 +205,36 @@ Proof.
  induction H; intros.
  Case "XVar".
   apply TYVar. auto. rewrite <- H0.
-  symmetry. eapply H2. auto.
+  symmetry. eapply H2; auto.
  Case "XLam".
   apply TYLam. auto.
   apply IHTYPE.
-   intros. apply H1.
-    unfold freeX_type. intro.
+   intros. apply H1. auto.
     apply FreeX_lam. unfold not. intro. subst.
-    rewrite H in H4. inversion H4. auto.
+    rewrite H in H3. inversion H3. auto.
    intros. unfold extend.
     remember (beq_name x x0) as e. destruct e; auto.
-    apply H2. unfold freeX_value. intro.
+    apply H2. auto.
     apply FreeX_lam. unfold not. intro. subst.
-    apply false_name_neq in Heqe. tauto.
-    auto.
+    apply false_name_neq in Heqe. tauto. auto.
  Case "XApp".
-  eapply TYApp.
-   apply IHTYPE1; auto.
-   apply IHTYPE2; auto.
+  eapply TYApp; auto.
  Case "XLAM".
   eapply TYLAM.
    auto. apply IHTYPE.
     intros. unfold extend.
      remember (beq_name a a0) as e. destruct e; auto.
-     apply H1. unfold freeX_type. intro.
+     apply H1. auto.
      apply FreeX_LAM. unfold not. intro. subst.
-     apply false_name_neq in Heqe. tauto.
-     auto.
-    intros. apply H2. unfold freeX_value. intro.
+      apply false_name_neq in Heqe. tauto. auto.
+    intros. apply H2. auto.
      apply FreeX_LAM. unfold not. intro. subst.
-     rewrite H in H4. inversion H4. auto.
+     rewrite H in H3. inversion H3. auto.
  Case "XAPP".
-  apply TYAPP.
-   apply IHTYPE.
-    intros. apply H1. eauto.
-    intros. apply H2. eauto.
-   eapply kienv_invariance.
-    eauto.
-    intros. apply H1. eauto.
+  apply TYAPP. auto.
+  eapply kienv_invariance.
+   eauto.
+   intros. apply H1. auto. auto.
 Qed.
 
 
@@ -244,13 +242,14 @@ Qed.
    an empty type environment.
  *)
 Theorem check_closed_in_empty
- : forall env t T 
- , closed t -> TYPE env t T -> TYPE empty t T.
+ : forall kenv tenv t T 
+ , closed t -> TYPE kenv tenv t T -> TYPE empty empty t T.
 Proof.
  intros.
  eapply tyenv_invariance.
-  eauto. 
-  intros. contradict H1. eauto.
+  eauto.
+  intros. unfold closed in H. specialize H with a. tauto.
+  intros. unfold closed in H. specialize H with x. tauto.
 Qed.
 
 
@@ -260,13 +259,20 @@ Qed.
  *)
 Theorem check_empty_is_closed
  : forall t T
- , TYPE empty t T -> closed t.
+ , TYPE empty empty t T -> closed t.
 Proof.
  intros.
- unfold closed. intro. unfold not. intro.
- eapply tyenv_contains_free_vars in H.
-  destruct H. unfold empty in H. inversion H.
-  eauto.
+ unfold closed. intro. unfold not.
+ intro.
+ destruct x. 
+ remember (Name s n) as v.
+ destruct s.
+  eapply tyenv_contains_free_valvars with (tenv:=empty) in H0.
+   destruct H0. unfold empty in H0. inversion H0.
+   subst. simpl. auto. eauto.
+  eapply kienv_contains_free_tyvars with (kenv:=empty) in H.
+   destruct H.  unfold empty in H. inversion H.
+   subst. eauto. auto.
 Qed.
 
 
