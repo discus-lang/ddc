@@ -138,6 +138,14 @@ Proof.
 Qed.
 
 
+Lemma nocapture_LAM
+ : forall a b t
+ , freeX a (XLAM b t) -> a <> b.
+Proof.
+ intros. inversion H. subst. auto.
+Qed.
+
+
 (* Closedness *******************************************************)
 Definition closed (t:exp) 
  := forall x, ~(freeX x t).
