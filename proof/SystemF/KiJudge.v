@@ -9,7 +9,8 @@ Require Export Exp.
 (* Kind environment contains kinds of free type vars *)
 Definition kienv := partial_map ki.
 
-(* Check well formdness of types. 
+
+(* Well formdness of types. 
    Regular System-F isn't higher kinded, so we just need to check
    that all the type variables are in the correct namespace.
  *)
@@ -39,7 +40,9 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
 Hint Constructors KIND.
 
 
-(* For well formed types, the only free variables are type variables *)
+(* If a well formed type has a free variable, 
+   then it's guaranteed to be a type variable.
+ *)
 Lemma only_type_vars_in_types
  :  forall a kenv T K
  ,  freeT a T
@@ -69,7 +72,8 @@ Qed.
 
 
 (* If a well formed type has a free kind variable, 
-   then that variable appears in the kind environment. *)
+   then that variable appears in the kind environment. 
+ *)
 Lemma kind_kienv_contains_free_tyvars
  :  forall kenv T K a
  ,  KIND kenv T K
@@ -98,8 +102,9 @@ Qed.
 
 
 (* We can check a type with a larger kind environment, 
-   and get the same kind. *)
-Lemma kienv_invariance
+   and get the same kind. 
+ *)
+Lemma kind_kienv_invariance
  :  forall kenv kenv' T K
  ,  KIND kenv  T K
  -> (forall a, space_of_name a = SType
@@ -123,5 +128,4 @@ Proof.
  Case "TFun".
   apply KIFun; auto.
 Qed.
-
 

@@ -129,7 +129,7 @@ Qed.
 (* We can check an exp with larger kind and type environments,
    and get the same type.
  *)
-Lemma tyenv_invariance 
+Lemma type_tyenv_invariance 
  :  forall tenv tenv' kenv kenv' t T
  ,  TYPE kenv tenv t T
  -> (forall a, space_of_name a = SType  
@@ -185,7 +185,7 @@ Theorem check_closed_in_empty
  , closed t -> TYPE kenv tenv t T -> TYPE empty empty t T.
 Proof.
  intros.
- eapply tyenv_invariance.
+ eapply type_tyenv_invariance.
   eauto.
   intros. unfold closed in H. specialize H with a. tauto.
   intros. unfold closed in H. specialize H with x. tauto.
@@ -247,7 +247,7 @@ Proof.
   simpl. remember (beq_name x y) as e. destruct e.
   SCase "x=y".
    apply true_name_eq in Heqe. subst.
-   eapply tyenv_invariance.
+   eapply type_tyenv_invariance.
     eauto.
     intros. apply extend_neq. apply nocapture_lam in H2. auto. 
   SCase "x<>y".

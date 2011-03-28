@@ -59,7 +59,7 @@ Hint Constructors freeX.
 Hint Resolve FreeX_var.
 
 
-(* Freshness **********************************************
+(* Freshness ********************************************************
    This is used to check that a term does not bind a particular
    name, to help ward against variable capture issues.
  *)
@@ -83,7 +83,7 @@ Inductive freshX : name -> exp -> Prop :=
 Hint Constructors freshX.
 
 
-(* Substitution of Types in Exps *************************)
+(* Substitution of Types in Exps ************************************)
 Fixpoint substTX (x : name) (S : ty)  (t : exp) : exp := 
   match t with
     |  XVar _ => t
@@ -104,7 +104,7 @@ Fixpoint substTX (x : name) (S : ty)  (t : exp) : exp :=
   end.
 
 
-(* Substitution of Exps in Exps **************************)
+(* Substitution of Exps in Exps *************************************)
 Fixpoint substXX (x : name) (s : exp) (t : exp) : exp :=
   match t with
     |  XVar x'      
@@ -126,9 +126,10 @@ Fixpoint substXX (x : name) (s : exp) (t : exp) : exp :=
   end.
 
 
-(* noncapturing *******************************************)
-(* If a variable is free is a lambda expression, then we know 
-   it's not the variable being bound. *)
+(* Noncapturing *****************************************************
+   If a name is free is a lambda expression, then we know that
+   it's not the name being bound by it. 
+ *)
 Lemma nocapture_lam
  : forall x y T t
  , freeX x (XLam y T t) -> x <> y.
@@ -137,7 +138,7 @@ Proof.
 Qed.
 
 
-(* closed *************************************************)
+(* Closedness *******************************************************)
 Definition closed (t:exp) 
  := forall x, ~(freeX x t).
 
@@ -173,7 +174,11 @@ Proof.
 Qed.
 
 
-(* values **************************************************)
+(* Values ***********************************************************
+   We require values to be closed, to make it easy to pass this 
+   closedness information out of the STEP relation.
+   In the proof of progress, if STEP produces a value, then it's closed.
+ *)
 Inductive value : exp -> Prop :=
  | Value_lam  
     : forall x T t
@@ -194,5 +199,4 @@ Proof.
  Case "XLam". auto.
  Case "XLAM". auto.
 Qed.
-
 
