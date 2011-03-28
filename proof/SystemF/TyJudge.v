@@ -171,7 +171,7 @@ Proof.
      rewrite H in H3. inversion H3. auto.
  Case "XAPP".
   apply TYAPP. auto.
-  eapply kienv_invariance.
+  eapply kind_kienv_invariance.
    eauto.
    intros. apply H1. auto. auto.
 Qed.
