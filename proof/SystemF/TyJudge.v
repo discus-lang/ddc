@@ -43,35 +43,6 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
 Hint Constructors KIND.
 
 
-(* For well formed types, the only free variables are type variables *)
-Lemma only_type_vars_in_types
- :  forall a kenv T K
- ,  freeT a T
- -> KIND kenv T K
- -> space_of_name a = SType.
-Proof. 
- intros.
- generalize dependent kenv. 
- induction T.
- Case "TCon".
-  inversion H.
- Case "TVar".
-  intros.
-  inversion H0. subst.
-  inversion H.  subst. auto.
- Case "TForall".
-  intros.
-  eapply IHT. 
-  inversion H.  subst. auto.
-  inversion H0. subst. eauto.
- Case "TFun".
-  intros. inversion H0. subst.
-  inversion H. subst.
-  eapply IHT1; eauto.
-  eapply IHT2; eauto.
-Qed.
-
-
 (* Check well typeness of terms. *)
 Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
  | TYVar 
@@ -106,10 +77,69 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
 
 Hint Constructors TYPE.
 
+
+(* For well formed types, the only free variables are type variables *)
+Lemma only_type_vars_in_types
+ :  forall a kenv T K
+ ,  freeT a T
+ -> KIND kenv T K
+ -> space_of_name a = SType.
+Proof. 
+ intros.
+ generalize dependent kenv. 
+ induction T.
+ Case "TCon".
+  inversion H.
+ Case "TVar".
+  intros.
+  inversion H0. subst.
+  inversion H.  subst. auto.
+ Case "TForall".
+  intros.
+  eapply IHT. 
+  inversion H.  subst. auto.
+  inversion H0. subst. eauto.
+ Case "TFun".
+  intros. inversion H0. subst.
+  inversion H. subst.
+  eapply IHT1; eauto.
+  eapply IHT2; eauto.
+Qed.
+
+
+(* If a well formed type has a free kind variable, 
+   then that variable appears in the kind environment. *)
+Lemma kind_kienv_contains_free_tyvars
+ :  forall kenv T K a
+ ,  KIND kenv T K
+ -> space_of_name a = SType
+ -> freeT a T
+ -> (exists K', kenv a = some K').
+Proof. 
+ intros.
+ generalize dependent kenv.
+ generalize dependent K.
+ induction T.
+ Case "TCon".
+  intros. inversion H1.
+ Case "TVar".
+  intros. inversion H1. subst.
+  inversion H. subst. eauto.
+ Case "TForall".
+  intros. inversion H1. subst.
+  inversion H. subst.
+  apply IHT in H9. destruct H9. exists x.
+  rewrite extend_neq in H2; auto. auto.
+ Case "TFun".
+  intros. inversion H. subst.
+  inversion H1; subst; eauto.
+Qed.
+
+
 (* If a well formed expresion has a free kind variable, 
    then that variable appears in the kind environment.
  *)
-Lemma kienv_contains_free_tyvars
+Lemma type_kienv_contains_free_tyvars
  :  forall a t T kenv tenv
  ,  TYPE kenv tenv t T
  -> space_of_name a = SType
@@ -140,16 +170,16 @@ Proof.
   rewrite extend_neq in H2. auto. auto. auto.
  Case "XAPP".
   intros.  inversion H1.
-  subst. inversion H. subst. eapply IHt. auto. eauto.
-  subst. inversion H. subst. 
-
-  admit. (* **************** FINISH ME ***********)
+  subst. inversion H. subst. eapply IHt; eauto.
+  subst. inversion H. subst.
+  eapply kind_kienv_contains_free_tyvars; eauto.
 Qed.
+
 
 (* If a well typed expression has a free value variable, 
    then that variable appears in the type environment.
  *)
-Lemma tyenv_contains_free_valvars
+Lemma type_tyenv_contains_free_valvars
  :  forall x t T kenv tenv
  ,  freeX x t
  -> space_of_name x = SValue
@@ -295,12 +325,12 @@ Proof.
  destruct x. 
  remember (Name s n) as v.
  destruct s.
-  eapply tyenv_contains_free_valvars with (tenv:=empty) in H0.
+  eapply type_tyenv_contains_free_valvars with (tenv:=empty) in H0.
    destruct H0. unfold empty in H0. inversion H0.
    subst. simpl. auto. eauto.
-  eapply kienv_contains_free_tyvars with (kenv:=empty) in H.
+  eapply type_kienv_contains_free_tyvars with (kenv:=empty) (a:=v) in H.
    destruct H.  unfold empty in H. inversion H.
-   subst. eauto. auto.
+   subst. auto. auto.
 Qed.
 
 
