@@ -2,7 +2,7 @@
 Require Export Name.
 Require Export Ty.
 
-(* expressions *******************************************)
+(* expressions ********************************************)
 Inductive exp : Type :=
   | XVar  : name -> exp
   | XLam  : name -> ty  -> exp -> exp
@@ -31,6 +31,7 @@ Inductive freeX : name -> exp -> Prop :=
 Hint Constructors freeX.
 Hint Resolve FreeX_var.
 
+
 (* If a variable is free is a lambda expression, then we know 
    it's not the variable being bound. *)
 Lemma nocapture_lam
@@ -38,59 +39,6 @@ Lemma nocapture_lam
  , freeX x (XLam y T t) -> x <> y.
 Proof.
  intros. inversion H. subst. auto.
-Qed.
-
-
-(* closed *************************************************)
-Definition closed (t:exp) 
- := forall x, ~(freeX x t).
-
-
-Theorem closed_var_not
- : forall n
- , ~(closed (XVar n)).
-Proof.
- intro. unfold not. intro.
- unfold closed in H. specialize H with n. auto. 
-Qed.
-
-
-Theorem closed_lam
- : forall x T t 
- , closed t -> closed (XLam x T t).
-Proof. 
- intros. unfold closed. intros. unfold not. intro.
- inversion H0. subst.
- unfold closed in H. apply H in H6. assumption.
-Qed.
-
-
-Theorem closed_app
- : forall t1 t2
- , closed t1 -> closed t2 -> closed (XApp t1 t2).
-Proof. 
- intros.
- unfold closed. intros. unfold not. intro.
- unfold closed in H.  specialize H  with x.
- unfold closed in H0. specialize H0 with x.
- inversion H1. auto. auto.
-Qed.
-
-
-(* values **************************************************)
-Inductive value : exp -> Prop :=
- | Value_lam  
-    : forall x T t
-    , closed (XLam x T t) -> value (XLam  x T t).
-
-Hint Constructors value.
-
-
-Lemma values_are_closed
- : forall t
- , value t -> closed t.
-Proof.
- intros. inversion H. auto.
 Qed.
 
 
@@ -116,6 +64,29 @@ Inductive freshX : name -> exp -> Prop :=
    -> freshX n1 (XApp t11 t12).
 
 Hint Constructors freshX.
+
+
+(* closed *************************************************)
+Definition closed (t:exp) 
+ := forall x, ~(freeX x t).
+
+
+(* values **************************************************)
+Inductive value : exp -> Prop :=
+ | Value_lam  
+    : forall x T t
+    , closed (XLam x T t) -> value (XLam  x T t).
+
+Hint Constructors value.
+
+
+Lemma values_are_closed
+ : forall t
+ , value t -> closed t.
+Proof.
+ intros. inversion H. auto.
+Qed.
+
 
 
 (* Substitution *******************************************)
