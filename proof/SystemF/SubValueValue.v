@@ -76,5 +76,5 @@ Proof.
      intros. apply H in H0. inversions H0.
      
      eapply type_tyenv_invariance; eauto.
-     eauto.
+
 Qed.
