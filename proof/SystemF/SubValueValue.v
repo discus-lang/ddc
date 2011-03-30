@@ -7,7 +7,7 @@ Require Import TyJudge.
  *)
 Lemma subst_value_value
  :  forall kenv tenv x t1 t2 T1 T2
- ,  (forall z, freeX z t2 -> freshX z t1)
+ ,  (forall z, freeX z t2 -> ~bindsX z t1)
  -> TYPE kenv (extend tenv x T2)  t1  T1
  -> TYPE kenv tenv                t2  T2
  -> TYPE kenv tenv  (substXX x t2 t1) T1.
@@ -44,37 +44,38 @@ Proof.
    inversions H0.
    apply TYLam. auto.
     apply IHt1.
-     intros. apply H in H0. inversions H0. auto.
+     intros. apply H in H0. unfold not in H0.
+     contradict H0. eauto.
+
     rewrite extend_swap; auto.
     eapply type_tyenv_invariance.
      eauto.
      auto.
-     intros. apply H in H2. inversions H2. rewrite extend_neq; auto.
+     intros. apply H in H2. rewrite extend_neq. auto.
+     contradict H2. subst. auto.
 
  Case "XApp".
    intros. simpl. inversions H0.
    eapply TYApp.
-    eapply IHt1_1 in H6. eauto. 
-     intros. apply H in H0. inversions H0. auto. auto.
-    eapply IHt1_2 in H8. eauto.
-     intros. apply H in H0. inversions H0. auto. auto.
+    eapply IHt1_1 in H6; eauto. 
+     intros. apply H in H0; eauto.
+    eapply IHt1_2 in H8; eauto.
+     intros. apply H in H0; eauto.
 
  Case "XLAM".
    intros. simpl. inversions H0.
    eapply TYLAM. eauto.
    apply IHt1.
-    intros. apply H in H0. inversion H0.
-    auto. auto.
+    intros. apply H in H0; eauto. 
+    auto.
     eapply type_tyenv_invariance; eauto.
-     intros. apply H in H2. inversions H2.
-     rewrite extend_neq; auto.
+     intros. apply H in H2; eauto.
+     rewrite extend_neq; auto. 
+     contradict H2. subst. auto.
 
  Case "XAPP".
    intros. simpl. inversions H0.
-   apply TYAPP.
-    apply IHt1.
-     intros. apply H in H0. inversions H0.
-     
-     eapply type_tyenv_invariance; eauto.
-
+   apply TYAPP; eauto.
+    apply IHt1; eauto.
+     intros. apply H in H0; eauto.
 Qed.

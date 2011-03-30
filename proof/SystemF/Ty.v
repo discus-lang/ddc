@@ -33,9 +33,27 @@ Inductive freeT : name -> ty -> Prop :=
    :  forall x T1 T2
    ,  freeT x T2 -> freeT x (TFun T1 T2).
 
-
 Hint Constructors freeT.
 Hint Resolve FreeT_var.
+
+
+(* Binding variables ***************************************)
+Inductive bindsT : name -> ty -> Prop :=
+ | BindsT_forall_bound
+   :  forall a t1
+   ,  bindsT a (TForall a t1)
+
+ | BindsT_forall
+   :  forall a b t1
+   ,  bindsT a t1
+   -> bindsT a (TForall b t1)
+
+ | BindsT_fun
+   :  forall a T1 T2
+   ,  bindsT a T1 \/ bindsT a T2
+   -> bindsT a (TFun T1 T2).
+
+Hint Constructors bindsT.
 
 
 (* Substitution of Types in Types *************************)

@@ -9,7 +9,6 @@ Require Export KiJudge.
 (* Type environment contains types of free value vars *)
 Definition tyenv := partial_map ty.
 
-
 (* Check well typeness of terms. *)
 Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
  | TYVar 

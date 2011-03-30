@@ -59,38 +59,40 @@ Hint Constructors freeX.
 Hint Resolve FreeX_var.
 
 
-(* Freshness ********************************************************
+(* Variable Binding *************************************************
    This is used to check that a term does not bind a particular
    name, to help ward against variable capture issues.
- *)
-Inductive freshX : name -> exp -> Prop :=
- | FreshX_var
-   :  forall x by
-   ,  freshX x (XVar by)
+*)
+Inductive bindsX : name -> exp -> Prop :=
+ | BindsX_lam_bound
+   :  forall x T11 t12
+   ,  bindsX x (XLam x T11 t12)
 
- | FreshX_lam
-   :  forall x y T t11
-   ,  x <> y
-   -> freshX x t11 
-   -> freshX x (XLam y T t11)
+ | BindsX_lam
+   :  forall v y T11 t12
+   ,  bindsT v T11 \/ bindsX v t12
+   -> bindsX v (XLam y T11 t12)
 
- | FreshX_app
-   :  forall x t11 t12
-   ,  freshX x t11
-   -> freshX x t12
-   -> freshX x (XApp t11 t12)
+ | BindsX_app
+   :  forall v t11 t12
+   ,  bindsX v t11 \/ bindsX v t12
+   -> bindsX v (XApp t11 t12)
 
- | FreshX_LAM
-   :  forall a b t1
-   ,  a <> b
-   -> freshX a t1
-   -> freshX a (XLAM b t1)
+ | BindsX_LAM_bound
+   :  forall a t1
+   ,  bindsX a (XLAM a t1)
 
- | FreshX_APP
-   :  forall x t1 T2
-   ,  freshX x (XAPP t1 T2).
+ | BindsX_LAM
+   :  forall v a t11
+   ,  bindsX v t11
+   -> bindsX v (XLAM a t11)
 
-Hint Constructors freshX.
+ | BindsX_APP
+   :  forall v t11 T12
+   ,  bindsX v t11 \/ bindsT v T12
+   -> bindsX v (XAPP t11 T12).
+
+Hint Constructors bindsX.
 
 
 (* Substitution of Types in Exps ************************************)
