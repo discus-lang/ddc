@@ -7,6 +7,8 @@ Inductive ty  : Type :=
  | TCon  : nat -> ty
  | TFun  : ty  -> ty -> ty.
 
+Hint Constructors ty.
+
 
 (** Expressions *******************************************)
 Inductive exp : Type :=
@@ -14,11 +16,14 @@ Inductive exp : Type :=
  | XLam  : ty  -> exp -> exp
  | XApp  : exp -> exp -> exp.
 
+Hint Constructors exp.
+
 
 Inductive value : exp -> Prop :=
  | Value_lam 
    : forall T t, value (XLam T t).
 
+Hint Constructors value.
 
 (** Type Judgements ***************************************)
 Definition tyenv := env ty.
@@ -48,6 +53,7 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
    -> TYPE tenv t2 T1
    -> TYPE tenv (XApp t1 t2) T2.
 
+Hint Constructors TYPE.
 
 (** Application ******************************************)
 Fixpoint applyX' (depth: nat) (tt: exp) (u: exp) : exp :=
@@ -63,9 +69,10 @@ Definition applyX := applyX' 0.
 (** Evaluation *******************************************)
 Inductive STEP : exp -> exp -> Prop :=
  |  EVLamApp
-    : forall T11 t12 t2
-    ,  STEP (XApp   (XLam T11 t12) t2)
-            (applyX t12 t2)
+    : forall T11 t12 tv2
+    ,  value tv2
+    -> STEP (XApp   (XLam T11 t12) tv2)
+            (applyX t12 tv2)
 
  |  EVApp1 
     :  forall t1 t1' t2
@@ -78,7 +85,7 @@ Inductive STEP : exp -> exp -> Prop :=
     -> STEP t2 t2'
     -> STEP (XApp tv1 t2) (XApp tv1 t2').
 
-
+Hint Constructors STEP.
 
 
 
