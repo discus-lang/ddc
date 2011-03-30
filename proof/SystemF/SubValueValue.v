@@ -1,4 +1,5 @@
 
+Require Import Exp.
 Require Import TyJudge.
 
 
@@ -63,16 +64,18 @@ Proof.
    eapply TYLAM. eauto.
    apply IHt1.
     intros. apply H in H0. inversion H0.
-    auto.
+    auto. auto.
     eapply type_tyenv_invariance; eauto.
      intros. apply H in H2. inversions H2.
+     rewrite extend_neq; auto.
 
  Case "XAPP".
    intros. simpl. inversions H0.
    apply TYAPP.
     apply IHt1.
-     intros. apply H in H0. inversion H0.
-     auto.
+     intros. apply H in H0. inversions H0.
+     
+     eauto.
      eapply type_tyenv_invariance; eauto.
      eauto.
 Qed.
