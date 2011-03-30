@@ -2,6 +2,7 @@
 Require Import TyJudge.
 Require Import EvJudge.
 Require Import SubValueValue.
+Require Import SubTypeValue.
 
 
 (* When a well typed term transitions to the next state, 

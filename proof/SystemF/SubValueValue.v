@@ -22,11 +22,11 @@ Proof.
   remember (beq_name x y) as e. destruct e.
   SCase "x=y".
    apply true_name_eq in Heqe. subst.
-   inversion H0. subst.
-   rewrite extend_eq in H6. inversion H6. subst. eauto.
+   inversions H0.
+   rewrite extend_eq in H6. inversions H6. eauto.
   SCase "x<>y".
    apply false_name_neq in Heqe.
-   inversion H0. subst.
+   inversions H0.
    rewrite extend_neq in H6.
    apply TYVar; eauto. auto.
 
@@ -35,49 +35,44 @@ Proof.
   simpl. remember (beq_name x y) as e. destruct e.
   SCase "x=y".
    apply true_name_eq in Heqe. subst.
-   eapply type_tyenv_invariance. eauto. intros. auto.
-   intros. apply nocapture_lam in H3. auto. 
+   eapply type_tyenv_invariance. eauto.
+    intros. auto.
+    intros. apply nocapture_lam in H3. auto. 
   SCase "x<>y".
    apply false_name_neq in Heqe.
-   inversion H0. subst.
+   inversions H0.
    apply TYLam. auto.
     apply IHt1.
-    intros. apply H in H2. inversion H2. subst. auto.
+     intros. apply H in H0. inversions H0. auto.
     rewrite extend_swap; auto.
     eapply type_tyenv_invariance.
      eauto.
-     intros. auto.
-     intros. apply H in H3. inversion H3. subst.
-      rewrite extend_neq; auto.
+     auto.
+     intros. apply H in H2. inversions H2. rewrite extend_neq; auto.
 
  Case "XApp".
-   intros. simpl. inversion H0. subst.
+   intros. simpl. inversions H0.
    eapply TYApp.
-   eapply IHt1_1 in H6. eauto. 
-    intros. apply H in H2. inversion H2. subst. auto. auto.
-   eapply IHt1_2 in H8. eauto.
-    intros. apply H in H2. inversion H2. subst. auto. auto.
+    eapply IHt1_1 in H6. eauto. 
+     intros. apply H in H0. inversions H0. auto. auto.
+    eapply IHt1_2 in H8. eauto.
+     intros. apply H in H0. inversions H0. auto. auto.
 
  Case "XLAM".
-   intros. simpl. inversion H0. subst.
+   intros. simpl. inversions H0.
    eapply TYLAM. eauto.
-   eapply type_tyenv_invariance.
    apply IHt1.
-    intros. apply H in H2. inversion H2.
-    eauto. 
-    eapply type_tyenv_invariance.
-    eauto. intros. apply H in H3. inversion H3.
-    intros. auto.
-    intros. auto.
-    intros. auto.
+    intros. apply H in H0. inversion H0.
+    auto.
+    eapply type_tyenv_invariance; eauto.
+     intros. apply H in H2. inversions H2.
 
  Case "XAPP".
-   intros. simpl. inversion H0. subst.
+   intros. simpl. inversions H0.
    apply TYAPP.
-   apply IHt1.
-    intros. apply H in H2. inversion H2.
-    auto.
-    eapply type_tyenv_invariance. eauto.
-     intros. auto.
-     intros. auto. eauto.
+    apply IHt1.
+     intros. apply H in H0. inversion H0.
+     auto.
+     eapply type_tyenv_invariance; eauto.
+     eauto.
 Qed.

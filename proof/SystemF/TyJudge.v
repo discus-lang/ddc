@@ -65,22 +65,22 @@ Proof.
   inversion H. subst. rewrite H0 in H3. inversion H3.
  Case "XLam".
   intros. inversion H1. subst.
-  inversion H. subst.
-  eapply IHt. auto. eauto.
+  inversion H; subst.
+  eapply IHt; eauto.
  Case "XApp".
   intros. inversion H. subst.
-  inversion H1.
-   subst. apply IHt1 in H6. auto. auto.
-   subst. apply IHt2 in H8. auto. auto.
+  inversion H1; subst.
+   apply IHt1 in H6; auto.
+   apply IHt2 in H8; auto.
  Case "XLAM".
   intros. inversion H1. subst.
   inversion H. subst.
   apply IHt in H10. destruct H10. exists x.
-  rewrite extend_neq in H2. auto. auto. auto.
+  rewrite extend_neq in H2; auto. auto.
  Case "XAPP".
-  intros.  inversion H1.
-  subst. inversion H. subst. eapply IHt; eauto.
-  subst. inversion H. subst.
+  intros.  inversion H1; subst.
+  inversion H. subst. eapply IHt; eauto.
+  inversion H. subst.
   eapply kind_kienv_contains_free_tyvars; eauto.
 Qed.
 

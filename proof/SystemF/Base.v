@@ -1,5 +1,9 @@
 (* Basic definitions shared by all modules *)
 
+(* Common tactics *****************************************)
+Tactic Notation "inversions" hyp(H) 
+ := inversion H; subst; clear H.
+
 
 (* Cases library due to Aaron Bohannon ********************)
 Require String. Open Scope string_scope.

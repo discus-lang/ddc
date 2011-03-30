@@ -78,7 +78,17 @@ Inductive freshX : name -> exp -> Prop :=
    :  forall x t11 t12
    ,  freshX x t11
    -> freshX x t12
-   -> freshX x (XApp t11 t12).
+   -> freshX x (XApp t11 t12)
+
+ | FreshX_LAM
+   :  forall a b t1
+   ,  a <> b
+   -> freshX a t1
+   -> freshX a (XLAM b t1)
+
+ | FreshX_APP
+   :  forall x t1 T2
+   ,  freshX x (XAPP t1 T2).
 
 Hint Constructors freshX.
 
