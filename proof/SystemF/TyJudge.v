@@ -141,9 +141,11 @@ Proof.
  generalize dependent tenv'.
  generalize dependent kenv'.
  induction H; intros.
+
  Case "XVar".
   apply TYVar. auto. rewrite <- H0.
   symmetry. eapply H2; auto.
+
  Case "XLam".
   apply TYLam. auto.
   apply IHTYPE.
@@ -155,11 +157,13 @@ Proof.
     apply H2. auto.
     apply FreeX_lam. unfold not. intro. subst.
     apply false_name_neq in Heqe. tauto. auto.
+
  Case "XApp".
   eapply TYApp; auto.
+
  Case "XLAM".
-  eapply TYLAM.
-   auto. apply IHTYPE.
+  eapply TYLAM. eauto.
+  apply IHTYPE.
     intros. unfold extend.
      remember (beq_name a a0) as e. destruct e; auto.
      apply H1. auto.
@@ -168,6 +172,7 @@ Proof.
     intros. apply H2. auto.
      apply FreeX_LAM. unfold not. intro. subst.
      rewrite H in H3. inversion H3. auto.
+
  Case "XAPP".
   apply TYAPP. auto.
   eapply kind_kienv_invariance.

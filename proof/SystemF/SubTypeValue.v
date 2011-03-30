@@ -10,7 +10,8 @@ Definition substTTE a T2 tenv
  *)
 Lemma subst_type_value
  :  forall kenv tenv a t1 T1 T2 K2
- ,  (forall z, freeT z T2 -> freshX z t1)
+ ,  kenv a = none
+ -> (forall z, freeT z T2 -> ~bindsX z t1)
  -> TYPE (extend kenv a K2) tenv  t1  T1
  -> KIND      kenv                T2  K2
  -> TYPE kenv
@@ -22,18 +23,18 @@ Proof.
  generalize dependent kenv.
  generalize dependent tenv.
  generalize dependent T1.
- induction t1; intros; inversions H0.
+ induction t1; intros; inversions H1.
 
  Case "XVar".
   apply TYVar; auto.
   unfold substTTE. unfold map. remember (tenv n) as e. destruct e.
-   inversions H6. inversions H6. auto.
+   inversions H7. inversions H7. auto.
 
  Case "XLam". simpl.
   eapply TYLam. auto.
   eapply type_tyenv_invariance.
    apply IHt1; eauto.
-    intros. apply H in H0. inversions H0. auto.
+    intros. apply H0 in H1; eauto.
     eauto.
     intros. unfold extend. remember (beq_name n x) as e. destruct e.
      apply true_name_eq in Heqe. subst.
@@ -45,33 +46,29 @@ Proof.
 
  Case "XApp". simpl.
   eapply TYApp.
-   eapply IHt1_1 in H6. eauto.
-    intros. apply H in H0. inversions H0. auto. auto. fold substTT.
-   eapply IHt1_2 in H8. eauto.
-    intros. apply H in H0. inversions H0. auto. auto.
+   eapply IHt1_1 in H7; eauto.
+    intros. apply H0 in H1; eauto. fold substTT.
+   eapply IHt1_2 in H9; eauto.
+    intros. apply H0 in H1; eauto.
 
  Case "XLAM". simpl.
   remember (beq_name a n) as e. destruct e.
-  apply true_name_eq in Heqe. subst.
-   rewrite -> extend_pack in H8.
-   rewrite -> extend_swap in H8.
-
-  apply TYLAM. auto.
-   apply IHt1 in H8.
-
-
-eauto.
-  apply true_name_eq in Heqe. subst.
-   eapply type_tyenv_invariance in H8. eauto.
-   eauto.
-   intros. unfold substTTE. unfold map. 
-   apply equal_f.
-
-unfold substTT.
-   intros.
-  eapply IHt1 in H1.
-   eauto.
+  SCase "a = n".
+   apply true_name_eq in Heqe. subst.
+   rewrite -> extend_pack in H9.
+   apply TYLAM; eauto.
+   eapply type_tyenv_invariance. eauto. eauto.
+   intros. unfold substTTE. unfold map. unfold substTT.
 
 
+   admit.
 
+  SCase "a <> n".
+   apply false_name_neq in Heqe.
+   apply TYLAM; eauto.
+   apply IHt1. intros.
+    apply H in H0. auto.
+    rewrite extend_swap; eauto.
+    eapply kind_kienv_invariance. eauto.
+    intros. rewrite extend_neq; eauto.
 
