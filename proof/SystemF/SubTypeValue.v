@@ -10,7 +10,7 @@ Definition substTTE a T2 tenv
  *)
 Lemma subst_type_value
  :  forall kenv tenv a t1 T1 T2 K2
- ,  kenv a = none
+ ,  kenv a = None
  -> (forall z, freeT z T2 -> ~bindsX z t1)
  -> TYPE (extend kenv a K2) tenv  t1  T1
  -> KIND      kenv                T2  K2
@@ -20,15 +20,13 @@ Lemma subst_type_value
          (substTT  a T2 T1).  
 Proof.
  intros kenv tenv a t1 T1 T2 K2.
- generalize dependent kenv.
- generalize dependent tenv.
- generalize dependent T1.
+ gen kenv tenv T1.
  induction t1; intros; inversions H1.
 
  Case "XVar".
   apply TYVar; auto.
-  unfold substTTE. unfold map. remember (tenv n) as e. destruct e.
-   inversions H7. inversions H7. auto.
+  unfold substTTE. unfold map. break (tenv n).
+  inversions H7. auto. false.
 
  Case "XLam". simpl.
   eapply TYLam. auto.
@@ -36,11 +34,11 @@ Proof.
    apply IHt1; eauto.
     intros. apply H0 in H1; eauto.
     eauto.
-    intros. unfold extend. remember (beq_name n x) as e. destruct e.
-     apply true_name_eq in Heqe. subst.
+    intros. unfold extend. break (beq_name n x).
+     apply true_name_eq in HeqX. subst.
       unfold substTTE. unfold map.
       rewrite <- beq_name_refl. auto.
-     apply false_name_neq in Heqe.
+     apply false_name_neq in HeqX.
       unfold substTTE. unfold map.
       rewrite <- neq_name_false. auto. auto. 
 
@@ -52,23 +50,39 @@ Proof.
     intros. apply H0 in H1; eauto.
 
  Case "XLAM". simpl.
-  remember (beq_name a n) as e. destruct e.
+  break (beq_name a n).
   SCase "a = n".
-   apply true_name_eq in Heqe. subst.
+   apply true_name_eq in HeqX. subst.
    rewrite -> extend_pack in H9.
    apply TYLAM; eauto.
    eapply type_tyenv_invariance. eauto. eauto.
-   intros. unfold substTTE. unfold map. unfold substTT.
-
-
-   admit.
+   intros. unfold substTTE. sort. 
+   admit. (* kenv n = None implies n not free in T2 *)
 
   SCase "a <> n".
-   apply false_name_neq in Heqe.
+   apply false_name_neq in HeqX.
    apply TYLAM; eauto.
-   apply IHt1. intros.
-    apply H in H0. auto.
+   apply IHt1.
+    rewrite extend_neq; auto.
+    intros.
+    apply H0 in H1. auto.
     rewrite extend_swap; eauto.
-    eapply kind_kienv_invariance. eauto.
-    intros. rewrite extend_neq; eauto.
+    admit. (* require T2 closed in theorem *)
+
+ Case "XAPP". simpl.
+  lets Ht1: IHt1 H7 H2.
+   eauto.
+   intros. specialize H0 with z. apply H0 in H1. contradict H1. eauto.
+   assert (T2 = substTT a T2 t). admit. (* T2 closed *)
+   rewrite <- H1. clear H1.
+   eapply TYAPP.
+    simpl in Ht1.
+     remember (beq_name a a0) in Ht1. destruct b.
+      apply true_name_eq in Heqb. subst. eauto. admit. (* fix *)
+
+   admit.
+   destruct K2. auto.
+Qed.
+      
+
 

@@ -15,20 +15,19 @@ Theorem preservation
  -> TYPE kenv tenv t' T.
 Proof.
  intros kenv tenv t t' T Htype Hstep.
- generalize dependent t'.
- generalize dependent T.
- induction t.
+ gen t' T.
+ induction t; intros.
 
  Case "XVar". 
-  intros. inversion Hstep.
+  inversions Hstep.
 
  Case "XLam".
-  intros. inversion Hstep.
+  inversion Hstep.
 
  Case "XApp".
-  intros. inversion Hstep. subst.
+  inversions Hstep.
   SCase "EVAppAbs".
-   inversion Htype. subst.
+   inversions Htype.
    eapply subst_value_value.
     intro. 
      apply values_are_closed in H2.
@@ -36,17 +35,19 @@ Proof.
      specialize H2 with z. intro. contradiction.
     inversion H4. eauto.
     auto.
-  SCase "EVApp1". subst.
-   inversion Htype. subst. eauto. 
-  SCase "EVApp2". subst.
-   inversion Htype. subst. eauto.
+  SCase "EVApp1".
+   inversions Htype. eauto.
+  SCase "EVApp2".
+   inversions Htype. eauto.
 
  Case "XLAM".
-  intros. inversion Hstep.
+  inversions Hstep.
 
  Case "XAPP".
-  intros. inversion Hstep. subst.
+  inversions Hstep.
   SCase "EVAPPLAM".
-   inversion Htype. subst.
+   inversions Htype.
+   inversions H3. (* need that T2 is closed *)
+   
 
 Qed.   
