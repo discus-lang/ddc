@@ -22,7 +22,7 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
  | KIVar
    :  forall kenv x K
    ,  space_of_name x = SType
-   -> kenv x          = some K
+   -> kenv x          = Some K
    -> KIND kenv (TVar x) KStar
 
  | KIForall
@@ -56,16 +56,17 @@ Proof.
   inversion H.
  Case "TVar".
   intros.
-  inversion H0. subst.
-  inversion H.  subst. auto.
+  inversions H.
+  inversions H0. auto.
  Case "TForall".
   intros.
   eapply IHT. 
-  inversion H.  subst. auto.
-  inversion H0. subst. eauto.
+  inversions H.  auto. 
+  inversions H0. eauto.
  Case "TFun".
-  intros. inversion H0. subst.
-  inversion H. subst.
+  intros.
+  inversions H0.
+  inversions H.
   eapply IHT1; eauto.
   eapply IHT2; eauto.
 Qed.
@@ -77,27 +78,26 @@ Qed.
 Lemma kind_kienv_contains_free_tyvars
  :  forall kenv T K a
  ,  KIND kenv T K
- -> space_of_name a = SType
- -> freeT a T
- -> (exists K', kenv a = some K').
+ -> tyname a -> freeT a T
+ -> (exists K', kenv a = Some K').
 Proof. 
  intros.
  generalize dependent kenv.
  generalize dependent K.
- induction T.
+ induction T; intros.
  Case "TCon".
-  intros. inversion H1.
+  inversion H1.
  Case "TVar".
-  intros. inversion H1. subst.
-  inversion H. subst. eauto.
+  inversions H1.
+  inversions H. eauto.
  Case "TForall".
-  intros. inversion H1. subst.
-  inversion H. subst.
-  apply IHT in H9. destruct H9. exists x.
-  rewrite extend_neq in H2; auto. auto.
+  inversions H1.
+  inversions H.
+  apply IHT in H8. destruct H8. exists x.
+  rewrite extend_neq in H; auto. auto.
  Case "TFun".
-  intros. inversion H. subst.
-  inversion H1; subst; eauto.
+  inversions H.
+  inversions H1; eauto.
 Qed.
 
 
@@ -107,8 +107,7 @@ Qed.
 Lemma kind_kienv_invariance
  :  forall kenv kenv' T K
  ,  KIND kenv  T K
- -> (forall a, space_of_name a = SType
-            -> freeT a T -> kenv a = kenv' a)
+ -> (forall a, tyname a -> freeT a T -> kenv a = kenv' a)
  -> KIND kenv' T K.
 Proof.
  intros.
@@ -117,14 +116,14 @@ Proof.
  Case "TCon".
   auto.
  Case "TVar".
-  eapply KIVar. auto. rewrite <- H1.
-  eauto. auto. auto.
+  eapply KIVar; auto.
+  rewrite <- H1; eauto.
  Case "TForall".
   apply KIForall. auto.
   apply IHKIND.
    intros.
-   unfold extend. remember (beq_name a a0) as e. destruct e.
-   auto. apply false_name_neq in Heqe. eauto.
+   unfold extend. breaka (beq_name a a0).
+   apply false_name_neq in HeqX. eauto.
  Case "TFun".
   apply KIFun; auto.
 Qed.

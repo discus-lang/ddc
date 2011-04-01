@@ -17,6 +17,16 @@ Definition space_of_name n :=
  end.
 
 
+Definition valname (n:name) : Prop 
+ := space_of_name n = SValue.
+Hint Unfold valname.
+
+
+Definition tyname  (n:name) : Prop
+ := space_of_name n = SType.
+Hint Unfold tyname.
+
+
 (* Names are equal when their ids are equal. *)
 Definition beq_name n1 n2 := 
  match (n1, n2) with 
@@ -48,13 +58,10 @@ Lemma beq_name_sym
  , beq_name n1 n2 = beq_name n2 n1.
 Proof.
  intros.
- destruct n1. destruct n2. destruct s. destruct s0.
- unfold beq_name. rewrite beq_nat_sym. auto.
- unfold beq_name. trivial.
- destruct s0.
- unfold beq_name. trivial.
- unfold beq_name. 
- rewrite beq_nat_sym. trivial.
+ destruct n1. destruct n2.
+ destruct s; destruct s0; unfold beq_name; auto.
+ rewrite beq_nat_sym. auto.
+ rewrite beq_nat_sym. auto.
 Qed.
 Hint Resolve beq_name_sym.
 
@@ -63,7 +70,12 @@ Lemma true_name_eq
  : forall n1 n2
  , true = beq_name n1 n2 -> n1 = n2.
 Proof.
- admit.
+ intros.
+ destruct n1. destruct n2.
+ destruct s; destruct s0; 
+  unfold beq_name in H;
+  try (lets N: beq_nat_eq H; subst; auto);
+  try (inversion H).
 Qed.
 Hint Resolve true_name_eq.
 
@@ -72,24 +84,33 @@ Lemma eq_name_true
  : forall n1 n2
  , n1 = n2 -> true = beq_name n1 n2.
 Proof.
- admit.
+ intros. subst. eauto.
 Qed.
+Hint Resolve eq_name_true.
 
 
-Lemma false_name_neq
+Theorem false_name_neq
  : forall n1 n2
  , false = beq_name n1 n2 -> n1 <> n2.
 Proof. 
- admit.
+ intros.
+ unfold not. intro. subst. contradict H. 
+ rewrite <- beq_name_refl. unfold not. intro. inversion H.
 Qed.
 Hint Resolve false_name_neq.
 
 
-Lemma neq_name_false
+Theorem neq_name_false
  : forall n1 n2
  , n1 <> n2 -> false = beq_name n1 n2.
 Proof. 
- admit.
+ intros.
+ destruct n1. destruct n2.
+ destruct s;  destruct s0;
+  try (unfold beq_name; auto).
+
+ apply neq_nat_false. contradict H. subst. auto.
+ apply neq_nat_false. contradict H. subst. auto.
 Qed.
 
 

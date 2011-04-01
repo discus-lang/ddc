@@ -13,7 +13,7 @@ Definition partial_map (A:Type)
 
 (* An empty typing context *)
 Definition empty {A:Type} : partial_map A 
- := fun _ => none.
+ := fun _ => None.
 
 Hint Unfold empty.
 
@@ -22,7 +22,7 @@ Hint Unfold empty.
 Definition extend {A:Type} (rest:partial_map A) (x:name) (T:A)
  := fun x' 
  => if beq_name x x'
-       then some T
+       then Some T
        else rest x'.
 
 Hint Unfold extend.
@@ -31,15 +31,15 @@ Hint Unfold extend.
 Definition map {A B:Type} (f : A -> B) (ctx:partial_map A)
  := fun x 
  => match ctx x with
-     | none    => none
-     | some T  => some (f T)
+     | None    => None
+     | Some T  => Some (f T)
     end.
 
 
 (* An extended contexted contains the member we extended it with. *)
 Lemma extend_eq 
  : forall A (ctx: partial_map A) x T
- , (extend ctx x T) x = some T.
+ , (extend ctx x T) x = Some T.
 Proof.
  intros. unfold extend.  
  rewrite <- beq_name_refl. auto.
@@ -55,8 +55,8 @@ Lemma extend_neq
  -> (extend ctx x2 T) x1 = ctx x1.
 Proof. 
  intros. unfold extend.
- remember (beq_name x2 x1) as e. destruct e.
- apply true_name_eq in Heqe. subst. contradict H. auto. auto.
+ breaka (beq_name x2 x1).
+ apply true_name_eq in HeqX. subst. contradict H. auto.
 Qed.
 Hint Resolve extend_neq.
 
@@ -69,7 +69,7 @@ Proof.
  intros.
  apply functional_extensionality. intro.
  unfold extend.
- remember (beq_name x1 x) as e. destruct e; auto.
+ breaka (beq_name x1 x).
 Qed.
 Hint Resolve extend_pack.
 

@@ -19,33 +19,68 @@ Inductive exp : Type :=
 Hint Constructors exp.
 
 
+(** Closedness ********************************************)
+Inductive coversX : nat -> exp -> Prop :=
+ | CoversX_var
+   :  forall n i
+   ,  (n >= i) 
+   -> coversX n (XVar i)
+
+ | CoversX_lam
+   :  forall n T t
+   ,  coversX (S n) t 
+   -> coversX n (XLam T t)
+
+ | CoversX_app
+   :  forall n t1 t2
+   ,  coversX n t1
+   -> coversX n t2
+   -> coversX n (XApp t1 t2).
+
+
+Inductive closedX : exp -> Prop :=
+ | ClosedX_lam
+   :  forall T t
+   ,  coversX O t
+   -> closedX (XLam T t)
+
+ | ClosedX_app
+   :  forall t1 t2
+   ,  closedX t1
+   -> closedX t2
+   -> closedX (XApp t1 t2).
+
+
 Inductive value : exp -> Prop :=
  | Value_lam 
-   : forall T t, value (XLam T t).
+   : forall T t
+   , closedX (XLam T t) -> value (XLam T t).
 
 Hint Constructors value.
+
+
 
 (** Type Judgements ***************************************)
 Definition tyenv := env ty.
 
 Fixpoint get (xx: env ty) (i: nat) {struct xx} : option ty :=
  match xx, i with
- | snoc empty T, O    => some T
- | snoc xs _,    S i' => get  xs i'
- | _, _               => none
+ | snoc _ T,  O    => some T
+ | snoc xs _, S i' => get  xs i'
+ | _, _            => none
  end.
 
 
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
  | TYVar 
-   :  forall tenv i t T
+   :  forall tenv i T
    ,  get tenv i = some T
-   -> TYPE tenv t T
+   -> TYPE tenv (XVar i) T
 
  | TYLam
    :  forall tenv t T1 T2
    ,  TYPE (tenv :> T1) t T2
-   -> TYPE tenv (XLam T1 t) T2
+   -> TYPE tenv (XLam T1 t) (TFun T1 T2)
 
  | TYApp
    :  forall tenv t1 t2 T1 T2
@@ -64,7 +99,7 @@ Fixpoint applyX' (depth: nat) (tt: exp) (u: exp) : exp :=
  end. 
 
 Definition applyX := applyX' 0.
-
+Hint Unfold applyX.
 
 (** Evaluation *******************************************)
 Inductive STEP : exp -> exp -> Prop :=
