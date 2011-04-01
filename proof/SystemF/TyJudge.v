@@ -13,13 +13,12 @@ Definition tyenv := partial_map ty.
 Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
  | TYVar 
    :  forall kenv tenv x T
-   ,  space_of_name x = SValue
-   -> tenv x = some T
+   ,  valname x -> tenv x = Some T
    -> TYPE kenv tenv (XVar x) T
 
  | TYLam 
    :  forall kenv tenv x T11 T12 t12
-   ,  space_of_name x = SValue
+   ,  valname x
    -> TYPE kenv (extend tenv x T11) t12 T12
    -> TYPE kenv tenv (XLam x T11 t12) (TFun T11 T12)
 
@@ -31,7 +30,7 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
 
  | TYLAM
    :  forall kenv tenv a t12 T12
-   ,  space_of_name a = SType
+   ,  tyname a
    -> TYPE (extend kenv a KStar) tenv t12 T12 
    -> TYPE kenv tenv (XLAM a t12) (TForall a T12)
 
@@ -50,37 +49,35 @@ Hint Constructors TYPE.
 Lemma type_kienv_contains_free_tyvars
  :  forall a t T kenv tenv
  ,  TYPE kenv tenv t T
- -> space_of_name a = SType
- -> freeX a t 
- -> (exists K', kenv a = some K').
+ -> tyname a -> freeX a t 
+ -> (exists K', kenv a = Some K').
 Proof. 
- intros.
- generalize dependent kenv.
- generalize dependent tenv.
- generalize dependent T.
- induction t.
+ intros. gen kenv tenv T.
+ induction t; intros.
  Case "XVar".
-  intros. inversion H1. subst.
-  inversion H. subst. rewrite H0 in H3. inversion H3.
+  inversions H1.
+  inversions H.
+   unfold tyname in H0.
+   unfold valname in H2. 
+   rewrite H0 in H2. inversion H2.
  Case "XLam".
-  intros. inversion H1. subst.
-  inversion H; subst.
+  inversions H1.
+  inversions H.
   eapply IHt; eauto.
  Case "XApp".
-  intros. inversion H. subst.
-  inversion H1; subst.
+  inversions H.
+  inversions H1.
    apply IHt1 in H6; auto.
    apply IHt2 in H8; auto.
  Case "XLAM".
-  intros. inversion H1. subst.
-  inversion H. subst.
-  apply IHt in H10. destruct H10. exists x.
-  rewrite extend_neq in H2; auto. auto.
+  inversions H1.
+  inversions H.
+  apply IHt in H9. destruct H9. exists x.
+  rewrite extend_neq in H; auto. auto.
  Case "XAPP".
-  intros.  inversion H1; subst.
-  inversion H. subst. eapply IHt; eauto.
-  inversion H. subst.
-  eapply kind_kienv_contains_free_tyvars; eauto.
+  inversions H1.
+   inversions H. eapply IHt; eauto.
+   inversions H. eapply kind_kienv_contains_free_tyvars; eauto.
 Qed.
 
 
@@ -89,38 +86,35 @@ Qed.
  *)
 Lemma type_tyenv_contains_free_valvars
  :  forall x t T kenv tenv
- ,  freeX x t
- -> space_of_name x = SValue
+ ,  valname x -> freeX x t
  -> TYPE kenv tenv t T
- -> (exists T', tenv x = some T').
+ -> (exists T', tenv x = Some T').
 Proof.
- intros.
- generalize dependent kenv.
- generalize dependent tenv.
- generalize dependent T.
- induction H; intros.
+ intros. gen kenv tenv T.
+ induction H0; intros.
  Case "XVar".
-  inversion H1. subst. exists T. auto.
+  inversions H1. exists T. auto.
  Case "XLam".
-  inversion H2. subst.
-  apply IHfreeX in H10.  
-  rewrite extend_neq in H10; auto. auto.
+  inversions H2.
+  apply IHfreeX in H10; auto.
+  rewrite extend_neq in H10; auto.
  Case "XApp/app1". 
-  inversion H1. subst.
-  eapply IHfreeX. eauto. eauto.
+  inversions H1.
+  eapply IHfreeX; auto. eauto.
  Case "XApp/app2".
-  inversion H1. subst.
-  eapply IHfreeX. eauto. eauto.
+  inversions H1.
+  eapply IHfreeX; auto. eauto.
  Case "XLAM".
-  inversion H2. subst.
-  apply IHfreeX in H9. auto. auto.
+  inversions H2.
+  apply IHfreeX in H9; auto.
  Case "XAPP/APP1".
-  inversion H1. subst.
-  eapply IHfreeX. auto. eauto.
+  inversions H1.
+  eapply IHfreeX; auto. eauto.
  Case "XApp/APP2".
-  inversion H1. subst.
+  inversions H1.
   eapply only_type_vars_in_types with (a:=x) in H8.
-  rewrite H0 in H8. inversion H8.
+  inversion H.
+  rewrite H8 in H2. inversion H2.
   auto.
 Qed.
 
@@ -131,32 +125,22 @@ Qed.
 Lemma type_tyenv_invariance 
  :  forall tenv tenv' kenv kenv' t T
  ,  TYPE kenv tenv t T
- -> (forall a, space_of_name a = SType  
-            -> freeX a t -> kenv a = kenv' a)
- -> (forall x, space_of_name x = SValue
-            -> freeX x t -> tenv x = tenv' x)
+ -> (forall a, tyname  a -> freeX a t -> kenv a = kenv' a)
+ -> (forall x, valname x -> freeX x t -> tenv x = tenv' x)
  -> TYPE kenv' tenv' t T.
 Proof.
- intros.
- generalize dependent tenv'.
- generalize dependent kenv'.
+ intros. gen tenv' kenv'.
  induction H; intros.
 
  Case "XVar".
   apply TYVar. auto. rewrite <- H0.
-  symmetry. eapply H2; auto.
+  symmetry. eapply H1; auto.
 
  Case "XLam".
   apply TYLam. auto.
   apply IHTYPE.
-   intros. apply H1. auto.
-    apply FreeX_lam. unfold not. intro. subst.
-    rewrite H in H3. inversion H3. auto.
-   intros. unfold extend.
-    remember (beq_name x x0) as e. destruct e; auto.
-    apply H2. auto.
-    apply FreeX_lam. unfold not. intro. subst.
-    apply false_name_neq in Heqe. tauto. auto.
+   intros. unfold extend. breaka (beq_name x x0).
+    eauto. eauto.
 
  Case "XApp".
   eapply TYApp; auto.
@@ -164,20 +148,14 @@ Proof.
  Case "XLAM".
   eapply TYLAM. eauto.
   apply IHTYPE.
-    intros. unfold extend.
-     remember (beq_name a a0) as e. destruct e; auto.
-     apply H1. auto.
-     apply FreeX_LAM. unfold not. intro. subst.
-      apply false_name_neq in Heqe. tauto. auto.
-    intros. apply H2. auto.
-     apply FreeX_LAM. unfold not. intro. subst.
-     rewrite H in H3. inversion H3. auto.
+   eauto.
+   intros.
+   unfold extend. breaka (beq_name a a0). eauto.
 
  Case "XAPP".
   apply TYAPP. auto.
   eapply kind_kienv_invariance.
-   eauto.
-   intros. apply H1. auto. auto.
+   eauto. eauto.
 Qed.
 
 
@@ -209,12 +187,12 @@ Proof.
  intro.
  destruct x. 
  remember (Name s n) as v.
- destruct s.
+ destruct s. 
   eapply type_tyenv_contains_free_valvars with (tenv:=empty) in H0.
    destruct H0. unfold empty in H0. inversion H0.
-   subst. simpl. auto. eauto.
+   subst. auto. eauto.
   eapply type_kienv_contains_free_tyvars with (kenv:=empty) (a:=v) in H.
-   destruct H.  unfold empty in H. inversion H.
+   destruct H.  unfold empty in H.  inversion H.
    subst. auto. auto.
 Qed.
 

@@ -114,6 +114,44 @@ Proof.
 Qed.
 
 
+(* Comparison of name spaces ******************************)
+Lemma name_valty_false
+ :  forall n
+ ,  valname n -> tyname n -> False.
+Proof.
+ intros.
+ unfold valname in H.
+ unfold tyname in H0.
+ rewrite H in H0.
+ inversion H0.
+Qed.
+Hint Resolve   name_valty_false.
+Hint Immediate name_valty_false.
+
+
+Lemma name_valty_neq
+ :  forall a b
+ ,  valname a -> tyname b -> a <> b.
+Proof.
+ intros. unfold not. intro. subst.
+ eapply name_valty_false. eauto. auto.
+Qed.
+Hint Resolve   name_valty_neq.
+Hint Immediate name_valty_neq.
+
+
+Lemma name_tyval_neq
+ :  forall a b
+ ,  tyname a -> valname b -> a <> b.
+Proof.
+ intros. unfold not. intro. subst.
+ eapply name_valty_false. eauto. auto.
+Qed.
+Hint Resolve   name_tyval_neq.
+Hint Immediate name_tyval_neq.
+
+
+
 (* Example Names ******************************************)
 Notation xA := (Name SValue 0).
 Notation xB := (Name SValue 1).
