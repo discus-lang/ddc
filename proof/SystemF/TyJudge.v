@@ -162,15 +162,15 @@ Qed.
 (* If well typed term is closed, when we can also check it in
    an empty type environment.
  *)
-Theorem check_closed_in_empty
+Theorem check_closedX_in_empty
  : forall kenv tenv t T 
- , closed t -> TYPE kenv tenv t T -> TYPE empty empty t T.
+ , closedX t -> TYPE kenv tenv t T -> TYPE empty empty t T.
 Proof.
  intros.
  eapply type_tyenv_invariance.
   eauto.
-  intros. unfold closed in H. specialize H with a. tauto.
-  intros. unfold closed in H. specialize H with x. tauto.
+  intros. unfold closedX in H. specialize H with a. tauto.
+  intros. unfold closedX in H. specialize H with x. tauto.
 Qed.
 
 
@@ -180,11 +180,10 @@ Qed.
  *)
 Theorem check_empty_is_closed
  : forall t T
- , TYPE empty empty t T -> closed t.
+ , TYPE empty empty t T -> closedX t.
 Proof.
  intros.
- unfold closed. intro. unfold not.
- intro.
+ unfold closedX. intro. intro.
  destruct x. 
  remember (Name s n) as v.
  destruct s. 

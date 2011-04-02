@@ -159,37 +159,39 @@ Qed.
 
 
 (* Closedness *******************************************************)
-Definition closed (t:exp) 
+Definition closedX (t:exp) 
  := forall x, ~(freeX x t).
 
+Hint Unfold closedX.
 
-Theorem closed_var_not
+
+Theorem closedX_var_not
  : forall n
- , ~(closed (XVar n)).
+ , ~(closedX (XVar n)).
 Proof.
- intro. unfold not. intro.
- unfold closed in H. specialize H with n. auto. 
+ intros. intro.
+ unfold closedX in H. specialize H with n. auto. 
 Qed.
 
 
-Theorem closed_lam
+Theorem closedX_lam
  : forall x T t 
- , closed t -> closed (XLam x T t).
+ , closedX t -> closedX (XLam x T t).
 Proof. 
- intros. unfold closed. intros. unfold not. intro.
- inversion H0. subst.
- unfold closed in H. apply H in H6. assumption.
+ intros. unfold closedX. intros. intro.
+ inversions H0.
+ unfold closedX in H. apply H in H6. auto.
 Qed.
 
 
 Theorem closed_app
  : forall t1 t2
- , closed t1 -> closed t2 -> closed (XApp t1 t2).
+ , closedX t1 -> closedX t2 -> closedX (XApp t1 t2).
 Proof. 
  intros.
- unfold closed. intros. unfold not. intro.
- unfold closed in H.  specialize H  with x.
- unfold closed in H0. specialize H0 with x.
+ unfold closedX. intros. intro.
+ unfold closedX in H.  specialize H  with x.
+ unfold closedX in H0. specialize H0 with x.
  inversion H1; subst; tauto.
 Qed.
 
@@ -202,18 +204,18 @@ Qed.
 Inductive value : exp -> Prop :=
  | Value_lam  
     : forall x T t
-    , closed (XLam x T t) -> value (XLam  x T t)
+    , closedX (XLam x T t) -> value (XLam  x T t)
 
  | Value_LAM
     : forall x t
-    , closed (XLAM x t)   -> value (XLAM x t).
+    , closedX (XLAM x t)   -> value (XLAM x t).
 
 Hint Constructors value.
 
 
 Lemma values_are_closed
  : forall t
- , value t -> closed t.
+ , value t -> closedX t.
 Proof.
  intros. inversion H.
  Case "XLam". auto.

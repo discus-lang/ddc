@@ -31,7 +31,7 @@ Proof.
    eapply subst_value_value.
     intro. 
      apply values_are_closed in H2.
-     unfold closed in H2.
+     unfold closedX in H2.
      specialize H2 with z. intro. contradiction.
     inversion H4. eauto.
     auto.
@@ -44,10 +44,11 @@ Proof.
   inversions Hstep.
 
  Case "XAPP".
-  inversions Hstep.
+  inverts keep Hstep.
   SCase "EVAPPLAM".
    inversions Htype.
-   inversions H3. (* need that T2 is closed *)
+   inversions H3.
+    (* need that T2 is closed add to EVAPPABS *)
    
 
 Qed.   

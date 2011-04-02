@@ -20,8 +20,9 @@ Inductive STEP : exp -> exp -> Prop :=
     ->  STEP (XApp v1 t2) (XApp v1 t2')
 
   | EVAPPLAM
-    :   forall x t12 T2 
-    ,   STEP (XAPP (XLAM x t12) T2)
+    :   forall x t12 T2
+    ,   closedT T2 
+    ->  STEP (XAPP (XLAM x t12) T2)
              (substTX x T2 t12)
 
   | EVAPP1
