@@ -13,57 +13,53 @@ Lemma subst_value_value
  -> TYPE kenv tenv  (substXX x t2 t1) T1.
 Proof.
  intros kenv tenv x t1 t2 T1 T2.
- generalize dependent kenv.
- generalize dependent tenv.
- generalize dependent T1.
- induction t1.
+ gen kenv tenv T1.
+ induction t1; intros.
 
  Case "XVar".
-  intros. simpl. rename n into y.
-  remember (beq_name x y) as e. destruct e.
+  simpl. rename n into y.
+  break (beq_name x y).
   SCase "x=y".
-   apply true_name_eq in Heqe. subst.
+   apply true_name_eq in HeqX. subst.
    inversions H0.
    rewrite extend_eq in H6. inversions H6. eauto.
   SCase "x<>y".
-   apply false_name_neq in Heqe.
+   apply false_name_neq in HeqX.
    inversions H0.
    rewrite extend_neq in H6.
    apply TYVar; eauto. auto.
 
  Case "XLam".
-  intros. rename n into y.
-  simpl. remember (beq_name x y) as e. destruct e.
+  rename n into y.
+  simpl. break (beq_name x y).
   SCase "x=y".
-   apply true_name_eq in Heqe. subst.
-   eapply type_tyenv_invariance. eauto.
-    intros. auto.
+   apply true_name_eq in HeqX. subst.
+   eapply type_tyenv_invariance.
+    eauto. eauto. 
     intros. apply nocapture_lam in H3. auto. 
   SCase "x<>y".
-   apply false_name_neq in Heqe.
-   inversions H0.
+   apply false_name_neq in HeqX.
+   inversion H0. subst.
    apply TYLam. auto.
     apply IHt1.
-     intros. apply H in H0. unfold not in H0.
-     contradict H0. eauto.
-
+     intros. apply H in H2. eauto. 
     rewrite extend_swap; auto.
     eapply type_tyenv_invariance.
      eauto.
      auto.
-     intros. apply H in H2. rewrite extend_neq. auto.
+     intros. apply H in H3. rewrite extend_neq. auto.
      contradict H2. subst. auto.
 
  Case "XApp".
-   intros. simpl. inversions H0.
+   simpl. inversions H0.
    eapply TYApp.
-    eapply IHt1_1 in H6; eauto. 
+    eapply IHt1_1 in H6; eauto.
      intros. apply H in H0; eauto.
     eapply IHt1_2 in H8; eauto.
      intros. apply H in H0; eauto.
 
  Case "XLAM".
-   intros. simpl. inversions H0.
+   simpl. inversions H0.
    eapply TYLAM. eauto.
    apply IHt1.
     intros. apply H in H0; eauto. 
@@ -74,7 +70,7 @@ Proof.
      contradict H2. subst. auto.
 
  Case "XAPP".
-   intros. simpl. inversions H0.
+   simpl. inversions H0.
    apply TYAPP; eauto.
     apply IHt1; eauto.
      intros. apply H in H0; eauto.
