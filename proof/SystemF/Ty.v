@@ -37,6 +37,11 @@ Hint Constructors freeT.
 Hint Resolve FreeT_var.
 
 
+(* Closedness **********************************************)
+Definition closedT (t: ty)
+ := forall x, ~(freeT x t).
+
+
 (* Binding variables ***************************************)
 Inductive bindsT : name -> ty -> Prop :=
  | BindsT_forall_bound

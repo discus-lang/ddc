@@ -45,9 +45,20 @@ Proof.
 
  Case "XAPP".
   inverts keep Hstep.
+  inverts keep Htype. 
+  inverts keep H5. sort.
   SCase "EVAPPLAM".
-   inversions Htype.
-   inversions H3.
+   lets Hs: subst_type_value H10 H7.
+    auto. 
+     admit. (** fixme **)
+    auto.
+   eapply type_tyenv_invariance.
+    apply Hs. eauto.
+    intros. sort.
+
+   inversions H5.
+   eapply IHt.
+    eapply EVAPPLAM.
     (* need that T2 is closed add to EVAPPABS *)
    
 

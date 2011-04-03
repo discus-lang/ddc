@@ -95,6 +95,22 @@ Inductive bindsX : name -> exp -> Prop :=
 Hint Constructors bindsX.
 
 
+(* Well Formedness **************************************************
+   This checks the binding structure of the expression, 
+     ensure all names are in the correct space
+     check for shadowing: (\x. \x. t)
+     check for same var being both bound and free.
+       this is bad: (\x. x) x   this is ok: (\x. x) (\x. x)
+*)
+(* Shift namespace premises to this judgement.
+   Doesn't work (\y. \x. y) (\x. x).. results in shadowing.
+   Maybe rewrite binders on every substitution.
+*)
+          
+
+
+
+
 (* Substitution of Types in Exps ************************************)
 Fixpoint substTX (x : name) (S : ty)  (t : exp) : exp := 
   match t with
@@ -164,6 +180,7 @@ Definition closedX (t:exp)
 
 Hint Unfold closedX.
 
+(* TODO: Check are we really using these lemmas? *)
 
 Theorem closedX_var_not
  : forall n
