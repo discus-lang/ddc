@@ -2,6 +2,7 @@
 Require Import KiJudge.
 Require Import TyJudge.
 Require Import Program.
+Require Import SubTypeType.
 
 Definition substTTE a T2 tenv
  := map (substTT a T2) tenv.
@@ -66,12 +67,25 @@ Proof.
      eauto.
 
  Case "XAPP". simpl.
-  inversions H.
+  inverts keep H. 
   assert (~bindsX a t1).
    intro. contradict Hnb. eauto.
   destruct K2.
-  rename t into t2.
-  lets Ht1: IHt1 H H6 H0.
+  rename t into T3. 
+  lets Ht1: IHt1 H1 H6 H0. sort.
+  simpl in Ht1.
+   breaka (beq_name a a0). 
+   SCase "a = a0". 
+    apply true_name_eq in HeqX. subst.
+     admit. (* add T2 no binds a0 *)
+    apply false_name_neq in HeqX.
+
+
+  assert ( substTT a T2 (substTT a0 T3 T11)
+         = substTT a0 (substTT a T2 T3) T11). admit.
+  rewrite H2.
+  eapply TYAPP. auto.
+
   admit.
 
 Qed.

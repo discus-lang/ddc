@@ -190,6 +190,8 @@ Proof.
  unfold closedX in H. specialize H with n. auto. 
 Qed.
 
+Hint Resolve closedX_var_not.
+
 
 Theorem closedX_lam
  : forall x T t 

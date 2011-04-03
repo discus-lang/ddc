@@ -1,5 +1,6 @@
 
 Require Export Name.
+Require Export Context.
 
 (* Kinds **************************************************)
 Inductive ki : Type :=
@@ -78,6 +79,25 @@ Fixpoint substTT (x : name) (S : ty) (T : ty) : ty :=
     |  TFun T1 T2 
     => TFun (substTT x S T1) (substTT x S T2)
   end.
+
+
+(* Type Environments **************************************)
+(* Type environment contains types of free value vars *)
+Definition tyenv := partial_map ty.
+
+
+(* Free variable in environment *)
+Definition freeTE (n: name) (tenv: tyenv)
+ := exists x T, tenv x = Some T /\ freeT n T.
+
+Theorem notFreeTE 
+ :  forall n tenv, ~freeTE n tenv 
+ -> forall x T, tenv x = Some T -> ~freeT n T.
+Proof.
+ intros.
+ intro. contradict H.
+ unfold freeTE. exists x. exists T. auto. 
+Qed.
 
 
 (* examples ***********************************************)

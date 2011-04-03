@@ -16,18 +16,18 @@ Definition kienv := partial_map ki.
  *)
 Inductive KIND : kienv -> ty -> ki -> Prop :=
  | KICon 
-   :  forall kenv x
-   ,  KIND kenv (TCon x) KStar
+   :  forall kenv c
+   ,  KIND kenv (TCon c) KStar
 
  | KIVar
-   :  forall kenv x K
-   ,  space_of_name x = SType
-   -> kenv x          = Some K
-   -> KIND kenv (TVar x) KStar
+   :  forall kenv a K
+   ,  tyname a
+   -> kenv a = Some K
+   -> KIND kenv (TVar a) KStar
 
  | KIForall
    :  forall kenv a T
-   ,  space_of_name a = SType
+   ,  tyname a
    -> KIND (extend kenv a KStar) T KStar
    -> KIND kenv (TForall a T) KStar
 
