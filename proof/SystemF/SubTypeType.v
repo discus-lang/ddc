@@ -5,7 +5,7 @@ Require Export KiJudge.
 (* Substitution of types in types preserves kinding *)
 Lemma subst_type_type
  :  forall kenv a T1 T2 K1 K2
- ,  tyname a -> ~bindsT a T1 -> closedT T2
+ ,  tyname a -> closedT T2 -> ~bindsT a T1 
  -> KIND   (extend kenv a K2) T1 K1
  -> KIND                kenv  T2 K2
  -> KIND  kenv (substTT a T2 T1) K1.
@@ -43,7 +43,6 @@ Proof.
    destruct K2. apply D.
     eapply kind_kienv_invariance.
     eauto. intros. contradict H5. eauto.
-    
    rewrite extend_swap. eauto. eauto.
 
  Case "TFun".

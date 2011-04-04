@@ -50,10 +50,13 @@ Proof.
    right.
    destruct IHHt; auto.
    SCase "t1 value".
-    inversions H0.
-    inversion  Ht. eauto.
+    inversions H1.
+    inversion  Ht.
+    exists (substTX x T2 t). apply EVAPPLAM.
+    eapply kind_check_empty_is_closed. eauto.
+
    SCase "t1 steps".
-    destruct H0 as [t1' Hstp].
+    destruct H1 as [t1' Hstp].
     exists (XAPP t1' T2).
     eapply EVAPP1. auto.
 Qed.

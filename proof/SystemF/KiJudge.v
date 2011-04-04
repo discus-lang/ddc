@@ -128,3 +128,24 @@ Proof.
   apply KIFun; auto.
 Qed.
 
+
+Theorem kind_check_empty_is_closed
+ : forall T K
+ , KIND empty T K -> closedT T.
+Proof. 
+ intros.
+ unfold closedT. intro. intro.
+ destruct x.
+ remember (Name s n) as a.
+ destruct s.
+ Case "valname a".
+  eapply only_type_vars_in_types with (a:=a) in H.
+   subst. simpl in H. inversion H. auto.
+ Case "tyname a".
+  eapply kind_kienv_contains_free_tyvars with (a:=a) in H.
+  destruct H. unfold empty in H. inversion H.
+  unfold tyname. subst. auto. auto.
+Qed.
+  
+
+

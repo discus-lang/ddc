@@ -12,7 +12,7 @@ Definition substTTE a T2 tenv
  *)
 Lemma subst_type_value
  :  forall kenv tenv a t1 T1 T2 K2
- ,  tyname a -> ~bindsX a t1 -> closedT T2
+ ,  tyname a -> closedT T2 -> ~bindsX a t1
  -> TYPE (extend kenv a K2) tenv  t1  T1
  -> KIND      kenv                T2  K2
  -> TYPE kenv
@@ -21,7 +21,7 @@ Lemma subst_type_value
          (substTT  a T2 T1).  
 Proof.
  intros kenv tenv a t1 T1 T2 K2.
- intros Htn Hnb Hc.
+ intros Htn Hc Hnb.
  gen kenv tenv T1.
  induction t1; intros.
 
@@ -79,15 +79,11 @@ Proof.
     apply true_name_eq in HeqX. subst.
      admit. (* add T2 no binds a0 *)
     apply false_name_neq in HeqX.
-
-
-  assert ( substTT a T2 (substTT a0 T3 T11)
-         = substTT a0 (substTT a T2 T3) T11). admit.
-  rewrite H2.
-  eapply TYAPP. auto.
-
-  admit.
-
+    
+    assert (~bindsT a T3). eauto.
+    lets Hk1: subst_type_type Htn H8 H0; auto.
+    lets Ht2: TYAPP Ht1 Hk1; auto.
+    admit. (* TODO: finish this *)
 Qed.
       
 
