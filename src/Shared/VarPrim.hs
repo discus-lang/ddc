@@ -205,9 +205,11 @@ getPrimVarBind space var
 renamePrimVar_value :: String -> Maybe VarId
 renamePrimVar_value ss
 	| Just xx	<- splitPrefix "Tuple" ss
+	, not $ null xx
 	= Just $ VarIdPrim $ VTuple (read xx)
 	
 	| Just xx	<- splitPrefix "suspend" ss
+	, not $ null xx
 	= Just $ VarIdPrim $ VSuspend (read xx)
 	
 	| otherwise
