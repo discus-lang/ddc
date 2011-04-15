@@ -49,11 +49,19 @@ Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
 
 Fixpoint take {A: Type} (n: nat) (e: env A) : env A :=
  match n, e with
- | O,   _       => empty
- | S n, e' :> T => take n e' :> T
- | S n, empty   => empty
+ | O,   _          => empty
+ | S n, e' :> T    => take n e' :> T
+ | S n, empty      => empty
  end.
 Hint Unfold take.
+
+
+Fixpoint drop {A: Type} (n: nat) (e: env A) : env A :=
+ match n, e with
+  | _,     empty   => empty
+  | O,     e :> T  => e
+  | S n',  e :> T  => drop n' e :> T
+  end.
 
 
 (* Lemmas ***********************************************************)
@@ -64,6 +72,14 @@ Proof.
  intros. destruct e.
  simpl. auto.
  simpl. auto.
+Qed.
+
+
+Theorem drop_rewind
+ : forall A ix (e : env A) x
+ , drop ix e :> x = drop (S ix) (e :> x).
+Proof.
+ intros. simpl. auto.
 Qed.
 
 
