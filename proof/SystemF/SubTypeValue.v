@@ -77,14 +77,22 @@ Proof.
    breaka (beq_name a a0). 
    SCase "a = a0". 
     apply true_name_eq in HeqX. subst.
-     admit. (* add T2 no binds a0 *)
+    admit. (* add T2 no binds a0 *)
+
+   SCase "a <> a0".
     apply false_name_neq in HeqX.
-    
     assert (~bindsT a T3). eauto.
     lets Hk1: subst_type_type Htn H8 H0; auto.
     lets Ht2: TYAPP Ht1 Hk1; auto.
     admit. (* TODO: finish this *)
 Qed.
-      
+
+
+
+
+
+
+
+
 
 

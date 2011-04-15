@@ -1,6 +1,5 @@
 
-Require Export Coq.Arith.EqNat.
-
+Require Import Base.
 
 (* option *************************************************)
 Inductive option (a : Type) :=
@@ -21,4 +20,8 @@ Implicit Arguments snoc  [A].
 Infix ":>" := snoc (at level 61, left associativity).
 
 
-
+Fixpoint length {A: Type} (e: env A) : nat :=
+ match e with 
+ | empty      => 0
+ | snoc e' x  => S (length e')
+ end.

@@ -1,4 +1,5 @@
 
+Require Export Base.
 Require Export Env.
 
 
@@ -8,6 +9,10 @@ Inductive ty  : Type :=
  | TFun  : ty  -> ty -> ty.
 
 Hint Constructors ty.
+
+
+(** Type Environments *************************************)
+Definition tyenv := env ty.
 
 
 (** Expressions *******************************************)
@@ -20,10 +25,12 @@ Hint Constructors exp.
 
 
 (** Closedness ********************************************)
+
+(* Expression is closed under an enviornment of a given size *)
 Inductive coversX : nat -> exp -> Prop :=
  | CoversX_var
    :  forall n i
-   ,  (n >= i) 
+   ,  (n > i) 
    -> coversX n (XVar i)
 
  | CoversX_lam
@@ -38,17 +45,19 @@ Inductive coversX : nat -> exp -> Prop :=
    -> coversX n (XApp t1 t2).
 
 
-Inductive closedX : exp -> Prop :=
- | ClosedX_lam
-   :  forall T t
-   ,  coversX O t
-   -> closedX (XLam T t)
+(* Expression is closed under the given environment. *)
+Inductive closedUnderX : tyenv -> exp -> Prop :=
+ | ClosedUnderX 
+   : forall tenv x 
+   , coversX (length tenv) x -> closedUnderX tenv x. 
 
- | ClosedX_app
-   :  forall t1 t2
-   ,  closedX t1
-   -> closedX t2
-   -> closedX (XApp t1 t2).
+
+(* Expression is closed under an empty environment, 
+   it has no free locally bound varirables *)
+Inductive closedX : exp -> Prop :=
+ | ClosedX 
+   : forall xx
+   , coversX 0 xx -> closedX xx.
 
 
 Inductive value : exp -> Prop :=
@@ -61,7 +70,6 @@ Hint Constructors value.
 
 
 (** Type Judgements ***************************************)
-Definition tyenv := env ty.
 
 Fixpoint get (xx: env ty) (i: nat) {struct xx} : option ty :=
  match xx, i with
@@ -73,9 +81,11 @@ Fixpoint get (xx: env ty) (i: nat) {struct xx} : option ty :=
 
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
  | TYVar 
-   :  forall tenv i T
-   ,  get tenv i = some T
-   -> TYPE tenv (XVar i) T
+   :   forall tenv i T
+   ,   get tenv i = some T
+   ->  TYPE tenv (XVar i) T  
+       (* we want to know length of tenv i < length tenv
+          makes it locally closed *)
 
  | TYLam
    :  forall tenv t T1 T2
@@ -90,16 +100,43 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 
 Hint Constructors TYPE.
 
-(** Application ******************************************)
-Fixpoint applyX' (depth: nat) (tt: exp) (u: exp) : exp :=
+
+
+
+(** Substitution ******************************************)
+Fixpoint shiftX (n: nat) (depth: nat) (tt: exp) : exp :=
+ match tt with 
+ | XVar ix    => if bge_nat ix depth
+                  then XVar (ix + n)
+                  else tt
+
+ | XLam T1 t1 => XLam T1 (shiftX n (depth + 1) t1)
+
+ | XApp t1 t2 => XApp (shiftX n depth t1)
+                      (shiftX n depth t2)
+ end.
+
+
+Fixpoint subLocalX' (depth: nat) (tt: exp) (u: exp) : exp :=
  match tt with
- | XVar n     => if beq_nat n depth then u else tt
- | XLam T1 t2 => XLam T1 (applyX' (S depth) t2 u)
- | XApp t1 t2 => XApp (applyX' depth t1 u) (applyX' depth t2 u)
+ | XVar ix    =>  match compare ix depth with
+                  | EQ => shiftX depth 0 u
+                  | GT => XVar (ix + 1)
+                  | _  => XVar ix
+                  end
+
+ | XLam T1 t2 => XLam T1 (subLocalX' (S depth) t2 u)
+
+ | XApp t1 t2 => XApp (subLocalX' depth t1 u)
+                      (subLocalX' depth t2 u)
  end. 
 
-Definition applyX := applyX' 0.
-Hint Unfold applyX.
+
+Definition  subLocalX := subLocalX' 0.
+Hint Unfold subLocalX.
+
+
+
 
 (** Evaluation *******************************************)
 Inductive STEP : exp -> exp -> Prop :=
@@ -107,7 +144,7 @@ Inductive STEP : exp -> exp -> Prop :=
     : forall T11 t12 tv2
     ,  value tv2
     -> STEP (XApp   (XLam T11 t12) tv2)
-            (applyX t12 tv2)
+            (subLocalX t12 tv2)
 
  |  EVApp1 
     :  forall t1 t1' t2

@@ -193,7 +193,7 @@ Qed.
 Hint Resolve closedX_var_not.
 
 
-Theorem closedX_lam
+Theorem closedX_lam_intro
  : forall x T t 
  , closedX t -> closedX (XLam x T t).
 Proof. 
@@ -201,9 +201,10 @@ Proof.
  inversions H0.
  unfold closedX in H. apply H in H6. auto.
 Qed.
+Hint Resolve closedX_lam_intro. 
 
 
-Theorem closed_app
+Theorem closedX_app_intro
  : forall t1 t2
  , closedX t1 -> closedX t2 -> closedX (XApp t1 t2).
 Proof. 
@@ -213,6 +214,47 @@ Proof.
  unfold closedX in H0. specialize H0 with x.
  inversion H1; subst; tauto.
 Qed.
+Hint Resolve closedX_app_intro.
+
+
+Theorem closedX_app_elim1
+ : forall t1 t2
+ , closedX (XApp t1 t2) -> closedX t1.
+Proof.
+ intros. unfold closedX in H.
+ unfold closedX. intros. specialize H with x. contradict H. eauto.
+Qed.
+Hint Resolve closedX_app_elim1.
+
+
+Theorem closedX_app_elim2
+ : forall t1 t2
+ , closedX (XApp t1 t2) -> closedX t2.
+Proof.
+ intros. unfold closedX in H.
+ unfold closedX. intros. specialize H with x. contradict H. eauto.
+Qed.
+Hint Resolve closedX_app_elim2.
+
+
+Theorem closedX_APP_elim1
+ : forall t1 T2
+ , closedX (XAPP t1 T2) -> closedX t1.
+Proof.
+ intros. unfold closedX in H.
+ unfold closedX. intros. specialize H with x. contradict H. eauto.
+Qed.
+Hint Resolve closedX_APP_elim1.
+
+
+Theorem closedX_APP_elim2
+ : forall t1 T2
+ , closedX (XAPP t1 T2) -> closedT T2.
+Proof.
+ intros. unfold closedX in H.
+ unfold closedT. intros. specialize H with x. contradict H. eauto.
+Qed.
+Hint Resolve closedX_APP_elim2.
 
 
 (* Values ***********************************************************
