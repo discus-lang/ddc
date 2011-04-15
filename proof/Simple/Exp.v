@@ -101,34 +101,40 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
-
-
 (** Substitution ******************************************)
-Fixpoint shiftX (n: nat) (depth: nat) (tt: exp) : exp :=
+Fixpoint drop (n: nat) (tenv: tyenv) : tyenv :=
+ match n, tenv with
+  | _,     empty      => empty
+  | O,     tenv :> T  => tenv
+  | S n',  tenv :> T  => drop n' tenv :> T
+  end.
+
+
+Fixpoint liftX (n: nat) (depth: nat) (tt: exp) : exp :=
  match tt with 
  | XVar ix    => if bge_nat ix depth
                   then XVar (ix + n)
                   else tt
 
- | XLam T1 t1 => XLam T1 (shiftX n (depth + 1) t1)
+ | XLam T1 t1 => XLam T1 (liftX n (depth + 1) t1)
 
- | XApp t1 t2 => XApp (shiftX n depth t1)
-                      (shiftX n depth t2)
+ | XApp t1 t2 => XApp (liftX n depth t1)
+                      (liftX n depth t2)
  end.
 
 
-Fixpoint subLocalX' (depth: nat) (tt: exp) (u: exp) : exp :=
+Fixpoint subLocalX' (depth: nat) (u: exp) (tt: exp)  : exp :=
  match tt with
  | XVar ix    =>  match compare ix depth with
-                  | EQ => shiftX depth 0 u
-                  | GT => XVar (ix + 1)
+                  | EQ => liftX depth 0 u
+                  | GT => XVar (ix - 1)
                   | _  => XVar ix
                   end
 
- | XLam T1 t2 => XLam T1 (subLocalX' (S depth) t2 u)
+ | XLam T1 t2 => XLam T1 (subLocalX' (S depth) u t2)
 
- | XApp t1 t2 => XApp (subLocalX' depth t1 u)
-                      (subLocalX' depth t2 u)
+ | XApp t1 t2 => XApp (subLocalX' depth u t1)
+                      (subLocalX' depth u t2)
  end. 
 
 
@@ -144,7 +150,7 @@ Inductive STEP : exp -> exp -> Prop :=
     : forall T11 t12 tv2
     ,  value tv2
     -> STEP (XApp   (XLam T11 t12) tv2)
-            (subLocalX t12 tv2)
+            (subLocalX tv2 t12)
 
  |  EVApp1 
     :  forall t1 t1' t2
