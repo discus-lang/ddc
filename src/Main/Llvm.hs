@@ -13,6 +13,8 @@ import Main.Sea
 import Main.Util
 
 import DDC.Base.SourcePos
+import DDC.Base.Prim.PrimPtr
+import DDC.Base.Prim.PrimType
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Sea.Exp
@@ -313,6 +315,19 @@ llvmOfSStmt (XPrim (MApp PAppCall) (fexp:args))
 llvmOfSStmt x@(XPrim op@(MApp PAppApply) args)
  = do	_		<- llvmOfExp x
 	addComment	"Ignore last value."
+
+llvmOfSStmt x@(XPrim (MPtr (PrimPtrPoke (PrimTypeInt (Width 32)))) [a1@(XVar _ (TPtr t1)), a2@(XVar _ t2)])
+ | t1 == t2 && isUnboxed t1
+ = do	ptr		<- llvmOfExp a1
+	val		<- llvmOfExp a2
+	addBlock	[ Store val ptr ]
+
+{-
+ = panic stage $ "llvmOfSStmt : PrimPtrPoke " ++ show __LINE__ ++ "\n\n"
+	++ show a1 ++ "\n\n"
+	++ show a2 ++ "\n\n"
+-}
+
 
 llvmOfSStmt x
  = panic stage $ "llvmOfSStmt:" ++ show __LINE__ ++ "\n\n" ++ show x ++ "\n"

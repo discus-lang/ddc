@@ -189,6 +189,13 @@ llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeWord (Width w)))) [ _, arg2@(XVar _ t2
 	return		r0
 
 
+llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeInt (Width w)))) [ _, arg2@(XVar _ t2@(TPtr _)) ]
+ = do	ptr		<- llvmOfExp arg2
+	r0		<- newUniqueReg $ LMInt w
+	addBlock	[ Assignment r0 (Load ptr) ]
+	return		r0
+
+
 llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")\n\n"
 	++ show op ++ "\n\n"
