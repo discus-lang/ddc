@@ -43,7 +43,7 @@ Inductive coversX : nat -> exp -> Prop :=
    ,  coversX n t1
    -> coversX n t2
    -> coversX n (XApp t1 t2).
-
+Hint Constructors coversX.
 
 (* Expression is closed under the given environment. *)
 Inductive closedUnderX : tyenv -> exp -> Prop :=
@@ -68,17 +68,7 @@ Inductive value : exp -> Prop :=
 Hint Constructors value.
 
 
-
 (** Type Judgements ***************************************)
-
-Fixpoint get (xx: env ty) (i: nat) {struct xx} : option ty :=
- match xx, i with
- | snoc _ T,  O    => some T
- | snoc xs _, S i' => get  xs i'
- | _, _            => none
- end.
-
-
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
  | TYVar 
    :   forall tenv i T
