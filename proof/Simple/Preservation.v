@@ -6,6 +6,39 @@ Require Import Substitute.
 Require Import Base.
 Require Import Coq.Arith.EqNat.
 
+
+(* We can type an expression with an environment one elem larger *)
+Theorem type_tyenv_weaken1
+ :  forall tenv t T1 T2
+ ,  TYPE tenv          t T1
+ -> TYPE (T2 <: tenv)  t T1.
+Proof.
+ intros. gen tenv T1.
+ induction t; intros; inversions H.
+
+ Case "XVar".
+  eapply TYVar. admit. (* admit ok *)
+
+ Case "XLam".
+  eapply TYLam. rewrite env_snoc_cons.
+  apply IHt. auto.
+
+ Case "XApp".
+  eapply TYApp; eauto.
+Qed.
+
+
+Theorem cons_snoc_empty
+ :  forall A (x: A)
+ ,  x <: empty = empty :> x.
+Proof.
+ intros. 
+ unfold cons. auto.
+Qed.
+
+
+ 
+
 Theorem type_tyenv_strengthen
  :  forall tenv tenv' n t T
  ,   coversX n t
@@ -31,21 +64,6 @@ Proof.
 Qed.
 
 
-Theorem type_tyenv_weaken
- :  forall tenv t T1 T2
- ,  TYPE tenv          t T1
- -> TYPE (T2 <: tenv)  t T1.
-Proof.
- intros. gen tenv T1.
- induction t; intros.
-
- inversions H. eapply TYVar. admit. (* admit ok *)
-
- inversions H. eapply TYLam. rewrite env_snoc_cons.
- apply IHt. auto.
-
- inversions H. eapply TYApp; eauto.
-Qed.
 
 
 Theorem type_check_closed_in_empty

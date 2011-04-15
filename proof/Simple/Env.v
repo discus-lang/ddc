@@ -75,6 +75,20 @@ Proof.
 Qed.
 
 
+Theorem get_weaken1
+ :  forall A (e: env A) n x1 x2
+ ,  get e n         = some x1
+ -> get (x2 <: e) n = some x1.
+Proof.
+ intros. gen n.
+ induction e.
+   intros. admit.
+   intros.
+    destruct n. simpl in H. simpl. auto. 
+    simpl. simpl in H. apply IHe. auto.
+Qed.
+
+
 Theorem drop_rewind
  : forall A ix (e : env A) x
  , drop ix e :> x = drop (S ix) (e :> x).
