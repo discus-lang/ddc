@@ -65,6 +65,15 @@ Fixpoint drop {A: Type} (n: nat) (e: env A) : env A :=
 
 
 (* Lemmas ***********************************************************)
+Theorem cons_snoc_empty
+ :  forall A (x: A)
+ ,  x <: empty = empty :> x.
+Proof.
+ intros. 
+ unfold cons. auto.
+Qed.
+
+
 Lemma env_snoc_cons
  :  forall A (e: env A) (x: A) (y: A)
  ,  ((x <: e) :> y) = (x <: (e :> y)).

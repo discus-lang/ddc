@@ -17,7 +17,7 @@ Proof.
  induction t; intros; inversions H.
 
  Case "XVar".
-  eapply TYVar. admit. (* admit ok *)
+  eapply TYVar. apply get_weaken1. auto.
 
  Case "XLam".
   eapply TYLam. rewrite env_snoc_cons.
@@ -27,17 +27,6 @@ Proof.
   eapply TYApp; eauto.
 Qed.
 
-
-Theorem cons_snoc_empty
- :  forall A (x: A)
- ,  x <: empty = empty :> x.
-Proof.
- intros. 
- unfold cons. auto.
-Qed.
-
-
- 
 
 Theorem type_tyenv_strengthen
  :  forall tenv tenv' n t T
