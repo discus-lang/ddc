@@ -26,9 +26,16 @@ Fixpoint cons   {A: Type} (x: A) (e: env A) : env A :=
  | snoc e' y  => snoc (cons x e') y
  end.
 
+Fixpoint append {A: Type} (e1: env A) (e2: env A) : env A :=
+ match e2 with 
+ | empty      => e1 
+ | snoc e2' x => snoc (append e1 e2') x
+ end.
+
 Implicit Arguments cons  [A].
-Infix ":>" := snoc (at level 61, left  associativity).
-Infix "<:" := cons (at level 62, right associativity).
+Infix ":>" := snoc   (at level 61, left  associativity).
+Infix "<:" := cons   (at level 62, right associativity).
+Infix "++" := append (at level 63).
 
 
 Fixpoint length {A: Type} (e: env A) : nat :=
@@ -65,7 +72,7 @@ Fixpoint drop {A: Type} (n: nat) (e: env A) : env A :=
 
 
 (* Lemmas ***********************************************************)
-Theorem cons_snoc_empty
+Lemma cons_snoc_empty
  :  forall A (x: A)
  ,  x <: empty = empty :> x.
 Proof.
@@ -84,26 +91,61 @@ Proof.
 Qed.
 
 
-Theorem get_weaken1
+Lemma append_empty
+ :  forall A  (e1: env A)
+ ,  empty ++ e1 = e1.
+Proof.
+ intros.
+ induction e1. auto. 
+ simpl. rewrite IHe1. auto.
+Qed.
+
+
+Lemma append_snoc
+ :  forall A  (e1: env A) (e2: env A) (x : A)
+ ,  ((e1 :> x) ++ e2) =  e1 ++ (x <: e2).
+Proof. 
+ intros.
+ induction e2.
+  auto. 
+  simpl. rewrite IHe2. auto.
+Qed.
+
+
+Lemma get_weaken1
  :  forall A (e: env A) n x1 x2
  ,  get e n         = some x1
  -> get (x2 <: e) n = some x1.
 Proof.
  intros. gen n.
  induction e.
-   intros. admit.
+   intros. 
+    destruct n.
+     simpl in H. inversions H.
+     simpl in H. inversions H.
    intros.
     destruct n. simpl in H. simpl. auto. 
     simpl. simpl in H. apply IHe. auto.
 Qed.
 
 
-Theorem drop_rewind
+Lemma get_weaken 
+ :  forall A (e1: env A) (e2: env A) n x1
+ ,  get e1 n         = some x1 
+ -> get (e2 ++ e1) n = some x1.
+Proof.
+ intros. gen e1.
+ induction e2. 
+  intros. rewrite append_empty. auto.
+  intros. rewrite append_snoc.
+   eapply IHe2. apply get_weaken1. auto.
+Qed.
+ 
+
+Lemma drop_rewind
  : forall A ix (e : env A) x
  , drop ix e :> x = drop (S ix) (e :> x).
 Proof.
  intros. simpl. auto.
 Qed.
-
-
 
