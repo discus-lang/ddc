@@ -25,11 +25,11 @@ makeSeaCompileCmd
 	-> [FilePath]		-- ^ extra include dirs
 	-> [String]		-- ^ extra flags to compile with, from .build file
 	-> String		-- ^ the compile command
-	
+
 makeSeaCompileCmd
 	args pathSourceBase pathRuntime pathLibrary
 	extraIncludeDirs extraCompileFlags
-	
+
 	=  "gcc"
 	++ " -Werror"
 	++ " -std=c99"
@@ -73,16 +73,16 @@ makeLinkCmd
 
 	= "gcc"
 	++ " -std=c99"
-	
+
 	++ " -o " ++ outFile
 
-	++ (if elem Profile args 
-		then " -pg" 
+	++ (if elem Profile args
+		then " -pg"
 		else "")
 
 	++ " " ++ concat [" " ++ obj | obj <- objects]
-					
-	++ (if elem StaticRuntime args 
+
+	++ (if elem StaticRuntime args
 		then " " ++ pathRuntime ++ "/libddc-runtime.a"
 		else " " ++ pathRuntime ++ "/libddc-runtime.so")
 
@@ -91,3 +91,6 @@ makeLinkCmd
 	++ " " ++ concat [" -L" ++ dir | dir <- extraLibDirs]
 	++ " " ++ concat [" -l" ++ lib | lib <- extraLibs]
 
+
+llcCommand :: String
+llcCommand = "llc -march=x86"

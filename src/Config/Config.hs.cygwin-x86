@@ -90,3 +90,6 @@ makeLinkCmd
 	++ " " ++ concat [" -L" ++ dir | dir <- extraLibDirs]
 	++ " " ++ concat [" -l" ++ lib | lib <- extraLibs]
 
+
+llcCommand :: String
+llcCommand = "llc -march=x86"

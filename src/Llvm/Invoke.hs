@@ -10,6 +10,8 @@ import System.Cmd
 import System.Exit
 import DDC.Main.Error
 
+import qualified Config.Config			as Config
+
 -----
 stage	= "Llvm.Invoke"
 
@@ -26,7 +28,7 @@ invokeLlvmCompiler
 	extraFlags
  = do
  	-- let cmd = Config.makeLlvmCompileCmd
-	let cmd	=  "llc "
+	let cmd	= Config.llcCommand ++ " "
 		++ pathSourceBase ++ ".ddc.ll"
 		++ " -o " ++ pathSourceBase ++ ".ddc.s"
 
