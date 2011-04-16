@@ -21,8 +21,6 @@ module Llvm.PpLlvm (
 
     ) where
 
-#include "HsVersions.h"
-
 import Llvm.AbsSyn
 import Llvm.Types
 
