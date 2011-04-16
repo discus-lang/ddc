@@ -261,9 +261,15 @@ primCall primId exp@(XVar (NSuper fv) (TFun at rt):args)
 mkOpFunc :: LlvmType -> PrimOp -> LlvmVar -> LlvmVar -> LlvmExpression
 mkOpFunc varType op
  = case (varType, op) of
-	(_	,	OpAdd)	-> LlvmOp LM_MO_Add
-	(_	,	OpSub)	-> LlvmOp LM_MO_Sub
-	(_	,	OpMul)	-> LlvmOp LM_MO_Mul
+	-- Integer addition, subtraction and multiplication..
+	(LMInt _,	OpAdd)	-> LlvmOp LM_MO_Add
+	(LMInt _,	OpSub)	-> LlvmOp LM_MO_Sub
+	(LMInt _,	OpMul)	-> LlvmOp LM_MO_Mul
+
+	-- Float addition, subtraction and multiplication..
+	(_	,	OpAdd)	-> LlvmOp LM_MO_FAdd
+	(_	,	OpSub)	-> LlvmOp LM_MO_FSub
+	(_	,	OpMul)	-> LlvmOp LM_MO_FMul
 
 	-- Integer division and remainder.
 	(LMInt _,	OpDiv)	-> LlvmOp LM_MO_SDiv
