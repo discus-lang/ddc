@@ -199,8 +199,8 @@ Proof.
     simpl in H0. inversions H0.
     simpl. auto. 
    destruct e1.
-   simpl in H0. inversions H0.
-   simpl. apply IHm. omega. simpl in H0. auto.
+    simpl in H0. inversions H0.
+    simpl. apply IHm. omega. simpl in H0. auto.
 Qed.
 
 

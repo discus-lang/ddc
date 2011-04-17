@@ -49,22 +49,24 @@ Theorem type_tyenv_strengthen
  ->  TYPE tenv' t T.
 Proof.
  intros. gen tenv tenv' n T.
- induction t; intros.
+ induction t; intros; inversions H1.
  
- inversions H. inversions H1.
- apply TYVar. admit. (* ok, n0 > n *)
+ Case "XVar".
+  apply TYVar. inversions H.
+  apply get_take. auto. auto.
 
- inversions H1. eapply TYLam.
- eapply IHt. inversions H. apply H2.
- assert (take n tenv :> t = take (S n) (tenv :> t)). simpl. auto.
- apply H0. auto.
+ Case "XLam".
+  eapply TYLam. inversions H.
+  eapply IHt.  apply H2.
+  assert (take n tenv :> t = take (S n) (tenv :> t)). simpl. auto.
+  eauto. auto.
 
- inversions H1. 
- eapply TYApp.
- eapply IHt1. inversions H. eauto. eauto. eauto.
- eapply IHt2. inversions H. eauto. eauto. eauto.
+ Case "XApp".
+  inversions H.
+  eapply TYApp.
+  eapply IHt1; eauto.
+  eapply IHt2; eauto.
 Qed.
-
 
 
 Theorem type_check_closed_in_empty
@@ -74,21 +76,22 @@ Theorem type_check_closed_in_empty
  -> TYPE empty t T.
 Proof.
  intros. inversions H.
- eapply type_tyenv_strengthen. eauto. eauto. eauto.
+ eapply type_tyenv_strengthen; eauto.
 Qed.
 
 
 Theorem type_check_closed_in_any
- :  forall tenv tenv' t T
- ,  closedX t
- -> TYPE tenv  t T
- -> TYPE tenv' t T.
+ :  forall tenv tenv' t1 T1
+ ,  closedX t1
+ -> TYPE tenv  t1 T1
+ -> TYPE tenv' t1 T1.
 Proof.
  intros.
- apply type_check_closed_in_empty in H0; auto.
- induction tenv'.
-  auto.
-  
+ lets D: type_check_closed_in_empty H H0. clear H0.
+ assert (TYPE (tenv' ++ empty) t1 T1).
+  apply type_tyenv_weaken. auto.
+  simpl in H0. auto.
+Qed.
 
 
 Theorem type_tyenv_invariance
@@ -156,11 +159,7 @@ Proof.
    auto.
    simpl. 
    lets D: type_check_closed_in_empty H0 H2.
-   eapply type_tyenv_invariance. eauto.
-   intros. rewrite drop_rewind.
-   
-
-admit. (* ok, t2 is closed *)
+   eapply type_check_closed_in_any; eauto.
   
  Case "XApp".
   inversions H1.
