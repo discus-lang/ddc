@@ -46,6 +46,7 @@ Fixpoint length {A: Type} (e: env A) : nat :=
 Hint Unfold length.
 
 
+(* Get a numbered element from a list *)
 Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
  match e, i with
  | snoc _ T,  O    => some T
@@ -54,6 +55,7 @@ Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
  end.
 
 
+(* Take some elements from the front of a list *)
 Fixpoint take {A: Type} (n: nat) (e: env A) : env A :=
  match n, e with
  | O,   _          => empty
@@ -63,11 +65,12 @@ Fixpoint take {A: Type} (n: nat) (e: env A) : env A :=
 Hint Unfold take.
 
 
+(* Drop a numbered element from a list *)
 Fixpoint drop {A: Type} (n: nat) (e: env A) : env A :=
  match n, e with
   | _,     empty   => empty
-  | O,     e :> T  => e
-  | S n',  e :> T  => drop n' e :> T
+  | O,     e' :> T  => e'
+  | S n',  e' :> T  => drop n' e' :> T
   end.
 
 
@@ -202,6 +205,24 @@ Proof.
     simpl in H0. inversions H0.
     simpl. apply IHm. omega. simpl in H0. auto.
 Qed.
+
+
+Lemma get_drop
+ :  forall A n m (e1: env A) x
+ ,  m > n -> get e1 n = some x -> get (drop m e1) n = some x.
+Proof.
+ intros. gen n e1.
+ induction m.
+  intros. inversions H.
+  intros. induction n.
+   destruct e1.
+    inversions H0.
+    simpl in H0. inversions H0.
+    simpl. auto.
+   destruct e1.
+    simpl in H0. inversions H0.
+    simpl. apply IHm. omega. simpl in H0. auto.
+Qed. 
 
 
 Lemma drop_rewind

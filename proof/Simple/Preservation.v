@@ -142,8 +142,10 @@ Proof.
 
   SCase "n < ix".
    apply TYVar. inversions H1.
-   rewrite <- H5. admit (* ok, n < ix *).
-
+   apply compare_lt in Heqe.
+   eapply get_take.
+   
+ 
   SCase "n > ix".
    apply TYVar. inversions H1.
    rewrite <- H5.
