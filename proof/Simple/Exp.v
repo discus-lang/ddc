@@ -68,3 +68,17 @@ Inductive value : exp -> Prop :=
 
 Hint Constructors value.
 
+
+(** Lemmas **********************************************************)
+Lemma closed_app
+ : forall t1 t2
+ , closedX (XApp t1 t2) -> closedX t1 /\ closedX t2.
+Proof.
+ intros.
+ inversions H. inversions H0.
+ apply ClosedX in H3.
+ apply ClosedX in H4.
+ auto.
+Qed.
+
+

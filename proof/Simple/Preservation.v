@@ -28,6 +28,19 @@ Proof.
 Qed.
 
 
+Theorem type_tyenv_weaken
+ :  forall tenv1 tenv2 t1 T1
+ ,  TYPE tenv1            t1 T1
+ -> TYPE (tenv2 ++ tenv1) t1 T1.
+Proof.
+ intros. gen tenv1.
+ induction tenv2; intros.
+  rewrite append_empty. auto.
+  rewrite append_snoc.  apply IHtenv2.
+   apply type_tyenv_weaken1. auto.
+Qed.
+
+
 Theorem type_tyenv_strengthen
  :  forall tenv tenv' n t T
  ,   coversX n t
@@ -54,7 +67,6 @@ Qed.
 
 
 
-
 Theorem type_check_closed_in_empty
  :  forall tenv t T
  ,  closedX t
@@ -64,6 +76,19 @@ Proof.
  intros. inversions H.
  eapply type_tyenv_strengthen. eauto. eauto. eauto.
 Qed.
+
+
+Theorem type_check_closed_in_any
+ :  forall tenv tenv' t T
+ ,  closedX t
+ -> TYPE tenv  t T
+ -> TYPE tenv' t T.
+Proof.
+ intros.
+ apply type_check_closed_in_empty in H0; auto.
+ induction tenv'.
+  auto.
+  
 
 
 Theorem type_tyenv_invariance

@@ -140,7 +140,69 @@ Proof.
   intros. rewrite append_snoc.
    eapply IHe2. apply get_weaken1. auto.
 Qed.
- 
+
+
+Lemma env_length_zero
+ :  forall A (e1: env A)
+ ,  length e1 = O -> e1 = empty.
+Proof.
+ intros.
+ destruct e1.
+  auto.
+  simpl in H. inversions H.
+Qed.
+
+
+Lemma get_succ
+ :  forall A n x (e1: env A)
+ ,  get (e1 :> x) (S n) = get e1 n.
+Proof.
+ intros.
+ simpl.
+ auto.
+Qed.
+
+
+Lemma get_take1
+ :  forall A n (e1: env A)
+ ,  get (take (S n) e1) n = get e1 n.
+Proof.
+ intros. gen n.
+ induction e1.
+  simpl. auto.
+  destruct n.
+   simpl. auto.
+   rewrite get_succ.
+   rewrite <- IHe1.
+   simpl. auto.
+Qed.
+
+
+Lemma get_cut
+ :  forall A (e1: env A) (a: A) n
+ ,  get (e1 :> a) (S n) = get e1 n.
+Proof. 
+ intros. simpl. auto.
+Qed.
+
+
+Lemma get_take 
+ :  forall A m n (e1: env A) (x: A)
+ ,  m > n -> get e1 n = some x -> get (take m e1) n = some x.
+Proof.
+ intros. gen n e1.
+ induction m.
+  intros. inversions H.
+  intros. induction n.
+   destruct e1. 
+    inversions H0. 
+    simpl in H0. inversions H0.
+    simpl. auto. 
+   destruct e1.
+   simpl in H0. inversions H0.
+   simpl. apply IHm. omega. simpl in H0. auto.
+Qed.
+
 
 Lemma drop_rewind
  : forall A ix (e : env A) x
