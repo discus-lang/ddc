@@ -2,14 +2,12 @@
 Require Export Exp.
 
 
-(** Type Judgements ***************************************)
+(** Type Judgements *************************************************)
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
  | TYVar 
-   :   forall tenv i T
-   ,   get tenv i = Some T
-   ->  TYPE tenv (XVar i) T  
-       (* we want to know length of tenv i < length tenv
-          makes it locally closed *)
+   :  forall tenv i T
+   ,  get tenv i = Some T
+   -> TYPE tenv (XVar i) T  
 
  | TYLam
    :  forall tenv t T1 T2
@@ -25,7 +23,7 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
-(* Strengthening type environments. *************)
+(* Weakening type environments. *************************************)
 Theorem type_tyenv_weaken1
  :  forall tenv t T1 T2
  ,  TYPE tenv          t T1
@@ -71,24 +69,56 @@ Proof.
  induction t; intros; inversions H1.
  
  Case "XVar".
-  apply TYVar. inversions H.
-  apply get_take. auto. auto.
+  inversions H.
+  apply TYVar.
+   apply get_take; auto.
 
  Case "XLam".
-  eapply TYLam. inversions H.
-  eapply IHt.  apply H2.
-  assert (take n tenv :> t = take (S n) (tenv :> t)). simpl. auto.
-  eauto. auto.
+  inversions H.
+  eapply TYLam.
+   eapply IHt with (n := S n) (tenv := tenv :> t); auto.
+   auto.
 
  Case "XApp".
   inversions H.
   eapply TYApp.
-  eapply IHt1; eauto.
-  eapply IHt2; eauto.
+   eapply IHt1; eauto.
+   eapply IHt2; eauto.
 Qed.
 
 
 (* Checking closed expressions ******************)
+Lemma type_check_closedUnderX 
+ :  forall tenv t T
+ ,  TYPE tenv t T
+ -> closedUnderX tenv t.
+Proof.
+ intros. apply ClosedUnderX. gen tenv T.
+ induction t; intros; inversions H.
+ 
+ Case "XVar".
+  apply CoversX_var.
+  eapply get_length_more. eauto.
+
+ Case "XLam". 
+  apply CoversX_lam.
+  apply IHt in H4. simpl in H4. auto.
+
+ Case "XApp".
+  apply CoversX_app; eauto.
+Qed.
+
+
+Lemma type_check_empty_is_closed
+ :  forall t T
+ ,  TYPE Empty t T
+ -> closedX t.
+Proof.
+ intros. apply type_check_closedUnderX in H.
+ inversions H. simpl in H0. apply ClosedX. auto.
+Qed.
+
+
 Theorem type_check_closed_in_empty
  :  forall tenv t T
  ,  closedX t
@@ -107,9 +137,9 @@ Theorem type_check_closed_in_any
  -> TYPE tenv' t1 T1.
 Proof.
  intros.
- lets D: type_check_closed_in_empty H H0. clear H0.
+ lets D: type_check_closed_in_empty H H0.
  assert (TYPE (tenv' ++ Empty) t1 T1).
   apply type_tyenv_weaken. auto.
-  simpl in H0. auto.
+  auto.
 Qed.
 

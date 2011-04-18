@@ -1,11 +1,7 @@
 
 Require Import TyJudge.
 Require Import EvJudge.
-Require Import Substitute.
 Require Import SubstValueValue.
-Require Import Exp.
-Require Import Base.
-Require Import Coq.Arith.EqNat.
 
 
 (* When a well typed term transitions to the next state, 
@@ -19,12 +15,11 @@ Proof.
  intros t t' T HT HS. gen T t'.
  induction t; intros.
 
- Case "XVar".
-  inversion HS.
+ (* These can't happen ase there is no evaluation rule *)
+ Case "XVar". inversion HS.
+ Case "XLam". inversion HS.
 
- Case "XLam".
-  inversion HS.
-
+ (* Applications *)
  Case "XApp".
   inversions HT.
   inverts keep HS.

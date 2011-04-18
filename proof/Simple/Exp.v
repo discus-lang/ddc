@@ -7,7 +7,6 @@ Require Export Env.
 Inductive ty  : Type :=
  | TCon  : nat -> ty
  | TFun  : ty  -> ty -> ty.
-
 Hint Constructors ty.
 
 
@@ -20,13 +19,12 @@ Inductive exp : Type :=
  | XVar  : nat -> exp
  | XLam  : ty  -> exp -> exp
  | XApp  : exp -> exp -> exp.
-
 Hint Constructors exp.
 
 
 (** Closedness ********************************************)
 
-(* Expression is closed under an enviornment of a given size *)
+(* Expression is closed under an environment of a given length *)
 Inductive coversX : nat -> exp -> Prop :=
  | CoversX_var
    :  forall n i
@@ -51,6 +49,7 @@ Inductive closedUnderX : tyenv -> exp -> Prop :=
  | ClosedUnderX 
    : forall tenv x 
    , coversX (length tenv) x -> closedUnderX tenv x. 
+Hint Constructors closedUnderX.
 
 
 (* Expression is closed under an empty environment, 
@@ -59,20 +58,22 @@ Inductive closedX : exp -> Prop :=
  | ClosedX 
    : forall xx
    , coversX 0 xx -> closedX xx.
+Hint Constructors closedX.
 
 
+(* Values are closed expressions that cannot be reduced further. *)
 Inductive value : exp -> Prop :=
  | Value_lam 
    : forall T t
    , closedX (XLam T t) -> value (XLam T t).
-
 Hint Constructors value.
 
 
 (** Lemmas **********************************************************)
 Lemma closed_app
- : forall t1 t2
- , closedX (XApp t1 t2) -> closedX t1 /\ closedX t2.
+ :  forall t1 t2
+ ,  closedX (XApp t1 t2) 
+ -> closedX t1 /\ closedX t2.
 Proof.
  intros.
  inversions H. inversions H0.
@@ -80,5 +81,4 @@ Proof.
  apply ClosedX in H4.
  auto.
 Qed.
-
 
