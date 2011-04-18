@@ -207,22 +207,81 @@ Proof.
 Qed.
 
 
-Lemma get_drop
- :  forall A n m (e1: env A) x
- ,  m > n -> get e1 n = some x -> get (drop m e1) n = some x.
+Lemma get_drop_above'
+ :  forall A n m (e1: env A) r
+ ,  m > n
+ -> get e1 n          = r
+ -> get (drop m e1) n = r.
 Proof.
  intros. gen n e1.
  induction m.
   intros. inversions H.
   intros. induction n.
    destruct e1.
-    inversions H0.
-    simpl in H0. inversions H0.
-    simpl. auto.
+    simpl in H0. subst. simpl. auto.
+    simpl in H0. subst. simpl. auto.
    destruct e1.
-    simpl in H0. inversions H0.
-    simpl. apply IHm. omega. simpl in H0. auto.
-Qed. 
+    simpl in H0. subst. simpl. auto.
+    simpl in H0. subst. simpl. apply IHm. omega. auto.
+Qed.
+
+
+Lemma get_drop_above
+ :  forall A n m (e1: env A)
+ ,  m > n -> get (drop m e1) n = get e1 n.
+Proof.
+ intros.
+ breaka (get e1 n); apply get_drop_above'; auto.
+Qed.
+
+
+Lemma get_drop_below'
+ :  forall A n m (e1: env A) r
+ ,  n > m
+ -> get (drop m e1) n = r
+ -> get e1 (S n)      = r.
+Proof.
+ intros. gen n e1.
+ induction m.
+  intros. 
+   destruct e1.
+    simpl. simpl in H0. auto.
+    simpl. simpl in H0. auto.
+  intros.
+   destruct e1.
+    simpl. simpl in H0. auto.
+    destruct n.
+     inversions H.
+     simpl. simpl in H0. apply IHm. omega. auto.
+Qed.
+
+
+Lemma get_drop_below
+ :  forall A n m (e1: env A)
+ ,  n > m
+ -> get (drop m e1) n = get e1 (S n).
+Proof.
+ intros.
+ remember (get (drop m e1) n) as r. symmetry.
+ eapply get_drop_below'. eauto. auto.
+Qed.
+ 
+
+Lemma get_from_succ
+ :  forall A n a (e1: env A)
+ ,  get (e1 :> a) (S n) = get e1 n.
+Proof.
+ intros. simpl. auto.
+Qed.
+
+
+Lemma get_minus1
+ : forall A n a (e1: env A)
+ , n > 0 -> get (e1 :> a) n = get e1 (n - 1).
+Proof.
+ intros. destruct n.
+ inversions H. simpl. assert (n - 0 = n). omega. rewrite H0. auto.
+Qed.
 
 
 Lemma drop_rewind

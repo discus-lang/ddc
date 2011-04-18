@@ -123,10 +123,9 @@ Proof.
   SCase "n > ix".
    apply compare_gt in Heqe.
    inversions H1.
-   apply TYVar.
-   rewrite <- H5.
-   
-   admit. (* probably ok *)
+   apply TYVar. apply get_drop_below.
+
+rewrite <- H5.
 
  Case "XLam".
   inversions H1.
