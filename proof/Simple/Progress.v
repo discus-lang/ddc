@@ -5,6 +5,11 @@ Require Import Exp.
 Require Import LibTactics.
 Require Import Base.
 
+Lemma type_check_closedUnderX 
+ :  forall tenv t T
+ ,  TYPE tenv t T -> closedUnderX tenv t.
+Proof. admit. Qed.
+
 
 Theorem progress
  :  forall t T
@@ -19,7 +24,11 @@ Proof.
   subst. inversion H.
 
  Case "XLam".
-  left. admit.
+  left. apply Value_lam. apply ClosedX.
+  subst. clear IHTYPE.
+  apply type_check_closedUnderX in H.
+  inversions H. simpl in H0.
+  apply CoversX_lam. auto.
 
  Case "XApp".
   right. 
