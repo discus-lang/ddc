@@ -28,7 +28,7 @@ Qed.
 
 Lemma type_check_empty_is_closed
  :  forall t T
- ,  TYPE empty t T -> closedX t.
+ ,  TYPE Empty t T -> closedX t.
 Proof.
  intros. apply type_check_closedUnderX in H.
  inversions H. simpl in H0. apply ClosedX. auto.
@@ -37,11 +37,11 @@ Qed.
 
 Theorem progress
  :  forall t T
- ,  TYPE empty t T
+ ,  TYPE Empty t T
  -> value t \/ (exists t', STEP t t').
 Proof.
  intros.
- remember (@empty ty) as tenv.
+ remember (@Empty ty) as tenv.
  induction H.
 
  Case "XVar".
@@ -67,6 +67,3 @@ Proof.
   SSCase "t1 steps".
    destruct H1 as [t1']. exists (XApp t1' t2). eauto.
 Qed.
-
-
-    

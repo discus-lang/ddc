@@ -3,36 +3,36 @@ Require Import Base.
 
 (** Environments ******************************************)
 Inductive env (A: Type) : Type :=
- | empty  : env A
- | snoc   : env A -> A -> env A.
+ | Empty  : env A
+ | Snoc   : env A -> A -> env A.
 Hint Constructors env.
 
-Implicit Arguments empty [A].
-Implicit Arguments snoc  [A].
+Implicit Arguments Empty [A].
+Implicit Arguments Snoc  [A].
 
 
 Fixpoint cons   {A: Type} (x: A) (e: env A) : env A :=
  match e with
- | empty      => snoc empty x
- | snoc e' y  => snoc (cons x e') y
+ | Empty      => Snoc Empty x
+ | Snoc e' y  => Snoc (cons x e') y
  end.
 
 Fixpoint append {A: Type} (e1: env A) (e2: env A) : env A :=
  match e2 with 
- | empty      => e1 
- | snoc e2' x => snoc (append e1 e2') x
+ | Empty      => e1 
+ | Snoc e2' x => Snoc (append e1 e2') x
  end.
 
 Implicit Arguments cons  [A].
-Infix ":>" := snoc   (at level 61, left  associativity).
+Infix ":>" := Snoc   (at level 61, left  associativity).
 Infix "<:" := cons   (at level 62, right associativity).
 Infix "++" := append (at level 63).
 
 
 Fixpoint length {A: Type} (e: env A) : nat :=
  match e with 
- | empty      => 0
- | snoc e' x  => S (length e')
+ | Empty      => 0
+ | Snoc e' x  => S (length e')
  end.
 Hint Unfold length.
 
@@ -40,18 +40,19 @@ Hint Unfold length.
 (* Get a numbered element from a list *)
 Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
  match e, i with
- | snoc _ T,  O    => Some T
- | snoc xs _, S i' => get  xs i'
+ | Snoc _ T,  O    => Some T
+ | Snoc xs _, S i' => get  xs i'
  | _, _            => None
  end.
+Hint Unfold length.
 
 
 (* Take some elements from the front of a list *)
 Fixpoint take {A: Type} (n: nat) (e: env A) : env A :=
  match n, e with
- | O,   _          => empty
+ | O,   _          => Empty
  | S n, e' :> T    => take n e' :> T
- | S n, empty      => empty
+ | S n, Empty      => Empty
  end.
 Hint Unfold take.
 
@@ -59,7 +60,7 @@ Hint Unfold take.
 (* Drop a numbered element from a list *)
 Fixpoint drop {A: Type} (n: nat) (e: env A) : env A :=
  match n, e with
-  | _,     empty   => empty
+  | _,     Empty    => Empty
   | O,     e' :> T  => e'
   | S n',  e' :> T  => drop n' e' :> T
   end.
@@ -68,7 +69,7 @@ Fixpoint drop {A: Type} (n: nat) (e: env A) : env A :=
 (* Lemmas ***********************************************************)
 Lemma cons_snoc_empty
  :  forall A (x: A)
- ,  x <: empty = empty :> x.
+ ,  x <: Empty = Empty :> x.
 Proof.
  intros. 
  unfold cons. auto.
@@ -87,7 +88,7 @@ Qed.
 
 Lemma append_empty
  :  forall A  (e1: env A)
- ,  empty ++ e1 = e1.
+ ,  Empty ++ e1 = e1.
 Proof.
  intros.
  induction e1. auto. 
@@ -138,7 +139,7 @@ Qed.
 
 Lemma env_length_zero
  :  forall A (e1: env A)
- ,  length e1 = O -> e1 = empty.
+ ,  length e1 = O -> e1 = Empty.
 Proof.
  intros.
  destruct e1.

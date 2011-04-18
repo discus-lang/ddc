@@ -73,7 +73,7 @@ Theorem type_check_closed_in_empty
  :  forall tenv t T
  ,  closedX t
  -> TYPE tenv  t T
- -> TYPE empty t T.
+ -> TYPE Empty t T.
 Proof.
  intros. inversions H.
  eapply type_tyenv_strengthen; eauto.
@@ -88,7 +88,7 @@ Theorem type_check_closed_in_any
 Proof.
  intros.
  lets D: type_check_closed_in_empty H H0. clear H0.
- assert (TYPE (tenv' ++ empty) t1 T1).
+ assert (TYPE (tenv' ++ Empty) t1 T1).
   apply type_tyenv_weaken. auto.
   simpl in H0. auto.
 Qed.
@@ -169,9 +169,9 @@ Qed.
    its type is perserved. *)
 Theorem preservation
  :  forall t t' T
- ,  TYPE empty t  T
+ ,  TYPE Empty t  T
  -> STEP t t'
- -> TYPE empty t' T.
+ -> TYPE Empty t' T.
 Proof.
  intros t t' T HT HS. gen T t'.
  induction t; intros.
