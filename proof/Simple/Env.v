@@ -41,7 +41,7 @@ Implicit Arguments cons  [A].
 Infix "<:" := cons   (at level 62, right associativity).
 
 
-(* Append two environments *)
+(* Append two environments. *)
 Fixpoint append {A: Type} (e1: env A) (e2: env A) : env A :=
  match e2 with 
  | Empty      => e1 
@@ -95,9 +95,7 @@ Lemma snoc_cons
  :  forall A (e: env A) (x: A) (y: A)
  ,  ((x <: e) :> y) = (x <: (e :> y)).
 Proof.
- intros. destruct e.
- simpl. auto.
- simpl. auto.
+ intros. destruct e; auto.
 Qed.
 
 
@@ -108,8 +106,7 @@ Qed.
 Proof.
  intros.
  destruct e1.
-  auto.
-  simpl in H. inversions H.
+  auto. false.
 Qed.
 
 
@@ -120,11 +117,11 @@ Proof.
  intros. gen e1.
  induction n.
   intros. destruct e1.
-   simpl in H. inversions H.
+   false.
    simpl in H. inversions H. simpl. omega.
    
   intros. destruct e1.
-   inversions H.
+   false.
    simpl in H. apply IHn in H. simpl. omega.
 Qed.
 Hint Resolve get_length_more.
@@ -136,8 +133,9 @@ Lemma append_empty_left
  ,  Empty ++ e1 = e1.
 Proof.
  intros.
- induction e1. auto. 
- simpl. rewrite IHe1. auto.
+ induction e1.
+  auto. 
+  simpl. rewrite IHe1. auto.
 Qed.
 Hint Resolve append_empty_left.
 
@@ -187,8 +185,8 @@ Proof.
  induction e.
    intros. 
     destruct n.
-     simpl in H. inversions H.
-     simpl in H. inversions H.
+     simpl in H. false.
+     simpl in H. false.
    intros.
     destruct n. simpl in H. simpl. auto. 
     simpl. simpl in H. apply IHe. auto.
@@ -234,13 +232,12 @@ Proof.
  induction m.
   intros. inversions H.
   intros. induction n.
-   destruct e1. 
-    inversions H0. 
-    simpl in H0. inversions H0.
-    simpl. auto. 
    destruct e1.
-    simpl in H0. inversions H0.
-    simpl. apply IHm. omega. simpl in H0. auto.
+    false. 
+    simpl in H0. inversions H0. simpl. auto.
+   destruct e1.
+    false.
+    simpl in H0. simpl. apply IHm. omega. auto.
 Qed.
 
 
@@ -264,10 +261,10 @@ Proof.
   intros. inversions H.
   intros. induction n.
    destruct e1.
-    simpl in H0. subst. simpl. auto.
-    simpl in H0. subst. simpl. auto.
+    auto.
+    auto.
    destruct e1.
-    simpl in H0. subst. simpl. auto.
+    auto.
     simpl in H0. subst. simpl. apply IHm. omega. auto.
 Qed.
 
@@ -277,8 +274,7 @@ Lemma get_drop_above
  ,  m > n 
  -> get (drop m e1) n = get e1 n.
 Proof.
- intros.
- breaka (get e1 n); apply get_drop_above'; auto.
+ intros. breaka (get e1 n); apply get_drop_above'; auto.
 Qed.
 
 
@@ -290,16 +286,14 @@ Lemma get_drop_below'
 Proof.
  intros. gen n e1.
  induction m.
-  intros. 
-   destruct e1.
-    simpl. simpl in H0. auto.
-    simpl. simpl in H0. auto.
-  intros.
-   destruct e1.
-    simpl. simpl in H0. auto.
-    destruct n.
-     inversions H.
-     simpl. simpl in H0. apply IHm. omega. auto.
+  intros. destruct e1.
+   auto.
+   auto.
+  intros. destruct e1.
+   auto.
+   destruct n.
+    inversions H.
+    simpl. simpl in H0. apply IHm. omega. auto.
 Qed.
 
 
