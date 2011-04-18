@@ -168,8 +168,9 @@ Proof. auto. Qed.
 
 
 Lemma get_minus1
- : forall A n a (e1: env A)
- , n > 0 -> get (e1 :> a) n = get e1 (n - 1).
+ :  forall A n a (e1: env A)
+ ,  n > 0
+ -> get (e1 :> a) n = get e1 (n - 1).
 Proof.
  intros. destruct n.
   inversions H.
@@ -273,7 +274,8 @@ Qed.
 
 Lemma get_drop_above
  :  forall A n m (e1: env A)
- ,  m > n -> get (drop m e1) n = get e1 n.
+ ,  m > n 
+ -> get (drop m e1) n = get e1 n.
 Proof.
  intros.
  breaka (get e1 n); apply get_drop_above'; auto.
