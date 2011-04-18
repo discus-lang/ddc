@@ -291,3 +291,19 @@ Proof.
  intros. simpl. auto.
 Qed.
 
+
+Lemma get_length_more
+ :  forall A n (e1: env A) x
+ ,  get e1 n = some x -> length e1 > n.
+Proof.
+ intros. gen e1.
+ induction n.
+  intros. destruct e1.
+   simpl in H. inversions H.
+   simpl in H. inversions H. simpl. omega.
+   
+  intros. destruct e1.
+   inversions H.
+   simpl in H. apply IHn in H. simpl. omega.
+Qed.
+

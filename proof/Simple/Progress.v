@@ -8,7 +8,31 @@ Require Import Base.
 Lemma type_check_closedUnderX 
  :  forall tenv t T
  ,  TYPE tenv t T -> closedUnderX tenv t.
-Proof. admit. Qed.
+Proof.
+ intros. apply ClosedUnderX.
+ gen tenv T.
+ induction t.
+ 
+ Case "XVar".
+  intros. inversions H. eapply CoversX_var.
+  eapply get_length_more. eauto.
+
+ Case "XLam". 
+  intros. inversions H. apply IHt in H4.
+  apply CoversX_lam. simpl in H4. auto.
+
+ Case "XApp".
+  intros. inversions H. eapply CoversX_app; eauto.
+Qed.
+
+
+Lemma type_check_empty_is_closed
+ :  forall t T
+ ,  TYPE empty t T -> closedX t.
+Proof.
+ intros. apply type_check_closedUnderX in H.
+ inversions H. simpl in H0. apply ClosedX. auto.
+Qed.
 
 
 Theorem progress
@@ -24,11 +48,9 @@ Proof.
   subst. inversion H.
 
  Case "XLam".
-  left. apply Value_lam. apply ClosedX.
-  subst. clear IHTYPE.
-  apply type_check_closedUnderX in H.
-  inversions H. simpl in H0.
-  apply CoversX_lam. auto.
+  left. clear IHTYPE. subst. apply TYLam in H.
+  subst. apply type_check_empty_is_closed in H.
+  eauto.
 
  Case "XApp".
   right. 
