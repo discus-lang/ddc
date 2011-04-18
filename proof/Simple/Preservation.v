@@ -118,14 +118,17 @@ Proof.
   SCase "n < ix".
    apply TYVar. inversions H1.
    apply compare_lt in Heqe.
-   eapply get_drop. auto. auto.
+    rewrite <- H5. eapply get_drop_above. auto.
    
   SCase "n > ix".
    apply compare_gt in Heqe.
    inversions H1.
-   apply TYVar. apply get_drop_below.
-
-rewrite <- H5.
+   apply TYVar. 
+    rewrite <- H5. 
+     destruct n. 
+      inversions Heqe.
+      simpl. assert (n - 0 = n). omega. rewrite H1.
+      apply get_drop_below. omega.
 
  Case "XLam".
   inversions H1.

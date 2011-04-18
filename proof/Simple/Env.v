@@ -237,7 +237,7 @@ Qed.
 
 Lemma get_drop_below'
  :  forall A n m (e1: env A) r
- ,  n > m
+ ,  n >= m
  -> get (drop m e1) n = r
  -> get e1 (S n)      = r.
 Proof.
@@ -258,7 +258,7 @@ Qed.
 
 Lemma get_drop_below
  :  forall A n m (e1: env A)
- ,  n > m
+ ,  n >= m
  -> get (drop m e1) n = get e1 (S n).
 Proof.
  intros.
