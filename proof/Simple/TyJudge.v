@@ -5,7 +5,7 @@ Require Export Exp.
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
  | TYVar 
    :   forall tenv i T
-   ,   get tenv i = some T
+   ,   get tenv i = Some T
    ->  TYPE tenv (XVar i) T  
        (* we want to know length of tenv i < length tenv
           makes it locally closed *)

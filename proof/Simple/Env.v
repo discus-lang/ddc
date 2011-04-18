@@ -1,15 +1,6 @@
 
 Require Import Base.
 
-(* option *************************************************)
-Inductive option (a : Type) :=
- | none  : option a
- | some  : a -> option a.
-
-Implicit Arguments none [[a]].
-Implicit Arguments some [[a]].
-
-
 (** Environments ******************************************)
 Inductive env (A: Type) : Type :=
  | empty  : env A
@@ -49,9 +40,9 @@ Hint Unfold length.
 (* Get a numbered element from a list *)
 Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
  match e, i with
- | snoc _ T,  O    => some T
+ | snoc _ T,  O    => Some T
  | snoc xs _, S i' => get  xs i'
- | _, _            => none
+ | _, _            => None
  end.
 
 
@@ -117,8 +108,8 @@ Qed.
 
 Lemma get_weaken1
  :  forall A (e: env A) n x1 x2
- ,  get e n         = some x1
- -> get (x2 <: e) n = some x1.
+ ,  get e n         = Some x1
+ -> get (x2 <: e) n = Some x1.
 Proof.
  intros. gen n.
  induction e.
@@ -134,8 +125,8 @@ Qed.
 
 Lemma get_weaken 
  :  forall A (e1: env A) (e2: env A) n x1
- ,  get e1 n         = some x1 
- -> get (e2 ++ e1) n = some x1.
+ ,  get e1 n         = Some x1 
+ -> get (e2 ++ e1) n = Some x1.
 Proof.
  intros. gen e1.
  induction e2. 
@@ -191,7 +182,7 @@ Qed.
 
 Lemma get_take 
  :  forall A m n (e1: env A) (x: A)
- ,  m > n -> get e1 n = some x -> get (take m e1) n = some x.
+ ,  m > n -> get e1 n = Some x -> get (take m e1) n = Some x.
 Proof.
  intros. gen n e1.
  induction m.
@@ -294,7 +285,7 @@ Qed.
 
 Lemma get_length_more
  :  forall A n (e1: env A) x
- ,  get e1 n = some x -> length e1 > n.
+ ,  get e1 n = Some x -> length e1 > n.
 Proof.
  intros. gen e1.
  induction n.

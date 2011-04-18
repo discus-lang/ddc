@@ -97,7 +97,7 @@ Qed.
 
 Theorem subst_value_value
  :  forall ix tenv t1 t2 T1 T2
- ,  get tenv ix = some T2
+ ,  get tenv ix = Some T2
  -> closedX t2
  -> TYPE tenv           t1 T1
  -> TYPE (drop ix tenv) t2 T2
