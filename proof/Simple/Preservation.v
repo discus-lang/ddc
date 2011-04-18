@@ -17,10 +17,10 @@ Proof.
  induction t; intros; inversions H.
 
  Case "XVar".
-  eapply TYVar. apply get_weaken1. auto.
+  eapply TYVar. apply get_cons_some. auto.
 
  Case "XLam".
-  eapply TYLam. rewrite env_snoc_cons.
+  eapply TYLam. rewrite snoc_cons.
   apply IHt. auto.
 
  Case "XApp".
@@ -35,7 +35,7 @@ Theorem type_tyenv_weaken
 Proof.
  intros. gen tenv1.
  induction tenv2; intros.
-  rewrite append_empty. auto.
+  rewrite append_empty_left. auto.
   rewrite append_snoc.  apply IHtenv2.
    apply type_tyenv_weaken1. auto.
 Qed.
