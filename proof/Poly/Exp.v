@@ -1,6 +1,6 @@
 
-Require Export Base.
-Require Export Env.
+Require Import Ty.
+Require Import Base.
 
 
 (** Expressions *****************************************************)
@@ -11,5 +11,3 @@ Inductive exp : Type :=
 Hint Constructors exp.
 
 
-(** Environments ****************************************************)
-Definition tyenv := env ty.

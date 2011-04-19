@@ -67,6 +67,17 @@ Proof.
 Qed. 
 
 
+Theorem nat_plus_zero
+ : forall a
+ , a + 0 = a.
+Proof. auto. Qed.
+
+
+Theorem nat_minus_zero
+ : forall a
+ , a - 0 = a.
+Proof. intros. omega. Qed.
+
 
 (* Comparison operators *********************************************)
 Inductive Ordering :=

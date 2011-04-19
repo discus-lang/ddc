@@ -1,6 +1,10 @@
 
 Require Import Env.
 
+(* Kinds ************************************************************)
+Inductive ki : Type :=
+ | KStar   : ki.
+
 
 (** Types ***********************************************************)
 Inductive ty  : Type :=
@@ -11,8 +15,9 @@ Inductive ty  : Type :=
 Hint Constructors ty.
 
 
-(* Kind Environment *************************************************)
-Definition kienv := env unit.
+(* Environments *****************************************************)
+Definition tyenv := env ty.
+Definition kienv := env ki.
 
 
 (* Closedness *******************************************************)
