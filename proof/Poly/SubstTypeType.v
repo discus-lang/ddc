@@ -41,18 +41,6 @@ Definition  substT := substT' 0.
 Hint Unfold substT.
 
 
-(* Covering Lemmas **************************************************)
-Theorem coversT_succ
- :  forall  n t
- ,  coversT n     t 
- -> coversT (S n) t.
-Proof.
- intros. 
- gen n.
- induction t; intros; inversions H; auto.
-Qed.
-
-
 (* Lifting Lemmas ***************************************************)
 
 (* Lifting an type by zero steps doesn't do anything. *)
