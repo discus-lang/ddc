@@ -100,7 +100,7 @@ Proof.
   rewrite IHt.
    auto.
    assert (n + 1 = S n). omega.
-    rewrite H. apply coversT_succ. auto.
+    rewrite H. auto.
 
  Case "TFun".
   simpl. inversions H.
@@ -161,7 +161,7 @@ Proof.
  Case "TForall".
   simpl. destruct k1. inversions H1.
   apply KIForall. rewrite drop_rewind. apply IHt1; eauto.
-  simpl. admit. (* need kind_check_closed_in_any *)
+  simpl. eapply kind_check_closed_in_any; eauto.
 
  Case "TFun".
   simpl. destruct k1. inversions H1.
