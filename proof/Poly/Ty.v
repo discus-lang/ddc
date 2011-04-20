@@ -96,4 +96,3 @@ Qed.
 Hint Resolve coversT_succ.
 
   
-

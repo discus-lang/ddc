@@ -35,7 +35,7 @@ Proof.
  intros. gen kenv k1.
  induction t1; intros; inversions H.
  Case "TCon".
-  apply KICon.
+  auto.
 
  Case "TVar".
   apply KIVar.
@@ -46,7 +46,7 @@ Proof.
   rewrite snoc_cons. apply IHt1. auto.
 
  Case "TFun".
-  apply KIFun; eauto.
+  auto.
 Qed.
 
 
@@ -74,7 +74,7 @@ Proof.
  intros. gen kenv kenv' n k.
  induction t; intros; inversions H1; inversions H.
  Case "TCon".
-  apply KICon.
+  auto.
 
  Case "TVar".
   apply KIVar.
@@ -85,7 +85,7 @@ Proof.
   eapply IHt with (n := S n) (kenv := kenv :> KStar); auto.
 
  Case "TFun".
-  apply KIFun; eauto.
+  eauto.
 Qed.
 
 
@@ -146,8 +146,4 @@ Proof.
   apply kind_kienv_weaken. auto.
   auto.
 Qed.
-
- 
-
-
 

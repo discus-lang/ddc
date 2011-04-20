@@ -75,7 +75,7 @@ Proof.
  gen n.
  induction t; intros.
  Case "TCon".
-  simpl. auto.
+  auto.
 
  Case "TVar".
   simpl. break (bge_nat n n0).
@@ -169,11 +169,6 @@ Proof.
  unfold substT.
  eapply subst_type_type_drop; simpl; eauto.
 Qed.
-
-
-
-
-
 
 
 
