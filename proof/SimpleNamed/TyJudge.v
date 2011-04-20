@@ -15,8 +15,8 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 
  | TYLam 
    :  forall env x T11 T12 t12
-   ,  TYPE (extend env x T11) t12 T12
-   -> TYPE env                (XLam x T11 t12) (TFun T11 T12)
+   ,  TYPE (extend env x T11)   t12 T12
+   -> TYPE env (XLam x T11 t12) (TFun T11 T12)
 
  | TYApp 
    :  forall env t1 t2 T11 T12

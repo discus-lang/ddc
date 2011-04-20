@@ -1,5 +1,7 @@
 
 Require Import Env.
+Require Import Base.
+
 
 (* Kinds ************************************************************)
 Inductive ki : Type :=
@@ -35,7 +37,7 @@ Inductive coversT : nat -> ty -> Prop :=
 
  | CoversT_forall
    :  forall n t
-   ,  coversT n t
+   ,  coversT (S n) t
    -> coversT n (TForall t)
 
  | CoversT_fun
@@ -80,4 +82,18 @@ Inductive normalT : ty -> Prop :=
    ,  normalT t1 -> normalT t2
    -> normalT (TFun t1 t2).
 Hint Constructors normalT.
+
+
+(* Lemmas ***********************************************************)
+Lemma coversT_succ
+ :  forall n t
+ ,  coversT n     t
+ -> coversT (S n) t.
+Proof.
+ intros. gen n.
+ induction t; intros; inversions H; auto.
+Qed.
+Hint Resolve coversT_succ.
+
+  
 
