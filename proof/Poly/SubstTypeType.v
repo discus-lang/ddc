@@ -11,8 +11,7 @@ Fixpoint liftT (n: nat) (depth: nat) (tt: ty) : ty :=
                   then TVar (it + n)
                   else tt
 
- | TForall t  => TForall (liftT n (depth + 1) t)
-
+ | TForall t  => TForall (liftT n (S depth) t)
  | TFun t1 t2 => TFun (liftT n depth t1)
                       (liftT n depth t2)
  end.
@@ -30,7 +29,6 @@ Fixpoint substT' (depth: nat) (u: ty) (tt: ty) : ty :=
                  end
 
  | TForall t  => TForall (substT' (S depth) u t)
-
  | TFun t1 t2 => TFun (substT' depth u t1)
                       (substT' depth u t2)
  end.
@@ -47,17 +45,11 @@ Theorem liftT_zero
  :  forall t1 depth
  ,  liftT 0 depth t1 = t1.
 Proof.
- induction t1; intros; simpl.
-
- Case "TCon".
-  auto.
+ induction t1; intros; simpl; 
+  try (auto; rewrite IHt1; auto).
 
  Case "TVar".
-  simpl. rewrite nat_plus_zero.
   breaka (bge_nat n depth).
-
- Case "TForall".
-  simpl. rewrite IHt1. auto.
 
  Case "TFun".
   rewrite IHt1_1. rewrite IHt1_2. auto.
@@ -70,27 +62,20 @@ Theorem liftT_covers
  ,  coversT n t
  -> liftT it n t = t.
 Proof.
- intros it n t.
- gen n.
- induction t; intros.
- Case "TCon".
-  auto.
+ intros it n t. gen n.
+ induction t; intros; inversions H; simpl.
+  try (auto; rewrite IHt; auto).
 
  Case "TVar".
-  simpl. break (bge_nat n n0).
+  break (bge_nat n n0).
   apply bge_nat_true in HeqX.
-  inversions H. false. omega.
+  false. omega.
   auto.
 
  Case "TForall".
-  simpl. inversions H.
-  rewrite IHt.
-   auto.
-   assert (n + 1 = S n). omega.
-    rewrite H. auto.
+  rewrite IHt; auto.
 
  Case "TFun".
-  simpl. inversions H.
   rewrite IHt1. rewrite IHt2. auto. auto. auto.
 Qed.
 
@@ -119,13 +104,13 @@ Theorem subst_type_type_drop
 Proof.
  intros it kenv t1 k1 t2 k2.
  gen it kenv k1.
- induction t1; intros.
+ induction t1; intros; simpl.
 
  Case "TCon".
-  simpl. destruct k1. auto.
+  destruct k1. auto.
 
  Case "TVar".
-  simpl. break (compare n it).
+  break (compare n it).
   SCase "n = it".
    apply compare_eq in HeqX. subst.
    rewrite liftT_closed; auto.
@@ -146,12 +131,12 @@ Proof.
     simpl. rewrite nat_minus_zero. apply get_drop_below. omega.
 
  Case "TForall".
-  simpl. destruct k1. inversions H1.
+  destruct k1. inversions H1.
   apply KIForall. rewrite drop_rewind. apply IHt1; eauto.
   simpl. eapply kind_check_closed_in_any; eauto.
 
  Case "TFun".
-  simpl. destruct k1. inversions H1.
+  destruct k1. inversions H1.
   apply KIFun; eauto.
 Qed.
 
