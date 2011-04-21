@@ -2,7 +2,6 @@
 Require Import KiJudge.
 Require Import Base.
 
-
 (* Lift type indices that are at least a certain depth. *)
 Fixpoint liftT (n: nat) (depth: nat) (tt: ty) : ty :=
  match tt with

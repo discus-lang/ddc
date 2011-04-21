@@ -8,7 +8,7 @@ Require Import Base.
 Inductive exp : Type :=
  | XVar  : nat -> exp
  | XLAM  : exp -> exp
- | XAPP  : exp -> exp -> exp
+ | XAPP  : exp -> ty  -> exp
  | XLam  : ty  -> exp -> exp
  | XApp  : exp -> exp -> exp.
 Hint Constructors exp.
@@ -25,17 +25,17 @@ Inductive coversXX : nat -> exp -> Prop :=
 
  | CoversXX_LAM
    :  forall n x
-   ,  coversXX (S n) x
+   ,  coversXX n x
    -> coversXX n (XLAM x)
 
  | CoversXX_APP 
    :  forall n x t
-   ,  coversXX n t
+   ,  coversXX n x
    -> coversXX n (XAPP x t)
 
  | CoversXX_lam
    :  forall n t x
-   ,  coversXX n x
+   ,  coversXX (S n) x
    -> coversXX n (XLam t x)
 
  | CoversXX_app
