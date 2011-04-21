@@ -42,13 +42,16 @@ Proof.
  induction H; intros.
  Case "XVar".
   inversion H0. subst. exists T. auto.
+
  Case "XLam".
   inversion H1. subst.
   apply IHfreeX in H7.  
   rewrite extend_neq in H7; auto.
+
  Case "XApp/app1". 
   inversion H0. subst.
   eapply IHfreeX. eauto.
+
  Case "XApp/app2".
   inversion H0. subst.
   eapply IHfreeX. eauto.
@@ -68,11 +71,13 @@ Proof.
  generalize dependent env'.
  induction H; intros.
  Case "XVar".
-  apply TYVar. rewrite <- H0; auto.
+  apply TYVar. rewrite <- H1. auto.
+
  Case "XLam".
   apply TYLam. apply IHTYPE.
   intros. unfold extend.
   remember (beq_name x x0) as e. destruct e; auto.
+
  Case "XApp".
   eapply TYApp; eauto.
 Qed.
