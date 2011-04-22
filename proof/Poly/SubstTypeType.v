@@ -104,40 +104,28 @@ Theorem subst_type_type_drop
 Proof.
  intros it kenv t1 k1 t2 k2.
  gen it kenv k1.
- induction t1; intros; simpl.
-
- Case "TCon".
-  destruct k1. auto.
+ induction t1; intros; simpl; inversions H1; eauto.
 
  Case "TVar".
-  break (compare n it).
+  destruct k1. destruct k2.
+  fbreak_compare.
   SCase "n = it".
-   apply compare_eq in HeqX. subst.
    rewrite liftT_closed; auto.
-   inversions H1. rewrite H0 in H5.
-   inversion H5. destruct k1. destruct k2.
-   auto.
 
   SCase "n < it".
-   apply compare_lt in HeqX.
-   apply KIVar. inversions H1. rewrite <- H5.
+   apply KIVar. rewrite <- H5.
    apply get_drop_above. auto.
 
   SCase "n > it".
-   apply compare_gt in HeqX.
-   apply KIVar. inversions H1. rewrite <- H5.
+   apply KIVar. rewrite <- H5.
    destruct n.
     simpl. false. omega.
     simpl. rewrite nat_minus_zero. apply get_drop_below. omega.
 
  Case "TForall".
-  destruct k1. inversions H1.
-  apply KIForall. rewrite drop_rewind. apply IHt1; eauto.
-  simpl. eapply kind_check_closed_in_any; eauto.
-
- Case "TFun".
-  destruct k1. inversions H1.
-  apply KIFun; eauto.
+  apply KIForall. rewrite drop_rewind.
+  apply IHt1; eauto. simpl.
+  eapply kind_check_closed_in_any; eauto.
 Qed.
 
 

@@ -33,20 +33,10 @@ Lemma kind_kienv_weaken1
  -> KIND (k2 <: kenv) t1 k1.
 Proof.
  intros. gen kenv k1.
- induction t1; intros; inversions H.
- Case "TCon".
-  auto.
-
- Case "TVar".
-  apply KIVar.
-  apply get_cons_some. auto.
-
+ induction t1; intros; inversions H; eauto.
  Case "TForall".
   apply KIForall.
   rewrite snoc_cons. apply IHt1. auto.
-
- Case "TFun".
-  auto.
 Qed.
 
 
@@ -57,9 +47,9 @@ Lemma kind_kienv_weaken
 Proof.
  intros. gen kenv1 k1.
  induction kenv2; intros.
- rewrite append_empty_left. auto.
- rewrite append_snoc. apply IHkenv2.
- apply kind_kienv_weaken1. auto.
+  rewrite append_empty_left. auto.
+  rewrite append_snoc. apply IHkenv2.
+   apply kind_kienv_weaken1. auto.
 Qed.
 
 
@@ -72,10 +62,7 @@ Lemma kind_kienv_strengthen
  ->  KIND kenv' t k.
 Proof.
  intros. gen kenv kenv' n k.
- induction t; intros; inversions H1; inversions H.
- Case "TCon".
-  auto.
-
+ induction t; intros; inversions H; inversions H1; eauto.
  Case "TVar".
   apply KIVar.
   apply get_take; auto.
@@ -83,9 +70,6 @@ Proof.
  Case "TForall".
   apply KIForall.
   eapply IHt with (n := S n) (kenv := kenv :> KStar); auto.
-
- Case "TFun".
-  eauto.
 Qed.
 
 
@@ -96,20 +80,10 @@ Lemma kind_check_closedUnderT
  -> closedUnderT kenv t.
 Proof.
  intros. eapply ClosedUnderT. gen kenv k.
- induction t; intros; inversions H.
- Case "TCon".
-  auto.
-
- Case "TVar".
-  apply CoversT_var.
-  eapply get_length_more. eauto.
-
+ induction t; intros; inversions H; eauto.
  Case "TForall".
   apply CoversT_forall.
   eapply IHt in H2. simpl in H2. auto.
-
- Case "TFun".
-  eauto.
 Qed.
 
 

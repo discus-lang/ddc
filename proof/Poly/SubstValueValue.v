@@ -99,6 +99,7 @@ Qed.
 
 (* Theorems *********************************************************)
 
+
 (* Substitution of values in values preserves typing. *)
 Theorem subst_value_value_drop
  :  forall ix kenv tenv x1 t1 x2 t2
@@ -110,43 +111,33 @@ Theorem subst_value_value_drop
  -> TYPE kenv (drop ix tenv) (substXX' ix x2 x1) t1.
 Proof.
  intros. gen ix kenv tenv t1 t2.
- induction x1; intros; simpl.
- Case "XVar".
-  breaka (compare n ix).
+ induction x1; intros; inversions H2; simpl; eauto.
+
+ Case "XVar". 
+  fbreak_compare.
   SCase "n = ix".
-   apply compare_eq in HeqX. subst.
    rewrite liftXX_closed; auto.
-   inversions H2. rewrite H1 in H7. inversions H7. auto.
+   rewrite H1 in H7. inversions H7. auto.
 
   SCase "n < ix".
-   apply compare_lt in HeqX.
-   apply TYVar. inversions H2. rewrite <- H7. auto.
+   apply TYVar. rewrite <- H7. auto.
 
   SCase "n > ix".
-   apply compare_gt in HeqX.
-   apply TYVar. inversions H2. rewrite <- H7.
+   apply TYVar. rewrite <- H7.
    destruct n.
     false. omega.
     simpl. rewrite nat_minus_zero. apply get_drop_below. omega.
 
  Case "XLAM".
-  inversions H2.
   eapply TYLAM. eapply IHx1; eauto.
   eapply type_check_tyclosed_in_any_tyenv; auto.
   eapply type_check_kiclosed_in_any_kienv; auto.
   eauto.
 
- Case "XAPP".
-  inversions H2; eauto.
-
  Case "XLam".
-  inversions H2.
   apply TYLam. rewrite drop_rewind.
   eapply IHx1; eauto.
   simpl. eapply type_check_tyclosed_in_any_tyenv. auto. eauto.
-
- Case "XApp".
-  inversions H2. eauto.
 Qed.
 
 

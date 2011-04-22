@@ -46,6 +46,7 @@ Lemma type_tyenv_weaken1
 Proof.
  intros. gen kenv tenv t1.
  induction x1; intros; inversions H; eauto.
+
  Case "XLam".
   apply TYLam. rewrite snoc_cons. auto.
 Qed.
@@ -58,9 +59,9 @@ Lemma type_tyenv_weaken
 Proof.
  intros. gen kenv tenv1 t1.
  induction tenv2; intros.
- rewrite append_empty_left. auto.
- rewrite append_snoc. apply IHtenv2.
- apply type_tyenv_weaken1. auto.
+  rewrite append_empty_left. auto.
+  rewrite append_snoc. apply IHtenv2.
+   apply type_tyenv_weaken1. auto.
 Qed.
 
 
@@ -72,6 +73,7 @@ Lemma type_kienv_weaken1
 Proof.
  intros. gen kenv tenv t1.
  induction x1; intros; inversions H; eauto.
+
  Case "XLAM".
   apply TYLAM. rewrite snoc_cons. auto.
 
@@ -88,9 +90,9 @@ Lemma type_kienv_weaken
 Proof.
  intros. gen kenv1 tenv t.
  induction kenv2; intros.
- rewrite append_empty_left. auto.
- rewrite append_snoc. apply IHkenv2.
- apply type_kienv_weaken1. auto.
+  rewrite append_empty_left. auto.
+  rewrite append_snoc. apply IHkenv2.
+   apply type_kienv_weaken1. auto.
 Qed.
 
 
@@ -104,6 +106,7 @@ Lemma type_tyenv_strengthen
 Proof.
  intros. gen kenv tenv tenv' n t.
  induction x; intros; inversions H1; inversions H; eauto.
+
  Case "XVar".
   apply TYVar.
   apply get_take; auto.
@@ -145,6 +148,7 @@ Lemma type_check_closedUnderXX
 Proof.
  intros. eapply ClosedUnderXX. gen kenv tenv t.
  induction x; intros; inversions H; eauto.
+
  Case "XLam".
   apply IHx in H5. auto.
 Qed.
@@ -193,6 +197,7 @@ Lemma type_check_closedUnderXT
 Proof.
  intros. eapply ClosedUnderXT. gen kenv tenv t.
  induction x; intros; inversions H; eauto.
+
  Case "XLAM".
   apply IHx in H3. auto.
 
