@@ -14,7 +14,7 @@ Inductive exp : Type :=
 Hint Constructors exp.
 
 
-(* Closedness *******************************************************)
+(* Closedness under type environment ********************************)
 
 (* Exp is val closed under a type environment of a given length *)
 Inductive coversXX : nat -> exp -> Prop :=
@@ -63,6 +63,55 @@ Inductive closedXX : exp -> Prop :=
 Hint Constructors closedXX.
 
 
+(* Closedness under kind environment ********************************)
+
+(* Exp is type closed under a kind environment of a given length *)
+Inductive coversXT : nat -> exp -> Prop :=
+ | CoversXT_var
+   :  forall n i
+   ,  coversXT n (XVar i)
+
+ | CoversXT_LAM
+   :  forall n x
+   ,  coversXT (S n) x
+   -> coversXT n (XLAM x)
+
+ | CoversXT_APP 
+   :  forall n x t
+   ,  coversXT n x
+   -> coversT  n t
+   -> coversXT n (XAPP x t)
+
+ | CoversXT_lam
+   :  forall n t x
+   ,  coversXT n x
+   -> coversXT n (XLam t x)
+
+ | CoversXT_app
+   :  forall n x1 x2
+   ,  coversXT n x1 -> coversXT n x2
+   -> coversXT n (XApp x1 x2).
+Hint Constructors coversXT.
+
+
+(* Exp is type closed under the given kind environment *)
+Inductive closedUnderXT : kienv -> exp -> Prop :=
+  |  ClosedUnderXT 
+     :  forall kenv x
+     ,  coversXT (length kenv) x
+     -> closedUnderXT kenv x.
+Hint Constructors closedUnderXT.
+
+
+(* Exp is type closed under the empty kind environment *)
+Inductive closedXT : exp -> Prop :=
+ |  ClosedXT
+    :  forall x
+    ,  coversXT 0 x
+    -> closedXT x.
+Hint Constructors closedXT.
+
+
 (* Lemmas ***********************************************************)
 Lemma coversXX_succ
  :  forall n x
@@ -74,6 +123,16 @@ Proof.
 Qed.
 Hint Resolve coversT_succ.
 
+
+Lemma coversXT_succ
+ :  forall n x
+ ,  coversXT n     x
+ -> coversXT (S n) x.
+Proof.
+ intros. gen n.
+ induction x; intros; inversions H; auto.
+Qed.
+Hint Resolve coversXT_succ.
 
 
 

@@ -1,6 +1,11 @@
 
 Require Import Exp.
+Require Import Ty.
+Require Import TyJudge.
+Require Import KiJudge.
+Require Import Env.
 Require Import Base.
+Require Import SubstTypeType.
 
 
 (* Lift value indices that are at least a certain depth. *)
@@ -89,6 +94,74 @@ Theorem liftXX_closed
 Proof.
  intros.
  apply liftXX_covers. inversions H. auto.
+Qed.
+
+
+(* Theorems *********************************************************)
+
+(* Substitution of values in values preserves typing. *)
+Theorem subst_value_value_drop
+ :  forall ix kenv tenv x1 t1 x2 t2
+ ,  closedXX x2
+ -> closedXT x2
+ -> get  tenv ix = Some t2
+ -> TYPE kenv tenv           x1 t1
+ -> TYPE kenv (drop ix tenv) x2 t2
+ -> TYPE kenv (drop ix tenv) (substXX' ix x2 x1) t1.
+Proof.
+ intros. gen ix kenv tenv t1 t2.
+ induction x1; intros; simpl.
+ Case "XVar".
+  breaka (compare n ix).
+  SCase "n = ix".
+   apply compare_eq in HeqX. subst.
+   rewrite liftXX_closed; auto.
+   inversions H2. rewrite H1 in H7. inversions H7. auto.
+
+  SCase "n < ix".
+   apply compare_lt in HeqX.
+   apply TYVar. inversions H2. rewrite <- H7. auto.
+
+  SCase "n > ix".
+   apply compare_gt in HeqX.
+   apply TYVar. inversions H2. rewrite <- H7.
+   destruct n.
+    false. omega.
+    simpl. rewrite nat_minus_zero. apply get_drop_below. omega.
+
+ Case "XLAM".
+  inversions H2.
+  eapply TYLAM. eapply IHx1; eauto.
+  eapply type_check_tyclosed_in_any_tyenv; auto.
+  eapply type_check_kiclosed_in_any_kienv; auto.
+  eauto.
+
+ Case "XAPP".
+  inversions H2; eauto.
+
+ Case "XLam".
+  inversions H2.
+  apply TYLam. rewrite drop_rewind.
+  eapply IHx1; eauto.
+  simpl. eapply type_check_tyclosed_in_any_tyenv. auto. eauto.
+
+ Case "XApp".
+  inversions H2. eauto.
+Qed.
+
+
+Theorem subst_value_value
+ :  forall kenv tenv x1 t1 x2 t2
+ ,  closedXX x2
+ -> closedXT x2
+ -> TYPE kenv (tenv :> t2)   x1 t1
+ -> TYPE kenv tenv x2 t2
+ -> TYPE kenv tenv (substXX x2 x1) t1.
+Proof.
+ intros.
+ assert (tenv = drop 0 (tenv :> t2)). auto. rewrite H3. clear H3.
+ unfold substXX.
+ eapply subst_value_value_drop; simpl; eauto.
 Qed.
 
 

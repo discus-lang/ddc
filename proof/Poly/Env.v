@@ -191,6 +191,7 @@ Proof.
     destruct n. simpl in H. simpl. auto. 
     simpl. simpl in H. apply IHe. auto.
 Qed.
+Hint Resolve get_cons_some.
 
 
 Lemma get_append_some
@@ -276,6 +277,7 @@ Lemma get_drop_above
 Proof.
  intros. breaka (get e1 n); apply get_drop_above'; auto.
 Qed.
+Hint Resolve get_drop_above.
 
 
 Lemma get_drop_below'
@@ -306,5 +308,5 @@ Proof.
  remember (get (drop m e1) n) as r. symmetry.
  eapply get_drop_below'. eauto. auto.
 Qed.
-
+Hint Resolve get_drop_below.
 
