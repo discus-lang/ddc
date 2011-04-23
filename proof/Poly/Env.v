@@ -89,6 +89,7 @@ Proof.
  intros. 
  unfold cons. auto.
 Qed.
+Hint Resolve cons_snoc_empty.
 
 
 Lemma snoc_cons
@@ -97,6 +98,7 @@ Lemma snoc_cons
 Proof.
  intros. destruct e; auto.
 Qed.
+Hint Resolve snoc_cons.
 
 
 (* length lemmas ********************************)
@@ -108,6 +110,7 @@ Proof.
  destruct e1.
   auto. false.
 Qed.
+Hint Resolve length_zero_is_empty.
 
 
 Lemma get_length_more
@@ -156,6 +159,7 @@ Proof.
   auto. 
   simpl. rewrite IHe2. auto.
 Qed.
+Hint Resolve append_snoc.
 
 
 (* get lemmas ***********************************)
@@ -163,6 +167,7 @@ Lemma get_succ
  :  forall A n x (e1: env A)
  ,  get (e1 :> x) (S n) = get e1 n.
 Proof. auto. Qed.
+Hint Resolve get_succ.
 
 
 Lemma get_minus1
@@ -174,6 +179,7 @@ Proof.
   inversions H.
   simpl. assert (n - 0 = n). omega. rewrite H0. auto.
 Qed.
+Hint Resolve get_minus1.
 
 
 Lemma get_cons_some
@@ -205,6 +211,7 @@ Proof.
   intros. rewrite append_snoc.
    eapply IHe2. apply get_cons_some. auto.
 Qed.
+Hint Resolve get_append_some.
 
 
 (* take lemmas **********************************)
@@ -221,6 +228,7 @@ Proof.
    rewrite <- IHe1.
    auto.
 Qed.
+Hint Resolve get_take_succ.
 
 
 Lemma get_take 
@@ -240,6 +248,7 @@ Proof.
     false.
     simpl in H0. simpl. apply IHm. omega. auto.
 Qed.
+Hint Resolve get_take.
 
 
 (* drop lemmas **********************************)
@@ -249,6 +258,7 @@ Lemma drop_rewind
 Proof.
  intros. simpl. auto.
 Qed.
+Hint Resolve drop_rewind.
 
 
 Lemma get_drop_above'

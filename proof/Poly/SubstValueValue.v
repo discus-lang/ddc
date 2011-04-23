@@ -73,16 +73,14 @@ Proof.
  intros ix n t.
  gen n.
  induction t; intros; inverts H; simpl;
-  try (rewrite IHt; auto).
+  try (rewrite IHt; auto);
+  try (rewrite IHt1; auto; rewrite IHt2; auto).
 
  Case "XVar".
   break (bge_nat n n0).
   apply bge_nat_true in HeqX.
   false. omega.
   auto.
-
- Case "XApp".
-  rewrite IHt1. rewrite IHt2. auto. auto. auto.
 Qed.
 
 
@@ -113,7 +111,7 @@ Proof.
  intros. gen ix kenv tenv t1 t2.
  induction x1; intros; inverts H2; simpl; eauto.
 
- Case "XVar". 
+ Case "XVar".
   fbreak_compare.
   SCase "n = ix".
    rewrite liftXX_closed; auto.

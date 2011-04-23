@@ -81,6 +81,7 @@ Lemma kind_check_closedUnderT
 Proof.
  intros. eapply ClosedUnderT. gen kenv k.
  induction t; intros; inverts H; eauto.
+
  Case "TForall".
   apply CoversT_forall.
   eapply IHt in H2. simpl in H2. auto.
