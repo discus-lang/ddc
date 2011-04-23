@@ -62,21 +62,20 @@ Theorem liftX_wfX
  -> wfX tenv x -> liftX ix n x = x.
 Proof.
  intros. gen tenv n.
- induction x; intros.
+ induction x; intros; simpl; simpl in H0.
  
  Case "XVar".
-  simpl. breaka (bge_nat n n0).
-  simpl in H0. apply bge_nat_true in HeqX.
+  breaka (bge_nat n n0).
+  apply bge_nat_true in HeqX.
   false. subst. destruct H0.
   eapply get_above_false in H; auto.
 
  Case "XLam".
-  simpl. simpl in H0.
   eapply IHx in H0; eauto.
   simpl in H0. symmetry. rewrite H. rewrite H0. auto.
 
  Case "XApp".
-  simpl. simpl in H0. destruct H0.
+  destruct H0.
   lets D1: IHx1 H0 H. rewrite D1.
   lets D2: IHx2 H1 H. rewrite D2.
   auto.
@@ -102,41 +101,30 @@ Theorem subst_value_value_drop
  -> TYPE (drop ix tenv) (subst' ix t2 t1) T1.
 Proof.
  intros ix tenv t1 t2 T1 T2. gen ix tenv T1.
- induction t1; intros.
+ induction t1; intros; simpl; inverts H1.
 
  Case "XVar".
-  unfold subst'.
-  break (compare n ix).
+  fbreak_compare.
   SCase "n = ix".
-   apply compare_eq in HeqX. subst.
    rewrite liftX_closed; eauto.
-   inverts H1. rewrite H in H5. inverts H5. auto.
+   rewrite H in H5. inverts H5. auto.
 
   SCase "n < ix".
-   apply compare_lt in HeqX.
-   apply TYVar. inversions H1. rewrite <- H5.
-    eapply get_drop_above. auto.
+   apply TYVar. rewrite <- H5. auto.
    
   SCase "n > ix".
-   apply compare_gt in HeqX.
-   apply TYVar. inversions H1. rewrite <- H5.
+   apply TYVar. rewrite <- H5.
    destruct n. 
-    inversions HeqX.
-    simpl. assert (n - 0 = n). omega. rewrite H1.
-    apply get_drop_below. omega.
+    false. omega.
+    simpl. rewrite nat_minus_zero. apply get_drop_below. omega.
 
  Case "XLam".
-  inversions H1.
-  simpl. apply TYLam.
-   rewrite drop_rewind.
-   apply IHt1; auto.
-    simpl.
-    lets D: type_check_closed_in_empty H0 H2.
-    eapply  type_check_closed_in_any; eauto.
-  
+  apply TYLam. rewrite drop_rewind.
+  apply IHt1; auto.
+  eapply type_check_closed_in_any_tyenv; eauto.
+
  Case "XApp".
-  inversions H1.
-  simpl. eapply TYApp; eauto.
+  eauto.
 Qed.
 
 

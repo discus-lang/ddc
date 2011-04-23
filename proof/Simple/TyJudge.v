@@ -23,6 +23,18 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
+(* Well Formedness **************************************************)
+(* A well typed expression is well formed *)
+Lemma type_wfX
+ :  forall tenv x t
+ ,  TYPE tenv x t
+ -> wfX  tenv x.
+Proof.
+ intros. gen tenv t.
+ induction x; intros; inverts H; simpl; eauto.
+Qed.
+
+
 (* Weakening type environments. *************************************)
 Theorem type_tyenv_weaken1
  :  forall tenv t T1 T2
@@ -30,17 +42,10 @@ Theorem type_tyenv_weaken1
  -> TYPE (T2 <: tenv)  t T1.
 Proof.
  intros. gen tenv T1.
- induction t; intros; inversions H.
-
- Case "XVar".
-  eapply TYVar. apply get_cons_some. auto.
+ induction t; intros; inversions H; eauto.
 
  Case "XLam".
-  eapply TYLam. rewrite snoc_cons.
-  apply IHt. auto.
-
- Case "XApp".
-  eapply TYApp; eauto.
+  eapply TYLam. rewrite snoc_cons. auto.
 Qed.
 
 
@@ -57,7 +62,7 @@ Proof.
 Qed.
 
 
-(* Strengthen type environments *****************)
+(* Strengthen type environments *************************************)
 Theorem type_tyenv_strengthen
  :  forall tenv tenv' n t T
  ,   wfX tenv' t
@@ -70,8 +75,7 @@ Proof.
  
  Case "XVar".
   apply TYVar.
-   destruct H. apply get_take.
-   eapply get_take_more. eauto. auto. 
+   destruct H. eauto. 
 
  Case "XLam".
   simpl in H.
@@ -87,19 +91,7 @@ Qed.
 
 
 (* Checking closed expressions ******************)
-
-(* A well typed expression is well formed *)
-Lemma type_wfX
- :  forall tenv x t
- ,  TYPE tenv x t
- -> wfX  tenv x.
-Proof.
- intros. gen tenv t.
- induction x; intros; inverts H; simpl; eauto.
-Qed.
-
-
-Lemma type_check_empty_is_closed
+Lemma type_check_empty_tyenv_is_closed
  :  forall t T
  ,  TYPE Empty t T
  -> closedX t.
@@ -108,7 +100,7 @@ Proof.
 Qed.
 
 
-Theorem type_check_closed_in_empty
+Theorem type_check_closed_in_empty_tyenv
  :  forall tenv t T
  ,  closedX t
  -> TYPE tenv  t T
@@ -120,14 +112,14 @@ Proof.
 Qed.
 
 
-Theorem type_check_closed_in_any
+Theorem type_check_closed_in_any_tyenv
  :  forall tenv tenv' t1 T1
  ,  closedX t1
  -> TYPE tenv  t1 T1
  -> TYPE tenv' t1 T1.
 Proof.
  intros.
- lets D: type_check_closed_in_empty H H0.
+ lets D: type_check_closed_in_empty_tyenv H H0.
  assert (TYPE (tenv' ++ Empty) t1 T1).
   apply type_tyenv_weaken. auto.
   auto.

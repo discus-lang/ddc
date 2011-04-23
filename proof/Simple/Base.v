@@ -1,6 +1,6 @@
 
 Require Export LibTactics.
-Require Import Omega.
+Require Export Omega.
 
 
 (* Tactics ************************************************)
@@ -66,6 +66,17 @@ Proof.
  intros. omega.
 Qed. 
 
+
+Theorem nat_plus_zero
+ : forall a
+ , a + 0 = a.
+Proof. auto. Qed.
+
+
+Theorem nat_minus_zero
+ : forall a
+ , a - 0 = a.
+Proof. intros. omega. Qed.
 
 
 (* Comparison operators *********************************************)
@@ -218,7 +229,38 @@ Proof.
   apply compare_lt in HeqX. auto.
   inversion H.
 Qed.
- 
+
+
+(* Tactics ************************************************)
+
+(* Break an of the form (compare ?E1 ?E2) into the possible orderings
+      and substitute the ?E1 = ?E2 when they are equal.
+*)
+Tactic Notation "break_compare" constr(E1) constr(E2) :=
+ let X := fresh "X" 
+ in  remember (compare E1 E2) as X; destruct X;     
+      [ match goal with 
+         | [ H: EQ = compare E1 E2 |- _ ] 
+         => apply compare_eq in H; subst
+        end
+      | match goal with 
+         | [ H: LT = compare E1 E2 |- _ ] => apply compare_lt in H
+        end 
+      | match goal with
+         | [ H: GT = compare E1 E2 |- _ ] => apply compare_gt in H
+        end
+      ].
+
+(* Find an expression of the form (compare ?E1 ?E2)
+ 	and call break_compare on it. 
+*)
+Tactic Notation "fbreak_compare" := 
+ match goal with 
+  | [ |- context[compare ?E1 ?E2] ] 
+    => break_compare E1 E2
+ end.
+
+
 
 
 
