@@ -63,7 +63,7 @@ Theorem liftT_covers
  -> liftT it n t = t.
 Proof.
  intros it n t. gen n.
- induction t; intros; inversions H; simpl.
+ induction t; intros; inverts H; simpl.
   try (auto; rewrite IHt; auto).
 
  Case "TVar".
@@ -87,7 +87,7 @@ Theorem liftT_closed
  -> liftT it 0 t = t. 
 Proof.
  intros.
- apply liftT_covers. inversions H. auto.
+ apply liftT_covers. inverts H. auto.
 Qed.
 
 
@@ -104,7 +104,7 @@ Theorem subst_type_type_drop
 Proof.
  intros it kenv t1 k1 t2 k2.
  gen it kenv k1.
- induction t1; intros; simpl; inversions H1; eauto.
+ induction t1; intros; simpl; inverts H1; eauto.
 
  Case "TVar".
   destruct k1. destruct k2.

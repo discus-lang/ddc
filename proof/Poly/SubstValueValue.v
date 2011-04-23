@@ -72,7 +72,7 @@ Theorem liftXX_covers
 Proof.
  intros ix n t.
  gen n.
- induction t; intros; inversions H; simpl;
+ induction t; intros; inverts H; simpl;
   try (rewrite IHt; auto).
 
  Case "XVar".
@@ -93,7 +93,7 @@ Theorem liftXX_closed
  -> liftXX ix 0 x = x. 
 Proof.
  intros.
- apply liftXX_covers. inversions H. auto.
+ apply liftXX_covers. inverts H. auto.
 Qed.
 
 
@@ -111,13 +111,13 @@ Theorem subst_value_value_drop
  -> TYPE kenv (drop ix tenv) (substXX' ix x2 x1) t1.
 Proof.
  intros. gen ix kenv tenv t1 t2.
- induction x1; intros; inversions H2; simpl; eauto.
+ induction x1; intros; inverts H2; simpl; eauto.
 
  Case "XVar". 
   fbreak_compare.
   SCase "n = ix".
    rewrite liftXX_closed; auto.
-   rewrite H1 in H7. inversions H7. auto.
+   rewrite H1 in H7. inverts H7. auto.
 
   SCase "n < ix".
    apply TYVar. rewrite <- H7. auto.

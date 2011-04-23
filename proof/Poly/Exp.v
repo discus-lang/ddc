@@ -119,7 +119,7 @@ Lemma coversXX_succ
  -> coversXX (S n) x.
 Proof.
  intros. gen n.
- induction x; intros; inversions H; auto.
+ induction x; intros; inverts H; auto.
 Qed.
 Hint Resolve coversT_succ.
 
@@ -130,7 +130,7 @@ Lemma coversXT_succ
  -> coversXT (S n) x.
 Proof.
  intros. gen n.
- induction x; intros; inversions H; auto.
+ induction x; intros; inverts H; auto.
 Qed.
 Hint Resolve coversXT_succ.
 

@@ -45,7 +45,7 @@ Lemma type_tyenv_weaken1
  -> TYPE kenv (t2 <: tenv) x1 t1.
 Proof.
  intros. gen kenv tenv t1.
- induction x1; intros; inversions H; eauto.
+ induction x1; intros; inverts H; eauto.
 
  Case "XLam".
   apply TYLam. rewrite snoc_cons. auto.
@@ -72,7 +72,7 @@ Lemma type_kienv_weaken1
  -> TYPE (k1 <: kenv) tenv x1 t1.
 Proof.
  intros. gen kenv tenv t1.
- induction x1; intros; inversions H; eauto.
+ induction x1; intros; inverts H; eauto.
 
  Case "XLAM".
   apply TYLAM. rewrite snoc_cons. auto.
@@ -105,14 +105,14 @@ Lemma type_tyenv_strengthen
  ->  TYPE kenv tenv' x t.
 Proof.
  intros. gen kenv tenv tenv' n t.
- induction x; intros; inversions H1; inversions H; eauto.
+ induction x; intros; inverts H1; inverts H; eauto.
 
  Case "XVar".
-  apply TYVar.
+  apply TYVar. subst.
   apply get_take; auto.
 
  Case "XLam".
-  apply TYLam.
+  apply TYLam. subst.
   eapply IHx with (n := S n) (tenv := tenv :> t); auto.
 Qed.
 
@@ -126,14 +126,14 @@ Lemma type_kienv_strengthen
  ->  TYPE kenv' tenv x t.
 Proof.
  intros. gen kenv kenv' tenv n t.
- induction x; intros; inversions H1; inversions H; eauto.
+ induction x; intros; inverts H1; inverts H; eauto.
 
  Case "XLAM".
-  apply TYLAM.
+  apply TYLAM. subst.
   apply IHx with (n := S n) (kenv := kenv :> KStar); auto.
 
  Case "XAPP".
-  apply TYAPP. eauto.
+  apply TYAPP. eauto. subst.
   eapply kind_kienv_strengthen; auto. auto.
 Qed.
 
@@ -147,7 +147,7 @@ Lemma type_check_closedUnderXX
  -> closedUnderXX tenv x.
 Proof.
  intros. eapply ClosedUnderXX. gen kenv tenv t.
- induction x; intros; inversions H; eauto.
+ induction x; intros; inverts H; eauto.
 
  Case "XLam".
   apply IHx in H5. auto.
@@ -160,7 +160,7 @@ Lemma type_check_empty_tyenv_is_tyclosed
  -> closedXX x.
 Proof.
  intros. eapply type_check_closedUnderXX in H.
- inversions H. auto.
+ inverts H. auto.
 Qed.
 
 
@@ -170,7 +170,7 @@ Lemma type_check_tyclosed_in_empty_tyenv
  -> TYPE kenv tenv  x t
  -> TYPE kenv Empty x t.
 Proof.
- intros. inversions H.
+ intros. inverts H.
  eapply type_tyenv_strengthen; eauto.
 Qed.
 
@@ -196,14 +196,14 @@ Lemma type_check_closedUnderXT
  -> closedUnderXT kenv x.
 Proof.
  intros. eapply ClosedUnderXT. gen kenv tenv t.
- induction x; intros; inversions H; eauto.
+ induction x; intros; inverts H; eauto.
 
  Case "XLAM".
   apply IHx in H3. auto.
 
  Case "XAPP".
   apply CoversXT_APP. eapply IHx; eauto.
-  apply kind_check_closedUnderT in H6. inversions H6. auto.
+  apply kind_check_closedUnderT in H6. inverts H6. auto.
 Qed.
 
 
@@ -213,7 +213,7 @@ Lemma type_check_empty_kienv_is_kiclosed
  -> closedXT x.
 Proof.
  intros. eapply type_check_closedUnderXT in H.
- inversions H. auto.
+ inverts H. auto.
 Qed.
 
 
@@ -223,7 +223,7 @@ Lemma type_check_kiclosed_in_empty_kienv
  -> TYPE kenv  tenv x t
  -> TYPE Empty tenv x t.
 Proof.
- intros. inversions H.
+ intros. inverts H.
  eapply type_kienv_strengthen; eauto.
 Qed.
 
