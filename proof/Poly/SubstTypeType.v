@@ -3,7 +3,7 @@ Require Import KiJudge.
 Require Import Base.
 
 (* Lift type indices that are at least a certain depth. *)
-Fixpoint liftT (n: nat) (depth: nat) (tt: ty) : ty :=
+Fixpoint liftTT (n: nat) (depth: nat) (tt: ty) : ty :=
  match tt with
  | TCon _     => tt
 
@@ -11,42 +11,43 @@ Fixpoint liftT (n: nat) (depth: nat) (tt: ty) : ty :=
                   then TVar (it + n)
                   else tt
 
- | TForall t  => TForall (liftT n (S depth) t)
- | TFun t1 t2 => TFun (liftT n depth t1)
-                      (liftT n depth t2)
+ | TForall t  => TForall (liftTT n (S depth) t)
+ | TFun t1 t2 => TFun    (liftTT n depth t1)
+                         (liftTT n depth t2)
  end.
 
 
 (* Substitution of Types in Types *)
-Fixpoint substT' (depth: nat) (u: ty) (tt: ty) : ty :=
+Fixpoint substTT' (depth: nat) (u: ty) (tt: ty) : ty :=
  match tt with
  | TCon _     => tt
  
  | TVar it    => match compare it depth with
-                 | EQ => liftT depth 0 u
+                 | EQ => liftTT depth 0 u
                  | GT => TVar (it - 1)
                  | _  => TVar  it
                  end
 
- | TForall t  => TForall (substT' (S depth) u t)
- | TFun t1 t2 => TFun (substT' depth u t1)
-                      (substT' depth u t2)
+ | TForall t  => TForall (substTT' (S depth) u t)
+ | TFun t1 t2 => TFun    (substTT' depth u t1)
+                         (substTT' depth u t2)
  end.
 
 
-Definition  substT := substT' 0.
-Hint Unfold substT.
+Definition  substTT := substTT' 0.
+Hint Unfold substTT.
 
 
 (* Lifting Lemmas ***************************************************)
 
 (* Lifting an type by zero steps doesn't do anything. *)
-Theorem liftT_zero
+Theorem liftTT_zero
  :  forall t1 depth
- ,  liftT 0 depth t1 = t1.
+ ,  liftTT 0 depth t1 = t1.
 Proof.
  induction t1; intros; simpl; 
-  try (auto; rewrite IHt1; auto).
+  try auto;
+  try (rewrite IHt1; auto).
 
  Case "TVar".
   breaka (bge_nat n depth).
@@ -57,37 +58,33 @@ Qed.
 
 
 (* Lifting covered indices doesn't do anything. *)
-Theorem liftT_covers
+Theorem liftTT_covers
  :  forall it n t
- ,  coversT n t
- -> liftT it n t = t.
+ ,  coversTT n t
+ -> liftTT it n t = t.
 Proof.
  intros it n t. gen n.
- induction t; intros; inverts H; simpl.
-  try (auto; rewrite IHt; auto).
+ induction t; intros; inverts H; simpl;
+  try auto;
+  try (rewrite IHt; auto);
+  try (rewrite IHt1; auto; rewrite IHt2; auto).
 
  Case "TVar".
   break (bge_nat n n0).
   apply bge_nat_true in HeqX.
   false. omega.
   auto.
-
- Case "TForall".
-  rewrite IHt; auto.
-
- Case "TFun".
-  rewrite IHt1. rewrite IHt2. auto. auto. auto.
 Qed.
 
 
 (* If a type is closed, then lifting it doesn't do anything. *)
-Theorem liftT_closed
+Theorem liftTT_closed
  :  forall it t
- ,  closedT t 
- -> liftT it 0 t = t. 
+ ,  closedTT t 
+ -> liftTT it 0 t = t. 
 Proof.
  intros.
- apply liftT_covers. inverts H. auto.
+ apply liftTT_covers. inverts H. auto.
 Qed.
 
 
@@ -96,11 +93,11 @@ Qed.
 (* Substitution of types in types preserves kinding. *)
 Theorem subst_type_type_drop
  :  forall it kenv t1 k1 t2 k2
- ,  closedT t2
+ ,  closedTT t2
  -> get  kenv it = Some k2
  -> KIND kenv           t1 k1
  -> KIND (drop it kenv) t2 k2
- -> KIND (drop it kenv) (substT' it t2 t1) k1.
+ -> KIND (drop it kenv) (substTT' it t2 t1) k1.
 Proof.
  intros it kenv t1 k1 t2 k2.
  gen it kenv k1.
@@ -110,11 +107,10 @@ Proof.
   destruct k1. destruct k2.
   fbreak_compare.
   SCase "n = it".
-   rewrite liftT_closed; auto.
+   rewrite liftTT_closed; auto.
 
   SCase "n < it".
-   apply KIVar. rewrite <- H5.
-   apply get_drop_above. auto.
+   apply KIVar. rewrite <- H5. auto.
 
   SCase "n > it".
    apply KIVar. rewrite <- H5.
@@ -131,16 +127,15 @@ Qed.
 
 Theorem subst_type_type
  :  forall kenv t1 k1 t2 k2
- ,  closedT t2
- -> KIND (kenv :> k2) t1 k1
- -> KIND kenv         t2 k2
- -> KIND kenv (substT t2 t1) k1.
+ ,  closedTT t2
+ -> KIND (kenv :> k2)  t1 k1
+ -> KIND kenv          t2 k2
+ -> KIND kenv (substTT t2 t1) k1.
 Proof.
  intros.
  assert (kenv = drop 0 (kenv :> k2)). auto. rewrite H2. clear H2.
- unfold substT.
+ unfold substTT.
  eapply subst_type_type_drop; simpl; eauto.
 Qed.
-
 
 

@@ -33,7 +33,7 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
    :  forall kenv tenv x1 t1 t2
    ,  TYPE kenv tenv x1 (TForall t1)
    -> KIND kenv t2 KStar
-   -> TYPE kenv tenv (XAPP x1 t2) (substT t2 t1). 
+   -> TYPE kenv tenv (XAPP x1 t2) (substTT t2 t1). 
 
 Hint Constructors TYPE.
 
@@ -203,7 +203,7 @@ Proof.
 
  Case "XAPP".
   apply CoversXT_APP. eapply IHx; eauto.
-  apply kind_check_closedUnderT in H6. inverts H6. auto.
+  apply kind_check_closedUnderTT in H6. inverts H6. auto.
 Qed.
 
 

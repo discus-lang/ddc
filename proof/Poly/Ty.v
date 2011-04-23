@@ -25,43 +25,43 @@ Definition kienv := env ki.
 (* Closedness *******************************************************)
 
 (* Type is closed under a kind environment of a given length. *)
-Inductive coversT : nat -> ty -> Prop :=
- | CoversT_con 
+Inductive coversTT : nat -> ty -> Prop :=
+ | CoversTT_con 
    :  forall n c
-   ,  coversT n (TCon c)
+   ,  coversTT n (TCon c)
 
- | CoversT_var         
+ | CoversTT_var         
    :  forall n i
    ,  n > i 
-   -> coversT n (TVar i)
+   -> coversTT n (TVar i)
 
- | CoversT_forall
+ | CoversTT_forall
    :  forall n t
-   ,  coversT (S n) t
-   -> coversT n (TForall t)
+   ,  coversTT (S n) t
+   -> coversTT n (TForall t)
 
  | CoversT_fun
    :  forall n t1 t2
-   ,  coversT n t1 -> coversT n t2
-   -> coversT n (TFun t1 t2).
-Hint Constructors coversT.
+   ,  coversTT n t1 -> coversTT n t2
+   -> coversTT n (TFun t1 t2).
+Hint Constructors coversTT.
 
 
 (* Type is closed under the given kind environment. *)
-Inductive closedUnderT : kienv -> ty -> Prop :=
- | ClosedUnderT 
+Inductive closedUnderTT : kienv -> ty -> Prop :=
+ | ClosedUnderTT 
    :  forall kenv t
-   ,  coversT (length kenv) t
-   -> closedUnderT kenv t.
+   ,  coversTT (length kenv) t
+   -> closedUnderTT kenv t.
 
 
 (* Type is closed under an empty kind environment. *)
-Inductive closedT : ty -> Prop :=
- | ClosedT 
+Inductive closedTT : ty -> Prop :=
+ | ClosedTT 
    :  forall t
-   ,  coversT 0 t
-   -> closedT t.
-Hint Constructors closedT.
+   ,  coversTT 0 t
+   -> closedTT t.
+Hint Constructors closedTT.
 
 
 (* Normal Types *****************************************************
@@ -85,14 +85,14 @@ Hint Constructors normalT.
 
 
 (* Lemmas ***********************************************************)
-Lemma coversT_succ
+Lemma coversTT_succ
  :  forall n t
- ,  coversT n     t
- -> coversT (S n) t.
+ ,  coversTT n     t
+ -> coversTT (S n) t.
 Proof.
  intros. gen n.
  induction t; intros; inversions H; auto.
 Qed.
-Hint Resolve coversT_succ.
+Hint Resolve coversTT_succ.
 
   

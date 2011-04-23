@@ -54,13 +54,11 @@ Theorem liftXX_zero
  ,  liftXX 0 depth x = x.
 Proof.
  induction x; intros; simpl; 
-  try (rewrite IHx; auto).
+  try (rewrite IHx; auto);
+  try (rewrite IHx1; auto; rewrite IHx2; auto).
 
  Case "TVar".
   breaka (bge_nat n depth).
-
- Case "TApp".
-  rewrite IHx1. rewrite IHx2. auto.
 Qed.
 
 

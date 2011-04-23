@@ -56,7 +56,7 @@ Qed.
 (* Strenghten kind environment **************************************)
 Lemma kind_kienv_strengthen
  :  forall kenv kenv' n t k
- ,   coversT n t
+ ,   coversTT n t
  ->  kenv' = take n kenv
  ->  KIND kenv  t k
  ->  KIND kenv' t k.
@@ -74,16 +74,16 @@ Qed.
 
 
 (* Checking closed types ********************************************)
-Lemma kind_check_closedUnderT
+Lemma kind_check_closedUnderTT
  :  forall kenv t k
  ,  KIND   kenv t k
- -> closedUnderT kenv t.
+ -> closedUnderTT kenv t.
 Proof.
- intros. eapply ClosedUnderT. gen kenv k.
+ intros. eapply ClosedUnderTT. gen kenv k.
  induction t; intros; inverts H; eauto.
 
  Case "TForall".
-  apply CoversT_forall.
+  apply CoversTT_forall.
   eapply IHt in H2. simpl in H2. auto.
 Qed.
 
@@ -91,16 +91,16 @@ Qed.
 Lemma kind_check_empty_is_closed
  :  forall     t k
  ,  KIND Empty t k 
- -> closedT t.
+ -> closedTT t.
 Proof.
- intros. eapply kind_check_closedUnderT in H.
+ intros. eapply kind_check_closedUnderTT in H.
  inverts H. auto.
 Qed.
 
 
 Lemma kind_check_closed_in_empty
  :  forall kenv t k
- ,  closedT t
+ ,  closedTT t
  -> KIND kenv  t k
  -> KIND Empty t k.
 Proof.
@@ -111,7 +111,7 @@ Qed.
 
 Theorem kind_check_closed_in_any
  :  forall kenv kenv' t k
- ,  closedT t
+ ,  closedTT t
  -> KIND kenv  t k
  -> KIND kenv' t k.
 Proof.

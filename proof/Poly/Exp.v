@@ -79,7 +79,7 @@ Inductive coversXT : nat -> exp -> Prop :=
  | CoversXT_APP 
    :  forall n x t
    ,  coversXT n x
-   -> coversT  n t
+   -> coversTT n t
    -> coversXT n (XAPP x t)
 
  | CoversXT_lam
@@ -121,7 +121,7 @@ Proof.
  intros. gen n.
  induction x; intros; inverts H; auto.
 Qed.
-Hint Resolve coversT_succ.
+Hint Resolve coversTT_succ.
 
 
 Lemma coversXT_succ
