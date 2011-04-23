@@ -66,50 +66,50 @@ Hint Constructors closedXX.
 (* Closedness under kind environment ********************************)
 
 (* Exp is type closed under a kind environment of a given length *)
-Inductive coversXT : nat -> exp -> Prop :=
- | CoversXT_var
+Inductive coversTX : nat -> exp -> Prop :=
+ | CoversTX_var
    :  forall n i
-   ,  coversXT n (XVar i)
+   ,  coversTX n (XVar i)
 
- | CoversXT_LAM
+ | CoversTX_LAM
    :  forall n x
-   ,  coversXT (S n) x
-   -> coversXT n (XLAM x)
+   ,  coversTX (S n) x
+   -> coversTX n (XLAM x)
 
- | CoversXT_APP 
+ | CoversTX_APP 
    :  forall n x t
-   ,  coversXT n x
+   ,  coversTX n x
    -> coversTT n t
-   -> coversXT n (XAPP x t)
+   -> coversTX n (XAPP x t)
 
- | CoversXT_lam
+ | CoversTX_lam
    :  forall n t x
-   ,  coversXT n x
-   -> coversXT n (XLam t x)
+   ,  coversTX n x
+   -> coversTX n (XLam t x)
 
- | CoversXT_app
+ | CoversTX_app
    :  forall n x1 x2
-   ,  coversXT n x1 -> coversXT n x2
-   -> coversXT n (XApp x1 x2).
-Hint Constructors coversXT.
+   ,  coversTX n x1 -> coversTX n x2
+   -> coversTX n (XApp x1 x2).
+Hint Constructors coversTX.
 
 
 (* Exp is type closed under the given kind environment *)
-Inductive closedUnderXT : kienv -> exp -> Prop :=
-  |  ClosedUnderXT 
+Inductive closedUnderTX : kienv -> exp -> Prop :=
+  |  ClosedUnderTX 
      :  forall kenv x
-     ,  coversXT (length kenv) x
-     -> closedUnderXT kenv x.
-Hint Constructors closedUnderXT.
+     ,  coversTX (length kenv) x
+     -> closedUnderTX kenv x.
+Hint Constructors closedUnderTX.
 
 
 (* Exp is type closed under the empty kind environment *)
-Inductive closedXT : exp -> Prop :=
- |  ClosedXT
+Inductive closedTX : exp -> Prop :=
+ |  ClosedTX
     :  forall x
-    ,  coversXT 0 x
-    -> closedXT x.
-Hint Constructors closedXT.
+    ,  coversTX 0 x
+    -> closedTX x.
+Hint Constructors closedTX.
 
 
 (* Lemmas ***********************************************************)
@@ -124,16 +124,14 @@ Qed.
 Hint Resolve coversTT_succ.
 
 
-Lemma coversXT_succ
+Lemma coversTX_succ
  :  forall n x
- ,  coversXT n     x
- -> coversXT (S n) x.
+ ,  coversTX n     x
+ -> coversTX (S n) x.
 Proof.
  intros. gen n.
  induction x; intros; inverts H; auto.
 Qed.
-Hint Resolve coversXT_succ.
-
-
+Hint Resolve coversTX_succ.
 
 

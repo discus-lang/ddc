@@ -120,7 +120,7 @@ Qed.
 (* Strenghten kind environment **************************************)
 Lemma type_kienv_strengthen
  :  forall kenv kenv' tenv n x t
- ,   coversXT n x
+ ,   coversTX n x
  ->  kenv' = take n kenv
  ->  TYPE kenv  tenv x t
  ->  TYPE kenv' tenv x t.
@@ -190,19 +190,19 @@ Qed.
 
 
 (* Closure under kind environment ***************)
-Lemma type_check_closedUnderXT
+Lemma type_check_closedUnderTX
  :  forall kenv tenv x t
  ,  TYPE kenv tenv x t
- -> closedUnderXT kenv x.
+ -> closedUnderTX kenv x.
 Proof.
- intros. eapply ClosedUnderXT. gen kenv tenv t.
+ intros. eapply ClosedUnderTX. gen kenv tenv t.
  induction x; intros; inverts H; eauto.
 
  Case "XLAM".
   apply IHx in H3. auto.
 
  Case "XAPP".
-  apply CoversXT_APP. eapply IHx; eauto.
+  apply CoversTX_APP. eapply IHx; eauto.
   apply kind_check_closedUnderTT in H6. inverts H6. auto.
 Qed.
 
@@ -210,16 +210,16 @@ Qed.
 Lemma type_check_empty_kienv_is_kiclosed
  :  forall tenv x t
  ,  TYPE Empty tenv x t
- -> closedXT x.
+ -> closedTX x.
 Proof.
- intros. eapply type_check_closedUnderXT in H.
+ intros. eapply type_check_closedUnderTX in H.
  inverts H. auto.
 Qed.
 
 
 Lemma type_check_kiclosed_in_empty_kienv
  :  forall kenv tenv x t
- ,  closedXT x
+ ,  closedTX x
  -> TYPE kenv  tenv x t
  -> TYPE Empty tenv x t.
 Proof.
@@ -230,7 +230,7 @@ Qed.
 
 Lemma type_check_kiclosed_in_any_kienv
  :  forall kenv kenv' tenv x t
- ,  closedXT x
+ ,  closedTX x
  -> TYPE kenv  tenv x t
  -> TYPE kenv' tenv x t.
 Proof.

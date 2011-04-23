@@ -100,7 +100,7 @@ Qed.
 Theorem subst_value_value_drop
  :  forall ix kenv tenv x1 t1 x2 t2
  ,  closedXX x2
- -> closedXT x2
+ -> closedTX x2
  -> get  tenv ix = Some t2
  -> TYPE kenv tenv           x1 t1
  -> TYPE kenv (drop ix tenv) x2 t2
@@ -140,7 +140,7 @@ Qed.
 Theorem subst_value_value
  :  forall kenv tenv x1 t1 x2 t2
  ,  closedXX x2
- -> closedXT x2
+ -> closedTX x2
  -> TYPE kenv (tenv :> t2)   x1 t1
  -> TYPE kenv tenv x2 t2
  -> TYPE kenv tenv (substXX x2 x1) t1.
