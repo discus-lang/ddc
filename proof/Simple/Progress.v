@@ -31,7 +31,7 @@ Proof.
    destruct IHTYPE2.
    SSCase "value t2".
     inversions H1.
-    exists (subLocalX t2 t). apply EVLamApp. auto.
+    exists (subst t2 t). apply EVLamApp. auto.
    SSCase "t2 steps".
     destruct H2 as [t2']. exists (XApp t1 t2'). auto.
   SSCase "t1 steps".

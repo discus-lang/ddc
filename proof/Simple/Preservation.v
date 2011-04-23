@@ -15,7 +15,7 @@ Proof.
  intros t t' T HT HS. gen T t'.
  induction t; intros.
 
- (* These can't happen ase there is no evaluation rule *)
+ (* These can't happen as there is no evaluation rule *)
  Case "XVar". inversion HS.
  Case "XLam". inversion HS.
 

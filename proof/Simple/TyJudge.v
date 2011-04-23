@@ -60,7 +60,7 @@ Qed.
 (* Strengthen type environments *****************)
 Theorem type_tyenv_strengthen
  :  forall tenv tenv' n t T
- ,   coversX n t
+ ,   wfX tenv' t
  ->  tenv' = take n tenv
  ->  TYPE tenv  t T
  ->  TYPE tenv' t T.
@@ -69,18 +69,17 @@ Proof.
  induction t; intros; inversions H1.
  
  Case "XVar".
-  inversions H.
   apply TYVar.
-   apply get_take; auto.
+   destruct H. apply get_take.
+   eapply get_take_more. eauto. auto. 
 
  Case "XLam".
-  inversions H.
+  simpl in H.
   eapply TYLam.
    eapply IHt with (n := S n) (tenv := tenv :> t); auto.
-   auto.
 
  Case "XApp".
-  inversions H.
+  simpl in H. destruct H.
   eapply TYApp.
    eapply IHt1; eauto.
    eapply IHt2; eauto.
@@ -88,24 +87,15 @@ Qed.
 
 
 (* Checking closed expressions ******************)
-Lemma type_check_closedUnderX 
- :  forall tenv t T
- ,  TYPE tenv t T
- -> closedUnderX tenv t.
+
+(* A well typed expression is well formed *)
+Lemma type_wfX
+ :  forall tenv x t
+ ,  TYPE tenv x t
+ -> wfX  tenv x.
 Proof.
- intros. apply ClosedUnderX. gen tenv T.
- induction t; intros; inversions H.
- 
- Case "XVar".
-  apply CoversX_var.
-  eapply get_length_more. eauto.
-
- Case "XLam". 
-  apply CoversX_lam.
-  apply IHt in H4. simpl in H4. auto.
-
- Case "XApp".
-  apply CoversX_app; eauto.
+ intros. gen tenv t.
+ induction x; intros; inverts H; simpl; eauto.
 Qed.
 
 
@@ -114,8 +104,7 @@ Lemma type_check_empty_is_closed
  ,  TYPE Empty t T
  -> closedX t.
 Proof.
- intros. apply type_check_closedUnderX in H.
- inversions H. simpl in H0. apply ClosedX. auto.
+ intros. unfold closedX. eapply type_wfX. eauto.
 Qed.
 
 
@@ -125,8 +114,9 @@ Theorem type_check_closed_in_empty
  -> TYPE tenv  t T
  -> TYPE Empty t T.
 Proof.
- intros. inversions H.
+ intros. unfold closedX in H. 
  eapply type_tyenv_strengthen; eauto.
+ eapply take_zero.
 Qed.
 
 

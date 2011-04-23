@@ -1,6 +1,6 @@
 
 Require Export Exp.
-Require Export Substitute.
+Require Export SubstValueValue.
 
 
 (** Evaluation *******************************************)
@@ -9,7 +9,7 @@ Inductive STEP : exp -> exp -> Prop :=
     : forall T11 t12 tv2
     ,  value tv2
     -> STEP (XApp   (XLam T11 t12) tv2)
-            (subLocalX tv2 t12)
+            (subst tv2 t12)
 
  |  EVApp1 
     :  forall t1 t1' t2

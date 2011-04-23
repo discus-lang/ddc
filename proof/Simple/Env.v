@@ -163,6 +163,20 @@ Lemma get_succ
  :  forall A n x (e1: env A)
  ,  get (e1 :> x) (S n) = get e1 n.
 Proof. auto. Qed.
+Hint Resolve get_succ.
+
+
+Lemma get_succ_some
+ :  forall A (e1: env A) n
+ ,  (exists t, get e1 (S n) = Some t)
+ -> (exists t, get e1 n     = Some t).
+Proof.
+ intros. gen n.
+ induction e1; intros.
+  eauto.
+  destruct n; simpl; eauto.
+Qed.
+Hint Resolve get_succ_some.
 
 
 Lemma get_minus1
@@ -174,6 +188,7 @@ Proof.
   inversions H.
   simpl. assert (n - 0 = n). omega. rewrite H0. auto.
 Qed.
+Hint Resolve get_minus1.
 
 
 Lemma get_cons_some
@@ -191,6 +206,7 @@ Proof.
     destruct n. simpl in H. simpl. auto. 
     simpl. simpl in H. apply IHe. auto.
 Qed.
+Hint Resolve get_cons_some.
 
 
 Lemma get_append_some
@@ -204,9 +220,36 @@ Proof.
   intros. rewrite append_snoc.
    eapply IHe2. apply get_cons_some. auto.
 Qed.
+Hint Resolve get_append_some.
+
+
+Theorem get_above_false
+ :  forall A n (e1: env A) t
+ ,  n >= length e1 
+ -> get e1 n = Some t 
+ -> False.
+Proof.
+ intros. gen n t.
+ induction e1; intros.
+  simpl in H0. false.
+  destruct n.
+   simpl in H0. inverts H0. inverts H.
+   simpl in H0. simpl in H.
+   assert (n >= length e1). omega.
+   eapply IHe1 in H1. auto. eauto.
+Qed.
 
 
 (* take lemmas **********************************)
+Lemma take_zero
+ :  forall A (e1: env A)
+ ,  Empty = take O e1.
+Proof.
+ intros. auto.
+Qed.
+Hint Resolve take_zero.
+
+
 Lemma get_take_succ
  :  forall A n (e1: env A)
  ,  get (take (S n) e1) n = get e1 n.
@@ -220,6 +263,7 @@ Proof.
    rewrite <- IHe1.
    auto.
 Qed.
+Hint Resolve get_take_succ.
 
 
 Lemma get_take 
@@ -239,6 +283,22 @@ Proof.
     false.
     simpl in H0. simpl. apply IHm. omega. auto.
 Qed.
+Hint Resolve get_take.
+
+
+Lemma get_take_more
+ :  forall A m n (e1: env A) (x : A)
+ ,  get (take m e1) n = Some x -> m > n.
+Proof.
+ intros. gen n e1.
+ induction m; intros.
+  false.
+  destruct e1.
+   simpl in H. false.
+   simpl in H. destruct n. auto.
+   apply IHm in H. omega.
+Qed.
+Hint Resolve get_take_more.
 
 
 (* drop lemmas **********************************)
@@ -248,6 +308,7 @@ Lemma drop_rewind
 Proof.
  intros. simpl. auto.
 Qed.
+Hint Resolve drop_rewind.
 
 
 Lemma get_drop_above'
@@ -276,6 +337,7 @@ Lemma get_drop_above
 Proof.
  intros. breaka (get e1 n); apply get_drop_above'; auto.
 Qed.
+Hint Resolve get_drop_above.
 
 
 Lemma get_drop_below'
@@ -306,5 +368,5 @@ Proof.
  remember (get (drop m e1) n) as r. symmetry.
  eapply get_drop_below'. eauto. auto.
 Qed.
-
+Hint Resolve get_drop_below.
 
