@@ -3,7 +3,7 @@ Require Import TyJudge.
 Require Export Exp.
 
 
-(** Substitution ******************************************)
+(** Substitution ****************************************************)
 Fixpoint liftX (n: nat) (depth: nat) (xx: exp) : exp :=
  match xx with 
  | XVar ix    => if bge_nat ix depth
@@ -139,6 +139,4 @@ Proof.
  lets H: subst_value_value_drop 0 (tenv :> t2).
   simpl in H. eapply H; eauto.
 Qed.
-
-
 

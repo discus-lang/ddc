@@ -87,7 +87,7 @@ Proof.
 Qed.
 
 
-(* Checking closed expressions ******************)
+(* Checking closed expressions **************************************)
 Theorem type_check_empty_tyenv_is_closed
  :  forall x t
  ,  TYPE Empty x t
