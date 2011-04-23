@@ -2,7 +2,7 @@
 Require Import Ty.
 Require Import Env.
 Require Import Base.
-
+Require Import SubstTypeType.
 
 (** Expressions *****************************************************)
 Inductive exp : Type :=

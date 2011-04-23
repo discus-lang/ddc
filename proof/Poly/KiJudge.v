@@ -26,6 +26,19 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
 Hint Constructors KIND.
 
 
+(* Well Formedness **************************************************)
+
+(* A well kinded type is well formed *)
+Theorem kind_wfT
+ :  forall kenv t k
+ ,  KIND kenv t k
+ -> wfT kenv t.
+Proof.
+ intros. gen kenv k.
+ induction t; intros; inverts H; simpl; eauto.
+Qed.
+
+
 (* Weakening kind environment ***************************************)
 Lemma kind_kienv_weaken1
  :  forall kenv t1 k1 k2
@@ -34,6 +47,7 @@ Lemma kind_kienv_weaken1
 Proof.
  intros. gen kenv k1.
  induction t1; intros; inverts H; eauto.
+
  Case "TForall".
   apply KIForall.
   rewrite snoc_cons. apply IHt1. auto.
@@ -56,62 +70,51 @@ Qed.
 (* Strenghten kind environment **************************************)
 Lemma kind_kienv_strengthen
  :  forall kenv kenv' n t k
- ,   coversTT n t
+ ,   wfT kenv' t
  ->  kenv' = take n kenv
  ->  KIND kenv  t k
  ->  KIND kenv' t k.
 Proof.
  intros. gen kenv kenv' n k.
- induction t; intros; inverts H; inverts H1; eauto.
+ induction t; intros; inverts H1; eauto.
  Case "TVar".
-  apply KIVar. subst.
-  apply get_take; auto.
+  apply KIVar.
+   destruct H.  subst. eauto.
 
  Case "TForall".
   apply KIForall. subst.
   eapply IHt with (n := S n) (kenv := kenv :> KStar); auto.
+
+ Case "TFun".
+  inverts H. eauto.
 Qed.
 
 
 (* Checking closed types ********************************************)
-Lemma kind_check_closedUnderTT
- :  forall kenv t k
- ,  KIND   kenv t k
- -> closedUnderTT kenv t.
-Proof.
- intros. eapply ClosedUnderTT. gen kenv k.
- induction t; intros; inverts H; eauto.
-
- Case "TForall".
-  apply CoversTT_forall.
-  eapply IHt in H2. simpl in H2. auto.
-Qed.
-
-
 Lemma kind_check_empty_is_closed
  :  forall     t k
  ,  KIND Empty t k 
- -> closedTT t.
+ -> closedT t.
 Proof.
- intros. eapply kind_check_closedUnderTT in H.
- inverts H. auto.
+ intros. unfold closedT. eapply kind_wfT. eauto.
 Qed.
 
 
 Lemma kind_check_closed_in_empty
  :  forall kenv t k
- ,  closedTT t
+ ,  closedT t
  -> KIND kenv  t k
  -> KIND Empty t k.
 Proof.
- intros. inverts H.
+ intros. unfold closedT in H.
  eapply kind_kienv_strengthen; eauto.
+ eapply take_zero.
 Qed.
 
 
 Theorem kind_check_closed_in_any
  :  forall kenv kenv' t k
- ,  closedTT t
+ ,  closedT t
  -> KIND kenv  t k
  -> KIND kenv' t k.
 Proof.

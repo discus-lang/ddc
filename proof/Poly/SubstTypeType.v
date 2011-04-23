@@ -57,22 +57,28 @@ Proof.
 Qed.
 
 
-(* Lifting covered indices doesn't do anything. *)
-Theorem liftTT_covers
- :  forall it n t
- ,  coversTT n t
- -> liftTT it n t = t.
+Theorem liftT_wfT
+ :  forall ix n t kenv
+ ,  n = length kenv
+ -> wfT kenv t 
+ -> liftTT ix n t = t.
 Proof.
- intros it n t. gen n.
- induction t; intros; inverts H; simpl;
-  try auto;
-  try (rewrite IHt; auto);
-  try (rewrite IHt1; auto; rewrite IHt2; auto).
+ intros. gen kenv n.
+ induction t; intros; simpl; simpl in H; eauto.
 
  Case "TVar".
-  break (bge_nat n n0).
+  breaka (bge_nat n n0).
   apply bge_nat_true in HeqX.
-  false. omega.
+  false. subst. destruct H0. eapply get_above_false; eauto.
+
+ Case "TForall".
+  eapply IHt in H0; eauto.
+  simpl in H0. symmetry. rewrite H. rewrite H0. auto.
+
+ Case "TFun".
+  destruct H0.
+  lets D1: IHt1 H0 H. rewrite D1.
+  lets D2: IHt2 H1 H. rewrite D2.
   auto.
 Qed.
 
@@ -80,11 +86,11 @@ Qed.
 (* If a type is closed, then lifting it doesn't do anything. *)
 Theorem liftTT_closed
  :  forall it t
- ,  closedTT t 
+ ,  closedT t 
  -> liftTT it 0 t = t. 
 Proof.
- intros.
- apply liftTT_covers. inverts H. auto.
+ intros. unfold closedT in H. eapply liftT_wfT; eauto.
+ simpl. auto.
 Qed.
 
 
@@ -93,7 +99,7 @@ Qed.
 (* Substitution of types in types preserves kinding. *)
 Theorem subst_type_type_drop
  :  forall it kenv t1 k1 t2 k2
- ,  closedTT t2
+ ,  closedT t2
  -> get  kenv it = Some k2
  -> KIND kenv           t1 k1
  -> KIND (drop it kenv) t2 k2
@@ -127,7 +133,7 @@ Qed.
 
 Theorem subst_type_type
  :  forall kenv t1 k1 t2 k2
- ,  closedTT t2
+ ,  closedT t2
  -> KIND (kenv :> k2)  t1 k1
  -> KIND kenv          t2 k2
  -> KIND kenv (substTT t2 t1) k1.
