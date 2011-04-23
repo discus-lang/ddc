@@ -41,7 +41,7 @@ Definition closedX (xx: exp) : Prop
 (* Values are closed expressions that cannot be reduced further. *)
 Inductive value : exp -> Prop :=
  | Value_lam 
-   : forall T t
-   , closedX (XLam T t) -> value (XLam T t).
+   : forall t x
+   , closedX (XLam t x) -> value (XLam t x).
 Hint Constructors value.
 

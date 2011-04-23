@@ -4,31 +4,31 @@ Require Export Exp.
 
 
 (** Substitution ******************************************)
-Fixpoint liftX (n: nat) (depth: nat) (tt: exp) : exp :=
- match tt with 
+Fixpoint liftX (n: nat) (depth: nat) (xx: exp) : exp :=
+ match xx with 
  | XVar ix    => if bge_nat ix depth
                   then XVar (ix + n)
-                  else tt
+                  else xx
 
- | XLam T1 t1 => XLam T1 (liftX n (S depth) t1)
+ | XLam t1 x1 => XLam t1 (liftX n (S depth) x1)
 
- | XApp t1 t2 => XApp (liftX n depth t1)
-                      (liftX n depth t2)
+ | XApp x1 x2 => XApp (liftX n depth x1)
+                      (liftX n depth x2)
  end.
 
 
-Fixpoint subst' (depth: nat) (u: exp) (tt: exp)  : exp :=
- match tt with
+Fixpoint subst' (depth: nat) (u: exp) (xx: exp)  : exp :=
+ match xx with
  | XVar ix    =>  match compare ix depth with
                   | EQ => liftX depth 0 u
                   | GT => XVar (ix - 1)
                   | _  => XVar ix
                   end
 
- | XLam T1 t2 => XLam T1 (subst' (S depth) u t2)
+ | XLam t1 x2 => XLam t1 (subst' (S depth) u x2)
 
- | XApp t1 t2 => XApp (subst' depth u t1)
-                      (subst' depth u t2)
+ | XApp x1 x2 => XApp (subst' depth u x1)
+                      (subst' depth u x2)
  end. 
 
 Definition  subst := subst' 0.
@@ -39,20 +39,20 @@ Hint Unfold subst.
 
 (* Lifting an expression by 0 steps doesn't do anything *)
 Theorem liftX_none
- : forall t1 depth
- , liftX 0 depth t1 = t1.
+ : forall x1 depth
+ , liftX 0 depth x1 = x1.
 Proof.
- induction t1; intro; simpl.
+ induction x1; intro; simpl.
 
  Case "XVar".
   assert (n + 0 = n). omega. rewrite H.
   breaka (bge_nat n depth).
 
  Case "XLam".
-  rewrite IHt1. auto.
+  rewrite IHx1. auto.
 
  Case "XApp". 
-  rewrite IHt1_1. rewrite IHt1_2. auto.
+  rewrite IHx1_1. rewrite IHx1_2. auto.
 Qed.
 
 
@@ -84,8 +84,8 @@ Qed.
 
 (* If a term is closed then lifting it doesn't do anything *)
 Theorem liftX_closed
- : forall ix t
- , closedX t -> liftX ix 0 t = t.
+ : forall ix x
+ , closedX x -> liftX ix 0 x = x.
 Proof.
  intros. unfold closedX in H. eapply liftX_wfX; eauto. 
  simpl. auto.
@@ -93,15 +93,15 @@ Qed.
 
 
 Theorem subst_value_value_drop
- :  forall ix tenv t1 t2 T1 T2
- ,  get tenv ix = Some T2
- -> closedX t2
- -> TYPE tenv           t1 T1
- -> TYPE (drop ix tenv) t2 T2
- -> TYPE (drop ix tenv) (subst' ix t2 t1) T1.
+ :  forall ix tenv x1 x2 t1 t2
+ ,  get tenv ix = Some t2
+ -> closedX x2
+ -> TYPE tenv           x1 t1
+ -> TYPE (drop ix tenv) x2 t2
+ -> TYPE (drop ix tenv) (subst' ix x2 x1) t1.
 Proof.
- intros ix tenv t1 t2 T1 T2. gen ix tenv T1.
- induction t1; intros; simpl; inverts H1.
+ intros ix tenv x1 x2 t1 t2. gen ix tenv t1.
+ induction x1; intros; simpl; inverts H1.
 
  Case "XVar".
   fbreak_compare.
@@ -120,7 +120,7 @@ Proof.
 
  Case "XLam".
   apply TYLam. rewrite drop_rewind.
-  apply IHt1; auto.
+  apply IHx1; auto.
   eapply type_check_closed_in_any_tyenv; eauto.
 
  Case "XApp".
@@ -129,14 +129,14 @@ Qed.
 
 
 Theorem subst_value_value
- :  forall tenv t1 t2 T1 T2
- ,  closedX t2
- -> TYPE (tenv :> T2) t1 T1
- -> TYPE tenv         t2 T2 
- -> TYPE tenv (subst t2 t1) T1.
+ :  forall tenv x1 x2 t1 t2
+ ,  closedX x2
+ -> TYPE (tenv :> t2) x1 t1
+ -> TYPE tenv         x2 t2 
+ -> TYPE tenv (subst x2 x1) t1.
 Proof. 
- intros tenv t1 t2 T1 T2 Ht1 Ht2.
- lets H: subst_value_value_drop 0 (tenv :> T2).
+ intros tenv x1 x2 t1 t2 Ht1 Ht2.
+ lets H: subst_value_value_drop 0 (tenv :> t2).
   simpl in H. eapply H; eauto.
 Qed.
 

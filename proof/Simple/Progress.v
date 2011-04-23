@@ -19,7 +19,7 @@ Proof.
 
  Case "XLam".
   left. clear IHTYPE. subst. apply TYLam in H.
-  apply type_check_empty_is_closed in H.
+  apply type_check_empty_tyenv_is_closed in H.
   eauto.
 
  Case "XApp".
@@ -27,13 +27,13 @@ Proof.
   specializes IHTYPE1 Heqtenv.
   specializes IHTYPE2 Heqtenv.
   destruct IHTYPE1.
-  SCase "value t1".
+  SCase "value x1".
    destruct IHTYPE2.
-   SSCase "value t2".
+   SSCase "value x2".
     inversions H1.
-    exists (subst t2 t). apply EVLamApp. auto.
-   SSCase "t2 steps".
-    destruct H2 as [t2']. exists (XApp t1 t2'). auto.
-  SSCase "t1 steps".
-   destruct H1 as [t1']. exists (XApp t1' t2). auto.
+    exists (subst x2 x). apply EVLamApp. auto.
+   SSCase "x2 steps".
+    destruct H2 as [x2']. exists (XApp x1 x2'). auto.
+  SSCase "x1 steps".
+   destruct H1 as [x1']. exists (XApp x1' x2). auto.
 Qed.

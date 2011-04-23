@@ -5,27 +5,27 @@ Require Export Exp.
 (** Type Judgements *************************************************)
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
  | TYVar 
-   :  forall tenv i T
-   ,  get tenv i = Some T
-   -> TYPE tenv (XVar i) T  
+   :  forall tenv i t
+   ,  get tenv i = Some t
+   -> TYPE tenv (XVar i) t
 
  | TYLam
-   :  forall tenv t T1 T2
-   ,  TYPE (tenv :> T1) t T2
-   -> TYPE tenv (XLam T1 t) (TFun T1 T2)
+   :  forall tenv x t1 t2
+   ,  TYPE (tenv :> t1) x t2
+   -> TYPE tenv (XLam t1 x) (TFun t1 t2)
 
  | TYApp
-   :  forall tenv t1 t2 T1 T2
-   ,  TYPE tenv t1 (TFun T1 T2)
-   -> TYPE tenv t2 T1
-   -> TYPE tenv (XApp t1 t2) T2.
+   :  forall tenv x1 x2 t1 t2
+   ,  TYPE tenv x1 (TFun t1 t2)
+   -> TYPE tenv x2 t1
+   -> TYPE tenv (XApp x1 x2) t2.
 
 Hint Constructors TYPE.
 
 
 (* Well Formedness **************************************************)
 (* A well typed expression is well formed *)
-Lemma type_wfX
+Theorem type_wfX
  :  forall tenv x t
  ,  TYPE tenv x t
  -> wfX  tenv x.
@@ -37,12 +37,12 @@ Qed.
 
 (* Weakening type environments. *************************************)
 Theorem type_tyenv_weaken1
- :  forall tenv t T1 T2
- ,  TYPE tenv          t T1
- -> TYPE (T2 <: tenv)  t T1.
+ :  forall tenv x t1 t2
+ ,  TYPE tenv          x t1
+ -> TYPE (t2 <: tenv)  x t1.
 Proof.
- intros. gen tenv T1.
- induction t; intros; inversions H; eauto.
+ intros. gen tenv t1.
+ induction x; intros; inversions H; eauto.
 
  Case "XLam".
   eapply TYLam. rewrite snoc_cons. auto.
@@ -50,9 +50,9 @@ Qed.
 
 
 Theorem type_tyenv_weaken
- :  forall tenv1 tenv2 t1 T1
- ,  TYPE tenv1            t1 T1
- -> TYPE (tenv2 ++ tenv1) t1 T1.
+ :  forall tenv1 tenv2 x1 t1
+ ,  TYPE tenv1            x1 t1
+ -> TYPE (tenv2 ++ tenv1) x1 t1.
 Proof.
  intros. gen tenv1.
  induction tenv2; intros.
@@ -64,14 +64,14 @@ Qed.
 
 (* Strengthen type environments *************************************)
 Theorem type_tyenv_strengthen
- :  forall tenv tenv' n t T
- ,   wfX tenv' t
+ :  forall tenv tenv' n x t
+ ,   wfX tenv' x
  ->  tenv' = take n tenv
- ->  TYPE tenv  t T
- ->  TYPE tenv' t T.
+ ->  TYPE tenv  x t
+ ->  TYPE tenv' x t.
 Proof.
- intros. gen tenv tenv' n T.
- induction t; intros; inversions H1.
+ intros. gen tenv tenv' n t.
+ induction x; intros; inversions H1.
  
  Case "XVar".
   apply TYVar.
@@ -80,31 +80,28 @@ Proof.
  Case "XLam".
   simpl in H.
   eapply TYLam.
-   eapply IHt with (n := S n) (tenv := tenv :> t); auto.
+   eapply IHx with (n := S n) (tenv := tenv :> t); auto.
 
  Case "XApp".
-  simpl in H. destruct H.
-  eapply TYApp.
-   eapply IHt1; eauto.
-   eapply IHt2; eauto.
+  simpl in H. destruct H. eauto.
 Qed.
 
 
 (* Checking closed expressions ******************)
-Lemma type_check_empty_tyenv_is_closed
- :  forall t T
- ,  TYPE Empty t T
- -> closedX t.
+Theorem type_check_empty_tyenv_is_closed
+ :  forall x t
+ ,  TYPE Empty x t
+ -> closedX x.
 Proof.
  intros. unfold closedX. eapply type_wfX. eauto.
 Qed.
 
 
 Theorem type_check_closed_in_empty_tyenv
- :  forall tenv t T
- ,  closedX t
- -> TYPE tenv  t T
- -> TYPE Empty t T.
+ :  forall tenv x t
+ ,  closedX x
+ -> TYPE tenv  x t
+ -> TYPE Empty x t.
 Proof.
  intros. unfold closedX in H. 
  eapply type_tyenv_strengthen; eauto.
@@ -113,14 +110,14 @@ Qed.
 
 
 Theorem type_check_closed_in_any_tyenv
- :  forall tenv tenv' t1 T1
- ,  closedX t1
- -> TYPE tenv  t1 T1
- -> TYPE tenv' t1 T1.
+ :  forall tenv tenv' x1 t1
+ ,  closedX x1
+ -> TYPE tenv  x1 t1
+ -> TYPE tenv' x1 t1.
 Proof.
  intros.
  lets D: type_check_closed_in_empty_tyenv H H0.
- assert (TYPE (tenv' ++ Empty) t1 T1).
+ assert (TYPE (tenv' ++ Empty) x1 t1).
   apply type_tyenv_weaken. auto.
   auto.
 Qed.

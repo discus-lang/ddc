@@ -7,13 +7,13 @@ Require Import SubstValueValue.
 (* When a well typed term transitions to the next state, 
    its type is perserved. *)
 Theorem preservation
- :  forall t t' T
- ,  TYPE Empty t  T
- -> STEP t t'
- -> TYPE Empty t' T.
+ :  forall x x' t
+ ,  TYPE Empty x  t
+ -> STEP x x'
+ -> TYPE Empty x' t.
 Proof.
- intros t t' T HT HS. gen T t'.
- induction t; intros.
+ intros x x' t HT HS. gen t x'.
+ induction x; intros.
 
  (* These can't happen as there is no evaluation rule *)
  Case "XVar". inversion HS.
@@ -30,7 +30,7 @@ Proof.
    eapply subst_value_value; eauto.
 
   SCase "EVApp1".
-   eapply IHt1 in H2; eauto.
-   eapply IHt2 in H4; eauto.
+   eapply IHx1 in H2; eauto.
+   eapply IHx2 in H4; eauto.
 Qed.
 
