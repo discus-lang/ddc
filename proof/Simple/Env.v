@@ -89,6 +89,7 @@ Proof.
  intros. 
  unfold cons. auto.
 Qed.
+Hint Resolve cons_snoc_empty.
 
 
 Lemma snoc_cons
@@ -97,6 +98,7 @@ Lemma snoc_cons
 Proof.
  intros. destruct e; auto.
 Qed.
+Hint Resolve snoc_cons.
 
 
 (* length lemmas ********************************)
@@ -108,6 +110,7 @@ Proof.
  destruct e1.
   auto. false.
 Qed.
+Hint Resolve length_zero_is_empty.
 
 
 Lemma get_length_more
@@ -156,6 +159,7 @@ Proof.
   auto. 
   simpl. rewrite IHe2. auto.
 Qed.
+Hint Resolve append_snoc.
 
 
 (* get lemmas ***********************************)
@@ -238,6 +242,7 @@ Proof.
    assert (n >= length e1). omega.
    eapply IHe1 in H1. auto. eauto.
 Qed.
+Hint Resolve get_above_false.
 
 
 (* take lemmas **********************************)
