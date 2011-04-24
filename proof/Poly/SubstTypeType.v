@@ -37,9 +37,41 @@ Fixpoint substTT' (depth: nat) (u: ty) (tt: ty) : ty :=
                          (substTT' depth u t2)
  end.
 
-
-Definition  substTT := substTT' 0.
+Definition substTT := substTT' 0.
 Hint Unfold substTT.
+
+
+(* Substitution of Types in Environments.
+   The new type corresponds to one of the kinds in the environment.
+   We drop out that kind, and substitute the new type into all
+   the indices that were pointing to it.
+   The susbstitution process also adjusts the indices that were
+   pointing to kinds after the one that was dropped.
+
+   Example:
+       k3, k2, (0 -> 1), k1, k0, (1 -> 2)    [C/2]
+   =>  k3, (C -> 0), k1, k0, (1 -> C)        [D/1]
+   =>  k3, (C -> 0), k0, (D -> C) 
+ *)
+Fixpoint substTE (n: nat) (u: ty) (e: tyenv) : tyenv :=
+  match n, e with 
+  |    _, Empty             => Empty
+
+  (* Found the kind to drop, we're done. *)
+  |    0, Snoc e' (EKind k) => e'
+
+  (* Still looking for the kind to drop out. *)
+  | S n', Snoc e'                (EKind k) 
+       => Snoc (substTE n' u e') (EKind k)
+
+  |    O, Snoc e'                (EType t) 
+       => Snoc (substTE n  u e') (EType (substTT' n u t))
+
+  (* As we pass over types in the environment,
+     substitute in the new one *)
+  | S n', Snoc e'                (EType t) 
+       => Snoc (substTE n' u e') (EType (substTT' n u t))
+  end.
 
 
 (* Lifting Lemmas ***************************************************)
@@ -101,7 +133,11 @@ Qed.
 
 (* Theorems *********************************************************)
 
-(* Substitution of types in types preserves kinding. *)
+(* Substitution of types in types preserves kinding.
+   Must also subst new new type into types in env higher than ix
+   otherwise indices ref subst type are broken.
+   Resulting type env would not be well formed *)
+
 Theorem subst_type_type_drop
  :  forall it kenv t1 k1 t2 k2
  ,  closedT t2

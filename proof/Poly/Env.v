@@ -52,6 +52,15 @@ Fixpoint append {A: Type} (e1: env A) (e2: env A) : env A :=
 Infix "++" := append.
 
 
+(* Apply a function to every element of an environment, 
+   yielding a new environment *)
+Fixpoint map {A B: Type} (f: A -> B) (e: env A) : env B :=
+ match e with
+ | Empty      => Empty
+ | Snoc e' x  => Snoc (map f e') (f x)
+ end.
+ 
+
 (* Get an indexed element from a list, starting from 0. *)
 Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
  match e, i with
