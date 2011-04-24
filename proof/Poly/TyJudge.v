@@ -10,7 +10,8 @@ Require Import Base.
 Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
  | TYVar 
    :  forall kenv tenv ix T
-   ,  get tenv ix = Some T
+   ,  wfEnv kenv tenv
+   -> get tenv ix = Some T
    -> TYPE kenv tenv (XVar ix) T
 
  | TYLam 
@@ -40,21 +41,30 @@ Hint Constructors TYPE.
 
 (* Well Formedness **************************************************)
 
-
-(* The type of an exp is well kinded
-Theorem type_kind 
- :  forall kenv tenv x t k
+(* The environment used to type an expression is well formed *)
+Theorem type_wfEnv
+ :  forall kenv tenv x t
  ,  TYPE kenv tenv x t
- -> KIND kenv t k.
+ -> wfEnv kenv tenv.
 Proof.
- intros. gen kenv tenv t k.
+ intros. gen kenv tenv t.
  induction x; intros.
 
  Case "XVar".
-  induction t; eauto.
-  inverts H.
-  admit.
-*)
+  inverts H. auto.
+
+ Case "XLAM".
+  inverts H. apply IHx in H3. admit.
+
+ Case "XAPP".
+  inverts H. eauto.
+
+ Case "XLam".
+  inverts H. apply IHx in H5. simpl in H5. tauto.
+
+ Case "XApp".
+  inverts H. eauto. 
+Qed.
 
 
 (* A well typed expression is well formed *)
@@ -68,7 +78,7 @@ Proof.
 
  Case "XVar".
   inverts H. split. eauto.
-  admit. (* add wf to TYVar *)
+  eapply wfT_from_wfEnv; eauto.
 
  Case "XLAM".
   inverts H. apply IHx in H3. eauto.
@@ -81,11 +91,14 @@ Proof.
    admit. (* subst types still well formed *)
 
  Case "XLam".
-  inverts H. apply IHx in H5. destruct H5.
-  split.
-   split. admit. (* add wf to TYLam *)
-   auto. simpl. split. admit.
+  inverts H. 
+  lets D: IHx H5. destruct D.
+  split. split.
+   admit. 
    auto.
+   simpl. split.
+    admit.
+    auto.
 
  Case "XApp".
   inverts H.

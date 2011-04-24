@@ -47,7 +47,7 @@ Fixpoint append {A: Type} (e1: env A) (e2: env A) : env A :=
  | Empty      => e1 
  | Snoc e2' x => Snoc (append e1 e2') x
  end.
-Infix "++" := append (at level 63).
+Infix "++" := append.
 
 
 (* Get an indexed element from a list, starting from 0. *)

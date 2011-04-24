@@ -41,4 +41,27 @@ Definition closedT (tt: ty) : Prop
 Hint Unfold closedT.
 
 
-  
+(* Well formed environments *)
+Fixpoint wfEnv (kenv: kienv) (tenv: tyenv) : Prop :=
+ match tenv with 
+ | Empty      => True
+ | tenv' :> t => wfT kenv t /\ wfEnv kenv tenv'
+ end.
+
+
+(* Lemmas ***********************************************************)
+
+Theorem wfT_from_wfEnv
+ :  forall kenv tenv ix t 
+ ,  get tenv ix = Some t
+ -> wfEnv kenv tenv 
+ -> wfT   kenv t.
+Proof.
+ intros. 
+ gen kenv ix t. induction tenv; intros.
+  false.
+  simpl in H0. destruct H0.
+  destruct ix.
+   simpl in H. inverts H. auto.
+   simpl in H. eapply IHtenv; eauto.
+Qed.
