@@ -1,13 +1,15 @@
-(** Environments ****************************************************
-  Environments are lists that grow from the right.
-  For example:
-     Snoc (Snoc (Snoc Empty x3) x2) x1
 
-  This can also be written as:
-     Empty :> x3 :> x2 :> x1
+(* Environments
+   Environments are lists that grow from the right.
+   For example:
+      Snoc (Snoc (Snoc Empty x3) x2) x1
 
-  Where :> is sugar for Snoc.
+   This can also be written as:
+      Empty :> x3 :> x2 :> x1
+
+   Where :> is sugar for Snoc.
  *)
+
 Require Import Base.
 
 
@@ -31,7 +33,7 @@ Fixpoint length {A: Type} (e: env A) : nat :=
 Hint Unfold length.
 
 
-(* Add an element to the left of an environment *)
+(* Add an element to the left of an environment. *)
 Fixpoint cons   {A: Type} (x: A) (e: env A) : env A :=
  match e with
  | Empty      => Snoc Empty x
