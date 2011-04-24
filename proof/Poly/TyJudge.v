@@ -38,6 +38,63 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
+(* Well Formedness **************************************************)
+
+
+(* The type of an exp is well kinded
+Theorem type_kind 
+ :  forall kenv tenv x t k
+ ,  TYPE kenv tenv x t
+ -> KIND kenv t k.
+Proof.
+ intros. gen kenv tenv t k.
+ induction x; intros.
+
+ Case "XVar".
+  induction t; eauto.
+  inverts H.
+  admit.
+*)
+
+
+(* A well typed expression is well formed *)
+Theorem type_wfX
+ :  forall kenv tenv x t
+ ,  TYPE kenv tenv x t
+ -> wfX  kenv tenv x /\ wfT kenv t.
+Proof.
+ intros. gen kenv tenv t.
+ induction x; intros; simpl; eauto.
+
+ Case "XVar".
+  inverts H. split. eauto.
+  admit. (* add wf to TYVar *)
+
+ Case "XLAM".
+  inverts H. apply IHx in H3. eauto.
+
+ Case "XAPP".
+  inverts H. apply IHx in H4. destruct H4.
+   split. split. auto.
+   eapply kind_wfT. eauto.
+   simpl in H0.
+   admit. (* subst types still well formed *)
+
+ Case "XLam".
+  inverts H. apply IHx in H5. destruct H5.
+  split.
+   split. admit. (* add wf to TYLam *)
+   auto. simpl. split. admit.
+   auto.
+
+ Case "XApp".
+  inverts H.
+  apply IHx1 in H4. destruct H4.
+  apply IHx2 in H6. destruct H6.
+  simpl in H0. tauto.
+Qed. 
+
+
 (* Weakening type environment ***************************************)
 Lemma type_tyenv_weaken1
  :  forall kenv tenv x1 t1 t2
