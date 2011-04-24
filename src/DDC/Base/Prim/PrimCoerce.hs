@@ -13,12 +13,14 @@ data PrimCoerce ty
 	-- | Coercion between unboxed pointer types.
 	--   eg between (Ptr# (String# %r1)) and (Ptr# Word8#)
 	--   The arguments give the type of the pointed-to data.
+	--   The first constructor argument is the source type, the second argument
+	--   the destination type.
 	= PrimCoercePtr	ty ty
-	
+
 	-- | Coercion betweeen (Ptr# a) and Addr#
 	--   The argument gives the type of the pointed-to data.
 	| PrimCoercePtrToAddr ty
-	
+
 	-- | Coercion between Addr# and (Ptr# a)
 	--   The argument gives the type of the pointed-to data.
 	| PrimCoerceAddrToPtr ty
