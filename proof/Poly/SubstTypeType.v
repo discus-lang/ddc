@@ -1,6 +1,10 @@
 
+Require Import Exp.
+Require Import TyEnv.
+Require Import WellFormed.
 Require Import KiJudge.
 Require Import Base.
+
 
 (* Lift type indices that are at least a certain depth. *)
 Fixpoint liftTT (n: nat) (depth: nat) (tt: ty) : ty :=
@@ -58,18 +62,19 @@ Qed.
 
 
 Theorem liftT_wfT
- :  forall ix n t kenv
- ,  n = length kenv
- -> wfT kenv t 
+ :  forall ix n t e
+ ,  n = length e
+ -> wfT e t 
  -> liftTT ix n t = t.
 Proof.
- intros. gen kenv n.
+ intros. gen e n.
  induction t; intros; simpl; simpl in H; eauto.
 
  Case "TVar".
   breaka (bge_nat n n0).
   apply bge_nat_true in HeqX.
-  false. subst. destruct H0. eapply get_above_false; eauto.
+  false. subst. destruct H0.
+  eapply getMatch_above_false; eauto.
 
  Case "TForall".
   eapply IHt in H0; eauto.
@@ -90,7 +95,7 @@ Theorem liftTT_closed
  -> liftTT it 0 t = t. 
 Proof.
  intros. unfold closedT in H. eapply liftT_wfT; eauto.
- simpl. auto.
+ auto.
 Qed.
 
 

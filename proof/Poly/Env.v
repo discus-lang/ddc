@@ -62,6 +62,31 @@ Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
 Hint Unfold length.
 
 
+Fixpoint filter {A: Type} (f: A -> bool) (e: env A) : env A :=
+  match e with 
+  | Empty     => Empty
+  | Snoc es x 
+  => if f x then Snoc (filter f es) x
+            else filter f es
+  end.
+
+
+Fixpoint getMatch {A: Type} 
+            (f: A -> bool) (e: env A) (i: nat) : option A :=
+  match e, i with
+  | Snoc es x, O     
+  => if f x then Some x 
+            else getMatch f es O
+
+  | Snoc es x, S i'
+  => if f x then getMatch f es i'
+            else getMatch f es i
+  | _, _
+  => None
+ end.
+Hint Unfold getMatch.
+
+
 (* Take some elements from the front of an element. *)
 Fixpoint take {A: Type} (n: nat) (e: env A) : env A :=
  match n, e with
@@ -103,7 +128,7 @@ Qed.
 Hint Resolve snoc_cons.
 
 
-(* length lemmas ********************************)
+(* length lemmas ****************************************************)
  Lemma length_zero_is_empty
  :  forall A (e1: env A)
  ,  length e1 = O -> e1 = Empty.
@@ -132,7 +157,7 @@ Qed.
 Hint Resolve get_length_more.
 
 
-(* append lemmas ********************************)
+(* append lemmas ****************************************************)
 Lemma append_empty_left
  :  forall A (e1: env A)
  ,  Empty ++ e1 = e1.
@@ -164,7 +189,7 @@ Qed.
 Hint Resolve append_snoc.
 
 
-(* get lemmas ***********************************)
+(* get lemmas *******************************************************)
 Lemma get_succ
  :  forall A n x (e1: env A)
  ,  get (e1 :> x) (S n) = get e1 n.
@@ -229,7 +254,7 @@ Qed.
 Hint Resolve get_append_some.
 
 
-Theorem get_above_false
+Lemma get_above_false
  :  forall A n (e1: env A) t
  ,  n >= length e1 
  -> get e1 n = Some t 
@@ -247,7 +272,64 @@ Qed.
 Hint Resolve get_above_false.
 
 
-(* take lemmas **********************************)
+(* filter lemmas ****************************************************)
+Lemma filter_length
+ :  forall A (e: env A) (f: A -> bool)
+ ,  length e >= length (filter f e).
+Proof.
+ intros. induction e; auto.
+ simpl. breaka (f a). simpl. omega.
+Qed.
+
+
+(* getMatch lemmas **************************************************)
+Lemma getMatch_filter
+ :  forall A (e: env A) (f: A -> bool) n
+ ,  getMatch f e n = get (filter f e) n.
+Proof.
+ intros. gen n.
+ induction e; intros.
+
+ Case "Empty".
+  auto.
+
+ Case "Snoc".
+  simpl. breaka (f a); destruct n; auto.
+  simpl. rewrite IHe. auto.
+Qed.
+
+
+Lemma getMatch_cons_some
+ :  forall A (e: env A) (f: A -> bool) n x1 x2
+ ,  getMatch f e n         = Some x1
+ -> getMatch f (x2 <: e) n = Some x1.
+Proof.
+ intros. gen n.
+ induction e; intros; destruct n; simpl in H; simpl.
+  false.
+  false.
+  breaka (f a).
+  breaka (f a).
+Qed.
+Hint Resolve getMatch_cons_some.
+
+
+Lemma getMatch_above_false
+ :  forall A n (e: env A) (f: A -> bool) x
+ ,  n >= length e
+ -> getMatch f e n = Some x
+ -> False.
+Proof.
+ intros.
+ rewrite getMatch_filter in H0.
+ assert (length e >= length (filter f e)). apply filter_length.
+ assert (n        >= length (filter f e)). omega.
+ eapply get_above_false; eauto.
+Qed.
+Hint Resolve getMatch_above_false.
+
+
+(* take lemmas ******************************************************)
 Lemma take_zero
  :  forall A (e1: env A)
  ,  Empty = take O e1.
@@ -308,7 +390,7 @@ Qed.
 Hint Resolve get_take_more.
 
 
-(* drop lemmas **********************************)
+(* drop lemmas ******************************************************)
 Lemma drop_rewind
  : forall A ix (e : env A) x
  , drop ix e :> x = drop (S ix) (e :> x).

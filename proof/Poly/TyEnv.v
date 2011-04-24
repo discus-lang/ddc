@@ -25,25 +25,44 @@
      k1, k2, k3 | (2 -> C 1) |- exp2
 
  *)
-
-Require Export Ty.
+Require Export Env.
+Require Import Exp.
 
 Inductive sort : Type :=
  | SKind
  | SType.
 
 
+(* Elements of the type environment *********************************)
 Inductive elem : Type := 
  | EKind : ki -> elem
  | EType : ty -> elem.
 
 
+Fixpoint elemIsKind (e: elem) : bool :=
+ match e with
+ | EKind _ => true
+ | _       => false
+ end.
 
 
- 
+Fixpoint elemIsType (e: elem) : bool :=
+ match e with 
+ | EType _ => true
+ | _       => false
+ end.
 
- 
+
+(* Type Environment *************************************************)
+Definition tyenv := env elem.
 
 
-     
-   
+Definition getK (tenv: tyenv) (ix: nat) 
+ := getMatch elemIsKind tenv ix.
+Hint Unfold getK.
+
+
+Definition getT (tenv: tyenv) (ix: nat)
+ := getMatch elemIsType tenv ix.
+Hint Unfold getT.
+

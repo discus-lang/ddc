@@ -1,52 +1,61 @@
 
-Require Export Ty.
-Require Export Env.
+Require Import Exp.
+Require Import TyEnv.
+Require Import WellFormed.
 Require Import Base.
 
 (* Kinds of types ***************************************************)
-Inductive KIND : kienv -> ty -> ki -> Prop :=
+
+Inductive KIND : tyenv -> ty -> ki -> Prop :=
  | KICon 
-   :  forall kenv c
-   ,  KIND kenv (TCon c) KStar
+   :  forall e c
+   ,  KIND e (TCon c) KStar
 
  | KIVar
-   :  forall kenv it k
-   ,  get kenv it = Some k
-   -> KIND kenv (TVar it) k
+   :  forall e it k
+   ,  getK e it = Some (EKind k)
+   -> KIND e (TVar it) k
 
  | KIForall
-   :  forall kenv t
-   ,  KIND (kenv :> KStar) t           KStar
-   -> KIND kenv            (TForall t) KStar
+   :  forall e t
+   ,  KIND (e :> EKind KStar) t          KStar
+   -> KIND e                 (TForall t) KStar
 
  | KIFun 
-   :  forall kenv t1 t2
-   ,  KIND kenv t1 KStar -> KIND kenv t2 KStar
-   -> KIND kenv (TFun t1 t2) KStar.
+   :  forall e t1 t2
+   ,  KIND e t1 KStar -> KIND e t2 KStar
+   -> KIND e (TFun t1 t2) KStar.
 Hint Constructors KIND.
 
 
 (* Well Formedness **************************************************)
 
 (* A well kinded type is well formed *)
-Theorem kind_wfT
- :  forall kenv t k
- ,  KIND kenv t k
- -> wfT kenv t.
+Lemma kind_wfT
+ :  forall e t k
+ ,  KIND e t k
+ -> wfT  e t.
 Proof.
- intros. gen kenv k.
+ intros. gen e k.
  induction t; intros; inverts H; simpl; eauto.
 Qed.
 
 
 (* Weakening kind environment ***************************************)
-Lemma kind_kienv_weaken1
- :  forall kenv t1 k1 k2
- ,  KIND kenv         t1 k1
- -> KIND (k2 <: kenv) t1 k1.
+
+(* If we add a new kind to the environment of a well kinded type, 
+   then that type is still well kinded *)
+Lemma kind_weaken1
+ :  forall e t1 k1 l
+ ,  KIND e        t1 k1
+ -> KIND (l <: e) t1 k1.
 Proof.
- intros. gen kenv k1.
+ intros. gen e k1.
  induction t1; intros; inverts H; eauto.
+
+ Case "TVar".
+  apply KIVar. 
+  apply getMatch_cons_some. auto.
 
  Case "TForall".
   apply KIForall.
@@ -54,45 +63,51 @@ Proof.
 Qed.
 
 
-Lemma kind_kienv_weaken
- :  forall kenv1 kenv2 t1 k1
- ,  KIND kenv1            t1 k1
- -> KIND (kenv2 ++ kenv1) t1 k1.
+Lemma kind_weaken
+ :  forall e1 e2 t1 k1
+ ,  KIND e1         t1 k1
+ -> KIND (e2 ++ e1) t1 k1.
 Proof.
- intros. gen kenv1 k1.
- induction kenv2; intros.
+ intros. gen e1 k1.
+ induction e2; intros.
   rewrite append_empty_left. auto.
-  rewrite append_snoc. apply IHkenv2.
-   apply kind_kienv_weaken1. auto.
+  rewrite append_snoc. apply IHe2.
+   apply kind_weaken1. auto.
 Qed.
 
 
 (* Strenghten kind environment **************************************)
-Lemma kind_kienv_strengthen
- :  forall kenv kenv' n t k
- ,   wfT kenv' t
- ->  kenv' = take n kenv
- ->  KIND kenv  t k
- ->  KIND kenv' t k.
+
+(* If a well kinded type doesn't use elements on the end of its
+   environment, then it is still well kinded if we cut them off *)
+Lemma kind_strengthen
+ :  forall e e' n t k
+ ,   wfT e' t
+ ->  e' = take n e
+ ->  KIND e  t k
+ ->  KIND e' t k.
 Proof.
- intros. gen kenv kenv' n k.
+ intros. gen e e' n k.
  induction t; intros; inverts H1; eauto.
  Case "TVar".
-  apply KIVar.
-   destruct H.  subst. eauto.
+  apply KIVar. subst.
+  destruct H. admit. (* ok, list lemma *)
 
  Case "TForall".
   apply KIForall. subst.
-  eapply IHt with (n := S n) (kenv := kenv :> KStar); auto.
+  eapply IHt with (n := S n) (e := e :> EKind KStar); auto.
 
  Case "TFun".
-  inverts H. eauto.
+  simpl in H. destruct H. eauto. 
 Qed.
 
 
 (* Checking closed types ********************************************)
-Lemma kind_check_empty_is_closed
- :  forall     t k
+
+(* If a type is well kinded in an empty environment,
+   then that type is closed. *)
+Lemma kind_empty_is_closed
+ :  forall t k
  ,  KIND Empty t k 
  -> closedT t.
 Proof.
@@ -100,28 +115,32 @@ Proof.
 Qed.
 
 
-Lemma kind_check_closed_in_empty
- :  forall kenv t k
+(* If a closed type is well kinded,
+   then it is well kinded in an empty environment. *)
+Lemma kind_closed_in_empty
+ :  forall e t k
  ,  closedT t
- -> KIND kenv  t k
+ -> KIND e     t k
  -> KIND Empty t k.
 Proof.
  intros. unfold closedT in H.
- eapply kind_kienv_strengthen; eauto.
+ eapply kind_strengthen; eauto.
  eapply take_zero.
 Qed.
 
 
-Theorem kind_check_closed_in_any
- :  forall kenv kenv' t k
+(* If a closed type is well kinded,
+   then it is well kinded in an any environment. *)
+Theorem kind_closed_in_any
+ :  forall e e' t k
  ,  closedT t
- -> KIND kenv  t k
- -> KIND kenv' t k.
+ -> KIND e  t k
+ -> KIND e' t k.
 Proof.
  intros.
- lets D: kind_check_closed_in_empty H H0.
- assert (KIND (kenv' ++ Empty) t k).
-  apply kind_kienv_weaken. auto.
+ lets D: kind_closed_in_empty H H0.
+ assert (KIND (e' ++ Empty) t k).
+  apply kind_weaken. auto.
   auto.
 Qed.
 
