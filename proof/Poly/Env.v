@@ -1,15 +1,13 @@
+(** Environments ****************************************************
+  Environments are lists that grow from the right.
+  For example:
+     Snoc (Snoc (Snoc Empty x3) x2) x1
 
-(* Environments
-   Environments are lists that grow from the right.
-   For example:
-      Snoc (Snoc (Snoc Empty x3) x2) x1
+  This can also be written as:
+     Empty :> x3 :> x2 :> x1
 
-   This can also be written as:
-      Empty :> x3 :> x2 :> x1
-
-   Where :> is sugar for Snoc.
+  Where :> is sugar for Snoc.
  *)
-
 Require Import Base.
 
 
@@ -33,12 +31,13 @@ Fixpoint length {A: Type} (e: env A) : nat :=
 Hint Unfold length.
 
 
-(* Add an element to the left of an environment. *)
+(* Add an element to the left of an environment *)
 Fixpoint cons   {A: Type} (x: A) (e: env A) : env A :=
  match e with
  | Empty      => Snoc Empty x
  | Snoc e' y  => Snoc (cons x e') y
  end.
+Hint Unfold cons.
 Implicit Arguments cons  [A].
 Infix "<:" := cons   (at level 62, right associativity).
 
@@ -49,17 +48,9 @@ Fixpoint append {A: Type} (e1: env A) (e2: env A) : env A :=
  | Empty      => e1 
  | Snoc e2' x => Snoc (append e1 e2') x
  end.
+Hint Unfold append.
 Infix "++" := append.
 
-
-(* Apply a function to every element of an environment, 
-   yielding a new environment *)
-Fixpoint map {A B: Type} (f: A -> B) (e: env A) : env B :=
- match e with
- | Empty      => Empty
- | Snoc e' x  => Snoc (map f e') (f x)
- end.
- 
 
 (* Get an indexed element from a list, starting from 0. *)
 Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
@@ -71,6 +62,7 @@ Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
 Hint Unfold length.
 
 
+(* Select elements that match a given predicate. *)
 Fixpoint filter {A: Type} (f: A -> bool) (e: env A) : env A :=
   match e with 
   | Empty     => Empty
@@ -80,6 +72,7 @@ Fixpoint filter {A: Type} (f: A -> bool) (e: env A) : env A :=
   end.
 
 
+(* Get the nth element from an environment that matches a predicate. *)
 Fixpoint getMatch {A: Type} 
             (f: A -> bool) (e: env A) (i: nat) : option A :=
   match e, i with
@@ -94,6 +87,17 @@ Fixpoint getMatch {A: Type}
   => None
  end.
 Hint Unfold getMatch.
+
+
+(* Insert a new element at an index in the list, 
+   all the elements above that point are shifted up one place. *)
+Fixpoint insert {A: Type} (ix: nat) (x: A) (e: env A) : env A 
+ := match ix, e with
+    | _,     Empty     => Snoc Empty x
+    | S ix', Snoc e' y => Snoc (insert ix' x e') y
+    | O    , es        => Snoc es x
+    end.
+Hint Unfold insert.
 
 
 (* Take some elements from the front of an element. *)
@@ -263,7 +267,7 @@ Qed.
 Hint Resolve get_append_some.
 
 
-Lemma get_above_false
+Theorem get_above_false
  :  forall A n (e1: env A) t
  ,  n >= length e1 
  -> get e1 n = Some t 
@@ -336,6 +340,57 @@ Proof.
  eapply get_above_false; eauto.
 Qed.
 Hint Resolve getMatch_above_false.
+
+
+(* insert lemmas ****************************************************)
+Lemma insert_rewind
+ :  forall {A: Type} ix t1 t2 (e: env A)
+ ,  insert ix t2 e :> t1 = insert (S ix) t2 (e :> t1).
+Proof. auto. Qed.
+
+
+Lemma get_insert_above
+ :  forall {A: Type} n ix (e: env A) x1 x2
+ ,  n >= ix
+ -> get e n                    = Some x1
+ -> get (insert ix x2 e) (S n) = Some x1.
+Proof.
+ intros. gen n e.
+ induction ix; intros.
+  destruct e.
+   false.
+   destruct n.
+    simpl in H0. auto.
+    simpl in H0. auto.
+  destruct e.
+   false.
+   destruct n.
+    false. omega.
+    simpl in H0. simpl. apply IHix. omega. auto.
+Qed.
+Hint Resolve get_insert_above.
+
+
+Lemma get_insert_below
+ :  forall {A: Type} n ix (e: env A) x1 x2
+ ,  n < ix
+ -> get e n                 = Some x1
+ -> get (insert ix x2 e) n  = Some x1.
+Proof.
+ intros. gen n e.
+ induction ix; intros.
+  destruct e.
+   false.
+   destruct n.
+    false. omega.
+    false. omega.
+  destruct e.
+   false.
+   destruct n. 
+    simpl in H0. auto.
+    simpl in H0. simpl. apply IHix. omega. auto.
+Qed.
+Hint Resolve get_insert_below.
 
 
 (* take lemmas ******************************************************)
@@ -426,6 +481,7 @@ Proof.
     auto.
     simpl in H0. subst. simpl. apply IHm. omega. auto.
 Qed.
+Hint Resolve get_drop_above'.
 
 
 Lemma get_drop_above
@@ -455,6 +511,7 @@ Proof.
     inversions H.
     simpl. simpl in H0. apply IHm. omega. auto.
 Qed.
+Hint Resolve get_drop_below'.
 
 
 Lemma get_drop_below
