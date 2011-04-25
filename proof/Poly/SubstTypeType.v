@@ -8,34 +8,34 @@ Require Import Base.
 
 (* Lift type indices that are at least a certain depth. *)
 Fixpoint liftTT (n: nat) (depth: nat) (tt: ty) : ty :=
- match tt with
- | TCon _     => tt
+  match tt with
+  | TCon _     => tt
 
- | TVar it    => if bge_nat it depth
-                  then TVar (it + n)
-                  else tt
+  | TVar it    => if bge_nat it depth
+                   then TVar (it + n)
+                   else tt
 
- | TForall t  => TForall (liftTT n (S depth) t)
- | TFun t1 t2 => TFun    (liftTT n depth t1)
-                         (liftTT n depth t2)
- end.
+  | TForall t  => TForall (liftTT n (S depth) t)
+  | TFun t1 t2 => TFun    (liftTT n depth t1)
+                          (liftTT n depth t2)
+  end.
 
 
 (* Substitution of Types in Types *)
 Fixpoint substTT' (depth: nat) (u: ty) (tt: ty) : ty :=
- match tt with
- | TCon _     => tt
+  match tt with
+  | TCon _     => tt
  
- | TVar it    => match compare it depth with
-                 | EQ => liftTT depth 0 u
-                 | GT => TVar (it - 1)
-                 | _  => TVar  it
-                 end
+  | TVar it    => match compare it depth with
+                  | EQ => liftTT depth 0 u
+                  | GT => TVar (it - 1)
+                  | _  => TVar  it
+                  end
 
- | TForall t  => TForall (substTT' (S depth) u t)
- | TFun t1 t2 => TFun    (substTT' depth u t1)
-                         (substTT' depth u t2)
- end.
+  | TForall t  => TForall (substTT' (S depth) u t)
+  | TFun t1 t2 => TFun    (substTT' depth u t1)
+                          (substTT' depth u t2)
+  end.
 
 Definition substTT := substTT' 0.
 Hint Unfold substTT.
@@ -44,7 +44,7 @@ Hint Unfold substTT.
 (* Substitution of Types in Environments.
    The new type corresponds to one of the kinds in the environment.
    We drop out that kind, and substitute the new type into all
-   the indices that were pointing to it.
+   the indices that were pointing to the kind.
    The susbstitution process also adjusts the indices that were
    pointing to kinds after the one that was dropped.
 
@@ -64,13 +64,13 @@ Fixpoint substTE (n: nat) (u: ty) (e: tyenv) : tyenv :=
   | S n', Snoc e'                (EKind k) 
        => Snoc (substTE n' u e') (EKind k)
 
+  (* As we pass over types in the environment,
+     substitute in the new one *)
   |    O, Snoc e'                (EType t) 
        => Snoc (substTE n  u e') (EType (substTT' n u t))
 
-  (* As we pass over types in the environment,
-     substitute in the new one *)
-  | S n', Snoc e'                (EType t) 
-       => Snoc (substTE n' u e') (EType (substTT' n u t))
+  |    _, Snoc e'                (EType t) 
+       => Snoc (substTE n  u e') (EType (substTT' n u t))
   end.
 
 
