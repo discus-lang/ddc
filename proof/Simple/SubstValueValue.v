@@ -2,9 +2,7 @@
 Require Import TyJudge.
 Require Export Exp.
 
-
 (** Substitution ****************************************************)
-
 (* When we push new elements on the environment stack of an
    expression, we need to lift free indices in the expression 
    across the new elements.

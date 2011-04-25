@@ -1,4 +1,7 @@
-
+(* Ordering and boolean comparison library.
+   Using the Ordering type is often cleaner than relying on
+   nested if-then-else expressions. 
+ *)
 Require Import BaseTactics.
 Require Import BaseNat.
 
@@ -7,7 +10,6 @@ Inductive Ordering :=
  | EQ
  | LT
  | GT.
-
 
 Fixpoint compare (n1: nat) (n2: nat) : Ordering :=
  match n1, n2 with
@@ -19,6 +21,7 @@ Fixpoint compare (n1: nat) (n2: nat) : Ordering :=
 Hint Unfold compare.
 
 
+(* Convert ordering to Prop of naturals *****************************)
 Theorem compare_eq 
  : forall n m
  , EQ = compare n m -> n = m.
@@ -64,17 +67,7 @@ Proof.
 Qed.
 Hint Resolve compare_gt.
 
-
-Definition beq_nat (n1 n2: nat) : bool :=
- match compare n1 n2 with
- | EQ => true
- | _  => false
- end.
-Hint Unfold beq_nat.
-
-
-(* Tactics ************************************************)
-
+(* Tactics **********************************************************)
 (* Break an of the form (compare ?E1 ?E2) into the possible orderings
       and substitute the ?E1 = ?E2 when they are equal.
 *)
@@ -103,7 +96,16 @@ Tactic Notation "fbreak_compare" :=
  end.
 
 
-(* less than equal ****************************************)
+(* equality *********************************************************)
+Definition beq_nat (n1 n2: nat) : bool :=
+ match compare n1 n2 with
+ | EQ => true
+ | _  => false
+ end.
+Hint Unfold beq_nat.
+
+
+(* less than equal **************************************************)
 Definition ble_nat (n1 n2: nat) : bool :=
  match compare n1 n2 with
  | LT  => true
@@ -139,7 +141,7 @@ Definition bgt_nat (n1 n2: nat) : bool :=
 Hint Unfold bgt_nat.
 
 
-(* greater than equal **********************************************)
+(* greater than equal ***********************************************)
 Definition bge_nat (n1 n2: nat) : bool :=
  match compare n1 n2 with
  | GT  => true
@@ -165,8 +167,7 @@ Qed.
 Hint Resolve bge_nat_true.
 
 
-
-(* less than **********************************************)
+(* less than ********************************************************)
 Definition blt_nat (n1 n2: nat) : bool :=
  match compare n1 n2 with
  | LT => true
@@ -189,6 +190,7 @@ Proof.
 Qed.
 Hint Resolve blt_nat_true.
 
+
 Lemma blt_nat_true'
  :  forall n m
  ,  n < m -> true = blt_nat n m.
@@ -208,7 +210,7 @@ Qed.
 Hint Resolve blt_nat_true'.
 
 
-Lemma bge_nat_false_is_ble
+Lemma bge_nat_false_is_blt
  :  forall n m
  ,  false = bge_nat n m
  -> true  = blt_nat n m.
@@ -221,5 +223,5 @@ Proof.
   apply blt_nat_true'. apply compare_lt in Heqo. auto.
   false.
 Qed.
-Hint Resolve bge_nat_false_is_ble.
+Hint Resolve bge_nat_false_is_blt.
 
