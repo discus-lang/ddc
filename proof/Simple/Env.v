@@ -37,6 +37,7 @@ Fixpoint cons   {A: Type} (x: A) (e: env A) : env A :=
  | Empty      => Snoc Empty x
  | Snoc e' y  => Snoc (cons x e') y
  end.
+Hint Unfold cons.
 Implicit Arguments cons  [A].
 Infix "<:" := cons   (at level 62, right associativity).
 
@@ -47,6 +48,7 @@ Fixpoint append {A: Type} (e1: env A) (e2: env A) : env A :=
  | Empty      => e1 
  | Snoc e2' x => Snoc (append e1 e2') x
  end.
+Hint Unfold append.
 Infix "++" := append.
 
 
@@ -283,6 +285,7 @@ Proof.
     false. omega.
     simpl in H0. simpl. apply IHix. omega. auto.
 Qed.
+Hint Resolve get_insert_above.
 
 
 Lemma get_insert_below
@@ -304,6 +307,7 @@ Proof.
     simpl in H0. auto.
     simpl in H0. simpl. apply IHix. omega. auto.
 Qed.
+Hint Resolve get_insert_below.
 
 
 (* take lemmas **********************************)

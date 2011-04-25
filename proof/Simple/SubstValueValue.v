@@ -81,26 +81,18 @@ Lemma liftX_insert
  -> TYPE (insert ix t2 e) (liftX 1 ix x) t1.
 Proof.
  intros. gen ix e t1.
- induction x; intros; simpl.
+ induction x; intros; simpl; inverts H; eauto.
 
  Case "XVar".
-  inverts H.
   breaka (bge_nat n ix).
   SCase "n >= ix".
    apply bge_nat_true in HeqX.
    apply TYVar.
    assert (n + 1 = S n). omega. rewrite H. clear H.
-   apply get_insert_above; auto.
-
-  SCase "n < ix".
-   apply TYVar. apply get_insert_below; auto.
+   auto.
 
  Case "XLam".
-  inverts H.
   apply TYLam. rewrite insert_rewind. auto.
- 
- Case "XApp".
-  inverts H. eauto.
 Qed.
 
 
