@@ -16,17 +16,17 @@ Proof.
  induction x; intros.
 
  (* These can't happen as there is no evaluation rule *)
- Case "XVar". inversion HS.
- Case "XLam". inversion HS.
+ Case "XVar". invert HS.
+ Case "XLam". invert HS.
 
  (* Applications *)
  Case "XApp".
-  inversions HT.
+  inverts HT.
   inverts keep HS.
 
   SCase "EVLamApp".
-   inversions H2.
-   inversions H3.
+   inverts H2.
+   inverts H3.
    eapply subst_value_value; eauto.
 
   SCase "EVApp1".

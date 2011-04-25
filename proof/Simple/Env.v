@@ -398,6 +398,7 @@ Proof.
     auto.
     simpl in H0. subst. simpl. apply IHm. omega. auto.
 Qed.
+Hint Resolve get_drop_above'.
 
 
 Lemma get_drop_above
@@ -427,6 +428,7 @@ Proof.
     inversions H.
     simpl. simpl in H0. apply IHm. omega. auto.
 Qed.
+Hint Resolve get_drop_below'.
 
 
 Lemma get_drop_below

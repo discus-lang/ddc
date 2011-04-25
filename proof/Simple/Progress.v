@@ -15,7 +15,7 @@ Proof.
  induction H.
 
  Case "XVar".
-  subst. inversion H.
+  subst. inverts H.
 
  Case "XLam".
   left. clear IHTYPE. subst. apply TYLam in H.
@@ -30,10 +30,11 @@ Proof.
   SCase "value x1".
    destruct IHTYPE2.
    SSCase "value x2".
-    inversions H1.
+    inverts H1.
     exists (subst x2 x). apply EVLamApp. auto.
    SSCase "x2 steps".
     destruct H2 as [x2']. exists (XApp x1 x2'). auto.
   SSCase "x1 steps".
    destruct H1 as [x1']. exists (XApp x1' x2). auto.
 Qed.
+

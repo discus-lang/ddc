@@ -74,6 +74,7 @@ Definition  subst := subst' 0.
 Hint Unfold subst.
 
 
+
 (** Lemmas **********************************************************)
 Lemma liftX_insert
  :  forall e ix x t1 t2
@@ -87,12 +88,12 @@ Proof.
   breaka (bge_nat n ix).
   SCase "n >= ix".
    apply bge_nat_true in HeqX.
-   apply TYVar.
-   assert (n + 1 = S n). omega. rewrite H. clear H.
-   auto.
+   apply TYVar. nnat. auto.
 
  Case "XLam".
-  apply TYLam. rewrite insert_rewind. auto.
+  apply TYLam.
+  rewrite insert_rewind. 
+   apply IHx. auto.
 Qed.
 
 
@@ -121,32 +122,30 @@ Theorem subst_value_value_drop
  -> TYPE (drop ix e) (subst' ix x2 x1) t1.
 Proof.
  intros. gen ix e x2 t1.
- induction x1; intros.
+ induction x1; intros; simpl; inverts H0; eauto.
 
  Case "XVar".
-  simpl. inverts H0.
   fbreak_compare.
   SCase "i = ix".
    rewrite H in H4. inverts H4. auto.
 
   SCase "n < ix".
-   apply TYVar. rewrite <- H4. auto.
+   apply TYVar.
+   rewrite <- H4.
+    apply get_drop_above. auto.
 
   SCase "n > ix".
-   apply TYVar. rewrite <- H4.
+   apply TYVar.
    destruct n.
     false. omega.
-    simpl. rewrite nat_minus_zero.
-    apply get_drop_below. omega.
+    simpl. nnat. rewrite <- H4.
+     apply get_drop_below. omega.
 
  Case "XLam".
-  simpl. inverts H0.
-  apply TYLam. rewrite drop_rewind.
-  apply IHx1; auto. simpl.
-  apply liftX_push. auto.
-
- Case "XApp".
-  simpl. inverts H0. eauto.
+  apply TYLam.
+  rewrite drop_rewind.
+  apply IHx1; auto.
+   simpl. apply liftX_push. auto.
 Qed.
 
 
@@ -159,6 +158,6 @@ Theorem subst_value_value
 Proof. 
  intros tenv x1 x2 t1 t2 Ht1 Ht2.
  lets H: subst_value_value_drop 0 (tenv :> t2).
-  simpl in H. eapply H; eauto.
+  simpl in H. eauto.
 Qed.
 
