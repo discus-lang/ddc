@@ -50,12 +50,12 @@ Fixpoint
           When we substitute the new expression, we need to lift
           its free indices across the lambdas that we've crossed
           to get to this point *)
-       | EQ => liftX d 0 u
+       | EQ  => u
        
        (* Index was free in the original expression.
           As we've removed the outermost binder, also decrease this
           index by one. *)
-       | GT => XVar (ix - 1)
+       | GT  => XVar (ix - 1)
 
        (* Index was bound in the original expression. *)
        | LT  => XVar ix
@@ -63,7 +63,7 @@ Fixpoint
 
     (* increase the depth as we move across a lambda *)
     |  XLam t1 x2
-    => XLam t1 (subst' (S d) u x2)
+    => XLam t1 (subst' (S d) (liftX 1 0 u) x2)
 
     |  XApp x1 x2 
     => XApp (subst' d u x1) (subst' d u x2)
@@ -76,73 +76,67 @@ Hint Unfold subst.
 
 (** Lemmas **********************************************************)
 
-(* Lifting an expression by 0 steps doesn't do anything.
-   This is equivalent to pushing 0 things on the environment. *)
-Theorem liftX_none
- : forall x1 depth
- , liftX 0 depth x1 = x1.
+
+Fixpoint insert {A: Type} (ix: nat) (x: A) (e: env A) : env A 
+ := match ix, e with
+    | _,     Empty     => Snoc Empty x
+    | S ix', Snoc e' y => Snoc (insert ix' x e') y
+    | O    , es        => Snoc es x
+    end.
+Hint Unfold insert.
+
+
+Lemma liftX_insert
+ :  forall e ix x t1 t2
+ ,  TYPE e x t1
+ -> TYPE (insert ix t2 e) (liftX 1 ix x) t1.
 Proof.
- induction x1; intro; simpl.
+ intros. gen ix e t1.
+ induction x; intros.
 
  Case "XVar".
-  assert (n + 0 = n). omega. rewrite H.
-  breaka (bge_nat n depth).
+  simpl. breaka (bge_nat n ix).
+  SCase "n >= ix".
+   inverts H.
+   apply TYVar.
+   apply bge_nat_true in HeqX.
+   admit. (* ok insert lemma *)
+
+  SCase "n < ix".
+   inverts H.
+   apply TYVar.
+   admit. (* ok insert lemma *)
 
  Case "XLam".
-  rewrite IHx1. auto.
-
- Case "XApp". 
-  rewrite IHx1_1. rewrite IHx1_2. auto.
-Qed.
-
-
-(* If an expression is well formed under a given environment, 
-   then all its indices are less than the length of this environment. 
-   Lifting indices more than this length doesn't do anything *)
-Theorem liftX_wfX
- :  forall n d x e
- ,  d = length e
- -> wfX e x
- -> liftX n d x = x.
-Proof.
- intros. gen e d.
- induction x; intros; simpl; simpl in H0.
+  simpl. inverts H.
+  apply TYLam.
+  assert (insert ix t2 e :> t = insert (S ix) t2 (e :> t)).
+  admit. (* ok insert lemma *)
+  rewrite H.
+  apply IHx. auto.
  
- Case "XVar".
-  breaka (bge_nat n0 d).
-  apply bge_nat_true in HeqX.
-  false. subst. destruct H0.
-  eapply get_above_false in H; auto.
-
- Case "XLam".
-  eapply IHx in H0; eauto.
-  simpl in H0. symmetry. rewrite H. rewrite H0. auto.
-
  Case "XApp".
-  destruct H0.
-  lets D1: IHx1 H0 H. rewrite D1.
-  lets D2: IHx2 H1 H. rewrite D2.
-  auto.
+  simpl. inverts H.
+  eauto.
 Qed.
 
 
-(* If an expression is closed then it has no free indices. 
-   Lifting it doesn't do anything. *)
-Theorem liftX_closed
- :  forall n x
- ,  closedX x
- -> liftX n 0 x = x.
+Lemma liftX_push
+ :  forall e x t1 t2
+ ,  TYPE  e         x            t1
+ -> TYPE (e :> t2) (liftX 1 0 x) t1.
 Proof.
- intros. unfold closedX in H. eapply liftX_wfX; eauto. 
- simpl. auto.
+ intros.
+ assert (e :> t2 = insert 0 t2 e). simpl. destruct e; auto.
+ rewrite H0. apply liftX_insert. auto.
 Qed.
 
 
 (* Substitution of values in values. 
-   Inductively, we need to reason about performing substitutions 
-   at any depth, hence we must prove a property about (subst' d x2 x1) 
-   instead of the weaker (subst x2 x1) that assumes the substitution
-   is taking place at top level.
+   Inductively, we must reason about performing substitutions at any
+   depth, hence we must prove a property about (subst' d x2 x1) instead
+   of the weaker (subst x2 x1) which assumes the substitution is taking
+   place at top level.
  *)
 Theorem subst_value_value_drop
  :  forall ix e x1 x2 t1 t2
@@ -151,14 +145,14 @@ Theorem subst_value_value_drop
  -> TYPE (drop ix e) x2 t2
  -> TYPE (drop ix e) (subst' ix x2 x1) t1.
 Proof.
- intros ix e x1 x2 t1 t2. gen ix e t1.
- induction x1; intros; simpl; inverts H0.
+ intros. gen ix e x2 t1.
+ induction x1; intros.
 
  Case "XVar".
+  simpl. inverts H0.
   fbreak_compare.
   SCase "i = ix".
-   rewrite H in H4. inverts H4.
-   lets D: type_wfX H1.
+   rewrite H in H4. inverts H4. auto.
 
   SCase "n < ix".
    apply TYVar. rewrite <- H4. auto.
@@ -170,12 +164,13 @@ Proof.
     simpl. rewrite nat_minus_zero. apply get_drop_below. omega.
 
  Case "XLam".
+  simpl. inverts H0.
   apply TYLam. rewrite drop_rewind.
-  apply IHx1; auto.
-  eapply type_check_closed_in_any_tyenv; eauto. admit.
+  apply IHx1; auto. simpl.
+  apply liftX_push. auto.
 
  Case "XApp".
-  eauto.
+  simpl. inverts H0. eauto.
 Qed.
 
 
