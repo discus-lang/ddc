@@ -60,6 +60,17 @@ Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
 Hint Unfold length.
 
 
+(* Insert a new element at an index in the list, 
+   all the elements above that point are shifted up one place. *)
+Fixpoint insert {A: Type} (ix: nat) (x: A) (e: env A) : env A 
+ := match ix, e with
+    | _,     Empty     => Snoc Empty x
+    | S ix', Snoc e' y => Snoc (insert ix' x e') y
+    | O    , es        => Snoc es x
+    end.
+Hint Unfold insert.
+
+
 (* Take some elements from the front of an element. *)
 Fixpoint take {A: Type} (n: nat) (e: env A) : env A :=
  match n, e with
@@ -243,6 +254,56 @@ Proof.
    eapply IHe1 in H1. auto. eauto.
 Qed.
 Hint Resolve get_above_false.
+
+
+(* insert lemmas ********************************)
+
+Lemma insert_rewind
+ :  forall {A: Type} ix t1 t2 (e: env A)
+ ,  insert ix t2 e :> t1 = insert (S ix) t2 (e :> t1).
+Proof. auto. Qed.
+
+
+Lemma get_insert_above
+ :  forall {A: Type} n ix (e: env A) x1 x2
+ ,  n >= ix
+ -> get e n                    = Some x1
+ -> get (insert ix x2 e) (S n) = Some x1.
+Proof.
+ intros. gen n e.
+ induction ix; intros.
+  destruct e.
+   false.
+   destruct n.
+    simpl in H0. auto.
+    simpl in H0. auto.
+  destruct e.
+   false.
+   destruct n.
+    false. omega.
+    simpl in H0. simpl. apply IHix. omega. auto.
+Qed.
+
+
+Lemma get_insert_below
+ :  forall {A: Type} n ix (e: env A) x1 x2
+ ,  n < ix
+ -> get e n                 = Some x1
+ -> get (insert ix x2 e) n  = Some x1.
+Proof.
+ intros. gen n e.
+ induction ix; intros.
+  destruct e.
+   false.
+   destruct n.
+    false. omega.
+    false. omega.
+  destruct e.
+   false.
+   destruct n. 
+    simpl in H0. auto.
+    simpl in H0. simpl. apply IHix. omega. auto.
+Qed.
 
 
 (* take lemmas **********************************)

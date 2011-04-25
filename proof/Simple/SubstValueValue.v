@@ -75,49 +75,32 @@ Hint Unfold subst.
 
 
 (** Lemmas **********************************************************)
-
-
-Fixpoint insert {A: Type} (ix: nat) (x: A) (e: env A) : env A 
- := match ix, e with
-    | _,     Empty     => Snoc Empty x
-    | S ix', Snoc e' y => Snoc (insert ix' x e') y
-    | O    , es        => Snoc es x
-    end.
-Hint Unfold insert.
-
-
 Lemma liftX_insert
  :  forall e ix x t1 t2
  ,  TYPE e x t1
  -> TYPE (insert ix t2 e) (liftX 1 ix x) t1.
 Proof.
  intros. gen ix e t1.
- induction x; intros.
+ induction x; intros; simpl.
 
  Case "XVar".
-  simpl. breaka (bge_nat n ix).
+  inverts H.
+  breaka (bge_nat n ix).
   SCase "n >= ix".
-   inverts H.
-   apply TYVar.
    apply bge_nat_true in HeqX.
-   admit. (* ok insert lemma *)
+   apply TYVar.
+   assert (n + 1 = S n). omega. rewrite H. clear H.
+   apply get_insert_above; auto.
 
   SCase "n < ix".
-   inverts H.
-   apply TYVar.
-   admit. (* ok insert lemma *)
+   apply TYVar. apply get_insert_below; auto.
 
  Case "XLam".
-  simpl. inverts H.
-  apply TYLam.
-  assert (insert ix t2 e :> t = insert (S ix) t2 (e :> t)).
-  admit. (* ok insert lemma *)
-  rewrite H.
-  apply IHx. auto.
+  inverts H.
+  apply TYLam. rewrite insert_rewind. auto.
  
  Case "XApp".
-  simpl. inverts H.
-  eauto.
+  inverts H. eauto.
 Qed.
 
 
@@ -161,7 +144,8 @@ Proof.
    apply TYVar. rewrite <- H4.
    destruct n.
     false. omega.
-    simpl. rewrite nat_minus_zero. apply get_drop_below. omega.
+    simpl. rewrite nat_minus_zero.
+    apply get_drop_below. omega.
 
  Case "XLam".
   simpl. inverts H0.
