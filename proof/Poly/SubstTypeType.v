@@ -1,188 +1,133 @@
 
-Require Import Exp.
-Require Import TyEnv.
-Require Import WellFormed.
 Require Import KiJudge.
+Require Import WellFormed.
+Require Import Exp.
 Require Import Base.
 
 
 (* Lift type indices that are at least a certain depth. *)
-Fixpoint liftTT (n: nat) (depth: nat) (tt: ty) : ty :=
+Fixpoint liftTT (n: nat) (d: nat) (tt: ty) : ty :=
   match tt with
   | TCon _     => tt
 
-  | TVar it    => if bge_nat it depth
-                   then TVar (it + n)
-                   else tt
+  |  TVar ix
+  => if bge_nat ix d
+      then TVar (ix + n)
+      else tt
 
-  | TForall t  => TForall (liftTT n (S depth) t)
-  | TFun t1 t2 => TFun    (liftTT n depth t1)
-                          (liftTT n depth t2)
+  |  TForall t 
+  => TForall (liftTT n (S d) t)
+
+  |  TFun t1 t2
+  => TFun    (liftTT n d t1) (liftTT n d t2)
   end.
 
 
-(* Substitution of Types in Types *)
-Fixpoint substTT' (depth: nat) (u: ty) (tt: ty) : ty :=
-  match tt with
-  | TCon _     => tt
+(* Substitution of Types in Types. *)
+Fixpoint substTT' (d: nat) (u: ty) (tt: ty) : ty 
+ := match tt with
+    |  TCon _     
+    => tt
  
-  | TVar it    => match compare it depth with
-                  | EQ => liftTT depth 0 u
-                  | GT => TVar (it - 1)
-                  | _  => TVar  it
-                  end
+    | TVar ix
+    => match compare ix d with
+       | EQ => u
+       | GT => TVar (ix - 1)
+       | _  => TVar  ix
+       end
 
-  | TForall t  => TForall (substTT' (S depth) u t)
-  | TFun t1 t2 => TFun    (substTT' depth u t1)
-                          (substTT' depth u t2)
+    |  TForall t  
+    => TForall (substTT' (S d) (liftTT 1 0 u) t)
+
+    |  TFun t1 t2 
+    => TFun (substTT' d u t1) (substTT' d u t2)
   end.
+
 
 Definition substTT := substTT' 0.
 Hint Unfold substTT.
 
 
-(* Substitution of Types in Environments.
-   The new type corresponds to one of the kinds in the environment.
-   We drop out that kind, and substitute the new type into all
-   the indices that were pointing to the kind.
-   The susbstitution process also adjusts the indices that were
-   pointing to kinds after the one that was dropped.
-
-   Example:
-       k3, k2, (0 -> 1), k1, k0, (1 -> 2)    [C/2]
-   =>  k3, (C -> 0), k1, k0, (1 -> C)        [D/1]
-   =>  k3, (C -> 0), k0, (D -> C) 
- *)
-Fixpoint substTE (n: nat) (u: ty) (e: tyenv) : tyenv :=
-  match n, e with 
-  |    _, Empty             => Empty
-
-  (* Found the kind to drop, we're done. *)
-  |    0, Snoc e' (EKind k) => e'
-
-  (* Still looking for the kind to drop out. *)
-  | S n', Snoc e'                (EKind k) 
-       => Snoc (substTE n' u e') (EKind k)
-
-  (* As we pass over types in the environment,
-     substitute in the new one *)
-  |    O, Snoc e'                (EType t) 
-       => Snoc (substTE n  u e') (EType (substTT' n u t))
-
-  |    _, Snoc e'                (EType t) 
-       => Snoc (substTE n  u e') (EType (substTT' n u t))
-  end.
-
-
 (* Lifting Lemmas ***************************************************)
-
-(* Lifting an type by zero steps doesn't do anything. *)
-Theorem liftTT_zero
- :  forall t1 depth
- ,  liftTT 0 depth t1 = t1.
+Lemma liftTT_insert
+ :  forall ke ix t k1 k2
+ ,  KIND ke t k1
+ -> KIND (insert ix k2 ke) (liftTT 1 ix t) k1.
 Proof.
- induction t1; intros; simpl; 
-  try auto;
-  try (rewrite IHt1; auto).
+ intros. gen ix ke k1.
+ induction t; intros; simpl; inverts H; eauto.
 
  Case "TVar".
-  breaka (bge_nat n depth).
-
- Case "TFun".
-  rewrite IHt1_1. rewrite IHt1_2. auto.
-Qed.
-
-
-Theorem liftT_wfT
- :  forall ix n t e
- ,  n = length e
- -> wfT e t 
- -> liftTT ix n t = t.
-Proof.
- intros. gen e n.
- induction t; intros; simpl; simpl in H; eauto.
-
- Case "TVar".
-  breaka (bge_nat n n0).
-  apply bge_nat_true in HeqX.
-  false. subst. destruct H0.
-  eapply getMatch_above_false; eauto.
+  breaka (bge_nat n ix).
+  SCase "n >= ix".
+   apply bge_nat_true in HeqX.
+   apply KIVar. nnat. auto.
 
  Case "TForall".
-  eapply IHt in H0; eauto.
-  simpl in H0. symmetry. rewrite H. rewrite H0. auto.
-
- Case "TFun".
-  destruct H0.
-  lets D1: IHt1 H0 H. rewrite D1.
-  lets D2: IHt2 H1 H. rewrite D2.
-  auto.
+  apply KIForall.
+  rewrite insert_rewind. 
+   apply IHt. auto.
 Qed.
 
 
-(* If a type is closed, then lifting it doesn't do anything. *)
-Theorem liftTT_closed
- :  forall it t
- ,  closedT t 
- -> liftTT it 0 t = t. 
+Lemma liftTT_push
+ :  forall ke t k1 k2
+ ,  KIND  ke         t             k1
+ -> KIND (ke :> k2) (liftTT 1 0 t) k1.
 Proof.
- intros. unfold closedT in H. eapply liftT_wfT; eauto.
- auto.
+ intros.
+ assert (ke :> k2 = insert 0 k2 ke). simpl. destruct ke; auto.
+ rewrite H0. apply liftTT_insert. auto.
 Qed.
 
 
 (* Theorems *********************************************************)
-
 (* Substitution of types in types preserves kinding.
    Must also subst new new type into types in env higher than ix
    otherwise indices ref subst type are broken.
    Resulting type env would not be well formed *)
 
 Theorem subst_type_type_drop
- :  forall it kenv t1 k1 t2 k2
- ,  closedT t2
- -> get  kenv it = Some k2
- -> KIND kenv           t1 k1
- -> KIND (drop it kenv) t2 k2
- -> KIND (drop it kenv) (substTT' it t2 t1) k1.
+ :  forall ix ke t1 k1 t2 k2
+ ,  get ke ix = Some k2
+ -> KIND ke t1 k1
+ -> KIND (drop ix ke) t2 k2
+ -> KIND (drop ix ke) (substTT' ix t2 t1) k1.
 Proof.
- intros it kenv t1 k1 t2 k2.
- gen it kenv k1.
- induction t1; intros; simpl; inverts H1; eauto.
+ intros. gen ix ke t2 k1 k2.
+ induction t1; intros; simpl; inverts H0; eauto.
 
  Case "TVar".
   destruct k1. destruct k2.
   fbreak_compare.
-  SCase "n = it".
-   rewrite liftTT_closed; auto.
+  SCase "n = ix".
+   auto.
 
-  SCase "n < it".
-   apply KIVar. rewrite <- H5. auto.
+  SCase "n < ix".
+   apply KIVar. rewrite <- H4. apply get_drop_above; auto.
 
-  SCase "n > it".
-   apply KIVar. rewrite <- H5.
+  SCase "n > ix".
+   apply KIVar. rewrite <- H4.
    destruct n.
-    simpl. false. omega.
-    simpl. rewrite nat_minus_zero. apply get_drop_below. omega.
+    false. omega.
+    simpl. nnat. apply get_drop_below. omega.
 
  Case "TForall".
   apply KIForall. rewrite drop_rewind.
-  apply IHt1; eauto. simpl.
-  eapply kind_check_closed_in_any; eauto.
+  eapply IHt1. auto. simpl. eauto. 
+  simpl. apply liftTT_push. auto.
 Qed.
 
 
 Theorem subst_type_type
- :  forall kenv t1 k1 t2 k2
- ,  closedT t2
- -> KIND (kenv :> k2)  t1 k1
- -> KIND kenv          t2 k2
- -> KIND kenv (substTT t2 t1) k1.
+ :  forall ke t1 k1 t2 k2
+ ,  KIND (ke :> k2) t1 k1
+ -> KIND ke         t2 k2
+ -> KIND ke (substTT t2 t1) k1.
 Proof.
  intros.
- assert (kenv = drop 0 (kenv :> k2)). auto. rewrite H2. clear H2.
+ assert (ke = drop 0 (ke :> k2)). auto. rewrite H1. clear H1.
  unfold substTT.
  eapply subst_type_type_drop; simpl; eauto.
 Qed.
-
 
