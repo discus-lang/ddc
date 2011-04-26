@@ -12,7 +12,7 @@ Fixpoint liftTT' (d: nat) (tt: ty) : ty :=
   | TCon _     => tt
 
   |  TVar ix
-  => if bge_nat ix d
+  => if le_gt_dec d ix
       then TVar (S ix)
       else tt
 
@@ -68,7 +68,56 @@ Definition substTE      := substTE' 0.
 Hint Unfold substTE.
 
 
+Ltac lift_cases :=
+  match goal with 
+  |   |- ?x 
+  => match x with 
+     | context [le_gt_dec ?n ?n'] => case (le_gt_dec n n')
+     end
+  end.
+  
+
+
 (* Lifting Lemmas ***************************************************)
+
+(* Changing the order of lifting. 
+     example indices: 0 1 2 3 4 5
+          let n + n': 1 + 2
+
+   Lift by (n + n') then by (n).
+     lift >= 3:       0 1 2 4 5 6
+     lift >= 1:       0 2 3 5 6 7  ** same result
+
+   Lift by (n) then by (1 + (n + n'))
+     lift >= 1:       0 2 3 4 5 6
+     lift >= 4:       0 2 3 5 6 7  ** same result
+ *)
+Lemma liftTT_liftTT
+ :  forall n n' t
+ ,  liftTT' n              (liftTT' (n + n') t) 
+ =  liftTT' (1 + (n + n')) (liftTT' n t).
+Proof.
+ intros. gen n n'.
+ induction t; intros.
+ Case "TCon".
+  simpl. auto.
+
+ Case "TVar".
+  simpl.
+  unfold liftTT'; repeat lift_cases; intros; 
+   auto; 
+   try (false; omega).
+
+ Case "TForall".
+  simpl. apply f_equal.
+  assert (S (n + n') = (S n) + n'). omega. rewrite H. clear H.
+  rewrite IHt. simpl. auto.
+
+ Case "TFun".
+  simpl. apply f_equal2; auto.
+Qed.  
+
+
 Lemma liftTT_insert
  :  forall ke ix t k1 k2
  ,  KIND ke t k1
