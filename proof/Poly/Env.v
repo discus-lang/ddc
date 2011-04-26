@@ -62,6 +62,15 @@ Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
 Hint Unfold length.
 
 
+(* A apply a function to all the elements of an environment. *)
+Fixpoint map {A B: Type} (f: A -> B) (e1: env A) : env B :=
+ match e1 with
+ | Empty      => Empty
+ | Snoc e2' x => Snoc (map f e2') (f x)
+ end. 
+Hint Unfold map.
+
+
 (* Select elements that match a given predicate. *)
 Fixpoint filter {A: Type} (f: A -> bool) (e: env A) : env A :=
   match e with 

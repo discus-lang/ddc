@@ -5,22 +5,27 @@ Require Import Exp.
 Require Import Base.
 
 
+(* Types ************************************************************)
 (* Lift type indices that are at least a certain depth. *)
-Fixpoint liftTT (n: nat) (d: nat) (tt: ty) : ty :=
+Fixpoint liftTT' (d: nat) (tt: ty) : ty :=
   match tt with
   | TCon _     => tt
 
   |  TVar ix
   => if bge_nat ix d
-      then TVar (ix + n)
+      then TVar (S ix)
       else tt
 
   |  TForall t 
-  => TForall (liftTT n (S d) t)
+  => TForall (liftTT' (S d) t)
 
   |  TFun t1 t2
-  => TFun    (liftTT n d t1) (liftTT n d t2)
+  => TFun    (liftTT' d t1) (liftTT' d t2)
   end.
+Hint Unfold liftTT'.
+
+Definition liftTT  := liftTT' 0.
+Hint Unfold liftTT.
 
 
 (* Substitution of Types in Types. *)
@@ -37,43 +42,53 @@ Fixpoint substTT' (d: nat) (u: ty) (tt: ty) : ty
        end
 
     |  TForall t  
-    => TForall (substTT' (S d) (liftTT 1 0 u) t)
+    => TForall (substTT' (S d) (liftTT u) t)
 
     |  TFun t1 t2 
     => TFun (substTT' d u t1) (substTT' d u t2)
   end.
 
-
 Definition substTT := substTT' 0.
 Hint Unfold substTT.
+
+
+(* Type Environments ************************************************)
+(* Lift type indices in type environments. *)
+Definition liftTE' d    := map (liftTT' d).
+Hint Unfold liftTE'.
+
+Definition liftTE       := liftTE' 0.
+Hint Unfold liftTE.
+
+(* Substitution of Types in Type Environments. *)
+Definition substTE' d t := map (substTT' d t). 
+Hint Unfold substTE'.
+
+Definition substTE      := substTE' 0.
+Hint Unfold substTE.
 
 
 (* Lifting Lemmas ***************************************************)
 Lemma liftTT_insert
  :  forall ke ix t k1 k2
  ,  KIND ke t k1
- -> KIND (insert ix k2 ke) (liftTT 1 ix t) k1.
+ -> KIND (insert ix k2 ke) (liftTT' ix t) k1.
 Proof.
  intros. gen ix ke k1.
  induction t; intros; simpl; inverts H; eauto.
 
  Case "TVar".
   breaka (bge_nat n ix).
-  SCase "n >= ix".
-   apply bge_nat_true in HeqX.
-   apply KIVar. nnat. auto.
 
  Case "TForall".
-  apply KIForall.
-  rewrite insert_rewind. 
-   apply IHt. auto.
+  apply KIForall. rewrite insert_rewind. apply IHt. auto.
 Qed.
 
 
 Lemma liftTT_push
  :  forall ke t k1 k2
- ,  KIND  ke         t             k1
- -> KIND (ke :> k2) (liftTT 1 0 t) k1.
+ ,  KIND  ke         t         k1
+ -> KIND (ke :> k2) (liftTT t) k1.
 Proof.
  intros.
  assert (ke :> k2 = insert 0 k2 ke). simpl. destruct ke; auto.
