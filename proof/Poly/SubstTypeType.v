@@ -78,7 +78,6 @@ Hint Unfold substTE.
 
 
 (* Lifting Lemmas ***************************************************)
-
 (* Changing the order of lifting. 
      example indices: 0 1 2 3 4 5
           let n + n': 1 + 2
@@ -117,6 +116,65 @@ Proof.
 Qed.  
 
 
+
+(* For two types t1, t2. 
+   If we lift t1 by d steps, then substitute t2 into it at the same depth 
+    then 1) substitution never takes place, because the free indices are now all >= d.
+         2) the substitution process subtracts d from each free index
+    so we get the same t1 we had when we started.
+ *)
+Lemma substTT_liftTT
+ :  forall d t1 t2
+ ,  substTT' d t2 (liftTT' d t1) = t1.
+Proof.
+ intros. gen d t2.
+ induction t1; intros; eauto.
+
+ Case "TVar".
+   simpl; lift_cases; unfold substTT';
+          fbreak_nat_compare; intros;
+    try auto;
+    try (false; omega);
+    try (f_equal; omega).
+
+ Case "TForall".
+  simpl. rewrite IHt1. auto.
+
+ Case "TFun".
+  simpl. rewrite IHt1_1. rewrite IHt1_2. auto.
+Qed.
+
+
+Lemma liftTT_substTT
+ :  forall n n' t1 t2
+ ,  liftTT' n (substTT' (n + n') t2 t1)
+ =  substTT' (1 + n + n') (liftTT' n t2) (liftTT' n t1).
+Proof.
+ intros. gen n n' t2.
+ induction t1; intros; eauto.
+
+ Case "TVar".
+  repeat (simpl; fbreak_nat_compare;
+          repeat lift_cases; intros);
+   try auto; 
+   try (false;   omega);
+   try (f_equal; omega).
+
+ Case "TForall".
+  simpl. f_equal. unfold liftTT.
+  assert (S (n + n') = (S n) + n'). omega. rewrite H.
+  rewrite IHt1. simpl. f_equal.
+  assert (S n = 1 + n). omega. rewrite H0.
+  lets D: liftTT_liftTT 0 n t2. symmetry in D. simpl in D. auto.
+
+ Case "TFun".
+  simpl. f_equal.
+  rewrite IHt1_1. auto.
+  rewrite IHt1_2. auto.
+Qed.
+
+
+(* Weakening Kind environment ***************************************)
 Lemma liftTT_insert
  :  forall ke ix t k1 k2
  ,  KIND ke t k1
