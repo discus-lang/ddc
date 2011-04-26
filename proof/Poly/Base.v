@@ -1,7 +1,8 @@
 
 Require Export BaseNat.
-Require Export BaseCompare.
 Require Export BaseTactics.
+Require Import Coq.Arith.Compare.
+
 
 (* Cases library due to Aaron Bohannon ********************)
 Require String. Open Scope string_scope.

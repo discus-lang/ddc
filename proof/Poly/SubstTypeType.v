@@ -35,9 +35,9 @@ Fixpoint substTT' (d: nat) (u: ty) (tt: ty) : ty
     => tt
  
     | TVar ix
-    => match compare ix d with
-       | EQ => u
-       | GT => TVar (ix - 1)
+    => match nat_compare ix d with
+       | Eq => u
+       | Gt => TVar (ix - 1)
        | _  => TVar  ix
        end
 
@@ -50,6 +50,15 @@ Fixpoint substTT' (d: nat) (u: ty) (tt: ty) : ty
 
 Definition substTT := substTT' 0.
 Hint Unfold substTT.
+
+
+Ltac lift_cases :=
+  match goal with 
+  |   |- ?x 
+  => match x with 
+     |  context [le_gt_dec ?n ?n'] => case (le_gt_dec n n')
+     end
+  end.
 
 
 (* Type Environments ************************************************)
@@ -66,16 +75,6 @@ Hint Unfold substTE'.
 
 Definition substTE      := substTE' 0.
 Hint Unfold substTE.
-
-
-Ltac lift_cases :=
-  match goal with 
-  |   |- ?x 
-  => match x with 
-     | context [le_gt_dec ?n ?n'] => case (le_gt_dec n n')
-     end
-  end.
-  
 
 
 (* Lifting Lemmas ***************************************************)
@@ -103,8 +102,8 @@ Proof.
   simpl. auto.
 
  Case "TVar".
-  simpl.
-  unfold liftTT'; repeat lift_cases; intros; 
+  simpl. unfold liftTT'.
+  repeat lift_cases; intros; 
    auto; 
    try (false; omega).
 
@@ -127,7 +126,7 @@ Proof.
  induction t; intros; simpl; inverts H; eauto.
 
  Case "TVar".
-  breaka (bge_nat n ix).
+  lift_cases; intros; auto.
 
  Case "TForall".
   apply KIForall. rewrite insert_rewind. apply IHt. auto.
@@ -163,7 +162,7 @@ Proof.
 
  Case "TVar".
   destruct k1. destruct k2.
-  fbreak_compare.
+  fbreak_nat_compare.
   SCase "n = ix".
    auto.
 
