@@ -191,7 +191,7 @@ unboxFloat32 objptr
 boxInt64 :: LlvmVar -> LlvmM LlvmVar
 boxInt64 int64
  = do	(objptr, dptr)
-		<- allocDataRS (sizeOfLlvmType i64) (pLift i64)
+		<- allocDataRSbyType (sizeOfLlvmType i64) (pLift i64)
 	addBlock
 		[ Store int64 dptr ]
 	return	objptr
@@ -217,7 +217,7 @@ unboxInt64 objptr
 boxFloat64 :: LlvmVar -> LlvmM LlvmVar
 boxFloat64 f64
  = do	(objptr, dptr)
-		<- allocDataRS (sizeOfLlvmType LMDouble) (pLift LMDouble)
+		<- allocDataRSbyType (sizeOfLlvmType LMDouble) (pLift LMDouble)
 	addBlock
 		[ Store f64 dptr ]
 	return	objptr

@@ -4,7 +4,8 @@ module Llvm.Runtime.Alloc
 	, allocThunk
 	, allocData
 	, allocDataM
-	, allocDataRS )
+	, allocDataRSbySize
+	, allocDataRSbyType )
 where
 
 import DDC.Main.Error
@@ -135,8 +136,8 @@ allocDataM tag dataSize ptrCount
 	return		ret
 
 
-allocDataRS :: Int -> LlvmType -> LlvmM (LlvmVar, LlvmVar)
-allocDataRS dataSize pType
+allocDataRSbyType :: Int -> LlvmType -> LlvmM (LlvmVar, LlvmVar)
+allocDataRSbyType dataSize pType
  = do	addAlias	("struct.DataRS", llvmTypeOfStruct ddcDataRS)
 
 	let size	= roundUpBytes (sizeOfLlvmType structDataRS + dataSize)
@@ -144,7 +145,7 @@ allocDataRS dataSize pType
 	let tagValue 	= (dataWords * 16) + objModeDataRS
 	let tag		= tagBasePlus tagValue
 
-	addComment	$ "allocDataRS " ++ show tagValue ++ " " ++ show dataSize ++ " " ++ show pType
+	addComment	$ "allocDataRSbyType " ++ show tagValue ++ " " ++ show dataSize ++ " " ++ show pType
 
 	pDataRS		<- allocate size "pDataRS" pStructDataRS
 
@@ -159,8 +160,29 @@ allocDataRS dataSize pType
 			, Assignment ret (Cast LM_Bitcast pDataRS pObj) ]
 	return		(ret, payload)
 
---------------------------------------------------------------------------------
 
+allocDataRSbySize :: Int -> Int -> LlvmM LlvmVar
+allocDataRSbySize tag dataSize
+ = do	addAlias	("struct.DataRS", llvmTypeOfStruct ddcDataRS)
+
+	let size	= roundUpBytes (sizeOfLlvmType structDataRS + dataSize)
+	let dataWords	= dataSize `div` 4
+	let tagValue 	= (tag * 256) + (dataWords * 16) + objModeDataRS
+	let tag		= tagBasePlus tagValue
+
+	addComment	$ "allocDataRSbySize " ++ show tagValue ++ " " ++ show dataSize
+
+	pDataRS		<- allocate size "pDataRS" pStructDataRS
+	ret		<- newUniqueNamedReg "allocated.DataRS" pObj
+
+	storeStructRegValue ddcDataRS pDataRS "tag" tag
+
+	addBlock	[ Assignment ret (Cast LM_Bitcast pDataRS pObj) ]
+	return		ret
+
+--------------------------------------------------------------------------------
+-- Store the given value in named field of the struct described by desc and
+-- referred to by the LlvmVar struct.
 storeStructRegValue :: LlvmStructDesc -> LlvmVar -> String -> LlvmVar -> LlvmM ()
 storeStructRegValue desc struct field value
  = do	let (indx, typ)	= structFieldLookup desc field

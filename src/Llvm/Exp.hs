@@ -25,6 +25,8 @@ import Llvm.Runtime
 import Llvm.Util
 import Llvm.Var
 
+import qualified Data.Map		as Map
+
 
 stage = "Llvm.Exp"
 
@@ -98,7 +100,7 @@ llvmOfXPrim (MBox (TCon (TyConUnboxed v))) [ XLit (LLit litfmt) ]
 llvmOfXPrim (MApp PAppCall) exp@(XVar (NSuper fv) (TFun at rt):args)
  = case varId fv of
 	VarIdPrim prim	-> primCall prim exp
-	_		-> funCall exp
+	_		-> primOrFunCall exp
 
 llvmOfXPrim (MApp PAppCall) (exp@(XVar (NSuper fv) ft):_)
  =	-- The type ft should be 'TFun _ _'. This is a bug in an earlier stage of the compiler.
@@ -174,6 +176,13 @@ llvmOfXPrim (MCoerce (PrimCoercePtr _ tdest)) [arg]
 	addBlock	[ Assignment r0 (Cast LM_Bitcast exp typ) ]
 	return		r0
 
+llvmOfXPrim (MCoerce (PrimCoerceAddrToPtr td@(TCon (TyConUnboxed _)))) [ arg@XVar{} ]
+ = do	let destType	= pLift $ toLlvmType td
+	ptr		<- llvmOfExp arg
+	r0		<- newUniqueReg $ destType
+	addBlock	[ Assignment r0 (Cast LM_Bitcast ptr destType ) ]
+	return		r0
+
 llvmOfXPrim (MPtr PrimPtrPlus) [ arg1@(XVar _ t1@(TPtr _)), arg2@(XVar _ (TCon (TyConUnboxed v2))) ]
  | varName v2 == "Int32#"
  = do	ptr		<- llvmOfExp arg1
@@ -223,7 +232,26 @@ intCastOp pc
 
 --------------------------------------------------------------------------------
 
+primOrFunCall :: [Exp a] -> LlvmM LlvmVar
+primOrFunCall all@((XVar (NSuper fv) (TFun at rt)):args)
+ | length at == length args
+ = case primLookup fv of
+	Nothing -> funCall all
+	Just fn	-> fn args
+
+
 funCall :: [Exp a] -> LlvmM LlvmVar
+funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
+ | length at == length args
+ , varName fv == "primAlloc_dataRS"
+ = do	let func	= funcDeclOfExp exp
+	addGlobalFuncDecl func
+	params		<- mapM llvmOfExp args
+	result		<- newUniqueNamedReg "result" $ toLlvmType rt
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
+	return		result
+
+
 funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
  | length at == length args
  = do	let func	= funcDeclOfExp exp
@@ -389,3 +417,48 @@ primProjFieldR args@[exp@(XVar v (TPtr (TCon TyConObj))), XLit (LLit (LiteralFmt
 			, Assignment bref (Call StdCall boxFun [pobj, pc] [])
 			, Assignment result (Cast LM_Bitcast bref pObj) ]
 	return		result
+
+-- =============================================================================
+
+
+mkPrimName :: Var -> String
+mkPrimName var = varName var ++ "|" ++ seaVar False var
+
+
+primLookup :: Var -> Maybe ([Exp a] -> LlvmM LlvmVar)
+primLookup funvar
+ = Map.lookup (mkPrimName funvar) primFunMap
+
+
+primFunMap :: Map.Map String ([Exp a] -> LlvmM LlvmVar)
+primFunMap
+ = Map.fromList
+	[ ( "primAlloc_dataRS|_allocDataRS", primAllocDataRS )
+	, ( "peekDataR_payload|primStore_peekDataR_payload", peekDataR_payload )
+	, ( "peekDataRS_payload|primStore_peekDataRS_payload", peekDataRS_payload )
+	]
+
+primAllocDataRS :: [Exp a] -> LlvmM LlvmVar
+primAllocDataRS args@[XLit (LLit (LiteralFmt (LInt tag) (UnboxedBits 32))), XLit (LLit (LiteralFmt (LInt dataSize) (UnboxedBits 32)))]
+ = allocDataRSbySize (fromInteger tag) (fromInteger dataSize)
+
+
+peekDataR_payload :: [Exp a] -> LlvmM LlvmVar
+peekDataR_payload [exp]
+ = panic stage $ "peekDataR_payload " ++ show exp
+
+peekDataRS_payload :: [Exp a] -> LlvmM LlvmVar
+peekDataRS_payload [exp@(XVar (NSlot n _) t)]
+ = do	addComment	$ "peekDataRS_payload " ++ varName n
+	addAlias	("struct.DataRS", llvmTypeOfStruct ddcDataRS)
+
+	let offset	= fst $ structFieldLookup ddcDataRS "payload"
+
+	pobj		<- llvmOfExp exp
+	pdata		<- newUniqueNamedReg "pDataRS" pStructDataRS
+	ptr		<- newUniqueNamedReg "pVoid" pChar
+
+	addBlock	[ Assignment pdata (Cast LM_Bitcast pobj pStructDataRS )
+			, Assignment ptr (GetElemPtr True pdata [ i32LitVar 0, i32LitVar offset, i32LitVar 0 ])
+			]
+	return		ptr

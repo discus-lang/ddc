@@ -156,6 +156,7 @@ toLlvmTypeCon (TyConUnboxed v)
 	"Word8#"	-> i8
 	"Word32#"	-> i32
 	"Word64#"	-> i64
+	"Addr#"		-> pChar
 	name		-> panic stage $ "toLlvmTypeCon (" ++ show __LINE__ ++ ") : " ++ name ++ "\n"
 
 toLlvmTypeCon (TyConAbstract v)
