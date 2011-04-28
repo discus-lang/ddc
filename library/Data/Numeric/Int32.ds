@@ -33,7 +33,7 @@ foreign import primInt32U_mul			:: Int32# -> Int32# -> Int32#
 foreign import primInt32U_div			:: Int32# -> Int32# -> Int32#
 foreign import primInt32U_mod			:: Int32# -> Int32# -> Int32#
 
--- Comparisons 
+-- Comparisons
 foreign import primInt32U_eq			:: Int32# -> Int32# -> Bool#
 foreign import primInt32U_neq			:: Int32# -> Int32# -> Bool#
 foreign import primInt32U_gt			:: Int32# -> Int32# -> Bool#
@@ -46,14 +46,14 @@ foreign import primInt32U_le			:: Int32# -> Int32# -> Bool#
 boxInt32 :: Int32# -> Int32
 boxInt32 u
  = do	w	= primAlloc_dataRS 0# 4#
-	poke (peekDataRS_payload w) u
+	poke (coerceAddrToPtr (peekDataRS_payload w)) u
 	w
 
 
 unboxInt32 :: Int32 -> Int32#
 unboxInt32 w
  = do	w'	= force w
-	peekOn w (peekDataRS_payload w')
+	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
 
 
 -- Unboxed Instances ----------------------------------------------------------
@@ -74,7 +74,7 @@ instance Ord Int32# where
 			\= GT
 
 
-instance Num Int32# where 
+instance Num Int32# where
  	(+) 		= primInt32U_add
 	(-) 		= primInt32U_sub
 	(*) 		= primInt32U_mul
@@ -95,10 +95,10 @@ instance Eq Int32 where
 --       needs these specific names for our pretend cross-module inlining setup.
 primInt32_eq  x y	= boxBool   (primInt32U_eq   (unboxInt32 x) (unboxInt32 y))
 primInt32_neq x y	= boxBool   (primInt32U_neq  (unboxInt32 x) (unboxInt32 y))
-		
+
 
 instance Ord Int32 where
-	(>) 		= primInt32_gt 
+	(>) 		= primInt32_gt
 	(<) 		= primInt32_lt
 	(>=)		= primInt32_ge
 	(<=)		= primInt32_le
@@ -126,7 +126,7 @@ instance Copy Int32 where
 instance Updatable Int32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (peekDataRS_payload w1') (unboxInt32 w2)
+		pokeOn w1 (coerceAddrToPtr (peekDataRS_payload w1')) (unboxInt32 w2)
 		()
 
 

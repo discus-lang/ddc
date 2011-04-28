@@ -20,25 +20,25 @@ import	Data.Numeric.Word8
 	Foreign.C.StdLib
  	Base
 
-project FlatString 
+project FlatString
  with {	box; unsafeUnbox; new; empty;
-	maxLengthU; lengthU; setLengthU; 
+	maxLengthU; lengthU; setLengthU;
  	maxLength;  length;  setLength;
-	index; 
+	index;
 	charsLeft;
-	append; 
-	slice; 
+	append;
+	slice;
 	unfoldrN; }
 
 
--- Instances ------------------------------------------------------------------	
+-- Instances ------------------------------------------------------------------
 instance Copy FlatString where
  copy	= flatString_copy
 
 
 -- Boxing --------------------------------------------------------------------
 -- | Create a new FlatString and copy some data into it.
---   TODO: Make a new new function that fills the string directly, 
+--   TODO: Make a new new function that fills the string directly,
 --         without needing to zero it out first.
 box :: Ptr# (String# %r1) -> FlatString %r2
 box strU
@@ -47,7 +47,7 @@ box strU
 	str	= new&{FlatString} (boxInt32 (len + 1#))
 
 	-- copy the source into it
-	dest	= coercePtr (plusPtr (peekDataR_payload str) 8#)
+	dest	= coercePtr (plusPtr (coerceAddrToPtr (peekDataR_payload str)) 8#)
 	strcpy dest strU
 
 	str.setLengthU len
@@ -63,12 +63,12 @@ box strU
 --
 unsafeUnbox :: FlatString %r1 -> Ptr# (String# %r1)
 unsafeUnbox str@(FlatString)
- 	= coercePtr (plusPtr (peekDataR_payload str) 8#)
+ 	= coercePtr (plusPtr (coerceAddrToPtr (peekDataR_payload str)) 8#)
 
 
 -- | Apply a function to a copy of the unboxed String contained
 --   in a FlatString. This String is copied out to the C heap before,
---   so it's ok if the function invokes the GC. The string is freed 
+--   so it's ok if the function invokes the GC. The string is freed
 --   after the function returns, so don't hold pointers to it afterwards.
 
 --   TODO: This doesn't work because we can't build a thunk that takes
@@ -93,7 +93,7 @@ new length
 
 	-- round length up to 4 byte word boundary for the DataR object.
 	spill		= mod len_nul 4#
-	len_spilled	= if spill == 0# 
+	len_spilled	= if spill == 0#
 				then len_nul
 				else len_nul + (4# - spill)
 
@@ -108,14 +108,14 @@ new length
 	payload = peekDataR_payload str
 
 	-- clear out the payload
-	memset (coercePtr payload) 0# len_payload
- 
+	memset (coerceAddrToPtr payload) 0# len_payload
+
 	-- write the maxLength
-	poke   payload len
+	poke   (coerceAddrToPtr payload) len
 
 	-- write the length
-	poke   (coercePtr (plusPtr (coercePtr payload) 4#)) 0#
-	
+	poke   (coercePtr (plusPtr (coerceAddrToPtr payload) 4#)) 0#
+
 	str
 
 
@@ -129,7 +129,7 @@ empty	= new 0
 --   TODO: Make this return a Word32#
 maxLengthU :: FlatString -> Int32#
 maxLengthU str@(FlatString)
- =	peek (peekDataR_payload str)
+ =	peek (coerceAddrToPtr (peekDataR_payload str))
 
 
 -- | Get the number of charaters currently stored in a FlatString.
@@ -137,18 +137,18 @@ maxLengthU str@(FlatString)
 lengthU :: FlatString -> Int32#
 lengthU str@(FlatString)
  = do	payload	= peekDataR_payload str
-	peek (coercePtr (plusPtr payload 4#))
+	peek (coercePtr (plusPtr (coerceAddrToPtr payload) 4#))
 
 
 -- | Set the current length of the string
 --   TODO: don't allow this to be set over the maximum available
---         This really wants a write effect, but we haven't added one because 
+--         This really wants a write effect, but we haven't added one because
 --         it's used by "new" and we cant mask effs on the return type of a
 --         fn yet.
 setLengthU :: FlatString -> Int32# -> ()
 setLengthU str@(FlatString) len
  = do	payload	= peekDataR_payload str
-	poke (coercePtr (plusPtr payload 4#)) len
+	poke (coercePtr (plusPtr (coerceAddrToPtr payload) 4#)) len
 	()
 
 
@@ -180,8 +180,8 @@ index str ix
  | ix < str.length
  = do	ixU	= unboxInt32 ix
  	payload	= peekDataR_payload str
-	w8	= peek (plusPtr payload (8#i32 + ixU))
-	
+	w8	= peek (plusPtr (coerceAddrToPtr payload) (8#i32 + ixU))
+
 	boxChar32 (primCast_Word8U_Word32U w8)
 
 
@@ -210,13 +210,13 @@ slice 	:: FlatString
 slice str start len
  = do	len'	= max (length str - start) len
 	str'	= new len'
-	
+
 	startU	= unboxInt32 start
 	lenU	= unboxInt32 len
 	dst	= coercePtr (unsafeUnbox str')
 	src	= plusPtr   (coercePtr (unsafeUnbox str)) startU
 	memcpy dst src lenU
-	
+
 	str'
 
 
@@ -233,14 +233,14 @@ slice str start len
 unfoldrN :: Int -> (a -> Maybe (Char32, a)) -> a -> (FlatString, Maybe a)
 unfoldrN len f x0
  | len < 0	= (new&{FlatString} 0, Just x0)
- | otherwise 
+ | otherwise
  = do	str	= new&{FlatString} len
 	setLength&{FlatString} str len
 
 	fill x n
  	 = case f x of
 	    Nothing      -> Nothing
-	    Just (c, x') 
+	    Just (c, x')
 	     -> if n == len
 		 then Just x
 		 else do
@@ -255,7 +255,7 @@ update :: FlatString -> Int -> Char32 -> ()
 update str n c
  = do 	pokeOnPtr
 		(unsafeUnbox&{FlatString} str)
-		(plusPtr (peekDataR_payload str) (8# + unboxInt32 n))  
+		(plusPtr (coerceAddrToPtr (peekDataR_payload str)) (8# + unboxInt32 n))
 		(primCast_Word32U_Word8U (unboxChar32 c))
 	()
 
