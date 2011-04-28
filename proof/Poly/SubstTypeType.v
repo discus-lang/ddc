@@ -48,7 +48,7 @@ Fixpoint substTT' (d: nat) (u: ty) (tt: ty) : ty
        end
 
     |  TForall t  
-    => TForall (substTT' (S d) (liftTT u) t)
+    => TForall (substTT' (S d) (liftTT' 0 u) t)
 
     |  TFun t1 t2 
     => TFun (substTT' d u t1) (substTT' d u t2)
@@ -85,8 +85,8 @@ Proof.
  induction t; intros; auto.
 
  Case "TVar".
-  simpl. unfold liftTT'.
-  repeat liftTT_cases; intros; burn.
+  simpl.
+  repeat (unfold liftTT'; liftTT_cases; intros); burn.
 
  Case "TForall".
   simpl.
@@ -130,7 +130,7 @@ Lemma liftTT_substTT
  =  substTT' (1 + n + n') (liftTT' n t2) (liftTT' n t1).
 Proof.
  intros. gen n n' t2.
- induction t1; intros; unfold liftTT; unfold substTT; eauto.
+ induction t1; intros; eauto.
 
  Case "TVar".
   repeat (simpl; fbreak_nat_compare; 
@@ -138,7 +138,7 @@ Proof.
    burn.
 
  Case "TForall".
-  simpl. unfold liftTT.
+  simpl.
   rewrite (IHt1 (S n) n'). simpl.
   rewrite (liftTT_liftTT 0 n). auto.
 
@@ -166,10 +166,8 @@ Proof.
  Case "TForall".
   simpl. f_equal.
   rewrite (IHt1 (S n) m). f_equal.
-   simpl. unfold liftTT.
-    rewrite (liftTT_substTT 0 (n + m)). auto.
-   simpl. unfold liftTT.
-    rewrite (liftTT_liftTT 0 n). auto.  
+   simpl. rewrite (liftTT_substTT 0 (n + m)). auto.
+   simpl. rewrite (liftTT_liftTT 0 n). auto.  
 
  Case "TFun".
   simpl. f_equal.
@@ -232,7 +230,8 @@ Proof.
    auto.
 
   SCase "n < ix".
-   apply KIVar. rewrite <- H4. apply get_drop_above; auto.
+   apply KIVar. rewrite <- H4.
+   apply get_drop_above; auto.
 
   SCase "n > ix".
    apply KIVar. rewrite <- H4.
@@ -241,9 +240,10 @@ Proof.
     simpl. nnat. apply get_drop_below. omega.
 
  Case "TForall".
-  apply KIForall. rewrite drop_rewind.
-  eapply IHt1. auto. simpl. eauto. 
-  simpl. apply liftTT_push. auto.
+  apply KIForall.
+  rewrite drop_rewind.
+  eapply IHt1; eauto.
+   apply liftTT_push. auto.
 Qed.
 
 

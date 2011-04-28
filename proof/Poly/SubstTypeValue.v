@@ -32,7 +32,7 @@ Fixpoint substTX' (d: nat) (u: ty) (xx: exp) : exp :=
   | XVar _     => xx
 
   |  XLAM x     
-  => XLAM (substTX' (S d) (liftTT u) x)
+  => XLAM (substTX' (S d) (liftTT' 0 u) x)
 
   |  XAPP x t
   => XAPP (substTX' d u x)  (substTT' d u t)
@@ -66,19 +66,16 @@ Proof.
   apply TYVar. admit. (* ok, lemma about map *)
 
  Case "XLAM".
-  simpl.
-  apply TYLAM. rewrite drop_rewind.
+  simpl. apply TYLAM.
+  rewrite drop_rewind.
   
   assert (liftTE (substTE' ix t2 te) = substTE' (S ix) (liftTT' 0 t2) (liftTE' 0 te)).
     admit. rewrite H0. (* ok, instance of liftTT_substTT *)
 
-  eapply IHx1.
-   unfold liftTE in H5. auto. 
-   simpl. eauto.
-   simpl. apply liftTT_push. auto.
+  eapply IHx1; eauto.
+   apply liftTT_push. auto.
 
  Case "XAPP".
-  unfold substTT.
   rewrite (substTT_substTT 0 ix).
   apply TYAPP.
    simpl. eapply (IHx1 ix) in H6; eauto.
@@ -96,6 +93,5 @@ Proof.
    eapply IHx1_1 in H6; eauto.
    eapply IHx1_2 in H8; eauto.
 Qed.
-
 
 
