@@ -18,7 +18,7 @@ import	DDC.Runtime.Store
 -- There aren't any corresponding C functions for these.
 -- They're implemented directly by the core language and backends.
 
--- Casting 
+-- Casting
 foreign import primCast_Int64U_Int8U		:: Int64# -> Int8#
 foreign import primCast_Int64U_Int16U		:: Int64# -> Int16#
 foreign import primCast_Int64U_Int32U		:: Int64# -> Int32#
@@ -46,19 +46,19 @@ foreign import primInt64U_le			:: Int64# -> Int64# -> Bool#
 boxInt64 :: Int64# -> Int64
 boxInt64 u
  = do	w	= primAlloc_dataRS 0# 8#
-	poke (peekDataRS_payload w) u
+	poke (coerceAddrToPtr (peekDataRS_payload w)) u
 	w
 
 
 unboxInt64 :: Int64 -> Int64#
 unboxInt64 w
  = do	w'	= force w
-	peekOn w (peekDataRS_payload w')
+	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
 
 
 -- Unboxed Instances ----------------------------------------------------------
 instance Eq Int64# where
-	(==)  x y	= boxBool (primInt64U_eq x y) 
+	(==)  x y	= boxBool (primInt64U_eq x y)
 	(/=)  x y	= boxBool (primInt64U_neq x y)
 
 
@@ -74,7 +74,7 @@ instance Ord Int64# where
 			\= GT
 
 
-instance Num Int64# where 
+instance Num Int64# where
  	(+) 		= primInt64U_add
 	(-) 		= primInt64U_sub
 	(*) 		= primInt64U_mul
@@ -84,13 +84,13 @@ instance Num Int64# where
 instance Integral Int64# where
 	div		= primInt64U_div
 	mod		= primInt64U_mod
-	
+
 
 -- Boxed Instances ------------------------------------------------------------
 instance Eq Int64 where
 	(==) x y	= boxBool   (primInt64U_eq  (unboxInt64 x) (unboxInt64 y))
 	(/=) x y	= boxBool   (primInt64U_neq (unboxInt64 x) (unboxInt64 y))
-		
+
 
 instance Ord Int64 where
 	(>) x y		= boxBool   (primInt64U_gt  (unboxInt64 x) (unboxInt64 y))
@@ -114,7 +114,7 @@ instance Copy Int64 where
 instance Updatable Int64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (peekDataRS_payload w1') (unboxInt64 w2)
+		pokeOn w1 (coerceAddrToPtr (peekDataRS_payload w1')) (unboxInt64 w2)
 		()
 
 
@@ -133,7 +133,7 @@ instance Num Int64 where
 instance Integral Int64 where
 	div x y		= boxInt64 (primInt64U_div (unboxInt64 x) (unboxInt64 y))
 	mod x y		= boxInt64 (primInt64U_mod (unboxInt64 x) (unboxInt64 y))
-	
+
 
 instance Accum Int64 where
 	(+=) a b	= a := (a + b)

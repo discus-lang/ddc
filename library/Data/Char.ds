@@ -10,16 +10,16 @@ import	Base
 boxChar32 :: Word32# -> Char32
 boxChar32 u
  = do	w	= primAlloc_dataRS 0# 4#
-	poke (peekDataRS_payload w) u
+	poke (coerceAddrToPtr (peekDataRS_payload w)) u
 	w
 
 unboxChar32 :: Char32 -> Word32#
 unboxChar32 w
  = do	w'	= force w
-	peekOn w (peekDataRS_payload w')
+	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
 
 
--- Instances ------------------------------------------------------------------		
+-- Instances ------------------------------------------------------------------
 instance Eq Char where
  (==) a b	= unboxChar32 a == unboxChar32 b
 

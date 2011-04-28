@@ -25,7 +25,7 @@ foreign import primCast_Word32U_Word64U		:: Word32# -> Word64#
 foreign import primCast_Word32U_Int32U		:: Word32# -> Int32#
 foreign import primCast_Word32U_Float32U	:: Word32# -> Float32#
 
--- Arithmetic 
+-- Arithmetic
 foreign import primWord32U_neg			:: Word32# -> Word32#
 foreign import primWord32U_add			:: Word32# -> Word32# -> Word32#
 foreign import primWord32U_sub 			:: Word32# -> Word32# -> Word32#
@@ -46,19 +46,19 @@ foreign import primWord32U_le			:: Word32# -> Word32# -> Bool#
 boxWord32 :: Word32# -> Word32
 boxWord32 u
  = do	w	= primAlloc_dataRS 0# 4#
-	poke (peekDataRS_payload w) u
+	poke (coerceAddrToPtr (peekDataRS_payload w)) u
 	w
 
 
 unboxWord32 :: Word32 -> Word32#
 unboxWord32 w
  = do	w'	= force w
-	peekOn w (peekDataRS_payload w')
+	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
 
 
 -- Unboxed Instances ----------------------------------------------------------
 instance Eq Word32# where
-	(==)  x y	= boxBool (primWord32U_eq x y) 
+	(==)  x y	= boxBool (primWord32U_eq x y)
 	(/=)  x y	= boxBool (primWord32U_neq x y)
 
 
@@ -74,7 +74,7 @@ instance Ord Word32# where
 			\= GT
 
 
-instance Num Word32# where 
+instance Num Word32# where
  	(+) 		= primWord32U_add
 	(-) 		= primWord32U_sub
 	(*) 		= primWord32U_mul
@@ -90,7 +90,7 @@ instance Integral Word32# where
 instance Eq Word32 where
 	(==) x y	= boxBool   (primWord32U_eq  (unboxWord32 x) (unboxWord32 y))
 	(/=) x y	= boxBool   (primWord32U_neq (unboxWord32 x) (unboxWord32 y))
-		
+
 
 instance Ord Word32 where
 	(>) x y		= boxBool   (primWord32U_gt  (unboxWord32 x) (unboxWord32 y))
@@ -110,7 +110,7 @@ instance Copy Word32 where
 instance Updatable Word32 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (peekDataRS_payload w1') (unboxWord32 w2)
+		pokeOn w1 (coerceAddrToPtr (peekDataRS_payload w1')) (unboxWord32 w2)
 		()
 
 

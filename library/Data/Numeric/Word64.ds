@@ -18,7 +18,7 @@ import	DDC.Runtime.Store
 -- There aren't any corresponding C functions for these.
 -- They're implemented directly by the core language and backends.
 
--- Casting 
+-- Casting
 foreign import primCast_Word64U_Word8U		:: Word64# -> Word8#
 foreign import primCast_Word64U_Word16U		:: Word64# -> Word16#
 foreign import primCast_Word64U_Word32U		:: Word64# -> Word32#
@@ -46,19 +46,19 @@ foreign import primWord64U_le			:: Word64# -> Word64# -> Bool#
 boxWord64 :: Word64# -> Word64
 boxWord64 u
  = do	w	= primAlloc_dataRS 0# 8#
-	poke (peekDataRS_payload w) u
+	poke (coerceAddrToPtr (peekDataRS_payload w)) u
 	w
 
 
 unboxWord64 :: Word64 -> Word64#
 unboxWord64 w
  = do	w'	= force w
-	peekOn w (peekDataRS_payload w')
+	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
 
 
 -- Unboxed Instances ----------------------------------------------------------
 instance Eq Word64# where
-	(==)  x y	= boxBool (primWord64U_eq x y) 
+	(==)  x y	= boxBool (primWord64U_eq x y)
 	(/=)  x y	= boxBool (primWord64U_neq x y)
 
 
@@ -74,7 +74,7 @@ instance Ord Word64# where
 			\= GT
 
 
-instance Num Word64# where 
+instance Num Word64# where
  	(+) 		= primWord64U_add
 	(-) 		= primWord64U_sub
 	(*) 		= primWord64U_mul
@@ -90,7 +90,7 @@ instance Integral Word64# where
 instance Eq Word64 where
 	(==) x y	= boxBool   (primWord64U_eq  (unboxWord64 x) (unboxWord64 y))
 	(/=) x y	= boxBool   (primWord64U_neq (unboxWord64 x) (unboxWord64 y))
-		
+
 
 instance Ord Word64 where
 	(>) x y		= boxBool   (primWord64U_gt  (unboxWord64 x) (unboxWord64 y))
@@ -110,7 +110,7 @@ instance Copy Word64 where
 instance Updatable Word64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (peekDataRS_payload w1') (unboxWord64 w2)
+		pokeOn w1 (coerceAddrToPtr (peekDataRS_payload w1')) (unboxWord64 w2)
 		()
 
 

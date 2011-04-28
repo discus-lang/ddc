@@ -44,10 +44,10 @@ foreign import primFloat64U_le			:: Float64# -> Float64# -> Bool#
 -- These are implemented by the C math library and/or as intrinsic
 -- functions in the backends.
 
--- Arithmetic 
+-- Arithmetic
 foreign import "fabs"	primFloat64U_abs  	:: Float64# -> Float64#
 
--- Trig 
+-- Trig
 foreign import "sin"	primFloat64U_sin	:: Float64# -> Float64#
 foreign import "asin"	primFloat64U_asin	:: Float64# -> Float64#
 foreign import "cos"	primFloat64U_cos	:: Float64# -> Float64#
@@ -55,7 +55,7 @@ foreign import "acos"	primFloat64U_acos	:: Float64# -> Float64#
 foreign import "tan"	primFloat64U_tan	:: Float64# -> Float64#
 foreign import "atan"	primFloat64U_atan	:: Float64# -> Float64#
 
--- Utils 
+-- Utils
 foreign import "trunc"	primFloat64U_ftrunc	:: Float64# -> Float64#
 foreign import "round"	primFloat64U_fround	:: Float64# -> Float64#
 foreign import "floor"	primFloat64U_ffloor	:: Float64# -> Float64#
@@ -69,14 +69,14 @@ foreign import "log"	primFloat64U_log	:: Float64# -> Float64#
 boxFloat64 :: Float64# -> Float64
 boxFloat64 u
  = do	w	= primAlloc_dataRS 0# 8#
-	poke (peekDataRS_payload w) u
+	poke (coerceAddrToPtr (peekDataRS_payload w)) u
 	w
 
 
 unboxFloat64 :: Float64 -> Float64#
 unboxFloat64 w
  = do	w'	= force w
-	peekOn w (peekDataRS_payload w')
+	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
 
 
 -- Conversion -----------------------------------------------------------------
@@ -101,7 +101,7 @@ instance Ord Float64# where
 	(<=)		= primFloat64U_le
 
 
-instance Num Float64# where 
+instance Num Float64# where
 	negate		= primFloat64U_neg
 	abs		= primFloat64U_abs
  	(+) 		= primFloat64U_add
@@ -134,7 +134,7 @@ instance Floating Float64# where
 instance Eq Float64 where
 	(==) x y	= boxBool   (primFloat64U_eq  (unboxFloat64 x) (unboxFloat64 y))
 	(/=) x y	= boxBool   (primFloat64U_neq (unboxFloat64 x) (unboxFloat64 y))
-		
+
 
 instance Ord Float64 where
 	(>) x y		= boxBool   (primFloat64U_gt  (unboxFloat64 x) (unboxFloat64 y))
@@ -158,7 +158,7 @@ instance Copy Float64 where
 instance Updatable Float64 where
 	(:=) w1 w2
 	 = do	w1'	= force w1
-		pokeOn w1 (peekDataRS_payload w1') (unboxFloat64 w2)
+		pokeOn w1 (coerceAddrToPtr (peekDataRS_payload w1')) (unboxFloat64 w2)
 		()
 
 
@@ -201,7 +201,7 @@ round64 x	= truncate64 (fround x)
 floor64 x 	= truncate64 (ffloor x)
 
 project Float64 where
- clamp :: Float64 -> Float64 -> Float64 -> Float64 
+ clamp :: Float64 -> Float64 -> Float64 -> Float64
  clamp x a b
 	| x < a		= a
 	| x > b		= b
