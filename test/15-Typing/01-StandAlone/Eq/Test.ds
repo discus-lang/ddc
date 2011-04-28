@@ -11,7 +11,7 @@ infix  5 ==, /=
 
 
 -- The class of types which support equality
-class Eq a where 
+class Eq a where
 
 	(==)	:: forall b %r1
 		.  a -> b -(!e1 $c1)> Bool %r1
@@ -19,28 +19,28 @@ class Eq a where
 		,  $c1 = ${x : a}
 		,  Shape2 a b
 
-	(/=)	:: forall b %r1 
+	(/=)	:: forall b %r1
 		.  a -> b -(!e1 $c1)> Bool %r1
 		:- !e1 = !ReadT a + !ReadT b
 		,  $c1 = ${x : a}
 		,  Shape2 a b
 
 
-foreign import "primInt32U_eq"	
+foreign import "primInt32U_eq"
  primInt32U_eq	:: Int32# -> Int32# -> Bool#
 
 
 boxInt32 :: Int32# -> Int32
 boxInt32 u
  = do	w	= primAlloc_dataRS 0# 4#
-	poke (coercePtr (peekDataRS_payload w)) u
+	poke (coercePtr (coerceAddrToPtr (peekDataRS_payload w))) u
 	w
 
 
 unboxInt32 :: Int32 -> Int32#
 unboxInt32 w
  = do	w'	= force w
-	peekOn w (coercePtr (peekDataRS_payload w'))
+	peekOn w (coercePtr (coerceAddrToPtr (peekDataRS_payload w')))
 
 
 instance Eq Int32 where
