@@ -11,17 +11,17 @@ import	Base
 -- Raw Data Internals ---------------------------------------------------------
 -- | Get the size of this entire DataR object.
 foreign import "primStore_peekDataR_size"
- peekDataR_size	
+ peekDataR_size
  	:: forall a. a -> Int32#
 
-	
+
 -- | Get a pointer to the payload of this DataR object.
 foreign import "primStore_peekDataR_payload"
  peekDataR_payload
- 	:: forall a b. a -> Ptr# b
+ 	:: forall a. a -> Addr#
 
 
 -- | Get a pointer to the payload of this DataR object.
 foreign import "primStore_peekDataRS_payload"
  peekDataRS_payload
- 	:: forall a b. a -> Ptr# b
+ 	:: forall a. a -> Addr#
