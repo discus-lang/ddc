@@ -48,11 +48,6 @@ Fixpoint substTX' (d: nat) (u: ty) (xx: exp) : exp :=
 Definition  substTX := substTX' 0.
 Hint Unfold substTX.
 
-Inductive substTEF : ty -> ty -> env ty -> env ty -> Prop :=
- | SUBSTFUCKER 
-   : forall t1 t2 e1 e2, substTEF t1 t2 e1 e2.
-
-
 
 Theorem subst_type_value_drop
  :  forall ix ke te x1 t1 t2 k2
@@ -83,37 +78,24 @@ Proof.
    simpl. apply liftTT_push. auto.
 
  Case "XAPP".
- 
-
- 
+  unfold substTT.
+  rewrite (substTT_substTT 0 ix).
+  apply TYAPP.
+   simpl. eapply (IHx1 ix) in H6; eauto.
+   simpl. eapply subst_type_type_drop; eauto.
   
+ Case "XLam".
+  simpl. apply TYLam.
+  assert ( substTE' ix t2 te :> substTT' ix t2 t
+         = substTE' ix t2 (te :> t)). admit. (* ok, prop of substTE' *)
+         rewrite H0. clear H0.
+  eapply IHx1; eauto.
 
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ Case "XApp".
+  eapply TYApp.
+   eapply IHx1_1 in H6; eauto.
+   eapply IHx1_2 in H8; eauto.
+Qed.
 
 
 

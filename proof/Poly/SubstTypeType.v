@@ -27,6 +27,12 @@ Hint Unfold liftTT'.
 Definition liftTT  := liftTT' 0.
 Hint Unfold liftTT.
 
+Ltac liftTT_cases 
+ := match goal with 
+     |  [ |- context [le_gt_dec ?n ?n'] ]
+     => case (le_gt_dec n n')
+    end.
+
 
 (* Substitution of Types in Types. *)
 Fixpoint substTT' (d: nat) (u: ty) (tt: ty) : ty 
@@ -52,15 +58,6 @@ Definition substTT := substTT' 0.
 Hint Unfold substTT.
 
 
-Ltac lift_cases :=
-  match goal with 
-  |   |- ?x 
-  => match x with 
-     |  context [le_gt_dec ?n ?n'] => case (le_gt_dec n n')
-     end
-  end.
-
-
 (* Type Environments ************************************************)
 (* Lift type indices in type environments. *)
 Definition liftTE' d    := map (liftTT' d).
@@ -78,51 +75,31 @@ Hint Unfold substTE.
 
 
 (* Lifting Lemmas ***************************************************)
-(* Changing the order of lifting. 
-     example indices: 0 1 2 3 4 5
-          let n + n': 1 + 2
-
-   Lift by (n + n') then by (n).
-     lift >= 3:       0 1 2 4 5 6
-     lift >= 1:       0 2 3 5 6 7  ** same result
-
-   Lift by (n) then by (1 + (n + n'))
-     lift >= 1:       0 2 3 4 5 6
-     lift >= 4:       0 2 3 5 6 7  ** same result
- *)
+(* Changing the order of lifting. *)
 Lemma liftTT_liftTT
  :  forall n n' t
  ,  liftTT' n              (liftTT' (n + n') t) 
  =  liftTT' (1 + (n + n')) (liftTT' n t).
 Proof.
  intros. gen n n'.
- induction t; intros.
- Case "TCon".
-  simpl. auto.
+ induction t; intros; auto.
 
  Case "TVar".
   simpl. unfold liftTT'.
-  repeat lift_cases; intros; 
-   auto; 
-   try (false; omega).
+  repeat liftTT_cases; intros; burn.
 
  Case "TForall".
-  simpl. apply f_equal.
-  assert (S (n + n') = (S n) + n'). omega. rewrite H. clear H.
-  rewrite IHt. simpl. auto.
+  simpl.
+  assert (S (n + n') = (S n) + n'). omega. rewrite H. 
+  rewrite IHt. auto.
 
  Case "TFun".
   simpl. apply f_equal2; auto.
 Qed.  
 
 
-
-(* For two types t1, t2. 
-   If we lift t1 by d steps, then substitute t2 into it at the same depth 
-    then 1) substitution never takes place, because the free indices are now all >= d.
-         2) the substitution process subtracts d from each free index
-    so we get the same t1 we had when we started.
- *)
+(* If we lift at depth d, this creates an empty space and
+   substituting into it doens't do anything. *)
 Lemma substTT_liftTT
  :  forall d t1 t2
  ,  substTT' d t2 (liftTT' d t1) = t1.
@@ -131,46 +108,73 @@ Proof.
  induction t1; intros; eauto.
 
  Case "TVar".
-   simpl; lift_cases; unfold substTT';
-          fbreak_nat_compare; intros;
-    try auto;
-    try (false; omega);
-    try (f_equal; omega).
+  simpl; liftTT_cases; unfold substTT';
+   fbreak_nat_compare; intros;
+   burn.
 
  Case "TForall".
-  simpl. rewrite IHt1. auto.
+  simpl. 
+  rewrite IHt1. auto.
 
  Case "TFun".
-  simpl. rewrite IHt1_1. rewrite IHt1_2. auto.
+  simpl.
+  rewrite IHt1_1.
+  rewrite IHt1_2. auto.
 Qed.
 
 
+(* Lifting after substitution *)
 Lemma liftTT_substTT
  :  forall n n' t1 t2
  ,  liftTT' n (substTT' (n + n') t2 t1)
  =  substTT' (1 + n + n') (liftTT' n t2) (liftTT' n t1).
 Proof.
  intros. gen n n' t2.
- induction t1; intros; eauto.
+ induction t1; intros; unfold liftTT; unfold substTT; eauto.
 
  Case "TVar".
-  repeat (simpl; fbreak_nat_compare;
-          repeat lift_cases; intros);
-   try auto; 
-   try (false;   omega);
-   try (f_equal; omega).
+  repeat (simpl; fbreak_nat_compare; 
+          try liftTT_cases; try intros);
+   burn.
 
  Case "TForall".
-  simpl. f_equal. unfold liftTT.
-  assert (S (n + n') = (S n) + n'). omega. rewrite H.
-  rewrite IHt1. simpl. f_equal.
-  assert (S n = 1 + n). omega. rewrite H0.
-  lets D: liftTT_liftTT 0 n t2. symmetry in D. simpl in D. auto.
+  simpl. unfold liftTT.
+  rewrite (IHt1 (S n) n'). simpl.
+  rewrite (liftTT_liftTT 0 n). auto.
+
+ Case "TFun".
+  simpl.
+  rewrite IHt1_1. auto.
+  rewrite IHt1_2. auto.
+Qed.
+
+
+(* Commuting substitutions. *)
+Lemma substTT_substTT
+ :  forall n m t1 t2 t3
+ ,  substTT' (n + m) t3 (substTT' n t2 t1)
+ =  substTT' n (substTT' (n + m) t3 t2)
+               (substTT' (1 + n + m) (liftTT' n t3) t1).
+Proof.
+ intros. gen n m t2 t3.
+ induction t1; intros; auto.
+
+ Case "TVar".
+  repeat (simpl; fbreak_nat_compare; burn).
+  rewrite substTT_liftTT. auto.
+
+ Case "TForall".
+  simpl. f_equal.
+  rewrite (IHt1 (S n) m). f_equal.
+   simpl. unfold liftTT.
+    rewrite (liftTT_substTT 0 (n + m)). auto.
+   simpl. unfold liftTT.
+    rewrite (liftTT_liftTT 0 n). auto.  
 
  Case "TFun".
   simpl. f_equal.
-  rewrite IHt1_1. auto.
-  rewrite IHt1_2. auto.
+   apply IHt1_1.
+   apply IHt1_2.
 Qed.
 
 
@@ -184,10 +188,12 @@ Proof.
  induction t; intros; simpl; inverts H; eauto.
 
  Case "TVar".
-  lift_cases; intros; auto.
+  liftTT_cases; intros; auto.
 
  Case "TForall".
-  apply KIForall. rewrite insert_rewind. apply IHt. auto.
+  apply KIForall.
+  rewrite insert_rewind.
+  apply IHt. auto.
 Qed.
 
 
@@ -197,7 +203,8 @@ Lemma liftTT_push
  -> KIND (ke :> k2) (liftTT t) k1.
 Proof.
  intros.
- assert (ke :> k2 = insert 0 k2 ke). simpl. destruct ke; auto.
+ assert (ke :> k2 = insert 0 k2 ke). simpl.
+   destruct ke; auto.
  rewrite H0. apply liftTT_insert. auto.
 Qed.
 
@@ -230,7 +237,7 @@ Proof.
   SCase "n > ix".
    apply KIVar. rewrite <- H4.
    destruct n.
-    false. omega.
+    burn.
     simpl. nnat. apply get_drop_below. omega.
 
  Case "TForall".
@@ -247,8 +254,8 @@ Theorem subst_type_type
  -> KIND ke (substTT t2 t1) k1.
 Proof.
  intros.
- assert (ke = drop 0 (ke :> k2)). auto. rewrite H1. clear H1.
  unfold substTT.
+ assert (ke = drop 0 (ke :> k2)). auto. rewrite H1.
  eapply subst_type_type_drop; simpl; eauto.
 Qed.
 
