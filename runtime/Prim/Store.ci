@@ -10,18 +10,18 @@ static inline Int32 primStore_peekDataR_size (Obj* obj)
 }
 
 
-static inline void* primStore_peekDataR_payload (Obj* obj)
+static inline Addr primStore_peekDataR_payload (Obj* obj)
 {
 	DataR* data	= (DataR*) obj;
-	void*  payload	= (void*)data->payload;
+	Addr  payload	= (void*)data->payload;
 	return	payload;
 }
 
 
-static inline void* primStore_peekDataRS_payload (Obj* obj)
+static inline Addr primStore_peekDataRS_payload (Obj* obj)
 {
 	DataRS* data	= (DataRS*) obj;
-	void*  payload	= (void*)data->payload;
+	Addr  payload	= (Addr)data->payload;
 	return	payload;
 }
 
