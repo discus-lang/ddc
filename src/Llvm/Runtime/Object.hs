@@ -13,6 +13,7 @@ module Llvm.Runtime.Object
 	, ddcThunk
 	, ddcData
 	, ddcDataM
+	, ddcDataR
 	, ddcDataRS
 	, ddcSuspIndir
 
@@ -27,6 +28,7 @@ module Llvm.Runtime.Object
 	, pStructThunk
 	, pStructData
 	, pStructDataM
+	, pStructDataR
 	, pStructDataRS
 	, pStructSuspIndir
 
@@ -122,6 +124,21 @@ structDataM = LMAlias ("struct.DataM", llvmTypeOfStruct ddcData)
 
 pStructDataM :: LlvmType
 pStructDataM = pLift structDataM
+
+--------------------------------------------------------------------------------
+
+ddcDataR :: LlvmStructDesc
+ddcDataR
+ =	mkLlvmStructDesc "DataR"
+		[ AField "tag" i32			-- tag
+		, AField "size" i32
+		, AField "payload" (LMArray 0 i8) ]	-- data
+
+structDataR :: LlvmType
+structDataR = LMAlias ("struct.DataR", llvmTypeOfStruct ddcDataR)
+
+pStructDataR :: LlvmType
+pStructDataR = pLift structDataR
 
 --------------------------------------------------------------------------------
 
