@@ -60,17 +60,17 @@ Hint Unfold substTT.
 
 (* Type Environments ************************************************)
 (* Lift type indices in type environments. *)
-Definition liftTE' d    := map (liftTT' d).
+Definition liftTE' d te    := map (liftTT' d) te.
 Hint Unfold liftTE'.
 
-Definition liftTE       := liftTE' 0.
+Definition liftTE te       := liftTE' 0 te.
 Hint Unfold liftTE.
 
 (* Substitution of Types in Type Environments. *)
-Definition substTE' d t := map (substTT' d t). 
+Definition substTE' d t te := map (substTT' d t) te.
 Hint Unfold substTE'.
 
-Definition substTE      := substTE' 0.
+Definition substTE te      := substTE' 0 te.
 Hint Unfold substTE.
 
 
@@ -176,6 +176,21 @@ Proof.
 Qed.
 
 
+(* Lifting lemmas on environments ***********************************)
+Lemma liftTE_substTE
+ :  forall n n' t2 te
+ ,  liftTE' n (substTE' (n + n') t2 te)
+ =  substTE' (1 + n + n') (liftTT' n t2) (liftTE' n te).
+Proof.
+ intros. induction te.
+  auto.
+  unfold substTE'. unfold liftTE'.
+   simpl. rewrite liftTT_substTT.
+   unfold liftTE' in IHte.
+   unfold substTE' in IHte. rewrite IHte. auto.
+Qed.
+
+
 (* Weakening Kind environment ***************************************)
 Lemma liftTT_insert
  :  forall ke ix t k1 k2
@@ -213,7 +228,7 @@ Qed.
    otherwise indices ref subst type are broken.
    Resulting type env would not be well formed *)
 
-Theorem subst_type_type_drop
+Theorem subst_type_type_ix
  :  forall ix ke t1 k1 t2 k2
  ,  get ke ix = Some k2
  -> KIND ke t1 k1
@@ -256,6 +271,6 @@ Proof.
  intros.
  unfold substTT.
  assert (ke = drop 0 (ke :> k2)). auto. rewrite H1.
- eapply subst_type_type_drop; simpl; eauto.
+ eapply subst_type_type_ix; simpl; eauto.
 Qed.
 

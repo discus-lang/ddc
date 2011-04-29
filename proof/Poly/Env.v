@@ -9,6 +9,7 @@
   Where :> is sugar for Snoc.
  *)
 Require Import Base.
+Require Import Coq.Program.Basics.
 
 
 (* Environments. *)
@@ -292,6 +293,40 @@ Proof.
    eapply IHe1 in H1. auto. eauto.
 Qed.
 Hint Resolve get_above_false.
+
+
+(* map lemmas *******************************************************)
+Lemma map_rewind
+ :  forall {A B: Type} (f: A -> B) (e: env A) x
+ ,  map f e :> f x 
+ =  map f (e :> x).
+Proof. auto. Qed.
+
+
+Lemma get_map 
+ : forall {A B: Type} (f: A -> B) (e: env A) x n
+ ,  get e n          = Some x
+ -> get (map f e) n  = Some (f x).
+Proof.
+ intros. gen n. 
+ induction e; intros.
+  false.
+  simpl. destruct n.
+   simpl in H. inverts H. auto.
+   eauto.
+Qed.
+Hint Resolve get_map.
+
+
+Lemma map_map
+ :  forall {A B C: Type} (f: B -> C) (g: A -> B) e
+ ,  map f (map g e) 
+ =  map (compose f g) e.
+Proof.
+ induction e.
+  auto.
+  simpl. rewrite IHe. auto.
+Qed.
 
 
 (* filter lemmas ****************************************************)

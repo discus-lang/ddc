@@ -49,7 +49,7 @@ Definition  substTX := substTX' 0.
 Hint Unfold substTX.
 
 
-Theorem subst_type_value_drop
+Theorem subst_type_value_ix
  :  forall ix ke te x1 t1 t2 k2
  ,  get ke ix = Some k2
  -> TYPE ke  te x1 t1
@@ -63,15 +63,13 @@ Proof.
  induction x1; intros; simpl; inverts H0; eauto.
 
  Case "XVar".
-  apply TYVar. admit. (* ok, lemma about map *)
+  apply TYVar.
+  unfold substTE'. auto.
 
  Case "XLAM".
   simpl. apply TYLAM.
   rewrite drop_rewind.
-  
-  assert (liftTE (substTE' ix t2 te) = substTE' (S ix) (liftTT' 0 t2) (liftTE' 0 te)).
-    admit. rewrite H0. (* ok, instance of liftTT_substTT *)
-
+  rewrite (liftTE_substTE 0 ix).
   eapply IHx1; eauto.
    apply liftTT_push. auto.
 
@@ -79,14 +77,15 @@ Proof.
   rewrite (substTT_substTT 0 ix).
   apply TYAPP.
    simpl. eapply (IHx1 ix) in H6; eauto.
-   simpl. eapply subst_type_type_drop; eauto.
+   simpl. eapply subst_type_type_ix; eauto.
   
  Case "XLam".
   simpl. apply TYLam.
-  assert ( substTE' ix t2 te :> substTT' ix t2 t
-         = substTE' ix t2 (te :> t)). admit. (* ok, prop of substTE' *)
-         rewrite H0. clear H0.
-  eapply IHx1; eauto.
+  unfold substTE'. rewrite map_rewind.
+  assert ( map (substTT' ix t2) (te :> t)
+         = substTE' ix t2 (te :> t)). auto.
+  rewrite H0.
+   eapply IHx1; eauto.
 
  Case "XApp".
   eapply TYApp.
@@ -94,4 +93,17 @@ Proof.
    eapply IHx1_2 in H8; eauto.
 Qed.
 
+
+Theorem subst_type_value
+ :  forall ke te x1 t1 t2 k2
+ ,  TYPE (ke :> k2) te x1 t1
+ -> KIND ke  t2 k2
+ -> TYPE ke (substTE t2 te)
+            (substTX t2 x1)
+            (substTT t2 t1).
+Proof.
+ intros. 
+ assert (ke = drop 0 (ke :> k2)). auto. rewrite H1.
+ eapply subst_type_value_ix; simpl; eauto.
+Qed.
 
