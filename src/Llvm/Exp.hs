@@ -205,6 +205,19 @@ llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeInt (Width w)))) [ _, arg2@(XVar _ t2@
 	return		r0
 
 
+
+llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeInt (Width _)))) [a1@(XVar _ (TPtr t1)), a2@(XVar _ t2)]
+ | t1 == t2 && isUnboxed t1
+ = do	ptr		<- llvmOfExp a1
+	val		<- llvmOfExp a2
+	addBlock	[ Store val ptr ]
+	return		val
+
+
+
+
+
+
 llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")\n\n"
 	++ show op ++ "\n\n"
@@ -243,17 +256,6 @@ primOrFunCall all@((XVar (NSuper fv) (TFun at rt)):args)
 funCall :: [Exp a] -> LlvmM LlvmVar
 funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
  | length at == length args
- , varName fv == "primAlloc_dataRS"
- = do	let func	= funcDeclOfExp exp
-	addGlobalFuncDecl func
-	params		<- mapM llvmOfExp args
-	result		<- newUniqueNamedReg "result" $ toLlvmType rt
-	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
-	return		result
-
-
-funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
- | length at == length args
  = do	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	params		<- mapM llvmOfExp args
@@ -275,6 +277,8 @@ primCall primId exp@(XVar (NSuper fv) (TFun at rt):args)
  = case primId of
 	VProjFieldR	-> primProjFieldR args
 	_		-> funCall exp
+	-- VUnit
+	-- VBoxString
 
  | otherwise
  = panic stage $ "primCall (" ++ show __LINE__ ++ ")"
@@ -418,28 +422,33 @@ primProjFieldR args@[exp@(XVar v (TPtr (TCon TyConObj))), XLit (LLit (LiteralFmt
 			, Assignment result (Cast LM_Bitcast bref pObj) ]
 	return		result
 
--- =============================================================================
-
-
-mkPrimName :: Var -> String
-mkPrimName var = varName var ++ "|" ++ seaVar False var
-
+--------------------------------------------------------------------------------
+-- Some primitive functions have to be implemented directly in LLVM code.
+--
+-- The primFunMap is a map from the primitive's Sea name to a function that
+-- generates LLVM code for the primitive.
+--
+-- TODO: There must be a nicer way to do this.
 
 primLookup :: Var -> Maybe ([Exp a] -> LlvmM LlvmVar)
 primLookup funvar
- = Map.lookup (mkPrimName funvar) primFunMap
+ = Map.lookup (seaVar False funvar) primFunMap
 
 
 primFunMap :: Map.Map String ([Exp a] -> LlvmM LlvmVar)
 primFunMap
  = Map.fromList
-	[ ( "primAlloc_dataRS|_allocDataRS", primAllocDataRS )
-	, ( "peekDataR_payload|primStore_peekDataR_payload", peekDataR_payload )
-	, ( "peekDataRS_payload|primStore_peekDataRS_payload", peekDataRS_payload )
+	[ ( "_allocDataRS",			primAllocDataRS )
+	, ( "primStore_peekDataR_payload",	peekDataR_payload )
+	, ( "primStore_peekDataRS_payload",	peekDataRS_payload )
+	, ( "primArrayInt32_poke",		arrayUI_poke )
+	, ( "primArrayInt32_peek",		arrayUI_peek )
 	]
 
+
 primAllocDataRS :: [Exp a] -> LlvmM LlvmVar
-primAllocDataRS args@[XLit (LLit (LiteralFmt (LInt tag) (UnboxedBits 32))), XLit (LLit (LiteralFmt (LInt dataSize) (UnboxedBits 32)))]
+primAllocDataRS [ XLit (LLit (LiteralFmt (LInt tag) (UnboxedBits 32)))
+		, XLit (LLit (LiteralFmt (LInt dataSize) (UnboxedBits 32))) ]
  = allocDataRSbySize (fromInteger tag) (fromInteger dataSize)
 
 
@@ -447,18 +456,63 @@ peekDataR_payload :: [Exp a] -> LlvmM LlvmVar
 peekDataR_payload [exp]
  = panic stage $ "peekDataR_payload " ++ show exp
 
+
 peekDataRS_payload :: [Exp a] -> LlvmM LlvmVar
-peekDataRS_payload [exp@(XVar (NSlot n _) t)]
- = do	addComment	$ "peekDataRS_payload " ++ varName n
+peekDataRS_payload [ exp@(XVar _ t) ]
+ = do	addComment	"peekDataRS_payload"
 	addAlias	("struct.DataRS", llvmTypeOfStruct ddcDataRS)
 
 	let offset	= fst $ structFieldLookup ddcDataRS "payload"
-
-	pobj		<- llvmOfExp exp
 	pdata		<- newUniqueNamedReg "pDataRS" pStructDataRS
 	ptr		<- newUniqueNamedReg "pVoid" pChar
 
+	pobj		<- llvmOfExp exp
 	addBlock	[ Assignment pdata (Cast LM_Bitcast pobj pStructDataRS )
 			, Assignment ptr (GetElemPtr True pdata [ i32LitVar 0, i32LitVar offset, i32LitVar 0 ])
 			]
 	return		ptr
+
+--------------------------------------------------------------------------------
+
+arrayUI_peek :: [Exp a] -> LlvmM LlvmVar
+arrayUI_peek	[ array@XVar{}
+		, index@XVar{}
+		]
+ = do	addComment	"arrayUI_peek"
+	addAlias	("struct.DataAUI", llvmTypeOfStruct ddcDataAUI)
+
+	let ploff	= fst $ structFieldLookup ddcDataAUI "elem"
+	pDataAUI	<- newUniqueNamedReg "arrray" pStructDataAUI
+	pindex		<- newUniqueNamedReg "index" pInt32
+	result		<- newUniqueNamedReg "result" i32
+
+	pobj		<- llvmOfExp array
+	ix		<- llvmOfExp index
+	addBlock	[ Assignment pDataAUI (Cast LM_Bitcast pobj pStructDataAUI )
+			, Assignment pindex (GetElemPtr True pDataAUI [ i32LitVar 0, i32LitVar ploff, ix ])
+			, Assignment result (Load pindex)
+			]
+	return		result
+
+
+arrayUI_poke :: [Exp a] -> LlvmM LlvmVar
+arrayUI_poke	[ array@XVar{}
+		, index@XVar{}
+		, value@XVar{}
+		]
+ = do	addComment	"arrayUI_poke"
+	addAlias	("struct.DataAUI", llvmTypeOfStruct ddcDataAUI)
+
+	let ploff	= fst $ structFieldLookup ddcDataAUI "elem"
+	pDataAUI	<- newUniqueNamedReg "arrray" pStructDataAUI
+	pindex		<- newUniqueNamedReg "index" pInt32
+
+	pobj		<- llvmOfExp array
+	ix		<- llvmOfExp index
+	ivalue		<- llvmOfExp value
+	addBlock	[ Assignment pDataAUI (Cast LM_Bitcast pobj pStructDataAUI )
+			, Assignment pindex (GetElemPtr True pDataAUI [ i32LitVar 0, i32LitVar ploff, ix ])
+			, Store ivalue pindex
+			]
+	addComment	"arrayUI_poke end"
+	return		ivalue
