@@ -52,7 +52,7 @@ funcDeclOfExp (XVar v t)
 
 varArgMap = Map.fromList
 	[ ("printf"	, [ (pChar, []) ])
-	, ("snprintf"	, [ (pChar, []), (llvmWord, []), (pChar, []) ])
+	, ("snprintf"	, [ (pChar, []), (i32, []), (pChar, []) ])
 	]
 
 specialCaseFuncs vname at
