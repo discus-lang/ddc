@@ -82,23 +82,6 @@ Fixpoint filter {A: Type} (f: A -> bool) (e: env A) : env A :=
   end.
 
 
-(* Get the nth element from an environment that matches a predicate. *)
-Fixpoint getMatch {A: Type} 
-            (f: A -> bool) (e: env A) (i: nat) : option A :=
-  match e, i with
-  | Snoc es x, O     
-  => if f x then Some x 
-            else getMatch f es O
-
-  | Snoc es x, S i'
-  => if f x then getMatch f es i'
-            else getMatch f es i
-  | _, _
-  => None
- end.
-Hint Unfold getMatch.
-
-
 (* Insert a new element at an index in the list, 
    all the elements above that point are shifted up one place. *)
 Fixpoint insert {A: Type} (ix: nat) (x: A) (e: env A) : env A 
@@ -337,53 +320,6 @@ Proof.
  intros. induction e; auto.
  simpl. breaka (f a). simpl. omega.
 Qed.
-
-
-(* getMatch lemmas **************************************************)
-Lemma getMatch_filter
- :  forall A (e: env A) (f: A -> bool) n
- ,  getMatch f e n = get (filter f e) n.
-Proof.
- intros. gen n.
- induction e; intros.
-
- Case "Empty".
-  auto.
-
- Case "Snoc".
-  simpl. breaka (f a); destruct n; auto.
-  simpl. rewrite IHe. auto.
-Qed.
-
-
-Lemma getMatch_cons_some
- :  forall A (e: env A) (f: A -> bool) n x1 x2
- ,  getMatch f e n         = Some x1
- -> getMatch f (x2 <: e) n = Some x1.
-Proof.
- intros. gen n.
- induction e; intros; destruct n; simpl in H; simpl.
-  false.
-  false.
-  breaka (f a).
-  breaka (f a).
-Qed.
-Hint Resolve getMatch_cons_some.
-
-
-Lemma getMatch_above_false
- :  forall A n (e: env A) (f: A -> bool) x
- ,  n >= length e
- -> getMatch f e n = Some x
- -> False.
-Proof.
- intros.
- rewrite getMatch_filter in H0.
- assert (length e >= length (filter f e)). apply filter_length.
- assert (n        >= length (filter f e)). omega.
- eapply get_above_false; eauto.
-Qed.
-Hint Resolve getMatch_above_false.
 
 
 (* insert lemmas ****************************************************)

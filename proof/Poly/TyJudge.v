@@ -26,14 +26,14 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
 
  | TYLAM
    :  forall ke te x1 t1
-   ,  TYPE (ke :> KStar) (liftTE' 0 te) x1        t1
-   -> TYPE ke            te            (XLAM x1) (TForall t1)
+   ,  TYPE (ke :> KStar) (liftTE 0 te) x1        t1
+   -> TYPE ke            te           (XLAM x1) (TForall t1)
 
  | TYAPP
    :  forall ke te x1 t1 t2
    ,  TYPE ke te x1 (TForall t1)
    -> KIND ke t2 KStar
-   -> TYPE ke te (XAPP x1 t2) (substTT' 0 t2 t1). 
+   -> TYPE ke te (XAPP x1 t2) (substTT 0 t2 t1). 
 
 Hint Constructors TYPE.
 
