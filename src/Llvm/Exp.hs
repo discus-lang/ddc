@@ -279,6 +279,15 @@ primOrFunCall all@((XVar (NSuper fv) (TFun at rt)):args)
 
 
 funCall :: [Exp a] -> LlvmM LlvmVar
+funCall (exp@(XVar (NSuper fv) (TFun at TVoid)):args)
+ | length at == length args
+ = do	let func	= funcDeclOfExp exp
+	addGlobalFuncDecl func
+	params		<- mapM llvmOfExp args
+	dummy		<- newUniqueNamedReg "dummy_do_not_use" $ toLlvmType TVoid
+	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) params []) ]
+	return		dummy
+
 funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
  | length at == length args
  = do	let func	= funcDeclOfExp exp
