@@ -25,7 +25,7 @@ Hint Unfold closedT.
 Fixpoint wfX (ke: kienv) (te: tyenv) (xx: exp) : Prop := 
  match xx with 
  | XVar i     => exists t, get te i = Some t
- | XLAM x     => wfX (ke :> KStar) te x
+ | XLAM x     => wfX (ke :> KStar) (liftTE 0 te) x
  | XAPP x t   => wfX ke te x  /\ wfT ke t
  | XLam t x   => wfT ke t     /\ wfX ke (te :> t) x
  | XApp x1 x2 => wfX ke te x1 /\ wfX ke te x2
@@ -43,6 +43,11 @@ Hint Unfold closedX.
 Inductive value : exp -> Prop :=
  | Value_lam 
    : forall t x
-   , closedX (XLam t x) -> value (XLam t x).
+   , closedX (XLam t x) -> value (XLam t x)
+
+ | Value_LAM
+   : forall x
+   , closedX (XLAM x)   -> value (XLAM x).
+
 Hint Constructors value.
 

@@ -8,29 +8,6 @@ Require Import Env.
 Require Import Base.
 
 
-(* Lift value indices in expressions.
-   That are greater or equal to a given depth. *)
-Fixpoint liftXX (d: nat) (xx: exp) : exp :=
-  match xx with
-  |  XVar ix    
-  => if le_gt_dec d ix
-      then XVar (S ix)
-      else xx
-
-  |  XLAM x
-  => XLAM (liftXX d x)
-
-  |  XAPP x t
-  => XAPP (liftXX d x) t
- 
-  |  XLam t x   
-  => XLam t (liftXX (S d) x)
-
-  |  XApp x1 x2
-  => XApp (liftXX d x1) (liftXX d x2)
- end.
-
-
 (* Substitution of Exps in Exps *)
 Fixpoint substXX (d: nat) (u: exp) (xx: exp) : exp :=
   match xx with
@@ -76,6 +53,7 @@ Proof.
  Case "XVar".
   apply TYVar. 
   apply get_map. auto.
+  apply liftTT_insert. auto.
 
  Case "XLAM".
   eapply TYLAM. 
@@ -91,9 +69,10 @@ Proof.
 
  Case "XLam".
   apply TYLam.
-  assert ( liftTE ix te :> liftTT ix t
-         = liftTE ix (te :> t)). auto. rewrite H. clear H.
-  apply IHx1. auto.
+   apply liftTT_insert. auto.
+   assert ( liftTE ix te :> liftTT ix t
+          = liftTE ix (te :> t)). auto. rewrite H. clear H.
+   apply IHx1. auto.
 
  Case "XApp".
   eapply TYApp.
@@ -140,8 +119,8 @@ Proof.
 
  Case "XLam".
   eapply TYLam.
-  rewrite insert_rewind.
-  apply IHx1. auto.
+   auto.
+   rewrite insert_rewind. apply IHx1. auto.
 Qed.
 
 
@@ -171,18 +150,19 @@ Proof.
  Case "XVar".
   fbreak_nat_compare.
   SCase "n = ix".
-   rewrite H in H5. inverts H5. auto.
+   rewrite H in H3. inverts H3. auto.
 
   SCase "n < ix".
    apply TYVar. 
-   rewrite <- H5. apply get_drop_above. auto.
+   rewrite <- H3. apply get_drop_above. auto. auto.
 
   SCase "n > ix".
    apply TYVar. auto.
-   rewrite <- H5.
+   rewrite <- H3.
    destruct n.
     burn.
     simpl. nnat. apply get_drop_below. omega.
+    auto.
 
  Case "XLAM".
   eapply (IHx1 ix) in H5.
@@ -196,9 +176,10 @@ Proof.
 
  Case "XLam".
   apply TYLam.
-  rewrite drop_rewind.
-  eapply IHx1; eauto.
-  simpl. apply type_tyenv_weaken. auto.
+   auto.
+   rewrite drop_rewind.
+   eapply IHx1; eauto.
+   simpl. apply type_tyenv_weaken. auto.
 Qed.
 
 

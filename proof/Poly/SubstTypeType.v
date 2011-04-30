@@ -6,31 +6,6 @@ Require Import Base.
 
 
 (* Types ************************************************************)
-(* Lift type indices that are at least a certain depth. *)
-Fixpoint liftTT (d: nat) (tt: ty) : ty :=
-  match tt with
-  | TCon _     => tt
-
-  |  TVar ix
-  => if le_gt_dec d ix
-      then TVar (S ix)
-      else tt
-
-  |  TForall t 
-  => TForall (liftTT (S d) t)
-
-  |  TFun t1 t2
-  => TFun    (liftTT d t1) (liftTT d t2)
-  end.
-Hint Unfold liftTT.
-
-Ltac lift_cases 
- := match goal with 
-     |  [ |- context [le_gt_dec ?n ?n'] ]
-     => case (le_gt_dec n n')
-    end.
-
-
 (* Substitution of Types in Types. *)
 Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty 
  := match tt with
@@ -53,10 +28,6 @@ Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty
 
 
 (* Type Environments ************************************************)
-(* Lift type indices in type environments. *)
-Definition liftTE d te    := map (liftTT d) te.
-Hint Unfold liftTE.
-
 (* Substitution of Types in Type Environments. *)
 Definition substTE d t te := map (substTT d t) te.
 Hint Unfold substTE.

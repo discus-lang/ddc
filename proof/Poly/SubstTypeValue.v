@@ -61,6 +61,7 @@ Proof.
  Case "XVar".
   apply TYVar.
   unfold substTE. auto.
+  eapply subst_type_type_ix; eauto.
 
  Case "XLAM".
   simpl. apply TYLAM.
@@ -77,6 +78,7 @@ Proof.
   
  Case "XLam".
   simpl. apply TYLam.
+  eapply subst_type_type_ix; eauto.
   unfold substTE. rewrite map_rewind.
   assert ( map (substTT ix t2) (te :> t)
          = substTE ix t2 (te :> t)). auto.
