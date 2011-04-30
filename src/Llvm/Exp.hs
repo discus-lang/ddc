@@ -43,7 +43,17 @@ llvmOfExp (XVar (NSlot _ n) _)
  =	readSlot n
 
 llvmOfExp (XVar n@(NAuto var) t@(TPtr (TCon (TyConUnboxed tv))))
- | varName tv == "File#" && seaVar False var `elem` [ "stdin", "stdout", "stderr" ]
+ | varName tv == "File#"
+ && seaVar False var `elem` [ "stdin", "stdout", "stderr" ]
+ = do	-- Need to special case handling of C stdin/stdout/stderr.
+	reg		<- newUniqueReg $ toLlvmType t
+	cv		<- toGlobalSeaVar (varOfName n) t
+	addBlock	[ Assignment reg (loadAddress cv) ]
+	return		reg
+
+llvmOfExp (XVar n@(NCaf var) t@(TPtr (TCon (TyConUnboxed tv))))
+ | varName tv == "File#"
+ && seaVar False var `elem` [ "stdin", "stdout", "stderr" ]
  = do	-- Need to special case handling of C stdin/stdout/stderr.
 	reg		<- newUniqueReg $ toLlvmType t
 	cv		<- toGlobalSeaVar (varOfName n) t
