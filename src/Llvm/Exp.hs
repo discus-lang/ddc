@@ -467,7 +467,18 @@ primAllocDataRS [ XLit (LLit (LiteralFmt (LInt tag) (UnboxedBits 32)))
 
 peekDataR_payload :: [Exp a] -> LlvmM LlvmVar
 peekDataR_payload [exp]
- = panic stage $ "peekDataR_payload " ++ show exp
+ = do	addComment	"peekDataR_payload"
+	addAlias	("struct.DataR", llvmTypeOfStruct ddcDataR)
+
+	let offset	= fst $ structFieldLookup ddcDataR "payload"
+	pdata		<- newUniqueNamedReg "pDataR" pStructDataR
+	ptr		<- newUniqueNamedReg "pVoid" pChar
+
+	pobj		<- llvmOfExp exp
+	addBlock	[ Assignment pdata (Cast LM_Bitcast pobj pStructDataR )
+			, Assignment ptr (GetElemPtr True pdata [ i32LitVar 0, i32LitVar offset, i32LitVar 0 ])
+			]
+	return		ptr
 
 
 peekDataRS_payload :: [Exp a] -> LlvmM LlvmVar
