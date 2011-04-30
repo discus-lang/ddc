@@ -509,7 +509,8 @@ primLookup funvar
 primFunMap :: Map.Map String ([Exp a] -> LlvmM LlvmVar)
 primFunMap
  = Map.fromList
-	[ ( "_allocDataRS",			primAllocDataRS )
+	[ ( "_allocDataR",			primAllocDataR )
+	, ( "_allocDataRS",			primAllocDataRS )
 	, ( "primStore_peekDataR_payload",	peekDataR_payload )
 	, ( "primStore_peekDataRS_payload",	peekDataRS_payload )
 	, ( "primArrayInt32_poke",		arrayUI_poke )
@@ -521,6 +522,13 @@ primAllocDataRS :: [Exp a] -> LlvmM LlvmVar
 primAllocDataRS [ XLit (LLit (LiteralFmt (LInt tag) (UnboxedBits 32)))
 		, XLit (LLit (LiteralFmt (LInt dataSize) (UnboxedBits 32))) ]
  = allocDataRSbySize (fromInteger tag) (fromInteger dataSize)
+
+primAllocDataR :: [Exp a] -> LlvmM LlvmVar
+primAllocDataR	[ XLit (LLit (LiteralFmt (LInt tag) (UnboxedBits 32)))
+		, size@XVar{} ]
+ = do 	dataSize	<- llvmOfExp size
+	allocDataR	(fromInteger tag) dataSize
+
 
 
 peekDataR_payload :: [Exp a] -> LlvmM LlvmVar

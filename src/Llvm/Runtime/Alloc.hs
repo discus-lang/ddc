@@ -1,9 +1,11 @@
 {-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 module Llvm.Runtime.Alloc
 	( allocate
+	, allocateVarSize
 	, allocThunk
 	, allocData
 	, allocDataM
+	, allocDataR
 	, allocDataRSbySize
 	, allocDataRSbyType )
 where
@@ -29,6 +31,11 @@ stage = "Llvm.Runtime.Alloc"
 -- boundaries and panics if asked to allocate zero or less bytes.
 allocate :: Int -> String -> LlvmType -> LlvmM LlvmVar
 allocate bytes name typ
+ = 	allocateVarSize (i32LitVar $ roundUpBytes bytes) name typ
+
+
+allocateVarSize :: LlvmVar -> String -> LlvmType -> LlvmM LlvmVar
+allocateVarSize size name typ
  = do	addGlobalFuncDecl allocCollect
 	ptr	<- newUniqueNamedReg name typ
 	r0	<- newUniqueNamedReg "r0" pChar
@@ -46,20 +53,18 @@ allocate bytes name typ
 	bb	<- newUniqueLabel "bb"
 	bb1	<- newUniqueLabel "bb1"
 
-	let count = i32LitVar $ roundUpBytes bytes
-
 	addBlock
-		[ Comment ["allocate " ++ show bytes ++ " bytes"]
+		[ Comment ["allocate " ++ show size ++ " bytes"]
 		, Branch entry
 		, MkLabel (uniqueOfLlvmVar entry)
 		, Assignment r0 (Load ddcHeapPtr)
-		, Assignment r1 (GetElemPtr True r0 [count])
+		, Assignment r1 (GetElemPtr True r0 [size])
 		, Assignment r2 (Load ddcHeapMax)
 		, Assignment r3 (Compare LM_CMP_Ugt r1 r2)
 		, BranchIf r3 bb bb1
 
 		, MkLabel (uniqueOfLlvmVar bb)
-		, Expr (Call StdCall (LMGlobalVar "_allocCollect" (LMFunction allocCollect) External Nothing Nothing True) [count] [])
+		, Expr (Call StdCall (LMGlobalVar "_allocCollect" (LMFunction allocCollect) External Nothing Nothing True) [size] [])
 		, Assignment pre (Load ddcHeapPtr)
 		, Branch bb1
 
@@ -67,7 +72,7 @@ allocate bytes name typ
 		, Assignment r4 (Phi pChar [(pre, bb), (r0 , entry)])
 
 		, Assignment r5 (Cast LM_Bitcast r4 (pLift i32))
-		, Assignment r6 (GetElemPtr True r4 [count])
+		, Assignment r6 (GetElemPtr True r4 [size])
 		, Store r6 ddcHeapPtr
 		]
 	if typ == pChar
@@ -133,6 +138,28 @@ allocDataM tag dataSize ptrCount
 
 	ret		<- newUniqueNamedReg "allocated.data" pObj
 	addBlock	[ Assignment ret (Cast LM_Bitcast pDataM pObj) ]
+	return		ret
+
+
+allocDataR :: Int -> LlvmVar -> LlvmM LlvmVar
+allocDataR tag dataSize
+ = do	addAlias	("struct.DataR", llvmTypeOfStruct ddcDataR)
+
+	let size	= roundUpBytes (sizeOfLlvmType structDataR)
+	let tagValue 	= (tag * 256) + objFixedDataR
+	let tag		= tagBasePlus tagValue
+
+	tsize		<- newUniqueNamedReg "tsize" i32
+	ret		<- newUniqueNamedReg "allocated.DataR" pObj
+
+	addComment	$ "allocDataR " ++ show tagValue
+	addBlock	[ Assignment tsize (LlvmOp LM_MO_Add dataSize (i32LitVar size)) ]
+
+	pDataR		<- allocateVarSize tsize "pDataR" pStructDataR
+
+	storeStructRegValue ddcDataR pDataR "tag" tag
+
+	addBlock	[ Assignment ret (Cast LM_Bitcast pDataR pObj) ]
 	return		ret
 
 

@@ -12,6 +12,7 @@ module Llvm.Runtime.Tags
 	, tagFixedThunk
 
 	, objModeDataRS
+	, objFixedDataR
 	, objFixedDataM
 	)
 where
@@ -66,6 +67,9 @@ objModeDataRS	= 0x03
 
 objFixedData :: Int
 objFixedData	= 0x21
+
+objFixedDataR :: Int
+objFixedDataR = 0x31
 
 objFixedDataM :: Int
 objFixedDataM = 0x41
