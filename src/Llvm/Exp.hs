@@ -161,6 +161,16 @@ llvmOfXPrim (MOp OpNeg) [arg]
 	addBlock	[ Assignment r0 (mkOpFunc typ OpSub (zeroLiteral typ) exp) ]
 	return		r0
 
+llvmOfXPrim (MOp OpIsZero) [ arg@(XVar n (TCon (TyConUnboxed t))) ]
+ | varName t == "Addr#"
+ = do	exp		<- llvmOfExp arg
+	rint		<- newUniqueReg llvmWord
+	bool		<- newUniqueReg i1
+	addBlock	[ Assignment rint (Cast LM_Bitcast exp llvmWord)
+			, Assignment bool (Compare LM_CMP_Eq rint (llvmWordLitVar 0))
+			]
+	return		bool
+
 llvmOfXPrim (MCast pcast) [arg]
  = do	exp		<- llvmOfExp arg
 	let (castop, typ)
