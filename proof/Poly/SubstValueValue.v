@@ -55,6 +55,7 @@ Fixpoint substXX (d: nat) (u: exp) (xx: exp) : exp :=
   end.
 
 
+
 (* Weakening Kind Env in TyJudge ************************************
    We can insert a new kind into the kind environment of a type
    judgement, provided we lift existing references to kinds higher
@@ -62,13 +63,43 @@ Fixpoint substXX (d: nat) (u: exp) (xx: exp) : exp :=
 
    References to existing elements of the kind environment may
    appear in the type environment, expression, as well as the
-   resulting type -- so we have to lift all of them.
+   resulting type -- so we must lift all of them.
  *)
 Lemma type_kienv_insert
- :  forall ke te ix x1 t1 k2
+ :  forall ix ke te x1 t1 k2
  ,  TYPE ke                 te             x1             t1
  -> TYPE (insert ix k2 ke) (liftTE ix te) (liftTX ix x1) (liftTT ix t1).
-Proof. admit. Qed.
+Proof. 
+ intros. gen ix ke te t1 k2.
+ induction x1; intros; inverts H; simpl; eauto.
+
+ Case "XVar".
+  apply TYVar. 
+  apply get_map. auto.
+
+ Case "XLAM".
+  eapply TYLAM. 
+  rewrite insert_rewind. 
+   rewrite (liftTE_liftTE 0 ix).
+   apply IHx1. auto.
+
+ Case "XAPP".
+  rewrite (liftTT_substTT' 0 ix). simpl.
+  eapply TYAPP.
+  eapply (IHx1 ix) in H4. simpl in H4. eauto.
+  apply liftTT_insert. auto.
+
+ Case "XLam".
+  apply TYLam.
+  assert ( liftTE ix te :> liftTT ix t
+         = liftTE ix (te :> t)). auto. rewrite H. clear H.
+  apply IHx1. auto.
+
+ Case "XApp".
+  eapply TYApp.
+   eapply IHx1_1 in H4. simpl in H4. eauto.
+   eapply IHx1_2 in H6. eauto.
+Qed.
 
 
 Lemma type_kienv_weaken

@@ -137,6 +137,31 @@ Proof.
 Qed.
 
 
+Lemma liftTT_substTT'
+ :  forall n n' t1 t2
+ ,  liftTT (n + n') (substTT n t2 t1)
+ =  substTT n (liftTT (n + n') t2) (liftTT (1 + n + n') t1).
+Proof.
+ intros. gen n n' t2.
+ induction t1; intros; auto.
+
+ Case "TVar".
+  repeat ( unfold liftTT; unfold substTT; fold liftTT; fold substTT
+         ; try lift_cases; try fbreak_nat_compare
+         ; intros); burn.
+
+ Case "TForall".
+  simpl. f_equal.
+  rewrite (IHt1 (S n) n'). f_equal.
+   simpl. rewrite (liftTT_liftTT 0 (n + n')). auto.
+
+ Case "TFun".
+  simpl. f_equal.
+   apply IHt1_1.
+   apply IHt1_2.
+Qed.
+
+
 (* Commuting substitutions. *)
 Lemma substTT_substTT
  :  forall n m t1 t2 t3
@@ -176,6 +201,19 @@ Proof.
    simpl. rewrite liftTT_substTT.
    unfold liftTE in IHte.
    unfold substTE in IHte. rewrite IHte. auto.
+Qed.
+
+
+Lemma liftTE_liftTE
+ :  forall n n' te
+ ,  liftTE n              (liftTE (n + n') te) 
+ =  liftTE (1 + (n + n')) (liftTE n te).
+Proof. 
+ intros. induction te.
+  auto.
+  unfold liftTE.
+   simpl. rewrite liftTT_liftTT.
+   unfold liftTE in IHte. rewrite IHte. auto.
 Qed.
 
 
