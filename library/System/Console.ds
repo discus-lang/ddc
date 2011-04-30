@@ -19,7 +19,7 @@ foreign import	"fputs"
  fputsU_console 
  	::	Ptr# String#	{read}	-- string to write to file
  	-> 	Ptr# File#	{read} 	-- file handle
- 	-(!e)>	Int
+ 	-(!e)>	Int32#
 	:- !e = !Console
 
 -- | Print a string to the console
