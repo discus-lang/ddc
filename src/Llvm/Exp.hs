@@ -169,59 +169,58 @@ llvmOfXPrim (MCast pcast) [arg]
 	addBlock	[ Assignment r0 (Cast castop exp typ) ]
 	return		r0
 
-llvmOfXPrim (MCoerce (PrimCoercePtr _ tdest)) [arg]
+llvmOfXPrim (MCoerce (PrimCoercePtr _ tdest)) [ arg ]
  = do	exp		<- llvmOfExp arg
 	let typ		= pLift $ toLlvmType tdest
 	r0		<- newUniqueReg typ
 	addBlock	[ Assignment r0 (Cast LM_Bitcast exp typ) ]
 	return		r0
 
-llvmOfXPrim (MCoerce (PrimCoerceAddrToPtr td@(TCon (TyConUnboxed _)))) [ arg@XVar{} ]
+llvmOfXPrim (MCoerce (PrimCoerceAddrToPtr td@(TCon _))) [ arg ]
  = do	let destType	= pLift $ toLlvmType td
 	ptr		<- llvmOfExp arg
 	r0		<- newUniqueReg $ destType
 	addBlock	[ Assignment r0 (Cast LM_Bitcast ptr destType ) ]
 	return		r0
 
-llvmOfXPrim (MPtr PrimPtrPlus) [ arg1@(XVar _ t1@(TPtr _)), arg2@(XVar _ (TCon (TyConUnboxed v2))) ]
- | varName v2 == "Int32#"
+llvmOfXPrim (MPtr PrimPtrPlus) [ arg1@(XVar _ t1@(TPtr _)), arg2 ]
  = do	ptr		<- llvmOfExp arg1
 	int		<- llvmOfExp arg2
 	r0		<- newUniqueReg $ toLlvmType t1
 	addBlock	[ Assignment r0 (GetElemPtr True ptr [int]) ]
 	return		r0
 
-llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeWord (Width w)))) [ _, arg2@(XVar _ t2@(TPtr _)) ]
+llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeWord (Width w)))) [ _, arg2@XVar{} ]
  = do	ptr		<- llvmOfExp arg2
 	r0		<- newUniqueReg $ LMInt w
 	addBlock	[ Assignment r0 (Load ptr) ]
 	return		r0
 
-llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeInt (Width w)))) [ _, arg2@(XVar _ t2@(TPtr _)) ]
+llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeInt (Width w)))) [ _, arg2@XVar{} ]
  = do	ptr		<- llvmOfExp arg2
 	r0		<- newUniqueReg $ LMInt w
 	addBlock	[ Assignment r0 (Load ptr) ]
 	return		r0
 
-llvmOfXPrim (MPtr (PrimPtrPokeOn (PrimTypeInt (Width w)))) [ _, a1@(XVar _ (TPtr t1)), a2@(XVar _ t2) ]
+llvmOfXPrim (MPtr (PrimPtrPokeOn (PrimTypeInt _))) [ _, a1@(XVar _ (TPtr _)), a2@XVar{} ]
  = do	ptr		<- llvmOfExp a1
 	val		<- llvmOfExp a2
 	addBlock	[ Store val ptr ]
 	return		val
 
-llvmOfXPrim (MPtr (PrimPtrPokeOn (PrimTypeWord (Width w)))) [ _, a1@(XVar _ (TPtr t1)), a2@(XVar _ t2) ]
+llvmOfXPrim (MPtr (PrimPtrPokeOn (PrimTypeWord _))) [ _, a1@(XVar _ (TPtr _)), a2@XVar{} ]
  = do	ptr		<- llvmOfExp a1
 	val		<- llvmOfExp a2
 	addBlock	[ Store val ptr ]
 	return		val
 
-llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeInt (Width _)))) [ a1@(XVar _ (TPtr t1)), a2@(XVar _ t2) ]
+llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeInt _))) [ a1@XVar{}, a2 ]
  = do	ptr		<- llvmOfExp a1
 	val		<- llvmOfExp a2
 	addBlock	[ Store val ptr ]
 	return		val
 
-llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeWord (Width _)))) [ a1@(XVar _ (TPtr t1)), a2@(XVar _ t2) ]
+llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeWord _))) [ a1@XVar{}, a2 ]
  = do	ptr		<- llvmOfExp a1
 	val		<- llvmOfExp a2
 	addBlock	[ Store val ptr ]
