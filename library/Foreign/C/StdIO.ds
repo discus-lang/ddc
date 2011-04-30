@@ -14,6 +14,12 @@ effect !File	:: !
 foreign import data "FILE" File# :: *
 
 
+-- TODO: This definition of file is a little dodgy. When DDC supports data
+-- constructors with unboxed values and then use:
+--
+--	data File = File { file :: Addr# }
+
+
 -- Streams --------------------------------------------------------------------
 -- | Standard output.
 foreign import "stdout" stdout :: Ptr# File#
