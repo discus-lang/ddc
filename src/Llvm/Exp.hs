@@ -322,19 +322,25 @@ llvmOfXPrim op args
 --------------------------------------------------------------------------------
 
 intCastOp :: PrimCast -> (LlvmCastOp, LlvmType)
-intCastOp pc@(PrimCast (PrimTypeWord (Width srcw)) (PrimTypeWord (Width destw)))
+intCastOp (PrimCast (PrimTypeWord (Width srcw)) (PrimTypeWord (Width destw)))
  | srcw < destw
  = (LM_Zext, LMInt destw)
 
  | otherwise
  = (LM_Trunc, LMInt destw)
 
-intCastOp pc@(PrimCast (PrimTypeInt (Width srcw)) (PrimTypeInt (Width destw)))
+intCastOp (PrimCast (PrimTypeInt (Width srcw)) (PrimTypeInt (Width destw)))
  | srcw < destw
  = (LM_Sext, LMInt destw)
 
  | otherwise
  = (LM_Trunc, LMInt destw)
+
+intCastOp (PrimCast (PrimTypeFloat (Width 32)) (PrimTypeFloat (Width 64)))
+ = (LM_Fpext, LMDouble)
+
+intCastOp (PrimCast (PrimTypeFloat (Width 64)) (PrimTypeFloat (Width 32)))
+ = (LM_Fptrunc, LMFloat)
 
 intCastOp pc
  = panic stage $ "intCastOp (" ++ show __LINE__ ++ ") " ++ show pc
