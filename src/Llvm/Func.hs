@@ -7,7 +7,6 @@ where
 import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Sea.Pretty
-import DDC.Var
 
 import Llvm
 import Llvm.Runtime.Object
@@ -20,7 +19,7 @@ stage = "Llvm.Stage"
 
 funcDeclOfExp :: Exp a -> LlvmFunctionDecl
 funcDeclOfExp (XVar (NSuper v) t@(TFun at rt))
- = let	(varArgs, params) = specialCaseFuncs (varName v) at
+ = let	(varArgs, params) = specialCaseFuncs (seaVar False v) at
    in	LlvmFunctionDecl {
 		--  Unique identifier of the function
 		decName = seaVar False v,
