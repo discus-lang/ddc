@@ -31,6 +31,9 @@ import qualified Data.Map		as Map
 stage = "Llvm.Exp"
 
 llvmOfExp :: Exp a -> LlvmM LlvmVar
+llvmOfExp (XPrim op args)
+ =	llvmOfXPrim op args
+
 llvmOfExp (XVar v2@NRts{} t2@(TPtr t@(TPtr (TCon TyConObj))))
  = do	reg		<- newUniqueReg $ toLlvmType t2
 	addBlock	[ Assignment reg (loadAddress (toLlvmRtsVar (varOfName v2) t2)) ]
@@ -39,13 +42,18 @@ llvmOfExp (XVar v2@NRts{} t2@(TPtr t@(TPtr (TCon TyConObj))))
 llvmOfExp (XVar (NSlot _ n) _)
  =	readSlot n
 
+llvmOfExp (XVar n@(NAuto var) t@(TPtr (TCon (TyConUnboxed tv))))
+ | varName tv == "File#" && seaVar False var `elem` [ "stdin", "stdout", "stderr" ]
+ = do	-- Need to special case handling of C stdin/stdout/stderr.
+	reg		<- newUniqueReg $ toLlvmType t
+	cv		<- toGlobalSeaVar (varOfName n) t
+	addBlock	[ Assignment reg (loadAddress cv) ]
+	return		reg
+
 llvmOfExp (XVar n@NAuto{} t)
  = do	reg		<- newUniqueReg $ toLlvmType t
 	addBlock	[ Assignment reg (loadAddress (toLlvmVar (varOfName n) t)) ]
 	return		reg
-
-llvmOfExp (XPrim op args)
- =	llvmOfXPrim op args
 
 llvmOfExp (XLit (LLit (LiteralFmt (LString s) Unboxed)))
  = do	gname		<- newUniqueName "str"
@@ -84,8 +92,14 @@ llvmOfExp (XLit (LLit lit))
  = 	return $ llvmVarOfLit lit
 
 llvmOfExp (XVar n@NSuper{} tv)
- = panic stage $ "llvmOfExp (" ++ show __LINE__ ++ ") :\n"
-	++ show n ++ "\n"
+ = panic stage $ "\nllvmOfExp (" ++ show __LINE__ ++ ") :\n\n"
+	++ show n ++ "\n\n"
+	++ show tv ++ "\n\n"
+
+llvmOfExp (XVar n@NCaf{} tv)
+ = panic stage $ "\nllvmOfExp (" ++ show __LINE__ ++ ") :\n\n"
+	++ show n ++ "\n\n"
+	++ show tv ++ "\n\n"
 
 llvmOfExp src
  = panic stage $ "llvmOfExp (" ++ show __LINE__ ++ ") :\n"
@@ -166,7 +180,7 @@ llvmOfXPrim (MOp OpIsZero) [ arg@(XVar n (TCon (TyConUnboxed t))) ]
  = do	exp		<- llvmOfExp arg
 	rint		<- newUniqueReg llvmWord
 	bool		<- newUniqueReg i1
-	addBlock	[ Assignment rint (Cast LM_Bitcast exp llvmWord)
+	addBlock	[ Assignment rint (Cast LM_Ptrtoint exp llvmWord)
 			, Assignment bool (Compare LM_CMP_Eq rint (llvmWordLitVar 0))
 			]
 	return		bool
@@ -180,10 +194,10 @@ llvmOfXPrim (MCast pcast) [arg]
 	return		r0
 
 llvmOfXPrim (MCoerce (PrimCoercePtr _ tdest)) [ arg ]
- = do	exp		<- llvmOfExp arg
-	let typ		= pLift $ toLlvmType tdest
-	r0		<- newUniqueReg typ
-	addBlock	[ Assignment r0 (Cast LM_Bitcast exp typ) ]
+ = do	let destType	= pLift $ toLlvmType tdest
+	exp		<- llvmOfExp arg
+	r0		<- newUniqueReg destType
+	addBlock	[ Assignment r0 (Cast LM_Bitcast exp destType) ]
 	return		r0
 
 llvmOfXPrim (MCoerce (PrimCoerceAddrToPtr td@(TCon _))) [ arg ]

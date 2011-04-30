@@ -157,11 +157,7 @@ toLlvmTypeCon (TyConUnboxed v)
 	"Word32#"	-> i32
 	"Word64#"	-> i64
 	"Addr#"		-> pChar
-
-	-- TODO: Do this now, but there's a suggestion for a better solution
-	-- in library/Foreign/C/StdIO.ds.
-	"File#"		-> pChar
-
+	"File#"		-> structFile
 	name		-> panic stage $ "toLlvmTypeCon (" ++ show __LINE__ ++ ") : " ++ name ++ "\n"
 
 toLlvmTypeCon (TyConAbstract v)

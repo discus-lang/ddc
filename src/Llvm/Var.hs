@@ -9,7 +9,8 @@ module Llvm.Var
 	, toLlvmRtsVar
 	, genericFunPtrVar
 	, llvmVarOfXVar
-	, isGlobalVar )
+	, isGlobalVar
+	, toGlobalSeaVar )
 where
 
 import DDC.Main.Error
@@ -60,6 +61,12 @@ toLlvmCafVar v t
 	    do	addGlobalVar (pVarLift lvar, Nothing)
 		return lvar
 
+toGlobalSeaVar :: Var -> Type -> LlvmM LlvmVar
+toGlobalSeaVar v t@(TPtr _)
+ = do	let lvar	= LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing Nothing False
+	mId		<- getModuleId
+	addGlobalVar	(pVarLift lvar, Nothing)
+	return		lvar
 
 toLlvmRtsVar :: Var -> Type -> LlvmVar
 toLlvmRtsVar v t

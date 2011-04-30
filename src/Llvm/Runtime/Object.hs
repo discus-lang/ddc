@@ -17,6 +17,7 @@ module Llvm.Runtime.Object
 	, ddcDataAUI
 	, ddcDataRS
 	, ddcSuspIndir
+	, ddcFile
 
 	, structObj
 	, structThunk
@@ -26,6 +27,7 @@ module Llvm.Runtime.Object
 	, structDataAUI
 	, structDataRS
 	, structSuspIndir
+	, structFile
 
 	, pObj
 	, pStructThunk
@@ -35,6 +37,7 @@ module Llvm.Runtime.Object
 	, pStructDataAUI
 	, pStructDataRS
 	, pStructSuspIndir
+	, pStructFile
 
 	, nullObj
 	, ppObj )
@@ -190,3 +193,15 @@ structSuspIndir = LMAlias ("struct.SuspIndir", llvmTypeOfStruct ddcSuspIndir)
 
 pStructSuspIndir :: LlvmType
 pStructSuspIndir = pLift structSuspIndir
+
+--------------------------------------------------------------------------------
+-- | We need a structFile as a place holder for the C stdio's FILE pointer.
+
+ddcFile :: LlvmType
+ddcFile = LMStruct [ LMInt 666 ]
+
+structFile :: LlvmType
+structFile = LMAlias ("struct.File", ddcFile)
+
+pStructFile :: LlvmType
+pStructFile = structFile
