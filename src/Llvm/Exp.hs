@@ -197,22 +197,35 @@ llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeWord (Width w)))) [ _, arg2@(XVar _ t2
 	addBlock	[ Assignment r0 (Load ptr) ]
 	return		r0
 
-
 llvmOfXPrim (MPtr (PrimPtrPeekOn (PrimTypeInt (Width w)))) [ _, arg2@(XVar _ t2@(TPtr _)) ]
  = do	ptr		<- llvmOfExp arg2
 	r0		<- newUniqueReg $ LMInt w
 	addBlock	[ Assignment r0 (Load ptr) ]
 	return		r0
 
-
-
-llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeInt (Width _)))) [a1@(XVar _ (TPtr t1)), a2@(XVar _ t2)]
- | t1 == t2 && isUnboxed t1
+llvmOfXPrim (MPtr (PrimPtrPokeOn (PrimTypeInt (Width w)))) [ _, a1@(XVar _ (TPtr t1)), a2@(XVar _ t2) ]
  = do	ptr		<- llvmOfExp a1
 	val		<- llvmOfExp a2
 	addBlock	[ Store val ptr ]
 	return		val
 
+llvmOfXPrim (MPtr (PrimPtrPokeOn (PrimTypeWord (Width w)))) [ _, a1@(XVar _ (TPtr t1)), a2@(XVar _ t2) ]
+ = do	ptr		<- llvmOfExp a1
+	val		<- llvmOfExp a2
+	addBlock	[ Store val ptr ]
+	return		val
+
+llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeInt (Width _)))) [ a1@(XVar _ (TPtr t1)), a2@(XVar _ t2) ]
+ = do	ptr		<- llvmOfExp a1
+	val		<- llvmOfExp a2
+	addBlock	[ Store val ptr ]
+	return		val
+
+llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeWord (Width _)))) [ a1@(XVar _ (TPtr t1)), a2@(XVar _ t2) ]
+ = do	ptr		<- llvmOfExp a1
+	val		<- llvmOfExp a2
+	addBlock	[ Store val ptr ]
+	return		val
 
 
 
