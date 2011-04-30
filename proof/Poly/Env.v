@@ -325,7 +325,8 @@ Qed.
 (* insert lemmas ****************************************************)
 Lemma insert_rewind
  :  forall {A: Type} ix t1 t2 (e: env A)
- ,  insert ix t2 e :> t1 = insert (S ix) t2 (e :> t1).
+ ,  insert ix t2 e :> t1 
+ =  insert (S ix) t2 (e :> t1).
 Proof. auto. Qed.
 
 
@@ -371,6 +372,20 @@ Proof.
     simpl in H0. simpl. apply IHix. omega. auto.
 Qed.
 Hint Resolve get_insert_below.
+
+
+Lemma map_insert 
+ : forall {A B: Type} (f: A -> B) ix x (xs: env A)
+ , map f (insert ix x xs)
+ = insert ix (f x) (map f xs).
+Proof.
+ intros. gen ix x.
+ induction xs; intros.
+  simpl. destruct ix; auto.
+  simpl. destruct ix; auto.
+   rewrite <- insert_rewind. simpl.
+   rewrite IHxs. auto.
+Qed.
 
 
 (* take lemmas ******************************************************)
@@ -504,4 +519,20 @@ Proof.
  eapply get_drop_below'. eauto. auto.
 Qed.
 Hint Resolve get_drop_below.
+
+
+Lemma map_drop
+ :  forall {A B: Type} (f: A -> B) ix (e1: env A)
+ ,  map f (drop ix e1) 
+ =  drop ix (map f e1).
+Proof.
+ intros. gen ix.
+ induction e1.
+  simpl. destruct ix; auto.
+  simpl. destruct ix; auto.
+   rewrite <- drop_rewind.
+   rewrite <- drop_rewind.
+   rewrite <- IHe1. auto.
+Qed.
+
 

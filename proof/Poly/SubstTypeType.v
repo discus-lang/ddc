@@ -24,7 +24,7 @@ Fixpoint liftTT (d: nat) (tt: ty) : ty :=
   end.
 Hint Unfold liftTT.
 
-Ltac liftTT_cases 
+Ltac lift_cases 
  := match goal with 
      |  [ |- context [le_gt_dec ?n ?n'] ]
      => case (le_gt_dec n n')
@@ -74,7 +74,7 @@ Proof.
 
  Case "TVar".
   simpl.
-  repeat (unfold liftTT; liftTT_cases; intros); burn.
+  repeat (unfold liftTT; lift_cases; intros); burn.
 
  Case "TForall".
   simpl.
@@ -96,7 +96,7 @@ Proof.
  induction t1; intros; eauto.
 
  Case "TVar".
-  simpl; liftTT_cases; unfold substTT;
+  simpl; lift_cases; unfold substTT;
    fbreak_nat_compare; intros;
    burn.
 
@@ -122,7 +122,7 @@ Proof.
 
  Case "TVar".
   repeat (simpl; fbreak_nat_compare; 
-          try liftTT_cases; try intros);
+          try lift_cases; try intros);
    burn.
 
  Case "TForall".
@@ -189,7 +189,7 @@ Proof.
  induction t; intros; simpl; inverts H; eauto.
 
  Case "TVar".
-  liftTT_cases; intros; auto.
+  lift_cases; intros; auto.
 
  Case "TForall".
   apply KIForall.
