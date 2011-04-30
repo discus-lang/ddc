@@ -227,6 +227,18 @@ llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeWord (Width _)))) [ a1@(XVar _ (TPtr t1)
 	addBlock	[ Store val ptr ]
 	return		val
 
+llvmOfXPrim (MPtr (PrimPtrPeek (PrimTypeWord (Width w)))) [ arg@XVar{} ]
+ = do	ptr		<- llvmOfExp arg
+	r0		<- newUniqueReg $ LMInt w
+	addBlock	[ Assignment r0 (Load ptr) ]
+	return		r0
+
+llvmOfXPrim (MPtr (PrimPtrPeek (PrimTypeInt (Width w)))) [ arg@XVar{} ]
+ = do	ptr		<- llvmOfExp arg
+	r0		<- newUniqueReg $ LMInt w
+	addBlock	[ Assignment r0 (Load ptr) ]
+	return		r0
+
 
 
 
@@ -234,6 +246,7 @@ llvmOfXPrim (MPtr (PrimPtrPoke (PrimTypeWord (Width _)))) [ a1@(XVar _ (TPtr t1)
 llvmOfXPrim op args
  = panic stage $ "llvmOfXPrim (" ++ show __LINE__ ++ ")\n\n"
 	++ show op ++ "\n\n"
+	++ "argCount " ++ show (length args) ++ "\n\n"
 	++ show args ++ "\n"
 
 --------------------------------------------------------------------------------
