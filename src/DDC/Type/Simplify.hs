@@ -109,7 +109,9 @@ trimToMaterialT' crsClo vsQuant tt
 	 -- TODO: if all the variables in a type are either
 	 --       quantified or immaterial then we can erase the type completely.
 	 | Just (tc, ts)		<- takeTDataTC tt
-	 -> panic stage $ "got data" % tt
-	 
+	 -> panic stage $ "\n    got data " % tt % "\n\n"
+		% "    TODO: If all the variables in a type are either quantified or immaterial\n"
+		% "          then we can erase the type completely.\n"
+
 	_ -> panic stage $ "no match for " % tt
 
