@@ -1,36 +1,7 @@
 
 Require Import SubstTypeType.
-Require Import SubstTypeValue.
+Require Import SubstTypeExp.
 Require Import TyJudge.
-Require Import KiJudge.
-Require Import Exp.
-Require Import Env.
-Require Import Base.
-
-
-(* Substitution of Exps in Exps *)
-Fixpoint substXX (d: nat) (u: exp) (xx: exp) : exp :=
-  match xx with
-  | XVar ix    
-  => match nat_compare ix d with
-     | Eq => u
-     | Gt => XVar (ix - 1)
-     | _  => XVar  ix
-     end
-
-  |  XLAM x
-  => XLAM (substXX d (liftTX 0 u) x)
-
-  |  XAPP x t
-  => XAPP (substXX d u x) t
-
-  |  XLam t x
-  => XLam t (substXX (S d) (liftXX 0 u) x)
-
-  |  XApp x1 x2
-  => XApp (substXX d u x1) (substXX d u x2)
-  end.
-
 
 
 (* Weakening Kind Env in TyJudge ************************************

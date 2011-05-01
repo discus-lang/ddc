@@ -1,8 +1,7 @@
 
-Require Import SubstTypeValue.
-Require Import SubstValueValue.
-Require Import WellFormed.
-Require Import Exp.
+Require Import SubstTypeExp.
+Require Import SubstExpExp.
+Require Export Exp.
 
 
 (* Single Step Evaluation *******************************************)

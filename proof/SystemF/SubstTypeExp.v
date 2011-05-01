@@ -1,48 +1,6 @@
 
 Require Import SubstTypeType.
 Require Import TyJudge.
-Require Import KiJudge.
-Require Import Exp.
-Require Import Env.
-Require Import Base.
-
-
-(* Lift type indices that are at least a certain depth. *)
-Fixpoint liftTX (d: nat) (xx: exp) : exp :=
-  match xx with
-  |  XVar _     => xx
-
-  |  XLAM x     
-  => XLAM (liftTX (S d) x)
-
-  |  XAPP x t 
-  => XAPP (liftTX d x)  (liftTT d t)
- 
-  |  XLam t x   
-  => XLam (liftTT d t)  (liftTX d x)
-
-  |  XApp x1 x2
-  => XApp (liftTX d x1) (liftTX d x2)
- end.
-
-
-(* Substitution of Types in Exps *)
-Fixpoint substTX (d: nat) (u: ty) (xx: exp) : exp :=
-  match xx with
-  | XVar _     => xx
-
-  |  XLAM x     
-  => XLAM (substTX (S d) (liftTT 0 u) x)
-
-  |  XAPP x t
-  => XAPP (substTX d u x)  (substTT d u t)
-
-  |  XLam t x
-  => XLam (substTT d u t)  (substTX d u x)
-
-  |  XApp x1 x2
-  => XApp (substTX d u x1) (substTX d u x2)
- end.
 
 
 Theorem subst_type_value_ix

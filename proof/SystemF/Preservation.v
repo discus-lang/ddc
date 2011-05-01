@@ -1,13 +1,9 @@
 
-Require Import WellFormed.
-Require Import SubstValueValue.
-Require Import SubstTypeValue.
+Require Import SubstExpExp.
+Require Import SubstTypeExp.
 Require Import SubstTypeType.
 Require Import EsJudge.
-Require Import KiJudge.
 Require Import TyJudge.
-Require Import Exp.
-Require Import Base.
 
 
 Theorem preservation

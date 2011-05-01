@@ -1,10 +1,10 @@
 
-Require Import Exp.
-Require Import WellFormed.
-Require Import Base.
+Require Export Ty.
+Require Export Ki.
+Require Export Env.
+
 
 (* Kinds of types ***************************************************)
-
 Inductive KIND : kienv -> ty -> ki -> Prop :=
  | KICon 
    :  forall ke c

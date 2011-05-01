@@ -1,10 +1,8 @@
 
 Require Import SubstTypeType.
-Require Import KiJudge.
-Require Import WellFormed.
-Require Import Exp.
-Require Import Env.
-Require Import Base.
+Require Export Exp.
+Require Export TyEnv.
+Require Export KiJudge.
 
 
 (* Check well typeness of terms. *)
