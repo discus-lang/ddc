@@ -42,7 +42,7 @@ logwar : bin/ddc bin/war library/Prelude.di
 .PHONY  : totallogwar
 totallogwar : bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
-	bin/war test -j $(THREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O
+	bin/war test -j $(THREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O $(compway_llvm)
 	@echo
 
 # Alias for war
