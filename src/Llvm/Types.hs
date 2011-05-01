@@ -207,7 +207,7 @@ getPlainName (LMLitVar    x          ) = getLit x
 
 -- | Print a literal value. No type.
 getLit :: LlvmLit -> String
-getLit (LMIntLit   i _) = show ((fromInteger i)::Int)
+getLit (LMIntLit   i _) = show i
 getLit (LMFloatLit r LMFloat ) = fToStr $ realToFrac r
 getLit (LMFloatLit r LMDouble) = dToStr r
 getLit f@(LMFloatLit _ _) = error $ "Can't print this float literal!" ++ show f
