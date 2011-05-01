@@ -11,7 +11,7 @@ Require Import Exp.
 Require Import Base.
 
 
-Theorem Progress
+Theorem progress
  :  forall x
  ,  (exists t, TYPE Empty Empty x t)
  -> value x \/ (exists x', STEP x x').
@@ -38,7 +38,7 @@ Proof.
    right.
     destruct H as [x'].
     exists (XAPP x' t).
-    apply ESAPP1.
+    apply ESAPP1. auto.
 
  Case "XLam".
   left. apply Value_lam.

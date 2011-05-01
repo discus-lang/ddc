@@ -31,7 +31,8 @@ Inductive STEP : exp -> exp -> Prop :=
 
   | ESAPP1
     :  forall x1 x1' t2
-    ,  STEP (XAPP x1 t2) (XAPP x1' t2).
+    ,  STEP x1 x1'
+    -> STEP (XAPP x1 t2) (XAPP x1' t2).
 
 
         
