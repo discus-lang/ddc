@@ -107,7 +107,7 @@ options	=
 	, OOpts		ImportDirs		["-i", "-import"]		"-i, -import  <dirs..>"
 						"Add dirs to the import path."
 	, OBlank
-	, OFlag		ViaLLVM			["-via-llvm"]			"Compile via LLVM."
+	, OFlag		ViaLLVM			["-fvia-llvm"]			"Compile via LLVM."
 	, OBlank
 	, OFlag		NoImplicitPrelude	["-no-implicit-prelude"]	
 						"Don't implicitly import Prelude."
