@@ -3,6 +3,8 @@ top = ../../../
 
 DDC = $(top)bin/ddc -basedir $(top)
 
+export DYLD_LIBRARY_PATH = $(top)runtime
+
 all : Main.bin
 
 clean :
