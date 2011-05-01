@@ -33,14 +33,14 @@ foreign import "primInt32U_eq"
 boxInt32 :: Int32# -> Int32
 boxInt32 u
  = do	w	= primAlloc_dataRS 0# 4#
-	poke (coercePtr (coerceAddrToPtr (peekDataRS_payload w))) u
+	poke (coerceAddrToPtr (peekDataRS_payload w)) u
 	w
 
 
 unboxInt32 :: Int32 -> Int32#
 unboxInt32 w
  = do	w'	= force w
-	peekOn w (coercePtr (coerceAddrToPtr (peekDataRS_payload w')))
+	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
 
 
 instance Eq Int32 where
