@@ -41,7 +41,7 @@ parseString parser str
 -- Module ------------------------------------------------------------------------------------------
 -- | Parse a whole module.
 pModule :: Parser [Top SP]
-pModule 
+pModule
  = 	pCParen pOrderedTop
 
 -- | Parse a top level binding, only accepting a specific ordering.
@@ -51,15 +51,15 @@ pOrderedTop
 	header	<- Parsec.sepEndBy pTopHeader pSemis
 	tops 	<- Parsec.sepEndBy pTop pSemis
 
-	return	$  maybeToList mModule 
-		++ header 
+	return	$  maybeToList mModule
+		++ header
 		++ tops
 
 -- | A header with an explicit module identifier.
 pModuleId :: Parser (Top SP)
  = do 	tok	<- pTok K.Module
-	mQual	<- Parsec.optionMaybe 
-		   (do	q	<- pModuleNameQual 
+	mQual	<- Parsec.optionMaybe
+		   (do	q	<- pModuleNameQual
 			pTok K.Dot
 			return q)
 	con	<- pCon
@@ -183,7 +183,9 @@ pTopForeignImportNext startPos
 				(do 	pTok K.HasOpType
 					pTypeOp)
 
-		return	$ PForeign startPos $ OImport mExName var sig mOpType
+		let nvar = var { varInfo = [ ISeaGlobal True ] }
+
+		return	$ PForeign startPos $ OImport mExName nvar sig mOpType
 
  <?> "pTopForeignImport"
 
@@ -296,11 +298,11 @@ pTopData
 		con	<- pOfSpace NameType pCon
 		pTopData2 tok con
 
-pTopData2 tok con 
+pTopData2 tok con
  = 	do	pTok	K.HasTypeMatch
 		kind	<- pKind
 		return	$ PKindSig (spTP tok) con kind
-		
+
  <|>	do	vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
 
 		ctors	<- 	do	pTok K.Equals
@@ -445,7 +447,7 @@ pTopProject_pun
 	let varField	= var { varNameSpace = NameField }
 
  	return	$ SBindFun (spV var) varField
-			[] 
+			[]
 			[ADefault (spV var) (XVar (spV var) var)]
 
 
