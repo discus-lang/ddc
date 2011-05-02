@@ -107,11 +107,11 @@ addGlobalVar (gvar, init)
 	let name	= getPlainName gvar
 	case Map.lookup name map of
 	  Nothing	-> modify $ \s -> s { globVars = Map.insert name (gvar, init) map }
-	  Just (cur, _)	-> unless (cur == gvar)
+	  Just (cur, _)	-> unless (getVarType cur == getVarType gvar)
 				$ panic stage
-					$ "The following two should match :"
-					++ "\n    " ++ show cur
-					++ "\n    " ++ show gvar
+					$ "addGlobalVar: The following two should match :"
+					++ "\n    '" ++ show cur
+					++ "'\n    '" ++ show gvar ++ "'"
 
 
 startFunction :: LlvmM ()
@@ -163,7 +163,7 @@ addAlias (name, typ)
 	  Nothing	-> modify $ \s -> s { aliases = Map.insert name typ map }
 	  Just curr	-> unless (curr == typ)
 				$ panic stage
-					$ "The following two should match :"
+					$ "addAlias: The following two should match :"
 					++ "\n    " ++ show curr
 					++ "\n    " ++ show typ
 
@@ -178,7 +178,7 @@ addGlobalFuncDecl fd
 	  Nothing	-> modify $ \s -> s { funcDecls = Map.insert name fd map }
 	  Just curr	-> unless (curr == fd)
 				$ panic stage
-					$ "The following two should match :"
+					$ "addGlobalFuncDecl: The following two should match :"
 					++ "\n    " ++ show curr
 					++ "\n    " ++ show fd
 
