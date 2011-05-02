@@ -148,12 +148,15 @@ toLlvmTypeCon TyConObj = structObj
 toLlvmTypeCon (TyConUnboxed v)
  = case varName v of
 	"Bool#"		-> i1
+	"Int8#"		-> i8
+	"Int16#"	-> i16
 	"Int32#"	-> i32
 	"Int64#"	-> i64
 	"Float32#"	-> LMFloat
 	"Float64#"	-> LMDouble
 	"String#"	-> i8
 	"Word8#"	-> i8
+	"Word16#"	-> i16
 	"Word32#"	-> i32
 	"Word64#"	-> i64
 	"Addr#"		-> pChar
