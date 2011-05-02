@@ -34,3 +34,19 @@ Proof.
    eapply IHx2 in H4; eauto.
 Qed.
 
+
+(* When we multi-step evaluate some expression,
+   then the result has the same type as the original.
+ *)  
+Lemma preservation_steps
+ :  forall n x1 t1 x2
+ ,  TYPE Empty x1 t1
+ -> STEPS n    x1 x2
+ -> TYPE Empty x2 t1.
+Proof.
+ intros. 
+ induction H0; eauto.
+  eapply preservation; eauto.
+Qed.
+
+
