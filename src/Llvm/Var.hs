@@ -94,7 +94,9 @@ genericFunPtrVar v
 isGlobalVar :: Var -> Bool
 isGlobalVar v
  -- If the variable is explicitly set as global use the given name.
- | bool : _	<- [global | ISeaGlobal global <- varInfo v]
+
+ | bool : _	<- [global |  ISeaGlobal global
+				<- concat $ [varInfo bound | IBoundBy bound <- varInfo v]]
  = bool
 
  | file : _	<- [sfile | ISourcePos (SourcePos (sfile, _, _))
