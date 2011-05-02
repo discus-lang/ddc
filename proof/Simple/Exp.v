@@ -23,7 +23,6 @@ Definition tyenv := env ty.
 
 
 (** Well Formedness *************************************************)
-
 (* Well formed expressions are closed under the given environment *)
 Fixpoint wfX (tenv: tyenv) (xx: exp) : Prop :=
  match xx with 
