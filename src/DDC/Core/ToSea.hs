@@ -126,7 +126,7 @@ toSeaP	xx
 	 	return Seq.empty
 
 	C.PExtern v t _
-	 ->	return $ Seq.fromList [E.PExtern v (toSeaT t)]
+	 ->	return $ Seq.fromList [E.PExtern v (toSeaExternT t)]
 
  	C.PBind v x
 	 -> do	let to		= C.superOpTypeX x

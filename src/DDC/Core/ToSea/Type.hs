@@ -1,6 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Core.ToSea.Type
 	( toSeaSuperT
+	, toSeaExternT
 	, toSeaT
 	, splitOpType
 	, stripValues)
@@ -35,6 +36,9 @@ toSeaSuperT tt
 --   we convert all function types to the type of an anonymous boxed object.
 toSeaT :: T.Type -> E.Type
 toSeaT tt	= toSeaT' True tt
+
+toSeaExternT :: T.Type -> E.Type
+toSeaExternT tt	= toSeaT' False tt
 
 toSeaT' :: Bool -> T.Type -> E.Type
 toSeaT' repr tt
