@@ -137,14 +137,14 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn heapSize
 			, (=@=) PCtorTag{} ]
 			eTree
 
+	unless (null junk)
+		$ panic stage $ "junk sea bits = " ++ show junk ++ "\n"
+
 	setTags		$ concatMap (\(PData a b) ->
 				map (\ (v, c) -> (seaVar False v, ctorDefTag c)) $ Map.toList b)
 			$ filter (PData{} =@=) eCtorTags
 
 	setTags		$ map (\(PCtorTag s i) -> (s, i)) seaCtorTags
-
-	unless (null junk)
-		$ panic stage $ "junk sea bits = " ++ show junk ++ "\n"
 
 	-- Build the LLVM code
 	let comments =	[ "---------------------------------------------------------------"
@@ -161,6 +161,7 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn heapSize
 
 	mapM_		addGlobalVar
 				$ moduleGlobals
+				++ map llvmOfSeaGlobal (eraseAnnotsTree seaExterns)
 				++ map llvmOfSeaGlobal (eraseAnnotsTree seaCafSlots)
 
 	mapM_		llvmOfSeaDecls $ eraseAnnotsTree $ seaCafInits ++ seaSupers
@@ -246,6 +247,22 @@ llvmOfSeaGlobal (PCafSlot v t@(TCon (TyConUnboxed tv)))
 			ptrAlign
 			False
 	in (var, Just (LMStaticLit (initLiteral tt)))
+
+llvmOfSeaGlobal (PExtern v t@(TCon (TyConUnboxed tv)))
+ =	let	tt = pLift $ toLlvmType t
+		var = LMGlobalVar
+			(seaVar False v)
+			tt
+			External
+			Nothing
+			ptrAlign
+			False
+	in (var, Nothing)
+
+llvmOfSeaGlobal (PExtern v t@(TPtr (TCon TyConObj)))
+ = panic stage $ "\n    Variable '" ++ varName v
+		++ "' (Sea name '" ++ seaVar False v ++ "') has incorrect type '"
+		++ show t ++ "'.\n"
 
 llvmOfSeaGlobal x
  = panic stage $ "llvmOfSeaGlobal (" ++ show __LINE__ ++ ")\n\n"
