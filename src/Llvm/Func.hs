@@ -1,7 +1,8 @@
 {-# LANGUAGE CPP #-}
 {-# OPTIONS -fwarn-unused-imports -fno-warn-type-defaults #-}
 module Llvm.Func
-	( funcDeclOfExp )
+	( funcDeclOfExp
+	, funcDeclOfExtern )
 where
 
 import DDC.Main.Error
@@ -41,6 +42,27 @@ funcDeclOfExp (XVar v t)
  = panic stage $ "funcDeclOfExp (" ++ show __LINE__ ++ ")\n\n"
 	++ show v ++ "\n\n"
 	++ show t ++ "\n"
+
+
+funcDeclOfExtern :: Top a -> LlvmFunctionDecl
+funcDeclOfExtern (PExtern v t@(TFun at rt))
+ = let	(varArgs, params) = specialCaseFuncs (seaVar False v) at
+   in	LlvmFunctionDecl {
+		--  Unique identifier of the function
+		decName = seaVar False v,
+		--  LinkageType of the function
+		funcLinkage = External,
+		--  The calling convention of the function
+		funcCc = CC_Ccc,
+		--  Type of the returned value
+		decReturnType = toLlvmType rt,
+		--  Indicates if this function uses varargs
+		decVarargs = varArgs,
+		--  Parameter types and attributes
+		decParams = params,
+		--  Function align value, must be power of 2
+		funcAlign = ptrAlign
+		}
 
 
 -- Calling the C function 'printf' with just a single string argument via the

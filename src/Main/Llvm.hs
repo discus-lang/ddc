@@ -27,6 +27,7 @@ import Llvm
 import LlvmM
 import Llvm.Assign
 import Llvm.Exp
+import Llvm.Func
 import Llvm.GhcReplace.Unique
 import Llvm.Invoke
 import Llvm.Runtime
@@ -159,10 +160,19 @@ outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn heapSize
 	addAlias	("struct.Thunk", llvmTypeOfStruct ddcThunk)
 	addAlias	("struct.SuspIndir", llvmTypeOfStruct ddcSuspIndir)
 
+	let isTFun x = case x of
+			PExtern _ (TFun _ _)	-> True
+			_			-> False
+
+	let (funExterns, dataExterns)
+			= partition isTFun $ eraseAnnotsTree seaExterns
+
 	mapM_		addGlobalVar
 				$ moduleGlobals
-				++ map llvmOfSeaGlobal (eraseAnnotsTree seaExterns)
+				++ map llvmOfSeaGlobal dataExterns
 				++ map llvmOfSeaGlobal (eraseAnnotsTree seaCafSlots)
+
+	mapM_		addGlobalFuncDecl $ map funcDeclOfExtern funExterns
 
 	mapM_		llvmOfSeaDecls $ eraseAnnotsTree $ seaCafInits ++ seaSupers
 
@@ -248,7 +258,12 @@ llvmOfSeaGlobal (PCafSlot v t@(TCon (TyConUnboxed tv)))
 			False
 	in (var, Just (LMStaticLit (initLiteral tt)))
 
-llvmOfSeaGlobal (PExtern v t@(TCon (TyConUnboxed tv)))
+llvmOfSeaGlobal (PExtern v t@TFun{})
+ = panic stage $ "\n    Variable '" ++ varName v
+		++ "' (Sea name '" ++ seaVar False v ++ "') has incorrect type '"
+		++ show t ++ "'.\n"
+
+llvmOfSeaGlobal (PExtern v t)
  =	let	tt = pLift $ toLlvmType t
 		var = LMGlobalVar
 			(seaVar False v)
@@ -258,11 +273,6 @@ llvmOfSeaGlobal (PExtern v t@(TCon (TyConUnboxed tv)))
 			ptrAlign
 			False
 	in (var, Nothing)
-
-llvmOfSeaGlobal (PExtern v t@(TPtr (TCon TyConObj)))
- = panic stage $ "\n    Variable '" ++ varName v
-		++ "' (Sea name '" ++ seaVar False v ++ "') has incorrect type '"
-		++ show t ++ "'.\n"
 
 llvmOfSeaGlobal x
  = panic stage $ "llvmOfSeaGlobal (" ++ show __LINE__ ++ ")\n\n"
