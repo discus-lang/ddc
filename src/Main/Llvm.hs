@@ -125,13 +125,13 @@ outLlvm
 outLlvm moduleName eTree eCtorTags pathThis importsExp modDefinesMainFn heapSize slotStackSize ctxStackSize
  = do
 	-- Break up the sea into parts.
-	let 	([ 	_seaProtos, 		seaSupers
+	let 	([ 	_seaProtos, 		seaSupers,		seaExterns
 		 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
 		 ,	_seaData
 		 , 	seaCtorTags ],		junk)
 
 		 = partitionBy
-			[ (=@=) PProto{}, 	(=@=) PSuper{}
+			[ (=@=) PProto{}, 	(=@=) PSuper{}, 	(=@=) PExtern{}
 			, (=@=) PCafProto{},	(=@=) PCafSlot{},	(=@=) PCafInit{}
 			, (=@=) PData{}
 			, (=@=) PCtorTag{} ]
@@ -202,7 +202,7 @@ llvmOfParams (v, t) = (toLlvmType t, [])
 --       recursive functions there may be assignments to arguments in the
 --       parameter list.
 --
---    b) Nauto variables can appear on the LHS of an assignment requiring Nauto
+--    b) NAuto variables can appear on the LHS of an assignment requiring NAuto
 --       vars to be handled differently whether they are on the LHS or RHS of
 --       the assignment. Handling them differently would make LLVM code gen
 --       difficult.

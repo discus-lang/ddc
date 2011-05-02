@@ -247,13 +247,13 @@ outSea	:: (?args :: [Arg.Arg])
 outSea	moduleName eTree pathThis pathImports extraIncludes
  = {-# SCC "Sea/out" #-}
 	-- Break up the sea into Header/Code parts.
-    let	([ 	_seaProtos, 		seaSupers
+    let	([ 	_seaProtos, 		seaSupers,		_seaExterns
 	 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
 	 ,      _seaData
 	 , 	_seaPCtorTag ], [])
 
 	 = partitionBy
-		[ (=@=) PProto{}, 	(=@=) PSuper{}
+		[ (=@=) PProto{}, 	(=@=) PSuper{}, 	(=@=) PExtern{}
 		, (=@=) PCafProto{},	(=@=) PCafSlot{},	(=@=) PCafInit{}
 		, (=@=) PData{}
 		, (=@=) PCtorTag{} ]

@@ -40,6 +40,9 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PComment s	-> "// " % s % ""
 	PBlank		-> nl
 
+	-- External functions and data.
+	PExtern v _ -> "/* " % sV v % "*/"
+
 	-- Data type declarations.
 	PData v ctors
 	 | Map.null ctors
@@ -372,7 +375,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	XPrim (MPtr (PrimPtrPeek _))   [x1]
 	 -> "_PEEK" % parens x1
-	
+
 
 	_ -> panic stage ("ppr[Exp]: no match for " % show xx)
 

@@ -40,6 +40,11 @@ data Top a
 	-- | Inject a blank line into the Sea file, to make it easier to read.
 	| PBlank
 
+	-- | Data or functions defined external to this module.
+	| PExtern
+		Var				-- Name of external.
+		Type				-- Its Type.
+
 	-- | Data type definition.
 	| PData
 		Var				--  Type constructor name.

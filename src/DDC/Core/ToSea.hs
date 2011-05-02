@@ -125,8 +125,8 @@ toSeaP	xx
 	 	mapM_ slurpWitnessKind ks
 	 	return Seq.empty
 
-	C.PExtern{}
-	 ->	return Seq.empty
+	C.PExtern v t _
+	 ->	return $ Seq.fromList [E.PExtern v (toSeaT t)]
 
  	C.PBind v x
 	 -> do	let to		= C.superOpTypeX x

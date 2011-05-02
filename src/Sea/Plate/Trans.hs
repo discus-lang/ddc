@@ -97,6 +97,9 @@ instance Monad m => TransM m a1 a2 Top where
 	PNil
 	 ->	transP table PNil
 
+	PExtern v t
+	 -> 	transP table	$ PExtern v t
+
 	PData v ctors
 	 -> 	transP table	$ PData v ctors
 
