@@ -149,8 +149,7 @@ Qed.
 
 Theorem subst_value_value
  :  forall tenv x1 x2 t1 t2
- ,  closedX x2
- -> TYPE (tenv :> t2) x1 t1
+ ,  TYPE (tenv :> t2) x1 t1
  -> TYPE tenv         x2 t2 
  -> TYPE tenv (subst x2 x1) t1.
 Proof. 

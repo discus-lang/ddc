@@ -43,3 +43,15 @@ Proof.
     exists (XApp x1' x2). auto.
 Qed.
 
+
+(* This doesn't work directly as we have nothing to induct over *)
+(*
+Theorem progress_steps
+ :  forall x1 t1 
+ ,  TYPE Empty x1 t1
+ -> exists v1, value v1 /\ STEPS x1 v1.
+Proof.
+ intros.
+ apply progress in H.
+Qed.
+*)
