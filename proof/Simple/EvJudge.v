@@ -70,67 +70,43 @@ Proof.
 Qed.
 
 
-
-
 (* Small to Big steps ***********************************************)
-
 Lemma expansion
- :  forall x1 t1 x2 v3
- ,  TYPE Empty x1 t1 -> STEP x1 x2 
+ :  forall te x1 t1 x2 v3
+ ,  TYPE te x1 t1 -> STEP x1 x2 
  -> EVAL x2 v3 
  -> EVAL x1 v3.
 Proof.
- intros. gen t1.
+ intros. gen te t1 v3.
  induction H0; intros.
 
  eapply EVLamApp.
   eauto. eauto.
   inverts H0. 
-  apply EVValue. eauto. auto. auto.
+  apply EVValue.
+   skip.         (* XLam t11 x12 isn't ness a value. We prob
+                    want whnf in the eval judgement instead of value *)
+   eauto.
+   auto.
 
  Case "x1 steps".
-  inverts H.
+  inverts H. inverts H1.
+   inverts H.
+   eapply EVLamApp.
+    apply H3.
+    auto.
+    eapply IHSTEP; eauto.
+    eauto.
+    eauto.
 
+ Case "x2 steps".
+  inverts H1. inverts H2.
+  inverts H1.
   eapply EVLamApp.
-   skip. eauto.
-   inverts H1.
-    lets D: EVValue (XApp x1' x2) H.
-  eauto.
-  skip.
-  eauto.
-  inverts H0.
-   skip.
-  
-
- 
-
-
-Lemma steps_to_eval
- :  forall n x1 t1 x2
- ,  TYPE Empty x1 t1
- -> STEPS n x1 x2
- -> EVAL x1 x2.
-Proof.
- intros. 
- induction H0.
-  admit.
-
-  induction x1.
-   inverts H0.
-   inverts H0.
-   admit.
-
- lets D1: IHSTEPS1 H. clear IHSTEPS1.
- lets T2: preservation_steps H H0_.
- lets D2: IHSTEPS2 T2. clear IHSTEPS2.
-
- induction x1.
-  inverts H. false.
-  admit.
- 
- eapply EVLamApp.
-  skip. skip.
-  
-
-    
+   apply H4.
+   auto.
+   eauto. 
+   eapply IHSTEP; eauto.
+   eauto.
+Qed.
 
