@@ -54,6 +54,20 @@ Inductive STEPS : nat -> exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
+(* Left linearised multi-step evaluation ****************************)
+Inductive STEPSL : nat -> exp -> exp -> Prop :=
+
+ | ESRefl 
+   : forall x1
+   , STEPSL 0 x1 x1
+
+ | ESSnoc 
+   :  forall n x1 x2 x3
+   ,  STEPSL n x1 x2 
+   -> STEP   x2 x3
+   -> STEPSL (S n) x1 x3.
+
+
 (* Context lemmas ***************************************************
    These help when proving something about a reduction in a given
    context. They're all trivial.

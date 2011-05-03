@@ -68,3 +68,69 @@ Proof.
   exists (n1 + (n2 + (1 + n3))).
    repeat (try (eapply ESLink); eauto).
 Qed.
+
+
+
+
+(* Small to Big steps ***********************************************)
+
+Lemma expansion
+ :  forall x1 t1 x2 v3
+ ,  TYPE Empty x1 t1 -> STEP x1 x2 
+ -> EVAL x2 v3 
+ -> EVAL x1 v3.
+Proof.
+ intros. gen t1.
+ induction H0; intros.
+
+ eapply EVLamApp.
+  eauto. eauto.
+  inverts H0. 
+  apply EVValue. eauto. auto. auto.
+
+ Case "x1 steps".
+  inverts H.
+
+  eapply EVLamApp.
+   skip. eauto.
+   inverts H1.
+    lets D: EVValue (XApp x1' x2) H.
+  eauto.
+  skip.
+  eauto.
+  inverts H0.
+   skip.
+  
+
+ 
+
+
+Lemma steps_to_eval
+ :  forall n x1 t1 x2
+ ,  TYPE Empty x1 t1
+ -> STEPS n x1 x2
+ -> EVAL x1 x2.
+Proof.
+ intros. 
+ induction H0.
+  admit.
+
+  induction x1.
+   inverts H0.
+   inverts H0.
+   admit.
+
+ lets D1: IHSTEPS1 H. clear IHSTEPS1.
+ lets T2: preservation_steps H H0_.
+ lets D2: IHSTEPS2 T2. clear IHSTEPS2.
+
+ induction x1.
+  inverts H. false.
+  admit.
+ 
+ eapply EVLamApp.
+  skip. skip.
+  
+
+    
+
