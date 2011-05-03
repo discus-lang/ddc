@@ -33,13 +33,4 @@ Proof.
  intros. gen tenv t.
  induction x; intros; inverts H; simpl; eauto.
 Qed.
-
-
-(* Checking closed expressions **************************************)
-Theorem type_check_empty_tyenv_is_closed
- :  forall x t
- ,  TYPE Empty x t
- -> closedX x.
-Proof.
- intros. unfold closedX. eapply type_wfX. eauto.
-Qed.
+Hint Resolve type_wfX.

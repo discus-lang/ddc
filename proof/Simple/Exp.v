@@ -35,6 +35,7 @@ Fixpoint wfX (tenv: tyenv) (xx: exp) : Prop :=
 (* Closed expressions are well formed under an empty environment *)
 Definition closedX (xx: exp) : Prop
  := wfX Empty xx.
+Hint Unfold closedX.
 
 
 (* Values are closed expressions that cannot be reduced further. *)
