@@ -1,3 +1,4 @@
+(* Bonus lemmas that aren't used by the main proofs *)
 
 Require Import Base.
 Require Import Env.
@@ -56,7 +57,6 @@ Proof.
  Case "XApp".
   simpl in H. destruct H. eauto.
 Qed.
-
 
 
 Theorem type_check_closed_in_empty_tyenv

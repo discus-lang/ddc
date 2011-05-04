@@ -3,21 +3,30 @@ Require Export Base.
 Require Export Env.
 
 
-(** Types ***********************************************************)
+(* Types ************************************************************)
 Inductive ty  : Type :=
  | TCon  : nat -> ty
  | TFun  : ty  -> ty -> ty.
 Hint Constructors ty.
 
 
-(** Expressions *****************************************************)
+(* Type Environments *)
+Definition tyenv := env ty.
+
+
+(* Expressions ******************************************************
+   We use deBruijn indices for binders.
+ *)
 Inductive exp : Type :=
  | XVar  : nat -> exp
  | XLam  : ty  -> exp -> exp
  | XApp  : exp -> exp -> exp.
-Hint Constructors exp.
+ Hint Constructors exp.
 
 
+(* Weak Head Normal Forms cannot be reduced further by 
+   call-by-value evaluation.
+ *)
 Inductive whnfX : exp -> Prop :=
  | Whnf_XVar 
    : forall i
@@ -29,21 +38,16 @@ Inductive whnfX : exp -> Prop :=
 Hint Constructors whnfX.
 
 
-(** Environments ****************************************************)
-Definition tyenv := env ty.
-
-
-(** Well Formedness *************************************************)
-(* Well formed expressions are closed under the given environment *)
+(* Well formed expressions are closed under the given environment. *)
 Fixpoint wfX (tenv: tyenv) (xx: exp) : Prop :=
- match xx with 
+ match xx with  
  | XVar i     => exists t, get tenv i = Some t
  | XLam t x   => wfX (tenv :> t) x
  | XApp x1 x2 => wfX tenv x1 /\ wfX tenv x2
  end.
 
 
-(* Closed expressions are well formed under an empty environment *)
+(* Closed expressions are well formed under an empty environment. *)
 Definition closedX (xx: exp) : Prop
  := wfX Empty xx.
 Hint Unfold closedX.
@@ -51,8 +55,8 @@ Hint Unfold closedX.
 
 (* Values are closed expressions that cannot be reduced further. *)
 Inductive value : exp -> Prop :=
-  | Value 
-    :  forall xx
-    ,  whnfX xx -> closedX xx
-    -> value xx.
+ | Value 
+   :  forall xx
+   ,  whnfX xx -> closedX xx
+   -> value xx.
 Hint Constructors value.

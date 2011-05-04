@@ -4,8 +4,9 @@ Require Import EsJudge.
 Require Import SubstValueValue.
 
 
-(* When a well typed term transitions to the next state, 
-   its type is perserved. *)
+(* When a well typed expression transitions to the next state
+   then its type is preserved.
+ *)
 Theorem preservation
  :  forall x x' t
  ,  TYPE Empty x  t
@@ -49,4 +50,22 @@ Proof.
   eapply preservation; eauto.
 Qed.
 
+
+(* When we multi-step evaluate some expression, 
+   then the result has the same type as the original.
+   Using the left-linearised form for the evaluation.
+ *)
+Lemma preservation_stepsl
+ :  forall x1 t1 x2
+ ,  TYPE Empty x1 t1
+ -> STEPSL x1 x2
+ -> TYPE Empty x2 t1.
+Proof.
+ intros. 
+ induction H0.
+  auto.
+  apply IHSTEPSL.
+  eapply preservation. 
+   eauto. auto.
+Qed.
 

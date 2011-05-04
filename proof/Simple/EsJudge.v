@@ -30,6 +30,9 @@ Hint Constructors STEP.
 
 (* Multi-step evaluation *******************************************
    A sequence of small step transitions.
+   As opposed to STEPSL, this version has an append constructor
+   ESAppend that makes it easy to join two evaluations together.
+   We use this when converting big-step evaluations to small-step.
  *)
 Inductive STEPS : exp -> exp -> Prop :=
 
@@ -81,14 +84,19 @@ Qed.
 Hint Resolve steps_app2.
 
 
-(* Left linearised multi-step evaluation ****************************)
+(* Left linearised multi-step evaluation ****************************
+   As opposed to STEPS, this version provides a single step at a time
+   and does not have an append constructor. This is convenient
+   when converting a small-step evaluations to big-step, via the
+   eval_expansion lemma.
+ *)
 Inductive STEPSL : exp -> exp -> Prop :=
 
  | ESLNone 
    : forall x1
    , STEPSL x1 x1
 
- | ESLSnoc 
+ | ESLCons
    :  forall x1 x2 x3
    ,  STEP   x1 x2 -> STEPSL x2 x3 
    -> STEPSL x1 x3.
@@ -96,7 +104,10 @@ Inductive STEPSL : exp -> exp -> Prop :=
 Hint Constructors STEPSL.
 
 
-(* Transitivity of left linearised multi-step evaluation. *)
+(* Transitivity of left linearised multi-step evaluation.
+   We use this when "flattening" a big step evaluation to the
+   small step one.
+ *)
 Lemma stepsl_trans
  :  forall x1 x2 x3
  ,  STEPSL x1 x2 -> STEPSL x2 x3
@@ -105,12 +116,15 @@ Proof.
  intros.
  induction H.
   eauto.
-  eapply ESLSnoc. eauto. eauto.
+  eapply ESLCons. eauto. eauto.
 Qed.
 
 
-(* Linearise a regular multi-step evaluation. *)
-Lemma steps_to_stepsl
+(* Linearise a regular multi-step evaluation.
+   This flattens out all the append constructors, leaving us with
+   a list of individual transitions. 
+ *)
+Lemma stepsl_of_steps
  :  forall x1 x2
  ,  STEPS  x1 x2
  -> STEPSL x1 x2.
@@ -121,6 +135,4 @@ Proof.
   eauto.
   eapply stepsl_trans; eauto.
 Qed.
-  
-
 

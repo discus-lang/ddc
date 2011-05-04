@@ -5,6 +5,9 @@ Require Import Exp.
 Require Import Base.
 
 
+(* A well typed expression is either a well formed value, 
+   or can transition to the next state.
+ *)
 Theorem progress
  :  forall t T
  ,  TYPE Empty t T
