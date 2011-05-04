@@ -15,6 +15,24 @@ Inductive exp : Type :=
 Hint Constructors exp.
 
 
+(* Weak Head Normal Forms cannot be reduced further by 
+   call-by-value evaluation.
+ *)
+Inductive whnfX : exp -> Prop :=
+ | Whnf_XVar 
+   : forall i
+   , whnfX (XVar i)
+
+ | Whnf_XLAM
+   : forall x1
+   , whnfX (XLAM x1)
+
+ | Whnf_XLam
+   : forall t1 x2
+   , whnfX (XLam t1 x2).
+Hint Constructors whnfX.
+
+
 (* Well Formedness **************************************************)
 (* A well formed expression is closed under the given environments *)
 Fixpoint wfX (ke: kienv) (te: tyenv) (xx: exp) : Prop := 
@@ -36,14 +54,10 @@ Hint Unfold closedX.
 
 (* Values are closed expressions that cannot be reduced further *)
 Inductive value : exp -> Prop :=
- | Value_lam 
-   : forall t x
-   , closedX (XLam t x) -> value (XLam t x)
-
- | Value_LAM
-   : forall x
-   , closedX (XLAM x)   -> value (XLAM x).
-
+ | Value
+   :  forall xx
+   ,  whnfX xx -> closedX xx
+   -> value xx.
 Hint Constructors value.
 
 

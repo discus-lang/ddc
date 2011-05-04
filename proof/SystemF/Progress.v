@@ -18,17 +18,17 @@ Proof.
   inverts H. false.
 
  Case "XLAM".
-  left. apply Value_LAM.
-  apply type_wfX in H. auto.
+  left. apply type_wfX in H. auto.
 
  Case "XAPP".
   inverts H.
   destruct IHx. eauto.
   SCase "x value".
-   right. inverts H.
-    inverts H4.
-    exists (substTX 0 t x0). 
-    eapply ESLAMAPP.
+   right. inverts H. inverts H4.
+    inverts H1. false.
+    inverts H0.
+    exists (substTX 0 t x1). eapply ESLAMAPP.
+    inverts H0.
   SCase "x steps".
    right.
     destruct H as [x'].
@@ -36,8 +36,7 @@ Proof.
     apply ESAPP1. auto.
 
  Case "XLam".
-  left. apply Value_lam.
-  apply type_wfX in H. auto.
+  left. apply type_wfX in H. auto.
 
  Case "XApp".
   right.
@@ -48,9 +47,10 @@ Proof.
    inverts H. 
 
    SSCase "x2 value".
-    exists (substXX 0 x2 x).
-    apply ESLamApp. auto.
-    inverts H4.
+    inverts H1. 
+     inverts H2. false.
+     inverts H4.
+     exists (substXX 0 x2 x0). apply ESLamApp. auto.
 
    SSCase "x2 steps".
     destruct H0 as [x2'].
