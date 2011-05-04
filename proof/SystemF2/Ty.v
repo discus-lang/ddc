@@ -5,22 +5,31 @@ Require Export Base.
 
 
 (* Types ************************************************************)
+Inductive tycon : Type :=
+ | TyConFun  : tycon
+ | TyConData : nat   -> ki -> tycon.
+Hint Constructors tycon.
+
 Inductive ty  : Type :=
- | TCon    : nat -> ty
- | TVar    : nat -> ty
- | TForall : ty  -> ty
- | TFun    : ty  -> ty -> ty.
+ | TCon      : tycon -> ty
+ | TVar      : nat   -> ty
+ | TForall   : ty    -> ty
+ | TApp      : ty    -> ty -> ty.
 Hint Constructors ty.
+
+
+Definition tFun := TCon TyConFun.
+Hint Unfold tFun.
 
 
 (* Well Formedness **************************************************)
 (* Well formed types are closed under the given kind environment *)
 Fixpoint wfT (ke: kienv) (tt: ty) : Prop := 
  match tt with
- | TCon _     => True
  | TVar i     => exists k, get ke i = Some k
+ | TCon _     => True
  | TForall t  => wfT (ke :> KStar) t
- | TFun t1 t2 => wfT ke t1 /\ wfT ke t2
+ | TApp t1 t2 => wfT ke t1 /\ wfT ke t2
  end.
 Hint Unfold wfT.
 
@@ -35,18 +44,18 @@ Hint Unfold closedT.
 (* Lift type indices that are at least a certain depth. *)
 Fixpoint liftTT (d: nat) (tt: ty) : ty :=
   match tt with
-  | TCon _     => tt
-
   |  TVar ix
   => if le_gt_dec d ix
       then TVar (S ix)
       else tt
 
+  |  TCon _     => tt
+
   |  TForall t 
   => TForall (liftTT (S d) t)
 
-  |  TFun t1 t2
-  => TFun    (liftTT d t1) (liftTT d t2)
+  |  TApp t1 t2
+  => TApp    (liftTT d t1) (liftTT d t2)
   end.
 Hint Unfold liftTT.
 
@@ -63,9 +72,6 @@ Ltac lift_cases
 (* Substitution of Types in Types. *)
 Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty 
  := match tt with
-    |  TCon _     
-    => tt
- 
     | TVar ix
     => match nat_compare ix d with
        | Eq => u
@@ -73,11 +79,14 @@ Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty
        | _  => TVar  ix
        end
 
+    |  TCon _     
+    => tt
+ 
     |  TForall t  
     => TForall (substTT (S d) (liftTT 0 u) t)
 
-    |  TFun t1 t2 
-    => TFun (substTT d u t1) (substTT d u t2)
+    |  TApp t1 t2 
+    => TApp (substTT d u t1) (substTT d u t2)
   end.
 
 
@@ -100,7 +109,7 @@ Proof.
   assert (S (n + n') = (S n) + n'). omega. rewrite H. 
   rewrite IHt. auto.
 
- Case "TFun".
+ Case "TApp".
   simpl. apply f_equal2; auto.
 Qed.  
 
@@ -123,7 +132,7 @@ Proof.
   simpl. 
   rewrite IHt1. auto.
 
- Case "TFun".
+ Case "TApp".
   simpl.
   rewrite IHt1_1.
   rewrite IHt1_2. auto.
@@ -149,7 +158,7 @@ Proof.
   rewrite (IHt1 (S n) n'). simpl.
   rewrite (liftTT_liftTT 0 n). auto.
 
- Case "TFun".
+ Case "TApp".
   simpl.
   rewrite IHt1_1. auto.
   rewrite IHt1_2. auto.
@@ -174,7 +183,7 @@ Proof.
   rewrite (IHt1 (S n) n'). f_equal.
    simpl. rewrite (liftTT_liftTT 0 (n + n')). auto.
 
- Case "TFun".
+ Case "TApp".
   simpl. f_equal.
    apply IHt1_1.
    apply IHt1_2.
@@ -201,7 +210,7 @@ Proof.
    simpl. rewrite (liftTT_substTT 0 (n + m)). auto.
    simpl. rewrite (liftTT_liftTT 0 n). auto.  
 
- Case "TFun".
+ Case "TApp".
   simpl. f_equal.
    apply IHt1_1.
    apply IHt1_2.

@@ -6,9 +6,13 @@ Require Export Env.
 
 (* Kinds of types ***************************************************)
 Inductive KIND : kienv -> ty -> ki -> Prop :=
- | KICon 
-   :  forall ke c
-   ,  KIND ke (TCon c) KStar
+ | KIConFun
+   :  forall ke
+   ,  KIND ke (TCon TyConFun) (KFun KStar (KFun KStar KStar))
+
+ | KIConData
+   :  forall ke i k
+   ,  KIND ke (TCon (TyConData i k)) k
 
  | KIVar
    :  forall ke i k
@@ -20,11 +24,11 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
    ,  KIND (ke :> KStar) t           KStar
    -> KIND ke            (TForall t) KStar
 
- | KIFun 
+ | KIApp 
    :  forall ke t1 t2
-   ,  KIND ke t1 KStar
+   ,  KIND ke t1 (KFun KStar KStar)
    -> KIND ke t2 KStar
-   -> KIND ke (TFun t1 t2) KStar.
+   -> KIND ke (TApp t1 t2) KStar.
 Hint Constructors KIND.
 
 
