@@ -25,10 +25,10 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
    -> KIND ke            (TForall t) KStar
 
  | KIApp 
-   :  forall ke t1 t2
-   ,  KIND ke t1 (KFun KStar KStar)
-   -> KIND ke t2 KStar
-   -> KIND ke (TApp t1 t2) KStar.
+   :  forall ke t1 t2 k11 k12
+   ,  KIND ke t1 (KFun k11 k12)
+   -> KIND ke t2 k11
+   -> KIND ke (TApp t1 t2) k12.
 Hint Constructors KIND.
 
 

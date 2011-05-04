@@ -17,11 +17,11 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
    :  forall ke te x12 t11 t12
    ,  KIND ke t11 KStar
    -> TYPE ke (te :> t11)  x12            t12
-   -> TYPE ke  te         (XLam t11 x12) (TFun t11 t12)
+   -> TYPE ke  te         (XLam t11 x12) (tFun t11 t12)
 
  | TYApp 
    :  forall ke te x1 x2 t11 t12
-   ,  TYPE ke te x1 (TFun t11 t12) 
+   ,  TYPE ke te x1 (tFun t11 t12) 
    -> TYPE ke te x2 t11
    -> TYPE ke te (XApp x1 x2) t12
 
@@ -54,7 +54,20 @@ Proof.
   eapply subst_type_type; eauto.
 
  Case "XLam".
-  eapply IHx1 in H4. inverts H4. auto.
+  unfold tFun.
+  apply IHx in H6.
+  eapply KIApp.
+   eapply KIApp.
+   eauto. auto. auto.
+
+ Case "XApp".
+  apply IHx1 in H4.
+  apply IHx2 in H6.
+   unfold tFun in H4.
+    inverts H4.
+    inverts H2.
+    inverts H3.
+    auto.
 Qed.
 
 
