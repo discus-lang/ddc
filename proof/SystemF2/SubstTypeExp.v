@@ -26,7 +26,7 @@ Proof.
   rewrite drop_rewind.
   rewrite (liftTE_substTE 0 ix).
   eapply IHx1; eauto.
-   apply liftTT_push. auto.
+   apply kind_kienv_weaken. auto.
 
  Case "XAPP".
   rewrite (substTT_substTT 0 ix).
@@ -46,6 +46,7 @@ Proof.
  Case "XApp".
   eapply TYApp.
    eapply IHx1_1 in H6; eauto.
+    simpl in H6. unfold tFun. eauto.
    eapply IHx1_2 in H8; eauto.
 Qed.
 

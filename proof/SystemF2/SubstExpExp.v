@@ -24,7 +24,7 @@ Proof.
  Case "XVar".
   apply TYVar. 
   apply get_map. auto.
-  apply liftTT_insert. auto.
+  apply kind_kienv_insert. auto.
 
  Case "XLAM".
   eapply TYLAM. 
@@ -36,11 +36,11 @@ Proof.
   rewrite (liftTT_substTT' 0 ix). simpl.
   eapply TYAPP.
   eapply (IHx1 ix) in H4. simpl in H4. eauto.
-  apply liftTT_insert. auto.
+  apply kind_kienv_insert. auto.
 
  Case "XLam".
   apply TYLam.
-   apply liftTT_insert. auto.
+   apply kind_kienv_insert. auto.
    assert ( liftTE ix te :> liftTT ix t
           = liftTE ix (te :> t)). auto. rewrite H. clear H.
    apply IHx1. auto.

@@ -10,6 +10,7 @@ Inductive tycon : Type :=
  | TyConData : nat   -> ki -> tycon.
 Hint Constructors tycon.
 
+
 Inductive ty  : Type :=
  | TCon      : tycon -> ty
  | TVar      : nat   -> ty
