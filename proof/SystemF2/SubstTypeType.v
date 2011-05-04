@@ -3,7 +3,7 @@ Require Import KiJudge.
 
 
 (* Weakening Kind environment ***************************************)
-Lemma liftTT_insert
+Lemma kind_kienv_insert
  :  forall ke ix t k1 k2
  ,  KIND ke t k1
  -> KIND (insert ix k2 ke) (liftTT ix t) k1.
@@ -21,7 +21,7 @@ Proof.
 Qed.
 
 
-Lemma liftTT_push
+Lemma kind_kienv_weaken
  :  forall ke t k1 k2
  ,  KIND  ke         t           k1
  -> KIND (ke :> k2) (liftTT 0 t) k1.
@@ -29,7 +29,7 @@ Proof.
  intros.
  assert (ke :> k2 = insert 0 k2 ke). simpl.
    destruct ke; auto.
- rewrite H0. apply liftTT_insert. auto.
+ rewrite H0. apply kind_kienv_insert. auto.
 Qed.
 
 
@@ -50,10 +50,10 @@ Proof.
  induction t1; intros; simpl; inverts H0; eauto.
 
  Case "TVar".
-  destruct k1. destruct k2.
   fbreak_nat_compare.
   SCase "n = ix".
-   auto.
+   rewrite H in H4.
+   inverts H4. auto.
 
   SCase "n < ix".
    apply KIVar. rewrite <- H4.
@@ -69,7 +69,7 @@ Proof.
   apply KIForall.
   rewrite drop_rewind.
   eapply IHt1; eauto.
-   apply liftTT_push. auto.
+   apply kind_kienv_weaken. auto.
 Qed.
 
 
