@@ -44,10 +44,7 @@ Fixpoint
  := match xx with
     | XVar ix 
     => match compare ix d with
-       (* Index matches the one we are substituting for. 
-          When we substitute the new expression, we need to lift
-          its free indices across the lambdas that we've crossed
-          to get to this point *)
+       (* Index matches the one we are substituting for. *)
        | EQ  => u
        
        (* Index was free in the original expression.
@@ -59,10 +56,13 @@ Fixpoint
        | LT  => XVar ix
        end
 
-    (* increase the depth as we move across a lambda *)
+    (* Increase the depth as we move across a lambda.
+       Also lift free references in the exp being substituted
+       across the lambda as we enter it. *)
     |  XLam t1 x2
     => XLam t1 (subst' (S d) (liftX 1 0 u) x2)
 
+    (* Applications *)
     |  XApp x1 x2 
     => XApp (subst' d u x1) (subst' d u x2)
  end. 
@@ -73,8 +73,12 @@ Hint Unfold subst.
 
 
 
-(** Lemmas **********************************************************)
-Lemma liftX_insert
+(* Weakening Type Env in Type Judgement *****************************
+   We can insert a new type into the type environment, provided we
+   lift existing references to types higher in the stack across
+   the new one.
+ *)
+Lemma type_tyenv_insert
  :  forall e ix x t1 t2
  ,  TYPE e x t1
  -> TYPE (insert ix t2 e) (liftX 1 ix x) t1.
@@ -95,14 +99,15 @@ Proof.
 Qed.
 
 
-Lemma liftX_push
+Lemma type_tyenv_weaken
  :  forall e x t1 t2
  ,  TYPE  e         x            t1
  -> TYPE (e :> t2) (liftX 1 0 x) t1.
 Proof.
  intros.
- assert (e :> t2 = insert 0 t2 e). simpl. destruct e; auto.
- rewrite H0. apply liftX_insert. auto.
+ assert (e :> t2 = insert 0 t2 e).
+  simpl. destruct e; auto.
+  rewrite H0. apply type_tyenv_insert. auto.
 Qed.
 
 
@@ -112,7 +117,7 @@ Qed.
    of the weaker (subst x2 x1) which assumes the substitution is taking
    place at top level.
  *)
-Theorem subst_value_value_drop
+Theorem subst_value_value_ix
  :  forall ix e x1 x2 t1 t2
  ,  get  e ix = Some t2
  -> TYPE e           x1 t1
@@ -143,7 +148,7 @@ Proof.
   apply TYLam.
   rewrite drop_rewind.
   apply IHx1; auto.
-   simpl. apply liftX_push. auto.
+   simpl. apply type_tyenv_weaken. auto.
 Qed.
 
 
@@ -154,7 +159,7 @@ Theorem subst_value_value
  -> TYPE tenv (subst x2 x1) t1.
 Proof. 
  intros tenv x1 x2 t1 t2 Ht1 Ht2.
- lets H: subst_value_value_drop 0 (tenv :> t2).
+ lets H: subst_value_value_ix 0 (tenv :> t2).
   simpl in H. eauto.
 Qed.
 

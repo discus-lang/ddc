@@ -4,7 +4,7 @@ Require Import Base.
 Require Import Env.
 Require Import Exp.
 Require Import TyJudge.
-Require Import SubstValueValue.
+Require Import SubstExpExp.
 
 
 (* Weakening type environments. *************************************)

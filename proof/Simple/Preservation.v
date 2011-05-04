@@ -1,7 +1,7 @@
 
 Require Import TyJudge.
 Require Import EsJudge.
-Require Import SubstValueValue.
+Require Import SubstExpExp.
 
 
 (* When a well typed expression transitions to the next state
