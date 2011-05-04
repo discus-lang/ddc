@@ -51,7 +51,42 @@ Proof.
   SCase "EsApp2".
    eapply TYApp; eauto.
 Qed.
-  
+
+
+(* When we multi-step evaluate some expression,
+   then the result has the same type as the original.
+ *)  
+Lemma preservation_steps
+ :  forall x1 t1 x2
+ ,  TYPE Empty Empty x1 t1
+ -> STEPS      x1 x2
+ -> TYPE Empty Empty x2 t1.
+Proof.
+ intros. 
+ induction H0; eauto.
+  eapply preservation; eauto.
+Qed.
+
+
+(* When we multi-step evaluate some expression, 
+   then the result has the same type as the original.
+   Using the left-linearised form for the evaluation.
+ *)
+Lemma preservation_stepsl
+ :  forall x1 t1 x2
+ ,  TYPE Empty Empty x1 t1
+ -> STEPSL x1 x2
+ -> TYPE Empty Empty x2 t1.
+Proof.
+ intros. 
+ induction H0.
+  auto.
+  apply IHSTEPSL.
+  eapply preservation. 
+   eauto. auto.
+Qed.
+
+
 
  
  

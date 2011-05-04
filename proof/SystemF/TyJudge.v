@@ -90,5 +90,5 @@ Proof.
   apply IHx2 in H6.
    auto.
 Qed.
-
+Hint Resolve type_wfX.
 
