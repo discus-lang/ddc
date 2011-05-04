@@ -18,6 +18,17 @@ Inductive exp : Type :=
 Hint Constructors exp.
 
 
+Inductive whnfX : exp -> Prop :=
+ | Whnf_XVar 
+   : forall i
+   , whnfX (XVar i)
+
+ | Whnf_XLam
+   : forall t1 x2
+   , whnfX (XLam t1 x2).
+Hint Constructors whnfX.
+
+
 (** Environments ****************************************************)
 Definition tyenv := env ty.
 
@@ -40,8 +51,8 @@ Hint Unfold closedX.
 
 (* Values are closed expressions that cannot be reduced further. *)
 Inductive value : exp -> Prop :=
- | Value_lam 
-   : forall t x
-   , closedX (XLam t x) -> value (XLam t x).
+  | Value 
+    :  forall xx
+    ,  whnfX xx -> closedX xx
+    -> value xx.
 Hint Constructors value.
-
