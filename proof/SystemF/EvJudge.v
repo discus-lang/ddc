@@ -94,3 +94,95 @@ Proof.
      eapply ESLamApp. eauto.
    eauto.      
 Qed.
+
+
+(* Small to Big steps ***********************************************
+   Convert a list of individual machine steps to a big-step
+   evaluation. The main part of this is the expansion lemma, which 
+   we use to build up the overall big-step evaluation one small-step
+   at a time. The other lemmas are used to feed it small-steps.
+ *)
+
+(* Given an existing big-step evalution, we can produce a new one
+   that does an extra step before returning the original value.
+ *)
+Lemma eval_expansion
+ :  forall ke te x1 t1 x2 v3
+ ,  TYPE ke te x1 t1
+ -> STEP x1 x2 -> EVAL x2 v3 
+ -> EVAL x1 v3.
+Proof.
+ intros. gen ke te t1 v3.
+
+ (* Induction over the form of (STEP x1 x2) *)
+ induction H0; intros.
+
+ Case "XApp".
+  SCase "value app".
+   eapply EVLamApp.
+   eauto.
+   inverts H. 
+   apply EVDone. auto. auto.
+ 
+  SCase "x1 steps".
+   inverts H. inverts H1.
+    inverts H.
+    eapply EVLamApp; eauto.
+
+  SCase "x2 steps".
+   inverts H1. inverts H2.
+   inverts H1.
+   eapply EVLamApp; eauto.
+
+ Case "XAPP".
+  SCase "type app".
+   eapply EVLAMAPP.
+   eauto.
+   inverts H.
+   auto.
+
+  SCase "x1 steps".
+   inverts H. inverts H1.
+    inverts H.
+    eapply EVLAMAPP; eauto.
+Qed.
+
+
+(* Convert a list of small steps to a big-step evaluation. *)
+Lemma eval_of_stepsl
+ :  forall x1 t1 v2
+ ,  TYPE Empty Empty x1 t1
+ -> STEPSL x1 v2 -> value v2
+ -> EVAL   x1 v2.
+Proof.
+ intros.
+ induction H0.
+ 
+ Case "ESLNone".
+   apply EVDone. inverts H1. auto.
+
+ Case "ESLCons".
+  eapply eval_expansion. 
+   eauto. eauto. 
+   apply IHSTEPSL.
+   eapply preservation. eauto. auto. auto.
+Qed.
+
+
+(* Convert a multi-step evaluation to a big-step evaluation.
+   We use stepsl_of_steps to flatten out the append constructors
+   in the multi-step evaluation, leaving a list of individual
+   small-steps.
+ *)
+Lemma eval_of_steps
+ :  forall x1 t1 v2
+ ,  TYPE Empty Empty x1 t1
+ -> STEPS x1 v2 -> value v2
+ -> EVAL  x1 v2.
+Proof.
+ intros.
+ eapply eval_of_stepsl; eauto.
+ apply  stepsl_of_steps; auto.
+Qed.
+
+
