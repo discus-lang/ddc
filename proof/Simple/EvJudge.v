@@ -44,32 +44,29 @@ Lemma eval_to_steps
  :  forall x1 t1 x2
  ,  TYPE Empty x1 t1
  -> EVAL x1 x2
- -> (exists n,  STEPS n x1 x2).
+ -> STEPS x1 x2.
 Proof.
  intros x1 t1 v2 HT HE. gen t1.
  induction HE.
- Case "EVValue".
-  intros.
-  exists O.
-  apply ESDone.
+ Case "EVDone".
+  intros. apply ESNone.
 
  Case "EVLamApp".
   intros. inverts HT.
 
-  lets E1: IHHE1 H2. clear IHHE1. destruct E1 as [n1].
-  lets E2: IHHE2 H4. clear IHHE2. destruct E2 as [n2].
+  lets E1: IHHE1 H2. 
+  lets E2: IHHE2 H4.
 
-  lets T1: preservation_steps H2 H. inverts keep T1.
-  lets T2: preservation_steps H4 H0.
-  lets T3: subst_value_value H5 T2.
-  lets E3: IHHE3 T3. clear IHHE3. destruct E3 as [n3].
+  lets T1: preservation_steps H2 E1. inverts keep T1.
+  lets T2: preservation_steps H4 E2.
+  lets T3: subst_value_value H1 T2.
+  lets E3: IHHE3 T3.
 
-  exists (n1 + (n2 + (1 + n3))).
-   eapply ESLink.
+  eapply ESAppend.
     eapply steps_app1. eauto.
-   eapply ESLink.
+   eapply ESAppend.
     eapply steps_app2. eauto. eauto.
-   eapply ESLink.
+   eapply ESAppend.
     eapply ESStep.
      eapply ESLamApp. eauto.
    eauto.      
@@ -79,19 +76,17 @@ Qed.
 (* Small to Big steps ***********************************************)
 Lemma expansion
  :  forall te x1 t1 x2 v3
- ,  TYPE te x1 t1 -> STEP x1 x2 
- -> EVAL x2 v3 
+ ,  TYPE te x1 t1
+ -> STEP x1 x2 -> EVAL x2 v3 
  -> EVAL x1 v3.
 Proof.
  intros. gen te t1 v3.
  induction H0; intros.
 
  eapply EVLamApp.
-  eauto. eauto.
-  inverts H0. 
-  apply EVDone.
-   inverts H. auto.
-   eauto.
+  eauto.
+  inverts H. 
+  apply EVDone. auto. auto.
  
  Case "x1 steps".
   inverts H. inverts H1.
@@ -102,5 +97,25 @@ Proof.
   inverts H1. inverts H2.
   inverts H1.
   eapply EVLamApp; eauto.
+Qed.
+
+
+Lemma stepsl_to_eval
+ :  forall x1 t1 v2
+ ,  TYPE Empty x1 t1
+ -> STEPSL x1 v2 -> value v2
+ -> EVAL   x1 v2.
+Proof.
+ intros.
+ induction H0.
+ 
+ Case "ESLNone".
+   apply EVDone. inverts H1. auto.
+
+ Case "ESLCons".
+  eapply expansion. 
+   eauto. eauto. 
+   apply IHSTEPSL.
+   eapply preservation. eauto. auto. auto.
 Qed.
 

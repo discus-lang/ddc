@@ -39,9 +39,9 @@ Qed.
    then the result has the same type as the original.
  *)  
 Lemma preservation_steps
- :  forall n x1 t1 x2
+ :  forall x1 t1 x2
  ,  TYPE Empty x1 t1
- -> STEPS n    x1 x2
+ -> STEPS      x1 x2
  -> TYPE Empty x2 t1.
 Proof.
  intros. 
