@@ -567,7 +567,7 @@ toSeaGL	nObj (label, var, t)
 	= E.SAssign
 		(E.XVar (E.NAuto var) (toSeaT t))
 		(toSeaT t)
-		(E.XArgData (E.XVar nObj (toSeaT t)) i)
+		(E.XArgBoxedData (E.XVar nObj (toSeaT t)) i)
 
 	| otherwise
 	= panic stage $ "toSeaGL: no match"

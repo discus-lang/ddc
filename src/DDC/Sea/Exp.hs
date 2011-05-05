@@ -183,7 +183,7 @@ data Exp a
 	| XLit		Lit
 
 	-- | Take a numbered field from some boxed data object.
-	| XArgData	(Exp a) Int
+	| XArgBoxedData	(Exp a) Int
 
 	-- | Take a numbered field from some thunk.
 	| XArgThunk	(Exp a) Int

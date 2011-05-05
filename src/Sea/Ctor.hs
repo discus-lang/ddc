@@ -70,7 +70,7 @@ expandField
 					--	(will be Nothing if the field is secondary)
 expandField nObj ixArg
  = do	vArg	<- newVarN NameValue
-	return	( [SAssign 	(XArgData (XVar nObj tPtrObj) ixArg)
+	return	( [SAssign 	(XArgBoxedData (XVar nObj tPtrObj) ixArg)
 				tPtrObj
 				(XVar (NAuto vArg) tPtrObj)]
 		, Just (vArg, tPtrObj) )
