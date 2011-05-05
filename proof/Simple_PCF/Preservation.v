@@ -13,30 +13,25 @@ Theorem preservation
  -> STEP x x'
  -> TYPE Empty x' t.
 Proof.
- intros x x' t HT HS. gen t x'.
- induction x; intros.
-
- (* These can't happen as there is no evaluation rule *)
- Case "XVar". invert HS.
- Case "XLam". invert HS.
+ intros x x' t HT HS.
+ gen t x'.
+ induction x; intros; 
+  inverts keep HT; 
+  inverts keep HS; 
+  eauto.
 
  (* Applications *)
  Case "XApp".
-  inverts HT.
-  inverts keep HS.
-
-  SCase "EVLamApp".
+  SCase "ESLamApp".
    inverts H2.
    inverts H3.
    eapply subst_value_value; eauto.
 
-  SCase "EVApp1".
-   eapply IHx1 in H2; eauto.
-   eapply IHx2 in H4; eauto.
+ Case "ESFix".
+  eapply subst_value_value; eauto.
 
- (* Naturals *)
- Case "XIsZero".
-  inverts HS.
+ Case "ESPredSucc".
+  inverts H1. auto.
 Qed.
 
 
