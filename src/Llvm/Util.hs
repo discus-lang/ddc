@@ -18,7 +18,6 @@ module Llvm.Util
 	, toLlvmType
 	, typeOfString
 	, alignOfType
-	, isUnboxed
 
 	, escapeString
 
@@ -174,13 +173,6 @@ typeOfString s = LMArray (length s + 1) i8
 alignOfType :: Type -> Maybe Int
 alignOfType (TPtr _) = ptrAlign
 alignOfType _ = Nothing
-
-
-isUnboxed :: Type -> Bool
-isUnboxed (TCon (TyConUnboxed _)) = True
-isUnboxed (TCon _) = False
-isUnboxed (TPtr _) = True
-isUnboxed _ = False
 
 --------------------------------------------------------------------------------
 
