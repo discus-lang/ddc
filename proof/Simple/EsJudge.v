@@ -12,7 +12,7 @@ Inductive STEP : exp -> exp -> Prop :=
    : forall t11 x12 v2
    ,  value v2
    -> STEP (XApp   (XLam t11 x12) v2)
-           (subst v2 x12)
+           (substX 0 v2 x12)
 
  | ESApp1 
    :  forall x1 x1' x2

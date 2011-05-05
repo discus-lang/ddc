@@ -34,3 +34,40 @@ Proof.
  induction x; intros; inverts H; simpl; eauto.
 Qed.
 Hint Resolve type_wfX.
+
+
+(* Weakening Type Env in Type Judgement *****************************
+   We can insert a new type into the type environment, provided we
+   lift existing references to types higher in the stack across
+   the new one.
+ *)
+Lemma type_tyenv_insert
+ :  forall e ix x t1 t2
+ ,  TYPE e x t1
+ -> TYPE (insert ix t2 e) (liftX ix x) t1.
+Proof.
+ intros. gen ix e t1.
+ induction x; intros; simpl; inverts H; eauto.
+
+ Case "XVar".
+  lift_cases; intros; auto.
+
+ Case "XLam".
+  apply TYLam.
+  rewrite insert_rewind. 
+   apply IHx. auto.
+Qed.
+
+
+Lemma type_tyenv_weaken
+ :  forall e x t1 t2
+ ,  TYPE  e         x            t1
+ -> TYPE (e :> t2) (liftX 0 x) t1.
+Proof.
+ intros.
+ assert (e :> t2 = insert 0 t2 e).
+  simpl. destruct e; auto.
+  rewrite H0. apply type_tyenv_insert. auto.
+Qed.
+
+

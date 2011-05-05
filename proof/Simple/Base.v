@@ -1,6 +1,5 @@
 
 Require Export BaseNat.
-Require Export BaseCompare.
 Require Export BaseTactics.
 
 (* Cases library due to Aaron Bohannon ********************)

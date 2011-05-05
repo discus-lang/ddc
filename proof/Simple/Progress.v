@@ -34,7 +34,7 @@ Proof.
    SSCase "value x2".
     inverts H1. inverts H3.
      inverts H4. false.
-     exists (subst x2 x0).
+     exists (substX 0 x2 x0).
      apply ESLamApp. auto.
    SSCase "x2 steps".
     destruct H2 as [x2'].

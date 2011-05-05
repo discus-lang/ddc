@@ -19,7 +19,7 @@ Inductive EVAL : exp -> exp -> Prop :=
 
  | EVLamApp
    :  forall x1 t11 x12 x2 v2 v3
-   ,  EVAL x1 (XLam t11 x12) -> EVAL x2 v2 -> EVAL (subst v2 x12) v3
+   ,  EVAL x1 (XLam t11 x12) -> EVAL x2 v2 -> EVAL (substX 0 v2 x12) v3
    -> EVAL (XApp x1 x2) v3.
 
 Hint Constructors EVAL.

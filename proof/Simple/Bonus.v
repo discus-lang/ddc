@@ -85,43 +85,22 @@ Proof.
 Qed.
 
 
-(* Lifting an expression by 0 steps doesn't do anything.
-   This is equivalent to pushing 0 things on the environment. *)
-Theorem liftX_none
- : forall x1 depth
- , liftX 0 depth x1 = x1.
-Proof.
- induction x1; intro; simpl.
-
- Case "XVar".
-  assert (n + 0 = n). omega. rewrite H.
-  breaka (bge_nat n depth).
-
- Case "XLam".
-  rewrite IHx1. auto.
-
- Case "XApp". 
-  rewrite IHx1_1. rewrite IHx1_2. auto.
-Qed.
-
-
 (* If an expression is well formed under a given environment, 
    then all its indices are less than the length of this environment. 
    Lifting indices more than this length doesn't do anything *)
 Theorem liftX_wfX
- :  forall n d x e
+ :  forall d x e
  ,  d = length e
  -> wfX e x
- -> liftX n d x = x.
+ -> liftX d x = x.
 Proof.
  intros. gen e d.
  induction x; intros; simpl; simpl in H0.
  
  Case "XVar".
-  breaka (bge_nat n0 d).
-  apply bge_nat_true in HeqX.
+  lift_cases; intros.
   false. subst. destruct H0.
-  eapply get_above_false in H; auto.
+  eapply get_above_false in H; auto. auto.
 
  Case "XLam".
   eapply IHx in H0; eauto.
@@ -138,9 +117,9 @@ Qed.
 (* If an expression is closed then it has no free indices. 
    Lifting it doesn't do anything. *)
 Lemma liftX_closed
- :  forall n x
+ :  forall x
  ,  closedX x
- -> liftX n 0 x = x.
+ -> liftX 0 x = x.
 Proof.
  intros. unfold closedX in H. eapply liftX_wfX; eauto. 
  simpl. auto.
