@@ -4,10 +4,18 @@ Require Export Env.
 
 
 (* Types ************************************************************)
+Inductive tycon : Type :=
+ | TyConBool  : tycon
+ | TyConNat   : tycon.
+Hint Constructors tycon.
+
 Inductive ty  : Type :=
- | TCon  : nat -> ty
- | TFun  : ty  -> ty -> ty.
+ | TCon       : tycon -> ty
+ | TFun       : ty    -> ty -> ty.
 Hint Constructors ty.
+
+Definition tBool := TCon TyConBool.
+Definition tNat  := TCon TyConNat.
 
 
 (* Type Environments *)
@@ -18,10 +26,28 @@ Definition tyenv := env ty.
    We use deBruijn indices for binders.
  *)
 Inductive exp : Type :=
- | XVar  : nat -> exp
- | XLam  : ty  -> exp -> exp
- | XApp  : exp -> exp -> exp.
- Hint Constructors exp.
+ (* Functions *)
+ | XVar    : nat -> exp
+ | XLam    : ty  -> exp -> exp
+ | XApp    : exp -> exp -> exp
+
+ (* Fixpoints *)
+ | XFix    : ty  -> exp -> exp
+
+ (* Naturals *)
+ | XZero   : exp
+ | XSucc   : exp -> exp
+ | XPred   : exp -> exp
+
+ (* Booleans *)
+ | XTrue   : exp
+ | XFalse  : exp
+ | XIsZero : exp -> exp
+
+ (* Branching *)
+ | XIf     : exp -> exp -> exp -> exp.
+
+Hint Constructors exp.
 
 
 (* Weak Head Normal Forms cannot be reduced further by 
@@ -39,11 +65,28 @@ Hint Constructors whnfX.
 
 
 (* Well formed expressions are closed under the given environment. *)
-Fixpoint wfX (tenv: tyenv) (xx: exp) : Prop :=
+Fixpoint wfX (te: tyenv) (xx: exp) : Prop :=
  match xx with  
- | XVar i     => exists t, get tenv i = Some t
- | XLam t x   => wfX (tenv :> t) x
- | XApp x1 x2 => wfX tenv x1 /\ wfX tenv x2
+ (* Functions *)
+ | XVar i          => exists t, get te i = Some t
+ | XLam t x        => wfX (te :> t) x
+ | XApp x1 x2      => wfX te x1 /\ wfX te x2
+
+ (* Fixpoints *)
+ | XFix t x        => wfX (te :> t) x
+ 
+ (* Naturals *)
+ | XZero           => True
+ | XSucc x1        => wfX te x1
+ | XPred x1        => wfX te x1
+
+ (* Booleans *)
+ | XTrue           => True
+ | XFalse          => True
+ | XIsZero x1      => wfX te x1
+
+ (* Branching *)
+ | XIf   x1 x2 x3  => wfX te x1 /\ wfX te x2 /\ wfX te x3
  end.
 
 
@@ -86,11 +129,24 @@ Fixpoint
         else xx
 
     (* increase the depth as we move across a lambda *)
-    |  XLam t1 x1
-    => XLam t1 (liftX (S d) x1)
+    |  XLam t1 x1   => XLam t1 (liftX (S d) x1)
+    |  XApp x1 x2   => XApp    (liftX d x1) (liftX d x2)
 
-    |  XApp x1 x2
-    => XApp   (liftX d x1) (liftX d x2)
+    (* Fixpoints *)
+    |  XFix t1 x1   => XFix t1 (liftX (S d) x1)
+
+    (* Naturals *)
+    |  XZero        => XZero
+    |  XSucc x1     => XSucc   (liftX d x1)
+    |  XPred x1     => XPred   (liftX d x1)
+
+    (* Booleans *)
+    |  XTrue        => XTrue
+    |  XFalse       => XFalse
+    |  XIsZero x1   => XIsZero (liftX d x1)
+
+    (* Branching *)
+    |  XIf x1 x2 x3 => XIf (liftX d x1) (liftX d x2) (liftX d x3)
     end.
 
 
@@ -102,6 +158,7 @@ Fixpoint
         (xx: exp) (* expression to substitute into *)
         : exp 
  := match xx with
+    (* Functions **********************)
     | XVar ix 
     => match nat_compare ix d with
        (* Index matches the one we are substituting for. *)
@@ -119,12 +176,26 @@ Fixpoint
     (* Increase the depth as we move across a lambda.
        Also lift free references in the exp being substituted
        across the lambda as we enter it. *)
-    |  XLam t1 x2
-    => XLam t1 (substX (S d) (liftX 0 u) x2)
+    |  XLam t1 x2   => XLam t1 (substX (S d) (liftX 0 u) x2)
 
-    (* Applications *)
-    |  XApp x1 x2 
-    => XApp (substX d u x1) (substX d u x2)
+    |  XApp x1 x2   => XApp (substX d u x1) (substX d u x2)
+
+    (* Fixpoints **********************)
+    |  XFix t1 x2   => XFix t1 (substX (S d) (liftX 0 u) x2)
+
+    (* Naturals ***********************)
+    |  XZero        => XZero
+    |  XSucc x1     => XSucc (substX d u x1)
+    |  XPred x1     => XPred (substX d u x1)
+
+    (* Booleans **********************)
+    |  XTrue        => XTrue
+    |  XFalse       => XFalse
+    |  XIsZero x1   => XIsZero (substX d u x1)
+
+    (* Branching *********************)
+    |  XIf x1 x2 x3 
+    => XIf (substX d u x1) (substX d u x2) (substX d u x3) 
  end. 
 
 

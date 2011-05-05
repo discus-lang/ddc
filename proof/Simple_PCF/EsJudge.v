@@ -8,22 +8,90 @@ Require Export SubstExpExp.
    machine can make at runtime.
  *)
 Inductive STEP : exp -> exp -> Prop :=
+ (* Applications **********************)
+ (* Evaluate the left of the application to get the abstraction. *)
+ | ESApp1 
+   :  forall x1 x1' x2
+   ,  STEP x1 x1'
+   -> STEP (XApp x1 x2) (XApp x1' x2)
+
+ (* Evaluate the right of the application to get a value. *)
+ | ESApp2 
+   :  forall v1 x2 x2'
+   ,  value v1
+   -> STEP x2 x2'
+   -> STEP (XApp v1 x2) (XApp v1 x2')
+
+ (* Substitute value into the abstraction. *) 
  | ESLamApp
    : forall t11 x12 v2
    ,  value v2
    -> STEP (XApp   (XLam t11 x12) v2)
            (substX 0 v2 x12)
 
- | ESApp1 
-   :  forall x1 x1' x2
-   ,  STEP x1 x1'
-   -> STEP (XApp x1 x2) (XApp x1' x2)
+ (* Fixpoints *************************)
+ (* Substitute the abstraction into itself. *)
+ | ESFix
+   :  forall t11 x12
+   ,  STEP (XFix t11 x12)
+           (substX 0 (XFix t11 x12) x12)
 
- | ESApp2 
-   :  forall v1 x2 x2'
-   ,  value v1
-   -> STEP x2 x2'
-   -> STEP (XApp v1 x2) (XApp v1 x2').
+ (* Naturals **************************)
+ (* Reduce the argument of a Succ to a value, so that the Succ
+    constructor is strict. Alternatively we could just leave it. *)
+ | ESSuccCtx
+   :  forall x1 x1'
+   ,  STEP x1 x1'
+   -> STEP (XSucc x1) (XSucc x1')
+
+ (* Reduce the argument of a Pred to a value, 
+    The valid will either be a Succ or Zero *)
+ | ESPredCtx
+   :  forall x1 x1'
+   ,  STEP x1 x1'
+   -> STEP (XPred x1) (XPred x1')
+
+ (* If we've got a Zero then just return Zero, 
+    this way we don't need to worry about negative naturals. *)
+ | ESPredZero 
+   :  STEP (XPred XZero) XZero
+
+ (* If we've got a Succ then return the inner expression. *)
+ | ESPredSucc 
+   :  forall x1
+   ,  STEP (XPred (XSucc x1)) x1
+
+ (* Booleans **************************)
+ (* Reduce the argument of IsZero to a value. *)
+ | ESIsZeroCtx
+   :  forall x1 x1'
+   ,  STEP x1 x1'
+   -> STEP (XIsZero x1) (XIsZero x1')
+ 
+ | ESIsZeroTrue
+   :  STEP (XIsZero XZero) XTrue
+
+ | ESIsZeroFalse
+   :  forall x1
+   ,  STEP (XIsZero (XSucc x1)) XTrue
+
+ (* Branching *************************)
+ (* Reduce the discriminant to a value,
+    we'll get a True or a False *)
+ | ESIfCtx
+   :  forall x1 x1' x2 x3 
+   ,  STEP x1 x1'
+   -> STEP (XIf x1 x2 x3) (XIf x1 x2 x3)
+
+ (* Take the 'then' branch. *)
+ | ESIfThen
+   :  forall x2 x3
+   ,  STEP (XIf XTrue x2 x3) x2
+
+ (* Take the 'else' branch. *)
+ | ESIfElse
+   :  forall x2 x3
+   ,  STEP (XIf XFalse x2 x3) x3.
 
 Hint Constructors STEP.
 

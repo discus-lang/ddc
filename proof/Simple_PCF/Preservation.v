@@ -33,6 +33,10 @@ Proof.
   SCase "EVApp1".
    eapply IHx1 in H2; eauto.
    eapply IHx2 in H4; eauto.
+
+ (* Naturals *)
+ Case "XIsZero".
+  inverts HS.
 Qed.
 
 

@@ -40,6 +40,12 @@ Proof.
   rewrite drop_rewind.
   apply IHx1; auto.
    simpl. apply type_tyenv_weaken. auto.
+
+ Case "XFix".
+  apply TYFix.
+  rewrite drop_rewind.
+  apply IHx1; auto.
+   simpl. apply type_tyenv_weaken. auto.
 Qed.
 
 
