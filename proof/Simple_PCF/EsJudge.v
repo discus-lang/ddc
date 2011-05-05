@@ -73,7 +73,7 @@ Inductive STEP : exp -> exp -> Prop :=
 
  | ESIsZeroFalse
    :  forall x1
-   ,  STEP (XIsZero (XSucc x1)) XTrue
+   ,  STEP (XIsZero (XSucc x1)) XFalse
 
  (* Branching *************************)
  (* Reduce the discriminant to a value,
@@ -81,7 +81,7 @@ Inductive STEP : exp -> exp -> Prop :=
  | ESIfCtx
    :  forall x1 x1' x2 x3 
    ,  STEP x1 x1'
-   -> STEP (XIf x1 x2 x3) (XIf x1 x2 x3)
+   -> STEP (XIf x1 x2 x3) (XIf x1' x2 x3)
 
  (* Take the 'then' branch. *)
  | ESIfThen
@@ -150,6 +150,46 @@ Proof.
  intros. induction H0; eauto.
 Qed.
 Hint Resolve steps_app2.
+
+
+Lemma steps_succ
+ :  forall x1 x1'
+ ,  STEPS x1 x1'
+ -> STEPS (XSucc x1) (XSucc x1').
+Proof.
+ intros. induction H; eauto.
+Qed.
+Hint Resolve steps_succ.
+
+
+Lemma steps_pred
+ :  forall x1 x1'
+ ,  STEPS x1 x1'
+ -> STEPS (XPred x1) (XPred x1').
+Proof.
+ intros. induction H; eauto.
+Qed.
+Hint Resolve steps_pred.
+
+
+Lemma steps_isZero
+ :  forall x1 x1'
+ ,  STEPS x1 x1'
+ -> STEPS (XIsZero x1) (XIsZero x1').
+Proof.
+ intros. induction H; eauto.
+Qed.
+Hint Resolve steps_isZero.
+
+
+Lemma steps_if
+ :  forall x1 x1' x2 x3
+ ,  STEPS x1 x1'
+ -> STEPS (XIf x1 x2 x3) (XIf x1' x2 x3).
+Proof.
+ intros. induction H; eauto.
+Qed.
+Hint Resolve steps_if.
 
 
 (* Left linearised multi-step evaluation ****************************

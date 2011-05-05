@@ -12,15 +12,62 @@ Require Export Exp.
    and its final value. 
  *)
 Inductive EVAL : exp -> exp -> Prop :=
+
+ (* Values are already evaluated ******)
  | EVDone
    :  forall v2
    ,  whnfX  v2
    -> EVAL   v2 v2
 
+ (* Function Applications *************)
  | EVLamApp
    :  forall x1 t11 x12 x2 v2 v3
    ,  EVAL x1 (XLam t11 x12) -> EVAL x2 v2 -> EVAL (substX 0 v2 x12) v3
-   -> EVAL (XApp x1 x2) v3.
+   -> EVAL (XApp x1 x2) v3
+
+ (* Fixpoint recursion ****************)
+ | EVFix 
+   :  forall t11 x12 v3
+   ,  EVAL (substX 0 (XFix t11 x12) x12) v3
+   -> EVAL (XFix t11 x12) v3
+
+ (* Naturals **************************)
+ | EVSucc
+   :  forall x1 v2
+   ,  EVAL x1 v2
+   -> EVAL (XSucc x1) (XSucc v2)
+
+ | EVPredZero
+   :  forall x1
+   ,  EVAL x1 XZero 
+   -> EVAL (XPred x1) XZero
+
+ | EVPredSucc
+   :  forall x1 x2 v2
+   ,  EVAL x1 (XSucc x2) -> EVAL x2 v2
+   -> EVAL (XPred x1) v2
+
+ (* Booleans **************************)
+ | EVIsZeroTrue
+   :  forall x1
+   ,  EVAL x1 XZero 
+   -> EVAL (XIsZero x1) XTrue
+
+ | EVIsZeroFalse
+   :  forall x1 x2
+   ,  EVAL x1 (XSucc x2)
+   -> EVAL (XIsZero x1) XFalse
+
+ (* Branching *************************)
+ | EVIfThen
+   :  forall x1 x2 x3 v2
+   ,  EVAL x1 XTrue -> EVAL x2 v2
+   -> EVAL (XIf x1 x2 x3) v2
+
+ | EVIfElse
+   :  forall x1 x2 x3 v3
+   ,  EVAL x1 XFalse -> EVAL x3 v3
+   -> EVAL (XIf x1 x2 x3) v3.
 
 Hint Constructors EVAL.
 
@@ -49,32 +96,51 @@ Lemma steps_of_eval
  -> EVAL x1 x2
  -> STEPS x1 x2.
 Proof.
- intros x1 t1 v2 HT HE. gen t1.
-
- (* Induction over the form of (EVAL x1 x2) *)
- induction HE.
- Case "EVDone".
-  intros. apply ESNone.
+ intros x1 t1 v2 HT HE.
+ gen t1.
+ induction HE; 
+  intros;
+  try (inverts keep HT; eauto).
 
  Case "EVLamApp".
-  intros. inverts HT.
-
   lets E1: IHHE1 H2. 
   lets E2: IHHE2 H4.
-
   lets T1: preservation_steps H2 E1. inverts keep T1.
   lets T2: preservation_steps H4 E2.
   lets T3: subst_value_value H1 T2.
   lets E3: IHHE3 T3.
-
   eapply ESAppend.
-    eapply steps_app1. eauto.
-   eapply ESAppend.
-    eapply steps_app2. eauto. eauto.
-   eapply ESAppend.
-    eapply ESStep.
-     eapply ESLamApp. eauto.
-   eauto.      
+   eapply steps_app1. eauto.
+  eapply ESAppend.
+   eapply steps_app2. eauto. eauto.
+  eapply ESAppend.
+   eapply ESStep.
+     eapply ESLamApp. eauto. eauto.
+
+ Case "EVFix".
+  inverts keep HT.
+  lets T1: subst_value_value H3 HT.
+  lets E1: IHHE T1.
+  eapply ESAppend.
+   eapply ESStep.
+    eapply ESFix. eauto.
+
+ Case "EVPred".
+  lets S1: IHHE1 H1.
+  lets T1: preservation_steps H1 S1.
+  inverts T1.
+  lets S2: IHHE2 H2.
+  eauto.
+
+ Case "EVIfTrue".
+  lets S1: IHHE1 H3.
+  lets S2: IHHE2 H5.
+  eauto.
+
+ Case "EVIfFalse".
+  lets S1: IHHE1 H3.
+  lets S2: IHHE2 H6.
+  eauto.
 Qed.
 
 
@@ -99,20 +165,65 @@ Proof.
  (* Induction over the form of (STEP x1 x2) *)
  induction H0; intros.
 
- eapply EVLamApp.
-  eauto.
-  inverts H. 
-  apply EVDone. auto. auto.
- 
- Case "x1 steps".
-  inverts H. inverts H1.
-   inverts H.
+ Case "XApp".
+  SCase "x1 steps".
+   inverts H. inverts H1.
+    inverts H.
+    eapply EVLamApp; eauto.
+
+  SCase "x2 steps".
+   inverts H1. inverts H2.
+   inverts H1.
    eapply EVLamApp; eauto.
 
- Case "x2 steps".
-  inverts H1. inverts H2.
-  inverts H1.
-  eapply EVLamApp; eauto.
+  SCase "subst". 
+   eapply EVLamApp.
+   eauto. inverts H.
+   apply EVDone. auto. auto.
+
+ Case "XFix".
+  eapply EVFix.
+  eauto.
+
+ Case "XSucc".
+  inverts H. inverts H1.
+   eapply EVSucc. 
+    inverts H. eauto.
+   lets D: IHSTEP H4 H2.
+   apply EVSucc. auto.
+
+ Case "XPred".
+  SCase "x1 steps".
+   inverts H. inverts H1.
+    inverts H. eauto. eauto.
+  SCase "x1 zero".
+   inverts H1. eauto.
+  SCase "x1 succ".
+   eauto.
+
+  Case "XIsZero".
+   SCase "x1 steps".
+    inverts H. inverts H1.
+     inverts H. eauto. eauto.
+   SCase "x1 zero".
+    inverts H1. eauto.
+   SCase "x1 succ".
+    inverts H. inverts H3.
+    inverts H1.
+    eapply EVIsZeroFalse.
+    eapply EVSucc. skip. (**** fixme *********)
+      
+  Case "XIf".
+   SCase "x1 steps".
+    inverts H. inverts H1.
+     inverts H.
+     eapply EVIfThen; eauto.
+     eapply EVIfElse; eauto.
+   SCase "x1 true".
+    inverts H. eauto.
+   SCase "x1 false".
+    inverts H. eauto.
+
 Qed.
 
 

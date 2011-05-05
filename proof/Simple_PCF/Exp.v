@@ -55,12 +55,27 @@ Hint Constructors exp.
  *)
 Inductive whnfX : exp -> Prop :=
  | Whnf_XVar 
-   : forall i
-   , whnfX (XVar i)
+   :  forall i
+   ,  whnfX (XVar i)
 
  | Whnf_XLam
-   : forall t1 x2
-   , whnfX (XLam t1 x2).
+   :  forall t1 x2
+   ,  whnfX (XLam t1 x2)
+
+ | Whnf_XZero
+   :  whnfX XZero
+
+ | Whnf_XSucc 
+   :  forall x1
+   ,  whnfX x1
+   -> whnfX (XSucc x1)
+
+ | Whnf_XTrue
+   :  whnfX XTrue
+
+ | Whnf_False
+   :  whnfX XFalse.
+
 Hint Constructors whnfX.
 
 
