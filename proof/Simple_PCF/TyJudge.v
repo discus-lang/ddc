@@ -29,9 +29,9 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
     -> TYPE te        (XFix t1 x1) t1
 
   (* Naturals *************************)
-  | TYZero
-    :  forall te
-    ,  TYPE te XZero tNat
+  | TYNat
+    :  forall te n
+    ,  TYPE te (XNat n) tNat
 
   | TYSucc
     :  forall te x1

@@ -43,9 +43,13 @@ Inductive STEP : exp -> exp -> Prop :=
    :  forall x1 x1'
    ,  STEP x1 x1'
    -> STEP (XSucc x1) (XSucc x1')
+ 
+ (* Increment the primitive value *)
+ | ESSucc
+   :  forall n
+   ,  STEP (XSucc (XNat n)) (XNat (S n))
 
- (* Reduce the argument of a Pred to a value, 
-    The valid will either be a Succ or Zero *)
+ (* Reduce the argument of a Pred to a value. *)
  | ESPredCtx
    :  forall x1 x1'
    ,  STEP x1 x1'
@@ -54,12 +58,12 @@ Inductive STEP : exp -> exp -> Prop :=
  (* If we've got a Zero then just return Zero, 
     this way we don't need to worry about negative naturals. *)
  | ESPredZero 
-   :  STEP (XPred XZero) XZero
+   :  STEP (XPred (XNat O)) (XNat O)
 
  (* If we've got a Succ then return the inner expression. *)
  | ESPredSucc 
-   :  forall x1
-   ,  STEP (XPred (XSucc x1)) x1
+   :  forall n
+   ,  STEP (XPred (XNat (S n))) (XNat n)
 
  (* Booleans **************************)
  (* Reduce the argument of IsZero to a value. *)
@@ -69,11 +73,11 @@ Inductive STEP : exp -> exp -> Prop :=
    -> STEP (XIsZero x1) (XIsZero x1')
  
  | ESIsZeroTrue
-   :  STEP (XIsZero XZero) XTrue
+   :  STEP (XIsZero (XNat O)) XTrue
 
  | ESIsZeroFalse
-   :  forall x1
-   ,  STEP (XIsZero (XSucc x1)) XFalse
+   :  forall n
+   ,  STEP (XIsZero (XNat (S n))) XFalse
 
  (* Branching *************************)
  (* Reduce the discriminant to a value,

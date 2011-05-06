@@ -29,9 +29,6 @@ Proof.
 
  Case "ESFix".
   eapply subst_value_value; eauto.
-
- Case "ESPredSucc".
-  inverts H1. auto.
 Qed.
 
 

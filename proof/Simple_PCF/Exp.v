@@ -35,7 +35,7 @@ Inductive exp : Type :=
  | XFix    : ty  -> exp -> exp
 
  (* Naturals *)
- | XZero   : exp
+ | XNat    : nat -> exp
  | XSucc   : exp -> exp
  | XPred   : exp -> exp
 
@@ -62,13 +62,9 @@ Inductive whnfX : exp -> Prop :=
    :  forall t1 x2
    ,  whnfX (XLam t1 x2)
 
- | Whnf_XZero
-   :  whnfX XZero
-
- | Whnf_XSucc 
-   :  forall x1
-   ,  whnfX x1
-   -> whnfX (XSucc x1)
+ | Whnf_XNat
+   :  forall n
+   ,  whnfX (XNat n)
 
  | Whnf_XTrue
    :  whnfX XTrue
@@ -91,7 +87,7 @@ Fixpoint wfX (te: tyenv) (xx: exp) : Prop :=
  | XFix t x        => wfX (te :> t) x
  
  (* Naturals *)
- | XZero           => True
+ | XNat n          => True
  | XSucc x1        => wfX te x1
  | XPred x1        => wfX te x1
 
@@ -151,13 +147,13 @@ Fixpoint
     |  XFix t1 x1   => XFix t1 (liftX (S d) x1)
 
     (* Naturals *)
-    |  XZero        => XZero
+    |  XNat _       => xx
     |  XSucc x1     => XSucc   (liftX d x1)
     |  XPred x1     => XPred   (liftX d x1)
 
     (* Booleans *)
-    |  XTrue        => XTrue
-    |  XFalse       => XFalse
+    |  XTrue        => xx
+    |  XFalse       => xx
     |  XIsZero x1   => XIsZero (liftX d x1)
 
     (* Branching *)
@@ -199,13 +195,13 @@ Fixpoint
     |  XFix t1 x2   => XFix t1 (substX (S d) (liftX 0 u) x2)
 
     (* Naturals ***********************)
-    |  XZero        => XZero
+    |  XNat _       => xx
     |  XSucc x1     => XSucc (substX d u x1)
     |  XPred x1     => XPred (substX d u x1)
 
     (* Booleans **********************)
-    |  XTrue        => XTrue
-    |  XFalse       => XFalse
+    |  XTrue        => xx
+    |  XFalse       => xx
     |  XIsZero x1   => XIsZero (substX d u x1)
 
     (* Branching *********************)

@@ -33,29 +33,29 @@ Inductive EVAL : exp -> exp -> Prop :=
 
  (* Naturals **************************)
  | EVSucc
-   :  forall x1 v2
-   ,  EVAL x1 v2
-   -> EVAL (XSucc x1) (XSucc v2)
+   :  forall x1 n
+   ,  EVAL x1 (XNat n)
+   -> EVAL (XSucc x1) (XNat (S n))
 
  | EVPredZero
    :  forall x1
-   ,  EVAL x1 XZero 
-   -> EVAL (XPred x1) XZero
+   ,  EVAL x1 (XNat O) 
+   -> EVAL (XPred x1) (XNat O)
 
  | EVPredSucc
-   :  forall x1 x2 v2
-   ,  EVAL x1 (XSucc x2) -> EVAL x2 v2
-   -> EVAL (XPred x1) v2
+   :  forall x1 n
+   ,  EVAL x1 (XNat (S n))
+   -> EVAL (XPred x1) (XNat n)
 
  (* Booleans **************************)
  | EVIsZeroTrue
    :  forall x1
-   ,  EVAL x1 XZero 
+   ,  EVAL x1 (XNat O) 
    -> EVAL (XIsZero x1) XTrue
 
  | EVIsZeroFalse
-   :  forall x1 x2
-   ,  EVAL x1 (XSucc x2)
+   :  forall x1 n
+   ,  EVAL x1 (XNat (S n))
    -> EVAL (XIsZero x1) XFalse
 
  (* Branching *************************)
@@ -125,13 +125,6 @@ Proof.
    eapply ESStep.
     eapply ESFix. eauto.
 
- Case "EVPred".
-  lets S1: IHHE1 H1.
-  lets T1: preservation_steps H1 S1.
-  inverts T1.
-  lets S2: IHHE2 H2.
-  eauto.
-
  Case "EVIfTrue".
   lets S1: IHHE1 H3.
   lets S2: IHHE2 H5.
@@ -187,9 +180,9 @@ Proof.
 
  Case "XSucc".
   inverts H. inverts H1.
-   eapply EVSucc. 
-    inverts H. eauto.
-   lets D: IHSTEP H4 H2.
+   inverts H.
+   eapply EVSucc. eauto.
+   inverts H1. 
    apply EVSucc. auto.
 
  Case "XPred".
@@ -199,7 +192,7 @@ Proof.
   SCase "x1 zero".
    inverts H1. eauto.
   SCase "x1 succ".
-   eauto.
+   inverts H1. eauto.
 
   Case "XIsZero".
    SCase "x1 steps".
@@ -211,7 +204,7 @@ Proof.
     inverts H. inverts H3.
     inverts H1.
     eapply EVIsZeroFalse.
-    eapply EVSucc. skip. (**** fixme *********)
+    eauto.
       
   Case "XIf".
    SCase "x1 steps".
