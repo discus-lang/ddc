@@ -15,7 +15,7 @@ Theorem progress
 Proof.
  intros.
  remember (@Empty ty) as tenv.
- induction H.
+ induction H; eauto.
 
  Case "XVar".
   subst. inverts H.
@@ -36,6 +36,9 @@ Proof.
      inverts H4. false.
      exists (substX 0 x2 x0).
      apply ESLamApp. auto.
+     inverts H.
+     inverts H.
+     inverts H.
    SSCase "x2 steps".
     destruct H2 as [x2'].
     exists (XApp x1 x2'). auto.
@@ -43,6 +46,44 @@ Proof.
    SSCase "x1 steps".
     destruct H1 as [x1'].
     exists (XApp x1' x2). auto.
+
+  SCase "XSucc".
+   right. 
+   destruct IHTYPE. auto. subst.
+    inverts H0. inverts H1;
+     try inverts H2; try inverts H.
+     false.
+     exists (XNat (S n)).
+      eapply ESSucc.
+     destruct H0. exists (XSucc x). eauto.
+
+  SCase "XPred".
+   right.
+   destruct IHTYPE. auto. subst.
+   inverts H0. inverts H1;
+    try inverts H2; try inverts H.
+    false. 
+    destruct n; eauto.
+    destruct H0. eauto.
+
+  SCase "XIsZero".
+   right.
+   destruct IHTYPE. auto. subst.
+   inverts H0. inverts H1; 
+    try inverts H2; try inverts H.
+    false.
+    destruct n; eauto.
+    destruct H0. eauto.
+
+  SCase "XIf".
+   right. 
+   destruct IHTYPE1. eauto.
+    inverts H2; inverts H3; 
+     try inverts H2; try inverts H;
+     inverts H4. false.
+     exists x2. eauto.
+     exists x3. eauto.
+     destruct H2. exists (XIf x x2 x3). eauto.
 Qed.
 
 
