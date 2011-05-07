@@ -10,6 +10,7 @@ import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Base.Prim
+import DDC.Type.Predicates
 import DDC.Var
 import Data.Function
 import Shared.VarUtil			(prettyPos)
@@ -563,6 +564,13 @@ isPatConst gg
 
 
 toSeaGL	nObj (label, var, t)
+	| C.LIndex i	<- label
+	, isUnboxedT	t
+	= E.SAssign
+		(E.XVar (E.NAuto var) (toSeaT t))
+		(toSeaT t)
+		(E.XArgUnboxedData (E.XVar nObj (toSeaT t)) i)
+
 	| C.LIndex i	<- label
 	= E.SAssign
 		(E.XVar (E.NAuto var) (toSeaT t))

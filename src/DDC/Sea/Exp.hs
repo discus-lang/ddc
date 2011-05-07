@@ -185,6 +185,9 @@ data Exp a
 	-- | Take a numbered field from some boxed data object.
 	| XArgBoxedData	(Exp a) Int
 
+	-- | Take a numbered field from some unboxed data object.
+	| XArgUnboxedData	(Exp a) Int
+
 	-- | Take a numbered field from some thunk.
 	| XArgThunk	(Exp a) Int
 

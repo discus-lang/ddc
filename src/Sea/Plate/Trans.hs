@@ -236,6 +236,10 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	x'		<- transZM table x
 		transX table	$ XArgBoxedData x' i
 
+	XArgUnboxedData x i
+	 -> do	x'		<- transZM table x
+		transX table	$ XArgUnboxedData x' i
+
 	XArgThunk x i
 	 -> do	x'		<- transZM table x
 		transX table	$ XArgThunk x' i

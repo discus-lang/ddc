@@ -239,6 +239,9 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XArgBoxedData x@(XVar _ _) i
 	 -> "_DARG(" % x % ", " % i % ")"
 
+	XArgUnboxedData _x@(XVar _ _) _i
+	 -> panic stage $ "XArgUnboxedData not implemented yet."
+
 	XArgThunk x@(XVar _ _) i
 	 -> "_TARG(" % x % ", " % i % ")"
 
