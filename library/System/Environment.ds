@@ -14,6 +14,7 @@ export	getArgs
 	getEnv
 	argCount
 	getArgValue
+	pointerSize
 
 effect !Environment :: !
 
@@ -56,3 +57,12 @@ getArgs ()
 getProgName :: () -> String
 getProgName ()
  = getArgValue 0
+
+
+-- | Get the size of a pointer (in bytes) for this architecure.
+
+foreign import "_ddcPointerSize"
+ pointerSizeU :: Int32#
+
+pointerSize :: Int32
+pointerSize = boxInt32 pointerSizeU

@@ -13,6 +13,7 @@ _Profile*	_ddcProfile	= 0;
 Int32		_ddcArgCount		= 0;
 String**	_ddcArgValue		= 0;
 
+Int32		_ddcPointerSize		= sizeof (void*);
 
 // The Heap -------------------------------------------------------------------
 //	_ddcHeap*      is the current heap in use (the from-space)

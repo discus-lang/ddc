@@ -16,6 +16,9 @@ extern _Profile* 	_ddcProfile;
 extern Int32		_ddcArgCount;
 extern String**		_ddcArgValue;
 
+// Environemnt values
+extern Int32		_ddcPointerSize;
+
 
 // Heap pointers
 extern Word8* 		_ddcHeapBase;
