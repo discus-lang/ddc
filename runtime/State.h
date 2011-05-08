@@ -18,7 +18,7 @@ extern String**		_ddcArgValue;
 
 
 // Heap pointers
-extern Word8* 		_ddcHeapBase;		
+extern Word8* 		_ddcHeapBase;
 extern Word8*		_ddcHeapPtr;
 extern Word8* 		_ddcHeapMax;
 
@@ -34,7 +34,7 @@ extern Obj**		_ddcSlotMax;
 extern Obj**		_ddcSlotHighWater;
 
 
-// Context stack	
+// Context stack
 extern struct Context*	_ddcContextStack;
 extern int		_ddcContextIndex;
 extern int		_ddcContextMax;

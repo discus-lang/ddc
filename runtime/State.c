@@ -24,16 +24,16 @@ String**	_ddcArgValue		= 0;
 //
 
 // The first object is allocated at this addr.
-Word8*	_ddcHeapBase		= 0;	
-	
+Word8*	_ddcHeapBase		= 0;
+
 // The next object is allocated starting from this addr.
-Word8*	_ddcHeapPtr		= 0;	
-						
+Word8*	_ddcHeapPtr		= 0;
+
 // Points to the last byte in the heap which can be allocated.
 Word8*	_ddcHeapMax		= 0;
-			
-// The heap (to space)			
-Word8*	_ddcHeapBackBase	= 0;	
+
+// The heap (to space)
+Word8*	_ddcHeapBackBase	= 0;
 Word8*	_ddcHeapBackPtr		= 0;
 Word8*	_ddcHeapBackMax		= 0;
 
@@ -43,17 +43,17 @@ Word8*	_ddcHeapBackMax		= 0;
 //	to the objects currently being used by the program. All objects
 //	must be reachable from the root set across any function that might
 //	trigger a GC.
-	
+
 // Base address of slot stack.
-Obj**	_ddcSlotBase		= 0;	
+Obj**	_ddcSlotBase		= 0;
 
 // The top of the slot stack.
 //	The next slot is allocated here.
 //	_S(0) is *(slotPtr-1)
-Obj**	_ddcSlotPtr		= 0;	
+Obj**	_ddcSlotPtr		= 0;
 
 // The maximum value that _slotPtr can take without overflowing the stack.
-Obj**	_ddcSlotMax		= 0;	
+Obj**	_ddcSlotMax		= 0;
 
 // The highest _ddcSlotPtr we've seen so far (used during profiling)
 Obj**	_ddcSlotHighWater	= 0;
@@ -69,14 +69,14 @@ struct Context*	_ddcContextStack	= 0;
 
 // Index of where the NEXT context will be stored.
 //	The context on the top of the stack is at (_contextIndex - 1)
-int	_ddcContextIndex	= 0;	
-						
+int	_ddcContextIndex	= 0;
+
 // Index of the highest available context.
-int	_ddcContextMax		= 0;	
+int	_ddcContextMax		= 0;
 
 // Used to pass the exception information from primExceptionThrow
 //	back to primExceptionTry.
-Obj*	_ddcContextObject	= 0;	
+Obj*	_ddcContextObject	= 0;
 
 
 // Debugging / Tracing state --------------------------------------------------
@@ -86,5 +86,5 @@ Obj*	_ddcContextObject	= 0;
 FILE*		_ddcTraceFile	= 0;
 
 // If this is true then the heap will be dumped after a panic.
-bool		_ddcDumpOnPanic	= false;	
+bool		_ddcDumpOnPanic	= false;
 
