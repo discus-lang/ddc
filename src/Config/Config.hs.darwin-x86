@@ -2,23 +2,9 @@
 -- | Compiler configuration for the darwin-x86 target
 --	Everything specific to this target should be in this file.
 --
-module Config.Config 
-	( 
-	-- * Word size config
-	  pointerBytes, pointerBits
-
-	-- * Shared objects config
-	, extSharedObject
-
-	-- * Commands for -fvia-c
-	, makeSeaCompileCmd
-	, makeLinkCmd
-
-	-- * Commands for -fvia-llvm
-	, llcCommand
-	, asCommand)
-where
+module Config.Config where
 import DDC.Main.Arg
+
 
 -- | Pointer size in bits and bytes.
 pointerBytes, pointerBits :: Int
@@ -26,7 +12,7 @@ pointerBytes = 4
 pointerBits = pointerBytes * 8
 
 
--- The extension to use for a shared object
+-- | The extension to use for a shared object
 extSharedObject
 	= "dylib"
 

@@ -5,15 +5,16 @@
 module Config.Config where
 import DDC.Main.Arg
 
--- The extension to use for a shared object
-extSharedObject
-	= "so"
-
 
 -- | Pointer size in bits and bytes.
 pointerBytes, pointerBits :: Int
 pointerBytes = 8
 pointerBits = pointerBytes * 8
+
+
+-- | The extension to use for a shared object
+extSharedObject
+	= "so"
 
 
 -- | The system command to compile a Sea source file.
@@ -93,5 +94,11 @@ makeLinkCmd
 	++ " " ++ concat [" -l" ++ lib | lib <- extraLibs]
 
 
+-- | Command to run the LLVM compiler
 llcCommand :: String
 llcCommand = "llc -march=x86-64"
+
+
+-- | Command to assemble a file.
+asCommand :: String
+asCommand  = "as -arch x86_64"

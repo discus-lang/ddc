@@ -50,7 +50,7 @@ totallogwar : bin/ddc bin/war library/Prelude.di
 		-batch -logFailed "war.failed" \
 		+compway normal \
 		+compway opt -O \
-		+compway opt-llvm -O -fvia-llvm
+		+compway llvm -O -fvia-llvm
 	@echo
 
 # Alias for war
