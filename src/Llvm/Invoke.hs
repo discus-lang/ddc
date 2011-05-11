@@ -60,7 +60,7 @@ invokeLlvmAssembler
 	extraFlags
  = do
  	-- let cmd = Config.makeLlvmAssembleCmd
-	let cmd	=  "as "
+	let cmd	=  Config.asCommand ++ " "
 		++ pathSourceBase ++ ".ddc.s"
 		++ " -o " ++ pathSourceBase ++ ".o"
 

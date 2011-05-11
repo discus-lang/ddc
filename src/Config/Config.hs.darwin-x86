@@ -2,18 +2,33 @@
 -- | Compiler configuration for the darwin-x86 target
 --	Everything specific to this target should be in this file.
 --
-module Config.Config where
+module Config.Config 
+	( 
+	-- * Word size config
+	  pointerBytes, pointerBits
+
+	-- * Shared objects config
+	, extSharedObject
+
+	-- * Commands for -fvia-c
+	, makeSeaCompileCmd
+	, makeLinkCmd
+
+	-- * Commands for -fvia-llvm
+	, llcCommand
+	, asCommand)
+where
 import DDC.Main.Arg
-
--- The extension to use for a shared object
-extSharedObject
-	= "dylib"
-
 
 -- | Pointer size in bits and bytes.
 pointerBytes, pointerBits :: Int
 pointerBytes = 4
 pointerBits = pointerBytes * 8
+
+
+-- The extension to use for a shared object
+extSharedObject
+	= "dylib"
 
 
 -- | The system command to compile a Sea source file.
@@ -96,5 +111,12 @@ makeLinkCmd
 	++ " -Xlinker -exported_symbol" ++ " -Xlinker _Base_ExceptionCaseNoMatch"
 
 
+-- | Command to run the LLVM compiler
 llcCommand :: String
 llcCommand = "llc -march=x86"
+
+
+-- | Command to assemble a file.
+asCommand :: String
+asCommand  = "as -arch i386"
+

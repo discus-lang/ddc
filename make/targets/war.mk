@@ -28,21 +28,29 @@ war : bin/ddc runtime bin/war library/Prelude.di
 .PHONY  : totalwar
 totalwar : bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
-	bin/war test -j $(THREADS) +compway normal +compway opt -O
+	bin/war test -j $(THREADS) \
+		+compway normal \
+		+compway opt  -O \
+		+compway llvm -O -fvia-llvm
 	@echo
 
 # Run the tests,  logging failures to war.failed
 .PHONY : logwar
 logwar : bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
-	bin/war test -j $(THREADS) -batch -logFailed "war.failed"
+	bin/war test -j $(THREADS) \
+		-batch -logFailed "war.failed"
 	@echo
 
 # Run tests in all ways interactively, logging failures to war.failed
 .PHONY  : totallogwar
 totallogwar : bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
-	bin/war test -j $(THREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O $(compway_llvm)
+	bin/war test -j $(THREADS) \
+		-batch -logFailed "war.failed" \
+		+compway normal \
+		+compway opt -O \
+		+compway opt-llvm -O -fvia-llvm
 	@echo
 
 # Alias for war
