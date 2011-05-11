@@ -101,5 +101,5 @@ llcCommand = "llc -march=x86"
 
 -- | Command to assemble a file.
 asCommand :: String
-asCommand  = "as -arch i386"
+asCommand  = "as "
 

@@ -100,4 +100,4 @@ llcCommand = "llc -march=ppc32"
 
 -- | Command to assemble a file.
 asCommand :: String
-asCommand  = "as -arch ppc32"
+asCommand  = "as "
