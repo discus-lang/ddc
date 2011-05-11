@@ -1,27 +1,63 @@
 
 Require Export Base.
 Require Export Env.
+Require Import Coq.Strings.String.
 
 
 (* Types ************************************************************)
-Inductive ty  : Type :=
- | TCon  : nat -> ty
- | TFun  : ty  -> ty -> ty.
+Inductive tycon : Type :=
+ | TyConData   : string -> tycon.
+Hint Constructors tycon.
+
+Inductive ty : Type :=
+ | TCon   : tycon -> ty
+ | TFun   : ty    -> ty -> ty.
 Hint Constructors ty.
-
-
-(* Type Environments *)
-Definition tyenv := env ty.
 
 
 (* Expressions ******************************************************
    We use deBruijn indices for binders.
  *)
+Inductive datacon : Type :=
+ | DataCon    : string -> datacon.
+Hint Constructors datacon.
+
 Inductive exp : Type :=
+ (* Functions *************************)
  | XVar  : nat -> exp
  | XLam  : ty  -> exp -> exp
- | XApp  : exp -> exp -> exp.
- Hint Constructors exp.
+ | XApp  : exp -> exp -> exp
+
+ (* Data Types ************************)
+ | XCon  : datacon -> list exp -> exp
+ | XCase : exp     -> list alt -> exp
+
+with alt     : Type :=
+ | AAlt  : datacon -> exp -> alt.
+
+Hint Constructors exp.
+Hint Constructors alt.
+
+
+(* Definitions ******************************************************)
+Inductive def  : Type :=
+ (* Definition of a data type constructor *)
+ | DefType 
+   :  tycon        (* Name of data type constructor *)
+   -> list datacon (* Data constructors that belong to this type *)
+   -> def
+
+ (* Definition of a data constructor *)
+ | DefData 
+   :  datacon      (* Name of data constructor *)
+   -> list ty      (* Types of arguments *)
+   -> tycon        (* tycon of constructed data *)
+   -> def.
+Hint Constructors def.
+
+
+(* Type Environments ************************************************)
+Definition tyenv := env ty.
 
 
 (* Weak Head Normal Forms cannot be reduced further by 
@@ -34,16 +70,39 @@ Inductive whnfX : exp -> Prop :=
 
  | Whnf_XLam
    : forall t1 x2
-   , whnfX (XLam t1 x2).
+   , whnfX (XLam t1 x2)
+
+ | Whnf_XCon
+   :  forall dc xs
+   ,  (forall i x, getl xs i = Some x -> whnfX x)
+   -> whnfX (XCon dc xs).
 Hint Constructors whnfX.
 
 
-(* Well formed expressions are closed under the given environment. *)
-Fixpoint wfX (tenv: tyenv) (xx: exp) : Prop :=
+Fixpoint wfX (te: tyenv) (xx: exp) : Prop :=
  match xx with  
- | XVar i     => exists t, get tenv i = Some t
- | XLam t x   => wfX (tenv :> t) x
- | XApp x1 x2 => wfX tenv x1 /\ wfX tenv x2
+ | XVar  i       => exists t, Env.get te i = Some t
+ | XLam  t x     => wfX (te :> t) x
+ | XApp  x1 x2   => wfX te x1 /\ wfX te x2
+
+ | XCon  dc xs   
+ => (fix wfXs (xs': list exp) : Prop := 
+     match xs' with 
+     | nil       => True
+     | x :: xs'' => wfX te x /\ wfXs xs''
+     end) xs
+
+ | XCase x alts 
+ => (fix wfAs (as': list alt) : Prop :=
+     match as' with 
+     | nil        => True
+     | a :: as''  => wfA te a /\ wfAs as''
+     end) alts
+ end
+
+with    wfA (te: tyenv) (aa: alt) : Prop :=
+ match aa with
+ | AAlt dc x     => wfX te x
  end.
 
 
@@ -91,7 +150,19 @@ Fixpoint
 
     |  XApp x1 x2
     => XApp   (liftX d x1) (liftX d x2)
-    end.
+
+    |  XCon dc xs
+    => XCon dc (List.map (liftX d) xs)
+
+    |  XCase x alts
+    => XCase (liftX d x) (List.map (liftA d) alts)
+    end
+
+ with liftA (d: nat) (aa: alt) := 
+  match aa with
+  | AAlt dc x => AAlt dc (liftX d x)
+  end.
+
 
 
 (** Substitution ****************************************************)
@@ -125,7 +196,19 @@ Fixpoint
     (* Applications *)
     |  XApp x1 x2 
     => XApp (substX d u x1) (substX d u x2)
- end. 
+
+    |  XCon dc xs
+    => XCon dc (List.map (substX d u) xs)
+
+    |  XCase x alts
+    => XCase (substX d u x) (List.map (substA d u) alts)
+    end
+
+with substA (d: nat) (u: exp) (aa: alt) 
+ := match aa with 
+    |  AAlt dc x 
+    => AAlt dc (substX d u x)
+    end. 
 
 
 

@@ -1,5 +1,6 @@
 
 Require Export BaseNat.
+Require Export BaseList.
 Require Export BaseTactics.
 
 (* Cases library due to Aaron Bohannon ********************)
