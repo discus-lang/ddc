@@ -1,0 +1,13 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import	Base
+	Data.Numeric.Int32
+
+-- Check non-consecutive function definitions
+id a = a
+ls a = a
+id b = b
+
+-- Redefinition of foreign imports
+foreign import "bad_import" bad_import :: Int -> Int
+bad_import a = a
