@@ -71,6 +71,7 @@ bindTopNames (moduleName, tree)
 
 	return ()
 
+
 -- | Verify that var names are as unique as required.
 --	Foreign imports must not appear more than once,
 --	Function definitions can appear many times but only consecutively
@@ -80,49 +81,55 @@ checkTopNames :: Show a => Tree a -> [Var] -> [[Var]]
 checkTopNames tree vsTop = checkTopNames_foreign tree vsTop ++ checkTopNames_functions tree
 
 -- | Check whether any foreign imports have duplicate names
-checkTopNames_foreign tree vsTop = occurrences
-	where
-		isForeign (PForeign _ _)	= True
-		isForeign _			= False
+checkTopNames_foreign tree vsTop 
+ = let  isForeign (PForeign _ _)	= True
+        isForeign _			= False
 
-		-- Get names of all the foreign imports
-		foreignNames =	nubBy varsMatchByName$
-				catMap slurpTopNames$
-				filter isForeign tree
+	-- Get names of all the foreign imports
+	foreignNames 
+	        = nubBy varsMatchByName
+	        $ catMap slurpTopNames
+	        $ filter isForeign tree
 
-		-- Filter where name is bound multiple times
-		notUniqueIn vs v = length (filter (varsMatchByName v) vs) > 1
-		multipleBindings = filter (notUniqueIn vsTop) foreignNames
+	-- Filter where name is bound multiple times
+	notUniqueIn vs v = length (filter (varsMatchByName v) vs) > 1
+	multipleBindings = filter (notUniqueIn vsTop) foreignNames
 
-		-- Get each binding of the multiply bound names
-		-- So we can show an error for each
-		occurrences = map
-			(\v -> filter (varsMatchByName v) vsTop)
-			multipleBindings
+	-- Get each binding of the multiply bound names
+	-- So we can show an error for each
+	occurrences 
+	        = map   (\v -> filter (varsMatchByName v) vsTop)
+		        multipleBindings
+  in    occurrences
+
 
 -- | Check whether any non-consecutive functions have duplicate names
---	Todo, consecutive CAFs should error too.
-checkTopNames_functions tree = checkConsecutive stmtNames []
-	where
-		isStmt (PStmt (SBindFun _ _ _ _))= True
-		isStmt _	= False
+--   TODO: consecutive CAFs should error too.
+checkTopNames_functions tree 
+ = checkConsecutive stmtNames []
+ where
+        isStmt (PStmt (SBindFun _ _ _ _)) = True
+        isStmt _                          = False
 
-		-- All top-level function bindings
-		stmtNames = catMap slurpTopNames$
-				filter isStmt tree
+        -- All top-level function bindings
+        stmtNames
+                = catMap slurpTopNames
+                $ filter isStmt tree
 
-		-- If v exists in vs, return first binding and v
-		checkStmt v vs = case find (varsMatchByName v) vs of
-				Nothing		-> []
-				Just vFirst	-> [[vFirst, v]]
+	-- If v exists in vs, return first binding and v
+        checkStmt v vs 
+                = case find (varsMatchByName v) vs of
+			Nothing		-> []
+			Just vFirst	-> [[vFirst, v]]
 
-		-- Look at two consecutive bindings at once,
-		-- If different names, check whether binding was used previously
-		checkConsecutive (x:y:vs) acc
-			| x `varsMatchByName` y	= checkConsecutive (y:vs) (acc ++ [x])
-			| otherwise		= checkStmt y acc ++
-				checkConsecutive (y:vs) (acc ++ [x])
-		checkConsecutive _ _		= []
+	-- Look at two consecutive bindings at once,
+	-- If different names, check whether binding was used previously
+        checkConsecutive (x:y:vs) acc
+         | x `varsMatchByName` y	= checkConsecutive (y:vs) (acc ++ [x])
+         | otherwise	                = checkStmt y acc ++ checkConsecutive (y:vs) (acc ++ [x])
+	 
+	checkConsecutive _ _		= []
+
 
 -- | Add error for multiple bindings. Takes list of conflicting bindings.
 checkTopNames_addBindingError :: [Var] -> RenameM ()
