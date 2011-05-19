@@ -170,7 +170,7 @@ pTopForeignImportNext startPos
 	do	pTok K.Data
 		name	<- pString
 		con	<- pOfSpace NameType pCon
-		let con2 = con { varInfo = [ISeaName name] }
+		let con2 = con { varInfo = [ISeaName name, ISourcePos startPos] }
 		pTopForeignImportEnd startPos name con2
 
  <|>	-- foreign import STRING var :: TYPE
@@ -183,7 +183,7 @@ pTopForeignImportNext startPos
 				(do 	pTok K.HasOpType
 					pTypeOp)
 
-		let nvar = var { varInfo = [ ISeaGlobal True ] }
+		let nvar = var { varInfo = [ ISeaGlobal True, ISourcePos startPos ] }
 
 		return	$ PForeign startPos $ OImport mExName nvar sig mOpType
 

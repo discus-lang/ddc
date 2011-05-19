@@ -1,7 +1,7 @@
 ddc: ERROR
 ./test/13-Renamer/T213-NameClash/Test.ds:13:0
         Redefined value variable 'bad_import'
-            first defined at: ?
+            first defined at: ./test/13-Renamer/T213-NameClash/Test.ds:12:0
 
 ./test/13-Renamer/T213-NameClash/Test.ds:9:0
         Redefined value variable 'id'
