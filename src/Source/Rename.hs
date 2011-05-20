@@ -25,6 +25,7 @@ import DDC.Main.Error
 import DDC.Var
 import DDC.Type
 import DDC.Main.Pretty		()
+import Data.Function (on)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Shared.VarUtil	as Var
@@ -82,14 +83,11 @@ checkTopNames tree vsTop = checkTopNames_foreign tree vsTop ++ checkTopNames_fun
 
 -- | Check whether any foreign imports have duplicate names
 checkTopNames_foreign tree vsTop 
- = let  isForeign (PForeign _ _)	= True
-        isForeign _			= False
-
-	-- Get names of all the foreign imports
+ = let  -- Get names of all the foreign imports
 	foreignNames 
 	        = nubBy varsMatchByName
 	        $ catMap slurpTopNames
-	        $ filter isForeign tree
+	        $ filter checkTopNames_isForeign tree
 
 	-- Filter where name is bound multiple times
 	notUniqueIn vs v = length (filter (varsMatchByName v) vs) > 1
@@ -103,32 +101,67 @@ checkTopNames_foreign tree vsTop
   in    occurrences
 
 
--- | Check whether any non-consecutive functions have duplicate names
---   TODO: consecutive CAFs should error too.
+-- | Check whether any functions have duplicate names
+--   Statement bindings are partitioned into groups,
+--	For functions taking arguments, name uniqueness is checked in previous groups
+--	For CAFs, the group must be empty.
 checkTopNames_functions tree 
- = checkConsecutive stmtNames []
- where
-        isStmt (PStmt (SBindFun _ _ _ _)) = True
-        isStmt _                          = False
+ = let  -- All top-levels and their names
+	topbindings = catMap (\top -> map (\name -> (name,top)) (slurpTopNames top)) tree
+	-- Statements grouped into blocks by name
+	stmtGroups = map (filter (checkTopNames_isBindFun.snd))
+		   $ checkTopNames_partitionBy (varsMatchByName `on` fst) topbindings
 
-        -- All top-level function bindings
-        stmtNames
-                = catMap slurpTopNames
-                $ filter isStmt tree
+	-- Check whether group name exists in bindings,
+	-- and make sure the group is single if it contains a CAF
+	checkGroup []		bindings = []
+	checkGroup ((v,t):vs)	bindings
+	 = case find (varsMatchByName v) bindings of
+		Nothing		-> checkGroup_CAF (v,t) vs
+		Just vFirst	-> [[vFirst, v]]
 
-	-- If v exists in vs, return first binding and v
-        checkStmt v vs 
-                = case find (varsMatchByName v) vs of
-			Nothing		-> []
-			Just vFirst	-> [[vFirst, v]]
+	-- Check uniquity of CAFs in group, differs from function case
+	-- in that a 'group' containing a CAF must be empty.
+	checkGroup_CAF (v,t) vs
+	 -- First is CAF, so make sure the group is empty
+	 | checkTopNames_isCAF t
+	  = case vs of
+		[]		-> []
+		((v2,t2):vs)	-> [[v,v2]]
+	 -- Not a CAF, so no CAFs can exist in group
+	 | otherwise
+	  = case find (checkTopNames_isCAF.snd) vs of
+		Nothing		-> []
+		Just (vCAF,t2)	-> [[v, vCAF]]
 
-	-- Look at two consecutive bindings at once,
-	-- If different names, check whether binding was used previously
-        checkConsecutive (x:y:vs) acc
-         | x `varsMatchByName` y	= checkConsecutive (y:vs) (acc ++ [x])
-         | otherwise	                = checkStmt y acc ++ checkConsecutive (y:vs) (acc ++ [x])
-	 
-	checkConsecutive _ _		= []
+	-- Run through all groups, collecting the previous groups'
+	-- variable names and checking against that
+	checkGroups [] acc	= []
+	checkGroups (g:gs) acc	=  checkGroup g acc
+				++ checkGroups gs (acc ++ map fst g)
+ in checkGroups stmtGroups []
+
+-- | Sort into consecutive 'equivalence groups' using given comparison function.
+--   E.g. checkTopNames_partitionBy (==) [1,1,2,3,1]
+--        would evaluate to [[1,1],[2],[3],[1]]
+checkTopNames_partitionBy :: (a -> a -> Bool) -> [a] -> [[a]]
+checkTopNames_partitionBy f []	= []
+checkTopNames_partitionBy f (v:vs)
+ = let (matching, rest) = span (f v) vs
+   in (v:matching) : (checkTopNames_partitionBy f rest)
+
+
+-- | True if top is a foreign binding
+checkTopNames_isForeign (PForeign _ _)	= True
+checkTopNames_isForeign _		= False
+
+-- | Check whether given Top is a function binding
+checkTopNames_isBindFun (PStmt (SBindFun _ _ _ _)) = True
+checkTopNames_isBindFun _                          = False
+
+-- | Check for function binding with no patterns or parameters
+checkTopNames_isCAF (PStmt (SBindFun _ _ [] _)) = True
+checkTopNames_isCAF _                           = False
 
 
 -- | Add error for multiple bindings. Takes list of conflicting bindings.

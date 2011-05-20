@@ -11,3 +11,19 @@ id b = b
 -- Redefinition of foreign imports
 foreign import "bad_import" bad_import :: Int -> Int
 bad_import a = a
+
+
+-- Check consecutive CAFs
+caf = 5
+caf = 6
+
+-- Some in group CAF, some not
+halfcaf x = x
+halfcaf = 5
+
+
+-- Check with a different kind of binding in between
+inbetween x = x
+data Foo = Foo
+inbetween y = y
+

@@ -66,7 +66,7 @@ testPatList_3
 		-> show a %% show b %% show c %% show d
 
 -- only two elems in list
-testPatList_3
+testPatList_4
  = case [(1, 'a'), (2, 'b')] of
 	[(a, b), (c, d), (e, f)]
 		-> "lose"
