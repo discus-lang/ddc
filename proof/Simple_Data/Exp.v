@@ -22,27 +22,37 @@ Inductive datacon : Type :=
  | DataCon    : string -> datacon.
 Hint Constructors datacon.
 
+
 Inductive exp : Type :=
  (* Functions *************************)
- | XVar  : nat -> exp
- | XLam  : ty  -> exp -> exp
- | XApp  : exp -> exp -> exp
+ | XVar   : nat -> exp
+ | XLam   : ty  -> exp -> exp
+ | XApp   : exp -> exp -> exp
 
  (* Data Types ************************)
- | XCon  : datacon -> list exp -> exp
- | XCase : exp     -> list alt -> exp
+ | XCon   : datacon -> list exp -> exp
+ | XCase  : exp     -> list alt -> exp
 
+ (* Alternatives **********************)
 with alt     : Type :=
- | AAlt  : datacon -> exp -> alt.
+ | AAlt   : datacon -> exp -> alt.
 
 Hint Constructors exp.
 Hint Constructors alt.
 
 
+Scheme exp_alt_ind := Induction for exp Sort Prop
+ with  alt_exp_ind := Induction for alt Sort Prop.
+
+Combined Scheme exp_alt_mutind
+ from exp_alt_ind, alt_exp_ind.
+
+
+
 (* Definitions ******************************************************)
 Inductive def  : Type :=
  (* Definition of a data type constructor *)
- | DefType 
+ | DefDataType 
    :  tycon        (* Name of data type constructor *)
    -> list datacon (* Data constructors that belong to this type *)
    -> def
@@ -51,15 +61,24 @@ Inductive def  : Type :=
  | DefData 
    :  datacon      (* Name of data constructor *)
    -> list ty      (* Types of arguments *)
-   -> tycon        (* tycon of constructed data *)
+   -> ty           (* Type  of constructed data *)
    -> def.
 Hint Constructors def.
 
 
 (* Type Environments ************************************************)
 Definition tyenv := env ty.
+Definition defs  := env def.
+
+Fixpoint getDataDef (dc: datacon) (ds: defs) : option def := 
+ match ds with 
+ | Empty                       => None
+ | ds' :> DefData dc _ _ as d  => Some d
+ | ds' :> _                    => getDataDef dc ds'
+ end.
 
 
+(* Weak Head Normal Form ********************************************)
 (* Weak Head Normal Forms cannot be reduced further by 
    call-by-value evaluation.
  *)
@@ -74,36 +93,53 @@ Inductive whnfX : exp -> Prop :=
 
  | Whnf_XCon
    :  forall dc xs
-   ,  (forall i x, getl xs i = Some x -> whnfX x)
+   ,  Forall whnfX xs
    -> whnfX (XCon dc xs).
 Hint Constructors whnfX.
 
 
-Fixpoint wfX (te: tyenv) (xx: exp) : Prop :=
- match xx with  
- | XVar  i       => exists t, Env.get te i = Some t
- | XLam  t x     => wfX (te :> t) x
- | XApp  x1 x2   => wfX te x1 /\ wfX te x2
+(* Well Formedness **************************************************)
+Inductive wfX : tyenv -> exp -> Prop :=
+ | WfX_XVar 
+   :  forall te i
+   ,  (exists t, Env.get te i = Some t)
+   -> wfX te (XVar i)
+ 
+ | WfX_XLam
+   :  forall te t x
+   ,  wfX (te :> t) x
+   -> wfX te (XLam t x)
 
- | XCon  dc xs   
- => (fix wfXs (xs': list exp) : Prop := 
-     match xs' with 
-     | nil       => True
-     | x :: xs'' => wfX te x /\ wfXs xs''
-     end) xs
+ | WfX_XApp 
+   :  forall te x1 x2
+   ,  wfX te x1 -> wfX te x2
+   -> wfX te (XApp x1 x2)
 
- | XCase x alts 
- => (fix wfAs (as': list alt) : Prop :=
-     match as' with 
-     | nil        => True
-     | a :: as''  => wfA te a /\ wfAs as''
-     end) alts
- end
+ | WfX_XCon
+   :  forall te dc xs
+   ,  Forall (wfX te) xs
+   -> wfX te (XCon dc xs)
 
-with    wfA (te: tyenv) (aa: alt) : Prop :=
- match aa with
- | AAlt dc x     => wfX te x
- end.
+ | WfX_XCase
+   :  forall te x alts
+   ,  wfX te x 
+   -> Forall (wfA te) alts
+   -> wfX te (XCase x alts)
+
+with    wfA : tyenv -> alt -> Prop :=
+ | WfA_AAlt
+   :  forall te dc x
+   ,  wfX te x
+   -> wfA te (AAlt dc x).
+
+Hint Constructors wfX.
+Hint Constructors wfA.
+
+Scheme wfX_wfA_ind := Induction for wfX Sort Prop
+ with  wfA_wfX_ind := Induction for wfA Sort Prop.
+
+Combined Scheme wfX_wfA_mutind
+ from wfX_wfA_ind, wfA_wfX_ind.
 
 
 (* Closed expressions are well formed under an empty environment. *)
@@ -135,6 +171,7 @@ Hint Constructors value.
 Fixpoint 
  liftX  (d:  nat) (* current binding depth in expression *)
         (xx: exp) (* expression to lift *)
+        {struct xx}
         : exp
  := match xx with 
     |  XVar ix    
@@ -156,9 +193,10 @@ Fixpoint
 
     |  XCase x alts
     => XCase (liftX d x) (List.map (liftA d) alts)
+
     end
 
- with liftA (d: nat) (aa: alt) := 
+ with liftA (d: nat) (aa: alt) {struct aa}:= 
   match aa with
   | AAlt dc x => AAlt dc (liftX d x)
   end.

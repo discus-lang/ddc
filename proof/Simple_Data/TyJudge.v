@@ -3,35 +3,93 @@ Require Export Exp.
 
 
 (** Type Judgements *************************************************)
-Inductive TYPE : tyenv -> exp -> ty -> Prop :=
+Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
+ (* Variables *)
  | TYVar 
-   :  forall tenv i t
-   ,  get tenv i = Some t
-   -> TYPE tenv (XVar i) t
+   :  forall ds te i t
+   ,  get te i = Some t
+   -> TYPE ds te (XVar i) t
 
+ (* Lambda Abstraction *)
  | TYLam
-   :  forall tenv x t1 t2
-   ,  TYPE (tenv :> t1) x t2
-   -> TYPE tenv (XLam t1 x) (TFun t1 t2)
+   :  forall ds te x t1 t2
+   ,  TYPE ds (te :> t1) x            t2
+   -> TYPE ds te         (XLam t1 x) (TFun t1 t2)
 
+ (* Applications *)
  | TYApp
-   :  forall tenv x1 x2 t1 t2
-   ,  TYPE tenv x1 (TFun t1 t2)
-   -> TYPE tenv x2 t1
-   -> TYPE tenv (XApp x1 x2) t2.
+   :  forall ds te x1 x2 t1 t2
+   ,  TYPE ds te x1           (TFun t1 t2)
+   -> TYPE ds te x2           t1
+   -> TYPE ds te (XApp x1 x2) t2
+
+ (* Data Constructors *)
+ | TYCon 
+   :  forall ds te xs dc tsArgs tResult
+   ,  getDataDef  dc ds = Some (DefData dc tsArgs tResult)
+   -> (Forall2 (TYPE ds te) xs tsArgs)
+   -> TYPE ds te (XCon dc xs) tResult
+
+ | TYCase
+   :  forall ds te xObj alts tPat tResult
+   ,  TYPE ds te xObj tPat
+   -> (forall a, In a alts -> TYPEA ds te a tPat tResult)
+   -> TYPE ds te (XCase xObj alts) tResult
+
+with TYPEA : defs -> tyenv -> alt -> ty -> ty -> Prop :=
+ (* Case Alternatives *)
+ | TYAlt 
+   :  forall ds te x1 t1 dc
+   ,  TYPE  ds te x1 t1
+   -> TYPEA ds te (AAlt dc x1) (TCon (TyConData "dude")) t1.
 
 Hint Constructors TYPE.
+Hint Constructors TYPEA.
 
 
 (* Well Formedness **************************************************)
 (* A well typed expression is well formed *)
 Theorem type_wfX
- :  forall tenv x t
- ,  TYPE tenv x t
- -> wfX  tenv x.
+ :  forall ds te x t
+ ,  TYPE ds te x t
+ -> wfX te x.
 Proof.
- intros. gen tenv t.
- induction x; intros; inverts H; simpl; eauto.
+ intros ds te x t. gen ds te t.
+
+ eapply 
+  (exp_alt_mutind 
+    (fun x => forall ds te t,     TYPE  ds te x t     -> wfX te x) 
+    (fun a => forall ds te t1 t2, TYPEA ds te a t1 t2 -> wfA te a)).
+
+ ; intros; try (inverts H).
+
+ Case "XVar".
+  eauto.
+
+ Case "XLam".
+  inverts H0. eauto.
+
+ Case "XApp".
+  inverts H1. eauto.
+
+ Case "XCon".
+  admit.
+
+ Case "XCase".
+  inverts H0.
+  eapply WfX_XCase.
+   eauto.
+   rewrite Forall_forall.
+    intros.
+    lets D: H7 H0.
+     inverts D.
+     eapply WfA_AAlt.
+     eapply H7 in H0. inverts H0.
+
+
+
+
+
 Qed.
 Hint Resolve type_wfX.
 
