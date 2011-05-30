@@ -41,12 +41,63 @@ Hint Constructors exp.
 Hint Constructors alt.
 
 
-Scheme exp_alt_ind := Induction for exp Sort Prop
- with  alt_exp_ind := Induction for alt Sort Prop.
+Theorem exp_mutind
+ : forall 
+    (PX : exp -> Prop)
+    (PA : alt -> Prop)
+ ,  (forall n,                                    PX (XVar n))
+ -> (forall t  x1, PX x1                       -> PX (XLam t x1))
+ -> (forall x1 x2, PX x1 -> PX x2              -> PX (XApp x1 x2))
+ -> (forall dc xs, (forall x, In x xs -> PX x) -> PX (XCon dc xs))
+ -> (forall x  aa, PX x  
+                -> (forall a, In a aa -> PA a) -> PX (XCase x aa))
+ -> (forall dc x,  PX x                        -> PA (AAlt dc x))
+ ->  forall x, PX x.
+Proof. 
+ intros PX PA.
+ intros var lam app con case alt.
+ refine (fix  IHX x : PX x := _
+         with IHA a : PA a := _
+         for  IHX).
 
-Combined Scheme exp_alt_mutind
- from exp_alt_ind, alt_exp_ind.
+ (* expressions *)
+ case x; intros.
 
+ Case "XVar".
+  apply var.
+
+ Case "XLam".
+  apply lam. 
+   apply IHX.
+
+ Case "XApp".
+  apply app. 
+   apply IHX.
+   apply IHX.
+
+ Case "XCon".
+  apply con.
+  induction l.
+   intros. simpl in H. contradiction.
+   intros. simpl in H. destruct H.
+    rewrite <- H. apply IHX.
+    apply IHl. apply H.
+
+ Case "XCase".
+  apply case.
+  apply IHX.
+  induction l.
+   intros. simpl in H. contradiction.
+   intros. simpl in H. destruct H.
+    rewrite <- H. apply IHA.
+    apply IHl. apply H.
+
+ (* alternatives *)
+ Case "XAlt".
+  case a; intros.
+  apply alt.
+   apply IHX.
+Qed.
 
 
 (* Definitions ******************************************************)

@@ -27,13 +27,13 @@ Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
  | TYCon 
    :  forall ds te xs dc tsArgs tResult
    ,  getDataDef  dc ds = Some (DefData dc tsArgs tResult)
-   -> (Forall2 (TYPE ds te) xs tsArgs)
-   -> TYPE ds te (XCon dc xs) tResult
+   -> (forall xs, Forall2 (TYPE ds te) xs tsArgs)
+  -> TYPE ds te (XCon dc xs) tResult
 
  | TYCase
    :  forall ds te xObj alts tPat tResult
    ,  TYPE ds te xObj tPat
-   -> (forall a, In a alts -> TYPEA ds te a tPat tResult)
+   -> (Forall (fun a => TYPEA ds te a tPat tResult) alts)
    -> TYPE ds te (XCase xObj alts) tResult
 
 with TYPEA : defs -> tyenv -> alt -> ty -> ty -> Prop :=
@@ -47,6 +47,17 @@ Hint Constructors TYPE.
 Hint Constructors TYPEA.
 
 
+Lemma Forall2_exists_left
+ : forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ ,  In x xs 
+ -> Forall2 R xs ys 
+ -> (exists y, R x y).
+Proof.
+ admit.
+Qed.
+
+
+
 (* Well Formedness **************************************************)
 (* A well typed expression is well formed *)
 Theorem type_wfX
@@ -54,13 +65,13 @@ Theorem type_wfX
  ,  TYPE ds te x t
  -> wfX te x.
 Proof.
- intros ds te x t. gen ds te t.
+ intros ds te x t.
+ gen ds te t.
 
  eapply 
-  (exp_alt_mutind 
+  (exp_mutind 
     (fun x => forall ds te t,     TYPE  ds te x t     -> wfX te x) 
-    (fun a => forall ds te t1 t2, TYPEA ds te a t1 t2 -> wfA te a)).
-
+    (fun a => forall ds te t1 t2, TYPEA ds te a t1 t2 -> wfA te a))
  ; intros; try (inverts H).
 
  Case "XVar".
@@ -73,23 +84,27 @@ Proof.
   inverts H1. eauto.
 
  Case "XCon".
-  admit.
+  apply WfX_XCon.
+  rewrite Forall_forall.
+   intros. 
+   inverts H0.
+   specialize H8 with xs.
+   lets D: Forall2_exists_left H1 H8.
+    destruct D. 
+    apply H in H0. eauto. eauto.
 
  Case "XCase".
-  inverts H0.
+  inverts H1.
   eapply WfX_XCase.
-   eauto.
+   eapply H. eauto.
    rewrite Forall_forall.
-    intros.
-    lets D: H7 H0.
-     inverts D.
-     eapply WfA_AAlt.
-     eapply H7 in H0. inverts H0.
+   rewrite Forall_forall in H8.
+    eauto.
 
-
-
-
-
+ Case "XAlt".
+  inverts H0.
+  apply WfA_AAlt.
+  eapply H. eauto.
 Qed.
 Hint Resolve type_wfX.
 
