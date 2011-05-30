@@ -41,6 +41,10 @@ Hint Constructors exp.
 Hint Constructors alt.
 
 
+(* Mutual induction principle for expressions.
+   As expressions are indirectly mutually recursive with lists,
+   Coq's Combined scheme command won't make us a strong enough
+   induction principle, so we need to write it out by hand. *)
 Theorem exp_mutind
  : forall 
     (PX : exp -> Prop)
