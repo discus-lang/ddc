@@ -183,8 +183,9 @@ Inductive wfX : tyenv -> exp -> Prop :=
 
 with    wfA : tyenv -> alt -> Prop :=
  | WfA_AAlt
-   :  forall te dc x
-   ,  wfX te x
+   :  forall te dc ds x tsArgs tResult
+   ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
+   -> wfX (te ++ envOfList tsArgs) x
    -> wfA te (AAlt dc x).
 
 Hint Constructors wfX.

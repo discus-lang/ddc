@@ -94,6 +94,13 @@ Fixpoint drop {A: Type} (n: nat) (e: env A) : env A :=
 Hint Unfold drop.
 
 
+Fixpoint envOfList {A: Type} (l: list A) : env A :=
+ match l with
+ | nil              => Empty
+ | x :: xs          => envOfList xs :> x
+ end.
+
+
 (* Lemmas ***********************************************************)
 Lemma cons_snoc_empty
  :  forall A (x: A)

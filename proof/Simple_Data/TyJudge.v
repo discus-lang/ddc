@@ -26,7 +26,7 @@ Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
  (* Data Constructors *)
  | TYCon 
    :  forall ds te xs dc tsArgs tResult
-   ,  getDataDef  dc ds = Some (DefData dc tsArgs tResult)
+   ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
    -> (forall xs, Forall2 (TYPE ds te) xs tsArgs)
   -> TYPE ds te (XCon dc xs) tResult
 
@@ -39,9 +39,10 @@ Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
 with TYPEA : defs -> tyenv -> alt -> ty -> ty -> Prop :=
  (* Case Alternatives *)
  | TYAlt 
-   :  forall ds te x1 t1 dc
-   ,  TYPE  ds te x1 t1
-   -> TYPEA ds te (AAlt dc x1) (TCon (TyConData "dude")) t1.
+   :  forall ds te x1 t1 dc tsArgs tResult
+   ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
+   -> TYPE  ds (te ++ envOfList tsArgs) x1 t1
+   -> TYPEA ds te (AAlt dc x1) tResult t1.
 
 Hint Constructors TYPE.
 Hint Constructors TYPEA.
@@ -60,7 +61,6 @@ Proof.
    subst. eauto.
    eapply IHForall2. eauto.
 Qed.
-
 
 
 (* Well Formedness **************************************************)
@@ -108,8 +108,7 @@ Proof.
 
  Case "XAlt".
   inverts H0.
-  apply WfA_AAlt.
-  eapply H. eauto.
+  eapply WfA_AAlt; eauto.
 Qed.
 Hint Resolve type_wfX.
 
