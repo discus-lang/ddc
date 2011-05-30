@@ -53,7 +53,12 @@ Lemma Forall2_exists_left
  -> Forall2 R xs ys 
  -> (exists y, R x y).
 Proof.
- admit.
+ intros.
+ induction H0.
+  false.
+  simpl in H. destruct H.
+   subst. eauto.
+   eapply IHForall2. eauto.
 Qed.
 
 
