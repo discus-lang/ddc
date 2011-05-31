@@ -140,14 +140,14 @@ Proof.
   eapply TYCon. 
    eauto.
    apply (Forall2_map_left (TYPE ds (insert ix t2 te))).
-   apply (Forall2_impl_In (TYPE ds te)); eauto.
+   apply (Forall2_impl_In  (TYPE ds te)); eauto.
 
  Case "XCase".
   inverts H1.
   eapply TYCase. 
    eauto.
-   apply Forall_map.
-   eapply (Forall_impl_In (fun a => TYPEA ds te a tPat t1)); eauto.
+   apply  Forall_map.
+   apply (Forall_impl_In (fun a => TYPEA ds te a tPat t1)); eauto.
 
  Case "XAlt".
   inverts H0.

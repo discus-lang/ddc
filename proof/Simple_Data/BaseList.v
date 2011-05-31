@@ -14,31 +14,30 @@ Hint Unfold getl.
 
 
 Lemma Forall_map
- : forall (A B: Type) 
-          (P:   B -> Prop)
-          (f:   A -> B)
-          (xs:  list A)
+ :  forall {A B: Type} 
+           (P: B -> Prop) (f: A -> B) 
+           (xs: list A)
  ,  Forall (fun x => P (f x)) xs
  -> Forall P (map f xs).
 Proof.
  intros. induction xs.
   apply Forall_nil.
-  simpl. 
-  inverts H.
-  apply Forall_cons. auto. auto.
+  inverts H. simpl. intuition.
 Qed.
 
 
 Lemma Forall_impl_In
  : forall {A: Type}
-          (P1: A -> Prop)
-          (P2: A -> Prop)
+          (P1: A -> Prop) (P2: A -> Prop)
           (xs: list A)
  ,  (forall x, In x xs -> P1 x -> P2 x)
  -> Forall P1 xs
  -> Forall P2 xs.
 Proof.
- admit.
+ intros.
+ induction xs.
+  auto. 
+  inverts H0. intuition.
 Qed.
 
 
@@ -78,8 +77,12 @@ Lemma Forall2_map_right
  ,  Forall2 (fun x y => R1 x (f y)) xs ys
  -> Forall2 R1 xs (map f ys).
 Proof.
- admit.
+ intros.
+ induction H.
+  apply Forall2_nil.
+  simpl. intuition.
 Qed.
+
 
 Lemma Forall2_map_left
  : forall {A B C: Type}
@@ -89,7 +92,10 @@ Lemma Forall2_map_left
  ,  Forall2 (fun x y => R1 (f x) y) xs ys
  -> Forall2 R1 (map f xs) ys.
 Proof.
- admit.
+ intros.
+ induction H.
+  apply Forall2_nil.
+  simpl. intuition.
 Qed.
 
 
@@ -103,7 +109,9 @@ Lemma Forall2_impl_In
  -> Forall2 R1 xs ys
  -> Forall2 R2 xs ys.
 Proof.
- admit.
+ intros.
+ induction H0.
+  apply Forall2_nil.
+  intuition.
 Qed.
-
 
