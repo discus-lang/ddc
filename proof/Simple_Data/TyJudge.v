@@ -42,7 +42,7 @@ with TYPEA : defs -> tyenv -> alt -> ty -> ty -> Prop :=
    :  forall ds te x1 t1 dc tsArgs tResult
    ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
    -> TYPE  ds (te ++ envOfList tsArgs) x1 t1
-   -> TYPEA ds te (AAlt dc x1) tResult t1.
+   -> TYPEA ds te (AAlt dc tsArgs x1) tResult t1.
 
 Hint Constructors TYPE.
 Hint Constructors TYPEA.
@@ -152,21 +152,22 @@ Proof.
  Case "XAlt".
   inverts H0.
   eapply TYAlt. eauto.
-  assert ( insert ix t2 te ++ envOfList tsArgs 
-         = insert (ix + List.length tsArgs) t2 (te ++ envOfList tsArgs)).
+  assert ( insert ix t2 te ++ envOfList ts 
+         = insert (ix + List.length ts) t2 (te ++ envOfList ts)).
       admit.
   rewrite H0.
   eapply H.
+  auto.
 Qed. 
 
 Lemma type_tyenv_weaken
- :  forall e x t1 t2
- ,  TYPE  e         x            t1
- -> TYPE (e :> t2) (liftX 0 x) t1.
+ :  forall ds te x t1 t2
+ ,  TYPE ds  te        x           t1
+ -> TYPE ds (te :> t2) (liftX 0 x) t1.
 Proof.
  intros.
- assert (e :> t2 = insert 0 t2 e).
-  simpl. destruct e; auto.
+ assert (te :> t2 = insert 0 t2 te).
+  simpl. destruct te; auto.
   rewrite H0. apply type_tyenv_insert. auto.
 Qed.
 

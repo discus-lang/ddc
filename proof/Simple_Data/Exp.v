@@ -35,7 +35,7 @@ Inductive exp : Type :=
 
  (* Alternatives **********************)
 with alt     : Type :=
- | AAlt   : datacon -> exp -> alt.
+ | AAlt   : datacon -> list ty  -> exp -> alt.
 
 Hint Constructors exp.
 Hint Constructors alt.
@@ -55,7 +55,7 @@ Theorem exp_mutind
  -> (forall dc xs, (forall x, In x xs -> PX x) -> PX (XCon dc xs))
  -> (forall x  aa, PX x  
                 -> (forall a, In a aa -> PA a) -> PX (XCase x aa))
- -> (forall dc x,  PX x                        -> PA (AAlt dc x))
+ -> (forall dc ts x, PX x                      -> PA (AAlt dc ts x))
  ->  forall x, PX x.
 Proof. 
  intros PX PA.
@@ -183,10 +183,10 @@ Inductive wfX : tyenv -> exp -> Prop :=
 
 with    wfA : tyenv -> alt -> Prop :=
  | WfA_AAlt
-   :  forall te dc ds x tsArgs tResult
+   :  forall te dc ds ts x tsArgs tResult
    ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
    -> wfX (te ++ envOfList tsArgs) x
-   -> wfA te (AAlt dc x).
+   -> wfA te (AAlt dc ts x).
 
 Hint Constructors wfX.
 Hint Constructors wfA.
@@ -254,7 +254,7 @@ Fixpoint
 
  with liftA (d: nat) (aa: alt) {struct aa}:= 
   match aa with
-  | AAlt dc x => AAlt dc (liftX d x)
+  | AAlt dc ts x => AAlt dc ts (liftX (d + List.length ts) x)
   end.
 
 
@@ -300,8 +300,8 @@ Fixpoint
 
 with substA (d: nat) (u: exp) (aa: alt) 
  := match aa with 
-    |  AAlt dc x 
-    => AAlt dc (substX d u x)
+    |  AAlt dc ts x 
+    => AAlt dc ts (substX d u x)
     end. 
 
 
