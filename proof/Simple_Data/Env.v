@@ -150,6 +150,15 @@ Qed.
 Hint Resolve get_length_more.
 
 
+Lemma length_envOfList 
+ :  forall A (xs: list A)
+ ,  length (envOfList xs) = List.length xs.
+Proof.
+ intros.
+ induction xs. auto. simpl. auto.
+Qed.
+
+
 (* append lemmas ********************************)
 Lemma append_empty_left
  :  forall A (e1: env A)
@@ -266,11 +275,24 @@ Hint Resolve get_above_false.
 
 
 (* insert lemmas ********************************)
-
 Lemma insert_rewind
  :  forall {A: Type} ix t1 t2 (e: env A)
  ,  insert ix t2 e :> t1 = insert (S ix) t2 (e :> t1).
 Proof. auto. Qed.
+
+
+Lemma insert_append
+ : forall {A : Type} ix (x: A) xs ys
+ , insert ix x xs ++ ys = insert (ix + length ys) x (xs ++ ys).
+Proof.
+ intros. 
+ induction ys. 
+  simpl. nnat. auto.
+  simpl. rewrite IHys.
+   rewrite insert_rewind.
+   assert (S (ix + length ys) = ix + S (length ys)). auto.
+   rewrite H. auto.
+Qed.
 
 
 Lemma get_insert_above

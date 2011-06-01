@@ -41,21 +41,7 @@ Proof.
 Qed.
 
 
-Lemma Forall2_exists_left
- : forall (A B: Type) (R: A -> B -> Prop) x xs ys
- ,  In x xs 
- -> Forall2 R xs ys 
- -> (exists y, R x y).
-Proof.
- intros.
- induction H0.
-  false.
-  simpl in H. destruct H.
-   subst. eauto.
-   eapply IHForall2. eauto.
-Qed.
-
-
+(* Forall2 **********************************************************)
 Lemma Forall2_impl
  : forall (A B: Type) 
           (R1: A -> B -> Prop)
@@ -66,36 +52,6 @@ Lemma Forall2_impl
  -> Forall2 R2 xs ys.
 Proof.
  intros. induction H0; auto. 
-Qed.
-
-
-Lemma Forall2_map_right
- : forall {A B C: Type}
-          (R1: A -> C -> Prop)
-          (f:  B -> C)
-          (xs: list A) (ys: list B)
- ,  Forall2 (fun x y => R1 x (f y)) xs ys
- -> Forall2 R1 xs (map f ys).
-Proof.
- intros.
- induction H.
-  apply Forall2_nil.
-  simpl. intuition.
-Qed.
-
-
-Lemma Forall2_map_left
- : forall {A B C: Type}
-          (R1: B -> C -> Prop)
-          (f:  A -> B)
-          (xs: list A) (ys: list C)
- ,  Forall2 (fun x y => R1 (f x) y) xs ys
- -> Forall2 R1 (map f xs) ys.
-Proof.
- intros.
- induction H.
-  apply Forall2_nil.
-  simpl. intuition.
 Qed.
 
 
@@ -115,3 +71,108 @@ Proof.
   intuition.
 Qed.
 
+
+Lemma Forall2_exists_left
+ : forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ ,  In x xs 
+ -> Forall2 R xs ys 
+ -> (exists y, R x y).
+Proof.
+ intros.
+ induction H0.
+  false.
+  simpl in H. destruct H.
+   subst. eauto.
+   eapply IHForall2. eauto.
+Qed.
+
+
+Lemma Forall2_exists_right
+ : forall (A B: Type) (R: A -> B -> Prop) y xs ys
+ ,  In y ys 
+ -> Forall2 R xs ys 
+ -> (exists x, R x y).
+Proof.
+ intros.
+ induction H0.
+  false.
+  simpl in H. destruct H.
+   subst. eauto.
+   eapply IHForall2. eauto.
+Qed.
+
+
+Lemma Forall2_map_left
+ : forall {A B C: Type}
+          (R1: B -> C -> Prop)
+          (f:  A -> B)
+          (xs: list A) (ys: list C)
+ ,  Forall2 (fun x y => R1 (f x) y) xs ys
+ -> Forall2 R1 (map f xs) ys.
+Proof.
+ intros.
+ induction H.
+  apply Forall2_nil.
+  simpl. intuition.
+Qed.
+
+
+Lemma Forall2_map_right
+ : forall {A B C: Type}
+          (R1: A -> C -> Prop)
+          (f:  B -> C)
+          (xs: list A) (ys: list B)
+ ,  Forall2 (fun x y => R1 x (f y)) xs ys
+ -> Forall2 R1 xs (map f ys).
+Proof.
+ intros.
+ induction H.
+  apply Forall2_nil.
+  simpl. intuition.
+Qed.
+
+
+Lemma Forall2_Forall_left
+ : forall {A B : Type}
+          (R   : A -> B -> Prop)
+          (P   : A -> Prop)
+          (xs  : list A)
+          (ys  : list B)
+ ,  Forall  (fun x => forall y, R x y -> P x) xs
+ -> Forall2 R xs ys
+ -> Forall  P xs.
+Proof.
+ intros.
+ rewrite Forall_forall.
+ rewrite Forall_forall in H. 
+ intros.
+ lets D: Forall2_exists_left H1 H0.
+ destruct D. eauto. 
+Qed.
+
+Hint Resolve Forall_forall.
+
+
+(*
+Lemma Forall_impl_elem
+ : forall {A: Type}
+          (P Q: A -> Prop)
+          (xs:  list A)
+  ,  Forall P xs
+  -> Forall (fun x => P x -> Q x) xs
+  -> Forall Q xs.
+Proof.
+ admit.
+Qed.
+
+Lemma Forall2_Forall_exists
+ : forall {A B : Type}
+          (R   : A -> B -> Prop)
+          (xs  : list A)
+          (ys  : list B)
+ ,  Forall2 R xs ys
+ -> Forall  (fun x => exists y, R x y) xs.
+Proof.
+ admit.
+Qed.
+*)

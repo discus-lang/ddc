@@ -1,7 +1,6 @@
 
 Require Export Exp.
 
-
 (** Type Judgements *************************************************)
 Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
  (* Variables *)
@@ -62,10 +61,10 @@ Proof.
   (exp_mutind 
     (fun x => forall ds te t,     TYPE  ds te x t     -> wfX te x) 
     (fun a => forall ds te t1 t2, TYPEA ds te a t1 t2 -> wfA te a))
- ; intros; try (inverts H).
+ ; intros.
 
  Case "XVar".
-  eauto.
+  inverts H.  eauto.
 
  Case "XLam".
   inverts H0. eauto.
@@ -74,20 +73,20 @@ Proof.
   inverts H1. eauto.
 
  Case "XCon".
+  inverts H0.
   apply WfX_XCon.
-  rewrite Forall_forall.
-   intros. 
-   inverts H0.
-   lets D: Forall2_exists_left H1 H8.
-    destruct D. 
-    apply H in H0. eauto. eauto.
+   eapply Forall2_Forall_left.
+    rewrite Forall_forall in H.
+    rewrite Forall_forall. eauto.
+    eauto.
 
  Case "XCase".
   inverts H1.
   eapply WfX_XCase.
    eapply H. eauto.
-   rewrite Forall_forall.
-   rewrite Forall_forall in H8.
+    rewrite Forall_forall in H0.
+    rewrite Forall_forall in H8.
+    rewrite Forall_forall.
     eauto.
 
  Case "XAlt".
@@ -139,6 +138,7 @@ Proof.
   inverts H0.
   eapply TYCon. 
    eauto.
+   rewrite Forall_forall in H.
    apply (Forall2_map_left (TYPE ds (insert ix t2 te))).
    apply (Forall2_impl_In  (TYPE ds te)); eauto.
 
@@ -146,19 +146,18 @@ Proof.
   inverts H1.
   eapply TYCase. 
    eauto.
+   rewrite Forall_forall in H0.
    apply  Forall_map.
    apply (Forall_impl_In (fun a => TYPEA ds te a tPat t1)); eauto.
 
  Case "XAlt".
   inverts H0.
   eapply TYAlt. eauto.
-  assert ( insert ix t2 te ++ envOfList ts 
-         = insert (ix + List.length ts) t2 (te ++ envOfList ts)).
-      admit.
-  rewrite H0.
-  eapply H.
+  rewrite insert_append.
+  rewrite length_envOfList.
   auto.
 Qed. 
+
 
 Lemma type_tyenv_weaken
  :  forall ds te x t1 t2

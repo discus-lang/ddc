@@ -49,13 +49,12 @@ Theorem exp_mutind
  : forall 
     (PX : exp -> Prop)
     (PA : alt -> Prop)
- ,  (forall n,                                    PX (XVar n))
- -> (forall t  x1, PX x1                       -> PX (XLam t x1))
- -> (forall x1 x2, PX x1 -> PX x2              -> PX (XApp x1 x2))
- -> (forall dc xs, (forall x, In x xs -> PX x) -> PX (XCon dc xs))
- -> (forall x  aa, PX x  
-                -> (forall a, In a aa -> PA a) -> PX (XCase x aa))
- -> (forall dc ts x, PX x                      -> PA (AAlt dc ts x))
+ ,  (forall n,                                PX (XVar n))
+ -> (forall t  x1,   PX x1                 -> PX (XLam t x1))
+ -> (forall x1 x2,   PX x1 -> PX x2        -> PX (XApp x1 x2))
+ -> (forall dc xs,            Forall PX xs -> PX (XCon dc xs))
+ -> (forall x  aa,   PX x  -> Forall PA aa -> PX (XCase x aa))
+ -> (forall dc ts x, PX x                  -> PA (AAlt dc ts x))
  ->  forall x, PX x.
 Proof. 
  intros PX PA.
@@ -81,24 +80,17 @@ Proof.
 
  Case "XCon".
   apply con.
-  induction l.
-   intros. simpl in H. contradiction.
-   intros. simpl in H. destruct H.
-    rewrite <- H. apply IHX.
-    apply IHl. apply H.
+   induction l; intuition.
 
  Case "XCase".
   apply case.
-  apply IHX.
-  induction l.
-   intros. simpl in H. contradiction.
-   intros. simpl in H. destruct H.
-    rewrite <- H. apply IHA.
-    apply IHl. apply H.
+   apply IHX.
+   induction l; intuition.
 
  (* alternatives *)
+ case a; intros.
+
  Case "XAlt".
-  case a; intros.
   apply alt.
    apply IHX.
 Qed.
