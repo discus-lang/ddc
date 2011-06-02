@@ -85,3 +85,103 @@ Proof.
 Qed.
 
 
+Lemma liftX_comm
+ : forall n m x d
+ , liftX n d (liftX m d x)
+ = liftX m d (liftX n d x). 
+Proof.
+ intros. gen d.
+ apply (exp_mutind
+        (fun x => forall d, liftX n d (liftX m d x) 
+                          = liftX m d (liftX n d x))
+
+        (fun a => forall d, liftA n d (liftA m d a)
+                          = liftA m d (liftA n d a)))
+  ; intros; simpl.
+
+ Case "XVar".
+  repeat (simple; lift_cases; intros; burn).
+
+ Case "XLam".
+  rewrite H. auto.
+
+ Case "XApp".
+  rewrite H. rewrite H0. auto.
+
+ Case "XCon".
+  f_equal.
+  rewrite map_map.
+  rewrite map_map.
+  rewrite Forall_forall in H.
+  rewrite (map_ext_In (fun x0 => liftX n d (liftX m d x0))
+                      (fun x0 => liftX m d (liftX n d x0))).
+  auto. eauto.
+
+ Case "XCase".
+  f_equal.
+  eauto. clear H.
+  rewrite map_map.
+  rewrite map_map.
+  rewrite Forall_forall in H0.
+  rewrite (map_ext_In (fun x1 : alt => liftA n d (liftA m d x1))
+                      (fun x1 : alt => liftA m d (liftA n d x1))).
+  auto. eauto.
+
+ Case "XAlt".
+  f_equal.
+  eauto.
+Qed.
+
+
+Lemma liftX_succ
+ : forall n m d x
+ , liftX (S n) d (liftX m     d x)
+ = liftX n     d (liftX (S m) d x). 
+Proof.
+ intros.
+ apply (exp_mutind
+        (fun x => forall d, liftX (S n) d (liftX m     d x) 
+                          = liftX n     d (liftX (S m) d x))
+
+        (fun a => forall d, liftA (S n) d (liftA  m    d a)
+                          = liftA n     d (liftA (S m) d a)))
+  ; intros; simpl.
+
+ Case "XVar".
+  repeat (simple; lift_cases; intros; burn).
+
+ Case "XLam".
+  f_equal.
+  rewrite H. auto.
+
+ Case "XApp".
+  f_equal.
+  rewrite H. auto.
+  rewrite H0. auto.
+
+ Case "XCon".
+  f_equal.
+
+ admit. (*** finish this*)
+ admit.
+ admit.
+Qed.
+ 
+
+Lemma liftX_plus 
+ : forall n m x 
+ , liftX n 0 (liftX m 0 x) = liftX (n + m) 0 x.
+Proof.
+ intros. gen n.
+ induction m.
+  intros. rewrite liftX_zero. nnat. auto.
+  intros.
+   assert (n + S m = S n + m). 
+    omega. rewrite H. clear H.
+   rewrite liftX_comm.
+   rewrite <- IHm.
+   rewrite liftX_comm.
+   rewrite liftX_succ. 
+   auto.
+Qed.
+   

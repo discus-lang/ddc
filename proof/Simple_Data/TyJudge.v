@@ -182,15 +182,12 @@ Proof.
  intros.
  induction te'.
   simpl. 
-  assert (liftX 0 0 x = x). 
-   admit. rewrite H0. clear H0. auto.
+  rewrite liftX_zero. auto.
   simpl.
-  assert (forall n m x, liftX (n + m) 0 x = liftX n 0 (liftX m 0 x)).
-   admit.
   rewrite <- nat_plus_one.
   assert (length te' + 1 = 1 + length te').
-   admit. rewrite H1.
-  rewrite H0.
+   omega. rewrite H0. clear H0.
+  rewrite <- liftX_plus.
   apply type_tyenv_weaken1. auto.
 Qed.
 
