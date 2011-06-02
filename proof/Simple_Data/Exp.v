@@ -254,6 +254,39 @@ Fixpoint
   end.
 
 
+Lemma liftX_zero
+ : forall d x
+ , liftX 0 d x = x.
+Proof.
+ intros. gen d.
+ apply (exp_mutind
+         (fun x => forall d, liftX 0 d x = x)
+         (fun a => forall d, liftA 0 d a = a))
+  ; intros; simpl.
+
+ Case "XVar".
+  lift_cases; intros; auto.
+
+ Case "XLam".
+  rewrite H. auto.
+
+ Case "XApp".
+  rewrite H. rewrite H0. auto.
+
+ Case "XCon".
+  rewrite Forall_forall in H.
+  rewrite (map_ext_In (liftX 0 d) id).
+  rewrite map_id. auto. auto.
+
+ Case "XCase".
+  rewrite Forall_forall in H0.
+  rewrite (map_ext_In (liftA 0 d) id).
+  rewrite map_id. rewrite H. auto. auto.
+
+ Case "AAlt".
+  rewrite H. auto.
+Qed.
+
 
 (** Substitution ****************************************************)
 (* Substitute for the outermost binder in an expression. *)

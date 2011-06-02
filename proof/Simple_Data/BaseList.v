@@ -13,6 +13,23 @@ Fixpoint getl {A: Type} (e: list A) (i: nat) : option A :=
 Hint Unfold getl.
 
 
+Lemma map_ext_In
+ : forall {A B : Type}
+          (f g : A -> B)
+          (xs  : list A)
+ ,  (forall x, In x xs -> f x = g x)
+ -> map f xs = map g xs.
+Proof.
+ intros.
+ induction xs.
+  auto.
+  simpl. rewrite IHxs. rewrite H.
+   auto. simpl. auto. 
+   intros. apply H.
+   simpl. auto.
+Qed.
+
+
 Lemma Forall_map
  :  forall {A B: Type} 
            (P: B -> Prop) (f: A -> B) 
