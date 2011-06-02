@@ -56,7 +56,7 @@ Proof.
   apply TYLam.
   rewrite drop_rewind.
   eapply H; eauto.
-   simpl. apply type_tyenv_weaken. auto.
+   simpl. apply type_tyenv_weaken1. auto.
 
  Case "XApp". 
   inverts H1. eauto.
@@ -84,27 +84,28 @@ Proof.
    assert  ( drop ix  te ++ envOfList ts
            = drop (ix + length (envOfList ts)) (te ++ envOfList ts)).
     admit. rewrite H1. clear H1.
-   simpl.
-   (* TODO: Definition of substA is broken.
-            Need to handle all of the ctor args being pushed
-            onto the environment at onceee.
-            Generalise liftX to lift across several new types at once *)
+   assert (Env.length (envOfList ts) = List.length ts).
+    admit. rewrite H1.
    eapply H.
-    eauto.
-    eapply get_append_some. eauto.
-    
-
+    auto.
+    skip.
+    assert ( drop (ix + List.length ts) (te ++ envOfList ts)
+           = drop ix te ++ envOfList ts).
+     admit. rewrite H3. clear H3.
+   rewrite <- H1.
+   apply type_tyenv_weaken_append.
+   eauto.
 Qed.
 
 
 Theorem subst_value_value
- :  forall tenv x1 x2 t1 t2
- ,  TYPE (tenv :> t2) x1 t1
- -> TYPE tenv         x2 t2 
- -> TYPE tenv (substX 0 x2 x1) t1.
+ :  forall ds te x1 x2 t1 t2
+ ,  TYPE ds (te :> t2) x1 t1
+ -> TYPE ds te         x2 t2 
+ -> TYPE ds te (substX 0 x2 x1) t1.
 Proof. 
- intros tenv x1 x2 t1 t2 Ht1 Ht2.
- lets H: subst_value_value_ix 0 (tenv :> t2).
+ intros ds te x1 x2 t1 t2 Ht1 Ht2.
+ lets H: subst_value_value_ix 0 (te :> t2).
   simpl in H. eauto.
 Qed.
 

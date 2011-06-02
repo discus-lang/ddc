@@ -96,6 +96,8 @@ Qed.
 Hint Resolve type_wfX.
 
 
+
+
 (* Weakening Type Env in Type Judgement *****************************
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across
@@ -104,7 +106,7 @@ Hint Resolve type_wfX.
 Lemma type_tyenv_insert
  :  forall ds te ix x t1 t2
  ,  TYPE ds te x t1
- -> TYPE ds (insert ix t2 te) (liftX ix x) t1.
+ -> TYPE ds (insert ix t2 te) (liftX 1 ix x) t1.
 Proof.
  intros.
  gen ix ds te t1.
@@ -113,14 +115,15 @@ Proof.
   (exp_mutind 
     (fun x => forall ix ds te t1
            ,  TYPE ds te x t1    
-           -> TYPE ds (insert ix t2 te) (liftX ix x) t1) 
+           -> TYPE ds (insert ix t2 te)  (liftX 1 ix x) t1) 
     (fun a => forall ix ds te t3 t4
            ,  TYPEA ds te a t3 t4 
-           -> TYPEA ds (insert ix t2 te) (liftA ix a) t3 t4))
+           -> TYPEA ds (insert ix t2 te) (liftA 1 ix a) t3 t4))
   ; intros; simpl.
 
  Case "XVar".
   inverts H.
+  nnat.
   lift_cases; intros; auto.
 
  Case "XLam".
@@ -155,19 +158,40 @@ Proof.
   eapply TYAlt. eauto.
   rewrite insert_append.
   rewrite length_envOfList.
-  auto.
+  eauto.
 Qed. 
 
 
-Lemma type_tyenv_weaken
+Lemma type_tyenv_weaken1
  :  forall ds te x t1 t2
- ,  TYPE ds  te        x           t1
- -> TYPE ds (te :> t2) (liftX 0 x) t1.
+ ,  TYPE ds te x t1
+ -> TYPE ds (te :> t2) (liftX 1 0 x) t1.
 Proof.
  intros.
  assert (te :> t2 = insert 0 t2 te).
   simpl. destruct te; auto.
   rewrite H0. apply type_tyenv_insert. auto.
+Qed.
+
+
+Lemma type_tyenv_weaken_append
+ :  forall ds te te' x t1
+ ,  TYPE ds te x t1
+ -> TYPE ds (te ++ te') (liftX (length te') 0 x) t1.
+Proof.
+ intros.
+ induction te'.
+  simpl. 
+  assert (liftX 0 0 x = x). 
+   admit. rewrite H0. clear H0. auto.
+  simpl.
+  assert (forall n m x, liftX (n + m) 0 x = liftX n 0 (liftX m 0 x)).
+   admit.
+  rewrite <- nat_plus_one.
+  assert (length te' + 1 = 1 + length te').
+   admit. rewrite H1.
+  rewrite H0.
+  apply type_tyenv_weaken1. auto.
 Qed.
 
 

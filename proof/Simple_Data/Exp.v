@@ -217,7 +217,8 @@ Hint Constructors value.
      t1, t0, ta, tb |- 2 3 (\. 0 3 4) :: t3
  *)
 Fixpoint 
- liftX  (d:  nat) (* current binding depth in expression *)
+ liftX  (n:  nat) (* number of elements pushed on stack *)
+        (d:  nat) (* current binding depth in expression *)
         (xx: exp) (* expression to lift *)
         {struct xx}
         : exp
@@ -225,28 +226,31 @@ Fixpoint
     |  XVar ix    
     => if le_gt_dec d ix
         (* var was pointing into env, lift it across new elems *)
-        then XVar (S ix)
+        then XVar (ix + n)
         (* var was locally bound, leave it be *)
         else xx
 
     (* increase the depth as we move across a lambda *)
     |  XLam t1 x1
-    => XLam t1 (liftX (S d) x1)
+    => XLam t1 (liftX n (S d) x1)
 
     |  XApp x1 x2
-    => XApp   (liftX d x1) (liftX d x2)
+    => XApp   (liftX n d x1) (liftX n d x2)
 
     |  XCon dc xs
-    => XCon dc (List.map (liftX d) xs)
+    => XCon dc (List.map (liftX n d) xs)
 
     |  XCase x alts
-    => XCase (liftX d x) (List.map (liftA d) alts)
+    => XCase (liftX n d x) (List.map (liftA n d) alts)
 
     end
 
- with liftA (d: nat) (aa: alt) {struct aa}:= 
+ with liftA (n: nat) (d: nat) (aa: alt) {struct aa}:= 
   match aa with
-  | AAlt dc ts x => AAlt dc ts (liftX (d + List.length ts) x)
+  | AAlt dc ts x => AAlt dc ts 
+                        (liftX  n 
+                               (d + List.length ts)
+                                x)
   end.
 
 
@@ -277,7 +281,7 @@ Fixpoint
        Also lift free references in the exp being substituted
        across the lambda as we enter it. *)
     |  XLam t1 x2
-    => XLam t1 (substX (S d) (liftX 0 u) x2)
+    => XLam t1 (substX (S d) (liftX 1 0 u) x2)
 
     (* Applications *)
     |  XApp x1 x2 
@@ -293,9 +297,9 @@ Fixpoint
 with substA (d: nat) (u: exp) (aa: alt) 
  := match aa with 
     |  AAlt dc ts x 
-    => AAlt dc ts (substX d u x)
+    => AAlt dc ts (substX (d + List.length ts) 
+                          (liftX (List.length ts) 0 u)
+                           x)
     end. 
-
-
 
 
