@@ -92,11 +92,11 @@ Lemma liftX_comm
 Proof.
  intros. gen d.
  apply (exp_mutind
-        (fun x => forall d, liftX n d (liftX m d x) 
-                          = liftX m d (liftX n d x))
+  (fun x => forall d, liftX n d (liftX m d x) 
+                    = liftX m d (liftX n d x))
 
-        (fun a => forall d, liftA n d (liftA m d a)
-                          = liftA m d (liftA n d a)))
+  (fun a => forall d, liftA n d (liftA m d a)
+                    = liftA m d (liftA n d a)))
   ; intros; simpl.
 
  Case "XVar".
@@ -113,8 +113,9 @@ Proof.
   rewrite map_map.
   rewrite map_map.
   rewrite Forall_forall in H.
-  rewrite (map_ext_In (fun x0 => liftX n d (liftX m d x0))
-                      (fun x0 => liftX m d (liftX n d x0))).
+  rewrite (map_ext_In 
+   (fun x0 => liftX n d (liftX m d x0))
+   (fun x0 => liftX m d (liftX n d x0))).
   auto. eauto.
 
  Case "XCase".
@@ -123,8 +124,9 @@ Proof.
   rewrite map_map.
   rewrite map_map.
   rewrite Forall_forall in H0.
-  rewrite (map_ext_In (fun x1 : alt => liftA n d (liftA m d x1))
-                      (fun x1 : alt => liftA m d (liftA n d x1))).
+  rewrite (map_ext_In
+   (fun a1 => liftA n d (liftA m d a1))
+   (fun a1 => liftA m d (liftA n d a1))).
   auto. eauto.
 
  Case "XAlt".
@@ -140,11 +142,11 @@ Lemma liftX_succ
 Proof.
  intros.
  apply (exp_mutind
-        (fun x => forall d, liftX (S n) d (liftX m     d x) 
-                          = liftX n     d (liftX (S m) d x))
+  (fun x => forall d, liftX (S n) d (liftX m     d x) 
+                    = liftX n     d (liftX (S m) d x))
 
-        (fun a => forall d, liftA (S n) d (liftA  m    d a)
-                          = liftA n     d (liftA (S m) d a)))
+  (fun a => forall d, liftA (S n) d (liftA  m    d a)
+                    = liftA n     d (liftA (S m) d a)))
   ; intros; simpl.
 
  Case "XVar".
@@ -161,12 +163,28 @@ Proof.
 
  Case "XCon".
   f_equal.
+  repeat (rewrite map_map).
+  rewrite Forall_forall in H.
+  rewrite (map_ext_In
+   (fun x0 => liftX (S n) d0 (liftX m d0 x0))
+   (fun x0 => liftX n d0 (liftX (S m) d0 x0))).
+  auto. auto.
 
- admit. (*** finish this*)
- admit.
- admit.
+ Case "XCase".
+  f_equal.
+  eauto.
+  repeat (rewrite map_map).
+  rewrite Forall_forall in H0.
+  rewrite (map_ext_In
+   (fun x1 => liftA (S n) d0 (liftA m d0 x1))
+   (fun x1 => liftA n d0 (liftA (S m) d0 x1))).
+  auto. auto.
+
+ Case "AAlt".
+  f_equal.
+  rewrite H. auto.
 Qed.
- 
+
 
 Lemma liftX_plus 
  : forall n m x 

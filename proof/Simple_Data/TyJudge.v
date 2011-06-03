@@ -96,8 +96,6 @@ Qed.
 Hint Resolve type_wfX.
 
 
-
-
 (* Weakening Type Env in Type Judgement *****************************
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across
