@@ -17,20 +17,19 @@ Theorem subst_value_value_ix
 Proof.
  intros. gen ix ds te x2 t1 t2.
 
- eapply 
-  (exp_mutind 
-    (fun x1 => forall ix ds te x2 t1
-            ,  TYPE ds te           x1 t1
-            -> forall t2
-            ,  get te ix = Some t2
-            -> TYPE ds (drop ix te) x2 t2
-            -> TYPE ds (drop ix te) (substX ix x2 x1) t1)
+ eapply (exp_mutind 
+  (fun x1 => forall ix ds te x2 t1
+          ,  TYPE ds te           x1 t1
+          -> forall t2
+          ,  get te ix = Some t2
+          -> TYPE ds (drop ix te) x2 t2
+          -> TYPE ds (drop ix te) (substX ix x2 x1) t1)
 
-    (fun a1 => forall ix ds te x2 t11 t12 t2
-            ,  get te ix = Some t2
-            -> TYPEA ds te           a1 t11 t12
-            -> TYPE  ds (drop ix te) x2 t2
-            -> TYPEA ds (drop ix te) (substA ix x2 a1) t11 t12))
+  (fun a1 => forall ix ds te x2 t11 t12 t2
+          ,  get te ix = Some t2
+          -> TYPEA ds te           a1 t11 t12
+          -> TYPE  ds (drop ix te) x2 t2
+          -> TYPEA ds (drop ix te) (substA ix x2 a1) t11 t12))
   ; intros; simpl.
 
  Case "XVar".
@@ -81,20 +80,14 @@ Proof.
   inverts H1.
   eapply TYAlt. 
    eauto.
-   assert  ( drop ix  te ++ envOfList ts
-           = drop (ix + length (envOfList ts)) (te ++ envOfList ts)).
-    admit. rewrite H1. clear H1.
-   assert (Env.length (envOfList ts) = List.length ts).
-    admit. rewrite H1.
-   eapply H.
-    auto.
-    skip.
-    assert ( drop (ix + List.length ts) (te ++ envOfList ts)
-           = drop ix te ++ envOfList ts).
-     admit. rewrite H3. clear H3.
-   rewrite <- H1.
-   apply type_tyenv_weaken_append.
-   eauto.
+   rewrite drop_append.
+    rewrite <- length_envOfList.
+    eapply H with (t2 := t2).
+     auto.
+     rewrite <- (get_append_right_some ty ix te (envOfList ts)). 
+      auto. auto.
+     rewrite <- drop_append.
+      apply type_tyenv_weaken_append. eauto.
 Qed.
 
 

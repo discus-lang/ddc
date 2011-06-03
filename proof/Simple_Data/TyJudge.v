@@ -57,10 +57,9 @@ Proof.
  intros ds te x t.
  gen ds te t.
 
- eapply 
-  (exp_mutind 
-    (fun x => forall ds te t,     TYPE  ds te x t     -> wfX te x) 
-    (fun a => forall ds te t1 t2, TYPEA ds te a t1 t2 -> wfA te a))
+ eapply (exp_mutind 
+  (fun x => forall ds te t,     TYPE  ds te x t     -> wfX te x) 
+  (fun a => forall ds te t1 t2, TYPEA ds te a t1 t2 -> wfA te a))
  ; intros.
 
  Case "XVar".
@@ -109,14 +108,13 @@ Proof.
  intros.
  gen ix ds te t1.
 
- eapply 
-  (exp_mutind 
-    (fun x => forall ix ds te t1
-           ,  TYPE ds te x t1    
-           -> TYPE ds (insert ix t2 te)  (liftX 1 ix x) t1) 
-    (fun a => forall ix ds te t3 t4
-           ,  TYPEA ds te a t3 t4 
-           -> TYPEA ds (insert ix t2 te) (liftA 1 ix a) t3 t4))
+ eapply (exp_mutind 
+  (fun x => forall ix ds te t1
+         ,  TYPE ds te x t1    
+         -> TYPE ds (insert ix t2 te)  (liftX 1 ix x) t1) 
+  (fun a => forall ix ds te t3 t4
+         ,  TYPEA ds te a t3 t4 
+         -> TYPEA ds (insert ix t2 te) (liftA 1 ix a) t3 t4))
   ; intros; simpl.
 
  Case "XVar".

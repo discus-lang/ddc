@@ -256,6 +256,37 @@ Qed.
 Hint Resolve get_append_some.
 
 
+Lemma get_cons_right_some
+ :  forall A n (e1: env A) x1 x2
+ ,  get e1 n               = Some x2
+ -> get (e1 :> x1) (n + 1) = Some x2.
+Proof.
+ intros.
+ destruct n.
+  simpl. auto.
+  simpl. nnat. auto.
+Qed.
+
+
+Lemma get_append_right_some
+ :  forall A n (e1 e2: env A) x1
+ ,  get  e1 n                      = Some x1
+ -> get (e1 ++ e2) (n + length e2) = Some x1.
+Proof.
+ intros.
+ induction e2.
+  simpl. nnat. auto.
+  assert (e1 ++ (e2 :> a) = (e1 ++ e2) :> a). 
+   simpl. auto.
+  rewrite H0.
+  assert (n + length (e2 :> a) = ((n + length e2) + 1)).
+   nnat. simpl. auto.
+  rewrite H1.
+  rewrite <- (get_cons_right_some A (n + length e2) (e1 ++ e2) a).
+   auto. auto.
+Qed.
+
+
 Theorem get_above_false
  :  forall A n (e1: env A) t
  ,  n >= length e1 
@@ -470,4 +501,17 @@ Proof.
  eapply get_drop_below'. eauto. auto.
 Qed.
 Hint Resolve get_drop_below.
+
+
+Lemma drop_append
+ :  forall A n (e1: env A) (e2: env A)
+ ,  drop n e1 ++ e2 = drop (n + length e2) (e1 ++ e2).
+Proof.
+ intros.
+ induction e2.
+  simpl. nnat. auto.
+  simpl. rewrite IHe2.
+   assert (n + S (length e2) = S (n + length e2)). omega. rewrite H.
+   apply drop_rewind.
+Qed.
 
