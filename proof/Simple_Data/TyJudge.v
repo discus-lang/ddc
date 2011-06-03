@@ -54,22 +54,21 @@ Theorem type_wfX
  ,  TYPE ds te x t
  -> wfX te x.
 Proof.
- intros ds te x t.
- gen ds te t.
-
- eapply (exp_mutind 
-  (fun x => forall ds te t,     TYPE  ds te x t     -> wfX te x) 
-  (fun a => forall ds te t1 t2, TYPEA ds te a t1 t2 -> wfA te a))
- ; intros.
+ intros. gen ds te t.
+ induction x using exp_mutind with 
+  (PA := fun a => forall ds te t1 t2
+      ,  TYPEA ds te a t1 t2 
+      -> wfA te a)
+  ; intros.
 
  Case "XVar".
-  inverts H.  eauto.
+  inverts H. eauto.
 
  Case "XLam".
-  inverts H0. eauto.
+  inverts H. eauto.
 
  Case "XApp".
-  inverts H1. eauto.
+  inverts H. eauto.
 
  Case "XCon".
   inverts H0.
@@ -80,16 +79,16 @@ Proof.
     eauto.
 
  Case "XCase".
-  inverts H1.
+  inverts H0.
   eapply WfX_XCase.
-   eapply H. eauto.
-    rewrite Forall_forall in H0.
-    rewrite Forall_forall in H8.
+   eapply IHx. eauto.
+    rewrite Forall_forall in H.
+    rewrite Forall_forall in H7.
     rewrite Forall_forall.
     eauto.
 
  Case "XAlt".
-  inverts H0.
+  inverts H.
   eapply WfA_AAlt; eauto.
 Qed.
 Hint Resolve type_wfX.
@@ -105,16 +104,11 @@ Lemma type_tyenv_insert
  ,  TYPE ds te x t1
  -> TYPE ds (insert ix t2 te) (liftX 1 ix x) t1.
 Proof.
- intros.
- gen ix ds te t1.
-
- eapply (exp_mutind 
-  (fun x => forall ix ds te t1
-         ,  TYPE ds te x t1    
-         -> TYPE ds (insert ix t2 te)  (liftX 1 ix x) t1) 
-  (fun a => forall ix ds te t3 t4
-         ,  TYPEA ds te a t3 t4 
-         -> TYPEA ds (insert ix t2 te) (liftA 1 ix a) t3 t4))
+ intros. gen ix ds te t1.
+ induction x using exp_mutind with 
+  (PA := fun a => forall ix ds te t3 t4
+      ,  TYPEA ds te a t3 t4 
+      -> TYPEA ds (insert ix t2 te) (liftA 1 ix a) t3 t4)
   ; intros; simpl.
 
  Case "XVar".
@@ -123,13 +117,13 @@ Proof.
   lift_cases; intros; auto.
 
  Case "XLam".
-  inverts H0.
+  inverts H.
   apply TYLam.
   rewrite insert_rewind. 
-   apply H. auto.
+   apply IHx. auto.
 
  Case "XApp".
-  inverts H1.
+  inverts H.
   eapply TYApp.
    eauto. eauto.
 
@@ -142,15 +136,15 @@ Proof.
    apply (Forall2_impl_In  (TYPE ds te)); eauto.
 
  Case "XCase".
-  inverts H1.
+  inverts H0.
   eapply TYCase. 
    eauto.
-   rewrite Forall_forall in H0.
+   rewrite Forall_forall in H.
    apply  Forall_map.
    apply (Forall_impl_In (fun a => TYPEA ds te a tPat t1)); eauto.
 
  Case "XAlt".
-  inverts H0.
+  inverts H.
   eapply TYAlt. eauto.
   rewrite insert_append.
   rewrite length_envOfList.

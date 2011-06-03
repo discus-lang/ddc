@@ -16,27 +16,19 @@ Theorem subst_value_value_ix
  -> TYPE ds (drop ix te) (substX ix x2 x1) t1.
 Proof.
  intros. gen ix ds te x2 t1 t2.
-
- eapply (exp_mutind 
-  (fun x1 => forall ix ds te x2 t1
-          ,  TYPE ds te           x1 t1
-          -> forall t2
-          ,  get te ix = Some t2
-          -> TYPE ds (drop ix te) x2 t2
-          -> TYPE ds (drop ix te) (substX ix x2 x1) t1)
-
-  (fun a1 => forall ix ds te x2 t11 t12 t2
-          ,  get te ix = Some t2
-          -> TYPEA ds te           a1 t11 t12
-          -> TYPE  ds (drop ix te) x2 t2
-          -> TYPEA ds (drop ix te) (substA ix x2 a1) t11 t12))
+ induction x1 using exp_mutind with 
+  (PA := fun a1 => forall ix ds te x2 t11 t12 t2
+      ,  get te ix = Some t2
+      -> TYPEA ds te           a1 t11 t12
+      -> TYPE  ds (drop ix te) x2 t2
+      -> TYPEA ds (drop ix te) (substA ix x2 a1) t11 t12)
   ; intros; simpl.
 
  Case "XVar".
-  inverts H.
+  inverts H0.
   fbreak_nat_compare.
   SCase "i = ix".
-   rewrite H0 in H5. inverts H5. auto.
+   rewrite H in H5. inverts H5. auto.
 
   SCase "n < ix".
    apply TYVar.
@@ -54,11 +46,11 @@ Proof.
   inverts H0.
   apply TYLam.
   rewrite drop_rewind.
-  eapply H; eauto.
+  eapply IHx1; eauto.
    simpl. apply type_tyenv_weaken1. auto.
 
  Case "XApp". 
-  inverts H1. eauto.
+  inverts H0. eauto.
 
  Case "XCon".
   inverts H0.
@@ -69,20 +61,20 @@ Proof.
    apply (Forall2_impl_In  (TYPE ds te)); eauto.
 
  Case "XCase".
-  inverts H1.
+  inverts H0.
   eapply TYCase.
-   eauto.
-   rewrite Forall_forall in H0.
+   eauto. clear IHx1.
+   rewrite Forall_forall in H.
    eapply Forall_map.
    eapply (Forall_impl_In (fun a => TYPEA ds te a tPat t1)); eauto.
 
  Case "AAlt".
-  inverts H1.
+  inverts H0.
   eapply TYAlt. 
    eauto.
    rewrite drop_append.
     rewrite <- length_envOfList.
-    eapply H with (t2 := t2).
+    eapply IHx1 with (t2 := t2).
      auto.
      rewrite <- (get_append_right_some ty ix te (envOfList ts)). 
       auto. auto.

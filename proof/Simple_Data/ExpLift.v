@@ -56,19 +56,19 @@ Lemma liftX_zero
  , liftX 0 d x = x.
 Proof.
  intros. gen d.
- apply (exp_mutind
-         (fun x => forall d, liftX 0 d x = x)
-         (fun a => forall d, liftA 0 d a = a))
+ induction x using exp_mutind with 
+  (PA := fun a => forall d
+      ,  liftA 0 d a = a)
   ; intros; simpl.
 
  Case "XVar".
   lift_cases; intros; auto.
 
  Case "XLam".
-  rewrite H. auto.
+  rewrite IHx. auto.
 
  Case "XApp".
-  rewrite H. rewrite H0. auto.
+  rewrite IHx1. rewrite IHx2. auto.
 
  Case "XCon".
   rewrite Forall_forall in H.
@@ -76,12 +76,12 @@ Proof.
   rewrite map_id. auto. auto.
 
  Case "XCase".
-  rewrite Forall_forall in H0.
+  rewrite Forall_forall in H.
   rewrite (map_ext_In (liftA 0 d) id).
-  rewrite map_id. rewrite H. auto. auto.
+  rewrite map_id. rewrite IHx. auto. auto.
 
  Case "AAlt".
-  rewrite H. auto.
+  rewrite IHx. auto.
 Qed.
 
 
@@ -91,22 +91,20 @@ Lemma liftX_comm
  = liftX m d (liftX n d x). 
 Proof.
  intros. gen d.
- apply (exp_mutind
-  (fun x => forall d, liftX n d (liftX m d x) 
-                    = liftX m d (liftX n d x))
-
-  (fun a => forall d, liftA n d (liftA m d a)
-                    = liftA m d (liftA n d a)))
+ induction x using exp_mutind with 
+  (PA := fun a => forall d
+      ,  liftA n d (liftA m d a)
+      =  liftA m d (liftA n d a))
   ; intros; simpl.
 
  Case "XVar".
   repeat (simple; lift_cases; intros; burn).
 
  Case "XLam".
-  rewrite H. auto.
+  rewrite IHx. auto.
 
  Case "XApp".
-  rewrite H. rewrite H0. auto.
+  rewrite IHx1. rewrite IHx2. auto.
 
  Case "XCon".
   f_equal.
@@ -120,10 +118,10 @@ Proof.
 
  Case "XCase".
   f_equal.
-  eauto. clear H.
+  eauto.
   rewrite map_map.
   rewrite map_map.
-  rewrite Forall_forall in H0.
+  rewrite Forall_forall in H.
   rewrite (map_ext_In
    (fun a1 => liftA n d (liftA m d a1))
    (fun a1 => liftA m d (liftA n d a1))).
@@ -140,13 +138,11 @@ Lemma liftX_succ
  , liftX (S n) d (liftX m     d x)
  = liftX n     d (liftX (S m) d x). 
 Proof.
- intros.
- apply (exp_mutind
-  (fun x => forall d, liftX (S n) d (liftX m     d x) 
-                    = liftX n     d (liftX (S m) d x))
-
-  (fun a => forall d, liftA (S n) d (liftA  m    d a)
-                    = liftA n     d (liftA (S m) d a)))
+ intros. gen d.
+ induction x using exp_mutind with 
+  (PA := fun a => forall d
+      ,  liftA (S n) d (liftA  m    d a)
+      =  liftA n     d (liftA (S m) d a))
   ; intros; simpl.
 
  Case "XVar".
@@ -154,35 +150,35 @@ Proof.
 
  Case "XLam".
   f_equal.
-  rewrite H. auto.
+  rewrite IHx. auto.
 
  Case "XApp".
   f_equal.
-  rewrite H. auto.
-  rewrite H0. auto.
+  rewrite IHx1. auto.
+  rewrite IHx2. auto.
 
  Case "XCon".
   f_equal.
   repeat (rewrite map_map).
   rewrite Forall_forall in H.
   rewrite (map_ext_In
-   (fun x0 => liftX (S n) d0 (liftX m d0 x0))
-   (fun x0 => liftX n d0 (liftX (S m) d0 x0))).
+   (fun x0 => liftX (S n) d (liftX m d x0))
+   (fun x0 => liftX n d (liftX (S m) d x0))).
   auto. auto.
 
  Case "XCase".
   f_equal.
   eauto.
   repeat (rewrite map_map).
-  rewrite Forall_forall in H0.
+  rewrite Forall_forall in H.
   rewrite (map_ext_In
-   (fun x1 => liftA (S n) d0 (liftA m d0 x1))
-   (fun x1 => liftA n d0 (liftA (S m) d0 x1))).
+   (fun x1 => liftA (S n) d (liftA m d x1))
+   (fun x1 => liftA n d (liftA (S m) d x1))).
   auto. auto.
 
  Case "AAlt".
   f_equal.
-  rewrite H. auto.
+  rewrite IHx. auto.
 Qed.
 
 

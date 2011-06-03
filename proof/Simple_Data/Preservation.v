@@ -8,12 +8,12 @@ Require Import SubstExpExp.
    then its type is preserved.
  *)
 Theorem preservation
- :  forall x x' t
- ,  TYPE Empty x  t
+ :  forall ds x x' t
+ ,  TYPE ds Empty x  t
  -> STEP x x'
- -> TYPE Empty x' t.
+ -> TYPE ds Empty x' t.
 Proof.
- intros x x' t HT HS. gen t x'.
+ intros ds x x' t HT HS. gen t x'.
  induction x; intros.
 
  (* These can't happen as there is no evaluation rule *)
@@ -33,6 +33,12 @@ Proof.
   SCase "EVApp1".
    eapply IHx1 in H2; eauto.
    eapply IHx2 in H4; eauto.
+
+ Case "XCon".
+  inverts HT.
+  inverts keep HS.
+  
+
 Qed.
 
 

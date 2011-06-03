@@ -23,9 +23,30 @@ Inductive STEP : exp -> exp -> Prop :=
    :  forall v1 x2 x2'
    ,  value v1
    -> STEP x2 x2'
-   -> STEP (XApp v1 x2) (XApp v1 x2').
+   -> STEP (XApp v1 x2) (XApp v1 x2')
+
+ | ESCon
+   : 
+   , 
+   , STEP (XCon dc xs) (XCon dc xs)
+
+with STEPL : list exp -> list exp -> Prop :=
+ | ESLNil
+   : STEPL  nil nil
+
+ | ESLStep
+   :  forall x1 x1' xs
+   ,  STEP  x1 x1'
+   -> STEPL (x1 :: xs) (x1' :: xs)
+
+ | ESLNext
+   :  forall v1 xs xs'
+   ,  value v1
+   -> STEPL xs xs'
+   -> STEPL (v1 :: xs) (v1 :: xs').
 
 Hint Constructors STEP.
+Hint Constructors STEPL.
 
 
 (* Multi-step evaluation *******************************************
