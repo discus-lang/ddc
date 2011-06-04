@@ -1,25 +1,23 @@
 
+
 Require Import TyJudge.
 Require Import EsJudge.
 Require Import SubstExpExp.
 
-
-(* When a well typed expression transitions to the next state
-   then its type is preserved. *)
+(* Preservation using evaluation judgement with contexts *)
 Theorem preservation
  :  forall x x' t
  ,  TYPE Empty x  t
- -> STEP x x'
+ -> STEP  x x'
  -> TYPE Empty x' t.
 Proof.
  intros x x' t HT HS. gen t.
- induction HS;
-  intros;
+ induction HS; intros;
   try (inverts HT; progress eauto).
 
  Case "EsContext".
-  destruct H; 
-   try (inverts HT; eauto).
+  destruct H; eauto
+   ; try (inverts HT; eauto).
 
  Case "EsLamApp".
   inverts HT. inverts H3.
@@ -63,4 +61,3 @@ Proof.
   eapply preservation. 
    eauto. auto.
 Qed.
-

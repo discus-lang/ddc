@@ -35,7 +35,7 @@ Proof.
     inverts H1. inverts H3.
      inverts H4. false.
      exists (substX 0 x2 x0).
-     apply ESLamApp. auto.
+     apply EsLamApp. auto.
      inverts H.
      inverts H.
      inverts H.
@@ -45,7 +45,8 @@ Proof.
 
    SSCase "x1 steps".
     destruct H1 as [x1'].
-    exists (XApp x1' x2). auto.
+    exists (XApp x1' x2).
+    eapply (EsContext (fun xx => XApp xx x2)); eauto.
 
   SCase "XSucc".
    right. 
@@ -54,7 +55,7 @@ Proof.
      try inverts H2; try inverts H.
      false.
      exists (XNat (S n)).
-      eapply ESSucc.
+      eapply EsSucc.
      destruct H0. exists (XSucc x). eauto.
 
   SCase "XPred".
@@ -83,7 +84,8 @@ Proof.
      inverts H4. false.
      exists x2. eauto.
      exists x3. eauto.
-     destruct H2. exists (XIf x x2 x3). eauto.
+     destruct H2. exists (XIf x x2 x3).
+     eapply (EsContext (fun xx => XIf xx x2 x3)); eauto.
 Qed.
 
 

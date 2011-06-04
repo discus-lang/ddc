@@ -40,7 +40,6 @@ Hint Constructors exp_ctx.
     machine can make at runtime. *)
 Inductive STEP : exp -> exp -> Prop :=
 
- (* Evaluation in a context *)
  | EsContext
    :  forall C x x'
    ,  exp_ctx C
@@ -129,6 +128,21 @@ Inductive STEPS : exp -> exp -> Prop :=
    -> STEPS x1 x3.
 
 Hint Constructors STEPS.
+
+
+(* Multi-step evaluation in a context. *)
+Lemma steps_context
+ :  forall C x1 x1'
+ ,  exp_ctx C
+ -> STEPS x1 x1'
+ -> STEPS (C x1) (C x1').
+Proof.
+ intros.
+ induction H0.
+  auto.
+  auto.
+  eapply EsAppend. eauto. eauto.
+Qed.
 
 
 (********************************************************************)

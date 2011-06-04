@@ -98,42 +98,50 @@ Lemma steps_of_eval
 Proof.
  intros x1 t1 v2 HT HE.
  gen t1.
- induction HE; 
-  intros;
-  try (inverts keep HT; eauto).
+ induction HE;
+  intros; 
+  inverts keep HT; eauto;
 
- Case "EVLamApp".
+  (* This gets simple expressions with a single context *)
+  try (  eapply EsAppend ;
+       [ eapply steps_context ; [ eauto | eapply IHHE ; eauto ]
+       | eauto ]).
+
+ Case "EvLamApp".
   lets E1: IHHE1 H2. 
   lets E2: IHHE2 H4.
   lets T1: preservation_steps H2 E1. inverts keep T1.
   lets T2: preservation_steps H4 E2.
   lets T3: subst_value_value H1 T2.
   lets E3: IHHE3 T3.
-  eapply ESAppend.
-   eapply steps_app1. eauto.
-  eapply ESAppend.
-   eapply steps_app2. eauto. eauto.
-  eapply ESAppend.
-   eapply ESStep.
-     eapply ESLamApp. eauto. eauto.
+  eapply EsAppend.
+   lets D: steps_context XcApp1. eapply D. eauto.
+  eapply EsAppend.
+   eapply steps_context; eauto. 
+  eapply EsAppend.
+   eapply EsStep.
+     eapply EsLamApp. eauto. eauto.
 
- Case "EVFix".
-  inverts keep HT.
+ Case "EvFix".
   lets T1: subst_value_value H3 HT.
   lets E1: IHHE T1.
-  eapply ESAppend.
-   eapply ESStep.
-    eapply ESFix. eauto.
+  eapply EsAppend.
+   eapply EsStep.
+    eapply EsFix. eauto.
 
  Case "EVIfTrue".
   lets S1: IHHE1 H3.
   lets S2: IHHE2 H5.
-  eauto.
+  eapply EsAppend.
+   eapply (steps_context (fun xx => XIf xx x2 x3)); eauto.
+   eauto.
 
  Case "EVIfFalse".
   lets S1: IHHE1 H3.
   lets S2: IHHE2 H6.
-  eauto.
+  eapply EsAppend.
+   eapply (steps_context (fun xx => XIf xx x2 x3)); eauto.
+   eauto.
 Qed.
 
 
@@ -153,70 +161,20 @@ Lemma eval_expansion
  -> STEP x1 x2 -> EVAL x2 v3 
  -> EVAL x1 v3.
 Proof.
- intros. gen te t1 v3.
+ intros te x1 t1 x2 v3 HT HS. gen te t1 v3.
+ induction HS; intros;
+  try (solve [inverts H; eauto]);
+  try eauto.
 
- (* Induction over the form of (STEP x1 x2) *)
- induction H0; intros.
-
- Case "XApp".
-  SCase "x1 steps".
-   inverts H. inverts H1.
-    inverts H.
-    eapply EVLamApp; eauto.
-
-  SCase "x2 steps".
-   inverts H1. inverts H2.
-   inverts H1.
-   eapply EVLamApp; eauto.
-
-  SCase "subst". 
-   eapply EVLamApp.
-   eauto. inverts H.
-   apply EVDone. auto. auto.
-
- Case "XFix".
-  eapply EVFix.
-  eauto.
-
- Case "XSucc".
-  inverts H. inverts H1.
-   inverts H.
-   eapply EVSucc. eauto.
-   inverts H1. 
-   apply EVSucc. auto.
-
- Case "XPred".
-  SCase "x1 steps".
-   inverts H. inverts H1.
-    inverts H. eauto. eauto.
-  SCase "x1 zero".
-   inverts H1. eauto.
-  SCase "x1 succ".
-   inverts H1. eauto.
-
-  Case "XIsZero".
-   SCase "x1 steps".
-    inverts H. inverts H1.
-     inverts H. eauto. eauto.
-   SCase "x1 zero".
-    inverts H1. eauto.
-   SCase "x1 succ".
-    inverts H. inverts H3.
-    inverts H1.
-    eapply EVIsZeroFalse.
-    eauto.
-      
-  Case "XIf".
-   SCase "x1 steps".
-    inverts H. inverts H1.
-     inverts H.
-     eapply EVIfThen; eauto.
-     eapply EVIfElse; eauto.
-   SCase "x1 true".
-    inverts H. eauto.
-   SCase "x1 false".
-    inverts H. eauto.
-
+ Case "Context".
+  destruct H.
+   eauto.
+   inverts HT; inverts H0; try (inverts H); eauto.
+   inverts HT; inverts H0; try (inverts H1); eauto.
+   inverts HT; inverts H0; try (inverts H); eauto.
+   inverts HT; inverts H0; try (inverts H); eauto.
+   inverts HT; inverts H0; try (inverts H); eauto.
+   inverts HT; inverts H0; try (inverts H); eauto.
 Qed.
 
 
