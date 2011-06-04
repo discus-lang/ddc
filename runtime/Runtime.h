@@ -43,6 +43,9 @@
 // Primitive functions.
 #include "Prim.h"
 
+// Pointer functions.
+#include "Pointer.h"
+
 // The top level entry point.
 #include "Main.h"
 
