@@ -5,29 +5,28 @@ Require Import SubstExpExp.
 
 
 (* When a well typed expression transitions to the next state
-   then its type is preserved.
- *)
+   then its type is preserved. *)
 Theorem preservation
  :  forall x x' t
  ,  TYPE Empty x  t
  -> STEP x x'
  -> TYPE Empty x' t.
 Proof.
- intros x x' t HT HS.
- gen t x'.
- induction x; intros; 
-  inverts keep HT; 
-  inverts keep HS; 
-  eauto.
+ intros x x' t HT HS. gen t.
+ induction HS;
+  intros;
+  try (inverts HT; progress eauto).
 
- (* Applications *)
- Case "XApp".
-  SCase "ESLamApp".
-   inverts H2.
-   inverts H3.
-   eapply subst_value_value; eauto.
+ Case "EsContext".
+  destruct H; 
+   try (inverts HT; eauto).
 
- Case "ESFix".
+ Case "EsLamApp".
+  inverts HT. inverts H3.
+  eapply subst_value_value; eauto.
+
+ Case "EsFix".
+  inverts HT.
   eapply subst_value_value; eauto.
 Qed.
 

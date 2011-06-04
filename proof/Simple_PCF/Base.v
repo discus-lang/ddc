@@ -1,6 +1,7 @@
 
 Require Export BaseNat.
 Require Export BaseTactics.
+Require Export BaseEnv.
 
 (* Cases library due to Aaron Bohannon ********************)
 Require String. Open Scope string_scope.
