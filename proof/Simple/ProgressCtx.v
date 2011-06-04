@@ -6,10 +6,10 @@ Require Import Base.
 
 
 (* Progress using evaluation judgement with contexts *)
-Theorem progress_ctx
+Theorem progress
  :  forall x T
  ,  TYPE Empty x T
- -> value x \/ (exists x', STEPc x x').
+ -> value x \/ (exists x', STEP x x').
 Proof.
  intros.
  remember (@Empty ty) as tyenv.
