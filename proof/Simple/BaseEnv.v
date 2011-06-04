@@ -8,7 +8,8 @@
 
   Where :> is sugar for Snoc.
  *)
-Require Import Base.
+Require Import BaseNat.
+Require Import BaseTactics.
 
 
 (* Environments. *)

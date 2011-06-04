@@ -1,7 +1,5 @@
 
 Require Export Base.
-Require Export Env.
-
 
 (* Types ************************************************************)
 Inductive ty  : Type :=
