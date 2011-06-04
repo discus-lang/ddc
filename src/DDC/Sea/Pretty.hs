@@ -58,15 +58,19 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	-- Supercombinators
 	PProto v argTypes resultType
-	 -> resultType %>> sVn 40 v %>> parens (punc ", " argTypes) % ";"
+	 -> let params = if null argTypes
+				then ppr "void"
+				else punc ", " argTypes
+	    in resultType %>> sVn 40 v %>> parens (params) % ";"
 
 	PSuper vName vtsArgs tResult stmts
-	 -> pprHeadBraces
-		(tResult %>> sV vName
-			 %>> parens (punc ", " [at %% sVL av | (av, at) <- vtsArgs])
-			 %  nl)
+	 -> let params = if null vtsArgs
+				then ppr "void"
+				else punc ", " [at %% sVL av | (av, at) <- vtsArgs]
+	    in pprHeadBraces
+		(tResult %>> sV vName %>> parens (params) %  nl)
 		stmts
-	 % nl
+		% nl
 
 	-- CAFs
 	PCafProto v t
