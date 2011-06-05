@@ -1,12 +1,11 @@
 
 Require Export Base.
 Require Export Env.
-Require Import Coq.Strings.String.
 
 
 (* Types ************************************************************)
 Inductive tycon : Type :=
- | TyConData   : string -> tycon.
+ | TyConData   : nat -> tycon.
 Hint Constructors tycon.
 
 Inductive ty : Type :=
@@ -19,7 +18,7 @@ Hint Constructors ty.
    We use deBruijn indices for binders.
  *)
 Inductive datacon : Type :=
- | DataCon    : string -> datacon.
+ | DataCon    : nat -> datacon.
 Hint Constructors datacon.
 
 
@@ -39,7 +38,6 @@ with alt     : Type :=
 
 Hint Constructors exp.
 Hint Constructors alt.
-
 
 (* Mutual induction principle for expressions.
    As expressions are indirectly mutually recursive with lists,
@@ -117,10 +115,17 @@ Hint Constructors def.
 Definition tyenv := env ty.
 Definition defs  := env def.
 
+
 Fixpoint getDataDef (dc: datacon) (ds: defs) : option def := 
  match ds with 
- | Empty                       => None
- | ds' :> DefData dc _ _ as d  => Some d
- | ds' :> _                    => getDataDef dc ds'
+ | ds' :> DefData dc' _ _ as d
+ => if datacon_beq dc dc' 
+     then  Some d
+     else  getDataDef dc ds'
+
+ | ds' :> _ => getDataDef dc ds'
+ | Empty    => None
  end.
+
+
 

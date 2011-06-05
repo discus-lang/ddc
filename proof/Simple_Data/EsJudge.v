@@ -54,6 +54,22 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
 
 
 (********************************************************************)
+(** * Utilities for evaluation *)
+
+(* Get the alternative body that matches a given constructor. *)
+Fixpoint getAltExp (dc: datacon) (alts: list alt) {struct alts} 
+                   : option exp :=
+ match alts with 
+ |  nil  => None
+
+ |  AAlt dc' _ x :: alts'
+ => if datacon_beq dc dc'
+     then Some x
+     else getAltExp dc alts'
+ end.
+
+
+(********************************************************************)
 (** * Single Small Step Evaluation *)
 (** The single step rules model the individual transitions that the 
      machine can make at runtime. *)
@@ -71,12 +87,14 @@ Inductive STEP : exp -> exp -> Prop :=
    : forall t11 x12 v2
    ,  value v2
    -> STEP (XApp   (XLam t11 x12) v2)
-           (substX 0 v2 x12).
+           (substX 0 v2 x12)
 
-
-(* TODO: Add rule for case expressions, 
-         need to choose the correct alternative, then do the
-         substitutions *)
+ | EsCaseAlt
+   :  forall dc vs alts x
+   ,  Forall value vs
+   -> getAltExp dc alts = Some x
+   -> STEP (XCase (XCon dc vs) alts)
+           (substXs 0 vs x).
 
 Hint Constructors STEP.
 
@@ -112,31 +130,6 @@ Inductive STEPS : exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
-(* Context lemmas ***************************************************
-   These help when proving something about a reduction in a given
-   context. They're all trivial.
- *)
-Lemma steps_app1
- :  forall x1 x1' x2
- ,  STEPS x1 x1'
- -> STEPS (XApp x1 x2) (XApp x1' x2).
-Proof.
- intros. induction H; eauto.
-Qed.
-Hint Resolve steps_app1.
-
-
-Lemma steps_app2
- :  forall v1 x2 x2'
- ,  value v1 
- -> STEPS x2 x2'
- -> STEPS (XApp v1 x2) (XApp v1 x2').
-Proof.
- intros. induction H0; eauto.
-Qed.
-Hint Resolve steps_app2.
-
-
 (* Left linearised multi-step evaluation ****************************
    As opposed to STEPS, this version provides a single step at a time
    and does not have an append constructor. This is convenient
@@ -144,7 +137,6 @@ Hint Resolve steps_app2.
    eval_expansion lemma.
  *)
 Inductive STEPSL : exp -> exp -> Prop :=
-
  | ESLNone 
    : forall x1
    , STEPSL x1 x1

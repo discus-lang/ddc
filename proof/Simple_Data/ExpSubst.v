@@ -49,3 +49,12 @@ with substA (d: nat) (u: exp) (aa: alt)
                           (liftX (List.length ts) 0 u)
                            x)
     end. 
+
+
+(* Substitute several expressions. *)
+Fixpoint substXs (d: nat) (us: list exp) (xx: exp) :=
+ match us with
+ | nil      => xx
+ | u :: us' => substXs d us' (substX d u xx)
+ end.
+ 
