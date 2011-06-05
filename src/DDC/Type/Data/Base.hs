@@ -11,7 +11,7 @@ module DDC.Type.Data.Base
 	, lookupLabelOfFieldIndex
 	, fieldsOfDataDef
 	, fieldTypeLabels
-	
+
 	, Materiality(..)
 --	, combineMateriality
 --	, contextualiseMateriality
@@ -41,16 +41,16 @@ data DataDef
 	{ -- | Name of the type constructor.
 	  dataDefName		:: Var
 
-	  -- | Optional Sea name for the type constructor, 
+	  -- | Optional Sea name for the type constructor,
 	  --   used when importing an external data type.
 	, dataDefSeaName	:: Maybe String
-	
+
 	  -- | Parameter variables to the data type.
 	, dataDefParams		:: [(Var, Kind)]
 
 	  -- | Map of data constructor name to definition.
-	, dataDefCtors		:: Map Var CtorDef 
-	
+	, dataDefCtors		:: Map Var CtorDef
+
 	  -- | Cache of the material type vars of the data type.
 	  --   These correspond to object that may appear in the store.
 	, dataDefMaterialVars   :: Maybe (Set Var)
@@ -72,9 +72,9 @@ dataDefKind ddef
 -- CtorDef ----------------------------------------------------------------------------------------
 -- | A data constructor definition.
 --	We need to remember the indices of each field so we can convert
---	pattern matches using labels to Sea form. 
+--	pattern matches using labels to Sea form.
 data CtorDef
-	= CtorDef 
+	= CtorDef
 	{ -- | Name of the data constructor.
 	  ctorDefName	:: Var
 
@@ -96,14 +96,14 @@ data CtorDef
 -- Fields -----------------------------------------------------------------------------------------
 -- | Get the type of a named field from a data type definition.
 --	If multiple constructors define this field then we just take the
---	type of the first one. It's up to the constructor of the `DataDef` 
+--	type of the first one. It's up to the constructor of the `DataDef`
 --	to ensure that all fields in a def have the same type.
 lookupTypeOfFieldFromDataDef :: Var -> DataDef -> Maybe Type
 lookupTypeOfFieldFromDataDef v def
 	= listToMaybe
 	$ catMaybes
-	$ map (lookupTypeOfNamedFieldFromCtorDef v) 
-	$ Map.elems 
+	$ map (lookupTypeOfNamedFieldFromCtorDef v)
+	$ Map.elems
 	$ dataDefCtors def
 
 
@@ -122,9 +122,9 @@ lookupTypeOfNamedFieldFromCtorDef vCtor ctorDef
 --   of the whole constructor.
 lookupTypeOfNumberedFieldFromCtorDef :: Int -> CtorDef -> Maybe Type
 lookupTypeOfNumberedFieldFromCtorDef ix ctorDef
- = let	(bksForall, [], tBody)	
+ = let	(bksForall, [], tBody)
 		= stripForallContextT $ ctorDefType ctorDef
-		
+
 	tsBits	= flattenTFuns tBody
 
 	-- minus one here because the last element corresponds to the
@@ -180,7 +180,7 @@ data Materiality
 	--   it's a closure type it's ``Weakly'' material.
 --	| MaterialHas
 	| MaterialStrong
-	
+
 	-- | Variable is used in both a material and immaterial position.
 	| MaterialMixed
 	deriving (Eq, Show)
@@ -197,7 +197,7 @@ instance Pretty Materiality PMode where
 --        Has      Not
 --           Absent
 --   @
---       
+--
 combineMateriality :: Materiality -> Materiality -> Materiality
 combineMateriality m1 m2
  = case (m1, m2) of
@@ -206,7 +206,7 @@ combineMateriality m1 m2
 
 	(MaterialMixed, _)			-> MaterialMixed
 	(_             , MaterialMixed)		-> MaterialMixed
-	
+
 	(MaterialStrong, MaterialStrong)	-> MaterialStrong
 	(MaterialNot,    MaterialNot)		-> MaterialNot
 
@@ -219,24 +219,24 @@ combineMateriality m1 m2
 --   immaterial in the overall function type. g.l.b over the following order:
 --
 --   @
---            Has     
+--            Has
 --           Mixed
 --            Not
 --           Absent
---   @ 
---        
+--   @
+--
 contextualiseMateriality :: Materiality -> Materiality -> Materiality
 contextualiseMateriality m1 m2
  = case (m1, m2) of
 	(MaterialAbsent, _)			-> MaterialAbsent
 	(_,              MaterialAbsent)	-> MaterialAbsent
-	
+
 	(MaterialNot,    _)			-> MaterialNot
 	(_,              MaterialNot)		-> MaterialNot
 
 	(MaterialMixed, _)			-> MaterialMixed
 	(_,		 MaterialMixed)		-> MaterialMixed
-	
+
 	(MaterialStrong, MaterialStrong)	-> MaterialStrong
 -}
 

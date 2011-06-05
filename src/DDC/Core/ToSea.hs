@@ -239,7 +239,7 @@ toSeaX		xx
 	C.XLAM _ k x
 	 -> do 	slurpWitnessKind k
 	 	toSeaX x
-	
+
 	-- non string constants
 	C.XLit litFmt@(LiteralFmt _ fmt)
 	 | dataFormatIsBoxed fmt
@@ -281,10 +281,10 @@ toSeaApps parts
 	C.XPrim C.MBox{} t : args
 	 | [tUnboxed, _tBoxed]	<- T.flattenTFuns $ T.stripToBodyT t
 	 -> do	args'		<- mapM toSeaX args
-	 	return	$ E.XPrim 
+	 	return	$ E.XPrim
 				(E.MBox (toSeaT tUnboxed))
 				args'
-				
+
 	-- the unboxing function is named after the result type
 	C.XPrim C.MUnbox{} t : args
 	 | [_tBoxed, tUnboxed]	<- T.flattenTFuns $ T.stripToBodyT t
@@ -297,7 +297,7 @@ toSeaApps parts
 	C.XPrim (C.MOp _ op) _ : args
 	 -> do	args'	<- mapM toSeaX args
 		return	$ E.XPrim (E.MOp op) args'
-		
+
 	-- casting
 	C.XPrim (C.MCast (PrimCast pt1 pt2)) _ : args
 	 -> do	args'	<- mapM toSeaX args
@@ -325,7 +325,7 @@ toSeaApps parts
 	C.XPrim (C.MPtr prim) _ : args
 	 -> do	args'	<- mapM toSeaX args
 		return	$ E.XPrim (E.MPtr prim) args'
-		
+
 	-- function calls
 	-- For these four we statically know that the thing we're calling is a supercombinator.
 	-- Note that if the resulting variables refer to supercombinators, their operational
@@ -364,16 +364,16 @@ toSeaApps parts
 
 	-- For general application, the two things we're applying are boxed objects.
 	C.XPrim (C.MCall (C.PrimCallApply var)) t : args
-	 -> do	xFun'		<- toSeaX (C.XVar var t) 
+	 -> do	xFun'		<- toSeaX (C.XVar var t)
 		args'		<- mapM toSeaX args
-	    	return	$ E.XPrim 
-				(E.MApp $ E.PAppApply) 
+	    	return	$ E.XPrim
+				(E.MApp $ E.PAppApply)
 				(xFun' : args')
-	
+
 	-- A plain variable that had some type applications applied to it.
 	[C.XVar v t]
 	 -> return $ E.XVar (E.NAuto v) (toSeaT t)
-	
+
 	_ -> panic stage $ "toSeaApps: no match for " % pprStr [PrettyCoreTypes] parts
 
 

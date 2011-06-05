@@ -1,4 +1,4 @@
-module Module.Interface 
+module Module.Interface
 	( Interface 	(..)
 	, IntData 	(..)
 	, IntDataCtor	(..)
@@ -30,19 +30,19 @@ data Interface
 	= Interface
 	{ -- | Id of the modue.
 	  intModuleId		:: ModuleId
-		
+
 	  -- | Other modules imported by this one.
 	, intImportedModules	:: Set ModuleId
 
 	  -- | Data types.
 	, intData		:: Map Var IntData
-		
+
 	  -- | Top level region decls.
 	, intRegion		:: Map Var IntRegion
 
 	  -- | Effect decls.
 	, intEffect		:: Map Var IntEffect
-	
+
 	  -- | Class decls.
 	, intClass		:: Map Var IntClass
 
@@ -72,7 +72,7 @@ data IntData
 	, intDataCtors		:: Map Var IntDataCtor} -- ^ Types of data constructors.
 	deriving Show
 
-	
+
 -- | Interface to a data constructor.
 data IntDataCtor
 	= IntDataCtor
@@ -100,7 +100,7 @@ data IntEffect
 	, intEffectSourcePos	:: SourcePos		-- ^ Where the effect decl is.
 	, intEffectKind		:: Kind	}		-- ^ Kind of effect constructor.
 	deriving Show
-	
+
 
 -- | Interface to abstract class declaration.
 data IntClass
@@ -109,7 +109,7 @@ data IntClass
 	, intClassSourcePos	:: SourcePos		-- ^ Where the class decl is.
 	, intClassSuper		:: Super }		-- ^ Superkind of class constructor.
 	deriving Show
-	
+
 
 -- | Interface to a type class.
 data IntClassDecl
@@ -119,8 +119,8 @@ data IntClassDecl
 	, intClassDeclTyVars	:: [(Var, Kind)]	-- ^ Type variables and their kinds.
 	, intClassDeclMembers	:: Map Var Type }	-- ^ Types of member functions.
 	deriving Show
-	
-	
+
+
 -- | Interface to a type class instance.
 data IntClassInst
 	= IntClassInst
@@ -148,7 +148,7 @@ data IntInfix
 	, intInfixPrecedence	:: Int }		-- ^ Precedence of operator.
 	deriving Show
 
-								
+
 -- | Interface to a top level binding.
 data IntBind
 	= IntBind

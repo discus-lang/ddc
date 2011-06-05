@@ -18,7 +18,7 @@ instance Docable ModuleId Str
  where	doc x	= DLeaf (ppr x)
 
 instance Docable (StrMode mode) (StrMode mode)
- where	doc x	= DLeaf x	
+ where	doc x	= DLeaf x
 
 instance Docable (Doc Str) Str
  where	doc x	= x
@@ -29,10 +29,10 @@ instance Docable Var Str
 instance Docable Int Str
  where	doc i 	= DLeaf (ppr i)
 
-instance Docable Type Str 
+instance Docable Type Str
  where	doc t	= doc $ prettyTypeSplit $ t
 
-instance Docable Kind Str 
+instance Docable Kind Str
  where	doc k	= doc $ ppr k
 
 instance Docable Super Str
@@ -53,12 +53,12 @@ instance Docable Interface Str where
 	, dNodeIfElems "effects"		$ intEffect    int
 	, dNodeIfElems "classes"		$ intClass     int
 
-	, dNodeIfElems "data-class-declarations"	
+	, dNodeIfElems "data-class-declarations"
 		$ intClassDecl int
 
 	-- data class instances
 	, let nodes	= [DNode (varName vClass) (doc insts)
-				| (vClass, insts)	
+				| (vClass, insts)
 				<- Map.toList		$ intClassInst int ]
 	  in if null nodes
 		then DBlank
@@ -76,7 +76,7 @@ instance Docable IntData Str where
   	= DNode (varName $ intDataName idata)
 	$ DList [ dNodeIfElems "ctors"	$ intDataCtors idata ]
 
-	
+
 instance Docable IntDataCtor Str where
  doc def
 	= DNode (varName $ intDataCtorName def)
@@ -97,7 +97,7 @@ instance Docable IntRegion Str where
 		[ DNode (varName v) (doc k)
 			| (v, k) <- Map.toList $ intRegionWitnessKinds def]]
 
-	
+
 instance Docable IntEffect Str where
  doc def
 	= DNode (varName $ intEffectName def)
@@ -110,8 +110,8 @@ instance Docable IntClass Str where
 	= DNode (varName $ intClassName def)
 	$ DList
 	[ DNode "super"		(doc $ intClassSuper def) ]
-	
-	
+
+
 instance Docable IntClassDecl Str where
  doc def
 	= DNode (varName $ intClassDeclName def)
@@ -133,7 +133,7 @@ instance Docable IntClassInst Str where
 	= DNode "instance"
 	$ DList
 	[ dNodeIfElems "arguments"	$ intClassInstArgs def
-	, dNodeIfElems "members"	
+	, dNodeIfElems "members"
 		[ DNode (varName v) (doc vInst)
 			| (v, vInst)	<- Map.toList $ intClassInstMembers def ]
 	]
@@ -143,10 +143,10 @@ instance Docable IntProjDict Str where
  doc def
 	= DNode "dictionary"
 	$ DList
-	[ DNode "type"			(doc $ intProjDictType def) 
-	, dNodeIfElems "members"	
+	[ DNode "type"			(doc $ intProjDictType def)
+	, dNodeIfElems "members"
 		[ DNode (varName v) (doc vImpl)
-			| (v, vImpl)	<- Map.toList $ intProjDictMembers def ] 
+			| (v, vImpl)	<- Map.toList $ intProjDictMembers def ]
 	]
 
 
@@ -157,10 +157,10 @@ instance Docable IntInfix Str where
 	[ DNode "assoc"			(doc $ intInfixMode def)
 	, DNode "prec"			(doc $ intInfixPrecedence def) ]
 
-	
+
 instance Docable IntBind Str where
  doc def
 	= DNode (varName $ intBindName def)
 	$ DList
 	[ DNode "type"		(doc $ intBindType def) ]
-	
+

@@ -10,33 +10,33 @@ import Shared.VarUtil		(VarGenM, newVarN)
 import qualified Shared.Unique	as Unique
 import qualified Data.Map	as Map
 
-type	ExM	= VarGenM 
+type	ExM	= VarGenM
 
 
 -- | Expand the definitions of data constructors in this tree.
 expandCtorTree :: Tree () -> Tree ()
 expandCtorTree tree
-	= evalState (liftM concat $ mapM expandDataP tree) 
+	= evalState (liftM concat $ mapM expandDataP tree)
 	$ VarId Unique.seaCtor 0
-	
+
 
 -- | Expand data constructors in a top level thing.
 expandDataP :: Top ()	-> ExM [Top ()]
 expandDataP p
  = case p of
  	PData v ctors
-	 -> liftM concat 
-	  $ mapM (\(v, ctor) -> expandCtor ctor) 
+	 -> liftM concat
+	  $ mapM (\(v, ctor) -> expandCtor ctor)
 	  $ Map.toList ctors
 
 	_		-> return [p]
-	
+
 
 -- | Expand the definition of a constructor.
-expandCtor 
+expandCtor
 	:: CtorDef
 	-> ExM [Top ()]
-	
+
 expandCtor (CtorDef vCtor tCtor arity tag fields)
  = do	-- var of the constructed object.
 	nObj		<- liftM NAuto $ newVarN NameValue
@@ -53,13 +53,13 @@ expandCtor (CtorDef vCtor tCtor arity tag fields)
 	let argVs	= catMaybes mArgVs
 
 	-- Return the result.
-	let retS	= SReturn $ (XVar nObj tPtrObj) 
+	let retS	= SReturn $ (XVar nObj tPtrObj)
 
 	let stmts	= [allocS] ++ fieldSs ++ [retS]
 	let super	= [PSuper vCtor argVs tPtrObj stmts]
-	
+
 	return 		$ super
- 	
+
 
 -- | Create initialization code for this field
 expandField
