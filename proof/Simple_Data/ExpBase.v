@@ -24,16 +24,16 @@ Hint Constructors datacon.
 
 
 Inductive exp : Type :=
- (* Functions *************************)
+ (* Functions *)
  | XVar   : nat -> exp
  | XLam   : ty  -> exp -> exp
  | XApp   : exp -> exp -> exp
 
- (* Data Types ************************)
+ (* Data Types *)
  | XCon   : datacon -> list exp -> exp
  | XCase  : exp     -> list alt -> exp
 
- (* Alternatives **********************)
+ (* Alternatives *)
 with alt     : Type :=
  | AAlt   : datacon -> list ty  -> exp -> alt.
 
