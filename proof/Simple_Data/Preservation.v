@@ -13,32 +13,34 @@ Theorem preservation
  -> STEP x x'
  -> TYPE ds Empty x' t.
 Proof.
- intros ds x x' t HT HS. gen t x'.
- induction x; intros.
+ intros ds x x' t HT HS. gen t.
+ induction HS; intros.
 
- (* These can't happen as there is no evaluation rule *)
- Case "XVar". invert HS.
- Case "XLam". invert HS.
+ (* Evaluation in an arbitrary context. *)
+ Case "EsContext".
+  destruct H; eauto; 
+   try (inverts HT; progress eauto).
 
- (* Applications *)
- Case "XApp".
-  inverts HT.
-  inverts keep HS.
+  (* The constructor case is tricky because we need to handle
+     an aribrary number of constructor arguments. *)
+  SCase "XCon".
+   inverts HT.
+   eapply TYCon. eauto.
 
-  SCase "EVLamApp".
-   inverts H2.
-   inverts H3.
-   eapply subst_value_value; eauto.
+   clear H4.    (* clear so it's doesn't get in the way of induction *)
+   gen tsArgs.  (* We need the IH to work for an arbitraty length
+                   of remaining arguments. *)
+   induction H. (* induction over length of context *)
+    intros. inverts H6. eauto.
+    intros. inverts H6. eauto.
 
-  SCase "EVApp1".
-   eapply IHx1 in H2; eauto.
-   eapply IHx2 in H4; eauto.
+ Case "EsLamApp".
+  inverts HT. inverts H4.
+  eapply subst_value_value; eauto.
 
- Case "XCon".
-  inverts HT.
-  inverts keep HS.
-  
-
+ Case "EsCaseAlt".
+  inverts HT. inverts H5.
+  (* TODO: finish this. need subst for list of exps *)
 Qed.
 
 
