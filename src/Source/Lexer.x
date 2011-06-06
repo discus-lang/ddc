@@ -197,6 +197,9 @@ tokens :-
 
  0b $bindigit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
  0b $bindigit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ 0b $bindigit+ i $digit* \# 		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ 0b $bindigit+ u $digit* \# 		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+
  0b $bindigit+ \# 			{ ptags (\s -> mkLit (LInt $ readBinWrap $ dropLast 1 s) Unboxed) }
 
  0b $bindigit+ i $digit*		{ ptags (\s -> makeLiteralB 'i' LInt s) }
@@ -205,6 +208,8 @@ tokens :-
 
  0o $octdigit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
  0o $octdigit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ 0o $octdigit+ i $digit* \#		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ 0o $octdigit+ u $digit* \#		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
  0o $octdigit+ \# 			{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
 
  0o $octdigit+ i $digit*		{ ptags (\s -> makeLiteralB 'i' LInt s) }
@@ -213,6 +218,8 @@ tokens :-
 
  0x $hexdigit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
  0x $hexdigit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ 0x $hexdigit+ i $digit* \#		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ 0x $hexdigit+ u $digit* \#		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
  0x $hexdigit+ \# 			{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
 
  0x $hexdigit+ i $digit*		{ ptags (\s -> makeLiteralB 'i' LInt s) }
@@ -225,9 +232,11 @@ tokens :-
  $digit+ \. $digit+			{ ptags (\s -> mkLit (LFloat $ read s) Boxed) }
 
  $digit+ \# u $digit*			{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ $digit+ u $digit* \#			{ ptags (\s -> makeLiteralUB 'u' LWord s) }
  $digit+    u $digit*			{ ptags (\s -> makeLiteralB  'u' LWord s) }
 
  $digit+ \# i $digit*			{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ $digit+ i $digit* \#			{ ptags (\s -> makeLiteralUB 'i' LInt s) }
  $digit+ \# 				{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
  $digit+    i $digit*			{ ptags (\s -> makeLiteralB  'i' LInt s) }
  $digit+				{ ptags (\s -> mkLit (LInt $ read s) Boxed) }
@@ -279,6 +288,14 @@ makeLiteralUB spec con ss
 	= case bits of
  	   []	-> mkLit (con $ readBinWrap num) Unboxed
 	   _	-> mkLit (con $ readBinWrap num) (UnboxedBits $ read bits)
+
+	| (num, spec':bits) <- splitOnLeft spec ss
+	, spec == spec'
+	= case bits of
+ 	   []	-> mkLit (con $ readBinWrap num) Unboxed
+	   _	-> mkLit (con $ readBinWrap num)
+				(UnboxedBits $ read
+				$ if last bits == '#' then init bits else bits)
 
 makeLiteralB :: (Num a, Read a) => Char -> (a -> Literal) -> String -> Token
 makeLiteralB spec con ss
