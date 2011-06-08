@@ -14,17 +14,6 @@ Hint Unfold getl.
 
 
 (* map lemmas *******************************************************)
-Lemma length_map
- : forall {A B : Type} (f : A -> B) (xs : list A)
- , length xs = length (map f xs).
-Proof.
- intros.
- induction xs.
-  eauto.
-  simpl. eauto.
-Qed.
-
-
 Lemma map_ext_In
  : forall {A B : Type}
           (f g : A -> B)

@@ -68,7 +68,7 @@ Proof.
    eapply Forall_map.
    eapply (Forall_impl_In 
     (fun a => TYPEA ds te a (TCon tcPat) t1)); eauto.
-   rewrite <- length_map. auto. eauto.
+   rewrite map_length. auto. eauto.
 
    eapply Forall_impl; eauto.
     intros. simpl in H0.
