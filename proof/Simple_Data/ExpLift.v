@@ -51,6 +51,16 @@ Fixpoint
   end.
 
 
+Lemma dcOfAlt_liftA
+ : forall n d a
+ , dcOfAlt (liftA n d a) = dcOfAlt a.
+Proof.
+ intros.
+ destruct a.
+ simpl. auto.
+Qed.
+
+
 Lemma liftX_zero
  : forall d x
  , liftX 0 d x = x.

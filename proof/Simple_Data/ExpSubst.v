@@ -58,3 +58,13 @@ Fixpoint substXs (d: nat) (us: list exp) (xx: exp) :=
  | u :: us' => substXs d us' (substX d u xx)
  end.
  
+
+Lemma dcOfAlt_substA
+ : forall d u a
+ , dcOfAlt (substA d u a) = dcOfAlt a.
+Proof.
+ intros.
+ destruct a.
+ simpl. auto.
+Qed.
+

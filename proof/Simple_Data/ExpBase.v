@@ -39,6 +39,13 @@ with alt     : Type :=
 Hint Constructors exp.
 Hint Constructors alt.
 
+
+Fixpoint dcOfAlt (aa: alt) : datacon :=
+ match aa with 
+ | AAlt dc _ _ => dc
+ end.
+Hint Unfold dcOfAlt.
+
 (* Mutual induction principle for expressions.
    As expressions are indirectly mutually recursive with lists,
    Coq's Combined scheme command won't make us a strong enough
@@ -114,6 +121,18 @@ Hint Constructors def.
 (* Type Environments ************************************************)
 Definition tyenv := env ty.
 Definition defs  := env def.
+
+
+Fixpoint getTypeDef (tc: tycon) (ds: defs) : option def := 
+ match ds with 
+ | ds' :> DefDataType tc' _ as d
+ => if tycon_beq tc tc' 
+     then  Some d
+     else  getTypeDef tc ds'
+
+ | ds' :> _ => getTypeDef tc ds'
+ | Empty    => None
+ end.
 
 
 Fixpoint getDataDef (dc: datacon) (ds: defs) : option def := 

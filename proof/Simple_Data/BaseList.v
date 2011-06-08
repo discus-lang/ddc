@@ -13,6 +13,18 @@ Fixpoint getl {A: Type} (e: list A) (i: nat) : option A :=
 Hint Unfold getl.
 
 
+(* map lemmas *******************************************************)
+Lemma length_map
+ : forall {A B : Type} (f : A -> B) (xs : list A)
+ , length xs = length (map f xs).
+Proof.
+ intros.
+ induction xs.
+  eauto.
+  simpl. eauto.
+Qed.
+
+
 Lemma map_ext_In
  : forall {A B : Type}
           (f g : A -> B)
@@ -30,6 +42,42 @@ Proof.
 Qed.
 
 
+Lemma In_map_exists
+  :  forall (A B: Type) (f: A -> B) x ys
+  ,  In x (map f ys)
+  -> (exists y, f y = x /\ In y ys).
+Proof.
+ intros.
+ induction ys.
+  simpl in H. false.
+  simpl in H.
+   inverts H.
+   simpl. exists a. eauto.
+   apply IHys in H0.
+   destruct H0.
+   exists x0. inverts H. split. auto. eauto.
+   simpl. eauto.
+Qed.
+
+
+Lemma In_exists_map
+  :  forall (A B: Type) (f: A -> B) x ys
+  ,  (exists y, f y = x /\ In y ys)
+  -> In x (map f ys).
+Proof.
+ intros.
+ induction ys.
+  destruct H.
+   simpl in H. inverts H. false.
+   simpl in H.
+   destruct H.
+   inverts H.
+   simpl. 
+   inverts H1. auto.
+   right. eauto.
+Qed.
+
+
 Lemma Forall_map
  :  forall {A B: Type} 
            (P: B -> Prop) (f: A -> B) 
@@ -43,6 +91,7 @@ Proof.
 Qed.
 
 
+(* Forall ***********************************************************)
 Lemma Forall_impl_In
  : forall {A: Type}
           (P1: A -> Prop) (P2: A -> Prop)

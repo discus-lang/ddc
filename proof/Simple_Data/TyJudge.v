@@ -29,11 +29,23 @@ Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
    -> Forall2 (TYPE ds te) xs tsArgs
    -> TYPE ds te (XCon dc xs) tResult
 
+ (* Case Expressions *)
  | TYCase
-   :  forall ds te xObj alts tPat tResult
-   ,  TYPE ds te xObj tPat
-   -> (Forall (fun a => TYPEA ds te a tPat tResult) alts)
+   :  forall ds te xObj tcPat tResult alts dcs
+
+      (* check types of expression and alternatives *)
+   ,  TYPE ds te xObj (TCon tcPat)            
+   -> Forall (fun alt => TYPEA ds te alt (TCon tcPat) tResult) alts
+
+      (* there must be at least one alternative *)
+   -> List.length alts > 0
+
+      (* all data cons must have a corresponding alternative *)
+   -> getTypeDef tcPat ds = Some (DefDataType tcPat dcs)
+   -> Forall (fun dc => In dc (map dcOfAlt alts)) dcs
+
    -> TYPE ds te (XCase xObj alts) tResult
+
 
 with TYPEA : defs -> tyenv -> alt -> ty -> ty -> Prop :=
  (* Case Alternatives *)
@@ -83,7 +95,7 @@ Proof.
   eapply WfX_XCase.
    eapply IHx. eauto.
     rewrite Forall_forall in H.
-    rewrite Forall_forall in H7.
+    rewrite Forall_forall in H4.
     rewrite Forall_forall.
     eauto.
 
@@ -139,9 +151,30 @@ Proof.
   inverts H0.
   eapply TYCase. 
    eauto.
+
    rewrite Forall_forall in H.
-   apply  Forall_map.
-   apply (Forall_impl_In (fun a => TYPEA ds te a tPat t1)); eauto.
+    apply  Forall_map.
+    apply (Forall_impl_In (fun a => TYPEA ds te a (TCon tcPat) t1)); eauto.
+
+   rewrite <- length_map. 
+    eauto.
+
+   eauto.
+
+   (* TODO: clean this mess up *)
+   rewrite Forall_forall.
+    rewrite Forall_forall in H10.
+    intros.
+    eapply H10 in H0.
+    rewrite map_map.
+    eapply In_exists_map.
+    apply In_map_exists in H0.
+    destruct H0.
+    exists x1.
+    inverts H0.
+    split.
+    rewrite dcOfAlt_liftA. auto. auto. 
+
 
  Case "XAlt".
   inverts H.

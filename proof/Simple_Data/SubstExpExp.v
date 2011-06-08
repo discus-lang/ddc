@@ -66,8 +66,19 @@ Proof.
    eauto. clear IHx1.
    rewrite Forall_forall in H.
    eapply Forall_map.
-   eapply (Forall_impl_In (fun a => TYPEA ds te a tPat t1)); eauto.
+   eapply (Forall_impl_In 
+    (fun a => TYPEA ds te a (TCon tcPat) t1)); eauto.
+   rewrite <- length_map. auto. eauto.
 
+   eapply Forall_impl; eauto.
+    intros. simpl in H0.
+    rewrite map_map.
+    apply in_map_iff.
+    apply in_map_iff in H0.
+     destruct H0. exists x. inverts H0.
+     split; auto.
+     rewrite dcOfAlt_substA. auto.
+     
  Case "AAlt".
   inverts H0.
   eapply TYAlt. 
@@ -93,4 +104,29 @@ Proof.
  lets H: subst_value_value_ix 0 (te :> t2).
   simpl in H. eauto.
 Qed.
+
+
+(* Substitution of several expressions at once. *)
+Theorem subst_value_value_list
+ :  forall ds te x1 xs t1 ts
+ ,  Forall2 (TYPE ds te)         xs ts
+ -> TYPE ds (te ++ envOfList ts) x1 t1
+ -> TYPE ds te    (substXs 0 xs x1) t1.
+Proof.
+ intros ds te x1 xs t1 ts HF HT.
+ gen ts x1.
+ induction xs; intros.
+  admit.
+  simpl. 
+   destruct ts.
+    inverts HF.
+    inverts HF.
+    eapply IHxs. eauto.
+    simpl in HT.
+    eapply subst_value_value. eauto.
+    admit. (********** wrong *)
+Qed.
+
+
+
 
