@@ -218,27 +218,3 @@ Qed.
 
 Hint Resolve Forall_forall.
 
-
-(*
-Lemma Forall_impl_elem
- : forall {A: Type}
-          (P Q: A -> Prop)
-          (xs:  list A)
-  ,  Forall P xs
-  -> Forall (fun x => P x -> Q x) xs
-  -> Forall Q xs.
-Proof.
- admit.
-Qed.
-
-Lemma Forall2_Forall_exists
- : forall {A B : Type}
-          (R   : A -> B -> Prop)
-          (xs  : list A)
-          (ys  : list B)
- ,  Forall2 R xs ys
- -> Forall  (fun x => exists y, R x y) xs.
-Proof.
- admit.
-Qed.
-*)
