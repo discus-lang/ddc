@@ -73,10 +73,10 @@ Qed.
    then the result has the same type as the original.
  *)  
 Lemma preservation_steps
- :  forall x1 t1 x2
- ,  TYPE Empty x1 t1
+ :  forall ds x1 t1 x2
+ ,  TYPE ds Empty x1 t1
  -> STEPS      x1 x2
- -> TYPE Empty x2 t1.
+ -> TYPE ds Empty x2 t1.
 Proof.
  intros. 
  induction H0; eauto.
@@ -89,10 +89,10 @@ Qed.
    Using the left-linearised form for the evaluation.
  *)
 Lemma preservation_stepsl
- :  forall x1 t1 x2
- ,  TYPE Empty x1 t1
+ :  forall ds x1 t1 x2
+ ,  TYPE ds Empty x1 t1
  -> STEPSL x1 x2
- -> TYPE Empty x2 t1.
+ -> TYPE ds Empty x2 t1.
 Proof.
  intros. 
  induction H0.
@@ -101,4 +101,5 @@ Proof.
   eapply preservation. 
    eauto. auto.
 Qed.
+
 
