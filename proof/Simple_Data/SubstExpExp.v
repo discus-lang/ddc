@@ -116,7 +116,13 @@ Proof.
  intros ds te x1 xs t1 ts HF HT.
  gen ts x1.
  induction xs; intros.
-  admit.
+
+ Case "base case".
+  destruct ts.
+   simpl. simpl in HT. auto.
+  inverts HF.
+
+ Case "step case".
   simpl. 
    destruct ts.
     inverts HF.
@@ -124,9 +130,11 @@ Proof.
     eapply IHxs. eauto.
     simpl in HT.
     eapply subst_value_value. eauto.
-    admit. (********** wrong *)
+    assert (List.length xs = List.length ts).
+     eapply Forall2_length. eauto.
+    rewrite H. clear H.
+    rewrite <- length_envOfList.
+    eapply type_tyenv_weaken_append.
+    auto.
 Qed.
-
-
-
 

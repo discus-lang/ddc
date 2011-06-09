@@ -110,6 +110,20 @@ Proof.
 Qed.
 
 
+Lemma Forall2_length
+ : forall {A B: Type} (R: A -> B -> Prop) 
+          (xs : list A) 
+          (ys : list B)
+ ,  Forall2 R xs ys
+ -> length xs = length ys.
+Proof.
+ intros.
+ induction H.
+  auto.
+  simpl. auto.
+Qed.
+
+
 Lemma Forall2_impl_In
  : forall {A B: Type}
           (R1: A -> B -> Prop)
