@@ -2,6 +2,8 @@
 Require Export BaseNat.
 Require Export BaseList.
 Require Export BaseTactics.
+Require Export Coq.Bool.BoolEq.
+Require Export Coq.Arith.EqNat.
 
 (* Cases library due to Aaron Bohannon ********************)
 Require String. Open Scope string_scope.

@@ -82,11 +82,9 @@ Proof.
   simpl in H.
   breaka (datacon_beq dc dc').
    inverts H.
-    assert (dc = dc'). admit. (* ok datacon_beq *)
-    subst. clear HeqX.
+    apply datacon_beq_eq in HeqX. subst.
     simpl. auto.
-
-   simpl. right. eauto.
+   simpl. right. auto.
 Qed.
 
 

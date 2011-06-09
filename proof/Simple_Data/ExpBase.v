@@ -22,6 +22,20 @@ Inductive datacon : Type :=
 Hint Constructors datacon.
 
 
+Lemma datacon_beq_eq
+ :  forall dc dc' 
+ ,  true = datacon_beq dc dc'
+ -> dc = dc'.
+Proof.
+ intros.
+ destruct dc.
+ destruct dc'.
+ simpl in H.
+ apply beq_nat_eq in H.
+ auto.
+Qed.
+
+
 Inductive exp : Type :=
  (* Functions *)
  | XVar   : nat -> exp
