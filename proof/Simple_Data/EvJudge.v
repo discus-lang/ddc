@@ -12,12 +12,12 @@ Require Export Exp.
    and its final value. 
  *)
 Inductive EVAL : exp -> exp -> Prop :=
- | EVDone
+ | EvDone
    :  forall v2
    ,  whnfX  v2
    -> EVAL   v2 v2
 
- | EVLamApp
+ | EvLamApp
    :  forall x1 t11 x12 x2 v2 v3
    ,  EVAL x1 (XLam t11 x12) -> EVAL x2 v2 -> EVAL (substX 0 v2 x12) v3
    -> EVAL (XApp x1 x2) v3.
@@ -44,37 +44,37 @@ Hint Resolve eval_produces_whnfX.
    machine steps.
  *)
 Lemma steps_of_eval
- :  forall x1 t1 x2
- ,  TYPE Empty x1 t1
- -> EVAL x1 x2
+ :  forall ds x1 t1 x2
+ ,  TYPE ds Empty x1 t1
+ -> EVAL  x1 x2
  -> STEPS x1 x2.
 Proof.
- intros x1 t1 v2 HT HE. gen t1.
+ intros ds x1 t1 v2 HT HE. gen t1.
 
  (* Induction over the form of (EVAL x1 x2) *)
  induction HE.
  Case "EVDone".
-  intros. apply ESNone.
+  intros. apply EsNone.
 
  Case "EVLamApp".
   intros. inverts HT.
 
-  lets E1: IHHE1 H2. 
-  lets E2: IHHE2 H4.
+  lets E1: IHHE1 H3. 
+  lets E2: IHHE2 H5.
 
-  lets T1: preservation_steps H2 E1. inverts keep T1.
-  lets T2: preservation_steps H4 E2.
-  lets T3: subst_value_value H1 T2.
+  lets T1: preservation_steps H3 E1. inverts keep T1.
+  lets T2: preservation_steps H5 E2.
+  lets T3: subst_value_value H2 T2.
   lets E3: IHHE3 T3.
 
-  eapply ESAppend.
-    eapply steps_app1. eauto.
-   eapply ESAppend.
-    eapply steps_app2. eauto. eauto.
-   eapply ESAppend.
-    eapply ESStep.
-     eapply ESLamApp. eauto.
-   eauto.      
+  eapply EsAppend.
+    lets D: steps_context XcApp1. eapply D. eauto. 
+   eapply EsAppend.
+    lets D: steps_context (XcApp2 (XLam t0 x12)). eauto.
+    eapply D. eauto.
+   eapply EsAppend.
+    eapply EsStep.
+     eapply EsLamApp. eauto. eauto.
 Qed.
 
 
@@ -89,47 +89,50 @@ Qed.
    that does an extra step before returning the original value.
  *)
 Lemma eval_expansion
- :  forall te x1 t1 x2 v3
- ,  TYPE te x1 t1
+ :  forall ds te x1 t1 x2 v3
+ ,  TYPE ds te x1 t1
  -> STEP x1 x2 -> EVAL x2 v3 
  -> EVAL x1 v3.
 Proof.
- intros. gen te t1 v3.
+ intros ds te x1 t1 x2 v3 HT HS. gen ds te t1 v3.
+ induction HS; intros; 
+  try (solve [inverts H; eauto]);
+  try eauto.
 
- (* Induction over the form of (STEP x1 x2) *)
- induction H0; intros.
+ Case "Context".
+  destruct H.
+   eauto.
 
- eapply EVLamApp.
-  eauto.
-  inverts H. 
-  apply EVDone. auto. auto.
- 
- Case "x1 steps".
-  inverts H. inverts H1.
-   inverts H.
-   eapply EVLamApp; eauto.
+   SCase "XcApp1".
+    inverts HT. inverts H0. inverts H. eauto.
 
- Case "x2 steps".
-  inverts H1. inverts H2.
-  inverts H1.
-  eapply EVLamApp; eauto.
+   SCase "XcApp2".
+    inverts HT. inverts H0. inverts H1. eauto.
+
+   SCase "XcCon".
+    inverts HT. inverts H0. inverts H1.
+    admit. (********* TODO: need big step rule *)
+
+   SCase "XcCase".
+    inverts HT.
+    admit. (********* TODO: finish this *)
 Qed.
 
 
 (* Convert a list of small steps to a big-step evaluation. *)
 Lemma eval_of_stepsl
- :  forall x1 t1 v2
- ,  TYPE Empty x1 t1
+ :  forall ds x1 t1 v2
+ ,  TYPE ds Empty x1 t1
  -> STEPSL x1 v2 -> value v2
  -> EVAL   x1 v2.
 Proof.
  intros.
  induction H0.
  
- Case "ESLNone".
-   apply EVDone. inverts H1. auto.
+ Case "EslNone".
+   apply EvDone. inverts H1. auto.
 
- Case "ESLCons".
+ Case "EslCons".
   eapply eval_expansion. 
    eauto. eauto. 
    apply IHSTEPSL.
@@ -143,8 +146,8 @@ Qed.
    small-steps.
  *)
 Lemma eval_of_steps
- :  forall x1 t1 v2
- ,  TYPE Empty x1 t1
+ :  forall ds x1 t1 v2
+ ,  TYPE ds Empty x1 t1
  -> STEPS x1 v2 -> value v2
  -> EVAL  x1 v2.
 Proof.

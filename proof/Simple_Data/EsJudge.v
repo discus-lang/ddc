@@ -157,23 +157,37 @@ Inductive STEPS : exp -> exp -> Prop :=
     We need this constructor to match the EVDone constructor
     in the big-step evaluation, so we can convert between big-step
     and multi-step evaluations. *)
- | ESNone
+ | EsNone
    :  forall x1
    ,  STEPS x1 x1
 
  (* Take a single step. *)
- | ESStep
+ | EsStep
    :  forall x1 x2
    ,  STEP  x1 x2
    -> STEPS x1 x2
 
  (* Combine two evaluations into a third. *)
- | ESAppend
+ | EsAppend
    :  forall x1 x2 x3
    ,  STEPS x1 x2 -> STEPS x2 x3
    -> STEPS x1 x3.
 
 Hint Constructors STEPS.
+
+
+Lemma steps_context
+ :  forall C x1 x1'
+ ,  exp_ctx C
+ -> STEPS x1 x1'
+ -> STEPS (C x1) (C x1').
+Proof.
+ intros.
+ induction H0.
+  auto.
+  auto.
+  eapply EsAppend; eauto.
+Qed.
 
 
 (* Left linearised multi-step evaluation ****************************
@@ -183,11 +197,11 @@ Hint Constructors STEPS.
    eval_expansion lemma.
  *)
 Inductive STEPSL : exp -> exp -> Prop :=
- | ESLNone 
+ | EslNone 
    : forall x1
    , STEPSL x1 x1
 
- | ESLCons
+ | EslCons
    :  forall x1 x2 x3
    ,  STEP   x1 x2 -> STEPSL x2 x3 
    -> STEPSL x1 x3.
@@ -207,7 +221,7 @@ Proof.
  intros.
  induction H.
   eauto.
-  eapply ESLCons. eauto. eauto.
+  eapply EslCons; eauto.
 Qed.
 
 
