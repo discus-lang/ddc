@@ -53,6 +53,7 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
     -> exps_ctx C
     -> exps_ctx (fun xx => v1 :: C xx).
 
+Hint Constructors exp_ctx. 
 
 (********************************************************************)
 (** * Utilities for evaluation *)
