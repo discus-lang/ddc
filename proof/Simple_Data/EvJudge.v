@@ -159,9 +159,13 @@ Proof.
     admit. (********* TODO: need big step rule *)
 
    SCase "XcCase".
-    inverts HT.
-    admit. (********* TODO: finish this *)
-    admit.
+    inverts HT. inverts H0. inverts H. eauto.
+    eapply EvCase with (dc := dc) (vs := vs).
+     admit. (*** ok, vs are values. need big step rule for XCon *)
+    rewrite Forall_forall. intros.
+    rewrite Forall_forall in H.
+    apply H in H2. inverts H2. eauto. eauto.
+    auto.
 Qed.
 
 
