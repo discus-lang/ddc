@@ -19,16 +19,25 @@ Inductive EVAL : exp -> exp -> Prop :=
 
  | EvLamApp
    :  forall x1 t11 x12 x2 v2 v3
-   ,  EVAL x1 (XLam t11 x12) -> EVAL x2 v2 -> EVAL (substX 0 v2 x12) v3
-   -> EVAL (XApp x1 x2) v3.
+   ,  EVAL x1 (XLam t11 x12)
+   -> EVAL x2 v2
+   -> EVAL (substX 0 v2 x12) v3
+   -> EVAL (XApp x1 x2)      v3
+
+ | EvCase 
+   :  forall x1 x2 v3 dc vs alts tsArgs
+   ,  EVAL x1 (XCon dc vs)
+   -> Forall whnfX vs
+   -> getAlt dc alts = Some (AAlt dc tsArgs x2)
+   -> EVAL (substXs 0 vs x2) v3
+   -> EVAL (XCase x1 alts)   v3.
 
 Hint Constructors EVAL.
 
 
 (* A terminating big-step evaluation always produces a whnf.
    The fact that the evaluation terminated is implied by the fact
-   that we have a finite proof of EVAL to pass to this lemma. 
- *)
+   that we have a finite proof of EVAL to pass to this lemma. *)
 Lemma eval_produces_whnfX
  :  forall x1 v1
  ,  EVAL   x1 v1
@@ -53,10 +62,10 @@ Proof.
 
  (* Induction over the form of (EVAL x1 x2) *)
  induction HE.
- Case "EVDone".
+ Case "EvDone".
   intros. apply EsNone.
 
- Case "EVLamApp".
+ Case "EvLamApp".
   intros. inverts HT.
 
   lets E1: IHHE1 H3. 
@@ -75,6 +84,42 @@ Proof.
    eapply EsAppend.
     eapply EsStep.
      eapply EsLamApp. eauto. eauto.
+
+ Case "EvCase".
+  intros. inverts keep HT.
+
+  lets Ex1: IHHE1 H3. clear IHHE1.
+
+  eapply EsAppend.
+   (* evaluate the discriminant *)
+   lets HSx1: steps_context XcCase. eapply HSx1.
+    eapply Ex1.
+
+  (* choose the alternative *)
+  lets HTCon: preservation_steps H3 Ex1. clear Ex1.
+  inverts HTCon.
+  assert (tsArgs0 = tsArgs).
+   eapply getAlt_matches_dataDef; eauto. subst.
+
+  lets HA: getAltExp_hasAlt H0.
+  rewrite Forall_forall in H4.
+  apply H4 in HA. clear H4.
+  inverts HA.
+
+   (* substitute ctor values into alternative *)
+  eapply EsAppend.
+   eapply EsStep.
+    eapply EsCaseAlt.
+     assert (Forall closedX vs).
+     admit.
+     rewrite Forall_forall.
+     intros.
+     apply Value.
+     rewrite Forall_forall in H. eauto.
+     rewrite Forall_forall in H1. eauto.
+     eauto.
+     eapply IHHE2.
+     eapply subst_value_value_list; eauto.
 Qed.
 
 
@@ -116,6 +161,7 @@ Proof.
    SCase "XcCase".
     inverts HT.
     admit. (********* TODO: finish this *)
+    admit.
 Qed.
 
 

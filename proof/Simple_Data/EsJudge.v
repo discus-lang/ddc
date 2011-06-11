@@ -39,6 +39,11 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
    :  forall dc C
    ,  exps_ctx C
    -> exp_ctx  (fun xx => XCon dc (C xx))
+
+ (* We need to reduce the discriminant of a case to a value. *)
+ | XcCase
+   :  forall alts
+   ,  exp_ctx  (fun xx => XCase xx alts)
  
  (* Some sub-expression in a list can only take a step when all 
     the previous expressions are already values. *)
