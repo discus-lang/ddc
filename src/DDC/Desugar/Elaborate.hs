@@ -90,6 +90,11 @@ elaborateTreeM dgHeader dgModule
 	-- Solve kind constraints
 	solveConstraints constraints
 
+	-- Remember kinds of class arguments to guide elaboration
+ 	let classes	=      slurpClasses dgHeader
+			Seq.>< slurpClasses dgModule
+	addClassKinds classes
+
 	-- Update the kinds of all the type consructors
 	-- TODO: huh? shouldn't this come after the next step?
 	dgHeader_tagged	<- tagKindsInGlob dgHeader

@@ -35,7 +35,9 @@ elabRegionsP pp
 		return	$ PClassDecl sp v ts' (zip vs mts')
 		
 	PClassInst sp v ts ss
-	 -> do	ts'	<- mapM elabRegionsT ts
+	 -> do	-- Find expected kinds of class' arguments
+		kinds	<- getClassKinds v
+		ts'	<- mapM elabRegionsClassInst (ts `zip` kinds)
 		return	$ PClassInst sp v ts' ss
 	
 	PProjDict sp t ss
@@ -48,6 +50,13 @@ elabRegionsP pp
 			
 	_ ->	return pp
 
+elabRegionsClassInst (t, kind)
+ = case kind of
+	-- Don't elaborate if the expected kind has region
+	(KFun (KCon KiConRegion _) _)
+	 -> return t
+	_
+	 -> elabRegionsT t
 
 elabRegionsS ss
  = case ss of

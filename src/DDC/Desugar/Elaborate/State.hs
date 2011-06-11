@@ -8,7 +8,9 @@ module DDC.Desugar.Elaborate.State
 	, newVarN
 	, getKind
 	, solveConstraints
-	, addConstraint)
+	, addConstraint
+	, getClassKinds
+	, addClassKinds)
 where
 import Control.Monad.State.Strict
 import DDC.Desugar.Elaborate.Constraint
@@ -28,7 +30,8 @@ type ElabM = State ElabS
 data ElabS
 	= ElabS 
 	{ stateVarGen	:: VarId 
-	, stateKinds	:: Map Var Kind }
+	, stateKinds	:: Map Var Kind
+	, stateClasses	:: Map Var [Kind] }
 	
 
 -- | Initial state for the elaboratot.
@@ -36,7 +39,8 @@ stateInit :: String -> ElabS
 stateInit unique
 	= ElabS
 	{ stateVarGen	= VarId unique 0
-	, stateKinds	= Map.empty }
+	, stateKinds	= Map.empty
+	, stateClasses	= Map.empty }
 	
 
 -- | Create a fresh variable in a given `NameSpace`.
@@ -94,3 +98,24 @@ addConstraint_unify v k k'
 	= panic stage
 	$ "addConstraint_unify: can't unify kinds for" %% v %% parens k %% parens k'
 
+
+-- | Get the kinds of a typeclass' arguments
+getClassKinds :: Var -> ElabM [Kind]
+getClassKinds v
+ = do	classes	<- gets stateClasses
+ 	case Map.lookup v classes of
+	 Just k		-> return k
+	 Nothing	-> panic stage
+	 		$ "getClassKinds: no arguments for typeclass " %% v
+
+-- | Add kind of class' arguments to map
+addClassKinds :: Seq (Var,[Kind]) -> ElabM ()
+addClassKinds classes
+ = do	Foldable.mapM_ addClassKind classes
+	return ()
+
+addClassKind :: (Var,[Kind]) -> ElabM ()
+addClassKind (v,ks)
+ = do	s <- get
+	let s' = s { stateClasses = Map.insert v ks (stateClasses s) }
+	put s'

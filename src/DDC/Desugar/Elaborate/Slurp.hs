@@ -2,7 +2,8 @@
 
 -- | Slurp constraints for kind inference from a desugared source tree.
 module DDC.Desugar.Elaborate.Slurp
-	(slurpConstraints)
+	( slurpConstraints
+	, slurpClasses )
 where
 import Shared.VarPrim
 import DDC.Desugar.Elaborate.Constraint
@@ -33,7 +34,7 @@ slurpConstraint pp
 
 	PClassDecl sp _ ts _
 	 -> map (\t -> 	let TVar k (UVar v)	= t
-			in   Constraint (KSClass sp) v (defaultKind v k)) ts
+			in Constraint (KSClass sp) v (defaultKind v k)) ts
 
  	PData sp def@(DataDef{})
 	 -> let	k	= dataDefKind def
@@ -74,3 +75,17 @@ forcePrimaryRegion vData k
 	
 	| otherwise
 	= KFun kRegion k
+
+-- | Slurp kinds of class arguments
+slurpClasses :: Glob SourcePos -> Seq (Var,[Kind])
+slurpClasses dg
+	= Seq.fromList 
+	$ concatMap slurpClass
+	$ treeOfGlob dg
+	
+slurpClass (PClassDecl _ v ts _)
+ = let	kinds = map (\(TVar k _) -> k) ts
+	in [(v,kinds)]
+slurpClass _
+ = []
+
