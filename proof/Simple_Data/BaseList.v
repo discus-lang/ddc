@@ -221,3 +221,17 @@ Qed.
 
 Hint Resolve Forall_forall.
 
+
+(* splitat ****************************************************)
+Fixpoint splitAt {A: Type} (ix : nat) (acc : list A) (xx : list A) 
+          : option (list A * list A)
+ := match ix, xx with 
+    | O,   nil       => None
+    | O,   (x :: xs) => Some (acc, (x :: xs))
+    | S n, nil       => None
+    | S n, (x :: xs) => splitAt n (acc ++ (x :: nil)) xs
+    end.
+
+
+
+

@@ -41,6 +41,8 @@ Proof.
   (* The constructor case is tricky because we need to handle
      an aribrary number of constructor arguments. *)
   SCase "XCon".
+   admit.
+(*
    inverts HT.
    eapply TYCon. eauto.
 
@@ -50,7 +52,7 @@ Proof.
    induction H. (* induction over length of context *)
     intros. inverts H6. eauto.
     intros. inverts H6. eauto.
-
+*)
  Case "EsLamApp".
   inverts HT. inverts H4.
   eapply subst_value_value; eauto.
