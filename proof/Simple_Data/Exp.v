@@ -27,7 +27,7 @@ Hint Constructors whnfX.
 Inductive wfX : tyenv -> exp -> Prop :=
  | WfX_XVar 
    :  forall te i
-   ,  (exists t, Env.get te i = Some t)
+   ,  (exists t, BaseEnv.get te i = Some t)
    -> wfX te (XVar i)
  
  | WfX_XLam

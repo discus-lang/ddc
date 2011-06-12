@@ -2,6 +2,7 @@
 Require Export BaseNat.
 Require Export BaseList.
 Require Export BaseTactics.
+Require Export BaseEnv.
 Require Export Coq.Bool.BoolEq.
 Require Export Coq.Arith.EqNat.
 
