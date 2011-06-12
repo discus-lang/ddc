@@ -280,6 +280,22 @@ Proof.
 Qed. 
 
 
+Lemma take_step
+ :  forall {A: Type} n (xx: list A) y (ys: list A)
+ ,  take  n    (xx ++ y :: ys) = xx
+ -> take (S n) (xx ++ y :: ys) = xx ++ (y :: nil).
+Proof.
+ intros.
+ destruct xx.
+  simpl. f_equal. simpl in H.
+  destruct n.
+   auto.
+   simpl in H. inverts H.
+  simpl. f_equal. simpl in H.
+   apply take_cons in H. auto.
+Qed.
+
+
 (*******************************************************************)
 Fixpoint drop {A: Type} (n: nat) (xx: list A) : list A :=
  match n, xx with
@@ -310,19 +326,18 @@ Proof.
 Qed.
 
 
-Lemma take_step
+Lemma drop_step
  :  forall {A: Type} n (xx: list A) y (ys: list A)
- ,  take  n    (xx ++ y :: ys) = xx
- -> take (S n) (xx ++ y :: ys) = xx ++ (y :: nil).
+ ,  drop n     xx = y :: ys
+ -> drop (S n) xx = ys.
 Proof.
- intros.
- destruct xx.
-  simpl. f_equal. simpl in H.
+ intros. gen n. 
+ induction xx; intros.
+  rewrite drop_nil in H. inverts H.
+  simpl.
   destruct n.
-   auto.
-   simpl in H. inverts H.
-  simpl. f_equal. simpl in H.
-   apply take_cons in H. auto.
+   simpl in H. inverts H. auto.
+   simpl in H. auto.
 Qed.
 
 
@@ -370,8 +385,7 @@ Proof.
  rewrite D1 in H1.
  rewrite D1 in H2.
  f_equal. 
-  rewrite D1.
-   
-  
-
+  rewrite D1. apply take_step. auto.
+  rewrite D1. eapply drop_step. eauto.
+Qed.
 
