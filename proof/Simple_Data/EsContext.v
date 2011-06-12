@@ -46,12 +46,25 @@ Lemma exps_ctx_Forall2_swap
             (x1 x2 : exp) Cs
             (y: B)        (ys: list B)
  ,   exps_ctx Cs
- ->  R x1 y
- ->  R x2 y
+ ->  (forall y, R x1 y -> R x2 y)
  ->  Forall2 R (Cs x1) ys
  ->  Forall2 R (Cs x2) ys.
 Proof.
- admit.
+ intros.
+ inverts H.
+ lets HP: (@splitAt_app_cons exp) H2.
+ lets D: Forall2_app_inv_l H1.
+  destruct D as [ys1].
+  destruct H as [ys2].
+  inverts H. inverts H5.
+  apply Forall2_app.
+   auto. clear H1. clear H4.
+  destruct ys2.
+   inverts H.
+   inverts H.
+   apply Forall2_cons.
+    apply H0. auto.
+    auto.
 Qed.
 
 

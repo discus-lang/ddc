@@ -100,9 +100,7 @@ Proof.
 
   lets HTx: (@exps_ctx_Forall2 ty) H0 H7. auto.
   destruct HTx as [t]. inverts H1.
-
-  lets HSx: IHHE1 H3. clear IHHE1.
-  lets HTv: preservation_steps H3 HSx.
+  lets HSx: IHHE1 H3. clear IHHE1. clear H3.
 
   eapply EsAppend.
    lets D: steps_context XcCon. eauto.
@@ -110,8 +108,11 @@ Proof.
 
    eapply IHHE2.
    eapply TYCon. eauto.
-   eapply exps_ctx_Forall2_swap.
-    eauto. eapply H3. eauto. eauto.
+   eapply exps_ctx_Forall2_swap with (x1 := x) (x2 := v).
+    eauto. eauto.
+    intros.
+    eapply preservation_steps; eauto.
+    eauto.
 
  (* Case selection ***)  
  Case "EvCase".
