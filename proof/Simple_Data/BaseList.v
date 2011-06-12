@@ -230,6 +230,7 @@ Fixpoint take {A: Type} (n: nat) (xx: list A) : list A :=
  | S n', x :: xs  => x :: take n' xs
  end.
 
+
 Lemma take_length 
  :  forall {A: Type} n (xs: list A)
  ,  n < length xs
@@ -245,6 +246,38 @@ Proof.
    apply IHxs.
    simpl in H. omega.
 Qed.
+Hint Resolve take_length.
+
+
+Lemma take_nil
+ :  forall {A: Type} n
+ ,  take n (@nil A) = nil.
+Proof.
+ intros. destruct n; auto.
+Qed.
+Hint Resolve take_nil.
+
+
+Lemma take_cons
+ :  forall {A: Type} n x (xs: list A) y (ys : list A)
+ ,  take n (x :: xs ++ y :: ys) = x :: xs
+ -> take n (     xs ++ y :: ys) =      xs ++ y :: nil.
+Proof.
+ induction n; intros.
+ simpl in H.
+  inverts H.
+ simpl in H.
+  inversion H.
+  rewrite H1.
+  destruct xs.
+  simpl. simpl in H1. f_equal.
+   destruct n.
+    auto.
+    simpl in H1. inverts H1.
+
+  simpl. f_equal.
+  eapply IHn. eauto.
+Qed. 
 
 
 (*******************************************************************)
@@ -256,7 +289,88 @@ Fixpoint drop {A: Type} (n: nat) (xx: list A) : list A :=
  end.
 
 
+Lemma drop_nil
+ :  forall {A: Type} n
+ ,  drop n (@nil A) = nil.
+Proof.
+ intros. destruct n; auto.
+Qed.
+
+
+Lemma take_drop
+ :  forall {A: Type} n (xx: list A)
+ ,  take n xx ++ drop n xx = xx.
+Proof.
+ intros. gen xx.
+ induction n; intros.
+  simpl. auto.
+  destruct xx.
+   simpl. auto.
+   simpl. f_equal. auto.
+Qed.
+
+
+
+Lemma take_step
+ :  forall {A: Type} n (xx: list A) y (ys: list A)
+ ,  take  n    (xx ++ y :: ys) = xx
+ -> take (S n) (xx ++ y :: ys) = xx ++ (y :: nil).
+Proof.
+ intros. gen n ys.
+ induction xx; intros.
+  admit.
+  simpl. f_equal.
+  simpl in H.
+
+  
+Qed.
+
 (*******************************************************************)
-Fixpoint splitAt {A: Type} (ix: nat) (xx: list A) : (list A * list A) :=
+Definition splitAt {A: Type} (ix: nat) (xx: list A) : (list A * list A) :=
  (take ix xx, drop ix xx).
+Hint Unfold splitAt.
+
+
+Lemma splitAt_app 
+ :  forall {A: Type} ix (xs: list A) (ys: list A) (zs: list A)
+ ,  splitAt ix xs = (ys, zs)
+ -> xs = ys ++ zs.
+Proof.
+ intros.
+ unfold splitAt in H.
+ inverts H.
+ symmetry. apply take_drop.
+Qed.
+
+
+Lemma splitAt_app_cons
+ :  forall {A: Type} ix (xs: list A) (yy: list A) (z: A) (zs: list A)
+ ,  splitAt ix xs = (yy, z :: zs)
+ -> xs = yy ++ (z :: zs).
+Proof.
+ intros.
+ unfold splitAt in H.
+ inverts H. 
+ symmetry. apply take_drop.
+Qed.
+
+
+Lemma splitAt_shift
+ :  forall {A: Type} ix (xs: list A) (ys: list A) (z0: A) (z1: A) (zs: list A)
+ ,  splitAt ix     xs = (ys,                z0 :: z1 :: zs)
+ -> splitAt (S ix) xs = (ys ++ (z0 :: nil), z1 :: zs).
+Proof.
+ intros. 
+ lets D:  @splitAt_app A.
+ lets D1: D H. clear D.
+ unfold splitAt.
+ unfold splitAt in H. inversion H. clear H.
+  rewrite H1.
+ rewrite D1 in H1.
+ rewrite D1 in H2.
+ f_equal. 
+  rewrite D1.
+   
+  
+
 

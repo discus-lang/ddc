@@ -50,21 +50,10 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
  with exps_ctx : (exp -> list exp) -> Prop :=
   | XscIx 
     :  forall ix xs vs x xs'
-    ,  splitAt ix nil xs = Some (vs, x :: xs')
+    ,  splitAt ix xs = (vs, x :: xs')
     -> Forall  value vs
     -> exps_ctx (fun xx => app vs (xx :: xs')).
 
-(*
-  | XscHead
-    : forall xs
-    , exps_ctx (fun xx => xx :: xs)
-
-  | XscTail 
-    :  forall v1 C
-    ,  value v1
-    -> exps_ctx C
-    -> exps_ctx (fun xx => v1 :: C xx).
-*)
 Hint Constructors exp_ctx. 
 
 (********************************************************************)

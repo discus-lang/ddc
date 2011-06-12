@@ -59,6 +59,7 @@ Hint Resolve eval_produces_whnfX.
    Convert a big-step evaluation into a list of individual
    machine steps.
  *)
+
 Lemma steps_of_evals
  :  forall ds xs ts vs 
  ,  Forall2 (TYPE ds Empty) xs ts
@@ -68,20 +69,19 @@ Proof.
  admit.
 Qed.
 
-Lemma steps_con4
- :  forall ix x v vs xs xs' dc acc
+Lemma steps_con
+ :  forall ix x v vs xs xs' dc
  ,  Forall value vs
  -> STEPS x v
- -> splitAt ix acc xs = Some (app acc vs, x :: xs')
- -> STEPS (XCon dc xs) (XCon dc (app acc vs ++ (v :: xs'))).
+ -> splitAt ix xs = (vs, x :: xs')
+ -> STEPS (XCon dc xs) (XCon dc (vs ++ (v :: xs'))).
 Proof.
- admit.
-(* intros.
- lets D: steps_context XcCon. eapply XscIx.
-  eauto. eauto.
- lets D1: D H0.
-  assert (xs = (app vs (x :: xs'))). skip.
-   rewrite H2. eapply D1. *)
+ intros.
+ lets D: steps_context XcCon. eapply (XscIx ix). eauto. auto.
+ lets D1: D H0. clear D.
+  assert (xs = app vs (x :: xs')). skip.
+   rewrite H2.
+ apply D1.
 Qed.
 
 
