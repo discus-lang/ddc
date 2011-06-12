@@ -2,23 +2,6 @@
 Require Import TyJudge.
 Require Import EsJudge.
 Require Import SubstExpExp.
-
-
-Lemma getAlt_matches_dataDef
- :  forall ds te tCon tResult alts dc x tsArgs tsArgs'
- ,  Forall (fun alt => TYPEA ds te alt tCon tResult) alts 
- -> getDataDef dc ds = Some (DefData dc tsArgs  tCon)
- -> getAlt dc alts   = Some (AAlt    dc tsArgs' x)
- -> tsArgs = tsArgs'.
-Proof.
- intros.
- rewrite Forall_forall in H.
- lets D: getAltExp_hasAlt H1.
- apply H in D.
- inverts D.
- rewrite H0 in H9.
- inverts H9. auto.
-Qed.
  
 
 (* When a well typed expression transitions to the next state
