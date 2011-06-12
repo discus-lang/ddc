@@ -34,7 +34,7 @@ Lemma exps_ctx_Forall2
 Proof.
  intros.
  inverts H.
- assert (In x (vs ++ x :: xs')). admit. (***** ok *)
+ assert (In x (vs ++ x :: xs')). apply in_splitted.
  lets D: Forall2_exists_left_In H H0.
  destruct D. 
  exists x1. eauto.

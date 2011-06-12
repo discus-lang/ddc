@@ -13,6 +13,17 @@ Fixpoint getl {A: Type} (e: list A) (i: nat) : option A :=
 Hint Unfold getl.
 
 
+Lemma in_splitted
+ : forall {A: Type} x (xp: list A) (xs: list A)
+ , In x (xp ++ x :: xs).
+Proof.
+ intros.
+ induction xp. 
+  simpl. auto.
+  simpl. right. auto.
+Qed.
+
+
 (* map lemmas *******************************************************)
 Lemma map_ext_In
  : forall {A B : Type}
