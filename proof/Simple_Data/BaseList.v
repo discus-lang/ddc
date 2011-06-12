@@ -310,20 +310,21 @@ Proof.
 Qed.
 
 
-
 Lemma take_step
  :  forall {A: Type} n (xx: list A) y (ys: list A)
  ,  take  n    (xx ++ y :: ys) = xx
  -> take (S n) (xx ++ y :: ys) = xx ++ (y :: nil).
 Proof.
- intros. gen n ys.
- induction xx; intros.
-  admit.
-  simpl. f_equal.
-  simpl in H.
-
-  
+ intros.
+ destruct xx.
+  simpl. f_equal. simpl in H.
+  destruct n.
+   auto.
+   simpl in H. inverts H.
+  simpl. f_equal. simpl in H.
+   apply take_cons in H. auto.
 Qed.
+
 
 (*******************************************************************)
 Definition splitAt {A: Type} (ix: nat) (xx: list A) : (list A * list A) :=
