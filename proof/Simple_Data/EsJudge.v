@@ -5,11 +5,10 @@ Require Export SubstExpExp.
 
 
 (********************************************************************)
-(** * Evaluation Contexts *)
+(** * Evaluation Contexts of lists *)
 (** An evaluation context defines a function that allows us to
     update a node in the AST for an expression. We use this to
     update nodes during single step evaluation. *)
-
 
 (*  A context defined by one place in a list of exps, where all 
     the exps to the left of it in the list are values:
@@ -25,6 +24,38 @@ Inductive exps_ctx : (exp -> list exp) -> Prop :=
    -> exps_ctx (fun xx => app vs (xx :: xs')).
 
 
+Lemma exps_ctx_Forall2 
+ :   forall {B: Type} (R: exp -> B -> Prop) 
+            (x: exp)  Cs
+            (y: B)    (ys: list B)
+ ,   exps_ctx Cs
+ ->  Forall2 R (Cs x) ys
+ ->  (exists y, In y ys /\ R x y).
+Proof.
+ intros.
+ inverts H.
+ assert (In x (vs ++ x :: xs')). admit. (***** ok *)
+ lets D: Forall2_exists_left_In H H0.
+ destruct D. 
+ exists x1. eauto.
+Qed.  
+
+
+Lemma exps_ctx_Forall2_swap
+ :   forall {B: Type} (R: exp -> B -> Prop)
+            (x1 x2 : exp) Cs
+            (y: B)        (ys: list B)
+ ,   exps_ctx Cs
+ ->  R x1 y
+ ->  R x2 y
+ ->  Forall2 R (Cs x1) ys
+ ->  Forall2 R (Cs x2) ys.
+Proof.
+ admit.
+Qed.
+
+
+(********************************************************************)
 (*  Evaluation contexts for expressions.
     This describes a place in the exp AST where the sub-expression
     there is able to take an evaluation step *)
@@ -195,6 +226,26 @@ Proof.
   auto.
   auto.
   eapply EsAppend; eauto.
+Qed.
+
+
+(* Reduce one of the arguments to a data constructor. 
+   The definition of evaluation contexts enforces a left-to-right 
+   order of evaluation, so all the arguments to the left of the one
+   to be reduced already need to be values. *)
+Lemma steps_context_XCon
+ :  forall ix x v vs xs xs' dc
+ ,  splitAt ix xs = (vs, x :: xs')
+ -> Forall value vs
+ -> STEPS  x v
+ -> STEPS (XCon dc xs) (XCon dc (vs ++ (v :: xs'))).
+Proof.
+ intros.
+ lets D: steps_context XcCon. eapply (XscIx ix). eauto. auto.
+ lets D1: D H1. clear D.
+  assert (xs = app vs (x :: xs')). eapply splitAt_app. eauto.
+   rewrite H2.
+ apply D1.
 Qed.
 
 

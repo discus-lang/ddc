@@ -60,91 +60,6 @@ Hint Resolve eval_produces_whnfX.
    Convert a big-step evaluation into a list of individual
    machine steps.
  *)
-
-
-(* Reduce one of the arguments to a data constructor. 
-   The definition of evaluation contexts enforces a left-to-right 
-   order of evaluation, so all the arguments to the left of the one
-   to be reduced already need to be values. *)
-Lemma steps_context_XCon
- :  forall ix x v vs xs xs' dc
- ,  splitAt ix xs = (vs, x :: xs')
- -> Forall value vs
- -> STEPS  x v
- -> STEPS (XCon dc xs) (XCon dc (vs ++ (v :: xs'))).
-Proof.
- intros.
- lets D: steps_context XcCon. eapply (XscIx ix). eauto. auto.
- lets D1: D H1. clear D.
-  assert (xs = app vs (x :: xs')). eapply splitAt_app. eauto.
-   rewrite H2.
- apply D1.
-Qed.
-
-
-Lemma steps_context_XCon_2 
- :   forall v x dc Cs
- ,   STEPS x v
- ->  exps_ctx Cs
- ->  STEPS (XCon dc (Cs x)) (XCon dc (Cs v)).
-Proof.
- intros.
- lets D: steps_context XcCon. eauto.
- eauto.
-Qed.
-
-
-Lemma Forall2_exists_left_In
- : forall (A B: Type) (R: A -> B -> Prop) x xs ys
- ,             In x xs  -> Forall2 R xs ys 
- -> (exists y, In y ys  /\         R x  y).
-Proof.
- intros.
- induction H0.
-  false.
-  simpl in H. destruct H.
-   subst.
-   exists y. split. simpl. auto. auto.
-   lets D: IHForall2 H.
-   destruct D.
-   exists x1.
-    inverts H2.
-    split. simpl. auto. auto.
-Qed.
-
-
-Lemma exps_ctx_Forall2 
- :   forall {B: Type} (R: exp -> B -> Prop) 
-            (x: exp)  Cs
-            (y: B)    (ys: list B)
- ,   exps_ctx Cs
- ->  Forall2 R (Cs x) ys
- ->  (exists y, In y ys /\ R x y).
-Proof.
- intros.
- inverts H.
- assert (In x (vs ++ x :: xs')).
-  admit.
- lets D: Forall2_exists_left_In H H0.
- destruct D. 
- exists x1. eauto.
-Qed.  
-
-
-Lemma exps_ctx_Forall2_swap
- :   forall {B: Type} (R: exp -> B -> Prop)
-            (x1 x2 : exp) Cs
-            (y: B)        (ys: list B)
- ,   exps_ctx Cs
- ->  R x1 y
- ->  R x2 y
- ->  Forall2 R (Cs x1) ys
- ->  Forall2 R (Cs x2) ys.
-Proof.
- admit.
-Qed.
-
-
 Lemma steps_of_eval
  :  forall ds x1 t1 x2
  ,  TYPE ds Empty x1 t1
@@ -158,6 +73,7 @@ Proof.
  Case "EvDone".
   intros. apply EsNone.
 
+ (* Function Application ***)
  Case "EvLamApp".
   intros. inverts HT.
 
@@ -178,6 +94,7 @@ Proof.
     eapply EsStep.
      eapply EsLamApp. eauto. eauto.
 
+ (* Constructor evaluation ***)
  Case "EvCon".
   intros. inverts keep HT.
 
@@ -195,7 +112,8 @@ Proof.
    eapply TYCon. eauto.
    eapply exps_ctx_Forall2_swap.
     eauto. eapply H3. eauto. eauto.
-  
+
+ (* Case selection ***)  
  Case "EvCase".
   intros. inverts keep HT.
 

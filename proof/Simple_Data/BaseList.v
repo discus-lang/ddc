@@ -156,6 +156,25 @@ Proof.
 Qed.
 
 
+Lemma Forall2_exists_left_In
+ : forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ ,             In x xs  -> Forall2 R xs ys 
+ -> (exists y, In y ys  /\         R x  y).
+Proof.
+ intros.
+ induction H0.
+  false.
+  simpl in H. destruct H.
+   subst.
+   exists y. split. simpl. auto. auto.
+   lets D: IHForall2 H.
+   destruct D.
+   exists x1.
+    inverts H2.
+    split. simpl. auto. auto.
+Qed.
+
+
 Lemma Forall2_exists_right
  : forall (A B: Type) (R: A -> B -> Prop) y xs ys
  ,  In y ys 
