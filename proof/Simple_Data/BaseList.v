@@ -67,19 +67,6 @@ Proof.
 Qed.
 
 
-Lemma Forall_map
- :  forall {A B: Type} 
-           (P: B -> Prop) (f: A -> B) 
-           (xs: list A)
- ,  Forall (fun x => P (f x)) xs
- -> Forall P (map f xs).
-Proof.
- intros. induction xs.
-  apply Forall_nil.
-  inverts H. simpl. intuition.
-Qed.
-
-
 (* Forall ***********************************************************)
 Lemma Forall_impl_In
  : forall {A: Type}
@@ -93,6 +80,19 @@ Proof.
  induction xs.
   auto. 
   inverts H0. intuition.
+Qed.
+
+
+Lemma Forall_map
+ :  forall {A B: Type} 
+           (P: B -> Prop) (f: A -> B) 
+           (xs: list A)
+ ,  Forall (fun x => P (f x)) xs
+ -> Forall P (map f xs).
+Proof.
+ intros. induction xs.
+  apply Forall_nil.
+  inverts H. simpl. intuition.
 Qed.
 
 
@@ -222,16 +222,41 @@ Qed.
 Hint Resolve Forall_forall.
 
 
-(* splitat ****************************************************)
-Fixpoint splitAt {A: Type} (ix : nat) (acc : list A) (xx : list A) 
-          : option (list A * list A)
- := match ix, xx with 
-    | O,   nil       => None
-    | O,   (x :: xs) => Some (acc, (x :: xs))
-    | S n, nil       => None
-    | S n, (x :: xs) => splitAt n (acc ++ (x :: nil)) xs
-    end.
+(********************************************************************)
+Fixpoint take {A: Type} (n: nat) (xx: list A) : list A :=
+ match n, xx with
+ | O, _           => nil
+ | S n', nil      => nil
+ | S n', x :: xs  => x :: take n' xs
+ end.
+
+Lemma take_length 
+ :  forall {A: Type} n (xs: list A)
+ ,  n < length xs
+ -> length (take n xs) = n.
+Proof.
+ intros. gen n.
+ induction xs; intros.
+  inverts H.
+  destruct n.
+   auto.
+   simpl.
+   f_equal.
+   apply IHxs.
+   simpl in H. omega.
+Qed.
 
 
+(*******************************************************************)
+Fixpoint drop {A: Type} (n: nat) (xx: list A) : list A :=
+ match n, xx with
+ | O, _           => xx
+ | S n', nil      => nil
+ | S n', x :: xs  => drop n' xs
+ end.
 
+
+(*******************************************************************)
+Fixpoint splitAt {A: Type} (ix: nat) (xx: list A) : (list A * list A) :=
+ (take ix xx, drop ix xx).
 
