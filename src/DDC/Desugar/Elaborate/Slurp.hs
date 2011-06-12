@@ -84,7 +84,7 @@ slurpClasses dg
 	$ treeOfGlob dg
 	
 slurpClass (PClassDecl _ v ts _)
- = let	kinds = map (\(TVar k _) -> k) ts
+ = let	kinds = map (\t -> let TVar k _ = t in k) ts
 	in [(v,kinds)]
 slurpClass _
  = []
