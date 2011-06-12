@@ -8,12 +8,26 @@ Require Export SubstExpExp.
 (** * Evaluation Contexts *)
 (** An evaluation context defines a function that allows us to
     update a node in the AST for an expression. We use this to
-    update nodes during single step evaluation. 
+    update nodes during single step evaluation. *)
 
-    Another way of viewing it is that the exp_ctx data type provides
-    a mechanism to describe a particular point in the AST. Using the 
-    exp_constructors, we can name any sub-expression that is ready
-    to take a step. *)
+
+(*  A context defined by one place in a list of exps, where all 
+    the exps to the left of it in the list are values:
+         v0 v1 v2 xx x4 x5 x6
+                  ^^
+    This is useful when enforcing a left-to-right evaluation
+    order for a list of exps, like in the arguments of an XCon *)
+Inductive exps_ctx : (exp -> list exp) -> Prop :=
+ | XscIx 
+   :  forall ix xs vs x xs'
+   ,  splitAt ix xs = (vs, x :: xs')
+   -> Forall  value vs
+   -> exps_ctx (fun xx => app vs (xx :: xs')).
+
+
+(*  Evaluation contexts for expressions.
+    This describes a place in the exp AST where the sub-expression
+    there is able to take an evaluation step *)
 Inductive exp_ctx : (exp -> exp) -> Prop :=
 
  (* The top level context names the entire expression *)
@@ -43,18 +57,10 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
  (* We need to reduce the discriminant of a case to a value. *)
  | XcCase
    :  forall alts
-   ,  exp_ctx  (fun xx => XCase xx alts)
- 
- (* Some sub-expression in a list can only take a step when all 
-    the previous expressions are already values. *)
- with exps_ctx : (exp -> list exp) -> Prop :=
-  | XscIx 
-    :  forall ix xs vs x xs'
-    ,  splitAt ix xs = (vs, x :: xs')
-    -> Forall  value vs
-    -> exps_ctx (fun xx => app vs (xx :: xs')).
+   ,  exp_ctx  (fun xx => XCase xx alts).
 
 Hint Constructors exp_ctx. 
+
 
 (********************************************************************)
 (** * Utilities for evaluation *)
