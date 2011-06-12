@@ -140,14 +140,8 @@ Proof.
   eapply EsAppend.
    eapply EsStep.
     eapply EsCaseAlt.
-     assert (Forall closedX vs).
-     admit.
-     rewrite Forall_forall.
-     intros.
-     apply Value.
+     auto.
      rewrite Forall_forall in H. eauto.
-     rewrite Forall_forall in H1. eauto.
-     eauto.
      eapply IHHE2.
      eapply subst_value_value_list; eauto.
 Qed.
@@ -189,13 +183,7 @@ Proof.
     admit. (********* TODO: need big step rule *)
 
    SCase "XcCase".
-    inverts HT. inverts H0. inverts H. eauto.
-    eapply EvCase with (dc := dc) (vs := vs).
-     admit. (*** ok, vs are values. need big step rule for XCon *)
-    rewrite Forall_forall. intros.
-    rewrite Forall_forall in H.
-    apply H in H2. inverts H2. eauto. eauto.
-    auto.
+    inverts HT. inverts H0. inverts H. eauto. 
 Qed.
 
 

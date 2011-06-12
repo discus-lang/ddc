@@ -40,7 +40,8 @@ Proof.
 
      SSSCase "x1 ~ XLam".
       exists (substX 0 x2 x0).
-      apply EsLamApp. auto.
+      apply EsLamApp.
+      inverts H2. auto.
 
      SSSCase "x1 ~ XCon".
       inverts H. admit. (*** add to TyCon that result must be data type *)

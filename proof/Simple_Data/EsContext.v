@@ -20,7 +20,7 @@ Inductive exps_ctx : (exp -> list exp) -> Prop :=
  | XscIx 
    :  forall ix xs vs x xs'
    ,  splitAt ix xs = (vs, x :: xs')
-   -> Forall  value vs
+   -> Forall  whnfX vs
    -> exps_ctx (fun xx => app vs (xx :: xs')).
 
 

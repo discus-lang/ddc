@@ -23,13 +23,13 @@ Inductive STEP : exp -> exp -> Prop :=
 
  | EsLamApp
    : forall t11 x12 v2
-   ,  value v2
+   ,  whnfX v2
    -> STEP (XApp   (XLam t11 x12) v2)
            (substX 0 v2 x12)
 
  | EsCaseAlt
    :  forall dc vs tsArgs alts x
-   ,  Forall value vs
+   ,  Forall whnfX vs
    -> getAlt dc alts = Some (AAlt dc tsArgs x)
    -> STEP (XCase (XCon dc vs) alts)
            (substXs 0 vs x).
@@ -89,12 +89,13 @@ Qed.
 Lemma steps_context_XCon
  :  forall ix x v vs xs xs' dc
  ,  splitAt ix xs = (vs, x :: xs')
- -> Forall value vs
+ -> Forall whnfX vs
  -> STEPS  x v
  -> STEPS (XCon dc xs) (XCon dc (vs ++ (v :: xs'))).
 Proof.
  intros.
- lets D: steps_context XcCon. eapply (XscIx ix). eauto. auto.
+ lets D: steps_context XcCon. eapply (XscIx ix).
+  eauto. auto.
  lets D1: D H1. clear D.
   assert (xs = app vs (x :: xs')). eapply splitAt_app. eauto.
    rewrite H2.
