@@ -22,11 +22,9 @@ Proof.
    try (inverts HT; progress eauto).
 
   SCase "XCon".
-   admit.
- (*   inverts HT.
+   inverts HT.
    eapply TYCon. eauto.
-   eapply Forall2_swap; eauto.
- *)
+   eapply context_Forall2_swap; eauto.
 
  Case "EsLamApp".
   inverts HT. inverts H4.
