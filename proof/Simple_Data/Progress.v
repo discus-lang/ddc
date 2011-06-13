@@ -73,10 +73,14 @@ Proof.
     SSCase "XCon".
      rewrite Forall_forall in H0.
      assert (exists tsArgs x, getAlt d alts = Some (AAlt d tsArgs x)).
-      inverts H. admit.
-      eauto.
-     destruct H5. destruct H5.
+      inverts H.
+      rewrite Forall_forall in H3.
+      assert (dcs0 = dcs).
+       rewrite H2 in H11. inverts H11. auto.
+       subst.
+       apply getAlt_exists. auto.
 
+     destruct H5. destruct H5.
      exists (substXs 0 l x0).
      eapply EsCaseAlt.
       inverts H4. inverts H6. auto.

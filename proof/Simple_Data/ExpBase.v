@@ -36,6 +36,21 @@ Proof.
 Qed.
 
 
+Lemma datacon_beq_false
+ :  forall dc 
+ ,  false = datacon_beq dc dc 
+ -> False.
+Proof.
+ intro.
+ destruct dc.
+ simpl.
+ intros.
+  induction n.
+  simpl in H. false.
+  simpl in H. auto.
+Qed.
+
+
 Inductive exp : Type :=
  (* Functions *)
  | XVar   : nat -> exp

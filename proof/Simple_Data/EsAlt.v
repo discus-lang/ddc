@@ -76,3 +76,26 @@ Proof.
  rewrite H0 in H9.
  inverts H9. auto.
 Qed.
+
+
+Lemma getAlt_exists
+ :  forall d alts
+ ,  In d (map dcOfAlt alts)
+ -> (exists tsArgs x, getAlt d alts = Some (AAlt d tsArgs x)).
+Proof.
+ intros.
+ induction alts.
+  simpl in H. false.
+  simpl in H. inverts H.
+   destruct a. simpl.
+   breaka (datacon_beq d d).
+    exists l. exists e. auto.
+    apply datacon_beq_false in HeqX. false.
+   lets D: IHalts H0.
+   destruct a. simpl.
+    breaka (datacon_beq d d0).
+     apply datacon_beq_eq in HeqX. subst. auto.
+     exists l. exists e. auto.
+Qed.
+
+
