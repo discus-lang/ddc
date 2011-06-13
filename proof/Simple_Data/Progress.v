@@ -89,8 +89,7 @@ Proof.
    destruct H4 as [xObj'].
    exists (XCase xObj' alts).
     eapply (EsContext (fun xx => XCase xx alts)).
-    admit. (***** TODO:  we're missing the case context *)
-    auto.
+    eauto. auto.
 Qed.
 
 
