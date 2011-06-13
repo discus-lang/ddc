@@ -12,11 +12,11 @@ import DDC.Main.Pretty
 import Data.Function
 import Data.List
 import qualified Data.Map	as Map
-	
+
 
 instance Pretty DataDef PMode where
- ppr def@(DataDef 
-	{ dataDefName 	= v 
+ ppr def@(DataDef
+	{ dataDefName 	= v
 	, dataDefParams	= vks
 	, dataDefCtors	= ctors })
 
@@ -41,22 +41,22 @@ instance Pretty CtorDef PMode where
  ppr (CtorDef v t arity tag fs)
   = v 	% nl %> ( "::" %% prettyTypeSplit t % nl
 		% vcat	[ "with { ARITY  = " % arity
-			, "     , TAG    = " % tag   
+			, "     , TAG    = " % tag
 			, "     , FIELDS = " % fs %% "}"])
 
 
 -- | Pretty print a data type definition in source syntax.
 pprDataDefAsSource :: DataDef -> Str
-pprDataDefAsSource 
- def@(DataDef 
+pprDataDefAsSource
+ def@(DataDef
 	{ dataDefName	= vData
 	, dataDefParams	= vksParam
 	, dataDefCtors	= ctors })
 
 	| Just name	<- dataDefSeaName def
-	= "foreign import data" 
+	= "foreign import data"
 		 %% show name %% vData %% "::" %% dataDefKind def
-	
+
 	| Map.null ctors
 	= "data" %% vData %% hsep (map ppr $ map fst vksParam)
 
@@ -79,9 +79,9 @@ pprCtorDefAsSource ctorDef
 	= pprHeadBlock (ctorDefName ctorDef)
 		$ map pprField
 		$ fieldTypeLabels ctorDef
-		
-	where	pprField (Nothing, 	t)	
+
+	where	pprField (Nothing, 	t)
 			= prettyTypeParens $ stripToBodyT t
-			
-		pprField (Just label,	t)	
+
+		pprField (Just label,	t)
 			= label %% "::" %% (prettyTypeParens $ stripToBodyT t)

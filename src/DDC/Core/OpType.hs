@@ -3,7 +3,7 @@
 -- | Taking arities and operational types.
 module	DDC.Core.OpType
 	( superOpTypeP
-	, superOpTypeX 
+	, superOpTypeX
 	, slurpSuperAritiesP)
 where
 import Util
@@ -25,7 +25,7 @@ stage = "DDC.Core.OpType"
 --	1) The Sea translation doesn't care about alot of the type information present
 --	   in the core types. eg boxed objects are just Obj*, and regions aren't used at all
 --
---	2) Supercombinators can return function objects, with value type (a -> b), but the 
+--	2) Supercombinators can return function objects, with value type (a -> b), but the
 --	   sea code treats them as just vanilla boxed objects.
 --
 superOpTypeP ::	 Top -> Type
@@ -39,7 +39,7 @@ superOpTypeP	pp
 	--	types around with them.
 	PExtern _ _ to	-> to
 
-	_ 	-> panic stage 
+	_ 	-> panic stage
 		$ "superOpTypeP: no match for " % show pp % "\n"
 
 
@@ -59,12 +59,12 @@ superOpType'	xx
 
 	-- take the type of the body of the super from the XTau enclosing it.
 	XTau	t _	-> [superOpTypePart t]
-	
+
 	-- there's no XTau enclosing the body, so we'll have to reconstruct
 	--	the type for it manually.
-	_		-> [superOpTypePart 
+	_		-> [superOpTypePart
 			$  checkedTypeOfOpenExp (stage ++ ".superOpType") xx]
-			
+
 superOpTypePart	tt
  = case tt of
 	TNil			-> TNil
@@ -83,11 +83,11 @@ superOpTypePart	tt
 	 -> makeTData Var.primTData kValue []
 
 	TApp{}
-	 -> let	result	
+	 -> let	result
 		 -- unboxed types are represented directly, and the Sea
 		 --	code must know about them.
 	 	 | Just (v, k, ts)	<- takeTData tt
-		 , v == Var.primTPtrU	
+		 , v == Var.primTPtrU
 		 = makeTData v k (map superOpTypePart ts)
 
 		 -- an unboxed tycon of some aritity, eg String#
@@ -98,17 +98,17 @@ superOpTypePart	tt
 		 -- boxed types are just 'Data'
 		 | Just (_, k, _)	<- takeTData tt
 		 = makeTData Var.primTData k []
-			
+
 		 -- all function objects are considered to be 'Thunk'
 		 | Just _		<- takeTFun tt
 		 = makeTData Var.primTThunk kValue []
-			
+
 		 | otherwise
 		 = makeTData Var.primTObj kValue []
-	   in result			
+	   in result
 
 	-- some unknown, boxed object 'Obj'
-	TVar k _	
+	TVar k _
 	 | k == kValue
 	 -> makeTData Var.primTObj kValue []
 
@@ -131,10 +131,10 @@ slurpSuperAritiesP pp
 	    in  Map.singleton v arity
 
 	PData def
-	 -> Map.unions 
-	 $  map slurpSuperArityCtorDef 
+	 -> Map.unions
+	 $  map slurpSuperArityCtorDef
 	 $  Map.elems $ dataDefCtors def
-			
+
 	_ -> Map.empty
 
 slurpSuperArityCtorDef :: CtorDef -> Map Var Int

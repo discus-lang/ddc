@@ -9,11 +9,11 @@ module Core.Plate.Trans
 	, transZM
 	, transZ
 
-	, transformV 
+	, transformV
 
 	, transformTM
 	, transformT
-	
+
 	, transformSM
 	, transformS
 
@@ -22,9 +22,9 @@ module Core.Plate.Trans
 
 	, transformX
 	, transformXM
-	
+
 	, transformA
-	
+
 	, transformW)
 where
 import DDC.Main.Error
@@ -45,16 +45,16 @@ dropStateM	m
    in	x'
 
 -----
-class Monad m => TransM m a 
+class Monad m => TransM m a
  where	transZM :: TransTable m -> a -> m a
 
 -----
-transZ 
+transZ
 	:: TransM (State ()) a
 	=> TransTable (State ())
 	-> a -> a
-	
-transZ	table x 
+
+transZ	table x
 	= evalState (transZM table x) ()
 
 -----
@@ -63,15 +63,15 @@ instance Monad m => TransM m Var
 
 
 -----
-instance (Monad m, TransM m a) 
-	=> TransM m [a] 
- where	
-  transZM table xx 
+instance (Monad m, TransM m a)
+	=> TransM m [a]
+ where
+  transZM table xx
    = 	mapM (transZM table) xx
 
 
 -----
-instance (Ord a, Monad m, TransM m a, TransM m b) 
+instance (Ord a, Monad m, TransM m a, TransM m b)
 	=> TransM m (Map a b) where
   transZM table xx
    = liftM Map.fromList $ mapM (transZM table) $ Map.toList xx
@@ -80,23 +80,23 @@ instance (Ord a, Monad m, TransM m a, TransM m b)
 instance (Monad m, TransM m a)
 	=> TransM m (Maybe a)
  where
-  transZM table Nothing	
+  transZM table Nothing
    = 	return Nothing
- 
-  transZM table (Just x)	
+
+  transZM table (Just x)
    = do	x'	<- transZM table x
    	return	$ Just x'
-	 	
+
 
 -----
-instance (Monad m, TransM m a, TransM m b) 
+instance (Monad m, TransM m a, TransM m b)
 	=> TransM m (a, b)
 
  where	transZM table (x, y)
    	 = do	x'	<- transZM table x
 	 	y'	<- transZM table y
 		return	(x', y')
-	 	
+
 
 
 -----
@@ -105,11 +105,11 @@ transformSM f s		= transZM 	transTableId { transS	= f,			decendT	= False } 	s
 transformS f s		= transZ	transTableId { transS	= \s -> return $ f s, 	decendT	= False }	s
 transformSS f ss 	= transZ  	transTableId { transSS	= \ss -> return $ f ss, decendT	= False }	ss
 transformSSM f ss	= transZM	transTableId { transSS	= f, 			decendT	= False }	ss
-	
+
 -----
 transformXM f x
  = transZM
- 	transTableId 
+ 	transTableId
 		{ transX	= f
 		, decendT	= False }
 	x
@@ -121,7 +121,7 @@ transformX f x
 		{ transX	= \x -> return $ f x
 		, decendT	= False }
 	x
-		
+
 -----
 transformA f x
  = transZ
@@ -137,7 +137,7 @@ transformW f x
 		{ transW	= \x -> return $ f x
 		, decendT	= False }
 	x
-		
+
 -----
 transformTM f t
  = transZM
@@ -154,18 +154,18 @@ transformT f t
 -----
 data TransTable m
 	= TransTable
-	{ transP	:: Top		-> m Top 
+	{ transP	:: Top		-> m Top
 	, transX	:: Exp		-> m Exp
 	, transM	:: Prim		-> m Prim
 	, transS	:: Stmt		-> m Stmt
-	, transA	:: Alt		-> m Alt 
+	, transA	:: Alt		-> m Alt
 	, transG	:: Guard	-> m Guard
 	, transW	:: Pat		-> m Pat
 
 	, transT	:: Type		-> m Type
 	, transK	:: Kind		-> m Kind
 
-	, transV	:: Var		-> m Var 
+	, transV	:: Var		-> m Var
 	, transV_bind	:: Var		-> m Var
 	, transV_free	:: Var		-> m Var
 
@@ -185,7 +185,7 @@ data TransTable m
 transTableId :: TransTable (State s)
 transTableId
 	= TransTable
-	{ transP	= return 
+	{ transP	= return
 	, transX	= return
 	, transM	= return
 	, transS	= return
@@ -212,46 +212,46 @@ transTableId
 	, decendK	= True }
 
 -----
-followX  table x	
+followX  table x
  | decendX table	= transZM table x
  | otherwise		= return x
 
-followSs table ss	
+followSs table ss
  = do	ss2	<- mapM (followS table) ss
  	ss3	<- transSS table ss2
 	return ss3
 
-followS  table s	
+followS  table s
  | decendS table 	= transZM table s
  | otherwise		= return s
- 
+
 followAs table aa	= mapM (followA table) aa
 followA  table a
  | decendA table	= transZM table a
  | otherwise		= return a
- 
+
 followGs table gg	= mapM (followG table) gg
 followG table g
  | decendG table	= transZM table g
  | otherwise		= return g
- 
+
 followTs table tt	= mapM (followT table) tt
 followT table t
  | decendT table	= transZM table t
  | otherwise		= return t
- 
+
 followK table k
  | decendK table	= transZM table k
  | otherwise		= return k
- 
+
 followV table v		= transV table v
 
 followV_free table v
  = do	v1	<- transV_free table v
  	v2	<- transV      table v1
 	return	v2
-  
-followV_bind table v	
+
+followV_bind table v
  = do	v1	<- transV_bind  table v
  	v2	<- transV	table v1
 	return v2
@@ -270,7 +270,7 @@ followB_bind table (BMore v t)
 	t'	<- followT table t
 	return (BMore v2 t')
 
-	
+
 -----
 instance Monad m => TransM m Top where
  transZM table p
@@ -279,18 +279,18 @@ instance Monad m => TransM m Top where
 	 -> do	v'		<- followV table v
 		x'		<- followX table x
 		transP table	$ PBind v' x'
-		
+
 	PExtern v tv to
 	 -> do	v'		<- followV table v
 	 	tv'		<- followT table tv
 		to'		<- followT table to
 		transP table	$ PExtern v' tv' to'
-		
-	PData ddef@(DataDef 
-		{ dataDefName	= v 
+
+	PData ddef@(DataDef
+		{ dataDefName	= v
 		, dataDefParams	= vksParam
 		, dataDefCtors	= ctors })
-		
+
 	 -> do	v'		<- transZM table v
 		vksParam'	<- transZM table vksParam
 		ctors'		<- transZM table ctors
@@ -313,9 +313,9 @@ instance Monad m => TransM m Top where
 	PClassInst v ts defs
 	 -> do	defs'		<- transZM table defs
 	 	return		$ PClassInst v ts defs'
-	 
-	 
------	
+
+
+-----
 instance Monad m => TransM m CtorDef where
  transZM table cc
   = case cc of
@@ -323,19 +323,19 @@ instance Monad m => TransM m CtorDef where
 	 -> do	v'		<- followV table v
 	 	t'		<- transZM table t
 		return		$ CtorDef v' t' arity tag fields
-	
-	 
+
+
 -----
 instance Monad m => TransM m Exp where
  transZM table xx
   = do	xx2	<- transX_enter table xx
  	transXM2 table xx2
-	
+
 transXM2 table xx
  = case xx of
 	XNil
 	 ->	transX table xx
-	 
+
 	-- core constructs
 	XVar v t
 	 -> do	v'		<- followV_free  table v
@@ -352,7 +352,7 @@ transXM2 table xx
 	 	k'		<- followK table k
 		x'		<- followX table x
 		transX table	$ XLAM v' k' x'
-		
+
 	XLam v t x eff clo
 	 -> do	v'		<- followV_bind table v
 		t'		<- followT table t
@@ -365,7 +365,7 @@ transXM2 table xx
 	 -> do	x'		<- followX table x
 	 	c'		<- followT table c
 		transX table	$ XAPP x' c'
-		
+
 	XApp x1 x2
 	 -> do	x1'		<- followX table x1
 	 	x2'		<- followX table x2
@@ -375,18 +375,18 @@ transXM2 table xx
 	 -> do	t'		<- followT table t
 	 	x'		<- followX table x
 		transX table	$ XTau t' x'
-		
+
 	XDo ss
 	 -> do	ss'		<- followSs table ss
 	 	transX table	$ XDo ss'
-		
+
 	XMatch  aa
 	 -> do	aa'		<- followAs table aa
 		transX table	$ XMatch aa'
-		
+
 	XLit l
 	 ->  do	transX table	$ XLit l
-	 
+
 	XLocal v vts x
 	 -> do	v'		<- followV_bind  table v
 		let (vs, ts)	= unzip vts
@@ -397,7 +397,7 @@ transXM2 table xx
 		transX table	$ XLocal v' vts' x'
 
 
-		
+
 
 instance Monad m => TransM m Prim where
  transZM table tt
@@ -411,13 +411,13 @@ instance Monad m => TransM m Prim where
 	MPtr{}			-> transM table tt
 	MCall{}			-> transM table tt
 
-		
+
 instance Monad m => TransM m Type where
  transZM table tt
   = case tt of
  	TNil
 	 ->	transT table tt
-	 
+
 	TForall b k1 t2
 	 -> do	b'		<- followB_bind table b
 	 	k1'		<- followT table k1
@@ -430,11 +430,11 @@ instance Monad m => TransM m Type where
 		crsMore'	<- liftM Map.fromList $ transZM table $ Map.toList crsMore
 		crsOther'	<- transZM table crsOther
 		return	$ TConstrain t' (Constraints crsEq' crsMore' crsOther')
-	
+
 	TSum k ts
 	 -> do	ts'		<- followTs table ts
 	 	transT table	$ TSum k ts'
-		
+
 	TVar k (UVar v)
 	 -> do	v'		<- followV_free table v
 	 	transT table	$ TVar k (UVar v')
@@ -451,7 +451,7 @@ instance Monad m => TransM m Type where
 	 -> do	t1'		<- followT table t1
 		t2'		<- followT table t2
 		transT table	$ TApp t1' t2'
-	
+
 	TCon tyCon
 	 -> do	tyCon'		<- transZM table tyCon
 	 	transT table	$ TCon tyCon'
@@ -464,7 +464,7 @@ instance Monad m => TransM m TyCon where
  transZM table tt
   = case tt of
   	TyConFun{}		-> return tt
-	 
+
 	TyConData { tyConName }
 	 -> do	name'	<- followV_free table tyConName
 	 	return	$ tt { tyConName = name' }
@@ -494,7 +494,7 @@ instance Monad m => TransM m Fetter where
 	 -> do	v'	<- followV_bind table v
 	 	t'	<- followT table t
 		return	$ FWhere (TVar k $ UVar v') t'
-		
+
 	FMore (TVar k (UVar v)) t
 	 -> do	v'	<- followV_bind table v
 	 	t'	<- followT table t
@@ -502,7 +502,7 @@ instance Monad m => TransM m Fetter where
 
 	_	-> panic stage
 		$ "transZM[Fetter]: no match for " % show ff
-		
+
 
 -- Kind --------------------------------------------------------------------------------------------
 instance Monad m => TransM m Kind where
@@ -534,7 +534,7 @@ instance Monad m => TransM m Stmt where
 	 -> do	mV'		<- liftToMaybe (followV_bind table) mV
 		x'		<- followX table x
 		transS table	$ SBind mV' x'
-		
+
 
 -----
 instance Monad m => TransM m Alt where
@@ -544,7 +544,7 @@ instance Monad m => TransM m Alt where
 	 -> do	gs'		<- followGs table gs
 	 	x'		<- followX  table x
 		transA table	$ AAlt gs' x'
-	
+
 
 -----
 instance Monad m => TransM m Guard where
@@ -554,7 +554,7 @@ instance Monad m => TransM m Guard where
 	 -> do	w'		<- transZM table w
 	 	x'		<- followX table x
 		transG table	$ GExp w' x'
-		
+
 
 -----
 instance Monad m => TransM m Pat where
@@ -566,7 +566,7 @@ instance Monad m => TransM m Pat where
 
 	WLit spos c
 	 ->  	transW table	$ WLit spos c
-	 
+
 	WCon spos v lvt
 	 -> do	v'		<- followV_free table v
 
