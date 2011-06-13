@@ -193,11 +193,15 @@ Proof.
       eauto.
       eauto.
      eauto.
+     
+     assert (C0 = C). admit.  (** argh *)
+     assert (x1 = x'). admit. (** argh *)
+     subst.
 
-     assert (x1 = x'). eapply context_equiv_exp.
+(*     assert (x1 = x'). eapply context_equiv_exp.
       eapply H6. eapply H. auto. subst.
-
      lets D: context_equiv H6 H H5. inverts D.
+ *)
      eapply EvCon; eauto.
 
    SCase "XcCase".

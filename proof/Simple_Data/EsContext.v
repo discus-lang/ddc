@@ -13,8 +13,9 @@ Require Export SubstExpExp.
     This is useful when enforcing a left-to-right evaluation
     order for a list of exps, like in the arguments of an XCon *)
 Inductive exps_ctx : (exp -> list exp) -> Prop :=
- | XscHead
-   :  exps_ctx (fun xx => xx :: nil)
+ | XscNil 
+   :  forall xs
+   ,  exps_ctx (fun xx => xx :: xs)
 
  | XscCons
    :  forall v C
@@ -24,29 +25,7 @@ Inductive exps_ctx : (exp -> list exp) -> Prop :=
 
 Hint Constructors exps_ctx.
 
-
-Lemma context_equiv_exp
- :  forall C1 C2 x1 x2
- ,  exps_ctx C1
- -> exps_ctx C2
- -> C1 x1 = C2 x2
- -> x1 = x2.
-Proof.
- intros C1 C2 x1 x2 H1 H2. intros.
- gen C2.
-  induction H1; intros.
-   inverts H2.
-    inverts H. auto.
-    inverts H1.
-     false. false.
-   inverts H2.
-    inverts H0.
-    inverts H1. false. false.
-   inverts H0.
-   eauto.
-Qed.
-
-
+(*
 Lemma context_equiv_ctx
  :  forall C1 C2 x
  ,  exps_ctx C1
@@ -54,6 +33,23 @@ Lemma context_equiv_ctx
  -> C1 x = C2 x
  -> C1 = C2.
 Proof.
+ intros C1 C2 x H1 H2. intros.
+ gen C2.
+  induction H1; intros.
+   inverts H2.
+    inverts H. auto.
+    destruct H1.
+     inverts H.
+
+     false. false.
+   inverts H2.
+    inverts H0.
+     destruct H1.
+      false. false.
+     inverts H0.
+   lets D: IHexps_ctx H4 H6. rewrite D. auto.
+
+
  intros C1 C2 x H1 H2. intros.
  gen C2.
   induction H1; intros.
@@ -70,6 +66,40 @@ Proof.
 Qed.
 
 
+Lemma context_equiv_exp
+ :  forall C1 C2 x1 x2
+ ,  exps_ctx C1
+ -> exps_ctx C2
+ -> C1 x1 = C2 x2
+ -> x1 = x2.
+Proof.
+ intros C1 C2 x1 x2 H1 H2. intros.
+ induction H1.
+
+ gen C2.
+  induction H1; intros.
+   inverts H2.
+    inverts H. auto.
+    inverts H1. inverts H.
+
+
+ intros C1 C2 x1 x2 H1 H2. intros.
+ gen C2.
+  induction H1; intros.
+   inverts H2.
+    inverts H. auto.
+    inverts H1. inverts H.
+     false. false.
+   inverts H2.
+    inverts H0.
+    inverts H1. false. false.
+   inverts H0.
+   eauto.
+Qed.
+
+
+
+
 Lemma context_equiv
  :  forall C1 C2 x1 x2
  ,  exps_ctx C1 
@@ -84,7 +114,7 @@ Proof.
   subst.
  auto.
 Qed.
-
+*)
 
 Lemma context_Forall2_swap
  :  forall {B: Type} (R: exp -> B -> Prop) C
@@ -139,7 +169,47 @@ Proof.
   inverts H0. auto.
   inverts H0. auto.
 Qed.
- 
+
+
+Lemma exps_ctx_run
+ :  forall (P: exp -> Prop) xs
+ ,  Forall (fun x => whnfX x \/ P x) xs
+ -> Forall whnfX xs \/ (exists C x', exps_ctx C /\ xs = C x' /\ P x').
+Proof.
+ intros.
+ induction xs.
+  left. auto.
+  inverts H.
+
+  inverts H2.
+   lets D: IHxs H3. clear IHxs.
+   inverts D.
+    left. auto.
+    right. 
+     destruct H0 as [C].
+     destruct H0 as [x']. 
+      inverts H0. inverts H2.
+      lets D2: XscCons H H1.
+      exists (fun xx => a :: C xx).
+      exists x'. auto.
+
+    lets D: IHxs H3. clear IHxs.
+    inverts D.
+     right.
+     lets D2: XscNil xs.
+     exists (fun xx => xx :: xs).
+     exists a. auto.
+
+    destruct H0 as [C].
+    destruct H0 as [x'].
+     inverts H0. inverts H2.
+     right.
+     exists (fun xx => xx :: C x').
+     exists a.
+     lets D2: XscNil (C x').
+     auto.
+Qed.
+
 
 (********************************************************************)
 (*  Evaluation contexts for expressions.

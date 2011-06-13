@@ -75,6 +75,7 @@ Fixpoint dcOfAlt (aa: alt) : datacon :=
  end.
 Hint Unfold dcOfAlt.
 
+
 (* Mutual induction principle for expressions.
    As expressions are indirectly mutually recursive with lists,
    Coq's Combined scheme command won't make us a strong enough
