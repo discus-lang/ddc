@@ -127,6 +127,20 @@ Proof.
 Qed.
 
 
+Lemma exps_ctx_Forall
+ : forall (P: exp -> Prop) C
+          (x: exp)
+  ,  exps_ctx C
+  -> Forall P (C x)
+  -> P x.
+Proof.
+ intros.
+ induction H.
+  inverts H0. auto.
+  inverts H0. auto.
+Qed.
+ 
+
 (********************************************************************)
 (*  Evaluation contexts for expressions.
     This describes a place in the exp AST where the sub-expression

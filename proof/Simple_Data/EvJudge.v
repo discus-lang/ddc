@@ -184,21 +184,21 @@ Proof.
      eauto. eauto. destruct H1.
 
    inverts H0.
-    assert (whnfX x'). inverts H2. admit. (* ok, need context_Forall lemma *)
-
+    inverts H2.
+    lets D: exps_ctx_Forall H5. auto.
     eapply EvCon.
-      auto.
+     auto.
 
-      eapply IHHS.
-       eauto.
-       eauto.
+     eapply IHHS.
       eauto.
+      eauto.
+     eauto.
 
-      assert (x1 = x'). eapply context_equiv_exp.
-       eapply H6. eapply H. auto. subst.
+     assert (x1 = x'). eapply context_equiv_exp.
+      eapply H6. eapply H. auto. subst.
 
-      lets D: context_equiv H6 H H5. inverts D.
-      eapply EvCon; eauto.
+     lets D: context_equiv H6 H H5. inverts D.
+     eapply EvCon; eauto.
 
    SCase "XcCase".
     inverts HT. inverts H0. inverts H. eauto. 
