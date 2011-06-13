@@ -89,6 +89,9 @@ data CtorDef
 
 	  -- | Map of field names to indices in the constructor.
 	, ctorDefFields	:: Map Var Int
+
+	  -- | The type of each field in the constructor.
+	, ctorDefFieldTypes :: [Type]
 	}
 	deriving (Show, Eq)
 

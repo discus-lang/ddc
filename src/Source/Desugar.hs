@@ -227,8 +227,7 @@ makeCtorDef
 	-> RewriteM T.CtorDef
 
 makeCtorDef vData vsParams tag (S.CtorDef vCtor fields)
- = do	let fieldIxs	= Map.fromList
-			$ zip 	(mapMaybe S.dataFieldLabel fields)
+ = do	let fieldIxs	= zip 	(mapMaybe S.dataFieldLabel fields)
 				([0..] :: [Int])
 
 	tCtor		<- makeCtorType
@@ -241,7 +240,9 @@ makeCtorDef vData vsParams tag (S.CtorDef vCtor fields)
 		, T.ctorDefType		= tCtor
 		, T.ctorDefArity	= length fields
 		, T.ctorDefTag		= tag
-		, T.ctorDefFields	= fieldIxs }
+		, T.ctorDefFields	= Map.fromList fieldIxs
+		, T.ctorDefFieldTypes	= map S.dataFieldType fields }
+
 
 
 -- Exp ---------------------------------------------------------------------------------------------

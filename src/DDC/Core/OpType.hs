@@ -138,5 +138,5 @@ slurpSuperAritiesP pp
 	_ -> Map.empty
 
 slurpSuperArityCtorDef :: CtorDef -> Map Var Int
-slurpSuperArityCtorDef (CtorDef vCtor _ arity _ _)
+slurpSuperArityCtorDef (CtorDef vCtor _ arity _ _ _)
 	= Map.singleton vCtor arity

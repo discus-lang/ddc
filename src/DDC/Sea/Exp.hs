@@ -104,11 +104,12 @@ data Top a
 --
 data CtorDef
 	= CtorDef
-	{ ctorDefName 	:: Var 			-- ^ name of constructor
-	, ctorDefType	:: Type			-- ^ type of constructor
-	, ctorDefArity	:: Int			-- ^ arity of constructor (number of params)
-	, ctorDefTag	:: Int			-- ^ tag of constructor   (order in original data type decl)
-	, ctorDefFields	:: Map Var Int }	-- ^ map of field names to indexes in the constructor.
+	{ ctorDefName 		:: Var 		-- ^ name of constructor
+	, ctorDefType		:: Type		-- ^ type of constructor
+	, ctorDefArity		:: Int		-- ^ arity of constructor (number of params)
+	, ctorDefTag		:: Int		-- ^ tag of constructor   (order in original data type decl)
+	, ctorDefFields		:: Map Var Int	-- ^ map of field names to indexes in the constructor.
+	, ctorDefFieldTypes	:: [Type] }	-- ^ map of field names to indexes in the constructor.
 	deriving (Show, Eq)
 
 

@@ -210,9 +210,9 @@ splitSuper accArgs xx
 
 -- CtorDef ----------------------------------------------------------------------------------------
 toSeaCtorDef :: T.CtorDef -> E.CtorDef
-toSeaCtorDef (T.CtorDef vCtor tCtor arity tag fields)
+toSeaCtorDef (T.CtorDef vCtor tCtor arity tag fields types)
  = let	tCtor'	= toSeaT tCtor
-   in	E.CtorDef vCtor tCtor' arity tag fields
+   in	E.CtorDef vCtor tCtor' arity tag fields (map toSeaT types)
 
 
 -- Exp --------------------------------------------------------------------------------------------

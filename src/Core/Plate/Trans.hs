@@ -319,10 +319,11 @@ instance Monad m => TransM m Top where
 instance Monad m => TransM m CtorDef where
  transZM table cc
   = case cc of
-  	CtorDef v t arity tag fields
+  	CtorDef v t arity tag fields types
 	 -> do	v'		<- followV table v
 	 	t'		<- transZM table t
-		return		$ CtorDef v' t' arity tag fields
+	 	types'		<- transZM table types
+		return		$ CtorDef v' t' arity tag fields types'
 
 
 -----

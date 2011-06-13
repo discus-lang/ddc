@@ -7,7 +7,8 @@ data Base.Int %r1 where
                 .  Int %r1
                 with { ARITY  = 0
                      , TAG    = 0
-                     , FIELDS = {} }
+                     , FIELDS = {}
+                     , TYPES  = [] }
         
 data List %r1 a1 where
         KIND       = % -> * -> *
@@ -18,14 +19,16 @@ data List %r1 a1 where
                 .  List %r1 a1
                 with { ARITY  = 0
                      , TAG    = 0
-                     , FIELDS = {} }
+                     , FIELDS = {}
+                     , TYPES  = [] }
         
         Cons
                 :: forall %r1 a1
                 .  a1 -> List %r1 a1
                 with { ARITY  = 1
                      , TAG    = 1
-                     , FIELDS = {} }
+                     , FIELDS = {}
+                     , TYPES  = [] }
         
 data IntFun %r1 %r2 %r3 %r4 !e1 $c1 where
         KIND       = % -> % -> % -> % -> ! -> $ -> *
@@ -36,14 +39,16 @@ data IntFun %r1 %r2 %r3 %r4 !e1 $c1 where
                 .  Int %r1 -> IntFun %r1 %r2 %r3 %r4 !e1 $c1
                 with { ARITY  = 1
                      , TAG    = 0
-                     , FIELDS = {} }
+                     , FIELDS = {}
+                     , TYPES  = [] }
         
         SFun
                 :: forall %r1 %r2 %r3 %r4 !e1 $c1
                 .  (Int %r3 -(!e1 $c1)> Int %r4) -> IntFun %r1 %r2 %r3 %r4 !e1 $c1
                 with { ARITY  = 1
                      , TAG    = 1
-                     , FIELDS = {} }
+                     , FIELDS = {}
+                     , TYPES  = [] }
         
 data FunOrder2 %r1 a1 a2 a3 $c1 !e1 $c2 !e2 where
         KIND       = % -> * -> * -> * -> $ -> ! -> $ -> ! -> *
@@ -54,5 +59,6 @@ data FunOrder2 %r1 a1 a2 a3 $c1 !e1 $c2 !e2 where
                 .  ((a1 -(!e1 $c1)> a2) -(!e2 $c2)> a3) -> FunOrder2 %r1 a1 a2 a3 $c1 !e1 $c2 !e2
                 with { ARITY  = 1
                      , TAG    = 0
-                     , FIELDS = {} }
+                     , FIELDS = {}
+                     , TYPES  = [] }
         

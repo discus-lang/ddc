@@ -130,12 +130,13 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 instance Pretty CtorDef PMode where
  ppr xx
   = case xx of
-  	CtorDef v t arity tag fs
+  	CtorDef v t arity tag fs ts
  	 -> v 	% nl
 		%> 	( ":: " % ppr t % nl
 			% "with { ARITY  = " % arity	% nl
  			% "     , TAG    = " % tag      % nl
-			% "     , FIELDS = " % fs 	% "}")
+			% "     , FIELDS = " % fs 		% nl
+			% "     , TYPES  = " % ts		% "}")
 
 
 -- Stmt --------------------------------------------------------------------------------------------
@@ -244,7 +245,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> "_DARG(" % x % ", " % i % ")"
 
 	XArgUnboxedData _x@(XVar _ _) _i
-	 -> panic stage $ "XArgUnboxedData not implemented yet."
+	 -> ppr "0; // XArgUnboxedData not implemented yet."
 
 	XArgThunk x@(XVar _ _) i
 	 -> "_TARG(" % x % ", " % i % ")"

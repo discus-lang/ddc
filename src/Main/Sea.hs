@@ -249,7 +249,7 @@ outSea	moduleName eTree pathThis pathImports extraIncludes
 	-- Break up the sea into Header/Code parts.
     let	([ 	_seaProtos, 		seaSupers,		_seaExterns
 	 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
-	 ,      _seaData
+	 ,      seaData
 	 , 	_seaPCtorTag ], [])
 
 	 = partitionBy
@@ -272,6 +272,8 @@ outSea	moduleName eTree pathThis pathImports extraIncludes
 		-- include own .h file.
 		, let Just name	= takeLast $ chopOnRight '/' $ nameTItoH pathThis
 		  in  "#include" %% dquotes name
+
+		, blank, vcat $ eraseAnnotsTree seaData
 
 		, blank, vcat $ eraseAnnotsTree seaCafSlots
 		, blank, vcat $ eraseAnnotsTree seaCafInits
