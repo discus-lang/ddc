@@ -38,7 +38,7 @@ Proof.
    eauto.
    eauto. auto.
    assert (tsArgs = tsArgs0).
-   lets D: getAlt_matches_dataDef H4 H9 H0. auto.
+   lets D: getAlt_matches_dataDef H4 H11 H0. auto.
    rewrite <- H1.
    auto.
 Qed.

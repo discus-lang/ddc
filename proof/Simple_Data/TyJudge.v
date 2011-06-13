@@ -24,10 +24,10 @@ Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
 
  (* Data Constructors *)
  | TYCon 
-   :  forall ds te xs dc tsArgs tResult
-   ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
+   :  forall ds te xs dc tsArgs tc
+   ,  getDataDef dc ds = Some (DefData dc tsArgs (TCon tc))
    -> Forall2 (TYPE ds te) xs tsArgs
-   -> TYPE ds te (XCon dc xs) tResult
+   -> TYPE ds te (XCon dc xs) (TCon tc)
 
  (* Case Expressions *)
  | TYCase

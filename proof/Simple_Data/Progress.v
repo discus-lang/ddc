@@ -43,8 +43,8 @@ Proof.
       apply EsLamApp.
       inverts H2. auto.
 
-     SSSCase "x1 ~ XCon".
-      inverts H. admit. (*** add to TyCon that result must be data type *)
+     SSSCase "x1 ~ XCon TFun".
+      inverts H. 
 
    SSCase "x2 steps".
     destruct H2 as [x2'].
