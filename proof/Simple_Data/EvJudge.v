@@ -26,11 +26,11 @@ Inductive EVAL : exp -> exp -> Prop :=
    -> EVAL (XApp x1 x2)      v3
 
  | EvCon
-   :  forall x v v3 dc Cs
-   ,  EVAL x v -> whnfX v
-   -> exps_ctx Cs
-   -> EVAL (XCon dc (Cs v)) v3
-   -> EVAL (XCon dc (Cs x)) v3
+   :  forall C x v dc v3
+   ,  exps_ctx C
+   -> EVAL x v
+   -> EVAL (XCon dc (C v)) v3
+   -> EVAL (XCon dc (C x)) v3
 
  | EvCase 
    :  forall x1 x2 v3 dc vs alts tsArgs
@@ -96,24 +96,16 @@ Proof.
 
  (* Constructor evaluation ***)
  Case "EvCon".
-  intros. inverts keep HT.
-
-  lets HTx: (@exps_ctx_Forall2 ty) H0 H7. auto.
-  destruct HTx as [t]. inverts H1.
-  lets HSx: IHHE1 H3. clear IHHE1. clear H3.
-
-  eapply EsAppend.
-   lets D: steps_context XcCon. eauto.
-    eapply D. eapply HSx.
-
+  intros.
+  eapply (EsAppend (XCon dc (C x)) (XCon dc (C v))).
+  eapply steps_context_XCon; eauto.
+  skip. skip.
+(*  
+   eapply IHHE1.
+   skip. 
    eapply IHHE2.
-   eapply TYCon. eauto.
-   eapply exps_ctx_Forall2_swap with (x1 := x) (x2 := v).
-    eauto. eauto.
-    intros.
-    eapply preservation_steps; eauto.
-    eauto.
-
+   skip.
+*)
  (* Case selection ***)  
  Case "EvCase".
   intros. inverts keep HT.
@@ -179,8 +171,19 @@ Proof.
     inverts HT. inverts H0. inverts H1. eauto.
 
    SCase "XcCon".
-    inverts HT. 
-    admit. (********* TODO: need big step rule *)
+    inverts HT. inverts H0.
+    eapply EvCon.
+      auto.
+
+      assert (exists t, TYPE ds te x t). admit. destruct H0. eauto.
+      assert (whnfX x'). admit.
+      eapply IHHS.
+       eauto.
+       eauto.
+      eauto.
+
+      inverts H2.
+
 
    SCase "XcCase".
     inverts HT. inverts H0. inverts H. eauto. 

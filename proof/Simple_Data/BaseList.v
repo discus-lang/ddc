@@ -248,8 +248,28 @@ Proof.
  lets D: Forall2_exists_left H1 H0.
  destruct D. eauto. 
 Qed.
-
 Hint Resolve Forall_forall.
+
+
+Lemma Forall2_swap
+ :   forall {A B: Type} (R: A -> B -> Prop)
+            (x x' : A)  (xs1 xs2: list A)
+            (y: B)      (ys: list B)
+ ,   (forall y, R x y -> R x' y)
+ ->  Forall2 R (xs1 ++ x  :: xs2) ys
+ ->  Forall2 R (xs1 ++ x' :: xs2) ys.
+Proof.
+ intros.
+ lets D: Forall2_app_inv_l H0.
+  destruct D  as [ys1].
+  destruct H1 as [ys2].
+  inverts H1. inverts H3.
+  apply Forall2_app.
+   auto.
+  destruct ys2 as [ys2 | y'].
+   inverts H1.
+   inverts H1. eauto.
+Qed.
 
 
 (********************************************************************)

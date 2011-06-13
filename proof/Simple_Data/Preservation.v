@@ -21,21 +21,13 @@ Proof.
   destruct H; eauto; 
    try (inverts HT; progress eauto).
 
-  (* The constructor case is tricky because we need to handle
-     an aribrary number of constructor arguments. *)
   SCase "XCon".
    admit.
-(*
-   inverts HT.
+ (*   inverts HT.
    eapply TYCon. eauto.
+   eapply Forall2_swap; eauto.
+ *)
 
-   clear H4.    (* clear so it's doesn't get in the way of induction *)
-   gen tsArgs.  (* We need the IH to work for an arbitraty length
-                   of remaining arguments. *)
-   induction H. (* induction over length of context *)
-    intros. inverts H6. eauto.
-    intros. inverts H6. eauto.
-*)
  Case "EsLamApp".
   inverts HT. inverts H4.
   eapply subst_value_value; eauto.

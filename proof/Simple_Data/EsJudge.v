@@ -82,24 +82,19 @@ Proof.
 Qed.
 
 
-(* Reduce one of the arguments to a data constructor. 
-   The definition of evaluation contexts enforces a left-to-right 
-   order of evaluation, so all the arguments to the left of the one
-   to be reduced already need to be values. *)
 Lemma steps_context_XCon
- :  forall ix x v vs xs xs' dc
- ,  splitAt ix xs = (vs, x :: xs')
- -> Forall whnfX vs
- -> STEPS  x v
- -> STEPS (XCon dc xs) (XCon dc (vs ++ (v :: xs'))).
+ :  forall C x v dc
+ ,  exps_ctx C
+ -> STEPS x v
+ -> STEPS (XCon dc (C x)) (XCon dc (C v)).
 Proof.
  intros.
- lets D: steps_context XcCon. eapply (XscIx ix).
-  eauto. auto.
- lets D1: D H1. clear D.
-  assert (xs = app vs (x :: xs')). eapply splitAt_app. eauto.
-   rewrite H2.
- apply D1.
+ induction H0.
+  auto.
+  lets D: EsContext XcCon. eauto. eauto.
+  eapply EsAppend.
+   eapply IHSTEPS1.
+   eauto.
 Qed.
 
 
