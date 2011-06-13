@@ -97,15 +97,22 @@ Proof.
  (* Constructor evaluation ***)
  Case "EvCon".
   intros.
+  inverts HT.
+
+  lets HTx: (@context_Forall2_exists_left ty) H6. 
+   eauto. destruct HTx as [t].
+
   eapply (EsAppend (XCon dc (C x)) (XCon dc (C v))).
   eapply steps_context_XCon; eauto.
-  skip. skip.
-(*  
-   eapply IHHE1.
-   skip. 
-   eapply IHHE2.
-   skip.
-*)
+
+  eapply IHHE2.
+   eapply TYCon.
+    eauto.
+    assert (forall z, TYPE ds Empty x z -> TYPE ds Empty v z).
+     intros. 
+     eapply preservation_steps. eauto. eauto.
+     eapply context_Forall2_swap; eauto.
+
  (* Case selection ***)  
  Case "EvCase".
   intros. inverts keep HT.
@@ -171,19 +178,28 @@ Proof.
     inverts HT. inverts H0. inverts H1. eauto.
 
    SCase "XcCon".
-    inverts HT. inverts H0.
+    inverts HT. 
+
+    assert (exists t, TYPE ds te x t). 
+    eapply context_Forall2_exists_left. 
+     eauto. eauto. destruct H1.
+
+   inverts H0.
+    assert (whnfX x'). inverts H2. admit. (* ok, need context_Forall lemma *)
+
     eapply EvCon.
       auto.
 
-      assert (exists t, TYPE ds te x t). admit. destruct H0. eauto.
-      assert (whnfX x'). admit.
       eapply IHHS.
        eauto.
        eauto.
       eauto.
 
-      inverts H2.
+      assert (x1 = x'). eapply context_equiv_exp.
+       eapply H4. eapply H. auto. subst.
 
+      lets D: context_equiv H4 H H3. inverts D.
+      eapply EvCon; eauto.
 
    SCase "XcCase".
     inverts HT. inverts H0. inverts H. eauto. 

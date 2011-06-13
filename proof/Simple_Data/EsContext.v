@@ -47,6 +47,86 @@ Proof.
 Qed.
 
 
+Lemma context_equiv_ctx
+ :  forall C1 C2 x
+ ,  exps_ctx C1
+ -> exps_ctx C2
+ -> C1 x = C2 x
+ -> C1 = C2.
+Proof.
+ intros C1 C2 x H1 H2. intros.
+ gen C2.
+  induction H1; intros.
+   inverts H2.
+    auto. inverts H.
+    destruct H1.
+     false. false.
+   inverts H2.
+    inverts H0.
+     destruct H1.
+      false. false.
+     inverts H0.
+   lets D: IHexps_ctx H4 H6. rewrite D. auto.
+Qed.
+
+
+Lemma context_equiv
+ :  forall C1 C2 x1 x2
+ ,  exps_ctx C1 
+ -> exps_ctx C2
+ -> C1 x1 = C2 x2
+ -> C1 = C2 /\ x1 = x2.
+Proof.
+ intros.
+ lets D1: context_equiv_exp H H0 H1.
+  subst.
+ lets D2: context_equiv_ctx H H0 H1.
+  subst.
+ auto.
+Qed.
+
+
+Lemma context_Forall2_swap
+ :  forall {B: Type} (R: exp -> B -> Prop) C
+           (x x': exp)
+           (ys:   list B)
+ ,  exps_ctx C
+ -> (forall y, R x y -> R x' y)
+ -> Forall2 R (C x)  ys
+ -> Forall2 R (C x') ys.
+Proof.
+ intros. gen ys.
+ induction H; intros.
+  destruct ys.
+   inverts H1.
+   eapply Forall2_cons. eapply H0.
+    inverts H1. auto.
+    inverts H1. auto.
+
+  inverts H2.
+   eapply Forall2_cons.
+   auto. auto.
+Qed.
+
+
+Lemma context_Forall2_exists_left
+ :  forall {B: Type} (R: exp -> B -> Prop) C
+           (x:  exp)
+           (ys: list B)
+ ,  exps_ctx C
+ -> Forall2 R (C x) ys
+ -> (exists y, R x y).
+Proof.
+ intros. gen ys.
+ induction H; intros.
+  destruct ys.
+   inverts H0.
+   inverts H0. eauto.
+  inverts H1.
+  eapply IHexps_ctx. eauto.
+Qed.
+
+
 (********************************************************************)
 (*  Evaluation contexts for expressions.
     This describes a place in the exp AST where the sub-expression
