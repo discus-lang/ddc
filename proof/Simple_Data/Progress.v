@@ -78,10 +78,11 @@ Proof.
 
      exists (substXs 0 l x0).
      eapply EsCaseAlt.
-      admit. (* ok. all con args are values, from value (XCon d l) *)
+      inverts H4. inverts H6. auto.
       eauto.
 
-    SSCase "XCase". inverts H4. inverts H5.   
+    SSCase "XCase". 
+     inverts H4. inverts H5.   
     
   SCase "xObj steps".
    right.
