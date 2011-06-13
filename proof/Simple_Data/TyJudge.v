@@ -24,8 +24,10 @@ Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
 
  (* Data Constructors *)
  | TYCon 
-   :  forall ds te xs dc tsArgs tc
-   ,  getDataDef dc ds = Some (DefData dc tsArgs (TCon tc))
+   :  forall ds te xs dc dcs tsArgs tc
+   ,  getDataDef dc ds = Some (DefData     dc tsArgs (TCon tc))
+   -> getTypeDef tc ds = Some (DefDataType tc dcs)
+   -> In dc dcs
    -> Forall2 (TYPE ds te) xs tsArgs
    -> TYPE ds te (XCon dc xs) (TCon tc)
 
@@ -141,8 +143,7 @@ Proof.
 
  Case "XCon".
   inverts H0.
-  eapply TYCon. 
-   eauto.
+  eapply TYCon; eauto.
    rewrite Forall_forall in H.
    apply (Forall2_map_left (TYPE ds (insert ix t2 te))).
    apply (Forall2_impl_In  (TYPE ds te)); eauto.

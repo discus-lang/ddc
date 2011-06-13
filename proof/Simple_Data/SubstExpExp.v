@@ -54,8 +54,7 @@ Proof.
 
  Case "XCon".
   inverts H0.
-  eapply TYCon.
-   eauto.
+  eapply TYCon; eauto.
    rewrite Forall_forall in H.
    apply (Forall2_map_left (TYPE ds (drop ix te))).
    apply (Forall2_impl_In  (TYPE ds te)); eauto.

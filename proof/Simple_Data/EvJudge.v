@@ -99,18 +99,17 @@ Proof.
   intros.
   inverts HT.
 
-  lets HTx: (@context_Forall2_exists_left ty) H6. 
+  lets HTx: (@context_Forall2_exists_left ty) H8.
    eauto. destruct HTx as [t].
 
   eapply (EsAppend (XCon dc (C x)) (XCon dc (C v))).
   eapply steps_context_XCon; eauto.
 
   eapply IHHE2.
-   eapply TYCon.
-    eauto.
+   eapply TYCon; eauto.
     assert (forall z, TYPE ds Empty x z -> TYPE ds Empty v z).
      intros. 
-     eapply preservation_steps. eauto. eauto.
+     eapply preservation_steps; eauto.
      eapply context_Forall2_swap; eauto.
 
  (* Case selection ***)  
@@ -196,9 +195,9 @@ Proof.
       eauto.
 
       assert (x1 = x'). eapply context_equiv_exp.
-       eapply H4. eapply H. auto. subst.
+       eapply H6. eapply H. auto. subst.
 
-      lets D: context_equiv H4 H H3. inverts D.
+      lets D: context_equiv H6 H H5. inverts D.
       eapply EvCon; eauto.
 
    SCase "XcCase".
