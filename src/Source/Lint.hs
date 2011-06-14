@@ -197,12 +197,8 @@ instance Lint (Foreign SourcePos) where
 
 instance Lint (CtorDef SourcePos) where
  lint f@(CtorDef v fs)
-   = do	fs' <- mapM lint fs
-   	let fields = length fs'
-	let unboxed = length $ filter (isUnboxedT . dataFieldType) fs'
-	if unboxed > 0 && unboxed /= fields
-	  then death f $ "Data constructor '" ++ varName v ++ "' contains both boxed and unboxed fields."
-	  else return f
+   = do	mapM_ lint fs
+	return f
 
 instance Lint (DataField SourcePos) where
  lint f = return f
