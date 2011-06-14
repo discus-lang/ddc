@@ -21,7 +21,7 @@ GHC_VERSION_FLAGS = -rtsopts
 endif
 
 # Number of jobs to use during make.
-THREADS		= 2
+THREADS		= 1
 
 # Override the above config.
 -include make/config-override.deps
