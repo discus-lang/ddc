@@ -309,6 +309,9 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		PAllocData ctor ctorArity
 		 -> "_allocData (" % "_tag" % sV ctor % ", " % ctorArity % ")"
 
+		PAllocDataM ctor boxedObjs unboxedStructSize
+		 -> "_allocDataM (" % "_tag" % sV ctor % ", " % boxedObjs %  ", " % unboxedStructSize % ")"
+
 	-- Primitive projections.
 	XPrim (MProj f) [xCtor, xField, x]
 	 -> case f of

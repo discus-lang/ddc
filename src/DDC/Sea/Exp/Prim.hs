@@ -37,7 +37,7 @@ data	Prim
 	-- | Primitive operators concerned with function application.
 	--   TODO: Change this to use PrimCall
 	| MApp		PrimApp
-	
+
 	-- | Primitive field projections.
 	| MProj		PrimProj
 
@@ -75,9 +75,13 @@ data PrimAlloc
 	--   and fill in the super pointer, super arity, and number of args in the thunk.
 	= PAllocThunk Var Type Int Int
 
-	-- | Allocate a fresh data object,
+	-- | Allocate a fresh Data object,
 	--   and fill in the constructor tag and arity.
 	| PAllocData Var Int
+
+	-- | Allocate a fresh DataM object
+	--   and fill in the number of boxed objects and the size or the unboxed struct.
+	| PAllocDataM Var Int Int
 	deriving (Show, Eq)
 
 
