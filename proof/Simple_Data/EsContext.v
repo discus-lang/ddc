@@ -170,6 +170,16 @@ Proof.
   inverts H0. auto.
 Qed.
 
+Lemma exps_ctx_run_Forall2
+ :  forall (R: exp -> exp -> Prop) xs ys
+ ,  Forall2 (fun x y => whnfX x \/ R x y) xs ys
+ -> Forall whnfX xs 
+    \/ (exists C x' y', R x' y' 
+                     /\ exps_ctx C /\ xs = C x' /\ ys = C y').
+Proof.
+ admit.
+Qed.
+
 
 Lemma exps_ctx_run
  :  forall (P: exp -> Prop) xs

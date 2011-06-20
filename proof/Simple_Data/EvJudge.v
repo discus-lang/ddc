@@ -26,11 +26,9 @@ Inductive EVAL : exp -> exp -> Prop :=
    -> EVAL (XApp x1 x2)      v3
 
  | EvCon
-   :  forall C x v dc v3
-   ,  exps_ctx C
-   -> EVAL x v
-   -> EVAL (XCon dc (C v)) v3
-   -> EVAL (XCon dc (C x)) v3
+   :  forall dc xs vs
+   ,  EVALS xs vs
+   -> EVAL  (XCon dc xs) (XCon dc vs)
 
  | EvCase 
    :  forall x1 x2 v3 dc vs alts tsArgs
@@ -38,9 +36,82 @@ Inductive EVAL : exp -> exp -> Prop :=
    -> Forall whnfX vs
    -> getAlt dc alts = Some (AAlt dc tsArgs x2)
    -> EVAL (substXs 0 vs x2) v3
-   -> EVAL (XCase x1 alts)   v3.
+   -> EVAL (XCase x1 alts)   v3
+
+ with EVALS : list exp -> list exp -> Prop :=
+  | EvsNil
+    :  EVALS nil nil
+
+  | EvsHead
+    :  forall x v xs vs
+    ,  EVAL x v
+    -> EVALS xs vs 
+    -> EVALS (x :: xs) (v :: vs)
+
+  | EvsCons
+    :  forall v xs vs
+    ,  whnfX v
+    -> EVALS xs vs
+    -> EVALS (v :: xs) (v :: vs).
 
 Hint Constructors EVAL.
+Hint Constructors EVALS.
+
+
+Theorem EVAL_mutind
+ :  forall (PE : exp      -> exp      -> Prop)
+           (PS : list exp -> list exp -> Prop)
+
+ ,  (forall v2 
+    ,  whnfX v2                   
+    -> PE v2 v2) 
+ -> (forall x1 t11 x12 x2 v2 v3
+    ,  EVAL x1 (XLam t11 x12)    -> PE x1 (XLam t11 x12) 
+    -> EVAL x2 v2                -> PE x2 v2 
+    -> EVAL (substX 0 v2 x12) v3 -> PE (substX 0 v2 x12) v3
+    -> PE (XApp x1 x2) v3) 
+ -> (forall dc xs vs
+    ,  EVALS xs vs               -> PS xs vs
+    -> PE (XCon dc xs) (XCon dc vs)) 
+ -> (forall x1 x2 v3 dc vs alts tsArgs
+    ,  EVAL x1 (XCon dc vs)      -> PE x1 (XCon dc vs) 
+    -> Forall whnfX vs 
+    -> getAlt dc alts = Some (AAlt dc tsArgs x2) 
+    -> EVAL (substXs 0 vs x2) v3 -> PE (substXs 0 vs x2) v3 
+    -> PE (XCase x1 alts) v3) 
+
+ -> (  PS nil nil)
+ -> (forall x v xs vs
+    ,  EVAL x v                  -> PE x  v
+    -> EVALS xs vs               -> PS xs vs
+    -> PS (x :: xs) (v :: vs))
+ -> (forall v xs vs
+    ,  whnfX v
+    -> EVALS xs vs               -> PS xs vs
+    -> PS (v :: xs) (v :: vs))
+ -> forall x1 x2
+ ,  EVAL x1 x2 -> PE x1 x2.
+
+Proof.
+ intros PE PS.
+ intros Hdone Hlam Hcon Hcase Hnil Hhead Hcons.
+ refine (fix  IHPE x  x'  (HE: EVAL  x  x')  {struct HE} 
+              : PE x x'   := _
+         with IHPS xs xs' (HS: EVALS xs xs') {struct HS}
+              : PS xs xs' := _
+         for  IHPE).
+
+ case HE; intros.
+ eapply Hdone; eauto.
+ eapply Hlam;  eauto.
+ eapply Hcon;  eauto.
+ eapply Hcase; eauto.
+
+ case HS; intros.
+ eapply Hnil.
+ eapply Hhead; eauto.
+ eapply Hcons; eauto.
+Qed.
 
 
 (* A terminating big-step evaluation always produces a whnf.
@@ -51,9 +122,117 @@ Lemma eval_produces_whnfX
  ,  EVAL   x1 v1
  -> whnfX  v1.
 Proof.
- intros. induction H; intros; eauto.
+ intros.
+ induction H using EVAL_mutind with
+  (PS := fun xs vs 
+      => EVALS xs vs 
+      -> Forall whnfX vs);
+  intros; eauto.
 Qed.
 Hint Resolve eval_produces_whnfX.
+
+
+Lemma evals_produces_whnfX
+ :  forall xs vs
+ ,  EVALS xs vs
+ -> Forall whnfX vs.
+Proof.
+ intros.
+ induction H; eauto.
+Qed.
+Hint Resolve evals_produces_whnfX.
+
+
+Inductive CHAIN : list exp -> list exp -> Prop :=
+ | EcDone
+   :  forall vs
+   ,  Forall whnfX vs
+   -> CHAIN vs vs
+
+ | EcCons
+   :  forall x v vs C
+   ,  exps_ctx C  -> STEPS x v
+   -> CHAIN (C v) vs
+   -> CHAIN (C x) vs.
+
+Hint Constructors CHAIN.
+
+
+Lemma make_chain
+ :  forall xs vs
+ ,  Forall2 STEPS xs vs
+ -> Forall  whnfX vs
+ -> CHAIN xs vs.
+Proof.
+ intros. gen vs.
+  induction xs as [xs | x]; intros.
+  inverts H. auto.
+ 
+  destruct vs as [vs | v].
+   inverts H.
+
+  inverts H. inverts H0.
+  assert (CHAIN xs vs). auto.
+   clear IHxs.
+
+  (* TODO: this comes from STEPS xs vs *)
+  assert (Forall2 (fun x v => whnfX x \/ STEPS x v) xs vs).
+   admit. (* ok, STEPS xs vs *)
+
+  (* either all the xs are already whnfX,
+      or there is a context where one can step *)
+  lets D: exps_ctx_run_Forall2 H0. clear H0.
+  inverts D.
+
+  Case "all whnfX".
+   assert (xs = vs). admit. subst. (* ok, stepping whnf yields same *)
+   assert (x = v).   admit. subst. (* ok, stepping whnf yields same *)
+   eapply EcDone. auto.
+
+  Case "something steps".
+   destruct H0 as [C].
+   destruct H0 as [x'].
+   destruct H0 as [v'].
+   inverts H0. inverts H5. inverts H7.
+
+   lets C1: XscNil (C x').  (* context for reduction of first elem *)
+   lets C2: XscCons H2 H0.  (* context for reduction in tail *)
+
+   (* final elem of chain, all elems whnfX *)
+   assert (CHAIN (v :: C v') (v :: C v')).
+    auto.
+
+   lets D1: EcCons x' v' (v :: C v') C2 H5. auto. (* reduction in tail *)
+   lets D2: EcCons x  v  (v :: C v') C1 D1. auto. (* reduction in head *)
+   auto.
+Qed.
+
+
+Lemma steps_chain_XCon
+ :  forall xs vs dc
+ ,  CHAIN xs vs
+ -> STEPS (XCon dc xs) (XCon dc vs).
+Proof.
+ intros.
+ induction H.
+  eauto.
+  eapply (EsAppend (XCon dc (C x)) (XCon dc (C v))).
+   eapply steps_context_XCon.
+     auto. auto.
+   auto.
+Qed.
+
+
+Lemma steps_in_XCon
+ :  forall xs vs dc
+ ,  Forall2 STEPS xs vs
+ -> Forall whnfX vs
+ -> STEPS (XCon dc xs) (XCon dc vs).
+Proof.
+ intros.
+ eapply steps_chain_XCon.
+ eapply make_chain. auto. auto.
+Qed.
 
 
 (* Big to Small steps ***********************************************
@@ -67,9 +246,13 @@ Lemma steps_of_eval
  -> STEPS x1 x2.
 Proof.
  intros ds x1 t1 v2 HT HE. gen t1.
+ induction HE using EVAL_mutind with
+  (PS := fun xs vs => forall ts
+      ,  Forall2 (TYPE ds Empty) xs ts
+      -> EVALS xs vs
+      -> Forall2 STEPS xs vs)
+  ; intros.
 
- (* Induction over the form of (EVAL x1 x2) *)
- induction HE.
  Case "EvDone".
   intros. apply EsNone.
 
@@ -98,19 +281,9 @@ Proof.
  Case "EvCon".
   intros.
   inverts HT.
-
-  lets HTx: (@context_Forall2_exists_left ty) H8.
-   eauto. destruct HTx as [t].
-
-  eapply (EsAppend (XCon dc (C x)) (XCon dc (C v))).
-  eapply steps_context_XCon; eauto.
-
-  eapply IHHE2.
-   eapply TYCon; eauto.
-    assert (forall z, TYPE ds Empty x z -> TYPE ds Empty v z).
-     intros. 
-     eapply preservation_steps; eauto.
-     eapply context_Forall2_swap; eauto.
+  lets D: IHHE H8 H.
+  eapply steps_in_XCon; eauto.
+ 
 
  (* Case selection ***)  
  Case "EvCase".
@@ -142,7 +315,22 @@ Proof.
      rewrite Forall_forall in H. eauto.
      eapply IHHE2.
      eapply subst_value_value_list; eauto.
+
+ Case "EvsNil".
+ auto.
+
+ Case "EvsHead".
+  destruct ts. 
+   inverts H0. 
+   inverts H0. eauto.
+
+ Case "EvsCons".
+  destruct ts.
+   inverts H1.
+   inverts H1. eauto.
 Qed.
+
+
 
 
 (* Small to Big steps ***********************************************
@@ -185,25 +373,22 @@ Proof.
 
    inverts H0.
     inverts H2.
-    lets D: exps_ctx_Forall H5. auto.
-    eapply EvCon.
-     auto.
+    eapply EvCon. 
+     clear H9.
+     induction H; intros.
+      inverts H5.
+      eapply EvsHead. eauto.
+       induction xs. eauto.
+        inverts H6. auto.
+        inverts H5. eauto.
 
-     eapply IHHS.
-      eauto.
-      eauto.
-     eauto.
-     
-     assert (C0 = C). admit.  (** argh *)
-     assert (x1 = x'). admit. (** argh *)
-     subst.
-
-(*     assert (x1 = x'). eapply context_equiv_exp.
-      eapply H6. eapply H. auto. subst.
-     lets D: context_equiv H6 H H5. inverts D.
- *)
-     eapply EvCon; eauto.
-
+    eapply EvCon. 
+     clear H3 H4 H9.
+     gen vs.
+     induction H; intros.
+      inverts H8. eauto. eauto.
+      inverts H8. eauto. eauto.
+      
    SCase "XcCase".
     inverts HT. inverts H0. inverts H. eauto. 
 Qed.
