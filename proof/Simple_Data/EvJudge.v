@@ -379,7 +379,7 @@ Proof.
       inverts H5.
       eapply EvsHead. eauto.
        induction xs. eauto.
-        inverts H6. auto.
+        inverts H6. eauto.
         inverts H5. eauto.
 
     eapply EvCon. 
