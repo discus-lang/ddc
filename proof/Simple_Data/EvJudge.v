@@ -42,17 +42,11 @@ Inductive EVAL : exp -> exp -> Prop :=
   | EvsNil
     :  EVALS nil nil
 
-  | EvsHead
-    :  forall x v xs vs
-    ,  EVAL x v
-    -> EVALS xs vs 
-    -> EVALS (x :: xs) (v :: vs)
-
   | EvsCons
-    :  forall v xs vs
-    ,  whnfX v
-    -> EVALS xs vs
-    -> EVALS (v :: xs) (v :: vs).
+    :  forall x v xs vs
+    ,  EVAL  x  v
+    -> EVALS xs vs 
+    -> EVALS (x :: xs) (v :: vs).
 
 Hint Constructors EVAL.
 Hint Constructors EVALS.
@@ -85,16 +79,12 @@ Theorem EVAL_mutind
     ,  EVAL x v                  -> PE x  v
     -> EVALS xs vs               -> PS xs vs
     -> PS (x :: xs) (v :: vs))
- -> (forall v xs vs
-    ,  whnfX v
-    -> EVALS xs vs               -> PS xs vs
-    -> PS (v :: xs) (v :: vs))
  -> forall x1 x2
  ,  EVAL x1 x2 -> PE x1 x2.
 
 Proof.
  intros PE PS.
- intros Hdone Hlam Hcon Hcase Hnil Hhead Hcons.
+ intros Hdone Hlam Hcon Hcase Hnil Hcons.
  refine (fix  IHPE x  x'  (HE: EVAL  x  x')  {struct HE} 
               : PE x x'   := _
          with IHPS xs xs' (HS: EVALS xs xs') {struct HS}
@@ -109,7 +99,6 @@ Proof.
 
  case HS; intros.
  eapply Hnil.
- eapply Hhead; eauto.
  eapply Hcons; eauto.
 Qed.
 
@@ -143,6 +132,7 @@ Qed.
 Hint Resolve evals_produces_whnfX.
 
 
+(********************************************************************)
 Inductive CHAIN : list exp -> list exp -> Prop :=
  | EcDone
    :  forall vs
@@ -151,7 +141,8 @@ Inductive CHAIN : list exp -> list exp -> Prop :=
 
  | EcCons
    :  forall x v vs C
-   ,  exps_ctx C  -> STEPS x v
+   ,  exps_ctx C  
+   -> STEPS x v -> whnfX v
    -> CHAIN (C v) vs
    -> CHAIN (C x) vs.
 
@@ -202,8 +193,8 @@ Proof.
    assert (CHAIN (v :: C v') (v :: C v')).
     auto.
 
-   lets D1: EcCons x' v' (v :: C v') C2 H5. auto. (* reduction in tail *)
-   lets D2: EcCons x  v  (v :: C v') C1 D1. auto. (* reduction in head *)
+   lets D1: EcCons x' v' (v :: C v') C2 H5. auto. admit. (* reduction in tail *)
+   lets D2: EcCons x  v  (v :: C v') C1 D1. auto. auto. (* reduction in head *)
    auto.
 Qed.
 
@@ -323,11 +314,6 @@ Proof.
   destruct ts. 
    inverts H0. 
    inverts H0. eauto.
-
- Case "EvsCons".
-  destruct ts.
-   inverts H1.
-   inverts H1. eauto.
 Qed.
 
 
@@ -377,7 +363,7 @@ Proof.
      clear H9.
      induction H; intros.
       inverts H5.
-      eapply EvsHead. eauto.
+      eapply EvsCons. eauto.
        induction xs. eauto.
         inverts H6. eauto.
         inverts H5. eauto.

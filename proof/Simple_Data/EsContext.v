@@ -12,8 +12,8 @@ Require Export SubstExpExp.
                   ^^
     This is useful when enforcing a left-to-right evaluation
     order for a list of exps, like in the arguments of an XCon *)
-Inductive exps_ctx : (exp -> list exp) -> Prop :=
- | XscNil 
+Inductive exps_ctx : (exp -> list exp) -> Type :=
+ | XscHead
    :  forall xs
    ,  exps_ctx (fun xx => xx :: xs)
 
@@ -24,6 +24,60 @@ Inductive exps_ctx : (exp -> list exp) -> Prop :=
    -> exps_ctx (fun xx => v :: C xx).
 
 Hint Constructors exps_ctx.
+
+Inductive exps_ctx2 
+           :  (exp -> list exp) 
+           -> (exp -> list exp) 
+           -> Prop :=
+ | Xsc2Head 
+   :  forall xs ys
+   ,  exps_ctx2 (fun xx => xx :: xs)  (fun yy => yy :: ys)
+ 
+ | Xsc2Cons
+   :  forall v C1 C2
+   ,  whnfX v
+   -> exps_ctx2 C1 C2
+   -> exps_ctx2 (fun xx => v :: C1 xx) (fun yy => v :: C2 yy).
+
+Hint Constructors exps_ctx2.
+
+
+Lemma exps_ctx_run_Forall2'
+ :  forall (R: exp -> exp -> Prop) xs ys  
+ ,  Forall2 (fun x y => R x y /\ whnfX y /\ (whnfX x -> y = x)) xs ys
+ ->  Forall whnfX xs
+  \/ (exists C1 C2 x' y'
+        , R x' y' 
+        /\ exps_ctx2 C1 C2 
+        /\ xs = C1 x' 
+        /\ ys = C2 y').
+Proof.
+ intros R xs ys HR.
+ induction HR.
+  Case "nil".
+   left. auto.
+
+  Case "cons".
+   rename l  into xs.
+   rename l' into ys.
+   inverts H. inverts H1.
+   inverts IHHR.
+   SCase "xs whnf".
+    admit.
+
+   SCase "xs ctx".
+    right.
+    destruct H1 as [C1].
+    destruct H1 as [C2].
+    destruct H1 as [x'].
+    destruct H1 as [y'].
+    inverts H1. inverts H4. inverts H5.
+    
+    exists (fun xx => xx :: C1 x').
+    exists (fun yy => yy :: C2 y').
+    exists x. exists y.
+    repeat (split; auto).
+Qed.
 
 
 Lemma context_Forall2_swap
@@ -78,16 +132,6 @@ Proof.
  induction H.
   inverts H0. auto.
   inverts H0. auto.
-Qed.
-
-Lemma exps_ctx_run_Forall2
- :  forall (R: exp -> exp -> Prop) xs ys
- ,  Forall2 (fun x y => whnfX x \/ R x y) xs ys
- -> Forall whnfX xs 
-    \/ (exists C x' y', R x' y' 
-                     /\ exps_ctx C /\ xs = C x' /\ ys = C y').
-Proof.
- admit.
 Qed.
 
 
