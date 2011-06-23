@@ -12,7 +12,7 @@ Require Export SubstExpExp.
                   ^^
     This is useful when enforcing a left-to-right evaluation
     order for a list of exps, like in the arguments of an XCon *)
-Inductive exps_ctx : (exp -> list exp) -> Type :=
+Inductive exps_ctx : (exp -> list exp) -> Prop :=
  | XscHead
    :  forall xs
    ,  exps_ctx (fun xx => xx :: xs)
@@ -26,9 +26,9 @@ Inductive exps_ctx : (exp -> list exp) -> Type :=
 Hint Constructors exps_ctx.
 
 Inductive exps_ctx2 
-           :  (exp -> list exp) 
-           -> (exp -> list exp) 
-           -> Prop :=
+   :  (exp -> list exp) 
+   -> (exp -> list exp) 
+   -> Prop :=
  | Xsc2Head 
    :  forall xs ys
    ,  exps_ctx2 (fun xx => xx :: xs)  (fun yy => yy :: ys)
@@ -42,12 +42,31 @@ Inductive exps_ctx2
 Hint Constructors exps_ctx2.
 
 
+Lemma exps_ctx2_left
+ : forall C1 C2
+ , exps_ctx2 C1 C2 -> exps_ctx C1.
+Proof.
+ intros.
+ induction H; auto.
+Qed.
+
+
+Lemma exps_ctx2_right
+ : forall C1 C2
+ , exps_ctx2 C1 C2 -> exps_ctx C2.
+Proof.
+ intros.
+ induction H; auto.
+Qed.
+ 
+
+(* TODO: drop the Forall whnfX xs out of the conclusion *)
 Lemma exps_ctx_run_Forall2'
  :  forall (R: exp -> exp -> Prop) xs ys  
- ,  Forall2 (fun x y => R x y /\ whnfX y /\ (whnfX x -> y = x)) xs ys
+ ,   Forall2 (fun x y => R x y /\ whnfX y /\ (whnfX x -> y = x)) xs ys
  ->  Forall whnfX xs
   \/ (exists C1 C2 x' y'
-        , R x' y' 
+        ,  R x' y' 
         /\ exps_ctx2 C1 C2 
         /\ xs = C1 x' 
         /\ ys = C2 y').
@@ -63,7 +82,11 @@ Proof.
    inverts H. inverts H1.
    inverts IHHR.
    SCase "xs whnf".
-    admit.
+    right.
+    exists (fun xx => xx :: xs).
+    exists (fun xx => xx :: ys).
+    exists x.
+    exists y. auto.     
 
    SCase "xs ctx".
     right.
@@ -160,7 +183,7 @@ Proof.
     lets D: IHxs H3. clear IHxs.
     inverts D.
      right.
-     lets D2: XscNil xs.
+     lets D2: XscHead xs.
      exists (fun xx => xx :: xs).
      exists a. auto.
 
@@ -170,7 +193,7 @@ Proof.
      right.
      exists (fun xx => xx :: C x').
      exists a.
-     lets D2: XscNil (C x').
+     lets D2: XscHead (C x').
      auto.
 Qed.
 

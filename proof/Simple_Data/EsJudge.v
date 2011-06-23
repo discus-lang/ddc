@@ -68,6 +68,44 @@ Inductive STEPS : exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
+Lemma step_whnfX
+ :  forall x v
+ ,  whnfX x -> STEP x v -> v = x.
+Proof.
+ intros.
+ induction H0.
+  destruct H0.
+   auto.
+   inverts H.
+   inverts H.
+   inverts H.
+    assert (whnfX x).
+    eapply exps_ctx_Forall. eauto. eauto. 
+    assert (x' = x). auto. subst. auto.
+   inverts H.
+  inverts H.
+  inverts H.
+Qed.
+
+
+Lemma steps_whnfX 
+ :  forall x v
+ ,  whnfX x -> STEPS x v -> v = x.
+Proof.
+ intros.
+ induction H0.
+  Case "EsNone".
+   auto.
+
+  Case "EsStep".
+   apply step_whnfX; auto.
+  
+  Case "EsAppend".
+   assert (x2 = x1). auto. subst.
+   auto.
+Qed.
+
+
 Lemma steps_context
  :  forall C x1 x1'
  ,  exp_ctx C

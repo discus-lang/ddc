@@ -1,4 +1,5 @@
 
+Require Import EvChain.
 Require Export SubstExpExp.
 Require Import Preservation.
 Require Import TyJudge.
@@ -132,86 +133,6 @@ Qed.
 Hint Resolve evals_produces_whnfX.
 
 
-(********************************************************************)
-Inductive CHAIN : list exp -> list exp -> Prop :=
- | EcDone
-   :  forall vs
-   ,  Forall whnfX vs
-   -> CHAIN vs vs
-
- | EcCons
-   :  forall x v vs C
-   ,  exps_ctx C  
-   -> STEPS x v -> whnfX v
-   -> CHAIN (C v) vs
-   -> CHAIN (C x) vs.
-
-Hint Constructors CHAIN.
-
-
-Lemma make_chain
- :  forall xs vs
- ,  Forall2 STEPS xs vs
- -> Forall  whnfX vs
- -> CHAIN xs vs.
-Proof.
- intros. gen vs.
-  induction xs as [xs | x]; intros.
-  inverts H. auto.
- 
-  destruct vs as [vs | v].
-   inverts H.
-
-  inverts H. inverts H0.
-  assert (CHAIN xs vs). auto.
-   clear IHxs.
-
-  (* TODO: this comes from STEPS xs vs *)
-  assert (Forall2 (fun x v => whnfX x \/ STEPS x v) xs vs).
-   admit. (* ok, STEPS xs vs *)
-
-  (* either all the xs are already whnfX,
-      or there is a context where one can step *)
-  lets D: exps_ctx_run_Forall2 H0. clear H0.
-  inverts D.
-
-  Case "all whnfX".
-   assert (xs = vs). admit. subst. (* ok, stepping whnf yields same *)
-   assert (x = v).   admit. subst. (* ok, stepping whnf yields same *)
-   eapply EcDone. auto.
-
-  Case "something steps".
-   destruct H0 as [C].
-   destruct H0 as [x'].
-   destruct H0 as [v'].
-   inverts H0. inverts H5. inverts H7.
-
-   lets C1: XscNil (C x').  (* context for reduction of first elem *)
-   lets C2: XscCons H2 H0.  (* context for reduction in tail *)
-
-   (* final elem of chain, all elems whnfX *)
-   assert (CHAIN (v :: C v') (v :: C v')).
-    auto.
-
-   lets D1: EcCons x' v' (v :: C v') C2 H5. auto. admit. (* reduction in tail *)
-   lets D2: EcCons x  v  (v :: C v') C1 D1. auto. auto. (* reduction in head *)
-   auto.
-Qed.
-
-
-Lemma steps_chain_XCon
- :  forall xs vs dc
- ,  CHAIN xs vs
- -> STEPS (XCon dc xs) (XCon dc vs).
-Proof.
- intros.
- induction H.
-  eauto.
-  eapply (EsAppend (XCon dc (C x)) (XCon dc (C v))).
-   eapply steps_context_XCon.
-     auto. auto.
-   auto.
-Qed.
 
 
 Lemma steps_in_XCon

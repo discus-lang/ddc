@@ -121,6 +121,19 @@ Proof.
 Qed.
 
 
+Lemma Forall2_eq
+ :  forall (A: Type) xs ys
+ ,  Forall2 (@eq A) xs ys
+ -> xs = ys.
+Proof.
+ intros.
+ induction H.
+ auto. 
+ rewrite IHForall2.
+ rewrite H. auto.
+Qed.
+
+
 Lemma Forall2_length
  : forall {A B: Type} (R: A -> B -> Prop) 
           (xs : list A) 

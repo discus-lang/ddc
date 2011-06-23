@@ -70,16 +70,24 @@ Proof.
  Case "XCon".
   inverts H0.
   assert (Forall (fun x => whnfX x \/ (exists x', STEP x x')) xs).
-   admit. clear H. (* fine *)
+   apply Forall_forall. intros.
+   rewrite Forall_forall in H.
+   lets T: H H0.
+   lets T2: Forall2_exists_left H0 H9.
+    destruct T2.
+   lets T3: T H1.
+   inverts T3. inverts H2.
+   auto.
+   auto.
   lets D: exps_ctx_run H0.
   inverts D.
    left.
     eapply Value. eauto. eauto.
    right. 
-    destruct H as [C].
-    destruct H as [x'].
-    inverts H. inverts H2.
-    lets D2: step_XCon H1 H5.
+    destruct H1 as [C].
+    destruct H1 as [x'].
+    inverts H1. inverts H5.
+    lets D2: step_XCon H2 H6.
      destruct D2. eauto.
 
  Case "XCase".
@@ -118,5 +126,4 @@ Proof.
  Case "XAlt".
    auto.     
 Qed.
-
 
