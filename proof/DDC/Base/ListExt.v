@@ -1,6 +1,6 @@
 (* Extensions to the Coq.Lists.List module *)
-Require Import Base.Nat.
-Require Import Base.Tactics.
+Require Import DDC.Base.Nat.
+Require Import DDC.Base.Tactics.
 Require Import Coq.Lists.List.
 
 

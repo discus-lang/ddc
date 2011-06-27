@@ -57,6 +57,13 @@ total	:
 	@$(MAKE) totallogwar
 
 
+# -- Build the Coq proofs
+.PHONY: proof
+proof: 
+	@$(MAKE) proofdeps
+	@$(MAKE) proof/Main.vo
+
+
 # -- Same as 'total', but do a full clean first
 .PHONY  : cleantotal
 cleantotal :
@@ -116,3 +123,5 @@ include make/rules.mk
 #   that missing -included files should be ignored.
 #
 -include make/Makefile.deps.inc
+-include make/deps/proof.deps.inc
+

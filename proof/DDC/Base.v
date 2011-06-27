@@ -1,6 +1,6 @@
-Require Export Base.Nat.
-Require Export Base.Tactics.
-Require Export Base.List.
+Require Export DDC.Base.Nat.
+Require Export DDC.Base.Tactics.
+Require Export DDC.Base.ListExt.
 
 (* Cases library due to Aaron Bohannon ********************)
 Require String. Open Scope string_scope.

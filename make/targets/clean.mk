@@ -13,11 +13,13 @@ clean  : cleanWar cleanRuntime cleanLibrary
 		-o	-name "*.hcr" \
 		-o	-name "*.td" \
 		-o	-name "*.ti" \
-		-o	-name "Makefile.deps" \
+		-o	-name "*.deps" \
+		-o      -name "*.deps.inc" \
+		-o	-name "*.vo" \
+		-o	-name "*.glob" \
 		-follow | xargs -n 1 rm -f
 
 	@rm -f doc/haddock/*
 	@rm -f src/Config/Config.hs
-	@rm -f make/Makefile.deps.inc
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak

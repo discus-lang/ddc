@@ -1,5 +1,6 @@
+
+Require Export DDC.Base.LibTactics.
 Require Export Omega.
-Require Export Base.LibTactics.
 
 
 Tactic Notation "break" constr(E) :=

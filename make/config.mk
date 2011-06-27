@@ -11,7 +11,11 @@
 #     devel_prof - development compile with profiling.
 BUILDFLAVOUR	= distro
 
-# The name of the GHC to use when building.
+# Number of jobs to use during make.
+THREADS		= 1
+
+# GHC Config ------------------------------------------------------------------
+# GHC binary to use when building.
 GHC		= ghc
 
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
@@ -20,8 +24,12 @@ ifeq "$(GHC_VERSION)" "7"
 GHC_VERSION_FLAGS = -rtsopts
 endif
 
-# Number of jobs to use during make.
-THREADS		= 1
+
+# Coq Config ------------------------------------------------------------------
+# Coq binaries to use when building
+COQDEP		= coqdep
+COQC		= coqc
+
 
 # Override the above config.
 -include make/config-override.deps
