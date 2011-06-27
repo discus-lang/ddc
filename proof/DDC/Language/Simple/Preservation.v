@@ -1,7 +1,7 @@
 
-Require Import DDC.Language.Simple.TyJudge.
-Require Import DDC.Language.Simple.EsJudge.
+Require Import DDC.Language.Simple.Step.
 Require Import DDC.Language.Simple.SubstExpExp.
+Require Import DDC.Language.Simple.Ty.
 
 
 (* Preservation using evaluation judgement with contexts *)

@@ -1,8 +1,8 @@
 
 Require Export DDC.Language.Simple.SubstExpExp.
 Require Import DDC.Language.Simple.Preservation.
-Require Import DDC.Language.Simple.TyJudge.
-Require Export DDC.Language.Simple.EsJudge.
+Require Import DDC.Language.Simple.Ty.
+Require Export DDC.Language.Simple.Step.
 Require Export DDC.Language.Simple.Exp.
 
 

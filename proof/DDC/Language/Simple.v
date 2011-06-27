@@ -1,8 +1,8 @@
 
 Require Export DDC.Language.Simple.Exp.
-Require Export DDC.Language.Simple.EsJudge.
-Require Export DDC.Language.Simple.EvJudge.
-Require Export DDC.Language.Simple.TyJudge.
+Require Export DDC.Language.Simple.Step.
+Require Export DDC.Language.Simple.Eval.
+Require Export DDC.Language.Simple.Ty.
 Require Export DDC.Language.Simple.SubstExpExp.
 Require Export DDC.Language.Simple.Progress.
 Require Export DDC.Language.Simple.Preservation.

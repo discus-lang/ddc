@@ -1,7 +1,7 @@
 (* Bonus lemmas that aren't used by the main proofs *)
 
 Require Import DDC.Language.Simple.Exp.
-Require Import DDC.Language.Simple.TyJudge.
+Require Import DDC.Language.Simple.Ty.
 Require Import DDC.Language.Simple.SubstExpExp.
 
 

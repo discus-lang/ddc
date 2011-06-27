@@ -1,5 +1,5 @@
 
-Require Import DDC.Language.Simple.TyJudge.
+Require Import DDC.Language.Simple.Ty.
 Require Export DDC.Language.Simple.Exp.
 
 (* Substitution of values in values. 
