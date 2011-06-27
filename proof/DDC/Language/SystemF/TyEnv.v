@@ -1,26 +1,27 @@
 
-Require Export Ty.
-Require Export Env.
+Require Export DDC.Language.SystemF.Ty.
 
 
-(* Type Enviroments *************************************************)
-Definition tyenv := env ty.
+(* Type enviroments *)
+Definition tyenv := list ty.
 Hint Unfold tyenv.
 
 
-(* Lifting **********************************************************)
 (* Lift type indices in type environments. *)
 Definition liftTE d te    := map (liftTT d) te.
 Hint Unfold liftTE.
 
 
-(* Substitution *****************************************************)
 (* Substitution of Types in Type Environments. *)
 Definition substTE d t te := map (substTT d t) te.
 Hint Unfold substTE.
 
 
-(* Lemmas ***********************************************************)
+(********************************************************************)
+(* The following lemmas as similar to the ones in Ty.v, 
+   except that we've applied them to entire type environments. 
+ *)
+
 Lemma liftTE_liftTE
  :  forall n n' te
  ,  liftTE n              (liftTE (n + n') te) 
@@ -39,12 +40,14 @@ Lemma substTE_liftTE
  ,  substTE d t2 (liftTE d te) = te.
 Proof.
  intros.
- unfold substTE. unfold liftTE.
+ unfold substTE.
+ unfold liftTE.
  rewrite map_map.
- unfold Basics.compose.
  induction te. 
   auto.
-  simpl. rewrite substTT_liftTT. rewrite IHte. auto.
+  simpl. 
+   unfold compose. rewrite substTT_liftTT.
+   unfold compose in IHte. rewrite IHte. auto.
 Qed.
 
 

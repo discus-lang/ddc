@@ -1,43 +1,42 @@
 
-Require Export TyEnv.
-Require Export Ty.
-Require Export Ki.
-Require Export Env.
+Require Export DDC.Language.SystemF.TyEnv.
+Require Export DDC.Language.SystemF.Ty.
+Require Export DDC.Language.SystemF.Ki.
 
 
-(** Expressions *****************************************************)
+(* Expressions *)
 Inductive exp : Type :=
- | XVar  : nat -> exp
- | XLAM  : exp -> exp
- | XAPP  : exp -> ty  -> exp
- | XLam  : ty  -> exp -> exp
- | XApp  : exp -> exp -> exp.
+ | XVar  : nat -> exp             (* deBruijn indices *)
+ | XLAM  : exp -> exp             (* Type abstraction *)
+ | XAPP  : exp -> ty  -> exp      (* Type application *)
+ | XLam  : ty  -> exp -> exp      (* Value abstraction *)
+ | XApp  : exp -> exp -> exp.     (* Value application *)
+
 Hint Constructors exp.
 
 
-(* Weak Head Normal Forms cannot be reduced further by 
-   call-by-value evaluation.
- *)
-Inductive whnfX : exp -> Prop :=
- | Whnf_XVar 
+(* Weak normal dorms cannot be reduced further by 
+   call-by-value evaluation. *)
+Inductive wnfX : exp -> Prop :=
+ | Wnf_XVar 
    : forall i
-   , whnfX (XVar i)
+   , wnfX (XVar i)
 
- | Whnf_XLAM
+ | Wnf_XLAM
    : forall x1
-   , whnfX (XLAM x1)
+   , wnfX (XLAM x1)
 
- | Whnf_XLam
+ | Wnf_XLam
    : forall t1 x2
-   , whnfX (XLam t1 x2).
-Hint Constructors whnfX.
+   , wnfX (XLam t1 x2).
+
+Hint Constructors wnfX.
 
 
-(* Well Formedness **************************************************)
 (* A well formed expression is closed under the given environments *)
 Fixpoint wfX (ke: kienv) (te: tyenv) (xx: exp) : Prop := 
  match xx with 
- | XVar i     => exists t, get te i = Some t
+ | XVar i     => exists t, get i te = Some t
  | XLAM x     => wfX (ke :> KStar) (liftTE 0 te) x
  | XAPP x t   => wfX ke te x  /\ wfT ke t
  | XLam t x   => wfT ke t     /\ wfX ke (te :> t) x
@@ -48,25 +47,26 @@ Hint Unfold wfX.
 
 (* Closed expressions are well formed under empty environments *)
 Definition closedX (xx: exp) : Prop
- := wfX Empty Empty xx.
+ := wfX nil nil xx.
 Hint Unfold closedX.
 
 
-(* Values are closed expressions that cannot be reduced further *)
+(* Values are closed expressions that cannot be reduced further. *)
 Inductive value : exp -> Prop :=
  | Value
    :  forall xx
-   ,  whnfX xx -> closedX xx
+   ,  wnfX xx -> closedX xx
    -> value xx.
 Hint Constructors value.
 
 
-(* Lifting **********************************************************)
-(* Lift type indices that are at least a certain depth. *)
+(********************************************************************)
+(* Lift type indices in expressions. *)
 Fixpoint liftTX (d: nat) (xx: exp) : exp :=
   match xx with
   |  XVar _     => xx
 
+  (* Increase type depth when moving across type abstractions. *)
   |  XLAM x     
   => XLAM (liftTX (S d) x)
 
@@ -81,8 +81,7 @@ Fixpoint liftTX (d: nat) (xx: exp) : exp :=
  end.
 
 
-(* Lift value indices in expressions.
-   That are greater or equal to a given depth. *)
+(* Lift value indices in expressions. *)
 Fixpoint liftXX (d: nat) (xx: exp) : exp :=
   match xx with
   |  XVar ix    
@@ -96,7 +95,8 @@ Fixpoint liftXX (d: nat) (xx: exp) : exp :=
   |  XAPP x t
   => XAPP (liftXX d x) t
  
-  |  XLam t x   
+  (* Increase value depth when moving across value abstractions. *)
+  |  XLam t x                  
   => XLam t (liftXX (S d) x)
 
   |  XApp x1 x2
@@ -104,12 +104,14 @@ Fixpoint liftXX (d: nat) (xx: exp) : exp :=
  end.
 
 
-(* Substitution *****************************************************)
-(* Substitution of Types in Exps *)
+(********************************************************************)
+(* Substitution of types in expressions. *)
 Fixpoint substTX (d: nat) (u: ty) (xx: exp) : exp :=
   match xx with
   | XVar _     => xx
 
+  (* Lift free type variables in the type to be substituted 
+     when we move across type abstractions. *)
   |  XLAM x     
   => XLAM (substTX (S d) (liftTT 0 u) x)
 
@@ -124,7 +126,7 @@ Fixpoint substTX (d: nat) (u: ty) (xx: exp) : exp :=
  end.
 
 
-(* Substitution of Exps in Exps *)
+(* Substitution of expressions in expressions. *)
 Fixpoint substXX (d: nat) (u: exp) (xx: exp) : exp :=
   match xx with
   | XVar ix    
@@ -134,19 +136,20 @@ Fixpoint substXX (d: nat) (u: exp) (xx: exp) : exp :=
      | _  => XVar  ix
      end
 
+  (* Lift free type variables in the expression to be substituted
+     when we move across type abstractions. *)
   |  XLAM x
   => XLAM (substXX d (liftTX 0 u) x)
 
   |  XAPP x t
   => XAPP (substXX d u x) t
 
+  (* Lift free value variables in the expression to be substituted
+     when we move across value abstractions. *)
   |  XLam t x
   => XLam t (substXX (S d) (liftXX 0 u) x)
 
   |  XApp x1 x2
   => XApp (substXX d u x1) (substXX d u x2)
   end.
-
-
-
 

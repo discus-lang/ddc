@@ -1,38 +1,40 @@
 
-Require Export Ki.
-Require Export Env.
-Require Export Base.
+Require Export DDC.Language.SystemF.Ki.
+Require Export DDC.Base.
 
 
-(* Types ************************************************************)
+(* Type Expressions *)
 Inductive ty  : Type :=
- | TCon    : nat -> ty
- | TVar    : nat -> ty
- | TForall : ty  -> ty
- | TFun    : ty  -> ty -> ty.
+ | TCon    : nat -> ty            (* Data type constructor. *)
+ | TVar    : nat -> ty            (* deBruijn index. *)
+ | TForall : ty  -> ty            (* Type variable binding. *)
+ | TFun    : ty  -> ty -> ty.     (* Function type constructor. *)
+
 Hint Constructors ty.
 
 
-(* Well Formedness **************************************************)
+(********************************************************************)
 (* Well formed types are closed under the given kind environment *)
 Fixpoint wfT (ke: kienv) (tt: ty) : Prop := 
  match tt with
  | TCon _     => True
- | TVar i     => exists k, get ke i = Some k
+ | TVar i     => exists k, get i ke = Some k
  | TForall t  => wfT (ke :> KStar) t
  | TFun t1 t2 => wfT ke t1 /\ wfT ke t2
  end.
 Hint Unfold wfT.
 
 
-(* Type is closed under an empty kind environment. *)
+(* A closed type is well formed under an empty type environment. *)
 Definition closedT (tt: ty) : Prop
- := wfT Empty tt.
+ := wfT nil tt.
 Hint Unfold closedT.
 
 
-(* Lifting *********************************************************)
-(* Lift type indices that are at least a certain depth. *)
+(********************************************************************)
+(* Lifting of type indices in types.
+   When we push new elements on the environment stack, we need
+   to lift referenes to existing elements across the new ones. *)
 Fixpoint liftTT (d: nat) (tt: ty) : ty :=
   match tt with
   | TCon _     => tt
@@ -51,7 +53,7 @@ Fixpoint liftTT (d: nat) (tt: ty) : ty :=
 Hint Unfold liftTT.
 
 
-(* Tactic to help deal with lifting functions *)
+(* Tactic to help deal with lifting functions. *)
 Ltac lift_cases 
  := match goal with 
      |  [ |- context [le_gt_dec ?n ?n'] ]
@@ -59,8 +61,8 @@ Ltac lift_cases
     end.
 
 
-(* Substitution *****************************************************)
-(* Substitution of Types in Types. *)
+(********************************************************************)
+(* Substitution for the outer-most binder in a type. *)
 Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty 
  := match tt with
     |  TCon _     
@@ -81,7 +83,7 @@ Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty
   end.
 
 
-(* Lemmas ***********************************************************)
+(********************************************************************)
 (* Changing the order of lifting. *)
 Lemma liftTT_liftTT
  :  forall n n' t
@@ -105,8 +107,14 @@ Proof.
 Qed.  
 
 
-(* If we lift at depth d, this creates an empty space and
-   substituting into it doens't do anything. *)
+(* Lifting then substituting at the same index doesn't do anything.
+
+   When we lift indices in a type that are greater or equal to some
+   depth d, there will be no indices of value d in the result. The
+   lifting process increments indices greater than 'd', but then the
+   substitution process decrements them again, so we get back to 
+   the type we started with. 
+ *)
 Lemma substTT_liftTT
  :  forall d t1 t2
  ,  substTT d t2 (liftTT d t1) = t1.
@@ -156,6 +164,7 @@ Proof.
 Qed.
 
 
+(* Lifting after substitution, another way. *)
 Lemma liftTT_substTT'
  :  forall n n' t1 t2
  ,  liftTT (n + n') (substTT n t2 t1)

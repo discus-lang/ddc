@@ -1,10 +1,99 @@
 
-Require Import SubstTypeType.
-Require Import SubstTypeExp.
-Require Import TyJudge.
+Require Import DDC.Language.SystemF.SubstTypeType.
+Require Export DDC.Language.SystemF.KiJudge.
+Require Export DDC.Language.SystemF.TyEnv.
+Require Export DDC.Language.SystemF.Exp.
 
 
-(* Weakening Kind Env in TyJudge ************************************
+(* Type judgement assigns a type to an expression. *)
+Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
+ | TYVar 
+   :  forall i ke te t
+   ,  get i te = Some t
+   -> KIND ke t  KStar
+   -> TYPE ke te (XVar i) t
+
+ | TYLam 
+   :  forall ke te x12 t11 t12
+   ,  KIND ke t11 KStar
+   -> TYPE ke (te :> t11)  x12            t12
+   -> TYPE ke  te         (XLam t11 x12) (TFun t11 t12)
+
+ | TYApp 
+   :  forall ke te x1 x2 t11 t12
+   ,  TYPE ke te x1 (TFun t11 t12) 
+   -> TYPE ke te x2 t11
+   -> TYPE ke te (XApp x1 x2) t12
+
+ | TYLAM
+   :  forall ke te x1 t1
+   ,  TYPE (ke :> KStar) (liftTE 0 te) x1        t1
+   -> TYPE ke            te           (XLAM x1) (TForall t1)
+
+ | TYAPP
+   :  forall ke te x1 t1 t2
+   ,  TYPE ke te x1 (TForall t1)
+   -> KIND ke t2 KStar
+   -> TYPE ke te (XAPP x1 t2) (substTT 0 t2 t1). 
+
+Hint Constructors TYPE.
+
+
+(* The type produced by a type judgement is well kinded. *)
+Theorem type_kind
+ :  forall ke te x t
+ ,  TYPE ke te x t
+ -> KIND ke t KStar.
+Proof.
+ intros. gen ke te t.
+ induction x; intros; inverts H; eauto.
+ 
+ Case "XAPP".
+  apply IHx in H4. inverts H4.
+  eapply subst_type_type; eauto.
+
+ Case "XLam".
+  eapply IHx1 in H4. inverts H4. auto.
+Qed.
+
+
+(* A well typed expression is well formed. *)
+Theorem type_wfX
+ :  forall ke te x t
+ ,  TYPE ke te x t
+ -> wfX  ke te x.
+Proof.
+ intros. gen ke te t.
+ induction x; intros; simpl.
+
+ Case "XVar".
+  inverts H. eauto.
+
+ Case "XLAM".
+  inverts H.
+  apply IHx in H3. eauto.
+
+ Case "XAPP".
+  inverts H. 
+  lets D: IHx H4. split. 
+   auto. eapply kind_wfT. eauto.
+
+ Case "XLam".
+  inverts H.
+  apply IHx in H6.
+  apply kind_wfT in H4. auto.
+
+ Case "XApp".
+  inverts H.
+  apply IHx1 in H4. 
+  apply IHx2 in H6.
+   auto.
+Qed.
+Hint Resolve type_wfX.
+
+
+(********************************************************************)
+(* Weakening the kind environment of a type judgement.
    We can insert a new kind into the kind environment of a type
    judgement, provided we lift existing references to kinds higher
    than this in the stack over the new one.
@@ -54,8 +143,8 @@ Qed.
 
 Lemma type_kienv_weaken
  :  forall ke te x1 t1 k2
- ,  TYPE ke                 te            x1              t1
- -> TYPE (ke :> k2)        (liftTE 0 te) (liftTX 0 x1)   (liftTT 0 t1).
+ ,  TYPE ke         te            x1            t1
+ -> TYPE (ke :> k2) (liftTE 0 te) (liftTX 0 x1) (liftTT 0 t1).
 Proof.
  intros.
  assert (ke :> k2 = insert 0 k2 ke). 
@@ -64,7 +153,8 @@ Proof.
 Qed.
 
 
-(* Weakening Type Env in TyJudge ************************************
+(********************************************************************)
+(* Weakening the type environment of a type judgement. 
    We can insert a new type into the type environment of a type 
    judgement, provided we lift existing references to types higher
    than this in the stack over the new one.
@@ -105,66 +195,6 @@ Proof.
   destruct te; auto. rewrite H0.
   apply type_tyenv_insert. auto.
 Qed.
-
-
-(* Substitution of Values in Values preserves Typing ****************)
-Theorem subst_value_value_ix
- :  forall ix ke te x1 t1 x2 t2
- ,  get  te ix = Some t2
- -> TYPE ke te           x1 t1
- -> TYPE ke (drop ix te) x2 t2
- -> TYPE ke (drop ix te) (substXX ix x2 x1) t1.
-Proof.
- intros. gen ix ke te t1 x2 t2.
- induction x1; intros; inverts H0; simpl; eauto.
-
- Case "XVar".
-  fbreak_nat_compare.
-  SCase "n = ix".
-   rewrite H in H3. inverts H3. auto.
-
-  SCase "n < ix".
-   apply TYVar. 
-   rewrite <- H3. apply get_drop_above. auto. auto.
-
-  SCase "n > ix".
-   apply TYVar. auto.
-   rewrite <- H3.
-   destruct n.
-    burn.
-    simpl. nnat. apply get_drop_below. omega.
-    auto.
-
- Case "XLAM".
-  eapply (IHx1 ix) in H5.
-  apply TYLAM.
-   unfold liftTE. rewrite map_drop. eauto.
-   eapply get_map. eauto.
-   unfold liftTE. rewrite <- map_drop.
-    assert (map (liftTT 0) (drop ix te) = liftTE 0 (drop ix te)). 
-     unfold liftTE. auto. rewrite H0. clear H0.
-    apply type_kienv_weaken. auto.
-
- Case "XLam".
-  apply TYLam.
-   auto.
-   rewrite drop_rewind.
-   eapply IHx1; eauto.
-   simpl. apply type_tyenv_weaken. auto.
-Qed.
-
-
-Theorem subst_value_value
- :  forall ke te x1 t1 x2 t2
- ,  TYPE ke (te :> t2) x1 t1
- -> TYPE ke te x2 t2
- -> TYPE ke te (substXX 0 x2 x1) t1.
-Proof.
- intros.
- assert (te = drop 0 (te :> t2)). auto.
- rewrite H1. eapply subst_value_value_ix; eauto. eauto.
-Qed.
-
 
 
 

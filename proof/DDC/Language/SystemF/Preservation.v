@@ -1,11 +1,12 @@
 
-Require Import SubstExpExp.
-Require Import SubstTypeExp.
-Require Import SubstTypeType.
-Require Import EsJudge.
-Require Import TyJudge.
+Require Import DDC.Language.SystemF.Step.
+Require Import DDC.Language.SystemF.SubstExpExp.
+Require Import DDC.Language.SystemF.SubstTypeExp.
+Require Import DDC.Language.SystemF.SubstTypeType.
+Require Import DDC.Language.SystemF.TyJudge.
 
 
+(* When an expression takes a step the results has the same type. *)
 Theorem preservation
  :  forall ke te x x' t
  ,  TYPE ke te x t
@@ -58,9 +59,9 @@ Qed.
  *)  
 Lemma preservation_steps
  :  forall x1 t1 x2
- ,  TYPE Empty Empty x1 t1
- -> STEPS      x1 x2
- -> TYPE Empty Empty x2 t1.
+ ,  TYPE nil nil x1 t1
+ -> STEPS x1 x2
+ -> TYPE nil nil x2 t1.
 Proof.
  intros. 
  induction H0; eauto.
@@ -74,9 +75,9 @@ Qed.
  *)
 Lemma preservation_stepsl
  :  forall x1 t1 x2
- ,  TYPE Empty Empty x1 t1
+ ,  TYPE nil nil x1 t1
  -> STEPSL x1 x2
- -> TYPE Empty Empty x2 t1.
+ -> TYPE nil nil x2 t1.
 Proof.
  intros. 
  induction H0.

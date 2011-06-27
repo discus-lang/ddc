@@ -1,6 +1,9 @@
+
 Require Export DDC.Base.Nat.
 Require Export DDC.Base.Tactics.
 Require Export DDC.Base.ListExt.
+Require Export Coq.Program.Basics.
+
 
 (* Cases library due to Aaron Bohannon ********************)
 Require String. Open Scope string_scope.

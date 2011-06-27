@@ -104,7 +104,7 @@ Fixpoint
 
 
 (*******************************************************************)
-(* Substitute for the outerm-ost binder in an expression. *)
+(* Substitute for the outermost binder in an expression. *)
 Fixpoint
  substX (d:  nat) (* current binding depth in expression *)
         (u:  exp) (* new expression to substitute *)

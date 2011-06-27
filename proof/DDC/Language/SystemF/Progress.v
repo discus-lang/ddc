@@ -1,14 +1,15 @@
 
-Require Import SubstExpExp.
-Require Import SubstTypeExp.
-Require Import SubstTypeType.
-Require Import EsJudge.
-Require Import TyJudge.
+Require Import DDC.Language.SystemF.Step.
+Require Import DDC.Language.SystemF.SubstExpExp.
+Require Import DDC.Language.SystemF.SubstTypeExp.
+Require Import DDC.Language.SystemF.SubstTypeType.
+Require Import DDC.Language.SystemF.TyJudge.
 
 
+(* A well typed expression is either a value, or can take a step. *)
 Theorem progress
  :  forall x
- ,  (exists t, TYPE Empty Empty x t)
+ ,  (exists t, TYPE nil nil x t)
  -> value x \/ (exists x', STEP x x').
 Proof.
  intros.

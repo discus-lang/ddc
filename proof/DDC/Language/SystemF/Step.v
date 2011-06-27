@@ -1,10 +1,10 @@
 
-Require Import SubstTypeExp.
-Require Import SubstExpExp.
-Require Export Exp.
+Require Import DDC.Language.SystemF.SubstTypeExp.
+Require Import DDC.Language.SystemF.SubstExpExp.
+Require Export DDC.Language.SystemF.Exp.
 
 
-(* Single Step Evaluation *******************************************)
+(* Small step evaluation *)
 Inductive STEP : exp -> exp -> Prop := 
   (* value applications *)
   | ESLamApp
@@ -36,7 +36,8 @@ Inductive STEP : exp -> exp -> Prop :=
 Hint Constructors STEP.
 
 
-(* Multi-step evaluation *******************************************
+(********************************************************************)
+(* Multi-step evaluation.
    A sequence of small step transitions.
    As opposed to STEPSL, this version has an append constructor
    ESAppend that makes it easy to join two evaluations together.
@@ -67,9 +68,10 @@ Inductive STEPS : exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
-(* Context lemmas ***************************************************
+(* Context lemmas
    These help when proving something about a reduction in a given
    context. They're all trivial.
+   TODO: Define contexts directly like in the Simple proof.
  *)
 Lemma steps_app1
  :  forall x1 x1' x2
@@ -101,7 +103,8 @@ Proof.
 Qed.
 
 
-(* Left linearised multi-step evaluation ****************************
+(********************************************************************)
+(* Left linearised multi-step evaluation
    As opposed to STEPS, this version provides a single step at a time
    and does not have an append constructor. This is convenient
    when converting a small-step evaluations to big-step, via the

@@ -2,6 +2,7 @@
 Require Import DDC.Base.Nat.
 Require Import DDC.Base.Tactics.
 Require Export Coq.Lists.List.
+Require Import Coq.Program.Basics.
 
 
 (* Unfolding defs from Coq.Lists.List module *)
@@ -58,6 +59,16 @@ Fixpoint delete {A: Type} (ix: nat) (xs: list A) : list A :=
  | O,    x :: xs'  => xs'
  | S n', x :: xs'  => x :: delete n' xs'
  end.
+
+
+(* Select elements that match a given predicate. *)
+Fixpoint filter {A: Type} (f: A -> bool) (xx: list A) : list A :=
+  match xx with 
+  | nil     => nil
+  | x :: xs
+  => if f x then x :: (filter f xs)
+            else filter f xs
+  end.
 
 
 (********************************************************************)
@@ -259,6 +270,47 @@ Hint Resolve get_above_false.
 
 
 (********************************************************************)
+(** Lemmas: map *)
+
+Lemma map_rewind
+ :  forall {A B: Type} (f: A -> B) (e: list A) x
+ ,  map f e :> f x 
+ =  map f (e :> x).
+Proof. auto. Qed.
+
+
+(* Applying a function to all the elements of a list and getting
+   one of the results is the same as getting the original value
+   and applying the function to just that value. *)
+Lemma get_map 
+ : forall {A B: Type} (f: A -> B) (xx: list A) x n
+ ,  get n xx         = Some x
+ -> get n (map f xx) = Some (f x).
+Proof.
+ intros. gen n. 
+ induction xx; intros.
+  false.
+  simpl. destruct n.
+   simpl in H. inverts H. trivial.
+   auto.
+Qed.
+Hint Resolve get_map.
+
+
+(* Applying two functions to all the elements of a list one after
+   the other is the same as applying their composition. *)
+Lemma map_map
+ :  forall {A B C: Type} (f: B -> C) (g: A -> B) xx
+ ,  map f (map g xx) 
+ =  map (compose f g) xx.
+Proof.
+ induction xx.
+  auto.
+  simpl. rewrite IHxx. auto.
+Qed.
+
+
+(********************************************************************)
 (** Lemmas: firstn *)
 
 (* If we take zero elements from a list,
@@ -393,6 +445,24 @@ Qed.
 Hint Resolve get_insert_below.
 
 
+(* Inserting a new element into a list then applying a function to 
+   all elements is the same as applying the function to all the
+   original elements, then inserting the new one with the function
+   already applied. *)
+Lemma map_insert 
+ : forall {A B: Type} (f: A -> B) ix x (xs: list A)
+ , map f (insert ix x xs)
+ = insert ix (f x) (map f xs).
+Proof.
+ intros. gen ix x.
+ induction xs; intros.
+  simpl. destruct ix; auto.
+  simpl. destruct ix; auto.
+   rewrite <- insert_rewind. simpl.
+   rewrite IHxs. auto.
+Qed.
+
+
 (********************************************************************)
 (** Lemmas: delete *)
 
@@ -475,4 +545,33 @@ Proof.
  eapply get_delete_below'; eauto.
 Qed.
 Hint Resolve get_delete_below.
+
+
+Lemma map_delete
+ :  forall {A B: Type} (f: A -> B) ix (xx: list A)
+ ,  map f (delete ix xx) 
+ =  delete ix (map f xx).
+Proof.
+ intros. gen ix.
+ induction xx.
+  simpl. destruct ix; auto.
+  simpl. destruct ix; auto.
+   rewrite <- delete_rewind.
+   rewrite <- delete_rewind.
+   rewrite <- IHxx. auto.
+Qed.
+
+
+(********************************************************************)
+(* Lemmas: filter *)
+
+(* The length of a filtered list is the same or smaller than
+   the original list. *)
+Lemma filter_length
+ :  forall A (xx: list A) (f: A -> bool)
+ ,  length xx >= length (filter f xx).
+Proof.
+ intros. induction xx; auto.
+ simpl. breaka (f a). simpl. omega.
+Qed.
 

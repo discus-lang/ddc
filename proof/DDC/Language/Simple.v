@@ -7,7 +7,7 @@ Require Export DDC.Language.Simple.Exp.
 (* Typing judgement and environment weakening. *)
 Require Export DDC.Language.Simple.Ty.
 
-(* Substitution lemma. *)
+(* Substitution of exps in exps preserves typing. *)
 Require Export DDC.Language.Simple.SubstExpExp.
 
 (* Small step evaluation. *)
