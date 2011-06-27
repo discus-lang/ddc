@@ -1,8 +1,7 @@
 
 Require Export DDC.Language.Simple.Exp.
 
-
-(** Type Judgements *************************************************)
+(* Typing judgement assigns a type to an expression. *)
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
  | TYVar 
    :  forall te i t
@@ -23,8 +22,8 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
-(* Well Formedness **************************************************)
-(* A well typed expression is well formed *)
+(* Lemmas ***********************************************************)
+(* A well typed expression is well formed. *)
 Theorem type_wfX
  :  forall te x t
  ,  TYPE te x t
@@ -36,11 +35,10 @@ Qed.
 Hint Resolve type_wfX.
 
 
-(* Weakening Type Env in Type Judgement *****************************
+(* Weakening the type environment of a typing judgement.
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across
-   the new one.
- *)
+   the new one. *)
 Lemma type_tyenv_insert
  :  forall te ix x t1 t2
  ,  TYPE te x t1

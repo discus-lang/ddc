@@ -4,7 +4,8 @@ Require Import DDC.Language.Simple.Ty.
 Require Import DDC.Language.Simple.Exp.
 
 
-(* Progress using evaluation judgement with contexts *)
+(* A closed, well typed expression is either a value or can 
+   take a step in the evaluation. *)
 Theorem progress
  :  forall x t
  ,  TYPE nil x t

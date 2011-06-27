@@ -2,13 +2,13 @@
 Require Import DDC.Language.Simple.Ty.
 Require Export DDC.Language.Simple.Exp.
 
-(* Substitution of values in values. 
+(* Substitution of expressions in expressions preserves typing.
+
    Inductively, we must reason about performing substitutions at any
    depth, hence we must prove a property about (subst' d x2 x1) instead
    of the weaker (subst x2 x1) which assumes the substitution is taking
-   place at top level.
- *)
-Theorem subst_value_value_ix
+   place at top level. *)
+Lemma subst_exp_exp_ix
  :  forall ix te x1 x2 t1 t2
  ,  get  ix te = Some t2
  -> TYPE te             x1 t1
@@ -43,14 +43,14 @@ Proof.
 Qed.
 
 
-Theorem subst_value_value
- :  forall tenv x1 x2 t1 t2
- ,  TYPE (tenv :> t2) x1 t1
- -> TYPE tenv         x2 t2 
- -> TYPE tenv (substX 0 x2 x1) t1.
+Theorem subst_exp_exp
+ :  forall te x1 x2 t1 t2
+ ,  TYPE (te :> t2) x1 t1
+ -> TYPE te         x2 t2 
+ -> TYPE te (substX 0 x2 x1) t1.
 Proof. 
- intros tenv x1 x2 t1 t2 Ht1 Ht2.
- lets H: subst_value_value_ix 0 (tenv :> t2).
+ intros te x1 x2 t1 t2 Ht1 Ht2.
+ lets H: subst_exp_exp_ix 0 (te :> t2).
   simpl in H. eauto.
 Qed.
 

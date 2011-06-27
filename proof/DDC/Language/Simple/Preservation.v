@@ -4,7 +4,8 @@ Require Import DDC.Language.Simple.SubstExpExp.
 Require Import DDC.Language.Simple.Ty.
 
 
-(* Preservation using evaluation judgement with contexts *)
+(* If a closed, well typed expression takes an evaluation step 
+   then the result has the same type as before. *)
 Theorem preservation
  :  forall x x' t
  ,  TYPE nil x  t
@@ -23,12 +24,12 @@ Proof.
  Case "EsLamApp".
   inverts H0.
   inverts H4.
-  eapply subst_value_value; eauto.
+  eapply subst_exp_exp; eauto.
 Qed.
 
 
-(* When we multi-step evaluate some expression,
-   then the result has the same type as the original. *)  
+(* If a closed, well typed expression takes several evaluation steps
+   then the result has the same type as before. *)
 Lemma preservation_steps
  :  forall x1 t1 x2
  ,  TYPE nil x1 t1
@@ -41,9 +42,9 @@ Proof.
 Qed.
 
 
-(* When we multi-step evaluate some expression, 
-   then the result has the same type as the original.
-   Using the left-linearised form for the evaluation. *)
+(* If a closed, well typed expression takes several evaluation steps
+   then the result has the same type as before. 
+   Usses the left linearised version of steps judement. *)
 Lemma preservation_stepsl
  :  forall x1 t1 x2
  ,  TYPE nil x1 t1

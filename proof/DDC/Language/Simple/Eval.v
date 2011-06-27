@@ -15,7 +15,7 @@ Require Export DDC.Language.Simple.Exp.
 Inductive EVAL : exp -> exp -> Prop :=
  | EVDone
    :  forall v2
-   ,  whnfX  v2
+   ,  wnfX  v2
    -> EVAL   v2 v2
 
  | EVLamApp
@@ -33,7 +33,7 @@ Hint Constructors EVAL.
 Lemma eval_produces_whnfX
  :  forall x1 v1
  ,  EVAL   x1 v1
- -> whnfX  v1.
+ -> wnfX  v1.
 Proof.
  intros. induction H; eauto.
 Qed.
@@ -42,8 +42,8 @@ Hint Resolve eval_produces_whnfX.
 
 (********************************************************************)
 (** * Big to Small steps *)
-(*  Convert a big-step evaluation into a list of individual
-    machine steps.
+(* Convert a big-step evaluation into a list of individual
+   machine steps.
  *)
 Lemma steps_of_eval
  :  forall x1 t1 x2
@@ -66,7 +66,7 @@ Proof.
 
   lets T1: preservation_steps H2 E1. inverts keep T1.
   lets T2: preservation_steps H4 E2.
-  lets T3: subst_value_value H1 T2.
+  lets T3: subst_exp_exp H1 T2.
   lets E3: IHHE3 T3.
 
   eapply EsAppend.

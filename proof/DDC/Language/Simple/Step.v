@@ -1,10 +1,14 @@
 
-Require Export Exp.
-Require Export SubstExpExp.
+Require Export DDC.Language.Simple.SubstExpExp.
+Require Export DDC.Language.Simple.Exp.
 
 
 (*******************************************************************)
-(** Evaluation contexts of expressions *)
+(* Evaluation contexts for expressions.
+   An evaluation context is an expression with a hole in any place
+   that can take a step via our evaluatio rules. We represent
+   the hole by the function that fills it. 
+ *)
 Inductive exp_ctx : (exp -> exp) -> Prop :=
  | XcTop
    :  exp_ctx (fun x => x)
@@ -21,16 +25,17 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
 Hint Constructors exp_ctx.
 
 
-(** Single Small Step Evaluation using contexts *)
+(* Small Step evaluation *)
 Inductive STEP : exp -> exp -> Prop :=
 
- (* Evaluation in a context *)
+ (* Evaluation in a context. *)
  | EsContext 
    :  forall C x x'
    ,  exp_ctx C
    -> STEP x x'
    -> STEP (C x) (C x')
 
+ (* Function application. *)
  | EsLamApp 
    :  forall t11 x12 v2
    ,  value v2
@@ -41,11 +46,11 @@ Hint Constructors STEP.
 
 
 (********************************************************************)
-(** Multi-step evaluation
-  A sequence of small step transitions.
-  As opposed to STEPSL, this version has an append constructor
-  ESAppend that makes it easy to join two evaluations together.
-  We use this when converting big-step evaluations to small-step.
+(* Multi-step evaluation
+   A sequence of small step transitions.
+   As opposed to STEPSL, this version has an append constructor
+   EsAppend that makes it easy to join two evaluations together.
+   We use this when converting big-step evaluations to small-step.
  *)
 Inductive STEPS : exp -> exp -> Prop :=
 
@@ -72,7 +77,9 @@ Inductive STEPS : exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
-(* Multi-step evaluation in a context. *)
+(* Multi-step evaluation in a context.
+   If an expression can be evaluated at top level, then it can 
+   be evaluated to the same result in any evaluation context. *)
 Lemma steps_context
  :  forall C x1 x1'
  ,  exp_ctx C
@@ -88,11 +95,11 @@ Qed.
 
 
 (********************************************************************)
-(** Left linearised multi-step evaluation
-  As opposed to STEPS, this version provides a single step at a time
-  and does not have an append constructor. This is convenient
-  when converting a small-step evaluations to big-step, via the
-  eval_expansion lemma.
+(* Left linearised multi-step evaluation
+   As opposed to STEPS, this version provides a single step at a time
+   and does not have an append constructor. This is convenient
+   when converting a small-step evaluations to big-step, via the
+   eval_expansion lemma.
  *)
 Inductive STEPSL : exp -> exp -> Prop :=
 

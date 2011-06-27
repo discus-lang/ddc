@@ -1,39 +1,46 @@
-
 Require Export DDC.Base.
 
-(* Types ************************************************************)
-Inductive ty  : Type :=
- | TCon  : nat -> ty
- | TFun  : ty  -> ty -> ty.
-Hint Constructors ty.
 
+(********************************************************************)
+(* Types *)
+Inductive ty  : Type :=
+ | TCon  : nat -> ty           (* data type constructor *)
+ | TFun  : ty  -> ty -> ty.    (* function type constructor *)
+Hint Constructors ty.
 
 (* Type Environments *)
 Definition tyenv := list ty.
 
 
-(* Expressions ******************************************************
-   We use deBruijn indices for binders.
- *)
+(********************************************************************)
+(* Value Expressions *)
 Inductive exp : Type :=
- | XVar  : nat -> exp
- | XLam  : ty  -> exp -> exp
- | XApp  : exp -> exp -> exp.
- Hint Constructors exp.
+ | XVar  : nat -> exp          (* deBruijn index *)
+ | XLam  : ty  -> exp -> exp   (* function abstraction *)
+ | XApp  : exp -> exp -> exp.  (* function application *)
+Hint Constructors exp.
 
 
-(* Weak Head Normal Forms cannot be reduced further by 
+(* Weak normal forms.
+   Expressions in weak normal form cannot be reduced further by
    call-by-value evaluation.
- *)
-Inductive whnfX : exp -> Prop :=
- | Whnf_XVar 
-   : forall i
-   , whnfX (XVar i)
 
- | Whnf_XLam
+   Note that c.b.v does not reduce under lambdas, which makes 
+   the result of an evaluation a *weak* normal form (instead of
+   a strong normal form).
+
+   It's not *weak head* normal form because we use strict function
+   application, so the function arguments are reduced to wnf before
+   substituting. *)
+Inductive wnfX : exp -> Prop :=
+ | Wnf_XVar 
+   : forall i
+   , wnfX (XVar i)
+
+ | Wnf_XLam
    : forall t1 x2
-   , whnfX (XLam t1 x2).
-Hint Constructors whnfX.
+   , wnfX (XLam t1 x2).
+Hint Constructors wnfX.
 
 
 (* Well formed expressions are closed under the given environment. *)
@@ -55,15 +62,15 @@ Hint Unfold closedX.
 Inductive value : exp -> Prop :=
  | Value 
    :  forall xx
-   ,  whnfX xx -> closedX xx
+   ,  wnfX xx -> closedX xx
    -> value xx.
 Hint Constructors value.
 
 
-(* Lifting **********************************************************)
-(* When we push new elements on the environment stack of an
-   expression, we need to lift free indices in the expression 
-   across the new elements.
+(********************************************************************)
+(* Lifting of references into the environment.
+   When we push new elements on the environment stack, we need
+   to lift referenes to existing elements across the new ones. 
 
    For example given: 
              t1, t0 |- 0 1 (\. 0 1 2) :: t3
@@ -73,17 +80,21 @@ Hint Constructors value.
  *)
 Fixpoint 
  liftX  (d:  nat) (* current binding depth in expression *)
-        (xx: exp) (* expression to lift *)
+        (xx: exp) (* expression containing referenes to lift *)
         : exp
  := match xx with 
     |  XVar ix    
     => if le_gt_dec d ix
-        (* var was pointing into env, lift it across new elems *)
+        (* Index is referencing the env, so lift it across the new elem *)
         then XVar (S ix)
-        (* var was locally bound, leave it be *)
+
+        (* Index is locally bound in the expression itself, and 
+           not the environment, so we don't need to change it. *)
         else xx
 
-    (* increase the depth as we move across a lambda *)
+    (* Increase the current depth as we move across a lambda, 
+       if we find locally bound indices that reference this lambda
+       then we don't need to lift them. *)
     |  XLam t1 x1
     => XLam t1 (liftX (S d) x1)
 
@@ -92,8 +103,8 @@ Fixpoint
     end.
 
 
-(** Substitution ****************************************************)
-(* Substitute for the outermost binder in an expression. *)
+(*******************************************************************)
+(* Substitute for the outerm-ost binder in an expression. *)
 Fixpoint
  substX (d:  nat) (* current binding depth in expression *)
         (u:  exp) (* new expression to substitute *)
@@ -115,16 +126,11 @@ Fixpoint
        end
 
     (* Increase the depth as we move across a lambda.
-       Also lift free references in the exp being substituted
-       across the lambda as we enter it. *)
+       Any free references in the exp being substitued also need
+       to be lifted across the lambda as we enter it. *)
     |  XLam t1 x2
     => XLam t1 (substX (S d) (liftX 0 u) x2)
 
-    (* Applications *)
     |  XApp x1 x2 
     => XApp (substX d u x1) (substX d u x2)
  end. 
-
-
-
-
