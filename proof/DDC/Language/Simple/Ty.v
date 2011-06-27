@@ -22,7 +22,7 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
-(* Lemmas ***********************************************************)
+(********************************************************************)
 (* A well typed expression is well formed. *)
 Theorem type_wfX
  :  forall te x t
