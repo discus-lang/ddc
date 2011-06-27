@@ -113,6 +113,7 @@ Notation "'=' x" := (fun y => y = x) (at level 71).
 (* ---------------------------------------------------------------------- *)
 (** ** Notation for projections *)
 
+(*
 Notation "'proj21' P" := (proj1 P) (at level 69, only parsing).
 Notation "'proj22' P" := (proj2 P) (at level 69, only parsing).
 
@@ -130,7 +131,7 @@ Notation "'proj52' P" := (proj1 (proj2 P)) (at level 69).
 Notation "'proj53' P" := (proj1 (proj2 (proj2 P))) (at level 69).
 Notation "'proj54' P" := (proj1 (proj2 (proj2 (proj2 P)))) (at level 69).
 Notation "'proj55' P" := (proj2 (proj2 (proj2 (proj2 P)))) (at level 69).
-
+*)
 
 
 (* ********************************************************************** *)
@@ -236,8 +237,9 @@ Require Import List.
 Inductive ltac_Wild : Set := 
   | ltac_wild : ltac_Wild.
 
+(*
 Notation "'__'" := ltac_wild : ltac_scope.
-
+*)
 (** [ltac_wilds] is another constant that can be used to simulate 
     a sequence of [N] wildcards, with [N] chosen appropriately 
     depending on the context. Notation is [___]. *)
@@ -245,10 +247,12 @@ Notation "'__'" := ltac_wild : ltac_scope.
 Inductive ltac_Wilds : Set := 
   | ltac_wilds : ltac_Wilds.
 
+(*
 Notation "'___'" := ltac_wilds : ltac_scope.
+*)
 
 (** [Boxer] is a datatype such that the type [list Boxer] can be used 
-    to manipulate list of values in ltac. *)
+1    to manipulate list of values in ltac. *)
 
 Inductive Boxer : Type :=
   | boxer : forall (A:Type), A -> Boxer.
@@ -1049,7 +1053,7 @@ Tactic Notation "lets" simple_intropattern(I1) simple_intropattern(I2) ":" const
 
 Tactic Notation "forwards" simple_intropattern(I) ":" constr(E) :=
   let E' := ltac_args E in
-  let E'' := (eval simpl in (E' ++ ((boxer ___)::nil))) in
+  let E'' := (eval simpl in (E' ++ ((boxer ltac_wilds)::nil))) in
   lets I: E''.
 
 Tactic Notation "forwards" ":" constr(E) :=  
