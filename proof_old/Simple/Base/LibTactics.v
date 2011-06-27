@@ -1,3 +1,4 @@
+
 (**************************************************************************
 * Useful General-Purpose Tactics for Coq                                  *
 * Arthur Charguéraud                                                      *
@@ -3139,3 +3140,5 @@ Tactic Notation "skip_induction" constr(E) :=
 (* TODO: why needed? *)
 Tactic Notation "apply" "*" constr(H) :=
   sapply H; auto_star.
+
+

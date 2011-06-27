@@ -1,10 +1,10 @@
-(* Extensions to the Coq.List.Lists module *)
-Require Import BaseNat.
-Require Import BaseTactics.
-Require Import List.
+(* Extensions to the Coq.Lists.List module *)
+Require Import Base.Nat.
+Require Import Base.Tactics.
+Require Import Coq.Lists.List.
 
 
-(* Unfolding defs from Coq.List.Lists module *)
+(* Unfolding defs from Coq.Lists.List module *)
 Hint Unfold length.
 Hint Unfold app.
 Hint Unfold firstn.

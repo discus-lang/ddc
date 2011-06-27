@@ -1,6 +1,5 @@
-
 Require Export Omega.
-Require Export BaseLibTactics.
+Require Export Base.LibTactics.
 
 
 Tactic Notation "break" constr(E) :=

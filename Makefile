@@ -100,6 +100,7 @@ include make/targets/lint.mk
 include make/targets/tarball.mk
 include make/targets/clean.mk
 include make/targets/ddc.mk
+include make/targets/proof.mk
 
 
 # -- Include magic ------------------------------------------------------------

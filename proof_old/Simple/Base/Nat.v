@@ -1,7 +1,6 @@
-
 (* Add some trivial facts about nats to the auto hint database,
    so we don't have to use omega as much. *)
-Require Import BaseTactics.
+Require Import Base.Tactics.
 
 Lemma nat_zero_le_all
  : forall n, 0 <= n.
