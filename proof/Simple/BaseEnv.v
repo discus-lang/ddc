@@ -1,308 +1,390 @@
-(** Environments ****************************************************
-  Environments are lists that grow from the right.
-  For example:
-     Snoc (Snoc (Snoc Empty x3) x2) x1
-
-  This can also be written as:
-     Empty :> x3 :> x2 :> x1
-
-  Where :> is sugar for Snoc.
- *)
+(* Extensions to the Coq.List.Lists module *)
 Require Import BaseNat.
 Require Import BaseTactics.
+Require Import List.
 
 
-(* Environments. *)
-Inductive env (A: Type) : Type :=
- | Empty  : env A
- | Snoc   : env A -> A -> env A.
-Hint Constructors env.
-
-Implicit Arguments Empty [A].
-Implicit Arguments Snoc  [A].
-Infix ":>" := Snoc   (at level 61, left  associativity).
-
-
-(* Get the length of an environment. *)
-Fixpoint length {A: Type} (e: env A) : nat :=
- match e with 
- | Empty      => 0
- | Snoc e' x  => S (length e')
- end.
+(* Unfolding defs from Coq.List.Lists module *)
 Hint Unfold length.
+Hint Unfold app.
+Hint Unfold firstn.
+Hint Unfold skipn.
 
 
-(* Add an element to the left of an environment *)
-Fixpoint cons   {A: Type} (x: A) (e: env A) : env A :=
- match e with
- | Empty      => Snoc Empty x
- | Snoc e' y  => Snoc (cons x e') y
+(********************************************************************)
+(** Definitions *)
+
+(* Add a single element to the end of the list *)
+Fixpoint snoc {A: Type} (x: A) (xx: list A) : list A :=
+ match xx with 
+ | nil       => x :: nil
+ | y :: xs'  => y :: snoc x xs'
  end.
-Hint Unfold cons.
-Implicit Arguments cons  [A].
-Infix "<:" := cons   (at level 62, right associativity).
+Hint Unfold snoc.
 
 
-(* Append two environments. *)
-Fixpoint append {A: Type} (e1: env A) (e2: env A) : env A :=
- match e2 with 
- | Empty      => e1 
- | Snoc e2' x => Snoc (append e1 e2') x
- end.
-Hint Unfold append.
-Infix "++" := append.
-
-
-(* Get an indexed element from a list, starting from 0. *)
-Fixpoint get {A: Type} (e: env A) (i: nat) : option A :=
+(* Get an indexed element from a list, starting from 0.
+   This is like the Coq 'nth' function, but returns an option instead
+   of a provided default value. Using an option is useful when we simply
+   want to determine whether some element is in the list, but don't
+   need the actual value *)
+Fixpoint get {A: Type} (i: nat) (e: list A) {struct e}: option A :=
  match e, i with
- | Snoc _ T,  O    => Some T
- | Snoc xs _, S i' => get  xs i'
- | _, _            => None
+ | x :: _,  O     => Some x
+ | _ :: xs, S i'  => get  i' xs
+ | _, _           => None
  end.
-Hint Unfold length.
+Hint Unfold get.
 
 
-(* Insert a new element at an index in the list, 
-   all the elements above that point are shifted up one place. *)
-Fixpoint insert {A: Type} (ix: nat) (x: A) (e: env A) : env A 
- := match ix, e with
-    | _,     Empty     => Snoc Empty x
-    | S ix', Snoc e' y => Snoc (insert ix' x e') y
-    | O    , es        => Snoc es x
-    end.
+(* Insert a new element at a place in the list.
+   All the elements above that place are shifted up one.
+   The resulting list is one element larger. *)
+Fixpoint insert {A: Type} (ix: nat) (x: A) (xs: list A) : list A :=
+ match ix, xs with
+ | _,     nil      => x :: nil
+ | S ix', y :: xs' => y :: (insert ix' x xs')
+ | O    , xs'      => x :: xs'
+ end.
 Hint Unfold insert.
 
 
-(* Take some elements from the front of an element. *)
-Fixpoint take {A: Type} (n: nat) (e: env A) : env A :=
- match n, e with
- | O,   _           => Empty
- | S n, e' :> T     => take n e' :> T
- | S n, Empty       => Empty
+(* Delete an element at a place in the list.
+   All the elements above that place are shifted down one.
+   The resulting list is one element smaller. *)
+Fixpoint delete {A: Type} (ix: nat) (xs: list A) : list A :=
+ match ix, xs with
+ | _,    nil       => nil
+ | O,    x :: xs'  => xs'
+ | S n', x :: xs'  => x :: delete n' xs'
  end.
-Hint Unfold take.
 
 
-(* Drop an indexed element from an environment.
-   The resulting environment is one smaller. *)
-Fixpoint drop {A: Type} (n: nat) (e: env A) : env A :=
- match n, e with
-  | _,     Empty    => Empty
-  | O,     e' :> T  => e'
-  | S n',  e' :> T  => drop n' e' :> T
-  end.
-Hint Unfold drop.
+(********************************************************************)
+(* Environment notations.
+   These look more natural than the standard operators when dealing
+   with de-Bruijn environments. *)
+Notation "xs :> x"  := (x :: xs)   (at level 61, left associativity).
+Notation "x  <: xs" := (snoc x xs) (at level 62, right associativity).
+Notation "xs >< ys" := (app ys xs) (at level 60, right associativity).
 
 
-(* Lemmas ***********************************************************)
+(********************************************************************)
+(** Lemmas: cons/snoc *)
+
 Lemma cons_snoc_empty
  :  forall A (x: A)
- ,  x <: Empty = Empty :> x.
-Proof.
- intros. 
- unfold cons. auto.
+ ,  x <: nil = nil :> x.
+Proof. 
+ auto.
 Qed.
 Hint Resolve cons_snoc_empty.
 
 
 Lemma snoc_cons
- :  forall A (e: env A) (x: A) (y: A)
- ,  ((x <: e) :> y) = (x <: (e :> y)).
+ :  forall A (xs: list A) (x: A) (y: A)
+ ,  ((x <: xs) :> y) = (x <: (xs :> y)).
 Proof.
- intros. destruct e; auto.
+ intros. destruct xs; auto.
 Qed.
 Hint Resolve snoc_cons.
 
 
-(* length lemmas ********************************)
- Lemma length_zero_is_empty
- :  forall A (e1: env A)
- ,  length e1 = O -> e1 = Empty.
+(********************************************************************)
+(** Lemmas: length *)
+
+(* A list with length zero is always nil. *)
+Lemma length_zero_is_nil
+ :  forall A (xx: list A)
+ ,  length xx = O 
+ -> xx = nil.
 Proof.
- intros.
- destruct e1.
-  auto. false.
+ intros. 
+ destruct xx.
+  trivial. false.
 Qed.
-Hint Resolve length_zero_is_empty.
+Hint Resolve length_zero_is_nil.
 
 
+(* If there is an element at a particular index, then the length
+   of the list is bigger than that index. *)
 Lemma get_length_more
- :  forall A n (e1: env A) x
- ,  get e1 n = Some x -> length e1 > n.
+ :  forall A n (xx: list A) x
+ ,  get n xx = Some x 
+ -> length xx > n.
 Proof.
- intros. gen e1.
- induction n.
-  intros. destruct e1.
-   false.
-   simpl in H. inversions H. simpl. omega.
+ intros. gen xx.
+ induction n; intros.
+  destruct xx.
+   false. 
+   simpl in H. inverts H. simpl. omega.
    
-  intros. destruct e1.
+  destruct xx.
    false.
    simpl in H. apply IHn in H. simpl. omega.
 Qed.
 Hint Resolve get_length_more.
 
 
-(* append lemmas ********************************)
-Lemma append_empty_left
- :  forall A (e1: env A)
- ,  Empty ++ e1 = e1.
+(********************************************************************)
+(** Lemmas: app *)
+
+Lemma app_nil_left
+ :  forall A (xx: list A)
+ ,  nil ++ xx = xx.
 Proof.
- intros.
- induction e1.
-  auto. 
-  simpl. rewrite IHe1. auto.
+ auto.
 Qed.
-Hint Resolve append_empty_left.
+Hint Resolve app_nil_left.
 
 
-Lemma append_empty_right
- :  forall A (e1: env A)
- ,  e1 ++ Empty = e1.
-Proof. auto. Qed.
-Hint Resolve append_empty_right.
-
-
-Lemma append_snoc
- :  forall A  (e1: env A) (e2: env A) (x : A)
- ,  ((e1 :> x) ++ e2) = e1 ++ (x <: e2).
+Lemma app_nil_right
+ :  forall A (xx: list A)
+ ,  xx ++ nil = xx.
 Proof. 
  intros.
- induction e2.
-  auto. 
-  simpl. rewrite IHe2. auto.
+ induction xx. 
+  auto.
+  simpl. rewrite IHxx. trivial.
 Qed.
-Hint Resolve append_snoc.
+Hint Resolve app_nil_right.
 
 
-(* get lemmas ***********************************)
-Lemma get_succ
- :  forall A n x (e1: env A)
- ,  get (e1 :> x) (S n) = get e1 n.
+Lemma app_snoc
+ :  forall A (l1: list A) (l2: list A) (x : A)
+ ,  ((l1 :> x) >< l2) = l1 >< (x <: l2).
+Proof. 
+ intros.
+ induction l2.
+  auto.
+  simpl. rewrite IHl2. auto.
+Qed.
+Hint Resolve app_snoc.
+
+
+(********************************************************************)
+(** Lemmas: get *)
+
+Lemma get_rewind
+ :  forall A n x (xx: list A)
+ ,  get n xx = get (S n) (xx :> x).
 Proof. auto. Qed.
-Hint Resolve get_succ.
+Hint Resolve get_rewind.
 
 
+(* If a list contains an element at a non-zero index, 
+   then it also contains an element at the previous index. *)
 Lemma get_succ_some
- :  forall A (e1: env A) n
- ,  (exists t, get e1 (S n) = Some t)
- -> (exists t, get e1 n     = Some t).
+ :  forall A (xx: list A) n
+ ,  (exists t, get (S n) xx = Some t)
+ -> (exists t, get n xx     = Some t).
 Proof.
  intros. gen n.
- induction e1; intros.
-  eauto.
+ induction xx; intros.
+  simpl in H. inverts H. inverts H0.
   destruct n; simpl; eauto.
 Qed.
 Hint Resolve get_succ_some.
 
 
+(* If a list contains an element at a non-zero index, 
+   then it also contains an element at the previous index. *)
 Lemma get_minus1
- :  forall A n a (e1: env A)
+ :  forall A n x (xx: list A)
  ,  n > 0
- -> get (e1 :> a) n = get e1 (n - 1).
+ -> get n (xx :> x) = get (n - 1) xx.
 Proof.
  intros. destruct n.
-  inversions H.
-  simpl. assert (n - 0 = n). omega. rewrite H0. auto.
+  inverts H.
+  simpl. nnat. trivial.
 Qed.
 Hint Resolve get_minus1.
 
 
-Lemma get_cons_some
- :  forall A (e: env A) n x1 x2
- ,  get e n         = Some x1
- -> get (x2 <: e) n = Some x1.
+(* If a list contains an element at a particular index,
+   then if we add a new element to the end of the list
+   then it still contains the original element at that same index. *)
+Lemma get_snoc_some
+ :  forall A (xx: list A) n x1 x2
+ ,  get n xx         = Some x1
+ -> get n (x2 <: xx) = Some x1.
 Proof.
  intros. gen n.
- induction e.
-   intros. 
-    destruct n.
-     simpl in H. false.
-     simpl in H. false.
-   intros.
-    destruct n. simpl in H. simpl. auto. 
-    simpl. simpl in H. apply IHe. auto.
+ induction xx; intros.
+  destruct n.
+   simpl in H. false.
+   simpl in H. false.
+  destruct n. 
+   simpl in H. simpl. trivial. 
+   simpl in H. simpl. apply IHxx. trivial.
 Qed.
-Hint Resolve get_cons_some.
+Hint Resolve get_snoc_some.
 
 
+(* If a list contains an element at a particular index,
+   then if we append more elements to the end of the ilst
+   then it still contains the original element at that same index. *)
 Lemma get_append_some
- :  forall A (e1: env A) (e2: env A) n x1
- ,  get e1 n         = Some x1 
- -> get (e2 ++ e1) n = Some x1.
+ :  forall A (l1: list A) (l2: list A) n x1
+ ,  get n l1         = Some x1 
+ -> get n (l1 ++ l2) = Some x1.
 Proof.
- intros. gen e1.
- induction e2. 
-  intros. rewrite append_empty_left. auto.
-  intros. rewrite append_snoc.
-   eapply IHe2. apply get_cons_some. auto.
+ intros. gen l1.
+ induction l2; intros.
+  rewrite app_nil_right. auto.
+  rewrite app_snoc. 
+   eapply IHl2. apply get_snoc_some. auto.
 Qed.
 Hint Resolve get_append_some.
 
 
+(* We cannot get elements from a list at indices the same, or larger, 
+   than the length of that list *)
 Theorem get_above_false
- :  forall A n (e1: env A) t
- ,  n >= length e1 
- -> get e1 n = Some t 
+ :  forall A n (xx: list A) t
+ ,  n >= length xx
+ -> get n xx = Some t 
  -> False.
 Proof.
  intros. gen n t.
- induction e1; intros.
+ induction xx; intros.
   simpl in H0. false.
   destruct n.
    simpl in H0. inverts H0. inverts H.
    simpl in H0. simpl in H.
-   assert (n >= length e1). omega.
-   eapply IHe1 in H1. auto. eauto.
+   assert (n >= length xx). omega.
+   eapply IHxx in H1. false. eauto.
 Qed.
 Hint Resolve get_above_false.
 
 
-(* insert lemmas ********************************)
+(********************************************************************)
+(** Lemmas: firstn *)
+
+(* If we take zero elements from a list,
+   then the resulting list is empty *)
+Lemma firstn_zero
+ :  forall A (xx: list A)
+ ,  firstn O xx = nil.
+Proof.
+ intros. auto.
+Qed.
+Hint Resolve firstn_zero.
+
+
+(* Up-lemma for get_take.
+   If a list has an element at a particular index 
+   if we take the elements from the list at least up to that index
+   then the resulting list still has the original element at the
+   same point. *)
+Lemma get_firstn_succ
+ :  forall A n (xx: list A)
+ ,  get n (firstn (S n) xx) = get n xx.
+Proof.
+ intros. gen n.
+ induction xx.
+  simpl. auto.
+  destruct n.
+   auto.
+   rewrite <- get_rewind. rewrite <- IHxx. auto.
+Qed.
+Hint Resolve get_firstn_succ.
+
+
+(* If a list has an element at a particular index 
+   if we take the elements from the list at least up to that index
+   then the resulting list still has the original element at the
+   same point. *)
+Lemma get_firstn 
+ :  forall A m n (xx: list A) (x: A)
+ ,  m > n 
+ -> get n xx            = Some x 
+ -> get n (firstn m xx) = Some x.
+Proof.
+ intros. gen n xx.
+ induction m; intros.
+  inverts H.
+  induction n.
+   destruct xx.
+    false. 
+    simpl in H0. inverts H0. auto.
+   destruct xx.
+    false.
+    simpl in H0. simpl. apply IHm. omega. trivial.
+Qed.
+Hint Resolve get_firstn.
+
+
+(* If we take some elements from the front of a list,
+   and there is still an element at a particular index
+   then the number of elements we took was more than that index. *)
+Lemma get_firstn_more
+ :  forall A m n (xx: list A) (x: A)
+ ,  get n (firstn m xx) = Some x -> m > n.
+Proof.
+ intros. gen n xx.
+ induction m; intros.
+  false.
+  destruct xx.
+   false.
+   simpl in H. destruct n. 
+    auto.
+    apply IHm in H. omega.
+Qed.
+Hint Resolve get_firstn_more.
+
+
+(********************************************************************)
+(** Lemmas: insert *)
 
 Lemma insert_rewind
- :  forall {A: Type} ix t1 t2 (e: env A)
- ,  insert ix t2 e :> t1 = insert (S ix) t2 (e :> t1).
+ :  forall {A: Type} ix t1 t2 (xx: list A)
+ ,  insert ix t2 xx :> t1 = insert (S ix) t2 (xx :> t1).
 Proof. auto. Qed.
 
 
+(* If we insert an element at a particular point in a list, 
+   then we can still get the elements above that point
+   provided we increment their original indices. *)
 Lemma get_insert_above
- :  forall {A: Type} n ix (e: env A) x1 x2
+ :  forall {A: Type} n ix (xx: list A) x1 x2
  ,  n >= ix
- -> get e n                    = Some x1
- -> get (insert ix x2 e) (S n) = Some x1.
+ -> get n xx                    = Some x1
+ -> get (S n) (insert ix x2 xx) = Some x1.
 Proof.
- intros. gen n e.
+ intros. gen n xx.
  induction ix; intros.
-  destruct e.
+  destruct xx.
    false.
-   destruct n.
-    simpl in H0. auto.
-    simpl in H0. auto.
-  destruct e.
+   destruct n; auto.
+  destruct xx.
    false.
    destruct n.
     false. omega.
-    simpl in H0. simpl. apply IHix. omega. auto.
+    simpl in H0. simpl. apply IHix. 
+     omega. 
+     auto.
 Qed.
 Hint Resolve get_insert_above.
 
 
+(* If we insert an element at a particular point in a list, 
+   then we can still get the elements below that point
+   using their original indices. *)
 Lemma get_insert_below
- :  forall {A: Type} n ix (e: env A) x1 x2
+ :  forall {A: Type} n ix (xx: list A) x1 x2
  ,  n < ix
- -> get e n                 = Some x1
- -> get (insert ix x2 e) n  = Some x1.
+ -> get n xx                = Some x1
+ -> get n (insert ix x2 xx) = Some x1.
 Proof.
- intros. gen n e.
+ intros. gen n xx.
  induction ix; intros.
-  destruct e.
+  destruct xx.
    false.
    destruct n.
     false. omega.
     false. omega.
-  destruct e.
+  destruct xx.
    false.
    destruct n. 
     simpl in H0. auto.
@@ -311,135 +393,86 @@ Qed.
 Hint Resolve get_insert_below.
 
 
-(* take lemmas **********************************)
-Lemma take_zero
- :  forall A (e1: env A)
- ,  Empty = take O e1.
-Proof.
- intros. auto.
-Qed.
-Hint Resolve take_zero.
+(********************************************************************)
+(** Lemmas: delete *)
 
-
-Lemma get_take_succ
- :  forall A n (e1: env A)
- ,  get (take (S n) e1) n = get e1 n.
-Proof.
- intros. gen n.
- induction e1.
-  simpl. auto.
-  destruct n.
-   simpl. auto.
-   rewrite get_succ.
-   rewrite <- IHe1.
-   auto.
-Qed.
-Hint Resolve get_take_succ.
-
-
-Lemma get_take 
- :  forall A m n (e1: env A) (x: A)
- ,  m > n 
- -> get e1 n          = Some x 
- -> get (take m e1) n = Some x.
-Proof.
- intros. gen n e1.
- induction m.
-  intros. inversions H.
-  intros. induction n.
-   destruct e1.
-    false. 
-    simpl in H0. inversions H0. simpl. auto.
-   destruct e1.
-    false.
-    simpl in H0. simpl. apply IHm. omega. auto.
-Qed.
-Hint Resolve get_take.
-
-
-Lemma get_take_more
- :  forall A m n (e1: env A) (x : A)
- ,  get (take m e1) n = Some x -> m > n.
-Proof.
- intros. gen n e1.
- induction m; intros.
-  false.
-  destruct e1.
-   simpl in H. false.
-   simpl in H. destruct n. auto.
-   apply IHm in H. omega.
-Qed.
-Hint Resolve get_take_more.
-
-
-(* drop lemmas **********************************)
-Lemma drop_rewind
- : forall A ix (e : env A) x
- , drop ix e :> x = drop (S ix) (e :> x).
+Lemma delete_rewind
+ : forall A ix (xs: list A) x
+ , delete (S ix) (x :: xs) = x :: delete ix xs.
 Proof.
  intros. simpl. auto.
 Qed.
-Hint Resolve drop_rewind.
+Hint Resolve delete_rewind.
 
 
-Lemma get_drop_above'
- :  forall A n m (e1: env A) r
+(* If we delete an element at a point in a list
+   then we can still get the elements below that point
+   using their original indices. *)
+Lemma get_delete_above'
+ :  forall A n m (xx: list A) r
  ,  m > n
- -> get e1 n          = r
- -> get (drop m e1) n = r.
+ -> get n xx            = r
+ -> get n (delete m xx) = r.
 Proof.
- intros. gen n e1.
+ intros. gen n xx.
  induction m.
   intros. inversions H.
   intros. induction n.
-   destruct e1.
+   destruct xx.
     auto.
     auto.
-   destruct e1.
+   destruct xx.
     auto.
-    simpl in H0. subst. simpl. apply IHm. omega. auto.
+    simpl in H0. subst. simpl. apply IHm.
+     omega.
+     trivial.
 Qed.
-Hint Resolve get_drop_above'.
+Hint Resolve get_delete_above'.
 
 
-Lemma get_drop_above
- :  forall A n m (e1: env A)
+Lemma get_delete_above
+ :  forall A n m (xx: list A)
  ,  m > n 
- -> get (drop m e1) n = get e1 n.
+ -> get n (delete m xx) = get n xx.
 Proof.
- intros. breaka (get e1 n); apply get_drop_above'; auto.
+ intros. 
+ breaka (get n xx); apply get_delete_above'; auto.
 Qed.
-Hint Resolve get_drop_above.
+Hint Resolve get_delete_above.
 
 
-Lemma get_drop_below'
- :  forall A n m (e1: env A) r
+(* If we delete an element at a point in a list
+   then we can still get the elements above that point
+   provided we decrement their original indices. *)
+Lemma get_delete_below'
+ :  forall A n m (xx: list A) r
  ,  n >= m
- -> get (drop m e1) n = r
- -> get e1 (S n)      = r.
+ -> get n (delete m xx) = r
+ -> get (S n) xx        = r.
 Proof.
- intros. gen n e1.
- induction m.
-  intros. destruct e1.
-   auto.
-   auto.
-  intros. destruct e1.
+ intros. gen n xx.
+ induction m; intros.
+  destruct xx; auto.
+  destruct xx.
    auto.
    destruct n.
-    inversions H.
-    simpl. simpl in H0. apply IHm. omega. auto.
+    inverts H.
+    simpl. simpl in H0. apply IHm. 
+     omega.
+     auto.
 Qed.
-Hint Resolve get_drop_below'.
+Hint Resolve get_delete_below'.
 
 
-Lemma get_drop_below
- :  forall A n m (e1: env A)
+Lemma get_delete_below
+ :  forall A n m (xx: list A)
  ,  n >= m
- -> get (drop m e1) n = get e1 (S n).
+ -> get n (delete m xx) = get (S n) xx.
 Proof.
  intros.
- remember (get (drop m e1) n) as r. symmetry.
- eapply get_drop_below'. eauto. auto.
+ remember (get n (delete m xx)) as r. 
+ symmetry.
+ eapply get_delete_below'; eauto.
 Qed.
-Hint Resolve get_drop_below.
+Hint Resolve get_delete_below.
 
