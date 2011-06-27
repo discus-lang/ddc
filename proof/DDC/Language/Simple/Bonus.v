@@ -1,19 +1,18 @@
 (* Bonus lemmas that aren't used by the main proofs *)
 
-Require Import Base.
-Require Import Env.
-Require Import Exp.
-Require Import TyJudge.
-Require Import SubstExpExp.
+Require Import DDC.Language.Simple.Exp.
+Require Import DDC.Language.Simple.TyJudge.
+Require Import DDC.Language.Simple.SubstExpExp.
 
 
-(* Weakening type environments. *************************************)
+(********************************************************************)
+(* Weakening type environments *)
 Theorem type_tyenv_weaken1
- :  forall tenv x t1 t2
- ,  TYPE tenv          x t1
- -> TYPE (t2 <: tenv)  x t1.
+ :  forall te x t1 t2
+ ,  TYPE te          x t1
+ -> TYPE (t2 <: te)  x t1.
 Proof.
- intros. gen tenv t1.
+ intros. gen te t1.
  induction x; intros; inversions H; eauto.
 
  Case "XLam".
@@ -24,25 +23,26 @@ Qed.
 Theorem type_tyenv_weaken
  :  forall tenv1 tenv2 x1 t1
  ,  TYPE tenv1            x1 t1
- -> TYPE (tenv2 ++ tenv1) x1 t1.
+ -> TYPE (tenv2 >< tenv1) x1 t1.
 Proof.
  intros. gen tenv1.
  induction tenv2; intros.
-  rewrite append_empty_left. auto.
-  rewrite append_snoc.  apply IHtenv2.
+  rewrite app_nil_right. auto.
+  rewrite app_snoc.  apply IHtenv2.
    apply type_tyenv_weaken1. auto.
 Qed.
 
 
-(* Strengthen type environments *************************************)
+(********************************************************************)
+(* Strengthen type environments *)
 Theorem type_tyenv_strengthen
- :  forall tenv tenv' n x t
- ,   wfX tenv' x
- ->  tenv' = take n tenv
- ->  TYPE tenv  x t
- ->  TYPE tenv' x t.
+ :  forall te te' n x t
+ ,   wfX te' x
+ ->  te' = firstn n te
+ ->  TYPE te  x t
+ ->  TYPE te' x t.
 Proof.
- intros. gen tenv tenv' n t.
+ intros. gen te te' n t.
  induction x; intros; inversions H1.
  
  Case "XVar".
@@ -52,7 +52,7 @@ Proof.
  Case "XLam".
   simpl in H.
   eapply TYLam.
-   eapply IHx with (n := S n) (tenv := tenv :> t); auto.
+   eapply IHx with (n := S n) (te := te :> t); auto.
 
  Case "XApp".
   simpl in H. destruct H. eauto.
@@ -62,12 +62,12 @@ Qed.
 Theorem type_check_closed_in_empty_tyenv
  :  forall tenv x t
  ,  closedX x
- -> TYPE tenv  x t
- -> TYPE Empty x t.
+ -> TYPE tenv x t
+ -> TYPE nil  x t.
 Proof.
  intros. unfold closedX in H. 
  eapply type_tyenv_strengthen; eauto.
- eapply take_zero.
+ symmetry. eapply firstn_zero.
 Qed.
 
 
@@ -79,7 +79,7 @@ Theorem type_check_closed_in_any_tyenv
 Proof.
  intros.
  lets D: type_check_closed_in_empty_tyenv H H0.
- assert (TYPE (tenv' ++ Empty) x1 t1).
+ assert (TYPE (tenv' >< nil) x1 t1).
   apply type_tyenv_weaken. auto.
   auto.
 Qed.

@@ -1,15 +1,15 @@
 
+Require Import DDC.Language.Simple.TyJudge.
+Require Import DDC.Language.Simple.EsJudge.
+Require Import DDC.Language.Simple.SubstExpExp.
 
-Require Import TyJudge.
-Require Import EsJudge.
-Require Import SubstExpExp.
 
 (* Preservation using evaluation judgement with contexts *)
 Theorem preservation
  :  forall x x' t
- ,  TYPE Empty x  t
- -> STEP  x x'
- -> TYPE Empty x' t.
+ ,  TYPE nil x  t
+ -> STEP x x'
+ -> TYPE nil x' t.
 Proof.
  intros. gen t.
  induction H0; intros.
@@ -28,13 +28,12 @@ Qed.
 
 
 (* When we multi-step evaluate some expression,
-   then the result has the same type as the original.
- *)  
+   then the result has the same type as the original. *)  
 Lemma preservation_steps
  :  forall x1 t1 x2
- ,  TYPE Empty x1 t1
- -> STEPS      x1 x2
- -> TYPE Empty x2 t1.
+ ,  TYPE nil x1 t1
+ -> STEPS    x1 x2
+ -> TYPE nil x2 t1.
 Proof.
  intros. 
  induction H0; eauto.
@@ -44,13 +43,12 @@ Qed.
 
 (* When we multi-step evaluate some expression, 
    then the result has the same type as the original.
-   Using the left-linearised form for the evaluation.
- *)
+   Using the left-linearised form for the evaluation. *)
 Lemma preservation_stepsl
  :  forall x1 t1 x2
- ,  TYPE Empty x1 t1
- -> STEPSL x1 x2
- -> TYPE Empty x2 t1.
+ ,  TYPE nil x1 t1
+ -> STEPSL   x1 x2
+ -> TYPE nil x2 t1.
 Proof.
  intros. 
  induction H0.
@@ -59,3 +57,4 @@ Proof.
   eapply preservation. 
    eauto. auto.
 Qed.
+

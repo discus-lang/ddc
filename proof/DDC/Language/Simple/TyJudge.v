@@ -1,24 +1,24 @@
 
-Require Export Exp.
+Require Export DDC.Language.Simple.Exp.
 
 
 (** Type Judgements *************************************************)
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
  | TYVar 
-   :  forall tenv i t
-   ,  get tenv i = Some t
-   -> TYPE tenv (XVar i) t
+   :  forall te i t
+   ,  get i te = Some t
+   -> TYPE te (XVar i) t
 
  | TYLam
-   :  forall tenv x t1 t2
-   ,  TYPE (tenv :> t1) x t2
-   -> TYPE tenv (XLam t1 x) (TFun t1 t2)
+   :  forall te x t1 t2
+   ,  TYPE (te :> t1) x t2
+   -> TYPE te (XLam t1 x) (TFun t1 t2)
 
  | TYApp
-   :  forall tenv x1 x2 t1 t2
-   ,  TYPE tenv x1 (TFun t1 t2)
-   -> TYPE tenv x2 t1
-   -> TYPE tenv (XApp x1 x2) t2.
+   :  forall te x1 x2 t1 t2
+   ,  TYPE te x1 (TFun t1 t2)
+   -> TYPE te x2 t1
+   -> TYPE te (XApp x1 x2) t2.
 
 Hint Constructors TYPE.
 
@@ -26,11 +26,11 @@ Hint Constructors TYPE.
 (* Well Formedness **************************************************)
 (* A well typed expression is well formed *)
 Theorem type_wfX
- :  forall tenv x t
- ,  TYPE tenv x t
- -> wfX  tenv x.
+ :  forall te x t
+ ,  TYPE te x t
+ -> wfX  te x.
 Proof.
- intros. gen tenv t.
+ intros. gen te t.
  induction x; intros; inverts H; simpl; eauto.
 Qed.
 Hint Resolve type_wfX.
@@ -42,11 +42,11 @@ Hint Resolve type_wfX.
    the new one.
  *)
 Lemma type_tyenv_insert
- :  forall e ix x t1 t2
- ,  TYPE e x t1
- -> TYPE (insert ix t2 e) (liftX ix x) t1.
+ :  forall te ix x t1 t2
+ ,  TYPE te x t1
+ -> TYPE (insert ix t2 te) (liftX ix x) t1.
 Proof.
- intros. gen ix e t1.
+ intros. gen ix te t1.
  induction x; intros; simpl; inverts H; eauto.
 
  Case "XVar".
@@ -60,13 +60,13 @@ Qed.
 
 
 Lemma type_tyenv_weaken
- :  forall e x t1 t2
- ,  TYPE  e         x            t1
- -> TYPE (e :> t2) (liftX 0 x) t1.
+ :  forall te x t1 t2
+ ,  TYPE  te         x          t1
+ -> TYPE (te :> t2) (liftX 0 x) t1.
 Proof.
  intros.
- assert (e :> t2 = insert 0 t2 e).
-  simpl. destruct e; auto.
+ assert (te :> t2 = insert 0 t2 te).
+  simpl. destruct te; auto.
   rewrite H0. apply type_tyenv_insert. auto.
 Qed.
 

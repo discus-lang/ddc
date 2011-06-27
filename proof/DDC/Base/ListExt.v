@@ -1,7 +1,7 @@
 (* Extensions to the Coq.Lists.List module *)
 Require Import DDC.Base.Nat.
 Require Import DDC.Base.Tactics.
-Require Import Coq.Lists.List.
+Require Export Coq.Lists.List.
 
 
 (* Unfolding defs from Coq.Lists.List module *)
@@ -398,7 +398,7 @@ Hint Resolve get_insert_below.
 
 Lemma delete_rewind
  : forall A ix (xs: list A) x
- , delete (S ix) (x :: xs) = x :: delete ix xs.
+ , x :: delete ix xs = delete (S ix) (x :: xs).
 Proof.
  intros. simpl. auto.
 Qed.

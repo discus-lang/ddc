@@ -1,18 +1,17 @@
 
-Require Import EsJudge.
-Require Import TyJudge.
-Require Import Exp.
-Require Import Base.
+Require Import DDC.Language.Simple.EsJudge.
+Require Import DDC.Language.Simple.TyJudge.
+Require Import DDC.Language.Simple.Exp.
 
 
 (* Progress using evaluation judgement with contexts *)
 Theorem progress
- :  forall x T
- ,  TYPE Empty x T
+ :  forall x t
+ ,  TYPE nil x t
  -> value x \/ (exists x', STEP x x').
 Proof.
  intros.
- remember (@Empty ty) as tyenv.
+ remember (@nil ty) as tyenv.
  induction H.
 
  Case "XVar".

@@ -1,6 +1,6 @@
 
-Require Import TyJudge.
-Require Export Exp.
+Require Import DDC.Language.Simple.TyJudge.
+Require Export DDC.Language.Simple.Exp.
 
 (* Substitution of values in values. 
    Inductively, we must reason about performing substitutions at any
@@ -9,13 +9,13 @@ Require Export Exp.
    place at top level.
  *)
 Theorem subst_value_value_ix
- :  forall ix e x1 x2 t1 t2
- ,  get  e ix = Some t2
- -> TYPE e           x1 t1
- -> TYPE (drop ix e) x2 t2
- -> TYPE (drop ix e) (substX ix x2 x1) t1.
+ :  forall ix te x1 x2 t1 t2
+ ,  get  ix te = Some t2
+ -> TYPE te             x1 t1
+ -> TYPE (delete ix te) x2 t2
+ -> TYPE (delete ix te) (substX ix x2 x1) t1.
 Proof.
- intros. gen ix e x2 t1.
+ intros. gen ix te x2 t1.
  induction x1; intros; simpl; inverts H0; eauto.
 
  Case "XVar".
@@ -26,18 +26,18 @@ Proof.
   SCase "n < ix".
    apply TYVar.
    rewrite <- H4.
-    apply get_drop_above. auto.
+    apply get_delete_above. auto.
 
   SCase "n > ix".
    apply TYVar.
    destruct n.
     false. omega.
     simpl. nnat. rewrite <- H4.
-     apply get_drop_below. omega.
+     apply get_delete_below. omega.
 
  Case "XLam".
   apply TYLam.
-  rewrite drop_rewind.
+  rewrite delete_rewind.
   apply IHx1; auto.
    simpl. apply type_tyenv_weaken. auto.
 Qed.

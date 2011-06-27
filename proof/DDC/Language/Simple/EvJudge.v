@@ -1,9 +1,9 @@
 
-Require Export SubstExpExp.
-Require Import Preservation.
-Require Import TyJudge.
-Require Export EsJudge.
-Require Export Exp.
+Require Export DDC.Language.Simple.SubstExpExp.
+Require Import DDC.Language.Simple.Preservation.
+Require Import DDC.Language.Simple.TyJudge.
+Require Export DDC.Language.Simple.EsJudge.
+Require Export DDC.Language.Simple.Exp.
 
 
 (********************************************************************)
@@ -47,8 +47,8 @@ Hint Resolve eval_produces_whnfX.
  *)
 Lemma steps_of_eval
  :  forall x1 t1 x2
- ,  TYPE Empty x1 t1
- -> EVAL x1 x2
+ ,  TYPE nil x1 t1
+ -> EVAL  x1 x2
  -> STEPS x1 x2.
 Proof.
  intros x1 t1 v2 HT HE. gen t1.
@@ -129,9 +129,9 @@ Qed.
 (* Convert a list of small steps to a big-step evaluation. *)
 Lemma eval_of_stepsl
  :  forall x1 t1 v2
- ,  TYPE Empty x1 t1
- -> STEPSL x1 v2 -> value v2
- -> EVAL   x1 v2.
+ ,  TYPE nil x1 t1
+ -> STEPSL   x1 v2 -> value v2
+ -> EVAL     x1 v2.
 Proof.
  intros.
  induction H0.
@@ -154,7 +154,7 @@ Qed.
  *)
 Lemma eval_of_steps
  :  forall x1 t1 v2
- ,  TYPE Empty x1 t1
+ ,  TYPE nil x1 t1
  -> STEPS x1 v2 -> value v2
  -> EVAL  x1 v2.
 Proof.

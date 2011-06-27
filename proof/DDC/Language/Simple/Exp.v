@@ -1,6 +1,5 @@
 
-
-Require Export Base.
+Require Export DDC.Base.
 
 (* Types ************************************************************)
 Inductive ty  : Type :=
@@ -10,7 +9,7 @@ Hint Constructors ty.
 
 
 (* Type Environments *)
-Definition tyenv := env ty.
+Definition tyenv := list ty.
 
 
 (* Expressions ******************************************************
@@ -38,17 +37,17 @@ Hint Constructors whnfX.
 
 
 (* Well formed expressions are closed under the given environment. *)
-Fixpoint wfX (tenv: tyenv) (xx: exp) : Prop :=
+Fixpoint wfX (te: tyenv) (xx: exp) : Prop :=
  match xx with  
- | XVar i     => exists t, get tenv i = Some t
- | XLam t x   => wfX (tenv :> t) x
- | XApp x1 x2 => wfX tenv x1 /\ wfX tenv x2
+ | XVar i     => exists t, get i te = Some t
+ | XLam t x   => wfX (te :> t) x
+ | XApp x1 x2 => wfX te x1 /\ wfX te x2
  end.
 
 
 (* Closed expressions are well formed under an empty environment. *)
 Definition closedX (xx: exp) : Prop
- := wfX Empty xx.
+ := wfX nil xx.
 Hint Unfold closedX.
 
 
