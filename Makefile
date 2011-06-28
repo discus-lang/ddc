@@ -61,7 +61,7 @@ total	:
 .PHONY: proof
 proof: 
 	@$(MAKE) proofdeps
-	@$(MAKE) proof/Main.vo
+	@$(MAKE) proof/Main.vo -j $(THREADS)
 
 
 # -- Same as 'total', but do a full clean first
