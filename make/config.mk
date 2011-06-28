@@ -32,7 +32,7 @@ COQC		= coqc
 
 
 # Override the above config.
--include make/config-override.deps
+-include make/config-override.mk
 
 
 
