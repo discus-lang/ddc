@@ -1,11 +1,12 @@
 
-Require Import SubstExpExp.
-Require Import SubstTypeExp.
-Require Import SubstTypeType.
-Require Import EsJudge.
-Require Import TyJudge.
+Require Import DDC.Language.SystemF2.Step.
+Require Import DDC.Language.SystemF2.SubstExpExp.
+Require Import DDC.Language.SystemF2.SubstTypeExp.
+Require Import DDC.Language.SystemF2.SubstTypeType.
+Require Import DDC.Language.SystemF2.TyJudge.
 
 
+(* When an expression takes a step the result has the same type. *)
 Theorem preservation
  :  forall ke te x x' t
  ,  TYPE ke te x t
@@ -28,7 +29,7 @@ Proof.
 
   SCase "ESAPPLAM".
    inverts H3.
-   eapply subst_type_value in H4; eauto.
+   eapply subst_type_exp in H4; eauto.
    rewrite substTE_liftTE in H4. auto.
 
   SCase "ESAPP1".
@@ -43,7 +44,7 @@ Proof.
   
   SCase "ESAppLam".
    inverts H3.
-   lets D: subst_value_value H9 H5. auto.
+   lets D: subst_exp_exp H9 H5. auto.
 
   SCase "EsApp1".
    eapply TYApp; eauto.
@@ -54,13 +55,12 @@ Qed.
 
 
 (* When we multi-step evaluate some expression,
-   then the result has the same type as the original.
- *)  
+   then the result has the same type as the original. *)
 Lemma preservation_steps
  :  forall x1 t1 x2
- ,  TYPE Empty Empty x1 t1
- -> STEPS      x1 x2
- -> TYPE Empty Empty x2 t1.
+ ,  TYPE nil nil x1 t1
+ -> STEPS x1 x2
+ -> TYPE nil nil x2 t1.
 Proof.
  intros. 
  induction H0; eauto.
@@ -70,13 +70,12 @@ Qed.
 
 (* When we multi-step evaluate some expression, 
    then the result has the same type as the original.
-   Using the left-linearised form for the evaluation.
- *)
+   Using the left-linearised form for the evaluation. *)
 Lemma preservation_stepsl
  :  forall x1 t1 x2
- ,  TYPE Empty Empty x1 t1
+ ,  TYPE nil nil x1 t1
  -> STEPSL x1 x2
- -> TYPE Empty Empty x2 t1.
+ -> TYPE nil nil x2 t1.
 Proof.
  intros. 
  induction H0.
@@ -87,6 +86,3 @@ Proof.
 Qed.
 
 
-
- 
- 

@@ -1,16 +1,15 @@
 
-Require Export Ki.
-Require Export Env.
-Require Export Base.
+Require Export DDC.Language.SystemF2.Ki.
 
 
-(* Types ************************************************************)
+(* Type Constructors. *)
 Inductive tycon : Type :=
  | TyConFun  : tycon
  | TyConData : nat   -> ki -> tycon.
 Hint Constructors tycon.
 
 
+(* Type Expressions. *)
 Inductive ty  : Type :=
  | TCon      : tycon -> ty
  | TVar      : nat   -> ty
@@ -19,16 +18,16 @@ Inductive ty  : Type :=
 Hint Constructors ty.
 
 
+(* Baked in types. *)
 Definition tFun (t1: ty) (t2: ty)
  := TApp (TApp (TCon TyConFun) t1) t2.
 Hint Unfold tFun.
 
 
-(* Well Formedness **************************************************)
-(* Well formed types are closed under the given kind environment *)
+(* Well formed types are closed under the given kind environment. *)
 Fixpoint wfT (ke: kienv) (tt: ty) : Prop := 
  match tt with
- | TVar i     => exists k, get ke i = Some k
+ | TVar i     => exists k, get i ke = Some k
  | TCon _     => True
  | TForall t  => wfT (ke :> KStar) t
  | TApp t1 t2 => wfT ke t1 /\ wfT ke t2
@@ -36,13 +35,14 @@ Fixpoint wfT (ke: kienv) (tt: ty) : Prop :=
 Hint Unfold wfT.
 
 
-(* Type is closed under an empty kind environment. *)
+(* Closed types are well formed under an empty environment. *)
 Definition closedT (tt: ty) : Prop
- := wfT Empty tt.
+ := wfT nil tt.
 Hint Unfold closedT.
 
 
-(* Lifting *********************************************************)
+(*******************************************************************)
+(* Lifting *)
 (* Lift type indices that are at least a certain depth. *)
 Fixpoint liftTT (d: nat) (tt: ty) : ty :=
   match tt with
@@ -70,7 +70,7 @@ Ltac lift_cases
     end.
 
 
-(* Substitution *****************************************************)
+(********************************************************************)
 (* Substitution of Types in Types. *)
 Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty 
  := match tt with
@@ -92,7 +92,7 @@ Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty
   end.
 
 
-(* Lemmas ***********************************************************)
+(********************************************************************)
 (* Changing the order of lifting. *)
 Lemma liftTT_liftTT
  :  forall n n' t

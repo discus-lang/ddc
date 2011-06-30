@@ -1,21 +1,20 @@
 
-Require Export SubstExpExp.
-Require Export SubstTypeExp.
-Require Import Preservation.
-Require Import TyJudge.
-Require Export EsJudge.
-Require Export Exp.
+Require Import DDC.Language.SystemF2.Preservation.
+Require Export DDC.Language.SystemF2.Step.
+Require Export DDC.Language.SystemF2.SubstExpExp.
+Require Export DDC.Language.SystemF2.SubstTypeExp.
+Require Import DDC.Language.SystemF2.TyJudge.
+Require Export DDC.Language.SystemF2.Exp.
 
 
-(* Big Step Evaluation **********************************************
+(* Big Step Evaluation.
    This is also called 'Natural Semantics'.
    It provides a relation between the expression to be reduced 
-   and its final value. 
- *)
+   and its final value. *)
 Inductive EVAL : exp -> exp -> Prop :=
  | EVDone
    :  forall v2
-   ,  whnfX  v2
+   ,  wnfX  v2
    -> EVAL   v2 v2
 
  | EVLAMAPP
@@ -31,28 +30,26 @@ Inductive EVAL : exp -> exp -> Prop :=
 Hint Constructors EVAL.
 
 
-(* A terminating big-step evaluation always produces a whnf.
+(* A terminating big-step evaluation always produces a wnf.
    The fact that the evaluation terminated is implied by the fact
-   that we have a finite proof of EVAL to pass to this lemma. 
- *)
-Lemma eval_produces_whnfX
+   that we have a finite proof of EVAL to pass to this lemma. *)
+Lemma eval_produces_wnfX
  :  forall x1 v1
  ,  EVAL   x1 v1
- -> whnfX  v1.
+ -> wnfX  v1.
 Proof.
  intros. induction H; eauto.
 Qed.
-Hint Resolve eval_produces_whnfX.
+Hint Resolve eval_produces_wnfX.
 
 
-(* Big to Small steps ***********************************************
+(* Big to Small steps
    Convert a big-step evaluation into a list of individual
-   machine steps.
- *)
+   machine steps. *)
 Lemma steps_of_eval
  :  forall x1 t1 x2
- ,  TYPE Empty Empty x1 t1
- -> EVAL x1 x2
+ ,  TYPE nil nil x1 t1
+ -> EVAL  x1 x2
  -> STEPS x1 x2.
 Proof.
  intros x1 t1 v2 HT HE. gen t1.
@@ -66,10 +63,8 @@ Proof.
   intros. inverts HT.
   lets E1: IHHE1 H3. clear IHHE1.
   lets T1: preservation_steps H3 E1. inverts keep T1.
-  lets T2: subst_type_value H4 H5.
+  lets T2: subst_type_exp H4 H5.
    simpl in T2.
-    assert (substTE 0 t2 (liftTE 0 Empty) = Empty). auto.
-    rewrite H in T2. clear H.
   lets E2: IHHE2 T2.
   eapply ESAppend.
    apply steps_APP1. eauto.
@@ -83,7 +78,7 @@ Proof.
   lets E2: IHHE2 H5.
   lets T1: preservation_steps H3 E1. inverts keep T1.
   lets T2: preservation_steps H5 E2.
-  lets T3: subst_value_value H8 T2.
+  lets T3: subst_exp_exp H8 T2.
   lets E3: IHHE3 T3.
   eapply ESAppend.
     eapply steps_app1. eauto.
@@ -96,7 +91,7 @@ Proof.
 Qed.
 
 
-(* Small to Big steps ***********************************************
+(* Small to Big steps
    Convert a list of individual machine steps to a big-step
    evaluation. The main part of this is the expansion lemma, which 
    we use to build up the overall big-step evaluation one small-step
@@ -121,7 +116,6 @@ Proof.
   SCase "value app".
    eapply EVLamApp.
    eauto.
-   inverts H. 
    apply EVDone. auto. auto.
  
   SCase "x1 steps".
@@ -151,7 +145,7 @@ Qed.
 (* Convert a list of small steps to a big-step evaluation. *)
 Lemma eval_of_stepsl
  :  forall x1 t1 v2
- ,  TYPE Empty Empty x1 t1
+ ,  TYPE nil nil x1 t1
  -> STEPSL x1 v2 -> value v2
  -> EVAL   x1 v2.
 Proof.
@@ -176,7 +170,7 @@ Qed.
  *)
 Lemma eval_of_steps
  :  forall x1 t1 v2
- ,  TYPE Empty Empty x1 t1
+ ,  TYPE nil nil x1 t1
  -> STEPS x1 v2 -> value v2
  -> EVAL  x1 v2.
 Proof.
@@ -184,5 +178,4 @@ Proof.
  eapply eval_of_stepsl; eauto.
  apply  stepsl_of_steps; auto.
 Qed.
-
 

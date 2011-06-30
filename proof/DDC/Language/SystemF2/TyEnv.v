@@ -1,26 +1,22 @@
 
-Require Export Ty.
-Require Export Env.
+Require Export DDC.Language.SystemF2.Ty.
 
 
-(* Type Enviroments *************************************************)
-Definition tyenv := env ty.
+(* Type Enviroments *)
+Definition tyenv := list ty.
 Hint Unfold tyenv.
 
 
-(* Lifting **********************************************************)
 (* Lift type indices in type environments. *)
 Definition liftTE d te    := map (liftTT d) te.
 Hint Unfold liftTE.
 
-
-(* Substitution *****************************************************)
-(* Substitution of Types in Type Environments. *)
+(* Substitution of types in type environments. *)
 Definition substTE d t te := map (substTT d t) te.
 Hint Unfold substTE.
 
 
-(* Lemmas ***********************************************************)
+(********************************************************************)
 Lemma liftTE_liftTE
  :  forall n n' te
  ,  liftTE n              (liftTE (n + n') te) 

@@ -1,11 +1,10 @@
 
-Require Export TyEnv.
-Require Export Ty.
-Require Export Ki.
-Require Export Env.
+Require Export DDC.Language.SystemF2.TyEnv.
+Require Export DDC.Language.SystemF2.Ty.
+Require Export DDC.Language.SystemF2.Ki.
 
 
-(** Expressions *****************************************************)
+(* Expressions *)
 Inductive exp : Type :=
  | XVar  : nat -> exp
  | XLAM  : exp -> exp
@@ -15,29 +14,27 @@ Inductive exp : Type :=
 Hint Constructors exp.
 
 
-(* Weak Head Normal Forms cannot be reduced further by 
-   call-by-value evaluation.
- *)
-Inductive whnfX : exp -> Prop :=
- | Whnf_XVar 
+(* Weak normal forms cannot be reduced further by 
+   call-by-value evaluation. *)
+Inductive wnfX : exp -> Prop :=
+ | Wnf_XVar 
    : forall i
-   , whnfX (XVar i)
+   , wnfX (XVar i)
 
- | Whnf_XLAM
+ | Wnf_XLAM
    : forall x1
-   , whnfX (XLAM x1)
+   , wnfX (XLAM x1)
 
- | Whnf_XLam
+ | Wnf_XLam
    : forall t1 x2
-   , whnfX (XLam t1 x2).
-Hint Constructors whnfX.
+   , wnfX (XLam t1 x2).
+Hint Constructors wnfX.
 
 
-(* Well Formedness **************************************************)
 (* A well formed expression is closed under the given environments *)
 Fixpoint wfX (ke: kienv) (te: tyenv) (xx: exp) : Prop := 
  match xx with 
- | XVar i     => exists t, get te i = Some t
+ | XVar i     => exists t, get i te = Some t
  | XLAM x     => wfX (ke :> KStar) (liftTE 0 te) x
  | XAPP x t   => wfX ke te x  /\ wfT ke t
  | XLam t x   => wfT ke t     /\ wfX ke (te :> t) x
@@ -46,9 +43,9 @@ Fixpoint wfX (ke: kienv) (te: tyenv) (xx: exp) : Prop :=
 Hint Unfold wfX.
 
 
-(* Closed expressions are well formed under empty environments *)
+(* A closed expression is well formed under an empty environment. *)
 Definition closedX (xx: exp) : Prop
- := wfX Empty Empty xx.
+ := wfX nil nil xx.
 Hint Unfold closedX.
 
 
@@ -56,13 +53,13 @@ Hint Unfold closedX.
 Inductive value : exp -> Prop :=
  | Value
    :  forall xx
-   ,  whnfX xx -> closedX xx
+   ,  wnfX xx -> closedX xx
    -> value xx.
 Hint Constructors value.
 
 
-(* Lifting **********************************************************)
-(* Lift type indices that are at least a certain depth. *)
+(********************************************************************)
+(* Lift type indices in expressions. *)
 Fixpoint liftTX (d: nat) (xx: exp) : exp :=
   match xx with
   |  XVar _     => xx
@@ -81,8 +78,7 @@ Fixpoint liftTX (d: nat) (xx: exp) : exp :=
  end.
 
 
-(* Lift value indices in expressions.
-   That are greater or equal to a given depth. *)
+(* Lift value indices in expressions. *)
 Fixpoint liftXX (d: nat) (xx: exp) : exp :=
   match xx with
   |  XVar ix    
@@ -104,7 +100,7 @@ Fixpoint liftXX (d: nat) (xx: exp) : exp :=
  end.
 
 
-(* Substitution *****************************************************)
+(********************************************************************)
 (* Substitution of Types in Exps *)
 Fixpoint substTX (d: nat) (u: ty) (xx: exp) : exp :=
   match xx with
@@ -146,7 +142,5 @@ Fixpoint substXX (d: nat) (u: exp) (xx: exp) : exp :=
   |  XApp x1 x2
   => XApp (substXX d u x1) (substXX d u x2)
   end.
-
-
 
 

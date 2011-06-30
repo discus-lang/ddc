@@ -1,17 +1,15 @@
 
-Require Import SubstTypeType.
-Require Import TyJudge.
+Require Import DDC.Language.SystemF2.SubstTypeType.
+Require Import DDC.Language.SystemF2.TyJudge.
 
 
-Theorem subst_type_value_ix
+Theorem subst_type_exp_ix
  :  forall ix ke te x1 t1 t2 k2
- ,  get ke ix = Some k2
+ ,  get ix ke = Some k2
  -> TYPE ke  te x1 t1
- -> KIND (drop ix ke)  t2 k2
- -> TYPE (drop ix ke) 
-         (substTE ix t2 te)
-         (substTX ix t2 x1)
-         (substTT ix t2 t1).
+ -> KIND (delete ix ke)  t2 k2
+ -> TYPE (delete ix ke)     (substTE ix t2 te)
+         (substTX ix t2 x1) (substTT ix t2 t1).
 Proof.
  intros. gen ix ke te t1 t2 k2.
  induction x1; intros; simpl; inverts H0; eauto.
@@ -23,7 +21,7 @@ Proof.
 
  Case "XLAM".
   simpl. apply TYLAM.
-  rewrite drop_rewind.
+  rewrite delete_rewind.
   rewrite (liftTE_substTE 0 ix).
   eapply IHx1; eauto.
    apply kind_kienv_weaken. auto.
@@ -51,16 +49,14 @@ Proof.
 Qed.
 
 
-Theorem subst_type_value
+Theorem subst_type_exp
  :  forall ke te x1 t1 t2 k2
  ,  TYPE (ke :> k2) te x1 t1
  -> KIND ke  t2 k2
- -> TYPE ke (substTE 0 t2 te)
-            (substTX 0 t2 x1)
-            (substTT 0 t2 t1).
+ -> TYPE ke (substTE 0 t2 te) (substTX 0 t2 x1) (substTT 0 t2 t1).
 Proof.
  intros. 
- assert (ke = drop 0 (ke :> k2)). auto. rewrite H1.
- eapply subst_type_value_ix; simpl; eauto.
+ assert (ke = delete 0 (ke :> k2)). auto. rewrite H1.
+ eapply subst_type_exp_ix; simpl; eauto.
 Qed.
 

@@ -1,15 +1,15 @@
 
-Require Import SubstTypeExp.
-Require Import SubstExpExp.
-Require Export Exp.
+Require Import DDC.Language.SystemF2.SubstTypeExp.
+Require Import DDC.Language.SystemF2.SubstExpExp.
+Require Export DDC.Language.SystemF2.Exp.
 
 
-(* Single Step Evaluation *******************************************)
+(* Single Step Evaluation *)
 Inductive STEP : exp -> exp -> Prop := 
   (* value applications *)
   | ESLamApp
     :  forall t11 x12 v2
-    ,  value v2
+    ,  wnfX v2
     -> STEP (XApp (XLam t11 x12) v2) (substXX 0 v2 x12)
 
   | ESApp1
@@ -19,7 +19,7 @@ Inductive STEP : exp -> exp -> Prop :=
  
   | ESApp2
     :  forall v1 x2 x2'
-    ,  value v1
+    ,  wnfX v1
     -> STEP x2 x2'
     -> STEP (XApp v1 x2) (XApp v1 x2')
 
@@ -36,7 +36,7 @@ Inductive STEP : exp -> exp -> Prop :=
 Hint Constructors STEP.
 
 
-(* Multi-step evaluation *******************************************
+(* Multi-step evaluation.
    A sequence of small step transitions.
    As opposed to STEPSL, this version has an append constructor
    ESAppend that makes it easy to join two evaluations together.
@@ -67,7 +67,7 @@ Inductive STEPS : exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
-(* Context lemmas ***************************************************
+(* Context lemmas.
    These help when proving something about a reduction in a given
    context. They're all trivial.
  *)
@@ -83,7 +83,7 @@ Hint Resolve steps_app1.
 
 Lemma steps_app2
  :  forall v1 x2 x2'
- ,  value v1 
+ ,  wnfX v1 
  -> STEPS x2 x2'
  -> STEPS (XApp v1 x2) (XApp v1 x2').
 Proof.
@@ -101,12 +101,11 @@ Proof.
 Qed.
 
 
-(* Left linearised multi-step evaluation ****************************
+(* Left linearised multi-step evaluation.
    As opposed to STEPS, this version provides a single step at a time
    and does not have an append constructor. This is convenient
    when converting a small-step evaluations to big-step, via the
-   eval_expansion lemma.
- *)
+   eval_expansion lemma. *)
 Inductive STEPSL : exp -> exp -> Prop :=
 
  | ESLNone 
@@ -123,8 +122,7 @@ Hint Constructors STEPSL.
 
 (* Transitivity of left linearised multi-step evaluation.
    We use this when "flattening" a big step evaluation to the
-   small step one.
- *)
+   small step one. *)
 Lemma stepsl_trans
  :  forall x1 x2 x3
  ,  STEPSL x1 x2 -> STEPSL x2 x3
@@ -139,8 +137,7 @@ Qed.
 
 (* Linearise a regular multi-step evaluation.
    This flattens out all the append constructors, leaving us with
-   a list of individual transitions. 
- *)
+   a list of individual transitions.  *)
 Lemma stepsl_of_steps
  :  forall x1 x2
  ,  STEPS  x1 x2

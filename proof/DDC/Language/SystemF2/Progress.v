@@ -1,14 +1,16 @@
 
-Require Import SubstExpExp.
-Require Import SubstTypeExp.
-Require Import SubstTypeType.
-Require Import EsJudge.
-Require Import TyJudge.
+Require Import DDC.Language.SystemF2.Step.
+Require Import DDC.Language.SystemF2.SubstExpExp.
+Require Import DDC.Language.SystemF2.SubstTypeExp.
+Require Import DDC.Language.SystemF2.SubstTypeType.
+Require Import DDC.Language.SystemF2.TyJudge.
 
 
+(* A closed, well typed expression is either a value
+   or can take a step. *)
 Theorem progress
  :  forall x
- ,  (exists t, TYPE Empty Empty x t)
+ ,  (exists t, TYPE nil nil x t)
  -> value x \/ (exists x', STEP x x').
 Proof.
  intros.
@@ -50,12 +52,13 @@ Proof.
     inverts H1. 
      inverts H2. false.
      inverts H4.
-     exists (substXX 0 x2 x0). apply ESLamApp. auto.
+     exists (substXX 0 x2 x0). 
+      inverts H0. apply ESLamApp. auto.
 
    SSCase "x2 steps".
     destruct H0 as [x2'].
     exists (XApp x1 x2').
-    apply ESApp2; auto.
+     inverts H. apply ESApp2; auto.
 
   SCase "x1 steps".
    destruct H as [x1'].

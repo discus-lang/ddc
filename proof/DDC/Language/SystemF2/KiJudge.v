@@ -1,10 +1,9 @@
 
-Require Export Ty.
-Require Export Ki.
-Require Export Env.
+Require Export DDC.Language.SystemF2.Ty.
+Require Export DDC.Language.SystemF2.Ki.
 
 
-(* Kinds of types ***************************************************)
+(* Kinds judgement assigns a kind to a type *)
 Inductive KIND : kienv -> ty -> ki -> Prop :=
  | KIConFun
    :  forall ke
@@ -16,7 +15,7 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
 
  | KIVar
    :  forall ke i k
-   ,  get  ke i = Some k
+   ,  get i ke = Some k
    -> KIND ke (TVar i) k
 
  | KIForall
@@ -32,7 +31,6 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
 Hint Constructors KIND.
 
 
-(* Well Formedness **************************************************)
 (* A well kinded type is well formed *)
 Lemma kind_wfT
  :  forall ke t k
@@ -44,15 +42,46 @@ Proof.
 Qed.
 
 
-(* Checking closed types ********************************************)
 (* If a type is well kinded in an empty environment,
    then that type is closed. *)
 Lemma kind_empty_is_closed
  :  forall t k
- ,  KIND Empty t k 
+ ,  KIND nil t k 
  -> closedT t.
 Proof.
  intros. unfold closedT. eapply kind_wfT. eauto.
 Qed.
+
+
+(* Weakening kind environments. *)
+Lemma kind_kienv_insert
+ :  forall ke ix t k1 k2
+ ,  KIND ke t k1
+ -> KIND (insert ix k2 ke) (liftTT ix t) k1.
+Proof.
+ intros. gen ix ke k1.
+ induction t; intros; simpl; inverts H; eauto.
+
+ Case "TVar".
+  lift_cases; intros; auto.
+
+ Case "TForall".
+  apply KIForall.
+  rewrite insert_rewind.
+  apply IHt. auto.
+Qed.
+
+
+Lemma kind_kienv_weaken
+ :  forall ke t k1 k2
+ ,  KIND  ke         t           k1
+ -> KIND (ke :> k2) (liftTT 0 t) k1.
+Proof.
+ intros.
+ assert (ke :> k2 = insert 0 k2 ke). simpl.
+   destruct ke; auto.
+ rewrite H0. apply kind_kienv_insert. auto.
+Qed.
+
 
 
