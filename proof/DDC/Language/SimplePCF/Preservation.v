@@ -1,15 +1,16 @@
 
+Require Import DDC.Language.SimplePCF.Step.
+Require Import DDC.Language.SimplePCF.Ty.
+Require Import DDC.Language.SimplePCF.SubstExpExp.
 
-Require Import TyJudge.
-Require Import EsJudge.
-Require Import SubstExpExp.
 
-(* Preservation using evaluation judgement with contexts *)
+(* If a closed, well typed expression takes an evaluation step
+   then the result has the same type as before. *)
 Theorem preservation
  :  forall x x' t
- ,  TYPE Empty x  t
+ ,  TYPE nil x  t
  -> STEP  x x'
- -> TYPE Empty x' t.
+ -> TYPE nil x' t.
 Proof.
  intros x x' t HT HS. gen t.
  induction HS; intros;
@@ -21,22 +22,21 @@ Proof.
 
  Case "EsLamApp".
   inverts HT. inverts H3.
-  eapply subst_value_value; eauto.
+  eapply subst_exp_exp; eauto.
 
  Case "EsFix".
   inverts HT.
-  eapply subst_value_value; eauto.
+  eapply subst_exp_exp; eauto.
 Qed.
 
 
 (* When we multi-step evaluate some expression,
-   then the result has the same type as the original.
- *)  
+   then the result has the same type as the before. *)
 Lemma preservation_steps
  :  forall x1 t1 x2
- ,  TYPE Empty x1 t1
- -> STEPS      x1 x2
- -> TYPE Empty x2 t1.
+ ,  TYPE nil x1 t1
+ -> STEPS    x1 x2
+ -> TYPE nil x2 t1.
 Proof.
  intros. 
  induction H0; eauto.
@@ -46,13 +46,12 @@ Qed.
 
 (* When we multi-step evaluate some expression, 
    then the result has the same type as the original.
-   Using the left-linearised form for the evaluation.
- *)
+   Using the left-linearised form for the evaluation. *)
 Lemma preservation_stepsl
  :  forall x1 t1 x2
- ,  TYPE Empty x1 t1
- -> STEPSL x1 x2
- -> TYPE Empty x2 t1.
+ ,  TYPE nil x1 t1
+ -> STEPSL   x1 x2
+ -> TYPE nil x2 t1.
 Proof.
  intros. 
  induction H0.

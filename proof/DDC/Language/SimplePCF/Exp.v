@@ -1,30 +1,33 @@
 
-Require Export Base.
-Require Export Env.
+Require Export DDC.Base.
 
 
-(* Types ************************************************************)
+(********************************************************************)
+(* Type Constructors *)
 Inductive tycon : Type :=
  | TyConBool  : tycon
  | TyConNat   : tycon.
 Hint Constructors tycon.
 
+
+(* Type Expressions *)
 Inductive ty  : Type :=
  | TCon       : tycon -> ty
  | TFun       : ty    -> ty -> ty.
 Hint Constructors ty.
 
+
+(* Baked-in Types *)
 Definition tBool := TCon TyConBool.
 Definition tNat  := TCon TyConNat.
 
 
 (* Type Environments *)
-Definition tyenv := env ty.
+Definition tyenv := list ty.
 
 
-(* Expressions ******************************************************
-   We use deBruijn indices for binders.
- *)
+(********************************************************************)
+(* Value Expressions *)
 Inductive exp : Type :=
  (* Functions *)
  | XVar    : nat -> exp
@@ -46,40 +49,38 @@ Inductive exp : Type :=
 
  (* Branching *)
  | XIf     : exp -> exp -> exp -> exp.
-
 Hint Constructors exp.
 
 
-(* Weak Head Normal Forms cannot be reduced further by 
-   call-by-value evaluation.
- *)
-Inductive whnfX : exp -> Prop :=
- | Whnf_XVar 
+(* Weak normal forms. 
+   Expressions in weak normal form cannot be reduced further by 
+   call-by-value evaluation. *)
+Inductive wnfX : exp -> Prop :=
+ | Wnf_XVar 
    :  forall i
-   ,  whnfX (XVar i)
+   ,  wnfX (XVar i)
 
- | Whnf_XLam
+ | Wnf_XLam
    :  forall t1 x2
-   ,  whnfX (XLam t1 x2)
+   ,  wnfX (XLam t1 x2)
 
- | Whnf_XNat
+ | Wnf_XNat
    :  forall n
-   ,  whnfX (XNat n)
+   ,  wnfX (XNat n)
 
- | Whnf_XTrue
-   :  whnfX XTrue
+ | Wnf_XTrue
+   :  wnfX XTrue
 
- | Whnf_False
-   :  whnfX XFalse.
-
-Hint Constructors whnfX.
+ | Wnf_False
+   :  wnfX XFalse.
+Hint Constructors wnfX.
 
 
 (* Well formed expressions are closed under the given environment. *)
 Fixpoint wfX (te: tyenv) (xx: exp) : Prop :=
  match xx with  
  (* Functions *)
- | XVar i          => exists t, get te i = Some t
+ | XVar i          => exists t, get i te = Some t
  | XLam t x        => wfX (te :> t) x
  | XApp x1 x2      => wfX te x1 /\ wfX te x2
 
@@ -103,7 +104,7 @@ Fixpoint wfX (te: tyenv) (xx: exp) : Prop :=
 
 (* Closed expressions are well formed under an empty environment. *)
 Definition closedX (xx: exp) : Prop
- := wfX Empty xx.
+ := wfX nil xx.
 Hint Unfold closedX.
 
 
@@ -111,13 +112,14 @@ Hint Unfold closedX.
 Inductive value : exp -> Prop :=
  | Value 
    :  forall xx
-   ,  whnfX xx -> closedX xx
+   ,  wnfX xx -> closedX xx
    -> value xx.
 Hint Constructors value.
 
 
-(* Lifting **********************************************************)
-(* When we push new elements on the environment stack of an
+(********************************************************************)
+(* Lifting of references to the environment.
+   When we push new elements on the environment stack of an
    expression, we need to lift free indices in the expression 
    across the new elements.
 
@@ -134,12 +136,12 @@ Fixpoint
  := match xx with 
     |  XVar ix    
     => if le_gt_dec d ix
-        (* var was pointing into env, lift it across new elems *)
+        (* Index was referencing the env, so lift it across the new elem *)
         then XVar (S ix)
-        (* var was locally bound, leave it be *)
+        (* Index was locally bound, so leave it be. *)
         else xx
 
-    (* increase the depth as we move across a lambda *)
+    (* Increase the depth as we move across a lambda *)
     |  XLam t1 x1   => XLam t1 (liftX (S d) x1)
     |  XApp x1 x2   => XApp    (liftX d x1) (liftX d x2)
 
@@ -161,7 +163,7 @@ Fixpoint
     end.
 
 
-(** Substitution ****************************************************)
+(********************************************************************)
 (* Substitute for the outermost binder in an expression. *)
 Fixpoint
  substX (d:  nat) (* current binding depth in expression *)
@@ -208,7 +210,4 @@ Fixpoint
     |  XIf x1 x2 x3 
     => XIf (substX d u x1) (substX d u x2) (substX d u x3) 
  end. 
-
-
-
 

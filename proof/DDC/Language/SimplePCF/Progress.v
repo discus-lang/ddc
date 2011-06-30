@@ -1,20 +1,18 @@
 
-Require Import EsJudge.
-Require Import TyJudge.
-Require Import Exp.
-Require Import Base.
+Require Import DDC.Language.SimplePCF.Step.
+Require Import DDC.Language.SimplePCF.Ty.
+Require Import DDC.Language.SimplePCF.Exp.
 
 
-(* A well typed expression is either a well formed value, 
-   or can transition to the next state.
- *)
+(* A closed well typed expression is either a value 
+   or can transition to the next state. *)
 Theorem progress
- :  forall t T
- ,  TYPE Empty t T
- -> value t \/ (exists t', STEP t t').
+ :  forall x t
+ ,  TYPE nil x t
+ -> value x \/ (exists x', STEP x x').
 Proof.
  intros.
- remember (@Empty ty) as tenv.
+ remember (@nil ty) as te.
  induction H; eauto.
 
  Case "XVar".
@@ -25,8 +23,8 @@ Proof.
 
  Case "XApp".
   right. 
-  specializes IHTYPE1 Heqtenv.
-  specializes IHTYPE2 Heqtenv.
+  specializes IHTYPE1 Heqte.
+  specializes IHTYPE2 Heqte.
   destruct IHTYPE1.
 
   SCase "value x1".
@@ -35,13 +33,13 @@ Proof.
     inverts H1. inverts H3.
      inverts H4. false.
      exists (substX 0 x2 x0).
-     apply EsLamApp. auto.
+     apply EsLamApp. inverts H2. auto.
      inverts H.
      inverts H.
      inverts H.
    SSCase "x2 steps".
     destruct H2 as [x2'].
-    exists (XApp x1 x2'). auto.
+    exists (XApp x1 x2'). inverts H1. auto.
 
    SSCase "x1 steps".
     destruct H1 as [x1'].

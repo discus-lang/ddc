@@ -1,10 +1,13 @@
 
-Require Export Exp.
-Require Export SubstExpExp.
+Require Export DDC.Language.SimplePCF.SubstExpExp.
+Require Export DDC.Language.SimplePCF.Exp.
 
 
 (*******************************************************************)
-(** Evaluation Contexts *)
+(** Evaluation Contexts. *)
+(*  Describes a place in the AST where the subespression there
+    is able to take an evaluation step. Each contexts is represented
+    by the function that fills it. *)
 Inductive exp_ctx : (exp -> exp) -> Prop :=
  | XcTop
    :  exp_ctx (fun x => x)
@@ -13,9 +16,11 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
    :  forall x2
    ,  exp_ctx (fun xx => XApp xx x2)
 
+ (* The argument of an application can only step once the
+    function has already been evaluated. *)
  | XcApp2 
    :  forall v1
-   ,  value v1 
+   ,  wnfX v1 
    -> exp_ctx (fun xx => XApp v1 xx)
 
  | XcSucc   
@@ -50,7 +55,7 @@ Inductive STEP : exp -> exp -> Prop :=
     Substitute the value into the abstraction *)
  | EsLamApp
    : forall t11 x12 v2
-   ,  value v2
+   ,  wnfX v2
    -> STEP (XApp   (XLam t11 x12) v2)
            (substX 0 v2 x12)
 

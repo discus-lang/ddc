@@ -1,14 +1,13 @@
 
-Require Export Exp.
+Require Export DDC.Language.SimplePCF.Exp.
 
-
-(** Type Judgements *************************************************)
+(* Typing judgement assigns a type to an expression. *)
 Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 
  (* Functions *************************)
  | TYVar 
    :  forall te i t
-   ,  get te i = Some t
+   ,  get i te = Some t
    -> TYPE te (XVar i) t
 
  | TYLam
@@ -67,34 +66,29 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
-(* Well Formedness **************************************************)
+(********************************************************************)
 (* A well typed expression is well formed *)
 Theorem type_wfX
- :  forall tenv x t
- ,  TYPE tenv x t
- -> wfX  tenv x.
+ :  forall te x t
+ ,  TYPE te x t
+ -> wfX  te x.
 Proof.
- intros. gen tenv t.
- induction x; intros; inverts H; simpl; eauto.
-
- (* Maybe the Coq search depth is too low for this one... *)
- Case "TyIf".
-  split; eauto.
+ intros. gen te t.
+ induction x; intros; inverts H; simpl; eauto 10.
 Qed.
 Hint Resolve type_wfX.
 
 
-(* Weakening Type Env in Type Judgement *****************************
+(* Weakening the type environment in typine judgements.
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across
-   the new one.
- *)
+   the new one. *)
 Lemma type_tyenv_insert
- :  forall e ix x t1 t2
- ,  TYPE e x t1
- -> TYPE (insert ix t2 e) (liftX ix x) t1.
+ :  forall te ix x t1 t2
+ ,  TYPE te x t1
+ -> TYPE (insert ix t2 te) (liftX ix x) t1.
 Proof.
- intros. gen ix e t1.
+ intros. gen ix te t1.
  induction x; intros; simpl; inverts H; eauto.
 
  Case "XVar".
@@ -113,13 +107,13 @@ Qed.
 
 
 Lemma type_tyenv_weaken
- :  forall e x t1 t2
- ,  TYPE  e         x            t1
- -> TYPE (e :> t2) (liftX 0 x) t1.
+ :  forall te x t1 t2
+ ,  TYPE  te        x           t1
+ -> TYPE (te :> t2) (liftX 0 x) t1.
 Proof.
  intros.
- assert (e :> t2 = insert 0 t2 e).
-  simpl. destruct e; auto.
+ assert (te :> t2 = insert 0 t2 te).
+  simpl. destruct te; auto.
   rewrite H0. apply type_tyenv_insert. auto.
 Qed.
 
