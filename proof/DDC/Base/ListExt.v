@@ -310,6 +310,66 @@ Proof.
 Qed.
 
 
+(* Extensional equality with map.
+   If two functions return equal results for all elements in a list, 
+   then using one or the other in a map gives the same result. *) 
+Lemma map_ext_in
+ : forall {A B : Type}
+          (f g : A -> B)
+          (xs  : list A)
+ , (forall x, In x xs -> f x = g x)
+ -> map f xs = map g xs.
+Proof.
+ intros.
+ induction xs.
+  auto.
+  simpl. rewrite IHxs. rewrite H.
+   auto. simpl. auto. 
+   intros. apply H.
+   simpl. auto.
+Qed.
+
+
+(* If some element is in the list resulting from a map, 
+   then we can find the un-transformed element in the original list. *)
+Lemma map_in_exists
+  :  forall (A B: Type) (f: A -> B) x ys
+  ,  In x (map f ys)
+  -> (exists y, f y = x /\ In y ys).
+Proof.
+ intros.
+ induction ys.
+  simpl in H. false.
+  simpl in H.
+   inverts H.
+   simpl. exists a. eauto.
+   apply IHys in H0.
+   destruct H0.
+   exists x0. inverts H. split. auto. eauto.
+   simpl. eauto.
+Qed.
+
+
+(* When we transform a list with a map, then we can find the element
+   in the result corresponding to any element in the source. *)
+Lemma map_exists_in
+  :  forall (A B: Type) (f: A -> B) x ys
+  ,  (exists y, f y = x /\ In y ys)
+  -> In x (map f ys).
+Proof.
+ intros.
+ induction ys.
+  destruct H.
+   simpl in H. inverts H. false.
+   simpl in H.
+   destruct H.
+   inverts H.
+   simpl. 
+   inverts H1. auto.
+   right. eauto.
+Qed.
+
+
 (********************************************************************)
 (** Lemmas: firstn *)
 

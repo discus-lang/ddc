@@ -8,9 +8,13 @@ Require Import DDC.Language.Simple.
 (* STLC with Fixpoints, Boolean choice and Naturals. *)
 Require Import DDC.Language.SimplePCF.
 
+(* STLC with Algebraic Data Types. *)
+Require Import DDC.Language.SimpleData.
+
 (* System-F. Like STLC, but with type abstraction and application. *)
 Require Import DDC.Language.SystemF.
 
 (* System-F2. Like System-F2 but with type-type application. *)
 Require Import DDC.Language.SystemF2.
+
 
