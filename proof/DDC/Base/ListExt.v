@@ -235,7 +235,7 @@ Hint Resolve get_snoc_some.
 (* If a list contains an element at a particular index,
    then if we append more elements to the end of the ilst
    then it still contains the original element at that same index. *)
-Lemma get_append_some
+Lemma get_app_some
  :  forall A (l1: list A) (l2: list A) n x1
  ,  get n l1         = Some x1 
  -> get n (l1 ++ l2) = Some x1.
@@ -246,7 +246,38 @@ Proof.
   rewrite app_snoc. 
    eapply IHl2. apply get_snoc_some. auto.
 Qed.
-Hint Resolve get_append_some.
+Hint Resolve get_app_some.
+
+
+Lemma get_cons_some
+ :  forall A n (e1: list A) x1 x2
+ ,  get n e1               = Some x2
+ -> get (n + 1) (e1 :> x1) = Some x2.
+Proof.
+ intros.
+ destruct n.
+  simpl. auto.
+  simpl. nnat. auto.
+Qed.
+
+
+Lemma get_app_left_some
+ :  forall A n (e1 e2: list A) x1
+ ,  get  n e1                      = Some x1
+ -> get (n + length e2) (e2 ++ e1) = Some x1.
+Proof.
+ intros.
+ induction e2.
+  simpl. nnat. auto.
+  assert ((e2 :> a) ++ e1 = (e2 ++ e1) :> a). 
+   simpl. auto.
+  rewrite H0.
+  assert (n + length (e2 :> a) = ((n + length e2) + 1)).
+   nnat. simpl. auto.
+  rewrite H1.
+  rewrite <- (get_cons_some A (n + length e2) (e2 ++ e1) a).
+   auto. auto.
+Qed.
 
 
 (* We cannot get elements from a list at indices the same, or larger, 
@@ -523,6 +554,20 @@ Proof.
 Qed.
 
 
+Lemma insert_app
+ : forall {A : Type} ix (x: A) xs ys
+ , insert ix x xs >< ys = insert (ix + length ys) x (xs >< ys).
+Proof.
+ intros. 
+ induction ys. 
+  simpl. nnat.  auto.
+  simpl. rewrite IHys.
+   rewrite insert_rewind.
+   assert (S (ix + length ys) = ix + S (length ys)). auto.
+   rewrite H. auto.
+Qed.
+
+
 (********************************************************************)
 (** Lemmas: delete *)
 
@@ -607,6 +652,19 @@ Qed.
 Hint Resolve get_delete_below.
 
 
+Lemma delete_app
+ :  forall A n (e1: list A) (e2: list A)
+ ,  delete n e1 >< e2 = delete (n + length e2) (e1 >< e2).
+Proof.
+ intros.
+ induction e2.
+  simpl. nnat. auto.
+  simpl. rewrite IHe2.
+   assert (n + S (length e2) = S (n + length e2)). omega. rewrite H.
+   apply delete_rewind.
+Qed.
+
+
 Lemma map_delete
  :  forall {A B: Type} (f: A -> B) ix (xx: list A)
  ,  map f (delete ix xx) 
@@ -633,5 +691,216 @@ Lemma filter_length
 Proof.
  intros. induction xx; auto.
  simpl. breaka (f a). simpl. omega.
+Qed.
+
+
+(********************************************************************)
+(* Lemmas: Forall *)
+
+Lemma Forall_impl_in
+ : forall {A: Type}
+          (P1: A -> Prop) (P2: A -> Prop)
+          (xs: list A)
+ ,  (forall x, In x xs -> P1 x -> P2 x)
+ -> Forall P1 xs
+ -> Forall P2 xs.
+Proof.
+ intros.
+ induction xs.
+  auto. 
+  inverts H0. intuition.
+Qed.
+
+
+Lemma Forall_map
+ :  forall {A B: Type} 
+           (P: B -> Prop) (f: A -> B) 
+           (xs: list A)
+ ,  Forall (fun x => P (f x)) xs
+ -> Forall P (map f xs).
+Proof.
+ intros. induction xs.
+  apply Forall_nil.
+  inverts H. simpl. intuition.
+Qed.
+
+
+(********************************************************************)
+(* Lemmas: Forall2 *)
+
+Lemma Forall2_impl
+ : forall (A B: Type) 
+          (R1: A -> B -> Prop)
+          (R2: A -> B -> Prop)
+          xs ys
+ , (forall x y, R1 x y -> R2 x y)
+ -> Forall2 R1 xs ys 
+ -> Forall2 R2 xs ys.
+Proof.
+ intros. induction H0; auto. 
+Qed.
+
+
+Lemma Forall2_impl_in
+ : forall {A B: Type}
+          (R1: A -> B -> Prop)
+          (R2: A -> B -> Prop)
+          (xs: list A)
+          (ys: list B)
+ ,  (forall x y, In x xs -> In y ys -> R1 x y -> R2 x y)
+ -> Forall2 R1 xs ys
+ -> Forall2 R2 xs ys.
+Proof.
+ intros.
+ induction H0.
+  apply Forall2_nil.
+  intuition.
+Qed.
+
+
+Lemma Forall2_eq
+ :  forall (A: Type) xs ys
+ ,  Forall2 (@eq A) xs ys
+ -> xs = ys.
+Proof.
+ intros.
+ induction H.
+ auto. 
+ rewrite IHForall2.
+ rewrite H. auto.
+Qed.
+
+
+Lemma Forall2_length
+ : forall {A B: Type} (R: A -> B -> Prop) 
+          (xs : list A) 
+          (ys : list B)
+ ,  Forall2 R xs ys
+ -> length xs = length ys.
+Proof.
+ intros.
+ induction H.
+  auto.
+  simpl. auto.
+Qed.
+
+
+Lemma Forall2_exists_left
+ : forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ ,  In x xs 
+ -> Forall2 R xs ys 
+ -> (exists y, R x y).
+Proof.
+ intros.
+ induction H0.
+  false.
+  simpl in H. destruct H.
+   subst. eauto.
+   eapply IHForall2. eauto.
+Qed.
+
+
+Lemma Forall2_exists_left_in
+ : forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ ,             In x xs  -> Forall2 R xs ys 
+ -> (exists y, In y ys  /\         R x  y).
+Proof.
+ intros.
+ induction H0.
+  false.
+  simpl in H. destruct H.
+   subst.
+   exists y. split. simpl. auto. auto.
+   lets D: IHForall2 H.
+   destruct D.
+   exists x1.
+    inverts H2.
+    split. simpl. auto. auto.
+Qed.
+
+
+Lemma Forall2_exists_right
+ : forall (A B: Type) (R: A -> B -> Prop) y xs ys
+ ,  In y ys 
+ -> Forall2 R xs ys 
+ -> (exists x, R x y).
+Proof.
+ intros.
+ induction H0.
+  false.
+  simpl in H. destruct H.
+   subst. eauto.
+   eapply IHForall2. eauto.
+Qed.
+
+
+Lemma Forall2_map_left
+ : forall {A B C: Type}
+          (R1: B -> C -> Prop)
+          (f:  A -> B)
+          (xs: list A) (ys: list C)
+ ,  Forall2 (fun x y => R1 (f x) y) xs ys
+ -> Forall2 R1 (map f xs) ys.
+Proof.
+ intros.
+ induction H.
+  apply Forall2_nil.
+  simpl. intuition.
+Qed.
+
+
+Lemma Forall2_map_right
+ : forall {A B C: Type}
+          (R1: A -> C -> Prop)
+          (f:  B -> C)
+          (xs: list A) (ys: list B)
+ ,  Forall2 (fun x y => R1 x (f y)) xs ys
+ -> Forall2 R1 xs (map f ys).
+Proof.
+ intros.
+ induction H.
+  apply Forall2_nil.
+  simpl. intuition.
+Qed.
+
+
+Lemma Forall2_Forall_left
+ : forall {A B : Type}
+          (R   : A -> B -> Prop)
+          (P   : A -> Prop)
+          (xs  : list A)
+          (ys  : list B)
+ ,  Forall  (fun x => forall y, R x y -> P x) xs
+ -> Forall2 R xs ys
+ -> Forall  P xs.
+Proof.
+ intros.
+ rewrite Forall_forall.
+ rewrite Forall_forall in H. 
+ intros.
+ lets D: Forall2_exists_left H1 H0.
+ destruct D. eauto. 
+Qed.
+Hint Resolve Forall_forall.
+
+
+Lemma Forall2_swap
+ :   forall {A B: Type} (R: A -> B -> Prop)
+            (x x' : A)  (xs1 xs2: list A)
+            (y: B)      (ys: list B)
+ ,   (forall y, R x y -> R x' y)
+ ->  Forall2 R (xs1 ++ x  :: xs2) ys
+ ->  Forall2 R (xs1 ++ x' :: xs2) ys.
+Proof.
+ intros.
+ lets D: Forall2_app_inv_l H0.
+  destruct D  as [ys1].
+  destruct H1 as [ys2].
+  inverts H1. inverts H3.
+  apply Forall2_app.
+   auto.
+  destruct ys2 as [ys2 | y'].
+   inverts H1.
+   inverts H1. eauto.
 Qed.
 

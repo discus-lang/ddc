@@ -1,33 +1,15 @@
 
-Require Import EsJudge.
-Require Import TyJudge.
-Require Import Exp.
-Require Import Base.
-Require Import BaseList.
-
-
-Lemma step_XCon
- :  forall  C x dc
- ,  exps_ctx C 
- -> (exists x', STEP x x')
- -> (exists x', STEP (XCon dc (C x)) (XCon dc (C x'))).
-Proof.
- intros. 
- destruct H0 as [x'].
- exists x'.
- eapply (EsContext (fun xx => XCon dc (C xx))).
- eauto. eauto.
-Qed.
-
-
+Require Import DDC.Language.SimpleData.Step.
+Require Import DDC.Language.SimpleData.TyJudge.
+Require Import DDC.Language.SimpleData.Exp.
+Require Import DDC.Base.
 
 
 (* A well typed expression is either a well formed value, 
-   or can transition to the next state.
- *)
+   or can transition to the next state. *)
 Theorem progress
  :  forall ds x t
- ,  TYPE ds Empty x t
+ ,  TYPE ds nil x t
  -> value x \/ (exists x', STEP x x').
 Proof.
  intros. gen t.
@@ -69,7 +51,7 @@ Proof.
  
  Case "XCon".
   inverts H0.
-  assert (Forall (fun x => whnfX x \/ (exists x', STEP x x')) xs).
+  assert (Forall (fun x => wnfX x \/ (exists x', STEP x x')) xs).
    apply Forall_forall. intros.
    rewrite Forall_forall in H.
    lets T: H H0.
@@ -87,7 +69,7 @@ Proof.
     destruct H1 as [C].
     destruct H1 as [x'].
     inverts H1. inverts H5.
-    lets D2: step_XCon H2 H6.
+    lets D2: step_context_XCon_exists H2 H6.
      destruct D2. eauto.
 
  Case "XCase".

@@ -1,13 +1,11 @@
 
-Require Export EsAlt.
-Require Export EsContext.
-Require Export TyJudge.
-Require Export Exp.
-Require Export SubstExpExp.
+Require Export DDC.Language.SimpleData.StepContext.
+Require Export DDC.Language.SimpleData.StepAlt.
+Require Export DDC.Language.SimpleData.TyJudge.
+Require Export DDC.Language.SimpleData.SubstExpExp.
+Require Export DDC.Language.SimpleData.Exp.
 
 
-
-(********************************************************************)
 (** * Single Small Step Evaluation *)
 (** The single step rules model the individual transitions that the 
      machine can make at runtime. *)
@@ -23,13 +21,13 @@ Inductive STEP : exp -> exp -> Prop :=
 
  | EsLamApp
    : forall t11 x12 v2
-   ,  whnfX v2
+   ,  wnfX v2
    -> STEP (XApp   (XLam t11 x12) v2)
            (substX 0 v2 x12)
 
  | EsCaseAlt
    :  forall dc vs tsArgs alts x
-   ,  Forall whnfX vs
+   ,  Forall wnfX vs
    -> getAlt dc alts = Some (AAlt dc tsArgs x)
    -> STEP (XCase (XCon dc vs) alts)
            (substXs 0 vs x).
@@ -37,12 +35,11 @@ Inductive STEP : exp -> exp -> Prop :=
 Hint Constructors STEP.
 
 
-(* Multi-step evaluation *******************************************
+(* Multi-step evaluation
    A sequence of small step transitions.
    As opposed to STEPSL, this version has an append constructor
    ESAppend that makes it easy to join two evaluations together.
-   We use this when converting big-step evaluations to small-step.
- *)
+   We use this when converting big-step evaluations to small-step. *)
 Inductive STEPS : exp -> exp -> Prop :=
 
  (* After no steps, we get the same exp.
@@ -68,9 +65,10 @@ Inductive STEPS : exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
-Lemma step_whnfX
+(* Stepping a wnf doesn't change it. *)
+Lemma step_wnfX
  :  forall x v
- ,  whnfX x -> STEP x v -> v = x.
+ ,  wnfX x -> STEP x v -> v = x.
 Proof.
  intros.
  induction H0.
@@ -79,7 +77,7 @@ Proof.
    inverts H.
    inverts H.
    inverts H.
-    assert (whnfX x).
+    assert (wnfX x).
     eapply exps_ctx_Forall. eauto. eauto. 
     assert (x' = x). auto. subst. auto.
    inverts H.
@@ -88,9 +86,24 @@ Proof.
 Qed.
 
 
-Lemma steps_whnfX 
+Lemma step_context_XCon_exists
+ :  forall  C x dc
+ ,  exps_ctx C 
+ -> (exists x', STEP x x')
+ -> (exists x', STEP (XCon dc (C x)) (XCon dc (C x'))).
+Proof.
+ intros. 
+ destruct H0 as [x'].
+ exists x'.
+ eapply (EsContext (fun xx => XCon dc (C xx))).
+ eauto. eauto.
+Qed.
+
+
+(* Multi-step evaluating a wnf doesn't change it. *)
+Lemma steps_wnfX 
  :  forall x v
- ,  whnfX x -> STEPS x v -> v = x.
+ ,  wnfX x -> STEPS x v -> v = x.
 Proof.
  intros.
  induction H0.
@@ -98,7 +111,7 @@ Proof.
    auto.
 
   Case "EsStep".
-   apply step_whnfX; auto.
+   apply step_wnfX; auto.
   
   Case "EsAppend".
    assert (x2 = x1). auto. subst.
@@ -106,6 +119,7 @@ Proof.
 Qed.
 
 
+(* Multi-step evaluation in a context. *)
 Lemma steps_context
  :  forall C x1 x1'
  ,  exp_ctx C
@@ -120,6 +134,7 @@ Proof.
 Qed.
 
 
+(* Multi-step evaluation of a data constructor argument. *)
 Lemma steps_context_XCon
  :  forall C x v dc
  ,  exps_ctx C
@@ -136,12 +151,12 @@ Proof.
 Qed.
 
 
-(* Left linearised multi-step evaluation ****************************
+(********************************************************************)
+(* Left linearised multi-step evaluation
    As opposed to STEPS, this version provides a single step at a time
    and does not have an append constructor. This is convenient
    when converting a small-step evaluations to big-step, via the
-   eval_expansion lemma.
- *)
+   eval_expansion lemma. *)
 Inductive STEPSL : exp -> exp -> Prop :=
  | EslNone 
    : forall x1
@@ -157,8 +172,7 @@ Hint Constructors STEPSL.
 
 (* Transitivity of left linearised multi-step evaluation.
    We use this when "flattening" a big step evaluation to the
-   small step one.
- *)
+   small step one. *)
 Lemma stepsl_trans
  :  forall x1 x2 x3
  ,  STEPSL x1 x2 -> STEPSL x2 x3
@@ -173,8 +187,7 @@ Qed.
 
 (* Linearise a regular multi-step evaluation.
    This flattens out all the append constructors, leaving us with
-   a list of individual transitions. 
- *)
+   a list of individual transitions. *)
 Lemma stepsl_of_steps
  :  forall x1 x2
  ,  STEPS  x1 x2

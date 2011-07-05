@@ -1,33 +1,32 @@
 
-Require Export ExpBase.
-Require Export ExpLift.
-Require Export ExpSubst.
+Require Export DDC.Language.SimpleData.ExpBase.
+Require Export DDC.Language.SimpleData.ExpLift.
+Require Export DDC.Language.SimpleData.ExpSubst.
 
-(* Weak Head Normal Form ********************************************)
-(* Weak Head Normal Forms cannot be reduced further by 
-   call-by-value evaluation.
- *)
-Inductive whnfX : exp -> Prop :=
- | Whnf_XVar 
+
+(* Weak normal forms cannot be reduced further by 
+   call-by-value evaluation. *)
+Inductive wnfX : exp -> Prop :=
+ | Wnf_XVar 
    : forall i
-   , whnfX (XVar i)
+   , wnfX (XVar i)
 
- | Whnf_XLam
+ | Wnf_XLam
    : forall t1 x2
-   , whnfX (XLam t1 x2)
+   , wnfX (XLam t1 x2)
 
- | Whnf_XCon
+ | Wnf_XCon
    :  forall dc xs
-   ,  Forall whnfX xs
-   -> whnfX (XCon dc xs).
-Hint Constructors whnfX.
+   ,  Forall wnfX xs
+   -> wnfX (XCon dc xs).
+Hint Constructors wnfX.
 
 
-(* Well Formedness **************************************************)
+(* Well formed expressions are closed under the given environment. *)
 Inductive wfX : tyenv -> exp -> Prop :=
  | WfX_XVar 
    :  forall te i
-   ,  (exists t, BaseEnv.get te i = Some t)
+   ,  (exists t, get i te = Some t)
    -> wfX te (XVar i)
  
  | WfX_XLam
@@ -55,22 +54,16 @@ with    wfA : tyenv -> alt -> Prop :=
  | WfA_AAlt
    :  forall te dc ds ts x tsArgs tResult
    ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
-   -> wfX (te ++ envOfList tsArgs) x
+   -> wfX (te >< tsArgs) x
    -> wfA te (AAlt dc ts x).
 
 Hint Constructors wfX.
 Hint Constructors wfA.
 
-Scheme wfX_wfA_ind := Induction for wfX Sort Prop
- with  wfA_wfX_ind := Induction for wfA Sort Prop.
-
-Combined Scheme wfX_wfA_mutind
- from wfX_wfA_ind, wfA_wfX_ind.
-
 
 (* Closed expressions are well formed under an empty environment. *)
 Definition closedX (xx: exp) : Prop
- := wfX Empty xx.
+ := wfX nil xx.
 Hint Unfold closedX.
 
 
@@ -78,7 +71,7 @@ Hint Unfold closedX.
 Inductive value : exp -> Prop :=
  | Value 
    :  forall xx
-   ,  whnfX xx -> closedX xx
+   ,  wnfX xx -> closedX xx
    -> value xx.
 Hint Constructors value.
 

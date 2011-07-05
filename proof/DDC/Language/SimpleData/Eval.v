@@ -1,22 +1,21 @@
 
-Require Import EvChain.
-Require Export SubstExpExp.
-Require Import Preservation.
-Require Import TyJudge.
-Require Export EsJudge.
-Require Export Exp.
-Require Import BaseList.
+Require Import DDC.Language.SimpleData.EvalChain.
+Require Import DDC.Language.SimpleData.Preservation.
+Require Export DDC.Language.SimpleData.SubstExpExp.
+Require Export DDC.Language.SimpleData.Step.
+Require Import DDC.Language.SimpleData.TyJudge.
+Require Export DDC.Language.SimpleData.Exp.
+Require Import DDC.Base.
 
 
-(* Big Step Evaluation **********************************************
+(* Big Step Evaluation
    This is also called 'Natural Semantics'.
    It provides a relation between the expression to be reduced 
-   and its final value. 
- *)
+   and its final value. *)
 Inductive EVAL : exp -> exp -> Prop :=
  | EvDone
    :  forall v2
-   ,  whnfX  v2
+   ,  wnfX  v2
    -> EVAL   v2 v2
 
  | EvLamApp
@@ -34,7 +33,7 @@ Inductive EVAL : exp -> exp -> Prop :=
  | EvCase 
    :  forall x1 x2 v3 dc vs alts tsArgs
    ,  EVAL x1 (XCon dc vs)
-   -> Forall whnfX vs
+   -> Forall wnfX vs
    -> getAlt dc alts = Some (AAlt dc tsArgs x2)
    -> EVAL (substXs 0 vs x2) v3
    -> EVAL (XCase x1 alts)   v3
@@ -58,7 +57,7 @@ Theorem EVAL_mutind
            (PS : list exp -> list exp -> Prop)
 
  ,  (forall v2 
-    ,  whnfX v2                   
+    ,  wnfX v2                   
     -> PE v2 v2) 
  -> (forall x1 t11 x12 x2 v2 v3
     ,  EVAL x1 (XLam t11 x12)    -> PE x1 (XLam t11 x12) 
@@ -70,7 +69,7 @@ Theorem EVAL_mutind
     -> PE (XCon dc xs) (XCon dc vs)) 
  -> (forall x1 x2 v3 dc vs alts tsArgs
     ,  EVAL x1 (XCon dc vs)      -> PE x1 (XCon dc vs) 
-    -> Forall whnfX vs 
+    -> Forall wnfX vs 
     -> getAlt dc alts = Some (AAlt dc tsArgs x2) 
     -> EVAL (substXs 0 vs x2) v3 -> PE (substXs 0 vs x2) v3 
     -> PE (XCase x1 alts) v3) 
@@ -107,38 +106,36 @@ Qed.
 (* A terminating big-step evaluation always produces a whnf.
    The fact that the evaluation terminated is implied by the fact
    that we have a finite proof of EVAL to pass to this lemma. *)
-Lemma eval_produces_whnfX
+Lemma eval_produces_wnfX
  :  forall x1 v1
  ,  EVAL   x1 v1
- -> whnfX  v1.
+ -> wnfX  v1.
 Proof.
  intros.
  induction H using EVAL_mutind with
   (PS := fun xs vs 
       => EVALS xs vs 
-      -> Forall whnfX vs);
+      -> Forall wnfX vs);
   intros; eauto.
 Qed.
-Hint Resolve eval_produces_whnfX.
+Hint Resolve eval_produces_wnfX.
 
 
-Lemma evals_produces_whnfX
+Lemma evals_produces_wnfX
  :  forall xs vs
  ,  EVALS xs vs
- -> Forall whnfX vs.
+ -> Forall wnfX vs.
 Proof.
  intros.
  induction H; eauto.
 Qed.
-Hint Resolve evals_produces_whnfX.
-
-
+Hint Resolve evals_produces_wnfX.
 
 
 Lemma steps_in_XCon
  :  forall xs vs dc
  ,  Forall2 STEPS xs vs
- -> Forall whnfX vs
+ -> Forall wnfX vs
  -> STEPS (XCon dc xs) (XCon dc vs).
 Proof.
  intros.
@@ -147,20 +144,19 @@ Proof.
 Qed.
 
 
-(* Big to Small steps ***********************************************
+(* Big to Small steps
    Convert a big-step evaluation into a list of individual
-   machine steps.
- *)
+   machine steps. *)
 Lemma steps_of_eval
  :  forall ds x1 t1 x2
- ,  TYPE ds Empty x1 t1
+ ,  TYPE ds nil x1 t1
  -> EVAL  x1 x2
  -> STEPS x1 x2.
 Proof.
  intros ds x1 t1 v2 HT HE. gen t1.
  induction HE using EVAL_mutind with
   (PS := fun xs vs => forall ts
-      ,  Forall2 (TYPE ds Empty) xs ts
+      ,  Forall2 (TYPE ds nil) xs ts
       -> EVALS xs vs
       -> Forall2 STEPS xs vs)
   ; intros.
@@ -177,7 +173,7 @@ Proof.
 
   lets T1: preservation_steps H3 E1. inverts keep T1.
   lets T2: preservation_steps H5 E2.
-  lets T3: subst_value_value H2 T2.
+  lets T3: subst_exp_exp H2 T2.
   lets E3: IHHE3 T3.
 
   eapply EsAppend.
@@ -214,7 +210,7 @@ Proof.
   assert (tsArgs0 = tsArgs).
    eapply getAlt_matches_dataDef; eauto. subst.
 
-  lets HA: getAltExp_hasAlt H0.
+  lets HA: getAlt_in H0.
   rewrite Forall_forall in H4.
   apply H4 in HA. clear H4.
   inverts HA.
@@ -226,7 +222,7 @@ Proof.
      auto.
      rewrite Forall_forall in H. eauto.
      eapply IHHE2.
-     eapply subst_value_value_list; eauto.
+     eapply subst_exp_exp_list; eauto.
 
  Case "EvsNil".
  auto.
@@ -239,13 +235,11 @@ Qed.
 
 
 
-
-(* Small to Big steps ***********************************************
+(* Small to Big steps
    Convert a list of individual machine steps to a big-step
    evaluation. The main part of this is the expansion lemma, which 
    we use to build up the overall big-step evaluation one small-step
-   at a time. The other lemmas are used to feed it small-steps.
- *)
+   at a time. The other lemmas are used to feed it small-steps. *)
 
 (* Given an existing big-step evalution, we can produce a new one
    that does an extra step before returning the original value.
@@ -304,7 +298,7 @@ Qed.
 (* Convert a list of small steps to a big-step evaluation. *)
 Lemma eval_of_stepsl
  :  forall ds x1 t1 v2
- ,  TYPE ds Empty x1 t1
+ ,  TYPE ds nil x1 t1
  -> STEPSL x1 v2 -> value v2
  -> EVAL   x1 v2.
 Proof.
@@ -329,7 +323,7 @@ Qed.
  *)
 Lemma eval_of_steps
  :  forall ds x1 t1 v2
- ,  TYPE ds Empty x1 t1
+ ,  TYPE ds nil x1 t1
  -> STEPS x1 v2 -> value v2
  -> EVAL  x1 v2.
 Proof.

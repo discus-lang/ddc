@@ -1,12 +1,13 @@
 
-Require Export Exp.
+Require Export DDC.Language.SimpleData.Exp.
 
-(** Type Judgements *************************************************)
+
+(* Type Judgement assigns a type to an expression. *)
 Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
  (* Variables *)
  | TYVar 
    :  forall ds te i t
-   ,  get te i = Some t
+   ,  get i te = Some t
    -> TYPE ds te (XVar i) t
 
  (* Lambda Abstraction *)
@@ -40,7 +41,7 @@ Inductive TYPE : defs -> tyenv -> exp -> ty -> Prop :=
    -> Forall (fun alt => TYPEA ds te alt (TCon tcPat) tResult) alts
 
       (* there must be at least one alternative *)
-   -> List.length alts > 0
+   -> length alts > 0
 
       (* all data cons must have a corresponding alternative *)
    -> getTypeDef tcPat ds = Some (DefDataType tcPat dcs)
@@ -54,14 +55,13 @@ with TYPEA : defs -> tyenv -> alt -> ty -> ty -> Prop :=
  | TYAlt 
    :  forall ds te x1 t1 dc tsArgs tResult
    ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
-   -> TYPE  ds (te ++ envOfList tsArgs) x1 t1
+   -> TYPE  ds (te >< tsArgs) x1 t1
    -> TYPEA ds te (AAlt dc tsArgs x1) tResult t1.
 
 Hint Constructors TYPE.
 Hint Constructors TYPEA.
 
 
-(* Well Formedness **************************************************)
 (* A well typed expression is well formed *)
 Theorem type_wfX
  :  forall ds te x t
@@ -108,11 +108,10 @@ Qed.
 Hint Resolve type_wfX.
 
 
-(* Weakening Type Env in Type Judgement *****************************
+(* Weakening Type Env in Type Judgement.
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across
-   the new one.
- *)
+   the new one. *)
 Lemma type_tyenv_insert
  :  forall ds te ix x t1 t2
  ,  TYPE ds te x t1
@@ -146,7 +145,7 @@ Proof.
   eapply TYCon; eauto.
    rewrite Forall_forall in H.
    apply (Forall2_map_left (TYPE ds (insert ix t2 te))).
-   apply (Forall2_impl_In  (TYPE ds te)); eauto.
+   apply (Forall2_impl_in  (TYPE ds te)); eauto.
 
  Case "XCase".
   inverts H0.
@@ -155,7 +154,7 @@ Proof.
 
    rewrite Forall_forall in H.
     apply  Forall_map.
-    apply (Forall_impl_In (fun a => TYPEA ds te a (TCon tcPat) t1)); eauto.
+    apply (Forall_impl_in (fun a => TYPEA ds te a (TCon tcPat) t1)); eauto.
 
    rewrite map_length.
     eauto.
@@ -168,24 +167,24 @@ Proof.
     intros.
     eapply H10 in H0.
     rewrite map_map.
-    eapply In_exists_map.
-    apply In_map_exists in H0.
+    eapply map_exists_in.
+    apply map_in_exists in H0.
     destruct H0.
     exists x1.
     inverts H0.
-    split.
+    split. unfold compose.
     rewrite dcOfAlt_liftA. auto. auto. 
-
 
  Case "XAlt".
   inverts H.
   eapply TYAlt. eauto.
-  rewrite insert_append.
-  rewrite length_envOfList.
+  rewrite insert_app.
   eauto.
 Qed. 
 
 
+(* We can push a new type onto the environment stack provided
+   we lift references to existing types across the new one. *)
 Lemma type_tyenv_weaken1
  :  forall ds te x t1 t2
  ,  TYPE ds te x t1
@@ -198,21 +197,22 @@ Proof.
 Qed.
 
 
+(* We can several new types onto the environment stack provided
+   we lift referenes to existing types across the new one. *)
 Lemma type_tyenv_weaken_append
  :  forall ds te te' x t1
  ,  TYPE ds te x t1
- -> TYPE ds (te ++ te') (liftX (length te') 0 x) t1.
+ -> TYPE ds (te >< te') (liftX (length te') 0 x) t1.
 Proof.
  intros.
  induction te'.
   simpl. 
-  rewrite liftX_zero. auto.
+   rewrite liftX_zero. auto. 
   simpl.
-  rewrite <- nat_plus_one.
-  assert (length te' + 1 = 1 + length te').
+   rewrite <- nat_plus_one.
+   assert (length te' + 1 = 1 + length te').
    omega. rewrite H0. clear H0.
   rewrite <- liftX_plus.
-  apply type_tyenv_weaken1. auto.
+  eapply type_tyenv_weaken1. auto.
 Qed.
-
 

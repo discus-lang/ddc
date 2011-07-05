@@ -1,17 +1,16 @@
 
-Require Import TyJudge.
-Require Import EsJudge.
-Require Import SubstExpExp.
+Require Import DDC.Language.SimpleData.Step.
+Require Import DDC.Language.SimpleData.TyJudge.
+Require Import DDC.Language.SimpleData.SubstExpExp.
  
 
 (* When a well typed expression transitions to the next state
-   then its type is preserved.
- *)
+   then its type is preserved. *)
 Theorem preservation
  :  forall ds x x' t
- ,  TYPE ds Empty x  t
+ ,  TYPE ds nil x  t
  -> STEP x x'
- -> TYPE ds Empty x' t.
+ -> TYPE ds nil x' t.
 Proof.
  intros ds x x' t HT HS. gen t.
  induction HS; intros.
@@ -28,30 +27,29 @@ Proof.
 
  Case "EsLamApp".
   inverts HT. inverts H4.
-  eapply subst_value_value; eauto.
+  eapply subst_exp_exp; eauto.
 
  Case "EsCaseAlt".
   inverts keep HT. inverts H3.
-  eapply subst_value_value_list.
-  eauto.
-  eapply getAltExp_inAlts.
+  eapply subst_exp_exp_list.
+  eauto. 
+  eapply getAlt_inAlts; eauto.
    eauto.
-   eauto. auto.
-   assert (tsArgs = tsArgs0).
+
+  assert (tsArgs = tsArgs0).
    lets D: getAlt_matches_dataDef H4 H7 H0. auto.
-   rewrite <- H1.
-   auto.
+   rewrite <- H1. clear H1.
+  auto.
 Qed.
 
 
 (* When we multi-step evaluate some expression,
-   then the result has the same type as the original.
- *)  
+   then the result has the same type as the original. *)  
 Lemma preservation_steps
  :  forall ds x1 t1 x2
- ,  TYPE ds Empty x1 t1
- -> STEPS      x1 x2
- -> TYPE ds Empty x2 t1.
+ ,  TYPE ds nil x1 t1
+ -> STEPS       x1 x2
+ -> TYPE ds nil x2 t1.
 Proof.
  intros. 
  induction H0; eauto.
@@ -65,9 +63,9 @@ Qed.
  *)
 Lemma preservation_stepsl
  :  forall ds x1 t1 x2
- ,  TYPE ds Empty x1 t1
+ ,  TYPE ds nil x1 t1
  -> STEPSL x1 x2
- -> TYPE ds Empty x2 t1.
+ -> TYPE ds nil x2 t1.
 Proof.
  intros. 
  induction H0.
@@ -76,5 +74,4 @@ Proof.
   eapply preservation. 
    eauto. auto.
 Qed.
-
 

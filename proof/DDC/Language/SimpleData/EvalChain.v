@@ -1,21 +1,20 @@
 
-Require Import EsContext.
-Require Import EsJudge.
-Require Import Exp.
-Require Import BaseList.
+Require Import DDC.Language.SimpleData.StepContext.
+Require Import DDC.Language.SimpleData.Step.
+Require Import DDC.Language.SimpleData.Exp.
+Require Import DDC.Base.
 
 
-(********************************************************************)
 Inductive CHAIN : list exp -> list exp -> Prop :=
  | EcDone
    :  forall vs
-   ,  Forall whnfX vs
+   ,  Forall wnfX vs
    -> CHAIN vs vs
 
  | EcCons
    :  forall x v vs C
    ,  exps_ctx C  
-   -> STEPS x v -> whnfX v
+   -> STEPS x v -> wnfX v
    -> CHAIN (C v) vs
    -> CHAIN (C x) vs.
 
@@ -24,7 +23,7 @@ Hint Constructors CHAIN.
 
 Lemma chain_extend
  :  forall v xs ys
- ,  whnfX v 
+ ,  wnfX v 
  -> CHAIN xs ys
  -> CHAIN (v :: xs) (v :: ys).
 Proof.
@@ -40,7 +39,7 @@ Qed.
 Lemma make_chain
  :  forall xs vs
  ,  Forall2 STEPS xs vs
- -> Forall  whnfX vs
+ -> Forall  wnfX vs
  -> CHAIN xs vs.
 Proof.
  intros. gen vs.
@@ -55,12 +54,12 @@ Proof.
    clear IHxs.
 
   (* TODO: this comes from STEPS xs vs *)
-  assert (Forall2 (fun x v => STEPS x v /\ whnfX v /\ (whnfX x -> v = x)) xs vs).
-   eapply (@Forall2_impl_In exp exp STEPS). intros.
+  assert (Forall2 (fun x v => STEPS x v /\ wnfX v /\ (wnfX x -> v = x)) xs vs).
+   eapply (@Forall2_impl_in exp exp STEPS). intros.
    split. auto.
    split. rewrite Forall_forall in H3. auto.
    intros.
-   apply steps_whnfX. auto. auto. auto.
+   apply steps_wnfX. auto. auto. auto.
    
 
   (* either all the xs are already whnfX,
@@ -70,10 +69,10 @@ Proof.
 
   Case "all whnfX".
     assert (Forall2 eq xs vs).
-    eapply (@Forall2_impl_In exp exp STEPS (@eq exp) xs vs).
+    eapply (@Forall2_impl_in exp exp STEPS (@eq exp) xs vs).
      intros. 
       symmetry.
-       apply steps_whnfX. 
+       apply steps_wnfX. 
        rewrite Forall_forall in H0. auto.
        auto.
        auto.
@@ -95,7 +94,7 @@ Proof.
    lets D1: exps_ctx2_left H0.
    lets D2: exps_ctx2_right H0.
 
-   assert (whnfX v').
+   assert (wnfX v').
     eapply exps_ctx_Forall. 
     eapply D2. auto.
 

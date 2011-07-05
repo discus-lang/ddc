@@ -1,7 +1,7 @@
 
-Require Import TyJudge.
-Require Export Exp.
-Require Export SubstExpExp.
+Require Import DDC.Language.SimpleData.TyJudge.
+Require Export DDC.Language.SimpleData.Exp.
+Require Export DDC.Language.SimpleData.SubstExpExp.
 
 
 (********************************************************************)
@@ -19,7 +19,7 @@ Inductive exps_ctx : (exp -> list exp) -> Prop :=
 
  | XscCons
    :  forall v C
-   ,  whnfX v
+   ,  wnfX v
    -> exps_ctx C
    -> exps_ctx (fun xx => v :: C xx).
 
@@ -35,7 +35,7 @@ Inductive exps_ctx2
  
  | Xsc2Cons
    :  forall v C1 C2
-   ,  whnfX v
+   ,  wnfX v
    -> exps_ctx2 C1 C2
    -> exps_ctx2 (fun xx => v :: C1 xx) (fun yy => v :: C2 yy).
 
@@ -63,8 +63,8 @@ Qed.
 (* TODO: drop the Forall whnfX xs out of the conclusion *)
 Lemma exps_ctx_run_Forall2'
  :  forall (R: exp -> exp -> Prop) xs ys  
- ,   Forall2 (fun x y => R x y /\ whnfX y /\ (whnfX x -> y = x)) xs ys
- ->  Forall whnfX xs
+ ,   Forall2 (fun x y => R x y /\ wnfX y /\ (wnfX x -> y = x)) xs ys
+ ->  Forall wnfX xs
   \/ (exists C1 C2 x' y'
         ,  R x' y' 
         /\ exps_ctx2 C1 C2 
@@ -160,8 +160,8 @@ Qed.
 
 Lemma exps_ctx_run
  :  forall (P: exp -> Prop) xs
- ,  Forall (fun x => whnfX x \/ P x) xs
- -> Forall whnfX xs \/ (exists C x', exps_ctx C /\ xs = C x' /\ P x').
+ ,  Forall (fun x => wnfX x \/ P x) xs
+ -> Forall wnfX xs \/ (exists C x', exps_ctx C /\ xs = C x' /\ P x').
 Proof.
  intros.
  induction xs.
