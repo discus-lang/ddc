@@ -77,6 +77,11 @@ varArgMap = Map.fromList
 	, ("snprintf"	, [ (pChar, []), (i32, []), (pChar, []) ])
 	]
 
+specialCaseFuncs vname [TVoid]
+ = case Map.lookup vname varArgMap of
+	Nothing -> (FixedArgs, [])
+	Just al	-> (VarArgs, al)
+
 specialCaseFuncs vname at
  = case Map.lookup vname varArgMap of
 	Nothing -> (FixedArgs, map (\t -> (toLlvmType t, [])) at)

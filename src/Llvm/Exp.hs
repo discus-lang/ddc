@@ -349,15 +349,14 @@ intCastOp pc
 
 primOrFunCall :: [Exp a] -> LlvmM LlvmVar
 primOrFunCall all@((XVar (NSuper fv) (TFun at rt)):args)
- | length at == length args
+ | length at == length args || (at == [TVoid] && null args)
  = case primLookup fv of
 	Nothing -> funCall all
 	Just fn	-> fn args
 
-
 funCall :: [Exp a] -> LlvmM LlvmVar
 funCall (exp@(XVar (NSuper fv) (TFun at TVoid)):args)
- | length at == length args
+ | length at == length args || (at == [TVoid] && null args)
  = do	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	params		<- mapM llvmOfExp args
@@ -366,7 +365,7 @@ funCall (exp@(XVar (NSuper fv) (TFun at TVoid)):args)
 	return		dummy
 
 funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
- | length at == length args
+ | length at == length args || (at == [TVoid] && null args)
  = do	let func	= funcDeclOfExp exp
 	addGlobalFuncDecl func
 	params		<- mapM llvmOfExp args
