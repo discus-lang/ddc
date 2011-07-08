@@ -46,6 +46,12 @@
 // Pointer functions.
 #include "Pointer.h"
 
+// Pointer functions.
+#include "Pointer.h"
+
+// Foreign functions.
+#include "Foreign.h"
+
 // The top level entry point.
 #include "Main.h"
 

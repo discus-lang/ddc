@@ -3,6 +3,7 @@
 # Find source files for the runtime system.
 runtime_c = \
 	$(shell ls runtime/*.c) \
+	$(shell find runtime/Foreign/C -name "*.c") \
 	$(shell find runtime/Prim -name "*.c") \
 	$(shell find runtime/Storage -name "*.c") \
 	$(shell find runtime/Debug -name "*.c")
@@ -31,8 +32,8 @@ runtime/libddc-runtime.a  : $(runtime_o)
 runtime : $(runtime_dep) \
 		runtime/libddc-runtime.a \
 		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),)
-		
-		
+
+
 # Clean objects in the runtime system
 .PHONY : cleanRuntime
 cleanRuntime :

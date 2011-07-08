@@ -33,15 +33,15 @@ foreign import "stderr" stderr :: Ptr# File#
 
 -- Position Constants ---------------------------------------------------------
 -- | Beginning of file.
-foreign import "SEEK_SET"
+foreign import "_runtimeCAF_stdio_seek_set"
  file_SEEK_SET :: Int32#
 
 -- | Current position in file.
-foreign import "SEEK_CUR"
+foreign import "_runtimeCAF_stdio_seek_cur"
  file_SEEK_CUR :: Int32#
 
 -- | End of file.
-foreign import "SEEK_END"
+foreign import "_runtimeCAF_stdio_seek_end"
  file_SEEK_END :: Int32#
 
 
