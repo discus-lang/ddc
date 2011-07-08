@@ -20,6 +20,7 @@ import DDC.Core.Glob
 import DDC.Core.Check
 import DDC.Type
 import DDC.Var
+import DDC.Var.PrimId
 import DDC.Base.Prim
 import qualified Data.Set		as Set
 
@@ -224,6 +225,18 @@ primX1' tt xx parts
 	 | elem (varName v) ["pokeOn", "pokeOnPtr"]
 	 , Just pt3 <- takePrimTypeOfType t2
 	 -> buildApp $ Left (XPrim (MPtr (PrimPtrPokeOn pt3)) t) : Right t1 : Right t2 : Right r3 : Right w4 : psArgs
+
+
+	-- Special case of foreign imported C functions that have a zero length
+	-- parameter list.
+	Left (XVar v t) : [ Left (XVar pv pt) ]
+	 | TApp (TApp (TApp (TApp (TCon TyConFun) (TCon (TyConData tv _ _))) _) _) _ <- t
+	 , TCon (TyConData ptv _ _) <- pt
+	 , varId tv == VarIdPrim TVoidU
+	 , varId ptv == VarIdPrim TVoidU
+	 -> Just xx
+
+
 
 	-- not a primitive function.
 	_ -> Just xx

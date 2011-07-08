@@ -339,6 +339,15 @@ toSeaApps parts
 		return	$ E.XPrim (E.MApp E.PAppTailCall)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
+
+	C.XPrim (C.MCall (C.PrimCallSuper vSuper)) _ : [C.XVar _ (T.TCon (T.TyConData tname _ _))]
+	 | varName tname == "Void#"
+	 -> do
+		Just tSuper	<- getOpTypeOfVar vSuper
+	    	return	$ E.XPrim (E.MApp E.PAppCall)
+				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : [])
+
+
 	C.XPrim (C.MCall (C.PrimCallSuper vSuper)) _ : args
 	 -> do	args'		<- mapM toSeaX args
 		Just tSuper	<- getOpTypeOfVar vSuper

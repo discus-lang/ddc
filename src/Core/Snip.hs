@@ -14,6 +14,7 @@ import DDC.Core.Glob
 import DDC.Core.Check
 import DDC.Type
 import DDC.Var
+import DDC.Var.PrimId
 import Shared.VarGen			(VarGenM, newVarN)
 import qualified Data.Map		as Map
 import qualified Debug.Trace
@@ -109,6 +110,10 @@ snipX1	table env xx
 	XPrim{}			-> leaveIt xx
 
 	-- Snip compound exprs from the arguments of applications.
+	XApp (XVar v t1) t2
+	 | isFunWithSeaVoidParam t1
+	 -> leaveIt xx
+
 	XApp x1 x2 		-> snipXLeft table (substituteT (flip Map.lookup env) xx)
 
 	XAPP (XVar v t1) t2	-> leaveIt xx
@@ -118,6 +123,15 @@ snipX1	table env xx
 	 	return		(ss, XAPP x' t)
 
 
+isFunWithSeaVoidParam ft
+ = case ft of
+	TApp (TCon TyConFun) (TCon (TyConData tcd _ _))
+	 -> varId tcd == VarIdPrim TVoidU
+
+	TApp a@TApp{} _
+	 -> isFunWithSeaVoidParam a
+
+	_ -> False
 
 
 -- | Snip some stuff from an expression.

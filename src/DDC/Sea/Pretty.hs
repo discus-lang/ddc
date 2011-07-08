@@ -282,6 +282,10 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		_	-> panic stage $ "ppr[Exp]: no match for " % show xx
 
 	-- Primitive function application operators.
+
+	XPrim (MApp PAppCall) (x@(XVar _ (TFun [TVoid] _)) : [])
+	 -> x % " ()"
+
 	XPrim (MApp f) (x : args)
 	 |  XVar _ _ <- x
 	 -> case f of
