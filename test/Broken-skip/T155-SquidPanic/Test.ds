@@ -5,11 +5,33 @@ data Entry k v = Entry {
         value :: v
     }
 
-data Hashtable k v = Hashtable {
-        hash    :: k -> Int;
-        entries :: Array (List (Entry k v))
+-- TODO: the elaborator doesn't add the !e1 and $c1 variables
+--       if they are left out.
+data Hashtable !e1 $c1 k v = Hashtable {
+        hash    :: k -(!e1 $c1)> Int;
+	entries :: Array (List (Entry k v))
     }
+	
+project Hashtable k v where
+    new 	= hashtable_new
+    lookup 	= hashtable_lookup
+    insert 	= hashtable_insert
+    delete 	= hashtable_delete
 
 hashtable_new :: (k -> Int) -> Int -> Hashtable k v
-hashtable_new hash capacity = Hashtable hash (new&{Array} capacity)
+hashtable_new hash capacity = Hashtable hash (new&{Array} capacity [])
+	
+hashtable_lookup :: k -> Hashtable k v -> Maybe v
+hashtable_lookup key ht = Nothing
+	
+hashtable_insert :: Hashtable k v -> k -> v -> ()
+hashtable_insert ht k v = ()
+	
+hashtable_delete :: Hashtable k v -> k -> ()
+hashtable_delete ht k = ()
+
+
+main () = do
+    --ht = new&{Hashtable} hash 100
+    println "ok"
 
