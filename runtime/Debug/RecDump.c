@@ -89,10 +89,9 @@ _rdumpData	(FILE* file, Obj* obj, int indent)
 
 // Dump raw data
 static void
-_rdumpDataR	(FILE* file, Obj* obj, int indent)
+_rdumpDataR	(FILE* file, Obj* obj)
 {
 	DataR*	data	= (DataR*)obj;
-	indent = 0 ;
 
 	fprintf (file, "DataR\n");
 	fprintf (file, "  { tag     = 0x%06x\n", _getObjTag (obj));
@@ -161,7 +160,7 @@ _rdumpObj	(FILE* file, Obj* obj, int indent)
 
 	 case _ObjTypeThunk:	_rdumpThunk (file, obj, indent);	return;
 	 case _ObjTypeData:	_rdumpData  (file, obj, indent);	return;
-	 case _ObjTypeDataR:	_rdumpDataR (file, obj, indent);	return;
+	 case _ObjTypeDataR:	_rdumpDataR (file, obj);	return;
 	 case _ObjTypeDataM:	_rdumpDataM (file, obj, indent);	return;
 	 case _ObjTypeSuspIndir: _rdumpSusp  (file, obj, indent);	return;
 
