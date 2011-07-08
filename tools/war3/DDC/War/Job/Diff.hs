@@ -3,14 +3,13 @@ module DDC.War.Job.Diff
 	(jobDiff)
 where
 import DDC.War.Job
-import DDC.War.Aspect
-import BuildBox.IO.File
+import DDC.War.Result
 import BuildBox
 import System.Directory
 
 
 -- | Compare two files for differences.
-jobDiff :: Job -> Build [Aspect]
+jobDiff :: Job -> Build [Result]
 jobDiff (JobDiff testName _wayName 
 		file fileOut fileDiff)
  = do	needs file
@@ -28,9 +27,9 @@ jobDiff (JobDiff testName _wayName
 		""
 	
 	-- Write its output to file.
-	io $ atomicWriteFile fileDiff strOut
+	atomicWriteFile fileDiff strOut
 
 	if strOut == ""
 	 then return []
-	 else return [AspectDiff file fileOut fileDiff]
+	 else return [ResultDiff fileOut fileDiff]
 	

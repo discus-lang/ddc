@@ -2,20 +2,18 @@
 module DDC.War.Job.CompileHS
 	(jobCompileHS)
 where
-import DDC.War.Aspect
+import DDC.War.Result
 import DDC.War.Job
 import BuildBox
-import BuildBox.IO.File
-import BuildBox.IO.Directory
 import System.FilePath
 import System.Directory
-import Util.Data.List
+import Data.ListUtil
 import Control.Monad
 
 
 
 -- | Compile a Haskell Source File
-jobCompileHS :: Job -> Build [Aspect]
+jobCompileHS :: Job -> Build [Result]
 jobCompileHS (JobCompileHS
 		testName _wayName srcHS optionsGHC
 		buildDir mainCompOut mainCompErr
@@ -55,8 +53,8 @@ jobCompileHS (JobCompileHS
 		("make -f " ++ buildMk)
 		""
 
-	io $ atomicWriteFile mainCompOut strOut
-	io $ atomicWriteFile mainCompErr strErr
+	atomicWriteFile mainCompOut strOut
+	atomicWriteFile mainCompErr strErr
 
 	return []
 	

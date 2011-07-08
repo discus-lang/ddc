@@ -3,13 +3,12 @@ module DDC.War.Job.Run
 	(jobRun)
 where
 import DDC.War.Job
-import DDC.War.Aspect
-import BuildBox.IO.File
+import DDC.War.Result
 import BuildBox
 
 
 -- | Run a binary
-jobRun :: Job -> Build [Aspect]
+jobRun :: Job -> Build [Result]
 jobRun (JobRun	testName _wayName _fileName
 		mainBin mainRunOut mainRunErr)
  = do	needs mainBin
@@ -20,8 +19,8 @@ jobRun (JobRun	testName _wayName _fileName
 	 $  io $ systemTeeIO False mainBin ""
 	
 	-- Write its output to files.
-	io $ atomicWriteFile mainRunOut strOut
-	io $ atomicWriteFile mainRunErr strErr
+	atomicWriteFile mainRunOut strOut
+	atomicWriteFile mainRunErr strErr
 	
-	return [AspectTime time]
+	return [ResultAspect $ Time TotalWall `secs` (fromRational $ toRational time)]
 	

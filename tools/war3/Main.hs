@@ -7,7 +7,6 @@ import DDC.War.JobDispatch
 import Util.Options
 import Util.Options.Help
 import BuildBox
-import BuildBox.IO.Directory
 import System.Environment
 import System.Directory
 import Control.Monad

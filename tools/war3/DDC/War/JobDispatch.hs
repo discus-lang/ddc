@@ -7,14 +7,14 @@ import DDC.War.Job.Compile
 import DDC.War.Job.Run
 import DDC.War.Job.Diff
 import DDC.War.Job
-import DDC.War.Aspect
+import DDC.War.Result
 import DDC.War.Config
 import DDC.War.Pretty
 import BuildBox
 import System.Directory
 
 
-dispatchJob :: Config -> Job -> Build [Aspect]
+dispatchJob :: Config -> Job -> Build [Result]
 dispatchJob config job
  = do	aspects	<- dispatchJob' job
 
@@ -27,7 +27,7 @@ dispatchJob config job
 	return aspects
 
 
-dispatchJob' :: Job -> Build [Aspect]
+dispatchJob' :: Job -> Build [Result]
 dispatchJob' job
  = case job of
 	JobCompile{}	-> jobCompile	job

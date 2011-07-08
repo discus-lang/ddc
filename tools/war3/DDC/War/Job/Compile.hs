@@ -2,14 +2,12 @@
 module DDC.War.Job.Compile
 	(jobCompile)
 where
-import DDC.War.Aspect
 import DDC.War.Job
+import DDC.War.Result
 import BuildBox
-import BuildBox.IO.File
-import BuildBox.IO.Directory
 import System.FilePath
 import System.Directory
-import Util.Data.List
+import Data.ListUtil
 import Control.Monad
 
 
@@ -17,7 +15,7 @@ import Control.Monad
 --   TODO: Take a parameter saying whether it's alowd to fail with error.
 --         Don't just duplicate the code again like in war2.
 
-jobCompile :: Job -> Build [Aspect]
+jobCompile :: Job -> Build [Result]
 jobCompile job@(JobCompile
 		testName _wayName srcDS optionsDDC optionsRTS
 		buildDir mainCompOut mainCompErr
@@ -81,17 +79,18 @@ jobCompile job@(JobCompile
 	let result
 		| shouldSucceed
 		, ExitFailure _	<- code	
-		= [AspectUnexpectedFailure]
+		= [ResultUnexpectedFailure]
 
 		| not shouldSucceed
 		, ExitSuccess	<- code
-		= [AspectUnexpectedSuccess]
+		= [ResultUnexpectedSuccess]
 		
 		| otherwise
 		= []
 			
-	io $ atomicWriteFile mainCompOut strOut
-	io $ atomicWriteFile mainCompErr strErr
+	atomicWriteFile mainCompOut strOut
+	atomicWriteFile mainCompErr strErr
 
-	return (AspectTime time : result)
+	return (ResultAspect (Time TotalWall `secs` (fromRational $ toRational time)) 
+		: result)
 	
