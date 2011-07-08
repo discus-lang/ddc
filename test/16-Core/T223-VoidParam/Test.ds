@@ -1,0 +1,14 @@
+
+pragma cc_includes [ "stdlib.h" ]
+
+-- void srand (unsigned int seed) ;
+-- int rand (void) ;
+
+foreign import "srand" srand :: Int32# -> Void#
+foreign import "rand" rand :: Void# -> Int32#
+
+main ()
+ = do	println "Before"
+	x = rand Void
+	srand x
+	println "After"
