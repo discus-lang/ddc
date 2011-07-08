@@ -181,6 +181,13 @@ packTypeCrsSub' config crsEq vsSubbed tt
 	 -> TSum k $ map downT
 	 	   $ map (makeTFreeBot v1) ts
 	
+	 -- rewrite (TDanger v1 (TFree_v2 t1)) => TDanger v1 t1
+	 --  TODO: This loses the second variable, need a better solution.
+	 | Just (t1, t2)	<- takeTDanger tt
+	 , Just (_v1, t3)       <- takeTFree t2
+	 -> makeTDanger t1 t3
+
+
 	TApp t1 t2
 	 -> TApp (downT t1) (downT t2)
 	

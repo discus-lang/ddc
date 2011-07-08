@@ -6,7 +6,7 @@
 --	the effect and closure info should be the sum of all effect/closure of the functions.
 --
 
-export	runTest
+export	{ runTest; oldFun; newFun }
 
 data FunBox %r1 a !e1 $c1
 	= FunBox {
@@ -37,7 +37,7 @@ runTest ()
 
 
 -- same idea, but return a tuple of functions that perform the operations.
-makeBox2 () ()
+makeBox2' () ()
  = do
 	box2	:: FunBox %r1 Int !e1 $c1
 		:- Mutable %r1
@@ -51,4 +51,4 @@ makeBox2 () ()
 
 	fun2;
 
-gotBox = makeBox2 () () ()
+gotBox = makeBox2' () () ()
