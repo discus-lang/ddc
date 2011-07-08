@@ -100,6 +100,9 @@ trimToMaterialT' crsClo vsQuant tt
 		crsClo vsQuant tBody
 
 	-- TODO: follow closure in functions.
+	TCon{}
+	 -> return tt
+
 	TApp{}
 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> [] 
