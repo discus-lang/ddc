@@ -2,7 +2,7 @@
 Require Export DDC.Language.SimpleData.ExpBase.
 Require Export DDC.Language.SimpleData.ExpLift.
 Require Export DDC.Language.SimpleData.ExpSubst.
-
+Require Export DDC.Language.SimpleData.ExpAlt.
 
 (* Weak normal forms cannot be reduced further by 
    call-by-value evaluation. *)
