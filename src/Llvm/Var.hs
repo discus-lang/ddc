@@ -9,6 +9,7 @@ module Llvm.Var
 	, toLlvmRtsVar
 	, genericFunPtrVar
 	, llvmVarOfXVar
+	, cafVarName
 	, isGlobalVar
 	, toGlobalSeaVar )
 where
@@ -24,7 +25,7 @@ import LlvmM
 import Llvm.Runtime.Object
 import Llvm.Util
 
-import Data.List					(isSuffixOf)
+import Data.List					(isPrefixOf, isSuffixOf)
 
 stage = "Llvm.Var"
 
@@ -41,7 +42,7 @@ toLlvmGlobalVar v t
 
 toLlvmCafVar :: Var -> Type -> LlvmM LlvmVar
 toLlvmCafVar v t@(TPtr _)
- = do	let lvar = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
+ = do	let lvar = LMGlobalVar (cafVarName $ seaVar False v) (toLlvmType t) External Nothing Nothing False
 	mId	<- getModuleId
 	if mId == varModuleId v
 	  then return lvar
@@ -53,13 +54,18 @@ toLlvmCafVar v t@(TPtr _)
 		return lvar
 
 toLlvmCafVar v t
- = do	let lvar = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
+ = do	let lvar = LMGlobalVar (cafVarName $ seaVar False v) (toLlvmType t) External Nothing Nothing False
 	mId	<- getModuleId
 	if mId == varModuleId v
 	  then return lvar
 	  else
 	    do	addGlobalVar (pVarLift lvar, Nothing)
 		return lvar
+
+cafVarName :: String -> String
+cafVarName seaName
+ = if isPrefixOf "_runtimeCAF" seaName then seaName else "_ddcCAF_" ++ seaName
+
 
 toGlobalSeaVar :: Var -> Type -> LlvmM LlvmVar
 toGlobalSeaVar v t@(TPtr _)

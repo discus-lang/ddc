@@ -239,7 +239,7 @@ llvmOfSeaGlobal :: Top (Maybe a) -> LMGlobal
 llvmOfSeaGlobal (PCafSlot v t@(TPtr (TCon TyConObj)))
  =	let	tt = pLift $ toLlvmType t
 		var = LMGlobalVar
-			("_ddcCAF_" ++ seaVar False v)	-- Variable name
+			(cafVarName $ seaVar False v)	-- Variable name
 			tt				-- LlvmType
 			ExternallyVisible		-- LlvmLinkageType
 			Nothing				-- LMSection
@@ -250,7 +250,7 @@ llvmOfSeaGlobal (PCafSlot v t@(TPtr (TCon TyConObj)))
 llvmOfSeaGlobal (PCafSlot v t@(TCon (TyConUnboxed tv)))
  =	let	tt = toLlvmType t
 		var = LMGlobalVar
-			("_ddcCAF_" ++ seaVar False v)
+			(cafVarName $ seaVar False v)
 			tt
 			ExternallyVisible
 			Nothing
