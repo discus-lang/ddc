@@ -28,8 +28,8 @@ import qualified Data.Set		as Set
 data Table
 	= Table
 	{ tableDirectRegions	:: Set Var }
-	
-tableZero 
+
+tableZero
 	= Table
 	{ tableDirectRegions	= Set.empty }
 
@@ -43,7 +43,7 @@ slurpWitnessKind tt kk
  	KApp k (TVar kR (UVar r))
 	 | k    == kDirect
 	 , kR	== kRegion
-	 -> tt { tableDirectRegions 
+	 -> tt { tableDirectRegions
 	 		= Set.insert r (tableDirectRegions tt)}
 
 	_ -> tt
@@ -60,12 +60,12 @@ primGlob glob
 primP :: Table -> Top -> (Table, Top)
 primP tt pp
  = case pp of
- 	PBind mV x	
+ 	PBind mV x
 	 -> let	(tt2, x')	= primX tt x
 	    in	(tt2, PBind mV x')
 
 	_ -> 	(tt, pp)
-	    
+
 -- exp..
 --	this boilerplate is mostly pasted from Core.Float .. abstract this somehow?
 primX :: Table -> Exp -> (Table, Exp)
@@ -75,7 +75,7 @@ primX tt xx
 	XPrim{}			-> (tt, xx)
 
 	-- check for direct regions on the way down
- 	XLAM b k x	
+ 	XLAM b k x
 	 -> let tt2		= slurpWitnessKind tt k
 		(tt3, x')	= primX tt2 x
 	    in	(tt3, XLAM b k x')
@@ -84,11 +84,11 @@ primX tt xx
 	XLocal v vts x
 	 -> let	ks	=  map (kindOfType . snd) vts
 	 	tt2	= foldl' slurpWitnessKind tt ks
-		
+
 		(tt3, x')	= primX tt2 x
 	    in	(tt3, XLocal v vts x')
 
-	XLam v t x eff clo	
+	XLam v t x eff clo
 	 -> let (tt', x')	= primX tt x
 	    in  (tt', XLam v t x' eff clo)
 
@@ -96,10 +96,10 @@ primX tt xx
 	 -> let	(tt', ss')	= mapAccumL primS tt ss
 	    in  (tt', XDo ss')
 
-	XMatch alts		
+	XMatch alts
 	 -> let	(tt', alts')	= mapAccumL primA tt alts
 	    in  (tt', XMatch alts')
-	    
+
 	XAPP x t
 	 -> let (tt', x')	= primX tt x
 	    in	(tt', XAPP x' t)
@@ -136,12 +136,12 @@ primS :: Table -> Stmt -> (Table, Stmt)
 primS tt ss
  = case ss of
 	-- enter into XTau
-	SBind mV (XTau t x)	
+	SBind mV (XTau t x)
 	 -> let Just x2		= primX1 tt x
 		(tt3, x3)	= primX tt x2
 	    in	(tt3, SBind mV (XTau t x3))
-	 
- 	SBind mV x		
+
+ 	SBind mV x
 	 -> let Just x2		= primX1 tt x
 		(tt3, x3)	= primX tt x2
 
@@ -152,7 +152,7 @@ primX1 :: Table -> Exp -> Maybe Exp
 primX1 tt xx
  	| isXApp xx || isXAPP xx	= primX1' tt xx (flattenApps xx)
  	| otherwise			= Just xx
-	
+
 primX1' tt xx parts
  = case parts of
 
@@ -166,16 +166,16 @@ primX1' tt xx parts
 	-- direct use of unboxing function
 	-- note that we must force non-direct objects before unboxing them.
 	Left (XVar v t) : psArgs@[Right tR@(TVar kR (UVar vR)), Left x]
-	 | kR	== kRegion			
+	 | kR	== kRegion
 	 , Just pt	<- readPrimUnboxing (varName v)
-	 -> if Set.member vR (tableDirectRegions tt) 
+	 -> if Set.member vR (tableDirectRegions tt)
 		then buildApp
 			$ Left (XPrim (MUnbox pt) t)
 			: psArgs
 
 		else buildApp
-			$ Left (XPrim (MUnbox pt) t) 
-			: Right tR 
+			$ Left (XPrim (MUnbox pt) t)
+			: Right tR
 			: Left (XApp (XPrim MForce (tForceFn (checkedTypeOfExp "Core.Prim.primX1" x))) x)
 			: []
 
@@ -183,12 +183,12 @@ primX1' tt xx parts
 	Left (XVar v t) : psArgs
 	 | Just (op, pt)	<- readPrimOp (varName v)
 	 -> buildApp $ Left (XPrim (MOp pt op) t) : psArgs
-	
+
 	-- primitive casting
 	[Left (XVar v t), Left x]
 	 | Just cast		<- readPrimCast (varName v)
 	 -> buildApp [Left (XPrim (MCast cast) t), Left x]
-	
+
 	-- primitive pointer coercion
 	-- TODO: rewrite this less verbosely
 	Left (XVar v t) : Right t1 : Right t2 : psArgs
@@ -217,7 +217,7 @@ primX1' tt xx parts
 
 	Left (XVar v t) : Right t1 : Right t2 : Right r3 : psArgs
 	 | elem (varName v) ["peekOn", "peekOnPtr"]
-	 , Just pt2 <- takePrimTypeOfType t2 
+	 , Just pt2 <- takePrimTypeOfType t2
 	 -> buildApp $ Left (XPrim (MPtr (PrimPtrPeekOn pt2)) t) : Right t1 : Right t2 : Right r3 : psArgs
 
 	Left (XVar v t) : Right t1 : Right t2 : Right r3 : Right w4 : psArgs

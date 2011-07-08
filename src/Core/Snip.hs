@@ -16,7 +16,7 @@ import DDC.Type
 import DDC.Var
 import Shared.VarGen			(VarGenM, newVarN)
 import qualified Data.Map		as Map
-import qualified Debug.Trace	
+import qualified Debug.Trace
 
 stage		= "Core.Snip"
 debug 		= False
@@ -31,12 +31,12 @@ data Table
 	{  -- | Globs used to determine which variable are defined at top level.
 	   tableHeaderGlob	:: Glob
 	,  tableModuleGlob	:: Glob
-	
+
 	   -- | whether to preserve type information of snipped vars
   	   --	  this requires that expressions have locally reconstuctable types
 	,  tablePreserveTypes	:: Bool }
-	   
-	
+
+
 -- Snip -------------------------------------------------------------------------------------------
 -- | Snip bindings in this tree.
 snipGlob
@@ -51,14 +51,14 @@ snipGlob table varPrefix glob
 			 	(mapBindsOfGlobM (transZM transTable) glob)
 				$ VarId varPrefix 0
    in	glob'
-   
+
 
 -- | Keep running the snipper on these statements until nothing more will snip.
 snipStmts ::	Table -> [Stmt] -> SnipM [Stmt]
 snipStmts	table ss
  = do
 	ss'	<- snipPass table ss
-	
+
 	if length ss == length ss'
 	 then return ss'
 	 else snipStmts table ss'
@@ -94,14 +94,14 @@ snipX1	table env xx
 	XTau t	x
 	 -> do	(ss, x')	<- snipX1 table env x
 	 	return	(ss, XTau t x')
-	
+
 	-- Can't lift exprs out of the scope of binders,
 	--	there might be free variables in them that would become out of scope
 	XLAM{}			-> leaveIt xx
 	XLam{}			-> leaveIt xx
 	XLocal{}		-> leaveIt xx
 
-	-- These are fine.	
+	-- These are fine.
 	XDo{}			-> leaveIt xx
 	XMatch{}		-> leaveIt xx
 	XLit{}			-> leaveIt xx
@@ -113,10 +113,10 @@ snipX1	table env xx
 
 	XAPP (XVar v t1) t2	-> leaveIt xx
 
-	XAPP x t	
+	XAPP x t
 	 -> do	(ss, x')	<- snipX table (substituteT (flip Map.lookup env) x)
 	 	return		(ss, XAPP x' t)
-	
+
 
 
 
@@ -133,13 +133,13 @@ snipX table xx
 	 	return	(ss, XTau t x')
 
 	XLam{}			-> snipIt table xx
-	XApp{}			-> snipXLeft table xx		
+	XApp{}			-> snipXLeft table xx
 
 	XDo{}			-> snipIt table xx
 	XMatch{}		-> snipIt table xx
 
 	XLit{}			-> leaveIt xx
-	
+
 	-- snip XVars if they're defined at top level
 	XVar v t
 	 |   varIsBoundAtTopLevelInGlob (tableModuleGlob table) v
@@ -150,10 +150,10 @@ snipX table xx
 	 -> leaveIt xx
 
 	XPrim{}			-> leaveIt xx
-	 
+
 	-- we should never see XLocals as arguments..
 	XLocal{}		-> leaveIt xx
-	 
+
 
 
 -- | Snip some expressions from the left hand side of a function application.
@@ -185,7 +185,7 @@ snipXLeft table xx
 snipXRight :: Table -> Exp -> SnipM ([Stmt], Exp)
 snipXRight table xx
  = case xx of
- 	XApp{}			
+ 	XApp{}
 	 -> snipIt table xx
 
 	-- leave literal values
@@ -208,7 +208,7 @@ snipXRight table xx
 
 
 -- | Snip some thing, creating a new statement.
---	If tablePreserve is turned on then preserve the type of the new var, 
+--	If tablePreserve is turned on then preserve the type of the new var,
 --	else just add a TNil. In this case we'll need to call Core.Reconstruct
 --	to fill in the type annots later on.
 snipIt :: Table -> Exp -> SnipM ([Stmt], Exp)
@@ -216,12 +216,12 @@ snipIt table xx
 	| tablePreserveTypes table
 	= do	b	<- newVarN NameValue
 		let tX	= checkedTypeOfOpenExp (stage ++ ".snipIt") xx
-	 	return	( [SBind (Just b) xx] 
+	 	return	( [SBind (Just b) xx]
 			, XVar b tX )
 
 	| otherwise
 	= do	b	<- newVarN NameValue
-	 	return	( [SBind (Just b) xx] 
+	 	return	( [SBind (Just b) xx]
 			, XVar b TNil )
 
 
@@ -230,7 +230,7 @@ leaveIt :: Exp -> SnipM ([Stmt], Exp)
 leaveIt xx	= return ([], xx)
 
 
--- | Take the variable from an expression 
+-- | Take the variable from an expression
 --	(possibly wrapped in a type application)
 takeVar :: Exp -> Maybe Var
 takeVar	(XAPP x t)	= takeVar x

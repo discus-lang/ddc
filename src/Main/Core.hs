@@ -74,18 +74,18 @@ coreTidy stage args base unique cgHeader cgModule
 coreBind
 	:: ModuleId
 	-> (Map Var [Var])	-- ^ TODO: get this from the glob.
-				--         map of class constraints on each region eg (%r1, [Lazy, Const]). 
+				--         map of class constraints on each region eg (%r1, [Lazy, Const]).
 	-> Set Var		-- ^ TODO: get this from the glob: he regions with global lifetimes
 				--         which should be bound at top level.
 	-> CoreStage
-	
-coreBind modId classMap rsGlobal 
+
+coreBind modId classMap rsGlobal
 	 stage args base unique cgHeader cgModule
  = {-# SCC "Core/bind" #-}
-   do	let cgModule' 
-		= bindGlob modId unique classMap rsGlobal 
+   do	let cgModule'
+		= bindGlob modId unique classMap rsGlobal
 		$ mapBindsOfGlob blockP cgModule
-	
+
 	dumpCG args base DumpCoreBind stage cgModule'
 	return cgModule'
 
@@ -100,20 +100,20 @@ coreSnip
 	-> Glob			-- ^ Header glob.
 	-> Glob			-- ^ Module glob.
 	-> IO Glob
-	
+
 coreSnip stage unique cgHeader cgModule
- = {-# SCC "Core/snip" #-} 
+ = {-# SCC "Core/snip" #-}
    do	-- snip exprs out of fn arguments
 	let snipTable	= Snip.Table
 			{ Snip.tableHeaderGlob		= cgHeader
 			, Snip.tableModuleGlob		= cgModule
 			, Snip.tablePreserveTypes	= False }
-			
+
 	let cgModule'	= Snip.snipGlob snipTable ("x" ++ unique) cgModule
 
-	dumpCT DumpCoreSnip (stage ++ "-snip")  
+	dumpCT DumpCoreSnip (stage ++ "-snip")
 		$ treeOfGlob cgModule'
-	
+
 	return cgModule'
 
 
@@ -135,8 +135,8 @@ coreDictionary cgHeader cgModule
 		$ treeOfGlob cgModule'
 
 	return	cgModule'
-	
-	
+
+
 ---------------------------------------------------------------------------------------------------
 -- | Thread through witness variables.
 coreThread
@@ -145,16 +145,16 @@ coreThread
 	=> Glob 		-- ^ Header Glob.
 	-> Glob 		-- ^ Module Glob.
 	-> IO Glob
-	
+
 coreThread cgHeader cgModule
  = {-# SCC "Core/thread" #-}
    do	let cgModule' = threadGlob cgHeader cgModule
- 
- 	dumpCT DumpCoreThread "core-thread" 
+
+ 	dumpCT DumpCoreThread "core-thread"
 		$ treeOfGlob cgModule'
 
 	return cgModule'
-	
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Identify primitive operations.
@@ -164,7 +164,7 @@ corePrim
 	=> Glob			-- ^ Header glob.
 	-> Glob			-- ^ Module glob.
 	-> IO Glob
-	
+
 corePrim cgHeader cgModule
  = {-# SCC "Core/prim" #-}
    do	let cgModule'	= primGlob cgModule
@@ -181,7 +181,7 @@ coreSimplify
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> String -> Glob -> Glob -> IO Glob
-	
+
 coreSimplify unique cgHeader cgModule
  = {-# SCC "Core/simplify" #-}
    do	let (cgModule', statss)
@@ -194,9 +194,9 @@ coreSimplify unique cgHeader cgModule
 	 $ do	dumpCT DumpCoreSimplify "core-simplify" $ treeOfGlob cgModule'
 		dumpS  DumpCoreSimplify "core-simplify--stats"
 			$ pprStrPlain $ vcat $ map ppr statss
-		
+
 	return	cgModule'
-	
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Check the tree for syntactic problems that won't be caught by type checking.
@@ -207,13 +207,13 @@ coreLint
 	-> Glob 		-- ^ core tree
 	-> Glob 		-- ^ header tree
 	-> IO Glob
-	
+
 coreLint stage cgHeader cgModule
  = {-# SCC "Core/lint" #-}
-   do	let cgModule'	= checkGlobs ("Compile.coreLint." ++ stage) cgHeader cgModule 
+   do	let cgModule'	= checkGlobs ("Compile.coreLint." ++ stage) cgHeader cgModule
 
-	dumpCT DumpCoreLint stage 		
-		$ treeOfGlob cgModule'		
+	dumpCT DumpCoreLint stage
+		$ treeOfGlob cgModule'
 
 	return cgModule'
 
@@ -221,21 +221,21 @@ coreLint stage cgHeader cgModule
 ---------------------------------------------------------------------------------------------------
 -- | Lift nested functions to top level.
 coreLambdaLift
-	:: (?args :: [Arg])	
+	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> Glob				-- ^ Header glob.
 	-> Glob				-- ^ Module glob.
 	-> IO	( Glob			-- transformed module glob, including new lifted bindings.
 		, Set Var)		-- the vars of the new bindings.
-	
+
 coreLambdaLift cgHeader cgModule
  = {-# SCC "Core/lift" #-}
    do	let (cgModule', vsNewLambdaLifted)
 		= lambdaLiftGlob cgHeader cgModule
-					
+
 	dumpCT DumpCoreLift "core-lift" 		$ treeOfGlob cgModule'
 	dumpS  DumpCoreLift "core-lift--new-bindings"	$ show vsNewLambdaLifted
-			
+
 	return	( cgModule'
 		, vsNewLambdaLifted)
 
@@ -245,10 +245,10 @@ coreLambdaLift cgHeader cgModule
 corePrep :: CoreStage
 corePrep stage args base unique cgHeader cgModule
  = {-# SCC "Core/prep" #-}
-   do	let eatXTau	= transformX 
-			$ \xx -> case xx of 
+   do	let eatXTau	= transformX
+			$ \xx -> case xx of
 					XTau _ x -> x
-					_	 -> xx				
+					_	 -> xx
 
 	let cgModule2	= labelIndexGlob cgHeader cgModule
 	let cgModule3	= mapBindsOfGlob (blockP . eatXTau) cgModule2
@@ -258,8 +258,8 @@ corePrep stage args base unique cgHeader cgModule
 			{ Snip.tableHeaderGlob		= cgHeader
 			, Snip.tableModuleGlob		= cgModule
 			, Snip.tablePreserveTypes	= True }
-			
-	let cgModule_snipped	
+
+	let cgModule_snipped
 			= Snip.snipGlob snipTable ("x" ++ unique) cgModule3
 
 	dumpCG args base DumpCorePrep stage cgModule_snipped
@@ -284,7 +284,7 @@ coreCurry cgHeader cgModule
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert Core-IR to Abstract-C
-coreToSea	
+coreToSea
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> String			-- ^ Unique.
@@ -302,8 +302,8 @@ coreToSea unique cgHeader cgModule
 	 	$ ["Values may not be mutually recursive.\n"
 		% "     offending variables: " % vsRecursive % "\n\n"]
 
-	 Right (esHeader, esModule) 
-	  -> do	
+	 Right (esHeader, esModule)
+	  -> do
 		let esHeader_list = foldr (:) [] esHeader
 		dumpET DumpSea "sea--header" $ E.eraseAnnotsTree esHeader_list
 
