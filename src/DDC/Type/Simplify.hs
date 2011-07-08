@@ -35,9 +35,7 @@ simplifyT tt
 --   This is in IO because it uses a HashTable internally.
 simplifyIO :: Type -> IO Type
 simplifyIO tt@(TConstrain tBody crs@(Constraints crsEq crsMore crsOther))
- = do	putStrLn "--------- slurpIO"
-
-	-- Slurp a table of how each of the constrained variable is used.
+ = do	-- Slurp a table of how each of the constrained variable is used.
 	-- Any variables free in the body are "Wanted", meaning we don't erase 
 	-- constraints on them (unless their trivial bottom constraints).
 	uses	<- emptyUsage 
@@ -62,7 +60,7 @@ simplifyIO tt@(TConstrain tBody crs@(Constraints crsEq crsMore crsOther))
 		
 	-- dump
 	us	<- Hash.toList $ useTable uses
-	putStrLn $ pprStrPlain $ vcat us
+--	putStrLn $ pprStrPlain $ vcat us
 	
 	let crs' = Constraints crsEq' crsMore crsOther
 	let tt'	 = TConstrain  tBody crs'
@@ -108,10 +106,11 @@ trimToMaterialT' crsClo vsQuant tt
 
 	 -- TODO: if all the variables in a type are either
 	 --       quantified or immaterial then we can erase the type completely.
-	 | Just (tc, ts)		<- takeTDataTC tt
-	 -> panic stage $ "\n    got data " % tt % "\n\n"
+	 | Just (_tc, _ts)		<- takeTDataTC tt
+	 -> return tt
+	    {- panic stage $ "\n    got data " % tt % "\n\n"
 		% "    TODO: If all the variables in a type are either quantified or immaterial\n"
-		% "          then we can erase the type completely.\n"
+		% "          then we can erase the type completely.\n" -}
 
 	_ -> panic stage $ "no match for " % tt
 
