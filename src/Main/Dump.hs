@@ -18,10 +18,10 @@ dumpCG args fileBase flag name glob
  = do	let pprMode	= catMaybes $ map takePrettyModeOfArg args
 
  	when (elem flag args)
-  	 $ writeFile 
+  	 $ dumpFile
 		(fileBase ++ ".dump-" ++ name ++ ".dc")
 		(pprStr pprMode (punc (semi % nlnl % nl) (C.treeOfGlob glob) % nl))
-	
+
 	return ()
 
 
@@ -30,7 +30,7 @@ dumpCT flag name sourceTree
  = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 
  	when (elem flag ?args)
-  	 $ writeFile 
+  	 $ dumpFile
 		(?pathSourceBase ++ ".dump-" ++ name ++ ".dc")
 		(pprStr pprMode (punc (semi % nlnl % nl) sourceTree % nl))
 
@@ -41,29 +41,29 @@ dumpCT flag name sourceTree
 dumpST flag name sourceTree
  = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
  	when (elem flag ?args)
-  	 $ writeFile 
+  	 $ dumpFile
 		(?pathSourceBase ++ ".dump-" ++ name ++ ".ds")
 		(pprStr pprMode	$ vsep $ map ppr sourceTree)
-	
+
 	return ()
 
 
 -- | Dump a string
 dumpS flag name str
  = do	when (elem flag ?args)
-	 (writeFile 
+	 (dumpFile
 	 	(?pathSourceBase ++ ".dump-" ++ name)
 		str)
-	
+
 	return ()
 
 -- | Dump a dot file
 dumpDot flag name str
  = do	when (elem flag ?args)
-	 (writeFile 
+	 (dumpFile
 	 	(?pathSourceBase ++ ".graph-" ++ name ++ ".dot")
 		str)
-	
+
 	return ()
 
 
@@ -74,23 +74,27 @@ dumpET flag name tree
  = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 
  	when (elem flag ?args)
-  	 (writeFile 
+  	 (dumpFile
 		(?pathSourceBase ++ ".dump-" ++ name ++ ".c")
 		(catInt "\n"
 			$ map (pprStr pprMode)
 			$ tree))
-	
+
 	return ()
 
 
+dumpFile fname text
+ = do	putStrLn $ "  * Dumping: " ++ fname
+	writeFile fname text
+
 -----
 dumpOpen flag name
- = do	
+ = do
 	if elem flag ?args
 	 then do
-	 	h	<- openFile 
-				(?pathSourceBase ++ ".dump-" ++ name ++ ".ds") 
+	 	h	<- openFile
+				(?pathSourceBase ++ ".dump-" ++ name ++ ".ds")
 				WriteMode
 		return $ Just h
-		
+
 	 else	return Nothing
