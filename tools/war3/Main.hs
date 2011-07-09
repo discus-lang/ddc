@@ -60,7 +60,7 @@ main
 	let testFilesSorted
 		= Set.toList testFilesSet
 
-	-- Create test jobs based on the files we have.
+	-- Create test chains based on the files we have.
 	let jobChains :: [[Job]]
 	    jobChains
 		= filter (not . null)
@@ -70,6 +70,7 @@ main
 		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
 		$ testFilesSorted
 
+	-- Run all the chains.
 	runJobChains config jobChains
 
 	return ()
@@ -78,12 +79,15 @@ main
 -- | Run some job chains.
 runJobChains :: Config -> [[Job]] -> IO ()
 runJobChains config jcs
- = do	let chainsTotal	= length jcs
+ = do	
+	-- count the total number of chains for the status display.
+	let chainsTotal	= length jcs
 
-	runParActions 4
+	runParActions (configThreads config)
 		$ map (\chain ix -> runJobChain config chainsTotal ix chain) jcs
 
 	return ()
+
 
 -- | Run a job chain, printing the results to the console.
 --   If any job in the chain fails, then skip the rest.
@@ -94,13 +98,18 @@ runJobChain config chainsTotal chainNum chain
 
 	return ()
 
+
+-- | Dispatch a single job of a chain.
 dispatch :: Config -> Int -> Int -> Int -> Job -> Build ()
 dispatch config chainsTotal chainNum jobNum job
- = do	results		<- dispatchJob job
+ = do	
+	-- Run the job
+	results		<- dispatchJob job
+
+	-- Display the result.
 	dirWorking	<- io $ getCurrentDirectory
 	let useColor	= not $ configBatch config
 	let width	= configFormatPathWidth config
-
 	outLn 	$  parens (padR (length $ show chainsTotal)
 				(ppr $ chainNum + 1) 
 				<> text "."
