@@ -5,6 +5,7 @@ import DDC.War.Config
 import DDC.War.Job
 import DDC.War.JobCreate
 import DDC.War.JobDispatch
+import DDC.War.Result
 import DDC.War.Gang
 import DDC.War.Pretty
 import Util.Options
@@ -12,7 +13,11 @@ import Util.Options.Help
 import BuildBox
 import System.Environment
 import System.Directory
+import System.IO
+import Control.Concurrent
+import Control.Concurrent.STM.TChan
 import Control.Monad
+import Control.Monad.STM
 import Data.List
 import qualified Data.Sequence		as Seq
 import qualified Data.Foldable		as Seq
@@ -70,53 +75,137 @@ main
 		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
 		$ testFilesSorted
 
+	-- Channel for threads to write their results to.
+	(chanResult :: ChanResult)
+		<- atomically $ newTChan
+
 	-- Run all the chains.
-	runJobChains config jobChains
+	runJobChains config chanResult jobChains
 
 	return ()
 
+data JobResult
+	= JobResultDone
+	| JobResult 
+		{ _jobResultChainIx	:: Int
+		, _jobResultJobIx	:: Int
+		, _jobResultJob		:: Job
+		, _jobResultResults	:: [Result] }
+
+type ChanResult
+	= TChan JobResult
+	
 
 -- | Run some job chains.
-runJobChains :: Config -> [[Job]] -> IO ()
-runJobChains config jcs
+runJobChains 
+	:: Config 	-- ^ war configuration
+	-> ChanResult	-- ^ channel to write job results to
+	-> [[Job]]	-- ^ chains of jobs
+	-> IO ()
+
+runJobChains config chanResult jcs
  = do	
-	-- count the total number of chains for the status display.
+	-- Count the total number of chains for the status display.
 	let chainsTotal	= length jcs
+	
+	-- Start up the gang to run all the job chains.
+	gang	<- runActions (configThreads config)
+	 	$ zipWith (runJobChain config chanResult chainsTotal) [1..] jcs
 
-	runParActions (configThreads config)
-		$ map (\chain ix -> runJobChain config chainsTotal ix chain) jcs
+	-- Start up the gang controller that manages the console and handles
+	-- user input.
+	forkIO $ controller config gang chainsTotal chanResult
 
+	-- Wait until the gang is finished running chains.
+	waitForGangState gang GangFinished
 	return ()
 
 
--- | Run a job chain, printing the results to the console.
---   If any job in the chain fails, then skip the rest.
-runJobChain :: Config -> Int -> Int -> [Job] -> IO ()
-runJobChain config chainsTotal chainNum chain
- = do	runBuild ("/tmp/war" ++ show chainNum) 
- 		$ zipWithM_ (dispatch config chainsTotal chainNum) [0..] chain
+controller 
+	:: Config
+	-> Gang
+	-> Int		-- ^ total number of chains
+	-> ChanResult	-- ^ channel to receive results from
+	-> IO ()
 
-	return ()
+controller config gang chainsTotal chanResult
+ = go_start
+ where	go_start 
+	 = do	-- See if there is any input on the console
+		gotInput	<- hReady stdin
+	 	if gotInput
+		 then go_input
+		 else go_checkResult
+	
+	go_input
+	 = do	putStrLn "Interrupt. Waiting for running jobs (CTRL-C kills)..."
+	 	flushGang gang
+			
+	go_checkResult
+	 = do	isEmpty <- atomically $ isEmptyTChan chanResult
+		if isEmpty 
+		 then go_start
+		 else do
+			jobResult	<- atomically $ readTChan chanResult
+			case jobResult of
+	 	 	 JobResultDone	-> return ()
+	 	 	 JobResult{}	
+	  	  	  -> do	controller_ok config chainsTotal jobResult
+ 				go_start
 
 
--- | Dispatch a single job of a chain.
-dispatch :: Config -> Int -> Int -> Int -> Job -> Build ()
-dispatch config chainsTotal chainNum jobNum job
- = do	
-	-- Run the job
-	results		<- dispatchJob job
-
-	-- Display the result.
-	dirWorking	<- io $ getCurrentDirectory
+controller_ok config chainsTotal (JobResult chainIx jobIx job results)
+ = do	-- Display the result.
+	dirWorking	<- getCurrentDirectory
 	let useColor	= not $ configBatch config
 	let width	= configFormatPathWidth config
-	outLn 	$  parens (padR (length $ show chainsTotal)
-				(ppr $ chainNum + 1) 
+
+	putStrLn 
+		$ render 
+		$ parens (padR (length $ show chainsTotal)
+				(ppr $ chainIx) 
 				<> text "."
-				<> ppr (jobNum + 1)
+				<> ppr (jobIx + 1)
 				<> text "/" 
 				<> ppr chainsTotal)
 		<> space
 		<> pprJobResult width useColor dirWorking job results
 
+
+-- | Run a job chain, printing the results to the console.
+--   If any job in the chain fails, then skip the rest.
+runJobChain 
+	:: Config		-- ^ war configuration
+	-> ChanResult		-- ^ channel to write job results to
+	-> Int			-- ^ total number of chains
+	-> Int			-- ^ index of this chain
+	-> [Job]		-- ^ chain of jobs to run
+	-> IO ()
+
+runJobChain config chanResult chainsTotal chainNum chain
+ = do	runBuild ("/tmp/war" ++ show chainNum) 
+ 		$ zipWithM_ (runJob config chanResult chainNum)
+			[1..]
+			chain
+
+	return ()
+
+-- | Dispatch a single job of a chain.
+runJob
+	:: Config 		-- ^ war configuration
+	-> ChanResult		-- ^ channel to write results to
+	-> Int			-- ^ index of this chain
+	-> Int			-- ^ index of this job of the chain
+	-> Job			-- ^ the job to run
+	-> Build ()
+
+runJob config chanResult chainNum jobNum job
+ = do	
+	-- Run the job
+	results		<- dispatchJob job
+	
+	-- Push the results into the channel for display
+	io $ atomically $ writeTChan chanResult 
+		(JobResult chainNum jobNum job results)
+		
 	return ()

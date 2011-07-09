@@ -96,4 +96,5 @@ DDC_PACKAGES	:= \
 	-package parsec \
 	-package QuickCheck \
 	-package buildbox \
-	-package text
+	-package text \
+	-package stm
