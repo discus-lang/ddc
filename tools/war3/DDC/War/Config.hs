@@ -7,7 +7,7 @@ import DDC.War.Options
 import DDC.War.Way
 import Util
 
-
+-- | Configuration information read from command line arguments.
 data Config
 	= Config {
  	-- | Raw options list passed to war.
@@ -37,6 +37,7 @@ data Config
 	deriving (Show, Eq)
 
 
+-- | Load command line arguments into a `Config`.
 loadConfig :: [Opt] -> Config
 loadConfig options
  = let

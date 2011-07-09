@@ -11,7 +11,6 @@ import Data.ListUtil
 import Control.Monad
 
 
-
 -- | Compile a Haskell Source File
 jobCompileHS :: Job -> Build [Result]
 jobCompileHS (JobCompileHS

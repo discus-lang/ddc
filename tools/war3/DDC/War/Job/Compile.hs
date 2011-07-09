@@ -12,7 +12,7 @@ import Control.Monad
 
 
 -- | Compile a Disciple source file.
---   TODO: Take a parameter saying whether it's alowd to fail with error.
+--   TODO: Take a parameter saying whether it's permitted to fail with error.
 --         Don't just duplicate the code again like in war2.
 
 jobCompile :: Job -> Build [Result]

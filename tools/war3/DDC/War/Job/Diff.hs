@@ -32,4 +32,4 @@ jobDiff (JobDiff testName _wayName
 	if strOut == ""
 	 then return []
 	 else return [ResultDiff fileOut fileDiff]
-	
+
