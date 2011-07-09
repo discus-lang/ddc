@@ -47,8 +47,9 @@ pprJobResult width useColor workingDir job aspects
 
 	-- CompileHS ----------------------------
 	JobCompileHS{}
+	 | Just time	<- takeResultTime aspects
 	 -> pprResult (jobFile job) "compile" 
-		Black	(text "ok")
+		Black	(text "time" <> (parens $ padR 7 $ ppr time))
 		
 	-- Run ----------------------------------
 	-- run was ok.

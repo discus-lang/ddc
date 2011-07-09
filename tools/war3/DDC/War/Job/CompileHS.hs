@@ -47,15 +47,16 @@ jobCompileHS (JobCompileHS
 	
 	genBuildMk buildMk mainBin' srcCopyHS'
 	
-	(code, strOut, strErr)
-	  <- io $ systemTeeIO False
+	(time, (code, strOut, strErr))
+	  <- runTimedCommand
+	  $  io $ systemTeeIO False
 		("make -f " ++ buildMk)
 		""
-
 	atomicWriteFile mainCompOut strOut
 	atomicWriteFile mainCompErr strErr
 
-	return []
+	let ftime	= fromRational $ toRational time
+	return [ ResultAspect $ Time TotalWall `secs` ftime ]
 	
 	
 genBuildMk :: FilePath -> String -> String -> Build ()
