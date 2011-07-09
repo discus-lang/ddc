@@ -99,7 +99,7 @@ showFloat32 f
 	fs	= new&{FlatString} maxLen
 	strU	= fs.unsafeUnbox
 
-	show_danger_snprintf strU maxLenU "%f"# fU
+	show_danger_snprintf strU maxLenU "%f"# (primCast_Float32U_Float64U fU)
 	fs.setLengthU (strlen strU)
 
 	SChunk fs
