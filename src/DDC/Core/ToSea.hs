@@ -210,9 +210,11 @@ splitSuper accArgs xx
 
 -- CtorDef ----------------------------------------------------------------------------------------
 toSeaCtorDef :: T.CtorDef -> E.CtorDef
-toSeaCtorDef (T.CtorDef vCtor tCtor arity tag fields types)
+toSeaCtorDef (T.CtorDef vCtor tCtor arity tag fields)
  = let	tCtor'	= toSeaT tCtor
-   in	E.CtorDef vCtor tCtor' arity tag fields (map toSeaT types)
+	-- Drop the last one because thats the type of the constructor.
+	ptypes	= map toSeaT $ init $ T.flattenTFuns $ T.stripToBodyT tCtor
+   in	E.CtorDef vCtor tCtor' arity tag fields ptypes
 
 
 -- Exp --------------------------------------------------------------------------------------------

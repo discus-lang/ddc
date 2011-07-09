@@ -240,8 +240,7 @@ makeCtorDef vData vsParams tag (S.CtorDef vCtor fields)
 		, T.ctorDefType		= tCtor
 		, T.ctorDefArity	= length fields
 		, T.ctorDefTag		= tag
-		, T.ctorDefFields	= Map.fromList fieldIxs
-		, T.ctorDefFieldTypes	= map S.dataFieldType fields }
+		, T.ctorDefFields	= Map.fromList fieldIxs }
 
 
 

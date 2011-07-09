@@ -47,8 +47,7 @@ createCtorDef vData vsData tag vCtor tsCtor
 	, ctorDefType		= createCtorType vData vsData vCtor tsCtor
 	, ctorDefArity		= length tsCtor
 	, ctorDefTag		= tag
-	, ctorDefFields		= Map.empty
-	, ctorDefFieldTypes	= [] }
+	, ctorDefFields		= Map.empty }
 
 
 -- | Filthily create a `DataDef`

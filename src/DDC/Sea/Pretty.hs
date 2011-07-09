@@ -130,13 +130,12 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 instance Pretty CtorDef PMode where
  ppr xx
   = case xx of
-  	CtorDef v t arity tag fs ts
+  	CtorDef v t arity tag fs _ts
  	 -> v 	% nl
 		%> 	( ":: " % ppr t % nl
 			% "with { ARITY  = " % arity	% nl
  			% "     , TAG    = " % tag      % nl
-			% "     , FIELDS = " % fs 		% nl
-			% "     , TYPES  = " % ts		% "}")
+			% "     , FIELDS = " % fs 		% "}")
 
 
 -- Stmt --------------------------------------------------------------------------------------------

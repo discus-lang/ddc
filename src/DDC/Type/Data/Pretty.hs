@@ -38,12 +38,11 @@ instance Pretty DataDef PMode where
 
 
 instance Pretty CtorDef PMode where
- ppr (CtorDef v t arity tag fs ts)
+ ppr (CtorDef v t arity tag fs)
   = v 	% nl %> ( "::" %% prettyTypeSplit t % nl
 		% vcat	[ "with { ARITY  = " % arity
 			, "     , TAG    = " % tag
-			, "     , FIELDS = " % fs
-			, "     , TYPES  = " % ts %% "}"])
+			, "     , FIELDS = " % fs %% "}"])
 
 
 -- | Pretty print a data type definition in source syntax.
