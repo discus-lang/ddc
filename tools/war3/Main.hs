@@ -115,11 +115,13 @@ runJobChains config chanResult jcs
 	forkIO	$ controller config gang chainsTotal chanResult
 		`finally` (putMVar varControllerDone ())
 
-	-- Wait until the gang is finished running chains.
-	waitForGangState gang GangFinished
 
 	-- Wait until the controller to finished
 	takeMVar varControllerDone
+
+	-- Wait until the gang is finished running chains, 
+	-- or has been killed.
+	joinGang gang
 	
 	return ()
 

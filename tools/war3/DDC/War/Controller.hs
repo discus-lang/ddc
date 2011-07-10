@@ -12,8 +12,11 @@ import BuildBox
 import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad.STM
+import Control.Monad
 import System.IO
 import System.Directory
+import qualified System.Cmd
+
 
 -- | Carries the result of a single test job.
 data JobResult
@@ -68,19 +71,26 @@ controller config gang chainsTotal chanResult
 		 -- No job results in channel, but the gang is still running.
 		 -- Spin until something else happens.
 		 else do
-			threadDelay 100000
+			threadDelay 10000
 			go_start
 
 	     -- We've got a job result from the input channel.
 	     -- Read the result and pass it off to the result handler.
 	     else do
 		jobResult <- atomically $ readTChan chanResult
-		handleResult config gang chainsTotal jobResult
-		go_start
+		keepGoing <- handleResult config gang chainsTotal jobResult
+		if keepGoing
+		 then go_start
+		 else do
+			killGang gang
+			return ()
+			
 
 
 -- | Handle a job result.
-handleResult :: Config -> Gang -> Int -> JobResult -> IO ()
+--   Returns True if the controller should continue, 
+--   or False if we should shut down and return to the caller.
+handleResult :: Config -> Gang -> Int -> JobResult -> IO Bool
 handleResult config gang chainsTotal (JobResult chainIx jobIx job results)
 
  -- In interactive mode, if the test result is different than expected
@@ -104,20 +114,22 @@ handleResult config gang chainsTotal (JobResult chainIx jobIx job results)
 	-- Ask the user what to do about it, 
 	--  and pause the gang while we're waiting for user input
 	pauseGang gang
-	handleResult_askDiff fileRef fileOut fileDiff
-	resumeGang gang
+	keepGoing	<- handleResult_askDiff fileRef fileOut fileDiff
+	when keepGoing
+	 $ resumeGang gang
 
-	return ()
+	return keepGoing
 
  -- Just print the test result to stdout.
  | otherwise
  = do	printResult config chainsTotal chainIx jobIx job results
+	return True
 
 
 handleResult_askDiff fileRef fileOut fileDiff
  = do	putStr	$  replicate 80 '-' ++ "\n"
 		++ "    (ENTER) continue   (e) show expected    (a) show actual\n"
-		++ "    (q)     quit       (u) update expected\n"
+		++ "    (CONTROL-C) quit   (u) update expected\n"
 		++ "\n"
 		++ "? "
 
@@ -127,11 +139,28 @@ handleResult_askDiff fileRef fileOut fileDiff
 	let result
 		-- continue, ignoring that the test gave a different result.
 		| ""		<- cmd
-		= return ()
+		= return True
 
-		-- Quit
-		| ('q': _)	<- cmd
-		= do	exitSuccess
+		-- Print the expected output
+		| ('e': _)	<- cmd
+		= do	str	<- readFile fileRef
+			putStr	$  replicate 80 '-' ++ "\n"
+			putStr	str
+			handleResult_askDiff fileRef fileOut fileDiff
+
+		-- Print the actual output
+		| ('a': _)	<- cmd
+		= do	str	<- readFile fileOut
+			putStr	$  replicate 80 '-' ++ "\n"
+			putStr	str
+			handleResult_askDiff fileRef fileOut fileDiff
+
+		-- Update the expected output with the actual one
+		| ('u': _)	<- cmd
+		= do	System.Cmd.system 
+				$ "cp " ++ fileOut ++ " " ++ fileRef
+
+			return True
 
 		-- Invalid Command
 		| otherwise
