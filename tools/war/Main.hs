@@ -193,11 +193,10 @@ hookFinished_ask config test way result
 	= do	
 		putStr 	$ pprResult (not $ configBatch config) test way result ++ "\n"
 		putStr	$  "\n"
-			++ "-- Output Differs  ----------------------------------------------------------\n"
+			++ "-- Output Differs  -----------------------------------------------------------\n"
 			++ "   expected file: " ++ fileExp	++	"\n"
 			++ "     actual file: " ++ fileOut	++ 	"\n"
-			++ replicate 100 '-' ++ "\n"
-
+			++ replicate 80 '-' ++ "\n"
 		str	<- readFile fileDiff
 		putStr	str
 		hFlush stdout
@@ -219,7 +218,7 @@ hookFinished_askDiff
 	test
 	res@(Left (TestFailDiff fileExp fileOut fileDiff))
  = do	
-	putStr	$  replicate 100 '-' ++ "\n"
+	putStr	$  replicate 80 '-' ++ "\n"
 		++ "    (ENTER) continue   (e) show expected    (a) show actual\n"
 		++ "    (q)     quit       (u) update expected\n"
 		++ "\n"
