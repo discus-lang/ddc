@@ -54,8 +54,9 @@ parse	fileName
         -- Emit a nice error message if the source file is empty or only contains comments.
 	--     Otherwise parser will bail with "unexpected end of input".
 	--     Lexer has dropped all comments by now, too.
-	when (toksSource == [])
-	  $ exitWithUserError ?args [ErrorParseNoCode]
+	when (toksSource == []) $
+	  let sp = SourcePos (fileName,1,1)
+	  in exitWithUserError ?args [ErrorParsePos sp "Source file contains no code."]
 
 	let toks	= scan source
 

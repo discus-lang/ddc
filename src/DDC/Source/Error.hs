@@ -31,9 +31,6 @@ data Error
 	-- | Parse error on this token.
 	| ErrorParse			TokenP String
 
-	-- | Source file was either empty or only contained comments.
-	| ErrorParseNoCode
-
 	-- | Parse error at this position.
 	| ErrorParsePos			SourcePos String
 
@@ -140,9 +137,6 @@ instance Pretty Error PMode where
  ppr (ErrorParse tok str)
  	= tokErr tok
 	$ "Parse error: " % str
-
- ppr (ErrorParseNoCode)
- 	= ppr $ indent "Parse error: Source file contains no code."
 
  ppr (ErrorParsePos sp str)
  	= spErr sp
