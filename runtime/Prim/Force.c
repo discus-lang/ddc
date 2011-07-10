@@ -1,6 +1,10 @@
 
 #include "../Runtime.h"
 
+#if _DDC_DEBUG
+#include <assert.h>
+#endif
+
 // If this object is a suspended application, then force it.
 Obj*	_force (Obj* obj)
 {
