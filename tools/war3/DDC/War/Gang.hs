@@ -2,11 +2,12 @@
 module DDC.War.Gang
 	( Gang
 	, GangState(..)
+	, getGangState
 	, startGang
 	, pauseGang
 	, flushGang
 	, waitForGangState
-	, runActions )
+	, forkGangActions )
 where
 import Control.Concurrent
 import Data.IORef
@@ -35,6 +36,11 @@ data GangState
 	| GangFinished
 	deriving (Show, Eq)
 
+
+-- | Get the state of a gang
+getGangState :: Gang -> IO GangState
+getGangState gang
+ = readIORef (gangState gang)
 
 -- | Start a paused gang, to allow it to continue running actions.
 startGang :: Gang -> IO ()
@@ -68,12 +74,12 @@ waitForGangState gang waitState
 
 
 -- | Start up a new gang to run the given actions.
-runActions 
+forkGangActions
 	:: Int 			-- ^ number of worker threads in the gang
 	-> [IO ()] 		-- ^ actions to run, which 
 	-> IO Gang
 
-runActions threads actions
+forkGangActions threads actions
  = do	semThreads		<- newQSemN threads
 	refState		<- newIORef GangRunning
 	refActionsRunning	<- newIORef 0

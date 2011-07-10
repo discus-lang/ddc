@@ -19,6 +19,7 @@ import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad
 import Control.Monad.STM
+import Control.Exception
 import Data.List
 import qualified Data.Sequence		as Seq
 import qualified Data.Foldable		as Seq
@@ -87,12 +88,11 @@ main
 
 -------------------------------------------------------------------------------
 data JobResult
-	= JobResultDone
-	| JobResult 
-		{ _jobResultChainIx	:: Int
-		, _jobResultJobIx	:: Int
-		, _jobResultJob		:: Job
-		, _jobResultResults	:: [Result] }
+ 	= JobResult 
+	{ _jobResultChainIx	:: Int
+	, _jobResultJobIx	:: Int
+	, _jobResultJob		:: Job
+	, _jobResultResults	:: [Result] }
 
 type ChanResult
 	= TChan JobResult
@@ -110,18 +110,24 @@ runJobChains config chanResult jcs
 	-- Count the total number of chains for the status display.
 	let chainsTotal	= length jcs
 	
-	-- Start up the gang to run all the job chains.
-	gang	<- runActions (configThreads config)
+	-- Fork a gang to run all the job chains.
+	gang	<- forkGangActions (configThreads config)
 	 	$ zipWith (runJobChain config chanResult chainsTotal)
 			[1..]
 			jcs
 
-	-- Start up the gang controller that manages the console and handles
+	-- Fork the gang controller that manages the console and handles
 	-- user input.
-	forkIO $ controller config gang chainsTotal chanResult
+	varControllerDone	<- newEmptyMVar
+	forkIO	$ controller config gang chainsTotal chanResult
+		`finally` (putMVar varControllerDone ())
 
 	-- Wait until the gang is finished running chains.
 	waitForGangState gang GangFinished
+
+	-- Wait until the controller to finished
+	takeMVar varControllerDone
+	
 	return ()
 
 
@@ -134,31 +140,33 @@ controller
 
 controller config gang chainsTotal chanResult
  = go_start
- where	go_start 
-	 = do	-- See if there is any input on the console
-		gotInput	<- hReady stdin
-	 	if gotInput
-		 then go_input
-		 else go_checkResult
+ where	
+	-- See if there is an input on the console.
+	go_start 
+	 =  hReady stdin >>= \gotInput
+	 -> if gotInput
+		then go_input
+		else go_checkResult
 	
 	go_input
 	 = do	putStrLn "Interrupt. Waiting for running jobs (CTRL-C kills)..."
 	 	flushGang gang
 			
 	go_checkResult
-	 = do	isEmpty <- atomically $ isEmptyTChan chanResult
-		if isEmpty 
-		 then do
+	 =  (atomically $ isEmptyTChan chanResult) >>= \isEmpty
+	 -> if isEmpty
+	     then do
+		gangState	<- getGangState gang
+		if gangState == GangFinished
+		 then	return ()
+		 else do
 			threadDelay 100000
 			go_start
-			
-		 else do
-			jobResult	<- atomically $ readTChan chanResult
-			case jobResult of
-	 	 	 JobResultDone	-> return ()
-	 	 	 JobResult{}	
-	  	  	  -> do	controller_ok config chainsTotal jobResult
- 				go_start
+
+	     else do
+		jobResult	<- atomically $ readTChan chanResult
+		controller_ok config chainsTotal jobResult
+		go_start
 
 
 controller_ok config chainsTotal (JobResult chainIx jobIx job results)
@@ -172,11 +180,13 @@ controller_ok config chainsTotal (JobResult chainIx jobIx job results)
 		$ parens (padR (length $ show chainsTotal)
 				(ppr $ chainIx) 
 				<> text "."
-				<> ppr (jobIx + 1)
+				<> ppr jobIx
 				<> text "/" 
 				<> ppr chainsTotal)
 		<> space
 		<> pprJobResult width useColor dirWorking job results
+
+	hFlush stdout
 
 
 -- | Get a unique(ish) id for this process.
