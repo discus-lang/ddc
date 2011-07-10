@@ -51,6 +51,12 @@ parse	fileName
 	let (toksSource, toksPragma)
 		= scanModuleWithOffside source
 
+        -- Emit a nice error message if the source file is empty or only contains comments.
+	--     Otherwise parser will bail with "unexpected end of input".
+	--     Lexer has dropped all comments by now, too.
+	when (toksSource == [])
+	  $ exitWithUserError ?args [ErrorParseNoCode]
+
 	let toks	= scan source
 
 	dumpS DumpSourceTokens "source-tokens-offside" 	$ show toksSource

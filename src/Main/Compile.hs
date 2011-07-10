@@ -104,18 +104,6 @@ compileFile setup scrapes sModule blessMain
 compileFile_parse
 	setup scrapes sRoot sModule
 	importDirs blessMain sSource
-
- -- Emit a nice error message if the source file is empty.
- --	If we parse an empty file to happy it will bail with "reading EOF!" which isn't as nice.
- | words sSource == []
- = do	let Just pathSource	= M.scrapePathSource sRoot
-	dirWorking		<- getCurrentDirectory
-	let pathRelative	=  "./" ++ makeRelative dirWorking pathSource
-	
-   	exitWithUserError (setupArgs setup) 
-   		[pathRelative % nl % indent "Source file is empty."]
-
- | otherwise
  = {-# SCC "Main/compileFile_parse" #-}
    do	let ?args		= setupArgs setup
 	let args		= setupArgs setup
