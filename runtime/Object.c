@@ -43,33 +43,45 @@ enum _ObjType
 
 // Determine the total size of this object.
 size_t	_objSize (Obj* obj)
-{
+{	size_t s = 0;
+
 	switch (_objType(obj)) {
 	 case _ObjTypeThunk:
-		return sizeof (Thunk) + sizeof(Obj*) * ((Thunk*)obj) ->arity;
+		s = sizeof (Thunk) + sizeof(Obj*) * ((Thunk*)obj) ->arity;
+		break ;
 
 	 case _ObjTypeData:
-		return sizeof (Data)  + sizeof(Obj*) * ((Data*) obj) ->arity;
+		s = sizeof (Data)  + sizeof(Obj*) * ((Data*) obj) ->arity;
+		break ;
 
 	 case _ObjTypeDataR:
-		return ((DataR*)obj) ->size;
+		s = ((DataR*)obj) ->size;
+		break ;
 
 	 case _ObjTypeDataRS:
-		return sizeof (DataRS) + _getObjArg(obj) * 4;
+		s = sizeof (DataRS) + _getObjArg(obj) * 4;
+		break ;
 
 	 case _ObjTypeDataM:
-		return ((DataM*)obj) ->size;
+		s = ((DataM*)obj) ->size;
+		break ;
 
 	 case _ObjTypeSuspIndir:
-		return sizeof (SuspIndir) + sizeof(Obj*) * ((SuspIndir*)obj) ->arity;
+		s = sizeof (SuspIndir) + sizeof(Obj*) * ((SuspIndir*)obj) ->arity;
+		break ;
 
-	 default:			break;
+	 default:
+		_ERROR ("Unknown object type.\n");
+		_ERROR ("  obj      = %p\n",	obj);
+		_ERROR ("  tagFlags = 0x%08x\n", 	obj ->tagFlags);
+		_PANIC ("Can't take the size of an unknown object.\n");
+		break;
 	}
 
-	_ERROR ("Unknown object type.\n");
-	_ERROR ("  obj      = %p\n",	obj);
-	_ERROR ("  tagFlags = 0x%08x\n", 	obj ->tagFlags);
-	_PANIC ("Can't take the size of an unknown object.\n");
+	if (s == 0)
+		_PANIC ("Object %p should have size > 0.\n", obj) ;
+
+	return s ;
 }
 
 // Determine whether the object is anchored and cannot
