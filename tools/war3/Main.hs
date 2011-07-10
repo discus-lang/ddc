@@ -1,6 +1,6 @@
 
 import DDC.War.Options
-import DDC.War.Way	()
+import DDC.War.Way
 import DDC.War.Config
 import DDC.War.Job
 import DDC.War.JobCreate
@@ -65,17 +65,23 @@ main
 		$  testFilesRaw
 
 	let testFilesSorted
-		= Set.toList testFilesSet
-
-	-- Create test chains based on the files we have.
-	let jobChains :: [[Job]]
-	    jobChains
-		= filter (not . null)
-		$ map    (createJobs "normal" testFilesSet)
-		$ filter (not . isInfixOf "skip-")	-- skip over skippable files.
+		= filter (not . isInfixOf "skip-")	-- skip over skippable files.
 		$ filter (not . isInfixOf "-skip")
 		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
-		$ testFilesSorted
+		$ Set.toList testFilesSet
+
+	-- Create test chains based on the files we have.
+	let ways'
+		= case configWays config of
+		   []	-> [Way "std" [] []]
+		   ways	-> ways
+
+	let jobChains :: [[Job]]
+	    jobChains
+		= concat
+		$ map (filter (not . null))
+		$ [ map (\way -> createJobs config way testFilesSet file) ways'
+			| file <- testFilesSorted]
 
 	-- Channel for threads to write their results to.
 	(chanResult :: ChanResult)

@@ -2,7 +2,9 @@
 module DDC.War.JobCreate
 	(createJobs)
 where
+import DDC.War.Config
 import DDC.War.Job
+import DDC.War.Way
 import DDC.War.FileType
 import System.FilePath
 import qualified Data.Set	as Set
@@ -13,16 +15,17 @@ import Data.Set			(Set)
 --   are available. If any of the jobs in a test fail unexpectedly then the other jobs
 --   in that test are ignored.
 createJobs 
-	:: String 		-- ^ Name of the way we're compiling, used to create build dirs.
+	:: Config
+	-> Way 			-- ^ Name of the way we're compiling, used to create build dirs.
 	-> Set FilePath		-- ^ All files available. The jobs created for a particular file
 				--   like Main.ds depend on the existance of others like Main.error.check
 	-> FilePath		-- ^ File we want to create jobs for.
 	-> [Job]
 
-createJobs wayName allFiles filePath
+createJobs config way allFiles filePath
  = let	fileName	= takeFileName filePath
 	sourceDir	= takeDirectory  filePath
-	buildDir	= sourceDir </> "war-" ++ wayName
+	buildDir	= sourceDir </> "war-" ++ wayName way
 	testName	= sourceDir
    in	case classifyFile filePath of
 	 -- Ignore boring files.
@@ -47,12 +50,12 @@ createJobs wayName allFiles filePath
 		 mainErrorCheck		= sourceDir </> "Main.error.check"
 		 shouldSucceed		= not $ Set.member mainErrorCheck allFiles
 	     
-		 shell			= JobShell testName wayName 
+		 shell			= JobShell testName (wayName way)
 						filePath sourceDir buildDir
 						mainShellStdout mainShellStderr
 						shouldSucceed
 
-		 diffError		= JobDiff testName wayName mainErrorCheck
+		 diffError		= JobDiff testName (wayName way) mainErrorCheck
 						mainShellStderr mainShellStderrDiff
 
  	     in	[shell] ++ (if shouldSucceed then [] else [diffError])
@@ -80,24 +83,25 @@ createJobs wayName allFiles filePath
 		 shouldDiffStderr = Set.member mainStderrCheck allFiles
 
 		 -- compile the .ds into a .bin
-		 compile 	= JobCompile 	testName wayName filePath [] ["-M30M"]
+		 compile 	= JobCompile 	testName (wayName way) filePath 
+		 				(wayOptsComp way) ["-M30M"]
 						buildDir mainCompStdout mainCompStderr 
 						(Just mainBin) shouldSucceed
 
 		 -- run the binary
-		 run		= JobRun  	testName wayName filePath mainBin 
+		 run		= JobRun  	testName (wayName way) filePath mainBin 
 						mainRunStdout mainRunStderr	
 			
 		 -- diff errors produced by the compilation
-		 diffError	= JobDiff	testName wayName mainErrorCheck
+		 diffError	= JobDiff	testName (wayName way) mainErrorCheck
 						mainCompStderr mainCompDiff
 		 
 		 -- diff the stdout of the run
-		 diffStdout	= JobDiff	testName wayName mainStdoutCheck
+		 diffStdout	= JobDiff	testName (wayName way) mainStdoutCheck
 						mainRunStdout mainStdoutDiff
 
 		 -- diff the stderr of the run
-		 diffStderr	= JobDiff	testName wayName mainStderrCheck
+		 diffStderr	= JobDiff	testName (wayName way) mainStderrCheck
 						mainRunStderr mainStderrDiff
 		
 	     in	if Set.member mainSH allFiles
@@ -121,11 +125,12 @@ createJobs wayName allFiles filePath
 		 testErrorCheck	= sourceDir </> replaceExtension fileName ".error.check"
 		 shouldSucceed	= not $ Set.member testErrorCheck allFiles
 
-		 compile	= JobCompile	testName wayName filePath [] ["-M30M"]
+		 compile	= JobCompile	testName (wayName way) filePath 
+						(wayOptsComp way) ["-M30M"]
 						buildDir testCompStdout testCompStderr
 						Nothing shouldSucceed
 		 
-		 diffError	= JobDiff	testName wayName testErrorCheck 
+		 diffError	= JobDiff	testName (wayName way) testErrorCheck 
 						testCompStderr testCompDiff
 
 		 -- Don't do anything if there is a Main.ds here.
@@ -144,11 +149,11 @@ createJobs wayName allFiles filePath
 		 mainRunStdout	= buildDir </> "Main.run.stdout"
 		 mainRunStderr	= buildDir </> "Main.run.stderr"
 
-		 compile 	= JobCompileHS 	testName wayName filePath []
+		 compile 	= JobCompileHS 	testName (wayName way) filePath []
 						buildDir mainCompStdout mainCompStderr 
 						mainBin
 
-		 run		= JobRun  	testName wayName filePath mainBin 
+		 run		= JobRun  	testName (wayName way) filePath mainBin 
 						mainRunStdout mainRunStderr	
 		
 	     in	 [compile, run]

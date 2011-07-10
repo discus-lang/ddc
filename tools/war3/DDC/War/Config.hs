@@ -49,15 +49,15 @@ loadConfig options
 
 	compWayPairs_		= [makeWayPair opts | OptCompWay opts	<- options ]
 	compWayPairs		= if null compWayPairs_ 
-					then [("normal", [])] 
+					then [("std", [])] 
 					else compWayPairs_
 
 	runWayPairs_		= [makeWayPair opts | OptRunWay  opts	<- options ]
 	runWayPairs		= if null runWayPairs_ 
-					then [("normal", [])]
+					then [("std", [])]
 					else runWayPairs_
 
-	ways			= [ WayOpts (compName ++ "-" ++ runName) compOpts runOpts
+	ways			= [ Way (compName ++ "-" ++ runName) compOpts runOpts
 					| (compName, compOpts)	<- compWayPairs
 					, (runName,  runOpts)	<- runWayPairs ]
 
