@@ -14,6 +14,7 @@ import BuildBox
 import System.Environment
 import System.Directory
 import System.IO
+import System.Random
 import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad
@@ -84,6 +85,7 @@ main
 
 	return ()
 
+-------------------------------------------------------------------------------
 data JobResult
 	= JobResultDone
 	| JobResult 
@@ -110,7 +112,9 @@ runJobChains config chanResult jcs
 	
 	-- Start up the gang to run all the job chains.
 	gang	<- runActions (configThreads config)
-	 	$ zipWith (runJobChain config chanResult chainsTotal) [1..] jcs
+	 	$ zipWith (runJobChain config chanResult chainsTotal)
+			[1..]
+			jcs
 
 	-- Start up the gang controller that manages the console and handles
 	-- user input.
@@ -172,6 +176,12 @@ controller_ok config chainsTotal (JobResult chainIx jobIx job results)
 		<> pprJobResult width useColor dirWorking job results
 
 
+-- | Get a unique(ish) id for this process.
+--   The random seeds the global generator with the cpu time in psecs, which should be good enough.
+getUniqueId :: IO Integer
+getUniqueId
+ 	= randomRIO (0, 1000000000)	
+
 -- | Run a job chain, printing the results to the console.
 --   If any job in the chain fails, then skip the rest.
 runJobChain 
@@ -183,7 +193,14 @@ runJobChain
 	-> IO ()
 
 runJobChain config chanResult chainsTotal chainNum chain
- = do	runBuild ("/tmp/war" ++ show chainNum) 
+ = do	uid		<- getUniqueId
+	let state	= (buildStateDefault uid ("/tmp/war" ++ show chainNum))
+			{ buildStateLogSystem
+				= if configDebug config
+					then Just stderr
+					else Nothing }
+	
+	runBuildWithState state
  		$ zipWithM_ (runJob config chanResult chainNum)
 			[1..]
 			chain

@@ -30,7 +30,7 @@ pprJobResult width useColor workingDir job aspects
 	JobCompile{}
 	 | or $ map isResultUnexpectedFailure aspects
 	 -> pprResult (jobFile job) "compile" 
-		Red	(text "compile fail")
+		Red	(text "failed")
 		
 	-- compile should have failed, but didn't.
 	JobCompile{}
@@ -59,6 +59,16 @@ pprJobResult width useColor workingDir job aspects
 		Green	(text "time" <> (parens $ padR 7 $ ppr time))
 
 	-- TODO: Handle run failure.
+	
+	-- Shell --------------------------------
+	JobShell{}
+	 | elem QuirkFailed $ takeQuirks aspects
+	 -> pprResult (jobShellSource job) "failed"
+		Red 	(text "failed")
+
+	 | otherwise
+	 -> pprResult (jobShellSource job) "failed"
+		Black 	(text "ok")
 	
 	-- Diff ---------------------------------
 	-- diffed files were different.

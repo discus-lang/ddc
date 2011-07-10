@@ -5,9 +5,8 @@ module DDC.War.Result
 	, isResultUnexpectedFailure
 	, isResultUnexpectedSuccess
 	, takeResultTime
-	, takeResultDiff)
-	
-	
+	, takeResultDiff
+	, takeQuirks )
 where
 import BuildBox
 import Data.Maybe
@@ -40,3 +39,7 @@ takeResultTime as
 takeResultDiff :: [Result] -> Maybe (String, String)
 takeResultDiff as
  	= listToMaybe [(fileOut, fileDiff) | a@(ResultDiff fileOut fileDiff) <- as]
+
+takeQuirks :: [Result] -> [Quirk]
+takeQuirks rs
+	= [q | ResultQuirk q <- rs]

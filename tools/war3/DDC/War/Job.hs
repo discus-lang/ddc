@@ -66,6 +66,33 @@ data Job
 		, jobMainBin		:: FilePath }
 
 
+	-- | Run a shell script.
+	| JobShell {
+		-- | Name of the test this job is a part of.
+		  jobTestName		:: String
+
+		-- | Name of the way we're running this test.
+		, jobWayName		:: String
+
+		-- | Shell script to run
+		, jobShellSource	:: FilePath
+
+		-- | Source dir that the script is in.
+		, jobSourceDir		:: FilePath
+
+		-- | Scratch dir that the script can write files to.
+		, jobScratchDir		:: FilePath
+
+		-- | Put what DDC says to stdout here.
+		, jobShellStdout	:: FilePath
+		
+		-- | Put what DDC says to stderr here.
+		, jobShellStderr	:: FilePath 
+
+		-- | True if the compile is expected to succeed, else not.
+		, jobShouldSucceed	:: Bool }
+
+
 	-- | Run a binary.
 	| JobRun {
 		-- | Name of the test this job is a part of.

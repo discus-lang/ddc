@@ -53,7 +53,7 @@ jobCompile job@(JobCompile
 
 			-- Build the program.
 	 		runTimedCommand 
-	 		 $ io $ systemTeeIO False 
+	 		 $ systemTee False 
 				(ddcBin'
 				++ " -v -make "	++ srcCopyDS'
 				++ " -o "	++ mainBin'
@@ -65,7 +65,7 @@ jobCompile job@(JobCompile
 		-- Compile the program.
 		| otherwise
 		=	runTimedCommand 
-	 		 $ io $ systemTeeIO False
+	 		 $ systemTee False
 				(ddcBin'
 				++ " -c "	++ srcCopyDS'
 				++ " " 		++ catInt " " optionsDDC

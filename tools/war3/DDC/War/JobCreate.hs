@@ -108,11 +108,22 @@ createJobs wayName allFiles filePath
 		 mainRunStderrDiff	= buildDir </> "Main.run.stderr.diff"
 	     in	 [ JobDiff 	testName wayName filePath mainRunStderr mainRunStderrDiff ]
 	
+
+	 FileMainSH
+	  -> let mainShellStdout	= buildDir  </> "Main.shell.stdout"
+		 mainShellStderr 	= buildDir  </> "Main.shell.stderr"
+	     
+		 shell			= JobShell testName wayName 
+						filePath sourceDir buildDir
+						mainShellStdout mainShellStderr
+						True
+
+ 	     in	[shell]
+
 	
 	 -- Expected compile errors are handled by the corresponding FileMainDS or FileTestDS rule.
 	 FileCompileErrorCheck		-> []
 	
 	 -- These tests don't work yet.
-	 FileMainSH			-> []
 	 FileCompileWarningCheck	-> []
 	

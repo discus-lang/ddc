@@ -97,4 +97,5 @@ DDC_PACKAGES	:= \
 	-package QuickCheck \
 	-package buildbox \
 	-package text \
-	-package stm
+	-package stm \
+	-package random

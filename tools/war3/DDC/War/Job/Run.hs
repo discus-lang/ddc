@@ -16,7 +16,7 @@ jobRun (JobRun	testName _wayName _fileName
 	-- Run the binary.
 	(time, (code, strOut, strErr))
 	 <- runTimedCommand 
-	 $  io $ systemTeeIO False mainBin ""
+	 $  systemTee False mainBin ""
 	
 	-- Write its output to files.
 	atomicWriteFile mainRunOut strOut

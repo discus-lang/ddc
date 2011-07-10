@@ -49,7 +49,7 @@ jobCompileHS (JobCompileHS
 	
 	(time, (code, strOut, strErr))
 	  <- runTimedCommand
-	  $  io $ systemTeeIO False
+	  $  systemTee False
 		("make -f " ++ buildMk)
 		""
 	atomicWriteFile mainCompOut strOut
