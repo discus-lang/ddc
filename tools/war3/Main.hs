@@ -200,6 +200,7 @@ getUniqueId :: IO Integer
 getUniqueId
  	= randomRIO (0, 1000000000)	
 
+
 -- | Run a job chain, printing the results to the console.
 --   If any job in the chain fails, then skip the rest.
 runJobChain 
@@ -219,9 +220,7 @@ runJobChain config chanResult chainsTotal chainNum chain
 					else Nothing }
 	
 	runBuildWithState state
- 		$ zipWithM_ (runJob config chanResult chainNum)
-			[1..]
-			chain
+ 	 $ zipWithM_ (runJob config chanResult chainNum) [1..] chain
 
 	return ()
 

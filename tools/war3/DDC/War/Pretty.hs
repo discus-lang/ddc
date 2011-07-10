@@ -50,15 +50,19 @@ pprJobResult width useColor workingDir job aspects
 	 | Just time	<- takeResultTime aspects
 	 -> pprResult (jobFile job) "compile" 
 		Black	(text "time" <> (parens $ padR 7 $ ppr time))
+
 		
 	-- Run ----------------------------------
 	-- run was ok.
 	JobRun{}
+	 | or $ map isResultUnexpectedFailure aspects
+	 -> pprResult (jobFileBin job) "run"
+		Red 	(text "failed")
+
 	 | Just time	<- takeResultTime aspects
 	 -> pprResult (jobFileBin job) "run"
 		Green	(text "time" <> (parens $ padR 7 $ ppr time))
 
-	-- TODO: Handle run failure.
 	
 	-- Shell --------------------------------
 	JobShell{}
@@ -95,3 +99,5 @@ pprAsColor True color doc
 
 pprAsColor False _ doc
 	= doc
+
+
