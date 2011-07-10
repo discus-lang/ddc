@@ -6,7 +6,6 @@ import DDC.War.Job
 import DDC.War.JobCreate
 import DDC.War.JobDispatch
 import DDC.War.Result
-import DDC.War.Gang
 import DDC.War.Pretty
 import Util.Options
 import Util.Options.Help
