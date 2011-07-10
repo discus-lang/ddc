@@ -148,7 +148,10 @@ controller config gang chainsTotal chanResult
 	go_checkResult
 	 = do	isEmpty <- atomically $ isEmptyTChan chanResult
 		if isEmpty 
-		 then go_start
+		 then do
+			threadDelay 100000
+			go_start
+			
 		 else do
 			jobResult	<- atomically $ readTChan chanResult
 			case jobResult of

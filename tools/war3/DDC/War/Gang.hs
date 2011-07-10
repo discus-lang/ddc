@@ -130,7 +130,7 @@ gangLoop_withWorker gang actions@(action:actionsRest)
 	state	<- readIORef (gangState gang)
 	case state of
 	 GangRunning
-	  -> do	forkIO $ do
+	  -> do	forkOS $ do
 			-- run the action (and wait for it to complete)
 			result	<- action
 
