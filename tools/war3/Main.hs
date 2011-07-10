@@ -5,8 +5,7 @@ import DDC.War.Config
 import DDC.War.Job
 import DDC.War.JobCreate
 import DDC.War.JobDispatch
-import DDC.War.Result
-import DDC.War.Pretty
+import DDC.War.Controller
 import Util.Options
 import Util.Options.Help
 import BuildBox
@@ -91,17 +90,6 @@ main
 
 	return ()
 
--------------------------------------------------------------------------------
-data JobResult
- 	= JobResult 
-	{ _jobResultChainIx	:: Int
-	, _jobResultJobIx	:: Int
-	, _jobResultJob		:: Job
-	, _jobResultResults	:: [Result] }
-
-type ChanResult
-	= TChan JobResult
-	
 
 -- | Run some job chains.
 runJobChains 
@@ -136,71 +124,6 @@ runJobChains config chanResult jcs
 	return ()
 
 
-controller 
-	:: Config
-	-> Gang
-	-> Int		-- ^ total number of chains
-	-> ChanResult	-- ^ channel to receive results from
-	-> IO ()
-
-controller config gang chainsTotal chanResult
- = go_start
- where	
-	-- See if there is an input on the console.
-	go_start 
-	 =  hReady stdin >>= \gotInput
-	 -> if gotInput
-		then go_input
-		else go_checkResult
-	
-	go_input
-	 = do	putStrLn "Interrupt. Waiting for running jobs (CTRL-C kills)..."
-	 	flushGang gang
-			
-	go_checkResult
-	 =  (atomically $ isEmptyTChan chanResult) >>= \isEmpty
-	 -> if isEmpty
-	     then do
-		gangState	<- getGangState gang
-		if gangState == GangFinished
-		 then	return ()
-		 else do
-			threadDelay 100000
-			go_start
-
-	     else do
-		jobResult	<- atomically $ readTChan chanResult
-		controller_ok config chainsTotal jobResult
-		go_start
-
-
-controller_ok config chainsTotal (JobResult chainIx jobIx job results)
- = do	-- Display the result.
-	dirWorking	<- getCurrentDirectory
-	let useColor	= not $ configBatch config
-	let width	= configFormatPathWidth config
-
-	putStrLn 
-		$ render 
-		$ parens (padR (length $ show chainsTotal)
-				(ppr $ chainIx) 
-				<> text "."
-				<> ppr jobIx
-				<> text "/" 
-				<> ppr chainsTotal)
-		<> space
-		<> pprJobResult width useColor dirWorking job results
-
-	hFlush stdout
-
-
--- | Get a unique(ish) id for this process.
---   The random seeds the global generator with the cpu time in psecs, which should be good enough.
-getUniqueId :: IO Integer
-getUniqueId
- 	= randomRIO (0, 1000000000)	
-
-
 -- | Run a job chain, printing the results to the console.
 --   If any job in the chain fails, then skip the rest.
 runJobChain 
@@ -224,6 +147,7 @@ runJobChain config chanResult chainsTotal chainNum chain
 
 	return ()
 
+
 -- | Dispatch a single job of a chain.
 runJob
 	:: Config 		-- ^ war configuration
@@ -243,3 +167,12 @@ runJob config chanResult chainNum jobNum job
 		(JobResult chainNum jobNum job results)
 		
 	return ()
+
+
+-- | Get a unique(ish) id for this process.
+--   The random seeds the global generator with the cpu time in psecs,
+--   which should be good enough.
+getUniqueId :: IO Integer
+getUniqueId
+ 	= randomRIO (0, 1000000000)	
+

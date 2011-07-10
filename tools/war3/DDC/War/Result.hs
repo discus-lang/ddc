@@ -16,7 +16,7 @@ data Result
 	| ResultUnexpectedSuccess
 	| ResultAspect 	(WithUnits (Aspect Single))
 	| ResultQuirk  	Quirk
-	| ResultDiff   	String String
+	| ResultDiff   	FilePath FilePath FilePath
 	deriving Show
 
 isResultUnexpectedFailure :: Result -> Bool
@@ -36,9 +36,11 @@ takeResultTime as
  	= listToMaybe [t | ResultAspect (WithSeconds (Time TotalWall (Single t))) <- as]
 
 
-takeResultDiff :: [Result] -> Maybe (String, String)
+takeResultDiff :: [Result] -> Maybe (FilePath, FilePath, FilePath)
 takeResultDiff as
- 	= listToMaybe [(fileOut, fileDiff) | a@(ResultDiff fileOut fileDiff) <- as]
+ = listToMaybe 	[ (fileRef, fileOut, fileDiff) 
+		| a@(ResultDiff fileRef fileOut fileDiff) <- as]
+
 
 takeQuirks :: [Result] -> [Quirk]
 takeQuirks rs

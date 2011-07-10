@@ -11,19 +11,19 @@ import System.Directory
 -- | Compare two files for differences.
 jobDiff :: Job -> Build [Result]
 jobDiff (JobDiff testName _wayName 
-		file fileOut fileDiff)
- = do	needs file
+		fileRef fileOut fileDiff)
+ = do	needs fileRef
 	needs fileOut
 	
-	file'		<- io $ canonicalizePath file
+	fileRef'	<- io $ canonicalizePath fileRef
 	fileOut'	<- io $ canonicalizePath fileOut
 	
-	diff'		<- io $ canonicalizePath "diff"
+	let diff	= "diff"
 	
 	-- Run the binary.
 	(code, strOut, strErr)
 	 <- systemTee False 
-	 	(diff' ++ " " ++ file' ++ " " ++ fileOut')
+	 	(diff ++ " " ++ fileRef' ++ " " ++ fileOut')
 		""
 	
 	-- Write its output to file.
@@ -31,5 +31,5 @@ jobDiff (JobDiff testName _wayName
 
 	if strOut == ""
 	 then return []
-	 else return [ResultDiff fileOut fileDiff]
+	 else return [ResultDiff fileRef fileOut fileDiff]
 
