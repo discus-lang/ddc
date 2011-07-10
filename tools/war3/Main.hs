@@ -212,7 +212,7 @@ runJobChain
 
 runJobChain config chanResult chainsTotal chainNum chain
  = do	uid		<- getUniqueId
-	let state	= (buildStateDefault uid ("/tmp/war" ++ show chainNum))
+	let state	= (buildStateDefault uid "/tmp")
 			{ buildStateLogSystem
 				= if configDebug config
 					then Just stderr
