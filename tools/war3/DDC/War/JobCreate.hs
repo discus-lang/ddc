@@ -60,7 +60,8 @@ createJobs wayName allFiles filePath
 
 	 -- For Main.ds files, build and run them with DDC.
 	 FileMainDS	
-	  -> let mainBin	  = buildDir  </> "Main.bin"
+	  -> let mainSH	  	  = sourceDir </> "Main.sh"
+		 mainBin	  = buildDir  </> "Main.bin"
 		 mainCompStdout	  = buildDir  </> "Main.compile.stdout"
 		 mainCompStderr	  = buildDir  </> "Main.compile.stderr"
 		 mainCompDiff     = buildDir  </> "Main.compile.stderr.diff"
@@ -99,7 +100,9 @@ createJobs wayName allFiles filePath
 		 diffStderr	= JobDiff	testName wayName mainStderrCheck
 						mainRunStderr mainStderrDiff
 		
-	     in	 [compile] 
+	     in	if Set.member mainSH allFiles
+		 then []
+		 else [compile] 
 			++ (if shouldSucceed    then [run]        else [diffError])
 			++ (if shouldDiffStdout then [diffStdout] else [])
 			++ (if shouldDiffStderr then [diffStderr] else [])
