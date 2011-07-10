@@ -62,13 +62,17 @@ pprJobResult width useColor workingDir job aspects
 	
 	-- Shell --------------------------------
 	JobShell{}
-	 | elem QuirkFailed $ takeQuirks aspects
-	 -> pprResult (jobShellSource job) "failed"
+	 | or $ map isResultUnexpectedFailure aspects
+	 -> pprResult (jobShellSource job) "shell"
 		Red 	(text "failed")
 
-	 | otherwise
-	 -> pprResult (jobShellSource job) "failed"
-		Black 	(text "ok")
+	 | or $ map isResultUnexpectedSuccess aspects
+	 -> pprResult (jobShellSource job) "shell"
+		Red 	(text "unexpected success")
+
+	 | Just time	<- takeResultTime aspects
+	 -> pprResult (jobShellSource job) "shell"
+		Black 	(text "time" <> (parens $ padR 7 $ ppr time))
 	
 	-- Diff ---------------------------------
 	-- diffed files were different.
@@ -81,7 +85,6 @@ pprJobResult width useColor workingDir job aspects
 	JobDiff{}
 	 ->  pprResult (jobFileOut job) "diff"
 		Black	(text "ok")
-
 
 
 pprAsColor :: Bool -> Color -> Doc -> Doc

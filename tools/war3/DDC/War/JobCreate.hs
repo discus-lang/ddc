@@ -112,13 +112,19 @@ createJobs wayName allFiles filePath
 	 FileMainSH
 	  -> let mainShellStdout	= buildDir  </> "Main.shell.stdout"
 		 mainShellStderr 	= buildDir  </> "Main.shell.stderr"
+		 mainShellStderrDiff	= buildDir  </> "Main.compile.stderr.diff"
+		 mainErrorCheck		= sourceDir </> "Main.error.check"
+		 shouldSucceed		= not $ Set.member mainErrorCheck allFiles
 	     
 		 shell			= JobShell testName wayName 
 						filePath sourceDir buildDir
 						mainShellStdout mainShellStderr
-						True
+						shouldSucceed
 
- 	     in	[shell]
+		 diffError		= JobDiff testName wayName mainErrorCheck
+						mainShellStderr mainShellStderrDiff
+
+ 	     in	[shell] ++ (if shouldSucceed then [] else [diffError])
 
 	
 	 -- Expected compile errors are handled by the corresponding FileMainDS or FileTestDS rule.
