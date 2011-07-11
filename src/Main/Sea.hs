@@ -40,98 +40,8 @@ import qualified DDC.Config.Version	as Version
 import qualified Sea.Util		as E
 import qualified Data.Map		as Map
 
-compileViaSea
-	:: (?verbose :: Bool, ?pathSourceBase :: FilePath)
-	=> Setup			-- ^ Compile setup.
-	-> ModuleId			-- ^ Module to compile, must also be in the scrape graph.
-	-> Tree ()			-- ^ The Tree for the module.
-	-> FilePath			-- ^ path of source .ds file.
-	-> FilePath			-- ^ path of created .di file.
-	-> [FilePath]			-- ^ C import directories.
-	-> [FilePath]			-- ^ C include files.
-	-> Map ModuleId [a]		-- ^ Module import map.
-	-> Bool				-- ^ Module defines 'main' function.
-	-> M.Scrape			-- ^ ScrapeGraph of this Module.
-	-> Map ModuleId M.Scrape	-- ^ Scrape graph of all modules reachable from the root.
-	-> Bool				-- ^ Whether to treat a 'main' function defined by this module
-					--	as the program entry point.
-	-> IO Result
 
-compileViaSea
-	setup modName eInit 
-	pathDS pathDI
-	importDirs includeFilesHere importsExp
-	modDefinesMainFn sRoot scrapes_noRoot blessMain
- = {-# SCC "Sea/compile" #-}
-    do	let ?args		= setupArgs setup
-
-	-- Generate C source code ---------------------------------------------
-	outVerb $ ppr $ "  * Generate C source code\n"
-	(  seaHeader
-	 , seaSource )	<- outSea modName eInit	pathDS
-				(map ((\(Just f) -> f) . M.scrapePathHeader)
-					$ Map.elems scrapes_noRoot)
-				includeFilesHere
-
-
-	-- If this module binds the top level main function
-	--	then append RTS initialisation code.
-	seaSourceInit
-	 <- if modDefinesMainFn && blessMain
-	     then do
-		let mainCode = mainTree
-				modName
-				(map fst $ Map.toList importsExp)
-				(not     $ elem Arg.NoImplicitHandler ?args)
-				(join    $ liftM buildStartHeapSize         $ M.scrapeBuild sRoot)
-				(join    $ liftM buildStartSlotStackSize    $ M.scrapeBuild sRoot)
-				(join    $ liftM buildStartContextStackSize $ M.scrapeBuild sRoot)
-
-		return 	$ seaSource
-			++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
-
-	     else return seaSource
-
-	-- Write C files ------------------------------------------------------
-	outVerb $ ppr $ "  * Write C files\n"	
-	let baseDS	= takeBaseName pathDS
-	let dirDS	= takeDirectory pathDS
-	let outputDir	= fromMaybe dirDS (outputDirOfSetup setup)
-	let pathC	= outputDir </> addExtension baseDS ".ddc.c"
-	let pathH	= outputDir </> addExtension baseDS ".ddc.h"
-	let pathO	= outputDir </> addExtension baseDS ".o"
-
-	writeFile pathC seaSourceInit
-	writeFile pathH seaHeader
-
-	------------------------------------------------------------------------
-	-- Invoke external compiler / linker
-	------------------------------------------------------------------------
-
-	-- !! Early exit on StopSea
-	when (elem Arg.StopSea ?args)
-		compileExit
-
-	-- Invoke GCC to compile C source.
-	invokeSeaCompiler
-		?args
-		pathC
-		pathO
-		(setupRuntime setup)
-		(setupLibrary setup)
-		importDirs
-		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
-
-	return	$ Result
-		{ resultModuleId	= modName
-		, resultDefinesMain	= modDefinesMainFn
-		, resultSourceDS	= pathDS
-		, resultOutputDI	= pathDI
-		, resultOutputC		= Just pathC
-		, resultOutputH		= Just pathH
-		, resultOutputO		= Just pathO
-		, resultOutputExe	= Nothing }
-
+-- Sea stages used by all backends ----------------------------------------------------------------
 
 -- | Substitute trivial x1 = x2 bindings
 seaSub	:: (?args :: [Arg.Arg]
@@ -251,9 +161,140 @@ seaInit moduleName eTree
 	return tree'
 
 
+-- | Create the C header file for this module.
+makeSeaHeader :: (Tree ()) -> String -> [String] -> [String] -> String
+makeSeaHeader eTree pathThis pathImports extraIncludes
+ = do		-- Break up the sea into Header/Code parts.
+	let 	([ seaProtos, seaCafProtos, seaCtorTag ], _junk)
+		 = partitionBy
+			[ (=@=) PProto{}, (=@=) PCafProto{}, (=@=) PCtorTag{} ]
+			eTree
+
+	let defTag	= makeIncludeDefTag pathThis
+
+	pprStrPlain
+	 $ vcat	[ "#ifndef _inc" % defTag
+		, "#define _inc" % defTag
+		, ppr "#include <runtime/Runtime.h>"
+		, ppr "#include <runtime/Runtime.ci>"
+		, vcat [ "#include <" % inc % ">" | inc <- pathImports ]
+		, vcat [ "#include <" % inc % ">" | inc <- extraIncludes]
+		, vcat $ eraseAnnotsTree seaCtorTag
+		, vcat $ eraseAnnotsTree seaCafProtos
+		, vcat $ eraseAnnotsTree seaProtos
+		, ppr "#endif"
+		, blank ]
+
+
+nameTItoH nameTI
+ = let	parts	= chopOnRight '.' nameTI
+   in   concat (init parts ++ ["ddc.h"])
+
+makeIncludeDefTag pathThis
+ = filter (\c -> isAlpha c || isDigit c)
+ 	$ pathThis
+
+
+---------------------------------------------------------------------------------------------------
+-- Sea stages specific to the -fvia-c backend.
+
+-- | Compile a Sea module via the C compiler.
+compileViaSea
+	:: Setup			-- ^ Compile setup.
+	-> ModuleId			-- ^ Module to compile, must also be in the scrape graph.
+	-> Tree ()			-- ^ The Sea Tree for the module.
+	-> FilePath			-- ^ path of source .ds file.
+	-> FilePath			-- ^ path of created .di file.
+	-> [FilePath]			-- ^ C import directories.
+	-> [FilePath]			-- ^ C include files.
+	-> Map ModuleId [a]		-- ^ Module import map.
+	-> Bool				-- ^ Module defines 'main' function.
+	-> M.Scrape			-- ^ Scrape graph of this module.
+	-> Map ModuleId M.Scrape	-- ^ Scrape graph of all modules reachable from the root.
+	-> Bool				-- ^ Whether to treat a 'main' function defined by this module
+					--	as the program entry point.
+	-> IO Result
+
+compileViaSea
+	setup modName eInit 
+	pathDS pathDI
+	importDirs includeFilesHere
+	importsExp
+	modDefinesMainFn
+	sRoot scrapes_noRoot
+	blessMain
+ = {-# SCC "Sea/compile" #-}
+    do	let ?args		= setupArgs setup
+        let ?verbose            = elem Arg.Verbose (setupArgs setup)
+
+	-- Generate C source code ---------------------------------------------
+	outVerb $ ppr $ "  * Generate C source code\n"
+	(  seaHeader
+	 , seaSource )	<- outSea setup modName eInit pathDS
+				(map ((\(Just f) -> f) . M.scrapePathHeader)
+					$ Map.elems scrapes_noRoot)
+				includeFilesHere
+
+
+	-- If this module binds the top level main function
+	--	then append RTS initialisation code.
+	seaSourceInit
+	 <- if modDefinesMainFn && blessMain
+	     then do
+		let mainCode = mainTree
+				modName
+				(map fst $ Map.toList importsExp)
+				(not     $ elem Arg.NoImplicitHandler ?args)
+				(join    $ liftM buildStartHeapSize         $ M.scrapeBuild sRoot)
+				(join    $ liftM buildStartSlotStackSize    $ M.scrapeBuild sRoot)
+				(join    $ liftM buildStartContextStackSize $ M.scrapeBuild sRoot)
+
+		return 	$ seaSource
+			++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
+
+	     else return seaSource
+
+	-- Write C files ------------------------------------------------------
+	outVerb $ ppr $ "  * Write C files\n"	
+	let baseDS	= takeBaseName pathDS
+	let dirDS	= takeDirectory pathDS
+	let outputDir	= fromMaybe dirDS (outputDirOfSetup setup)
+	let pathC	= outputDir </> addExtension baseDS ".ddc.c"
+	let pathH	= outputDir </> addExtension baseDS ".ddc.h"
+	let pathO	= outputDir </> addExtension baseDS ".o"
+
+	writeFile pathC seaSourceInit
+	writeFile pathH seaHeader
+
+	-- Invoke external compiler / linker ----------------------------------
+	-- !! Early exit on StopSea
+	when (elem Arg.StopSea ?args)
+		compileExit
+
+	-- Invoke GCC to compile C source.
+	invokeSeaCompiler
+		?args
+		pathC
+		pathO
+		(setupRuntime setup)
+		(setupLibrary setup)
+		importDirs
+		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
+
+	return	$ Result
+		{ resultModuleId	= modName
+		, resultDefinesMain	= modDefinesMainFn
+		, resultSourceDS	= pathDS
+		, resultOutputDI	= pathDI
+		, resultOutputC		= Just pathC
+		, resultOutputH		= Just pathH
+		, resultOutputO		= Just pathO
+		, resultOutputExe	= Nothing }
+
+
 -- | Create C source files
-outSea	:: (?args :: [Arg.Arg])
-	=> ModuleId
+outSea	:: Setup                -- compilation setup
+	-> ModuleId             -- id of the module being compiled
 	-> (Tree ())		-- sea source
 	-> FilePath		-- path of the source file
 	-> [FilePath]		-- paths of the imported .h header files
@@ -261,7 +302,7 @@ outSea	:: (?args :: [Arg.Arg])
 	-> IO	( String
 		, String )
 
-outSea	moduleName eTree pathThis pathImports extraIncludes
+outSea setup moduleName eTree pathThis pathImports extraIncludes
  = {-# SCC "Sea/out" #-}
 	-- Break up the sea into Header/Code parts.
     let	([ 	_seaProtos, 		seaSupers,		_seaExterns
@@ -298,38 +339,4 @@ outSea	moduleName eTree pathThis pathImports extraIncludes
 
    in return	( seaHeader
 		, seaCode )
-
-
--- | Create the C header file for this module.
-makeSeaHeader :: (Tree ()) -> String -> [String] -> [String] -> String
-makeSeaHeader eTree pathThis pathImports extraIncludes
- = do		-- Break up the sea into Header/Code parts.
-	let 	([ seaProtos, seaCafProtos, seaCtorTag ], _junk)
-		 = partitionBy
-			[ (=@=) PProto{}, (=@=) PCafProto{}, (=@=) PCtorTag{} ]
-			eTree
-
-	let defTag	= makeIncludeDefTag pathThis
-
-	pprStrPlain
-	 $ vcat	[ "#ifndef _inc" % defTag
-		, "#define _inc" % defTag
-		, ppr "#include <runtime/Runtime.h>"
-		, ppr "#include <runtime/Runtime.ci>"
-		, vcat [ "#include <" % inc % ">" | inc <- pathImports ]
-		, vcat [ "#include <" % inc % ">" | inc <- extraIncludes]
-		, vcat $ eraseAnnotsTree seaCtorTag
-		, vcat $ eraseAnnotsTree seaCafProtos
-		, vcat $ eraseAnnotsTree seaProtos
-		, ppr "#endif"
-		, blank ]
-
-
-nameTItoH nameTI
- = let	parts	= chopOnRight '.' nameTI
-   in   concat (init parts ++ ["ddc.h"])
-
-makeIncludeDefTag pathThis
- = filter (\c -> isAlpha c || isDigit c)
- 	$ pathThis
 

@@ -450,7 +450,8 @@ compileFile setup scrapes sModule blessMain
 	eInit		<- seaInit
 				modName
 				eFlatten
-
+        
+        -- Pass off to back-end compiler --------------------------------------
 	-- TODO : Put the parameters into a struct and call compileViaX with just
 	-- a single parameter.
 	if elem Arg.ViaLLVM ?args
