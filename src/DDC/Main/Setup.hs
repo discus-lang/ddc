@@ -1,16 +1,16 @@
 
-module Main.Setup
+module DDC.Main.Setup
 	( Setup (..)
 	, setupArgs 
 	, importDirsOfSetup
 	, outputDirOfSetup)
 where
 import DDC.Main.Arg
-import Util
-
+import Data.List
+import Data.Maybe
 
 -- | Compilation setup, shared between compilation of multiple modules.
---   Carries information about command line arguments,  and where the
+--   Carries information about command line arguments, and where the
 --   runtime system and libraries are. 
 data Setup
 	= Setup
@@ -18,7 +18,9 @@ data Setup
 	, setupArgsBuild	:: [Arg]
 	, setupRuntime		:: FilePath
 	, setupLibrary		:: FilePath
-	, setupRecursive	:: Maybe [FilePath] }	-- files that we've already compile on this path
+
+	-- files that we've already compiled on this path.
+	, setupRecursive	:: Maybe [FilePath] }
 	deriving Show
 
 

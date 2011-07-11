@@ -8,11 +8,11 @@ where
 
 -- main stages
 import Main.BuildFile
-import Main.Setup
 import Main.Sea
 import Main.Util
 
 import DDC.Base.SourcePos
+import DDC.Main.Setup
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Sea.Exp

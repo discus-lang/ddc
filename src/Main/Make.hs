@@ -5,16 +5,16 @@ module Main.Make
 where
 import Util
 import Util.Graph.Deps
-import Main.Setup
 import Main.Compile
 import Main.Link
-import Main.Result
 import DDC.Module.Error
 import DDC.Module.Scrape
 import DDC.Module.ScrapeGraph
-import DDC.Var
+import DDC.Main.Setup
+import DDC.Main.Result
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import DDC.Main.Arg			(Arg)
 import qualified DDC.Main.Arg 		as Arg
 import qualified System.IO		as System

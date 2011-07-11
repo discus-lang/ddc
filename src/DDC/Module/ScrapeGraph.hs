@@ -10,8 +10,8 @@ import DDC.Module.Scrape
 import DDC.Main.Arg
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Main.Setup
 import DDC.Var
-import Main.Setup
 import Util
 import System.Exit
 import qualified Data.Map	as Map

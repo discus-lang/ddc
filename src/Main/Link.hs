@@ -3,11 +3,11 @@ module Main.Link
 	(linkFile)
 where
 import Main.BuildFile
-import Main.Setup
 import Util
 import System.Exit
 import System.Cmd
 import DDC.Module.Error
+import DDC.Main.Setup
 import DDC.Main.Error
 import DDC.Main.Pretty
 import System.Directory 	(doesDirectoryExist)

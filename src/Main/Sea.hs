@@ -12,14 +12,14 @@ module Main.Sea
 	, seaInit
 	, makeSeaHeader )
 where
-import Main.Setup
-import Main.Result
 import Main.BuildFile
 import Main.Dump
 import Main.Util
 import DDC.Main.Pretty
-import DDC.Var
+import DDC.Main.Setup
+import DDC.Main.Result
 import DDC.Sea.Exp
+import DDC.Var
 import Sea.Util
 import Sea.Invoke
 import Sea.Sub		(subTree)

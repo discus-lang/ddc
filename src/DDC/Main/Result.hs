@@ -1,5 +1,5 @@
 
-module Main.Result
+module DDC.Main.Result
 	(Result(..))
 where
 import DDC.Var
@@ -7,11 +7,9 @@ import DDC.Var
 
 -- | Compilation result. 
 --   We get one of these back for every module we successfully compile.
---   It should describe all the products of the compilation, including
---   all dropped files.
+--   It describes the files produced by the compilation process.
 data Result
-	= Result
-	{ 
+	= Result { 
  	-- | Id of the compiled module.
 	  resultModuleId	:: ModuleId
 	
@@ -35,3 +33,4 @@ data Result
 
 	-- | Path to produced executable
 	, resultOutputExe	:: Maybe FilePath }
+

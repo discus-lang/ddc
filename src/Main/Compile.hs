@@ -7,8 +7,8 @@ where
 --	so there'll be a lot of imports...
 
 -- main stages
-import Main.Setup
-import Main.Result
+import DDC.Main.Setup
+import DDC.Main.Result
 import Main.Util
 import Main.Sea
 import Main.Llvm			()

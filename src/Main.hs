@@ -3,13 +3,13 @@ module Main
 	( main
 	, ddc )
 where
-import Main.Setup
-import Main.Compile
 import Main.Init
 import Main.Make
+import Main.Compile
 import DDC.Module.Error
 import DDC.Module.Scrape
 import DDC.Module.ScrapeGraph
+import DDC.Main.Setup
 import DDC.Main.Pretty
 import DDC.Main.Error
 import Util

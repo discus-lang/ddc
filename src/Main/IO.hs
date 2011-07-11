@@ -3,10 +3,10 @@ module Main.IO
 	( ImportDef(..)
 	, chaseModules)
 where
-import Main.Setup
 import Util
 import Util.System.Directory
 import DDC.Base.SourcePos
+import DDC.Main.Setup
 import DDC.Main.Arg
 import DDC.Main.Pretty
 import DDC.Main.Error
