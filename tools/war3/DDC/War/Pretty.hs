@@ -7,6 +7,7 @@ import DDC.War.Result
 import Util.Terminal.VT100
 import BuildBox
 import System.FilePath
+import Data.List
 
 pprJobResult 
 	:: Int 		-- ^ Width of reports.
@@ -17,11 +18,20 @@ pprJobResult
 	-> Doc
 	
 pprJobResult width useColor workingDir job aspects
- = let	pprResult strFile strAction colorResult docResult 
-	 =  padL width (text $ makeRelative workingDir strFile) 
-	 <> (padL 10 $ text $ jobWayName job)
-	 <> (padL 10 $ text strAction)
-	 <> pprAsColor useColor colorResult (docResult)
+ = let	
+
+        pprResult strFile strAction colorResult docResult 
+	 = let  -- Don't show the output dir in the file path, 
+                -- show it as if the output files were in the source dir.
+                wayDir      = "war-" ++ jobWayName job
+                pathParts   = splitPath $ makeRelative workingDir strFile
+                pathParts'  = delete (wayDir ++ "/") pathParts
+                strFile'    = joinPath pathParts'
+
+	   in   padL width (text strFile') 
+	         <> (padL 10 $ text $ jobWayName job)
+	         <> (padL 10 $ text strAction)
+	         <> pprAsColor useColor colorResult (docResult)
 
    in case job of
 
