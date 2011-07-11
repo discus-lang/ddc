@@ -22,7 +22,7 @@ war : bin/ddc runtime bin/war library/Prelude.di
 totalwar : bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
-		+compway normal \
+		+compway std \
 		+compway opt  -O \
 		+compway llvm -O -fvia-llvm
 	@echo
@@ -41,7 +41,7 @@ totallogwar : bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		-batch -logFailed "war.failed" \
-		+compway normal \
+		+compway std \
 		+compway opt -O \
 		+compway llvm -O -fvia-llvm
 	@echo
