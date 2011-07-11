@@ -85,7 +85,8 @@ compileFile setup scrapes sModule blessMain
 	dirWorking		<- getCurrentDirectory
 	let pathRelativeDS	= "./" ++ makeRelative dirWorking pathDS
 
-	let ?pathSourceBase	= baseDS
+	let ?pathSourceBase	= dirDS </> baseDS
+        putStrLn $ "pathSourceBase = " ++ ?pathSourceBase
 
 	-- Gather up all the import dirs ---------------------------------------
 	let importDirs	
@@ -275,7 +276,7 @@ compileFile setup scrapes sModule blessMain
 	-- Convert to normalised form -----------------------------------------
 	outVerb $ ppr $ "  * Core: Tidy\n"
 	cgModule_tidy
-	 <- SC.coreTidy		"core-tidy" ?args baseDS "CN" 
+	 <- SC.coreTidy		"core-tidy" ?args ?pathSourceBase "CN" 
 				cgHeader cgModule
 							
 	-- Create local regions -----------------------------------------------
@@ -290,7 +291,7 @@ compileFile setup scrapes sModule blessMain
 		
 	cgModule_bind	
 	 <- SC.coreBind 	sModule (T.solutionRegionClasses solution) rsGlobal 
-				"core-bind" ?args baseDS "CB"
+				"core-bind" ?args ?pathSourceBase "CB"
 				cgHeader cgModule_tidy
 
 	-- Convert to A-normal form -------------------------------------------
@@ -336,7 +337,7 @@ compileFile setup scrapes sModule blessMain
 	-- Prepare for conversion to core -------------------------------------
 	outVerb $ ppr $ "  * Core: Prep\n"
 	cgModule_prep
-	 <- SC.corePrep		"core-prep" ?args baseDS "CP"
+	 <- SC.corePrep		"core-prep" ?args ?pathSourceBase "CP"
 				cgHeader cgModule_lambdaLifted 
 
 	-- Check the program one last time ------------------------------------
@@ -389,8 +390,6 @@ compileFile setup scrapes sModule blessMain
 	-- !! Early exit on StopCore
 	when (elem Arg.StopCore ?args)
 		compileExit
-
-
 
 	-- Chase down extra C header files to include into source -------------
 	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
