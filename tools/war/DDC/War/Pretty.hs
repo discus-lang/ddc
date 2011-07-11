@@ -1,6 +1,7 @@
 
 module DDC.War.Pretty
-	(pprJobResult)
+	( pprJobResult
+	, diagnoseJobResults) 
 where
 import DDC.War.Job
 import DDC.War.Result
@@ -9,15 +10,23 @@ import BuildBox
 import System.FilePath
 import Data.List
 
-pprJobResult 
+
+pprJobResult :: Int -> Bool -> FilePath	-> Job -> [Result] -> Doc
+pprJobResult width useColor workingDir job results
+ = snd $ diagnoseJobResults width useColor workingDir job results
+ 
+
+-- | Diagnose whether some job results represent success or failure, 
+--   and generate a Doc describing them.
+diagnoseJobResults
 	:: Int 		-- ^ Width of reports.
 	-> Bool 	-- ^ Whether to use color in reports.
 	-> FilePath	-- ^ Working directory to show test files relative to.
 	-> Job 		-- ^ Job to pretty print.
 	-> [Result]	-- ^ Returned results of job.
-	-> Doc
+	-> (Bool, Doc)
 	
-pprJobResult width useColor workingDir job aspects
+diagnoseJobResults width useColor workingDir job aspects
  = let	
 
         pprResult strFile strAction colorResult docResult 
@@ -39,66 +48,66 @@ pprJobResult width useColor workingDir job aspects
 	-- compile should have succeeded, but didn't.
 	JobCompile{}
 	 | or $ map isResultUnexpectedFailure aspects
-	 -> pprResult (jobFile job) "compile" 
-		Red	(text "failed")
+	 -> (False, pprResult (jobFile job) "compile" 
+		        Red	(text "failed"))
 		
 	-- compile should have failed, but didn't.
 	JobCompile{}
 	 | or $ map isResultUnexpectedSuccess aspects
-	 -> pprResult (jobFile job) "compile" 
-		Red	(text "unexpected success")
+	 -> (False, pprResult (jobFile job) "compile" 
+		        Red	(text "unexpected success"))
 	
 	-- compile did was was expected of it.
 	JobCompile{}
 	 | Just time	<- takeResultTime aspects 
-	 -> pprResult (jobFile job) "compile" 
-		Blue	(text "time" <> (parens $ padR 7 $ ppr time))
+	 -> (True, pprResult (jobFile job) "compile" 
+		        Blue	(text "time" <> (parens $ padR 7 $ ppr time)))
 
 
 	-- CompileHS ----------------------------
 	JobCompileHS{}
 	 | Just time	<- takeResultTime aspects
-	 -> pprResult (jobFile job) "compile" 
-		Black	(text "time" <> (parens $ padR 7 $ ppr time))
+	 -> (True, pprResult (jobFile job) "compile" 
+		        Black	(text "time" <> (parens $ padR 7 $ ppr time)))
 
 		
 	-- Run ----------------------------------
 	-- run was ok.
 	JobRun{}
 	 | or $ map isResultUnexpectedFailure aspects
-	 -> pprResult (jobFileBin job) "run"
-		Red 	(text "failed")
+	 -> (False, pprResult (jobFileBin job) "run"
+		        Red 	(text "failed"))
 
 	 | Just time	<- takeResultTime aspects
-	 -> pprResult (jobFileBin job) "run"
-		Green	(text "time" <> (parens $ padR 7 $ ppr time))
+	 -> (True, pprResult (jobFileBin job) "run"
+		        Green	(text "time" <> (parens $ padR 7 $ ppr time)))
 
 	
 	-- Shell --------------------------------
 	JobShell{}
 	 | or $ map isResultUnexpectedFailure aspects
-	 -> pprResult (jobShellSource job) "shell"
-		Red 	(text "failed")
+	 -> (False, pprResult (jobShellSource job) "shell"
+		        Red 	(text "failed"))
 
 	 | or $ map isResultUnexpectedSuccess aspects
-	 -> pprResult (jobShellSource job) "shell"
-		Red 	(text "unexpected success")
+	 -> (False, pprResult (jobShellSource job) "shell"
+		        Red 	(text "unexpected success"))
 
 	 | Just time	<- takeResultTime aspects
-	 -> pprResult (jobShellSource job) "shell"
-		Black 	(text "time" <> (parens $ padR 7 $ ppr time))
+	 -> (True, pprResult (jobShellSource job) "shell"
+		        Black 	(text "time" <> (parens $ padR 7 $ ppr time)))
 	
 	-- Diff ---------------------------------
 	-- diffed files were different.
 	JobDiff{}
    	 | Just _		<- takeResultDiff aspects
-	 -> pprResult (jobFileOut job) "diff"
-		Red	(text "failed") 
+	 -> (False, pprResult (jobFileOut job) "diff"
+		        Red	(text "failed"))
 
 	-- diffed files were identical, all ok.
 	JobDiff{}
-	 ->  pprResult (jobFileOut job) "diff"
-		Black	(text "ok")
+	 -> (True, pprResult (jobFileOut job) "diff"
+		        Black	(text "ok"))
 
 
 pprAsColor :: Bool -> Color -> Doc -> Doc

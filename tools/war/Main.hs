@@ -6,6 +6,7 @@ import DDC.War.Job
 import DDC.War.JobCreate
 import DDC.War.JobDispatch
 import DDC.War.Controller
+import DDC.War.Pretty
 import Util.Options
 import Util.Options.Help
 import BuildBox
@@ -19,6 +20,7 @@ import Control.Monad
 import Control.Monad.STM
 import Control.Exception
 import Data.List
+import Data.Maybe
 import qualified Data.Sequence		as Seq
 import qualified Data.Foldable		as Seq
 import qualified Data.Set		as Set
@@ -86,8 +88,25 @@ main
 		<- atomically $ newTChan
 
 	-- Run all the chains.
-	runJobChains config chanResult jobChains
+	results <- runJobChains config chanResult jobChains
 
+	-- Write out a log of failed tests if we were asked to
+	when (isJust $ configLogFailed config)
+	 $ do   let Just fileLog = configLogFailed config
+	        workingDir       <- getCurrentDirectory
+
+	        let diag jr      = diagnoseJobResults
+	                                (configFormatPathWidth config)
+	                                False -- no color
+	                                workingDir
+	                                (jobResultJob jr)
+	                                (jobResultResults jr)
+	                                
+	        let ssResults    = [doc | (success, doc) <- map diag results
+	                                , not success ]
+	        
+	        writeFile fileLog ((render $ vcat ssResults) ++ "\n")
+	
 	return ()
 
 
@@ -96,7 +115,7 @@ runJobChains
 	:: Config 	-- ^ war configuration
 	-> ChanResult	-- ^ channel to write job results to
 	-> [[Job]]	-- ^ chains of jobs
-	-> IO ()
+	-> IO [JobResult]
 
 runJobChains config chanResult jcs
  = do	
@@ -111,19 +130,22 @@ runJobChains config chanResult jcs
 
 	-- Fork the gang controller that manages the console and handles
 	-- user input.
-	varControllerDone	<- newEmptyMVar
-	forkIO	$ controller config gang chainsTotal chanResult
-		`finally` (putMVar varControllerDone ())
-
+	varResults	<- newEmptyMVar
+	jobResults      
+	 <- forkIO 
+	 $ do   results <- controller config gang chainsTotal chanResult
+	        putMVar varResults results
+	 `finally` (putMVar varResults [])
 
 	-- Wait until the controller to finished
-	takeMVar varControllerDone
+	results <- takeMVar varResults
 
 	-- Wait until the gang is finished running chains, 
-	-- or has been killed.
+	-- or has been killed by the controller.
 	joinGang gang
 	
-	return ()
+	return results
+	
 
 
 -- | Run a job chain, printing the results to the console.

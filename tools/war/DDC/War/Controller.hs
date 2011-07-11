@@ -21,10 +21,10 @@ import qualified System.Cmd
 -- | Carries the result of a single test job.
 data JobResult
  	= JobResult 
-	{ _jobResultChainIx	:: Int
-	, _jobResultJobIx	:: Int
-	, _jobResultJob		:: Job
-	, _jobResultResults	:: [Result] }
+	{ jobResultChainIx	:: Int
+	, jobResultJobIx	:: Int
+	, jobResultJob		:: Job
+	, jobResultResults	:: [Result] }
 
 -- | Channel to write test job results to.
 type ChanResult
@@ -38,25 +38,27 @@ controller
 	-> Gang
 	-> Int		-- ^ total number of chains
 	-> ChanResult	-- ^ channel to receive results from
-	-> IO ()
+	-> IO [JobResult]
 
 controller config gang chainsTotal chanResult
- = go_start
+ = liftM reverse $ go_start []
  where	
 	-- See if there is an input on the console.
-	go_start 
+        go_start :: [JobResult] -> IO [JobResult]
+	go_start jobResults
 	 =  hReady stdin >>= \gotInput
 	 -> if gotInput
-		then go_input
-		else go_checkResult
+		then go_input jobResults
+		else go_checkResult jobResults
 	
 	-- We've got input on the console, wait for already running tests then bail out.
-	go_input
+	go_input jobResults
 	 = do	putStrLn "Interrupt. Waiting for running jobs (CTRL-C kills)..."
 	 	flushGang gang
+	 	return jobResults
 
 	-- See if any job results have been written to our input channel.
-	go_checkResult
+	go_checkResult jobResults
 	 =  (atomically $ isEmptyTChan chanResult) >>= \isEmpty
 	 -> if isEmpty
 	     then do
@@ -66,13 +68,13 @@ controller config gang chainsTotal chanResult
 		 -- No job results in channel, and the gang has finished.
 		 -- We're done, so return to caller.
 		 then do
-			return ()
+			return jobResults
 
 		 -- No job results in channel, but the gang is still running.
 		 -- Spin until something else happens.
 		 else do
 			threadDelay 10000
-			go_start
+			go_start jobResults
 
 	     -- We've got a job result from the input channel.
 	     -- Read the result and pass it off to the result handler.
@@ -80,10 +82,10 @@ controller config gang chainsTotal chanResult
 		jobResult <- atomically $ readTChan chanResult
 		keepGoing <- handleResult config gang chainsTotal jobResult
 		if keepGoing
-		 then go_start
+		 then go_start (jobResult : jobResults)
 		 else do
 			killGang gang
-			return ()
+			return (jobResult : jobResults)
 			
 
 
