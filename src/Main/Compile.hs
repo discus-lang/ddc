@@ -86,7 +86,6 @@ compileFile setup scrapes sModule blessMain
 	let pathRelativeDS	= "./" ++ makeRelative dirWorking pathDS
 
 	let ?pathSourceBase	= dirDS </> baseDS
-        putStrLn $ "pathSourceBase = " ++ ?pathSourceBase
 
 	-- Gather up all the import dirs ---------------------------------------
 	let importDirs	
