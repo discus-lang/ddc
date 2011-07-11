@@ -20,7 +20,8 @@ extSharedObject
 -- | The system command to compile a Sea source file.
 makeSeaCompileCmd
 	:: [Arg]		-- ^ ddc command line args
-	-> FilePath		-- ^ base path of source file
+	-> FilePath		-- ^ path of source c file
+	-> FilePath             -- ^ path of output o file
 	-> FilePath		-- ^ path to runtime system
 	-> FilePath		-- ^ path to base libraries
 	-> [FilePath]		-- ^ extra include dirs
@@ -28,7 +29,7 @@ makeSeaCompileCmd
 	-> String		-- ^ the compile command
 
 makeSeaCompileCmd
-	args pathSourceBase pathRuntime pathLibrary
+	args pathC pathO pathRuntime pathLibrary
 	extraIncludeDirs extraCompileFlags
 
 	=  "gcc-3"		-- Must use 'gcc-3' on Cygwin because plain 'gcc' is a symlink
@@ -39,8 +40,8 @@ makeSeaCompileCmd
 	++ " -std=c99"
 	++ " -D BITS=" ++ show pointerBits
 
-	++ " -c " ++ pathSourceBase ++ ".ddc.c"
-	++ " -o " ++ pathSourceBase ++ ".o"
+	++ " -c " ++ pathC
+	++ " -o " ++ pathO
 
 	++ (if elem Debug args   then " -g"  else "")
 	++ (if elem OptAll args  then " -O3" else "")
