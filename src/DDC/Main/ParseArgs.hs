@@ -104,6 +104,9 @@ options	=
 	, OOpt		OutputFile		["-o", "-output"]		"-o, -output  <file>"
 						"Redirect output to this file."
 
+	, OOpt		OutputDir		["-outputdir"]			"-outputdir <dir>"
+						"Redirect output files to this dir."
+
 	, OOpts		ImportDirs		["-i", "-import"]		"-i, -import  <dirs..>"
 						"Add dirs to the import path."
 	, OBlank

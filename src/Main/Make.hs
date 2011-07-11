@@ -8,6 +8,7 @@ import Util.Graph.Deps
 import Main.Setup
 import Main.Compile
 import Main.Link
+import Main.Result
 import DDC.Module.Error
 import DDC.Module.Scrape
 import DDC.Module.ScrapeGraph
@@ -18,7 +19,6 @@ import DDC.Main.Arg			(Arg)
 import qualified DDC.Main.Arg 		as Arg
 import qualified System.IO		as System
 import qualified System.Exit		as System
-import qualified System.Directory 	as System
 import qualified System.FilePath	as System
 import qualified Data.Set		as Set
 
@@ -135,38 +135,22 @@ buildLoop' args setup graph buildCount buildIx roots build
 		let graph_pruned
 			= Map.filter (\s -> Map.member (scrapeModuleName s) graph_modImports_pruned) graph
 			
-		-- run the compiler to produce the object file
-		let Just scrape		= Map.lookup m graph_pruned
-		let Just pathSource	= scrapePathSource scrape
-		let setup'		= setup { setupArgsCmd = setupArgsCmd setup ++ scrapeArgsInline scrape }
-		definesMain		<- compileFile setup' graph_pruned m (shouldBlessMain roots m) 
+		-- run the compiler to produce the object file.
+		let Just scrape	= Map.lookup m graph_pruned
+		let setup'	= setup { setupArgsCmd = setupArgsCmd setup ++ scrapeArgsInline scrape }
+		result		<- compileFile setup' graph_pruned m (shouldBlessMain roots m) 
 
-		-- check that the object and interface is actually there
-		let fileDir		= System.takeDirectory pathSource
-		let fileBase		= System.takeBaseName  pathSource
-
-		let droppedFile ext	= fileDir ++ "/" ++ fileBase ++ ext
-		let checkDropped ext 	= do
-			let file	= droppedFile ext
-			exists		<- System.doesFileExist file
-			when (not exists)
-			 $ do	putStrLn $ "ddc error: no " ++ ext ++ " file was produced by compiler."
-				System.exitFailure
-
-		checkDropped ".o"
-		checkDropped ".di"
-		checkDropped ".ddc.h"
-
-		-- update the graph
+		-- update the graph with the compilation products.
 		let scrape'	= scrape 
 					{ scrapeNeedsRebuild 	= False 
-					, scrapePathInterface	= Just $ droppedFile ".di"
-					, scrapePathHeader	= Just $ droppedFile ".ddc.h"
-					, scrapePathObject	= Just $ droppedFile ".o" 
-					, scrapeDefinesMain	= definesMain }
+					, scrapePathInterface	= Just $ resultOutputDI result
+					, scrapePathHeader	= resultOutputH result
+					, scrapePathObject	= resultOutputO result
+					, scrapeDefinesMain	= resultDefinesMain result }
 					
 		graph'		<- scrapeGraphInsert args m scrape' graph
-			
+
+		-- build more modules if needed.
 		buildLoop args setup graph' buildCount (buildIx + 1) roots
 
 

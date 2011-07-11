@@ -5,7 +5,6 @@ import Util
 import System.Cmd
 import System.Exit
 import System.Directory
-import System.FilePath
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import qualified DDC.Main.Arg	as Arg
@@ -16,29 +15,30 @@ stage	= "Sea.Invoke"
 -- | Invoke the external C compiler to compile this source program.
 invokeSeaCompiler 
 	:: [Arg]		-- ^ ddc command line args
-	-> FilePath		-- ^ base path of source file
+	-> FilePath		-- ^ path of source C file
+	-> FilePath		-- ^ path of output O file
 	-> FilePath		-- ^ path to the runtime system
 	-> FilePath		-- ^ path to the base libraries
 	-> [FilePath]		-- ^ extra include dirs
 	-> [String]		-- ^ extra flags to compile with (from build files)
 	-> IO ()
 
-invokeSeaCompiler 
-	args
-	pathSourceBase
-	pathRuntime
-	pathLibrary
+invokeSeaCompiler args
+	pathC pathO
+	pathRuntime pathLibrary
 	importDirs
 	extraFlags
  = do
-	pathSourceBase'	<- liftM dropExtension $ canonicalizePath (pathSourceBase ++ ".ds")
+	pathC'		<- canonicalizePath pathC
+	pathO'		<- canonicalizePath pathO
 	pathRuntime'	<- canonicalizePath pathRuntime
 	pathLibrary'	<- canonicalizePath pathLibrary
 	importDirs'	<- mapM canonicalizePath $ nub importDirs
 
 	let cmd	= Config.makeSeaCompileCmd 
 			args
-			pathSourceBase'
+			pathC'
+			pathO'
 			pathRuntime'
 			pathLibrary'
 			importDirs

@@ -24,25 +24,20 @@ jobCompile job@(JobCompile
  = do	needs srcDS
 	
 	-- The directory holding the Main.ds file.
-	let (srcDir, srcFile)	= splitFileName srcDS
+	let (srcDir, _srcFile)	= splitFileName srcDS
 		
-	-- Copy the .ds files to the build directory.
-	-- This freshens them and ensures we won't conflict with other make jobs
-	-- running on the same source files, but in different ways.
-	ensureDir buildDir
+	-- Touch the .ds files to the build directory to ensure they're built.
 	sources	<- io
 		$  liftM (filter (\f -> isSuffixOf ".ds" f || isSuffixOf ".build" f))
 		$  lsFilesIn srcDir
 
-	qssystem $ "cp " ++ (catInt " " sources) ++ " " ++ buildDir
+	qssystem $ "touch " ++ (catInt " " sources)
 
-	-- The copied version of the root source file.
-	let srcCopyDS	= buildDir ++ "/" ++ srcFile
-	srcCopyDS'	<- io $ canonicalizePath srcCopyDS
+	-- ensure the output directory exists
+	ensureDir buildDir
 
-	ddcBin'		<- io $ canonicalizePath "bin/ddc"
-		
 	-- Do the compile.
+	ddcBin'		<- io $ canonicalizePath "bin/ddc"
 	let compile
 		| Just mainBin	<- mMainBin
 		= do	
@@ -55,10 +50,11 @@ jobCompile job@(JobCompile
 	 		runTimedCommand 
 	 		 $ systemTee False 
 				(ddcBin'
-				++ " -v -make "	++ srcCopyDS'
-				++ " -o "	++ mainBin'
-				++ " " 		++ catInt " " optionsDDC
-				++ " +RTS "	++ catInt " " optionsRTS)
+				++ " -v -make "	  ++ srcDS
+				++ " -o "	  ++ mainBin'
+				++ " -outputdir " ++ buildDir
+				++ " " 		  ++ catInt " " optionsDDC
+				++ " +RTS "	  ++ catInt " " optionsRTS)
 				""
 
 
@@ -67,7 +63,7 @@ jobCompile job@(JobCompile
 		=	runTimedCommand 
 	 		 $ systemTee False
 				(ddcBin'
-				++ " -c "	++ srcCopyDS'
+				++ " -c "	++ srcDS
 				++ " " 		++ catInt " " optionsDDC
 				++ " +RTS "	++ catInt " " optionsRTS)
 				""

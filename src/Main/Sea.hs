@@ -13,6 +13,7 @@ module Main.Sea
 	, makeSeaHeader )
 where
 import Main.Setup
+import Main.Result
 import Main.BuildFile
 import Main.Dump
 import Main.Util
@@ -31,6 +32,7 @@ import Sea.Flatten	(flattenTree)
 import DDC.Sea.Init	(initTree, mainTree)
 import Util
 import Data.Char
+import System.FilePath
 import qualified DDC.Module.Scrape	as M
 import qualified DDC.Main.Arg		as Arg
 import qualified DDC.Core.Glob		as C
@@ -38,13 +40,13 @@ import qualified DDC.Config.Version	as Version
 import qualified Sea.Util		as E
 import qualified Data.Map		as Map
 
-
 compileViaSea
 	:: (?verbose :: Bool, ?pathSourceBase :: FilePath)
 	=> Setup			-- ^ Compile setup.
 	-> ModuleId			-- ^ Module to compile, must also be in the scrape graph.
 	-> Tree ()			-- ^ The Tree for the module.
-	-> FilePath			-- ^ FilePath of source file.
+	-> FilePath			-- ^ path of source .ds file.
+	-> FilePath			-- ^ path of created .di file.
 	-> [FilePath]			-- ^ C import directories.
 	-> [FilePath]			-- ^ C include files.
 	-> Map ModuleId [a]		-- ^ Module import map.
@@ -53,10 +55,12 @@ compileViaSea
 	-> Map ModuleId M.Scrape	-- ^ Scrape graph of all modules reachable from the root.
 	-> Bool				-- ^ Whether to treat a 'main' function defined by this module
 					--	as the program entry point.
-	-> IO Bool
+	-> IO Result
 
 compileViaSea
-	setup modName eInit pathSource importDirs includeFilesHere importsExp
+	setup modName eInit 
+	pathDS pathDI
+	importDirs includeFilesHere importsExp
 	modDefinesMainFn sRoot scrapes_noRoot blessMain
  = {-# SCC "Sea/compile" #-}
     do	let ?args		= setupArgs setup
@@ -64,10 +68,7 @@ compileViaSea
 	-- Generate C source code ---------------------------------------------
 	outVerb $ ppr $ "  * Generate C source code\n"
 	(  seaHeader
-	 , seaSource )	<- outSea
-				modName
-	 			eInit
-				pathSource
+	 , seaSource )	<- outSea modName eInit	pathDS
 				(map ((\(Just f) -> f) . M.scrapePathHeader)
 					$ Map.elems scrapes_noRoot)
 				includeFilesHere
@@ -92,10 +93,16 @@ compileViaSea
 	     else return seaSource
 
 	-- Write C files ------------------------------------------------------
-	outVerb $ ppr $ "  * Write C files\n"
-	writeFile (?pathSourceBase ++ ".ddc.c") seaSourceInit
-	writeFile (?pathSourceBase ++ ".ddc.h") seaHeader
+	outVerb $ ppr $ "  * Write C files\n"	
+	let baseDS	= takeBaseName pathDS
+	let dirDS	= takeDirectory pathDS
+	let outputDir	= fromMaybe dirDS (outputDirOfSetup setup)
+	let pathC	= outputDir </> addExtension baseDS ".ddc.c"
+	let pathH	= outputDir </> addExtension baseDS ".ddc.h"
+	let pathO	= outputDir </> addExtension baseDS ".o"
 
+	writeFile pathC seaSourceInit
+	writeFile pathH seaHeader
 
 	------------------------------------------------------------------------
 	-- Invoke external compiler / linker
@@ -108,13 +115,23 @@ compileViaSea
 	-- Invoke GCC to compile C source.
 	invokeSeaCompiler
 		?args
-		?pathSourceBase
+		pathC
+		pathO
 		(setupRuntime setup)
 		(setupLibrary setup)
 		importDirs
 		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
 
-	return modDefinesMainFn
+	return	$ Result
+		{ resultModuleId	= modName
+		, resultDefinesMain	= modDefinesMainFn
+		, resultSourceDS	= pathDS
+		, resultOutputDI	= pathDI
+		, resultOutputC		= Just pathC
+		, resultOutputH		= Just pathH
+		, resultOutputO		= Just pathO
+		, resultOutputExe	= Nothing }
+
 
 -- | Substitute trivial x1 = x2 bindings
 seaSub	:: (?args :: [Arg.Arg]

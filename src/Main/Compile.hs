@@ -8,9 +8,10 @@ where
 
 -- main stages
 import Main.Setup
+import Main.Result
 import Main.Util
 import Main.Sea
-import Main.Llvm
+import Main.Llvm			()
 import qualified Main.Dump		as Dump
 import qualified Main.Source		as SS
 import qualified Main.Desugar		as SD
@@ -65,23 +66,41 @@ compileFile
 	-> ModuleId			-- ^ module to compile, must also be in the scrape graph.
 	-> Bool				-- ^ whether to treat a 'main' function defined by this module
 					--	as the program entry point.
-	-> IO Bool			-- ^ true if the module defines the main function
+	-> IO Result			-- ^ compilation result describing the created files.
 
 compileFile setup scrapes sModule blessMain
  = {-# SCC "Main/compileFile" #-}
-   do 	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
+   do	let ?args	= setupArgs setup
+	let ?verbose	= elem Arg.Verbose ?args
 
 	-- Decide on module names  ---------------------------------------------
 	let Just sRoot	= Map.lookup sModule scrapes
-	let filePath	= let Just s = M.scrapePathSource sRoot in s
-	let fileDir	= takeDirectory filePath
+	let modName	= M.scrapeModuleName sRoot
 
-	-- Gather up all the import dirs.
+	-- Get paths of source file -------------------------------------------
+	let pathDS	= let Just s = M.scrapePathSource sRoot in s
+	let baseDS	= takeBaseName pathDS
+	let dirDS	= takeDirectory pathDS
+
+	dirWorking		<- getCurrentDirectory
+	let pathRelativeDS	= "./" ++ makeRelative dirWorking pathDS
+
+	let ?pathSourceBase	= baseDS
+
+	-- Gather up all the import dirs ---------------------------------------
 	let importDirs	
-		= (setupLibrary setup)
-		: fileDir
+		= setupLibrary setup
+		: dirDS
 		: (concat $ [dirs | Arg.ImportDirs dirs <- setupArgs setup])
 
+	-- Decide where to place output files ---------------------------------
+	-- Not all of these will nessesarally be created,
+	--   but we define all the paths here.
+	let outputDir	= fromMaybe dirDS (outputDirOfSetup setup)
+	let pathDI	= outputDir </> addExtension baseDS ".di"
+	let pathDI_new	= outputDir </> addExtension baseDS ".di-new"
+
+	-- Debug
 	when ?verbose
 	 $ do	out	$ "  * CompileFile " % (M.scrapePathSource sRoot) % "\n"
 			% "    - setup  = " % show setup 	% "\n\n"
@@ -93,33 +112,6 @@ compileFile setup scrapes sModule blessMain
 				$ map show $ setupArgs setup)
 			% "\n"
 			
-	-- Load the source file
-	sSource		<- readUtf8File filePath
-
-	compileFile_parse 
-		setup scrapes sRoot sModule
-		importDirs blessMain  sSource
-
-
-compileFile_parse
-	setup scrapes sRoot sModule
-	importDirs blessMain sSource
- = {-# SCC "Main/compileFile_parse" #-}
-   do	let ?args		= setupArgs setup
-	let args		= setupArgs setup
-	let ?verbose		= elem Arg.Verbose ?args
-
-	-- extract some file names
-	let modName		= M.scrapeModuleName sRoot
-	let pathSource		= let Just s = M.scrapePathSource sRoot in s
-
-	dirWorking		<- getCurrentDirectory
-	let pathSourceRelative	= "./" ++ makeRelative dirWorking pathSource
-
-	let fileDir		= takeDirectory pathSource
-	let fileBase		= takeBaseName  pathSource
-	let ?pathSourceBase	= fileDir ++ "/" ++ fileBase
-	let base		= fileDir ++ "/" ++ fileBase
 	
 	-- Parse imported interface files --------------------------------------
 	let loadInterface (mod, scrape) = 
@@ -132,19 +124,21 @@ compileFile_parse
 		
 	let scrapes_noRoot	= Map.delete (M.scrapeModuleName sRoot) scrapes 
 
-	importsExp		<- {-# SCC "Main/load" #-}
-				   liftM Map.fromList
-				$  mapM loadInterface 
-				$  Map.toList scrapes_noRoot
+	importsExp	<- {-# SCC "Main/load" #-}
+			   liftM Map.fromList
+			$  mapM loadInterface 
+			$  Map.toList scrapes_noRoot
 
 	Dump.dumpST 	Arg.DumpSourceParse "source-parse--header" 
 		(concat $ Map.elems importsExp)
 
 
-	-- Parse the source file ----------------------------------------------
+	-- Load and parse the source file -------------------------------------
+	sSource		<- readUtf8File pathDS
+
 	outVerb $ ppr $ "  * Source: Parse\n"
 	(sParsed, pragmas)	
-			<- SS.parse pathSourceRelative sSource
+			<- SS.parse pathRelativeDS sSource
 
 	-- Slurp out pragmas
 	let pragmas	= {-# SCC "Main/compileFile_parse/pragmas" #-}
@@ -281,7 +275,7 @@ compileFile_parse
 	-- Convert to normalised form -----------------------------------------
 	outVerb $ ppr $ "  * Core: Tidy\n"
 	cgModule_tidy
-	 <- SC.coreTidy		"core-tidy" args base "CN" 
+	 <- SC.coreTidy		"core-tidy" ?args baseDS "CN" 
 				cgHeader cgModule
 							
 	-- Create local regions -----------------------------------------------
@@ -296,7 +290,7 @@ compileFile_parse
 		
 	cgModule_bind	
 	 <- SC.coreBind 	sModule (T.solutionRegionClasses solution) rsGlobal 
-				"core-bind" args base "CB"
+				"core-bind" ?args baseDS "CB"
 				cgHeader cgModule_tidy
 
 	-- Convert to A-normal form -------------------------------------------
@@ -342,7 +336,7 @@ compileFile_parse
 	-- Prepare for conversion to core -------------------------------------
 	outVerb $ ppr $ "  * Core: Prep\n"
 	cgModule_prep
-	 <- SC.corePrep		"core-prep" args base "CP"
+	 <- SC.corePrep		"core-prep" ?args baseDS "CP"
 				cgHeader cgModule_lambdaLifted 
 
 	-- Check the program one last time ------------------------------------
@@ -371,7 +365,7 @@ compileFile_parse
 				(T.solutionTypes solution)
 				vsNoExport
 
-	writeFile (?pathSourceBase ++ ".di") diInterface	
+	writeFile pathDI diInterface	
 
 	-- Make the new style module interface.
 	outVerb $ ppr $ "  * Make new style interface file\n"
@@ -389,8 +383,8 @@ compileFile_parse
 				cgModule_final
 
 	when (elem Arg.DumpNewInterfaces ?args)
-	 $ do writeFile (?pathSourceBase ++ ".di-new") 
-		$ pprStrPlain $ pprDocIndentedWithNewLines 2 $ doc diNewInterface
+	 $ writeFile pathDI_new
+	 $ pprStrPlain $ pprDocIndentedWithNewLines 2 $ doc diNewInterface
 
 	-- !! Early exit on StopCore
 	when (elem Arg.StopCore ?args)
@@ -461,10 +455,14 @@ compileFile_parse
 	-- TODO : Put the parameters into a struct and call compileViaX with just
 	-- a single parameter.
 	if elem Arg.ViaLLVM ?args
-	  then compileViaLlvm
-		setup modName eInit eHeader pathSource importDirs includeFilesHere importsExp
-		modDefinesMainFn sRoot scrapes_noRoot blessMain
+	  then {- compileViaLlvm
+		setup modName eInit eHeader pathDS importDirs includeFilesHere importsExp
+		modDefinesMainFn sRoot scrapes_noRoot blessMain -}
+		error "compile llvm not finished"
+
 	  else compileViaSea
-		setup modName eInit pathSource importDirs includeFilesHere importsExp
+		setup modName eInit 
+		pathDS pathDI
+		importDirs includeFilesHere importsExp
 		modDefinesMainFn sRoot scrapes_noRoot blessMain
 

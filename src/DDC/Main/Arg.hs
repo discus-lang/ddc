@@ -23,6 +23,7 @@ data Arg
 	| Make		[String]	-- ^ Recursive build then link executable.
 	| InputFile	String		-- ^ Set input file.
 	| OutputFile	String		-- ^ Set output file.
+	| OutputDir	String		-- ^ Dir for output files.
 	| ImportDirs	[String]	-- ^ Dirs to look for imports.
 	| PathBase	String		-- ^ Base path to libraries.
 	| NoImplicitPrelude		-- ^ Don't implicitly import the prelude.
