@@ -75,11 +75,11 @@ createJobs config way allFiles filePath
 		 shouldSucceed	  = not $ Set.member mainErrorCheck allFiles
 
 		 mainStdoutCheck  = sourceDir </> "Main.stdout.check" 
-		 mainStdoutDiff   = sourceDir </> "Main.stdout.diff" 
+		 mainStdoutDiff   = buildDir  </> "Main.run.stdout.diff" 
 		 shouldDiffStdout = Set.member mainStdoutCheck allFiles
 
 		 mainStderrCheck  = sourceDir </> "Main.stderr.check" 
-		 mainStderrDiff   = sourceDir </> "Main.stderr.diff" 
+		 mainStderrDiff   = buildDir  </> "Main.run.stderr.diff" 
 		 shouldDiffStderr = Set.member mainStderrCheck allFiles
 
 		 -- compile the .ds into a .bin
