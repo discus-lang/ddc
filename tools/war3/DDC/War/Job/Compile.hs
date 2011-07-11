@@ -60,12 +60,13 @@ jobCompile job@(JobCompile
 
 		-- Compile the program.
 		| otherwise
-		=	runTimedCommand 
+		= do	runTimedCommand 
 	 		 $ systemTee False
 				(ddcBin'
-				++ " -c "	++ srcDS
-				++ " " 		++ catInt " " optionsDDC
-				++ " +RTS "	++ catInt " " optionsRTS)
+				++ " -c "	  ++ srcDS
+				++ " -outputdir " ++ buildDir
+				++ " " 		  ++ catInt " " optionsDDC
+				++ " +RTS "	  ++ catInt " " optionsRTS)
 				""
 
 	(time, (code, strOut, strErr))
