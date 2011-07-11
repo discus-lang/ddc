@@ -1,7 +1,7 @@
 # Default build configuration.
 #
 #   This file is under version control.
-#   If you want to override these options then create a file make/config-override.deps
+#   If you want to override these options then create a file make/config-override.mk
 #   and assign the appropdiate variables there.
 #
 
