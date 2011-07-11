@@ -11,7 +11,7 @@ import DDC.Main.Setup
 import DDC.Main.Result
 import Main.Util
 import Main.Sea
-import Main.Llvm			()
+import Main.Llvm
 import qualified Main.Dump		as Dump
 import qualified Main.Source		as SS
 import qualified Main.Desugar		as SD
@@ -455,10 +455,11 @@ compileFile setup scrapes sModule blessMain
 	-- TODO : Put the parameters into a struct and call compileViaX with just
 	-- a single parameter.
 	if elem Arg.ViaLLVM ?args
-	  then {- compileViaLlvm
-		setup modName eInit eHeader pathDS importDirs includeFilesHere importsExp
-		modDefinesMainFn sRoot scrapes_noRoot blessMain -}
-		error "compile llvm not finished"
+	  then compileViaLlvm
+		setup modName eInit eHeader
+		pathDS pathDI
+		importDirs includeFilesHere importsExp
+		modDefinesMainFn sRoot scrapes_noRoot blessMain
 
 	  else compileViaSea
 		setup modName eInit 

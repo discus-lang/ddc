@@ -5,14 +5,13 @@
 module Main.Llvm
 	(compileViaLlvm)
 where
-
--- main stages
 import Main.BuildFile
 import Main.Sea
 import Main.Util
 
 import DDC.Base.SourcePos
 import DDC.Main.Setup
+import DDC.Main.Result
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Sea.Exp
@@ -35,6 +34,7 @@ import Llvm.Util
 import Llvm.Var
 
 import Sea.Util				(eraseAnnotsTree)
+import System.FilePath
 
 import Util
 import qualified Data.Map		as Map
@@ -58,7 +58,8 @@ compileViaLlvm
 	-> ModuleId			-- ^ Module to compile, must also be in the scrape graph.
 	-> Tree ()			-- ^ The Tree for the module.
 	-> Tree ()			-- ^ The constructor tags for imported modules.
-	-> FilePath			-- ^ FilePath of source file.
+	-> FilePath			-- ^ FilePath of source .ds file.
+	-> FilePath                     -- ^ FilePath of source .di file
 	-> [FilePath]			-- ^ C import directories.
 	-> [FilePath]			-- ^ C include files.
 	-> Map ModuleId [a]		-- ^ Module import map.
@@ -67,10 +68,12 @@ compileViaLlvm
 	-> Map ModuleId M.Scrape	-- ^ Scrape graph of all modules reachable from the root.
 	-> Bool				-- ^ Whether to treat a 'main' function defined by this module
 					--	as the program entry point.
-	-> IO Bool
+	-> IO Result
 
 compileViaLlvm
-	setup modName eTree eCtorTags pathSource importDirs includeFilesHere importsExp
+	setup modName eTree eCtorTags
+	pathSource pathDI
+	importDirs includeFilesHere importsExp
 	modDefinesMainFn sRoot scrapes_noRoot blessMain
  = do
 	let	?args		= setupArgs setup
@@ -79,8 +82,17 @@ compileViaLlvm
 	let	slotStackSize	= getValue buildStartSlotStackSize	sRoot
 	let	ctxStackSize	= getValue buildStartContextStackSize	sRoot
 
+        -- Decide where to put output files.
+	let baseDS	= takeBaseName pathSource
+	let dirDS	= takeDirectory pathSource
+	let outputDir	= fromMaybe dirDS (outputDirOfSetup setup)
+	let pathLL	= outputDir </> addExtension baseDS ".ddc.ll"
+	let pathH	= outputDir </> addExtension baseDS ".ddc.h"
+	let pathO	= outputDir </> addExtension baseDS ".o"
+        let pathS       = outputDir </> addExtension baseDS ".s"
+
 	outVerb $ ppr "  * Write C header\n"
-	writeFile (?pathSourceBase ++ ".ddc.h")
+	writeFile pathH
 		$ makeSeaHeader
 			eTree
 			pathSource
@@ -93,13 +105,21 @@ compileViaLlvm
 				(outLlvm modName eTree eCtorTags pathSource importsExp modDefinesMainFn heapSize slotStackSize ctxStackSize)
 				$ initLlvmState modName
 
-	writeFile (?pathSourceBase ++ ".ddc.ll")
+	writeFile pathLL
 			$ pprStrPlain $ ppLlvmModule llvmSource
 
-	invokeLlvmCompiler ?pathSourceBase []
-	invokeLlvmAssembler ?pathSourceBase []
+	invokeLlvmCompiler  pathLL pathS []
+	invokeLlvmAssembler pathS  pathO []
 
-	return modDefinesMainFn
+	return  $ Result
+	        { resultModuleId        = modName
+	        , resultDefinesMain     = modDefinesMainFn
+	        , resultSourceDS        = pathSource
+	        , resultOutputDI        = pathDI
+	        , resultOutputC         = Nothing
+	        , resultOutputH         = Just pathH
+	        , resultOutputO         = Just pathO
+	        , resultOutputExe       = Nothing }
 
 
 getValue :: (Build -> Maybe Integer) -> M.Scrape -> Integer

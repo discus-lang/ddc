@@ -19,18 +19,20 @@ stage	= "Llvm.Invoke"
 --	Representation source program into native assembler.
 invokeLlvmCompiler
 	:: (?verbose :: Bool)
-	=> FilePath		-- ^ base path of source file
+	=> FilePath		-- ^ path of source .ll file
+	-> FilePath             -- ^ path of output .s file
 	-> [String]		-- ^ extra flags to compile with (from build files)
 	-> IO ()
 
 invokeLlvmCompiler
-	pathSourceBase
+	pathLL
+	pathS
 	extraFlags
  = do
  	-- let cmd = Config.makeLlvmCompileCmd
-	let cmd	= Config.llcCommand ++ " "
-		++ pathSourceBase ++ ".ddc.ll"
-		++ " -o " ++ pathSourceBase ++ ".ddc.s"
+	let cmd	= Config.llcCommand 
+	        ++ " "    ++ pathLL
+		++ " -o " ++ pathS
 
 	outVerb $ ppr $ "\n"
 		% "  * Invoking IR compiler.\n"
@@ -43,7 +45,7 @@ invokeLlvmCompiler
 	 ExitFailure _
 	  -> panic stage
 	  	$ "invokeLlvmCompiler: compilation of IR file failed.\n"
-		% "    path = " % pathSourceBase % ".ddc.ll" % "\n"
+		% "    path = " % pathLL % "\n"
 
 
 
@@ -51,18 +53,20 @@ invokeLlvmCompiler
 --	source program into a native object file.
 invokeLlvmAssembler
 	:: (?verbose :: Bool)
-	=> FilePath		-- ^ base path of source file
+	=> FilePath		-- ^ path of source .s file
+	-> FilePath             -- ^ path of output .o file
 	-> [String]		-- ^ extra flags to compile with (from build files)
 	-> IO ()
 
 invokeLlvmAssembler
-	pathSourceBase
+	pathS
+	pathO
 	extraFlags
  = do
  	-- let cmd = Config.makeLlvmAssembleCmd
-	let cmd	=  Config.asCommand ++ " "
-		++ pathSourceBase ++ ".ddc.s"
-		++ " -o " ++ pathSourceBase ++ ".o"
+	let cmd	=  Config.asCommand 
+	        ++ " "    ++ pathS
+		++ " -o " ++ pathO
 
 	outVerb $ ppr $ "\n"
 		% "  * Invoking assembler.\n"
@@ -75,5 +79,5 @@ invokeLlvmAssembler
 	 ExitFailure _
 	  -> panic stage
 	  	$ "invokeLlvmAssembler: compilation of ASM file failed.\n"
-		% "    path = " % pathSourceBase % ".s" % "\n"
+		% "    path = " % pathS % "\n"
 
