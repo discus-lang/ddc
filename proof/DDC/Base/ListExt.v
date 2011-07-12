@@ -70,6 +70,15 @@ Fixpoint filter {A: Type} (f: A -> bool) (xx: list A) : list A :=
             else filter f xs
   end.
 
+(* Update the element at the given position in a list.
+   If the position is not in the list then return the original list. *)
+Fixpoint update {A: Type} (ix: nat) (y: A) (xx: list A) : list A :=
+ match ix, xx with 
+ | _,    nil       => nil
+ | O,    x :: xs   => y :: xs
+ | S n', x :: xs   => x :: update n' y xs
+ end.
+
 
 (********************************************************************)
 (* Environment notations.
@@ -692,6 +701,10 @@ Proof.
  intros. induction xx; auto.
  simpl. breaka (f a). simpl. omega.
 Qed.
+
+
+(********************************************************************)
+(* Lemmas: update *)
 
 
 (********************************************************************)

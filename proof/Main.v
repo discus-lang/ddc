@@ -8,6 +8,9 @@ Require Import DDC.Language.Simple.
 (* STLC with Fixpoints, Boolean choice and Naturals. *)
 Require Import DDC.Language.SimplePCF.
 
+(* STLC with mutable references. *)
+Require Import DDC.Language.SimpleRef.
+
 (* STLC with Algebraic Data Types. *)
 Require Import DDC.Language.SimpleData.
 
