@@ -62,8 +62,8 @@ Inductive STEP  : heap -> exp -> heap -> exp -> Prop :=
  | EsNewRef
    :  forall h v1
    ,  value v1
-   -> STEP h         (XNewRef v1)
-           (h :> v1) (XLoc (length h))
+   -> STEP h           (XNewRef v1)
+           (snoc v1 h) (XLoc (length h))
 
  | EsReadRef
    :  forall l h v

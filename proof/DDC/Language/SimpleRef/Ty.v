@@ -48,7 +48,7 @@ Hint Constructors TYPE.
 
 (********************************************************************)
 Definition TYPEH (se : tyenv) (h: heap)
-   := Forall2 (TYPE nil nil) h se.
+   := Forall2 (TYPE nil se) h se.
 
 
 (********************************************************************)
@@ -64,6 +64,7 @@ Qed.
 Hint Resolve type_wfX.
 
 
+(********************************************************************)
 (* Weakening the type environment of a typing judgement.
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across
@@ -97,4 +98,31 @@ Proof.
   rewrite H0. apply type_tyenv_insert. auto.
 Qed.
 
+
+(********************************************************************)
+(* Weakening of store typing. *)
+Lemma type_stenv_push
+ : forall te se1 t2     x t1
+ ,  TYPE te  se1        x t1
+ -> TYPE te (t2 <: se1) x t1.
+Proof.
+ intros. gen te t1.
+ induction x; intros; inverts H; eauto.
+Qed.
+Hint Resolve type_stenv_push.
+
+
+Lemma type_stenv_weaken
+ : forall te se1 se2 x t1
+ ,  TYPE te  se1         x t1
+ -> TYPE te (se2 >< se1) x t1.
+Proof.
+ intros. gen se1.
+ induction se2; intros.
+ rewrite app_nil_right. auto.
+ assert ((se2 :> a) >< se1 = se2 >< (a <: se1)). auto.
+  rewrite H0.
+  eapply IHse2. apply type_stenv_push. auto.
+Qed.
+Hint Resolve type_stenv_weaken.
 
