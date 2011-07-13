@@ -41,17 +41,15 @@ jobCompile job@(JobCompile
 	let compile
 		| Just mainBin	<- mMainBin
 		= do	
-			mainBin'	<- io $ canonicalizePath mainBin
-
 			-- If there is an existing binary then remove it.
-			qssystem $ "rm -f " ++ mainBin'
+			qssystem $ "rm -f " ++ mainBin
 
 			-- Build the program.
 	 		runTimedCommand 
 	 		 $ systemTee False 
 				(ddcBin'
 				++ " -v -make "	  ++ srcDS
-				++ " -o "	  ++ mainBin'
+				++ " -o "	  ++ mainBin
 				++ " -outputdir " ++ buildDir
 				++ " " 		  ++ catInt " " optionsDDC
 				++ " +RTS "	  ++ catInt " " optionsRTS)

@@ -5,7 +5,6 @@ where
 import DDC.War.Job
 import DDC.War.Result
 import BuildBox
-import System.Directory
 
 
 -- | Compare two files for differences.
@@ -15,15 +14,12 @@ jobDiff (JobDiff testName _wayName
  = do	needs fileRef
 	needs fileOut
 	
-	fileRef'	<- io $ canonicalizePath fileRef
-	fileOut'	<- io $ canonicalizePath fileOut
-	
 	let diff	= "diff"
 	
 	-- Run the binary.
 	(code, strOut, strErr)
 	 <- systemTee False 
-	 	(diff ++ " " ++ fileRef' ++ " " ++ fileOut')
+	 	(diff ++ " " ++ fileRef ++ " " ++ fileOut)
 		""
 	
 	-- Write its output to file.
