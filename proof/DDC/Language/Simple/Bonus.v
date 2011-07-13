@@ -7,20 +7,20 @@ Require Import DDC.Language.Simple.SubstExpExp.
 
 (********************************************************************)
 (* Weakening type environments *)
-Theorem type_tyenv_weaken1
+Lemma type_tyenv_weaken1
  :  forall te x t1 t2
  ,  TYPE te          x t1
  -> TYPE (t2 <: te)  x t1.
 Proof.
  intros. gen te t1.
- induction x; intros; inversions H; eauto.
+ induction_type x.
 
  Case "XLam".
   eapply TYLam. rewrite snoc_cons. auto.
 Qed.
 
 
-Theorem type_tyenv_weaken
+Lemma type_tyenv_weaken
  :  forall tenv1 tenv2 x1 t1
  ,  TYPE tenv1            x1 t1
  -> TYPE (tenv2 >< tenv1) x1 t1.
@@ -35,7 +35,7 @@ Qed.
 
 (********************************************************************)
 (* Strengthen type environments *)
-Theorem type_tyenv_strengthen
+Lemma type_tyenv_strengthen
  :  forall te te' n x t
  ,   wfX te' x
  ->  te' = firstn n te
@@ -43,11 +43,10 @@ Theorem type_tyenv_strengthen
  ->  TYPE te' x t.
 Proof.
  intros. gen te te' n t.
- induction x; intros; inversions H1.
- 
+ induction_type x; subst. 
+
  Case "XVar".
-  apply TYVar.
-   destruct H. eauto. 
+  destruct H. eauto.
 
  Case "XLam".
   simpl in H.
@@ -55,19 +54,19 @@ Proof.
    eapply IHx with (n := S n) (te := te :> t); auto.
 
  Case "XApp".
-  simpl in H. destruct H. eauto.
+  simpl in H. burn.
 Qed.
 
 
-Theorem type_check_closed_in_empty_tyenv
+Lemma type_check_closed_in_empty_tyenv
  :  forall tenv x t
  ,  closedX x
  -> TYPE tenv x t
  -> TYPE nil  x t.
 Proof.
- intros. unfold closedX in H. 
+ intros.
  eapply type_tyenv_strengthen; eauto.
- symmetry. eapply firstn_zero.
+  symmetry. eapply firstn_zero.
 Qed.
 
 
@@ -78,10 +77,10 @@ Theorem type_check_closed_in_any_tyenv
  -> TYPE tenv' x1 t1.
 Proof.
  intros.
- lets D: type_check_closed_in_empty_tyenv H H0.
- assert (TYPE (tenv' >< nil) x1 t1).
+ assert (TYPE nil x1 t1).
+  eapply type_check_closed_in_empty_tyenv; eauto.
+ assert (TYPE (tenv' >< nil) x1 t1); eauto.
   apply type_tyenv_weaken. auto.
-  auto.
 Qed.
 
 
@@ -98,9 +97,9 @@ Proof.
  induction x; intros; simpl; simpl in H0.
  
  Case "XVar".
-  lift_cases; intros.
+  lift_cases; intros; eauto.
   false. subst. destruct H0.
-  eapply get_above_false in H; auto. auto.
+   eapply get_above_false in H; auto. 
 
  Case "XLam".
   eapply IHx in H0; eauto.
@@ -108,8 +107,8 @@ Proof.
 
  Case "XApp".
   destruct H0.
-  lets D1: IHx1 H0 H. rewrite D1.
-  lets D2: IHx2 H1 H. rewrite D2.
+  spec IHx1 H0 H. rewrite IHx1.
+  spec IHx2 H1 H. rewrite IHx2.
   auto.
 Qed.
 
@@ -121,7 +120,7 @@ Lemma liftX_closed
  ,  closedX x
  -> liftX 0 x = x.
 Proof.
- intros. unfold closedX in H. eapply liftX_wfX; eauto. 
- simpl. auto.
+ intros.
+  eapply liftX_wfX; eauto. auto.
 Qed.
 

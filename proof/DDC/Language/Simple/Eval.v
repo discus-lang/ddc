@@ -26,6 +26,14 @@ Inductive EVAL : exp -> exp -> Prop :=
 Hint Constructors EVAL.
 
 
+(* Invert all hypothesis that are compound eval statements. *)
+Ltac inverts_eval :=
+ repeat 
+  (match goal with 
+   | [ H: EVAL (XApp _ _)_ |- _ ] => inverts H
+   end).
+
+
 (* A terminating big-step evaluation always produces a whnf.
    The fact that the evaluation terminated is implied by the fact
    that we have a finite proof of EVAL to pass to this lemma. 
@@ -54,25 +62,24 @@ Proof.
  intros x1 t1 v2 HT HE. gen t1.
 
  (* Induction over the form of (EVAL x1 x2) *)
- induction HE.
+ induction HE; intros.
  Case "EVDone".
-  intros. apply EsNone.
+  apply EsNone.
 
  Case "EVLamApp".
-  intros. inverts HT.
+  inverts_type.
+  spec IHHE1 H2.
+  spec IHHE2 H4.
 
-  lets E1: IHHE1 H2. 
-  lets E2: IHHE2 H4.
-
-  lets T1: preservation_steps H2 E1. inverts keep T1.
-  lets T2: preservation_steps H4 E2.
+  lets T1: preservation_steps H2 IHHE1. inverts keep T1.
+  lets T2: preservation_steps H4 IHHE2.
   lets T3: subst_exp_exp H1 T2.
   lets E3: IHHE3 T3.
 
   eapply EsAppend.
     lets D: steps_context XcApp1. eapply D. eauto.
    eapply EsAppend.
-    lets D: steps_context XcApp2 E2; eauto.
+    lets D: steps_context XcApp2 IHHE2; eauto.
    eapply EsAppend.
     eapply EsStep.
      eapply EsLamApp. eauto.
@@ -97,32 +104,14 @@ Lemma eval_expansion
  -> STEP x1 x2 -> EVAL x2 v3 
  -> EVAL x1 v3.
 Proof.
- intros. gen te t1 v3.
+ intros te x1 t1 x2 v3 HT HS HE. gen te t1 v3.
+ induction HS; intros.
 
- (* Induction over the form of (STEP x1 x2) *)
- induction H0; intros.
+ Case "context".
+  destruct H; inverts_type; inverts_eval; eauto; nope.
 
- Case "eval in context".
-  destruct H. 
-
-  SCase "top level".
-   eauto.
- 
-  SCase "x1 steps".
-   inverts H1. inverts H2.
-    inverts H.
-    eapply EVLamApp; eauto.
-
-  SCase "x2 steps".
-   inverts H1. inverts H2.
-   inverts H1.
-   eapply EVLamApp; eauto.
-
-  SCase "application".
-   eapply EVLamApp.
-    eauto.
-    inverts H. 
-    apply EVDone. auto. auto.
+ Case "application".
+  eauto.
 Qed.
 
 
@@ -133,17 +122,12 @@ Lemma eval_of_stepsl
  -> STEPSL   x1 v2 -> value v2
  -> EVAL     x1 v2.
 Proof.
- intros.
- induction H0.
- 
- Case "ESLNone".
-   apply EVDone. inverts H1. auto.
+ intros x1 t1 v2 HT HS Hv.
+ induction HS; eauto.
 
  Case "ESLCons".
-  eapply eval_expansion. 
-   eauto. eauto. 
-   apply IHSTEPSL.
-   eapply preservation. eauto. auto. auto.
+  eapply eval_expansion;
+   eauto using preservation.
 Qed.
 
 
@@ -160,6 +144,6 @@ Lemma eval_of_steps
 Proof.
  intros.
  eapply eval_of_stepsl; eauto.
- apply  stepsl_of_steps; auto.
+  apply stepsl_of_steps; auto.
 Qed.
 

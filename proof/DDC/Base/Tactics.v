@@ -2,6 +2,16 @@
 Require Export DDC.Base.LibTactics.
 Require Export Omega.
 
+(********************************************************************)
+(* Shorthands for existing tactics *)
+
+Tactic Notation "spec" hyp(H1) hyp(H2) 
+ := specializes H1 H2.
+Tactic Notation "spec" hyp(H1) hyp(H2) hyp(H3)
+ := specializes H1 H2 H3.
+Tactic Notation "spec" hyp(H1) hyp(H2) hyp(H3) hyp(H4)
+ := specializes H1 H2 H3 H4.
+
 
 Tactic Notation "break" constr(E) :=
  let X := fresh "X" in remember (E) as X; destruct X.
@@ -10,8 +20,11 @@ Tactic Notation "breaka" constr(E) :=
  let X := fresh "X" in remember (E) as X; destruct X; auto.
 
 
-(* Find the first (nat_compare ?E1 ?E2) and destruct it into the
-   possible orderings. Also substitute ?E1 = ?E2 when they are equal. *)
+(********************************************************************)
+(* Breaking up nat_compare
+   Find the first (nat_compare ?E1 ?E2) and destruct it into the
+   possible orderings. Also substitute ?E1 = ?E2 when they are equal. 
+ *)
 Ltac fbreak_nat_compare :=
  match goal with 
  |  [ |- context [nat_compare ?E1 ?E2] ]
@@ -46,6 +59,31 @@ Ltac lift_cases
      => case (le_gt_dec n n')
     end.
 
+
+(********************************************************************)
+(* A better 'false'. 
+   Try to eliminate the goal by finding a false hypothesis.
+ *)
+Ltac nope1
+ := match goal with
+    (* An equality might be false, so check it before
+       attemptiong to clear it in the next case. *)
+      [ H : _ = _ |- _] => solve [false]
+   
+    (* Inverting an equality doesn't make progress, 
+       so just get rid of it. *)
+    | [ H : _ = _ |- _] => clear H
+
+    (* Keep inverting hypothesis provided we don't get anymore
+       goals. If we get more goals then we'll diverge, and we're
+       looking to eliminate this goal, not make more. *)
+    | [ H : _     |- _] 
+      => first [ solve [false]
+               | solve [inverts H]
+               | (inverts H ; [idtac]) ]
+    end.
+
+Ltac nope := repeat nope1.
 
 
 (********************************************************************)
@@ -100,13 +138,14 @@ Ltac burn1
 
 (* Top-level megatactic.
    Handles disjunctions by applying burn1 to each of the parts.
-    This often happens in progress proofs. eg  value x \/ step x x'.
-
-   TODO: handle conjuctions common in preservation proofs.*)
+    This often happens in progress proofs. eg  value x \/ step x x'. *)
 Ltac burn :=
  match goal with 
-   [ _ : _ |- _ \/ _ ] 
-     => try burn1; try (left; burn1); try (right; burn1)
+     [ _ : _ |- _ \/ _ ] 
+       => try burn1; try (left; burn1); try (right; burn1)
+
+   | [ H : _ /\ _ |- _]
+       => decompose [and] H; burn1
 
    | _ => burn1
  end.

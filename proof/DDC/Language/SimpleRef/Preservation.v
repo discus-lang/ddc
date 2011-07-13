@@ -65,11 +65,13 @@ Proof.
   admit. (* extends *)
   admit. (* ok *)
   auto.
+  admit.
 Qed.
 
 
 (* If a closed, well typed expression takes several evaluation steps
    then the result has the same type as before. *)
+(*
 Lemma preservation_steps
  :  forall x1 t1 x2
  ,  TYPE nil x1 t1
@@ -80,11 +82,12 @@ Proof.
  induction H0; eauto.
   eapply preservation; eauto.
 Qed.
-
+*)
 
 (* If a closed, well typed expression takes several evaluation steps
    then the result has the same type as before. 
    Usses the left linearised version of steps judement. *)
+(*
 Lemma preservation_stepsl
  :  forall x1 t1 x2
  ,  TYPE nil x1 t1
@@ -98,4 +101,6 @@ Proof.
   eapply preservation. 
    eauto. auto.
 Qed.
+*)
+
 

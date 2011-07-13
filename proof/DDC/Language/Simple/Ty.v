@@ -24,11 +24,12 @@ Hint Constructors TYPE.
 
 (* Invert all hypothesis that are compound typing statements. *)
 Ltac inverts_type :=
- match goal with 
- | [ H: TYPE _ (XVar _)   _ |- _ ] => inverts H
- | [ H: TYPE _ (XLam _ _) _ |- _ ] => inverts H
- | [ H: TYPE _ (XApp _ _) _ |- _ ] => inverts H
- end.
+ repeat 
+  (match goal with 
+   | [ H: TYPE _ (XVar _)   _ |- _ ] => inverts H
+   | [ H: TYPE _ (XLam _ _) _ |- _ ] => inverts H
+   | [ H: TYPE _ (XApp _ _) _ |- _ ] => inverts H
+   end).
 
 
 (* Induction over structure of expression, 
@@ -36,6 +37,25 @@ Ltac inverts_type :=
    This gets common cases in proofs about TYPE judgements. *)
 Tactic Notation "induction_type" ident(X) :=
  induction X; intros; inverts_type; simpl; eauto.
+
+
+
+(*******************************************************************)
+(* Forms of values. 
+   If we know the type of a value then we know the
+   form of that value. *)
+
+Lemma value_lam 
+ :  forall xx te t1 t2
+ ,  value xx 
+ -> TYPE te xx (TFun t1 t2)
+ -> (exists t x, xx = XLam t x).
+Proof.
+ intros.
+ destruct xx; eauto; nope.
+Qed.
+Hint Resolve value_lam.
+
 
 
 (********************************************************************)
