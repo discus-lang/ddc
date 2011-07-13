@@ -201,7 +201,7 @@ Proof.
  induction t1; intros; auto.
 
  Case "TVar".
-  repeat (simpl; fbreak_nat_compare; burn).
+  repeat (simpl; fbreak_nat_compare); try burn.
   rewrite substTT_liftTT. auto.
 
  Case "TForall".

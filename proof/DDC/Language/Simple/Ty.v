@@ -22,6 +22,22 @@ Inductive TYPE : tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
+(* Invert all hypothesis that are compound typing statements. *)
+Ltac inverts_type :=
+ match goal with 
+ | [ H: TYPE _ (XVar _)   _ |- _ ] => inverts H
+ | [ H: TYPE _ (XLam _ _) _ |- _ ] => inverts H
+ | [ H: TYPE _ (XApp _ _) _ |- _ ] => inverts H
+ end.
+
+
+(* Induction over structure of expression, 
+   inverting compound typing judgements along the way.
+   This gets common cases in proofs about TYPE judgements. *)
+Tactic Notation "induction_type" ident(X) :=
+ induction X; intros; inverts_type; simpl; eauto.
+
+
 (********************************************************************)
 (* A well typed expression is well formed. *)
 Theorem type_wfX
@@ -30,7 +46,7 @@ Theorem type_wfX
  -> wfX  te x.
 Proof.
  intros. gen te t.
- induction x; intros; inverts H; simpl; eauto.
+ induction_type x.
 Qed.
 Hint Resolve type_wfX.
 
@@ -45,15 +61,14 @@ Lemma type_tyenv_insert
  -> TYPE (insert ix t2 te) (liftX ix x) t1.
 Proof.
  intros. gen ix te t1.
- induction x; intros; simpl; inverts H; eauto.
+ induction_type x.
 
  Case "XVar".
   lift_cases; intros; auto.
 
  Case "XLam".
   apply TYLam.
-  rewrite insert_rewind. 
-   apply IHx. auto.
+  rewrite insert_rewind. auto. 
 Qed.
 
 
@@ -64,8 +79,8 @@ Lemma type_tyenv_weaken
 Proof.
  intros.
  assert (te :> t2 = insert 0 t2 te).
-  simpl. destruct te; auto.
-  rewrite H0. apply type_tyenv_insert. auto.
+  simpl. destruct te; auto. rewrite H0.
+ apply type_tyenv_insert. auto.
 Qed.
 
 

@@ -118,7 +118,7 @@ Proof.
   ; intros; simpl.
 
  Case "XVar".
-  repeat (simple; lift_cases; intros; burn).
+  repeat (simple; lift_cases; intros); burn.
 
  Case "XLam".
   rewrite IHx. auto.
@@ -168,7 +168,7 @@ Proof.
   ; intros; simpl.
 
  Case "XVar".
-  repeat (simple; lift_cases; intros; burn).
+  repeat (simple; lift_cases; intros); burn.
 
  Case "XLam".
   f_equal.
