@@ -19,8 +19,8 @@ stage	= "Llvm.Invoke"
 --	Representation source program into native assembler.
 invokeLlvmCompiler
 	:: (?verbose :: Bool)
-	=> FilePath		-- ^ path of source .ll file
-	-> FilePath             -- ^ path of output .s file
+	=> FilePath		-- ^ path of source .ll file (must be canonical)
+	-> FilePath             -- ^ path of output .s file  (must be canonical)
 	-> [String]		-- ^ extra flags to compile with (from build files)
 	-> IO ()
 

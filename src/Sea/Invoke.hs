@@ -15,8 +15,8 @@ stage	= "Sea.Invoke"
 -- | Invoke the external C compiler to compile this source program.
 invokeSeaCompiler 
 	:: [Arg]		-- ^ ddc command line args
-	-> FilePath		-- ^ path of source C file
-	-> FilePath		-- ^ path of output O file
+	-> FilePath		-- ^ path of source C file (must be canonical)
+	-> FilePath		-- ^ path of output O file (must be canonical)
 	-> FilePath		-- ^ path to the runtime system
 	-> FilePath		-- ^ path to the base libraries
 	-> [FilePath]		-- ^ extra include dirs
@@ -29,16 +29,14 @@ invokeSeaCompiler args
 	importDirs
 	extraFlags
  = do
-	pathC'		<- canonicalizePath pathC
-	pathO'		<- canonicalizePath pathO
 	pathRuntime'	<- canonicalizePath pathRuntime
 	pathLibrary'	<- canonicalizePath pathLibrary
 	importDirs'	<- mapM canonicalizePath $ nub importDirs
 
 	let cmd	= Config.makeSeaCompileCmd 
 			args
-			pathC'
-			pathO'
+			pathC
+			pathO
 			pathRuntime'
 			pathLibrary'
 			importDirs
