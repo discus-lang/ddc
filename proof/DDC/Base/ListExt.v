@@ -991,3 +991,66 @@ Proof.
    inverts H1. eauto.
 Qed.
 
+
+Lemma Forall2_snoc
+ : forall {A B : Type}
+          (R   : A -> B -> Prop)
+          (xs  : list A)
+          (ys  : list B)
+          x y
+ ,  R x y
+ -> Forall2 R xs ys
+ -> Forall2 R (x <: xs) (y <: ys).
+Proof.
+ intros.
+ induction H0.
+  simpl. auto.
+  simpl. auto.
+Qed.
+Hint Resolve Forall2_snoc.
+
+
+Lemma Forall2_get_get_same
+ : forall {A B : Type} 
+          (R   : A -> B -> Prop)
+          (xs  : list A)
+          (ys  : list B)
+          ix x y
+ ,  Forall2 R xs ys
+ -> get ix xs = Some x
+ -> get ix ys = Some y
+ -> R x y.
+Proof.
+ intros. gen ix.
+ induction H; intros.
+  false.
+  destruct ix.
+   simpl in H1. inverts H1.
+   simpl in H2. inverts H2. 
+   auto.
+
+   simpl in H1.
+   simpl in H2.
+   eauto.
+Qed.
+
+
+Lemma Forall2_update_right
+ : forall {A B : Type} 
+          (R   : A -> B -> Prop)
+          (xs  : list A)
+          (ys  : list B)
+          ix x y
+ ,  R x y
+ -> Forall2 R xs ys
+ -> get ix ys = Some y
+ -> Forall2 R (update ix x xs) ys.
+Proof.
+ intros. gen ix.
+ induction H0; intros.
+  false.
+  induction ix.
+   simpl. simpl in H2. inverts H2. auto.
+   simpl. eauto.
+Qed.
+
