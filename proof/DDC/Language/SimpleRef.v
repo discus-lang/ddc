@@ -20,5 +20,5 @@ Require Export DDC.Language.SimpleRef.Progress.
 Require Export DDC.Language.SimpleRef.Preservation.
 
 (* Big step evaluation, and conversion between small step evaluation. *)
-Require Export DDC.Language.SimpleRef.Eval.
+(* Require Export DDC.Language.SimpleRef.Eval. *)
 

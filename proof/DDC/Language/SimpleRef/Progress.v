@@ -17,24 +17,6 @@ Qed.
 Hint Resolve value_ref.
 
 
-Ltac dest H
- := match goal with 
-    [ H : exists a, _ |- _ ]
-     => destruct H as [a]
-    end.
-
-Ltac dests H
- := repeat (dest H).
-
-
-Ltac shift H
- := match goal with 
-    [ H : exists a, _ |- exists b, _] 
-     => destruct H as [a]; exists a
-    end.
-
-Ltac shifts H
- := repeat (shift H).
 
 
 (* A closed, well typed expression is either a value or can 
