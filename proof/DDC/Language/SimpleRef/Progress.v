@@ -3,20 +3,6 @@ Require Import DDC.Language.SimpleRef.Step.
 Require Import DDC.Language.SimpleRef.Ty.
 Require Import DDC.Language.SimpleRef.Exp.
 
-Lemma value_ref
- :  forall x te se t
- ,  value x
- -> TYPE te se x (TRef t)
- -> (exists l, x = XLoc l).
-Proof.
- intros.
- destruct x; try (inverts H0); try (inverts H; inverts H0).
- inverts H1. inverts H.
- inverts H1. eauto.
-Qed.
-Hint Resolve value_ref.
-
-
 
 
 (* A closed, well typed expression is either a value or can 
@@ -47,10 +33,9 @@ Proof.
    destruct IHHT2; eauto.
    SSCase "value x2".
     SSSCase "EsLamApp".
-     assert (exists t x, x1 = XLam t x). admit.
-      dests H1.
-      subst.
-      exists h (substX 0 x2 x). auto.
+     assert (exists t x, x1 = XLam t x) as HF. eauto.
+     dests HF. subst.
+     exists h (substX 0 x2 x). auto.
 
    SSCase "x2 steps".
     dests H0. exists h' (XApp x1 x'). eauto.
@@ -70,13 +55,11 @@ Proof.
   destruct IHHT; eauto.
   SCase "xRef value".
    assert (exists l, xRef = XLoc l) as HF. eauto.
-    destruct HF as [l]. subst.
+   dest HF. subst.
    inverts_type.
    assert (exists xData, get l h = Some xData).
-    admit. destruct H0 as [xData]. (* ok, list lemma *)
-
-   exists h.
-   exists xData. auto.
+    admit. dest H0. (* ok, list lemma *)
+   exists h xData. auto.
 
   SCase "xRef steps".
    dests H.
@@ -90,9 +73,8 @@ Proof.
    destruct IHHT2; eauto.
     SSCase "value xData".
      assert (exists l, xRef = XLoc l) as HF. eauto.
-      destruct HF as [l]. subst.
-     exists (update l xData h). exists xUnit.
-     auto.
+     dest HF. subst.
+     exists (update l xData h) xUnit. auto.
     SSCase "x2 steps".
      dests H0.
      exists h' (XWriteRef xRef x'). auto.

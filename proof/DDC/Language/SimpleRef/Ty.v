@@ -69,8 +69,36 @@ Tactic Notation "induction_type" ident(X) :=
 
 
 (********************************************************************)
+(* Well-typing of heap wrt the store typing. *)
 Definition TYPEH (se : tyenv) (h: heap)
    := Forall2 (TYPE nil se) h se.
+
+
+(********************************************************************)
+(* Forms of values. 
+   If we know the type of a value,
+   then we know the form of that value. *)
+
+Lemma value_lam 
+ :  forall x te se t1 t2
+ ,  value x 
+ -> TYPE te se x (TFun t1 t2)
+ -> (exists t x', x = XLam t x').
+Proof.
+ intros. destruct x; eauto; nope.
+Qed.
+Hint Resolve value_lam.
+
+
+Lemma value_ref
+ :  forall x te se t
+ ,  value x
+ -> TYPE te se x (TRef t)
+ -> (exists l, x = XLoc l).
+Proof.
+ intros. destruct x; eauto; nope.
+Qed.
+Hint Resolve value_ref.
 
 
 (********************************************************************)
