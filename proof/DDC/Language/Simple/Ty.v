@@ -39,7 +39,6 @@ Tactic Notation "induction_type" ident(X) :=
  induction X; intros; inverts_type; simpl; eauto.
 
 
-
 (*******************************************************************)
 (* Forms of values. 
    If we know the type of a value then we know the

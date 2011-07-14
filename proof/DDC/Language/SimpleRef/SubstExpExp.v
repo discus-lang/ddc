@@ -16,12 +16,12 @@ Lemma subst_exp_exp_ix
  -> TYPE (delete ix te) se (substX ix x2 x1) t1.
 Proof.
  intros. gen ix te se x2 t1.
- induction x1; intros; simpl; inverts H0; eauto.
+ induction_type x1.
 
  Case "XVar".
   fbreak_nat_compare.
   SCase "i = ix".
-   rewrite H in H5. inverts H5. auto.
+   burn.
 
   SCase "n < ix".
    apply TyVar.
@@ -31,9 +31,9 @@ Proof.
   SCase "n > ix".
    apply TyVar.
    destruct n.
-    false. omega.
+    burn.
     simpl. nnat. rewrite <- H5.
-     apply get_delete_below. omega.
+     apply get_delete_below. burn.
 
  Case "XLam".
   apply TyLam.

@@ -96,6 +96,16 @@ Inductive value : exp -> Prop :=
    -> value xx.
 Hint Constructors value.
 
+Lemma value_wnfX 
+ : forall xx, value xx -> wnfX xx.
+ Proof. intros. inverts H. auto. Qed.
+Hint Resolve value_wnfX.
+
+Lemma value_closedX 
+ : forall xx, value xx -> closedX xx.
+ Proof. intros. inverts H. auto. Qed.
+Hint Resolve value_closedX.
+
 
 (********************************************************************)
 (* Lifting of references into the environment.

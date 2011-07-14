@@ -46,6 +46,28 @@ Inductive TYPE : tyenv -> stenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
+(* Invert all hypothesis that are compound typing statements. *)
+Ltac inverts_type :=
+ repeat 
+  (match goal with 
+   | [ H: TYPE _ _ (XCon _)   _      |- _ ] => inverts H
+   | [ H: TYPE _ _ (XVar _)   _      |- _ ] => inverts H
+   | [ H: TYPE _ _ (XLam _ _) _      |- _ ] => inverts H
+   | [ H: TYPE _ _ (XApp _ _) _      |- _ ] => inverts H
+   | [ H: TYPE _ _ (XNewRef _) _     |- _ ] => inverts H
+   | [ H: TYPE _ _ (XWriteRef _ _) _ |- _ ] => inverts H
+   | [ H: TYPE _ _ (XReadRef _ ) _   |- _ ] => inverts H
+   | [ H: TYPE _ _ (XLoc _ ) _       |- _ ] => inverts H
+   end).
+
+
+(* Induction over structure of expression, 
+   inverting compound typing judgements along the way.
+   This gets common cases in proofs about TYPE judgements. *)
+Tactic Notation "induction_type" ident(X) :=
+ induction X; intros; inverts_type; simpl; eauto.
+
+
 (********************************************************************)
 Definition TYPEH (se : tyenv) (h: heap)
    := Forall2 (TYPE nil se) h se.
@@ -58,8 +80,7 @@ Theorem type_wfX
  ,  TYPE te se x t
  -> wfX  te x.
 Proof.
- intros. 
- induction H; simpl; eauto.
+ intros. induction H; simpl; eauto.
 Qed.
 Hint Resolve type_wfX.
 
@@ -75,15 +96,14 @@ Lemma type_tyenv_insert
  -> TYPE (insert ix t2 te) se (liftX ix x) t1.
 Proof.
  intros. gen ix te se t1.
- induction x; intros; simpl; inverts H; eauto.
+ induction_type x.
 
  Case "XVar".
   lift_cases; intros; auto.
 
  Case "XLam".
   apply TyLam.
-  rewrite insert_rewind. 
-   apply IHx. auto.
+  rewrite insert_rewind. eauto. 
 Qed.
 
 
@@ -107,7 +127,7 @@ Lemma type_stenv_push
  -> TYPE te (t2 <: se1) x t1.
 Proof.
  intros. gen te t1.
- induction x; intros; inverts H; eauto.
+ induction_type x.
 Qed.
 Hint Resolve type_stenv_push.
 
@@ -120,9 +140,9 @@ Proof.
  intros. gen se1.
  induction se2; intros.
  rewrite app_nil_right. auto.
- assert ((se2 :> a) >< se1 = se2 >< (a <: se1)). auto.
-  rewrite H0.
-  eapply IHse2. apply type_stenv_push. auto.
+ assert ((se2 :> a) >< se1 = se2 >< (a <: se1)). 
+  auto. rewrite H0.
+ eauto.
 Qed.
 Hint Resolve type_stenv_weaken.
 

@@ -17,6 +17,26 @@ Qed.
 Hint Resolve value_ref.
 
 
+Ltac dest H
+ := match goal with 
+    [ H : exists a, _ |- _ ]
+     => destruct H as [a]
+    end.
+
+Ltac dests H
+ := repeat (dest H).
+
+
+Ltac shift H
+ := match goal with 
+    [ H : exists a, _ |- exists b, _] 
+     => destruct H as [a]; exists a
+    end.
+
+Ltac shifts H
+ := repeat (shift H).
+
+
 (* A closed, well typed expression is either a value or can 
    take a step in the evaluation. *)
 Theorem progress
@@ -26,65 +46,50 @@ Theorem progress
  -> value x \/ (exists h' x', STEP h x h' x').
 Proof.
  intros se h x t HTH HT.
- remember (@nil ty) as tyenv.
- induction HT.
+ remember (@nil ty) as te.
+ induction HT; subst.
 
  Case "XVar".
-  subst. inverts H.
+  nope.
 
  Case "XLoc".
   left. eauto.
 
  Case "XLam".
-  left. subst. eauto.
+  left. eauto.
 
  Case "XApp".
   right. 
-  specializes IHHT1 Heqtyenv. auto.
-  specializes IHHT2 Heqtyenv. auto.
-  destruct IHHT1.
-
+  destruct IHHT1; eauto.
   SCase "value x1".
-   destruct IHHT2.
+   destruct IHHT2; eauto.
    SSCase "value x2".
-    inverts H. inverts H1.
-     inverts H2. false.
-     SSSCase "EsLamApp".
-      exists h.
-      exists (substX 0 x2 x0).
-      apply EsLamApp. auto.
-     SSSCase "XLoc".
-      inverts HT1.
+    SSSCase "EsLamApp".
+     assert (exists t x, x1 = XLam t x). admit.
+      dests H1.
+      subst.
+      exists h (substX 0 x2 x). auto.
 
    SSCase "x2 steps".
-    destruct H0 as [h'].
-    destruct H0 as [x2'].
-    exists h'. exists (XApp x1 x2'). 
-    inverts H. auto.
+    dests H0. exists h' (XApp x1 x'). eauto.
 
    SSCase "x1 steps".
-    destruct H as [h'].
-    destruct H as [x1'].
-    exists h'. exists (XApp x1' x2).
-    lets D: EsContext XcApp1. eauto.
+    dests H. exists h' (XApp x' x2).
+    lets D: EsContext XcApp1; eauto.
 
  Case "XNewRef".
   right.
   destruct IHHT; eauto.
   SCase "x1 steps".
-   destruct H as [h'].
-   destruct H as [xData'].
-   exists h'. exists (XNewRef xData'). auto.
+   dests H. exists h' (XNewRef x'). auto.
 
  Case "XReadRef".
   right.
   destruct IHHT; eauto.
   SCase "xRef value".
-   subst. 
-   assert (exists l, xRef = XLoc l). eauto.
-    destruct H0 as [l]. subst.
-
-   inverts HT.
+   assert (exists l, xRef = XLoc l) as HF. eauto.
+    destruct HF as [l]. subst.
+   inverts_type.
    assert (exists xData, get l h = Some xData).
     admit. destruct H0 as [xData]. (* ok, list lemma *)
 
@@ -92,31 +97,26 @@ Proof.
    exists xData. auto.
 
   SCase "xRef steps".
-   destruct H as [h'].
-   destruct H as [x'].
+   dests H.
    exists h' (XReadRef x').
    lets D: EsContext XcReadRef. eauto.
 
  Case "XWriteRef".
   right.
-  specializes IHHT1 Heqtyenv. auto.
-  specializes IHHT2 Heqtyenv. auto.
-
-  destruct IHHT1.
+  destruct IHHT1; eauto.
   SCase "value xRef".
-   destruct IHHT2.
+   destruct IHHT2; eauto.
     SSCase "value xData".
-     assert (exists l, xRef = XLoc l). eauto.
-     destruct H1 as [l]. subst.
+     assert (exists l, xRef = XLoc l) as HF. eauto.
+      destruct HF as [l]. subst.
      exists (update l xData h). exists xUnit.
      auto.
     SSCase "x2 steps".
-     destruct H0 as [h']. exists h'.
-     destruct H0 as [xData'].
-      exists (XWriteRef xRef xData'). auto.
-      inverts H. auto. 
+     dests H0.
+     exists h' (XWriteRef xRef x'). auto.
    SCase "xRef Steps".
-    destruct H as [h']. 
-    destruct H as [xRef']. 
-     lets D: EsContext XcWriteRef1. eauto. 
+    dests H. 
+    lets D: EsContext XcWriteRef1. eauto.
 Qed.
+
+
