@@ -192,6 +192,23 @@ Proof. auto. Qed.
 Hint Resolve get_rewind.
 
 
+(* If we can get an element from a list then it is in that list. *)
+Lemma get_in
+ :  forall A (xs: list A) x n
+ ,  get n xs = Some x -> In x xs.
+Proof.
+ intros.
+  gen x xs. 
+  induction n; intros.
+   destruct xs. 
+    false.
+    simpl in H. inverts H. simpl. auto.
+   destruct xs.
+    simpl in H. false.
+    simpl in H. simpl. right. auto.
+Qed.
+
+
 (* If a list contains an element at a non-zero index, 
    then it also contains an element at the previous index. *)
 Lemma get_succ_some
@@ -798,6 +815,62 @@ Proof.
 Qed.
 
 
+Lemma Forall2_get_get_left
+ :  forall (A B: Type) (R: A -> B -> Prop) x xs ys ix
+ ,  Forall2 R xs ys
+ -> get ix xs = Some x
+ -> (exists y, get ix ys = Some y).
+Proof.
+ intros. gen ix x.
+ induction H; intros. 
+  false.
+  destruct ix.
+   simpl in H1. simpl. eauto.
+   simpl in H1. simpl. eauto.
+Qed.
+
+
+Lemma Forall2_get_get_right
+ :  forall (A B: Type) (R: A -> B -> Prop) y xs ys ix
+ ,  Forall2 R xs ys
+ -> get ix ys = Some y
+ -> (exists x, get ix xs = Some x).
+Proof.
+ intros. gen ix y.
+ induction H; intros. 
+  false.
+  destruct ix.
+   simpl in H1. simpl. eauto.
+   simpl in H1. simpl. eauto.
+Qed.
+
+
+Lemma Forall2_exists_in_left
+ :  forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ ,  In x xs
+ -> Forall2 R xs ys
+ -> (exists y, In y ys).
+Proof.
+ intros.
+ induction H0.
+  false.
+  exists y. simpl. auto.
+Qed.
+
+
+Lemma Forall2_exists_in_right
+ :  forall (A B: Type) (R: A -> B -> Prop) y xs ys
+ ,  In y ys
+ -> Forall2 R xs ys
+ -> (exists x, In x xs).
+Proof.
+ intros.
+ induction H0.
+  false.
+  exists x. simpl. auto.
+Qed.
+
+
 Lemma Forall2_exists_left
  : forall (A B: Type) (R: A -> B -> Prop) x xs ys
  ,  In x xs 
@@ -811,6 +884,7 @@ Proof.
    subst. eauto.
    eapply IHForall2. eauto.
 Qed.
+Hint Resolve Forall2_exists_left.
 
 
 Lemma Forall2_exists_left_in
@@ -845,7 +919,7 @@ Proof.
    subst. eauto.
    eapply IHForall2. eauto.
 Qed.
-
+Hint Resolve Forall2_exists_right.
 
 Lemma Forall2_map_left
  : forall {A B C: Type}

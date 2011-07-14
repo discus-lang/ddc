@@ -58,8 +58,9 @@ Proof.
    dest HF. subst.
    inverts_type.
    assert (exists xData, get l h = Some xData).
-    admit. dest H0. (* ok, list lemma *)
-   exists h xData. auto.
+    eauto. eapply Forall2_get_get_right; eauto.
+    dest H0. 
+    exists h xData. auto.
 
   SCase "xRef steps".
    dests H.
