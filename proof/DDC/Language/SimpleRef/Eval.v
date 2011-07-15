@@ -6,6 +6,12 @@ Require Export DDC.Language.SimpleRef.Step.
 Require Export DDC.Language.SimpleRef.Exp.
 
 
+(* Well-formed heaps contain values only. 
+   No free variables or reducible terms in heap cells. *)
+Definition wfH (h: heap) 
+ := Forall value h.
+
+
 (********************************************************************)
 (** Big Step Evaluation *)
 (*  This is also called 'Natural Semantics'.
@@ -16,7 +22,8 @@ Inductive EVAL : heap -> exp -> heap -> exp -> Prop :=
  | EvDone
    :  forall h v2
    ,  value  v2
-   -> EVAL  h v2 h v2
+   -> wfH    h
+   -> EVAL   h v2 h v2
 
  | EvLamApp
    :  forall h0 h1 h2 h3 x1 t11 x12 x2 v2 v3
@@ -33,7 +40,7 @@ Inductive EVAL : heap -> exp -> heap -> exp -> Prop :=
           (v1 <: h1) (XLoc (length h1))
 
  | EvReadRef
-   :  forall h0 x1 h1 v2 l 
+   :  forall h0 x1 h1 v2 l
    ,  EVAL h0 x1 h1 (XLoc l)        (* evaluate heap location *)
    -> get l h1 = Some v2            (* lookup up that location from the heap *)
    -> EVAL h0 (XReadRef x1) 
@@ -53,6 +60,9 @@ Hint Constructors EVAL.
 Ltac inverts_eval := 
  repeat 
   (match goal with 
+    | [ H: EVAL _ (XLoc _)        _ _ |- _ ] => inverts H
+    | [ H: EVAL _ (XCon _)        _ _ |- _ ] => inverts H
+    | [ H: EVAL _ (XLam _ _)      _ _ |- _ ] => inverts H
     | [ H: EVAL _ (XApp _ _)      _ _ |- _ ] => inverts H
     | [ H: EVAL _ (XNewRef _)     _ _ |- _ ] => inverts H
     | [ H: EVAL _ (XReadRef _)    _ _ |- _ ] => inverts H
@@ -60,10 +70,16 @@ Ltac inverts_eval :=
    end).
 
 
-(* Well-formed heaps contain values only. 
-   No free variables or reducible terms in heap cells. *)
-Definition wfH (h: heap) 
- := Forall value h.
+Lemma eval_value_eq
+ :  forall h0 v0 h1 v1
+ ,  value v0
+ -> EVAL h0 v0 h1 v1
+ -> h1 = h0 /\ v1 = v0.
+Proof.
+ intros. 
+ destruct v0; nope; eauto.
+Qed.
+
 
 (* A terminating big-step evaluation always produces a wnf, 
    and preserves the wellformedness of the heap. 
@@ -71,11 +87,10 @@ Definition wfH (h: heap)
    that we have a finite proof of EVAL to pass to this lemma. *)
 Lemma eval_produces_wfH_value
  :  forall h0 x1 h1 v1
- ,  wfH    h0
- -> EVAL   h0 x1 h1 v1
+ ,  EVAL   h0 x1 h1 v1
  -> wfH h1 /\ value v1.
 Proof.
- intros. induction H0; iauto.
+ intros. induction H; iauto.
 
  admit. (* ok, snoc onto heap *)
 
@@ -90,34 +105,29 @@ Proof.
 Qed.
 
 
-(* A terminating big-step evaluation
-   preserves the wellformedness of the heap *)
-Lemma eval_preserves_wfH
+(* A terminating big-step evaluation produces a well formed heap. *)
+Lemma eval_produces_wfH
  :  forall h0 x1 h1 v1
- ,  wfH h0 
- -> EVAL h0 x1 h1 v1
+ ,  EVAL h0 x1 h1 v1
  -> wfH h1.
 Proof.
  intros.
- lets D: eval_produces_wfH_value H H0.
- tauto.
+ lets D: eval_produces_wfH_value H. tauto.
 Qed.
-Hint Resolve eval_preserves_wfH.
+Hint Resolve eval_produces_wfH.
 
 
-(* A terminating big-step evaluation
-   produces a value. *)
+(* A terminating big-step evaluation produces a value. *)
 Lemma eval_produces_value
  :  forall h0 x1 h1 v1
- ,  wfH h0
- -> EVAL h0 x1 h1 v1
+ ,  EVAL h0 x1 h1 v1
  -> value v1.
 Proof.
  intros.
- lets D: eval_produces_wfH_value H H0.
- tauto.
+ lets D: eval_produces_wfH_value H. tauto.
 Qed.
 Hint Resolve eval_produces_value.
+
 
 
 (********************************************************************)
@@ -135,7 +145,7 @@ Hint Resolve eval_produces_value.
  *)
 Lemma steps_of_eval
  :  forall se h0 h1 x1 t1 x2
- ,  wfH h0 -> TYPEH se  h0
+ ,  wfH h0 -> TYPEH se h0
  -> TYPE  nil se x1 t1
  -> EVAL  h0  x1 h1 x2
  -> STEPS h0  x1 h1 x2.
@@ -247,7 +257,8 @@ Proof.
 
   eapply EsAppend.
    lets D: steps_context XcWriteRef1. eapply D. eauto.
-   lets D: steps_context XcWriteRef2; eauto.
+   lets D: steps_context XcWriteRef2.
+    assert (value (XLoc l)). eauto. eauto. eauto.
 Qed.
 
 
@@ -262,48 +273,100 @@ Qed.
 (* Given an existing big-step evalution, we can produce a new one
    that does an extra step before returning the original value.
  *)
-(*
+
 Lemma eval_expansion
- :  forall se te h1 x1 t1 h2 x2 h3 v3
- ,  TYPE se te x1 t1
- -> STEP h1 x1  h2 x2 -> EVAL h2 x2  h3 v3 
- -> EVAL h1 x1  h3 v3.
+ :  forall se h1 x1 t1 h2 x2 h3 v3
+ ,  wfH h1  
+ -> TYPE  nil se x1 t1
+ -> STEP  h1 x1  h2 x2 -> EVAL h2 x2  h3 v3 
+ -> EVAL  h1 x1  h3 v3.
 Proof.
- intros. gen se te t1 h3 v3.
+ intros se h1 x1 t1 h2 x2 h3 v3 HW HT HS HE.
+ gen se t1 h3 v3.
 
  (* Induction over the form of (STEP x1 x2) *)
- induction H0; intros.
+ induction HS; intros.
 
- Case "eval in context".
+ Case "context".
+  destruct H; eauto; inverts_type.
+  SCase "XcApp".
+   inverts_eval. nope. eauto.
+   inverts_eval. nope.
+    assert (h1 = h' /\ XLam t11 x12 = v1).
+    eapply eval_value_eq; eauto. int. subst.
+    eapply EvLamApp. eauto. eauto.
+    eauto.
+ 
+  SCase "XcNewRef".
+   inverts_eval. nope. eauto.
 
+  SCase "XcReadRef".
+   inverts_eval. nope. eauto.
 
+  SCase "XcWriteRef".
+   inverts_eval. nope. eauto. eauto.
+   inverts_eval. nope. eauto.
+    assert (h1 = h' /\ XLoc l0 = v1).
+    eapply eval_value_eq; eauto. int. subst.
+    eauto.
 
-  SCase "XApp".
-   eapply EVLamApp; eauto.
+ Case "XApp".
+  inverts_type.
+  eapply EvLamApp; eauto.
+  assert (value (XLam t0 x12)). eauto.
+  eauto.
 
-  SCase "XNewRef".
-   eapply EV
+ Case "XNewRef".
+  assert (h3 = v1 <: h /\ v3 = XLoc (length h)).
+   eapply eval_value_eq; eauto. eapply Value; burn. 
+   int. subst.
+  auto.
+
+ Case "XReadRef".
+  assert (value v). admit.  (* ok, wf from heap *)
+  assert (h3 = h /\ v3 = v).
+   eapply eval_value_eq; eauto.
+   int. subst.
+  eapply EvReadRef; eauto.
+  eapply EvDone. eapply Value; burn.
+   auto.
+
+ Case "XWriteRef".
+  assert (h3 = update l v2 h /\ v3 = xUnit).
+   eapply eval_value_eq; eauto. unfold xUnit. 
+   eapply Value; burn. int. subst.
+  eauto.
+  eapply EvWriteRef.
+  eapply EvDone. eapply Value; burn.
+  auto.
+  inverts HE.
+   assert (value v2). admit. (* ok, from wf of update result *)
+   eauto.
 Qed.
 
 
 (* Convert a list of small steps to a big-step evaluation. *)
 Lemma eval_of_stepsl
- :  forall x1 t1 v2
- ,  TYPE nil x1 t1
- -> STEPSL   x1 v2 -> value v2
- -> EVAL     x1 v2.
+ :  forall se h1 x1 t1 h2 v2
+ ,  wfH h1 -> TYPEH  se h1
+ -> TYPE   nil se x1 t1
+ -> STEPSL h1 x1 h2 v2 -> value v2
+ -> EVAL   h1 x1 h2 v2.
 Proof.
- intros.
- induction H0.
+ intros. gen se.
+ induction H2; intros.
  
- Case "ESLNone".
-   apply EVDone. inverts H1. auto.
+ Case "EslNone".
+   apply EvDone; auto.
 
- Case "ESLCons".
-  eapply eval_expansion. 
-   eauto. eauto. 
-   apply IHSTEPSL.
-   eapply preservation. eauto. auto. auto.
+ Case "EslCons".
+  eapply eval_expansion; eauto.
+  lets D: preservation H1 H4 H0.
+  dest D. int.
+
+  assert (wfH h2). admit. (* ok, add step preserves wfH to preservation*)
+  spec IHSTEPSL H7 H3 H5.
+  auto.
 Qed.
 
 
@@ -313,13 +376,14 @@ Qed.
    small-steps.
  *)
 Lemma eval_of_steps
- :  forall x1 t1 v2
- ,  TYPE nil x1 t1
- -> STEPS x1 v2 -> value v2
- -> EVAL  x1 v2.
+ :  forall se h1 x1 t1 h2 v2
+ ,  wfH h1 -> TYPEH se h1
+ -> TYPE nil se x1 t1
+ -> STEPS h1 x1 h2 v2 -> value v2
+ -> EVAL  h1 x1 h2 v2.
 Proof.
  intros.
  eapply eval_of_stepsl; eauto.
  apply  stepsl_of_steps; auto.
 Qed.
-*)
+
