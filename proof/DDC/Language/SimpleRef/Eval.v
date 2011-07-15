@@ -12,32 +12,42 @@ Require Export DDC.Language.SimpleRef.Exp.
     It provides a relation between the expression to be reduced 
     and its final value. 
  *)
-Inductive EVAL : exp -> exp -> Prop :=
+Inductive EVAL : heap -> exp -> heap -> exp -> Prop :=
  | EVDone
-   :  forall v2
+   :  forall h v2
    ,  wnfX  v2
-   -> EVAL   v2 v2
+   -> EVAL  h v2 h v2
 
  | EVLamApp
-   :  forall x1 t11 x12 x2 v2 v3
-   ,  EVAL x1 (XLam t11 x12) -> EVAL x2 v2 -> EVAL (substX 0 v2 x12) v3
-   -> EVAL (XApp x1 x2) v3.
+   :  forall h0 h1 h2 h3 x1 t11 x12 x2 v2 v3
+   ,  EVAL h0 x1                h1 (XLam t11 x12)
+   -> EVAL h1 x2                h2 v2
+   -> EVAL h2 (substX 0 v2 x12) h3 v3
+   -> EVAL h0 (XApp x1 x2)      h3 v3.
 
 Hint Constructors EVAL.
 
 
-(* A terminating big-step evaluation always produces a whnf.
+(* Invert all hypothesis that are compound eval statements *)
+Ltac inverts_eval := 
+ repeat 
+  (match goal with 
+    | [ H: EVAL _ (XApp _ _) _ _ |- _ ] => inverts H
+   end).
+
+
+(* A terminating big-step evaluation always produces a wnf.
    The fact that the evaluation terminated is implied by the fact
    that we have a finite proof of EVAL to pass to this lemma. 
  *)
-Lemma eval_produces_whnfX
- :  forall x1 v1
- ,  EVAL   x1 v1
- -> wnfX  v1.
+Lemma eval_produces_wnfX
+ :  forall h0 x1 h1 v1
+ ,  EVAL   h0 x1 h1 v1
+ -> wnfX   v1.
 Proof.
  intros. induction H; eauto.
 Qed.
-Hint Resolve eval_produces_whnfX.
+Hint Resolve eval_produces_wnfX.
 
 
 (********************************************************************)
@@ -46,37 +56,58 @@ Hint Resolve eval_produces_whnfX.
    machine steps.
  *)
 Lemma steps_of_eval
- :  forall x1 t1 x2
- ,  TYPE nil x1 t1
- -> EVAL  x1 x2
- -> STEPS x1 x2.
+ :  forall se h0 h1 x1 t1 x2
+ ,  TYPEH se  h0
+ -> TYPE  nil se x1 t1
+ -> EVAL  h0  x1 h1 x2
+ -> STEPS h0  x1 h1 x2.
 Proof.
- intros x1 t1 v2 HT HE. gen t1.
+ intros se h0 h1 x1 t1 v2 HTH HT HE. gen se t1.
 
  (* Induction over the form of (EVAL x1 x2) *)
- induction HE.
+ induction HE; intros.
  Case "EVDone".
-  intros. apply EsNone.
+  apply EsNone.
 
  Case "EVLamApp".
-  intros. inverts HT.
+  inverts_type. 
+   rename H3 into Tx1.
+   rename H5 into Tx2.
 
-  lets E1: IHHE1 H2. 
-  lets E2: IHHE2 H4.
+  (* evaluate function *)
+  assert (STEPS h0 x1 h1 (XLam t11 x12)) as Sx1.
+   eauto. clear IHHE1.
+  lets Rx1: preservation_steps HTH Tx1 Sx1.
+   destruct Rx1 as [se1]. int.
+   inverts_type. 
 
-  lets T1: preservation_steps H2 E1. inverts keep T1.
-  lets T2: preservation_steps H4 E2.
-  lets T3: subst_exp_exp H1 T2.
-  lets E3: IHHE3 T3.
+  (* evaluate arg *)
+  assert (TYPE  nil se1 x2 t0). iauto.
+  assert (STEPS h1  x2  h2 v2) as Sx2.
+   iauto. clear IHHE2.
+  lets Rx1: preservation_steps se1 h1 x2 t0 h2.
+  lets Rx1': Rx1 v2. clear Rx1. int.
+  destruct H2 as [se2]. int.
+
+  (* perform substitution *)
+  assert (TYPE  nil se2 (substX 0 v2 x12) t1).
+   eapply subst_exp_exp; eauto.
+  assert (STEPS h2 (substX 0 v2 x12) h3 v3). eauto.
+  lets Rx2: preservation_steps se2 h2 (substX 0 v2 x12) t1 h3.
+  lets Rx2': Rx2 v3. clear Rx2. int.
+  destruct H8 as [se3]. int.
 
   eapply EsAppend.
-    lets D: steps_context XcApp1. eapply D. eauto.
-   eapply EsAppend.
-    lets D: steps_context XcApp2 E2; eauto.
-   eapply EsAppend.
-    eapply EsStep.
-     eapply EsLamApp. eauto.
-   eauto.
+    lets D: steps_context XcApp1.
+     eapply D. eauto.
+  eapply EsAppend.
+   lets D: steps_context XcApp2.
+    assert (wnfX (XLam t0 x12)) as WL. auto. eapply WL.
+    eapply D. eauto.
+  eapply EsAppend.
+   eapply EsStep.
+    eapply EsLamApp. eauto.
+    eauto.
 Qed.
 
 
@@ -91,6 +122,7 @@ Qed.
 (* Given an existing big-step evalution, we can produce a new one
    that does an extra step before returning the original value.
  *)
+(*
 Lemma eval_expansion
  :  forall te x1 t1 x2 v3
  ,  TYPE te x1 t1
@@ -162,4 +194,4 @@ Proof.
  eapply eval_of_stepsl; eauto.
  apply  stepsl_of_steps; auto.
 Qed.
-
+*)

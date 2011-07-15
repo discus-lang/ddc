@@ -5,6 +5,12 @@ Require Export Omega.
 (********************************************************************)
 (* Shorthands for existing tactics *)
 
+Tactic Notation "int"
+ := intuition.
+
+Tactic Notation "iauto"
+ := intuition eauto with *.
+
 Tactic Notation "spec" hyp(H1) hyp(H2) 
  := specializes H1 H2.
 Tactic Notation "spec" hyp(H1) hyp(H2) hyp(H3)
