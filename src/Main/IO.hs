@@ -30,11 +30,11 @@ data ImportDef
 	  -- | Full path to its .di interface file.
 	, idFilePathDI		:: FilePath
 
-	  -- | Full path to its .o object file. 
+	  -- | Full path to its .o object file.
 	, idFilePathO		:: FilePath
 
 	  -- | Relative path between source .ds and .ddc.h header
-	, idFileRelPathH	:: FilePath	
+	, idFileRelPathH	:: FilePath
 
 	  -- | The (parsed) interface.
 	, idInterface		:: S.Tree SourcePos
@@ -46,7 +46,7 @@ data ImportDef
 -- | Chase down interface files for these modules.
 --	Do this recursively and return a map with all the interfaces needed.
 --
-chaseModules 
+chaseModules
 	:: Setup				-- ^ current compile setup
 	-> (Setup -> FilePath -> IO ())		-- ^ function to compile a module.
 	-> [FilePath]				-- ^ directories to search for imports.
@@ -64,7 +64,7 @@ chaseModules setup compileFun importDirs importsRoot importMap
 	| (r:rs)	<- importsRoot
 	, elem r $ Map.keys importMap
 	= chaseModules setup compileFun importDirs rs importMap
- 
+
 	-- try and find the interface for this module
 	| (r:rs)	<- importsRoot
 	= do	mInt	<- loadInterface (setupArgs setup) importDirs r
@@ -72,7 +72,7 @@ chaseModules setup compileFun importDirs importsRoot importMap
 		case mInt of
 		 -- add the interface file to the map
 	  	 Just int
-		  -> chaseModules setup compileFun importDirs 
+		  -> chaseModules setup compileFun importDirs
 			(idImportedModules int ++ rs)
 		 	(Map.insert r int $ importMap)
 
@@ -82,41 +82,41 @@ chaseModules setup compileFun importDirs importsRoot importMap
 chaseModules_die missingModule importDirs
  = dieWithUserError
 	[ "    Can't find interface file for module '" % missingModule % "'\n"
-	% "    Import dirs are:\n" 
+	% "    Import dirs are:\n"
 	%> punc "\n" importDirs 	% "\n" ]
 
 chaseModules_build setup compileFun importDirs importsRoot importMap
-	
+
 	| (r : rs)	<- importsRoot
 	= do 	let ModuleId vs		= r
 		let fileDir		= pprStrPlain $ "/" %!% vs
 		let fileNameDS		= fileDir ++ ".ds"
-		
+
 		-- try and find source for this module
 		mPathDS	<- findFileInDirs importDirs fileNameDS
-		
-		case mPathDS of 
+
+		case mPathDS of
                  -- build the source file.
-		 Just (_, pathDS)	
-		  -> do	
+		 Just (_, pathDS)
+		  -> do
 		  	-- TODO: check for recursive modules
 		  	let setup'	= chaseModules_checkRecursive setup pathDS
-						
+
 		  	compileFun setup' pathDS
 
 		  	mInt	<- loadInterface (setupArgs setup) importDirs r
-			case mInt of 
-			 Just int	-> chaseModules setup compileFun importDirs 
+			case mInt of
+			 Just int	-> chaseModules setup compileFun importDirs
 			 			(idImportedModules int ++ rs)
 						(Map.insert r int $ importMap)
 
 			 -- no interface file was dropped during compilation,
 			 --	but the compile function didn't end the program.
-			 Nothing	
-			  -> panic stage 
-			  		$ "chaseModules_build: source " % pathDS 
+			 Nothing
+			  -> panic stage
+			  		$ "chaseModules_build: source " % pathDS
 			  		% " compiled, but no interface file was dropped."
-		  
+
 		 -- no source and no interface, time to die.
 		 Nothing		-> chaseModules_die r importDirs
 
@@ -127,16 +127,16 @@ chaseModules_checkRecursive setup fileName
 		[ "    Can't compile recursive module '" % fileName % "'\n"
 		% "      imports are:\n"
 			%> punc "\n" fs % "\n"]
-		
+
 	| Just fs	<- setupRecursive setup
 	= setup { setupRecursive = Just (fileName : fs) }
-	
+
 	| otherwise
 	= setup { setupRecursive = Just [fileName] }
 
 
 -- | find, read and parse a module interface file.
-loadInterface 
+loadInterface
 	:: [Arg]
 	-> [FilePath]
 	-> ModuleId
@@ -156,7 +156,7 @@ loadInterface
 	mPathDI			<- findFileInDirs importDirs fileNameDI
 	mPathO			<- findFileInDirs importDirs fileNameO
 	mPathH			<- findFileInDirs importDirs fileNameH
-	
+
 	let result
 		| Just (dirDI, pathDI)	<- mPathDI
 		, Just (dirO,  pathO)	<- mPathO
@@ -164,12 +164,12 @@ loadInterface
 		= do
 			source		<- readFile pathDI
 			let tree
-				= S.parseModule pathDI 
+				= S.parseModule pathDI
 				$ map (\t -> t { Token.tokenFile = pathDI })
 				$ fst
 				$ S.scanModuleWithOffside source
-		
-			returnJ	
+
+			returnJ
 				$ ImportDef
 				{ idModule		= mod
 				, idFilePathDI		= pathDI
@@ -190,4 +190,4 @@ dropPrefix [] x	= x
 dropPrefix (p:ps) x
 	| isPrefixOf p x	= drop (length p) x
 	| otherwise		= dropPrefix ps x
-	
+

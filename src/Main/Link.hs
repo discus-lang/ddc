@@ -18,17 +18,17 @@ import qualified Config.Config	as Config
 stage	= "Main.Link"
 
 -- Link -------------------------------------------------------------------------------------------
-linkFile 
+linkFile
 	:: Setup
 	-> Maybe Build
 	-> [FilePath]
 	-> IO ()
-	
+
 linkFile setup mBuild objects
  = do	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
 
 	-- decide on an output file name to use
-	let outFileName	
+	let outFileName
 		= case filter (\x -> x =@= Arg.OutputFile{}) (setupArgsCmd setup) of
 			[Arg.OutputFile fileName] 	-> fileName
 			_				-> "a.out"
@@ -56,10 +56,10 @@ linkFile setup mBuild objects
 
 	isDir		<-  doesDirectoryExist outFileName
 
-	when isDir 
+	when isDir
 	 $ exitWithUserError args
 		[ ErrorNotOverWritingDirectory outFileName ]
-		
+
 	retLink		<- system cmd
 
 	case retLink of

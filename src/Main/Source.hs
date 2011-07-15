@@ -42,11 +42,11 @@ parse 	:: (?args :: [Arg]
 	-> String			-- source of root module
 	-> IO 	( Tree SourcePos	-- source parse tree
 		, [String])		-- pragma strings
-			
+
 parse	fileName
 	source
  = {-# SCC "Source/parse" #-}
-   do	
+   do
 	-- lex the source file
 	let (toksSource, toksPragma)
 		= scanModuleWithOffside source
@@ -66,9 +66,9 @@ parse	fileName
 	-- check for strings with tabs in them. We'll reject these.
 	let tokStringTabs
 		= filter Token.tokenPHasStringTabs toksSource
-	
+
 	case tokStringTabs of
-	 (t:_) -> exitWithUserError ?args [ErrorLexicalStringTabs t]	
+	 (t:_) -> exitWithUserError ?args [ErrorLexicalStringTabs t]
 
 	 [] -> do
 		-- expand out \n \b and friends to their literal equivalents
@@ -78,18 +78,18 @@ parse	fileName
 			= case Token.expandEscapedChars s of
 				Nothing	-> exitWithUserError ?args [ErrorLexicalEscape tp]
 				Just s'	-> return $ tp { Token.token = Token.Literal (LiteralFmt (LString s') fmt) }
-			
+
 			| otherwise
 			= return tp
 
 		toksEscape	<- mapM expandEscapes toksSource
-	
+
 		-- set the filename on all the tokens to the current one
 		let toksSource'	= map (Token.tokenPSetFileName fileName)    toksEscape
 
 		-- parse the source file
 		let sParsed	= parseModule fileName toksSource'
-		dumpS 	DumpSourceParse "source-parse" 
+		dumpS 	DumpSourceParse "source-parse"
 			$ show sParsed
 
 		return	( sParsed
@@ -101,7 +101,7 @@ parse	fileName
 sourceSlurpFixTable
 	:: Tree SourcePos		-- source and header parse tree
 	-> IO [FixDef SourcePos]	-- fixity table
-		
+
 sourceSlurpFixTable sTree
  = {-# SCC "Source/slurpFixTable" #-}
    return $ slurpFixTable sTree
@@ -111,7 +111,7 @@ sourceSlurpFixTable sTree
 sourceSlurpInlineVars
 	:: Tree SourcePos
 	-> IO [Var]
-	
+
 sourceSlurpInlineVars  sTree
  = 	return	$ catMap
 			(\p -> case p of
@@ -119,7 +119,7 @@ sourceSlurpInlineVars  sTree
 				 | varName v == "Inline"
 				 , vs		 <- map (\(XVar sp v) -> v) xs
 				 -> vs
-			 
+
 				_ -> [])
 			sTree
 
@@ -131,7 +131,7 @@ defix	:: (?args :: [Arg]
 	=> Tree	SourcePos		-- source parse tree
 	-> [FixDef SourcePos]		-- fixity table
 	-> IO (Tree SourcePos)		-- defixed parse tree, will have no more XInfix nodes.
-	
+
 defix sParsed fixTable
  = {-# SCC "Source/defix" #-}
    do	let (sDefixed, errss)
@@ -140,18 +140,18 @@ defix sParsed fixTable
 			$ sParsed
 
 	let errs	= concat errss
-	
+
 	when (not $ null errs)
 	 $ exitWithUserError ?args errs
-	
+
 	-- dump
 	dumpST	DumpSourceDefix "source-defix" sDefixed
-	
+
 	return	 sDefixed
-	
-	
+
+
 ---------------------------------------------------------------------------------------------------
--- | Check scoping of variables and 
+-- | Check scoping of variables and
 -- NOTE:
 -- 	We need to rename infix defs _after_ foreign imports
 --	We do this so that the Sea name for functions like (+ / primInt32Add)
@@ -178,7 +178,7 @@ rename mTrees
 	-- exit after dumping, so we can see what's going on.
 	when (not $ null $ S.stateErrors state')
 	 $ exitWithUserError ?args $ S.stateErrors state'
-	
+
 	return mTrees'
 
 
@@ -188,12 +188,12 @@ sourceKinds
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree SourcePos
 	-> IO [(Var, Kind)]
-	
+
 sourceKinds sTree
  = do	let kinds	= slurpKinds sTree
---	dumpS DumpSourceKinds "source-kinds" 
+--	dumpS DumpSourceKinds "source-kinds"
 --		(catMap (\(v, k) -> pprStr $ v %>> " :: " % k % ";\n") kinds)
-		
+
 	return	kinds
 
 
@@ -208,15 +208,15 @@ lint hTree sTree
  = {-# SCC "Source/lint" #-}
    do	let (hTree_ok, hErrs)	= runState (lintTree hTree) []
 	let (sTree_ok, sErrs)	= runState (lintTree sTree) []
-	
+
 	let errs = hErrs ++ sErrs
 	when (not $ null $ errs)
 	 $ exitWithUserError ?args errs
-	
+
 	return (hTree_ok, sTree_ok)
-	
-	
----------------------------------------------------------------------------------------------------	
+
+
+---------------------------------------------------------------------------------------------------
 -- | Convert from Source to Desugared IR.
 desugar
 	:: (?args :: [Arg]
@@ -227,21 +227,21 @@ desugar
 	-> Tree	SourcePos		-- source tree
 	-> IO 	( D.Tree SourcePos
 		, D.Tree SourcePos)
-	
+
 desugar unique kinds hTree sTree
  = {-# SCC "Source/desugar" #-}
    do	let kindMap	= Map.fromList kinds
-	let (hTree', sTree', errors)	
+	let (hTree', sTree', errors)
 			= rewriteTree unique kindMap hTree sTree
-			
+
 	-- dump
-	dumpST DumpDesugar "desugar--header" 
+	dumpST DumpDesugar "desugar--header"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) hTree')
 
-	dumpST DumpDesugar "desugar--source" 
+	dumpST DumpDesugar "desugar--source"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sTree')
 
 	when (not $ null errors)
 	 $ exitWithUserError ?args errors
-		
+
 	return	(hTree', sTree')

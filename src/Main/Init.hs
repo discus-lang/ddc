@@ -14,7 +14,7 @@ import qualified DDC.Main.Arg	as Arg
 
 -- locate the path to the DDC runtime library and base libraries,
 --	or die with an error if they can' be found
-verbLocateRunLib 
+verbLocateRunLib
 	:: Bool
 	-> [Arg]
 	-> IO (FilePath, FilePath)
@@ -40,29 +40,28 @@ verbLocateRunLib verbose args
 	mPathLibrary	<- liftM (liftM fst)
 			$  findFileInDirs pathLibrary_test
 			$ "Base.ds"
-	
+
 	-- if /runtime and /library can't be found then die with an appropriate error
 	when (isNothing mPathRuntime)
 	 $ exitWithUserError args
 		[ ErrorCantFindRuntime pathRuntime_test ]
-		
+
 	when (isNothing mPathLibrary)
 	 $ exitWithUserError args
 		[ ErrorCantFindLibrary pathLibrary_test ]
-			
+
 	let Just pathRuntime_	= mPathRuntime
 	let Just pathLibrary_	= mPathLibrary
-	
+
 	pathRuntime	<- canonicalizePath pathRuntime_
 	pathLibrary	<- canonicalizePath pathLibrary_
-	
+
 	when verbose
 	 $ do	putStr	$ pprStrPlain
 			$ "  * Located Runtime and Libraries\n"
 			% "    - pathRuntime = " % pathRuntime	% "\n"
 	 		% "    - pathLibrary = " % pathLibrary	% "\n"
 			% "\n"
-	
+
 	return 	( pathRuntime
 		, pathLibrary)
-	

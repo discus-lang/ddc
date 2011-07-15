@@ -56,16 +56,16 @@ desugarElaborate
 
 desugarElaborate unique dgHeader dgModule
  = {-# SCC "D/elaborate" #-}
-   do	
+   do
 	let (dgHeader', dgModule', constraints, kindMap, errors)
 		= D.elaborateTree unique dgHeader dgModule
-		
+
 	let treeHeader'	= D.treeOfGlob dgHeader'
-	let treeModule'	= D.treeOfGlob dgModule'	
-		
+	let treeModule'	= D.treeOfGlob dgModule'
+
 	dumpST DumpDesugarElaborate "desugar-elaborate--header"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeHeader')
-	
+
 	dumpST DumpDesugarElaborate "desugar-elaborate--source"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeModule')
 
@@ -73,17 +73,17 @@ desugarElaborate unique dgHeader dgModule
 		(map ppr $ Foldable.toList constraints)
 
 	dumpST DumpDesugarElaborate "desugar-elaborate--kinds"
-		(map (\(v, k) -> padL 20 v % " :: " % k % "\n") 
+		(map (\(v, k) -> padL 20 v % " :: " % k % "\n")
 			$ Map.toList kindMap)
 
 	when (not $ null errors)
 	 $ exitWithUserError ?args errors
-		
+
 	return	( dgHeader'
 		, dgModule'
 		, kindMap)
-		
-		
+
+
 -- ProjectEta --------------------------------------------------------------------------------------
 desugarProjectEta
 	:: (?args :: [Arg]
@@ -91,19 +91,19 @@ desugarProjectEta
 	=> String
 	-> D.Tree SourcePos
 	-> IO	(D.Tree SourcePos)
-	
+
 desugarProjectEta unique sourceTree
  = {-# SCC "D/projectEta" #-}
    do
 	let sourceTree'	= D.projectEtaExpandTree unique sourceTree
-	
+
 	dumpST DumpDesugarProject "desugar-project-eta"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sourceTree')
 
 	return sourceTree'
-	
+
 -- Project -----------------------------------------------------------------------------------------
-desugarProject 
+desugarProject
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> String
@@ -118,8 +118,8 @@ desugarProject unique modName headerTree sourceTree
    do
 	-- Snip down projection dictionaries and add default projections.
  	let (sourceTree', errors)
-		= D.projectTree unique modName headerTree sourceTree 
-	
+		= D.projectTree unique modName headerTree sourceTree
+
 	dumpST DumpDesugarProject "desugar-project"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sourceTree')
 
@@ -131,13 +131,13 @@ desugarProject unique modName headerTree sourceTree
 
 	when (not $ null errors)
 	 $ exitWithUserError ?args errors
-		
+
 	return (sourceTree', projTable)
 
-	
-	
+
+
 -- Constraints -------------------------------------------------------------------------------------
-desugarSlurp	
+desugarSlurp
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Bool						-- whether to require main fn to have type () -> ()
@@ -145,10 +145,10 @@ desugarSlurp
 	-> (D.Tree SourcePos)				-- header tree
 	-> IO	( (D.Tree (Maybe (T.Type, T.Effect)))	-- source tree with type and effect annotations
 		, T.Problem)				-- problem for contraint solver
-				
+
 desugarSlurp blessMain sTree hTree
  = do
-	let (sTree', problem, errs)	
+	let (sTree', problem, errs)
 		= {-# SCC "D/slurp/slurp" #-}
 		  D.slurpTree blessMain hTree sTree
 
@@ -174,7 +174,7 @@ desugarSlurp blessMain sTree hTree
 	-- dumping.
 	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 	dumpST	DumpDesugarSlurp "desugar-slurp" sTree'
-	
+
 	dumpS	DumpTypeConstraints "type-constraints"
 		$ pprStr pprMode  $ T.problemConstraints problem
 
@@ -185,25 +185,25 @@ desugarSlurp blessMain sTree hTree
 		let Just (T.UseMap hashTable)	= mUsage
 		usageMap	<- Hash.toList hashTable
 		dumpS DumpTypeConstraints "type-constraints--usage"
-		 $ (pprStr pprMode 
+		 $ (pprStr pprMode
 			$ vcat [ padL 30 v %% uses | (v, uses) <- usageMap ])
 
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
 		$ (catInt "\n" $ map (pprStr pprMode) $ Set.toList $ T.problemTypeVarsPlease problem_simplified)
-	
+
 	return	$ deepSeq (T.problemConstraints problem_simplified)
 		$ ( sTree'
 		  , problem_simplified)
-	
-	
+
+
 -- Solve -------------------------------------------------------------------------------------------
 desugarSolve
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> T.Problem		-- ^ Problem for type constraint solver.
 	-> IO T.Solution
-	
+
 desugarSolve problem
  = {-# SCC "D/solve" #-}
    do
@@ -211,15 +211,15 @@ desugarSolve problem
 	--	what's gone wrong if it crashes mid-stream.
 
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
-		
- 	state	<- {-# SCC "D/solve/solve" #-} 
+
+ 	state	<- {-# SCC "D/solve/solve" #-}
 		   T.solveProblem ?args hTrace problem
 
 	-- dump out the type graph
 	--	do this before bailing on errors so we can see what's gone wrong.
 	when (elem Verbose ?args)
 	 $ putStr "  * Type: Dumping graph\n"
-	 
+
 	dGraph	<- evalStateT T.dumpGraph state
 	dumpS	DumpTypeSolve  "type-solve--graph" (pprStrPlain dGraph)
 
@@ -228,9 +228,9 @@ desugarSolve problem
 	case T.stateErrors state of
 
 	 -- no errors, carry on
-	 [] -> desugarSolveConstraints2 
+	 [] -> desugarSolveConstraints2
 			hTrace
-			problem 
+			problem
 	 		(T.problemTypeVarsPlease problem)
 			state
 
@@ -242,25 +242,25 @@ desugarSolve problem
 		 Nothing	-> return ())
 
 		when (not $ null $ T.stateErrors state)
-		 	$ exitWithUserError ?args 
+		 	$ exitWithUserError ?args
 			$ T.beautifyErrors
 			$ T.stateErrors state
-		
+
 		panic "Core.SolveSquid" "done already"
 
-	 
-desugarSolveConstraints2 
-	hTrace 
+
+desugarSolveConstraints2
+	hTrace
 	problem
-	vsTypesPlease 
+	vsTypesPlease
 	state
- = do	
+ = do
 	when (elem Verbose ?args)
 	 $ putStr "  * Type: Exporting\n"
 
 	-- extract out the stuff we'll need for conversion to core.
-	(solution, state2)	
-		<- {-# SCC "D/solve/export" #-} runStateT 
+	(solution, state2)
+		<- {-# SCC "D/solve/export" #-} runStateT
 			(T.squidExport vsTypesPlease) state
 
 	-- flush the trace output to make sure it's written to the file.
@@ -273,7 +273,7 @@ desugarSolveConstraints2
 	 $ do	graph	<- readIORef (T.stateGraph state)
 		size	<- readIORef (T.graphClassIdGen graph)
 		putStr 	$ pprStrPlain
-	 		$ "    - graph size: " 
+	 		$ "    - graph size: "
 	 		% size % "\n"
 
 	-- dump details of the solution.
@@ -281,14 +281,14 @@ desugarSolveConstraints2
 		$ catInt "\n\n"
 		$ map pprStrPlain
 		$ map (\(v, t) -> v % " ::\n" %> T.prettyTypeSplit t)
-		$ Map.toList 
+		$ Map.toList
 		$ T.solutionTypes solution
 
-	dumpS 	DumpTypeSolve   "type-solution--instanceInfo" 
+	dumpS 	DumpTypeSolve   "type-solution--instanceInfo"
 		$ catInt "\n\n"
 		$ map pprStrPlain
 		$ map (\(v, inst) -> v % "\n" % inst % "\n")
-		$ Map.toList 
+		$ Map.toList
 		$ T.solutionInstanceInfo solution
 
 	dumpS	DumpTypeSolve	"type-solution--regionClasses"
@@ -296,7 +296,7 @@ desugarSolveConstraints2
 		$ map pprStrPlain
 		$ Map.toList
 		$ T.solutionRegionClasses solution
-		
+
 	dumpS	DumpTypeSolve	"type-soltion--projResolution"
 		$ catInt "\n"
 		$ map pprStrPlain
@@ -305,15 +305,15 @@ desugarSolveConstraints2
 
 	-- the export process can find more errors
 	when (not $ null $ T.stateErrors state2)
-	 	$ exitWithUserError ?args 
-		$ T.beautifyErrors 
+	 	$ exitWithUserError ?args
+		$ T.beautifyErrors
 		$ T.stateErrors state2
-		
+
 	return 	solution
 
 
 -- ToCore ------------------------------------------------------------------------------------------
-desugarToCore 
+desugarToCore
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> D.Tree (Maybe (T.Type, T.Effect))	-- ^ Source tree
@@ -324,20 +324,20 @@ desugarToCore
 	-> IO	( C.Glob
 		, C.Glob )
 
-desugarToCore 
+desugarToCore
 	sourceTree
 	headerTree
 	mapValueToTypeVars
 	projTable
 	solution
 
- = {-# SCC "D/toCore" #-} 
+ = {-# SCC "D/toCore" #-}
    do 	let toCoreGlob'
-		= D.toCoreTree 
+		= D.toCoreTree
 			mapValueToTypeVars
 			projTable
 			solution
-	
+
 	let cgSource		= toCoreGlob' sourceTree
 	let cgSource_clean	= D.cleanGlob cgSource
 	let cgHeader		= toCoreGlob' headerTree

@@ -216,7 +216,7 @@ compileViaSea
 	-> IO Result
 
 compileViaSea
-	setup modName eInit 
+	setup modName eInit
 	pathDS pathDI
 	importDirs includeFilesHere
 	importsExp
@@ -255,7 +255,7 @@ compileViaSea
 	     else return seaSource
 
 	-- Write C files ------------------------------------------------------
-	outVerb $ ppr $ "  * Write C files\n"	
+	outVerb $ ppr $ "  * Write C files\n"
 	let baseDS	= takeBaseName pathDS
 	let dirDS	= takeDirectory pathDS
 	let outputDir	= fromMaybe dirDS (outputDirOfSetup setup)

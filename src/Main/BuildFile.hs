@@ -20,31 +20,31 @@ data Build
 	= Build
 	{ -- Extra args to use when compiling
 	  buildExtraDDCArgs	:: [String]
-		
+
 	  -- Extra libraries to link with
 	, buildExtraLinkLibs	:: [String]
-	
+
 	  -- Extra dirs to look for libraries in
 	, buildExtraLinkLibDirs :: [String]
-	
+
 	  -- Extra objects to link with
-	, buildExtraLinkObjs	:: [String] 
-	
+	, buildExtraLinkObjs	:: [String]
+
 	  -- Extra flags to pass to the C compiler
 	, buildExtraCCFlags	:: [String]
-	
+
 	  -- Extra flags to pass to the linker
-	, buildExtraLDFlags	:: [String] 
-	
+	, buildExtraLDFlags	:: [String]
+
  	  -- Starting heap size for compiled program, or Nothing for default.
 	, buildStartHeapSize		:: Maybe Integer
-	
+
 	  -- Starting slot stack size of compiled program, or Nothing for default.
 	, buildStartSlotStackSize 	:: Maybe Integer
-	
+
 	  -- Starting context stack size of compiled program, or Nothing for default.
 	, buildStartContextStackSize	:: Maybe Integer }
-	
+
 	deriving (Show)
 
 
@@ -56,7 +56,7 @@ buildZero
 	, buildExtraLinkLibDirs		= []
 	, buildExtraLinkObjs		= []
 	, buildExtraCCFlags		= []
-	, buildExtraLDFlags		= [] 
+	, buildExtraLDFlags		= []
 	, buildStartHeapSize		= Nothing
 	, buildStartSlotStackSize	= Nothing
 	, buildStartContextStackSize	= Nothing }
@@ -69,9 +69,9 @@ buildAdd b1 b2
 	, buildExtraLinkLibDirs	= buildExtraLinkLibDirs b1 ++ buildExtraLinkLibDirs	b2
 	, buildExtraLinkObjs	= buildExtraLinkObjs 	b1 ++ buildExtraLinkObjs	b2
 	, buildExtraCCFlags	= buildExtraCCFlags  	b1 ++ buildExtraCCFlags 	b2
-	, buildExtraLDFlags	= buildExtraLDFlags  	b1 ++ buildExtraLDFlags 	b2 
+	, buildExtraLDFlags	= buildExtraLDFlags  	b1 ++ buildExtraLDFlags 	b2
 
-	, buildStartHeapSize		
+	, buildStartHeapSize
 		= takeFirstJust [ buildStartHeapSize b1
 				, buildStartHeapSize b2]
 
@@ -83,21 +83,21 @@ buildAdd b1 b2
 		= takeFirstJust [ buildStartContextStackSize b1
 				, buildStartContextStackSize b2]
 	}
-	
-	
+
+
 verbLoadBuildFile :: Bool -> FilePath -> IO (Maybe Build)
 verbLoadBuildFile verbose path
- = do	
+ = do
 	when verbose
  	 $	putStr $ "  * Checking for build file " ++ path ++ "\n"
-	
+
 	mBuild	<- loadBuildFile path
-	
+
 	when verbose
 	 $ case mBuild of
 	 	Nothing		-> putStr $ "    - none\n\n"
 		Just build	-> putStr $ " " ++ show build ++ "\n\n"
-	
+
 	return mBuild
 
 -- | Load a build file from this file path
@@ -110,7 +110,7 @@ loadBuildFile pathBuild
 	    	src		<- readFile pathBuild
 		let build	= parseSections pathBuild (lines src) buildZero
 		return		$ Just build
-		
+
 	    else return		$ Nothing
 
 
@@ -119,13 +119,13 @@ parseSections :: FilePath -> [String]	-> Build -> Build
 parseSections pathBuild [] build = build
 parseSections pathBuild ss build
  = let	(build1, ssRest)	 = parseSection pathBuild ss
-   in	parseSections pathBuild ssRest (buildAdd build build1) 
-   
+   in	parseSections pathBuild ssRest (buildAdd build build1)
+
 
 -- | Parse a section in the build file
-parseSection 
+parseSection
 	:: FilePath		-- path to the build file
-	-> [String] 
+	-> [String]
 	-> ( Build		-- build info from the parsed section
 	   , [String])		-- more lines in the file
 
@@ -136,22 +136,22 @@ parseSection pathBuild (s : ss)
 	| isPrefixOf "extra-ddc-args:" s
 	, (words, ssRest)	<- chopSection (s : ss)
 	= ( buildZero { buildExtraDDCArgs  = words }
-	  , ssRest)		
+	  , ssRest)
 
 	| isPrefixOf "extra-link-libs:" s
 	, (words, ssRest)	<- chopSection (s : ss)
 	= ( buildZero { buildExtraLinkLibs  = words }
-	  , ssRest)		
+	  , ssRest)
 
 	| isPrefixOf "extra-link-lib-dirs:" s
 	, (words, ssRest)	<- chopSection (s : ss)
 	= ( buildZero { buildExtraLinkLibDirs  = words }
-	  , ssRest)		
+	  , ssRest)
 
 	| isPrefixOf "extra-link-objs:" s
 	, (words, ssRest)	<- chopSection (s : ss)
 	= ( buildZero { buildExtraLinkObjs  = words }
-	  , ssRest)		
+	  , ssRest)
 
 	| isPrefixOf "start-heap-size:" s
 	, ([str], ssRest)	<- chopSection (s : ss)
@@ -178,7 +178,7 @@ parseSection pathBuild (s : ss)
 --	The section starts after the ':' on the first line and extends until the next line
 --	with a non-space charater in the first column.
 --
-chopSection 
+chopSection
 	:: [String]		-- lines of the file
 				-- first line should be the   "tag: ... " line from a section header
 
@@ -195,7 +195,7 @@ chopSection (s : ssMore)
 		| isSpace x	= False
 		| otherwise	= True
 
- 	(ssThis, ssRest)	
+ 	(ssThis, ssRest)
 		= splitWhenLeft isSectionStart ssMore
 
   in	( words $ concat $ sRest : ssThis

@@ -60,7 +60,7 @@ out ss		= putStr $ pprStrPlain ss
 --	Compiles one source file.
 --	Returns a list of module names and the paths to their compiled object files.
 --
-compileFile 
+compileFile
 	:: Setup 			-- ^ compile setup.
 	-> Map ModuleId M.Scrape	-- ^ scrape graph of all modules reachable from the root.
 	-> ModuleId			-- ^ module to compile, must also be in the scrape graph.
@@ -88,7 +88,7 @@ compileFile setup scrapes sModule blessMain
 	let ?pathSourceBase	= dirDS </> baseDS
 
 	-- Gather up all the import dirs ---------------------------------------
-	let importDirs	
+	let importDirs
 		= setupLibrary setup
 		: dirDS
 		: (concat $ [dirs | Arg.ImportDirs dirs <- setupArgs setup])
@@ -107,29 +107,29 @@ compileFile setup scrapes sModule blessMain
 			% "    - sRoot  = " % show sRoot	% "\n\n"
 
 	 	out	$ "  * Compile options are:\n"
-			% (concat 
-				$ map (\s -> "    " ++ s ++ "\n") 
+			% (concat
+				$ map (\s -> "    " ++ s ++ "\n")
 				$ map show $ setupArgs setup)
 			% "\n"
-			
-	
+
+
 	-- Parse imported interface files --------------------------------------
-	let loadInterface (mod, scrape) = 
+	let loadInterface (mod, scrape) =
 	     case M.scrapePathInterface scrape of
 	      Nothing	-> panic "Main.Compile" $ "compileFile: no interface for " % mod % "\n"
 	      Just path	-> do
 		src		<- readFile path
 		(tree, _)	<- SS.parse ("./" ++ makeRelative dirWorking path) src
 		return	(mod, tree)
-		
-	let scrapes_noRoot	= Map.delete (M.scrapeModuleName sRoot) scrapes 
+
+	let scrapes_noRoot	= Map.delete (M.scrapeModuleName sRoot) scrapes
 
 	importsExp	<- {-# SCC "Main/load" #-}
 			   liftM Map.fromList
-			$  mapM loadInterface 
+			$  mapM loadInterface
 			$  Map.toList scrapes_noRoot
 
-	Dump.dumpST 	Arg.DumpSourceParse "source-parse--header" 
+	Dump.dumpST 	Arg.DumpSourceParse "source-parse--header"
 		(concat $ Map.elems importsExp)
 
 
@@ -137,7 +137,7 @@ compileFile setup scrapes sModule blessMain
 	sSource		<- readUtf8File pathDS
 
 	outVerb $ ppr $ "  * Source: Parse\n"
-	(sParsed, pragmas)	
+	(sParsed, pragmas)
 			<- SS.parse pathRelativeDS sSource
 
 	-- Slurp out pragmas
@@ -147,33 +147,33 @@ compileFile setup scrapes sModule blessMain
 	------------------------------------------------------------------------
 	-- Source Stages
 	------------------------------------------------------------------------
-	
+
 	-- Rename variables and add uniqueBinds -------------------------------
 	outVerb $ ppr $ "  * Source: Rename\n"
 	((_, sRenamed) : modHeaderRenamedTs)
 			<- SS.rename $ (modName, sParsed) : Map.toList importsExp
-	
+
 	let hRenamed	= concat [tree	| (mod, tree) <- modHeaderRenamedTs ]
 
 
 	-- If this module is Main.hs then require it to contain the main function.
-	let modDefinesMainFn 
+	let modDefinesMainFn
 			= any (\p -> case p of
 					S.PStmt (S.SBindFun _ v _ _)
 					 | varName v == "main"	-> True
 					 | otherwise		-> False
 					_			-> False)
 			$ sRenamed
-	
+
 	when (  sModule == ModuleId ["Main"]
 	    &&  (not $ modDefinesMainFn))
 		 $ exitWithUserError ?args [ErrorNoMainInMain]
-					
-			
+
+
 	-- Slurp out header information and fixity defs.
 	fixTable	<- SS.sourceSlurpFixTable
 				(sRenamed ++ hRenamed)
-	
+
 	-- Defix the source ---------------------------------------------------
 	outVerb $ ppr $ "  * Source: Defix\n"
 	sDefixed	<- SS.defix
@@ -182,15 +182,15 @@ compileFile setup scrapes sModule blessMain
 
 	-- Slurp out kind table
 	kindTable	<- SS.sourceKinds (sDefixed ++ hRenamed)
-	
+
 	-- Lint check the source program before desugaring -------------------
 	outVerb $ ppr $ "  * Source: Lint\n"
 
-	(sHeader_linted, sProg_linted)	
-			<- SS.lint 
-				hRenamed 
+	(sHeader_linted, sProg_linted)
+			<- SS.lint
+				hRenamed
 				sDefixed
-	
+
 	-- Desugar the source language ----------------------------------------
 	outVerb $ ppr $ "  * Convert to Desugared IR\n"
 	(hDesugared, sDesugared)
@@ -204,15 +204,15 @@ compileFile setup scrapes sModule blessMain
 	-----------------------------------------------------------------------
 	-- Desugar/Type inference stage
 	-----------------------------------------------------------------------
-	
+
 	let dgHeader_desugared	= D.globOfTree hDesugared
 	let dgModule_desugared	= D.globOfTree sDesugared
-	
+
 	-- Elaborate type information in data defs and signatures -------------
 	outVerb $ ppr $ "  * Desugar: Elaborate\n"
-	(dgHeader_elab, dgModule_elab, kindTable)	
-			<- SD.desugarElaborate 
-				"DE" 
+	(dgHeader_elab, dgModule_elab, kindTable)
+			<- SD.desugarElaborate
+				"DE"
 				dgHeader_desugared
 				dgModule_desugared
 
@@ -222,14 +222,14 @@ compileFile setup scrapes sModule blessMain
 	-- Eta expand simple v1 = v2 projections ------------------------------
 	outVerb $ ppr $ "  * Desugar: ProjectEta\n"
 	sProjectEta	<- SD.desugarProjectEta
-				"DE" 
+				"DE"
 				sElab
-			
+
 	-- Snip down dictionaries and add default projections -----------------
 	outVerb $ ppr $ "  * Desugar: Project\n"
-	(dProg_project, projTable)	
+	(dProg_project, projTable)
 			<- SD.desugarProject
-				"SP" 
+				"SP"
 				modName
 				hElab
 				sProjectEta
@@ -266,18 +266,18 @@ compileFile setup scrapes sModule blessMain
 				hTagged
 				(T.problemValueToTypeVars problem)
 				projTable
-				solution 
-				
+				solution
+
 	------------------------------------------------------------------------
 	-- Core stages
-	------------------------------------------------------------------------	
+	------------------------------------------------------------------------
 
 	-- Convert to normalised form -----------------------------------------
 	outVerb $ ppr $ "  * Core: Tidy\n"
 	cgModule_tidy
-	 <- SC.coreTidy		"core-tidy" ?args ?pathSourceBase "CN" 
+	 <- SC.coreTidy		"core-tidy" ?args ?pathSourceBase "CN"
 				cgHeader cgModule
-							
+
 	-- Create local regions -----------------------------------------------
 	outVerb $ ppr $ "  * Core: Bind\n"
 
@@ -287,62 +287,62 @@ compileFile setup scrapes sModule blessMain
 			$ map freeVars
 			$ [t	| (v, t)	<- Map.toList $ T.solutionTypes solution
 				, Set.member v (T.problemTopLevelTypeVars problem)]
-		
-	cgModule_bind	
-	 <- SC.coreBind 	sModule (T.solutionRegionClasses solution) rsGlobal 
+
+	cgModule_bind
+	 <- SC.coreBind 	sModule (T.solutionRegionClasses solution) rsGlobal
 				"core-bind" ?args ?pathSourceBase "CB"
 				cgHeader cgModule_tidy
 
 	-- Convert to A-normal form -------------------------------------------
 	outVerb $ ppr $ "  * Core: Snip\n"
 	cgModule_snip
-	 <- SC.coreSnip		"core-snip" "CS" 
+	 <- SC.coreSnip		"core-snip" "CS"
 				cgHeader cgModule_bind
 
 	-- Thread through witnesses -------------------------------------------
 	outVerb $ ppr $ "  * Core: Thread\n"
-	cgModule_thread	
+	cgModule_thread
 	 <- SC.coreThread 	cgHeader cgModule_snip
 
 	-- Reconstruct and check types (with the linter) ----------------------
 	outVerb $ ppr $ "  * Core: Lint Reconstruct\n"
-	cgModule_lintRecon	
-	 <- SC.coreLint 	"core-lint-reconstruct" 
+	cgModule_lintRecon
+	 <- SC.coreLint 	"core-lint-reconstruct"
 				cgHeader cgModule_thread
 
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"
-	cgModule_dict	
+	cgModule_dict
 	 <- SC.coreDictionary	cgHeader cgModule_lintRecon
 
 	-- Identify prim ops --------------------------------------------------
 	outVerb $ ppr $ "  * Core: Prim\n"
-	cgModule_prim	
+	cgModule_prim
 	 <- SC.corePrim		cgHeader cgModule_dict
 
 	-- Simplifier does various simple optimising transforms ---------------
 	outVerb $ ppr $ "  * Core: Simplify\n"
-	cgModule_simplified	
+	cgModule_simplified
 			<- if elem Arg.OptSimplify ?args
 				then SC.coreSimplify "CI" cgHeader cgModule_prim
 				else return cgModule_prim
-					
+
 	-- Perform lambda lifting ---------------------------------------------
 	outVerb $ ppr $ "  * Core: LambdaLift\n"
 	(  cgModule_lambdaLifted
-	 , vsNewLambdaLifted) 
+	 , vsNewLambdaLifted)
 	 <- SC.coreLambdaLift	cgHeader cgModule_simplified
 
 	-- Prepare for conversion to core -------------------------------------
 	outVerb $ ppr $ "  * Core: Prep\n"
 	cgModule_prep
 	 <- SC.corePrep		"core-prep" ?args ?pathSourceBase "CP"
-				cgHeader cgModule_lambdaLifted 
+				cgHeader cgModule_lambdaLifted
 
 	-- Check the program one last time ------------------------------------
 	outVerb $ ppr $ "  * Core: Lint (final)\n"
-	cgModule_lintFinal  
-	 <- SC.coreLint		"core-lint-final" 
+	cgModule_lintFinal
+	 <- SC.coreLint		"core-lint-final"
 				cgHeader cgModule_prep
 
 	-- Resolve partial applications ---------------------------------------
@@ -352,7 +352,7 @@ compileFile setup scrapes sModule blessMain
 
 	-- Generate the module interface --------------------------------------
 	outVerb $ ppr $ "  * Make interface file\n"
-	
+
 	-- Don't export types of top level bindings that were created during lambda lifting.
 	let vsNoExport	= vsNewLambdaLifted
 
@@ -365,14 +365,14 @@ compileFile setup scrapes sModule blessMain
 				(T.solutionTypes solution)
 				vsNoExport
 
-	writeFile pathDI diInterface	
+	writeFile pathDI diInterface
 
 	-- Make the new style module interface.
 	outVerb $ ppr $ "  * Make new style interface file\n"
-	let Just thisScrape	
+	let Just thisScrape
 		= Map.lookup modName scrapes
 
-	let diNewInterface	
+	let diNewInterface
 	 		= MN.makeInterface
 				thisScrape
 				vsNoExport
@@ -392,7 +392,7 @@ compileFile setup scrapes sModule blessMain
 
 	-- Chase down extra C header files to include into source -------------
 	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
-	
+
 	when (elem Arg.Verbose ?args)
 	 $ do	mapM_ (\path -> putStr $ pprStrPlain $ "  - included file   " % path % "\n")
 	 		$ includeFilesHere
@@ -402,37 +402,37 @@ compileFile setup scrapes sModule blessMain
 	-- Convert to Sea code ------------------------------------------------
 	outVerb $ ppr $ "  * Convert to Sea IR\n"
 
-	(eHeader, eSea)	
+	(eHeader, eSea)
 	 <- SC.coreToSea "TE" cgHeader cgModule
 
 	------------------------------------------------------------------------
 	-- Sea stages
 	------------------------------------------------------------------------
-		
+
 	-- Subsitute simple v1 = v2 statements ---------------------------------
 	outVerb $ ppr $ "  * Sea: Substitute\n"
 	eSub		<- seaSub
 				eSea
-				
+
 
 	-- Expand out constructors ---------------------------------------------
 	outVerb $ ppr $ "  * Sea: ExpandCtors\n"
 	eCtor		<- seaCtor
 				eSub
-				
+
 	-- Expand out thunking -------------------------------------------------
 	outVerb $ ppr $ "  * Sea: Thunking\n"
 	eThunking	<- seaThunking
 				eCtor
-				
+
 	-- Add suspension forcing code -----------------------------------------
 	outVerb $ ppr $ "  * Sea: Forcing\n"
 	eForce		<- seaForce
 				eThunking
-				
+
 	-- Add GC slots and fixup calls to CAFS --------------------------------
 	outVerb $ ppr $ "  * Sea: Slotify\n"
-	eSlot		<- seaSlot	
+	eSlot		<- seaSlot
 				eForce
 				eHeader
 				cgHeader
@@ -449,7 +449,7 @@ compileFile setup scrapes sModule blessMain
 	eInit		<- seaInit
 				modName
 				eFlatten
-        
+
         -- Pass off to back-end compiler --------------------------------------
 	-- TODO : Put the parameters into a struct and call compileViaX with just
 	-- a single parameter.
@@ -461,7 +461,7 @@ compileFile setup scrapes sModule blessMain
 		modDefinesMainFn sRoot scrapes_noRoot blessMain
 
 	  else compileViaSea
-		setup modName eInit 
+		setup modName eInit
 		pathDS pathDI
 		importDirs includeFilesHere importsExp
 		modDefinesMainFn sRoot scrapes_noRoot blessMain
