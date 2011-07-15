@@ -152,12 +152,14 @@ allocDataR tag dataSize
 	tsize		<- newUniqueNamedReg "tsize" i32
 	ret		<- newUniqueNamedReg "allocated.DataR" pObj
 
-	addComment	$ "allocDataR " ++ show tagValue
+	addComment	$ "allocDataR " ++ show tagValue ++ " " ++ show size
+
 	addBlock	[ Assignment tsize (LlvmOp LM_MO_Add dataSize (i32LitVar size)) ]
 
 	pDataR		<- allocateVarSize tsize "pDataR" pStructDataR
 
 	storeStructRegValue ddcDataR pDataR "tag" tag
+	storeStructRegValue ddcDataR pDataR "size" tsize
 
 	addBlock	[ Assignment ret (Cast LM_Bitcast pDataR pObj) ]
 	return		ret
