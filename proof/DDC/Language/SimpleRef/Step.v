@@ -19,7 +19,7 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
 
  | XcApp2 
    :  forall v1
-   ,  wnfX v1 
+   ,  value v1 
    -> exp_ctx (fun xx => XApp v1 xx)
 
  | XcNewRef
@@ -34,7 +34,7 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
 
  | XcWriteRef2
    :  forall v1
-   ,  wnfX v1
+   ,  value v1
    -> exp_ctx (fun xx => XWriteRef v1 xx).
 
 Hint Constructors exp_ctx.

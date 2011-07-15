@@ -44,7 +44,7 @@ Hint Constructors exp.
 
 (* Baked in expressions *)
 Definition xUnit := XCon 0.
-
+Hint Unfold xUnit.
 
 (* Heap *)
 Definition heap := list exp.
@@ -54,6 +54,10 @@ Definition heap := list exp.
    Expressions in weak normal form cannot be reduced further by
    call-by-value evaluation. *)
 Inductive wnfX : exp -> Prop :=
+ | Wnf_XCon 
+   : forall n
+   , wnfX (XCon n)
+
  | Wnf_XVar 
    : forall i
    , wnfX (XVar i)
