@@ -1,0 +1,25 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+-- Had a bug (not recorded in the bug tracker) in the LLVM backend where the
+-- size field of a DataR object was not set correctly. This was find until
+-- the garbage collector was run. The garbage collector would find an object
+-- with size zero and crash.
+--
+-- With this test we try to trigger this bug much earlier by allocating a
+-- single FlatString and then running the collector. If the collector finds
+-- a problem it will abort the program.
+
+
+import	Base
+	Data.String
+	System.Console
+
+foreign import  "_allocCollect" allocCollect :: Int32# -> Void#
+
+
+main ()
+ = do
+	hello = boxString "Hello!"#
+	allocCollect 8#
+	println hello
+
