@@ -24,10 +24,7 @@ Proof.
    (inverts HT;
     edestruct IHHS as [se2]; eauto;
     exists se2;
-    splits; try tauto;
-    repeat (match goal with 
-     | [ H : _ /\ _ |- _ ] => inverts H
-    end); eauto).
+    splits; iauto).
 
  Case "EsLamApp".
   inverts_type.
@@ -56,7 +53,8 @@ Proof.
   inverts_type.
   exists se. splits; eauto.
   eapply Forall2_update_right; eauto.
-  admit. (* ok, need type rule for unit *)
+  unfold xUnit.
+  unfold tUnit. eauto.
 Qed.
 
 
@@ -84,7 +82,7 @@ Proof.
     destruct IHHS as [se3].
     inverts H2. inverts H5.
     exists se3. splits; auto.
-    admit. (* ok, need trans of extends *)
+    eapply extends_trans; eauto.
 Qed.
 
 

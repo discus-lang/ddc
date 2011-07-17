@@ -17,6 +17,12 @@ Proof.
  remember (@nil ty) as te.
  induction HT; subst.
 
+ Case "XCon".
+  left. 
+  eapply Value.
+   auto.
+   unfold closedX. simpl. auto.
+
  Case "XVar".
   nope.
 

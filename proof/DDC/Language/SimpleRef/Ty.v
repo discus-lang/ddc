@@ -3,6 +3,10 @@ Require Export DDC.Language.SimpleRef.Exp.
 
 (* Typing judgement assigns a type to an expression. *)
 Inductive TYPE : tyenv -> stenv -> exp -> ty -> Prop :=
+ | TyCon 
+   :  forall te se n
+   ,  TYPE te se (XCon n) (TCon n)
+
  | TyVar 
    :  forall te se i t
    ,  get i te = Some t
