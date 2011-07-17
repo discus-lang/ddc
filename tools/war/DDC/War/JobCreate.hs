@@ -14,7 +14,7 @@ import Data.Set			(Set)
 --   There can be several jobs associated with a test, depending on what comparison files
 --   are available. If any of the jobs in a test fail unexpectedly then the other jobs
 --   in that test are ignored.
-createJobs 
+createJobs
 	:: Config
 	-> Way 			-- ^ Name of the way we're compiling, used to create build dirs.
 	-> Set FilePath		-- ^ All files available. The jobs created for a particular file
@@ -34,10 +34,10 @@ createJobs config way allFiles filePath
 	 -- Run stdout and stderr diffs are handled by the FileMainDS rule.
 	 FileRunStdoutCheck		-> []
 	 FileRunStderrCheck		-> []
-	
+
 	 -- Expected compile errors are handled by the corresponding FileMainDS or FileTestDS rule.
 	 FileCompileErrorCheck		-> []
-	
+
 	 -- TODO: Warning tests don't work yet.
 	 FileCompileWarningCheck	-> []
 
@@ -49,7 +49,7 @@ createJobs config way allFiles filePath
 		 mainShellStderrDiff	= buildDir  </> "Main.compile.stderr.diff"
 		 mainErrorCheck		= sourceDir </> "Main.error.check"
 		 shouldSucceed		= not $ Set.member mainErrorCheck allFiles
-	     
+
 		 shell			= JobShell testName (wayName way)
 						filePath sourceDir buildDir
 						mainShellStdout mainShellStderr
@@ -62,7 +62,7 @@ createJobs config way allFiles filePath
 
 
 	 -- For Main.ds files, build and run them with DDC.
-	 FileMainDS	
+	 FileMainDS
 	  -> let mainSH	  	  = sourceDir </> "Main.sh"
 		 mainBin	  = buildDir  </> "Main.bin"
 		 mainCompStdout	  = buildDir  </> "Main.compile.stdout"
@@ -74,28 +74,28 @@ createJobs config way allFiles filePath
 		 mainErrorCheck	  = sourceDir </> "Main.error.check"
 		 shouldSucceed	  = not $ Set.member mainErrorCheck allFiles
 
-		 mainStdoutCheck  = sourceDir </> "Main.stdout.check" 
-		 mainStdoutDiff   = buildDir  </> "Main.run.stdout.diff" 
+		 mainStdoutCheck  = sourceDir </> "Main.stdout.check"
+		 mainStdoutDiff   = buildDir  </> "Main.run.stdout.diff"
 		 shouldDiffStdout = Set.member mainStdoutCheck allFiles
 
-		 mainStderrCheck  = sourceDir </> "Main.stderr.check" 
-		 mainStderrDiff   = buildDir  </> "Main.run.stderr.diff" 
+		 mainStderrCheck  = sourceDir </> "Main.stderr.check"
+		 mainStderrDiff   = buildDir  </> "Main.run.stderr.diff"
 		 shouldDiffStderr = Set.member mainStderrCheck allFiles
 
 		 -- compile the .ds into a .bin
-		 compile 	= JobCompile 	testName (wayName way) filePath 
-		 				(wayOptsComp way) ["-M30M"]
-						buildDir mainCompStdout mainCompStderr 
+		 compile 	= JobCompile 	testName (wayName way) filePath
+		 				(wayOptsComp way) ["-M40M"]
+						buildDir mainCompStdout mainCompStderr
 						(Just mainBin) shouldSucceed
 
 		 -- run the binary
-		 run		= JobRun  	testName (wayName way) filePath mainBin 
-						mainRunStdout mainRunStderr	
-			
+		 run		= JobRun  	testName (wayName way) filePath mainBin
+						mainRunStdout mainRunStderr
+
 		 -- diff errors produced by the compilation
 		 diffError	= JobDiff	testName (wayName way) mainErrorCheck
 						mainCompStderr mainCompDiff
-		 
+
 		 -- diff the stdout of the run
 		 diffStdout	= JobDiff	testName (wayName way) mainStdoutCheck
 						mainRunStdout mainStdoutDiff
@@ -103,10 +103,10 @@ createJobs config way allFiles filePath
 		 -- diff the stderr of the run
 		 diffStderr	= JobDiff	testName (wayName way) mainStderrCheck
 						mainRunStderr mainStderrDiff
-		
+
 	     in	if Set.member mainSH allFiles
 		 then []
-		 else [compile] 
+		 else [compile]
 			++ (if shouldSucceed    then [run]        else [diffError])
 			++ (if shouldDiffStdout then [diffStdout] else [])
 			++ (if shouldDiffStderr then [diffStderr] else [])
@@ -125,18 +125,18 @@ createJobs config way allFiles filePath
 		 testErrorCheck	= sourceDir </> replaceExtension fileName ".error.check"
 		 shouldSucceed	= not $ Set.member testErrorCheck allFiles
 
-		 compile	= JobCompile	testName (wayName way) filePath 
+		 compile	= JobCompile	testName (wayName way) filePath
 						(wayOptsComp way) ["-M30M"]
 						buildDir testCompStdout testCompStderr
 						Nothing shouldSucceed
-		 
-		 diffError	= JobDiff	testName (wayName way) testErrorCheck 
+
+		 diffError	= JobDiff	testName (wayName way) testErrorCheck
 						testCompStderr testCompDiff
 
 		 -- Don't do anything if there is a Main.ds here.
 		 -- This other .ds file is probably a part of a larger program.
 	     in	 if   Set.member mainDS allFiles
-		   || Set.member mainSH allFiles 
+		   || Set.member mainSH allFiles
 		  then []
 		  else [compile] ++ (if shouldSucceed then [] else [diffError])
 
@@ -150,10 +150,10 @@ createJobs config way allFiles filePath
 		 mainRunStderr	= buildDir </> "Main.run.stderr"
 
 		 compile 	= JobCompileHS 	testName (wayName way) filePath []
-						buildDir mainCompStdout mainCompStderr 
+						buildDir mainCompStdout mainCompStderr
 						mainBin
 
-		 run		= JobRun  	testName (wayName way) filePath mainBin 
-						mainRunStdout mainRunStderr	
-		
+		 run		= JobRun  	testName (wayName way) filePath mainBin
+						mainRunStdout mainRunStderr
+
 	     in	 [compile, run]
