@@ -1,0 +1,31 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import	Base
+	Class.Show.Numeric
+	Data.Numeric.Int32
+	System.Console
+
+data Test
+	= TA Int32
+	| TB Int32#
+	| TC Float32 Int32 Int32# Float32#
+	| TD { ai0 :: Int32# ; af1 :: Float32 ; ai2 :: Int32 ; af3 :: Float32# }
+
+instance Show Test where
+	show (TA a) = show a
+	show (TB a) = show a
+	show (TC a b c d) = show a % " " % show b % " " % show c % " " % show d
+
+	-- Should be able to pattern match with (TD a b c d) but that currently
+	-- generates bad C code.
+	show (TD w x y z) = show w % " " % show x % " " % show y % " " % show z
+
+main ()
+ = do
+	println (show (TA 1))
+	println (show (TB 2#))
+	println (show (TC 0.3 4 5# 0.6#))
+	td = TD 7# 0.8 9 1.0#
+	println (show td)
+	-- Use the field projections
+	println (show td.ai0 %% show td.af1 %% show td.ai2 %% show td.af3)
