@@ -46,6 +46,9 @@ Hint Constructors exp.
 Definition xUnit := XCon 0.
 Hint Unfold xUnit.
 
+Definition heap := list exp.
+Hint Unfold heap.
+
 
 (* Weak normal forms.
    Expressions in weak normal form cannot be reduced further by
@@ -68,7 +71,7 @@ Inductive wnfX : exp -> Prop :=
    , wnfX (XLoc l).
 Hint Constructors wnfX.
 
-Check Wnf_XVar.
+
 
 (* Well formed expressions are closed under the given environment. *)
 Fixpoint wfX (te: tyenv) (xx: exp) : Prop :=
