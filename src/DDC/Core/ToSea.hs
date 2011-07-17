@@ -178,10 +178,38 @@ toSeaP	xx
 				$ sortBy (compare `on` T.ctorDefTag)
 				$ Map.elems ctors
 
+		-- All constructors with unboxed fields need a struct definition.
+		-- For code generation, we need a struct name derived from the
+		-- constructor name and a (index, type) pair for each field.
+		-- Once we have the field (index, type) pairs, we sort the fields
+		-- so that the boxed fields come first.
+		let ctorStructs	= map makeCtorStruct
+				$ filter hasUnboxedField
+				$ sortBy (compare `on` E.ctorDefTag)
+				$ Map.elems ctors'
+
 	 	return		$ Seq.fromList
-				$ dataDef : tagDefs
+				$ dataDef : ctorStructs ++ tagDefs
 
 	_ ->	return Seq.empty
+
+
+hasUnboxedField ctor@E.CtorDef{}
+ = any isUnboxedET $ E.ctorDefFieldTypes ctor
+
+
+makeCtorStruct ctor@E.CtorDef{}
+ = let (unboxed, boxed)
+		= partition (isUnboxedET . snd)
+		$ zip [0..]
+		$ E.ctorDefFieldTypes ctor
+   in E.PCtorStruct (E.ctorDefName ctor) (boxed ++ unboxed)
+
+
+isUnboxedET t
+ = case t of
+	E.TCon (E.TyConUnboxed _) -> True
+	_ -> False
 
 
 -- | split the RHS of a supercombinator into its args and expression
@@ -364,7 +392,7 @@ toSeaApps parts
 
 	C.XPrim (C.MCall (C.PrimCallCurry vSuper superA)) _ : args
 	 -> do	Just tSuper	<- getOpTypeOfVar vSuper
-		if  any isUnboxed args
+		if  any isUnboxedExp args
                  then panic stage
 				$ "Partial application of function to unboxed args at "
  				% prettyPos vSuper
@@ -388,8 +416,8 @@ toSeaApps parts
 	_ -> panic stage $ "toSeaApps: no match for " % pprStr [PrettyCoreTypes] parts
 
 
-isUnboxed :: C.Exp -> Bool
-isUnboxed x
+isUnboxedExp :: C.Exp -> Bool
+isUnboxedExp x
  = case x of
 	-- This may not be complete.
 	C.XLit (LiteralFmt _ fmt) -> dataFormatIsUnboxed fmt

@@ -53,6 +53,10 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	    in  pprHeadBraces ("data" %% v %% "where" % nl)
 			ctorsList
 
+	PCtorStruct n f
+	 -> let fields = map (\(i, t) -> ppr t %% "f" % show i % ";") f
+	    in "typedef struct {" % nl % indent (vcat fields) % "\n}" %% sV n % "_S" %% ";\n"
+
 	-- Constructor tag name and value
 	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")"
 

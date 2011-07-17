@@ -162,12 +162,12 @@ seaInit moduleName eTree
 
 
 -- | Create the C header file for this module.
-makeSeaHeader :: (Tree ()) -> String -> [String] -> [String] -> String
-makeSeaHeader eTree pathThis pathImports extraIncludes
+makeSeaHeader :: ModuleId -> (Tree ()) -> String -> [String] -> [String] -> String
+makeSeaHeader modName eTree pathThis pathImports extraIncludes
  = do		-- Break up the sea into Header/Code parts.
-	let 	([ seaProtos, seaCafProtos, seaCtorTag ], _junk)
+	let 	([ seaProtos, seaCafProtos, seaCtorTag, seaCtorStructs ], _junk)
 		 = partitionBy
-			[ (=@=) PProto{}, (=@=) PCafProto{}, (=@=) PCtorTag{} ]
+			[ (=@=) PProto{}, (=@=) PCafProto{}, (=@=) PCtorTag{}, (=@=) PCtorStruct{} ]
 			eTree
 
 	let defTag	= makeIncludeDefTag pathThis
@@ -175,15 +175,23 @@ makeSeaHeader eTree pathThis pathImports extraIncludes
 	pprStrPlain
 	 $ vcat	[ "#ifndef _inc" % defTag
 		, "#define _inc" % defTag
+		, blank
 		, ppr "#include <runtime/Runtime.h>"
 		, ppr "#include <runtime/Runtime.ci>"
+		, blank
 		, vcat [ "#include <" % inc % ">" | inc <- pathImports ]
 		, vcat [ "#include <" % inc % ">" | inc <- extraIncludes]
-		, vcat $ eraseAnnotsTree seaCtorTag
-		, vcat $ eraseAnnotsTree seaCafProtos
-		, vcat $ eraseAnnotsTree seaProtos
-		, ppr "#endif"
+		, blank, vcat $ eraseAnnotsTree seaCtorTag
+		, blank, vcat $ eraseAnnotsTree
+						$ filter (isModuleLocal modName) seaCtorStructs
+		, blank, vcat $ eraseAnnotsTree seaCafProtos
+		, blank, vcat $ eraseAnnotsTree seaProtos
+		, blank, ppr "#endif"
 		, blank ]
+
+isModuleLocal :: ModuleId -> Top () -> Bool
+isModuleLocal modName (PCtorStruct v _)
+ = modName == varModuleId v
 
 
 nameTItoH nameTI
@@ -307,18 +315,18 @@ outSea setup moduleName eTree pathThis pathImports extraIncludes
 	-- Break up the sea into Header/Code parts.
     let	([ 	_seaProtos, 		seaSupers,		_seaExterns
 	 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
-	 ,      seaData
+	 ,      seaData,		_seaCtorStructs
 	 , 	_seaPCtorTag ], [])
 
 	 = partitionBy
 		[ (=@=) PProto{}, 	(=@=) PSuper{}, 	(=@=) PExtern{}
 		, (=@=) PCafProto{},	(=@=) PCafSlot{},	(=@=) PCafInit{}
-		, (=@=) PData{}
+		, (=@=) PData{},	(=@=) PCtorStruct{}
 		, (=@=) PCtorTag{} ]
 		eTree
 
  	-- Build the C header
-	seaHeader = makeSeaHeader eTree pathThis pathImports extraIncludes
+	seaHeader = makeSeaHeader moduleName eTree pathThis pathImports extraIncludes
 
 	-- Build the C code.
 	seaCode	= pprStrPlain $ vcat

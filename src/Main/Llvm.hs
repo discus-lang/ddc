@@ -93,9 +93,7 @@ compileViaLlvm
 
 	outVerb $ ppr "  * Write C header\n"
 	writeFile pathH
-		$ makeSeaHeader
-			eTree
-			pathSource
+		$ makeSeaHeader modName eTree pathSource
 			(map (fromJust . M.scrapePathHeader) $ Map.elems scrapes_noRoot)
 			includeFilesHere
 

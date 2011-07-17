@@ -63,9 +63,13 @@ data Top a
 		Type 				-- result type
 		[Stmt a]			-- statements
 
+	-- | Constructor struct definition (for constructors with unboxed fields).
+	| PCtorStruct
+		Var				-- struct name
+		[(Int, Type)]			-- field index and types
 
 	-- | Constructor tag name and value
-	| PCtorTag	String Int		-- ^ Constructor name ane value.
+	| PCtorTag	String Int		-- ^ Constructor name and value.
 
 	-- cafs -----------------------
 	| PCafProto	Var Type		-- ^ The prototype for a CAF slot index.

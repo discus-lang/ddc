@@ -124,6 +124,9 @@ instance Monad m => TransM m a1 a2 Top where
 	 	ss3		<- transSS table ss2
 		transP table	$ PCafInit v t ss3
 
+	PCtorStruct n f
+	 -> transP table	$ PCtorStruct n f
+
 	PCtorTag n i
 	 ->	transP table	$ PCtorTag n i
 
