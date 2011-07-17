@@ -55,7 +55,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	PCtorStruct n f
 	 -> let fields = map (\(i, t) -> ppr t %% "f" % show i % ";") f
-	    in "typedef struct {" % nl % indent (vcat fields) % "\n}" %% sV n % "_S" %% ";\n"
+	    in "typedef struct {" % nl % indent (vcat fields) % "\n}" %% sV n % "_Ctor" %% ";\n"
 
 	-- Constructor tag name and value
 	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")"
@@ -247,8 +247,8 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XArgBoxedData x@(XVar _ _) i
 	 -> "_DARG(" % x % ", " % i % ")"
 
-	XArgUnboxedData _x@(XVar _ _) _i
-	 -> ppr "0; // XArgUnboxedData not implemented yet."
+	XArgUnboxedData v x@(XVar _ _) i
+	 -> "_DMARG(" % x % ", " % sV v % "_Ctor" % ", " % i % ")"
 
 	XArgThunk x@(XVar _ _) i
 	 -> "_TARG(" % x % ", " % i % ")"

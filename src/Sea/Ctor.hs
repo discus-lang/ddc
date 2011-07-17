@@ -47,7 +47,7 @@ expandCtor (CtorDef vCtor tCtor arity tag fields types)
 
 	-- Initialise all the fields.
 	(stmtss, mArgVs)
-		<- liftM unzip $ mapM (\ i -> expandField nObj i (types !! i)) [0 .. arity - 1]
+		<- liftM unzip $ mapM (\ i -> expandField vCtor nObj i (types !! i)) [0 .. arity - 1]
 
 	let fieldSs	= concat stmtss
 	let argVs	= catMaybes mArgVs
@@ -63,22 +63,23 @@ expandCtor (CtorDef vCtor tCtor arity tag fields types)
 
 -- | Create initialization code for this field
 expandField
-	:: Name				-- ^ name of the object being constructed.
+	:: Var
+	-> Name				-- ^ name of the object being constructed.
 	-> Int				-- ^ index of argument.
 	-> Type				-- ^ type of argument.
 	-> ExM 	( [Stmt ()]		-- initialization code
 		, Maybe (Var, Type))	-- the arguments to the constructor
 					--	(will be Nothing if the field is secondary)
-expandField nObj ixArg (TPtr (TCon TyConObj))
+expandField _ nObj ixArg (TPtr (TCon TyConObj))
  = do	vArg	<- newVarN NameValue
 	return	( [SAssign 	(XArgBoxedData (XVar nObj tPtrObj) ixArg)
 				tPtrObj
 				(XVar (NAuto vArg) tPtrObj)]
 		, Just (vArg, tPtrObj) )
 
-expandField nObj ixArg tArg@(TCon (TyConUnboxed _))
+expandField v nObj ixArg tArg@(TCon (TyConUnboxed _))
  = do	vArg	<- newVarN NameValue
-	return	( [SAssign 	(XArgUnboxedData (XVar nObj tArg) ixArg)
+	return	( [SAssign 	(XArgUnboxedData v (XVar nObj tArg) ixArg)
 				tPtrObj
 				(XVar (NAuto vArg) tArg)]
 		, Just (vArg, tArg) )

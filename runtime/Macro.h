@@ -24,6 +24,9 @@
 // Extract an constructor argument froma data object.
 #define _DARG(data,i)	(((Data*)data) ->a[i])
 
+// Extract a field from a constructor containing at least one unboxed field.
+#define _DMARG(data,s,i)	((s*)(((DataM*)data) ->payload))->f##i
+
 // Extract a function argument from a thunk.
 #define _TARG(thunk,i)	(((Thunk*)thunk) ->a[i])
 

@@ -571,7 +571,7 @@ toSeaG	_ ssFront gg
 					else E.XTag $ E.XVar name t'
 
 				let ssL		= assignLastSS (E.XVar name t', t') ssRHS
-				return	( map (toSeaGL name) lvts
+				return	( map (toSeaGL v name) lvts
 					, Just $ E.GCase sp
 							(not rhsIsDirect)
 							(ssFront ++ ssL)
@@ -602,13 +602,13 @@ isPatConst gg
 	_		-> False
 
 
-toSeaGL	nObj (label, var, t)
+toSeaGL	struct nObj (label, var, t)
 	| C.LIndex i	<- label
 	, isUnboxedT	t
 	= E.SAssign
 		(E.XVar (E.NAuto var) (toSeaT t))
 		(toSeaT t)
-		(E.XArgUnboxedData (E.XVar nObj (toSeaT t)) i)
+		(E.XArgUnboxedData struct (E.XVar nObj (toSeaT t)) i)
 
 	| C.LIndex i	<- label
 	= E.SAssign
