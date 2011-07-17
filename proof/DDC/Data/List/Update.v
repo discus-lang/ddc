@@ -13,6 +13,41 @@ Fixpoint update {A: Type} (ix: nat) (y: A) (xx: list A) : list A :=
  end.
 
 
+Lemma Forall_update
+ :  forall A (P: A -> Prop) ix x xs
+ ,  P x
+ -> Forall P xs
+ -> Forall P (update ix x xs).
+Proof.
+ intros. gen ix.
+ induction xs; intros.
+  destruct ix; simpl; auto.
+  destruct ix; inverts H0.
+   simpl. auto.
+   simpl. apply Forall_cons; auto.
+Qed.
+
+
+Lemma Forall_update_result
+ :  forall A (P: A -> Prop) ix x y xs
+ ,  get ix xs = Some y
+ -> Forall P (update ix x xs)
+ -> P x.
+Proof.
+ intros. gen xs.
+ induction ix; intros.
+  destruct xs.
+   inverts H.
+   simpl in H. inverts H.
+   simpl in H0. inverts H0. auto.
+  destruct xs.
+   simpl in H. false.
+   simpl in H.
+   simpl in H0. inverts H0.
+   eauto.
+Qed.
+
+ 
 Lemma Forall2_update_right
  : forall {A B : Type} 
           (R   : A -> B -> Prop)

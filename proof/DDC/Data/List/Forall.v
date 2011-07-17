@@ -21,6 +21,42 @@ Proof.
 Qed.
 
 
+Lemma Forall_get
+ :  forall A (P: A -> Prop) ix x xs
+ ,  Forall P xs
+ -> get ix xs = Some x
+ -> P x.
+Proof.
+ intros. gen x xs.
+ induction ix; intros.
+  destruct xs.
+   false.
+   simpl in H0. inverts H0. inverts H. auto.
+  destruct xs.
+   false.
+   simpl in H0.
+   eapply IHix.
+    inverts H. eapply H4. auto.
+Qed.
+
+
+Lemma Forall_snoc
+ :  forall A (P: A -> Prop) x xs
+ ,  P x
+ -> Forall P xs
+ -> Forall P (x <: xs).
+Proof.
+ intros. gen x.
+ induction xs; intros. 
+  simpl. auto.
+  simpl. 
+   eapply Forall_cons. 
+    inverts H0. auto.
+   eapply IHxs.
+    inverts H0. auto. auto.
+Qed.
+
+
 Lemma Forall_map
  :  forall {A B: Type} 
            (P: B -> Prop) (f: A -> B) 

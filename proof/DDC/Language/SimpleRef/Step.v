@@ -73,10 +73,31 @@ Inductive STEP  : heap -> exp -> heap -> exp -> Prop :=
 
  | EsWriteRef
    :  forall l h v2
-   ,  STEP h  (XWriteRef (XLoc l) v2)
+   ,  value v2
+   -> STEP h  (XWriteRef (XLoc l) v2)
            (update l v2 h) xUnit.
 
 Hint Constructors STEP.
+
+
+
+(* Well-formed heaps contain values only. 
+   No free variables or reducible terms in heap cells. *)
+Definition wfH (h: heap) 
+ := Forall value h.
+
+
+Lemma step_preserves_wfH
+ :  forall h1 h2 x1 x2 
+ ,  wfH h1
+ -> STEP h1 x1 h2 x2
+ -> wfH h2.
+Proof.
+ intros.
+ induction H0; auto.
+ eapply Forall_snoc; auto.
+ eapply Forall_update; auto.
+Qed.
 
 
 (********************************************************************)

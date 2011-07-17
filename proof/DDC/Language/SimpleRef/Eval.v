@@ -6,12 +6,6 @@ Require Export DDC.Language.SimpleRef.Step.
 Require Export DDC.Language.SimpleRef.Exp.
 
 
-(* Well-formed heaps contain values only. 
-   No free variables or reducible terms in heap cells. *)
-Definition wfH (h: heap) 
- := Forall value h.
-
-
 (********************************************************************)
 (** Big Step Evaluation *)
 (*  This is also called 'Natural Semantics'.
@@ -91,15 +85,10 @@ Lemma eval_produces_wfH_value
  -> wfH h1 /\ value v1.
 Proof.
  intros. induction H; iauto.
-
- admit. (* ok, snoc onto heap *)
-
+ apply Forall_snoc; eauto.
  eapply Value; burn.
-
- admit. (* ok, get value from heap *)
-
- admit. (* ok, update heap, stil wf *)
-
+ eapply Forall_get; eauto.
+ eapply Forall_update; auto.
  unfold xUnit.
  eapply Value; burn.
 Qed.
@@ -256,9 +245,13 @@ Proof.
    destruct Rx2 as [se2]. int.
 
   eapply EsAppend.
-   lets D: steps_context XcWriteRef1. eapply D. eauto.
+   lets D: steps_context XcWriteRef1. 
+    eapply D. eapply Sx1.
+  eapply EsAppend.
    lets D: steps_context XcWriteRef2.
-    assert (value (XLoc l)). eauto. eauto. eauto.
+    assert (value (XLoc l)). eauto. eauto.
+    eapply D. eapply Sx2.
+    eauto.
 Qed.
 
 
@@ -276,12 +269,12 @@ Qed.
 
 Lemma eval_expansion
  :  forall se h1 x1 t1 h2 x2 h3 v3
- ,  wfH h1  
+ ,  wfH h1 -> TYPEH se h1
  -> TYPE  nil se x1 t1
  -> STEP  h1 x1  h2 x2 -> EVAL h2 x2  h3 v3 
  -> EVAL  h1 x1  h3 v3.
 Proof.
- intros se h1 x1 t1 h2 x2 h3 v3 HW HT HS HE.
+ intros se h1 x1 t1 h2 x2 h3 v3 HW HTH HT HS HE.
  gen se t1 h3 v3.
 
  (* Induction over the form of (STEP x1 x2) *)
@@ -298,7 +291,7 @@ Proof.
     eauto.
  
   SCase "XcNewRef".
-   inverts_eval. nope. eauto.
+   inverts_eval. simpl. nope. eauto.
 
   SCase "XcReadRef".
    inverts_eval. nope. eauto.
@@ -323,7 +316,9 @@ Proof.
   auto.
 
  Case "XReadRef".
-  assert (value v). admit.  (* ok, wf from heap *)
+  assert (value v).
+   eapply Forall_get.
+    eapply HW. eapply H.
   assert (h3 = h /\ v3 = v).
    eapply eval_value_eq; eauto.
    int. subst.
@@ -340,7 +335,13 @@ Proof.
   eapply EvDone. eapply Value; burn.
   auto.
   inverts HE.
-   assert (value v2). admit. (* ok, from wf of update result *)
+   inverts_type.
+   assert (value v2). 
+    assert (exists xData, get l h = Some xData).
+    eapply Forall2_get_get_right.
+     eapply HTH. eapply H7. destruct H2.
+    eapply Forall_update_result.
+     eapply H2. auto.
    eauto.
 Qed.
 
@@ -363,10 +364,10 @@ Proof.
   eapply eval_expansion; eauto.
   lets D: preservation H1 H4 H0.
   dest D. int.
-
-  assert (wfH h2). admit. (* ok, add step preserves wfH to preservation*)
+  assert (wfH h2). 
+   eapply step_preserves_wfH; eauto.
   spec IHSTEPSL H7 H3 H5.
-  auto.
+  eauto.
 Qed.
 
 
