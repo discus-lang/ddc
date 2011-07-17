@@ -1,6 +1,6 @@
 
 Require Import DDC.Data.List.Base.
-Require Import DDC.Base.Nat.
+Require Import DDC.Data.Nat.
 Require Import DDC.Base.Tactics.
 
 

@@ -1,7 +1,7 @@
 
-Require Export DDC.Base.Nat.
-Require Export DDC.Base.Tactics.
 Require Export DDC.Data.List.
+Require Export DDC.Data.Nat.
+Require Export DDC.Base.Tactics.
 Require Export Coq.Program.Basics.
 
 

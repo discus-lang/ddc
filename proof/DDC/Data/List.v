@@ -13,7 +13,7 @@ Require Export DDC.Data.List.Insert.
 Require Export DDC.Data.List.Delete.
 Require Export DDC.Data.List.Update.
 
-Require Import DDC.Base.Nat.
+Require Import DDC.Data.Nat.
 Require Import DDC.Base.Tactics.
 Require Import Coq.Program.Basics.
 

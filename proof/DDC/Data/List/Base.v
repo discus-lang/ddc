@@ -1,6 +1,6 @@
 
 Require Export Coq.Lists.List.
-Require Import DDC.Base.Nat.
+Require Import DDC.Data.Nat.
 Require Import DDC.Base.Tactics.
 
 
