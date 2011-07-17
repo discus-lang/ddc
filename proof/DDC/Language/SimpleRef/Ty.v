@@ -72,6 +72,7 @@ Tactic Notation "induction_type" ident(X) :=
 (* Well-typing of heap wrt the store typing. *)
 Definition TYPEH (se : tyenv) (h: heap)
    := Forall2 (TYPE nil se) h se.
+Hint Unfold TYPEH.
 
 
 (********************************************************************)
@@ -135,7 +136,7 @@ Proof.
 Qed.
 
 
-Lemma type_tyenv_weaken
+Lemma type_tyenv_cons
  :  forall te se x t1 t2
  ,  TYPE  te se         x          t1
  -> TYPE (te :> t2) se (liftX 0 x) t1.
@@ -145,11 +146,12 @@ Proof.
   simpl. destruct te; auto.
   rewrite H0. apply type_tyenv_insert. auto.
 Qed.
+Hint Resolve type_tyenv_cons.
 
 
 (********************************************************************)
 (* Weakening of store typing. *)
-Lemma type_stenv_push
+Lemma type_stenv_snoc
  : forall te se1 t2     x t1
  ,  TYPE te  se1        x t1
  -> TYPE te (t2 <: se1) x t1.
@@ -157,7 +159,7 @@ Proof.
  intros. gen te t1.
  induction_type x.
 Qed.
-Hint Resolve type_stenv_push.
+Hint Resolve type_stenv_snoc.
 
 
 Lemma type_stenv_weaken
@@ -173,4 +175,18 @@ Proof.
  eauto.
 Qed.
 Hint Resolve type_stenv_weaken.
+
+
+Lemma type_stenv_extends
+ : forall te se1 se2 x t1
+ ,  extends se2 se1
+ -> TYPE te se1 x t1
+ -> TYPE te se2 x t1.
+Proof.
+ intros.
+ simpl in H.
+ destruct H as [se3]. subst.
+ auto.
+Qed.
+Hint Resolve type_stenv_extends.
 

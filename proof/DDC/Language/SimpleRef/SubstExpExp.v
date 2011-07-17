@@ -39,7 +39,7 @@ Proof.
   apply TyLam.
   rewrite delete_rewind.
   apply IHx1; auto.
-   simpl. apply type_tyenv_weaken. auto.
+   simpl. apply type_tyenv_cons. auto.
 Qed.
 
 

@@ -242,6 +242,7 @@ Proof.
   simpl. auto.
   simpl. nnat. auto.
 Qed.
+Hint Resolve get_cons_some.
 
 
 Lemma get_app_left_some
@@ -261,6 +262,17 @@ Proof.
   rewrite <- (get_cons_some A (n + length e2) (e2 ++ e1) a).
    auto. auto.
 Qed.
+Hint Resolve get_app_left_some.
+
+
+Lemma get_length_snoc_some
+ : forall A x (xs: list A)
+ , get (length xs) (x <: xs) = Some x.
+Proof.
+ intros.
+ induction xs; simpl; auto.
+Qed.
+Hint Resolve get_length_snoc_some.
 
 
 (* We cannot get elements from a list at indices the same, or larger, 
@@ -281,3 +293,4 @@ Proof.
    eapply IHxx in H1. false. eauto.
 Qed.
 Hint Resolve get_above_false.
+

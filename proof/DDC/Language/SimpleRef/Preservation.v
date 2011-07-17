@@ -3,47 +3,6 @@ Require Import DDC.Language.SimpleRef.Step.
 Require Import DDC.Language.SimpleRef.SubstExpExp.
 Require Import DDC.Language.SimpleRef.Ty.
 
-Definition extends {A: Type} (xs: list A) (ys: list A)
- := exists zs, xs = zs >< ys.
-
-
-Lemma extends_refl
- : forall {A: Type} (se: list A)
- , extends se se.
-Proof.
- induction se; intros.
-  unfold extends. exists (@nil A). eauto.
-  unfold extends. exists (@nil A). eauto.
-Qed.
-Hint Resolve extends_refl.
-
-
-Lemma extends_snoc 
- : forall {A: Type} x (xx: list A)
- , extends (x <: xx) xx.
-Proof.
- intros. unfold extends.
- exists (x :: nil).
- induction xx.
-  simpl. auto.
-  simpl. rewrite IHxx. auto.
-Qed.
-Hint Resolve extends_snoc. 
-
-
-Lemma type_stenv_extends
- : forall te se1 se2 x t1
- ,  extends se2 se1
- -> TYPE te se1 x t1
- -> TYPE te se2 x t1.
-Proof.
- intros.
- simpl in H.
- destruct H as [se3]. subst.
- auto.
-Qed.
-Hint Resolve type_stenv_extends.
-
 
 (* If a closed, well typed expression takes an evaluation step 
    then the result has the same type as before. *)
@@ -80,11 +39,13 @@ Proof.
   exists (tData <: se). splits.
    eauto.
    eapply Forall2_snoc.
-    eapply type_stenv_push. auto.
+    eapply type_stenv_snoc. auto.
     eapply Forall2_impl. 
-    eapply type_stenv_push. auto. 
+    eapply type_stenv_snoc. auto. 
    eapply TyLoc.
-    admit. (* ok, list lemma *)
+    assert (length h = length se) as HL.
+     eapply Forall2_length; eauto.
+     rewrite HL. auto.
 
  Case "EsReadRef".
   inverts_type.
