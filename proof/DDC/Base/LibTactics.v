@@ -229,7 +229,7 @@ Ltac _rem :=
 (* ---------------------------------------------------------------------- *)
 (** ** List of arguments for tactics  *)
 
-Require Import List.
+Require Import Coq.Lists.List.
 
 (** [ltac_wild] is a constant that can be used to simulate 
     wildcard arguments in tactic definitions. Notation is [__]. *)
