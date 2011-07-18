@@ -23,17 +23,16 @@ Proof.
       -> TYPEA ds te           a1 t11 t12
       -> TYPE  ds (delete ix te) x2 t2
       -> TYPEA ds (delete ix te) (substA ix x2 a1) t11 t12)
-  ; intros; simpl.
+  ; intros; simpl; inverts_type; eauto.
 
  Case "XVar".
-  inverts H0.
   fbreak_nat_compare.
   SCase "i = ix".
    rewrite H in H5. inverts H5. auto.
 
   SCase "n < ix".
    apply TYVar.
-   rewrite <- H5.
+    rewrite <- H5.
     apply get_delete_above. auto.
 
   SCase "n > ix".
@@ -44,53 +43,43 @@ Proof.
      apply get_delete_below. omega.
 
  Case "XLam".
-  inverts H0.
   apply TYLam.
   rewrite delete_rewind.
-  eapply IHx1; eauto.
-   simpl. apply type_tyenv_weaken1. auto.
-
- Case "XApp". 
-  inverts H0. eauto.
+  eauto using type_tyenv_weaken1.
 
  Case "XCon".
-  inverts H0.
   eapply TYCon; eauto.
-   rewrite Forall_forall in H.
+   nforall.
    apply (Forall2_map_left (TYPE ds (delete ix te))).
    apply (Forall2_impl_in  (TYPE ds te)); eauto.
 
+ (* Case expressions *)
  Case "XCase".
-  inverts H0.
-  eapply TYCase.
-   eauto. clear IHx1.
-   rewrite Forall_forall in H.
-   eapply Forall_map.
-   eapply (Forall_impl_in 
-    (fun a => TYPEA ds te a (TCon tcPat) t1)); eauto.
-   rewrite map_length. auto. eauto.
+  eapply TYCase; eauto.
+   clear IHx1.
+   (* Alts have correct type *)
+    eapply Forall_map.
+    nforall. eauto.
 
-   eapply Forall_impl; eauto.
-    intros. simpl in H0.
-    rewrite map_map.
-    apply in_map_iff.
-    apply in_map_iff in H0.
-     destruct H0. exists x. inverts H0.
-     split; auto.
-     unfold compose.
-     rewrite dcOfAlt_substA. auto.
+   (* There is at least one alt *)
+   rewrite map_length; eauto.
+
+   (* Required datacon is in alts list *)
+   nforall. intros.
+   rename x into d.
+   rewrite map_map. unfold compose.
+   apply in_map_iff.
+   assert (exists a, dcOfAlt a = d /\ In a aa). 
+    eapply map_in_exists. eauto. shift a. int.
+   rewrite <- H4. 
+   rewrite dcOfAlt_substA; auto.
      
  Case "AAlt".
-  inverts H0.
-  eapply TYAlt. 
-   eauto.
-   rewrite delete_app.
-    eapply IHx1 with (t2 := t2).
-     auto.
-     rewrite <- (get_app_left_some ty ix te ts). 
-      auto. auto.
-     rewrite <- delete_app.
-      apply type_tyenv_weaken_append. eauto.
+  eapply TYAlt; auto.
+  rewrite delete_app.
+  eapply IHx1; eauto.
+  rewrite <- delete_app.
+  eauto using type_tyenv_weaken_append.
 Qed.
 
 
@@ -115,26 +104,23 @@ Theorem subst_exp_exp_list
 Proof.
  intros ds te x1 xs t1 ts HF HT.
  gen ts x1.
- induction xs; intros.
+ induction xs; intros; inverts_type.
 
  Case "base case".
-  destruct ts.
-   simpl. simpl in HT. auto.
-  inverts HF.
+  destruct ts. 
+   simpl. auto.
+   nope.
 
  Case "step case".
   simpl. 
    destruct ts.
+    nope.
     inverts HF.
-    inverts HF.
-    eapply IHxs. eauto.
-    simpl in HT.
-    eapply subst_exp_exp. 
-     eauto.
+     eapply IHxs. eauto.
+     simpl in HT.
+     eapply subst_exp_exp. eauto. 
      assert (length xs = length ts).
-      eapply Forall2_length in H4. auto.   
-     rewrite H. clear H.
-     eapply type_tyenv_weaken_append.
-     auto.
+      eapply Forall2_length in H4. auto. rewrite H. clear H.   
+     eapply type_tyenv_weaken_append. auto.
 Qed.
 

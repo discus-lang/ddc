@@ -62,6 +62,19 @@ Hint Constructors TYPE.
 Hint Constructors TYPEA.
 
 
+(* Invert all hypothesis that are compound typing statements. *)
+Ltac inverts_type :=
+ repeat 
+  (match goal with 
+   | [ H: TYPE _ _ (XVar  _)   _      |- _ ] => inverts H
+   | [ H: TYPE _ _ (XLam  _ _) _      |- _ ] => inverts H
+   | [ H: TYPE _ _ (XApp  _ _) _      |- _ ] => inverts H
+   | [ H: TYPE _ _ (XCon  _ _) _      |- _ ] => inverts H
+   | [ H: TYPE _ _ (XCase _ _) _      |- _ ] => inverts H
+   | [ H: TYPEA _ _ (AAlt _ _ _) _ _  |- _ ] => inverts H
+   end).
+
+
 (* A well typed expression is well formed *)
 Theorem type_wfX
  :  forall ds te x t
@@ -73,37 +86,18 @@ Proof.
   (PA := fun a => forall ds te t1 t2
       ,  TYPEA ds te a t1 t2 
       -> wfA te a)
-  ; intros.
-
- Case "XVar".
-  inverts H. eauto.
-
- Case "XLam".
-  inverts H. eauto.
-
- Case "XApp".
-  inverts H. eauto.
+  ; intros; inverts_type; eauto.
 
  Case "XCon".
-  inverts H0.
   apply WfX_XCon.
-   eapply Forall2_Forall_left.
-    rewrite Forall_forall in H.
-    rewrite Forall_forall. eauto.
-    eauto.
+  nforall. intros.
+  eapply Forall2_exists_left in H9; eauto.
+  destruct H9. eauto.
 
  Case "XCase".
-  inverts H0.
   eapply WfX_XCase.
    eapply IHx. eauto.
-    rewrite Forall_forall in H.
-    rewrite Forall_forall in H4.
-    rewrite Forall_forall.
-    eauto.
-
- Case "XAlt".
-  inverts H.
-  eapply WfA_AAlt; eauto.
+   nforall. eauto.
 Qed.
 Hint Resolve type_wfX.
 
@@ -122,64 +116,44 @@ Proof.
   (PA := fun a => forall ix ds te t3 t4
       ,  TYPEA ds te a t3 t4 
       -> TYPEA ds (insert ix t2 te) (liftA 1 ix a) t3 t4)
-  ; intros; simpl.
+  ; intros; inverts_type; simpl; eauto.
 
  Case "XVar".
-  inverts H.
-  nnat.
+  nnat. 
   lift_cases; intros; auto.
 
  Case "XLam".
-  inverts H.
   apply TYLam.
-  rewrite insert_rewind. 
-   apply IHx. auto.
-
- Case "XApp".
-  inverts H.
-  eapply TYApp.
-   eauto. eauto.
+  rewrite insert_rewind. auto.
 
  Case "XCon".
-  inverts H0.
   eapply TYCon; eauto.
-   rewrite Forall_forall in H.
+   nforall.
    apply (Forall2_map_left (TYPE ds (insert ix t2 te))).
    apply (Forall2_impl_in  (TYPE ds te)); eauto.
 
  Case "XCase".
-  inverts H0.
-  eapply TYCase. 
-   eauto.
+  eapply TYCase; eauto.
+   apply Forall_map.
+   apply (Forall_impl_in (fun a => TYPEA ds te a (TCon tcPat) t1)); eauto.
+   nforall. eauto.
 
-   rewrite Forall_forall in H.
-    apply  Forall_map.
-    apply (Forall_impl_in (fun a => TYPEA ds te a (TCon tcPat) t1)); eauto.
+  rewrite map_length; auto.
 
-   rewrite map_length.
+  nforall.
+   intros. rename x0 into d. 
+   rewrite map_map. unfold compose.
+   eapply map_exists_in.
+   assert (In d (map dcOfAlt aa)). 
     eauto.
-
-   eauto.
-
-   (* TODO: clean this mess up *)
-   rewrite Forall_forall.
-    rewrite Forall_forall in H10.
-    intros.
-    eapply H10 in H0.
-    rewrite map_map.
-    eapply map_exists_in.
-    apply map_in_exists in H0.
-    destruct H0.
-    exists x1.
-    inverts H0.
-    split. unfold compose.
-    rewrite dcOfAlt_liftA. auto. auto. 
+   assert (exists a, dcOfAlt a = d /\ In a aa).
+    eapply map_in_exists. auto.
+   shift a. subst. int. rewrite <- H6.
+   eapply dcOfAlt_liftA.
 
  Case "XAlt".
-  inverts H.
-  eapply TYAlt. eauto.
-  rewrite insert_app.
-  eauto.
+  eapply TYAlt; eauto.
+  rewrite insert_app. auto.
 Qed. 
 
 
@@ -193,7 +167,8 @@ Proof.
  intros.
  assert (te :> t2 = insert 0 t2 te).
   simpl. destruct te; auto.
-  rewrite H0. apply type_tyenv_insert. auto.
+ rewrite H0.
+  apply type_tyenv_insert. auto.
 Qed.
 
 
@@ -205,14 +180,13 @@ Lemma type_tyenv_weaken_append
  -> TYPE ds (te >< te') (liftX (length te') 0 x) t1.
 Proof.
  intros.
- induction te'.
-  simpl. 
-   rewrite liftX_zero. auto. 
-  simpl.
-   rewrite <- nat_plus_one.
-   assert (length te' + 1 = 1 + length te').
-   omega. rewrite H0. clear H0.
-  rewrite <- liftX_plus.
-  eapply type_tyenv_weaken1. auto.
+ induction te'; simpl.
+  rewrite liftX_zero. 
+   auto. 
+  rewrite <- nat_plus_one.
+   assert (length te' + 1 = 1 + length te') as HL. 
+    burn. rewrite HL. clear HL.
+   rewrite <- liftX_plus.
+   eapply type_tyenv_weaken1. auto. 
 Qed.
 

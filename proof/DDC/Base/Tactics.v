@@ -1,6 +1,8 @@
 
 Require Export DDC.Base.LibTactics.
 Require Export Omega.
+Require Import Coq.Lists.List.
+
 
 (********************************************************************)
 (* Shorthands for existing tactics *)
@@ -64,6 +66,17 @@ Ltac lift_cases
      |  [ |- context [le_gt_dec ?n ?n'] ]
      => case (le_gt_dec n n')
     end.
+
+(********************************************************************)
+(* Tactics for working with forall. *)
+(* Normalise foralls to In form. *)
+Ltac nforall := 
+ repeat
+  (match goal with 
+   | [ H: Forall _ _ |- _ ] => rewrite Forall_forall in H
+   | [ H: _ |- Forall _ _ ] => rewrite Forall_forall
+   end).
+
 
 (********************************************************************)
 (* Tactics for working with existentials. *)
@@ -163,7 +176,8 @@ Ltac injectos :=
    one of the primitive tactics. *)
 Ltac burn1 
  := first
-    [ injectos
+    [ burn0
+    | injectos
     | false;   burn0 
     | f_equal; burn0 ].
 

@@ -217,7 +217,7 @@ Proof.
  lets D: Forall2_exists_left H1 H0.
  destruct D. eauto. 
 Qed.
-Hint Resolve Forall_forall.
+Hint Resolve Forall2_Forall_left.
 
 
 Lemma Forall2_swap
