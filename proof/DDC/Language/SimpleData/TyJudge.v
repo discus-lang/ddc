@@ -66,11 +66,11 @@ Hint Constructors TYPEA.
 Ltac inverts_type :=
  repeat 
   (match goal with 
-   | [ H: TYPE _ _ (XVar  _)   _      |- _ ] => inverts H
-   | [ H: TYPE _ _ (XLam  _ _) _      |- _ ] => inverts H
-   | [ H: TYPE _ _ (XApp  _ _) _      |- _ ] => inverts H
-   | [ H: TYPE _ _ (XCon  _ _) _      |- _ ] => inverts H
-   | [ H: TYPE _ _ (XCase _ _) _      |- _ ] => inverts H
+   | [ H: TYPE  _ _ (XVar  _)    _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ (XLam  _ _)  _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ (XApp  _ _)  _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ (XCon  _ _)  _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ (XCase _ _)  _    |- _ ] => inverts H
    | [ H: TYPEA _ _ (AAlt _ _ _) _ _  |- _ ] => inverts H
    end).
 

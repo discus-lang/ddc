@@ -23,7 +23,7 @@ Proof.
   SCase "XCon".
    inverts HT.
    eapply TYCon; eauto.
-   eapply context_Forall2_swap; eauto.
+   eapply exps_ctx_Forall2_swap; eauto.
 
  Case "EsLamApp".
   inverts HT. inverts H4.

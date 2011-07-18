@@ -268,9 +268,9 @@ Proof.
    SCase "XcCon".
     inverts HT. 
 
-    assert (exists t, TYPE ds te x t). 
-    eapply context_Forall2_exists_left. 
-     eauto. eauto. destruct H1.
+    assert (exists t, TYPE ds te x t).
+    eapply exps_ctx_Forall2_exists_left; eauto.
+     destruct H1.
 
    inverts H0.
     inverts H2.

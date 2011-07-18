@@ -64,7 +64,7 @@ Proof.
 
   (* either all the xs are already whnfX,
       or there is a context where one can step *)
-  lets D: exps_ctx_run_Forall2' H0. clear H0.
+  lets D: exps_ctx2_run H0. clear H0.
   inverts D.
 
   Case "all whnfX".
