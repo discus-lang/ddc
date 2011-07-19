@@ -115,11 +115,11 @@ void	_dumpThunk 	(FILE* file, Obj* obj)
 	fprintf (file, "Thunk   { tag     = 0x%06x\n",	_getObjTag (obj));
 	fprintf (file, "        , flags   = 0x%02x\n",	_getObjFlags (obj));
 	fprintf (file, "        , func    = %p\n",	thunk ->func);
-	fprintf (file, "        , arity   = %d\n",	thunk ->arity);
-	fprintf (file, "        , args    = %d\n",	thunk ->args);
+	fprintf (file, "        , arity   = %u\n",	thunk ->arity);
+	fprintf (file, "        , args    = %u\n",	thunk ->args);
 
 	for (uint32_t i = 0; i < thunk ->args; i++)
-		fprintf (file, "        , a[%2d]   = %p\n", i, thunk ->a[i]);
+		fprintf (file, "        , a[%2u]   = %p\n", i, thunk ->a[i]);
 
 	fprintf (file, "        }\n");
 }
@@ -135,10 +135,10 @@ void	_dumpSusp	(FILE* file, Obj* obj)
 		, (_getObjTag (obj) == _tagSusp) ? "susp" : "indir");
 
 	fprintf (file, "        , obj     = %p\n", 	susp ->obj);
-	fprintf (file, "        , airity  = %d\n", 	susp ->arity);
+	fprintf (file, "        , airity  = %u\n", 	susp ->arity);
 
 	for (uint32_t i = 0; i < susp->arity; i++)
-		fprintf (file, "        , a[%2d]   = %p\n", i, susp->a[i]);
+		fprintf (file, "        , a[%2u]   = %p\n", i, susp->a[i]);
 
 	fprintf (file, "        }\n");
 }
@@ -150,11 +150,11 @@ void	_dumpData	(FILE* file, Obj* obj)
 	Data* data	= (Data*)obj;
 
 	fprintf (file, "Data    { tag     = 0x%06x\n", _getObjTag (obj));
-	fprintf (file, "        , arity   = %d\n", 	data ->arity);
+	fprintf (file, "        , arity   = %u\n", 	data ->arity);
 
 
 	for (uint32_t i = 0; i < data->arity; i++)
-		fprintf (file, "        , a[%2d]   = %p\n", i, data->a[i]);
+		fprintf (file, "        , a[%2u]   = %p\n", i, data->a[i]);
 
 	fprintf (file, "        }\n");
 }
@@ -166,7 +166,7 @@ void	_dumpDataR	(FILE* file, Obj* obj)
 	DataR*	data	= (DataR*)obj;
 
 	fprintf (file, "DataR   { tag     = 0x%06x\n", _getObjTag (obj));
-	fprintf (file, "        , size    = %d\n",     data ->size);
+	fprintf (file, "        , size    = %u\n",     data ->size);
 
 	fprintf (file, "        }\n");
 }
@@ -198,15 +198,15 @@ void	_dumpDataM 	(FILE* file, Obj* obj)
 	DataM*	data	= (DataM*)obj;
 
 	fprintf (file, "DataM   { tag      = 0x%06x\n", _getObjTag (obj));
-	fprintf (file, "        , size     = %d\n",	data ->size);
-	fprintf (file, "        , ptrCount = %d\n",	data ->ptrCount);
+	fprintf (file, "        , size     = %u\n",	data ->size);
+	fprintf (file, "        , ptrCount = %u\n",	data ->ptrCount);
 
 
 	// print out obj pointers.
 	Obj** payloadObj	= (Obj**) &(data ->payload);
 
 	for (uint32_t i = 0; i < data ->ptrCount; i++)
-		fprintf (file, "        , a[%2d]   = %p\n", i, payloadObj[i]);
+		fprintf (file, "        , a[%2u]   = %p\n", i, payloadObj[i]);
 
 	fprintf (file, "        }\n");
 }
