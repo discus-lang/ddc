@@ -72,14 +72,14 @@ expandField
 					--	(will be Nothing if the field is secondary)
 expandField _ nObj ixArg (TPtr (TCon TyConObj))
  = do	vArg	<- newVarN NameValue
-	return	( [SAssign 	(XArgBoxedData (XVar nObj tPtrObj) ixArg)
+	return	( [SAssign 	(XArgData (XVar nObj tPtrObj) ixArg)
 				tPtrObj
 				(XVar (NAuto vArg) tPtrObj)]
 		, Just (vArg, tPtrObj) )
 
 expandField v nObj ixArg tArg@(TCon (TyConUnboxed _))
  = do	vArg	<- newVarN NameValue
-	return	( [SAssign 	(XArgUnboxedData v (XVar nObj tArg) ixArg)
+	return	( [SAssign 	(XArgDataM v (XVar nObj tArg) ixArg)
 				tPtrObj
 				(XVar (NAuto vArg) tArg)]
 		, Just (vArg, tArg) )

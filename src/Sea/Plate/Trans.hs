@@ -235,14 +235,14 @@ instance Monad m => TransM m a1 a2 Exp where
 	 	transX table	$ XPrim v xs'
 
 	-- projection
-	XArgBoxedData x i
+	XArgData x i
 	 -> do	x'		<- transZM table x
-		transX table	$ XArgBoxedData x' i
+		transX table	$ XArgData x' i
 
-	XArgUnboxedData v x i
+	XArgDataM v x i
 	 -> do	x'		<- transZM table x
 		v'		<- transV table v
-		transX table	$ XArgUnboxedData v' x' i
+		transX table	$ XArgDataM v' x' i
 
 	XArgThunk x i
 	 -> do	x'		<- transZM table x

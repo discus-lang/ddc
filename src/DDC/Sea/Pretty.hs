@@ -244,10 +244,10 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XTag x
 	 -> "_getObjTag(" % x % ")"
 
-	XArgBoxedData x@(XVar _ _) i
+	XArgData x@(XVar _ _) i
 	 -> "_DARG(" % x % ", " % i % ")"
 
-	XArgUnboxedData v x@(XVar _ _) i
+	XArgDataM v x@(XVar _ _) i
 	 -> "_DMARG(" % x % ", " % sV v % "_Ctor" % ", " % i % ")"
 
 	XArgThunk x@(XVar _ _) i

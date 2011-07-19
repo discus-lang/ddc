@@ -608,13 +608,13 @@ toSeaGL	struct nObj (label, var, t)
 	= E.SAssign
 		(E.XVar (E.NAuto var) (toSeaT t))
 		(toSeaT t)
-		(E.XArgUnboxedData struct (E.XVar nObj (toSeaT t)) i)
+		(E.XArgDataM struct (E.XVar nObj (toSeaT t)) i)
 
 	| C.LIndex i	<- label
 	= E.SAssign
 		(E.XVar (E.NAuto var) (toSeaT t))
 		(toSeaT t)
-		(E.XArgBoxedData (E.XVar nObj (toSeaT t)) i)
+		(E.XArgData (E.XVar nObj (toSeaT t)) i)
 
 	| otherwise
 	= panic stage $ "toSeaGL: no match"

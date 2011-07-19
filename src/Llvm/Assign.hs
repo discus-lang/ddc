@@ -65,7 +65,7 @@ llvmOfAssign (XArgThunk (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
 			, Assignment ptr (GetElemPtr True thunk [ i32LitVar 0, i32LitVar indx, i32LitVar i ])
 			, Store rsrc (pVarLift ptr) ]
 
-llvmOfAssign (XArgBoxedData (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
+llvmOfAssign (XArgData (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
  = do	rsrc		<- llvmOfExp src
 	obj		<- readSlot ix
 	pdata		<- newUniqueReg pStructData

@@ -188,10 +188,10 @@ data Exp a
 	| XLit		Lit
 
 	-- | Take a numbered field from some boxed data object.
-	| XArgBoxedData	(Exp a) Int
+	| XArgData	(Exp a) Int
 
 	-- | Take a numbered field from some unboxed data object.
-	| XArgUnboxedData	Var (Exp a) Int
+	| XArgDataM	Var (Exp a) Int
 
 	-- | Take a numbered field from some thunk.
 	| XArgThunk	(Exp a) Int

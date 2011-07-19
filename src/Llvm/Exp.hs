@@ -73,7 +73,7 @@ llvmOfExp (XLit (LLit (LiteralFmt (LString s) Unboxed)))
 	addBlock	[ Assignment reg (GetElemPtr True (pVarLift name) [ i32LitVar 0, i32LitVar 0 ]) ]
 	return		reg
 
-llvmOfExp (XArgBoxedData (XVar (NSlot _ n) _) i)
+llvmOfExp (XArgData (XVar (NSlot _ n) _) i)
  = do	let indx        = fst $ structFieldLookup ddcData "args"
 	pobj		<- readSlot n
 	pdata		<- newUniqueNamedReg "pdata" pStructData
