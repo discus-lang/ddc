@@ -10,7 +10,6 @@ import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Base.Prim
-import DDC.Type.Predicates
 import DDC.Var
 import Data.Function
 import Shared.VarUtil			(prettyPos)
@@ -34,6 +33,11 @@ import qualified Data.Sequence		as Seq
 
 stage	= "DDC.Core.ToSea"
 
+data CtorDefMap
+	= CtorDefMap
+	{ importCtorDefs :: Map Var T.CtorDef
+	, moduleCtorDefs :: Map Var T.CtorDef
+	}
 
 toSeaGlobs
 	:: String		-- ^ unique
@@ -106,7 +110,8 @@ toSeaTree
 	-> Seq (E.Top ())
 
 toSeaTree unique vsCafs cgHeader cgModule ps
- = evalState 	(liftM join $ mapM toSeaP ps)
+ = let ctorDefMap = CtorDefMap (C.globDataCtors cgHeader) (C.globDataCtors cgModule)
+   in evalState (liftM join $ mapM (toSeaP ctorDefMap) ps)
 		SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
 			, stateCafVars		= vsCafs
 			, stateDirectRegions	= Set.empty
@@ -115,8 +120,8 @@ toSeaTree unique vsCafs cgHeader cgModule ps
 
 
 -- Top --------------------------------------------------------------------------------------------
-toSeaP :: C.Top -> SeaM (Seq (E.Top ()))
-toSeaP	xx
+toSeaP :: CtorDefMap -> C.Top -> SeaM (Seq (E.Top ()))
+toSeaP	ctorDefMap xx
  = case xx of
 
 	-- region
@@ -140,7 +145,7 @@ toSeaP	xx
 	 	(argNames, x')
 				<- splitSuper [] x
 
-		sss'		<- mapM toSeaS $ slurpStmtsX x'
+		sss'		<- mapM (toSeaS ctorDefMap) $ slurpStmtsX x'
 		let ss'		= concat sss'
 		let argNTs	= zip argNames argTypes
 
@@ -184,7 +189,7 @@ toSeaP	xx
 		-- Once we have the field (index, type) pairs, we sort the fields
 		-- so that the boxed fields come first.
 		let ctorStructs	= map makeCtorStruct
-				$ filter hasUnboxedField
+				$ filter E.hasUnboxedFields
 				$ sortBy (compare `on` E.ctorDefTag)
 				$ Map.elems ctors'
 
@@ -194,22 +199,14 @@ toSeaP	xx
 	_ ->	return Seq.empty
 
 
-hasUnboxedField ctor@E.CtorDef{}
- = any isUnboxedET $ E.ctorDefFieldTypes ctor
 
 
 makeCtorStruct ctor@E.CtorDef{}
- = let (unboxed, boxed)
-		= partition (isUnboxedET . snd)
+ = let (boxed, unboxed)
+		= partition (E.typeIsBoxed . snd)
 		$ zip [0..]
 		$ E.ctorDefFieldTypes ctor
    in E.PCtorStruct (E.ctorDefName ctor) (boxed ++ unboxed)
-
-
-isUnboxedET t
- = case t of
-	E.TCon (E.TyConUnboxed _) -> True
-	_ -> False
 
 
 -- | split the RHS of a supercombinator into its args and expression
@@ -438,18 +435,18 @@ isUnboxedExp x
 --   all out into a single list here.
 --
 --
-toSeaS	:: C.Stmt -> SeaM [E.Stmt ()]
-toSeaS xx
+toSeaS	:: CtorDefMap -> C.Stmt -> SeaM [E.Stmt ()]
+toSeaS ctorDefMap xx
  = case xx of
 	-- decend past type info
 	C.SBind b (C.XTau _ x)
-	 -> toSeaS $ C.SBind b x
+	 -> toSeaS ctorDefMap $ C.SBind b x
 
 	C.SBind b (C.XLAM _ _ x)
-	 -> toSeaS $ C.SBind b x
+	 -> toSeaS ctorDefMap $ C.SBind b x
 
 	C.SBind b (C.XLocal _ _ x)
-	 -> toSeaS $ C.SBind b x
+	 -> toSeaS ctorDefMap $ C.SBind b x
 
 	-- flatten out the initial statements and recursively bind the lhs
 	--	to the last expression in the list.
@@ -457,14 +454,14 @@ toSeaS xx
 	 -> do  let Just ssInit			= takeInit ss
 	 	let Just (C.SBind Nothing x) 	= takeLast ss
 
-		ssInit'	<- liftM concat $ mapM toSeaS ssInit
-		ssMore	<- toSeaS (C.SBind b x)
+		ssInit'	<- liftM concat $ mapM (toSeaS ctorDefMap) ssInit
+		ssMore	<- toSeaS ctorDefMap $ C.SBind b x
 
 	    	return	$ ssInit' ++ ssMore
 
 	-- matches
 	C.SBind (Just var) x@(C.XMatch aa)
-	 -> do	aa'		<- mapM (toSeaA Nothing) aa
+	 -> do	aa'		<- mapM (toSeaA ctorDefMap Nothing) aa
 
 		let xT		= C.checkedTypeOfOpenExp (stage ++ ".toSeaS") x
 		let t		= toSeaT xT
@@ -474,7 +471,7 @@ toSeaS xx
 
 
 	C.SBind Nothing	(C.XMatch aa)
-	 -> do	aa'		<- mapM (toSeaA Nothing) aa
+	 -> do	aa'		<- mapM (toSeaA ctorDefMap Nothing) aa
 	    	return		[E.SMatch aa']
 
 
@@ -490,36 +487,37 @@ toSeaS xx
 
 
 -- Alt --------------------------------------------------------------------------------------------
-toSeaA :: (Maybe C.Exp) -> C.Alt -> SeaM (E.Alt ())
-toSeaA	   mObjV xx
+toSeaA :: CtorDefMap -> (Maybe C.Exp) -> C.Alt -> SeaM (E.Alt ())
+toSeaA	   ctorDefMap mObjV xx
  = case xx of
 	C.AAlt [] x
 	 -> do
 	 	ss'		<- liftM concat
-				$  mapM toSeaS
+				$  mapM (toSeaS ctorDefMap)
 				$  slurpStmtsX x
 
 	    	return	$ E.ADefault ss'
 
 	C.AAlt gs x
-	 -> do	(ssFront, mgs')	<- mapAccumLM (toSeaG mObjV) [] gs
+	 -> do	(ssFront, mgs')	<- mapAccumLM (toSeaG ctorDefMap mObjV) [] gs
 		let gs'		= catMaybes mgs'
 
 	    	ss'		<- liftM concat
-				$  mapM toSeaS
+				$  mapM (toSeaS ctorDefMap)
 				$  slurpStmtsX x
 
 		return	$ E.AAlt gs' (ssFront ++ ss')
 
 
 -- Guard ------------------------------------------------------------------------------------------
-toSeaG	:: Maybe C.Exp 		-- match object
+toSeaG	:: CtorDefMap
+	-> Maybe C.Exp 		-- match object
 	-> [E.Stmt ()] 		-- stmts to add to the front of this guard.
 	-> C.Guard
 	-> SeaM ( [E.Stmt ()]	-- stmts to add to the front of the next guard.
 		,  Maybe (E.Guard ()))
 
-toSeaG	_ ssFront gg
+toSeaG ctorDefMap _ ssFront gg
  = case gg of
 
 	C.GExp w x
@@ -529,7 +527,7 @@ toSeaG	_ ssFront gg
 
 	  	-- convert the RHS expression into a sequence of stmts
 	 	ssRHS		<- liftM concat
-				$  mapM toSeaS
+				$  mapM (toSeaS ctorDefMap)
 				$  slurpStmtsX x
 
 		-- if the guard expression is in a direct region then we don't need to check
@@ -567,11 +565,16 @@ toSeaG	_ ssFront gg
 			= do	name		<- liftM E.NAuto $ newVarN NameValue
 
 				let compX	= if isPatConst w
-					then E.XVar name t'
-					else E.XTag $ E.XVar name t'
+						then E.XVar name t'
+						else E.XTag $ E.XVar name t'
 
 				let ssL		= assignLastSS (E.XVar name t', t') ssRHS
-				return	( map (toSeaGL v name) lvts
+
+				let toSeaGL	= if hasUnboxedFields ctorDefMap v
+						then toSeaGLDataM v
+						else toSeaGLData
+
+				return	( map (toSeaGL name) lvts
 					, Just $ E.GCase sp
 							(not rhsIsDirect)
 							(ssFront ++ ssL)
@@ -582,6 +585,19 @@ toSeaG	_ ssFront gg
 			= panic stage $ "toSeaG: no match"
 
 		result
+
+
+-- | Lookup ctor name v in the ctorDefMap retrieved from the Glob and see if
+-- the constructor has unboxed fields.
+-- We look first in the module we're currently compiling and then in the header
+-- containing the imports.
+hasUnboxedFields ctorDefMap v
+ = case Map.lookup v (moduleCtorDefs ctorDefMap) of
+	Just s -> T.hasUnboxedFields s
+	Nothing ->
+		case Map.lookup v (importCtorDefs ctorDefMap) of
+		  Just s -> T.hasUnboxedFields s
+		  Nothing -> False
 
 
 -- check if this type is in a direct region
@@ -602,14 +618,17 @@ isPatConst gg
 	_		-> False
 
 
-toSeaGL	struct nObj (label, var, t)
+toSeaGLDataM struct nObj (label, var, t)
 	| C.LIndex i	<- label
-	, isUnboxedT	t
 	= E.SAssign
 		(E.XVar (E.NAuto var) (toSeaT t))
 		(toSeaT t)
 		(E.XArgDataM struct (E.XVar nObj (toSeaT t)) i)
 
+	| otherwise
+	= panic stage $ "toSeaGLDataM: no match"
+
+toSeaGLData nObj (label, var, t)
 	| C.LIndex i	<- label
 	= E.SAssign
 		(E.XVar (E.NAuto var) (toSeaT t))
@@ -617,7 +636,7 @@ toSeaGL	struct nObj (label, var, t)
 		(E.XArgData (E.XVar nObj (toSeaT t)) i)
 
 	| otherwise
-	= panic stage $ "toSeaGL: no match"
+	= panic stage $ "toSeaGLData: no match"
 
 
 -- | Decend into XLocal and XDo and slurp out the contained lists of statements.

@@ -8,6 +8,7 @@ import DDC.Sea.Exp
 import DDC.Var
 import Shared.VarUtil		(VarGenM, newVarN)
 import qualified Shared.Unique	as Unique
+import qualified Config.Config	as Config
 import qualified Data.Map	as Map
 
 type	ExM	= VarGenM
@@ -41,13 +42,28 @@ expandCtor (CtorDef vCtor tCtor arity tag fields types)
  = do	-- var of the constructed object.
 	nObj		<- liftM NAuto $ newVarN NameValue
 
+	-- Determine how the fields are going to be store. Constructors with
+	-- one or more  unboxed fields use a different allocation method and
+	-- layout to those only boxed fields.
+	let (boxed, unboxed)
+			= partition typeIsBoxed types
+
+	let allocation	= if null unboxed
+			then PAllocData vCtor arity
+			else PAllocDataM vCtor (length boxed)
+					(dataMSize (length boxed) unboxed)
+
 	-- allocate the object
-	let allocS 	= SAssign (XVar nObj tPtrObj) tPtrObj
-			$ XPrim (MAlloc (PAllocData vCtor arity)) []
+	let allocS 	= SAssign (XVar nObj tPtrObj) tPtrObj (XPrim (MAlloc allocation) [])
+
+	let expandField = if null unboxed
+			then expandFieldData
+			else expandFieldDataM vCtor
+
 
 	-- Initialise all the fields.
 	(stmtss, mArgVs)
-		<- liftM unzip $ mapM (\ i -> expandField vCtor nObj i (types !! i)) [0 .. arity - 1]
+		<- liftM unzip $ mapM (\ i -> expandField nObj i (types !! i)) [0 .. arity - 1]
 
 	let fieldSs	= concat stmtss
 	let argVs	= catMaybes mArgVs
@@ -62,7 +78,7 @@ expandCtor (CtorDef vCtor tCtor arity tag fields types)
 
 
 -- | Create initialization code for this field
-expandField
+expandFieldDataM
 	:: Var
 	-> Name				-- ^ name of the object being constructed.
 	-> Int				-- ^ index of argument.
@@ -70,17 +86,30 @@ expandField
 	-> ExM 	( [Stmt ()]		-- initialization code
 		, Maybe (Var, Type))	-- the arguments to the constructor
 					--	(will be Nothing if the field is secondary)
-expandField _ nObj ixArg (TPtr (TCon TyConObj))
- = do	vArg	<- newVarN NameValue
-	return	( [SAssign 	(XArgData (XVar nObj tPtrObj) ixArg)
-				tPtrObj
-				(XVar (NAuto vArg) tPtrObj)]
-		, Just (vArg, tPtrObj) )
-
-expandField v nObj ixArg tArg@(TCon (TyConUnboxed _))
+expandFieldDataM v nObj ixArg tArg
  = do	vArg	<- newVarN NameValue
 	return	( [SAssign 	(XArgDataM v (XVar nObj tArg) ixArg)
 				tPtrObj
 				(XVar (NAuto vArg) tArg)]
 		, Just (vArg, tArg) )
 
+
+expandFieldData
+	:: Name				-- ^ name of the object being constructed.
+	-> Int				-- ^ index of argument.
+	-> Type				-- ^ type of argument.
+	-> ExM 	( [Stmt ()]		-- initialization code
+		, Maybe (Var, Type))	-- the arguments to the constructor
+					--	(will be Nothing if the field is secondary)
+expandFieldData nObj ixArg tArg
+ = do	vArg	<- newVarN NameValue
+	return	( [SAssign 	(XArgData (XVar nObj tPtrObj) ixArg)
+				tPtrObj
+				(XVar (NAuto vArg) tArg)]
+		, Just (vArg, tPtrObj) )
+
+
+
+
+dataMSize boxCount unboxed
+ = boxCount * Config.pointerBytes + (length unboxed) * 4
