@@ -75,6 +75,7 @@ Proof.
   destruct H; auto; nope.
 
  Case "XCon dc (C x)".
+  inverts HW.
   assert (wnfX x).
   eapply exps_ctx_Forall; eauto.
   assert (x' = x); auto.

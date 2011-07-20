@@ -71,7 +71,7 @@ Lemma eval_value_eq
  -> h1 = h0 /\ v1 = v0.
 Proof.
  intros. 
- destruct v0; nope; eauto.
+ destruct v0; inverts_eval; nope; eauto.
 Qed.
 
 

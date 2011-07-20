@@ -134,7 +134,11 @@ Ltac nope1
                | (inverts H ; [idtac]) ]
     end.
 
-Ltac nope := repeat nope1.
+
+(* Nope solves the goal completely or does nothing *)
+Ltac nope 
+ := first [ solve [repeat nope1] 
+          | idtac ].
 
 
 (********************************************************************)
