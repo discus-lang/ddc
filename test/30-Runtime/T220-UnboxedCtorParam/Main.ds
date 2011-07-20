@@ -4,6 +4,9 @@ import	Base
 	Class.Show.Numeric
 	Data.Numeric.Int32
 	System.Console
+	Foreign.C.StdIO
+
+foreign import  "_allocCollect" allocCollect :: Int32# -> Void#
 
 data Test
 	= TA Int32
@@ -21,11 +24,21 @@ instance Show Test where
 	show (TD w x y z) = show w % " " % show x % " " % show y % " " % show z
 
 main ()
- = do
-	println (show (TA 1))
-	println (show (TB 2#))
-	println (show (TC 0.3 4 5# 0.6#))
+ = do	ta = TA 1
+	tb = TB 2#
+	tc = TC 0.3 4 5# 0.6#
 	td = TD 7# 0.8 9 1.0#
+
+	-- Call allocCollect to make sure we haven't messed up the heap.
+	allocCollect 8#
+
+	println (show ta)
+	println (show tb)
+	println (show tc)
 	println (show td)
+
 	-- Use the field projections
 	println (show td.ai0 %% show td.af1 %% show td.ai2 %% show td.af3)
+	allocCollect 8#
+	()
+

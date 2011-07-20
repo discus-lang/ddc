@@ -1,0 +1,12 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import	Base
+	Class.Show.Numeric
+	Data.Numeric.Int32
+
+data Test
+	= TA Int32
+	| TB Int32#
+	| TC Float32 Int32 Int32# Float32#
+	| TD { ai0 :: Int32# ; af1 :: Float32 ; ai2 :: Int32 ; af3 :: Float32# }
+
