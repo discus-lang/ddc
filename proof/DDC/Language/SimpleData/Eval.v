@@ -208,7 +208,7 @@ Proof.
   lets HTCon: preservation_steps H3 Ex1. clear Ex1.
   inverts HTCon.
   assert (tsArgs0 = tsArgs).
-   eapply getAlt_matches_dataDef; eauto. subst.
+   eapply getAlt_ctorArgTypesMatchDataDef; eauto. subst.
 
   lets HA: getAlt_in H0.
   rewrite Forall_forall in H4.

@@ -33,11 +33,11 @@ Proof.
   inverts keep HT. inverts H3.
   eapply subst_exp_exp_list.
   eauto. 
-  eapply getAlt_inAlts; eauto.
+  eapply getAlt_bodyIsWellTyped_fromCase; eauto.
    eauto.
 
   assert (tsArgs = tsArgs0).
-   lets D: getAlt_matches_dataDef H4 H7 H0. auto.
+   lets D: getAlt_ctorArgTypesMatchDataDef H4 H7 H0. auto.
    rewrite <- H1. clear H1.
   auto.
 Qed.

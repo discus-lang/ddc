@@ -70,19 +70,15 @@ Lemma step_wnfX
  :  forall x v
  ,  wnfX x -> STEP x v -> v = x.
 Proof.
- intros.
- induction H0.
-  destruct H0.
-   auto.
-   inverts H.
-   inverts H.
-   inverts H.
-    assert (wnfX x).
-    eapply exps_ctx_Forall. eauto. eauto. 
-    assert (x' = x). auto. subst. auto.
-   inverts H.
-  inverts H.
-  inverts H.
+ intros x v HW HS.
+ induction HS; nope.
+  destruct H; auto; nope.
+
+ Case "XCon dc (C x)".
+  assert (wnfX x).
+  eapply exps_ctx_Forall; eauto.
+  assert (x' = x); auto.
+  subst. auto.
 Qed.
 
 
@@ -92,11 +88,9 @@ Lemma step_context_XCon_exists
  -> (exists x', STEP x x')
  -> (exists x', STEP (XCon dc (C x)) (XCon dc (C x'))).
 Proof.
- intros. 
- destruct H0 as [x'].
- exists x'.
- eapply (EsContext (fun xx => XCon dc (C xx))).
- eauto. eauto.
+ intros C x dc HC HS.
+ shift x'.
+ eapply (EsContext (fun xx => XCon dc (C xx))); auto.
 Qed.
 
 
@@ -105,17 +99,14 @@ Lemma steps_wnfX
  :  forall x v
  ,  wnfX x -> STEPS x v -> v = x.
 Proof.
- intros.
- induction H0.
-  Case "EsNone".
-   auto.
-
+ intros x v HW HS.
+ induction HS; auto.
   Case "EsStep".
    apply step_wnfX; auto.
   
   Case "EsAppend".
-   assert (x2 = x1). auto. subst.
-   auto.
+   assert (x2 = x1); auto.
+    subst. auto.
 Qed.
 
 
@@ -126,11 +117,8 @@ Lemma steps_context
  -> STEPS x1 x1'
  -> STEPS (C x1) (C x1').
 Proof.
- intros.
- induction H0.
-  auto.
-  auto.
-  eapply EsAppend; eauto.
+ intros C x1 x1' HC HS.
+ induction HS; eauto.
 Qed.
 
 
@@ -141,13 +129,12 @@ Lemma steps_context_XCon
  -> STEPS x v
  -> STEPS (XCon dc (C x)) (XCon dc (C v)).
 Proof.
- intros.
- induction H0.
-  auto.
-  lets D: EsContext XcCon. eauto. eauto.
-  eapply EsAppend.
-   eapply IHSTEPS1.
-   eauto.
+ intros C x v dc HC HS.
+ induction HS; auto.
+
+ Case "XCon".
+  lets D: EsContext XcCon; eauto. 
+  eauto.
 Qed.
 
 
@@ -178,10 +165,8 @@ Lemma stepsl_trans
  ,  STEPSL x1 x2 -> STEPSL x2 x3
  -> STEPSL x1 x3.
 Proof.
- intros.
- induction H.
-  eauto.
-  eapply EslCons; eauto.
+ intros x1 x2 x3 H1 H2.
+ induction H1; eauto.
 Qed.
 
 
@@ -193,10 +178,8 @@ Lemma stepsl_of_steps
  ,  STEPS  x1 x2
  -> STEPSL x1 x2.
 Proof. 
- intros.
- induction H.
-  auto.
-  eauto.
-  eapply stepsl_trans; eauto.
+ intros x1 x2 HS.
+ induction HS; 
+  eauto using stepsl_trans.
 Qed.
 

@@ -18,88 +18,78 @@ Proof.
   ; intros.
  
  Case "XVar".
-  subst. inverts H. false.
+  nope.
 
  Case "XLam".
-  left. eapply Value; eauto.
+  left. eauto.
 
  Case "XApp".
-  inverts H.
   right.
-  specializes IHx1 H4.
-  specializes IHx2 H6.
-  inverts IHx1.
-  inverts IHx2.
-  SCase "x1/x2 value".
-   inverts H4.
-   false.
-   SSCase "x1 ~ XLam".
-    exists (substX 0 x2 x).
-    apply EsLamApp.
-    inverts H0. auto.
-   inverts H. inverts H3.
-   inverts H. inverts H3.
-   inverts H4.
-   inverts H4.
-  SCase "x2 steps".
-   destruct H0 as [x2'].
-   exists (XApp x1 x2'). auto.
+  inverts_type.
+  edestruct IHx1; eauto.
+  SCase "value x1".
+   edestruct IHx2; eauto.
+    SSCase "value x2".
+     assert (exists t x, x1 = XLam t x) as HF. eauto.
+     destruct HF as [t11].
+     destruct H1 as [x12].
+     subst.
+     exists (substX 0 x2 x12). 
+     apply EsLamApp; eauto.
+    SSCase "x2 steps".
+     destruct H0 as [x2'].
+     exists (XApp x1 x2'). auto.
   SCase "x1 steps".
    destruct H  as [x1'].
    exists (XApp x1' x2).
    eapply (EsContext (fun xx => XApp xx x2)); auto.
  
  Case "XCon".
-  inverts H0.
-  assert (Forall (fun x => wnfX x \/ (exists x', STEP x x')) xs).
-   apply Forall_forall. intros.
-   rewrite Forall_forall in H.
-   lets T: H H0.
-   lets T2: Forall2_exists_left H0 H9.
-    destruct T2.
-   lets T3: T H1.
-   inverts T3. inverts H2.
-   auto.
-   auto.
-  lets D: exps_ctx_run H0.
+  inverts_type.
+  (* All ctor args are either wnf or can step *)
+  assert (Forall (fun x => wnfX x \/ (exists x', STEP x x')) xs) as HWS.
+   nforall. intros.
+   assert (exists t, TYPE ds nil x t).
+    eapply Forall2_exists_left; eauto.
+    dest t.
+   assert (value x \/ (exists x', STEP x x')).
+    eapply H; eauto.
+   int.     
+
+  (* All ctor args are wnf, or there is a context where one can step *)
+  lets D: exps_ctx_run HWS.
   inverts D.
-   left.
-    eapply Value. eauto. eauto.
-   right. 
-    destruct H1 as [C].
-    destruct H1 as [x'].
-    inverts H1. inverts H5.
-    lets D2: step_context_XCon_exists H2 H6.
-     destruct D2. eauto.
+   (* All ctor args are wnf *)
+   left. eauto 6.
+   (* There is a context where one ctor arg can step *)
+   right.
+    dest C. dest x'.
+    int. subst.
+    lets D: step_context_XCon_exists H1 H5.
+    destruct D as [x'']. eauto.
 
  Case "XCase".
   right.
-  inverts H0.
-  specializes IHx H3.
-  inverts IHx.
+  inverts_type.
+  assert (value x \/ (exists x', STEP x x')) as HS; eauto.
+  inverts HS. clear IHx.
   SCase "x value".
    destruct x.
-    SSCase "can't happen".
-     inverts H3. inverts H7.
-     inverts H3.
-     inverts H0.
-     inverts H1.
+    nope. nope. nope. (* denope *)
     SSCase "XCon".
-     inverts H3.
+     inverts_type.
      assert (dcs0 = dcs).
       rewrite H8 in H12. inverts H12. auto. subst.
-     assert (exists ts x, getAlt d aa = Some (AAlt d ts x)).
+     assert (exists ts x, getAlt d aa = Some (AAlt d ts x)) as HG.
       eapply getAlt_exists.
-      rewrite Forall_forall in H10.
-      eauto.
-     destruct H1 as [ts].
-     destruct H1 as [x].      
+      nforall. eauto.
+     dest ts. dest x.
      exists (substXs 0 l x).
      eapply EsCaseAlt.
-      inverts H0. inverts H2. auto.
+      inverts H0. inverts H2. auto. (* cleanup *)
       eauto.
     SSCase "can't happen".
-     inverts H0. inverts H1.
+     nope.
   SCase "x steps".
    destruct H0 as [x'].
    exists (XCase x' aa).

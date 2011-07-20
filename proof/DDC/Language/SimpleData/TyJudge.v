@@ -75,6 +75,22 @@ Ltac inverts_type :=
    end).
 
 
+(********************************************************************)
+(* Forms of values. 
+   If we know the type of a value,
+   then we know the form of that value. *)
+Lemma value_lam 
+ :  forall x ds te t1 t2
+ ,  value x 
+ -> TYPE ds te x (TFun t1 t2)
+ -> (exists t x', x = XLam t x').
+Proof.
+ intros. destruct x; eauto; nope.
+Qed.
+Hint Resolve value_lam.
+
+
+(********************************************************************)
 (* A well typed expression is well formed *)
 Theorem type_wfX
  :  forall ds te x t
