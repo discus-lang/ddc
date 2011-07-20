@@ -74,8 +74,7 @@ Proof.
   assert (value x \/ (exists x', STEP x x')) as HS; eauto.
   inverts HS. clear IHx.
   SCase "x value".
-   destruct x.
-    nope. nope. nope. (* denope *)
+   destruct x; nope.
     SSCase "XCon".
      inverts_type.
      assert (dcs0 = dcs).
@@ -85,15 +84,12 @@ Proof.
       nforall. eauto.
      dest ts. dest x.
      exists (substXs 0 l x).
-     eapply EsCaseAlt.
-      inverts H0. inverts H2. auto. (* cleanup *)
-      eauto.
-    SSCase "can't happen".
-     nope.
+     eapply EsCaseAlt; eauto.
+
   SCase "x steps".
    destruct H0 as [x'].
    exists (XCase x' aa).
-   lets D: EsContext XcCase. eauto.
+   lets D: EsContext XcCase; eauto.
 
  Case "XAlt".
    auto.     

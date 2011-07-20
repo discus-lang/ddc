@@ -132,18 +132,6 @@ Qed.
 Hint Resolve evals_produces_wnfX.
 
 
-Lemma steps_in_XCon
- :  forall xs vs dc
- ,  Forall2 STEPS xs vs
- -> Forall wnfX vs
- -> STEPS (XCon dc xs) (XCon dc vs).
-Proof.
- intros.
- eapply steps_chain_XCon.
- eapply make_chain. auto. auto.
-Qed.
-
-
 (* Big to Small steps
    Convert a big-step evaluation into a list of individual
    machine steps. *)

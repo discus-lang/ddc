@@ -85,4 +85,19 @@ Lemma value_closedX
  Proof. intros. inverts H. auto. Qed.
 Hint Resolve value_closedX.
 
+Lemma value_wnfXs_XCon
+ : forall xs dc
+ , value (XCon dc xs) -> Forall wnfX xs.
+Proof.
+ intros. inverts H. inverts H0. auto.
+Qed.
+Hint Resolve value_wnfXs_XCon.
+
+Lemma value_closedXs_XCon
+ : forall xs dc
+ , value (XCon dc xs) -> Forall closedX xs.
+Proof.
+ intros. inverts H. inverts H1. auto.
+Qed.
+Hint Resolve value_closedXs_XCon.
 

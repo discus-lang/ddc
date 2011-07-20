@@ -95,8 +95,6 @@ Lemma dcOfAlt_substA
  : forall d u a
  , dcOfAlt (substA d u a) = dcOfAlt a.
 Proof.
- intros.
- destruct a.
- simpl. auto.
+ intros. destruct a. auto.
 Qed.
 

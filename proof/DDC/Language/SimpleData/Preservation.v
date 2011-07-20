@@ -2,7 +2,7 @@
 Require Import DDC.Language.SimpleData.Step.
 Require Import DDC.Language.SimpleData.TyJudge.
 Require Import DDC.Language.SimpleData.SubstExpExp.
- 
+
 
 (* When a well typed expression transitions to the next state
    then its type is preserved. *)
@@ -13,29 +13,22 @@ Theorem preservation
  -> TYPE ds nil x' t.
 Proof.
  intros ds x x' t HT HS. gen t.
- induction HS; intros.
+ induction HS; intros; inverts_type; eauto.
 
  (* Evaluation in an arbitrary context. *)
  Case "EsContext".
-  destruct H; eauto; 
-   try (inverts HT; progress eauto).
+  destruct H; inverts_type; eauto. 
 
   SCase "XCon".
-   inverts HT.
    eapply TYCon; eauto.
    eapply exps_ctx_Forall2_swap; eauto.
 
  Case "EsLamApp".
-  inverts HT. inverts H4.
   eapply subst_exp_exp; eauto.
 
  Case "EsCaseAlt".
-  inverts keep HT. inverts H3.
-  eapply subst_exp_exp_list.
-  eauto. 
+  eapply subst_exp_exp_list; eauto.
   eapply getAlt_bodyIsWellTyped_fromCase; eauto.
-   eauto.
-
   assert (tsArgs = tsArgs0).
    lets D: getAlt_ctorArgTypesMatchDataDef H4 H7 H0. auto.
    rewrite <- H1. clear H1.
@@ -51,9 +44,8 @@ Lemma preservation_steps
  -> STEPS       x1 x2
  -> TYPE ds nil x2 t1.
 Proof.
- intros. 
- induction H0; eauto.
-  eapply preservation; eauto.
+ intros ds x1 t1 x2 HT HS.
+ induction HS; eauto using preservation.
 Qed.
 
 
@@ -67,11 +59,7 @@ Lemma preservation_stepsl
  -> STEPSL x1 x2
  -> TYPE ds nil x2 t1.
 Proof.
- intros. 
- induction H0.
-  auto.
-  apply IHSTEPSL.
-  eapply preservation. 
-   eauto. auto.
+ intros ds x1 t1 x2 HT HSL.
+ induction HSL; eauto using preservation.
 Qed.
 

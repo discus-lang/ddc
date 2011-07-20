@@ -62,9 +62,7 @@ Lemma dcOfAlt_liftA
  : forall n d a
  , dcOfAlt (liftA n d a) = dcOfAlt a.
 Proof.
- intros.
- destruct a.
- simpl. auto.
+ intros. destruct a. auto.
 Qed.
 
 
@@ -90,17 +88,17 @@ Proof.
   rewrite IHx1. rewrite IHx2. auto.
 
  Case "XCon".
-  rewrite Forall_forall in H.
-  rewrite (map_ext_in (liftX 0 d) id).
-  rewrite map_id. auto. auto.
+  nforall.
+  rewrite (map_ext_in (liftX 0 d) id); auto.
+  rewrite map_id; auto.
 
  Case "XCase".
-  rewrite Forall_forall in H.
-  rewrite (map_ext_in (liftA 0 d) id).
-  rewrite map_id. rewrite IHx. auto. auto.
+  nforall.
+  rewrite (map_ext_in (liftA 0 d) id); auto.
+  rewrite map_id. rewrite IHx; auto.
 
  Case "AAlt".
-  rewrite IHx. auto.
+  rewrite IHx; auto.
 Qed.
 
 
