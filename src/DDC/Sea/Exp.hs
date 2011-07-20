@@ -13,7 +13,8 @@ module DDC.Sea.Exp
 	, Guard		(..)
 	, Exp		(..)
 	, Lit		(..)
-	, Var)
+	, Var
+	, hasUnboxedFields )
 where
 import DDC.Sea.Exp.Prim
 import DDC.Sea.Exp.Type
@@ -218,3 +219,9 @@ data Lit
 	-- | A literal of some primitve type like int or float.
 	| LLit		LiteralFmt
 	deriving (Show, Eq)
+
+
+hasUnboxedFields :: CtorDef -> Bool
+hasUnboxedFields ctor
+ = any (not . typeIsBoxed) $ ctorDefFieldTypes ctor
+

@@ -11,6 +11,7 @@ module DDC.Type.Data.Base
 	, lookupLabelOfFieldIndex
 	, fieldsOfDataDef
 	, fieldTypeLabels
+	, hasUnboxedFields
 
 	, Materiality(..)
 --	, combineMateriality
@@ -23,6 +24,7 @@ import DDC.Type.Builtin
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Operators.Strip
+import DDC.Type.Predicates
 import DDC.Var
 import DDC.Main.Pretty
 import Control.Monad
@@ -161,6 +163,13 @@ fieldTypeLabels ctorDef
 	  , let Just t = lookupTypeOfNumberedFieldFromCtorDef ix ctorDef in t)
 	| ix <- [0 .. (ctorDefArity ctorDef - 1)] ]
 
+hasUnboxedFields :: CtorDef -> Bool
+hasUnboxedFields ctorDef
+ = let	(_, [], tBody)
+		= stripForallContextT $ ctorDefType ctorDef
+
+	tsBits	= flattenTFuns tBody
+   in any isUnboxedT tsBits
 
 -- Materiality ------------------------------------------------------------------------------------
 --
