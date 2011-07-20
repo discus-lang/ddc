@@ -239,9 +239,9 @@ typedef struct {
 //
 typedef struct {
 	uint32_t	tagFlags;
-	PAD64		(Int32 pad);
+	uint32_t	padding;	// Padding to ensure payload is 8 byte aligned.
 	uint32_t	size;		// Size of the whole object, in bytes.
-	uint32_t	ptrCount;	// The number of pointers at the start of the payload
+	uint32_t	ptrCount;	// The number of Obj pointers at the start of the payload.
 	Word8		payload[];	// Contains ptrCount pointers, then some uninterpreted data.
 } DataM;
 
