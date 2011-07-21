@@ -82,7 +82,7 @@ expandCtor ctor@(CtorDef vCtor tCtor arity tag fields types)
 
 -- | Create initialization code for this field
 expandFieldDataM
-	:: Var
+	:: Var				-- ^ the constructor name.
 	-> Name				-- ^ name of the object being constructed.
 	-> Int				-- ^ index of argument.
 	-> Type				-- ^ type of argument.
