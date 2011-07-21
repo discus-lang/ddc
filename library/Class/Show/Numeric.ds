@@ -7,6 +7,7 @@ module	Class.Show.Numeric
 import 	Class.Show
 	Data.Numeric.Int32
 	Data.Numeric.Int64
+	Data.Numeric.Word8
 	Data.Numeric.Word32
 	Data.Numeric.Word64
 	Data.Numeric.Float32
@@ -23,6 +24,7 @@ foreign import "primInt64_toString"
 foreign import "primWord64_toString"
  	primWord64_toString  :: Word64# -> Ptr# String# -> Int64# -> Void#
 
+foreign import primCast_Word8U_Word32U :: Word8# -> Word32#
 
 -- Conversions ----------------------------------------------------------------
 -- | Show an `Int32` as a `String`.
@@ -156,6 +158,10 @@ instance Show Int64 where
  show  ss	= showInt64 ss
  showL ss	= showInt64 @ ss
 
+
+instance Show Word8# where
+ show  ss	= showWord32 (boxWord32 (primCast_Word8U_Word32U ss))
+ showL ss	= showWord32 (boxWord32 (primCast_Word8U_Word32U ss))
 
 instance Show Word32# where
  show  ss	= showWord32 (boxWord32 ss)
