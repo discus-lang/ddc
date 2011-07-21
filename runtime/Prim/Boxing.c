@@ -3,8 +3,13 @@
 #include "../Storage/Alloc.ci"
 #include <string.h>
 
+typedef struct {
+	Obj*	obj;
+	void*	field;
+} BoxedRef ;
+
 // NOTE: These boxing functions are defined here for use by the runtime system
-//       and external C glue code only. The compiled Disciple programs treat 
+//       and external C glue code only. The compiled Disciple programs treat
 //       boxing and unboxing as primitives and expand out their own code for it.
 
 Obj* 	_boxRef (Obj* obj_, void* field)
@@ -20,12 +25,12 @@ Obj* 	_boxRef (Obj* obj_, void* field)
 	//	We allocate 1 'real' ptr, which points to the start of the object and is followed by GC.
 	//	as well as  1 'raw'  ptr, which points to the field to update, which is not followed by GC.
 	//
-	DataM* 	data		= (DataM*)_allocDataM (_tagBase, 1, sizeof (Obj*));
-	void**	payload		= (void**) data ->payload;
+	DataM*		data	= (DataM*)_allocDataM (_tagBase, 1, sizeof (BoxedRef));
+	BoxedRef*	bref	= (BoxedRef*) data ->payload;
 
 	// set the object and field ptrs.
-	payload[0]		= _S(0);
-	payload[1]		= (void*)_S(0) + offset;
+	bref->obj		= _S(0);
+	bref->field		= (void*)_S(0) + offset;
 
 	_LEAVE(2);
 	return	(Obj*)data;
