@@ -157,12 +157,13 @@ Obj*	_allocDataM
 		( uint32_t tag		// constructor tag.
 		, uint32_t ptrCount	// the number of pointers appearing at the start of the object
 		, uint32_t dataSize)	// the size of the trailing data.
-					// this needs to be correct (and a multiple of 8 bytes), so the new
-					// object will not misalign the heap.
+					//	this needs to be a valid size, so the new object will
+					//	not misalign the heap.
 {
-	// The size of the whole object. dataSize is the size of the data in
-	// the payload field.
-	size_t	size	= sizeof(DataM) + dataSize;
+	// The size of the whole object
+	size_t	size	= sizeof(DataM)
+			+ ptrCount * sizeof (Obj*)
+			+ dataSize;
 
 	// Allocate the object.
 	DataM*	data	= (DataM*)_alloc (size);
@@ -170,7 +171,7 @@ Obj*	_allocDataM
 	// Write the header.
 	data ->tagFlags	= (tag << 8) | _ObjFixedDataM;
 	data ->size	= size;
-	data ->ptrCount	= ptrCount;
+	data ->ptrCount	= 0;
 
 	_PROFILE_ALLOC (dataMixed.count++);
 	_PROFILE_ALLOC (dataMixed.bytes += size);
