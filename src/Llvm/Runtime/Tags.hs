@@ -1,23 +1,17 @@
 {-# OPTIONS -fno-warn-type-defaults #-}
 
 module Llvm.Runtime.Tags
-	( tagBase
-	, tagBasePlus
+	( tagBasePlus
 	, tagData
+	, tagDataM
 	, tagDataR
 	, tagSuspIndir
 	, tagDataRS
 	, tagIndir
 	, tagSusp
 	, tagFixedThunk
-
-	, objModeDataRS
-	, objFixedDataR
-	, objFixedDataM
 	)
 where
-
-import Data.Bits
 
 import Llvm
 import Llvm.Util
@@ -28,27 +22,25 @@ import Llvm.Util
 --	runtime/Prim/Boxing.ci
 
 
--- Tag values from runtime/Object.h.
-
-tagBase :: LlvmVar
-tagBase = i32LitVar 0
-
-
--- tagBasePlus value is tagBase + x
 tagBasePlus :: Int -> LlvmVar
 tagBasePlus x = i32LitVar x
+
+-- These tag values must be compatible with those in runtime/Object.h.
 
 tagData :: Int -> LlvmVar
 tagData tag = i32LitVar (objFixedData + tag * 256)
 
-tagDataR :: LlvmVar
-tagDataR = i32LitVar 0x31
+tagDataM :: Int -> LlvmVar
+tagDataM tag = i32LitVar (objFixedDataM + tag * 256)
+
+tagDataR :: Int -> LlvmVar
+tagDataR tag = i32LitVar (objFixedDataR + tag * 256)
+
+tagDataRS :: Int -> Int -> LlvmVar
+tagDataRS tag dataSize = i32LitVar (objModeDataRS + dataSize * 16 + tag * 256)
 
 tagSuspIndir :: LlvmVar
 tagSuspIndir = i32LitVar 0x51
-
-tagDataRS :: Int -> LlvmVar
-tagDataRS dataSize = i32LitVar ((shiftL dataSize 4) .|. objModeDataRS)
 
 tagIndir :: LlvmVar
 tagIndir = i32LitVar 0x0fffffd

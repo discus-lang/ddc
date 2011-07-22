@@ -128,11 +128,9 @@ allocDataM tag dataSize ptrCount
 	let size	= sizeOfLlvmType structDataM + ptrCount * sizeOfLlvmType pObj + roundUpBytes dataSize
 	addComment	$ "allocDataM " ++ show tag ++ " " ++ show dataSize ++ " " ++ show ptrCount
 
-	let tagValue 	= (dataSize * 256) + objFixedDataM
-
 	pDataM		<- allocate size "pDataM" pStructDataM
 
-	storeStructRegValue ddcDataM pDataM "tag" (tagBasePlus tagValue)
+	storeStructRegValue ddcDataM pDataM "tag" (tagDataM tag)
 	storeStructRegValue ddcDataM pDataM "size" (i32LitVar size)
 	storeStructRegValue ddcDataM pDataM "ptrCount" (i32LitVar 0)
 
@@ -146,39 +144,35 @@ allocDataR tag dataSize
  = do	addAlias	("struct.DataR", llvmTypeOfStruct ddcDataR)
 
 	let size	= roundUpBytes (sizeOfLlvmType structDataR)
-	let tagValue 	= (tag * 256) + objFixedDataR
-	let tag		= tagBasePlus tagValue
 
 	tsize		<- newUniqueNamedReg "tsize" i32
 	ret		<- newUniqueNamedReg "allocated.DataR" pObj
 
-	addComment	$ "allocDataR " ++ show tagValue ++ " " ++ show size
+	addComment	$ "allocDataR " ++ show tag ++ " " ++ show size
 
 	addBlock	[ Assignment tsize (LlvmOp LM_MO_Add dataSize (i32LitVar size)) ]
 
 	pDataR		<- allocateVarSize tsize "pDataR" pStructDataR
 
-	storeStructRegValue ddcDataR pDataR "tag" tag
+	storeStructRegValue ddcDataR pDataR "tag" (tagDataR tag)
 	storeStructRegValue ddcDataR pDataR "size" tsize
 
 	addBlock	[ Assignment ret (Cast LM_Bitcast pDataR pObj) ]
 	return		ret
 
 
-allocDataRSbyType :: Int -> LlvmType -> LlvmM (LlvmVar, LlvmVar)
-allocDataRSbyType dataSize pType
+allocDataRSbyType :: Int -> Int -> LlvmType -> LlvmM (LlvmVar, LlvmVar)
+allocDataRSbyType tag dataSize pType
  = do	addAlias	("struct.DataRS", llvmTypeOfStruct ddcDataRS)
 
 	let size	= roundUpBytes (sizeOfLlvmType structDataRS + dataSize)
 	let dataWords	= dataSize `div` 4
-	let tagValue 	= (dataWords * 16) + objModeDataRS
-	let tag		= tagBasePlus tagValue
 
-	addComment	$ "allocDataRSbyType " ++ show tagValue ++ " " ++ show dataSize ++ " " ++ show pType
+	addComment	$ "allocDataRSbyType " ++ show tag ++ " " ++ show dataSize ++ " " ++ show pType
 
 	pDataRS		<- allocate size "pDataRS" pStructDataRS
 
-	storeStructRegValue ddcDataRS pDataRS "tag" tag
+	storeStructRegValue ddcDataRS pDataRS "tag" (tagDataRS tag dataWords)
 
 	ptr		<- newUniqueReg pChar
 	payload		<- newUniqueNamedReg "payload" pType
@@ -196,15 +190,13 @@ allocDataRSbySize tag dataSize
 
 	let size	= roundUpBytes (sizeOfLlvmType structDataRS + dataSize)
 	let dataWords	= dataSize `div` 4
-	let tagValue 	= (tag * 256) + (dataWords * 16) + objModeDataRS
-	let tag		= tagBasePlus tagValue
 
-	addComment	$ "allocDataRSbySize " ++ show tagValue ++ " " ++ show dataSize
+	addComment	$ "allocDataRSbySize " ++ show tag ++ " " ++ show dataSize
 
 	pDataRS		<- allocate size "pDataRS" pStructDataRS
 	ret		<- newUniqueNamedReg "allocated.DataRS" pObj
 
-	storeStructRegValue ddcDataRS pDataRS "tag" tag
+	storeStructRegValue ddcDataRS pDataRS "tag" (tagDataRS tag dataWords)
 
 	addBlock	[ Assignment ret (Cast LM_Bitcast pDataRS pObj) ]
 	return		ret

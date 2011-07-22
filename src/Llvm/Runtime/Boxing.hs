@@ -57,7 +57,7 @@ boxInt32 int32
 	objptr	<- allocate 8 "boxed" pObj
 	addBlock
 		[ Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
-		, Store (tagDataRS 1) iptr0
+		, Store (tagDataRS 0 1) iptr0
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
 		, Store int32 iptr1
 		]
@@ -164,7 +164,7 @@ boxFloat32 f32
 	objptr	<- allocate 8 "boxed" pObj
 	addBlock
 		[ Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
-		, Store (tagDataRS 1) iptr0
+		, Store (tagDataRS 0 1) iptr0
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
 		, Assignment fptr (Cast LM_Bitcast iptr1 (pLift LMFloat))
 		, Store f32 fptr
@@ -191,7 +191,7 @@ unboxFloat32 objptr
 boxInt64 :: LlvmVar -> LlvmM LlvmVar
 boxInt64 int64
  = do	(objptr, dptr)
-		<- allocDataRSbyType (sizeOfLlvmType i64) (pLift i64)
+		<- allocDataRSbyType 0 (sizeOfLlvmType i64) (pLift i64)
 	addBlock
 		[ Store int64 dptr ]
 	return	objptr
@@ -217,7 +217,7 @@ unboxInt64 objptr
 boxFloat64 :: LlvmVar -> LlvmM LlvmVar
 boxFloat64 f64
  = do	(objptr, dptr)
-		<- allocDataRSbyType (sizeOfLlvmType LMDouble) (pLift LMDouble)
+		<- allocDataRSbyType 0 (sizeOfLlvmType LMDouble) (pLift LMDouble)
 	addBlock
 		[ Store f64 dptr ]
 	return	objptr
