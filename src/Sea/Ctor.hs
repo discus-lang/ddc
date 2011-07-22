@@ -4,19 +4,14 @@ module Sea.Ctor
 	(expandCtorTree)
 where
 import Util
-import DDC.Base.DataFormat
-import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Var
-import DDC.Var.PrimId
 import Shared.VarUtil		(VarGenM, newVarN)
 import qualified Shared.Unique	as Unique
 import qualified Config.Config	as Config
 import qualified Data.Map	as Map
 
 type	ExM	= VarGenM
-
-stage = "Sea.Ctor"
 
 -- | Expand the definitions of data constructors in this tree.
 expandCtorTree :: Tree () -> Tree ()
@@ -112,39 +107,13 @@ expandFieldData nObj ixArg tArg
 		, Just (vArg, tPtrObj) )
 
 
-
--- | Calculate the size of the DataM payload
+-- | Calculate the size of the DataM payload.
+-- Unboxed fields are ordered from largest to smallest so avoid  alignment
+-- issues. We can therefore just sum the size of the fields. However, the total
+-- size of the struct must still be a multiple of 8.
 payloadSize types
- = let (boxed, unboxed) = partition typeIsBoxed types
-
-   in	(length boxed) * Config.pointerBytes
-	+ foldl' calculatePaddedLength 0 (map unboxedSize unboxed)
-
-
-calculatePaddedLength :: Int -> Int -> Int
-calculatePaddedLength accum fieldLen
- = if accum `mod` fieldLen == 0
-	then accum + fieldLen
-	else accum - (accum `div` fieldLen) + 2 * fieldLen
-
-
-unboxedSize :: Type -> Int
-unboxedSize (TCon (TyConUnboxed v))
- = case varId v of
-	VarIdPrim (TChar (UnboxedBits 32))	-> 4
-
-	VarIdPrim (TFloat (UnboxedBits 32))	-> 4
-	VarIdPrim (TFloat (UnboxedBits 64))	-> 8
-
-	VarIdPrim (TInt (UnboxedBits 8))	-> 1
-	VarIdPrim (TInt (UnboxedBits 16))	-> 2
-	VarIdPrim (TInt (UnboxedBits 32))	-> 4
-	VarIdPrim (TInt (UnboxedBits 64))	-> 8
-
-	VarIdPrim (TWord (UnboxedBits 8))	-> 1
-	VarIdPrim (TWord (UnboxedBits 16))	-> 2
-	VarIdPrim (TWord (UnboxedBits 32))	-> 4
-	VarIdPrim (TWord (UnboxedBits 64))	-> 8
-
-	id -> panic stage $ "unboxedSize : " ++ show id
-
+ = let	(boxed, unboxed)
+		= partition typeIsBoxed types
+	size	= (length boxed) * Config.pointerBytes
+		+ sum (map unboxedSize unboxed)
+   in size + (if size `mod` 8  == 0 then 0 else 8 - size `mod` 8)

@@ -10,6 +10,7 @@ import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Base.Prim
+import DDC.Sea.Exp.Type
 import DDC.Var
 import Data.Function
 import Shared.VarUtil			(prettyPos)
@@ -199,14 +200,21 @@ toSeaP	ctorDefMap xx
 	_ ->	return Seq.empty
 
 
-
-
 makeCtorStruct ctor@E.CtorDef{}
- = let (boxed, unboxed)
+ = let	(boxed, unboxed)
 		= partition (E.typeIsBoxed . snd)
 		$ zip [0..]
 		$ E.ctorDefFieldTypes ctor
-   in E.PCtorStruct (E.ctorDefName ctor) (boxed ++ unboxed)
+
+	-- Sort the unboxed fields from largest to smallest so that no struct
+	-- padding is needed to assure correct field alignment.
+	reverseFieldSize :: (a, E.Type) -> (a, E.Type) -> Ordering
+	reverseFieldSize (_, left) (_, right)
+		= compare (unboxedSize right) (unboxedSize left)
+
+	unboxedSorted
+		= sortBy reverseFieldSize unboxed
+   in E.PCtorStruct (E.ctorDefName ctor) (boxed ++ unboxedSorted)
 
 
 -- | split the RHS of a supercombinator into its args and expression
