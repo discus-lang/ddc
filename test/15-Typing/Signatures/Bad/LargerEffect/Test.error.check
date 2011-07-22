@@ -1,5 +1,5 @@
 ddc: ERROR
-./test/15-Typing/Signatures/Bad/LargerEffect/Test.ds:2:8
+./test/15-Typing/Signatures/Bad/LargerEffect/Test.ds:6:8
         Inferred type:
             succ
                 :: forall %r1 %r0 %r2
@@ -12,7 +12,7 @@ ddc: ERROR
                 :: forall %r1 %r0 %r2
                 .  Int32 %r0 -> Int32 %r2 -(!e0 $c0)> Int32 %r1
                 :- !e0   =  !Read %r0
-                ,  $c0   =  ${xDE600 : %r0}
+                ,  $c0   =  ${xDE88 : %r0}
         
         Because  !Read %r2 + !Read %r0  does not match  !Read %r0
 

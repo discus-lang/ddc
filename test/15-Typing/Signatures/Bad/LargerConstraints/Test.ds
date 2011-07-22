@@ -1,5 +1,9 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import	Base
+	Data.Numeric.Int32
 
 succ 	<: Int %r1 {read} -> Int {read} -> Int %r2
-succ x y 
+succ x y
  = do	x'	= (+) @ x 5
 	x' + y

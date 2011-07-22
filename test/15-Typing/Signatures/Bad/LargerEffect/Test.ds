@@ -1,3 +1,7 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import	Base
+	Data.Numeric.Int32
 
 succ 	<: Int {read} -> Int -> Int %r1
 succ x y = x + y

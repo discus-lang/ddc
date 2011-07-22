@@ -1,5 +1,13 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
--- The effect sig on fillPrimes doesn't show the read effects for 
+import	Base
+	Data.Array
+	Data.Function
+	Data.Numeric.Int32
+	System.Console
+
+
+-- The effect sig on fillPrimes doesn't show the read effects for
 -- the middle two parameters.
 
 -- | Check if an int is a multiple of any in a given array.
@@ -15,7 +23,7 @@ fillPrimes <: (Array{read}) (Int{modify}) -> Int -> Int -> Int{read} -> ()
 fillPrimes primes max high i
 	| high > max = ()
 
-	| checkPrime primes high i 0		
+	| checkPrime primes high i 0
 	= do	primes.(high) := i
 		fillPrimes primes max (high + 1) (i + 1)
 
@@ -29,7 +37,7 @@ main ()
 	-- Start with an array containing the first prime as its first element.
 	primes	   = generate&{Array Int} (max + 1) (\_ -> 0)
 	primes.(0) := 2
-	
+
 	-- Fill the array with more primes.
 	fillPrimes primes max 1 2
 
