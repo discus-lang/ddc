@@ -1,0 +1,30 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+-- | Functions useful for debugging the runtime.
+module DDC.Runtime.Debug
+
+import	Base
+	Foreign.C.StdIO
+
+export	dumpObj
+	runGC
+
+-- | The effect of running a garbage collection.
+effect !GarbageCollection	:: !
+
+foreign import "_dumpObj"
+	privDumpObj :: forall a . Ptr# File# -> a -(!File)> Void#
+
+foreign import "_allocCollect"
+	privAllocCollect :: Int32# -(!GarbageCollection)> Void#
+
+
+dumpObj :: a -(!File)> ()
+dumpObj obj
+ = do	privDumpObj stdout obj
+	()
+
+runGC :: () -(!GarbageCollection)> ()
+runGC ()
+ = do	privAllocCollect 8#
+	()

@@ -1,7 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 -- Disciple Prelude.
--- TODO: Not all this stuff should actually be in the Prelude, but we're 
+-- TODO: Not all this stuff should actually be in the Prelude, but we're
 --       building it all to avoid races when running tests in parallel.
 --       We can fix this when we fix the races in the war test driver.
 --       The Foreign, DDC.Runtime, Math and System stuff shouldn't really
@@ -28,7 +28,7 @@ import	Class.Show.Numeric
 import	Class.Show.List
 import	Class.Show.Other
 import	Class.Update
-	
+
 import	Data.Bool
 import	Data.BoolU
 import	Data.Numeric.Addr
@@ -69,8 +69,9 @@ import	Foreign.C.SysSocket
 
 import	DDC.Runtime
 import	DDC.Runtime.Alloc
+import	DDC.Runtime.Debug
 import	DDC.Runtime.Store
-	
+
 import	System.Console
 import	System.Environment
 import	System.File
