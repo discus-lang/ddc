@@ -5,14 +5,9 @@ import	Base
 	Data.Numeric.Int32
 	System.Console
 	Foreign.C.StdIO
+	DDC.Runtime.Debug
+	Test
 
-foreign import  "_allocCollect" allocCollect :: Int32# -> Void#
-
-data Test
-	= TA Int32
-	| TB Int32#
-	| TC Float32 Int32 Int32# Float32#
-	| TD { ai0 :: Int32# ; af1 :: Float32 ; ai2 :: Int32 ; af3 :: Float32# }
 
 instance Show Test where
 	show (TA a) = show a
@@ -23,22 +18,24 @@ instance Show Test where
 	-- generates bad C code.
 	show (TD w x y z) = show w % " " % show x % " " % show y % " " % show z
 
+	show (TE ea eb ec ed) = show ea % " " % show eb % " " % show ec % " " % show ed
+
 main ()
  = do	ta = TA 1
 	tb = TB 2#
 	tc = TC 0.3 4 5# 0.6#
 	td = TD 7# 0.8 9 1.0#
+	te = TE 8#u8 32#u32 8#u8 64#u64
 
-	-- Call allocCollect to make sure we haven't messed up the heap.
-	allocCollect 8#
+	-- Run the GC to make sure we haven't messed up the heap.
+	runGC ()
 
-	println (show ta)
-	println (show tb)
-	println (show tc)
-	println (show td)
+	println ("A" %% show ta)
+	println ("B" %% show tb)
+	println ("C" %% show tc)
 
 	-- Use the field projections
-	println (show td.ai0 %% show td.af1 %% show td.ai2 %% show td.af3)
-	allocCollect 8#
-	()
+	println ("D" %% show td.ai0 %% show td.af1 %% show td.ai2 %% show td.af3)
+	println ("E" %% show te)
+	runGC ()
 
