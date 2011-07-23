@@ -80,7 +80,7 @@ data PrimAlloc
 	| PAllocData Var Int
 
 	-- | Allocate a fresh DataM object
-	--   and fill in the number of boxed objects and the size or the unboxed struct.
+	--   and fill in the number of boxed objects and the DataM payload size.
 	| PAllocDataM Var Int Int
 	deriving (Show, Eq)
 
