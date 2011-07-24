@@ -463,8 +463,6 @@ pStmt_bind
 	do	pat	<- pPat
 		pStmt_bindPat2 pat
 
- <?>	"pStmt_bind"
-
 
 pStmt_bindVarPat :: Var -> [Pat SP] -> Parser (Stmt SP)
 pStmt_bindVarPat var pats
@@ -499,33 +497,32 @@ pStmt_bindPat2 pat
  <?> 	"pattern binding"
 
 
--- | Parse a type sig (only)
+-- | Parse a type sig (only), not consuming anything if there is a possible
+-- overlap
 pStmt_sig :: Parser (Stmt SP)
 pStmt_sig
- = Parsec.sepBy1 (pOfSpace NameValue pVar) (pTok K.Comma)
- >>= \vars
- -> 	do 	ht	<- pTok K.HasTypeMatch
-	   	typ	<- pType <?> "a type for " ++ quotVars vars
-	   	return	$ SSig (spTP ht) SigModeMatch vars typ
+ = do	(vars, sp, mode) <- Parsec.try $
+	  do	vars	<- Parsec.sepBy1 (pOfSpace NameValue pVar) (pTok K.Comma)
+		ht	<- token Just
+		case lookup (K.token ht) modeMap of
+		  Just mode -> return (vars, spTP ht, mode)
+		  Nothing   -> fail "pStmt_sig: invalid signature mode"
 
- <|> 	do 	ht	<- pTok K.HasTypeExact
-	   	typ	<- pType <?> "a type for " ++ quotVars vars
-	   	return	$ SSig (spTP ht) SigModeExact vars typ
-
- <|>	do 	ht	<- pTok K.HasTypeLess
-	   	typ	<- pType <?> "a type for " ++ quotVars vars
-	   	return	$ SSig (spTP ht) SigModeLess vars typ
-
- <|>	do 	ht	<- pTok K.HasTypeMore
-	   	typ	<- pType <?> "a type for " ++ quotVars vars
-	   	return	$ SSig (spTP ht) SigModeMore vars typ
+	typ  <- pType <?> "a type for " ++ quotVars vars
+	return $ SSig sp mode vars typ
 
  <?> "a type signature"
+
+ where
+ modeMap = [ (K.HasTypeMatch, SigModeMatch)
+           , (K.HasTypeExact, SigModeExact)
+           , (K.HasTypeLess,  SigModeLess)
+           , (K.HasTypeMore,  SigModeMore) ]
 
 -- | Parse a signature or binding
 pStmt_sigBind :: Parser (Stmt SP)
 pStmt_sigBind
- = 	Parsec.try pStmt_sig
+ = 	pStmt_sig
   <|> 	pStmt_bind
   <?>   "pStmt_sigBind"
 
