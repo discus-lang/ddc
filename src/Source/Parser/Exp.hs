@@ -85,6 +85,14 @@ pExp1'
   	do	(lit, sp) <- pLiteralFmtSP
 		return	$ XLit sp lit
 
+  <|>	-- unterminated string
+	do	Parsec.lookAhead . pTok $ K.Junk "\""
+		fail "unterminated string literal"
+
+  <|>	-- unterminated char
+	do	Parsec.lookAhead . pTok $ K.Junk "\'"
+		fail "unterminated or invalid character literal"
+
   <|>	-- case EXP of { ALT .. }
   	do	tok	<- pTok K.Case
 		exp	<- pExp
@@ -447,14 +455,13 @@ pStmt_bind
 		return	stmt
 
  <|>	-- VAR ....
-	Parsec.try
-          (do	var	<- pOfSpace NameValue pVar
+	do	var	<- Parsec.try $ pOfSpace NameValue pVar
 		pats	<- Parsec.many pPat1
-		pStmt_bindVarPat var pats)
+		pStmt_bindVarPat var pats
 
  <|>	-- PAT  ...
-	  (do	pat	<- pPat
-		pStmt_bindPat2 pat)
+	do	pat	<- pPat
+		pStmt_bindPat2 pat
 
  <?>	"pStmt_bind"
 

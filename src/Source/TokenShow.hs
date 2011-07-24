@@ -32,7 +32,7 @@ showSource tok =
 
 	Literal lf	-> pprStrPlain $ ppr lf
 
-	Junk    s	-> "<junk " ++ s ++ ">"
+	Junk    s	-> "junk character " ++ s
 	CommentPragma s	-> s
 	tok		-> 
 	 case lookup tok tokString of
