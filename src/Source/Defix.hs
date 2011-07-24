@@ -160,7 +160,7 @@ defixEsLeft sp
 	= (XApp spo (XApp spo (XVar spo op) e1) e2) : xs
  
 	| otherwise					
-	= e1 : (XOp sp op) : defixEsLeft sp fixTable highPrec (e2 : xs)
+	= e1 : (XOp spo op) : defixEsLeft sp fixTable highPrec (e2 : xs)
 
 defixEsLeft sp fixTable	highPrec	p	
 	= panic stage "defixEsLeft: broken input expression."
@@ -179,7 +179,7 @@ defixEsRight sp
 	= (XApp spo (XApp spo (XVar spo op) e1) e2) : xs
  
 	| otherwise
-	= e2 : (XVar sp op) : defixEsRight sp fixTable highPrec (e1 : xs)
+	= e2 : (XOp spo op) : defixEsRight sp fixTable highPrec (e1 : xs)
 
 
 
@@ -197,7 +197,6 @@ getPrec  fixTable v
 
 getAssoc :: [FixDef a] -> Var -> InfixMode a
 getAssoc fixTable v	
-	| otherwise
 	= snd $ fromMaybe defaultFix $ lookupBy ((==) `on` varName) v fixTable
 
 
