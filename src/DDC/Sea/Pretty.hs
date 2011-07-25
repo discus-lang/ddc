@@ -3,7 +3,8 @@
 
 -- | Pretty printing of Sea expressions.
 module DDC.Sea.Pretty
-	(seaVar)
+	( seaVar
+	, ctorName )
 where
 import DDC.Sea.Exp
 import DDC.Main.Pretty
@@ -55,7 +56,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	PCtorStruct n f
 	 -> let fields = map (\(i, t) -> ppr t %% "f" % show i % ";") f
-	    in "typedef struct {" % nl % indent (vcat fields) % "\n}" %% sV n % "_Ctor" %% ";\n"
+	    in "typedef struct {" % nl % indent (vcat fields) % "\n}" %% ctorName n %% ";\n"
 
 	-- Constructor tag name and value
 	PCtorTag n i	-> "#define _tag" %  n % " (_tagBase + " % i % ")"
@@ -248,7 +249,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> "_DARG(" % x % ", " % i % ")"
 
 	XArgDataM v x@(XVar _ _) i
-	 -> "_DMARG(" % x % ", " % sV v % "_Ctor" % ", " % i % ")"
+	 -> "_DMARG(" % x % ", " % ctorName v % ", " % i % ")"
 
 	XArgThunk x@(XVar _ _) i
 	 -> "_TARG(" % x % ", " % i % ")"
@@ -551,6 +552,12 @@ seaVar local v
 	-- vars defined at top level need their module name prepended.
 	| otherwise
 	= seaModule (varModuleId v) ++ "_" ++ varName v
+
+
+-- | Show a Var name as a constructor struct name.
+ctorName :: Var -> String
+ctorName v
+ = "_" ++ seaModule (varModuleId v) ++ "_" ++ varName v ++ "_Ctor"
 
 
 -- | Show a module id.
