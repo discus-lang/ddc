@@ -1,3 +1,2 @@
-ddc: "./test/12-Parser/Var/T69-RegionVarsInTerms/Main.ds" (line 3, column 10):
-unexpected a
-expecting pattern binding
+ddc: "./test/12-Parser/Var/T69-RegionVarsInTerms/Main.ds" (line 0, column 0):
+unexpected b
