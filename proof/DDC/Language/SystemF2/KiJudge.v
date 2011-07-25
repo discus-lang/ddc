@@ -31,14 +31,25 @@ Inductive KIND : kienv -> ty -> ki -> Prop :=
 Hint Constructors KIND.
 
 
+(* Invert all hypothesis that are compound kinding statements. *)
+Ltac inverts_kind :=
+ repeat 
+  (match goal with 
+   | [ H: KIND _ (TCon _)    _  |- _ ] => inverts H
+   | [ H: KIND _ (TVar _)    _  |- _ ] => inverts H
+   | [ H: KIND _ (TForall _) _  |- _ ] => inverts H
+   | [ H: KIND _ (TApp _ _) _   |- _ ] => inverts H
+   end).
+
+
 (* A well kinded type is well formed *)
 Lemma kind_wfT
  :  forall ke t k
  ,  KIND ke t k
  -> wfT  ke t.
 Proof.
- intros. gen ke k.
- induction t; intros; inverts H; simpl; eauto.
+ intros ke t k HK. gen ke k.
+ induction t; intros; inverts_kind; simpl; eauto.
 Qed.
 
 
@@ -60,7 +71,7 @@ Lemma kind_kienv_insert
  -> KIND (insert ix k2 ke) (liftTT ix t) k1.
 Proof.
  intros. gen ix ke k1.
- induction t; intros; simpl; inverts H; eauto.
+ induction t; intros; simpl; inverts_kind; eauto.
 
  Case "TVar".
   lift_cases; intros; auto.

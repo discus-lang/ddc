@@ -39,6 +39,18 @@ Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=
 Hint Constructors TYPE.
 
 
+(* Invert all hypothesis that are compound typing statements. *)
+Ltac inverts_type :=
+ repeat 
+  (match goal with 
+   | [ H: TYPE _ _ (XVar _)   _  |- _ ] => inverts H
+   | [ H: TYPE _ _ (XLam _ _) _  |- _ ] => inverts H
+   | [ H: TYPE _ _ (XApp _ _) _  |- _ ] => inverts H
+   | [ H: TYPE _ _ (XLAM _)   _  |- _ ] => inverts H
+   | [ H: TYPE _ _ (XAPP _ _) _  |- _ ] => inverts H
+   end).
+
+
 (* The type produced by a type judgement is well kinded *)
 Theorem type_kind
  :  forall ke te x t
@@ -46,27 +58,20 @@ Theorem type_kind
  -> KIND ke t KStar.
 Proof.
  intros. gen ke te t.
- induction x; intros; inverts H; eauto.
+ induction x; intros; inverts_type; eauto.
  
  Case "XAPP".
   apply IHx in H4. inverts H4.
   eapply subst_type_type; eauto.
 
  Case "XLam".
-  unfold tFun.
-  apply IHx in H6.
-  eapply KIApp.
-   eapply KIApp.
-   eauto. auto. auto.
+  unfold tFun. eauto.
 
  Case "XApp".
   apply IHx1 in H4.
   apply IHx2 in H6.
    unfold tFun in H4.
-    inverts H4.
-    inverts H2.
-    inverts H3.
-    auto.
+    inverts_kind. eauto.
 Qed.
 
 
@@ -77,30 +82,8 @@ Theorem type_wfX
  -> wfX  ke te x.
 Proof.
  intros. gen ke te t.
- induction x; intros; simpl.
-
- Case "XVar".
-  inverts H. eauto.
-
- Case "XLAM".
-  inverts H.
-  apply IHx in H3. eauto.
-
- Case "XAPP".
-  inverts H. 
-  lets D: IHx H4. split. 
-   auto. eapply kind_wfT. eauto.
-
- Case "XLam".
-  inverts H.
-  apply IHx in H6.
-  apply kind_wfT in H4. auto.
-
- Case "XApp".
-  inverts H.
-  apply IHx1 in H4. 
-  apply IHx2 in H6.
-   auto.
+ induction x; intros; inverts_type; simpl; 
+  eauto using kind_wfT.
 Qed.
 Hint Resolve type_wfX.
 
@@ -119,7 +102,7 @@ Lemma type_kienv_insert
  -> TYPE (insert ix k2 ke) (liftTE ix te) (liftTX ix x1) (liftTT ix t1).
 Proof. 
  intros. gen ix ke te t1 k2.
- induction x1; intros; inverts H; simpl; eauto.
+ induction x1; intros; inverts_type; simpl; eauto.
 
  Case "XVar".
   apply TYVar. 
@@ -174,7 +157,7 @@ Lemma type_tyenv_insert
  -> TYPE ke (insert ix t2 te) (liftXX ix x1) t1.
 Proof. 
  intros. gen ix ke te t1 t2.
- induction x1; intros; simpl; inverts H; eauto.
+ induction x1; intros; simpl; inverts_type; eauto.
 
  Case "XVar".
   lift_cases; intros; auto.
@@ -184,13 +167,11 @@ Proof.
   assert ( liftTE 0 (insert ix t2 te)
          = insert ix (liftTT 0 t2) (liftTE 0 te)). 
    unfold liftTE. rewrite map_insert. auto.
-  rewrite H.
-  apply IHx1. auto.
+  rewrite H; eauto.
 
  Case "XLam".
-  eapply TYLam.
-   auto.
-   rewrite insert_rewind. apply IHx1. auto.
+  eapply TYLam; eauto.
+   rewrite insert_rewind. eauto.
 Qed.
 
 

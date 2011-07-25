@@ -13,7 +13,7 @@ Theorem subst_exp_exp_ix
  -> TYPE ke (delete ix te) (substXX ix x2 x1) t1.
 Proof.
  intros. gen ix ke te t1 x2 t2.
- induction x1; intros; inverts H0; simpl; eauto.
+ induction x1; intros; inverts_type; simpl; eauto.
 
  Case "XVar".
   fbreak_nat_compare.
@@ -21,16 +21,14 @@ Proof.
    rewrite H in H3. inverts H3. auto.
 
   SCase "n < ix".
-   apply TYVar. 
-   rewrite <- H3. apply get_delete_above. auto. auto.
+   apply TYVar; auto.
 
   SCase "n > ix".
-   apply TYVar. auto.
+   apply TYVar; auto.
    rewrite <- H3.
    destruct n.
-    burn.
-    simpl. nnat. apply get_delete_below. omega.
-    auto.
+    burn. simpl. nnat. 
+    apply get_delete_below. omega.
 
  Case "XLAM".
   eapply (IHx1 ix) in H5.
@@ -43,11 +41,9 @@ Proof.
     apply type_kienv_weaken. auto.
 
  Case "XLam".
-  apply TYLam.
-   auto.
+  apply TYLam; auto.
    rewrite delete_rewind.
-   eapply IHx1; eauto.
-   simpl. apply type_tyenv_weaken. auto.
+   eauto using type_tyenv_weaken.
 Qed.
 
 
@@ -59,6 +55,8 @@ Theorem subst_exp_exp
 Proof.
  intros.
  assert (te = delete 0 (te :> t2)). auto.
- rewrite H1. eapply subst_exp_exp_ix; eauto. eauto.
+ rewrite H1. 
+ eapply subst_exp_exp_ix; eauto. 
+ simpl. eauto.
 Qed.
 

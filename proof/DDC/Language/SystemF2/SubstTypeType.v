@@ -14,7 +14,7 @@ Theorem subst_type_type_ix
  -> KIND (delete ix ke) (substTT ix t2 t1) k1.
 Proof.
  intros. gen ix ke t2 k1 k2.
- induction t1; intros; simpl; inverts H0; eauto.
+ induction t1; intros; simpl; inverts_kind; eauto.
 
  Case "TVar".
   fbreak_nat_compare.

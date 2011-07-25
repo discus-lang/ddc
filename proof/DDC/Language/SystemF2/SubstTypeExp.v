@@ -12,7 +12,7 @@ Theorem subst_type_exp_ix
          (substTX ix t2 x1) (substTT ix t2 t1).
 Proof.
  intros. gen ix ke te t1 t2 k2.
- induction x1; intros; simpl; inverts H0; eauto.
+ induction x1; intros; simpl; inverts_type; eauto.
 
  Case "XVar".
   apply TYVar.
@@ -23,11 +23,11 @@ Proof.
   simpl. apply TYLAM.
   rewrite delete_rewind.
   rewrite (liftTE_substTE 0 ix).
-  eapply IHx1; eauto.
-   apply kind_kienv_weaken. auto.
+  eauto using kind_kienv_weaken.
 
  Case "XAPP".
   rewrite (substTT_substTT 0 ix).
+  eauto using subst_type_type_ix.
   apply TYAPP.
    simpl. eapply (IHx1 ix) in H6; eauto.
    simpl. eapply subst_type_type_ix; eauto.
@@ -38,8 +38,7 @@ Proof.
   unfold substTE. rewrite map_rewind.
   assert ( map (substTT ix t2) (te :> t)
          = substTE ix t2 (te :> t)). auto.
-  rewrite H0.
-   eapply IHx1; eauto.
+  rewrite H0; eauto.
 
  Case "XApp".
   eapply TYApp.

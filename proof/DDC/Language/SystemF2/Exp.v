@@ -58,6 +58,17 @@ Inductive value : exp -> Prop :=
 Hint Constructors value.
 
 
+Lemma value_wnfX 
+ : forall xx, value xx -> wnfX xx.
+ Proof. intros. inverts H. auto. Qed.
+Hint Resolve value_wnfX.
+
+Lemma value_closedX 
+ : forall xx, value xx -> closedX xx.
+ Proof. intros. inverts H. auto. Qed.
+Hint Resolve value_closedX.
+
+
 (********************************************************************)
 (* Lift type indices in expressions. *)
 Fixpoint liftTX (d: nat) (xx: exp) : exp :=
