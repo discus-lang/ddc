@@ -20,4 +20,6 @@ Require Import DDC.Language.SystemF.
 (* System-F2. Like System-F2 but with type-type application. *)
 Require Import DDC.Language.SystemF2.
 
+(* System-F2 with Algebraic Data Types *)
+Require Import DDC.Language.SystemF2Data.
 
