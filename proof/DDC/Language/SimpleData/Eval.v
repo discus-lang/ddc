@@ -52,6 +52,16 @@ Hint Constructors EVAL.
 Hint Constructors EVALS.
 
 
+(* Invert all hypothesis that are compound eval statements. *)
+Ltac inverts_eval :=
+ repeat
+  (match goal with 
+   | [ H: EVAL (XApp _ _)  _ |- _ ] => inverts H
+   | [ H: EVAL (XCon _ _)  _ |- _ ] => inverts H
+   | [ H: EVAL (XCase _ _) _ |- _ ] => inverts H
+   end).
+
+
 Theorem EVAL_mutind
  :  forall (PE : exp      -> exp      -> Prop)
            (PS : list exp -> list exp -> Prop)
@@ -213,7 +223,7 @@ Proof.
      eapply subst_exp_exp_list; eauto.
 
  Case "EvsNil".
- auto.
+  auto.
 
  Case "EvsHead".
   destruct ts. 
@@ -244,27 +254,24 @@ Proof.
   try eauto.
 
  Case "Context".
-  destruct H.
-   eauto.
+  destruct H; inverts_type; eauto.
 
    SCase "XcApp1".
-    inverts HT. inverts H0. inverts H. eauto.
-
+    inverts_eval. inverts H. eauto.
+   
    SCase "XcApp2".
-    inverts HT. inverts H0. inverts H1. eauto.
+    inverts_eval. inverts H1. eauto.
 
    SCase "XcCon".
-    inverts HT. 
-
     assert (exists t, TYPE ds te x t).
     eapply exps_ctx_Forall2_exists_left; eauto.
-     destruct H1.
-
-   inverts H0.
+    dest t.
+ 
+    inverts_eval.
     inverts H2.
-    eapply EvCon. 
-     clear H9.
-     induction H; intros.
+    eapply EvCon. clear H9. 
+ 
+    induction H; intros.
       inverts H5.
       eapply EvsCons. eauto.
        induction xs. eauto.
@@ -279,7 +286,7 @@ Proof.
       inverts H8. eauto. eauto.
       
    SCase "XcCase".
-    inverts HT. inverts H0. inverts H. eauto. 
+    inverts H0. inverts H. eauto. 
 Qed.
 
 
@@ -297,10 +304,9 @@ Proof.
    apply EvDone. inverts H1. auto.
 
  Case "EslCons".
-  eapply eval_expansion. 
-   eauto. eauto. 
-   apply IHSTEPSL.
-   eapply preservation. eauto. auto. auto.
+  eapply eval_expansion; eauto.
+   apply IHSTEPSL; auto.
+   eapply preservation; eauto.
 Qed.
 
 

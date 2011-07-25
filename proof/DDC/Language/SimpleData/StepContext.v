@@ -201,6 +201,9 @@ Qed.
    where x4 can be evaluated into y4. The rest may or may not
    be wnfs, but the'll still be related.
 
+   v1 v2 v3 v4 XX x6 x7 x8 x9
+   v1 v2 v3 v4 XX v6 v7 v8 v
+
 *)
 Lemma exps_ctx2_run
  :  forall (R: exp -> exp -> Prop) xs ys  

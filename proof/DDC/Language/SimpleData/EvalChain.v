@@ -54,17 +54,20 @@ Inductive CHAIN : list exp -> list exp -> Prop :=
 Hint Constructors CHAIN.
 
 
+(* Add an already-evaluated expression to a chain. 
+   This effectively indicates that the expression was pre-evaluated
+   and doesn't need to be evaluated again during the reduction. *)
 Lemma chain_extend
  :  forall v xs ys
  ,  wnfX v 
  -> CHAIN xs ys
  -> CHAIN (v :: xs) (v :: ys).
 Proof.
- intros.
- induction H0.
+ intros v xs ys HW HC.
+ induction HC.
   auto.
-  lets D1: XscCons v H0. auto.
-  lets D2: EcCons D1 H1 H2 IHCHAIN. 
+  lets D1: XscCons v H. auto.
+  lets D2: EcCons D1 H0 H1 IHHC. 
   auto.
 Qed.
 
@@ -76,63 +79,60 @@ Lemma make_chain
  -> CHAIN xs vs.
 Proof.
  intros. gen vs.
-  induction xs as [xs | x]; intros.
-  inverts H. auto.
+ induction xs as [xs | x]; intros.
+  Case "xs = nil".
+   inverts H. auto.
  
-  destruct vs as [vs | v].
-   inverts H.
+  Case "xs = xs' :> v".
+   destruct vs as [vs | v].
 
-  inverts H. inverts H0.
-  assert (CHAIN xs vs). auto.
-   clear IHxs.
+   SCase "vs = nil".
+    nope.
 
-  (* TODO: this comes from STEPS xs vs *)
-  assert (Forall2 (fun x v => STEPS x v /\ wnfX v /\ (wnfX x -> v = x)) xs vs).
-   eapply (@Forall2_impl_in exp exp STEPS). intros.
-   split. auto.
-   split. rewrite Forall_forall in H3. auto.
-   intros.
-   apply steps_wnfX. auto. auto. auto.
+   SCase "vs = vs' :> v".
+    inverts H. 
+    inverts H0.
+    assert (CHAIN xs vs). auto. clear IHxs.
+
+    (* Build the property of STEPS we want to ass to exps_ctx2_run *)
+    assert (Forall2 
+     (fun x v => STEPS x v /\ wnfX v /\ (wnfX x -> v = x)) xs vs).
+     eapply (@Forall2_impl_in exp exp STEPS); auto.
+      intros.  nforall. int.
+      apply steps_wnfX; auto. 
    
+    (* Either all the xs are already whnfX,
+       or there is a context where one can step *)
+    lets HR: exps_ctx2_run H0. clear H0.
+    inverts HR.
 
-  (* either all the xs are already whnfX,
-      or there is a context where one can step *)
-  lets D: exps_ctx2_run H0. clear H0.
-  inverts D.
-
-  Case "all whnfX".
-    assert (Forall2 eq xs vs).
-    eapply (@Forall2_impl_in exp exp STEPS (@eq exp) xs vs).
-     intros. 
-      symmetry.
-       apply steps_wnfX. 
-       rewrite Forall_forall in H0. auto.
-       auto.
-       auto.
-    assert (xs = vs).
-     apply Forall2_eq. auto. subst.
+    SSCase "xs all whnfX".
+     assert (Forall2 eq xs vs).
+      eapply (@Forall2_impl_in exp exp STEPS (@eq exp) xs vs).
+      nforall. intros. symmetry. eauto using steps_wnfX.
+      auto.
+     assert (xs = vs).
+      apply Forall2_eq. auto. subst.
    
-   lets C1: XscHead vs.
-   lets D1: EcCons x v (v :: vs) C1 H4.
-    apply D1. auto.
-    auto.
+     lets C1: XscHead vs.
+     lets D1: EcCons x v (v :: vs) C1 H4.
+     eauto.
 
-  Case "something steps".
-   destruct H0 as [C1].
-   destruct H0 as [C2].
-   destruct H0 as [x'].
-   destruct H0 as [v'].
-   inverts H0. inverts H5. inverts H7.
+    SSCase "something steps".
+     (* unpack the evaluation contexts *)
+     dest C1. dest C2. 
+     destruct H0 as [x']. 
+     destruct H0 as [v'].
+     int. subst.
 
-   lets D1: exps_ctx2_left H0.
-   lets D2: exps_ctx2_right H0.
+     lets HC1: exps_ctx2_left  H0. 
+     lets HC2: exps_ctx2_right H0.
 
-   assert (wnfX v').
-    eapply exps_ctx_Forall. 
-    eapply D2. auto.
+     assert (wnfX v').
+      eapply exps_ctx_Forall; eauto.
 
-   lets E1: XscCons C1 H2 D1.
-   lets E2: XscCons C2 H2 D2.
+     lets E1: XscCons C1 H2 HC1.
+     lets E2: XscCons C2 H2 HC2.
 
    lets E3: XscHead (C1 x').
 
