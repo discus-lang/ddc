@@ -1,0 +1,3 @@
+ddc: "./test/12-Parser/Types/T190-MissingClosureConstraint/Test.ds" (line 5, column 18):
+unexpected x
+expecting a closure constraint for '$c1'
