@@ -1,0 +1,8 @@
+
+-- Used to say: 
+--   ddc: src/Source/Defix.hs:94:16-31: Non-exhaustive patterns in lambda
+-- Because the source positions of some of the infix operators were being
+-- lost by the defixer.
+main ()
+ = do	list = [1, 2, 3]
+	println $ "list " % list % " : " $ show list
