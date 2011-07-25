@@ -123,16 +123,16 @@ allocData tag arity
 
 
 allocDataM :: Int -> Int -> Int -> LlvmM LlvmVar
-allocDataM tag dataSize ptrCount
- = do	addAlias	("struct.DataM", llvmTypeOfStruct ddcData)
-	let size	= sizeOfLlvmType structDataM + ptrCount * sizeOfLlvmType pObj + roundUpBytes dataSize
-	addComment	$ "allocDataM " ++ show tag ++ " " ++ show dataSize ++ " " ++ show ptrCount
+allocDataM tag ptrCount payloadSize
+ = do	addAlias	("struct.DataM", llvmTypeOfStruct ddcDataM)
+	let size	= sizeOfLlvmType structDataM + roundUpBytes payloadSize
+	addComment	$ "allocDataM " ++ show tag ++ " " ++ show ptrCount ++ " " ++ show payloadSize
 
 	pDataM		<- allocate size "pDataM" pStructDataM
 
 	storeStructRegValue ddcDataM pDataM "tag" (tagDataM tag)
 	storeStructRegValue ddcDataM pDataM "size" (i32LitVar size)
-	storeStructRegValue ddcDataM pDataM "ptrCount" (i32LitVar 0)
+	storeStructRegValue ddcDataM pDataM "ptrCount" (i32LitVar ptrCount)
 
 	ret		<- newUniqueNamedReg "allocated.data" pObj
 	addBlock	[ Assignment ret (Cast LM_Bitcast pDataM pObj) ]

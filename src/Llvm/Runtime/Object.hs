@@ -120,7 +120,7 @@ ddcDataM :: LlvmStructDesc
 ddcDataM
  =	mkLlvmStructDesc "DataM"
 		[ AField "tag" i32
-		, APadTo8If64
+		, AField "padding" i32
 		, AField "size" i32
 		, AField "ptrCount" i32
 		, AField "payload" (LMArray 0 i8) ]
