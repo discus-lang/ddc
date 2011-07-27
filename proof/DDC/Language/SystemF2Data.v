@@ -1,7 +1,6 @@
 (* System-F2 with Algebraic Data Types 
  *)
 
-
 (********************************************************************)
 (* Shared with SystemF2 *)
 
@@ -24,10 +23,22 @@ Require Export DDC.Language.SystemF2.SubstTypeType.
 (********************************************************************)
 Require Export DDC.Language.SystemF2Data.Def.
 
-(*
+(* Expressions and induction principle *)
+Require Export DDC.Language.SystemF2Data.ExpBase.
+
+(* Utils for working with case alternative *)
+Require Export DDC.Language.SystemF2Data.ExpAlt.
+
+(* Lifting and lifting lemmas for expressions *)
+Require Export DDC.Language.SystemF2Data.ExpLift.
+
+(* Substitutio for expressions *)
+Require Export DDC.Language.SystemF2Data.ExpSubst.
+
 (* Expressions, normal forms, lifting and substitution. *)
 Require Export DDC.Language.SystemF2.Exp.
 
+(*
 (* Type Judgement. *)
 Require Export DDC.Language.SystemF2.TyJudge.
 
