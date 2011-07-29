@@ -36,12 +36,12 @@ Require Export DDC.Language.SystemF2Data.ExpLift.
 Require Export DDC.Language.SystemF2Data.ExpSubst.
 
 (* Expressions, normal forms, lifting and substitution. *)
-Require Export DDC.Language.SystemF2.Exp.
+Require Export DDC.Language.SystemF2Data.Exp.
+
+(* Type Judgement. *)
+Require Export DDC.Language.SystemF2Data.TyJudge.
 
 (*
-(* Type Judgement. *)
-Require Export DDC.Language.SystemF2.TyJudge.
-
 (* Substitution of types in expressions preserves typing. *)
 Require Export DDC.Language.SystemF2.SubstTypeExp.
 

@@ -38,7 +38,7 @@ Inductive wfX : kienv -> tyenv -> exp -> Prop :=
  
  | WfX_XLAM
    :  forall ke te x
-   ,  wfX (ke :> KStar) te x
+   ,  wfX (ke :> KStar) (liftTE 0 te) x
    -> wfX ke te (XLAM x)
 
  | WfX_XAPP

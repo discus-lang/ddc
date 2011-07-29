@@ -51,6 +51,7 @@ Proof.
  intros ke t k HK. gen ke k.
  induction t; intros; inverts_kind; simpl; eauto.
 Qed.
+Hint Resolve kind_wfT.
 
 
 (* If a type is well kinded in an empty environment,
@@ -62,6 +63,7 @@ Lemma kind_empty_is_closed
 Proof.
  intros. unfold closedT. eapply kind_wfT. eauto.
 Qed.
+Hint Resolve kind_empty_is_closed.
 
 
 (* Weakening kind environments. *)

@@ -25,14 +25,26 @@ Hint Unfold tFun.
 
 
 (* Well formed types are closed under the given kind environment. *)
-Fixpoint wfT (ke: kienv) (tt: ty) : Prop := 
- match tt with
- | TVar i     => exists k, get i ke = Some k
- | TCon _     => True
- | TForall t  => wfT (ke :> KStar) t
- | TApp t1 t2 => wfT ke t1 /\ wfT ke t2
- end.
-Hint Unfold wfT.
+Inductive wfT (ke: kienv) : ty -> Prop :=
+ | WfT_TVar 
+   :  forall i
+   ,  (exists k, get i ke = Some k)
+   -> wfT ke (TVar i)
+
+ | WfT_TCon
+   :  forall n
+   ,  wfT ke (TCon n)
+
+ | WfT_TForall
+   :  forall t
+   ,  wfT (ke :> KStar) t
+   -> wfT ke (TForall t)
+
+ | WfT_TApp
+   :  forall t1 t2
+   ,  wfT ke t1 -> wfT ke t2
+   -> wfT ke (TApp t1 t2).
+Hint Constructors wfT.
 
 
 (* Closed types are well formed under an empty environment. *)
