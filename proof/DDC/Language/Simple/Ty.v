@@ -2,19 +2,19 @@
 Require Export DDC.Language.Simple.Exp.
 
 (* Typing judgement assigns a type to an expression. *)
-Inductive TYPE : tyenv -> exp -> ty -> Prop :=
+Inductive TYPE (te: tyenv) : exp -> ty -> Prop :=
  | TYVar 
-   :  forall te i t
+   :  forall i t
    ,  get i te = Some t
    -> TYPE te (XVar i) t
 
  | TYLam
-   :  forall te x t1 t2
+   :  forall x t1 t2
    ,  TYPE (te :> t1) x t2
    -> TYPE te (XLam t1 x) (TFun t1 t2)
 
  | TYApp
-   :  forall te x1 x2 t1 t2
+   :  forall x1 x2 t1 t2
    ,  TYPE te x1 (TFun t1 t2)
    -> TYPE te x2 t1
    -> TYPE te (XApp x1 x2) t2.

@@ -27,14 +27,14 @@ Proof.
 
   SCase "n < ix".
    apply TYVar.
-   rewrite <- H4.
+    rewrite <- H3.
     apply get_delete_above. auto.
 
   SCase "n > ix".
    apply TYVar.
    destruct n.
     burn.
-    simpl. nnat. rewrite <- H4.
+    simpl. nnat. rewrite <- H3.
      apply get_delete_below. burn.
 
  Case "XLam".

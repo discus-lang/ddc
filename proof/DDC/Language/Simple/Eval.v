@@ -68,12 +68,12 @@ Proof.
 
  Case "EVLamApp".
   inverts_type.
-  spec IHHE1 H2.
-  spec IHHE2 H4.
+  spec IHHE1 H1.
+  spec IHHE2 H3.
 
-  lets T1: preservation_steps H2 IHHE1. inverts keep T1.
-  lets T2: preservation_steps H4 IHHE2.
-  lets T3: subst_exp_exp H1 T2.
+  lets T1: preservation_steps H1 IHHE1. inverts keep T1.
+  lets T2: preservation_steps H3 IHHE2.
+  lets T3: subst_exp_exp H0 T2.
   lets E3: IHHE3 T3.
 
   eapply EsAppend.
