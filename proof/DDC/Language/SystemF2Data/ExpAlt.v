@@ -6,7 +6,7 @@ Require Export DDC.Base.
 (* Get the data constructor of an alternative. *)
 Fixpoint dcOfAlt (aa: alt) : datacon :=
  match aa with 
- | AAlt dc _ _ => dc
+ | AAlt dc _ => dc
  end.
 Hint Unfold dcOfAlt.
 
@@ -17,9 +17,9 @@ Fixpoint getAlt (dc: datacon) (alts: list alt) {struct alts}
  match alts with 
  |  nil  => None
 
- |  AAlt dc' tsArgs x :: alts'
+ |  AAlt dc' x :: alts'
  => if datacon_beq dc dc'
-     then Some (AAlt dc' tsArgs x)
+     then Some (AAlt dc' x)
      else getAlt dc alts'
  end.
 
@@ -50,7 +50,7 @@ Qed.
 Lemma getAlt_exists
  :  forall d alts
  ,  In d (map dcOfAlt alts)
- -> (exists tsArgs x, getAlt d alts = Some (AAlt d tsArgs x)).
+ -> (exists x, getAlt d alts = Some (AAlt d x)).
 Proof.
  intros.
  induction alts.
@@ -58,12 +58,12 @@ Proof.
   simpl in H. inverts H.
    destruct a. simpl.
    breaka (datacon_beq d d).
-    exists l. exists e. auto.
+    exists e. auto.
     apply datacon_beq_false in HeqX. false.
    lets D: IHalts H0.
    destruct a. simpl.
     breaka (datacon_beq d d0).
      apply datacon_beq_eq in HeqX. subst. auto.
-     exists l. exists e. auto.
+     exists e. auto.
 Qed.
 

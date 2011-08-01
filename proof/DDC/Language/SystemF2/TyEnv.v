@@ -8,7 +8,7 @@ Hint Unfold tyenv.
 
 
 (* Lift type indices in type environments. *)
-Definition liftTE d te    := map (liftTT d) te.
+Definition liftTE d te    := map (liftTT 1 d) te.
 Hint Unfold liftTE.
 
 (* Substitution of types in type environments. *)
@@ -47,7 +47,7 @@ Qed.
 Lemma liftTE_substTE
  :  forall n n' t2 te
  ,  liftTE n (substTE (n + n') t2 te)
- =  substTE (1 + n + n') (liftTT n t2) (liftTE n te).
+ =  substTE (1 + n + n') (liftTT 1 n t2) (liftTE n te).
 Proof.
  intros. induction te.
   auto.

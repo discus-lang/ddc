@@ -4,6 +4,15 @@
 (* Kinds and kind environemnts. *)
 Require Export DDC.Language.SystemF2.Ki.
 
+(* Type expressions, and functions that operate on them *)
+Require Export DDC.Language.SystemF2.TyBase.
+
+(* Lifting of indices in type expressions *)
+Require Export DDC.Language.SystemF2.TyLift.
+
+(* Substitution of types in types, and lemmas about it *)
+Require Export DDC.Language.SystemF2.TySubst.
+
 (* Types, well formed and closed, lifting and substitution lemmas. *)
 Require Export DDC.Language.SystemF2.Ty.
 

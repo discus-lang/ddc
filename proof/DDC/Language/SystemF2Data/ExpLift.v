@@ -5,23 +5,41 @@ Require Export DDC.Base.
 
 
 (********************************************************************)
-(* When we push new elements on the environment stack of an
-   expression, we need to lift free indices in the expression 
-   across the new elements.
+(* Lift type indices in expressions. *)
+Fixpoint liftTX (d: nat) (xx: exp) : exp :=
+  match xx with
+  |  XVar _     => xx
 
-   For example given: 
-             t1, t0 |- 0 1 (\. 0 1 2) :: t3
+  |  XLAM x     
+  => XLAM (liftTX (S d) x)
 
-   Pushing two more elements gives:
-     t1, t0, ta, tb |- 2 3 (\. 0 3 4) :: t3
- *)
-Fixpoint 
- liftXX (n:  nat) (* number of elements pushed on stack *)
-        (d:  nat) (* current binding depth in expression *)
-        (xx: exp) (* expression to lift *)
-        {struct xx}
-        : exp
- := match xx with 
+  |  XAPP x t 
+  => XAPP (liftTX d x)  (liftTT 1 d t)
+ 
+  |  XLam t x   
+  => XLam (liftTT d 1 t)  (liftTX d x)
+
+  |  XApp x1 x2
+  => XApp (liftTX d x1) (liftTX d x2)
+
+  |  XCon dc ts xs
+  => XCon dc (map (liftTT 1 d) ts) (map (liftTX d) xs)
+
+  |  XCase xx alts
+  => XCase (liftTX d xx) (map (liftTA d) alts)
+ end
+
+ with liftTA (d: nat) (aa: alt) : alt :=
+  match aa with
+  |  AAlt dc xx
+  => AAlt dc (liftTX d xx)
+  end.
+
+
+(********************************************************************)
+(* Lift expression indices in expressions *)
+Fixpoint liftXX (n:  nat) (d:  nat) (xx: exp) {struct xx} : exp :=
+ match xx with 
     |  XVar ix    
     => if le_gt_dec d ix
         (* index was pointing into env, lift it across new elems *)
@@ -43,8 +61,8 @@ Fixpoint
     => XApp   (liftXX n d x1) (liftXX n d x2)
 
     (* lift all the arguments of a data constructor *)
-    |  XCon dc xs
-    => XCon dc (map (liftXX n d) xs)
+    |  XCon dc ts xs
+    => XCon dc ts (map (liftXX n d) xs)
 
     (* lift all the alternatives in a case-expression *)
     |  XCase x alts
@@ -57,8 +75,8 @@ Fixpoint
      is pushed onto the environment for each of the arguments
      of the data constructor. We need to increase the current
      binding depth by the number of arguments. *)
-  |  AAlt dc ts x 
-  => AAlt dc ts (liftXX n (d + length ts) x)
+  |  AAlt (DataCon tag arity) x 
+  => AAlt (DataCon tag arity) (liftXX n (d + arity) x)
   end.
 
 
@@ -68,7 +86,7 @@ Lemma dcOfAlt_liftXA
  : forall n d a
  , dcOfAlt (liftXA n d a) = dcOfAlt a.
 Proof.
- intros. destruct a. auto.
+ intros. destruct a. destruct d0. auto.
 Qed.
 
 
@@ -96,6 +114,9 @@ Proof.
   nforall.
   rewrite (map_ext_in (liftXA 0 d) id); auto.
   rewrite map_id. rewrite IHx; auto.
+
+ Case "XAlt".
+  destruct dc. burn.
 Qed.
 
 
@@ -135,6 +156,10 @@ Proof.
    (fun a1 => liftXA n d (liftXA m d a1))
    (fun a1 => liftXA m d (liftXA n d a1))).
   auto. eauto.
+
+ Case "XAlt".
+  destruct dc.
+  simpl. burn.
 Qed.
 
 
@@ -173,6 +198,10 @@ Proof.
    (fun x1 => liftXA (S n) d (liftXA m d x1))
    (fun x1 => liftXA n d (liftXA (S m) d x1))).
   auto. auto.
+
+ Case "XAlt".
+  destruct dc.
+  simpl. burn.
 Qed.
 
 

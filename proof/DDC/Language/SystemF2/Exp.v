@@ -79,13 +79,13 @@ Fixpoint liftTX (d: nat) (xx: exp) : exp :=
   => XLAM (liftTX (S d) x)
 
   |  XAPP x t 
-  => XAPP (liftTX d x)  (liftTT d t)
+  => XAPP (liftTX d x)   (liftTT 1 d t)
  
   |  XLam t x   
-  => XLam (liftTT d t)  (liftTX d x)
+  => XLam (liftTT 1 d t) (liftTX d x)
 
   |  XApp x1 x2
-  => XApp (liftTX d x1) (liftTX d x2)
+  => XApp (liftTX d x1)  (liftTX d x2)
  end.
 
 
@@ -118,7 +118,7 @@ Fixpoint substTX (d: nat) (u: ty) (xx: exp) : exp :=
   | XVar _     => xx
 
   |  XLAM x     
-  => XLAM (substTX (S d) (liftTT 0 u) x)
+  => XLAM (substTX (S d) (liftTT 1 0 u) x)
 
   |  XAPP x t
   => XAPP (substTX d u x)  (substTT d u t)

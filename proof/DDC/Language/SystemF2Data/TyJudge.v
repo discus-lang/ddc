@@ -44,26 +44,25 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) : exp -> ty -> Prop :=
 
  (* Data Constructors *)
  | TYCon 
-   :  forall xs dc dcs tsArgs tc
-   ,  getDataDef dc ds = Some (DefData     dc tsArgs (TCon tc))
-   -> getTypeDef tc ds = Some (DefDataType tc dcs)
-   -> In dc dcs
-   -> Forall2 (TYPE ds ke te) xs tsArgs
-   -> TYPE ds ke te (XCon dc xs) (TCon tc)
+   :  forall tc (ks: list ki) (ts: list ty) (xs: list exp) dc dcs
+   ,  DEFSOK ds
+   -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
+   -> getDataDef dc ds = Some (DefData     dc ts tc)
+   -> Forall2 (TYPE ds ke te) xs ts
+   -> TYPE ds ke te (XCon dc ts xs) (makeTApps (TCon tc) ts)
 
  (* Case Expressions *)
  | TYCase
-   :  forall xObj tcPat tResult alts dcs
+   :  forall xObj tObj tcObj ks tResult alts dcs
 
       (* check types of expression and alternatives *)
-   ,  TYPE ds ke te xObj (TCon tcPat)            
-   -> Forall (fun alt => TYPEA ds ke te alt (TCon tcPat) tResult) alts
+   ,  TYPE ds ke te xObj tObj
+   -> Forall (fun alt => TYPEA ds ke te alt tObj tResult) alts
 
-      (* there must be at least one alternative *)
-   -> length alts > 0
-
-      (* all data cons must have a corresponding alternative *)
-   -> getTypeDef tcPat ds = Some (DefDataType tcPat dcs)
+      (* All data cons must have a corresponding alternative. 
+         Maybe we should move this to the well-formedness judgement *)
+   -> getCtorOfType tObj  = Some tcObj
+   -> getTypeDef tcObj ds = Some (DefDataType tcObj ks dcs)
    -> Forall (fun dc => In dc (map dcOfAlt alts)) dcs
 
    -> TYPE ds ke te (XCase xObj alts) tResult
@@ -71,10 +70,11 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) : exp -> ty -> Prop :=
 with TYPEA  (ds: defs) (ke: kienv) (te: tyenv) : alt -> ty -> ty -> Prop :=
  (* Case Alternatives *)
  | TYAlt 
-   :  forall x1 t1 dc tsArgs tResult
-   ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
-   -> TYPE  ds ke (te >< tsArgs) x1 t1
-   -> TYPEA ds ke te (AAlt dc tsArgs x1) tResult t1.
+   :  forall x1 dc tObj tObj1 tsObj tsFields tResult tcObj
+   ,  getDataDef dc ds = Some (DefData dc tsFields tcObj)
+   -> takeTApps tObj   = (tObj1, tsObj)
+   -> TYPE  ds ke (te >< map (substTTs 0 tsObj) tsFields) x1 tResult
+   -> TYPEA ds ke te (AAlt dc x1) tObj tResult.
 
 Hint Constructors TYPE.
 Hint Constructors TYPEA.
@@ -84,14 +84,14 @@ Hint Constructors TYPEA.
 Ltac inverts_type :=
  repeat 
   (match goal with 
-   | [ H: TYPE  _ _ _ (XVar  _)    _    |- _ ] => inverts H
-   | [ H: TYPE  _ _ _ (XLAM  _)    _    |- _ ] => inverts H
-   | [ H: TYPE  _ _ _ (XAPP  _ _)  _    |- _ ] => inverts H
-   | [ H: TYPE  _ _ _ (XLam  _ _)  _    |- _ ] => inverts H
-   | [ H: TYPE  _ _ _ (XApp  _ _)  _    |- _ ] => inverts H
-   | [ H: TYPE  _ _ _ (XCon  _ _)  _    |- _ ] => inverts H
-   | [ H: TYPE  _ _ _ (XCase _ _)  _    |- _ ] => inverts H
-   | [ H: TYPEA _ _ _ (AAlt _ _ _) _ _  |- _ ] => inverts H
+   | [ H: TYPE  _ _ _ (XVar  _)     _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ _ (XLAM  _)     _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ _ (XAPP  _ _)   _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ _ (XLam  _ _)   _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ _ (XApp  _ _)   _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ _ (XCon  _ _ _) _    |- _ ] => inverts H
+   | [ H: TYPE  _ _ _ (XCase _ _)   _    |- _ ] => inverts H
+   | [ H: TYPEA _ _ _ (AAlt _ _ _)  _ _  |- _ ] => inverts H
    end).
 
 
@@ -106,12 +106,17 @@ Lemma value_lam
  -> (exists t x', x = XLam t x').
 Proof.
  intros. destruct x; eauto; nope.
+
+ unfold tFun in H0.
+ inverts H0. 
+  admit. (* data type cannot construct functions *)
 Qed.
 Hint Resolve value_lam.
 
 
 (********************************************************************)
 (* A well typed expression is well formed *)
+(*
 Theorem type_wfX
  :  forall ds ke te x t
  ,  TYPE ds ke te x t
@@ -127,13 +132,26 @@ Proof.
  Case "XCon".
   apply WfX_XCon.
   nforall. intros.
-  eapply Forall2_exists_left in H7; eauto.
-  dest y. eauto.
+  eapply Forall2_exists_left in H8; eauto.
+  dest y.
+   skip. skip. (* types in data def are well formed *)
+   nforall.
+    intros. eapply H. auto.
+    skip. (* ok, x in t *)
 
  Case "XCase".
   eapply WfX_XCase.
    eapply IHx. eauto.
    nforall. eauto.
+
+ Case "XAlt".
+  destruct dc.
+  inverts H.
+  eapply WfA_AAlt. eauto.
+  (* no. change wfX so it only needs to be wf under an environment
+         of a specific length, not wf under a specific environment.
+         The wf judgement doesn't now the true environment, as this
+         depends on the object type *)
 Qed.
 Hint Resolve type_wfX.
 
@@ -234,3 +252,4 @@ Proof.
    eapply type_tyenv_weaken1. auto. 
 Qed.
 
+*)

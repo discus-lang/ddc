@@ -13,12 +13,12 @@ Inductive exp : Type :=
  | XApp   : exp -> exp -> exp       (* function application *)
 
  (* Data Types *)
- | XCon   : datacon -> list exp -> exp
+ | XCon   : datacon -> list ty -> list exp -> exp
  | XCase  : exp     -> list alt -> exp
 
  (* Alternatives *)
 with alt     : Type :=
- | AAlt   : datacon -> list ty  -> exp -> alt.
+ | AAlt   : datacon -> exp -> alt.
 
 Hint Constructors exp.
 Hint Constructors alt.
@@ -38,9 +38,9 @@ Theorem exp_mutind
  -> (forall x1 t2,   PX x1                 -> PX (XAPP x1 t2))
  -> (forall t  x1,   PX x1                 -> PX (XLam t x1))
  -> (forall x1 x2,   PX x1 -> PX x2        -> PX (XApp x1 x2))
- -> (forall dc xs,            Forall PX xs -> PX (XCon dc xs))
+ -> (forall dc ts xs,         Forall PX xs -> PX (XCon dc ts xs))
  -> (forall x  aa,   PX x  -> Forall PA aa -> PX (XCase x aa))
- -> (forall dc ts x, PX x                  -> PA (AAlt dc ts x))
+ -> (forall dc x,    PX x                  -> PA (AAlt dc x))
  ->  forall x, PX x.
 Proof. 
  intros PX PA.
@@ -74,7 +74,7 @@ Proof.
 
  Case "XCon".
   apply con.
-   induction l; intuition.
+   induction l0; intuition.
 
  Case "XCase".
   apply case.

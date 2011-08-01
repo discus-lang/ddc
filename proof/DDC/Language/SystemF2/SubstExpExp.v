@@ -36,7 +36,7 @@ Proof.
    unfold liftTE. rewrite map_delete. eauto.
    eapply get_map. eauto.
    unfold liftTE. rewrite <- map_delete.
-    assert (map (liftTT 0) (delete ix te) = liftTE 0 (delete ix te)). 
+    assert (map (liftTT 1 0) (delete ix te) = liftTE 0 (delete ix te)). 
      unfold liftTE. auto. rewrite H0. clear H0.
     apply type_kienv_weaken. auto.
 

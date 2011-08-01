@@ -2,14 +2,40 @@
 Require Export DDC.Language.SystemF2Data.ExpBase.
 Require Import DDC.Language.SystemF2Data.ExpLift.
 
+(* Substitution of Types in Exps *)
+Fixpoint substTX (d: nat) (u: ty) (xx: exp) : exp :=
+  match xx with
+  | XVar _     => xx
 
-(* Substitute for the outermost binder in an expression. *)
-Fixpoint
- substXX (d:  nat) (* current binding depth in expression *)
-         (u:  exp) (* new expression to substitute *)
-         (xx: exp) (* expression to substitute into *)
-         : exp 
- := match xx with
+  |  XLAM x     
+  => XLAM (substTX (S d) (liftTT 1 0 u) x)
+
+  |  XAPP x t
+  => XAPP (substTX d u x)  (substTT d u t)
+
+  |  XLam t x
+  => XLam (substTT d u t)  (substTX d u x)
+
+  |  XApp x1 x2
+  => XApp (substTX d u x1) (substTX d u x2)
+
+  |  XCon dc ts xs 
+  => XCon dc (map (substTT d u) ts) (map (substTX d u) xs)
+
+  |  XCase xx alts
+  => XCase (substTX d u xx) (map (substTA d u) alts)
+ end
+
+with substTA (d: nat) (u: ty) (aa: alt) : alt :=
+  match aa with
+  |  AAlt dc xx
+  => AAlt dc (substTX d u xx)
+  end.
+
+
+(* Substitution of Exps in Exps *)
+Fixpoint substXX (d:  nat) (u: exp) (xx: exp) : exp :=
+ match xx with
     | XVar ix 
     => match nat_compare ix d with
        (* Index matches the one we are substituting for. *)
@@ -40,8 +66,8 @@ Fixpoint
     |  XApp x1 x2 
     => XApp (substXX d u x1) (substXX d u x2)
 
-    |  XCon dc xs
-    => XCon dc (map (substXX d u) xs)
+    |  XCon dc ts xs
+    => XCon dc ts (map (substXX d u) xs)
 
     |  XCase x alts
     => XCase (substXX d u x) (map (substXA d u) alts)
@@ -49,11 +75,10 @@ Fixpoint
 
 with substXA (d: nat) (u: exp) (aa: alt) 
  := match aa with 
-    |  AAlt dc ts x 
-    => AAlt dc ts 
-         (substXX (d + length ts) 
-                  (liftXX (length ts) 0 u)
-                   x)
+    |  AAlt (DataCon tag arity) x 
+    => AAlt (DataCon tag arity)
+         (substXX (d + arity) 
+                  (liftXX arity 0 u) x)
     end. 
 
 
@@ -101,6 +126,6 @@ Lemma dcOfAlt_substXA
  : forall d u a
  , dcOfAlt (substXA d u a) = dcOfAlt a.
 Proof.
- intros. destruct a. auto.
+ intros. destruct a. destruct d0. auto.
 Qed.
 

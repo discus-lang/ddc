@@ -99,7 +99,7 @@ Hint Resolve type_wfX.
 Lemma type_kienv_insert
  :  forall ix ke te x1 t1 k2
  ,  TYPE ke                 te             x1             t1
- -> TYPE (insert ix k2 ke) (liftTE ix te) (liftTX ix x1) (liftTT ix t1).
+ -> TYPE (insert ix k2 ke) (liftTE ix te) (liftTX ix x1) (liftTT 1 ix t1).
 Proof. 
  intros. gen ix ke te t1 k2.
  induction x1; intros; inverts_type; simpl; eauto.
@@ -124,7 +124,7 @@ Proof.
  Case "XLam".
   apply TYLam.
    apply kind_kienv_insert. auto.
-   assert ( liftTE ix te :> liftTT ix t
+   assert ( liftTE ix te :> liftTT 1 ix t
           = liftTE ix (te :> t)). auto. rewrite H. clear H.
    apply IHx1. auto.
 
@@ -138,7 +138,7 @@ Qed.
 Lemma type_kienv_weaken
  :  forall ke te x1 t1 k2
  ,  TYPE ke                 te            x1              t1
- -> TYPE (ke :> k2)        (liftTE 0 te) (liftTX 0 x1)   (liftTT 0 t1).
+ -> TYPE (ke :> k2)        (liftTE 0 te) (liftTX 0 x1)   (liftTT 1 0 t1).
 Proof.
  intros.
  assert (ke :> k2 = insert 0 k2 ke). 
@@ -165,7 +165,7 @@ Proof.
  Case "XLAM".
   apply TYLAM. simpl.
   assert ( liftTE 0 (insert ix t2 te)
-         = insert ix (liftTT 0 t2) (liftTE 0 te)). 
+         = insert ix (liftTT 1 0 t2) (liftTE 0 te)). 
    unfold liftTE. rewrite map_insert. auto.
   rewrite H; eauto.
 

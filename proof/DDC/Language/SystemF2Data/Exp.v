@@ -23,9 +23,9 @@ Inductive wnfX : exp -> Prop :=
    , wnfX (XLam t1 x2)
 
  | Wnf_XCon
-   :  forall dc xs
+   :  forall dc ts xs
    ,  Forall wnfX xs
-   -> wnfX (XCon dc xs).
+   -> wnfX (XCon dc ts xs).
 Hint Constructors wnfX.
 
 
@@ -57,9 +57,10 @@ Inductive wfX : kienv -> tyenv -> exp -> Prop :=
    -> wfX ke te (XApp x1 x2)
 
  | WfX_XCon
-   :  forall ke te dc xs
-   ,  Forall (wfX ke te) xs
-   -> wfX ke te (XCon dc xs)
+   :  forall ke te dc ts xs
+   ,  Forall (wfT ke)    ts
+   -> Forall (wfX ke te) xs
+   -> wfX ke te (XCon dc ts xs)
 
  | WfX_XCase
    :  forall ke te x alts
@@ -69,10 +70,10 @@ Inductive wfX : kienv -> tyenv -> exp -> Prop :=
 
 with    wfA : kienv -> tyenv -> alt -> Prop :=
  | WfA_AAlt
-   :  forall ke te dc ds ts x tsArgs tResult
+   :  forall ke te dc ds x tsArgs tResult
    ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
    -> wfX ke (te >< tsArgs) x
-   -> wfA ke te (AAlt dc ts x).
+   -> wfA ke te (AAlt dc x).
 
 Hint Constructors wfX.
 Hint Constructors wfA.
@@ -103,16 +104,16 @@ Lemma value_closedX
 Hint Resolve value_closedX.
 
 Lemma value_wnfXs_XCon
- : forall xs dc
- , value (XCon dc xs) -> Forall wnfX xs.
+ : forall ts xs dc
+ , value (XCon dc ts xs) -> Forall wnfX xs.
 Proof.
  intros. inverts H. inverts H0. auto.
 Qed.
 Hint Resolve value_wnfXs_XCon.
 
 Lemma value_closedXs_XCon
- : forall xs dc
- , value (XCon dc xs) -> Forall closedX xs.
+ : forall ts xs dc
+ , value (XCon dc ts xs) -> Forall closedX xs.
 Proof.
  intros. inverts H. inverts H1. auto.
 Qed.
