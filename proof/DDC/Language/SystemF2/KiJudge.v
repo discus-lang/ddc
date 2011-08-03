@@ -46,10 +46,20 @@ Ltac inverts_kind :=
 Lemma kind_wfT
  :  forall ke t k
  ,  KIND ke t k
- -> wfT  ke t.
+ -> wfT  (length ke) t.
 Proof.
  intros ke t k HK. gen ke k.
  induction t; intros; inverts_kind; simpl; eauto.
+ 
+ apply get_length_more in H1.
+  induction ke.
+   simpl in H1. burn.
+   simpl. destruct n.
+    burn. 
+    eapply WfT_TVar. simpl in H1. omega.
+ 
+ eapply WfT_TForall.
+  apply IHt in H1. simpl in H1. auto.
 Qed.
 Hint Resolve kind_wfT.
 
@@ -61,7 +71,10 @@ Lemma kind_empty_is_closed
  ,  KIND nil t k 
  -> closedT t.
 Proof.
- intros. unfold closedT. eapply kind_wfT. eauto.
+ intros. unfold closedT.
+ assert (@length ki nil = 0). auto.
+  rewrite <- H0.
+  eapply kind_wfT. eauto.
 Qed.
 Hint Resolve kind_empty_is_closed.
 

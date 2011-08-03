@@ -5,31 +5,31 @@ Require Export DDC.Language.SystemF2.TySubst.
 
 
 (* Well formed types are closed under the given kind environment. *)
-Inductive wfT (ke: kienv) : ty -> Prop :=
+Inductive wfT (kn: nat) : ty -> Prop :=
  | WfT_TVar 
-   :  forall i
-   ,  (exists k, get i ke = Some k)
-   -> wfT ke (TVar i)
+   :  forall ki
+   ,  ki <= kn
+   -> wfT kn (TVar ki)
 
  | WfT_TCon
    :  forall n
-   ,  wfT ke (TCon n)
+   ,  wfT kn (TCon n)
 
  | WfT_TForall
    :  forall t
-   ,  wfT (ke :> KStar) t
-   -> wfT ke (TForall t)
+   ,  wfT (S kn) t
+   -> wfT kn (TForall t)
 
  | WfT_TApp
    :  forall t1 t2
-   ,  wfT ke t1 -> wfT ke t2
-   -> wfT ke (TApp t1 t2).
+   ,  wfT kn t1 -> wfT kn t2
+   -> wfT kn (TApp t1 t2).
 Hint Constructors wfT.
 
 
 (* Closed types are well formed under an empty environment. *)
 Definition closedT (tt: ty) : Prop
- := wfT nil tt.
+ := wfT O tt.
 Hint Unfold closedT.
 
 

@@ -103,6 +103,16 @@ Qed.
 Hint Resolve get_length_more.
 
 
+Lemma get_length_less
+ :  forall A n (xx: list A) x
+ ,  get n xx = Some x
+ -> n < length xx.
+Proof.
+ eapply get_length_more.
+Qed.
+Hint Resolve get_length_more.
+
+
 (********************************************************************)
 (** Lemmas: app *)
 

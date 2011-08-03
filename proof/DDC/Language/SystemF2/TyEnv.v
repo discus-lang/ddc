@@ -17,6 +17,18 @@ Hint Unfold substTE.
 
 
 (********************************************************************)
+Lemma length_liftTE
+ :  forall d te
+ ,  length te = length (liftTE d te).
+Proof.
+ intros. 
+ induction te.
+  eauto.
+  simpl. burn.
+Qed.
+
+
+(********************************************************************)
 Lemma liftTE_liftTE
  :  forall n n' te
  ,  liftTE n              (liftTE (n + n') te) 

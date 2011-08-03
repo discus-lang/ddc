@@ -32,20 +32,20 @@ Hint Constructors wnfX.
 
 
 (* A well formed expression is closed under the given environments *)
-Fixpoint wfX (ke: kienv) (te: tyenv) (xx: exp) : Prop := 
+Fixpoint wfX (kn: nat) (tn: nat) (xx: exp) : Prop := 
  match xx with 
- | XVar i     => exists t, get i te = Some t
- | XLAM x     => wfX (ke :> KStar) (liftTE 0 te) x
- | XAPP x t   => wfX ke te x  /\ wfT ke t
- | XLam t x   => wfT ke t     /\ wfX ke (te :> t) x
- | XApp x1 x2 => wfX ke te x1 /\ wfX ke te x2
+ | XVar ti    => ti < tn
+ | XLAM x     => wfX (S kn) tn x
+ | XAPP x t   => wfX kn tn x  /\ wfT kn t
+ | XLam t x   => wfT kn t     /\ wfX kn (S tn) x
+ | XApp x1 x2 => wfX kn tn x1 /\ wfX kn tn x2
  end.
 Hint Unfold wfX.
 
 
 (* A closed expression is well formed under an empty environment. *)
 Definition closedX (xx: exp) : Prop
- := wfX nil nil xx.
+ := wfX O O xx.
 Hint Unfold closedX.
 
 

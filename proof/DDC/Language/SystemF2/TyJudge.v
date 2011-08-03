@@ -79,12 +79,21 @@ Qed.
 Theorem type_wfX
  :  forall ke te x t
  ,  TYPE ke te x t
- -> wfX  ke te x.
+ -> wfX  (length ke) (length te) x.
 Proof.
  intros. gen ke te t.
- induction x; intros; inverts_type; simpl; 
-  eauto using kind_wfT.
-Qed.
+ induction x; intros; inverts_type; simpl; eauto.
+ 
+ eapply get_length_more. eauto.
+
+ apply IHx in H3.
+  simpl in H3. rewrite <- length_liftTE in H3. eauto.
+
+ split.
+  eapply kind_wfT. eauto.
+  assert (length (te :> t) = S (length te)). eauto.
+   rewrite <- H. eauto.
+Qed.  
 Hint Resolve type_wfX.
 
 
