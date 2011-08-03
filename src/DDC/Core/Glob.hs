@@ -7,7 +7,7 @@ module DDC.Core.Glob
 	, globOfTree
 	, treeOfGlob
 	, seqOfGlob
-	, bindingArityFromGlob 
+	, bindingArityFromGlob
 	, typeFromGlob
 	, opTypeFromGlob
 	, varIsBoundAtTopLevelInGlob
@@ -41,10 +41,10 @@ stage	= "Core.Glob"
 -- | A Glob provides an efficient way to organise top level declarations.
 --   Note: Don't add extra fields to this type that can't be reconstructed
 -- 	   directly from a Tree. We want to be able to convert between
---	   Glob and Tree without losing information.	      
+--	   Glob and Tree without losing information.
 data Glob
 	= Glob
-	{ 
+	{
 	-- | Abstract type class constraints.
 	  globClass		:: Map Var Top
 
@@ -59,7 +59,7 @@ data Glob
 
 	-- | Data type declarations.
 	, globData		:: Map Var Top
-	
+
 	-- | Map of data constructor name definition,
 	--	for all data constructors from all data types.
 	, globDataCtors		:: Map Var CtorDef
@@ -94,71 +94,71 @@ globEmpty
 	, globClassMethods	= Map.empty
 	, globClassInst		= Map.empty
 	, globBind		= Map.empty }
-	
+
 
 -- | Convert a program Tree to a Glob.
 globOfTree :: Tree -> Glob
 globOfTree ps
  = let	-- Add all the tops to the glob.
 	globTops	= foldr insertTopInGlob globEmpty ps
-	
+
 	-- Build the map of data constructors.
  	ctors		= Map.unions $ [ dataDefCtors def | PData def <- ps ]
 	globTops_ctors	= globTops { globDataCtors = ctors }
 
-	-- Build the map of overloaded vars to the names of the classes 
+	-- Build the map of overloaded vars to the names of the classes
 	--	they are defined in.
 	vsMethods	= Map.unions
 			$ map Map.fromList
 			[ map 	(\(vMethod, _) -> (vMethod, vClass)) vtMethods
 				| PClassDict vClass _ vtMethods
 				<- Map.elems $ globClassDict globTops ]
-							
+
 	globTops_classMethods
-			= globTops_ctors 
+			= globTops_ctors
 			{ globClassMethods = vsMethods }
 
    in	globTops_classMethods
 
 
--- | Insert a top into a glob. 
+-- | Insert a top into a glob.
 --	If the top is already there the old one is updated.
 insertTopInGlob :: Top -> Glob -> Glob
 insertTopInGlob pp glob
  = case pp of
-	PClass{}	
-	 -> glob { globClass 		
+	PClass{}
+	 -> glob { globClass
 			= Map.insert (topClassName pp)		pp (globClass glob) }
 
-	PEffect{}	
-	 -> glob { globEffect 		
+	PEffect{}
+	 -> glob { globEffect
 			= Map.insert (topEffectName pp)		pp (globEffect glob) }
 
-	PRegion{}	
-	 -> glob { globRegion 		
+	PRegion{}
+	 -> glob { globRegion
 			= Map.insert (topRegionName pp)		pp (globRegion glob) }
-		
-	PExtern{}	
-	 -> glob { globExtern 		
+
+	PExtern{}
+	 -> glob { globExtern
 			= Map.insert (topExternName pp) 	pp (globExtern glob) }
 
 	PData def
-	 -> glob { globData 		
+	 -> glob { globData
 			= Map.insert (dataDefName def) 		pp (globData glob) }
 
-	PClassDict{}	
-	 -> glob { globClassDict	
+	PClassDict{}
+	 -> glob { globClassDict
 			= Map.insert (topClassDictName pp) 	pp (globClassDict glob) }
 
-	PClassInst{}	
-	 -> glob { globClassInst	
-			= Map.adjustWithDefault 
-				(Seq.|> pp) Seq.empty 
+	PClassInst{}
+	 -> glob { globClassInst
+			= Map.adjustWithDefault
+				(Seq.|> pp) Seq.empty
 				(topClassInstName pp)
 				(globClassInst glob) }
 
-	PBind{}	
-	 -> glob { globBind		
+	PBind{}
+	 -> glob { globBind
 			= Map.insert (topBindName pp)	 	pp (globBind glob) }
 
 
@@ -167,7 +167,7 @@ treeOfGlob :: Glob -> Tree
 treeOfGlob glob
  	= (Map.elems
 		$ Map.unions
-		[ globClass  		glob 
+		[ globClass  		glob
 		, globEffect		glob
 		, globRegion		glob
 		, globExtern		glob
@@ -175,7 +175,7 @@ treeOfGlob glob
 		, globClassDict		glob
 		, globBind		glob ])
 	++ (foldr (:) [] $ join $ Seq.fromList $ Map.elems $ globClassInst glob)
-	
+
 
 
 -- | Convert a `Glob` to a sequence of `Top`s.
@@ -191,7 +191,7 @@ seqOfGlob glob
 	><  seqOfMap (globBind		glob)
 	where seqOfMap m = Map.fold (Seq.<|) Seq.empty m
 
-	
+
 -- | If this glob has a value binding, then get its binding arity.
 --	The "binding arity" is the number of args directly accepted
 --	by the function, ie the number of outermost value lambdas.
@@ -207,7 +207,7 @@ bindingArityFromGlob v glob
 
 	| Just ctor@CtorDef{}	<- Map.lookup v (globDataCtors glob)
 	= Just $ ctorDefArity ctor
-	
+
 	| otherwise
 	= Nothing
 
@@ -218,14 +218,14 @@ typeFromGlob v glob
 	-- External decls are already annotated with their types.
 	| Just pp@PExtern{}	<- Map.lookup v (globExtern glob)
 	= Just $ topExternType pp
-	
-	-- If we can slurp out the type directly from its annots then use that, 
+
+	-- If we can slurp out the type directly from its annots then use that,
 	--	otherwise we'll have to reconstruct it manually.
 	| Just pp@PBind{}	<- Map.lookup v (globBind glob)
 	= Just $ fromMaybe (checkedTypeOfExp "Core.Glob.typeFromGlob" (topBindExp pp))
 			   (maybeSlurpTypeX (topBindExp pp))
-	
-	-- Var is a data constructor.	
+
+	-- Var is a data constructor.
 	| Just ctor@CtorDef{}	<- Map.lookup v (globDataCtors glob)
 	= Just $ ctorDefType ctor
 
@@ -246,23 +246,23 @@ opTypeFromGlob v glob
 	| Just pp@PExtern{}	<- Map.lookup v (globExtern glob)
 	= Just $ topExternOpType pp
 
-	-- If we can slurp out the type directly from its annots then use that, 
+	-- If we can slurp out the type directly from its annots then use that,
 	--	otherwise we'll have to reconstruct it manually.
 	| Just pp@PBind{}	<- Map.lookup v (globBind glob)
 	= Just $ superOpTypeP pp
 
-	-- Var is a data constructor.	
+	-- Var is a data constructor.
 	| Just ctor@CtorDef{}	<- Map.lookup v (globDataCtors glob)
-	= Just 	$ makeTFunsPureEmpty 
-		$ replicate (ctorDefArity ctor + 1) 
+	= Just 	$ makeTFunsPureEmpty
+		$ replicate (ctorDefArity ctor + 1)
 		$ makeTData Var.primTData kValue []
-		
+
 	| otherwise
 	= Nothing
-	
+
 
 -- | Check if a value variable is bound at top-level in this `Glob`.
---	Since we know it is a value var we don't have to check 
+--	Since we know it is a value var we don't have to check
 varIsBoundAtTopLevelInGlob :: Glob -> Var -> Bool
 varIsBoundAtTopLevelInGlob glob v
  = case varNameSpace v of
@@ -271,35 +271,35 @@ varIsBoundAtTopLevelInGlob glob v
 		, Map.member v $ globDataCtors	glob
 		, Map.member v $ globBind	glob
 		, Map.member v $ globClassMethods glob ]
-	
+
 	NameType
 	 -> 	Map.member v $ globData	glob
-		
+
 	NameRegion
-	 ->	Map.member v $ globRegion glob 
-	
+	 ->	Map.member v $ globRegion glob
+
 	NameEffect
 	 ->	Map.member v $ globEffect glob
-	
+
 	NameClosure	-> False
-	NameClass	-> False	
-			
-	_ -> panic stage 
+	NameClass	-> False
+
+	_ -> panic stage
 	   $ "varIsBoundAtTopLevelInGlob: not implemented for " % show (varNameSpace v)
-		
+
 
 -- As often want to do something to all the top level bindings in a glob,
 --	we define some useful transforms...
 
 -- | Apply a function to all PBinds in a `Glob`.
 mapBindsOfGlob :: (Top -> Top) -> Glob -> Glob
-mapBindsOfGlob f 
+mapBindsOfGlob f
 	= liftToBindsOfGlob (fmap f)
 
 
 -- | Apply a monadic computation to all the PBinds of a `Glob`.
 mapBindsOfGlobM :: Monad m => (Top -> m Top) -> Glob -> m Glob
-mapBindsOfGlobM f 
+mapBindsOfGlobM f
 	= liftToBindsOfGlobM (mapM f)
 
 
@@ -307,12 +307,12 @@ mapBindsOfGlobM f
 mapBindsOfGlobM_ :: Monad m => (Top -> m a) -> Glob -> m ()
 mapBindsOfGlobM_ f glob
  	= mapM_ f $ Map.elems $ globBind glob
-	
+
 
 -- These aren't exported, as we don't have any reason to use the 'Map' versions yet.
 -- | Apply a function to the binding map of a `Glob`.
-liftToBindsOfGlob 
-	:: (Map Var Top -> Map Var Top) 
+liftToBindsOfGlob
+	:: (Map Var Top -> Map Var Top)
 	-> Glob -> Glob
 
 liftToBindsOfGlob f glob
@@ -320,11 +320,11 @@ liftToBindsOfGlob f glob
 
 
 -- | Apply a monadic computation to the binding map of a `Glob`.
-liftToBindsOfGlobM 
+liftToBindsOfGlobM
 	:: Monad m
 	=> (Map Var Top -> m (Map Var Top))
 	-> Glob -> m Glob
-	
+
 liftToBindsOfGlobM f glob
  = do	binds'	<- f $ globBind glob
 	return	$ glob { globBind = binds' }

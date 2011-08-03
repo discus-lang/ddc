@@ -16,22 +16,22 @@ import Data.Maybe
 -- | Table containing functions we can apply to the various nodes of the tree.
 data TransEnvCore m env
 	= TransEnvCore
-	{ transEnvCoreT		:: Maybe (TransEnvType m env)	
-		
+	{ transEnvCoreT		:: Maybe (TransEnvType m env)
+
 	, transEnvCoreP		:: TransEnvUp   m env Top
 	, transEnvCoreA		:: TransEnvUp   m env Alt
 	, transEnvCoreG		:: TransEnvUp   m env Guard
-	, transEnvCoreW		:: TransEnvUp   m env Pat 
+	, transEnvCoreW		:: TransEnvUp   m env Pat
 	, transEnvCoreS		:: TransEnvUp   m env Stmt
 
 	, transEnvCoreX_down	:: TransEnvDown m env Exp
 	, transEnvCoreX_up	:: TransEnvUp   m env Exp
-	
+
 	, transEnvCoreV		:: TransEnvUp   m env Var }
 
 -- | Identity transformation table.
 transEnvCoreId :: Monad m => TransEnvCore m env
-transEnvCoreId 
+transEnvCoreId
 	= TransEnvCore
 	{ transEnvCoreT		= Nothing
 
@@ -45,7 +45,7 @@ transEnvCoreId
 	, transEnvCoreX_up	= transEnvUpId
 
 	, transEnvCoreV		= transEnvUpId }
-	
+
 
 -- Instances --------------------------------------------------------------------------------------
 
@@ -68,9 +68,9 @@ instance Monad m => TransEnv TransEnvCore m env Exp where
  transEnv table env xx
   = do	(xx', env')	<- transEnvCoreX_down table env xx
 	let down :: TransEnv TransEnvCore m env a => a -> m a
-	    down =  transEnv table env' 
+	    down =  transEnv table env'
 
-	transEnvCoreX_up table env' 
+	transEnvCoreX_up table env'
 	 =<< case xx' of
 		XNil			-> return xx'
 		XVar   v  t		-> liftM2 XVar      (down v)   (down t)
@@ -103,7 +103,7 @@ instance Monad m => TransEnv TransEnvCore m env Alt where
 
 	case aa of
 		AAlt gs x	-> liftM2 AAlt (down gs) (down x)
-		
+
 -- Guard
 instance Monad m => TransEnv TransEnvCore m env Guard where
  transEnv table env gg
@@ -133,7 +133,7 @@ instance Monad m => TransEnv TransEnvCore m env Label where
 	case ll of
 		LIndex{}	-> return ll
 		LVar v		-> liftM LVar (down v)
-		
+
 -- Var
 instance Monad m => TransEnv TransEnvCore m env Var where
  transEnv table env vv	= transEnvCoreV table env vv

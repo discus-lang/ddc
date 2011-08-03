@@ -26,19 +26,19 @@ type SimplifierPass
 	   , Stats)		--   Simplifier stats for this pass.
 
 
--- | Keep doing passes of the core simplifier until we stop making progress, 
+-- | Keep doing passes of the core simplifier until we stop making progress,
 --   that is, until we reach a fix-point.
-fixSimplifierPass 
+fixSimplifierPass
 	:: SimplifierPass	-- ^ The pass to run.
 	-> String		-- ^ Unique id for generating fresh variables.
 	-> Glob 		-- ^ Header glob
 	-> Glob			-- ^ Module glob
-	-> (Glob, [Stats])	
-	
+	-> (Glob, [Stats])
+
 fixSimplifierPass pass unique cgHeader cgModule_
  = go 0 [] cgModule_
  where	go (cycles :: Int) accStats cgModule
-	 = let	(cgModule', stats) 
+	 = let	(cgModule', stats)
 			= pass 	(unique ++ show cycles ++ "p")
 				cgHeader cgModule
 
@@ -52,38 +52,38 @@ simplifyPassTidy :: SimplifierPass
 simplifyPassTidy _unique _cgHeader cgModule
  = let	transXM
 	 = 	simplifyMatchX	  countMatch False
-	
-	(cgFinal, ruleCounts) 
-	 = runState 	(mapBindsOfGlobM (transformXM transXM) cgModule) 
+
+	(cgFinal, ruleCounts)
+	 = runState 	(mapBindsOfGlobM (transformXM transXM) cgModule)
 			ruleCountsZero
-			
+
    in	( cgFinal
 	, Stats	{ statsFloat		= Nothing
 		, statsRuleCounts	= ruleCounts })
-						
+
 
 -- | Do a pass of the simplifier
-simplifyPassAll :: SimplifierPass 
+simplifyPassAll :: SimplifierPass
 simplifyPassAll unique cgHeader cgModule
- = let	
+ = let
 	-- Extract a table of how many times each binding was used.
-	(table', cgFloat)	
+	(table', cgFloat)
 		= Float.floatBindsUseOfGlob cgModule
- 
+
 	-- All available rules.
 	table
 	 = transTableId
-	 { transX	=  	simplifyUnboxBoxX countBoxing 
+	 { transX	=  	simplifyUnboxBoxX countBoxing
 	 		>=>	simplifyMatchX    countMatch  True
 
 	 , transA	=	simplifyMatchA    countMatch }
- 
+
 	-- Run simplification rules.
 	(cgRules, ruleCounts)
-	  = runState 
-		(mapBindsOfGlobM (transZM table) cgFloat) 
-		ruleCountsZero	
-	
+	  = runState
+		(mapBindsOfGlobM (transZM table) cgFloat)
+		ruleCountsZero
+
 	-- | Resnip the tree to get back into a-normal form.
 	--   This also breaks up compond expressions which makes it more likely
 	--   that let-floating will succeed the next time around.
@@ -92,11 +92,10 @@ simplifyPassAll unique cgHeader cgModule
 			, Snip.tableModuleGlob		= cgModule
 			, Snip.tablePreserveTypes	= True }
 
-   	cgSnipped	= Snip.snipGlob snipTable ("x" ++ unique ++ "S") 
+   	cgSnipped	= Snip.snipGlob snipTable ("x" ++ unique ++ "S")
 			$ cgRules
-	
+
    in	( cgSnipped
 	, Stats	{ statsFloat      = Just $ Float.tableStats table'
 		, statsRuleCounts = ruleCounts })
-			
-		
+

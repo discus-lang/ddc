@@ -43,7 +43,7 @@ data Top
 
 	-- | A top level\/global region.
 	| PRegion
-		{ topRegionName 	:: Var 
+		{ topRegionName 	:: Var
 		, topRegionWitnesses 	:: [(Var, Type)] }
 
 	-- | A (value) binding imported from somewhere else.
@@ -51,7 +51,7 @@ data Top
 		{ topExternName		:: Var
 		, topExternType 	:: Type
 		, topExternOpType	:: Type	}
-	
+
 	-- | A data type and its constructors.
 	| PData	{ topDataDef		:: DataDef }
 
@@ -70,7 +70,7 @@ data Top
 	-- | A top-level binding.
 	| PBind
 		{ topBindName		:: Var
-		, topBindExp		:: Exp }	
+		, topBindExp		:: Exp }
 	deriving (Show, Eq)
 
 
@@ -144,7 +144,7 @@ data Pat
 
 	-- | Match against a constructor and bind its arguments.
 	--   Not all the arguments need to be bound.
-	| WCon	SourcePos 
+	| WCon	SourcePos
 		Var 			-- constructor name
 		[(Label, Var, Type)]	-- arguments.
 	deriving (Show, Eq)

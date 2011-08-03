@@ -41,23 +41,23 @@ instance Pretty Top PMode where
  ppr xx
   = case xx of
 	PBind v x
-	 -> v 	%! " =     " %> x 
+	 -> v 	%! " =     " %> x
 
 	PExtern v (TSum k []) _
 	 | k == kValue
 	 -> "extern"   %% v
-	
+
 	PExtern v tv to
 	 -> "extern"   %% v
 	 %! " =      " %> (tv %! ":$ " % to)
 
 	PData def
 	 -> ppr def
-	
+
 	PRegion vRegion vts
 	 -> pprHeadBlock ("region" %% vRegion %% "with ")
 		[ pv vWit %% "=" %% t | (vWit, t) <- vts ]
-	
+
 	PEffect v k
 	 -> "effect" %% v %% "::" %% k
 
@@ -65,28 +65,28 @@ instance Pretty Top PMode where
 	 -> "class"  %% v
 
 	PClassDict v vks sigs
-	 -> pprHeadBlockSep 
-		("class" %% v 
-			 %% hsep (map pprPClassDict_varKind vks) 
+	 -> pprHeadBlockSep
+		("class" %% v
+			 %% hsep (map pprPClassDict_varKind vks)
 			 %% "where" % nl)
 		[ v' % nl %> "::" %% prettyTypeSplit sig | (v', sig) <- sigs]
 
 	PClassInst v ts defs
 	 -> pprHeadBlockSep
-		("instance" %% v 
+		("instance" %% v
 			%% hsep (map prettyTypeParens ts))
 		[ v' % nl %> "= " %% x | (v', x) <- defs]
 
 
 pprPClassDict_varKind (v, k)
 	= parens $ v %% "::" %% k
-		
-	 
+
+
 -- Exp ----------------------------------------------------------------------------------------------
 instance Pretty Exp PMode where
  ppr xx
   = case xx of
-	XNil	
+	XNil
 	 -> ppr "@XNil"
 
 	XVar v TNil
@@ -101,20 +101,20 @@ instance Pretty Exp PMode where
 	 -> pprIfMode (elem PrettyCoreTypes)
 	 	(parens (ppr m %% "::" %% t))
 		(ppr m)
-		
+
 	XLAM v k e
 	 | prettyFoldXLAM
-	 -> let 
+	 -> let
 		-- split off vars with simple kinds
 	 	takeLAMs acc (XLAM v' k' x)
-	 	  | elem k' [kRegion, kEffect, kClosure, kValue]	
+	 	  | elem k' [kRegion, kEffect, kClosure, kValue]
 		  = takeLAMs (v' : acc) x
-	 
+
 	 	takeLAMs acc x
 		 = (x, reverse acc)
-	 
+
 	        (xRest, vsSimple) = takeLAMs [] xx
-	    
+
 	     in	case vsSimple of
 	    	 []	-> "/\\" %% parens (padL 8 (sb v) % " :: " % k)  %% "->" % nl %  e
 		 _	-> "/\\" %% punc ", " (map sb vsSimple)          %% "->" % nl % xRest
@@ -127,21 +127,21 @@ instance Pretty Exp PMode where
 	 -> "\\ " %% (parens $ padL 8 (sv v) %% "::" %% t)
 		  %% pEffClo %% "->"
 		  %! x
-	 
-	 where	pEffClo	
-		 | eff == tPure, clo == tEmpty	
+
+	 where	pEffClo
+		 | eff == tPure, clo == tEmpty
 		 = blank
-			
-		 | eff == tPure		
+
+		 | eff == tPure
 		 = nl % padR 18 "of" %% prettyTypeParens clo
 
-	 	 | clo == tEmpty		
+	 	 | clo == tEmpty
 		 = nl % padR 18 "of" %% prettyTypeParens eff
 
 		 | otherwise
-		 = nl % padR 18 "of" %% prettyTypeParens eff 
+		 = nl % padR 18 "of" %% prettyTypeParens eff
 		 %! replicate 15 ' '  % "    " % prettyTypeParens clo
-					 	 
+
 	XAPP x t
 	 | spaceApp t
 	 ->  x % nl %> prettyTypeParens t
@@ -150,8 +150,8 @@ instance Pretty Exp PMode where
 	 ->  x %% prettyTypeParens t
 
 	XApp e1 e2
-	 -> let	pprAppLeft x 
-	 	  | x =@= XVar{} 
+	 -> let	pprAppLeft x
+	 	  | x =@= XVar{}
 			|| x =@= XPrim{}
 			|| isXApp x		= ppr x
 		  | otherwise			= parens x
@@ -171,7 +171,7 @@ instance Pretty Exp PMode where
 
 	XMatch alts
 	 -> pprHeadBlockSep "match " alts
-	
+
 	XLit lit
 	 -> ppr lit
 
@@ -180,7 +180,7 @@ instance Pretty Exp PMode where
 	 			%% braces (punc "; "  [pv v' % " = " % t | (v', t) <- vts])
 				%% "in"
 			%! x
-	 
+
 
 
 spaceApp xx
@@ -199,7 +199,7 @@ prettyExpB x
 
 -- Prim --------------------------------------------------------------------------------------------
 instance Pretty Prim PMode where
- ppr xx 
+ ppr xx
   = case xx of
 	MForce			-> ppr "prim{Force}"
 	MBox   pt		-> ppr "prim{Box" 		% brackets pt % "}"
@@ -220,7 +220,7 @@ instance Pretty PrimCall PMode where
 	PrimCallSuperApply v i	-> ppr "prim{SuperApply " % i % "}" %% v
 	PrimCallCurry v i	-> ppr "prim{Curry " % i % "}"	%% v
 	PrimCallApply v		-> ppr "prim{Apply}" 		%% v
-	
+
 
 -- PrimOp ------------------------------------------------------------------------------------------
 instance Pretty PrimOp PMode where
@@ -229,7 +229,7 @@ instance Pretty PrimOp PMode where
 
 -- PrimCoerce -------------------------------------------------------------------------------------
 instance Pretty (PrimCoerce Type) PMode where
- ppr xx 
+ ppr xx
   = case xx of
 	PrimCoercePtr t1 t2	-> ppr "prim{CoercePtr"	% brackets (t1  % "|" % t2)  % "}"
 	PrimCoercePtrToAddr t1	-> ppr "prim{CoercePtrToAddr" 	% brackets t1 % "}"
@@ -257,16 +257,16 @@ instance Pretty Stmt PMode where
 	SBind (Just v) x
 	 | isXLambda x
 	 , isXLAMBDA x
-	 -> sv v %! " =     " %> x 
+	 -> sv v %! " =     " %> x
 
 	 | length (pprStrPlain v) < 12
 	 , not $ isXLambda x
 	 , not $ isXLAMBDA x
 	 , not $ isXTau x
 	 -> padL 12 (sv v) %% "=" %> x
-	 
+
 	 | otherwise
-	 -> sv v %> "=" %% x  
+	 -> sv v %> "=" %% x
 
 -- Alt --------------------------------------------------------------------------------------------
 instance Pretty Alt PMode where
@@ -291,19 +291,19 @@ instance Pretty Guard PMode where
 
 -- Pat ---------------------------------------------------------------------------------------------
 instance Pretty Pat PMode where
- ppr xx 
+ ppr xx
   = case xx of
 	WVar v		-> pv  v
   	WLit _ c	-> ppr c
 	WCon _ v []	-> pv  v
 
 	WCon _ v binds
-	 -> pv v  %% "{" 
+	 -> pv v  %% "{"
 		  %! indent (punc (semi % nl) (map prettyLVT binds) % semi) %% "}"
 
 
 prettyLVT (label, var, t)
-	=  "." %  label 
+	=  "." %  label
 	%% "=" %% padL 8 (sv var) %> " ::" %% t
 
 

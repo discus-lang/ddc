@@ -28,7 +28,7 @@ stage		= "DDC.Core.Float"
 
 -- | Calculate usage information and float the binds in this tree
 floatBindsUseOfGlob
-	:: Glob 
+	:: Glob
 	-> (Table, Glob)
 
 floatBindsUseOfGlob cgModule
@@ -43,37 +43,37 @@ floatBindsUseOfGlob cgModule
 
 -- | Float the binds in this tree
 floatBindsOfGlob
-	:: Table 
+	:: Table
 	-> Glob
 	-> (Table, Glob)
 
 floatBindsOfGlob table cgModule
  = let	(table', vpsBind')
-		= mapAccumL (floatBindsP 0 shareZero) table 
-		$ Map.toList 
+		= mapAccumL (floatBindsP 0 shareZero) table
+		$ Map.toList
 		$ globBind cgModule
 
    in	( table'
 	, cgModule { globBind = Map.fromList vpsBind' })
-   
+
 
 -- Top ---------------------------------------------------------------------------------------------
-floatBindsP 
-	:: Level 
-	-> Share 
-	-> Table 
+floatBindsP
+	:: Level
+	-> Share
+	-> Table
 	-> (Var, Top)
 	-> (Table, (Var, Top))
 
 floatBindsP level share table (v1, pp)
  = case pp of
- 	PBind v2 x	
+ 	PBind v2 x
 	 -> let	(tt', x')	= floatBindsX level share table x
 	    in	(tt', (v1, PBind v2 x'))
 
 	_	-> (table, (v1, pp))
-	
-	
+
+
 -- Exp ---------------------------------------------------------------------------------------------
 floatBindsX :: Level -> Share -> Table -> Exp -> (Table, Exp)
 floatBindsX level share tt xx
@@ -81,7 +81,7 @@ floatBindsX level share tt xx
 	XNil -> (tt, XNil)
 
 	-- check for constant regions on the way down
- 	XLAM b k x	
+ 	XLAM b k x
 	 -> let tt2		= slurpWitnessKind tt k
 		(tt3, x')	= floatBindsX level share tt2 x
 	    in	(tt3, XLAM b k x')
@@ -90,28 +90,28 @@ floatBindsX level share tt xx
 	XLocal v vts x
 	 -> let ks	= map (kindOfType . snd) vts
 	 	tt2	= foldl' slurpWitnessKind tt ks
-		
+
 		(tt3, x')	= floatBindsX level share tt2 x
 	    in	(tt3, XLocal v vts x')
-	
+
 	-- When we hit a variable, check to see if there is a binding for it in the table
 	XVar v_ t
 	 -> let v	= sinkVar share v_
 	    in  case Map.lookup v (tableBinds tt) of
-		 	Just (x, _)	
+		 	Just (x, _)
 			 -> let tt2	= tt { tableBinds = Map.delete v (tableBinds tt) }
 			    in	floatBindsX level share tt2 x
-	
+
 			Nothing		-> (tt, XVar v t)
 
 	XPrim{}
 	 -> 	(tt, xx)
-	
 
-	XLam v t x eff clo	
+
+	XLam v t x eff clo
 	 -> let -- increase the level number when we pass through a value lambda
 		level'	= level + 1
-		
+
 		-- don't carry shared expressions into lambdas.. don't want to change the closure properties
 		share'	= shareZero
 
@@ -124,10 +124,10 @@ floatBindsX level share tt xx
 
 	XDo{}			-> floatBindsXDo level share tt xx
 
-	XMatch alts		
+	XMatch alts
 	 -> let	(tt', alts')	= mapAccumL (floatBindsA level share) tt alts
 	    in  (tt', XMatch alts')
-	    
+
 	XAPP x t
 	 -> let (tt', x')	= floatBindsX level share tt x
 	    in	(tt', XAPP x' t)
@@ -152,7 +152,7 @@ floatBindsA level share tt (AAlt gs x)
  = let	(tt2, gs')	= mapAccumL (floatBindsG level share) tt gs
  	(tt3, x')	= floatBindsX level share tt2 x
    in	(tt3, AAlt gs' x')
-   
+
 
 -- Guard -------------------------------------------------------------------------------------------
 floatBindsG :: Level -> Share -> Table -> Guard -> (Table, Guard)
@@ -165,7 +165,7 @@ floatBindsG level share tt (GExp ws x)
 --	walk forwards across the statements
 --	Pick all bindings that aren't marked as NoDups
 --	Before each statement, drop any carried bindings that conflict with its visible effects
---	
+--
 -- TODO: The effects of bindings in the program being walked over are not cached.
 --	 If we have a deeply nested program, then the time it takes to recalculate these effects
 --	 might start to hurt. Rejig Core.Recon to drop XTau to remember these.
@@ -200,7 +200,7 @@ floatBindsS :: Level -> Share -> Table -> Stmt -> (Share, Table, [Stmt])
 floatBindsS level share table	(SBind Nothing x)
  = let	(table', x')	= floatBindsX level share table x
    in	(share, table', [SBind Nothing x'])
-   
+
 floatBindsS level share table_	(SBind (Just vBind) xBind_)
 
 	-- remember forcings that we haven't seen before
@@ -209,14 +209,14 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 	, Nothing		<- Map.lookup v2 (shareForcings share)
 	= let	share'		= share { shareForcings = Map.insert v2 vBind (shareForcings share) }
 	  in	(share', table, [SBind (Just vBind) xBind])
-	  
+
 	-- replace calls to force with ones that we've seen before
 	| XApp (XPrim MForce _) (XVar v2 _)	<- xBind
 	, Just v3	<- Map.lookup v2 (shareForcings share)
 	= let 	share'	= share { shareVarSub   = Map.insert vBind v3 (shareVarSub share) }
-		table'	= (tableStats_ ## statsSharedForcings_ <#> \s -> vBind : s) table	
+		table'	= (tableStats_ ## statsSharedForcings_ <#> \s -> vBind : s) table
 	  in	(share', table', [])
-	  
+
 	-- remember unboxings we haven't seen before
 	-- only move pure unboxings for now.
 	| [Left (XPrim MUnbox{} _), Right (TVar kR (UVar vR)), Left (XVar v2 _)] <- flattenApps xBind
@@ -225,14 +225,14 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 	, Set.member vR (tableConstRegions table)
 	= let	share'		= share { shareUnboxings = Map.insert v2 (vBind, vR) (shareUnboxings share) }
 	  in	(share', table, [SBind (Just vBind) xBind])
-	  
+
 	-- replace calls to unbox with ones we've seen before
 	| [Left (XPrim MUnbox{} _), Right (TVar kR (UVar vR1)), Left (XVar v2 _)]	<- flattenApps xBind
 	, kR	== kRegion
 	, Just (v3, vR2) <- Map.lookup v2 (shareUnboxings share)
 	, vR1 == vR2
 	= let	share'		= share { shareVarSub	= Map.insert vBind v3 (shareVarSub share) }
-		table'	= (tableStats_ ## statsSharedUnboxings_ <#> \s -> vBind : s) table	
+		table'	= (tableStats_ ## statsSharedUnboxings_ <#> \s -> vBind : s) table
 	  in	(share', table', [])
 
 	-- some other expression
@@ -241,14 +241,14 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 		effBind		= checkedEffectOfOpenExp (stage ++ ".floatBindsS") xBind
 
 		-- reduce the effect using information about what things are const / pure
-		effReduced	= reduceEffect 
+		effReduced	= reduceEffect
 					(tableConstRegions table)
 					(tableConstTypes table)
 					(tablePureEffects table)
 					effBind
 
 		-- lookup how this binding is used
-		(mUse :: Maybe [Use])	
+		(mUse :: Maybe [Use])
 			= Map.lookup vBind (tableBoundUse table)
 
 		-- decide whether its ok to move it
@@ -262,7 +262,7 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 
 				-- add the statement to the table
 				tt3	= tt2 { tableBinds = Map.insert vBind (xStripped, effReduced) (tableBinds tt2) }
-		
+
 			  in 	(share, tt3, [])
 
 			-- not ok to move this binding
@@ -272,4 +272,4 @@ floatBindsS level share table_	(SBind (Just vBind) xBind_)
 
 	-- do the initial decent into the rhs
 	where	(table, xBind)	= floatBindsX level share table_ xBind_
-	
+
