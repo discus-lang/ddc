@@ -10,11 +10,27 @@ bin/war : $(war_hs)
 # -- Running tests --------------------------------------------------------------------------------
 # .. for the war against bugs.
 
-# Run the testsuite interactively
+# Run the testsuite with the C and LLVM backends interactively
 .PHONY 	: war
 war : bin/ddc runtime bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
+	bin/war test -j $(THREADS) \
+		+compway std \
+		+compway llvm -fvia-llvm
+	@echo
+
+# Run the testsuite with the C backend interactively
+.PHONY 	: cwar
+cwar : bin/ddc runtime bin/war library/Prelude.di
+	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS)
+	@echo
+
+# Run the testsuite with the LLVM backend interactively
+.PHONY 	: llvmwar
+llvmwar : bin/ddc runtime bin/war library/Prelude.di
+	@echo "* Running tests --------------------------------------------------------------------"
+	bin/war test -j $(THREADS) +compway llvm -fvia-llvm
 	@echo
 
 # Run tests in all ways interactively
