@@ -363,36 +363,28 @@ toSeaApps parts
 	--   We call getOpTypeVar, which inspects the original definition of each super for
 	--   locally defined ones, or returns the operational type from the interface files
 	--   for imported ones.
-	C.XPrim (C.MCall (C.PrimCallTail vSuper)) _ : args
+	C.XPrim (C.MCall (C.PrimCallTail vSuper)) tSuper : args
 	 -> do	args'		<- mapM toSeaX args
-		Just tSuper	<- getOpTypeOfVar vSuper
 		return	$ E.XPrim (E.MApp E.PAppTailCall)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
-
-	C.XPrim (C.MCall (C.PrimCallSuper vSuper)) _ : [C.XVar _ (T.TCon (T.TyConData tname _ _))]
+	C.XPrim (C.MCall (C.PrimCallSuper vSuper)) tSuper : [C.XVar _ (T.TCon (T.TyConData tname _ _))]
 	 | varName tname == "Void#"
-	 -> do
-		Just tSuper	<- getOpTypeOfVar vSuper
-	    	return	$ E.XPrim (E.MApp E.PAppCall)
+	 ->	return	$ E.XPrim (E.MApp E.PAppCall)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : [])
 
-
-	C.XPrim (C.MCall (C.PrimCallSuper vSuper)) _ : args
+	C.XPrim (C.MCall (C.PrimCallSuper vSuper)) tSuper : args
 	 -> do	args'		<- mapM toSeaX args
-		Just tSuper	<- getOpTypeOfVar vSuper
 	    	return	$ E.XPrim (E.MApp E.PAppCall)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
-	C.XPrim (C.MCall (C.PrimCallSuperApply vSuper superA)) _ : args
+	C.XPrim (C.MCall (C.PrimCallSuperApply vSuper superA)) tSuper : args
 	 -> do	args'		<- mapM toSeaX args
-		Just tSuper	<- getOpTypeOfVar vSuper
 		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA)
 				  (E.XVar (E.NSuper vSuper) (toSeaSuperT tSuper) : args')
 
-	C.XPrim (C.MCall (C.PrimCallCurry vSuper superA)) _ : args
-	 -> do	Just tSuper	<- getOpTypeOfVar vSuper
-		if  any isUnboxedExp args
+	C.XPrim (C.MCall (C.PrimCallCurry vSuper superA)) tSuper : args
+	 -> if  any isUnboxedExp args
                  then panic stage
 				$ "Partial application of function to unboxed args at "
  				% prettyPos vSuper
