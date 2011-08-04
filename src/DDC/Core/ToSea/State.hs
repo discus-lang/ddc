@@ -4,7 +4,7 @@ module DDC.Core.ToSea.State
 	, SeaM
 	, newVarN
 	, slurpWitnessKind
-	)
+	, getOpTypeOfVar)
 where
 import DDC.Main.Pretty
 import DDC.Var
@@ -25,8 +25,8 @@ data SeaS
 	, stateCafVars		:: Set Var
 
 	  -- | regions known to be direct
-	, stateDirectRegions	:: Set Var
-
+	, stateDirectRegions	:: Set Var 
+	
 	 -- | the original header glob
 	, stateHeaderGlob	:: C.Glob
 
@@ -63,3 +63,13 @@ slurpWitnessKind kk
 
 	_ -> return ()
 
+-- | Get the operational type of some top level variable.
+getOpTypeOfVar :: Var -> SeaM (Maybe T.Type)
+getOpTypeOfVar v
+ = do	cgHeader	<- gets stateHeaderGlob
+	cgModule	<- gets stateModuleGlob
+	
+	return	$ takeFirstJust 
+		[ C.opTypeFromGlob v cgHeader
+		, C.opTypeFromGlob v cgModule ]
+	
