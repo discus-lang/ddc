@@ -247,7 +247,6 @@ Proof.
 Qed. 
 
 
-(*
 (* We can push a new type onto the environment stack provided
    we lift references to existing types across the new one. *)
 Lemma type_tyenv_weaken1
@@ -280,5 +279,3 @@ Proof.
    rewrite <- liftXX_plus.
    eapply type_tyenv_weaken1. auto. 
 Qed.
-
-*)
