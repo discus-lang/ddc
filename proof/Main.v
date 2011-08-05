@@ -14,6 +14,9 @@ Require Import DDC.Language.SimpleRef.
 (* STLC with Algebraic Data Types. *)
 Require Import DDC.Language.SimpleData.
 
+(* STLC with work and space resource types *)
+Require Import DDC.Language.SimpleResource.
+
 (* System-F. Like STLC, but with type abstraction and application. *)
 Require Import DDC.Language.SystemF.
 
