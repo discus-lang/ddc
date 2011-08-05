@@ -7,7 +7,6 @@ Require Export DDC.Language.SystemF2Data.Exp.
 
 
 (* Type Judgement assigns a type to an expression. *)
-(* TODO: Allow data constructors to have polymorphics types *)
 Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) : exp -> ty -> Prop :=
  (* Variables *)
  | TYVar 
@@ -48,6 +47,7 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) : exp -> ty -> Prop :=
    ,  DEFSOK ds
    -> getTypeDef tc ds = Some (DefDataType tc ks       dcs)
    -> getDataDef dc ds = Some (DefData     dc tsFields tc)
+   -> Forall2 (KIND ke) tsParam ks
    -> Forall2 (TYPE ds ke te) xs (map (substTTs 0 tsParam) tsFields)
    -> TYPE ds ke te (XCon dc tsParam xs) (makeTApps (TCon tc) tsParam)
 
@@ -115,36 +115,52 @@ Proof.
   simpl in H4. inverts H4.
   assert (DEFOK ds (DefData d tsFields TyConFun)).
    eapply getDataDef_ok; eauto.
-  inverts H0.
-  simpl in H10. false.
+  inverts H0. nope.
 Qed.
 Hint Resolve value_lam.
 
 
 (********************************************************************)
 (* A well typed expression is well formed *)
-(*
+
 Theorem type_wfX
  :  forall ds ke te x t
  ,  TYPE ds ke te x t
- -> wfX ke te x.
+ -> wfX (length ke) (length te) x.
 Proof.
  intros. gen ds ke te t.
  induction x using exp_mutind with 
   (PA := fun a => forall ds ke te t1 t2
       ,  TYPEA ds ke te a t1 t2 
-      -> wfA ke te a)
+      -> wfA (length ke) (length te) a)
   ; intros; inverts_type; eauto.
 
+ Case "XVar".
+  eapply WfX_XVar. 
+   eapply get_length_less. eauto.
+
+ Case "XLAM".
+  eapply WfX_XLAM.
+  apply IHx in H1.
+  assert (length (ke :> KStar) = S (length ke)).
+   auto. rewrite H in H1.
+   rewrite <- length_liftTE in H1. auto.
+
+ Case "XLam".
+  eapply WfX_XLam.
+  eauto.
+  apply IHx in H4. 
+   assert (length (te :> t) = S (length te)).
+    auto. rewrite H in H4. auto.
+  
  Case "XCon".
   apply WfX_XCon.
   nforall. intros.
   eapply Forall2_exists_left in H8; eauto.
-  dest y.
-   skip. skip. (* types in data def are well formed *)
-   nforall.
-    intros. eapply H. auto.
-    skip. (* ok, x in t *)
+  dest y. eauto.
+   nforall. intros.
+   eapply Forall2_exists_left in H9; eauto. dest y.
+   eapply H; eauto.
 
  Case "XCase".
   eapply WfX_XCase.
@@ -155,14 +171,16 @@ Proof.
   destruct dc.
   inverts H.
   eapply WfA_AAlt. eauto.
-  (* no. change wfX so it only needs to be wf under an environment
-         of a specific length, not wf under a specific environment.
-         The wf judgement doesn't now the true environment, as this
-         depends on the object type *)
+  apply IHx in H6.
+  rewrite app_length in H6.
+  rewrite map_length in H6.
+  rewrite plus_comm in H6.
+  auto.   
 Qed.
 Hint Resolve type_wfX.
 
 
+(*
 (* Weakening Type Env in Type Judgement.
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across

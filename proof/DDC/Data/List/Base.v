@@ -149,6 +149,17 @@ Qed.
 Hint Resolve app_snoc.
 
 
+Lemma app_length
+ :  forall {A} (l1: list A) l2
+ ,  length (l1 ++ l2) = length l1 + length l2.
+Proof.
+ intros.
+ induction l1.
+  auto.
+  simpl. int.
+Qed.
+
+
 (********************************************************************)
 (** Lemmas: get *)
 
