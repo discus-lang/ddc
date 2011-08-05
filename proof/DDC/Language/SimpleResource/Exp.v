@@ -22,8 +22,10 @@ Inductive exp : Type :=
 
  | XClo  : forall env, env -> exp -> exp -> exp.
 
+
 Hint Constructors exp.
 
+(*
 Fixpoint vectX (xx : exp) : exp := 
  match xx  with
  | XInt  k     => XInt k
@@ -39,7 +41,7 @@ Fixpoint vectX (xx : exp) : exp :=
 
 use implicit lifting context.
  always keep current context on stack d
-
+*)
 
 (* Weak normal forms. *)
 Inductive wnfX : exp -> Prop :=
