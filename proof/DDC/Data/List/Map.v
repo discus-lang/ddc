@@ -14,6 +14,17 @@ Lemma map_rewind
 Proof. auto. Qed.
 
 
+Lemma map_snoc
+ :  forall {A B} (f: A -> B) x xs
+ ,  map f (snoc x xs) = snoc (f x) (map f xs).
+Proof.
+ intros.
+ induction xs.
+  simpl. auto.
+  simpl. rewrite IHxs. auto.
+Qed.
+
+
 (* Applying a function to all the elements of a list and getting
    one of the results is the same as getting the original value
    and applying the function to just that value. *)

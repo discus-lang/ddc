@@ -90,6 +90,28 @@ Proof.
 Qed.
 
 
+Lemma dcOfAlt_liftTA
+ : forall d a
+ , dcOfAlt (liftTA d a) = dcOfAlt a.
+Proof.
+ intros. destruct a. destruct d0. auto.
+Qed.
+
+
+Lemma dcOfAlt_liftTA_map
+ :  forall ix aa
+ ,  map dcOfAlt (map (liftTA ix) aa)
+ =  map dcOfAlt aa.
+Proof.
+ intros.
+ induction aa.
+  auto.
+  simpl.
+   f_equal. apply dcOfAlt_liftTA.
+   auto.
+Qed.
+
+
 (* When we lift an expression by zero places,
    then the expression is unchanged. *)
 Lemma liftXX_zero

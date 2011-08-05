@@ -70,21 +70,24 @@ Proof.
 Qed.
 
 
-(* Break apart a type application into the constructor type
-   and a list of argument types. *)
-Fixpoint takeTApps (tt: ty) : (ty * list ty) :=
- match tt with
- | TApp t1 t2 => match takeTApps t1 with
-                 | (t11, t1s) => (t1, snoc t2 t1s )
-                 end
- | _          => (tt, nil)
- end.
-
 Fixpoint takeTCon (tt: ty) : ty :=
  match tt with 
  | TApp t1 t2 => takeTCon t1
  | _          => tt
  end.
+
+Fixpoint takeTArgs (tt: ty) : list ty :=
+ match tt with 
+ | TApp t1 t2 => snoc t2 (takeTArgs t1)
+ | _          => cons tt nil
+ end.
+
+
+(* Break apart a type application into the constructor type
+   and a list of argument types. *)
+Definition takeTApps (tt: ty) : (ty * list ty) 
+ := (takeTCon tt, takeTArgs tt).
+
 
 
 Lemma takeTCon_makeTApps
@@ -111,10 +114,5 @@ Proof.
   eapply IHts in H.
   simpl in H. auto.
 Qed.
-
-
-
-
-
 
 

@@ -31,6 +31,40 @@ Ltac lift_cases
 
 
 (********************************************************************)
+Lemma getCtorOfType_liftTT
+ :  forall d ix t 
+ ,  getCtorOfType (liftTT d ix t) = getCtorOfType t.
+Proof.
+ intros.
+ induction t; try burn.
+
+ Case "TVar".
+  simpl. lift_cases; auto.
+Qed.  
+
+
+Lemma liftTT_takeTCon
+ :  forall tt d ix
+ ,  liftTT d ix (takeTCon tt) = takeTCon (liftTT d ix tt).
+Proof.
+ intros.
+ induction tt; intros; auto.
+ simpl. lift_cases; auto.
+Qed.
+
+
+Lemma liftTT_takeTArgs
+ : forall tt d ix
+ , map (liftTT d ix) (takeTArgs tt) = takeTArgs (liftTT d ix tt).
+Proof.
+ intros.
+ induction tt; intros; auto.
+ simpl. lift_cases; auto.
+ simpl. rewrite map_snoc. 
+  f_equal. auto.
+Qed. 
+
+
 Lemma liftTT_makeTApps 
  :  forall n d t1 ts
  ,  liftTT n d (makeTApps t1 ts)

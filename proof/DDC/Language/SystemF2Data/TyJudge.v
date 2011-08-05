@@ -92,7 +92,7 @@ Ltac inverts_type :=
    | [ H: TYPE  _ _ _ (XApp  _ _)   _    |- _ ] => inverts H
    | [ H: TYPE  _ _ _ (XCon  _ _ _) _    |- _ ] => inverts H
    | [ H: TYPE  _ _ _ (XCase _ _)   _    |- _ ] => inverts H
-   | [ H: TYPEA _ _ _ (AAlt _ _ _)  _ _  |- _ ] => inverts H
+   | [ H: TYPEA _ _ _ (AAlt _ _)    _ _  |- _ ] => inverts H
    end).
 
 
@@ -170,7 +170,6 @@ Proof.
 
  Case "XAlt".
   destruct dc.
-  inverts H.
   eapply WfA_AAlt. eauto.
   apply IHx in H7.
   rewrite app_length in H7.
@@ -244,9 +243,31 @@ Proof.
     auto.
 
  Case "XCase".
-  admit.
+  eapply TYCase; eauto.
+  apply  Forall_map.
+  eapply Forall_impl_in; eauto.
+   intros. nforall.
+   eapply H. 
+    auto.
+    simpl in H1. auto.
+    rewrite getCtorOfType_liftTT. auto.
+    nforall. intros.
+     apply H8 in H0.
+     rewrite dcOfAlt_liftTA_map. auto.
 
  Case "XAlt".
+  eapply TYAlt; eauto.
+  unfold takeTApps in H4. invert H4.
+  intros. unfold takeTApps.
+   f_equal; eauto.
+  
+  (* need lemma *)
+  (*
+  assert ( forall ts, liftTE ix  te >< map (substTTs 0 ts) tsFields
+         = liftTE ix (te >< map (substTTs 0 ts) tsFields)).
+  admit.
+  eapply IHx1 in H7.
+   rewrite H. eauto. *)
   admit.
 Qed.   
 
@@ -308,7 +329,6 @@ Proof.
 
  Case "XAlt".
   destruct dc.
-  inverts H.
   eapply TYAlt; eauto.
   rewrite insert_app.
   rewrite map_length.
