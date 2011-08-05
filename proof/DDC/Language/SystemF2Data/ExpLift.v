@@ -17,7 +17,7 @@ Fixpoint liftTX (d: nat) (xx: exp) : exp :=
   => XAPP (liftTX d x)  (liftTT 1 d t)
  
   |  XLam t x   
-  => XLam (liftTT d 1 t)  (liftTX d x)
+  => XLam (liftTT 1 d t)  (liftTX d x)
 
   |  XApp x1 x2
   => XApp (liftTX d x1) (liftTX d x2)

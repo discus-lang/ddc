@@ -31,6 +31,19 @@ Ltac lift_cases
 
 
 (********************************************************************)
+Lemma liftTT_makeTApps 
+ :  forall n d t1 ts
+ ,  liftTT n d (makeTApps t1 ts)
+ =  makeTApps (liftTT n d t1) (map (liftTT n d) ts). 
+Proof.
+ intros. gen t1.
+ induction ts; intros.
+  auto.
+  simpl. rewrite IHts. auto.
+Qed.
+
+
+(********************************************************************)
 (* Changing the order of lifting. *)
 Lemma liftTT_liftTT
  :  forall d d' t
@@ -47,4 +60,3 @@ Proof.
   assert (S (d + d') = (S d) + d'). omega. rewrite H. 
   rewrite IHt. auto.
 Qed.  
-

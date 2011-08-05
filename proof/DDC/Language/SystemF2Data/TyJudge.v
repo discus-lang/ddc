@@ -181,7 +181,77 @@ Qed.
 Hint Resolve type_wfX.
 
 
+(********************************************************************)
+(* Weakening Kind Env in Type Judgement. *)
+Lemma type_kienv_insert
+ :  forall ix ds ke te x1 t1 k2
+ ,  TYPE ds ke                te             x1             t1
+ -> TYPE ds (insert ix k2 ke) (liftTE ix te) (liftTX ix x1) (liftTT 1 ix t1).
+Proof.
+ intros. gen ix ds ke te t1 k2.
+ induction x1 using exp_mutind with 
+  (PA := fun a => forall ix ds ke te k2 t3 t4
+               ,  TYPEA ds ke te a t3 t4 
+               -> TYPEA ds (insert ix k2 ke) (liftTE ix te) 
+                           (liftTA ix a)     (liftTT 1 ix t3) (liftTT 1 ix t4))
+  ; intros; inverts_type; simpl; eauto.
 
+ Case "XVar".
+  apply TYVar.
+  apply get_map; auto.
+
+ Case "XLAM".
+  eapply TYLAM. 
+  rewrite insert_rewind. 
+   rewrite (liftTE_liftTE 0 ix).
+   apply IHx1. auto.
+
+ Case "XAPP".
+  rewrite (liftTT_substTT' 0 ix). simpl.
+  eapply TYAPP.
+  eapply (IHx1 ix) in H2. simpl in H2. eauto.
+  apply kind_kienv_insert. auto.
+
+ Case "XLam".
+  apply TYLam.
+   apply kind_kienv_insert. auto.
+   assert ( liftTE ix te :> liftTT 1 ix t
+          = liftTE ix (te :> t)). auto. rewrite H. clear H.
+   apply IHx1. auto.
+
+ Case "XApp".
+  eapply TYApp.
+   eapply IHx1_1 in H2. simpl in H2. eauto.
+   eapply IHx1_2 in H4. eauto.
+
+ Case "XCon".
+  rewrite liftTT_makeTApps.
+  eapply TYCon; eauto.
+   eapply Forall2_map_left.
+   eapply Forall2_impl.
+   intros.
+   eapply kind_kienv_insert. eauto. eauto.
+   apply Forall2_map.
+   apply Forall2_map_right' in H9.
+   eapply Forall2_impl_in; eauto.
+    simpl. intros.
+    nforall.
+    lets D: H ix H2; auto.
+    assert ( liftTT 1 ix (substTTs 0 ts y)
+           = substTTs 0 (map (liftTT 1 ix) ts) y).
+     admit.                                          (* need lemma *)
+    rewrite <- H3.
+    auto.
+
+ Case "XCase".
+  admit.
+
+ Case "XAlt".
+  admit.
+Qed.   
+
+
+(********************************************************************)
 (* Weakening Type Env in Type Judgement.
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across

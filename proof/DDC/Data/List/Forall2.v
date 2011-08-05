@@ -170,6 +170,22 @@ Qed.
 Hint Resolve Forall2_exists_right.
 
 
+Lemma Forall2_map
+ : forall {A B C D: Type}
+          (R1: B -> D -> Prop)
+          (f:  A -> B)
+          (g:  C -> D)
+          (xs: list A) (ys: list C)
+ ,  Forall2 (fun x y => R1 (f x) (g y)) xs ys
+ -> Forall2 R1 (map f xs) (map g ys).
+Proof.
+ intros.
+ induction H.
+  apply Forall2_nil.
+  simpl. int.
+Qed.
+
+
 Lemma Forall2_map_left
  : forall {A B C: Type}
           (R1: B -> C -> Prop)
@@ -181,7 +197,27 @@ Proof.
  intros.
  induction H.
   apply Forall2_nil.
-  simpl. intuition.
+  simpl. int.
+Qed.
+
+
+Lemma Forall2_map_left'
+ : forall {A B C: Type}
+          (R1: B -> C -> Prop)
+          (f:  A -> B)
+          (xs: list A) (ys: list C)
+ ,  Forall2 R1 (map f xs) ys
+ -> Forall2 (fun x y => R1 (f x) y) xs ys.
+Proof.
+ intros. gen ys.
+ induction xs; intros.
+  destruct ys.
+   auto.
+   simpl in H. nope.
+  destruct ys.
+   simpl in H. nope.
+   simpl in H. inverts H.
+   apply Forall2_cons. auto. auto.
 Qed.
 
 
@@ -196,7 +232,27 @@ Proof.
  intros.
  induction H.
   apply Forall2_nil.
-  simpl. intuition.
+  simpl. int.
+Qed.
+
+
+Lemma Forall2_map_right'
+ : forall {A B C: Type}
+          (R1: A -> C -> Prop)
+          (f:  B -> C)
+          (xs: list A) (ys: list B)
+ ,  Forall2 R1 xs (map f ys)
+ -> Forall2 (fun x y => R1 x (f y)) xs ys.
+Proof.
+ intros. gen xs.
+ induction ys; intros.
+  destruct xs.
+   auto.
+   simpl in H. nope.
+  destruct xs.
+   simpl in H. nope.
+   simpl in H. inverts H.
+   apply Forall2_cons. auto. auto.
 Qed.
 
 
@@ -282,5 +338,4 @@ Proof.
    simpl in H2.
    eauto.
 Qed.
-
 
