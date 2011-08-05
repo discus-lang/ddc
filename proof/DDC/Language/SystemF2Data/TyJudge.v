@@ -44,12 +44,12 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) : exp -> ty -> Prop :=
 
  (* Data Constructors *)
  | TYCon 
-   :  forall tc (ks: list ki) (ts: list ty) (xs: list exp) dc dcs
+   :  forall tc (ks: list ki) tsFields tsParam xs dc dcs
    ,  DEFSOK ds
-   -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
-   -> getDataDef dc ds = Some (DefData     dc ts tc)
-   -> Forall2 (TYPE ds ke te) xs ts
-   -> TYPE ds ke te (XCon dc ts xs) (makeTApps (TCon tc) ts)
+   -> getTypeDef tc ds = Some (DefDataType tc ks       dcs)
+   -> getDataDef dc ds = Some (DefData     dc tsFields tc)
+   -> Forall2 (TYPE ds ke te) xs (map (substTTs 0 tsParam) tsFields)
+   -> TYPE ds ke te (XCon dc tsParam xs) (makeTApps (TCon tc) tsParam)
 
  (* Case Expressions *)
  | TYCase

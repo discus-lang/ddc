@@ -35,6 +35,19 @@ Fixpoint substTTs (d: nat) (us: list ty) (tt: ty) :=
 
 
 (********************************************************************)
+Lemma substTT_makeTApps 
+ :  forall d t2 t1 ts
+ ,  substTT d t2 (makeTApps t1 ts) 
+ =  makeTApps (substTT d t2 t1) (map (substTT d t2) ts).
+Proof.
+ intros. gen d t2 t1.
+ induction ts; intros.
+  auto.
+  simpl. rewrite IHts. auto.
+Qed.
+
+
+(********************************************************************)
 (* If we lift at depth d, this creates an empty space and
    substituting into it doens't do anything. *)
 Lemma substTT_liftTT

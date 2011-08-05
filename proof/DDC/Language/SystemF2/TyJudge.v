@@ -195,4 +195,3 @@ Proof.
   apply type_tyenv_insert. auto.
 Qed.
 
-

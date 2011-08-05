@@ -1,12 +1,30 @@
 
 Require Export DDC.Language.SystemF2.Ki.
 
+
+(********************************************************************)
 (* Type Constructors. *)
 Inductive tycon : Type :=
  | TyConFun  : tycon
  | TyConData : nat   -> ki -> tycon.
 Hint Constructors tycon.
 
+Definition isTyConFun  (tc: tycon) : Prop :=
+ match tc with
+ | TyConFun      => True
+ | TyConData _ _ => False
+ end.
+Hint Unfold isTyConFun.
+
+Definition isTyConData (tc: tycon) : Prop :=
+ match tc with
+ | TyConFun      => False
+ | TyConData _ _ => True
+ end.
+Hint Unfold isTyConData.
+
+
+(********************************************************************)
 (* Type Expressions. *)
 Inductive ty  : Type :=
  | TCon      : tycon -> ty
