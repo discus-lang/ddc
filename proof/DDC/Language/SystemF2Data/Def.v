@@ -165,7 +165,7 @@ Inductive DEFOK : list def -> def -> Prop :=
 
  (* Check that a data constructor definition is ok. *)
  | DefOkData
-   :  forall tc ds ks dc dcs tsArgs
+   :  forall tc ds ks dc dcs tsArgs tag arity
       (* Get the data type def this data ctor belongs to *)
    ,  getTypeDef tc ds = Some (DefDataType tc ks dcs)
 
@@ -176,11 +176,13 @@ Inductive DEFOK : list def -> def -> Prop :=
       (* Data ctor must be one of the ctors in the data type def *)
    -> In dc dcs
 
+   -> length tsArgs = arity
+
       (* All the ctor arg types must be well kinded in an environment
          consistin of just the parameter types. *)
    -> Forall (fun t => KIND ks t KStar) tsArgs
 
-   -> DEFOK ds (DefData dc tsArgs tc).
+   -> DEFOK ds (DefData (DataCon tag arity) tsArgs tc).
 
 
 (********************************************************************)

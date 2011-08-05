@@ -71,7 +71,8 @@ with TYPEA  (ds: defs) (ke: kienv) (te: tyenv) : alt -> ty -> ty -> Prop :=
  (* Case Alternatives *)
  | TYAlt 
    :  forall x1 dc tObj tObj1 tsObj tsFields tResult tcObj
-   ,  getDataDef dc ds = Some (DefData dc tsFields tcObj)
+   ,  DEFSOK ds
+   -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
    -> takeTApps tObj   = (tObj1, tsObj)
    -> TYPE  ds ke (te >< map (substTTs 0 tsObj) tsFields) x1 tResult
    -> TYPEA ds ke te (AAlt dc x1) tObj tResult.
@@ -171,16 +172,16 @@ Proof.
   destruct dc.
   inverts H.
   eapply WfA_AAlt. eauto.
-  apply IHx in H6.
-  rewrite app_length in H6.
-  rewrite map_length in H6.
-  rewrite plus_comm in H6.
+  apply IHx in H7.
+  rewrite app_length in H7.
+  rewrite map_length in H7.
+  rewrite plus_comm  in H7.
   auto.   
 Qed.
 Hint Resolve type_wfX.
 
 
-(*
+
 (* Weakening Type Env in Type Judgement.
    We can insert a new type into the type environment, provided we
    lift existing references to types higher in the stack across
@@ -204,7 +205,7 @@ Proof.
  Case "XLAM".
   apply TYLAM.
   assert ( liftTE 0 (insert ix t2 te)
-         = insert ix (liftTT 0 t2) (liftTE 0 te)).
+         = insert ix (liftTT 1 0 t2) (liftTE 0 te)).
    unfold liftTE. rewrite map_insert. auto.
    rewrite H. eauto.
 
@@ -222,28 +223,31 @@ Proof.
   eapply TYCase; eauto.
    apply Forall_map.
    apply (Forall_impl_in 
-     (fun a => TYPEA ds ke te a (TCon tcPat) t1)); eauto.
+     (fun a => TYPEA ds ke te a tObj t1)); eauto.
    nforall. eauto.
-
-  rewrite map_length; auto.
-
-  nforall.
-   intros. rename x0 into d. 
-   rewrite map_map. unfold compose.
-   eapply map_exists_in.
-   assert (In d (map dcOfAlt aa)). 
+   nforall.
+    intros. rewrite map_map. unfold compose.
+    rename x0 into d.
+    eapply map_exists_in.
+    assert (In d (map dcOfAlt aa)). 
     eauto.
-   assert (exists a, dcOfAlt a = d /\ In a aa).
+    assert (exists a, dcOfAlt a = d /\ In a aa).
     eapply map_in_exists. auto.
    shift a. subst. int. rewrite <- H7.
    eapply dcOfAlt_liftXA.
 
  Case "XAlt".
+  destruct dc.
+  inverts H.
   eapply TYAlt; eauto.
-  rewrite insert_app. auto.
+  rewrite insert_app.
+  rewrite map_length.
+  apply getDataDef_ok in H3; auto.
+   inverts H3. auto.
 Qed. 
 
 
+(*
 (* We can push a new type onto the environment stack provided
    we lift references to existing types across the new one. *)
 Lemma type_tyenv_weaken1
