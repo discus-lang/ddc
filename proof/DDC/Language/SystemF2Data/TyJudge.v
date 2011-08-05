@@ -107,9 +107,16 @@ Lemma value_lam
 Proof.
  intros. destruct x; eauto; nope.
 
+ (* Show that x can't be a XCon because data type definitions can't
+    define the function type constructor. *)
  unfold tFun in H0.
- inverts H0. 
-  admit. (* data type cannot construct functions *)
+ inverts H0.
+  apply makeTApps_takeTCon in H4.
+  simpl in H4. inverts H4.
+  assert (DEFOK ds (DefData d tsFields TyConFun)).
+   eapply getDataDef_ok; eauto.
+  inverts H0.
+  simpl in H10. false.
 Qed.
 Hint Resolve value_lam.
 

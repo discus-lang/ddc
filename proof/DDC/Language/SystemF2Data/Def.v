@@ -103,6 +103,21 @@ Fixpoint getTypeDef (tc: tycon) (ds: defs) : option def :=
  | Empty    => None
  end.
 
+Lemma getTypeDef_in
+ :  forall tc ds ddef
+ ,  getTypeDef tc ds = Some ddef
+ -> In ddef ds.
+Proof.
+ intros.
+ induction ds.
+  false.
+  destruct a.
+   simpl in H.
+   destruct (tycon_beq tc t). 
+    inverts H. int.
+   int. int.
+Qed.
+
 
 (* Lookup the def of a given data constructor. 
    Returns None if it's not in the list. *)
@@ -116,6 +131,22 @@ Fixpoint getDataDef (dc: datacon) (ds: defs) : option def :=
  | ds' :> _ => getDataDef dc ds'
  | Empty    => None
  end.
+
+Lemma getDataDef_in
+ :  forall tc ds ddef
+ ,  getDataDef tc ds = Some ddef
+ -> In ddef ds.
+Proof.
+ intros.
+ induction ds.
+  false.
+  destruct a.
+   int.
+   simpl in H.
+   destruct (datacon_beq tc d). 
+    inverts H. int.
+   int.
+Qed.
 
 
 (********************************************************************)
@@ -138,6 +169,10 @@ Inductive DEFOK : list def -> def -> Prop :=
       (* Get the data type def this data ctor belongs to *)
    ,  getTypeDef tc ds = Some (DefDataType tc ks dcs)
 
+      (* Type constructor must be a data type constructor, 
+         not the function type constructor. *)
+   -> isTyConData tc
+
       (* Data ctor must be one of the ctors in the data type def *)
    -> In dc dcs
 
@@ -147,8 +182,34 @@ Inductive DEFOK : list def -> def -> Prop :=
 
    -> DEFOK ds (DefData dc tsArgs tc).
 
+
+(********************************************************************)
 (* Check that some data type definitions and their
    associated constructors are ok *)
 Definition DEFSOK (ds: list def) : Prop :=
   Forall (DEFOK ds) ds.
+
+Lemma getTypeDef_ok 
+ :  forall ds tc ddef
+ ,  DEFSOK ds
+ -> getTypeDef tc ds = Some ddef
+ -> DEFOK  ds ddef.
+Proof.
+ intros.
+ unfold DEFSOK in H.
+ apply getTypeDef_in in H0.
+ nforall. auto.
+Qed.  
+
+Lemma getDataDef_ok
+ :  forall ds tc ddef
+ ,  DEFSOK ds
+ -> getDataDef tc ds = Some ddef
+ -> DEFOK ds ddef.
+Proof.
+ intros.
+ unfold DEFSOK in H.
+ apply getDataDef_in in H0.
+ nforall. auto.
+Qed.  
 

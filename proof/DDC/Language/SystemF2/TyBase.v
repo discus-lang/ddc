@@ -58,6 +58,17 @@ Fixpoint makeTApps (t1: ty) (tt: list ty) : ty :=
  end.
 
 
+Lemma makeTApps_snoc
+ : forall t1 t2 t3 ts
+ , makeTApps (TApp t1 t2) (snoc t3 ts) 
+ = TApp (makeTApps t1 (cons t2 ts)) t3.
+Proof.
+ intros. gen t1 t2.
+ induction ts; intros.
+  simpl. auto.
+  simpl. rewrite IHts. auto.
+Qed.
+
 
 (* Break apart a type application into the constructor type
    and a list of argument types. *)
@@ -68,5 +79,42 @@ Fixpoint takeTApps (tt: ty) : (ty * list ty) :=
                  end
  | _          => (tt, nil)
  end.
+
+Fixpoint takeTCon (tt: ty) : ty :=
+ match tt with 
+ | TApp t1 t2 => takeTCon t1
+ | _          => tt
+ end.
+
+
+Lemma takeTCon_makeTApps
+ :  forall t1 ts
+ ,  takeTCon (makeTApps t1 ts) = takeTCon t1.
+Proof.
+ intros. gen t1.
+ induction ts; intros.
+  simpl. auto.
+  simpl.
+  rewrite IHts. simpl. auto.
+Qed.    
+
+
+Lemma makeTApps_takeTCon
+ : forall t1 t2 ts  
+ ,  makeTApps t1 ts = t2
+ -> takeTCon t1     = takeTCon t2.
+Proof.
+ intros. gen t1 t2.
+ induction ts; intros.
+  simpl in H. subst. auto.
+
+  eapply IHts in H.
+  simpl in H. auto.
+Qed.
+
+
+
+
+
 
 
