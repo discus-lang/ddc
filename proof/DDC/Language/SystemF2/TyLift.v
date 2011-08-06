@@ -78,6 +78,96 @@ Qed.
 
 
 (********************************************************************)
+Lemma liftTT_zero
+ :  forall d t
+ ,  liftTT 0 d t = t.
+Proof.
+ intros. gen d.
+ induction t; intros; eauto.
+
+ Case "TVar".
+  simpl. lift_cases; nnat; auto.
+
+ Case "TForall".
+   simpl. rewrite IHt. auto.
+
+ Case "TApp".
+   simpl. rewrite IHt1. rewrite IHt2. auto.
+Qed.
+
+
+Lemma liftTT_comm
+ :  forall n m d t
+ ,  liftTT n d (liftTT m d t)
+ =  liftTT m d (liftTT n d t).
+Proof.
+ intros. gen d.
+ induction t; intros; eauto.
+ 
+ Case "TVar".
+  repeat (simpl; lift_cases; intros); burn.
+
+ Case "TForall".
+  simpl. rewrite IHt. auto.
+
+ Case "TApp".
+  simpl. rewrite IHt1. rewrite IHt2. auto.
+Qed.
+
+
+Lemma liftTT_succ
+ :  forall n m d t
+ ,  liftTT (S n) d (liftTT m     d t)
+ =  liftTT n     d (liftTT (S m) d t).
+Proof.
+ intros. gen d m n.
+ induction t; intros; eauto.
+ 
+ Case "TVar".
+  repeat (simpl; lift_cases; intros); burn.
+
+ Case "TForall".
+  simpl. rewrite IHt. auto.
+
+ Case "TApp".
+  simpl. rewrite IHt1. rewrite IHt2. auto.
+Qed.
+
+
+Lemma liftTT_plus 
+ : forall n m t
+ , liftTT n 0 (liftTT m 0 t) = liftTT (n + m) 0 t.
+Proof.
+ intros. gen n.
+ induction m; intros.
+
+ rewrite liftTT_zero. nnat. auto.
+ assert (n + S m = S n + m).
+  omega. rewrite H. clear H.
+ rewrite liftTT_comm.
+ rewrite <- IHm.
+ rewrite liftTT_comm.
+ rewrite liftTT_succ.
+ auto.
+Qed.
+
+
+Lemma liftTT_plus'
+ : forall n m d t
+ , liftTT n d (liftTT m d t) = liftTT (n + m) d t.
+Proof.
+ intros. gen n m.
+ induction d; intros.
+ rewrite liftTT_plus. auto.
+
+ induction t.
+  simpl. auto.
+  simpl. skip.
+  simpl.
+Qed.
+
+
+
 (* Changing the order of lifting. *)
 Lemma liftTT_liftTT
  :  forall d d' t

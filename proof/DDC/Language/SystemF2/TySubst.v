@@ -89,6 +89,38 @@ Proof.
 Qed.
 
 
+
+
+Lemma liftTT_substTT'
+ :  forall m n n' t1 t2
+ ,  liftTT m n (substTT (n + n') t2 t1)
+ =  substTT (m + n + n') (liftTT m n t2) (liftTT m n t1).
+Proof.
+ intros. gen n n'.
+ induction m; intros.
+  simpl.  
+   rewrite liftTT_zero.
+   rewrite liftTT_zero.
+   rewrite liftTT_zero.
+   auto.
+  simpl.
+   assert (S m = 1 + m). 
+    omega. rewrite H.
+   rewrite <- liftTT_plus'.
+   rewrite IHm. simpl.
+   
+
+
+Lemma liftTT_substTTs
+ :  forall n n' ts t
+ ,  liftTT 1 n (substTTs (n + n') ts t)
+ =  substTTs (1 + n + n') (map (liftTT 1 n) ts) (liftTT 1 n t).
+Proof.
+ intros. gen n n'.
+ induction ts.
+  auto.
+  simpl.
+
 Lemma liftTT_substTT'
  :  forall n n' t1 t2
  ,  liftTT 1 (n + n') (substTT n t2 t1)
