@@ -34,6 +34,25 @@ Tactic Notation "SSSSSSCase" constr(name) := Case_aux SSSSSSCase name.
 Tactic Notation "SSSSSSSCase" constr(name) := Case_aux SSSSSSSCase name.
 
 
+(********************************************************************)
+(* Tactic to help deal with lifting functions *)
+Ltac lift_cases 
+ := match goal with 
+     |  [ |- context [le_gt_dec ?n ?n'] ]
+     => case (le_gt_dec n n')
+    end.
+
+
+Ltac lift_burn t
+ := induction t; intros; eauto;  
+
+          (* this gets most var cases *)
+    first [ repeat (simpl; lift_cases; nnat; intros); burn 
+      
+          (* try to apply rewrites from the hypotheses *)    
+          | repeat rewritess ].
+
+
 
 
 

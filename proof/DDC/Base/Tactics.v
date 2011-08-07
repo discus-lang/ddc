@@ -65,13 +65,17 @@ Ltac fbreak_nat_compare :=
         ]
  end.
 
-
-(* Tactic to help deal with lifting functions *)
-Ltac lift_cases 
- := match goal with 
-     |  [ |- context [le_gt_dec ?n ?n'] ]
-     => case (le_gt_dec n n')
+(********************************************************************)
+(* Apply rewrites from the hypotheses *)
+Ltac rewritess
+ := simpl; 
+    match goal with
+    | [H: eq _ _               |- _ ] => simpl; rewrite H; auto
+    | [H: forall _,     eq _ _ |- _ ] => simpl; rewrite H; auto
+    | [H: forall _ _,   eq _ _ |- _ ] => simpl; rewrite H; auto
+    | [H: forall _ _ _, eq _ _ |- _ ] => simpl; rewrite H; auto
     end.
+
 
 (********************************************************************)
 (* Tactics for working with forall. *)

@@ -22,24 +22,13 @@ Fixpoint liftTT (n: nat) (d: nat) (tt: ty) : ty :=
 Hint Unfold liftTT.
 
 
-(* Tactic to help deal with lifting functions *)
-Ltac lift_cases 
- := match goal with 
-     |  [ |- context [le_gt_dec ?n ?n'] ]
-     => case (le_gt_dec n n')
-    end.
-
 
 (********************************************************************)
 Lemma getCtorOfType_liftTT
  :  forall d ix t 
  ,  getCtorOfType (liftTT d ix t) = getCtorOfType t.
 Proof.
- intros.
- induction t; try burn.
-
- Case "TVar".
-  simpl. lift_cases; auto.
+ lift_burn t.
 Qed.  
 
 
@@ -47,9 +36,7 @@ Lemma liftTT_takeTCon
  :  forall tt d ix
  ,  liftTT d ix (takeTCon tt) = takeTCon (liftTT d ix tt).
 Proof.
- intros.
- induction tt; intros; auto.
- simpl. lift_cases; auto.
+ intros; lift_burn tt.
 Qed.
 
 
@@ -71,9 +58,7 @@ Lemma liftTT_makeTApps
  =  makeTApps (liftTT n d t1) (map (liftTT n d) ts). 
 Proof.
  intros. gen t1.
- induction ts; intros.
-  auto.
-  simpl. rewrite IHts. auto.
+ induction ts; intros; auto; rewritess.
 Qed.
 
 
@@ -83,16 +68,7 @@ Lemma liftTT_zero
  ,  liftTT 0 d t = t.
 Proof.
  intros. gen d.
- induction t; intros; eauto.
-
- Case "TVar".
-  simpl. lift_cases; nnat; auto.
-
- Case "TForall".
-   simpl. rewrite IHt. auto.
-
- Case "TApp".
-   simpl. rewrite IHt1. rewrite IHt2. auto.
+ lift_burn t.
 Qed.
 
 
@@ -102,16 +78,7 @@ Lemma liftTT_comm
  =  liftTT m d (liftTT n d t).
 Proof.
  intros. gen d.
- induction t; intros; eauto.
- 
- Case "TVar".
-  repeat (simpl; lift_cases; intros); burn.
-
- Case "TForall".
-  simpl. rewrite IHt. auto.
-
- Case "TApp".
-  simpl. rewrite IHt1. rewrite IHt2. auto.
+ lift_burn t.
 Qed.
 
 
@@ -121,16 +88,7 @@ Lemma liftTT_succ
  =  liftTT n     d (liftTT (S m) d t).
 Proof.
  intros. gen d m n.
- induction t; intros; eauto.
- 
- Case "TVar".
-  repeat (simpl; lift_cases; intros); burn.
-
- Case "TForall".
-  simpl. rewrite IHt. auto.
-
- Case "TApp".
-  simpl. rewrite IHt1. rewrite IHt2. auto.
+ lift_burn t.
 Qed.
 
 
