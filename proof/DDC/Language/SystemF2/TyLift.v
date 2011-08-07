@@ -134,13 +134,13 @@ Proof.
 Qed.
 
 
-Lemma liftTT_plus 
- : forall n m t
- , liftTT n 0 (liftTT m 0 t) = liftTT (n + m) 0 t.
+Lemma liftTT_plus
+ : forall n m d t
+ , liftTT n d (liftTT m d t) = liftTT (n + m) d t.
 Proof.
- intros. gen n.
+ intros. gen n d.
  induction m; intros.
-
+ 
  rewrite liftTT_zero. nnat. auto.
  assert (n + S m = S n + m).
   omega. rewrite H. clear H.
@@ -149,27 +149,11 @@ Proof.
  rewrite liftTT_comm.
  rewrite liftTT_succ.
  auto.
-Qed.
-
-
-Lemma liftTT_plus'
- : forall n m d t
- , liftTT n d (liftTT m d t) = liftTT (n + m) d t.
-Proof.
- intros. gen n m.
- induction d; intros.
- rewrite liftTT_plus. auto.
-
- induction t.
-  simpl. auto.
-  simpl. skip.
-  simpl.
-Qed.
-
+Qed. 
 
 
 (* Changing the order of lifting. *)
-Lemma liftTT_liftTT
+Lemma liftTT_liftTT'
  :  forall d d' t
  ,  liftTT 1 d              (liftTT 1 (d + d') t) 
  =  liftTT 1 (1 + (d + d')) (liftTT 1 d t).
@@ -184,3 +168,54 @@ Proof.
   assert (S (d + d') = (S d) + d'). omega. rewrite H. 
   rewrite IHt. auto.
 Qed.  
+
+
+Lemma liftTT_liftTT''
+ :  forall n1 m1 n2 t
+ ,  liftTT m1   n1 (liftTT 1 (n2 + n1) t)
+ =  liftTT 1 (m1 + n2 + n1) (liftTT m1 n1 t).
+Proof.
+ intros. gen n1 m1 n2 t.
+ induction m1; intros.
+  simpl.
+   rewrite liftTT_zero.
+   rewrite liftTT_zero.
+   auto.
+  simpl.
+
+  assert (S m1 = 1 + m1). 
+   omega. rewrite H.
+  
+  rewrite <- liftTT_plus.
+  rewrite IHm1.
+  assert (m1 + n2 + n1 = n1 + (m1 + n2)).
+   omega. rewrite H0. clear H0.
+
+  rewrite liftTT_liftTT'.
+   simpl. 
+
+   f_equal.
+   rewrite liftTT_plus. auto.
+Qed.
+
+
+Lemma liftTT_liftTT
+ :  forall m1 n1 m2 n2 t
+ ,  liftTT m1 n1 (liftTT m2 (n2 + n1) t)
+ =  liftTT m2 (m1 + n2 + n1) (liftTT m1 n1 t).
+Proof.
+ intros. gen n1 m1 n2 t.
+ induction m2; intros.
+  rewrite liftTT_zero.
+  rewrite liftTT_zero.
+  auto.
+  
+  assert (S m2 = 1 + m2).
+   omega. rewrite H.
+  
+  rewrite <- liftTT_plus.
+  rewrite liftTT_liftTT''.
+  rewrite IHm2.
+  rewrite -> liftTT_plus. auto.
+Qed.
+  

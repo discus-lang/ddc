@@ -1,6 +1,7 @@
 
 Require Export DDC.Language.SystemF2.TyBase.
 Require Export DDC.Language.SystemF2.TyLift.
+Require Import Coq.Logic.FunctionalExtensionality.
 
 
 (********************************************************************)
@@ -65,7 +66,7 @@ Qed.
 
 
 (* Lifting after substitution *)
-Lemma liftTT_substTT
+Lemma liftTT_substTT1
  :  forall n n' t1 t2
  ,  liftTT 1 n (substTT (n + n') t2 t1)
  =  substTT (1 + n + n') (liftTT 1 n t2) (liftTT 1 n t1).
@@ -81,7 +82,7 @@ Proof.
  Case "TForall".
   simpl.
   rewrite (IHt1 (S n) n'). simpl.
-  rewrite (liftTT_liftTT 0 n). auto.
+  rewrite (liftTT_liftTT' 0 n). auto.
 
  Case "TApp".
   rewrite IHt1_1. 
@@ -89,9 +90,7 @@ Proof.
 Qed.
 
 
-
-
-Lemma liftTT_substTT'
+Lemma liftTT_substTT
  :  forall m n n' t1 t2
  ,  liftTT m n (substTT (n + n') t2 t1)
  =  substTT (m + n + n') (liftTT m n t2) (liftTT m n t1).
@@ -106,20 +105,64 @@ Proof.
   simpl.
    assert (S m = 1 + m). 
     omega. rewrite H.
-   rewrite <- liftTT_plus'.
-   rewrite IHm. simpl.
-   
+   rewrite <- liftTT_plus.
+   rewrite IHm.
+   assert (m + n + n' = n + (m + n')).
+    omega. rewrite H0.
+   rewrite liftTT_substTT1.
+   simpl. 
+   f_equal; rewrite liftTT_plus; auto.
+Qed.
 
 
-Lemma liftTT_substTTs
- :  forall n n' ts t
- ,  liftTT 1 n (substTTs (n + n') ts t)
- =  substTTs (1 + n + n') (map (liftTT 1 n) ts) (liftTT 1 n t).
+Lemma substTTs_TForall
+ :  forall ts d t
+ ,  substTTs d ts (TForall t)
+ =  TForall (substTTs (1 + d) (map (liftTT 1 0) ts) t).
 Proof.
- intros. gen n n'.
- induction ts.
-  auto.
+ intros. gen d t.
+ induction ts; intros.
+  simpl. auto.
   simpl.
+  rewrite map_length.
+   rewrite <- IHts.
+   f_equal. f_equal. f_equal.
+   rewrite liftTT_comm. auto.
+Qed.
+
+(*
+Lemma liftTT_substTTs
+ :  forall m n n' ts t
+ ,  liftTT m n (substTTs (n + n') ts t)
+ =  substTTs (m + n + n') (map (liftTT m n) ts) (liftTT m n t).
+Proof.
+ intros. gen m n n' ts.
+ induction t; intros.
+
+ Case "TCon".
+  induction ts.
+   auto.
+   simpl. rewrite IHts. auto.
+
+ Case "TVar".
+   admit.
+
+ Case "TForall".
+  simpl.
+  rewrite substTTs_TForall. simpl.
+  rewrite substTTs_TForall. simpl.
+  f_equal.
+  assert (S (n + n') = S n + n').
+   omega. rewrite H.
+  rewrite IHt.
+  f_equal. omega. simpl.
+  rewrite map_map. rewrite map_map.
+  unfold compose.
+  f_equal.
+   extensionality x.
+   simpl.
+
+*)
 
 Lemma liftTT_substTT'
  :  forall n n' t1 t2
@@ -137,7 +180,7 @@ Proof.
  Case "TForall".
   simpl. f_equal.
   rewrite (IHt1 (S n) n'). f_equal.
-   simpl. rewrite (liftTT_liftTT 0 (n + n')). auto.
+   simpl. rewrite (liftTT_liftTT' 0 (n + n')). auto.
 
  Case "TApp".
   simpl. f_equal.
@@ -163,8 +206,8 @@ Proof.
  Case "TForall".
   simpl. f_equal.
   rewrite (IHt1 (S n) m). f_equal.
-   simpl. rewrite (liftTT_substTT 0 (n + m)). auto.
-   simpl. rewrite (liftTT_liftTT 0 n). auto.  
+   simpl. rewrite (liftTT_substTT1 0 (n + m)). auto.
+   simpl. rewrite (liftTT_liftTT' 0 n). auto.  
 
  Case "TApp".
   simpl. f_equal.

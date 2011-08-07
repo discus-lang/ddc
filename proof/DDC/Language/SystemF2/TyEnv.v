@@ -37,7 +37,7 @@ Proof.
  intros. induction te.
   auto.
   unfold liftTE.
-   simpl. rewrite liftTT_liftTT.
+   simpl. rewrite liftTT_liftTT'.
    unfold liftTE in IHte. rewrite IHte. auto.
 Qed.
 
