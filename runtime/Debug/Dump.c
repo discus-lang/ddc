@@ -1,6 +1,7 @@
 
 #include "../Runtime.h"
 #include <stdlib.h>
+#include <stddef.h>
 
 // Dump the whole RTS state to a file.
 //	Then abort the program.
@@ -206,7 +207,15 @@ void	_dumpDataM 	(FILE* file, Obj* obj)
 	Obj** payloadObj	= (Obj**) &(data ->payload);
 
 	for (uint32_t i = 0; i < data ->ptrCount; i++)
-		fprintf (file, "        , a[%2u]   = %p\n", i, payloadObj[i]);
+		fprintf (file, "        , a[%2u]    = %p\n", i, payloadObj[i]);
+
+	size_t payload_size	= data->size - offsetof (DataM, payload) ;
+	unsigned char * bytes	= (unsigned char *) data->payload ;
+	fprintf (file, "        , payload  =");
+
+	for (uint32_t k = data->ptrCount * sizeof (void*) ; k < payload_size ; k++)
+		fprintf (file, " %02x", bytes [k]) ;
+	fputc ('\n', file);
 
 	fprintf (file, "        }\n");
 }
