@@ -210,3 +210,10 @@ Ltac burn :=
    | _ => burn1
  end.
 
+
+(* Rewrite using burn.
+   Just state the equality to use. 
+ *)
+Tactic Notation "rrwrite" constr(xx)
+ := let H := fresh 
+    in assert xx as H by burn; rewrite H; clear H.

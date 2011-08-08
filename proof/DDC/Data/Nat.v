@@ -50,3 +50,5 @@ Tactic Notation "nnat"
  := try rewrite nat_plus_zero
   ; try rewrite nat_minus_zero
   ; try rewrite nat_plus_one.
+
+

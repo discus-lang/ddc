@@ -98,20 +98,25 @@ Lemma liftTT_plus
 Proof.
  intros. gen n d.
  induction m; intros.
- 
- rewrite liftTT_zero. nnat. auto.
- assert (n + S m = S n + m).
-  omega. rewrite H. clear H.
- rewrite liftTT_comm.
- rewrite <- IHm.
- rewrite liftTT_comm.
- rewrite liftTT_succ.
- auto.
+ rewrite liftTT_zero. 
+  nnat. auto.
+ rrwrite (n + S m = S n + m). 
+  rewrite liftTT_comm.
+  rewrite <- IHm.
+  rewrite liftTT_comm.
+  rewrite liftTT_succ.
+  auto.
 Qed. 
 
 
-(* Changing the order of lifting. *)
-Lemma liftTT_liftTT'
+(********************************************************************)
+(* Changing the order of lifting.
+   We build this up in stages. 
+   Start out by only allow lifting by a single place for both
+   applications. Then allow lifting by multiple places in the first
+   application, then multiple places in both. 
+*)
+Lemma liftTT_liftTT_11
  :  forall d d' t
  ,  liftTT 1 d              (liftTT 1 (d + d') t) 
  =  liftTT 1 (1 + (d + d')) (liftTT 1 d t).
@@ -123,37 +128,29 @@ Proof.
   repeat (unfold liftTT; lift_cases; intros); burn.
 
  Case "TForall".
-  assert (S (d + d') = (S d) + d'). omega. rewrite H. 
+  rrwrite (S (d + d') = (S d) + d').
   rewrite IHt. auto.
 Qed.  
 
 
-Lemma liftTT_liftTT''
+Lemma liftTT_liftTT_1
  :  forall n1 m1 n2 t
  ,  liftTT m1   n1 (liftTT 1 (n2 + n1) t)
  =  liftTT 1 (m1 + n2 + n1) (liftTT m1 n1 t).
 Proof.
  intros. gen n1 m1 n2 t.
- induction m1; intros.
-  simpl.
-   rewrite liftTT_zero.
-   rewrite liftTT_zero.
-   auto.
-  simpl.
+ induction m1; intros; simpl.
+  rewrite liftTT_zero.
+  rewrite liftTT_zero.
+  auto.
 
-  assert (S m1 = 1 + m1). 
-   omega. rewrite H.
-  
+  rrwrite (S m1 = 1 + m1).
   rewrite <- liftTT_plus.
   rewrite IHm1.
-  assert (m1 + n2 + n1 = n1 + (m1 + n2)).
-   omega. rewrite H0. clear H0.
-
-  rewrite liftTT_liftTT'.
-   simpl. 
-
-   f_equal.
-   rewrite liftTT_plus. auto.
+  rrwrite (m1 + n2 + n1 = n1 + (m1 + n2)).
+  rewrite liftTT_liftTT_11.
+  rewrite -> liftTT_plus.
+  burn.
 Qed.
 
 
@@ -168,12 +165,10 @@ Proof.
   rewrite liftTT_zero.
   auto.
   
-  assert (S m2 = 1 + m2).
-   omega. rewrite H.
-  
+  rrwrite (S m2 = 1 + m2).
   rewrite <- liftTT_plus.
-  rewrite liftTT_liftTT''.
+  rewrite liftTT_liftTT_1.
   rewrite IHm2.
-  rewrite -> liftTT_plus. auto.
+  rewrite -> liftTT_plus.
+  auto.
 Qed.
-  
