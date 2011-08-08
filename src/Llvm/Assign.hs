@@ -6,6 +6,7 @@ where
 
 import DDC.Main.Error
 import DDC.Sea.Exp
+import DDC.Sea.Pretty
 import DDC.Var
 
 import Llvm
@@ -75,6 +76,27 @@ llvmOfAssign (XArgData (XVar (NSlot _ ix) tv@(TPtr (TCon TyConObj))) i) tc src
 	addBlock	[ Assignment pdata (Cast LM_Bitcast obj pStructData)
 			, Assignment ptr (GetElemPtr True pdata [ i32LitVar 0, i32LitVar indx, i32LitVar i ])
 			, Store rsrc (pVarLift ptr) ]
+
+llvmOfAssign (XArgDataM struct (XVar (NSlot _ ix) tv) i) tc src
+ = do	let name	= ctorName struct
+	(index, ftype)	<- getCtorFieldByIndex name i
+	ctorStruct	<- getCtorStruct name
+	let pli		= fst $ structFieldLookup ddcDataM "payload"
+
+	rsrc		<- llvmOfExp src
+	pobj		<- readSlot ix
+	pdata		<- newUniqueNamedReg "pdata" pStructDataM
+	payload		<- newUniqueNamedReg "payload" pChar
+	pctor		<- newUniqueNamedReg "pctor" $ pLift ctorStruct
+	pfield		<- newUniqueNamedReg "pfield" $ pLift ftype
+	addBlock	[ Assignment pdata (Cast LM_Bitcast pobj pStructDataM)
+			, Assignment payload (GetElemPtr True pdata [ i32LitVar 0, i32LitVar pli, i32LitVar 0 ])
+			, Assignment pctor (Cast LM_Bitcast payload (pLift ctorStruct))
+			, Assignment pfield (GetElemPtr True pctor [ i32LitVar 0, i32LitVar index ])
+			, Store rsrc pfield ]
+
+
+
 
 
 llvmOfAssign (XVar v1@NCaf{} tv) tc@(TCon (TyConUnboxed _)) src

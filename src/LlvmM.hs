@@ -10,6 +10,10 @@ module LlvmM
 	, addGlobalFuncDecl
 	, addString
 
+	, addCtorStruct
+	, getCtorFieldByIndex
+	, getCtorStruct
+
 	, newUniqueReg
 	, newUniqueNamedReg
 	, newUniqueLabel
@@ -75,7 +79,16 @@ data LlvmState
 	, functions	:: [LlvmFunction]
 
 	-- | The constructor tags for the module.
-	, ctorTags	:: Map String Int }
+	, ctorTags	:: Map String Int
+
+	-- | The constructor name and a list of field (index, types).
+	, ctorStructs	:: Map String CtorStruct }
+
+
+data CtorStruct
+	= CS
+	{ csAlias	:: LlvmAlias
+	, csFields	:: Map Int (Int, LlvmType) }
 
 type LlvmM = StateT LlvmState IO
 
@@ -90,7 +103,8 @@ initLlvmState modId
 	, strings	= Map.empty
 	, funcDecls	= Map.empty
 	, functions	= []
-	, ctorTags	= Map.empty }
+	, ctorTags	= Map.empty
+	, ctorStructs	= Map.empty }
 
 
 addBlock :: [LlvmStatement] -> LlvmM ()
@@ -224,6 +238,42 @@ checkName ok (s:ss)
 
  | otherwise
  = False
+
+--------------------------------------------------------------------------------
+
+addCtorStruct :: String -> [(Int, LlvmType)] -> LlvmM ()
+addCtorStruct name fields
+ = do	let alias	= (name, LMStruct (map snd fields))
+	addAlias	alias
+	let ctor	= CS alias 	$ Map.fromList
+					$ map (\(a, (b, c)) -> (b, (a, c)))
+					$ zip  [0..] fields
+	state		<- get
+	let map		= ctorStructs state
+	case Map.lookup name map of
+	  Nothing	-> modify $ \s -> s { ctorStructs = Map.insert name ctor map }
+	  Just _	-> panic stage	$ "addCtorStruct: Var '" ++ name
+					++ "' already present in map."
+
+
+getCtorFieldByIndex :: String -> Int -> LlvmM (Int, LlvmType)
+getCtorFieldByIndex name index
+ = do	state		<- get
+	case Map.lookup name (ctorStructs state) of
+	  Nothing	-> panic stage $ "Can't find constructor '" ++ name ++ "'."
+	  Just ctor	->
+		case Map.lookup index (csFields ctor) of
+		  Just x	-> return x
+		  Nothing	-> panic stage $ "Can't find index '"
+					++ show index ++ "' in constructor '" ++ name ++ "'."
+
+getCtorStruct :: String -> LlvmM LlvmType
+getCtorStruct name
+ = do	state		<- get
+	case Map.lookup name (ctorStructs state) of
+	  Nothing	-> panic stage $ "Can't find constructor '" ++ name ++ "'."
+	  Just ctor	-> return $ LMAlias $ csAlias ctor
+
 
 --------------------------------------------------------------------------------
 

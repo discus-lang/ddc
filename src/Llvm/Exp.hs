@@ -82,6 +82,28 @@ llvmOfExp (XArgData (XVar (NSlot _ n) _) i)
 			, Assignment ret (Load args) ]
 	return		ret
 
+
+llvmOfExp (XArgDataM struct (XVar (NSlot _ n) t) i)
+ = do	let name	= ctorName struct
+	ctorStruct	<- getCtorStruct name
+	(index, ftype)	<- getCtorFieldByIndex name i
+	addComment	$ "llvmOfExp XArgDataM : " ++ name ++ " " ++ show i ++ " -> " ++ show index
+
+	let pli		= fst $ structFieldLookup ddcDataM "payload"
+	pobj		<- readSlot n
+	pdata		<- newUniqueNamedReg "pdata" pStructDataM
+	payload		<- newUniqueNamedReg "payload" pChar
+	pctor		<- newUniqueNamedReg "ctor" $ pLift $ ctorStruct
+	pfield		<- newUniqueNamedReg "pval" $ pLift ftype
+	ret		<- newUniqueNamedReg "ret" ftype
+	addBlock	[ Assignment pdata (Cast LM_Bitcast pobj pStructDataM)
+			, Assignment payload (GetElemPtr True pdata [ i32LitVar 0, i32LitVar pli, i32LitVar 0 ])
+			, Assignment pctor (Cast LM_Bitcast payload (pLift ctorStruct))
+			, Assignment pfield (GetElemPtr True pctor [ i32LitVar 0, i32LitVar index ])
+			, Assignment ret (Load pfield) ]
+	return		ret
+
+
 llvmOfExp (XVar v@NCafPtr{} tv)
  = do	r1		<- newUniqueNamedReg "r1" $ toLlvmType tv
 	r2		<- newUniqueNamedReg "r2" $ toLlvmType tv
@@ -175,6 +197,10 @@ llvmOfXPrim (MAlloc (PAllocThunk v t arity argc)) args
 llvmOfXPrim (MAlloc (PAllocData v arity)) []
  = do	tag	<- getTag $ seaVar False v
 	allocData tag arity
+
+llvmOfXPrim (MAlloc (PAllocDataM v boxedCount payloadSize)) []
+ = do	tag	<- getTag $ seaVar False v
+	allocDataM tag boxedCount payloadSize
 
 llvmOfXPrim (MOp OpNeg) [arg]
  = do	exp		<- llvmOfExp arg

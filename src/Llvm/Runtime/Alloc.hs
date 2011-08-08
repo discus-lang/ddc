@@ -125,7 +125,7 @@ allocData tag arity
 allocDataM :: Int -> Int -> Int -> LlvmM LlvmVar
 allocDataM tag ptrCount payloadSize
  = do	addAlias	("struct.DataM", llvmTypeOfStruct ddcDataM)
-	let size	= sizeOfLlvmType structDataM + roundUpBytes payloadSize
+	let size	= sizeOfLlvmType structDataM + payloadSize
 	addComment	$ "allocDataM " ++ show tag ++ " " ++ show ptrCount ++ " " ++ show payloadSize
 
 	pDataM		<- allocate size "pDataM" pStructDataM
