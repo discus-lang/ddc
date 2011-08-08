@@ -127,7 +127,7 @@ ddcDataM
 
 
 structDataM :: LlvmType
-structDataM = LMAlias ("struct.DataM", llvmTypeOfStruct ddcData)
+structDataM = LMAlias ("struct.DataM", llvmTypeOfStruct ddcDataM)
 
 pStructDataM :: LlvmType
 pStructDataM = pLift structDataM
