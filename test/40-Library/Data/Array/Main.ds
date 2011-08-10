@@ -1,0 +1,62 @@
+import Data.ArrayU
+
+-- A boolean check using 'arrayUI_get' of an element of an array
+checkValue :: ArrayU Int -> Int -> Int -> Bool
+checkValue array i v = arrayUI_get array i == v
+
+-- Makes an array of 'size' elements all set to 'constant'
+makeArray :: (ArrayU Int -> Int -> () ) -> Int -> Int -> ArrayU Int
+makeArray func size constant = 
+    do  array = arrayUI_new 0 size
+        func array constant
+        array
+
+-- Makes an array of 'size' elements of incrementing Ints starting from 'begin'.
+makeArrayInc :: (ArrayU Int -> Int -> Int -> () ) -> Int -> Int -> ArrayU Int
+makeArrayInc func size begin =
+    do  array = arrayUI_new 0 size
+        map (\i -> func array i (i+begin)) [0..size-1]
+        array
+
+-- Runs a test using a supplied function on an array and returns a String
+test :: (ArrayU Int -> Int -> Int -> Bool)
+    -> ArrayU Int -> Int -> [Int] -> String
+test _ _ _ [] = "Failed - params empty"
+test checkFunc array size params@(p:_)=
+    case and $ zipWith (checkFunc array) [0..size-1] params of 
+                    True  -> "Passed"
+                    False -> "Failed -" 
+                        % " size "     % show size 
+                        % " param " % show p
+
+-- Used to test if an array is filled with a single constant
+-- Also an initial use of '@' to introduce laziness where needed.
+testConst array constant param 
+    = test checkValue array constant (repeat param)
+        where repeat x = x : repeat @ x
+
+-- Used to test if an array is filled with sequential values starting with 'begin'
+testInc array size begin
+    = test checkValue array size [begin..begin+size-1]
+
+--  Uses a function 'func' to test if an array is filled with constants
+runTestConst func size constant =
+    let array = makeArray func size constant
+    in putStrLn $ testConst array size constant
+ 
+-- Uses 'func' to test if an array is filled with sequential values
+-- Will probably expand once ArrayU has more methods to test.
+runTestInc func size begin =
+    let array = makeArrayInc func size begin
+    in putStrLn $ testInc array size begin
+
+main ()
+ = do	
+    runTestConst arrayUI_fill 1000 42
+    runTestConst arrayUI_fill2 1000 42
+    
+    runTestInc arrayUI_set 1000 0
+    --runTestInc arrayUI_fill2 1000 13
+
+    ()
+
