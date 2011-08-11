@@ -26,15 +26,6 @@ Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty
   end.
 
 
-Fixpoint substTTs (d: nat) (us: list ty) (tt: ty) :=
- match us with
- | nil      => tt
- | u :: us' => substTTs d us' 
-                 (substTT d u tt)
- end.
-
-
-
 
 (********************************************************************)
 Lemma substTT_makeTApps 
@@ -67,7 +58,8 @@ Qed.
 
 
 (********************************************************************)
-(* Lifting after substitution *)
+(* Lifting after substitution,
+   with the lifting at a lower index. *)
 Lemma liftTT_substTT_1
  :  forall n n' t1 t2
  ,  liftTT 1 n (substTT (n + n') t2 t1)
@@ -104,58 +96,9 @@ Proof.
 Qed.
 
 
-(* proof of this is probably too much of a hassle with the
-   inductive version of simultaneous substitution.
-   Do real simultaneous substitution taking a list of things
-   to substitute. 
- *)
-Lemma liftTT_substTTs
- :  forall m n n' ts t
- ,  liftTT m n (substTTs (n + n') ts t)
- =  substTTs (m + n + n') (map (liftTT m n) ts) (liftTT m n t).
-Proof.
- intros. gen m n n' t. 
- induction ts; intros.
- 
-  simpl. auto.
-  simpl.
-
-  rewrite IHts.
-  rewrite liftTT_substTT.
-  rrwrite (n = n + 0).  
-  auto.
-Qed. 
-
-
 (********************************************************************)
-(*
-Lemma substTTs_TForall
- :  forall ts d t
- ,  substTTs d ts (TForall t)
- =  TForall (substTTs (1 + d) (map (liftTT 1 0) ts) t).
-Proof.
- intros. gen d t.
- induction ts; intros; simpl; try burn.
-
- Case "TForall".
-  rewrite map_length.
-  rewrite <- IHts.
-  rewrite liftTT_comm. auto.
-Qed.
-
-
-Lemma substTTs_TApp
- :  forall ts d t1 t2
- ,  substTTs d ts (TApp t1 t2)
- =  TApp (substTTs d ts t1) (substTTs d ts t2).
-Proof.
- intros. gen d t1 t2.
- induction ts; intros; simpl; try burn.
-Qed.
-*)
-(********************************************************************)
-
-
+(* Lifting after substiution, 
+   with the ligting at a higher index *)
 Lemma liftTT_substTT'
  :  forall n n' t1 t2
  ,  liftTT 1 (n + n') (substTT n t2 t1)

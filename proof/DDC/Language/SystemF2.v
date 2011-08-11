@@ -13,6 +13,9 @@ Require Export DDC.Language.SystemF2.TyLift.
 (* Substitution of types in types, and lemmas about it *)
 Require Export DDC.Language.SystemF2.TySubst.
 
+(* Simultaneous substitution of types in types, and lemmas about it *)
+Require Export DDC.Language.SystemF2.TySubsts.
+
 (* Types, well formed and closed, lifting and substitution lemmas. *)
 Require Export DDC.Language.SystemF2.Ty.
 

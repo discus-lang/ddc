@@ -56,6 +56,18 @@ Proof.
 Qed.
 
 
+Lemma map_impl
+ :  forall {A B} (f: A -> B) {g: A -> B} xs
+ ,  (forall x, f x = g x)
+ -> map f xs = map g xs.
+Proof.
+ intros.
+ induction xs.
+  auto.
+  repeat rewritess.
+Qed.
+
+
 (* Extensional equality with map.
    If two functions return equal results for all elements in a list, 
    then using one or the other in a map gives the same result. *) 

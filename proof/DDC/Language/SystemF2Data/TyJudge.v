@@ -2,6 +2,7 @@
 Require Export DDC.Language.SystemF2.Ki.
 Require Export DDC.Language.SystemF2.KiJudge.
 Require Export DDC.Language.SystemF2.TyEnv.
+Require Export DDC.Language.SystemF2.TySubsts.
 Require Export DDC.Language.SystemF2Data.Def.
 Require Export DDC.Language.SystemF2Data.Exp.
 
