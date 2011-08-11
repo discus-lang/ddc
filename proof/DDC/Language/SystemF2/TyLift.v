@@ -125,7 +125,7 @@ Proof.
  induction t; intros; simpl; try burn.
 
  Case "TVar".
-  repeat (unfold liftTT; lift_cases; intros); burn.
+  repeat (lift_cases; unfold liftTT); burn.
 
  Case "TForall".
   rrwrite (S (d + d') = (S d) + d').

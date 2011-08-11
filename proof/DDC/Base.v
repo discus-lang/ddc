@@ -36,11 +36,25 @@ Tactic Notation "SSSSSSSCase" constr(name) := Case_aux SSSSSSSCase name.
 
 (********************************************************************)
 (* Tactic to help deal with lifting functions *)
-Ltac lift_cases 
+Ltac fbreak_get 
+ := match goal with 
+    |  [ |- context [get ?E1 ?E2] ] 
+    => case (get E1 E2)
+    end.
+
+
+Ltac fbreak_le_gt_dec
  := match goal with 
      |  [ |- context [le_gt_dec ?n ?n'] ]
      => case (le_gt_dec n n')
     end.
+
+
+Ltac lift_cases := 
+ repeat (intros;
+  first [ fbreak_nat_compare
+        | fbreak_le_gt_dec
+        | fbreak_get]); intros.
 
 
 Ltac lift_burn t

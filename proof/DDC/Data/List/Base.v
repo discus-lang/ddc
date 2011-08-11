@@ -113,6 +113,21 @@ Qed.
 Hint Resolve get_length_more.
 
 
+Lemma get_none_length
+ :  forall {A} n (xs: list A)
+ ,  get n xs = None
+ -> length xs <= n.
+Proof.
+ intros. gen n.
+ induction xs; intros.
+  simpl. burn.
+  simpl. simpl in H.
+   destruct n.
+    false.
+    apply IHxs in H. omega.
+Qed.
+
+
 (********************************************************************)
 (** Lemmas: app *)
 

@@ -43,26 +43,6 @@ Proof.
 Qed.
 
 
-Ltac fbreak_get 
- := match goal with 
-    |  [ |- context [get ?E1 ?E2] ] 
-    => case (get E1 E2)
-    end.
-
-Ltac fbreak_le_gt_dec
- := match goal with 
-     |  [ |- context [le_gt_dec ?n ?n'] ]
-     => case (le_gt_dec n n')
-    end.
-
-
-Ltac lift_unfold := 
- repeat (intros; simpl;
-  first [ fbreak_nat_compare
-        | fbreak_le_gt_dec
-        | fbreak_get]).
-
-
 Lemma match_option
  : forall {A} {B} (f: A -> B) (xs: list A) ix y
  , f (match get ix xs         with | Some x => x | None  => y   end)
@@ -76,21 +56,6 @@ Proof.
   rewrite HeqGet. auto.
 
   admit. (* fine, list lemma *)
-Qed.
-
-
-Lemma get_none_length
- :  forall {A} n (xs: list A)
- ,  get n xs = None
- -> length xs <= n.
-Proof.
- intros. gen n.
- induction xs; intros.
-  simpl. burn.
-  simpl. simpl in H.
-   destruct n.
-    false.
-    apply IHxs in H. omega.
 Qed.
 
 
@@ -109,19 +74,21 @@ Proof.
   auto.
 
  Case "TVar".
-  lift_unfold; 
-   induction us; 
-    unfold substTTs';
-    try lift_unfold; intros; simpl;
-    try (rewrite map_length);
-    try burn.
+  repeat (simpl; lift_cases);
+   induction us;
+    unfold substTTs'; 
+     auto;
+     try (rewrite map_length);
+     try (simpl; lift_cases; burn).
 
   SCase "manual case".
+   repeat simpl.
    rrwrite (n0 + n' - (n0 + n') = 0).
    rrwrite (n0 + n' + 1 - S (n0 + n') = 0). 
    auto.
 
   SCase "manual case".
+   repeat simpl.
    nnat.
    rrwrite  (S n - S (n0 + n') = n - (n0 + n')).
    remember (n - (n0 + n')) as X.
@@ -135,7 +102,7 @@ Proof.
      symmetry in HeqY.
      apply get_none_length in HeqY.
      rewrite map_length in HeqY.
-     lift_unfold; 
+     lift_cases; 
       intros; fequal; burn.
 
  Case "TForall".
