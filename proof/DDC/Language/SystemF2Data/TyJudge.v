@@ -237,11 +237,12 @@ Proof.
     simpl. intros.
     nforall.
     lets D: H ix H2; auto.
-    assert ( liftTT 1 ix (substTTs 0 ts y)
-           = substTTs 0 (map (liftTT 1 ix) ts) y).
-     admit.                                          (* need lemma *)
-    rewrite <- H3.
-    auto.
+    assert (ix = ix + 0). omega.  
+     rewrite H3 in D. 
+    rewrite liftTT_substTTs' in D. 
+    rewrite <- H3 in D.
+    admit. (* need that tsFields are closed under tyvars on data type 
+              then liftTT 1 (length ts + ix) y = y) *)
 
  Case "XCase".
   eapply TYCase; eauto.

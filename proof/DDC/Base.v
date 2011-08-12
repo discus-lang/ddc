@@ -38,15 +38,17 @@ Tactic Notation "SSSSSSSCase" constr(name) := Case_aux SSSSSSSCase name.
 (* Tactic to help deal with lifting functions *)
 Ltac fbreak_get 
  := match goal with 
-    |  [ |- context [get ?E1 ?E2] ] 
-    => case (get E1 E2)
+     |  [ |- context [get ?E1 ?E2] ] 
+     => let X := fresh 
+        in remember (get E1 E2) as X; destruct X
     end.
 
 
 Ltac fbreak_le_gt_dec
  := match goal with 
      |  [ |- context [le_gt_dec ?n ?n'] ]
-     => case (le_gt_dec n n')
+     => let X := fresh 
+        in remember (le_gt_dec n n') as X; destruct X
     end.
 
 
@@ -65,12 +67,5 @@ Ltac lift_burn t
       
           (* try to apply rewrites from the hypotheses *)    
           | repeat rewritess ].
-
-
-
-
-
-
-
 
 
