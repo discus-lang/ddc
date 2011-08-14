@@ -61,6 +61,7 @@ Proof.
   auto.
   simpl. auto.
 Qed.
+Hint Resolve Forall2_length. 
 
 
 Lemma Forall2_get_get_left

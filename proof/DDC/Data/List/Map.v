@@ -43,6 +43,19 @@ Qed.
 Hint Resolve get_map.
 
 
+Lemma map_app 
+ :  forall {A B} (f: A -> B) xx yy
+ ,  map f (xx ++ yy)
+ =  map f xx ++ map f yy.
+Proof.
+ intros.
+ induction xx.
+  auto.
+  simpl. rewrite IHxx. auto.
+Qed.
+Hint Resolve map_app.
+
+
 (* Applying two functions to all the elements of a list one after
    the other is the same as applying their composition. *)
 Lemma map_map

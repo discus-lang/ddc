@@ -39,6 +39,18 @@ Lemma liftTT_takeTCon
 Proof.
  intros; lift_burn tt.
 Qed.
+Hint Resolve liftTT_takeTCon.
+
+
+Lemma liftTT_takeTCon'
+ :  forall n d tt tCon
+ ,  takeTCon tt = tCon
+ -> takeTCon (liftTT n d tt) = liftTT n d tCon.
+Proof.
+ intros. gen n d.
+ induction tt; intros; rewrite <- H; auto.
+Qed.
+Hint Resolve liftTT_takeTCon'.
 
 
 Lemma liftTT_takeTArgs
@@ -51,9 +63,21 @@ Proof.
  simpl. rewrite map_snoc. 
   f_equal. auto.
 Qed. 
+Hint Resolve liftTT_takeTArgs.
 
 
-Lemma liftTT_makeTApps 
+Lemma liftTT_takeTArgs'
+ :  forall n d tt tsArgs
+ ,  takeTArgs tt = tsArgs
+ -> takeTArgs (liftTT n d tt) = map (liftTT n d) tsArgs.
+Proof.
+ intros.
+ induction tt; intros; rewrite <- H; auto.
+Qed.
+Hint Resolve liftTT_takeTArgs'.
+
+
+Lemma liftTT_makeTApps
  :  forall n d t1 ts
  ,  liftTT n d (makeTApps t1 ts)
  =  makeTApps (liftTT n d t1) (map (liftTT n d) ts). 
@@ -61,6 +85,7 @@ Proof.
  intros. gen t1.
  induction ts; intros; auto; rewritess.
 Qed.
+Hint Resolve liftTT_makeTApps.
 
 
 (********************************************************************)
@@ -196,3 +221,4 @@ Proof.
   rewrite -> liftTT_plus.
   auto.
 Qed.
+

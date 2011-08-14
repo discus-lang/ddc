@@ -5,6 +5,7 @@ Require Export DDC.Language.SystemF2.TyEnv.
 Require Export DDC.Language.SystemF2.TySubsts.
 Require Export DDC.Language.SystemF2Data.Def.
 Require Export DDC.Language.SystemF2Data.Exp.
+Require Import Coq.Logic.FunctionalExtensionality.
 
 
 (* Type Judgement assigns a type to an expression. *)
@@ -71,11 +72,13 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) : exp -> ty -> Prop :=
 with TYPEA  (ds: defs) (ke: kienv) (te: tyenv) : alt -> ty -> ty -> Prop :=
  (* Case Alternatives *)
  | TYAlt 
-   :  forall x1 dc tObj tObj1 tsObj tsFields tResult tcObj
+   :  forall x1 dc tObj tObj1 tc ks tsParam tsFields tResult dcs
    ,  DEFSOK ds
-   -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
-   -> takeTApps tObj   = (tObj1, tsObj)
-   -> TYPE  ds ke (te >< map (substTTs 0 tsObj) tsFields) x1 tResult
+   -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
+   -> getDataDef dc ds = Some (DefData     dc tsFields tc)
+   -> Forall2 (KIND ke) tsParam ks
+   -> takeTApps tObj   = (tObj1, tsParam)
+   -> TYPE  ds ke (te >< map (substTTs 0 tsParam) tsFields) x1 tResult
    -> TYPEA ds ke te (AAlt dc x1) tObj tResult.
 
 Hint Constructors TYPE.
@@ -172,10 +175,10 @@ Proof.
  Case "XAlt".
   destruct dc.
   eapply WfA_AAlt. eauto.
-  apply IHx in H7.
-  rewrite app_length in H7.
-  rewrite map_length in H7.
-  rewrite plus_comm  in H7.
+  apply IHx in H9.
+  rewrite app_length in H9.
+  rewrite map_length in H9.
+  rewrite plus_comm  in H9.
   auto.   
 Qed.
 Hint Resolve type_wfX.
@@ -283,19 +286,42 @@ Proof.
      rewrite dcOfAlt_liftTA_map. auto.
 
  Case "XAlt".
-  eapply TYAlt; eauto.
-  unfold takeTApps in H4. invert H4.
-  intros. unfold takeTApps.
-   f_equal; eauto.
-  
-  (* need lemma *)
-  (*
-  assert ( forall ts, liftTE ix  te >< map (substTTs 0 ts) tsFields
-         = liftTE ix (te >< map (substTTs 0 ts) tsFields)).
-  admit.
-  eapply IHx1 in H7.
-   rewrite H. eauto. *)
-  admit.
+  assert ( takeTApps (liftTT 1 ix t3) 
+          = (liftTT 1 ix tObj1, map (liftTT 1 ix) tsParam)).
+   unfold takeTApps in H6. invert H6. intros.
+   unfold takeTApps. f_equal. auto. auto.
+
+  lets HD: getDataDef_ok H2 H4. inverts HD.
+   rewrite H8 in H3. inverts H3.
+
+  eapply TYAlt; eauto. 
+   unfold takeTApps in H. invert H. intros.
+   unfold takeTApps.
+   rewrite H3. lists. auto.
+   eapply Forall2_map_left.
+   eapply Forall2_impl; eauto.
+    intros. eapply kind_kienv_insert. auto.
+
+   assert ( map (liftTT 1 ix) (map (substTTs 0 tsParam)  tsFields)
+          = map (substTTs 0 (map (liftTT 1 ix) tsParam)) tsFields) as HXX.
+    rewrite map_map. unfold compose.
+    erewrite map_ext_in; eauto.
+    intros.
+     rename x into t1.
+     rrwrite (ix = ix + 0).
+     rewrite liftTT_substTTs'.
+     f_equal. 
+     nnat.
+     assert (wfT (length ks) t1).
+      eapply kind_wfT.
+      nforall. eauto.
+     eapply liftTT_wfT_1.
+     assert (length tsParam = length ks) as HL; eauto.
+     rewrite HL. auto.
+
+   rewrite <- HXX.
+   unfold liftTE. rewrite <- map_app.
+   unfold liftTE in IHx1. eapply IHx1. auto.
 Qed.   
 
 
@@ -344,13 +370,13 @@ Proof.
      (fun a => TYPEA ds ke te a tObj t1)); eauto.
    nforall. eauto.
    nforall.
-    intros. rewrite map_map. unfold compose.
+    intros. lists.
     rename x0 into d.
     eapply map_exists_in.
     assert (In d (map dcOfAlt aa)). 
-    eauto.
+     eauto.
     assert (exists a, dcOfAlt a = d /\ In a aa).
-    eapply map_in_exists. auto.
+     eapply map_in_exists. auto.
    shift a. subst. int. rewrite <- H7.
    eapply dcOfAlt_liftXA.
 
@@ -358,9 +384,9 @@ Proof.
   destruct dc.
   eapply TYAlt; eauto.
   rewrite insert_app.
-  rewrite map_length.
-  apply getDataDef_ok in H3; auto.
-   inverts H3. auto.
+  lists.
+  eapply getDataDef_ok in H2; eauto.
+   inverts H2. auto.
 Qed. 
 
 

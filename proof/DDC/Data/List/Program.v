@@ -17,9 +17,8 @@ Proof.
 
   remember (get ix (map f xs)) as X.
   destruct X.
-   admit.
+   symmetry in HeqX.   eapply get_length_more in HeqX.
+   symmetry in HeqGet. eapply get_none_length in HeqGet.
+   rewrite map_length in HeqX. exfalso. omega.
    auto.
 Qed.
-
-
-
