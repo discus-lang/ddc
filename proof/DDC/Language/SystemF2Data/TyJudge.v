@@ -277,7 +277,7 @@ Proof.
    eapply H. 
     auto.
     simpl in H1. auto.
-    rewrite getCtorOfType_liftTT. auto.
+    rewrite liftTT_getCtorOfType. auto.
     nforall. intros.
      apply H8 in H0.
      rewrite dcOfAlt_liftTA_map. auto.

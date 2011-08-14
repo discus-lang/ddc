@@ -25,7 +25,7 @@ Hint Unfold liftTT.
 
 (********************************************************************)
 (* Lifting and type utils *)
-Lemma getCtorOfType_liftTT
+Lemma liftTT_getCtorOfType
  :  forall d ix t 
  ,  getCtorOfType (liftTT d ix t) = getCtorOfType t.
 Proof.
