@@ -5,20 +5,6 @@ Require Export DDC.Language.SystemF2.TyLift.
 Require Import Coq.Logic.FunctionalExtensionality.
 
 
-Ltac fbreak_le_gt_dec'
- := match goal with 
-     |  [ |- context [le_gt_dec ?n ?n'] ]
-     => case (le_gt_dec n n')
-    end.
-
-
-Ltac lift_cases' := 
- repeat (intros;
-  first [ fbreak_nat_compare
-        | fbreak_le_gt_dec'
-        | fbreak_get]); intros.
-
-
 Lemma get_some_get_map_some
  :  forall {A} t1 t2 ix us (f: A -> A)
  ,  Some t1 = get ix us
@@ -261,7 +247,7 @@ Proof.
   simpl. auto.
 
  Case "TVar".
-   repeat (simpl; unfold substTTs'; lift_cases');
+   repeat (simpl; unfold substTTs'; lift_cases);
     try (rewrite map_length);
     try auto;
     try (false; omega); 
