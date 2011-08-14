@@ -13,6 +13,7 @@ Require Export DDC.Data.List.Insert.
 Require Export DDC.Data.List.Delete.
 Require Export DDC.Data.List.Update.
 Require Export DDC.Data.List.Extends.
+Require Export DDC.Data.List.Program.
 
 Require Import DDC.Data.Nat.
 Require Import DDC.Base.Tactics.
@@ -20,5 +21,60 @@ Require Import Coq.Program.Basics.
 
 
 
+(******************************************************************************)
+(* Intution tactic for lists 
+   Does some stuff to lists that we usually want *)
 
+
+(* Infer upper bound on index used in get *)
+Ltac lists_get_length_some
+ := match goal with 
+    | [  H1 : Some _  = get ?ix ?xs 
+      ,  H2 : length ?xs > ?ix   
+      |- _] => idtac
+
+    | [ H : Some _  = get ?ix ?xs 
+      |- _ ]
+    => assert (length xs > ix) by
+        (eapply get_length_more; eauto)
+    end.
+
+
+(* Infer lower bound on index used in get *)
+Ltac lists_get_length_none
+ := match goal with 
+    | [ H1 : None    = get ?ix ?xs 
+      , H2 : length ?xs <= ?ix
+      |- _] => idtac
+
+    | [ H : None    = get ?ix ?xs |- _ ]
+    => assert (length xs <= ix) by
+        (eapply get_none_length; eauto)
+    end.
+
+
+(* Infer relationship between values from original and transformed list *)
+Ltac lists_get_map_some_some
+ := match goal with
+    | [ H1 : Some ?t1 = get ?ix ?us
+      , H2 : Some ?t2 = get ?ix (map ?f ?us)
+      , H3 : ?t2 = ?f ?t1
+      |- _] => idtac
+
+    | [ H1 : Some ?t1 = get ?ix ?us
+      , H2 : Some ?t2 = get ?ix (map ?f ?us)
+      |- _]  
+      => assert (t2 = f t1) by 
+          (symmetry; eapply map_get_some_some; eauto)
+    end.
+
+
+(* Intuition tactic fof lists *)
+Ltac lists
+ := try lists_get_map_some_some;
+    try lists_get_length_some;
+    try lists_get_length_none;
+    repeat (try (rewrite map_length in *));
+    repeat (try (rewrite map_map    in *);
+            unfold compose in *).
 

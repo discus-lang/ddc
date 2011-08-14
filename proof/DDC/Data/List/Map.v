@@ -126,3 +126,21 @@ Proof.
    inverts H1. auto.
    right. eauto.
 Qed.
+
+
+Lemma map_get_some_some
+ :  forall {A} t1 t2 ix us (f: A -> A)
+ ,  Some t1 = get ix us
+ -> Some t2 = get ix (map f us)
+ -> f t1 = t2.
+Proof.
+ intros. gen ix t1 t2.
+ induction us; intros.
+  false.
+  destruct ix.
+   simpl in H. simpl in H0. 
+   inverts H.  inverts H0. auto.
+
+   simpl in H. simpl in H0; eauto.
+Qed.
+

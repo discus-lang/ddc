@@ -5,51 +5,9 @@ Require Export DDC.Language.SystemF2.TyLift.
 Require Import Coq.Logic.FunctionalExtensionality.
 
 
-Lemma get_some_get_map_some
- :  forall {A} t1 t2 ix us (f: A -> A)
- ,  Some t1 = get ix us
- -> Some t2 = get ix (map f us)
- -> f t1 = t2.
-Proof.
- intros. gen ix t1 t2.
- induction us; intros.
-  false.
-  destruct ix.
-   simpl in H. simpl in H0. 
-   inverts H.  inverts H0. auto.
-
-   simpl in H. simpl in H0; eauto.
-Qed.
 
 
-Ltac make_get_some_get_map_some
- := match goal with
-    | [ H1 : Some ?t1 = get _ _
-      , H2 : Some ?t2 = get _ _
-      |- _]  
-      => lets D: @get_some_get_map_some ty H1 H2; eauto
-    end.
 
-Ltac make_get_some_none_lengths
- := match goal with
-    | [ H1 : Some ?t1 = get _ _
-      , H2 : None     = get _ _
-      |- _]  
-      => symmetry in H1; apply get_length_more in H1;
-         symmetry in H2; apply get_none_length in H2
-    end.
-
-
-Lemma get_zero_nonempty_some
- :  forall {A} (us: list A)
- ,  length us > 0
- -> (exists x, get 0 us = Some x).
-Proof.
- intros.
- destruct us.
-  simpl in H. inverts H.
-  simpl. eauto.
-Qed.
 
 
 
@@ -112,25 +70,7 @@ Proof.
 Qed.
 
 
-
 (********************************************************************)
-Lemma match_option
- : forall {A} {B} (f: A -> B) (xs: list A) ix y
- , f (match get ix xs         with | Some x => x | None  => y   end)
- =   (match get ix (map f xs) with | Some x => x | None  => f y end).
-Proof.
- intros.
- remember (get ix xs) as Get.
- destruct Get.
-  symmetry in HeqGet.
-  apply (get_map f) in HeqGet.
-  rewrite HeqGet. auto.
-
-  admit. (* fine, list lemma *)
-Qed.
-
-
-
 (* Lifting after substitution *)
 Lemma liftTT_substTTs_1
  :  forall n n' t1 us
@@ -230,6 +170,7 @@ Proof.
 Qed.
 
 
+
 (********************************************************************)
 (* Lifting after substitution, 
    with the lifting at a higher index *)
@@ -248,48 +189,20 @@ Proof.
 
  Case "TVar".
    repeat (simpl; unfold substTTs'; lift_cases);
-    try (rewrite map_length);
     try auto;
-    try (false; omega); 
-    try make_get_some_get_map_some;
-    try (make_get_some_none_lengths);
-    try (rewrite map_length in HeqH1; burn).
-
-   SCase "manual case".
-    f_equal. 
-     apply get_zero_nonempty_some in H. dest x.
-     assert (n0 - n0 = 0). omega.
-      rewrite H0 in HeqH0.
-      rewrite H in HeqH0. false.
-
-   SCase "manual case".
-    symmetry in HeqH0. apply get_length_more in HeqH0.
-    symmetry in HeqH1. apply get_length_more in HeqH1.
-    rewrite map_length in HeqH1. burn.
-
-   SCase "manual case".
-    symmetry in HeqH0. apply get_none_length in HeqH0.
-    symmetry in HeqH1. apply get_none_length in HeqH1.
-    rewrite map_length in HeqH1. burn.
-
-   SCase "manual case".
-    symmetry in HeqH0. apply get_none_length in HeqH0.
-    symmetry in HeqH1. apply get_none_length in HeqH1.
-    rewrite map_length in HeqH1. burn.
+    try (false; omega);
+    try (lists; burn).
 
  Case "TForall".
   simpl. f_equal.
   rrwrite (S (n' + n) = n' + S n).
   erewrite IHt1.
   f_equal.
-   rewrite map_map.
-   rewrite map_map.
-   unfold compose. f_equal. extensionality x.
-   rrwrite (n' + S n = 1 + (n' + n) + 0).
-   rewrite <- liftTT_liftTT. nnat. auto.
-  f_equal.
-   rewrite map_length. omega.
-   rewrite map_length. omega.
+   lists. f_equal. extensionality x.
+    rrwrite (n' + S n = 1 + (n' + n) + 0).
+    rewrite <- liftTT_liftTT. nnat. auto.
+   f_equal; lists; omega.
+  lists; omega.
 
  Case "TApp".
   simpl. f_equal.

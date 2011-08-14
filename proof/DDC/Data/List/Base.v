@@ -330,3 +330,15 @@ Proof.
 Qed.
 Hint Resolve get_above_false.
 
+
+Lemma get_zero_nonempty_some
+ :  forall {A} (us: list A)
+ ,  length us > 0
+ -> (exists x, get 0 us = Some x).
+Proof.
+ intros.
+ destruct us.
+  simpl in H. inverts H.
+  simpl. eauto.
+Qed.
+
