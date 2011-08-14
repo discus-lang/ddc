@@ -181,58 +181,6 @@ Qed.
 Hint Resolve type_wfX.
 
 
-Lemma liftTT_wfT_1
- :  forall kn n t
- ,  wfT kn t
- -> liftTT 1 (kn + n + 1) t = t.
-Proof.
- intros. gen kn n.
- induction t; intros; auto.
- 
- Case "TVar".
-  simpl.
-   case (le_gt_dec (kn + n0 +1)); intros.
-   inverts H. burn.
-   auto.
-
- Case "TForall".
-  simpl. f_equal.
-  rrwrite (S (kn + n + 1) = S kn + n + 1).
-   inverts H.
-   eapply IHt. auto.
-
- Case "TApp".
-  inverts H. simpl.
-  repeat rewritess.
-Qed.
-
-
-Lemma liftTT_closed_1
- :  forall t ix
- ,  wfT 0 t
- -> liftTT 1 ix t = t.
-Proof.
- intros.
- induction t; intros; auto.
-  induction ix.
-   inverts H.
-
-  simpl. lift_cases. inverts H. f_equal.
-
-
-
-
-Lemma liftTT_unbound
- :  forall (ts: list ty) t ix
- ,  wfT (length ts) t
- -> liftTT 1 (length ts + ix) t = t.
-Proof.
- intros.
- destruct ts.
-  simpl in H. simpl.
-
-
-
 (********************************************************************)
 (* Weakening Kind Env in Type Judgement. *)
 Lemma type_kienv_insert
@@ -316,21 +264,10 @@ Proof.
       eapply Forall2_length. eauto.
      rewrite HLts.
      eapply kind_wfT. nforall. eauto.
+     nnat.
+     apply liftTT_wfT_1. auto.
 
-
-     (* 
-
-     destruct ts.
-      simpl. rewrite <- Hix0.
-       simpl in H. 
-       assert (closedT y). auto.
-       admit. (* lift closed *)
-     
-    rewrite HL in D.
-    spec D k2.    
-    
-    admit. (* need that tsFields are closed under tyvars on data type 
-              then liftTT 1 (length ts + ix) y = y) *)
+    rewrite <- H. auto.
 
  Case "XCase".
   eapply TYCase; eauto.

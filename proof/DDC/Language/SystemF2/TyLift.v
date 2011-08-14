@@ -24,6 +24,7 @@ Hint Unfold liftTT.
 
 
 (********************************************************************)
+(* Lifting and type utils *)
 Lemma getCtorOfType_liftTT
  :  forall d ix t 
  ,  getCtorOfType (liftTT d ix t) = getCtorOfType t.
@@ -107,6 +108,29 @@ Proof.
   rewrite liftTT_succ.
   auto.
 Qed. 
+
+
+Lemma liftTT_wfT_1
+ :  forall t n ix
+ ,  wfT n t
+ -> liftTT 1 (n + ix) t = t.
+Proof.
+ intros. gen n ix.
+ induction t; intros; auto.
+  Case "TVar".
+   inverts H. simpl. lift_cases; burn.
+
+  Case "TForall".
+   simpl. f_equal.
+   inverts H.
+   eapply IHt in H1.
+   rrwrite (S (n + ix) = S n + ix).
+   eauto.
+
+  Case "TApp".
+   inverts H.
+   repeat rewritess; auto.
+Qed.
 
 
 (********************************************************************)

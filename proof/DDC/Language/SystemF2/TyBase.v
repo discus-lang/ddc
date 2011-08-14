@@ -40,6 +40,9 @@ Definition tFun (t1: ty) (t2: ty)
 Hint Unfold tFun.
 
 
+(********************************************************************)
+(* Type Utils *)
+
 (* Get the type constructor of a type, if any *)
 Fixpoint getCtorOfType (tt: ty) : option tycon :=
  match tt with
@@ -56,18 +59,6 @@ Fixpoint makeTApps (t1: ty) (tt: list ty) : ty :=
  | nil     => t1
  | t :: ts => makeTApps (TApp t1 t) ts
  end.
-
-
-Lemma makeTApps_snoc
- : forall t1 t2 t3 ts
- , makeTApps (TApp t1 t2) (snoc t3 ts) 
- = TApp (makeTApps t1 (cons t2 ts)) t3.
-Proof.
- intros. gen t1 t2.
- induction ts; intros.
-  simpl. auto.
-  simpl. rewrite IHts. auto.
-Qed.
 
 
 Fixpoint takeTCon (tt: ty) : ty :=
@@ -88,6 +79,18 @@ Fixpoint takeTArgs (tt: ty) : list ty :=
 Definition takeTApps (tt: ty) : (ty * list ty) 
  := (takeTCon tt, takeTArgs tt).
 
+
+
+Lemma makeTApps_snoc
+ : forall t1 t2 t3 ts
+ , makeTApps (TApp t1 t2) (snoc t3 ts) 
+ = TApp (makeTApps t1 (cons t2 ts)) t3.
+Proof.
+ intros. gen t1 t2.
+ induction ts; intros.
+  simpl. auto.
+  simpl. rewrite IHts. auto.
+Qed.
 
 
 Lemma takeTCon_makeTApps
@@ -114,5 +117,35 @@ Proof.
   eapply IHts in H.
   simpl in H. auto.
 Qed.
+
+
+(********************************************************************)
+(* Well formed types are closed under the given kind environment. *)
+Inductive wfT (kn: nat) : ty -> Prop :=
+ | WfT_TVar 
+   :  forall ki
+   ,  ki < kn
+   -> wfT kn (TVar ki)
+
+ | WfT_TCon
+   :  forall n
+   ,  wfT kn (TCon n)
+
+ | WfT_TForall
+   :  forall t
+   ,  wfT (S kn) t
+   -> wfT kn (TForall t)
+
+ | WfT_TApp
+   :  forall t1 t2
+   ,  wfT kn t1 -> wfT kn t2
+   -> wfT kn (TApp t1 t2).
+Hint Constructors wfT.
+
+
+(* Closed types are well formed under an empty environment. *)
+Definition closedT (tt: ty) : Prop
+ := wfT O tt.
+Hint Unfold closedT.
 
 
