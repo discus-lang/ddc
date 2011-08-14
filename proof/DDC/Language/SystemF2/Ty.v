@@ -8,7 +8,7 @@ Require Export DDC.Language.SystemF2.TySubst.
 Inductive wfT (kn: nat) : ty -> Prop :=
  | WfT_TVar 
    :  forall ki
-   ,  ki <= kn
+   ,  ki < kn
    -> wfT kn (TVar ki)
 
  | WfT_TCon

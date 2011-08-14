@@ -181,6 +181,58 @@ Qed.
 Hint Resolve type_wfX.
 
 
+Lemma liftTT_wfT_1
+ :  forall kn n t
+ ,  wfT kn t
+ -> liftTT 1 (kn + n + 1) t = t.
+Proof.
+ intros. gen kn n.
+ induction t; intros; auto.
+ 
+ Case "TVar".
+  simpl.
+   case (le_gt_dec (kn + n0 +1)); intros.
+   inverts H. burn.
+   auto.
+
+ Case "TForall".
+  simpl. f_equal.
+  rrwrite (S (kn + n + 1) = S kn + n + 1).
+   inverts H.
+   eapply IHt. auto.
+
+ Case "TApp".
+  inverts H. simpl.
+  repeat rewritess.
+Qed.
+
+
+Lemma liftTT_closed_1
+ :  forall t ix
+ ,  wfT 0 t
+ -> liftTT 1 ix t = t.
+Proof.
+ intros.
+ induction t; intros; auto.
+  induction ix.
+   inverts H.
+
+  simpl. lift_cases. inverts H. f_equal.
+
+
+
+
+Lemma liftTT_unbound
+ :  forall (ts: list ty) t ix
+ ,  wfT (length ts) t
+ -> liftTT 1 (length ts + ix) t = t.
+Proof.
+ intros.
+ destruct ts.
+  simpl in H. simpl.
+
+
+
 (********************************************************************)
 (* Weakening Kind Env in Type Judgement. *)
 Lemma type_kienv_insert
@@ -225,22 +277,58 @@ Proof.
    eapply IHx1_2 in H4. eauto.
 
  Case "XCon".
+  (* unpack the data type definition *)
+  assert (DEFOK ds (DefData dc tsFields tc)) as DDefOK.
+   eapply getDataDef_ok; eauto.
+   inverts DDefOK.
+   assert (ks0 = ks /\ dcs0 = dcs).
+    rewrite H5 in H3. inverts H3. auto. int. subst. clear H3.
+
+  (* show XCon has the correct type *)
   rewrite liftTT_makeTApps.
   eapply TYCon; eauto.
-   eapply Forall2_map_left.
-   eapply Forall2_impl.
-   intros.
-   eapply kind_kienv_insert. eauto. eauto.
-   apply Forall2_map.
-   apply Forall2_map_right' in H9.
-   eapply Forall2_impl_in; eauto.
-    simpl. intros.
+
+   (* type args have correct kinds *)
+    eapply Forall2_map_left.
+    eapply Forall2_impl; eauto.
+    intros. eapply kind_kienv_insert. auto.
+
+   (* exp args have correct types *)
+    apply Forall2_map.
+    apply Forall2_map_right' in H9.
+    eapply Forall2_impl_in; eauto.
+     simpl. intros.
+
     nforall.
-    lets D: H ix H2; auto.
-    assert (ix = ix + 0). omega.  
-     rewrite H3 in D. 
-    rewrite liftTT_substTTs' in D. 
-    rewrite <- H3 in D.
+    lets D: H ix H2 k2; auto. clear H.
+
+    assert ( liftTT 1 ix (substTTs 0 ts y)
+           = substTTs 0 (map (liftTT 1 ix) ts) y).
+
+     assert (ix = ix + 0) as Hix0. omega.  
+     rewrite -> Hix0. 
+     rewrite liftTT_substTTs'. 
+     rewrite <- Hix0.
+     f_equal.
+
+    assert (wfT (length ts) y).
+     assert (length ts = length ks) as HLts.
+      eapply Forall2_length. eauto.
+     rewrite HLts.
+     eapply kind_wfT. nforall. eauto.
+
+
+     (* 
+
+     destruct ts.
+      simpl. rewrite <- Hix0.
+       simpl in H. 
+       assert (closedT y). auto.
+       admit. (* lift closed *)
+     
+    rewrite HL in D.
+    spec D k2.    
+    
     admit. (* need that tsFields are closed under tyvars on data type 
               then liftTT 1 (length ts + ix) y = y) *)
 

@@ -47,8 +47,7 @@ Ltac fbreak_get
 Ltac fbreak_le_gt_dec
  := match goal with 
      |  [ |- context [le_gt_dec ?n ?n'] ]
-     => let X := fresh 
-        in remember (le_gt_dec n n') as X; destruct X
+     => case (le_gt_dec n n'); intros
     end.
 
 
@@ -67,5 +66,4 @@ Ltac lift_burn t
       
           (* try to apply rewrites from the hypotheses *)    
           | repeat rewritess ].
-
 
