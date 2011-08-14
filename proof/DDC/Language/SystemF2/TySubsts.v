@@ -1,14 +1,7 @@
 
-
 Require Export DDC.Language.SystemF2.TyBase.
 Require Export DDC.Language.SystemF2.TyLift.
 Require Import Coq.Logic.FunctionalExtensionality.
-
-
-
-
-
-
 
 
 (********************************************************************)
@@ -51,7 +44,7 @@ Proof.
     lift_cases; burn.
 
  Case "TForall".
-  simpl. f_equal. auto.
+  simpl. burn.
 
  Case "TApp".
   repeat rewritess.
@@ -121,21 +114,17 @@ Proof.
    simpl. 
     rrwrite (S (n + n') = (S n) + n').
     rewrite IHt1. auto.
-
    simpl.
     rewrite (liftTT_liftTT_11 0 n). simpl.
     rewrite (IHt1 (S n) n'). 
     f_equal. simpl. f_equal.
-    rewrite map_map. rewrite map_map.
-    f_equal. unfold compose. 
-    extensionality x.
-    symmetry.
-    rrwrite (n = n + 0).
-    rewrite liftTT_liftTT. auto.
+     lists. f_equal. extensionality x.
+     symmetry.
+     rrwrite (n = n + 0).
+     rewrite liftTT_liftTT. auto.
 
  Case "TApp".
-  simpl. f_equal.
-  rewritess. rewritess.
+  simpl. f_equal; rewritess.
 Qed.
 
 
@@ -161,12 +150,11 @@ Proof.
   simpl.
   rrwrite (m + n + n' = n + (m + n')).
   rewrite liftTT_substTTs_1.
-  f_equal.
-  rewrite map_map. unfold compose.
-  f_equal.
-  extensionality x.
-  rewrite -> liftTT_plus. auto.
-  rewrite -> liftTT_plus. auto.
+  f_equal. 
+   lists. f_equal.
+    extensionality x.
+    rewrite -> liftTT_plus. auto.
+   rewrite -> liftTT_plus. auto.
 Qed.
 
 
