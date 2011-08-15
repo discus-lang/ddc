@@ -1,6 +1,7 @@
 
 Require Export DDC.Language.SystemF2.TyBase.
 Require Export DDC.Language.SystemF2.TyLift.
+Require Export DDC.Language.SystemF2.TySubst.
 Require Import Coq.Logic.FunctionalExtensionality.
 
 
@@ -216,3 +217,177 @@ Proof.
   simpl. omega.
 Qed.
 
+
+Lemma liftTT_map_substTT
+ :  forall m n n' ts t2
+ ,  map (liftTT m n) (map (substTT (n + n') t2) ts)
+ =  map (substTT (m + n + n') (liftTT m n t2)) (map (liftTT m n) ts).
+Proof.
+ intros.
+ induction ts.
+  auto.
+  simpl. rewrite IHts. f_equal.
+  rewrite liftTT_substTT. auto.
+Qed.
+
+
+Lemma wfT_exists
+ :  forall t1
+ ,  (exists tn, wfT tn t1).
+Proof.
+ intros.
+ induction t1.
+ Case "TCon".
+  exists 0. 
+  auto.
+
+ Case "TVar".
+  exists (S n).
+  eauto.
+
+ Case "TForall".
+  shift tn.
+  eapply WfT_TForall.
+  admit. (* ok *)
+
+ Case "TApp".
+  destruct IHt1_1 as [tn1].
+  destruct IHt1_2 as [tn2].
+  exists (max tn1 tn2).
+  eapply WfT_TApp.
+  admit. (* ok *)
+  admit. (* ok *)
+Qed.
+Hint Resolve wfT_exists.
+
+
+
+Lemma substTT_closed'
+ :  forall t1 t2 ix tn m
+ ,  wfT tn t1
+ -> ix >= tn
+ -> substTT ix (liftTT 1 m t2) t1 = t1.
+Proof.
+ intros. gen t2 ix tn m.
+ induction t1; intros; auto.
+
+ Case "TVar".
+  simpl.
+  lift_cases; auto.
+   inverts H. burn.
+   inverts H. burn.
+
+ Case "TForall".
+  simpl. f_equal.
+   erewrite IHt1. eauto.
+    inverts H. eauto. omega.
+
+ Case "TApp".
+  simpl. inverts H.
+   erewrite IHt1_1; eauto.
+   erewrite IHt1_2; eauto.
+Qed.
+
+
+Lemma substTT_closed
+ :  forall ix t1 t2
+ ,  closedT t1
+ -> substTT ix t2 t1 = t1.
+Proof.
+ intros.
+ assert (exists n, wfT n t2).
+  auto. dest n.
+
+ assert (exists n, liftTT 1 n t2 = t2).
+  exists n. eauto.
+  rrwrite (n = n + 0). 
+  apply liftTT_wfT_1. auto.
+  destruct H1 as [n'].
+
+ rewrite <- H1.
+ eapply substTT_closed'.
+ unfold closedT in H. eauto. omega.
+Qed.
+
+
+Lemma substTTs_closing'
+ :  forall ts t1 tn n
+ ,  Forall (wfT (tn + n)) ts
+ -> wfT (length ts + n) t1
+ -> wfT (tn + n) (substTTs n ts t1).
+Proof.
+ intros. gen n tn ts.
+ induction t1; intros; unfold closedT.
+  simpl. auto.
+
+ Case "TVar".
+  inverts H0.
+  simpl; lift_cases; eauto.
+   unfold substTTs'.
+    lift_cases. 
+      admit. (* ok, get in*)
+      eapply WfT_TVar. lists. omega.
+    eapply WfT_TVar.
+      omega.
+   unfold substTTs'.
+    lift_cases.
+     admit. (* ok, get in *)
+     eapply WfT_TVar. lists. omega.
+
+ Case "TForall".
+  inverts H0. simpl.
+  eapply WfT_TForall.
+  rrwrite (S (tn + n) = tn + (S n)).
+  eapply IHt1.
+   eapply Forall_map. 
+   nforall. intros. admit. (* ok, lemma *)
+   lists.
+   assert (S (length ts + n) = length ts + (S n)).
+    omega.
+    rewrite H0 in H2. eauto.
+
+ Case "TApp".
+  inverts H0.
+  simpl. eauto. 
+Qed.
+Hint Resolve substTTs_closing'.
+
+
+Lemma substTTs_closing
+ :  forall tn ts t1
+ ,  Forall (wfT tn) ts
+ -> wfT (length ts) t1
+ -> wfT tn (substTTs 0 ts t1).
+Proof.
+ intros.
+ rrwrite (tn = tn + 0).
+ eapply substTTs_closing';
+  nnat; auto.
+Qed.
+
+
+Lemma substTTs_substTT
+ :   forall n n' t1 t2 ts
+ ,   wfT (length ts) t1
+ ->  substTTs n (map (substTT (n + n') t2) ts) t1
+ =   substTT (n + n') t2 (substTTs n ts t1).
+Proof.
+ intros.
+  induction t1; intros; auto.
+  admit.
+
+ Case "TForall".
+  inverts H.
+  simpl. f_equal.
+  rrwrite (n + n' = 0 + (n + n')). 
+  rewrite liftTT_map_substTT. nnat.
+  rrwrite (1 + (n + n') = S n + n').
+  rrwrite (S (0 + (n + n')) = 1 + n + n'). nnat.
+  lists.
+  rrwrite (S n + n' = 1 + 0 + (n + n')).
+  admit.
+  (* hmm *)
+
+ Case "TApp".
+  inverts H. simpl. burn.
+Qed.
