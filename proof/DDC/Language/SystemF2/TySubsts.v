@@ -231,37 +231,6 @@ Proof.
 Qed.
 
 
-Lemma wfT_exists
- :  forall t1
- ,  (exists tn, wfT tn t1).
-Proof.
- intros.
- induction t1.
- Case "TCon".
-  exists 0. 
-  auto.
-
- Case "TVar".
-  exists (S n).
-  eauto.
-
- Case "TForall".
-  shift tn.
-  eapply WfT_TForall.
-  admit. (* ok *)
-
- Case "TApp".
-  destruct IHt1_1 as [tn1].
-  destruct IHt1_2 as [tn2].
-  exists (max tn1 tn2).
-  eapply WfT_TApp.
-  admit. (* ok *)
-  admit. (* ok *)
-Qed.
-Hint Resolve wfT_exists.
-
-
-
 Lemma substTT_closed'
  :  forall t1 t2 ix tn m
  ,  wfT tn t1
