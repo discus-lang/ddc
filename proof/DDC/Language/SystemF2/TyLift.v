@@ -31,6 +31,7 @@ Lemma liftTT_getCtorOfType
 Proof.
  lift_burn t.
 Qed.  
+Hint Rewrite liftTT_getCtorOfType : global.
 
 
 Lemma liftTT_takeTCon
@@ -39,7 +40,7 @@ Lemma liftTT_takeTCon
 Proof.
  intros; lift_burn tt.
 Qed.
-Hint Resolve liftTT_takeTCon.
+Hint Rewrite liftTT_takeTCon : global.
 
 
 Lemma liftTT_takeTCon'
@@ -48,7 +49,7 @@ Lemma liftTT_takeTCon'
  -> takeTCon (liftTT n d tt) = liftTT n d tCon.
 Proof.
  intros. gen n d.
- induction tt; intros; rewrite <- H; auto.
+ induction tt; intros; rewrite <- H; burn.
 Qed.
 Hint Resolve liftTT_takeTCon'.
 
@@ -60,10 +61,9 @@ Proof.
  intros.
  induction tt; intros; auto.
  simpl. lift_cases; auto.
- simpl. rewrite map_snoc. 
-  f_equal. auto.
+ simpl. rewrite map_snoc. burn. 
 Qed. 
-Hint Resolve liftTT_takeTArgs.
+Hint Rewrite liftTT_takeTArgs : global.
 
 
 Lemma liftTT_takeTArgs'
@@ -72,7 +72,7 @@ Lemma liftTT_takeTArgs'
  -> takeTArgs (liftTT n d tt) = map (liftTT n d) tsArgs.
 Proof.
  intros.
- induction tt; intros; rewrite <- H; auto.
+ induction tt; intros; rewrite <- H; burn.
 Qed.
 Hint Resolve liftTT_takeTArgs'.
 
@@ -83,9 +83,9 @@ Lemma liftTT_makeTApps
  =  makeTApps (liftTT n d t1) (map (liftTT n d) ts). 
 Proof.
  intros. gen t1.
- induction ts; intros; auto; rewritess.
+ induction ts; burn.
 Qed.
-Hint Resolve liftTT_makeTApps.
+Hint Rewrite liftTT_makeTApps : global.
 
 
 (********************************************************************)

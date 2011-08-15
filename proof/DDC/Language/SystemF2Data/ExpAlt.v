@@ -42,6 +42,7 @@ Proof.
     simpl. auto.
    simpl. right. auto.
 Qed.
+Hint Resolve getAlt_in.
 
 
 (* Given a data constructor, if one of the alternatives in a 

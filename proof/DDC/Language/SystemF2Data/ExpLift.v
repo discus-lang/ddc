@@ -2,6 +2,7 @@
 Require Export DDC.Language.SystemF2Data.ExpBase.
 Require Export DDC.Language.SystemF2Data.ExpAlt.
 Require Export DDC.Base.
+Require Import Coq.Logic.FunctionalExtensionality.
 
 
 (********************************************************************)
@@ -88,6 +89,7 @@ Lemma dcOfAlt_liftXA
 Proof.
  intros. destruct a. destruct d0. auto.
 Qed.
+Hint Rewrite dcOfAlt_liftXA : global.
 
 
 Lemma dcOfAlt_liftTA
@@ -96,6 +98,7 @@ Lemma dcOfAlt_liftTA
 Proof.
  intros. destruct a. destruct d0. auto.
 Qed.
+Hint Rewrite dcOfAlt_liftTA : global.
 
 
 Lemma dcOfAlt_liftTA_map
@@ -103,13 +106,9 @@ Lemma dcOfAlt_liftTA_map
  ,  map dcOfAlt (map (liftTA ix) aa)
  =  map dcOfAlt aa.
 Proof.
- intros.
- induction aa.
-  auto.
-  simpl.
-   f_equal. apply dcOfAlt_liftTA.
-   auto.
+ intros. induction aa; simpl; burn.
 Qed.
+Hint Rewrite dcOfAlt_liftTA_map : global.
 
 
 (* When we lift an expression by zero places,
@@ -125,7 +124,7 @@ Proof.
   ; intros; simpl; try burn.
 
  Case "XVar".
-  lift_cases; intros; auto.
+  lift_cases; burn.
 
  Case "XCon".
   nforall.
@@ -135,11 +134,12 @@ Proof.
  Case "XCase".
   nforall.
   rewrite (map_ext_in (liftXA 0 d) id); auto.
-  rewrite map_id. rewrite IHx; auto.
+  rewrite map_id. burn.
 
  Case "XAlt".
   destruct dc. burn.
 Qed.
+Hint Rewrite liftXX_zero : global.
 
 
 (* Commutivity of lifting. *)
@@ -159,29 +159,22 @@ Proof.
   repeat (simple; lift_cases; intros); burn.
 
  Case "XCon".
-  f_equal.
-  rewrite map_map.
-  rewrite map_map.
-  rewrite Forall_forall in H.
+  f_equal. lists. 
+  nforall.
   rewrite (map_ext_in 
    (fun x0 => liftXX n d (liftXX m d x0))
-   (fun x0 => liftXX m d (liftXX n d x0))).
-  auto. eauto.
+   (fun x0 => liftXX m d (liftXX n d x0))); burn.
 
  Case "XCase".
-  f_equal.
-  eauto.
-  rewrite map_map.
-  rewrite map_map.
-  rewrite Forall_forall in H.
+  f_equal. eauto. 
+  lists.
+  nforall.
   rewrite (map_ext_in
    (fun a1 => liftXA n d (liftXA m d a1))
-   (fun a1 => liftXA m d (liftXA n d a1))).
-  auto. eauto.
+   (fun a1 => liftXA m d (liftXA n d a1))); burn.
 
  Case "XAlt".
-  destruct dc.
-  simpl. burn.
+  destruct dc. burn.
 Qed.
 
 
@@ -203,28 +196,22 @@ Proof.
   repeat (simple; lift_cases; intros); burn.
 
  Case "XCon".
-  f_equal.
-  repeat (rewrite map_map).
-  rewrite Forall_forall in H.
+  f_equal. lists. nforall.
   rewrite (map_ext_in
    (fun x0 => liftXX (S n) d (liftXX m d x0))
-   (fun x0 => liftXX n d (liftXX (S m) d x0))).
-  auto. auto.
+   (fun x0 => liftXX n d (liftXX (S m) d x0))); burn.
 
  Case "XCase".
-  f_equal.
-  eauto.
-  repeat (rewrite map_map).
-  rewrite Forall_forall in H.
+  f_equal; auto. lists. nforall.
   rewrite (map_ext_in
    (fun x1 => liftXA (S n) d (liftXA m d x1))
-   (fun x1 => liftXA n d (liftXA (S m) d x1))).
+   (fun x1 => liftXA n d (liftXA (S m) d x1))); burn.
   auto. auto.
 
  Case "XAlt".
-  destruct dc.
-  simpl. burn.
+  destruct dc; burn.
 Qed.
+Hint Rewrite liftXX_succ : global.
 
 
 (* We can collapse two consecutive lifting expressions by lifting 
@@ -236,15 +223,14 @@ Lemma liftXX_plus
  , liftXX n 0 (liftXX m 0 x) = liftXX (n + m) 0 x.
 Proof.
  intros. gen n.
- induction m.
-  intros. rewrite liftXX_zero. nnat. auto.
+ induction m; intros.
+  burn.
+
   intros.
-   assert (n + S m = S n + m). 
-    omega. rewrite H. clear H.
-   rewrite liftXX_comm.
-   rewrite <- IHm.
-   rewrite liftXX_comm.
-   rewrite liftXX_succ. 
-   auto.
+  rrwrite (n + S m = S n + m). 
+  rewrite liftXX_comm.
+  rewrite <- IHm.
+  rewrite liftXX_comm.
+  burn.
 Qed.
 

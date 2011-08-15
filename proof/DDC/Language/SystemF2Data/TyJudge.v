@@ -119,8 +119,8 @@ Proof.
   apply makeTApps_takeTCon in H4.
   simpl in H4. inverts H4.
   assert (DEFOK ds (DefData d tsFields TyConFun)).
-   eapply getDataDef_ok; eauto.
-  inverts H0. nope.
+   eauto.
+  nope.
 Qed.
 Hint Resolve value_lam.
 
@@ -168,8 +168,8 @@ Proof.
    eapply H; eauto.
 
  Case "XCase".
-  eapply WfX_XCase.
-   eapply IHx. eauto.
+  eapply WfX_XCase. 
+   burn.
    nforall. eauto.
 
  Case "XAlt".
@@ -207,20 +207,21 @@ Proof.
   eapply TYLAM. 
   rewrite insert_rewind. 
    rewrite (liftTE_liftTE 0 ix).
-   apply IHx1. auto.
+   burn.
 
  Case "XAPP".
-  rewrite (liftTT_substTT' 0 ix). simpl.
+  rewrite (liftTT_substTT' 0 ix). 
+  simpl.
   eapply TYAPP.
   eapply (IHx1 ix) in H2. simpl in H2. eauto.
-  apply kind_kienv_insert. auto.
+  apply kind_kienv_insert; auto.
 
  Case "XLam".
   apply TYLam.
    apply kind_kienv_insert. auto.
-   assert ( liftTE ix te :> liftTT 1 ix t
-          = liftTE ix (te :> t)). auto. rewrite H. clear H.
-   apply IHx1. auto.
+   rrwrite ( liftTE ix te :> liftTT 1 ix t
+           = liftTE ix (te :> t)).
+   burn.
 
  Case "XApp".
   eapply TYApp.
@@ -236,13 +237,12 @@ Proof.
     rewrite H5 in H3. inverts H3. auto. int. subst. clear H3.
 
   (* show XCon has the correct type *)
-  rewrite liftTT_makeTApps.
-  eapply TYCon; eauto.
+  rr. eapply TYCon; eauto.
 
    (* type args have correct kinds *)
     eapply Forall2_map_left.
     eapply Forall2_impl; eauto.
-    intros. eapply kind_kienv_insert. auto.
+    eauto using kind_kienv_insert.
 
    (* exp args have correct types *)
     apply Forall2_map.
@@ -277,19 +277,17 @@ Proof.
   apply  Forall_map.
   eapply Forall_impl_in; eauto.
    intros. nforall.
-   eapply H. 
-    auto.
-    simpl in H1. auto.
-    rewrite liftTT_getCtorOfType. auto.
+   eapply H; burn.
+    rr. burn.
     nforall. intros.
      apply H8 in H0.
-     rewrite dcOfAlt_liftTA_map. auto.
+     burn.
 
  Case "XAlt".
   assert ( takeTApps (liftTT 1 ix t3) 
           = (liftTT 1 ix tObj1, map (liftTT 1 ix) tsParam)).
-   unfold takeTApps in H6. invert H6. intros.
-   unfold takeTApps. f_equal. auto. auto.
+   unfold takeTApps in H6. invert H6. 
+   burn. 
 
   lets HD: getDataDef_ok H2 H4. inverts HD.
    rewrite H8 in H3. inverts H3.
@@ -304,7 +302,7 @@ Proof.
 
    assert ( map (liftTT 1 ix) (map (substTTs 0 tsParam)  tsFields)
           = map (substTTs 0 (map (liftTT 1 ix) tsParam)) tsFields) as HXX.
-    rewrite map_map. unfold compose.
+    lists.
     erewrite map_ext_in; eauto.
     intros.
      rename x into t1.
@@ -321,7 +319,7 @@ Proof.
 
    rewrite <- HXX.
    unfold liftTE. rewrite <- map_app.
-   unfold liftTE in IHx1. eapply IHx1. auto.
+   unfold liftTE in IHx1. burn.
 Qed.   
 
 
@@ -343,15 +341,14 @@ Proof.
   ; intros; inverts_type; simpl; eauto.
 
  Case "XVar".
-  nnat. 
-  lift_cases; intros; auto.
+  nnat; lift_cases; burn.
 
  Case "XLAM".
   apply TYLAM.
   assert ( liftTE 0 (insert ix t2 te)
          = insert ix (liftTT 1 0 t2) (liftTE 0 te)).
    unfold liftTE. rewrite map_insert. auto.
-   rewrite H. eauto.
+   burn.
 
  Case "XLam".
   apply TYLam; eauto.
@@ -385,8 +382,8 @@ Proof.
   eapply TYAlt; eauto.
   rewrite insert_app.
   lists.
-  eapply getDataDef_ok in H2; eauto.
-   inverts H2. auto.
+  assert (DEFOK ds (DefData (DataCon n n0) tsFields tc)) as HDOK. burn.
+  inverts HDOK. burn.
 Qed. 
 
 
@@ -414,11 +411,11 @@ Lemma type_tyenv_weaken_append
 Proof.
  intros.
  induction te'; simpl.
-  rewrite liftXX_zero. 
-   auto. 
-  rewrite <- nat_plus_one.
-   assert (length te' + 1 = 1 + length te') as HL. 
-    burn. rewrite HL. clear HL.
-   rewrite <- liftXX_plus.
-   eapply type_tyenv_weaken1. auto. 
+  burn.
+
+  rrwrite (S (length te') = length te' + 1).
+  rrwrite (length te' + 1 = 1 + length te').
+  rewrite <- liftXX_plus.
+  eapply type_tyenv_weaken1.
+  burn.
 Qed.

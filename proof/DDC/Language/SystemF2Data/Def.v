@@ -103,6 +103,7 @@ Fixpoint getTypeDef (tc: tycon) (ds: defs) : option def :=
  | Empty    => None
  end.
 
+
 Lemma getTypeDef_in
  :  forall tc ds ddef
  ,  getTypeDef tc ds = Some ddef
@@ -117,6 +118,7 @@ Proof.
     inverts H. int.
    int. int.
 Qed.
+Hint Resolve getTypeDef_in.
 
 
 (* Lookup the def of a given data constructor. 
@@ -147,6 +149,7 @@ Proof.
     inverts H. int.
    int.
 Qed.
+Hint Resolve getDataDef_in.
 
 
 (********************************************************************)
@@ -199,9 +202,11 @@ Lemma getTypeDef_ok
 Proof.
  intros.
  unfold DEFSOK in H.
- apply getTypeDef_in in H0.
+ apply getTypeDef_in in H0. 
  nforall. auto.
 Qed.  
+Hint Resolve getTypeDef_ok.
+
 
 Lemma getDataDef_ok
  :  forall ds tc ddef
@@ -213,5 +218,5 @@ Proof.
  unfold DEFSOK in H.
  apply getDataDef_in in H0.
  nforall. auto.
-Qed.  
-
+Qed.
+Hint Resolve getDataDef_ok.
