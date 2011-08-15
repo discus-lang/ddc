@@ -108,5 +108,3 @@ Proof.
  rewrite H0. apply kind_kienv_insert. auto.
 Qed.
 
-
-

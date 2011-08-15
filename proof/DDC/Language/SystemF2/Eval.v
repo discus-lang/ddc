@@ -149,17 +149,8 @@ Lemma eval_of_stepsl
  -> STEPSL x1 v2 -> value v2
  -> EVAL   x1 v2.
 Proof.
- intros.
- induction H0.
- 
- Case "ESLNone".
-   apply EVDone. inverts H1. auto.
-
- Case "ESLCons".
-  eapply eval_expansion. 
-   eauto. eauto. 
-   apply IHSTEPSL.
-   eapply preservation. eauto. auto. auto.
+ intros. 
+ induction H0; eauto using eval_expansion.
 Qed.
 
 
@@ -174,8 +165,6 @@ Lemma eval_of_steps
  -> STEPS x1 v2 -> value v2
  -> EVAL  x1 v2.
 Proof.
- intros.
- eapply eval_of_stepsl; eauto.
- apply  stepsl_of_steps; auto.
+ eauto using eval_of_stepsl, stepsl_of_steps.
 Qed.
 

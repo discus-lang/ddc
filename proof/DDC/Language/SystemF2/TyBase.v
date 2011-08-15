@@ -87,9 +87,7 @@ Lemma makeTApps_snoc
  = TApp (makeTApps t1 (cons t2 ts)) t3.
 Proof.
  intros. gen t1 t2.
- induction ts; intros.
-  simpl. auto.
-  simpl. rewrite IHts. auto.
+ induction ts; simpl; burn.
 Qed.
 
 
@@ -98,10 +96,8 @@ Lemma takeTCon_makeTApps
  ,  takeTCon (makeTApps t1 ts) = takeTCon t1.
 Proof.
  intros. gen t1.
- induction ts; intros.
-  simpl. auto.
-  simpl.
-  rewrite IHts. simpl. auto.
+ induction ts; intros; simpl; auto.
+  rewrite IHts. burn.
 Qed.    
 
 
@@ -113,9 +109,7 @@ Proof.
  intros. gen t1 t2.
  induction ts; intros.
   simpl in H. subst. auto.
-
-  eapply IHts in H.
-  simpl in H. auto.
+  eapply IHts in H. simpl in H. auto.
 Qed.
 
 
@@ -206,7 +200,7 @@ Proof.
  intros.
  induction t1.
  Case "TCon".
-  exists 0. 
+  exists 0.
   auto.
 
  Case "TVar".
@@ -226,5 +220,4 @@ Proof.
    rewrite Max.max_comm. eauto.
 Qed.
 Hint Resolve wfT_exists.
-
 

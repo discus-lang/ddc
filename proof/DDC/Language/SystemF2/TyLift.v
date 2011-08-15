@@ -96,6 +96,7 @@ Proof.
  intros. gen d.
  lift_burn t.
 Qed.
+Hint Rewrite liftTT_zero : global.
 
 
 Lemma liftTT_comm
@@ -116,6 +117,7 @@ Proof.
  intros. gen d m n.
  lift_burn t.
 Qed.
+Hint Rewrite liftTT_succ : global. 
 
 
 Lemma liftTT_plus
@@ -124,15 +126,15 @@ Lemma liftTT_plus
 Proof.
  intros. gen n d.
  induction m; intros.
- rewrite liftTT_zero. 
-  nnat. auto.
+ rewrite liftTT_zero; burn.
+
  rrwrite (n + S m = S n + m). 
   rewrite liftTT_comm.
   rewrite <- IHm.
   rewrite liftTT_comm.
-  rewrite liftTT_succ.
-  auto.
+  burn.
 Qed. 
+Hint Rewrite <- liftTT_plus : global.
 
 
 Lemma liftTT_wfT_1
@@ -150,11 +152,11 @@ Proof.
    inverts H.
    eapply IHt in H1.
    rrwrite (S (n + ix) = S n + ix).
-   eauto.
+   burn.
 
   Case "TApp".
    inverts H.
-   repeat rewritess; auto.
+   repeat rewritess; burn.
 Qed.
 
 
@@ -178,7 +180,7 @@ Proof.
 
  Case "TForall".
   rrwrite (S (d + d') = (S d) + d').
-  rewrite IHt. auto.
+  rewrite IHt. burn.
 Qed.  
 
 
@@ -189,16 +191,13 @@ Lemma liftTT_liftTT_1
 Proof.
  intros. gen n1 m1 n2 t.
  induction m1; intros; simpl.
-  rewrite liftTT_zero.
-  rewrite liftTT_zero.
-  auto.
+  burn. 
 
   rrwrite (S m1 = 1 + m1).
   rewrite <- liftTT_plus.
   rewrite IHm1.
   rrwrite (m1 + n2 + n1 = n1 + (m1 + n2)).
   rewrite liftTT_liftTT_11.
-  rewrite -> liftTT_plus.
   burn.
 Qed.
 
@@ -210,15 +209,13 @@ Lemma liftTT_liftTT
 Proof.
  intros. gen n1 m1 n2 t.
  induction m2; intros.
-  rewrite liftTT_zero.
-  rewrite liftTT_zero.
-  auto.
-  
+  burn.
+
   rrwrite (S m2 = 1 + m2).
   rewrite <- liftTT_plus.
   rewrite liftTT_liftTT_1.
   rewrite IHm2.
-  rewrite -> liftTT_plus.
-  auto.
+  burn.
 Qed.
+Hint Rewrite liftTT_liftTT : global.
 

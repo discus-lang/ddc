@@ -27,8 +27,8 @@ Proof.
    apply TYVar; auto.
    rewrite <- H3.
    destruct n.
-    burn. simpl. nnat. 
-    apply get_delete_below. omega.
+    burn. 
+    simpl. nnat. apply get_delete_below; burn.
 
  Case "XLAM".
   eapply (IHx1 ix) in H5.
@@ -36,8 +36,7 @@ Proof.
    unfold liftTE. rewrite map_delete. eauto.
    eapply get_map. eauto.
    unfold liftTE. rewrite <- map_delete.
-    assert (map (liftTT 1 0) (delete ix te) = liftTE 0 (delete ix te)). 
-     unfold liftTE. auto. rewrite H0. clear H0.
+    rrwrite (map (liftTT 1 0) (delete ix te) = liftTE 0 (delete ix te)). 
     apply type_kienv_weaken. auto.
 
  Case "XLam".
@@ -54,9 +53,7 @@ Theorem subst_exp_exp
  -> TYPE ke te (substXX 0 x2 x1) t1.
 Proof.
  intros.
- assert (te = delete 0 (te :> t2)). auto.
- rewrite H1. 
- eapply subst_exp_exp_ix; eauto. 
- simpl. eauto.
+ rrwrite (te = delete 0 (te :> t2)). 
+ eapply subst_exp_exp_ix; burn.
 Qed.
 

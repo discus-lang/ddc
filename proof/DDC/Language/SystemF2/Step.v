@@ -128,10 +128,7 @@ Lemma stepsl_trans
  ,  STEPSL x1 x2 -> STEPSL x2 x3
  -> STEPSL x1 x3.
 Proof.
- intros.
- induction H.
-  eauto.
-  eapply ESLCons. eauto. eauto.
+ intros. induction H; burn.
 Qed.
 
 
@@ -143,10 +140,6 @@ Lemma stepsl_of_steps
  ,  STEPS  x1 x2
  -> STEPSL x1 x2.
 Proof. 
- intros.
- induction H.
-  auto.
-  eauto.
-  eapply stepsl_trans; eauto.
+ intros. induction H; eauto using stepsl_trans.
 Qed.
 

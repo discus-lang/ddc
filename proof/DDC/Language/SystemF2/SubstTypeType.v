@@ -36,7 +36,7 @@ Proof.
   apply KIForall.
   rewrite delete_rewind.
   eapply IHt1; eauto.
-   apply kind_kienv_weaken. auto.
+   apply kind_kienv_weaken; auto.
 Qed.
 
 
@@ -48,7 +48,7 @@ Theorem subst_type_type
 Proof.
  intros.
  unfold substTT.
- assert (ke = delete 0 (ke :> k2)). auto. rewrite H1.
- eapply subst_type_type_ix; simpl; eauto.
+ rrwrite (ke = delete 0 (ke :> k2)).
+ eapply subst_type_type_ix; burn.
 Qed.
 

@@ -21,10 +21,7 @@ Lemma length_liftTE
  :  forall d te
  ,  length te = length (liftTE d te).
 Proof.
- intros. 
- induction te.
-  eauto.
-  simpl. burn.
+ induction te; burn.
 Qed.
 
 
@@ -38,7 +35,7 @@ Proof.
   auto.
   unfold liftTE.
    simpl. rewrite liftTT_liftTT_11.
-   unfold liftTE in IHte. rewrite IHte. auto.
+   unfold liftTE in IHte. burn.
 Qed.
 
 
@@ -48,11 +45,8 @@ Lemma substTE_liftTE
 Proof.
  intros.
  unfold substTE. unfold liftTE.
- rewrite map_map.
- unfold Basics.compose.
- induction te. 
-  auto.
-  simpl. rewrite substTT_liftTT. rewrite IHte. auto.
+ lists.
+ induction te; simpl; burn.
 Qed.
 
 

@@ -34,10 +34,9 @@ Lemma substTT_makeTApps
  =  makeTApps (substTT d t2 t1) (map (substTT d t2) ts).
 Proof.
  intros. gen d t2 t1.
- induction ts; intros.
-  auto.
-  simpl. rewrite IHts. auto.
+ induction ts; burn.
 Qed.
+Hint Rewrite substTT_makeTApps : global.
 
 
 (********************************************************************)
@@ -52,9 +51,9 @@ Proof.
 
  Case "TVar".
   lift_cases; unfold substTT;
-   fbreak_nat_compare; intros;
-   burn.
+   fbreak_nat_compare; burn. 
 Qed.
+Hint Rewrite substTT_liftTT : global.
 
 
 (********************************************************************)
@@ -66,7 +65,7 @@ Lemma liftTT_substTT_1
  =  substTT (1 + n + n') (liftTT 1 n t2) (liftTT 1 n t1).
 Proof.
  intros. gen n n' t2.
- induction t1; intros; simpl; try burn; try (repeat rewritess).
+ induction t1; intros; simpl; try burn.
 
  Case "TVar".
   repeat (simpl; fbreak_nat_compare; 
@@ -74,7 +73,8 @@ Proof.
 
  Case "TForall".
   rewrite (IHt1 (S n) n').
-  rewrite (liftTT_liftTT_11 0 n). auto.
+  rewrite (liftTT_liftTT_11 0 n).
+  burn.
 Qed.
 
 
@@ -85,15 +85,16 @@ Lemma liftTT_substTT
 Proof.
  intros. gen n n'.
  induction m; intros; simpl.
-  repeat (rewrite liftTT_zero); auto.
+  burn.
 
   rrwrite (S m = 1 + m).
   rewrite <- liftTT_plus.
   rewrite IHm.
   rrwrite (m + n + n' = n + (m + n')).
   rewrite liftTT_substTT_1. 
-  simpl; f_equal; rewrite liftTT_plus; auto.
+  burn.
 Qed.
+Hint Rewrite <- liftTT_substTT : global.
 
 
 (********************************************************************)
@@ -105,17 +106,18 @@ Lemma liftTT_substTT'
  =  substTT n (liftTT 1 (n + n') t2) (liftTT 1 (1 + n + n') t1).
 Proof.
  intros. gen n n' t2.
- induction t1; intros; try (repeat rewritess); eauto.
+ induction t1; intros; try burn.
 
  Case "TVar".
   repeat ( unfold liftTT; unfold substTT; fold liftTT; fold substTT
          ; try lift_cases
          ; try fbreak_nat_compare
-         ; intros); try burn.
+         ; intros); burn.
 
  Case "TForall".
   simpl. rewrite (IHt1 (S n) n').
-  simpl. rewrite (liftTT_liftTT_11 0 (n + n')). auto.
+  simpl. rewrite (liftTT_liftTT_11 0 (n + n')). 
+  burn.
 Qed.
 
 
@@ -128,16 +130,15 @@ Lemma substTT_substTT
               (substTT (1 + n + m) (liftTT 1 n t3) t1).
 Proof.
  intros. gen n m t2 t3.
- induction t1; intros; eauto.
+ induction t1; intros; try burn.
 
  Case "TVar".
-  repeat (simpl; fbreak_nat_compare); try burn.
-  rewrite substTT_liftTT. auto.
+  repeat (simpl; fbreak_nat_compare); burn.
 
  Case "TForall".
   simpl. f_equal.
   rewrite (IHt1 (S n) m). 
-  f_equal; simpl.
+  f_equal.
    rewrite (liftTT_substTT_1 0 (n + m)). auto.
    rewrite (liftTT_liftTT_11 0 n). auto.  
 

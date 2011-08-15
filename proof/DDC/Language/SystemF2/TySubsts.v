@@ -37,19 +37,14 @@ Lemma substTTs_nil
  ,  substTTs n nil t = t.
 Proof.
  intros. gen n.
- induction t; intros; auto.
+ induction t; intros; try burn.
 
  Case "TVar".
   simpl. lift_cases; auto;
    unfold substTTs'; nnat;
     lift_cases; burn.
-
- Case "TForall".
-  simpl. burn.
-
- Case "TApp".
-  repeat rewritess.
 Qed.
+Hint Rewrite substTTs_nil : global.
 
 
 Lemma substTTs_makeTApps 
@@ -58,10 +53,9 @@ Lemma substTTs_makeTApps
  =  makeTApps (substTTs d us t1) (map (substTTs d us) ts).
 Proof.
  intros. gen d us t1.
- induction ts; intros.
-  auto.
-  simpl. rewrite IHts. auto.
+ induction ts; burn.
 Qed.
+Hint Rewrite substTTs_makeTApps : global.
 
 
 (********************************************************************)
@@ -72,10 +66,7 @@ Lemma liftTT_substTTs_1
  =  substTTs (1 + n + n') (map (liftTT 1 n) us) (liftTT 1 n t1).
 Proof.
  intros. gen n n' us.
- induction t1; intros.
-
- Case "TCon".
-  auto.
+ induction t1; intros; try burn.
 
  Case "TVar".
   repeat (simpl; lift_cases);
@@ -106,15 +97,14 @@ Proof.
      symmetry in HeqY.
      apply get_none_length in HeqY.
      rewrite map_length in HeqY.
-     lift_cases; 
-      intros; fequal; burn.
+     lift_cases; burn.
 
  Case "TForall".
   simpl. f_equal. 
   induction us.
    simpl. 
     rrwrite (S (n + n') = (S n) + n').
-    rewrite IHt1. auto.
+    burn.
    simpl.
     rewrite (liftTT_liftTT_11 0 n). simpl.
     rewrite (IHt1 (S n) n'). 
@@ -122,10 +112,7 @@ Proof.
      lists. f_equal. extensionality x.
      symmetry.
      rrwrite (n = n + 0).
-     rewrite liftTT_liftTT. auto.
-
- Case "TApp".
-  simpl. f_equal; rewritess.
+     eapply liftTT_liftTT.
 Qed.
 
 
@@ -136,13 +123,11 @@ Lemma liftTT_substTTs
 Proof.
  intros. gen n n'.
  induction m; intros.
-  simpl.
-   rewrite liftTT_zero.
-   rewrite liftTT_zero.
+  simpl. rr.
    f_equal.
    rewrite (@map_impl ty ty (liftTT 0 n) id).
-    induction us; auto. simpl. rewrite <- IHus. auto.
-   intros. rewrite liftTT_zero. unfold id. auto.
+    induction us; burn. 
+    burn.
 
   simpl.
   rrwrite (S m = 1 + m).
@@ -153,11 +138,10 @@ Proof.
   rewrite liftTT_substTTs_1.
   f_equal. 
    lists. f_equal.
-    extensionality x.
-    rewrite -> liftTT_plus. auto.
-   rewrite -> liftTT_plus. auto.
+    extensionality x; burn.
+    burn.
 Qed.
-
+Hint Rewrite <- liftTT_substTTs : global.
 
 
 (********************************************************************)
@@ -171,10 +155,7 @@ Lemma liftTT_substTTs_nonempty_env
                (liftTT 1 (length us + n' + n) t1).
 Proof.
  intros. gen n n' us.
- induction t1; intros.
-
- Case "TCon".
-  simpl. auto.
+ induction t1; intros; try burn.
 
  Case "TVar".
    repeat (simpl; unfold substTTs'; lift_cases);
@@ -190,13 +171,8 @@ Proof.
    lists. f_equal. extensionality x.
     rrwrite (n' + S n = 1 + (n' + n) + 0).
     rewrite <- liftTT_liftTT. nnat. auto.
-   f_equal; lists; omega.
-  lists; omega.
-
- Case "TApp".
-  simpl. f_equal.
-  rewrite IHt1_1; eauto.
-  rewrite IHt1_2; eauto.
+   lists; burn.
+  lists; burn.
 Qed.
 
 
@@ -209,13 +185,10 @@ Lemma liftTT_substTTs'
 Proof.
  intros.
  destruct us.
-  simpl. 
-   rewrite substTTs_nil.
-   rewrite substTTs_nil. auto.
-  simpl.
-  apply liftTT_substTTs_nonempty_env.
-  simpl. omega.
+  burn.
+  simpl. apply liftTT_substTTs_nonempty_env; burn.
 Qed.
+Hint Rewrite <- liftTT_substTTs' : global.
 
 
 Lemma liftTT_map_substTT
@@ -223,12 +196,9 @@ Lemma liftTT_map_substTT
  ,  map (liftTT m n) (map (substTT (n + n') t2) ts)
  =  map (substTT (m + n + n') (liftTT m n t2)) (map (liftTT m n) ts).
 Proof.
- intros.
- induction ts.
-  auto.
-  simpl. rewrite IHts. f_equal.
-  rewrite liftTT_substTT. auto.
+ induction ts; simpl; burn.
 Qed.
+Hint Rewrite <- liftTT_map_substTT : global.
 
 
 Lemma substTT_closed'
@@ -238,23 +208,13 @@ Lemma substTT_closed'
  -> substTT ix (liftTT 1 m t2) t1 = t1.
 Proof.
  intros. gen t2 ix tn m.
- induction t1; intros; auto.
+ induction t1; intros; simpl; inverts H; try burn.
 
  Case "TVar".
-  simpl.
-  lift_cases; auto.
-   inverts H. burn.
-   inverts H. burn.
+  lift_cases; burn.
 
  Case "TForall".
-  simpl. f_equal.
-   erewrite IHt1. eauto.
-    inverts H. eauto. omega.
-
- Case "TApp".
-  simpl. inverts H.
-   erewrite IHt1_1; eauto.
-   erewrite IHt1_2; eauto.
+  erewrite IHt1; burn. 
 Qed.
 
 
@@ -274,8 +234,7 @@ Proof.
   destruct H1 as [n'].
 
  rewrite <- H1.
- eapply substTT_closed'.
- unfold closedT in H. eauto. omega.
+ eapply substTT_closed'; burn.
 Qed.
 
 
@@ -286,11 +245,9 @@ Lemma substTTs_closing'
  -> wfT (tn + n) (substTTs n ts t1).
 Proof.
  intros. gen n tn ts.
- induction t1; intros; unfold closedT.
-  simpl. auto.
+ induction t1; intros; inverts H0; unfold closedT; try burn.
 
  Case "TVar".
-  inverts H0.
   simpl; lift_cases; eauto.
    unfold substTTs'.
     lift_cases. 
@@ -304,7 +261,6 @@ Proof.
      eapply WfT_TVar. lists. omega.
 
  Case "TForall".
-  inverts H0. simpl.
   eapply WfT_TForall.
   rrwrite (S (tn + n) = tn + (S n)).
   eapply IHt1.
@@ -313,11 +269,7 @@ Proof.
    lists.
    assert (S (length ts + n) = length ts + (S n)).
     omega.
-    rewrite H0 in H2. eauto.
-
- Case "TApp".
-  inverts H0.
-  simpl. eauto. 
+    rewrite H0 in H2. burn.
 Qed.
 Hint Resolve substTTs_closing'.
 
@@ -333,6 +285,7 @@ Proof.
  eapply substTTs_closing';
   nnat; auto.
 Qed.
+Hint Resolve substTTs_closing.
 
 
 Lemma substTTs_substTT
@@ -342,11 +295,12 @@ Lemma substTTs_substTT
  =   substTT (n + n') t2 (substTTs n ts t1).
 Proof.
  intros.
-  induction t1; intros; auto.
+  induction t1; intros; inverts H; try burn.
+
+ Case "TVar".
   admit.
 
  Case "TForall".
-  inverts H.
   simpl. f_equal.
   rrwrite (n + n' = 0 + (n + n')). 
   rewrite liftTT_map_substTT. nnat.
@@ -357,6 +311,4 @@ Proof.
   admit.
   (* hmm *)
 
- Case "TApp".
-  inverts H. simpl. burn.
 Qed.

@@ -146,6 +146,11 @@ Ltac nope
 
 
 (********************************************************************)
+Ltac rr 
+ := autorewrite with global in *.
+
+
+(********************************************************************)
 (* Mega-tactic for semantics proofs.
    * This gets lots of the common cases, where Coq really should 
      have tried a bit harder. For example, trying f_equal before eauto.
@@ -193,27 +198,38 @@ Ltac burn1
     [ burn0
     | injectos
     | false;   burn0 
-    | f_equal; burn0 ].
+    | f_equal; burn0].
+
+
+Ltac burn2
+ := first
+    [ burn1
+    | rewritess; burn1
+    | simpl; burn1
+    | simpl; rewritess; burn1
+    | simpl; try f_equal; rewritess; try f_equal; burn1].
 
 
 (* Top-level megatactic.
    Handles disjunctions by applying burn1 to each of the parts.
     This often happens in progress proofs. eg  value x \/ step x x'. *)
 Ltac burn :=
+ intros; 
+ try (autorewrite with global in *);
  match goal with 
      [ _ : _ |- _ \/ _ ] 
-       => try burn1; try (left; burn1); try (right; burn1)
+       => try burn1; try (left; burn2); try (right; burn2)
 
    | [ H : _ /\ _ |- _]
-       => decompose [and] H; burn1
+       => decompose [and] H; burn2
 
-   | _ => burn1
+   | _ => burn2
  end.
 
 
 (* Rewrite using burn.
-   Just state the equality to use. 
- *)
+   Just state the equality to use.   *)
 Tactic Notation "rrwrite" constr(xx)
  := let H := fresh 
     in assert xx as H by burn; rewrite H; clear H.
+

@@ -52,6 +52,7 @@ Proof.
   SCase "EsApp2".
    eapply TYApp; eauto.
 Qed.
+Hint Resolve preservation.
 
 
 (* When we multi-step evaluate some expression,
@@ -62,10 +63,9 @@ Lemma preservation_steps
  -> STEPS x1 x2
  -> TYPE nil nil x2 t1.
 Proof.
- intros. 
- induction H0; eauto.
-  eapply preservation; eauto.
+ intros. induction H0; burn.
 Qed.
+Hint Resolve preservation_steps.
 
 
 (* When we multi-step evaluate some expression, 
@@ -77,12 +77,7 @@ Lemma preservation_stepsl
  -> STEPSL x1 x2
  -> TYPE nil nil x2 t1.
 Proof.
- intros. 
- induction H0.
-  auto.
-  apply IHSTEPSL.
-  eapply preservation. 
-   eauto. auto.
+ intros. induction H0; burn.
 Qed.
-
+Hint Resolve preservation_stepsl.
 
