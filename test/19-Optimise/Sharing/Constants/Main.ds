@@ -1,0 +1,33 @@
+import DDC.Runtime.Store
+import Data.Numeric.Addr
+
+main () = do
+    x = True
+    y = True
+    z = x
+    --The first two are sanity checks
+    msgOnNotShared x x
+    msgOnNotShared x z
+    msgOnNotShared x y
+
+    a = F
+    b = F
+    msgOnNotShared a b
+
+    c = ()
+    d = ()
+    msgOnNotShared c d
+    ()
+
+data TBool = T | F | N
+
+shared :: a -> a -> Bool
+shared x y = do
+    tmp = primAddrU_eq (peekDataR_payload x) (peekDataR_payload y)
+    boxBool tmp
+
+msgOnNotShared :: a -> a -> ()
+msgOnNotShared a b =    if      shared a b
+                        then    () 
+                        else    putStrLn "Object addresses not equal"
+
