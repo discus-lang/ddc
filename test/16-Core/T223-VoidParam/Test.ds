@@ -9,6 +9,6 @@ foreign import "rand" rand :: Void# -> Int32#
 
 main ()
  = do	println "Before"
-	x = rand Void
+	x = rand Void#
 	srand x
 	println "After"

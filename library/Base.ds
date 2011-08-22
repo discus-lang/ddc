@@ -27,7 +27,7 @@ data Thunk
 --   Don't use (Ptr# Void#) after C. Use Addr# for that instead.
 --   The Void# constructor can be used as the parameter passed to a C function
 --   whcih takes no parameters that is imported via the FFI.
-data Void# = Void
+data Void# = Void#
 
 
 -- | A pointer to some thing.
