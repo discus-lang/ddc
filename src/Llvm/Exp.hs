@@ -378,6 +378,13 @@ primOrFunCall all@((XVar (NSuper fv) (TFun at rt)):args)
 	Nothing -> funCall all
 	Just fn	-> fn args
 
+primOrFunCall ((XVar (NSuper fv) t):args)
+ = panic stage $
+	"\n   Function : " ++ seaVar False fv ++
+	"\n   Type     : " ++ show t ++
+	"\n   arglen   : " ++ show (length args) ++ "\n"
+
+
 funCall :: [Exp a] -> LlvmM LlvmVar
 funCall (exp@(XVar (NSuper fv) (TFun at TVoid)):args)
  | length at == length args || (at == [TVoid] && null args)
