@@ -479,10 +479,7 @@ genAltDefault _ def
 caseDeath :: String -> Int -> Int -> LlvmM ()
 caseDeath file line column
  = do	addGlobalFuncDecl deathCase
-
-	gname	<- newUniqueName "str.src.file"
-	let name = LMGlobalVar gname (typeOfString file) Internal Nothing ptrAlign True
-	addGlobalVar ( name, Just (LMStaticStr file (typeOfString file)) )
+	name	<- addString file
 	pstr	<- newUniqueNamedReg "pstr" pChar
 
 	addBlock

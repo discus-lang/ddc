@@ -8,6 +8,7 @@ module LlvmM
 
 	, addGlobalVar
 	, addGlobalFuncDecl
+	, addString
 
 	, newUniqueReg
 	, newUniqueNamedReg
@@ -35,6 +36,7 @@ import Util
 
 import Llvm
 import Llvm.GhcReplace.Unique
+import Llvm.Runtime.Object
 import Llvm.Util
 
 import Data.Char
@@ -61,7 +63,11 @@ data LlvmState
 	, aliases	:: Map String LlvmType
 
 	-- | Global variables for the module.
-	, globVars	:: Map String LMGlobal
+	, globalVars	:: Map String LMGlobal
+
+	-- | Global variables for the module.
+	, strings	:: Map String LMGlobal
+
 	-- | Forward declarations of external functions.
 	, funcDecls	:: Map String LlvmFunctionDecl
 
@@ -80,7 +86,8 @@ initLlvmState modId
 
 	, moduleId	= modId
 	, aliases	= Map.empty
-	, globVars	= Map.empty
+	, globalVars	= Map.empty
+	, strings	= Map.empty
 	, funcDecls	= Map.empty
 	, functions	= []
 	, ctorTags	= Map.empty }
@@ -103,15 +110,35 @@ addComment text
 addGlobalVar :: LMGlobal -> LlvmM ()
 addGlobalVar (gvar, init)
  = do	state		<- get
-	let map		= globVars state
+	let map		= globalVars state
 	let name	= getPlainName gvar
 	case Map.lookup name map of
-	  Nothing	-> modify $ \s -> s { globVars = Map.insert name (gvar, init) map }
+	  Nothing	-> modify $ \s -> s { globalVars = Map.insert name (gvar, init) map }
 	  Just (cur, _)	-> unless (getVarType cur == getVarType gvar)
 				$ panic stage
 					$ "addGlobalVar: The following two should match :"
 					++ "\n    '" ++ show cur
 					++ "'\n    '" ++ show gvar ++ "'"
+
+addString :: String -> LlvmM LlvmVar
+addString s
+ = do	vname	<- newUniqueName "str"
+	let gvar = LMGlobalVar vname (typeOfString s) Internal Nothing ptrAlign True
+	let init = Just (LMStaticStr (escapeString s) (typeOfString s))
+	state		<- get
+	let map		= strings state
+	case Map.lookup s map of
+	  Nothing
+	    ->	do	modify (\st -> st { strings = Map.insert s (gvar, init) map })
+			return gvar
+
+	  Just (cur, _)
+	    -> do	unless (getVarType cur == getVarType gvar)
+			 $ panic stage
+				$ "addString: The following two should match :"
+				++ "\n    '" ++ show cur
+				++ "'\n    '" ++ show gvar ++ "'"
+			return cur
 
 
 startFunction :: LlvmM ()
@@ -236,9 +263,10 @@ renderModule :: [LMString] ->  LlvmM LlvmModule
 renderModule comments
  = do	state		<- get
 	let taliases	= Map.toList $ aliases state
-	let globals	= map snd $ Map.toList $ globVars state
+	let globals	= map snd $ Map.toList $ globalVars state
+	let strs	= map snd $ Map.toList $ strings state
 	let fdecls	= map snd $ Map.toList $ funcDecls state
-	return	$ LlvmModule comments taliases globals fdecls
+	return	$ LlvmModule comments taliases (globals ++ strs) fdecls
 				$ reverse $ functions state
 
 --------------------------------------------------------------------------------
