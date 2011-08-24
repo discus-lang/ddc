@@ -72,6 +72,12 @@ GCC_FLAGS		+= -fPIC -D BITS=32 -m32
 GCC_LINK_SHARED		:= gcc -m32 -dynamiclib -undefined dynamic_lookup 
 SHARED_SUFFIX		:= dylib
 
+# -- Darwin on x86_64
+else ifeq "$(Target)" "darwin-x86_64"
+GCC_FLAGS		+= -fPIC -D BITS=64 -m64
+GCC_LINK_SHARED		:= gcc -m64 -dynamiclib -undefined dynamic_lookup 
+SHARED_SUFFIX		:= dylib
+
 # -- WindowsXP/Cygwin on x86
 else ifeq "$(Target)" "cygwin-x86"
 GCC_FLAGS		+= -D BITS=32 -m32
