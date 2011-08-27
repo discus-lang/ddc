@@ -45,7 +45,7 @@ funcDeclOfExp (XVar v t)
 
 
 funcDeclOfExtern :: Top a -> LlvmFunctionDecl
-funcDeclOfExtern (PExtern v t@(TFun at rt))
+funcDeclOfExtern pp@(PExtern v t@(TFun at rt))
  = let	(varArgs, params) = specialCaseFuncs (seaVar False v) at
    in	LlvmFunctionDecl {
 		--  Unique identifier of the function

@@ -4,6 +4,7 @@
 module	DDC.Core.OpType
 	( superOpTypeP
 	, superOpTypeX
+	, superOpTypePartT
 	, slurpSuperAritiesP)
 where
 import Util
@@ -55,23 +56,24 @@ superOpType'	xx
 
 	-- slurp off parameter types
  	XLam _ t x _ _
-	 -> superOpTypePart t :  superOpType' x
+	 -> superOpTypePartT t :  superOpType' x
 
 	-- take the type of the body of the super from the XTau enclosing it.
-	XTau	t _	-> [superOpTypePart t]
+	XTau	t _	-> [superOpTypePartT t]
 
 	-- there's no XTau enclosing the body, so we'll have to reconstruct
 	--	the type for it manually.
-	_		-> [superOpTypePart
+	_		-> [superOpTypePartT
 			$  checkedTypeOfOpenExp (stage ++ ".superOpType") xx]
 
-superOpTypePart	tt
+superOpTypePartT :: Type -> Type
+superOpTypePartT tt
  = case tt of
 	TNil			-> TNil
 
 	-- skip over constraints
-	TForall _ _ t		-> superOpTypePart t
-	TConstrain t _		-> superOpTypePart t
+	TForall _ _ t		-> superOpTypePartT t
+	TConstrain t _		-> superOpTypePartT t
 
 	-- an unboxed var of airity zero, eg Int32#
 	TCon (TyConData name _ _)
@@ -88,7 +90,7 @@ superOpTypePart	tt
 		 --	code must know about them.
 	 	 | Just (v, k, ts)	<- takeTData tt
 		 , v == Var.primTPtrU
-		 = makeTData v k (map superOpTypePart ts)
+		 = makeTData v k (map superOpTypePartT ts)
 
 		 -- an unboxed tycon of some aritity, eg String#
 		 | Just (v, k, _)	<- takeTData tt

@@ -42,7 +42,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PBlank		-> nl
 
 	-- External functions and data.
-	PExtern v _ -> "/* " % sV v % "*/"
+	PExtern v t -> "/* " %% sV v %% ":: " %% t %% "*/"
 
 	-- Data type declarations.
 	PData v ctors

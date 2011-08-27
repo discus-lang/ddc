@@ -253,9 +253,9 @@ opTypeFromGlob v glob
 
 	-- Var is a data constructor.
 	| Just ctor@CtorDef{}	<- Map.lookup v (globDataCtors glob)
-	= Just 	$ makeTFunsPureEmpty
-		$ replicate (ctorDefArity ctor + 1)
-		$ makeTData Var.primTData kValue []
+        = let   argTypes        = map (superOpTypePartT . snd) $ fieldTypeLabels ctor
+                resultType      = makeTData Var.primTData kValue []
+          in    Just 	$ makeTFunsPureEmpty (argTypes ++ [resultType])
 
 	| otherwise
 	= Nothing
