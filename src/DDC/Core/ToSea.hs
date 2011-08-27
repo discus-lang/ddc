@@ -244,10 +244,16 @@ splitSuper accArgs xx
 -- CtorDef ----------------------------------------------------------------------------------------
 toSeaCtorDef :: T.CtorDef -> E.CtorDef
 toSeaCtorDef (T.CtorDef vCtor tCtor arity tag fields)
- = let	tCtor'	= toSeaT tCtor
+ = let	
+        -- Strip of foralls and convert to sea type
+        tCtor_stripped	= T.stripToBodyT tCtor
+        tCtor_sea       = toSeaSuperT tCtor_stripped
+
 	-- Drop the last one because thats the type of the constructor.
-	ptypes	= map toSeaT $ init $ T.flattenTFuns $ T.stripToBodyT tCtor
-   in	E.CtorDef vCtor tCtor' arity tag fields ptypes
+	ptypes	        = map toSeaT $ init $ T.flattenTFuns $ tCtor_stripped
+	        
+   in   E.CtorDef vCtor tCtor_sea arity tag fields ptypes
+
 
 
 -- Exp --------------------------------------------------------------------------------------------
