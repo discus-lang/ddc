@@ -1,5 +1,6 @@
 
 {
+{-# OPTIONS_GHC -Wwarn #-}
 {-# OPTIONS
 	-fno-warn-monomorphism-restriction
 	-fno-warn-unused-binds
