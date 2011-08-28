@@ -303,12 +303,29 @@ Proof.
  Case "TForall".
   simpl. f_equal.
   rrwrite (n + n' = 0 + (n + n')). 
-  rewrite liftTT_map_substTT. nnat.
+  rewrite liftTT_map_substTT. 
+  lists. nnat.
   rrwrite (1 + (n + n') = S n + n').
-  rrwrite (S (0 + (n + n')) = 1 + n + n'). nnat.
+  rrwrite (S (0 + (n + n')) = 1 + n + n').
   lists.
   rrwrite (S n + n' = 1 + 0 + (n + n')).
   admit.
   (* hmm *)
-
 Qed.
+
+
+Lemma substTTs_substTT_map
+ :  forall n n' ts1 t2 ts3
+ ,  Forall (wfT (length ts1)) ts3
+ -> map (substTTs n (map (substTT (n + n') t2) ts1)) ts3
+ =  map (substTT (n + n') t2) (map (substTTs n ts1) ts3).
+Proof.
+ intros.
+ induction ts3.
+  auto.
+  inverts H.
+  simpl. rewrite IHts3; eauto. f_equal.
+  eapply substTTs_substTT; eauto.
+Qed.
+  
+

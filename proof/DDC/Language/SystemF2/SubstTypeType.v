@@ -40,6 +40,24 @@ Proof.
 Qed.
 
 
+Theorem subst_type_type_ix_forall2
+ :  forall ix ke t2 k2 ts ks
+ ,  get ix ke = Some k2
+ -> Forall2 (KIND ke) ts ks
+ ->          KIND (delete ix ke) t2 k2
+ -> Forall2 (KIND (delete ix ke)) (map (substTT ix t2) ts) ks.
+Proof.
+ intros.
+ eapply Forall2_map_left.
+ apply (Forall2_impl ty ki
+            (fun t k => KIND ke t k)
+            (fun t k => KIND (delete ix ke) (substTT ix t2 t) k)
+            ts ks).
+  intros. eapply subst_type_type_ix; eauto.
+  eauto.
+Qed.  
+
+
 Theorem subst_type_type
  :  forall ke t1 k1 t2 k2
  ,  KIND (ke :> k2) t1 k1
