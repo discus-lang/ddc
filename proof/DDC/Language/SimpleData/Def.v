@@ -9,6 +9,12 @@ Inductive datacon : Type :=
 Hint Constructors datacon.
 
 
+Fixpoint datacon_beq t1 t2 :=
+  match t1, t2 with
+  | DataCon n1, DataCon n2 => beq_nat n1 n2
+  end.
+
+
 (* Definitions. 
    Carries meta information about type and data constructors. *)
 Inductive def  : Type :=

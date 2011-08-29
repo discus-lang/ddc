@@ -1,6 +1,7 @@
 
 Require Import DDC.Language.SystemF2.SubstTypeType.
 Require Import DDC.Language.SystemF2Data.TyJudge.
+Require Import Coq.Logic.FunctionalExtensionality.
 
 
 Theorem subst_type_exp_ix
@@ -65,15 +66,26 @@ Proof.
     rrwrite (0 + ix = ix).
     nforall.
     eapply H; eauto.
-     skip. (* ok wf *)
+    nnat.
+    assert (DEFOK ds (DefData     dc tsFields tc)). eauto.
+    assert (DEFOK ds (DefDataType tc ks       dcs)). eauto.
+     inverts H5. inverts H9.
+    assert (ks0 = ks). burn. subst.
+    rrwrite (length ts = length ks). 
+    assert (KIND ks y KStar). nforall. auto.
+    eauto.
  
  Case "XCase".
   eapply TYCase; eauto.
   eapply Forall_map.
   nforall. intros. eauto.
-   skip. (* ok, getCtorOfType subst *)  
-   nforall.
-    skip. (* ok *)
+  nforall. intros.
+   assert (In x (map dcOfAlt aa)). auto.
+   assert ( map dcOfAlt (map (substTA ix t2) aa)
+          = map dcOfAlt aa) as HDC.
+    lists. f_equal.
+    extensionality x0. rr. auto.
+   rewrite HDC. auto.
 
  Case "AAlt".
   eapply TYAlt with 

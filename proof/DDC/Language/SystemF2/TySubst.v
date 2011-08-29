@@ -28,6 +28,18 @@ Fixpoint substTT (d: nat) (u: ty) (tt: ty) : ty
 
 
 (********************************************************************)
+(* Substitution and type utils *)
+Lemma substTT_getCtorOfType
+ :  forall d t1 t2 t3
+ ,  getCtorOfType t2                = Some t3
+ -> getCtorOfType (substTT d t1 t2) = Some t3.
+Proof.
+ intros. gen d t1 t3.
+ induction t2; try burn.
+Qed.  
+Hint Resolve substTT_getCtorOfType.
+
+
 Lemma substTT_makeTApps 
  :  forall d t2 t1 ts
  ,  substTT d t2 (makeTApps t1 ts) 

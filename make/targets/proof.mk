@@ -6,7 +6,7 @@ src_coq_v 	= $(shell find proof -name "*.v" -follow)
 src_coq_vo	= $(patsubst %.v,%.vo,$(src_coq_v))
 
 
-proof/DDC/%.vo  : proof/DDC/%.v
+proof/DDC/%.vo proof/DDC/%.glob : proof/DDC/%.v
 	@echo "* Checking $<"
 	@$(COQC) -R proof/DDC DDC  $<
 

@@ -121,11 +121,23 @@ Fixpoint substXXs (d: nat) (us: list exp) (xx: exp) :=
 
 
 (* The data constructor of an alternative is unchanged
-   by substitution. *)
+   by exp substitution. *)
 Lemma dcOfAlt_substXA
  : forall d u a
  , dcOfAlt (substXA d u a) = dcOfAlt a.
 Proof.
  intros. destruct a. destruct d0. auto.
 Qed.
+Hint Rewrite dcOfAlt_substXA : global.
+
+
+(* The data constructor of an alternative is unchanged
+   by type substitution. *)
+Lemma dcOfAlt_substTA
+ : forall d u a
+ , dcOfAlt (substTA d u a) = dcOfAlt a.
+Proof.
+ intros. destruct a. destruct d0. auto.
+Qed.
+Hint Rewrite dcOfAlt_substTA : global.
 

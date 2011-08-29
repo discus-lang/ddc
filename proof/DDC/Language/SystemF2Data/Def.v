@@ -13,6 +13,12 @@ Inductive datacon : Type :=
 Hint Constructors datacon.
 
 
+Fixpoint datacon_beq t1 t2 :=
+  match t1, t2 with
+  | DataCon n11 n12, DataCon n21 n22 
+  => beq_nat n11 n21 && beq_nat n12 n22
+  end.
+
 Lemma beq_true_and_split
  :  forall a1 a2
  ,  true = a1 && a2
