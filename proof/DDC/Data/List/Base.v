@@ -200,6 +200,7 @@ Proof.
     simpl in H. false.
     simpl in H. simpl. right. auto.
 Qed.
+Hint Resolve get_in.
 
 
 (* If a list contains an element at a non-zero index, 

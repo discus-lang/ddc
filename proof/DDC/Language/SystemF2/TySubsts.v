@@ -238,6 +238,7 @@ Proof.
 Qed.
 
 
+
 Lemma substTTs_closing'
  :  forall ts t1 tn n
  ,  Forall (wfT (tn + n)) ts
@@ -250,15 +251,15 @@ Proof.
  Case "TVar".
   simpl; lift_cases; eauto.
    unfold substTTs'.
-    lift_cases. 
-      admit. (* ok, get in*)
+    lift_cases.
+      lists.
       eapply WfT_TVar. lists. omega.
     eapply WfT_TVar.
       omega.
    unfold substTTs'.
     lift_cases.
-     admit. (* ok, get in *)
-     eapply WfT_TVar. lists. omega.
+      lists.
+      eapply WfT_TVar. lists. omega.
 
  Case "TForall".
   eapply WfT_TForall.
@@ -328,4 +329,3 @@ Proof.
   eapply substTTs_substTT; eauto.
 Qed.
   
-

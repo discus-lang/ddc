@@ -55,6 +55,7 @@ Proof.
    eapply IHxs.
     inverts H0. auto. auto.
 Qed.
+Hint Resolve Forall_snoc.
 
 
 Lemma Forall_map
@@ -68,4 +69,4 @@ Proof.
   apply Forall_nil.
   inverts H. simpl. intuition.
 Qed.
-
+Hint Resolve Forall_map.

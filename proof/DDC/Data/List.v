@@ -69,11 +69,27 @@ Ltac lists_get_map_some_some
     end.
 
 
+(* Forall_get can't be used as a regular hint *)
+Ltac lists_Forall_get
+ := match goal with 
+    | [  H1 : Forall ?P ?xs
+      ,  H2 : Some ?x = get ?ix ?xs
+      |- ?P ?x ]
+      => eapply Forall_get; eauto
+
+    | [  H1 : Forall (?P ?y) ?xs
+      ,  H2 : Some ?x = get ?ix ?xs
+      |- (?P ?y) ?x ]
+      => eapply Forall_get; eauto
+    end.
+
+
 (* Intuition tactic fof lists *)
 Ltac lists
  := try lists_get_map_some_some;
     try lists_get_length_some;
     try lists_get_length_none;
+    try lists_Forall_get;
     repeat (try (rewrite map_length in *));
     repeat (try (rewrite map_map    in *);
             unfold compose in *).
