@@ -201,7 +201,8 @@ Qed.
 Hint Rewrite <- liftTT_map_substTT : global.
 
 
-Lemma substTT_closed'
+(* Substitution for an index that is not referenced by the type is identity *)
+Lemma substTT_unbound
  :  forall t1 t2 ix tn m
  ,  wfT tn t1
  -> ix >= tn
@@ -218,6 +219,7 @@ Proof.
 Qed.
 
 
+(* Substitution into a closed type is identity *)
 Lemma substTT_closed
  :  forall ix t1 t2
  ,  closedT t1
@@ -234,9 +236,8 @@ Proof.
   destruct H1 as [n'].
 
  rewrite <- H1.
- eapply substTT_closed'; burn.
+ eapply substTT_unbound; burn.
 Qed.
-
 
 
 Lemma substTTs_closing'
@@ -293,34 +294,36 @@ Hint Resolve substTTs_closing.
 
 
 Lemma substTTs_substTT
- :   forall n n' t1 t2 ts
- ,   wfT (length ts) t1
+ :   forall ts t1 t2 n n'
+ ,   wfT (length ts + n) t1
  ->  substTTs n (map (substTT (n + n') t2) ts) t1
  =   substTT (n + n') t2 (substTTs n ts t1).
 Proof.
- intros.
-  induction t1; intros; inverts H; try burn.
+ intros. gen ts n n' t2.
+ induction t1; intros; inverts H; try burn.
 
  Case "TVar".
-  admit.
+  repeat (simpl; unfold substTTs'; lift_cases);
+    try auto;
+    try (false; omega);
+    try (lists; burn).
 
  Case "TForall".
   simpl. f_equal.
   rrwrite (n + n' = 0 + (n + n')). 
   rewrite liftTT_map_substTT. 
-  lists. nnat.
+  nnat.
   rrwrite (1 + (n + n') = S n + n').
   rrwrite (S (0 + (n + n')) = 1 + n + n').
+  rewrite IHt1. nnat. burn.
   lists.
-  rrwrite (S n + n' = 1 + 0 + (n + n')).
-  admit.
-  (* hmm *)
+  rrwrite (length ts + S n = S (length ts + n)). auto.
 Qed.
 
 
 Lemma substTTs_substTT_map
  :  forall n n' ts1 t2 ts3
- ,  Forall (wfT (length ts1)) ts3
+ ,  Forall (wfT (length ts1 + n)) ts3
  -> map (substTTs n (map (substTT (n + n') t2) ts1)) ts3
  =  map (substTT (n + n') t2) (map (substTTs n ts1) ts3).
 Proof.
