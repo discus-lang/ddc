@@ -266,7 +266,10 @@ Proof.
   rrwrite (S (tn + n) = tn + (S n)).
   eapply IHt1.
    eapply Forall_map. 
-   nforall. intros. admit. (* ok, lemma *)
+    nforall. intros.
+     assert (wfT (tn + n) x). auto.
+     rrwrite (tn + S n = S (tn + n)).
+     auto.
    lists.
    assert (S (length ts + n) = length ts + (S n)).
     omega.

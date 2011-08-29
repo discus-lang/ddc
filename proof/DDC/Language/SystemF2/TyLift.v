@@ -22,6 +22,30 @@ Fixpoint liftTT (n: nat) (d: nat) (tt: ty) : ty :=
 Hint Unfold liftTT.
 
 
+(********************************************************************)
+(* Lifting and well-formedness *)
+Lemma liftTT_wfT
+ :  forall kn t d
+ ,  wfT kn t
+ -> wfT (S kn) (liftTT 1 d t).
+Proof.
+ intros. gen kn d.
+ lift_burn t.
+ 
+ Case "TVar".
+  inverts H.
+  repeat (simpl; lift_cases).
+   eapply WfT_TVar. burn.
+   eapply WfT_TVar. burn.
+
+ Case "TForall".
+  inverts H. burn.
+
+ Case "TApp".
+  inverts H. burn.
+Qed.
+Hint Resolve liftTT_wfT.
+
 
 (********************************************************************)
 (* Lifting and type utils *)
