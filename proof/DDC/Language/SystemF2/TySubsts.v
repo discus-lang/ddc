@@ -334,4 +334,3 @@ Proof.
   simpl. rewrite IHts3; eauto. f_equal.
   eapply substTTs_substTT; eauto.
 Qed.
-  

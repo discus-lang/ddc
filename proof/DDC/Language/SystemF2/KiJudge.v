@@ -64,6 +64,17 @@ Qed.
 Hint Resolve kind_wfT.
 
 
+Lemma kind_wfT_Forall
+ :  forall ks ts
+ ,  Forall (fun t => KIND ks t KStar) ts
+ -> Forall (wfT (length ks)) ts.
+Proof.
+ intros.
+ nforall. eauto.
+Qed.
+Hint Resolve kind_wfT_Forall.
+
+
 (* If a type is well kinded in an empty environment,
    then that type is closed. *)
 Lemma kind_empty_is_closed

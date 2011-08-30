@@ -1,4 +1,3 @@
-
 Require Import DDC.Language.SystemF2.SubstTypeType.
 Require Import DDC.Language.SystemF2Data.TyJudge.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -67,6 +66,7 @@ Proof.
     nforall.
     eapply H; eauto.
     nnat.
+    (* TODO: Add DEFSOK as tactic *)
     assert (DEFOK ds (DefData     dc tsFields tc)). eauto.
     assert (DEFOK ds (DefDataType tc ks       dcs)). eauto.
      inverts H5. inverts H9.
@@ -88,19 +88,24 @@ Proof.
    rewrite HDC. auto.
 
  Case "AAlt".
-  eapply TYAlt with 
-    (tc := tc) (ks := ks) (dcs := dcs) (tObj1 := tObj1); eauto.
-  eapply subst_type_type_ix_forall2; eauto.
-   skip. (* ok *)
 
-  unfold substTE.
-   rrwrite (ix = 0 + ix).
-   rewrite substTTs_substTT_map.
-   rrwrite (0 + ix = ix).
-   rewrite <- map_app.
-   unfold substTE in IHx1.
-   eapply IHx1; eauto.
-   skip. (* ok fields wfT *)
+  (* TODO: split this getting defs from env into a tactic *)
+  assert (DEFOK ds (DefData dc tsFields tc)).
+   eauto. inverts H0. rewrite H9 in H5. inverts H5.
+
+  rr.
+  eapply TYAlt with 
+    (tc := tc) (ks := ks) (dcs := dcs); eauto.
+  eapply subst_type_type_ix_forall2; eauto.
+   eapply IHx1 in H10; eauto.
+   rrwrite (ix = 0 + ix).   
+   rewrite substTTs_substTT_map. 
+    rrwrite (0 + ix = ix). (* TODO: renorm nats as tactic *)
+    unfold substTE. rewrite <- map_app. auto.
+    nnat.
+
+    rrwrite (length tsParam = length ks).
+    eauto.
 Qed.
 
 

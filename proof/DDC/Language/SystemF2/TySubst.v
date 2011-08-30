@@ -51,6 +51,17 @@ Qed.
 Hint Rewrite substTT_makeTApps : global.
 
 
+Lemma takeTCon_substTT
+ :  forall ix t1 tc t2
+ ,  takeTCon t1                 = TCon tc
+ -> takeTCon (substTT ix t2 t1) = TCon tc.
+Proof.
+ intros. gen ix t2.
+ induction t1; burn.
+Qed. 
+
+
+
 (********************************************************************)
 (* If we lift at depth d, this creates an empty space and
    substituting into it doens't do anything. *)

@@ -72,14 +72,13 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) : exp -> ty -> Prop :=
 with TYPEA  (ds: defs) (ke: kienv) (te: tyenv) : alt -> ty -> ty -> Prop :=
  (* Case Alternatives *)
  | TYAlt 
-   :  forall x1 dc tObj tObj1 tc ks tsParam tsFields tResult dcs
+   :  forall x1 dc tc ks tsParam tsFields tResult dcs
    ,  DEFSOK ds
    -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
    -> getDataDef dc ds = Some (DefData     dc tsFields tc)
    -> Forall2 (KIND ke) tsParam ks
-   -> takeTApps tObj   = (tObj1, tsParam)
    -> TYPE  ds ke (te >< map (substTTs 0 tsParam) tsFields) x1 tResult
-   -> TYPEA ds ke te (AAlt dc x1) tObj tResult.
+   -> TYPEA ds ke te (AAlt dc x1) (makeTApps (TCon tc) tsParam) tResult.
 
 Hint Constructors TYPE.
 Hint Constructors TYPEA.
@@ -175,10 +174,10 @@ Proof.
  Case "XAlt".
   destruct dc.
   eapply WfA_AAlt. eauto.
-  apply IHx in H9.
-  rewrite app_length in H9.
-  rewrite map_length in H9.
-  rewrite plus_comm  in H9.
+  apply IHx in H8.
+  rewrite app_length in H8.
+  rewrite map_length in H8.
+  rewrite plus_comm  in H8.
   auto.   
 Qed.
 Hint Resolve type_wfX.
@@ -284,18 +283,11 @@ Proof.
      burn.
 
  Case "XAlt".
-  assert ( takeTApps (liftTT 1 ix t3) 
-          = (liftTT 1 ix tObj1, map (liftTT 1 ix) tsParam)).
-   unfold takeTApps in H6. invert H6. 
-   burn. 
-
   lets HD: getDataDef_ok H2 H4. inverts HD.
-   rewrite H8 in H3. inverts H3.
+   rewrite H6 in H3. inverts H3.
 
-  eapply TYAlt; eauto. 
-   unfold takeTApps in H. invert H. intros.
-   unfold takeTApps.
-   rewrite H3. lists. auto.
+  rr.
+  eapply TYAlt; eauto.
    eapply Forall2_map_left.
    eapply Forall2_impl; eauto.
     intros. eapply kind_kienv_insert. auto.
