@@ -312,7 +312,20 @@ Proof.
    rewrite <- HXX.
    unfold liftTE. rewrite <- map_app.
    unfold liftTE in IHx1. burn.
-Qed.   
+Qed.
+
+
+Lemma type_kienv_weaken1
+ :  forall ds ke te x1 t1 k2
+ ,  TYPE ds ke                   te            x1              t1
+ -> TYPE ds (ke :> k2) (liftTE 0 te) (liftTX 0 x1) (liftTT 1 0 t1).
+Proof.
+ intros.
+ assert (ke :> k2 = insert 0 k2 ke).
+  simpl. destruct ke; auto.
+ rewrite H0.
+ eapply type_kienv_insert; auto.
+Qed.
 
 
 (********************************************************************)

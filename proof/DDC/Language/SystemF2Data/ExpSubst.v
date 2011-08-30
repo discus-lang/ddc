@@ -51,7 +51,7 @@ Fixpoint substXX (d:  nat) (u: exp) (xx: exp) : exp :=
        end
 
     |  XLAM x1
-    => XLAM (substXX d u x1)
+    => XLAM (substXX d (liftTX 0 u) x1)
 
     |  XAPP x1 t2
     => XAPP (substXX d u x1) t2
