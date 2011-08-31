@@ -45,8 +45,14 @@ Proof.
    erewrite getCtorOfType_makeTApps in H5; eauto.
    inverts H5.
   rewrite H6 in H15. inverts H15.
-  
-  (* TODO: not finsihed *)
+  rr.
+  have (length ts = length ks0)      as HTK1.
+  have (length tsParam = length ks0) as HTK2.
+  rewrite <- HTK1 in HTK2.
+  assert (tsParam = ts).
+  eapply makeTApps_args_eq'.
+   eauto. eauto. subst.
+  eauto.
 Qed.
 
 
@@ -54,9 +60,9 @@ Qed.
    then the result has the same type as the original. *)  
 Lemma preservation_steps
  :  forall ds x1 t1 x2
- ,  TYPE ds nil x1 t1
+ ,  TYPE ds nil nil x1 t1
  -> STEPS       x1 x2
- -> TYPE ds nil x2 t1.
+ -> TYPE ds nil nil x2 t1.
 Proof.
  intros ds x1 t1 x2 HT HS.
  induction HS; eauto using preservation.
@@ -69,9 +75,9 @@ Qed.
  *)
 Lemma preservation_stepsl
  :  forall ds x1 t1 x2
- ,  TYPE ds nil x1 t1
+ ,  TYPE ds nil nil x1 t1
  -> STEPSL x1 x2
- -> TYPE ds nil x2 t1.
+ -> TYPE ds nil nil x2 t1.
 Proof.
  intros ds x1 t1 x2 HT HSL.
  induction HSL; eauto using preservation.

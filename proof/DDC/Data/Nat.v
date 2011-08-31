@@ -32,11 +32,19 @@ Qed.
 Lemma nat_plus_zero
  : forall n, n + 0 = n.
 Proof. auto. Qed.
+Hint Rewrite nat_plus_zero : global.
+
+
+Lemma nat_zero_plus 
+ :  forall n, 0 + n = n.
+Proof. auto. Qed.
+Hint Rewrite nat_zero_plus : global.
 
 
 Lemma nat_minus_zero
  : forall n, n - 0 = n.
 Proof. intros. omega. Qed.
+Hint Rewrite nat_minus_zero : global.
 
 
 Lemma nat_plus_one
@@ -50,5 +58,4 @@ Tactic Notation "nnat"
  := try rewrite nat_plus_zero
   ; try rewrite nat_minus_zero
   ; try rewrite nat_plus_one.
-
 

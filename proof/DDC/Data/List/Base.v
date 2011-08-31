@@ -152,6 +152,7 @@ Proof.
  auto.
 Qed.
 Hint Resolve app_nil_left.
+Hint Rewrite app_nil_left : global.
 
 
 Lemma app_nil_right
@@ -164,6 +165,7 @@ Proof.
   simpl. rewrite IHxx. trivial.
 Qed.
 Hint Resolve app_nil_right.
+Hint Rewrite app_nil_right : global.
 
 
 Lemma app_snoc
@@ -179,7 +181,7 @@ Hint Resolve app_snoc.
 
 
 Lemma app_length
- :  forall {A} (l1: list A) l2
+ :  forall A (l1: list A) l2
  ,  length (l1 ++ l2) = length l1 + length l2.
 Proof.
  intros.
@@ -187,6 +189,23 @@ Proof.
   auto.
   simpl. int.
 Qed.
+Hint Rewrite app_length : global.
+
+
+Lemma length_snoc 
+ :  forall A (xs: list A) x
+ ,  length (x <: xs)  = 1 + length xs.
+Proof.
+ intros.
+ assert (x <: xs = (x :: nil) >< xs).
+  rewrite app_snoc.
+  rewrite app_nil_right. auto.
+
+ rewrite H.
+ rewrite app_length.
+ simpl. omega.
+Qed.
+Hint Rewrite length_snoc : global.
 
 
 (********************************************************************)
@@ -324,6 +343,7 @@ Proof.
  induction xs; simpl; auto.
 Qed.
 Hint Resolve get_length_snoc_some.
+Hint Rewrite get_length_snoc_some : global.
 
 
 (* We cannot get elements from a list at indices the same, or larger, 

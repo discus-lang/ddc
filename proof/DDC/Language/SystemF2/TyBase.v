@@ -153,35 +153,40 @@ Lemma makeTApps_rewind
 Proof. intros. auto. Qed.
 
 
-Lemma makeTApps_eq
+Lemma makeTApps_args_eq'
  :  forall tc ts1 ts2
- ,  length ts1 = length ts2 (*do dump this premise *)
+ ,  length ts1 = length ts2
  -> makeTApps (TCon tc) ts1 = makeTApps (TCon tc) ts2
  -> ts1 = ts2.
 Proof.
  intros. gen ts2.
  induction ts1 using rev_ind; intros.
-  skip.
-
-  lets D: @snocable ty ts2.
-  inverts D.
+  Case "ts1 = nil".
+   assert (ts2 = nil).
+    simpl in H. 
+    symmetry in H.
+    eauto. auto.
+   
+  Case "ts1 ~ snoc".
+   lets D: @snocable ty ts2. inverts D.
+   SCase "ts2 ~ nil".
+    simpl in H.
+    rewrite app_snoc in H.
+    rewrite app_nil_right in H.
+    simpl in H.
    skip.
 
    dest t. dest ts'. subst.
 
    rewrite app_snoc in H.
-   rewrite app_snoc.
-   rewrite app_nil_right.
+   rewrite app_snoc. rr.
 
-   rewrite app_snoc in H0.
-   rewrite app_nil_right in H0.
+   rewrite app_snoc in H0. rr.
    rewrite makeTApps_snoc' in H0.
    rewrite makeTApps_snoc' in H0.
    inverts H0.
-   rewrite app_nil_right in H.
-   assert (length ts1 = length ts'). admit. (* fine, lists *)
-   lets D: IHts1 H0.
-   rewrite D. eauto. eauto.
+   simpl in H. inverts H.
+   erewrite IHts1; eauto.
 Qed.
 
 

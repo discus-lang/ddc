@@ -336,9 +336,11 @@ Proof.
      assert (length tsParam = length ks) as HL; eauto.
      rewrite HL. auto.
 
+   unfold liftTE in IHx1. 
+   unfold liftTE.
    rewrite <- HXX.
-   unfold liftTE. rewrite <- map_app.
-   unfold liftTE in IHx1. burn.
+   rewrite <- map_app.
+   burn.
 Qed.
 
 

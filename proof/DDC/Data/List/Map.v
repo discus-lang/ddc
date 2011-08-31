@@ -15,7 +15,7 @@ Proof. auto. Qed.
 
 
 Lemma map_snoc
- :  forall {A B} (f: A -> B) x xs
+ :  forall A B (f: A -> B) x xs
  ,  map f (snoc x xs) = snoc (f x) (map f xs).
 Proof.
  intros.
@@ -23,6 +23,7 @@ Proof.
   simpl. auto.
   simpl. rewrite IHxs. auto.
 Qed.
+Hint Rewrite map_snoc : global.
 
 
 (* Applying a function to all the elements of a list and getting
@@ -44,7 +45,7 @@ Hint Resolve get_map.
 
 
 Lemma map_app 
- :  forall {A B} (f: A -> B) xx yy
+ :  forall A B (f: A -> B) xx yy
  ,  map f (xx ++ yy)
  =  map f xx ++ map f yy.
 Proof.
@@ -54,6 +55,7 @@ Proof.
   simpl. rewrite IHxx. auto.
 Qed.
 Hint Resolve map_app.
+Hint Rewrite map_app : global.
 
 
 (* Applying two functions to all the elements of a list one after

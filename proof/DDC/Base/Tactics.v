@@ -215,6 +215,7 @@ Ltac burn2
     This often happens in progress proofs. eg  value x \/ step x x'. *)
 Ltac burn :=
  intros; 
+ try burn0;
  try (autorewrite with global in *);
  match goal with 
      [ _ : _ |- _ \/ _ ] 
