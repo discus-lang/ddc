@@ -47,10 +47,13 @@ Require Export DDC.Language.SystemF2Data.SubstTypeExp.
 (* Substitution of expressions in expressions preserves typing. *)
 Require Export DDC.Language.SystemF2Data.SubstExpExp.
 
-(*
-(* Small step evaluation. *)
-Require Export DDC.Language.SystemF2.Step.
+(* Small step evaluation contexts *)
+Require Export DDC.Language.SystemF2Data.StepContext.
 
+(* Small step evaluation. *)
+Require Export DDC.Language.SystemF2Data.Step.
+
+(*
 (* A well typed expression is either a value, or can take a step. *)
 Require Export DDC.Language.SystemF2.Progress.
 
