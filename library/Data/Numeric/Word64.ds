@@ -43,18 +43,12 @@ foreign import primWord64U_le			:: Word64# -> Word64# -> Bool#
 
 
 -- Boxing ---------------------------------------------------------------------
-boxWord64 :: Word64# -> Word64
-boxWord64 u
- = do	w	= primAlloc_dataRS 0# 8#
-	poke (coerceAddrToPtr (peekDataRS_payload w)) u
-	w
 
+boxWord64 :: Word64# -> Word64
+boxWord64 u = Word64 u
 
 unboxWord64 :: Word64 -> Word64#
-unboxWord64 w
- = do	w'	= force w
-	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
-
+unboxWord64 (Word64 w) = w
 
 -- Unboxed Instances ----------------------------------------------------------
 instance Eq Word64# where

@@ -43,18 +43,12 @@ foreign import primInt64U_le			:: Int64# -> Int64# -> Bool#
 
 
 -- Boxing ---------------------------------------------------------------------
-boxInt64 :: Int64# -> Int64
-boxInt64 u
- = do	w	= primAlloc_dataRS 0# 8#
-	poke (coerceAddrToPtr (peekDataRS_payload w)) u
-	w
 
+boxInt64 :: Int64# -> Int64
+boxInt64 u = Int64 u
 
 unboxInt64 :: Int64 -> Int64#
-unboxInt64 w
- = do	w'	= force w
-	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
-
+unboxInt64 (Int64 w) = w
 
 -- Unboxed Instances ----------------------------------------------------------
 instance Eq Int64# where
