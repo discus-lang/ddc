@@ -57,7 +57,7 @@ Proof.
    int.     
 
   (* All ctor args are wnf, or there is a context where one can step *)
-  lets D: exps_ctx_run HWS.
+  lets D: (@exps_ctx_run exp exp) HWS.
   inverts D.
    (* All ctor args are wnf *)
    left. eauto 6.

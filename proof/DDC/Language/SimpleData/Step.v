@@ -85,7 +85,7 @@ Qed.
 
 Lemma step_context_XCon_exists
  :  forall  C x dc
- ,  exps_ctx C 
+ ,  exps_ctx wnfX C 
  -> (exists x', STEP x x')
  -> (exists x', STEP (XCon dc (C x)) (XCon dc (C x'))).
 Proof.
@@ -126,7 +126,7 @@ Qed.
 (* Multi-step evaluation of a data constructor argument. *)
 Lemma steps_context_XCon
  :  forall C x v dc
- ,  exps_ctx C
+ ,  exps_ctx wnfX C
  -> STEPS x v
  -> STEPS (XCon dc (C x)) (XCon dc (C v)).
 Proof.

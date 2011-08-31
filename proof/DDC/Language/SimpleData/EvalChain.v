@@ -46,7 +46,7 @@ Inductive CHAIN : list exp -> list exp -> Prop :=
 
  | EcCons
    :  forall x v vs C
-   ,  exps_ctx C  
+   ,  exps_ctx wnfX C  
    -> STEPS x v -> wnfX v
    -> CHAIN (C v) vs
    -> CHAIN (C x) vs.
@@ -66,7 +66,7 @@ Proof.
  intros v xs ys HW HC.
  induction HC.
   auto.
-  lets D1: XscCons v H. auto.
+  lets D1: (@XscCons exp) wnfX v H. auto.
   lets D2: EcCons D1 H0 H1 IHHC. 
   auto.
 Qed.
@@ -103,7 +103,7 @@ Proof.
    
     (* Either all the xs are already whnfX,
        or there is a context where one can step *)
-    lets HR: exps_ctx2_run H0. clear H0.
+    lets HR: (@exps_ctx2_run exp) wnfX H0. clear H0.
     inverts HR.
 
     SSCase "xs all whnfX".
@@ -114,7 +114,7 @@ Proof.
      assert (xs = vs).
       apply Forall2_eq. auto. subst.
    
-     lets C1: XscHead vs.
+     lets C1: (@XscHead exp) vs.
      lets D1: EcCons x v (v :: vs) C1 H4.
      eauto.
 
@@ -131,10 +131,10 @@ Proof.
      assert (wnfX v').
       eapply exps_ctx_Forall; eauto.
 
-     lets E1: XscCons C1 H2 HC1.
-     lets E2: XscCons C2 H2 HC2.
+     lets E1: (@XscCons exp) C1 H2 HC1.
+     lets E2: (@XscCons exp) C2 H2 HC2.
 
-   lets E3: XscHead (C1 x').
+   lets E3: (@XscHead exp) (C1 x').
 
    lets F1: EcCons x v (v :: C2 v') E3.
     apply F1. auto. auto. clear F1.
