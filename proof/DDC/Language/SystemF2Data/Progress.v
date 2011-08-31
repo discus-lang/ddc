@@ -18,14 +18,11 @@ Proof.
   (PA := fun a => a = a)
   ; intros.
 
-
  Case "XVar".
   nope.
 
-
  Case "XLAM".
   left. apply type_wfX in H0. auto.
-
 
  Case "XAPP".
   inverts keep H0.
@@ -51,10 +48,8 @@ Proof.
     lets D: EsContext XcAPP H1.
     eauto.
 
-
  Case "XLam".
   left. eapply type_wfX in H0. auto.
-
 
  Case "XApp".
   right.
@@ -77,7 +72,6 @@ Proof.
    exists (XApp x1' x2).
    eapply (EsContext (fun xx => XApp xx x2)); auto.
  
-
  Case "XCon".
   inverts_type.
   (* All ctor args are either wnf or can step *)
@@ -105,7 +99,6 @@ Proof.
     int. subst.
     lets D: step_context_XCon_exists H2 H4.
     destruct D as [x'']. eauto.
-
 
  Case "XCase".
   right.
@@ -149,7 +142,6 @@ Proof.
    destruct H2 as [x'].
    exists (XCase x' aa).
    lets D: EsContext XcCase; eauto.
-
 
  Case "XAlt".
    auto.     

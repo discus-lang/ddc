@@ -153,7 +153,7 @@ Lemma makeTApps_rewind
 Proof. intros. auto. Qed.
 
 
-Lemma makeTApps_args_eq'
+Lemma makeTApps_args_eq
  :  forall tc ts1 ts2
  ,  length ts1 = length ts2
  -> makeTApps (TCon tc) ts1 = makeTApps (TCon tc) ts2
@@ -173,14 +173,11 @@ Proof.
     simpl in H.
     rewrite app_snoc in H.
     rewrite app_nil_right in H.
-    simpl in H.
-   skip.
+    simpl in H. burn. 
 
    dest t. dest ts'. subst.
-
    rewrite app_snoc in H.
    rewrite app_snoc. rr.
-
    rewrite app_snoc in H0. rr.
    rewrite makeTApps_snoc' in H0.
    rewrite makeTApps_snoc' in H0.
