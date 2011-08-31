@@ -43,18 +43,12 @@ foreign import primWord32U_le			:: Word32# -> Word32# -> Bool#
 
 
 -- Boxing ---------------------------------------------------------------------
-boxWord32 :: Word32# -> Word32
-boxWord32 u
- = do	w	= primAlloc_dataRS 0# 4#
-	poke (coerceAddrToPtr (peekDataRS_payload w)) u
-	w
 
+boxWord32 :: Word32# -> Word32
+boxWord32 u = Word32 u
 
 unboxWord32 :: Word32 -> Word32#
-unboxWord32 w
- = do	w'	= force w
-	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
-
+unboxWord32 (Word32 w) = w
 
 -- Unboxed Instances ----------------------------------------------------------
 instance Eq Word32# where

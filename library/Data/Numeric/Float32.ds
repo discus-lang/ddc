@@ -67,18 +67,12 @@ foreign import "logf"	primFloat32U_log	:: Float32# -> Float32#
 
 
 -- Boxing ---------------------------------------------------------------------
-boxFloat32 :: Float32# -> Float32
-boxFloat32 u
- = do	w	= primAlloc_dataRS 0# 4#
-	poke (coerceAddrToPtr (peekDataRS_payload w)) u
-	w
 
+boxFloat32 :: Float32# -> Float32
+boxFloat32 u = Float32 u
 
 unboxFloat32 :: Float32 -> Float32#
-unboxFloat32 w
- = do	w'	= force w
-	peekOn w (coerceAddrToPtr (peekDataRS_payload w'))
-
+unboxFloat32 (Float32 w) = w
 
 -- Conversion -----------------------------------------------------------------
 -- TODO: rewrite these directly in Disciple.
