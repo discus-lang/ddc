@@ -233,3 +233,12 @@ Tactic Notation "rrwrite" constr(xx)
  := let H := fresh 
     in assert xx as H by burn; rewrite H; clear H.
 
+
+Tactic Notation "have" constr(E) :=
+ let H := fresh 
+ in assert E as H by burn.
+
+
+Tactic Notation "have" constr(E) "as" ident(H) :=
+ assert E as H by burn.
+

@@ -100,6 +100,17 @@ Proof.
 Qed.
 
 
+Lemma makeTApps_snoc'
+ :  forall t1 t2 ts
+ ,  makeTApps t1 (snoc t2 ts)
+ =  TApp (makeTApps t1 ts) t2.
+Proof.
+ intros. gen t1 t2.
+ induction ts; intros.
+  auto.
+  simpl. auto.
+Qed.
+
 
 Lemma takeTCon_makeTApps
  :  forall t1 ts
@@ -133,6 +144,44 @@ Proof.
   auto.
   simpl.
   rewrite IHts; auto.
+Qed.
+
+
+Lemma makeTApps_rewind
+ :  forall t1 t2 ts
+ ,  makeTApps (TApp t1 t2) ts = makeTApps t1 (t2 :: ts).
+Proof. intros. auto. Qed.
+
+
+Lemma makeTApps_eq
+ :  forall tc ts1 ts2
+ ,  length ts1 = length ts2 (*do dump this premise *)
+ -> makeTApps (TCon tc) ts1 = makeTApps (TCon tc) ts2
+ -> ts1 = ts2.
+Proof.
+ intros. gen ts2.
+ induction ts1 using rev_ind; intros.
+  skip.
+
+  lets D: @snocable ty ts2.
+  inverts D.
+   skip.
+
+   dest t. dest ts'. subst.
+
+   rewrite app_snoc in H.
+   rewrite app_snoc.
+   rewrite app_nil_right.
+
+   rewrite app_snoc in H0.
+   rewrite app_nil_right in H0.
+   rewrite makeTApps_snoc' in H0.
+   rewrite makeTApps_snoc' in H0.
+   inverts H0.
+   rewrite app_nil_right in H.
+   assert (length ts1 = length ts'). admit. (* fine, lists *)
+   lets D: IHts1 H0.
+   rewrite D. eauto. eauto.
 Qed.
 
 
