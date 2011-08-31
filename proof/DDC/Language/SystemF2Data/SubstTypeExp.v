@@ -43,7 +43,7 @@ Proof.
   eapply subst_type_type_ix; eauto.
   unfold substTE. rewrite map_rewind.
   rrwrite ( map (substTT ix t2) (te :> t)
-         = substTE ix t2 (te :> t)).
+          = substTE ix t2 (te :> t)).
   burn.
 
  Case "XApp".
@@ -61,26 +61,25 @@ Proof.
    eapply Forall2_map_right' in H11.
    eapply Forall2_impl_in; eauto; intros.
     rrwrite (ix = 0 + ix). 
-    rewrite substTTs_substTT.
-    rrwrite (0 + ix = ix).
-    nforall.
-    eapply H; eauto.
-    nnat.
-    (* TODO: Add DEFSOK as tactic *)
-    assert (DEFOK ds (DefData     dc tsFields tc)). eauto.
-    assert (DEFOK ds (DefDataType tc ks       dcs)). eauto.
-     inverts H5. inverts H9.
-    assert (ks0 = ks). burn. subst.
-    rrwrite (length ts = length ks). 
-    assert (KIND ks y KStar). nforall. auto.
-    eauto.
+    rewrite substTTs_substTT; rr.
+     nforall. eapply H; eauto.
+
+     (* TODO: Add DEFSOK as tactic *)
+     have (DEFOK ds (DefData     dc tsFields tc)).
+     have (DEFOK ds (DefDataType tc ks       dcs)).
+      inverts H5. inverts H9.
+     assert (ks0 = ks). burn. subst.
+     rrwrite (length ts = length ks).
+     nforall.
+     have (KIND ks y KStar).
+     eauto.
  
  Case "XCase".
   eapply TYCase; eauto.
   eapply Forall_map.
   nforall. intros. eauto.
   nforall. intros.
-   assert (In x (map dcOfAlt aa)). auto.
+   have (In x (map dcOfAlt aa)).
    assert ( map dcOfAlt (map (substTA ix t2) aa)
           = map dcOfAlt aa) as HDC.
     lists. f_equal.
@@ -90,20 +89,16 @@ Proof.
  Case "AAlt".
 
   (* TODO: split this getting defs from env into a tactic *)
-  assert (DEFOK ds (DefData dc tsFields tc)).
-   eauto. inverts H0. rewrite H11 in H5. inverts H5.
+  have (DEFOK ds (DefData dc tsFields tc)) as HD.
+   inverts HD. rewrite H9 in H5. inverts H5.
 
   rr.
-  eapply TYAlt with 
-    (tc := tc) (ks := ks) (dcs := dcs); eauto.
+  eapply TYAlt with (tc := tc) (ks := ks) (dcs := dcs); eauto.
   eapply subst_type_type_ix_forall2; eauto.
    eapply IHx1 in H10; eauto.
    rrwrite (ix = 0 + ix).   
-   rewrite substTTs_substTT_map. 
-    rrwrite (0 + ix = ix). (* TODO: renorm nats as tactic *)
-    unfold substTE. rewrite <- map_app. auto.
-    nnat.
-
+   rewrite substTTs_substTT_map; rr.
+    unfold substTE. rewrite <- map_app. auto. 
     rrwrite (length tsParam = length ks).
     eauto.
 Qed.

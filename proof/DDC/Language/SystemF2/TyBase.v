@@ -274,12 +274,10 @@ Proof.
  intros.
  induction t1.
  Case "TCon".
-  exists 0.
-  auto.
+  exists 0. auto.
 
  Case "TVar".
-  exists (S n).
-  eauto.
+  exists (S n). eauto.
 
  Case "TForall".
   shift tn.

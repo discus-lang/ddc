@@ -229,16 +229,20 @@ Ltac burn :=
 
 
 (* Rewrite using burn.
-   Just state the equality to use.   *)
+   Just state the equality to use. *)
 Tactic Notation "rrwrite" constr(xx)
  := let H := fresh 
     in assert xx as H by burn; rewrite H; clear H.
 
+Tactic Notation "rrwrite" constr(xx) "in" hyp(H)
+ := let H2 := fresh
+    in  assert xx as H2 by burn; rewrite H2 in H; clear H2.
 
+
+(* Assert a statement and prove it via burn. *)
 Tactic Notation "have" constr(E) :=
  let H := fresh 
  in assert E as H by burn.
-
 
 Tactic Notation "have" constr(E) "as" ident(H) :=
  assert E as H by burn.

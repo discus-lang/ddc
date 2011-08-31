@@ -226,8 +226,7 @@ Lemma substTT_closed
  -> substTT ix t2 t1 = t1.
 Proof.
  intros.
- assert (exists n, wfT n t2).
-  auto. dest n.
+ have (exists n, wfT n t2). dest n.
 
  assert (exists n, liftTT 1 n t2 = t2).
   exists n. eauto.
@@ -268,13 +267,12 @@ Proof.
   eapply IHt1.
    eapply Forall_map. 
     nforall. intros.
-     assert (wfT (tn + n) x). auto.
+     have (wfT (tn + n) x).
      rrwrite (tn + S n = S (tn + n)).
      auto.
    lists.
-   assert (S (length ts + n) = length ts + (S n)).
-    omega.
-    rewrite H0 in H2. burn.
+   rrwrite (S (length ts + n) = length ts + (S n)) in H2.
+   burn.
 Qed.
 Hint Resolve substTTs_closing'.
 

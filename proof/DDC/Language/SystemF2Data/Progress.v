@@ -58,7 +58,7 @@ Proof.
   SCase "value x1".
    edestruct IHx2; eauto.
     SSCase "value x2".
-     assert (exists t x, x1 = XLam t x) as HF. eauto.
+     have (exists t x, x1 = XLam t x) as HF.
      destruct HF as [t11].
      destruct H2 as [x12].
      subst.
@@ -77,12 +77,8 @@ Proof.
   (* All ctor args are either wnf or can step *)
   assert (Forall (fun x => wnfX x \/ (exists x', STEP x x')) xs) as HWS.
    nforall. intros.
-   assert (exists t, TYPE ds nil nil x t).
-    eapply Forall2_exists_left; eauto.
-    dest t.
-   assert (value x \/ (exists x', STEP x x')).
-    eapply H0; eauto.
-   int.     
+   have (exists t, TYPE ds nil nil x t). dest t.
+   have (value x \/ (exists x', STEP x x')). int.     
 
   (* All ctor args are wnf, or there is a context where one can step *)
   lets D: (@exps_ctx_run exp exp) HWS.
@@ -103,33 +99,29 @@ Proof.
  Case "XCase".
   right.
   inverts keep H1.
-  assert (value x \/ (exists x', STEP x x')) as HS; eauto.
+  have (value x \/ (exists x', STEP x x')) as HS.
   inverts HS. clear IHx.
   SCase "x value".
    destruct x; nope.
     SSCase "XCase (XLAM x) aa".
-     assert (exists t', tObj = TForall t'). eauto.
-     dest t'. subst.
-     false.
+     have (exists t', tObj = TForall t').
+     dest t'. subst. false.
 
     SSCase "XCase (XLam t x) aa".
-     assert (exists t11 t12, tObj = tFun t11 t12). eauto.
+     have (exists t11 t12, tObj = tFun t11 t12).
      dest t11. dest t12. subst.
-     unfold tFun in H6. 
-     simpl in H6. inverts H6.
-     assert (DEFOK ds (DefDataType TyConFun ks dcs)). eauto.
-      inverts H3. false.
+     unfold tFun in H6. simpl in H6. inverts H6.
+     have (DEFOK ds (DefDataType TyConFun ks dcs)) as HD.
+     inverts HD. false.
 
     SSCase "XCon".
      (* show there is a corresponding alternative 
         TODO: split this into a lemma *)
-     assert (exists x, getAlt d aa = Some (AAlt d x)) as HG.
-      eapply getAlt_exists.
-      nforall.
-      eapply H9. 
-      inverts H4.
+      assert (exists x, getAlt d aa = Some (AAlt d x)) as HG.
+       eapply getAlt_exists.
+       nforall. eapply H9. inverts H4.
 
-      assert (getCtorOfType (TCon tc) = Some tc). auto.
+      have (getCtorOfType (TCon tc) = Some tc).
       erewrite getCtorOfType_makeTApps in H6; eauto.
        inverts H6.
       eauto.

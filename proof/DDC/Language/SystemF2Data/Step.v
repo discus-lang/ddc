@@ -111,8 +111,8 @@ Proof.
    apply step_wnfX; auto.
   
   Case "EsAppend".
-   assert (x2 = x1); auto.
-    subst. auto.
+   have (x2 = x1).
+   subst. auto.
 Qed.
 
 

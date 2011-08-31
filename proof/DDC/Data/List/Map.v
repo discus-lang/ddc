@@ -121,6 +121,7 @@ Proof.
    exists x0. inverts H. split. auto. eauto.
    simpl. eauto.
 Qed.
+Hint Resolve map_in_exists.
 
 
 (* When we transform a list with a map, then we can find the element
@@ -141,6 +142,7 @@ Proof.
    inverts H1. auto.
    right. eauto.
 Qed.
+Hint Resolve map_exists_in.
 
 
 Lemma map_get_some_some

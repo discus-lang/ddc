@@ -117,8 +117,7 @@ Proof.
  inverts H0.
   apply makeTApps_takeTCon in H4.
   simpl in H4. inverts H4.
-  assert (DEFOK ds (DefData d tsFields TyConFun)).
-   eauto.
+  have (DEFOK ds (DefData d tsFields TyConFun)).
   nope.
 Qed.
 Hint Resolve value_lam.
@@ -131,8 +130,7 @@ Lemma type_XLAM
  ,  TYPE ds ke te (XLAM x) t
  -> (exists t', t = TForall t').
 Proof.
- intros.
- destruct t; nope.
+ intros. destruct t; nope.
  eauto.
 Qed.
 Hint Resolve type_XLAM.
@@ -143,9 +141,8 @@ Lemma type_XLam
  ,  TYPE ds ke te (XLam t1 x) t2
  -> (exists t21 t22, t2 = tFun t21 t22).
 Proof.
- intros.
- destruct t2; nope.
- inverts H.
+ intros. destruct t2; nope.
+ inverts H. 
  unfold tFun. eauto.
 Qed.
 Hint Resolve type_XLam.
@@ -168,44 +165,38 @@ Proof.
 
  Case "XVar".
   eapply WfX_XVar. 
-   eapply get_length_less. eauto.
+  eapply get_length_less; eauto.
 
  Case "XLAM".
   eapply WfX_XLAM.
   apply IHx in H1.
-  assert (length (ke :> KStar) = S (length ke)).
-   auto. rewrite H in H1.
-   rewrite <- length_liftTE in H1. auto.
+  rrwrite (length (ke :> KStar) = S (length ke)) in H1.
+  rewrite <- length_liftTE in H1. auto.
 
  Case "XLam".
-  eapply WfX_XLam.
-  eauto.
-  apply IHx in H4. 
-   assert (length (te :> t) = S (length te)).
-    auto. rewrite H in H4. auto.
-  
+  eapply WfX_XLam; eauto.
+  apply IHx in H4.
+  rrwrite (length (te :> t) = S (length te)) in H4.
+  auto.
+
  Case "XCon".
   apply WfX_XCon.
   nforall. intros.
-  eapply Forall2_exists_left in H8; eauto.
-  dest y. eauto.
+  have (exists k, KIND ke x k).
+  dest k. eauto.
    nforall. intros.
-   eapply Forall2_exists_left in H9; eauto. dest y.
-   eapply H; eauto.
+   have (exists t, TYPE ds ke te x t).
+   dest t. eauto.
 
  Case "XCase".
-  eapply WfX_XCase. 
-   burn.
-   nforall. eauto.
+  eapply WfX_XCase; eauto.
+  nforall. eauto.
 
  Case "XAlt".
   destruct dc.
   eapply WfA_AAlt. eauto.
   apply IHx in H8.
-  rewrite app_length in H8.
-  rewrite map_length in H8.
-  rewrite plus_comm  in H8.
-  auto.   
+  rr. lists. rewrite plus_comm. auto.
 Qed.
 Hint Resolve type_wfX.
 
@@ -232,8 +223,8 @@ Proof.
  Case "XLAM".
   eapply TYLAM. 
   rewrite insert_rewind. 
-   rewrite (liftTE_liftTE 0 ix).
-   burn.
+  rewrite (liftTE_liftTE 0 ix).
+  burn.
 
  Case "XAPP".
   rewrite (liftTT_substTT' 0 ix). 
@@ -256,11 +247,11 @@ Proof.
 
  Case "XCon".
   (* unpack the data type definition *)
-  assert (DEFOK ds (DefData dc tsFields tc)) as DDefOK.
+  assert (DEFOK ds (DefData dc tsFields tc)) as HD.
    eapply getDataDef_ok; eauto.
-   inverts DDefOK.
-   assert (ks0 = ks /\ dcs0 = dcs).
-    rewrite H7 in H5. inverts H5. auto. int. subst. clear H5.
+   inverts HD.
+   have (ks0 = ks /\ dcs0 = dcs).
+    int. subst. clear H5.
 
   (* show XCon has the correct type *)
   rr. eapply TYCon; eauto.
@@ -276,27 +267,25 @@ Proof.
     eapply Forall2_impl_in; eauto.
      simpl. intros.
 
-    nforall.
-    lets D: H ix H2 k2; auto. clear H.
+     nforall.
+     lets D: H ix H2 k2; auto. clear H.
 
-    assert ( liftTT 1 ix (substTTs 0 ts y)
-           = substTTs 0 (map (liftTT 1 ix) ts) y).
+     assert ( liftTT 1 ix (substTTs 0 ts y)
+            = substTTs 0 (map (liftTT 1 ix) ts) y).
 
-     assert (ix = ix + 0) as Hix0. omega.  
-     rewrite -> Hix0. 
-     rewrite liftTT_substTTs'. 
-     rewrite <- Hix0.
-     f_equal.
+      rrwrite (ix = ix + 0).
+      rewrite liftTT_substTTs'.
+      rrwrite (ix + 0 = ix).
+      f_equal. 
 
-    assert (wfT (length ts) y).
-     assert (length ts = length ks) as HLts.
-      eapply Forall2_length. eauto.
-     rewrite HLts.
-     eapply kind_wfT. nforall. eauto.
-     nnat.
-     apply liftTT_wfT_1. auto.
+       assert (wfT (length ts) y).
+       assert (length ts = length ks) as HLts.
+        eapply Forall2_length. eauto.
+        rewrite HLts.
+        eapply kind_wfT. nforall. eauto.
 
-    rewrite <- H. auto.
+       rr. apply liftTT_wfT_1. auto.
+       rewrite <- H. auto.
 
  Case "XCase".
   eapply TYCase; eauto.
@@ -306,7 +295,7 @@ Proof.
    eapply H; burn.
     rr. burn.
     nforall. intros.
-     apply H8 in H0.
+     have (In x (map dcOfAlt aa)).
      burn.
 
  Case "XAlt".
@@ -333,8 +322,8 @@ Proof.
       eapply kind_wfT.
       nforall. eauto.
      eapply liftTT_wfT_1.
-     assert (length tsParam = length ks) as HL; eauto.
-     rewrite HL. auto.
+     rrwrite (length tsParam = length ks).
+     auto.
 
    unfold liftTE in IHx1. 
    unfold liftTE.
@@ -350,9 +339,9 @@ Lemma type_kienv_weaken1
  -> TYPE ds (ke :> k2) (liftTE 0 te) (liftTX 0 x1) (liftTT 1 0 t1).
 Proof.
  intros.
- assert (ke :> k2 = insert 0 k2 ke).
+ assert (ke :> k2 = insert 0 k2 ke) as HI.
   simpl. destruct ke; auto.
- rewrite H0.
+ rewrite HI.
  eapply type_kienv_insert; auto.
 Qed.
 
@@ -404,11 +393,12 @@ Proof.
     intros. lists.
     rename x0 into d.
     eapply map_exists_in.
-    assert (In d (map dcOfAlt aa)). 
-     eauto.
+    have (In d (map dcOfAlt aa)). 
     assert (exists a, dcOfAlt a = d /\ In a aa).
      eapply map_in_exists. auto.
-   shift a. subst. int. rewrite <- H7.
+   shift a. subst. int. 
+   have (dcOfAlt a = d) as HA.
+   rewrite <- HA.
    eapply dcOfAlt_liftXA.
 
  Case "XAlt".
@@ -416,8 +406,8 @@ Proof.
   eapply TYAlt; eauto.
   rewrite insert_app.
   lists.
-  assert (DEFOK ds (DefData (DataCon n n0) tsFields tc)) as HDOK. burn.
-  inverts HDOK. burn.
+  have (DEFOK ds (DefData (DataCon n n0) tsFields tc)) as HD.
+  inverts HD. burn.
 Qed. 
 
 
@@ -429,10 +419,10 @@ Lemma type_tyenv_weaken1
  -> TYPE ds ke (te :> t2) (liftXX 1 0 x) t1.
 Proof.
  intros.
- assert (te :> t2 = insert 0 t2 te).
+ assert (te :> t2 = insert 0 t2 te) as HI.
   simpl. destruct te; auto.
- rewrite H0.
-  apply type_tyenv_insert. auto.
+ rewrite HI.
+ apply type_tyenv_insert. auto.
 Qed.
 
 

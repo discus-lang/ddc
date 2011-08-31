@@ -67,18 +67,16 @@ Proof.
 
    (* Required datacon is in alts list *)
    nforall. intros.
-   rename x into d.
-   rewrite map_map. unfold compose.
+   rename x into d. lists.
    apply in_map_iff.
-   assert (exists a, dcOfAlt a = d /\ In a aa). 
-    eapply map_in_exists. eauto. shift a. int.
-   rewrite <- H4. 
+   have (exists a, dcOfAlt a = d /\ In a aa). 
+    shift a. int. subst.
    rewrite dcOfAlt_substXA; auto.
 
  Case "AAlt".
   (* TODO: tactic for this *)
-  assert (DEFOK ds (DefData dc tsFields tc)).
-   eauto. inverts H0. rewrite H11 in H5. inverts H5. subst.
+  have (DEFOK ds (DefData dc tsFields tc)) as HD.
+   inverts HD. rewrite H9 in H5. inverts H5. subst.
 
   eapply TYAlt; eauto.
   rewrite delete_app.
@@ -130,8 +128,7 @@ Proof.
      eapply IHxs. eauto.
      simpl in HT.
      eapply subst_exp_exp. eauto. 
-     assert (length xs = length ts).
-      eapply Forall2_length in H4. auto. rewrite H. clear H.   
+     rrwrite (length xs = length ts).
      eapply type_tyenv_weaken_append. auto.
 Qed.
 

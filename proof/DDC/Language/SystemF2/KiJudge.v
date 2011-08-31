@@ -83,7 +83,7 @@ Lemma kind_empty_is_closed
  -> closedT t.
 Proof.
  intros. unfold closedT.
- assert (@length ki nil = 0). auto.
+ have (@length ki nil = 0).
   rewrite <- H0.
   eapply kind_wfT. eauto.
 Qed.

@@ -93,15 +93,18 @@ Inductive value : exp -> Prop :=
    -> value xx.
 Hint Constructors value.
 
+
 Lemma value_wnfX 
  : forall xx, value xx -> wnfX xx.
  Proof. intros. inverts H. auto. Qed.
 Hint Resolve value_wnfX.
 
+
 Lemma value_closedX 
  : forall xx, value xx -> closedX xx.
  Proof. intros. inverts H. auto. Qed.
 Hint Resolve value_closedX.
+
 
 Lemma value_wnfXs_XCon
  : forall ts xs dc
@@ -110,6 +113,7 @@ Proof.
  intros. inverts H. inverts H0. auto.
 Qed.
 Hint Resolve value_wnfXs_XCon.
+
 
 Lemma value_closedXs_XCon
  : forall ts xs dc

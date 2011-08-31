@@ -54,10 +54,10 @@ Require Export DDC.Language.SystemF2Data.StepContext.
 Require Export DDC.Language.SystemF2Data.Step.
 
 (* A well typed expression is either a value, or can take a step. *)
-Require Export DDC.Language.SystemF2.Progress.
+Require Export DDC.Language.SystemF2Data.Progress.
 
 (* When an expression takes a step the results has the same type. *)
-Require Export DDC.Language.SystemF2.Preservation.
+Require Export DDC.Language.SystemF2Data.Preservation.
 
 (*
 (* Big step evaluation, and conversion to small steps. *)

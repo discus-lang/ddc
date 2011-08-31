@@ -67,4 +67,5 @@ Proof.
      apply datacon_beq_eq in HeqX. subst. auto.
      exists e. auto.
 Qed.
+Hint Resolve getAlt_exists.
 

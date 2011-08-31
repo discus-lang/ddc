@@ -27,9 +27,9 @@ Proof.
   eapply subst_exp_exp; eauto.
 
  Case "EsLAMAPP".
-  assert (TYPE ds nil (substTE 0 t2 nil) (substTX 0 t2 x12) (substTT 0 t2 t1))
+  assert (TYPE ds nil (substTE 0 t2 nil) (substTX 0 t2 x12) (substTT 0 t2 t1)) as HT
       by (eapply subst_type_exp; eauto).
-  simpl in H. auto.
+  simpl in HT. auto.
 
  Case "EsCaseAlt".
   eapply subst_exp_exp_list; eauto.
@@ -50,8 +50,8 @@ Proof.
   have (length tsParam = length ks0) as HTK2.
   rewrite <- HTK1 in HTK2.
   assert (tsParam = ts).
-  eapply makeTApps_args_eq'.
-   eauto. eauto. subst.
+   eapply makeTApps_args_eq; eauto. 
+   subst.
   eauto.
 Qed.
 
