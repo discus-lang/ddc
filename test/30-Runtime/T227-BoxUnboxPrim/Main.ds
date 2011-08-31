@@ -1,0 +1,29 @@
+
+main ()
+ = do	-- Setup all the objects first so that if they overlap on the heap
+	-- they won't be printed out.
+	a = 1111111122222222i64
+	b = boxInt64 3333333344444444#i64
+	c = 5555555566666666u64
+	d = boxWord64 7777777788888888#u64
+	e = 1.234567f64
+	f = boxFloat64 3.456789#f64
+	g = 11111111
+	h = boxInt32 22222222#
+	i = 33333333u
+	j = boxWord32 44444444#u
+	k = 0.123456
+	l = boxFloat32 0.234567#f
+
+	println (show (unboxInt64 a))
+	println (show b)
+	println (show (unboxWord64 c))
+	println (show d)
+	println (show (unboxFloat64 e))
+	println (show f)
+	println (show (unboxInt32 g))
+	println (show h)
+	println (show (unboxWord32 i))
+	println (show j)
+	println (show (unboxFloat32 k))
+	println (show l)
