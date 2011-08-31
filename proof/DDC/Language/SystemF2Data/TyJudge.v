@@ -125,6 +125,33 @@ Hint Resolve value_lam.
 
 
 (********************************************************************)
+(* Forms of types *)
+Lemma type_XLAM
+ :  forall ds ke te x t
+ ,  TYPE ds ke te (XLAM x) t
+ -> (exists t', t = TForall t').
+Proof.
+ intros.
+ destruct t; nope.
+ eauto.
+Qed.
+Hint Resolve type_XLAM.
+
+
+Lemma type_XLam
+ :  forall ds ke te x t1 t2
+ ,  TYPE ds ke te (XLam t1 x) t2
+ -> (exists t21 t22, t2 = tFun t21 t22).
+Proof.
+ intros.
+ destruct t2; nope.
+ inverts H.
+ unfold tFun. eauto.
+Qed.
+Hint Resolve type_XLam.
+
+
+(********************************************************************)
 (* A well typed expression is well formed *)
 
 Theorem type_wfX
@@ -233,7 +260,7 @@ Proof.
    eapply getDataDef_ok; eauto.
    inverts DDefOK.
    assert (ks0 = ks /\ dcs0 = dcs).
-    rewrite H5 in H3. inverts H3. auto. int. subst. clear H3.
+    rewrite H7 in H5. inverts H5. auto. int. subst. clear H5.
 
   (* show XCon has the correct type *)
   rr. eapply TYCon; eauto.
@@ -284,7 +311,7 @@ Proof.
 
  Case "XAlt".
   lets HD: getDataDef_ok H2 H4. inverts HD.
-   rewrite H6 in H3. inverts H3.
+   rewrite H7 in H3. inverts H3.
 
   rr.
   eapply TYAlt; eauto.

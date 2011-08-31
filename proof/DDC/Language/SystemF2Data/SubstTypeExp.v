@@ -91,7 +91,7 @@ Proof.
 
   (* TODO: split this getting defs from env into a tactic *)
   assert (DEFOK ds (DefData dc tsFields tc)).
-   eauto. inverts H0. rewrite H9 in H5. inverts H5.
+   eauto. inverts H0. rewrite H11 in H5. inverts H5.
 
   rr.
   eapply TYAlt with 

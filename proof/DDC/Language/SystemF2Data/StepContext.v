@@ -28,8 +28,8 @@ Inductive exp_ctx : (exp -> exp) -> Prop :=
    -> exp_ctx  (fun xx => XApp v1 xx)
 
  | XcAPP
-   :  forall x1 t2
-   ,  exp_ctx  (fun xx => XAPP x1 t2)
+   :  forall t2
+   ,  exp_ctx  (fun xx => XAPP xx t2)
 
  (* As the XCon constructor contains a list of sub-expressions, 
     we need an additional exps_ctx context to indicate which one 

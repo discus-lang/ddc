@@ -100,6 +100,7 @@ Proof.
 Qed.
 
 
+
 Lemma takeTCon_makeTApps
  :  forall t1 ts
  ,  takeTCon (makeTApps t1 ts) = takeTCon t1.
@@ -111,7 +112,7 @@ Qed.
 
 
 Lemma makeTApps_takeTCon
- : forall t1 t2 ts  
+ :  forall t1 t2 ts  
  ,  makeTApps t1 ts = t2
  -> takeTCon t1     = takeTCon t2.
 Proof.
@@ -119,6 +120,19 @@ Proof.
  induction ts; intros.
   simpl in H. subst. auto.
   eapply IHts in H. simpl in H. auto.
+Qed.
+
+
+Lemma getCtorOfType_makeTApps
+ :  forall tc t1 ts
+ ,  getCtorOfType t1 = Some tc
+ -> getCtorOfType (makeTApps t1 ts) = Some tc.
+Proof.
+ intros. gen t1.
+ induction ts; intros.
+  auto.
+  simpl.
+  rewrite IHts; auto.
 Qed.
 
 

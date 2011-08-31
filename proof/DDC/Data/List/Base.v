@@ -67,6 +67,20 @@ Qed.
 Hint Resolve snoc_cons.
 
 
+Lemma snocable
+ : forall {A} (ts: list A)
+ , ts = nil \/ (exists t ts', ts = snoc t ts').
+Proof.
+ intros.
+ induction ts.
+  auto.
+  inverts IHts.
+   right. eauto.
+   right. dest t. dest ts.
+    subst. eauto.
+Qed.
+
+
 (********************************************************************)
 (** Lemmas: length *)
 

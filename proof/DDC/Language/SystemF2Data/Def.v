@@ -140,6 +140,7 @@ Fixpoint getDataDef (dc: datacon) (ds: defs) : option def :=
  | Empty    => None
  end.
 
+
 Lemma getDataDef_in
  :  forall tc ds ddef
  ,  getDataDef tc ds = Some ddef
@@ -158,14 +159,20 @@ Qed.
 Hint Resolve getDataDef_in.
 
 
+
+
 (********************************************************************)
 (* Check that a definition is ok. *)
 Inductive DEFOK : list def -> def -> Prop :=
  (* Check that a data type definition is ok *)
  | DefOkType
    :  forall ds tc ks dcs
+      (* Type constructor must be a data type constructor, 
+         not the function type constructor. *)
+   ,  isTyConData tc
+
       (* There must be at least one data constructor *)
-   ,  length dcs > 0
+   -> length dcs > 0
       
       (* All the data constructors must be present in the list of defs *)
    -> Forall (fun dc => exists ddef, getDataDef dc ds = Some ddef) dcs
@@ -174,16 +181,16 @@ Inductive DEFOK : list def -> def -> Prop :=
 
  (* Check that a data constructor definition is ok. *)
  | DefOkData
-   :  forall tc ds ks dc dcs tsArgs tag arity
-      (* Get the data type def this data ctor belongs to *)
-   ,  getTypeDef tc ds = Some (DefDataType tc ks dcs)
-
+   :  forall tc ds ks dcs tsArgs tag arity
       (* Type constructor must be a data type constructor, 
          not the function type constructor. *)
-   -> isTyConData tc
+   ,  isTyConData tc
+
+      (* Get the data type def this data ctor belongs to *)
+   -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
 
       (* Data ctor must be one of the ctors in the data type def *)
-   -> In dc dcs
+   -> In (DataCon tag arity) dcs
 
    -> length tsArgs = arity
 
@@ -226,3 +233,21 @@ Proof.
  nforall. auto.
 Qed.
 Hint Resolve getDataDef_ok.
+
+
+Lemma getDataDef_datacon_in
+ :  forall d ds ts tc ks dcs
+ ,  DEFSOK ds
+ -> getDataDef d  ds = Some (DefData     d  ts tc)
+ -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
+ -> In d dcs.
+Proof.
+ intros.
+ assert (DEFOK ds (DefData d ts tc)) as HD. eauto.
+ assert (DEFOK ds (DefDataType tc ks dcs)) as HT. eauto.
+ inverts HD. inverts HT.
+ rewrite H1 in H6. inverts H6.
+ auto.
+Qed.
+Hint Resolve getDataDef_datacon_in.
+

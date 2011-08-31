@@ -78,7 +78,7 @@ Proof.
  Case "AAlt".
   (* TODO: tactic for this *)
   assert (DEFOK ds (DefData dc tsFields tc)).
-   eauto. inverts H0. rewrite H9 in H5. inverts H5. subst.
+   eauto. inverts H0. rewrite H11 in H5. inverts H5. subst.
 
   eapply TYAlt; eauto.
   rewrite delete_app.
