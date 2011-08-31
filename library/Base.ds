@@ -63,6 +63,7 @@ foreign import data "Int64"	Int64#
 foreign import data "Float32"	Float32#
 foreign import data "Float64"	Float64#
 
+foreign import data "Char32"	Char32#
 
 -- Boxed Data Types -----------------------------------------------------------
 data Unit = Unit
@@ -73,20 +74,20 @@ data Bool
 	= False
 	| True
 
-data Word8	:: % -> *
-data Word16	:: % -> *
-data Word32	:: % -> *
-data Word64	:: % -> *
+data Word8 %r	= Word8 Word8#
+data Word16 %r	= Word16 Word16#
+data Word32 %r	= Word32 Word32#
+data Word64 %r	= Word64 Word64#
 
-data Int8	:: % -> *
-data Int16	:: % -> *
-data Int32	:: % -> *
-data Int64	:: % -> *
+data Int8 %r	= Int8 Int8#
+data Int16 %r	= Int16 Int16#
+data Int32 %r	= Int32 Int32#
+data Int64 %r	= Int64 Int64#
 
-data Float32	:: % -> *
-data Float64	:: % -> *
+data Float32 %r	= Float32 Float32#
+data Float64 %r = Float64 Float64#
 
-data Char32	:: % -> *
+data Char32 %r	= Char32 Char32#
 
 data Ref a
 	= Ref { x :: a }
