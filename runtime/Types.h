@@ -35,6 +35,9 @@ typedef int64_t			Int64;
 typedef float			Float32;
 typedef double			Float64;
 
+// A 32 bit char
+typedef uint32_t		Char32;
+
 // Strings
 //	Null terminated C-strings, treated as an abstract type.
 //	(Ptr String) in Disciple == (char*) in C.

@@ -153,6 +153,7 @@ toLlvmTypeCon (TyConUnboxed v)
 	"Int64#"	-> i64
 	"Float32#"	-> LMFloat
 	"Float64#"	-> LMDouble
+	"Char32#"	-> i32
 	"String#"	-> i8
 	"Word8#"	-> i8
 	"Word16#"	-> i16
