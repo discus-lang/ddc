@@ -104,10 +104,10 @@ tokString =
 	, (Break,		"break")
 
 	-- Compile time literals
-	, (CLFile,		"__file__")
-	, (CLFunc,		"__func__")
-	, (CLLine,		"__line__")
-	, (CLModule,		"__module__")
+	, (CLFile,		"__FILE__")
+	, (CLFunc,		"__FUNC__")
+	, (CLLine,		"__LINE__")
+	, (CLModule,		"__MODULE__")
 
 	-- Symbols -----------------------------------------
 	
