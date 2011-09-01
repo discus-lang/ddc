@@ -24,24 +24,24 @@ import DDC.Type.SigMode
 import DDC.Var
 
 -- | A `Tree` is a list of top level declarations.
-type Tree a	
+type Tree a
 	= [Top a]
 
 -- | Top level declarations.
 data Top a
 	= -- | Some pragma.
 	  --	TODO: ditch this in favour of Haskell style pragmas.
-	  PPragma	
+	  PPragma
 		{ topAnnot		:: a
 		, topPragmaExps		:: [Exp a] }
 
 	-- | Set the identifier of the current module.
-	| PModule	
+	| PModule
 		{ topAnnot		:: a
 		, topModuleId		:: ModuleId }
-		
+
 	-- | Import some modules.
-	| PImportModule 
+	| PImportModule
 		{ topAnnot		:: a
 		, topImportModuleIds	:: [ModuleId] }
 
@@ -56,14 +56,14 @@ data Top a
 		, topForeign		:: Foreign a }
 
 	-- | Infix operator declarations.
-	| PInfix	
+	| PInfix
 		{ topAnnot		:: a
 		, topInfixMode		:: InfixMode a
 		, topInfixPrecedence	:: Int
 		, topInfixVars		:: [Var] }
 
 	-- | The superkind of an abstract type class.
-	| PClass  	
+	| PClass
 		{ topAnnot		:: a
 		, topClassVar		:: Var
 		, topClassSuper		:: Super }
@@ -79,7 +79,7 @@ data Top a
 		{ topAnnot		:: a
 		, topTypeSynonymVar	:: Var
 		, topTypeSynonymType	:: Type }
-	
+
 	-- | Introduce a top-level region.
 	--	TODO: allow constraints to be declared in the same place.
 	| PRegion
@@ -87,20 +87,20 @@ data Top a
 		, topRegionVar		:: Var }
 
 	-- | An algebraic data type declaration.
-	| PData	
+	| PData
 		{ topAnnot		:: a
 		, topDataName		:: Var
 		, topDataParams		:: [Var]
 		, topDataCtors		:: [CtorDef a] }
-	
+
 	-- | A data class declaration.
 	| PClassDict
 		{ topAnnot		:: a
 		, topClassDeclName	:: Var
 		, topClassDeclParams	:: [(Var, Kind)]
-		, topClassDeclContext	:: [(Var, [Var])] 
+		, topClassDeclContext	:: [(Var, [Var])]
 		, topClassDeclMembers	:: [([Var], Type)] }
-		
+
 	-- | A data class instance.
 	| PClassInst
 		{ topAnnot		:: a
@@ -116,16 +116,16 @@ data Top a
 		, topProjDictStmts	:: [Stmt a] }
 
 	-- | A binding
-	| PStmt	
+	| PStmt
 		{ topStmt		:: Stmt a }
-		
+
 	deriving (Show, Eq)
 
 
 
 
 -- TODO: make this into its own data type.
-type FixDef a	
+type FixDef a
 	= (Var, (Int, InfixMode a))
 
 data CtorDef a
@@ -155,12 +155,12 @@ data Export a
 -- | Foreign imports and exports.
 data Foreign a
 	-- Import a value binding
-	= OImport 
+	= OImport
 		(Maybe String) 	-- external name
 		Var 		-- name of binding
 		Type 		-- type of binding
 		(Maybe Type)	-- operational type of binding
-		
+
 	-- Import an unboxed data type
 	| OImportUnboxedData
 		String		-- external name
@@ -176,23 +176,23 @@ data InfixMode a
 
 	-- Left associative.
 	--	x * y * z => * (* x y) z
-	= InfixLeft					
-	
+	= InfixLeft
+
 	-- Right associative.
 	--	x * y * z => * x (* y z)
-	| InfixRight					
+	| InfixRight
 
 	-- Non associative.
 	--	x * y * z => error
-	| InfixNone					
-	
+	| InfixNone
+
 	-- Magical Suspend operator associativity.
 	--	Used internally in Source.Defix
 	--
 	--	f @ x y @ z => suspend1 (suspend2 f x y) z
 	--
-	| InfixSuspend					
-	
+	| InfixSuspend
+
 	deriving (Show, Eq)
 
 
@@ -214,11 +214,11 @@ data Exp a
 	| XLet		a [Stmt a] (Exp a)		-- let STMTS in EXP
 	| XIfThenElse	a (Exp a) (Exp a) (Exp a)	-- if EXP1 then EXP2 else EXP3
 	| XTry		a (Exp a) [Alt a] (Maybe (Exp a)) -- try EXP catch { ALTS } (with EXP)
-	| XThrow	a (Exp a)	
-	| XWhere	a (Exp a) [Stmt a]		-- EXP where { STMTS 
+	| XThrow	a (Exp a)
+	| XWhere	a (Exp a) [Stmt a]		-- EXP where { STMTS
 	| XTuple	a [Exp a]
 	| XList		a [Exp a]
-	| XListRange	a Bool (Exp a) (Maybe (Exp a)) (Maybe (Exp a))	
+	| XListRange	a Bool (Exp a) (Maybe (Exp a)) (Maybe (Exp a))
 							-- [EXP .. EXP] / [EXP, EXP .. EXP] / [EXP .. ]
 	| XListComp	a (Exp a) [LCQual a]		-- [ EXP | QUAL .. ]
 	| XWhile	a (Exp a) (Exp a)		-- test, body
@@ -230,7 +230,7 @@ data Exp a
 	| XDefix	a [Exp a]			-- Some collection of apps / suspensions / infix expressions
 	| XDefixApps	a [Exp a]
 	| XOp		a Var				-- An infix operator
-	
+
 	| XApp 		a (Exp a) (Exp a)		-- EXP1 EXP2
 	| XAppSusp	a (Exp a) (Exp a)		-- ex @ e1 .. eN	=> suspendN ex e1 .. eN
 
@@ -250,7 +250,7 @@ data Proj a
 
 
 -- | Statements.
-data Stmt a	
+data Stmt a
 	-- | Type of binding must be compatible with this one.
 	--   The `SigMode` field says how to do the actual comparison.
 	= SSig		a SigMode [Var] Type
@@ -264,17 +264,17 @@ data Stmt a
 	-- | An irrefutable pattern binding.
 	| SBindPat	a (Pat a) (Exp a)
 
-	-- | A monadic binding. 
+	-- | A monadic binding.
 	--   Desugars to  (exp `bind` \var -> ...)
 	| SBindMonadic	a (Pat a) (Exp a)
 	deriving (Show, Eq)
-	
+
 
 -- | Case and match alternatives.
 data Alt a
 	= APat		a (Pat a) (Exp a)		-- ^ Case style pattern match	p1 -> e2
 	| AAlt		a [Guard a] (Exp a)		-- ^ Match style pattern match  guards -> e2
-	| ADefault	a (Exp a)			-- ^ Default alternative. 
+	| ADefault	a (Exp a)			-- ^ Default alternative.
 							--	There should only be one of these per set of alts.
 
 	deriving (Show, Eq)
@@ -287,9 +287,9 @@ data Guard a
 	deriving (Show, Eq)
 
 
--- | Patterns.	
+-- | Patterns.
 data Pat a
-	= WVar		a Var				-- ^ Plain var, always matches.		v 
+	= WVar		a Var				-- ^ Plain var, always matches.		v
 	| WObjVar	a Var				-- ^ Binds the current object.		^v
 	| WLit		a LiteralFmt			-- ^ Match a literal value		5
 	| WCon		a Var [Pat a]			-- ^ A constructor pattern		(C p1 p2 ...)

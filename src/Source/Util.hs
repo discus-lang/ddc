@@ -6,7 +6,7 @@ module Source.Util
 	, takePatBoundVs
 	, flattenApps
 	, unflattenApps
-	, sourcePosX 
+	, sourcePosX
 	, sourcePosW)
 where
 import Source.Exp
@@ -32,14 +32,14 @@ takeExportVar xx
 -- | take the vars which are bound by this statement of this statement
 takeStmtBoundVs :: Stmt a -> [Var]
 takeStmtBoundVs s
- = case s of 
+ = case s of
 	SSig      	sp _ vs t	-> vs
 	SStmt 	  	sp e		-> []
 	SBindFun 	sp v ps as 	-> [v]
 	SBindPat	sp pat x	-> takePatBoundVs pat
 	SBindMonadic 	sp pat x	-> takePatBoundVs pat
 
-	
+
 -- | take the vars which are bound by this pattern
 takePatBoundVs :: Pat a -> [Var]
 takePatBoundVs w
@@ -55,8 +55,8 @@ takePatBoundVs w
 	WTuple		sp ws		-> catMap takePatBoundVs ws
 	WCons		sp w1 w2	-> takePatBoundVs w1 ++ takePatBoundVs w2
 	WList		sp ws		-> catMap takePatBoundVs ws
-		
-		
+
+
 -- | Convert some function applications into a list of expressions.
 --
 -- eg	   flattenApps (XApp (XApp (XApp x1 x2) x3) x4)
@@ -70,7 +70,7 @@ flattenApps xx
 
 
 -- | Convert a list of expressions into function applications.
---	
+--
 -- eg	   unflattenApps [x1, x2, x3, x4]
 --	=> XApp (XApp (XApp x1 x2) x3) x4
 --
@@ -78,18 +78,18 @@ unflattenApps :: a -> [Exp a] -> Exp a
 unflattenApps sp []			= panic stage "unflattenApps: empty list"
 unflattenApps sp (x:xs)
  = unflattenApps' sp x xs
- 
+
 unflattenApps' sp x xx
  = case xx of
  	[]	-> x
-	xs	
+	xs
 	 -> let	Just xsL	= takeLast xs
 	    in	XApp sp (unflattenApps' sp x (init xs)) xsL
-	
-	
+
+
 -- | Slurp out the source position from this expression
 sourcePosX :: Exp SourcePos -> SourcePos
-sourcePosX xx 
+sourcePosX xx
  = case xx of
  	XNil				-> panic stage "sourcePosX: no source pos in XNil"
 	XLit		sp c		-> sp
