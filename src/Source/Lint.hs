@@ -44,7 +44,6 @@ module Source.Lint
 where
 import Source.Exp
 import DDC.Source.Error
-import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Type
@@ -56,7 +55,7 @@ import qualified Data.Set	as Set
 
 stage	= "Source.Lint"
 
-lintTree :: Tree SourcePos -> LintM (Tree SourcePos)
+lintTree :: Tree a -> LintM (Tree a)
 lintTree t
  = do	let ss	= [s	| PStmt s <- t]
 	_	<- lintStmts_sigsHaveBindings ss
@@ -97,7 +96,7 @@ death x s
 
 
 -- Top --------------------------------------------------------------------------------------------
-instance Lint (Top SourcePos) where
+instance Lint (Top a) where
  lint xx
   = case xx of
 	PPragma sp es
@@ -179,10 +178,10 @@ instance Lint (Top SourcePos) where
 	 -> do	s'	<- lint s
 		return	$ PStmt	s'
 
-instance Lint (Export SourcePos) where
+instance Lint (Export a) where
  lint e	= return e
 
-instance Lint (Foreign SourcePos) where
+instance Lint (Foreign a) where
  lint f@(OImport (Just cName) _ _ _)
    = if isValidIdentifier cName
 	then return f
@@ -195,12 +194,12 @@ instance Lint (Foreign SourcePos) where
 
  lint f = return f
 
-instance Lint (CtorDef SourcePos) where
+instance Lint (CtorDef a) where
  lint f@(CtorDef v fs)
    = do	mapM_ lint fs
 	return f
 
-instance Lint (DataField SourcePos) where
+instance Lint (DataField a) where
  lint f = return f
 
 
@@ -212,7 +211,7 @@ isValidIdentifier (s:ss)
  = (s == '_' || isAlpha s) && all (\s -> isAlphaNum s || s == '_') ss
 
 -- Stmt --------------------------------------------------------------------------------------------
-instance Lint (Stmt SourcePos) where
+instance Lint (Stmt a) where
  lint s
   = case s of
 	SSig  sp sigMode v t
@@ -242,7 +241,7 @@ instance Lint (Stmt SourcePos) where
 
 
 -- | Check that every signature in this list of statements has an associated binding
-lintStmts_sigsHaveBindings :: [Stmt SourcePos] -> LintM [Stmt SourcePos]
+lintStmts_sigsHaveBindings :: [Stmt a] -> LintM [Stmt a]
 lintStmts_sigsHaveBindings ss
  = do	let sigVars
 		= Set.fromList
@@ -264,7 +263,7 @@ lintStmts_sigsHaveBindings ss
 
 
 -- Exp --------------------------------------------------------------------------------------------
-instance Lint (Exp SourcePos) where
+instance Lint (Exp a) where
  lint x
   = case x of
 	XNil
@@ -414,7 +413,7 @@ instance Lint (Exp SourcePos) where
 
 
 -- LCQual -----------------------------------------------------------------------------------------
-instance Lint (LCQual SourcePos) where
+instance Lint (LCQual a) where
  lint qual
   = case qual of
 	LCGen b w x
@@ -432,7 +431,7 @@ instance Lint (LCQual SourcePos) where
 
 
 -- Proj -------------------------------------------------------------------------------------------
-instance Lint (Proj SourcePos) where
+instance Lint (Proj a) where
  lint proj
   = case proj of
 	JField sp v
@@ -459,7 +458,7 @@ instance Lint LiteralFmt where
 
 
 -- Alt --------------------------------------------------------------------------------------------
-instance Lint (Alt SourcePos) where
+instance Lint (Alt a) where
  lint a
   = case a of
 	APat sp w e
@@ -478,7 +477,7 @@ instance Lint (Alt SourcePos) where
 
 
 -- Pat ---------------------------------------------------------------------------------------------
-instance Lint (Pat SourcePos) where
+instance Lint (Pat a) where
  lint ww
   = case ww of
 	WVar sp v
@@ -529,7 +528,7 @@ instance Lint (Pat SourcePos) where
 
 
 -- Label -------------------------------------------------------------------------------------------
-instance Lint (Label SourcePos) where
+instance Lint (Label a) where
  lint l
   = case l of
 	LIndex sp i
@@ -541,7 +540,7 @@ instance Lint (Label SourcePos) where
 
 
 -- Guard -------------------------------------------------------------------------------------------
-instance Lint (Guard SourcePos) where
+instance Lint (Guard a) where
  lint gg
   = case gg of
 	GExp sp w x
