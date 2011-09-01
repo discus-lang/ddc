@@ -270,6 +270,11 @@ instance Lint (Exp SourcePos) where
 	XNil
 	 -> return x
 
+	XType sp e t
+	 -> do	e'	<- lint e
+		t'	<- lint t
+		return	$ XType sp e' t'
+
 	XLit sp litfmt
 	 -> do	litfmt'	<- lint litfmt
 		return	$ XLit sp litfmt'

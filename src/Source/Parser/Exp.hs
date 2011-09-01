@@ -6,6 +6,7 @@ import Source.Exp
 import Source.Parser.Type
 import Source.Parser.Pattern
 import Source.Parser.Base
+import Source.Util
 import DDC.Type.SigMode
 import DDC.Var
 import qualified Source.Token					as K
@@ -55,13 +56,18 @@ pExp
 
 pExp2 :: Parser (Exp SP)
 pExp2
- =	-- projections
- 	-- EXP . EXP   /   EXP . (EXP)  /  EXP # EXP
-	do	exp	<-pExp1'
-		(do	x	<- pProject exp
-        	        return	$ stripXParens x
+ = do	exp	<- pExp1'
+	(do	-- Type annotation
+		pTok	K.HasTypeMatch
+		typ	<- pType
+		return	$ XType (sourcePosX exp) (stripXParens exp) typ
 
-		 <|> do return	$ stripXParens exp)
+	 <|>	-- projections
+		-- EXP . EXP   /   EXP . (EXP)  /  EXP # EXP
+ 	    do	x	<- pProject exp
+                return	$ stripXParens x
+
+	 <|> do	return	$ stripXParens exp)
 
   <?>   "pExp2"
 

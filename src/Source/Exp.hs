@@ -200,6 +200,7 @@ data InfixMode a
 data Exp a
 	= XNil
 
+	| XType		a (Exp a) Type			-- EXP with a type annotation
 	| XLit		a LiteralFmt			-- LIT
 	| XVar 		a Var				-- VAR
 	| XObjField	a Var				-- _VAR.

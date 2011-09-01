@@ -92,6 +92,7 @@ sourcePosX :: Exp SourcePos -> SourcePos
 sourcePosX xx
  = case xx of
  	XNil				-> panic stage "sourcePosX: no source pos in XNil"
+ 	XType		sp e t		-> sp
 	XLit		sp c		-> sp
 	XVar 		sp v		-> sp
 	XProj 		sp x j		-> sp

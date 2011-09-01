@@ -165,6 +165,7 @@ instance Pretty (Exp a) PMode where
  ppr xx
   = case xx of
   	XNil		-> ppr "@XNil"
+  	XType	sp e t	-> "(" % e % "::" % t % ")"
 	XLit 	sp c	-> ppr c
 	XVar 	sp v	-> ppr v
 
