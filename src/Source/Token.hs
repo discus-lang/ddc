@@ -189,6 +189,14 @@ data Token
 	| When			-- ^ when
 	| Unless		-- ^ unless
 	| Break			-- ^ break
+
+
+	-- Compile time literals
+	-- Converted to string or integer literals in the parser
+	| CLFile		-- ^ __file__
+	| CLFunc		-- ^ __func__
+	| CLLine		-- ^ __line__
+	| CLModule		-- ^ __module__
 	
 
 	-- Symbols ---------------------------------------------------------------------------------

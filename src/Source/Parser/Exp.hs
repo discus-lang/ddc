@@ -85,6 +85,10 @@ pExp1'
   	do	(lit, sp) <- pLiteralFmtSP
 		return	$ XLit sp lit
 
+  <|>	-- compile-time literals e.g. __file__ __line__
+	do	(lit, sp) <- pCompileLiteralSP
+		return	$ XLit sp lit
+
   <|>	-- unterminated string
 	do	Parsec.lookAhead . pTok $ K.Junk "\""
 		fail "unterminated string literal"
@@ -456,6 +460,7 @@ pStmt_bind
 
  <|>	-- VAR ....
 	do	var	<- Parsec.try $ pOfSpace NameValue pVar
+		Parsec.updateState (\st -> st {funcName = varName var})
 		pats	<- Parsec.many pPat1
 		pStmt_bindVarPat var pats
 

@@ -1,0 +1,19 @@
+module Test
+
+main ()
+ = do	println$ __FILE__ % ":" % show __LINE__
+	println$ "module " % __MODULE__
+	println$ "func " % __FUNC__
+	println$ "where_fun " % where_fun ()
+	println$ "instance " % get ()
+	println$ "lambdacaf " % lambdacaf ()
+ where where_fun () = __FUNC__
+
+
+class Test a where
+	get :: a -> String
+
+instance Test () where
+	get () = __FUNC__
+
+lambdacaf = \x -> __FUNC__

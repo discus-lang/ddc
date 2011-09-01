@@ -18,6 +18,8 @@ module Source.Parser.Base
 	, pInt, pIntSP, pZero
 	, pString, pStringSP
 
+	, pCompileLiteralSP
+
 	-- Debugging and tracing combinators.
 	, pAnything, pTrace, pShowNext )
 where
@@ -32,6 +34,7 @@ import qualified Source.Token					as K
 import qualified Source.TokenShow				as K
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
+import qualified DDC.Base.SourcePos				as SourcePos
 
 -- Helper Parsers ----------------------------------------------------------------------------------
 -- { inside }
@@ -347,6 +350,23 @@ pStringSP = token parseString
 pString	= liftM fst pStringSP
 
 
+-- | Parse compile-time variables like __FILE__ and replace with literal value
+pCompileLiteralSP :: Parser (LiteralFmt, SP)
+pCompileLiteralSP
+ = do	parseState <- Parsec.getState
+	token (parseCmp parseState)
+ where	file (SourcePos.SourcePos (f,_,_)) = if take 2 f == "./"
+					     then drop 2 f
+					     else f
+	line (SourcePos.SourcePos (_,l,_)) = l
+	lit l t = Just (LiteralFmt l Boxed, spTP t)
+	parseCmp pSt t
+  	 | K.TokenP { K.token = tok' } <- t = case tok' of
+	    K.CLFile  -> lit (LString$ file$ spTP t) t
+	    K.CLLine  -> lit (LInt$ fromIntegral$ line$ spTP t) t
+	    K.CLFunc  -> lit (LString$ funcName pSt) t
+	    K.CLModule-> lit (LString$ moduleName pSt) t
+	    otherwise -> Nothing
 
 --------------------------------------------------------------------------------
 -- Debugging and tracing combinators.

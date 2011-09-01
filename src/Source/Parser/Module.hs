@@ -20,11 +20,10 @@ import qualified Source.Token					as K
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 
-
 -- | Parse a module.
 parseModule :: String -> [K.TokenP] -> [Top SP]
 parseModule fileName tokens
- = let	eExp	= Parsec.runParser pModule () fileName tokens
+ = let	eExp	= Parsec.runParser pModule parseState fileName tokens
    in	case eExp of
    		Right exp	-> exp
 		Left err	-> error $ show err
@@ -33,10 +32,11 @@ parseModule fileName tokens
 --	(for testing)
 parseString parser str
  = let 	tokens		= scan str
- 	eExp		= Parsec.runParser parser () "file" tokens
+ 	eExp		= Parsec.runParser parser parseState "file" tokens
    in	case eExp of
 		Right exp	-> putStr (pprStrPlain exp ++ "\n\n")
 		Left err	-> error $ show err
+
 
 -- Module ------------------------------------------------------------------------------------------
 -- | Parse a whole module.
@@ -63,8 +63,11 @@ pModuleId :: Parser (Top SP)
 			pTok K.Dot
 			return q)
 	con	<- pCon
+	let moduleId = fromMaybe [] mQual ++ [varName con]
+	-- TODO: there must exist a specific function for this?
+	Parsec.updateState (\st -> st { moduleName = catInt "." moduleId })
 	pSemis
-	return	$ PModule (spTP tok) (ModuleId (fromMaybe [] mQual ++ [varName con]))
+	return	$ PModule (spTP tok) (ModuleId moduleId)
 
 pTopHeader :: Parser (Top SP)
  =	pTopImport

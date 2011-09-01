@@ -246,7 +246,7 @@ scrapeImports (l:ls)
 			
 scrapeImport ls
  = let	tokens	= fst $ scanModuleWithOffside (catInt "\n" (ls ++ ["\n"]))
-	result	= Parsec.runParser (pCParen pTopImport) () "" tokens
+	result	= Parsec.runParser (pCParen pTopImport) parseState "" tokens
 	
    in	case result of
 	 -- if we get a parse error then just return an empty scrape

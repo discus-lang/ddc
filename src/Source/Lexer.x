@@ -118,6 +118,11 @@ tokens :-
  true\#			{ ptag (mkLit (LBool True)  Unboxed) }
  false\#		{ ptag (mkLit (LBool False) Unboxed) }
 
+ __FILE__		{ ptag CLFile			}
+ __FUNC__		{ ptag CLFunc			}
+ __LINE__		{ ptag CLLine			}
+ __MODULE__		{ ptag CLModule			}
+
  \:\:			{ ptag HasTypeMatch		}
  \=\:			{ ptag HasTypeExact		}
  \<\:			{ ptag HasTypeLess		}

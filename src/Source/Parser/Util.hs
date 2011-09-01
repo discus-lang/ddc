@@ -4,6 +4,9 @@ module Source.Parser.Util
 	, (<?>)		-- from Parsec
 	, fail		-- from Control.Monad
 
+	, ParseState(ParseState, funcName, moduleName)
+	, parseState
+
 	, SP, Parser
 
 	-- Variable Creation
@@ -45,7 +48,19 @@ stage	= "Source.Parser.Util"
 
 ----
 type SP		= SourcePos
-type Parser 	= Parsec.GenParser K.TokenP ()
+
+data ParseState = ParseState
+	{ funcName	:: String
+	, moduleName	:: String
+	}
+-- | Initial state for parser,
+-- stores things like current function and module name
+-- for __func__ __module__ constants
+parseState = ParseState 
+	{ funcName	= ""
+	, moduleName	= "" }
+
+type Parser 	= Parsec.GenParser K.TokenP ParseState
 
 -- Variable Creation -------------------------------------------------------------------------------
 -- | Convert a token to a variable
