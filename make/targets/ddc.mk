@@ -8,7 +8,8 @@ src_alex_hs	=  $(patsubst %.x,%.hs,$(src_alex_x))
 src_hs_existing	=  $(shell find src -name "*.hs" -follow)
 
 # -- files that will be generated
-src_hs_generated = src/Config/Config.hs src/Source/Plate/Trans.hs
+src_hs_generated = src/Config/Config.hs src/Source/Plate/Trans.hs \
+	 src/Source/Lexer.hs
 
 # -- all .hs files in the src dir, including ones we need to preprocess.
 src_hs_all	+= $(src_hs_existing)
@@ -42,6 +43,6 @@ bin/ddc	: make/Makefile.deps $(src_obj)
 	@echo "* Linking ddc"
 	@$(GHC) -o bin/ddc $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(src_obj)
 	@echo
-	
-	
+
+
 

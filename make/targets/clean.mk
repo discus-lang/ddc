@@ -20,6 +20,6 @@ clean  : cleanWar cleanRuntime cleanLibrary
 		-follow | xargs -n 1 rm -f
 
 	@rm -f doc/haddock/*
-	@rm -f src/Config/Config.hs
+	@rm -f src/Config/Config.hs src/Source/Lexer.hs
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak
