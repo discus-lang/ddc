@@ -1,9 +1,13 @@
 # Base libraries.
 
+# -- Find Source Files --------------------------------------------------------
+libs_ds	=  $(shell find library -name "*.ds" -follow)
+
+# -- Targets ------------------------------------------------------------------
 .PHONY	: libs
 libs	: library/Graphics.di
 
-library/Prelude.di library/Graphics.di : bin/ddc
+library/Prelude.di library/Graphics.di : bin/ddc $(libs_ds)
 	@echo "* Building base libraries ----------------------------------------------------------"
 	@bin/ddc $(config_ddc_flags) -O -build library/Prelude.ds
 	@touch library/Prelude.di

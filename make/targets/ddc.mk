@@ -9,7 +9,7 @@ src_hs_existing	=  $(shell find src -name "*.hs" -follow)
 
 # -- files that will be generated
 src_hs_generated = src/Config/Config.hs src/Source/Plate/Trans.hs \
-	 src/Source/Lexer.hs
+	 $(src_alex_x)
 
 # -- all .hs files in the src dir, including ones we need to preprocess.
 src_hs_all	+= $(src_hs_existing)
