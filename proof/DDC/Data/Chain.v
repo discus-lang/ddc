@@ -1,7 +1,5 @@
 
-Require Import DDC.Language.SimpleData.StepContext.
-Require Import DDC.Language.SimpleData.Step.
-Require Import DDC.Language.SimpleData.Exp.
+Require Import DDC.Data.Context.
 Require Import DDC.Base.
 
 
@@ -38,19 +36,25 @@ Require Import DDC.Base.
       need to show that expressions to the left are already values,
       because there aren't any.
 *)
+Section Chain.
+Variable exp       : Type.
+Variable Val       : exp -> Prop.
+Variable Steps     : exp -> exp -> Prop.
+Variable Steps_val : forall x1 x2, Val x1 -> Steps x1 x2 -> x2 = x1.
+
+
 Inductive CHAIN : list exp -> list exp -> Prop :=
  | EcDone
    :  forall vs
-   ,  Forall wnfX vs
+   ,  Forall Val vs
    -> CHAIN vs vs
 
  | EcCons
    :  forall x v vs C
-   ,  exps_ctx wnfX C  
-   -> STEPS x v -> wnfX v
+   ,  exps_ctx Val C  
+   -> Steps x v -> Val v
    -> CHAIN (C v) vs
    -> CHAIN (C x) vs.
-
 Hint Constructors CHAIN.
 
 
@@ -59,23 +63,23 @@ Hint Constructors CHAIN.
    and doesn't need to be evaluated again during the reduction. *)
 Lemma chain_extend
  :  forall v xs ys
- ,  wnfX v 
+ ,  Val v 
  -> CHAIN xs ys
  -> CHAIN (v :: xs) (v :: ys).
 Proof.
  intros v xs ys HW HC.
- induction HC.
-  auto.
-  lets D1: (@XscCons exp) wnfX v H. auto.
-  lets D2: EcCons D1 H0 H1 IHHC. 
-  auto.
+ induction HC; auto.
+  lets D1: (@XscCons exp) Val v H. auto.
+  lets D2: EcCons D1 H0 H1 IHHC. auto. 
 Qed.
 
 
+(* Make the chain of evaluation contexts needed to evaluate
+   some expressions to values *)
 Lemma make_chain
  :  forall xs vs
- ,  Forall2 STEPS xs vs
- -> Forall  wnfX vs
+ ,  Forall2 Steps xs vs
+ -> Forall  Val   vs
  -> CHAIN xs vs.
 Proof.
  intros. gen vs.
@@ -92,25 +96,24 @@ Proof.
    SCase "vs = vs' :> v".
     inverts H. 
     inverts H0.
-    assert (CHAIN xs vs). auto. clear IHxs.
+    have (CHAIN xs vs). clear IHxs.
 
     (* Build the property of STEPS we want to ass to exps_ctx2_run *)
     assert (Forall2 
-     (fun x v => STEPS x v /\ wnfX v /\ (wnfX x -> v = x)) xs vs).
-     eapply (@Forall2_impl_in exp exp STEPS); auto.
-      intros.  nforall. int.
-      apply steps_wnfX; auto. 
+     (fun x v => Steps x v /\ Val v /\ (Val x -> v = x)) xs vs) as HS.
+     eapply (@Forall2_impl_in exp exp Steps); auto.
+      intros. nforall. int.
    
     (* Either all the xs are already whnfX,
        or there is a context where one can step *)
-    lets HR: (@exps_ctx2_run exp) wnfX H0. clear H0.
+    lets HR: (@exps_ctx2_run exp) Val HS. clear HS.
     inverts HR.
 
     SSCase "xs all whnfX".
      assert (Forall2 eq xs vs).
-      eapply (@Forall2_impl_in exp exp STEPS (@eq exp) xs vs).
-      nforall. intros. symmetry. eauto using steps_wnfX.
-      auto.
+      eapply (@Forall2_impl_in exp exp Steps (@eq exp) xs vs).
+      nforall. intros. symmetry. eauto. auto.
+
      assert (xs = vs).
       apply Forall2_eq. auto. subst.
    
@@ -128,7 +131,7 @@ Proof.
      lets HC1: exps_ctx2_left  H0. 
      lets HC2: exps_ctx2_right H0.
 
-     assert (wnfX v').
+     assert (Val v').
       eapply exps_ctx_Forall; eauto.
 
      lets E1: (@XscCons exp) C1 H2 HC1.
@@ -137,32 +140,11 @@ Proof.
    lets E3: (@XscHead exp) (C1 x').
 
    lets F1: EcCons x v (v :: C2 v') E3.
-    apply F1. auto. auto. clear F1.
+   apply F1; auto. clear F1.
 
-   eapply chain_extend. auto. auto.
+   eapply chain_extend; auto.
 Qed.
 
 
-Lemma steps_chain_XCon
- :  forall xs vs dc
- ,  CHAIN xs vs
- -> STEPS (XCon dc xs) (XCon dc vs).
-Proof.
- intros.
- induction H; auto.
-  eapply (EsAppend (XCon dc (C x)) (XCon dc (C v))); auto.
-  eapply steps_context_XCon; auto.
-Qed.
-
-
-Lemma steps_in_XCon
- :  forall xs vs dc
- ,  Forall2 STEPS xs vs
- -> Forall wnfX vs
- -> STEPS (XCon dc xs) (XCon dc vs).
-Proof.
- intros xs vs dc HS HW.
- lets HC: make_chain HS HW.
- eapply steps_chain_XCon. auto.
-Qed.
+End Chain.
 

@@ -1,5 +1,4 @@
 
-Require Import DDC.Language.SimpleData.EvalChain.
 Require Import DDC.Language.SimpleData.Preservation.
 Require Export DDC.Language.SimpleData.SubstExpExp.
 Require Export DDC.Language.SimpleData.Step.

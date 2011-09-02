@@ -139,6 +139,23 @@ Proof.
 Qed.
 
 
+Lemma steps_in_XCon
+ :  forall xs vs dc
+ ,  Forall2 STEPS xs vs
+ -> Forall wnfX vs
+ -> STEPS (XCon dc xs) (XCon dc vs).
+Proof.
+ intros xs vs dc HS HW.
+ lets HC: make_chain HS HW.
+  eapply steps_wnfX.
+
+ clear HS. clear HW.
+ induction HC; auto.
+  eapply (EsAppend (XCon dc (C x)) (XCon dc (C v))); auto.
+  eapply steps_context_XCon; auto.
+Qed.
+
+
 (********************************************************************)
 (* Left linearised multi-step evaluation
    As opposed to STEPS, this version provides a single step at a time

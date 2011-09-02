@@ -43,9 +43,6 @@ Require Import DDC.Language.SimpleData.Progress.
 (* When an expression takes a step the result has the same type as before *)
 Require Import DDC.Language.SimpleData.Preservation.
 
-(* Construction of contexts for big step evaluation *) 
-Require Import DDC.Language.SimpleData.EvalChain.
-
 (* Big step evaluation and conversion between small steps *)
 Require Import DDC.Language.SimpleData.Eval.
 
