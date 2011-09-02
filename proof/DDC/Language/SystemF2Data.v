@@ -59,7 +59,6 @@ Require Export DDC.Language.SystemF2Data.Progress.
 (* When an expression takes a step the results has the same type. *)
 Require Export DDC.Language.SystemF2Data.Preservation.
 
-(*
 (* Big step evaluation, and conversion to small steps. *)
 Require Export DDC.Language.SystemF2.Eval.
-*)
+

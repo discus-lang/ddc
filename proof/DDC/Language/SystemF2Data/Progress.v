@@ -30,7 +30,7 @@ Proof.
   SCase "x value".
    right. inverts H1. inverts H3.
     SSCase "x = XVar". nope.
-    SSCase "x = XLAM". exists (substTX 0 t2 x1). eapply ESLAMAPP.
+    SSCase "x = XLAM". exists (substTX 0 t2 x1). eapply EsLAMAPP.
     SSCase "x = XAPP". nope.
     SSCase "x = XApp". nope.
     SSCase "x = XCon".

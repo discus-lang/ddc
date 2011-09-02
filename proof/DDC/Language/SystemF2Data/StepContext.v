@@ -1,8 +1,7 @@
 
 Require Import DDC.Language.SystemF2Data.TyJudge.
-Require Export DDC.Language.SystemF2Data.Exp.
-Require Export DDC.Language.SystemF2Data.SubstExpExp.
 Require Export DDC.Data.Context.
+Require Export DDC.Data.Chain.
 
 
 (********************************************************************)

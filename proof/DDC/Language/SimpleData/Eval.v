@@ -281,8 +281,8 @@ Proof.
      clear H3 H4 H9.
      gen vs.
      induction H; intros.
-      inverts H8. eauto. eauto.
-      inverts H8. eauto. eauto.
+      inverts H8. eauto.
+      inverts H8. eauto.
       
    SCase "XcCase".
     inverts H0. inverts H. eauto. 

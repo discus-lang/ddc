@@ -25,7 +25,7 @@ Inductive STEP : exp -> exp -> Prop :=
            (substXX 0 v2 x12)
 
  (* type applications *)
- | ESLAMAPP
+ | EsLAMAPP
    :  forall x12 t2      
    ,  STEP (XAPP (XLAM x12) t2)
            (substTX 0 t2 x12)
@@ -141,6 +141,23 @@ Proof.
  Case "XCon".
   lets D: EsContext XcCon; eauto. 
   eauto.
+Qed.
+
+
+Lemma steps_in_XCon
+ :  forall xs ts vs dc
+ ,  Forall2 STEPS xs vs
+ -> Forall wnfX vs
+ -> STEPS (XCon dc ts xs) (XCon dc ts vs).
+Proof.
+ intros xs ts vs dc HS HW.
+ lets HC: make_chain HS HW.
+  eapply steps_wnfX.
+
+ clear HS. clear HW.
+ induction HC; auto.
+  eapply (EsAppend (XCon dc ts (C x)) (XCon dc ts (C v))); auto.
+  eapply steps_context_XCon; auto.
 Qed.
 
 
