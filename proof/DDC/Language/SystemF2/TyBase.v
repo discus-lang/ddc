@@ -120,6 +120,7 @@ Proof.
  induction ts; intros; simpl; auto.
   rewrite IHts. burn.
 Qed.    
+Hint Resolve takeTCon_makeTApps.
 
 
 Lemma makeTApps_takeTCon
@@ -132,6 +133,7 @@ Proof.
   simpl in H. subst. auto.
   eapply IHts in H. simpl in H. auto.
 Qed.
+Hint Resolve makeTApps_takeTCon.
 
 
 Lemma getCtorOfType_makeTApps
@@ -145,6 +147,7 @@ Proof.
   simpl.
   rewrite IHts; auto.
 Qed.
+Hint Resolve getCtorOfType_makeTApps.
 
 
 Lemma makeTApps_rewind

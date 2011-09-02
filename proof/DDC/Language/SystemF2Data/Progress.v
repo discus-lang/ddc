@@ -33,12 +33,9 @@ Proof.
     SSCase "x = XLAM". exists (substTX 0 t2 x1). eapply ESLAMAPP.
     SSCase "x = XAPP". nope.
     SSCase "x = XApp". nope.
-
     SSCase "x = XCon".
-     (* TODO: XAPP (XCon dc tsParam xs) t2) cant happen as it's miskinded.
-              need lemma saying kind of value types is KStar *)
-     skip.
-
+     inverts_type.
+     have (takeTCon (TCon tc0) = takeTCon (TForall t0)). nope.
     SSCase "x = XCase".
      nope.
   SCase "x steps".
@@ -85,9 +82,14 @@ Proof.
   inverts D.
    (* All ctor args are wnf *)
    left.
-   assert (Forall (wfT 0) ts).   eauto. admit. (* ok ts WK under nil*)
-   assert (Forall (wfX 0 0) xs). eauto. admit. (* ok xs WT under nil nil *)
-   eauto. 
+   assert (Forall (wfT 0) ts).
+    rrwrite (0 = length (@nil ki)).
+    eapply kind_wfT_Forall2. eauto.
+
+   assert (Forall (wfX 0 0) xs).
+    have    (0 = length (@nil ki)) as HKL. rewrite HKL at 1.
+    rrwrite (0 = length (@nil ty)). eauto.
+   eauto.
 
    (* There is a context where one ctor arg can step *)
    right.

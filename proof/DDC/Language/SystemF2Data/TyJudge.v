@@ -201,6 +201,19 @@ Qed.
 Hint Resolve type_wfX.
 
 
+Lemma type_wfX_Forall2
+ :  forall ds ke te xs ts
+ ,  Forall2 (TYPE ds ke te) xs ts
+ -> Forall (wfX (length ke) (length te)) xs.
+Proof.
+ intros.
+ eapply (Forall2_Forall_left (TYPE ds ke te)).
+ intros. nforall. eauto.
+ eauto.
+Qed.
+Hint Resolve type_wfX_Forall2.
+
+
 (********************************************************************)
 (* Weakening Kind Env in Type Judgement. *)
 Lemma type_kienv_insert

@@ -75,6 +75,18 @@ Qed.
 Hint Resolve kind_wfT_Forall.
 
 
+Lemma kind_wfT_Forall2
+ :  forall (ke: kienv) ts ks
+ ,  Forall2 (KIND ke) ts ks
+ -> Forall (wfT (length ke)) ts.
+Proof.
+ intros.
+ eapply (Forall2_Forall_left (KIND ke)).
+ nforall. intros. eauto. eauto.
+Qed.
+Hint Resolve kind_wfT_Forall2.
+
+
 (* If a type is well kinded in an empty environment,
    then that type is closed. *)
 Lemma kind_empty_is_closed
