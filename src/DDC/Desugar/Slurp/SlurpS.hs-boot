@@ -4,7 +4,8 @@ module DDC.Desugar.Slurp.SlurpS
 
 where
 import DDC.Desugar.Slurp.Base
+import Source.Desugar			(Annot)
 import Data.Bag
 
-slurpS	:: Stmt Annot1
+slurpS	:: Stmt Annot
 	-> CSlurpM (Type, Effect, Closure, Stmt Annot2, Bag CTree)

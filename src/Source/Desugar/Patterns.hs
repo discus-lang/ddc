@@ -55,13 +55,15 @@ rewritePatX xx
 
 	_ -> return xx
 
+
+
 rewritePatA co aa
  = case aa of
-	D.AAlt sp gs x
-	 -> do	gsAts		<- mapM (sprinkleAtsG sp) gs
+	D.AAlt annot gs x
+	 -> do	gsAts		<- mapM (sprinkleAtsG (fst annot)) gs
 	  	let gsLift	= catMap simplifyGuard gsAts
 	  	gsDesugared <- catMapM desugarLiteralGuard gsLift
-		return	$ D.AAlt sp gsDesugared x
+		return	$ D.AAlt annot gsDesugared x
 
 
 -- | These variables are treated as special aliases for list functions.
@@ -83,11 +85,11 @@ sprinkleAtsG
 sprinkleAtsG sp gg
  = case gg of
  	D.GCase nn p
-	 -> do	p'	<- sprinkleAtsW_down sp p
+	 -> do	p'	<- sprinkleAtsW_down (sp, Nothing) p
 	 	return	$ D.GCase nn p'
 
 	D.GExp nn p x
-	 -> do	p'	<- sprinkleAtsW_down sp p
+	 -> do	p'	<- sprinkleAtsW_down (sp, Nothing) p
 	 	return	$ D.GExp nn p' x
 
 -- Name internal nodes in this pattern
@@ -118,12 +120,13 @@ sprinkleAtsW sp ww
 		return	$ D.WAt nn v (D.WConLabelP nn var lws')
 
 	D.WAt nn v w
-	 -> do	w'	<- sprinkleAtsW_down sp w
+	 -> do	w'	<- sprinkleAtsW_down (sp, Nothing) w
 	 	return	$ D.WAt nn v w'
 
 
 -- name internal nodes in thie pattern, but not the outer one.
-sprinkleAtsW_down sp ww
+sprinkleAtsW_down :: Annot -> Pat Annot -> RewriteM (Pat Annot)
+sprinkleAtsW_down annot ww
  = case ww of
  	D.WConLabel nn var lvs
 	 -> do	return	$ D.WConLabel nn var lvs
@@ -141,7 +144,7 @@ sprinkleAtsW_down sp ww
 	D.WConLabelP nn v lws
 	 -> do	lws'	<- mapZippedM
 	 			return
-				(sprinkleAtsW nn)
+				(sprinkleAtsW (fst annot))
 				lws
 		return	$ D.WConLabelP nn v lws'
 
@@ -149,7 +152,7 @@ sprinkleAtsW_down sp ww
 -- simplifyGuard -----------------------------------------------------------------------------------
 
 -- A list of vars and what pattern to match them against
-type CollectAtS 	= [(Var, D.Pat Annot, SourcePos)]
+type CollectAtS 	= [(Var, D.Pat Annot, Annot)]
 type CollectAtM		= State CollectAtS
 
 
@@ -171,18 +174,18 @@ simplifyGuard guard
 					{ D.transW = collectAtNodesW }) guard)
 			[]
 
-	gs	= g 					-- the outer pattern is returned
-		: [ D.GExp sp p (D.XVar sp v) 		-- build a match for each internal node
-				| (v, p, sp) <- vws]
+	gs	= g 	-- the outer pattern is returned build a match for each internal node
+		: [ D.GExp annot p (D.XVar annot v)
+				| (v, p, annot) <- vws]
   in	gs
 
 collectAtNodesW :: D.Pat Annot -> CollectAtM (D.Pat Annot)
 collectAtNodesW ww
  = case ww of
- 	D.WAt sp v w
+ 	D.WAt annot v w
 	 -> do	s	<- get
-	 	put	((v, w, sp) : s)
-		return	$ D.WVar sp v
+	 	put	((v, w, annot) : s)
+		return	$ D.WVar annot v
 
 	D.WConLabelP nn v lws
 	 ->  do	let lvs	= mapZipped
@@ -266,7 +269,8 @@ makeMatchFunction sp pp xResult xFallback
 	(vsFree, xBody)	<- makeMatchExp sp pp xResult xFallback
 
 	-- add the lambdas out the front
-	let xFinal	= addLambdas sp vsFree xBody
+	let annot	= (sp, Nothing)
+	let xFinal	= addLambdas annot vsFree xBody
 
 	return	$ xFinal
 
@@ -283,6 +287,7 @@ makeMatchExp sp pp xResult xFallback
 	-- make a guard for each of the patterns
 	(vs, mGs)	<- liftM unzip $ mapM makeGuard pp
 	let gs		= catMaybes mGs
+	let annot	= (sp, Nothing)
 
 	-- the new match expression has a single alternative,
 	--	with a new guard to match each of the argument patterns
@@ -290,16 +295,16 @@ makeMatchExp sp pp xResult xFallback
 				[]	-> xResult
 				-- NB: it's ok if we don't have a fallback expression because the Sea generator will fill in
 				-- a default case that just throws an appropriate exception
-				_	-> D.XMatch sp Nothing $ [D.AAlt sp gs xResult] ++ maybe [] (\x -> [D.AAlt sp [] x]) xFallback
+				_	-> D.XMatch annot Nothing $ [D.AAlt annot gs xResult] ++ maybe [] (\x -> [D.AAlt annot [] x]) xFallback
 	return (vs, xMatch)
 
 
 -- Make a new guard to match this pattern
 makeGuard
-	:: D.Pat a
+	:: D.Pat Annot
 	-> RewriteM
 		( Var
-		, Maybe (D.Guard a))
+		, Maybe (D.Guard Annot))
 
 makeGuard (D.WVar sp v)
 	= return (v, Nothing)

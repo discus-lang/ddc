@@ -24,7 +24,7 @@ import Source.Lexer			(scanModuleWithOffside, scan)
 import Source.Parser.Module		(parseModule)
 import Source.Slurp			(slurpFixTable, slurpKinds)
 import Source.Defix			(defixP)
-import Source.Desugar			(rewriteTree)
+import Source.Desugar			(Annot, rewriteTree)
 import Source.Lint			(lintTree)
 import qualified Data.Map		as Map
 import qualified DDC.Desugar.Transform	as D
@@ -200,9 +200,9 @@ sourceKinds sTree
 ---------------------------------------------------------------------------------------------------
 -- | Lint check the source program
 lint 	:: (?args :: [Arg])
-	=> Tree SourcePos
-	-> Tree SourcePos
-	-> IO (Tree SourcePos, Tree SourcePos)
+	=> Tree a
+	-> Tree a
+	-> IO (Tree a, Tree a)
 
 lint hTree sTree
  = {-# SCC "Source/lint" #-}
@@ -225,8 +225,8 @@ desugar
 	-> [(Var, Kind)]		-- kind table
 	-> Tree	SourcePos		-- header tree
 	-> Tree	SourcePos		-- source tree
-	-> IO 	( D.Tree SourcePos
-		, D.Tree SourcePos)
+	-> IO 	( D.Tree Annot
+		, D.Tree Annot)
 
 desugar unique kinds hTree sTree
  = {-# SCC "Source/desugar" #-}

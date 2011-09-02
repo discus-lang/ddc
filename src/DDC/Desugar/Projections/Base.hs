@@ -13,13 +13,12 @@ module DDC.Desugar.Projections.Base
 where
 import DDC.Source.Error
 import DDC.Main.Pretty
-import DDC.Base.SourcePos
 import DDC.Type
 import DDC.Var
+import Source.Desugar			(Annot)
 import Control.Monad.State.Strict
-import qualified Data.Map	as Map
+import qualified Data.Map		as Map
 
-type	Annot		= SourcePos
 type	ProjectM	= State ProjectS
 
 

@@ -4,14 +4,13 @@ module DDC.Desugar.ProjectEta
 where
 import DDC.Desugar.Exp
 import DDC.Desugar.Bits
-import DDC.Base.SourcePos
 import DDC.Var
+import Source.Desugar		(Annot)
 import Shared.VarGen
 import Control.Monad
 import qualified Data.Map	as Map
 import Util
 
-type Annot	= SourcePos
 
 -- | Eta expand projection functions
 --	This helps avoid intermediate partial of the projection's 'worker' function.

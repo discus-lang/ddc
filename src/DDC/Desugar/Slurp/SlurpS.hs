@@ -6,6 +6,7 @@ import DDC.Desugar.Slurp.Base
 import DDC.Desugar.Slurp.SlurpX
 import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
+import Source.Desugar		(Annot)
 import Util
 import qualified Data.MapUtil	as Map
 import qualified Data.Bag	as Bag
@@ -14,7 +15,7 @@ import Data.Bag			(Bag)
 stage	= "DDC.Desugar.Slurp.SlurpS"
 
 -- | Slurp out type constraints a statement.
-slurpS 	:: Stmt Annot1
+slurpS 	:: Stmt Annot
 	-> CSlurpM
 		( Type		-- type var
 		, Effect	-- effect vars
@@ -23,12 +24,12 @@ slurpS 	:: Stmt Annot1
 		, Bag CTree)	-- constraints
 
 -- statements (bindings with out a bound var)
-slurpS 	(SBind sp Nothing e1)
+slurpS 	(SBind annot Nothing e1)
  = do
 	tBind				<- newTVarD
 	(tX@TVar{}, eX, _, x1', qsX)	<- slurpX e1
 
-	let qs = [ CEq  (TSU $ SUBind sp) tBind	$ tX ]
+	let qs = [ CEq  (TSU $ SUBind (fst annot)) tBind	$ tX ]
 
 	return	( tX
 		, eX
@@ -40,7 +41,7 @@ slurpS 	(SBind sp Nothing e1)
 			, branchSub	= qs ++ Bag.toList qsX } )
 
 -- regular bindings
-slurpS	(SBind sp (Just v) e1)
+slurpS	(SBind annot (Just v) e1)
  = do
 	tBind@(TVar _ (UVar vBindT))		<- lbindVtoT v
  	(tX@(TVar _ (UVar{})), eX, _, x1', qsX)	<- slurpX e1
@@ -53,16 +54,16 @@ slurpS	(SBind sp (Just v) e1)
 			$ CBranch
 			{ branchBind	= BLet [vBindT]
 			, branchSub
-			   	=  [ CEq  (TSU $ SUBind sp) tBind tX ]
-				++ Bag.toList (qsX >< (Bag.singleton (CGen (TSM $ SMGen sp v) tBind))) })
+			   	=  [ CEq  (TSU $ SUBind (fst annot)) tBind tX ]
+				++ Bag.toList (qsX >< (Bag.singleton (CGen (TSM $ SMGen (fst annot) v) tBind))) })
 
 -- type signatures
-slurpS	(SSig sp sigMode vs tSig)
+slurpS	(SSig annot sigMode vs tSig)
  = do
 	forM_ vs
 	 $ \v -> do
 		TVar _ (UVar vT) <- lbindVtoT v
-		let sig	= ProbSig v sp sigMode tSig
+		let sig	= ProbSig v (fst annot) sigMode tSig
 		modify $ \s -> s {
 			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
 

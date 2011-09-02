@@ -13,7 +13,6 @@ import DDC.Desugar.Bits
 import DDC.Desugar.Projections.Base
 import DDC.Desugar.Projections.Snip
 import DDC.Desugar.Projections.Check
-import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
@@ -175,7 +174,7 @@ addProjDictFunsP dataMap p
 
 -- | Make a projection function for a particular field.
 makeProjFun
-	:: SourcePos 		-- ^ Source position to assign to the new function.
+	:: Annot 		-- ^ Source position to assign to the new function.
 	-> Type			-- ^ Type being projected.
 	-> DataDef		-- ^ Data definition of type.
 	-> Var 			-- ^ Name of field to project.
@@ -219,7 +218,7 @@ makeProjFunAlt sp vObj vField ctorDef
 	  -> return Nothing
 
 makeProjR_fun
-	:: SourcePos
+	:: Annot
 	-> Type
 	-> DataDef
 	-> Var

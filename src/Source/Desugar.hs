@@ -3,11 +3,12 @@
 --   Desugaring before the inferencer makes the error messages not as good,
 --   but the constraint slurper much easier to write.
 --
---   We also default the formats of unsized literals liek '5' to a format
+--   We also default the formats of unsized literals like '5' to a format
 --   suitable for the platform (like Int32).
 --
 module Source.Desugar
-	( rewriteTree
+	( Annot
+	, rewriteTree
 	, rewrite
 	, rewriteLetStmts )
 where
@@ -72,7 +73,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
  rewrite pp
   = case pp of
 	S.PImportModule sp ms
-	 ->	returnJ	$ D.PImport sp ms
+	 ->	returnJ	$ D.PImport (sp, Nothing) ms
 
 	-- imported values
 	S.PForeign sp (S.OImport mName v tv to)
@@ -82,7 +83,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 				Just seaName	-> v { varInfo = varInfo v ++ [ISeaName seaName ]}
 
 		let to'	= maybeJust to (let Just to2 = makeOpTypeT tv' in to2)
-	 	returnJ $ D.PExtern sp v' tv' to'
+	 	returnJ $ D.PExtern (sp, Nothing) v' tv' to'
 
 	-- imported unboxed types
 	S.PForeign sp (S.OImportUnboxedData name var k)
@@ -97,7 +98,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 						  return (v, k))
 					ksParams
 
-		returnJ	$ D.PData sp
+		returnJ	$ D.PData (sp, Nothing)
 			$ T.DataDef
 				{ T.dataDefName			= var'
 				, T.dataDefSeaName		= Just name
@@ -120,7 +121,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 						  return (v, k))
 					ksParams
 
-	 	returnJ $ D.PData sp
+	 	returnJ $ D.PData (sp, Nothing)
 			$ T.DataDef
 				{ T.dataDefName			= v
 				, T.dataDefSeaName		= Nothing
@@ -130,22 +131,22 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 				, T.dataDefImmaterialVars	= Nothing }
 
 	 | otherwise
-	 -> returnJ $ D.PKindSig sp v k
+	 -> returnJ $ D.PKindSig (sp, Nothing) v k
 
 	S.PTypeSynonym sp v t
-	 -> returnJ	$ D.PTypeSynonym sp v t
+	 -> returnJ	$ D.PTypeSynonym (sp, Nothing) v t
 
 	-- data definitions
 	S.PData sp v vs ctors
 	 -> do	dataDef	<- makeDataDef v vs ctors
-	 	returnJ	$ D.PData sp dataDef
+	 	returnJ	$ D.PData (sp, Nothing) dataDef
 
 	S.PRegion sp v
-	 ->	returnJ	$ D.PRegion sp v
+	 ->	returnJ	$ D.PRegion (sp, Nothing) v
 
 	-- classes
 	S.PClass sp v s
-	 ->	returnJ	$ D.PSuperSig sp v s
+	 ->	returnJ	$ D.PSuperSig (sp, Nothing) v s
 
 	-- class dictionaries
  	S.PClassDict sp vC vks _ sigs
@@ -159,7 +160,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 	 	let sigs'	= catMap makeSigs sigs
 
-		returnJ		$ D.PClassDecl sp vC tsParam sigs'
+		returnJ		$ D.PClassDecl (sp, Nothing) vC tsParam sigs'
 
 	-- class instances
 	S.PClassInst sp vC ts _ ss
@@ -171,7 +172,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		mapM_ addError errs
 
 		ts_rewrite	<- mapM rewrite ts
-	 	returnJ		$ D.PClassInst sp vC ts ss_merged
+	 	returnJ		$ D.PClassInst (sp, Nothing) vC ts ss_merged
 
 	-- projections
 	S.PProjDict sp t ss
@@ -182,16 +183,16 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 		t'		<- rewrite t
 
-		returnJ		$ D.PProjDict sp t' ss_merged
+		returnJ		$ D.PProjDict (sp, Nothing) t' ss_merged
 
 
 	S.PStmt (S.SSig sp sigMode vs t)
 	 -> do	t'	<- rewrite t
-	 	returnJ	$ D.PTypeSig sp sigMode vs t
+	 	returnJ	$ D.PTypeSig (sp, Nothing) sigMode vs t
 
   	S.PStmt s
-	 -> do	(D.SBind sp (Just v) x)	<- rewrite s
-	 	returnJ			$ D.PBind sp v x
+	 -> do	(D.SBind an (Just v) x)	<- rewrite s
+	 	returnJ			$ D.PBind an v x
 
 	_  ->	return	Nothing
 
@@ -253,42 +254,44 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	S.XNil		-> return D.XNil
 
 	S.XLit sp litFmt
-	 -> return	$ D.XLit sp $ defaultLiteralFmt litFmt
+	 -> return	$ D.XLit (sp, Nothing) $ defaultLiteralFmt litFmt
 
 	S.XVar sp v
-	 -> 	return	$ D.XVar 	sp v
+	 -> 	return	$ D.XVar (sp, Nothing) v
 
 	-- projections
-	S.XProj sp x1 (S.JIndex sp2 x2)
+	S.XProj sp x1 (S.JIndex _ x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
-		return	$ D.XApp sp (D.XApp sp (D.XVar sp primIndex) x1') x2'
+	 	let ann = (sp, Nothing)
+		return	$ D.XApp ann (D.XApp ann (D.XVar ann primIndex) x1') x2'
 
-	S.XProj sp x1 (S.JIndexR sp2 x2)
+	S.XProj sp x1 (S.JIndexR _ x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
-		return	$ D.XApp sp (D.XApp sp (D.XVar sp primIndexR) x1') x2'
+	 	let ann = (sp, Nothing)
+		return	$ D.XApp ann (D.XApp ann (D.XVar ann primIndexR) x1') x2'
 
 	S.XProj sp x pj
 	 -> do	x'	<- rewrite x
 	 	pj'	<- rewrite pj
-	 	return	$ D.XProj 	sp x' pj'
+	 	return	$ D.XProj (sp, Nothing) x' pj'
 
 	S.XProjT sp t pj
 	 -> do	t'	<- rewrite t
 	 	pj'	<- rewrite pj
 
-		return	$ D.XProjT sp t pj'
+		return	$ D.XProjT (sp, Nothing) t pj'
 
 	S.XApp sp x1 x2
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
-		return	$ D.XApp sp x1' x2'
+		return	$ D.XApp (sp, Nothing) x1' x2'
 
 	S.XCase sp x aa
 	 -> do	x'	<- rewrite x
 	 	aa'	<- rewrite aa
-		return	$ D.XMatch sp (Just x') aa'
+		return	$ D.XMatch (sp, Nothing) (Just x') aa'
 
 	S.XDo sp ss
 	 -> do	ss'		<- mapM rewrite ss
@@ -300,7 +303,7 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 		let (ss_merged, errs) = mergeBindings ss_demon
 		mapM_ addError errs
 
-		return	$ D.XDo sp ss_merged
+		return	$ D.XDo (sp, Nothing) ss_merged
 
 	-- Let and where expressions are treated similarly.
 	--	They're just sugar for do expressions, and don't support mutual recursion.
@@ -316,51 +319,45 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
 		x3'	<- rewrite x3
-		return	$ D.XIfThenElse sp x1' x2' x3'
+		return	$ D.XIfThenElse (sp, Nothing) x1' x2' x3'
 
 	-- lambda sugar.
 	S.XLambdaPats sp ps x
 	 -> do	x'	<- rewrite x
 		ps'	<- mapM rewrite ps
-	 	x2	<- makeMatchFunction sp ps' x' Nothing
-		return x2
+	 	makeMatchFunction sp ps' x' Nothing
+
 
 	S.XLambdaCase sp alts
-	 -> do
-		alts'	<- rewrite alts
-
+	 -> do	alts'	<- rewrite alts
 	 	var_	<- newVarN NameValue
-		let var	= var_
-			{ varInfo = [ISourcePos sp] }
-
-		return	$ D.XLambda sp var (D.XMatch sp (Just $ D.XVar sp var) alts')
+		let var	= var_ { varInfo = [ISourcePos sp] }
+		let ann = (sp, Nothing)
+		return	$ D.XLambda ann var (D.XMatch ann (Just $ D.XVar ann var) alts')
 
 	S.XLambdaProj sp j xs
 	 -> do	var_	<- newVarN NameValue
-	 	let var	= var_
-			{ varInfo = [ISourcePos sp] }
-
+	 	let var	= var_ { varInfo = [ISourcePos sp] }
+		let ann = (sp, Nothing)
 		j'	<- rewrite j
 		xs'	<- rewrite xs
 
-		return	$ D.XLambda sp var (D.unflattenApps sp (D.XProj sp (D.XVar sp var) j') xs')
+		return	$ D.XLambda ann var (D.unflattenApps ann (D.XProj ann (D.XVar ann var) j') xs')
 
 	-- match sugar.
 	S.XMatch sp aa
 	 -> do	aa'	<- rewrite aa
-
-	 	return	$ D.XMatch sp Nothing aa'
+	 	return	$ D.XMatch (sp, Nothing) Nothing aa'
 
 
 	-- exception sugar.
 	S.XThrow sp x
-	 -> do
-		x'	<- rewrite x
-	 	return	$ (D.XApp sp (D.XVar sp primThrow) x')
+	 -> do	x'	<- rewrite x
+		let ann = (sp, Nothing)
+	 	return	$ (D.XApp ann (D.XVar ann primThrow) x')
 
 	S.XTry sp x aa Nothing
-	 -> do
-		x'	<- rewrite x
+	 -> do	x'	<- rewrite x
 		aa'	<- rewrite aa
 	 	rewriteTry sp [] x' aa'
 
@@ -374,8 +371,9 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 		withVA	<- newVarNI NameValue [ISourcePos sp]
 		d	<- newVarN  NameValue
 
-		let ssMore	= [D.SBind sp (Just withV) (D.XLambda sp d w')]
-		let appW	= D.XApp sp (D.XVar sp withV) (D.XVar sp primUnit)
+		let annot	= (sp, Nothing)
+		let ssMore	= [D.SBind annot (Just withV) (D.XLambda annot d w')]
+		let appW	= D.XApp annot (D.XVar annot withV) (D.XVar annot primUnit)
 
 		let aaWith	= map (addWithAlt appW) aa'
 		rewriteTry sp ssMore x' aaWith
@@ -384,54 +382,58 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	S.XWhen	sp testX bodyX
 	 -> do	testX'	<- rewrite testX
 	 	bodyX'	<- rewrite bodyX
-		return	$ D.XMatch sp (Just testX')
-				[ D.AAlt sp	[D.GCase sp (D.WConLabel sp primTrue [])]
+		let ann = (sp, Nothing)
+		return	$ D.XMatch ann (Just testX')
+				[ D.AAlt ann	[D.GCase ann (D.WConLabel ann primTrue [])]
 						bodyX'
 
-				, D.AAlt sp	[]
-						(D.XVar sp primUnit) ]
+				, D.AAlt ann	[]
+						(D.XVar ann primUnit) ]
 
 	S.XUnless sp testX bodyX
 	 -> do	testX'	<- rewrite testX
 	 	bodyX'	<- rewrite bodyX
-	 	return	$ D.XMatch sp (Just testX')
-		 		[ D.AAlt sp	[D.GCase sp (D.WConLabel sp primFalse [])]
+	 	let ann = (sp, Nothing)
+	 	return	$ D.XMatch ann (Just testX')
+		 		[ D.AAlt ann	[D.GCase ann (D.WConLabel ann primFalse [])]
 						bodyX'
 
-				, D.AAlt sp 	[]
-						(D.XVar sp primUnit) ]
+				, D.AAlt ann 	[]
+						(D.XVar ann primUnit) ]
 
 	S.XWhile sp testX bodyX
 	 -> do	d1	<- newVarN NameValue
 		vLoop	<- newVarN NameValue
 		testX'	<- rewrite testX
 		bodyX'	<- rewrite bodyX
+		let ann = (sp, Nothing)
+		let loopX	= D.XLambda ann d1
+				$ D.XDo ann
+				[ D.SBind ann Nothing
+					(D.XMatch ann (Just testX')
+						[ D.AAlt ann	[D.GCase ann (D.WConLabel ann primFalse [])]
+								(D.XApp ann (D.XVar ann primThrow) (D.XVar ann primExceptionBreak))
 
-		let loopX	= D.XLambda sp d1
-				$ D.XDo sp
-				[ D.SBind sp Nothing
-					(D.XMatch sp (Just testX')
-						[ D.AAlt sp	[D.GCase sp (D.WConLabel sp primFalse [])]
-								(D.XApp sp (D.XVar sp primThrow) (D.XVar sp primExceptionBreak))
+						, D.AAlt ann	[]
+								(D.XVar ann primUnit) ])
 
-						, D.AAlt sp	[]
-								(D.XVar sp primUnit) ])
+				, D.SBind ann Nothing bodyX' ]
 
-				, D.SBind sp Nothing bodyX' ]
-
-		return		$ D.XDo sp
-				[ D.SBind sp (Just vLoop) 	$ loopX
-				, D.SBind sp Nothing		$ D.XApp sp (D.XVar sp primGateLoop) (D.XVar sp vLoop)]
+		return		$ D.XDo ann
+				[ D.SBind ann (Just vLoop) 	$ loopX
+				, D.SBind ann Nothing		$ D.XApp ann (D.XVar ann primGateLoop) (D.XVar ann vLoop)]
 
 	S.XBreak sp
-	 ->	return	$ D.XApp sp (D.XVar sp primThrow) (D.XVar sp primExceptionBreak)
+	 -> do	let annot = (sp, Nothing)
+		return	$ D.XApp annot (D.XVar annot primThrow) (D.XVar annot primExceptionBreak)
 
 
 	-- list sugar
 	S.XList sp xs
-	 -> do	let makeList = \xx -> case xx of
-	 		[]	-> D.XVar sp primNil
-			(x:xs)	-> D.XApp sp (D.XApp sp (D.XVar sp primCons) x) (makeList xs)
+	 -> do	let ann	= (sp, Nothing)
+		let makeList = \xx -> case xx of
+	 		[]	-> D.XVar ann primNil
+			(x:xs)	-> D.XApp ann (D.XApp ann (D.XVar ann primCons) x) (makeList xs)
 
 		xs'	<- mapM rewrite xs
 		return	$ makeList xs'
@@ -439,27 +441,32 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	S.XListRange sp True x1 Nothing (Just x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
-		return	$ D.XApp sp (D.XApp sp (D.XVar sp primRangeL) x1') x2'
+	 	let ann = (sp, Nothing)
+		return	$ D.XApp ann (D.XApp ann (D.XVar ann primRangeL) x1') x2'
 
 	S.XListRange sp False x1 Nothing (Just x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
-		return	$ D.XApp sp (D.XApp sp (D.XVar sp primRange) x1') x2'
+		let ann = (sp, Nothing)
+		return	$ D.XApp ann (D.XApp ann (D.XVar ann primRange) x1') x2'
 
 	S.XListRange sp True x1 Nothing Nothing
 	 -> do	x1'	<- rewrite x1
-	  	return	$ D.XApp sp (D.XVar sp primRangeInfL) x1'
+		let ann = (sp, Nothing)
+	  	return	$ D.XApp ann (D.XVar ann primRangeInfL) x1'
 
 	S.XListRange sp False x1 (Just x2) (Just x3)
 	 -> do	x1'	<- rewrite x1
 		x2'	<- rewrite x2
 		x3'	<- rewrite x3
-		return	$ D.XApp sp (D.XApp sp (D.XApp sp (D.XVar sp primRangeStep) x1') x2') x3'
+		let ann = (sp, Nothing)
+		return	$ D.XApp ann (D.XApp ann (D.XApp ann (D.XVar ann primRangeStep) x1') x2') x3'
 
 	S.XListRange sp True x1 (Just x2) Nothing
 	 -> do	x1'	<- rewrite x1
 		x2'	<- rewrite x2
-		return	$ D.XApp sp (D.XApp sp (D.XVar sp primRangeInfStepL) x1') x2'
+		let ann	= (sp, Nothing)
+		return	$ D.XApp ann (D.XApp ann (D.XVar ann primRangeInfStepL) x1') x2'
 
 	S.XListComp{}
 	 -> 	rewriteListComp xx
@@ -468,7 +475,8 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	-- data expression/pattern sugar.
 	S.XTuple sp xx
 	 -> do	xx'	<- rewrite xx
-	 	return	$ D.unflattenApps sp (D.XVar sp $ primTuple (length xx)) xx'
+		let ann	= (sp, Nothing)
+	 	return	$ D.unflattenApps ann (D.XVar ann $ primTuple (length xx)) xx'
 
 	_	-> panic stage
 		$ "rewrite[Exp]: can't rewrite " % xx % "\n\n"
@@ -479,7 +487,8 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 rewriteLetStmts :: SourcePos -> [S.Stmt SourcePos] -> D.Exp Annot -> RewriteM (D.Exp Annot)
 rewriteLetStmts sp ss x_body'
   = do	ss'		<- mapM rewrite ss
-	let ssX		= ss' ++ [D.SBind sp Nothing x_body']
+	let annot	= (sp, Nothing)
+	let ssX		= ss' ++ [D.SBind annot Nothing x_body']
 
 	ssX_demon	<- rewriteDoSS ssX
 
@@ -487,23 +496,23 @@ rewriteLetStmts sp ss x_body'
 	let (ssX_merged, errs) = mergeBindings ssX_demon
 	mapM_ addError errs
 
-	return	$ D.XDo	sp ssX_merged
+	return	$ D.XDo	annot ssX_merged
 
 
 -- Proj ---------------------------------------------------------------------------------------------
 instance Rewrite (S.Proj SourcePos) (D.Proj Annot) where
  rewrite pp
   = case pp of
-  	S.JField  sp v	-> return $ D.JField  sp v
-	S.JFieldR sp v	-> return $ D.JFieldR sp v
+  	S.JField  sp v	-> return $ D.JField  (sp, Nothing) v
+	S.JFieldR sp v	-> return $ D.JFieldR (sp, Nothing) v
 
 	S.JIndex  sp x
 	 -> do	v	<- newVarN NameValue
-	 	return	$ D.JField sp v
+	 	return	$ D.JField (sp, Nothing) v
 
 	S.JIndexR sp x
 	 -> do	v	<- newVarN NameValue
-	 	return	$ D.JFieldR sp v
+	 	return	$ D.JFieldR (sp, Nothing) v
 
 
 -- Stmt ---------------------------------------------------------------------------------------------
@@ -512,18 +521,18 @@ instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
   = case ss of
 	S.SSig sp sigMode vs t
 	 -> do 	t'	<- rewrite t
-	 	return	$ D.SSig sp sigMode vs t
+	 	return	$ D.SSig (sp, Nothing) sigMode vs t
 
 	S.SStmt sp x
 	 -> do	x'	<- rewrite x
-	 	return	$ D.SBind sp Nothing x'
+	 	return	$ D.SBind (sp, Nothing) Nothing x'
 
 
 	-- If the right is just a single expression, then we don't want
 	-- 	to wrap it in a dummy match.
 	S.SBindFun sp v [] [S.ADefault sp' x]
 	 -> do	x'	<- rewrite x
-		return	$ D.SBind sp (Just v) x'
+		return	$ D.SBind (sp, Nothing) (Just v) x'
 
 	S.SBindFun sp v ps as
 	 -> do	ps'	<- mapM rewrite ps
@@ -532,28 +541,29 @@ instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
 		-- Make guards to deconstruct each of the patterns
 		(vs, mGs)	<- liftM unzip $ mapM makeGuard ps'
 		let newGs	= catMaybes mGs
+		let annot	= (sp, Nothing)
 
 		-- Add those guards to each alternative
 		let asPat	= map (\a -> case a of
-						D.AAlt sp gs x -> D.AAlt sp (newGs ++ gs) x)
+						D.AAlt annot gs x -> D.AAlt annot (newGs ++ gs) x)
 				$ as'
 
 		-- Add lambdas to the front to bind each of the arguments.
-		let x2		= D.addLambdas sp vs
-				$ D.XMatch sp Nothing asPat
+		let x2		= D.addLambdas annot vs
+				$ D.XMatch annot Nothing asPat
 
-		return	$ D.SBind sp (Just v) x2
+		return	$ D.SBind annot (Just v) x2
 
 	S.SBindPat sp pat x
 	 -> do	pat'	<- rewrite pat
 	 	x'	<- rewrite x
-		return	$ D.SBindPat sp pat' x'
+		return	$ D.SBindPat (sp, Nothing) pat' x'
 
 
 	S.SBindMonadic sp pat x
 	 -> do	pat'	<- rewrite pat
 	 	x'	<- rewrite x
-	 	return	$ D.SBindMonadic sp pat' x'
+	 	return	$ D.SBindMonadic (sp, Nothing) pat' x'
 
 
 
@@ -564,16 +574,17 @@ instance Rewrite (S.Alt SourcePos) (D.Alt Annot) where
 	S.APat sp w x
 	 -> do	w'		<- rewrite w
 	  	x'		<- rewrite x
-	 	return	$ D.AAlt sp [D.GCase sp w'] x'
+	  	let annot	= (sp, Nothing)
+	 	return	$ D.AAlt annot [D.GCase annot w'] x'
 
 	S.AAlt sp gs x
 	 -> do	gs'	<- rewrite gs
 	 	x'	<- rewrite x
-		return	$ D.AAlt sp gs' x'
+		return	$ D.AAlt (sp, Nothing) gs' x'
 
 	S.ADefault sp x
 	 -> do	x'	<- rewrite x
-	 	return	$ D.AAlt sp [] x'
+	 	return	$ D.AAlt (sp, Nothing) [] x'
 
 
 -- Guard ------------------------------------------------------------------------------------------
@@ -583,11 +594,12 @@ instance Rewrite (S.Guard SourcePos) (D.Guard Annot) where
 	S.GExp sp w x
 	 -> do	w'	<- rewrite w
 	 	x'	<- rewrite x
-		return	$ D.GExp sp w' x'
+		return	$ D.GExp (sp, Nothing) w' x'
 
 	S.GBool sp x
 	 -> do	x'	<- rewrite x
-	 	return	$ D.GExp sp (D.WConLabel sp primTrue []) x'
+		let ann = (sp, Nothing)
+	 	return	$ D.GExp ann (D.WConLabel ann primTrue []) x'
 
 
 
@@ -601,52 +613,55 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
  rewrite ww
   = case ww of
 	S.WVar sp v
-	 -> do	return	$ D.WVar sp v
+	 -> do	return	$ D.WVar (sp, Nothing) v
 
 	S.WLit sp litFmt
-	 -> do	return	$ D.WLit sp $ defaultLiteralFmt litFmt
+	 -> do	return	$ D.WLit (sp, Nothing) $ defaultLiteralFmt litFmt
 
 	S.WCon sp v ps
 	 -> do	ps'	<- mapM rewrite ps
-	 	return	$ D.WConLabelP sp
+		let ann = (sp, Nothing)
+	 	return	$ D.WConLabelP ann
 				(rewritePatVar v)
-				(zip [D.LIndex sp i | i <- [0..]] ps')
+				(zip [D.LIndex ann i | i <- [0..]] ps')
 
 	S.WAt sp v p
 	 -> do	p'	<- rewrite p
-	 	return	$ D.WAt sp v p'
+	 	return	$ D.WAt (sp, Nothing) v p'
 
 	S.WWildcard sp
 	 -> do	v	<- newVarN NameValue
-	 	return	$ D.WVar sp v
+	 	return	$ D.WVar (sp, Nothing) v
 
 	S.WConLabel sp v lvs
 	 -> do	lvs'	<- mapZippedM
 	 			rewrite rewrite
 	 			lvs
 
-	 	return	$ D.WConLabelP sp (rewritePatVar v) lvs'
+	 	return	$ D.WConLabelP (sp, Nothing) (rewritePatVar v) lvs'
 
 	S.WUnit sp
-	 -> do	return	$ D.WConLabel sp primUnit []
+	 -> do	return	$ D.WConLabel (sp, Nothing) primUnit []
 
 	S.WTuple sp ps
 	 -> do	ps'	<- mapM rewrite ps
-	 	return	$ D.WConLabelP sp
+		let ann = (sp, Nothing)
+	 	return	$ D.WConLabelP ann
 				(primTuple (length ps))
-				(zip [D.LIndex sp i | i <- [0..]] ps')
+				(zip [D.LIndex ann i | i <- [0..]] ps')
 
 	S.WCons sp p1 p2
 	 -> do	p1'	<- rewrite p1
 	 	p2'	<- rewrite p2
-		return	$ D.WConLabelP sp
+	 	let ann = (sp, Nothing)
+		return	$ D.WConLabelP ann
 				primCons
-				[ (D.LIndex sp 0, p1')
-				, (D.LIndex sp 1, p2') ]
+				[ (D.LIndex ann 0, p1')
+				, (D.LIndex ann 1, p2') ]
 
 	-- [] -> Nil
 	S.WList sp []
-	 -> 	return	$ D.WConLabelP sp primNil []
+	 -> 	return	$ D.WConLabelP (sp, Nothing) primNil []
 
 	-- [a, b, c] -> Cons a (Cons b (Cons c Nil))
 	S.WList sp ps
@@ -662,24 +677,24 @@ rewritePatList
 	-> RewriteM (D.Pat Annot)
 
 rewritePatList sp []
- = do	return $ D.WConLabelP sp primNil []
+ = do	return $ D.WConLabelP (sp, Nothing) primNil []
 
 rewritePatList sp (p:ps)
  = do	p'	<- rewrite p
 	ps'	<- rewritePatList sp ps
-
-	return	$ D.WConLabelP sp
+	let ann = (sp, Nothing)
+	return	$ D.WConLabelP ann
 			primCons
-			[ (D.LIndex sp 0, p')
-			, (D.LIndex sp 1, ps') ]
+			[ (D.LIndex ann 0, p')
+			, (D.LIndex ann 1, ps') ]
 
 
 -- Label ------------------------------------------------------------------------------------------
 instance Rewrite (S.Label SourcePos) (D.Label Annot) where
  rewrite ll
   = case ll of
-  	S.LIndex sp i	-> return $ D.LIndex sp i
-	S.LVar sp v	-> return $ D.LVar   sp v
+  	S.LIndex sp i	-> return $ D.LIndex (sp, Nothing) i
+	S.LVar sp v	-> return $ D.LVar   (sp, Nothing) v
 
 
 -- Try syntax--------------------------------------------------------------------------------------
@@ -696,20 +711,21 @@ rewriteTry	   sp ssMore x aa
 	tryCatchVA	<- newVarNI NameValue [ISourcePos sp]
 
 	d		<- newVarN  NameValue
-	let aDefault	= D.AAlt sp [] (D.XApp sp (D.XVar sp primThrow) (D.XVar sp tryCatchVA))
+	let annot	= (sp, Nothing)
+	let aDefault	= D.AAlt annot [] (D.XApp annot (D.XVar annot primThrow) (D.XVar annot tryCatchVA))
 
-	let exp	= D.XDo sp $
-		[ D.SBind sp 	(Just tryExpV)
-				(D.XLambda sp d x) ]
+	let exp	= D.XDo annot $
+		[ D.SBind annot (Just tryExpV)
+				(D.XLambda annot d x) ]
 		++ ssMore ++
-		[ D.SBind sp 	(Just tryCatchV)
-				(D.XLambda sp tryCatchVA
-					(D.XMatch sp (Just $ D.XVar sp tryCatchVA) (aa ++ [aDefault])))
+		[ D.SBind annot 	(Just tryCatchV)
+				(D.XLambda annot tryCatchVA
+					(D.XMatch annot (Just $ D.XVar annot tryCatchVA) (aa ++ [aDefault])))
 
-		, D.SBind sp Nothing
-			$ D.XApp sp 	(D.XApp sp	(D.XVar sp primTry)
-							(D.XVar sp tryExpV))
-					(D.XVar sp tryCatchV)
+		, D.SBind annot Nothing
+			$ D.XApp annot 	(D.XApp annot (D.XVar annot primTry)
+							(D.XVar annot tryExpV))
+					(D.XVar annot tryCatchV)
 		]
 
 	return exp
@@ -745,16 +761,16 @@ rewriteDoSS (s : ss)
 				(D.XMatch sp Nothing [D.AAlt sp [g] xRest]) ]
 
 
- 	D.SBindMonadic sp pat x
+ 	D.SBindMonadic annot pat x
 	 -> do 	ss'	<- rewriteDoSS ss
-	  	let xDo	= D.XDo sp ss'
+	  	let xDo	= D.XDo annot ss'
 
-		([var], xMatch)	<- makeMatchExp sp [pat] xDo Nothing
+		([var], xMatch)	<- makeMatchExp (fst annot) [pat] xDo Nothing
 
-	        let xRest	= D.XLambda sp var xMatch
+	        let xRest	= D.XLambda annot var xMatch
 
-	    	return	[D.SBind sp Nothing
-				(D.XApp sp (D.XApp sp (D.XVar sp primBind) x) xRest)]
+	    	return	[D.SBind annot Nothing
+				(D.XApp annot (D.XApp annot (D.XVar annot primBind) x) xRest)]
 
 
 -- Type -------------------------------------------------------------------------------------------

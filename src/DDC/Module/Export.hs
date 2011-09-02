@@ -10,6 +10,7 @@ import DDC.Main.Error
 import DDC.Var
 import DDC.Desugar.Pretty		()
 import DDC.Type				(Type)
+import Source.Desugar			(Annot)
 import Source.Pretty			()
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
@@ -31,7 +32,7 @@ stage	= "DDC.Module.Export"
 makeInterface
 	:: ModuleId		-- name of this module
 	-> S.Tree SourcePos	-- source tree
-	-> D.Tree SourcePos	-- desugared tree
+	-> D.Tree Annot		-- desugared tree
 	-> C.Tree		-- core tree
 	-> Map Var Var		-- sigma table (value var -> type var)
 	-> Map Var T.Type	-- schemeTable
@@ -111,7 +112,7 @@ exportAll
 	-> (Var -> Type)	-- ^ a fn to get the type scheme of a top level binding
 	-> Set Var		-- ^ vars of top level bindings.
 	-> [S.Top SourcePos] 	-- ^ source tree
-	-> [D.Top SourcePos]	-- ^ desugared tree
+	-> [D.Top Annot]	-- ^ desugared tree
 	-> [C.Top]		-- ^ core tree
 	-> (Var -> Bool)	-- ^ don't export these vars
 	-> String		-- ^ the interface file
@@ -252,11 +253,11 @@ eraseVarModuleSourceTree m tree
 -- | erase module qualifiers from variables in this tree
 eraseVarModuleDesugaredTree
 	:: ModuleId
-	-> D.Tree SourcePos
-	-> D.Tree SourcePos
+	-> D.Tree Annot
+	-> D.Tree Annot
 
 eraseVarModuleDesugaredTree m tree
- =	map 	(D.transZ (D.transTableId (\(x :: SourcePos) -> return x))
+ =	map 	(D.transZ (D.transTableId (\(x :: Annot) -> return x))
 			{ D.transV	= \v -> return $ eraseVarModuleV m v
 			, D.transT	= \t -> return $ T.transformV (eraseVarModuleV m) t  })
 		tree

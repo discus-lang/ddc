@@ -1,8 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Type constraint slurper state.
 module	DDC.Desugar.Slurp.State
-	( Annot1
-	, Annot2
+	( Annot2
 	, BindMode (..)
 	, CSlurpM
 	, CSlurpS  (..)
@@ -13,7 +12,6 @@ module	DDC.Desugar.Slurp.State
 where
 import DDC.Solve.Error
 import DDC.Main.Pretty
-import DDC.Base.SourcePos
 import DDC.Solve.Interface.Problem
 import DDC.Type
 import DDC.Type.Data
@@ -23,7 +21,6 @@ import qualified Data.Set 	as Set
 import qualified Data.Map 	as Map
 import qualified Shared.Unique	as Unique
 
-type	Annot1	= SourcePos
 type	Annot2	= Maybe (Type, Effect)
 
 -- | Expresses how a particular variable has been bound

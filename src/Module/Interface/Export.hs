@@ -9,6 +9,7 @@ import DDC.Type
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
+import Source.Desugar			(Annot)
 import Control.Monad
 import Data.Maybe
 import Data.Foldable
@@ -42,7 +43,7 @@ makeInterface
 	-> Map Var Var		-- ^ Map of value to type vars.
 	-> Map Var Type		-- ^ Map of type vars to inferred source types.
 	-> [S.Top SourcePos]	-- ^ Source    program tree.
-	-> [D.Top SourcePos]	-- ^ Desugared program tree.
+	-> [D.Top Annot]	-- ^ Desugared program tree.
 	-> C.Glob		-- ^ Core program glob.
 	-> Interface
 

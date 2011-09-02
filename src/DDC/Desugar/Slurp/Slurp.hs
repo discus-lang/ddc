@@ -10,6 +10,7 @@ import DDC.Solve.Interface.Problem
 import DDC.Var
 import DDC.Type			()
 import DDC.Type.Data
+import Source.Desugar		(Annot)
 import Control.DeepSeq
 import Util
 import qualified Data.MapUtil	as Map
@@ -24,8 +25,8 @@ stage	= "DDC.Desugar.Slurp.Slurp"
 --   that we'll need to solve them.
 slurpTree
 	:: Bool 		-- ^ Whether to require the main fn to have type () -> ()
-	-> Tree Annot1		-- ^ Desugared header
-	-> Tree Annot1 		-- ^ Desugared tree.
+	-> Tree Annot		-- ^ Desugared header
+	-> Tree Annot 		-- ^ Desugared tree.
 	-> (  Tree Annot2	--   Desugared tree   with type and effect annots.
 	    , Problem		--   Problem for type constraints solver.
 	    , [Error])		--   Errors found when slurping constraints.
@@ -43,12 +44,12 @@ slurpTree blessMain hTree sTree
 	 = runState
 	    (do
 		-- convert external type definitions and method types.
-		let defsExtern	= [ProbDef v sp typ
-					| PExtern sp v typ _ 	<- tree]
+		let defsExtern	= [ProbDef v (fst annot) typ
+					| PExtern annot v typ _ 	<- tree]
 
 		let defsMethod	= concat
-				$ [map (\(v, t) -> ProbDef v sp (makeMethodType vClass tsParam v t)) sigs
-					| PClassDecl sp vClass tsParam sigs <- tree]
+				$ [map (\(v, t) -> ProbDef v (fst annot) (makeMethodType vClass tsParam v t)) sigs
+					| PClassDecl annot vClass tsParam sigs <- tree]
 
 		let defs	= defsExtern ++ defsMethod
 
@@ -112,7 +113,7 @@ makeMethodType vClass tsParam _ tSig
 
 
 slurpTreeM
-	:: Tree Annot1
+	:: Tree Annot
 	-> CSlurpM
 		( Tree Annot2	-- the tree annotated with TREC variables linking it
 				--	with the constraints.
@@ -165,7 +166,7 @@ slurpTreeM tree
 
 -- Top --------------------------------------------------------------------------------------------
 -- | Slurp out type constraints from a top level thing.
-slurpP 	:: Top Annot1
+slurpP 	:: Top Annot
 	-> CSlurpM (Top Annot2, Bag CTree)
 
 slurpP	(PImport _ ms)
@@ -184,7 +185,7 @@ slurpP	(PSuperSig _ v k)
  =	return	( PSuperSig Nothing v k
 		, Bag.empty)
 
-slurpP (PClassInst sp v ts ss)
+slurpP (PClassInst annot v ts ss)
  = do	-- All the RHS of the statements are vars, so we don't get any useful constraints back
 	(_, _, _, ss', _) <- liftM unzip5 $  mapM slurpS ss
 
@@ -193,18 +194,18 @@ slurpP (PClassInst sp v ts ss)
 		stateSlurpClassInst
 		 	= Map.unionWith (++)
  				(stateSlurpClassInst s)
-			 	(Map.singleton v [ProbClassInst v sp ts]) }
+			 	(Map.singleton v [ProbClassInst v (fst annot) ts]) }
 
 	return	( PClassInst Nothing v ts ss'
 		, Bag.empty )
 
-slurpP	(PTypeSig sp sigMode vs tSig)
+slurpP	(PTypeSig annot sigMode vs tSig)
  = do
 	-- Add the sigs to the state.
 	forM_ vs
 	 $ \v -> do
 		TVar _ (UVar vT) <- lbindVtoT v
-		let sig	= ProbSig v sp sigMode tSig
+		let sig	= ProbSig v (fst annot) sigMode tSig
 		modify $ \s -> s {
 			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
 
@@ -220,7 +221,7 @@ slurpP (PData _ dataDef)
 		, Bag.empty)
 
 
-slurpP	(PProjDict sp t ss)
+slurpP	(PProjDict annot t ss)
  = do 	let vsProjInst	= Map.fromList
 			$ [ (vField, vImpl)
 				| SBind _ (Just vField) (XVar _ vImpl) <-  ss]
@@ -234,14 +235,14 @@ slurpP	(PProjDict sp t ss)
 		stateSlurpProjDict
 			= Map.unionWith (++)
 				(stateSlurpProjDict s)
-				(Map.singleton vCtor [ProbProjDict vCtor sp vsProjInst]) }
+				(Map.singleton vCtor [ProbProjDict vCtor (fst annot) vsProjInst]) }
 
 	return	( PProjDict Nothing t ss'
 		, Bag.empty )
 
-slurpP (PBind sp v x)
+slurpP (PBind annot v x)
  = do	(_, _, _, stmt', qs)
-			<- slurpS (SBind sp (Just v) x)
+			<- slurpS (SBind annot (Just v) x)
 
 	-- If the stmt binds a var then we want the type for it from the solver.
 	(case bindingVarOfStmt stmt' of

@@ -7,6 +7,7 @@ import DDC.Desugar.Slurp.SlurpX
 import DDC.Type.Data.Base
 import DDC.Solve.Location
 import DDC.Var
+import Source.Desugar		(Annot)
 import Data.Bag			(Bag)
 import qualified Data.Bag	as Bag
 import Util
@@ -14,7 +15,7 @@ import Util
 stage	= "DDC.Desugar.Slurp.SlurpA"
 
 -- | Slurp out type constraints from a match alternative.
-slurpA	:: Alt Annot1
+slurpA	:: Alt Annot
 	-> CSlurpM
 		( Type		-- type constraint placed on the case object.
 		, Type		-- type of the RHS.
@@ -23,7 +24,7 @@ slurpA	:: Alt Annot1
 		, Alt Annot2	-- annotated Alt.
 		, CTree)	-- constraints.
 
-slurpA	(AAlt sp gs x)
+slurpA	(AAlt annot gs x)
  = do
 	tGuards	<- newTVarDS "guards"
 	eAlt	<- newTVarES "alt"
@@ -40,8 +41,8 @@ slurpA	(AAlt sp gs x)
 	-- slurp the RHS of the alternative
 	(tX, eX, _, x', qsX)	<- slurpX x
 
-	let qs	=  makeCEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
-		++ [CMore (TSE $ SEGuards sp) eAlt $ makeTSum   kEffect  (eX : esGuards)]
+	let qs	=  makeCEqs (TSU $ SUGuards (fst annot)) (tGuards : catMaybes mtsGuards)
+		++ [CMore (TSE $ SEGuards (fst annot)) eAlt $ makeTSum   kEffect  (eX : esGuards)]
 
 	let cbindsGuards	= concat cbindssGuards
 	let bind
@@ -62,7 +63,7 @@ slurpA	(AAlt sp gs x)
 
 
 -- Guards ------------------------------------------------------------------------------------------
-slurpG 	:: Guard Annot1
+slurpG 	:: Guard Annot
 	-> CSlurpM
 		( [(Var, Var)]		-- (value var, type var) of vars bound by the guard.
 		, Maybe Type		-- type constraint placed on case object.
@@ -84,7 +85,7 @@ slurpG	(GCase _ w)
 		, qsW )
 
 
-slurpG	(GExp sp w x)
+slurpG	(GExp annot w x)
  = do
 	eGuard			<- newTVarES "guard"
 	(cbindsW, tW, w', qsW) 	<- slurpW w
@@ -102,8 +103,8 @@ slurpG	(GExp sp w x)
 			_	-> [TApp tHeadRead tX]
 
 	let qs = constraints
-		[ CEq	(TSU $ SUGuards sp)	tX	$ tW
-		, CMore	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum kEffect (eX : effMatch) ]
+		[ CEq	(TSU $ SUGuards (fst annot))	tX	$ tW
+		, CMore	(TSE $ SEGuardObj (fst annot))	eGuard	$ makeTSum kEffect (eX : effMatch) ]
 
 	return	( cbindsW
 		, Nothing
@@ -114,7 +115,7 @@ slurpG	(GExp sp w x)
 
 
 -- Pat ---------------------------------------------------------------------------------------------
-slurpW	:: Pat Annot1
+slurpW	:: Pat Annot
 	-> CSlurpM
 		( [(Var, Var)]		-- (value var, type var) of vars bound by pattern.
 		, Type			-- type of the pattern.
@@ -154,7 +155,7 @@ slurpW	(WConLabel _ vCon lvs)
 		, Bag.concat cTrees )
 
 
-slurpW	(WLit sp litFmt)
+slurpW	(WLit annot litFmt)
  = do
 	tD@(TVar _ (UVar tV))	<- newTVarDS "const"
 	tE			<- newTVarES "const"
@@ -185,7 +186,7 @@ slurpW	(WLit sp litFmt)
  	return	( []
 		, tD
 		, WLit (Just (tD, tE)) litFmt
-		, constraints [CEq (TSV $ SVLiteralMatch sp litFmt) tD tLit])
+		, constraints [CEq (TSV $ SVLiteralMatch (fst annot) litFmt) tD tLit])
 
 
 slurpW	(WVar _ v)
@@ -203,14 +204,14 @@ slurpW w
 -- Labels ------------------------------------------------------------------------------------------
 slurpLV	:: Var				-- ^ Data constructor name.
 	-> [Type]			-- ^ Parameter types of data type constructor
-	-> (Label Annot1, Var)		-- ^ Field label and var to bind that field to.
+	-> (Label Annot, Var)		-- ^ Field label and var to bind that field to.
 	-> CSlurpM
 		( (Label Annot2, Var)	-- field label and orginal binding var
 		, Maybe (Var, Var)	-- original binding variable, and type var for that field.
 		, Bag CTree )
 
 -- A field label using a numeric index.
-slurpLV vCtor tsParams (LIndex sp ix, vBind)
+slurpLV vCtor tsParams (LIndex annot ix, vBind)
  = do
 	-- create a new type var for this arg.
  	(TVar _ (UVar vT))	<- lbindVtoT vBind
@@ -243,10 +244,10 @@ slurpLV vCtor tsParams (LIndex sp ix, vBind)
 	  -> let Just tField_inst = instantiateT tField tsParams
 	     in	 return ( (LIndex Nothing ix, vBind)
 			, Just (vBind, vT)
-			, constraints [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )
+			, constraints [CEq (TSV $ SVMatchCtorArg (fst annot)) (TVar kValue $ UVar vT) tField_inst] )
 
 
-slurpLV vCtor tsParams (LVar sp vField, vBind)
+slurpLV vCtor tsParams (LVar annot vField, vBind)
  = do 	-- Create a new type var for this arg.
  	Just (TVar _ (UVar vT))	<- bindVtoT vBind
 	wantTypeV vT
@@ -266,4 +267,4 @@ slurpLV vCtor tsParams (LVar sp vField, vBind)
  	  -> let Just tField_inst = instantiateT tField tsParams
 	     in	 return	( (LVar Nothing vField, vBind)
  			, Just (vBind, vT)
-			, constraints [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )
+			, constraints [CEq (TSV $ SVMatchCtorArg (fst annot)) (TVar kValue $ UVar vT) tField_inst] )

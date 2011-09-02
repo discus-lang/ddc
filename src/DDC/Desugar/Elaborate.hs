@@ -38,9 +38,9 @@ import DDC.Type.Data.Elaborate
 import DDC.Type.Data
 import DDC.Type
 import DDC.Var
-import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
+import Source.Desugar			(Annot)
 import Data.List
 import Data.Sequence			(Seq)
 import Data.Map				(Map)
@@ -60,10 +60,10 @@ stage 		= "DDC.Desugar.Elaborate"
 -- | Elaborate types in this tree.
 elaborateTree
 	:: String		-- ^ Unique
-	-> Glob SourcePos	-- ^ Header tree
-	-> Glob SourcePos	-- ^ Module tree
-	-> ( Glob SourcePos 	-- new header tree
-	   , Glob SourcePos	-- new module tree
+	-> Glob Annot		-- ^ Header tree
+	-> Glob Annot		-- ^ Module tree
+	-> ( Glob Annot 	-- new header tree
+	   , Glob Annot		-- new module tree
 	   , Seq Constraint	-- the kind constaints
 	   , Map Var Kind	-- the kind of every type constructor
 	   , [Error])		-- errors found during elaboration
@@ -154,7 +154,7 @@ elaborateTreeM dgHeader dgModule
 
 -- | Find groups of vars with the same name and module id, pick one uniqueid
 --   and substitute into all globs, source and header included.
-mergeMonoVarsOfGlobs :: Set Var -> Glob SourcePos -> Glob SourcePos
+mergeMonoVarsOfGlobs :: Set Var -> Glob a -> Glob a
 mergeMonoVarsOfGlobs vsMono dgModule
  = let	vsGroups	= groupBy varsMatchByName $ Set.toList vsMono
 	sub		= Map.unions
@@ -173,7 +173,7 @@ mergeMonoVarsOfGlobs vsMono dgModule
 
 -- Tag Kinds --------------------------------------------------------------------------------------
 -- | Tag each data constructor with its kind from this table
-tagKindsInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
+tagKindsInGlob :: Glob a -> ElabM (Glob a)
 tagKindsInGlob pp
 	= D.transZM (D.transTableId return)
 		{ D.transT	= tagKindsT Map.empty }
@@ -229,7 +229,7 @@ tagKindsCrs local crs
 -- Attach -----------------------------------------------------------------------------------------
 -- | Attach DataDefs to all TyCons in a glob.
 --   This makes it easy to get the def when consuming the type.
-attachDataDefsToTyConsInGlob :: Map Var DataDef -> Glob SourcePos -> Glob SourcePos
+attachDataDefsToTyConsInGlob :: Map Var DataDef -> Glob Annot -> Glob Annot
 attachDataDefsToTyConsInGlob defs glob
 	= D.transZ (D.transTableId return)
 		{ D.transT	= \t -> return $ T.transformT (attachDataDefsT defs) t }
@@ -248,14 +248,14 @@ attachDataDefsT defs tt
 
 -- EffClo -----------------------------------------------------------------------------------------
 -- | Elaborate effects and closures in a top level signature.
-elaborateEffCloInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
+elaborateEffCloInGlob :: Glob Annot -> ElabM (Glob Annot)
 elaborateEffCloInGlob glob
  = do	externs'	<- mapM elaborateEffCloP (globExterns glob)
 	typesigs'	<- mapM (mapM elaborateEffCloP) (globTypeSigs glob)
 	return	$ glob 	{ globExterns	= externs'
 			, globTypeSigs	= typesigs' }
 
-elaborateEffCloP :: Top SourcePos -> ElabM (Top SourcePos)
+elaborateEffCloP :: Top Annot -> ElabM (Top Annot)
 elaborateEffCloP pp
   = case pp of
 	PExtern sp v t mt

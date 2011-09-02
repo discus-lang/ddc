@@ -3,8 +3,9 @@ module DDC.Desugar.Slurp.SlurpA
 	(slurpA)
 where
 import DDC.Desugar.Slurp.Base
+import Source.Desugar			(Annot)
 
-slurpA	:: Alt Annot1
+slurpA	:: Alt Annot
 	-> CSlurpM
 		( Type					-- type constraint placed on the case object.
 		, Type					-- type of the RHS.

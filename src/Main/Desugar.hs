@@ -10,10 +10,10 @@ import Main.Dump
 import DDC.Main.Pretty
 import DDC.Main.Arg
 import DDC.Main.Error
-import DDC.Base.SourcePos
 import DDC.Var
 import Data.IORef
 import Control.DeepSeq
+import Source.Desugar				(Annot)
 import System.IO				(hFlush)
 import Util					hiding (null, elem)
 import qualified DDC.Type			as T
@@ -41,17 +41,16 @@ import qualified Data.Map			as Map
 import qualified Data.Set			as Set
 import qualified Data.HashTable			as Hash
 
-
 -- Elaborate ---------------------------------------------------------------------------------------
 -- | Elaborate type information.
 desugarElaborate
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> String				-- ^ unique
-	-> D.Glob SourcePos			-- ^ header tree
-	-> D.Glob SourcePos			-- ^ source tree
-	-> IO	( D.Glob SourcePos
-		, D.Glob SourcePos
+	-> D.Glob Annot			-- ^ header tree
+	-> D.Glob Annot			-- ^ source tree
+	-> IO	( D.Glob Annot
+		, D.Glob Annot
 		, Map Var T.Kind)
 
 desugarElaborate unique dgHeader dgModule
@@ -89,8 +88,8 @@ desugarProjectEta
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> String
-	-> D.Tree SourcePos
-	-> IO	(D.Tree SourcePos)
+	-> D.Tree Annot
+	-> IO	(D.Tree Annot)
 
 desugarProjectEta unique sourceTree
  = {-# SCC "D/projectEta" #-}
@@ -108,9 +107,9 @@ desugarProject
 	 ,  ?pathSourceBase :: FilePath)
 	=> String
 	-> ModuleId
-	-> D.Tree SourcePos
-	-> D.Tree SourcePos
-	-> IO	( D.Tree SourcePos
+	-> D.Tree Annot
+	-> D.Tree Annot
+	-> IO	( D.Tree Annot
 		, D.ProjTable )
 
 desugarProject unique modName headerTree sourceTree
@@ -141,8 +140,8 @@ desugarSlurp
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Bool						-- whether to require main fn to have type () -> ()
-	-> (D.Tree SourcePos)				-- source tree
-	-> (D.Tree SourcePos)				-- header tree
+	-> (D.Tree Annot)				-- source tree
+	-> (D.Tree Annot)				-- header tree
 	-> IO	( (D.Tree (Maybe (T.Type, T.Effect)))	-- source tree with type and effect annotations
 		, T.Problem)				-- problem for contraint solver
 

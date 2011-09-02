@@ -5,10 +5,10 @@ where
 import DDC.Source.Error
 import DDC.Desugar.Exp
 import DDC.Desugar.Glob
-import DDC.Base.SourcePos
 import DDC.Type
 import DDC.Var
 import DDC.Main.Error
+import Source.Desugar		(Annot)
 import Data.Maybe
 import Util
 import qualified Data.Set	as Set
@@ -24,8 +24,8 @@ stage		= "DDC.Desugar.Elaborate.Quantify"
 --
 elabQuantifySigsInGlob
 	:: Set Var	-- ^ don't quantify these variables.
-	-> Glob	SourcePos
-	-> (Glob SourcePos, Set Var, [Error])
+	-> Glob	Annot
+	-> (Glob Annot, Set Var, [Error])
 
 elabQuantifySigsInGlob vsMono glob
  = let
@@ -43,8 +43,8 @@ elabQuantifySigsInGlob vsMono glob
 
 elabQuantifySig
 	:: Set Var 	-- don't quantify these vars.
-	-> Top SourcePos
-	-> Top SourcePos
+	-> Top Annot
+	-> Top Annot
 
 elabQuantifySig vsMono pp
  = case pp of
@@ -73,7 +73,7 @@ elabQuantifySigT vsMono tSig
 --	   emit errors for vars in sigs that have been quantified.
 --
 staticVarsFromSigsOfGlob
-	:: Glob SourcePos
+	:: Glob Annot
 	-> ( Set Var	-- Region vars in top-level region declarations.
 	   , Set Var	-- Region vars that represent material data.
 	   , Set Var	-- Region vars in closures.

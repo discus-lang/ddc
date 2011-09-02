@@ -34,7 +34,8 @@ rewriteListComp x
  	S.XListComp sp exp [S.LCExp (S.XVar _ v)]
 	 |  varId v == VarIdPrim Var.VTrue
 	 -> do	exp'	<- rewrite exp
-	 	return 	$ D.XApp sp (D.XApp sp (D.XVar sp primCons) exp') (D.XVar sp primNil)
+		let ann	= (sp, Nothing)
+	 	return 	$ D.XApp ann (D.XApp ann (D.XVar ann primCons) exp') (D.XVar ann primNil)
 
 	-- [ e | q ]			=> [e | q, True]
 	S.XListComp sp exp [q]
@@ -45,31 +46,31 @@ rewriteListComp x
 	S.XListComp sp exp (S.LCExp b : qs)
 	 -> do	lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		b'	<- rewrite b
-	 	return 	$ D.XIfThenElse sp b' lc' (D.XVar sp primNil)
+		let ann	= (sp, Nothing)
+	 	return 	$ D.XIfThenElse ann b' lc' (D.XVar ann primNil)
 
 	-- [ e | p <- l, Q]		=> let ok p = [e | Q] in concatMap ok l
 	S.XListComp sp exp (S.LCGen lazy (S.WVar _ p) l : qs)
-	 -> do
-		let catMapVar	= if lazy then primConcatMapL else primConcatMap;
-
+	 -> do	let catMapVar	= if lazy then primConcatMapL else primConcatMap;
 		lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		l'	<- rewrite l
-
-	 	return	$ D.XDo sp
-				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) (D.XLambda sp p lc') ) l') ]
+		let ann	= (sp, Nothing)
+	 	return	$ D.XDo ann
+				[ D.SBind ann Nothing  (D.XApp ann (D.XApp ann (D.XVar ann catMapVar) (D.XLambda ann p lc') ) l') ]
 
 	-- [e | pattern <- l, Q]		=> concatMap (\p -> case p of pattern -> [e | Q]; _ -> []) l
 	S.XListComp sp exp (S.LCGen lazy pat l : qs)
-	 -> do
-		let catMapVar	= if lazy then primConcatMapL else primConcatMap
+	 -> do	let catMapVar	= if lazy then primConcatMapL else primConcatMap
 
 		lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		l'	<- rewrite l
 		pat'	<- rewrite [pat]
-		patFunc	<- makeMatchFunction sp pat' lc' (Just (D.XVar sp primNil))
+		let ann	= (sp, Nothing)
 
-	 	return	$ D.XDo sp
-				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) patFunc) l') ]
+		patFunc	<- makeMatchFunction sp pat' lc' (Just (D.XVar ann primNil))
+
+	 	return	$ D.XDo ann
+				[ D.SBind ann Nothing  (D.XApp ann (D.XApp ann (D.XVar ann catMapVar) patFunc) l') ]
 
 	-- [e | let s, Q]		=> let s in [e | Q]
 	S.XListComp sp exp (S.LCLet ss : qs)

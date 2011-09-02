@@ -12,12 +12,12 @@ import DDC.Desugar.Exp
 import DDC.Type
 import DDC.Type.Data
 import DDC.Var
-import DDC.Base.SourcePos
-import Data.Sequence	as Seq
+import Source.Desugar		(Annot)
+import Data.Sequence		as Seq
 
 
 -- | Slurp kind constraints from the desugared module
-slurpConstraints :: Glob SourcePos -> Seq Constraint
+slurpConstraints :: Glob Annot -> Seq Constraint
 slurpConstraints dg
 	= Seq.fromList
 	$ concatMap slurpConstraint
@@ -25,21 +25,21 @@ slurpConstraints dg
 
 slurpConstraint pp
  = case pp of
- 	PKindSig sp v k
+ 	PKindSig annot v k
  	 | resultKind k == kEffect
-	 -> [Constraint (KSEffect sp) v k]
+	 -> [Constraint (KSEffect (fst annot)) v k]
 
 	 | otherwise
-	 -> [Constraint (KSSig sp) v k]
+	 -> [Constraint (KSSig (fst annot)) v k]
 
-	PClassDecl sp _ ts _
+	PClassDecl annot _ ts _
 	 -> map (\t -> 	let TVar k (UVar v)	= t
-			in Constraint (KSClass sp) v (defaultKind v k)) ts
+			in Constraint (KSClass (fst annot)) v (defaultKind v k)) ts
 
- 	PData sp def@(DataDef{})
+ 	PData annot def@(DataDef{})
 	 -> let	k	= dataDefKind def
 	        k'	= forcePrimaryRegion (dataDefName def) k
-	    in	[Constraint (KSData sp) (dataDefName def) k']
+	    in	[Constraint (KSData (fst annot)) (dataDefName def) k']
 
 	_	-> []
 
@@ -77,7 +77,7 @@ forcePrimaryRegion vData k
 	= KFun kRegion k
 
 -- | Slurp kinds of class arguments
-slurpClasses :: Glob SourcePos -> Seq (Var,[Kind])
+slurpClasses :: Glob a -> Seq (Var,[Kind])
 slurpClasses dg
 	= Seq.fromList
 	$ concatMap slurpClass

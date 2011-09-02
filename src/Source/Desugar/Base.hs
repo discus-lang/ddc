@@ -13,10 +13,11 @@ where
 import DDC.Source.Error
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import Util
 
-type Annot	= SourcePos
+type Annot	= (SourcePos, Maybe Type)
 type RewriteM	= State RewriteS
 
 data RewriteS

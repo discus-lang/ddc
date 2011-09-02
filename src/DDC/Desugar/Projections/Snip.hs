@@ -8,7 +8,6 @@ import DDC.Desugar.Bits
 import DDC.Desugar.Projections.Base
 import DDC.Desugar.Projections.Naming
 import DDC.Desugar.Exp
-import DDC.Base.SourcePos
 import DDC.Type
 import DDC.Type.SigMode
 import DDC.Var
@@ -23,9 +22,9 @@ import Util
 --   Also snip class instances while we're here.
 snipProjDictTree
 	:: ModuleId 			-- ^ the name of the current module
-	-> Map Var (Top SourcePos)	-- ^ class dictionary definitions
-	-> Tree SourcePos
-	-> ProjectM (Tree SourcePos)
+	-> Map Var (Top Annot)	-- ^ class dictionary definitions
+	-> Tree Annot
+	-> ProjectM (Tree Annot)
 
 snipProjDictTree modName classDicts tree
  	= liftM concat
@@ -93,11 +92,11 @@ snipProjDictP _ _ pp
 --
 snipInstBind
 	:: ModuleId
-	-> Top SourcePos		-- ^ the class dict def of this instance
-	-> Top SourcePos		-- ^ the class dict instance
-	-> Stmt SourcePos		-- ^ the binding in this instance to snip
-	-> ProjectM ( Stmt SourcePos
-		    , [Top SourcePos])
+	-> Top Annot		-- ^ the class dict def of this instance
+	-> Top Annot		-- ^ the class dict instance
+	-> Stmt Annot		-- ^ the binding in this instance to snip
+	-> ProjectM ( Stmt Annot
+		    , [Top Annot])
 
 -- if the RHS is already a var we can leave it as it is.
 snipInstBind modName

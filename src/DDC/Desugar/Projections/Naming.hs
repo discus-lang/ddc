@@ -6,16 +6,15 @@ module DDC.Desugar.Projections.Naming
 	, makeTypeName)
 where
 import DDC.Desugar.Projections.Base
-import DDC.Base.SourcePos
 import DDC.Type
 import DDC.Var
-import qualified Shared.VarUtil	as Var
+import qualified Shared.VarUtil		as Var
 import Util
 
 -- | Create a name for a top level projection function.
 --	Add the type and projection names to the var to make the core IR readable.
-newProjFunVar :: SourcePos -> ModuleId -> Var -> Var -> ProjectM Var
-newProjFunVar src modName@(ModuleId ms) vCon vField
+newProjFunVar :: Annot -> ModuleId -> Var -> Var -> ProjectM Var
+newProjFunVar annot modName@(ModuleId ms) vCon vField
  = do 	var	<- newVarN NameValue
 	return	$ var
 		{ varName 	= Var.deSymString
@@ -23,14 +22,14 @@ newProjFunVar src modName@(ModuleId ms) vCon vField
 	 			++ varName vCon 	++ "_"
 				++ varName vField
 
-		, varInfo 	= [ISourcePos src ]
+		, varInfo 	= [ISourcePos (fst annot) ]
 		, varModuleId	= modName }
 
 
 -- | Create a name for a top level type class instance function
 --	Add the type class and function names to the var to make the core IR readable.
-newInstFunVar :: SourcePos -> ModuleId -> Var -> [Type] -> Var -> ProjectM Var
-newInstFunVar src modName@(ModuleId ms) vClass tsArgs vInst
+newInstFunVar :: Annot -> ModuleId -> Var -> [Type] -> Var -> ProjectM Var
+newInstFunVar annot modName@(ModuleId ms) vClass tsArgs vInst
  = do 	var	<- newVarN NameValue
 	return	$ var
 		{ varName	= Var.deSymString
@@ -39,7 +38,7 @@ newInstFunVar src modName@(ModuleId ms) vClass tsArgs vInst
 				++ catMap makeTypeName tsArgs	++ "_"
 				++ varName vInst
 
-		, varInfo 	= [ISourcePos src ]
+		, varInfo 	= [ISourcePos (fst annot) ]
 		, varModuleId 	= modName }
 
 
