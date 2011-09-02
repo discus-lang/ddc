@@ -18,7 +18,7 @@ elabRegionsInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
 elabRegionsInGlob glob
 	= transZM (transTableId return)
 		{ transP	= elabRegionsP
-		, transS_leave	= elabRegionsS 
+		, transS_leave	= elabRegionsS
 		, transX_leave	= elabRegionsX }
 		glob
 
@@ -27,27 +27,27 @@ elabRegionsP pp
 	PExtern sp v t ot
 	 -> do	t'	<- elabRegionsT t
 		return	$ PExtern sp v t' ot
-		
+
 	PClassDecl sp v ts vts
 	 -> do	ts'	<- mapM elabRegionsT ts
 		let (vs, mts)	= unzip vts
 		mts'	<- mapM elabRegionsT mts
 		return	$ PClassDecl sp v ts' (zip vs mts')
-		
+
 	PClassInst sp v ts ss
 	 -> do	-- Find expected kinds of class' arguments
 		kinds	<- getClassKinds v
 		ts'	<- mapM elabRegionsClassInst (ts `zip` kinds)
 		return	$ PClassInst sp v ts' ss
-	
+
 	PProjDict sp t ss
 	 -> do	t'	<- elabRegionsT t
 		return	$ PProjDict sp t' ss
-	
+
 	PTypeSig sp sigMode v t
 	 -> do	t'	<- elabRegionsT t
 		return	$ PTypeSig sp sigMode v t'
-			
+
 	_ ->	return pp
 
 elabRegionsClassInst (t, kind)
@@ -72,7 +72,7 @@ elabRegionsX xx
 	XProjT sp t j
 	 -> do	t'	<- elabRegionsT t
 		return	$ XProjT sp t' j
-	
+
 	_ ->	return xx
 
 elabRegionsT t

@@ -15,7 +15,7 @@ import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Var
 import Util
-		
+
 type Annot	= SourcePos
 type RewriteM	= State RewriteS
 
@@ -24,7 +24,7 @@ data RewriteS
 	{ stateVarGen	:: VarId
 	, stateErrors	:: [Error] }
 
-	
+
 -- | Make a new variable in this namespace and name it after a string.
 newVarNS :: NameSpace -> String -> RewriteM Var
 newVarNS space str
@@ -40,11 +40,11 @@ newVarNS space str
 -- | Make a new variable in this namespace.
 newVarN space 	= newVarNS space ""
 
-	
+
 -- | Make a new variable in this namespace with some info attached to the var.
 newVarNI :: NameSpace -> [VarInfo]	-> RewriteM Var
 newVarNI space info
- = do 	var	<- newVarN space 
+ = do 	var	<- newVarN space
 	return	var { varInfo = info }
 
 
@@ -57,17 +57,17 @@ addError err
 -- Simple Rewrite Instanes ------------------------------------------------------------------------
 class Rewrite a b | a -> b where
  rewrite :: a -> RewriteM b
-  
+
 instance Rewrite a b => Rewrite [a] [b] where
  rewrite xx	= mapM rewrite xx
- 
+
 instance Rewrite a b => Rewrite (Maybe a) (Maybe b) where
  rewrite xx
   = case xx of
-  	Nothing	
+  	Nothing
 	 -> 	return	Nothing
 
-	Just x	
+	Just x
 	 -> do	x'	<- rewrite x
 		return	$ Just x'
 

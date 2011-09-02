@@ -22,7 +22,7 @@ stage	= "DDC.Desugar.Slurp.SlurpX"
 
 -- | Slurp out type constraints from an expression.
 slurpX	:: Exp Annot1
-	-> CSlurpM 
+	-> CSlurpM
 		( Type		-- type of expression.
 		, Effect	-- effect of expression.
 		, Closure	-- closure of expression.
@@ -39,9 +39,9 @@ slurpX	xx@(XLambda sp vBound xBody)
 	-- Create type vars for all the lambda bound vars.
 	Just tBound@(TVar _ (UVar vBoundT))
 			<- bindVtoT vBound
-	
+
 	-- Slurp the body.
-	(tBody, eBody, _, xBody', qsBody)	
+	(tBody, eBody, _, xBody', qsBody)
 			<- slurpX xBody
 
 	-- Get the closure terms for value vars free in this expression
@@ -59,10 +59,10 @@ slurpX	xx@(XLambda sp vBound xBody)
 	let tsClo	= tsCloFree ++ tsProjTags
 
 	-- the constraints
-	let qs	= 
+	let qs	=
 		[ CEq   (TSV $ SVLambda sp) tX	$ makeTFun tBound tBody eBody cX
 		, CMore (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
- 	
+
 	-- If the sub expression is also a lambda then we can pack its constraints
 	--	into this branch as well. This reduces the number of nested branches
 	-- 	and saves indenting in the constraint file.
@@ -72,19 +72,19 @@ slurpX	xx@(XLambda sp vBound xBody)
 		     in	 Bag.singleton $ CBranch
 		     		{ branchBind 	= mergeCBinds (BLambda [vBoundT]) (branchBind branch2)
 				, branchSub  	= qs ++ branchSub branch2 }
-				
+
 		_
 		 -> Bag.singleton $ CBranch
 		 		{ branchBind 	= BLambda [vBoundT]
 				, branchSub  	= qs ++ Bag.toList qsBody }
-	
-	
+
+
 	-- we'll be wanting to annotate these vars with TECs when we convert to core.
 	wantTypeVs
 		$  vBoundT
 		:  [v | TVar kE (UVar v) <- [eBody],	kE == kEffect]
 		++ [v | TVar kC (UVar v) <- [cX],	kC == kClosure]
-	
+
 	return	( tX
 		, tPure
 		, tEmpty
@@ -102,17 +102,17 @@ slurpX	(XApp sp fun arg)
 			<- newTVarES "app"
 
 	-- function
- 	(tFun, eFun, _, fun', qsFun)	
+ 	(tFun, eFun, _, fun', qsFun)
 			<- slurpX fun
 
 	-- arg
-	(tArg, eArg, _, arg', qsArg)	
+	(tArg, eArg, _, arg', qsArg)
 			<- slurpX arg
-	
+
 	let qs	= constraints
-		[ CEq   (TSV $ SVApp sp) tFun	$ makeTFun tArg tX eApp tEmpty 
+		[ CEq   (TSV $ SVApp sp) tFun	$ makeTFun tArg tX eApp tEmpty
 		, CMore (TSE $ SEApp sp) eX	$ makeTSum kEffect  [eFun, eArg, eApp] ]
-	
+
 	return	( tX
 		, eX
 		, tEmpty
@@ -133,10 +133,10 @@ slurpX	(XMatch sp (Just obj) alts)
 	let TVar _ (UVar vObj) 		= tObj
 
 	-- alternatives
-	(tsAltsLHS, tsAltsRHS, esAlts, _, alts', qsAlts)	
+	(tsAltsLHS, tsAltsRHS, esAlts, _, alts', qsAlts)
 			<- liftM unzip6 $ mapM slurpA alts
 
-	let qsMatch	
+	let qsMatch
 		=  constraints
 	  	$  makeCEqs (TSU $ SUAltLeft  sp) (tObj : tsAltsLHS)
 		++ makeCEqs (TSU $ SUAltRight sp) (tRHS : tsAltsRHS)
@@ -160,15 +160,15 @@ slurpX	(XMatch sp Nothing alts)
 	eMatch		<- newTVarES "mat"
 
 	-- alternatives
-	(altsTP, altsTX, altsEs, _, alts', altsQs)	
+	(altsTP, altsTX, altsEs, _, alts', altsQs)
 			<- liftM unzip6 $ mapM slurpA alts
-	
-	let matchQs	
+
+	let matchQs
 		=  constraints
 		$  makeCEqs (TSU $ SUAltLeft sp)  (tLHS : altsTP)
 		++ makeCEqs (TSU $ SUAltRight sp) (tRHS	: altsTX)
 		++ [CMore   (TSE $ SEMatch sp) eMatch	$ makeTSum kEffect altsEs ]
-				  
+
 	return	( tRHS
 		, eMatch
 		, tEmpty
@@ -178,12 +178,12 @@ slurpX	(XMatch sp Nothing alts)
 
 -- Lit ------------------------------------------------------------------------
 slurpX	(XLit sp litFmt)
- = do	
+ = do
  	tX@(TVar _ (UVar vT))	<- newTVarDS "lit"
 	eX			<- newTVarES "lit"
 
 	-- work out the type of this literal
-	let TyConData 
+	let TyConData
 		{ tyConName 	= tcVar
 		, tyConDataKind = tcKind }
 		= fromMaybe (panic stage $ "slurpX: no type for literal " % show litFmt)
@@ -196,7 +196,7 @@ slurpX	(XLit sp litFmt)
 		= do	vR	<- newVarN NameRegion
 			return	( tPtrU `TApp` makeTData tcVar tcKind [TVar kRegion $ UVar vR]
 				, tPure)
-				
+
 		-- Creating a boxed string calls the Disciple 'boxString'
 		-- function on the unboxed string embedded in the object file.
 		-- This copies said unboxed string, which causes a read effect.
@@ -219,18 +219,18 @@ slurpX	(XLit sp litFmt)
 		= do	vR	<- newVarN NameRegion
 			return	( makeTData tcVar tcKind [TVar kRegion $ UVar vR]
 				, tPure)
-			
+
 		| otherwise
 		= panic stage $ "tLitM: no match"
 
 	(tLit, eLit)	<- tLitM
-	
+
 	let qs 	= constraints
 	 	[ CEq (TSV $ SVLiteral sp litFmt) tX tLit
 		, CEq (TSV $ SVLiteral sp litFmt) eX eLit ]
 
 	wantTypeV vT
-		
+
 	return	( tX
 		, eX
 		, tEmpty
@@ -241,9 +241,9 @@ slurpX	(XLit sp litFmt)
 
 -- Var ------------------------------------------------------------------------
 slurpX 	xx@(XVar _ var)
- = do	tV@(TVar _ (UVar vT))	
+ = do	tV@(TVar _ (UVar vT))
 		<- lbindVtoT    var
-	
+
 	wantTypeV vT
 	slurpV xx tV
 
@@ -253,10 +253,10 @@ slurpX	(XDo sp stmts)
  = do
 	tX		<- newTVarDS 	"do"
 	eX		<- newTVarES	"do"
-	
+
 	--  Add all the bound vars to the bindMode map.
 	let boundVs	= [v | Just v <- map bindingVarOfStmt stmts]
-	
+
 	-- Decend into each statement in turn.
 	(tsStmts, esStmts, _, stmts', qssStmts)
 			<- liftM unzip5 $ mapM slurpS stmts
@@ -268,11 +268,11 @@ slurpX	(XDo sp stmts)
 
 
 	-- Signal that we're leaving the scope of all the let bindings in this block
-	let letBindsC c	
+	let letBindsC c
 		| CBranch{}	<- c
 		, BLet vs	<- branchBind c
 		= vs
-		
+
 		| otherwise
 		= []
 
@@ -280,12 +280,12 @@ slurpX	(XDo sp stmts)
 	let bindLeave	= case vsBind of
 				[]	-> BNothing
 				_	-> BLetGroup vsBind
-			
+
 	-- The type for this expression is the type of the last statement.
-	let qs	= Bag.singleton 
-		$ CBranch 
+	let qs	= Bag.singleton
+		$ CBranch
 		{ branchBind	= bindLeave
-		, branchSub	= 
+		, branchSub	=
 			[ CEq   (TSV $ SVDoLast sp) tX 	$ tLast
 			, CMore (TSE $ SEDo sp)	eX 	$ makeTSum  kEffect  esStmts ]
 		   	++ Bag.toList qsStmts }
@@ -318,15 +318,15 @@ slurpX	(XIfThenElse sp xObj xThen xElse)
 
 	-- Slurp the ELSE expression.
 	(tElse, eElse, _, xElse', qsElse) <- slurpX xElse
-	
+
 	let qs	= constraints
 		$  [ CEq     (TSV $ SVIfObj sp)	tObj	$ tBool']
 		++ (makeCEqs (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse]))
 		++ [ CMore   (TSE $ SEIfObj sp)	eTest 	$ TApp tHeadRead tObj
 		   , CMore   (TSE $ SEIf sp) eX		$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
-		
+
 	wantTypeV vObj
-		
+
 	return	( tAlts
 		, eX
 		, tEmpty
@@ -337,7 +337,7 @@ slurpX	(XIfThenElse sp xObj xThen xElse)
 -- Proj ------------------------------------------------------------------------
 slurpX 	(XProj sp xBody proj)
  = do
-	let (projT, label)	
+	let (projT, label)
 		= case proj of
 			JField  _ l	-> (TJField  l, l)
 			JFieldR _ l	-> (TJFieldR l, l)
@@ -358,14 +358,14 @@ slurpX 	(XProj sp xBody proj)
 	cProj	<- newTVarCS	"proj"
 
  	(tBody, eBody, _, xBody', qsBody)	<- slurpX xBody
-	
+
 	let proj'	= transformN (const Nothing) proj
-			
+
 	let qs	= constraints
-		[ CProject (TSV $ SVProj sp projT)	
+		[ CProject (TSV $ SVProj sp projT)
 			projT vInst tBody (makeTFun tBody tX eProj cProj)
 
-		, CMore	(TSE $ SEProj sp)	
+		, CMore	(TSE $ SEProj sp)
 			eX $ makeTSum kEffect  [eBody, eProj] ]
 
 	return	( tX
@@ -376,8 +376,8 @@ slurpX 	(XProj sp xBody proj)
 
 
 slurpX	(XProjT sp tDict proj)
- = do	
- 	let (projT, label)	
+ = do
+ 	let (projT, label)
 		= case proj of
 			JField  _ l	-> (TJField  l, l)
 			JFieldR _ l	-> (TJFieldR l, l)
@@ -402,7 +402,7 @@ slurpX	(XProjT sp tDict proj)
 	let proj'	= transformN (const Nothing) proj
 
 	let qs	= constraints
-		[ CProject (TSV $ SVProj sp projT) projT vInst tDictVar tX 
+		[ CProject (TSV $ SVProj sp projT) projT vInst tDictVar tX
 		, CEq	   (TSV $ SVProj sp projT) tDictVar tDict
 		, CEq      (TSV $ SVProj sp projT) cProj (makeTFreeBot label tX) ]
 
@@ -435,10 +435,10 @@ slurpV _ _	= panic stage $ "no match"
 
 makeUseVar vInst vT
  = do 	TVar _ (UVar vTu_) <- newTVarD
-	let vTu		= vTu_  
-			{ varName = (varName vTu_)  ++ "_" ++ (varName vT) 
+	let vTu		= vTu_
+			{ varName = (varName vTu_)  ++ "_" ++ (varName vT)
 			, varInfo = [IValueVar vInst]}
- 	
+
 	return vTu
 
 

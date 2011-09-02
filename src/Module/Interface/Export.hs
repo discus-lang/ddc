@@ -30,11 +30,11 @@ stage	= "Module.Interface.Export"
 
 
 -- | Construct a module interface from all this stuff.
---	Various pieces of information come from different analyses and stages in the compiler, 
+--	Various pieces of information come from different analyses and stages in the compiler,
 --	and we collect it all together here to make it easier to write out the interface file.
 --	Nothing should go into the `Interface` that doesn't need to be in the interface file.
 --	The actual pretty printing happens in Module.Interface.Pretty.
---	
+--
 makeInterface
 	:: Scrape
 	-> Set Var		-- ^ Vars of things that that should not be exported.
@@ -45,7 +45,7 @@ makeInterface
 	-> [D.Top SourcePos]	-- ^ Desugared program tree.
 	-> C.Glob		-- ^ Core program glob.
 	-> Interface
-	
+
 makeInterface
 	scrape
 	vsNoExport
@@ -56,38 +56,38 @@ makeInterface
 	coreGlob
 
 	= Interface
-	{ intModuleId		
+	{ intModuleId
 		= scrapeModuleName scrape
 
-	, intImportedModules	
+	, intImportedModules
 		= Set.fromList $ scrapeImported scrape
 
-	, intData		
+	, intData
 		= Map.map getIntDataOfCoreTop
 		$ C.globData coreGlob
 
-	, intRegion		
+	, intRegion
 		= Map.map getIntRegionOfCorePRegion
 		$ C.globRegion coreGlob
 
-	, intEffect		
+	, intEffect
 		= Map.map getIntEffectOfCorePEffect
 		$ C.globEffect coreGlob
 
 	, intClass
 		= Map.map getIntClassOfCorePClass
 		$ C.globClass coreGlob
-		
-	, intClassDecl	
+
+	, intClassDecl
 		= Map.map getIntClassDeclOfCorePClassDict
-		$ C.globClassDict coreGlob	
-	
-	, intClassInst		
+		$ C.globClassDict coreGlob
+
+	, intClassInst
 		= Map.map (fmap getIntClassInstOfCorePClassInst)
 		$ C.globClassInst coreGlob
 
-	, intProjDict		
-		= foldl addDesugaredProjDictToMap Map.empty 
+	, intProjDict
+		= foldl addDesugaredProjDictToMap Map.empty
 		$ [p	| p@D.PProjDict{}	<- desugaredTree ]
 
 	, intInfix
@@ -96,21 +96,21 @@ makeInterface
 
 	-- Only export bindings that aren't in the vsNoExport set.
 	, intBind
-	 	= Map.map (getIntBindOfCorePBind coreGlob 
+	 	= Map.map (getIntBindOfCorePBind coreGlob
 				mpValueToTypeVars mpSourceTypes)
 		$ Map.filterWithKey (\k p -> not $ Set.member k vsNoExport )
-		$ C.globBind coreGlob 
+		$ C.globBind coreGlob
 	}
-	
-	 
-	
+
+
+
 -- | Convert a core `PData` to an `IntData`.
 getIntDataOfCoreTop :: C.Top -> IntData
 getIntDataOfCoreTop pp@C.PData{}
 	= IntData
 	{ intDataName		= T.dataDefName  $ C.topDataDef pp
 	, intDataSourcePos	= undefined
-	, intDataCtors		= Map.map getIntDataCtorOfCoreCtorDef 
+	, intDataCtors		= Map.map getIntDataCtorOfCoreCtorDef
 				$ T.dataDefCtors $ C.topDataDef pp }
 
 
@@ -123,15 +123,15 @@ getIntDataCtorOfCoreCtorDef def
 	, intDataCtorType	= T.ctorDefType def
 	, intDataCtorTag	= T.ctorDefTag  def
 	, intDataCtorFields	= T.ctorDefFields def }
-	
-	
+
+
 -- | Convert a core `PRegion` to an `IntRegion`.
 getIntRegionOfCorePRegion :: C.Top -> IntRegion
 getIntRegionOfCorePRegion pp@C.PRegion{}
 	= IntRegion
 	{ intRegionName		= C.topRegionName pp
 	, intRegionSourcePos 	= undefined
-	, intRegionWitnessKinds	
+	, intRegionWitnessKinds
 		= Map.fromList
 		$ [(v, kindOfType t)
 			| (v, t) <- C.topRegionWitnesses pp] }
@@ -171,80 +171,80 @@ getIntClassInstOfCorePClassInst pp@C.PClassInst{}
 	{ intClassInstName	= C.topClassInstName pp
 	, intClassInstSourcePos	= undefined
 	, intClassInstArgs	= C.topClassInstArgs pp
-	, intClassInstMembers	
-		= Map.fromList 
+	, intClassInstMembers
+		= Map.fromList
 		$ C.topClassInstMembers pp
 	}
 
 
 -- | Convert a desugared `PProjDict` into an `IntProjDict`.
---	Projection dictionaries get desugared out before reaching 
+--	Projection dictionaries get desugared out before reaching
 --	the core program, so we have to get this info from the
 --	desugared tree.
---	
-addDesugaredProjDictToMap 
-	:: Map Var (Seq IntProjDict) 
-	-> D.Top a 
+--
+addDesugaredProjDictToMap
+	:: Map Var (Seq IntProjDict)
+	-> D.Top a
 	-> Map Var (Seq IntProjDict)
-	
-addDesugaredProjDictToMap 
-	mpProjDicts 
+
+addDesugaredProjDictToMap
+	mpProjDicts
 	p@(D.PProjDict _ typ members)
 
  = let	Just (vType, _, _)	= takeTData typ
 
-	projDict	
+	projDict
 		= IntProjDict
 		{ intProjDictType	= typ
-		, intProjDictMembers	= Map.fromList 
-					$ map getIntProjOfDesugaredStmt 
-					$ members 
+		, intProjDictMembers	= Map.fromList
+					$ map getIntProjOfDesugaredStmt
+					$ members
 		}
-	
+
    in	Map.adjustWithDefault
 		(Seq.|> projDict) Seq.empty
 		vType mpProjDicts
 
 
-getIntProjOfDesugaredStmt 
+getIntProjOfDesugaredStmt
 	:: D.Stmt a 			-- ^ Desugared stmt
 	-> (Var, Var)
 
-getIntProjOfDesugaredStmt 
+getIntProjOfDesugaredStmt
 	(D.SBind _ (Just vProj) (D.XVar _ vImpl))
  = 	(vProj, vImpl)
 
 
 -- | Convert a source `PInfix` to an `IntInfix`.
-addSourcePInfixToMap 
+addSourcePInfixToMap
 	:: Map Var IntInfix
 	-> S.Top SourcePos
 	-> Map Var IntInfix
 
 addSourcePInfixToMap m p@(S.PInfix{})
-	= Map.union m 
+	= Map.union m
 	$ Map.fromList
-		[ (v, IntInfix 
+		[ (v, IntInfix
 			{ intInfixName		= v
 			, intInfixSourcePos	= undefined
 			, intInfixMode		= S.topInfixMode p
 			, intInfixPrecedence	= S.topInfixPrecedence p })
 
 			| v <- S.topInfixVars p ]
-	
+
 
 -- | Convert a core `PBind` into an `IntBind`
-getIntBindOfCorePBind 
+getIntBindOfCorePBind
 	:: C.Glob 		-- ^ The core glob.
 	-> Map Var Var		-- ^ Map of value vars to type vars.
 	-> Map Var Type		-- ^ Table of source types.
-	-> C.Top 
+	-> C.Top
 	-> IntBind
 
-getIntBindOfCorePBind 
-	glob 
-	mapValueToTypeVars 
-	sourceTypeTable 
+getIntBindOfCorePBind
+	glob
+	mapValueToTypeVars
+	sourceTypeTable
 	pp@C.PBind{}
 
 	= IntBind
@@ -252,18 +252,18 @@ getIntBindOfCorePBind
 	, intBindSourcePos	= undefined
 	, intBindSeaName	= Nothing
 
-	-- The type table maps type vars to types, 
+	-- The type table maps type vars to types,
 	--	so we first have to lookup the type var corresponding
 	--	to the name of the binding.
-	, intBindType		
+	, intBindType
 		= let 	v	= C.topBindName pp
-		
+
 			vT	= fromMaybe (panic stage $ "getIntBindOfCoreBind: no type var for " % v)
 				$ Map.lookup v mapValueToTypeVars
 
 			Just t	= Map.lookup vT sourceTypeTable
 		  in	t
-		
+
 	, intBindSeaType	= undefined }
 
 

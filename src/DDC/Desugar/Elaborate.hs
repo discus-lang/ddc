@@ -4,25 +4,25 @@
 -- | Elaborate data type definitions and type signatures in this tree.
 --   In the source program we allow region, effect, and closure infomation to be elided
 --   from data type definitions and type signatures.
--- 
+--
 --   For data type definitions, we add region effect and closure parameters using heuristics
 --   based on how the data constructors are defined.
 --
 --   In type signatures we add fresh variables to data type constructor applications,
---   using the kind of the data type constructors as a guide. These varaiables are just 
+--   using the kind of the data type constructors as a guide. These varaiables are just
 --   place holders, don't constrain the type, and just turn into 'meta' variables during
 --   type inference.
 --
---   NOTE: At the moment this only elaborates the effect and closure information 
+--   NOTE: At the moment this only elaborates the effect and closure information
 --         in type signatures. It runs after Desugar.Kinds which adds in missing region variables.
 
 --   TODO: This is fairly ad-hoc at the moment, we'll need more experience with it to
---         determine if these heuristics are what we actually want. In all cases the 
+--         determine if these heuristics are what we actually want. In all cases the
 --         program should work if you add in all the required type information manually.
 --
 --   TODO: I expect we'll want to combine kind inference with this process in the long run.
--- 
-module DDC.Desugar.Elaborate 
+--
+module DDC.Desugar.Elaborate
 	(elaborateTree)
 where
 import DDC.Source.Error
@@ -58,7 +58,7 @@ import Data.Maybe
 stage 		= "DDC.Desugar.Elaborate"
 
 -- | Elaborate types in this tree.
-elaborateTree 
+elaborateTree
 	:: String		-- ^ Unique
 	-> Glob SourcePos	-- ^ Header tree
 	-> Glob SourcePos	-- ^ Module tree
@@ -74,15 +74,15 @@ elaborateTree unique dgHeader dgModule
 		= runState
 			(elaborateTreeM dgHeader dgModule)
 			(stateInit unique)
-	
+
    in	( dgHeader'
 	, dgModule'
 	, constraints
 	, stateKinds state'
 	, errs )
-		
+
 elaborateTreeM dgHeader dgModule
- = do	
+ = do
 	-- Slurp out kind constraints from the program
  	let constraints	=      slurpConstraints dgHeader
 			Seq.>< slurpConstraints dgModule
@@ -109,12 +109,12 @@ elaborateTreeM dgHeader dgModule
 	let defsHeader	= fmap topDataDef $ globDataDecls dgHeader_tagged
 	let defsModule	= fmap topDataDef $ globDataDecls dgModule_tagged
 
-	(defsHeader', defsModule') 
+	(defsHeader', defsModule')
 		<- elaborateDataDefs newVarN defsHeader defsModule
-				
+
 	let makeAnDefs glob anns defs
-		= glob { globDataDecls = Map.fromList 
-			[ (dataDefName def, PData an def) 
+		= glob { globDataDecls = Map.fromList
+			[ (dataDefName def, PData an def)
 				| (an, def) <- zip anns (Map.elems defs) ] }
 
 	let dgHeader_data = makeAnDefs dgHeader_tagged anHeader defsHeader'
@@ -135,17 +135,17 @@ elaborateTreeM dgHeader dgModule
 	let defsAll		= Map.union defsHeader' defsModule'
 	let dgHeader_attach	= attachDataDefsToTyConsInGlob defsAll dgHeader_effclo
 	let dgModule_attach	= attachDataDefsToTyConsInGlob defsAll dgModule_effclo
-	
+
 	-- Add missing forall quantifiers to sigs.
-	let (dgHeader_quant, vsMono_, errsHeader)	
+	let (dgHeader_quant, vsMono_, errsHeader)
 				= elabQuantifySigsInGlob Set.empty dgHeader_attach
 
-	let (dgModule_quant, vsMono,  errsModule)	
+	let (dgModule_quant, vsMono,  errsModule)
 				= elabQuantifySigsInGlob vsMono_   dgModule_attach
-	
+
 	-- See NOTE [Merging top-level monomorphic vars]
 	let (dgModule_merged)	= mergeMonoVarsOfGlobs vsMono dgModule_quant
-	
+
 	return	( dgHeader_quant
 		, dgModule_merged
 		, constraints
@@ -158,19 +158,19 @@ mergeMonoVarsOfGlobs :: Set Var -> Glob SourcePos -> Glob SourcePos
 mergeMonoVarsOfGlobs vsMono dgModule
  = let	vsGroups	= groupBy varsMatchByName $ Set.toList vsMono
 	sub		= Map.unions
-		 	$ [ Map.fromList $ zip rest (repeat v1)	
+		 	$ [ Map.fromList $ zip rest (repeat v1)
 				| (v1 : rest)	<- vsGroups
 				, not $ null rest]
-	
-	transT		= T.transZM T.transTableId 
+
+	transT		= T.transZM T.transTableId
 			{ T.transV = \v -> return $ fromMaybe v (Map.lookup v sub) }
 
-	transP		= D.transZ (D.transTableId return) 
+	transP		= D.transZ (D.transTableId return)
 			{ D.transT = transT }
 
    in	dgModule { globTypeSigs = Map.map (map transP) (globTypeSigs dgModule) }
 
-	
+
 -- Tag Kinds --------------------------------------------------------------------------------------
 -- | Tag each data constructor with its kind from this table
 tagKindsInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
@@ -178,12 +178,12 @@ tagKindsInGlob pp
 	= D.transZM (D.transTableId return)
 		{ D.transT	= tagKindsT Map.empty }
 		pp
-		
+
 tagKindsT :: Map Var Kind -> Type -> ElabM Type
 tagKindsT local tt
  = case tt of
 	TVar _ (UVar v)
-	 -> do	kindMap	<- gets stateKinds 
+	 -> do	kindMap	<- gets stateKinds
 		case listToMaybe $ catMaybes [Map.lookup v kindMap, Map.lookup v local] of
 			Nothing	-> return $ tt
 			Just k'	-> return $ TVar k' $ UVar v
@@ -196,13 +196,13 @@ tagKindsT local tt
 
 	TCon{}
 	 -> return tt
-			
+
 	TSum k ts
 	 -> liftM2 TSum (return k) (mapM (tagKindsT local) ts)
-		
+
 	TApp t1 t2
 	 -> liftM2 TApp (tagKindsT local t1) (tagKindsT local t2)
-	
+
 	TForall b k t
 	 | Just v	<- takeVarOfBind b
 	 -> do	let local'	= Map.insert v k local
@@ -214,17 +214,17 @@ tagKindsT local tt
 
 	TConstrain t crs
 	 -> liftM2 TConstrain (tagKindsT local t) (tagKindsCrs local crs)
-			
+
 	_ -> panic stage $ "tagKindsT: no match for " % tt
 
-		
+
 tagKindsCrs :: Map Var Kind -> Constraints -> ElabM Constraints
 tagKindsCrs local crs
- = liftM3 Constraints 
+ = liftM3 Constraints
 		(mapM (tagKindsT local) $ crsEq   crs)
 		(mapM (tagKindsT local) $ crsMore crs)
 		(return $ crsOther crs)
-	
+
 
 -- Attach -----------------------------------------------------------------------------------------
 -- | Attach DataDefs to all TyCons in a glob.
@@ -241,7 +241,7 @@ attachDataDefsT defs tt
 	| TCon (TyConData v k Nothing)	<- tt
 	, Just def			<- Map.lookup v defs
 	= TCon (TyConData v k (Just def))
-	
+
 	| otherwise
 	= tt
 
@@ -252,7 +252,7 @@ elaborateEffCloInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
 elaborateEffCloInGlob glob
  = do	externs'	<- mapM elaborateEffCloP (globExterns glob)
 	typesigs'	<- mapM (mapM elaborateEffCloP) (globTypeSigs glob)
-	return	$ glob 	{ globExterns	= externs' 
+	return	$ glob 	{ globExterns	= externs'
 			, globTypeSigs	= typesigs' }
 
 elaborateEffCloP :: Top SourcePos -> ElabM (Top SourcePos)
@@ -261,11 +261,11 @@ elaborateEffCloP pp
 	PExtern sp v t mt
 	 -> do	t'	<- elaborateEffCloInFunSigT t
 		return	$ PExtern sp v t' mt
-		
+
 	PTypeSig a sigMode vs t
 	 -> do	t'	<- elaborateEffCloInFunSigT t
 		return	$ PTypeSig a sigMode vs t'
-	
+
 	_ -> return pp
 
 
@@ -285,21 +285,21 @@ elaborateEffCloP pp
 	in material positions. However, because the renamer renames each
 	signature in its own context, the two occurrences of %r1 will have
 	different unique ids. This is because the renamer assumes that forall
-	quantifiers will be added for every free variable in a signature. 
-	
+	quantifiers will be added for every free variable in a signature.
+
 	Here in the elaborator though, we don't add foralls for material vars.
 	Of course, the renamer can't know what vars are material because the
 	materiality of the data type of interest might not have been computed then.
-	
-	For comparison, suppose we added an explicit region binder at top level:	
+
+	For comparison, suppose we added an explicit region binder at top level:
 
 	 region %r1
-	
+
 	In this case we'd be ok: all occurrences of %r1 would have the same uniqueid.
 	However, as we don't want to require every top-level region to be explicitly
 	defined, we must instead collect up groups of monomorphic top level region
 	vars with the same name and moduleid, and rewrite them so they also have the
 	same unqiue. In effect we're finishing the job of the renamer based on the
-	materiality information we've just computed.	
+	materiality information we've just computed.
 -}
 

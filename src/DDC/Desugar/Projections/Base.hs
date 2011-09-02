@@ -29,7 +29,7 @@ data ProjectS
 	{ stateVarGen	:: VarId
 	, stateErrors	:: [Error] }
 
-	
+
 -- | Create a new state.
 stateInit :: String -> ProjectS
 stateInit unique
@@ -43,7 +43,7 @@ addError :: Error -> ProjectM ()
 addError err
 	= modify $ \s -> s { stateErrors = err : stateErrors s }
 
-	
+
 -- | Allocate a fresh variable in this namespace.
 newVarN :: NameSpace -> ProjectM Var
 newVarN	space
@@ -60,13 +60,13 @@ newVarN	space
 
 -- | Create a new variable with the same info as the one, but give it this module name
 --	and a fresh unique id.
-freshenVar :: ModuleId -> Var -> ProjectM Var		
+freshenVar :: ModuleId -> Var -> ProjectM Var
 freshenVar mid v
  = do	vNew		<- newVarN (varNameSpace v)
-	let vFresh	
-		= v 	{ varId		= varId vNew 
+	let vFresh
+		= v 	{ varId		= varId vNew
 			, varModuleId	= mid }
-			
+
 	return vFresh
 
 
@@ -74,7 +74,7 @@ freshenVar mid v
 freshenCrsEq :: ModuleId -> Type -> ProjectM Type
 freshenCrsEq mid tt
  = case tt of
-	TForall b k t	
+	TForall b k t
 	 -> do	t'	<- freshenCrsEq mid t
 		return	$ TForall b k t'
 
@@ -85,12 +85,12 @@ freshenCrsEq mid tt
 
 		    takeSub _	= return Nothing
 
-		Just subs	<- liftM sequence 
-				$  mapM takeSub 
+		Just subs	<- liftM sequence
+				$  mapM takeSub
 				$  Map.keys $ crsEq crs
 
 		let vsSub	= Map.fromList subs
-			
+
 		return	$ subTT_everywhere vsSub tt
-		
+
 	_ -> return tt

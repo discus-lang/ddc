@@ -24,29 +24,29 @@ stage = "Source.Desugar.ListComp"
 --
 --	BUGS: let patterns not implemented yet.
 --
-rewriteListComp 
+rewriteListComp
 	:: S.Exp SourcePos -> RewriteM (D.Exp Annot)
-	
-rewriteListComp x 
+
+rewriteListComp x
  = case x of
 
 	-- [ e | True ] 		=> [e]
  	S.XListComp sp exp [S.LCExp (S.XVar _ v)]
-	 |  varId v == VarIdPrim Var.VTrue 	
+	 |  varId v == VarIdPrim Var.VTrue
 	 -> do	exp'	<- rewrite exp
 	 	return 	$ D.XApp sp (D.XApp sp (D.XVar sp primCons) exp') (D.XVar sp primNil)
-	 
+
 	-- [ e | q ]			=> [e | q, True]
-	S.XListComp sp exp [q]		
-	 -> rewriteListComp 
+	S.XListComp sp exp [q]
+	 -> rewriteListComp
 	 		$ S.XListComp sp exp [q, S.LCExp (S.XVar sp primTrue)]
-	
+
 	-- [ e | b, Q ]			=> if b then [e | Q] else []
 	S.XListComp sp exp (S.LCExp b : qs)
 	 -> do	lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		b'	<- rewrite b
 	 	return 	$ D.XIfThenElse sp b' lc' (D.XVar sp primNil)
-	
+
 	-- [ e | p <- l, Q]		=> let ok p = [e | Q] in concatMap ok l
 	S.XListComp sp exp (S.LCGen lazy (S.WVar _ p) l : qs)
 	 -> do
@@ -54,7 +54,7 @@ rewriteListComp x
 
 		lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		l'	<- rewrite l
-		
+
 	 	return	$ D.XDo sp
 				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) (D.XLambda sp p lc') ) l') ]
 

@@ -1,5 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-module DDC.Desugar.Slurp.SlurpA 
+module DDC.Desugar.Slurp.SlurpA
 	(slurpA)
 where
 import DDC.Desugar.Slurp.Base
@@ -14,8 +14,8 @@ import Util
 stage	= "DDC.Desugar.Slurp.SlurpA"
 
 -- | Slurp out type constraints from a match alternative.
-slurpA	:: Alt Annot1	
-	-> CSlurpM 
+slurpA	:: Alt Annot1
+	-> CSlurpM
 		( Type		-- type constraint placed on the case object.
 		, Type		-- type of the RHS.
 		, Effect	-- effect of evaluating the alternative.
@@ -33,7 +33,7 @@ slurpA	(AAlt sp gs x)
 	--	because slurpW sets the bindMode for any matched vars.
 	--
 	-- BUGS?: we're not using the guards, check this
-	
+
 	(cbindssGuards, mtsGuards, esGuards, _csGuards, gs', qssGuards)
 				<- liftM unzip6 $ mapM slurpG gs
 
@@ -44,10 +44,10 @@ slurpA	(AAlt sp gs x)
 		++ [CMore (TSE $ SEGuards sp) eAlt $ makeTSum   kEffect  (eX : esGuards)]
 
 	let cbindsGuards	= concat cbindssGuards
-	let bind 
+	let bind
 		| []	<- cbindsGuards
 		= BNothing
-		
+
 		| otherwise
 		= BDecon [vDeconT | (_, vDeconT) <- cbindsGuards]
 
@@ -63,17 +63,17 @@ slurpA	(AAlt sp gs x)
 
 -- Guards ------------------------------------------------------------------------------------------
 slurpG 	:: Guard Annot1
-	-> CSlurpM 
+	-> CSlurpM
 		( [(Var, Var)]		-- (value var, type var) of vars bound by the guard.
 		, Maybe Type		-- type constraint placed on case object.
 		, Effect		-- effect of evaluting the guard.
 		, Closure		-- closure of guard.
 		, Guard Annot2		-- annotated guard.
 		, Bag CTree)		-- constraints.
-		
+
 slurpG	(GCase _ w)
- = do	
- 	(cbindsW, tW, w', qsW)	
+ = do
+ 	(cbindsW, tW, w', qsW)
  		<- slurpW w
 
  	return	( cbindsW
@@ -82,13 +82,13 @@ slurpG	(GCase _ w)
 		, tEmpty
 		, GCase Nothing w'
 		, qsW )
-		
- 	
+
+
 slurpG	(GExp sp w x)
  = do
 	eGuard			<- newTVarES "guard"
 	(cbindsW, tW, w', qsW) 	<- slurpW w
-		
+
 	-- slurp the matched exp
 	(tX, eX, _, x', qsX)	<- slurpX x
 
@@ -102,10 +102,10 @@ slurpG	(GExp sp w x)
 			_	-> [TApp tHeadRead tX]
 
 	let qs = constraints
-		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 
+		[ CEq	(TSU $ SUGuards sp)	tX	$ tW
 		, CMore	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum kEffect (eX : effMatch) ]
 
-	return	( cbindsW		
+	return	( cbindsW
 		, Nothing
 		, eGuard
 		, tEmpty
@@ -115,44 +115,44 @@ slurpG	(GExp sp w x)
 
 -- Pat ---------------------------------------------------------------------------------------------
 slurpW	:: Pat Annot1
-	-> CSlurpM		
+	-> CSlurpM
 		( [(Var, Var)]		-- (value var, type var) of vars bound by pattern.
 		, Type			-- type of the pattern.
 		, Pat Annot2		-- annotatted pattern.
 		, Bag CTree)		-- constraints for each arg in the pattern.
 
 slurpW	(WConLabel _ vCon lvs)
- = do	
+ = do
 	-- Lookup what data type this constructor belongs to.
 	mDataDef	<- lookupDataDefOfCtorNamed vCon
-	let dataDef	= fromMaybe (panic stage 
+	let dataDef	= fromMaybe (panic stage
 					$ "slurpW: can't find type data type definition for data constructor '"
 					% vCon % "'")
 			$ mDataDef
-	
+
 	let vksParam	= dataDefParams dataDef
-	
+
 	-- Instantiate each of the vars in the data type.
 	vsInst		<- mapM newVarZ $ map fst vksParam
 	let Just ksInst	=  sequence $ map (kindOfSpace . varNameSpace) vsInst
 	let tsInst	=  zipWith TVar ksInst $ map UVar vsInst
-	
+
 	-- This is the type the pattern must be.
-	let tPat	= makeTData 
+	let tPat	= makeTData
 				(dataDefName dataDef)
 				(makeKFuns (map snd vksParam) kValue)
 				tsInst
-				
+
 	-- Slurp constraints for each of the bound fields.
 	(lvs', cBinds, cTrees)
 			<- liftM unzip3
 			$  mapM (slurpLV vCon tsInst) lvs
-			
+
  	return	( catMaybes cBinds
 		, tPat
 		, WConLabel Nothing vCon lvs'
 		, Bag.concat cTrees )
-		
+
 
 slurpW	(WLit sp litFmt)
  = do
@@ -160,7 +160,7 @@ slurpW	(WLit sp litFmt)
 	tE			<- newTVarES "const"
 
 	-- work out the type of this literal
-	let Just TyConData 
+	let Just TyConData
 		{ tyConName 	= tcVar
 		, tyConDataKind = tcKind }
 		= tyConOfLiteralFmt litFmt
@@ -173,11 +173,11 @@ slurpW	(WLit sp litFmt)
 		| tcKind == KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
 			return	$ makeTData tcVar tcKind [TVar kRegion $ UVar vR]
-			
+
 		| otherwise
 		= panic stage $ "tLitM: no match"
-		
-			
+
+
 	tLit <- tLitM
 
 	wantTypeV tV
@@ -190,12 +190,12 @@ slurpW	(WLit sp litFmt)
 
 slurpW	(WVar _ v)
  = do	tBound@(TVar _ (UVar vT))	<- lbindVtoT v
- 			
+
 	return	( [(v, vT)]
 		, tBound
 		, WVar (Just (tBound, tPure)) v
 		, Bag.empty)
-	
+
 slurpW w
  = panic stage $ "slurpW: no match for " % show w % "\n"
 
@@ -204,28 +204,28 @@ slurpW w
 slurpLV	:: Var				-- ^ Data constructor name.
 	-> [Type]			-- ^ Parameter types of data type constructor
 	-> (Label Annot1, Var)		-- ^ Field label and var to bind that field to.
-	-> CSlurpM 
+	-> CSlurpM
 		( (Label Annot2, Var)	-- field label and orginal binding var
 		, Maybe (Var, Var)	-- original binding variable, and type var for that field.
 		, Bag CTree )
 
--- A field label using a numeric index.	
+-- A field label using a numeric index.
 slurpLV vCtor tsParams (LIndex sp ix, vBind)
  = do
 	-- create a new type var for this arg.
  	(TVar _ (UVar vT))	<- lbindVtoT vBind
-	wantTypeV vT	
+	wantTypeV vT
 
 	-- Get the ctor definition.
 	Just ctorDef	<- lookupCtorDefOfCtorNamed vCtor
-	
+
 	case lookupTypeOfNumberedFieldFromCtorDef ix ctorDef of
          -- Uh oh, there's no field with this index.
 	 --	Add the error to the monad and return some dummy info so
 	 --	that the slurper can proceed and maybe find more errors.
 	 Nothing
 	  -> do	addError
-	   	  (ErrorCtorArity 
+	   	  (ErrorCtorArity
 			{ eCtorVar	= vCtor
 			, eCtorArity	= ctorDefArity ctorDef
 			, ePatternArity	= ix + 1})
@@ -237,7 +237,7 @@ slurpLV vCtor tsParams (LIndex sp ix, vBind)
 			, Bag.empty )
 
 	 -- Got the type of the field.
-	 -- The field type comes with the same outer forall quantifiers that 
+	 -- The field type comes with the same outer forall quantifiers that
 	 -- were on the scheme for the whole constructor type.
 	 Just tField
 	  -> let Just tField_inst = instantiateT tField tsParams
@@ -250,7 +250,7 @@ slurpLV vCtor tsParams (LVar sp vField, vBind)
  = do 	-- Create a new type var for this arg.
  	Just (TVar _ (UVar vT))	<- bindVtoT vBind
 	wantTypeV vT
- 
+
 	-- Get the ctor definition.
 	Just ctorDef	<- lookupCtorDefOfCtorNamed vCtor
 
@@ -261,7 +261,7 @@ slurpLV vCtor tsParams (LVar sp vField, vBind)
 	 -- been detected by the renamer.
 	 Nothing
 	  -> panic stage $ "slurpLV: no field named " % vField
-	
+
 	 Just tField
  	  -> let Just tField_inst = instantiateT tField tsParams
 	     in	 return	( (LVar Nothing vField, vBind)

@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-module DDC.Desugar.ProjectEta 
-	(projectEtaExpandTree) 
+module DDC.Desugar.ProjectEta
+	(projectEtaExpandTree)
 where
 import DDC.Desugar.Exp
 import DDC.Desugar.Bits
@@ -20,7 +20,7 @@ type Annot	= SourcePos
 -- 	project Type where
 --		fun1 = fun1_impl
 --		fun2 = fun2_impl
---	
+--
 --	fun1_impl1 x y = ...
 --	fun2_impl2 x   = ...
 --
@@ -33,11 +33,11 @@ type Annot	= SourcePos
 --	fun1_impl1 x y = ...
 --	fun2_impl2 x   = ...
 --
-projectEtaExpandTree 
-	:: String		-- ^ unqiue bind 
+projectEtaExpandTree
+	:: String		-- ^ unqiue bind
 	-> Tree Annot		-- ^ source tree
 	-> Tree Annot
-	
+
 projectEtaExpandTree unique tree
  = let	arities	= slurpArity tree
    in	evalVarGen (mapM (projectEtaP arities) tree) ("x" ++ unique)
@@ -49,10 +49,10 @@ projectEtaP table pp
  	PProjDict n t ss
 	 -> do	ss'	<- mapM (projectEtaS table) ss
 	 	return	$ PProjDict n t ss'
-		
+
 	_ ->	return pp
-	
-	
+
+
 -- | Eta explain variable bindings.
 projectEtaS :: Map Var Int -> Stmt Annot -> VarGenM (Stmt Annot)
 projectEtaS table ss
@@ -60,13 +60,13 @@ projectEtaS table ss
 	, Just arity	<- Map.lookup v2 table
 	= do 	x'	<- etaExpand arity (XVar n2 v2)
 		return	$ SBind n1 mV x'
-		
+
 	| otherwise
 	= return ss
-	
 
--- | Eta expand this expression 
-etaExpand 
+
+-- | Eta expand this expression
+etaExpand
 	:: Int 		-- ^ number of args to add
 	-> Exp Annot	-- ^ expression
 	-> VarGenM (Exp Annot)
@@ -74,10 +74,10 @@ etaExpand
 etaExpand args xx
  = do	vars		<- replicateM args (newVarN NameValue)
 	let Just n	= takeAnnotX xx
-	
+
 	let xxApp	= foldl (\x v -> XApp n x (XVar n v)) 	xx 	vars
 	let xxLam	= foldl (\x v -> XLambda n v x)		xxApp	(reverse vars)
-	
+
 	return xxLam
 
 
@@ -85,7 +85,7 @@ etaExpand args xx
 slurpArity :: Tree Annot -> Map Var Int
 slurpArity tree
  = foldl' slurpArityP Map.empty tree
- 
+
 slurpArityP :: Map Var Int -> Top Annot -> Map Var Int
 slurpArityP table pp
  = case pp of

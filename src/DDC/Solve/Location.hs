@@ -9,7 +9,7 @@ module DDC.Solve.Location
 	, SourceUnify	(..)
 	, SourceMisc	(..)
 	, SourceInfer	(..)
-	
+
 	, takeSourcePos
 	, dispSourcePos
 	, dispTypeSource
@@ -33,7 +33,7 @@ data TypeSource
 	-- A dummy typesource for hacking around
 	--	this shouldn't be present in deployed code.
 	= TSNil	String
-	
+
 	-- These are positions from the actual source file.
 	| TSV SourceValue			-- ^ Constraints on value types
 	| TSE SourceEffect			-- ^ Constraints on effect types
@@ -55,21 +55,21 @@ instance Pretty TypeSource PMode where
  ppr (TSM sm)	 = "TSM"   %% ppr sm
  ppr (TSI si)	 = "TSI"   %% ppr si
 
- 
+
 -- | Sources of value constraints
 data SourceValue
 	= SVLambda	{ vsp :: SourcePos }			-- ^ Lambda expressions have function type
 	| SVApp		{ vsp :: SourcePos }			-- ^ LHS of an application must be a function
 	| SVLiteral	{ vsp :: SourcePos, vLit :: LiteralFmt } -- ^ Literal values in expressions have distinct types
 	| SVDoLast	{ vsp :: SourcePos }			-- ^ Do expressions have the type of the last stmt.
-	| SVIfObj	{ vsp :: SourcePos }			-- ^ Match object of an if-expression must be Bool	
+	| SVIfObj	{ vsp :: SourcePos }			-- ^ Match object of an if-expression must be Bool
 	| SVProj	{ vsp :: SourcePos, vProj :: TProj }	-- ^ Value type constraints from field projection.
 	| SVInst	{ vsp :: SourcePos, vVar :: Var }	-- ^ Type constraint from instance of this bound variable
 
-	| SVLiteralMatch 
+	| SVLiteralMatch
 			{ vsp :: SourcePos, vLit :: LiteralFmt } -- ^ Matching against a literal value.
 
-	| SVMatchCtorArg 
+	| SVMatchCtorArg
 			{ vsp :: SourcePos } 			-- ^ Matching against a ctor gives types for its args.
 
 	| SVSig		{ vsp :: SourcePos, vVar :: Var }	-- ^ Value constraint from type signature.
@@ -79,11 +79,11 @@ data SourceValue
 	| SVCtorDef	{ vsp :: SourcePos
 			, vvarData :: Var
 			, vvarCtor :: Var }			-- ^ Definition of constructor type.
-	
-	| SVCtorField	{ vsp :: SourcePos 
+
+	| SVCtorField	{ vsp :: SourcePos
 			, vVarData :: Var
-			, vVarCtor :: Var 
-			, vVarField :: Var }			-- ^ Type signature of constructor field. 
+			, vVarCtor :: Var
+			, vVarField :: Var }			-- ^ Type signature of constructor field.
 
 
 	deriving (Show, Eq)
@@ -158,7 +158,7 @@ data SourceInfer
 	= SIClassName
 
 	-- | Used to tag const constraints arrising from purification of effects.
-	| SIPurifier	
+	| SIPurifier
 		ClassId		-- the class holding that effect and purity constraint
 		Effect 		-- the effect that was purified
 		TypeSource	-- the source of the effect
@@ -175,12 +175,12 @@ data SourceInfer
 		TypeSource
 
 	-- ^ The result of crushing some effect
-	| SICrushedES	
+	| SICrushedES
 		ClassId		-- the class holding the effect that was crushed
 		Node		-- the effect that was crushed
 		TypeSource	-- the source of this effect
 
-	-- ^ A scheme that was generalised and added to the graph because its 
+	-- ^ A scheme that was generalised and added to the graph because its
 	--	bound var was instantiated.
 	| SIGenInst
 		Var
@@ -191,7 +191,7 @@ data SourceInfer
 instance Pretty SourceInfer PMode where
  ppr SIClassName		= ppr "SIClassName"
 
- ppr (SIPurifier cid eff effSrc f fSrc)		
+ ppr (SIPurifier cid eff effSrc f fSrc)
 	= "SIPurifier" %% cid %% parens eff %% parens effSrc %% parens f %% parens fSrc
 
  ppr (SICrushedFS cid iF src)	= "SICrushedFS" %% cid %% parens iF %% src
@@ -208,12 +208,12 @@ takeSourcePos ts
 	TSC sc	-> Just $ csp sc
 	TSU su	-> Just $ usp su
 	TSM sm	-> Just $ msp sm
-	
+
 	TSI (SICrushedFS _ _ src)	-> takeSourcePos src
 	TSI (SICrushedES _ _ src)	-> takeSourcePos src
 	TSI (SIPurifier  _ _ _ _ fSrc)	-> takeSourcePos fSrc
 	TSI (SIGenInst   _ src)		-> takeSourcePos src
-		
+
 	_	-> Nothing
 
 
@@ -222,7 +222,7 @@ dispSourcePos ts
  = case takeSourcePos ts of
  	Just sp	-> ppr sp
 	Nothing	-> panic stage $ "dispSourcePos: no source location in " % ts
-		
+
 
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
@@ -233,7 +233,7 @@ dispTypeSource tt ts
 
 	| TSE se	<- ts
 	= dispSourceEffect tt se
-	
+
 	| TSU su	<- ts
 	= dispSourceUnify tt su
 
@@ -246,33 +246,33 @@ dispTypeSource tt ts
 	| otherwise
 	= panic stage $ "dispTypeSource: no match for " % ts
 
-	
+
 -- | Show the source of a type error due to this reason
 dispSourceValue :: Pretty tt PMode => tt -> SourceValue -> Str
 dispSourceValue tt sv
  = case sv of
-	SVLambda sp 
-		-> "lambda abstraction" 	
+	SVLambda sp
+		-> "lambda abstraction"
 		%! "              at: " % sp
 
-	SVApp sp 
+	SVApp sp
 		-> "  function application"
 		%! "              at: " % sp
-		
+
 	SVLiteral sp lit
 	 	-> "  literal value "   % lit
 		%! "         of type: " % tt
-		%! "              at: " % sp 
-		
+		%! "              at: " % sp
+
 	SVDoLast sp
 	 	-> "  result of do expression"
 		%! "              at: " % sp
-		
-	SVIfObj sp 
+
+	SVIfObj sp
 		-> "  object of if-then-else expression"
 		%! "   which must be: Bool"
 		%! "              at: " % sp
-		
+
 	SVProj sp j
 	 -> let	cJ = case j of
 	 		TJField v	-> TJField  v { varModuleId = ModuleIdNil }
@@ -281,43 +281,43 @@ dispSourceValue tt sv
 	 		TJIndexR v	-> TJIndexR v { varModuleId = ModuleIdNil }
 	    in vcat
 		[ "      projection '" % cJ % "'"
-		, "         of type: " % tt	
+		, "         of type: " % tt
 	 	, "              at: " % sp ]
-	
+
 	SVInst sp var
-		-> "      the use of: " % var 
+		-> "      the use of: " % var
 		%! "         of type: " % tt
-		%! "              at: " % sp 
-		
+		%! "              at: " % sp
+
 	SVLiteralMatch sp lit
-		-> "  match against literal value " % lit 
+		-> "  match against literal value " % lit
 		%! "         of type: " % tt
-		%! "              at: " % sp 
-		
+		%! "              at: " % sp
+
 	SVMatchCtorArg sp
 		-> ppr "  argument of constructor match"
 		%! "         of type: " % tt
-		%! "              at: " % sp 
-		
+		%! "              at: " % sp
+
 	SVSig sp var
 		-> "  type signature for '" % var % "'"
 		%! "  which requires: " % tt
-		%! "              at: " % sp 
-		
+		%! "              at: " % sp
+
 	SVSigClass sp var
 		-> "  type signature for '" % var % "' in type-class definiton"
 		%! "              at: " % sp
-		
+
 	SVSigExtern _ var
 		-> "  type of import '" % var % "'"
-		
+
 	SVCtorDef sp vData vCtor
 		-> "  definition of constructor '" % vCtor % "' of '" % vData % "'"
-		%! "              at: " % sp 
-		
+		%! "              at: " % sp
+
 	SVCtorField sp vData vCtor vField
 		-> "  definition of field " % vField % " of '" % vCtor % "' in type '" % vData % "'"
-		%! "              at: " % sp 
+		%! "              at: " % sp
 
 
 -- | Show the source of a type error due to this reason
@@ -328,16 +328,16 @@ dispSourceEffect tt se
 		-> "  effect from function application"
 		%! "          namely: " % tt
 		%! "              at: " % sp
-		
+
 	SEMatchObj sp
 		-> "  effect due to inspecting discriminant"
-		%! "          namely: " % tt 
-		%! "              at: " % sp 
-		
+		%! "          namely: " % tt
+		%! "              at: " % sp
+
 	SEMatch sp
 		-> "  effect of match alternative"
 		%! "          namely: " % tt
-		%! "              at: " % sp 
+		%! "              at: " % sp
 
 	SEDo sp
 		-> "  effect of do expression"
@@ -350,14 +350,14 @@ dispSourceEffect tt se
 
 	SEIf sp
 		-> "  effect of if-then-else expression"
- 		%! "          namely: " % tt 
+ 		%! "          namely: " % tt
 		%! "              at: " % sp
 
 	SEProj sp
 		-> "  effect of field projection"
-		%! "          namely: " % tt 
-		%! "              at: " % sp 
-		
+		%! "          namely: " % tt
+		%! "              at: " % sp
+
 	SEGuardObj sp
 		-> "  effect due to testing pattern guard"
 		%! "          namely: " % tt
@@ -374,10 +374,10 @@ dispSourceEffect tt se
 dispSourceUnify :: Pretty tt PMode => tt -> SourceUnify -> Str
 dispSourceUnify tt sv
  = case sv of
- 	SUAltLeft sp 
+ 	SUAltLeft sp
 		-> "alternatives"
 		%! "              at: " % sp
-		
+
 	SUAltRight sp
 		->  "result of alternatives"
 		%! "              at: " % sp
@@ -392,14 +392,14 @@ dispSourceUnify tt sv
 		%! "              at: " % sp
 
 	SUBind _
-		-> ppr "binding"	
+		-> ppr "binding"
 
 
 -- Normalise ---------------------------------------------------------------------------------------
 --	We don't want to display raw classIds in the error messages for two reasons
 --
 --	1) Don't want to worry the user about non-useful information.
---	2) They tend to change when we modify the type inferencer, and we don't want to 
+--	2) They tend to change when we modify the type inferencer, and we don't want to
 --		have to update all the check files for inferencer tests every time this happens.
 --
 -- Could do this directly on the string, if we displayed an * infront of type variables..
@@ -422,7 +422,7 @@ dispFetterSource f ts
 	, TSV (SVInst sp var)	<- ts
 	=  "      the use of: " % var
 	%! "              at: " % sp
-	
+
 	| FConstraint _ _	<- f
 	, TSV (SVInst sp var)	<- ts
 	=  "      constraint: " % f
@@ -450,7 +450,7 @@ dispFetterSource f ts
 	%! dispTypeSource   eff effSrc
 	%! "due to"
 	%! dispFetterSource fPure fPureSrc
-	
+
 	-- hrm.. this shouldn't happen
 	| otherwise
 	= panic stage $ "dispFetterSource: no match for " % show ts

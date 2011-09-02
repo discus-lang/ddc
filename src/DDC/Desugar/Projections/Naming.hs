@@ -19,10 +19,10 @@ newProjFunVar src modName@(ModuleId ms) vCon vField
  = do 	var	<- newVarN NameValue
 	return	$ var
 		{ varName 	= Var.deSymString
-				$ "project_" 
-	 			++ varName vCon 	++ "_" 
-				++ varName vField 
-			
+				$ "project_"
+	 			++ varName vCon 	++ "_"
+				++ varName vField
+
 		, varInfo 	= [ISourcePos src ]
 		, varModuleId	= modName }
 
@@ -34,8 +34,8 @@ newInstFunVar src modName@(ModuleId ms) vClass tsArgs vInst
  = do 	var	<- newVarN NameValue
 	return	$ var
 		{ varName	= Var.deSymString
-				$ "instance_" 
-				++ varName vClass	 	++ "_" 
+				$ "instance_"
+				++ varName vClass	 	++ "_"
 				++ catMap makeTypeName tsArgs	++ "_"
 				++ varName vInst
 
@@ -51,7 +51,7 @@ makeTypeName tt
 	TApp{}
 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> "Fun" ++ makeTypeName t1 ++ makeTypeName t2
-	
+
 	 | Just (v, _, ts)		<- takeTData tt
 	 -> varName v ++ catMap makeTypeName ts
 

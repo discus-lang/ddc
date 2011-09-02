@@ -1,5 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-module DDC.Desugar.Slurp.SlurpS 
+module DDC.Desugar.Slurp.SlurpS
 	(slurpS)
 where
 import DDC.Desugar.Slurp.Base
@@ -15,7 +15,7 @@ stage	= "DDC.Desugar.Slurp.SlurpS"
 
 -- | Slurp out type constraints a statement.
 slurpS 	:: Stmt Annot1
-	-> CSlurpM 
+	-> CSlurpM
 		( Type		-- type var
 		, Effect	-- effect vars
 		, Closure	-- closure of this statement
@@ -27,7 +27,7 @@ slurpS 	(SBind sp Nothing e1)
  = do
 	tBind				<- newTVarD
 	(tX@TVar{}, eX, _, x1', qsX)	<- slurpX e1
-	
+
 	let qs = [ CEq  (TSU $ SUBind sp) tBind	$ tX ]
 
 	return	( tX
@@ -49,25 +49,25 @@ slurpS	(SBind sp (Just v) e1)
 		, eX
 		, tEmpty
 		, SBind (Just (tX, eX)) (Just v) x1'
-		, Bag.singleton 
+		, Bag.singleton
 			$ CBranch
 			{ branchBind	= BLet [vBindT]
-			, branchSub	
+			, branchSub
 			   	=  [ CEq  (TSU $ SUBind sp) tBind tX ]
 				++ Bag.toList (qsX >< (Bag.singleton (CGen (TSM $ SMGen sp v) tBind))) })
 
 -- type signatures
 slurpS	(SSig sp sigMode vs tSig)
  = do
-	forM_ vs 
-	 $ \v -> do	
+	forM_ vs
+	 $ \v -> do
 		TVar _ (UVar vT) <- lbindVtoT v
 		let sig	= ProbSig v sp sigMode tSig
-		modify $ \s -> s { 
+		modify $ \s -> s {
 			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
 
 	(tX1 : _)	<- mapM lbindVtoT vs
- 		
+
 	return	( tX1
 		, tPure
 		, tEmpty
@@ -77,4 +77,4 @@ slurpS	(SSig sp sigMode vs tSig)
 slurpS	_
 	= panic stage
 	$ "slurpS: unexpected statement during slurping. Maybe the desugarer messed up."
-	
+
