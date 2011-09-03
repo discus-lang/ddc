@@ -105,13 +105,13 @@ addProjDictDataTree tree
 
 
 addProjDictDataP projMap p
- 	| PData sp (DataDef
+ 	| PData ann (DataDef
 			{ dataDefName 	= v
 				, dataDefParams	= vks
 				, dataDefCtors	= ctors }) <- p
  	, Nothing	<- Map.lookup v projMap
- 	= [p, PProjDict sp
-		(makeTData v 	(makeKFuns (map snd vks) kValue)
+ 	= [p, PProjDict ann
+ 			(makeTData v 	(makeKFuns (map snd vks) kValue)
 				(map varToTBot $ map fst vks))
 				[]]
 
@@ -136,7 +136,7 @@ addProjDictFunsTree dataMap tree
 
 addProjDictFunsP
 	dataMap
-	p@(PProjDict sp projType ss)
+	p@(PProjDict ann projType ss)
 
  | Just (v, k, ts)	<- takeTData projType
  , Just dataDef		<- Map.lookup v dataMap
@@ -158,15 +158,15 @@ addProjDictFunsP
 	let newFieldVs	= Set.difference dataFieldVs dictVs
 
 	projFunsSS	<- liftM concat
-			$  mapM (makeProjFun sp tData dataDef)
+			$  mapM (makeProjFun ann tData dataDef)
 			$  Set.toList newFieldVs
 
 	-- Make reference projection functions
 	projRFunsSS 	<- liftM concat
-			$  mapM (makeProjR_fun sp tData dataDef)
+			$  mapM (makeProjR_fun ann tData dataDef)
 			$  Set.toList dataFieldVs
 
-	return 	$ PProjDict sp projType (projFunsSS ++ projRFunsSS ++ ss)
+	return 	$ PProjDict ann projType (projFunsSS ++ projRFunsSS ++ ss)
 
 addProjDictFunsP dataMap p
  =	return p
@@ -180,11 +180,11 @@ makeProjFun
 	-> Var 			-- ^ Name of field to project.
 	-> ProjectM [Stmt Annot]
 
-makeProjFun sp tData dataDef fieldV
+makeProjFun ann tData dataDef fieldV
   = do 	objV	<- newVarN NameValue
 
 	alts	<- liftM catMaybes
-  		$  mapM (makeProjFunAlt sp objV fieldV)
+  		$  mapM (makeProjFunAlt ann objV fieldV)
 		$  Map.elems $ dataDefCtors dataDef
 
 	-- Find the field type for this projection.
@@ -192,15 +192,15 @@ makeProjFun sp tData dataDef fieldV
 		= liftM stripToBodyT
 		$ lookupTypeOfFieldFromDataDef fieldV dataDef
 
-    	return	[ SSig  sp SigModeMatch [fieldV]
+    	return	[ SSig ann SigModeMatch [fieldV]
 			(makeTFun tData resultT tPure tEmpty)
 
-		, SBind sp (Just fieldV)
- 			(XLambda sp objV
-				(XMatch sp (Just (XVar sp objV)) alts)) ]
+		, SBind ann (Just fieldV)
+ 			(XLambda ann objV
+				(XMatch ann (Just (XVar ann objV)) alts)) ]
 
 
-makeProjFunAlt sp vObj vField ctorDef
+makeProjFunAlt ann vObj vField ctorDef
  = do	let mFieldIx
 		= liftM stripToBodyT
 		$ lookupTypeOfNamedFieldFromCtorDef vField ctorDef
@@ -210,9 +210,9 @@ makeProjFunAlt sp vObj vField ctorDef
 	case mFieldIx of
 	 Just ix
 	  -> return $ Just
-	  $  AAlt sp	[GCase sp (WConLabel sp (ctorDefName ctorDef)
-				  [(LVar sp vField, vBind)]) ]
-			(XVar sp vBind)
+	  $  AAlt ann [GCase ann (WConLabel ann (ctorDefName ctorDef)
+				  [(LVar ann vField, vBind)]) ]
+			(XVar ann vBind)
 
 	 Nothing
 	  -> return Nothing
@@ -224,7 +224,7 @@ makeProjR_fun
 	-> Var
 	-> ProjectM [Stmt Annot]
 
-makeProjR_fun sp tData dataDef vField
+makeProjR_fun ann tData dataDef vField
  = do	funV_	<- newVarN NameValue
 	let funV = funV_
 		{ varName 	= "ref_" ++ varName vField
@@ -232,7 +232,7 @@ makeProjR_fun sp tData dataDef vField
 
 	vObj	<- newVarN NameValue
 	alts	<- liftM catMaybes
- 		$  mapM (makeProjR_alt sp vObj vField)
+ 		$  mapM (makeProjR_alt ann vObj vField)
 		$  Map.elems
 		$  dataDefCtors dataDef
 
@@ -252,7 +252,7 @@ makeProjR_fun sp tData dataDef vField
 				$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
 				% "  tData = " % show tData			% "\n"
 
-	return	[ SSig  sp SigModeMatch [funV]
+	return	[ SSig ann SigModeMatch [funV]
 			(makeTFun tData (makeTData
 						primTRef
 						(KFun kRegion (KFun kValue kValue))
@@ -261,12 +261,12 @@ makeProjR_fun sp tData dataDef vField
 					tEmpty)
 
 
-		, SBind sp (Just funV)
-			(XLambda sp vObj
-				(XMatch sp (Just (XVar sp vObj)) alts))]
+		, SBind ann (Just funV)
+			(XLambda ann vObj
+				(XMatch ann (Just (XVar ann vObj)) alts))]
 
 
-makeProjR_alt sp objV fieldV ctor
+makeProjR_alt ann objV fieldV ctor
  = do	let vCon	= ctorDefName ctor
 	let (mFieldIx :: Maybe Int)
 		= Map.lookup fieldV $ ctorDefFields ctor
@@ -274,11 +274,11 @@ makeProjR_alt sp objV fieldV ctor
 	return
 	 $ case mFieldIx of
 	    Just ix
-	     -> Just $ AAlt sp
-			[ GCase sp (WConLabel sp vCon []) ]
-			(XApp sp (XApp sp (XVar sp primProjFieldR)
-					 	   (XVar sp objV))
-				 (XLit sp (LiteralFmt (LInt $ fromIntegral ix)
+	     -> Just $ AAlt ann
+			[ GCase ann (WConLabel ann vCon []) ]
+			(XApp ann (XApp ann (XVar ann primProjFieldR)
+					 	   (XVar ann objV))
+				 (XLit ann (LiteralFmt (LInt $ fromIntegral ix)
 					              (UnboxedBits 32))))
 
 	    Nothing	-> Nothing

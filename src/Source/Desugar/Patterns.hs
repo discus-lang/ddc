@@ -60,7 +60,7 @@ rewritePatX xx
 rewritePatA co aa
  = case aa of
 	D.AAlt annot gs x
-	 -> do	gsAts		<- mapM (sprinkleAtsG (fst annot)) gs
+	 -> do	gsAts		<- mapM (sprinkleAtsG (spOfAnnot annot)) gs
 	  	let gsLift	= catMap simplifyGuard gsAts
 	  	gsDesugared <- catMapM desugarLiteralGuard gsLift
 		return	$ D.AAlt annot gsDesugared x
@@ -85,11 +85,11 @@ sprinkleAtsG
 sprinkleAtsG sp gg
  = case gg of
  	D.GCase nn p
-	 -> do	p'	<- sprinkleAtsW_down (sp, Nothing) p
+	 -> do	p'	<- sprinkleAtsW_down (annotOfSp sp) p
 	 	return	$ D.GCase nn p'
 
 	D.GExp nn p x
-	 -> do	p'	<- sprinkleAtsW_down (sp, Nothing) p
+	 -> do	p'	<- sprinkleAtsW_down (annotOfSp sp) p
 	 	return	$ D.GExp nn p' x
 
 -- Name internal nodes in this pattern
@@ -120,7 +120,7 @@ sprinkleAtsW sp ww
 		return	$ D.WAt nn v (D.WConLabelP nn var lws')
 
 	D.WAt nn v w
-	 -> do	w'	<- sprinkleAtsW_down (sp, Nothing) w
+	 -> do	w'	<- sprinkleAtsW_down (annotOfSp sp) w
 	 	return	$ D.WAt nn v w'
 
 
@@ -144,7 +144,7 @@ sprinkleAtsW_down annot ww
 	D.WConLabelP nn v lws
 	 -> do	lws'	<- mapZippedM
 	 			return
-				(sprinkleAtsW (fst annot))
+				(sprinkleAtsW (spOfAnnot annot))
 				lws
 		return	$ D.WConLabelP nn v lws'
 
@@ -269,7 +269,7 @@ makeMatchFunction sp pp xResult xFallback
 	(vsFree, xBody)	<- makeMatchExp sp pp xResult xFallback
 
 	-- add the lambdas out the front
-	let annot	= (sp, Nothing)
+	let annot	= annotOfSp sp
 	let xFinal	= addLambdas annot vsFree xBody
 
 	return	$ xFinal
@@ -287,7 +287,7 @@ makeMatchExp sp pp xResult xFallback
 	-- make a guard for each of the patterns
 	(vs, mGs)	<- liftM unzip $ mapM makeGuard pp
 	let gs		= catMaybes mGs
-	let annot	= (sp, Nothing)
+	let annot	= annotOfSp sp
 
 	-- the new match expression has a single alternative,
 	--	with a new guard to match each of the argument patterns

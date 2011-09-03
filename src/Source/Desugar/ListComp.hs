@@ -34,7 +34,7 @@ rewriteListComp x
  	S.XListComp sp exp [S.LCExp (S.XVar _ v)]
 	 |  varId v == VarIdPrim Var.VTrue
 	 -> do	exp'	<- rewrite exp
-		let ann	= (sp, Nothing)
+		let ann	= annotOfSp sp
 	 	return 	$ D.XApp ann (D.XApp ann (D.XVar ann primCons) exp') (D.XVar ann primNil)
 
 	-- [ e | q ]			=> [e | q, True]
@@ -46,7 +46,7 @@ rewriteListComp x
 	S.XListComp sp exp (S.LCExp b : qs)
 	 -> do	lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		b'	<- rewrite b
-		let ann	= (sp, Nothing)
+		let ann	 = annotOfSp sp
 	 	return 	$ D.XIfThenElse ann b' lc' (D.XVar ann primNil)
 
 	-- [ e | p <- l, Q]		=> let ok p = [e | Q] in concatMap ok l
@@ -54,7 +54,7 @@ rewriteListComp x
 	 -> do	let catMapVar	= if lazy then primConcatMapL else primConcatMap;
 		lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		l'	<- rewrite l
-		let ann	= (sp, Nothing)
+		let ann	 = annotOfSp sp
 	 	return	$ D.XDo ann
 				[ D.SBind ann Nothing  (D.XApp ann (D.XApp ann (D.XVar ann catMapVar) (D.XLambda ann p lc') ) l') ]
 
@@ -65,7 +65,7 @@ rewriteListComp x
 		lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		l'	<- rewrite l
 		pat'	<- rewrite [pat]
-		let ann	= (sp, Nothing)
+		let ann	 = annotOfSp sp
 
 		patFunc	<- makeMatchFunction sp pat' lc' (Just (D.XVar ann primNil))
 

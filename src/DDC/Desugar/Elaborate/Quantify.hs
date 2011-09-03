@@ -48,13 +48,13 @@ elabQuantifySig
 
 elabQuantifySig vsMono pp
  = case pp of
-	PTypeSig sp mode vs tSig
+	PTypeSig ann mode vs tSig
  	 -> let	tSig'	= elabQuantifySigT vsMono tSig
-	    in	PTypeSig sp mode vs tSig'
+	    in	PTypeSig ann mode vs tSig'
 
-	PExtern sp v tSig mSeaType
+	PExtern ann v tSig mSeaType
 	 -> let	tSig'	= elabQuantifySigT vsMono tSig
-	    in	PExtern sp v tSig' mSeaType
+	    in	PExtern ann v tSig' mSeaType
 
 	_ -> panic stage "elabQuantifySig: no match"
 

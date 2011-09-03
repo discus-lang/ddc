@@ -23,29 +23,29 @@ elabRegionsInGlob glob
 
 elabRegionsP pp
  = case pp of
-	PExtern sp v t ot
+	PExtern ann v t ot
 	 -> do	t'	<- elabRegionsT t
-		return	$ PExtern sp v t' ot
+		return	$ PExtern ann v t' ot
 
-	PClassDecl sp v ts vts
+	PClassDecl ann v ts vts
 	 -> do	ts'	<- mapM elabRegionsT ts
 		let (vs, mts)	= unzip vts
 		mts'	<- mapM elabRegionsT mts
-		return	$ PClassDecl sp v ts' (zip vs mts')
+		return	$ PClassDecl ann v ts' (zip vs mts')
 
-	PClassInst sp v ts ss
+	PClassInst ann v ts ss
 	 -> do	-- Find expected kinds of class' arguments
 		kinds	<- getClassKinds v
 		ts'	<- mapM elabRegionsClassInst (ts `zip` kinds)
-		return	$ PClassInst sp v ts' ss
+		return	$ PClassInst ann v ts' ss
 
-	PProjDict sp t ss
+	PProjDict ann t ss
 	 -> do	t'	<- elabRegionsT t
-		return	$ PProjDict sp t' ss
+		return	$ PProjDict ann t' ss
 
-	PTypeSig sp sigMode v t
+	PTypeSig ann sigMode v t
 	 -> do	t'	<- elabRegionsT t
-		return	$ PTypeSig sp sigMode v t'
+		return	$ PTypeSig ann sigMode v t'
 
 	_ ->	return pp
 
@@ -59,18 +59,18 @@ elabRegionsClassInst (t, kind)
 
 elabRegionsS ss
  = case ss of
-	SSig sp sigMode v t
+	SSig ann sigMode v t
 	 -> do	t'	<- elabRegionsT t
-		return	$ SSig sp sigMode v t'
+		return	$ SSig ann sigMode v t'
 
 	_		-> return ss
 
 
 elabRegionsX xx
  = case xx of
-	XProjT sp t j
+	XProjT ann t j
 	 -> do	t'	<- elabRegionsT t
-		return	$ XProjT sp t' j
+		return	$ XProjT ann t' j
 
 	_ ->	return xx
 

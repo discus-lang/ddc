@@ -258,9 +258,9 @@ elaborateEffCloInGlob glob
 elaborateEffCloP :: Top Annot -> ElabM (Top Annot)
 elaborateEffCloP pp
   = case pp of
-	PExtern sp v t mt
+	PExtern ann v t mt
 	 -> do	t'	<- elaborateEffCloInFunSigT t
-		return	$ PExtern sp v t' mt
+		return	$ PExtern ann v t' mt
 
 	PTypeSig a sigMode vs t
 	 -> do	t'	<- elaborateEffCloInFunSigT t

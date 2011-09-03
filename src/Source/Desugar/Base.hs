@@ -4,7 +4,9 @@ module Source.Desugar.Base
 	( Rewrite(..)
 	, RewriteM
 	, RewriteS(..)
-	, Annot
+	, Annot (..)
+	, annotOfSp
+	, spOfAnnot
 	, newVarN
 	, newVarNS
 	, newVarNI
@@ -17,13 +19,24 @@ import DDC.Type
 import DDC.Var
 import Util
 
-type Annot	= (SourcePos, Maybe Type)
+data Annot
+	= Annot SourcePos (Maybe Type)
+	deriving (Show)
+
 type RewriteM	= State RewriteS
 
 data RewriteS
 	= RewriteS
 	{ stateVarGen	:: VarId
 	, stateErrors	:: [Error] }
+
+
+annotOfSp :: SourcePos -> Annot
+annotOfSp sp = Annot sp Nothing
+
+
+spOfAnnot :: Annot -> SourcePos
+spOfAnnot (Annot sp _) = sp
 
 
 -- | Make a new variable in this namespace and name it after a string.
@@ -55,7 +68,7 @@ addError err
  	= modify $ \s -> s { stateErrors = err : stateErrors s }
 
 
--- Simple Rewrite Instanes ------------------------------------------------------------------------
+-- Simple Rewrite Instances ------------------------------------------------------------------------
 class Rewrite a b | a -> b where
  rewrite :: a -> RewriteM b
 

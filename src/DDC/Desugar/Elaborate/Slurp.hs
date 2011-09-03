@@ -12,7 +12,7 @@ import DDC.Desugar.Exp
 import DDC.Type
 import DDC.Type.Data
 import DDC.Var
-import Source.Desugar		(Annot)
+import Source.Desugar		(Annot, spOfAnnot)
 import Data.Sequence		as Seq
 
 
@@ -27,19 +27,19 @@ slurpConstraint pp
  = case pp of
  	PKindSig annot v k
  	 | resultKind k == kEffect
-	 -> [Constraint (KSEffect (fst annot)) v k]
+	 -> [Constraint (KSEffect (spOfAnnot annot)) v k]
 
 	 | otherwise
-	 -> [Constraint (KSSig (fst annot)) v k]
+	 -> [Constraint (KSSig (spOfAnnot annot)) v k]
 
 	PClassDecl annot _ ts _
 	 -> map (\t -> 	let TVar k (UVar v)	= t
-			in Constraint (KSClass (fst annot)) v (defaultKind v k)) ts
+			in Constraint (KSClass (spOfAnnot annot)) v (defaultKind v k)) ts
 
  	PData annot def@(DataDef{})
 	 -> let	k	= dataDefKind def
 	        k'	= forcePrimaryRegion (dataDefName def) k
-	    in	[Constraint (KSData (fst annot)) (dataDefName def) k']
+	    in	[Constraint (KSData (spOfAnnot annot)) (dataDefName def) k']
 
 	_	-> []
 

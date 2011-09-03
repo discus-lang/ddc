@@ -10,7 +10,7 @@ import DDC.Solve.Location
 import DDC.Var
 import DDC.Base.DataFormat
 import DDC.Main.Pretty
-import Source.Desugar		(Annot)
+import Source.Desugar		(Annot, spOfAnnot)
 import Control.Monad
 import Data.Bag			(Bag)
 import Util			(unzip6, unzip5, takeLast, catMap)
@@ -61,8 +61,8 @@ slurpX	xx@(XLambda annot vBound xBody)
 
 	-- the constraints
 	let qs	=
-		[ CEq   (TSV $ SVLambda (fst annot)) tX	$ makeTFun tBound tBody eBody cX
-		, CMore (TSC $ SCLambda (fst annot)) cX	$ makeTSum kClosure tsClo ]
+		[ CEq   (TSV $ SVLambda (spOfAnnot annot)) tX	$ makeTFun tBound tBody eBody cX
+		, CMore (TSC $ SCLambda (spOfAnnot annot)) cX	$ makeTSum kClosure tsClo ]
 
 	-- If the sub expression is also a lambda then we can pack its constraints
 	--	into this branch as well. This reduces the number of nested branches
@@ -111,8 +111,8 @@ slurpX	(XApp annot fun arg)
 			<- slurpX arg
 
 	let qs	= constraints
-		[ CEq   (TSV $ SVApp (fst annot)) tFun	$ makeTFun tArg tX eApp tEmpty
-		, CMore (TSE $ SEApp (fst annot)) eX	$ makeTSum kEffect  [eFun, eArg, eApp] ]
+		[ CEq   (TSV $ SVApp (spOfAnnot annot)) tFun	$ makeTFun tArg tX eApp tEmpty
+		, CMore (TSE $ SEApp (spOfAnnot annot)) eX	$ makeTSum kEffect  [eFun, eArg, eApp] ]
 
 	return	( tX
 		, eX
@@ -139,10 +139,10 @@ slurpX	(XMatch annot (Just obj) alts)
 
 	let qsMatch
 		=  constraints
-	  	$  makeCEqs (TSU $ SUAltLeft  (fst annot)) (tObj : tsAltsLHS)
-		++ makeCEqs (TSU $ SUAltRight (fst annot)) (tRHS : tsAltsRHS)
-		++ [ CMore  (TSE $ SEMatchObj (fst annot)) eMatch	$ TApp tHeadRead tObj
-		   , CMore  (TSE $ SEMatch (fst annot)) eX $ makeTSum kEffect  ([eObj, eMatch] ++ esAlts) ]
+	  	$  makeCEqs (TSU $ SUAltLeft  (spOfAnnot annot)) (tObj : tsAltsLHS)
+		++ makeCEqs (TSU $ SUAltRight (spOfAnnot annot)) (tRHS : tsAltsRHS)
+		++ [ CMore  (TSE $ SEMatchObj (spOfAnnot annot)) eMatch	$ TApp tHeadRead tObj
+		   , CMore  (TSE $ SEMatch (spOfAnnot annot)) eX $ makeTSum kEffect  ([eObj, eMatch] ++ esAlts) ]
 
 	wantTypeV vObj
 
@@ -166,9 +166,9 @@ slurpX	(XMatch annot Nothing alts)
 
 	let matchQs
 		=  constraints
-		$  makeCEqs (TSU $ SUAltLeft (fst annot))  (tLHS : altsTP)
-		++ makeCEqs (TSU $ SUAltRight (fst annot)) (tRHS	: altsTX)
-		++ [CMore   (TSE $ SEMatch (fst annot)) eMatch	$ makeTSum kEffect altsEs ]
+		$  makeCEqs (TSU $ SUAltLeft (spOfAnnot annot))  (tLHS : altsTP)
+		++ makeCEqs (TSU $ SUAltRight (spOfAnnot annot)) (tRHS	: altsTX)
+		++ [CMore   (TSE $ SEMatch (spOfAnnot annot)) eMatch	$ makeTSum kEffect altsEs ]
 
 	return	( tRHS
 		, eMatch
@@ -227,8 +227,8 @@ slurpX	(XLit annot litFmt)
 	(tLit, eLit)	<- tLitM
 
 	let qs 	= constraints
-	 	[ CEq (TSV $ SVLiteral (fst annot) litFmt) tX tLit
-		, CEq (TSV $ SVLiteral (fst annot) litFmt) eX eLit ]
+	 	[ CEq (TSV $ SVLiteral (spOfAnnot annot) litFmt) tX tLit
+		, CEq (TSV $ SVLiteral (spOfAnnot annot) litFmt) eX eLit ]
 
 	wantTypeV vT
 
@@ -287,8 +287,8 @@ slurpX	(XDo annot stmts)
 		$ CBranch
 		{ branchBind	= bindLeave
 		, branchSub	=
-			[ CEq   (TSV $ SVDoLast (fst annot)) tX 	$ tLast
-			, CMore (TSE $ SEDo (fst annot))	eX 	$ makeTSum  kEffect  esStmts ]
+			[ CEq   (TSV $ SVDoLast (spOfAnnot annot)) tX 	$ tLast
+			, CMore (TSE $ SEDo (spOfAnnot annot))	eX 	$ makeTSum  kEffect  esStmts ]
 		   	++ Bag.toList qsStmts }
 
 	wantTypeVs boundTVs
@@ -321,10 +321,10 @@ slurpX	(XIfThenElse annot xObj xThen xElse)
 	(tElse, eElse, _, xElse', qsElse) <- slurpX xElse
 
 	let qs	= constraints
-		$  [ CEq     (TSV $ SVIfObj (fst annot))	tObj	$ tBool']
-		++ (makeCEqs (TSU $ SUIfAlt (fst annot))	(tAlts	: [tThen, tElse]))
-		++ [ CMore   (TSE $ SEIfObj (fst annot))	eTest 	$ TApp tHeadRead tObj
-		   , CMore   (TSE $ SEIf (fst annot)) eX		$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
+		$  [ CEq     (TSV $ SVIfObj (spOfAnnot annot))	tObj	$ tBool']
+		++ (makeCEqs (TSU $ SUIfAlt (spOfAnnot annot))	(tAlts	: [tThen, tElse]))
+		++ [ CMore   (TSE $ SEIfObj (spOfAnnot annot))	eTest 	$ TApp tHeadRead tObj
+		   , CMore   (TSE $ SEIf (spOfAnnot annot)) eX		$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
 
 	wantTypeV vObj
 
@@ -363,10 +363,10 @@ slurpX 	(XProj annot xBody proj)
 	let proj'	= transformN (const Nothing) proj
 
 	let qs	= constraints
-		[ CProject (TSV $ SVProj (fst annot) projT)
+		[ CProject (TSV $ SVProj (spOfAnnot annot) projT)
 			projT vInst tBody (makeTFun tBody tX eProj cProj)
 
-		, CMore	(TSE $ SEProj (fst annot))
+		, CMore	(TSE $ SEProj (spOfAnnot annot))
 			eX $ makeTSum kEffect  [eBody, eProj] ]
 
 	return	( tX
@@ -403,9 +403,9 @@ slurpX	(XProjT annot tDict proj)
 	let proj'	= transformN (const Nothing) proj
 
 	let qs	= constraints
-		[ CProject (TSV $ SVProj (fst annot) projT) projT vInst tDictVar tX
-		, CEq	   (TSV $ SVProj (fst annot) projT) tDictVar tDict
-		, CEq      (TSV $ SVProj (fst annot) projT) cProj (makeTFreeBot label tX) ]
+		[ CProject (TSV $ SVProj (spOfAnnot annot) projT) projT vInst tDictVar tX
+		, CEq	   (TSV $ SVProj (spOfAnnot annot) projT) tDictVar tDict
+		, CEq      (TSV $ SVProj (spOfAnnot annot) projT) cProj (makeTFreeBot label tX) ]
 
 	return	( tX
 		, eX
@@ -424,7 +424,7 @@ slurpV (XVar annot var) (TVar k (UVar vT))
 	let tX		= TVar k $ UVar vTu
 	let eX		= tPure
 	let qs		= constraints
-			[ CInst (TSV $ SVInst (fst annot) vT) vTu vT ]
+			[ CInst (TSV $ SVInst (spOfAnnot annot) vT) vTu vT ]
 
 	return	( tX
 		, eX

@@ -7,7 +7,7 @@ import DDC.Desugar.Slurp.SlurpX
 import DDC.Type.Data.Base
 import DDC.Solve.Location
 import DDC.Var
-import Source.Desugar		(Annot)
+import Source.Desugar		(Annot, spOfAnnot)
 import Data.Bag			(Bag)
 import qualified Data.Bag	as Bag
 import Util
@@ -41,8 +41,8 @@ slurpA	(AAlt annot gs x)
 	-- slurp the RHS of the alternative
 	(tX, eX, _, x', qsX)	<- slurpX x
 
-	let qs	=  makeCEqs (TSU $ SUGuards (fst annot)) (tGuards : catMaybes mtsGuards)
-		++ [CMore (TSE $ SEGuards (fst annot)) eAlt $ makeTSum   kEffect  (eX : esGuards)]
+	let qs	=  makeCEqs (TSU $ SUGuards (spOfAnnot annot)) (tGuards : catMaybes mtsGuards)
+		++ [CMore (TSE $ SEGuards (spOfAnnot annot)) eAlt $ makeTSum   kEffect  (eX : esGuards)]
 
 	let cbindsGuards	= concat cbindssGuards
 	let bind
@@ -103,8 +103,8 @@ slurpG	(GExp annot w x)
 			_	-> [TApp tHeadRead tX]
 
 	let qs = constraints
-		[ CEq	(TSU $ SUGuards (fst annot))	tX	$ tW
-		, CMore	(TSE $ SEGuardObj (fst annot))	eGuard	$ makeTSum kEffect (eX : effMatch) ]
+		[ CEq	(TSU $ SUGuards (spOfAnnot annot))	tX	$ tW
+		, CMore	(TSE $ SEGuardObj (spOfAnnot annot))	eGuard	$ makeTSum kEffect (eX : effMatch) ]
 
 	return	( cbindsW
 		, Nothing
@@ -186,7 +186,7 @@ slurpW	(WLit annot litFmt)
  	return	( []
 		, tD
 		, WLit (Just (tD, tE)) litFmt
-		, constraints [CEq (TSV $ SVLiteralMatch (fst annot) litFmt) tD tLit])
+		, constraints [CEq (TSV $ SVLiteralMatch (spOfAnnot annot) litFmt) tD tLit])
 
 
 slurpW	(WVar _ v)
@@ -244,7 +244,7 @@ slurpLV vCtor tsParams (LIndex annot ix, vBind)
 	  -> let Just tField_inst = instantiateT tField tsParams
 	     in	 return ( (LIndex Nothing ix, vBind)
 			, Just (vBind, vT)
-			, constraints [CEq (TSV $ SVMatchCtorArg (fst annot)) (TVar kValue $ UVar vT) tField_inst] )
+			, constraints [CEq (TSV $ SVMatchCtorArg (spOfAnnot annot)) (TVar kValue $ UVar vT) tField_inst] )
 
 
 slurpLV vCtor tsParams (LVar annot vField, vBind)
@@ -267,4 +267,4 @@ slurpLV vCtor tsParams (LVar annot vField, vBind)
  	  -> let Just tField_inst = instantiateT tField tsParams
 	     in	 return	( (LVar Nothing vField, vBind)
  			, Just (vBind, vT)
-			, constraints [CEq (TSV $ SVMatchCtorArg (fst annot)) (TVar kValue $ UVar vT) tField_inst] )
+			, constraints [CEq (TSV $ SVMatchCtorArg (spOfAnnot annot)) (TVar kValue $ UVar vT) tField_inst] )

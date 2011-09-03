@@ -8,6 +8,7 @@ where
 import DDC.Desugar.Projections.Base
 import DDC.Type
 import DDC.Var
+import Source.Desugar			(spOfAnnot)
 import qualified Shared.VarUtil		as Var
 import Util
 
@@ -22,7 +23,7 @@ newProjFunVar annot modName@(ModuleId ms) vCon vField
 	 			++ varName vCon 	++ "_"
 				++ varName vField
 
-		, varInfo 	= [ISourcePos (fst annot) ]
+		, varInfo 	= [ISourcePos (spOfAnnot annot) ]
 		, varModuleId	= modName }
 
 
@@ -38,7 +39,7 @@ newInstFunVar annot modName@(ModuleId ms) vClass tsArgs vInst
 				++ catMap makeTypeName tsArgs	++ "_"
 				++ varName vInst
 
-		, varInfo 	= [ISourcePos (fst annot) ]
+		, varInfo 	= [ISourcePos (spOfAnnot annot) ]
 		, varModuleId 	= modName }
 
 

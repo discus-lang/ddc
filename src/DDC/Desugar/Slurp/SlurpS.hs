@@ -6,7 +6,7 @@ import DDC.Desugar.Slurp.Base
 import DDC.Desugar.Slurp.SlurpX
 import DDC.Solve.Location
 import DDC.Solve.Interface.Problem
-import Source.Desugar		(Annot)
+import Source.Desugar		(Annot, spOfAnnot)
 import Util
 import qualified Data.MapUtil	as Map
 import qualified Data.Bag	as Bag
@@ -29,7 +29,7 @@ slurpS 	(SBind annot Nothing e1)
 	tBind				<- newTVarD
 	(tX@TVar{}, eX, _, x1', qsX)	<- slurpX e1
 
-	let qs = [ CEq  (TSU $ SUBind (fst annot)) tBind	$ tX ]
+	let qs = [ CEq  (TSU $ SUBind (spOfAnnot annot)) tBind	$ tX ]
 
 	return	( tX
 		, eX
@@ -54,8 +54,8 @@ slurpS	(SBind annot (Just v) e1)
 			$ CBranch
 			{ branchBind	= BLet [vBindT]
 			, branchSub
-			   	=  [ CEq  (TSU $ SUBind (fst annot)) tBind tX ]
-				++ Bag.toList (qsX >< (Bag.singleton (CGen (TSM $ SMGen (fst annot) v) tBind))) })
+			   	=  [ CEq  (TSU $ SUBind (spOfAnnot annot)) tBind tX ]
+				++ Bag.toList (qsX >< (Bag.singleton (CGen (TSM $ SMGen (spOfAnnot annot) v) tBind))) })
 
 -- type signatures
 slurpS	(SSig annot sigMode vs tSig)
@@ -63,7 +63,7 @@ slurpS	(SSig annot sigMode vs tSig)
 	forM_ vs
 	 $ \v -> do
 		TVar _ (UVar vT) <- lbindVtoT v
-		let sig	= ProbSig v (fst annot) sigMode tSig
+		let sig	= ProbSig v (spOfAnnot annot) sigMode tSig
 		modify $ \s -> s {
 			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
 

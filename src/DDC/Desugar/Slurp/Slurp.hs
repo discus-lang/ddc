@@ -10,7 +10,7 @@ import DDC.Solve.Interface.Problem
 import DDC.Var
 import DDC.Type			()
 import DDC.Type.Data
-import Source.Desugar		(Annot)
+import Source.Desugar		(Annot, spOfAnnot)
 import Control.DeepSeq
 import Util
 import qualified Data.MapUtil	as Map
@@ -44,11 +44,11 @@ slurpTree blessMain hTree sTree
 	 = runState
 	    (do
 		-- convert external type definitions and method types.
-		let defsExtern	= [ProbDef v (fst annot) typ
+		let defsExtern	= [ProbDef v (spOfAnnot annot) typ
 					| PExtern annot v typ _ 	<- tree]
 
 		let defsMethod	= concat
-				$ [map (\(v, t) -> ProbDef v (fst annot) (makeMethodType vClass tsParam v t)) sigs
+				$ [map (\(v, t) -> ProbDef v (spOfAnnot annot) (makeMethodType vClass tsParam v t)) sigs
 					| PClassDecl annot vClass tsParam sigs <- tree]
 
 		let defs	= defsExtern ++ defsMethod
@@ -194,7 +194,7 @@ slurpP (PClassInst annot v ts ss)
 		stateSlurpClassInst
 		 	= Map.unionWith (++)
  				(stateSlurpClassInst s)
-			 	(Map.singleton v [ProbClassInst v (fst annot) ts]) }
+			 	(Map.singleton v [ProbClassInst v (spOfAnnot annot) ts]) }
 
 	return	( PClassInst Nothing v ts ss'
 		, Bag.empty )
@@ -205,7 +205,7 @@ slurpP	(PTypeSig annot sigMode vs tSig)
 	forM_ vs
 	 $ \v -> do
 		TVar _ (UVar vT) <- lbindVtoT v
-		let sig	= ProbSig v (fst annot) sigMode tSig
+		let sig	= ProbSig v (spOfAnnot annot) sigMode tSig
 		modify $ \s -> s {
 			stateSlurpSigs = Map.adjustWithDefault (++ [sig]) [] vT (stateSlurpSigs s) }
 
@@ -235,7 +235,7 @@ slurpP	(PProjDict annot t ss)
 		stateSlurpProjDict
 			= Map.unionWith (++)
 				(stateSlurpProjDict s)
-				(Map.singleton vCtor [ProbProjDict vCtor (fst annot) vsProjInst]) }
+				(Map.singleton vCtor [ProbProjDict vCtor (spOfAnnot annot) vsProjInst]) }
 
 	return	( PProjDict Nothing t ss'
 		, Bag.empty )

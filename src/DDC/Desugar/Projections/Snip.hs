@@ -32,7 +32,7 @@ snipProjDictTree modName classDicts tree
 
 
 -- | Snip RHS of bindings in projection dictionaries.
-snipProjDictP modName classDicts (PProjDict sp t ss)
+snipProjDictP modName classDicts (PProjDict ann t ss)
  = do
 	let (Just (vCon, _, _))	= takeTData t
 
@@ -41,25 +41,25 @@ snipProjDictP modName classDicts (PProjDict sp t ss)
 			$ Set.unions
 			$ map bindingVarsOfStmt ss
 
-	dictVsNew 	<- mapM (newProjFunVar sp modName vCon) dictVs
+	dictVsNew 	<- mapM (newProjFunVar ann modName vCon) dictVs
 	let varMap	= Map.fromList $ zip dictVs dictVsNew
 
 	let (mpp, mss')	= unzip $ map (snipProjDictS varMap) ss
 
-	return	$ PProjDict sp t (catMaybes mss')
+	return	$ PProjDict ann t (catMaybes mss')
 		: catMaybes mpp
 
 
 -- Snip RHS of bindings in type class instances.
 snipProjDictP modName classDicts
-	pInst@(PClassInst sp vClass ts ssInst)
+	pInst@(PClassInst ann vClass ts ssInst)
 
 	-- lookup the class definition for this instance
 	| Just pClass	<- Map.lookup vClass classDicts
 	= do	(ss', pss)	<- liftM unzip
 				$  mapM (snipInstBind modName pClass pInst) ssInst
 
-		return	$ PClassInst sp vClass ts ss'
+		return	$ PClassInst ann vClass ts ss'
 			: concat pss
 
 	| otherwise
@@ -108,10 +108,10 @@ snipInstBind modName
 snipInstBind modName
 	pDict@(PClassDecl _  vClass  tsClass vtsClass)
 	pInst@(PClassInst _  _       tsInst  _)
-	sBind@(SBind sp (Just vInst) _)
+	sBind@(SBind ann (Just vInst) _)
  = do
 	-- create a new top-level variable to use for this binding
- 	vTop	<- newInstFunVar sp modName vClass tsInst vInst
+ 	vTop	<- newInstFunVar ann modName vClass tsInst vInst
 
 	-- lookup the type for this instance function and substitute
 	--	in the types for this instance
@@ -137,7 +137,7 @@ snipInstBind modName
 --
 snipInstBind' modName
 	pDict@(PClassDecl _  vClass  tsClass vtsClass)
-	pInst@(PClassInst sp vClass' tsInst  ssInst)
+	pInst@(PClassInst ann vClass' tsInst  ssInst)
 	sBind@(SBind spBind (Just vInst) xx)
 	vTop
 	tInst

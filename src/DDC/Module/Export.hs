@@ -136,8 +136,8 @@ exportAll moduleName getType _ psSource psDesugared_ psCore export
 	, blank
 
 	, ppr "-- Abstract data types"
- 	, vcat	[ ppr (D.PKindSig sp (eraseModule vData) k)
-			| D.PKindSig sp vData k <- psDesugared
+ 	, vcat	[ ppr (D.PKindSig ann (eraseModule vData) k)
+			| D.PKindSig ann vData k <- psDesugared
 			, T.resultKind k == T.kValue ]
 
 	, ppr "-- Data Types"
