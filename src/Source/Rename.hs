@@ -415,6 +415,12 @@ instance Rename (Exp SourcePos) where
  rename exp
   = case exp of
 
+	-- exp with type annotation
+	XType sp exp t
+	 -> do	exp'	<- rename exp
+		t'	<- rename t
+		return	$ XType sp exp' t'
+
 	-- core
 	XLit sp lit
 	 -> return exp

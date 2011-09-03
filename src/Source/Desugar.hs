@@ -255,6 +255,11 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	-- core language.
 	S.XNil		-> return D.XNil
 
+	S.XType sp exp t
+	 -> do	exp'	<- rewrite exp
+		t'	<- rewrite t
+		return	$ applyTypeAnnotation exp' t'
+
 	S.XLit sp litFmt
 	 -> return	$ D.XLit (annotOfSp sp) $ defaultLiteralFmt litFmt
 
@@ -799,3 +804,21 @@ instance Rewrite Type Type where
 
 	_ -> panic stage $ "rewrite[Type]: no match for " % tt
 
+-- Apply type annotations  ------------------------------------------------------------------------
+
+applyTypeAnnotation :: D.Exp Annot -> Type -> D.Exp Annot
+applyTypeAnnotation exp typ
+ = case exp of
+	D.XNil			-> D.XNil
+	D.XVoid a 		-> D.XVoid	(annotAddType a typ)
+	D.XVar a e		-> D.XVar	(annotAddType a typ) e
+	D.XLit a l		-> D.XLit	(annotAddType a typ) l
+	D.XProj a e p		-> D.XProj	(annotAddType a typ) e p
+	D.XProjT a t p		-> D.XProjT	(annotAddType a typ) t p
+	D.XLambda a v e		-> D.XLambda	(annotAddType a typ) v e
+	D.XApp a f x		-> D.XApp	(annotAddType a typ) f x
+	D.XMatch a m x		-> D.XMatch	(annotAddType a typ) m x
+	D.XDo a d		-> D.XDo	(annotAddType a typ) d
+	D.XIfThenElse a d t s	-> D.XIfThenElse(annotAddType a typ) d t s
+
+	_ -> panic stage $ "applyTypeAnnot to Exp : " ++ show exp

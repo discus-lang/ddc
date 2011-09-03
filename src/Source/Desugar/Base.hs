@@ -6,6 +6,7 @@ module Source.Desugar.Base
 	, RewriteS(..)
 	, Annot (..)
 	, annotOfSp
+	, annotAddType
 	, spOfAnnot
 	, newVarN
 	, newVarNS
@@ -34,6 +35,8 @@ data RewriteS
 annotOfSp :: SourcePos -> Annot
 annotOfSp sp = Annot sp Nothing
 
+annotAddType :: Annot -> Type -> Annot
+annotAddType (Annot sp _) t = Annot sp (Just t)
 
 spOfAnnot :: Annot -> SourcePos
 spOfAnnot (Annot sp _) = sp
