@@ -1,2 +1,2 @@
 
-main = println $ show [ (1::Int) .. 10 ]
+main () = println $ show [ (1::Int) .. 10 ]
