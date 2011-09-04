@@ -5,6 +5,27 @@ Require Import DDC.Language.SystemF2Data.Exp.
 Require Import DDC.Base.
 
 
+(* If we have a well typed case match on a data object then there
+   is an alternative corresponding to that data constructor *)
+Lemma getAlt_has
+ :  forall ds dc ts xs alts t
+ ,  DEFSOK ds
+ -> TYPE ds nil nil (XCase (XCon dc ts xs) alts) t
+ -> (exists x, getAlt dc alts = Some (AAlt dc x)).
+Proof.
+ intros.
+ eapply getAlt_exists.
+ inverts_type.
+ nforall. eapply H8.
+
+ have (getCtorOfType (TCon tc) = Some tc) as HC.
+ erewrite getCtorOfType_makeTApps in H5; eauto.
+ inverts H5.
+ eauto.
+Qed.
+Hint Resolve getAlt_has.
+
+
 (* A well typed expression is either a well formed value, 
    or can transition to the next state. *)
 Theorem progress
@@ -18,11 +39,14 @@ Proof.
   (PA := fun a => a = a)
   ; intros.
 
+
  Case "XVar".
   nope.
 
+
  Case "XLAM".
   left. apply type_wfX in H0. auto.
+
 
  Case "XAPP".
   inverts keep H0.
@@ -45,8 +69,10 @@ Proof.
     lets D: EsContext XcAPP H1.
     eauto.
 
+
  Case "XLam".
   left. eapply type_wfX in H0. auto.
+
 
  Case "XApp".
   right.
@@ -68,7 +94,8 @@ Proof.
    destruct H0  as [x1'].
    exists (XApp x1' x2).
    eapply (EsContext (fun xx => XApp xx x2)); auto.
- 
+
+
  Case "XCon".
   inverts_type.
   (* All ctor args are either wnf or can step *)
@@ -98,17 +125,25 @@ Proof.
     lets D: step_context_XCon_exists H2 H4.
     destruct D as [x'']. eauto.
 
+
  Case "XCase".
   right.
   inverts keep H1.
   have (value x \/ (exists x', STEP x x')) as HS.
   inverts HS. clear IHx.
+
+  (* Discriminant is a value *)
   SCase "x value".
    destruct x; nope.
+
+    (* Can't happen, 
+       TForall has no data type constructor *)
     SSCase "XCase (XLAM x) aa".
      have (exists t', tObj = TForall t').
      dest t'. subst. false.
 
+    (* Can't happen, 
+       tFun has no data type constructor *)
     SSCase "XCase (XLam t x) aa".
      have (exists t11 t12, tObj = tFun t11 t12).
      dest t11. dest t12. subst.
@@ -116,22 +151,14 @@ Proof.
      have (DEFOK ds (DefDataType TyConFun ks dcs)) as HD.
      inverts HD. false.
 
+    (* When we have a well typed case match on some data object, 
+       then there is a corresponding alternative. *)
     SSCase "XCon".
-     (* show there is a corresponding alternative 
-        TODO: split this into a lemma *)
-      assert (exists x, getAlt d aa = Some (AAlt d x)) as HG.
-       eapply getAlt_exists.
-       nforall. eapply H9. inverts H4.
-
-      have (getCtorOfType (TCon tc) = Some tc).
-      erewrite getCtorOfType_makeTApps in H6; eauto.
-       inverts H6.
-      eauto.
-
-     dest x.
-     exists (substXXs 0 l0 x).
+     have (exists x, getAlt d aa = Some (AAlt d x)).
+     dest x. exists (substXXs 0 l0 x).
      eapply EsCaseAlt; eauto.
 
+  (* Discriminant steps *)
   SCase "x steps".
    destruct H2 as [x'].
    exists (XCase x' aa).
@@ -140,5 +167,4 @@ Proof.
  Case "XAlt".
    auto.     
 Qed.
-
 
