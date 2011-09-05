@@ -11,7 +11,7 @@ Require Import DDC.Language.SimplePCF.
 (* STLC with mutable references. *)
 Require Import DDC.Language.SimpleRef.
 
-(* STLC with Algebraic Data Types. *)
+(* STLC with algebraic data types. *)
 Require Import DDC.Language.SimpleData.
 
 (* STLC with work and space resource types *)
@@ -23,6 +23,8 @@ Require Import DDC.Language.SystemF.
 (* System-F2. Like System-F2 but with type-type application. *)
 Require Import DDC.Language.SystemF2.
 
-(* System-F2 with Algebraic Data Types *)
+(* System-F2 with algebraic data types *)
 Require Import DDC.Language.SystemF2Data.
 
+(* System-F2 with algebraic data types and a mutable store. *)
+Require Import DDC.Language.SystemF2Store.
