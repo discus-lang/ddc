@@ -196,7 +196,9 @@ Proof.
   destruct dc.
   eapply WfA_AAlt. eauto.
   apply IHx in H8.
-  rr. lists. rewrite plus_comm. auto.
+  rr. lists.
+  rrwrite (length te + length tsFields = length tsFields + length te).
+  eauto.
 Qed.
 Hint Resolve type_wfX.
 
@@ -260,11 +262,7 @@ Proof.
 
  Case "XCon".
   (* unpack the data type definition *)
-  assert (DEFOK ds (DefData dc tsFields tc)) as HD.
-   eapply getDataDef_ok; eauto.
-   inverts HD.
-   have (ks0 = ks /\ dcs0 = dcs).
-    int. subst. clear H5.
+  defok ds (DefData dc tsFields tc).
 
   (* show XCon has the correct type *)
   rr. eapply TYCon; eauto.
@@ -311,9 +309,9 @@ Proof.
      have (In x (map dcOfAlt aa)).
      burn.
 
+       
  Case "XAlt".
-  lets HD: getDataDef_ok H2 H4. inverts HD.
-   rewrite H7 in H3. inverts H3.
+  defok ds (DefData dc tsFields tc).
 
   rr.
   eapply TYAlt; eauto.
@@ -415,12 +413,10 @@ Proof.
    eapply dcOfAlt_liftXA.
 
  Case "XAlt".
-  destruct dc.
+  defok ds (DefData dc tsFields tc).
   eapply TYAlt; eauto.
   rewrite insert_app.
-  lists.
-  have (DEFOK ds (DefData (DataCon n n0) tsFields tc)) as HD.
-  inverts HD. burn.
+  lists. burn.
 Qed. 
 
 

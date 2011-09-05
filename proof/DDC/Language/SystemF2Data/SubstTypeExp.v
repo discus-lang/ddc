@@ -63,16 +63,11 @@ Proof.
     rrwrite (ix = 0 + ix). 
     rewrite substTTs_substTT; rr.
      nforall. eapply H; eauto.
-
-     (* TODO: Add DEFSOK as tactic *)
-     have (DEFOK ds (DefData     dc tsFields tc)).
-     have (DEFOK ds (DefDataType tc ks       dcs)).
-      inverts H5. inverts H9.
-     assert (ks0 = ks). burn. subst.
+     defok ds (DefData     dc tsFields tc).
+     defok ds (DefDataType tc ks       dcs).
      rrwrite (length ts = length ks).
      nforall.
-     have (KIND ks y KStar).
-     eauto.
+     have (KIND ks y KStar). eauto.
  
  Case "XCase".
   eapply TYCase; eauto.
@@ -87,11 +82,7 @@ Proof.
    rewrite HDC. auto.
 
  Case "AAlt".
-
-  (* TODO: split this getting defs from env into a tactic *)
-  have (DEFOK ds (DefData dc tsFields tc)) as HD.
-   inverts HD. rewrite H9 in H5. inverts H5.
-
+  defok ds (DefData dc tsFields tc).
   rr.
   eapply TYAlt with (tc := tc) (ks := ks) (dcs := dcs); eauto.
   eapply subst_type_type_ix_forall2; eauto.
