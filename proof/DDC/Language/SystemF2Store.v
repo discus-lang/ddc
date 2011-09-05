@@ -26,19 +26,19 @@ Require Export DDC.Language.SystemF2Store.Def.
 (* Expressions and induction principle *)
 Require Export DDC.Language.SystemF2Store.ExpBase.
 
-(*
 (* Utils for working with case alternative *)
-Require Export DDC.Language.SystemF2Data.ExpAlt.
+Require Export DDC.Language.SystemF2Store.ExpAlt.
 
 (* Lifting and lifting lemmas for expressions *)
-Require Export DDC.Language.SystemF2Data.ExpLift.
+Require Export DDC.Language.SystemF2Store.ExpLift.
 
-(* Substitutio for expressions *)
-Require Export DDC.Language.SystemF2Data.ExpSubst.
+(* Substitution for expressions *)
+Require Export DDC.Language.SystemF2Store.ExpSubst.
 
 (* Expressions, normal forms, lifting and substitution. *)
-Require Export DDC.Language.SystemF2Data.Exp.
+Require Export DDC.Language.SystemF2Store.Exp.
 
+(*
 (* Type Judgement. *)
 Require Export DDC.Language.SystemF2Data.TyJudge.
 
