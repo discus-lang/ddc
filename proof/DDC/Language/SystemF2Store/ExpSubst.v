@@ -26,8 +26,8 @@ Fixpoint substTX (d: nat) (u: ty) (xx: exp) : exp :=
   |  XCase xx alts
   => XCase (substTX d u xx) (map (substTA d u) alts)
 
-  |  XUpdate c i x1 x2
-  => XUpdate c i (substTX d u x1) (substTX d u x2)
+  |  XUpdate c i ts x1 x2
+  => XUpdate c i (map (substTT d u) ts) (substTX d u x1) (substTX d u x2)
  end
 
 with substTA (d: nat) (u: ty) (aa: alt) : alt :=
@@ -79,8 +79,8 @@ Fixpoint substXX (d:  nat) (u: exp) (xx: exp) : exp :=
     |  XCase x alts
     => XCase (substXX d u x) (map (substXA d u) alts)
 
-    |  XUpdate c i x1 x2
-    => XUpdate c i (substXX d u x1) (substXX d u x2)
+    |  XUpdate c i ts x1 x2
+    => XUpdate c i ts (substXX d u x1) (substXX d u x2)
     end
 
 with substXA (d: nat) (u: exp) (aa: alt) 

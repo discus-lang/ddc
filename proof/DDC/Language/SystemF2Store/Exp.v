@@ -78,10 +78,10 @@ Inductive wfX (kn: nat) (tn: nat) (sn: nat) : exp -> Prop :=
    -> wfX kn tn sn (XCase x alts)
 
   | WfX_XUpdate
-    :  forall c i x1 x2
+    :  forall c i ts x1 x2
     ,  wfX kn tn sn x1 
     -> wfX kn tn sn x2
-    -> wfX kn tn sn (XUpdate c i x1 x2)
+    -> wfX kn tn sn (XUpdate c i ts x1 x2)
 
 with    wfA (kn: nat) (tn: nat) (sn: nat) : alt -> Prop :=
  | WfA_AAlt

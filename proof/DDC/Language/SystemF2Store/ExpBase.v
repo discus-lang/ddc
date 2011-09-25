@@ -24,7 +24,7 @@ Inductive exp : Type :=
  (* Destructive update of store, 
     takes the constructor and argument indices,
     the location to update, and a new expression. *)
- | XUpdate : nat -> nat -> exp -> exp -> exp
+ | XUpdate : nat -> nat -> list ty -> exp -> exp -> exp
 
  (* Alternatives *)
 with alt     : Type :=
@@ -51,7 +51,7 @@ Theorem exp_mutind
  -> (forall x1 x2,   PX x1 -> PX x2        -> PX (XApp x1 x2))
  -> (forall dc ts xs,         Forall PX xs -> PX (XCon dc ts xs))
  -> (forall x  aa,   PX x  -> Forall PA aa -> PX (XCase x aa))
- -> (forall c  i x1 x2, PX x1 -> PX x2     -> PX (XUpdate c i x1 x2))
+ -> (forall c  i ts x1 x2, PX x1 -> PX x2  -> PX (XUpdate c i ts x1 x2))
  -> (forall dc x,    PX x                  -> PA (AAlt dc x))
  ->  forall x, PX x.
 Proof. 

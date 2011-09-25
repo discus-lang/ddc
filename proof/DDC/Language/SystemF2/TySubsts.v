@@ -291,6 +291,16 @@ Qed.
 Hint Resolve substTTs_closing.
 
 
+Lemma substTTs_liftTT
+ :   forall ts t1 n n' m
+ ,   wfT (length ts + n) t1
+ ->  substTTs n (map (liftTT m (n + n')) ts) t1
+ =   liftTT m (n + n') (substTTs n ts t1).
+Proof.
+ admit.
+Qed.
+
+
 Lemma substTTs_substTT
  :   forall ts t1 t2 n n'
  ,   wfT (length ts + n) t1

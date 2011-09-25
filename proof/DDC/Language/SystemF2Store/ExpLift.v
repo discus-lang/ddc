@@ -30,8 +30,8 @@ Fixpoint liftTX (d: nat) (xx: exp) : exp :=
   |  XCase xx alts
   => XCase (liftTX d xx) (map (liftTA d) alts)
 
-  |  XUpdate c i x1 x2
-  => XUpdate c i (liftTX d x1) (liftTX d x2)
+  |  XUpdate c i ts x1 x2
+  => XUpdate c i (map (liftTT 1 d) ts) (liftTX d x1) (liftTX d x2)
 
  end
 
@@ -77,8 +77,8 @@ Fixpoint liftXX (n:  nat) (d:  nat) (xx: exp) {struct xx} : exp :=
     |  XCase x alts
     => XCase (liftXX n d x) (map (liftXA n d) alts)
 
-    |  XUpdate c i x1 x2
-    => XUpdate c i (liftXX n d x1) (liftXX n d x2)
+    |  XUpdate c i ts x1 x2
+    => XUpdate c i ts (liftXX n d x1) (liftXX n d x2)
     end
 
  with liftXA (n: nat) (d: nat) (aa: alt) {struct aa}:= 
