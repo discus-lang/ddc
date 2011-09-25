@@ -297,7 +297,25 @@ Lemma substTTs_liftTT
  ->  substTTs n (map (liftTT m (n + n')) ts) t1
  =   liftTT m (n + n') (substTTs n ts t1).
 Proof.
- admit.
+ intros. gen ts n n' m.
+ induction t1; intros; inverts H; try burn.
+
+ Case "TVar".
+  repeat (simpl; unfold substTTs'; lift_cases);
+    try auto;
+    try (false; omega);
+    try (lists; burn).
+
+ Case "TForall".
+  simpl. f_equal.
+  rrwrite (n + n' = (n + n') + 0).
+  rewrite liftTT_map_liftTT.
+  rr.
+  rrwrite (1 + (n + n') = S n + n').
+  rewrite IHt1. eauto.
+  lists.
+  rrwrite (length ts + S n = S (length ts + n)).
+  eauto.
 Qed.
 
 

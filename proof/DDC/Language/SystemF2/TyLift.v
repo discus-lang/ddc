@@ -243,3 +243,12 @@ Proof.
 Qed.
 Hint Rewrite liftTT_liftTT : global.
 
+
+Lemma liftTT_map_liftTT
+ :  forall m1 n1 m2 n2 ts
+ ,  map (liftTT m1 n1) (map (liftTT m2 (n2 + n1)) ts)
+ =  map (liftTT m2 (m1 + n2 + n1)) (map (liftTT m1 n1) ts).
+Proof.
+ induction ts; simpl; burn.
+Qed.  
+
