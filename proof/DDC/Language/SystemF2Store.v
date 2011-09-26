@@ -48,10 +48,10 @@ Require Export DDC.Language.SystemF2Store.SubstTypeExp.
 (* Substitution of expressions in expressions preserves typing. *)
 Require Export DDC.Language.SystemF2Store.SubstExpExp.
 
-(*
 (* Small step evaluation contexts *)
-Require Export DDC.Language.SystemF2Data.StepContext.
+Require Export DDC.Language.SystemF2Store.StepContext.
 
+(*
 (* Small step evaluation. *)
 Require Export DDC.Language.SystemF2Data.Step.
 
