@@ -87,16 +87,14 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
 
  (* Update data object *)
  | TyUpdate
-   :  forall cn i xObj tObj dcObj tcObj tsParam tsFields ks dcs xField tField
+   :  forall cn i xObj dcObj tcObj tsParam tsFields ks dcs xField tField
    ,  DEFSOK ds
    -> getTypeDef tcObj ds = Some (DefDataType tcObj ks dcs)
    -> getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
    -> Forall2 (KIND ke) tsParam ks
-   -> takeTArgs tObj      = tsParam
-   -> getCtorOfType tObj  = Some tcObj
    -> get cn dcs          = Some dcObj
    -> get i  tsFields     = Some tField
-   -> TYPE ds ke te se xObj tObj 
+   -> TYPE ds ke te se xObj (makeTApps (TCon tcObj) tsParam) 
    -> TYPE ds ke te se xField (substTTs 0 tsParam tField)
    -> TYPE ds ke te se (XUpdate cn i tsParam xObj xField) tUnit
 
@@ -369,13 +367,14 @@ Proof.
    eapply Forall2_map_left.
     eapply Forall2_impl; eauto.
     eauto using kind_kienv_insert.
-   rr. 
-    eauto.
-   rrwrite (ix = 0 + ix).  
-    rewrite substTTs_liftTT.
+  rrwrite (TCon tcObj = liftTT 1 ix (TCon tcObj)).  
+  rewrite <- liftTT_makeTApps.
+  eauto.    
+  rrwrite (ix = 0 + ix).  
+   rewrite substTTs_liftTT.
     rr. eauto.
     rr.
-    rrwrite (length (takeTArgs tObj) = length ks).
+    rrwrite (length ts = length ks).
     nforall. eauto.
 
  Case "XAlt".

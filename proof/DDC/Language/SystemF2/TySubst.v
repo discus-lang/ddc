@@ -51,6 +51,17 @@ Qed.
 Hint Rewrite substTT_makeTApps : global.
 
 
+Lemma liftTT_makeTApps
+ :  forall d n t1 ts
+ ,  liftTT n d (makeTApps t1 ts)
+ =  makeTApps (liftTT n d t1) (map (liftTT n d) ts).
+Proof.
+ intros. gen d n t1.
+ induction ts; burn.
+Qed.
+Hint Rewrite liftTT_makeTApps : global.
+
+
 Lemma takeTCon_substTT
  :  forall ix t1 tc t2
  ,  takeTCon t1                 = TCon tc
@@ -59,6 +70,7 @@ Proof.
  intros. gen ix t2.
  induction t1; burn.
 Qed. 
+
 
 
 
