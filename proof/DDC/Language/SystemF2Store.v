@@ -51,6 +51,9 @@ Require Export DDC.Language.SystemF2Store.SubstExpExp.
 (* Small step evaluation contexts *)
 Require Export DDC.Language.SystemF2Store.StepContext.
 
+(* Stores. *)
+Require Export DDC.Language.SystemF2Store.Store.
+
 (* Small step evaluation. *)
 Require Export DDC.Language.SystemF2Store.Step.
 
