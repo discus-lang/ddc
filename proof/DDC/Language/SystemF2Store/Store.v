@@ -45,21 +45,29 @@ Definition svalueOf (xx : exp) (sv : svalue) : Prop
 
 (* Store typing models the store.
    All types in the store typing have a corresponding binding in the store *)
-Definition SM (ds: defs) (st: stenv) (s: store)
+Definition STOREM (ds: defs) (st: stenv) (s: store)
  := length st = length s.
+Hint Unfold STOREM.
 
 
 (* Store is well typed, *)
-Definition ST (ds: defs) (st: stenv) (ss: store)
- := forall i dcObj svFields tcObj tsParam tsFields
- ,  DEFSOK ds
- -> get i ss = Some (SObj dcObj svFields)
- -> get i st = Some (makeTApps (TCon tcObj) tsParam)
- /\ getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
- /\ Forall2 (TYPE ds nil nil st)
-            (map expOfSValue svFields)
-            (map (substTTs 0 tsParam) tsFields).
+Definition STORET (ds: defs) (st: stenv) (ss: store)
+ := forall i dcObj svFields
+ ,  get i ss = Some (SObj dcObj svFields)
+ -> (exists tcObj tsParam tsFields 
+    ,  get i st            = Some (makeTApps (TCon tcObj) tsParam)
+    /\ getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
+    /\ Forall2 (TYPE ds nil nil st)
+               (map expOfSValue svFields)
+               (map (substTTs 0 tsParam) tsFields)).
+Hint Unfold STORET.
 
 
-
+(* Well formed store.
+   Store is well formed under some data type definitions and a store typing. *)
+Definition WfS (ds: defs) (se: stenv) (ss: store)
+ := DEFSOK ds  
+ /\ STOREM ds se ss 
+ /\ STORET ds se ss.
+Hint Unfold WfS.
 
