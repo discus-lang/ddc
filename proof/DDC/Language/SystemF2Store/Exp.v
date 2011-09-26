@@ -7,6 +7,12 @@ Require Export DDC.Language.SystemF2Store.ExpSubst.
 Require Export DDC.Language.SystemF2Store.ExpAlt.
 
 
+(********************************************************************)
+(* Builtin expressions *)
+Definition xUnit := XCon (DataCon 0 0) nil nil.
+
+
+(********************************************************************)
 (* Weak normal forms cannot be reduced further by 
    call-by-value evaluation. *)
 Inductive wnfX : exp -> Prop :=
@@ -24,12 +30,8 @@ Inductive wnfX : exp -> Prop :=
 
  | Wnf_XLam
    : forall t1 x2
-   , wnfX (XLam t1 x2)
+   , wnfX (XLam t1 x2).
 
- | Wnf_XCon
-   :  forall dc ts xs
-   ,  Forall wnfX xs
-   -> wnfX (XCon dc ts xs).
 Hint Constructors wnfX.
 
 
@@ -121,12 +123,12 @@ Lemma value_closedX
  Proof. intros. inverts H. auto. Qed.
 Hint Resolve value_closedX.
 
-
+(*
 Lemma value_wnfXs_XCon
  : forall ts xs dc
  , value (XCon dc ts xs) -> Forall wnfX xs.
 Proof.
- intros. inverts H. inverts H0. auto.
+ intros. inverts H. inverts H0.
 Qed.
 Hint Resolve value_wnfXs_XCon.
 
@@ -142,4 +144,4 @@ Proof.
  nforall. eauto. 
 Qed.
 Hint Resolve value_closedXs_XCon.
-
+*)

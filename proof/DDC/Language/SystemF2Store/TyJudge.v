@@ -87,16 +87,15 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
 
  (* Update data object *)
  | TyUpdate
-   :  forall cn i xObj dcObj tcObj tsParam tsFields ks dcs xField tField
+   :  forall i xObj dcObj tcObj tsParam tsFields ks dcs xField tField
    ,  DEFSOK ds
    -> getTypeDef tcObj ds = Some (DefDataType tcObj ks dcs)
    -> getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
    -> Forall2 (KIND ke) tsParam ks
-   -> get cn dcs          = Some dcObj
    -> get i  tsFields     = Some tField
    -> TYPE ds ke te se xObj (makeTApps (TCon tcObj) tsParam) 
    -> TYPE ds ke te se xField (substTTs 0 tsParam tField)
-   -> TYPE ds ke te se (XUpdate cn i tsParam xObj xField) tUnit
+   -> TYPE ds ke te se (XUpdate dcObj i tsParam xObj xField) tUnit
 
 with TYPEA  (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
      : alt -> ty -> ty -> Prop :=
@@ -148,16 +147,6 @@ Proof.
   inverts H0. 
   unfold tFun in H3.
   simpl in H3. inverts H3.
-  nope.
-
- (* 'x' can't be an XCon because data type definitions can't define the
-    function type constructor. *)
- unfold tFun in H0.
- inverts H0.
-  apply makeTApps_takeTCon in H4.
-  simpl in H4. inverts H4.
-
-  have (DEFOK ds (DefData d tsFields TyConFun)).
   nope.
 Qed.
 Hint Resolve value_lam.
@@ -362,7 +351,7 @@ Proof.
      burn.
 
  Case "XUpdate".
-  defok ds (DefData dcObj tsFields tcObj).
+  defok ds (DefData dc tsFields tcObj).
   eapply TyUpdate; eauto.
    eapply Forall2_map_left.
     eapply Forall2_impl; eauto.

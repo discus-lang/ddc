@@ -88,7 +88,7 @@ Proof.
    rewrite HDC. auto.
 
  Case "XUpdate".
-  defok ds (DefData     dcObj tsFields tcObj).
+  defok ds (DefData     dc    tsFields tcObj).
   defok ds (DefDataType tcObj ks dcs).
   eapply TyUpdate; eauto.
   eapply Forall2_map_left.

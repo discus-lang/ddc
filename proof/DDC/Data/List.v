@@ -10,6 +10,7 @@ Require Export DDC.Data.List.Forall2.
 Require Export DDC.Data.List.Firstn.
 Require Export DDC.Data.List.Filter.
 Require Export DDC.Data.List.Insert.
+Require Export DDC.Data.List.Replace.
 Require Export DDC.Data.List.Delete.
 Require Export DDC.Data.List.Update.
 Require Export DDC.Data.List.Extends.
