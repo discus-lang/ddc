@@ -41,13 +41,14 @@ Require Export DDC.Language.SystemF2Store.Exp.
 (* Type Judgement. *)
 Require Export DDC.Language.SystemF2Store.TyJudge.
 
-(*
 (* Substitution of types in expressions preserves typing. *)
-Require Export DDC.Language.SystemF2Data.SubstTypeExp.
+Require Export DDC.Language.SystemF2Store.SubstTypeExp.
+
 
 (* Substitution of expressions in expressions preserves typing. *)
-Require Export DDC.Language.SystemF2Data.SubstExpExp.
+Require Export DDC.Language.SystemF2Store.SubstExpExp.
 
+(*
 (* Small step evaluation contexts *)
 Require Export DDC.Language.SystemF2Data.StepContext.
 
