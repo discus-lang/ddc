@@ -50,7 +50,7 @@ Definition STOREM (ds: defs) (st: stenv) (s: store)
 Hint Unfold STOREM.
 
 
-(* Store is well typed, *)
+(* Well typed store. *)
 Definition STORET (ds: defs) (st: stenv) (ss: store)
  := forall i dcObj svFields
  ,  get i ss = Some (SObj dcObj svFields)
