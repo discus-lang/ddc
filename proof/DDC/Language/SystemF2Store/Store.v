@@ -13,15 +13,6 @@ Inductive svalue :=
 Hint Constructors svalue.
 
 
-(* Store binding with a constructor tag and some storeable values *)
-Inductive sbind :=
- | SObj : datacon -> list svalue -> sbind.
-
-
-Definition store  := list sbind.
-Hint Unfold store.
-
-
 Definition takeSValueOfExp (xx : exp) : option svalue :=
  match xx with
  | XLoc n    => Some (SLoc n)
@@ -43,6 +34,30 @@ Definition svalueOf (xx : exp) (sv : svalue) : Prop
  := takeSValueOfExp xx = Some sv.
 
 
+(* There is a store value for every expression value. *)
+Lemma svalueFromValue
+ : forall v, value v -> (exists sv, svalueOf v sv).
+Proof.
+ intros.
+ destruct v; nope; unfold svalueOf.
+  exists (SLoc  n).  eauto.
+  exists (SLAM  v).  eauto.
+  exists (SLam t v). eauto.
+Qed.
+Hint Resolve svalueFromValue.
+
+
+(******************************************************************************)
+(* Store binding with a constructor tag and some storeable values *)
+Inductive sbind :=
+ | SObj : datacon -> list svalue -> sbind.
+
+
+Definition store  := list sbind.
+Hint Unfold store.
+
+
+(******************************************************************************)
 (* Store typing models the store.
    All types in the store typing have a corresponding binding in the store *)
 Definition STOREM (ds: defs) (st: stenv) (s: store)

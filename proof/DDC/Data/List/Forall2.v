@@ -171,6 +171,28 @@ Qed.
 Hint Resolve Forall2_exists_right.
 
 
+Lemma Forall2_exists_right_all
+ :  forall (A B: Type) 
+           (P: A -> Prop)
+           (R: A -> B -> Prop)
+           (xs: list A)
+ ,  (forall x, P x -> (exists y, R x y))
+ -> Forall  P xs
+ -> (exists ys, Forall2 R xs ys).
+Proof.
+ intros.
+ induction xs.
+  exists (@nil B). auto.
+  inverts H0.
+   spec IHxs H4.
+   dest ys.
+   have (exists y, R a y).
+   dest y.
+   exists (ys :> y). eauto.
+Qed.
+Hint Resolve Forall2_exists_right_all.
+
+
 Lemma Forall2_map
  : forall {A B C D: Type}
           (R1: B -> D -> Prop)
