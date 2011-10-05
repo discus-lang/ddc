@@ -142,6 +142,7 @@ Proof.
 Qed.
 
 
+
 (********************************************************************)
 (** Lemmas: app *)
 
@@ -376,4 +377,30 @@ Proof.
   simpl in H. inverts H.
   simpl. eauto.
 Qed.
+Hint Resolve get_zero_nonempty_some.
+
+
+Lemma get_same_length
+ :  forall {A B} (xs: list A) x (ys: list B) i
+ ,  length xs = length ys
+ -> get i xs  = Some x
+ -> exists y, get i ys = Some y.
+Proof.
+ intros. gen ys x i.
+ induction xs; intros.
+  have (ys = nil).
+   subst. nope.
+  destruct ys.
+   nope.
+   have (length xs = length ys).
+   spec IHxs H1.
+   destruct i.
+    simpl in H0.
+     inverts H0.
+     exists b. eauto.
+    simpl in H0.
+    simpl. 
+    spec IHxs H0. auto.
+Qed.
+Hint Resolve get_same_length.
 

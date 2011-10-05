@@ -9,37 +9,37 @@ Require Import DDC.Base.
    data object, then there is a case alternative corresponding to
    that object's data constructor. *)
 
-(* TODO: 
-   Well typed loc implies we have a heap binding
-   Want TYPE (XLoc l) -> (exists dc svs, get l ss = Some dc svs) *)
-
 Lemma getAlt_has
- :  forall ds se ss l dc svs alts t
+ :  forall ds se ss l alts t
  ,  WfS ds se ss
- -> get l ss = Some (SObj dc svs) (* TODO: drop this premise *)
  -> TYPE ds nil nil se (XCase (XLoc l) alts) t
- -> (exists x, getAlt dc alts = Some (AAlt dc x)).
+ -> (exists dc, (exists svs, get    l  ss   = Some (SObj dc svs))
+            /\  (exists x,   getAlt dc alts = Some (AAlt dc x))).
 Proof.
  intros.
+ inverts H0.
+
+ have (exists dc svs, get l ss = Some (SObj dc svs)).
+  shift dc. split.
+  shift svs. auto.
+  dest svs.
+
  eapply getAlt_exists.
  inverts_type.
- nforall. 
- assert (In dc dcs).
-  rewrite H6 in H3. inverts H3.
-  have (getCtorOfType (TCon tc) = Some tc) as HC.
-  inverts H. int.
-  unfold STORET in H4.
-   spec H4 H0.
-   dest tcObj. dest tsParam. dest tsFields.
-   int.
-   rewrite H4 in H2. inverts H2.
-   erewrite getCtorOfType_makeTApps with (tc := tcObj) in H6; eauto.
-    inverts H6.
-   eauto.
- eauto.
+ nforall.
+ inverts H. int.
+ unfold STORET in *.
+  spec H10 l dc svs H0.
+  destruct H10 as [tcObj'].
+  dest tsParam.
+  dest tsFields.
+  int.
+  rewrite H2 in H10. inverts H10.
+  erewrite getCtorOfType_makeTApps with (tc := tcObj') in H5; eauto.
+    inverts H5.
+  erewrite getCtorOfType_makeTApps with (tc := tcObj) in H7; eauto.
 Qed.
 Hint Resolve getAlt_has.
-
 
 
 (* A well typed expression is either a well formed value, 
@@ -172,11 +172,17 @@ Proof.
     (* When we have a well typed case match on some data object, 
        then there is a corresponding alternative. *)
     SSCase "XLoc".
-     admit.
-(*     have (exists x, getAlt dc aa = Some (AAlt d x)).
-     dest x. exists (substXXs 0 l0 x).
-     eapply EsCaseAlt; eauto.
-*)
+     lets D: getAlt_has H H1.
+     dest dc. int. 
+     destruct H8  as [svs].
+     destruct H10 as [x].
+     exists s.
+     assert (exists vs, Forall2 svalueOf vs svs).
+      eapply Forall2_exists_left_from_right.
+      eauto.
+     dest vs.
+     exists (substXXs 0 vs x).
+     eauto.
 
     (* Can't happen, 
        TForall has no data type constructor *)

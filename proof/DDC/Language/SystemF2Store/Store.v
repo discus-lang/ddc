@@ -34,8 +34,21 @@ Definition svalueOf (xx : exp) (sv : svalue) : Prop
  := takeSValueOfExp xx = Some sv.
 
 
+(* There is an expression for every store value *)
+Lemma exp_from_svalue
+ : forall sv, exists v, svalueOf v sv.
+Proof.
+ intros.
+ destruct sv; unfold svalueOf.
+  exists (XLoc n). int.
+  exists (XLAM e). int.
+  exists (XLam t e). int.
+Qed.
+Hint Resolve exp_from_svalue.
+
+
 (* There is a store value for every expression value. *)
-Lemma svalueFromValue
+Lemma svalue_from_value
  : forall v, value v -> (exists sv, svalueOf v sv).
 Proof.
  intros.
@@ -44,7 +57,7 @@ Proof.
   exists (SLAM  v).  eauto.
   exists (SLam t v). eauto.
 Qed.
-Hint Resolve svalueFromValue.
+Hint Resolve svalue_from_value.
 
 
 (******************************************************************************)
@@ -85,4 +98,36 @@ Definition WfS (ds: defs) (se: stenv) (ss: store)
  /\ STOREM ds se ss 
  /\ STORET ds se ss.
 Hint Unfold WfS.
+
+
+Lemma store_has_sbind_for_stenv
+ :  forall ds se ss l tObj
+ ,  WfS ds se ss
+ -> get l se = Some tObj
+ -> (exists dc svs, get l ss = Some (SObj dc svs)).
+Proof.
+ intros.
+ inverts H. int.
+ have (length se = length ss).
+ have (exists sb, get l ss = Some sb).
+ dest sb.
+ destruct sb.
+ eauto.
+Qed.
+Hint Resolve store_has_sbind_for_stenv.
+
+
+Lemma store_has_sbind_for_XLoc
+ :  forall ds ke te se ss l tObj
+ ,  WfS ds se ss
+ -> TYPE ds ke te se (XLoc l) tObj
+ -> (exists dc svs, get l ss = Some (SObj dc svs)).
+Proof.
+ intros.
+ inverts H. int.
+ inverts_type.
+ eauto.
+Qed.
+Hint Resolve store_has_sbind_for_XLoc.
+
 
