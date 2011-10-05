@@ -1,0 +1,4 @@
+
+-- Check that we're adding type annotations to the constraint graph.
+-- '1' is not a Char. 
+main () = println $ show [ (1::Char) .. 10 ]
