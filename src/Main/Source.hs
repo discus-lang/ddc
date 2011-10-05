@@ -24,7 +24,7 @@ import Source.Lexer			(scanModuleWithOffside, scan)
 import Source.Parser.Module		(parseModule)
 import Source.Slurp			(slurpFixTable, slurpKinds)
 import Source.Defix			(defixP)
-import Source.Desugar			(Annot, rewriteTree)
+import Source.Desugar			(Annot(..), rewriteTree)
 import Source.Lint			(lintTree)
 import qualified Data.Map		as Map
 import qualified DDC.Desugar.Transform	as D
@@ -236,12 +236,13 @@ desugar unique kinds hTree sTree
 
 	-- dump
 	dumpST DumpDesugar "desugar--header"
-		(map (D.transformN $ \a -> (Nothing :: Maybe ())) hTree')
+		(map (D.transformN $ \(Annot sp mType) -> mType) hTree')
 
 	dumpST DumpDesugar "desugar--source"
-		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sTree')
+		(map (D.transformN $ \(Annot sp mType) -> mType) sTree')
 
 	when (not $ null errors)
 	 $ exitWithUserError ?args errors
 
 	return	(hTree', sTree')
+

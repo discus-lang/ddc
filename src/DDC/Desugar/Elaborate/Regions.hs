@@ -8,7 +8,7 @@ import DDC.Desugar.Transform
 import DDC.Desugar.Glob
 import DDC.Desugar.Exp
 import DDC.Type
-import Source.Desugar			(Annot)
+import Source.Desugar			(Annot(..))
 
 -- | Add missing region variables to type signatures in this tree.
 --   This just walks down the tree and calls the elaborator from
@@ -17,6 +17,7 @@ elabRegionsInGlob :: Glob Annot -> ElabM (Glob Annot)
 elabRegionsInGlob glob
 	= transZM (transTableId return)
 		{ transP	= elabRegionsP
+                , transN        = elabRegionsN
 		, transS_leave	= elabRegionsS
 		, transX_leave	= elabRegionsX }
 		glob
@@ -57,6 +58,16 @@ elabRegionsClassInst (t, kind)
 	_
 	 -> elabRegionsT t
 
+
+elabRegionsN n@(Annot sp mType)
+ = case mType of
+        Just t
+          -> do t'      <- elabRegionsT t
+                return  $ Annot sp (Just t')
+                
+        Nothing         -> return n
+
+
 elabRegionsS ss
  = case ss of
 	SSig ann sigMode v t
@@ -65,7 +76,6 @@ elabRegionsS ss
 
 	_		-> return ss
 
-
 elabRegionsX xx
  = case xx of
 	XProjT ann t j
@@ -73,6 +83,7 @@ elabRegionsX xx
 		return	$ XProjT ann t' j
 
 	_ ->	return xx
+
 
 elabRegionsT t
  = do	(t_elab, _)	<- elaborateRsT newVarN t

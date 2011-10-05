@@ -24,6 +24,11 @@ data Annot
 	= Annot SourcePos (Maybe Type)
 	deriving (Show)
 
+instance Pretty Annot PMode where
+ ppr (Annot sp mt)
+        = sp %% mt
+ 
+
 type RewriteM	= State RewriteS
 
 data RewriteS

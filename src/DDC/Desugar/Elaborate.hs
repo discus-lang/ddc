@@ -40,7 +40,7 @@ import DDC.Type
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
-import Source.Desugar			(Annot)
+import Source.Desugar			(Annot(..))
 import Data.List
 import Data.Sequence			(Seq)
 import Data.Map				(Map)
@@ -173,12 +173,25 @@ mergeMonoVarsOfGlobs vsMono dgModule
 
 -- Tag Kinds --------------------------------------------------------------------------------------
 -- | Tag each data constructor with its kind from this table
-tagKindsInGlob :: Glob a -> ElabM (Glob a)
+tagKindsInGlob :: Glob Annot -> ElabM (Glob Annot)
 tagKindsInGlob pp
 	= D.transZM (D.transTableId return)
-		{ D.transT	= tagKindsT Map.empty }
+		{ D.transN      = tagKindsN Map.empty
+		, D.transT	= tagKindsT Map.empty }
 		pp
 
+
+-- | Tag type constructors in type annots with their kinds.
+tagKindsN :: Map Var Kind -> Annot -> ElabM Annot
+tagKindsN local (Annot sp (Just t))
+ = do   t'      <- tagKindsT local t
+        return  $ Annot sp (Just t')
+
+tagKindsN _ n
+ = return n
+
+
+-- | Tag type constructors in types with their kinds.
 tagKindsT :: Map Var Kind -> Type -> ElabM Type
 tagKindsT local tt
  = case tt of
@@ -232,10 +245,20 @@ tagKindsCrs local crs
 attachDataDefsToTyConsInGlob :: Map Var DataDef -> Glob Annot -> Glob Annot
 attachDataDefsToTyConsInGlob defs glob
 	= D.transZ (D.transTableId return)
-		{ D.transT	= \t -> return $ T.transformT (attachDataDefsT defs) t }
+		{ D.transN      = \n -> return $ attachDataDefsN defs n
+		, D.transT	= \t -> return $ T.transformT (attachDataDefsT defs) t }
 		glob
 
 
+-- | Attach data defs to tycons in a type annot
+attachDataDefsN :: Map Var DataDef -> Annot -> Annot
+attachDataDefsN defs nn
+ = case nn of
+        Annot sp (Just t)       -> Annot sp (Just $ T.transformT (attachDataDefsT defs) t)
+        _                       -> nn
+        
+
+-- | Attach data defs to tycons in a type.
 attachDataDefsT :: Map Var DataDef -> Type -> Type
 attachDataDefsT defs tt
 	| TCon (TyConData v k Nothing)	<- tt

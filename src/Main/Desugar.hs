@@ -27,6 +27,7 @@ import qualified DDC.Solve.State		as T
 import qualified DDC.Solve.Error.Beautify	as T
 import qualified DDC.Constraint.Simplify	as T
 import qualified DDC.Constraint.Simplify.Usage	as T
+import qualified Source.Desugar.Base	        as D
 import qualified DDC.Desugar.Glob		as D
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Desugar.ToCore		as D
@@ -66,7 +67,7 @@ desugarElaborate unique dgHeader dgModule
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeHeader')
 
 	dumpST DumpDesugarElaborate "desugar-elaborate--source"
-		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeModule')
+		(map (D.transformN $ \(D.Annot _ mType) -> mType) treeModule')
 
 	dumpST DumpDesugarElaborate "desugar-elaborate--constraints"
 		(map ppr $ Foldable.toList constraints)
