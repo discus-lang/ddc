@@ -113,7 +113,7 @@ data Exp a
 		{ expAnnot		:: a }
 
 	-- | Variables.
-	| XVar	{ expVarAnnot		:: a
+	| XVar	{ expAnnot		:: a
 		, expVarName		:: Var }
 
 	-- | Literal values.
@@ -182,7 +182,7 @@ data Exp a
 	-- | A projection tagged with the type and closure variables of
 	--	the as-yet unknown projection function.
 	| XProjTagged
-		{ expProjAnnot		:: a
+		{ expAnnot		:: a
 
 		-- | This type variable will be bound to the real type of the 
 		--	projection function once we work out what it is.

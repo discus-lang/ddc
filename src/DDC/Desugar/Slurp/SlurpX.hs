@@ -10,7 +10,7 @@ import DDC.Solve.Location
 import DDC.Var
 import DDC.Base.DataFormat
 import DDC.Main.Pretty
-import Source.Desugar		(Annot, spOfAnnot)
+import Source.Desugar		(Annot(..), spOfAnnot)
 import Control.Monad
 import Data.Bag			(Bag)
 import Util			(unzip6, unzip5, takeLast, catMap)
@@ -24,15 +24,27 @@ stage	= "DDC.Desugar.Slurp.SlurpX"
 -- | Slurp out type constraints from an expression.
 slurpX	:: Exp Annot
 	-> CSlurpM
-		( Type		-- type of expression.
+		( Type		-- type variable of expression.
 		, Effect	-- effect of expression.
 		, Closure	-- closure of expression.
 		, Exp Annot2	-- annotated exp.
 		, Bag CTree)	-- constraints.
 
+slurpX xx
+ | Annot sp (Just tAnnot)       <- expAnnot xx
+ = do   (tX, eX, cX, xx', qs)   <- slurpX' xx
+        
+        let qs' =  Bag.singleton (CEq (TSV $ SVSigAnnot sp) tX  tAnnot)
+                >< qs
+
+        return (tX, eX, cX, xx', qs')
+         
+ | otherwise
+ = slurpX' xx        
+  
 
 -- Lam ------------------------------------------------------------------------
-slurpX	xx@(XLambda annot vBound xBody)
+slurpX'	xx@(XLambda annot vBound xBody)
  = do
 	tX		<- newTVarDS "lam"
 	cX		<- newTVarCS "lam"
@@ -94,7 +106,7 @@ slurpX	xx@(XLambda annot vBound xBody)
 
 
 -- App ------------------------------------------------------------------------
-slurpX	(XApp annot fun arg)
+slurpX'	(XApp annot fun arg)
  = do
 	tX		<- newTVarDS "app"
 	eX		<- newTVarES "app"
@@ -122,7 +134,7 @@ slurpX	(XApp annot fun arg)
 
 
 -- Match ----------------------------------------------------------------------
-slurpX	(XMatch annot (Just obj) alts)
+slurpX'	(XMatch annot (Just obj) alts)
  = do
 	-- unification vars
 	tRHS				<- newTVarDS "matRHS"
@@ -153,7 +165,7 @@ slurpX	(XMatch annot (Just obj) alts)
 		, qsMatch >< qsObj >< Bag.fromList qsAlts)
 
 
-slurpX	(XMatch annot Nothing alts)
+slurpX'	(XMatch annot Nothing alts)
  = do
 	-- unification vars
 	tLHS		<- newTVarDS "matLHS"
@@ -178,7 +190,7 @@ slurpX	(XMatch annot Nothing alts)
 
 
 -- Lit ------------------------------------------------------------------------
-slurpX	(XLit annot litFmt)
+slurpX'	(XLit annot litFmt)
  = do
  	tX@(TVar _ (UVar vT))	<- newTVarDS "lit"
 	eX			<- newTVarES "lit"
@@ -241,7 +253,7 @@ slurpX	(XLit annot litFmt)
 
 
 -- Var ------------------------------------------------------------------------
-slurpX 	xx@(XVar _ var)
+slurpX' xx@(XVar _ var)
  = do	tV@(TVar _ (UVar vT))
 		<- lbindVtoT    var
 
@@ -250,7 +262,7 @@ slurpX 	xx@(XVar _ var)
 
 
 -- Do -------------------------------------------------------------------------
-slurpX	(XDo annot stmts)
+slurpX'	(XDo annot stmts)
  = do
 	tX		<- newTVarDS 	"do"
 	eX		<- newTVarES	"do"
@@ -301,7 +313,7 @@ slurpX	(XDo annot stmts)
 
 
 -- If -------------------------------------------------------------------------
-slurpX	(XIfThenElse annot xObj xThen xElse)
+slurpX'	(XIfThenElse annot xObj xThen xElse)
  = do	tAlts		<- newTVarDS 	"ifAlts"
 	eX		<- newTVarES	"if"
 	eTest		<- newTVarES 	"ifObj"
@@ -336,7 +348,7 @@ slurpX	(XIfThenElse annot xObj xThen xElse)
 
 
 -- Proj ------------------------------------------------------------------------
-slurpX 	(XProj annot xBody proj)
+slurpX' (XProj annot xBody proj)
  = do
 	let (projT, label)
 		= case proj of
@@ -376,7 +388,7 @@ slurpX 	(XProj annot xBody proj)
 		, qsBody >< qs )
 
 
-slurpX	(XProjT annot tDict proj)
+slurpX'	(XProjT annot tDict proj)
  = do
  	let (projT, label)
 		= case proj of
@@ -413,7 +425,7 @@ slurpX	(XProjT annot tDict proj)
 		, XProjTaggedT (Just (tX, eX)) vInst (makeTFreeBot label cProj) proj'
 		, qs )
 
-slurpX x
+slurpX' x
  = panic stage $ "slurpX: cannot slurp " ++ show x
 
 

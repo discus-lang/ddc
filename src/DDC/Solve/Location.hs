@@ -72,9 +72,10 @@ data SourceValue
 	| SVMatchCtorArg
 			{ vsp :: SourcePos } 			-- ^ Matching against a ctor gives types for its args.
 
-	| SVSig		{ vsp :: SourcePos, vVar :: Var }	-- ^ Value constraint from type signature.
-	| SVSigClass	{ vsp :: SourcePos, vVar :: Var }	-- ^ Signature from type-class dictionary definition.
-	| SVSigExtern	{ vsp :: SourcePos, vVar :: Var }	-- ^ Signature from external type.
+	| SVSig		{ vsp :: SourcePos, vVar :: Var }	-- ^ Top level type signature.
+	| SVSigClass	{ vsp :: SourcePos, vVar :: Var }	-- ^ Type signature in type-class dictionary definition.
+	| SVSigExtern	{ vsp :: SourcePos, vVar :: Var }	-- ^ Type signature in a foreign import.
+	| SVSigAnnot    { vsp :: SourcePos }                    -- ^ Constraint from a type annotation directly on an expression.
 
 	| SVCtorDef	{ vsp :: SourcePos
 			, vvarData :: Var
@@ -310,6 +311,10 @@ dispSourceValue tt sv
 
 	SVSigExtern _ var
 		-> "  type of import '" % var % "'"
+
+	SVSigAnnot sp
+		-> "  type annotation"
+		%! "              at: " % sp
 
 	SVCtorDef sp vData vCtor
 		-> "  definition of constructor '" % vCtor % "' of '" % vData % "'"
