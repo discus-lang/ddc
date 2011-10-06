@@ -71,7 +71,22 @@ Proof.
 Qed.
 
 
-(********************************************************************)
+Lemma datacon_eq_ex
+ : forall (dc1 dc2 : datacon)
+ , dc1 = dc2 \/ dc1 <> dc2.
+Proof.
+ intros.
+ assert (exists b, b = datacon_beq dc1 dc2).
+  eauto. dest b.
+ destruct b. 
+  apply datacon_beq_eq in H. subst. auto.
+  right. unfold not. intros.
+  subst. apply datacon_beq_false in H. auto.
+Qed.
+Hint Resolve datacon_eq_ex.
+
+
+(********************************************************************) 
 (* Definitions. 
    Carries meta information about type and data constructors. *)
 Inductive def  : Type :=

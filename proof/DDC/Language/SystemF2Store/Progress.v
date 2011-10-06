@@ -129,6 +129,7 @@ Proof.
   (* All ctor args are wnf, or there is a context where one can step *)
   lets D: (@exps_ctx_run exp exp) HWS.
   inverts D.
+
    (* All ctor args are wnf *)
    right.
    assert (Forall (wfT 0) ts).
@@ -208,28 +209,31 @@ Proof.
    exists (XCase x' aa).
    lets D: EsContext XcCase; eauto.
 
+
  Case "XUpdate".
   right.
   inverts_type.
   edestruct IHx1; eauto.
+
   SCase "value x1".
    edestruct IHx2; eauto.
+
    SSCase "value x2".
     assert (exists l, x1 = XLoc l).
-     admit.                                                         (* TODO: forms of values *)
+     eapply value_loc; eauto.
+     defok ds (DefDataType tcObj ks dcs). auto.
     dest l. subst.
-    assert (exists dc svs, get l s = Some (SObj dc svs)) as HJ.
-     admit.                                                         (* TODO: lemma *)
+    have (exists dc svs, get l s = Some (SObj dc svs)) as HJ.
     destruct HJ as [dc'].
     destruct H2 as [svs].
 
     (* Case on whether the data constructor matches *)
-    assert (dc' = dc \/ ~(dc' = dc)) as HM.
-     admit. inverts HM.                                             (* TODO: lemma *)
+    have (dc' = dc \/ ~(dc' = dc)) as HM.
+     inverts HM.
 
      SSSCase "dc' = dc".
       assert (exists sv2, svalueOf x2 sv2).
-       admit. dest sv2.                                             (* TODO: lemma *)
+       eauto. dest sv2.
       exists (replace l (SObj dc (replace i sv2 svs)) s).
       exists xUnit.
       eapply EsUpdate; eauto.

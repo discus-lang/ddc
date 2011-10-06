@@ -152,6 +152,32 @@ Qed.
 Hint Resolve value_lam.
 
 
+Lemma value_loc
+ :  forall x ds ke te se tcObj ts
+ ,  value x
+ -> isTyConData tcObj
+ -> TYPE ds ke te se x (makeTApps (TCon tcObj) ts)
+ -> (exists l, x = XLoc l).
+Proof.
+ intros. destruct x; eauto; nope.
+ 
+ Case "XLAM x = XLoc l".
+  inverts_type.
+   symmetry in H3.
+   apply makeTApps_takeTCon in H3.
+   nope.
+
+ Case "XLam t x = XLoc l".
+  inverts_type. 
+   symmetry in H4.
+   unfold tFun in *.
+   apply makeTApps_takeTCon in H4.
+   simpl in H4.
+   inverts H4.
+   nope.
+Qed.
+
+
 (********************************************************************)
 (* Forms of types *)
 Lemma type_XLAM
