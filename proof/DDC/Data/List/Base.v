@@ -181,6 +181,43 @@ Qed.
 Hint Resolve app_snoc.
 
 
+Lemma app_snoc'
+ :  forall A (l1: list A) (l2: list A) (x : A)
+ ,  (x <: l1) >< l2 = x <: (l1 >< l2).
+Proof.
+ intros.
+ induction l2.
+  auto.
+  simpl. rewrite IHl2. auto.
+Qed.
+Hint Resolve app_snoc'.
+
+
+Lemma app_cons_nil_left
+ :  forall A x (yy: list A)
+ ,  (x :: nil) ++ yy
+ =  x :: yy.
+Proof.
+ intros.
+ simpl. auto.
+Qed.
+Hint Resolve app_cons_nil_left.
+Hint Rewrite app_cons_nil_left : global.
+
+
+Lemma app_cons_nil_right
+ :  forall A y (xx: list A)
+ ,  xx ++ (y :: nil)
+ =  snoc y xx.
+Proof.
+ intros.
+ rewrite app_snoc. rr.
+ auto.
+Qed.
+Hint Resolve app_cons_nil_right.
+Hint Rewrite app_cons_nil_right : global.
+
+
 Lemma app_length
  :  forall A (l1: list A) l2
  ,  length (l1 ++ l2) = length l1 + length l2.

@@ -47,6 +47,7 @@ Qed.
 Hint Resolve liftTT_wfT.
 
 
+
 (********************************************************************)
 (* Lifting and type utils *)
 Lemma liftTT_getCtorOfType
@@ -182,6 +183,20 @@ Proof.
    inverts H.
    repeat rewritess; burn.
 Qed.
+
+
+Lemma liftTT_closedT_10
+ :  forall t
+ ,  closedT t
+ -> closedT (liftTT 1 0 t).
+Proof.
+ intros.
+ unfold closedT in *.
+ rrwrite (0 = 0 + 0). 
+ rewrite liftTT_wfT_1. eauto.
+ eauto.
+Qed.
+Hint Resolve liftTT_closedT_10.
 
 
 (********************************************************************)

@@ -4,6 +4,51 @@ Require Import DDC.Base.Tactics.
 
 
 (********************************************************************)
+(* Lemmas: in *)
+Lemma in_snoc 
+ :  forall A x a (xs: list A)
+ ,  In x xs 
+ -> In x (a <: xs).
+Proof.
+ intros.
+ induction xs.
+  nope.
+  simpl in H.
+   inverts H.
+   simpl. auto.
+   simpl. eauto.
+Qed.
+Hint Resolve in_snoc.
+
+
+Lemma in_app_right
+ :  forall A x (xs ys: list A)
+ ,  In x ys
+ -> In x (xs ++ ys).
+Proof.
+ intros.
+ induction xs.
+  rr. auto.
+  rrwrite ((a :: xs) ++ ys = a :: (xs ++ ys)).
+  apply in_cons. auto.
+Qed.
+Hint Resolve in_app_right.
+
+
+Lemma in_app_left
+ :  forall A x (xs ys: list A)
+ ,  In x xs
+ -> In x (xs ++ ys).
+Proof.
+ intros.
+ eapply (@rev_ind A (fun ys => In x (xs ++ ys))); intros.
+  rr. auto.
+  rr. rrwrite ((x0 <: l) >< xs = (x0 <: (l >< xs))). eauto.
+Qed.
+Hint Resolve in_app_left.
+
+
+(********************************************************************)
 (* Lemmas: Forall *)
 
 Lemma Forall_impl_in
@@ -56,6 +101,26 @@ Proof.
     inverts H0. auto. auto.
 Qed.
 Hint Resolve Forall_snoc.
+
+
+Lemma Forall_app_left
+ :  forall A (P: A -> Prop) xs ys
+ ,  Forall P (xs ++ ys)
+ -> Forall P xs.
+Proof.
+ intros. nforall. eauto.
+Qed.
+Hint Resolve Forall_app_left.
+
+
+Lemma Forall_app_right
+ :  forall A (P: A -> Prop) xs ys
+ ,  Forall P (xs ++ ys)
+ -> Forall P ys.
+Proof.
+ intros. nforall. eauto.
+Qed.
+Hint Resolve Forall_app_right.
 
 
 Lemma Forall_map

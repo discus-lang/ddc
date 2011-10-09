@@ -534,3 +534,69 @@ Proof.
   eapply type_tyenv_weaken1.
   burn.
 Qed.
+
+
+(********************************************************************)
+(* Weakening Store Typing in Type Judgement. *)
+Lemma type_stenv_snoc 
+ :  forall ds ke te se t2    x t1
+ ,  closedT t2
+ -> TYPE ds ke te se         x t1
+ -> TYPE ds ke te (t2 <: se) x t1.
+Proof.
+ intros. gen ds ke te se t1 t2.
+ induction x using exp_mutind with 
+  (PA := fun a => forall ds ke te se t2 t3 t4
+      ,  closedT t2
+      -> TYPEA ds ke te se         a t3 t4
+      -> TYPEA ds ke te (t2 <: se) a t3 t4)
+  ; intros; inverts_type; eauto.
+
+ Case "XLAM".
+  eapply TyLAM.
+  unfold liftTE in *. rr.
+  spec IHx H2.
+  eapply IHx.
+  eauto.
+
+ Case "XCon".
+  eapply TyCon; eauto.
+  eapply Forall2_impl_in with (R1 := TYPE ds ke te se).
+   nforall. eauto. eauto.
+
+ Case "XCase".
+  eapply TyCase; nforall; eauto.
+Qed.
+Hint Resolve type_stenv_snoc.
+
+
+Lemma type_stenv_weaken
+ :  forall ds ke te se1 se2 x t1
+ ,  Forall closedT se2
+ -> TYPE ds ke te  se1         x t1
+ -> TYPE ds ke te (se2 >< se1) x t1.
+Proof.
+ intros. gen ds ke te se1.
+ induction se2; intros.
+ rewrite app_nil_right. auto.
+ rrwrite ((se2 :> a) >< se1 = se2 >< (a <: se1)). 
+ inverts H. eauto.
+Qed.
+Hint Resolve type_stenv_weaken.
+
+
+Lemma type_stenv_extends
+ :  forall ds ke te se1 se2 x t1
+ ,  Forall closedT se2
+ -> extends se2 se1
+ -> TYPE ds ke te se1 x t1
+ -> TYPE ds ke te se2 x t1.
+Proof.
+ intros.
+ unfold extends in *.
+ destruct H0 as [se3]. subst.
+ eapply type_stenv_weaken; auto.
+  eauto.
+Qed.
+Hint Resolve type_stenv_extends.
+

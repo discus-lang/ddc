@@ -5,43 +5,6 @@ Require Import DDC.Language.SystemF2Store.Exp.
 Require Import DDC.Base.
 
 
-(* If we have a well typed case match on a store location containing some 
-   data object, then there is a case alternative corresponding to
-   that object's data constructor. *)
-
-Lemma getAlt_has
- :  forall ds se ss l alts t
- ,  WfS ds se ss
- -> TYPE ds nil nil se (XCase (XLoc l) alts) t
- -> (exists dc, (exists svs, get    l  ss   = Some (SObj dc svs))
-            /\  (exists x,   getAlt dc alts = Some (AAlt dc x))).
-Proof.
- intros.
- inverts H0.
-
- have (exists dc svs, get l ss = Some (SObj dc svs)).
-  shift dc. split.
-  shift svs. auto.
-  dest svs.
-
- eapply getAlt_exists.
- inverts_type.
- nforall.
- inverts H. int.
- unfold STORET in *.
-  spec H10 l dc svs H0.
-  destruct H10 as [tcObj'].
-  dest tsParam.
-  dest tsFields.
-  int.
-  rewrite H2 in H10. inverts H10.
-  erewrite getCtorOfType_makeTApps with (tc := tcObj') in H5; eauto.
-    inverts H5.
-  erewrite getCtorOfType_makeTApps with (tc := tcObj) in H7; eauto.
-Qed.
-Hint Resolve getAlt_has.
-
-
 (* A well typed expression is either a well formed value, 
    or can transition to the next state. *)
 Theorem progress

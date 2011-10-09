@@ -184,7 +184,6 @@ Proof.
    dest t. dest ts'. subst.
    rewrite app_snoc in H.
    rewrite app_snoc. rr.
-   rewrite app_snoc in H0. rr.
    rewrite makeTApps_snoc' in H0.
    rewrite makeTApps_snoc' in H0.
    inverts H0.
