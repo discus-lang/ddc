@@ -4,10 +4,6 @@ Require Import DDC.Language.SystemF2Store.TyJudge.
 Require Import DDC.Language.SystemF2Store.SubstExpExp.
 Require Import DDC.Language.SystemF2Store.SubstTypeExp.
 
-(* TODO: 
-   Add that store environment is closed to WfS
-   need this for se weakening lemmas.
-*)
 
 (* When a well typed expression transitions to the next state
    then its type is preserved. *)
@@ -16,7 +12,8 @@ Theorem preservation
  ,  WfS ds se s
  -> TYPE ds nil nil se x  t
  -> STEP s x s' x'
- -> (exists se', WfS ds se' s'
+ -> (exists se', extends se' se
+             /\  WfS ds  se' s'
              /\  TYPE ds nil nil se' x' t).
 Proof.
  intros ds se s s' x x' t HW HT HS. gen t.
@@ -25,39 +22,70 @@ Proof.
  (* Evaluation in an arbitrary context. *)
  Case "EsContext".
   spec IHHS HW.
-  destruct H.
-
-   SCase "top".
-    edestruct IHHS as [se2]; eauto.
-
-   SCase "app1".
-    inverts_type.
-    edestruct IHHS as [se2]. eauto.
-    exists se2. int.
-    eapply TyApp. eauto. spec IHHs 
+  destruct H; try 
+   (inverts_type; 
+    edestruct IHHS as [se2]; eauto; 
+    exists se2; int; eauto).
 
   SCase "XCon".
+   inverts_type.
+   assert (exists t, TYPE ds nil nil se x t) as HX.
+    eapply (@exps_ctx_Forall2_exists_left exp ty wnfX C); eauto.
+   dest t. 
+   edestruct IHHS as [se2]; eauto.
+   exists se2; int.
+
    eapply TyCon; eauto.
-   eapply exps_ctx_Forall2_swap.
-    eauto.
-    spec IHHS HW. eapply IHHS. auto.
+   assert (Forall2 (TYPE ds nil nil se2) (C x) (map (substTTs 0 ts) tsFields)) as HF.
+    eapply Forall2_impl with (R1 := TYPE ds nil nil se). eauto. eauto.
+
+    admit. (* fark. Forall2 lemma *)
+
+  SCase "XCase".
+   eapply TyCase; eauto. 
+   nforall. intros.
+   apply H2 in H5.
+   admit. (* ok, need store typing weakening for TYPEA *)
 
  Case "EsLamApp".
+  exists se. int.
   eapply subst_exp_exp; eauto.
 
  Case "EsLAMAPP".
-
+  exists se. int.
   assert (TYPE ds nil (substTE 0 t2 nil) (substTE 0 t2 se)
                       (substTX 0 t2 x12) (substTT 0 t2 t1)) as HT.
    eapply subst_type_exp; eauto.
-   admit.
-  simpl in HT. auto.
+   have (Forall closedT se).
+   assert (liftTE 0 se = se) as HL.
+    admit. (* ok se all closed *)
+   rewrite HL in H2.
+   rrwrite (liftTE 0 nil = nil) in H2. auto.
+  rrwrite (substTE 0 t2 nil = nil) in HT.
+
+   assert (substTE 0 t2 se  = se) as HS.
+    admit. (* ok se all closed *)
+   rewrite HS in HT.
+  auto.
+
+ Case "EsAlloc".
+  exists ((makeTApps (TCon tc) tsParam) <: se).
+  int. 
+  admit. (* TODO: show extended store still well formed *)
+  eapply TyLoc.
+  admit. (* ok get lemma *)
+  skip.  (* TODO: fixme *)
+  defok ds (DefDataType tc ks dcs). eauto.
 
  Case "EsCaseAlt".
-  eapply subst_exp_exp_list; eauto.
-  have (In (AAlt dc x) alts).
+  skip.
+(* exists se. int.
+   eapply subst_exp_exp_list.
+   skip. (* ok svs are wf *)
 
-  nforall. (* todo: burn should get this *)
+   have (In (AAlt dc x) alts).
+   nforall.
+
   have (TYPEA ds nil nil (AAlt dc x) (makeTApps (TCon tc) ts) t) as HA.
   inverts HA.
   rewrite H11 in H16. inverts H16.
@@ -75,20 +103,22 @@ Proof.
    eapply makeTApps_args_eq; eauto. 
    subst.
   eauto.
+ *)
+
+ Case "EsUpdate".
+  skip.
+
+ Case "EsUpdateSkip".
+  exists se. int.
+  unfold xUnit. unfold tUnit.
+  rrwrite ( TCon (TyConData 0 KStar)
+          = makeTApps (TCon (TyConData 0 KStar)) nil).
+  eapply TyCon with (tsFields := nil) (dcs := nil); eauto.
+  skip. skip. (* ok, need to bake in the DataDefs for unit *)
+  rrwrite (map (substTTs 0 nil) (@nil ty) = (@nil ty)).
+  auto.
 Qed.
 
-
-(* When we multi-step evaluate some expression,
-   then the result has the same type as the original. *)  
-Lemma preservation_steps
- :  forall ds x1 t1 x2
- ,  TYPE ds nil nil x1 t1
- -> STEPS       x1 x2
- -> TYPE ds nil nil x2 t1.
-Proof.
- intros ds x1 t1 x2 HT HS.
- induction HS; eauto using preservation.
-Qed.
 
 
 (* When we multi-step evaluate some expression, 
@@ -96,12 +126,43 @@ Qed.
    Using the left-linearised form for the evaluation.
  *)
 Lemma preservation_stepsl
- :  forall ds x1 t1 x2
- ,  TYPE ds nil nil x1 t1
- -> STEPSL x1 x2
- -> TYPE ds nil nil x2 t1.
+ :  forall ds x1 t1 x2 se s s'
+ ,  WfS  ds se s
+ -> TYPE ds nil nil se  x1 t1
+ -> STEPSL      s   x1 s' x2
+ -> (exists se', extends se' se
+              /\ WfS  ds se' s'
+              /\ TYPE ds nil nil se' x2 t1).
 Proof.
- intros ds x1 t1 x2 HT HSL.
- induction HSL; eauto using preservation.
+ intros ds x1 t1 x2 se s s' HW HT HS. gen se.
+ induction HS; intros.
+  Case "EslNone".
+   eauto.
+  Case "EslCons".
+   lets D: preservation HW HT H.
+    destruct D as [se2].
+    int.
+   spec IHHS H0 H3.
+   destruct IHHS as [se3].
+   int.
+   exists se3. int.
+   eapply extends_trans; eauto.
+Qed.
+
+
+(* When we multi-step evaluate some expression,
+   then the result has the same type as the original. *)  
+Lemma preservation_steps
+ :  forall ds x1 t1 x2 se s s'
+ ,  WfS ds se s
+ -> TYPE ds nil nil se x1 t1
+ -> STEPS        s  x1 s' x2
+ -> (exists se', extends se' se
+              /\  WfS ds  se' s'
+              /\  TYPE ds nil nil se' x2 t1).
+Proof.
+ intros ds x1 t1 x2 se s s' HW HT HS.
+ eapply stepsl_of_steps in HS.
+ eapply preservation_stepsl; eauto.
 Qed.
 

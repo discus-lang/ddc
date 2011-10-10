@@ -92,15 +92,28 @@ Definition STORET (ds: defs) (st: stenv) (ss: store)
 Hint Unfold STORET.
 
 
+(******************************************************************************)
 (* Well formed store.
    Store is well formed under some data type definitions and a store typing. *)
 Definition WfS (ds: defs) (se: stenv) (ss: store)
- := DEFSOK ds  
+ := DEFSOK ds
+ /\ Forall closedT se
  /\ STOREM ds se ss 
  /\ STORET ds se ss.
 Hint Unfold WfS.
 
+Lemma WfS_defsok 
+ : forall ds se ss, WfS ds se ss -> DEFSOK ds.
+Proof. intros. inverts H. tauto. Qed.
+Hint Resolve WfS_defsok.
 
+Lemma WfS_closedT
+ : forall ds se ss, WfS ds se ss -> Forall closedT se.
+Proof. intros. inverts H. tauto. Qed.
+Hint Resolve WfS_closedT.
+
+
+(******************************************************************************)
 Lemma store_has_sbind_for_stenv
  :  forall ds se ss l tObj
  ,  WfS ds se ss
@@ -125,7 +138,7 @@ Lemma store_has_sbind_for_XLoc
  -> (exists dc svs, get l ss = Some (SObj dc svs)).
 Proof.
  intros.
- inverts H. int.
+ inverts keep H. int.
  inverts_type.
  eauto.
 Qed.
@@ -156,12 +169,12 @@ Proof.
  nforall.
  inverts H. int.
  unfold STORET in *.
-  spec H10 l dc svs H0.
-  destruct H10 as [tcObj'].
+  spec H11 l dc svs H0.
+  destruct H11 as [tcObj'].
   dest tsParam.
   dest tsFields.
   int.
-  rewrite H2 in H10. inverts H10.
+  rewrite H2 in H11. inverts H11.
   erewrite getCtorOfType_makeTApps with (tc := tcObj') in H5; eauto.
     inverts H5.
   erewrite getCtorOfType_makeTApps with (tc := tcObj) in H7; eauto.
