@@ -307,8 +307,7 @@ Proof.
     rr. burn.
     nforall. intros.
      have (In x (map dcOfAlt aa)).
-     burn.                                    (* expensive! *)
-
+     rr. auto.
        
  Case "XAlt".
   defok ds (DefData dc tsFields tc).
