@@ -25,6 +25,7 @@ Definition isTyConFun  (tc: tycon) : Prop :=
  end.
 Hint Unfold isTyConFun.
 
+
 Definition isTyConData (tc: tycon) : Prop :=
  match tc with
  | TyConFun      => False
@@ -179,7 +180,7 @@ Proof.
     simpl in H.
     rewrite app_snoc in H.
     rewrite app_nil_right in H.
-    simpl in H. burn. 
+    simpl in H; burn.
 
    dest t. dest ts'. subst.
    rewrite app_snoc in H.

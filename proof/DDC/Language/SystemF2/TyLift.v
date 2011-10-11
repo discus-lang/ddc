@@ -74,7 +74,7 @@ Lemma liftTT_takeTCon'
  -> takeTCon (liftTT n d tt) = liftTT n d tCon.
 Proof.
  intros. gen n d.
- induction tt; intros; rewrite <- H; burn.
+ induction tt; intros; rewrite <- H; try burn.
 Qed.
 Hint Resolve liftTT_takeTCon'.
 
@@ -97,7 +97,7 @@ Lemma liftTT_takeTArgs'
  -> takeTArgs (liftTT n d tt) = map (liftTT n d) tsArgs.
 Proof.
  intros.
- induction tt; intros; rewrite <- H; burn.
+ induction tt; intros; rewrite <- H; try burn.
 Qed.
 Hint Resolve liftTT_takeTArgs'.
 
@@ -108,7 +108,8 @@ Lemma liftTT_makeTApps
  =  makeTApps (liftTT n d t1) (map (liftTT n d) ts). 
 Proof.
  intros. gen t1.
- induction ts; burn.
+ induction ts.
+  burn. rip. simpl. rewritess.
 Qed.
 Hint Rewrite liftTT_makeTApps : global.
 

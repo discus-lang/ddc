@@ -15,7 +15,8 @@ Proof.
  induction H; subst.
 
  Case "XVar". false.
- Case "XLam". burn.
+ Case "XLam". eauto 7.
+
 
  Case "XApp".
   right.

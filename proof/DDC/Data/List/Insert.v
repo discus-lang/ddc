@@ -20,9 +20,18 @@ Hint Unfold insert.
 (** Lemmas: insert *)
 
 Lemma insert_rewind
- :  forall {A: Type} ix t1 t2 (xx: list A)
+ :  forall {A} ix t1 t2 (xx: list A)
  ,  insert ix t2 xx :> t1 = insert (S ix) t2 (xx :> t1).
 Proof. auto. Qed.
+
+
+Lemma insert_zero
+ :  forall {A} x (xs : list A)
+ ,  insert 0 x xs = xs :> x.
+Proof. 
+ rip. destruct xs; auto.
+Qed.
+Hint Resolve insert_zero.
 
 
 (* If we insert an element at a particular point in a list, 

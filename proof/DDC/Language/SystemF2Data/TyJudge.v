@@ -307,7 +307,7 @@ Proof.
     rr. burn.
     nforall. intros.
      have (In x (map dcOfAlt aa)).
-     burn.
+     burn.                                    (* expensive! *)
 
        
  Case "XAlt".
@@ -340,7 +340,7 @@ Proof.
    unfold liftTE.
    rewrite <- HXX.
    rewrite <- map_app.
-   burn.
+   eauto.
 Qed.
 
 

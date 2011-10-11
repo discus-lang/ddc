@@ -35,6 +35,15 @@ Tactic Notation "breaka" constr(E) :=
 
 
 (********************************************************************)
+Ltac rip
+ := try match goal with
+       |- forall _, _  => intros
+     | [ H : _ |- _ ]  => solve [inverts H]
+     end.
+ 
+
+
+(********************************************************************)
 (* Breaking up nat_compare
    Find the first (nat_compare ?E1 ?E2) and destruct it into the
    possible orderings. Also substitute ?E1 = ?E2 when they are equal. 
@@ -76,6 +85,7 @@ Ltac rewritess
     | [H: forall _ _ _, eq _ _ |- _ ] => simpl; rewrite H; auto
     end.
 
+Ltac rs := rewritess.
 
 (********************************************************************)
 (* Tactics for working with forall. *)
@@ -141,7 +151,7 @@ Ltac nope1
 
 (* Nope solves the goal completely or does nothing *)
 Ltac nope 
- := first [ solve [repeat nope1] 
+ := first [ rip; solve [repeat nope1] 
           | idtac ].
 
 
@@ -164,68 +174,63 @@ Ltac rr
      language though.
  *)
 
-(* Try primitive tactics from quickest to slowest. 
-   These should all fail if they do not solve the goal. *)
+
+(* Primitive tactics that fail quickly. *)
 Ltac burn0
  := first
-    [ assumption       (* Goal is one of the assumptions. *)
-    | reflexivity      (* Goal has form e = e. *)
-    | omega            (* Solves inequalities with Presburger arithmetic. 
-                          Common with deBruijn representations. *)
-    | solve [auto]     (* Wrapping these tactics in solve ensures that *)
-    | solve [eauto] ]. (*   they fail if they do not apply. *)
+    [ assumption                    (* Goal is one of the assumptions. *)
+    | reflexivity                   (* Goal has form e = e. *)
+    | solve [eauto]
+    | omega                         (* Solves inequalities with Presburger arithmetic.  *)
+    | false; omega ].               (* Solves inequalities with Presburger arithmetic.  *)
 
-
-(* Try to use injectivity between two constructor applications.
-   These are common when we lookup values from the environment, 
-    eg with  get ix tyenv = Some t1. *)
-Ltac injectos :=
- match goal with 
-    [ H1 : _ = ?C ?y1
-    , H2 : _ = ?C ?y2 |- _]
-     => assert (y1 = y2); rewrite H1 in H2; inverts H2; burn0
-
-  | [ H1 : ?C ?y1 = _
-    , H2 : ?C ?y2 = _ |- _]
-     => assert (y1 = y2); rewrite H1 in H2; inverts H2; burn0
- end.
-
+(* Try the firstorder solver.
+   This can be slow if it fails. *)
+Ltac burn1
+ := first
+    [ burn0 
+    | solve [firstorder burn0] ].
 
 (* Try to change the goal in some other way before applying
    one of the primitive tactics. *)
-Ltac burn1 
- := first
-    [ burn0
-    | injectos
-    | false;   burn0 
-    | f_equal; burn0].
-
-
 Ltac burn2
  := first
     [ burn1
-    | rewritess; burn1
-    | simpl; burn1
-    | simpl; rewritess; burn1
-    | simpl; try f_equal; rewritess; try f_equal; burn1].
+    | f_equal; burn1 ].
+
+
+(* Apply normalising rewrite rules in various combinations *)
+Ltac burn3
+ := first [ burn2
+          | try rr; 
+            first [ burn2
+                  | try rs;
+                    first [ burn2
+                          | simpl; burn2 ]]].
+
+
+Ltac burn4
+(* Try to use injectivity between two constructor applications.
+   These are common when we lookup values from the environment, 
+    eg with  get ix tyenv = Some t1. *)
+ := rip; match goal with 
+      [ H1 : _ = ?C ?y1
+      , H2 : _ = ?C ?y2 |- _]
+      => assert (y1 = y2); rewrite H1 in H2; inverts H2; burn3
+
+    | [ H1 : ?C ?y1 = _
+      , H2 : ?C ?y2 = _ |- _]
+      => assert (y1 = y2); rewrite H1 in H2; inverts H2; burn3
+
+    | _ => burn3
+ end.
 
 
 (* Top-level megatactic.
-   Handles disjunctions by applying burn1 to each of the parts.
-    This often happens in progress proofs. eg  value x \/ step x x'. *)
-Ltac burn :=
- intros; 
- try burn0;
- try (autorewrite with global in *);
- match goal with 
-     [ _ : _ |- _ \/ _ ] 
-       => try burn1; try (left; burn2); try (right; burn2)
-
-   | [ H : _ /\ _ |- _]
-       => decompose [and] H; burn2
-
-   | _ => burn2
- end.
+   Try some simple, fast things first. 
+   Then try everything. *)
+Ltac burn 
+ := first [burn0 | burn4].
 
 
 (* Rewrite using burn.
@@ -238,6 +243,8 @@ Tactic Notation "rrwrite" constr(xx) "in" hyp(H)
  := let H2 := fresh
     in  assert xx as H2 by burn; rewrite H2 in H; clear H2.
 
+Tactic Notation "rw" constr(xx)             := rrwrite xx.
+Tactic Notation "rw" constr(xx) "in" hyp(H) := rrwrite xx in H.
 
 (* Assert a statement and prove it via burn. *)
 Tactic Notation "have" constr(E) :=

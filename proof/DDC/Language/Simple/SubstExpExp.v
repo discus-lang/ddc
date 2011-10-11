@@ -17,31 +17,22 @@ Lemma subst_exp_exp_ix
  -> TYPE (delete ix te) x2 t2
  -> TYPE (delete ix te) (substX ix x2 x1) t1.
 Proof.
- intros. gen ix te x2 t1.
+ rip. gen ix te x2 t1.
  induction_type x1.
 
  Case "XVar".
-  fbreak_nat_compare.
-  SCase "i = ix".
-   burn.
-
-  SCase "n < ix".
-   apply TYVar.
-    rewrite <- H3.
-    apply get_delete_above. auto.
-
+  fbreak_nat_compare; try burn.
   SCase "n > ix".
-   apply TYVar.
+   eapply TYVar.
    destruct n.
     burn.
     simpl. nnat. rewrite <- H3.
-     apply get_delete_below. burn.
+    apply get_delete_below. burn.
 
- Case "XLam".
+ Case "XLam". 
   apply TYLam.
   rewrite delete_rewind.
-  apply IHx1; auto.
-   simpl. apply type_tyenv_weaken. auto.
+  apply IHx1; burn.
 Qed.
 
 
@@ -50,9 +41,8 @@ Theorem subst_exp_exp
  ,  TYPE (te :> t2) x1 t1
  -> TYPE te         x2 t2 
  -> TYPE te (substX 0 x2 x1) t1.
-Proof. 
- intros te x1 x2 t1 t2 Ht1 Ht2.
- lets H: subst_exp_exp_ix 0 (te :> t2).
-  simpl in H. eauto.
+Proof.
+ rip. lets D: subst_exp_exp_ix 0 (te :> t2).
+ simpl in D. eauto.
 Qed.
 

@@ -53,7 +53,7 @@ Lemma substTTs_makeTApps
  =  makeTApps (substTTs d us t1) (map (substTTs d us) ts).
 Proof.
  intros. gen d us t1.
- induction ts; burn.
+ induction ts; try burn.
 Qed.
 Hint Rewrite substTTs_makeTApps : global.
 
@@ -113,6 +113,11 @@ Proof.
      symmetry.
      rrwrite (n = n + 0).
      eapply liftTT_liftTT.
+
+ Case "TApp".
+  simpl.
+  rewrite IHt1_1.
+  rewrite IHt1_2. eauto.
 Qed.
 
 
@@ -126,7 +131,8 @@ Proof.
   simpl. rr.
    f_equal.
    rewrite (@map_impl ty ty (liftTT 0 n) id).
-    induction us; burn. 
+    induction us; try burn.
+    simpl. rewrite <- IHus. auto.
     burn.
 
   simpl.
@@ -209,13 +215,16 @@ Lemma substTT_unbound
  -> substTT ix (liftTT 1 m t2) t1 = t1.
 Proof.
  intros. gen t2 ix tn m.
- induction t1; intros; simpl; inverts H; try burn.
+ induction t1; intros; simpl; inverts H; try burn0.
 
  Case "TVar".
   lift_cases; burn.
 
  Case "TForall".
   erewrite IHt1; burn. 
+
+ Case "TApp".
+  f_equal; eauto.
 Qed.
 
 
@@ -252,7 +261,7 @@ Proof.
   simpl; lift_cases; eauto.
    unfold substTTs'.
     lift_cases.
-      lists.
+      lists. simpl.
       eapply WfT_TVar. lists. omega.
     eapply WfT_TVar.
       omega.

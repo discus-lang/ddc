@@ -49,12 +49,10 @@ Lemma value_lam
  ,  value xx 
  -> TYPE te xx (TFun t1 t2)
  -> (exists t x, xx = XLam t x).
-Proof.
- intros.
+Proof. 
  destruct xx; eauto; nope.
 Qed.
 Hint Resolve value_lam.
-
 
 
 (********************************************************************)
@@ -89,6 +87,7 @@ Proof.
   apply TYLam.
   rewrite insert_rewind. auto. 
 Qed.
+Hint Resolve type_tyenv_insert.
 
 
 Lemma type_tyenv_weaken
@@ -96,10 +95,7 @@ Lemma type_tyenv_weaken
  ,  TYPE  te         x          t1
  -> TYPE (te :> t2) (liftX 0 x) t1.
 Proof.
- intros.
- assert (te :> t2 = insert 0 t2 te).
-  simpl. destruct te; auto. rewrite H0.
- apply type_tyenv_insert. auto.
+ rip. rw (te :> t2 = insert 0 t2 te). auto.
 Qed.
-
+Hint Resolve type_tyenv_weaken.
 

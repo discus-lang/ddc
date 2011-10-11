@@ -46,7 +46,7 @@ Lemma substTT_makeTApps
  =  makeTApps (substTT d t2 t1) (map (substTT d t2) ts).
 Proof.
  intros. gen d t2 t1.
- induction ts; burn.
+ induction ts; try burn.
 Qed.
 Hint Rewrite substTT_makeTApps : global.
 
@@ -176,10 +176,5 @@ Proof.
   f_equal.
    rewrite (liftTT_substTT_1 0 (n + m)). auto.
    rewrite (liftTT_liftTT_11 0 n). auto.  
-
- Case "TApp".
-  simpl. f_equal.
-   apply IHt1_1.
-   apply IHt1_2.
 Qed.
 

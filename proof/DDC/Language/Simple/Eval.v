@@ -22,7 +22,6 @@ Inductive EVAL : exp -> exp -> Prop :=
    :  forall x1 t11 x12 x2 v2 v3
    ,  EVAL x1 (XLam t11 x12) -> EVAL x2 v2 -> EVAL (substX 0 v2 x12) v3
    -> EVAL (XApp x1 x2) v3.
-
 Hint Constructors EVAL.
 
 
@@ -82,8 +81,9 @@ Proof.
     lets D: steps_context XcApp2 IHHE2; eauto.
    eapply EsAppend.
     eapply EsStep.
-     eapply EsLamApp. eauto.
-   eauto.
+     eapply EsLamApp.  
+      burn.
+     eauto.
 Qed.
 
 
@@ -111,7 +111,7 @@ Proof.
   destruct H; inverts_type; inverts_eval; eauto; nope.
 
  Case "application".
-  eauto.
+  burn.
 Qed.
 
 
@@ -123,7 +123,7 @@ Lemma eval_of_stepsl
  -> EVAL     x1 v2.
 Proof.
  intros x1 t1 v2 HT HS Hv.
- induction HS; eauto.
+ induction HS; try burn.
 
  Case "ESLCons".
   eapply eval_expansion;
