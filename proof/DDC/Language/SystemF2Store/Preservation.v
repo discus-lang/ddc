@@ -4,6 +4,23 @@ Require Import DDC.Language.SystemF2Store.TyJudge.
 Require Import DDC.Language.SystemF2Store.SubstExpExp.
 Require Import DDC.Language.SystemF2Store.SubstTypeExp.
 
+Lemma replace_nil
+ : forall {A} n (x : A)
+ , replace n x nil = nil.
+Proof.
+ destruct n; burn.
+Qed.
+
+Lemma replace_length
+ : forall {A} n x (xs : list A)
+ , length (replace n x xs) = length xs.
+Proof.
+ intros. gen n.
+ induction xs; intros.
+  rewrite replace_nil; auto.
+  destruct n; burn.
+Qed. 
+
 
 (* When a well typed expression transitions to the next state
    then its type is preserved. *)
@@ -106,7 +123,14 @@ Proof.
  *)
 
  Case "EsUpdate".
-  skip.
+  exists se. rip.
+  inverts keep HW.
+  unfold WfS.
+   rip; eauto.
+    unfold STOREM in *.
+     rs. rewrite replace_length. auto.
+    unfold STORET in *. subst. rip.
+
 
  Case "EsUpdateSkip".
   exists se. int.

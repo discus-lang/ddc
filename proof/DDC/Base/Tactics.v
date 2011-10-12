@@ -26,7 +26,6 @@ Tactic Notation "spec" hyp(H1) hyp(H2) hyp(H3) hyp(H4) hyp(H5)
 Tactic Notation "spec" hyp(H1) hyp(H2) hyp(H3) hyp(H4) hyp(H5) hyp(H6)
  := specializes H1 H2 H3 H4 H5 H6.
 
-
 Tactic Notation "break" constr(E) :=
  let X := fresh "X" in remember (E) as X; destruct X.
 
@@ -35,44 +34,15 @@ Tactic Notation "breaka" constr(E) :=
 
 
 (********************************************************************)
+(* Rip apart compound hypothesis and goals.
+   Then try auto to eliminate the easy stuff. *)
 Ltac rip
  := try match goal with
-       |- forall _, _  => intros
-     | [ H : _ |- _ ]  => solve [inverts H]
-     end.
+                  |- forall _, _  => intros; rip
+     |            |- _ /\ _       => split; rip
+     | [H: _ /\ _ |- _ ]          => inverts H; rip
+     end; try auto.
  
-
-
-(********************************************************************)
-(* Breaking up nat_compare
-   Find the first (nat_compare ?E1 ?E2) and destruct it into the
-   possible orderings. Also substitute ?E1 = ?E2 when they are equal. 
- *)
-Ltac fbreak_nat_compare :=
- match goal with 
- |  [ |- context [nat_compare ?E1 ?E2] ]
- => let X := fresh "X" 
-    in  remember (nat_compare E1 E2) as X; destruct X;     
-
-        (* In the equality case, sometimes we get equations like
-           n = S n, which can't be substituted. Hence try subst. *)
-        [ match goal with 
-          |  [ H: Eq = nat_compare E1 E2 |- _ ] 
-          => symmetry in H; apply nat_compare_eq in H; 
-             try subst 
-          end
-
-        | match goal with 
-          |  [ H: Lt = nat_compare E1 E2 |- _ ]
-          => symmetry in H; apply nat_compare_lt in H
-          end 
-
-        | match goal with
-          |  [ H: Gt = nat_compare E1 E2 |- _ ]
-          => symmetry in H; apply nat_compare_gt in H
-         end
-        ]
- end.
 
 (********************************************************************)
 (* Apply rewrites from the hypotheses *)
@@ -86,16 +56,7 @@ Ltac rewritess
     end.
 
 Ltac rs := rewritess.
-
-(********************************************************************)
-(* Tactics for working with forall. *)
-(* Normalise foralls to In form. *)
-Ltac nforall := 
- repeat
-  (match goal with 
-   | [ H: Forall _ _ |- _ ] => rewrite Forall_forall in H
-   | [ H: _ |- Forall _ _ ] => rewrite Forall_forall
-   end).
+Ltac rr := autorewrite with global in *.
 
 
 (********************************************************************)
@@ -128,6 +89,8 @@ Ltac shifts H
 (********************************************************************)
 (* A better 'false'. 
    Try to eliminate the goal by finding a false hypothesis.
+   Can be expensive when inverting many of the hypothesis produce
+   more premises.
  *)
 Ltac nope1
  := match goal with
@@ -156,33 +119,28 @@ Ltac nope
 
 
 (********************************************************************)
-Ltac rr 
- := autorewrite with global in *.
+(* Burn mega-tactic for semantics proofs.
 
-
-(********************************************************************)
-(* Mega-tactic for semantics proofs.
    * This gets lots of the common cases, where Coq really should 
      have tried a bit harder. For example, trying f_equal before eauto.
 
    * It also contains cases for patterns that often arise when using
      the deBruijn representation. For example, trying false before
      omega to show that a case concerning index manipulation
-     cannot happen.   
+     cannot happen.
 
-   * It does not contain any support specific to a particular 
-     language though.
+   * Failing is sometimes slow due to the (firstorder burn0) tactic
+     in burn1.
  *)
-
 
 (* Primitive tactics that fail quickly. *)
 Ltac burn0
  := first
-    [ assumption                    (* Goal is one of the assumptions. *)
-    | reflexivity                   (* Goal has form e = e. *)
-    | solve [eauto]
-    | omega                         (* Solves inequalities with Presburger arithmetic.  *)
-    | false; omega ].               (* Solves inequalities with Presburger arithmetic.  *)
+    [ assumption       (* Goal is one of the assumptions. *)
+    | reflexivity      (* Goal has form e = e. *)
+    | solve [eauto]    (* Resolution based proving *)
+    | omega            (* Solves inequalities with Presburger arithmetic.  *)
+    | false; omega ].  (* Solves inequalities with Presburger arithmetic.  *)
 
 (* Try the firstorder solver.
    This can be slow if it fails. *)
@@ -191,15 +149,17 @@ Ltac burn1
     [ burn0 
     | solve [firstorder burn0] ].
 
-(* Try to change the goal in some other way before applying
+(* Try to factor the goal in some other way before applying
    one of the primitive tactics. *)
 Ltac burn2
  := first
     [ burn1
     | f_equal; burn1 ].
 
-
-(* Apply normalising rewrite rules in various combinations *)
+(* Apply normalising rewrite rules in various combinations.
+   We need to try different combinations. Simplifying can cause rewrite
+   rules not to fire, or to not have the form required for a auto rule,
+   so we want to try burn2 before and after rewrites. *)
 Ltac burn3
  := first [ burn2
           | try rr; 
@@ -208,11 +168,13 @@ Ltac burn3
                     first [ burn2
                           | simpl; burn2 ]]].
 
+(* Apply common factorings that should always make goals easier
+   to solve. 
 
-Ltac burn4
-(* Try to use injectivity between two constructor applications.
+   Try to use injectivity between two constructor applications.
    These are common when we lookup values from the environment, 
     eg with  get ix tyenv = Some t1. *)
+Ltac burn4
  := rip; match goal with 
       [ H1 : _ = ?C ?y1
       , H2 : _ = ?C ?y2 |- _]
@@ -225,14 +187,24 @@ Ltac burn4
     | _ => burn3
  end.
 
-
 (* Top-level megatactic.
-   Try some simple, fast things first. 
-   Then try everything. *)
+   Try some simple, fast things first, then try everything. *)
 Ltac burn 
  := first [burn0 | burn4].
 
 
+(********************************************************************)
+(* Assert a statement and prove it via burn. *)
+Tactic Notation "have" constr(E) :=
+ let H := fresh 
+ in assert E as H by burn.
+
+
+Tactic Notation "have" constr(E) "as" ident(H) :=
+ assert E as H by burn.
+
+
+(********************************************************************)
 (* Rewrite using burn.
    Just state the equality to use. *)
 Tactic Notation "rrwrite" constr(xx)
@@ -246,11 +218,46 @@ Tactic Notation "rrwrite" constr(xx) "in" hyp(H)
 Tactic Notation "rw" constr(xx)             := rrwrite xx.
 Tactic Notation "rw" constr(xx) "in" hyp(H) := rrwrite xx in H.
 
-(* Assert a statement and prove it via burn. *)
-Tactic Notation "have" constr(E) :=
- let H := fresh 
- in assert E as H by burn.
 
-Tactic Notation "have" constr(E) "as" ident(H) :=
- assert E as H by burn.
+(********************************************************************)
+(* Tactics specific to particular libraries *)
+
+(* Tactics for working with forall. *)
+(* Normalise foralls to In form. *)
+Ltac nforall := 
+ repeat
+  (match goal with 
+   | [ H: Forall _ _ |- _ ] => rewrite Forall_forall in H
+   | [ H: _ |- Forall _ _ ] => rewrite Forall_forall
+   end).
+
+
+(* Breaking up nat_compare
+   Find the first (nat_compare ?E1 ?E2) and destruct it into the
+   possible orderings. Also substitute ?E1 = ?E2 when they are equal. *)
+Ltac fbreak_nat_compare :=
+ match goal with 
+ |  [ |- context [nat_compare ?E1 ?E2] ]
+ => let X := fresh "X" 
+    in  remember (nat_compare E1 E2) as X; destruct X;     
+
+        (* In the equality case, sometimes we get equations like
+           n = S n, which can't be substituted. Hence try subst. *)
+        [ match goal with 
+          |  [ H: Eq = nat_compare E1 E2 |- _ ] 
+          => symmetry in H; apply nat_compare_eq in H; 
+             try subst 
+          end
+
+        | match goal with 
+          |  [ H: Lt = nat_compare E1 E2 |- _ ]
+          => symmetry in H; apply nat_compare_lt in H
+          end 
+
+        | match goal with
+          |  [ H: Gt = nat_compare E1 E2 |- _ ]
+          => symmetry in H; apply nat_compare_gt in H
+         end
+        ]
+ end.
 

@@ -79,12 +79,13 @@ Definition STOREM (ds: defs) (st: stenv) (s: store)
 Hint Unfold STOREM.
 
 
+(********************************************************************)
 (* Well typed store. *)
 Definition STORET (ds: defs) (st: stenv) (ss: store)
- := forall i dcObj svFields
- ,  get i ss = Some (SObj dcObj svFields)
+ := forall l dcObj svFields
+ ,  get l ss = Some (SObj dcObj svFields)
  -> (exists tcObj tsParam tsFields 
-    ,  get i st            = Some (makeTApps (TCon tcObj) tsParam)
+    ,  get l st            = Some (makeTApps (TCon tcObj) tsParam)
     /\ getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
     /\ Forall2 (TYPE ds nil nil st)
                (map expOfSValue svFields)
@@ -92,9 +93,45 @@ Definition STORET (ds: defs) (st: stenv) (ss: store)
 Hint Unfold STORET.
 
 
-(******************************************************************************)
+(* If we replace a field in a well typed store with one of the same
+   type then the store is still well typed *)
+Lemma storet_replace_field
+ : forall ds se s tField vField1 svField1 vField2 svField2 svs i l dc
+ ,  STORET ds se s
+ -> TYPE ds nil nil se vField1 tField -> svalueOf vField1 svField1
+ -> TYPE ds nil nil se vField2 tField -> svalueOf vField2 svField2
+ -> get l s    = Some (SObj dc svs)
+ -> get i svs  = Some svField1
+ -> STORET ds se (replace l (SObj dc (replace i svField2 svs)) s).
+Proof.
+ intros.
+ unfold STORET in *. rip.
+ assert (l0 = l \/ l0 <> l) as HL. admit.
+ destruct HL.
+ Case "l0 = l".
+  subst.
+  spec H H4. dests H. 
+  exists tcObj. exists tsParam. exists tsFields.
+  rip.
+  assert (dcObj = dc).                       (* ok, from get replace doesn't change dc *)
+   admit. subst.
+  auto.
+  admit.                                     (* todo *)
+ Case "l0 <> l".
+  assert (dcObj = dc /\ svFields = svs). 
+   admit. rip. subst.                        (* ok from get replace l0 <> l *)
+  spec H l0 dc svs.
+  assert (get l0 s = Some (SObj dc svs)).
+   admit.                                    (* ok from get replace l0 <> l *)
+  spec H H8.
+  shifts H. eauto.
+Qed.
+
+
+(********************************************************************)
 (* Well formed store.
-   Store is well formed under some data type definitions and a store typing. *)
+   Store is well formed under some data type definitions and a
+   store typing. *)
 Definition WfS (ds: defs) (se: stenv) (ss: store)
  := DEFSOK ds
  /\ Forall closedT se
@@ -113,7 +150,7 @@ Proof. intros. inverts H. tauto. Qed.
 Hint Resolve WfS_closedT.
 
 
-(******************************************************************************)
+(********************************************************************)
 Lemma store_has_sbind_for_stenv
  :  forall ds se ss l tObj
  ,  WfS ds se ss
@@ -180,5 +217,4 @@ Proof.
   erewrite getCtorOfType_makeTApps with (tc := tcObj) in H7; eauto.
 Qed.
 Hint Resolve getAlt_has.
-
 

@@ -109,7 +109,8 @@ Lemma liftTT_makeTApps
 Proof.
  intros. gen t1.
  induction ts.
-  burn. rip. simpl. rewritess.
+  burn.
+  simpl. rip. rs.
 Qed.
 Hint Rewrite liftTT_makeTApps : global.
 
