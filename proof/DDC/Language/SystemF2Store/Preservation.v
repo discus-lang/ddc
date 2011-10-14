@@ -123,14 +123,32 @@ Proof.
  *)
 
  Case "EsUpdate".
+  symmetry in H0. subst.
   exists se. rip.
   inverts keep HW.
   unfold WfS.
    rip; eauto.
     unfold STOREM in *.
      rs. rewrite replace_length. auto.
-    unfold STORET in *. subst. rip.
 
+    (* We can get the old field value that is being replaced. *)
+    assert (exists svField vField
+               ,  get i svs = Some svField
+               /\ svalueOf vField svField) as HL.
+     eapply storet_field_has; eauto. admit.                (* fine, list lemma *)
+     destruct HL  as [svField0].
+     destruct H10 as [vField0].
+     rip. 
+
+    (* The old field value has the same type as the one we're replacing it with *)
+    assert (TYPE ds nil nil se vField0 (substTTs 0 tsParam tField)) as HF.
+     eapply storet_field_type; eauto.
+
+    (* When we replace the field the store is still well typed. *)
+    eapply storet_replace_field
+      with (vField2 := vField); eauto.
+    
+    admit. (* TODO: need type def for unit *)
 
  Case "EsUpdateSkip".
   exists se. int.

@@ -60,6 +60,15 @@ Qed.
 Hint Resolve svalue_from_value.
 
 
+Lemma svalue_of_expOfSValue
+ : forall sv : svalue, svalueOf (expOfSValue sv) sv.
+Proof.
+ intros.
+ destruct sv; simpl; unfold svalueOf; simpl; auto.
+Qed.
+Hint Resolve svalue_of_expOfSValue.
+
+
 (********************************************************************)
 (* Store binding with a constructor tag and some storeable values *)
 Inductive sbind :=
@@ -93,10 +102,140 @@ Definition STORET (ds: defs) (st: stenv) (ss: store)
 Hint Unfold STORET.
 
 
+Lemma get_length_snoc
+ :  forall {A} (xs : list A) (x : A)
+ ,  get (length xs) (x <: xs) = Some x.
+Proof.
+ intros. gen x.
+ induction xs.
+   simpl. auto.
+   simpl. auto.
+Qed.
+
+
+Lemma get_length_less
+ :  forall {A} i (xs : list A)
+ ,  i < length xs
+ -> exists x, get i xs = Some x.
+Proof.
+ intros. gen xs.
+ induction i; intros.
+  nope.
+  destruct xs.
+   simpl in H. nope.
+   simpl in H.
+   simpl. eapply IHi.
+    burn.
+Qed.
+
+
+(* For each object in the store, the number of fields
+   is the same as what is predicted by the data definition *)
+Lemma storet_field_lengths
+ :  forall ds dc se s l svs tsFields tObj
+ ,  STORET ds se s
+ -> get l s          = Some (SObj dc svs)
+ -> getDataDef dc ds = Some (DefData dc tsFields tObj)
+ -> length svs = length tsFields.
+Proof.
+ intros.
+ unfold STORET in *.
+ spec H l dc svs H0.
+  destruct H as [tcObj].
+  destruct H as [tsParam].
+  destruct H as [tsFields'].
+  rip.
+ assert (tsFields' = tsFields).
+  rewrite H1 in H. inverts H. auto. subst. clear H.
+ 
+ assert ( length (map expOfSValue svs)
+        = length (map (substTTs 0 tsParam) tsFields)).
+  eauto.
+  rewrite map_length in H.
+  rewrite map_length in H.
+ auto.
+Qed.
+Hint Resolve storet_field_lengths : global.
+
+
+(* If we can get an object from the store, 
+   then we can also get any of the fields specified by its data def *)
+Lemma storet_field_has
+ :  forall ds s se svs tcObj tsFields i l dc
+ ,  STORET ds se s
+ -> get l s          = Some (SObj dc svs)
+ -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
+ -> i < length tsFields
+ -> exists svField vField
+        ,  get i svs = Some svField 
+        /\ svalueOf vField svField.
+Proof.
+ intros.
+ assert (length svs = length tsFields) as HL.
+  eapply storet_field_lengths; eauto.
+ assert (exists svField, get i svs = Some svField).
+  eapply get_length_less.
+  rewrite HL. auto.
+  shift H3.
+ assert (exists v, svalueOf v svField) as HV.
+  eauto.
+  shift HV. eauto.
+Qed.
+
+
+(* If we can get an objects field, 
+   then that field has the type determined by the data def and
+   store environment *)
+Lemma storet_field_type
+ :  forall ds se s l i svs vField svField tsParam tcObj tField tsFields dc
+ ,  STORET ds se s
+ -> get l s          = Some (SObj dc svs)
+ -> get l se         = Some (makeTApps (TCon tcObj) tsParam)
+ -> get i svs        = Some svField
+ -> svalueOf vField svField
+ -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
+ -> TYPE ds nil nil se vField (substTTs 0 tsParam tField).
+Proof.
+ intros.
+ have (STORET ds se s).
+ unfold STORET in H.
+  spec H l dc svs H0.
+  destruct H as [tcObj'].
+  destruct H as [tsParam'].
+  destruct H as [tsFields'].
+  rip.
+
+ assert (tcObj' = tcObj /\ tsParam' = tsParam /\ tsFields' = tsFields).
+  rewrite H in H4. inverts H4.
+  assert (tsParam' = tsParam).
+  admit.                                               (* FIXME *)
+  tauto.
+  rip.
+
+ assert (length svs = length tsFields).
+  eapply storet_field_lengths; eauto.
+
+ assert (exists vsFields, Forall2 svalueOf vsFields svs) as HFs.
+  eapply Forall2_construct_left with (f := expOfSValue); eauto.
+  destruct HFs as [vsFields].
+
+ assert (vsFields = map expOfSValue svs).
+  admit.
+
+ assert (get i (map expOfSValue svs) = Some vField).
+  admit.
+
+ assert (get i (map (substTTs 0 tsParam) tsFields) 
+         = Some (substTTs 0 tsParam tField)).
+  admit.
+ admit.
+Qed.
+
+
 (* If we replace a field in a well typed store with one of the same
    type then the store is still well typed *)
 Lemma storet_replace_field
- : forall ds se s tField vField1 svField1 vField2 svField2 svs i l dc
+ :  forall ds se s tField vField1 svField1 vField2 svField2 svs i l dc
  ,  STORET ds se s
  -> TYPE ds nil nil se vField1 tField -> svalueOf vField1 svField1
  -> TYPE ds nil nil se vField2 tField -> svalueOf vField2 svField2
@@ -112,19 +251,13 @@ Proof.
   subst.
   spec H H4. dests H. 
   exists tcObj. exists tsParam. exists tsFields.
-  rip.
-  assert (dcObj = dc).                       (* ok, from get replace doesn't change dc *)
-   admit. subst.
+  assert (dcObj = dc /\ svFields = replace i svField2 svs).
+   erewrite replace_get_eq in H6; eauto.
+    inverts H6. auto. rip.
   auto.
-  admit.                                     (* todo *)
+  admit.             (* ok, Forall2 lemma, or go through storet_replace_bind *)
  Case "l0 <> l".
-  assert (dcObj = dc /\ svFields = svs). 
-   admit. rip. subst.                        (* ok from get replace l0 <> l *)
-  spec H l0 dc svs.
-  assert (get l0 s = Some (SObj dc svs)).
-   admit.                                    (* ok from get replace l0 <> l *)
-  spec H H8.
-  shifts H. eauto.
+  rewrite replace_get_neq in H6; auto.
 Qed.
 
 

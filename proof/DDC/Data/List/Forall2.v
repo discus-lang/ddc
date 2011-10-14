@@ -400,3 +400,38 @@ Proof.
    simpl in H2.
    eauto.
 Qed.
+
+
+Lemma Forall2_construct_left
+ : forall {A B : Type}
+          (R   : A -> B -> Prop)
+          (f   : B -> A)
+          (ys  : list B)
+ ,  (forall b, R (f b) b)
+ -> (exists (xs : list A), Forall2 R xs ys).
+Proof.
+ intros.
+ induction ys.
+  eauto.
+  destruct IHys as [xs].
+  exists (xs :> f a).
+  eauto.
+Qed.     
+
+
+Lemma Forall2_construct_right
+ : forall {A B : Type}
+          (R   : A -> B -> Prop)
+          (f   : A -> B)
+          (xs  : list A)
+ ,  (forall a, R a (f a))
+ -> (exists (ys : list B), Forall2 R xs ys).
+Proof.
+ intros.
+ induction xs.
+  eauto.
+  destruct IHxs as [ys].
+  exists (ys :> f a).
+  eauto.
+Qed.
+
