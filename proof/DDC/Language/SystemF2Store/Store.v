@@ -69,7 +69,35 @@ Qed.
 Hint Resolve svalue_of_expOfSValue.
 
 
-(********************************************************************)
+Lemma svalueOf_is_expOfSValue
+ :  forall v sv
+ ,  svalueOf v sv
+ -> v = expOfSValue sv.
+Proof.
+ intros.
+ inverts H.
+  destruct sv;
+   destruct v; try burn; simpl in *; inverts H1; auto.
+Qed.
+Hint Resolve svalueOf_is_expOfSValue.
+
+
+Lemma svalueOf_forall_expOfSValue
+ :  forall vs svs
+ ,  Forall2 svalueOf vs svs
+ -> vs = map expOfSValue svs.
+Proof.
+ intros.
+ induction H.
+  simpl. auto.
+  subst. simpl.
+  f_equal. 
+  eapply svalueOf_is_expOfSValue. auto.
+Qed.
+Hint Resolve svalueOf_forall_expOfSValue.
+
+
+(********************************************************************) 
 (* Store binding with a constructor tag and some storeable values *)
 Inductive sbind :=
  | SObj : datacon -> list svalue -> sbind.
@@ -220,14 +248,17 @@ Proof.
   destruct HFs as [vsFields].
 
  assert (vsFields = map expOfSValue svs).
-  admit.
+  eapply svalueOf_forall_expOfSValue. auto.
 
  assert (get i (map expOfSValue svs) = Some vField).
+  assert (vField = expOfSValue svField). auto.
+  subst. eauto.
+
+ assert ( get i (map (substTTs 0 tsParam) tsFields) 
+        = Some (substTTs 0 tsParam tField)).
   admit.
 
- assert (get i (map (substTTs 0 tsParam) tsFields) 
-         = Some (substTTs 0 tsParam tField)).
-  admit.
+
  admit.
 Qed.
 

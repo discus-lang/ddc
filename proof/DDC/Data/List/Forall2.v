@@ -402,6 +402,26 @@ Proof.
 Qed.
 
 
+Lemma Forall2_get_left_for_right
+ :  forall {A B : Type}
+           (R   : A -> B -> Prop)
+           (f   : B -> A)
+           i y ys
+ ,  Forall2 R (map f ys) ys
+ -> get i ys         = Some y
+ -> get i (map f ys) = Some (f y).
+Proof.
+ intros. gen i y. 
+ induction ys; intros.
+  nope.
+  destruct i.
+   simpl in H0. inverts H0. simpl. auto.
+   simpl in H0.
+   simpl. inverts H. eauto.
+Qed.
+Hint Resolve Forall2_get_left_for_right.
+
+
 Lemma Forall2_construct_left
  : forall {A B : Type}
           (R   : A -> B -> Prop)
@@ -417,6 +437,7 @@ Proof.
   exists (xs :> f a).
   eauto.
 Qed.     
+Hint Resolve Forall2_construct_left.
 
 
 Lemma Forall2_construct_right
@@ -434,4 +455,5 @@ Proof.
   exists (ys :> f a).
   eauto.
 Qed.
+Hint Resolve Forall2_construct_right.
 
