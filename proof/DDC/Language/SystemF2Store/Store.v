@@ -222,6 +222,7 @@ Lemma storet_field_type
  -> get i svs        = Some svField
  -> svalueOf vField svField
  -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
+ -> get i tsFields   = Some tField
  -> TYPE ds nil nil se vField (substTTs 0 tsParam tField).
 Proof.
  intros.
@@ -236,9 +237,11 @@ Proof.
  assert (tcObj' = tcObj /\ tsParam' = tsParam /\ tsFields' = tsFields).
   rewrite H in H4. inverts H4.
   assert (tsParam' = tsParam).
-  admit.                                               (* FIXME *)
-  tauto.
-  rip.
+   rewrite H1 in H7.
+   inverts H7.
+   eapply makeTApps_args_eq. eauto.
+  eauto.
+  rip. 
 
  assert (length svs = length tsFields).
   eapply storet_field_lengths; eauto.
@@ -253,42 +256,85 @@ Proof.
  assert (get i (map expOfSValue svs) = Some vField).
   assert (vField = expOfSValue svField). auto.
   subst. eauto.
+  subst.
 
  assert ( get i (map (substTTs 0 tsParam) tsFields) 
         = Some (substTTs 0 tsParam tField)).
-  admit.
+  eauto.
 
-
- admit.
+ eapply Forall2_get_get_same; eauto.
 Qed.
 
 
 (* If we replace a field in a well typed store with one of the same
    type then the store is still well typed *)
 Lemma storet_replace_field
- :  forall ds se s tField vField1 svField1 vField2 svField2 svs i l dc
+ :  forall ds se s tField tField' vField1 svField1 vField2 svField2 svs i l dc tcObj 
+           tsFields tsParam
  ,  STORET ds se s
+ -> get l s          = Some (SObj dc svs)
+ -> get l se         = Some (makeTApps (TCon tcObj) tsParam)
+ -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
+ -> get i tsFields   = Some tField'
+ -> tField           = substTTs 0 tsParam tField'
  -> TYPE ds nil nil se vField1 tField -> svalueOf vField1 svField1
  -> TYPE ds nil nil se vField2 tField -> svalueOf vField2 svField2
- -> get l s    = Some (SObj dc svs)
- -> get i svs  = Some svField1
+ -> get i svs        = Some svField1
  -> STORET ds se (replace l (SObj dc (replace i svField2 svs)) s).
 Proof.
  intros.
  unfold STORET in *. rip.
- assert (l0 = l \/ l0 <> l) as HL. admit.
+
+ assert (dcObj = dc).
+  admit. subst.
+
+ have (l0 = l \/ l0 <> l) as HL.
  destruct HL.
+
  Case "l0 = l".
   subst.
-  spec H H4. dests H. 
-  exists tcObj. exists tsParam. exists tsFields.
-  assert (dcObj = dc /\ svFields = replace i svField2 svs).
-   erewrite replace_get_eq in H6; eauto.
-    inverts H6. auto. rip.
-  auto.
-  admit.             (* ok, Forall2 lemma, or go through storet_replace_bind *)
+  spec H H0.
+  destruct H as [tcObj'].
+  destruct H as [tsParam'].
+  destruct H as [tsFields'].
+  rip.
+  exists tcObj.
+  exists tsParam.
+  exists tsFields.
+  rip.
+
+  assert (tcObj' = tcObj /\ tsFields' = tsFields).
+   rewrite H in H2.
+   inverts H2.
+   auto. rip. subst.
+
+  assert (tsParam' = tsParam).
+   rewrite H4 in H1. 
+   inverts H1.
+   eapply makeTApps_args_eq in H13.
+   auto. subst.
+
+  assert (svFields = replace i svField2 svs).
+   erewrite replace_get_eq in H10; eauto.
+    inverts H10. 
+   auto. subst.
+
+  eapply Forall2_map.
+  eapply Forall2_map' in H12.
+
+  assert (vField1 = expOfSValue svField1).
+   admit. subst.
+
+  assert (vField2 = expOfSValue svField2).
+   admit. subst.
+
+  assert (tsFields = replace i tField' tsFields).
+   admit. rewrite H11. clear H11.
+
+  eapply Forall2_replace; eauto.
+
  Case "l0 <> l".
-  rewrite replace_get_neq in H6; auto.
+  rewrite replace_get_neq in H10; auto.
 Qed.
 
 

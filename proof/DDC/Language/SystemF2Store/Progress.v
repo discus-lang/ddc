@@ -104,7 +104,7 @@ Proof.
     rrwrite (0 = length (@nil ty)). eauto.
 
    assert (exists svs, Forall2 svalueOf xs svs).
-    eapply (Forall2_exists_right_all exp svalue value). auto.
+    eapply (Forall2_exists_right_all value). auto.
     assert (Forall closedX xs).
      nforall. eauto.
      nforall. eauto.

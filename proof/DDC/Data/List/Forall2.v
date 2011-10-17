@@ -1,6 +1,7 @@
 
 Require Import DDC.Data.List.Base.
 Require Import DDC.Base.Tactics.
+Require Import DDC.Data.List.Replace.
 
 
 (********************************************************************)
@@ -23,8 +24,7 @@ Lemma Forall2_impl_in
  : forall {A B: Type}
           (R1: A -> B -> Prop)
           (R2: A -> B -> Prop)
-          (xs: list A)
-          (ys: list B)
+          xs ys
  ,  (forall x y, In x xs -> In y ys -> R1 x y -> R2 x y)
  -> Forall2 R1 xs ys
  -> Forall2 R2 xs ys.
@@ -156,7 +156,9 @@ Qed.
 
 
 Lemma Forall2_exists_right
- : forall (A B: Type) (R: A -> B -> Prop) y xs ys
+ : forall {A B}
+     (R: A -> B -> Prop)
+     y xs ys
  ,  In y ys 
  -> Forall2 R xs ys 
  -> (exists x, R x y).
@@ -172,10 +174,10 @@ Hint Resolve Forall2_exists_right.
 
 
 Lemma Forall2_exists_left_all
- :  forall (A B: Type) 
-           (P: B -> Prop)
-           (R: A -> B -> Prop)
-           (ys: list B)
+ :  forall {A B}
+      (P: B -> Prop)
+      (R: A -> B -> Prop)
+      ys
  ,  (forall y, P y -> (exists x, R x y))
  -> Forall  P ys
  -> (exists xs, Forall2 R xs ys).
@@ -194,10 +196,10 @@ Hint Resolve Forall2_exists_left_all.
 
 
 Lemma Forall2_exists_right_all
- :  forall (A B: Type) 
-           (P: A -> Prop)
-           (R: A -> B -> Prop)
-           (xs: list A)
+ :  forall {A B}
+     (P: A -> Prop)
+     (R: A -> B -> Prop)
+     xs
  ,  (forall x, P x -> (exists y, R x y))
  -> Forall  P xs
  -> (exists ys, Forall2 R xs ys).
@@ -232,12 +234,12 @@ Qed.
 Hint Resolve Forall2_exists_left_from_right.
 
 
+
 Lemma Forall2_map
- : forall {A B C D: Type}
-          (R1: B -> D -> Prop)
-          (f:  A -> B)
-          (g:  C -> D)
-          (xs: list A) (ys: list C)
+ : forall {A B C D}
+     (R1: B -> D -> Prop)
+     (f:  A -> B) (g:  C -> D)
+     xs ys
  ,  Forall2 (fun x y => R1 (f x) (g y)) xs ys
  -> Forall2 R1 (map f xs) (map g ys).
 Proof.
@@ -248,11 +250,31 @@ Proof.
 Qed.
 
 
+Lemma Forall2_map'
+ : forall {A B C D}
+     (R1: B -> D -> Prop)
+     (f:  A -> B) (g:  C -> D)
+     xs ys
+ ,  Forall2 R1 (map f xs) (map g ys)
+ -> Forall2 (fun x y => R1 (f x) (g y)) xs ys.
+Proof.
+ intros. gen ys.
+ induction xs; intros.
+  induction ys; intros.
+   auto.
+   nope.
+   destruct ys.
+    nope.
+    simpl in H.
+    inverts H. eauto.
+Qed.
+
+
 Lemma Forall2_map_left
- : forall {A B C: Type}
-          (R1: B -> C -> Prop)
-          (f:  A -> B)
-          (xs: list A) (ys: list C)
+ : forall {A B C}
+     (R1: B -> C -> Prop)
+     (f:  A -> B)
+     xs ys
  ,  Forall2 (fun x y => R1 (f x) y) xs ys
  -> Forall2 R1 (map f xs) ys.
 Proof.
@@ -264,10 +286,10 @@ Qed.
 
 
 Lemma Forall2_map_left'
- : forall {A B C: Type}
-          (R1: B -> C -> Prop)
-          (f:  A -> B)
-          (xs: list A) (ys: list C)
+ : forall {A B C}
+     (R1: B -> C -> Prop)
+     (f:  A -> B)
+     xs ys
  ,  Forall2 R1 (map f xs) ys
  -> Forall2 (fun x y => R1 (f x) y) xs ys.
 Proof.
@@ -284,10 +306,10 @@ Qed.
 
 
 Lemma Forall2_map_right
- : forall {A B C: Type}
-          (R1: A -> C -> Prop)
-          (f:  B -> C)
-          (xs: list A) (ys: list B)
+ : forall {A B C}
+     (R1: A -> C -> Prop)
+     (f:  B -> C)
+     xs ys
  ,  Forall2 (fun x y => R1 x (f y)) xs ys
  -> Forall2 R1 xs (map f ys).
 Proof.
@@ -299,10 +321,10 @@ Qed.
 
 
 Lemma Forall2_map_right'
- : forall {A B C: Type}
-          (R1: A -> C -> Prop)
-          (f:  B -> C)
-          (xs: list A) (ys: list B)
+ : forall {A B C}
+     (R1: A -> C -> Prop)
+     (f:  B -> C)
+     xs ys
  ,  Forall2 R1 xs (map f ys)
  -> Forall2 (fun x y => R1 x (f y)) xs ys.
 Proof.
@@ -319,11 +341,10 @@ Qed.
 
 
 Lemma Forall2_Forall_left
- : forall {A B : Type}
-          (R   : A -> B -> Prop)
-          (P   : A -> Prop)
-          (xs  : list A)
-          (ys  : list B)
+ : forall {A B}
+     (R : A -> B -> Prop)
+     (P : A -> Prop)
+     xs ys
  ,  Forall  (fun x => forall y, R x y -> P x) xs
  -> Forall2 R xs ys
  -> Forall  P xs.
@@ -339,12 +360,13 @@ Hint Resolve Forall2_Forall_left.
 
 
 Lemma Forall2_swap
- :   forall {A B: Type} (R: A -> B -> Prop)
-            (x x' : A)  (xs1 xs2: list A)
-            (y: B)      (ys: list B)
- ,   (forall y, R x y -> R x' y)
- ->  Forall2 R (xs1 ++ x  :: xs2) ys
- ->  Forall2 R (xs1 ++ x' :: xs2) ys.
+ :  forall {A B}
+      (R : A -> B -> Prop)
+      (y : B)  (ys: list B)
+      x x' xs1 xs2
+ ,  (forall y, R x y -> R x' y)
+ -> Forall2 R (xs1 ++ x  :: xs2) ys
+ -> Forall2 R (xs1 ++ x' :: xs2) ys.
 Proof.
  intros.
  lets D: Forall2_app_inv_l H0.
@@ -360,11 +382,9 @@ Qed.
 
 
 Lemma Forall2_snoc
- : forall {A B : Type}
-          (R   : A -> B -> Prop)
-          (xs  : list A)
-          (ys  : list B)
-          x y
+ : forall {A B}
+     (R   : A -> B -> Prop)
+     x xs y ys
  ,  R x y
  -> Forall2 R xs ys
  -> Forall2 R (x <: xs) (y <: ys).
@@ -378,20 +398,18 @@ Hint Resolve Forall2_snoc.
 
 
 Lemma Forall2_get_get_same
- : forall {A B : Type} 
-          (R   : A -> B -> Prop)
-          (xs  : list A)
-          (ys  : list B)
-          ix x y
+ : forall {A B}
+     (R   : A -> B -> Prop)
+     i x xs y ys
  ,  Forall2 R xs ys
- -> get ix xs = Some x
- -> get ix ys = Some y
+ -> get i xs = Some x
+ -> get i ys = Some y
  -> R x y.
 Proof.
- intros. gen ix.
+ intros. gen i.
  induction H; intros.
   false.
-  destruct ix.
+  destruct i.
    simpl in H1. inverts H1.
    simpl in H2. inverts H2. 
    auto.
@@ -403,10 +421,10 @@ Qed.
 
 
 Lemma Forall2_get_left_for_right
- :  forall {A B : Type}
-           (R   : A -> B -> Prop)
-           (f   : B -> A)
-           i y ys
+ :  forall {A B}
+     (R   : A -> B -> Prop)
+     (f   : B -> A)
+     i y ys
  ,  Forall2 R (map f ys) ys
  -> get i ys         = Some y
  -> get i (map f ys) = Some (f y).
@@ -423,10 +441,10 @@ Hint Resolve Forall2_get_left_for_right.
 
 
 Lemma Forall2_construct_left
- : forall {A B : Type}
-          (R   : A -> B -> Prop)
-          (f   : B -> A)
-          (ys  : list B)
+ : forall {A B}
+     (R   : A -> B -> Prop)
+     (f   : B -> A)
+     ys
  ,  (forall b, R (f b) b)
  -> (exists (xs : list A), Forall2 R xs ys).
 Proof.
@@ -441,10 +459,10 @@ Hint Resolve Forall2_construct_left.
 
 
 Lemma Forall2_construct_right
- : forall {A B : Type}
-          (R   : A -> B -> Prop)
-          (f   : A -> B)
-          (xs  : list A)
+ : forall {A B}
+     (R : A -> B -> Prop)
+     (f : A -> B)
+     xs
  ,  (forall a, R a (f a))
  -> (exists (ys : list B), Forall2 R xs ys).
 Proof.
@@ -456,4 +474,25 @@ Proof.
   eauto.
 Qed.
 Hint Resolve Forall2_construct_right.
+
+
+Lemma Forall2_replace
+ : forall {A B} i x xs y ys
+     (R : A -> B -> Prop)
+     (f : A -> B)
+ ,  Forall2 R xs ys
+ -> R x y
+ -> Forall2 R (replace i x xs) (replace i y ys).
+Proof.
+ intros. gen i.
+ induction H; intros.
+  repeat (rewrite replace_nil).
+   auto.
+  destruct i.
+   simpl. eauto.
+   simpl.
+   eapply Forall2_cons.
+    auto.
+    spec IHForall2 i. auto.
+Qed.
 
