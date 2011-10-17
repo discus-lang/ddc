@@ -162,17 +162,25 @@ Proof. intros. auto. Qed.
 
 Lemma makeTApps_args_eq
  :  forall tc ts1 ts2
- ,  length ts1 = length ts2
- -> makeTApps (TCon tc) ts1 = makeTApps (TCon tc) ts2
+ ,  makeTApps (TCon tc) ts1 = makeTApps (TCon tc) ts2
  -> ts1 = ts2.
 Proof.
  intros. gen ts2.
  induction ts1 using rev_ind; intros.
   Case "ts1 = nil".
-   assert (ts2 = nil).
-    simpl in H. 
-    symmetry in H.
-    eauto. auto.
+   simpl in H. 
+   destruct ts2.
+    SCase "ts2 ~ nil".
+     auto.
+
+    SCase "ts2 ~ cons".
+    simpl in H.
+    lets D: @snocable ty ts2. inverts D.
+     simpl in H. nope.
+     destruct H0 as [t2].
+     destruct H0 as [ts2']. 
+     subst.
+     rewrite makeTApps_snoc in H. nope.
    
   Case "ts1 ~ snoc".
    lets D: @snocable ty ts2. inverts D.
@@ -180,16 +188,18 @@ Proof.
     simpl in H.
     rewrite app_snoc in H.
     rewrite app_nil_right in H.
-    simpl in H; burn.
+    rewrite makeTApps_snoc' in H.
+    nope.
 
-   dest t. dest ts'. subst.
-   rewrite app_snoc in H.
-   rewrite app_snoc. rr.
-   rewrite makeTApps_snoc' in H0.
-   rewrite makeTApps_snoc' in H0.
-   inverts H0.
-   simpl in H. inverts H.
-   erewrite IHts1; eauto.
+   SCase "ts2 ~ snoc" .
+    dest t. dest ts'. subst.
+    rewrite app_snoc in H.
+    rewrite app_snoc. rr.
+    rewrite makeTApps_snoc' in H.
+    rewrite makeTApps_snoc' in H.
+    inverts H.
+    eapply IHts1 in H1. subst. 
+    auto.
 Qed.
 
 
