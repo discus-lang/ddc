@@ -592,3 +592,17 @@ Proof.
 Qed.
 Hint Resolve type_stenv_extends.
 
+
+Lemma typea_stenv_extends
+ :  forall ds ke te aa t1 t2 se1 se2
+ ,  Forall closedT se2
+ -> extends se2 se1
+ -> TYPEA ds ke te se1 aa t1 t2
+ -> TYPEA ds ke te se2 aa t1 t2.
+Proof.
+ intros.
+ destruct aa.
+ inverts H1.
+ eauto.
+Qed.
+Hint Resolve typea_stenv_extends.

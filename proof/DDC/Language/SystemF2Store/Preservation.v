@@ -19,7 +19,8 @@ Proof.
  intros ds se s s' x x' t HW HT HS. gen t.
  induction HS; intros; inverts_type; eauto.
 
- (* Evaluation in an arbitrary context. *)
+
+ (** Context *******************************)
  Case "EsContext".
   spec IHHS HW.
   destruct H; try 
@@ -39,18 +40,22 @@ Proof.
    assert (Forall2 (TYPE ds nil nil se2) (C x) (map (substTTs 0 ts) tsFields)) as HF.
     eapply Forall2_impl with (R1 := TYPE ds nil nil se). eauto. eauto.
 
-    admit. (* fark. Forall2 lemma *)
+    admit.                                                   (* fark. Forall2 context lemma *)
 
   SCase "XCase".
    eapply TyCase; eauto. 
    nforall. intros.
    apply H2 in H5.
-   admit. (* ok, need store typing weakening for TYPEA *)
+   eauto.
 
+
+ (** LamApp *****************************)
  Case "EsLamApp".
   exists se. int.
   eapply subst_exp_exp; eauto.
 
+
+ (* LAMAPP *****************************)
  Case "EsLAMAPP".
   exists se. int.
   assert (TYPE ds nil (substTE 0 t2 nil) (substTE 0 t2 se)
@@ -58,25 +63,68 @@ Proof.
    eapply subst_type_exp; eauto.
    have (Forall closedT se).
    assert (liftTE 0 se = se) as HL.
-    admit. (* ok se all closed *)
+    admit.                                                  (* ok se all closed *)
    rewrite HL in H2.
    rrwrite (liftTE 0 nil = nil) in H2. auto.
   rrwrite (substTE 0 t2 nil = nil) in HT.
 
    assert (substTE 0 t2 se  = se) as HS.
-    admit. (* ok se all closed *)
+    admit.                                                  (* ok se all closed *)
    rewrite HS in HT.
   auto.
 
- Case "EsAlloc".
-  exists ((makeTApps (TCon tc) tsParam) <: se).
-  int. 
-  admit. (* TODO: show extended store still well formed *)
-  eapply TyLoc.
-  admit. (* ok get lemma *)
-  skip.  (* TODO: fixme *)
-  defok ds (DefDataType tc ks dcs). eauto.
 
+ (* Alloc *****************************)
+ Case "EsAlloc".
+  exists ((makeTApps (TCon tc) tsParam) <: se). int.
+
+  (* Show extended store is still well formed. *)
+  assert (Forall closedT (makeTApps (TCon tc) tsParam <: se)).
+   assert (Forall closedT tsParam).
+    unfold closedT.
+    rrwrite (0 = length (@nil ki)).
+    eapply kind_wfT_Forall2.
+    eauto.
+   assert (closedT (makeTApps (TCon tc) tsParam)).
+    eapply makeTApps_wfT; eauto.
+   eauto.
+
+  assert (STOREM ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: s)).
+   unfold STOREM.
+   assert (length s = length se).
+    unfold WfS in *; burn.
+   admit.
+
+  assert (STORET ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: s)).
+   inverts HW. int.
+   unfold STORET in *.
+   intros.
+
+   assert (l <= length s) as HL.
+    assert (l < length (SObj dc svs <: s)).
+     eauto. rr. omega.
+    inverts HL.
+
+    SCase "l = length s".
+     lets D: H11 (length s) dc svs. clear H11.
+     admit.
+
+    SCase "l < length s".
+     lets D: H11 l dcObj svFields. clear H11.
+     admit.
+
+  auto.
+
+  (* Show resulting location is well typed in new store. *)
+  eapply TyLoc with (tc := tc).
+   assert (length s = length se) as HL
+    by (unfold WfS in *; burn).
+   rewrite HL. eauto.
+   eauto.
+   defok ds (DefDataType tc ks dcs). auto. 
+ 
+
+ (** Case *****************************)
  Case "EsCaseAlt".
   skip.
 (* exists se. int.
@@ -105,6 +153,8 @@ Proof.
   eauto.
  *)
 
+
+ (** Update ***************************)
  Case "EsUpdate".
   symmetry in H0. subst.
   exists se. rip.

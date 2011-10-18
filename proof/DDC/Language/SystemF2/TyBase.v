@@ -203,6 +203,7 @@ Proof.
 Qed.
 
 
+
 (********************************************************************)
 (* Well formed types are closed under the given kind environment. *)
 Inductive wfT (kn: nat) : ty -> Prop :=
@@ -228,8 +229,8 @@ Hint Constructors wfT.
 
 
 (* Closed types are well formed under an empty environment. *)
-Definition closedT (tt: ty) : Prop
- := wfT O tt.
+Definition closedT : ty -> Prop
+ := wfT O.
 Hint Unfold closedT.
 
 
@@ -309,3 +310,13 @@ Proof.
 Qed.
 Hint Resolve wfT_exists.
 
+
+Lemma makeTApps_wfT
+ :  forall n t1 ts
+ ,  wfT n t1 
+ -> Forall (wfT n) ts
+ -> wfT n (makeTApps t1 ts).
+Proof.
+ intros.
+ admit.                                      (* TODO: fixme *)
+Qed.
