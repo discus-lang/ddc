@@ -49,17 +49,7 @@ Lemma kind_wfT
  -> wfT  (length ke) t.
 Proof.
  intros ke t k HK. gen ke k.
- induction t; intros; inverts_kind; simpl; eauto.
- 
- apply get_length_more in H1.
-  induction ke.
-   simpl in H1. burn.
-   simpl. destruct n.
-    burn. 
-    eapply WfT_TVar. simpl in H1. omega.
- 
- eapply WfT_TForall.
-  apply IHt in H1. simpl in H1. auto.
+ induction t; intros; inverts_kind; burn. 
 Qed.
 Hint Resolve kind_wfT.
 
@@ -69,8 +59,7 @@ Lemma kind_wfT_Forall
  ,  Forall (fun t => KIND ks t KStar) ts
  -> Forall (wfT (length ks)) ts.
 Proof.
- intros.
- nforall. eauto.
+ intros. nforall. eauto.
 Qed.
 Hint Resolve kind_wfT_Forall.
 

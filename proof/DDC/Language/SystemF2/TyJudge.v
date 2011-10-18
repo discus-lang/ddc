@@ -83,8 +83,6 @@ Theorem type_wfX
 Proof.
  intros. gen ke te t.
  induction x; intros; inverts_type; simpl; eauto.
- 
- eapply get_length_more. eauto.
 
  apply IHx in H3.
   simpl in H3. rewrite <- length_liftTE in H3. eauto.

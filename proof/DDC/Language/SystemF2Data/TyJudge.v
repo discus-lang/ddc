@@ -163,10 +163,6 @@ Proof.
       -> wfA (length ke) (length te) a)
   ; intros; inverts_type; eauto.
 
- Case "XVar".
-  eapply WfX_XVar. 
-  eapply get_length_less; eauto.
-
  Case "XLAM".
   eapply WfX_XLAM.
   apply IHx in H1.

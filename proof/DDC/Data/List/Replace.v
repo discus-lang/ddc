@@ -24,6 +24,17 @@ Proof.
 Qed.
 
 
+Lemma replace_length
+ : forall {A} n x (xs : list A)
+ , length (replace n x xs) = length xs.
+Proof.
+ intros. gen n.
+ induction xs; intros.
+  rewrite replace_nil; auto.
+  destruct n; burn.
+Qed. 
+
+
 Lemma replace_get_eq
  :  forall {A} (xs: list A) x x' n
  ,  get n xs                  = Some x
@@ -58,4 +69,20 @@ Proof.
     auto. auto.
 Qed.
 Hint Resolve replace_get_neq.
+
+
+Lemma replace_id
+ :  forall {A} x (xs: list A) i
+ ,  get i xs = Some x
+ -> replace i x xs = xs.
+Proof.
+ intros. gen i.
+ induction xs; intros.
+  rewrite replace_nil. auto.
+  destruct i.
+   simpl.
+   simpl in H. inverts H. auto.
+   simpl. rs.
+Qed.
+Hint Resolve replace_id.
 

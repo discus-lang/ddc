@@ -285,13 +285,15 @@ Proof.
  intros.
  unfold STORET in *. rip.
 
- assert (dcObj = dc).
-  admit. subst.
-
  have (l0 = l \/ l0 <> l) as HL.
  destruct HL.
 
  Case "l0 = l".
+  subst. 
+  assert (dcObj = dc).
+   erewrite replace_get_eq in H10.
+   inverts H10. auto. eauto. 
+
   subst.
   spec H H0.
   destruct H as [tcObj'].
@@ -322,14 +324,11 @@ Proof.
   eapply Forall2_map.
   eapply Forall2_map' in H12.
 
-  assert (vField1 = expOfSValue svField1).
-   admit. subst.
+  have (vField1 = expOfSValue svField1). subst.
+  have (vField2 = expOfSValue svField2). subst.
 
-  assert (vField2 = expOfSValue svField2).
-   admit. subst.
-
-  assert (tsFields = replace i tField' tsFields).
-   admit. rewrite H11. clear H11.
+  assert (tsFields = replace i tField' tsFields) as HR.
+   symmetry. eauto. rewrite HR. clear HR.
 
   eapply Forall2_replace; eauto.
 

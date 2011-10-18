@@ -124,7 +124,7 @@ Lemma get_length_less
 Proof.
  eapply get_length_more.
 Qed.
-Hint Resolve get_length_more.
+Hint Resolve get_length_less.
 
 
 Lemma get_none_length
@@ -140,7 +140,7 @@ Proof.
     false.
     apply IHxs in H. omega.
 Qed.
-
+Hint Resolve get_none_length.
 
 
 (********************************************************************)

@@ -4,23 +4,6 @@ Require Import DDC.Language.SystemF2Store.TyJudge.
 Require Import DDC.Language.SystemF2Store.SubstExpExp.
 Require Import DDC.Language.SystemF2Store.SubstTypeExp.
 
-Lemma replace_nil
- : forall {A} n (x : A)
- , replace n x nil = nil.
-Proof.
- destruct n; burn.
-Qed.
-
-Lemma replace_length
- : forall {A} n x (xs : list A)
- , length (replace n x xs) = length xs.
-Proof.
- intros. gen n.
- induction xs; intros.
-  rewrite replace_nil; auto.
-  destruct n; burn.
-Qed. 
-
 
 (* When a well typed expression transitions to the next state
    then its type is preserved. *)
@@ -128,14 +111,14 @@ Proof.
   inverts keep HW.
   unfold WfS.
    rip; eauto.
-    unfold STOREM in *.
-     rs. rewrite replace_length. auto.
+    unfold STOREM in *. rs.
+    rewrite replace_length; eauto.
 
     (* We can get the old field value that is being replaced. *)
     assert (exists svField vField
                ,  get i svs = Some svField
                /\ svalueOf vField svField) as HL.
-     eapply storet_field_has; eauto. admit.                (* fine, list lemma *)
+     eapply storet_field_has; eauto.
      destruct HL  as [svField0].
      destruct H10 as [vField0].
      rip. 
@@ -146,9 +129,8 @@ Proof.
 
     (* When we replace the field the store is still well typed. *)
     eapply storet_replace_field
-      with (vField2 := vField); eauto.
-    
-    admit. (* TODO: need type def for unit *)
+      with (vField2 := vField); eauto. 
+    admit.                                                 (* TODO: need type def for unit *)
 
  Case "EsUpdateSkip".
   exists se. int.
@@ -156,7 +138,7 @@ Proof.
   rrwrite ( TCon (TyConData 0 KStar)
           = makeTApps (TCon (TyConData 0 KStar)) nil).
   eapply TyCon with (tsFields := nil) (dcs := nil); eauto.
-  skip. skip. (* ok, need to bake in the DataDefs for unit *)
+  skip. skip.                                              (* TODO: need type def for unit *)
   rrwrite (map (substTTs 0 nil) (@nil ty) = (@nil ty)).
   auto.
 Qed.
