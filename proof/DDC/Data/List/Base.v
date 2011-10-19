@@ -115,6 +115,26 @@ Qed.
 Hint Resolve get_length_snoc.
 
 
+Lemma get_length_less_snoc
+ :  forall {A} i x (xs : list A)
+ ,  i < length xs
+ -> get i (x <: xs) = get i xs.
+Proof.
+ intros. gen i.
+ induction xs; intros.
+  destruct i. 
+   nope.
+   auto.
+  destruct i.
+   auto.
+   simpl.
+   simpl in H.
+   assert (i < length xs). omega.
+   eauto.
+Qed.
+Hint Resolve get_length_less_snoc.
+
+
 (* If there is an element at a particular index, then the length
    of the list is bigger than that index. *)
 Lemma get_length_more

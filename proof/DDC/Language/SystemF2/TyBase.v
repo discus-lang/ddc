@@ -347,6 +347,18 @@ Lemma makeTApps_wfT
  -> Forall (wfT n) ts
  -> wfT n (makeTApps t1 ts).
 Proof.
- intros.
- admit.                                      (* TODO: fixme *)
+ intros. gen t1.
+ induction ts; intros.
+  simpl. auto.
+  simpl.
+  inverts H0.
+  assert (ts = nil \/ (exists t ts', ts = t <: ts')) as HS.
+   apply snocable.
+   inverts HS.
+    simpl. auto. 
+    dest H0. dest H0. subst.
+    eapply IHts. auto.
+     auto.
 Qed.
+
+

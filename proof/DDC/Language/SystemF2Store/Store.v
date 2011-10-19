@@ -279,21 +279,31 @@ Proof.
     assert (l < length (SObj dc svs <: ss)).
      eauto. rr. omega.
 
-    inverts HL.
+   inverts HL.
 
-    SCase "l = length ss".
-     assert (dcObj = dc /\ svFields = svs).
-      rr. inverts H10. auto. rip.
-     exists tc tsParam tsFields. rip.
-     have (length ss = length se) as HL.
-      rewrite HL. rr. auto.     
-     assert (xs = map expOfSValue svs) as HV. 
-      eauto. rewrite <- HV.
-     eapply (Forall2_impl (TYPE ds nil nil se)); eauto.
+   SCase "l = length ss".
+    assert (dcObj = dc /\ svFields = svs).
+     rr. inverts H10. auto. rip.
 
-    SCase "l < length s".
-     lets D: H11 l dcObj svFields. clear H11.
-     admit.                                                 (* TODO *)
+    exists tc tsParam tsFields. rip.
+    have (length ss = length se) as HL.
+     rewrite HL. rr. auto.     
+    assert (xs = map expOfSValue svs) as HV. 
+     eauto. rewrite <- HV.
+    eapply (Forall2_impl (TYPE ds nil nil se)); eauto.
+
+   SCase "l < length s".
+    assert (get l ss = Some (SObj dcObj svFields)) as HG.
+     have (l < length ss).
+     rewrite get_length_less_snoc in H10; auto.
+
+    lets D: H11 l dcObj svFields HG. clear H11.
+     destruct D as [tcObj].       exists tcObj.
+     destruct H11 as [tsParam'].  exists tsParam'.
+     destruct H11 as [tsFields']. exists tsFields'.
+     rip.
+
+    eapply (Forall2_impl (TYPE ds nil nil se)); eauto.
 
  (* Build WfS out of previous assertions *)
  auto.
