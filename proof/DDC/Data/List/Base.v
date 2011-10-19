@@ -86,15 +86,23 @@ Qed.
 
 (* A list with length zero is always nil. *)
 Lemma length_zero_is_nil
- :  forall A (xx: list A)
+ :  forall {A} (xx: list A)
  ,  length xx = O 
  -> xx = nil.
 Proof.
  intros. 
- destruct xx.
-  trivial. false.
+ destruct xx; burn.
 Qed.
 Hint Resolve length_zero_is_nil.
+
+
+Lemma length_simpl_snoc
+ : forall {A} x (xs: list A)
+ , length (x <: xs) = 1 + length xs.
+Proof. 
+ induction xs; burn.
+Qed.
+Hint Resolve length_simpl_snoc.
 
 
 Lemma get_length_snoc
@@ -102,9 +110,7 @@ Lemma get_length_snoc
  ,  get (length xs) (x <: xs) = Some x.
 Proof.
  intros. gen x.
- induction xs.
-   simpl. auto.
-   simpl. auto.
+ induction xs; burn.
 Qed.
 Hint Resolve get_length_snoc.
 

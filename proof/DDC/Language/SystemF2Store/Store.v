@@ -267,7 +267,7 @@ Proof.
   unfold STOREM.
   assert (length ss = length se).
    unfold WfS in *; burn.
-  admit.                                                    (* TODO ok, list snoc lemma *)
+   repeat (rewrite length_simpl_snoc). eauto.
 
  (* Extended store is well typed under extended store typing *)
  assert (STORET ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: ss)).
@@ -278,11 +278,18 @@ Proof.
    assert (l <= length ss) as HL.
     assert (l < length (SObj dc svs <: ss)).
      eauto. rr. omega.
+
     inverts HL.
 
-    SCase "l = length s".
-     lets D: H11 (length ss) dc svs. clear H11.
-     admit.                                                 (* TODO *)
+    SCase "l = length ss".
+     assert (dcObj = dc /\ svFields = svs).
+      rr. inverts H10. auto. rip.
+     exists tc tsParam tsFields. rip.
+     have (length ss = length se) as HL.
+      rewrite HL. rr. auto.     
+     assert (xs = map expOfSValue svs) as HV. 
+      eauto. rewrite <- HV.
+     eapply (Forall2_impl exp ty (TYPE ds nil nil se)); eauto.
 
     SCase "l < length s".
      lets D: H11 l dcObj svFields. clear H11.
