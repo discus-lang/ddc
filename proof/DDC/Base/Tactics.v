@@ -7,12 +7,6 @@ Require Import Coq.Lists.List.
 (********************************************************************)
 (* Shorthands for existing tactics *)
 
-Tactic Notation "int"
- := intuition.
-
-Tactic Notation "iauto"
- := intuition eauto with *.
-
 Tactic Notation "spec" hyp(H1) hyp(H2) 
  := specializes H1 H2.
 Tactic Notation "spec" hyp(H1) hyp(H2) hyp(H3)
@@ -37,12 +31,15 @@ Tactic Notation "breaka" constr(E) :=
 (* Rip apart compound hypothesis and goals.
    Then try auto to eliminate the easy stuff. *)
 Ltac rip
- := try match goal with
-                  |- forall _, _  => intros; rip
-     |            |- _ /\ _       => split; rip
-     | [H: _ /\ _ |- _ ]          => inverts H; rip
-     end; try auto.
- 
+ := try 
+     (repeat
+       (match goal with
+                              |- forall _, _ => intros;     rip
+        |                        |- _ /\ _   => split;      rip
+        | [H: _ /\ _             |- _ ]      => inverts H;  rip
+        | [H1: ?a -> ?b, H2: ?a  |-  _]      => spec H1 H2; rip
+        end)); try auto.
+
 
 (********************************************************************)
 (* Apply rewrites from the hypotheses *)

@@ -102,7 +102,7 @@ Proof.
   assert (Forall (fun x => wnfX x \/ (exists x', STEP x x')) xs) as HWS.
    nforall. intros.
    have (exists t, TYPE ds nil nil x t). dest t.
-   have (value x \/ (exists x', STEP x x')). int.     
+   have (value x \/ (exists x', STEP x x')). intuition.
 
   (* All ctor args are wnf, or there is a context where one can step *)
   lets D: (@exps_ctx_run exp exp) HWS.
@@ -121,7 +121,7 @@ Proof.
    (* There is a context where one ctor arg can step *)
    right.
     dest C. dest x'.
-    int. subst.
+    rip.
     lets D: step_context_XCon_exists H2 H4.
     destruct D as [x'']. eauto.
 

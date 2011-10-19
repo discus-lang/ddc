@@ -136,8 +136,7 @@ Proof.
   destruct a.
    simpl in H.
    destruct (tycon_beq tc t). 
-    inverts H. int.
-   int. int.
+    inverts H. burn. burn. burn.
 Qed.
 Hint Resolve getTypeDef_in.
 
@@ -165,15 +164,12 @@ Proof.
  induction ds.
   false.
   destruct a.
-   int.
+   burn.
    simpl in H.
    destruct (datacon_beq tc d). 
-    inverts H. int.
-   int.
+    inverts H. burn. burn. 
 Qed.
 Hint Resolve getDataDef_in.
-
-
 
 
 (********************************************************************)

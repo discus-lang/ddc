@@ -24,7 +24,7 @@ Proof.
    (inverts HT;
     edestruct IHHS as [se2]; eauto;
     exists se2;
-    splits; iauto).
+    splits; burn).
 
  Case "EsLamApp".
   inverts_type.

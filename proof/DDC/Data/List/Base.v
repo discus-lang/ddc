@@ -282,7 +282,7 @@ Proof.
  intros.
  induction l1.
   auto.
-  simpl. int.
+  simpl. rip.
 Qed.
 Hint Rewrite app_length : global.
 

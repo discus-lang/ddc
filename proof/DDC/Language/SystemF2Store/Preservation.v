@@ -26,7 +26,7 @@ Proof.
   destruct H; try 
    (inverts_type; 
     edestruct IHHS as [se2]; eauto; 
-    exists se2; int; eauto).
+    exists se2; rip; eauto).
 
   SCase "XCon".
    inverts_type.
@@ -34,7 +34,7 @@ Proof.
     eapply (@exps_ctx_Forall2_exists_left exp ty wnfX C); eauto.
    dest t. 
    edestruct IHHS as [se2]; eauto.
-   exists se2; int.
+   exists se2; rip.
 
    eapply TyCon; eauto.
    assert (Forall2 (TYPE ds nil nil se2) (C x) (map (substTTs 0 ts) tsFields)) as HF.
@@ -51,13 +51,13 @@ Proof.
 
  (** LamApp *****************************)
  Case "EsLamApp".
-  exists se. int.
+  exists se. rip.
   eapply subst_exp_exp; eauto.
 
 
  (* LAMAPP *****************************)
  Case "EsLAMAPP".
-  exists se. int.
+  exists se. rip.
   assert (TYPE ds nil (substTE 0 t2 nil) (substTE 0 t2 se)
                       (substTX 0 t2 x12) (substTT 0 t2 t1)) as HT.
    eapply subst_type_exp; eauto.
@@ -71,7 +71,7 @@ Proof.
 
  (* Alloc *****************************)
  Case "EsAlloc".
-  exists ((makeTApps (TCon tc) tsParam) <: se). int.
+  exists ((makeTApps (TCon tc) tsParam) <: se). rip.
 
   (* Store extended with the new binding is well formed *)
   eapply store_extended_wellformed; eauto.
@@ -144,7 +144,7 @@ Proof.
     admit.                                                 (* TODO: need type def for unit *)
 
  Case "EsUpdateSkip".
-  exists se. int.
+  exists se. rip.
   unfold xUnit. unfold tUnit.
   rrwrite ( TCon (TyConData 0 KStar)
           = makeTApps (TCon (TyConData 0 KStar)) nil).
@@ -176,11 +176,11 @@ Proof.
   Case "EslCons".
    lets D: preservation HW HT H.
     destruct D as [se2].
-    int.
-   spec IHHS H0 H3.
+    rip.
+   spec IHHS H0. rip.
    destruct IHHS as [se3].
-   int.
-   exists se3. int.
+   rip.
+   exists se3. rip.
    eapply extends_trans; eauto.
 Qed.
 

@@ -39,9 +39,9 @@ Lemma exp_from_svalue
 Proof.
  intros.
  destruct sv; unfold svalueOf.
-  exists (XLoc n). int.
-  exists (XLAM e). int.
-  exists (XLam t e). int.
+  exists (XLoc n).   auto.
+  exists (XLAM e).   auto.
+  exists (XLam t e). auto.
 Qed.
 Hint Resolve exp_from_svalue.
 
@@ -52,9 +52,9 @@ Lemma svalue_from_value
 Proof.
  intros.
  destruct v; nope; unfold svalueOf.
-  exists (SLoc  n).  eauto.
-  exists (SLAM  v).  eauto.
-  exists (SLam t v). eauto.
+  exists (SLoc  n).  auto.
+  exists (SLAM  v).  auto.
+  exists (SLam t v). auto.
 Qed.
 Hint Resolve svalue_from_value.
 
@@ -94,5 +94,4 @@ Proof.
   eapply svalueOf_is_expOfSValue. auto.
 Qed.
 Hint Resolve svalueOf_forall_expOfSValue.
-
 

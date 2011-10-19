@@ -271,7 +271,7 @@ Proof.
 
  (* Extended store is well typed under extended store typing *)
  assert (STORET ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: ss)).
-   inverts HW. int.
+   inverts HW. rip.
    unfold STORET in *.
    intros.
 
@@ -321,7 +321,7 @@ Lemma store_has_sbind_for_stenv
  -> (exists dc svs, get l ss = Some (SObj dc svs)).
 Proof.
  intros.
- inverts H. int.
+ inverts H. rip.
  have (length se = length ss).
  have (exists sb, get l ss = Some sb).
  dest sb.
@@ -338,7 +338,7 @@ Lemma store_has_sbind_for_XLoc
  -> (exists dc svs, get l ss = Some (SObj dc svs)).
 Proof.
  intros.
- inverts keep H. int.
+ inverts keep H. rip.
  inverts_type.
  eauto.
 Qed.
@@ -366,13 +366,13 @@ Proof.
  eapply getAlt_exists.
  inverts_type.
  nforall.
- inverts H. int.
+ inverts H. rip.
  unfold STORET in *.
   spec H11 l dc svs H0.
   destruct H11 as [tcObj'].
   dest tsParam.
   dest tsFields.
-  int.
+  rip.
   rewrite H2 in H11. inverts H11.
   erewrite getCtorOfType_makeTApps with (tc := tcObj') in H5; eauto.
     inverts H5.

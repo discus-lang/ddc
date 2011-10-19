@@ -87,7 +87,7 @@ Proof.
   assert (Forall (fun x => wnfX x \/ (exists s' x', STEP s x s' x')) xs) as HWS.
    nforall. intros.
    have (exists t, TYPE ds nil nil se x t). dest t.
-   have (value x \/ (exists s' x', STEP s x s' x')). int.     
+   have (value x \/ (exists s' x', STEP s x s' x')). intuition.
 
   (* All ctor args are wnf, or there is a context where one can step *)
   lets D: (@exps_ctx_run exp exp) HWS.
@@ -117,7 +117,7 @@ Proof.
    (* There is a context where one ctor arg can step *)
    right.
     dest C. dest x'.
-    int. subst.
+    rip. subst.
     dest s'.
     lets D: step_context_XCon_exists H2 H1.
     destruct D as [x'']. eauto.
@@ -137,7 +137,7 @@ Proof.
        then there is a corresponding alternative. *)
     SSCase "XLoc".
      lets D: store_has_sbind_for_XLoc_and_alt H H1.
-     dest dc. int. 
+     dest dc. rip.
      destruct H8  as [svs].
      destruct H10 as [x].
      exists s.

@@ -19,6 +19,7 @@ Fixpoint datacon_beq t1 t2 :=
   => beq_nat n11 n21 && beq_nat n12 n22
   end.
 
+
 Lemma beq_true_and_split
  :  forall a1 a2
  ,  true = a1 && a2
@@ -66,7 +67,7 @@ Proof.
  intros.
   apply beq_false_and_split in H.
   inverts H.
-   induction n. false. auto.
+   induction n.  false. auto.
    induction n0. false. auto.
 Qed.
 
@@ -120,9 +121,8 @@ Proof.
   false.
   destruct a.
    simpl in H.
-   destruct (tycon_beq tc t). 
-    inverts H. int.
-   int. int.
+   destruct (tycon_beq tc t);
+    inverts H. burn. burn. burn.
 Qed.
 Hint Resolve getTypeDef_in.
 
@@ -150,11 +150,10 @@ Proof.
  induction ds.
   false.
   destruct a.
-   int.
+   burn.
    simpl in H.
    destruct (datacon_beq tc d). 
-    inverts H. int.
-   int.
+    inverts H. burn. burn.
 Qed.
 Hint Resolve getDataDef_in.
 

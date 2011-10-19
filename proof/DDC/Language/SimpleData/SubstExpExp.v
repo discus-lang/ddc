@@ -70,8 +70,7 @@ Proof.
    rewrite map_map. unfold compose.
    apply in_map_iff.
    assert (exists a, dcOfAlt a = d /\ In a aa). 
-    eapply map_in_exists. eauto. shift a. int.
-   rewrite <- H4. 
+    eapply map_in_exists. eauto. shift a. rip.
    rewrite dcOfAlt_substA; auto.
      
  Case "AAlt".

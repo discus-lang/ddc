@@ -147,9 +147,7 @@ Lemma getCtorOfType_makeTApps
 Proof.
  intros. gen t1.
  induction ts; intros.
-  auto.
-  simpl.
-  rewrite IHts; auto.
+  auto. rs.
 Qed.
 Hint Resolve getCtorOfType_makeTApps.
 
@@ -160,7 +158,6 @@ Lemma makeTApps_rewind
 Proof. intros. auto. Qed.
 
 
-
 Lemma makeTApps_tycon_eq
  :  forall tc1 tc2 ts1 ts2
  ,  makeTApps (TCon tc1) ts1 = makeTApps (TCon tc2) ts2
@@ -168,8 +165,7 @@ Lemma makeTApps_tycon_eq
 Proof.
  intros.
  assert ( takeTCon (makeTApps (TCon tc1) ts1) 
-        = takeTCon (makeTApps (TCon tc2) ts2)) as HT.
-  rewrite H. eauto.
+        = takeTCon (makeTApps (TCon tc2) ts2)) as HT by rs.
  repeat (rewrite takeTCon_makeTApps in HT).
  simpl in HT. inverts HT. auto.
 Qed.
@@ -305,11 +301,10 @@ Proof.
         \/ ((tn2 <= tn1) /\ max tn1 tn2 = tn1)).
   eapply Max.max_spec.
 
- inverts H0. int. rewrite H2. 
+ inverts H0. rip. rs.
   eapply wfT_more; eauto. 
 
- inverts H1. int. rewrite H2.
-  auto.
+ inverts H1. rip. rs.
 Qed.
 Hint Resolve wfT_max.
 

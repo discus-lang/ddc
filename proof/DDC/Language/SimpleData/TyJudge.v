@@ -164,7 +164,7 @@ Proof.
     eauto.
    assert (exists a, dcOfAlt a = d /\ In a aa).
     eapply map_in_exists. auto.
-   shift a. subst. int. rewrite <- H6.
+   shift a. rip.
    eapply dcOfAlt_liftA.
 
  Case "XAlt".

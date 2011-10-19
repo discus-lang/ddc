@@ -481,9 +481,7 @@ Proof.
     have (In d (map dcOfAlt aa)). 
     assert (exists a, dcOfAlt a = d /\ In a aa).
      eapply map_in_exists. auto.
-   shift a. subst. int. 
-   have (dcOfAlt a = d) as HA.
-   rewrite <- HA.
+   shift a. rip.
    eapply dcOfAlt_liftXA.
 
  Case "XAlt".

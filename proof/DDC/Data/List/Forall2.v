@@ -245,7 +245,7 @@ Proof.
  intros.
  induction H.
   apply Forall2_nil.
-  simpl. int.
+  burn.
 Qed.
 
 
@@ -280,7 +280,7 @@ Proof.
  intros.
  induction H.
   apply Forall2_nil.
-  simpl. int.
+  burn.
 Qed.
 
 
@@ -315,7 +315,7 @@ Proof.
  intros.
  induction H.
   apply Forall2_nil.
-  simpl. int.
+  burn.
 Qed.
 
 
@@ -388,10 +388,7 @@ Lemma Forall2_snoc
  -> Forall2 R xs ys
  -> Forall2 R (x <: xs) (y <: ys).
 Proof.
- intros.
- induction H0.
-  simpl. auto.
-  simpl. auto.
+ intros. induction H0; burn.
 Qed.
 Hint Resolve Forall2_snoc.
 

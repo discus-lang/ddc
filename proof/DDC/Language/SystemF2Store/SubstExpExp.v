@@ -70,7 +70,7 @@ Proof.
    rename x into d. lists.
    apply in_map_iff.
    have (exists a, dcOfAlt a = d /\ In a aa). 
-    shift a. int. subst.
+    shift a. rip.
    rewrite dcOfAlt_substXA; auto.
 
  Case "AAlt".

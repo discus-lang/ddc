@@ -102,7 +102,7 @@ Proof.
     assert (Forall2 
      (fun x v => Steps x v /\ Val v /\ (Val x -> v = x)) xs vs) as HS.
      eapply (@Forall2_impl_in exp exp Steps); auto.
-      intros. nforall. int.
+      intros. nforall. rip.
    
     (* Either all the xs are already whnfX,
        or there is a context where one can step *)
@@ -126,7 +126,7 @@ Proof.
      dest C1. dest C2. 
      destruct H0 as [x']. 
      destruct H0 as [v'].
-     int. subst.
+     rip.
 
      lets HC1: exps_ctx2_left  H0. 
      lets HC2: exps_ctx2_right H0.
