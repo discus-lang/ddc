@@ -62,16 +62,11 @@ Proof.
                       (substTX 0 t2 x12) (substTT 0 t2 t1)) as HT.
    eapply subst_type_exp; eauto.
    have (Forall closedT se).
-   assert (liftTE 0 se = se) as HL.
-    admit.                                         (* TODO ok se all closed *)
-   rewrite HL in H2.
-   rrwrite (liftTE 0 nil = nil) in H2. auto.
-  rrwrite (substTE 0 t2 nil = nil) in HT.
-
-   assert (substTE 0 t2 se  = se) as HS.
-    admit.                                         (* TODO ok se all closed *)
-   rewrite HS in HT.
-  auto.
+   rw (liftTE  0 se     = se)  in H2.
+   rw (liftTE  0 nil    = nil) in H2. auto.
+   rw (substTE 0 t2 nil = nil) in HT.
+   rw (substTE 0 t2 se  = se)  in HT. auto.
+   auto.
 
 
  (* Alloc *****************************)

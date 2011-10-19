@@ -31,11 +31,9 @@ Lemma liftTE_liftTE
  ,  liftTE n              (liftTE (n + n') te) 
  =  liftTE (1 + (n + n')) (liftTE n te).
 Proof. 
- intros. induction te.
-  auto.
+ intros. induction te; rip.
   unfold liftTE.
-   simpl. rewrite liftTT_liftTT_11.
-   unfold liftTE in IHte. burn.
+  simpl. rewrite liftTT_liftTT_11. burn.
 Qed.
 
 
@@ -55,11 +53,42 @@ Lemma liftTE_substTE
  ,  liftTE n (substTE (n + n') t2 te)
  =  substTE (1 + n + n') (liftTT 1 n t2) (liftTE n te).
 Proof.
- intros. induction te.
-  auto.
+ intros. induction te; rip.
   unfold substTE. unfold liftTE.
    simpl. rewrite liftTT_substTT.
-   unfold liftTE in IHte.
+   unfold liftTE  in IHte.
    unfold substTE in IHte. rewrite IHte. auto.
 Qed.
+
+
+Lemma liftTE_closedT_id
+ :  forall n se
+ ,  Forall closedT se
+ -> liftTE n se = se.
+Proof.
+ intros.
+ unfold liftTE.
+ induction se; rip.
+  inverts H.
+  spec IHse H3.
+  rs. rw (liftTT 1 n a = a).
+  auto.
+Qed.
+Hint Resolve liftTE_closedT_id.
+
+
+Lemma substTE_closedT_id
+ :  forall n t2 se
+ ,  Forall closedT se
+ -> substTE n t2 se = se.
+Proof.
+ intros.
+ unfold substTE.
+ induction se; rip.
+  inverts H.
+  spec IHse H3.
+  rs. rw (substTT n t2 a = a).
+  auto.
+Qed.
+Hint Resolve substTE_closedT_id.
 

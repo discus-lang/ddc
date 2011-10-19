@@ -72,6 +72,41 @@ Proof.
 Qed. 
 
 
+(********************************************************************)
+Lemma substTT_wfT
+ :  forall d ix t t2
+ ,  wfT d t
+ -> substTT (d + ix) t2 t = t.
+Proof.
+ intros. gen d ix t2.
+ induction t; intros; eauto.
+  Case "TVar".
+   inverts H. simpl. lift_cases; burn.
+
+ Case "TForall".
+   simpl. f_equal.
+   inverts H.
+   spec IHt H1.
+   rrwrite (S (d + ix) = S d + ix).
+   burn.
+
+  Case "TApp".
+   inverts H.
+   repeat rewritess; burn.
+Qed.
+Hint Resolve substTT_wfT.
+
+
+Lemma substTT_closedT_id
+ :  forall d t t2
+ ,  closedT t
+ -> substTT d t2 t = t.
+Proof.
+ intros.
+ rw (d = d + 0).
+ eauto.
+Qed.
+Hint Resolve substTT_closedT_id.
 
 
 (********************************************************************)

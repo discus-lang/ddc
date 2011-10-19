@@ -155,7 +155,7 @@ Proof.
  induction m; intros.
  rewrite liftTT_zero; burn.
 
- rrwrite (n + S m = S n + m). 
+ rw (n + S m = S n + m). 
   rewrite liftTT_comm.
   rewrite <- IHm.
   rewrite liftTT_comm.
@@ -164,6 +164,7 @@ Qed.
 Hint Rewrite <- liftTT_plus : global.
 
 
+(******************************************************************************)
 Lemma liftTT_wfT_1
  :  forall t n ix
  ,  wfT n t
@@ -178,13 +179,26 @@ Proof.
    simpl. f_equal.
    inverts H.
    eapply IHt in H1.
-   rrwrite (S (n + ix) = S n + ix).
+   rw (S (n + ix) = S n + ix).
    burn.
 
   Case "TApp".
    inverts H.
    repeat rewritess; burn.
 Qed.
+Hint Resolve liftTT_wfT_1.
+
+
+Lemma liftTT_closedT_id_1
+ :  forall t d
+ ,  closedT t
+ -> liftTT 1 d t = t.
+Proof.
+ intros.
+ rw (d = d + 0); auto.
+ eauto.
+Qed.
+Hint Resolve liftTT_closedT_id_1.
 
 
 Lemma liftTT_closedT_10
@@ -194,9 +208,8 @@ Lemma liftTT_closedT_10
 Proof.
  intros.
  unfold closedT in *.
- rrwrite (0 = 0 + 0). 
- rewrite liftTT_wfT_1. eauto.
- eauto.
+ rw (0 = 0 + 0). 
+ rewrite liftTT_wfT_1; auto.
 Qed.
 Hint Resolve liftTT_closedT_10.
 
