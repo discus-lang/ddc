@@ -116,9 +116,7 @@ Proof.
 
    (* There is a context where one ctor arg can step *)
    right.
-    dest C. dest x'.
-    rip. subst.
-    dest s'.
+    dest C. dest x'. rip. dest s'.
     lets D: step_context_XCon_exists H2 H1.
     destruct D as [x'']. eauto.
 
@@ -141,9 +139,7 @@ Proof.
      destruct H8  as [svs].
      destruct H10 as [x].
      exists s.
-     assert (exists vs, Forall2 svalueOf vs svs).
-      eapply Forall2_exists_left_from_right.
-      eauto.
+     have (exists vs, Forall2 svalueOf vs svs).
      dest vs.
      exists (substXXs 0 vs x).
      eauto.
@@ -195,8 +191,8 @@ Proof.
      inverts HM.
 
      SSSCase "dc' = dc".
-      assert (exists sv2, svalueOf x2 sv2).
-       eauto. dest sv2.
+      have (exists sv2, svalueOf x2 sv2).
+      dest sv2.
       exists (replace l (SObj dc (replace i sv2 svs)) s).
       exists xUnit.
       eapply EsUpdate; eauto.

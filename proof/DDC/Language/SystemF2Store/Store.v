@@ -93,10 +93,10 @@ Lemma storet_field_has
 Proof.
  intros.
  have (length svs = length tsFields).
- assert (exists svField, get i svs = Some svField)
-  by (eapply get_length_less_exists; rs).
+ have (exists svField, get i svs = Some svField)
+  by  (eapply get_length_less_exists; rs).
  shift svField.
- have   (exists v, svalueOf v svField). eauto.
+ have (exists v, svalueOf v svField). eauto.
 Qed.
 
 
@@ -125,16 +125,14 @@ Proof.
   destruct H as [tsFields'].
   rip. ddef_merge.
 
- assert (exists vsFields, Forall2 svalueOf vsFields svs) as HFs.
-  eapply Forall2_construct_left with (f := expOfSValue); eauto.
-  destruct HFs as [vsFields].
+ have (exists vsFields, Forall2 svalueOf vsFields svs) as HFs.
+ destruct HFs as [vsFields].
 
- assert (get i (map expOfSValue svs) = Some vField).
-  rw (vField = expOfSValue svField). 
-  eauto.
+ have (get i (map expOfSValue svs) = Some vField)
+  by  (rw (vField = expOfSValue svField); eauto).
 
- have ( get i (map (substTTs 0 tsParam) tsFields) 
-        = Some (substTTs 0 tsParam tField)).
+ have (get i (map (substTTs 0 tsParam) tsFields) 
+       = Some (substTTs 0 tsParam tField)).
 
  eapply Forall2_get_get_same; eauto.
 Qed.
@@ -179,10 +177,9 @@ Proof.
   exists tsFields.
   rip. ddef_merge.
 
-  assert (svFields = replace i svField2 svs).
-   erewrite replace_get_eq in H10; eauto.
-    inverts H10. 
-   auto. subst.
+  have (svFields = replace i svField2 svs)
+   by  (erewrite replace_get_eq in H10; eauto; 
+        inverts H10; auto; subst).
 
   eapply Forall2_map.
   eapply Forall2_map' in H12.
@@ -190,8 +187,8 @@ Proof.
   have (vField1 = expOfSValue svField1). subst.
   have (vField2 = expOfSValue svField2). subst.
 
-  assert (tsFields = replace i tField' tsFields) as HR.
-   symmetry. eauto. rewrite HR. clear HR.
+  have (tsFields = replace i tField' tsFields) as HR
+   by  (symmetry; eauto). rewrite HR. clear HR.
 
   eapply Forall2_replace; eauto.
 
@@ -225,16 +222,19 @@ Proof.
    rrwrite (0 = length (@nil ki)).
    eapply kind_wfT_Forall2.
    eauto.
-  assert (closedT (makeTApps (TCon tc) tsParam)).
-   eapply makeTApps_wfT; eauto.
+  have (closedT (makeTApps (TCon tc) tsParam))
+   by  (eapply makeTApps_wfT; eauto).
   eauto.
 
  (* Extended store typing models extended store *)
  assert (STOREM ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: ss)).
   unfold STOREM.
-  assert (length ss = length se).
-   unfold WfS in *; burn.
-   repeat (rewrite length_simpl_snoc). eauto.
+
+  have (length ss = length se)
+   by  (unfold WfS in *; burn).
+
+  repeat (rewrite length_simpl_snoc).
+  eauto.
 
  (* Extended store is well typed under extended store typing *)
  assert (STORET ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: ss)).
@@ -255,8 +255,8 @@ Proof.
     exists tc tsParam tsFields. rip.
     have (length ss = length se) as HL.
      rewrite HL. rr. auto.     
-    assert (xs = map expOfSValue svs) as HV. 
-     eauto. rewrite <- HV.
+    have (xs = map expOfSValue svs) as HV. 
+    rewrite <- HV.
     eapply (Forall2_impl (TYPE ds nil nil se)); eauto.
 
    SCase "l < length s".

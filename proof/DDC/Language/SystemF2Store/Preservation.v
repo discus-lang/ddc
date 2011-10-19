@@ -30,15 +30,15 @@ Proof.
 
   SCase "XCon".
    inverts_type.
-   assert (exists t, TYPE ds nil nil se x t) as HX.
-    eapply (@exps_ctx_Forall2_exists_left exp ty wnfX C); eauto.
+   have (exists t, TYPE ds nil nil se x t) as HX
+     by (eapply (@exps_ctx_Forall2_exists_left exp ty wnfX C); eauto).
    dest t. 
    edestruct IHHS as [se2]; eauto.
    exists se2; rip.
 
    eapply TyCon; eauto.
-   assert (Forall2 (TYPE ds nil nil se2) (C x) (map (substTTs 0 ts) tsFields)) as HF.
-    eapply Forall2_impl with (R1 := TYPE ds nil nil se). eauto. eauto.
+   have  (Forall2 (TYPE ds nil nil se2) (C x) (map (substTTs 0 ts) tsFields)) as HF
+    by   (eapply Forall2_impl with (R1 := TYPE ds nil nil se); eauto; eauto).
 
     admit.                                         (* fark. Forall2 context lemma *)
 
@@ -78,8 +78,8 @@ Proof.
 
   (* New store location is well typed under the store typing. *)
   eapply TyLoc with (tc := tc).
-   assert (length s = length se) as HL
-    by (unfold WfS in *; burn).
+   have (length s = length se) as HL
+    by  (unfold WfS in *; burn).
    rewrite HL. eauto.
    eauto.
    defok ds (DefDataType tc ks dcs). auto. 
@@ -126,17 +126,18 @@ Proof.
     rewrite replace_length; eauto.
 
     (* We can get the old field value that is being replaced. *)
-    assert (exists svField vField
+    have (exists svField vField
                ,  get i svs = Some svField
-               /\ svalueOf vField svField) as HL.
-     eapply storet_field_has; eauto.
-     destruct HL  as [svField0].
-     destruct H10 as [vField0].
-     rip. 
+               /\ svalueOf vField svField) as HL
+     by  (eapply storet_field_has; eauto).
+
+    destruct HL  as [svField0].
+    destruct H10 as [vField0].
+    rip. 
 
     (* The old field value has the same type as the one we're replacing it with *)
-    assert (TYPE ds nil nil se vField0 (substTTs 0 tsParam tField)) as HF.
-     eapply storet_field_type; eauto.
+    have (TYPE ds nil nil se vField0 (substTTs 0 tsParam tField)) as HF
+     by  (eapply storet_field_type; eauto).
 
     (* When we replace the field the store is still well typed. *)
     eapply storet_replace_field
@@ -146,14 +147,17 @@ Proof.
  Case "EsUpdateSkip".
   exists se. rip.
   unfold xUnit. unfold tUnit.
-  rrwrite ( TCon (TyConData 0 KStar)
-          = makeTApps (TCon (TyConData 0 KStar)) nil).
+
+  rw ( TCon (TyConData 0 KStar)
+     = makeTApps (TCon (TyConData 0 KStar)) nil).
+
   eapply TyCon with (tsFields := nil) (dcs := nil); eauto.
+
   skip. skip.                                              (* TODO: need type def for unit *)
-  rrwrite (map (substTTs 0 nil) (@nil ty) = (@nil ty)).
+
+  rw (map (substTTs 0 nil) (@nil ty) = (@nil ty)).
   auto.
 Qed.
-
 
 
 (* When we multi-step evaluate some expression, 

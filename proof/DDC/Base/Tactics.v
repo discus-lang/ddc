@@ -191,14 +191,23 @@ Ltac burn
 
 
 (********************************************************************)
-(* Assert a statement and prove it via burn. *)
+(* Assert a statement and prove it via burn.
+   This leads to more structured proving than using plain 'assert', 
+   because a 'have' form must always complete the goal. *)
+
 Tactic Notation "have" constr(E) :=
  let H := fresh 
  in assert E as H by burn.
 
-
 Tactic Notation "have" constr(E) "as" ident(H) :=
  assert E as H by burn.
+
+Tactic Notation "have" constr(E) "by" tactic(T) :=
+ let H := fresh 
+ in assert E as H by T.
+
+Tactic Notation "have" constr(E) "as" ident(H) "by" tactic(T) :=
+ assert E as H by T.
 
 
 (********************************************************************)
