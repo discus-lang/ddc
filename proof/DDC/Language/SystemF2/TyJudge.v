@@ -4,6 +4,14 @@ Require Export DDC.Language.SystemF2.Exp.
 Require Export DDC.Language.SystemF2.TyEnv.
 Require Export DDC.Language.SystemF2.KiJudge.
 
+(* Builtin in types. *)
+Definition tUnit 
+ := TCon (TyConData 0 KStar).
+
+Definition tFun (t1: ty) (t2: ty)
+ := TApp (TApp (TCon TyConFun) t1) t2.
+Hint Unfold tFun.
+
 
 (* Type judgement assigns a type to an expression. *)
 Inductive TYPE : kienv -> tyenv -> exp -> ty -> Prop :=

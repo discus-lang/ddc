@@ -44,15 +44,6 @@ Inductive ty  : Type :=
 Hint Constructors ty.
 
 
-(* Baked in types. *)
-Definition tUnit 
- := TCon (TyConData 0 KStar).
-
-Definition tFun (t1: ty) (t2: ty)
- := TApp (TApp (TCon TyConFun) t1) t2.
-Hint Unfold tFun.
-
-
 (********************************************************************)
 (* Type Utils *)
 

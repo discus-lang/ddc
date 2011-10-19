@@ -9,7 +9,7 @@ Require Import Coq.Bool.Bool.
 (* Data Constructors
    Carries a data constructor tag and an arity. *)
 Inductive datacon : Type :=
- | DataCon    : nat -> nat -> datacon.
+ | DataCon  : nat -> nat -> datacon.
 Hint Constructors datacon.
 
 
@@ -213,10 +213,21 @@ Inductive DEFOK : list def -> def -> Prop :=
 
 
 (********************************************************************)
-(* Check that some data type definitions and their
-   associated constructors are ok *)
-Definition DEFSOK (ds: list def) : Prop :=
-  Forall (DEFOK ds) ds.
+(* Builtin data types must be present in the list of definitions. *)
+Definition dcUnit := DataCon   0 0. 
+Hint Unfold dcUnit.
+
+Definition tcUnit := TyConData 0 KStar.
+Hint Unfold tcUnit.
+
+
+(* Check that data type and data constructor definitions are
+   well formed, and that the list of definitions contains the
+   builtin types. *)   
+Definition DEFSOK (ds: list def) : Prop 
+ := Forall (DEFOK ds) ds
+ /\ getTypeDef tcUnit ds = Some (DefDataType tcUnit nil (dcUnit :: nil))
+ /\ getDataDef dcUnit ds = Some (DefData     dcUnit nil tcUnit).
 
 Lemma getTypeDef_ok 
  :  forall ds tc ddef
@@ -225,9 +236,9 @@ Lemma getTypeDef_ok
  -> DEFOK  ds ddef.
 Proof.
  intros.
- unfold DEFSOK in H.
- apply getTypeDef_in in H0. 
- nforall. auto.
+ unfold DEFSOK in *.
+ apply getTypeDef_in in H0.
+ rip. nforall. auto. 
 Qed.  
 Hint Resolve getTypeDef_ok.
 
@@ -239,9 +250,9 @@ Lemma getDataDef_ok
  -> DEFOK ds ddef.
 Proof.
  intros.
- unfold DEFSOK in H.
+ unfold DEFSOK in *.
  apply getDataDef_in in H0.
- nforall. auto.
+ rip. nforall. auto.
 Qed.
 Hint Resolve getDataDef_ok.
 

@@ -149,21 +149,14 @@ Proof.
     (* When we replace the field the store is still well typed. *)
     eapply storet_replace_field
       with (vField2 := vField); eauto. 
-    admit.                                                 (* TODO: need type def for unit *)
+    inverts keep H7. rip.
+    eapply TyCon; burn.
 
  Case "EsUpdateSkip".
   exists se. rip.
   unfold xUnit. unfold tUnit.
-
-  rw ( TCon (TyConData 0 KStar)
-     = makeTApps (TCon (TyConData 0 KStar)) nil).
-
-  eapply TyCon with (tsFields := nil) (dcs := nil); eauto.
-
-  skip. skip.                                              (* TODO: need type def for unit *)
-
-  rw (map (substTTs 0 nil) (@nil ty) = (@nil ty)).
-  auto.
+  inverts keep H6. rip.
+  eapply TyCon; burn.
 Qed.
 
 

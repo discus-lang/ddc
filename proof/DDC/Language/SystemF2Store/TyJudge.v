@@ -8,6 +8,15 @@ Require Export DDC.Language.SystemF2Store.Exp.
 Require Import Coq.Logic.FunctionalExtensionality.
 
 
+(* Builtin in types. *)
+Definition tUnit 
+ := makeTApps (TCon tcUnit) nil.
+
+Definition tFun (t1: ty) (t2: ty)
+ := TApp (TApp (TCon TyConFun) t1) t2.
+Hint Unfold tFun.
+
+
 (* Store Typing holds the types of locations *)
 Definition stenv := list ty.
 

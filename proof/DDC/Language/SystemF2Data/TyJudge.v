@@ -7,6 +7,14 @@ Require Export DDC.Language.SystemF2Data.Def.
 Require Export DDC.Language.SystemF2Data.Exp.
 Require Import Coq.Logic.FunctionalExtensionality.
 
+(* Builtin in types. *)
+Definition tUnit 
+ := makeTApps (TCon tcUnit) nil.
+
+Definition tFun (t1: ty) (t2: ty)
+ := TApp (TApp (TCon TyConFun) t1) t2.
+Hint Unfold tFun.
+
 
 (* Type Judgement assigns a type to an expression. *)
 Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) : exp -> ty -> Prop :=
