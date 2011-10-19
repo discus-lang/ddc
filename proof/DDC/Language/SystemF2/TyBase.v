@@ -160,9 +160,24 @@ Lemma makeTApps_rewind
 Proof. intros. auto. Qed.
 
 
+
+Lemma makeTApps_tycon_eq
+ :  forall tc1 tc2 ts1 ts2
+ ,  makeTApps (TCon tc1) ts1 = makeTApps (TCon tc2) ts2
+ -> tc1 = tc2.
+Proof.
+ intros.
+ assert ( takeTCon (makeTApps (TCon tc1) ts1) 
+        = takeTCon (makeTApps (TCon tc2) ts2)) as HT.
+  rewrite H. eauto.
+ repeat (rewrite takeTCon_makeTApps in HT).
+ simpl in HT. inverts HT. auto.
+Qed.
+
+
 Lemma makeTApps_args_eq
  :  forall tc ts1 ts2
- ,  makeTApps (TCon tc) ts1 = makeTApps (TCon tc) ts2
+ ,  makeTApps (TCon tc) ts1  = makeTApps (TCon tc) ts2
  -> ts1 = ts2.
 Proof.
  intros. gen ts2.
@@ -202,6 +217,21 @@ Proof.
     auto.
 Qed.
 
+
+Lemma makeTApps_eq_params
+ : forall tc1 tc2 ts1 ts2
+ ,  makeTApps (TCon tc1) ts1 = makeTApps (TCon tc2) ts2
+ -> tc1 = tc2 /\ ts1 = ts2.
+Proof.
+ intros.
+ assert (tc1 = tc2).
+  eapply makeTApps_tycon_eq; eauto.
+  subst.
+ assert (ts1 = ts2).
+  eapply makeTApps_args_eq; eauto.
+  subst.
+ auto.
+Qed.
 
 
 (********************************************************************)

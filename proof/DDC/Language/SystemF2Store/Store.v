@@ -107,6 +107,20 @@ Definition store  := list sbind.
 Hint Unfold store.
 
 
+(* Store binding is well typed under some data type defs and store environment. *)
+Inductive TYPEB (ds: defs) (se: stenv) : sbind -> ty -> Prop := 
+ | TyObj 
+   :  forall tc ks dc dcs tsFields tsParam svs xs
+   ,  DEFSOK ds
+   -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
+   -> getDataDef dc ds = Some (DefData dc tsFields tc)
+   -> Forall2 (KIND nil) tsParam ks
+   -> Forall2 svalueOf   xs svs
+   -> Forall2 (TYPE ds nil nil se) xs (map (substTTs 0 tsParam) tsFields)
+   -> TYPEB ds se (SObj dc svs) (makeTApps (TCon tc) tsParam).
+Hint Constructors TYPEB.
+
+
 (********************************************************************)
 (* Store typing models the store.
    All types in the store typing have a corresponding binding in
@@ -389,6 +403,67 @@ Proof.
  eauto.
 Qed.
 Hint Resolve store_has_sbind_for_XLoc.
+
+
+(********************************************************************)
+(* When we extend the store and store typing with a new binding, 
+   then the resulting store is still well formed. *)
+Lemma store_extended_wellformed
+ :  forall ds se ss bo to dc svs tc tsParam
+ ,  WfS ds se ss
+ -> bo = SObj dc svs
+ -> to = makeTApps (TCon tc) tsParam
+ -> TYPEB ds se bo to
+ -> WfS ds (to <: se) (bo <: ss).
+Proof.
+ intros ds se ss bo to dc svs tc tsParam HW HBO HTO HT.
+ subst.
+
+ inverts HT.
+ assert (tc0 = tc /\ tsParam0 = tsParam).
+  eapply makeTApps_eq_params. eauto. rip. clear H1.
+
+ (* Extended store typing is still closed *)
+ assert (Forall closedT (makeTApps (TCon tc) tsParam <: se)).
+  assert (Forall closedT tsParam).
+   unfold closedT.
+   rrwrite (0 = length (@nil ki)).
+   eapply kind_wfT_Forall2.
+   eauto.
+  assert (closedT (makeTApps (TCon tc) tsParam)).
+   eapply makeTApps_wfT; eauto.
+  eauto.
+
+ (* Extended store typing models extended store *)
+ assert (STOREM ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: ss)).
+  unfold STOREM.
+  assert (length ss = length se).
+   unfold WfS in *; burn.
+  admit. (* ok list snoc lemma *)
+
+ (* Extended store is well typed under extended store typing *)
+ assert (STORET ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: ss)).
+   inverts HW. int.
+   unfold STORET in *.
+   intros.
+
+   assert (l <= length ss) as HL.
+    assert (l < length (SObj dc svs <: ss)).
+     eauto. rr. omega.
+    inverts HL.
+
+    SCase "l = length s".
+     lets D: H11 (length ss) dc svs. clear H11.
+     admit.
+
+    SCase "l < length s".
+     lets D: H11 l dcObj svFields. clear H11.
+     admit.
+
+ (* Build WfS out of previous assertions *)
+ auto.
+Qed.
+Hint Resolve store_extended_wellformed.
 
 
 (********************************************************************)

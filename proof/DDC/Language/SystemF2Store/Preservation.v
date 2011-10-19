@@ -78,51 +78,17 @@ Proof.
  Case "EsAlloc".
   exists ((makeTApps (TCon tc) tsParam) <: se). int.
 
-  (* Show extended store is still well formed. *)
-  assert (Forall closedT (makeTApps (TCon tc) tsParam <: se)).
-   assert (Forall closedT tsParam).
-    unfold closedT.
-    rrwrite (0 = length (@nil ki)).
-    eapply kind_wfT_Forall2.
-    eauto.
-   assert (closedT (makeTApps (TCon tc) tsParam)).
-    eapply makeTApps_wfT; eauto.
-   eauto.
+  (* Store extended with the new binding is well formed *)
+  eapply store_extended_wellformed; eauto.
 
-  assert (STOREM ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: s)).
-   unfold STOREM.
-   assert (length s = length se).
-    unfold WfS in *; burn.
-   admit.
-
-  assert (STORET ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: s)).
-   inverts HW. int.
-   unfold STORET in *.
-   intros.
-
-   assert (l <= length s) as HL.
-    assert (l < length (SObj dc svs <: s)).
-     eauto. rr. omega.
-    inverts HL.
-
-    SCase "l = length s".
-     lets D: H11 (length s) dc svs. clear H11.
-     admit.
-
-    SCase "l < length s".
-     lets D: H11 l dcObj svFields. clear H11.
-     admit.
-
-  auto.
-
-  (* Show resulting location is well typed in new store. *)
+  (* New store location is well typed under the store typing. *)
   eapply TyLoc with (tc := tc).
    assert (length s = length se) as HL
     by (unfold WfS in *; burn).
    rewrite HL. eauto.
    eauto.
    defok ds (DefDataType tc ks dcs). auto. 
- 
+
 
  (** Case *****************************)
  Case "EsCaseAlt".
