@@ -38,10 +38,10 @@ Lemma exp_from_svalue
  : forall sv, exists v, svalueOf v sv.
 Proof.
  intros.
- destruct sv; unfold svalueOf.
-  exists (XLoc n).   auto.
-  exists (XLAM e).   auto.
-  exists (XLam t e). auto.
+ destruct sv.
+  exists (XLoc n).   burn.
+  exists (XLAM e).   burn.
+  exists (XLam t e). burn.
 Qed.
 Hint Resolve exp_from_svalue.
 
@@ -51,10 +51,10 @@ Lemma svalue_from_value
  : forall v, value v -> (exists sv, svalueOf v sv).
 Proof.
  intros.
- destruct v; nope; unfold svalueOf.
-  exists (SLoc  n).  auto.
-  exists (SLAM  v).  auto.
-  exists (SLam t v). auto.
+ destruct v; nope.
+  exists (SLoc  n).  burn.
+  exists (SLAM  v).  burn.
+  exists (SLam t v). burn.
 Qed.
 Hint Resolve svalue_from_value.
 
@@ -62,8 +62,7 @@ Hint Resolve svalue_from_value.
 Lemma svalue_of_expOfSValue
  : forall sv : svalue, svalueOf (expOfSValue sv) sv.
 Proof.
- intros.
- destruct sv; simpl; unfold svalueOf; simpl; auto.
+ intros. destruct sv; burn.
 Qed.
 Hint Resolve svalue_of_expOfSValue.
 
@@ -86,12 +85,7 @@ Lemma svalueOf_forall_expOfSValue
  ,  Forall2 svalueOf vs svs
  -> vs = map expOfSValue svs.
 Proof.
- intros.
- induction H.
-  simpl. auto.
-  subst. simpl.
-  f_equal. 
-  eapply svalueOf_is_expOfSValue. auto.
+ intros. induction H; burn.
 Qed.
 Hint Resolve svalueOf_forall_expOfSValue.
 

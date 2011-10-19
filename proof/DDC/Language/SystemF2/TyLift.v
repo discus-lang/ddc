@@ -30,19 +30,12 @@ Lemma liftTT_wfT
  -> wfT (S kn) (liftTT 1 d t).
 Proof.
  intros. gen kn d.
- lift_burn t.
+ lift_burn t; inverts H; try burn.
  
  Case "TVar".
-  inverts H.
   repeat (simpl; lift_cases).
    eapply WfT_TVar. burn.
    eapply WfT_TVar. burn.
-
- Case "TForall".
-  inverts H. burn.
-
- Case "TApp".
-  inverts H. burn.
 Qed.
 Hint Resolve liftTT_wfT.
 
@@ -74,7 +67,7 @@ Lemma liftTT_takeTCon'
  -> takeTCon (liftTT n d tt) = liftTT n d tCon.
 Proof.
  intros. gen n d.
- induction tt; intros; rewrite <- H; try burn.
+ induction tt; intros; rewrite <- H; burn.
 Qed.
 Hint Resolve liftTT_takeTCon'.
 
@@ -84,9 +77,9 @@ Lemma liftTT_takeTArgs
  , map (liftTT d ix) (takeTArgs tt) = takeTArgs (liftTT d ix tt).
 Proof.
  intros.
- induction tt; intros; auto.
- simpl. lift_cases; auto.
- simpl. rewrite map_snoc. burn. 
+ induction tt; intros; simpl; auto.
+  lift_cases; auto.
+  rr. burn.
 Qed. 
 Hint Rewrite liftTT_takeTArgs : global.
 
@@ -108,9 +101,7 @@ Lemma liftTT_makeTApps
  =  makeTApps (liftTT n d t1) (map (liftTT n d) ts). 
 Proof.
  intros. gen t1.
- induction ts.
-  burn.
-  simpl. rip. rs.
+ induction ts; burn.
 Qed.
 Hint Rewrite liftTT_makeTApps : global.
 
@@ -120,8 +111,7 @@ Lemma liftTT_zero
  :  forall d t
  ,  liftTT 0 d t = t.
 Proof.
- intros. gen d.
- lift_burn t.
+ intros. gen d. lift_burn t.
 Qed.
 Hint Rewrite liftTT_zero : global.
 
@@ -131,8 +121,7 @@ Lemma liftTT_comm
  ,  liftTT n d (liftTT m d t)
  =  liftTT m d (liftTT n d t).
 Proof.
- intros. gen d.
- lift_burn t.
+ intros. gen d. lift_burn t.
 Qed.
 
 
@@ -141,8 +130,7 @@ Lemma liftTT_succ
  ,  liftTT (S n) d (liftTT m     d t)
  =  liftTT n     d (liftTT (S m) d t).
 Proof.
- intros. gen d m n.
- lift_burn t.
+ intros. gen d m n. lift_burn t.
 Qed.
 Hint Rewrite liftTT_succ : global. 
 
@@ -171,20 +159,18 @@ Lemma liftTT_wfT_1
  -> liftTT 1 (n + ix) t = t.
 Proof.
  intros. gen n ix.
- induction t; intros; auto.
+ induction t; intros; inverts H; simpl; auto.
+
   Case "TVar".
-   inverts H. simpl. lift_cases; burn.
+   lift_cases; burn.
 
   Case "TForall".
-   simpl. f_equal.
-   inverts H.
-   eapply IHt in H1.
+   f_equal. spec IHt H1.
    rw (S (n + ix) = S n + ix).
    burn.
 
   Case "TApp".
-   inverts H.
-   repeat rewritess; burn.
+   rs. burn.
 Qed.
 Hint Resolve liftTT_wfT_1.
 
@@ -195,8 +181,7 @@ Lemma liftTT_closedT_id_1
  -> liftTT 1 d t = t.
 Proof.
  intros.
- rw (d = d + 0); auto.
- eauto.
+ rw (d = d + 0). eauto.
 Qed.
 Hint Resolve liftTT_closedT_id_1.
 
@@ -206,9 +191,8 @@ Lemma liftTT_closedT_10
  ,  closedT t
  -> closedT (liftTT 1 0 t).
 Proof.
- intros.
- unfold closedT in *.
- rw (0 = 0 + 0). 
+ intros. red.
+ rw (0 = 0 + 0).
  rewrite liftTT_wfT_1; auto.
 Qed.
 Hint Resolve liftTT_closedT_10.
@@ -233,9 +217,9 @@ Proof.
   repeat (lift_cases; unfold liftTT); burn.
 
  Case "TForall".
-  rrwrite (S (d + d') = (S d) + d').
-  rewrite IHt. burn.
-Qed.  
+  rw (S (d + d') = (S d) + d').
+  burn.
+Qed.
 
 
 Lemma liftTT_liftTT_1
@@ -247,10 +231,10 @@ Proof.
  induction m1; intros; simpl.
   burn. 
 
-  rrwrite (S m1 = 1 + m1).
+  rw (S m1 = 1 + m1).
   rewrite <- liftTT_plus.
-  rewrite IHm1.
-  rrwrite (m1 + n2 + n1 = n1 + (m1 + n2)).
+  rs.
+  rw (m1 + n2 + n1 = n1 + (m1 + n2)).
   rewrite liftTT_liftTT_11.
   burn.
 Qed.
@@ -265,7 +249,7 @@ Proof.
  induction m2; intros.
   burn.
 
-  rrwrite (S m2 = 1 + m2).
+  rw (S m2 = 1 + m2).
   rewrite <- liftTT_plus.
   rewrite liftTT_liftTT_1.
   rewrite IHm2.

@@ -79,20 +79,9 @@ Lemma substTT_wfT
  -> substTT (d + ix) t2 t = t.
 Proof.
  intros. gen d ix t2.
- induction t; intros; eauto.
+ induction t; intros; inverts H; simpl; try burn.
   Case "TVar".
-   inverts H. simpl. lift_cases; burn.
-
- Case "TForall".
-   simpl. f_equal.
-   inverts H.
-   spec IHt H1.
-   rrwrite (S (d + ix) = S d + ix).
-   burn.
-
-  Case "TApp".
-   inverts H.
-   repeat rewritess; burn.
+   lift_cases; burn.
 Qed.
 Hint Resolve substTT_wfT.
 
@@ -103,8 +92,7 @@ Lemma substTT_closedT_id
  -> substTT d t2 t = t.
 Proof.
  intros.
- rw (d = d + 0).
- eauto.
+ rw (d = d + 0). eauto.
 Qed.
 Hint Resolve substTT_closedT_id.
 
@@ -157,10 +145,10 @@ Proof.
  induction m; intros; simpl.
   burn.
 
-  rrwrite (S m = 1 + m).
+  rw (S m = 1 + m).
   rewrite <- liftTT_plus.
-  rewrite IHm.
-  rrwrite (m + n + n' = n + (m + n')).
+  rs.
+  rw (m + n + n' = n + (m + n')).
   rewrite liftTT_substTT_1. 
   burn.
 Qed.
@@ -206,10 +194,10 @@ Proof.
   repeat (simpl; fbreak_nat_compare); burn.
 
  Case "TForall".
-  simpl. f_equal.
+  simpl.
   rewrite (IHt1 (S n) m). 
-  f_equal.
-   rewrite (liftTT_substTT_1 0 (n + m)). auto.
-   rewrite (liftTT_liftTT_11 0 n). auto.  
+  rewrite (liftTT_substTT_1 0 (n + m)).
+  rewrite (liftTT_liftTT_11 0 n).
+  burn.
 Qed.
 

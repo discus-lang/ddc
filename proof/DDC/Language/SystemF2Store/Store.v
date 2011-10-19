@@ -64,22 +64,19 @@ Lemma storet_field_lengths
 Proof.
  intros.
  unfold STORET in *.
- spec H l dc svs H0.
+ spec H l dc svs. rip.
   destruct H as [tcObj].
   destruct H as [tsParam].
   destruct H as [tsFields'].
   rip.
- assert (tsFields' = tsFields).
-  rewrite H1 in H. inverts H. auto. subst. clear H.
- 
- assert ( length (map expOfSValue svs)
+  ddef_merge.
+  have  ( length (map expOfSValue svs)
         = length (map (substTTs 0 tsParam) tsFields)).
-  eauto.
   rewrite map_length in H.
   rewrite map_length in H.
  auto.
 Qed.
-Hint Resolve storet_field_lengths : global.
+Hint Resolve storet_field_lengths.
 
 
 (* If we can get an object from the store, 
@@ -95,17 +92,15 @@ Lemma storet_field_has
         /\ svalueOf vField svField.
 Proof.
  intros.
- assert (length svs = length tsFields) as HL.
-  eapply storet_field_lengths; eauto.
- assert (exists svField, get i svs = Some svField).
-  eapply get_length_less_exists.
-  rewrite HL. auto.
-  shift H3.
- assert (exists v, svalueOf v svField) as HV.
-  eauto.
-  shift HV. eauto.
+ have (length svs = length tsFields).
+ assert (exists svField, get i svs = Some svField)
+  by (eapply get_length_less_exists; rs).
+ shift svField.
+ have   (exists v, svalueOf v svField). eauto.
 Qed.
 
+
+(******************************************************************************)
 
 (* If we can get an objects field, 
    then that field has the type determined by the data def and
@@ -124,39 +119,22 @@ Proof.
  intros.
  have (STORET ds se s).
  unfold STORET in H.
-  spec H l dc svs H0.
+  spec H l dc svs. rip.
   destruct H as [tcObj'].
   destruct H as [tsParam'].
   destruct H as [tsFields'].
-  rip.
-
- assert (tcObj' = tcObj /\ tsParam' = tsParam /\ tsFields' = tsFields).
-  rewrite H in H4. inverts H4.
-  assert (tsParam' = tsParam).
-   rewrite H1 in H7.
-   inverts H7.
-   eapply makeTApps_args_eq. eauto.
-  eauto.
-  rip. 
-
- assert (length svs = length tsFields).
-  eapply storet_field_lengths; eauto.
+  rip. ddef_merge.
 
  assert (exists vsFields, Forall2 svalueOf vsFields svs) as HFs.
   eapply Forall2_construct_left with (f := expOfSValue); eauto.
   destruct HFs as [vsFields].
 
- assert (vsFields = map expOfSValue svs).
-  eapply svalueOf_forall_expOfSValue. auto.
-
  assert (get i (map expOfSValue svs) = Some vField).
-  assert (vField = expOfSValue svField). auto.
-  subst. eauto.
-  subst.
-
- assert ( get i (map (substTTs 0 tsParam) tsFields) 
-        = Some (substTTs 0 tsParam tField)).
+  rw (vField = expOfSValue svField). 
   eauto.
+
+ have ( get i (map (substTTs 0 tsParam) tsFields) 
+        = Some (substTTs 0 tsParam tField)).
 
  eapply Forall2_get_get_same; eauto.
 Qed.
@@ -199,18 +177,7 @@ Proof.
   exists tcObj.
   exists tsParam.
   exists tsFields.
-  rip.
-
-  assert (tcObj' = tcObj /\ tsFields' = tsFields).
-   rewrite H in H2.
-   inverts H2.
-   auto. rip. subst.
-
-  assert (tsParam' = tsParam).
-   rewrite H4 in H1. 
-   inverts H1.
-   eapply makeTApps_args_eq in H13.
-   auto. subst.
+  rip. ddef_merge.
 
   assert (svFields = replace i svField2 svs).
    erewrite replace_get_eq in H10; eauto.
@@ -324,9 +291,7 @@ Proof.
  inverts H. rip.
  have (length se = length ss).
  have (exists sb, get l ss = Some sb).
- dest sb.
- destruct sb.
- eauto.
+ dest sb. destruct sb. eauto.
 Qed.
 Hint Resolve store_has_sbind_for_stenv.
 
@@ -368,7 +333,7 @@ Proof.
  nforall.
  inverts H. rip.
  unfold STORET in *.
-  spec H11 l dc svs H0.
+  spec H11 l dc svs. rip.
   destruct H11 as [tcObj'].
   dest tsParam.
   dest tsFields.

@@ -545,17 +545,16 @@ Proof.
  Case "XLAM".
   eapply TyLAM.
   unfold liftTE in *. rr.
-  spec IHx H2.
-  eapply IHx.
-  eauto.
+  spec IHx H2. eauto.
 
  Case "XCon".
   eapply TyCon; eauto.
-  eapply Forall2_impl_in with (R1 := TYPE ds ke te se).
-   nforall. eauto. eauto.
+  eapply Forall2_impl_in with (R1 := TYPE ds ke te se); 
+   nforall; eauto.
 
  Case "XCase".
-  eapply TyCase; nforall; eauto.
+  eapply TyCase; 
+   nforall; eauto.
 Qed.
 Hint Resolve type_stenv_snoc.
 

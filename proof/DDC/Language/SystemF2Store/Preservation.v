@@ -22,7 +22,7 @@ Proof.
 
  (** Context *******************************)
  Case "EsContext".
-  spec IHHS HW.
+  rip.
   destruct H; try 
    (inverts_type; 
     edestruct IHHS as [se2]; eauto; 
@@ -176,12 +176,9 @@ Proof.
   Case "EslCons".
    lets D: preservation HW HT H.
     destruct D as [se2].
-    rip.
-   spec IHHS H0. rip.
-   destruct IHHS as [se3].
-   rip.
-   exists se3. rip.
-   eapply extends_trans; eauto.
+    rip. spec IHHS H0.
+    rip. shift se'.
+    rip. eapply extends_trans; eauto.
 Qed.
 
 

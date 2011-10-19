@@ -69,8 +69,7 @@ Proof.
  intros.
  unfold liftTE.
  induction se; rip.
-  inverts H.
-  spec IHse H3.
+  inverts H. rip.
   rs. rw (liftTT 1 n a = a).
   auto.
 Qed.
@@ -85,8 +84,7 @@ Proof.
  intros.
  unfold substTE.
  induction se; rip.
-  inverts H.
-  spec IHse H3.
+  inverts H. rip.
   rs. rw (substTT n t2 a = a).
   auto.
 Qed.
