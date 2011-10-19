@@ -331,7 +331,7 @@ Hint Resolve store_has_sbind_for_XLoc.
 (* If we have a well typed case match on a store location containing
    some data object, then there is a case alternative corresponding to
    that object's data constructor. *)
-Lemma getAlt_has
+Lemma store_has_sbind_for_XLoc_and_alt
  :  forall ds se ss l alts t
  ,  WfS ds se ss
  -> TYPE ds nil nil se (XCase (XLoc l) alts) t
@@ -361,5 +361,5 @@ Proof.
     inverts H5.
   erewrite getCtorOfType_makeTApps with (tc := tcObj) in H7; eauto.
 Qed.
-Hint Resolve getAlt_has.
+Hint Resolve store_has_sbind_for_XLoc_and_alt.
 

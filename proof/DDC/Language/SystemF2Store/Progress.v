@@ -136,7 +136,7 @@ Proof.
     (* When we have a well typed case match on some data object, 
        then there is a corresponding alternative. *)
     SSCase "XLoc".
-     lets D: getAlt_has H H1.
+     lets D: store_has_sbind_for_XLoc_and_alt H H1.
      dest dc. int. 
      destruct H8  as [svs].
      destruct H10 as [x].
