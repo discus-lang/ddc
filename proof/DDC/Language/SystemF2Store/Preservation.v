@@ -32,15 +32,25 @@ Proof.
    inverts_type.
    have (exists t, TYPE ds nil nil se x t) as HX
      by (eapply (@exps_ctx_Forall2_exists_left exp ty wnfX C); eauto).
-   dest t. 
-   edestruct IHHS as [se2]; eauto.
-   exists se2; rip.
+   dest t.
 
+   spec IHHS H0.
+   destruct IHHS as [se2].
+   exists se2; rip.
+  
    eapply TyCon; eauto.
+   eapply (exps_ctx_Forall2_swap wnfX (TYPE ds nil nil se2) C x); auto.
+    intros.
+
+   have (y = t)
+    by (eapply type_unique; eauto).
+   subst.
+
+   eauto.
+
    have  (Forall2 (TYPE ds nil nil se2) (C x) (map (substTTs 0 ts) tsFields)) as HF
     by   (eapply Forall2_impl with (R1 := TYPE ds nil nil se); eauto; eauto).
-
-    admit.                                         (* fark. Forall2 context lemma *)
+   auto.
 
   SCase "XCase".
    eapply TyCase; eauto. 

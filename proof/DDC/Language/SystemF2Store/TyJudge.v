@@ -7,6 +7,23 @@ Require Export DDC.Language.SystemF2Store.Def.
 Require Export DDC.Language.SystemF2Store.Exp.
 Require Import Coq.Logic.FunctionalExtensionality.
 
+Lemma in_in_nonempty
+ :  forall {A} xs1 xs2
+ ,  (forall (x: A), In x xs1 -> In x xs2)
+ -> length xs1 > 0
+ -> length xs2 > 0.
+Proof.
+ intros.
+ destruct xs1.
+  nope.
+  destruct xs2.
+   have (In a (xs1 :> a)).
+   spec H a. rip. nope.
+   simpl. omega.
+Qed.
+
+
+
 
 (* Builtin in types. *)
 Definition tUnit 
@@ -21,6 +38,7 @@ Hint Unfold tFun.
 Definition stenv := list ty.
 
 (* Type Judgement assigns a type to an expression. *)
+(* TODO: put DEFSOK at bottom of tree *)
 Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
            : exp -> ty -> Prop :=
  (* Variables *)
@@ -127,7 +145,7 @@ Ltac inverts_type :=
  repeat 
   (match goal with 
    | [ H: TYPE  _ _ _ _ (XVar  _)     _       |- _ ] => inverts H
-   | [ H: TYPE  _ _ _ _ (XLoc  _)     _       |- _ ] => inverts H
+   | [ H: TYPE  _ _ _ _ (XLoc  _)     _       |- _ ] => inverts H 
    | [ H: TYPE  _ _ _ _ (XLAM  _)     _       |- _ ] => inverts H
    | [ H: TYPE  _ _ _ _ (XAPP  _ _)   _       |- _ ] => inverts H
    | [ H: TYPE  _ _ _ _ (XLam  _ _)   _       |- _ ] => inverts H
@@ -137,6 +155,60 @@ Ltac inverts_type :=
    | [ H: TYPE  _ _ _ _ (XUpdate _ _ _ _ _) _ |- _ ] => inverts H
    | [ H: TYPEA _ _ _ _ (AAlt _ _)    _ _     |- _ ] => inverts H
    end).
+
+
+(********************************************************************)
+(* Uniqueness of typing *)
+Lemma type_unique
+ :  forall ds ke te se x t1 t2 
+ ,  DEFSOK ds
+ -> TYPE ds ke te se x t1
+ -> TYPE ds ke te se x t2
+ -> t1 = t2.
+Proof.
+ intros. gen ds ke te se t1 t2.
+ induction x using exp_mutind with 
+  (PA := fun a => forall ds ke te se t2 t3 t3'
+               ,  TYPEA ds ke te se a t2 t3
+               -> TYPEA ds ke te se a t2 t3'
+               -> t3 = t3');
+  intros; try (solve [inverts_type; try congruence]).
+
+ inverts_type. spec IHx H2 H3. auto. congruence.
+ inverts_type. spec IHx H3 H4. auto. congruence.
+ inverts_type. spec IHx H6 H7. auto. congruence.
+
+ Case "XApp".
+  inverts_type.
+  spec IHx1 H4 H3. auto.
+  spec IHx2 H6 H7. auto.
+  unfold tFun in *.
+  congruence.
+
+ Case "XCase".
+  inverts_type.
+  have (tObj0 = tObj).
+   eauto. subst.
+
+  nforall.
+  assert (length aa > 0).
+  defok ds (DefDataType tcObj ks dcs).
+  nforall.
+  lets D: @in_in_nonempty H10. rip.
+  lists. auto.
+
+  destruct aa. 
+   nope.
+   have (TYPEA ds ke te se a tObj t1) as HT1.
+   have (TYPEA ds ke te se a tObj t2) as HT2.
+   spec H a HT1 HT2; burn.
+
+ Case "Alt".
+  inverts_type.
+  eapply makeTApps_eq_params in H2. rip.
+  assert (tsFields0 = tsFields). congruence. subst.
+  lets D1: IHx H9 H13; auto.
+Qed.
 
 
 (********************************************************************)
