@@ -87,33 +87,40 @@ Proof.
 
  (** Case *****************************)
  Case "EsCaseAlt".
-  skip.
-(* exists se. int.
-   eapply subst_exp_exp_list.
-   skip. (* ok svs are wf *)
+  exists se.  rip.
+  inverts HW. rip.
+  unfold STORET in *.
+  spec H13 H.
+  destruct H13 as [tcObj'].
+  destruct H12 as [tsParam'].
+  destruct H12 as [tsFields']. 
+  rip.
 
-   have (In (AAlt dc x) alts).
-   nforall.
+  rewrite H13 in H3. inverts H3.
+  rewrite H6  in H8. inverts H8.
 
-  have (TYPEA ds nil nil (AAlt dc x) (makeTApps (TCon tc) ts) t) as HA.
-  inverts HA.
-  rewrite H11 in H16. inverts H16.
-  rewrite H15 in H10. inverts H10.
+  assert (tcObj' = tc).
+   rewrite (getCtorOfType_makeTApps tcObj') in H6; auto.
+   inverts H6. auto.
+  subst.
 
-  have (getCtorOfType (TCon tc0) = Some tc0) as HTC.
-   erewrite getCtorOfType_makeTApps in H5; eauto.
-   inverts H5.
-  rewrite H6 in H15. inverts H15.
-  rr.
-  have (length ts = length ks0)      as HTK1.
-  have (length tsParam = length ks0) as HTK2.
-  rewrite <- HTK1 in HTK2.
-  assert (tsParam = ts).
-   eapply makeTApps_args_eq; eauto. 
+  have (In dc dcs).
+  have (In (AAlt dc x) alts).
+
+  have (TYPEA ds nil nil se (AAlt dc x) (makeTApps (TCon tc) tsParam') t) as HA
+   by  (nforall; auto).
+
+  have (vs = map expOfSValue svs).
    subst.
-  eauto.
- *)
 
+  eapply subst_exp_exp_list. eauto.
+  inverts HA. ddef_merge. 
+
+  assert (tsParam' = tsParam).
+   apply makeTApps_eq_params in H17. rip.
+   subst. 
+  auto.
+  
 
  (** Update ***************************)
  Case "EsUpdate".
