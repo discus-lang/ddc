@@ -44,7 +44,6 @@ Require Export DDC.Language.SystemF2Store.TyJudge.
 (* Substitution of types in expressions preserves typing. *)
 Require Export DDC.Language.SystemF2Store.SubstTypeExp.
 
-
 (* Substitution of expressions in expressions preserves typing. *)
 Require Export DDC.Language.SystemF2Store.SubstExpExp.
 
@@ -52,20 +51,20 @@ Require Export DDC.Language.SystemF2Store.SubstExpExp.
 Require Export DDC.Language.SystemF2Store.StepContext.
 
 (* Stores. *)
+Require Export DDC.Language.SystemF2Store.StoreValue.
+Require Export DDC.Language.SystemF2Store.StoreBind.
 Require Export DDC.Language.SystemF2Store.Store.
 
 (* Small step evaluation. *)
 Require Export DDC.Language.SystemF2Store.Step.
 
-
 (* A well typed expression is either a value, or can take a step. *)
 Require Export DDC.Language.SystemF2Store.Progress.
 
-(*
 (* When an expression takes a step the results has the same type. *)
-Require Export DDC.Language.SystemF2Data.Preservation.
+Require Export DDC.Language.SystemF2Store.Preservation.
 
+(*
 (* Big step evaluation, and conversion to small steps. *)
-Require Export DDC.Language.SystemF2.Eval.
-
+Require Export DDC.Language.SystemF2Store.Eval.
 *)

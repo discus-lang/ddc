@@ -97,6 +97,18 @@ Qed.
 Hint Resolve length_zero_is_nil.
 
 
+Lemma get_length_snoc
+ :  forall {A} (xs : list A) (x : A)
+ ,  get (length xs) (x <: xs) = Some x.
+Proof.
+ intros. gen x.
+ induction xs.
+   simpl. auto.
+   simpl. auto.
+Qed.
+Hint Resolve get_length_snoc.
+
+
 (* If there is an element at a particular index, then the length
    of the list is bigger than that index. *)
 Lemma get_length_more
@@ -125,6 +137,25 @@ Proof.
  eapply get_length_more.
 Qed.
 Hint Resolve get_length_less.
+
+
+Lemma get_length_less_exists
+ :  forall {A} i (xs : list A)
+ ,  i < length xs
+ -> exists x, get i xs = Some x.
+Proof.
+ intros. gen xs.
+ induction i; intros.
+  destruct xs. 
+   nope.
+   simpl in H. burn.
+  destruct xs.
+   simpl in H. nope.
+   simpl in H.
+   simpl. eapply IHi.
+    burn.
+Qed.
+Hint Resolve get_length_less_exists.
 
 
 Lemma get_none_length

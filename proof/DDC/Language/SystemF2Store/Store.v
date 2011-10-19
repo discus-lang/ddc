@@ -1,124 +1,8 @@
 
 Require Export DDC.Language.SystemF2Store.TyJudge.
 Require Export DDC.Language.SystemF2Store.Exp.
-
-
-(********************************************************************)
-(* Storeable values are the ones that we can keep directly in 
-   store bindings *)
-Inductive svalue :=
- | SLoc  : nat -> svalue
- | SLAM  : exp -> svalue
- | SLam  : ty  -> exp -> svalue.
-Hint Constructors svalue.
-
-
-Definition takeSValueOfExp (xx : exp) : option svalue :=
- match xx with
- | XLoc n    => Some (SLoc n)
- | XLAM x    => Some (SLAM x)
- | XLam t x  => Some (SLam t x)
- | _         => None
- end.
-
-
-Definition expOfSValue (s: svalue) : exp :=
- match s with
- | SLoc n    => XLoc n
- | SLAM x    => XLAM x
- | SLam t x  => XLam t x
- end.
-
-
-Definition svalueOf (xx : exp) (sv : svalue) : Prop
- := takeSValueOfExp xx = Some sv.
-
-
-(* There is an expression for every store value *)
-Lemma exp_from_svalue
- : forall sv, exists v, svalueOf v sv.
-Proof.
- intros.
- destruct sv; unfold svalueOf.
-  exists (XLoc n). int.
-  exists (XLAM e). int.
-  exists (XLam t e). int.
-Qed.
-Hint Resolve exp_from_svalue.
-
-
-(* There is a store value for every expression value. *)
-Lemma svalue_from_value
- : forall v, value v -> (exists sv, svalueOf v sv).
-Proof.
- intros.
- destruct v; nope; unfold svalueOf.
-  exists (SLoc  n).  eauto.
-  exists (SLAM  v).  eauto.
-  exists (SLam t v). eauto.
-Qed.
-Hint Resolve svalue_from_value.
-
-
-Lemma svalue_of_expOfSValue
- : forall sv : svalue, svalueOf (expOfSValue sv) sv.
-Proof.
- intros.
- destruct sv; simpl; unfold svalueOf; simpl; auto.
-Qed.
-Hint Resolve svalue_of_expOfSValue.
-
-
-Lemma svalueOf_is_expOfSValue
- :  forall v sv
- ,  svalueOf v sv
- -> v = expOfSValue sv.
-Proof.
- intros.
- inverts H.
-  destruct sv;
-   destruct v; try burn; simpl in *; inverts H1; auto.
-Qed.
-Hint Resolve svalueOf_is_expOfSValue.
-
-
-Lemma svalueOf_forall_expOfSValue
- :  forall vs svs
- ,  Forall2 svalueOf vs svs
- -> vs = map expOfSValue svs.
-Proof.
- intros.
- induction H.
-  simpl. auto.
-  subst. simpl.
-  f_equal. 
-  eapply svalueOf_is_expOfSValue. auto.
-Qed.
-Hint Resolve svalueOf_forall_expOfSValue.
-
-
-(********************************************************************) 
-(* Store binding with a constructor tag and some storeable values *)
-Inductive sbind :=
- | SObj : datacon -> list svalue -> sbind.
-
-
-Definition store  := list sbind.
-Hint Unfold store.
-
-
-(* Store binding is well typed under some data type defs and store environment. *)
-Inductive TYPEB (ds: defs) (se: stenv) : sbind -> ty -> Prop := 
- | TyObj 
-   :  forall tc ks dc dcs tsFields tsParam svs xs
-   ,  DEFSOK ds
-   -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
-   -> getDataDef dc ds = Some (DefData dc tsFields tc)
-   -> Forall2 (KIND nil) tsParam ks
-   -> Forall2 svalueOf   xs svs
-   -> Forall2 (TYPE ds nil nil se) xs (map (substTTs 0 tsParam) tsFields)
-   -> TYPEB ds se (SObj dc svs) (makeTApps (TCon tc) tsParam).
-Hint Constructors TYPEB.
+Require Export DDC.Language.SystemF2Store.StoreValue.
+Require Export DDC.Language.SystemF2Store.StoreBind.
 
 
 (********************************************************************)
@@ -144,32 +28,30 @@ Definition STORET (ds: defs) (st: stenv) (ss: store)
 Hint Unfold STORET.
 
 
-Lemma get_length_snoc
- :  forall {A} (xs : list A) (x : A)
- ,  get (length xs) (x <: xs) = Some x.
-Proof.
- intros. gen x.
- induction xs.
-   simpl. auto.
-   simpl. auto.
-Qed.
+(********************************************************************)
+(* Well formed store.
+   Store is well formed under some data type definitions and a
+   store typing. *)
+Definition WfS (ds: defs) (se: stenv) (ss: store)
+ := DEFSOK ds
+ /\ Forall closedT se
+ /\ STOREM ds se ss 
+ /\ STORET ds se ss.
+Hint Unfold WfS.
+
+Lemma WfS_defsok 
+ : forall ds se ss, WfS ds se ss -> DEFSOK ds.
+Proof. intros. inverts H. tauto. Qed.
+Hint Resolve WfS_defsok.
+
+Lemma WfS_closedT
+ : forall ds se ss, WfS ds se ss -> Forall closedT se.
+Proof. intros. inverts H. tauto. Qed.
+Hint Resolve WfS_closedT.
 
 
-Lemma get_length_less
- :  forall {A} i (xs : list A)
- ,  i < length xs
- -> exists x, get i xs = Some x.
-Proof.
- intros. gen xs.
- induction i; intros.
-  nope.
-  destruct xs.
-   simpl in H. nope.
-   simpl in H.
-   simpl. eapply IHi.
-    burn.
-Qed.
-
+(********************************************************************)
+(* Lemmas about object fields *)
 
 (* For each object in the store, the number of fields
    is the same as what is predicted by the data definition *)
@@ -216,7 +98,7 @@ Proof.
  assert (length svs = length tsFields) as HL.
   eapply storet_field_lengths; eauto.
  assert (exists svField, get i svs = Some svField).
-  eapply get_length_less.
+  eapply get_length_less_exists.
   rewrite HL. auto.
   shift H3.
  assert (exists v, svalueOf v svField) as HV.
@@ -352,60 +234,6 @@ Qed.
 
 
 (********************************************************************)
-(* Well formed store.
-   Store is well formed under some data type definitions and a
-   store typing. *)
-Definition WfS (ds: defs) (se: stenv) (ss: store)
- := DEFSOK ds
- /\ Forall closedT se
- /\ STOREM ds se ss 
- /\ STORET ds se ss.
-Hint Unfold WfS.
-
-Lemma WfS_defsok 
- : forall ds se ss, WfS ds se ss -> DEFSOK ds.
-Proof. intros. inverts H. tauto. Qed.
-Hint Resolve WfS_defsok.
-
-Lemma WfS_closedT
- : forall ds se ss, WfS ds se ss -> Forall closedT se.
-Proof. intros. inverts H. tauto. Qed.
-Hint Resolve WfS_closedT.
-
-
-(********************************************************************)
-Lemma store_has_sbind_for_stenv
- :  forall ds se ss l tObj
- ,  WfS ds se ss
- -> get l se = Some tObj
- -> (exists dc svs, get l ss = Some (SObj dc svs)).
-Proof.
- intros.
- inverts H. int.
- have (length se = length ss).
- have (exists sb, get l ss = Some sb).
- dest sb.
- destruct sb.
- eauto.
-Qed.
-Hint Resolve store_has_sbind_for_stenv.
-
-
-Lemma store_has_sbind_for_XLoc
- :  forall ds ke te se ss l tObj
- ,  WfS ds se ss
- -> TYPE ds ke te se (XLoc l) tObj
- -> (exists dc svs, get l ss = Some (SObj dc svs)).
-Proof.
- intros.
- inverts keep H. int.
- inverts_type.
- eauto.
-Qed.
-Hint Resolve store_has_sbind_for_XLoc.
-
-
-(********************************************************************)
 (* When we extend the store and store typing with a new binding, 
    then the resulting store is still well formed. *)
 Lemma store_extended_wellformed
@@ -439,7 +267,7 @@ Proof.
   unfold STOREM.
   assert (length ss = length se).
    unfold WfS in *; burn.
-  admit. (* ok list snoc lemma *)
+  admit.                                                    (* TODO ok, list snoc lemma *)
 
  (* Extended store is well typed under extended store typing *)
  assert (STORET ds (makeTApps (TCon tc) tsParam <: se) (SObj dc svs <: ss)).
@@ -454,11 +282,11 @@ Proof.
 
     SCase "l = length s".
      lets D: H11 (length ss) dc svs. clear H11.
-     admit.
+     admit.                                                 (* TODO *)
 
     SCase "l < length s".
      lets D: H11 l dcObj svFields. clear H11.
-     admit.
+     admit.                                                 (* TODO *)
 
  (* Build WfS out of previous assertions *)
  auto.
@@ -467,6 +295,39 @@ Hint Resolve store_extended_wellformed.
 
 
 (********************************************************************)
+(* Lemmas about existence of store components from WfS *)
+
+Lemma store_has_sbind_for_stenv
+ :  forall ds se ss l tObj
+ ,  WfS ds se ss
+ -> get l se = Some tObj
+ -> (exists dc svs, get l ss = Some (SObj dc svs)).
+Proof.
+ intros.
+ inverts H. int.
+ have (length se = length ss).
+ have (exists sb, get l ss = Some sb).
+ dest sb.
+ destruct sb.
+ eauto.
+Qed.
+Hint Resolve store_has_sbind_for_stenv.
+
+
+Lemma store_has_sbind_for_XLoc
+ :  forall ds ke te se ss l tObj
+ ,  WfS ds se ss
+ -> TYPE ds ke te se (XLoc l) tObj
+ -> (exists dc svs, get l ss = Some (SObj dc svs)).
+Proof.
+ intros.
+ inverts keep H. int.
+ inverts_type.
+ eauto.
+Qed.
+Hint Resolve store_has_sbind_for_XLoc.
+
+
 (* If we have a well typed case match on a store location containing
    some data object, then there is a case alternative corresponding to
    that object's data constructor. *)

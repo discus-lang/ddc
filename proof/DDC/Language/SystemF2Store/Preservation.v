@@ -40,7 +40,7 @@ Proof.
    assert (Forall2 (TYPE ds nil nil se2) (C x) (map (substTTs 0 ts) tsFields)) as HF.
     eapply Forall2_impl with (R1 := TYPE ds nil nil se). eauto. eauto.
 
-    admit.                                                   (* fark. Forall2 context lemma *)
+    admit.                                         (* fark. Forall2 context lemma *)
 
   SCase "XCase".
    eapply TyCase; eauto. 
@@ -63,13 +63,13 @@ Proof.
    eapply subst_type_exp; eauto.
    have (Forall closedT se).
    assert (liftTE 0 se = se) as HL.
-    admit.                                                  (* ok se all closed *)
+    admit.                                         (* TODO ok se all closed *)
    rewrite HL in H2.
    rrwrite (liftTE 0 nil = nil) in H2. auto.
   rrwrite (substTE 0 t2 nil = nil) in HT.
 
    assert (substTE 0 t2 se  = se) as HS.
-    admit.                                                  (* ok se all closed *)
+    admit.                                         (* TODO ok se all closed *)
    rewrite HS in HT.
   auto.
 
