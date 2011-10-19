@@ -49,7 +49,7 @@ Theorem subst_type_type_ix_forall2
 Proof.
  intros.
  eapply Forall2_map_left.
- apply (Forall2_impl ty ki
+ apply (Forall2_impl
             (fun t k => KIND ke t k)
             (fun t k => KIND (delete ix ke) (substTT ix t2 t) k)
             ts ks).

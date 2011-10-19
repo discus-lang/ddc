@@ -8,7 +8,7 @@ Require Import DDC.Data.List.Replace.
 (* Lemmas: Forall2 *)
 
 Lemma Forall2_impl
- : forall (A B: Type) 
+ : forall {A B}
           (R1: A -> B -> Prop)
           (R2: A -> B -> Prop)
           xs ys
@@ -21,7 +21,7 @@ Qed.
 
 
 Lemma Forall2_impl_in
- : forall {A B: Type}
+ : forall {A B}
           (R1: A -> B -> Prop)
           (R2: A -> B -> Prop)
           xs ys
@@ -37,7 +37,7 @@ Qed.
 
 
 Lemma Forall2_eq
- :  forall (A: Type) xs ys
+ :  forall {A} xs ys
  ,  Forall2 (@eq A) xs ys
  -> xs = ys.
 Proof.
@@ -50,7 +50,7 @@ Qed.
 
 
 Lemma Forall2_length
- : forall {A B: Type} (R: A -> B -> Prop) 
+ : forall {A B} (R: A -> B -> Prop) 
           (xs : list A) 
           (ys : list B)
  ,  Forall2 R xs ys
@@ -65,7 +65,7 @@ Hint Resolve Forall2_length.
 
 
 Lemma Forall2_get_get_left
- :  forall (A B: Type) (R: A -> B -> Prop) x xs ys ix
+ :  forall {A B} (R: A -> B -> Prop) x xs ys ix
  ,  Forall2 R xs ys
  -> get ix xs = Some x
  -> (exists y, get ix ys = Some y).
@@ -80,7 +80,7 @@ Qed.
 
 
 Lemma Forall2_get_get_right
- :  forall (A B: Type) (R: A -> B -> Prop) y xs ys ix
+ :  forall {A B} (R: A -> B -> Prop) y xs ys ix
  ,  Forall2 R xs ys
  -> get ix ys = Some y
  -> (exists x, get ix xs = Some x).
@@ -95,7 +95,7 @@ Qed.
 
 
 Lemma Forall2_exists_in_left
- :  forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ :  forall {A B} (R: A -> B -> Prop) x xs ys
  ,  In x xs
  -> Forall2 R xs ys
  -> (exists y, In y ys).
@@ -108,7 +108,7 @@ Qed.
 
 
 Lemma Forall2_exists_in_right
- :  forall (A B: Type) (R: A -> B -> Prop) y xs ys
+ :  forall {A B} (R: A -> B -> Prop) y xs ys
  ,  In y ys
  -> Forall2 R xs ys
  -> (exists x, In x xs).
@@ -121,7 +121,7 @@ Qed.
 
 
 Lemma Forall2_exists_left
- : forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ : forall {A B} (R: A -> B -> Prop) x xs ys
  ,  In x xs 
  -> Forall2 R xs ys 
  -> (exists y, R x y).
@@ -137,7 +137,7 @@ Hint Resolve Forall2_exists_left.
 
 
 Lemma Forall2_exists_left_in
- : forall (A B: Type) (R: A -> B -> Prop) x xs ys
+ : forall {A B} (R: A -> B -> Prop) x xs ys
  ,             In x xs  -> Forall2 R xs ys 
  -> (exists y, In y ys  /\         R x  y).
 Proof.
@@ -156,8 +156,7 @@ Qed.
 
 
 Lemma Forall2_exists_right
- : forall {A B}
-     (R: A -> B -> Prop)
+ : forall {A B} (R: A -> B -> Prop)
      y xs ys
  ,  In y ys 
  -> Forall2 R xs ys 
@@ -353,7 +352,7 @@ Proof.
  rewrite Forall_forall.
  rewrite Forall_forall in H. 
  intros.
- lets D: Forall2_exists_left H1 H0.
+ lets D: @Forall2_exists_left H1 H0.
  destruct D. eauto. 
 Qed.
 Hint Resolve Forall2_Forall_left.

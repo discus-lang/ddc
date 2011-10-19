@@ -289,7 +289,7 @@ Proof.
       rewrite HL. rr. auto.     
      assert (xs = map expOfSValue svs) as HV. 
       eauto. rewrite <- HV.
-     eapply (Forall2_impl exp ty (TYPE ds nil nil se)); eauto.
+     eapply (Forall2_impl (TYPE ds nil nil se)); eauto.
 
     SCase "l < length s".
      lets D: H11 l dcObj svFields. clear H11.

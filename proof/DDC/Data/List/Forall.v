@@ -6,7 +6,7 @@ Require Import DDC.Base.Tactics.
 (********************************************************************)
 (* Lemmas: in *)
 Lemma in_snoc 
- :  forall A x a (xs: list A)
+ :  forall {A} x a (xs: list A)
  ,  In x xs 
  -> In x (a <: xs).
 Proof.
@@ -22,7 +22,7 @@ Hint Resolve in_snoc.
 
 
 Lemma in_app_right
- :  forall A x (xs ys: list A)
+ :  forall {A} x (xs ys: list A)
  ,  In x ys
  -> In x (xs ++ ys).
 Proof.
@@ -36,7 +36,7 @@ Hint Resolve in_app_right.
 
 
 Lemma in_app_left
- :  forall A x (xs ys: list A)
+ :  forall {A} x (xs ys: list A)
  ,  In x xs
  -> In x (xs ++ ys).
 Proof.
@@ -52,7 +52,7 @@ Hint Resolve in_app_left.
 (* Lemmas: Forall *)
 
 Lemma Forall_impl_in
- : forall {A: Type}
+ : forall {A}
           (P1: A -> Prop) (P2: A -> Prop)
           (xs: list A)
  ,  (forall x, In x xs -> P1 x -> P2 x)
@@ -67,7 +67,7 @@ Qed.
 
 
 Lemma Forall_get
- :  forall A (P: A -> Prop) ix x xs
+ :  forall {A} (P: A -> Prop) ix x xs
  ,  Forall P xs
  -> get ix xs = Some x
  -> P x.
@@ -86,7 +86,7 @@ Qed.
 
 
 Lemma Forall_snoc
- :  forall A (P: A -> Prop) x xs
+ :  forall {A} (P: A -> Prop) x xs
  ,  P x
  -> Forall P xs
  -> Forall P (x <: xs).
@@ -104,7 +104,7 @@ Hint Resolve Forall_snoc.
 
 
 Lemma Forall_app_left
- :  forall A (P: A -> Prop) xs ys
+ :  forall {A} (P: A -> Prop) xs ys
  ,  Forall P (xs ++ ys)
  -> Forall P xs.
 Proof.
@@ -114,7 +114,7 @@ Hint Resolve Forall_app_left.
 
 
 Lemma Forall_app_right
- :  forall A (P: A -> Prop) xs ys
+ :  forall {A} (P: A -> Prop) xs ys
  ,  Forall P (xs ++ ys)
  -> Forall P ys.
 Proof.
@@ -124,7 +124,7 @@ Hint Resolve Forall_app_right.
 
 
 Lemma Forall_map
- :  forall {A B: Type} 
+ :  forall {A B}
            (P: B -> Prop) (f: A -> B) 
            (xs: list A)
  ,  Forall (fun x => P (f x)) xs
