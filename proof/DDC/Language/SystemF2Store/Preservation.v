@@ -92,7 +92,7 @@ Proof.
     by  (unfold WfS in *; burn).
    rewrite HL. eauto.
    eauto.
-   defok ds (DefDataType tc ks dcs). auto. 
+   defok ds (DefType tc ks dcs). auto. 
 
 
  (** Case *****************************)

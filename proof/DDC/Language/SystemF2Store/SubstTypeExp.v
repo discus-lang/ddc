@@ -69,8 +69,8 @@ Proof.
     rrwrite (ix = 0 + ix). 
     rewrite substTTs_substTT; rr.
      nforall. eapply H; eauto.
-     defok ds (DefData     dc tsFields tc).
-     defok ds (DefDataType tc ks       dcs).
+     defok ds (DefData dc tsFields tc).
+     defok ds (DefType tc ks       dcs).
      rrwrite (length ts = length ks).
      nforall.
      have (KIND ks y KStar). eauto.
@@ -88,8 +88,8 @@ Proof.
    rewrite HDC. auto.
 
  Case "XUpdate".
-  defok ds (DefData     dc    tsFields tcObj).
-  defok ds (DefDataType tcObj ks dcs).
+  defok ds (DefData dc    tsFields tcObj).
+  defok ds (DefType tcObj ks dcs).
   eapply TyUpdate; eauto.
   eapply Forall2_map_left.
    eapply Forall2_impl; eauto; intros.

@@ -7,23 +7,6 @@ Require Export DDC.Language.SystemF2Store.Def.
 Require Export DDC.Language.SystemF2Store.Exp.
 Require Import Coq.Logic.FunctionalExtensionality.
 
-Lemma in_in_nonempty
- :  forall {A} xs1 xs2
- ,  (forall (x: A), In x xs1 -> In x xs2)
- -> length xs1 > 0
- -> length xs2 > 0.
-Proof.
- intros.
- destruct xs1.
-  nope.
-  destruct xs2.
-   have (In a (xs1 :> a)).
-   spec H a. rip. nope.
-   simpl. omega.
-Qed.
-
-
-
 
 (* Builtin in types. *)
 Definition tUnit 
@@ -37,23 +20,24 @@ Hint Unfold tFun.
 (* Store Typing holds the types of locations *)
 Definition stenv := list ty.
 
+
 (* Type Judgement assigns a type to an expression. *)
 (* TODO: put DEFSOK at bottom of tree *)
 Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
            : exp -> ty -> Prop :=
+
  (* Variables *)
  | TyVar 
    :  forall i t
    ,  get i te = Some t
    -> TYPE ds ke te se (XVar i) t
 
+ (* Locations must refer to data types.
+    Naked functions are not place in the store because
+    they are not updatable and have no region annotations. *)
  | TyLoc
    :  forall i t tc
    ,  get i se         = Some t
-
-   (* Locations must refer to data types.
-      Naked functions are not place in the store because
-      they are not updatable and have no region annotations. *)
    -> getCtorOfType t  = Some tc
    -> isTyConData tc
 
@@ -90,8 +74,8 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  | TyCon 
    :  forall tc (ks: list ki) tsFields tsParam xs dc dcs
    ,  DEFSOK ds
-   -> getTypeDef tc ds = Some (DefDataType tc ks       dcs)
-   -> getDataDef dc ds = Some (DefData     dc tsFields tc)
+   -> getTypeDef tc ds = Some (DefType tc ks       dcs)
+   -> getDataDef dc ds = Some (DefData dc tsFields tc)
    -> Forall2 (KIND ke) tsParam ks
    -> Forall2 (TYPE ds ke te se) xs (map (substTTs 0 tsParam) tsFields)
    -> TYPE ds ke te se (XCon dc tsParam xs) (makeTApps (TCon tc) tsParam)
@@ -107,7 +91,7 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
       (* All data cons must have a corresponding alternative. 
          Maybe we should move this to the well-formedness judgement *)
    -> getCtorOfType tObj  = Some tcObj
-   -> getTypeDef tcObj ds = Some (DefDataType tcObj ks dcs)
+   -> getTypeDef tcObj ds = Some (DefType tcObj ks dcs)
    -> Forall (fun dc => In dc (map dcOfAlt alts)) dcs
 
    -> TYPE ds ke te se (XCase xObj alts) tResult
@@ -116,7 +100,7 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  | TyUpdate
    :  forall i xObj dcObj tcObj tsParam tsFields ks dcs xField tField
    ,  DEFSOK ds
-   -> getTypeDef tcObj ds = Some (DefDataType tcObj ks dcs)
+   -> getTypeDef tcObj ds = Some (DefType tcObj ks dcs)
    -> getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
    -> Forall2 (KIND ke) tsParam ks
    -> get i  tsFields     = Some tField
@@ -130,8 +114,8 @@ with TYPEA  (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  | TyAlt 
    :  forall x1 dc tc ks tsParam tsFields tResult dcs
    ,  DEFSOK ds
-   -> getTypeDef tc ds = Some (DefDataType tc ks dcs)
-   -> getDataDef dc ds = Some (DefData     dc tsFields tc)
+   -> getTypeDef tc ds = Some (DefType tc ks dcs)
+   -> getDataDef dc ds = Some (DefData dc tsFields tc)
    -> Forall2 (KIND ke) tsParam ks
    -> TYPE  ds ke (te >< map (substTTs 0 tsParam) tsFields) se x1 tResult
    -> TYPEA ds ke te se (AAlt dc x1) (makeTApps (TCon tc) tsParam) tResult.
@@ -192,9 +176,9 @@ Proof.
 
   nforall.
   assert (length aa > 0).
-  defok ds (DefDataType tcObj ks dcs).
+  defok ds (DefType tcObj ks dcs).
   nforall.
-  lets D: @in_in_nonempty H10. rip.
+  lets D: @length_in_in_nonempty H10. rip.
   lists. auto.
 
   destruct aa. 

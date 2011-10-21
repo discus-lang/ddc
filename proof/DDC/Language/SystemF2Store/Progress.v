@@ -157,7 +157,7 @@ Proof.
      dest t11. dest t12. subst.
      unfold tFun in H6. simpl in H6. inverts H6.
      inverts H.
-     have (DEFOK ds (DefDataType TyConFun ks dcs)) as HD.
+     have (DEFOK ds (DefType TyConFun ks dcs)) as HD.
      inverts HD. false.
 
   (* Discriminant steps *)
@@ -180,7 +180,7 @@ Proof.
    SSCase "value x2".
     assert (exists l, x1 = XLoc l).
      eapply value_loc; eauto.
-     defok ds (DefDataType tcObj ks dcs). auto.
+     defok ds (DefType tcObj ks dcs). auto.
     dest l. subst.
     have (exists dc svs, get l s = Some (SObj dc svs)) as HJ.
     destruct HJ as [dc'].

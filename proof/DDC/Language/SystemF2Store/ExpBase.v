@@ -1,6 +1,7 @@
 
 Require Export DDC.Language.SystemF2.Ty.
 Require Export DDC.Language.SystemF2Store.Def.
+Require Export DDC.Language.SystemF2Store.ExpDataCon.
 Require Export DDC.Base.
 
 (* Expressions *)

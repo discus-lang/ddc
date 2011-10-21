@@ -200,6 +200,23 @@ Qed.
 Hint Resolve get_none_length.
 
 
+Lemma length_in_in_nonempty
+ :  forall {A} xs1 xs2
+ ,  (forall (x: A), In x xs1 -> In x xs2)
+ -> length xs1 > 0
+ -> length xs2 > 0.
+Proof.
+ intros.
+ destruct xs1.
+  nope.
+  destruct xs2.
+   have (In a (xs1 :> a)).
+   spec H a. rip. nope.
+   simpl. omega.
+Qed.
+Hint Resolve length_in_in_nonempty.
+
+
 (********************************************************************)
 (** Lemmas: app *)
 
