@@ -29,7 +29,8 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  (* Variables *)
  | TyVar 
    :  forall i t
-   ,  get i te = Some t
+   ,  DEFSOK ds
+   -> get i te = Some t
    -> TYPE ds ke te se (XVar i) t
 
  (* Locations must refer to data types.
@@ -37,7 +38,8 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
     they are not updatable and have no region annotations. *)
  | TyLoc
    :  forall i t tc
-   ,  get i se         = Some t
+   ,  DEFSOK ds
+   -> get i se         = Some t
    -> getCtorOfType t  = Some tc
    -> isTyConData tc
 
@@ -99,8 +101,7 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  (* Update data object *)
  | TyUpdate
    :  forall i xObj dcObj tcObj tsParam tsFields ks dcs xField tField
-   ,  DEFSOK ds
-   -> getTypeDef tcObj ds = Some (DefType tcObj ks dcs)
+   ,  getTypeDef tcObj ds = Some (DefType tcObj ks dcs)
    -> getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
    -> Forall2 (KIND ke) tsParam ks
    -> get i  tsFields     = Some tField
@@ -113,8 +114,7 @@ with TYPEA  (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  (* Case Alternatives *)
  | TyAlt 
    :  forall x1 dc tc ks tsParam tsFields tResult dcs
-   ,  DEFSOK ds
-   -> getTypeDef tc ds = Some (DefType tc ks dcs)
+   ,  getTypeDef tc ds = Some (DefType tc ks dcs)
    -> getDataDef dc ds = Some (DefData dc tsFields tc)
    -> Forall2 (KIND ke) tsParam ks
    -> TYPE  ds ke (te >< map (substTTs 0 tsParam) tsFields) se x1 tResult
@@ -142,30 +142,47 @@ Ltac inverts_type :=
 
 
 (********************************************************************)
+(* Well typing imples data type defs are ok *)
+Lemma type_defsok
+ :  forall ds ke te se x t
+ ,  TYPE ds ke te se x t
+ -> DEFSOK ds.
+Proof.
+ intros. gen ke te se t.
+ induction x using exp_mutind with
+  (PA := fun a => forall ke te se t1 t2
+      ,  TYPEA ds ke te se a t1 t2
+      -> DEFSOK ds)
+   ; intros; inverts_type; try eauto.
+Qed.
+Hint Resolve type_defsok.
+
+
+
+(********************************************************************)
 (* Uniqueness of typing *)
 Lemma type_unique
  :  forall ds ke te se x t1 t2 
- ,  DEFSOK ds
- -> TYPE ds ke te se x t1
+ ,  TYPE ds ke te se x t1
  -> TYPE ds ke te se x t2
  -> t1 = t2.
 Proof.
  intros. gen ds ke te se t1 t2.
  induction x using exp_mutind with 
   (PA := fun a => forall ds ke te se t2 t3 t3'
-               ,  TYPEA ds ke te se a t2 t3
-               -> TYPEA ds ke te se a t2 t3'
-               -> t3 = t3');
+      ,  TYPEA ds ke te se a t2 t3
+      -> TYPEA ds ke te se a t2 t3'
+      -> t3 = t3');
   intros; try (solve [inverts_type; try congruence]).
 
+ inverts_type. spec IHx H1 H2. auto. congruence.
  inverts_type. spec IHx H2 H3. auto. congruence.
- inverts_type. spec IHx H3 H4. auto. congruence.
- inverts_type. spec IHx H6 H7. auto. congruence.
+ inverts_type. spec IHx H5 H6. auto. congruence.
 
  Case "XApp".
   inverts_type.
-  spec IHx1 H4 H3. auto.
-  spec IHx2 H6 H7. auto.
+  spec IHx1 H3 H2. auto.
+  spec IHx2 H5 H6. auto.
   unfold tFun in *.
   congruence.
 
@@ -178,7 +195,7 @@ Proof.
   assert (length aa > 0).
   defok ds (DefType tcObj ks dcs).
   nforall.
-  lets D: @length_in_in_nonempty H10. rip.
+  lets D: @length_in_in_nonempty H9. rip.
   lists. auto.
 
   destruct aa. 
@@ -191,7 +208,7 @@ Proof.
   inverts_type.
   eapply makeTApps_eq_params in H2. rip.
   assert (tsFields0 = tsFields). congruence. subst.
-  lets D1: IHx H9 H13; auto.
+  lets D1: IHx H8 H11; auto.
 Qed.
 
 
@@ -210,8 +227,8 @@ Proof.
  (* 'x' can't be a XLoc because we don't store naked functions in the heap *)
  Case "XLoc n = XLam t x'".
   inverts H0. 
-  unfold tFun in H3.
-  simpl in H3. inverts H3.
+  unfold tFun in H4.
+  simpl in *. inverts H4.
   nope.
 Qed.
 Hint Resolve value_lam.
@@ -313,7 +330,7 @@ Proof.
  Case "XAlt".
   destruct dc.
   eapply WfA_AAlt. eauto.
-  apply IHx in H8.
+  apply IHx in H7.
   rr. lists.
   rrwrite (length te + length tsFields = length tsFields + length te).
   eauto.
@@ -350,7 +367,7 @@ Proof.
   ; intros; inverts_type; simpl; eauto.
 
  Case "XVar".
-  apply TyVar.
+  apply TyVar; auto.
   apply get_map; auto.
 
  Case "XLoc".

@@ -24,14 +24,15 @@ Proof.
  Case "XVar".
   fbreak_nat_compare.
   SCase "n = ix".
-   rewrite H in H3. inverts H3. auto.
+   have (t2 = t1) by congruence. subst.
+   auto.
 
   SCase "n < ix".
    apply TyVar; auto.
 
   SCase "n > ix".
    apply TyVar; auto.
-   rewrite <- H3.
+   rewrite <- H4.
    destruct n.
     burn. 
     simpl. nnat. apply get_delete_below; burn.

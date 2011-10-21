@@ -333,15 +333,15 @@ Proof.
  nforall.
  inverts H. rip.
  unfold STORET in *.
-  spec H11 l dc svs. rip.
-  destruct H11 as [tcObj'].
+  spec H12 l dc svs. rip.
+  destruct H12 as [tcObj'].
   dest tsParam.
   dest tsFields.
   rip.
-  rewrite H2 in H11. inverts H11.
+  rewrite H7 in H12. inverts H12.
   erewrite getCtorOfType_makeTApps with (tc := tcObj') in H5; eauto.
     inverts H5.
-  erewrite getCtorOfType_makeTApps with (tc := tcObj) in H7; eauto.
+  erewrite getCtorOfType_makeTApps with (tc := tcObj) in H9; eauto.
 Qed.
 Hint Resolve store_has_sbind_for_XLoc_and_alt.
 

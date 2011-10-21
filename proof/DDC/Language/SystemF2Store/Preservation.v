@@ -87,7 +87,7 @@ Proof.
   eapply store_extended_wellformed; eauto.
 
   (* New store location is well typed under the store typing. *)
-  eapply TyLoc with (tc := tc).
+  eapply TyLoc with (tc := tc); auto.
    have (length s = length se) as HL
     by  (unfold WfS in *; burn).
    rewrite HL. eauto.
@@ -100,14 +100,14 @@ Proof.
   exists se.  rip.
   inverts HW. rip.
   unfold STORET in *.
-  spec H13 H.
-  destruct H13 as [tcObj'].
-  destruct H12 as [tsParam'].
-  destruct H12 as [tsFields']. 
+  spec H14 H.
+  destruct H14 as [tcObj'].
+  destruct H13 as [tsParam'].
+  destruct H13 as [tsFields']. 
   rip.
 
-  rewrite H13 in H3. inverts H3.
-  rewrite H6  in H8. inverts H8.
+  rewrite H14 in H8. inverts H8.
+  have (tcObj = tc) by congruence. subst.
 
   assert (tcObj' = tc).
    rewrite (getCtorOfType_makeTApps tcObj') in H6; auto.
@@ -127,7 +127,7 @@ Proof.
   inverts HA. ddef_merge. 
 
   assert (tsParam' = tsParam).
-   apply makeTApps_eq_params in H17. rip.
+   apply makeTApps_eq_params in H19. rip.
    subst. 
   auto.
   
@@ -149,7 +149,7 @@ Proof.
      by  (eapply storet_field_has; eauto).
 
     destruct HL  as [svField0].
-    destruct H10 as [vField0].
+    destruct H12 as [vField0].
     rip. 
 
     (* The old field value has the same type as the one we're replacing it with *)
@@ -159,13 +159,13 @@ Proof.
     (* When we replace the field the store is still well typed. *)
     eapply storet_replace_field
       with (vField2 := vField); eauto. 
-    inverts keep H7. rip.
+    inverts keep H3. rip.
     eapply TyCon; burn.
 
  Case "EsUpdateSkip".
   exists se. rip.
   unfold xUnit. unfold tUnit.
-  inverts keep H6. rip.
+  inverts keep H2. rip.
   eapply TyCon; burn.
 Qed.
 

@@ -23,7 +23,7 @@ Proof.
   intros; simpl; inverts_type; eauto.
 
  Case "XVar".
-  apply TyVar.
+  apply TyVar; auto.
   unfold substTE. auto.
 
  Case "XLoc".
@@ -108,7 +108,7 @@ Proof.
   rr.
   eapply TyAlt with (tc := tc) (ks := ks) (dcs := dcs); eauto.
   eapply subst_type_type_ix_forall2; eauto.
-   eapply IHx1 in H10; eauto.
+   eapply IHx1 in H9; eauto.
    rrwrite (ix = 0 + ix).   
    rewrite substTTs_substTT_map; rr.
     unfold substTE. rewrite <- map_app. auto. 

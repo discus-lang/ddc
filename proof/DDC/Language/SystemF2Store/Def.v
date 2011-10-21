@@ -94,6 +94,13 @@ Qed.
 Hint Resolve getDataDef_in.
 
 
+Definition haveDef (ds: defs) (d : def) : Prop
+ := match d with 
+    | DefType tc ks dcs => getTypeDef tc ds = Some d
+    | DefData dc ts tc  => getDataDef dc ds = Some d
+    end.
+
+
 (********************************************************************)
 (* Check that a definition is ok. *)
 Inductive DEFOK : list def -> def -> Prop :=
