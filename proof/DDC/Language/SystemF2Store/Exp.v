@@ -88,7 +88,7 @@ Inductive wfX (kn: nat) (tn: nat) (sn: nat) : exp -> Prop :=
 with    wfA (kn: nat) (tn: nat) (sn: nat) : alt -> Prop :=
  | WfA_AAlt
    :  forall dc ds x tsArgs tResult
-   ,  getDataDef dc ds = Some (DefData dc tsArgs tResult)
+   ,  hasDef ds (DefData dc tsArgs tResult)
    -> wfX kn (tn + length tsArgs) sn x
    -> wfA kn tn sn (AAlt dc x).
 
@@ -123,25 +123,3 @@ Lemma value_closedX
  Proof. intros. inverts H. auto. Qed.
 Hint Resolve value_closedX.
 
-(*
-Lemma value_wnfXs_XCon
- : forall ts xs dc
- , value (XCon dc ts xs) -> Forall wnfX xs.
-Proof.
- intros. inverts H. inverts H0.
-Qed.
-Hint Resolve value_wnfXs_XCon.
-
-
-Lemma value_closedXs_XCon
- : forall ts xs dc
- , value (XCon dc ts xs) -> Forall closedX xs.
-Proof.
- intros. 
- inverts H.
- unfold closedX in H1. dest sn.
- inverts H.
- nforall. eauto. 
-Qed.
-Hint Resolve value_closedXs_XCon.
-*)

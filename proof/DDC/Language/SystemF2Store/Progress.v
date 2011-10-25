@@ -180,7 +180,8 @@ Proof.
    SSCase "value x2".
     assert (exists l, x1 = XLoc l).
      eapply value_loc; eauto.
-     defok ds (DefType tcObj ks dcs). auto.
+     have (DEFOK ds (DefType tcObj ks dcs)).
+      inverts H2. auto.
     dest l. subst.
     have (exists dc svs, get l s = Some (SObj dc svs)) as HJ.
     destruct HJ as [dc'].

@@ -87,12 +87,13 @@ Proof.
   eapply store_extended_wellformed; eauto.
 
   (* New store location is well typed under the store typing. *)
-  eapply TyLoc with (tc := tc); auto.
+  eapply TyLoc with (tc := tc); eauto.
    have (length s = length se) as HL
     by  (unfold WfS in *; burn).
    rewrite HL. eauto.
+   have (DEFOK ds (DefType tc ks dcs)) as HD.
+   inverts HD.
    eauto.
-   defok ds (DefType tc ks dcs). auto. 
 
 
  (** Case *****************************)
@@ -124,7 +125,7 @@ Proof.
    subst.
 
   eapply subst_exp_exp_list. eauto.
-  inverts HA. ddef_merge. 
+  inverts HA. defs_merge. 
 
   assert (tsParam' = tsParam).
    apply makeTApps_eq_params in H19. rip.
@@ -160,13 +161,21 @@ Proof.
     eapply storet_replace_field
       with (vField2 := vField); eauto. 
     inverts keep H3. rip.
-    eapply TyCon; burn.
+    eapply TyCon.
+     red. burn.
+     red. burn.
+     eauto.
+     simpl. burn.
 
  Case "EsUpdateSkip".
   exists se. rip.
   unfold xUnit. unfold tUnit.
   inverts keep H2. rip.
-  eapply TyCon; burn.
+  eapply TyCon; simpl.
+   red. burn.
+   red. burn.
+   eauto.
+   simpl. burn.
 Qed.
 
 

@@ -20,8 +20,8 @@ Definition STORET (ds: defs) (st: stenv) (ss: store)
  := forall l dcObj svFields
  ,  get l ss = Some (SObj dcObj svFields)
  -> (exists tcObj tsParam tsFields 
-    ,  get l st            = Some (makeTApps (TCon tcObj) tsParam)
-    /\ getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
+    ,  get l st  = Some (makeTApps (TCon tcObj) tsParam)
+    /\ hasDef ds (DefData dcObj tsFields tcObj)
     /\ Forall2 (TYPE ds nil nil st)
                (map expOfSValue svFields)
                (map (substTTs 0 tsParam) tsFields)).
@@ -58,8 +58,8 @@ Hint Resolve WfS_closedT.
 Lemma storet_field_lengths
  :  forall ds dc se s l svs tsFields tObj
  ,  STORET ds se s
- -> get l s          = Some (SObj dc svs)
- -> getDataDef dc ds = Some (DefData dc tsFields tObj)
+ -> get l s   = Some (SObj dc svs)
+ -> hasDef ds (DefData dc tsFields tObj)
  -> length svs = length tsFields.
 Proof.
  intros.
@@ -69,7 +69,7 @@ Proof.
   destruct H as [tsParam].
   destruct H as [tsFields'].
   rip.
-  ddef_merge.
+  defs_merge.
   have  ( length (map expOfSValue svs)
         = length (map (substTTs 0 tsParam) tsFields)).
   rewrite map_length in H.
@@ -84,8 +84,8 @@ Hint Resolve storet_field_lengths.
 Lemma storet_field_has
  :  forall ds s se svs tcObj tsFields i l dc
  ,  STORET ds se s
- -> get l s          = Some (SObj dc svs)
- -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
+ -> get l s   = Some (SObj dc svs)
+ -> hasDef ds (DefData dc tsFields tcObj)
  -> i < length tsFields
  -> exists svField vField
         ,  get i svs = Some svField 
@@ -112,7 +112,7 @@ Lemma storet_field_type
  -> get l se         = Some (makeTApps (TCon tcObj) tsParam)
  -> get i svs        = Some svField
  -> svalueOf vField svField
- -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
+ -> hasDef ds (DefData dc tsFields tcObj)
  -> get i tsFields   = Some tField
  -> TYPE ds nil nil se vField (substTTs 0 tsParam tField).
 Proof.
@@ -123,7 +123,7 @@ Proof.
   destruct H as [tcObj'].
   destruct H as [tsParam'].
   destruct H as [tsFields'].
-  rip. ddef_merge.
+  rip. defs_merge.
 
  have (exists vsFields, Forall2 svalueOf vsFields svs) as HFs.
  destruct HFs as [vsFields].
@@ -146,7 +146,7 @@ Lemma storet_replace_field
  ,  STORET ds se s
  -> get l s          = Some (SObj dc svs)
  -> get l se         = Some (makeTApps (TCon tcObj) tsParam)
- -> getDataDef dc ds = Some (DefData dc tsFields tcObj)
+ -> hasDef ds (DefData dc tsFields tcObj)
  -> get i tsFields   = Some tField'
  -> tField           = substTTs 0 tsParam tField'
  -> TYPE ds nil nil se vField1 tField -> svalueOf vField1 svField1
@@ -175,7 +175,7 @@ Proof.
   exists tcObj.
   exists tsParam.
   exists tsFields.
-  rip. ddef_merge.
+  rip. defs_merge.
 
   have (svFields = replace i svField2 svs)
    by  (erewrite replace_get_eq in H10; eauto; 
@@ -250,7 +250,7 @@ Proof.
 
    SCase "l = length ss".
     assert (dcObj = dc /\ svFields = svs).
-     rr. inverts H10. auto. rip.
+     rr. split; congruence. rip.
 
     exists tc tsParam tsFields. rip.
     have (length ss = length se) as HL.
@@ -262,17 +262,18 @@ Proof.
    SCase "l < length s".
     assert (get l ss = Some (SObj dcObj svFields)) as HG.
      have (l < length ss).
-     rewrite get_length_less_snoc in H10; auto.
+     rewrite get_length_less_snoc in H9; auto.
 
-    lets D: H11 l dcObj svFields HG. clear H11.
+    lets D: H10 l dcObj svFields HG. clear H10.
      destruct D as [tcObj].       exists tcObj.
-     destruct H11 as [tsParam'].  exists tsParam'.
-     destruct H11 as [tsFields']. exists tsFields'.
+     destruct H10 as [tsParam'].  exists tsParam'.
+     destruct H10 as [tsFields']. exists tsFields'.
      rip.
 
     eapply (Forall2_impl (TYPE ds nil nil se)); eauto.
 
  (* Build WfS out of previous assertions *)
+ inverts HW.
  auto.
 Qed.
 Hint Resolve store_extended_wellformed.

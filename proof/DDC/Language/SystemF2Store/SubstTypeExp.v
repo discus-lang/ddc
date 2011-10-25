@@ -64,16 +64,14 @@ Proof.
    eapply subst_type_type_ix_forall2; eauto.
 
    eapply Forall2_map.
-   eapply Forall2_map_right' in H11.
+   eapply Forall2_map_right' in H10.
    eapply Forall2_impl_in; eauto; intros.
     rrwrite (ix = 0 + ix). 
     rewrite substTTs_substTT; rr.
      nforall. eapply H; eauto.
-     defok ds (DefData dc tsFields tc).
-     defok ds (DefType tc ks       dcs).
-     rrwrite (length ts = length ks).
-     nforall.
-     have (KIND ks y KStar). eauto.
+     have (DEFOK ds (DefData dc tsFields tc)).
+     have (DEFOK ds (DefType tc ks       dcs)).
+     rrwrite (length ts = length ks). eauto.
  
  Case "XCase".
   eapply TyCase; eauto.
@@ -88,8 +86,8 @@ Proof.
    rewrite HDC. auto.
 
  Case "XUpdate".
-  defok ds (DefData dc    tsFields tcObj).
-  defok ds (DefType tcObj ks dcs).
+  have (DEFOK ds (DefData dc    tsFields tcObj)).
+  have (DEFOK ds (DefType tcObj ks dcs)).
   eapply TyUpdate; eauto.
   eapply Forall2_map_left.
    eapply Forall2_impl; eauto; intros.
@@ -99,12 +97,11 @@ Proof.
   eauto.
   rrwrite (ix = 0 + ix).
   rewrite substTTs_substTT; eauto.
-  rr.
-  rrwrite (length ts = length ks).
-  nforall. eauto.
+  nnat.
+  rrwrite (length ts = length ks). eauto.
 
  Case "AAlt".
-  defok ds (DefData dc tsFields tc).
+  have (DEFOK ds (DefData dc tsFields tc)).
   rr.
   eapply TyAlt with (tc := tc) (ks := ks) (dcs := dcs); eauto.
   eapply subst_type_type_ix_forall2; eauto.
@@ -113,7 +110,7 @@ Proof.
    rewrite substTTs_substTT_map; rr.
     unfold substTE. rewrite <- map_app. auto. 
     rrwrite (length tsParam = length ks).
-    eauto.
+    nforall. eauto.
 Qed.
 
 

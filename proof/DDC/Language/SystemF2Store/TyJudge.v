@@ -8,6 +8,7 @@ Require Export DDC.Language.SystemF2Store.Exp.
 Require Import Coq.Logic.FunctionalExtensionality.
 
 
+(******************************************************************************)
 (* Builtin in types. *)
 Definition tUnit 
  := makeTApps (TCon tcUnit) nil.
@@ -17,12 +18,13 @@ Definition tFun (t1: ty) (t2: ty)
 Hint Unfold tFun.
 
 
+(* TODO: move this to Env module *)
 (* Store Typing holds the types of locations *)
 Definition stenv := list ty.
 
 
+(******************************************************************************)
 (* Type Judgement assigns a type to an expression. *)
-(* TODO: put DEFSOK at bottom of tree *)
 Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
            : exp -> ty -> Prop :=
 
@@ -75,9 +77,8 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  (* Data Constructors *)
  | TyCon 
    :  forall tc (ks: list ki) tsFields tsParam xs dc dcs
-   ,  DEFSOK ds
-   -> getTypeDef tc ds = Some (DefType tc ks       dcs)
-   -> getDataDef dc ds = Some (DefData dc tsFields tc)
+   ,  hasDef ds (DefType tc ks       dcs)
+   -> hasDef ds (DefData dc tsFields tc)
    -> Forall2 (KIND ke) tsParam ks
    -> Forall2 (TYPE ds ke te se) xs (map (substTTs 0 tsParam) tsFields)
    -> TYPE ds ke te se (XCon dc tsParam xs) (makeTApps (TCon tc) tsParam)
@@ -93,7 +94,7 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
       (* All data cons must have a corresponding alternative. 
          Maybe we should move this to the well-formedness judgement *)
    -> getCtorOfType tObj  = Some tcObj
-   -> getTypeDef tcObj ds = Some (DefType tcObj ks dcs)
+   -> hasDef ds (DefType tcObj ks dcs)
    -> Forall (fun dc => In dc (map dcOfAlt alts)) dcs
 
    -> TYPE ds ke te se (XCase xObj alts) tResult
@@ -101,8 +102,8 @@ Inductive TYPE (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  (* Update data object *)
  | TyUpdate
    :  forall i xObj dcObj tcObj tsParam tsFields ks dcs xField tField
-   ,  getTypeDef tcObj ds = Some (DefType tcObj ks dcs)
-   -> getDataDef dcObj ds = Some (DefData dcObj tsFields tcObj)
+   ,  hasDef ds (DefType tcObj ks dcs)
+   -> hasDef ds (DefData dcObj tsFields tcObj)
    -> Forall2 (KIND ke) tsParam ks
    -> get i  tsFields     = Some tField
    -> TYPE ds ke te se xObj (makeTApps (TCon tcObj) tsParam) 
@@ -114,8 +115,8 @@ with TYPEA  (ds: defs) (ke: kienv) (te: tyenv) (se: stenv)
  (* Case Alternatives *)
  | TyAlt 
    :  forall x1 dc tc ks tsParam tsFields tResult dcs
-   ,  getTypeDef tc ds = Some (DefType tc ks dcs)
-   -> getDataDef dc ds = Some (DefData dc tsFields tc)
+   ,  hasDef ds (DefType tc ks dcs)
+   -> hasDef ds (DefData dc tsFields tc)
    -> Forall2 (KIND ke) tsParam ks
    -> TYPE  ds ke (te >< map (substTTs 0 tsParam) tsFields) se x1 tResult
    -> TYPEA ds ke te se (AAlt dc x1) (makeTApps (TCon tc) tsParam) tResult.
@@ -158,7 +159,6 @@ Qed.
 Hint Resolve type_defsok.
 
 
-
 (********************************************************************)
 (* Uniqueness of typing *)
 Lemma type_unique
@@ -186,6 +186,11 @@ Proof.
   unfold tFun in *.
   congruence.
 
+ Case "XCon".
+  inverts_type.
+  defs_merge.
+  auto.
+   
  Case "XCase".
   inverts_type.
   have (tObj0 = tObj).
@@ -193,10 +198,10 @@ Proof.
 
   nforall.
   assert (length aa > 0).
-  defok ds (DefType tcObj ks dcs).
-  nforall.
-  lets D: @length_in_in_nonempty H9. rip.
-  lists. auto.
+   lets D: @length_in_in_nonempty H9.
+   have (DEFOK ds (DefType tcObj ks dcs)) as HD.
+   inverts HD.
+   lists. rip.
 
   destruct aa. 
    nope.
@@ -207,7 +212,7 @@ Proof.
  Case "Alt".
   inverts_type.
   eapply makeTApps_eq_params in H2. rip.
-  assert (tsFields0 = tsFields). congruence. subst.
+  defs_merge.
   lets D1: IHx H8 H11; auto.
 Qed.
 
@@ -403,7 +408,7 @@ Proof.
 
  Case "XCon".
   (* unpack the data type definition *)
-  defok ds (DefData dc tsFields tc).
+  have (DEFOK ds (DefData dc tsFields tc)).
 
   (* show XCon has the correct type *)
   rr. eapply TyCon; eauto.
@@ -415,29 +420,29 @@ Proof.
 
    (* exp args have correct types *)
     apply Forall2_map.
-    apply Forall2_map_right' in H9.
+    apply Forall2_map_right' in H8.
+
     eapply Forall2_impl_in; eauto.
      simpl. intros.
 
      nforall.
-     lets D: H ix H2 k2; auto. clear H.
+     lets D: H x ix k2; auto. clear H.
+     eauto.
+
+     have (wfT (length ks) y) as HT.
+     have (length ts = length ks) as HL.
+     rewrite <- HL in HT.
 
      assert ( liftTT 1 ix (substTTs 0 ts y)
-            = substTTs 0 (map (liftTT 1 ix) ts) y).
-
+            = substTTs 0 (map (liftTT 1 ix) ts) y) as HF.
       rrwrite (ix = ix + 0).
       rewrite liftTT_substTTs'.
       rrwrite (ix + 0 = ix).
-      f_equal. 
+      f_equal.
+      rr. auto.
 
-       assert (wfT (length ts) y).
-       assert (length ts = length ks) as HLts.
-        eapply Forall2_length. eauto.
-        rewrite HLts.
-        eapply kind_wfT. nforall. eauto.
-
-       rr. apply liftTT_wfT_1. auto.
-       rewrite <- H. auto.
+     rewrite <- HF.
+     auto.
 
  Case "XCase".
   eapply TyCase; eauto.
@@ -451,7 +456,7 @@ Proof.
      rr. auto.
 
  Case "XUpdate".
-  defok ds (DefData dc tsFields tcObj).
+  have (DEFOK ds (DefData dc tsFields tcObj)).
   eapply TyUpdate; eauto.
    eapply Forall2_map_left.
     eapply Forall2_impl; eauto.
@@ -467,7 +472,7 @@ Proof.
     nforall. eauto.
 
  Case "XAlt".
-  defok ds (DefData dc tsFields tc).
+  have (DEFOK ds (DefData dc tsFields tc)).
 
   rr.
   eapply TyAlt; eauto.
@@ -480,17 +485,16 @@ Proof.
     lists.
     erewrite map_ext_in; eauto.
     intros.
-     rename x into t1.
-     rrwrite (ix = ix + 0).
-     rewrite liftTT_substTTs'.
-     f_equal. 
-     nnat.
-     assert (wfT (length ks) t1).
-      eapply kind_wfT.
-      nforall. eauto.
-     eapply liftTT_wfT_1.
-     rrwrite (length tsParam = length ks).
-     auto.
+    rename x into t1.
+
+    rrwrite (ix = ix + 0).
+    rewrite liftTT_substTTs'.
+    f_equal. 
+    nnat.
+
+    have (wfT (length ks) t1).
+    rw   (length tsParam = length ks).
+    auto.
 
    unfold liftTE in IHx1. 
    unfold liftTE.
@@ -567,10 +571,12 @@ Proof.
    eapply dcOfAlt_liftXA.
 
  Case "XAlt".
-  defok ds (DefData dc tsFields tc).
+  have (DEFOK ds (DefData dc tsFields tc)).
+  destruct dc. inverts keep H.
   eapply TyAlt; eauto.
   rewrite insert_app.
-  lists. burn.
+  lists.
+  eauto.
 Qed. 
 
 

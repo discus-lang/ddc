@@ -32,73 +32,22 @@ Hint Constructors def.
 Definition defs  := list def.
 
 
-(********************************************************************)
-(* Lookup the def of a given type constructor.
-   Returns None if it's not in the list. *)
-Fixpoint getTypeDef (tc: tycon) (ds: defs) : option def := 
- match ds with 
- | ds' :> DefType tc' _ _ as d
- => if tycon_beq tc tc' 
-     then  Some d
-     else  getTypeDef tc ds'
-
- | ds' :> _ => getTypeDef tc ds'
- | Empty    => None
- end.
-
-
-Lemma getTypeDef_in
- :  forall tc ds ddef
- ,  getTypeDef tc ds = Some ddef
- -> In ddef ds.
-Proof.
- intros.
- induction ds.
-  false.
-  destruct a.
-   simpl in H.
-   destruct (tycon_beq tc t). 
-    inverts H. burn. burn. burn.
-Qed.
-Hint Resolve getTypeDef_in.
-
-
-(* Lookup the def of a given data constructor. 
-   Returns None if it's not in the list. *)
-Fixpoint getDataDef (dc: datacon) (ds: defs) : option def := 
- match ds with 
- | ds' :> DefData dc' _ _ as d
- => if datacon_beq dc dc' 
-     then  Some d
-     else  getDataDef dc ds'
-
- | ds' :> _ => getDataDef dc ds'
- | Empty    => None
- end.
-
-
-Lemma getDataDef_in
- :  forall tc ds ddef
- ,  getDataDef tc ds = Some ddef
- -> In ddef ds.
-Proof.
- intros.
- induction ds.
-  false.
-  destruct a.
-   burn.
-   simpl in H.
-   destruct (datacon_beq tc d). 
-    inverts H. burn. burn. 
-Qed.
-Hint Resolve getDataDef_in.
-
-
-Definition haveDef (ds: defs) (d : def) : Prop
- := match d with 
-    | DefType tc ks dcs => getTypeDef tc ds = Some d
-    | DefData dc ts tc  => getDataDef dc ds = Some d
+(* Check whether two definitions match on their keys *)
+Definition def_match (d1 : def) (d2 : def) : Prop
+ := match d1, d2 with
+    | DefType tc1 _ _, DefType tc2 _ _ => tc1 = tc2
+    | DefData dc1 _ _, DefData dc2 _ _ => dc1 = dc2
+    | _, _                             => False
     end.
+
+
+(* For every pair of entries in the definitions list, 
+   if their keys are equal then the entries are equal. *)
+Definition defs_normal (ds: defs) : Prop
+ := ForallPairs 
+     (fun d1 d2 => def_match d1 d2 -> d1 = d2)
+     ds.
+Hint Unfold defs_normal.
 
 
 (********************************************************************)
@@ -115,7 +64,7 @@ Inductive DEFOK : list def -> def -> Prop :=
    -> length dcs > 0
       
       (* All the data constructors must be present in the list of defs *)
-   -> Forall (fun dc => exists ddef, getDataDef dc ds = Some ddef) dcs
+   -> Forall (fun dc => exists ts, In (DefData dc ts tc) ds) dcs
 
    -> DEFOK ds (DefType tc ks dcs)
 
@@ -127,7 +76,7 @@ Inductive DEFOK : list def -> def -> Prop :=
    ,  isTyConData tc
 
       (* Get the data type def this data ctor belongs to *)
-   -> getTypeDef tc ds = Some (DefType tc ks dcs)
+   -> In (DefType tc ks dcs) ds
 
       (* Data ctor must be one of the ctors in the data type def *)
    -> In (DataCon tag arity) dcs
@@ -155,58 +104,142 @@ Hint Unfold tcUnit.
    builtin types. *)   
 Definition DEFSOK (ds: list def) : Prop 
  := Forall (DEFOK ds) ds
- /\ getTypeDef tcUnit ds = Some (DefType tcUnit nil (dcUnit :: nil))
- /\ getDataDef dcUnit ds = Some (DefData dcUnit nil tcUnit).
+ /\ defs_normal ds
+ /\ In (DefType tcUnit nil (dcUnit :: nil)) ds
+ /\ In (DefData dcUnit nil tcUnit) ds.
+Hint Unfold DEFSOK.
 
-Lemma getTypeDef_ok 
- :  forall ds tc ddef
- ,  DEFSOK ds
- -> getTypeDef tc ds = Some ddef
- -> DEFOK  ds ddef.
+
+(********************************************************************)
+(* A sugared way to state that some def is in the environment *)
+Definition hasDef (ds: defs) (d : def)
+ := In d ds /\ DEFSOK ds.
+Hint Unfold DEFSOK.
+
+
+Lemma hasDef_in
+ : forall d ds, hasDef ds d -> In d ds.
+Proof. burn. Qed.
+Hint Resolve hasDef_in.
+
+
+Lemma hasDef_defsok
+ : forall d ds, hasDef ds d -> DEFSOK ds.
+Proof. burn. Qed.
+Hint Resolve hasDef_defsok.
+
+
+Lemma hasDef_defok
+ : forall d ds, hasDef ds d -> DEFOK ds d.
 Proof.
  intros.
+ inverts H.
  unfold DEFSOK in *.
- apply getTypeDef_in in H0.
- rip. nforall. auto. 
-Qed.  
-Hint Resolve getTypeDef_ok.
-
-
-Lemma getDataDef_ok
- :  forall ds tc ddef
- ,  DEFSOK ds
- -> getDataDef tc ds = Some ddef
- -> DEFOK ds ddef.
-Proof.
- intros.
- unfold DEFSOK in *.
- apply getDataDef_in in H0.
- rip. nforall. auto.
+ rip. nforall. burn.
 Qed.
-Hint Resolve getDataDef_ok.
+Hint Resolve hasDef_defok.
 
 
-Lemma getDataDef_datacon_in
- :  forall d ds ts tc ks dcs
+Lemma hasDef_type_eq_in
+ :  forall ds tc ks1 ks2 dcs1 dcs2
  ,  DEFSOK ds
- -> getDataDef d  ds = Some (DefData d  ts tc)
- -> getTypeDef tc ds = Some (DefType tc ks dcs)
- -> In d dcs.
+ -> In (DefType tc ks1 dcs1) ds
+ -> In (DefType tc ks2 dcs2) ds
+ -> ks2 = ks1 /\ dcs2 = dcs1.
 Proof.
  intros.
- assert (DEFOK ds (DefData d ts tc)) as HD. eauto.
- assert (DEFOK ds (DefType tc ks dcs)) as HT. eauto.
- inverts HD. inverts HT.
- rewrite H1 in H6. inverts H6.
+ unfold DEFSOK in *.
+ unfold defs_normal in *.
+ unfold ForallPairs in *.
+
+ assert (ks2 = ks1 /\ dcs2 = dcs1).
+  rip;
+   have (DefType tc ks2 dcs2 = DefType tc ks1 dcs1)
+     by (eapply H; eauto; burn).
+  congruence.
+  congruence.
  auto.
 Qed.
-Hint Resolve getDataDef_datacon_in.
+Hint Resolve hasDef_type_eq_in.
+
+
+Lemma hasDef_data_eq_in
+ :  forall ds dc ts1 ts2 tc1 tc2
+ ,  DEFSOK ds
+ -> In (DefData dc ts1 tc1) ds
+ -> In (DefData dc ts2 tc2) ds
+ -> ts2 = ts1 /\ tc2 = tc1.
+Proof.
+ intros.
+ unfold DEFSOK in *.
+ unfold defs_normal in *.
+ unfold ForallPairs in *.
+
+ assert (ts2 = ts1 /\ tc2 = tc1).
+  rip;
+   have (DefData dc ts2 tc2 = DefData dc ts1 tc1)
+     by (eapply H; eauto; burn).
+  congruence.
+  congruence.
+ auto.
+Qed.
+Hint Resolve hasDef_data_eq_in.
+
+
+Lemma hasDef_datacon_in
+ :  forall ds dc ts tc ks dcs
+ ,  hasDef ds (DefData dc ts tc)
+ -> hasDef ds (DefType tc ks dcs)
+ -> In dc dcs.
+Proof.
+ intros.
+ have (DEFOK ds (DefData dc ts tc))  as HD. inverts HD.
+ have (DEFOK ds (DefType tc ks dcs)) as HT. inverts HT.
+
+ assert (dcs0 = dcs).
+  eauto.
+  unfold hasDef in *.  rip.
+  unfold DEFSOK in H2. rip.
+  unfold defs_normal in *.
+  unfold ForallPairs in *.
+  have (DefType tc ks dcs = DefType tc ks0 dcs0)
+    by (eapply H2; eauto; burn).
+  congruence.
+  subst.
+ 
+ eauto.
+Qed.
+Hint Resolve hasDef_datacon_in.
 
 
 (******************************************************************************)
 (* Tactic to help unpack data definitions *)
-Ltac ddef_merge
+Ltac defs_merge
  := repeat (match goal with 
+
+    | [ H1 : hasDef ?ds (DefType ?tc ?ks0 ?dcs0)
+      , H2 : hasDef ?ds (DefType ?tc ?ks1 ?dcs1) |- _ ]
+    => let HA := fresh
+       in  assert (ks1 = ks0 /\ dcs1 = dcs0) as HA
+             by (eapply hasDef_type_eq_in; eauto);
+             inverts HA; clear H2
+
+    | [ H1 : hasDef ?ds (DefData ?dc ?ts0 ?tc0)
+      , H2 : hasDef ?ds (DefData ?dc ?ts1 ?tc1) |- _ ]
+    => let HA := fresh
+       in  assert (ts1 = ts0 /\ tc1 = tc0) as HA
+             by (eapply hasDef_data_eq_in; eauto);
+             inverts HA; clear H2
+
+    | [ H1 : get ?l ?se = Some (makeTApps (TCon ?tc0) ?ts0)
+      , H2 : get ?l ?se = Some (makeTApps (TCon ?tc1) ?ts1) |- _ ]
+    => let HA := fresh
+       in  assert (tc1 = tc0 /\ ts1 = ts0) as HA
+            by (rewrite H1 in H2; inverts H2; eapply makeTApps_eq_params; auto);
+            inverts HA; clear H2 
+     end).
+
+(*
     | [ H1 : getTypeDef ?tc ?ds = Some (DefType _ ?ks0 ?dcs0)
       , H2 : getTypeDef ?tc ?ts = Some (DefType _ ?ks1 ?dcs1) |- _ ]
     => let HA := fresh
@@ -229,8 +262,33 @@ Ltac ddef_merge
             inverts HA; clear H2 
     end).
 
-
 Tactic Notation "defok" constr(ds) constr(ddef)
  := let H := fresh
     in assert (DEFOK ds ddef) as H by burn;
        inverts H; try ddef_merge.
+*)
+
+
+(******************************************************************************)
+Lemma hasDef_wfT_tField
+ :  forall ds tc ks dc dcs tField tsFields
+ ,  hasDef ds (DefType tc ks dcs)
+ -> hasDef ds (DefData dc tsFields tc)
+ -> In tField tsFields
+ -> wfT (length ks) tField.
+Proof.
+ intros.
+ eapply kind_wfT.
+ have (DEFOK ds (DefData dc tsFields tc)) as HD.
+ inverts HD.
+ unfold hasDef in *.
+ rip.
+ defs_merge.
+ have (ks = ks0 /\ dcs = dcs0).
+  rip.
+ nforall.
+ eauto.
+Qed.
+Hint Resolve hasDef_wfT_tField.
+
+

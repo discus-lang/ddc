@@ -16,9 +16,8 @@ Hint Unfold store.
 Inductive TYPEB (ds: defs) (se: stenv) : sbind -> ty -> Prop := 
  | TyObj 
    :  forall tc ks dc dcs tsFields tsParam svs xs
-   ,  DEFSOK ds
-   -> getTypeDef tc ds = Some (DefType tc ks dcs)
-   -> getDataDef dc ds = Some (DefData dc tsFields tc)
+   ,  hasDef ds (DefType tc ks dcs)
+   -> hasDef ds (DefData dc tsFields tc)
    -> Forall2 (KIND nil) tsParam ks
    -> Forall2 svalueOf   xs svs
    -> Forall2 (TYPE ds nil nil se) xs (map (substTTs 0 tsParam) tsFields)

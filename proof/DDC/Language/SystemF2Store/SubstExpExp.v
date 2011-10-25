@@ -75,15 +75,17 @@ Proof.
    rewrite dcOfAlt_substXA; auto.
 
  Case "AAlt".
-  defok ds (DefData dc tsFields tc).
+  have (DEFOK ds (DefData dc tsFields tc)).
+  destruct dc. inverts H0.
+   
   eapply TyAlt; eauto.
   rewrite delete_app.
   lists.
   assert ( length tsFields 
          = length (map (substTTs 0 tsParam) tsFields)) as HL
    by (lists; auto).
-  rewrite HL.
   eapply IHx1 with (t2 := t2); eauto.
+  rewrite HL. eauto. rs.
   rewrite <- delete_app.
   eauto using type_tyenv_weaken_append.
 Qed.
@@ -125,7 +127,7 @@ Proof.
      eapply IHxs. eauto.
      simpl in HT.
      eapply subst_exp_exp. eauto. 
-     rrwrite (length xs = length ts).
+     rw (length xs = length ts).
      eapply type_tyenv_weaken_append. auto.
 Qed.
 
