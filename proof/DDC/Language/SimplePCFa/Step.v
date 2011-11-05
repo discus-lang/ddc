@@ -1,7 +1,7 @@
 
-Require Import DDC.Language.SimplePCFa.Exp.
-Require Import DDC.Language.SimplePCFa.ExpLift.
-Require Import DDC.Language.SimplePCFa.ExpSubst.
+Require Export DDC.Language.SimplePCFa.Exp.
+Require Export DDC.Language.SimplePCFa.ExpLift.
+Require Export DDC.Language.SimplePCFa.ExpSubst.
 
 
 (******************************************************************************)
@@ -35,7 +35,8 @@ Inductive STEPP : exp -> exp -> Prop :=
 
  | SpIfElse
    : forall x1 x2
-   , STEPP (XIf (VConst (CBool true)) x1 x2) x2.
+   , STEPP (XIf (VConst (CBool false)) x1 x2) x2.
+Hint Constructors STEPP.
 
 
 (* Single step reduction. 

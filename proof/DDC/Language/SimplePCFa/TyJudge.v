@@ -1,6 +1,6 @@
 
-Require Import DDC.Language.SimplePCFa.Exp.
-Require Import DDC.Language.SimplePCFa.Ty.
+Require Export DDC.Language.SimplePCFa.Exp.
+Require Export DDC.Language.SimplePCFa.Ty.
 
 
 Inductive TYPEX : tyenv -> exp -> ty -> Prop :=
