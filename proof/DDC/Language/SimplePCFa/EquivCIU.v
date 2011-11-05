@@ -29,16 +29,11 @@ Proof.
 Qed.
 
 
-(* TODO: finish me, swap indices 0 1 *)
-Definition swapXX (d: nat) (x: exp) : exp
- := x.
 
 (* TODO: finish me, lower indices (S i) to i *)
 Definition lowerXX (d: nat) (x: exp) : exp
  := x.
 
-Definition wfX (n: nat) (x: exp) : Prop
- := True.
 
 
 (* Nest two let bindings, 
@@ -55,6 +50,11 @@ Proof.
  admit.  (* TODO *)
 Qed.
 
+
+
+(* TODO: finish me, swap indices 0 1 *)
+Definition swapXX (d: nat) (x: exp) : exp
+ := x.
 
 (* Swap two let bindings, 
    changes the order of operations. *)

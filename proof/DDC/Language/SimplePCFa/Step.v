@@ -28,6 +28,16 @@ Inductive STEPP : exp -> exp -> Prop :=
    , STEPP (XOp1 OPred (VConst (CNat (S n))))
            (XVal (VConst (CNat n)))
 
+ (* Booleans *)
+ | SpIsZeroTrue
+   : STEPP (XOp1 OIsZero (VConst (CNat O)))
+           (XVal (VConst (CBool true)))
+
+ | SpIsZeroFalse
+   : forall n
+   , STEPP (XOp1 OIsZero (VConst (CNat (S n))))
+           (XVal (VConst (CBool false)))
+
  (* Branching *)
  | SpIfThen
    : forall x1 x2
@@ -58,6 +68,29 @@ Inductive STEP : exp -> exp -> Prop :=
    : forall t1 v1 x2 
    , STEP (XLet t1 (XVal v1) x2)
           (substVX 0 v1 x2).
+Hint Constructors STEP.
+
+
+(********************************************************************)
+(** Multi-step evaluation. *)
+Inductive STEPS : exp -> exp -> Prop :=
+ | SsNone
+   :  forall x1
+   ,  STEPS x1 x1
+
+ (* Take a single step. *)
+ | SsStep
+   :  forall x1 x2
+   ,  STEP  x1 x2
+   -> STEPS x1 x2
+
+ (* Combine two evaluations into a third. *)
+ | SsAppend
+   :  forall x1 x2 x3
+   ,  STEPS x1 x2 -> STEPS x2 x3
+   -> STEPS x1 x3.
+
+Hint Constructors STEPS.
 
 
 (******************************************************************************)
