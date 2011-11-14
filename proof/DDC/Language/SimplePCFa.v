@@ -1,6 +1,7 @@
 
 (* Types, expressions, normal forms, values, lifting and substitution *)
 Require Export DDC.Language.SimplePCFa.Exp.
+Require Export DDC.Language.SimplePCFa.ExpRefs.
 Require Export DDC.Language.SimplePCFa.ExpLift.
 Require Export DDC.Language.SimplePCFa.ExpSubst.
 Require Export DDC.Language.SimplePCFa.ExpSubsts.
@@ -20,6 +21,9 @@ Require Export DDC.Language.SimplePCFa.Step.
 
 (* Big step evaluation, and conversion between small step evaluation. *)
 Require Export DDC.Language.SimplePCFa.Eval.
+
+(* CIU equivalence *)
+Require Export DDC.Language.SimplePCFa.EquivCIU.
 
 (*
 (* A well typed expression is either a value or can take a step. *)
