@@ -69,6 +69,74 @@ Inductive EVAL : exp -> exp -> Prop :=
 Hint Constructors EVAL.
 
 
+Lemma eval_value
+ :  forall x1 x2
+ ,  EVAL x1 x2
+ -> (exists v2, x2 = XVal v2).
+Proof.
+ intros.
+ induction H; eauto.
+Qed.
+Hint Resolve eval_value.
+
+
+(*****************************************************************************)
+(* Eval to steps *)
+Lemma eval_steps
+ :  forall x1 x2
+ ,  EVAL  x1 x2 
+ -> STEPS x1 x2.
+Proof.
+ admit.
+Qed.
+Hint Resolve eval_steps.
+
+
+Lemma steps_eval
+ :  forall x1 x2
+ ,  STEPS x1 x2
+ -> EVAL  x1 x2.
+Proof.
+ admit.
+Qed.
+Hint Resolve steps_eval.
+
+
+(******************************************************************************)
+(* Termination *)
+Lemma term_steps_exists
+ :  forall x
+ ,  TERM x 
+ -> (exists x', STEPS x x').
+Proof.
+ intros.
+ inverts H.
+ induction H0; eauto.
+Qed.
+Hint Resolve term_steps_exists.
+
+
+Lemma term_eval_exists
+ :  forall x
+ ,  TERM x 
+ -> (exists x', EVAL x x').
+Proof.
+ intros.
+ have (exists x', STEPS x x').
+ shift x'.
+ eauto.
+Qed.
+
+
+Lemma term_eval_wrapped
+ :  forall x1 f
+ ,  TERMF f x1
+ -> (exists x2, EVAL (wrap f x1) x2).
+Proof. eauto. Qed.
+
+
+(******************************************************************************)
+(* Transitivity of termination *)
 Lemma term_steps_advance
  : forall f x1 x2
  , TERMF f x1 -> STEPS x1 x2 -> TERMF f x2.
@@ -107,19 +175,13 @@ Proof.
 Qed.
 
 
+(******************************************************************************)
+
+(* TODO: shift this to steps *)
 Lemma steps_context_let1
  :  forall t1 x1 x1' x2
  ,  STEPS x1 x1' 
  -> STEPS (XLet t1 x1 x2) (XLet t1 x1' x2).
-Proof.
- admit.
-Qed.
-
-
-Lemma eval_steps
- :  forall x1 x2
- ,  EVAL  x1 x2 
- -> STEPS x1 x2.
 Proof.
  admit.
 Qed.
@@ -159,8 +221,25 @@ Proof.
 Qed.
 
 
-(* Something like
-Lemma term_eval_wrapped
-  TERMF f x -> (exists x2, EVAL (wrap f x) x2)
+Lemma eval_term_wrapped
+ : forall x1 x2 f
+ , EVAL (wrap f x1) x2 -> TERMF f x1.
+Proof. 
+ intros.
+ eapply eval_term in H.
+ gen x1. 
+ induction f; intros.
+  simpl in *. inverts H. auto.
+  simpl in *. 
+  lets D: IHf H. inverts D. auto.
+   inverts H0.
+Qed.
+Hint Resolve eval_term_wrapped.
 
-*)
+
+Lemma eval_eval_wrapped
+ : forall x1 x2 f
+ , EVAL (wrap f x1) x2 -> (exists x3, EVAL x1 x3).
+Proof. burn. Qed.
+Hint Resolve eval_eval_wrapped.
+

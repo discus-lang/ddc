@@ -36,6 +36,7 @@ Hint Constructors val.
 Hint Constructors exp.
 
 
+(******************************************************************************)
 (* Well formed expressions are closed under the given environment. *)
 Inductive wfX (tn: nat) : exp -> Prop :=
  | WfX_VVar
@@ -77,4 +78,7 @@ Inductive wfX (tn: nat) : exp -> Prop :=
    -> wfX tn (XIf v1 x2 x3).
 
 
-
+(* Closed expressions are well formed under an empty environment. *)
+Definition closedX (xx: exp) : Prop 
+ := wfX 0 xx.
+ 
