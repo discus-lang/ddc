@@ -1,0 +1,24 @@
+Name:                ddc-core
+Version:             0.4.0.0
+License:             MIT
+License-file:        LICENSE
+Author:              Ben Lippmeier
+Maintainer:          benl@ouroborus.net
+Build-Type:          Simple
+Cabal-Version:       >=1.6
+Stability:           provisional
+Category:            Graphics
+Homepage:            http://disciple.ouroborus.net
+Bug-reports:         disciple@ouroborus.net
+Description:
+        Disciple core language.
+
+Library
+  Build-Depends: 
+        base       == 4.*
+
+  ghc-options:
+        -Wall
+
+  Exposed-modules:
+        DDC.Core.Exp
