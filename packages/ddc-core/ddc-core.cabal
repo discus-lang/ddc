@@ -17,8 +17,16 @@ Library
   Build-Depends: 
         base       == 4.*
 
-  ghc-options:
-        -Wall
-
   Exposed-modules:
         DDC.Core.Exp
+        DDC.Type.Exp
+        DDC.Type.Compounds
+        DDC.Type.Check.Con
+
+  GHC-options:
+        -Wall
+        -Werror
+
+  Extensions:
+        ParallelListComp
+  

@@ -1,178 +1,13 @@
 
-module DDC.Core.Exp
-        ( Bound(..)
-        , Bind (..)
-        
-        -- * Kind, type and witness expressions.
-        , Type (..)
-        , TCon (..)
-        , KiCon(..)
-        , TyCon(..)
-        , WiCon(..)
-
-        -- * Value expressions.
-        , Exp  (..)
+module DDC.Core.Exp 
+        ( -- * Value expressions.
+          Exp  (..)
         , XCon (..)
         , Alt  (..)
         , Let  (..)
         , Stmt (..))
 where
-
-
--- Variables --------------------------------------------------------------------------------------
--- | Bound occurrence of a variable.
-data Bound v
-        -- | Bound variable, with its type.
-        = UVar  v (Type v)
-
-        -- | Bound varaible with its type and more-than constraint.
-        | UMore v (Type v) (Type v)
-        deriving (Eq, Show)
-        
-
--- | Binding occurrence of a variable.
-data Bind v
-        -- | Binding variable, with its type.
-        = BVar  v (Type v)
-        
-        -- | Binding variable with its type and more-than constraint.
-        | BMore v (Type v) (Type v)
-        deriving (Eq, Show)
-
-
--- Types ------------------------------------------------------------------------------------------
--- | A kind, type, or witness. The domain of proof.
---   We use the same data type to represent all three, because they have a similar structure.
-data Type v
-        -- | Type constructor.
-        = TCon  (TCon  v)
-
-        -- | Type variable.
-        | TVar  (Bound v)
-        
-        -- | Type abstraction.
-        | TLam  (Bind  v)
-        
-        -- | Type application.
-        | TApp  (Type  v) (Type v)
-        
-        -- | Least upper bound.
-        | TSum  (Type  v) (Type v)
-        
-        -- | Joining of witnesses.
-        | TJoin (Type v)  (Type v)
-        
-        -- | Separation of regions.
-        | TSep  (Type v)  (Type v)
-        deriving (Eq, Show)
-
-
--- | Kind, type and witness constructors.
-data TCon v
-        -- | Kind constructor.
-        = TConKind KiCon
-
-        -- | Type constructor.
-        | TConType (TyCon v)
-
-        -- | Witness constructor.
-        | TConWit  (WiCon v)
-        deriving (Eq, Show)
-
-
--- | Kind constructor.
-data KiCon
-        -- | Kind of everything
-        = KiBox         Int                     -- **
-
-        -- | Function kind.
-        | KiConFun      KiCon KiCon
-
-        -- | Kind of values.
-        | KiConValue                            -- *
-
-        -- | Kind of regions.
-        | KiConRegion                           -- %
-
-        -- | Kind of effects.
-        | KiConEffect                           -- !
-
-        -- | Kind of closures.
-        | KiConClosure                          -- $
-
-        -- | Kind of witnesses.
-        | KiConWitness                          -- @
-        deriving (Eq, Show)
-
-
--- | Type constructor.
-data TyCon v
-        -- | The function type constructor.
-        = TyConFun
-        
-        -- | Read of some region
-        | TyConRead
-
-        -- | Read of all regions in some type
-        | TyConDeepRead
-        
-        -- | Write of some region
-        | TyConWrite
-        
-        -- | Write to all regions in some type
-        | TyConDeepWrite
-        
-        -- | Allocation into some region
-        | TyConAlloc
-        
-        -- | Some region is free in a closure.
-        | TyConFree
-        
-        -- | All material variables in a type are free in a closure.
-        | TyConDeepFree
-        
-        -- | User data constructor with its type.
-        | TyConData v (Type v)
-        deriving (Eq, Show)
-
-
--- | Witness constructor.
-data WiCon v
-        -- | Constancy of some region.
-        = WiConConst            -- :: % -> @
-
-        -- | Constancy of all regions in some type
-        | WiConDeepConst        -- :: * -> @
-
-        -- | Mutability of some region.
-        | WiConMutable          -- :: % -> @
-
-        -- | Mutability of all regions in some type.
-        | WiConDeepMutable      -- :: * -> @
-
-        -- | Laziness of some region.
-        | WiConLazy             -- :: % -> @
-
-        -- | Laziness of the primary region in some type.
-        | WiConHeadLazy         -- :: * -> @
-
-        -- | Directness of some region (not lazy).
-        | WiConDirect           -- :: % -> @
-
-        -- | Purity of some effect.
-        --     Pure e1  <> Pure e2  = Pure (e1 + e2)
-        | WiConPure             -- :: ! -> @
-
-        -- | Emptiness of some closure.
-        --     Empty c1 <> Empty c2 = Empty (c1 + c2)
-        | WiConEmpty            -- :: $ -> @
-        
-        -- | Purity a read from a region.
-        | WiConPurify           -- :: Const r -> Pure (Read r)
-                
-        -- | Witness to some user defined type class constraint.
-        | WiConClass v (Type v)
-        deriving (Eq, Show)
+import DDC.Type.Exp
 
 
 -- Values -----------------------------------------------------------------------------------------
@@ -195,7 +30,10 @@ data Exp n v p
         | XApp  n (Exp n v p) (Exp n v p)
 
         -- | Type and witness application.
-        | XAPP  n (Exp n v p) (Type v)
+        | XTApp n (Exp n v p) (Type v)
+        
+        -- | Witness application.
+        | XWApp n (Exp n v p) (Witness v)
         
         -- | Type cast.
         --   Argument is the witness for the cast.
@@ -229,8 +67,8 @@ data Let n v p
         -- | Possibly recursive function binding.
         = XLet    (Bind v)        (Exp n v p)
 
-        -- | Local region binding with witnesses to its properties.
-        | XLocal  v [(v, Type v)] (Exp n v p)
+        -- | Create a local region binding with witnesses to its properties.
+        | XLocal v (Type v) [(v, Type v)] (Exp n v p)
         deriving (Eq, Show)
 
 
@@ -240,7 +78,7 @@ data Stmt n v p
         deriving (Eq, Show)
 
 
-data Cast
+data Cast v
         -- | Weakening some effect
         = CastWeakenEffect  (Type v)
 
