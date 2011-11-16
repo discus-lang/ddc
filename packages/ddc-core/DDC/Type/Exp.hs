@@ -13,7 +13,7 @@ module DDC.Type.Exp
         , KiCon(..)
         , TyCon(..)
         
-        -- * Witness.
+        -- * Witness
         , Witness(..)
         , WiCon(..))
 where
@@ -73,8 +73,7 @@ data Type n
         | TSum  (Type n) (Type n)
 
         -- | Least element of some kind.
-        --   Parameters at the next level up.
-        | TBot  (Type n)
+        | TBot  (Kind n)
         deriving (Eq, Show)
 
 type Sort n     = Type n
@@ -115,10 +114,10 @@ data SoCon
 data KiCon
         -- | Any kind.
         --   The others are subkinds of this one.
-        = KiConAny                 -- '?'
+        = KiConAny              -- '?'
 
         -- | Function kind.
-        | KiConFun              -- 'k1 -> k2'
+        | KiConFun              -- '(~>)'
 
         -- | Kind of data values.
         | KiConData             -- '* :: **'
@@ -142,7 +141,7 @@ data TyCon n
 
         -- Value type constructors --------------
         -- | The function type constructor.
-        = TyConFun              -- :: '* -> * -> ! -> $ -> *'
+        = TyConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
 
         -- | User data constructor with its type.
         | TyConData n (Kind n)
@@ -150,70 +149,70 @@ data TyCon n
         
         -- Effect type constructors -------------
         -- | Read of some region
-        | TyConRead             -- :: '% -> !'
+        | TyConRead             -- :: '% ~> !'
 
         -- | Read of all material regions in value type.
-        | TyConDeepRead         -- :: '* -> !'
+        | TyConDeepRead         -- :: '* ~> !'
         
         -- | Write of some region.
-        | TyConWrite            -- :: '% -> !'
-        
+        | TyConWrite            -- :: '% ~> !'
+
         -- | Write to all material regions in some type
-        | TyConDeepWrite        -- :: '* -> !'
+        | TyConDeepWrite        -- :: '* ~> !'
         
         -- | Allocation into some region.
-        | TyConAlloc            -- :: '% -> !'
+        | TyConAlloc            -- :: '% ~> !'
 
         
         -- Closure type constructors ------------
         -- | Some region is free in a closure.
-        | TyConFree             -- :: '% -> $'
+        | TyConFree             -- :: '% ~> $'
         
         -- | All material regions in a type are free in a closure.
-        | TyConDeepFree         -- :: '* -> $'
+        | TyConDeepFree         -- :: '* ~> $'
 
 
         -- Witness type constructors ------------
         -- Witness implication.
-        | TyConImpl             -- :: '@ => @ => @'
+        | TyConImpl             -- :: '(=>)'
         
         -- | Constancy of some region.
-        | TyConConst            -- :: % -> @
+        | TyConConst            -- :: % ~> @
 
         -- | Constancy of material regions in some type
-        | TyConDeepConst        -- :: * -> @
+        | TyConDeepConst        -- :: * ~> @
 
         -- | Mutability of some region.
-        | TyConMutable          -- :: % -> @
+        | TyConMutable          -- :: % ~> @
 
         -- | Mutability of material regions in some type.
-        | TyConDeepMutable      -- :: * -> @
+        | TyConDeepMutable      -- :: * ~> @
 
         -- | Laziness of some region.
-        | TyConLazy             -- :: % -> @
+        | TyConLazy             -- :: % ~> @
 
         -- | Laziness of the primary region in some type.
-        | TyConHeadLazy         -- :: * -> @
+        | TyConHeadLazy         -- :: * ~> @
 
         -- | Directness of some region (not lazy).
-        | TyConDirect           -- :: % -> @
+        | TyConDirect           -- :: % ~> @
 
         -- | Distinctness \/ Separation of regions.
         --   Arity must be >= 2.
-        | TyConDistinct Int     -- :: % -> % ... -> @
+        | TyConDistinct Int     -- :: % ~> % ... ~> @
 
         -- | Purity of some effect.
-        | TyConPure             -- :: ! -> @
+        | TyConPure             -- :: ! ~> @
 
         -- | Emptiness of some closure.
-        | TyConEmpty            -- :: $ -> @
+        | TyConEmpty            -- :: $ ~> @
         deriving (Eq, Show)
 
 
 -- Witness ----------------------------------------------------------------------------------------
 data Witness n
         -- | Witness constructor.
-        = WCon  (WiCon n)
+        = WCon  WiCon
         
         -- | Witness variable.
         | WVar  (Bound n)
@@ -227,7 +226,7 @@ data Witness n
 
 
 -- | Witness constructor.
-data WiCon n
+data WiCon
         -- | The pure effect is pure
         = WiConMkPure           -- :: Pure (!0)
 

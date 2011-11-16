@@ -6,7 +6,8 @@ module DDC.Type.Compounds
           -- * Kind Construction.
         , kAny
         , kData, kRegion, kEffect, kClosure, kWitness
-        , kFun,  kFuns
+        , kFun,     (~~>)
+        , kFuns
         
           -- * Type Construction.
         , tRead,    tDeepRead
@@ -20,13 +21,15 @@ module DDC.Type.Compounds
         , tDistinct
         , tPure
         , tEmpty
+        , tFun,     (-->)
         
           -- * Witness Construction
         , wApp
         
           -- * Type structure
         , tBot
-        , tApp,     tApps
+        , tApp,     ($:)
+        , tApps
         , tImpl
         , tLam1,    tLams)
 where
@@ -48,9 +51,11 @@ kClosure        = TCon $ TConKind KiConClosure
 kWitness        = TCon $ TConKind KiConWitness
 
 -- | Build a kind function.
-kFun  :: Type v -> Type v -> Type v
-kFun k1 k2
-        = (TCon (TConKind KiConFun) `TApp` k1) `TApp` k2
+kFun, (~~>) :: Type v -> Type v -> Type v
+kFun k1 k2      = (TCon (TConKind KiConFun) `TApp` k1) `TApp` k2
+(~~>)           = kFun
+
+
 
 -- | Build some kind functions.
 kFuns :: [Type v] -> Type v -> Type v
@@ -81,13 +86,25 @@ tPure           = TCon $ TConType $ TyConPure
 tEmpty          = TCon $ TConType $ TyConEmpty
 
 
+-- | Build a value type function, 
+--   with the provided effect and closure.
+tFun    :: Type n -> Type n -> Effect n -> Closure n -> Type n
+tFun t1 t2 eff clo
+        = TCon (TConType TyConFun) `tApps` [t1, t2, eff, clo]
+
+(-->)   :: Type n -> Type n -> Type n
+(-->) t1 t2     = tFun t1 t2 (tBot kEffect) (tBot kClosure)
+
+
+
+
 -- Type Structure ---------------------------------------------------------------------------------
 tBot            = TBot
-
 tApp            = TApp
+($:)            = TApp
 
 tApps   :: Type n -> [Type n] -> Type n
-tApps t1 ts     = foldl (flip TApp) t1 ts
+tApps t1 ts     = foldl TApp t1 ts
 
 -- | Build a witness implication type.
 tImpl t1 t2      
@@ -107,10 +124,9 @@ tLams  :: [Kind n] -> ([Type n] -> Type n) -> Type n
 tLams ks f
  = let  bs      = [BVar NAnon k          | k <- ks]
         us      = [TVar (UVar (NIx n) k) | k <- ks | n <- [0..]]
-   in   foldr TLam (f $ reverse us) bs
+   in   foldr TLam (f us) bs
 
 
 -- Witnesses --------------------------------------------------------------------------------------
 wApp            = WApp
-
 

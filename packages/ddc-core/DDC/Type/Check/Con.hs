@@ -2,18 +2,17 @@
 module DDC.Type.Check.Con
         ( takeSortOfKiCon
         , kindOfTyCon
-        , typeOfWiCon
-
-        , kData, kRegion, kClosure, kEffect
-        , kFun,  kFuns)
+        , typeOfWiCon)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 
 
 -- | Take the superkind of an atomic kind constructor.
---   The 'KiConAny' constructor has no superkind.
---   The 'KiConFun' constructor is handled by a specific rule.
+--
+--   * The 'KiConAny' constructor has no superkind.
+--
+--   * The 'KiConFun' constructor is handled by a specific rule.
 takeSortOfKiCon :: KiCon -> Maybe (Sort n)
 takeSortOfKiCon kc
  = case kc of
@@ -26,7 +25,7 @@ takeSortOfKiCon kc
         KiConWitness    -> Just sProp
 
 
--- | Take the kind of an atomic type constructor.
+-- | Take the kind of an type constructor.
 kindOfTyCon :: TyCon n -> Kind n
 kindOfTyCon tc
  = case tc of
@@ -53,7 +52,7 @@ kindOfTyCon tc
 
 
 -- | Take the type of a witness constructor.
-typeOfWiCon :: WiCon n -> Type n
+typeOfWiCon :: WiCon -> Type n
 typeOfWiCon wc
  = case wc of
         WiConMkPure     -> tPure  `tApp` tBot kEffect

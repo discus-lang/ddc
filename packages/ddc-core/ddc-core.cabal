@@ -15,18 +15,23 @@ Description:
 
 Library
   Build-Depends: 
-        base       == 4.*
+        base            == 4.*,
+        mainland-pretty == 0.1.*
 
   Exposed-modules:
         DDC.Core.Exp
         DDC.Type.Exp
+        DDC.Type.Pretty
         DDC.Type.Compounds
+        DDC.Type.Predicates
         DDC.Type.Check.Con
 
   GHC-options:
-        -Wall
         -Werror
+        -Wall
+        -fno-warn-orphans
 
   Extensions:
         ParallelListComp
+        PatternGuards
   
