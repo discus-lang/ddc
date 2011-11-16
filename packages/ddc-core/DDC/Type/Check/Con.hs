@@ -1,6 +1,6 @@
 
 module DDC.Type.Check.Con
-        ( takeSortOfKiCon
+        ( sortOfKiCon
         , kindOfTyCon
         , typeOfWiCon)
 where
@@ -9,20 +9,16 @@ import DDC.Type.Compounds
 
 
 -- | Take the superkind of an atomic kind constructor.
---
---   * The 'KiConAny' constructor has no superkind.
---
---   * The 'KiConFun' constructor is handled by a specific rule.
-takeSortOfKiCon :: KiCon -> Maybe (Sort n)
-takeSortOfKiCon kc
+--   The kind function (~>) is handled separately because it doesn't have a sort
+--   without being fully applied.
+sortOfKiCon :: KiCon -> Sort n
+sortOfKiCon kc
  = case kc of
-        KiConAny        -> Nothing 
-        KiConFun        -> Nothing
-        KiConData       -> Just sComp
-        KiConRegion     -> Just sComp
-        KiConEffect     -> Just sComp
-        KiConClosure    -> Just sComp
-        KiConWitness    -> Just sProp
+        KiConData       -> sComp
+        KiConRegion     -> sComp
+        KiConEffect     -> sComp
+        KiConClosure    -> sComp
+        KiConWitness    -> sProp
 
 
 -- | Take the kind of an type constructor.
@@ -31,14 +27,14 @@ kindOfTyCon tc
  = case tc of
         TyConFun        -> [kData, kData, kEffect, kClosure] `kFuns` kData
         TyConData _ k   -> k
-        TyConRead       -> kRegion  `kFun` kEffectret
+        TyConRead       -> kRegion  `kFun` kEffect
         TyConDeepRead   -> kData    `kFun` kEffect
         TyConWrite      -> kRegion  `kFun` kEffect
         TyConDeepWrite  -> kData    `kFun` kEffect
         TyConAlloc      -> kRegion  `kFun` kEffect
         TyConFree       -> kRegion  `kFun` kClosure
         TyConDeepFree   -> kData    `kFun` kClosure
-        TyConImpl       -> kWitness `kFun` kWitness `kFun` kWitness
+        TyConImpl       -> kWitness `kFun` (kWitness `kFun` kWitness)
         TyConConst      -> kRegion  `kFun` kWitness
         TyConDeepConst  -> kData    `kFun` kWitness
         TyConMutable    -> kRegion  `kFun` kWitness
@@ -59,23 +55,23 @@ typeOfWiCon wc
         WiConMkEmpty    -> tEmpty `tApp` tBot kClosure
 
         WiConMkConst    
-         -> tLam1 kRegion $ \r -> tConst   `tApp` r
+         -> tForall kRegion $ \r -> tConst r
 
         WiConMkMutable
-         -> tLam1 kRegion $ \r -> tMutable `tApp` r
+         -> tForall kRegion $ \r -> tMutable `tApp` r
 
         WiConMkLazy
-         -> tLam1 kRegion $ \r -> tLazy    `tApp` r
+         -> tForall kRegion $ \r -> tLazy    `tApp` r
 
         WiConMkDirect
-         -> tLam1 kRegion $ \r -> tDirect  `tApp` r
+         -> tForall kRegion $ \r -> tDirect  `tApp` r
 
         WiConMkPurify
-         -> tLam1 kRegion $ \r -> (tConst `tApp` r) `tImpl`  (tPure  `tApp` (tRead `tApp` r))
+         -> tForall kRegion $ \r -> (tConst r) `tImpl`  (tPure  `tApp` (tRead `tApp` r))
 
         WiConMkShare
-         -> tLam1 kRegion $ \r -> (tConst `tApp` r)  `tImpl` (tEmpty `tApp` (tFree `tApp` r))
+         -> tForall kRegion $ \r -> (tConst r)  `tImpl` (tEmpty `tApp` (tFree `tApp` r))
 
         WiConMkDistinct n
-         -> tLams (replicate n kRegion) $ \rs -> (tDistinct n) `tApps` rs
+         -> tForalls (replicate n kRegion) $ \rs -> (tDistinct n) `tApps` rs
 

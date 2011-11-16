@@ -1,25 +1,32 @@
 
-module DDC.Type.Pretty where
+module DDC.Type.Pretty 
+        (module Text.PrettyPrint.Mainland)
+where
 import DDC.Type.Exp
 import DDC.Type.Predicates
 import Text.PrettyPrint.Mainland
 
 
 -- Name, Bind, Bound ------------------------------------------------------------------------------
-instance Pretty n => Pretty (Name n) where
+instance Pretty n => Pretty (NameDef n) where
  ppr nn
   = case nn of
-        NName n         -> ppr n
-        NAnon           -> empty
-        NIx i           -> brackets $ (text $ show i)
+        NDName n        -> ppr n
+        NDAnon          -> text "_"
+
+
+instance Pretty n => Pretty (NameUse n) where
+ ppr nn
+  = case nn of
+        NUName n        -> ppr n
+        NUIx i          -> text "?" <> (text $ show i)
 
 
 instance Pretty n => Pretty (Bind n) where
  ppr nn
   = case nn of
-        BVar  NAnon t   -> ppr t
-        BVar  n t       -> parens (ppr n <> text ":" <> ppr t)
-        BMore n t c     -> parens (ppr n <> text ":" <> ppr t <> text ":>" <> ppr c)
+        BVar  n t       -> ppr n <> text ":" <> ppr t
+        BMore n t c     -> ppr n <> text ":" <> ppr t <> text ":>" <> ppr c
 
 
 instance Pretty n => Pretty (Bound n) where
@@ -34,7 +41,7 @@ instance Pretty n => Pretty (Type n) where
  pprPrec d tt
   = case tt of
         -- Full application of function constructors are printed infix.
-        TApp (TApp (TCon (TConKind KiConFun)) k1) k2
+        TApp (TApp (TCon TConKindFun) k1) k2
          -> pprParen (d > 5)
          $  ppr k1 <+> text "~>" <+> ppr k2
 
@@ -51,9 +58,9 @@ instance Pretty n => Pretty (Type n) where
         TCon tc    -> ppr tc
         TVar b     -> ppr b
 
-        TLam b t
+        TForall b t
          -> pprParen (d > 1)
-         $  text "\\" <> ppr b <> text "." <> ppr t
+         $  brackets (ppr b) <> dot <> ppr t
 
         TApp t1 t2
          -> pprParen (d > 10)
@@ -72,6 +79,7 @@ instance Pretty n => Pretty (TCon n) where
  ppr tt
   = case tt of
         TConSort sc     -> ppr sc
+        TConKindFun     -> text "(~>)"
         TConKind kc     -> ppr kc
         TConType tc     -> ppr tc
 
@@ -79,7 +87,6 @@ instance Pretty n => Pretty (TCon n) where
 instance Pretty SoCon where
  ppr sc 
   = case sc of
-        SoAny           -> text "??"
         SoComp          -> text "**"
         SoProp          -> text "@@"
 
@@ -87,8 +94,6 @@ instance Pretty SoCon where
 instance Pretty KiCon where
  ppr kc
   = case kc of
-        KiConAny        -> text "?"
-        KiConFun        -> text "(~>)"
         KiConData       -> text "*"
         KiConRegion     -> text "%"
         KiConEffect     -> text "!"

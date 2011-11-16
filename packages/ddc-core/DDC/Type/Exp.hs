@@ -1,55 +1,61 @@
 
 module DDC.Type.Exp
-        ( Name (..)
-        , Bound(..)
-        , Bind (..)
+        ( NameDef (..)
+        , NameUse (..)
+        , Bound   (..)
+        , Bind    (..)
         
         -- * Types, Kinds, and Sorts
-        , Type (..)
+        , Type    (..)
         , Kind,   Sort
         , Region, Effect, Closure
-        , TCon (..)
-        , SoCon(..)
-        , KiCon(..)
-        , TyCon(..)
+        , TCon    (..)
+        , SoCon   (..)
+        , KiCon   (..)
+        , TyCon   (..)
         
         -- * Witness.
-        , Witness(..)
-        , WiCon(..))
+        , Witness (..)
+        , WiCon   (..))
 where
 
--- Variables --------------------------------------------------------------------------------------
--- | Names.
+-- Name -------------------------------------------------------------------------------------------
+-- | Defining occurrence of a name.
 --   We support both absolute textual names and relative deBruijn names.
-data Name n
+data NameDef n
         -- | A textual name.
-        = NName n
-
-        -- | The binding occurrence of a deBruijn name.
-        | NAnon
-
-        -- | The bound occurrence of a deBruijn name.
-        | NIx   Int
+        = NDName n
+        | NDAnon
         deriving (Eq, Show)
 
 
+-- | Use of a name.
+data NameUse n
+        = NUName n
+        -- | The bound occurrence of a deBruijn name.
+        | NUIx   Int
+        deriving (Eq, Show)
+
+
+-- Binds and Bounds -------------------------------------------------------------------------------
+-- TODO: refactor these into single constructors with a Maybe for the constraint.
 -- | Binding occurrence of a variable.
 data Bind n
         -- | Binding variable, with its type.
-        = BVar  (Name n) (Type n)
+        = BVar  (NameDef n) (Type n)
         
         -- | Binding variable with its type and more-than constraint.
-        | BMore (Name n) (Type n) (Type n)
+        | BMore (NameDef n) (Type n) (Type n)
         deriving (Eq, Show)
 
 
 -- | Bound occurrence of a variable.
 data Bound n
         -- | Bound variable, with its type.
-        = UVar   (Name n) (Type n)
+        = UVar   (NameUse n) (Type n)
 
         -- | Bound varaible with its type and more-than constraint.
-        | UMore  (Name n) (Type n) (Type n)
+        | UMore  (NameUse n) (Type n) (Type n)
         deriving (Eq, Show)
         
 
@@ -58,23 +64,27 @@ data Bound n
 --   We use the same data type to represent all three, as they have a similar structure.
 data Type n
         -- | Type constructor.
-        = TCon  (TCon  n)
+        = TCon    (TCon  n)
 
         -- | Type variable.
-        | TVar  (Bound n)
+        | TVar    (Bound n)
         
         -- | Type abstraction.
-        | TLam  (Bind n) (Type n)
+        | TForall (Bind n) (Type n)
         
         -- | Type application.
-        | TApp  (Type n) (Type n)
-        
+        | TApp    (Type n) (Type n)
+
         -- | Least upper bound.
-        | TSum  (Type n) (Type n)
+        --   TODO: change this to be a type sum.
+        --         use an array of maps, where the key is the tycon.
+        --         Find just to support single arity type constructors.
+        --         Make a hash function to convert summable TyCons to ints for the array.
+        | TSum    (Type n) (Type n)
 
         -- | Least element of some kind.
         --   Parameters at the next level up.
-        | TBot  (Type n)
+        | TBot    (Type n)
         deriving (Eq, Show)
 
 type Sort n     = Type n
@@ -86,25 +96,24 @@ type Closure n  = Type n
 
 -- | Kind, type and witness constructors.
 data TCon n
-        -- | Sort constructor (level 3)
-        = TConSort  SoCon
+        -- | Sort constructor  (level 3)
+        = TConSort    SoCon
 
-        -- | Kind constructor  (level 2)
-        | TConKind  KiCon
+        -- | Kind constructors (level 2)
+        --   The kind function is treated separtely because it isn't well formed
+        --   without being fully applied.
+        | TConKindFun 
+        | TConKind    KiCon
 
         -- | Type constructor  (level 1)
-        | TConType (TyCon n)
+        | TConType    (TyCon n)
         deriving (Eq, Show)
 
 
 -- | Sort constructor.
 data SoCon
-        -- | Any sort.
-        --   The others are sub-sorts of this one.
-        = SoAny                 -- '??'
-                
         -- | Sort of computation kinds.
-        | SoComp                -- '**'
+        = SoComp                -- '**'
 
         -- | Sort of proof kinds.
         | SoProp                -- '@@'
@@ -113,15 +122,8 @@ data SoCon
 
 -- | Kind constructor.
 data KiCon
-        -- | Any kind.
-        --   The others are subkinds of this one.
-        = KiConAny              -- '?'
-
-        -- | Function kind.
-        | KiConFun              -- '(~>)'
-
         -- | Kind of data values.
-        | KiConData             -- '* :: **'
+        = KiConData             -- '* :: **'
 
         -- | Kind of regions.
         | KiConRegion           -- '% :: **'

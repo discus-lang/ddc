@@ -31,7 +31,7 @@ foreign type Char      :: % -> *;
 --       Parser should take a (String -> SourcePos -> Prim) function.
 {-# PRIM OP add #-}
 foreign value add
-        :: \(r1 r2 r3: %)
+        :: [r1 r2 r3: %]
         .  Int r1 -> Int r2 -(e c)> Int r3
         :- e = Read r1 + Read r2
         ,  c = Free r1;
@@ -53,7 +53,11 @@ value five
         = id {Int} 5;
 
 value map 
-        *a1 *a2 %r1 %r2 !e $c
+        :: [a1 a2: *] [r1 r2: %] [e: !] [c: $]
+        .  (a1 -(e c)> a2) -> List r1 a1 -> List r2 a2;
+
+value map 
+        (a1 a2: *) (r1 r2: %) (e: !) (c: $)
         (f:  a1 -(e c)> a2) (xs: List r1 a1)
         = case xs of {
                 Nil             -> Nil;

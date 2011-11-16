@@ -1,12 +1,18 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Type.Compounds
-        ( -- * Sort Construction.
-          sAny, sComp, sProp
+        ( typeOfBind
+        , takeKeyOfBind
+        , takeMoreOfBind
+
+        , typeOfBound
+        , nameUseOfBound
+        
+         -- * Sort Construction.
+        , sComp, sProp
 
           -- * Kind Construction.
-        , kAny
         , kData, kRegion, kEffect, kClosure, kWitness
-        , kFun,     (~~>)
+        , kFun,     (~>>)
         , kFuns
         
           -- * Type Construction.
@@ -21,7 +27,7 @@ module DDC.Type.Compounds
         , tDistinct
         , tPure
         , tEmpty
-        , tFun,     (-->)
+        , tFun,     (->>)
         
           -- * Witness Construction
         , wApp
@@ -31,19 +37,57 @@ module DDC.Type.Compounds
         , tApp,     ($:)
         , tApps
         , tImpl
-        , tLam1,    tLams)
+        , tForall,  tForalls)
 where
 import DDC.Type.Exp
 
 
+-- Names, Binds and Bounds ------------------------------------------------------------------------
+-- | Take the `Type` of a `Bind`.
+typeOfBind :: Bind n -> Type n
+typeOfBind bb
+ = case bb of   
+        BVar  _ t       -> t
+        BMore _ t _     -> t
+
+
+-- | Take the key of a bind, if there is one.
+takeKeyOfBind :: Bind n -> Maybe n
+takeKeyOfBind bb
+ = case bb of
+        BVar  (NDName n) _      -> Just n
+        BMore (NDName n) _ _    -> Just n
+        _                       -> Nothing
+
+
+-- | Take the more-than constraint from a bind, if there is one.
+takeMoreOfBind :: Bind n -> Maybe (Type n)
+takeMoreOfBind bb
+ = case bb of
+        BVar{}                  -> Nothing
+        BMore _ _ more          -> Just more
+
+
+-- Bound ------------------------------------------------------------------------------------------
+-- | Take the `Type` of a `Bound`
+typeOfBound :: Bound n -> Type n
+typeOfBound uu
+ = case uu of   
+        UVar  _ t       -> t
+        UMore _ t _     -> t
+
+nameUseOfBound :: Bound n -> NameUse n
+nameUseOfBound uu
+ = case uu of
+        UVar   uu _             -> uu
+        UMore  uu _ _           -> uu
+
 -- Level 3 constructors (sorts) -------------------------------------------------------------------
-sAny            = TCon $ TConSort SoAny
 sComp           = TCon $ TConSort SoComp
 sProp           = TCon $ TConSort SoProp
 
 
 -- Level 2 constructors (kinds) -------------------------------------------------------------------
-kAny            = TCon $ TConKind KiConAny
 kData           = TCon $ TConKind KiConData
 kRegion         = TCon $ TConKind KiConRegion
 kEffect         = TCon $ TConKind KiConEffect
@@ -51,11 +95,9 @@ kClosure        = TCon $ TConKind KiConClosure
 kWitness        = TCon $ TConKind KiConWitness
 
 -- | Build a kind function.
-kFun, (~~>) :: Type v -> Type v -> Type v
-kFun k1 k2      = (TCon (TConKind KiConFun) `TApp` k1) `TApp` k2
-(~~>)           = kFun
-
-
+kFun, (~>>) :: Type v -> Type v -> Type v
+kFun k1 k2      = (TCon TConKindFun `TApp` k1) `TApp` k2
+(~>>)           = kFun
 
 -- | Build some kind functions.
 kFuns :: [Type v] -> Type v -> Type v
@@ -74,7 +116,7 @@ tDeepWrite      = TCon $ TConType $ TyConDeepWrite
 tAlloc          = TCon $ TConType $ TyConAlloc
 tFree           = TCon $ TConType $ TyConFree
 tDeepFree       = TCon $ TConType $ TyConDeepFree
-tConst          = TCon $ TConType $ TyConConst
+tConst    tr    = (TCon $ TConType $ TyConConst) `tApp` tr
 tDeepConst      = TCon $ TConType $ TyConDeepConst
 tMutable        = TCon $ TConType $ TyConMutable
 tDeepMutable    = TCon $ TConType $ TyConDeepMutable
@@ -92,8 +134,8 @@ tFun    :: Type n -> Type n -> Effect n -> Closure n -> Type n
 tFun t1 t2 eff clo
         = TCon (TConType TyConFun) `tApps` [t1, t2, eff, clo]
 
-(-->)   :: Type n -> Type n -> Type n
-(-->) t1 t2     = tFun t1 t2 (tBot kEffect) (tBot kClosure)
+(->>)   :: Type n -> Type n -> Type n
+(->>) t1 t2     = tFun t1 t2 (tBot kEffect) (tBot kClosure)
 
 
 
@@ -112,19 +154,19 @@ tImpl t1 t2
 
 
 -- | Build an anonymous type abstraction, with a single parameter.
-tLam1 :: Kind n -> (Type n -> Type n) -> Type n
-tLam1 k f
- = let  b       = BVar NAnon   k
-        u       = UVar (NIx 0) k
-   in   TLam b (f (TVar u))
+tForall :: Kind n -> (Type n -> Type n) -> Type n
+tForall k f
+ = let  b       = BVar NDAnon   k
+        u       = UVar (NUIx 0) k
+   in   TForall b (f (TVar u))
 
 
 -- | Build an anonymous type abstraction, with several parameters.
-tLams  :: [Kind n] -> ([Type n] -> Type n) -> Type n
-tLams ks f
- = let  bs      = [BVar NAnon k          | k <- ks]
-        us      = [TVar (UVar (NIx n) k) | k <- ks | n <- [0..]]
-   in   foldr TLam (f us) bs
+tForalls  :: [Kind n] -> ([Type n] -> Type n) -> Type n
+tForalls ks f
+ = let  bs      = [BVar NDAnon k          | k <- ks]
+        us      = [TVar (UVar (NUIx n) k) | k <- ks | n <- [0..]]
+   in   foldr TForall (f us) bs
 
 
 -- Witnesses --------------------------------------------------------------------------------------
