@@ -31,7 +31,7 @@ kindOfTyCon tc
  = case tc of
         TyConFun        -> [kData, kData, kEffect, kClosure] `kFuns` kData
         TyConData _ k   -> k
-        TyConRead       -> kRegion  `kFun` kEffect
+        TyConRead       -> kRegion  `kFun` kEffectret
         TyConDeepRead   -> kData    `kFun` kEffect
         TyConWrite      -> kRegion  `kFun` kEffect
         TyConDeepWrite  -> kData    `kFun` kEffect

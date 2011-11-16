@@ -13,7 +13,7 @@ module DDC.Type.Exp
         , KiCon(..)
         , TyCon(..)
         
-        -- * Witness
+        -- * Witness.
         , Witness(..)
         , WiCon(..))
 where
@@ -73,7 +73,8 @@ data Type n
         | TSum  (Type n) (Type n)
 
         -- | Least element of some kind.
-        | TBot  (Kind n)
+        --   Parameters at the next level up.
+        | TBot  (Type n)
         deriving (Eq, Show)
 
 type Sort n     = Type n
@@ -212,7 +213,7 @@ data TyCon n
 -- Witness ----------------------------------------------------------------------------------------
 data Witness n
         -- | Witness constructor.
-        = WCon  WiCon
+        = WCon  WiCon 
         
         -- | Witness variable.
         | WVar  (Bound n)
