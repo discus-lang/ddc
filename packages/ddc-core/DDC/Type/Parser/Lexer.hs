@@ -3,7 +3,6 @@
 module DDC.Type.Parser.Lexer
         ( isTyConName, isTyConStart, isTyConBody
         , isTyVarName, isTyVarStart, isTyVarBody
-        , Tok(..)
         , lexType)
 where
 import Data.Char
@@ -45,15 +44,9 @@ isTyVarBody c
 
 
 ---------------------------------------------------------------------------------------------------
--- | Tokens returned by the type lexer.
-data Tok
-        = Tok      String
-        | TokError String
-        deriving (Eq, Show)
-
-
 -- | Lex a string into type tokens.
-lexType :: String -> [Tok]
+--   If there are any `Nothing` elements in the returned list then there was a lexical error.
+lexType :: String -> [Maybe String]
 lexType str
  = concatMap lexWord $ words str
  where 
@@ -62,47 +55,49 @@ lexType str
         []              -> []        
 
         -- Function Constructors
-        '~' : '>' : w'  -> Tok "~>" : lexWord w'
-        '-' : '>' : w'  -> Tok "->" : lexWord w'
-        '-' : '(' : w'  -> Tok "-(" : lexWord w'
-        ')' : '>' : w'  -> Tok ")>" : lexWord w'
+        '~' : '>' : w'  -> Just "~>" : lexWord w'
+        '-' : '>' : w'  -> Just "->" : lexWord w'
+        '-' : '(' : w'  -> Just "-(" : lexWord w'
+        ')' : '>' : w'  -> Just ")>" : lexWord w'
 
         -- Brackets
-        '(' : w'        -> Tok "("  : lexWord w'
-        ')' : w'        -> Tok ")"  : lexWord w'
-        '[' : w'        -> Tok "["  : lexWord w'
-        ']' : w'        -> Tok "]"  : lexWord w'
-        ':' : w'        -> Tok "]"  : lexWord w'
-        '.' : w'        -> Tok "]"  : lexWord w'
+        '(' : w'        -> Just "("  : lexWord w'
+        ')' : w'        -> Just ")"  : lexWord w'
+        '[' : w'        -> Just "["  : lexWord w'
+        ']' : w'        -> Just "]"  : lexWord w'
+        ':' : w'        -> Just ":"  : lexWord w'
+        '.' : w'        -> Just "."  : lexWord w'
         
         -- Bottoms
-        '!' : '0' : w'  -> Tok "!0" : lexWord w'
-        '$' : '0' : w'  -> Tok "!0" : lexWord w'
+        '*' : '0' : w'  -> Just "*0" : lexWord w'
+        '%' : '0' : w'  -> Just "%0" : lexWord w'
+        '!' : '0' : w'  -> Just "!0" : lexWord w'
+        '$' : '0' : w'  -> Just "$0" : lexWord w'
 
         -- Sort Constructors
-        '*' : '*' : w'  -> Tok "**" : lexWord w'
-        '@' : '@' : w'  -> Tok "@@" : lexWord w'        
+        '*' : '*' : w'  -> Just "**" : lexWord w'
+        '@' : '@' : w'  -> Just "@@" : lexWord w'        
 
         -- Kind Constructors
-        '*' : w'        -> Tok "*"  : lexType w'
-        '%' : w'        -> Tok "%"  : lexType w'
-        '!' : w'        -> Tok "!"  : lexType w'
-        '$' : w'        -> Tok "$"  : lexType w'
-        '@' : w'        -> Tok "@"  : lexType w'
+        '*' : w'        -> Just "*"  : lexType w'
+        '%' : w'        -> Just "%"  : lexType w'
+        '!' : w'        -> Just "!"  : lexType w'
+        '$' : w'        -> Just "$"  : lexType w'
+        '@' : w'        -> Just "@"  : lexType w'
 
         -- Type Constructor
         c : cs
          | isTyConStart c
          , (body, rest)        <- span isTyConBody cs
-         -> Tok (c:body) : lexType rest
+         -> Just (c:body) : lexType rest
         
         -- Type Variable
         c : cs
          | isTyVarStart c
          , (body, rest)         <- span isTyVarBody cs
-         -> Tok (c:body) : lexType rest
+         -> Just (c:body) : lexType rest
         
         -- Error
-        _               -> [TokError w]
+        _               -> [Nothing]
 
 

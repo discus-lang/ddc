@@ -1,5 +1,9 @@
 
-module DDC.Type.Parser where
+module DDC.Type.Parser
+        ( Parser
+        , runParserOfStrings
+        , pType)
+where
 import DDC.Type.Exp
 import DDC.Type.Parser.Tokens
 import Data.Functor.Identity
@@ -26,6 +30,10 @@ runParserOfStrings parser
         
 
 ---------------------------------------------------------------------------------------------------
+-- | Top level parser for types.
+pType   :: Parser k (Type k)
+pType   = pType3
+
 -- Foralls.
 pType3 :: Parser k (Type k)
 pType3

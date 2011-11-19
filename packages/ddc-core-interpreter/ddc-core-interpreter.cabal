@@ -16,13 +16,14 @@ Description:
 Executable ddci-core
   Build-depends:
         base            == 4.*,
-        gloss           == 1.5.*
+        ddc-core        == 0.4.*
 
   Main-is:
         Main.hs
 
   Other-modules:
-        DDCI.Core.Help
+        DDCI.Core.Command.Help
+        DDCI.Core.Command.Kind
 
   Extensions:
         PatternGuards
