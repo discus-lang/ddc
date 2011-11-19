@@ -19,57 +19,57 @@ where
 -- Types ------------------------------------------------------------------------------------------
 -- | A value type (level 1), kind (level 2) or sort (level 3).
 --   We use the same data type to represent all three, as they have a similar structure.
-data Type v c
+data Type n
         -- | Type constructor.
-        = TVar    (Bound v c)
+        = TVar    (Bound n)
 
-        | TCon    (TCon  v c)
+        | TCon    (TCon  n)
 
         -- | Type abstraction.
-        | TForall (Bind  v c) (Type  v c)
+        | TForall (Bind  n) (Type  n)
         
         -- | Type application.
-        | TApp    (Type  v c) (Type  v c)
+        | TApp    (Type  n) (Type  n)
 
         -- | Least upper bound.
         --   TODO: change this to be a type sum.
         --         use an array of maps, where the key is the tycon.
         --         Find just to support single arity type constructors.
         --         Make a hash function to convert summable TyCons to ints for the array.
-        | TSum    (Type v c) (Type v c)
+        | TSum    (Type n) (Type n)
 
         -- | Least element of some kind.
         --   Parameters at the next level up.
-        | TBot    (Kind v c)
+        | TBot    (Kind n)
         deriving (Eq, Show)
 
 
-type Sort    v c = Type v c
-type Kind    v c = Type v c
-type Region  v c = Type v c
-type Effect  v c = Type v c
-type Closure v c = Type v c
+type Sort    n = Type n
+type Kind    n = Type n
+type Region  n = Type n
+type Effect  n = Type n
+type Closure n = Type n
 
 
 -- Bind -------------------------------------------------------------------------------------------
 -- | Binding occurrence of a variable.
-data Bind v c
-        = BName v   (Kind v c)
-        | BAnon     (Kind v c)
+data Bind n
+        = BName n   (Kind n)
+        | BAnon     (Kind n)
         deriving (Eq, Show)
         
 
 -- | Bound occurrence of a variable.
 --   If the varibles haven't been annotated with their kinds then the kind  field will be TBot. 
-data Bound v c
-        = UName v   (Kind v c)
-        | UIx   Int (Kind v c)
+data Bound n
+        = UName n   (Kind n)
+        | UIx   Int (Kind n)
         deriving (Eq, Show)
 
 
 -- TCon -------------------------------------------------------------------------------------------
 -- | Kind, type and witness constructors.
-data TCon v c
+data TCon n
         -- | Sort constructor  (level 3)
         = TConSort    SoCon
 
@@ -80,7 +80,7 @@ data TCon v c
         | TConKind    KiCon
 
         -- | Type constructor  (level 1)
-        | TConType    (TyCon v c)
+        | TConType    (TyCon n)
         deriving (Eq, Show)
 
 
@@ -114,11 +114,11 @@ data KiCon
 
 
 -- | Type constructor.
-data TyCon v c
+data TyCon n
 
         -- Value type constructors --------------
         -- | User data constructor with its type.
-        = TyConData c (Kind v c)
+        = TyConData n (Kind n)
 
         -- | The function type constructor.
         | TyConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
@@ -187,18 +187,18 @@ data TyCon v c
 
 
 -- Witness ----------------------------------------------------------------------------------------
-data Witness v
+data Witness n
         -- | Witness constructor.
         = WCon  WiCon 
         
         -- | Witness variable.
-        | WVar  v
+        | WVar  n
         
         -- | Witness application.
-        | WApp  (Witness v) (Witness v)
+        | WApp  (Witness n) (Witness n)
 
         -- | Joining of witnesses.
-        | WJoin (Witness v) (Witness v)
+        | WJoin (Witness n) (Witness n)
         deriving (Eq, Show)
 
 

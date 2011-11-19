@@ -8,14 +8,14 @@ import Text.PrettyPrint.Mainland
 
 
 -- Bind, Bound ------------------------------------------------------------------------------
-instance (Pretty v, Pretty c) => Pretty (Bind v c) where
+instance Pretty n => Pretty (Bind n) where
  ppr nn
   = case nn of
         BName v k       -> ppr v     <> text ":" <> ppr k
         BAnon   k       -> text "_"  <> text ":" <> ppr k
 
 
-instance (Pretty v, Pretty c) => Pretty (Bound v c) where
+instance Pretty n => Pretty (Bound n) where
  ppr nn
   = case nn of
         UName v _       -> ppr v
@@ -23,7 +23,7 @@ instance (Pretty v, Pretty c) => Pretty (Bound v c) where
 
 
 -- Type -------------------------------------------------------------------------------------------
-instance (Pretty v, Pretty c) => Pretty (Type v c) where
+instance Pretty n => Pretty (Type n) where
  pprPrec d tt
   = case tt of
         -- Full application of function constructors are printed infix.
@@ -61,7 +61,7 @@ instance (Pretty v, Pretty c) => Pretty (Type v c) where
 
 
 -- TCon -------------------------------------------------------------------------------------------
-instance (Pretty v, Pretty c) => Pretty (TCon v c) where
+instance Pretty n => Pretty (TCon n) where
  ppr tt
   = case tt of
         TConSort sc     -> ppr sc
@@ -87,7 +87,7 @@ instance Pretty KiCon where
         KiConWitness    -> text "@"
 
 
-instance (Pretty v, Pretty c) => Pretty (TyCon v c) where
+instance Pretty n => Pretty (TyCon n) where
  ppr tc 
   = case tc of
         TyConFun        -> text "(->)"

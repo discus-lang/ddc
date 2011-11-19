@@ -51,27 +51,27 @@ kindOfTyCon tc
 typeOfWiCon :: WiCon -> Type n
 typeOfWiCon wc
  = case wc of
-        WiConMkPure     -> tPure  `tApp` tBot kEffect
-        WiConMkEmpty    -> tEmpty `tApp` tBot kClosure
+        WiConMkPure     -> tPure  (tBot kEffect)
+        WiConMkEmpty    -> tEmpty (tBot kClosure)
 
         WiConMkConst    
          -> tForall kRegion $ \r -> tConst r
 
         WiConMkMutable
-         -> tForall kRegion $ \r -> tMutable `tApp` r
+         -> tForall kRegion $ \r -> tMutable r
 
         WiConMkLazy
-         -> tForall kRegion $ \r -> tLazy    `tApp` r
+         -> tForall kRegion $ \r -> tLazy r
 
         WiConMkDirect
-         -> tForall kRegion $ \r -> tDirect  `tApp` r
+         -> tForall kRegion $ \r -> tDirect r
 
         WiConMkPurify
-         -> tForall kRegion $ \r -> (tConst r) `tImpl`  (tPure  `tApp` (tRead `tApp` r))
+         -> tForall kRegion $ \r -> (tConst r) `tImpl`  (tPure  $ tRead r)
 
         WiConMkShare
-         -> tForall kRegion $ \r -> (tConst r)  `tImpl` (tEmpty `tApp` (tFree `tApp` r))
+         -> tForall kRegion $ \r -> (tConst r)  `tImpl` (tEmpty $ tFree r)
 
         WiConMkDistinct n
-         -> tForalls (replicate n kRegion) $ \rs -> (tDistinct n) `tApps` rs
+         -> tForalls (replicate n kRegion) $ \rs -> tDistinct rs
 

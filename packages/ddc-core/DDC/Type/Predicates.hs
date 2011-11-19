@@ -4,6 +4,6 @@ module DDC.Type.Predicates
 where
 import DDC.Type.Exp
 
-isBot :: Type v c -> Bool
+isBot :: Type n -> Bool
 isBot (TBot _)  = True
 isBot _         = False

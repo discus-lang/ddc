@@ -3,7 +3,6 @@ module DDC.Type.Check.Exp
         (kindOfType, kindOfType')
 where
 import DDC.Type.Exp
-import DDC.Type.Compounds
 import DDC.Type.Pretty
 import DDC.Type.Check.Con
 import Data.Map                 (Map)
@@ -28,12 +27,11 @@ kindOfType' tt
 
 -- checkType --------------------------------------------------------------------------------------
 -- | Check a type, returning its kind.
---   TODO: add environment.
 checkType :: Ord n => Env n -> Type n -> CheckM n (Kind n)
 checkType env tt
  = case tt of
         -- Sorts don't have a higher classification.
-        TCon (TConSort sc)
+        TCon (TConSort _)
          -> throw $ ErrorNakedSort tt
  
         -- Can't sort check a naked kind function
@@ -51,7 +49,7 @@ checkType env tt
         TVar uu
          -> case lookupEnv uu env of
                 Nothing -> throw  $ ErrorUndefined uu
-                Just k  -> return $ fst k 
+                Just k  -> return k 
         
         TForall b1 t2
          -> checkType (extendEnv b1 env) t2
@@ -70,23 +68,19 @@ checkType env tt
                   
                  _              -> throw $ ErrorAppNotFun tt t1 t2
 
-        -- TODO: handle sums, need TypeSum
+        TSum{} 
+         -> error "TSums not done"
 
         TBot k
          -> return k
 
 
 -- Check Environment ------------------------------------------------------------------------------
--- | Kind with an optional more-than constraint.
-type TypeMore n 
-        = (Type n, Maybe (Type n))
-
-
 -- | Type environment used when checking.
 data Env n
         = Env
-        { envMap        :: Map n (TypeMore n)
-        , envStack      :: [TypeMore n] }
+        { envMap        :: Map n (Kind n)
+        , envStack      :: [Kind n] }
 
 
 -- | An empty environment.
@@ -99,18 +93,17 @@ emptyEnv = Env
 -- | Extend an environment with a new binding.
 extendEnv :: Ord n => Bind n -> Env n -> Env n
 extendEnv bb env
- = let  more    = (typeOfBind bb, takeMoreOfBind bb)
-   in   case takeKeyOfBind bb of
-         Nothing -> env { envStack = more : envStack env }
-         Just n  -> env { envMap   = Map.insert n more (envMap env) }
+ = case bb of
+         BName n k      -> env { envMap   = Map.insert n k (envMap env) }
+         BAnon   k      -> env { envStack = k : envStack env }
 
 
 -- | Lookup a bound variable from an environment.
-lookupEnv :: Ord n => Bound n -> Env n -> Maybe (TypeMore n)
+lookupEnv :: Ord n => Bound n -> Env n -> Maybe (Kind n)
 lookupEnv uu env
- = case nameUseOfBound uu of
-        NUName n        -> Map.lookup n (envMap env)
-        NUIx i          -> lookup i (zip [0..] (envStack env))
+ = case uu of
+        UName n _       -> Map.lookup n (envMap env)
+        UIx i _         -> lookup i (zip [0..] (envStack env))
 
 
 -- Check Monad ------------------------------------------------------------------------------------
@@ -162,3 +155,6 @@ instance Pretty n => Pretty (Error n) where
         
         ErrorNakedSort s
          -> text "Can't check a naked sort: " <> ppr s
+
+        ErrorUndefined u
+         -> text "Undefined variable: " <> ppr u

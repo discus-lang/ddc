@@ -1,7 +1,7 @@
 
-
 module DDC.Type.Parser where
 import DDC.Type.Exp
+import DDC.Type.Parser.Tokens
 import Data.Functor.Identity
 import Text.Parsec
 import Text.Parsec.Pos
@@ -9,95 +9,11 @@ import Control.Monad
 import Data.Char
 import qualified DDC.Type.Compounds     as T
 
-data Tokens k
-        = Tokens
-        { tRoundBra     :: k
-        , tRoundKet     :: k
-        , tSquareBra    :: k
-        , tSquareKet    :: k
-        , tColon        :: k
-        , tDot          :: k
-        , tSortComp     :: k
-        , tSortProp     :: k
-        , tKindValue    :: k
-        , tKindRegion   :: k
-        , tKindEffect   :: k
-        , tKindClosure  :: k
-        , tKindWitness  :: k
-        , tKindFun      :: k
-        , tTypeFun      :: k
-        , tTypeFunBra   :: k
-        , tTypeFunKet   :: k
-        , tBotEffect    :: k
-        , tBotClosure   :: k
-        , tTyConBuiltin :: k -> Maybe (TyCon k k)
-        , tTyConUser    :: k -> Maybe (TyCon k k)
-        , tVar          :: k -> Maybe k }
 
-tokenStrings :: Tokens String
-tokenStrings
-        = Tokens
-        { tRoundBra     = "("
-        , tRoundKet     = ")"
-        , tSquareBra    = "["
-        , tSquareKet    = "]"
-        , tColon        = ":"
-        , tDot          = "."
-        , tSortComp     = "**"
-        , tSortProp     = "@@"
-        , tKindValue    = "*"
-        , tKindRegion   = "%"
-        , tKindEffect   = "!"
-        , tKindClosure  = "$"
-        , tKindWitness  = "@"
-        , tKindFun      = "~>"
-        , tTypeFun      = "->"
-        , tTypeFunBra   = "-("
-        , tTypeFunKet   = ")>"
-        , tBotEffect    = "!0"
-        , tBotClosure   = "$0"
-        , tTyConBuiltin = readTyConBuiltin
-        , tTyConUser    = readTyConUser 
-        , tVar          = readVar }
+type Parser k a
+        =  (Show k, Eq k)
+        => ParsecT [k] (Tokens k) Identity a
 
-
-readTyConBuiltin :: String -> Maybe (TyCon k k)
-readTyConBuiltin ss
- = case ss of
-        "Read"          -> Just TyConRead
-        "DeepRead"      -> Just TyConDeepRead
-        "Write"         -> Just TyConWrite
-        "DeepWrite"     -> Just TyConDeepWrite
-        "Alloc"         -> Just TyConAlloc
-        "Free"          -> Just TyConFree
-        "DeepFree"      -> Just TyConDeepFree
-        "Const"         -> Just TyConConst
-        "DeepConst"     -> Just TyConDeepConst
-        "Mutable"       -> Just TyConMutable
-        "DeepMutable"   -> Just TyConDeepMutable
-        "Lazy"          -> Just TyConLazy
-        "HeadLazy"      -> Just TyConHeadLazy
-        "Direct"        -> Just TyConDirect
-        "Pure"          -> Just TyConPure
-        "Empty"         -> Just TyConEmpty
-        _               -> Nothing
-
-
--- | Read a named, user defined TyCon.
---   We won't know its kind, so fill this in with the Bottom element for 
---   computatation kinds (**0).
---   TODO: This doesn't reject junk on the end of the name.
-readTyConUser :: String -> Maybe (TyCon String String)
-readTyConUser (s:ss)
-        | isUpper s     = Just (TyConData (s:ss) (TBot T.sComp))
-        | otherwise     = Nothing
-
--- | Read a named, user defined variable.
---   TODO: This doesn't reject junk at the end of the name.
-readVar :: String -> Maybe String
-readVar str@(s:ss)
-        | isLower s     = Just str
-        | otherwise     = Nothing
 
 runParserOfStrings
         :: Parser String a
@@ -111,14 +27,8 @@ runParserOfStrings parser
         
 
 ---------------------------------------------------------------------------------------------------
-type Parser k a
-        =  (Show k, Eq k)
-        => ParsecT [k] (Tokens k) Identity a
-
-
----------------------------------------------------------------------------------------------------
--- | Functions.
-pType3 :: Parser k (Type k k)
+-- Foralls.
+pType3 :: Parser k (Type k)
 pType3
  = do   choice
          [ -- [v : T2]. T3
@@ -135,7 +45,8 @@ pType3
          , do   pType2]
 
 
-pType2 :: Parser k (Type k k)
+-- Functions
+pType2 :: Parser k (Type k)
 pType2
  = do   t1      <- pType1
         choice 
@@ -153,15 +64,15 @@ pType2
          , do   return t1 ]
 
 
--- | Applications.
-pType1 :: Parser k (Type k k)
+-- Applications
+pType1 :: Parser k (Type k)
 pType1  
  = do   (t:ts)  <- many1 pType0
         return  $  foldl TApp t ts
 
 
--- | Constructors and atomic things.
-pType0 :: Parser k (Type k k)
+-- Atomics
+pType0 :: Parser k (Type k)
 pType0  = choice
         -- (TYPE2) and (->)
         [ do    pTok tRoundBra
@@ -204,7 +115,6 @@ pType0  = choice
         ]
 
 
---pBind :: Parser k (Bind 
 
 ---------------------------------------------------------------------------------------------------
 -- | Accept a token from the table and return the given value.
@@ -223,7 +133,7 @@ pTok f
 
 
 -- | Parse a builtin named tycon.
-pTyConBuiltin :: Parser k (TyCon k k)
+pTyConBuiltin :: Parser k (TyCon k)
 pTyConBuiltin
  = do   toks    <- getState
         token   show
@@ -232,12 +142,13 @@ pTyConBuiltin
 
 
 -- | Parse a user defined named tycon.
-pTyConUser :: Parser k (TyCon k k)
+pTyConUser :: Parser k (TyCon k)
 pTyConUser
  = do   toks    <- getState
         token   show
                 (const (newPos "foo" 0 0))
                 (tTyConUser toks)
+
 
 -- | Parse a variable
 pVar :: Parser k k

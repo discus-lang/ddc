@@ -44,24 +44,24 @@ import DDC.Type.Exp
 -- Names, Binds and Bounds ------------------------------------------------------------------------
 -- | Take the variable name of a bind.
 --   If this is an anonymous variable then there won't be a name.
-takeNameOfBind  :: Bind v c -> Maybe v
-takeNameOfBind  (BName v _)     = Just v
+takeNameOfBind  :: Bind n -> Maybe n
+takeNameOfBind  (BName n _)     = Just n
 takeNameOfBind  (BAnon   _)     = Nothing
 
 -- | Take the kind of a bind.
-kindOfBind :: Bind v c -> Kind v c
+kindOfBind :: Bind n -> Kind n
 kindOfBind (BName _ k)          = k
 kindOfBind (BAnon   k)          = k
 
 
 -- | Take the variable name of bound variable.
 --   If this is an anonymous variable then there won't be a name.
-takeNameOfBound :: Bound v c -> Maybe v
-takeNameOfBound (UName v _)     = Just v
+takeNameOfBound :: Bound n -> Maybe n
+takeNameOfBound (UName n _)     = Just n
 takeNameOfBound (UIx _ _)       = Nothing
 
 -- | Take the kind of a bound variable.
-kindOfBound :: Bind v c -> Kind v c
+kindOfBound :: Bind n -> Kind n
 kindOfBound (BName _ k)         = k
 kindOfBound (BAnon   k)         = k
 
@@ -71,18 +71,18 @@ tBot            = TBot
 tApp            = TApp
 ($:)            = TApp
 
-tApps   :: Type v c -> [Type v c] -> Type  v c
+tApps   :: Type n -> [Type n] -> Type n
 tApps t1 ts     = foldl TApp t1 ts
 
 
 -- | Build an anonymous type abstraction, with a single parameter.
-tForall :: Kind v c -> (Type v c -> Type v c) -> Type v c
+tForall :: Kind n -> (Type n -> Type n) -> Type n
 tForall k f
         = TForall (BAnon k) (f (TVar (UIx 0 k)))
 
 
 -- | Build an anonymous type abstraction, with several parameters.
-tForalls  :: [Kind v c] -> ([Type v c] -> Type v c) -> Type v c
+tForalls  :: [Kind n] -> ([Type n] -> Type n) -> Type n
 tForalls ks f
  = let  bs      = [BAnon k | k <- ks]
         us      = [TVar (UIx n  k) | k <- ks | n <- [0..]]
@@ -91,13 +91,13 @@ tForalls ks f
 
 -- Function Constructors --------------------------------------------------------------------------
 -- | Build a kind function.
-kFun, (~>>) :: Type v c -> Type v c -> Type v c
+kFun, (~>>) :: Type n -> Type n -> Type n
 kFun k1 k2      = (TCon TConKindFun `TApp` k1) `TApp` k2
 (~>>)           = kFun
 
 
 -- | Build some kind functions.
-kFuns :: [Type v c] -> Type v c -> Type v c
+kFuns :: [Type n] -> Type n -> Type n
 kFuns []  k1    = k1
 kFuns ks  k1    
  = let  k       = last ks
@@ -107,16 +107,16 @@ kFuns ks  k1
 
 -- | Build a value type function, 
 --   with the provided effect and closure.
-tFun    :: Type v c -> Type v c -> Effect v c -> Closure v c -> Type v c
+tFun    :: Type n -> Type n -> Effect n -> Closure n -> Type n
 tFun t1 t2 eff clo
         = TCon (TConType TyConFun) `tApps` [t1, t2, eff, clo]
 
-(->>)   :: Type v c -> Type v c -> Type v c
+(->>)   :: Type n -> Type n -> Type n
 (->>) t1 t2     = tFun t1 t2 (tBot kEffect) (tBot kClosure)
 
 
 -- | Build a witness implication type.
-tImpl :: Type v c -> Type v c -> Type v c
+tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
         = ((TCon $ TConType $ TyConImpl) `tApp` t1) `tApp` t2
 

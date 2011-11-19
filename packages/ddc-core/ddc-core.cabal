@@ -16,6 +16,7 @@ Description:
 Library
   Build-Depends: 
         base            == 4.*,
+        containers      == 0.4.*,
         mainland-pretty == 0.1.*
 
   Exposed-modules:
@@ -25,6 +26,7 @@ Library
         DDC.Type.Compounds
         DDC.Type.Predicates
         DDC.Type.Check.Con
+        DDC.Type.Check.Exp
 
   GHC-options:
         -Werror
