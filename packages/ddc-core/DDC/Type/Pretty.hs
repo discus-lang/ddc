@@ -7,37 +7,23 @@ import DDC.Type.Predicates
 import Text.PrettyPrint.Mainland
 
 
--- Name, Bind, Bound ------------------------------------------------------------------------------
-instance Pretty n => Pretty (NameDef n) where
+-- Bind, Bound ------------------------------------------------------------------------------
+instance (Pretty v, Pretty c) => Pretty (Bind v c) where
  ppr nn
   = case nn of
-        NDName n        -> ppr n
-        NDAnon          -> text "_"
+        BName v k       -> ppr v     <> text ":" <> ppr k
+        BAnon   k       -> text "_"  <> text ":" <> ppr k
 
 
-instance Pretty n => Pretty (NameUse n) where
+instance (Pretty v, Pretty c) => Pretty (Bound v c) where
  ppr nn
   = case nn of
-        NUName n        -> ppr n
-        NUIx i          -> text "?" <> (text $ show i)
-
-
-instance Pretty n => Pretty (Bind n) where
- ppr nn
-  = case nn of
-        BVar  n t       -> ppr n <> text ":" <> ppr t
-        BMore n t c     -> ppr n <> text ":" <> ppr t <> text ":>" <> ppr c
-
-
-instance Pretty n => Pretty (Bound n) where
- ppr nn
-  = case nn of
-        UVar  n _       -> ppr n
-        UMore n _ _     -> ppr n
+        UName v _       -> ppr v
+        UIx i _         -> ppr (show i) <> text "?"
 
 
 -- Type -------------------------------------------------------------------------------------------
-instance Pretty n => Pretty (Type n) where
+instance (Pretty v, Pretty c) => Pretty (Type v c) where
  pprPrec d tt
   = case tt of
         -- Full application of function constructors are printed infix.
@@ -75,7 +61,7 @@ instance Pretty n => Pretty (Type n) where
 
 
 -- TCon -------------------------------------------------------------------------------------------
-instance Pretty n => Pretty (TCon n) where
+instance (Pretty v, Pretty c) => Pretty (TCon v c) where
  ppr tt
   = case tt of
         TConSort sc     -> ppr sc
@@ -87,8 +73,8 @@ instance Pretty n => Pretty (TCon n) where
 instance Pretty SoCon where
  ppr sc 
   = case sc of
-        SoComp          -> text "**"
-        SoProp          -> text "@@"
+        SoConComp       -> text "**"
+        SoConProp       -> text "@@"
 
 
 instance Pretty KiCon where
@@ -101,11 +87,11 @@ instance Pretty KiCon where
         KiConWitness    -> text "@"
 
 
-instance Pretty n => Pretty (TyCon n) where
+instance (Pretty v, Pretty c) => Pretty (TyCon v c) where
  ppr tc 
   = case tc of
         TyConFun        -> text "(->)"
-        TyConData n _   -> ppr n
+        TyConData v _   -> ppr v
         TyConRead       -> text "Read"
         TyConDeepRead   -> text "DeepRead"
         TyConWrite      -> text "Write"

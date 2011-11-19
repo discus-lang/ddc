@@ -1,20 +1,27 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Type.Compounds
-        ( typeOfBind
-        , takeKeyOfBind
-        , takeMoreOfBind
+        ( takeNameOfBind,  kindOfBind
+        , takeNameOfBound, kindOfBound
 
-        , typeOfBound
-        , nameUseOfBound
-        
-         -- * Sort Construction.
+        -- * Type structure.
+        , tBot
+        , tApp,     ($:)
+        , tApps
+        , tForall
+        , tForalls
+
+        -- * Function constructos.
+        , kFun,     (~>>)
+        , kFuns
+        , tFun,     (->>)
+        , tImpl
+
+          -- * Sort Construction.
         , sComp, sProp
 
           -- * Kind Construction.
         , kData, kRegion, kEffect, kClosure, kWitness
-        , kFun,     (~>>)
-        , kFuns
-        
+
           -- * Type Construction.
         , tRead,    tDeepRead
         , tWrite,   tDeepWrite
@@ -27,64 +34,97 @@ module DDC.Type.Compounds
         , tDistinct
         , tPure
         , tEmpty
-        , tFun,     (->>)
         
           -- * Witness Construction
-        , wApp
-        
-          -- * Type structure
-        , tBot
-        , tApp,     ($:)
-        , tApps
-        , tImpl
-        , tForall,  tForalls)
+        , wApp        
+        )
 where
 import DDC.Type.Exp
 
-
 -- Names, Binds and Bounds ------------------------------------------------------------------------
--- | Take the `Type` of a `Bind`.
-typeOfBind :: Bind n -> Type n
-typeOfBind bb
- = case bb of   
-        BVar  _ t       -> t
-        BMore _ t _     -> t
+-- | Take the variable name of a bind.
+--   If this is an anonymous variable then there won't be a name.
+takeNameOfBind  :: Bind v c -> Maybe v
+takeNameOfBind  (BName v _)     = Just v
+takeNameOfBind  (BAnon   _)     = Nothing
+
+-- | Take the kind of a bind.
+kindOfBind :: Bind v c -> Kind v c
+kindOfBind (BName _ k)          = k
+kindOfBind (BAnon   k)          = k
 
 
--- | Take the key of a bind, if there is one.
-takeKeyOfBind :: Bind n -> Maybe n
-takeKeyOfBind bb
- = case bb of
-        BVar  (NDName n) _      -> Just n
-        BMore (NDName n) _ _    -> Just n
-        _                       -> Nothing
+-- | Take the variable name of bound variable.
+--   If this is an anonymous variable then there won't be a name.
+takeNameOfBound :: Bound v c -> Maybe v
+takeNameOfBound (UName v _)     = Just v
+takeNameOfBound (UIx _ _)       = Nothing
+
+-- | Take the kind of a bound variable.
+kindOfBound :: Bind v c -> Kind v c
+kindOfBound (BName _ k)         = k
+kindOfBound (BAnon   k)         = k
 
 
--- | Take the more-than constraint from a bind, if there is one.
-takeMoreOfBind :: Bind n -> Maybe (Type n)
-takeMoreOfBind bb
- = case bb of
-        BVar{}                  -> Nothing
-        BMore _ _ more          -> Just more
+-- Type Structure ---------------------------------------------------------------------------------
+tBot            = TBot
+tApp            = TApp
+($:)            = TApp
+
+tApps   :: Type v c -> [Type v c] -> Type  v c
+tApps t1 ts     = foldl TApp t1 ts
 
 
--- Bound ------------------------------------------------------------------------------------------
--- | Take the `Type` of a `Bound`
-typeOfBound :: Bound n -> Type n
-typeOfBound uu
- = case uu of   
-        UVar  _ t       -> t
-        UMore _ t _     -> t
+-- | Build an anonymous type abstraction, with a single parameter.
+tForall :: Kind v c -> (Type v c -> Type v c) -> Type v c
+tForall k f
+        = TForall (BAnon k) (f (TVar (UIx 0 k)))
 
-nameUseOfBound :: Bound n -> NameUse n
-nameUseOfBound uu
- = case uu of
-        UVar   uu _             -> uu
-        UMore  uu _ _           -> uu
+
+-- | Build an anonymous type abstraction, with several parameters.
+tForalls  :: [Kind v c] -> ([Type v c] -> Type v c) -> Type v c
+tForalls ks f
+ = let  bs      = [BAnon k | k <- ks]
+        us      = [TVar (UIx n  k) | k <- ks | n <- [0..]]
+   in   foldr TForall (f us) bs
+
+
+-- Function Constructors --------------------------------------------------------------------------
+-- | Build a kind function.
+kFun, (~>>) :: Type v c -> Type v c -> Type v c
+kFun k1 k2      = (TCon TConKindFun `TApp` k1) `TApp` k2
+(~>>)           = kFun
+
+
+-- | Build some kind functions.
+kFuns :: [Type v c] -> Type v c -> Type v c
+kFuns []  k1    = k1
+kFuns ks  k1    
+ = let  k       = last ks
+        ks'     = init ks
+   in   kFuns ks' k `kFun` k1
+
+
+-- | Build a value type function, 
+--   with the provided effect and closure.
+tFun    :: Type v c -> Type v c -> Effect v c -> Closure v c -> Type v c
+tFun t1 t2 eff clo
+        = TCon (TConType TyConFun) `tApps` [t1, t2, eff, clo]
+
+(->>)   :: Type v c -> Type v c -> Type v c
+(->>) t1 t2     = tFun t1 t2 (tBot kEffect) (tBot kClosure)
+
+
+-- | Build a witness implication type.
+tImpl :: Type v c -> Type v c -> Type v c
+tImpl t1 t2      
+        = ((TCon $ TConType $ TyConImpl) `tApp` t1) `tApp` t2
+
+
 
 -- Level 3 constructors (sorts) -------------------------------------------------------------------
-sComp           = TCon $ TConSort SoComp
-sProp           = TCon $ TConSort SoProp
+sComp           = TCon $ TConSort SoConComp
+sProp           = TCon $ TConSort SoConProp
 
 
 -- Level 2 constructors (kinds) -------------------------------------------------------------------
@@ -94,79 +134,24 @@ kEffect         = TCon $ TConKind KiConEffect
 kClosure        = TCon $ TConKind KiConClosure
 kWitness        = TCon $ TConKind KiConWitness
 
--- | Build a kind function.
-kFun, (~>>) :: Type v -> Type v -> Type v
-kFun k1 k2      = (TCon TConKindFun `TApp` k1) `TApp` k2
-(~>>)           = kFun
-
--- | Build some kind functions.
-kFuns :: [Type v] -> Type v -> Type v
-kFuns []  k1    = k1
-kFuns ks  k1    
- = let  k       = last ks
-        ks'     = init ks
-   in   kFuns ks' k `kFun` k1
-
-
 -- Level 1 constructors (value types) -------------------------------------------------------------
-tRead           = TCon $ TConType $ TyConRead
-tDeepRead       = TCon $ TConType $ TyConDeepRead
-tWrite          = TCon $ TConType $ TyConWrite
-tDeepWrite      = TCon $ TConType $ TyConDeepWrite
-tAlloc          = TCon $ TConType $ TyConAlloc
-tFree           = TCon $ TConType $ TyConFree
-tDeepFree       = TCon $ TConType $ TyConDeepFree
-tConst    tr    = (TCon $ TConType $ TyConConst) `tApp` tr
-tDeepConst      = TCon $ TConType $ TyConDeepConst
-tMutable        = TCon $ TConType $ TyConMutable
-tDeepMutable    = TCon $ TConType $ TyConDeepMutable
-tLazy           = TCon $ TConType $ TyConLazy
-tHeadLazy       = TCon $ TConType $ TyConHeadLazy
-tDirect         = TCon $ TConType $ TyConDirect
-tDistinct n     = TCon $ TConType $ TyConDistinct n
-tPure           = TCon $ TConType $ TyConPure
-tEmpty          = TCon $ TConType $ TyConEmpty
-
-
--- | Build a value type function, 
---   with the provided effect and closure.
-tFun    :: Type n -> Type n -> Effect n -> Closure n -> Type n
-tFun t1 t2 eff clo
-        = TCon (TConType TyConFun) `tApps` [t1, t2, eff, clo]
-
-(->>)   :: Type n -> Type n -> Type n
-(->>) t1 t2     = tFun t1 t2 (tBot kEffect) (tBot kClosure)
-
-
-
-
--- Type Structure ---------------------------------------------------------------------------------
-tBot            = TBot
-tApp            = TApp
-($:)            = TApp
-
-tApps   :: Type n -> [Type n] -> Type n
-tApps t1 ts     = foldl TApp t1 ts
-
--- | Build a witness implication type.
-tImpl t1 t2      
-        = ((TCon $ TConType $ TyConImpl) `tApp` t1) `tApp` t2
-
-
--- | Build an anonymous type abstraction, with a single parameter.
-tForall :: Kind n -> (Type n -> Type n) -> Type n
-tForall k f
- = let  b       = BVar NDAnon   k
-        u       = UVar (NUIx 0) k
-   in   TForall b (f (TVar u))
-
-
--- | Build an anonymous type abstraction, with several parameters.
-tForalls  :: [Kind n] -> ([Type n] -> Type n) -> Type n
-tForalls ks f
- = let  bs      = [BVar NDAnon k          | k <- ks]
-        us      = [TVar (UVar (NUIx n) k) | k <- ks | n <- [0..]]
-   in   foldr TForall (f us) bs
+tRead        t  = (TCon $ TConType $ TyConRead)        `tApp` t
+tDeepRead    t  = (TCon $ TConType $ TyConDeepRead)    `tApp` t
+tWrite       t  = (TCon $ TConType $ TyConWrite)       `tApp` t
+tDeepWrite   t  = (TCon $ TConType $ TyConDeepWrite)   `tApp` t
+tAlloc       t  = (TCon $ TConType $ TyConAlloc)       `tApp` t
+tFree        t  = (TCon $ TConType $ TyConFree)        `tApp` t
+tDeepFree    t  = (TCon $ TConType $ TyConDeepFree)    `tApp` t
+tConst       t  = (TCon $ TConType $ TyConConst)       `tApp` t
+tDeepConst   t  = (TCon $ TConType $ TyConDeepConst)   `tApp` t
+tMutable     t  = (TCon $ TConType $ TyConMutable)     `tApp` t
+tDeepMutable t  = (TCon $ TConType $ TyConDeepMutable) `tApp` t
+tLazy        t  = (TCon $ TConType $ TyConLazy)        `tApp` t
+tHeadLazy    t  = (TCon $ TConType $ TyConHeadLazy)    `tApp` t
+tDirect      t  = (TCon $ TConType $ TyConDirect)      `tApp` t
+tPure        t  = (TCon $ TConType $ TyConPure)        `tApp` t
+tEmpty       t  = (TCon $ TConType $ TyConEmpty)       `tApp` t
+tDistinct   ts  = (TCon $ TConType $ TyConDistinct (length ts)) `tApps` ts
 
 
 -- Witnesses --------------------------------------------------------------------------------------
