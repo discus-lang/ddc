@@ -6,7 +6,6 @@ import Data.Functor.Identity
 import Text.Parsec
 import Text.Parsec.Pos
 import Control.Monad
-import Data.Char
 import qualified DDC.Type.Compounds     as T
 
 

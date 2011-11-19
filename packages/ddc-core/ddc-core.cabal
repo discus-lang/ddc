@@ -17,7 +17,9 @@ Library
   Build-Depends: 
         base            == 4.*,
         containers      == 0.4.*,
-        mainland-pretty == 0.1.*
+        mainland-pretty == 0.1.*,
+        parsec          == 3.1.*,
+        transformers    == 0.2.*
 
   Exposed-modules:
         DDC.Core.Exp
@@ -27,6 +29,9 @@ Library
         DDC.Type.Predicates
         DDC.Type.Check.Con
         DDC.Type.Check.Exp
+        DDC.Type.Parser.Tokens
+        DDC.Type.Parser.Lexer
+        DDC.Type.Parser
 
   GHC-options:
         -Werror
@@ -36,4 +41,5 @@ Library
   Extensions:
         ParallelListComp
         PatternGuards
-  
+        RankNTypes
+        FlexibleContexts
