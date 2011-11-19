@@ -1,0 +1,32 @@
+Name:                ddc-core-interpreter
+Version:             0.4.0.0
+License:             MIT
+License-file:        LICENSE
+Author:              Ben Lippmeier
+Maintainer:          benl@ouroborus.net
+Build-Type:          Simple
+Cabal-Version:       >=1.6
+Stability:           provisional
+Category:            Graphics
+Homepage:            http://disciple.ouroborus.net
+Bug-reports:         disciple@ouroborus.net
+Description:
+        Interpreter and REPL for Disciple core language.
+
+Executable ddci-core
+  Build-depends:
+        base            == 4.*,
+        gloss           == 1.5.*
+
+  Main-is:
+        Main.hs
+
+  Other-modules:
+        DDCI.Core.Help
+
+  Extensions:
+        PatternGuards
+
+  ghc-options:
+        -O2
+        -Wall
