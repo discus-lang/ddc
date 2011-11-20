@@ -1,9 +1,11 @@
 
 module DDC.Type.Check.Exp 
-        (kindOfType, kindOfType')
+        (kindOfType, kindOfType'
+        , Error(..))
 where
 import DDC.Type.Exp
 import DDC.Type.Pretty
+import DDC.Type.Compounds
 import DDC.Type.Check.Con
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
@@ -45,14 +47,21 @@ checkType env tt
         TCon (TConType tc)
          -> return $ kindOfTyCon tc
 
-        -- TODO: check against more-than constraint from environment.
         TVar uu
          -> case lookupEnv uu env of
                 Nothing -> throw  $ ErrorUndefined uu
                 Just k  -> return k 
         
         TForall b1 t2
-         -> checkType (extendEnv b1 env) t2
+         -> do  _       <- checkType env (kindOfBind b1)
+                checkType (extendEnv b1 env) t2
+        
+        -- Applications of the kind function constructor are handled directly because
+        -- the constructor doesn't have a sort by itself.
+        TApp (TApp (TCon TConKindFun) k1) k2
+         -> do  _       <- checkType env k1
+                s2      <- checkType env k2
+                return  s2
         
         -- TODO: need to use type equiv judgement intead
         --       beacuse           Pure (e1 + e2)
@@ -66,7 +75,7 @@ checkType env tt
                   | k11 == k2   -> return k12
                   | otherwise   -> throw $ ErrorAppArgMismatch tt k11 k2
                   
-                 _              -> throw $ ErrorAppNotFun tt t1 t2
+                 _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
         TSum{} 
          -> error "TSums not done"
@@ -127,7 +136,14 @@ throw err       = CheckM $ Left err
 -- | Type errors.
 data Error n
         = ErrorAppArgMismatch   (Type n) (Kind n) (Kind n)
-        | ErrorAppNotFun        (Type n) (Type n) (Type n)
+
+        | ErrorAppNotFun
+        { errorChecking         :: Type n
+        , errorFunType          :: Type n
+        , errorFunTypeKind      :: Kind n
+        , errorArgType          :: Type n
+        , errorArgTypeKind      :: Kind n }
+
         | ErrorUnappliedKindFun 
         | ErrorNakedSort        (Sort n)
         | ErrorUndefined        (Bound n)
@@ -143,12 +159,14 @@ instance Pretty n => Pretty (Error n) where
                 , text "   does not match: " <> ppr t2
                 , text "   in application: " <> ppr tt ]
          
-        ErrorAppNotFun tt t1 t2
+        ErrorAppNotFun tt t1 k1 t2 k2
          -> sep $ punctuate line
                 [ text "Core type mismatch."
-                , text "     cannot apply: " <> ppr t2
-                , text "  to non-function: " <> ppr t1
-                , text "    in appliction: " <> ppr tt]
+                , text "     cannot apply type: " <> ppr t2
+                , text "               of kind: " <> ppr k2
+                , text "  to non-function type: " <> ppr t1
+                , text "               of kind: " <> ppr k1
+                , text "         in appliction: " <> ppr tt]
                 
         ErrorUnappliedKindFun 
          -> text "Can't take sort of unapplied kind function constructor."

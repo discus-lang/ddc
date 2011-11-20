@@ -1,7 +1,12 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Type.Compounds
-        ( takeNameOfBind,  kindOfBind
-        , takeNameOfBound, kindOfBound
+        ( takeNameOfBind
+        , kindOfBind
+        , replaceKindOfBind
+
+        , takeNameOfBound
+        , kindOfBound
+        , replaceKindOfBound
 
         -- * Type structure.
         , tBot
@@ -48,10 +53,17 @@ takeNameOfBind  :: Bind n -> Maybe n
 takeNameOfBind  (BName n _)     = Just n
 takeNameOfBind  (BAnon   _)     = Nothing
 
+
 -- | Take the kind of a bind.
 kindOfBind :: Bind n -> Kind n
 kindOfBind (BName _ k)          = k
 kindOfBind (BAnon   k)          = k
+
+
+-- | Replace the kind of a bind with a new one.
+replaceKindOfBind :: Kind n -> Bind n -> Bind n
+replaceKindOfBind k (BName n _) = BName n k
+replaceKindOfBind k (BAnon   _) = BAnon k
 
 
 -- | Take the variable name of bound variable.
@@ -60,10 +72,17 @@ takeNameOfBound :: Bound n -> Maybe n
 takeNameOfBound (UName n _)     = Just n
 takeNameOfBound (UIx _ _)       = Nothing
 
+
 -- | Take the kind of a bound variable.
 kindOfBound :: Bind n -> Kind n
 kindOfBound (BName _ k)         = k
 kindOfBound (BAnon   k)         = k
+
+
+-- | Replace the kind of a bound with a new one.
+replaceKindOfBound :: Kind n -> Bound n -> Bound n
+replaceKindOfBound k (UName n _) = UName n k
+replaceKindOfBound k (UIx i _)   = UIx i k
 
 
 -- Type Structure ---------------------------------------------------------------------------------
