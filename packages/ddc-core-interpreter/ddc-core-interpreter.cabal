@@ -25,6 +25,8 @@ Executable ddci-core
   Other-modules:
         DDCI.Core.Command.Help
         DDCI.Core.Command.Kind
+        DDCI.Core.Command.Type
+        DDCI.Core.Command.WType
 
   Extensions:
         PatternGuards

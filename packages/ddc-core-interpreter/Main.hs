@@ -2,6 +2,7 @@
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Kind
 import DDCI.Core.Command.Type
+import DDCI.Core.Command.WType
 import System.IO
 import Data.List
 
@@ -33,34 +34,42 @@ handle line ws
         | []    <- ws
         =       loop
         
+        -- Quit the interpreter.
         | ":quit" : _   <- ws
         =       return ()
         
+        -- Print the help screen.
         | cmd : _       <- ws
         , cmd == ":help" || cmd == ":?"
         = do    putStr help
                 loop
         
-        -- Show the kind of a type
+        -- Show the kind of a type.
         | Just rest     <- splitPrefix ":kind" line
         = do    cmdShowKind rest
                 putStr "\n"
                 loop
 
-        -- Show the type of a value expression
+        -- Show the type of a witness.
+        | Just rest     <- splitPrefix ":wtype" line
+        = do    cmdShowWType rest
+                putStr "\n"
+                loop
+
+        -- Show the type of a value expression.
         | Just rest     <- splitPrefix ":type" line
         = do    cmdShowType rest
                 putStr "\n"
                 loop
         
-        -- Some command we don't handle
+        -- Some command we don't handle.
         | cmd@(':' : _ ) : _       <- ws
         = do    putStrLn $ "unknown command '" ++ cmd ++ "'"
                 putStrLn $ "use :? for help."
                 putStr "\n"
                 loop
                 
-        -- An expression to evaluate
+        -- An expression to evaluate.
         | otherwise
         = do    putStrLn "*** This doesn't do anything yet"
                 loop

@@ -37,6 +37,8 @@ Library
         DDC.Type.Parser.Lexer
         DDC.Type.Parser
         DDC.Core.Exp
+        DDC.Core.Pretty
+        DDC.Core.Parser.Tokens
         DDC.Core.Parser.Lexer
 
 

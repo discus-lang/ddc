@@ -39,9 +39,6 @@ module DDC.Type.Compounds
         , tDistinct
         , tPure
         , tEmpty
-        
-          -- * Witness Construction
-        , wApp        
         )
 where
 import DDC.Type.Exp
@@ -174,6 +171,4 @@ tDistinct       = tBuiltinN TyConDistinct
 tBuiltin1 tc t  = (TCon $ TConType $ TyConBuiltin tc) `tApp` t
 tBuiltinN tc ts = (TCon $ TConType $ TyConBuiltin (tc (length ts))) `tApps` ts
 
--- Witnesses --------------------------------------------------------------------------------------
-wApp            = WApp
 

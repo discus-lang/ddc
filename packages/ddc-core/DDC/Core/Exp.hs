@@ -4,7 +4,12 @@ module DDC.Core.Exp
         , Cast (..)
         , Let  (..)
         , Alt  (..)
-        , Pat  (..))
+        , Pat  (..)
+        
+                
+        -- * Witness.
+        , Witness (..)
+        , WiCon   (..))
 where
 import DDC.Type.Exp
 
@@ -96,4 +101,52 @@ data Pat n p
         -- | Match a data constructor and bind its arguments.
         | PData (Bound n) [Bind n]
         deriving (Eq, Show)
+        
+
+-- Witness ----------------------------------------------------------------------------------------
+data Witness n
+        -- | Witness constructor.
+        = WCon  WiCon 
+        
+        -- | Witness variable.
+        | WVar  n
+        
+        -- | Witness application.
+        | WApp  (Witness n) (Witness n)
+
+        -- | Joining of witnesses.
+        | WJoin (Witness n) (Witness n)
+        deriving (Eq, Show)
+
+
+-- | Witness constructor.
+data WiCon
+        -- | The pure effect is pure
+        = WiConMkPure           -- :: Pure (!0)
+
+        -- | The empty closure is empty
+        | WiConMkEmpty          -- :: Empty ($0)
+
+        -- | Witness that a region is constant.
+        | WiConMkConst          -- :: [r: %]. Const r
+        
+        -- | Witness that a region is mutable.
+        | WiConMkMutable        -- :: [r: %]. Mutable r
+
+        -- | Witness that a region is lazy.
+        | WiConMkLazy           -- :: [r: %]. Const r
+        
+        -- | Witness that a region is direct.
+        | WiConMkDirect         -- :: [r: %]. Mutable r
+
+        -- | Purify a read from a constant region.
+        | WiConMkPurify         -- :: [r: %]. Const r => Pure  (Read r)
+
+        -- | Hide the sharing of a constant region.
+        | WiConMkShare          -- :: [r: %]. Const r => Empty (Free r)
+
+        -- | Witness that some regions are distinct.
+        | WiConMkDistinct Int   -- :: [r0 r1 ... rn : %]. Distinct_n r0 r1 .. rn
+        deriving (Eq, Show)
+
         
