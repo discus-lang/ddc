@@ -38,7 +38,8 @@ pType   = pType3
 pType3 :: Parser k (Type k)
 pType3
  = do   choice
-         [ -- [v11 v12 ... v1n : T2, v21 v22 ... v2n : T2]. T3
+         [ -- Universal quantification.
+           -- [v11 v12 ... v1n : T2, v21 v22 ... v2n : T2]. T3
            do   pTok tSquareBra
                 vsk     <- sepBy1 
                             (do vs      <- many1 pVar 
@@ -64,12 +65,20 @@ pType2 :: Parser k (Type k)
 pType2
  = do   t1      <- pType1
         choice 
-         [ -- t1 -> t2
+         [ -- T1 -> T2
            do   pTok tTypeFun
                 t2      <- pType2
                 return  $ t1 T.->> t2
 
-           -- k1 ~> k2
+           -- T1 -(T0 T0)> t2
+         , do   pTok tTypeFunBra
+                eff     <- pType0
+                clo     <- pType0
+                pTok tTypeFunKet
+                t2      <- pType2
+                return  $ T.tFun t1 t2 eff clo
+
+           -- T1 ~> T2
          , do   pTok tKindFun
                 t2      <- pType2
                 return  $ TApp (TApp (TCon TConKindFun) t1) t2

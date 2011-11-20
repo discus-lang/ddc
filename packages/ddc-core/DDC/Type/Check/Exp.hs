@@ -62,7 +62,7 @@ checkType env tt
          -> do  _       <- checkType env k1
                 s2      <- checkType env k2
                 return  s2
-        
+
         -- TODO: need to use type equiv judgement intead
         --       beacuse           Pure (e1 + e2)
         --       won't match with  Pure (e2 + e1)
