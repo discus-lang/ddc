@@ -14,7 +14,7 @@ cmdShowKind ss
  = case sequence (lexType ss) of
         Nothing         -> putStrLn "lexical error"
         Just toks       
-         -> do  -- putStrLn $ "tokens = " ++ show toks
+         -> do  putStrLn $ "tokens = " ++ show toks
                 showKind_toks toks
         
 
@@ -22,7 +22,9 @@ showKind_toks :: [String] -> IO ()
 showKind_toks toks
  = case runParserOfStrings pType toks of
         Left err        -> putStrLn $ "parse error " ++ show err
-        Right t         -> showKind_type t
+        Right t 
+         -> do  putStrLn $ "type = " ++ (show t)
+                showKind_type t
 
         
 showKind_type :: Kind String -> IO ()

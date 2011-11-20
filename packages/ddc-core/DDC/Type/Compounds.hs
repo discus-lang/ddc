@@ -91,18 +91,15 @@ tForalls ks f
 
 -- Function Constructors --------------------------------------------------------------------------
 -- | Build a kind function.
-kFun, (~>>) :: Type n -> Type n -> Type n
+kFun, (~>>) :: Kind n -> Kind n -> Kind n
 kFun k1 k2      = (TCon TConKindFun `TApp` k1) `TApp` k2
 (~>>)           = kFun
 
 
 -- | Build some kind functions.
-kFuns :: [Type n] -> Type n -> Type n
-kFuns []  k1    = k1
-kFuns ks  k1    
- = let  k       = last ks
-        ks'     = init ks
-   in   kFuns ks' k `kFun` k1
+kFuns :: [Kind n] -> Kind n -> Kind n
+kFuns []     k1    = k1
+kFuns (k:ks) k1    = k `kFun` kFuns ks k1
 
 
 -- | Build a value type function, 
@@ -111,8 +108,10 @@ tFun    :: Type n -> Type n -> Effect n -> Closure n -> Type n
 tFun t1 t2 eff clo
         = TCon (TConType TyConFun) `tApps` [t1, t2, eff, clo]
 
-(->>)   :: Type n -> Type n -> Type n
-(->>) t1 t2     = tFun t1 t2 (tBot kEffect) (tBot kClosure)
+-- | Build a pure and empty value type function.
+tFunPE, (->>)   :: Type n -> Type n -> Type n
+tFunPE t1 t2    = tFun t1 t2 (tBot kEffect) (tBot kClosure)
+(->>)           = tFunPE
 
 
 -- | Build a witness implication type.

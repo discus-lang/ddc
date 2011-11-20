@@ -21,6 +21,7 @@ data Tokens k
         , tSquareBra    :: k
         , tSquareKet    :: k
         , tColon        :: k
+        , tComma        :: k
         , tDot          :: k
         , tSortComp     :: k
         , tSortProp     :: k
@@ -49,6 +50,7 @@ tokenStrings
         , tSquareBra    = "["
         , tSquareKet    = "]"
         , tColon        = ":"
+        , tComma        = ","
         , tDot          = "."
         , tSortComp     = "**"
         , tSortProp     = "@@"

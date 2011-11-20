@@ -38,15 +38,22 @@ pType   = pType3
 pType3 :: Parser k (Type k)
 pType3
  = do   choice
-         [ -- [v : T2]. T3
+         [ -- [v11 v12 ... v1n : T2, v21 v22 ... v2n : T2]. T3
            do   pTok tSquareBra
-                v       <- pVar
-                pTok tColon
-                k       <- pType2
+                vsk     <- sepBy1 
+                            (do vs      <- many1 pVar 
+                                pTok tColon
+                                k       <- pType2
+                                return  $ (vs, k))
+                            (pTok tComma)
                 pTok tSquareKet
                 pTok tDot
+
                 body    <- pType3
-                return  $ TForall (BName v k) body
+
+                return  $ foldr TForall body 
+                        $ [ BName v k   | (vs, k) <- vsk
+                                        , v       <- vs]
           
            -- Body type
          , do   pType2]
@@ -60,7 +67,7 @@ pType2
          [ -- t1 -> t2
            do   pTok tTypeFun
                 t2      <- pType2
-                return  $ TApp (TApp (TCon (TConType TyConFun)) t1) t2
+                return  $ t1 T.->> t2
 
            -- k1 ~> k2
          , do   pTok tKindFun

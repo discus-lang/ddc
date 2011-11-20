@@ -67,6 +67,7 @@ lexType str
         ']' : w'        -> Just "]"  : lexWord w'
         ':' : w'        -> Just ":"  : lexWord w'
         '.' : w'        -> Just "."  : lexWord w'
+        ',' : w'        -> Just ","  : lexWord w'
         
         -- Bottoms
         '*' : '0' : w'  -> Just "*0" : lexWord w'

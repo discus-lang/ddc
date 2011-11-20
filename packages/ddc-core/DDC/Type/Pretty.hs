@@ -33,12 +33,12 @@ instance Pretty n => Pretty (Type n) where
 
         TApp (TApp (TCon (TConType TyConImpl)) k1) k2
          -> pprParen (d > 5)
-         $  ppr k1 <+> text "=>" <+> ppr k2
+         $  ppr k1 <+> text "=>" <+> pprPrec 6 k2
 
         TApp (TApp (TApp (TApp (TCon (TConType TyConFun)) t1) t2) eff) clo
          | isBot eff, isBot clo
          -> pprParen (d > 5)
-         $  ppr t1 <+> text "->" <+> ppr t2
+         $  ppr t1 <+> text "->" <+> pprPrec 6 t2
 
         -- Standard types.
         TCon tc    -> ppr tc
