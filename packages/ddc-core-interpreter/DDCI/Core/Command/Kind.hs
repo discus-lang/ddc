@@ -19,7 +19,7 @@ cmdShowKind ss
 
 showKind_toks :: [Token] -> IO ()
 showKind_toks toks
- = case TP.runParserOfStrings TP.pType toks of
+ = case TP.runParserOfStringTokens tokenOfString stringOfToken TP.pType toks of
         Left err        -> putStrLn $ "parse error " ++ show err
         Right t         -> showKind_type t
 

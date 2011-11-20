@@ -1,7 +1,7 @@
 
 module DDC.Type.Exp
-        -- * Types, Kinds, and Sorts
-        ( Type    (..)
+        ( -- * Types, Kinds, and Sorts
+          Type    (..)
         , Bind    (..)
         , Bound   (..)
         , Kind,   Sort
@@ -60,7 +60,8 @@ data Bind n
         
 
 -- | Bound occurrence of a variable.
---   If the varibles haven't been annotated with their kinds then the kind  field will be TBot. 
+-- 
+--   * If the variables haven't been annotated with their kinds then the kind field will be TBot. 
 data Bound n
         = UName n   (Kind n)
         | UIx   Int (Kind n)
@@ -68,7 +69,9 @@ data Bound n
 
 
 -- Type Sums --------------------------------------------------------------------------------------
--- | We keep type sums in a normalised format instead of joining them together with the binary
+-- | A least upper bound of several types.
+-- 
+--   We keep type sums in this normalised format instead of joining them together with the binary
 --   operator (+). This makes them much easier to work with, as a given sum type often only has
 --   a single physical representation.
 data TypeSum n

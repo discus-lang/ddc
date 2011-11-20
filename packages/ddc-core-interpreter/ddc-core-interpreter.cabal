@@ -16,7 +16,8 @@ Description:
 Executable ddci-core
   Build-depends:
         base            == 4.*,
-        ddc-core        == 0.4.*
+        ddc-core        == 0.4.*,
+        mainland-pretty == 0.1.*
 
   Main-is:
         Main.hs

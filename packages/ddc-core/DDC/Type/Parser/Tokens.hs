@@ -8,7 +8,7 @@ module DDC.Type.Parser.Tokens
         , readVar)
 where
 import DDC.Type.Exp
-import DDC.Type.Operators.LiftNames
+import DDC.Type.Operators.Rename
 import DDC.Type.Parser.Lexer
 import Control.Monad
 import qualified DDC.Type.Compounds     as T
@@ -46,7 +46,7 @@ data Tokens k
 
 
 -- | Apply a function to all the tokens in the table.
-liftTokens :: (k1 -> k2) -> (k2 -> k1) -> Tokens k1 -> Tokens k2
+liftTokens :: Ord k2 => (k1 -> k2) -> (k2 -> k1) -> Tokens k1 -> Tokens k2
 liftTokens toTok fromTok tt
         = Tokens
         { tRoundBra     = toTok (tRoundBra    tt)
@@ -70,8 +70,8 @@ liftTokens toTok fromTok tt
         , tTypeFunKet   = toTok (tTypeFunKet  tt)
         , tBotEffect    = toTok (tBotEffect   tt)
         , tBotClosure   = toTok (tBotClosure  tt)
-        , tTyConBuiltin = liftM (liftNamesTC toTok) . tTyConBuiltin tt . fromTok 
-        , tTyConUser    = liftM (liftNamesTC toTok) . tTyConUser    tt . fromTok 
+        , tTyConBuiltin = liftM (rename toTok) . tTyConBuiltin tt . fromTok 
+        , tTyConUser    = liftM (rename toTok) . tTyConUser    tt . fromTok 
         , tVar          = liftM toTok . tVar tt . fromTok }
 
 

@@ -2,7 +2,7 @@
 module DDC.Type.Parser
         ( Parser
         , runParserOfStrings
-        , runParserOfTokens
+        , runParserOfStringTokens
         , pType)
 where
 import DDC.Type.Exp
@@ -30,13 +30,21 @@ runParserOfStrings parser
         tokenStrings
         "foo"
 
-runParserOfTokens
-        :: Ord k
-        -> (String -> k)
+
+
+runParserOfStringTokens
+        :: (Ord k, Show k)
+        => (String -> k)
+        -> (k      -> String)
         -> Parser k a
         -> [k]
-        -> Either ParseError k
-        
+        -> Either ParseError a
+
+runParserOfStringTokens toTok fromTok parser 
+ = runParser parser
+        (liftTokens toTok fromTok tokenStrings)
+        "foo"
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Top level parser for types.
@@ -128,7 +136,7 @@ pType0  = choice
 
                  , do   pTok tTypeFun
                         pTok tRoundKet
-                        return (TCon $ TConType TyConFun)
+                        return (TCon $ TConType $ TyConBuiltin TyConFun)
                  ]
 
         -- Named type constructors
