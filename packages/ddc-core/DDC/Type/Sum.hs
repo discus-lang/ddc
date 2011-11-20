@@ -5,6 +5,7 @@ module DDC.Type.Sum
         , unhashTyCon
         , empty
         , insert
+        , kindOfSum
         , toList, fromList)
 where
 import DDC.Type.Exp
@@ -82,6 +83,12 @@ insert t ts
         
         TSum ts'         -> foldr insert ts (toList ts')
         TBot{}           -> ts
+
+
+-- | Take the kind of a sum.
+kindOfSum :: TypeSum n -> Kind n
+kindOfSum ts
+        = typeSumKind ts
 
 
 -- | Flatten out a sum, yielding a list of individual terms.

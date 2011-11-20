@@ -55,11 +55,15 @@ instance Pretty n => Pretty (Type n) where
 
         TSum ts
          -> pprParen (d > 9) 
-         $  sep $ punctuate (text " + ") (map ppr $ TS.toList ts)
+         $  ppr ts
 
         TBot k  
          -> ppr k <> text "0"
 
+
+instance Pretty n => Pretty (TypeSum n) where
+ ppr ts
+  = sep $ punctuate (text " +") (map ppr $ TS.toList ts)
 
 
 -- TCon -------------------------------------------------------------------------------------------

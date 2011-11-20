@@ -7,9 +7,10 @@ import DDC.Type.Exp
 import DDC.Type.Pretty
 import DDC.Type.Compounds
 import DDC.Type.Check.Con
+import Data.List
 import Data.Map                 (Map)
+import qualified DDC.Type.Sum   as TS
 import qualified Data.Map       as Map
-
 
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Take the kind of a type.
@@ -29,9 +30,11 @@ kindOfType' tt
 
 -- checkType --------------------------------------------------------------------------------------
 -- | Check a type, returning its kind.
+--   TODO: attach kinds to bound variables, and to sums.
 checkType :: Ord n => Env n -> Type n -> CheckM n (Kind n)
 checkType env tt
  = case tt of
+        -- Constructors ---------------
         -- Sorts don't have a higher classification.
         TCon (TConSort _)
          -> throw $ ErrorNakedSort tt
@@ -47,15 +50,21 @@ checkType env tt
         TCon (TConType tc)
          -> return $ kindOfTyCon tc
 
+
+        -- Variables ------------------
         TVar uu
          -> case lookupEnv uu env of
                 Nothing -> throw  $ ErrorUndefined uu
                 Just k  -> return k 
         
+        
+        -- Quantifiers ----------------
         TForall b1 t2
          -> do  _       <- checkType env (kindOfBind b1)
                 checkType (extendEnv b1 env) t2
         
+
+        -- Applications ---------------
         -- Applications of the kind function constructor are handled directly because
         -- the constructor doesn't have a sort by itself.
         TApp (TApp (TCon TConKindFun) k1) k2
@@ -77,11 +86,29 @@ checkType env tt
                   
                  _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
-        TSum{} 
-         -> error "TSums not done"
 
+        -- Sums -----------------------
+        TSum ts
+         -> do  ks      <- mapM (checkType env) $ TS.toList ts
+
+                -- Check that all the types in the sum have a single kind, 
+                -- and return that kind.
+                k <- case nub ks of     
+                         []     -> return $ TS.kindOfSum ts
+                         [k]    -> return k
+                         _      -> (throw $ ErrorSumKindMismatch (TS.kindOfSum ts) ts ks)
+                
+                -- Check that the kind of the elements is a valid one.
+                -- Only effects and closures can be summed.
+                if (k == kEffect || k == kClosure)
+                 then return k
+                 else (throw $ ErrorSumKindInvalid ts k)
+
+
+        -- Bot ------------------------
         TBot k
-         -> return k
+         -> do  _       <- checkType env k
+                return k
 
 
 -- Check Environment ------------------------------------------------------------------------------
@@ -133,10 +160,17 @@ throw :: Error n -> CheckM n a
 throw err       = CheckM $ Left err
 
 
+-- Error ------------------------------------------------------------------------------------------
 -- | Type errors.
 data Error n
-        = ErrorAppArgMismatch   (Type n) (Kind n) (Kind n)
 
+        -- | Kinds of paramter and arg don't match when checking type application.
+        = ErrorAppArgMismatch   
+        { errorChecking         :: Type n
+        , errorParamKind        :: Kind n
+        , errorArgKind          :: Kind n }
+
+        -- | Tried to apply a non-functional type to an argument.
         | ErrorAppNotFun
         { errorChecking         :: Type n
         , errorFunType          :: Type n
@@ -144,24 +178,46 @@ data Error n
         , errorArgType          :: Type n
         , errorArgTypeKind      :: Kind n }
 
+        -- | Found an unapplied kind function constructor.
         | ErrorUnappliedKindFun 
-        | ErrorNakedSort        (Sort n)
-        | ErrorUndefined        (Bound n)
+
+        -- | Tried to check a sort.
+        | ErrorNakedSort
+        { errorSort             :: Sort n }
+
+        -- | Found an undefined variable.
+        | ErrorUndefined        
+        { errorBound            :: Bound n }
+        
+        -- | Found types with multiple kinds in a sum.
+        --   If the kind hasn't been attached to the `TypeSum` yet then it may
+        --   be holding the placeholder value (tBot sComp).
+        | ErrorSumKindMismatch
+        { errorKindExpected     :: Kind n
+        , errorTypeSum          :: TypeSum n
+        , errorKinds            :: [Kind n] }
+        
+        -- | Found a sum with an invalid kind.
+        --   Sums can only have effect or closure kind.
+        | ErrorSumKindInvalid
+        { errorCheckingSum      :: TypeSum n
+        , errorKind             :: Kind n }
         deriving Show
 
-instance Pretty n => Pretty (Error n) where
+
+instance (Eq n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
         ErrorAppArgMismatch tt t1 t2
          -> sep $ punctuate line 
-                [ text "Core type mismatch."
+                [ text "Core type mismatch in application."
                 , text "             type: " <> ppr t1
                 , text "   does not match: " <> ppr t2
                 , text "   in application: " <> ppr tt ]
          
         ErrorAppNotFun tt t1 k1 t2 k2
          -> sep $ punctuate line
-                [ text "Core type mismatch."
+                [ text "Core type mismatch in application."
                 , text "     cannot apply type: " <> ppr t2
                 , text "               of kind: " <> ppr k2
                 , text "  to non-function type: " <> ppr t1
@@ -176,3 +232,21 @@ instance Pretty n => Pretty (Error n) where
 
         ErrorUndefined u
          -> text "Undefined variable: " <> ppr u
+         
+        ErrorSumKindMismatch k ts ks
+         -> sep $ punctuate line
+                [ text "Core type mismatch in sum."
+                , text " found multiple types: " <> ppr ts
+                , text " with differing kinds: " <> ppr ks ]
+                ++ (if k /= tBot sComp
+                        then [text "        expected kind: " <> ppr k ]
+                        else [])
+                
+        ErrorSumKindInvalid ts k
+         -> sep $ punctuate line
+                [ text "Invalid kind for type sum."
+                , text "         the type sum: " <> ppr ts
+                , text "             has kind: " <> ppr k
+                , text "  but it must be ! or $" ]
+                
+                

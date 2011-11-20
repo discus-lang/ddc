@@ -11,6 +11,7 @@ import Text.Parsec
 import Text.Parsec.Pos
 import Control.Monad
 import qualified DDC.Type.Compounds     as T
+import qualified DDC.Type.Sum           as TS
 
 
 type Parser k a
@@ -31,12 +32,12 @@ runParserOfStrings parser
 
 ---------------------------------------------------------------------------------------------------
 -- | Top level parser for types.
-pType   :: Parser k (Type k)
-pType   = pType3
+pType   :: Ord k => Parser k (Type k)
+pType   = pType4
 
 -- Foralls.
-pType3 :: Parser k (Type k)
-pType3
+pType4 :: Ord k => Parser k (Type k)
+pType4
  = do   choice
          [ -- Universal quantification.
            -- [v11 v12 ... v1n : T2, v21 v22 ... v2n : T2]. T3
@@ -59,9 +60,22 @@ pType3
            -- Body type
          , do   pType2]
 
+-- Sums
+pType3 :: Ord k => Parser k (Type k)
+pType3 
+ = do   t1      <- pType2
+        choice 
+         [ -- Type sums.
+           -- T2 + T3
+           do   pTok tPlus
+                t2      <- pType3
+                return  $ TSum $ TS.fromList (TBot T.sComp) [t1, t2]
+                
+         , do   return t1 ]
+
 
 -- Functions
-pType2 :: Parser k (Type k)
+pType2 :: Ord k => Parser k (Type k)
 pType2
  = do   t1      <- pType1
         choice 
@@ -88,14 +102,14 @@ pType2
 
 
 -- Applications
-pType1 :: Parser k (Type k)
+pType1 :: Ord k => Parser k (Type k)
 pType1  
  = do   (t:ts)  <- many1 pType0
         return  $  foldl TApp t ts
 
 
 -- Atomics
-pType0 :: Parser k (Type k)
+pType0 :: Ord k => Parser k (Type k)
 pType0  = choice
         -- (TYPE2) and (->)
         [ do    pTok tRoundBra

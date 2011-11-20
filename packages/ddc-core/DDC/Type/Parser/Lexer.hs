@@ -85,8 +85,11 @@ lexType str
         '!' : w'        -> Just "!"  : lexType w'
         '$' : w'        -> Just "$"  : lexType w'
         '@' : w'        -> Just "@"  : lexType w'
+        
+        -- Symbolic Type Constructors
+        '+' : w'        -> Just "+"  : lexType w'
 
-        -- Type Constructor
+        -- Named Type Constructors
         c : cs
          | isTyConStart c
          , (body, rest)        <- span isTyConBody cs

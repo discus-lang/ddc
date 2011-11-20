@@ -23,6 +23,7 @@ data Tokens k
         , tColon        :: k
         , tComma        :: k
         , tDot          :: k
+        , tPlus         :: k
         , tSortComp     :: k
         , tSortProp     :: k
         , tKindValue    :: k
@@ -52,6 +53,7 @@ tokenStrings
         , tColon        = ":"
         , tComma        = ","
         , tDot          = "."
+        , tPlus         = "+"
         , tSortComp     = "**"
         , tSortProp     = "@@"
         , tKindValue    = "*"
