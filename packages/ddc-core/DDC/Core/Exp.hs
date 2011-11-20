@@ -28,7 +28,7 @@ data Exp a n p
         -- | Value application.
         | XApp  a (Exp a n p) (Exp a n p)
 
-        -- | Type and witness application.
+        -- | Type application.
         | XAppT a (Exp a n p) (Type n)
         
         -- | Witness application.
@@ -36,7 +36,7 @@ data Exp a n p
         
         -- | Type cast.
         --   Argument is the witness for the cast.
-        | XCast a (Exp a n p) (Type n)
+        | XCast a (Exp a n p) (Cast n)
 
         -- | Some possibly recursive definitions.
         | XLet  a (Let a n p) (Exp a n p)
@@ -48,8 +48,14 @@ data Exp a n p
 
 -- | Type casts.
 data Cast n
+        -- | Weaken the effect of an expression.
+        = CastWeakenEffect  (Effect n)
+        
+        -- | Weaken the closure of an expression.
+        | CastWeakenClosure (Closure n)
+
         -- | Purify the effect of an expression.
-        = CastPurify  (Witness n)
+        | CastPurify  (Witness n)
 
         -- | Emptyfy the closure of an expression.
         | CastEmptify (Witness n)

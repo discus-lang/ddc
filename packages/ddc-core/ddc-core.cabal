@@ -23,7 +23,6 @@ Library
         parsec          == 3.1.*
 
   Exposed-modules:
-        DDC.Core.Exp
         DDC.Type.Exp
         DDC.Type.Sum
         DDC.Type.Pretty
@@ -37,6 +36,9 @@ Library
         DDC.Type.Parser.Tokens
         DDC.Type.Parser.Lexer
         DDC.Type.Parser
+        DDC.Core.Exp
+        DDC.Core.Parser.Lexer
+
 
   GHC-options:
         -Werror

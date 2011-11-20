@@ -1,45 +1,45 @@
 
--- | Reference lexer for the type parser.
+-- | Reference lexer for the type parser. Slow but Simple.
 module DDC.Type.Parser.Lexer
-        ( isTyConName, isTyConStart, isTyConBody
-        , isTyVarName, isTyVarStart, isTyVarBody
+        ( isConName, isConStart, isConBody
+        , isVarName, isVarStart, isVarBody
         , lexType)
 where
 import Data.Char
 
 
 -- TyCon names ------------------------------------------------------------------------------------
--- | String is a type constructor name.
-isTyConName :: String -> Bool
-isTyConName []          = False
-isTyConName (c:cs)      = isTyConStart c && and (map isTyConBody cs)
+-- | String is a constructor name.
+isConName :: String -> Bool
+isConName []          = False
+isConName (c:cs)      = isConStart c && and (map isConBody cs)
 
 
--- | Character can start a type constructor name.
-isTyConStart :: Char -> Bool
-isTyConStart = isUpper
+-- | Character can start a constructor name.
+isConStart :: Char -> Bool
+isConStart = isUpper
 
 
--- | Charater can be part of a type constructor body.
-isTyConBody  :: Char -> Bool
-isTyConBody c           = isUpper c || isLower c || isDigit c || c == '_'
+-- | Charater can be part of a constructor body.
+isConBody  :: Char -> Bool
+isConBody c           = isUpper c || isLower c || isDigit c || c == '_'
         
 
 -- TyVar names ------------------------------------------------------------------------------------
--- | String is a type variable name.
-isTyVarName :: String -> Bool
-isTyVarName []          = False
-isTyVarName (c:cs)      = isTyVarStart c && and (map isTyVarBody cs)
+-- | String is a variable name.
+isVarName :: String -> Bool
+isVarName []          = False
+isVarName (c:cs)      = isVarStart c && and (map isVarBody cs)
 
 
--- | Charater can start a type variable name.
-isTyVarStart :: Char -> Bool
-isTyVarStart = isLower
+-- | Charater can start a variable name.
+isVarStart :: Char -> Bool
+isVarStart = isLower
         
 
--- | Character can be part of a type variable body.
-isTyVarBody  :: Char -> Bool
-isTyVarBody c
+-- | Character can be part of a variable body.
+isVarBody  :: Char -> Bool
+isVarBody c
         = isUpper c || isLower c || isDigit c || c == '_' || c == '\''
 
 
@@ -91,14 +91,14 @@ lexType str
 
         -- Named Type Constructors
         c : cs
-         | isTyConStart c
-         , (body, rest)        <- span isTyConBody cs
+         | isConStart c
+         , (body, rest)        <- span isConBody cs
          -> Just (c:body) : lexType rest
         
         -- Type Variable
         c : cs
-         | isTyVarStart c
-         , (body, rest)         <- span isTyVarBody cs
+         | isVarStart c
+         , (body, rest)         <- span isVarBody cs
          -> Just (c:body) : lexType rest
         
         -- Error

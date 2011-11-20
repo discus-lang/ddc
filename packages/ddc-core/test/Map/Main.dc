@@ -44,10 +44,9 @@ data List (r: %) (a: *) {
 };
 
 
-
 -- Value bindings
 value id
-        = \(x: *). x;
+        = [x: *]. x;
 
 value five
         = id {Int} 5;
@@ -57,16 +56,17 @@ value map
         .  (a1 -(e c)> a2) -> List r1 a1 -> List r2 a2;
 
 value map 
-        (a1 a2: *) (r1 r2: %) (e: !) (c: $)
-        (f:  a1 -(e c)> a2) (xs: List r1 a1)
-        = case xs of {
+        [a1 a2: *] [r1 r2: %] [e: !] [c: $]
+        (f:  a1 -(e c)> a2) 
+        = \(xs: List r1 a1).
+          case xs of {
                 Nil             -> Nil;
                 Cons x xs       -> Cons {a2} (f x) (map_pure {|a1 a2 r1 r2 e c|} f) xs;
         };
 
 
 value map_lazy 
-        *a1 *a2 %r1 %r2 $c 
+        [a1, a2: *, r1 r2: %, c: $]
         (w: Const r1)
         (f: a1 -(!0 c)> a2) (xs: List r1 a1)
         = purify {w}
@@ -77,8 +77,6 @@ value map_lazy
                         (f x) 
                         (suspend {List r1 a1} {List r2 a2} (map_lazy {|a1 a2 r1 r2|} f) xs);
           };
-
-weaken! {Read r1 + Write r2} ...
 
 
 -- NOTE: Interpreter expects a function with a single region parameter,

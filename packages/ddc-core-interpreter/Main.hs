@@ -1,6 +1,7 @@
 
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Kind
+import DDCI.Core.Command.Type
 import System.IO
 import Data.List
 
@@ -43,6 +44,12 @@ handle line ws
         -- Show the kind of a type
         | Just rest     <- splitPrefix ":kind" line
         = do    cmdShowKind rest
+                putStr "\n"
+                loop
+
+        -- Show the type of a value expression
+        | Just rest     <- splitPrefix ":type" line
+        = do    cmdShowType rest
                 putStr "\n"
                 loop
         

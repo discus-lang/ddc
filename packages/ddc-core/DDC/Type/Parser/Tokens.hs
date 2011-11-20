@@ -134,13 +134,13 @@ readTyConBuiltin ss
 --   computatation kinds (**0).
 readTyConUser :: String -> Maybe (TyCon String)
 readTyConUser ss
-        | isTyConName ss        = Just (TyConUser ss (TBot T.sComp))
-        | otherwise             = Nothing
+        | isConName ss  = Just (TyConUser ss (TBot T.sComp))
+        | otherwise     = Nothing
 
 
 -- | Read a named, user defined variable.
 readVar :: String -> Maybe String
 readVar ss
-        | isTyVarName ss        = Just ss
-        | otherwise             = Nothing
+        | isVarName ss  = Just ss
+        | otherwise     = Nothing
 
