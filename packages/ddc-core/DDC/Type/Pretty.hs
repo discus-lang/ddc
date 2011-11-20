@@ -5,6 +5,7 @@ where
 import DDC.Type.Exp
 import DDC.Type.Predicates
 import Text.PrettyPrint.Mainland
+import qualified DDC.Type.Sum   as TS
 
 
 -- Bind, Bound ------------------------------------------------------------------------------
@@ -52,12 +53,13 @@ instance Pretty n => Pretty (Type n) where
          -> pprParen (d > 10)
          $  ppr t1 <+> pprPrec 11 t2
 
-        TSum t1 t2
+        TSum ts
          -> pprParen (d > 9) 
-         $  ppr t1 <+> text "+" <+> ppr t2
+         $  sep $ punctuate (text " + ") (map ppr $ TS.toList ts)
 
         TBot k  
          -> ppr k <> text "0"
+
 
 
 -- TCon -------------------------------------------------------------------------------------------

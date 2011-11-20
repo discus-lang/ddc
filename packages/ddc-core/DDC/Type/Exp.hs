@@ -6,6 +6,7 @@ module DDC.Type.Exp
         , Bound   (..)
         , Kind,   Sort
         , Region, Effect, Closure
+        , TypeSum (..),   TyConHash(..)
         , TCon    (..)
         , SoCon   (..)
         , KiCon   (..)
@@ -15,14 +16,18 @@ module DDC.Type.Exp
         , Witness (..)
         , WiCon   (..))
 where
+import Data.Array
+import Data.Map         (Map)
+
 
 -- Types ------------------------------------------------------------------------------------------
 -- | A value type (level 1), kind (level 2) or sort (level 3).
 --   We use the same data type to represent all three, as they have a similar structure.
 data Type n
-        -- | Type constructor.
+        -- | Type variable.
         = TVar    (Bound n)
 
+        -- | Type constructor.
         | TCon    (TCon  n)
 
         -- | Type abstraction.
@@ -32,14 +37,9 @@ data Type n
         | TApp    (Type  n) (Type  n)
 
         -- | Least upper bound.
-        --   TODO: change this to be a type sum.
-        --         use an array of maps, where the key is the tycon.
-        --         Find just to support single arity type constructors.
-        --         Make a hash function to convert summable TyCons to ints for the array.
-        | TSum    (Type n) (Type n)
+        | TSum    (TypeSum n)
 
         -- | Least element of some kind.
-        --   Parameters at the next level up.
         | TBot    (Kind n)
         deriving (Eq, Show)
 
@@ -65,6 +65,38 @@ data Bound n
         = UName n   (Kind n)
         | UIx   Int (Kind n)
         deriving (Eq, Show)
+
+
+-- Type Sums --------------------------------------------------------------------------------------
+-- | We keep type sums in a normalised format instead of joining them together with the binary
+--   operator (+). This makes them much easier to work with, as a given sum type often only has
+--   a single physical representation.
+data TypeSum n
+        = TypeSum
+        { -- | The kind of all the elements in this sum.
+          typeSumKind           :: Kind n
+
+          -- | Where we can see the outer constructor of a type its argument is inserted into this 
+          --   array. This handles most common cases like Read, Write, Alloc effects.
+        , typeSumElems          :: Array TyConHash [Type n]
+
+          -- | A map for named type variables.
+        , typeSumBoundNamed     :: Map n   (Kind n)
+
+          -- | A map for anonymous type variables.
+        , typeSumBoundAnon      :: Map Int (Kind n)
+
+          -- | Types that can't be placed in the other fields go here.
+          --   INVARIANT: this list doesn't contain other TSum forms.
+        , typeSumSpill          :: [Type n] }
+        deriving (Eq, Show)
+
+
+-- | Hash value used to insert types into type sums.
+--   Only tycons that can be inserted into the sum have a hash value.
+data TyConHash 
+        = TyConHash !Int
+        deriving (Eq, Show, Ord, Ix)
 
 
 -- TCon -------------------------------------------------------------------------------------------
@@ -211,23 +243,23 @@ data WiCon
         | WiConMkEmpty          -- :: Empty ($0)
 
         -- | Witness that a region is constant.
-        | WiConMkConst          -- :: \(r: %). Const r
+        | WiConMkConst          -- :: [r: %]. Const r
         
         -- | Witness that a region is mutable.
-        | WiConMkMutable        -- :: \(r: %). Mutable r
+        | WiConMkMutable        -- :: [r: %]. Mutable r
 
         -- | Witness that a region is lazy.
-        | WiConMkLazy           -- :: \(r: %). Const r
+        | WiConMkLazy           -- :: [r: %]. Const r
         
         -- | Witness that a region is direct.
-        | WiConMkDirect         -- :: \(r: %). Mutable r
+        | WiConMkDirect         -- :: [r: %]. Mutable r
 
         -- | Purify a read from a constant region.
-        | WiConMkPurify         -- :: \(r: %). Const r => Pure  (Read r)
+        | WiConMkPurify         -- :: [r: %]. Const r => Pure  (Read r)
 
         -- | Hide the sharing of a constant region.
-        | WiConMkShare          -- :: \(r: %). Const r => Empty (Free r)
+        | WiConMkShare          -- :: [r: %]. Const r => Empty (Free r)
 
         -- | Witness that some regions are distinct.
-        | WiConMkDistinct Int   -- :: \(r0 r1 ... rn : %). Distinct_n r0 r1 .. rn
+        | WiConMkDistinct Int   -- :: [r0 r1 ... rn : %]. Distinct_n r0 r1 .. rn
         deriving (Eq, Show)

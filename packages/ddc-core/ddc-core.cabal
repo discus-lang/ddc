@@ -17,13 +17,15 @@ Library
   Build-Depends: 
         base            == 4.*,
         containers      == 0.4.*,
+        array           == 0.3.*,
+        transformers    == 0.2.*,
         mainland-pretty == 0.1.*,
-        parsec          == 3.1.*,
-        transformers    == 0.2.*
+        parsec          == 3.1.*
 
   Exposed-modules:
         DDC.Core.Exp
         DDC.Type.Exp
+        DDC.Type.Sum
         DDC.Type.Pretty
         DDC.Type.Compounds
         DDC.Type.Predicates
