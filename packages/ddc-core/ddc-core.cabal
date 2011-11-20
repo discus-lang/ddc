@@ -29,8 +29,10 @@ Library
         DDC.Type.Pretty
         DDC.Type.Compounds
         DDC.Type.Predicates
+        DDC.Type.Check
         DDC.Type.Check.Con
         DDC.Type.Check.Exp
+        DDC.Type.Operators
         DDC.Type.Operators.Rename
         DDC.Type.Parser.Tokens
         DDC.Type.Parser.Lexer
