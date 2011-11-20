@@ -2,6 +2,7 @@
 module DDC.Type.Parser
         ( Parser
         , runParserOfStrings
+        , runParserOfTokens
         , pType)
 where
 import DDC.Type.Exp
@@ -28,6 +29,13 @@ runParserOfStrings parser
  = runParser parser 
         tokenStrings
         "foo"
+
+runParserOfTokens
+        :: Ord k
+        -> (String -> k)
+        -> Parser k a
+        -> [k]
+        -> Either ParseError k
         
 
 ---------------------------------------------------------------------------------------------------

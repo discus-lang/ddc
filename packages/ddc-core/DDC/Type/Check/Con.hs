@@ -25,8 +25,15 @@ sortOfKiCon kc
 kindOfTyCon :: TyCon n -> Kind n
 kindOfTyCon tc
  = case tc of
+        TyConUser _ k   -> k
+        TyConBuiltin tb -> kindOfTyConBuiltin tb
+
+
+-- | Take the kind of a builtin type constructor.
+kindOfTyConBuiltin :: TyConBuiltin -> Kind n
+kindOfTyConBuiltin tb
+ = case tb of
         TyConFun        -> [kData, kData, kEffect, kClosure] `kFuns` kData
-        TyConData _ k   -> k
         TyConRead       -> kRegion  `kFun` kEffect
         TyConDeepRead   -> kData    `kFun` kEffect
         TyConWrite      -> kRegion  `kFun` kEffect

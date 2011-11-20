@@ -32,11 +32,11 @@ instance Pretty n => Pretty (Type n) where
          -> pprParen (d > 5)
          $  ppr k1 <+> text "~>" <+> ppr k2
 
-        TApp (TApp (TCon (TConType TyConImpl)) k1) k2
+        TApp (TApp (TCon (TConType (TyConBuiltin TyConImpl))) k1) k2
          -> pprParen (d > 5)
          $  ppr k1 <+> text "=>" <+> pprPrec 6 k2
 
-        TApp (TApp (TApp (TApp (TCon (TConType TyConFun)) t1) t2) eff) clo
+        TApp (TApp (TApp (TApp (TCon (TConType (TyConBuiltin TyConFun))) t1) t2) eff) clo
          | isBot eff, isBot clo
          -> pprParen (d > 5)
          $  ppr t1 <+> text "->" <+> pprPrec 6 t2
@@ -92,12 +92,16 @@ instance Pretty KiCon where
         KiConClosure    -> text "$"
         KiConWitness    -> text "@"
 
-
 instance Pretty n => Pretty (TyCon n) where
+ ppr tc
+  = case tc of
+        TyConUser v _   -> ppr v
+        TyConBuiltin tb -> ppr tb
+        
+instance Pretty TyConBuiltin where
  ppr tc 
   = case tc of
         TyConFun        -> text "(->)"
-        TyConData v _   -> ppr v
         TyConRead       -> text "Read"
         TyConDeepRead   -> text "DeepRead"
         TyConWrite      -> text "Write"

@@ -10,7 +10,7 @@ module DDC.Type.Exp
         , TCon    (..)
         , SoCon   (..)
         , KiCon   (..)
-        , TyCon   (..)
+        , TyCon   (..),   TyConBuiltin(..)
         
         -- * Witness.
         , Witness (..)
@@ -147,14 +147,20 @@ data KiCon
 
 -- | Type constructor.
 data TyCon n
+        -- | User defined type constructor with its kind.
+        = TyConUser     n (Kind n)
 
+        -- | A builtin type constructor.
+        | TyConBuiltin  TyConBuiltin
+        deriving (Eq, Show)
+
+
+-- | Builtin type constructors that don't contain names.
+data TyConBuiltin
         -- Value type constructors --------------
-        -- | User data constructor with its type.
-        = TyConData n (Kind n)
-
         -- | The function type constructor.
-        | TyConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
-        
+        = TyConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
+
 
         -- Effect type constructors -------------
         -- | Read of some region

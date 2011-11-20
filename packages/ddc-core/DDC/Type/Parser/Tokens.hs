@@ -1,13 +1,16 @@
 
 module DDC.Type.Parser.Tokens
         ( Tokens(..)
+        , liftTokens
         , tokenStrings
         , readTyConBuiltin
         , readTyConUser
         , readVar)
 where
 import DDC.Type.Exp
+import DDC.Type.Operators.LiftNames
 import DDC.Type.Parser.Lexer
+import Control.Monad
 import qualified DDC.Type.Compounds     as T
 
 
@@ -40,6 +43,36 @@ data Tokens k
         , tTyConBuiltin :: k -> Maybe (TyCon k)
         , tTyConUser    :: k -> Maybe (TyCon k)
         , tVar          :: k -> Maybe k }
+
+
+-- | Apply a function to all the tokens in the table.
+liftTokens :: (k1 -> k2) -> (k2 -> k1) -> Tokens k1 -> Tokens k2
+liftTokens toTok fromTok tt
+        = Tokens
+        { tRoundBra     = toTok (tRoundBra    tt)
+        , tRoundKet     = toTok (tRoundKet    tt)
+        , tSquareBra    = toTok (tSquareBra   tt)
+        , tSquareKet    = toTok (tSquareKet   tt)
+        , tColon        = toTok (tColon       tt)
+        , tComma        = toTok (tComma       tt)
+        , tDot          = toTok (tDot         tt)
+        , tPlus         = toTok (tPlus        tt)
+        , tSortComp     = toTok (tSortComp    tt)
+        , tSortProp     = toTok (tSortProp    tt)
+        , tKindValue    = toTok (tKindValue   tt)
+        , tKindRegion   = toTok (tKindRegion  tt)
+        , tKindEffect   = toTok (tKindEffect  tt)
+        , tKindClosure  = toTok (tKindClosure tt)
+        , tKindWitness  = toTok (tKindWitness tt)
+        , tKindFun      = toTok (tKindFun     tt)
+        , tTypeFun      = toTok (tTypeFun     tt)
+        , tTypeFunBra   = toTok (tTypeFunBra  tt)
+        , tTypeFunKet   = toTok (tTypeFunKet  tt)
+        , tBotEffect    = toTok (tBotEffect   tt)
+        , tBotClosure   = toTok (tBotClosure  tt)
+        , tTyConBuiltin = liftM (liftNamesTC toTok) . tTyConBuiltin tt . fromTok 
+        , tTyConUser    = liftM (liftNamesTC toTok) . tTyConUser    tt . fromTok 
+        , tVar          = liftM toTok . tVar tt . fromTok }
 
 
 -- | An instance of the `Tokens` type, that just uses strings for the tokens.
@@ -75,7 +108,8 @@ tokenStrings
 -- | Read a builtin `TyCon`. 
 readTyConBuiltin :: String -> Maybe (TyCon k)
 readTyConBuiltin ss
- = case ss of
+ = liftM TyConBuiltin
+ $ case ss of
         "Read"          -> Just TyConRead
         "DeepRead"      -> Just TyConDeepRead
         "Write"         -> Just TyConWrite
@@ -100,7 +134,7 @@ readTyConBuiltin ss
 --   computatation kinds (**0).
 readTyConUser :: String -> Maybe (TyCon String)
 readTyConUser ss
-        | isTyConName ss        = Just (TyConData ss (TBot T.sComp))
+        | isTyConName ss        = Just (TyConUser ss (TBot T.sComp))
         | otherwise             = Nothing
 
 

@@ -18,6 +18,14 @@ import qualified Data.Map       as Map
 hashTyCon :: TyCon n -> Maybe TyConHash
 hashTyCon tc
  = case tc of
+        TyConUser{}      -> Nothing
+        TyConBuiltin tcb -> hashTyConBuiltin tcb
+        
+
+-- | Yield the `TyConHash` of a `TyConBuiltin`, or `Nothing` if there isn't one.
+hashTyConBuiltin :: TyConBuiltin -> Maybe TyConHash
+hashTyConBuiltin tc
+ = case tc of
         TyConRead       -> Just $ TyConHash 0
         TyConDeepRead   -> Just $ TyConHash 1
         TyConWrite      -> Just $ TyConHash 2
@@ -39,7 +47,8 @@ hashTyConRange
 --   or `error` if there isn't one.
 unhashTyCon :: TyConHash -> TyCon n
 unhashTyCon (TyConHash i)
- = case i of
+ = TyConBuiltin
+ $ case i of
         0               -> TyConRead
         1               -> TyConDeepRead
         2               -> TyConWrite

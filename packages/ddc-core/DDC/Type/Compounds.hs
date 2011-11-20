@@ -125,7 +125,7 @@ kFuns (k:ks) k1    = k `kFun` kFuns ks k1
 --   with the provided effect and closure.
 tFun    :: Type n -> Type n -> Effect n -> Closure n -> Type n
 tFun t1 t2 eff clo
-        = TCon (TConType TyConFun) `tApps` [t1, t2, eff, clo]
+        = (TCon $ TConType $ TyConBuiltin TyConFun) `tApps` [t1, t2, eff, clo]
 
 -- | Build a pure and empty value type function.
 tFunPE, (->>)   :: Type n -> Type n -> Type n
@@ -136,7 +136,7 @@ tFunPE t1 t2    = tFun t1 t2 (tBot kEffect) (tBot kClosure)
 -- | Build a witness implication type.
 tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
-        = ((TCon $ TConType $ TyConImpl) `tApp` t1) `tApp` t2
+        = ((TCon $ TConType $ TyConBuiltin $ TyConImpl) `tApp` t1) `tApp` t2
 
 
 
@@ -153,24 +153,26 @@ kClosure        = TCon $ TConKind KiConClosure
 kWitness        = TCon $ TConKind KiConWitness
 
 -- Level 1 constructors (value types) -------------------------------------------------------------
-tRead        t  = (TCon $ TConType $ TyConRead)        `tApp` t
-tDeepRead    t  = (TCon $ TConType $ TyConDeepRead)    `tApp` t
-tWrite       t  = (TCon $ TConType $ TyConWrite)       `tApp` t
-tDeepWrite   t  = (TCon $ TConType $ TyConDeepWrite)   `tApp` t
-tAlloc       t  = (TCon $ TConType $ TyConAlloc)       `tApp` t
-tFree        t  = (TCon $ TConType $ TyConFree)        `tApp` t
-tDeepFree    t  = (TCon $ TConType $ TyConDeepFree)    `tApp` t
-tConst       t  = (TCon $ TConType $ TyConConst)       `tApp` t
-tDeepConst   t  = (TCon $ TConType $ TyConDeepConst)   `tApp` t
-tMutable     t  = (TCon $ TConType $ TyConMutable)     `tApp` t
-tDeepMutable t  = (TCon $ TConType $ TyConDeepMutable) `tApp` t
-tLazy        t  = (TCon $ TConType $ TyConLazy)        `tApp` t
-tHeadLazy    t  = (TCon $ TConType $ TyConHeadLazy)    `tApp` t
-tDirect      t  = (TCon $ TConType $ TyConDirect)      `tApp` t
-tPure        t  = (TCon $ TConType $ TyConPure)        `tApp` t
-tEmpty       t  = (TCon $ TConType $ TyConEmpty)       `tApp` t
-tDistinct   ts  = (TCon $ TConType $ TyConDistinct (length ts)) `tApps` ts
+tRead           = tBuiltin1 TyConRead
+tDeepRead       = tBuiltin1 TyConDeepRead
+tWrite          = tBuiltin1 TyConWrite
+tDeepWrite      = tBuiltin1 TyConDeepWrite
+tAlloc          = tBuiltin1 TyConAlloc
+tFree           = tBuiltin1 TyConFree
+tDeepFree       = tBuiltin1 TyConDeepFree
+tConst          = tBuiltin1 TyConConst
+tDeepConst      = tBuiltin1 TyConDeepConst
+tMutable        = tBuiltin1 TyConMutable
+tDeepMutable    = tBuiltin1 TyConDeepMutable
+tLazy           = tBuiltin1 TyConLazy
+tHeadLazy       = tBuiltin1 TyConHeadLazy
+tDirect         = tBuiltin1 TyConDirect
+tPure           = tBuiltin1 TyConPure
+tEmpty          = tBuiltin1 TyConEmpty
+tDistinct       = tBuiltinN TyConDistinct 
 
+tBuiltin1 tc t  = (TCon $ TConType $ TyConBuiltin tc) `tApp` t
+tBuiltinN tc ts = (TCon $ TConType $ TyConBuiltin (tc (length ts))) `tApps` ts
 
 -- Witnesses --------------------------------------------------------------------------------------
 wApp            = WApp

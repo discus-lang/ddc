@@ -31,6 +31,7 @@ Library
         DDC.Type.Predicates
         DDC.Type.Check.Con
         DDC.Type.Check.Exp
+        DDC.Type.Operators.LiftNames
         DDC.Type.Parser.Tokens
         DDC.Type.Parser.Lexer
         DDC.Type.Parser
