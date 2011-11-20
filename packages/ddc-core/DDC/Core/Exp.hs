@@ -1,11 +1,10 @@
 
 module DDC.Core.Exp 
-        ( -- * Value expressions.
-          Exp  (..)
-        , XCon (..)
-        , Alt  (..)
+        ( Exp  (..)
+        , Cast (..)
         , Let  (..)
-        , Stmt (..))
+        , Alt  (..)
+        , Pat  (..))
 where
 import DDC.Type.Exp
 
@@ -13,78 +12,82 @@ import DDC.Type.Exp
 -- Values -----------------------------------------------------------------------------------------
 -- | A value expression,
 --   The domain of computation.
-data Exp n v p
+data Exp a n p
         -- | A primitive operator or literal.
-        = XPrim n p
-
-        -- | Data constructor.
-        | XCon  n (XCon v)
+        = XPrim a p
 
         -- | Value variable.
-        | XVar  n (Bound v)
+        | XVar  a (Bound n)
+
+        -- | Data constructor.
+        | XCon  a (Bound n)
         
         -- | Function abstraction.
-        | XLam  n (Bind v)    (Exp n v p)
+        | XLam  a (Bind n)    (Exp a n p)
         
         -- | Value application.
-        | XApp  n (Exp n v p) (Exp n v p)
+        | XApp  a (Exp a n p) (Exp a n p)
 
         -- | Type and witness application.
-        | XTApp n (Exp n v p) (Type v)
+        | XAppT a (Exp a n p) (Type n)
         
         -- | Witness application.
-        | XWApp n (Exp n v p) (Witness v)
+        | XAppW a (Exp a n p) (Witness n)
         
         -- | Type cast.
         --   Argument is the witness for the cast.
-        | XCast n (Exp n v p) (Type v)
+        | XCast a (Exp a n p) (Type n)
+
+        -- | Some possibly recursive definitions.
+        | XLet  a (Let a n p) (Exp a n p)
                 
         -- | Case branching.
-        | XCase n (Exp n v p) [Alt n v p]
+        | XCase a (Exp a n p) [Alt a n p]
+        deriving (Eq, Show)
+
+
+-- | Type casts.
+data Cast n
+        -- | Purify the effect of an expression.
+        = CastPurify  (Witness n)
+
+        -- | Emptyfy the closure of an expression.
+        | CastEmptify (Witness n)
+        deriving (Eq, Show)
+
+
+-- | Possibly recursive bindings.
+data Let a n p
+        -- | A non-binding, effectful statement.
+        = LStmt          (Exp a n p)
         
-        -- | Some recursive definitions.
-        | XRec  n [Let n v p] (Exp n v p)
+        -- | Non-recursive binding
+        | LLet  (Bind n) (Exp a n p)
         
-        -- | Some non-recursive statements.
-        | XDo   n [Stmt n v p]
+        -- | Recursive binding
+        | LRec  [(Bind n, Exp a n p)]
+
+        -- | Bind a local region variable, and (non-recursive) witnesses to its properties.
+        | XLocal (Bind n) [(Bind n, Type n)]
         deriving (Eq, Show)
 
 
--- | Data Constructors
-data XCon v
-        = XConData v
+-- | Case alternatives.
+data Alt a n p
+        = XAlt (Pat n p) (Exp a n p)
         deriving (Eq, Show)
 
 
--- | Case alternatives
-data Alt n v p
-        = XAlt (XCon v) [Bind v] (Exp n v p)
+-- | Pattern matches.
+data Pat n p
+
+        -- | The default pattern always succeeds.
+        = PDefault
+
+        -- | Match a literal.
+        | PLit  p
+
+        -- | Match a data constructor and bind its arguments.
+        | PData (Bound n) [Bind n]
         deriving (Eq, Show)
-
-
--- | Possibly recursive let bindings
-data Let n v p
-        -- | Possibly recursive function binding.
-        = XLet    (Bind v)        (Exp n v p)
-
-        -- | Create a local region binding with witnesses to its properties.
-        | XLocal v (Type v) [(v, Type v)] (Exp n v p)
-        deriving (Eq, Show)
-
-
--- | Statement, perhaps binding a variable.
-data Stmt n v p
-        = SStmt (Maybe (Bind v)) (Exp n v p)
-        deriving (Eq, Show)
-
-
-data Cast v
-        -- | Weakening some effect
-        = CastWeakenEffect  (Type v)
-
-        -- | Weakening some closure
-        | CastWeakenClosure (Type v)
-
-        -- | Purify an effect.
-        | CastPurify        (Type v)
-        deriving (Eq, Show)
+        
