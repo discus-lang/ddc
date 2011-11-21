@@ -3,11 +3,12 @@ module DDC.Type.Check.Exp
         (kindOfType, kindOfType'
         , Error(..))
 where
-import DDC.Type.Exp
-import DDC.Type.Pretty
 import DDC.Type.Compounds
 import DDC.Type.Check.Con
+import DDC.Type.Exp
+import DDC.Base.Pretty
 import Data.List
+import DDC.Type.Pretty          ()
 import Data.Map                 (Map)
 import qualified DDC.Type.Sum   as TS
 import qualified Data.Map       as Map

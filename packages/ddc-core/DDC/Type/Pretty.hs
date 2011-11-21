@@ -1,11 +1,10 @@
 
 module DDC.Type.Pretty 
-        ( module Text.PrettyPrint.Mainland
-        , pprParen)
+        (module DDC.Base.Pretty)
 where
 import DDC.Type.Exp
 import DDC.Type.Predicates
-import Text.PrettyPrint.Mainland
+import DDC.Base.Pretty
 import qualified DDC.Type.Sum    as TS
 
 
@@ -123,9 +122,4 @@ instance Pretty TyConBuiltin where
         TyConEmpty      -> text "Empty"
 
 
--- Utils ------------------------------------------------------------------------------------------
-pprParen :: Bool -> Doc -> Doc
-pprParen b c
- = if b then parens c
-        else c
 

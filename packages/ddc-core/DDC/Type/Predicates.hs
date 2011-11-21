@@ -1,4 +1,5 @@
 
+-- | Predicates on type expressions.
 module DDC.Type.Predicates
         (isBot)
 where

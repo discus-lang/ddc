@@ -1,10 +1,12 @@
 
-module DDC.Core.Pretty
-        (module Text.PrettyPrint.Mainland)
+-- | Pretty printing for core expressions.
+module DDC.Core.Pretty 
+        ( module DDC.Type.Pretty
+        , module DDC.Base.Pretty)
 where
 import DDC.Core.Exp
 import DDC.Type.Pretty
-import Text.PrettyPrint.Mainland
+import DDC.Base.Pretty
 
 
 -- Witness ----------------------------------------------------------------------------------------

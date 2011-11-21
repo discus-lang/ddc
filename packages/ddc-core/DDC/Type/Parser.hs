@@ -1,55 +1,23 @@
 
+-- | Parser for type expressions.
 module DDC.Type.Parser
-        ( Parser
-        , runWrapParser
+        ( module DDC.Base.Parser
+        , Parser
         , pType)
 where
 import DDC.Type.Exp
 import DDC.Type.Parser.Tokens
-import Data.Functor.Identity
-import Text.Parsec
+import DDC.Base.Parser
 import Control.Monad
 import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Sum           as TS
 
 
--- 
+-- | Parser of type tokens.
 type Parser k n a
-        =  (Show k, Eq k)
-        => ParsecT [k] (ParseState k n) Identity a
+        = ParserG (Tokens k n) k n a
 
 
-data ParseState k n
-        = ParseState
-        { stateTokens           :: Tokens k n
-        , stateTokenShow        :: k -> String
-        , stateTokenPos         :: k -> SourcePos
-        , stateFileName         :: String }
-        
-
--- | Run a type parser,
---   where the tokens are just wrapped strings.
-runWrapParser
-        :: (Eq k, Show k, Ord n)
-        => (k -> String)           -- ^ Show a token.
-        -> (k -> SourcePos)        -- ^ Take the source position of a token.
-        -> (k -> String -> n)      -- ^ Convert a string to a variable name.
-        -> String                  -- ^ File name for error messages.
-        -> Parser k n a            -- ^ Parser to run.
-        -> [k]                     -- ^ Tokens to parse.
-        -> Either ParseError a
-
-runWrapParser tokenShow tokenPos makeName fileName parser 
- = runParser parser
-        ParseState 
-        { stateTokens           = liftTokens tokenShow makeName tokenStrings
-        , stateTokenShow        = tokenShow
-        , stateTokenPos         = tokenPos
-        , stateFileName         = fileName }
-        fileName
-
-
----------------------------------------------------------------------------------------------------
 -- | Top level parser for types.
 pType   :: Ord n => Parser k n (Type n)
 pType   = pType4
@@ -151,17 +119,17 @@ pType0  = choice
                 return  $ TCon (TConType tc)
 
         -- Symbolic constructors.
-        , do    pToken tSortComp    (TCon $ TConSort SoConComp)
-        , do    pToken tSortProp    (TCon $ TConSort SoConProp) 
-        , do    pToken tKindValue   (TCon $ TConKind KiConData)
-        , do    pToken tKindRegion  (TCon $ TConKind KiConRegion) 
-        , do    pToken tKindEffect  (TCon $ TConKind KiConEffect) 
-        , do    pToken tKindClosure (TCon $ TConKind KiConClosure) 
-        , do    pToken tKindWitness (TCon $ TConKind KiConWitness) 
+        , do    pTokenAs tSortComp    (TCon $ TConSort SoConComp)
+        , do    pTokenAs tSortProp    (TCon $ TConSort SoConProp) 
+        , do    pTokenAs tKindValue   (TCon $ TConKind KiConData)
+        , do    pTokenAs tKindRegion  (TCon $ TConKind KiConRegion) 
+        , do    pTokenAs tKindEffect  (TCon $ TConKind KiConEffect) 
+        , do    pTokenAs tKindClosure (TCon $ TConKind KiConClosure) 
+        , do    pTokenAs tKindWitness (TCon $ TConKind KiConWitness) 
             
         -- Bottoms.
-        , do    pToken tBotEffect  (TBot T.kEffect)
-        , do    pToken tBotClosure (TBot T.kClosure)
+        , do    pTokenAs tBotEffect  (TBot T.kEffect)
+        , do    pTokenAs tBotClosure (TBot T.kClosure)
       
         -- Bound occurrence of a variable.
         -- We don't know the kind of this variable yet, so fill in the field with the bottom
@@ -172,42 +140,16 @@ pType0  = choice
         ]
 
 
-
 ---------------------------------------------------------------------------------------------------
-token'  :: Stream s Identity k 
-        => (Tokens k n -> k -> Maybe b)
-        -> ParsecT s (ParseState k n) Identity b
-token' f
- = do   state   <- getState
-        token   (stateTokenShow state)
-                (stateTokenPos  state)
-                (f (stateTokens state))
-
-
--- | Accept a token from the table and return the given value.
-pToken :: (Tokens k n -> k -> Bool) -> t -> Parser k n t
-pToken f t = pTok f >> return t
-
-
--- | Accept a token from the table.
-pTok     :: (Tokens k n -> k -> Bool) -> Parser k n ()
-pTok f  = token' 
-        $ \toks t -> if f toks t 
-                        then Just ()
-                        else Nothing
-
-
 -- | Parse a builtin named tycon.
 pTyConBuiltin :: Parser k n (TyCon n)
-pTyConBuiltin   = token' tTyConBuiltin
-
+pTyConBuiltin   = pToken tTyConBuiltin
 
 -- | Parse a user defined named tycon.
 pTyConUser :: Parser k n (TyCon n)
-pTyConUser      = token' tTyConUser
-
+pTyConUser      = pToken tTyConUser
 
 -- | Parse a variable.
 pVar :: Parser k n n
-pVar            = token' tVar
+pVar            = pToken tVar
 

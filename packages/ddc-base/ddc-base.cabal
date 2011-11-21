@@ -1,4 +1,4 @@
-Name:                ddc-core
+Name:                ddc-base
 Version:             0.4.0.0
 License:             MIT
 License-file:        LICENSE
@@ -11,36 +11,19 @@ Category:            Graphics
 Homepage:            http://disciple.ouroborus.net
 Bug-reports:         disciple@ouroborus.net
 Description:
-        Disciple core language.
+        Common definitions and dependencies for the Discipled Disciple Compiler.
 
 Library
   Build-Depends: 
         base            == 4.*,
-        containers      == 0.4.*,
-        array           == 0.3.*,
         transformers    == 0.2.*,
-        ddc-base        == 0.4.0.*
+        mainland-pretty == 0.1.*,
+        parsec          == 3.1.*
 
   Exposed-modules:
-        DDC.Type.Exp
-        DDC.Type.Sum
-        DDC.Type.Pretty
-        DDC.Type.Compounds
-        DDC.Type.Predicates
-        DDC.Type.Check
-        DDC.Type.Check.Con
-        DDC.Type.Check.Exp
-        DDC.Type.Operators
-        DDC.Type.Operators.Rename
-        DDC.Type.Parser.Tokens
-        DDC.Type.Parser.Lexer
-        DDC.Type.Parser
-        DDC.Core.Exp
-        DDC.Core.Pretty
-        DDC.Core.Parser
-        DDC.Core.Parser.Tokens
-        DDC.Core.Parser.Lexer
-
+        DDC.Base.Parser
+        DDC.Base.Pretty
+        
 
   GHC-options:
         -Werror
