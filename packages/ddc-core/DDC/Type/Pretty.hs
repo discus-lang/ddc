@@ -20,7 +20,7 @@ instance Pretty n => Pretty (Bound n) where
  ppr nn
   = case nn of
         UName v _       -> ppr v
-        UIx i _         -> ppr (show i) <> text "?"
+        UIx i _         -> text "^" <> ppr i
 
 
 -- Type -------------------------------------------------------------------------------------------

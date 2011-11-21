@@ -1,13 +1,15 @@
 
 module DDC.Core.Exp 
-        ( Exp  (..)
+        ( module DDC.Type.Exp
+
+          -- * Value expressions.
+        , Exp  (..)
         , Cast (..)
         , Let  (..)
         , Alt  (..)
         , Pat  (..)
-        
-                
-        -- * Witness.
+                        
+          -- * Witnesses expressions.
         , Witness (..)
         , WiCon   (..))
 where
@@ -60,10 +62,10 @@ data Cast n
         | CastWeakenClosure (Closure n)
 
         -- | Purify the effect of an expression.
-        | CastPurify  (Witness n)
+        | CastPurify (Witness n)
 
-        -- | Emptyfy the closure of an expression.
-        | CastEmptify (Witness n)
+        -- | Hide sharing in a closure of an expression.
+        | CastShare  (Witness n)
         deriving (Eq, Show)
 
 

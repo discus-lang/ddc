@@ -6,7 +6,6 @@ module DDC.Core.Parser.Tokens
         , readWiConBuiltin)
 where
 import DDC.Core.Exp
-import DDC.Type.Exp
 import DDC.Type.Operators.Rename
 import Control.Monad
 import qualified DDC.Type.Parser.Tokens as T
@@ -53,6 +52,7 @@ data Tokens k n
         , tOf           :: k -> Bool
         , tTyConBuiltin :: k -> Maybe (TyCon n)
         , tTyConUser    :: k -> Maybe (TyCon n)
+        , tWiConBuiltin :: k -> Maybe WiCon
         , tDaCon        :: k -> Maybe n
         , tVar          :: k -> Maybe n }
 
@@ -100,6 +100,7 @@ liftTokens f g tt
         , tOf           = tOf          tt . f
         , tTyConBuiltin = \k -> liftM (rename (g k)) $ tTyConBuiltin tt $ f k
         , tTyConUser    = \k -> liftM (rename (g k)) $ tTyConUser    tt $ f k 
+        , tWiConBuiltin = \k ->                        tWiConBuiltin tt $ f k 
         , tDaCon        = \k -> liftM (g k)          $ tDaCon tt        $ f k
         , tVar          = \k -> liftM (g k)          $ tVar   tt        $ f k }
 
@@ -141,6 +142,7 @@ tokenStrings
         , tOf           = (==) "of"
         , tTyConBuiltin = T.readTyConBuiltin
         , tTyConUser    = T.readTyConUser 
+        , tWiConBuiltin = readWiConBuiltin
         , tDaCon        = readDaConUser
         , tVar          = T.readVar }
 

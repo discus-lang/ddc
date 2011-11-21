@@ -14,7 +14,7 @@ import Control.Monad
 import qualified DDC.Type.Compounds     as T
 
 
--- | Acceptors for the tokens used by the type parer.
+-- | Acceptors for the tokens used by the type parser.
 -- 
 --   This is abstract in the exact representation, so that the client module can 
 --   attach its own source positions and file name information.
@@ -112,7 +112,7 @@ tokenStrings
         , tVar          = readVar }
 
 
--- | Read a builtin `TyCon`. 
+-- | Read a named, builtin `TyCon`. 
 readTyConBuiltin :: String -> Maybe (TyCon n)
 readTyConBuiltin ss
  = liftM TyConBuiltin
@@ -136,7 +136,8 @@ readTyConBuiltin ss
         _               -> Nothing
 
 
--- | Read a named, user defined TyCon.
+-- | Read a named, user defined `TyCon`.
+--
 --   We won't know its kind, so fill this in with the Bottom element for 
 --   computatation kinds (**0).
 readTyConUser :: String -> Maybe (TyCon String)

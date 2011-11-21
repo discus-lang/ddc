@@ -1,6 +1,6 @@
 
 module DDC.Type.Check.Exp 
-        (kindOfType, kindOfType'
+        ( kindOfType, kindOfType'
         , Error(..))
 where
 import DDC.Type.Compounds
@@ -8,17 +8,20 @@ import DDC.Type.Check.Con
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List
-import DDC.Type.Pretty          ()
-import Data.Map                 (Map)
-import qualified DDC.Type.Sum   as TS
-import qualified Data.Map       as Map
+import DDC.Type.Check.Monad             (throw, result)
+import DDC.Type.Pretty                  ()
+import DDC.Type.Check.Env               (Env)
+import qualified DDC.Type.Sum           as TS
+import qualified DDC.Type.Check.Env     as Env
+import qualified DDC.Type.Check.Monad   as G
+
+type CheckM n   = G.CheckM (Error n)
+
 
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Take the kind of a type.
 kindOfType  :: Ord n => Type n -> Either (Error n) (Kind n)
-kindOfType tt
- = case checkType emptyEnv tt of
-         CheckM r       -> r
+kindOfType tt = result $ checkType Env.empty tt
 
 
 -- | Take the kind of a type, or `error` if there isn't one.
@@ -56,7 +59,7 @@ checkType env tt
 
         -- Variables ------------------
         TVar uu
-         -> case lookupEnv uu env of
+         -> case Env.lookup uu env of
                 Nothing -> throw  $ ErrorUndefined uu
                 Just k  -> return k 
         
@@ -64,7 +67,7 @@ checkType env tt
         -- Quantifiers ----------------
         TForall b1 t2
          -> do  _       <- checkType env (kindOfBind b1)
-                checkType (extendEnv b1 env) t2
+                checkType (Env.extend b1 env) t2
         
 
         -- Applications ---------------
@@ -112,55 +115,6 @@ checkType env tt
         TBot k
          -> do  _       <- checkType env k
                 return k
-
-
--- Check Environment ------------------------------------------------------------------------------
--- | Type environment used when checking.
-data Env n
-        = Env
-        { envMap        :: Map n (Kind n)
-        , envStack      :: [Kind n] }
-
-
--- | An empty environment.
-emptyEnv :: Env n
-emptyEnv = Env
-        { envMap        = Map.empty
-        , envStack      = [] }
-
-
--- | Extend an environment with a new binding.
-extendEnv :: Ord n => Bind n -> Env n -> Env n
-extendEnv bb env
- = case bb of
-         BName n k      -> env { envMap   = Map.insert n k (envMap env) }
-         BAnon   k      -> env { envStack = k : envStack env }
-
-
--- | Lookup a bound variable from an environment.
-lookupEnv :: Ord n => Bound n -> Env n -> Maybe (Kind n)
-lookupEnv uu env
- = case uu of
-        UName n _       -> Map.lookup n (envMap env)
-        UIx i _         -> lookup i (zip [0..] (envStack env))
-
-
--- Check Monad ------------------------------------------------------------------------------------
--- | Type checking monad.
-data CheckM n a
-        = CheckM (Either (Error n) a)
-
-instance Monad (CheckM n) where
- return x   = CheckM (Right x)
- (>>=) m f  
-  = case m of
-          CheckM (Left err)     -> CheckM (Left err)
-          CheckM (Right x)      -> f x
-
-          
--- | Throw a type error in the monad.
-throw :: Error n -> CheckM n a
-throw err       = CheckM $ Left err
 
 
 -- Error ------------------------------------------------------------------------------------------

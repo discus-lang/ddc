@@ -28,6 +28,8 @@ Library
         DDC.Type.Compounds
         DDC.Type.Predicates
         DDC.Type.Check
+        DDC.Type.Check.Env
+        DDC.Type.Check.Monad
         DDC.Type.Check.Con
         DDC.Type.Check.Exp
         DDC.Type.Operators
@@ -36,6 +38,7 @@ Library
         DDC.Type.Parser.Lexer
         DDC.Type.Parser
         DDC.Core.Exp
+        DDC.Core.Check
         DDC.Core.Pretty
         DDC.Core.Parser
         DDC.Core.Parser.Tokens

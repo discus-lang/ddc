@@ -1,4 +1,20 @@
 
+module DDC.Core.Check
+        ( typeOfWitness
+        , typeOfWiCon)
+where
+import DDC.Core.Exp
+import DDC.Type.Compounds
+
+typeOfWitness :: Witness n -> Type n
+typeOfWitness ww
+ = case ww of
+        WCon wc
+         -> typeOfWiCon wc
+
+        _ -> error "typeOfWitness: not handled yet"
+        
+
 -- | Take the type of a witness constructor.
 typeOfWiCon :: WiCon -> Type n
 typeOfWiCon wc
