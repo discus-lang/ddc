@@ -14,99 +14,106 @@ import Control.Monad
 import qualified DDC.Type.Compounds     as T
 
 
--- | A description of the tokens the parser accepts.
+-- | Acceptors for the tokens used by the type parer.
+-- 
 --   This is abstract in the exact representation, so that the client module can 
 --   attach its own source positions and file name information.
-data Tokens k
+data Tokens k n
         = Tokens
-        { tRoundBra     :: k
-        , tRoundKet     :: k
-        , tSquareBra    :: k
-        , tSquareKet    :: k
-        , tColon        :: k
-        , tComma        :: k
-        , tDot          :: k
-        , tPlus         :: k
-        , tSortComp     :: k
-        , tSortProp     :: k
-        , tKindValue    :: k
-        , tKindRegion   :: k
-        , tKindEffect   :: k
-        , tKindClosure  :: k
-        , tKindWitness  :: k
-        , tKindFun      :: k
-        , tTypeFun      :: k
-        , tTypeFunBra   :: k
-        , tTypeFunKet   :: k
-        , tBotEffect    :: k
-        , tBotClosure   :: k
-        , tTyConBuiltin :: k -> Maybe (TyCon k)
-        , tTyConUser    :: k -> Maybe (TyCon k)
-        , tVar          :: k -> Maybe k }
+        { tRoundBra     :: k -> Bool
+        , tRoundKet     :: k -> Bool
+        , tSquareBra    :: k -> Bool
+        , tSquareKet    :: k -> Bool
+        , tColon        :: k -> Bool
+        , tComma        :: k -> Bool
+        , tDot          :: k -> Bool
+        , tPlus         :: k -> Bool
+        , tSortComp     :: k -> Bool
+        , tSortProp     :: k -> Bool
+        , tKindValue    :: k -> Bool
+        , tKindRegion   :: k -> Bool
+        , tKindEffect   :: k -> Bool
+        , tKindClosure  :: k -> Bool
+        , tKindWitness  :: k -> Bool
+        , tKindFun      :: k -> Bool
+        , tTypeFun      :: k -> Bool
+        , tTypeFunBra   :: k -> Bool
+        , tTypeFunKet   :: k -> Bool
+        , tBotEffect    :: k -> Bool
+        , tBotClosure   :: k -> Bool
+        , tTyConBuiltin :: k -> Maybe (TyCon n)
+        , tTyConUser    :: k -> Maybe (TyCon n)
+        , tVar          :: k -> Maybe n }
 
 
 -- | Apply a function to all the tokens in the table.
-liftTokens :: Ord k2 => (k1 -> k2) -> (k2 -> k1) -> Tokens k1 -> Tokens k2
-liftTokens toTok fromTok tt
+liftTokens 
+        :: Ord n2
+        => (k2 -> k1)
+        -> (k2 -> n1 -> n2)
+        -> Tokens k1 n1
+        -> Tokens k2 n2
+
+liftTokens f g tt
         = Tokens
-        { tRoundBra     = toTok (tRoundBra    tt)
-        , tRoundKet     = toTok (tRoundKet    tt)
-        , tSquareBra    = toTok (tSquareBra   tt)
-        , tSquareKet    = toTok (tSquareKet   tt)
-        , tColon        = toTok (tColon       tt)
-        , tComma        = toTok (tComma       tt)
-        , tDot          = toTok (tDot         tt)
-        , tPlus         = toTok (tPlus        tt)
-        , tSortComp     = toTok (tSortComp    tt)
-        , tSortProp     = toTok (tSortProp    tt)
-        , tKindValue    = toTok (tKindValue   tt)
-        , tKindRegion   = toTok (tKindRegion  tt)
-        , tKindEffect   = toTok (tKindEffect  tt)
-        , tKindClosure  = toTok (tKindClosure tt)
-        , tKindWitness  = toTok (tKindWitness tt)
-        , tKindFun      = toTok (tKindFun     tt)
-        , tTypeFun      = toTok (tTypeFun     tt)
-        , tTypeFunBra   = toTok (tTypeFunBra  tt)
-        , tTypeFunKet   = toTok (tTypeFunKet  tt)
-        , tBotEffect    = toTok (tBotEffect   tt)
-        , tBotClosure   = toTok (tBotClosure  tt)
-        , tTyConBuiltin = liftM (rename toTok) . tTyConBuiltin tt . fromTok 
-        , tTyConUser    = liftM (rename toTok) . tTyConUser    tt . fromTok 
-        , tVar          = liftM toTok . tVar tt . fromTok }
+        { tRoundBra     = tRoundBra     tt . f
+        , tRoundKet     = tRoundKet     tt . f
+        , tSquareBra    = tSquareBra    tt . f
+        , tSquareKet    = tSquareKet    tt . f
+        , tColon        = tColon        tt . f
+        , tComma        = tComma        tt . f
+        , tDot          = tDot          tt . f
+        , tPlus         = tPlus         tt . f
+        , tSortComp     = tSortComp     tt . f
+        , tSortProp     = tSortProp     tt . f
+        , tKindValue    = tKindValue    tt . f
+        , tKindRegion   = tKindRegion   tt . f
+        , tKindEffect   = tKindEffect   tt . f
+        , tKindClosure  = tKindClosure  tt . f
+        , tKindWitness  = tKindWitness  tt . f
+        , tKindFun      = tKindFun      tt . f
+        , tTypeFun      = tTypeFun      tt . f
+        , tTypeFunBra   = tTypeFunBra   tt . f
+        , tTypeFunKet   = tTypeFunKet   tt . f
+        , tBotEffect    = tBotEffect    tt . f
+        , tBotClosure   = tBotClosure   tt . f
+        , tTyConBuiltin = \k -> liftM (rename (g k)) $ tTyConBuiltin tt $ f k
+        , tTyConUser    = \k -> liftM (rename (g k)) $ tTyConUser    tt $ f k
+        , tVar          = \k -> liftM (g k)          $ tVar tt          $ f k }
 
 
 -- | An instance of the `Tokens` type, that just uses strings for the tokens.
-tokenStrings :: Tokens String
+tokenStrings :: Tokens String String
 tokenStrings
         = Tokens
-        { tRoundBra     = "("
-        , tRoundKet     = ")"
-        , tSquareBra    = "["
-        , tSquareKet    = "]"
-        , tColon        = ":"
-        , tComma        = ","
-        , tDot          = "."
-        , tPlus         = "+"
-        , tSortComp     = "**"
-        , tSortProp     = "@@"
-        , tKindValue    = "*"
-        , tKindRegion   = "%"
-        , tKindEffect   = "!"
-        , tKindClosure  = "$"
-        , tKindWitness  = "@"
-        , tKindFun      = "~>"
-        , tTypeFun      = "->"
-        , tTypeFunBra   = "-("
-        , tTypeFunKet   = ")>"
-        , tBotEffect    = "!0"
-        , tBotClosure   = "$0"
+        { tRoundBra     = (==) "("
+        , tRoundKet     = (==) ")"
+        , tSquareBra    = (==) "["
+        , tSquareKet    = (==) "]"
+        , tColon        = (==) ":"
+        , tComma        = (==) ","
+        , tDot          = (==) "."
+        , tPlus         = (==) "+"
+        , tSortComp     = (==) "**"
+        , tSortProp     = (==) "@@"
+        , tKindValue    = (==) "*"
+        , tKindRegion   = (==) "%"
+        , tKindEffect   = (==) "!"
+        , tKindClosure  = (==) "$"
+        , tKindWitness  = (==) "@"
+        , tKindFun      = (==) "~>"
+        , tTypeFun      = (==) "->"
+        , tTypeFunBra   = (==) "-("
+        , tTypeFunKet   = (==) ")>"
+        , tBotEffect    = (==) "!0"
+        , tBotClosure   = (==) "$0"
         , tTyConBuiltin = readTyConBuiltin
         , tTyConUser    = readTyConUser 
         , tVar          = readVar }
 
 
 -- | Read a builtin `TyCon`. 
-readTyConBuiltin :: String -> Maybe (TyCon k)
+readTyConBuiltin :: String -> Maybe (TyCon n)
 readTyConBuiltin ss
  = liftM TyConBuiltin
  $ case ss of
@@ -143,4 +150,3 @@ readVar :: String -> Maybe String
 readVar ss
         | isVarName ss  = Just ss
         | otherwise     = Nothing
-

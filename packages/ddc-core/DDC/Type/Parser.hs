@@ -1,58 +1,62 @@
 
 module DDC.Type.Parser
         ( Parser
-        , runParserOfStrings
-        , runParserOfStringTokens
+        , runWrapParser
         , pType)
 where
 import DDC.Type.Exp
 import DDC.Type.Parser.Tokens
 import Data.Functor.Identity
 import Text.Parsec
-import Text.Parsec.Pos
 import Control.Monad
 import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Sum           as TS
 
 
-type Parser k a
+-- 
+type Parser k n a
         =  (Show k, Eq k)
-        => ParsecT [k] (Tokens k) Identity a
+        => ParsecT [k] (ParseState k n) Identity a
 
 
-runParserOfStrings
-        :: Parser String a
-        -> [String]
+data ParseState k n
+        = ParseState
+        { stateTokens           :: Tokens k n
+        , stateTokenShow        :: k -> String
+        , stateTokenPos         :: k -> SourcePos
+        , stateFileName         :: String }
+        
+
+-- | Run a type parser,
+--   where the tokens are just wrapped strings.
+runWrapParser
+        :: (Eq k, Show k, Ord n)
+        => (k -> String)           -- ^ Show a token.
+        -> (k -> SourcePos)        -- ^ Take the source position of a token.
+        -> (k -> String -> n)      -- ^ Convert a string to a variable name.
+        -> String                  -- ^ File name for error messages.
+        -> Parser k n a            -- ^ Parser to run.
+        -> [k]                     -- ^ Tokens to parse.
         -> Either ParseError a
 
-runParserOfStrings parser
- = runParser parser 
-        tokenStrings
-        "foo"
-
-
-
-runParserOfStringTokens
-        :: (Ord k, Show k)
-        => (String -> k)
-        -> (k      -> String)
-        -> Parser k a
-        -> [k]
-        -> Either ParseError a
-
-runParserOfStringTokens toTok fromTok parser 
+runWrapParser tokenShow tokenPos makeName fileName parser 
  = runParser parser
-        (liftTokens toTok fromTok tokenStrings)
-        "foo"
+        ParseState 
+        { stateTokens           = liftTokens tokenShow makeName tokenStrings
+        , stateTokenShow        = tokenShow
+        , stateTokenPos         = tokenPos
+        , stateFileName         = fileName }
+        fileName
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Top level parser for types.
-pType   :: Ord k => Parser k (Type k)
+pType   :: Ord n => Parser k n (Type n)
 pType   = pType4
 
+
 -- Foralls.
-pType4 :: Ord k => Parser k (Type k)
+pType4 :: Ord n => Parser k n (Type n)
 pType4
  = do   choice
          [ -- Universal quantification.
@@ -77,7 +81,7 @@ pType4
          , do   pType2]
 
 -- Sums
-pType3 :: Ord k => Parser k (Type k)
+pType3 :: Ord n => Parser k n (Type n)
 pType3 
  = do   t1      <- pType2
         choice 
@@ -91,7 +95,7 @@ pType3
 
 
 -- Functions
-pType2 :: Ord k => Parser k (Type k)
+pType2 :: Ord n => Parser k n (Type n)
 pType2
  = do   t1      <- pType1
         choice 
@@ -118,14 +122,14 @@ pType2
 
 
 -- Applications
-pType1 :: Ord k => Parser k (Type k)
+pType1 :: Ord n => Parser k n (Type n)
 pType1  
  = do   (t:ts)  <- many1 pType0
         return  $  foldl TApp t ts
 
 
 -- Atomics
-pType0 :: Ord k => Parser k (Type k)
+pType0 :: Ord n => Parser k n (Type n)
 pType0  = choice
         -- (TYPE2) and (->)
         [ do    pTok tRoundBra
@@ -170,44 +174,40 @@ pType0  = choice
 
 
 ---------------------------------------------------------------------------------------------------
+token'  :: Stream s Identity k 
+        => (Tokens k n -> k -> Maybe b)
+        -> ParsecT s (ParseState k n) Identity b
+token' f
+ = do   state   <- getState
+        token   (stateTokenShow state)
+                (stateTokenPos  state)
+                (f (stateTokens state))
+
+
 -- | Accept a token from the table and return the given value.
-pToken :: (Tokens k -> k) -> t -> Parser k t
+pToken :: (Tokens k n -> k -> Bool) -> t -> Parser k n t
 pToken f t = pTok f >> return t
 
 
 -- | Accept a token from the table.
-pTok     :: (Tokens k -> k) -> Parser k ()
-pTok f   
- = do   toks    <- getState
-        token   show
-                (const (newPos "foo" 0 0))
-                (\t -> if f toks == t 
-                                then Just () else Nothing)
+pTok     :: (Tokens k n -> k -> Bool) -> Parser k n ()
+pTok f  = token' 
+        $ \toks t -> if f toks t 
+                        then Just ()
+                        else Nothing
 
 
 -- | Parse a builtin named tycon.
-pTyConBuiltin :: Parser k (TyCon k)
-pTyConBuiltin
- = do   toks    <- getState
-        token   show
-                (const (newPos "foo" 0 0))
-                (tTyConBuiltin toks)
+pTyConBuiltin :: Parser k n (TyCon n)
+pTyConBuiltin   = token' tTyConBuiltin
 
 
 -- | Parse a user defined named tycon.
-pTyConUser :: Parser k (TyCon k)
-pTyConUser
- = do   toks    <- getState
-        token   show
-                (const (newPos "foo" 0 0))
-                (tTyConUser toks)
+pTyConUser :: Parser k n (TyCon n)
+pTyConUser      = token' tTyConUser
 
 
--- | Parse a variable
-pVar :: Parser k k
-pVar
- = do   toks    <- getState
-        token   show
-                (const (newPos "foo" 0 0))
-                (tVar toks)
+-- | Parse a variable.
+pVar :: Parser k n n
+pVar            = token' tVar
 
