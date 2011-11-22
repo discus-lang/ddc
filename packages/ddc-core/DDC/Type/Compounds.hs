@@ -71,9 +71,9 @@ takeNameOfBound (UIx _ _)       = Nothing
 
 
 -- | Take the kind of a bound variable.
-kindOfBound :: Bind n -> Kind n
-kindOfBound (BName _ k)         = k
-kindOfBound (BAnon   k)         = k
+kindOfBound :: Bound n -> Kind n
+kindOfBound (UName _ k)         = k
+kindOfBound (UIx _ k)           = k
 
 
 -- | Replace the kind of a bound with a new one.

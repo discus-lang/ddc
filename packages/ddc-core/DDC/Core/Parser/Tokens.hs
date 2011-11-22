@@ -53,7 +53,7 @@ data Tokens k n
         , tTyConBuiltin :: k -> Maybe (TyCon n)
         , tTyConUser    :: k -> Maybe (TyCon n)
         , tWiConBuiltin :: k -> Maybe WiCon
-        , tDaCon        :: k -> Maybe n
+        , tDaConUser    :: k -> Maybe n
         , tVar          :: k -> Maybe n }
 
 
@@ -101,7 +101,7 @@ liftTokens f g tt
         , tTyConBuiltin = \k -> liftM (rename (g k)) $ tTyConBuiltin tt $ f k
         , tTyConUser    = \k -> liftM (rename (g k)) $ tTyConUser    tt $ f k 
         , tWiConBuiltin = \k ->                        tWiConBuiltin tt $ f k 
-        , tDaCon        = \k -> liftM (g k)          $ tDaCon tt        $ f k
+        , tDaConUser    = \k -> liftM (g k)          $ tDaConUser    tt $ f k
         , tVar          = \k -> liftM (g k)          $ tVar   tt        $ f k }
 
 
@@ -143,7 +143,7 @@ tokenStrings
         , tTyConBuiltin = T.readTyConBuiltin
         , tTyConUser    = T.readTyConUser 
         , tWiConBuiltin = readWiConBuiltin
-        , tDaCon        = readDaConUser
+        , tDaConUser    = readDaConUser
         , tVar          = T.readVar }
 
 

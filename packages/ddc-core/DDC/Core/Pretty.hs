@@ -9,6 +9,17 @@ import DDC.Type.Pretty
 import DDC.Base.Pretty
 
 
+-- Exp --------------------------------------------------------------------------------------------
+instance Pretty n => Pretty (Exp a n p) where
+ pprPrec _d xx
+  = case xx of
+        XVar _ n        -> ppr n
+        XCon _ n        -> ppr n
+        
+        XLam _ u x      -> text "\\" <> parens (ppr u) <> text "." <> ppr x
+        _               -> error "pprPrec[Exp] not finished"
+
+
 -- Witness ----------------------------------------------------------------------------------------
 instance Pretty n => Pretty (Witness n) where
  pprPrec d ww
@@ -20,7 +31,7 @@ instance Pretty n => Pretty (Witness n) where
          -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
          
         WJoin w1 w2
-         -> pprParen (d > 9)  (ppr w1 <+> text "<>" <+> ppr w2)
+         -> pprParen (d > 9)  (ppr w1 <+> text " & " <+> ppr w2)
 
 
 instance Pretty WiCon where

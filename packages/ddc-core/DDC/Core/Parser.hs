@@ -2,16 +2,51 @@
 module DDC.Core.Parser
         ( module DDC.Base.Parser
         , Parser
+        , pExp
         , pWitness)
+        
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Tokens
 import DDC.Base.Parser
+import qualified DDC.Type.Compounds     as T
 
 
 -- | Parser of core language tokens.
 type Parser k n a
         = ParserG (Tokens k n) k n a
+
+
+-- Expressions -----------------------------------------------------------------------------------
+pExp :: Ord n => Parser k n (Exp () n p)
+pExp = pExp1
+
+pExp1 :: Ord n => Parser k n (Exp () n p)
+pExp1
+        = choice
+        -- Lambda abstractions
+        [ do    pTok tBackSlash
+                pTok tRoundBra
+                var     <- pVar
+                -- TODO add type
+                pTok tRoundKet
+                pTok tDot
+                xBody   <- pExp
+                return  $ XLam () (BName var (T.tBot T.kData)) xBody
+
+        , do    pExp0 ]
+
+
+pExp0 :: Ord n => Parser k n (Exp () n p)
+pExp0
+        = choice
+        -- Named type constructors
+        [ do    var       <- pDaConUser
+                return  $ XCon () (UName var (T.tBot T.kData)) 
+
+        -- Variables
+        , do    var     <- pVar
+                return  $ XVar () (UName var (T.tBot T.kData)) ]
 
 
 -- Witnesses -------------------------------------------------------------------------------------
@@ -29,20 +64,14 @@ pWitness0
 
 
 ---------------------------------------------------------------------------------------------------
-{-
--- | Parse a builtin named `TyCon`.
-pTyConBuiltin :: Parser k n (TyCon n)
-pTyConBuiltin   = pToken tTyConBuiltin
-
 -- | Parse a user defined named `TyCon`.
-pTyConUser :: Parser k n (TyCon n)
-pTyConUser      = pToken tTyConUser
--}
+pDaConUser :: Parser k n n
+pDaConUser      = pToken tDaConUser
+
 -- | Parse a builtin named `WiCon`
 pWiConBuiltin :: Parser k n WiCon
 pWiConBuiltin   = pToken tWiConBuiltin
-{-
+
 -- | Parse a variable.
 pVar :: Parser k n n
 pVar            = pToken tVar
--}

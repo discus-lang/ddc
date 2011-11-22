@@ -1,11 +1,27 @@
 
 module DDC.Core.Check
-        ( typeOfWitness
+        ( typeOfExp
+        , typeOfWitness
         , typeOfWiCon)
 where
 import DDC.Core.Exp
 import DDC.Type.Compounds
 
+
+-- Exp ------------------------------------------------------------------------
+typeOfExp :: Exp a n p -> Type n
+typeOfExp xx
+ = case xx of
+        XVar _ u
+         -> kindOfBound u
+         
+        XCon _ u
+         -> kindOfBound u
+         
+        _ -> error "typeOfExp: not handled yet"
+         
+
+-- Witness --------------------------------------------------------------------
 typeOfWitness :: Witness n -> Type n
 typeOfWitness ww
  = case ww of
