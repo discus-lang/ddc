@@ -19,27 +19,27 @@ typeOfWitness ww
 typeOfWiCon :: WiCon -> Type n
 typeOfWiCon wc
  = case wc of
-        WiConMkPure     -> tPure  (tBot kEffect)
-        WiConMkEmpty    -> tEmpty (tBot kClosure)
+        WiConPure     -> tPure  (tBot kEffect)
+        WiConEmpty    -> tEmpty (tBot kClosure)
 
-        WiConMkConst    
+        WiConConst    
          -> tForall kRegion $ \r -> tConst r
 
-        WiConMkMutable
+        WiConMutable
          -> tForall kRegion $ \r -> tMutable r
 
-        WiConMkLazy
+        WiConLazy
          -> tForall kRegion $ \r -> tLazy r
 
-        WiConMkDirect
+        WiConDirect
          -> tForall kRegion $ \r -> tDirect r
 
-        WiConMkPurify
+        WiConRead
          -> tForall kRegion $ \r -> (tConst r) `tImpl`  (tPure  $ tRead r)
 
-        WiConMkShare
+        WiConFree
          -> tForall kRegion $ \r -> (tConst r)  `tImpl` (tEmpty $ tFree r)
 
-        WiConMkDistinct n
+        WiConDistinct n
          -> tForalls (replicate n kRegion) $ \rs -> tDistinct rs
 

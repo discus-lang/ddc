@@ -26,15 +26,15 @@ instance Pretty n => Pretty (Witness n) where
 instance Pretty WiCon where
  ppr wc
   = case wc of
-        WiConMkPure     -> text "MkPure"
-        WiConMkEmpty    -> text "MkEmpty"
-        WiConMkConst    -> text "MkConst"
-        WiConMkMutable  -> text "MkMutable"
-        WiConMkLazy     -> text "MkLazy"
-        WiConMkDirect   -> text "MkDirect"
-        WiConMkPurify   -> text "MkPurify"
-        WiConMkShare    -> text "MkShare"
-        WiConMkDistinct n
-         -> text "MkDistinct" <> (text $ show n)
+        WiConPure       -> text "pure"
+        WiConEmpty      -> text "empty"
+        WiConConst      -> text "const"
+        WiConMutable    -> text "mutable"
+        WiConLazy       -> text "lazy"
+        WiConDirect     -> text "direct"
+        WiConRead       -> text "read"
+        WiConFree       -> text "free"
+        WiConDistinct n
+         -> text "distinct" <> (text $ show n)
 
 

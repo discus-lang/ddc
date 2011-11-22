@@ -13,7 +13,7 @@
 --      eg {|a1 (Int r1) r1 r2 r3 e1 e2|}
 --
 -- Add purifying coersions 
---      purify {w1 + w2} (f x)
+--      purify {w1 & w2} (f x)
 --
 module Test where
 
@@ -39,37 +39,32 @@ foreign value add
 
 -- Type bindings
 data List (r: %) (a: *) {
-        Nil     :: \(r: %) (a: *). List r a
-        Cons    :: \(r: %) (a: *). a -> List r a -> List r a
+        Nil     :: [r: %] [a: *]. List r a
+        Cons    :: [r: %] [a: *]. a -> List r a -> List r a
 };
 
 
 -- Value bindings
-value id
-        = [x: *]. x;
+id      = [x: *]. x;
+five    = id {Int} 5;
 
-value five
-        = id {Int} 5;
+map  :: [a1 a2: *] [r1 r2: %] [e: !] [c: $]
+     .  (a1 -(e c)> a2) -> List r1 a1 -> List r2 a2;
 
-value map 
-        :: [a1 a2: *] [r1 r2: %] [e: !] [c: $]
-        .  (a1 -(e c)> a2) -> List r1 a1 -> List r2 a2;
-
-value map 
-        [a1 a2: *] [r1 r2: %] [e: !] [c: $]
-        (f:  a1 -(e c)> a2) 
-        = \(xs: List r1 a1).
-          case xs of {
+map     [a1 a2: *] [r1 r2: %] [e: !] [c: $].
+        (f:  a1 -(e c)> a2) (xs: List r1 a1) : List r2 a2
+        = case xs of {
                 Nil             -> Nil;
-                Cons x xs       -> Cons {a2} (f x) (map_pure {|a1 a2 r1 r2 e c|} f) xs;
+                Cons x xs       -> Cons {a2} (f x) (map {|a1 a2 r1 r2 e c|} f) xs;
         };
 
 
-value map_lazy 
-        [a1, a2: *, r1 r2: %, c: $]
-        (w: Const r1)
+map_lazy 
+        [a1, a2: *] [r1 r2: %] [c: $] --- TODO: remove comma syntax between vars
+        (w: Const r1) (w5: Shared r2)
         (f: a1 -(!0 c)> a2) (xs: List r1 a1)
-        = purify {w}
+        = purify <w1 & read w2 & read w3>     -- TODO: allow witness to be elided and reconstructed, 
+          forget <w1 & free w w5>             --       can just leave it out because we'll never otherwise see a <
           case xs of {
                 Nil             -> Nil;
                 Cons x xs       
@@ -82,12 +77,11 @@ value map_lazy
 -- NOTE: Interpreter expects a function with a single region parameter,
 --       and will pass a constructor for the region that the return value
 --       can be allocated into.
-value result
-        =  \(rr: %).
-        in local r1 with {w1 = Const r1}
-        in local r2 with {w2 = Const r2}
+result  =  \(rr: %).
+        in local r1 with {w1 = const   r1}
+        in local r2 with {w2 = mutable r2}
         in map_lazy
                 {Int r1} {Int r2} {r1} {rr} 
-                (purify {w1 + w2} (add {|r1 r2 r3|} (5 {r1})))
+                (purify {w1 & w2} (add {|r1 r2 r3|} (5 {r1})))
                 (Cons {r1} (10 {r1}) (Cons {r1} (10 {r2}) (Nil {r2})))
 

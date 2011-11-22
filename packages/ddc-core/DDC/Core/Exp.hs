@@ -65,7 +65,7 @@ data Cast n
         | CastPurify (Witness n)
 
         -- | Hide sharing in a closure of an expression.
-        | CastShare  (Witness n)
+        | CastForget (Witness n)
         deriving (Eq, Show)
 
 
@@ -124,31 +124,31 @@ data Witness n
 -- | Witness constructor.
 data WiCon
         -- | The pure effect is pure
-        = WiConMkPure           -- :: Pure (!0)
+        = WiConPure             -- pure     :: Pure (!0)
 
         -- | The empty closure is empty
-        | WiConMkEmpty          -- :: Empty ($0)
+        | WiConEmpty            -- empty    :: Empty ($0)
 
         -- | Witness that a region is constant.
-        | WiConMkConst          -- :: [r: %]. Const r
+        | WiConConst            -- const    :: [r: %]. Const r
         
         -- | Witness that a region is mutable.
-        | WiConMkMutable        -- :: [r: %]. Mutable r
+        | WiConMutable          -- mutable  :: [r: %]. Mutable r
 
         -- | Witness that a region is lazy.
-        | WiConMkLazy           -- :: [r: %]. Const r
+        | WiConLazy             -- lazy     :: [r: %]. Const r
         
         -- | Witness that a region is direct.
-        | WiConMkDirect         -- :: [r: %]. Mutable r
+        | WiConDirect           -- direct   :: [r: %]. Mutable r
 
         -- | Purify a read from a constant region.
-        | WiConMkPurify         -- :: [r: %]. Const r => Pure  (Read r)
+        | WiConRead             -- read     :: [r: %]. Const r => Pure  (Read r)
 
         -- | Hide the sharing of a constant region.
-        | WiConMkShare          -- :: [r: %]. Const r => Empty (Free r)
+        | WiConFree             -- free     :: [r: %]. Const r => Shared r => Empty (Free r)
 
         -- | Witness that some regions are distinct.
-        | WiConMkDistinct Int   -- :: [r0 r1 ... rn : %]. Distinct_n r0 r1 .. rn
+        | WiConDistinct Int     -- distinct :: [r0 r1 ... rn : %]. Distinct_n r0 r1 .. rn
         deriving (Eq, Show)
 
         

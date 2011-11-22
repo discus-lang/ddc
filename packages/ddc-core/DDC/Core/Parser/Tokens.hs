@@ -161,12 +161,12 @@ readDaConUser ss
 readWiConBuiltin :: String -> Maybe WiCon
 readWiConBuiltin ss
  = case ss of
-        "MkPure"        -> Just WiConMkPure
-        "MkEmpty"       -> Just WiConMkEmpty
-        "MkConst"       -> Just WiConMkConst
-        "MkMutable"     -> Just WiConMkMutable
-        "MkLazy"        -> Just WiConMkLazy
-        "MkDirect"      -> Just WiConMkDirect
-        "MkPurify"      -> Just WiConMkPurify
-        "MkShare"       -> Just WiConMkShare
+        "pure"          -> Just WiConPure
+        "empty"         -> Just WiConEmpty
+        "const"         -> Just WiConConst
+        "mutable"       -> Just WiConMutable
+        "lazy"          -> Just WiConLazy
+        "direct"        -> Just WiConDirect
+        "read"          -> Just WiConRead
+        "free"          -> Just WiConFree
         _               -> Nothing
