@@ -1,9 +1,12 @@
 
+
+Require Export DDC.Language.SimplePCFa.Eval.
+Require Export DDC.Language.SimplePCFa.Step.
+Require Export DDC.Language.SimplePCFa.TyJudge.
+Require Export DDC.Language.SimplePCFa.ExpLower.
+Require Export DDC.Language.SimplePCFa.ExpLift.
 Require Export DDC.Language.SimplePCFa.ExpRefs.
 Require Export DDC.Language.SimplePCFa.ExpSubsts.
-Require Export DDC.Language.SimplePCFa.TyJudge.
-Require Export DDC.Language.SimplePCFa.Step.
-Require Export DDC.Language.SimplePCFa.Eval.
 Require DDC.Base.
 
 
@@ -64,11 +67,6 @@ Proof.
  red. rip. inverts H0. burn.
 Qed.
 
-
-
-(* TODO: finish me, lower indices (S i) to i *)
-Definition lowerXX (d: nat) (x: exp) : exp
- := x.
 
 
 Definition swapXX (d: nat) (x: exp) : exp

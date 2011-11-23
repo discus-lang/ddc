@@ -59,3 +59,22 @@ Tactic Notation "nnat"
   ; try rewrite nat_minus_zero
   ; try rewrite nat_plus_one.
 
+
+(* Convert boolean (in)equalities *)
+Ltac eqs_beq_nat
+ := repeat match goal with
+    | [ H : true = beq_nat ?n ?m |- _]
+    => symmetry in H; apply beq_nat_true in H
+   
+    | [H : false = beq_nat ?n ?m |- _]
+    => symmetry in H; apply beq_nat_false in H
+    end.
+
+
+(* Break on boolean equality *)
+Ltac break_beq_nat
+ := match goal with 
+     |  [ |- context [beq_nat ?n ?m] ]
+     => let X := fresh in remember (beq_nat n m) as X; destruct X
+    end; eqs_beq_nat.
+

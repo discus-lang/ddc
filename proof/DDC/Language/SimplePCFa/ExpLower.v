@@ -3,7 +3,7 @@ Require Import DDC.Language.SimplePCFa.Exp.
 Require Import DDC.Language.SimplePCFa.ExpLift.
 
 
-(* Lifting of references into the environment *)
+(* Lowering of references into the environment *)
 Fixpoint lowerXV (d: nat) (vv: val) : val := 
   match vv with
   | VVar    O    => vv
