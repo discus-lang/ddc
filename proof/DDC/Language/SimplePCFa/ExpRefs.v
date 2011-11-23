@@ -11,7 +11,8 @@ Fixpoint refsXV (ix: nat) (vv: val) : Prop
        | _   => False
        end
     | VConst c     => False
-    | VFun t x     => refsXX (S (S ix)) x
+    | VLam t x     => refsXX (S ix) x
+    | VFix t v     => refsXV (S ix) v
     end
 with    refsXX (ix: nat) (xx: exp) :=
   match xx with

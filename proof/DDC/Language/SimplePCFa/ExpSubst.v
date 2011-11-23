@@ -13,7 +13,8 @@ Fixpoint substVV (d: nat) (u: val) (vv: val) :=
      | Lt  => VVar ix
      end
   | VConst c     => VConst c
-  | VFun t x     => VFun t (substVX (S (S d)) (liftXV 0 u) x)
+  | VLam t x     => VLam t (substVX (S d) (liftXV 0 u) x)
+  | VFix t v     => VFix t (substVV (S d) (liftXV 0 u) v)
   end
 
 with    substVX (d: nat) (u: val) (xx: exp) :=

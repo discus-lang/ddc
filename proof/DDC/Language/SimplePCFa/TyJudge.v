@@ -17,13 +17,17 @@ Inductive TYPEX : tyenv -> exp -> ty -> Prop :=
    :  forall te n
    ,  TYPEX te (XVal (VConst (CNat n))) tNat
 
- | TxConstFun
+ | TxLam
    :  forall te t1 t2 x2
-   ,  TYPEX (te :> t1 :> TFun t1 t2) x2 t2
-   -> TYPEX te (XVal (VFun t1 x2))
-               (TFun t1 t2)
+   ,  TYPEX (te :> t1) x2 t2
+   -> TYPEX te (XVal (VLam t1 x2)) (TFun t1 t2)
 
- | TxLet 
+ | TxFix
+   :  forall te t1 v2
+   ,  TYPEX (te :> t1) (XVal v2) t1
+   -> TYPEX te (XVal (VFix t1 v2)) t1
+
+ | TxLet
    :  forall te t1 x1 t2 x2
    ,  TYPEX (te :> t1) x2 t2
    -> TYPEX te        (XLet t1 x1 x2) t2
@@ -56,3 +60,4 @@ Inductive TYPEX : tyenv -> exp -> ty -> Prop :=
    -> TYPEX te x3 tR
    -> TYPEX te (XIf v1 x2 x3) tR.
 Hint Constructors TYPEX.
+

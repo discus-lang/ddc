@@ -9,7 +9,8 @@ Fixpoint liftXV (d: nat) (vv: val) : val :=
        then VVar (S i)
        else vv
   | VConst c     => VConst c
-  | VFun t x     => VFun t (liftXX (S (S d)) x)
+  | VLam t x     => VLam t (liftXX (S d) x)
+  | VFix t v     => VFix t (liftXV (S d) v)
   end
 
 with    liftXX (d: nat) (xx: exp) : exp :=

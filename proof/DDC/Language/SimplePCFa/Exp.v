@@ -22,10 +22,10 @@ Hint Constructors op1.
 Inductive val : Type := 
   | VVar    : nat   -> val
   | VConst  : const -> val
-  | VFun    : ty    -> exp -> val
+  | VLam    : ty    -> exp -> val
+  | VFix    : ty    -> val -> val
 
 (* Expressions *)
-(* All evaluation is forced by the let expression. *)
 with     exp : Type :=
   | XVal    : val -> exp
   | XLet    : ty  -> exp -> exp -> exp
@@ -48,10 +48,15 @@ Inductive wfX (tn: nat) : exp -> Prop :=
    :  forall c
    ,  wfX tn (XVal (VConst c))
 
- | WfX_VFun
+ | WfX_Lam
    :  forall t1 x2
-   ,  wfX (S (S tn)) x2
-   -> wfX tn  (XVal (VFun t1 x2))
+   ,  wfX (S tn) x2
+   -> wfX tn  (XVal (VLam t1 x2))
+
+ | WfX_Fix
+   :  forall t1 v2
+   ,  wfX (S tn) (XVal v2)
+   -> wfX tn  (XVal (VFix t1 v2))
 
  | WfX_XLet
    : forall t1 x1 x2
@@ -81,4 +86,4 @@ Inductive wfX (tn: nat) : exp -> Prop :=
 (* Closed expressions are well formed under an empty environment. *)
 Definition closedX (xx: exp) : Prop 
  := wfX 0 xx.
- 
+

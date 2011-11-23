@@ -8,10 +8,15 @@ Require Export DDC.Language.SimplePCFa.ExpSubst.
 (* Primitive reduction step. *)
 Inductive STEPP : exp -> exp -> Prop := 
  (* Application *)
- | SpApp 
+ | SpAppLam
    : forall t11 x12 v2
-   , STEPP (XApp (VFun t11 x12) v2)
-           (substVX 0 v2 (substVX 0 (VFun t11 x12) x12))
+   , STEPP (XApp (VLam t11 x12) v2)
+           (substVX 0 v2 x12)
+
+ | SpAppFix 
+   : forall t1 v2 v3
+   , STEPP (XApp (VFix t1 v2) v3)
+           (XApp (substVV 0 (VFix t1 v2) v2) v3)
 
  (* Naturals *)
  | SpSucc 

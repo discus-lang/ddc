@@ -19,13 +19,15 @@ Fixpoint substVVs (d: nat) (vs: list val) (vv: val)
        | _   => substVVs' ix d vs vv
        end
 
-   |  VConst c
-   => vv
+    |  VConst c
+    => vv
 
-   |  VFun t x
-   => VFun t (substVXs (S (S d)) 
-               (map (fun v => liftXV 0 (liftXV 0 v)) vs) x)     
-   end
+    |  VLam t x
+    => VLam t (substVXs (S d) (map (fun v => liftXV 0 v) vs) x)
+
+    |  VFix t v
+    => VFix t (substVVs (S d) (map (fun v => liftXV 0 v) vs) v)
+    end
 with    substVXs (d: nat) (vs: list val) (xx: exp)
  := match xx with
     |  XVal v 

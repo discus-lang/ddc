@@ -25,10 +25,15 @@ Inductive EVAL : exp -> exp -> Prop :=
    -> EVAL (XLet t1 x1 x2)   x3
 
  (* Function Applications *************)
+ | EvAppLam
+   :  forall t11 x12 v2 x3
+   ,  EVAL (substVX 0 v2 x12) x3
+   -> EVAL (XApp (VLam t11 x12) v2) x3
+
  | EvFunApp
-   :  forall t1 x1 v2 x3
-   ,  EVAL (substVX  0 v2 (substVX 0 (VFun t1 x1) x1)) x3
-   -> EVAL (XApp (VFun t1 x1) v2) x3
+   :  forall t11 v12 v2 x3
+   ,  EVAL (XApp (substVV 0 (VFix t11 v12) v12) v2) x3
+   -> EVAL (XApp (VFix t11 v12) v2) x3
 
  (* Naturals **************************)
  | EvSucc
@@ -209,10 +214,16 @@ Proof.
   eapply SsStep.
   eauto.
 
- Case "XApp".
+ Case "XApp/VLam".
   eapply RTerm.
   eapply RfStep.
-  eapply SpApp.
+  eapply SpAppLam.
+  inverts IHEVAL. eauto.
+
+ Case "XApp/VFix".
+  eapply RTerm.
+  eapply RfStep.
+  eapply SpAppFix.
   inverts IHEVAL. eauto.
 
  Case "XIfThen".
