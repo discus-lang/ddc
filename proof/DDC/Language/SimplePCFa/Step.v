@@ -98,6 +98,16 @@ Inductive STEPS : exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
+(* TODO: shift this to steps *)
+Lemma steps_context_let1
+ :  forall t1 x1 x1' x2
+ ,  STEPS x1 x1' 
+ -> STEPS (XLet t1 x1 x2) (XLet t1 x1' x2).
+Proof.
+ admit.
+Qed.
+
+
 (******************************************************************************)
 (* Frame Stacks *)
 (* Holds the continuation while a 'let' expression reduces the bound term. *)

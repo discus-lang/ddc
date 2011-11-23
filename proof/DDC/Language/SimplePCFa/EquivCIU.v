@@ -71,18 +71,29 @@ Definition lowerXX (d: nat) (x: exp) : exp
  := x.
 
 
+Definition swapXX (d: nat) (x: exp) : exp
+ := x.
+
 (* Nest two let bindings, 
    changes binding structure but not order of operations.
 
     let [t1] = x1 in let [t2] = x2   in x3
  => let [t2] = (let [t1] = x1 in x2) in x3
 *)
+Lemma nest_type
+ : forall te z1 z2 t x1 t1 x2 t2 x3
+ ,  z1 = XLet t1 x1 (XLet t2 x2 x3)
+ -> z2 = XLet t2 (XLet t1 (liftXX 1 x1) (swapXX 0 x2)) (lowerXX 1 x3)
+ -> TYPEX te z1 t
+ -> TYPEX te z2 t.
+
+
 Lemma eciu_if_let_let_nest
  :  forall te z1 z2 t1 x1 t2 x2 t3 x3
- ,  TYPEX te z1 t3
- -> TYPEX te z2 t3
- -> z1 = XLet t1 x1 (XLet t2 x2  x3)
+ ,  z1 = XLet t1 x1 (XLet t2 x2  x3)
  -> z2 = XLet t2 (XLet t1 x1 (liftXX 0 x2)) (lowerXX 1 x3)
+ -> TYPEX te z1 t3
+ -> TYPEX te z2 t3
  -> not (refsXX 1 x3)
  -> EQCIU te z1 z2 t3.
 Proof.

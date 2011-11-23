@@ -182,16 +182,6 @@ Qed.
 
 (******************************************************************************)
 
-(* TODO: shift this to steps *)
-Lemma steps_context_let1
- :  forall t1 x1 x1' x2
- ,  STEPS x1 x1' 
- -> STEPS (XLet t1 x1 x2) (XLet t1 x1' x2).
-Proof.
- admit.
-Qed.
-
-
 (* If we have a big-step evaluation for some expression, 
    then that expression terminates. *)
 Lemma eval_term

@@ -37,6 +37,45 @@ Hint Constructors exp.
 
 
 (******************************************************************************)
+(* Induction principle for expressions. *)
+Lemma exp_mutind : forall 
+    (PX : exp -> Prop)
+    (PV : val -> Prop)
+ ,  (forall n,                                   PV (VVar n))
+ -> (forall c,                                   PV (VConst c))
+ -> (forall t x,      PX x                    -> PV (VLam t x))
+ -> (forall t v,      PV v                    -> PV (VFix t v))
+ -> (forall v,        PV v                    -> PX (XVal v))
+ -> (forall t x1 x2,  PX x1 -> PX x2          -> PX (XLet t x1 x2))
+ -> (forall v1 v2,    PV v1 -> PV v2          -> PX (XApp v1 v2))
+ -> (forall o v,      PV v                    -> PX (XOp1 o v))
+ -> (forall v1 x2 x3, PV v1 -> PX x2 -> PX x3 -> PX (XIf v1 x2 x3))
+ ->  forall x, PX x.
+Proof. 
+ intros PX PV.
+ intros hVar hConst hLam hFix hVal hLet hApp hOp1 hIf.
+ refine (fix  IHX x : PX x := _
+         with IHV v : PV v := _
+         for  IHX).
+
+ (* expressions *)
+ case x; intros.
+ apply hVal. apply IHV.
+ apply hLet. apply IHX. apply IHX.
+ apply hApp. apply IHV. apply IHV.
+ apply hOp1. apply IHV.
+ apply hIf.  apply IHV. apply IHX. apply IHX.
+
+ (* values *)
+ case v; intros.
+ apply hVar.
+ apply hConst.
+ apply hLam. apply IHX.
+ apply hFix. apply IHV.
+Qed.
+
+
+(******************************************************************************)
 (* Well formed expressions are closed under the given environment. *)
 Inductive wfX (tn: nat) : exp -> Prop :=
  | WfX_VVar
