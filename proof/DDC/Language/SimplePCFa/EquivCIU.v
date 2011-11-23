@@ -5,6 +5,7 @@ Require Export DDC.Language.SimplePCFa.Step.
 Require Export DDC.Language.SimplePCFa.TyJudge.
 Require Export DDC.Language.SimplePCFa.ExpLower.
 Require Export DDC.Language.SimplePCFa.ExpLift.
+Require Export DDC.Language.SimplePCFa.ExpSwap.
 Require Export DDC.Language.SimplePCFa.ExpRefs.
 Require Export DDC.Language.SimplePCFa.ExpSubsts.
 Require DDC.Base.
@@ -69,9 +70,6 @@ Qed.
 
 
 
-Definition swapXX (d: nat) (x: exp) : exp
- := x.
-
 (* Nest two let bindings, 
    changes binding structure but not order of operations.
 
@@ -82,8 +80,13 @@ Lemma nest_type
  : forall te z1 z2 t x1 t1 x2 t2 x3
  ,  z1 = XLet t1 x1 (XLet t2 x2 x3)
  -> z2 = XLet t2 (XLet t1 (liftXX 1 x1) (swapXX 0 x2)) (lowerXX 1 x3)
+ -> ~(refsXX 1 x3)
  -> TYPEX te z1 t
  -> TYPEX te z2 t.
+Proof.
+ intros. subst.
+ eapply TxLet.
+ inverts H2. inverts H6.
 
 
 Lemma eciu_if_let_let_nest

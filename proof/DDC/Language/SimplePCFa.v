@@ -4,6 +4,7 @@ Require Export DDC.Language.SimplePCFa.Exp.
 Require Export DDC.Language.SimplePCFa.ExpRefs.
 Require Export DDC.Language.SimplePCFa.ExpLift.
 Require Export DDC.Language.SimplePCFa.ExpLower.
+Require Export DDC.Language.SimplePCFa.ExpSwap.
 Require Export DDC.Language.SimplePCFa.ExpSubst.
 Require Export DDC.Language.SimplePCFa.ExpSubsts.
 
