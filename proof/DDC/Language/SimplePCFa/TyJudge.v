@@ -107,4 +107,5 @@ Proof.
   simpl in H.
   eapply TxIf; burn.
 Qed.
+Hint Resolve type_tyenv_delete.
 

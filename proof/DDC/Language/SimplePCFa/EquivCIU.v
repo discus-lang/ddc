@@ -1,5 +1,4 @@
 
-
 Require Export DDC.Language.SimplePCFa.Eval.
 Require Export DDC.Language.SimplePCFa.Step.
 Require Export DDC.Language.SimplePCFa.TyJudge.
@@ -19,8 +18,7 @@ Require DDC.Base.
      in all contexts (the use)
 *)
 Definition EQCIU (te: tyenv) (x1 x2: exp) (t: ty)
- := forall te x1 x2 t
- ,  TYPEX te x1 t
+ := TYPEX te x1 t
  -> TYPEX te x2 t
  -> (forall f vs x1' x2'
       ,  Forall2 (fun v => TYPEX nil (XVal v)) vs te    
@@ -87,18 +85,44 @@ Proof.
  intros. subst.
  eapply TxLet.
  inverts H2. inverts H6.
+ eapply type_tyenv_delete with (ix := 1) in H5. 
+  simpl in H5. auto. auto.
+Qed.
 
 
 Lemma eciu_if_let_let_nest
- :  forall te z1 z2 t1 x1 t2 x2 t3 x3
- ,  z1 = XLet t1 x1 (XLet t2 x2  x3)
- -> z2 = XLet t2 (XLet t1 x1 (liftXX 0 x2)) (lowerXX 1 x3)
- -> TYPEX te z1 t3
- -> TYPEX te z2 t3
- -> not (refsXX 1 x3)
- -> EQCIU te z1 z2 t3.
+ :  forall te z1 z2 t x1 t1 x2 t2 x3
+ ,  z1 = XLet t1 x1 (XLet t2 x2 x3)
+ -> z2 = XLet t2 (XLet t1 (liftXX 1 x1) (swapXX 0 x2)) (lowerXX 1 x3)
+ -> ~ (refsXX 1 x3)
+ -> TYPEX te z1 t
+ -> EQCIU te z1 z2 t.
 Proof.
- admit.  (* TODO *)
+ intros. subst. red. intros.
+ unfold csubstVXs in H4.
+ unfold csubstVXs in H5. rip.
+ split.
+
+ intros.
+  simpl.
+  induction f. admit.
+  simpl in IHf.
+  simpl in H4.
+  eapply IHf.
+
+simpl in H4.
+  eapply RfLetPush.
+  eapply RfLetPush.
+  inverts H4.
+   admit.       (* fixme *)
+   inverts H5.
+
+ intros.
+  simpl. 
+  simpl in H4.
+  inverts H4. 
+   admit.      (* fixme *)
+   inverts H5.
 Qed.
 
 (*
