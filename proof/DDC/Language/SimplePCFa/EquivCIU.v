@@ -1,6 +1,6 @@
 
 Require Export DDC.Language.SimplePCFa.Eval.
-Require Export DDC.Language.SimplePCFa.Step.
+Require Export DDC.Language.SimplePCFa.StepBase.
 Require Export DDC.Language.SimplePCFa.TyJudge.
 Require Export DDC.Language.SimplePCFa.ExpLower.
 Require Export DDC.Language.SimplePCFa.ExpLift.

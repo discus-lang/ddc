@@ -1,7 +1,7 @@
 
+Require Import DDC.Language.SimplePCFa.StepBase.
 Require Import DDC.Language.SimplePCFa.Exp.
 Require Import DDC.Language.SimplePCFa.ExpSubst.
-Require Import DDC.Language.SimplePCFa.Step.
 
 
 (********************************************************************)

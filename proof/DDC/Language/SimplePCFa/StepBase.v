@@ -98,7 +98,7 @@ Inductive STEPS : exp -> exp -> Prop :=
 Hint Constructors STEPS.
 
 
-(* TODO: shift this to steps *)
+(* TODO *)
 Lemma steps_context_let1
  :  forall t1 x1 x1' x2
  ,  STEPS x1 x1' 

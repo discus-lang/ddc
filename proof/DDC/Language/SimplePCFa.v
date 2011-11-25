@@ -19,13 +19,15 @@ Require Export DDC.Language.SimplePCFa.TyJudge.
 Require Export DDC.Language.SimplePCF.SubstExpExp.
 *)
 (* Small step evaluation. *)
-Require Export DDC.Language.SimplePCFa.Step.
+Require Export DDC.Language.SimplePCFa.StepBase.
+Require Export DDC.Language.SimplePCFa.StepFrame.
+
 
 (* Big step evaluation, and conversion between small step evaluation. *)
-Require Export DDC.Language.SimplePCFa.Eval.
+(* Require Export DDC.Language.SimplePCFa.Eval. *)
 
 (* CIU equivalence *)
-Require Export DDC.Language.SimplePCFa.EquivCIU.
+(* Require Export DDC.Language.SimplePCFa.EquivCIU. *)
 
 (*
 (* A well typed expression is either a value or can take a step. *)
