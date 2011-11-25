@@ -1,4 +1,5 @@
 
+Require Import DDC.Language.SimplePCFa.StepTerm.
 Require Import DDC.Language.SimplePCFa.StepBase.
 Require Import DDC.Language.SimplePCFa.Exp.
 Require Import DDC.Language.SimplePCFa.ExpSubst.
@@ -135,44 +136,15 @@ Qed.
 
 Lemma term_eval_wrapped
  :  forall x1 f
- ,  TERMF f x1
+ ,  TERMS f x1
  -> (exists x2, EVAL (wrap f x1) x2).
 Proof. eauto. Qed.
 
 
-(******************************************************************************)
-(* Transitivity of termination *)
-Lemma term_steps_advance
- : forall f x1 x2
- , TERMF f x1 -> STEPS x1 x2 -> TERMF f x2.
-Proof.
- intros.
- induction H0; eauto.
-
-  gen f.
-  induction H0; intros; eauto.
-  destruct x1; nope.
-   inverts H0. assert (x1' = x2). admit. subst. auto.  (* determinism of STEPP *)
-   inverts H0. skip. (* ok *)
-   inverts H0. skip. (* ok *)
-
-   SCase "XLet".
-    eapply RfLetPush.
-    inverts H.
-     eauto.
-     nope.
-
-   SCase "XApp".
-    inverts H.
-    inverts H2. auto.
-    inverts H.
-    inverts H0.
-Qed.
-
 
 Lemma term_steps_rewind
  : forall f x1 x2
- , TERMF f x2 -> STEPS x1 x2 -> TERMF f x1.
+ , TERMS f x2 -> STEPS x1 x2 -> TERMS f x1.
 Proof.
  intros.
  induction H0; eauto.
@@ -223,15 +195,17 @@ Qed.
 
 
 Lemma eval_term_wrapped
- : forall x1 x2 f
- , EVAL (wrap f x1) x2 -> TERMF f x1.
+ :  forall x1 x2 f
+ ,  EVAL (wrap f x1) x2
+ -> TERMS f x1.
 Proof. 
  intros.
  eapply eval_term in H.
  gen x1. 
  induction f; intros.
   simpl in *. inverts H. auto.
-  simpl in *. 
+  simpl in *.
+  destruct a. 
   lets D: IHf H. inverts D. auto.
    inverts H0.
 Qed.
