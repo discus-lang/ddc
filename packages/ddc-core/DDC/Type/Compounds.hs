@@ -1,12 +1,12 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Type.Compounds
         ( takeNameOfBind
-        , kindOfBind
-        , replaceKindOfBind
+        , typeOfBind
+        , replaceTypeOfBind
 
         , takeNameOfBound
-        , kindOfBound
-        , replaceKindOfBound
+        , typeOfBound
+        , replaceTypeOfBound
 
         -- * Type structure.
         , tBot
@@ -51,16 +51,16 @@ takeNameOfBind  (BName n _)     = Just n
 takeNameOfBind  (BAnon   _)     = Nothing
 
 
--- | Take the kind of a bind.
-kindOfBind :: Bind n -> Kind n
-kindOfBind (BName _ k)          = k
-kindOfBind (BAnon   k)          = k
+-- | Take the type of a bind.
+typeOfBind :: Bind n -> Type n
+typeOfBind (BName _ k)          = k
+typeOfBind (BAnon   k)          = k
 
 
 -- | Replace the kind of a bind with a new one.
-replaceKindOfBind :: Kind n -> Bind n -> Bind n
-replaceKindOfBind k (BName n _) = BName n k
-replaceKindOfBind k (BAnon   _) = BAnon k
+replaceTypeOfBind :: Type n -> Bind n -> Bind n
+replaceTypeOfBind t (BName n _) = BName n t
+replaceTypeOfBind t (BAnon   _) = BAnon t
 
 
 -- | Take the variable name of bound variable.
@@ -70,16 +70,16 @@ takeNameOfBound (UName n _)     = Just n
 takeNameOfBound (UIx _ _)       = Nothing
 
 
--- | Take the kind of a bound variable.
-kindOfBound :: Bound n -> Kind n
-kindOfBound (UName _ k)         = k
-kindOfBound (UIx _ k)           = k
+-- | Take the type of a bound variable.
+typeOfBound :: Bound n -> Type n
+typeOfBound (UName _ k)         = k
+typeOfBound (UIx _ k)           = k
 
 
--- | Replace the kind of a bound with a new one.
-replaceKindOfBound :: Kind n -> Bound n -> Bound n
-replaceKindOfBound k (UName n _) = UName n k
-replaceKindOfBound k (UIx i _)   = UIx i k
+-- | Replace the type of a bound with a new one.
+replaceTypeOfBound :: Type n -> Bound n -> Bound n
+replaceTypeOfBound t (UName n _) = UName n t
+replaceTypeOfBound t (UIx i _)   = UIx i t
 
 
 -- Type Structure ---------------------------------------------------------------------------------

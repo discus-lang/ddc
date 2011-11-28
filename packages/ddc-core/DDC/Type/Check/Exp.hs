@@ -1,6 +1,7 @@
 
 module DDC.Type.Check.Exp 
         ( kindOfType, kindOfType'
+        , checkType
         , Error(..))
 where
 import DDC.Type.Compounds
@@ -19,12 +20,12 @@ type CheckM n   = G.CheckM (Error n)
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
--- | Take the kind of a type.
+-- | Take the kind of a type in an empty environment.
 kindOfType  :: Ord n => Type n -> Either (Error n) (Kind n)
-kindOfType tt = result $ checkType Env.empty tt
+kindOfType tt = result $ checkTypeM Env.empty tt
 
 
--- | Take the kind of a type, or `error` if there isn't one.
+-- | Take the kind of a type in an empty environment, or `error` if there isn't one.
 kindOfType' :: (Ord n, Pretty n) => Type n -> Kind n
 kindOfType' tt
  = case kindOfType tt of
@@ -32,13 +33,18 @@ kindOfType' tt
         Right k         -> k
 
 
+-- | Check a type, returning an error or its kind.
+checkType :: Ord n => Env n -> Type n -> Either (Error n) (Kind n)
+checkType env tt = result $ checkTypeM env tt
+
+
 -- checkType --------------------------------------------------------------------------------------
 -- | Check a type, returning its kind.
 --   TODO: attach kinds to bound variables, and to sums.
 --         check that existing annotations have the same kinds as from the environment.
 --         add a function to check that a type has kind annots in the right places.
-checkType :: Ord n => Env n -> Type n -> CheckM n (Kind n)
-checkType env tt
+checkTypeM :: Ord n => Env n -> Type n -> CheckM n (Kind n)
+checkTypeM env tt
  = case tt of
         -- Constructors ---------------
         -- Sorts don't have a higher classification.
@@ -66,16 +72,16 @@ checkType env tt
         
         -- Quantifiers ----------------
         TForall b1 t2
-         -> do  _       <- checkType env (kindOfBind b1)
-                checkType (Env.extend b1 env) t2
+         -> do  _       <- checkTypeM env (typeOfBind b1)
+                checkTypeM (Env.extend b1 env) t2
         
 
         -- Applications ---------------
         -- Applications of the kind function constructor are handled directly because
         -- the constructor doesn't have a sort by itself.
         TApp (TApp (TCon TConKindFun) k1) k2
-         -> do  _       <- checkType env k1
-                s2      <- checkType env k2
+         -> do  _       <- checkTypeM env k1
+                s2      <- checkTypeM env k2
                 return  s2
 
         -- TODO: need to use type equiv judgement intead
@@ -83,8 +89,8 @@ checkType env tt
         --       won't match with  Pure (e2 + e1)
         --       no, this will be fine when we move to type sums
         TApp t1 t2
-         -> do  k1      <- checkType env t1
-                k2      <- checkType env t2
+         -> do  k1      <- checkTypeM env t1
+                k2      <- checkTypeM env t2
                 case k1 of
                  TApp (TApp (TCon TConKindFun) k11) k12
                   | k11 == k2   -> return k12
@@ -95,7 +101,7 @@ checkType env tt
 
         -- Sums -----------------------
         TSum ts
-         -> do  ks      <- mapM (checkType env) $ TS.toList ts
+         -> do  ks      <- mapM (checkTypeM env) $ TS.toList ts
 
                 -- Check that all the types in the sum have a single kind, 
                 -- and return that kind.
@@ -113,7 +119,7 @@ checkType env tt
 
         -- Bot ------------------------
         TBot k
-         -> do  _       <- checkType env k
+         -> do  _       <- checkTypeM env k
                 return k
 
 

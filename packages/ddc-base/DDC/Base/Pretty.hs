@@ -1,7 +1,8 @@
 
 module DDC.Base.Pretty
         ( module Text.PrettyPrint.Mainland
-        , pprParen)
+        , pprParen
+        , vcat)
 where
 import Text.PrettyPrint.Mainland
 
@@ -10,3 +11,6 @@ pprParen :: Bool -> Doc -> Doc
 pprParen b c
  = if b then parens c
         else c
+
+vcat :: [Doc] -> Doc
+vcat    = sep . punctuate line

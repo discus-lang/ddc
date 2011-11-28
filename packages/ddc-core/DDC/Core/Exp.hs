@@ -151,4 +151,3 @@ data WiCon
         | WiConDistinct Int     -- distinct :: [r0 r1 ... rn : %]. Distinct_n r0 r1 .. rn
         deriving (Eq, Show)
 
-        

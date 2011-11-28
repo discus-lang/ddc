@@ -56,9 +56,27 @@ handle line ws
                 putStr "\n"
                 loop
 
-        -- Show the type of a value expression.
+        -- Show the value type, effect and closure of an expression.
+        | Just rest     <- splitPrefix ":check" line
+        = do    cmdShowType ShowTypeAll rest
+                putStr "\n"
+                loop
+
+        -- Show just the value type of an expression.
         | Just rest     <- splitPrefix ":type" line
-        = do    cmdShowType rest
+        = do    cmdShowType ShowTypeValue rest
+                putStr "\n"
+                loop
+
+        -- Show just the effect of an expression.
+        | Just rest     <- splitPrefix ":effect" line
+        = do    cmdShowType ShowTypeEffect rest
+                putStr "\n"
+                loop
+
+        -- Show just the closure of an expression.
+        | Just rest     <- splitPrefix ":closure" line
+        = do    cmdShowType ShowTypeClosure rest
                 putStr "\n"
                 loop
         
