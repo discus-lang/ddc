@@ -51,7 +51,7 @@ five    = id {Int} 5;
 map  :: [a1 a2: *] [r1 r2: %] [e: !] [c: $]
      .  (a1 -(e c)> a2) -> List r1 a1 -> List r2 a2;
 
-map     [a1 a2: *] [r1 r2: %] [e: !] [c: $].
+map     (a1 a2: *) (r1 r2: %) (e: !) (c: $).
         (f:  a1 -(e c)> a2) (xs: List r1 a1) : List r2 a2
         = case xs of {
                 Nil             -> Nil;
@@ -60,7 +60,7 @@ map     [a1 a2: *] [r1 r2: %] [e: !] [c: $].
 
 
 map_lazy 
-        [a1, a2: *] [r1 r2: %] [c: $] --- TODO: remove comma syntax between vars
+        (a1, a2: *) (r1 r2: %) (c: $) --- TODO: remove comma syntax between vars
         (w: Const r1) (w5: Shared r2)
         (f: a1 -(!0 c)> a2) (xs: List r1 a1)
         = purify <w1 & read w2 & read w3>     -- TODO: allow witness to be elided and reconstructed, 
@@ -70,7 +70,7 @@ map_lazy
                 Cons x xs       
                  -> Cons {a2}
                         (f x) 
-                        (suspend {List r1 a1} {List r2 a2} (map_lazy {|a1 a2 r1 r2|} f) xs);
+                        (suspend {List r1 a1} {List r2 a2} (map_lazy {|a1 a2 r1 r2|} <|w w5|> f) xs);
           };
 
 

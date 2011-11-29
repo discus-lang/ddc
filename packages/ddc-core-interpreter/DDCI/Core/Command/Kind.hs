@@ -1,7 +1,8 @@
-
+{-# OPTIONS -fno-warn-missing-signagtures #-}
 module DDCI.Core.Command.Kind
         (cmdShowKind)
 where
+import DDCI.Core.Prim.Env
 import DDCI.Core.Token
 import DDC.Type.Pretty
 import DDC.Type.Check.Exp
@@ -18,17 +19,18 @@ cmdShowKind ss
         Nothing         -> putStrLn "lexical error"
         Just toks       -> showKind_toks $ map Token toks
 
-
-showKind_toks :: [Token] -> IO ()
-showKind_toks toks                
+goParse toks                
  = case parseType toks of 
         Left err        -> putStrLn $ "parse error " ++ show err
-        Right t         -> showKind_type t
+        Right t         -> goSpread t
 
-        
-showKind_type :: Kind Token -> IO ()
-showKind_type t
- = case kindOfType t of
+goSpread t
+ = case enscope primEnv t of
+        Left errs       -> putStrLn $ "enscope errors " ++ show errs
+        Right t'        -> goCheck t'
+
+goCheck t
+ = case checkType primEnv t of
         Left err        -> putStrLn $ show $ ppr err
         Right k         -> putStrLn $ show $ (ppr t <> text " :: " <> ppr k)
  

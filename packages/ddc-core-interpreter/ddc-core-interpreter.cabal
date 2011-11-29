@@ -16,6 +16,7 @@ Description:
 Executable ddci-core
   Build-depends:
         base            == 4.*,
+        containers      == 0.4.*,
         ddc-base        == 0.4.*,
         ddc-core        == 0.4.*
 
@@ -27,6 +28,8 @@ Executable ddci-core
         DDCI.Core.Command.Kind
         DDCI.Core.Command.Type
         DDCI.Core.Command.WType
+        DDCI.Core.Prim.Env
+        
 
   Extensions:
         PatternGuards

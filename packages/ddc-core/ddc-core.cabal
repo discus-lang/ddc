@@ -22,22 +22,22 @@ Library
         ddc-base        == 0.4.0.*
 
   Exposed-modules:
-        DDC.Type.Exp
-        DDC.Type.Sum
-        DDC.Type.Universe
-        DDC.Type.Pretty
         DDC.Type.Compounds
-        DDC.Type.Predicates
         DDC.Type.Check
         DDC.Type.Check.Env
         DDC.Type.Check.Monad
         DDC.Type.Check.Con
         DDC.Type.Check.Exp
-        DDC.Type.Operators
-        DDC.Type.Operators.Rename
+        DDC.Type.Exp
         DDC.Type.Parser.Tokens
         DDC.Type.Parser.Lexer
         DDC.Type.Parser
+        DDC.Type.Predicates
+        DDC.Type.Pretty
+        DDC.Type.Sum
+        DDC.Type.Transform
+        DDC.Type.Transform.Rename
+        DDC.Type.Universe
         DDC.Core.Exp
         DDC.Core.Check
         DDC.Core.Pretty

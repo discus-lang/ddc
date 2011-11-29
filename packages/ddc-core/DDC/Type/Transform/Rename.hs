@@ -1,6 +1,6 @@
 
 -- | Boilerplate to apply a function to every name in a `Type` related thing.
-module DDC.Type.Operators.Rename
+module DDC.Type.Transform.Rename
         (Named(..))
 where
 import DDC.Type.Exp

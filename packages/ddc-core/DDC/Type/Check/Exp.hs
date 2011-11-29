@@ -40,8 +40,7 @@ checkType env tt = result $ checkTypeM env tt
 
 -- checkType --------------------------------------------------------------------------------------
 -- | Check a type, returning its kind.
---   TODO: attach kinds to bound variables, and to sums.
---         check that existing annotations have the same kinds as from the environment.
+--   TODO: check that existing annotations have the same kinds as from the environment.
 --         add a function to check that a type has kind annots in the right places.
 checkTypeM :: Ord n => Env n -> Type n -> CheckM n (Kind n)
 checkTypeM env tt
