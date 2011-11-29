@@ -83,7 +83,7 @@ pType2
            -- T1 ~> T2
          , do   pTok tKindFun
                 t2      <- pType2
-                return  $ TApp (TApp (TCon TConKindFun) t1) t2
+                return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
 
            -- Body type
          , do   return t1 ]
@@ -108,24 +108,27 @@ pType0  = choice
 
                  , do   pTok tTypeFun
                         pTok tRoundKet
-                        return (TCon $ TConType $ TyConBuiltin TyConFun)
+                        return (TCon $ TyConComp TcConFun)
                  ]
 
         -- Named type constructors
-        , do    tc      <- pTyConBuiltin
-                return  $ TCon (TConType tc)
+        , do    tc      <- pTwConBuiltin
+                return  $ TCon (TyConWitness tc)
 
-        , do    tc      <- pTyConUser
-                return  $ TCon (TConType tc)
+        , do    tc      <- pTcConBuiltin
+                return  $ TCon (TyConComp tc)
+
+        , do    tc      <- pTcConData
+                return  $ TCon (TyConComp tc)
 
         -- Symbolic constructors.
-        , do    pTokenAs tSortComp    (TCon $ TConSort SoConComp)
-        , do    pTokenAs tSortProp    (TCon $ TConSort SoConProp) 
-        , do    pTokenAs tKindValue   (TCon $ TConKind KiConData)
-        , do    pTokenAs tKindRegion  (TCon $ TConKind KiConRegion) 
-        , do    pTokenAs tKindEffect  (TCon $ TConKind KiConEffect) 
-        , do    pTokenAs tKindClosure (TCon $ TConKind KiConClosure) 
-        , do    pTokenAs tKindWitness (TCon $ TConKind KiConWitness) 
+        , do    pTokenAs tSortComp    (TCon $ TyConSort SoConComp)
+        , do    pTokenAs tSortProp    (TCon $ TyConSort SoConProp) 
+        , do    pTokenAs tKindValue   (TCon $ TyConKind KiConData)
+        , do    pTokenAs tKindRegion  (TCon $ TyConKind KiConRegion) 
+        , do    pTokenAs tKindEffect  (TCon $ TyConKind KiConEffect) 
+        , do    pTokenAs tKindClosure (TCon $ TyConKind KiConClosure) 
+        , do    pTokenAs tKindWitness (TCon $ TyConKind KiConWitness) 
             
         -- Bottoms.
         , do    pTokenAs tBotEffect  (TBot T.kEffect)
@@ -141,13 +144,17 @@ pType0  = choice
 
 
 ---------------------------------------------------------------------------------------------------
--- | Parse a builtin named tycon.
-pTyConBuiltin :: Parser k n (TyCon n)
-pTyConBuiltin   = pToken tTyConBuiltin
+-- | Parse a builtin named `TwCon`
+pTwConBuiltin :: Parser k n TwCon
+pTwConBuiltin   = pToken tTwConBuiltin
+
+-- | Parse a builtin named `TcCon`
+pTcConBuiltin :: Parser k n (TcCon n)
+pTcConBuiltin   = pToken tTcConBuiltin
 
 -- | Parse a user defined named tycon.
-pTyConUser :: Parser k n (TyCon n)
-pTyConUser      = pToken tTyConUser
+pTcConData :: Parser k n (TcCon n)
+pTcConData      = pToken tTcConData
 
 -- | Parse a variable.
 pVar :: Parser k n n

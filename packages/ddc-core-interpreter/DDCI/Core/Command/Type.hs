@@ -46,7 +46,7 @@ showType_exp
         :: (Eq n, Pretty n)
         => ShowTypeMode
         -> Exp a n p
-        -> Either (Error n) (Type n, Effect n, Closure n)
+        -> Either (Error a n p) (Type n, Effect n, Closure n)
         -> IO ()
 
 showType_exp _ _ (Left err)

@@ -7,6 +7,9 @@ help    = unlines
         , "  :quit          exit DDCi-core" 
         , "  :help, :?      display this help"         
         , "  :kind          show the kind of a type"
-        , "  :type          show the type of a value expression"
+        , "  :type          show the type    of a value expression"
+        , "  :effect        show the effect  of a value expression"
+        , "  :closure       show the closure of a value expression"
+        , "  :check         show the type, effect and closure of a value expression"
         , "  :wtype         show the type of a witness expression"
         , "" ]

@@ -1,7 +1,8 @@
 
 module DDC.Type.Check.Con
         ( sortOfKiCon
-        , kindOfTyCon)
+        , kindOfTwCon
+        , kindOfTcCon)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -10,46 +11,47 @@ import DDC.Type.Compounds
 -- | Take the superkind of an atomic kind constructor.
 --   The kind function (~>) is handled separately because it doesn't have a sort
 --   without being fully applied.
-sortOfKiCon :: KiCon -> Sort n
+sortOfKiCon :: KiCon -> Maybe (Sort n)
 sortOfKiCon kc
  = case kc of
-        KiConData       -> sComp
-        KiConRegion     -> sComp
-        KiConEffect     -> sComp
-        KiConClosure    -> sComp
-        KiConWitness    -> sProp
+        KiConFun        -> Nothing
+        KiConData       -> Just sComp
+        KiConRegion     -> Just sComp
+        KiConEffect     -> Just sComp
+        KiConClosure    -> Just sComp
+        KiConWitness    -> Just sProp
 
 
--- | Take the kind of an type constructor.
-kindOfTyCon :: TyCon n -> Kind n
-kindOfTyCon tc
+-- | Take the kind of a witness type constructor.
+kindOfTwCon :: TwCon -> Kind n
+kindOfTwCon tc
  = case tc of
-        TyConUser _ k   -> k
-        TyConBuiltin tb -> kindOfTyConBuiltin tb
+        TwConImpl       -> kWitness `kFun` (kWitness `kFun` kWitness)
+        TwConConst      -> kRegion  `kFun` kWitness
+        TwConDeepConst  -> kData    `kFun` kWitness
+        TwConMutable    -> kRegion  `kFun` kWitness
+        TwConDeepMutable-> kData    `kFun` kWitness
+        TwConLazy       -> kRegion  `kFun` kWitness
+        TwConHeadLazy   -> kData    `kFun` kWitness
+        TwConDirect     -> kData    `kFun` kWitness
+        TwConDistinct n -> kFuns (replicate n kRegion) kWitness
+        TwConPure       -> kEffect  `kFun` kWitness
+        TwConEmpty      -> kClosure `kFun` kWitness
 
 
--- | Take the kind of a builtin type constructor.
-kindOfTyConBuiltin :: TyConBuiltin -> Kind n
-kindOfTyConBuiltin tb
- = case tb of
-        TyConFun        -> [kData, kData, kEffect, kClosure] `kFuns` kData
-        TyConRead       -> kRegion  `kFun` kEffect
-        TyConDeepRead   -> kData    `kFun` kEffect
-        TyConWrite      -> kRegion  `kFun` kEffect
-        TyConDeepWrite  -> kData    `kFun` kEffect
-        TyConAlloc      -> kRegion  `kFun` kEffect
-        TyConFree       -> kRegion  `kFun` kClosure
-        TyConDeepFree   -> kData    `kFun` kClosure
-        TyConImpl       -> kWitness `kFun` (kWitness `kFun` kWitness)
-        TyConConst      -> kRegion  `kFun` kWitness
-        TyConDeepConst  -> kData    `kFun` kWitness
-        TyConMutable    -> kRegion  `kFun` kWitness
-        TyConDeepMutable-> kData    `kFun` kWitness
-        TyConLazy       -> kRegion  `kFun` kWitness
-        TyConHeadLazy   -> kData    `kFun` kWitness
-        TyConDirect     -> kData    `kFun` kWitness
-        TyConDistinct n -> kFuns (replicate n kRegion) kWitness
-        TyConPure       -> kEffect  `kFun` kWitness
-        TyConEmpty      -> kClosure `kFun` kWitness
+-- | Take the kind of a computation type constructor.
+kindOfTcCon :: TcCon n -> Kind n
+kindOfTcCon tc
+ = case tc of
+        TcConFun        -> [kData, kData, kEffect, kClosure] `kFuns` kData
+        TcConData _ k   -> k
+        TcConRead       -> kRegion  `kFun` kEffect
+        TcConDeepRead   -> kData    `kFun` kEffect
+        TcConWrite      -> kRegion  `kFun` kEffect
+        TcConDeepWrite  -> kData    `kFun` kEffect
+        TcConAlloc      -> kRegion  `kFun` kEffect
+        TcConFree       -> kRegion  `kFun` kClosure
+        TcConDeepFree   -> kData    `kFun` kClosure
+
 
 

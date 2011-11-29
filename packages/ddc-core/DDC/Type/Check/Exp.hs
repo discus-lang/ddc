@@ -48,19 +48,21 @@ checkTypeM env tt
  = case tt of
         -- Constructors ---------------
         -- Sorts don't have a higher classification.
-        TCon (TConSort _)
+        TCon (TyConSort _)
          -> throw $ ErrorNakedSort tt
  
         -- Can't sort check a naked kind function
         -- because the sort depends on the argument kinds.
-        TCon TConKindFun 
-         -> throw $ ErrorUnappliedKindFun
-          
-        TCon (TConKind kc)
-         -> return $ sortOfKiCon kc
+        TCon (TyConKind kc)
+         -> case sortOfKiCon kc of
+                Just s  -> return s
+                Nothing -> throw $ ErrorUnappliedKindFun
 
-        TCon (TConType tc)
-         -> return $ kindOfTyCon tc
+        TCon (TyConWitness tc)
+         -> return $ kindOfTwCon tc
+
+        TCon (TyConComp tc)
+         -> return $ kindOfTcCon tc
 
 
         -- Variables ------------------
@@ -79,7 +81,7 @@ checkTypeM env tt
         -- Applications ---------------
         -- Applications of the kind function constructor are handled directly because
         -- the constructor doesn't have a sort by itself.
-        TApp (TApp (TCon TConKindFun) k1) k2
+        TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
          -> do  _       <- checkTypeM env k1
                 s2      <- checkTypeM env k2
                 return  s2
@@ -92,7 +94,7 @@ checkTypeM env tt
          -> do  k1      <- checkTypeM env t1
                 k2      <- checkTypeM env t2
                 case k1 of
-                 TApp (TApp (TCon TConKindFun) k11) k12
+                 TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
                   | k11 == k2   -> return k12
                   | otherwise   -> throw $ ErrorAppArgMismatch tt k11 k2
                   

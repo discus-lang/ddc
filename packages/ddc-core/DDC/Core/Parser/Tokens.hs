@@ -50,8 +50,9 @@ data Tokens k n
         , tEmptify      :: k -> Bool
         , tCase         :: k -> Bool
         , tOf           :: k -> Bool
-        , tTyConBuiltin :: k -> Maybe (TyCon n)
-        , tTyConUser    :: k -> Maybe (TyCon n)
+        , tTwConBuiltin :: k -> Maybe TwCon
+        , tTcConBuiltin :: k -> Maybe (TcCon n)
+        , tTcConData    :: k -> Maybe (TcCon n)
         , tWiConBuiltin :: k -> Maybe WiCon
         , tDaConUser    :: k -> Maybe n
         , tVar          :: k -> Maybe n }
@@ -98,8 +99,9 @@ liftTokens f g tt
         , tEmptify      = tEmptify     tt . f
         , tCase         = tCase        tt . f
         , tOf           = tOf          tt . f
-        , tTyConBuiltin = \k -> liftM (rename (g k)) $ tTyConBuiltin tt $ f k
-        , tTyConUser    = \k -> liftM (rename (g k)) $ tTyConUser    tt $ f k 
+        , tTwConBuiltin = \k ->                        tTwConBuiltin tt $ f k 
+        , tTcConBuiltin = \k -> liftM (rename (g k)) $ tTcConBuiltin tt $ f k
+        , tTcConData    = \k -> liftM (rename (g k)) $ tTcConData    tt $ f k 
         , tWiConBuiltin = \k ->                        tWiConBuiltin tt $ f k 
         , tDaConUser    = \k -> liftM (g k)          $ tDaConUser    tt $ f k
         , tVar          = \k -> liftM (g k)          $ tVar   tt        $ f k }
@@ -140,8 +142,9 @@ tokenStrings
         , tEmptify      = (==) "emptify"
         , tCase         = (==) "case"
         , tOf           = (==) "of"
-        , tTyConBuiltin = T.readTyConBuiltin
-        , tTyConUser    = T.readTyConUser 
+        , tTwConBuiltin = T.readTwConBuiltin
+        , tTcConBuiltin = T.readTcConBuiltin
+        , tTcConData    = T.readTcConData
         , tWiConBuiltin = readWiConBuiltin
         , tDaConUser    = readDaConUser
         , tVar          = T.readVar }

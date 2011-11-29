@@ -108,7 +108,7 @@ tForalls ks f
 -- Function Constructors --------------------------------------------------------------------------
 -- | Build a kind function.
 kFun, (~>>) :: Kind n -> Kind n -> Kind n
-kFun k1 k2      = (TCon TConKindFun `TApp` k1) `TApp` k2
+kFun k1 k2      = ((TCon $ TyConKind KiConFun)`TApp` k1) `TApp` k2
 (~>>)           = kFun
 
 
@@ -122,7 +122,7 @@ kFuns (k:ks) k1    = k `kFun` kFuns ks k1
 --   with the provided effect and closure.
 tFun    :: Type n -> Type n -> Effect n -> Closure n -> Type n
 tFun t1 t2 eff clo
-        = (TCon $ TConType $ TyConBuiltin TyConFun) `tApps` [t1, t2, eff, clo]
+        = (TCon $ TyConComp TcConFun) `tApps` [t1, t2, eff, clo]
 
 -- | Build a pure and empty value type function.
 tFunPE, (->>)   :: Type n -> Type n -> Type n
@@ -133,42 +133,45 @@ tFunPE t1 t2    = tFun t1 t2 (tBot kEffect) (tBot kClosure)
 -- | Build a witness implication type.
 tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
-        = ((TCon $ TConType $ TyConBuiltin $ TyConImpl) `tApp` t1) `tApp` t2
+        = ((TCon $ TyConWitness TwConImpl) `tApp` t1) `tApp` t2
 
 
 
 -- Level 3 constructors (sorts) -------------------------------------------------------------------
-sComp           = TCon $ TConSort SoConComp
-sProp           = TCon $ TConSort SoConProp
+sComp           = TCon $ TyConSort SoConComp
+sProp           = TCon $ TyConSort SoConProp
 
 
 -- Level 2 constructors (kinds) -------------------------------------------------------------------
-kData           = TCon $ TConKind KiConData
-kRegion         = TCon $ TConKind KiConRegion
-kEffect         = TCon $ TConKind KiConEffect
-kClosure        = TCon $ TConKind KiConClosure
-kWitness        = TCon $ TConKind KiConWitness
+kData           = TCon $ TyConKind KiConData
+kRegion         = TCon $ TyConKind KiConRegion
+kEffect         = TCon $ TyConKind KiConEffect
+kClosure        = TCon $ TyConKind KiConClosure
+kWitness        = TCon $ TyConKind KiConWitness
 
--- Level 1 constructors (value types) -------------------------------------------------------------
-tRead           = tBuiltin1 TyConRead
-tDeepRead       = tBuiltin1 TyConDeepRead
-tWrite          = tBuiltin1 TyConWrite
-tDeepWrite      = tBuiltin1 TyConDeepWrite
-tAlloc          = tBuiltin1 TyConAlloc
-tFree           = tBuiltin1 TyConFree
-tDeepFree       = tBuiltin1 TyConDeepFree
-tConst          = tBuiltin1 TyConConst
-tDeepConst      = tBuiltin1 TyConDeepConst
-tMutable        = tBuiltin1 TyConMutable
-tDeepMutable    = tBuiltin1 TyConDeepMutable
-tLazy           = tBuiltin1 TyConLazy
-tHeadLazy       = tBuiltin1 TyConHeadLazy
-tDirect         = tBuiltin1 TyConDirect
-tPure           = tBuiltin1 TyConPure
-tEmpty          = tBuiltin1 TyConEmpty
-tDistinct       = tBuiltinN TyConDistinct 
 
-tBuiltin1 tc t  = (TCon $ TConType $ TyConBuiltin tc) `tApp` t
-tBuiltinN tc ts = (TCon $ TConType $ TyConBuiltin (tc (length ts))) `tApps` ts
+-- Level 1 constructors (witness and computation types) -------------------------------------------
+tRead           = tcCon1 TcConRead
+tDeepRead       = tcCon1 TcConDeepRead
+tWrite          = tcCon1 TcConWrite
+tDeepWrite      = tcCon1 TcConDeepWrite
+tAlloc          = tcCon1 TcConAlloc
+tFree           = tcCon1 TcConFree
+tDeepFree       = tcCon1 TcConDeepFree
+
+tConst          = twCon1 TwConConst
+tDeepConst      = twCon1 TwConDeepConst
+tMutable        = twCon1 TwConMutable
+tDeepMutable    = twCon1 TwConDeepMutable
+tLazy           = twCon1 TwConLazy
+tHeadLazy       = twCon1 TwConHeadLazy
+tDirect         = twCon1 TwConDirect
+tPure           = twCon1 TwConPure
+tEmpty          = twCon1 TwConEmpty
+tDistinct       = twConN TwConDistinct 
+
+tcCon1 tc t  = (TCon $ TyConComp    tc) `tApp` t
+twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
+twConN tc ts = (TCon $ TyConWitness   (tc (length ts))) `tApps` ts
 
 

@@ -28,15 +28,15 @@ instance Pretty n => Pretty (Type n) where
  pprPrec d tt
   = case tt of
         -- Full application of function constructors are printed infix.
-        TApp (TApp (TCon TConKindFun) k1) k2
+        TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
          -> pprParen (d > 5)
          $  ppr k1 <+> text "~>" <+> ppr k2
 
-        TApp (TApp (TCon (TConType (TyConBuiltin TyConImpl))) k1) k2
+        TApp (TApp (TCon (TyConWitness TwConImpl)) k1) k2
          -> pprParen (d > 5)
          $  ppr k1 <+> text "=>" <+> pprPrec 6 k2
 
-        TApp (TApp (TApp (TApp (TCon (TConType (TyConBuiltin TyConFun))) t1) t2) eff) clo
+        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) t2) eff) clo
          | isBot eff, isBot clo
          -> pprParen (d > 5)
          $  ppr t1 <+> text "->" <+> pprPrec 6 t2
@@ -67,13 +67,13 @@ instance Pretty n => Pretty (TypeSum n) where
 
 
 -- TCon -------------------------------------------------------------------------------------------
-instance Pretty n => Pretty (TCon n) where
+instance Pretty n => Pretty (TyCon n) where
  ppr tt
   = case tt of
-        TConSort sc     -> ppr sc
-        TConKindFun     -> text "(~>)"
-        TConKind kc     -> ppr kc
-        TConType tc     -> ppr tc
+        TyConSort sc    -> ppr sc
+        TyConKind kc    -> ppr kc
+        TyConWitness tc -> ppr tc
+        TyConComp tc    -> ppr tc
 
 
 instance Pretty SoCon where
@@ -86,40 +86,39 @@ instance Pretty SoCon where
 instance Pretty KiCon where
  ppr kc
   = case kc of
+        KiConFun        -> text "(~>)"
         KiConData       -> text "*"
         KiConRegion     -> text "%"
         KiConEffect     -> text "!"
         KiConClosure    -> text "$"
         KiConWitness    -> text "@"
 
-instance Pretty n => Pretty (TyCon n) where
- ppr tc
-  = case tc of
-        TyConUser v _   -> ppr v
-        TyConBuiltin tb -> ppr tb
+
+instance Pretty TwCon where
+ ppr tw
+  = case tw of
+        TwConImpl       -> text "(=>)"
+        TwConConst      -> text "Const"
+        TwConDeepConst  -> text "DeepConst"
+        TwConMutable    -> text "Mutable"
+        TwConDeepMutable-> text "DeepMutable"
+        TwConLazy       -> text "Lazy"
+        TwConHeadLazy   -> text "HeadLazy"
+        TwConDirect     -> text "Direct"
+        TwConDistinct n -> text "Distinct" <> (text $ show n)
+        TwConPure       -> text "Pure"
+        TwConEmpty      -> text "Empty"
         
-instance Pretty TyConBuiltin where
+
+instance Pretty n => Pretty (TcCon n) where
  ppr tc 
   = case tc of
-        TyConFun        -> text "(->)"
-        TyConRead       -> text "Read"
-        TyConDeepRead   -> text "DeepRead"
-        TyConWrite      -> text "Write"
-        TyConDeepWrite  -> text "DeepWrite"
-        TyConAlloc      -> text "Alloc"
-        TyConFree       -> text "Free"
-        TyConDeepFree   -> text "DeepFree"
-        TyConImpl       -> text "(=>)"
-        TyConConst      -> text "Const"
-        TyConDeepConst  -> text "DeepConst"
-        TyConMutable    -> text "Mutable"
-        TyConDeepMutable-> text "DeepMutable"
-        TyConLazy       -> text "Lazy"
-        TyConHeadLazy   -> text "HeadLazy"
-        TyConDirect     -> text "Direct"
-        TyConDistinct n -> text "Distinct" <> (text $ show n)
-        TyConPure       -> text "Pure"
-        TyConEmpty      -> text "Empty"
-
-
-
+        TcConData v _   -> ppr v
+        TcConFun        -> text "(->)"
+        TcConRead       -> text "Read"
+        TcConDeepRead   -> text "DeepRead"
+        TcConWrite      -> text "Write"
+        TcConDeepWrite  -> text "DeepWrite"
+        TcConAlloc      -> text "Alloc"
+        TcConFree       -> text "Free"
+        TcConDeepFree   -> text "DeepFree"

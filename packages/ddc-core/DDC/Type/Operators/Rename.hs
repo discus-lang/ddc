@@ -40,18 +40,27 @@ instance Named Bound where
         UIx   i k       -> UIx   i     (rename f k)
 
 
-instance Named TCon where
+instance Named TyCon where
  rename f cc
   = case cc of
-        TConSort sc     -> TConSort sc
-        TConKindFun     -> TConKindFun
-        TConKind kc     -> TConKind kc
-        TConType tc     -> TConType (rename f tc)
+        TyConSort sc    -> TyConSort sc
+        TyConKind kc    -> TyConKind kc
+        TyConWitness tc -> TyConWitness tc
+        TyConComp tc    -> TyConComp (rename f tc)
 
 
-instance Named TyCon where
+instance Named TcCon where
  rename f tc
   = case tc of
-        TyConUser n k   -> TyConUser (f n) (rename f k)
-        TyConBuiltin tb -> TyConBuiltin tb
+        TcConData n k   -> TcConData (f n) (rename f k)
+        TcConFun        -> TcConFun
+        TcConRead       -> TcConRead
+        TcConDeepRead   -> TcConDeepRead
+        TcConWrite      -> TcConWrite
+        TcConDeepWrite  -> TcConDeepWrite
+        TcConAlloc      -> TcConAlloc
+        TcConFree       -> TcConFree
+        TcConDeepFree   -> TcConDeepFree
 
+
+        

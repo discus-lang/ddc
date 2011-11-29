@@ -29,12 +29,10 @@ showWType_toks toks
         
 showWType_type :: Witness Token -> IO ()
 showWType_type w
-        = putStrLn $ show $ (ppr w <> text " :: " <> ppr (typeOfWitness w))
-{-
- = case typeOfWitness t of
+ = case typeOfWitness w of
         Left err        -> putStrLn $ show $ ppr err
-        Right k         -> putStrLn $ show $ (ppr t <> text " :: " <> ppr k)
- -}
+        Right k         -> putStrLn $ show $ (ppr w <> text " :: " <> ppr k)
+
 
 parseWitness :: [Token] -> Either CP.ParseError (Witness Token)
 parseWitness toks

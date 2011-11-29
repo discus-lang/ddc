@@ -1,35 +1,39 @@
 
 module DDC.Type.Exp
         ( -- * Types, Kinds, and Sorts
-          Type    (..)
-        , Bind    (..)
-        , Bound   (..)
+          Type     (..)
+        , Bind     (..)
+        , Bound    (..)
         , Kind,   Sort
         , Region, Effect, Closure
-        , TypeSum (..),   TyConHash(..)
-        , TCon    (..)
-        , SoCon   (..)
-        , KiCon   (..)
-        , TyCon   (..),   TyConBuiltin(..))
+        , TypeSum  (..),   TyConHash(..)
+        , TyCon    (..)
+        , SoCon    (..)
+        , KiCon    (..)
+        , TwCon    (..)
+        , TcCon    (..))
 where
 import Data.Array
 import Data.Map         (Map)
 
 
 -- Types ------------------------------------------------------------------------------------------
--- | A value type (level 1), kind (level 2) or sort (level 3).
---   We use the same data type to represent all three, as they have a similar structure.
+-- | A value type, kind, or sort.
+--
+--   We use the same data type to represent all three universes, as they have a similar
+--   algebraic structure.
+--
 data Type n
-        -- | Type variable.
+        -- | Variable.
         = TVar    (Bound n)
 
-        -- | Type constructor.
-        | TCon    (TCon  n)
+        -- | Constructor.
+        | TCon    (TyCon n)
 
-        -- | Type abstraction.
+        -- | Abstraction.
         | TForall (Bind  n) (Type  n)
         
-        -- | Type application.
+        -- | Application.
         | TApp    (Type  n) (Type  n)
 
         -- | Least upper bound.
@@ -89,8 +93,8 @@ data TypeSum n
           --   INVARIANT: this list doesn't contain other TSum forms.
         , typeSumSpill          :: [Type n] }
         deriving (Eq, Show)
-
-
+        -- TODO: Eq instance is wrong because we much check the spill fields.
+        
 -- | Hash value used to insert types into type sums.
 --   Only tycons that can be inserted into the sum have a hash value.
 data TyConHash 
@@ -98,37 +102,49 @@ data TyConHash
         deriving (Eq, Show, Ord, Ix)
 
 
--- TCon -------------------------------------------------------------------------------------------
+-- TyCon ------------------------------------------------------------------------------------------
 -- | Kind, type and witness constructors.
-data TCon n
-        -- | Sort constructor  (level 3)
-        = TConSort    SoCon
+--
+--   These are grouped to make it easy to determine the universe that they belong to.
+-- 
+data TyCon n
+        -- | Sort constructors               (level 3)
+        = TyConSort    SoCon
 
-        -- | Kind constructors (level 2)
-        --   The kind function is treated separtely because it isn't well formed
-        --   without being fully applied.
-        | TConKindFun 
-        | TConKind    KiCon
+        -- | Kind constructors               (level 2)
+        | TyConKind    KiCon
 
-        -- | Type constructor  (level 1)
-        | TConType    (TyCon n)
+        -- | Witness type constructors       (level 1)
+        | TyConWitness TwCon
+
+        -- | Computation type constructors   (level 1)
+        | TyConComp    (TcCon n)
         deriving (Eq, Show)
 
 
 -- | Sort constructor.
 data SoCon
-        -- | Sort of computation kinds.
-        = SoConComp                -- '**'
+        -- | Sort of witness kinds.
+        = SoConProp                -- '@@'
 
-        -- | Sort of proof kinds.
-        | SoConProp                -- '@@'
+        -- | Sort of computation kinds.
+        | SoConComp                -- '**'
         deriving (Eq, Show)
 
 
 -- | Kind constructor.
 data KiCon
+        -- | Function kind constructor.
+        --   This is only well formed, and has a sort, when it is fully applied.
+        = KiConFun              -- (~>)
+
+        -- Witness kinds ------------------------
+        -- | Kind of witnesses.
+        | KiConWitness          -- '@ :: @@'
+
+        -- Computation kinds ---------------------
         -- | Kind of data values.
-        = KiConData             -- '* :: **'
+        | KiConData             -- '* :: **'
 
         -- | Kind of regions.
         | KiConRegion           -- '% :: **'
@@ -138,88 +154,80 @@ data KiCon
 
         -- | Kind of closures.
         | KiConClosure          -- '$ :: **'
-
-        -- | Kind of witnesses.
-        | KiConWitness          -- '@ :: ++'
         deriving (Eq, Show)
 
 
--- | Type constructor.
-data TyCon n
-        -- | User defined type constructor with its kind.
-        = TyConUser     n (Kind n)
+-- | Witness type constructors.
+data TwCon
+        -- Witness implication.
+        = TwConImpl             -- :: '(=>) :: * ~> *'
+        
+        -- | Constancy of some region.
+        | TwConConst            -- :: % ~> @
 
-        -- | A builtin type constructor.
-        | TyConBuiltin  TyConBuiltin
+        -- | Constancy of material regions in some type
+        | TwConDeepConst        -- :: * ~> @
+
+        -- | Mutability of some region.
+        | TwConMutable          -- :: % ~> @
+
+        -- | Mutability of material regions in some type.
+        | TwConDeepMutable      -- :: * ~> @
+
+        -- | Laziness of some region.
+        | TwConLazy             -- :: % ~> @
+
+        -- | Laziness of the primary region in some type.
+        | TwConHeadLazy         -- :: * ~> @
+
+        -- | Directness of some region (not lazy).
+        | TwConDirect           -- :: % ~> @
+
+        -- | Distinctness \/ Separation of regions.
+        --   Arity must be >= 2.
+        | TwConDistinct Int     -- :: % ~> % ... ~> @
+
+        -- | Purity of some effect.
+        | TwConPure             -- :: ! ~> @
+
+        -- | Emptiness of some closure.
+        | TwConEmpty            -- :: $ ~> @
         deriving (Eq, Show)
 
 
--- | Builtin type constructors that don't contain names.
-data TyConBuiltin
-        -- Value type constructors --------------
-        -- | The function type constructor.
-        = TyConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
+-- | Computation type constructors.
+data TcCon n
+        -- Data type constructors ---------------
+        -- | Data type constructor with its kind.
+        = TcConData     n (Kind n)
+
+        -- | The function type constructor is baked in so we 
+        --   represent it separately.
+        | TcConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
 
 
         -- Effect type constructors -------------
         -- | Read of some region
-        | TyConRead             -- :: '% ~> !'
+        | TcConRead             -- :: '% ~> !'
 
         -- | Read of all material regions in value type.
-        | TyConDeepRead         -- :: '* ~> !'
+        | TcConDeepRead         -- :: '* ~> !'
         
         -- | Write of some region.
-        | TyConWrite            -- :: '% ~> !'
+        | TcConWrite            -- :: '% ~> !'
 
         -- | Write to all material regions in some type
-        | TyConDeepWrite        -- :: '* ~> !'
+        | TcConDeepWrite        -- :: '* ~> !'
         
         -- | Allocation into some region.
-        | TyConAlloc            -- :: '% ~> !'
+        | TcConAlloc            -- :: '% ~> !'
 
         
         -- Closure type constructors ------------
         -- | Some region is free in a closure.
-        | TyConFree             -- :: '% ~> $'
+        | TcConFree             -- :: '% ~> $'
         
         -- | All material regions in a type are free in a closure.
-        | TyConDeepFree         -- :: '* ~> $'
-
-
-        -- Witness type constructors ------------
-        -- Witness implication.
-        | TyConImpl             -- :: '(=>)'
-        
-        -- | Constancy of some region.
-        | TyConConst            -- :: % ~> @
-
-        -- | Constancy of material regions in some type
-        | TyConDeepConst        -- :: * ~> @
-
-        -- | Mutability of some region.
-        | TyConMutable          -- :: % ~> @
-
-        -- | Mutability of material regions in some type.
-        | TyConDeepMutable      -- :: * ~> @
-
-        -- | Laziness of some region.
-        | TyConLazy             -- :: % ~> @
-
-        -- | Laziness of the primary region in some type.
-        | TyConHeadLazy         -- :: * ~> @
-
-        -- | Directness of some region (not lazy).
-        | TyConDirect           -- :: % ~> @
-
-        -- | Distinctness \/ Separation of regions.
-        --   Arity must be >= 2.
-        | TyConDistinct Int     -- :: % ~> % ... ~> @
-
-        -- | Purity of some effect.
-        | TyConPure             -- :: ! ~> @
-
-        -- | Emptiness of some closure.
-        | TyConEmpty            -- :: $ ~> @
+        | TcConDeepFree         -- :: '* ~> $'
         deriving (Eq, Show)
-
 

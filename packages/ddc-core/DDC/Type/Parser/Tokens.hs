@@ -3,8 +3,9 @@ module DDC.Type.Parser.Tokens
         ( Tokens(..)
         , liftTokens
         , tokenStrings
-        , readTyConBuiltin
-        , readTyConUser
+        , readTwConBuiltin
+        , readTcConBuiltin
+        , readTcConData
         , readVar)
 where
 import DDC.Type.Exp
@@ -41,8 +42,9 @@ data Tokens k n
         , tTypeFunKet   :: k -> Bool
         , tBotEffect    :: k -> Bool
         , tBotClosure   :: k -> Bool
-        , tTyConBuiltin :: k -> Maybe (TyCon n)
-        , tTyConUser    :: k -> Maybe (TyCon n)
+        , tTwConBuiltin :: k -> Maybe TwCon
+        , tTcConBuiltin :: k -> Maybe (TcCon n)
+        , tTcConData    :: k -> Maybe (TcCon n)
         , tVar          :: k -> Maybe n }
 
 
@@ -77,8 +79,9 @@ liftTokens f g tt
         , tTypeFunKet   = tTypeFunKet   tt . f
         , tBotEffect    = tBotEffect    tt . f
         , tBotClosure   = tBotClosure   tt . f
-        , tTyConBuiltin = \k -> liftM (rename (g k)) $ tTyConBuiltin tt $ f k
-        , tTyConUser    = \k -> liftM (rename (g k)) $ tTyConUser    tt $ f k
+        , tTwConBuiltin = tTwConBuiltin tt . f
+        , tTcConBuiltin = \k -> liftM (rename (g k)) $ tTcConBuiltin tt $ f k
+        , tTcConData    = \k -> liftM (rename (g k)) $ tTcConData    tt $ f k
         , tVar          = \k -> liftM (g k)          $ tVar tt          $ f k }
 
 
@@ -107,42 +110,49 @@ tokenStrings
         , tTypeFunKet   = (==) ")>"
         , tBotEffect    = (==) "!0"
         , tBotClosure   = (==) "$0"
-        , tTyConBuiltin = readTyConBuiltin
-        , tTyConUser    = readTyConUser 
+        , tTwConBuiltin = readTwConBuiltin
+        , tTcConBuiltin = readTcConBuiltin
+        , tTcConData    = readTcConData
         , tVar          = readVar }
 
 
--- | Read a named, builtin `TyCon`. 
-readTyConBuiltin :: String -> Maybe (TyCon n)
-readTyConBuiltin ss
- = liftM TyConBuiltin
- $ case ss of
-        "Read"          -> Just TyConRead
-        "DeepRead"      -> Just TyConDeepRead
-        "Write"         -> Just TyConWrite
-        "DeepWrite"     -> Just TyConDeepWrite
-        "Alloc"         -> Just TyConAlloc
-        "Free"          -> Just TyConFree
-        "DeepFree"      -> Just TyConDeepFree
-        "Const"         -> Just TyConConst
-        "DeepConst"     -> Just TyConDeepConst
-        "Mutable"       -> Just TyConMutable
-        "DeepMutable"   -> Just TyConDeepMutable
-        "Lazy"          -> Just TyConLazy
-        "HeadLazy"      -> Just TyConHeadLazy
-        "Direct"        -> Just TyConDirect
-        "Pure"          -> Just TyConPure
-        "Empty"         -> Just TyConEmpty
+-- | Read a named, builtin `TwCon`. 
+readTwConBuiltin :: String -> Maybe TwCon
+readTwConBuiltin ss
+ = case ss of
+        "Const"         -> Just TwConConst
+        "DeepConst"     -> Just TwConDeepConst
+        "Mutable"       -> Just TwConMutable
+        "DeepMutable"   -> Just TwConDeepMutable
+        "Lazy"          -> Just TwConLazy
+        "HeadLazy"      -> Just TwConHeadLazy
+        "Direct"        -> Just TwConDirect
+        "Pure"          -> Just TwConPure
+        "Empty"         -> Just TwConEmpty
         _               -> Nothing
 
 
--- | Read a named, user defined `TyCon`.
+-- | Read a named, builtin `TcCon`. 
+readTcConBuiltin :: String -> Maybe (TcCon n)
+readTcConBuiltin ss
+ = case ss of
+        "Read"          -> Just TcConRead
+        "DeepRead"      -> Just TcConDeepRead
+        "Write"         -> Just TcConWrite
+        "DeepWrite"     -> Just TcConDeepWrite
+        "Alloc"         -> Just TcConAlloc
+        "Free"          -> Just TcConFree
+        "DeepFree"      -> Just TcConDeepFree
+        _               -> Nothing
+
+
+-- | Read a named, user defined `TcCon`.
 --
 --   We won't know its kind, so fill this in with the Bottom element for 
 --   computatation kinds (**0).
-readTyConUser :: String -> Maybe (TyCon String)
-readTyConUser ss
-        | isConName ss  = Just (TyConUser ss (TBot T.sComp))
+readTcConData :: String -> Maybe (TcCon String)
+readTcConData ss
+        | isConName ss  = Just (TcConData ss (TBot T.sComp))
         | otherwise     = Nothing
 
 

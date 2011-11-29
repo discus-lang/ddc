@@ -20,36 +20,36 @@ import DDC.Type.Exp
 -- | A value expression,
 --   The domain of computation.
 data Exp a n p
-        -- | A primitive operator or literal.
-        = XPrim a p
-
         -- | Value variable.
-        | XVar  a (Bound n)
+        = XVar  a (Bound n)
+
+        -- | A primitive operator or literal.
+        | XPrim a p
 
         -- | Data constructor.
         | XCon  a (Bound n)
-        
-        -- | Function abstraction.
-        | XLam  a (Bind n)    (Exp a n p)
-        
+
         -- | Value application.
         | XApp  a (Exp a n p) (Exp a n p)
 
-        -- | Type application.
-        | XAppT a (Exp a n p) (Type n)
-        
-        -- | Witness application.
-        | XAppW a (Exp a n p) (Witness n)
-        
+        -- | Function abstraction.
+        | XLam  a (Bind n)    (Exp a n p)
+
+        -- | Some possibly recursive definitions.
+        | XLet  a (Let a n p) (Exp a n p)
+
+        -- | Case branching.
+        | XCase a (Exp a n p) [Alt a n p]
+
         -- | Type cast.
         --   Argument is the witness for the cast.
         | XCast a (Exp a n p) (Cast n)
 
-        -- | Some possibly recursive definitions.
-        | XLet  a (Let a n p) (Exp a n p)
-                
-        -- | Case branching.
-        | XCase a (Exp a n p) [Alt a n p]
+        -- | Type can appear as the argument of an `XApp`.
+        | XType    (Type n)
+
+        -- | Witness can appear as the argument of an `XApp`.
+        | XWitness (Witness n)
         deriving (Eq, Show)
 
 
@@ -72,6 +72,7 @@ data Cast n
 -- | Possibly recursive bindings.
 data Let a n p
         -- | A non-binding, effectful statement.
+        --   TODO: add non binding form to Bind and drop this contructor.
         = LStmt          (Exp a n p)
         
         -- | Non-recursive binding
