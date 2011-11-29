@@ -37,7 +37,7 @@ instance Pretty n => Pretty (Type n) where
          $  ppr k1 <+> text "=>" <+> pprPrec 6 k2
 
         TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) t2) eff) clo
-         | isBot eff, isBot clo
+         | isBottom eff, isBottom clo
          -> pprParen (d > 5)
          $  ppr t1 <+> text "->" <+> pprPrec 6 t2
 
