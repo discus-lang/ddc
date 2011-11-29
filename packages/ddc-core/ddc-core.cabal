@@ -24,6 +24,7 @@ Library
   Exposed-modules:
         DDC.Type.Exp
         DDC.Type.Sum
+        DDC.Type.Universe
         DDC.Type.Pretty
         DDC.Type.Compounds
         DDC.Type.Predicates

@@ -1,4 +1,5 @@
 
+-- | Abstract syntax for the DDC core language.
 module DDC.Core.Exp 
         ( module DDC.Type.Exp
 

@@ -1,4 +1,5 @@
 
+-- | Type checker for the DDC core language.
 module DDC.Core.Check
         ( checkExp,     typeOfExp,     typeOfExp'
         , checkWitness, typeOfWitness, typeOfWitness'
@@ -9,6 +10,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Base.Pretty                  ()
 import DDC.Type.Compounds
+import DDC.Type.Universe
 import DDC.Type.Sum                     as T
 import DDC.Type.Check.Env               (Env)
 import DDC.Type.Check.Monad             (result, throw)
@@ -21,7 +23,7 @@ type CheckM a n p   = G.CheckM (Error a n p)
 
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Take the kind of a type.
-typeOfExp  :: Ord n => Exp a n p -> Either (Error a n p) (Type n)
+typeOfExp  :: (Ord n, Pretty n) => Exp a n p -> Either (Error a n p) (Type n)
 typeOfExp xx 
         = result 
         $ do    (t, _eff, _clo) <- checkExpM Env.empty xx
@@ -37,7 +39,7 @@ typeOfExp' tt
 
 -- | Check an expression, returning an error or its type, effect and closure.
 checkExp 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Env n -> Exp a n p
         -> Either (Error a n p)
                   (Type n, Effect n, Closure n)
@@ -54,7 +56,7 @@ checkExp env xx
 --         check that existing annotations have the same kinds as from the environment.
 --         add a function to check that a type has kind annots in the right places.
 checkExpM 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Env n -> Exp a n p
         -> CheckM a n p (Type n, TypeSum n, TypeSum n)
 
@@ -66,28 +68,15 @@ checkExpM env xx
                         , T.empty kEffect
                         , T.empty kClosure)
          
+        -- primitives
+        XPrim _ _
+         -> error "checkExp: XPrim not done yet"
 
         -- data constructors.
         XCon _ u
          ->     return  ( typeOfBound u
                         , T.empty kEffect
                         , T.empty kClosure)
-
-
-        -- lambda abstractions.
-        XLam _ _b _x
-         ->      return $ error "not finished"
-
-{-         do  let t1          =  typeOfBind b
-                k1              <- checkTypeM env t1
-                (t2, e2, c2)    <- checkExpM  (Env.extend b env) x
-                
-                if isValueType t1 then 
-                        return  ( tFun t1 t2 (TSum e2) (TSum c2)
-                                , T.empty kEffect
-                                , T.empty kClosure)
-                 else if 
--}
 
         -- value-type application.
         XApp _ x1 (XType t2)
@@ -103,7 +92,6 @@ checkExpM env xx
                   | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
                  _              -> throw $ ErrorAppNotFun   xx t1 t2
 
-
         -- value-witness application.
         XApp _ x1 (XWitness w2)
          -> do  (t1, effs1, clos1)   <- checkExpM env x1
@@ -118,7 +106,6 @@ checkExpM env xx
                   | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun   xx t1 t2
                  
-
         -- value-value application.
         XApp _ x1 x2
          -> do  (t1, effs1, clos1)    <- checkExpM env x1
@@ -134,6 +121,40 @@ checkExpM env xx
                                 , clos1 `plus` clos2 `plus` clos)
                   | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun xx t1 t2
+
+        -- lambda abstractions.
+        XLam _ b1 x2
+         -> do  let t1          =  typeOfBind b1
+                k1              <- checkTypeM env t1
+                (t2, e2, c2)    <- checkExpM  (Env.extend b1 env) x2
+
+                -- The form of the function constructor depends on what universe we're dealing with.
+                -- Note that only the computation abstraction can suspend visible effects.
+                case universeFromType2 k1 of
+                  Just UniverseComp
+                   -> return ( tFun t1 t2 (TSum e2) (TSum c2)
+                             , T.empty kEffect
+                             , T.empty kClosure)
+
+                  Just UniverseWitness
+                   | e2 /= T.empty kEffect -> throw $ ErrorEffectfulAbstraction xx (TSum e2)
+                   | otherwise             -> return (tImpl t1 t2,   T.empty kEffect, T.empty kClosure)
+                      
+                  Just UniverseSpec
+                   | e2 /= T.empty kEffect -> throw $ ErrorEffectfulAbstraction xx (TSum e2)
+                   | otherwise             -> return (TForall b1 t2, T.empty kEffect, T.empty kClosure)
+
+                  _ -> throw $ ErrorMalformedType xx k1
+
+        -- let binding
+        XLet{}  -> error "checkExp: XLet not done yet"
+        
+        -- case expression
+        XCase{} -> error "checkExp: XCase not done yet"
+        
+        -- type cast
+        XCast{} -> error "checkExp: XCase not done yet"
+                
  
         _ -> error "typeOfExp: not handled yet"
 
@@ -215,9 +236,19 @@ typeOfWiCon wc
 -- Error ------------------------------------------------------------------------------------------
 -- | Type errors.
 data Error a n p
+
         -- | Found a kind error when checking a type.
         = ErrorType
         { errorTypeError        :: T.Error n }
+
+        -- | Found a malformed exp, and we don't have a more specific diagnosis.
+        | ErrorMalformedExp
+        { errorChecking         :: Exp a n p }
+
+        -- | Found a malformed type, and we don't have a more specific diagnosis.
+        | ErrorMalformedType
+        { errorChecking         :: Exp a n p
+        , errorType             :: Type n }
 
         -- | Types of parameter and arg don't match when checking application.
         | ErrorAppMismatch
@@ -231,25 +262,45 @@ data Error a n p
         , errorNotFunType       :: Type n
         , errorArgType          :: Type n }
 
+        -- | Non-computation abstractions cannot have visible effects.
+        | ErrorEffectfulAbstraction
+        { errorChecking         :: Exp a n p
+        , errorEffect           :: Effect n }
+
+
 
 instance (Eq n, Pretty n) => Pretty (Error a n p) where
  ppr err
   = case err of
         ErrorType err'  -> ppr err'
-        
-        ErrorAppMismatch tt t1 t2
-         -> sep $ punctuate line 
-                [ text "Core type mismatch in application."
-                , text "                    type: " <> ppr t1
-                , text "          does not match: " <> ppr t2
-                , text "          in application: " <> ppr tt ]
-         
-        ErrorAppNotFun _tt t1 t2
-         -> sep $ punctuate line
-                [ text "Core type mismatch in application."
-                , text " cannot apply expression"
-                , text "                 of type: " <> ppr t2
-                , text "         to non-function "
-                , text "                 of type: " <> ppr t1 ]
 
+        ErrorMalformedExp xx
+         -> vcat [ text "Core type error."
+                 , text "    found malformed exp: " <> ppr xx ]
         
+        ErrorMalformedType xx tt
+         -> vcat [ text "Core type error."
+                 , text "   found malformed type: " <> ppr tt
+                 , text "          when checking: " <> ppr xx ]
+
+        ErrorAppMismatch xx t1 t2
+         -> vcat [ text "Core type error in application."
+                 , text " cannot apply function " 
+                 , text "                 of type: " <> ppr t1
+                 , text "     to argument of type: " <> ppr t2
+                 , text "          in application: " <> ppr xx ]
+         
+        ErrorAppNotFun xx t1 t2
+         -> vcat [ text "Core type error in application."
+                 , text " cannot apply non-function"
+                 , text "                 of type: " <> ppr t1
+                 , text "     to argument of type: " <> ppr t2 
+                 , text "          in application: " <> ppr xx ]
+
+        ErrorEffectfulAbstraction xx eff
+         -> vcat [ text "Core type error in abstraction."
+                 , text "  non-computation abstraction"
+                 , text "     has visible effect: " <> ppr eff
+                 , text "          when checking: " <> ppr xx ]
+                 
+
