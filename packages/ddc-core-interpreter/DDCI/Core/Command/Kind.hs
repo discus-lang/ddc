@@ -2,23 +2,22 @@
 module DDCI.Core.Command.Kind
         (cmdShowKind)
 where
+import DDCI.Core.Prim.Name
 import DDCI.Core.Prim.Env
-import DDCI.Core.Token
 import DDC.Type.Pretty
 import DDC.Type.Check
-import DDC.Type.Transform               as T
-import qualified DDC.Type.Parser.Lexer  as TP
-import qualified DDC.Type.Parser.Tokens as TP
-import qualified DDC.Type.Parser        as TP
+import DDC.Type.Parser.Lexer
+import DDC.Type.Parser.Tokens
+import DDC.Type.Parser
 import DDC.Type.Exp
-import Control.Monad
+import DDC.Base.Lexer
+import qualified DDC.Type.Transform     as T
+import qualified DDC.Base.Parser        as BP
 
 
 cmdShowKind :: String -> IO ()
 cmdShowKind ss
- = case sequence (TP.lexType ss) of
-        Nothing         -> putStrLn "lexical error"
-        Just toks       -> goParse $ map Token toks
+        = goParse (lexType Name ss)
 
 goParse toks                
  = case parseType toks of 
@@ -31,10 +30,6 @@ goCheck t
         Right k         -> putStrLn $ show $ (ppr t <> text " :: " <> ppr k)
  
 
-parseType :: [Token] -> Either TP.ParseError (Type Token)
+parseType :: [Token (Tok Name)] -> Either BP.ParseError (Type Name)
 parseType toks
- = let  tokenTable      = TP.liftTokens stringOfToken tokenOfString TP.tokenStrings
-        fileName        = "foo"
-   in   TP.runWrapParserG tokenTable
-                stringOfToken posOfToken tokenOfString 
-                fileName TP.pType toks
+        = BP.runTokenParser show "<interactive>" pType toks

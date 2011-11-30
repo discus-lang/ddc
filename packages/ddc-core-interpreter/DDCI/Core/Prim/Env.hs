@@ -9,7 +9,7 @@ module DDCI.Core.Prim.Env
         ( primEnv
         , primDataTypeKinds)
 where
-import DDCI.Core.Token
+import DDCI.Core.Prim.Name
 import DDC.Type.Exp
 import DDC.Type.Check.Env
 import DDC.Type.Compounds
@@ -18,7 +18,7 @@ import Data.Map                         (Map)
 
 
 -- | Environment containing types for all the primitive bindings.
-primEnv :: Env Token
+primEnv :: Env Name
 primEnv
         = Env
         { envMap        = primDataTypeKinds
@@ -26,12 +26,12 @@ primEnv
 
 
 -- | Kinds of primitive data type constructors.
-primDataTypeKinds :: Map Token (Kind Token)
+primDataTypeKinds :: Map Name (Kind Name)
 primDataTypeKinds
         = Map.fromList
-        [ (Token "Unit",   kData)
-        , (Token "Int",    kFun kRegion kData)
-        , (Token "Char",   kFun kRegion kData)
-        , (Token "String", kFun kRegion kData) ]
+        [ (Name "Unit",   kData)
+        , (Name "Int",    kFun kRegion kData)
+        , (Name "Char",   kFun kRegion kData)
+        , (Name "String", kFun kRegion kData) ]
         
 

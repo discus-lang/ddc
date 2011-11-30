@@ -1,78 +1,66 @@
 
 module DDC.Base.Parser
         ( module Text.Parsec
-        , module Text.Parsec.Pos
-        , ParserG
-        , ParserStateG(..)
-        , runWrapParserG
-        , pToken
-        , pTokenAs
+        , Parser
+        , ParserState   (..)
+        , runTokenParser
+        , pTokMaybe
+        , pTokAs
         , pTok)
 where
-import Text.Parsec
-import Text.Parsec.Pos
+import DDC.Base.Lexer
 import Data.Functor.Identity
+import Text.Parsec
+import Text.Parsec                      as P
 
 
 -- | A generic parser,
 --   parameterised over token definition type, token type, name type and return type.
-type ParserG ts k n a
+type Parser k a
         =  (Show k, Eq k)
-        => ParsecT [k] (ParserStateG ts k n) Identity a
+        => P.ParsecT [Token k] (ParserState k) Identity a
 
 
 -- | A generic parser state.
-data ParserStateG ts k n
+data ParserState k
         = ParseState
-        { stateTokens           :: ts
-        , stateTokenShow        :: k -> String
-        , stateTokenPos         :: k -> SourcePos
-        , stateMakeName         :: k -> String -> n
+        { stateTokenShow        :: k -> String
         , stateFileName         :: String }
 
 
 -- | Run a generic parser,
 --   where the tokens are just wrapped strings.
-runWrapParserG
-        :: (Eq k, Show k, Ord n)
-        => ts                   -- ^ Token definitions
-        -> (k -> String)        -- ^ Show a token.
-        -> (k -> SourcePos)     -- ^ Take the source position of a token.
-        -> (k -> String -> n)   -- ^ Convert a string to a variable name.
+runTokenParser
+        :: (Eq k, Show k)
+        => (k -> String)        -- ^ Show a token.
         -> String               -- ^ File name for error messages.
-        -> ParserG ts k n a     -- ^ Parser to run.
-        -> [k]                  -- ^ Tokens to parse.
-        -> Either ParseError a
+        -> Parser k a           -- ^ Parser to run.
+        -> [Token k]            -- ^ Tokens to parse.
+        -> Either P.ParseError a
 
-runWrapParserG ts tokenShow tokenPos makeName fileName parser 
- = runParser parser
+runTokenParser tokenShow fileName parser 
+ = P.runParser parser
         ParseState 
-        { stateTokens           = ts
-        , stateTokenShow        = tokenShow
-        , stateTokenPos         = tokenPos
-        , stateMakeName         = makeName
+        { stateTokenShow        = tokenShow
         , stateFileName         = fileName }
         fileName
 
 
--- | Accept a token from the table.
-pToken  :: (ts -> k -> Maybe a)
-        -> ParserG ts k n a
-pToken  f
- = do   state   <- getState
-        token   (stateTokenShow state)
-                (stateTokenPos  state)
-                (f (stateTokens state))
+-- | Accept a token.
+pTokMaybe  :: (k -> Maybe a) -> Parser k a
+pTokMaybe f
+ = do   state   <- P.getState
+        P.token (stateTokenShow state . tokenTok)
+                (takeParsecSourcePos)
+                (f . tokenTok)
 
 
--- | Accept a token from the table and return the given value.
-pTokenAs  :: (ts -> k -> Bool) -> t
-          -> ParserG ts k n t
-pTokenAs f t = pTok f >> return t
+-- | Accept a token and return the given value.
+pTokAs    :: Eq k => k -> t -> Parser k t
+pTokAs k t = pTok k >> return t
 
 
--- | Accept a token from the table.
-pTok    :: (ts -> k -> Bool)
-        -> ParserG ts k n ()
-pTok f  = pToken $ \toks t -> if f toks t then Just () else Nothing
+-- | Accept the given token.
+pTok      :: Eq k => k -> Parser k ()
+pTok k  = pTokMaybe $ \k' -> if k == k' then Just () else Nothing
 

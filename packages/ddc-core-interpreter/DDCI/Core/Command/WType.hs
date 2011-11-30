@@ -1,43 +1,34 @@
-
+{-# OPTIONS -fno-warn-missing-signatures #-}
 module DDCI.Core.Command.WType
         (cmdShowWType)
 where
-import DDCI.Core.Token
+import DDCI.Core.Prim.Name
 import DDC.Core.Pretty
 import DDC.Core.Exp
 import DDC.Core.Check
-import qualified DDC.Core.Parser.Lexer  as CP
-import qualified DDC.Core.Parser.Tokens as CP
-import qualified DDC.Core.Parser        as CP
-import Control.Monad
+import DDC.Core.Parser.Lexer
+import DDC.Core.Parser.Tokens
+import DDC.Core.Parser
+import DDC.Base.Lexer
+import qualified DDC.Base.Parser        as BP
 
 
 -- | Show the type of a witness.
 cmdShowWType :: String -> IO ()
 cmdShowWType ss
- = case sequence (CP.lexExp ss) of
-        Nothing         -> putStrLn "lexical error"
-        Just toks       -> showWType_toks $ map Token toks
+        = goParse (lexExp Name ss)
 
-
-showWType_toks :: [Token] -> IO ()
-showWType_toks toks                
+goParse toks
  = case parseWitness toks of 
         Left err        -> putStrLn $ "parse error " ++ show err
-        Right w         -> showWType_type w
+        Right w         -> goCheck w
 
-        
-showWType_type :: Witness Token -> IO ()
-showWType_type w
+goCheck w 
  = case typeOfWitness w of
         Left err        -> putStrLn $ show $ ppr err
         Right k         -> putStrLn $ show $ (ppr w <> text " :: " <> ppr k)
 
 
-parseWitness :: [Token] -> Either CP.ParseError (Witness Token)
+parseWitness :: [Token (Tok Name)] -> Either BP.ParseError (Witness Name)
 parseWitness toks
- = let  tokenTable      = CP.liftTokens stringOfToken tokenOfString CP.tokenStrings
-        fileName        = "foo"
-   in   CP.runWrapParserG tokenTable
-                stringOfToken posOfToken tokenOfString 
-                fileName CP.pWitness toks
+        = BP.runTokenParser show "<interactive>" pWitness toks

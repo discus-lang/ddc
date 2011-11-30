@@ -8,41 +8,42 @@ module DDC.Core.Parser
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Tokens
-import DDC.Base.Parser
+import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok)
+import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 
 
 -- | Parser of core language tokens.
-type Parser k n a
-        = ParserG (Tokens k n) k n a
+type Parser n a
+        = P.Parser (Tok n) a
 
 
 -- Expressions -----------------------------------------------------------------------------------
-pExp :: Ord n => Parser k n (Exp () p n)
+pExp :: Ord n => Parser n (Exp () p n)
 pExp = pExp1
 
-pExp1 :: Ord n => Parser k n (Exp () p n)
+pExp1 :: Ord n => Parser n (Exp () p n)
 pExp1
-        = choice
+        = P.choice
         -- Lambda abstractions
-        [ do    pTok tBackSlash
-                pTok tRoundBra
+        [ do    pTok KBackSlash
+                pTok KRoundBra
                 var     <- pVar
                 -- TODO add type
-                pTok tRoundKet
-                pTok tDot
+                pTok KRoundKet
+                pTok KDot
                 xBody   <- pExp
                 return  $ XLam () (BName var (T.tBot T.kData)) xBody
 
         , do    pExp0 ]
 
 
-pExp0 :: Ord n => Parser k n (Exp () p n)
+pExp0 :: Ord n => Parser n (Exp () p n)
 pExp0
-        = choice
+        = P.choice
         -- Named type constructors
-        [ do    var       <- pDaConUser
-                return  $ XCon () (UName var (T.tBot T.kData)) 
+        [ do    con       <- pCon
+                return  $ XCon () (UName con (T.tBot T.kData)) 
 
         -- Variables
         , do    var     <- pVar
@@ -51,27 +52,42 @@ pExp0
 
 -- Witnesses -------------------------------------------------------------------------------------
 -- | Top level parser for witnesses.
-pWitness :: Ord n => Parser k n (Witness n)
+pWitness :: Ord n => Parser n (Witness n)
 pWitness = pWitness0
 
-pWitness0 :: Ord n => Parser k n (Witness n)
+pWitness0 :: Ord n => Parser n (Witness n)
 pWitness0 
-        = choice
+        = P.choice
         -- Named witness constructors.
-        [ do    wc     <- pWiConBuiltin
+        [ do    wc     <- pWiCon
                 return $ WCon wc ]
 
 
 
 ---------------------------------------------------------------------------------------------------
--- | Parse a user defined named `TyCon`.
-pDaConUser :: Parser k n n
-pDaConUser      = pToken tDaConUser
-
 -- | Parse a builtin named `WiCon`
-pWiConBuiltin :: Parser k n WiCon
-pWiConBuiltin   = pToken tWiConBuiltin
+pWiCon :: Parser n WiCon
+pWiCon  = pTokMaybe
+        $ \k -> case k of
+                 KWiConBuiltin wc -> Just wc
+                 _                -> Nothing
 
--- | Parse a variable.
-pVar :: Parser k n n
-pVar            = pToken tVar
+-- | Parse a constructor name
+pCon :: Parser n n
+pCon    = pTokMaybe
+        $ \k -> case k of
+                 KCon n -> Just n
+                 _      -> Nothing
+
+-- | Parse a variable name
+pVar :: Parser n n
+pVar    = pTokMaybe
+        $ \k -> case k of
+                 KVar n -> Just n
+                 _      -> Nothing
+
+
+
+
+
+

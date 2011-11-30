@@ -28,6 +28,7 @@ Executable ddci-core
         DDCI.Core.Command.Kind
         DDCI.Core.Command.Type
         DDCI.Core.Command.WType
+        DDCI.Core.Prim.Name
         DDCI.Core.Prim.Env
         
 

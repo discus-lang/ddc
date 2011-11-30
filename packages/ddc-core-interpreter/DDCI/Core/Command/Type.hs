@@ -1,17 +1,18 @@
-
+{-# OPTIONS -fno-warn-missing-signatures #-}
 module DDCI.Core.Command.Type
         ( cmdShowType
         , ShowTypeMode(..))
 where
-import DDCI.Core.Token
+import DDCI.Core.Prim.Name
 import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
+import DDC.Core.Parser.Lexer
+import DDC.Core.Parser.Tokens
+import DDC.Core.Parser
+import DDC.Base.Lexer
+import qualified DDC.Base.Parser        as BP
 import qualified DDC.Type.Check.Env     as Env
-import qualified DDC.Core.Parser.Lexer  as XP
-import qualified DDC.Core.Parser.Tokens as XP
-import qualified DDC.Core.Parser        as XP
-import Control.Monad
 
 
 -- | What components of the checked type to display.
@@ -26,33 +27,18 @@ data ShowTypeMode
 -- | Show the type of an expression.
 cmdShowType :: ShowTypeMode -> String -> IO ()
 cmdShowType mode ss
- = case sequence (XP.lexExp ss) of
-        Nothing         -> putStrLn "lexical error"
-        Just toks       -> showType_toks mode $ map Token toks
+        = goParse mode (lexExp Name ss)
 
-
--- | Show the type of an expression,
---   given its tokens.
-showType_toks :: ShowTypeMode -> [Token] -> IO ()
-showType_toks mode toks                
+goParse mode toks                
  = case parseExp toks of 
     Left err -> putStrLn $ "parse error " ++ show err
-    Right x  -> showType_exp mode x (checkExp Env.empty x)
+    Right x  -> goCheck mode x (checkExp Env.empty x)
 
         
--- | Show the type of an expresion
---   given the result of the type checking.
-showType_exp
-        :: (Eq n, Pretty n)
-        => ShowTypeMode
-        -> Exp a p n
-        -> Either (Error a p n) (Type n, Effect n, Closure n)
-        -> IO ()
-
-showType_exp _ _ (Left err)
+goCheck _ _ (Left err)
         = putStrLn $ show $ ppr err
 
-showType_exp mode x (Right (t, eff, clo))
+goCheck mode x (Right (t, eff, clo))
  = case mode of
         ShowTypeAll
          -> putStrLn $ show $ vcat 
@@ -71,15 +57,7 @@ showType_exp mode x (Right (t, eff, clo))
          -> putStrLn $ show (ppr x <> text " :$ " <> ppr clo)
 
 
--- | Parse some tokens as an expression.
---
---   Use a fake file name in parser error messages because we assume the tokens
---   have just been read from the console.
-parseExp :: [Token] -> Either XP.ParseError (Exp () p Token)
+parseExp :: [Token (Tok Name)] -> Either BP.ParseError (Exp () p Name)
 parseExp toks
- = let  tokenTable      = XP.liftTokens stringOfToken tokenOfString XP.tokenStrings
-        fileName        = "<interactive>"
-   in   XP.runWrapParserG tokenTable
-                stringOfToken posOfToken tokenOfString 
-                fileName XP.pExp toks
+        = BP.runTokenParser show "<interactive>" pExp toks
 
