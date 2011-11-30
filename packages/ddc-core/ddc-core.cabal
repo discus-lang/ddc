@@ -46,10 +46,12 @@ Library
         
   Other-modules:
         DDC.Type.Check.CheckCon
-        DDC.Type.Check.CheckType
+        DDC.Type.Check.CheckError
         DDC.Type.Transform.Rename
         DDC.Type.Transform.Spread
+        DDC.Core.Check.CheckError
         DDC.Core.Transform.Spread
+        
 
 
   GHC-options:
