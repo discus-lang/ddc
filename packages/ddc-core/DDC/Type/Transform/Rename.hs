@@ -1,5 +1,4 @@
 
--- | Boilerplate to apply a function to every name in a `Type` related thing.
 module DDC.Type.Transform.Rename
         (Rename(..))
 where

@@ -45,8 +45,8 @@ showType_toks mode toks
 showType_exp
         :: (Eq n, Pretty n)
         => ShowTypeMode
-        -> Exp a n p
-        -> Either (Error a n p) (Type n, Effect n, Closure n)
+        -> Exp a p n
+        -> Either (Error a p n) (Type n, Effect n, Closure n)
         -> IO ()
 
 showType_exp _ _ (Left err)
@@ -75,7 +75,7 @@ showType_exp mode x (Right (t, eff, clo))
 --
 --   Use a fake file name in parser error messages because we assume the tokens
 --   have just been read from the console.
-parseExp :: [Token] -> Either XP.ParseError (Exp () Token p)
+parseExp :: [Token] -> Either XP.ParseError (Exp () p Token)
 parseExp toks
  = let  tokenTable      = XP.liftTokens stringOfToken tokenOfString XP.tokenStrings
         fileName        = "<interactive>"

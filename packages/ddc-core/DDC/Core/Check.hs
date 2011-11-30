@@ -18,19 +18,20 @@ import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Env     as Env
 import qualified DDC.Type.Check.Monad   as G
 
-type CheckM a n p   = G.CheckM (Error a n p)
+type CheckM a p n   = G.CheckM (Error a p n)
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Take the kind of a type.
-typeOfExp  :: (Ord n, Pretty n) => Exp a n p -> Either (Error a n p) (Type n)
+typeOfExp  :: (Ord n, Pretty n) => Exp a p n -> Either (Error a p n) (Type n)
 typeOfExp xx 
         = result 
         $ do    (t, _eff, _clo) <- checkExpM Env.empty xx
                 return t
 
+
 -- | Take the kind of a type, or `error` if there isn't one.
-typeOfExp' :: (Ord n, Pretty n) => Exp a n p -> Type n
+typeOfExp' :: (Ord n, Pretty n) => Exp a p n -> Type n
 typeOfExp' tt
  = case typeOfExp tt of
         Left err        -> error $ show $ ppr err
@@ -40,8 +41,8 @@ typeOfExp' tt
 -- | Check an expression, returning an error or its type, effect and closure.
 checkExp 
         :: (Ord n, Pretty n)
-        => Env n -> Exp a n p
-        -> Either (Error a n p)
+        => Env n -> Exp a p n
+        -> Either (Error a p n)
                   (Type n, Effect n, Closure n)
 
 checkExp env xx 
@@ -57,8 +58,8 @@ checkExp env xx
 --         add a function to check that a type has kind annots in the right places.
 checkExpM 
         :: (Ord n, Pretty n)
-        => Env n -> Exp a n p
-        -> CheckM a n p (Type n, TypeSum n, TypeSum n)
+        => Env n -> Exp a p n
+        -> CheckM a p n (Type n, TypeSum n, TypeSum n)
 
 checkExpM env xx
  = case xx of
@@ -161,7 +162,7 @@ checkExpM env xx
 
 -- checkType -------------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
-checkTypeM :: Ord n => Env n -> Type n -> CheckM a n p (Kind n)
+checkTypeM :: Ord n => Env n -> Type n -> CheckM a p n (Kind n)
 checkTypeM env tt
  = case T.checkType env tt of
         Left err        -> throw $ ErrorType err
@@ -169,7 +170,7 @@ checkTypeM env tt
 
 
 -- Witness ----------------------------------------------------------------------------------------
-typeOfWitness :: Ord n => Witness n -> Either (Error a n p) (Type n)
+typeOfWitness :: Ord n => Witness n -> Either (Error a p n) (Type n)
 typeOfWitness ww = result $ checkWitnessM Env.empty ww
 
 
@@ -185,7 +186,7 @@ typeOfWitness' ww
 checkWitness
         :: Ord n 
         => Env n -> Witness n
-        -> Either (Error a n p) (Type n)
+        -> Either (Error a p n) (Type n)
 
 checkWitness env xx
         = result $ checkWitnessM env xx
@@ -194,7 +195,7 @@ checkWitness env xx
 checkWitnessM 
         :: Ord n 
         => Env n -> Witness n
-        -> CheckM a n p (Type n)
+        -> CheckM a p n (Type n)
 
 checkWitnessM _ ww
  = case ww of
@@ -235,7 +236,7 @@ typeOfWiCon wc
 
 -- Error ------------------------------------------------------------------------------------------
 -- | Type errors.
-data Error a n p
+data Error a p n
 
         -- | Found a kind error when checking a type.
         = ErrorType
@@ -243,33 +244,33 @@ data Error a n p
 
         -- | Found a malformed exp, and we don't have a more specific diagnosis.
         | ErrorMalformedExp
-        { errorChecking         :: Exp a n p }
+        { errorChecking         :: Exp a p n }
 
         -- | Found a malformed type, and we don't have a more specific diagnosis.
         | ErrorMalformedType
-        { errorChecking         :: Exp a n p
+        { errorChecking         :: Exp a p n
         , errorType             :: Type n }
 
         -- | Types of parameter and arg don't match when checking application.
         | ErrorAppMismatch
-        { errorChecking         :: Exp a n p
+        { errorChecking         :: Exp a p n
         , errorParamType        :: Type n
         , errorArgType          :: Type n }
 
         -- | Tried to apply a non function to an argument.
         | ErrorAppNotFun
-        { errorChecking         :: Exp a n p
+        { errorChecking         :: Exp a p n
         , errorNotFunType       :: Type n
         , errorArgType          :: Type n }
 
         -- | Non-computation abstractions cannot have visible effects.
         | ErrorEffectfulAbstraction
-        { errorChecking         :: Exp a n p
+        { errorChecking         :: Exp a p n
         , errorEffect           :: Effect n }
 
 
 
-instance (Eq n, Pretty n) => Pretty (Error a n p) where
+instance (Eq n, Pretty n) => Pretty (Error a p n) where
  ppr err
   = case err of
         ErrorType err'  -> ppr err'

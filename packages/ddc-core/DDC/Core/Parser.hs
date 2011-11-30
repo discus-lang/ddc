@@ -18,10 +18,10 @@ type Parser k n a
 
 
 -- Expressions -----------------------------------------------------------------------------------
-pExp :: Ord n => Parser k n (Exp () n p)
+pExp :: Ord n => Parser k n (Exp () p n)
 pExp = pExp1
 
-pExp1 :: Ord n => Parser k n (Exp () n p)
+pExp1 :: Ord n => Parser k n (Exp () p n)
 pExp1
         = choice
         -- Lambda abstractions
@@ -37,7 +37,7 @@ pExp1
         , do    pExp0 ]
 
 
-pExp0 :: Ord n => Parser k n (Exp () n p)
+pExp0 :: Ord n => Parser k n (Exp () p n)
 pExp0
         = choice
         -- Named type constructors

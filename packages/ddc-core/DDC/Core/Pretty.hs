@@ -10,7 +10,7 @@ import DDC.Base.Pretty
 
 
 -- Exp --------------------------------------------------------------------------------------------
-instance Pretty n => Pretty (Exp a n p) where
+instance Pretty n => Pretty (Exp a p n) where
  pprPrec _d xx
   = case xx of
         XVar _ n        -> ppr n

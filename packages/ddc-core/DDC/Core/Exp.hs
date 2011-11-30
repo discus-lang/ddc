@@ -19,7 +19,7 @@ import DDC.Type.Exp
 
 -- Values -----------------------------------------------------------------------------------------
 -- | A value expression, universe of computation.
-data Exp a n p
+data Exp a p n
         -- | Value variable.
         = XVar  a (Bound n)
 
@@ -30,19 +30,19 @@ data Exp a n p
         | XCon  a (Bound n)
 
         -- | Value application.
-        | XApp  a (Exp a n p) (Exp a n p)
+        | XApp  a (Exp a p n) (Exp a p n)
 
         -- | Function abstraction.
-        | XLam  a (Bind n)    (Exp a n p)
+        | XLam  a (Bind n)    (Exp a p n)
 
         -- | Some possibly recursive definitions.
-        | XLet  a (Let a n p) (Exp a n p)
+        | XLet  a (Let a p n) (Exp a p n)
 
         -- | Case branching.
-        | XCase a (Exp a n p) [Alt a n p]
+        | XCase a (Exp a p n) [Alt a p n]
 
         -- | Type cast.
-        | XCast a (Exp a n p) (Cast n)
+        | XCast a (Exp a p n) (Cast n)
 
         -- | Type can appear as the argument of an `XApp`.
         | XType    (Type n)
@@ -69,16 +69,16 @@ data Cast n
 
 
 -- | Possibly recursive bindings.
-data Let a n p
+data Let a p n
         -- | A non-binding, effectful statement.
         --   TODO: add non binding form to Bind and drop this contructor.
-        = LStmt          (Exp a n p)
+        = LStmt          (Exp a p n)
         
         -- | Non-recursive binding
-        | LLet  (Bind n) (Exp a n p)
+        | LLet  (Bind n) (Exp a p n)
         
         -- | Recursive binding
-        | LRec  [(Bind n, Exp a n p)]
+        | LRec  [(Bind n, Exp a p n)]
 
         -- | Bind a local region variable, and (non-recursive) witnesses to its properties.
         | XLocal (Bind n) [(Bind n, Type n)]
@@ -86,13 +86,13 @@ data Let a n p
 
 
 -- | Case alternatives.
-data Alt a n p
-        = XAlt (Pat n p) (Exp a n p)
+data Alt a p n
+        = XAlt (Pat p n) (Exp a p n)
         deriving (Eq, Show)
 
 
 -- | Pattern matches.
-data Pat n p
+data Pat p n
 
         -- | The default pattern always succeeds.
         = PDefault
