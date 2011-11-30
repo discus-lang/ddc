@@ -3,6 +3,7 @@
 module DDC.Type.Predicates
         ( isBot
         , isBottom
+        , isDataKind
         , isEffectKind
         , isClosureKind)
 where
@@ -27,18 +28,26 @@ isBottom tt
         | otherwise     = False
 
 
+-- | Check if some kind is the data kind.
+isDataKind :: Kind n -> Bool
+isDataKind tt
+ = case tt of
+        TCon (TyConKind KiConData)    -> True
+        _                             -> False
+
+
 -- | Check if some kind is the effect kind.
 isEffectKind :: Kind n -> Bool
 isEffectKind tt
  = case tt of
-        TCon (TyConKind (KiConEffect))  -> True
-        _                               -> False
+        TCon (TyConKind KiConEffect)  -> True
+        _                             -> False
 
 
 -- | Check if some kind is the closure kind.
 isClosureKind :: Kind n -> Bool
 isClosureKind tt
  = case tt of
-        TCon (TyConKind (KiConClosure)) -> True
-        _                               -> False
+        TCon (TyConKind KiConClosure) -> True
+        _                             -> False
 
