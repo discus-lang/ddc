@@ -5,8 +5,9 @@ where
 import DDC.Type.Exp
 import DDC.Type.Predicates
 import DDC.Base.Pretty
-import qualified DDC.Type.Sum    as TS
+import qualified DDC.Type.Sum           as TS
 
+stage   = "DDC.Type.Pretty"
 
 -- Bind, Bound ------------------------------------------------------------------------------
 instance Pretty n => Pretty (Bind n) where
@@ -63,8 +64,13 @@ instance Pretty n => Pretty (Type n) where
 
 
 instance Pretty n => Pretty (TypeSum n) where
- ppr ts
-  = sep $ punctuate (text " +") (map ppr $ TS.toList ts)
+ ppr ss
+  = case TS.toList ss of
+      [] | isEffectKind  $ TS.kindOfSum ss -> text "!0"
+         | isClosureKind $ TS.kindOfSum ss -> text "$0"
+         | otherwise                       -> error $ stage ++ ": malformed sum"
+         
+      ts  -> sep $ punctuate (text " +") (map ppr ts)
 
 
 -- TCon -------------------------------------------------------------------------------------------

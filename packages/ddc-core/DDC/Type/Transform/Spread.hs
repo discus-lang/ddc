@@ -2,6 +2,7 @@
 module DDC.Type.Transform.Spread
         (Spread(..))
 where
+import qualified DDC.Type.Pretty        as P
 import DDC.Type.Compounds
 import DDC.Type.Exp
 import DDC.Type.Check.Env               (Env)
@@ -12,7 +13,7 @@ import qualified DDC.Type.Sum           as T
 -- | Spread type annotations from the environment and binders
 --   into variables at the leaves.
 class Spread (c :: * -> *) where
-        spread :: forall n. Ord n => Env n -> c n -> c n
+        spread :: forall n. (Ord n, P.Pretty n) => Env n -> c n -> c n
         
 
 instance Spread Type where

@@ -2,7 +2,9 @@
 -- | Predicates on type expressions.
 module DDC.Type.Predicates
         ( isBot
-        , isBottom)
+        , isBottom
+        , isEffectKind
+        , isClosureKind)
 where
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as T
@@ -23,3 +25,20 @@ isBottom tt
         = True
         
         | otherwise     = False
+
+
+-- | Check if some kind is the effect kind.
+isEffectKind :: Kind n -> Bool
+isEffectKind tt
+ = case tt of
+        TCon (TyConKind (KiConEffect))  -> True
+        _                               -> False
+
+
+-- | Check if some kind is the closure kind.
+isClosureKind :: Kind n -> Bool
+isClosureKind tt
+ = case tt of
+        TCon (TyConKind (KiConClosure)) -> True
+        _                               -> False
+

@@ -109,11 +109,10 @@ checkExpM env xx
                  
         -- value-value application.
         XApp _ x1 x2
-         -> do  (t1, effs1, clos1)    <- checkExpM env x1
-                (t2, effs2, clos2)    <- checkExpM env x2
+         -> do  (t1, effs1, clos1) <- checkExpM  env x1
+                (t2, effs2, clos2) <- checkExpM  env x2
                 case t1 of
-                 TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun))
-                        t11) t12) eff) clo
+                 TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) t12) eff) clo
                   | t11 == t2   
                   , TSum effs   <- eff
                   , TSum clos   <- clo
@@ -133,6 +132,8 @@ checkExpM env xx
                 -- Note that only the computation abstraction can suspend visible effects.
                 case universeFromType2 k1 of
                   Just UniverseComp
+                   |  k1 /= kData          -> throw $ ErrorCompBindNotData xx t1 k1
+                   |  otherwise
                    -> return ( tFun t1 t2 (TSum e2) (TSum c2)
                              , T.empty kEffect
                              , T.empty kClosure)
@@ -268,6 +269,12 @@ data Error a p n
         { errorChecking         :: Exp a p n
         , errorEffect           :: Effect n }
 
+        -- | Computation lambdas must bind values of kind kData
+        | ErrorCompBindNotData
+        { errorChecking         :: Exp a p n 
+        , errorType             :: Type n
+        , errorKind             :: Kind n }
+
 
 
 instance (Eq n, Pretty n) => Pretty (Error a p n) where
@@ -277,31 +284,40 @@ instance (Eq n, Pretty n) => Pretty (Error a p n) where
 
         ErrorMalformedExp xx
          -> vcat [ text "Core type error."
-                 , text "    found malformed exp: " <> ppr xx ]
+                 , text "    Found malformed exp: " <> ppr xx ]
         
         ErrorMalformedType xx tt
          -> vcat [ text "Core type error."
-                 , text "   found malformed type: " <> ppr tt
-                 , text "          when checking: " <> ppr xx ]
+                 , text "    Found malformed type: " <> ppr tt
+                 , text "           when checking: " <> ppr xx ]
 
         ErrorAppMismatch xx t1 t2
-         -> vcat [ text "Core type error in application."
-                 , text " cannot apply function " 
+         -> vcat [ text "Core type error."
+                 , text "Cannot apply function " 
                  , text "                 of type: " <> ppr t1
                  , text "     to argument of type: " <> ppr t2
                  , text "          in application: " <> ppr xx ]
          
         ErrorAppNotFun xx t1 t2
-         -> vcat [ text "Core type error in application."
-                 , text " cannot apply non-function"
+         -> vcat [ text "Core type error."
+                 , text "Cannot apply non-function"
                  , text "                 of type: " <> ppr t1
                  , text "     to argument of type: " <> ppr t2 
                  , text "          in application: " <> ppr xx ]
 
         ErrorEffectfulAbstraction xx eff
-         -> vcat [ text "Core type error in abstraction."
-                 , text "  non-computation abstraction"
-                 , text "     has visible effect: " <> ppr eff
-                 , text "          when checking: " <> ppr xx ]
+         -> vcat [ text "Core type error."
+                 , text "Non-computation abstraction"
+                 , text "      has visible effect: " <> ppr eff
+                 , text "          but it must be: 0!"
+                 , text "           when checking: " <> ppr xx ]
                  
+        
+        ErrorCompBindNotData xx t1 k1
+         -> vcat [ text "Core type error."
+                 , text "Type of computation binder has wrong kind."
+                 , text "         type of binder: " <> ppr t1
+                 , text "               has kind: " <> ppr k1
+                 , text "         but it must be: *" 
+                 , text "          when checking: " <> ppr xx ]
 

@@ -33,7 +33,9 @@ cmdShowType mode ss
 goParse mode toks                
  = case parseExp toks of 
     Left err -> putStrLn $ "parse error " ++ show err
-    Right x  -> goCheck mode x (checkExp primEnv (T.spread primEnv x))
+    Right x  
+     -> let x'  = T.spread primEnv x
+        in  goCheck mode x' (checkExp primEnv x')
 
         
 goCheck _ _ (Left err)
@@ -42,11 +44,12 @@ goCheck _ _ (Left err)
 goCheck mode x (Right (t, eff, clo))
  = case mode of
         ShowTypeAll
-         -> putStrLn $ show $ vcat 
+         -> putStrLn $ show 
+                $ vcat 
                 [ ppr x
                 , nest 4 $ text ":: " <> ppr t
-                , nest 4 $ text ":! " <> ppr eff
-                , nest 4 $ text ":$ " <> ppr clo]
+                , nest 4 $ text ":!: " <> ppr eff
+                , nest 4 $ text ":$: " <> ppr clo]
         
         ShowTypeValue
          -> putStrLn $ show (ppr x <> text " :: " <> ppr t)
