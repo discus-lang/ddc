@@ -18,6 +18,7 @@ import DDC.Type.Check.Monad             (result, throw)
 import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Env     as Env
 import qualified DDC.Type.Check.Monad   as G
+import Control.Monad
 
 type CheckM a p n   = G.CheckM (Error a p n)
 
@@ -127,7 +128,15 @@ checkExpM env xx
         XLam _ b1 x2
          -> do  let t1          =  typeOfBind b1
                 k1              <- checkTypeM env t1
+                let u1          =  universeFromType2 k1
 
+                -- We can't shadow level 1 binders because subsequent types will depend 
+                -- on the original version.
+                when (  u1 == Just UniverseSpec
+                     && Env.memberBind b1 env)
+                 $ throw $ ErrorLamReboundSpec xx b1
+
+                -- Check the body.
                 let env'        =  Env.extend b1 env
                 (t2, e2, c2)    <- checkExpM  env' x2
                 k2              <- checkTypeM env' t2
@@ -288,6 +297,11 @@ data Error a p n
         , errorBind             :: Bind n
         , errorType             :: Type n
         , errorKind             :: Kind n }
+        
+        -- | Tried to shadow a level-1 binder.
+        | ErrorLamReboundSpec
+        { errorChecking         :: Exp a p n
+        , errorBind             :: Bind n }
 
 
 instance (Eq n, Pretty n) => Pretty (Error a p n) where
@@ -341,4 +355,11 @@ instance (Eq n, Pretty n) => Pretty (Error a p n) where
                  , text "          body has type: " <> ppr t2
                  , text "              with kind: " <> ppr k2
                  , text "         but it must be: *"
+                 , text "          when checking: " <> ppr xx ]
+
+        ErrorLamReboundSpec xx b1
+         -> vcat [ text "Core type error."
+                 , text "Cannot shadow level-1 binder."
+                 , text "                 binder: " <> ppr b1
+                 , text "  is already in the environment"
                  , text "          when checking: " <> ppr xx ]

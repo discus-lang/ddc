@@ -38,7 +38,7 @@ data Universe
         --   Data constructors, functions, effects, regions and closures live here.
         --   These are the things that do something useful at runtime.
         | UniverseComp
-        deriving Show
+        deriving (Show, Eq) 
 
 
 -- | Given the type of the type of the type of some thing (up three levels),

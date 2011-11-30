@@ -3,13 +3,14 @@ module DDC.Type.Check.Env
         ( Env(..)
         , empty
         , extend
-        , lookup
-        , lookupName)
+        , member,       memberBind
+        , lookup,       lookupName)
 where
 import DDC.Type.Exp
+import Data.Maybe
 import Data.Map                 (Map)
-import qualified Data.Map       as Map
 import Prelude                  hiding (lookup)
+import qualified Data.Map       as Map
 import qualified Prelude        as P
 
 -- | Type environment used when checking.
@@ -35,6 +36,21 @@ extend bb env
          BNone{}        -> env
 
 
+-- | Check whether a bound variable is present in an environment.
+member :: Ord n => Bound n -> Env n -> Bool
+member uu env
+        = isJust $ lookup uu env
+
+
+-- | Check whether a binder is already present in the an environment.
+--   This can only return True for named binders, not anonymous ones.
+memberBind :: Ord n => Bind n -> Env n -> Bool
+memberBind uu env
+ = case uu of
+        BName n _       -> Map.member n (envMap env)
+        _               -> False
+
+
 -- | Lookup a bound variable from an environment.
 lookup :: Ord n => Bound n -> Env n -> Maybe (Type n)
 lookup uu env
@@ -47,3 +63,5 @@ lookup uu env
 lookupName :: Ord n => n -> Env n -> Maybe (Type n)
 lookupName n env
         = Map.lookup n (envMap env)
+
+
