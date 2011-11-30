@@ -12,8 +12,9 @@ import qualified DDC.Type.Sum    as TS
 instance Pretty n => Pretty (Bind n) where
  ppr nn
   = case nn of
-        BName v k       -> ppr v     <> text ":" <> ppr k
-        BAnon   k       -> text "_"  <> text ":" <> ppr k
+        BName v t       -> ppr v     <> text ":" <> ppr t
+        BAnon   t       -> text "^"  <> text ":" <> ppr t
+        BNone   t       -> text "_"  <> text ":" <> ppr t
 
 
 instance Pretty n => Pretty (Bound n) where

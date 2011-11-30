@@ -29,8 +29,9 @@ instance Rename TypeSum where
 instance Rename Bind where
  rename f bb
   = case bb of
-        BName n k       -> BName (f n) (rename f k)
-        BAnon   k       -> BAnon       (rename f k)
+        BName n t       -> BName (f n) (rename f t)
+        BAnon   t       -> BAnon (rename f t)
+        BNone   t       -> BNone (rename f t)
         
 
 instance Rename Bound where

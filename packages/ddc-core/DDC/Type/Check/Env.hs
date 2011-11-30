@@ -32,6 +32,7 @@ extend bb env
  = case bb of
          BName n k      -> env { envMap   = Map.insert n k (envMap env) }
          BAnon   k      -> env { envStack = k : envStack env }
+         BNone{}        -> env
 
 
 -- | Lookup a bound variable from an environment.

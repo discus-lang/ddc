@@ -70,12 +70,8 @@ data Cast n
 
 -- | Possibly recursive bindings.
 data Let a p n
-        -- | A non-binding, effectful statement.
-        --   TODO: add non binding form to Bind and drop this contructor.
-        = LStmt          (Exp a p n)
-        
         -- | Non-recursive binding
-        | LLet  (Bind n) (Exp a p n)
+        = LLet  (Bind n) (Exp a p n)
         
         -- | Recursive binding
         | LRec  [(Bind n, Exp a p n)]

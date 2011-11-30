@@ -48,21 +48,30 @@ import DDC.Type.Exp
 -- | Take the variable name of a bind.
 --   If this is an anonymous variable then there won't be a name.
 takeNameOfBind  :: Bind n -> Maybe n
-takeNameOfBind  (BName n _)     = Just n
-takeNameOfBind  (BAnon   _)     = Nothing
+takeNameOfBind bb
+ = case bb of
+        BName n _       -> Just n
+        BAnon   _       -> Nothing
+        BNone   _       -> Nothing
 
 
 -- | Take the type of a bind.
 typeOfBind :: Bind n -> Type n
-typeOfBind (BName _ k)          = k
-typeOfBind (BAnon   k)          = k
+typeOfBind bb
+ = case bb of
+        BName _ t       -> t
+        BAnon   t       -> t
+        BNone   t       -> t
 
 
 -- | Replace the kind of a bind with a new one.
 replaceTypeOfBind :: Type n -> Bind n -> Bind n
-replaceTypeOfBind t (BName n _) = BName n t
-replaceTypeOfBind t (BAnon   _) = BAnon t
-
+replaceTypeOfBind t bb
+ = case bb of
+        BName n _       -> BName n t
+        BAnon   _       -> BAnon t
+        BNone   _       -> BNone t
+        
 
 -- | Take the variable name of bound variable.
 --   If this is an anonymous variable then there won't be a name.

@@ -54,8 +54,9 @@ type Closure n = Type n
 -- Bind -------------------------------------------------------------------------------------------
 -- | Binding occurrence of a variable.
 data Bind n
-        = BName n   (Type n)
-        | BAnon     (Type n)
+        = BName n   (Type n)    -- ^ Named variable in the environment.
+        | BAnon     (Type n)    -- ^ Nameless variable on the deBruijn stack.
+        | BNone     (Type n)    -- ^ A variable with no uses in the body doesn't need a name.
         deriving (Eq, Show)
         
 
@@ -63,8 +64,8 @@ data Bind n
 -- 
 --   * If the variables haven't been annotated with their kinds then the kind field will be TBot. 
 data Bound n
-        = UName n   (Type n)
-        | UIx   Int (Type n)
+        = UName n   (Type n)    -- ^ Named variable in the environment.
+        | UIx   Int (Type n)    -- ^ Nameless variable on the deBruijn stack.
         deriving (Eq, Show)
 
 

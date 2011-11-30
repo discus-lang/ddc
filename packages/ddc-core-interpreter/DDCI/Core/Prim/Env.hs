@@ -24,6 +24,7 @@ primEnv
         { envMap        = primDataTypeKinds
         , envStack      = [] }
 
+
 -- | Kinds of primitive data type constructors.
 primDataTypeKinds :: Map Token (Kind Token)
 primDataTypeKinds
