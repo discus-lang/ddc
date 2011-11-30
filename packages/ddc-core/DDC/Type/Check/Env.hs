@@ -3,7 +3,8 @@ module DDC.Type.Check.Env
         ( Env(..)
         , empty
         , extend
-        , lookup )
+        , lookup
+        , lookupName)
 where
 import DDC.Type.Exp
 import Data.Map                 (Map)
@@ -39,3 +40,9 @@ lookup uu env
  = case uu of
         UName n _       -> Map.lookup n (envMap env)
         UIx i _         -> P.lookup i (zip [0..] (envStack env))
+
+
+-- | Lookup a bound name from an environment.
+lookupName :: Ord n => n -> Env n -> Maybe (Type n)
+lookupName n env
+        = Map.lookup n (envMap env)

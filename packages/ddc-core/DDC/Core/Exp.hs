@@ -3,14 +3,14 @@
 module DDC.Core.Exp 
         ( module DDC.Type.Exp
 
-          -- * Value expressions.
+          -- * Computation expressions
         , Exp  (..)
         , Cast (..)
         , Let  (..)
         , Alt  (..)
         , Pat  (..)
                         
-          -- * Witnesses expressions.
+          -- * Witnesses expressions
         , Witness (..)
         , WiCon   (..))
 where
@@ -18,8 +18,7 @@ import DDC.Type.Exp
 
 
 -- Values -----------------------------------------------------------------------------------------
--- | A value expression,
---   The domain of computation.
+-- | A value expression, universe of computation.
 data Exp a n p
         -- | Value variable.
         = XVar  a (Bound n)
@@ -43,7 +42,6 @@ data Exp a n p
         | XCase a (Exp a n p) [Alt a n p]
 
         -- | Type cast.
-        --   Argument is the witness for the cast.
         | XCast a (Exp a n p) (Cast n)
 
         -- | Type can appear as the argument of an `XApp`.

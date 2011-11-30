@@ -37,6 +37,7 @@ Library
         DDC.Type.Sum
         DDC.Type.Transform
         DDC.Type.Transform.Rename
+        DDC.Type.Transform.Spread
         DDC.Type.Universe
         DDC.Core.Exp
         DDC.Core.Check

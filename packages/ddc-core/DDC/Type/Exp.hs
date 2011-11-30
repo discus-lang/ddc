@@ -54,8 +54,8 @@ type Closure n = Type n
 -- Bind -------------------------------------------------------------------------------------------
 -- | Binding occurrence of a variable.
 data Bind n
-        = BName n   (Kind n)
-        | BAnon     (Kind n)
+        = BName n   (Type n)
+        | BAnon     (Type n)
         deriving (Eq, Show)
         
 
@@ -63,8 +63,8 @@ data Bind n
 -- 
 --   * If the variables haven't been annotated with their kinds then the kind field will be TBot. 
 data Bound n
-        = UName n   (Kind n)
-        | UIx   Int (Kind n)
+        = UName n   (Type n)
+        | UIx   Int (Type n)
         deriving (Eq, Show)
 
 
