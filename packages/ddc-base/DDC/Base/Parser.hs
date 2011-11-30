@@ -17,7 +17,7 @@ import Text.Parsec                      as P
 -- | A generic parser,
 --   parameterised over token definition type, token type, name type and return type.
 type Parser k a
-        =  (Show k, Eq k)
+        =  Eq k
         => P.ParsecT [Token k] (ParserState k) Identity a
 
 
@@ -31,7 +31,7 @@ data ParserState k
 -- | Run a generic parser,
 --   where the tokens are just wrapped strings.
 runTokenParser
-        :: (Eq k, Show k)
+        :: Eq k
         => (k -> String)        -- ^ Show a token.
         -> String               -- ^ File name for error messages.
         -> Parser k a           -- ^ Parser to run.

@@ -6,8 +6,8 @@ import DDCI.Core.Prim.Name
 import DDCI.Core.Prim.Env
 import DDC.Type.Pretty
 import DDC.Type.Check
-import DDC.Type.Parser.Lexer
-import DDC.Type.Parser.Tokens
+import DDC.Core.Parser.Lexer
+import DDC.Core.Parser.Tokens
 import DDC.Type.Parser
 import DDC.Type.Exp
 import DDC.Base.Lexer
@@ -17,7 +17,7 @@ import qualified DDC.Base.Parser        as BP
 
 cmdShowKind :: String -> IO ()
 cmdShowKind ss
-        = goParse (lexType Name ss)
+        = goParse (lexExp Name ss)
 
 goParse toks                
  = case parseType toks of 

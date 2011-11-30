@@ -3,6 +3,7 @@ module DDCI.Core.Command.Type
         ( cmdShowType
         , ShowTypeMode(..))
 where
+import DDCI.Core.Prim.Env
 import DDCI.Core.Prim.Name
 import DDC.Core.Exp
 import DDC.Core.Check
@@ -11,8 +12,8 @@ import DDC.Core.Parser.Lexer
 import DDC.Core.Parser.Tokens
 import DDC.Core.Parser
 import DDC.Base.Lexer
+import qualified DDC.Core.Transform     as T
 import qualified DDC.Base.Parser        as BP
-import qualified DDC.Type.Check.Env     as Env
 
 
 -- | What components of the checked type to display.
@@ -32,7 +33,7 @@ cmdShowType mode ss
 goParse mode toks                
  = case parseExp toks of 
     Left err -> putStrLn $ "parse error " ++ show err
-    Right x  -> goCheck mode x (checkExp Env.empty x)
+    Right x  -> goCheck mode x (checkExp primEnv (T.spread primEnv x))
 
         
 goCheck _ _ (Left err)

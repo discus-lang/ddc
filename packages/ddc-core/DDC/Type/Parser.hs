@@ -6,13 +6,17 @@ module DDC.Type.Parser
         , pType)
 where
 import DDC.Type.Exp
-import DDC.Type.Parser.Tokens
 import Control.Monad
 import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Sum           as TS
 
+-- HACKS: We're using the core tokens here so we don't have to duplicate
+--        the parser so it works on Type tokens as well as Core tokens.
+--        Perhaps we want a type class to recognise the tokens that are
+--        common to both versions.
+import DDC.Core.Parser.Tokens   
 
 -- | Parser of type tokens.
 type Parser n a

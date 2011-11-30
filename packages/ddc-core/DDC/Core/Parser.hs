@@ -11,7 +11,8 @@ import DDC.Core.Parser.Tokens
 import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
-
+import qualified DDC.Type.Parser        as T
+import Control.Monad.Error
 
 -- | Parser of core language tokens.
 type Parser n a
@@ -29,11 +30,12 @@ pExp1
         [ do    pTok KBackSlash
                 pTok KRoundBra
                 var     <- pVar
-                -- TODO add type
+                pTok KColon
+                t       <- T.pType
                 pTok KRoundKet
                 pTok KDot
                 xBody   <- pExp
-                return  $ XLam () (BName var (T.tBot T.kData)) xBody
+                return  $ XLam () (BName var t) xBody
 
         , do    pExp0 ]
 
@@ -85,9 +87,3 @@ pVar    = pTokMaybe
         $ \k -> case k of
                  KVar n -> Just n
                  _      -> Nothing
-
-
-
-
-
-

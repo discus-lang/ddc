@@ -19,15 +19,14 @@ Library
         containers      == 0.4.*,
         array           == 0.3.*,
         transformers    == 0.2.*,
-        ddc-base        == 0.4.0.*
+        ddc-base        == 0.4.0.*,
+        mtl             == 2.0.*
 
   Exposed-modules:
         DDC.Type.Compounds
         DDC.Type.Check
         DDC.Type.Check.Env
         DDC.Type.Check.Monad
-        DDC.Type.Check.CheckCon
-        DDC.Type.Check.CheckType
         DDC.Type.Exp
         DDC.Type.Parser.Tokens
         DDC.Type.Parser.Lexer
@@ -36,8 +35,6 @@ Library
         DDC.Type.Pretty
         DDC.Type.Sum
         DDC.Type.Transform
-        DDC.Type.Transform.Rename
-        DDC.Type.Transform.Spread
         DDC.Type.Universe
         DDC.Core.Exp
         DDC.Core.Check
@@ -45,6 +42,14 @@ Library
         DDC.Core.Parser
         DDC.Core.Parser.Tokens
         DDC.Core.Parser.Lexer
+        DDC.Core.Transform
+        
+  Other-modules:
+        DDC.Type.Check.CheckCon
+        DDC.Type.Check.CheckType
+        DDC.Type.Transform.Rename
+        DDC.Type.Transform.Spread
+        DDC.Core.Transform.Spread
 
 
   GHC-options:
@@ -57,4 +62,7 @@ Library
         PatternGuards
         RankNTypes
         FlexibleContexts
+        FlexibleInstances
+        MultiParamTypeClasses
+        UndecidableInstances
         KindSignatures

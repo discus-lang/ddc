@@ -6,7 +6,7 @@ module DDC.Core.Exp
           -- * Computation expressions
         , Exp  (..)
         , Cast (..)
-        , Let  (..)
+        , Lets (..)
         , Alt  (..)
         , Pat  (..)
                         
@@ -36,7 +36,7 @@ data Exp a p n
         | XLam  a (Bind n)    (Exp a p n)
 
         -- | Some possibly recursive definitions.
-        | XLet  a (Let a p n) (Exp a p n)
+        | XLet  a (Lets a p n) (Exp a p n)
 
         -- | Case branching.
         | XCase a (Exp a p n) [Alt a p n]
@@ -69,7 +69,7 @@ data Cast n
 
 
 -- | Possibly recursive bindings.
-data Let a p n
+data Lets a p n
         -- | Non-recursive binding
         = LLet  (Bind n) (Exp a p n)
         

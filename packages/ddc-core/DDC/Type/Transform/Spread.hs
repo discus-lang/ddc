@@ -20,7 +20,11 @@ instance Spread Type where
   = case tt of
         TVar u          -> TVar $ spread env u
         TCon tc         -> TCon $ spread env tc
-        TForall u t     -> TForall u $ spread (Env.extend u env) t
+
+        TForall b t
+         -> let b'      = spread env b
+            in  TForall b' $ spread (Env.extend b' env) t
+
         TApp t1 t2      -> TApp (spread env t1) (spread env t2)
         TSum ss         -> TSum (spread env ss)
         TBot k          -> TBot (spread env k)
@@ -31,6 +35,14 @@ instance Spread TypeSum where
         = T.fromList (spread env $ T.kindOfSum ss)
         $ map (spread env)
         $ T.toList ss
+
+
+instance Spread Bind where
+ spread env bb
+  = case bb of
+        BName n t       -> BName n (spread env t)
+        BAnon t         -> BAnon (spread env t)
+        BNone t         -> BNone (spread env t)
 
 
 instance Spread Bound where
