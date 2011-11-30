@@ -21,7 +21,7 @@ import Data.Map                         (Map)
 primEnv :: Env Name
 primEnv
         = Env
-        { envMap        = primDataTypeKinds
+        { envMap        = primDataTypeKinds `Map.union` primOperatorTypes
         , envStack      = [] }
 
 
@@ -33,5 +33,21 @@ primDataTypeKinds
         , (Name "Int",    kFun kRegion kData)
         , (Name "Char",   kFun kRegion kData)
         , (Name "String", kFun kRegion kData) ]
-        
+
+
+tInt :: Region Name -> Type Name
+tInt r1 = tConData1 (Name "Int") (kFun kRegion kData) r1
+
+-- | Types of primitive operators
+primOperatorTypes :: Map Name (Type Name)
+primOperatorTypes 
+ = Map.fromList
+ [      ( Name "add"
+        , tForalls [kRegion, kRegion, kRegion] $ \[r2, r1, r0] 
+                -> tFun (tInt r2) (tBot kEffect)
+                                  (tBot kClosure)
+                 $ tFun (tInt r1) (tSum kEffect  [tRead r2, tRead r1])
+                                  (tSum kClosure [tFree r2])
+                 $ tInt r0 )]
+
 

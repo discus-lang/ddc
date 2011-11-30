@@ -13,7 +13,7 @@ module DDC.Type.Sum
         , toList, fromList)
 where
 import DDC.Type.Exp
-import DDC.Type.Compounds
+-- import DDC.Type.Compounds
 import Data.Array
 import qualified Data.Map       as Map
 
@@ -120,7 +120,7 @@ toList TypeSum
         , typeSumBoundAnon      = anon
         , typeSumSpill          = spill}
 
- =      [ TCon (unhashTyCon h) $: t 
+ =      [ TApp (TCon (unhashTyCon h)) t 
                 | (h, ts) <- assocs sumElems, t <- ts] 
         ++ [TVar $ UName n k | (n, k) <- Map.toList named]
         ++ [TVar $ UIx   i k | (i, k) <- Map.toList anon]

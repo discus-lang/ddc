@@ -68,12 +68,14 @@ lexExp mkName str
         ']'  : w'       -> mkToken KSquareKet   : lexWord w'
         '{'  : w'       -> mkToken KBraceBra    : lexWord w'
         '}'  : w'       -> mkToken KBraceKet    : lexWord w'
+        '<'  : w'       -> mkToken KAngleBra    : lexWord w'
+        '>'  : w'       -> mkToken KAngleKet    : lexWord w'            
 
         -- Punctuation
         ':'  : w'       -> mkToken KColon       : lexWord w'
         '.'  : w'       -> mkToken KDot         : lexWord w'
         ','  : w'       -> mkToken KComma       : lexWord w'
-        '+' : w'        -> mkToken KPlus        : lexWord w'
+        '+'  : w'       -> mkToken KPlus        : lexWord w'
         '\\' : w'       -> mkToken KBackSlash   : lexWord w'
         ';'  : w'       -> mkToken KSemiColon   : lexWord w'
         

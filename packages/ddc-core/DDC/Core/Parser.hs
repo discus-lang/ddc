@@ -21,11 +21,11 @@ type Parser n a
 
 -- Expressions -----------------------------------------------------------------------------------
 pExp :: Ord n => Parser n (Exp () p n)
-pExp = pExp1
+pExp = pExp2
 
-pExp1 :: Ord n => Parser n (Exp () p n)
-pExp1
-        = P.choice
+pExp2 :: Ord n => Parser n (Exp () p n)
+pExp2
+ = P.choice
         -- Lambda abstractions
         [ do    pTok KBackSlash
                 pTok KRoundBra
@@ -34,17 +34,51 @@ pExp1
                 t       <- T.pType
                 pTok KRoundKet
                 pTok KDot
-                xBody   <- pExp
+                xBody   <- pExp2
                 return  $ XLam () (BName var t) xBody
 
+        , do    pExp1 ]
+
+
+-- Applications
+pExp1 :: Ord n => Parser n (Exp () p n)
+pExp1 
+ = do   (x:xs)  <- P.many1 pArg
+        return  $ foldl (XApp ()) x xs
+
+
+-- Comp, Witness or Spec arguments.
+pArg :: Ord n => Parser n (Exp () p n)
+pArg    
+ = P.choice
+        -- {TYPE}
+        [ do    pTok KBraceBra
+                t       <- T.pType 
+                pTok KBraceKet
+                return  $ XType t
+        
+        -- <WITNESS>
+        , do    pTok KAngleBra
+                w       <- pWitness
+                pTok KAngleKet
+                return  $ XWitness w
+                
+        -- EXP0
         , do    pExp0 ]
 
 
+-- Atomics
 pExp0 :: Ord n => Parser n (Exp () p n)
 pExp0
-        = P.choice
+ = P.choice
+        -- (EXP2)
+        [ do    pTok KRoundBra
+                t       <- pExp2
+                pTok KRoundKet
+                return  $ t
+        
         -- Named type constructors
-        [ do    con       <- pCon
+        , do    con       <- pCon
                 return  $ XCon () (UName con (T.tBot T.kData)) 
 
         -- Variables
@@ -59,7 +93,7 @@ pWitness = pWitness0
 
 pWitness0 :: Ord n => Parser n (Witness n)
 pWitness0 
-        = P.choice
+ = P.choice
         -- Named witness constructors.
         [ do    wc     <- pWiCon
                 return $ WCon wc ]

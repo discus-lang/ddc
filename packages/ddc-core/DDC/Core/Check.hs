@@ -115,7 +115,7 @@ checkExpM env xx
          -> do  (t1, effs1, clos1) <- checkExpM  env x1
                 (t2, effs2, clos2) <- checkExpM  env x2
                 case t1 of
-                 TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) t12) eff) clo
+                 TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) clo) t12
                   | t11 == t2   
                   , TSum effs   <- eff
                   , TSum clos   <- clo
@@ -149,7 +149,7 @@ checkExpM env xx
                    |  not $ isDataKind k1  -> throw $ ErrorLamBindNotData xx t1 k1
                    |  not $ isDataKind k2  -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
                    |  otherwise
-                   -> return ( tFun t1 t2 (TSum e2) (TSum c2)
+                   -> return ( tFun t1 (TSum e2) (TSum c2) t2
                              , T.empty kEffect
                              , T.empty kClosure)
 
@@ -164,6 +164,7 @@ checkExpM env xx
                    | otherwise             -> return (TForall b1 t2, T.empty kEffect, T.empty kClosure)
 
                   _ -> throw $ ErrorMalformedType xx k1
+
 
         -- let binding
         XLet{}  -> error "checkExp: XLet not done yet"

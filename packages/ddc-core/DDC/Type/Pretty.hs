@@ -38,10 +38,16 @@ instance Pretty n => Pretty (Type n) where
          -> pprParen (d > 5)
          $  ppr k1 <+> text "=>" <+> pprPrec 6 k2
 
-        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) t2) eff) clo
+        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) eff) clo) t2
          | isBottom eff, isBottom clo
          -> pprParen (d > 5)
-         $  ppr t1 <+> text "->" <+> pprPrec 6 t2
+         $  ppr t1 <+> text "->" 
+                   <+> (if isTFun t2 then pprPrec 5 t2 else pprPrec 6 t2)
+
+         | otherwise
+         -> pprParen (d > 5)
+         $  ppr t1 <+> text "-(" <> ppr eff <> text "|" <> ppr clo <> text ")>" 
+                   <+> (if isTFun t2 then pprPrec 5 t2 else pprPrec 6 t2)
 
         -- Standard types.
         TCon tc    -> ppr tc
@@ -49,7 +55,7 @@ instance Pretty n => Pretty (Type n) where
 
         TForall b t
          -> pprParen (d > 1)
-         $  brackets (ppr b) <> dot <> ppr t
+         $  brackets (ppr b) <> dot <> softbreak <> ppr t
 
         TApp t1 t2
          -> pprParen (d > 10)
@@ -62,6 +68,12 @@ instance Pretty n => Pretty (Type n) where
         TBot k  
          -> ppr k <> text "0"
 
+isTFun :: Type n -> Bool
+isTFun tt
+ = case tt of
+         TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) _) _) _) _
+                -> True
+         _      -> False
 
 instance Pretty n => Pretty (TypeSum n) where
  ppr ss

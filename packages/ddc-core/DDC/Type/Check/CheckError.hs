@@ -1,4 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
+-- | Errors produced when checking types.
 module DDC.Type.Check.CheckError
         (Error(..))
 where

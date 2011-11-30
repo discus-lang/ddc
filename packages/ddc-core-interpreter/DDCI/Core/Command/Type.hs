@@ -52,13 +52,13 @@ goCheck mode x (Right (t, eff, clo))
                 , nest 4 $ text ":$: " <> ppr clo]
         
         ShowTypeValue
-         -> putStrLn $ show (ppr x <> text " :: " <> ppr t)
+         -> putStrLn $ pretty 100 (ppr x <> text " :: " <> ppr t)
         
         ShowTypeEffect
-         -> putStrLn $ show (ppr x <> text " :! " <> ppr eff)
+         -> putStrLn $ pretty 100 (ppr x <> text " :! " <> ppr eff)
 
         ShowTypeClosure
-         -> putStrLn $ show (ppr x <> text " :$ " <> ppr clo)
+         -> putStrLn $ pretty 100 (ppr x <> text " :$ " <> ppr clo)
 
 
 parseExp :: [Token (Tok Name)] -> Either BP.ParseError (Exp () p Name)

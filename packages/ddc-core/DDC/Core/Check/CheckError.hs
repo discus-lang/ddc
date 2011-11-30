@@ -1,4 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
+-- | Errors produced when checking core expressions.
 module DDC.Core.Check.CheckError
         (Error(..))
 where
@@ -6,7 +7,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty
 import qualified DDC.Type.Check as T
 
--- Error ------------------------------------------------------------------------------------------
+
 -- | Type errors.
 data Error a p n
 

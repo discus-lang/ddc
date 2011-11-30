@@ -11,12 +11,17 @@ import DDC.Base.Pretty
 
 -- Exp --------------------------------------------------------------------------------------------
 instance Pretty n => Pretty (Exp a p n) where
- pprPrec _d xx
+ pprPrec d xx
   = case xx of
         XVar _ n        -> ppr n
         XCon _ n        -> ppr n
         
         XLam _ u x      -> text "\\" <> parens (ppr u) <> text "." <> ppr x
+
+        XApp _ x1 x2
+         -> pprParen (d > 10)
+         $  ppr x1 <+> pprPrec 11 x2
+
         _               -> error "pprPrec[Exp] not finished"
 
 

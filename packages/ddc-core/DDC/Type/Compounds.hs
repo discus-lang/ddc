@@ -15,6 +15,7 @@ module DDC.Type.Compounds
         , tApps
         , tForall
         , tForalls
+        , tSum
 
           -- * Function type construction
         , kFun,     (~>>)
@@ -40,9 +41,12 @@ module DDC.Type.Compounds
         , tDistinct
         , tPure
         , tEmpty
+        
+        , tConData1
         )
 where
 import DDC.Type.Exp
+import qualified DDC.Type.Sum   as T
 
 -- Names, Binds and Bounds ------------------------------------------------------------------------
 -- | Take the variable name of a bind.
@@ -111,8 +115,14 @@ tForall k f
 tForalls  :: [Kind n] -> ([Type n] -> Type n) -> Type n
 tForalls ks f
  = let  bs      = [BAnon k | k <- ks]
-        us      = [TVar (UIx n  k) | k <- ks | n <- [0..]]
+        us      = reverse [TVar (UIx n  k) | k <- ks | n <- [0..]]
    in   foldr TForall (f us) bs
+
+
+tSum :: Ord n => Kind n -> [Type n] -> Type n
+tSum k ts
+        = TSum (T.fromList k ts)
+
 
 
 -- Function Constructors --------------------------------------------------------------------------
@@ -130,13 +140,13 @@ kFuns (k:ks) k1    = k `kFun` kFuns ks k1
 
 -- | Build a value type function, 
 --   with the provided effect and closure.
-tFun    :: Type n -> Type n -> Effect n -> Closure n -> Type n
-tFun t1 t2 eff clo
-        = (TCon $ TyConComp TcConFun) `tApps` [t1, t2, eff, clo]
+tFun    :: Type n -> Effect n -> Closure n -> Type n -> Type n
+tFun t1 eff clo t2
+        = (TCon $ TyConComp TcConFun) `tApps` [t1, eff, clo, t2]
 
 -- | Build a pure and empty value type function.
 tFunPE, (->>)   :: Type n -> Type n -> Type n
-tFunPE t1 t2    = tFun t1 t2 (tBot kEffect) (tBot kClosure)
+tFunPE t1 t2    = tFun t1 (tBot kEffect) (tBot kClosure) t2
 (->>)           = tFunPE
 
 
@@ -184,4 +194,8 @@ tcCon1 tc t  = (TCon $ TyConComp    tc) `tApp` t
 twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
 twConN tc ts = (TCon $ TyConWitness   (tc (length ts))) `tApps` ts
 
+
+-- | Build a data constructor application of one argumnet.
+tConData1 :: n -> Kind n -> Type n -> Type n
+tConData1 n k t1 = TApp (TCon (TyConComp (TcConData n k))) t1
 

@@ -22,6 +22,8 @@ data Tok n
         | KSquareKet
         | KBraceBra
         | KBraceKet
+        | KAngleBra
+        | KAngleKet
 
         -- punctuation
         | KColon

@@ -44,7 +44,7 @@ kindOfTwCon tc
 kindOfTcCon :: TcCon n -> Kind n
 kindOfTcCon tc
  = case tc of
-        TcConFun        -> [kData, kData, kEffect, kClosure] `kFuns` kData
+        TcConFun        -> [kData, kEffect, kClosure, kData] `kFuns` kData
         TcConData _ k   -> k
         TcConRead       -> kRegion  `kFun` kEffect
         TcConDeepRead   -> kData    `kFun` kEffect
