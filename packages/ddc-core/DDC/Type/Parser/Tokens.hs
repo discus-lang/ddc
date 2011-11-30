@@ -9,7 +9,7 @@ module DDC.Type.Parser.Tokens
         , readVar)
 where
 import DDC.Type.Exp
-import DDC.Type.Operators.Rename
+import DDC.Type.Transform.Rename
 import DDC.Type.Parser.Lexer
 import Control.Monad
 import qualified DDC.Type.Compounds     as T

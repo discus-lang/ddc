@@ -1,16 +1,17 @@
 
 -- | Boilerplate to apply a function to every name in a `Type` related thing.
 module DDC.Type.Transform.Rename
-        (Named(..))
+        (Rename(..))
 where
 import DDC.Type.Exp
 import DDC.Type.Sum
 
 
-class Named (c :: * -> *) where
+-- | Apply a function to all the names in a thing.
+class Rename (c :: * -> *) where
  rename :: forall n1 n2. Ord n2 => (n1 -> n2) -> c n1 -> c n2
 
-instance Named Type where
+instance Rename Type where
  rename f tt
   = case tt of
         TVar    u       -> TVar    (rename f u)
@@ -21,26 +22,26 @@ instance Named Type where
         TBot    k       -> TBot    (rename f k)
 
 
-instance Named TypeSum where
+instance Rename TypeSum where
  rename f ts
   = fromList (rename f $ kindOfSum ts) $ map (rename f) $ toList ts
 
 
-instance Named Bind where
+instance Rename Bind where
  rename f bb
   = case bb of
         BName n k       -> BName (f n) (rename f k)
         BAnon   k       -> BAnon       (rename f k)
         
 
-instance Named Bound where
+instance Rename Bound where
  rename f uu
   = case uu of
         UName n k       -> UName (f n) (rename f k)
         UIx   i k       -> UIx   i     (rename f k)
 
 
-instance Named TyCon where
+instance Rename TyCon where
  rename f cc
   = case cc of
         TyConSort sc    -> TyConSort sc
@@ -49,7 +50,7 @@ instance Named TyCon where
         TyConComp tc    -> TyConComp (rename f tc)
 
 
-instance Named TcCon where
+instance Rename TcCon where
  rename f tc
   = case tc of
         TcConData n k   -> TcConData (f n) (rename f k)

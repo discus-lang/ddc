@@ -1,8 +1,17 @@
 
 module DDC.Type.Check
-        ( kindOfType
+        ( -- * Kinds of Types
+          checkType
+        , kindOfType
         , kindOfType'
-        , checkType
+
+          -- * Kinds of Constructors
+        , sortOfKiCon
+        , kindOfTwCon
+        , kindOfTcCon
+        
+          -- * Errors
         , Error(..))
 where
-import DDC.Type.Check.Exp
+import DDC.Type.Check.CheckType
+import DDC.Type.Check.CheckCon

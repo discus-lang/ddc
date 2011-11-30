@@ -1,5 +1,5 @@
 
 module DDC.Type.Transform
-        (Named(..))
+        (Rename(..))
 where
 import DDC.Type.Transform.Rename

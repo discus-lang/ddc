@@ -1,5 +1,5 @@
-
-module DDC.Type.Check.Con
+{-# OPTIONS_HADDOCK hide #-}
+module DDC.Type.Check.CheckCon
         ( sortOfKiCon
         , kindOfTwCon
         , kindOfTcCon)
@@ -9,8 +9,9 @@ import DDC.Type.Compounds
 
 
 -- | Take the superkind of an atomic kind constructor.
---   The kind function (~>) is handled separately because it doesn't have a sort
---   without being fully applied.
+--
+--   * Yields `Nothing` for the kind function (~>) as it doesn't have a sort
+--     without being fully applied.
 sortOfKiCon :: KiCon -> Maybe (Sort n)
 sortOfKiCon kc
  = case kc of

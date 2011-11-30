@@ -1,6 +1,7 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Type.Compounds
-        ( takeNameOfBind
+        ( -- * Variable binders
+          takeNameOfBind
         , typeOfBind
         , replaceTypeOfBind
 
@@ -8,26 +9,26 @@ module DDC.Type.Compounds
         , typeOfBound
         , replaceTypeOfBound
 
-        -- * Type structure.
+          -- * Type structure
         , tBot
         , tApp,     ($:)
         , tApps
         , tForall
         , tForalls
 
-        -- * Function constructos.
+          -- * Function type construction
         , kFun,     (~>>)
         , kFuns
         , tFun,     (->>)
         , tImpl
 
-          -- * Sort Construction.
+          -- * Sort construction
         , sComp, sProp
 
-          -- * Kind Construction.
+          -- * Kind construction
         , kData, kRegion, kEffect, kClosure, kWitness
 
-          -- * Type Construction.
+          -- * Type construction
         , tRead,    tDeepRead
         , tWrite,   tDeepWrite
         , tAlloc

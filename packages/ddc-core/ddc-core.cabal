@@ -26,8 +26,8 @@ Library
         DDC.Type.Check
         DDC.Type.Check.Env
         DDC.Type.Check.Monad
-        DDC.Type.Check.Con
-        DDC.Type.Check.Exp
+        DDC.Type.Check.CheckCon
+        DDC.Type.Check.CheckType
         DDC.Type.Exp
         DDC.Type.Parser.Tokens
         DDC.Type.Parser.Lexer

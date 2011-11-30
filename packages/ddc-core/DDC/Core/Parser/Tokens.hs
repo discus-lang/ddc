@@ -6,7 +6,7 @@ module DDC.Core.Parser.Tokens
         , readWiConBuiltin)
 where
 import DDC.Core.Exp
-import DDC.Type.Operators.Rename
+import DDC.Type.Transform.Rename
 import Control.Monad
 import qualified DDC.Type.Parser.Tokens as T
 import qualified DDC.Type.Parser.Lexer  as T

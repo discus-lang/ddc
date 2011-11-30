@@ -1,11 +1,11 @@
-
-module DDC.Type.Check.Exp 
+{-# OPTIONS_HADDOCK hide #-}
+module DDC.Type.Check.CheckType
         ( kindOfType, kindOfType'
         , checkType
         , Error(..))
 where
+import DDC.Type.Check.CheckCon
 import DDC.Type.Compounds
-import DDC.Type.Check.Con
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List
@@ -20,22 +20,22 @@ type CheckM n   = G.CheckM (Error n)
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
--- | Take the kind of a type in an empty environment.
+-- | Check a type in the given environment, returning an error or its kind.
+checkType :: Ord n => Env n -> Type n -> Either (Error n) (Kind n)
+checkType env tt = result $ checkTypeM env tt
+
+
+-- | Check a type in an empty environment, returning an error or its kind.
 kindOfType  :: Ord n => Type n -> Either (Error n) (Kind n)
 kindOfType tt = result $ checkTypeM Env.empty tt
 
 
--- | Take the kind of a type in an empty environment, or `error` if there isn't one.
+-- | Check a type in an empty environment, returning its kind, or `error` if there isn't one.
 kindOfType' :: (Ord n, Pretty n) => Type n -> Kind n
 kindOfType' tt
  = case kindOfType tt of
         Left err        -> error $ show $ (ppr err)
         Right k         -> k
-
-
--- | Check a type, returning an error or its kind.
-checkType :: Ord n => Env n -> Type n -> Either (Error n) (Kind n)
-checkType env tt = result $ checkTypeM env tt
 
 
 -- checkType --------------------------------------------------------------------------------------
