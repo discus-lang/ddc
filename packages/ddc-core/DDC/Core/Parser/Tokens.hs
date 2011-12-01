@@ -26,13 +26,25 @@ data Tok n
         | KAngleKet
 
         -- punctuation
-        | KColon
         | KDot
-        | KComma
+        | KBar
+        | KHat
         | KPlus
+        | KColon
+        | KComma
         | KBackSlash
         | KSemiColon
-        | KBar
+        | KUnderscore
+
+        -- expression keywords
+        | KIn
+        | KOf
+        | KLet
+        | KLetRec
+        | KLocal
+        | KCase
+        | KPurify
+        | KForget
 
         -- symbolic constructors
         | KSortComp
@@ -50,23 +62,16 @@ data Tok n
         -- bottoms
         | KBotEffect
         | KBotClosure
-
-        -- expression keywords
-        | KLetRec
-        | KLet
-        | KLocal
-        | KIn
-        | KCase
-        | KOf
-        | KPurify
-        | KForget
         
-        -- witness 
+        -- named things
         | KTwConBuiltin TwCon
         | KTcConBuiltin (TcCon n)
         | KWiConBuiltin WiCon
         | KCon        n      
         | KVar        n
+        
+        -- literal values
+        | KInteger Integer
         deriving (Eq, Show)
 
 

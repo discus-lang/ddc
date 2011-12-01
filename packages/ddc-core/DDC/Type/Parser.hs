@@ -3,7 +3,8 @@
 module DDC.Type.Parser
         ( module DDC.Base.Parser
         , Parser
-        , pType)
+        , pType
+        , pInteger)
 where
 import DDC.Type.Exp
 import Control.Monad
@@ -41,28 +42,40 @@ pTypeSum
                 
          , do   return t1 ]
 
+-- Binds
+pBinder :: Ord n => Parser n (Binder n)
+pBinder
+ = P.choice
+        -- Named binders.
+        [ do    v       <- pVar
+                return  $ RName v
+                
+        -- Anonymous binders.
+        , do    pTok KHat
+                return  $ RAnon 
+        
+        -- Vacant binders.
+        , do    pTok KUnderscore
+                return  $ RNone ]
+
 
 -- Foralls.
 pTypeForall :: Ord n => Parser n (Type n)
 pTypeForall
- = do   P.choice
+ = P.choice
          [ -- Universal quantification.
-           -- [v11 v12 ... v1n : T2, v21 v22 ... v2n : T2]. T3
+           -- [v1 v1 ... vn : T1]. T2
            do   pTok KSquareBra
-                vsk     <- P.sepBy1 
-                            (do vs      <- P.many1 pVar 
-                                pTok KColon
-                                k       <- pTypeSum
-                                return  $ (vs, k))
-                            (pTok KComma)
+                bs      <- P.many1 pBinder
+                pTok KColon
+                k       <- pTypeSum
                 pTok KSquareKet
                 pTok KDot
 
                 body    <- pTypeForall
 
                 return  $ foldr TForall body 
-                        $ [ BName v k   | (vs, k) <- vsk
-                                        , v       <- vs]
+                        $ map (\b -> T.makeBindFromBinder b k) bs
 
            -- Body type
          , do   pTypeFun]
@@ -139,11 +152,15 @@ pType0  = P.choice
         , do    pTokAs KBotClosure (TBot T.kClosure)
       
         -- Bound occurrence of a variable.
-        -- We don't know the kind of this variable yet, so fill in the field with the bottom
-        -- element of computation kinds. This isn't really part of the language, but makes
-        -- sense implentation-wise.
+        --  We don't know the kind of this variable yet, so fill in the field with the bottom
+        --  element of computation kinds. This isn't really part of the language, but makes
+        --  sense implentation-wise.
         , do    v       <- pVar
                 return  $  TVar (UName v (TBot T.sComp))
+
+        , do    pTok KHat
+                i       <- pInteger
+                return  $  TVar (UIx (fromIntegral i) (TBot T.sComp))
         ]
 
 
@@ -171,3 +188,10 @@ pVar    = pTokMaybe
                  KVar n         -> Just n
                  _              -> Nothing
 
+-- | Parse an integer.
+pInteger :: Parser n Integer
+pInteger
+        = pTokMaybe
+        $ \k -> case k of
+                 KInteger i     -> Just i
+                 _              -> Nothing

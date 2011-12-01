@@ -4,6 +4,10 @@ module DDC.Type.Compounds
           takeNameOfBind
         , typeOfBind
         , replaceTypeOfBind
+        
+          -- * Binders
+        , binderOfBind
+        , makeBindFromBinder
         , partitionBindsByType
         
           -- * Bounds
@@ -87,6 +91,12 @@ binderOfBind bb
         BAnon _         -> RAnon
         BNone _         -> RNone
 
+makeBindFromBinder :: Binder n -> Type n -> Bind n
+makeBindFromBinder bb t
+ = case bb of
+        RName n         -> BName n t
+        RAnon           -> BAnon t
+        RNone           -> BNone t
 
 -- | Make lists of binds that have the same type.
 partitionBindsByType :: Eq n => [Bind n] -> [([Binder n], Type n)]

@@ -21,6 +21,7 @@ import DDC.Core.Parser.Tokens
 import DDC.Type.Parser.Lexer
 import qualified DDC.Type.Transform    as T
 import Data.List
+import Data.Char
 
 
 -- WiCon names ------------------------------------------------------------------------------------
@@ -72,13 +73,15 @@ lexExp mkName str
         '>'  : w'       -> mkToken KAngleKet    : lexWord w'            
 
         -- Punctuation
-        ':'  : w'       -> mkToken KColon       : lexWord w'
         '.'  : w'       -> mkToken KDot         : lexWord w'
-        ','  : w'       -> mkToken KComma       : lexWord w'
+        '|'  : w'       -> mkToken KBar         : lexWord w'
+        '^'  : w'       -> mkToken KHat         : lexWord w'
         '+'  : w'       -> mkToken KPlus        : lexWord w'
+        ':'  : w'       -> mkToken KColon       : lexWord w'
+        ','  : w'       -> mkToken KComma       : lexWord w'
         '\\' : w'       -> mkToken KBackSlash   : lexWord w'
         ';'  : w'       -> mkToken KSemiColon   : lexWord w'
-        '|'  : w'       -> mkToken KBar         : lexWord w'
+        '_'  : w'       -> mkToken KUnderscore  : lexWord w'
         
         -- Bottoms
         '!' : '0' : w'  -> mkToken KBotEffect   : lexWord w'
@@ -94,6 +97,13 @@ lexExp mkName str
         '!' : w'        -> mkToken KKindEffect  : lexWord w'
         '$' : w'        -> mkToken KKindClosure : lexWord w'
         '@' : w'        -> mkToken KKindWitness : lexWord w'
+        
+        -- Literal values
+        c : cs
+         | isDigit c
+         , (body, rest)         <- span isDigit cs
+         -> mkToken (KInteger (read (c:body))) : lexWord rest
+        
         
         -- Named Constructors
         c : cs
@@ -139,12 +149,12 @@ lexExp mkName str
 -- | Textual keywords in the core language.
 keywords :: [(String, Tok n)]
 keywords
- =      [ ("letrec", KLetRec)
-        , ("let",    KLet)
-        , ("local",  KLocal)
-        , ("in",     KIn)
-        , ("case",   KCase)
+ =      [ ("in",     KIn)
         , ("of",     KOf) 
+        , ("let",    KLet)
+        , ("letrec", KLetRec)
+        , ("local",  KLocal)
+        , ("case",   KCase)
         , ("purify", KPurify)
         , ("forget", KForget) ]
 
