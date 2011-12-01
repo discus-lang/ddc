@@ -344,7 +344,6 @@ checkExp_trace m xx env
 	  in result
 
 	-- Value application
-	-- TODO: why is it ok to discard the third closure?
 	XApp x1 x2
 	 | (x1', t1, eff1, clo1) <- checkExp' n x1 env
 	 , (x2', t2, eff2, clo2) <- checkExp' n x2 env
