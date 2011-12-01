@@ -1,8 +1,6 @@
 
 import DDCI.Core.Command.Help
-import DDCI.Core.Command.Kind
-import DDCI.Core.Command.Type
-import DDCI.Core.Command.WType
+import DDCI.Core.Command.Check
 import System.IO
 import Data.List
 
