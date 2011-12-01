@@ -24,6 +24,7 @@ Library
 
   Exposed-modules:
         DDC.Type.Compounds
+        DDC.Type.Collect.Free
         DDC.Type.Check
         DDC.Type.Check.Env
         DDC.Type.Check.Monad

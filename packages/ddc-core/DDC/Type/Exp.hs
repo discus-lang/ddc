@@ -77,6 +77,12 @@ data Bound n
         | UIx   Int (Type n)    -- ^ Nameless variable on the deBruijn stack.
         deriving (Eq, Show)
 
+instance Ord n => Ord (Bound n) where
+ compare (UName n1 _) (UName n2 _)      = compare n1 n2
+ compare (UIx   i1 _) (UIx i2 _)        = compare i1 i2
+ compare (UIx   _  _) (UName _ _)       = LT
+ compare (UName _  _) (UIx   _ _)       = GT
+
 
 -- Type Sums --------------------------------------------------------------------------------------
 -- | A least upper bound of several types.

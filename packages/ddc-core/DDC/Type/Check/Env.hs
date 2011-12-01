@@ -1,10 +1,15 @@
 
+-- | Type environments.
+--
+--      * TODO: Store the current depth separately, to avoid checking the length all the time in `depth`.
+--
 module DDC.Type.Check.Env
         ( Env(..)
         , empty
         , extend
         , member,       memberBind
-        , lookup,       lookupName)
+        , lookup,       lookupName
+        , depth)
 where
 import DDC.Type.Exp
 import Data.Maybe
@@ -64,4 +69,8 @@ lookupName :: Ord n => n -> Env n -> Maybe (Type n)
 lookupName n env
         = Map.lookup n (envMap env)
 
+
+-- | Yield the depth of the debruijn stack.
+depth :: Env n -> Int
+depth env       = length $ envStack env
 

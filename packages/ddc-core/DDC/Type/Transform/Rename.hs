@@ -6,8 +6,8 @@ import DDC.Type.Exp
 import DDC.Type.Sum
 
 
--- | Apply a function to all the names in a thing.
 class Rename (c :: * -> *) where
+ -- | Apply a function to all the names in a thing.
  rename :: forall n1 n2. Ord n2 => (n1 -> n2) -> c n1 -> c n2
 
 instance Rename Type where
