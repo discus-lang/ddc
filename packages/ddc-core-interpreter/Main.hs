@@ -1,6 +1,7 @@
 
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Check
+import DDCI.Core.Command.Free
 import System.IO
 import Data.List
 
@@ -42,42 +43,38 @@ handle line ws
         = do    putStr help
                 loop
         
+        -- Free -------------------------------------------
+        -- Show free vars in a type
+        | Just rest     <- splitPrefix ":tfree" line
+        = do    { cmdFreeType rest; putStr "\n"; loop }
+        
+        -- Checking ---------------------------------------
         -- Show the kind of a type.
         | Just rest     <- splitPrefix ":kind" line
-        = do    cmdShowKind rest
-                putStr "\n"
-                loop
+        = do    { cmdShowKind rest;  putStr "\n"; loop }
 
         -- Show the type of a witness.
         | Just rest     <- splitPrefix ":wtype" line
-        = do    cmdShowWType rest
-                putStr "\n"
-                loop
+        = do    { cmdShowWType rest; putStr "\n"; loop }
 
         -- Show the value type, effect and closure of an expression.
         | Just rest     <- splitPrefix ":check" line
-        = do    cmdShowType ShowTypeAll rest
-                putStr "\n"
-                loop
+        = do    { cmdShowType ShowTypeAll rest;     putStr "\n"; loop }
 
         -- Show just the value type of an expression.
         | Just rest     <- splitPrefix ":type" line
-        = do    cmdShowType ShowTypeValue rest
-                putStr "\n"
-                loop
+        = do    { cmdShowType ShowTypeValue rest;   putStr "\n"; loop }
 
         -- Show just the effect of an expression.
         | Just rest     <- splitPrefix ":effect" line
-        = do    cmdShowType ShowTypeEffect rest
-                putStr "\n"
-                loop
+        = do    { cmdShowType ShowTypeEffect rest;  putStr "\n"; loop }
 
         -- Show just the closure of an expression.
         | Just rest     <- splitPrefix ":closure" line
-        = do    cmdShowType ShowTypeClosure rest
-                putStr "\n"
-                loop
+        = do    { cmdShowType ShowTypeClosure rest; putStr "\n"; loop }
         
+        
+        -- Unknown ----------------------------------------
         -- Some command we don't handle.
         | cmd@(':' : _ ) : _       <- ws
         = do    putStrLn $ "unknown command '" ++ cmd ++ "'"

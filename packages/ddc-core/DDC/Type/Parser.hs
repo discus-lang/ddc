@@ -25,12 +25,26 @@ type Parser n a
 
 -- | Top level parser for types.
 pType   :: Ord n => Parser n (Type n)
-pType   = pType4
+pType   = pTypeSum
+
+
+-- Sums
+pTypeSum :: Ord n => Parser n (Type n)
+pTypeSum 
+ = do   t1      <- pTypeForall
+        P.choice 
+         [ -- Type sums.
+           -- T2 + T3
+           do   pTok KPlus
+                t2      <- pTypeSum
+                return  $ TSum $ TS.fromList (TBot T.sComp) [t1, t2]
+                
+         , do   return t1 ]
 
 
 -- Foralls.
-pType4 :: Ord n => Parser n (Type n)
-pType4
+pTypeForall :: Ord n => Parser n (Type n)
+pTypeForall
  = do   P.choice
          [ -- Universal quantification.
            -- [v11 v12 ... v1n : T2, v21 v22 ... v2n : T2]. T3
@@ -38,56 +52,44 @@ pType4
                 vsk     <- P.sepBy1 
                             (do vs      <- P.many1 pVar 
                                 pTok KColon
-                                k       <- pType2
+                                k       <- pTypeSum
                                 return  $ (vs, k))
                             (pTok KComma)
                 pTok KSquareKet
                 pTok KDot
 
-                body    <- pType3
+                body    <- pTypeForall
 
                 return  $ foldr TForall body 
                         $ [ BName v k   | (vs, k) <- vsk
                                         , v       <- vs]
 
            -- Body type
-         , do   pType2]
-
--- Sums
-pType3 :: Ord n => Parser n (Type n)
-pType3 
- = do   t1      <- pType2
-        P.choice 
-         [ -- Type sums.
-           -- T2 + T3
-           do   pTok KPlus
-                t2      <- pType3
-                return  $ TSum $ TS.fromList (TBot T.sComp) [t1, t2]
-                
-         , do   return t1 ]
+         , do   pTypeFun]
 
 
 -- Functions
-pType2 :: Ord n => Parser n (Type n)
-pType2
+pTypeFun :: Ord n => Parser n (Type n)
+pTypeFun
  = do   t1      <- pType1
         P.choice 
          [ -- T1 -> T2
            do   pTok KTypeFun
-                t2      <- pType2
+                t2      <- pTypeFun
                 return  $ t1 T.->> t2
 
-           -- T1 -(T0 T0)> t2
+           -- T1 -(TSUM | TSUM)> t2
          , do   pTok KTypeFunBra
-                eff     <- pType0
-                clo     <- pType0
+                eff     <- pTypeSum
+                pTok KBar
+                clo     <- pTypeSum
                 pTok KTypeFunKet
-                t2      <- pType2
-                return  $ T.tFun t1 t2 eff clo
+                t2      <- pTypeFun
+                return  $ T.tFun t1 eff clo t2
 
            -- T1 ~> T2
          , do   pTok KKindFun
-                t2      <- pType2
+                t2      <- pTypeFun
                 return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
 
            -- Body type
@@ -107,7 +109,7 @@ pType0  = P.choice
         -- (TYPE2) and (->)
         [ do    pTok KRoundBra
                 P.choice
-                 [ do   t       <- pType2
+                 [ do   t       <- pTypeSum
                         pTok KRoundKet
                         return t 
 

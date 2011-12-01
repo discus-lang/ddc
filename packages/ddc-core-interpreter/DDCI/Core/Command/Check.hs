@@ -1,4 +1,3 @@
-{-# OPTIONS -fno-warn-missing-signatures #-}
 module DDCI.Core.Command.Check
         ( cmdShowKind
         , cmdShowWType

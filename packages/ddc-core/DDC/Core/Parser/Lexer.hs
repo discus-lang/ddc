@@ -78,6 +78,7 @@ lexExp mkName str
         '+'  : w'       -> mkToken KPlus        : lexWord w'
         '\\' : w'       -> mkToken KBackSlash   : lexWord w'
         ';'  : w'       -> mkToken KSemiColon   : lexWord w'
+        '|'  : w'       -> mkToken KBar         : lexWord w'
         
         -- Bottoms
         '!' : '0' : w'  -> mkToken KBotEffect   : lexWord w'

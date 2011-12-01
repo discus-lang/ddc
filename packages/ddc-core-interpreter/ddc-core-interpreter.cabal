@@ -26,6 +26,7 @@ Executable ddci-core
   Other-modules:
         DDCI.Core.Command.Help
         DDCI.Core.Command.Check
+        DDCI.Core.Command.Free
         DDCI.Core.Prim.Name
         DDCI.Core.Prim.Env
         

@@ -32,6 +32,7 @@ data Tok n
         | KPlus
         | KBackSlash
         | KSemiColon
+        | KBar
 
         -- symbolic constructors
         | KSortComp
