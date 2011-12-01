@@ -47,7 +47,7 @@ primOperatorTypes
                 -> tFun (tInt r2) (tBot kEffect)
                                   (tBot kClosure)
                  $ tFun (tInt r1) (tSum kEffect  [tRead r2, tRead r1])
-                                  (tSum kClosure [tFree r2])
+                                  (tSum kClosure [tShare r2])
                  $ tInt r0 )]
 
 

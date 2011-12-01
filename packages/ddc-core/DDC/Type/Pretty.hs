@@ -173,5 +173,5 @@ instance Pretty n => Pretty (TcCon n) where
         TcConWrite      -> text "Write"
         TcConDeepWrite  -> text "DeepWrite"
         TcConAlloc      -> text "Alloc"
-        TcConFree       -> text "Free"
-        TcConDeepFree   -> text "DeepFree"
+        TcConShare      -> text "Share"
+        TcConDeepShare  -> text "DeepShare"

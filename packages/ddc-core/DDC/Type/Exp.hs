@@ -234,10 +234,10 @@ data TcCon n
 
         
         -- Closure type constructors ------------
-        -- | Some region is free in a closure.
-        | TcConFree             -- :: '% ~> $'
+        -- | Some region is captured in a closure.
+        | TcConShare            -- :: '% ~> $'
         
-        -- | All material regions in a type are free in a closure.
-        | TcConDeepFree         -- :: '* ~> $'
+        -- | All material regions in a type are captured in a closure.
+        | TcConDeepShare        -- :: '* ~> $'
         deriving (Eq, Show)
 

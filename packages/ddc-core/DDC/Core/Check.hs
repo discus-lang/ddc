@@ -246,8 +246,8 @@ typeOfWiCon wc
         WiConRead
          -> tForall kRegion $ \r -> (tConst r) `tImpl`  (tPure  $ tRead r)
 
-        WiConFree
-         -> tForall kRegion $ \r -> (tConst r)  `tImpl` (tEmpty $ tFree r)
+        WiConShare
+         -> tForall kRegion $ \r -> (tConst r)  `tImpl` (tEmpty $ tShare r)
 
         WiConDistinct n
          -> tForalls (replicate n kRegion) $ \rs -> tDistinct rs

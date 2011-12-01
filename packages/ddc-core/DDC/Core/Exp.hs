@@ -141,7 +141,7 @@ data WiCon
         | WiConRead             -- read     :: [r: %]. Const r => Pure  (Read r)
 
         -- | Hide the sharing of a constant region.
-        | WiConFree             -- free     :: [r: %]. Const r => Shared r => Empty (Free r)
+        | WiConShare            -- share    :: [r: %]. Const r => Empty (Share r)
 
         -- | Witness that some regions are distinct.
         | WiConDistinct Int     -- distinct :: [r0 r1 ... rn : %]. Distinct_n r0 r1 .. rn

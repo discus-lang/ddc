@@ -51,8 +51,8 @@ kindOfTcCon tc
         TcConWrite      -> kRegion  `kFun` kEffect
         TcConDeepWrite  -> kData    `kFun` kEffect
         TcConAlloc      -> kRegion  `kFun` kEffect
-        TcConFree       -> kRegion  `kFun` kClosure
-        TcConDeepFree   -> kData    `kFun` kClosure
+        TcConShare      -> kRegion  `kFun` kClosure
+        TcConDeepShare  -> kData    `kFun` kClosure
 
 
 

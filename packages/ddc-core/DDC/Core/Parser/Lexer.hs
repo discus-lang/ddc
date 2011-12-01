@@ -35,7 +35,7 @@ readWiConBuiltin ss
         "lazy"          -> Just WiConLazy
         "direct"        -> Just WiConDirect
         "read"          -> Just WiConRead
-        "free"          -> Just WiConFree
+        "share"         -> Just WiConShare
         _               -> Nothing
 
 

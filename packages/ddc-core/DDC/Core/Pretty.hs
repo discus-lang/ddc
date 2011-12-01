@@ -49,7 +49,7 @@ instance Pretty WiCon where
         WiConLazy       -> text "lazy"
         WiConDirect     -> text "direct"
         WiConRead       -> text "read"
-        WiConFree       -> text "free"
+        WiConShare      -> text "share"
         WiConDistinct n
          -> text "distinct" <> (text $ show n)
 

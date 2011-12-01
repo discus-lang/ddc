@@ -35,7 +35,7 @@ module DDC.Type.Compounds
         , tRead,        tDeepRead
         , tWrite,       tDeepWrite
         , tAlloc
-        , tFree,        tDeepFree
+        , tShare,       tDeepShare
         , tConst,       tDeepConst
         , tMutable,     tDeepMutable
         , tLazy,        tHeadLazy
@@ -211,8 +211,8 @@ tDeepRead       = tcCon1 TcConDeepRead
 tWrite          = tcCon1 TcConWrite
 tDeepWrite      = tcCon1 TcConDeepWrite
 tAlloc          = tcCon1 TcConAlloc
-tFree           = tcCon1 TcConFree
-tDeepFree       = tcCon1 TcConDeepFree
+tShare          = tcCon1 TcConShare
+tDeepShare      = tcCon1 TcConDeepShare
 
 tConst          = twCon1 TwConConst
 tDeepConst      = twCon1 TwConDeepConst

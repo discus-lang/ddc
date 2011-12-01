@@ -60,8 +60,8 @@ instance Rename TcCon where
         TcConWrite      -> TcConWrite
         TcConDeepWrite  -> TcConDeepWrite
         TcConAlloc      -> TcConAlloc
-        TcConFree       -> TcConFree
-        TcConDeepFree   -> TcConDeepFree
+        TcConShare      -> TcConShare
+        TcConDeepShare  -> TcConDeepShare
 
 
         
