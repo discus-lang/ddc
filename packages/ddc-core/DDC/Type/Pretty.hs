@@ -4,20 +4,47 @@ module DDC.Type.Pretty
 where
 import DDC.Type.Exp
 import DDC.Type.Predicates
+import DDC.Type.Compounds
 import DDC.Base.Pretty
 import qualified DDC.Type.Sum           as TS
 
 stage   = "DDC.Type.Pretty"
 
--- Bind, Bound ------------------------------------------------------------------------------
-instance Pretty n => Pretty (Bind n) where
- ppr nn
-  = case nn of
+-- Bind -------------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Bind n) where
+ ppr bb
+  = case bb of
         BName v t       -> ppr v     <> text ":" <> ppr t
         BAnon   t       -> text "^"  <> text ":" <> ppr t
         BNone   t       -> text "_"  <> text ":" <> ppr t
 
 
+-- Binder -----------------------------------------------------------------------------------------
+instance Pretty n => Pretty (Binder n) where
+ ppr bb
+  = case bb of
+        RName v         -> ppr v
+        RAnon           -> text "^"
+        RNone           -> text "_"
+
+
+-- | Pretty print a binder, adding spaces after names.
+--   The RAnon and None binders don't need spaces, as they're single symbols.
+pprBinderSep   :: Pretty n => Binder n -> Doc
+pprBinderSep bb
+ = case bb of
+        RName v         -> ppr v <> text " "
+        RAnon           -> text "^"
+        RNone           -> text "_"
+
+
+-- | Print a group of binders with the same type.
+pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
+pprBinderGroup (rs, t)
+        =  (cat $ map pprBinderSep rs) <> text " : "  <> ppr t
+
+
+-- Bound ------------------------------------------------------------------------------------------
 instance Pretty n => Pretty (Bound n) where
  ppr nn
   = case nn of
@@ -26,7 +53,7 @@ instance Pretty n => Pretty (Bound n) where
 
 
 -- Type -------------------------------------------------------------------------------------------
-instance Pretty n => Pretty (Type n) where
+instance (Pretty n, Eq n) => Pretty (Type n) where
  pprPrec d tt
   = case tt of
         -- Full application of function constructors are printed infix.
@@ -46,7 +73,7 @@ instance Pretty n => Pretty (Type n) where
 
          | otherwise
          -> pprParen (d > 5)
-         $  ppr t1 <+> text "-(" <> ppr eff <> text "|" <> ppr clo <> text ")>" 
+         $  ppr t1 <+> text "-(" <> ppr eff <> text " | " <> ppr clo <> text ")>" 
                    <+> (if isTFun t2 then pprPrec 5 t2 else pprPrec 6 t2)
 
         -- Standard types.
@@ -54,8 +81,15 @@ instance Pretty n => Pretty (Type n) where
         TVar b     -> ppr b
 
         TForall b t
+         | Just (bsMore, tBody) <- takeTForalls t
+         -> let groups  = partitionBindsByType (b:bsMore)
+            in  pprParen (d > 1) 
+                 $ brackets (sep $ map pprBinderGroup groups)
+                        <> dot <> ppr tBody
+                        
+         | otherwise
          -> pprParen (d > 1)
-         $  brackets (ppr b) <> dot <> softbreak <> ppr t
+                $ brackets (ppr b) <> dot <> ppr t
 
         TApp t1 t2
          -> pprParen (d > 10)
@@ -75,7 +109,7 @@ isTFun tt
                 -> True
          _      -> False
 
-instance Pretty n => Pretty (TypeSum n) where
+instance (Pretty n, Eq n) => Pretty (TypeSum n) where
  ppr ss
   = case TS.toList ss of
       [] | isEffectKind  $ TS.kindOfSum ss -> text "!0"

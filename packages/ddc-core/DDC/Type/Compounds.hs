@@ -1,10 +1,12 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Type.Compounds
-        ( -- * Variable binders
+        ( -- * Binds
           takeNameOfBind
         , typeOfBind
         , replaceTypeOfBind
-
+        , partitionBindsByType
+        
+          -- * Bounds
         , takeNameOfBound
         , typeOfBound
         , replaceTypeOfBound
@@ -14,7 +16,7 @@ module DDC.Type.Compounds
         , tApp,     ($:)
         , tApps
         , tForall
-        , tForalls
+        , tForalls,     takeTForalls
         , tSum
 
           -- * Function type construction
@@ -30,13 +32,13 @@ module DDC.Type.Compounds
         , kData, kRegion, kEffect, kClosure, kWitness
 
           -- * Type construction
-        , tRead,    tDeepRead
-        , tWrite,   tDeepWrite
+        , tRead,        tDeepRead
+        , tWrite,       tDeepWrite
         , tAlloc
-        , tFree,    tDeepFree
-        , tConst,   tDeepConst
-        , tMutable, tDeepMutable
-        , tLazy,    tHeadLazy
+        , tFree,        tDeepFree
+        , tConst,       tDeepConst
+        , tMutable,     tDeepMutable
+        , tLazy,        tHeadLazy
         , tDirect
         , tDistinct
         , tPure
@@ -48,7 +50,7 @@ where
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as T
 
--- Names, Binds and Bounds ------------------------------------------------------------------------
+-- Binds ------------------------------------------------------------------------------------------
 -- | Take the variable name of a bind.
 --   If this is an anonymous variable then there won't be a name.
 takeNameOfBind  :: Bind n -> Maybe n
@@ -75,8 +77,28 @@ replaceTypeOfBind t bb
         BName n _       -> BName n t
         BAnon   _       -> BAnon t
         BNone   _       -> BNone t
-        
 
+
+-- Binders ----------------------------------------------------------------------------------------
+binderOfBind :: Bind n -> Binder n
+binderOfBind bb
+ = case bb of
+        BName n _       -> RName n
+        BAnon _         -> RAnon
+        BNone _         -> RNone
+
+
+-- | Make lists of binds that have the same type.
+partitionBindsByType :: Eq n => [Bind n] -> [([Binder n], Type n)]
+partitionBindsByType [] = []
+partitionBindsByType (b:bs)
+ = let  t       = typeOfBind b
+        bsSame  = takeWhile (\b' -> typeOfBind b' == t) bs
+        rs      = map binderOfBind (b:bsSame)
+   in   (rs, t) : partitionBindsByType (drop (length bsSame) bs)
+
+
+-- Bounds -----------------------------------------------------------------------------------------
 -- | Take the variable name of bound variable.
 --   If this is an anonymous variable then there won't be a name.
 takeNameOfBound :: Bound n -> Maybe n
@@ -96,7 +118,7 @@ replaceTypeOfBound t (UName n _) = UName n t
 replaceTypeOfBound t (UIx i _)   = UIx i t
 
 
--- Type Structure ---------------------------------------------------------------------------------
+-- Applications -----------------------------------------------------------------------------------
 tBot            = TBot
 tApp            = TApp
 ($:)            = TApp
@@ -105,6 +127,7 @@ tApps   :: Type n -> [Type n] -> Type n
 tApps t1 ts     = foldl TApp t1 ts
 
 
+-- Foralls ----------------------------------------------------------------------------------------
 -- | Build an anonymous type abstraction, with a single parameter.
 tForall :: Kind n -> (Type n -> Type n) -> Type n
 tForall k f
@@ -119,6 +142,18 @@ tForalls ks f
    in   foldr TForall (f us) bs
 
 
+-- | Split nested foralls from the front of a type, 
+--   or `Nothing` if there was no outer forall.
+takeTForalls :: Type n -> Maybe ([Bind n], Type n)
+takeTForalls tt
+ = let  go bs (TForall b t) = go (b:bs) t
+        go bs t             = (reverse bs, t)
+   in   case go [] tt of
+         ([], _)        -> Nothing
+         (bs, body)     -> Just (bs, body)
+
+
+-- Sums -------------------------------------------------------------------------------------------
 tSum :: Ord n => Kind n -> [Type n] -> Type n
 tSum k ts
         = TSum (T.fromList k ts)

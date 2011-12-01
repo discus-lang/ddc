@@ -2,6 +2,7 @@
 module DDC.Type.Exp
         ( -- * Types, Kinds, and Sorts
           Type     (..)
+        , Binder  (..)
         , Bind     (..)
         , Bound    (..)
         , Kind,   Sort
@@ -58,7 +59,15 @@ data Bind n
         | BAnon     (Type n)    -- ^ Nameless variable on the deBruijn stack.
         | BNone     (Type n)    -- ^ A variable with no uses in the body doesn't need a name.
         deriving (Eq, Show)
-        
+
+
+-- | Represents the binder of a `Bind`, without the type.
+data Binder n
+        = RName n
+        | RAnon
+        | RNone
+        deriving (Eq, Show)
+
 
 -- | Bound occurrence of a variable.
 -- 
