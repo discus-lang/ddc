@@ -5,13 +5,10 @@ module DDCI.Core.Command.Type
 where
 import DDCI.Core.Prim.Env
 import DDCI.Core.Prim.Name
-import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser.Lexer
-import DDC.Core.Parser.Tokens
 import DDC.Core.Parser
-import DDC.Base.Lexer
 import qualified DDC.Core.Transform     as T
 import qualified DDC.Base.Parser        as BP
 
@@ -31,7 +28,7 @@ cmdShowType mode ss
         = goParse mode (lexExp Name ss)
 
 goParse mode toks                
- = case parseExp toks of 
+ = case BP.runTokenParser show "<interactive>" pExp toks of 
     Left err -> putStrLn $ "parse error " ++ show err
     Right x  
      -> let x'  = T.spread primEnv x
@@ -59,9 +56,3 @@ goCheck mode x (Right (t, eff, clo))
 
         ShowTypeClosure
          -> putStrLn $ pretty 100 (ppr x <> text " :$ " <> ppr clo)
-
-
-parseExp :: [Token (Tok Name)] -> Either BP.ParseError (Exp () p Name)
-parseExp toks
-        = BP.runTokenParser show "<interactive>" pExp toks
-

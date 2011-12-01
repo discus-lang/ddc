@@ -7,10 +7,7 @@ import DDCI.Core.Prim.Env
 import DDC.Type.Pretty
 import DDC.Type.Check
 import DDC.Core.Parser.Lexer
-import DDC.Core.Parser.Tokens
 import DDC.Type.Parser
-import DDC.Type.Exp
-import DDC.Base.Lexer
 import qualified DDC.Type.Transform     as T
 import qualified DDC.Base.Parser        as BP
 
@@ -20,7 +17,7 @@ cmdShowKind ss
         = goParse (lexExp Name ss)
 
 goParse toks                
- = case parseType toks of 
+ = case BP.runTokenParser show "<interactive>" pType toks of 
         Left err        -> putStrLn $ "parse error " ++ show err
         Right t         -> goCheck t
 
@@ -28,8 +25,3 @@ goCheck t
  = case checkType primEnv (T.spread primEnv t) of
         Left err        -> putStrLn $ show $ ppr err
         Right k         -> putStrLn $ show $ (ppr t <> text " :: " <> ppr k)
- 
-
-parseType :: [Token (Tok Name)] -> Either BP.ParseError (Type Name)
-parseType toks
-        = BP.runTokenParser show "<interactive>" pType toks
