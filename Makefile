@@ -48,7 +48,7 @@ include make/build.mk
 allWithConfig :
 	@$(MAKE) packages/ddc-main/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc bin/war runtime external libs -j $(THREADS)
+	@$(MAKE) bin/ddc bin/ddci-core bin/war runtime external libs -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
@@ -59,6 +59,13 @@ total	:
 	@$(MAKE) totallogwar
 
 
+# -- Same as 'total', but do a full clean first
+.PHONY  : cleantotal
+cleantotal :
+	@$(MAKE) clean
+	@$(MAKE) total
+
+
 # -- Build the Coq proofs
 .PHONY: proof
 proof:
@@ -66,11 +73,9 @@ proof:
 	@$(MAKE) proof/Main.vo -j $(THREADS)
 
 
-# -- Same as 'total', but do a full clean first
-.PHONY  : cleantotal
-cleantotal :
-	@$(MAKE) clean
-	@$(MAKE) total
+# -- Build all dependencies
+.PHONY	: deps
+deps	: make/deps/Makefile-main.deps make/deps/Makefile-ddci-core.deps
 
 
 # -- What to do during the nightly builds
@@ -109,6 +114,7 @@ include make/targets/lint.mk
 include make/targets/tarball.mk
 include make/targets/clean.mk
 include make/targets/ddc.mk
+include make/targets/ddci-core.mk
 include make/targets/proof.mk
 
 
@@ -124,6 +130,7 @@ include make/rules.mk
 #   This behavior is different to the documentation which says
 #   that missing -included files should be ignored.
 #
--include make/Makefile.deps.inc
+-include make/deps/Makefile-main.deps.inc
+-include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/proof.deps.inc
 

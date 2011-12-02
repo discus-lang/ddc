@@ -11,4 +11,3 @@ packages/ddc-main/Source/Plate/Trans.hs : bin/plate packages/ddc-main/Source/Pla
 	@echo
 	@echo "* Generating boilerplate for $@"
 	@bin/plate packages/ddc-main/Source/Exp.hs packages/ddc-main/Source/Plate/Trans.hs-stub packages/ddc-main/Source/Plate/Trans.hs
-	@echo

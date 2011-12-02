@@ -19,7 +19,8 @@ GHC_LANGUAGE	:= \
 	-XTypeSynonymInstances \
 	-XNamedFieldPuns \
 	-XExistentialQuantification \
-	-XBangPatterns
+	-XBangPatterns \
+	-XRankNTypes
 
 
 # -- Warnings -----------------------------------------------------------------
@@ -98,4 +99,6 @@ DDC_PACKAGES	:= \
 	-package buildbox \
 	-package text \
 	-package stm \
-	-package random
+	-package random \
+	-package mainland-pretty \
+	-package transformers 
