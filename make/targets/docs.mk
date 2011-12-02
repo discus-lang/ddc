@@ -10,8 +10,7 @@ nodoc	= \
 .PHONY	: docs
 docs	:
 	@echo "* Building haddock documentation ---------------------------------------------------"
-	echo $(src_hs_all)
-	haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-main \
+	@haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-main \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(src_hs_all))
 	@echo
