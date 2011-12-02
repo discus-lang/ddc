@@ -46,7 +46,7 @@ include make/build.mk
 
 .PHONY	: allWithConfig
 allWithConfig :
-	@$(MAKE) src/Source/Lexer.hs
+	@$(MAKE) packages/ddc-main/Source/Lexer.hs
 	@$(MAKE) deps
 	@$(MAKE) bin/ddc bin/war runtime external libs -j $(THREADS)
 

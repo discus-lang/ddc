@@ -1,14 +1,14 @@
 
 # -- Find Source Files --------------------------------------------------------
 # -- files needing to be processed via alex
-src_alex_x	=  $(shell find src -name "*.x" -follow)
+src_alex_x	=  $(shell find packages/ddc-main -name "*.x" -follow)
 src_alex_hs	=  $(patsubst %.x,%.hs,$(src_alex_x))
 
 # -- files that are ready to compile
-src_hs_existing	=  $(shell find src -name "*.hs" -follow)
+src_hs_existing	=  $(shell find packages/ddc-main -name "*.hs" -follow)
 
 # -- files that will be generated
-src_hs_generated = src/Config/Config.hs src/Source/Plate/Trans.hs \
+src_hs_generated = packages/ddc-main/Config/Config.hs packages/ddc-main/Source/Plate/Trans.hs \
 	 $(src_alex_hs)
 
 # -- all .hs files in the src dir, including ones we need to preprocess.
@@ -18,7 +18,7 @@ src_hs_all	+= $(src_alex_hs)
 
 # -- Configuration ------------------------------------------------------------
 # -- use the $(Target) from make/config.mk to decide which ddc config file to use
-src/Config/Config.hs : src/Config/Config.hs.$(Target)
+packages/ddc-main/Config/Config.hs : packages/ddc-main/Config/Config.hs.$(Target)
 	@echo "* Using configuration" $^
 	@cp $^ $@
 	@echo
@@ -29,7 +29,7 @@ deps	: make/Makefile.deps
 
 make/Makefile.deps : $(src_hs_existing) $(src_hs_generated)
 	@echo "* Building dependencies"
-	@$(GHC) -isrc -M $^ -dep-makefile -optdepmake/Makefile.deps $(GHC_INCDIRS)
+	@$(GHC) -ipackages/ddc-main -M $^ -dep-makefile -optdepmake/Makefile.deps $(GHC_INCDIRS)
 	@rm -f make/Makefile.deps.bak
 	@cp make/Makefile.deps make/Makefile.deps.inc
 	@echo

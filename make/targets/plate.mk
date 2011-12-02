@@ -1,14 +1,14 @@
 # The boilerplate generator and generated boilerplate.
 
 # Build the boiler plate generator
-bin/plate : tools/plate/Main.hs src/Config/Config.hs
+bin/plate : tools/plate/Main.hs packages/ddc-main/Config/Config.hs
 	@echo "* Building boilerplate generator ---------------------------------------------------"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -isrc -itools/plate -o bin/plate --make $^
+	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -ipackages/ddc-main -itools/plate -o bin/plate --make $^
 
 
 # Generate boilerplate
-src/Source/Plate/Trans.hs : bin/plate src/Source/Plate/Trans.hs-stub src/Source/Exp.hs
+packages/ddc-main/Source/Plate/Trans.hs : bin/plate packages/ddc-main/Source/Plate/Trans.hs-stub packages/ddc-main/Source/Exp.hs
 	@echo
 	@echo "* Generating boilerplate for $@"
-	@bin/plate src/Source/Exp.hs src/Source/Plate/Trans.hs-stub src/Source/Plate/Trans.hs
+	@bin/plate packages/ddc-main/Source/Exp.hs packages/ddc-main/Source/Plate/Trans.hs-stub packages/ddc-main/Source/Plate/Trans.hs
 	@echo
