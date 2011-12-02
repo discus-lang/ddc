@@ -1,7 +1,8 @@
 
 import DDCI.Core.Command.Help
-import DDCI.Core.Command.Check
+import DDCI.Core.Command.Anon
 import DDCI.Core.Command.Free
+import DDCI.Core.Command.Check
 import System.IO
 import Data.List
 
@@ -42,11 +43,15 @@ handle line ws
         , cmd == ":help" || cmd == ":?"
         = do    putStr help
                 loop
+
+        -- Anonymize --------------------------------------
+        | Just rest     <- splitPrefix ":tanon" line
+        = do    { cmdAnonType rest; putStr "\n"; loop }
         
         -- Free -------------------------------------------
-        -- Show free vars in a type
         | Just rest     <- splitPrefix ":tfree" line
         = do    { cmdFreeType rest; putStr "\n"; loop }
+        
         
         -- Checking ---------------------------------------
         -- Show the kind of a type.
