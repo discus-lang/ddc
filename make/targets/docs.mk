@@ -2,15 +2,16 @@
 
 # We leave these out to break import loops.
 nodoc	= \
-	src/Source/Lexer.hs \
-	src/Util/Tunnel.hs \
-	src/Source/Type/SlurpA.hs \
-	src/Source/Type/SlurpX.hs
+	packages/ddc-main/src/Source/Lexer.hs \
+	packages/ddc-main/src/Util/Tunnel.hs \
+	packages/ddc-main/src/Source/Type/SlurpA.hs \
+	packages/ddc-main/src/Source/Type/SlurpX.hs
 
 .PHONY	: docs
 docs	:
 	@echo "* Building haddock documentation ---------------------------------------------------"
-	@haddock -w -h -o doc/haddock --optghc=-isrc \
+	echo $(src_hs_all)
+	haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-main \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(src_hs_all))
 	@echo

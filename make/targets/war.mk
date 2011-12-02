@@ -1,11 +1,12 @@
 
 # -- The driver program ---------------------------------------------------------------------------
-war_hs	= $(shell find tools/war -name "*.hs") $(shell find packages/ddc-main/Util -name "*.hs")
+war_hs	= $(shell find packages/ddc-war -name "*.hs") \
+          $(shell find packages/ddc-main/Util -name "*.hs")
 
 bin/war : $(war_hs)
 	@echo "* Building war test driver ---------------------------------------------------------"
 	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -threaded  \
-		-ipackages/ddc-main -itools/war --make tools/war/Main.hs -o bin/war
+		-ipackages/ddc-main -ipackages/ddc-war --make packages/ddc-war/Main.hs -o bin/war
 
 # -- Running tests --------------------------------------------------------------------------------
 # .. for the war against bugs.
