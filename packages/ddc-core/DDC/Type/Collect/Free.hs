@@ -4,10 +4,10 @@ module DDC.Type.Collect.Free
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
-import DDC.Type.Check.Env               (Env)
+import DDC.Type.Env                     (Env)
 import Data.Set                         (Set)
 import qualified DDC.Type.Sum           as Sum
-import qualified DDC.Type.Check.Env     as Env
+import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
 
 

@@ -5,8 +5,8 @@ where
 import qualified DDC.Type.Pretty        as P
 import DDC.Type.Compounds
 import DDC.Type.Exp
-import DDC.Type.Check.Env               (Env)
-import qualified DDC.Type.Check.Env     as Env
+import DDC.Type.Env                     (Env)
+import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Sum           as T
 
 

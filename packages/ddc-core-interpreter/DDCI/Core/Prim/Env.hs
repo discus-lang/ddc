@@ -11,7 +11,7 @@ module DDCI.Core.Prim.Env
 where
 import DDCI.Core.Prim.Name
 import DDC.Type.Exp
-import DDC.Type.Check.Env
+import DDC.Type.Env
 import DDC.Type.Compounds
 import qualified Data.Map               as Map
 import Data.Map                         (Map)

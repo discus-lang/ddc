@@ -21,9 +21,9 @@ import DDC.Base.Pretty
 import Data.List
 import DDC.Type.Check.Monad             (throw, result)
 import DDC.Type.Pretty                  ()
-import DDC.Type.Check.Env               (Env)
+import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Sum           as TS
-import qualified DDC.Type.Check.Env     as Env
+import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check.Monad   as G
 
 

@@ -4,7 +4,7 @@ module DDC.Core.Transform.Spread
 where
 import DDC.Core.Exp
 import DDC.Type.Transform.Spread
-import qualified DDC.Type.Check.Env     as Env
+import qualified DDC.Type.Env           as Env
 
 instance Spread (Exp a p) where
  spread env xx

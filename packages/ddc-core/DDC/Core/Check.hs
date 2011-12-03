@@ -14,10 +14,10 @@ import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Universe
 import DDC.Type.Sum                     as T
-import DDC.Type.Check.Env               (Env)
+import DDC.Type.Env                     (Env)
 import DDC.Type.Check.Monad             (result, throw)
+import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
-import qualified DDC.Type.Check.Env     as Env
 import qualified DDC.Type.Check.Monad   as G
 import Control.Monad
 

@@ -3,7 +3,7 @@
 --
 --      * TODO: Store the current depth separately, to avoid checking the length all the time in `depth`.
 --
-module DDC.Type.Check.Env
+module DDC.Type.Env
         ( Env(..)
         , empty
         , extend
