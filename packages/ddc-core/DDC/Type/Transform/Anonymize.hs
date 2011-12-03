@@ -14,7 +14,7 @@ class Anonymize (c :: * -> *) where
  --   
  --   The stack contains binders the names of binders that have already been rewritten,
  --   and any bound occurrences will be replaced by references into this stack.
- anonymize :: forall n. Ord n => [(n, Type n)] -> c n -> c n
+ anonymize :: forall n. Ord n => [Bind n] -> c n -> c n
 
 
 instance Anonymize Bind where
@@ -25,9 +25,8 @@ instance Anonymize Bind where
 instance Anonymize Bound where 
  anonymize stack bb
   = case bb of
-        UName n t
-         | Just ix      <- findIndex (\(n', _) -> n' == n) stack    
-         , (_, t)       <- stack !! ix
+        UName _ t
+         | Just ix      <- findIndex (boundMatchesBind bb) stack    
          -> UIx ix t
          
         _ -> bb
@@ -43,9 +42,10 @@ instance Anonymize Type where
         TForall b t     
          -> let b'      = anonymize stack b
                 t'      = typeOfBind b'
-                stack'  = case takeNameOfBind b' of
-                                Nothing -> stack
-                                Just n  -> (n, t') : stack
+                stack'  = case b' of
+                                BName{} -> b' : stack
+                                BAnon{} -> b' : stack
+                                _       -> stack
                                 
             in  TForall (BAnon t') (anonymize stack' t)
 

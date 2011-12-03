@@ -14,6 +14,7 @@ module DDC.Type.Compounds
         , takeNameOfBound
         , typeOfBound
         , replaceTypeOfBound
+        , boundMatchesBind
 
           -- * Type structure
         , tBot
@@ -127,6 +128,15 @@ replaceTypeOfBound :: Type n -> Bound n -> Bound n
 replaceTypeOfBound t (UName n _) = UName n t
 replaceTypeOfBound t (UIx i _)   = UIx i t
 
+
+-- | Check whether named `Bound` matches a named `Bind`.
+--  
+--   Yields `False` for other combinations of bounds and binds.
+boundMatchesBind :: Eq n => Bound n -> Bind n -> Bool
+boundMatchesBind u b
+ = case (u, b) of
+        (UName n1 _, BName n2 _) -> n1 == n2
+        _                        -> False
 
 -- Applications -----------------------------------------------------------------------------------
 tBot            = TBot
