@@ -41,7 +41,7 @@ pprBinderSep bb
 -- | Print a group of binders with the same type.
 pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
 pprBinderGroup (rs, t)
-        =  (cat $ map pprBinderSep rs) <> text " : "  <> ppr t
+        =  (brackets $ (cat $ map pprBinderSep rs) <> text ":"  <> ppr t) <> dot
 
 
 -- Bound ------------------------------------------------------------------------------------------
@@ -84,8 +84,7 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          | Just (bsMore, tBody) <- takeTForalls t
          -> let groups  = partitionBindsByType (b:bsMore)
             in  pprParen (d > 1) 
-                 $ brackets (sep $ map pprBinderGroup groups)
-                        <> dot <> ppr tBody
+                 $ (cat $ map pprBinderGroup groups) <> ppr tBody
                         
          | otherwise
          -> pprParen (d > 1)
@@ -102,12 +101,14 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
         TBot k  
          -> ppr k <> text "0"
 
+
 isTFun :: Type n -> Bool
 isTFun tt
  = case tt of
          TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) _) _) _) _
                 -> True
          _      -> False
+
 
 instance (Pretty n, Eq n) => Pretty (TypeSum n) where
  ppr ss
