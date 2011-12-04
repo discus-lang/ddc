@@ -42,12 +42,6 @@ primDataTypeKinds
         
         , (Name "U",      tUnit)]
 
-tInt :: Region Name -> Type Name
-tInt r1 = tConData1 (Name "Int") (kFun kRegion kData) r1
-
-tUnit :: Type Name
-tUnit   = tConData0 (Name "Unit") kData
-
 
 -- | Types of primitive operators
 primOperatorTypes :: Map Name (Type Name)
@@ -62,6 +56,20 @@ primOperatorTypes
                  $ tInt r0 )]
 
 
+tInt :: Region Name -> Type Name
+tInt r1 = tConData1 (Name "Int") (kFun kRegion kData) r1
+
+tUnit :: Type Name
+tUnit   = tConData0 (Name "Unit") kData
+
+
+
+-- Primitive things -------------------------------------------------------------------------------
+data Prim
+        = PInt Integer
+
+
+-- Parsing ----------------------------------------------------------------------------------------
 makePrimLiteral :: Literal -> Maybe Prim
 makePrimLiteral ll
  = case ll of
@@ -69,6 +77,7 @@ makePrimLiteral ll
         _               -> Nothing
 
 
+-- Checking -------------------------------------------------------------------------------------
 typeOfPrim :: Prim -> Type Name
 typeOfPrim pp
  = case pp of
@@ -82,6 +91,3 @@ instance Pretty Prim where
  ppr pp
   = case pp of
         PInt i  -> text (show i)
-
-data Prim
-        = PInt Integer
