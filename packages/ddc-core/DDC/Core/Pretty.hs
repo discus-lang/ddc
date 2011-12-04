@@ -5,8 +5,27 @@ module DDC.Core.Pretty
         , module DDC.Base.Pretty)
 where
 import DDC.Core.Exp
+import DDC.Core.Compounds
 import DDC.Type.Pretty
+import DDC.Type.Compounds
 import DDC.Base.Pretty
+
+
+-- Binder -----------------------------------------------------------------------------------------
+-- | Pretty print a binder, adding spaces after names.
+--   The RAnon and None binders don't need spaces, as they're single symbols.
+pprBinderSep   :: Pretty n => Binder n -> Doc
+pprBinderSep bb
+ = case bb of
+        RName v         -> ppr v <> text " "
+        RAnon           -> text "^"
+        RNone           -> text "_"
+
+
+-- | Print a group of binders with the same type.
+pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
+pprBinderGroup (rs, t)
+        =  text "\\" <> parens ((cat $ map pprBinderSep rs) <> text ":"  <> ppr t) <> dot
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -16,7 +35,15 @@ instance (Pretty n, Eq n) => Pretty (Exp a p n) where
         XVar _ n        -> ppr n
         XCon _ n        -> ppr n
         
-        XLam _ u x      -> text "\\" <> parens (ppr u) <> text "." <> ppr x
+        XLam _ b x      
+         | Just (bsMore, xBody) <- takeXLams x
+         -> let groups = partitionBindsByType (b:bsMore)
+            in  pprParen (d > 1)
+                 $ (cat $ map pprBinderGroup groups) <> ppr xBody
+
+         | otherwise 
+         -> pprParen (d > 1) 
+              $ text "\\" <> parens (ppr b) <> text "." <> ppr x
 
         XApp _ x1 x2
          -> pprParen (d > 10)
