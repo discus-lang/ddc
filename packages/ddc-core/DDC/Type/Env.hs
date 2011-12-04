@@ -6,7 +6,8 @@
 module DDC.Type.Env
         ( Env(..)
         , empty
-        , extend
+        , extend,       fromList
+        , combine
         , member,       memberBind
         , lookup,       lookupName
         , depth)
@@ -33,12 +34,27 @@ empty   = Env
 
 
 -- | Extend an environment with a new binding.
+--   TODO: refactor this so the new binding is on the right.
 extend :: Ord n => Bind n -> Env n -> Env n
 extend bb env
  = case bb of
          BName n k      -> env { envMap   = Map.insert n k (envMap env) }
          BAnon   k      -> env { envStack = k : envStack env }
          BNone{}        -> env
+
+-- | Convert a list of `Bind`s to an environment.
+fromList :: Ord n => [Bind n] -> Env n
+fromList bs
+        = foldr extend empty bs
+
+
+-- | Combine two environments, 
+--   bindings in the second environment take preference.
+combine :: Ord n => Env n -> Env n -> Env n
+combine env1 env2
+        = Env  
+        { envMap        = envMap   env1  `Map.union` envMap   env2
+        , envStack      = envStack env1  ++          envStack env2 }
 
 
 -- | Check whether a bound variable is present in an environment.

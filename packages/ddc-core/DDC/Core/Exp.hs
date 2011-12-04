@@ -107,7 +107,7 @@ data Witness n
         = WCon  WiCon 
         
         -- | Witness variable.
-        | WVar  n
+        | WVar  (Bound n)
         
         -- | Witness application.
         | WApp  (Witness n) (Witness n)

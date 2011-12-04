@@ -6,14 +6,23 @@ module DDCI.Core.Command.Check
 where
 import DDCI.Core.Prim.Env
 import DDCI.Core.Prim.Name
+import DDC.Type.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser.Lexer
 import DDC.Core.Parser
+import DDC.Core.Collect.Free            ()
+import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
+import qualified DDC.Type.Compounds     as T
+import qualified DDC.Type.Collect.Free  as T
 import qualified DDC.Core.Transform     as C
 import qualified DDC.Base.Parser        as BP
+import qualified Data.Set               as Set
+import Data.Set                         (Set)
+import Data.List
+import Data.Maybe
 
 
 -- kind -------------------------------------------------------------------------------------------
@@ -71,15 +80,38 @@ cmdShowType mode ss
                         (pExp (PrimHandler makePrimLiteral))
                         toks 
             of  Left err -> putStrLn $ "parse error " ++ show err
-                Right x  
-                 -> let x'  = C.spread primEnv x
-                    in  goCheck x' (checkExp typeOfPrim primEnv x')
+                Right x  -> goCheck x
 
-        
-        goCheck _ (Left err)
+        goCheck x
+         = let  x'      = C.spread primEnv x
+
+                -- Determine the free regions in the expression that end with 
+                -- the prime character. We'll add these to the initial environment.
+                us :: Set (Bound Name)
+                us      = T.free Env.empty x'
+                us'     = map (T.replaceTypeOfBound T.kRegion)
+                        $ Set.toList
+                        $ Set.filter 
+                               (\b -> case T.takeNameOfBound b of
+                                        Just (Name n)   -> isSuffixOf "'" n
+                                        _               -> False)
+                        $ us
+
+                envRgn  = Env.fromList
+                        $ mapMaybe
+                               (\u -> case u of
+                                        UName n t       -> Just $ BName n t
+                                        _               -> Nothing)
+                        $ us'                
+
+                env     = Env.combine primEnv envRgn
+
+           in   goResult x' (checkExp typeOfPrim env x')
+
+        goResult _ (Left err)
          = putStrLn $ show $ ppr err
 
-        goCheck x (Right (t, eff, clo))
+        goResult x (Right (t, eff, clo))
          = case mode of
                 ShowTypeAll
                  -> putStrLn $ show 
