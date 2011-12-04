@@ -20,7 +20,8 @@ GHC_LANGUAGE	:= \
 	-XNamedFieldPuns \
 	-XExistentialQuantification \
 	-XBangPatterns \
-	-XRankNTypes
+	-XRankNTypes \
+	-XNoMonomorphismRestriction 
 
 
 # -- Warnings -----------------------------------------------------------------

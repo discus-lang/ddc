@@ -3,6 +3,7 @@ import DDCI.Core.Command.Help
 import DDCI.Core.Command.Anon
 import DDCI.Core.Command.Free
 import DDCI.Core.Command.Check
+import DDCI.Core.Command.Subst
 import System.IO
 import Data.List
 
@@ -45,13 +46,16 @@ handle line ws
                 loop
 
         -- Anonymize --------------------------------------
-        | Just rest     <- splitPrefix ":tanon" line
+        | Just rest     <- splitPrefix ":anonT" line
         = do    { cmdAnonType rest; putStr "\n"; loop }
         
         -- Free -------------------------------------------
-        | Just rest     <- splitPrefix ":tfree" line
+        | Just rest     <- splitPrefix ":freeT" line
         = do    { cmdFreeType rest; putStr "\n"; loop }
         
+        -- Subst ------------------------------------------
+        | Just rest     <- splitPrefix ":substTT" line
+        = do    { cmdSubstTT rest;  putStr "\n"; loop }
         
         -- Checking ---------------------------------------
         -- Show the kind of a type.
@@ -59,7 +63,7 @@ handle line ws
         = do    { cmdShowKind rest;  putStr "\n"; loop }
 
         -- Show the type of a witness.
-        | Just rest     <- splitPrefix ":wtype" line
+        | Just rest     <- splitPrefix ":typeW" line
         = do    { cmdShowWType rest; putStr "\n"; loop }
 
         -- Show the value type, effect and closure of an expression.
