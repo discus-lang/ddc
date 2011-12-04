@@ -13,7 +13,7 @@ import DDC.Type.Transform
 import DDC.Type.Universe
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Sum                     as T
+import DDC.Type.Sum                     as Sum
 import DDC.Type.Env                     (Env)
 import DDC.Type.Check.Monad             (result, throw)
 import DDC.Base.Pretty                  ()
@@ -21,6 +21,7 @@ import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Monad   as G
 import Control.Monad
+import Debug.Trace
 
 type CheckM a p n   = G.CheckM (Error a p n)
 
@@ -77,9 +78,9 @@ checkExpM
 checkExpM typeOfPrim env xx
  = case xx of
         -- variables, primitives and constructors.
-        XVar _ u        -> return  ( typeOfBound u, T.empty kEffect, T.empty kClosure)
-        XPrim _ p       -> return  ( typeOfPrim p,  T.empty kEffect, T.empty kClosure)
-        XCon _ u        -> return  ( typeOfBound u, T.empty kEffect, T.empty kClosure)
+        XVar _ u        -> return  ( typeOfBound u, Sum.empty kEffect, Sum.empty kClosure)
+        XPrim _ p       -> return  ( typeOfPrim p,  Sum.empty kEffect, Sum.empty kClosure)
+        XCon _ u        -> return  ( typeOfBound u, Sum.empty kEffect, Sum.empty kClosure)
 
         -- value-type application.
         XApp _ x1 (XType t2)
@@ -119,12 +120,12 @@ checkExpM typeOfPrim env xx
                 case t1 of
                  TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) clo) t12
                   | t11 == t2   
-                  , TSum effs   <- eff
-                  , TSum clos   <- clo
+                  , effs   <- Sum.fromList kEffect  [eff]
+                  , clos   <- Sum.fromList kClosure [clo]
                   -> return     ( t12
                                 , effs1 `plus` effs2 `plus` effs
                                 , clos1 `plus` clos2 `plus` clos)
-                  | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
+                  | otherwise   -> trace (show $ ppr eff <+> ppr clo) $ throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun xx t1 t2
 
         -- lambda abstractions.
@@ -152,18 +153,18 @@ checkExpM typeOfPrim env xx
                    |  not $ isDataKind k2  -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
                    |  otherwise
                    -> return ( tFun t1 (TSum e2) (TSum c2) t2
-                             , T.empty kEffect
-                             , T.empty kClosure)
+                             , Sum.empty kEffect
+                             , Sum.empty kClosure)
 
                   Just UniverseWitness
-                   | e2 /= T.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
+                   | e2 /= Sum.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
                    | not $ isDataKind k2   -> throw $ ErrorLamBodyNotData xx b1 t2 k2
-                   | otherwise             -> return (tImpl t1 t2,   T.empty kEffect, T.empty kClosure)
+                   | otherwise             -> return (tImpl t1 t2,   Sum.empty kEffect, Sum.empty kClosure)
                       
                   Just UniverseSpec
-                   | e2 /= T.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
+                   | e2 /= Sum.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
                    | not $ isDataKind k2   -> throw $ ErrorLamBodyNotData xx b1 t2 k2
-                   | otherwise             -> return (TForall b1 t2, T.empty kEffect, T.empty kClosure)
+                   | otherwise             -> return (TForall b1 t2, Sum.empty kEffect, Sum.empty kClosure)
 
                   _ -> throw $ ErrorMalformedType xx k1
 

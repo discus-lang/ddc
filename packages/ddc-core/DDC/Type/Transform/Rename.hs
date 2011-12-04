@@ -18,7 +18,6 @@ instance Rename Type where
         TForall b t     -> TForall (rename f b)  (rename f t)
         TApp    t1 t2   -> TApp    (rename f t1) (rename f t2)
         TSum    ts      -> TSum    (rename f ts)
-        TBot    k       -> TBot    (rename f k)
 
 
 instance Rename TypeSum where

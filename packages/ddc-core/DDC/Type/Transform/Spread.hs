@@ -27,7 +27,6 @@ instance Spread Type where
 
         TApp t1 t2      -> TApp (spread env t1) (spread env t2)
         TSum ss         -> TSum (spread env ss)
-        TBot k          -> TBot (spread env k)
         
 
 instance Spread TypeSum where

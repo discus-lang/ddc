@@ -95,7 +95,6 @@ insert t ts
         TApp{}           -> ts { typeSumSpill      = t : typeSumSpill ts }
         
         TSum ts'         -> foldr insert ts (toList ts')
-        TBot{}           -> ts
 
 
 -- | Add two type sum.

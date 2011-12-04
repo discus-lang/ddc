@@ -49,7 +49,6 @@ instance LiftT Type where
         TForall b t     -> liftAtDepthT n (d + 1) t
         TApp t1 t2      -> TApp (liftAtDepthT n d t1) (liftAtDepthT n d t2)
         TSum ss         -> TSum $ liftAtDepthT n d ss
-        TBot k          -> TBot $ liftAtDepthT n d k
 
 
 instance LiftT TypeSum where

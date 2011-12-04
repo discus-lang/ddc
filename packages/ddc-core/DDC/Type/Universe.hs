@@ -73,7 +73,6 @@ universeFromType2 tt
         TForall _ _             -> Nothing
         TApp _ t2               -> universeFromType2 t2
         TSum _                  -> Nothing
-        TBot _                  -> Nothing
 
 
 -- | Given the type of some thing (up one level),
@@ -89,7 +88,6 @@ universeFromType1 tt
         TForall _ t2            -> universeFromType1 t2
         TApp _ t2               -> universeFromType1 t2
         TSum _                  -> Nothing
-        TBot k                  -> universeFromType2 k
 
 
 -- | Yield the universe of some type.
@@ -104,6 +102,5 @@ universeOfType tt
         TForall _ t2            -> universeOfType t2
         TApp _ t2               -> universeOfType t2
         TSum ss                 -> universeFromType1 (T.kindOfSum ss)
-        TBot t1                 -> universeFromType1 t1
 
 

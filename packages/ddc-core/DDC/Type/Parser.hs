@@ -9,9 +9,9 @@ module DDC.Type.Parser
 where
 import DDC.Type.Exp
 import Control.Monad
+import DDC.Type.Compounds
 import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok, (<?>))
 import qualified DDC.Base.Parser        as P
-import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Sum           as TS
 
 -- HACKS: We're using the core tokens here so we don't have to duplicate
@@ -39,7 +39,7 @@ pTypeSum
            -- T2 + T3
            do   pTok KPlus
                 t2      <- pTypeSum
-                return  $ TSum $ TS.fromList (TBot T.sComp) [t1, t2]
+                return  $ TSum $ TS.fromList (tBot sComp) [t1, t2]
                 
          , do   return t1 ]
 
@@ -76,7 +76,7 @@ pTypeForall
                 body    <- pTypeForall
 
                 return  $ foldr TForall body 
-                        $ map (\b -> T.makeBindFromBinder b k) bs
+                        $ map (\b -> makeBindFromBinder b k) bs
 
            -- Body type
          , do   pTypeFun]
@@ -90,7 +90,7 @@ pTypeFun
          [ -- T1 -> T2
            do   pTok KTypeFun
                 t2      <- pTypeFun
-                return  $ t1 T.->> t2
+                return  $ t1 ->> t2
 
            -- T1 -(TSUM | TSUM)> t2
          , do   pTok KTypeFunBra
@@ -99,7 +99,7 @@ pTypeFun
                 clo     <- pTypeSum
                 pTok KTypeFunKet
                 t2      <- pTypeFun
-                return  $ T.tFun t1 eff clo t2
+                return  $ tFun t1 eff clo t2
 
            -- T1 ~> T2
          , do   pTok KKindFun
@@ -150,19 +150,19 @@ pType0
         , do    pTokAs KKindWitness (TCon $ TyConKind KiConWitness) 
             
         -- Bottoms.
-        , do    pTokAs KBotEffect  (TBot T.kEffect)
-        , do    pTokAs KBotClosure (TBot T.kClosure)
+        , do    pTokAs KBotEffect  (tBot kEffect)
+        , do    pTokAs KBotClosure (tBot kClosure)
       
         -- Bound occurrence of a variable.
         --  We don't know the kind of this variable yet, so fill in the field with the bottom
         --  element of computation kinds. This isn't really part of the language, but makes
         --  sense implentation-wise.
         , do    v       <- pVar
-                return  $  TVar (UName v (TBot T.sComp))
+                return  $  TVar (UName v (tBot sComp))
 
         , do    pTok KHat
                 i       <- pInteger
-                return  $  TVar (UIx (fromIntegral i) (TBot T.sComp))
+                return  $  TVar (UIx (fromIntegral i) (tBot sComp))
         ]
  <?> "atomic type"
 
@@ -181,7 +181,7 @@ pTcConNamed
         = pTokMaybe
         $ \k -> case k of
                  KTcConBuiltin c  -> Just c
-                 KCon n           -> Just (TcConData n (T.tBot T.kData))
+                 KCon n           -> Just (TcConData n (tBot kData))
                  _                -> Nothing
 
 -- | Parse a variable.

@@ -2,7 +2,6 @@
 -- | Predicates on type expressions.
 module DDC.Type.Predicates
         ( isBot
-        , isBottom
         , isDataKind
         , isEffectKind
         , isClosureKind)
@@ -10,17 +9,9 @@ where
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as T
 
--- | Test if some type is a `TBot`. 
+-- | Test if some type is an empty TSum
 isBot :: Type n -> Bool
-isBot (TBot _)  = True
-isBot _         = False
-
-
--- | Test if some type is a `TBot` or an empty `TSum`.
-isBottom :: Type n -> Bool
-isBottom tt
-        | TBot{}        <- tt = True
-
+isBot tt
         | TSum ss       <- tt
         , []            <- T.toList ss
         = True

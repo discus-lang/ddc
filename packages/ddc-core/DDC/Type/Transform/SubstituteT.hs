@@ -59,7 +59,6 @@ instance SubstituteT Type where
 
          TApp t1 t2      -> TApp (down t1) (down t2)
          TSum ss         -> TSum (down ss)
-         TBot k          -> TBot (down k)
 
          TForall b tBody
           -> let -- Substitute into the annotation on the binder.

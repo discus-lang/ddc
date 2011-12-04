@@ -51,7 +51,6 @@ instance Anonymize Type where
 
         TApp t1 t2      -> TApp (anonymize stack t1) (anonymize stack t2)
         TSum ss         -> TSum (anonymize stack ss)
-        TBot k          -> TBot (anonymize stack k)
 
 
 instance Anonymize TypeSum where
@@ -59,3 +58,4 @@ instance Anonymize TypeSum where
         = T.fromList (anonymize stack $ T.kindOfSum ss)
         $ map (anonymize stack)
         $ T.toList ss
+

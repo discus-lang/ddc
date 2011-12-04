@@ -128,8 +128,3 @@ checkTypeM env tt
                  then return k
                  else (throw $ ErrorSumKindInvalid ts k)
 
-
-        -- Bot ------------------------
-        TBot k
-         -> do  _       <- checkTypeM env k
-                return k

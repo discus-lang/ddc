@@ -39,9 +39,6 @@ data Type n
 
         -- | Least upper bound.
         | TSum    (TypeSum n)
-
-        -- | Least element of some kind.
-        | TBot    (Kind n)
         deriving (Eq, Show)
 
 

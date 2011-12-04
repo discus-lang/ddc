@@ -38,7 +38,6 @@ instance Free n (Type n) where
         TForall b t     -> Set.unions [free env b,  free (Env.extend b env) t]
         TApp t1 t2      -> Set.unions [free env t1, free env t2]
         TSum ss         -> free env ss
-        TBot _          -> Set.empty
 
 
 instance Free n (TypeSum n) where

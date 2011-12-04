@@ -6,7 +6,7 @@ import DDC.Type.Exp
 import DDC.Type.Predicates
 import DDC.Type.Compounds
 import DDC.Base.Pretty
-import qualified DDC.Type.Sum           as TS
+import qualified DDC.Type.Sum           as Sum
 
 stage   = "DDC.Type.Pretty"
 
@@ -66,7 +66,7 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          $  ppr k1 <+> text "=>" <+> pprPrec 6 k2
 
         TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) eff) clo) t2
-         | isBottom eff, isBottom clo
+         | isBot eff, isBot clo
          -> pprParen (d > 5)
          $  ppr t1 <+> text "->" 
                    <+> (if isTFun t2 then pprPrec 5 t2 else pprPrec 6 t2)
@@ -95,11 +95,11 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          $  ppr t1 <+> pprPrec 11 t2
 
         TSum ts
-         -> pprParen (d > 9) 
-         $  ppr ts
-
-        TBot k  
-         -> ppr k <> text "0"
+         | isBot tt     
+         -> ppr (Sum.kindOfSum ts) <> text "0"
+         
+         | otherwise
+         -> pprParen (d > 9) $  ppr ts
 
 
 isTFun :: Type n -> Bool
@@ -112,9 +112,9 @@ isTFun tt
 
 instance (Pretty n, Eq n) => Pretty (TypeSum n) where
  ppr ss
-  = case TS.toList ss of
-      [] | isEffectKind  $ TS.kindOfSum ss -> text "!0"
-         | isClosureKind $ TS.kindOfSum ss -> text "$0"
+  = case Sum.toList ss of
+      [] | isEffectKind  $ Sum.kindOfSum ss -> text "!0"
+         | isClosureKind $ Sum.kindOfSum ss -> text "$0"
          | otherwise                       -> error $ stage ++ ": malformed sum"
          
       ts  -> sep $ punctuate (text " +") (map ppr ts)

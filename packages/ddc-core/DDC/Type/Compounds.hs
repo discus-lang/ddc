@@ -54,7 +54,7 @@ module DDC.Type.Compounds
         )
 where
 import DDC.Type.Exp
-import qualified DDC.Type.Sum   as T
+import qualified DDC.Type.Sum   as Sum
 
 -- Binds ------------------------------------------------------------------------------------------
 -- | Take the variable name of a bind.
@@ -152,7 +152,7 @@ takeSubstBoundOfBind bb
 
 
 -- Applications -----------------------------------------------------------------------------------
-tBot            = TBot
+tBot k          = TSum $ Sum.empty k
 tApp            = TApp
 ($:)            = TApp
 
@@ -189,7 +189,7 @@ takeTForalls tt
 -- Sums -------------------------------------------------------------------------------------------
 tSum :: Ord n => Kind n -> [Type n] -> Type n
 tSum k ts
-        = TSum (T.fromList k ts)
+        = TSum (Sum.fromList k ts)
 
 
 

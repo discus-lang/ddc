@@ -77,8 +77,8 @@ instance (Pretty p, Pretty n, Eq n) => Pretty (Error a p n) where
         ErrorAppMismatch xx t1 t2
          -> vcat [ text "Core type error."
                  , text "Cannot apply function " 
-                 , text "                 of type: " <> ppr t1
-                 , text "     to argument of type: " <> ppr t2
+                 , text "                 of type: " <> ppr (show t1)
+                 , text "     to argument of type: " <> ppr (show t2)
                  , text "          in application: " <> ppr xx ]
          
         ErrorAppNotFun xx t1 t2
