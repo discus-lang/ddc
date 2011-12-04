@@ -78,9 +78,17 @@ checkExpM
 checkExpM typeOfPrim env xx
  = case xx of
         -- variables, primitives and constructors.
-        XVar _ u        -> return  ( typeOfBound u, Sum.empty kEffect, Sum.empty kClosure)
         XPrim _ p       -> return  ( typeOfPrim p,  Sum.empty kEffect, Sum.empty kClosure)
-        XCon _ u        -> return  ( typeOfBound u, Sum.empty kEffect, Sum.empty kClosure)
+
+        XVar _ u        
+         ->     return  ( typeOfBound u
+                        , Sum.empty kEffect
+                        , Sum.singleton kClosure (tShare $ typeOfBound u))
+
+        XCon _ u
+         ->     return  ( typeOfBound u
+                        , Sum.empty kEffect
+                        , Sum.singleton kClosure (tShare $ typeOfBound u))
 
         -- value-type application.
         XApp _ x1 (XType t2)
@@ -124,7 +132,7 @@ checkExpM typeOfPrim env xx
                   , clos   <- Sum.fromList kClosure [clo]
                   -> return     ( t12
                                 , effs1 `plus` effs2 `plus` effs
-                                , clos1 `plus` clos2 `plus` clos)
+                                , clos1 `plus` clos2)
                   | otherwise   -> trace (show $ ppr eff <+> ppr clo) $ throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun xx t1 t2
 

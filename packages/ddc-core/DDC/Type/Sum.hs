@@ -4,69 +4,20 @@
 -- TODO: defailt Eq instance is wrong because we much check the spill fields.
 --       We want eq operation to be fast.
 module DDC.Type.Sum 
-        ( hashTyCon, hashTyConRange
-        , unhashTyCon
-        , empty
+        ( empty
+        , singleton
         , insert
         , plus
         , kindOfSum
-        , toList, fromList)
+        , toList, fromList
+        , hashTyCon, hashTyConRange
+        , unhashTyCon)
 where
 import DDC.Type.Exp
--- import DDC.Type.Compounds
 import Data.Array
 import qualified Data.Map       as Map
 
-
--- | Yield the `TyConHash` of a `TyCon`, or `Nothing` if there isn't one.
-hashTyCon :: TyCon n -> Maybe TyConHash
-hashTyCon tc
- = case tc of
-        TyConComp tc'   -> hashTcCon tc'
-        _               -> Nothing
-        
-
--- | Yield the `TyConHash` of a `TyConBuiltin`, or `Nothing` if there isn't one.
-hashTcCon :: TcCon n -> Maybe TyConHash
-hashTcCon tc
- = case tc of
-        TcConRead       -> Just $ TyConHash 0
-        TcConDeepRead   -> Just $ TyConHash 1
-        TcConWrite      -> Just $ TyConHash 2
-        TcConDeepWrite  -> Just $ TyConHash 3
-        TcConAlloc      -> Just $ TyConHash 4
-        TcConShare      -> Just $ TyConHash 5
-        TcConDeepShare  -> Just $ TyConHash 6
-        _               -> Nothing
-
-
--- | Range of hashes that can be produced by `hashTyCon`.
-hashTyConRange :: (TyConHash, TyConHash)
-hashTyConRange
- =      ( TyConHash 0
-        , TyConHash 6)
-                
-
--- | Yield the TyCon corresponding to a TyConHash, 
---   or `error` if there isn't one.
-unhashTyCon :: TyConHash -> TyCon n
-unhashTyCon (TyConHash i)
- = TyConComp
- $ case i of
-        0               -> TcConRead
-        1               -> TcConDeepRead
-        2               -> TcConWrite
-        3               -> TcConDeepWrite
-        4               -> TcConAlloc
-        5               -> TcConShare
-        6               -> TcConDeepShare
-
-        -- This should never happen, because we only produce hashes
-        -- with the above 'hashTyCon' function.
-        _ -> error $ "DDC.Type.Sum: bad TyConHash " ++ show i
-
-
--- | An empty type sum of the given kind.
+-- | Construct an empty type sum of the given kind.
 empty :: Kind n -> TypeSum n
 empty k = TypeSum
         { typeSumKind           = k
@@ -74,6 +25,12 @@ empty k = TypeSum
         , typeSumBoundNamed     = Map.empty
         , typeSumBoundAnon      = Map.empty
         , typeSumSpill          = [] }
+
+
+-- | Construct a type sum containing a single element.
+singleton :: Ord n => Kind n -> Type n -> TypeSum n
+singleton k t
+        = insert t (empty k)
 
 
 -- | Insert a new element into a sum.
@@ -130,5 +87,53 @@ toList TypeSum
 fromList :: Ord n => Kind n -> [Type n] -> TypeSum n
 fromList k ts
         = foldr insert (empty k) ts
+
+
+-- | Yield the `TyConHash` of a `TyCon`, or `Nothing` if there isn't one.
+hashTyCon :: TyCon n -> Maybe TyConHash
+hashTyCon tc
+ = case tc of
+        TyConComp tc'   -> hashTcCon tc'
+        _               -> Nothing
+        
+
+-- | Yield the `TyConHash` of a `TyConBuiltin`, or `Nothing` if there isn't one.
+hashTcCon :: TcCon n -> Maybe TyConHash
+hashTcCon tc
+ = case tc of
+        TcConRead       -> Just $ TyConHash 0
+        TcConDeepRead   -> Just $ TyConHash 1
+        TcConWrite      -> Just $ TyConHash 2
+        TcConDeepWrite  -> Just $ TyConHash 3
+        TcConAlloc      -> Just $ TyConHash 4
+        TcConShare      -> Just $ TyConHash 5
+        TcConDeepShare  -> Just $ TyConHash 6
+        _               -> Nothing
+
+
+-- | Range of hashes that can be produced by `hashTyCon`.
+hashTyConRange :: (TyConHash, TyConHash)
+hashTyConRange
+ =      ( TyConHash 0
+        , TyConHash 6)
+                
+
+-- | Yield the TyCon corresponding to a TyConHash, 
+--   or `error` if there isn't one.
+unhashTyCon :: TyConHash -> TyCon n
+unhashTyCon (TyConHash i)
+ = TyConComp
+ $ case i of
+        0               -> TcConRead
+        1               -> TcConDeepRead
+        2               -> TcConWrite
+        3               -> TcConDeepWrite
+        4               -> TcConAlloc
+        5               -> TcConShare
+        6               -> TcConDeepShare
+
+        -- This should never happen, because we only produce hashes
+        -- with the above 'hashTyCon' function.
+        _ -> error $ "DDC.Type.Sum: bad TyConHash " ++ show i
 
 

@@ -57,7 +57,7 @@ primOperatorTypes
         , tForalls [kRegion, kRegion, kRegion] $ \[r2, r1, r0] 
                 -> tFun (tInt r2) (tBot kEffect)
                                   (tBot kClosure)
-                 $ tFun (tInt r1) (tSum kEffect  [tRead r2, tRead r1])
+                 $ tFun (tInt r1) (tSum kEffect  [tRead r2, tRead r1, tAlloc r0])
                                   (tSum kClosure [tShare r2])
                  $ tInt r0 )]
 
