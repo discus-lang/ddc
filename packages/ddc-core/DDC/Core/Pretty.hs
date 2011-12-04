@@ -22,6 +22,9 @@ instance (Pretty n, Eq n) => Pretty (Exp a p n) where
          -> pprParen (d > 10)
          $  ppr x1 <+> pprPrec 11 x2
 
+        XType    t      -> braces $ ppr t
+        XWitness w      -> angles $ ppr w
+
         _               -> error "pprPrec[Exp] not finished"
 
 

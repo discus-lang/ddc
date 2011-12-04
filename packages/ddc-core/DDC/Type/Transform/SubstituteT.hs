@@ -66,7 +66,6 @@ instance SubstituteT Type where
                 bSub    = down b
 
                 (b', stack', dAnon', dName')
-
                  -- Push anonymous binder on the stack.
                  | BAnon t      <- bSub
                  = (BAnon t, BAnon t   : stack, dAnon + 1, dName)
@@ -77,6 +76,7 @@ instance SubstituteT Type where
                  , Set.member n fns
                  = (BAnon t, BName n t : stack, dAnon,     dName + 1)
          
+                 -- Binder was a wildcard, nothing binds.
                  | otherwise
                  = (bSub,    stack,             dAnon,     dName)
 
@@ -107,6 +107,7 @@ instance SubstituteT Type where
           -- Bound index doesn't match, but lower this index by one to account
           -- for the removal of the outer binder.
           | UIx  i2 t    <- u'
+          , i2 > dAnon
           , cutOffset    <- case u of
                                  UIx{}   -> 1
                                  _       -> 0

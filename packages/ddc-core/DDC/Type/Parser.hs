@@ -4,11 +4,12 @@ module DDC.Type.Parser
         ( module DDC.Base.Parser
         , Parser
         , pType
+        , pBinder
         , pInteger)
 where
 import DDC.Type.Exp
 import Control.Monad
-import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok)
+import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok, (<?>))
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Sum           as TS
@@ -118,7 +119,8 @@ pType1
 
 -- Atomics
 pType0 :: Ord n => Parser n (Type n)
-pType0  = P.choice
+pType0  
+ = P.choice
         -- (TYPE2) and (->)
         [ do    pTok KRoundBra
                 P.choice
@@ -162,6 +164,7 @@ pType0  = P.choice
                 i       <- pInteger
                 return  $  TVar (UIx (fromIntegral i) (TBot T.sComp))
         ]
+ <?> "atomic type"
 
 
 ---------------------------------------------------------------------------------------------------

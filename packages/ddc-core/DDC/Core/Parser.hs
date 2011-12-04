@@ -8,11 +8,12 @@ module DDC.Core.Parser
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Tokens
-import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok)
+import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok, (<?>))
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Parser        as T
 import Control.Monad.Error
+
 
 -- | Parser of core language tokens.
 type Parser n a
@@ -29,23 +30,29 @@ pExp2
         -- Lambda abstractions
         [ do    pTok KBackSlash
                 pTok KRoundBra
-                var     <- pVar
+                bs      <- P.many1 T.pBinder
                 pTok KColon
                 t       <- T.pType
                 pTok KRoundKet
                 pTok KDot
+
                 xBody   <- pExp2
-                return  $ XLam () (BName var t) xBody
+
+                return  $ foldr (XLam ()) xBody
+                        $ map (\b -> T.makeBindFromBinder b t) bs
 
         , do    pExp1 ]
+
+ <?> "an expression"
 
 
 -- Applications
 pExp1 :: Ord n => Parser n (Exp () p n)
 pExp1 
- = do   (x:xs)  <- P.many1 pArg
+  = do  (x:xs)  <- P.many1 pArg
         return  $ foldl (XApp ()) x xs
 
+ <?> "an expression or application"
 
 -- Comp, Witness or Spec arguments.
 pArg :: Ord n => Parser n (Exp () p n)
@@ -65,12 +72,13 @@ pArg
                 
         -- EXP0
         , do    pExp0 ]
+ <?> "a type type, witness or expression argument"
 
 
 -- Atomics
 pExp0 :: Ord n => Parser n (Exp () p n)
 pExp0
- = P.choice
+  = P.choice
         -- (EXP2)
         [ do    pTok KRoundBra
                 t       <- pExp2
@@ -85,6 +93,8 @@ pExp0
         , do    var     <- pVar
                 return  $ XVar () (UName var (T.tBot T.kData)) ]
 
+ <?> "a variable, constructor, or parenthesised type"
+
 
 -- Witnesses -------------------------------------------------------------------------------------
 -- | Top level parser for witnesses.
@@ -97,7 +107,7 @@ pWitness0
         -- Named witness constructors.
         [ do    wc     <- pWiCon
                 return $ WCon wc ]
-
+ <?> "a witness"
 
 
 ---------------------------------------------------------------------------------------------------

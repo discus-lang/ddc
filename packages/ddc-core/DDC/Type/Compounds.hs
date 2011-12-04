@@ -15,6 +15,7 @@ module DDC.Type.Compounds
         , typeOfBound
         , replaceTypeOfBound
         , boundMatchesBind
+        , takeSubstBoundOfBind
 
           -- * Type structure
         , tBot
@@ -137,6 +138,18 @@ boundMatchesBind u b
  = case (u, b) of
         (UName n1 _, BName n2 _) -> n1 == n2
         _                        -> False
+
+-- | Convert a `Bound` to a `Bind`, ready for substitution.
+--   
+--   Returns `UName` for `BName`, `UIx 0` for `BAnon` 
+--   and `Nothing` for `BNone`, because there's nothing to substitute.
+takeSubstBoundOfBind :: Bind n -> Maybe (Bound n)
+takeSubstBoundOfBind bb
+ = case bb of
+        BName n t       -> Just $ UName n t
+        BAnon t         -> Just $ UIx 0 t
+        BNone t         -> Nothing
+
 
 -- Applications -----------------------------------------------------------------------------------
 tBot            = TBot

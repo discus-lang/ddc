@@ -9,13 +9,14 @@ where
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Check.CheckError
-import DDC.Base.Pretty                  ()
+import DDC.Type.Transform
+import DDC.Type.Universe
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Universe
 import DDC.Type.Sum                     as T
 import DDC.Type.Env                     (Env)
 import DDC.Type.Check.Monad             (result, throw)
+import DDC.Base.Pretty                  ()
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Monad   as G
@@ -89,9 +90,12 @@ checkExpM env xx
                 case t1 of
                  TForall b11 t12
                   | typeOfBind b11 == k2
-                  -> return     ( t12           -- TODO: subst type into result
-                                , effs1         -- TODO: subst type into result
-                                , clos1 )       -- TODO: subst type into result
+                  -> case takeSubstBoundOfBind b11 of
+                      Just u    -> return ( substituteT u t2 t12
+                                          , substituteT u t2 effs1
+                                          , substituteT u t2 clos1)
+
+                      Nothing   -> return (t12, effs1, clos1)
 
                   | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
                  _              -> throw $ ErrorAppNotFun   xx t1 t2
