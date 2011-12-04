@@ -72,7 +72,7 @@ cmdShowType mode ss
         goParse toks                
          = case BP.runTokenParser 
                         show "<interactive>"
-                        (pExp (PrimHandler makePrimLiteral))
+                        (pExp (PrimHandler makePrimLit makePrimExp))
                         toks 
             of  Left err -> putStrLn $ "parse error " ++ show err
                 Right x  -> goCheck x

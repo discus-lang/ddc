@@ -21,16 +21,21 @@ import Control.Monad.Error
 type Parser n a
         = P.Parser (Tok n) a
 
-data PrimHandler p
-        = PrimHandler (Literal -> Maybe p)
+data PrimHandler p n
+        = PrimHandler 
+        { -- Construct a primitive literal.
+          primMkLit     :: Literal -> Maybe p
+
+          -- Construct a primitive operator.
+        , primMkOp      :: n       -> Maybe p }
 
 
 -- Expressions -----------------------------------------------------------------------------------
-pExp    :: Ord n => PrimHandler p
+pExp    :: Ord n => PrimHandler p n
         -> Parser n (Exp () p n)
 pExp = pExp2
 
-pExp2   :: Ord n => PrimHandler p 
+pExp2   :: Ord n => PrimHandler p n 
         -> Parser n (Exp () p n)
 pExp2 ph
  = P.choice
@@ -54,7 +59,7 @@ pExp2 ph
 
 
 -- Applications
-pExp1   :: Ord n => PrimHandler p
+pExp1   :: Ord n => PrimHandler p n
         -> Parser n (Exp () p n)
 pExp1 ph
   = do  (x:xs)  <- liftM concat $ P.many1 (pArgs ph)
@@ -64,7 +69,7 @@ pExp1 ph
 
 
 -- Comp, Witness or Spec arguments.
-pArgs   :: Ord n => PrimHandler p
+pArgs   :: Ord n => PrimHandler p n
         -> Parser n [Exp () p n]
 pArgs ph
  = P.choice
@@ -100,7 +105,7 @@ pArgs ph
 
 
 -- Atomics
-pExp0   :: Ord n => PrimHandler p
+pExp0   :: Ord n => PrimHandler p n
         -> Parser n (Exp () p n)
 pExp0 ph
   = P.choice
@@ -109,6 +114,12 @@ pExp0 ph
                 t       <- pExp2 ph
                 pTok KRoundKet
                 return  $ t
+
+        -- Primitive Literals
+        , do    pLit ph 
+        
+        -- Primitive Operators
+        , do    pPrimOp ph
         
         -- Named type constructors
         , do    con       <- pCon
@@ -117,18 +128,16 @@ pExp0 ph
         -- Variables
         , do    var     <- pVar
                 return  $ XVar () (UName var (T.tBot T.kData)) 
-                
-        -- Literals
-        , do    pLit ph ]
+        ]
 
  <?> "a variable, constructor, or parenthesised type"
 
--- Literals ---------------------------------------------------------------------------------------
--- 
-pLit    :: PrimHandler p 
+-- Primitives -------------------------------------------------------------------------------------
+-- | Parse a primitive literal.
+pLit    :: PrimHandler p n
         -> Parser n (Exp () p n)
 
-pLit (PrimHandler mkLit) 
+pLit (PrimHandler mkLit _) 
         = pTokMaybe
         $ \k -> case k of 
                  KInteger i 
@@ -137,9 +146,23 @@ pLit (PrimHandler mkLit)
                  
                  _ -> Nothing
 
+
+-- | Parse a primitive operator.
+pPrimOp :: PrimHandler p n
+        -> Parser n (Exp () p n)
+
+pPrimOp (PrimHandler _ mkOp)
+        = pTokMaybe
+        $ \k -> case k of 
+                 KVar n 
+                  | Just p      <- mkOp n
+                  -> Just $ XPrim () p
+                 
+                 _ -> Nothing
+
 -- Witnesses -------------------------------------------------------------------------------------
 -- | Top level parser for witnesses.
-pWitness :: Ord n => Parser n (Witness n)
+pWitness :: Ord n  => Parser n (Witness n)
 pWitness = pWitness0
 
 pWitness0 :: Ord n => Parser n (Witness n)

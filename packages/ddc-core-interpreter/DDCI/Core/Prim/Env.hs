@@ -9,8 +9,10 @@ module DDCI.Core.Prim.Env
         ( primEnv
         , primDataTypeKinds
 
-        , Prim(..)
-        , makePrimLiteral
+        , Prim  (..)
+        , PrimOp(..)
+        , makePrimLit
+        , makePrimExp
         , typeOfPrim)
 where
 import DDCI.Core.Prim.Name
@@ -27,7 +29,7 @@ import Data.Map                         (Map)
 primEnv :: Env Name
 primEnv
         = Env
-        { envMap        = primDataTypeKinds `Map.union` primOperatorTypes
+        { envMap        = primDataTypeKinds
         , envStack      = [] }
 
 
@@ -43,19 +45,6 @@ primDataTypeKinds
         , (Name "U",      tUnit)]
 
 
--- | Types of primitive operators
-primOperatorTypes :: Map Name (Type Name)
-primOperatorTypes 
- = Map.fromList
- [      ( Name "add"
-        , tForalls [kRegion, kRegion, kRegion] $ \[r2, r1, r0] 
-                -> tFun (tInt r2) (tBot kEffect)
-                                  (tBot kClosure)
-                 $ tFun (tInt r1) (tSum kEffect  [tRead r2, tRead r1, tAlloc r0])
-                                  (tSum kClosure [tShare r2])
-                 $ tInt r0 )]
-
-
 tInt :: Region Name -> Type Name
 tInt r1 = tConData1 (Name "Int") (kFun kRegion kData) r1
 
@@ -66,18 +55,50 @@ tUnit   = tConData0 (Name "Unit") kData
 
 -- Primitive things -------------------------------------------------------------------------------
 data Prim
-        = PInt Integer
+        = PInt    Integer
+        | PPrimOp PrimOp
+        deriving (Eq, Show)
+        
+data PrimOp
+        = OpNeg
+        | OpAdd
+        | OpSub
+        deriving (Eq, Show)
+
+
+instance Pretty Prim where
+ ppr pp
+  = case pp of
+        PInt i          -> text (show i)
+        PPrimOp op      -> ppr op
+        
+
+instance Pretty PrimOp where
+ ppr op
+  = case op of
+        OpNeg           -> text "neg"
+        OpAdd           -> text "add"
+        OpSub           -> text "sub"
 
 
 -- Parsing ----------------------------------------------------------------------------------------
-makePrimLiteral :: Literal -> Maybe Prim
-makePrimLiteral ll
+makePrimLit :: Literal  -> Maybe Prim
+makePrimLit ll
  = case ll of
         LInteger i      -> Just $ PInt i
         _               -> Nothing
 
+makePrimExp :: Name     -> Maybe Prim
+makePrimExp (Name n)
+ = case n of
+        "neg"           -> Just $ PPrimOp OpNeg
+        "add"           -> Just $ PPrimOp OpAdd
+        "sub"           -> Just $ PPrimOp OpSub
+        _               -> Nothing
+
 
 -- Checking -------------------------------------------------------------------------------------
+-- | Yield the type of a primitive.
 typeOfPrim :: Prim -> Type Name
 typeOfPrim pp
  = case pp of
@@ -87,7 +108,17 @@ typeOfPrim pp
                               (tBot kClosure)
                  $ tInt r
 
-instance Pretty Prim where
- ppr pp
-  = case pp of
-        PInt i  -> text (show i)
+        PPrimOp op      -> typeOfPrimOp op
+
+
+-- | Yield the type of a primitive operator.
+typeOfPrimOp :: PrimOp -> Type Name
+typeOfPrimOp op
+ = case op of
+    OpAdd       -> tForalls [kRegion, kRegion, kRegion] $ \[r2, r1, r0] 
+                        -> tFun (tInt r2) (tBot kEffect)
+                                          (tBot kClosure)
+                         $ tFun (tInt r1) (tSum kEffect  [tRead r2, tRead r1, tAlloc r0])
+                                          (tSum kClosure [tShare r2])
+                         $ tInt r0
+
