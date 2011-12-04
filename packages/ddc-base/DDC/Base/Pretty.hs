@@ -14,3 +14,7 @@ pprParen b c
 
 vcat :: [Doc] -> Doc
 vcat    = sep . punctuate line
+
+
+instance Pretty () where
+ ppr _ = text "()"

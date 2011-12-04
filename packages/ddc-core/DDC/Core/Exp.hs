@@ -20,11 +20,11 @@ import DDC.Type.Exp
 -- Values -----------------------------------------------------------------------------------------
 -- | A value expression, universe of computation.
 data Exp a p n
-        -- | Value variable.
-        = XVar  a (Bound n)
-
         -- | A primitive operator or literal.
-        | XPrim a p
+        = XPrim a p
+
+        -- | Value variable.
+        | XVar  a (Bound n)
 
         -- | Data constructor.
         | XCon  a (Bound n)

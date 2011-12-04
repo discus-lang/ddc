@@ -2,12 +2,14 @@
 module DDC.Core.Parser
         ( module DDC.Base.Parser
         , Parser
+        , PrimHandler (..)
         , pExp
         , pWitness)
         
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Tokens
+import DDC.Base.Literal
 import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok, (<?>))
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
@@ -19,13 +21,18 @@ import Control.Monad.Error
 type Parser n a
         = P.Parser (Tok n) a
 
+data PrimHandler p
+        = PrimHandler (Literal -> Maybe p)
+
 
 -- Expressions -----------------------------------------------------------------------------------
-pExp :: Ord n => Parser n (Exp () p n)
+pExp    :: Ord n => PrimHandler p
+        -> Parser n (Exp () p n)
 pExp = pExp2
 
-pExp2 :: Ord n => Parser n (Exp () p n)
-pExp2
+pExp2   :: Ord n => PrimHandler p 
+        -> Parser n (Exp () p n)
+pExp2 ph
  = P.choice
         -- Lambda abstractions
         [ do    pTok KBackSlash
@@ -36,27 +43,30 @@ pExp2
                 pTok KRoundKet
                 pTok KDot
 
-                xBody   <- pExp2
+                xBody   <- pExp2 ph
 
                 return  $ foldr (XLam ()) xBody
                         $ map (\b -> T.makeBindFromBinder b t) bs
 
-        , do    pExp1 ]
+        , do    pExp1 ph ]
 
  <?> "an expression"
 
 
 -- Applications
-pExp1 :: Ord n => Parser n (Exp () p n)
-pExp1 
-  = do  (x:xs)  <- liftM concat $ P.many1 pArgs
+pExp1   :: Ord n => PrimHandler p
+        -> Parser n (Exp () p n)
+pExp1 ph
+  = do  (x:xs)  <- liftM concat $ P.many1 (pArgs ph)
         return  $ foldl (XApp ()) x xs
 
  <?> "an expression or application"
 
+
 -- Comp, Witness or Spec arguments.
-pArgs :: Ord n => Parser n [Exp () p n]
-pArgs    
+pArgs   :: Ord n => PrimHandler p
+        -> Parser n [Exp () p n]
+pArgs ph
  = P.choice
         -- {TYPE}
         [ do    pTok KBraceBra
@@ -83,19 +93,20 @@ pArgs
                 return  $ map XWitness ws
                 
         -- EXP0
-        , do    x       <- pExp0 
+        , do    x       <- pExp0 ph
                 return  [x]
         ]
  <?> "a type type, witness or expression argument"
 
 
 -- Atomics
-pExp0 :: Ord n => Parser n (Exp () p n)
-pExp0
+pExp0   :: Ord n => PrimHandler p
+        -> Parser n (Exp () p n)
+pExp0 ph
   = P.choice
         -- (EXP2)
         [ do    pTok KRoundBra
-                t       <- pExp2
+                t       <- pExp2 ph
                 pTok KRoundKet
                 return  $ t
         
@@ -105,10 +116,26 @@ pExp0
 
         -- Variables
         , do    var     <- pVar
-                return  $ XVar () (UName var (T.tBot T.kData)) ]
+                return  $ XVar () (UName var (T.tBot T.kData)) 
+                
+        -- Literals
+        , do    pLit ph ]
 
  <?> "a variable, constructor, or parenthesised type"
 
+-- Literals ---------------------------------------------------------------------------------------
+-- 
+pLit    :: PrimHandler p 
+        -> Parser n (Exp () p n)
+
+pLit (PrimHandler mkLit) 
+        = pTokMaybe
+        $ \k -> case k of 
+                 KInteger i 
+                  | Just p      <- mkLit (LInteger i)
+                  -> Just $ XPrim () p
+                 
+                 _ -> Nothing
 
 -- Witnesses -------------------------------------------------------------------------------------
 -- | Top level parser for witnesses.
@@ -122,7 +149,6 @@ pWitness0
         [ do    wc     <- pWiCon
                 return $ WCon wc ]
  <?> "a witness"
-
 
 ---------------------------------------------------------------------------------------------------
 -- | Parse a builtin named `WiCon`

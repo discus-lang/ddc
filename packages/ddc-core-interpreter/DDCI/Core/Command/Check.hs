@@ -46,7 +46,7 @@ cmdShowWType ss
 
         goCheck w 
          = case typeOfWitness w of
-                Left err        -> putStrLn $ show $ ppr err
+                Left err        -> putStrLn $ show $ ppr (err :: Error () () Name)
                 Right k         -> putStrLn $ show $ (ppr w <> text " :: " <> ppr k)
 
 
@@ -66,11 +66,14 @@ cmdShowType mode ss
  = goParse (lexExp Name ss)
  where
         goParse toks                
-         = case BP.runTokenParser show "<interactive>" pExp toks of 
-                Left err -> putStrLn $ "parse error " ++ show err
+         = case BP.runTokenParser 
+                        show "<interactive>"
+                        (pExp (PrimHandler makePrimLiteral))
+                        toks 
+            of  Left err -> putStrLn $ "parse error " ++ show err
                 Right x  
                  -> let x'  = C.spread primEnv x
-                    in  goCheck x' (checkExp primEnv x')
+                    in  goCheck x' (checkExp typeOfPrim primEnv x')
 
         
         goCheck _ (Left err)

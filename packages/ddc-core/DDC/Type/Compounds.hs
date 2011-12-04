@@ -50,7 +50,7 @@ module DDC.Type.Compounds
         , tPure
         , tEmpty
         
-        , tConData1
+        , tConData0,    tConData1
         )
 where
 import DDC.Type.Exp
@@ -263,7 +263,12 @@ twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
 twConN tc ts = (TCon $ TyConWitness   (tc (length ts))) `tApps` ts
 
 
--- | Build a data constructor application of one argumnet.
+-- | Build a nullary type constructor of the given kind.
+tConData0 :: n -> Kind n -> Type n
+tConData0 n k    = TCon (TyConComp (TcConData n k))
+
+-- | Build a type constructor application of one argumnet.
 tConData1 :: n -> Kind n -> Type n -> Type n
 tConData1 n k t1 = TApp (TCon (TyConComp (TcConData n k))) t1
+
 

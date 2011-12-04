@@ -60,7 +60,7 @@ data Error a p n
         , errorBind             :: Bind n }
 
 
-instance (Eq n, Pretty n) => Pretty (Error a p n) where
+instance (Pretty p, Pretty n, Eq n) => Pretty (Error a p n) where
  ppr err
   = case err of
         ErrorType err'  -> ppr err'

@@ -7,12 +7,18 @@
 --
 module DDCI.Core.Prim.Env
         ( primEnv
-        , primDataTypeKinds)
+        , primDataTypeKinds
+
+        , Prim(..)
+        , makePrimLiteral
+        , typeOfPrim)
 where
 import DDCI.Core.Prim.Name
 import DDC.Type.Exp
 import DDC.Type.Env
 import DDC.Type.Compounds
+import DDC.Base.Literal
+import DDC.Base.Pretty
 import qualified Data.Map               as Map
 import Data.Map                         (Map)
 
@@ -32,11 +38,16 @@ primDataTypeKinds
         [ (Name "Unit",   kData)
         , (Name "Int",    kFun kRegion kData)
         , (Name "Char",   kFun kRegion kData)
-        , (Name "String", kFun kRegion kData) ]
-
+        , (Name "String", kFun kRegion kData) 
+        
+        , (Name "U",      tUnit)]
 
 tInt :: Region Name -> Type Name
 tInt r1 = tConData1 (Name "Int") (kFun kRegion kData) r1
+
+tUnit :: Type Name
+tUnit   = tConData0 (Name "Unit") kData
+
 
 -- | Types of primitive operators
 primOperatorTypes :: Map Name (Type Name)
@@ -51,3 +62,26 @@ primOperatorTypes
                  $ tInt r0 )]
 
 
+makePrimLiteral :: Literal -> Maybe Prim
+makePrimLiteral ll
+ = case ll of
+        LInteger i      -> Just $ PInt i
+        _               -> Nothing
+
+
+typeOfPrim :: Prim -> Type Name
+typeOfPrim pp
+ = case pp of
+        PInt _          
+         -> tForall kRegion
+          $ \r  -> tFun tUnit (tAlloc r)
+                              (tBot kClosure)
+                 $ tInt r
+
+instance Pretty Prim where
+ ppr pp
+  = case pp of
+        PInt i  -> text (show i)
+
+data Prim
+        = PInt Integer
