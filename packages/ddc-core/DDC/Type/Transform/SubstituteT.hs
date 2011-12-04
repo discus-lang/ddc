@@ -3,7 +3,6 @@
 module DDC.Type.Transform.SubstituteT
         (SubstituteT(..))
 where
-import DDC.Type.Pretty
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Collect.Free
@@ -22,7 +21,7 @@ class SubstituteT (c :: * -> *) where
  --   in the type to substitute, then we rewrite that binder to anonymous form,
  --   avoiding the capture.
  substituteWithT
-        :: forall n. (Ord n, Pretty n)
+        :: forall n. Ord n
         => Bound n              -- ^ Bound variable that we're subsituting into.
         -> Type n               -- ^ Type to substitute.
         -> Set  n               -- ^ Names of free varaibles in the type to substitute.
@@ -34,7 +33,7 @@ class SubstituteT (c :: * -> *) where
 
  -- | Wrapper for `substituteWithT` that determines the set of free names in the
  --   type being substituted, and starts with an empty binder stack.
- substituteT :: (SubstituteT c, Ord n, Pretty n) => Bound n -> Type n -> c n -> c n
+ substituteT :: (SubstituteT c, Ord n) => Bound n -> Type n -> c n -> c n
  substituteT u t x
   = let -- Determine the free names in the type we're subsituting.
         -- We'll need to rename binders with the same names as these
