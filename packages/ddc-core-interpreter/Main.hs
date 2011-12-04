@@ -4,6 +4,7 @@ import DDCI.Core.Command.Anon
 import DDCI.Core.Command.Free
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Subst
+import DDCI.Core.Command.Eval
 import System.IO
 import Data.List
 
@@ -93,8 +94,7 @@ handle line ws
                 
         -- An expression to evaluate.
         | otherwise
-        = do    putStrLn "*** This doesn't do anything yet"
-                loop
+        = do    { cmdEval line; putStr "\n"; loop }
 
 
 -- | Split a prefix from the front of a string, returning the trailing part.
