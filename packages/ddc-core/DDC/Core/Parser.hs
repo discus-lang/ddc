@@ -49,29 +49,43 @@ pExp2
 -- Applications
 pExp1 :: Ord n => Parser n (Exp () p n)
 pExp1 
-  = do  (x:xs)  <- P.many1 pArg
+  = do  (x:xs)  <- liftM concat $ P.many1 pArgs
         return  $ foldl (XApp ()) x xs
 
  <?> "an expression or application"
 
 -- Comp, Witness or Spec arguments.
-pArg :: Ord n => Parser n (Exp () p n)
-pArg    
+pArgs :: Ord n => Parser n [Exp () p n]
+pArgs    
  = P.choice
         -- {TYPE}
         [ do    pTok KBraceBra
                 t       <- T.pType 
                 pTok KBraceKet
-                return  $ XType t
+                return  [XType t]
+
+        -- {: TYPE0 TYPE0 ... :}
+        , do    pTok KBraceColonBra
+                ts      <- P.many1 T.pType0
+                pTok KBraceColonKet
+                return  $ map XType ts
         
         -- <WITNESS>
         , do    pTok KAngleBra
                 w       <- pWitness
                 pTok KAngleKet
-                return  $ XWitness w
+                return  [XWitness w]
+                
+        -- <: WITNESS0 WITNESS0 ... :>
+        , do    pTok KAngleColonBra
+                ws      <- P.many1 pWitness0
+                pTok KAngleColonKet
+                return  $ map XWitness ws
                 
         -- EXP0
-        , do    pExp0 ]
+        , do    x       <- pExp0 
+                return  [x]
+        ]
  <?> "a type type, witness or expression argument"
 
 

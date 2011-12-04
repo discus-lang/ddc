@@ -57,46 +57,52 @@ lexExp mkName str
         []              -> []        
 
         -- Function Constructors
-        '~' : '>' : w'  -> mkToken KKindFun     : lexWord w'
-        '-' : '>' : w'  -> mkToken KTypeFun     : lexWord w'
-        '-' : '(' : w'  -> mkToken KTypeFunBra  : lexWord w'
-        ')' : '>' : w'  -> mkToken KTypeFunKet  : lexWord w'
+        '~' : '>' : w'  -> mkToken KKindFun       : lexWord w'
+        '-' : '>' : w'  -> mkToken KTypeFun       : lexWord w'
+        '-' : '(' : w'  -> mkToken KTypeFunBra    : lexWord w'
+        ')' : '>' : w'  -> mkToken KTypeFunKet    : lexWord w'
 
-        -- Brackets
-        '('  : w'       -> mkToken KRoundBra    : lexWord w'
-        ')'  : w'       -> mkToken KRoundKet    : lexWord w'
-        '['  : w'       -> mkToken KSquareBra   : lexWord w'
-        ']'  : w'       -> mkToken KSquareKet   : lexWord w'
-        '{'  : w'       -> mkToken KBraceBra    : lexWord w'
-        '}'  : w'       -> mkToken KBraceKet    : lexWord w'
-        '<'  : w'       -> mkToken KAngleBra    : lexWord w'
-        '>'  : w'       -> mkToken KAngleKet    : lexWord w'            
+        -- Compound Parens
+        '{'  : ':' : w' -> mkToken KBraceColonBra : lexWord w'
+        ':'  : '}' : w' -> mkToken KBraceColonKet : lexWord w'
+        '<'  : ':' : w' -> mkToken KAngleColonBra : lexWord w'
+        ':'  : '>' : w' -> mkToken KAngleColonKet : lexWord w'
+
+        -- Parens
+        '('  : w'       -> mkToken KRoundBra      : lexWord w'
+        ')'  : w'       -> mkToken KRoundKet      : lexWord w'
+        '['  : w'       -> mkToken KSquareBra     : lexWord w'
+        ']'  : w'       -> mkToken KSquareKet     : lexWord w'
+        '{'  : w'       -> mkToken KBraceBra      : lexWord w'
+        '}'  : w'       -> mkToken KBraceKet      : lexWord w'
+        '<'  : w'       -> mkToken KAngleBra      : lexWord w'
+        '>'  : w'       -> mkToken KAngleKet      : lexWord w'            
 
         -- Punctuation
-        '.'  : w'       -> mkToken KDot         : lexWord w'
-        '|'  : w'       -> mkToken KBar         : lexWord w'
-        '^'  : w'       -> mkToken KHat         : lexWord w'
-        '+'  : w'       -> mkToken KPlus        : lexWord w'
-        ':'  : w'       -> mkToken KColon       : lexWord w'
-        ','  : w'       -> mkToken KComma       : lexWord w'
-        '\\' : w'       -> mkToken KBackSlash   : lexWord w'
-        ';'  : w'       -> mkToken KSemiColon   : lexWord w'
-        '_'  : w'       -> mkToken KUnderscore  : lexWord w'
+        '.'  : w'       -> mkToken KDot           : lexWord w'
+        '|'  : w'       -> mkToken KBar           : lexWord w'
+        '^'  : w'       -> mkToken KHat           : lexWord w'
+        '+'  : w'       -> mkToken KPlus          : lexWord w'
+        ':'  : w'       -> mkToken KColon         : lexWord w'
+        ','  : w'       -> mkToken KComma         : lexWord w'
+        '\\' : w'       -> mkToken KBackSlash     : lexWord w'
+        ';'  : w'       -> mkToken KSemiColon     : lexWord w'
+        '_'  : w'       -> mkToken KUnderscore    : lexWord w'
         
         -- Bottoms
-        '!' : '0' : w'  -> mkToken KBotEffect   : lexWord w'
-        '$' : '0' : w'  -> mkToken KBotClosure  : lexWord w'
+        '!' : '0' : w'  -> mkToken KBotEffect     : lexWord w'
+        '$' : '0' : w'  -> mkToken KBotClosure    : lexWord w'
 
         -- Sort Constructors
-        '*' : '*' : w'  -> mkToken KSortComp    : lexWord w'
-        '@' : '@' : w'  -> mkToken KSortProp    : lexWord w'        
+        '*' : '*' : w'  -> mkToken KSortComp      : lexWord w'
+        '@' : '@' : w'  -> mkToken KSortProp      : lexWord w'        
 
         -- Kind Constructors
-        '*' : w'        -> mkToken KKindValue   : lexWord w'
-        '%' : w'        -> mkToken KKindRegion  : lexWord w'
-        '!' : w'        -> mkToken KKindEffect  : lexWord w'
-        '$' : w'        -> mkToken KKindClosure : lexWord w'
-        '@' : w'        -> mkToken KKindWitness : lexWord w'
+        '*' : w'        -> mkToken KKindValue     : lexWord w'
+        '%' : w'        -> mkToken KKindRegion    : lexWord w'
+        '!' : w'        -> mkToken KKindEffect    : lexWord w'
+        '$' : w'        -> mkToken KKindClosure   : lexWord w'
+        '@' : w'        -> mkToken KKindWitness   : lexWord w'
         
         -- Literal values
         c : cs

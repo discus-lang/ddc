@@ -3,7 +3,7 @@
 module DDC.Type.Parser
         ( module DDC.Base.Parser
         , Parser
-        , pType
+        , pType, pType0
         , pBinder
         , pInteger)
 where

@@ -15,6 +15,13 @@ data Tok n
         -- some junk that corresponds to a lexer error
         = KJunk String
 
+
+        -- compound parens
+        | KBraceColonBra
+        | KBraceColonKet
+        | KAngleColonBra
+        | KAngleColonKet
+
         -- parens
         | KRoundBra
         | KRoundKet
