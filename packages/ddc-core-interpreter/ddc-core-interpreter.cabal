@@ -30,6 +30,7 @@ Executable ddci-core
         DDCI.Core.Prim.Base
         DDCI.Core.Prim.Name
         DDCI.Core.Prim.Env
+        DDCI.Core.Prim.Store
         
 
   Extensions:

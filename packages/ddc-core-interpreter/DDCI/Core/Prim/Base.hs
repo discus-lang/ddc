@@ -2,6 +2,8 @@
 module DDCI.Core.Prim.Base
         ( Prim          (..)
         , PrimOp        (..)
+        , Loc           (..)
+        , Rgn           (..)
         , makePrimLit
         , makePrimExp)
 where
@@ -11,15 +13,30 @@ import DDC.Base.Literal
 
 
 data Prim
-        = PInt    Integer
+        = PLoc    Loc
+        | PRgn    Rgn
+        | PInt    Integer
         | PPrimOp PrimOp
         deriving (Eq, Show)
-        
+
+-- | A primitive operator.
 data PrimOp
         = OpNeg
         | OpAdd
         | OpSub
         deriving (Eq, Show)
+
+
+-- | A store location with its region handle.
+data Loc
+        = Loc Int
+        deriving (Eq, Ord, Show)
+
+
+-- | Region handles describe what region a store binding is in.
+data Rgn
+        = Rgn Int
+        deriving (Eq, Ord, Show)
 
 
 instance Pretty Prim where
