@@ -8,19 +8,13 @@
 module DDCI.Core.Prim.Env
         ( primEnv
         , primDataTypeKinds
-
-        , Prim  (..)
-        , PrimOp(..)
-        , makePrimLit
-        , makePrimExp
         , typeOfPrim)
 where
 import DDCI.Core.Prim.Name
+import DDCI.Core.Prim.Base
 import DDC.Type.Exp
 import DDC.Type.Env
 import DDC.Type.Compounds
-import DDC.Base.Literal
-import DDC.Base.Pretty
 import qualified Data.Map               as Map
 import Data.Map                         (Map)
 
@@ -50,51 +44,6 @@ tInt r1 = tConData1 (Name "Int") (kFun kRegion kData) r1
 
 tUnit :: Type Name
 tUnit   = tConData0 (Name "Unit") kData
-
-
-
--- Primitive things -------------------------------------------------------------------------------
-data Prim
-        = PInt    Integer
-        | PPrimOp PrimOp
-        deriving (Eq, Show)
-        
-data PrimOp
-        = OpNeg
-        | OpAdd
-        | OpSub
-        deriving (Eq, Show)
-
-
-instance Pretty Prim where
- ppr pp
-  = case pp of
-        PInt i          -> text (show i)
-        PPrimOp op      -> ppr op
-        
-
-instance Pretty PrimOp where
- ppr op
-  = case op of
-        OpNeg           -> text "neg"
-        OpAdd           -> text "add"
-        OpSub           -> text "sub"
-
-
--- Parsing ----------------------------------------------------------------------------------------
-makePrimLit :: Literal  -> Maybe Prim
-makePrimLit ll
- = case ll of
-        LInteger i      -> Just $ PInt i
-        _               -> Nothing
-
-makePrimExp :: Name     -> Maybe Prim
-makePrimExp (Name n)
- = case n of
-        "neg"           -> Just $ PPrimOp OpNeg
-        "add"           -> Just $ PPrimOp OpAdd
-        "sub"           -> Just $ PPrimOp OpSub
-        _               -> Nothing
 
 
 -- Checking -------------------------------------------------------------------------------------

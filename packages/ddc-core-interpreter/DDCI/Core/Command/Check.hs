@@ -7,6 +7,7 @@ where
 import DDCI.Core.Prim.Region
 import DDCI.Core.Prim.Env
 import DDCI.Core.Prim.Name
+import DDCI.Core.Prim.Base
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser.Lexer
