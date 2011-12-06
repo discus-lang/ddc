@@ -1,6 +1,8 @@
 
 module DDCI.Core.Prim.Region
-        (makeDefaultRegionEnv)
+        ( makeDefaultRegionEnv
+        , isRegionHandleName
+        , isRegionHandleBound)
 where
 import DDCI.Core.Prim.Name
 import DDC.Type.Exp
@@ -10,8 +12,8 @@ import qualified DDC.Type.Compounds     as T
 import qualified Data.Set               as Set
 import Data.Set                         (Set)
 import Data.List
-
 import Data.Maybe
+import Data.Char
 
 
 -- | Given the set of names free in some expression, 
@@ -33,3 +35,23 @@ makeDefaultRegionEnv fus
                                 UName n t       -> Just $ BName n t
                                 _               -> Nothing)
                 $ us'
+
+
+-- | Name has the form 'Rn#', which we treat as a region handle.
+isRegionHandleName :: Name -> Bool
+isRegionHandleName (Name ('R':rest))
+        | length rest >= 1
+        , and $ map isDigit $ init rest
+        , last rest == '#'
+        = True
+
+isRegionHandleName _    = False        
+
+
+-- | Bound Name has the form 'Rn#', which we treat as a region handle.
+isRegionHandleBound :: Bound Name -> Bool
+isRegionHandleBound uu
+ = case uu of
+        UName n _       -> isRegionHandleName n
+        _               -> False
+

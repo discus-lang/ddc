@@ -12,6 +12,7 @@ import DDC.Base.Pretty
 import DDC.Base.Literal
 
 
+-- Prim -----------------------------------------------------------------------
 data Prim
         = PLoc    Loc
         | PRgn    Rgn
@@ -19,6 +20,36 @@ data Prim
         | PPrimOp PrimOp
         deriving (Eq, Show)
 
+
+instance Pretty Prim where
+ ppr pp
+  = case pp of
+        PLoc l          -> ppr l
+        PRgn r          -> ppr r
+        PInt i          -> text (show i)
+        PPrimOp op      -> ppr op
+
+
+-- Locs and Rgns --------------------------------------------------------------
+-- | A store location.
+data Loc
+        = Loc Int
+        deriving (Eq, Ord, Show)
+
+instance Pretty Loc where
+ ppr (Loc l)    = text "L" <> text (show l) <> text "#"
+ 
+
+-- | Region handles describe what region a store binding is in.
+data Rgn
+        = Rgn Int
+        deriving (Eq, Ord, Show)
+
+instance Pretty Rgn where
+ ppr (Rgn r)    = text "R" <> text (show r) <> text "#"
+
+
+-- PrimOps --------------------------------------------------------------------
 -- | A primitive operator.
 data PrimOp
         = OpNeg
@@ -26,24 +57,6 @@ data PrimOp
         | OpSub
         deriving (Eq, Show)
 
-
--- | A store location with its region handle.
-data Loc
-        = Loc Int
-        deriving (Eq, Ord, Show)
-
-
--- | Region handles describe what region a store binding is in.
-data Rgn
-        = Rgn Int
-        deriving (Eq, Ord, Show)
-
-
-instance Pretty Prim where
- ppr pp
-  = case pp of
-        PInt i          -> text (show i)
-        PPrimOp op      -> ppr op
         
 
 instance Pretty PrimOp where
@@ -54,7 +67,7 @@ instance Pretty PrimOp where
         OpSub           -> text "sub"
 
 
--- Parsing ----------------------------------------------------------------------------------------
+-- Parsing --------------------------------------------------------------------
 makePrimLit :: Literal  -> Maybe Prim
 makePrimLit ll
  = case ll of
