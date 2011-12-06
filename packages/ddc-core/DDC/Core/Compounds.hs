@@ -1,6 +1,8 @@
 
 module DDC.Core.Compounds 
-        (takeXLams)
+        ( takeXLams
+        , takeXApps
+        , takeXPrimApps)
 where
 import DDC.Core.Exp
 
@@ -14,3 +16,22 @@ takeXLams xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
+
+
+-- | Flatten an application into the function parts and arguments, if any.
+takeXApps   :: Exp a p n -> [Exp a p n]
+takeXApps xx
+ = case xx of
+        XApp _ x1 x2    -> x1 : takeXApps x2
+        _               -> [xx]
+
+
+-- | Flatten a primitive application into the primitive constructor, 
+--   and its arguments, if any.
+--   
+--   Returns `Nothing` if the expression isn't a primitive or an applicatin of one.
+takeXPrimApps :: Exp a p n -> Maybe (p, [Exp a p n])
+takeXPrimApps xx
+ = case takeXApps xx of
+        XPrim _ p : xs  -> Just (p, xs)
+        _               -> Nothing

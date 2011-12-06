@@ -7,6 +7,7 @@ module DDCI.Core.Prim.Store
         , SBind  (..)
         
         -- * Operators
+        , empty
         , newLoc
         , addBind
         , allocBind
@@ -18,6 +19,8 @@ import DDC.Core.Exp
 import Data.Map                 (Map)
 import Data.Set                 (Set)
 import qualified Data.Map       as Map
+
+import qualified Data.Set       as Set
 import Control.Monad
 
 
@@ -44,9 +47,18 @@ data SBind
         , sbindDataArgs         :: [SValue] }
 
         | SInt  Integer
-        
+        deriving (Eq, Show)
+
 
 -- Operators ------------------------------------------------------------------
+-- | An empty store, with no bindings or regions.
+empty   :: Store
+empty   = Store
+        { storeNextLoc  = 1
+        , storeRegions  = Set.empty
+        , storeBinds    = Map.empty }
+
+
 -- | Create a new location in the store.
 newLoc  :: Store -> (Store, Loc)
 newLoc store

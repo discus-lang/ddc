@@ -2,15 +2,18 @@
 module DDCI.Core.Command.Eval
         (cmdEval)
 where
+import DDCI.Core.Prim.Step
 import DDCI.Core.Prim.Region
 import DDCI.Core.Prim.Env
 import DDCI.Core.Prim.Name
 import DDCI.Core.Prim.Base
+import qualified DDC.Core.Step          as C
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser.Lexer
 import DDC.Core.Parser
 import DDC.Core.Collect.Free            ()
+import qualified DDCI.Core.Prim.Store   as Store
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Collect.Free  as T
 import qualified DDC.Core.Transform     as C
@@ -40,12 +43,17 @@ cmdEval ss
                 -- The initial environment.
                 env     = Env.combine primEnv envRgn
 
-           in   goResult x' (checkExp typeOfPrim env x')
+           in   goStep x' (checkExp typeOfPrim env x')
 
-
-        goResult _ (Left err)
+        goStep _ (Left err)
          = putStrLn $ show $ ppr err
 
-        goResult x (Right (t, eff, clo))
-         = putStrLn $ pretty 100 (ppr x <> text " :: " <> ppr t)
+        goStep x (Right (t, eff, clo))
+         = case C.step (C.PrimStep primStep) x Store.empty of
+                Nothing         -> putStrLn $ show $ text "STUCK!"
+                Just (_s', x')  -> putStrLn $ pretty 100 (ppr x')
+
+
+
+
 

@@ -44,6 +44,7 @@ Library
         DDC.Core.Parser.Tokens
         DDC.Core.Parser.Lexer
         DDC.Core.Transform
+        DDC.Core.Step
         
   Other-modules:
         DDC.Type.Check.CheckCon
