@@ -25,8 +25,16 @@ import Data.Char
 -- | String is a constructor name.
 isConName :: String -> Bool
 isConName []          = False
-isConName (c:cs)      = isConStart c && and (map isConBody cs)
-
+isConName (c:cs)      
+        | isConStart c 
+        , and (map isConBody cs)
+        = True
+        
+        | _ : _         <- cs
+        , isConStart c
+        , and (map isConBody (init cs))
+        , last cs == '#'
+        = True
 
 -- | Character can start a constructor name.
 isConStart :: Char -> Bool
@@ -154,20 +162,23 @@ lexType mkName str
         -- Named Constructors
         c : cs
          | isConStart c
-         , (body, rest)         <- span isConBody cs
+         , (body,  rest)        <- span isConBody cs
+         , (body', rest')       <- case rest of
+                                        '#' : rest'     -> (body ++ "#", rest')
+                                        _               -> (body, rest)
          -> let readNamedCon s
                  | Just twcon   <- readTwConBuiltin s
-                 = mkToken (KTwConBuiltin twcon) : lexWord rest
+                 = mkToken (KTwConBuiltin twcon) : lexWord rest'
                  
                  | Just tccon   <- readTcConBuiltin s
-                 = mkToken (KTcConBuiltin $ T.rename mkName tccon) : lexWord rest
+                 = mkToken (KTcConBuiltin $ T.rename mkName tccon) : lexWord rest'
                  
                  | Just con     <- readCon s
-                 = mkToken (KCon $ mkName con)   : lexWord rest
+                 = mkToken (KCon $ mkName con)   : lexWord rest'
                
                  | otherwise    = [mkToken (KJunk s)]
                  
-            in  readNamedCon (c : body)
+            in  readNamedCon (c : body')
         
         -- Named Variables
         c : cs
