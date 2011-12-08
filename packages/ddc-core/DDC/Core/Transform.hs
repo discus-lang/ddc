@@ -1,5 +1,8 @@
 
 module DDC.Core.Transform
-        (Spread (..))
+        ( Spread        (..)
+        , TransformUpMX (..)
+        , transformUpX)
 where
 import DDC.Core.Transform.Spread
+import DDC.Core.Transform.TransformX

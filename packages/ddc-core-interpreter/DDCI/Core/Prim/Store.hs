@@ -9,6 +9,7 @@ module DDCI.Core.Prim.Store
         -- * Operators
         , empty
         , newLoc
+        , newRgn,       newRgns
         , addBind
         , allocBind
         , lookupBind)
@@ -27,8 +28,17 @@ import Control.Monad
 -- | The store maps locations to store bindings.
 data Store
         = Store 
-        { storeNextLoc  :: Int
+        { -- | Next store location to allocate.
+          storeNextLoc  :: Int
+
+          -- | Next region handle to allocate.
+        , storeNextRgn  :: Int
+
+          -- | Region handles already allocated.
         , storeRegions  :: Set Rgn
+
+          -- | Map of locations to store bindings,
+          --   and the handles for the regions they're in.
         , storeBinds    :: Map Loc (Rgn, SBind) }
 
 
@@ -55,6 +65,7 @@ data SBind
 empty   :: Store
 empty   = Store
         { storeNextLoc  = 1
+        , storeNextRgn  = 1
         , storeRegions  = Set.empty
         , storeBinds    = Map.empty }
 
@@ -66,6 +77,23 @@ newLoc store
         store'  = store { storeNextLoc  = loc + 1 }
    in   (store', Loc loc)
 
+
+-- | Create a new region in the store.
+newRgn  :: Store -> (Store, Rgn)
+newRgn store
+ = let  rgn     = storeNextRgn store
+        store'  = store { storeNextRgn  = rgn + 1 }
+   in   (store', Rgn rgn)
+
+
+-- | Create several new regions in the store
+newRgns :: Int -> Store -> (Store, [Rgn])
+newRgns 0     store     = (store, [])
+newRgns count store
+ = let  rgns    = [ storeNextRgn store .. storeNextRgn store + count - 1]
+        store'  = store { storeNextRgn  = storeNextRgn store + count }
+   in   (store', map Rgn rgns)
+        
 
 -- | Add a store binding to the store, at the given location.
 addBind :: Loc -> Rgn -> SBind -> Store -> Store

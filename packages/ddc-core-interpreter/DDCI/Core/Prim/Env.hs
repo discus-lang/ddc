@@ -57,6 +57,10 @@ typeOfPrim pp
                               (tBot kClosure)
                  $ tInt r
 
+        -- TODO: check this is in the store typing
+        PRgn _
+         -> kRegion
+
         PPrimOp op      -> typeOfPrimOp op
 
 

@@ -25,6 +25,8 @@ import Data.Map         (Map)
 --   algebraic structure.
 --
 data Type n
+--        = TPrim   p     
+        
         -- | Variable.
         = TVar    (Bound n)
 

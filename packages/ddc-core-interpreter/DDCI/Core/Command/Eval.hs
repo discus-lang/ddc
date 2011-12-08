@@ -3,7 +3,8 @@ module DDCI.Core.Command.Eval
         (cmdEval)
 where
 import DDCI.Core.Prim
-import DDC.Type.Exp
+import DDC.Type.Compounds
+import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser.Lexer
@@ -13,11 +14,10 @@ import qualified DDCI.Core.Prim.Store           as Store
 import qualified DDC.Core.Step                  as C
 import qualified DDC.Core.Collect.GatherBound   as C
 import qualified DDC.Type.Env                   as Env
-import qualified DDC.Type.Collect.Free          as T
 import qualified DDC.Core.Transform             as C
 import qualified DDC.Base.Parser                as BP
 import qualified Data.Set                       as Set
-import Data.Set                                 (Set)
+import Data.Maybe
 import Debug.Trace
 
 -- | Show the type of an expression.
@@ -38,18 +38,41 @@ cmdEval ss
                 x'      = C.spread primEnv x
 
                 -- Look for constructors of the form Rn# which we'll treat as exising region handles.
-                us      :: Set (Bound Name)
-                us      = Set.filter isRegionHandleBound
+                ns      :: [Name]
+                ns      = mapMaybe takeNameOfBound
+                        $ Set.toList 
+                        $ Set.filter isRegionHandleBound
                         $ C.gatherBound x' 
 
-                -- Determine the free regions in the expression that end with the prime character.
-                -- We'll add these to the initial environment.
-                envRgn  = makeDefaultRegionEnv $ T.free Env.empty x'
+                -- The initial store
+                store   = Store.empty
+                
+                -- Allocate new region handles for each of the names we've found
+                (_store', rgns) 
+                        = Store.newRgns (length ns) store 
+
+                -- Substitute our new region handles into the expression.
+                nsRgns  = zip ns $ map PRgn rgns
+
+                replaceCon _ xx
+                 = case xx of
+                        XType (TCon (TyConComp (TcConData n _)))
+                         | Just p       <- lookup n nsRgns
+                         -> XPrim () p
+                         
+                        _ -> xx
+                
+                x''     = C.transformUpX replaceCon Env.empty x'
+
+                -- TODO: need store environment
+                -- We need to check that all region handles in the term are present in the store environment.
+                envRgn  = Env.empty
 
                 -- The initial environment.
                 env     = Env.combine primEnv envRgn
-
-           in   trace (show $ ppr us) $ goStep x' (checkExp typeOfPrim env x')
+                
+           in   trace (show x' ++ "\n" ++ show x'') 
+                        $ goStep x' (checkExp typeOfPrim env x'')
 
         goStep _ (Left err)
          = putStrLn $ show $ ppr err
@@ -60,6 +83,7 @@ cmdEval ss
                 Just (_s', x')  -> putStrLn $ pretty 100 (ppr x')
 
 
+-- add :: forall (r1 r2 r3: %). Int r1 -> Int r2 -> Int r3
 
 
 
