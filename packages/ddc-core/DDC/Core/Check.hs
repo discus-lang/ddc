@@ -23,29 +23,27 @@ import qualified DDC.Type.Check.Monad   as G
 import Control.Monad
 import Debug.Trace
 
-type CheckM a p n   = G.CheckM (Error a p n)
+type CheckM a n   = G.CheckM (Error a n)
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Take the kind of a type.
 typeOfExp 
         :: (Ord n, Pretty n)
-        => (p -> Type n)
-        -> Exp a p n
-        -> Either (Error a p n) (Type n)
-typeOfExp typeOfPrim xx 
+        => Exp a n
+        -> Either (Error a n) (Type n)
+typeOfExp xx 
         = result 
-        $ do    (t, _eff, _clo) <- checkExpM typeOfPrim Env.empty xx
+        $ do    (t, _eff, _clo) <- checkExpM Env.empty xx
                 return t
 
 
 -- | Take the kind of a type, or `error` if there isn't one.
 typeOfExp' 
-        :: (Pretty p, Pretty n, Ord n) 
-        => (p -> Type n)
-        -> Exp a p n -> Type n
-typeOfExp' typeOfPrim tt
- = case typeOfExp typeOfPrim tt of
+        :: (Pretty n, Ord n) 
+        => Exp a n -> Type n
+typeOfExp' tt
+ = case typeOfExp tt of
         Left err        -> error $ show $ ppr err
         Right k         -> k
 
@@ -53,14 +51,13 @@ typeOfExp' typeOfPrim tt
 -- | Check an expression, returning an error or its type, effect and closure.
 checkExp 
         :: (Ord n, Pretty n)
-        => (p -> Type n)
-        -> Env n -> Exp a p n
-        -> Either (Error a p n)
+        => Env n -> Exp a n
+        -> Either (Error a n)
                   (Type n, Effect n, Closure n)
 
-checkExp typeOfPrim env xx 
+checkExp env xx 
  = result
- $ do   (t, effs, clos) <- checkExpM typeOfPrim env xx
+ $ do   (t, effs, clos) <- checkExpM env xx
         return  (t, TSum effs, TSum clos)
         
 
@@ -71,15 +68,12 @@ checkExp typeOfPrim env xx
 --         add a function to check that a type has kind annots in the right places.
 checkExpM 
         :: (Ord n, Pretty n)
-        => (p -> Type n)
-        -> Env n -> Exp a p n
-        -> CheckM a p n (Type n, TypeSum n, TypeSum n)
+        => Env n -> Exp a n
+        -> CheckM a n (Type n, TypeSum n, TypeSum n)
 
-checkExpM typeOfPrim env xx
+checkExpM env xx
  = case xx of
         -- variables, primitives and constructors.
-        XPrim _ p       -> return  ( typeOfPrim p,  Sum.empty kEffect, Sum.empty kClosure)
-
         XVar _ u        
          ->     return  ( typeOfBound u
                         , Sum.empty kEffect
@@ -92,7 +86,7 @@ checkExpM typeOfPrim env xx
 
         -- value-type application.
         XApp _ x1 (XType t2)
-         -> do  (t1, effs1, clos1)   <- checkExpM  typeOfPrim env x1
+         -> do  (t1, effs1, clos1)   <- checkExpM  env x1
                 k2                   <- checkTypeM env t2
                 case t1 of
                  TForall b11 t12
@@ -109,7 +103,7 @@ checkExpM typeOfPrim env xx
 
         -- value-witness application.
         XApp _ x1 (XWitness w2)
-         -> do  (t1, effs1, clos1)   <- checkExpM typeOfPrim env x1
+         -> do  (t1, effs1, clos1)   <- checkExpM     env x1
                 t2                   <- checkWitnessM env w2
                 case t1 of
                  TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
@@ -123,8 +117,8 @@ checkExpM typeOfPrim env xx
                  
         -- value-value application.
         XApp _ x1 x2
-         -> do  (t1, effs1, clos1) <- checkExpM typeOfPrim env x1
-                (t2, effs2, clos2) <- checkExpM typeOfPrim env x2
+         -> do  (t1, effs1, clos1) <- checkExpM env x1
+                (t2, effs2, clos2) <- checkExpM env x2
                 case t1 of
                  TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) clo) t12
                   | t11 == t2   
@@ -150,7 +144,7 @@ checkExpM typeOfPrim env xx
 
                 -- Check the body.
                 let env'        =  Env.extend b1 env
-                (t2, e2, c2)    <- checkExpM  typeOfPrim env' x2
+                (t2, e2, c2)    <- checkExpM  env' x2
                 k2              <- checkTypeM env' t2
 
                 -- The form of the function constructor depends on what universe we're dealing with.
@@ -192,7 +186,7 @@ checkExpM typeOfPrim env xx
 
 -- checkType -------------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
-checkTypeM :: Ord n => Env n -> Type n -> CheckM a p n (Kind n)
+checkTypeM :: Ord n => Env n -> Type n -> CheckM a n (Kind n)
 checkTypeM env tt
  = case T.checkType env tt of
         Left err        -> throw $ ErrorType err
@@ -200,7 +194,7 @@ checkTypeM env tt
 
 
 -- Witness ----------------------------------------------------------------------------------------
-typeOfWitness :: Ord n => Witness n -> Either (Error a p n) (Type n)
+typeOfWitness :: Ord n => Witness n -> Either (Error a n) (Type n)
 typeOfWitness ww = result $ checkWitnessM Env.empty ww
 
 
@@ -208,7 +202,7 @@ typeOfWitness ww = result $ checkWitnessM Env.empty ww
 typeOfWitness' :: forall n. (Ord n, Pretty n) => Witness n -> Type n
 typeOfWitness' ww
  = case typeOfWitness ww of
-        Left err        -> error $ show $ ppr (err :: Error () () n)
+        Left err        -> error $ show $ ppr (err :: Error () n)
         Right k         -> k
 
 
@@ -216,7 +210,7 @@ typeOfWitness' ww
 checkWitness
         :: Ord n 
         => Env n -> Witness n
-        -> Either (Error a p n) (Type n)
+        -> Either (Error a n) (Type n)
 
 checkWitness env xx
         = result $ checkWitnessM env xx
@@ -225,7 +219,7 @@ checkWitness env xx
 checkWitnessM 
         :: Ord n 
         => Env n -> Witness n
-        -> CheckM a p n (Type n)
+        -> CheckM a n (Type n)
 
 checkWitnessM _ ww
  = case ww of

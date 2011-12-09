@@ -17,7 +17,6 @@ where
 import DDC.Base.Lexer
 import DDC.Type.Exp
 import DDC.Type.Parser.Tokens
-import qualified DDC.Type.Transform    as T
 import Data.Char
 
 
@@ -64,7 +63,7 @@ readTwConBuiltin ss
 
 -- | Read a builtin `TcCon` with a non-symbolic name, 
 --   ie not '->'.
-readTcConBuiltin :: String -> Maybe (TcCon n)
+readTcConBuiltin :: String -> Maybe TcCon
 readTcConBuiltin ss
  = case ss of
         "Read"          -> Just TcConRead
@@ -171,7 +170,7 @@ lexType mkName str
                  = mkToken (KTwConBuiltin twcon) : lexWord rest'
                  
                  | Just tccon   <- readTcConBuiltin s
-                 = mkToken (KTcConBuiltin $ T.rename mkName tccon) : lexWord rest'
+                 = mkToken (KTcConBuiltin tccon) : lexWord rest'
                  
                  | Just con     <- readCon s
                  = mkToken (KCon $ mkName con)   : lexWord rest'

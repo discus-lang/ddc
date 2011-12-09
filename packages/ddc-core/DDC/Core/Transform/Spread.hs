@@ -6,11 +6,10 @@ import DDC.Core.Exp
 import DDC.Type.Transform.Spread
 import qualified DDC.Type.Env           as Env
 
-instance Spread (Exp a p) where
+instance Spread (Exp a) where
  spread env xx
   = case xx of
         XVar a u        -> XVar a (spread env u)
-        XPrim{}         -> xx
         XCon a u        -> XCon a (spread env u)
         XApp a x1 x2    -> XApp a (spread env x1) (spread env x2)
 

@@ -4,27 +4,21 @@ module DDCI.Core.Command.Check
         , cmdShowType
         , ShowTypeMode(..))
 where
-import DDCI.Core.Prim.Region
-import DDCI.Core.Prim.Env
 import DDCI.Core.Prim.Name
-import DDCI.Core.Prim.Base
 import DDC.Core.Check
 import DDC.Core.Pretty
-import DDC.Core.Parser.Lexer
 import DDC.Core.Parser
 import DDC.Core.Collect.Free            ()
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
-import qualified DDC.Type.Collect.Free  as T
 import qualified DDC.Core.Transform     as C
 import qualified DDC.Base.Parser        as BP
-
 
 -- kind -------------------------------------------------------------------------------------------
 cmdShowKind :: String -> IO ()
 cmdShowKind ss
- = goParse (lexExp Name ss)
+ = goParse (lexString ss)
  where
         goParse toks                
          = case BP.runTokenParser show "<interactive>" T.pType toks of 
@@ -32,7 +26,7 @@ cmdShowKind ss
                 Right t         -> goCheck t
 
         goCheck t
-         = case T.checkType primEnv (C.spread primEnv t) of
+         = case T.checkType Env.empty (C.spread Env.empty t) of
                 Left err        -> putStrLn $ show $ ppr err
                 Right k         -> putStrLn $ show $ (ppr t <> text " :: " <> ppr k)
 
@@ -42,7 +36,7 @@ cmdShowKind ss
 -- | Show the type of a witness.
 cmdShowWType :: String -> IO ()
 cmdShowWType ss
- = goParse (lexExp Name ss)
+ = goParse (lexString ss)
  where
         goParse toks
          = case BP.runTokenParser show "<interactive>" pWitness toks of 
@@ -51,7 +45,7 @@ cmdShowWType ss
 
         goCheck w 
          = case typeOfWitness w of
-                Left err        -> putStrLn $ show $ ppr (err :: Error () () Name)
+                Left err        -> putStrLn $ show $ ppr (err :: Error ()  Name)
                 Right k         -> putStrLn $ show $ (ppr w <> text " :: " <> ppr k)
 
 
@@ -68,27 +62,24 @@ data ShowTypeMode
 -- | Show the type of an expression.
 cmdShowType :: ShowTypeMode -> String -> IO ()
 cmdShowType mode ss
- = goParse (lexExp Name ss)
+ = goParse (lexString ss)
  where
         goParse toks                
-         = case BP.runTokenParser 
-                        show "<interactive>"
-                        (pExp (PrimHandler makePrimLit makePrimExp))
-                        toks 
+         = case BP.runTokenParser show "<interactive>" pExp toks 
             of  Left err -> putStrLn $ "parse error " ++ show err
                 Right x  -> goCheck x
 
         goCheck x
-         = let  x'      = C.spread primEnv x
+         = let  x'      = C.spread Env.empty x
 
                 -- Determine the free regions in the expression that end with the prime character.
                 -- We'll add these to the initial environment.
-                envRgn  = makeDefaultRegionEnv $ T.free Env.empty x'
+--                envRgn  = makeDefaultRegionEnv $ T.free Env.empty x'
 
                 -- The initial environment.
-                env     = Env.combine primEnv envRgn
+--                env     = Env.combine primEnv envRgn
 
-           in   goResult x' (checkExp typeOfPrim env x')
+           in   goResult x' (checkExp Env.empty x')
 
 
         goResult _ (Left err)

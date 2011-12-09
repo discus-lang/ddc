@@ -7,10 +7,9 @@ import DDC.Type.Collect.GatherBound
 import qualified Data.Set               as Set
 
 
-instance GatherBound n (Exp a p n) where
+instance GatherBound n (Exp a n) where
  gatherBound xx
   = case xx of
-        XPrim{}         -> Set.empty
         XVar _ u        -> gatherBound u
         XCon _ u        -> gatherBound u
         XApp _ x1 x2    -> Set.unions [gatherBound x1, gatherBound x2]

@@ -25,8 +25,6 @@ import Data.Map         (Map)
 --   algebraic structure.
 --
 data Type n
---        = TPrim   p     
-        
         -- | Variable.
         = TVar    (Bound n)
 
@@ -54,17 +52,17 @@ type Closure n = Type n
 -- Bind -------------------------------------------------------------------------------------------
 -- | Binding occurrence of a variable.
 data Bind n
-        = BName n   (Type n)    -- ^ Named variable in the environment.
+        = BNone     (Type n)    -- ^ A variable with no uses in the body doesn't need a name.
         | BAnon     (Type n)    -- ^ Nameless variable on the deBruijn stack.
-        | BNone     (Type n)    -- ^ A variable with no uses in the body doesn't need a name.
+        | BName n   (Type n)    -- ^ Named variable in the environment.
         deriving (Eq, Show)
 
 
 -- | Represents the binder of a `Bind`, without the type.
 data Binder n
-        = RName n
+        = RNone
         | RAnon
-        | RNone
+        | RName n
         deriving (Eq, Show)
 
 
@@ -72,15 +70,20 @@ data Binder n
 -- 
 --   * If the variables haven't been annotated with their kinds then the kind field will be TBot. 
 data Bound n
-        = UName n   (Type n)    -- ^ Named variable in the environment.
-        | UIx   Int (Type n)    -- ^ Nameless variable on the deBruijn stack.
+        = UIx   Int (Type n)    -- ^ Nameless variable on the deBruijn stack.
+        | UName n   (Type n)    -- ^ Named variable in the environment.
+        | UPrim n   (Type n)    -- ^ Named primitive thing that is not also bound in the environment.
         deriving (Eq, Show)
+
 
 instance Ord n => Ord (Bound n) where
  compare (UName n1 _) (UName n2 _)      = compare n1 n2
- compare (UIx   i1 _) (UIx i2 _)        = compare i1 i2
- compare (UIx   _  _) (UName _ _)       = LT
+ compare (UIx   i1 _) (UIx   i2 _)      = compare i1 i2
+ compare (UPrim n1 _) (UPrim n2 _)      = compare n1 n2
+ compare (UIx   _  _) _                 = LT
  compare (UName _  _) (UIx   _ _)       = GT
+ compare (UName _  _) (UPrim _ _)       = LT
+ compare (UPrim _  _) _                 = GT
 
 
 -- Type Sums --------------------------------------------------------------------------------------
@@ -123,17 +126,20 @@ data TyConHash
 --   These are grouped to make it easy to determine the universe that they belong to.
 -- 
 data TyCon n
-        -- | Sort constructors               (level 3)
+        -- | Builtin Sort constructors               (level 3)
         = TyConSort    SoCon
 
-        -- | Kind constructors               (level 2)
+        -- | Builtin Kind constructors               (level 2)
         | TyConKind    KiCon
 
-        -- | Witness type constructors       (level 1)
+        -- | Builtin Witness type constructors       (level 1)
         | TyConWitness TwCon
 
-        -- | Computation type constructors   (level 1)
-        | TyConComp    (TcCon n)
+        -- | Builtin Computation type constructors   (level 1)
+        | TyConComp    TcCon
+        
+        -- | User defined and primitive constructors.
+        | TyConBound   (Bound n)
         deriving (Eq, Show)
 
 
@@ -210,15 +216,12 @@ data TwCon
         deriving (Eq, Show)
 
 
--- | Computation type constructors.
-data TcCon n
+-- | Builtin computation type constructors.
+data TcCon
         -- Data type constructors ---------------
-        -- | Data type constructor with its kind.
-        = TcConData     n (Kind n)
-
         -- | The function type constructor is baked in so we 
         --   represent it separately.
-        | TcConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
+        = TcConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
 
 
         -- Effect type constructors -------------

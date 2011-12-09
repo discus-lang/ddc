@@ -9,7 +9,7 @@ import qualified DDC.Type.Check as T
 
 
 -- | Type errors.
-data Error a p n
+data Error a n
 
         -- | Found a kind error when checking a type.
         = ErrorType
@@ -17,50 +17,50 @@ data Error a p n
 
         -- | Found a malformed exp, and we don't have a more specific diagnosis.
         | ErrorMalformedExp
-        { errorChecking         :: Exp a p n }
+        { errorChecking         :: Exp a n }
 
         -- | Found a malformed type, and we don't have a more specific diagnosis.
         | ErrorMalformedType
-        { errorChecking         :: Exp a p n
+        { errorChecking         :: Exp a n
         , errorType             :: Type n }
 
         -- | Types of parameter and arg don't match when checking application.
         | ErrorAppMismatch
-        { errorChecking         :: Exp a p n
+        { errorChecking         :: Exp a n
         , errorParamType        :: Type n
         , errorArgType          :: Type n }
 
         -- | Tried to apply a non function to an argument.
         | ErrorAppNotFun
-        { errorChecking         :: Exp a p n
+        { errorChecking         :: Exp a n
         , errorNotFunType       :: Type n
         , errorArgType          :: Type n }
 
         -- | Non-computation abstractions cannot have visible effects.
         | ErrorLamNotPure
-        { errorChecking         :: Exp a p n
+        { errorChecking         :: Exp a n
         , errorEffect           :: Effect n }
 
         -- | Computation lambdas must bind values of data kind.
         | ErrorLamBindNotData
-        { errorChecking         :: Exp a p n 
+        { errorChecking         :: Exp a n 
         , errorType             :: Type n
         , errorKind             :: Kind n }
 
         -- | The body of Spec and Witness lambdas must be of data kind.
         | ErrorLamBodyNotData
-        { errorChecking         :: Exp a p n
+        { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorType             :: Type n
         , errorKind             :: Kind n }
         
         -- | Tried to shadow a level-1 binder.
         | ErrorLamReboundSpec
-        { errorChecking         :: Exp a p n
+        { errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
 
-instance (Pretty p, Pretty n, Eq n) => Pretty (Error a p n) where
+instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
   = case err of
         ErrorType err'  -> ppr err'

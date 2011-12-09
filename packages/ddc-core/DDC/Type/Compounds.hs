@@ -265,10 +265,10 @@ twConN tc ts = (TCon $ TyConWitness   (tc (length ts))) `tApps` ts
 
 -- | Build a nullary type constructor of the given kind.
 tConData0 :: n -> Kind n -> Type n
-tConData0 n k    = TCon (TyConComp (TcConData n k))
+tConData0 n k    = TCon (TyConBound (UName n k))
 
 -- | Build a type constructor application of one argumnet.
 tConData1 :: n -> Kind n -> Type n -> Type n
-tConData1 n k t1 = TApp (TCon (TyConComp (TcConData n k))) t1
+tConData1 n k t1 = TApp (TCon (TyConBound (UName n k))) t1
 
 

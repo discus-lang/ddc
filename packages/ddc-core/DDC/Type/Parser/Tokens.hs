@@ -30,7 +30,7 @@ data Tok n
         | KBotEffect
         | KBotClosure
         | KTwConBuiltin  TwCon
-        | KTcConBuiltin  (TcCon n)
+        | KTcConBuiltin  TcCon
         | KCon   n
         | KVar   n
         deriving (Eq, Show)

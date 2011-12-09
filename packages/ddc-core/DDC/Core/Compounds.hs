@@ -9,7 +9,7 @@ import DDC.Core.Exp
 
 -- | Split nested lambdas from the front of an expression
 --   or `Nothing` if there was no outer lambda
-takeXLams :: Exp a p n -> Maybe ([Bind n], Exp a p n)
+takeXLams :: Exp a n -> Maybe ([Bind n], Exp a n)
 takeXLams xx
  = let  go bs (XLam _ b x) = go (b:bs) x
         go bs x            = (reverse bs, x)
@@ -19,7 +19,7 @@ takeXLams xx
 
 
 -- | Flatten an application into the function parts and arguments, if any.
-takeXApps   :: Exp a p n -> [Exp a p n]
+takeXApps   :: Exp a n -> [Exp a n]
 takeXApps xx
  = case xx of
         XApp _ x1 x2    -> x1 : takeXApps x2
@@ -30,8 +30,8 @@ takeXApps xx
 --   and its arguments, if any.
 --   
 --   Returns `Nothing` if the expression isn't a primitive or an applicatin of one.
-takeXPrimApps :: Exp a p n -> Maybe (p, [Exp a p n])
+takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
 takeXPrimApps xx
  = case takeXApps xx of
-        XPrim _ p : xs  -> Just (p, xs)
-        _               -> Nothing
+        XCon _ (UPrim p _) : xs  -> Just (p, xs)
+        _                        -> Nothing

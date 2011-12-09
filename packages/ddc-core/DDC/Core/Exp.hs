@@ -19,35 +19,32 @@ import DDC.Type.Exp
 
 -- Values -----------------------------------------------------------------------------------------
 -- | A value expression, universe of computation.
-data Exp a p n
-        -- | A primitive operator or literal.
-        = XPrim a p
+data Exp a n
+        -- | Value variable   or primop.
+        = XVar  a  (Bound n)
 
-        -- | Value variable.
-        | XVar  a (Bound n)
-
-        -- | Data constructor.
-        | XCon  a (Bound n)
+        -- | Data constructor or literal.
+        | XCon  a  (Bound n)
 
         -- | Value application.
-        | XApp  a (Exp a p n) (Exp a p n)
+        | XApp  a  (Exp a n)  (Exp a n)
 
         -- | Function abstraction.
-        | XLam  a (Bind n)    (Exp a p n)
+        | XLam  a  (Bind n)   (Exp a n)
 
         -- | Some possibly recursive definitions.
-        | XLet  a (Lets a p n) (Exp a p n)
+        | XLet  a  (Lets a n) (Exp a n)
 
         -- | Case branching.
-        | XCase a (Exp a p n) [Alt a p n]
+        | XCase a  (Exp a n)  [Alt a n]
 
         -- | Type cast.
-        | XCast a (Exp a p n) (Cast n)
+        | XCast a  (Exp a n)  (Cast n)
 
-        -- | Type can appear as the argument of an `XApp`.
+        -- | Type can appear as the argument of an application.
         | XType    (Type n)
 
-        -- | Witness can appear as the argument of an `XApp`.
+        -- | Witness can appear as the argument of an application.
         | XWitness (Witness n)
         deriving (Eq, Show)
 
@@ -69,12 +66,12 @@ data Cast n
 
 
 -- | Possibly recursive bindings.
-data Lets a p n
+data Lets a n
         -- | Non-recursive binding
-        = LLet  (Bind n) (Exp a p n)
+        = LLet  (Bind n) (Exp a n)
         
         -- | Recursive binding
-        | LRec  [(Bind n, Exp a p n)]
+        | LRec  [(Bind n, Exp a n)]
 
         -- | Bind a local region variable, and (non-recursive) witnesses to its properties.
         | XLocal (Bind n) [(Bind n, Type n)]
@@ -82,20 +79,16 @@ data Lets a p n
 
 
 -- | Case alternatives.
-data Alt a p n
-        = XAlt (Pat p n) (Exp a p n)
+data Alt a n
+        = XAlt (Pat n) (Exp a n)
         deriving (Eq, Show)
 
 
 -- | Pattern matches.
-data Pat p n
-
+data Pat n
         -- | The default pattern always succeeds.
         = PDefault
-
-        -- | Match a literal.
-        | PLit  p
-
+        
         -- | Match a data constructor and bind its arguments.
         | PData (Bound n) [Bind n]
         deriving (Eq, Show)

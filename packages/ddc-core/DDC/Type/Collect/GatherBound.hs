@@ -43,15 +43,6 @@ instance GatherBound n (TypeSum n) where
 instance GatherBound n (TyCon n) where
  gatherBound tc
   = case tc of
-        TyConComp tc    -> gatherBound tc
+        TyConBound u    -> gatherBound u
         _               -> Set.empty
         
-instance GatherBound n (TcCon n) where
- gatherBound tc
-  = case tc of
-        TcConData n k   -> Set.singleton (UName n k)
-        _               -> Set.empty
-
-
-
- 

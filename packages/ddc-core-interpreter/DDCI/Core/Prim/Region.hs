@@ -1,5 +1,8 @@
 
 module DDCI.Core.Prim.Region
+        ()
+where
+{-
         ( makeDefaultRegionEnv
         , isRegionHandleName
         , isRegionHandleBound)
@@ -54,4 +57,4 @@ isRegionHandleBound uu
  = case uu of
         UName n _       -> isRegionHandleName n
         _               -> False
-
+-}

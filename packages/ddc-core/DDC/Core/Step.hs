@@ -5,13 +5,13 @@ import DDC.Core.Exp
 
 -- | Holds a function to perform primitive reductions.
 --   These are defined by the client.
-data PrimStep a n p s
+data PrimStep a n s
         = PrimStep
-        { primStep      :: p -> [Exp a p n] -> s -> Maybe (s, Exp a p n) }
+        { primStep      :: n -> [Exp a n] -> s -> Maybe (s, Exp a n) }
                 
 
 -- | Perform a single step reduction of a core expression.
-step :: PrimStep a n p s -> Exp a p n -> s -> Maybe (s, Exp a p n)
+step :: PrimStep a n s -> Exp a n -> s -> Maybe (s, Exp a n)
 step (PrimStep primStep) xx s 
         -- A primitive reduction defined by the client.
         | Just (p, xs)     <- takeXPrimApps xx

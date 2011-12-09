@@ -8,10 +8,9 @@ import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
 
 
-instance Free n (Exp a p n) where
+instance Free n (Exp a n) where
  free env xx
   = case xx of
-        XPrim{}         -> Set.empty
         XVar _ u        -> free env u
         XCon{}          -> Set.empty
         XApp _ x1 x2    -> Set.unions [free env x1, free env x2]

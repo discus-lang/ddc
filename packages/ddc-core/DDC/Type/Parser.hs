@@ -5,12 +5,13 @@ module DDC.Type.Parser
         , Parser
         , pType, pType0
         , pBinder
-        , pInteger)
+        , pIndex
+        , pTok, pTokAs)
 where
 import DDC.Type.Exp
 import Control.Monad
 import DDC.Type.Compounds
-import DDC.Base.Parser                  (pTokMaybe, pTokAs, pTok, (<?>))
+import DDC.Base.Parser                  ((<?>))
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Sum           as TS
 
@@ -137,8 +138,8 @@ pType0
         , do    tc      <- pTwCon
                 return  $ TCon (TyConWitness tc)
 
-        , do    tc      <- pTcConNamed
-                return  $ TCon (TyConComp tc)
+        , do    tc      <- pTyConNamed
+                return  $ TCon tc
 
         -- Symbolic constructors.
         , do    pTokAs KSortComp    (TCon $ TyConSort SoConComp)
@@ -160,8 +161,7 @@ pType0
         , do    v       <- pVar
                 return  $  TVar (UName v (tBot sComp))
 
-        , do    pTok KHat
-                i       <- pInteger
+        , do    i       <- pIndex
                 return  $  TVar (UIx (fromIntegral i) (tBot sComp))
         ]
  <?> "atomic type"
@@ -170,31 +170,33 @@ pType0
 ---------------------------------------------------------------------------------------------------
 -- | Parse a named `TwCon`
 pTwCon :: Parser n TwCon
-pTwCon  = pTokMaybe 
-        $ \k -> case k of
-                 KTwConBuiltin c  -> Just c
-                 _                -> Nothing
+pTwCon  = P.pTokMaybe f
+ where f (KA (KTwConBuiltin c)) = Just c
+       f _                      = Nothing
 
 -- | Parse a named `TcCon`
-pTcConNamed :: Parser n (TcCon n)
-pTcConNamed 
-        = pTokMaybe
-        $ \k -> case k of
-                 KTcConBuiltin c  -> Just c
-                 KCon n           -> Just (TcConData n (tBot kData))
-                 _                -> Nothing
+pTyConNamed :: Parser n (TyCon n)
+pTyConNamed  = P.pTokMaybe f
+ where  f (KN (KCon n))          = Just (TyConBound (UName n (tBot kData)))
+        f _                      = Nothing
 
 -- | Parse a variable.
 pVar :: Parser n n
-pVar    = pTokMaybe
-        $ \k -> case k of
-                 KVar n         -> Just n
-                 _              -> Nothing
+pVar    = P.pTokMaybe f
+ where  f (KN (KVar n))         = Just n
+        f _                     = Nothing
 
--- | Parse an integer.
-pInteger :: Parser n Integer
-pInteger
-        = pTokMaybe
-        $ \k -> case k of
-                 KInteger i     -> Just i
-                 _              -> Nothing
+-- | Parse a debuijn index
+pIndex :: Parser n Int
+pIndex = P.pTokMaybe f
+ where  f (KA (KIndex i))       = Just i
+        f _                     = Nothing
+
+-- | Parse an atomic token.
+pTok :: TokAtom -> Parser n ()
+pTok k     = P.pTok (KA k)
+
+
+-- | Parse an atomic token and return some value.
+pTokAs :: TokAtom -> a -> Parser n a
+pTokAs k x = P.pTokAs (KA k) x

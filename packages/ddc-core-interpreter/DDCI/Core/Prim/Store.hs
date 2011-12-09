@@ -14,7 +14,6 @@ module DDCI.Core.Prim.Store
         , allocBind
         , lookupBind)
 where
-import DDCI.Core.Prim.Base
 import DDCI.Core.Prim.Name
 import DDC.Core.Exp
 import Data.Map                 (Map)
@@ -46,7 +45,7 @@ data Store
 --   these are the things that can be kept directly in store bindings.
 data SValue
         = SLoc Int
-        | SLam (Bind Name) (Exp () Prim Name)
+        | SLam (Bind Name) (Exp () Name)
         deriving (Eq, Show)
 
 

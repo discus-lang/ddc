@@ -3,10 +3,9 @@ module DDCI.Core.Command.Subst
         (cmdSubstTT)
 where
 import DDCI.Core.Prim.Name
-import DDCI.Core.Prim.Env
 import DDC.Type.Exp
 import DDC.Type.Pretty
-import DDC.Core.Parser.Lexer
+import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Transform     as T
 import qualified DDC.Base.Parser        as BP
@@ -14,12 +13,12 @@ import qualified DDC.Base.Parser        as BP
 
 cmdSubstTT :: String -> IO ()
 cmdSubstTT ss
- = goParse (lexExp Name ss)
+ = goParse (lexString ss)
  where
         goParse toks                
          = case BP.runTokenParser show "<interactive>" T.pType toks of 
                 Left err        -> putStrLn $ "parse error " ++ show err
-                Right t         -> goSubstTT (T.spread primEnv t)
+                Right t         -> goSubstTT (T.spread Env.empty t)
 
         goSubstTT (TApp (TForall b t1) t2)
          = case b of

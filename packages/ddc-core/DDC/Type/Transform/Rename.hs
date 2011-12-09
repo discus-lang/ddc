@@ -9,6 +9,7 @@ import DDC.Type.Sum
 class Rename (c :: * -> *) where
  -- | Apply a function to all the names in a thing.
  rename :: forall n1 n2. Ord n2 => (n1 -> n2) -> c n1 -> c n2
+ 
 
 instance Rename Type where
  rename f tt
@@ -43,24 +44,9 @@ instance Rename Bound where
 instance Rename TyCon where
  rename f cc
   = case cc of
-        TyConSort sc    -> TyConSort sc
-        TyConKind kc    -> TyConKind kc
+        TyConSort sc    -> TyConSort    sc
+        TyConKind kc    -> TyConKind    kc
         TyConWitness tc -> TyConWitness tc
-        TyConComp tc    -> TyConComp (rename f tc)
+        TyConComp tc    -> TyConComp    tc
+        TyConBound u    -> TyConBound $ rename f u
 
-
-instance Rename TcCon where
- rename f tc
-  = case tc of
-        TcConData n k   -> TcConData (f n) (rename f k)
-        TcConFun        -> TcConFun
-        TcConRead       -> TcConRead
-        TcConDeepRead   -> TcConDeepRead
-        TcConWrite      -> TcConWrite
-        TcConDeepWrite  -> TcConDeepWrite
-        TcConAlloc      -> TcConAlloc
-        TcConShare      -> TcConShare
-        TcConDeepShare  -> TcConDeepShare
-
-
-        

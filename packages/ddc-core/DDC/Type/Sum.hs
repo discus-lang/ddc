@@ -98,7 +98,7 @@ hashTyCon tc
         
 
 -- | Yield the `TyConHash` of a `TyConBuiltin`, or `Nothing` if there isn't one.
-hashTcCon :: TcCon n -> Maybe TyConHash
+hashTcCon :: TcCon -> Maybe TyConHash
 hashTcCon tc
  = case tc of
         TcConRead       -> Just $ TyConHash 0

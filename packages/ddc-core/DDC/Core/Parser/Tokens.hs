@@ -1,9 +1,12 @@
 
 module DDC.Core.Parser.Tokens
-        (Tok    (..))
+        ( Tok      (..)
+        , TokAtom  (..)
+        , TokNamed (..))
 where
 import DDC.Type.Exp
 import DDC.Core.Exp
+import DDC.Type.Transform.Rename
 
 
 -- | Tokens accepted by the core language parser.
@@ -14,10 +17,14 @@ import DDC.Core.Exp
 data Tok n
         -- some junk that corresponds to a lexer error
         = KJunk String
+        | KA !TokAtom 
+        | KN !(TokNamed n)
+        deriving (Eq, Show)
+        
 
-
+data TokAtom
         -- compound parens
-        | KBraceColonBra
+        = KBraceColonBra
         | KBraceColonKet
         | KAngleColonBra
         | KAngleColonKet
@@ -70,15 +77,35 @@ data Tok n
         | KBotEffect
         | KBotClosure
         
-        -- named things
+        -- debruijn indices
+        | KIndex Int
+
+        -- builtin names
         | KTwConBuiltin TwCon
-        | KTcConBuiltin (TcCon n)
         | KWiConBuiltin WiCon
-        | KCon        n      
-        | KVar        n
-        
-        -- literal values
-        | KInteger Integer
+        | KTcConBuiltin TcCon
         deriving (Eq, Show)
 
+
+data TokNamed n
+        = KCon n
+        | KVar n
+        | KLit n
+        deriving (Eq, Show)
+
+
+instance Rename Tok where
+ rename f kk
+  = case kk of
+        KJunk s -> KJunk s
+        KA t    -> KA t
+        KN t    -> KN $ rename f t
+
+
+instance Rename TokNamed where
+ rename f kk
+  = case kk of
+        KCon c           -> KCon $ f c
+        KVar c           -> KVar $ f c
+        KLit c           -> KLit $ f c
 

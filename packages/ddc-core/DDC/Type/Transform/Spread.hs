@@ -54,16 +54,6 @@ instance Spread Bound where
 instance Spread TyCon where
  spread env tc
   = case tc of
-        TyConComp cc    -> TyConComp (spread env cc)
+        TyConBound u    -> TyConBound (spread env u)
         _               -> tc
 
-
-instance Spread TcCon where
- spread env cc
-  = case cc of
-        TcConData n k
-         -> case Env.lookupName n env of
-                 Just k' -> TcConData n k'
-                 Nothing -> TcConData n k
-                 
-        _               -> cc

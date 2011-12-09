@@ -128,6 +128,7 @@ instance Pretty n => Pretty (TyCon n) where
         TyConKind kc    -> ppr kc
         TyConWitness tc -> ppr tc
         TyConComp tc    -> ppr tc
+        TyConBound u    -> ppr u
 
 
 instance Pretty SoCon where
@@ -164,10 +165,9 @@ instance Pretty TwCon where
         TwConEmpty      -> text "Empty"
         
 
-instance Pretty n => Pretty (TcCon n) where
+instance Pretty TcCon where
  ppr tc 
   = case tc of
-        TcConData v _   -> ppr v
         TcConFun        -> text "(->)"
         TcConRead       -> text "Read"
         TcConDeepRead   -> text "DeepRead"
