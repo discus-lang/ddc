@@ -13,7 +13,7 @@ pprParen b c
         else c
 
 vcat :: [Doc] -> Doc
-vcat    = cat . punctuate line
+vcat ds   = folddoc (<>) (punctuate line ds)
 
 
 instance Pretty () where

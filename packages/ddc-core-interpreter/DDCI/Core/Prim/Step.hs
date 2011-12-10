@@ -22,14 +22,13 @@ primStep n xs store
  = trace (show $ text "primStep: " <+> text (show n) <+> text (show xs))
  $ primStep' n xs store
 
-primStep' (NameInt i) 
-         [ XType tR@(TCon (TyConBound (UPrim (NameRgn rgn) _)))
-         , XCon _   (UPrim (NamePrimCon PrimDaConUnit) _)]
-         store
- = let  (store1, l)   = Store.allocBind rgn (SInt i) store
-   in   Just  (store1
-              , XCon () (UPrim   (NameLoc l) 
-                                 (tInt tR)))
+primStep' (NameInt i) [xRegion, xUnit] store
+        | XType tR@(TCon  (TyConBound (UPrim (NameRgn rgn) _)))  <- xRegion
+        , XCon _   (UPrim (NamePrimCon PrimDaConUnit) _)         <- xUnit
+        , Store.hasRgn store rgn
+        , (store1, l)   <- Store.allocBind rgn (SInt i) store
+        = Just  ( store1
+                , XCon () (UPrim (NameLoc l) (tInt tR)))
 
 primStep' _ _ _
         = Nothing

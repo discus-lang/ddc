@@ -4,11 +4,12 @@ module DDCI.Core.Command.Eval
 where
 import DDCI.Core.Prim
 import DDCI.Core.Command.Check
+import DDC.Core.Exp
 import DDC.Core.Pretty
-import DDC.Core.Collect.Free                    ()
+import DDC.Core.Collect
 import qualified DDCI.Core.Prim.Store           as Store
 import qualified DDC.Core.Step                  as C
-
+import qualified Data.Set                       as Set
 
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: String -> IO ()
@@ -20,10 +21,12 @@ cmdStep str
          = return ()
 
         goStore (Just (x, _, _, _))
-         = goStep x Store.empty
+         = let  rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
+                store   = Store.empty { Store.storeRegions = Set.fromList rs }
+           in   goStep x store
 
-        goStep x _store
-         = case C.step (C.PrimStep primStep) primEnv x Store.empty of
+        goStep x store
+         = case C.step (C.PrimStep primStep) primEnv x store of
              Nothing         -> putStrLn $ show $ text "STUCK!"
              Just (store', x')  
               -> do     putStrLn $ pretty 100 (ppr x')

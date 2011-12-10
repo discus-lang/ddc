@@ -10,6 +10,7 @@ module DDCI.Core.Prim.Store
         , empty
         , newLoc
         , newRgn,       newRgns
+        , hasRgn
         , addBind
         , allocBind
         , lookupBind)
@@ -62,19 +63,20 @@ data SBind
 
 -- Pretty ---------------------------------------------------------------------
 instance Pretty Store where
- ppr (Store _nextLoc _nextRgn _regions _binds)
-  [ text "Store"                                <> line
-  , text " nextLoc: " <> text (show nextLoc)    <> line
-  , text " nextRgn: " <> text (show nextRgn)    <> line
-  , text " regions: " <> text (show regions)
+ ppr (Store nextLoc nextRgn regions binds)
+  = vcat
+  [ text "STORE"
+  , text " NextLoc: " <> text (show nextLoc)
+  , text " NextRgn: " <> text (show nextRgn)
+  , text " Regions: " <> braces (sep  (map ppr $ Set.toList regions))
   , text ""
-  , text " BINDS:"
-  , sep $ [ ppr l <> colon <> ppr r <> text " -> " <> ppr sbind
+  , text " Binds:"
+  , sep $ [ text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind
                 | (l, (r, sbind)) <- Map.toList binds] ]
 
 instance Pretty SValue where  
- ppr (SLoc i)   = text "INT" <> text (show i)
- ppr (SLam b x) = text "Lam" <> ppr b <> text ":" <> ppr x
+ ppr (SLoc i)   = text "INT " <> text (show i)
+ ppr (SLam b x) = text "Lam " <> ppr b <> text ":" <> ppr x
 
 
 instance Pretty SBind where
@@ -85,7 +87,7 @@ instance Pretty SBind where
                 <+> sep (map parens $ map ppr svs)
 
  ppr (SInt i)
-        = text "INT" <> ppr (show i)
+        = text "INT " <> text (show i)
  
  
 -- Operators ------------------------------------------------------------------
@@ -121,6 +123,12 @@ newRgns count store
  = let  rgns    = [ storeNextRgn store .. storeNextRgn store + count - 1]
         store'  = store { storeNextRgn  = storeNextRgn store + count }
    in   (store', map Rgn rgns)
+
+
+-- | Check whether a store contains the given region.
+hasRgn :: Store -> Rgn -> Bool
+hasRgn store rgn
+        = Set.member rgn (storeRegions store)
         
 
 -- | Add a store binding to the store, at the given location.
