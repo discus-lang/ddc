@@ -24,10 +24,10 @@ step p store xx
 -- = trace (show $ text "stepping: " <> text (show xx) <> line)
  = step' p store xx
  
-step' (PrimStep primStep) store xx
+step' (PrimStep pStep) store xx
         -- A primitive reduction defined by the client.
         | Just (p, xs)          <- takeXPrimApps xx
-        , Just (store', x')     <- primStep p xs store
+        , Just (store', x')     <- pStep p xs store
         = Just (store', x')
 
 step' p store (XApp a x1 x2)

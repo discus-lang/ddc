@@ -27,7 +27,7 @@ Library
         DDC.Type.Collect.Free
         DDC.Type.Collect.GatherBound
         DDC.Type.Check
-        DDC.Type.Check.Env
+        DDC.Type.Env
         DDC.Type.Check.Monad
         DDC.Type.Exp
         DDC.Type.Parser.Tokens
@@ -73,3 +73,6 @@ Library
         MultiParamTypeClasses
         UndecidableInstances
         KindSignatures
+        NoMonomorphismRestriction
+        ScopedTypeVariables
+        

@@ -46,7 +46,7 @@ insert t ts
         TApp (TCon tc) t2
          |  Just h       <- hashTyCon tc
          ,  tsThere      <- typeSumElems ts ! h
-         -> if elem t tsThere
+         -> if elem t2 tsThere
                 then ts
                 else ts { typeSumElems = (typeSumElems ts) // [(h, t2 : tsThere)] }
         
