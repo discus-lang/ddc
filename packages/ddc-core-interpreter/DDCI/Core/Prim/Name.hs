@@ -120,11 +120,19 @@ readName str@(c:rest)
         
         | c == 'R'
         , (ds, "#")     <- span isDigit rest
+        , not $ null ds
         = Just $ NameRgn (Rgn $ read ds)
         
         | c == 'L'
         , (ds, "#")     <- span isDigit rest
+        , not $ null ds
         = Just $ NameLoc (Loc $ read ds)
+        
+        | str == "U"
+        = Just $ NamePrimCon PrimDaConUnit
+        
+        | str == "Unit"
+        = Just $ NamePrimCon PrimTyConUnit
         
         | isUpper c
         = Just $ NameCon str

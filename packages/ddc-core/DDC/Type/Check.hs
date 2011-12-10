@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-unused-matches -fwarn-incomplete-patterns -fwarn-name-shadowing #-}
 module DDC.Type.Check
         ( -- * Kinds of Types
           checkType
@@ -68,12 +68,9 @@ checkTypeM env tt
                 Just s  -> return s
                 Nothing -> throw $ ErrorUnappliedKindFun
 
-        TCon (TyConWitness tc)
-         -> return $ kindOfTwCon tc
-
-        TCon (TyConComp tc)
-         -> return $ kindOfTcCon tc
-
+        TCon (TyConWitness tc)  -> return $ kindOfTwCon tc
+        TCon (TyConComp tc)     -> return $ kindOfTcCon tc
+        TCon (TyConBound u)     -> return $ typeOfBound u
 
         -- Variables ------------------
         TVar uu

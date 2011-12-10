@@ -102,12 +102,16 @@ pExp0
                 return  $ t
         
         -- Named type constructors
-        , do    con       <- pCon
+        , do    con     <- pCon
                 return  $ XCon () (UName con (T.tBot T.kData)) 
+
+        -- Literals
+        , do    lit     <- pLit
+                return  $ XCon () (UName lit (T.tBot T.kData))
 
         -- Debruijn indices
         , do    i       <-T.pIndex
-                return  $ XVar () (UIx   i  (T.tBot T.kData))
+                return  $ XVar () (UIx   i   (T.tBot T.kData))
 
         -- Variables
         , do    var     <- pVar
@@ -134,24 +138,27 @@ pWitness0
 ---------------------------------------------------------------------------------------------------
 -- | Parse a builtin named `WiCon`
 pWiCon :: Parser n WiCon
-pWiCon  = P.pTokMaybe
-        $ \k -> case k of
-                 KA (KWiConBuiltin wc) -> Just wc
-                 _                     -> Nothing
+pWiCon  = P.pTokMaybe f
+ where  f (KA (KWiConBuiltin wc)) = Just wc
+        f _                       = Nothing
 
--- | Parse a constructor name
-pCon :: Parser n n
-pCon    = P.pTokMaybe
-        $ \k -> case k of
-                 KN (KCon n) -> Just n
-                 _           -> Nothing
 
 -- | Parse a variable name
 pVar :: Parser n n
-pVar    = P.pTokMaybe
-        $ \k -> case k of
-                 KN (KVar n) -> Just n
-                 _           -> Nothing
+pVar    = P.pTokMaybe f
+ where  f (KN (KVar n)) = Just n
+        f _             = Nothing
 
 
+-- | Parse a constructor name
+pCon :: Parser n n
+pCon    = P.pTokMaybe f
+ where  f (KN (KCon n)) = Just n
+        f _             = Nothing
 
+
+-- | Parse a literal
+pLit :: Parser n n
+pLit    = P.pTokMaybe f
+ where  f (KN (KLit n)) = Just n
+        f _             = Nothing

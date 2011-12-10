@@ -12,7 +12,7 @@ instance Free n (Exp a n) where
  free env xx
   = case xx of
         XVar _ u        -> free env u
-        XCon{}          -> Set.empty
+        XCon _ u        -> free env u
         XApp _ x1 x2    -> Set.unions [free env x1, free env x2]
         XLam _ b  x     -> Set.unions [free env b,  free (Env.extend b env) x]
         XLet{}          -> error "exp free not done yet"

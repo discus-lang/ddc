@@ -4,16 +4,18 @@ module DDCI.Core.Command.Check
         , cmdShowType
         , ShowTypeMode(..))
 where
+import DDCI.Core.Prim.Env
 import DDCI.Core.Prim.Name
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser
-import DDC.Core.Collect.Free            ()
+import DDC.Core.Collect.Free
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
 import qualified DDC.Core.Transform     as C
 import qualified DDC.Base.Parser        as BP
+import qualified Data.Set               as Set
 
 -- kind -------------------------------------------------------------------------------------------
 cmdShowKind :: String -> IO ()
@@ -26,7 +28,7 @@ cmdShowKind ss
                 Right t         -> goCheck t
 
         goCheck t
-         = case T.checkType Env.empty (C.spread Env.empty t) of
+         = case T.checkType Env.empty (C.spread primEnv t) of
                 Left err        -> putStrLn $ show $ ppr err
                 Right k         -> putStrLn $ show $ (ppr t <> text " :: " <> ppr k)
 
@@ -65,22 +67,16 @@ cmdShowType mode ss
  = goParse (lexString ss)
  where
         goParse toks                
-         = case BP.runTokenParser show "<interactive>" pExp toks 
-            of  Left err -> putStrLn $ "parse error " ++ show err
+         = case BP.runTokenParser show "<interactive>" pExp toks of
+                Left err -> putStrLn $ "parse error " ++ show err
                 Right x  -> goCheck x
 
         goCheck x
-         = let  x'      = C.spread Env.empty x
-
-                -- Determine the free regions in the expression that end with the prime character.
-                -- We'll add these to the initial environment.
---                envRgn  = makeDefaultRegionEnv $ T.free Env.empty x'
-
-                -- The initial environment.
---                env     = Env.combine primEnv envRgn
-
-           in   goResult x' (checkExp Env.empty x')
-
+         = let  x'      = C.spread primEnv x
+                fvs     = free   primEnv x'
+           in   if Set.null fvs
+                 then   goResult x' (checkExp Env.empty x')
+                 else   putStrLn $ pretty 100 $ text "free variables " <> ppr fvs
 
         goResult _ (Left err)
          = putStrLn $ show $ ppr err
