@@ -25,6 +25,9 @@ data FileType
 	-- | A Test.ds file we should compile, but not into an executale.
 	| FileTestDS
 
+        -- | A Test.dcx file should be fed into the DDCi-core interpreter
+        | FileTestDCX
+
 	-- Check errors when compiling
 	-- | Compile is expected to fail, and produce some errors into a file.
 	--   We check those errors agianst the ones given in this other file.
@@ -54,6 +57,10 @@ classifyFile path
 	-- Test compile files
 	| (_base, ext) <- splitExtension path
 	, ext == ".ds"				= FileTestDS
+
+        -- Test DDCi-core files
+        | (_base, ext)  <- splitExtension path
+        , ext == ".dcx"                         = FileTestDCX
 	
 	-- Check errors when compiling.
 	| isSuffixOf ".error.check"  name	= FileCompileErrorCheck

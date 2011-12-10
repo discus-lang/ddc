@@ -141,6 +141,25 @@ createJobs config way allFiles filePath
 		  else [compile] ++ (if shouldSucceed then [] else [diffError])
 
 
+	 -- If there is no Main.ds or Main.sh in the same directory, but there is some
+	 -- other .ds file, then feed it into DDCi-core.
+	 FileTestDCX
+	  -> let testDDCiStdout	  = buildDir  </> replaceExtension fileName ".ddci-core.stdout"
+		 testDDCiStderr	  = buildDir  </> replaceExtension fileName ".ddci-core.stderr"
+
+		 testStdoutCheck  = sourceDir </> "Test.stdout.check"
+		 testStdoutDiff   = buildDir  </> "Test.stdout.check.diff"
+		 shouldDiffStdout = Set.member testStdoutCheck allFiles
+
+		 jobRun         = JobRunDCX     testName (wayName way) filePath
+						buildDir testDDCiStdout testDDCiStderr
+
+		 jobDiff        = JobDiff	testName (wayName way) testStdoutCheck
+						testDDCiStdout testStdoutDiff
+
+	     in [jobRun] ++ (if shouldDiffStdout then [jobDiff] else [])
+	 
+
 	 -- For Main.hs files, compile with GHC and run them
 	 FileMainHS
 	  -> let mainBin	= buildDir </> "Main.bin"

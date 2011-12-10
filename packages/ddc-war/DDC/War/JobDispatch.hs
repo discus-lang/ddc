@@ -5,6 +5,7 @@ where
 import DDC.War.Job.CompileHS
 import DDC.War.Job.Compile
 import DDC.War.Job.Run
+import DDC.War.Job.RunDCX
 import DDC.War.Job.Shell
 import DDC.War.Job.Diff
 import DDC.War.Job
@@ -17,6 +18,7 @@ dispatchJob job
 	JobCompile{}	-> jobCompile	job
 	JobCompileHS{}	-> jobCompileHS	job
 	JobRun{}	-> jobRun	job
+	JobRunDCX{}     -> jobRunDCX    job
 	JobShell{}	-> jobShell	job
 	JobDiff{}	-> jobDiff 	job
 

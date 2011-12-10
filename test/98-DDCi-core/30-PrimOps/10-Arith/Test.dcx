@@ -1,0 +1,7 @@
+
+-- Two and three make five (hopefully).
+-- The evaluator must decend into all arguments of the application.
+add {:R1# R2# R3#:} (2 {R1#} ()) (3 {R2#} ())
+
+-- Nested addition
+add {:R1# R2# R3#:} (add {:R3# R4# R1#:} (20 {R3#} ()) (30 {R4#} ())) (40 {R2#} ())

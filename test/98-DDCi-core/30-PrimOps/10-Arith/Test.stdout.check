@@ -1,0 +1,33 @@
+-- Two and three make five (hopefully).
+-- The evaluator must decend into all arguments of the application.
+add {R1#} {R2#} {R3#} L1# (3 {R2#} ())
+add {R1#} {R2#} {R3#} L1# L2#
+L3#
+STORE
+ NextLoc: 4
+ NextRgn: 1
+ Regions: {R1# R2# R3#}
+
+ Binds:
+ L1#:R1# -> INT 2
+ L2#:R2# -> INT 3
+ L3#:R3# -> INT 5
+
+-- Nested addition
+add {R1#} {R2#} {R3#} (add {R3#} {R4#} {R1#} L1# (30 {R4#} ())) (40 {R2#} ())
+add {R1#} {R2#} {R3#} (add {R3#} {R4#} {R1#} L1# L2#) (40 {R2#} ())
+add {R1#} {R2#} {R3#} L3# (40 {R2#} ())
+add {R1#} {R2#} {R3#} L3# L4#
+L5#
+STORE
+ NextLoc: 6
+ NextRgn: 1
+ Regions: {R1# R2# R3# R4#}
+
+ Binds:
+ L1#:R3# -> INT 20
+ L2#:R4# -> INT 30
+ L3#:R1# -> INT 50
+ L4#:R2# -> INT 40
+ L5#:R3# -> INT 90
+

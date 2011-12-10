@@ -6,16 +6,28 @@ import DDCI.Core.Command.Check
 import DDCI.Core.Command.Subst
 import DDCI.Core.Command.Eval
 import System.IO
+import System.Environment
 import Data.List
 
 main :: IO ()
 main 
+ = do   args    <- getArgs
+        case args of
+         [fileName]
+          -> do file    <- readFile fileName
+                mapM_ handleLine $ lines file
+         
+         _ -> runInteractive
+
+
+-- | Run an interactive session
+runInteractive :: IO ()
+runInteractive
  = do   putStrLn "DDCi-core, version 0.4.0: http://disciple.ouroborus.net  :? for help"
 
         -- Setup terminal mode.
         hSetBuffering stdin NoBuffering
         hSetEcho stdin False
-
         loop
 
 
@@ -27,74 +39,112 @@ loop
         line    <- getInput []
         putChar '\n'
         hFlush stdout
-        handle line (words line)
+
+        continue  <- handleLine line
+        if continue
+                then loop 
+                else return ()
+
+
+-- | Handle a single line of input.
+handleLine :: String -> IO Bool
+handleLine line
+ = handle1 line (words line)
+
+
+-- | Handle an input line, and print newline after successful ones.
+handle1 :: String -> [String] -> IO Bool
+handle1 line ws
+        -- Ignore empty lines.
+        | []    <- ws
+        =       return True
+
+        -- Echo comment lines.
+        | w:_   <- ws
+        , isPrefixOf "--" w
+        = do    putStr $ line ++ "\n"
+                return True
+
+        -- Quit the interpreter.
+        | ":quit" : _   <- ws
+        =       return False
+
+        | otherwise
+        = do    handled  <- handle line ws
+                if handled
+                 then do
+                        putStr "\n"
+                        return True
+                 else do
+                        putStrLn $ "unknown command."
+                        putStrLn $ "use :? for help."
+                        return True
 
 
 -- | Handle an input line.
-handle :: String -> [String] -> IO ()
+handle :: String -> [String] -> IO Bool
 handle line ws
-        | []    <- ws
-        =       loop
-        
-        -- Quit the interpreter.
-        | ":quit" : _   <- ws
-        =       return ()
-        
         -- Print the help screen.
         | cmd : _       <- ws
         , cmd == ":help" || cmd == ":?"
         = do    putStr help
-                loop
+                return True
 
         -- Anonymize --------------------------------------
         | Just rest     <- splitPrefix ":anonT" line
-        = do    { cmdAnonType rest; putStr "\n"; loop }
+        = do    cmdAnonType rest
+                return True
         
         -- Free -------------------------------------------
         | Just rest     <- splitPrefix ":freeT" line
-        = do    { cmdFreeType rest; putStr "\n"; loop }
+        = do    cmdFreeType rest
+                return True
         
         -- Subst ------------------------------------------
         | Just rest     <- splitPrefix ":substTT" line
-        = do    { cmdSubstTT rest;  putStr "\n"; loop }
+        = do    cmdSubstTT rest
+                return True
         
         -- Checking ---------------------------------------
         -- Show the kind of a type.
         | Just rest     <- splitPrefix ":kind" line
-        = do    { cmdShowKind rest;  putStr "\n"; loop }
+        = do    cmdShowKind rest
+                return True
 
         -- Show the type of a witness.
         | Just rest     <- splitPrefix ":typeW" line
-        = do    { cmdShowWType rest; putStr "\n"; loop }
+        = do    cmdShowWType rest
+                return True
 
         -- Show the value type, effect and closure of an expression.
         | Just rest     <- splitPrefix ":check" line
-        = do    { cmdShowType ShowTypeAll rest;     putStr "\n"; loop }
+        = do    cmdShowType ShowTypeAll rest
+                return True 
 
         -- Show just the value type of an expression.
         | Just rest     <- splitPrefix ":type" line
-        = do    { cmdShowType ShowTypeValue rest;   putStr "\n"; loop }
+        = do    cmdShowType ShowTypeValue rest
+                return True
 
         -- Show just the effect of an expression.
         | Just rest     <- splitPrefix ":effect" line
-        = do    { cmdShowType ShowTypeEffect rest;  putStr "\n"; loop }
+        = do    cmdShowType ShowTypeEffect rest
+                return True
 
         -- Show just the closure of an expression.
         | Just rest     <- splitPrefix ":closure" line
-        = do    { cmdShowType ShowTypeClosure rest; putStr "\n"; loop }
-        
+        = do    cmdShowType ShowTypeClosure rest
+                return True
         
         -- Unknown ----------------------------------------
         -- Some command we don't handle.
-        | cmd@(':' : _ ) : _       <- ws
-        = do    putStrLn $ "unknown command '" ++ cmd ++ "'"
-                putStrLn $ "use :? for help."
-                putStr "\n"
-                loop
-                
+        | (':' : _ ) : _       <- ws
+        = do    return False
+        
         -- An expression to evaluate.
         | otherwise
-        = do    { cmdEval line; putStr "\n"; loop }
+        = do    cmdEval line
+                return True
 
 
 -- | Split a prefix from the front of a string, returning the trailing part.

@@ -82,6 +82,17 @@ diagnoseJobResults width useColor workingDir job aspects
 	 -> (True, pprResult (jobFileBin job) "run"
 		        Green	(text "time" <> (parens $ padR 7 $ ppr time)))
 
+        -- RunDCX -------------------------------
+	-- run was ok.
+	JobRunDCX{}
+	 | or $ map isResultUnexpectedFailure aspects
+	 -> (False, pprResult (jobFile job) "run"
+		        Red 	(text "failed"))
+
+	 | Just time	<- takeResultTime aspects
+	 -> (True, pprResult (jobFile job) "run"
+		        Green	(text "time" <> (parens $ padR 7 $ ppr time)))
+
 	
 	-- Shell --------------------------------
 	JobShell{}

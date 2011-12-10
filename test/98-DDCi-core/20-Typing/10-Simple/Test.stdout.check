@@ -1,0 +1,49 @@
+-- Types of Expressions -------------------------------------------------------
+-- See if we can print out any type.
+add
+::  [^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Share ^2)> Int ^0
+:!: !0
+:$: Share ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 +
+           Alloc ^0 | Share ^2)> Int ^0)
+
+-- Instantiate the outer forall of the type of add with a region handle.
+-- Region handles in the expression are automatically added to the store at
+-- startup time.
+add {R1#}
+::  [^^:%].Int R1# -> Int ^1 -(Read R1# + Read ^1 +
+    Alloc ^0 | Share R1#)> Int ^0
+:!: !0
+:$: Share ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 +
+           Alloc ^0 | Share ^2)> Int ^0)
+
+-- Instantiate all the foralls with different region handles.
+add {R1#} {R2#} {R3#}
+::  Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Share R1#)> Int R3#
+:!: !0
+:$: Share ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 +
+           Alloc ^0 | Share ^2)> Int ^0)
+
+-- Same as above, but with nicer syntax.
+add {R1#} {R2#} {R3#}
+::  Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Share R1#)> Int R3#
+:!: !0
+:$: Share ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 +
+           Alloc ^0 | Share ^2)> Int ^0)
+
+-- Instantiate all the foralls with the same region handle.
+-- The 'add' primop causes the effect (Read R1# + Read R1#) which should be 
+-- packed down to just (Read R1#).
+add {R1#} {R1#} {R1#}
+::  Int R1# -> Int R1# -(Read R1# + Read R1# + Alloc R1# | Share R1#)> Int R1#
+:!: !0
+:$: Share ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 +
+           Alloc ^0 | Share ^2)> Int ^0)
+
+-- Wrap type lambdas around the 'add' primop and use these to rename the 
+-- anonymous binders in its type.
+\(r1 r2 r3 :%).add {r1} {r2} {r3}
+::  [r1 r2 r3 :%].Int r1 -> Int r2 -(Read r1 + Read r2 +
+    Alloc r3 | Share r1)> Int r3
+:!: !0
+:$: $0
+

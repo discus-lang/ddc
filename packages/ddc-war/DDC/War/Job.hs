@@ -66,6 +66,27 @@ data Job
 		, jobMainBin		:: FilePath }
 
 
+	-- | Feed a file into DDCi-core
+	| JobRunDCX {
+		-- | Name of the test this job is a part of.
+		  jobTestName		:: String
+
+		-- | Name of the way we're running this test.
+		, jobWayName		:: String
+		
+		-- | Root source file of the program (the 'Main.ds')
+		, jobFile		:: FilePath 
+		
+		-- | Scratch dir to do the build in.
+		, jobScratchDir		:: String
+
+		-- | Put what DDC says to stdout here.
+		, jobCompileStdout	:: FilePath
+		
+		-- | Put what DDC says to stderr here.
+		, jobCompileStderr	:: FilePath }
+
+
 	-- | Run a shell script.
 	| JobShell {
 		-- | Name of the test this job is a part of.
