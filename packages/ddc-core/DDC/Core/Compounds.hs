@@ -33,5 +33,6 @@ takeXApps xx
 takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
 takeXPrimApps xx
  = case takeXApps xx of
+        XVar _ (UPrim p _) : xs  -> Just (p, xs)
         XCon _ (UPrim p _) : xs  -> Just (p, xs)
         _                        -> Nothing
