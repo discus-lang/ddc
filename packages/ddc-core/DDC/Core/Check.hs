@@ -76,12 +76,12 @@ checkExpM env xx
         XVar _ u        
          ->     return  ( typeOfBound u
                         , Sum.empty kEffect
-                        , Sum.singleton kClosure (tShare $ typeOfBound u))
+                        , Sum.singleton kClosure (tDeepShare $ typeOfBound u))
 
         XCon _ u
          ->     return  ( typeOfBound u
                         , Sum.empty kEffect
-                        , Sum.singleton kClosure (tShare $ typeOfBound u))
+                        , Sum.singleton kClosure (tDeepShare $ typeOfBound u))
 
         -- value-type application.
         XApp _ x1 (XType t2)
