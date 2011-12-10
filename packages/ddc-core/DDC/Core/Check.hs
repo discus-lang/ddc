@@ -123,7 +123,6 @@ checkExpM env xx
                  TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) clo) t12
                   | t11 == t2   
                   , effs   <- Sum.fromList kEffect  [eff]
-                  , clos   <- Sum.fromList kClosure [clo]
                   -> return     ( t12
                                 , effs1 `plus` effs2 `plus` effs
                                 , clos1 `plus` clos2)

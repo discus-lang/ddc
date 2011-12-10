@@ -27,6 +27,7 @@ instance Free n (Bound n) where
         | otherwise             
         = case u of
                 UName{}         -> Set.singleton u
+                UPrim{}         -> Set.empty
                 UIx i t         -> Set.singleton $ UIx (i - Env.depth env) t
 
 

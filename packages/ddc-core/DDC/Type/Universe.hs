@@ -69,7 +69,8 @@ universeFromType2 tt
                 _               -> Nothing
 
         TCon (TyConWitness _)   -> Nothing
-        TCon (TyConComp _)      -> Nothing
+        TCon (TyConComp  _)     -> Nothing
+        TCon (TyConBound _)     -> Nothing
         TForall _ _             -> Nothing
         TApp _ t2               -> universeFromType2 t2
         TSum _                  -> Nothing
@@ -85,6 +86,7 @@ universeFromType1 tt
         TCon (TyConKind _)      -> Just UniverseSpec
         TCon (TyConWitness _)   -> Just UniverseWitness
         TCon (TyConComp _)      -> Just UniverseComp
+        TCon (TyConBound u)     -> universeFromType2 (typeOfBound u)
         TForall _ t2            -> universeFromType1 t2
         TApp _ t2               -> universeFromType1 t2
         TSum _                  -> Nothing
@@ -99,6 +101,7 @@ universeOfType tt
         TCon (TyConKind _)      -> Just UniverseKind
         TCon (TyConWitness _)   -> Just UniverseSpec
         TCon (TyConComp _)      -> Just UniverseSpec
+        TCon (TyConBound u)     -> universeFromType1 (typeOfBound u)
         TForall _ t2            -> universeOfType t2
         TApp _ t2               -> universeOfType t2
         TSum ss                 -> universeFromType1 (T.kindOfSum ss)

@@ -2,10 +2,9 @@
 module DDC.Type.Transform.Spread
         (Spread(..))
 where
-import qualified DDC.Type.Pretty        as P
-import DDC.Type.Compounds
 import DDC.Type.Exp
 import DDC.Type.Env                     (Env)
+import qualified DDC.Type.Pretty        as P
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Sum           as T
 
@@ -46,9 +45,22 @@ instance Spread Bind where
 
 instance Spread Bound where
  spread env uu
-  = case Env.lookup uu env of
-          Just t        -> replaceTypeOfBound t uu
-          Nothing       -> uu
+  = case uu of
+        UIx ix _      
+         | Just t'       <- Env.lookup uu env
+         -> UIx ix t'
+         
+        UName n _
+         | Just t'      <- Env.lookup uu env
+         -> if Env.isPrim env n 
+                 then UPrim n t'
+                 else UName n t'
+                 
+        UPrim n _
+         | Just t'      <- Env.lookup uu env
+         -> UPrim n t'
+        
+        _ -> uu
 
 
 instance Spread TyCon where

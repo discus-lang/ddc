@@ -23,17 +23,22 @@ import Data.Char
 -- TyCon names ------------------------------------------------------------------------------------
 -- | String is a constructor name.
 isConName :: String -> Bool
-isConName []          = False
-isConName (c:cs)      
+isConName str
+ = case str of
+     []          -> False
+     (c:cs)      
         | isConStart c 
         , and (map isConBody cs)
-        = True
+        -> True
         
         | _ : _         <- cs
         , isConStart c
         , and (map isConBody (init cs))
         , last cs == '#'
-        = True
+        -> True
+
+        | otherwise
+        -> False
 
 -- | Character can start a constructor name.
 isConStart :: Char -> Bool

@@ -2,10 +2,12 @@ module DDCI.Core.Command.Check
         ( cmdShowKind
         , cmdShowWType
         , cmdShowType
-        , ShowTypeMode(..))
+        , ShowTypeMode(..)
+        , cmdParseCheckExp)
 where
 import DDCI.Core.Prim.Env
 import DDCI.Core.Prim.Name
+import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser
@@ -64,39 +66,71 @@ data ShowTypeMode
 -- | Show the type of an expression.
 cmdShowType :: ShowTypeMode -> String -> IO ()
 cmdShowType mode ss
- = goParse (lexString ss)
+ = cmdParseCheckExp ss >>= goResult
  where
-        goParse toks                
-         = case BP.runTokenParser show "<interactive>" pExp toks of
-                Left err -> putStrLn $ "parse error " ++ show err
-                Right x  -> goCheck x
+        -- Expression passed type checking, 
+        --   print out the requested information.
+        goResult Nothing
+         = return ()
 
-        goCheck x
-         = let  x'      = C.spread primEnv x
-                fvs     = free   primEnv x'
-           in   if Set.null fvs
-                 then   goResult x' (checkExp Env.empty x')
-                 else   putStrLn $ pretty 100 $ text "free variables " <> ppr fvs
-
-        goResult _ (Left err)
-         = putStrLn $ show $ ppr err
-
-        goResult x (Right (t, eff, clo))
+        goResult (Just (x, t, eff, clo))
          = case mode of
                 ShowTypeAll
-                 -> putStrLn $ show 
+                 -> putStrLn $ show
                  $ vcat [ ppr x
-                        , nest 4 $ text ":: " <> ppr t
+                        , nest 4 $ text "::  " <> ppr t
                         , nest 4 $ text ":!: " <> ppr eff
                         , nest 4 $ text ":$: " <> ppr clo]
         
                 ShowTypeValue
-                 -> putStrLn $ pretty 100 (ppr x <> text " :: " <> ppr t)
+                 -> putStrLn $ show (ppr x <> text " :: " <> ppr t)
         
                 ShowTypeEffect
-                 -> putStrLn $ pretty 100 (ppr x <> text " :! " <> ppr eff)
+                 -> putStrLn $ show (ppr x <> text " :! " <> ppr eff)
 
                 ShowTypeClosure
-                 -> putStrLn $ pretty 100 (ppr x <> text " :$ " <> ppr clo)
+                 -> putStrLn $ show (ppr x <> text " :$ " <> ppr clo)
 
+
+-- | Parse the given core expression, 
+--   and return it, along with its type, effect and closure.
+--
+--   If the expression had a parse error, undefined vars, or type error
+--   then print this to the console.
+cmdParseCheckExp 
+        :: String 
+        -> IO (Maybe ( Exp () Name
+                     , Type Name, Effect Name, Closure Name))
+
+cmdParseCheckExp str
+ = goParse (lexString str)
+ where
+        -- Lex and parse the string.
+        goParse toks                
+         = case BP.runTokenParser show "<interactive>" pExp toks of
+                Left err 
+                 -> do  putStrLn $ "parse error " ++ show err
+                        return Nothing
+                
+                Right x  -> goCheck x
+
+        -- Spread type annotations into binders,
+        --   check for undefined variables, 
+        --   and check its type.
+        goCheck x
+         = let  x'      = C.spread primEnv x
+                fvs     = free     primEnv x'
+           in   if Set.null fvs
+                 then   goResult x' (checkExp Env.empty x')
+                 else do  
+                        putStrLn $ show $ text "Undefined variables: " <> ppr fvs
+                        return Nothing
+
+        -- Expression had a type error.
+        goResult _ (Left err)
+         = do   putStrLn $ show $ ppr err
+                return  Nothing
+         
+        goResult x (Right (t, eff, clo))
+         =      return $ Just (x, t, eff, clo)
 

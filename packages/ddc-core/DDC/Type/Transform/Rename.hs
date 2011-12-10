@@ -37,8 +37,9 @@ instance Rename Bind where
 instance Rename Bound where
  rename f uu
   = case uu of
-        UName n k       -> UName (f n) (rename f k)
         UIx   i k       -> UIx   i     (rename f k)
+        UName n k       -> UName (f n) (rename f k)
+        UPrim n k       -> UName (f n) (rename f k)
 
 
 instance Rename TyCon where

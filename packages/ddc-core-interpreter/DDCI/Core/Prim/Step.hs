@@ -25,3 +25,5 @@ primStep (NameInt i)
               , XCon () (UPrim   (NameLoc l) 
                                  (tInt (TCon (TyConBound uR)))))
 
+primStep _ _ _
+        = Nothing

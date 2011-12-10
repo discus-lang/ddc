@@ -25,7 +25,7 @@ instance Monad m => TransformUpMX m Exp where
         XCon{}          -> return xx
         XApp a x1 x2    -> liftM3 XApp (return a) (transformUpMX f env x1) (transformUpMX f env x2)
         XLam a b  x1    -> liftM3 XLam (return a) (return b) (transformUpMX f (Env.extend b env) x1)
-        XType t         -> return xx
+        XType _         -> return xx
 
         _               -> error "transformUpX: not finished"
 

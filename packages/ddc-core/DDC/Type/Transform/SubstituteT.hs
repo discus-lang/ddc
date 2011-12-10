@@ -66,14 +66,14 @@ instance SubstituteT Type where
 
                 (b', stack', dAnon', dName')
                  -- Push anonymous binder on the stack.
-                 | BAnon t      <- bSub
-                 = (BAnon t, BAnon t   : stack, dAnon + 1, dName)
+                 | BAnon t'      <- bSub
+                 = (BAnon t', BAnon t'   : stack, dAnon + 1, dName)
 
                  -- If this binder would capture names in the type that we're
                  -- substituting then rewrite it to an anonymous one.
-                 | BName n t     <- bSub
+                 | BName n t'     <- bSub
                  , Set.member n fns
-                 = (BAnon t, BName n t : stack, dAnon,     dName + 1)
+                 = (BAnon t', BName n t' : stack, dAnon,     dName + 1)
          
                  -- Binder was a wildcard, nothing binds.
                  | otherwise
@@ -93,9 +93,9 @@ instance SubstituteT Type where
 
           -- The Bind for this name was rewritten to avoid variable capture,
           -- so we also have to update the bound occurrence.
-          | UName n t    <- u'
+          | UName _ t'    <- u'
           , Just ix      <- findIndex (boundMatchesBind u') stack
-          -> TVar $ UIx ix t
+          -> TVar $ UIx ix t'
 
           -- Bound index matches the one that we're substituting for.
           | UIx i1 _     <- u
@@ -105,12 +105,12 @@ instance SubstituteT Type where
 
           -- Bound index doesn't match, but lower this index by one to account
           -- for the removal of the outer binder.
-          | UIx  i2 t    <- u'
+          | UIx  i2 t'    <- u'
           , i2 > dAnon
           , cutOffset    <- case u of
                                  UIx{}   -> 1
                                  _       -> 0
-          -> TVar $ UIx (i2 + dName - cutOffset) t
+          -> TVar $ UIx (i2 + dName - cutOffset) t'
 
           -- Some name that didn't match.
           | otherwise

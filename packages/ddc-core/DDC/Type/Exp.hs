@@ -70,9 +70,10 @@ data Binder n
 -- 
 --   * If the variables haven't been annotated with their kinds then the kind field will be TBot. 
 data Bound n
-        = UIx   Int (Type n)    -- ^ Nameless variable on the deBruijn stack.
-        | UName n   (Type n)    -- ^ Named variable in the environment.
-        | UPrim n   (Type n)    -- ^ Named primitive thing that is not also bound in the environment.
+        = UIx   Int (Type n)    -- ^ Nameless variable that should be on the deBruijn stack.
+        | UName n   (Type n)    -- ^ Named variable that should be in the environment.
+        | UPrim n   (Type n)    -- ^ Named primitive that is not bound in the environment.
+                                --   Prims aren't every counted as being free.
         deriving (Eq, Show)
 
 

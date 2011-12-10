@@ -94,7 +94,7 @@ handle line ws
                 
         -- An expression to evaluate.
         | otherwise
-        = do    { cmdEval line; putStr "\n"; loop }
+        = do    { cmdStep line; putStr "\n"; loop }
 
 
 -- | Split a prefix from the front of a string, returning the trailing part.

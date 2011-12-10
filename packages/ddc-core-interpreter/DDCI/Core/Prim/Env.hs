@@ -20,7 +20,7 @@ import qualified DDC.Type.Env   as Env
 
 -- | Environment containing just the primitive names.
 primEnv :: Env Name
-primEnv = Env.setPrim typeOfPrimName Env.empty
+primEnv = Env.setPrimFun typeOfPrimName Env.empty
 
 
 -- | Take the type of a primitive name.

@@ -38,6 +38,13 @@ GHC_WARNINGS	:= \
 	-fwarn-unused-imports \
 	-fno-warn-missing-methods
 
+# These are turned on for all code under the DDC tree, 
+#  Other code will have this enabled when it is moved there.
+GHC_WARNINGS2	:= \
+	-fwarn-unused-matches \
+	-fwarn-incomplete-patterns \
+	-fwarn-name-shadowing
+
 
 # -- Warnings for GHC 7.0.1
 #

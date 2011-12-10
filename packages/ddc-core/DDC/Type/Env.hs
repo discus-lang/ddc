@@ -7,7 +7,7 @@ module DDC.Type.Env
         ( Env(..)
         , empty
         , extend
-        , setPrim
+        , setPrimFun,   isPrim
         , fromList
         , combine
         , member,       memberBind
@@ -32,7 +32,7 @@ data Env n
         , envStack      :: [Type n] 
         
           -- | Types of baked in, primitive names.
-        , envPrim       :: n -> Maybe (Type n) }
+        , envPrimFun    :: n -> Maybe (Type n) }
 
 
 -- | An empty environment.
@@ -40,7 +40,7 @@ empty :: Env n
 empty   = Env
         { envMap        = Map.empty
         , envStack      = [] 
-        , envPrim       = \_ -> Nothing }
+        , envPrimFun    = \_ -> Nothing }
 
 
 -- | Extend an environment with a new binding.
@@ -54,9 +54,16 @@ extend bb env
 
 
 -- | Set the function that knows the types of primitive things.
-setPrim :: (n -> Maybe (Type n)) -> Env n -> Env n
-setPrim f env
-        = env { envPrim = f }
+setPrimFun :: (n -> Maybe (Type n)) -> Env n -> Env n
+setPrimFun f env
+        = env { envPrimFun = f }
+
+
+-- | Check whether a name is known by the `primFun`.
+isPrim :: Env n -> n -> Bool
+isPrim env n
+        = isJust $ envPrimFun env n
+
 
 
 -- | Convert a list of `Bind`s to an environment.
@@ -72,7 +79,7 @@ combine env1 env2
         = Env  
         { envMap        = envMap   env1  `Map.union` envMap   env2
         , envStack      = envStack env2 ++ envStack env1
-        , envPrim       = \n -> envPrim env2 n `mplus` envPrim env1 n }
+        , envPrimFun    = \n -> envPrimFun env2 n `mplus` envPrimFun env1 n }
 
 
 -- | Check whether a bound variable is present in an environment.
@@ -96,10 +103,13 @@ lookup uu env
  = case uu of
         UName n _
          ->      Map.lookup n (envMap env) 
-         `mplus` envPrim env n
+         `mplus` envPrimFun env n
 
         UIx i _ 
          -> P.lookup i (zip [0..] (envStack env))
+
+        UPrim n _
+         -> envPrimFun env n
 
 
 -- | Lookup a bound name from an environment.

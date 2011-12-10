@@ -36,6 +36,7 @@ instance LiftT Bound where
  liftAtDepthT n d uu
   = case uu of
         UName{}         -> uu
+        UPrim{}         -> uu
         UIx i t 
          | d <= i       -> UIx (i + n) t
          | otherwise    -> uu
@@ -46,8 +47,8 @@ instance LiftT Type where
   = case tt of
         TVar uu         -> TVar $ liftAtDepthT n d uu
         TCon{}          -> tt
-        TForall b t     -> liftAtDepthT n (d + 1) t
-        TApp t1 t2      -> TApp (liftAtDepthT n d t1) (liftAtDepthT n d t2)
+        TForall b t     -> TForall (liftAtDepthT n d b)  (liftAtDepthT n (d + 1) t)
+        TApp t1 t2      -> TApp    (liftAtDepthT n d t1) (liftAtDepthT n d t2)
         TSum ss         -> TSum $ liftAtDepthT n d ss
 
 

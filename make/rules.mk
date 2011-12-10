@@ -36,13 +36,16 @@ packages/ddc-main/%.hi-boot : packages/ddc-main/%.hs-boot packages/ddc-main/%.o-
 
 packages/ddc-base/%.o : packages/ddc-base/%.hs
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-base
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base
 
 packages/ddc-core/%.o : packages/ddc-core/%.hs
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-core -ipackages/ddc-base
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-core -ipackages/ddc-base
 
 packages/ddc-core-interpreter/%.o : packages/ddc-core-interpreter/%.hs
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-core-interpreter -ipackages/ddc-core -ipackages/ddc-base
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-core-interpreter -ipackages/ddc-core -ipackages/ddc-base
 

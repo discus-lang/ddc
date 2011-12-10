@@ -114,20 +114,28 @@ partitionBindsByType (b:bs)
 -- | Take the variable name of bound variable.
 --   If this is an anonymous variable then there won't be a name.
 takeNameOfBound :: Bound n -> Maybe n
-takeNameOfBound (UName n _)     = Just n
-takeNameOfBound (UIx _ _)       = Nothing
-
+takeNameOfBound uu
+ = case uu of
+        UName n _       -> Just n
+        UPrim n _       -> Just n
+        UIx _ _         -> Nothing
 
 -- | Take the type of a bound variable.
 typeOfBound :: Bound n -> Type n
-typeOfBound (UName _ k)         = k
-typeOfBound (UIx _ k)           = k
+typeOfBound uu
+ = case uu of
+        UName _ t       -> t
+        UPrim _ t       -> t
+        UIx   _ t       -> t
 
 
 -- | Replace the type of a bound with a new one.
 replaceTypeOfBound :: Type n -> Bound n -> Bound n
-replaceTypeOfBound t (UName n _) = UName n t
-replaceTypeOfBound t (UIx i _)   = UIx i t
+replaceTypeOfBound t uu
+ = case uu of
+        UName n _       -> UName n t
+        UPrim n _       -> UPrim n t
+        UIx   i _       -> UIx   i t
 
 
 -- | Check whether named `Bound` matches a named `Bind`.
@@ -148,7 +156,7 @@ takeSubstBoundOfBind bb
  = case bb of
         BName n t       -> Just $ UName n t
         BAnon t         -> Just $ UIx 0 t
-        BNone t         -> Nothing
+        BNone _         -> Nothing
 
 
 -- Applications -----------------------------------------------------------------------------------

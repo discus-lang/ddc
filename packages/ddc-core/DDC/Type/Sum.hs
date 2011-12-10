@@ -38,6 +38,7 @@ insert :: Ord n => Type n -> TypeSum n -> TypeSum n
 insert t ts
  = case t of
         TVar (UName n k) -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
+        TVar (UPrim n k) -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
         TVar (UIx   i k) -> ts { typeSumBoundAnon  = Map.insert i k (typeSumBoundAnon  ts) }
         TCon{}           -> ts { typeSumSpill      = t : typeSumSpill ts }
         TForall{}        -> ts { typeSumSpill      = t : typeSumSpill ts }
