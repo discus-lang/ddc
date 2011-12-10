@@ -13,7 +13,7 @@ pprParen b c
         else c
 
 vcat :: [Doc] -> Doc
-vcat    = sep . punctuate line
+vcat    = cat . punctuate line
 
 
 instance Pretty () where

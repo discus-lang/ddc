@@ -24,9 +24,8 @@ cmdStep str
 
         goStep x _store
          = case C.step (C.PrimStep primStep) primEnv x Store.empty of
-                Nothing         -> putStrLn $ show $ text "STUCK!"
-                Just (_s', x')  -> putStrLn $ pretty 100 (ppr x')
-
-
-
+             Nothing         -> putStrLn $ show $ text "STUCK!"
+             Just (store', x')  
+              -> do     putStrLn $ pretty 100 (ppr x')
+                        putStrLn $ pretty 100 (ppr store')
 

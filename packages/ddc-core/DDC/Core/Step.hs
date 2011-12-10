@@ -5,7 +5,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Type.Env             (Env)
 import DDC.Base.Pretty          ()
-import Debug.Trace
+--import Debug.Trace
 
 -- | Holds a function to perform primitive reductions.
 --   These are defined by the client.
@@ -22,8 +22,8 @@ step    :: (Eq n, Pretty n, Show a, Show n)
         -> s                    -- ^ Current store.
         -> Maybe (s, Exp a n)   -- ^ New store and expression.
 step p env x store
- = trace (show $ text "stepping: " <> text (show x))
- $ step' p env x store
+-- = trace (show $ text "stepping: " <> text (show x))
+ = step' p env x store
          
 step' (PrimStep primStep) _env xx store
         -- A primitive reduction defined by the client.

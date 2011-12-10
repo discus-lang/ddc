@@ -22,7 +22,7 @@ takeXLams xx
 takeXApps   :: Exp a n -> [Exp a n]
 takeXApps xx
  = case xx of
-        XApp _ x1 x2    -> x1 : takeXApps x2
+        XApp _ x1 x2    -> takeXApps x1 ++ [x2]
         _               -> [xx]
 
 

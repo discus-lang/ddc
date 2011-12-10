@@ -16,6 +16,7 @@ module DDCI.Core.Prim.Store
 where
 import DDCI.Core.Prim.Name
 import DDC.Core.Exp
+import DDC.Core.Pretty          hiding (empty)
 import Data.Map                 (Map)
 import Data.Set                 (Set)
 import qualified Data.Map       as Map
@@ -59,6 +60,34 @@ data SBind
         deriving (Eq, Show)
 
 
+-- Pretty ---------------------------------------------------------------------
+instance Pretty Store where
+ ppr (Store _nextLoc _nextRgn _regions _binds)
+  [ text "Store"                                <> line
+  , text " nextLoc: " <> text (show nextLoc)    <> line
+  , text " nextRgn: " <> text (show nextRgn)    <> line
+  , text " regions: " <> text (show regions)
+  , text ""
+  , text " BINDS:"
+  , sep $ [ ppr l <> colon <> ppr r <> text " -> " <> ppr sbind
+                | (l, (r, sbind)) <- Map.toList binds] ]
+
+instance Pretty SValue where  
+ ppr (SLoc i)   = text "INT" <> text (show i)
+ ppr (SLam b x) = text "Lam" <> ppr b <> text ":" <> ppr x
+
+
+instance Pretty SBind where
+ ppr (SObj tag svs)    
+        = text "OBJ " 
+                <>  ppr tag
+                <>  colon
+                <+> sep (map parens $ map ppr svs)
+
+ ppr (SInt i)
+        = text "INT" <> ppr (show i)
+ 
+ 
 -- Operators ------------------------------------------------------------------
 -- | An empty store, with no bindings or regions.
 empty   :: Store
