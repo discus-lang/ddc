@@ -58,6 +58,9 @@ lexExp str
    = case w of
         []              -> []        
 
+        -- The unit data constructor
+        '(' : ')' : w'  -> tokN (KCon "()")    : lexWord w'
+
         -- Function Constructors
         '~' : '>' : w'  -> tokA KKindFun       : lexWord w'
         '-' : '>' : w'  -> tokA KTypeFun       : lexWord w'

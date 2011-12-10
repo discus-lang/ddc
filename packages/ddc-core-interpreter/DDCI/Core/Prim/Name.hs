@@ -85,7 +85,7 @@ instance Pretty PrimCon where
  ppr con
   = case con of
         PrimTyConUnit   -> text "Unit"
-        PrimDaConUnit   -> text "U"
+        PrimDaConUnit   -> text "()"
         PrimTyConInt    -> text "Int"
         PrimTyConString -> text "String"
 
@@ -133,12 +133,15 @@ readName str@(c:rest)
         
         | str == "Unit"
         = Just $ NamePrimCon PrimTyConUnit
+
+        | str == "()"
+        = Just $ NamePrimCon PrimDaConUnit
         
         | isUpper c
         = Just $ NameCon str
         
         | (ds, "")      <- span isDigit str
-        = Just $ NameInt (read ds)
+        = Just $ NameInt (read ds)        
         
         | otherwise
         = Nothing
