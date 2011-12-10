@@ -33,8 +33,8 @@ cmdStep str
          = case C.step (C.PrimStep primStep) store x of
              Nothing         -> putStrLn $ show $ text "STUCK!"
              Just (store', x')  
-              -> do     putStrLn $ pretty 100 (ppr x')
-                        putStrLn $ pretty 100 (ppr store')
+              -> do     putStrLn $ pretty (ppr x')
+                        putStrLn $ pretty (ppr store')
 
 
 -- | Parse, check, and single step evaluate an expression.
@@ -59,11 +59,11 @@ cmdEval str
                       putStrLn $ show $ ppr err
                       
             Right (_t, _eff, _clo)
-             -> do    putStrLn $ pretty 100 (ppr x')
---                    putStrLn $ pretty 100 (ppr t)
+             -> do    putStrLn $ pretty (ppr x')
+--                    putStrLn $ pretty (ppr t)
                       goStep x' store'
                       
          | otherwise
-         = do   putStrLn $ pretty 100 (ppr store)
+         = do   putStrLn $ pretty (ppr store)
 
 

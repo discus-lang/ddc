@@ -76,7 +76,7 @@ cmdShowType mode ss
         goResult (Just (x, t, eff, clo))
          = case mode of
                 ShowTypeAll
-                 -> putStrLn $ show
+                 -> putStrLn $ pretty
                  $ vcat [ ppr x
                         , nest 4 $ text "::  " <> ppr t
                         , nest 4 $ text ":!: " <> ppr eff
