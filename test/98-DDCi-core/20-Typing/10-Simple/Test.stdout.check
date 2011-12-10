@@ -47,3 +47,18 @@ add {R1#} {R1#} {R1#}
 :!: !0
 :$: $0
 
+-- A fully applied integer constructor should cause an alloc effect.
+2 {R1#} ()
+::  Int R1#
+:!: Alloc R1#
+:$: Share ([^:%].Unit -(Alloc ^0 | $0)> Int ^0) + Share Unit
+
+-- Addition should also read the args, and alloc the result.
+add {R1#} {R2#} {R3#} (2 {R1#} ()) (3 {R2#} ())
+::  Int R3#
+:!: Read R1# + Read R2# + Alloc R1# + Alloc R2# + Alloc R3#
+:$: Share ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 +
+           Alloc ^0 | Share ^2)> Int ^0) +
+    Share ([^:%].Unit -(Alloc ^0 | $0)> Int ^0) + Share Unit +
+    Share ([^:%].Unit -(Alloc ^0 | $0)> Int ^0) + Share Unit
+

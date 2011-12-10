@@ -21,3 +21,9 @@
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
 :check \(r1 r2 r3:%).add {:r1 r2 r3:}
+
+-- A fully applied integer constructor should cause an alloc effect.
+:check (2 {R1#} ())
+
+-- Addition should also read the args, and alloc the result.
+:check add {:R1# R2# R3#:} (2 {R1#} ()) (3 {R2#} ())
