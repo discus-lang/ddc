@@ -5,9 +5,11 @@ module DDCI.Core.Command.Eval
 where
 import DDCI.Core.Prim
 import DDCI.Core.Command.Check
+import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect
+import qualified DDC.Type.Env                   as Env
 import qualified DDCI.Core.Prim.Store           as Store
 import qualified DDC.Core.Step                  as C
 import qualified Data.Set                       as Set
@@ -50,12 +52,18 @@ cmdEval str
            in   goStep x store
 
         goStep x store
-         = case C.step (C.PrimStep primStep) store x of
-             Just (store', x')
-              -> do   putStrLn $ pretty 100 (ppr x')
+         | Just (store', x')    <- C.step (C.PrimStep primStep) store x 
+         = case checkExp Env.empty x' of
+            Left err
+             -> do    putStrLn "OFF THE RAILS!"
+                      putStrLn $ show $ ppr err
+                      
+            Right (_t, _eff, _clo)
+             -> do    putStrLn $ pretty 100 (ppr x')
+--                    putStrLn $ pretty 100 (ppr t)
                       goStep x' store'
                       
-             Nothing 
-              -> do   return ()
+         | otherwise
+         = do   putStrLn $ pretty 100 (ppr store)
 
 

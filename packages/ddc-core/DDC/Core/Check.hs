@@ -21,7 +21,6 @@ import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Monad   as G
 import Control.Monad
-import Debug.Trace
 
 type CheckM a n   = G.CheckM (Error a n)
 
@@ -120,13 +119,13 @@ checkExpM env xx
          -> do  (t1, effs1, clos1) <- checkExpM env x1
                 (t2, effs2, clos2) <- checkExpM env x2
                 case t1 of
-                 TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) clo) t12
+                 TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) _clo) t12
                   | t11 == t2   
                   , effs   <- Sum.fromList kEffect  [eff]
                   -> return     ( t12
                                 , effs1 `plus` effs2 `plus` effs
                                 , clos1 `plus` clos2)
-                  | otherwise   -> trace (show $ ppr eff <+> ppr clo) $ throw $ ErrorAppMismatch xx t11 t2
+                  | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun xx t1 t2
 
         -- lambda abstractions.

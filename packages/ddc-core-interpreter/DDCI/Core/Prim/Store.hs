@@ -13,7 +13,8 @@ module DDCI.Core.Prim.Store
         , hasRgn
         , addBind
         , allocBind
-        , lookupBind)
+        , lookupBind
+        , lookupRegionBind)
 where
 import DDCI.Core.Prim.Name
 import DDC.Core.Exp
@@ -71,7 +72,7 @@ instance Pretty Store where
   , text " Regions: " <> braces (sep  (map ppr $ Set.toList regions))
   , text ""
   , text " Binds:"
-  , sep $ [ text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind
+  , vcat $ [ text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind
                 | (l, (r, sbind)) <- Map.toList binds] ]
 
 instance Pretty SValue where  
@@ -146,8 +147,14 @@ allocBind rgn sbind store
    in   (store2, loc)
 
 
--- | Lookup a store binding from the store.
+-- | Lookup a the binding for a location.
 lookupBind :: Loc -> Store -> Maybe SBind
 lookupBind loc store
         = liftM snd $ Map.lookup loc (storeBinds store)
+
+
+-- | Lookup the region handle and binding for a location.
+lookupRegionBind :: Loc -> Store -> Maybe (Rgn, SBind)
+lookupRegionBind loc store
+        = Map.lookup loc (storeBinds store)
 
