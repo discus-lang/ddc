@@ -3,7 +3,7 @@
 add
 ::  [^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Share ^2)> Int ^0
 :!: !0
-:$: DeepShare ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Share ^2)> Int ^0)
+:$: $0
 
 -- Instantiate the outer forall of the type of add with a region handle.
 -- Region handles in the expression are automatically added to the store at
@@ -11,19 +11,19 @@ add
 add {R1#}
 ::  [^^:%].Int R1# -> Int ^1 -(Read R1# + Read ^1 + Alloc ^0 | Share R1#)> Int ^0
 :!: !0
-:$: DeepShare ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Share ^2)> Int ^0)
+:$: $0
 
 -- Instantiate all the foralls with different region handles.
 add {R1#} {R2#} {R3#}
 ::  Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Share R1#)> Int R3#
 :!: !0
-:$: DeepShare ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Share ^2)> Int ^0)
+:$: $0
 
 -- Same as above, but with nicer syntax.
 add {R1#} {R2#} {R3#}
 ::  Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Share R1#)> Int R3#
 :!: !0
-:$: DeepShare ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Share ^2)> Int ^0)
+:$: $0
 
 -- Instantiate all the foralls with the same region handle.
 -- The 'add' primop causes the effect (Read R1# + Read R1#) which should be 
@@ -31,7 +31,7 @@ add {R1#} {R2#} {R3#}
 add {R1#} {R1#} {R1#}
 ::  Int R1# -> Int R1# -(Read R1# + Alloc R1# | Share R1#)> Int R1#
 :!: !0
-:$: DeepShare ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Share ^2)> Int ^0)
+:$: $0
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
@@ -44,11 +44,11 @@ add {R1#} {R1#} {R1#}
 2 {R1#} ()
 ::  Int R1#
 :!: Alloc R1#
-:$: DeepShare ([^:%].Unit -(Alloc ^0 | $0)> Int ^0) + DeepShare Unit
+:$: $0
 
 -- Addition should also read the args, and alloc the result.
 add {R1#} {R2#} {R3#} (2 {R1#} ()) (3 {R2#} ())
 ::  Int R3#
 :!: Read R1# + Read R2# + Alloc R1# + Alloc R2# + Alloc R3#
-:$: DeepShare ([^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Share ^2)> Int ^0) + DeepShare ([^:%].Unit -(Alloc ^0 | $0)> Int ^0) + DeepShare Unit
+:$: $0
 

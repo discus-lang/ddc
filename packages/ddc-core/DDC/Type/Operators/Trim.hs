@@ -84,10 +84,10 @@ trimDeepSharedD env tt
          -> Sum.empty kClosure
 
         -- Add locally bound variable to the environment.
+        -- TODO: for now we just drop the forall if the free vars list is empty,
+        --       but also need to lower debruijn indices.
         -- TODO: drop forall if there are no free vars in the body, 
         --       will also have to lower locally bound debruijn indices.
-        -- TODO: for now we just drop the forall if the free vars list is empty,
-        --       which is a safe approx. 
         -- TODO: recomputing the free vars like this is bad for complexity, 
         --       should track free vars on the fly.
         TForall b t
