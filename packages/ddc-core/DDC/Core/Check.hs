@@ -10,6 +10,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Check.CheckError
 import DDC.Type.Transform
+import DDC.Type.Operators.Trim
 import DDC.Type.Universe
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -32,19 +33,19 @@ typeOfExp
         => Exp a n
         -> Either (Error a n) (Type n)
 typeOfExp xx 
-        = result 
-        $ do    (t, _eff, _clo) <- checkExpM Env.empty xx
-                return t
-
+ = case checkExp Env.empty xx of
+        Left err        -> Left err
+        Right (t, _, _) -> Right t
+        
 
 -- | Take the kind of a type, or `error` if there isn't one.
 typeOfExp' 
         :: (Pretty n, Ord n) 
         => Exp a n -> Type n
 typeOfExp' tt
- = case typeOfExp tt of
+ = case checkExp Env.empty tt of
         Left err        -> error $ show $ ppr err
-        Right k         -> k
+        Right (t, _, _) -> t
 
 
 -- | Check an expression, returning an error or its type, effect and closure.
@@ -57,7 +58,9 @@ checkExp
 checkExp env xx 
  = result
  $ do   (t, effs, clos) <- checkExpM env xx
-        return  (t, TSum effs, TSum clos)
+        let clo_trimmed = trimClosure (TSum clos)
+        return  
+         (t, TSum effs, clo_trimmed)
         
 
 -- checkExp ---------------------------------------------------------------------------------------

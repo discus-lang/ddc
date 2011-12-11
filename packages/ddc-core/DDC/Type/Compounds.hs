@@ -26,9 +26,9 @@ module DDC.Type.Compounds
         , tSum
 
           -- * Function type construction
-        , kFun,     (~>>)
+        , kFun, (~>>)
         , kFuns
-        , tFun,     (->>)
+        , tFun, (->>),  takeTFun
         , tImpl
 
           -- * Sort construction
@@ -202,31 +202,40 @@ tSum k ts
 
 
 -- Function Constructors --------------------------------------------------------------------------
--- | Build a kind function.
+-- | Construct a kind function.
 kFun, (~>>) :: Kind n -> Kind n -> Kind n
 kFun k1 k2      = ((TCon $ TyConKind KiConFun)`TApp` k1) `TApp` k2
 (~>>)           = kFun
 
 
--- | Build some kind functions.
+-- | Construct some kind functions.
 kFuns :: [Kind n] -> Kind n -> Kind n
 kFuns []     k1    = k1
 kFuns (k:ks) k1    = k `kFun` kFuns ks k1
 
 
--- | Build a value type function, 
+-- | Construct a value type function, 
 --   with the provided effect and closure.
 tFun    :: Type n -> Effect n -> Closure n -> Type n -> Type n
 tFun t1 eff clo t2
         = (TCon $ TyConComp TcConFun) `tApps` [t1, eff, clo, t2]
 
--- | Build a pure and empty value type function.
+-- | Destruct a value type function.
+takeTFun :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
+takeTFun tt
+ = case tt of
+        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) eff) clo) t2
+         ->  Just (t1, eff, clo, t2)
+        _ -> Nothing
+        
+
+-- | Construct a pure and empty value type function.
 tFunPE, (->>)   :: Type n -> Type n -> Type n
 tFunPE t1 t2    = tFun t1 (tBot kEffect) (tBot kClosure) t2
 (->>)           = tFunPE
 
 
--- | Build a witness implication type.
+-- | Construct a witness implication type.
 tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
         = ((TCon $ TyConWitness TwConImpl) `tApp` t1) `tApp` t2

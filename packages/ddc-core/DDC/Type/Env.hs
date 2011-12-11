@@ -12,7 +12,8 @@ module DDC.Type.Env
         , combine
         , member,       memberBind
         , lookup,       lookupName
-        , depth)
+        , depth
+        , wrapTForalls)
 where
 import DDC.Type.Exp
 import Data.Maybe
@@ -121,4 +122,15 @@ lookupName n env
 -- | Yield the depth of the debruijn stack.
 depth :: Env n -> Int
 depth env       = length $ envStack env
+
+
+-- | Wrap locally bound (non primitive) variables defined in an environment around a type
+--   as new foralls.
+wrapTForalls :: Ord n => Env n -> Type n -> Type n
+wrapTForalls env tBody
+ = let  bsNamed = [BName b t | (b, t) <- Map.toList $ envMap env ]
+        bsAnon  = [BAnon t   | t <- envStack env]
+        
+        tInner  = foldr TForall tBody (reverse bsAnon)
+   in   foldr TForall tInner bsNamed
 
