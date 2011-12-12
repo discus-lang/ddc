@@ -8,6 +8,7 @@ module DDC.Core.Check
 where
 import DDC.Core.Exp
 import DDC.Core.Pretty
+import DDC.Core.Compounds
 import DDC.Core.Check.CheckError
 import DDC.Type.Transform
 import DDC.Type.Operators.Trim
@@ -177,7 +178,10 @@ checkExpM env xx
 
 
         -- let binding
-        XLet{}  -> error "checkExp: XLet not done yet"
+        XLet _ lts x
+         -> do  checkLetsM env lts
+                let env'        = Env.extends (bindsOfLets lts) env
+                checkExpM env' x
         
         -- case expression
         XCase{} -> error "checkExp: XCase not done yet"
@@ -187,6 +191,30 @@ checkExpM env xx
                 
  
         _ -> error "typeOfExp: not handled yet"
+
+
+-- checkLets -------------------------------------------------------------------------------------
+-- | Check some let bindings in the exp checking monad,
+--   returning their effect and closure.
+checkLetsM 
+        :: Ord n => Env n
+        -> Lets a n 
+        -> CheckM a n (TypeSum n, TypeSum n)
+        
+checkLetsM env lts
+ = case lts of
+        LLet{}  -> error "checkLetsM: LLet not done yet"
+        LRec{}  -> error "checkLetsM: LRec not done yet"
+
+        -- TODO: do effect masking.
+        -- TODO: check region is not visible in return type.
+        LRegion b bs
+         -> do  checkTypeM env (typeOfBind b)
+                let env' = Env.extend b env
+                mapM_ (checkTypeM env') $ map typeOfBind bs
+                return  ( Sum.empty kEffect
+                        , Sum.empty kClosure)
+        
 
 
 -- checkType -------------------------------------------------------------------------------------

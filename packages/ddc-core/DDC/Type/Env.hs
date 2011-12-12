@@ -6,7 +6,7 @@
 module DDC.Type.Env
         ( Env(..)
         , empty
-        , extend
+        , extend,       extends
         , setPrimFun,   isPrim
         , fromList
         , combine
@@ -45,13 +45,18 @@ empty   = Env
 
 
 -- | Extend an environment with a new binding.
---   TODO: refactor this so the new binding is on the right.
 extend :: Ord n => Bind n -> Env n -> Env n
 extend bb env
  = case bb of
          BName n k      -> env { envMap   = Map.insert n k (envMap env) }
          BAnon   k      -> env { envStack = k : envStack env }
          BNone{}        -> env
+
+
+-- | Extend an environment with a list of new bindings
+extends :: Ord n => [Bind n] -> Env n -> Env n
+extends bs env
+        = foldr extend env bs
 
 
 -- | Set the function that knows the types of primitive things.

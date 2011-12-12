@@ -73,6 +73,9 @@ lexExp str
         '<'  : ':' : w' -> tokA KAngleColonBra : lexWord w'
         ':'  : '>' : w' -> tokA KAngleColonKet : lexWord w'
 
+        -- Compound symbols
+        ':'  : ':' : w' -> tokA KHasType       : lexWord w'
+
         -- Debruijn indices
         '^'  : cs
          |  (ds, rest)   <- span isDigit cs
@@ -142,6 +145,11 @@ lexExp str
                  
             in  readNamedCon (c : body')
 
+        -- Keywords
+        _
+         | Just (key, t) <- find (\(key, _) -> isPrefixOf key w) keywords
+         -> tok t : lexWord (drop (length key) w)
+
         -- Named Variables and Witness constructors
         c : cs
          | isVarStart c
@@ -156,11 +164,6 @@ lexExp str
                  | otherwise    = [tok (KJunk s)]
             in  readNamedVar (c:body)
 
-        -- Keywords
-        _
-         | Just (key, t) <- find (\(key, _) -> isPrefixOf key w) keywords
-         -> tok t : lexWord (drop (length key) w)
-         
         -- Error
         _               -> [tok $ KJunk w]
         
@@ -171,9 +174,10 @@ keywords
  =      [ ("in",     KA KIn)
         , ("of",     KA KOf) 
         , ("let",    KA KLet)
-        , ("letrec", KA KLetRec)
-        , ("local",  KA KLocal)
+        , ("rec",    KA KRec)
+        , ("region", KA KRegion)
         , ("case",   KA KCase)
         , ("purify", KA KPurify)
-        , ("forget", KA KForget) ]
-
+        , ("forget", KA KForget) 
+        , ("with",   KA KWith)
+        , ("where",  KA KWhere) ]

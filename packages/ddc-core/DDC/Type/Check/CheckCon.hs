@@ -34,7 +34,7 @@ kindOfTwCon tc
         TwConDeepMutable-> kData    `kFun` kWitness
         TwConLazy       -> kRegion  `kFun` kWitness
         TwConHeadLazy   -> kData    `kFun` kWitness
-        TwConDirect     -> kData    `kFun` kWitness
+        TwConDirect     -> kRegion  `kFun` kWitness
         TwConDistinct n -> kFuns (replicate n kRegion) kWitness
         TwConPure       -> kEffect  `kFun` kWitness
         TwConEmpty      -> kClosure `kFun` kWitness

@@ -1,11 +1,21 @@
 
 module DDC.Core.Compounds 
-        ( takeXLams
+        ( bindsOfLets
+        , takeXLams
         , takeXApps
         , takeXPrimApps)
 where
 import DDC.Core.Exp
 
+
+-- | Take the binds of a `Lets`
+bindsOfLets :: Lets a n -> [Bind n]
+bindsOfLets ll
+ = case ll of
+        LLet b _        -> [b]
+        LRec bxs        -> map fst bxs
+        LRegion b bs    -> b : bs
+        
 
 -- | Split nested lambdas from the front of an expression
 --   or `Nothing` if there was no outer lambda

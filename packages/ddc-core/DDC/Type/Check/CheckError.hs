@@ -79,7 +79,7 @@ instance (Eq n, Pretty n) => Pretty (Error n) where
          -> text "Can't check a naked sort: " <> ppr s
 
         ErrorUndefined u
-         -> text "Undefined type variable: " <> ppr u
+         -> text "Undefined type variable when checking type: " <> ppr u
          
         ErrorSumKindMismatch k ts ks
          -> sep $ punctuate line

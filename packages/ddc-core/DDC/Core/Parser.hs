@@ -21,28 +21,54 @@ type Parser n a
         = P.Parser (Tok n) a
 
 
--- Expressions -----------------------------------------------------------------------------------
+-- Expressions ----------------------------------------------------------------
 pExp    :: Ord n => Parser n (Exp () n)
 pExp = pExp2
 
 pExp2   :: Ord n => Parser n (Exp () n)
-pExp2 
+pExp2   
  = P.choice
         -- Lambda abstractions
-        [ do    pTok KBackSlash
-                pTok KRoundBra
-                bs      <- P.many1 T.pBinder
-                pTok KColon
-                t       <- T.pType
-                pTok KRoundKet
-                pTok KDot
+ [ do   pTok KBackSlash
+        pTok KRoundBra
+        bs      <- P.many1 T.pBinder
+        pTok KColon
+        t       <- T.pType
+        pTok KRoundKet
+        pTok KDot
 
-                xBody   <- pExp2
+        xBody   <- pExp2
 
-                return  $ foldr (XLam ()) xBody
-                        $ map (\b -> T.makeBindFromBinder b t) bs
+        return  $ foldr (XLam ()) xBody
+                $ map (\b -> T.makeBindFromBinder b t) bs
 
-        , do    pExp1 ]
+        -- Local region binding
+        --   let region r1 with { w1 : T1 ... } in T2
+        --   let region r1 in T2
+ , do   pTok KLet
+        pTok KRegion
+        r       <- pVar
+
+        P.choice 
+         [ do   pTok KWith
+                pTok KBraceBra
+                wits    <- P.sepBy1 
+                           (do  w       <- pVar
+                                pTok KColon
+                                t       <- T.pTypeApp
+                                return  (BName w t))
+                           (pTok KSemiColon)
+                pTok KBraceKet
+                pTok KIn
+                x       <- pExp2 
+                return  $ XLet () (LRegion (BName r T.kRegion) wits) x 
+
+         , do   pTok KIn
+                x       <- pExp2
+                return $ XLet ()  (LRegion (BName r T.kRegion) []) x ]
+
+ , do   pExp1 
+ ]
 
  <?> "an expression"
 
@@ -61,67 +87,67 @@ pArgs   :: Ord n => Parser n [Exp () n]
 pArgs 
  = P.choice
         -- {TYPE}
-        [ do    pTok KBraceBra
-                t       <- T.pType 
-                pTok KBraceKet
-                return  [XType t]
+ [ do   pTok KBraceBra
+        t       <- T.pType 
+        pTok KBraceKet
+        return  [XType t]
 
         -- {: TYPE0 TYPE0 ... :}
-        , do    pTok KBraceColonBra
-                ts      <- P.many1 T.pType0
-                pTok KBraceColonKet
-                return  $ map XType ts
+ , do   pTok KBraceColonBra
+        ts      <- P.many1 T.pTypeAtom
+        pTok KBraceColonKet
+        return  $ map XType ts
         
         -- <WITNESS>
-        , do    pTok KAngleBra
-                w       <- pWitness
-                pTok KAngleKet
-                return  [XWitness w]
+ , do   pTok KAngleBra
+        w       <- pWitness
+        pTok KAngleKet
+        return  [XWitness w]
                 
         -- <: WITNESS0 WITNESS0 ... :>
-        , do    pTok KAngleColonBra
-                ws      <- P.many1 pWitness0
-                pTok KAngleColonKet
-                return  $ map XWitness ws
+ , do   pTok KAngleColonBra
+        ws      <- P.many1 pWitness0
+        pTok KAngleColonKet
+        return  $ map XWitness ws
                 
         -- EXP0
-        , do    x       <- pExp0
-                return  [x]
-        ]
+ , do   x       <- pExp0
+        return  [x]
+ ]
  <?> "a type type, witness or expression argument"
 
 
 -- Atomics
 pExp0   :: Ord n => Parser n (Exp () n)
 pExp0 
-  = P.choice
+ = P.choice
         -- (EXP2)
-        [ do    pTok KRoundBra
-                t       <- pExp2
-                pTok KRoundKet
-                return  $ t
+ [ do   pTok KRoundBra
+        t       <- pExp2
+        pTok KRoundKet
+        return  $ t
         
         -- Named type constructors
-        , do    con     <- pCon
-                return  $ XCon () (UName con (T.tBot T.kData)) 
+ , do   con     <- pCon
+        return  $ XCon () (UName con (T.tBot T.kData)) 
 
         -- Literals
-        , do    lit     <- pLit
-                return  $ XCon () (UName lit (T.tBot T.kData))
+ , do   lit     <- pLit
+        return  $ XCon () (UName lit (T.tBot T.kData))
 
         -- Debruijn indices
-        , do    i       <-T.pIndex
-                return  $ XVar () (UIx   i   (T.tBot T.kData))
+ , do   i       <-T.pIndex
+        return  $ XVar () (UIx   i   (T.tBot T.kData))
 
         -- Variables
-        , do    var     <- pVar
-                return  $ XVar () (UName var (T.tBot T.kData)) 
-        ]
+ , do   var     <- pVar
+        return  $ XVar () (UName var (T.tBot T.kData)) 
+ ]
 
  <?> "a variable, constructor, or parenthesised type"
 
 
--- Witnesses -------------------------------------------------------------------------------------
+-- Witnesses ------------------------------------------------------------------
 -- | Top level parser for witnesses.
 pWitness :: Ord n  => Parser n (Witness n)
 pWitness = pWitness0
@@ -135,7 +161,7 @@ pWitness0
  <?> "a witness"
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Parse a builtin named `WiCon`
 pWiCon :: Parser n WiCon
 pWiCon  = P.pTokMaybe f

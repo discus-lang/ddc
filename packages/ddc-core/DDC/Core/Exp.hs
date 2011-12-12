@@ -68,13 +68,13 @@ data Cast n
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive binding
-        = LLet  (Bind n) (Exp a n)
+        = LLet    (Bind n) (Exp a n)
         
         -- | Recursive binding
-        | LRec  [(Bind n, Exp a n)]
+        | LRec    [(Bind n, Exp a n)]
 
         -- | Bind a local region variable, and (non-recursive) witnesses to its properties.
-        | XLocal (Bind n) [(Bind n, Type n)]
+        | LRegion (Bind n) [Bind n]
         deriving (Eq, Show)
 
 

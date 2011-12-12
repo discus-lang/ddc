@@ -39,6 +39,9 @@ data TokAtom
         | KAngleBra
         | KAngleKet
 
+        -- compound symbols
+        | KHasType
+
         -- punctuation
         | KDot
         | KBar
@@ -54,11 +57,13 @@ data TokAtom
         | KIn
         | KOf
         | KLet
-        | KLetRec
-        | KLocal
+        | KRec
+        | KRegion
         | KCase
         | KPurify
         | KForget
+        | KWith
+        | KWhere
 
         -- symbolic constructors
         | KSortComp

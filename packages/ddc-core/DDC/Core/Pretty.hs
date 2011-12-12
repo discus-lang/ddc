@@ -49,10 +49,31 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> pprParen (d > 10)
          $  ppr x1 <+> pprPrec 11 x2
 
+        XLet _ lts x
+         -> text "let" <+> ppr lts <+> text "in" <+> ppr x
+
         XType    t      -> braces $ ppr t
         XWitness w      -> angles $ ppr w
 
         _               -> error "pprPrec[Exp] not finished"
+
+
+-- Lets -------------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Lets a n) where
+ ppr lts
+  = case lts of
+        LLet{}          -> error "ppr[Lets]: not finished"
+        LRec{}          -> error "ppr[Lets]: not finished"
+
+        LRegion b []
+         -> text "region"
+                <+> ppr (binderOfBind b)
+
+        LRegion b bs
+         -> text "region"
+                <+> ppr (binderOfBind b)
+                <+> text "with"
+                <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
 
 
 -- Witness ----------------------------------------------------------------------------------------

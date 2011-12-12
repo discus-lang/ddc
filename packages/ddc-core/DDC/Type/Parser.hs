@@ -3,7 +3,7 @@
 module DDC.Type.Parser
         ( module DDC.Base.Parser
         , Parser
-        , pType, pType0
+        , pType, pTypeAtom, pTypeApp
         , pBinder
         , pIndex
         , pTok, pTokAs)
@@ -86,7 +86,7 @@ pTypeForall
 -- Functions
 pTypeFun :: Ord n => Parser n (Type n)
 pTypeFun
- = do   t1      <- pType1
+ = do   t1      <- pTypeApp
         P.choice 
          [ -- T1 -> T2
            do   pTok KTypeFun
@@ -112,15 +112,15 @@ pTypeFun
 
 
 -- Applications
-pType1 :: Ord n => Parser n (Type n)
-pType1  
- = do   (t:ts)  <- P.many1 pType0
+pTypeApp :: Ord n => Parser n (Type n)
+pTypeApp  
+ = do   (t:ts)  <- P.many1 pTypeAtom
         return  $  foldl TApp t ts
 
 
 -- Atomics
-pType0 :: Ord n => Parser n (Type n)
-pType0  
+pTypeAtom :: Ord n => Parser n (Type n)
+pTypeAtom  
  = P.choice
         -- (TYPE2) and (->)
         [ do    pTok KRoundBra

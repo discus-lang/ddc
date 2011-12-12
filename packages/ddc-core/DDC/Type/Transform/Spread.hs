@@ -53,7 +53,7 @@ instance Spread Bound where
         UName n _
          | Just t'      <- Env.lookup uu env
          -> if Env.isPrim env n 
-                 then UPrim n t'
+                 then UPrim n t'        -- TODO: recursively spread into dropped type, but do occ check.
                  else UName n t'
                  
         UPrim n _
