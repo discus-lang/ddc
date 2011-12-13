@@ -57,8 +57,8 @@ data TokAtom
         | KIn
         | KOf
         | KLet
-        | KRec
-        | KRegion
+        | KLetRec
+        | KLetRegion
         | KCase
         | KPurify
         | KForget

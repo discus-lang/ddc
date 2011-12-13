@@ -45,8 +45,7 @@ pExp2
         -- Local region binding
         --   let region r1 with { w1 : T1 ... } in T2
         --   let region r1 in T2
- , do   pTok KLet
-        pTok KRegion
+ , do   pTok KLetRegion
         r       <- pVar
 
         P.choice 
