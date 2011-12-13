@@ -59,6 +59,12 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
+        -- | Bound region variable is free in the type of the body of a letregion.
+        | ErrorLetRegionFree
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorType             :: Type n }
+
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
@@ -119,3 +125,12 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "                 binder: " <> ppr b1
                  , text "  is already in the environment"
                  , text "          when checking: " <> ppr xx ]
+                 
+        ErrorLetRegionFree xx b t
+         -> vcat [ text "Core type error."
+                 , text "Bound region variable is free in the type of the body of a letregion"
+                 , text "                 binder: " <> ppr b
+                 , text "             is free in: " <> ppr t
+                 , text "          when checking: " <> ppr xx ]
+                 
+                 

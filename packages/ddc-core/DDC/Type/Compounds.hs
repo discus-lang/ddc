@@ -11,8 +11,8 @@ module DDC.Type.Compounds
         , partitionBindsByType
         
           -- * Bounds
-        , takeNameOfBound
         , typeOfBound
+        , takeNameOfBound
         , replaceTypeOfBound
         , boundMatchesBind
         , takeSubstBoundOfBind
@@ -111,6 +111,15 @@ partitionBindsByType (b:bs)
 
 
 -- Bounds -----------------------------------------------------------------------------------------
+-- | Take the type of a bound variable.
+typeOfBound :: Bound n -> Type n
+typeOfBound uu
+ = case uu of
+        UName _ t       -> t
+        UPrim _ t       -> t
+        UIx   _ t       -> t
+
+
 -- | Take the variable name of bound variable.
 --   If this is an anonymous variable then there won't be a name.
 takeNameOfBound :: Bound n -> Maybe n
@@ -119,14 +128,6 @@ takeNameOfBound uu
         UName n _       -> Just n
         UPrim n _       -> Just n
         UIx _ _         -> Nothing
-
--- | Take the type of a bound variable.
-typeOfBound :: Bound n -> Type n
-typeOfBound uu
- = case uu of
-        UName _ t       -> t
-        UPrim _ t       -> t
-        UIx   _ t       -> t
 
 
 -- | Replace the type of a bound with a new one.

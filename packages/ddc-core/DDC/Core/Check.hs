@@ -8,7 +8,7 @@ module DDC.Core.Check
 where
 import DDC.Core.Exp
 import DDC.Core.Pretty
-import DDC.Core.Compounds
+import DDC.Core.Collect.Free
 import DDC.Core.Check.CheckError
 import DDC.Type.Transform
 import DDC.Type.Operators.Trim
@@ -22,6 +22,7 @@ import DDC.Base.Pretty                  ()
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Monad   as G
+import qualified Data.Set               as Set
 import Control.Monad
 
 type CheckM a n   = G.CheckM (Error a n)
@@ -178,11 +179,29 @@ checkExpM env xx
 
 
         -- let binding
-        XLet _ lts x
-         -> do  checkLetsM env lts
-                let env'        = Env.extends (bindsOfLets lts) env
-                checkExpM env' x
-        
+        XLet _ (LRegion b bs) x
+         -> do  -- Check the region variable.
+                checkTypeM env (typeOfBind b)
+                let env1         = Env.extend b env
+
+                -- Check the witness types.
+                mapM_ (checkTypeM env1) $ map typeOfBind bs
+                let env2         = Env.extends bs env1
+
+                -- Check the body expression
+                (t, effs, clos)  <- checkExpM env2 x
+
+                -- The free variables of the body cannot contain the bound region.
+                let fvs         = free Env.empty t
+                (case takeSubstBoundOfBind b of
+                  Nothing               -> return ()
+                  Just u
+                   | Set.member u fvs   -> throw $ ErrorLetRegionFree xx b t
+                   | otherwise          -> return ())
+                
+                return (t, effs, clos)
+
+
         -- case expression
         XCase{} -> error "checkExp: XCase not done yet"
         
@@ -191,30 +210,6 @@ checkExpM env xx
                 
  
         _ -> error "typeOfExp: not handled yet"
-
-
--- checkLets -------------------------------------------------------------------------------------
--- | Check some let bindings in the exp checking monad,
---   returning their effect and closure.
-checkLetsM 
-        :: Ord n => Env n
-        -> Lets a n 
-        -> CheckM a n (TypeSum n, TypeSum n)
-        
-checkLetsM env lts
- = case lts of
-        LLet{}  -> error "checkLetsM: LLet not done yet"
-        LRec{}  -> error "checkLetsM: LRec not done yet"
-
-        -- TODO: do effect masking.
-        -- TODO: check region is not visible in return type.
-        LRegion b bs
-         -> do  checkTypeM env (typeOfBind b)
-                let env' = Env.extend b env
-                mapM_ (checkTypeM env') $ map typeOfBind bs
-                return  ( Sum.empty kEffect
-                        , Sum.empty kClosure)
-        
 
 
 -- checkType -------------------------------------------------------------------------------------

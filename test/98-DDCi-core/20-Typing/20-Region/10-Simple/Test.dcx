@@ -1,0 +1,11 @@
+
+-- Parsing of let region with no witnesses
+:check letregion r1 in ()
+
+-- Parsing of let region with some witnesses
+:check letregion r1 with { w1 : Const r1 } in ()
+:check letregion r1 with { w1 : Const r1; w2 : Direct r1 } in ()
+
+-- Use the bound region in the body of the expression.
+-- TODO: effects mentioning the region should be masked
+:check letregion r1 in add {:r1 r1 R2#:} (2 {r1} ()) (3 {r1} ())
