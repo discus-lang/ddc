@@ -45,7 +45,7 @@ typeOfPrimName nn
         NamePrimCon PrimDaConUnit       -> Just $ tUnit 
         
         -- neg
-        NamePrimOp PrimOpNeg
+        NamePrimOp PrimOpNegInt
          -> Just $ tForalls [kRegion, kRegion] $ \[r1, r0]
                 -> tFun (tInt r1) (tSum kEffect  [tRead r1, tAlloc r0])
                                   (tBot kClosure)
@@ -53,7 +53,7 @@ typeOfPrimName nn
 
         -- add, sub
         NamePrimOp p
-         | elem p [PrimOpAdd, PrimOpSub]
+         | elem p [PrimOpAddInt, PrimOpSubInt]
          -> Just $ tForalls [kRegion, kRegion, kRegion] $ \[r2, r1, r0] 
                 -> tFun (tInt r2) (tBot kEffect)
                                   (tBot kClosure)

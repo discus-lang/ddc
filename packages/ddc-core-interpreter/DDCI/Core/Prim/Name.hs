@@ -93,18 +93,20 @@ instance Pretty PrimCon where
 -- PrimOps --------------------------------------------------------------------
 -- | A primitive operator.
 data PrimOp
-        = PrimOpNeg
-        | PrimOpAdd
-        | PrimOpSub
+        = PrimOpNegInt
+        | PrimOpAddInt
+        | PrimOpSubInt
+        | PrimOpUpdateInt
         deriving (Show, Eq, Ord)
 
 
 instance Pretty PrimOp where
  ppr op
   = case op of
-        PrimOpNeg       -> text "neg"
-        PrimOpAdd       -> text "add"
-        PrimOpSub       -> text "sub"
+        PrimOpNegInt    -> text "negInt"
+        PrimOpAddInt    -> text "addInt"
+        PrimOpSubInt    -> text "subInt"
+        PrimOpUpdateInt -> text "updateInt"
 
 
 -- Parsing --------------------------------------------------------------------
@@ -113,9 +115,10 @@ readName []     = Nothing
 readName str@(c:rest)
         | isLower c    
         = case (c:rest) of
-                "neg"           -> Just $ NamePrimOp PrimOpNeg
-                "add"           -> Just $ NamePrimOp PrimOpAdd
-                "sub"           -> Just $ NamePrimOp PrimOpSub
+                "negInt"        -> Just $ NamePrimOp PrimOpNegInt
+                "addInt"        -> Just $ NamePrimOp PrimOpAddInt
+                "subInt"        -> Just $ NamePrimOp PrimOpSubInt
+                "updateInt"     -> Just $ NamePrimOp PrimOpUpdateInt
                 _               -> Just $ NameVar str
         
         | c == 'R'

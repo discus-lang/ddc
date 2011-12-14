@@ -31,7 +31,7 @@ primStep' (NameInt i) [xRegion, xUnit] store
         = Just  ( store1
                 , XCon () (UPrim (NameLoc l) (tInt tR)))
 
-primStep' (NamePrimOp PrimOpAdd) [xR1, xR2, xR3, x1, x2] store
+primStep' (NamePrimOp PrimOpAddInt) [xR1, xR2, xR3, x1, x2] store
         -- unpack the args
         | XType     (TCon (TyConBound (UPrim (NameRgn r1) _)))  <- xR1
         , XType     (TCon (TyConBound (UPrim (NameRgn r2) _)))  <- xR2

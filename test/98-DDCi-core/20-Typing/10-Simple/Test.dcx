@@ -1,29 +1,29 @@
 -- Types of Expressions -------------------------------------------------------
 -- See if we can print out any type.
-:check add
+:check addInt
 
 -- Instantiate the outer forall of the type of add with a region handle.
 -- Region handles in the expression are automatically added to the store at
 -- startup time.
-:check add {R1#}
+:check addInt {R1#}
 
 -- Instantiate all the foralls with different region handles.
-:check add {R1#} {R2#} {R3#}
+:check addInt {R1#} {R2#} {R3#}
 
 -- Same as above, but with nicer syntax.
-:check add {:R1# R2# R3#:}
+:check addInt {:R1# R2# R3#:}
 
 -- Instantiate all the foralls with the same region handle.
 -- The 'add' primop causes the effect (Read R1# + Read R1#) which should be 
 -- packed down to just (Read R1#).
-:check add {:R1# R1# R1#:}
+:check addInt {:R1# R1# R1#:}
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
-:check \(r1 r2 r3:%).add {:r1 r2 r3:}
+:check \(r1 r2 r3:%).addInt {:r1 r2 r3:}
 
 -- A fully applied integer constructor should cause an alloc effect.
 :check (2 {R1#} ())
 
 -- Addition should also read the args, and alloc the result.
-:check add {:R1# R2# R3#:} (2 {R1#} ()) (3 {R2#} ())
+:check addInt {:R1# R2# R3#:} (2 {R1#} ()) (3 {R2#} ())
