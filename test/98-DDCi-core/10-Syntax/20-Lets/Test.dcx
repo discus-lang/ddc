@@ -1,2 +1,9 @@
 
 :check let _ : Unit = () in ()
+
+:check let x : Unit = () in x
+
+:check \
+ let x : Unit = () in\
+ let y : Unit = ()\
+ in y

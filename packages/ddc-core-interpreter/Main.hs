@@ -17,11 +17,12 @@ main
         case args of
          [fileName]
           -> do file    <- readFile fileName
-                mapM_ handleLine $ lines file
+                runBatch file
          
          _ -> runInteractive
 
 
+-- Interactive ------------------------------------------------------------------------------------
 -- | Run an interactive session
 runInteractive :: IO ()
 runInteractive
@@ -30,47 +31,100 @@ runInteractive
         -- Setup terminal mode.
         hSetBuffering stdin NoBuffering
         hSetEcho stdin False
-        loop []
+        loopInteractive
 
 
 -- | The main REPL loop.
-loop :: String -> IO ()
-loop acc
- = do   when (null acc)
-         $ do   putStr "> "
-                hFlush stdout
+loopInteractive :: IO ()
+loopInteractive 
+ = loop []
+ where  loop acc
+         = do   when (null acc)
+                 $ do   putStr "> "
+                        hFlush stdout
          
-        line    <- getInput []
-        putChar '\n'
-        hFlush stdout
+                line    <- getInput []
+                putChar '\n'
+                hFlush stdout
 
-        case line of
-         []     -> loopCmd acc
-         _
-          | last line == '\\'
-          -> loop (acc ++ init line) 
+                case line of
+                 []     -> doCmd acc
+                 _
+                  | last line == '\\'
+                  -> loop  (acc ++ init line) 
           
-          | otherwise
-          -> loopCmd (acc ++ line)
+                  | otherwise
+                  -> doCmd (acc ++ line)
+
+        doCmd [] = loop []
+        doCmd cmd
+         = do   continue  <- handleCmdLine cmd
+                if continue
+                 then loop []
+                 else return ()
+
+
+-- | Get an input line from the console.
+--   TODO: We'd prefer to have proper readline support.
+--         For now we just handle backspace.
+getInput :: String -> IO String
+getInput buf
+ = do   c       <- hGetChar stdin
+        getInput' c
+ where
+  getInput' c
+        | c == '\n'
+        = return (reverse buf)
+
+        | _:bs  <- buf
+        , c == '\DEL'
+        = do    putStr "\b"
+                putStr " "
+                putStr "\b"
+                hFlush stdout
+                getInput bs
         
-loopCmd :: String -> IO ()
-loopCmd []      = loop []
-loopCmd cmd
- = do   continue  <- handleLine cmd
-        if continue
-         then loop []
-         else return ()
+        | []    <- buf
+        , c == '\DEL'
+        = getInput []
+
+        | otherwise
+        = do    putStr [c]
+                hFlush stdout
+                getInput (c : buf)
 
 
+-- Batch ------------------------------------------------------------------------------------------
+runBatch :: String -> IO ()
+runBatch str
+ = loop (lines str) []
+ where 
+        loop []         acc   = doCmd [] acc
+        loop ([]:ls) acc      = doCmd ls acc
+        loop (line:ls) acc
+            | last line == '\\'
+            = loop ls (acc ++ init line) 
+          
+            | otherwise
+            = doCmd ls (acc ++ line)
+
+        doCmd [] [] = return ()
+        doCmd ls cmd
+         = do   continue  <- handleCmdLine cmd
+                if continue
+                 then loop ls []
+                 else return ()
+
+
+-- Commands ---------------------------------------------------------------------------------------
 -- | Handle a single line of input.
-handleLine :: String -> IO Bool
-handleLine line
- = handle1 line (words line)
-
+handleCmdLine :: String -> IO Bool
+handleCmdLine line
+ = handleCmdLine1 line (words line)
 
 -- | Handle an input line, and print newline after successful ones.
-handle1 :: String -> [String] -> IO Bool
-handle1 line ws
+handleCmdLine1 :: String -> [String] -> IO Bool
+handleCmdLine1 line ws
         -- Ignore empty lines.
         | []    <- ws
         =       return True
@@ -173,29 +227,3 @@ splitPrefix prefix str
         = Nothing
         
 
--- | Get an input line from the console.
-getInput :: String -> IO String
-getInput buf
- = do   c       <- hGetChar stdin
-        getInput' c
- where
-  getInput' c
-        | c == '\n'
-        = return (reverse buf)
-
-        | _:bs  <- buf
-        , c == '\DEL'
-        = do    putStr "\b"
-                putStr " "
-                putStr "\b"
-                hFlush stdout
-                getInput bs
-        
-        | []    <- buf
-        , c == '\DEL'
-        = getInput []
-
-        | otherwise
-        = do    putStr [c]
-                hFlush stdout
-                getInput (c : buf)
