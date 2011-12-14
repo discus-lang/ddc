@@ -42,6 +42,19 @@ pExp2
         return  $ foldr (XLam ()) xBody
                 $ map (\b -> T.makeBindFromBinder b t) bs
 
+
+        -- Let expressions
+ , do   pTok KLet
+        b       <- T.pBinder
+        pTok KColon
+        t       <- T.pType
+        pTok KEquals
+        x1      <- pExp
+        pTok KIn
+        x2      <- pExp
+        return  $ XLet () (LLet (T.makeBindFromBinder b t) x1) x2
+        
+
         -- Local region binding
         --   let region r1 with { w1 : T1 ... } in T2
         --   let region r1 in T2

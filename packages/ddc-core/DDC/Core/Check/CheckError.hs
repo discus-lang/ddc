@@ -59,6 +59,12 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
+        -- | In let expression, type of binder does not match type of right of binding.
+        | ErrorLetMismatch
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorType             :: Type n }
+
         -- | Bound region variable is free in the type of the body of a letregion.
         | ErrorLetRegionFree
         { errorChecking         :: Exp a n
@@ -124,6 +130,13 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "Cannot shadow level-1 binder."
                  , text "                 binder: " <> ppr b1
                  , text "  is already in the environment"
+                 , text "          when checking: " <> ppr xx ]
+        
+        ErrorLetMismatch xx b t
+         -> vcat [ text "Core type error."
+                 , text "Type of binder does not match type of binding in a let expression."
+                 , text "         type of binder: " <> ppr (show b)
+                 , text "         does not match: " <> ppr (show t)
                  , text "          when checking: " <> ppr xx ]
                  
         ErrorLetRegionFree xx b t

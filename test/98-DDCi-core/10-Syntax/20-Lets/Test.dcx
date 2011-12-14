@@ -1,0 +1,2 @@
+
+:check let _ : Unit = () in ()

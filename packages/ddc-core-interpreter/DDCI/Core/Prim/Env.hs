@@ -42,6 +42,7 @@ typeOfPrimName nn
                  $ tInt r
         
         -- unit
+        NamePrimCon PrimTyConUnit       -> Just $ kData
         NamePrimCon PrimDaConUnit       -> Just $ tUnit 
         
         -- neg
@@ -76,9 +77,10 @@ typeOfPrimName nn
 
 -- | Application of the Int type constructor.
 tInt :: Region Name -> Type Name
-tInt r1 = tConData1 (NamePrimCon PrimTyConInt) (kFun kRegion kData) r1
+tInt r1 = TApp  (TCon (TyConBound (UPrim (NamePrimCon PrimTyConInt) (kFun kRegion kData))))
+                r1
 
 -- | The Unit type constructor.
 tUnit :: Type Name
-tUnit   = tConData0 (NamePrimCon PrimTyConUnit) kData
+tUnit   = TCon (TyConBound (UPrim (NamePrimCon PrimTyConUnit) kData))
 

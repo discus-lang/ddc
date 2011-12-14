@@ -62,7 +62,12 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  ppr lts
   = case lts of
-        LLet{}          -> error "ppr[Lets]: not finished"
+        LLet b x
+         -> text "let"
+                <+> ppr b
+                <+> text "="
+                <+> ppr x
+        
         LRec{}          -> error "ppr[Lets]: not finished"
 
         LLetRegion b []

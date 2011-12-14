@@ -52,6 +52,7 @@ data TokAtom
         | KBackSlash
         | KSemiColon
         | KUnderscore
+        | KEquals
 
         -- expression keywords
         | KIn

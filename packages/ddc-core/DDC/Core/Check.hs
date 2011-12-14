@@ -81,7 +81,7 @@ checkExpM
 
 checkExpM env xx
  = case xx of
-        -- variables, primitives and constructors.
+        -- variables and constructors ---------------------
         XVar _ u        
          ->     return  ( typeOfBound u
                         , Sum.empty kEffect
@@ -92,6 +92,8 @@ checkExpM env xx
                         , Sum.empty kEffect
                         , Sum.singleton kClosure (tDeepShare $ typeOfBound u))
 
+
+        -- application ------------------------------------
         -- value-type application.
         XApp _ x1 (XType t2)
          -> do  (t1, effs1, clos1)   <- checkExpM  env x1
@@ -137,7 +139,8 @@ checkExpM env xx
                   | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun xx t1 t2
 
-        -- lambda abstractions.
+
+        -- lambda abstractions ----------------------------
         XLam _ b1 x2
          -> do  let t1          =  typeOfBind b1
                 k1              <- checkTypeM env t1
@@ -163,26 +166,56 @@ checkExpM env xx
                    |  otherwise
                    -> return ( tFun t1 (TSum e2) (TSum c2) t2
                              , Sum.empty kEffect
-                             , Sum.empty kClosure)
+                             , Sum.empty kClosure)      -- TODO: this is wrong
 
                   Just UniverseWitness
                    | e2 /= Sum.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
-                   | not $ isDataKind k2   -> throw $ ErrorLamBodyNotData xx b1 t2 k2
-                   | otherwise             -> return (tImpl t1 t2,   Sum.empty kEffect, Sum.empty kClosure)
+                   | not $ isDataKind k2     -> throw $ ErrorLamBodyNotData xx b1 t2 k2
+                   | otherwise               -> return ( tImpl t1 t2
+                                                       , Sum.empty kEffect
+                                                       , Sum.empty kClosure)      -- TODO: this is wrong
                       
                   Just UniverseSpec
                    | e2 /= Sum.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
                    | not $ isDataKind k2   -> throw $ ErrorLamBodyNotData xx b1 t2 k2
-                   | otherwise             -> return (TForall b1 t2, Sum.empty kEffect, Sum.empty kClosure)
+                   | otherwise             -> return  ( TForall b1 t2
+                                                      , Sum.empty kEffect
+                                                      , Sum.empty kClosure)       -- TODO: this is wrong
 
                   _ -> throw $ ErrorMalformedType xx k1
 
+        -- let --------------------------------------------
+        XLet _ (LLet b11 x12) x2
+         -> do  -- Check the annotation
+                 k11    <- checkTypeM env (typeOfBind b11)
 
-        -- let binding
+                 -- The parser should ensure the bound variable always has data kind.
+                 when (not $ isDataKind k11)
+                  $ error $ "checkExpM: LLet does not bind a value variable."
+                 
+                 -- Check the right of the binding.
+                 (t12, effs12, clos12)  <- checkExpM env x12
+
+                 -- The type of the binding must match that of the right
+                 when (typeOfBind b11 /= t12)
+                  $ throw $ ErrorLetMismatch xx b11 t12
+                 
+                 -- Check the body expression.
+                 let env1       = Env.extend b11 env
+                 (t2, effs2, clos2)  <- checkExpM env1 x2
+                 
+                 -- TODO: We should be recording free vars instead of closure terms,
+                 --       because we need to mask the bound 
+                 return ( t2
+                        , effs12 `plus` effs2
+                        , clos12 `plus` clos2)          -- TODO: this is wrong
+          
+
+        -- letregion --------------------------------------
         XLet _ (LLetRegion b bs) x
          -- The parser should ensure the bound variable always has region kind.
          | not $ isRegionKind (typeOfBind b)
-         -> error "checkExpM: LRegion does not bind a region variable"
+         -> error "checkExpM: LRegion does not bind a region variable."
 
          | otherwise
          -> case takeSubstBoundOfBind b of
@@ -213,6 +246,8 @@ checkExpM env xx
                                 
                 return (t, effs', clos)
 
+
+        -- withregion -------------------------------------
         XLet _ (LWithRegion u) x
          -- The evaluation function should ensure this is a handle.
          | not $ isRegionKind (typeOfBound u)
