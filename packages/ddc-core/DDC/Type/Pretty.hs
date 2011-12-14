@@ -14,9 +14,9 @@ stage   = "DDC.Type.Pretty"
 instance (Pretty n, Eq n) => Pretty (Bind n) where
  ppr bb
   = case bb of
-        BName v t       -> ppr v     <> text ":" <> ppr t
-        BAnon   t       -> text "^"  <> text ":" <> ppr t
-        BNone   t       -> text "_"  <> text ":" <> ppr t
+        BName v t       -> ppr v     <+> text ":" <+> ppr t
+        BAnon   t       -> text "^"  <+> text ":" <+> ppr t
+        BNone   t       -> text "_"  <+> text ":" <+> ppr t
 
 
 -- Binder -----------------------------------------------------------------------------------------

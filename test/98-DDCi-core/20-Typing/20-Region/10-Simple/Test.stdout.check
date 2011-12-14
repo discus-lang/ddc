@@ -5,12 +5,12 @@ letregion r1 in ()
 :$: $0
 
 -- Parsing of let region with some witnesses
-letregion r1 with {w1:Const r1} in ()
+letregion r1 with {w1 : Const r1} in ()
 ::  Unit
 :!: !0
 :$: $0
 
-letregion r1 with {w1:Const r1; w2:Direct r1} in ()
+letregion r1 with {w1 : Const r1; w2 : Direct r1} in ()
 ::  Unit
 :!: !0
 :$: $0
