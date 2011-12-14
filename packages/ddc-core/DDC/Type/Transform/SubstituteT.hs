@@ -3,7 +3,8 @@
 module DDC.Type.Transform.SubstituteT
         ( SubstituteT(..)
         , BindStack(..)
-        , pushBind)
+        , pushBind
+        , substBound)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -15,15 +16,6 @@ import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import Data.Set                 (Set)
-
-
--- | Stack of anonymous binders that we've entered under, 
---   and named binders that we're rewriting.
-data BindStack n
-        = BindStack
-        { stackBinds    :: [Bind n]
-        , stackAnons    :: Int
-        , stackNamed    :: Int }
 
 
 class SubstituteT (c :: * -> *) where
@@ -60,8 +52,51 @@ instance SubstituteT Bind where
   = let k'      = substituteWithT u fvs t stack $ typeOfBind bb
     in  replaceTypeOfBind k' bb
  
-
  
+instance SubstituteT Type where
+ substituteWithT u t fns stack tt
+  = let down    = substituteWithT u t fns stack
+    in  case tt of
+         TCon{}          -> tt
+
+         TApp t1 t2      -> TApp (down t1) (down t2)
+         TSum ss         -> TSum (down ss)
+
+         TForall b tBody
+          -> let -- Substitute into the annotation on the binder.
+                 bSub            = down b
+
+                 -- Push bind onto stack, and anonymise to avoid capture if needed
+                 (stack', b')    = pushBind fns stack bSub
+                
+                 -- Substitute into body.
+                 tBody'          = substituteWithT u t fns stack' tBody
+
+             in  TForall b' tBody'
+
+         TVar u'
+          -> case substBound stack u u' of
+                Left  u'' -> TVar u''
+                Right n   -> liftT n t
+                
+
+instance SubstituteT TypeSum where
+ substituteWithT u n fns stack ss
+  = let k       = substituteWithT u n fns stack
+                $ Sum.kindOfSum ss
+    in  Sum.fromList k 
+                $ map (substituteWithT u n fns stack)
+                $ Sum.toList ss
+
+
+-------------------------------------------------------------------------------
+-- | Stack of anonymous binders that we've entered under, 
+--   and named binders that we're rewriting.
+data BindStack n
+        = BindStack
+        { stackBinds    :: [Bind n]
+        , stackAnons    :: Int
+        , stackNamed    :: Int }
 
 -- | Push a bind onto a bind stack, 
 --   anonymising it if need be to avoid variable capture.
@@ -90,66 +125,45 @@ pushBind fns bs@(BindStack stack dAnon dName) bb
         _ -> (bs, bb)
 
 
-instance SubstituteT Type where
- substituteWithT u t fns stack@(BindStack binds dAnon dName) tt
-  = let down    = substituteWithT u t fns stack
-    in  case tt of
-         TCon{}          -> tt
+-- | Compare a `Bound` against the one we're substituting for.
+substBound
+        :: Ord n
+        => BindStack n          -- ^ Current Bind stack during substitution.
+        -> Bound n              -- ^ Bound we're substituting for.
+        -> Bound n              -- ^ Bound we're looking at now.
+        -> Either 
+                (Bound n)       -- ^ Bound doesn't match, but rewite it to this one.
+                Int             -- ^ Bound matches, drop the thing being substituted and 
+                                --   and lift indices this many steps.
 
-         TApp t1 t2      -> TApp (down t1) (down t2)
-         TSum ss         -> TSum (down ss)
+substBound (BindStack binds dAnon dName) u u'
+        -- Bound name matches the one that we're substituting for.
+        | UName n1 _   <- u
+        , UName n2 _   <- u'
+        , n1 == n2
+        = Right (dAnon + dName)
 
-         TForall b tBody
-          -> let -- Substitute into the annotation on the binder.
-                 bSub            = down b
+        -- The Bind for this name was rewritten to avoid variable capture,
+        -- so we also have to update the bound occurrence.
+        | UName _ t     <- u'
+        , Just ix       <- findIndex (boundMatchesBind u') binds
+        = Left $ UIx ix t
 
-                 -- Push bind onto stack, and anonymise to avoid capture if needed
-                 (stack', b')    = pushBind fns stack bSub
-                
-                 -- Substitute into body.
-                 tBody'          = substituteWithT u t fns stack' tBody
+        -- Bound index matches the one that we're substituting for.
+        | UIx  i1 _     <- u
+        , UIx  i2 _     <- u'
+        , i1 + dAnon == i2 
+        = Right (dAnon + dName)
 
-             in  TForall b' tBody'
+        -- Bound index doesn't match, but lower this index by one to account
+        -- for the removal of the outer binder.
+        | UIx  i2 t     <- u'
+        , i2 > dAnon
+        , cutOffset     <- case u of
+                                UIx{}   -> 1
+                                _       -> 0
+        = Left $ UIx (i2 + dName - cutOffset) t
 
-         TVar u'
-          -- Bound name matches the one that we're substituting for.
-          | UName n1 _   <- u
-          , UName n2 _   <- u'
-          , n1 == n2
-          -> liftT (dAnon + dName) t
-
-          -- The Bind for this name was rewritten to avoid variable capture,
-          -- so we also have to update the bound occurrence.
-          | UName _ t'    <- u'
-          , Just ix      <- findIndex (boundMatchesBind u') binds
-          -> TVar $ UIx ix t'
-
-          -- Bound index matches the one that we're substituting for.
-          | UIx i1 _     <- u
-          , UIx i2 _     <- u'
-          , i1 + dAnon == i2 
-          -> liftT (dAnon + dName) t
-
-          -- Bound index doesn't match, but lower this index by one to account
-          -- for the removal of the outer binder.
-          | UIx  i2 t'    <- u'
-          , i2 > dAnon
-          , cutOffset    <- case u of
-                                 UIx{}   -> 1
-                                 _       -> 0
-          -> TVar $ UIx (i2 + dName - cutOffset) t'
-
-          -- Some name that didn't match.
-          | otherwise
-          -> tt
-
-
-instance SubstituteT TypeSum where
- substituteWithT u n fns stack ss
-  = let k       = substituteWithT u n fns stack
-                $ Sum.kindOfSum ss
-    in  Sum.fromList k 
-                $ map (substituteWithT u n fns stack)
-                $ Sum.toList ss
-
-
+        -- Some name that didn't match.
+        | otherwise
+        = Left u'
