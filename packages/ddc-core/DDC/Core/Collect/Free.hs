@@ -38,12 +38,14 @@ instance Free n (Lets a n) where
                         [ Set.unions $ map (free env)  bs
                         , Set.unions $ map (free env') xs ]
         
-        LRegion b bs
+        LLetRegion b bs
          -> let env1    = Env.extend b env
             in  Set.unions 
                         [ free env b
                         , Set.unions $ map (free env1) bs]
 
+        LWithRegion b   -> free env b
+        
 
 instance Free n (Cast n) where
  free env cc

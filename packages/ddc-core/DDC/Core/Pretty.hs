@@ -65,15 +65,19 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
         LLet{}          -> error "ppr[Lets]: not finished"
         LRec{}          -> error "ppr[Lets]: not finished"
 
-        LRegion b []
+        LLetRegion b []
          -> text "letregion"
                 <+> ppr (binderOfBind b)
 
-        LRegion b bs
+        LLetRegion b bs
          -> text "letregion"
                 <+> ppr (binderOfBind b)
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
+
+        LWithRegion b
+         -> text "withregion"
+                <+> ppr b
 
 
 -- Witness ----------------------------------------------------------------------------------------

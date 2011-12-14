@@ -24,18 +24,19 @@ instance GatherBound n (Exp a n) where
 instance GatherBound n (Lets a n) where
  gatherBound xx
   = case xx of
-        LLet b x
-         -> Set.unions [gatherBound b, gatherBound x]
+        LLet b x        -> Set.unions [gatherBound b, gatherBound x]
  
         LRec bxs        
          -> Set.unions
                 [ Set.unions $ map (gatherBound . fst) bxs
                 , Set.unions $ map (gatherBound . snd) bxs]
 
-        LRegion b bs
+        LLetRegion b bs
          -> Set.unions
                 $ gatherBound b
                 : map gatherBound bs
+
+        LWithRegion b   -> gatherBound b
 
 
 instance GatherBound n (Cast n) where

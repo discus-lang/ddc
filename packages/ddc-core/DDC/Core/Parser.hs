@@ -61,11 +61,11 @@ pExp2
                 pTok KBraceKet
                 pTok KIn
                 x       <- pExp2 
-                return  $ XLet () (LRegion b wits) x 
+                return  $ XLet () (LLetRegion b wits) x 
 
          , do   pTok KIn
                 x       <- pExp2
-                return $ XLet ()  (LRegion b []) x ]
+                return $ XLet ()  (LLetRegion b []) x ]
 
  , do   pExp1 
  ]

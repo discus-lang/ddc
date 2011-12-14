@@ -16,9 +16,31 @@ letregion r1 with {w1:Const r1; w2:Direct r1} in ()
 :$: $0
 
 -- Use the bound region in the body of the expression.
--- TODO: effects mentioning the region should be masked
 letregion r1 in add {r1} {r1} {R2#} (2 {r1} ()) (3 {r1} ())
 ::  Int R2#
-:!: Read r1 + Alloc r1 + Alloc R2#
+:!: Alloc R2#
 :$: $0
+
+-- As above, but with debruijn indices.
+letregion ^ in add {^0} {^0} {R2#} (2 {^0} ()) (3 {^0} ())
+::  Int R2#
+:!: Alloc R2#
+:$: $0
+
+-- Do the reduction
+letregion r1 in add {r1} {r1} {R2#} (2 {r1} ()) (3 {r1} ())
+withregion R1# in add {R1#} {R1#} {R2#} (2 {R1#} ()) (3 {R1#} ())
+withregion R1# in add {R1#} {R1#} {R2#} L1# (3 {R1#} ())
+withregion R1# in add {R1#} {R1#} {R2#} L1# L2#
+withregion R1# in L3#
+L3#
+STORE
+ NextLoc: 4
+ NextRgn: 2
+ Regions: {R1# R2#}
+
+ Binds:
+ L1#:R1# -> INT 2
+ L2#:R1# -> INT 3
+ L3#:R2# -> INT 5
 

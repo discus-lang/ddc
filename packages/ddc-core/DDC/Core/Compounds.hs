@@ -12,10 +12,11 @@ import DDC.Core.Exp
 bindsOfLets :: Lets a n -> [Bind n]
 bindsOfLets ll
  = case ll of
-        LLet b _        -> [b]
-        LRec bxs        -> map fst bxs
-        LRegion b bs    -> b : bs
-        
+        LLet b _          -> [b]
+        LRec bxs          -> map fst bxs
+        LLetRegion   b bs -> b : bs
+        LWithRegion{}     -> []
+
 
 -- | Split nested lambdas from the front of an expression
 --   or `Nothing` if there was no outer lambda

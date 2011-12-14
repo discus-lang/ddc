@@ -38,11 +38,14 @@ instance Spread (Lets a) where
                 
         LRec{}          -> error "spread LRec not done"
 
-        LRegion b bs
+        LLetRegion b bs
          -> let b'      = spread env b
                 env'    = Env.extend b' env
                 bs'     = map (spread env') bs
-            in  LRegion b' bs'
+            in  LLetRegion b' bs'
+
+        LWithRegion b
+         -> LWithRegion (spread env b)
 
 
 instance Spread Witness where

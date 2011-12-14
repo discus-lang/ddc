@@ -9,8 +9,9 @@
 -- Use the bound region in the body of the expression.
 :check letregion r1 in add {:r1 r1 R2#:} (2 {r1} ()) (3 {r1} ())
 
--- Do the same thing with debruijn indices.
+-- As above, but with debruijn indices.
 :check letregion ^  in add {:^0 ^0 R2#:} (2 {^0} ()) (3 {^0} ())
 
 -- Do the reduction
--- letregion r1 in add {:r1 r1 R2#:} (2 {r1} ()) (3 {r1} ())
+letregion r1 in add {:r1 r1 R2#:} (2 {r1} ()) (3 {r1} ())
+

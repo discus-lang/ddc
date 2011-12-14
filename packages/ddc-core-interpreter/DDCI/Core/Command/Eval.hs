@@ -9,10 +9,22 @@ import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect
+import DDC.Type.Compounds
+import DDCI.Core.Prim.Store                     (Store)
 import qualified DDC.Type.Env                   as Env
 import qualified DDCI.Core.Prim.Store           as Store
 import qualified DDC.Core.Step                  as C
 import qualified Data.Set                       as Set
+
+prims   = C.PrimStep
+        { C.primStep            = primStep
+        , C.primNewRegion       = primNewRegion }
+
+primNewRegion :: Store -> (Store, Bound Name)
+primNewRegion store
+ = let  (store', rgn)   = Store.newRgn store
+        u               = UPrim (NameRgn rgn) kRegion
+   in   (store', u)
 
 
 -- | Parse, check, and single step evaluate an expression.
@@ -30,7 +42,7 @@ cmdStep str
            in   goStep x store
 
         goStep x store
-         = case C.step (C.PrimStep primStep) store x of
+         = case C.step prims store x of
              Nothing         -> putStrLn $ show $ text "STUCK!"
              Just (store', x')  
               -> do     putStrLn $ pretty (ppr x')
@@ -52,7 +64,7 @@ cmdEval str
            in   goStep x store
 
         goStep x store
-         | Just (store', x')    <- C.step (C.PrimStep primStep) store x 
+         | Just (store', x')    <- C.step prims store x 
          = case checkExp Env.empty x' of
             Left err
              -> do    putStrLn "OFF THE RAILS!"

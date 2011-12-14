@@ -113,7 +113,8 @@ newLoc store
 newRgn  :: Store -> (Store, Rgn)
 newRgn store
  = let  rgn     = storeNextRgn store
-        store'  = store { storeNextRgn  = rgn + 1 }
+        store'  = store { storeNextRgn  = rgn + 1 
+                        , storeRegions  = Set.insert (Rgn rgn) (storeRegions store) }
    in   (store', Rgn rgn)
 
 
@@ -121,9 +122,10 @@ newRgn store
 newRgns :: Int -> Store -> (Store, [Rgn])
 newRgns 0     store     = (store, [])
 newRgns count store
- = let  rgns    = [ storeNextRgn store .. storeNextRgn store + count - 1]
-        store'  = store { storeNextRgn  = storeNextRgn store + count }
-   in   (store', map Rgn rgns)
+ = let  rgns    = map Rgn $ [ storeNextRgn store .. storeNextRgn store + count - 1]
+        store'  = store { storeNextRgn  = storeNextRgn store + count 
+                        , storeRegions  = Set.union (Set.fromList rgns) (storeRegions store) }
+   in   (store', rgns)
 
 
 -- | Check whether a store contains the given region.

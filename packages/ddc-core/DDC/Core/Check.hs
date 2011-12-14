@@ -179,7 +179,8 @@ checkExpM env xx
 
 
         -- let binding
-        XLet _ (LRegion b bs) x
+        XLet _ (LLetRegion b bs) x
+         -- The parser should ensure the bound variable always has region kind.
          | not $ isRegionKind (typeOfBind b)
          -> error "checkExpM: LRegion does not bind a region variable"
 
@@ -196,7 +197,7 @@ checkExpM env xx
                 mapM_ (checkTypeM env1) $ map typeOfBind bs
                 let env2         = Env.extends bs env1
 
-                -- Check the body expression
+                -- Check the body expression.
                 (t, effs, clos)  <- checkExpM env2 x
 
                 -- The free variables of the body cannot contain the bound region.
@@ -204,13 +205,35 @@ checkExpM env xx
                 when (Set.member u fvs)
                  $ throw $ ErrorLetRegionFree xx b t
                 
-                -- Delete effects on the bound region from the result
+                -- Delete effects on the bound region from the result.
                 let effs'       = Sum.delete (tRead  (TVar u))
                                 $ Sum.delete (tWrite (TVar u))
                                 $ Sum.delete (tAlloc (TVar u))
                                 $ effs
                                 
                 return (t, effs', clos)
+
+        XLet _ (LWithRegion u) x
+         -- The evaluation function should ensure this is a handle.
+         | not $ isRegionKind (typeOfBound u)
+         -> error "checkExpM: LWithRegion does not contain a region handle"
+         
+         | otherwise
+         -> do  -- Check the region handle
+                checkTypeM env (typeOfBound u)
+                
+                -- Check the body expression.
+                (t, effs, clos) <- checkExpM env x
+                
+                -- Delete effects on the bound region from the result.
+                let tu          = TCon $ TyConBound u
+                let effs'       = Sum.delete (tRead  tu)
+                                $ Sum.delete (tWrite tu)
+                                $ Sum.delete (tAlloc tu)
+                                $ effs
+                
+                return (t, effs', clos)
+                
 
         -- case expression
         XCase{} -> error "checkExp: XCase not done yet"

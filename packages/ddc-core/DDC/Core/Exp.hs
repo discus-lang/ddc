@@ -74,7 +74,10 @@ data Lets a n
         | LRec    [(Bind n, Exp a n)]
 
         -- | Bind a local region variable, and (non-recursive) witnesses to its properties.
-        | LRegion (Bind n) [Bind n]
+        | LLetRegion  (Bind n) [Bind n]
+        
+        -- | Holds a region handle during evaluation.
+        | LWithRegion (Bound n)
         deriving (Eq, Show)
 
 
