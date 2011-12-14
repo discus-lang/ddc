@@ -12,6 +12,7 @@ import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser
 import DDC.Core.Collect.Free
+import DDC.Type.Compounds
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
@@ -131,6 +132,6 @@ cmdParseCheckExp str
          = do   putStrLn $ show $ ppr err
                 return  Nothing
          
-        goResult x (Right (t, eff, clo))
-         =      return $ Just (x, t, eff, clo)
+        goResult x (Right (t, eff, _clo))
+         =      return $ Just (x, t, eff, tBot kClosure)        -- TODO: add closure
 

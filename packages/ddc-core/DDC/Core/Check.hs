@@ -11,7 +11,7 @@ import DDC.Core.Pretty
 import DDC.Core.Collect.Free
 import DDC.Core.Check.CheckError
 import DDC.Type.Transform
-import DDC.Type.Operators.Trim
+-- import DDC.Type.Operators.Trim
 import DDC.Type.Universe
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -19,6 +19,7 @@ import DDC.Type.Sum                     as Sum
 import DDC.Type.Env                     (Env)
 import DDC.Type.Check.Monad             (result, throw)
 import DDC.Base.Pretty                  ()
+import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Monad   as G
@@ -59,25 +60,24 @@ checkExp
         :: (Ord n, Pretty n)
         => Env n -> Exp a n
         -> Either (Error a n)
-                  (Type n, Effect n, Closure n)
+                  (Type n, Effect n, Set (Bound n))
 
 checkExp env xx 
  = result
- $ do   (t, effs, clos) <- checkExpM env xx
-        let clo_trimmed = trimClosure (TSum clos)
-        return  
-         (t, TSum effs, clo_trimmed)
+ $ do   (t, effs, fvs) <- checkExpM env xx
+        return (t, TSum effs, fvs)
         
 
 -- checkExp ---------------------------------------------------------------------------------------
--- | Check a type, returning its kind.
+-- | Check an expression, 
+--   returning its type, effect and free value variables.
 --   TODO: attach kinds to bound variables, and to sums.
 --         check that existing annotations have the same kinds as from the environment.
 --         add a function to check that a type has kind annots in the right places.
 checkExpM 
         :: (Ord n, Pretty n)
         => Env n -> Exp a n
-        -> CheckM a n (Type n, TypeSum n, TypeSum n)
+        -> CheckM a n (Type n, TypeSum n, Set (Bound n))
 
 checkExpM env xx
  = case xx of
@@ -85,18 +85,18 @@ checkExpM env xx
         XVar _ u        
          ->     return  ( typeOfBound u
                         , Sum.empty kEffect
-                        , Sum.singleton kClosure (tDeepShare $ typeOfBound u))
+                        , Set.singleton u)
 
         XCon _ u
          ->     return  ( typeOfBound u
                         , Sum.empty kEffect
-                        , Sum.singleton kClosure (tDeepShare $ typeOfBound u))
+                        , Set.singleton u)
 
 
         -- application ------------------------------------
         -- value-type application.
         XApp _ x1 (XType t2)
-         -> do  (t1, effs1, clos1)   <- checkExpM  env x1
+         -> do  (t1, effs1, fvs1)    <- checkExpM  env x1
                 k2                   <- checkTypeM env t2
                 case t1 of
                  TForall b11 t12
@@ -104,38 +104,38 @@ checkExpM env xx
                   -> case takeSubstBoundOfBind b11 of
                       Just u    -> return ( substituteT u t2 t12
                                           , substituteT u t2 effs1
-                                          , substituteT u t2 clos1)
+                                          , fvs1)
 
-                      Nothing   -> return (t12, effs1, clos1)
+                      Nothing   -> return (t12, effs1, fvs1)
 
                   | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
                  _              -> throw $ ErrorAppNotFun   xx t1 t2
 
         -- value-witness application.
         XApp _ x1 (XWitness w2)
-         -> do  (t1, effs1, clos1)   <- checkExpM     env x1
+         -> do  (t1, effs1, fvs1)    <- checkExpM     env x1
                 t2                   <- checkWitnessM env w2
                 case t1 of
                  TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
                   | t11 == t2   
                   -> return     ( t12
                                 , effs1
-                                , clos1 )
+                                , fvs1 )
 
                   | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun   xx t1 t2
                  
         -- value-value application.
         XApp _ x1 x2
-         -> do  (t1, effs1, clos1) <- checkExpM env x1
-                (t2, effs2, clos2) <- checkExpM env x2
+         -> do  (t1, effs1, fvs1)    <- checkExpM env x1
+                (t2, effs2, fvs2)    <- checkExpM env x2
                 case t1 of
                  TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) _clo) t12
                   | t11 == t2   
                   , effs   <- Sum.fromList kEffect  [eff]
                   -> return     ( t12
                                 , effs1 `plus` effs2 `plus` effs
-                                , clos1 `plus` clos2)
+                                , fvs1 `Set.union` fvs2)
                   | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun xx t1 t2
 
@@ -154,7 +154,7 @@ checkExpM env xx
 
                 -- Check the body.
                 let env'        =  Env.extend b1 env
-                (t2, e2, c2)    <- checkExpM  env' x2
+                (t2, e2, fvs2)  <- checkExpM  env' x2
                 k2              <- checkTypeM env' t2
 
                 -- The form of the function constructor depends on what universe we're dealing with.
@@ -164,25 +164,28 @@ checkExpM env xx
                    |  not $ isDataKind k1  -> throw $ ErrorLamBindNotData xx t1 k1
                    |  not $ isDataKind k2  -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
                    |  otherwise
-                   -> return ( tFun t1 (TSum e2) (TSum c2) t2
+                   -> return ( tFun t1 (TSum e2) (tBot kClosure) t2             -- TODO: add closure
                              , Sum.empty kEffect
-                             , Sum.empty kClosure)      -- TODO: this is wrong
+                             , case takeSubstBoundOfBind b1 of
+                                Nothing -> fvs2
+                                Just u  -> Set.delete u fvs2)
 
                   Just UniverseWitness
                    | e2 /= Sum.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
                    | not $ isDataKind k2     -> throw $ ErrorLamBodyNotData xx b1 t2 k2
                    | otherwise               -> return ( tImpl t1 t2
                                                        , Sum.empty kEffect
-                                                       , Sum.empty kClosure)      -- TODO: this is wrong
+                                                       , fvs2)
                       
                   Just UniverseSpec
                    | e2 /= Sum.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
                    | not $ isDataKind k2   -> throw $ ErrorLamBodyNotData xx b1 t2 k2
                    | otherwise             -> return  ( TForall b1 t2
                                                       , Sum.empty kEffect
-                                                      , Sum.empty kClosure)       -- TODO: this is wrong
+                                                      , fvs2)
 
                   _ -> throw $ ErrorMalformedType xx k1
+
 
         -- let --------------------------------------------
         XLet _ (LLet b11 x12) x2
@@ -194,7 +197,7 @@ checkExpM env xx
                   $ error $ "checkExpM: LLet does not bind a value variable."
                  
                  -- Check the right of the binding.
-                 (t12, effs12, clos12)  <- checkExpM env x12
+                 (t12, effs12, fvs12)  <- checkExpM env x12
 
                  -- The type of the binding must match that of the right
                  when (typeOfBind b11 /= t12)
@@ -202,14 +205,17 @@ checkExpM env xx
                  
                  -- Check the body expression.
                  let env1       = Env.extend b11 env
-                 (t2, effs2, clos2)  <- checkExpM env1 x2
+                 (t2, effs2, fvs2)     <- checkExpM env1 x2
+                 let fvs2'  = case takeSubstBoundOfBind b11 of
+                                Nothing -> fvs2
+                                Just u  -> Set.delete u fvs2
                  
                  -- TODO: We should be recording free vars instead of closure terms,
                  --       because we need to mask the bound 
                  return ( t2
                         , effs12 `plus` effs2
-                        , clos12 `plus` clos2)          -- TODO: this is wrong
-          
+                        , fvs12 `Set.union` fvs2')
+
 
         -- letregion --------------------------------------
         XLet _ (LLetRegion b bs) x
@@ -231,11 +237,11 @@ checkExpM env xx
                 let env2         = Env.extends bs env1
 
                 -- Check the body expression.
-                (t, effs, clos)  <- checkExpM env2 x
+                (t, effs, fvs)  <- checkExpM env2 x
 
                 -- The free variables of the body cannot contain the bound region.
-                let fvs         = free Env.empty t
-                when (Set.member u fvs)
+                let fvsT         = free Env.empty t
+                when (Set.member u fvsT)
                  $ throw $ ErrorLetRegionFree xx b t
                 
                 -- Delete effects on the bound region from the result.
@@ -244,7 +250,7 @@ checkExpM env xx
                                 $ Sum.delete (tAlloc (TVar u))
                                 $ effs
                                 
-                return (t, effs', clos)
+                return (t, effs', fvs)
 
 
         -- withregion -------------------------------------
@@ -258,7 +264,7 @@ checkExpM env xx
                 checkTypeM env (typeOfBound u)
                 
                 -- Check the body expression.
-                (t, effs, clos) <- checkExpM env x
+                (t, effs, fvs) <- checkExpM env x
                 
                 -- Delete effects on the bound region from the result.
                 let tu          = TCon $ TyConBound u
@@ -267,7 +273,7 @@ checkExpM env xx
                                 $ Sum.delete (tAlloc tu)
                                 $ effs
                 
-                return (t, effs', clos)
+                return (t, effs', fvs)
                 
 
         -- case expression
