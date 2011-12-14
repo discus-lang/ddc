@@ -19,7 +19,7 @@ instance Free n (Exp a n) where
         XLam _ b  x     -> Set.unions [free env b,   free (Env.extend b env) x]
         XLet _ lts x    -> Set.unions [free env lts, free (Env.extends (bindsOfLets lts) env) x]
 
-        XCase{}         -> error "exp free not done yet"
+        XCase{}         -> error "free[Exp] XCase"
 
         XCast _ x c     -> Set.unions [free env x,  free env c]
         XType t         -> free env t
