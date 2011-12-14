@@ -47,6 +47,11 @@ step' ps store (XApp a x1 x2)
         , Just (store', x2')    <- step ps store x2
         = Just (store', XApp a x1 x2')
 
+-- (EvLetDone)
+step' ps store (XLet a (LLet b x1) x2)
+        | Just (store', x1')    <- step ps store x1
+        = Just (store', XLet a (LLet b x1') x2)
+
 -- (EvCreateRegion): Create a new region.
 -- TODO: substitute in witnesses
 step' ps store (XLet a (LLetRegion bRegion _bws) x)

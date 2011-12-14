@@ -131,20 +131,17 @@ readName str@(c:rest)
         , not $ null ds
         = Just $ NameLoc (Loc $ read ds)
         
-        | str == "U"
-        = Just $ NamePrimCon PrimDaConUnit
-        
-        | str == "Unit"
-        = Just $ NamePrimCon PrimTyConUnit
+        | str == "Unit" = Just $ NamePrimCon PrimTyConUnit
+        | str == "()"   = Just $ NamePrimCon PrimDaConUnit
 
-        | str == "()"
-        = Just $ NamePrimCon PrimDaConUnit
+        | str == "Int"  = Just $ NamePrimCon PrimTyConInt
+
+        | (ds, "")      <- span isDigit str
+        = Just $ NameInt (read ds)        
         
         | isUpper c
         = Just $ NameCon str
         
-        | (ds, "")      <- span isDigit str
-        = Just $ NameInt (read ds)        
         
         | otherwise
         = Nothing

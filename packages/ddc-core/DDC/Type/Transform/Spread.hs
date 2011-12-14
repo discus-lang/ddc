@@ -11,7 +11,7 @@ import qualified DDC.Type.Sum           as T
 
 class Spread (c :: * -> *) where
  -- | Spread type annotations from the environment and binders into variables at the leaves.
- spread :: forall n. (Ord n, P.Pretty n) => Env n -> c n -> c n
+ spread :: forall n. (Ord n, Show n, P.Pretty n) => Env n -> c n -> c n
         
 
 instance Spread Type where

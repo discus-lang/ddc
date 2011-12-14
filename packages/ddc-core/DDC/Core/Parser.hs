@@ -149,7 +149,7 @@ pExp0
         return  $ XCon () (UName lit (T.tBot T.kData))
 
         -- Debruijn indices
- , do   i       <-T.pIndex
+ , do   i       <- T.pIndex
         return  $ XVar () (UIx   i   (T.tBot T.kData))
 
         -- Variables
@@ -170,7 +170,16 @@ pWitness0
  = P.choice
         -- Named witness constructors.
         [ do    wc     <- pWiCon
-                return $ WCon wc ]
+                return $ WCon wc 
+                
+        -- Debruijn indices
+        , do    i       <- T.pIndex
+                return  $ WVar (UIx   i   (T.tBot T.kWitness))
+
+        -- Variables
+        , do    var     <- pVar
+                return  $ WVar (UName var (T.tBot T.kWitness)) ]
+
  <?> "a witness"
 
 

@@ -34,7 +34,8 @@ typeOfPrimName nn
         NameRgn _
          -> Just $ kRegion
 
-        -- All ints have the same type.
+        -- int
+        NamePrimCon PrimTyConInt        -> Just $ kFun kRegion kData
         NameInt _
          -> Just $ tForall kRegion
           $ \r  -> tFun tUnit (tAlloc r)
@@ -44,6 +45,7 @@ typeOfPrimName nn
         -- unit
         NamePrimCon PrimTyConUnit       -> Just $ kData
         NamePrimCon PrimDaConUnit       -> Just $ tUnit 
+        
         
         -- neg
         NamePrimOp PrimOpNegInt

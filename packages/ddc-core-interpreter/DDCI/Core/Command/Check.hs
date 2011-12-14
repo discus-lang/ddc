@@ -125,6 +125,7 @@ cmdParseCheckExp str
                  then   goResult x' (checkExp Env.empty x')
                  else do  
                         putStrLn $ show $ text "Undefined variables: " <> ppr fvs
+                        putStrLn $ show x'
                         return Nothing
 
         -- Expression had a type error.

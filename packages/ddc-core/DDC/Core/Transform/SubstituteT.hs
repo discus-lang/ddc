@@ -9,8 +9,8 @@ import DDC.Type.Transform.SubstituteT
 
 
 instance SubstituteT (Exp a) where
- substituteWithT u t fvs stack dAnon dName xx
-  = let down    = substituteWithT u t fvs stack dAnon dName
+ substituteWithT u t fvs stack xx
+  = let down    = substituteWithT u t fvs stack
     in  case xx of
          -- Types are never substitute for expression variables, but we do need
          -- to substitute into the annotation.
@@ -22,10 +22,15 @@ instance SubstituteT (Exp a) where
           -> let t' = down (typeOfBound u')
              in  XCon a $ replaceTypeOfBound t' u'
          
-         XApp a x1 x2     -> XApp a (down x1) (down x2)
+         XApp a x1 x2           
+          -> XApp a (down x1) (down x2)
+
+         XLet a (LLet b x1) x2
+          -> XLet a (LLet (down b) (down x1)) (down x2)
+
+         XLet{}  -> error "substituteWithT: XLet  not done yet"
          
          XLam{}  -> error "substituteWithT: XLam  not done yet"
-         XLet{}  -> error "substituteWithT: XLet  not done yet"
          XCase{} -> error "substituteWithT: XCase not done yet"
          XCast{} -> error "substituteWithT: XCast not done yet"
 
@@ -35,8 +40,8 @@ instance SubstituteT (Exp a) where
 
 
 instance SubstituteT Witness where
- substituteWithT u t fvs stack dAnon dName ww
-  = let down    = substituteWithT u t fvs stack dAnon dName
+ substituteWithT u t fvs stack ww
+  = let down    = substituteWithT u t fvs stack
     in case ww of
           WCon{}        -> ww
 

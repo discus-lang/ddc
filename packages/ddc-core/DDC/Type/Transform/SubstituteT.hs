@@ -1,7 +1,9 @@
 
 -- | Type substitution.
 module DDC.Type.Transform.SubstituteT
-        (SubstituteT(..))
+        ( SubstituteT(..)
+        , BindStack(..)
+        , pushBind)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -15,6 +17,15 @@ import qualified Data.Set       as Set
 import Data.Set                 (Set)
 
 
+-- | Stack of anonymous binders that we've entered under, 
+--   and named binders that we're rewriting.
+data BindStack n
+        = BindStack
+        { stackBinds    :: [Bind n]
+        , stackAnons    :: Int
+        , stackNamed    :: Int }
+
+
 class SubstituteT (c :: * -> *) where
  -- | Substitute a type into some thing.
  --   In the target, if we find a named binder that would capture a free variable
@@ -25,10 +36,7 @@ class SubstituteT (c :: * -> *) where
         => Bound n              -- ^ Bound variable that we're subsituting into.
         -> Type n               -- ^ Type to substitute.
         -> Set  n               -- ^ Names of free varaibles in the type to substitute.
-        -> [Bind n]             -- ^ Anonymous binders that we've entered under, and named
-                                --   binders that we're rewriting.
-        -> Int                  -- ^ Number of BAnons in the stack.
-        -> Int                  -- ^ Number of BNames in the stack.
+        -> BindStack n          -- ^ Bind stack.
         -> c n -> c n
 
  -- | Wrapper for `substituteWithT` that determines the set of free names in the
@@ -41,19 +49,50 @@ class SubstituteT (c :: * -> *) where
                         $ mapMaybe takeNameOfBound 
                         $ Set.toList 
                         $ free Env.empty t
+
+        stack           = BindStack [] 0 0
  
-   in   substituteWithT u t freeNames [] 0 0 x
+   in   substituteWithT u t freeNames stack x
 
 
 instance SubstituteT Bind where
- substituteWithT u fvs t stack dAnon dName bb
-  = let k'      = substituteWithT u fvs t stack dAnon dName $ typeOfBind bb
+ substituteWithT u fvs t stack bb
+  = let k'      = substituteWithT u fvs t stack $ typeOfBind bb
     in  replaceTypeOfBind k' bb
-  
-        
+ 
+
+ 
+
+-- | Push a bind onto a bind stack, 
+--   anonymising it if need be to avoid variable capture.
+pushBind
+        :: Ord n
+        => Set n                  -- ^ Names free in the thing we're substiuting.
+        -> BindStack n            -- ^ Current bind stack.
+        -> Bind n                 -- ^ Bind to push.
+        -> (BindStack n, Bind n)  -- ^ New stack and possibly anonymised bind.
+
+pushBind fns bs@(BindStack stack dAnon dName) bb
+ = case bb of
+        -- Push anonymous bind on stack.
+        BAnon t                 
+         -> ( BindStack (BAnon t   : stack) (dAnon + 1) dName
+            , BAnon t)
+            
+        -- This binder would capture names in the thing that we're substituting,
+        -- to rewrite it to an anonymous one.
+        BName n t
+         | Set.member n fns     
+         -> ( BindStack (BName n t : stack) dAnon       (dName + 1)
+            , BAnon t)
+
+        -- Binder was a wildcard or non-capturing name.
+        _ -> (bs, bb)
+
+
 instance SubstituteT Type where
- substituteWithT u t fns stack dAnon dName tt
-  = let down    = substituteWithT u t fns stack dAnon dName
+ substituteWithT u t fns stack@(BindStack binds dAnon dName) tt
+  = let down    = substituteWithT u t fns stack
     in  case tt of
          TCon{}          -> tt
 
@@ -62,27 +101,15 @@ instance SubstituteT Type where
 
          TForall b tBody
           -> let -- Substitute into the annotation on the binder.
-                bSub    = down b
+                 bSub            = down b
 
-                (b', stack', dAnon', dName')
-                 -- Push anonymous binder on the stack.
-                 | BAnon t'      <- bSub
-                 = (BAnon t', BAnon t'   : stack, dAnon + 1, dName)
-
-                 -- If this binder would capture names in the type that we're
-                 -- substituting then rewrite it to an anonymous one.
-                 | BName n t'     <- bSub
-                 , Set.member n fns
-                 = (BAnon t', BName n t' : stack, dAnon,     dName + 1)
-         
-                 -- Binder was a wildcard, nothing binds.
-                 | otherwise
-                 = (bSub,    stack,             dAnon,     dName)
-
-                tBody'  = substituteWithT u t fns stack' dAnon' dName' tBody
+                 -- Push bind onto stack, and anonymise to avoid capture if needed
+                 (stack', b')    = pushBind fns stack bSub
+                
+                 -- Substitute into body.
+                 tBody'          = substituteWithT u t fns stack' tBody
 
              in  TForall b' tBody'
-
 
          TVar u'
           -- Bound name matches the one that we're substituting for.
@@ -94,7 +121,7 @@ instance SubstituteT Type where
           -- The Bind for this name was rewritten to avoid variable capture,
           -- so we also have to update the bound occurrence.
           | UName _ t'    <- u'
-          , Just ix      <- findIndex (boundMatchesBind u') stack
+          , Just ix      <- findIndex (boundMatchesBind u') binds
           -> TVar $ UIx ix t'
 
           -- Bound index matches the one that we're substituting for.
@@ -118,11 +145,11 @@ instance SubstituteT Type where
 
 
 instance SubstituteT TypeSum where
- substituteWithT u n fns stack dAnon dName ss
-  = let k       = substituteWithT u n fns stack dAnon dName 
+ substituteWithT u n fns stack ss
+  = let k       = substituteWithT u n fns stack
                 $ Sum.kindOfSum ss
     in  Sum.fromList k 
-                $ map (substituteWithT u n fns stack dAnon dName)
+                $ map (substituteWithT u n fns stack)
                 $ Sum.toList ss
 
 

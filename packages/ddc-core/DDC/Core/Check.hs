@@ -325,8 +325,8 @@ checkWitnessM
 
 checkWitnessM _ ww
  = case ww of
-        WCon wc
-         -> return $ typeOfWiCon wc
+        WCon wc -> return $ typeOfWiCon wc
+        WVar u  -> return $ typeOfBound u
 
         _ -> error "typeOfWitness: not handled yet"
         

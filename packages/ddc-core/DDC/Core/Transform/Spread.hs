@@ -19,8 +19,9 @@ instance Spread (Exp a) where
             in  XLam a b' (spread (Env.extend b' env) x)
             
         XLet a lts x
-         -> let env'    = Env.extends (bindsOfLets lts) env
-            in  XLet a (spread env' lts) (spread env' x)
+         -> let lts'    = spread env lts
+                env'    = Env.extends (bindsOfLets lts') env
+            in  XLet a lts' (spread env' x)
          
         XCase{}         -> error "spread XCase not done"
         XCast{}         -> error "spread XCast not done"
@@ -51,7 +52,7 @@ instance Spread (Lets a) where
 instance Spread Witness where
  spread env ww
   = case ww of
-        WCon wicon      -> WCon wicon
-        WVar n          -> WVar n               -- TODO add type
+        WCon  wicon     -> WCon wicon
+        WVar  u         -> WVar  (spread env u)
         WApp  w1 w2     -> WApp  (spread env w1) (spread env w2)
         WJoin w1 w2     -> WJoin (spread env w1) (spread env w2)

@@ -53,7 +53,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> ppr lts <+> text "in" <+> ppr x
 
         XType    t      -> braces $ ppr t
-        XWitness w      -> angles $ ppr w
+        XWitness w      -> text "<" <> ppr w <> text ">"
 
         _               -> error "pprPrec[Exp] not finished"
 

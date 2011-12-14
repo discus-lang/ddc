@@ -135,8 +135,8 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         ErrorLetMismatch xx b t
          -> vcat [ text "Core type error."
                  , text "Type of binder does not match type of binding in a let expression."
-                 , text "         type of binder: " <> ppr (show b)
-                 , text "         does not match: " <> ppr (show t)
+                 , text "         type of binder: " <> ppr b
+                 , text "         does not match: " <> ppr t
                  , text "          when checking: " <> ppr xx ]
                  
         ErrorLetRegionFree xx b t
