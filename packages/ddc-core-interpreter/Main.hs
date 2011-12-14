@@ -8,6 +8,8 @@ import DDCI.Core.Command.Eval
 import System.IO
 import System.Environment
 import Data.List
+import Control.Monad
+
 
 main :: IO ()
 main 
@@ -28,22 +30,36 @@ runInteractive
         -- Setup terminal mode.
         hSetBuffering stdin NoBuffering
         hSetEcho stdin False
-        loop
+        loop []
 
 
 -- | The main REPL loop.
-loop :: IO ()
-loop
- = do   putStr "> "
-        hFlush stdout
+loop :: String -> IO ()
+loop acc
+ = do   when (null acc)
+         $ do   putStr "> "
+                hFlush stdout
+         
         line    <- getInput []
         putChar '\n'
         hFlush stdout
 
-        continue  <- handleLine line
+        case line of
+         []     -> loopCmd acc
+         _
+          | last line == '\\'
+          -> loop (acc ++ init line) 
+          
+          | otherwise
+          -> loopCmd (acc ++ line)
+        
+loopCmd :: String -> IO ()
+loopCmd []      = loop []
+loopCmd cmd
+ = do   continue  <- handleLine cmd
         if continue
-                then loop 
-                else return ()
+         then loop []
+         else return ()
 
 
 -- | Handle a single line of input.
@@ -112,7 +128,7 @@ handle line ws
                 return True
 
         -- Show the type of a witness.
-        | Just rest     <- splitPrefix ":typeW" line
+        | Just rest     <- splitPrefix ":wtype" line
         = do    cmdShowWType rest
                 return True
 
