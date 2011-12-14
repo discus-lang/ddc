@@ -60,6 +60,16 @@ typeOfPrimName nn
                  $ tFun (tInt r1) (tSum kEffect  [tRead r2, tRead r1, tAlloc r0])
                                   (tSum kClosure [tShare r2])
                  $ tInt r0
+
+        -- update :: [r1 r2 : %]. Mutable r1 => Int r1 -> Int r2 -(Write r1 + Read r2 | Share r1)> ()
+        NamePrimOp PrimOpUpdateInt
+         -> Just $ tForalls [kRegion, kRegion] $ \[r1, r2]
+                -> tImpl (tMutable r1)
+                $  tFun  (tInt r1) (tBot kEffect)
+                                   (tBot kClosure)
+                $  tFun  (tInt r2) (tSum kEffect  [tWrite r1, tRead r2])
+                                   (tSum kClosure [tShare r1])
+                $  tUnit
                  
         _ -> Nothing
 
