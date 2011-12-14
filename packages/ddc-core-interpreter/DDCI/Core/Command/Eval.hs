@@ -18,7 +18,8 @@ import qualified Data.Set                       as Set
 
 prims   = C.PrimStep
         { C.primStep            = primStep
-        , C.primNewRegion       = primNewRegion }
+        , C.primNewRegion       = primNewRegion
+        , C.primArity           = arityOfPrimName }
 
 primNewRegion :: Store -> (Store, Bound Name)
 primNewRegion store

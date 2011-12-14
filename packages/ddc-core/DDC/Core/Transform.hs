@@ -1,11 +1,15 @@
 
 module DDC.Core.Transform
         ( Spread        (..)
+        , LiftX         (..)
+        , SubstituteT   (..)
+        , SubstituteX   (..)
         , TransformUpMX (..)
-        , transformUpX
-        , SubstituteT   (..))
+        , transformUpX)
+
 where
 import DDC.Core.Transform.Spread
 import DDC.Core.Transform.TransformX
+import DDC.Core.Transform.LiftX
 import DDC.Core.Transform.SubstituteT
 import DDC.Core.Transform.SubstituteX

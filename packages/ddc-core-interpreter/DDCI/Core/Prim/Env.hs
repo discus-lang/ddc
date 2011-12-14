@@ -8,6 +8,7 @@
 module DDCI.Core.Prim.Env
         ( primEnv
         , typeOfPrimName
+        , arityOfPrimName
         , tInt
         , tUnit)
 where
@@ -74,6 +75,17 @@ typeOfPrimName nn
                                    (tSum kClosure [tShare r1])
                 $  tUnit
                  
+        _ -> Nothing
+
+
+-- TODO: determine this from the type.
+arityOfPrimName :: Name -> Maybe Int
+arityOfPrimName n
+ = case n of
+        NamePrimOp p
+         | elem p [PrimOpAddInt, PrimOpSubInt]
+         -> Just 5
+         
         _ -> Nothing
 
 

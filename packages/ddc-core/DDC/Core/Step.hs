@@ -13,7 +13,10 @@ import DDC.Base.Pretty          ()
 data PrimStep a n s
         = PrimStep
         { primStep      :: n -> [Exp a n] -> s -> Maybe (s, Exp a n)
-        , primNewRegion :: s -> (s, Bound n) }
+        , primNewRegion :: s -> (s, Bound n) 
+
+        -- | Get the arity of a primop, where the arity includes the type and witness arguments.
+        , primArity     :: n -> Maybe Int }
                 
 
 -- step -----------------------------------------------------------------------
@@ -37,17 +40,24 @@ step' ps store xx
 
 -- (EvApp1): Evaluate the left of an application.
 step' ps store (XApp a x1 x2)
-        | isWnf x1
+        | isWnf (primArity ps) x1
         , Just (store', x1')    <- step ps store x1
         = Just (store', XApp a x1' x2)
 
 -- (EvApp2): Evaluate the right of an application.
 step' ps store (XApp a x1 x2)
-        | isWnf x1
+        | isWnf (primArity ps) x1
         , Just (store', x2')    <- step ps store x2
         = Just (store', XApp a x1 x2')
 
--- (EvLetDone)
+-- (EvLetSubst)
+step' ps store (XLet _ (LLet b x1) x2)
+        | isWnf (primArity ps) x1
+        = case takeSubstBoundOfBind b of
+           Nothing      -> Just (store, x2)
+           Just u       -> Just (store, substituteX u x1 x2)
+
+-- (EvLetStep)
 step' ps store (XLet a (LLet b x1) x2)
         | Just (store', x1')    <- step ps store x1
         = Just (store', XLet a (LLet b x1') x2)
@@ -62,16 +72,17 @@ step' ps store (XLet a (LLetRegion bRegion _bws) x)
 
  | otherwise
  = Just (store, x)
+
+-- (EvEjectRegion): Eject completed value from the region context.
+step' ps store (XLet _ (LWithRegion _) x)
+        | isWnf (primArity ps) x
+        = Just (store, x)
  
 -- (EvWithRegion): Reduction within a region context.
 step' ps store (XLet a (LWithRegion uRegion) x)
         | Just (store', x')     <- step ps store x
         = Just (store', XLet a (LWithRegion uRegion) x')
 
--- (EvEjectRegion): Eject completed value from the region context.
-step' _ store (XLet _ (LWithRegion _) x)
-        | isWnf x
-        = Just (store, x)
 
 -- (Done/Stuck): Either a value, or a stuck expression.
 step' _ _ _        
@@ -80,21 +91,22 @@ step' _ _ _
         
 -- isWnf ----------------------------------------------------------------------
 -- | Check if an expression is a weak normal form.
-isWnf :: Exp a n -> Bool
-isWnf xx
+isWnf :: (n -> Maybe Int) -> Exp a n -> Bool
+isWnf pArity xx
  = case xx of
          XVar{}         -> True
          XCon{}         -> True
          XLam{}         -> True
          XLet{}         -> False
          XCase{}        -> False
-         XCast _ x _    -> isWnf x
+         XCast _ x _    -> isWnf pArity x
          XType{}        -> True
          XWitness{}     -> True
-         
+
          XApp{} 
-          | Just (_, xs)        <- takeXPrimApps xx
-          , and $ map isWnf xs
+          | Just (p, xs)        <- takeXPrimApps xx
+          , Just arity          <- pArity p
+          , length xs < arity
           -> True
           
           | otherwise
