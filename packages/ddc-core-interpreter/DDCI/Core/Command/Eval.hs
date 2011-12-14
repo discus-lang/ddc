@@ -59,11 +59,12 @@ cmdEval str
                       putStrLn $ show $ ppr err
                       
             Right (_t, _eff, _clo)
-             -> do    putStrLn $ pretty (ppr x')
+             -> do    putStrLn $ pretty (ppr x)
 --                    putStrLn $ pretty (ppr t)
                       goStep x' store'
                       
          | otherwise
-         = do   putStrLn $ pretty (ppr store)
+         = do   putStrLn $ pretty (ppr x)
+                putStrLn $ pretty (ppr store)
 
 
