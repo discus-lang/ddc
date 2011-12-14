@@ -7,6 +7,7 @@ module DDC.Type.Sum
         ( empty
         , singleton
         , insert
+        , delete
         , plus
         , kindOfSum
         , toList, fromList
@@ -15,6 +16,7 @@ module DDC.Type.Sum
 where
 import DDC.Type.Exp
 import Data.Array
+import qualified Data.List      as L
 import qualified Data.Map       as Map
 
 -- | Construct an empty type sum of the given kind.
@@ -53,6 +55,26 @@ insert t ts
         TApp{}           -> ts { typeSumSpill      = t : typeSumSpill ts }
         
         TSum ts'         -> foldr insert ts (toList ts')
+
+
+-- | Delete an element from a sum.
+delete :: Ord n => Type n -> TypeSum n -> TypeSum n
+delete t ts
+ = case t of
+        TVar (UName n _) -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
+        TVar (UPrim n _) -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
+        TVar (UIx   i _) -> ts { typeSumBoundAnon  = Map.delete i (typeSumBoundAnon  ts) }
+        TCon{}           -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
+        TForall{}        -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
+        
+        TApp (TCon tc) t2
+         | Just h       <- hashTyCon tc
+         , tsThere      <- typeSumElems ts ! h
+         -> ts { typeSumElems = (typeSumElems ts) // [(h, L.delete t2 tsThere)] }
+         
+        TApp{}          -> ts { typeSumSpill       = L.delete t (typeSumSpill ts) }
+        
+        TSum ts'        -> foldr delete ts (toList ts')
 
 
 -- | Add two type sum.

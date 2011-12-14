@@ -46,7 +46,8 @@ pExp2
         --   let region r1 with { w1 : T1 ... } in T2
         --   let region r1 in T2
  , do   pTok KLetRegion
-        r       <- pVar
+        br      <- T.pBinder
+        let b   = T.makeBindFromBinder br T.kRegion
 
         P.choice 
          [ do   pTok KWith
@@ -60,11 +61,11 @@ pExp2
                 pTok KBraceKet
                 pTok KIn
                 x       <- pExp2 
-                return  $ XLet () (LRegion (BName r T.kRegion) wits) x 
+                return  $ XLet () (LRegion b wits) x 
 
          , do   pTok KIn
                 x       <- pExp2
-                return $ XLet ()  (LRegion (BName r T.kRegion) []) x ]
+                return $ XLet ()  (LRegion b []) x ]
 
  , do   pExp1 
  ]

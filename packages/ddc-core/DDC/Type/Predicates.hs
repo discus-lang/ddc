@@ -3,11 +3,13 @@
 module DDC.Type.Predicates
         ( isBot
         , isDataKind
+        , isRegionKind
         , isEffectKind
         , isClosureKind)
 where
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as T
+
 
 -- | Test if some type is an empty TSum
 isBot :: Type n -> Bool
@@ -24,6 +26,13 @@ isDataKind :: Kind n -> Bool
 isDataKind tt
  = case tt of
         TCon (TyConKind KiConData)    -> True
+        _                             -> False
+
+-- | Check if some kind is the region kind.
+isRegionKind :: Region n -> Bool
+isRegionKind tt
+ = case tt of
+        TCon (TyConKind KiConRegion)  -> True
         _                             -> False
 
 

@@ -1,3 +1,4 @@
 
 -- Error: bound region variable is free in the type of the body of a letregion.
 :check letregion r1 in 4 {r1} ()
+

@@ -180,7 +180,15 @@ checkExpM env xx
 
         -- let binding
         XLet _ (LRegion b bs) x
-         -> do  -- Check the region variable.
+         | not $ isRegionKind (typeOfBind b)
+         -> error "checkExpM: LRegion does not bind a region variable"
+
+         | otherwise
+         -> case takeSubstBoundOfBind b of
+             Nothing     -> checkExpM env x
+             Just u
+              -> do
+                -- Check the region variable.
                 checkTypeM env (typeOfBind b)
                 let env1         = Env.extend b env
 
@@ -193,14 +201,16 @@ checkExpM env xx
 
                 -- The free variables of the body cannot contain the bound region.
                 let fvs         = free Env.empty t
-                (case takeSubstBoundOfBind b of
-                  Nothing               -> return ()
-                  Just u
-                   | Set.member u fvs   -> throw $ ErrorLetRegionFree xx b t
-                   | otherwise          -> return ())
+                when (Set.member u fvs)
+                 $ throw $ ErrorLetRegionFree xx b t
                 
-                return (t, effs, clos)
-
+                -- Delete effects on the bound region from the result
+                let effs'       = Sum.delete (tRead  (TVar u))
+                                $ Sum.delete (tWrite (TVar u))
+                                $ Sum.delete (tAlloc (TVar u))
+                                $ effs
+                                
+                return (t, effs', clos)
 
         -- case expression
         XCase{} -> error "checkExp: XCase not done yet"
