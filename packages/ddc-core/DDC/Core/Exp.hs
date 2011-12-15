@@ -110,6 +110,9 @@ data Witness n
 
         -- | Joining of witnesses.
         | WJoin (Witness n) (Witness n)
+
+        -- | Type can appear as the argument of an application.
+        | WType (Type n)
         deriving (Eq, Show)
 
 

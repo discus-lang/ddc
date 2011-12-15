@@ -63,4 +63,5 @@ instance Free n (Witness n) where
         WVar u          -> free env u
         WApp  w1 w2     -> Set.unions [free env w1, free env w2]
         WJoin w1 w2     -> Set.unions [free env w1, free env w2]
-
+        WType t1        -> free env t1
+        

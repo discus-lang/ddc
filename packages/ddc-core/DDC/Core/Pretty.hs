@@ -86,7 +86,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
 
 
 -- Witness ----------------------------------------------------------------------------------------
-instance Pretty n => Pretty (Witness n) where
+instance (Pretty n, Eq n) => Pretty (Witness n) where
  pprPrec d ww
   = case ww of
         WCon wc         -> ppr wc
@@ -97,6 +97,8 @@ instance Pretty n => Pretty (Witness n) where
          
         WJoin w1 w2
          -> pprParen (d > 9)  (ppr w1 <+> text " & " <+> ppr w2)
+
+        WType t         -> braces $ ppr t
 
 
 instance Pretty WiCon where

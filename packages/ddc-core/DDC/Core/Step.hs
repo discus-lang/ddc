@@ -1,5 +1,10 @@
 
-module DDC.Core.Step where
+module DDC.Core.Step 
+        ( PrimStep       (..)
+        , step
+        , isWnf
+        , regionWitnessOfType )
+where
 import DDC.Core.Compounds
 import DDC.Core.Transform
 import DDC.Core.Exp
@@ -63,11 +68,24 @@ step' ps store (XLet a (LLet b x1) x2)
         = Just (store', XLet a (LLet b x1') x2)
 
 -- (EvCreateRegion): Create a new region.
--- TODO: substitute in witnesses
-step' ps store (XLet a (LLetRegion bRegion _bws) x)
+step' ps store (XLet a (LLetRegion bRegion bws) x)
  | Just uRegion <- takeSubstBoundOfBind bRegion
- = let  (store', uHandle) = primNewRegion ps store
-        x'      = substituteT uRegion (TCon $ TyConBound uHandle) x
+ = let  
+        -- Allocation a new region handle for the bound region.
+        (store', uHandle) = primNewRegion ps store
+        tHandle = TCon $ TyConBound uHandle
+
+        -- Substitute handle into the witness types.
+        bws'    = map (substituteT uRegion tHandle) bws
+
+        -- Build witnesses for each of the witness types.
+        uws'    = [(u, t) | Just u <- map takeSubstBoundOfBind bws'
+                          | Just t <- map regionWitnessOfType  $ map typeOfBind bws']
+        
+        -- Substitute handle and witnesses into body.
+        x'      = substituteT  uRegion tHandle
+                $ substituteWs uws' x
+
    in   Just (store', XLet a (LWithRegion uHandle) x')
 
  | otherwise
@@ -111,3 +129,18 @@ isWnf pArity xx
           
           | otherwise
           -> False
+
+
+-- | Get the region witness corresponding to one of the witness types that are
+--   permitted in a letregion.
+regionWitnessOfType :: Type n -> Maybe (Witness n)
+regionWitnessOfType tt
+ = case tt of
+        TApp (TCon (TyConWitness TwConMutable)) r 
+         -> Just $ WApp (WCon (WiConMutable)) (WType r)
+        
+        TApp (TCon (TyConWitness TwConConst)) r
+         -> Just $ WApp (WCon (WiConConst))   (WType r)
+
+        _ -> Nothing
+

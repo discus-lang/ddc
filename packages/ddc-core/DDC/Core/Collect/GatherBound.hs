@@ -55,3 +55,5 @@ instance GatherBound n (Witness n) where
         WVar u          -> gatherBound u
         WApp  w1 w2     -> Set.unions [gatherBound w1, gatherBound w2]
         WJoin w1 w2     -> Set.unions [gatherBound w1, gatherBound w2]
+        WType t         -> gatherBound t
+

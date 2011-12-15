@@ -323,12 +323,41 @@ checkWitnessM
         => Env n -> Witness n
         -> CheckM a n (Type n)
 
-checkWitnessM _ ww
+checkWitnessM env ww
  = case ww of
         WCon wc -> return $ typeOfWiCon wc
         WVar u  -> return $ typeOfBound u
 
-        _ -> error "typeOfWitness: not handled yet"
+        -- value-type application.
+        WApp w1 (WType t2)
+         -> do  t1      <- checkWitnessM  env w1
+                k2      <- checkTypeM     env t2
+                case t1 of
+                 TForall b11 t12
+                  | typeOfBind b11 == k2
+                  -> case takeSubstBoundOfBind b11 of
+                      Just u    -> return $ substituteT u t2 t12
+                      Nothing   -> return t12
+
+                  | otherwise   -> error "sorry" -- throw $ ErrorWAppMismatch ww (typeOfBind b11) t2
+                 _              -> error "sorry" -- throw $ ErrorWAppNotFun   ww t1 t2
+
+
+        -- witness-witness application
+        WApp w1 w2
+         -> do  t1      <- checkWitnessM env w1
+                t2      <- checkWitnessM env w2
+                case t1 of
+                 TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
+                  | t11 == t2   
+                  -> return t12
+                  | otherwise   -> error "sorry" -- throw $ ErrorAppMismatch xx t11 t2
+                 _              -> error "sorry" -- throw $ ErrorAppNotFun xx t1 t2
+
+
+        WJoin{} -> error "typeOfWitness: WJoin not done yet"
+
+        WType t -> checkTypeM env t
         
 
 -- | Take the type of a witness constructor.
@@ -354,7 +383,7 @@ typeOfWiCon wc
          -> tForall kRegion $ \r -> (tConst r) `tImpl`  (tPure  $ tRead r)
 
         WiConShare
-         -> tForall kRegion $ \r -> (tConst r)  `tImpl` (tEmpty $ tShare r)
+         -> tForall kRegion $ \r -> (tConst r) `tImpl` (tEmpty $ tShare r)
 
         WiConDistinct n
          -> tForalls (replicate n kRegion) $ \rs -> tDistinct rs

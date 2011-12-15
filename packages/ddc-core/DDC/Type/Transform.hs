@@ -13,7 +13,9 @@ module DDC.Type.Transform
         , LiftT         (..)
 
           -- * Type substitution
-        , SubstituteT   (..))
+        , SubstituteT   (..)
+        , substituteT
+        , substituteTs)
 where
 import DDC.Type.Transform.Anonymize
 import DDC.Type.Transform.Rename

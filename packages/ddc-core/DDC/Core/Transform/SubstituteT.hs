@@ -1,7 +1,9 @@
 
 -- | Type substitution.
 module DDC.Core.Transform.SubstituteT
-        (SubstituteT(..))
+        ( SubstituteT(..)
+        , substituteT
+        , substituteTs)
 where
 import DDC.Core.Exp
 import DDC.Type.Compounds
@@ -43,12 +45,12 @@ instance SubstituteT Witness where
  substituteWithT u t fvs stack ww
   = let down    = substituteWithT u t fvs stack
     in case ww of
-          WCon{}        -> ww
+         WCon{}         -> ww
 
-          WVar u'
-           -> let t'  = down (typeOfBound u')
-              in  WVar $ replaceTypeOfBound t' u'
+         WVar u'
+          -> let t'  = down (typeOfBound u')
+             in  WVar $ replaceTypeOfBound t' u'
           
-          WApp  w1 w2   -> WApp  (down w1) (down w2)
-          WJoin w1 w2   -> WJoin (down w1) (down w2)
-        
+         WApp  w1 w2    -> WApp  (down w1) (down w2)
+         WJoin w1 w2    -> WJoin (down w1) (down w2)
+         WType t1       -> WType (down t1)

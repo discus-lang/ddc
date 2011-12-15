@@ -56,3 +56,4 @@ instance Spread Witness where
         WVar  u         -> WVar  (spread env u)
         WApp  w1 w2     -> WApp  (spread env w1) (spread env w2)
         WJoin w1 w2     -> WJoin (spread env w1) (spread env w2)
+        WType t1        -> WType (spread env t1)

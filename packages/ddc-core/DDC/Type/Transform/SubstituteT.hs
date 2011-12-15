@@ -2,6 +2,9 @@
 -- | Type substitution.
 module DDC.Type.Transform.SubstituteT
         ( SubstituteT(..)
+        , substituteT
+        , substituteTs
+
         , BindStack(..)
         , pushBind
         , substBound)
@@ -31,22 +34,30 @@ class SubstituteT (c :: * -> *) where
         -> BindStack n          -- ^ Bind stack.
         -> c n -> c n
 
- -- | Wrapper for `substituteWithT` that determines the set of free names in the
- --   type being substituted, and starts with an empty binder stack.
- substituteT :: (SubstituteT c, Ord n) => Bound n -> Type n -> c n -> c n
- substituteT u t x
-  = let -- Determine the free names in the type we're subsituting.
-        -- We'll need to rename binders with the same names as these
-        freeNames       = Set.fromList
-                        $ mapMaybe takeNameOfBound 
-                        $ Set.toList 
-                        $ free Env.empty t
 
-        stack           = BindStack [] 0 0
+-- | Wrapper for `substituteWithT` that determines the set of free names in the
+--   type being substituted, and starts with an empty binder stack.
+substituteT :: (SubstituteT c, Ord n) => Bound n -> Type n -> c n -> c n
+substituteT u t x
+ = let -- Determine the free names in the type we're subsituting.
+       -- We'll need to rename binders with the same names as these
+       freeNames       = Set.fromList
+                       $ mapMaybe takeNameOfBound 
+                       $ Set.toList 
+                       $ free Env.empty t
+
+       stack           = BindStack [] 0 0
  
-   in   substituteWithT u t freeNames stack x
+  in   substituteWithT u t freeNames stack x
 
 
+-- | Wrapper for `substituteT` to substitute multiple things.
+substituteTs :: (SubstituteT c, Ord n) => [(Bound n, Type n)] -> c n -> c n
+substituteTs bts x
+        = foldr (uncurry substituteT) x bts
+
+
+-- Instances --------------------------------------------------------------------------------------
 instance SubstituteT Bind where
  substituteWithT u fvs t stack bb
   = let k'      = substituteWithT u fvs t stack $ typeOfBind bb
