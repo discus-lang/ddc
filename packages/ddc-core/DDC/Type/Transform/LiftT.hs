@@ -6,7 +6,6 @@ where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as Sum
-import Data.List
 
 
 class LiftT (c :: * -> *) where
