@@ -143,8 +143,8 @@ substBound
         -> Bound n              -- ^ Bound we're substituting for.
         -> Bound n              -- ^ Bound we're looking at now.
         -> Either 
-                (Bound n)       -- ^ Bound doesn't match, but rewite it to this one.
-                Int             -- ^ Bound matches, drop the thing being substituted and 
+                (Bound n)       --   Bound doesn't match, but rewite it to this one.
+                Int             --   Bound matches, drop the thing being substituted and 
                                 --   and lift indices this many steps.
 
 substBound (BindStack binds dAnon dName) u u'
