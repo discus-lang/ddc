@@ -11,7 +11,6 @@ import DDC.Core.Pretty
 import DDC.Core.Collect.Free
 import DDC.Core.Check.CheckError
 import DDC.Type.Transform
--- import DDC.Type.Operators.Trim
 import DDC.Type.Universe
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -164,7 +163,7 @@ checkExpM env xx
                    |  not $ isDataKind k1  -> throw $ ErrorLamBindNotData xx t1 k1
                    |  not $ isDataKind k2  -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
                    |  otherwise
-                   -> return ( tFun t1 (TSum e2) (tBot kClosure) t2             -- TODO: add closure
+                   -> return ( tFun t1 (TSum e2) (tBot kClosure) t2                             -- TODO: add closure
                              , Sum.empty kEffect
                              , case takeSubstBoundOfBind b1 of
                                 Nothing -> fvs2

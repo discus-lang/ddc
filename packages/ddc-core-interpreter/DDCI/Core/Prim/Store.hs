@@ -93,7 +93,6 @@ instance Pretty SBind where
   = text "OBJ"  <+>  ppr tag
                 <+>  colon
                 <+> sep (map parens $ map ppr svs)
-
  
  
 -- Operators ------------------------------------------------------------------

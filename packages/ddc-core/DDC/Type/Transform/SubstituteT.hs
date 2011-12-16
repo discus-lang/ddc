@@ -57,7 +57,7 @@ substituteTs bts x
         = foldr (uncurry substituteT) x bts
 
 
--- Instances --------------------------------------------------------------------------------------
+-- Instances ------------------------------------------------------------------
 instance SubstituteT Bind where
  substituteWithT u fvs t stack bb
   = let k'      = substituteWithT u fvs t stack $ typeOfBind bb
@@ -139,13 +139,13 @@ pushBind fns bs@(BindStack stack dAnon dName) bb
 -- | Compare a `Bound` against the one we're substituting for.
 substBound
         :: Ord n
-        => BindStack n          -- ^ Current Bind stack during substitution.
-        -> Bound n              -- ^ Bound we're substituting for.
-        -> Bound n              -- ^ Bound we're looking at now.
+        => BindStack n      -- ^ Current Bind stack during substitution.
+        -> Bound n          -- ^ Bound we're substituting for.
+        -> Bound n          -- ^ Bound we're looking at now.
         -> Either 
-                (Bound n)       --   Bound doesn't match, but rewite it to this one.
-                Int             --   Bound matches, drop the thing being substituted and 
-                                --   and lift indices this many steps.
+                (Bound n)   --   Bound doesn't match, but rewite it to this one.
+                Int         --   Bound matches, drop the thing being substituted and 
+                            --   and lift indices this many steps.
 
 substBound (BindStack binds dAnon dName) u u'
         -- Bound name matches the one that we're substituting for.

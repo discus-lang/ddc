@@ -24,13 +24,13 @@ import Data.Maybe
 --   and operators that vary from client to client.
 --
 data Name 
-        -- Names who's types are bound in the environment.
+        -- Names whose types are bound in the environment.
         = NameVar     String    -- ^ Variables
         | NameCon     String    -- ^ Constructors
         | NameLoc     Loc       -- ^ Store location
         | NameRgn     Rgn       -- ^ Region handle
 
-        -- Names who's types are baked in, and should be attached to 
+        -- Names whose types are baked in, and should be attached to 
         -- the `Bound` constructor that they appear in.
         | NameInt     Integer   -- ^ Integer literals
         | NamePrimCon PrimCon   -- ^ Primitive constructors (eg Unit)
