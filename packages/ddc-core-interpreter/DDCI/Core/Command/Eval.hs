@@ -19,13 +19,22 @@ import qualified Data.Set                       as Set
 prims   = C.PrimStep
         { C.primStep            = primStep
         , C.primNewRegion       = primNewRegion
+        , C.primDelRegion       = primDelRegion
         , C.primArity           = arityOfPrimName }
+
 
 primNewRegion :: Store -> (Store, Bound Name)
 primNewRegion store
  = let  (store', rgn)   = Store.newRgn store
         u               = UPrim (NameRgn rgn) kRegion
    in   (store', u)
+
+
+primDelRegion :: Bound Name -> Store -> Maybe Store
+primDelRegion uu store
+ = case uu of
+        UPrim (NameRgn rgn) _   -> Just $ Store.delRgn rgn store
+        _                       -> Nothing
 
 
 -- | Parse, check, and single step evaluate an expression.

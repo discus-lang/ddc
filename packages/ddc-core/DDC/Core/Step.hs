@@ -31,6 +31,9 @@ data PrimStep a n s
           -- | Create a new region in the store.
         , primNewRegion :: s -> (s, Bound n) 
 
+          -- | Delete a region from the store, along with all its bindings.
+        , primDelRegion :: Bound n -> s -> Maybe s
+
           -- | Get the arity of a primop, where the arity includes the type and
           --   witness arguments.
         , primArity     :: n -> Maybe Int }
@@ -109,10 +112,11 @@ step' ps store (XLet a (LLetRegion bRegion bws) x)
  = Just (store, x)
 
 
--- (EvEjectRegion): Eject completed value from the region context.
-step' ps store (XLet _ (LWithRegion _) x)
+-- (EvEjectRegion): Eject completed value from the region context, and delete the region.
+step' ps store (XLet _ (LWithRegion r) x)
         | isWnf (primArity ps) x
-        = Just (store, x)
+        , Just store'    <- primDelRegion ps r store
+        = Just (store', x)
 
  
 -- (EvWithRegion): Reduction within a region context.

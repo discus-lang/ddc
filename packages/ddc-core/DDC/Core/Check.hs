@@ -160,8 +160,8 @@ checkExpM env xx
                 -- Note that only the computation abstraction can suspend visible effects.
                 case universeFromType2 k1 of
                   Just UniverseComp
-                   |  not $ isDataKind k1  -> throw $ ErrorLamBindNotData xx t1 k1
-                   |  not $ isDataKind k2  -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
+                   |  not $ isDataKind k1     -> throw $ ErrorLamBindNotData xx t1 k1
+                   |  not $ isDataKind k2     -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
                    |  otherwise
                    -> return ( tFun t1 (TSum e2) (tBot kClosure) t2                             -- TODO: add closure
                              , Sum.empty kEffect
@@ -170,18 +170,18 @@ checkExpM env xx
                                 Just u  -> Set.delete u fvs2)
 
                   Just UniverseWitness
-                   | e2 /= Sum.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
-                   | not $ isDataKind k2     -> throw $ ErrorLamBodyNotData xx b1 t2 k2
-                   | otherwise               -> return ( tImpl t1 t2
-                                                       , Sum.empty kEffect
-                                                       , fvs2)
+                   | e2 /= Sum.empty kEffect  -> throw $ ErrorLamNotPure     xx (TSum e2)
+                   | not $ isDataKind k2      -> throw $ ErrorLamBodyNotData xx b1 t2 k2
+                   | otherwise                -> return ( tImpl t1 t2
+                                                        , Sum.empty kEffect
+                                                        , fvs2)
                       
                   Just UniverseSpec
-                   | e2 /= Sum.empty kEffect -> throw $ ErrorLamNotPure     xx (TSum e2)
-                   | not $ isDataKind k2   -> throw $ ErrorLamBodyNotData xx b1 t2 k2
-                   | otherwise             -> return  ( TForall b1 t2
-                                                      , Sum.empty kEffect
-                                                      , fvs2)
+                   | e2 /= Sum.empty kEffect  -> throw $ ErrorLamNotPure     xx (TSum e2)
+                   | not $ isDataKind k2      -> throw $ ErrorLamBodyNotData xx b1 t2 k2
+                   | otherwise                -> return ( TForall b1 t2
+                                                        , Sum.empty kEffect
+                                                        , fvs2)
 
                   _ -> throw $ ErrorMalformedType xx k1
 

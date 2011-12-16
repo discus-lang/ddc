@@ -17,6 +17,7 @@ module DDCI.Core.Prim.Store
         , empty
         , newLoc
         , newRgn,       newRgns
+        , delRgn
         , hasRgn
         , addBind
         , allocBind
@@ -130,6 +131,14 @@ newRgns count store
         store'  = store { storeNextRgn  = storeNextRgn store + count 
                         , storeRegions  = Set.union (Set.fromList rgns) (storeRegions store) }
    in   (store', rgns)
+
+
+-- | Delete a region, removing all its bindings.
+delRgn :: Rgn -> Store -> Store
+delRgn rgn store
+ = let  binds'   = [x | x@(_, (r, _)) <- Map.toList $ storeBinds store
+                      , r /= rgn ]  
+   in   store { storeBinds = Map.fromList binds' }
 
 
 -- | Check whether a store contains the given region.
