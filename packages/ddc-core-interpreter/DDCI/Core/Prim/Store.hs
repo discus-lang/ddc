@@ -64,8 +64,6 @@ data SBind
         = SObj
         { sbindDataTag          :: Name
         , sbindDataArgs         :: [SValue] }
-
-        | SInt  Integer
         deriving (Eq, Show)
 
 
@@ -83,19 +81,19 @@ instance Pretty Store where
                 | (l, (r, sbind)) <- Map.toList binds] ]
 
 instance Pretty SValue where  
- ppr (SLoc i)   = text "INT " <> text (show i)
- ppr (SLam b x) = text "Lam " <> ppr b <> text ":" <> ppr x
+ ppr (SLoc i)   = text "LOC " <> text (show i)
+ ppr (SLam b x) = text "LAM " <> ppr b <> text ":" <> ppr x
 
 
 instance Pretty SBind where
+ ppr (SObj tag [])
+  = text "OBJ"  <+> ppr tag
+
  ppr (SObj tag svs)    
-        = text "OBJ " 
-                <>  ppr tag
-                <>  colon
+  = text "OBJ"  <+>  ppr tag
+                <+>  colon
                 <+> sep (map parens $ map ppr svs)
 
- ppr (SInt i)
-        = text "INT " <> text (show i)
  
  
 -- Operators ------------------------------------------------------------------

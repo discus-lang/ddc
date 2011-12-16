@@ -40,7 +40,7 @@ STORE
  Regions: {R1# R2#}
 
  Binds:
- L1#:R1# -> INT 2
- L2#:R1# -> INT 3
- L3#:R2# -> INT 5
+ L1#:R1# -> OBJ 2
+ L2#:R1# -> OBJ 3
+ L3#:R2# -> OBJ 5
 

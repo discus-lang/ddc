@@ -10,9 +10,9 @@ STORE
  Regions: {R1# R2# R3#}
 
  Binds:
- L1#:R1# -> INT 2
- L2#:R2# -> INT 3
- L3#:R3# -> INT 5
+ L1#:R1# -> OBJ 2
+ L2#:R2# -> OBJ 3
+ L3#:R3# -> OBJ 5
 
 -- Nested addition
 addInt {R1#} {R2#} {R3#} (addInt {R3#} {R4#} {R1#} (20 {R3#} ()) (30 {R4#} ())) (40 {R2#} ())
@@ -27,9 +27,9 @@ STORE
  Regions: {R1# R2# R3# R4#}
 
  Binds:
- L1#:R3# -> INT 20
- L2#:R4# -> INT 30
- L3#:R1# -> INT 50
- L4#:R2# -> INT 40
- L5#:R3# -> INT 90
+ L1#:R3# -> OBJ 20
+ L2#:R4# -> OBJ 30
+ L3#:R1# -> OBJ 50
+ L4#:R2# -> OBJ 40
+ L5#:R3# -> OBJ 90
 
