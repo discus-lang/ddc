@@ -1,4 +1,11 @@
 
+-- | Definition of the store.
+--
+--   This implements the store in terms of the operational semantics of the
+--   core language, and isn't intended to be efficient in a practical sense.
+--   If we cared about runtime performance we'd want to use an IOArray or
+--   some other mutable structure to hold the bindings, instead of a Data.Map.
+--
 module DDCI.Core.Prim.Store
         ( Store  (..)
         , Loc    (..)
@@ -18,13 +25,12 @@ module DDCI.Core.Prim.Store
 where
 import DDCI.Core.Prim.Name
 import DDC.Core.Exp
+import Control.Monad
 import DDC.Core.Pretty          hiding (empty)
 import Data.Map                 (Map)
 import Data.Set                 (Set)
 import qualified Data.Map       as Map
-
 import qualified Data.Set       as Set
-import Control.Monad
 
 
 -- | The store maps locations to store bindings.
@@ -44,8 +50,8 @@ data Store
         , storeBinds    :: Map Loc (Rgn, SBind) }
 
 
--- | Store value, 
---   these are the things that can be kept directly in store bindings.
+-- | Store value.
+--   These are the things that can be kept directly in store bindings.
 data SValue
         = SLoc Int
         | SLam (Bind Name) (Exp () Name)
@@ -53,6 +59,7 @@ data SValue
 
 
 -- | Store binding.
+--   These are "naked objects" that can be allocated directly into the heap.
 data SBind 
         = SObj
         { sbindDataTag          :: Name

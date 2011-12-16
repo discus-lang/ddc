@@ -86,6 +86,9 @@ arityOfPrimName n
          | elem p [PrimOpAddInt, PrimOpSubInt]
          -> Just 5
          
+        NamePrimOp PrimOpUpdateInt
+         -> Just 5
+         
         _ -> Nothing
 
 
