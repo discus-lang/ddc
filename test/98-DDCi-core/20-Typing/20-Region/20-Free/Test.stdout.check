@@ -1,14 +1,12 @@
 -- Error: bound region variable is free in the type of the body of a letregion.
-Core type error.
-Bound region variable is free in the type of the body of a letregion
-                 binder: r1 : %
-             is free in: Int r1
-          when checking: letregion r1 in 4 {r1} ()
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Int r1
+             when checking: letregion r1 in 4 {r1} ()
 
 -- Error: bound region is free in the effect of a returned function.
-Core type error.
-Bound region variable is free in the type of the body of a letregion
-                 binder: r1 : %
-             is free in: Unit -(Read r1 + Alloc r1 + Alloc R2# | $0)> Int R2#
-          when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).addInt {r1} {r1} {R2#} (2 {r1} ()) (3 {r1} ())
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R2# | $0)> Int R2#
+             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).addInt {r1} {r1} {R2#} (2 {r1} ()) (3 {r1} ())
 

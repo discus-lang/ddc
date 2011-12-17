@@ -78,72 +78,59 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         ErrorType err'  -> ppr err'
 
         ErrorMalformedExp xx
-         -> vcat [ text "Core type error."
-                 , text "    Found malformed exp: " <> ppr xx ]
+         -> vcat [ text "Malformed expression: "    <> ppr xx ]
         
         ErrorMalformedType xx tt
-         -> vcat [ text "Core type error."
-                 , text "    Found malformed type: " <> ppr tt
-                 , text "           when checking: " <> ppr xx ]
+         -> vcat [ text "Found malformed type: "    <> ppr tt
+                 , text "       when checking: "    <> ppr xx ]
 
         ErrorAppMismatch xx t1 t2
-         -> vcat [ text "Core type error."
-                 , text "Cannot apply function " 
-                 , text "                 of type: " <> ppr t1
-                 , text "     to argument of type: " <> ppr t2
-                 , text "          in application: " <> ppr xx ]
+         -> vcat [ text "Type mismatch in application." 
+                 , text "     Function expects: "       <> ppr t1
+                 , text "      but argument is: "       <> ppr t2
+                 , text "       in application: "       <> ppr xx ]
          
         ErrorAppNotFun xx t1 t2
-         -> vcat [ text "Core type error."
-                 , text "Cannot apply non-function"
-                 , text "                 of type: " <> ppr t1
-                 , text "     to argument of type: " <> ppr t2 
-                 , text "          in application: " <> ppr xx ]
+         -> vcat [ text "Cannot apply non-function"
+                 , text "              of type: "       <> ppr t1
+                 , text "  to argument of type: "       <> ppr t2 
+                 , text "       in application: "       <> ppr xx ]
 
         ErrorLamNotPure xx eff
-         -> vcat [ text "Core type error."
-                 , text "Non-computation abstraction"
-                 , text "      has visible effect: " <> ppr eff
-                 , text "          but it must be: 0!"
-                 , text "           when checking: " <> ppr xx ]
+         -> vcat [ text "Impure type abstraction"
+                 , text "           has effect: "       <> ppr eff
+                 , text "        when checking: "       <> ppr xx ]
                  
         
         ErrorLamBindNotData xx t1 k1
-         -> vcat [ text "Core type error."
-                 , text "Parameter of computation abstraction has wrong kind."
-                 , text "         type of binder: " <> ppr t1
-                 , text "               has kind: " <> ppr k1
-                 , text "         but it must be: *" 
-                 , text "          when checking: " <> ppr xx ]
+         -> vcat [ text "Function parameter does not have value kind."
+                 , text "    The function parameter:"    <> ppr t1
+                 , text "                  has kind: "   <> ppr k1
+                 , text "            but it must be: *"
+                 , text "             when checking: "   <> ppr xx ]
 
         ErrorLamBodyNotData xx b1 t2 k2
-         -> vcat [ text "Core type error."
-                 , text "Body of abstraction has wrong kind."
-                 , text "  in lambda with binder: " <> ppr b1
-                 , text "          body has type: " <> ppr t2
-                 , text "              with kind: " <> ppr k2
-                 , text "         but it must be: *"
-                 , text "          when checking: " <> ppr xx ]
+         -> vcat [ text "Result of function does not have value kind."
+                 , text "   In function with binder: "   <> ppr b1
+                 , text "       the result has type: "   <> ppr t2
+                 , text "                 with kind: "   <> ppr k2
+                 , text "            but it must be: *"
+                 , text "             when checking: "   <> ppr xx ]
 
         ErrorLamReboundSpec xx b1
-         -> vcat [ text "Core type error."
-                 , text "Cannot shadow level-1 binder."
-                 , text "                 binder: " <> ppr b1
-                 , text "  is already in the environment"
-                 , text "          when checking: " <> ppr xx ]
+         -> vcat [ text "Cannot shadow level-1 binder: " <> ppr b1
+                 , text "  when checking: " <> ppr xx ]
         
         ErrorLetMismatch xx b t
-         -> vcat [ text "Core type error."
-                 , text "Type of binder does not match type of binding in a let expression."
-                 , text "         type of binder: " <> ppr b
-                 , text "         does not match: " <> ppr t
-                 , text "          when checking: " <> ppr xx ]
+         -> vcat [ text "Type mismatch in let-binding."
+                 , text "       The binder has type: "   <> ppr b
+                 , text "     but the body has type: "   <> ppr t
+                 , text "             when checking: "   <> ppr xx ]
                  
         ErrorLetRegionFree xx b t
-         -> vcat [ text "Core type error."
-                 , text "Bound region variable is free in the type of the body of a letregion"
-                 , text "                 binder: " <> ppr b
-                 , text "             is free in: " <> ppr t
-                 , text "          when checking: " <> ppr xx ]
+         -> vcat [ text "Region variable escapes scope of letregion."
+                 , text "       The region variable: "   <> ppr b
+                 , text "  is free in the body type: "   <> ppr t
+                 , text "             when checking: "   <> ppr xx ]
                  
                  
