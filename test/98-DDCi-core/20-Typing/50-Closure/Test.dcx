@@ -21,6 +21,12 @@
  \(x:Int R0#). \(y:Int R1#). addInt {:R0# R1# R2#:} x y
 
 
+-- Multiple levels of binding.
+:check\
+ \(x:Int R0#). \(y:Int R1#). \(z: Int R2#).\
+   addInt {:R3# R0# R4#:} (addInt {:R1# R2# R3#:} y z) x
+
+
 -- Inner function has a value in the closure whose type contains
 -- a higher kinded type variable.
 :check\
