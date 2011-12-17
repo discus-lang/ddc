@@ -1,0 +1,9 @@
+
+-- The inner function uses a value in region R0#.
+:check\
+ let x : Int R0# = 5 {R0#} () in\
+ \(z:Unit). addInt {:R0# R0# R1#:} x x
+
+:check\
+ \(x:Int R0#). addInt {:R0# R0# R1#:} x x
+

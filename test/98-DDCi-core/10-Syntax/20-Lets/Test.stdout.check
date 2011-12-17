@@ -1,0 +1,25 @@
+let _ : Unit = () in ()
+::  Unit
+:!: !0
+:$: $0
+
+let x : Unit = () in x
+::  Unit
+:!: !0
+:$: $0
+
+let x : Unit = () in let y : Unit = () in y
+::  Unit
+:!: !0
+:$: $0
+
+letregion r in let x : Int r = 4 {r} () in addInt {r} {r} {R1#} x x
+::  Int R1#
+:!: Alloc R1#
+:$: $0
+
+letregion r1 in letregion r2 in let x1 : Int r1 = 2 {r1} () in let x2 : Int r2 = 3 {r2} () in addInt {r1} {r2} {R1#} x1 x2
+::  Int R1#
+:!: Alloc R1#
+:$: $0
+

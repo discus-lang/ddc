@@ -7,7 +7,6 @@ where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Collect.Free
-import DDC.Type.Env             (Env)
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum
@@ -17,36 +16,22 @@ import qualified Data.Set       as Set
 -- | Trim a closure.
 trimClosure :: Ord n => Closure n -> Closure n
 trimClosure cc
-        = TSum $ trimToSumC Env.empty cc
+        = TSum $ trimToSumC cc
 
 
 -- | Trim a closure down to a closure sum.
-trimToSumC :: forall n. (Free n (TypeSum n), Ord n) => Env n -> Closure n -> TypeSum n
-trimToSumC env cc
+--   This can `error` if the closure is mis-kinded.
+trimToSumC :: forall n. (Free n (TypeSum n), Ord n) => Closure n -> TypeSum n
+trimToSumC cc
  = case cc of
         -- Locally bound closure variables can't be instantiated to anything else.
-        TVar u
-         | Env.member u env     -> Sum.empty kClosure
-         | otherwise            -> Sum.singleton kClosure cc
+        TVar{}          -> Sum.singleton kClosure cc
+
+        -- There aren't any naked constructors of closure type.
+        TCon{}          -> error "trimToSumC: found naked closure constructor"
         
-        -- There aren't any locally bound closure constructors, 
-        --  but just return the provided type to keep 'trimC' total.
-        TCon{}
-         -> Sum.singleton kClosure cc
-        
-        -- Add locally bound variable to the environment.
-        -- TODO: drop forall if there are no free vars in the body, 
-        --       will also have to lower locally bound debruijn indices.
-        -- TODO: for now we just drop the forall if the free vars list is empty,
-        --       which is a safe approx. 
-        -- TODO: recomputing the free vars like this is bad for complexity, 
-        --       should track free vars on the fly.
-        TForall b t
-         -> let c'      = trimToSumC (Env.extend b env) t       :: TypeSum n
-                ns      = free Env.empty c'                     :: Set (Bound n)
-            in  if Set.size ns == 0
-                then Sum.empty kClosure
-                else Sum.singleton kClosure $ TForall b $ TSum c'
+        -- The body of a forall should have data kind.                          -- TODO: enforce this in kinding rules.
+        TForall{}       -> error "trimToSumC: found forall"
 
         -- Use constructor applied to a region.
         TApp (TCon (TyConComp TcConUse)) _
@@ -54,34 +39,36 @@ trimToSumC env cc
         
         -- DeepUse constructor applied to a data type.
         TApp (TCon (TyConComp TcConDeepUse)) t2 
-         -> trimDeepUsedD env t2
+         -> trimDeepUsedD t2
 
-        -- Some other constructor we don't know about.
-        TApp{}
-         -> Sum.singleton kClosure cc
+        -- Some other constructor we don't know about,
+        --  perhaps using a type variable of higher kind.
+        TApp{}          -> Sum.singleton kClosure cc
 
         -- Trim components of a closure sum and rebuild the sum.
         TSum ts
          -> Sum.fromList kClosure 
-          $ concatMap (Sum.toList . trimToSumC env)
+          $ concatMap (Sum.toList . trimToSumC)
           $ Sum.toList ts
         
 
--- | Trim the argument of a DeepUSed constructor down to a closure sum.
+-- | Trim the argument of a DeepUsed constructor down to a closure sum.
 --   The argument is of data kind.
-trimDeepUsedD :: forall n. (Free n (TypeSum n), Ord n) => Env n -> Type n -> TypeSum n
-trimDeepUsedD env tt
+---
+--   NOTE: We can't just look at the free variables here and wrap Use
+--   and DeepUse constructors around them, as the type may contain higher
+--   kinded type variables such as: (t a). In this case we must preserve
+--   the DeepUse constructor and return DeepUse (t a).
+--
+trimDeepUsedD :: forall n. (Free n (TypeSum n), Ord n) => Type n -> TypeSum n
+trimDeepUsedD tt
  = case tt of
-        -- Locally bound variables can never be instantiated,
-        --  so can't be made to contain region variables.
-        TVar u
-         | Env.member u env     -> Sum.empty kClosure
-         | otherwise            -> Sum.singleton kClosure $ tDeepUse tt
+        -- Keep type variables.
+        TVar{}          -> Sum.singleton kClosure $ tDeepUse tt
 
-        -- Naked constructors don't contain region variables.
-        --  This handles closure terms like 'DeepShare Unit'.
-        TCon{}
-         -> Sum.empty kClosure
+        -- Naked data constructors don't contain region variables.
+        --  This handles closure terms like 'DeepUse Unit'.
+        TCon{}          -> Sum.empty kClosure
 
         -- Add locally bound variable to the environment.
         -- TODO: for now we just drop the forall if the free vars list is empty,
@@ -90,25 +77,16 @@ trimDeepUsedD env tt
         --       will also have to lower locally bound debruijn indices.
         -- TODO: recomputing the free vars like this is bad for complexity, 
         --       should track free vars on the fly.
-        TForall b t
-         -> let c'      = trimDeepUsedD (Env.extend b env) t  :: TypeSum n
-                ns      = free Env.empty c'                     :: Set (Bound n)
+        TForall{}
+         -> let ns      = free Env.empty tt  :: Set (Bound n)
             in  if Set.size ns == 0
                 then Sum.empty kClosure
-                else Sum.singleton kClosure $ TForall b $ TSum c'
+                else Sum.singleton kClosure $ tDeepUse tt
 
-        -- 
-        TApp{}
-         -- For functions, all params are immaterial except the closure.
-         |  Just (_t1, _eff, clo, _t2)      <- takeTFun tt
-         -> trimToSumC env clo
-
-         |  otherwise
-         -> Sum.singleton kClosure $ tDeepUse tt
+        TApp{}          -> Sum.singleton kClosure $ tDeepUse tt
 
         -- We shouldn't get sums of data types in regular code, 
         --  but the (tBot kData) form might appear in debugging. 
-        TSum{}
-         -> Sum.singleton kClosure $ tDeepUse tt
+        TSum{}          -> Sum.singleton kClosure $ tDeepUse tt
 
 
