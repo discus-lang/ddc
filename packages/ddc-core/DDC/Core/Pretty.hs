@@ -11,7 +11,7 @@ import DDC.Type.Compounds
 import DDC.Base.Pretty
 
 
--- Binder -----------------------------------------------------------------------------------------
+-- Binder ---------------------------------------------------------------------
 -- | Pretty print a binder, adding spaces after names.
 --   The RAnon and None binders don't need spaces, as they're single symbols.
 pprBinderSep   :: Pretty n => Binder n -> Doc
@@ -25,10 +25,11 @@ pprBinderSep bb
 -- | Print a group of binders with the same type.
 pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
 pprBinderGroup (rs, t)
-        =  text "\\" <> parens ((cat $ map pprBinderSep rs) <> text ":"  <> ppr t) <> dot
+ =  text "\\"   <> parens ((cat $ map pprBinderSep rs) 
+                <> text ":"  <> ppr t) <> dot
 
 
--- Exp --------------------------------------------------------------------------------------------
+-- Exp ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
  pprPrec d xx
   = case xx of
@@ -52,13 +53,34 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XLet _ lts x
          -> ppr lts <+> text "in" <+> ppr x
 
+        XCast _ cc x
+         -> pprParen (d > 10)
+         $  ppr cc <+> pprPrec 11 x
+
         XType    t      -> braces $ ppr t
         XWitness w      -> text "<" <> ppr w <> text ">"
 
         _               -> error "pprPrec[Exp] not finished"
 
 
--- Lets -------------------------------------------------------------------------------------------
+-- Cast -----------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Cast n) where
+ ppr cc
+  = case cc of
+        CastWeakenEffect  eff   
+         -> text "weakeff" <+> parens (ppr eff)
+
+        CastWeakenClosure clo
+         -> text "weakclo" <+> parens (ppr clo)
+
+        CastPurify w
+         -> text "purify"  <+> text "<" <> ppr w <> text ">"
+
+        CastForget w
+         -> text "forget"  <+> text "<" <> ppr w <> text ">"
+
+
+-- Lets -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  ppr lts
   = case lts of
@@ -85,7 +107,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                 <+> ppr b
 
 
--- Witness ----------------------------------------------------------------------------------------
+-- Witness --------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Witness n) where
  pprPrec d ww
   = case ww of

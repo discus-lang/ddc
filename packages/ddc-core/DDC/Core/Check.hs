@@ -279,7 +279,11 @@ checkExpM env xx
         XCase{} -> error "checkExp: XCase not done yet"
         
         -- type cast --------------------------------------
-        XCast{} -> error "checkExp: XCast not done yet"
+        XCast _ (CastPurify w) x1
+         -> do  _tW             <- checkWitnessM env w
+                (t1, effs, fvs) <- checkExpM env x1
+
+                return (t1, effs, fvs)
                 
  
         _ -> error "typeOfExp: not handled yet"

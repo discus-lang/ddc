@@ -1,4 +1,4 @@
 
 :check\
 letregion r1 with {w1 : Const r1} in\
- \(x:Unit). purify <alloc r1> (5 {r1} ())
+ \(x:Unit). purify <alloc {r1}> (5 {r1} ())
