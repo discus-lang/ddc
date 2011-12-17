@@ -259,7 +259,7 @@ checkExpM env xx
          -> error "checkExpM: LWithRegion does not contain a region handle"
          
          | otherwise
-         -> do  -- Check the region handle
+         -> do  -- Check the region handle.
                 checkTypeM env (typeOfBound u)
                 
                 -- Check the body expression.
@@ -328,10 +328,11 @@ checkWitnessM
 
 checkWitnessM env ww
  = case ww of
-        WCon wc -> return $ typeOfWiCon wc
+        -- variables and constructors.
         WVar u  -> return $ typeOfBound u
+        WCon wc -> return $ typeOfWiCon wc
 
-        -- value-type application.
+        -- value-type application
         WApp w1 (WType t2)
          -> do  t1      <- checkWitnessM  env w1
                 k2      <- checkTypeM     env t2
@@ -358,8 +359,24 @@ checkWitnessM env ww
                  _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
 
-        WJoin{} -> error "typeOfWitness: WJoin not done yet"
+        -- join witnesses
+        WJoin w1 w2
+         -> do  t1      <- checkWitnessM env w1
+                t2      <- checkWitnessM env w2
+                case (t1, t2) of
+                 (   TApp (TCon (TyConWitness TwConPure)) eff1
+                  ,  TApp (TCon (TyConWitness TwConPure)) eff2)
+                  -> return $ TApp (TCon (TyConWitness TwConPure))
+                                   (TSum $ Sum.fromList kEffect  [eff1, eff2])
 
+                 (   TApp (TCon (TyConWitness TwConEmpty)) clo1
+                  ,  TApp (TCon (TyConWitness TwConEmpty)) clo2)
+                  -> return $ TApp (TCon (TyConWitness TwConEmpty))
+                                   (TSum $ Sum.fromList kClosure [clo1, clo2])
+
+                 _ -> throw $ ErrorCannotJoin ww w1 t1 w2 t2
+
+        -- embedded types
         WType t -> checkTypeM env t
         
 

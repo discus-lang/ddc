@@ -108,6 +108,7 @@ lexExp str
         ';'  : w'       -> tokA KSemiColon     : lexWord w'
         '_'  : w'       -> tokA KUnderscore    : lexWord w'
         '='  : w'       -> tokA KEquals        : lexWord w'
+        '&'  : w'       -> tokA KAmpersand     : lexWord w'
         
         -- Bottoms
         '!' : '0' : w'  -> tokA KBotEffect     : lexWord w'

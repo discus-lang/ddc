@@ -118,7 +118,7 @@ instance (Pretty n, Eq n) => Pretty (Witness n) where
          -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
          
         WJoin w1 w2
-         -> pprParen (d > 9)  (ppr w1 <+> text " & " <+> ppr w2)
+         -> pprParen (d > 9)  (ppr w1 <+> text "&" <+> ppr w2)
 
         WType t         -> braces $ ppr t
 

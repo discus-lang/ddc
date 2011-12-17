@@ -173,7 +173,20 @@ pExp0
 -- Witnesses ------------------------------------------------------------------
 -- | Top level parser for witnesses.
 pWitness :: Ord n  => Parser n (Witness n)
-pWitness = pWitnessApp
+pWitness = pWitnessJoin
+
+
+-- Witness Joining
+pWitnessJoin :: Ord n => Parser n (Witness n)
+pWitnessJoin 
+   -- WITNESS  or  WITNESS & WITNESS
+ = do   w1      <- pWitnessApp
+        P.choice 
+         [ do   pTok KAmpersand
+                w2      <- pWitnessJoin
+                return  (WJoin w1 w2)
+
+         , do   return w1 ]
 
 
 -- Applications

@@ -76,12 +76,19 @@ data Error a n
         , errorParamType        :: Type n
         , errorArgType          :: Type n }
 
-        -- | Can't apply a non-constructor witness.
+        -- | Cannot apply a non-constructor witness.
         | ErrorWAppNotCtor
         { errorWitness          :: Witness n
         , errorNotFunType       :: Type n
         , errorArgType          :: Type n }
 
+        -- | Cannot join witnesses.
+        | ErrorCannotJoin
+        { errorWitness          :: Witness n
+        , errorWitnessLeft      :: Witness n
+        , errorTypeLeft         :: Type n
+        , errorWitnessRight     :: Witness n
+        , errorTypeRight        :: Type n }
 
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
@@ -157,6 +164,13 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "  to argument of type: "       <> ppr t2 
                  , text "        when checking: "       <> ppr ww ]
 
+        ErrorCannotJoin ww w1 t1 w2 t2
+         -> vcat [ text "Cannot join witnesses."
+                 , text "          Cannot join: "       <> ppr w1
+                 , text "              of type: "       <> ppr t1
+                 , text "         with witness: "       <> ppr w2
+                 , text "              of type: "       <> ppr t2
+                 , text "        when checking: "       <> ppr ww ]
 
 
 

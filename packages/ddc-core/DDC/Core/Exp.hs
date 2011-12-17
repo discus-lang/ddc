@@ -99,11 +99,11 @@ data Pat n
 
 -- Witness ----------------------------------------------------------------------------------------
 data Witness n
-        -- | Witness constructor.
-        = WCon  WiCon 
-        
         -- | Witness variable.
-        | WVar  (Bound n)
+        = WVar  (Bound n)
+        
+        -- | Witness constructor.
+        | WCon  WiCon 
         
         -- | Witness application.
         | WApp  (Witness n) (Witness n)
