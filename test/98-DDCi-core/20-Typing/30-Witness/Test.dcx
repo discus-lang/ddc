@@ -1,0 +1,19 @@
+
+-- Show the type of the mutable constructor.
+:wtype mutable
+
+
+-- Mutability of some region.
+:wtype mutable {R0#}
+
+
+-- Error: type mismatch in witness application.
+:wtype mutable mutable
+
+
+-- Error: type mismatch in witness application.
+:wtype mutable {Unit}
+
+
+-- Error: cannot apply non-constructor witness to argument.
+:wtype mutable {R0#} mutable

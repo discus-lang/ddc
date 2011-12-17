@@ -41,17 +41,56 @@ cmdShowKind ss
 -- | Show the type of a witness.
 cmdShowWType :: String -> IO ()
 cmdShowWType ss
- = goParse (lexString ss)
+ = cmdParseCheckWitness ss >>= goResult
  where
-        goParse toks
-         = case BP.runTokenParser show "<interactive>" pWitness toks of 
-                Left err        -> putStrLn $ "parse error " ++ show err
-                Right w         -> goCheck w
+        goResult Nothing
+         = return ()
 
-        goCheck w 
-         = case typeOfWitness w of
-                Left err        -> putStrLn $ show $ ppr (err :: Error ()  Name)
-                Right k         -> putStrLn $ show $ (ppr w <> text " :: " <> ppr k)
+        goResult (Just (w, t))
+         = putStrLn $ show $ (ppr w <> text " :: " <> ppr t)
+
+
+-- | Parse the given witness, and return it along with its type. 
+--
+--   If the expression had a parse error, undefined vars, or type error
+--   then print this to the console.
+cmdParseCheckWitness
+        :: String 
+        -> IO (Maybe (Witness Name, Type Name))
+
+cmdParseCheckWitness str
+ = goParse (lexString str)
+ where
+        -- Lex and parse the string.
+        goParse toks                
+         = case BP.runTokenParser show "<interactive>" pWitness toks of
+                Left err 
+                 -> do  putStrLn $ "parse error " ++ show err
+                        return Nothing
+                
+                Right x  -> goCheck x
+
+        -- Spread type annotations into binders,
+        --   check for undefined variables, 
+        --   and check its type.
+        goCheck x
+         = let  x'      = C.spread primEnv x
+                fvs     = free     primEnv x'
+           in   if Set.null fvs
+                 then   goResult x' (checkWitness Env.empty x')
+                 else do  
+                        putStrLn $ show $ text "Undefined variables: " <> ppr fvs
+                        putStrLn $ show x'
+                        return Nothing
+
+        -- Expression had a type error.
+        goResult _ (Left err)
+         = do   putStrLn $ show $ ppr err
+                return  Nothing
+         
+        goResult x (Right t)
+         =      return $ Just (x, t)
+
 
 
 -- check / type / effect / closure ----------------------------------------------------------------
@@ -134,5 +173,5 @@ cmdParseCheckExp str
                 return  Nothing
          
         goResult x (Right (t, eff, _clo))
-         =      return $ Just (x, t, eff, tBot kClosure)        -- TODO: add closure
+         =      return $ Just (x, t, eff, tBot kClosure)                        -- TODO: add closure
 

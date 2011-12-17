@@ -10,7 +10,6 @@ import qualified DDC.Type.Check as T
 
 -- | Type errors.
 data Error a n
-
         -- | Found a kind error when checking a type.
         = ErrorType
         { errorTypeError        :: T.Error n }
@@ -71,6 +70,19 @@ data Error a n
         , errorBind             :: Bind n
         , errorType             :: Type n }
 
+        -- | Type mismatch in witness application.
+        | ErrorWAppMismatch
+        { errorWitness          :: Witness n
+        , errorParamType        :: Type n
+        , errorArgType          :: Type n }
+
+        -- | Can't apply a non-constructor witness.
+        | ErrorWAppNotCtor
+        { errorWitness          :: Witness n
+        , errorNotFunType       :: Type n
+        , errorArgType          :: Type n }
+
+
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
@@ -104,18 +116,18 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         
         ErrorLamBindNotData xx t1 k1
          -> vcat [ text "Function parameter does not have value kind."
-                 , text "    The function parameter:"    <> ppr t1
-                 , text "                  has kind: "   <> ppr k1
+                 , text "    The function parameter:"   <> ppr t1
+                 , text "                  has kind: "  <> ppr k1
                  , text "            but it must be: *"
-                 , text "             when checking: "   <> ppr xx ]
+                 , text "             when checking: "  <> ppr xx ]
 
         ErrorLamBodyNotData xx b1 t2 k2
          -> vcat [ text "Result of function does not have value kind."
-                 , text "   In function with binder: "   <> ppr b1
-                 , text "       the result has type: "   <> ppr t2
-                 , text "                 with kind: "   <> ppr k2
+                 , text "   In function with binder: "  <> ppr b1
+                 , text "       the result has type: "  <> ppr t2
+                 , text "                 with kind: "  <> ppr k2
                  , text "            but it must be: *"
-                 , text "             when checking: "   <> ppr xx ]
+                 , text "             when checking: "  <> ppr xx ]
 
         ErrorLamReboundSpec xx b1
          -> vcat [ text "Cannot shadow level-1 binder: " <> ppr b1
@@ -123,14 +135,28 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         
         ErrorLetMismatch xx b t
          -> vcat [ text "Type mismatch in let-binding."
-                 , text "       The binder has type: "   <> ppr b
-                 , text "     but the body has type: "   <> ppr t
-                 , text "             when checking: "   <> ppr xx ]
+                 , text "       The binder has type: "  <> ppr b
+                 , text "     but the body has type: "  <> ppr t
+                 , text "             when checking: "  <> ppr xx ]
                  
         ErrorLetRegionFree xx b t
          -> vcat [ text "Region variable escapes scope of letregion."
-                 , text "       The region variable: "   <> ppr b
-                 , text "  is free in the body type: "   <> ppr t
-                 , text "             when checking: "   <> ppr xx ]
-                 
-                 
+                 , text "       The region variable: "  <> ppr b
+                 , text "  is free in the body type: "  <> ppr t
+                 , text "             when checking: "  <> ppr xx ]
+        
+        ErrorWAppMismatch ww t1 t2
+         -> vcat [ text "Type mismatch in witness application."
+                 , text "  Constructor expects: "       <> ppr t1
+                 , text "      but argument is: "       <> ppr t2
+                 , text "        when checking: "       <> ppr ww]
+
+        ErrorWAppNotCtor ww t1 t2
+         -> vcat [ text "Type cannot apply non-constructor witness"
+                 , text "              of type: "       <> ppr t1
+                 , text "  to argument of type: "       <> ppr t2 
+                 , text "        when checking: "       <> ppr ww ]
+
+
+
+

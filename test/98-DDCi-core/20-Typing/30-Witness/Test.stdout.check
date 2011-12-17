@@ -1,0 +1,24 @@
+-- Show the type of the mutable constructor.
+mutable :: [^ : %].Mutable ^0
+
+-- Mutability of some region.
+mutable {R0#} :: Mutable R0#
+
+-- Error: type mismatch in witness application.
+Type cannot apply non-constructor witness
+              of type: [^ : %].Mutable ^0
+  to argument of type: [^ : %].Mutable ^0
+        when checking: mutable mutable
+
+-- Error: type mismatch in witness application.
+Type mismatch in witness application.
+  Constructor expects: %
+      but argument is: *
+        when checking: mutable {Unit}
+
+-- Error: cannot apply non-constructor witness to argument.
+Type cannot apply non-constructor witness
+              of type: Mutable R0#
+  to argument of type: [^ : %].Mutable ^0
+        when checking: mutable {R0#} mutable
+

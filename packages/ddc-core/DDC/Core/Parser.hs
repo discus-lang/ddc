@@ -119,7 +119,7 @@ pArgs
                 
         -- <: WITNESS0 WITNESS0 ... :>
  , do   pTok KAngleColonBra
-        ws      <- P.many1 pWitness0
+        ws      <- P.many1 pWitnessAtom
         pTok KAngleColonKet
         return  $ map XWitness ws
                 
@@ -163,22 +163,53 @@ pExp0
 -- Witnesses ------------------------------------------------------------------
 -- | Top level parser for witnesses.
 pWitness :: Ord n  => Parser n (Witness n)
-pWitness = pWitness0
+pWitness = pWitnessApp
 
-pWitness0 :: Ord n => Parser n (Witness n)
-pWitness0 
+
+-- Applications
+pWitnessApp :: Ord n => Parser n (Witness n)
+pWitnessApp 
+  = do  (x:xs)  <- P.many1 pWitnessArg
+        return  $ foldl WApp x xs
+
+ <?> "a witness expression or application"
+
+
+-- Function argument
+pWitnessArg :: Ord n => Parser n (Witness n)
+pWitnessArg 
  = P.choice
-        -- Named witness constructors.
-        [ do    wc     <- pWiCon
-                return $ WCon wc 
-                
-        -- Debruijn indices
-        , do    i       <- T.pIndex
-                return  $ WVar (UIx   i   (T.tBot T.kWitness))
+ [ -- {TYPE}
+   do   pTok KBraceBra
+        t       <- T.pType
+        pTok KBraceKet
+        return  $ WType t
 
-        -- Variables
-        , do    var     <- pVar
-                return  $ WVar (UName var (T.tBot T.kWitness)) ]
+   -- WITNESS
+ , do   pWitnessAtom ]
+
+
+-- Atomics
+pWitnessAtom :: Ord n => Parser n (Witness n)
+pWitnessAtom 
+ = P.choice
+   -- (WITNESS)
+ [ do    pTok KRoundBra
+         w       <- pWitness
+         pTok KRoundKet
+         return  $ w
+
+   -- Named witness constructors.
+ , do    wc     <- pWiCon
+         return $ WCon wc 
+                
+   -- Debruijn indices
+ , do    i       <- T.pIndex
+         return  $ WVar (UIx   i   (T.tBot T.kWitness))
+
+   -- Variables
+ , do    var     <- pVar
+         return  $ WVar (UName var (T.tBot T.kWitness)) ]
 
  <?> "a witness"
 

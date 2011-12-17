@@ -338,8 +338,8 @@ checkWitnessM env ww
                       Just u    -> return $ substituteT u t2 t12
                       Nothing   -> return t12
 
-                  | otherwise   -> error "sorry" -- throw $ ErrorWAppMismatch ww (typeOfBind b11) t2
-                 _              -> error "sorry" -- throw $ ErrorWAppNotFun   ww t1 t2
+                  | otherwise   -> throw $ ErrorWAppMismatch ww (typeOfBind b11) k2
+                 _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
 
         -- witness-witness application
@@ -350,8 +350,8 @@ checkWitnessM env ww
                  TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
                   | t11 == t2   
                   -> return t12
-                  | otherwise   -> error "sorry" -- throw $ ErrorAppMismatch xx t11 t2
-                 _              -> error "sorry" -- throw $ ErrorAppNotFun xx t1 t2
+                  | otherwise   -> throw $ ErrorWAppMismatch ww t11 t2
+                 _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
 
         WJoin{} -> error "typeOfWitness: WJoin not done yet"
