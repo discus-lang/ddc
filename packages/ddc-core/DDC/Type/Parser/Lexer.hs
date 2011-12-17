@@ -76,8 +76,9 @@ readTcConBuiltin ss
         "Write"         -> Just TcConWrite
         "DeepWrite"     -> Just TcConDeepWrite
         "Alloc"         -> Just TcConAlloc
-        "Share"         -> Just TcConShare
-        "DeepShare"     -> Just TcConDeepShare
+        "DeepAlloc"     -> Just TcConDeepAlloc
+        "Use"           -> Just TcConUse
+        "DeepUse"       -> Just TcConDeepUse
         _               -> Nothing
 
 

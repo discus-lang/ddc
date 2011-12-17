@@ -183,6 +183,18 @@ data KiCon
 data TwCon
         -- Witness implication.
         = TwConImpl             -- :: '(=>) :: * ~> *'
+
+        -- | Purity of some effect.
+        | TwConPure             -- :: ! ~> @
+
+        -- | Emptiness of some closure.
+        | TwConEmpty            -- :: $ ~> @
+
+        -- | Globalness of some region.
+        | TwConGlobal           -- :: % ~> @
+
+        -- | Globalness of material regions in some type.
+        | TwConDeepGlobal       -- :: % ~> @
         
         -- | Constancy of some region.
         | TwConConst            -- :: % ~> @
@@ -209,11 +221,6 @@ data TwCon
         --   Arity must be >= 2.
         | TwConDistinct Int     -- :: % ~> % ... ~> @
 
-        -- | Purity of some effect.
-        | TwConPure             -- :: ! ~> @
-
-        -- | Emptiness of some closure.
-        | TwConEmpty            -- :: $ ~> @
         deriving (Eq, Show)
 
 
@@ -235,18 +242,20 @@ data TcCon
         -- | Write of some region.
         | TcConWrite            -- :: '% ~> !'
 
-        -- | Write to all material regions in some type
+        -- | Write to all material regions in some type.
         | TcConDeepWrite        -- :: '* ~> !'
         
         -- | Allocation into some region.
         | TcConAlloc            -- :: '% ~> !'
 
+        -- | Allocation into all material regions in some type.
+        | TcConDeepAlloc        -- :: '* ~> !'
         
         -- Closure type constructors ------------
         -- | Some region is captured in a closure.
-        | TcConShare            -- :: '% ~> $'
+        | TcConUse              -- :: '% ~> $'
         
         -- | All material regions in a type are captured in a closure.
-        | TcConDeepShare        -- :: '* ~> $'
+        | TcConDeepUse          -- :: '* ~> $'
         deriving (Eq, Show)
 

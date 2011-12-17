@@ -48,13 +48,13 @@ trimToSumC env cc
                 then Sum.empty kClosure
                 else Sum.singleton kClosure $ TForall b $ TSum c'
 
-        -- Share constructor applied to a region.
-        TApp (TCon (TyConComp TcConShare)) _
+        -- Use constructor applied to a region.
+        TApp (TCon (TyConComp TcConUse)) _
          -> Sum.singleton kClosure cc
         
-        -- DeepShare constructor applied to a data type.
-        TApp (TCon (TyConComp TcConDeepShare)) t2 
-         -> trimDeepSharedD env t2
+        -- DeepUse constructor applied to a data type.
+        TApp (TCon (TyConComp TcConDeepUse)) t2 
+         -> trimDeepUsedD env t2
 
         -- Some other constructor we don't know about.
         TApp{}
@@ -67,16 +67,16 @@ trimToSumC env cc
           $ Sum.toList ts
         
 
--- | Trim the argument of a DeepShared constructor down to a closure sum.
+-- | Trim the argument of a DeepUSed constructor down to a closure sum.
 --   The argument is of data kind.
-trimDeepSharedD :: forall n. (Free n (TypeSum n), Ord n) => Env n -> Type n -> TypeSum n
-trimDeepSharedD env tt
+trimDeepUsedD :: forall n. (Free n (TypeSum n), Ord n) => Env n -> Type n -> TypeSum n
+trimDeepUsedD env tt
  = case tt of
         -- Locally bound variables can never be instantiated,
         --  so can't be made to contain region variables.
         TVar u
          | Env.member u env     -> Sum.empty kClosure
-         | otherwise            -> Sum.singleton kClosure $ tDeepShare tt
+         | otherwise            -> Sum.singleton kClosure $ tDeepUse tt
 
         -- Naked constructors don't contain region variables.
         --  This handles closure terms like 'DeepShare Unit'.
@@ -91,7 +91,7 @@ trimDeepSharedD env tt
         -- TODO: recomputing the free vars like this is bad for complexity, 
         --       should track free vars on the fly.
         TForall b t
-         -> let c'      = trimDeepSharedD (Env.extend b env) t  :: TypeSum n
+         -> let c'      = trimDeepUsedD (Env.extend b env) t  :: TypeSum n
                 ns      = free Env.empty c'                     :: Set (Bound n)
             in  if Set.size ns == 0
                 then Sum.empty kClosure
@@ -104,11 +104,11 @@ trimDeepSharedD env tt
          -> trimToSumC env clo
 
          |  otherwise
-         -> Sum.singleton kClosure $ tDeepShare tt
+         -> Sum.singleton kClosure $ tDeepUse tt
 
         -- We shouldn't get sums of data types in regular code, 
         --  but the (tBot kData) form might appear in debugging. 
         TSum{}
-         -> Sum.singleton kClosure $ tDeepShare tt
+         -> Sum.singleton kClosure $ tDeepUse tt
 
 

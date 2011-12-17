@@ -106,13 +106,14 @@ instance Pretty WiCon where
   = case wc of
         WiConPure       -> text "pure"
         WiConEmpty      -> text "empty"
+        WiConGlobal     -> text "global"
         WiConConst      -> text "const"
         WiConMutable    -> text "mutable"
         WiConLazy       -> text "lazy"
         WiConDirect     -> text "direct"
-        WiConRead       -> text "read"
         WiConShare      -> text "share"
-        WiConDistinct n
-         -> text "distinct" <> (text $ show n)
+        WiConRead       -> text "read"
+        WiConAlloc      -> text "alloc"
+        WiConDistinct n -> text "distinct" <> (text $ show n)
 
 

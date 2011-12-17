@@ -142,7 +142,7 @@ isWnf pArity xx
          XLam{}         -> True
          XLet{}         -> False
          XCase{}        -> False
-         XCast _ x _    -> isWnf pArity x
+         XCast _ _ x    -> isWnf pArity x
          XType{}        -> True
          XWitness{}     -> True
 

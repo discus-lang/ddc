@@ -154,6 +154,10 @@ instance Pretty TwCon where
  ppr tw
   = case tw of
         TwConImpl       -> text "(=>)"
+        TwConPure       -> text "Pure"
+        TwConEmpty      -> text "Empty"
+        TwConGlobal     -> text "Global"
+        TwConDeepGlobal -> text "DeepGlobal"
         TwConConst      -> text "Const"
         TwConDeepConst  -> text "DeepConst"
         TwConMutable    -> text "Mutable"
@@ -162,8 +166,6 @@ instance Pretty TwCon where
         TwConHeadLazy   -> text "HeadLazy"
         TwConDirect     -> text "Direct"
         TwConDistinct n -> text "Distinct" <> (text $ show n)
-        TwConPure       -> text "Pure"
-        TwConEmpty      -> text "Empty"
         
 
 instance Pretty TcCon where
@@ -175,5 +177,8 @@ instance Pretty TcCon where
         TcConWrite      -> text "Write"
         TcConDeepWrite  -> text "DeepWrite"
         TcConAlloc      -> text "Alloc"
-        TcConShare      -> text "Share"
-        TcConDeepShare  -> text "DeepShare"
+        TcConDeepAlloc  -> text "DeepAlloc"
+        TcConUse        -> text "Use"
+        TcConDeepUse    -> text "DeepUse"
+
+

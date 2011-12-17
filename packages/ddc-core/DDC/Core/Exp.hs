@@ -39,7 +39,7 @@ data Exp a n
         | XCase a  (Exp a n)  [Alt a n]
 
         -- | Type cast.
-        | XCast a  (Exp a n)  (Cast n)
+        | XCast a  (Cast n)   (Exp a n)
 
         -- | Type can appear as the argument of an application.
         | XType    (Type n)
@@ -118,31 +118,84 @@ data Witness n
 
 -- | Witness constructor.
 data WiCon
-        -- | The pure effect is pure
-        = WiConPure             -- pure     :: Pure (!0)
+        -- | The pure effect is pure.
+        = WiConPure     -- pure     :: Pure (!0)
 
-        -- | The empty closure is empty
-        | WiConEmpty            -- empty    :: Empty ($0)
+
+        -- | The empty closure is empty.
+        | WiConEmpty    -- empty    :: Empty ($0)
+
+
+        -- | Witness that a region is global.
+        -- 
+        --   Global regions live for the duration of the program and are not
+        --   deallocated in a stack like manner. This lets us hide the use of
+        --   such regions, and rely on the garbage collector to reclaim the
+        --   space.
+        | WiConGlobal   -- global   :: [r: %]. Global r
+
 
         -- | Witness that a region is constant.
-        | WiConConst            -- const    :: [r: %]. Const r
+        --
+        --   This lets us purify read and allocation effects on it,
+        --   and prevents it from being Mutable.
+        | WiConConst    -- const    :: [r: %]. Const r
         
+
         -- | Witness that a region is mutable.
-        | WiConMutable          -- mutable  :: [r: %]. Mutable r
+        --
+        --   This lets us update objects in the region, 
+        --   and prevents it from being Constant.
+        | WiConMutable  -- mutable  :: [r: %]. Mutable r
+
 
         -- | Witness that a region is lazy.
-        | WiConLazy             -- lazy     :: [r: %]. Const r
+        --
+        --   This lets is allocate thunks into the region,
+        --   and prevents it from being Direct.
+        | WiConLazy     -- lazy     :: [r: %]. Const r
+
         
         -- | Witness that a region is direct.
-        | WiConDirect           -- direct   :: [r: %]. Mutable r
+        --
+        --   This ensures there are no thunks in the region,
+        --   which prevents it from being Lazy.
+        | WiConDirect   -- direct   :: [r: %]. Mutable r
 
-        -- | Purify a read from a constant region.
-        | WiConRead             -- read     :: [r: %]. Const r => Pure  (Read r)
 
-        -- | Hide the sharing of a constant region.
-        | WiConShare            -- share    :: [r: %]. Const r => Empty (Share r)
+        -- | Hide the use of a global region.
+        --
+        --   This lets us empty the closure of an expression, and rely
+        --   on the garbage collector to reclaim objects in that region.
+        --   This is needed when we suspend function applications that 
+        --   have such a region in their closure, because the type of the
+        --   returned thunk doesn't reveal that it holds on to objects in 
+        --   that region.
+        | WiConShare    -- use      :: [r: %]. Global r => Const r => Empty (Use r)
+
+
+        -- | Purify a read effect from a constant region.
+        --
+        --   This lets us suspend applications that read constant objects,
+        --   because it doesn't matter if the read is delayed, we'll always
+        --   ge the same result.
+        | WiConRead     -- read     :: [r: %]. Const r => Pure (Read r)
+
+
+        -- | Purify an allocation effect into a constant region.
+        --
+        --   This lets us increase the sharing of constant objects,
+        --   because we can't tell constant objects of the same value apart.
+        | WiConAlloc    -- alloc    :: [r: %]. Const r => Pure (Alloc r)
+
 
         -- | Witness that some regions are distinct.
+        --
+        --   This ensures that the regions are physically seprate, so reads
+        --   and writes into one won't interfere with reads and writes
+        --   to the other. We have a family of constructors of arbitray arity,
+        --   that encode that number of regions all being distinct from each 
+        --   other.
         | WiConDistinct Int     -- distinct :: [r0 r1 ... rn : %]. Distinct_n r0 r1 .. rn
         deriving (Eq, Show)
 

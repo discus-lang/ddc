@@ -28,6 +28,10 @@ kindOfTwCon :: TwCon -> Kind n
 kindOfTwCon tc
  = case tc of
         TwConImpl       -> kWitness `kFun` (kWitness `kFun` kWitness)
+        TwConPure       -> kEffect  `kFun` kWitness
+        TwConEmpty      -> kClosure `kFun` kWitness
+        TwConGlobal     -> kRegion  `kFun` kWitness
+        TwConDeepGlobal -> kData    `kFun` kWitness
         TwConConst      -> kRegion  `kFun` kWitness
         TwConDeepConst  -> kData    `kFun` kWitness
         TwConMutable    -> kRegion  `kFun` kWitness
@@ -36,8 +40,6 @@ kindOfTwCon tc
         TwConHeadLazy   -> kData    `kFun` kWitness
         TwConDirect     -> kRegion  `kFun` kWitness
         TwConDistinct n -> kFuns (replicate n kRegion) kWitness
-        TwConPure       -> kEffect  `kFun` kWitness
-        TwConEmpty      -> kClosure `kFun` kWitness
 
 
 -- | Take the kind of a computation type constructor.
@@ -50,8 +52,8 @@ kindOfTcCon tc
         TcConWrite      -> kRegion  `kFun` kEffect
         TcConDeepWrite  -> kData    `kFun` kEffect
         TcConAlloc      -> kRegion  `kFun` kEffect
-        TcConShare      -> kRegion  `kFun` kClosure
-        TcConDeepShare  -> kData    `kFun` kClosure
-
+        TcConDeepAlloc  -> kData    `kFun` kEffect
+        TcConUse        -> kRegion  `kFun` kClosure
+        TcConDeepUse    -> kData    `kFun` kClosure
 
 

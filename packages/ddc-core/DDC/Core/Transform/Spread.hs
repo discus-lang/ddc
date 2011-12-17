@@ -1,4 +1,6 @@
 
+-- | Spreading of type annotations from binders and the environment into bound
+--   variables and constructors.
 module DDC.Core.Transform.Spread
         (Spread(..))
 where
@@ -6,6 +8,7 @@ import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Type.Transform.Spread
 import qualified DDC.Type.Env           as Env
+
 
 instance Spread (Exp a) where
  spread env xx
@@ -24,10 +27,20 @@ instance Spread (Exp a) where
             in  XLet a lts' (spread env' x)
          
         XCase{}         -> error "spread XCase not done"
-        XCast{}         -> error "spread XCast not done"
+
+        XCast a c x     -> XCast a (spread env c) (spread env x)
         
         XType t         -> XType    (spread env t)
         XWitness w      -> XWitness (spread env w)
+
+
+instance Spread Cast where
+ spread env cc
+  = case cc of
+        CastWeakenEffect eff    -> CastWeakenEffect  (spread env eff)
+        CastWeakenClosure clo   -> CastWeakenClosure (spread env clo)
+        CastPurify w            -> CastPurify        (spread env w)
+        CastForget w            -> CastForget        (spread env w)
 
 
 instance Spread (Lets a) where

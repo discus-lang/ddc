@@ -279,7 +279,7 @@ checkExpM env xx
         XCase{} -> error "checkExp: XCase not done yet"
         
         -- type cast
-        XCast{} -> error "checkExp: XCase not done yet"
+        XCast{} -> error "checkExp: XCast not done yet"
                 
  
         _ -> error "typeOfExp: not handled yet"
@@ -366,6 +366,9 @@ typeOfWiCon wc
         WiConPure     -> tPure  (tBot kEffect)
         WiConEmpty    -> tEmpty (tBot kClosure)
 
+        WiConGlobal
+         -> tForall kRegion $ \r -> tGlobal r
+
         WiConConst    
          -> tForall kRegion $ \r -> tConst r
 
@@ -378,11 +381,14 @@ typeOfWiCon wc
         WiConDirect
          -> tForall kRegion $ \r -> tDirect r
 
-        WiConRead
-         -> tForall kRegion $ \r -> (tConst r) `tImpl`  (tPure  $ tRead r)
-
         WiConShare
-         -> tForall kRegion $ \r -> (tConst r) `tImpl` (tEmpty $ tShare r)
+         -> tForall kRegion $ \r -> tGlobal r `tImpl` tConst r `tImpl` (tEmpty $ tUse r)
+
+        WiConRead
+         -> tForall kRegion $ \r -> tConst r `tImpl` (tPure  $ tRead r)
+
+        WiConAlloc
+         -> tForall kRegion $ \r -> tConst r `tImpl` (tPure $ tAlloc r)
 
         WiConDistinct n
          -> tForalls (replicate n kRegion) $ \rs -> tDistinct rs

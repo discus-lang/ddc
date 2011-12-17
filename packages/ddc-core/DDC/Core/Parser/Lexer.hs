@@ -23,34 +23,39 @@ import Data.List
 import Data.Char
 
 
--- WiCon names ------------------------------------------------------------------------------------
+-- WiCon names ----------------------------------------------------------------
 -- | Read a `WiCon`.
+---
+--   This should function should have a case for every `WiCon`.
+--
 readWiConBuiltin :: String -> Maybe WiCon
 readWiConBuiltin ss
  = case ss of
         "pure"          -> Just WiConPure
         "empty"         -> Just WiConEmpty
+        "global"        -> Just WiConGlobal
         "const"         -> Just WiConConst
         "mutable"       -> Just WiConMutable
         "lazy"          -> Just WiConLazy
         "direct"        -> Just WiConDirect
-        "read"          -> Just WiConRead
         "share"         -> Just WiConShare
-        _               -> Nothing
+        "read"          -> Just WiConRead
+        "alloc"         -> Just WiConAlloc
+        _               -> Nothing                                              -- TODO: add distinctN
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Lex a string into type tokens.
 --   
 --   * This is a conservative extension of the core type parser.
---   * If there are any `Nothing` elements in the returned list then there was a lexical error.
+--   * If there are any `Nothing` elements in the returned list then there was
+--     a lexical error.
 lexExp :: String -> [Token (Tok String)]
 lexExp str
  = concatMap lexWord $ words str
  where 
--- TODO: maintain the real source position.
   -- make a token
-  tok t = Token t (SourcePos Nothing 0 0)
+  tok t = Token t (SourcePos Nothing 0 0)                                       -- TODO: maintain real sourcepos
   tokA  = tok . KA
   tokN  = tok . KN
 

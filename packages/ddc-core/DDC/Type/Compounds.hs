@@ -37,18 +37,23 @@ module DDC.Type.Compounds
           -- * Kind construction
         , kData, kRegion, kEffect, kClosure, kWitness
 
-          -- * Type construction
+          -- * Effect type constructors
         , tRead,        tDeepRead
         , tWrite,       tDeepWrite
-        , tAlloc
-        , tShare,       tDeepShare
+        , tAlloc,       tDeepAlloc
+
+          -- * Closure type constructors.
+        , tUse,         tDeepUse
+
+          -- * Witness type constructors.
+        , tPure
+        , tEmpty
+        , tGlobal,      tDeepGlobal
         , tConst,       tDeepConst
         , tMutable,     tDeepMutable
         , tLazy,        tHeadLazy
         , tDirect
         , tDistinct
-        , tPure
-        , tEmpty
         
         , tConData0,    tConData1
         )
@@ -257,14 +262,24 @@ kWitness        = TCon $ TyConKind KiConWitness
 
 
 -- Level 1 constructors (witness and computation types) -------------------------------------------
+
+-- Effect type constructors
 tRead           = tcCon1 TcConRead
 tDeepRead       = tcCon1 TcConDeepRead
 tWrite          = tcCon1 TcConWrite
 tDeepWrite      = tcCon1 TcConDeepWrite
 tAlloc          = tcCon1 TcConAlloc
-tShare          = tcCon1 TcConShare
-tDeepShare      = tcCon1 TcConDeepShare
+tDeepAlloc      = tcCon1 TcConDeepAlloc
 
+-- Closure type constructors.
+tUse            = tcCon1 TcConUse
+tDeepUse        = tcCon1 TcConDeepUse
+
+-- Witness type constructors.
+tPure           = twCon1 TwConPure
+tEmpty          = twCon1 TwConEmpty
+tGlobal         = twCon1 TwConGlobal
+tDeepGlobal     = twCon1 TwConDeepGlobal
 tConst          = twCon1 TwConConst
 tDeepConst      = twCon1 TwConDeepConst
 tMutable        = twCon1 TwConMutable
@@ -272,8 +287,6 @@ tDeepMutable    = twCon1 TwConDeepMutable
 tLazy           = twCon1 TwConLazy
 tHeadLazy       = twCon1 TwConHeadLazy
 tDirect         = twCon1 TwConDirect
-tPure           = twCon1 TwConPure
-tEmpty          = twCon1 TwConEmpty
 tDistinct       = twConN TwConDistinct 
 
 tcCon1 tc t  = (TCon $ TyConComp    tc) `tApp` t
