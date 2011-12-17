@@ -290,7 +290,7 @@ checkExpM env xx
 
                 return (t1, effs', fvs)
  
- 
+  
         _ -> error "typeOfExp: not handled yet"
 
 

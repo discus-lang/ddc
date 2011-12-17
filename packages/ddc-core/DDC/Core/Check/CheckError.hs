@@ -103,11 +103,11 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         ErrorType err'  -> ppr err'
 
         ErrorMalformedExp xx
-         -> vcat [ text "Malformed expression: "    <> ppr xx ]
+         -> vcat [ text "Malformed expression: "        <> ppr xx ]
         
         ErrorMalformedType xx tt
-         -> vcat [ text "Found malformed type: "    <> ppr tt
-                 , text "       when checking: "    <> ppr xx ]
+         -> vcat [ text "Found malformed type: "        <> ppr tt
+                 , text "       when checking: "        <> ppr xx ]
 
         ErrorAppMismatch xx t1 t2
          -> vcat [ text "Type mismatch in application." 
@@ -180,8 +180,8 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
 
         ErrorWitnessNotPurity xx w t
          -> vcat [ text "Witness for a purify does not witness purity."
-                 , text "        Witness: " <> ppr w
-                 , text "       has type: " <> ppr t
-                 , text "  when checking: " <> ppr xx ]
+                 , text "        Witness: "             <> ppr w
+                 , text "       has type: "             <> ppr t
+                 , text "  when checking: "             <> ppr xx ]
 
 

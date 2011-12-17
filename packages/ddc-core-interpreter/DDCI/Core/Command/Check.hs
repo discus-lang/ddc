@@ -32,8 +32,8 @@ cmdShowKind ss
 
         goCheck t
          = case T.checkType Env.empty (C.spread primEnv t) of
-                Left err        -> putStrLn $ show $ ppr err
-                Right k         -> putStrLn $ show $ (ppr t <> text " :: " <> ppr k)
+                Left err        -> putStrLn $ pretty $ ppr err
+                Right k         -> putStrLn $ pretty $ (ppr t <> text " :: " <> ppr k)
 
 
 
@@ -47,7 +47,7 @@ cmdShowWType ss
          = return ()
 
         goResult (Just (w, t))
-         = putStrLn $ show $ (ppr w <> text " :: " <> ppr t)
+         = putStrLn $ pretty $ (ppr w <> text " :: " <> ppr t)
 
 
 -- | Parse the given witness, and return it along with its type. 
@@ -79,13 +79,12 @@ cmdParseCheckWitness str
            in   if Set.null fvs
                  then   goResult x' (checkWitness Env.empty x')
                  else do  
-                        putStrLn $ show $ text "Undefined variables: " <> ppr fvs
-                        putStrLn $ show x'
+                        putStrLn $ pretty $ text "Undefined variables: " <> ppr fvs
                         return Nothing
 
         -- Expression had a type error.
         goResult _ (Left err)
-         = do   putStrLn $ show $ ppr err
+         = do   putStrLn $ pretty $ ppr err
                 return  Nothing
          
         goResult x (Right t)
@@ -123,13 +122,13 @@ cmdShowType mode ss
                         , nest 4 $ text ":$: " <> ppr clo]
         
                 ShowTypeValue
-                 -> putStrLn $ show (ppr x <> text " :: " <> ppr t)
+                 -> putStrLn $ pretty (ppr x <> text " :: " <> ppr t)
         
                 ShowTypeEffect
-                 -> putStrLn $ show (ppr x <> text " :! " <> ppr eff)
+                 -> putStrLn $ pretty (ppr x <> text " :! " <> ppr eff)
 
                 ShowTypeClosure
-                 -> putStrLn $ show (ppr x <> text " :$ " <> ppr clo)
+                 -> putStrLn $ pretty (ppr x <> text " :$ " <> ppr clo)
 
 
 -- | Parse the given core expression, 
@@ -163,13 +162,12 @@ cmdParseCheckExp str
            in   if Set.null fvs
                  then   goResult x' (checkExp Env.empty x')
                  else do  
-                        putStrLn $ show $ text "Undefined variables: " <> ppr fvs
-                        putStrLn $ show x'
+                        putStrLn $ pretty $ text "Undefined variables: " <> ppr fvs
                         return Nothing
 
         -- Expression had a type error.
         goResult _ (Left err)
-         = do   putStrLn $ show $ ppr err
+         = do   putStrLn $ pretty $ ppr err
                 return  Nothing
          
         goResult x (Right (t, eff, _clo))
