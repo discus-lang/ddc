@@ -90,6 +90,12 @@ data Error a n
         , errorWitnessRight     :: Witness n
         , errorTypeRight        :: Type n }
 
+        -- | Witness provided for a purify does not witness purity
+        | ErrorWitnessNotPurity
+        { errorChecking         :: Exp a n
+        , errorWitness          :: Witness n
+        , errorType             :: Type n }
+
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
@@ -172,5 +178,10 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "              of type: "       <> ppr t2
                  , text "        when checking: "       <> ppr ww ]
 
+        ErrorWitnessNotPurity xx w t
+         -> vcat [ text "Witness for a purify does not witness purity."
+                 , text "        Witness: " <> ppr w
+                 , text "       has type: " <> ppr t
+                 , text "  when checking: " <> ppr xx ]
 
 

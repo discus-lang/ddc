@@ -2,6 +2,13 @@
 -- Error: region is free in the return type of the returned function.
 :check\
 letregion r1 with {w1 : Const r1} in\
+ \(x:Unit). purify <alloc {r1} w1> (5 {r1} ())
+
+
+-- Error: witness for purify does not witness purity
+-- We've left off the variable for the const witness.
+:check\
+letregion r1 with {w1 : Const r1} in\
  \(x:Unit). purify <alloc {r1}> (5 {r1} ())
 
 

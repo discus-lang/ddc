@@ -280,11 +280,16 @@ checkExpM env xx
         
         -- type cast --------------------------------------
         XCast _ (CastPurify w) x1
-         -> do  _tW             <- checkWitnessM env w
+         -> do  tW              <- checkWitnessM env w
                 (t1, effs, fvs) <- checkExpM env x1
-
-                return (t1, effs, fvs)
                 
+                effs' <- case tW of
+                          TApp (TCon (TyConWitness TwConPure)) effMask
+                            -> return $ Sum.delete effMask effs
+                          _ -> throw  $ ErrorWitnessNotPurity xx w tW
+
+                return (t1, effs', fvs)
+ 
  
         _ -> error "typeOfExp: not handled yet"
 
