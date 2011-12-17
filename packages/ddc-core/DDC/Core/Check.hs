@@ -278,7 +278,7 @@ checkExpM env xx
         -- case expression
         XCase{} -> error "checkExp: XCase not done yet"
         
-        -- type cast
+        -- type cast --------------------------------------
         XCast{} -> error "checkExp: XCast not done yet"
                 
  
