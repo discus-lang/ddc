@@ -4,6 +4,37 @@
  let x : Int R0# = 5 {R0#} () in\
  \(z:Unit). addInt {:R0# R0# R1#:} x x
 
+
+-- The inner function uses a value in region R0#.
+:check\
+ let x : Int R0# = 5 {R0#} () in\
+ \(z:Unit). addInt {:R0# R0# R1#:} x x
+
+
+-- Inner function uses the bound value, but it is not free in the closure.
 :check\
  \(x:Int R0#). addInt {:R0# R0# R1#:} x x
+
+
+-- Inner function uses the bound value, and it is free in the closure.
+:check\
+ \(x:Int R0#). \(y:Int R1#). addInt {:R0# R1# R2#:} x y
+
+
+-- Inner function has a value in the closure whose type contains
+-- a higher kinded type variable.
+:check\
+ \(a:% ~> *). \(x:a R1#). \(f: a R1# -> a R1#). f x
+
+
+-- Inner funtion has a value in the clousre whose type contains
+-- a closure variable.
+:check\
+ \(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x
+
+
+-- Like above, and we've also instantiated the variable.
+-- :check\
+-- (\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)\
+-- {Read R0#} {Use R1#}
 

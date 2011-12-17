@@ -57,20 +57,18 @@ instance (Eq n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
         ErrorAppArgMismatch tt t1 t2
-         -> sep $ punctuate line 
-                [ text "Core type mismatch in application."
-                , text "             type: " <> ppr t1
-                , text "   does not match: " <> ppr t2
-                , text "   in application: " <> ppr tt ]
+         -> vcat [ text "Core type mismatch in application."
+                 , text "             type: " <> ppr t1
+                 , text "   does not match: " <> ppr t2
+                 , text "   in application: " <> ppr tt ]
          
         ErrorAppNotFun tt t1 k1 t2 k2
-         -> sep $ punctuate line
-                [ text "Core type mismatch in application."
-                , text "     cannot apply type: " <> ppr t2
-                , text "               of kind: " <> ppr k2
-                , text "  to non-function type: " <> ppr t1
-                , text "               of kind: " <> ppr k1
-                , text "         in appliction: " <> ppr tt]
+         -> vcat [ text "Core type mismatch in application."
+                 , text "     cannot apply type: " <> ppr t2
+                 , text "               of kind: " <> ppr k2
+                 , text "  to non-function type: " <> ppr t1
+                 , text "               of kind: " <> ppr k1
+                 , text "         in appliction: " <> ppr tt]
                 
         ErrorUnappliedKindFun 
          -> text "Can't take sort of unapplied kind function constructor."
