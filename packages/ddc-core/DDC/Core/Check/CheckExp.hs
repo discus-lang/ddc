@@ -255,8 +255,11 @@ checkExpM env xx
                                 $ Sum.delete (tWrite (TVar u))
                                 $ Sum.delete (tAlloc (TVar u))
                                 $ effs
-                                
-                return (t, effs', clo)
+
+                -- Delete the bound region variable from the cloure.
+                let clo_masked  = Set.delete (GBoundRgnVar u) clo
+                
+                return (t, effs', clo_masked)
 
 
         -- withregion -------------------------------------
@@ -277,8 +280,8 @@ checkExpM env xx
                 let effs'       = Sum.delete (tRead  tu)
                                 $ Sum.delete (tWrite tu)
                                 $ Sum.delete (tAlloc tu)
-                                $ effs
-                
+                                $ effs                
+
                 return (t, effs', clo)
                 
 

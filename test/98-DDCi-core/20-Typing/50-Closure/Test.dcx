@@ -63,6 +63,7 @@
  letregion r1 with {w1 : Const r1} in\
  purify <read {r1} w1> (addInt {:r1 R0# R0#:} (5 {r1} ()) (5 {R0#} ()))
 
+
 -- Error: region is visible in the closure of the returned function.
 -- We've purified the read and alloc effects, but we can still see
 -- that the function uses the region due to the Use term in the

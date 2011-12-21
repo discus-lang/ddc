@@ -75,7 +75,6 @@ trimDeepUsedD tt
          | otherwise
          -> Sum.empty kClosure
 
-
         -- Add locally bound variable to the environment.
         -- See Note: Trimming Foralls. 
         TForall{}
@@ -94,7 +93,6 @@ trimDeepUsedD tt
               ->  Sum.fromList kClosure cs
 
              _ -> Sum.singleton kClosure $ tDeepUse tt
-
 
         -- We shouldn't get sums of data types in regular code, 
         --  but the (tBot kData) form might appear in debugging. 
