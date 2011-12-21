@@ -48,7 +48,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XApp _ x1 x2
          -> pprParen (d > 10)
-         $  ppr x1 <+> pprPrec 11 x2
+         $  pprPrec 2 x1 <+> pprPrec 11 x2
 
         XLet _ lts x
          -> ppr lts <+> text "in" <+> ppr x
