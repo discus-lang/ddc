@@ -255,7 +255,7 @@ takeKFuns :: Kind n -> [Kind n]
 takeKFuns kk
  = case kk of
         TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
-                -> takeKFuns k1 ++ [k2]
+                -> [k1] ++ takeKFuns k2
         _       -> [kk]
 
 

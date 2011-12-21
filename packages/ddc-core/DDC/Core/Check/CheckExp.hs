@@ -329,6 +329,13 @@ instance Ord n => Ord (TaggedClosure n) where
  compare  GBoundRgn{}      GBoundVal{}          = GT
 
 
+instance (Eq n, Pretty n) => Pretty (TaggedClosure n) where
+ ppr cc
+  = case cc of
+        GBoundVal u clos -> text "CLOVAL" <+> ppr u <+> text ":" <+> ppr clos
+        GBoundRgn u      -> text "CLORGN" <+> ppr u
+
+
 -- | Convert a tagged clousure to a regular closure by dropping the tag variables.
 closureOfTagged :: TaggedClosure n -> Closure n
 closureOfTagged gg

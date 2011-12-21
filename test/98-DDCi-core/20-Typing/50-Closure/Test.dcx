@@ -45,8 +45,8 @@
  (\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)\
  {Read R0#} {Use R1#}
 
--- Like above, and we've also instantiated the variable with a
--- closure that still needs to be trimmed.
+-- Like above, and we've also instantiated the variable with a closure that
+-- could be trimmed, but because it's explicit in the term we don't do so. 
 :check\
  (\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)\
  {Read R0#} {DeepUse (Int R1#)}
