@@ -102,9 +102,11 @@ checkExpM env xx
                   -> case takeSubstBoundOfBind b11 of
                       Just u    -> return ( substituteT u t2 t12
                                           , substituteT u t2 effs1
-                                          , clos1)                      -- TODO: add ty clo, and subst.
+                                          , clos1 `Set.union` taggedClosureOfTyArg t2)  -- TODO: do subst.
 
-                      Nothing   -> return (t12, effs1, clos1)
+                      Nothing   -> return ( t12
+                                          , effs1
+                                          , clos1 `Set.union` taggedClosureOfTyArg t2)
 
                   | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
                  _              -> throw $ ErrorAppNotFun   xx t1 t2
@@ -118,7 +120,7 @@ checkExpM env xx
                   | t11 == t2   
                   -> return     ( t12
                                 , effs1
-                                , clos1 )                               -- TODO: add ty clo
+                                , clos1 )
 
                   | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
                  _              -> throw $ ErrorAppNotFun   xx t1 t2
@@ -311,29 +313,35 @@ checkTypeM env tt
 -- TaggedClosure ----------------------------------------------------------------------------------
 -- | A closure tagged with the bound variable that the closure term is due to.
 data TaggedClosure n
-        = GBoundVal (Bound n) (TypeSum n)
-        | GBoundRgn (Bound n)
+        = GBoundVal    (Bound n) (TypeSum n)
+        | GBoundRgnVar (Bound n)
+        | GBoundRgnCon (Bound n)
         deriving Show
 
 
 instance Eq n  => Eq (TaggedClosure n) where
- (==)    (GBoundVal u1 _) (GBoundVal u2 _)      = u1 == u2
- (==)    (GBoundRgn u1)   (GBoundRgn u2)        = u1 == u2
+ (==)    (GBoundVal u1 _)  (GBoundVal u2 _)     = u1 == u2
+ (==)    (GBoundRgnVar u1) (GBoundRgnVar u2)    = u1 == u2
+ (==)    (GBoundRgnCon u1) (GBoundRgnCon u2)    = u1 == u2
  (==)    _                 _                    = False
  
 
 instance Ord n => Ord (TaggedClosure n) where
- compare (GBoundVal u1 _) (GBoundVal u2 _)      = compare u1 u2
- compare (GBoundRgn u1)   (GBoundRgn u2)        = compare u1 u2
- compare  GBoundVal{}      GBoundRgn{}          = LT
- compare  GBoundRgn{}      GBoundVal{}          = GT
+ compare g1 g2 = compare (ordify g1) (ordify g2)
+  where 
+        ordify gg
+         = case gg of
+                GBoundVal u _   -> (0, u) :: (Int, Bound n)
+                GBoundRgnVar u  -> (1, u)
+                GBoundRgnCon u  -> (2, u)
 
 
 instance (Eq n, Pretty n) => Pretty (TaggedClosure n) where
  ppr cc
   = case cc of
-        GBoundVal u clos -> text "CLOVAL" <+> ppr u <+> text ":" <+> ppr clos
-        GBoundRgn u      -> text "CLORGN" <+> ppr u
+        GBoundVal    u clos -> text "CLOVAL   " <+> ppr u <+> text ":" <+> ppr clos
+        GBoundRgnVar u      -> text "CLORGNVAR" <+> ppr u
+        GBoundRgnCon u      -> text "CLORGNCON" <+> ppr u
 
 
 -- | Convert a tagged clousure to a regular closure by dropping the tag variables.
@@ -341,7 +349,8 @@ closureOfTagged :: TaggedClosure n -> Closure n
 closureOfTagged gg
  = case gg of
         GBoundVal _ clos  -> TSum $ clos
-        GBoundRgn u       -> tUse (TVar u)
+        GBoundRgnVar u    -> tUse (TVar u)
+        GBoundRgnCon u    -> tUse (TCon (TyConBound u))
 
 
 -- | Convert a set of tagged closures to a regular closure by dropping the tag variables.
@@ -353,20 +362,24 @@ closureOfTaggedSet clos
 
 
 -- | Take the tagged closure of a value variable.
-taggedClosureOfValBound :: Ord n => Bound n -> TaggedClosure n
+taggedClosureOfValBound :: (Ord n, Pretty n) => Bound n -> TaggedClosure n
 taggedClosureOfValBound u
         = GBoundVal u 
         $ Sum.singleton kClosure 
-        $ tDeepUse $ typeOfBound u
+        $ trimClosure $ tDeepUse $ typeOfBound u
 
-{-
--- | Take the tagged closure of a type variable.
-taggedClosureOfTyBound  :: Ord n => Bound n -> Maybe (TaggedClosure n)
-taggedClosureOfTyBound u
-        | isRegionKind (typeOfBound u)
-        = Just $ GBoundRgn u
 
-        | otherwise
-        = Nothing
--}
+-- | Take the tagged closure of a type argument.
+taggedClosureOfTyArg :: (Ord n, Pretty n) => Type n -> Set (TaggedClosure n)
+taggedClosureOfTyArg tt
+ = case tt of
+        TVar u
+         |   isRegionKind (typeOfBound u)
+         ->  Set.singleton $ GBoundRgnVar u
+
+        TCon (TyConBound u)
+         |   isRegionKind (typeOfBound u)
+         ->  Set.singleton $ GBoundRgnCon u
+
+        _ -> Set.empty
 
