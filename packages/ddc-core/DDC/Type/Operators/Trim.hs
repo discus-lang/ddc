@@ -4,8 +4,10 @@
 module DDC.Type.Operators.Trim 
         (trimClosure)
 where
+import DDC.Type.Check.CheckCon
 import DDC.Type.Exp
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.Collect.Free
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
@@ -24,7 +26,7 @@ trimClosure cc
 trimToSumC :: forall n. (Free n (TypeSum n), Ord n) => Closure n -> TypeSum n
 trimToSumC cc
  = case cc of
-        -- Locally bound closure variables can't be instantiated to anything else.
+        -- Keep closure variables.
         TVar{}          -> Sum.singleton kClosure cc
 
         -- There aren't any naked constructors of closure type.
@@ -33,11 +35,11 @@ trimToSumC cc
         -- The body of a forall should have data kind.                          -- TODO: enforce this in kinding rules.
         TForall{}       -> error "trimToSumC: found forall"
 
-        -- Use constructor applied to a region.
+        -- Keep use constructor applied to a region.
         TApp (TCon (TyConComp TcConUse)) _
          -> Sum.singleton kClosure cc
         
-        -- DeepUse constructor applied to a data type.
+        -- Trim DeepUse constructor applied to a data type.
         TApp (TCon (TyConComp TcConDeepUse)) t2 
          -> trimDeepUsedD t2
 
@@ -68,25 +70,42 @@ trimDeepUsedD tt
 
         -- Naked data constructors don't contain region variables.
         --  This handles closure terms like 'DeepUse Unit'.
-        TCon{}          -> Sum.empty kClosure
+        TCon{}          -> Sum.singleton kClosure $ tDeepUse tt
 
         -- Add locally bound variable to the environment.
-        -- TODO: for now we just drop the forall if the free vars list is empty,
-        --       but also need to lower debruijn indices.
-        -- TODO: drop forall if there are no free vars in the body, 
-        --       will also have to lower locally bound debruijn indices.
-        -- TODO: recomputing the free vars like this is bad for complexity, 
-        --       should track free vars on the fly.
+        -- TODO: For now we just drop the forall if the free vars list is empty.
+        --       This is ok because we only do this at top-level, so don't need
+        --       to lower debruijn indices to account for deleted intermediate
+        --       quantifiers.
         TForall{}
          -> let ns      = free Env.empty tt  :: Set (Bound n)
             in  if Set.size ns == 0
-                then Sum.empty kClosure
-                else Sum.singleton kClosure $ tDeepUse tt
+                 then Sum.empty kClosure
+                 else Sum.singleton kClosure $ tDeepUse tt
 
-        TApp{}          -> Sum.singleton kClosure $ tDeepUse tt
+        -- 
+        TApp{}
+         -> case takeTyConApps tt of
+             Just (tc, args)     
+              | Just k          <- takeKindOfTyCon tc
+              , Just cs         <- sequence $ zipWith makeUsed (takeKFuns k) args
+              -> Sum.fromList kClosure cs
+
+             _ ->  Sum.singleton kClosure $ tDeepUse tt
+
 
         -- We shouldn't get sums of data types in regular code, 
         --  but the (tBot kData) form might appear in debugging. 
         TSum{}          -> Sum.singleton kClosure $ tDeepUse tt
 
+
+-- | Make the appropriate Use term for a type of the given kind,
+--   or `Nothing` if there isn't one.
+makeUsed :: Kind n -> Type n -> Maybe (Closure n)
+makeUsed k t
+        | isRegionKind k        = Just $ tUse t
+        | isDataKind   k        = Just $ tDeepUse t                     -- TODO: re-trim args when we have data types.
+        | isEffectKind k        = Just $ tEmpty kClosure
+        | isClosureKind k       = Just $ t
+        | otherwise             = Nothing
 

@@ -19,15 +19,15 @@ module DDC.Type.Compounds
 
           -- * Type structure
         , tBot
-        , tApp,     ($:)
-        , tApps
+        , tApp,         ($:)
+        , tApps,        takeTApps,      takeTyConApps
         , tForall
         , tForalls,     takeTForalls
         , tSum
 
           -- * Function type construction
         , kFun, (~>>)
-        , kFuns
+        , kFuns,        takeKFun,       takeKFuns
         , tFun, (->>),  takeTFun
         , tImpl
 
@@ -55,13 +55,13 @@ module DDC.Type.Compounds
         , tDirect
         , tDistinct
         
-        , tConData0,    tConData1
-        )
+        , tConData0,    tConData1)
 where
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as Sum
 
--- Binds ------------------------------------------------------------------------------------------
+
+-- Binds ----------------------------------------------------------------------
 -- | Take the variable name of a bind.
 --   If this is an anonymous variable then there won't be a name.
 takeNameOfBind  :: Bind n -> Maybe n
@@ -90,7 +90,7 @@ replaceTypeOfBind t bb
         BNone   _       -> BNone t
 
 
--- Binders ----------------------------------------------------------------------------------------
+-- Binders --------------------------------------------------------------------
 binderOfBind :: Bind n -> Binder n
 binderOfBind bb
  = case bb of
@@ -98,12 +98,14 @@ binderOfBind bb
         BAnon _         -> RAnon
         BNone _         -> RNone
 
+
 makeBindFromBinder :: Binder n -> Type n -> Bind n
 makeBindFromBinder bb t
  = case bb of
         RName n         -> BName n t
         RAnon           -> BAnon t
         RNone           -> BNone t
+
 
 -- | Make lists of binds that have the same type.
 partitionBindsByType :: Eq n => [Bind n] -> [([Binder n], Type n)]
@@ -115,7 +117,7 @@ partitionBindsByType (b:bs)
    in   (rs, t) : partitionBindsByType (drop (length bsSame) bs)
 
 
--- Bounds -----------------------------------------------------------------------------------------
+-- Bounds ---------------------------------------------------------------------
 -- | Take the type of a bound variable.
 typeOfBound :: Bound n -> Type n
 typeOfBound uu
@@ -165,16 +167,36 @@ takeSubstBoundOfBind bb
         BNone _         -> Nothing
 
 
--- Applications -----------------------------------------------------------------------------------
+-- Applications ---------------------------------------------------------------
 tBot k          = TSum $ Sum.empty k
 tApp            = TApp
 ($:)            = TApp
 
+
+-- | Build sequence of type applications.
 tApps   :: Type n -> [Type n] -> Type n
 tApps t1 ts     = foldl TApp t1 ts
 
 
--- Foralls ----------------------------------------------------------------------------------------
+-- | Flatten a sequence ot type applications into the function part and
+--   arguments, if any.
+takeTApps   :: Type n -> [Type n]
+takeTApps tt
+ = case tt of
+        TApp t1 t2      -> takeTApps t1 ++ [t2]
+        _               -> [tt]
+
+
+-- | Flatten a sequence of type applications, returning the type constructor
+--   and arguments, if there is one.
+takeTyConApps :: Type n -> Maybe (TyCon n, [Type n])
+takeTyConApps tt
+ = case takeTApps tt of
+        TCon tc : args  -> Just $ (tc, args)
+        _               -> Nothing
+
+
+-- Foralls --------------------------------------------------------------------
 -- | Build an anonymous type abstraction, with a single parameter.
 tForall :: Kind n -> (Type n -> Type n) -> Type n
 tForall k f
@@ -200,14 +222,13 @@ takeTForalls tt
          (bs, body)     -> Just (bs, body)
 
 
--- Sums -------------------------------------------------------------------------------------------
+-- Sums -----------------------------------------------------------------------
 tSum :: Ord n => Kind n -> [Type n] -> Type n
 tSum k ts
         = TSum (Sum.fromList k ts)
 
 
-
--- Function Constructors --------------------------------------------------------------------------
+-- Function Constructors ------------------------------------------------------
 -- | Construct a kind function.
 kFun, (~>>) :: Kind n -> Kind n -> Kind n
 kFun k1 k2      = ((TCon $ TyConKind KiConFun)`TApp` k1) `TApp` k2
@@ -220,11 +241,30 @@ kFuns []     k1    = k1
 kFuns (k:ks) k1    = k `kFun` kFuns ks k1
 
 
+-- | Destruct a kind function
+takeKFun :: Kind n -> Maybe (Kind n, Kind n)
+takeKFun kk
+ = case kk of
+        TApp (TApp (TCon (TyConKind KiConFun)) k1) k2   
+                -> Just (k1, k2)
+        _       -> Nothing
+
+
+-- | Destruct a chain of kind functions into the arguments
+takeKFuns :: Kind n -> [Kind n]
+takeKFuns kk
+ = case kk of
+        TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
+                -> takeKFuns k1 ++ [k2]
+        _       -> [kk]
+
+
 -- | Construct a value type function, 
 --   with the provided effect and closure.
 tFun    :: Type n -> Effect n -> Closure n -> Type n -> Type n
 tFun t1 eff clo t2
         = (TCon $ TyConComp TcConFun) `tApps` [t1, eff, clo, t2]
+
 
 -- | Destruct a value type function.
 takeTFun :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
@@ -233,7 +273,9 @@ takeTFun tt
         TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) eff) clo) t2
          ->  Just (t1, eff, clo, t2)
         _ -> Nothing
-        
+
+
+
 
 -- | Construct a pure and empty value type function.
 tFunPE, (->>)   :: Type n -> Type n -> Type n
@@ -248,12 +290,12 @@ tImpl t1 t2
 
 
 
--- Level 3 constructors (sorts) -------------------------------------------------------------------
+-- Level 3 constructors (sorts) -----------------------------------------------
 sComp           = TCon $ TyConSort SoConComp
 sProp           = TCon $ TyConSort SoConProp
 
 
--- Level 2 constructors (kinds) -------------------------------------------------------------------
+-- Level 2 constructors (kinds) -----------------------------------------------
 kData           = TCon $ TyConKind KiConData
 kRegion         = TCon $ TyConKind KiConRegion
 kEffect         = TCon $ TyConKind KiConEffect
@@ -261,7 +303,7 @@ kClosure        = TCon $ TyConKind KiConClosure
 kWitness        = TCon $ TyConKind KiConWitness
 
 
--- Level 1 constructors (witness and computation types) -------------------------------------------
+-- Level 1 constructors (witness and computation types) -----------------------
 
 -- Effect type constructors
 tRead           = tcCon1 TcConRead
@@ -297,6 +339,7 @@ twConN tc ts = (TCon $ TyConWitness   (tc (length ts))) `tApps` ts
 -- | Build a nullary type constructor of the given kind.
 tConData0 :: n -> Kind n -> Type n
 tConData0 n k    = TCon (TyConBound (UName n k))
+
 
 -- | Build a type constructor application of one argumnet.
 tConData1 :: n -> Kind n -> Type n -> Type n

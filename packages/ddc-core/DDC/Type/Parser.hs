@@ -15,11 +15,13 @@ import DDC.Base.Parser                  ((<?>))
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Sum           as TS
 
+
 -- HACKS: We're using the core tokens here so we don't have to duplicate
 --        the parser so it works on Type tokens as well as Core tokens.
 --        Perhaps we want a type class to recognise the tokens that are
 --        common to both versions.
 import DDC.Core.Parser.Tokens   
+
 
 -- | Parser of type tokens.
 type Parser n a
@@ -135,6 +137,9 @@ pTypeAtom
                  ]
 
         -- Named type constructors
+        , do    tc      <- pTcCon
+                return  $ TCon (TyConComp tc)
+
         , do    tc      <- pTwCon
                 return  $ TCon (TyConWitness tc)
 
@@ -155,9 +160,9 @@ pTypeAtom
         , do    pTokAs KBotClosure (tBot kClosure)
       
         -- Bound occurrence of a variable.
-        --  We don't know the kind of this variable yet, so fill in the field with the bottom
-        --  element of computation kinds. This isn't really part of the language, but makes
-        --  sense implentation-wise.
+        --  We don't know the kind of this variable yet, so fill in the
+        --  field with the bottom element of computation kinds. This isn't
+        --  really part of the language, but makes sense implentation-wise.
         , do    v       <- pVar
                 return  $  TVar (UName v (tBot sComp))
 
@@ -167,14 +172,20 @@ pTypeAtom
  <?> "atomic type"
 
 
----------------------------------------------------------------------------------------------------
--- | Parse a named `TwCon`
+-------------------------------------------------------------------------------
+-- | Parse a builtin `TcCon`
+pTcCon :: Parser n TcCon
+pTcCon  = P.pTokMaybe f
+ where f (KA (KTcConBuiltin c)) = Just c
+       f _                      = Nothing 
+
+-- | Parse a builtin `TwCon`
 pTwCon :: Parser n TwCon
 pTwCon  = P.pTokMaybe f
  where f (KA (KTwConBuiltin c)) = Just c
        f _                      = Nothing
 
--- | Parse a named `TcCon`
+-- | Parse a user `TcCon`
 pTyConNamed :: Parser n (TyCon n)
 pTyConNamed  = P.pTokMaybe f
  where  f (KN (KCon n))          = Just (TyConBound (UName n (tBot kData)))

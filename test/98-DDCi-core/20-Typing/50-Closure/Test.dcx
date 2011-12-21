@@ -39,8 +39,15 @@
  \(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x
 
 
--- Like above, and we've also instantiated the variable.
--- :check\
--- (\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)\
--- {Read R0#} {Use R1#}
+-- Like above, and we've also instantiated the variable with a
+-- pre-trimmed closure.
+:check\
+ (\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)\
+ {Read R0#} {Use R1#}
+
+-- Like above, and we've also instantiated the variable with a
+-- closure that still needs to be trimmed.
+:check\
+ (\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)\
+ {Read R0#} {DeepUse (Int R1#)}
 

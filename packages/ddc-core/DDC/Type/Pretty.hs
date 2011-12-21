@@ -69,8 +69,9 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
         TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) eff) clo) t2
          | isBot eff, isBot clo
          -> pprParen (d > 5)
-         $  ppr t1 <+> text "->" 
-                   <+> (if isTFun t2 then pprPrec 5 t2 else pprPrec 6 t2)
+         $  (if isTFun t1 then pprPrec 6 t1 else pprPrec 5 t1)
+                   <+> text "->" 
+                   <+> ppr t2
 
          | otherwise
          -> pprParen (d > 5)

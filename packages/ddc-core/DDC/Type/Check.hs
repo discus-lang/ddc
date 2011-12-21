@@ -6,7 +6,7 @@ module DDC.Type.Check
         , kindOfType'
 
           -- * Kinds of Constructors
-        , sortOfKiCon
+        , takeSortOfKiCon
         , kindOfTwCon
         , kindOfTcCon
         
@@ -64,7 +64,7 @@ checkTypeM env tt
         -- Can't sort check a naked kind function
         -- because the sort depends on the argument kinds.
         TCon (TyConKind kc)
-         -> case sortOfKiCon kc of
+         -> case takeSortOfKiCon kc of
                 Just s  -> return s
                 Nothing -> throw $ ErrorUnappliedKindFun
 

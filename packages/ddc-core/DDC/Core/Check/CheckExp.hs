@@ -52,10 +52,6 @@ typeOfExp' tt
 
 
 -- | Check an expression, returning an error or its type, effect and closure.
---   TODO: We trim the closure once at the top.
---         We don't want to trim at every level, bad complexity.
---         We prob want to trim types once at the bottom of the tree, to keep the 
---         overall size down, then once again at the top.
 checkExp 
         :: (Ord n, Pretty n)
         => Env n -> Exp a n

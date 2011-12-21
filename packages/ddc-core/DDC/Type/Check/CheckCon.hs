@@ -1,6 +1,7 @@
 {-# OPTIONS_HADDOCK hide #-}
 module DDC.Type.Check.CheckCon
-        ( sortOfKiCon
+        ( takeKindOfTyCon
+        , takeSortOfKiCon
         , kindOfTwCon
         , kindOfTcCon)
 where
@@ -8,12 +9,25 @@ import DDC.Type.Exp
 import DDC.Type.Compounds
 
 
+-- | Take the kind of a `TyCon`, if there is one.
+takeKindOfTyCon :: TyCon n -> Maybe (Kind n)
+takeKindOfTyCon tt
+ = case tt of        
+        -- Sorts don't have a higher classification.
+        TyConSort    _  -> Nothing
+ 
+        TyConKind    kc -> takeSortOfKiCon kc
+        TyConWitness tc -> Just $ kindOfTwCon tc
+        TyConComp    tc -> Just $ kindOfTcCon tc
+        TyConBound   u  -> Just $ typeOfBound u
+
+
 -- | Take the superkind of an atomic kind constructor.
 --
 --   * Yields `Nothing` for the kind function (~>) as it doesn't have a sort
 --     without being fully applied.
-sortOfKiCon :: KiCon -> Maybe (Sort n)
-sortOfKiCon kc
+takeSortOfKiCon :: KiCon -> Maybe (Sort n)
+takeSortOfKiCon kc
  = case kc of
         KiConFun        -> Nothing
         KiConData       -> Just sComp
