@@ -50,6 +50,14 @@ data Error n
         | ErrorSumKindInvalid
         { errorCheckingSum      :: TypeSum n
         , errorKind             :: Kind n }
+
+        -- | Found a witness implication whose types have invalid kinds.
+        | ErrorWitnessImplInvalid
+        { errorChecking         :: Type n
+        , errorLeftType         :: Type n
+        , errorLeftKind         :: Kind n
+        , errorRightType        :: Type n
+        , errorRightKind        :: Kind n }
         deriving Show
 
 
@@ -80,19 +88,25 @@ instance (Eq n, Pretty n) => Pretty (Error n) where
          -> text "Undefined type variable when checking type: " <> ppr u
          
         ErrorSumKindMismatch k ts ks
-         -> sep $ punctuate line
-                [ text "Core type mismatch in sum."
-                , text " found multiple types: " <> ppr ts
-                , text " with differing kinds: " <> ppr ks ]
-                ++ (if k /= tBot sComp
+         -> vcat 
+              $  [ text "Core type mismatch in sum."
+                 , text " found multiple types: " <> ppr ts
+                 , text " with differing kinds: " <> ppr ks ]
+                 ++ (if k /= tBot sComp
                         then [text "        expected kind: " <> ppr k ]
                         else [])
                 
         ErrorSumKindInvalid ts k
-         -> sep $ punctuate line
-                [ text "Invalid kind for type sum."
-                , text "         the type sum: " <> ppr ts
-                , text "             has kind: " <> ppr k
-                , text "  but it must be ! or $" ]
-                
+         -> vcat [ text "Invalid kind for type sum."
+                 , text "         the type sum: " <> ppr ts
+                 , text "             has kind: " <> ppr k
+                 , text "  but it must be ! or $" ]
+        
+        ErrorWitnessImplInvalid tt t1 k1 t2 k2
+         -> vcat [ text "Invalid args for witness implication."
+                 , text "            left type: " <> ppr t1
+                 , text "             has kind: " <> ppr k1
+                 , text "           right type: " <> ppr t2
+                 , text "             has kind: " <> ppr k2 
+                 , text "        when checking: " <> ppr tt ]
                 

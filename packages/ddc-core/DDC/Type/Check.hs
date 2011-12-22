@@ -16,6 +16,7 @@ where
 import DDC.Type.Check.CheckError
 import DDC.Type.Check.CheckCon
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List
@@ -93,6 +94,20 @@ checkTypeM env tt
                 s2      <- checkTypeM env k2
                 return  s2
 
+
+        -- The implication constructor is overloaded and can have the following kinds:
+        --   (=>) :: @ ~> @ ~> @,  for witness implication.
+        --   (=>) :: @ ~> * ~> *,  for a context.
+        TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
+         -> do  k1      <- checkTypeM env t1
+                k2      <- checkTypeM env t2
+                if      isWitnessKind k1 && isWitnessKind k2
+                 then     return kWitness
+                else if isWitnessKind k1 && isDataKind k2
+                 then     return kData
+                else    throw $ ErrorWitnessImplInvalid tt t1 k2 t2 k2
+
+
         -- TODO: need to use type equiv judgement intead
         --       beacuse           Pure (e1 + e2)
         --       won't match with  Pure (e2 + e1)
@@ -103,7 +118,7 @@ checkTypeM env tt
                 case k1 of
                  TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
                   | k11 == k2   -> return k12
-                  | otherwise   -> throw $ ErrorAppArgMismatch tt k11 k2
+                  | otherwise   -> throw $ ErrorAppArgMismatch tt k1 k2
                   
                  _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 

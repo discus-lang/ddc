@@ -33,7 +33,7 @@ trimToSumC cc
         -- There aren't any naked constructors of closure type.
         TCon{}          -> error "trimToSumC: found naked closure constructor"
         
-        -- The body of a forall should have data kind.                          -- TODO: enforce this in kinding rules.
+        -- The body of a forall should have data or witness kind.       -- TODO: enforce this in kinding rules.
         TForall{}       -> error "trimToSumC: found forall"
 
         -- Keep use constructor applied to a region.

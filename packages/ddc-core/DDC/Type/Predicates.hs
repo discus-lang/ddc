@@ -5,7 +5,8 @@ module DDC.Type.Predicates
         , isDataKind
         , isRegionKind
         , isEffectKind
-        , isClosureKind)
+        , isClosureKind
+        , isWitnessKind)
 where
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as T
@@ -49,5 +50,13 @@ isClosureKind :: Kind n -> Bool
 isClosureKind tt
  = case tt of
         TCon (TyConKind KiConClosure) -> True
+        _                             -> False
+
+
+-- | Check if some kind is the witness kind.
+isWitnessKind :: Kind n -> Bool
+isWitnessKind tt
+ = case tt of
+        TCon (TyConKind KiConWitness) -> True
         _                             -> False
 
