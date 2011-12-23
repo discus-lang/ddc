@@ -11,19 +11,19 @@ addInt
 addInt {R1#}
 ::  [^^:%].Int R1# -> Int ^1 -(Read R1# + Read ^1 + Alloc ^0 | Use R1#)> Int ^0
 :!: !0
-:$: $0
+:$: Use R1#
 
 -- Instantiate all the foralls with different region handles.
 addInt {R1#} {R2#} {R3#}
 ::  Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Use R1#)> Int R3#
 :!: !0
-:$: $0
+:$: Use R1# + Use R2# + Use R3#
 
 -- Same as above, but with nicer syntax.
 addInt {R1#} {R2#} {R3#}
 ::  Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Use R1#)> Int R3#
 :!: !0
-:$: $0
+:$: Use R1# + Use R2# + Use R3#
 
 -- Instantiate all the foralls with the same region handle.
 -- The 'add' primop causes the effect (Read R1# + Read R1#) which should be 
@@ -31,7 +31,7 @@ addInt {R1#} {R2#} {R3#}
 addInt {R1#} {R1#} {R1#}
 ::  Int R1# -> Int R1# -(Read R1# + Alloc R1# | Use R1#)> Int R1#
 :!: !0
-:$: $0
+:$: Use R1#
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
@@ -44,11 +44,11 @@ addInt {R1#} {R1#} {R1#}
 2 {R1#} ()
 ::  Int R1#
 :!: Alloc R1#
-:$: $0
+:$: Use R1#
 
 -- Addition should also read the args, and alloc the result.
 addInt {R1#} {R2#} {R3#} (2 {R1#} ()) (3 {R2#} ())
 ::  Int R3#
 :!: Read R1# + Read R2# + Alloc R1# + Alloc R2# + Alloc R3#
-:$: $0
+:$: Use R1# + Use R2# + Use R3#
 

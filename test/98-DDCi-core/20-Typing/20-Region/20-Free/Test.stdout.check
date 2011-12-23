@@ -7,6 +7,6 @@ Region variable escapes scope of letregion.
 -- Error: bound region is free in the effect of a returned function.
 Region variable escapes scope of letregion.
        The region variable: r1 : %
-  is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R2# | $0)> Int R2#
+  is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R2# | Use r1 + Use R2#)> Int R2#
              when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).addInt {r1} {r1} {R2#} (2 {r1} ()) (3 {r1} ())
 

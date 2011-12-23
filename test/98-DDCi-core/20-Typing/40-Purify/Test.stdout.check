@@ -1,7 +1,7 @@
 -- Error: region is free in the return type of the returned function.
 Region variable escapes scope of letregion.
        The region variable: r1 : %
-  is free in the body type: Unit -> Int r1
+  is free in the body type: Unit -(!0 | Use r1)> Int r1
              when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <alloc {r1} w1> (5 {r1} ())
 
 -- Error: witness for purify does not witness purity
@@ -14,22 +14,22 @@ Witness for a purify does not witness purity.
 -- Error: region is visible in the effect of the returned function.
 Region variable escapes scope of letregion.
        The region variable: r1 : %
-  is free in the body type: Unit -(Read r1 + Read R0# + Alloc r1 + Alloc R0# | $0)> Int R0#
+  is free in the body type: Unit -(Read r1 + Read R0# + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
              when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).addInt {r1} {R0#} {R0#} (2 {r1} ()) (3 {R0#} ())
 
 -- Error: region is visible in the effect of the returned function.
 -- We've purified the read effect, but the alloc effect is still visible.
 Region variable escapes scope of letregion.
        The region variable: r1 : %
-  is free in the body type: Unit -(Read R0# + Alloc r1 + Alloc R0# | $0)> Int R0#
+  is free in the body type: Unit -(Read R0# + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
              when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <read {r1} w1> (addInt {r1} {R0#} {R0#} (2 {r1} ()) (3 {R0#} ()))
 
 -- Error: region is visible in the closure of the returned function.
 -- We've purified the read and alloc effects, but we can still see
 -- that the function uses the region due to the Use term in the
 -- function's closure.
-letregion r1 with {w1 : Const r1} in \(x : Unit).purify <read {r1} w1 & alloc {r1} w1> (addInt {r1} {R0#} {R0#} (2 {r1} ()) (3 {R0#} ()))
-::  Unit -(Read R0# + Alloc R0# | $0)> Int R0#
-:!: !0
-:$: $0
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <read {r1} w1 & alloc {r1} w1> (addInt {r1} {R0#} {R0#} (2 {r1} ()) (3 {R0#} ()))
 

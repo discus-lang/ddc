@@ -164,11 +164,13 @@ checkExpM env xx
                    |  not $ isDataKind k1     -> throw $ ErrorLamBindNotData xx t1 k1
                    |  not $ isDataKind k2     -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
                    |  otherwise
-                   -> let clos2_masked
+                   -> let -- Mask closure terms due to locally bound value vars.
+                          clos2_masked
                            = case takeSubstBoundOfBind b1 of
                               Just u -> Set.delete (taggedClosureOfValBound u) clo2
                               _      -> clo2
 
+                          -- Trim the closure before we annotate the returned function type with it.
                           clos2_captured
                            = trimClosure $ closureOfTaggedSet clos2_masked
 
@@ -186,9 +188,17 @@ checkExpM env xx
                   Just UniverseSpec
                    | e2 /= Sum.empty kEffect  -> throw $ ErrorLamNotPure     xx (TSum e2)
                    | not $ isDataKind k2      -> throw $ ErrorLamBodyNotData xx b1 t2 k2
-                   | otherwise                -> return ( TForall b1 t2
-                                                        , Sum.empty kEffect
-                                                        , clo2)                 -- TODO: cut bound region
+                   | otherwise                
+                   -> let 
+                          -- Mask closure terms due to locally bound region vars.
+                          clos2_masked 
+                           = case takeSubstBoundOfBind b1 of
+                              Just u -> Set.difference clo2 (taggedClosureOfTyArg (TVar u))
+                              _      -> clo2
+                        
+                      in  return ( TForall b1 t2
+                                 , Sum.empty kEffect
+                                 , clos2_masked)
 
                   _ -> throw $ ErrorMalformedType xx k1
 
@@ -212,15 +222,16 @@ checkExpM env xx
                  -- Check the body expression.
                  let env1  = Env.extend b11 env
                  (t2, effs2, clo2)     <- checkExpM env1 x2
-                 let clo2' = case takeSubstBoundOfBind b11 of
+
+                 -- Mask closure terms due to locally bound value vars.
+                 let clo2_masked
+                      = case takeSubstBoundOfBind b11 of
                                 Nothing -> clo2
                                 Just u  -> Set.delete (taggedClosureOfValBound u) clo2
                  
-                 -- TODO: We should be recording free vars instead of closure terms,
-                 --       because we need to mask the bound 
                  return ( t2
                         , effs12 `plus` effs2
-                        , clo12 `Set.union` clo2')
+                        , clo12 `Set.union` clo2_masked)
 
 
         -- letregion --------------------------------------
