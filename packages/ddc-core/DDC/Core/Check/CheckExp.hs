@@ -280,7 +280,7 @@ checkExpM env xx@(XLet _ (LLetRegion b bs) x)
                         $ Sum.delete (tAlloc (TVar u))
                         $ effs
 
-        -- Delete the bound region variable from the cloure.
+        -- Delete the bound region variable from the closure.
         let clo_masked  = Set.delete (GBoundRgnVar u) clo
         
         return (t, effs', clo_masked)
@@ -304,9 +304,12 @@ checkExpM env (XLet _ (LWithRegion u) x)
         let effs'       = Sum.delete (tRead  tu)
                         $ Sum.delete (tWrite tu)
                         $ Sum.delete (tAlloc tu)
-                        $ effs                                          -- TODO: delete bound region var from closure
+                        $ effs
+        
+        -- Delete the bound region handle from the closure.
+        let clo_masked  = Set.delete (GBoundRgnCon u) clo
 
-        return (t, effs', clo)
+        return (t, effs', clo_masked)
                 
 
 -- case expression ------------------------------
