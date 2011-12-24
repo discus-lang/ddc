@@ -1,0 +1,32 @@
+-- Error: conflicting witnesses
+Conflicting witness types with letregion.
+      Witness binding: w1 : Mutable r1
+       conflicts with: w2 : Const r1
+        when checking: letregion r1 with {w1 : Mutable r1; w2 : Const r1} in ()
+
+-- Error: conflicting witnesses
+Conflicting witness types with letregion.
+      Witness binding: w1 : Lazy r1
+       conflicts with: w2 : Direct r1
+        when checking: letregion r1 with {w1 : Lazy r1; w2 : Direct r1} in ()
+
+-- Error: wrong region in witness set
+Witness type is not for bound region.
+      letregion binds: r2
+  but witness type is: w1 : Const r1
+        when checking: letregion r2 with {w1 : Const r1} in ()
+
+-- Error: invalid witness type
+Invalid witness type with letregion.
+          The witness: w1 : Use r1
+  cannot be created with a letregion
+        when checking: letregion r1 with {w1 : Use r1} in ()
+
+-- Error: mistyped witness
+Core type mismatch in application.
+     cannot apply type: r1
+               of kind: %
+  to non-function type: Mutable r1
+               of kind: @
+         in appliction: Mutable r1 r1
+
