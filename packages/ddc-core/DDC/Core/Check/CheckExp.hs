@@ -28,7 +28,7 @@ import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified Data.Set               as Set
 import Control.Monad
-
+import Data.List                        as L
 
 -- Wrappers -------------------------------------------------------------------
 -- | Take the kind of a type.
@@ -239,11 +239,6 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
 
 -- letregion --------------------------------------
 -- TODO: check well formedness of witness set.
--- TODO: On nameclash, kick out witnesses with the same name.
---
---       letregion r1 with {w1:Const r1} in 
---       letregion r1 with {w1:Mutable r1} in...
---
 checkExpM env xx@(XLet _ (LLetRegion b bs) x)
  -- The parser should ensure the bound variable always has region kind.
  | not $ isRegionKind (typeOfBind b)
@@ -262,15 +257,19 @@ checkExpM env xx@(XLet _ (LLetRegion b bs) x)
         when (Env.memberBind b env)
          $ throw $ ErrorLetRegionRebound xx b
         
-        -- Check the witness types.
+        -- Check type correctness of the witness types.
         let env1         = Env.extend b env
         mapM_ (checkTypeM env1) $ map typeOfBind bs
-        let env2         = Env.extends bs env1
+
+        -- Check that the witnesses bound here are for the region,
+        -- and they don't conflict with each other.
+        checkWitnessBindsM xx u bs
 
         -- Check the body expression.
+        let env2         = Env.extends bs env1
         (t, effs, clo)  <- checkExpM env2 x
 
-        -- The free variables of the body cannot contain the bound region.
+        -- The bound region variable cannot be free in the body type.
         let fvsT         = free Env.empty t
         when (Set.member u fvsT)
          $ throw $ ErrorLetRegionFree xx b t
@@ -305,7 +304,7 @@ checkExpM env (XLet _ (LWithRegion u) x)
         let effs'       = Sum.delete (tRead  tu)
                         $ Sum.delete (tWrite tu)
                         $ Sum.delete (tAlloc tu)
-                        $ effs                
+                        $ effs                                          -- TODO: delete bound region var from closure
 
         return (t, effs', clo)
                 
@@ -349,7 +348,7 @@ checkExpM _env _
  = error "typeOfExp: not handled yet"
 
 
--- checkType ------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
 checkTypeM :: Ord n => Env n -> Type n -> CheckM a n (Kind n)
 checkTypeM env tt
@@ -358,4 +357,64 @@ checkTypeM env tt
         Right k         -> return k
 
 
+-------------------------------------------------------------------------------
+-- | Check the set of witness bindings bound in a letregion for conflicts.
+checkWitnessBindsM :: Ord n => Exp a n -> Bound n -> [Bind n] -> CheckM a n ()
+checkWitnessBindsM xx nRegion bsWits
+ = mapM_ (checkWitnessBindM xx nRegion bsWits) bsWits
+        -- want each and others.
 
+checkWitnessBindM 
+        :: Ord n 
+        => Exp a n
+        -> Bound n              -- ^ Region variable bound in the letregion.
+        -> [Bind n]             -- ^ Other witness bindings in the same set.
+        -> Bind  n              -- ^ The witness binding to check.
+        -> CheckM a n ()
+
+checkWitnessBindM xx uRegion bsWit bWit
+ = let btsWit   
+        = [(typeOfBind b, b) | b <- bsWit]
+
+       -- Check the argument of a witness type is for the region we're
+       -- introducing here.
+       checkWitnessArg t
+        = case t of
+            TVar u'
+             | uRegion /= u'    -> throw $ ErrorLetRegionWitnessOther xx uRegion bWit
+             | otherwise        -> return ()
+
+            TCon (TyConBound u')
+             | uRegion /= u'    -> throw $ ErrorLetRegionWitnessOther xx uRegion bWit
+             | otherwise        -> return ()
+
+            -- The parser should ensure the right of a witness is a 
+            -- constructor or variable.
+            _ -> error "checkWitnessBindM: unexpected witness argument"
+
+   in  case typeOfBind bWit of
+        TApp (TCon (TyConWitness TwConGlobal))  t2
+         -> checkWitnessArg t2
+
+        TApp (TCon (TyConWitness TwConConst))   t2
+         | Just bConflict <- L.lookup (tMutable t2) btsWit
+         -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
+         | otherwise    -> checkWitnessArg t2
+
+        TApp (TCon (TyConWitness TwConMutable)) t2
+         | Just bConflict <- L.lookup (tConst t2)   btsWit
+         -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
+         | otherwise    -> checkWitnessArg t2
+
+        TApp (TCon (TyConWitness TwConLazy))    t2
+         | Just bConflict <- L.lookup (tDirect t2)  btsWit
+         -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
+         | otherwise    -> checkWitnessArg t2
+
+        TApp (TCon (TyConWitness TwConDirect))  t2
+         | Just bConflict <- L.lookup (tLazy t2)    btsWit
+         -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
+         | otherwise    -> checkWitnessArg t2
+
+        _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
+     

@@ -75,6 +75,23 @@ data Error a n
         , errorBind             :: Bind n
         , errorType             :: Type n }
 
+        -- | A witness with this type cannot be created at a letregion.
+        | ErrorLetRegionWitnessInvalid
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n }
+
+        -- | A witness conflicts with another one defined with the same letregion.
+        | ErrorLetRegionWitnessConflict
+        { errorChecking         :: Exp a n
+        , errorBindWitness1     :: Bind n
+        , errorBindWitness2     :: Bind n }
+
+        -- | A witness introduced with a letregion was for some other region.
+        | ErrorLetRegionWitnessOther
+        { errorChecking         :: Exp a n
+        , errorBoundRegion      :: Bound n
+        , errorBindWitness      :: Bind  n }
+
         -- | Type mismatch in witness application.
         | ErrorWAppMismatch
         { errorWitness          :: Witness n
@@ -175,6 +192,24 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "  is free in the body type: "  <> ppr t
                  , text "             when checking: "  <> ppr xx ]
         
+        ErrorLetRegionWitnessInvalid xx b
+         -> vcat [ text "Invalid witness type with letregion."
+                 , text "          The witness: "       <> ppr b
+                 , text "  cannot be created with a letregion"
+                 , text "        when checking: "       <> ppr xx]
+
+        ErrorLetRegionWitnessConflict xx b1 b2
+         -> vcat [ text "Conflicting witness types with letregion."
+                 , text "      Witness binding: "       <> ppr b1
+                 , text "       conflicts with: "       <> ppr b2 
+                 , text "        when checking: "       <> ppr xx]
+
+        ErrorLetRegionWitnessOther xx b1 b2
+         -> vcat [ text "Witness type is not for bound region."
+                 , text "      letregion binds: "       <> ppr b1
+                 , text "  but witness type is: "       <> ppr b2
+                 , text "        when checking: "       <> ppr xx]
+
         ErrorWAppMismatch ww t1 t2
          -> vcat [ text "Type mismatch in witness application."
                  , text "  Constructor expects: "       <> ppr t1
