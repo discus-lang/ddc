@@ -4,18 +4,20 @@ module DDC.Core.Check.TaggedClosure
         , closureOfTagged
         , closureOfTaggedSet
         , taggedClosureOfValBound
-        , taggedClosureOfTyArg)
+        , taggedClosureOfTyArg
+        , maskFromTaggedSet)
 where
 import DDC.Type.Operators.Trim
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Pretty
 import DDC.Type.Exp
+import Data.Maybe
 import Data.Set                 (Set)
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 
--- TaggedClosure --------------------------------------------------------------
+
 -- | A closure tagged with the bound variable that the closure term is due to.
 data TaggedClosure n
         = GBoundVal    (Bound n) (TypeSum n)
@@ -88,3 +90,29 @@ taggedClosureOfTyArg tt
          ->  Set.singleton $ GBoundRgnCon u
 
         _ -> Set.empty
+
+
+-- | Mask a closure term from a tagged closure.
+maskFromTaggedSet 
+        :: Ord n 
+        => TypeSum n 
+        -> Set (TaggedClosure n) -> Set (TaggedClosure n)
+maskFromTaggedSet ts1 set
+        = Set.fromList $ mapMaybe mask $ Set.toList set
+
+ where mask gg
+        = case gg of
+           GBoundVal u ts2              
+            -> Just $ GBoundVal u $ ts2 `Sum.difference` ts1
+
+           GBoundRgnVar u
+            | Sum.elem (tUse (TVar u)) ts1
+                                -> Nothing
+            | otherwise         -> Just gg
+
+           GBoundRgnCon u
+            | Sum.elem (tUse (TCon (TyConBound u))) ts1     
+                                -> Nothing
+            | otherwise         -> Just gg
+
+

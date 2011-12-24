@@ -54,6 +54,8 @@ isConBody c           = isUpper c || isLower c || isDigit c || c == '_'
 readTwConBuiltin :: String -> Maybe TwCon
 readTwConBuiltin ss
  = case ss of
+        "Global"        -> Just TwConGlobal
+        "DeepGlobal"    -> Just TwConDeepGlobal
         "Const"         -> Just TwConConst
         "DeepConst"     -> Just TwConDeepConst
         "Mutable"       -> Just TwConMutable

@@ -130,7 +130,7 @@ typeOfWiCon wc
         WiConDirect
          -> tForall kRegion $ \r -> tDirect r
 
-        WiConShare
+        WiConUse
          -> tForall kRegion $ \r -> tGlobal r `tImpl` tConst r `tImpl` (tEmpty $ tUse r)
 
         WiConRead

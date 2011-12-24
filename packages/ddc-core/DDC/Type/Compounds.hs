@@ -288,6 +288,7 @@ tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
         = ((TCon $ TyConWitness TwConImpl) `tApp` t1) `tApp` t2
 
+infixr `tImpl`
 
 
 -- Level 3 constructors (sorts) -----------------------------------------------

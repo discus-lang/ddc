@@ -6,9 +6,11 @@
 module DDC.Type.Sum 
         ( empty
         , singleton
+        , elem
         , insert
         , delete
-        , plus
+        , union
+        , difference
         , kindOfSum
         , toList, fromList
         , hashTyCon, hashTyConRange
@@ -18,6 +20,7 @@ import DDC.Type.Exp
 import Data.Array
 import qualified Data.List      as L
 import qualified Data.Map       as Map
+import Prelude                  hiding (elem)
 
 -- | Construct an empty type sum of the given kind.
 empty :: Kind n -> TypeSum n
@@ -35,6 +38,13 @@ singleton k t
         = insert t (empty k)
 
 
+-- | Check whether an element is a member of a sum.
+--   TODO: Do the check directly instead of flattening the sum to a list.
+elem :: (Eq n, Ord n) => Type n -> TypeSum n -> Bool
+elem t ts 
+        = L.elem t (toList ts)
+
+
 -- | Insert a new element into a sum.
 insert :: Ord n => Type n -> TypeSum n -> TypeSum n
 insert t ts
@@ -48,7 +58,7 @@ insert t ts
         TApp (TCon tc) t2
          |  Just h       <- hashTyCon tc
          ,  tsThere      <- typeSumElems ts ! h
-         -> if elem t2 tsThere
+         -> if L.elem t2 tsThere
                 then ts
                 else ts { typeSumElems = (typeSumElems ts) // [(h, t2 : tsThere)] }
         
@@ -80,8 +90,15 @@ delete t ts
 -- | Add two type sum.
 -- 
 --   TODO: make this more efficiet. Directly combine the components.
-plus     :: Ord n => TypeSum n -> TypeSum n -> TypeSum n
-plus ts1 ts2 = foldr insert ts2 (toList ts1)
+union     :: Ord n => TypeSum n -> TypeSum n -> TypeSum n
+union ts1 ts2 
+        = foldr insert ts2 (toList ts1)
+
+
+-- | Delete all members of the second sum from the first one.
+difference :: Ord n => TypeSum n -> TypeSum n -> TypeSum n
+difference ts1 ts2
+        = foldr delete ts1 (toList ts2)
 
 
 -- | Take the kind of a sum.

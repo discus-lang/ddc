@@ -158,7 +158,7 @@ data WiCon
         --   have such a region in their closure, because the type of the
         --   returned thunk doesn't reveal that it holds on to objects in 
         --   that region.
-        | WiConShare    -- use      :: [r: %]. Global r => Const r => Empty (Use r)
+        | WiConUse      -- use      :: [r: %]. Global r => Const r => Empty (Use r)
 
         -- | Purify a read effect from a constant region.
         --   This lets us suspend applications that read constant objects,

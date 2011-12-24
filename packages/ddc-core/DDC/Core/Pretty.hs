@@ -133,7 +133,7 @@ instance Pretty WiCon where
         WiConMutable    -> text "mutable"
         WiConLazy       -> text "lazy"
         WiConDirect     -> text "direct"
-        WiConShare      -> text "share"
+        WiConUse        -> text "use"
         WiConRead       -> text "read"
         WiConAlloc      -> text "alloc"
         WiConDistinct n -> text "distinct" <> (text $ show n)

@@ -80,27 +80,36 @@ pExp2
                 x       <- pExp2
                 return $ XLet ()  (LLetRegion b []) x ]
 
+
+        -- purify <WITNESS> EXP
+  , do  pTok KPurify
+        pTok KAngleBra
+        w       <- pWitness
+        pTok KAngleKet
+        x       <- pExp2
+        return  $ XCast () (CastPurify w) x
+
+
+        -- forget <WITNESS> EXP
+  , do  pTok KForget
+        pTok KAngleBra
+        w       <- pWitness
+        pTok KAngleKet
+        x       <- pExp2
+        return  $ XCast () (CastForget w) x
+
+        -- APP
  , do   pExpApp
  ]
 
  <?> "an expression"
 
 
--- Application and casts
+-- Applications.
 pExpApp   :: Ord n => Parser n (Exp () n)
 pExpApp 
-  = P.choice
-       -- Purify
-  [ do  pTok KPurify
-        pTok KAngleBra
-        w       <- pWitness
-        pTok KAngleKet
-        x       <- pExp0
-        return  $ XCast () (CastPurify w) x
-
-        -- Function application
-  , do  (x:xs)  <- liftM concat $ P.many1 pArgs
-        return  $ foldl (XApp ()) x xs ]
+  = do  (x:xs)  <- liftM concat $ P.many1 pArgs
+        return  $ foldl (XApp ()) x xs
 
  <?> "an expression or application"
 

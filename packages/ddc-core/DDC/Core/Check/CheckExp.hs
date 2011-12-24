@@ -71,11 +71,8 @@ checkExp env xx
 -- | Check an expression, 
 --   returning its type, effect and free value variables.
 --   TODO: 
---    attach kinds to bound variables, and to sums.
---    check that existing annotations have the same kinds as from the
---    environment.
---    add a function to check that a type has kind annots in the right
--- places.
+--    check that existing annotations have the same kinds as from the environment.
+--    add a function to check that a type has kind annots in the right places.
 checkExpM 
         :: (Ord n, Pretty n)
         => Env n -> Exp a n
@@ -105,7 +102,7 @@ checkExpM env xx@(XApp _ x1 (XType t2))
           -> case takeSubstBoundOfBind b11 of
               Just u    -> return ( substituteT u t2 t12
                                   , substituteT u t2 effs1
-                                  , clos1 `Set.union` taggedClosureOfTyArg t2)          -- TODO: do subst.
+                                  , clos1 `Set.union` taggedClosureOfTyArg t2)
 
               Nothing   -> return ( t12
                                   , effs1
@@ -137,7 +134,7 @@ checkExpM env xx@(XApp _ x1 x2)
           | t11 == t2   
           , effs    <- Sum.fromList kEffect  [eff]
           -> return ( t12
-                    , effs1 `plus` effs2 `plus` effs
+                    , effs1 `Sum.union` effs2 `Sum.union` effs
                     , clos1 `Set.union` clos2)
           | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
          _              -> throw $ ErrorAppNotFun xx t1 t2
@@ -236,11 +233,17 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
                 Just u  -> Set.delete (taggedClosureOfValBound u) clo2
         
         return ( t2
-               , effs12 `plus` effs2
-               , clo12 `Set.union` clo2_masked)
+               , effs12 `Sum.union` effs2
+               , clo12  `Set.union` clo2_masked)
 
 
 -- letregion --------------------------------------
+-- TODO: check well formedness of witness set.
+-- TODO: On nameclash, kick out witnesses with the same name.
+--
+--       letregion r1 with {w1:Const r1} in 
+--       letregion r1 with {w1:Mutable r1} in...
+--
 checkExpM env xx@(XLet _ (LLetRegion b bs) x)
  -- The parser should ensure the bound variable always has region kind.
  | not $ isRegionKind (typeOfBind b)
@@ -305,8 +308,10 @@ checkExpM env (XLet _ (LWithRegion u) x)
 -- case expression ------------------------------
 checkExpM _env XCase{} 
  = error "checkExp: XCase not done yet"
-        
+
+
 -- type cast -------------------------------------
+-- Purify an effect, given a witness that it is pure.
 checkExpM env xx@(XCast _ (CastPurify w) x1)
  = do   tW              <- checkWitnessM env w
         (t1, effs, clo) <- checkExpM env x1
@@ -317,6 +322,21 @@ checkExpM env xx@(XCast _ (CastPurify w) x1)
                   _ -> throw  $ ErrorWitnessNotPurity xx w tW
 
         return (t1, effs', clo)
+
+-- Forget a closure, given a witness that it is empty.
+checkExpM env xx@(XCast _ (CastForget w) x1)
+ = do   tW               <- checkWitnessM env w
+        (t1, effs, clos) <- checkExpM env x1
+
+        clos' <- case tW of
+                  TApp (TCon (TyConWitness TwConEmpty)) cloMask
+                    -> return $ maskFromTaggedSet 
+                                        (Sum.singleton kClosure cloMask)
+                                        clos
+
+                  _ -> throw $ ErrorWitnessNotEmpty xx w tW
+
+        return (t1, effs, clos')
 
 
 -- some other thing -----------------------------

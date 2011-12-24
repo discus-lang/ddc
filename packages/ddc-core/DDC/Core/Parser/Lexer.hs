@@ -38,7 +38,7 @@ readWiConBuiltin ss
         "mutable"       -> Just WiConMutable
         "lazy"          -> Just WiConLazy
         "direct"        -> Just WiConDirect
-        "share"         -> Just WiConShare
+        "use"           -> Just WiConUse
         "read"          -> Just WiConRead
         "alloc"         -> Just WiConAlloc
         _               -> Nothing                                              -- TODO: add distinctN
