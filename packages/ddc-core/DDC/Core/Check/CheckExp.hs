@@ -256,9 +256,14 @@ checkExpM env xx@(XLet _ (LLetRegion b bs) x)
       -> do
         -- Check the region variable.
         checkTypeM env (typeOfBind b)
-        let env1         = Env.extend b env
 
+        -- We can't shadow region binders because we might have witnesses
+        -- in the environment that conflict with the ones created here.
+        when (Env.memberBind b env)
+         $ throw $ ErrorLetRegionRebound xx b
+        
         -- Check the witness types.
+        let env1         = Env.extend b env
         mapM_ (checkTypeM env1) $ map typeOfBind bs
         let env2         = Env.extends bs env1
 

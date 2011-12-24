@@ -64,6 +64,11 @@ data Error a n
         , errorBind             :: Bind n
         , errorType             :: Type n }
 
+        -- | Tried to rebind a region variable with the same name as on in the environment.
+        | ErrorLetRegionRebound
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n }
+
         -- | Bound region variable is free in the type of the body of a letregion.
         | ErrorLetRegionFree
         { errorChecking         :: Exp a n
@@ -158,6 +163,12 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "     but the body has type: "  <> ppr t
                  , text "             when checking: "  <> ppr xx ]
                  
+        ErrorLetRegionRebound xx b
+         -> vcat [ text "Region variable shadows existing one."
+                 , text "           Region variable: "  <> ppr b
+                 , text "     is already in environment"
+                 , text "             when checking: "  <> ppr xx]
+
         ErrorLetRegionFree xx b t
          -> vcat [ text "Region variable escapes scope of letregion."
                  , text "       The region variable: "  <> ppr b
