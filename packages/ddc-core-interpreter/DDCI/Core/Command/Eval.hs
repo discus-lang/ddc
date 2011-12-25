@@ -11,12 +11,11 @@ import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect
-import DDC.Type.Compounds
-import DDCI.Core.Eval.Store                     (Store)
 import qualified DDC.Type.Env                   as Env
 import qualified DDCI.Core.Eval.Store           as Store
 import qualified DDCI.Core.Eval.Step            as C
 import qualified Data.Set                       as Set
+
 
 prims   = C.PrimStep
         { C.primStep            = primStep
@@ -24,19 +23,6 @@ prims   = C.PrimStep
         , C.primDelRegion       = primDelRegion
         , C.primArity           = arityOfPrimName }
 
-
-primNewRegion :: Store -> (Store, Bound Name)
-primNewRegion store
- = let  (store', rgn)   = Store.newRgn store
-        u               = UPrim (NameRgn rgn) kRegion
-   in   (store', u)
-
-
-primDelRegion :: Bound Name -> Store -> Maybe Store
-primDelRegion uu store
- = case uu of
-        UPrim (NameRgn rgn) _   -> Just $ Store.delRgn rgn store
-        _                       -> Nothing
 
 
 -- | Parse, check, and single step evaluate an expression.
