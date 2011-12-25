@@ -3,17 +3,19 @@ module DDCI.Core.Command.Eval
         ( cmdStep
         , cmdEval)
 where
-import DDCI.Core.Prim
+import DDCI.Core.Eval.Env
+import DDCI.Core.Eval.Prim
+import DDCI.Core.Eval.Name
 import DDCI.Core.Command.Check
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect
 import DDC.Type.Compounds
-import DDCI.Core.Prim.Store                     (Store)
+import DDCI.Core.Eval.Store                     (Store)
 import qualified DDC.Type.Env                   as Env
-import qualified DDCI.Core.Prim.Store           as Store
-import qualified DDC.Core.Step                  as C
+import qualified DDCI.Core.Eval.Store           as Store
+import qualified DDCI.Core.Eval.Step            as C
 import qualified Data.Set                       as Set
 
 prims   = C.PrimStep
@@ -70,7 +72,8 @@ cmdEval str
 
         goStore (Just (x, _, _, _))
          = let  rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
-                store   = Store.empty { Store.storeRegions = Set.fromList rs }
+                store   = Store.empty { Store.storeRegions = Set.fromList rs }          
+                                                        -- TODO: next region to alloc should be higher than all of these.
            in   goStep x store
 
         goStep x store

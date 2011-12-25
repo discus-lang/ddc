@@ -5,14 +5,15 @@
 --   enough to experiment with the core language. When we end up wanting to interpret full
 --   Disciple programs, we should use the primops defined by the real compiler.
 --
-module DDCI.Core.Prim.Env
+module DDCI.Core.Eval.Env
         ( primEnv
         , typeOfPrimName
         , arityOfPrimName
+        , tUnit
         , tInt
-        , tUnit)
+        , tList)
 where
-import DDCI.Core.Prim.Name
+import DDCI.Core.Eval.Name
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Env             (Env)
@@ -35,19 +36,42 @@ typeOfPrimName nn
         NameRgn _
          -> Just $ kRegion
 
-        -- int
-        NamePrimCon PrimTyConInt        -> Just $ kFun kRegion kData
+        -- Unit -----------------------------
+        NamePrimCon PrimTyConUnit
+         -> Just $ kData
+
+        NamePrimCon PrimDaConUnit
+         -> Just $ tUnit 
+
+        
+        -- List -----------------------------
+        NamePrimCon PrimTyConList
+         -> Just $ kRegion `kFun` kData `kFun` kData
+
+        NamePrimCon PrimDaConNil        
+         -> Just $ tForalls [kRegion, kData] $ \[tR, tA]
+                -> tFun tUnit (tAlloc tR)
+                              (tBot kClosure)
+                 $ tList tR tA
+
+        NamePrimCon PrimDaConCons
+         -> Just $ tForalls [kRegion, kData] $ \[tR, tA] 
+                -> tFun tA            (tBot kEffect)
+                                      (tBot kClosure)
+                 $ tFun (tList tR tA) (tSum kEffect  [tAlloc   tR])
+                                      (tSum kClosure [tDeepUse tA])
+                 $ tList tR tA
+
+        -- Int ------------------------------
+        NamePrimCon PrimTyConInt
+         -> Just $ kFun kRegion kData
+
         NameInt _
          -> Just $ tForall kRegion
           $ \r  -> tFun tUnit (tAlloc r)
                               (tBot kClosure)
                  $ tInt r
-        
-        -- unit
-        NamePrimCon PrimTyConUnit       -> Just $ kData
-        NamePrimCon PrimDaConUnit       -> Just $ tUnit 
-        
-        
+
         -- neg
         NamePrimOp PrimOpNegInt
          -> Just $ tForalls [kRegion, kRegion] $ \[r1, r0]
@@ -92,12 +116,21 @@ arityOfPrimName n
         _ -> Nothing
 
 
--- | Application of the Int type constructor.
+-- | Application of the Unit data type constructor.
+tUnit :: Type Name
+tUnit   = TCon (TyConBound (UPrim (NamePrimCon PrimTyConUnit) kData))
+
+
+-- | Application of the Int data type constructor.
 tInt :: Region Name -> Type Name
 tInt r1 = TApp  (TCon (TyConBound (UPrim (NamePrimCon PrimTyConInt) (kFun kRegion kData))))
                 r1
 
--- | The Unit type constructor.
-tUnit :: Type Name
-tUnit   = TCon (TyConBound (UPrim (NamePrimCon PrimTyConUnit) kData))
+-- | Application of the List data type constructor.
+tList :: Region Name -> Type Name -> Type Name
+tList tR tA
+        = tApps (TCon  (TyConBound (UPrim (NamePrimCon PrimTyConList)
+                                          (kRegion `kFun` kData `kFun` kData))))
+                [tR, tA]
+
 

@@ -5,7 +5,7 @@
 --   operators and constructors are defined in the interpreter package, 
 --   as they depend on the exact representation of the store.
 --
-module DDC.Core.Step 
+module DDCI.Core.Eval.Step 
         ( PrimStep       (..)
         , step
         , isWnf
@@ -18,6 +18,7 @@ import DDC.Type.Compounds
 import DDC.Core.Pretty
 import DDC.Base.Pretty          ()
 -- import Debug.Trace
+
 
 
 -- | Holds a function to perform primitive reductions.

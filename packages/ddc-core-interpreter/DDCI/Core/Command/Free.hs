@@ -2,7 +2,7 @@
 module DDCI.Core.Command.Free
         ( cmdFreeType )
 where
-import DDCI.Core.Prim.Name
+import DDCI.Core.Eval.Name
 import DDC.Type.Exp
 import DDC.Core.Pretty
 import DDC.Type.Collect.Free

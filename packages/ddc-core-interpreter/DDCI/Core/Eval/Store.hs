@@ -6,7 +6,7 @@
 --   If we cared about runtime performance we'd want to use an IOArray or
 --   some other mutable structure to hold the bindings, instead of a Data.Map.
 --
-module DDCI.Core.Prim.Store
+module DDCI.Core.Eval.Store
         ( Store  (..)
         , Loc    (..)
         , Rgn    (..)
@@ -24,7 +24,7 @@ module DDCI.Core.Prim.Store
         , lookupBind
         , lookupRegionBind)
 where
-import DDCI.Core.Prim.Name
+import DDCI.Core.Eval.Name
 import DDC.Core.Exp
 import Control.Monad
 import DDC.Core.Pretty          hiding (empty)

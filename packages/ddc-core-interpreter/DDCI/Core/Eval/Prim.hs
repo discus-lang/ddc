@@ -3,14 +3,14 @@
 -- 
 --   This should implements the proper operational semantics of the core language,
 --   so we're careful to check all premieses of the evaluation rules are satisfied.
-module DDCI.Core.Prim.Step
+module DDCI.Core.Eval.Prim
         (primStep)
 where
-import DDCI.Core.Prim.Env
-import DDCI.Core.Prim.Name
+import DDCI.Core.Eval.Env
+import DDCI.Core.Eval.Name
 import DDC.Core.Exp
-import DDCI.Core.Prim.Store             (Store, SBind(..))
-import qualified DDCI.Core.Prim.Store   as Store
+import DDCI.Core.Eval.Store             (Store, SBind(..))
+import qualified DDCI.Core.Eval.Store   as Store
 
 
 -- | Singe step a primitive operator or constructor.

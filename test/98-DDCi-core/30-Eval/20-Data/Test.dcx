@@ -1,0 +1,10 @@
+
+
+-- Construct an empty list.
+Nil {R0#} {Int R0#} ()
+
+
+-- Construct a single element list.
+Cons {R0#} {Int R0#}\
+        (5 {R0#} ())\
+        (Nil {R0#} {Int R0#} ())

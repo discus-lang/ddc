@@ -1,5 +1,5 @@
 
-module DDCI.Core.Prim.Name 
+module DDCI.Core.Eval.Name 
         ( Name    (..)
         , Loc     (..)
         , Rgn     (..)
@@ -78,6 +78,11 @@ data PrimCon
         | PrimDaConUnit         -- ^ Unit data constructor
         | PrimTyConInt          -- ^ Int  type constructor.
         | PrimTyConString       -- ^ String type constructor.
+
+        -- Implement lists as primitives until we have data decls working
+        | PrimTyConList         -- ^ List data type constructor.
+        | PrimDaConNil          -- ^ Nil data constructor.
+        | PrimDaConCons         -- ^ Cons data constructor.
         deriving (Show, Eq, Ord)
 
 
@@ -88,6 +93,9 @@ instance Pretty PrimCon where
         PrimDaConUnit   -> text "()"
         PrimTyConInt    -> text "Int"
         PrimTyConString -> text "String"
+        PrimTyConList   -> text "List"
+        PrimDaConNil    -> text "Nil"
+        PrimDaConCons   -> text "Cons"
 
 
 -- PrimOps --------------------------------------------------------------------
@@ -110,9 +118,11 @@ instance Pretty PrimOp where
 
 
 -- Parsing --------------------------------------------------------------------
+-- | Read the name of a primitive operator or constructor.
 readName :: String -> Maybe Name
 readName []     = Nothing
 readName str@(c:rest)
+        -- primops
         | isLower c    
         = case (c:rest) of
                 "negInt"        -> Just $ NamePrimOp PrimOpNegInt
@@ -121,27 +131,36 @@ readName str@(c:rest)
                 "updateInt"     -> Just $ NamePrimOp PrimOpUpdateInt
                 _               -> Just $ NameVar str
         
+        -- region handles
         | c == 'R'
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         = Just $ NameRgn (Rgn $ read ds)
         
+        -- store locations
         | c == 'L'
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         = Just $ NameLoc (Loc $ read ds)
         
+        -- units
         | str == "Unit" = Just $ NamePrimCon PrimTyConUnit
         | str == "()"   = Just $ NamePrimCon PrimDaConUnit
 
+        -- integers
         | str == "Int"  = Just $ NamePrimCon PrimTyConInt
 
         | (ds, "")      <- span isDigit str
         = Just $ NameInt (read ds)        
         
+        -- implement lists as primitive until we have data type decls implemented
+        | str == "List" = Just $ NamePrimCon PrimTyConList
+        | str == "Nil"  = Just $ NamePrimCon PrimDaConNil
+        | str == "Cons" = Just $ NamePrimCon PrimDaConCons
+
+        -- other constructors
         | isUpper c
         = Just $ NameCon str
-        
         
         | otherwise
         = Nothing

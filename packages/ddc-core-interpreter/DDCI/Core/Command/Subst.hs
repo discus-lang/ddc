@@ -2,7 +2,7 @@
 module DDCI.Core.Command.Subst
         (cmdSubstTT)
 where
-import DDCI.Core.Prim.Name
+import DDCI.Core.Eval.Name
 import DDC.Type.Exp
 import DDC.Type.Pretty
 import qualified DDC.Type.Env           as Env

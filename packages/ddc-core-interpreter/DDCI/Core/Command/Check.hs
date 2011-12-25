@@ -5,8 +5,8 @@ module DDCI.Core.Command.Check
         , ShowTypeMode(..)
         , cmdParseCheckExp)
 where
-import DDCI.Core.Prim.Env
-import DDCI.Core.Prim.Name
+import DDCI.Core.Eval.Env
+import DDCI.Core.Eval.Name
 import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
