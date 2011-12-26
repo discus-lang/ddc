@@ -8,11 +8,9 @@
 module DDCI.Core.Eval.Env
         ( primEnv
         , typeOfPrimName
-        , arityOfPrimName
-        , tUnit
-        , tInt
-        , tList)
+        , arityOfName)
 where
+import DDCI.Core.Eval.Compounds
 import DDCI.Core.Eval.Name
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -103,34 +101,26 @@ typeOfPrimName nn
 
 
 -- TODO: determine this from the type.
-arityOfPrimName :: Name -> Maybe Int
-arityOfPrimName n
+arityOfName :: Name -> Maybe Int
+arityOfName n
  = case n of
+        NameLoc{}                       -> Just 0
+        NameRgn{}                       -> Just 0
+        NameInt{}                       -> Just 2
+
+        NamePrimCon PrimDaConUnit       -> Just 0        
+        NamePrimCon PrimDaConNil        -> Just 2
+
+        NamePrimCon PrimDaConCons       -> Just 4
+
         NamePrimOp p
          | elem p [PrimOpAddInt, PrimOpSubInt]
          -> Just 5
          
         NamePrimOp PrimOpUpdateInt
-         -> Just 5
+         -> Just 5        
          
         _ -> Nothing
 
-
--- | Application of the Unit data type constructor.
-tUnit :: Type Name
-tUnit   = TCon (TyConBound (UPrim (NamePrimCon PrimTyConUnit) kData))
-
-
--- | Application of the Int data type constructor.
-tInt :: Region Name -> Type Name
-tInt r1 = TApp  (TCon (TyConBound (UPrim (NamePrimCon PrimTyConInt) (kFun kRegion kData))))
-                r1
-
--- | Application of the List data type constructor.
-tList :: Region Name -> Type Name -> Type Name
-tList tR tA
-        = tApps (TCon  (TyConBound (UPrim (NamePrimCon PrimTyConList)
-                                          (kRegion `kFun` kData `kFun` kData))))
-                [tR, tA]
 
 

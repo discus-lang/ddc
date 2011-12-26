@@ -3,6 +3,7 @@ module DDC.Core.Compounds
         ( bindsOfLets
         , takeXLams
         , takeXApps
+        , takeXConApps
         , takeXPrimApps)
 where
 import DDC.Core.Exp
@@ -37,13 +38,23 @@ takeXApps xx
         _               -> [xx]
 
 
--- | Flatten a primitive application into the primitive constructor, 
---   and its arguments, if any.
+-- | Flatten an application of a primitive variable into the variable
+--   and its arguments.
 --   
---   Returns `Nothing` if the expression isn't a primitive or an applicatin of one.
+--   Returns `Nothing` if the expression isn't a primop application.
 takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
 takeXPrimApps xx
  = case takeXApps xx of
         XVar _ (UPrim p _) : xs  -> Just (p, xs)
-        XCon _ (UPrim p _) : xs  -> Just (p, xs)
         _                        -> Nothing
+
+-- | Flatten an application of a data constructor into the constructor
+--   and its arguments. 
+--
+--   Returns `Nothing` if the expression isn't a constructor application.
+takeXConApps :: Exp a n -> Maybe (Bound n, [Exp a n])
+takeXConApps xx
+ = case takeXApps xx of
+        XCon _ u : xs   -> Just (u, xs)
+        _               -> Nothing
+

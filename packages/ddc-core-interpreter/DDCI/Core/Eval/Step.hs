@@ -18,8 +18,7 @@ import DDC.Core.Compounds
 import DDC.Core.Transform
 import DDC.Core.Exp
 import DDC.Type.Compounds
-import DDC.Base.Pretty          ()
-                
+              
 
 -- step -----------------------------------------------------------------------
 -- | Perform a single step reduction of a core expression.
@@ -28,22 +27,24 @@ step    :: Store                      -- ^ Current store.
         -> Maybe (Store, Exp () Name) -- ^ New store and expression.
 
 step store xx
- --  trace (show $ text "stepping: " <> text (show xx) <> line)
- = step' store xx
- 
+  = step' store xx
+
 
 -- (EvPrim): Step a primitive operator or constructor defined by the client.
 step' store xx
         | Just (p, xs)          <- takeXPrimApps xx
-        , Just (store', x')     <- primStep p xs store
+        , and $ map isWnf xs
+        , Just (store', x')     <- stepPrimOp p xs store
         = Just (store', x')
 
 
--- (EvApp1): Evaluate the left of an application.
-step' store (XApp a x1 x2)
-        | isWnf x1
-        , Just (store', x1')    <- step store x1
-        = Just (store', XApp a x1' x2)
+-- (EvAlloc): Construct some data in the heap.
+step' store xx
+        | Just (u, xs)          <- takeXConApps xx
+        , and $ map isWnf xs
+        = case u of
+                UPrim n _       -> stepPrimCon n xs store
+                _               -> error "step': non primitive constructor"
 
 
 -- (EvApp2): Evaluate the right of an application.
@@ -51,6 +52,12 @@ step' store (XApp a x1 x2)
         | isWnf x1
         , Just (store', x2')    <- step store x2
         = Just (store', XApp a x1 x2')
+
+
+-- (EvApp1): Evaluate the left of an application.
+step' store (XApp a x1 x2)
+        | Just (store', x1')    <- step store x1
+        = Just (store', XApp a x1' x2)
 
 
 -- (EvLetSubst): Substitute in a bound value in a let expression.
@@ -126,14 +133,22 @@ isWnf xx
          XType{}        -> True
          XWitness{}     -> True
 
-         XApp{} 
-          | Just (p, xs)        <- takeXPrimApps xx
-          , Just arity          <- arityOfPrimName p
-          , length xs < arity
-          -> True
-          
-          | otherwise
+         XApp _ x1 x2
+          | Just (n, xs)     <- takeXPrimApps xx
+          , and $ map isWnf xs
+          , Just a           <- arityOfName n
+          , length xs == a
           -> False
+
+          | Just (u, xs)     <- takeXConApps xx
+          , and $ map isWnf xs
+          , UPrim n _        <- u
+          , Just a           <- arityOfName n
+          , length xs == a   
+          -> False
+
+          | otherwise   -> isWnf x1 && isWnf x2
+
 
 
 -- | Get the region witness corresponding to one of the witness types that are

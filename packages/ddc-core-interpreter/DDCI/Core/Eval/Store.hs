@@ -54,7 +54,7 @@ data Store
 -- | Store value.
 --   These are the things that can be kept directly in store bindings.
 data SValue
-        = SLoc Int
+        = SLoc Loc
         | SLam (Bind Name) (Exp () Name)
         deriving (Eq, Show)
 
@@ -82,7 +82,7 @@ instance Pretty Store where
                 | (l, (r, sbind)) <- Map.toList binds] ]
 
 instance Pretty SValue where  
- ppr (SLoc i)   = text "LOC " <> text (show i)
+ ppr (SLoc l)   = text "LOC " <> ppr l
  ppr (SLam b x) = text "LAM " <> ppr b <> text ":" <> ppr x
 
 

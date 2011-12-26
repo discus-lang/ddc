@@ -1,6 +1,11 @@
 
 module DDCI.Core.Eval.Compounds
-        ( isUnitX
+        ( tUnit
+        , tInt
+        , tList 
+
+        -- Exp
+        , isUnitX
         , takeHandleT
         , takeHandleX
         , takeLocX
@@ -16,6 +21,27 @@ import DDC.Core.Exp
 import DDCI.Core.Eval.Store     as Store
 
 
+-- Type -----------------------------------------------------------------------
+-- | Application of the Unit data type constructor.
+tUnit :: Type Name
+tUnit   = TCon (TyConBound (UPrim (NamePrimCon PrimTyConUnit) kData))
+
+
+-- | Application of the Int data type constructor.
+tInt :: Region Name -> Type Name
+tInt r1 = TApp  (TCon (TyConBound (UPrim (NamePrimCon PrimTyConInt) 
+                                  (kFun kRegion kData))))
+                r1
+
+-- | Application of the List data type constructor.
+tList :: Region Name -> Type Name -> Type Name
+tList tR tA
+        = tApps (TCon  (TyConBound (UPrim (NamePrimCon PrimTyConList)
+                                          (kRegion `kFun` kData `kFun` kData))))
+                [tR, tA]
+
+
+-- Exp ------------------------------------------------------------------------
 -- | Check whether an expression is the unit constructor.
 isUnitX :: Exp a Name -> Bool
 isUnitX xx

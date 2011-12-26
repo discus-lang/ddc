@@ -2,36 +2,32 @@
 -- | Single step evaluation of primitive operators and constructors.
 -- 
 --   This should implements the proper operational semantics of the core language,
---   so we're careful to check all premieses of the evaluation rules are satisfied.
+--   so we're careful to check all premises of the evaluation rules are satisfied.
 module DDCI.Core.Eval.Prim
-        ( primStep
+        ( stepPrimCon
+        , stepPrimOp
         , primNewRegion
         , primDelRegion)
 where
 import DDCI.Core.Eval.Compounds
-import DDCI.Core.Eval.Env
+import DDCI.Core.Eval.Store
 import DDCI.Core.Eval.Name
 import DDC.Core.Exp
-import DDCI.Core.Eval.Store             (Store, SBind(..))
 import qualified DDCI.Core.Eval.Store   as Store
 
 
--- | Singe step a primitive operator or constructor.
-primStep
-        :: Name                 -- ^ Name of operator to evaluate.
-        -> [Exp () Name]        -- ^ Arguments to operator.
+-------------------------------------------------------------------------------
+-- | Single step a primitive constructor.
+stepPrimCon
+        :: Name                 -- ^ Name of constructor to allocate.
+        -> [Exp () Name]        -- ^ Arguments to constructor.
         -> Store                -- ^ Current store.
         -> Maybe ( Store        
                  , Exp () Name) -- ^ New store and result expression, 
                                 --   if the operator steps, otherwise Nothing.
 
-primStep n xs store
--- = trace (show $ text "primStep: " <+> text (show n) <+> text (show xs))
- = primStep' n xs store
-
-
 -- Alloction of Ints.
-primStep' (NameInt i) [xR, xUnit] store
+stepPrimCon (NameInt i) [xR, xUnit] store
         -- unpack the args
         | XType tR      <- xR
         , Just rgn      <- takeHandleT tR
@@ -47,8 +43,57 @@ primStep' (NameInt i) [xR, xUnit] store
                 , XCon () (UPrim (NameLoc l) (tInt tR)))
 
 
+-- We're handling Nil and Cons specially until we have general data types.
+stepPrimCon n@(NamePrimCon PrimDaConNil) [xR, xA, xUnit] store
+        -- unpack the args
+        | XType tR      <- xR
+        , Just rgn      <- takeHandleT tR
+        , XType tA      <- xA
+        , isUnitX xUnit
+
+        -- the store must contain the region we're going to allocate into.
+        , Store.hasRgn store rgn
+
+        -- add the binding to the store
+        , (store1, l)   <- Store.allocBind rgn (SObj n []) store
+
+        = Just  ( store1
+                , XCon () (UPrim (NameLoc l) (tList tR tA)))
+
+
+stepPrimCon n@(NamePrimCon PrimDaConCons) [xR, xA, xHead, xTail] store
+        -- unpack the args
+        | XType tR      <- xR
+        , Just rgn      <- takeHandleT tR
+        , XType tA      <- xA
+        , Just lHead    <- takeLocX xHead
+        , Just lTail    <- takeLocX xTail
+
+        -- the store must contain the region we're going to allocate into.
+        , Store.hasRgn store rgn
+
+        -- add the binding to the store
+        , (store1, l)   <- Store.allocBind rgn (SObj n [SLoc lHead, SLoc lTail]) store
+
+        = Just  ( store1
+                , XCon () (UPrim (NameLoc l) (tList tR tA)))
+
+stepPrimCon _ _ _
+        = Nothing
+
+
+-------------------------------------------------------------------------------
+-- | Single step a primitive operator.
+stepPrimOp
+        :: Name                 -- ^ Name of operator to evaluate.
+        -> [Exp () Name]        -- ^ Arguments to operator.
+        -> Store                -- ^ Current store.
+        -> Maybe ( Store        
+                 , Exp () Name) -- ^ New store and result expression, 
+                                --   if the operator steps, otherwise Nothing.
+
 -- Addition of Ints.
-primStep' (NamePrimOp PrimOpAddInt) [xR1, xR2, xR3, xL1, xL2] store
+stepPrimOp (NamePrimOp PrimOpAddInt) [xR1, xR2, xR3, xL1, xL2] store
         -- unpack the args
         | Just r1       <- takeHandleX xR1
         , Just r2       <- takeHandleX xR2
@@ -79,7 +124,7 @@ primStep' (NamePrimOp PrimOpAddInt) [xR1, xR2, xR3, xL1, xL2] store
 
 
 -- Update of Ints.
-primStep' (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
+stepPrimOp (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
         -- unpack the args
         | Just r1       <- takeHandleX  xR1
         , Just r2       <- takeHandleX  xR2
@@ -104,6 +149,6 @@ primStep' (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
         = Just  ( store1
                 , XCon () (UPrim (NamePrimCon PrimDaConUnit) tUnit))
 
-primStep' _ _ _
+stepPrimOp _ _ _
         = Nothing
 
