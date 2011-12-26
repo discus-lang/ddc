@@ -3,8 +3,7 @@ module DDCI.Core.Command.Eval
         ( cmdStep
         , cmdEval)
 where
-import DDCI.Core.Eval.Env
-import DDCI.Core.Eval.Prim
+import DDCI.Core.Eval.Step
 import DDCI.Core.Eval.Name
 import DDCI.Core.Command.Check
 import DDC.Core.Check
@@ -13,16 +12,7 @@ import DDC.Core.Pretty
 import DDC.Core.Collect
 import qualified DDC.Type.Env                   as Env
 import qualified DDCI.Core.Eval.Store           as Store
-import qualified DDCI.Core.Eval.Step            as C
 import qualified Data.Set                       as Set
-
-
-prims   = C.PrimStep
-        { C.primStep            = primStep
-        , C.primNewRegion       = primNewRegion
-        , C.primDelRegion       = primDelRegion
-        , C.primArity           = arityOfPrimName }
-
 
 
 -- | Parse, check, and single step evaluate an expression.
@@ -40,7 +30,7 @@ cmdStep str
            in   goStep x store
 
         goStep x store
-         = case C.step prims store x of
+         = case step store x of
              Nothing         -> putStrLn $ show $ text "STUCK!"
              Just (store', x')  
               -> do     putStrLn $ pretty (ppr x')
@@ -63,7 +53,7 @@ cmdEval str
            in   goStep x store
 
         goStep x store
-         | Just (store', x')    <- C.step prims store x 
+         | Just (store', x')    <- step store x 
          = case checkExp Env.empty x' of
             Left err
              -> do    putStrLn "OFF THE RAILS!"
