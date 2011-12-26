@@ -73,7 +73,7 @@ stepPrimCon n@(NamePrimCon PrimDaConCons) [xR, xA, xHead, xTail] store
         , Store.hasRgn store rgn
 
         -- add the binding to the store
-        , (store1, l)   <- Store.allocBind rgn (SObj n [SLoc lHead, SLoc lTail]) store
+        , (store1, l)   <- Store.allocBind rgn (SObj n [lHead, lTail]) store
 
         = Just  ( store1
                 , XCon () (UPrim (NameLoc l) (tList tR tA)))

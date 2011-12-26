@@ -10,7 +10,6 @@ module DDCI.Core.Eval.Store
         ( Store  (..)
         , Loc    (..)
         , Rgn    (..)
-        , SValue (..)
         , SBind  (..)
         
         -- * Operators
@@ -25,7 +24,6 @@ module DDCI.Core.Eval.Store
         , lookupRegionBind)
 where
 import DDCI.Core.Eval.Name
-import DDC.Core.Exp
 import Control.Monad
 import DDC.Core.Pretty          hiding (empty)
 import Data.Map                 (Map)
@@ -51,20 +49,12 @@ data Store
         , storeBinds    :: Map Loc (Rgn, SBind) }
 
 
--- | Store value.
---   These are the things that can be kept directly in store bindings.
-data SValue
-        = SLoc Loc
-        | SLam (Bind Name) (Exp () Name)
-        deriving (Eq, Show)
-
-
 -- | Store binding.
 --   These are "naked objects" that can be allocated directly into the heap.
 data SBind 
         = SObj
         { sbindDataTag          :: Name
-        , sbindDataArgs         :: [SValue] }
+        , sbindDataArgs         :: [Loc] }
         deriving (Eq, Show)
 
 
@@ -81,19 +71,14 @@ instance Pretty Store where
   , vcat $ [ text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind
                 | (l, (r, sbind)) <- Map.toList binds] ]
 
-instance Pretty SValue where  
- ppr (SLoc l)   = text "LOC " <> ppr l
- ppr (SLam b x) = text "LAM " <> ppr b <> text ":" <> ppr x
-
 
 instance Pretty SBind where
  ppr (SObj tag [])
   = text "OBJ"  <+> ppr tag
 
  ppr (SObj tag svs)    
-  = text "OBJ"  <+>  ppr tag
-                <+>  colon
-                <+> sep (map parens $ map ppr svs)
+  = text "OBJ"  <+> ppr tag
+                <+> (sep $ map ppr svs)
  
  
 -- Operators ------------------------------------------------------------------
