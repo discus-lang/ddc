@@ -25,13 +25,13 @@ STORE
  L3#:R0# -> OBJ Cons L1# L2#
 
 -- Contruct and destruct a single element list.
-let i : Int R0# = 5 {R0#} () in let nil : List R0# (Int R0#) = Nil {R0#} {Int R0#} () in let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} i nil in case xx of {Nil  -> 0; Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
-let i : Int R0# = L1# in let nil : List R0# (Int R0#) = Nil {R0#} {Int R0#} () in let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} i nil in case xx of {Nil  -> 0; Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
-let nil : List R0# (Int R0#) = Nil {R0#} {Int R0#} () in let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} L1# nil in case xx of {Nil  -> 0; Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
-let nil : List R0# (Int R0#) = L2# in let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} L1# nil in case xx of {Nil  -> 0; Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
-let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} L1# L2# in case xx of {Nil  -> 0; Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
-let xx : List R0# (Int R0#) = L3# in case xx of {Nil  -> 0; Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
-case L3# of {Nil  -> 0; Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
+let i : Int R0# = 5 {R0#} () in let nil : List R0# (Int R0#) = Nil {R0#} {Int R0#} () in let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} i nil in case xx of {Nil  -> 0 {R0#} (); Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
+let i : Int R0# = L1# in let nil : List R0# (Int R0#) = Nil {R0#} {Int R0#} () in let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} i nil in case xx of {Nil  -> 0 {R0#} (); Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
+let nil : List R0# (Int R0#) = Nil {R0#} {Int R0#} () in let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} L1# nil in case xx of {Nil  -> 0 {R0#} (); Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
+let nil : List R0# (Int R0#) = L2# in let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} L1# nil in case xx of {Nil  -> 0 {R0#} (); Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
+let xx : List R0# (Int R0#) = Cons {R0#} {Int R0#} L1# L2# in case xx of {Nil  -> 0 {R0#} (); Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
+let xx : List R0# (Int R0#) = L3# in case xx of {Nil  -> 0 {R0#} (); Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
+case L3# of {Nil  -> 0 {R0#} (); Cons (x : Int R0#) (xs : List R0# (Int R0#)) -> x}
 L1#
 STORE
  NextLoc: 4

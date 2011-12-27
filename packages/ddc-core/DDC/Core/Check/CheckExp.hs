@@ -313,7 +313,7 @@ checkExpM env (XLet _ (LWithRegion u) x)
                 
 
 -- case expression ------------------------------
-checkExpM env (XCase _ x alts)
+checkExpM env xx@(XCase _ x alts)
  = do
         -- Check the discriminant.
         (tDiscrim, effs, clos) 
@@ -324,10 +324,16 @@ checkExpM env (XCase _ x alts)
                 <- liftM unzip3 
                 $  mapM (checkAltM env tDiscrim) alts
 
-        -- TODO: Check that the alts are exhaustive.
+        -- The parser should ensure there is always at least one alternative.
+        when (null alts)
+         $ error "checkExpM: no alternatives for case expression"
 
-        -- TODO: Check that all result types are identical.
-        let tAlt         = head ts
+        -- Check that all result types are identical.
+        let (tAlt : _)  = ts
+        forM_ ts $ \tAlt' 
+         -> when (tAlt /= tAlt') $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
+
+        -- TODO: Check that the alts are exhaustive.
 
         -- TODO: Mask bound variables from closure
         let closs_masked = closs

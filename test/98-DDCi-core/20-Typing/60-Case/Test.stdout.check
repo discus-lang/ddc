@@ -1,0 +1,6 @@
+-- Error: types of alternatives are not identical.
+Mismatch in alternative result types.
+   Type of alternative: Int R0#
+        does not match: Unit
+         when checking: case 5 {R0#} () of {0  -> 0 {R0#} (); 1  -> ()}
+

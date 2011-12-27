@@ -124,6 +124,12 @@ data Error a n
         , errorWitness          :: Witness n
         , errorType             :: Type n }
 
+        -- | Result types of case expression are not identical.
+        | ErrorCaseAltResultMismatch
+        { errorChecking         :: Exp a n
+        , errorAltType1         :: Type n
+        , errorAltType2         :: Type n }
+
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
@@ -241,4 +247,11 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "        Witness: "             <> ppr w
                  , text "       has type: "             <> ppr t
                  , text "  when checking: "             <> ppr xx ]
+
+        ErrorCaseAltResultMismatch xx t1 t2
+         -> vcat [ text "Mismatch in alternative result types."
+                 , text "   Type of alternative: "      <> ppr t1
+                 , text "        does not match: "      <> ppr t2
+                 , text "         when checking: "      <> ppr xx ]
+
 
