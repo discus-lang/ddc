@@ -14,6 +14,7 @@ import DDCI.Core.Eval.Store
 import DDCI.Core.Eval.Name
 import DDCI.Core.Eval.Prim
 import DDCI.Core.Eval.Env
+import DDCI.Core.Eval.Compounds
 import DDC.Core.Compounds
 import DDC.Core.Transform
 import DDC.Core.Exp
@@ -87,7 +88,7 @@ step' store (XLet a (LLetRegion bRegion bws) x)
 
         -- Build witnesses for each of the witness types.
         uws'    = [(u, t) | Just u <- map takeSubstBoundOfBind bws'
-                          | Just t <- map regionWitnessOfType  $ map typeOfBind bws']
+                          | Just t <- map regionWitnessOfType $ map typeOfBind bws']
         
         -- Substitute handle and witnesses into body.
         x'      = substituteT  uRegion tHandle
@@ -112,10 +113,50 @@ step' store (XLet a (LWithRegion uRegion) x)
         = Just (store', XLet a (LWithRegion uRegion) x')
 
 
+-- (EvCaseMatch): Case branching.
+step' store (XCase a xDiscrim alts)
+        | Just lDiscrim            <- takeLocX xDiscrim
+        , Just (SObj nTag lsArgs)  <- lookupBind lDiscrim store
+        , [AAlt pat xBody]         <- filter (tagMatchesAlt nTag) alts
+        = case pat of
+           PDefault         
+            -> Just (store, xBody)
+
+           PData _ bsArgs      
+            | tsArgs    <- map typeOfBind bsArgs
+            , uxsArgs   <- [ (u, XCon a (UPrim (NameLoc l) t))
+                                | l       <- lsArgs
+                                | t       <- tsArgs
+                                | Just u  <- map takeSubstBoundOfBind bsArgs]
+            -> Just ( store
+                    , substituteXs uxsArgs xBody)
+
+
+-- (EvCaseStep): Evaluation of discriminant.
+step' store (XCase a xDiscrim alts)
+        | Just (store', xDiscrim')      <- step store xDiscrim
+        = Just (store', XCase a xDiscrim' alts)
+
+
 -- (Done/Stuck): Either already a value, or expression is stuck.
 step' _ _        
         = Nothing
         
+
+-- | See if a constructor tag matches a case alternative.
+tagMatchesAlt :: Name -> Alt a Name -> Bool
+tagMatchesAlt n (AAlt p _)
+        = tagMatchesPat n p
+
+
+-- | See if a constructor tag matches a pattern.
+tagMatchesPat :: Name -> Pat Name -> Bool
+tagMatchesPat _ PDefault        = True
+tagMatchesPat n (PData u' _)
+ = case takeNameOfBound u' of
+        Just n' -> n == n'
+        _       -> False
+
         
 -- isWnf ----------------------------------------------------------------------
 -- | Check if an expression is a weak normal form (a value).

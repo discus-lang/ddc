@@ -1,7 +1,8 @@
 
 -- | Type substitution.
 module DDC.Core.Transform.SubstituteX
-        ( SubstituteX(..))
+        ( SubstituteX(..)
+        , substituteXs)
 where
 import DDC.Core.Exp
 import DDC.Core.Collect.Free
@@ -41,6 +42,13 @@ class SubstituteX (c :: * -> * -> *) where
         stack           = BindStack [] 0 0
  
    in   substituteWithX u t freeNames stack x
+
+
+-- | Wrapper for `substituteX` to substitute multiple things.
+substituteXs :: (SubstituteX c, Ord n) => [(Bound n, Exp a n)] -> c a n -> c a n
+substituteXs bts x
+        = foldr (uncurry substituteX) x bts
+
 
 
 instance SubstituteX Exp where 

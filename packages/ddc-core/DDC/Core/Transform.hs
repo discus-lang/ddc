@@ -13,6 +13,7 @@ module DDC.Core.Transform
         , substituteWs
 
         , SubstituteX   (..)
+        , substituteXs
 
         , TransformUpMX (..)
         , transformUpX)
