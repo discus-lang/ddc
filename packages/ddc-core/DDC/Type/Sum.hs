@@ -1,7 +1,7 @@
 
 -- | Utilities for working with TypeSums.
 --
--- TODO: defailt Eq instance is wrong because we much check the spill fields.
+-- TODO: default Eq instance is wrong because we much check the spill fields.
 --       We want eq operation to be fast.
 module DDC.Type.Sum 
         ( empty
@@ -10,6 +10,7 @@ module DDC.Type.Sum
         , insert
         , delete
         , union
+        , unions
         , difference
         , kindOfSum
         , toList, fromList
@@ -89,10 +90,17 @@ delete t ts
 
 -- | Add two type sum.
 -- 
---   TODO: make this more efficiet. Directly combine the components.
+--   TODO: make this more efficient. Directly combine the components.
 union     :: Ord n => TypeSum n -> TypeSum n -> TypeSum n
 union ts1 ts2 
         = foldr insert ts2 (toList ts1)
+
+
+-- | Union a list of `TypeSum`s together.
+unions    :: Ord n => Kind n -> [TypeSum n] -> TypeSum n
+unions k []       = empty k
+unions _ (t:ts)   = foldr union t ts
+
 
 
 -- | Delete all members of the second sum from the first one.

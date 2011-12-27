@@ -10,16 +10,27 @@ import qualified Data.Set               as Set
 instance GatherBound n (Exp a n) where
  gatherBound xx
   = case xx of
-        XVar _ u        -> gatherBound u
-        XCon _ u        -> gatherBound u
-        XApp _ x1 x2    -> Set.unions [gatherBound x1, gatherBound x2]
-        XLam _ b  x     -> Set.unions [gatherBound b,  gatherBound x]
-        XLet _ lt x     -> Set.unions [gatherBound lt, gatherBound x]
-        XCase{}         -> error "GatherBound[Exp] not done yet"
+        XVar  _ u       -> gatherBound u
+        XCon  _ u       -> gatherBound u
+        XApp  _ x1 x2   -> Set.unions [gatherBound x1, gatherBound x2]
+        XLam  _ b  x    -> Set.unions [gatherBound b,  gatherBound x]
+        XLet  _ lt x    -> Set.unions [gatherBound lt, gatherBound x]
+        XCase _ x alts  -> Set.unions [gatherBound x,  Set.unions $ map gatherBound alts]
         XCast _ x c     -> Set.unions [gatherBound x,  gatherBound c]
         XType t         -> gatherBound t
         XWitness w      -> gatherBound w
 
+
+instance GatherBound n (Pat n) where
+ gatherBound pp
+  = case pp of
+        PDefault        -> Set.empty
+        PData u bs      -> Set.unions (gatherBound u : map gatherBound bs)
+
+
+instance GatherBound n (Alt a n) where
+ gatherBound (AAlt p x)
+        = Set.unions [gatherBound p, gatherBound x]
 
 instance GatherBound n (Lets a n) where
  gatherBound xx

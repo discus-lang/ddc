@@ -26,9 +26,10 @@ module DDC.Type.Compounds
         , tSum
 
           -- * Function type construction
-        , kFun, (~>>)
+        , kFun
         , kFuns,        takeKFun,       takeKFuns
-        , tFun, (->>),  takeTFun
+        , tFun,         takeTFun
+        , tFunPE
         , tImpl
 
           -- * Sort construction
@@ -230,9 +231,10 @@ tSum k ts
 
 -- Function Constructors ------------------------------------------------------
 -- | Construct a kind function.
-kFun, (~>>) :: Kind n -> Kind n -> Kind n
+kFun :: Kind n -> Kind n -> Kind n
 kFun k1 k2      = ((TCon $ TyConKind KiConFun)`TApp` k1) `TApp` k2
-(~>>)           = kFun
+
+infixr `kFun`
 
 
 -- | Construct some kind functions.
@@ -265,6 +267,8 @@ tFun    :: Type n -> Effect n -> Closure n -> Type n -> Type n
 tFun t1 eff clo t2
         = (TCon $ TyConComp TcConFun) `tApps` [t1, eff, clo, t2]
 
+infixr `tFun`
+
 
 -- | Destruct a value type function.
 takeTFun :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
@@ -278,9 +282,8 @@ takeTFun tt
 
 
 -- | Construct a pure and empty value type function.
-tFunPE, (->>)   :: Type n -> Type n -> Type n
+tFunPE  :: Type n -> Type n -> Type n
 tFunPE t1 t2    = tFun t1 (tBot kEffect) (tBot kClosure) t2
-(->>)           = tFunPE
 
 
 -- | Construct a witness implication type.

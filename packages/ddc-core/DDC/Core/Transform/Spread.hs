@@ -26,7 +26,10 @@ instance Spread (Exp a) where
                 env'    = Env.extends (bindsOfLets lts') env
             in  XLet a lts' (spread env' x)
          
-        XCase{}         -> error "spread XCase not done"
+        XCase a x alts
+         -> let x'      = spread env x
+                alts'   = map (spread env) alts
+            in  XCase a x' alts'
 
         XCast a c x     -> XCast a (spread env c) (spread env x)
         
@@ -41,6 +44,22 @@ instance Spread Cast where
         CastWeakenClosure clo   -> CastWeakenClosure (spread env clo)
         CastPurify w            -> CastPurify        (spread env w)
         CastForget w            -> CastForget        (spread env w)
+
+
+instance Spread Pat where
+ spread env pat
+  = case pat of
+        PDefault        -> PDefault
+        PData u bs      -> PData (spread env u) (map (spread env) bs)
+
+
+instance Spread (Alt a) where
+ spread env alt
+  = case alt of
+        AAlt p x
+         -> let p'      = spread env p
+                env'    = Env.extends (bindsOfPat p') env
+            in  AAlt p' (spread env' x)
 
 
 instance Spread (Lets a) where

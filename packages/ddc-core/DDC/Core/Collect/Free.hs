@@ -17,19 +17,41 @@ instance Free n (Exp a n) where
         XCon _ u        -> free env u
         XApp _ x1 x2    -> Set.unions [free env x1,  free env x2]
         XLam _ b  x     -> Set.unions [free env b,   free (Env.extend b env) x]
-        XLet _ lts x    -> Set.unions [free env lts, free (Env.extends (bindsOfLets lts) env) x]
 
-        XCase{}         -> error "free[Exp] XCase"
+        XLet _ lts x    
+         -> Set.unions [ free env lts
+                       , free (Env.extends (bindsOfLets lts) env) x]
+
+        XCase _ x alts
+         -> Set.unions [ free env x
+                       , Set.unions $ map (free env) alts]
 
         XCast _ x c     -> Set.unions [free env x,  free env c]
         XType t         -> free env t
         XWitness w      -> free env w
 
 
+instance Free n (Pat n) where
+ free env pat 
+  = case pat of
+        PDefault        -> Set.empty
+        PData u bs      
+         -> Set.unions  [ free env u
+                        , Set.unions $ map (free env) bs]
+
+instance Free n (Alt a n) where
+ free env alt
+  = case alt of
+        AAlt p x
+         -> Set.unions [ free env p
+                       , free (Env.extends (bindsOfPat p) env) x ]
+
 instance Free n (Lets a n) where
  free env lts 
   = case lts of
-        LLet b x        -> Set.unions [free env b,   free (Env.extend b env) x]
+        LLet b x        
+         -> Set.unions [ free env b
+                       , free (Env.extend b env) x]
 
         LRec bxs        
          -> let (bs, xs) = unzip bxs

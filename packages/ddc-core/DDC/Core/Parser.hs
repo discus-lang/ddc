@@ -81,6 +81,16 @@ pExp2
                 return $ XLet ()  (LLetRegion b []) x ]
 
 
+        -- case EXP of { ALTS }
+  , do  pTok KCase
+        x       <- pExp
+        pTok KOf 
+        pTok KBraceBra
+        alts    <- P.sepEndBy1 pAlt (pTok KSemiColon)
+        pTok KBraceKet
+        return  $ XCase () x alts
+
+
         -- purify <WITNESS> EXP
   , do  pTok KPurify
         pTok KAngleBra
@@ -106,7 +116,7 @@ pExp2
 
 
 -- Applications.
-pExpApp   :: Ord n => Parser n (Exp () n)
+pExpApp :: Ord n => Parser n (Exp () n)
 pExpApp 
   = do  (x:xs)  <- liftM concat $ P.many1 pArgs
         return  $ foldl (XApp ()) x xs
@@ -177,6 +187,36 @@ pExp0
  ]
 
  <?> "a variable, constructor, or parenthesised type"
+
+
+-- Case alternatives.
+pAlt    :: Ord n => Parser n (Alt () n)
+pAlt
+ = do   p       <- pPat
+        pTok KTypeFun
+        x       <- pExp
+        return  $ AAlt p x
+
+
+-- Patterns.
+pPat    :: Ord n => Parser n (Pat n)
+pPat
+ = do   nCon    <- pCon 
+        bs      <- P.many (do
+                        pTok KRoundBra
+                        b       <- pBind
+                        pTok KRoundKet
+                        return b)
+        return  $ PData (UName nCon (T.tBot T.kData)) bs
+
+
+-- Binders
+pBind   :: Ord n => Parser n (Bind n)
+pBind 
+ = do   b       <- T.pBinder
+        pTok KColon
+        t       <- T.pType
+        return  $ T.makeBindFromBinder b t 
 
 
 -- Witnesses ------------------------------------------------------------------

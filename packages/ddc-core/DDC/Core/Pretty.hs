@@ -53,6 +53,10 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XLet _ lts x
          -> ppr lts <+> text "in" <+> ppr x
 
+        XCase _ x alts
+         -> text "case" <+> ppr x <+> text "of"
+                <+> braces (sep $ punctuate semi $ map ppr alts)
+
         XCast _ cc x
          -> pprParen (d > 10)
          $  ppr cc <+> pprPrec 11 x
@@ -60,7 +64,18 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XType    t      -> braces $ ppr t
         XWitness w      -> text "<" <> ppr w <> text ">"
 
-        _               -> error "pprPrec[Exp] not finished"
+
+-- Pat ------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Pat n) where
+ ppr pp
+  = case pp of
+        PDefault        -> text "_"
+        PData u bs      -> ppr u <+> sep (map (parens . ppr) bs)
+
+
+-- Alt ------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Alt a n) where
+ ppr (AAlt p x)         = ppr p <+> text "->" <+> ppr x
 
 
 -- Cast -----------------------------------------------------------------------

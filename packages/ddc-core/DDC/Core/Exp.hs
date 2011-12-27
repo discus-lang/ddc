@@ -83,7 +83,7 @@ data Lets a n
 
 -- | Case alternatives.
 data Alt a n
-        = XAlt (Pat n) (Exp a n)
+        = AAlt (Pat n) (Exp a n)
         deriving (Eq, Show)
 
 

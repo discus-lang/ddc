@@ -7,6 +7,7 @@ module DDC.Type.Transform.SubstituteT
 
         , BindStack(..)
         , pushBind
+        , pushBinds
         , substBound)
 where
 import DDC.Type.Exp
@@ -134,6 +135,13 @@ pushBind fns bs@(BindStack stack dAnon dName) bb
 
         -- Binder was a wildcard or non-capturing name.
         _ -> (bs, bb)
+
+
+-- | Push several binds onto the bind stack,
+--   anonymysing them if need be to avoid variable capture.
+pushBinds :: Ord n => Set n -> BindStack n -> [Bind n]  -> (BindStack n, [Bind n])
+pushBinds fns stack bs
+        = mapAccumL (pushBind fns) stack bs
 
 
 -- | Compare a `Bound` against the one we're substituting for.

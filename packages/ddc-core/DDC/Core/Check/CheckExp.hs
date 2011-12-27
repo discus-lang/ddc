@@ -293,7 +293,7 @@ checkExpM env (XLet _ (LWithRegion u) x)
  = error "checkExpM: LWithRegion does not contain a region handle"
  
  | otherwise
- = do  -- Check the region handle.
+ = do   -- Check the region handle.
         checkTypeM env (typeOfBound u)
         
         -- Check the body expression.
@@ -313,8 +313,28 @@ checkExpM env (XLet _ (LWithRegion u) x)
                 
 
 -- case expression ------------------------------
-checkExpM _env XCase{} 
- = error "checkExp: XCase not done yet"
+checkExpM env (XCase _ x alts)
+ = do
+        -- Check the discriminant.
+        (tDiscrim, effs, clos) 
+                <- checkExpM env x
+
+        -- Check the alternatives.
+        (ts, effss, closs)     
+                <- liftM unzip3 
+                $  mapM (checkAltM env tDiscrim) alts
+
+        -- TODO: Check that the alts are exhaustive.
+
+        -- TODO: Check that all result types are identical.
+        let tAlt         = head ts
+
+        -- TODO: Mask bound variables from closure
+        let closs_masked = closs
+
+        return  ( tAlt
+                , Sum.unions kEffect (effs : effss)
+                , Set.unions         (clos : closs_masked) )
 
 
 -- type cast -------------------------------------
@@ -349,6 +369,23 @@ checkExpM env xx@(XCast _ (CastForget w) x1)
 -- some other thing -----------------------------
 checkExpM _env _
  = error "typeOfExp: not handled yet"
+
+
+-------------------------------------------------------------------------------
+-- | Check a case alternative.
+checkAltM 
+        :: (Pretty n, Ord n) 
+        => Env n -> Type n -> Alt a n 
+        -> CheckM a n (Type n, TypeSum n, Set (TaggedClosure n))
+
+checkAltM env _ (AAlt PDefault xBody)
+        = checkExpM env xBody
+
+checkAltM env _tDiscrim (AAlt (PData _uCon bsArg) xBody)
+ = do   let env' = Env.extends bsArg env
+        
+        -- TODO: check pattern against type of discriminant
+        checkExpM env' xBody
 
 
 -------------------------------------------------------------------------------

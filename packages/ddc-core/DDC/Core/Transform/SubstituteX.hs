@@ -51,9 +51,12 @@ instance SubstituteX Exp where
          -> case substBound stack u u' of
                 Left u'' -> XVar a u''
                 Right n  -> liftX n x
-                
+
         XCon{}          -> xx
+
         XApp a x1 x2    -> XApp a (down x1) (down x2)
+
+        XLam{}          -> error "substituteWithX: XLam not done yet"
 
         XLet a (LLet b x1) x2
          -> let x1'             = substituteWithX u x fns stack x1
@@ -61,10 +64,32 @@ instance SubstituteX Exp where
                 x2'             = substituteWithX u x fns stack' x2
             in  XLet a (LLet b' x1') x2'
 
+        XLet{}          -> error "substituteWitX: XLet not done"
+
+        XCase a x1 alts
+         -> let x1'             = substituteWithX u x fns stack x1
+                alts'           = map (substituteWithX u x fns stack) alts
+            in  XCase a x1' alts'
+
+        XCast{}         -> error "substituteWithX: XCast not done yet"
+
         XType{}         -> xx
         XWitness{}      -> xx
-
-        _       -> error "substituteWithX: not done yet"
  
+
+instance SubstituteX Alt where
+ substituteWithX u x fns stack aa
+  = let down = substituteWithX u x fns stack
+    in case aa of
+        AAlt PDefault xBody
+         -> AAlt PDefault $ down xBody
+        
+        AAlt (PData uCon bs) xBody
+         -> let (stack', bs')   = pushBinds fns stack bs
+                xBody'          = substituteWithX u x fns stack' xBody
+            in  AAlt (PData uCon bs') xBody'
+
+
+
  
  

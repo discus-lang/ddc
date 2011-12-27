@@ -93,7 +93,7 @@ pTypeFun
          [ -- T1 -> T2
            do   pTok KTypeFun
                 t2      <- pTypeFun
-                return  $ t1 ->> t2
+                return  $ t1 `tFunPE` t2
 
            -- T1 -(TSUM | TSUM)> t2
          , do   pTok KTypeFunBra

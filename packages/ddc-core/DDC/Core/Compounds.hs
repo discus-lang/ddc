@@ -1,6 +1,7 @@
 
 module DDC.Core.Compounds 
         ( bindsOfLets
+        , bindsOfPat
         , takeXLams
         , takeXApps
         , takeXConApps
@@ -17,6 +18,14 @@ bindsOfLets ll
         LRec bxs          -> map fst bxs
         LLetRegion   b bs -> b : bs
         LWithRegion{}     -> []
+
+
+-- | Take the binds of a `Pat`
+bindsOfPat :: Pat n -> [Bind n]
+bindsOfPat pp
+ = case pp of
+        PDefault          -> []
+        PData _ bs        -> bs
 
 
 -- | Split nested lambdas from the front of an expression
