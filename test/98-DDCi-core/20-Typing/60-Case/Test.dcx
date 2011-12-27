@@ -7,8 +7,10 @@
         1 -> ();\
 }
 
+
+-- Error: pattern and discriminant types don't match.
 :check\
- let xx0  = Nil {R0#} {Int R0#} () in\
+ let xx0  = Nil  {R0#} {Int R0#} () in\
  let xx1  = Cons {R0#} {Int R0#} (5 {R0#} ()) xx0 in\
  case xx1 of {\
      ()  -> ()\

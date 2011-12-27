@@ -81,36 +81,40 @@ checkExpM env (XVar _ u)
  = let  tBound  = typeOfBound u
         mtEnv   = Env.lookup u env
 
-        effs    = Sum.empty kEffect
-        clos    = Set.singleton $ taggedClosureOfValBound u
-
-        result'
-         -- When annotation is bot, use type from environment.
+        tResult
+         -- When annotation on the bound is bot,
+         --  then use the type from the environment.
          | Just tEnv    <- mtEnv
          , isBot tBound
-         = return (tEnv, effs, clos)
+         = tEnv
 
-         -- Annotation matches type from environment.
+         -- The bound has an explicit type annotation,
+         --  which matches the one from the environment.
          | Just tEnv    <- mtEnv
          , tBound == tEnv
-         = return (tEnv, effs, clos)
+         = tEnv
 
-         -- This shouldn't happen because the parser doesn't add not-bot
-         -- annotations to bound variables yet.
+         -- The bound has an explicit type annotation,
+         --  which does not match the one from the environment.
+         --  This shouldn't happen because the parser doesn't add non-bot
+         --  annotations to bound variables.
          | Just _tEnv    <- mtEnv
          = error "checkExpM: annotation on bound does not match that in environment."
 
          -- Variable not in environment, so use annotation.
+         --  This happens when checking open terms.
          | otherwise
-         = return (tBound, effs, clos)
+         = tBound
 
-   in   result'
+   in   return  ( tResult
+                , Sum.empty kEffect
+                , Set.singleton $ taggedClosureOfValBound u)
 
 
 checkExpM _env (XCon _ u)
- = return  ( typeOfBound u
-           , Sum.empty kEffect
-           , Set.empty)
+ =      return  ( typeOfBound u
+                , Sum.empty kEffect
+                , Set.empty)
 
 
 -- application ------------------------------------
