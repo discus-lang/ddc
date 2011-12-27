@@ -23,10 +23,7 @@ type Parser n a
 
 -- Expressions ----------------------------------------------------------------
 pExp    :: Ord n => Parser n (Exp () n)
-pExp = pExp2
-
-pExp2   :: Ord n => Parser n (Exp () n)
-pExp2   
+pExp 
  = P.choice
         -- Lambda abstractions
  [ do   pTok KBackSlash
@@ -37,7 +34,7 @@ pExp2
         pTok KRoundKet
         pTok KDot
 
-        xBody   <- pExp2
+        xBody   <- pExp
 
         return  $ foldr (XLam ()) xBody
                 $ map (\b -> T.makeBindFromBinder b t) bs
@@ -73,11 +70,11 @@ pExp2
                            (pTok KSemiColon)
                 pTok KBraceKet
                 pTok KIn
-                x       <- pExp2 
+                x       <- pExp 
                 return  $ XLet () (LLetRegion b wits) x 
 
          , do   pTok KIn
-                x       <- pExp2
+                x       <- pExp
                 return $ XLet ()  (LLetRegion b []) x ]
 
 
@@ -96,7 +93,7 @@ pExp2
         pTok KAngleBra
         w       <- pWitness
         pTok KAngleKet
-        x       <- pExp2
+        x       <- pExp
         return  $ XCast () (CastPurify w) x
 
 
@@ -105,7 +102,7 @@ pExp2
         pTok KAngleBra
         w       <- pWitness
         pTok KAngleKet
-        x       <- pExp2
+        x       <- pExp
         return  $ XCast () (CastForget w) x
 
         -- APP
@@ -165,7 +162,7 @@ pExp0
  = P.choice
         -- (EXP2)
  [ do   pTok KRoundBra
-        t       <- pExp2
+        t       <- pExp
         pTok KRoundKet
         return  $ t
         
@@ -201,13 +198,23 @@ pAlt
 -- Patterns.
 pPat    :: Ord n => Parser n (Pat n)
 pPat
- = do   nCon    <- pCon 
+ = P.choice
+ [ -- _
+   do   pTok KUnderscore
+        return  $ PDefault
+
+   -- LIT
+ , do   nLit    <- pLit
+        return  $ PData (UName nLit (T.tBot T.kData)) []
+
+   -- CON (x1 : TYPE) ...
+ , do   nCon    <- pCon 
         bs      <- P.many (do
                         pTok KRoundBra
                         b       <- pBind
                         pTok KRoundKet
                         return b)
-        return  $ PData (UName nCon (T.tBot T.kData)) bs
+        return  $ PData (UName nCon (T.tBot T.kData)) bs]
 
 
 -- Binders

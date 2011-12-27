@@ -117,7 +117,7 @@ step' store (XLet a (LWithRegion uRegion) x)
 step' store (XCase a xDiscrim alts)
         | Just lDiscrim            <- takeLocX xDiscrim
         , Just (SObj nTag lsArgs)  <- lookupBind lDiscrim store
-        , [AAlt pat xBody]         <- filter (tagMatchesAlt nTag) alts
+        , AAlt pat xBody : _       <- filter (tagMatchesAlt nTag) alts
         = case pat of
            PDefault         
             -> Just (store, xBody)

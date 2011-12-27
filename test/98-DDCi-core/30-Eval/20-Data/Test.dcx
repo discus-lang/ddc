@@ -19,3 +19,12 @@ case xx of {\
   Cons (x  : Int R0#)\
        (xs : List R0# (Int R0#))  -> x\
 }
+
+
+-- Match on an integer literal.
+case 5 {R0#} () of {\
+  5 -> 1 {R0#} ();\
+  _ -> 0;\
+}
+
+
