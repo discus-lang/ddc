@@ -8,6 +8,7 @@ import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Type.Pretty
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Base.Pretty
 
 
@@ -100,10 +101,15 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
  ppr lts
   = case lts of
         LLet b x
-         -> text "let"
-                <+> ppr b
-                <+> text "="
-                <+> ppr x
+         | isBot $ typeOfBind b 
+         -> text "let"  <+> ppr (binderOfBind b)
+                        <+> text "="
+                        <+> ppr x
+
+         | otherwise
+         -> text "let"  <+> ppr b
+                        <+> text "="
+                        <+> ppr x
         
         LRec{}          -> error "ppr[Lets]: not finished"
 

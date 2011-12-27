@@ -70,9 +70,6 @@ checkExp env xx
 -- checkExp -------------------------------------------------------------------
 -- | Check an expression, 
 --   returning its type, effect and free value variables.
---   TODO: 
---    check that existing annotations have the same kinds as from the environment.
---    add a function to check that a type has kind annots in the right places.
 checkExpM 
         :: (Ord n, Pretty n)
         => Env n -> Exp a n
@@ -80,10 +77,35 @@ checkExpM
 
 
 -- variables and constructors ---------------------
-checkExpM _env (XVar _ u)
- = return  ( typeOfBound u
-           , Sum.empty kEffect
-           , Set.singleton $ taggedClosureOfValBound u)
+checkExpM env (XVar _ u)
+ = let  tBound  = typeOfBound u
+        mtEnv   = Env.lookup u env
+
+        effs    = Sum.empty kEffect
+        clos    = Set.singleton $ taggedClosureOfValBound u
+
+        result'
+         -- When annotation is bot, use type from environment.
+         | Just tEnv    <- mtEnv
+         , isBot tBound
+         = return (tEnv, effs, clos)
+
+         -- Annotation matches type from environment.
+         | Just tEnv    <- mtEnv
+         , tBound == tEnv
+         = return (tEnv, effs, clos)
+
+         -- This shouldn't happen because the parser doesn't add not-bot
+         -- annotations to bound variables yet.
+         | Just _tEnv    <- mtEnv
+         = error "checkExpM: annotation on bound does not match that in environment."
+
+         -- Variable not in environment, so use annotation.
+         | otherwise
+         = return (tBound, effs, clos)
+
+   in   result'
+
 
 checkExpM _env (XCon _ u)
  = return  ( typeOfBound u
@@ -208,27 +230,23 @@ checkExpM env xx@(XLam _ b1 x2)
 
 -- let --------------------------------------------
 checkExpM env xx@(XLet _ (LLet b11 x12) x2)
- = do   -- Check the annotation
-        k11    <- checkTypeM env (typeOfBind b11)
-
-        -- The parser should ensure the bound variable always has data kind.
-        when (not $ isDataKind k11)
-         $ error $ "checkExpM: LLet does not bind a value variable."
-                         
-        -- Check the right of the binding.
+ = do   -- Check the right of the binding.
         (t12, effs12, clo12)  <- checkExpM env x12
 
-        -- The type of the binding must match that of the right
-        when (typeOfBind b11 /= t12)
-         $ throw $ ErrorLetMismatch xx b11 t12
-         
+        -- Check binder annotation
+        (b11', k11')    <- checkLetBindOfTypeM xx env t12 b11
+
+        -- The right of the binding should have data kind.
+        when (not $ isDataKind k11')
+         $ error $ "checkExpM: LLet does not bind a value variable." ++ (pretty $ ppr k11')
+          
         -- Check the body expression.
-        let env1  = Env.extend b11 env
+        let env1  = Env.extend b11' env
         (t2, effs2, clo2)     <- checkExpM env1 x2
 
         -- Mask closure terms due to locally bound value vars.
         let clo2_masked
-             = case takeSubstBoundOfBind b11 of
+             = case takeSubstBoundOfBind b11' of
                 Nothing -> clo2
                 Just u  -> Set.delete (taggedClosureOfValBound u) clo2
         
@@ -333,7 +351,15 @@ checkExpM env xx@(XCase _ x alts)
         forM_ ts $ \tAlt' 
          -> when (tAlt /= tAlt') $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
 
+--         error (pretty $ ppr tDiscrim)
+
+        -- TODO: Check that discriminant type matches types of constructors.
+
+        -- TODO: Check that annotation types on pattern args are correct.
+
         -- TODO: Check that the alts are exhaustive.
+
+        -- TODO: Check for overlapping constructors.
 
         -- TODO: Mask bound variables from closure
         let closs_masked = closs
@@ -392,15 +418,6 @@ checkAltM env _tDiscrim (AAlt (PData _uCon bsArg) xBody)
         
         -- TODO: check pattern against type of discriminant
         checkExpM env' xBody
-
-
--------------------------------------------------------------------------------
--- | Check a type in the exp checking monad.
-checkTypeM :: Ord n => Env n -> Type n -> CheckM a n (Kind n)
-checkTypeM env tt
- = case T.checkType env tt of
-        Left err        -> throw $ ErrorType err
-        Right k         -> return k
 
 
 -------------------------------------------------------------------------------
@@ -463,4 +480,40 @@ checkWitnessBindM xx uRegion bsWit bWit
          | otherwise    -> checkWitnessArg t2
 
         _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
+
+
+-------------------------------------------------------------------------------
+-- | Check a type in the exp checking monad.
+checkTypeM :: Ord n => Env n -> Type n -> CheckM a n (Kind n)
+checkTypeM env tt
+ = case T.checkType env tt of
+        Left err        -> throw $ ErrorType err
+        Right k         -> return k
+
+
+-------------------------------------------------------------------------------
+-- | Check the type annotation of a let bound variable against the type
+--   inferred for the right of the binding.
+--   If the annotation is Bot then we just replace the annotation,
+--   otherwise it must match that for the right of the binding.
+checkLetBindOfTypeM 
+        :: (Eq n, Ord n) 
+        => Exp a n -> Env n -> Type n -> Bind n 
+        -> CheckM a n (Bind n, Kind n)
+
+checkLetBindOfTypeM xx env tRight b
+        -- If the annotation is Bot then just replace it.
+        | isBot (typeOfBind b)
+        = do    k       <- checkTypeM env tRight
+                return  ( replaceTypeOfBind tRight b 
+                        , k)
+
+        -- The type of the binder must match that of the right of the binding.
+        | typeOfBind b /= tRight
+        = throw $ ErrorLetMismatch xx b tRight
+
+        | otherwise
+        = do    k       <- checkTypeM env (typeOfBind b)
+                return (b, k)
+
      

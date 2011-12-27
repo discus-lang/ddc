@@ -1,0 +1,11 @@
+
+
+-- Let expression with explicit type annotation.
+:check let x : Int R0# = 5 {R0#} () in  x
+
+-- Let expression with no type annotation.
+:check let x = 5 {R0#} () in x
+
+-- Error: let binder has incorrect type annotation.
+:check let x : Int R0# = () in x
+

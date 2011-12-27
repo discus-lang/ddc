@@ -117,6 +117,7 @@ instance (Pretty n, Eq n) => Pretty (TypeSum n) where
   = case Sum.toList ss of
       [] | isEffectKind  $ Sum.kindOfSum ss -> text "!0"
          | isClosureKind $ Sum.kindOfSum ss -> text "$0"
+         | isDataKind    $ Sum.kindOfSum ss -> text "*0"
          | otherwise                       -> error $ stage ++ ": malformed sum"
          
       ts  -> sep $ punctuate (text " +") (map ppr ts)

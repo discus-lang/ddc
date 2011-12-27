@@ -40,16 +40,14 @@ pExp
                 $ map (\b -> T.makeBindFromBinder b t) bs
 
 
-        -- Let expressions
+        -- Let expression with type annotation.
  , do   pTok KLet
-        b       <- T.pBinder
-        pTok KColon
-        t       <- T.pType
+        b       <- pBind (T.tBot T.kData)
         pTok KEquals
         x1      <- pExp
         pTok KIn
         x2      <- pExp
-        return  $ XLet () (LLet (T.makeBindFromBinder b t) x1) x2
+        return  $ XLet () (LLet b x1) x2
         
 
         -- Local region binding
@@ -211,19 +209,31 @@ pPat
  , do   nCon    <- pCon 
         bs      <- P.many (do
                         pTok KRoundBra
-                        b       <- pBind
+                        b       <- pBindTyped
                         pTok KRoundKet
                         return b)
         return  $ PData (UName nCon (T.tBot T.kData)) bs]
 
 
--- Binders
-pBind   :: Ord n => Parser n (Bind n)
-pBind 
+-- Bind with type.
+pBindTyped :: Ord n => Parser n (Bind n)
+pBindTyped 
  = do   b       <- T.pBinder
         pTok KColon
         t       <- T.pType
         return  $ T.makeBindFromBinder b t 
+
+
+-- Bind with optional type.
+pBind :: Ord n => Type n -> Parser n (Bind n)
+pBind tDefault
+ = do   b       <- T.pBinder
+        P.choice 
+         [ do   pTok KColon
+                t       <- T.pType
+                return  $ T.makeBindFromBinder b t
+
+         , do   return  $ T.makeBindFromBinder b tDefault]
 
 
 -- Witnesses ------------------------------------------------------------------

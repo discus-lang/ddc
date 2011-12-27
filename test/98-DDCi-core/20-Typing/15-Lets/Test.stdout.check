@@ -1,0 +1,18 @@
+-- Let expression with explicit type annotation.
+let x : Int R0# = 5 {R0#} () in x
+::  Int R0#
+:!: Alloc R0#
+:$: Use R0#
+
+-- Let expression with no type annotation.
+let x = 5 {R0#} () in x
+::  Int R0#
+:!: Alloc R0#
+:$: Use R0#
+
+-- Error: let binder has incorrect type annotation.
+Type mismatch in let-binding.
+       The binder has type: x : Int R0#
+     but the body has type: Unit
+             when checking: let x : Int R0# = () in x
+
