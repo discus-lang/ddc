@@ -24,7 +24,12 @@ case xx of {\
 -- Match on an integer literal.
 case 5 {R0#} () of {\
   5 -> 1 {R0#} ();\
-  _ -> 0;\
+  _ -> 0 {R0#} ();\
 }
 
 
+-- Fall through to default alternative.
+case 5 {R0#} () of {\
+  6 -> 1 {R0#} ();\
+  _ -> 0 {R0#} ();\
+}
