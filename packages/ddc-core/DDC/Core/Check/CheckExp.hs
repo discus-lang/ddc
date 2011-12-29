@@ -349,27 +349,23 @@ checkExpM env xx@(XCase _ xDiscrim alts)
         -- Take the type arguments from the type of the discriminant.
         (_tCon, tsArgs)
                 <- case takeTApps tDiscrim of 
-                     []                 -> error "checkExpM: tDiscrim did not split"
-                     tCon : tsArgs      -> return (tCon, tsArgs)
+                     []            -> error "checkExpM: tDiscrim did not split"
+                     tCon : tsArgs -> return (tCon, tsArgs)
                         
         -- Check the alternatives.
         (ts, effss, closs)     
                 <- liftM unzip3 
                 $  mapM (checkAltM xx env tDiscrim tsArgs) alts
 
-        -- The parser should ensure there is always at least one alternative.
+        -- There must be at least one alternative.
         when (null alts)
-         $ error "checkExpM: no alternatives for case expression"
+         $ throw $ ErrorCaseNoAlternatives xx
 
         -- Check that all alternative result types are identical.
         let (tAlt : _)  = ts
         forM_ ts $ \tAlt' 
-         -> when (tAlt /= tAlt') $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
-
-
-        -- TODO: Check that discriminant type matches types of constructors.
-
-        -- TODO: Check that annotation types on pattern args are correct.
+         -> when (tAlt /= tAlt') 
+             $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
 
         -- TODO: Check that the alts are exhaustive.
 
@@ -448,13 +444,16 @@ checkAltM xx env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
                         = takeTFunArgResult tCtor_inst
 
         -- The result type of the constructor must match the discriminant type.
+        -- TODO: need to implement more data types before we can test this.
         when (tDiscrim /= tResult)
-         $ error "checkAltM: fark"
+         $ error "checkAltM: discrim types does not match ctor result type"
 
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
         when (length tsFields_ctor < length bsArg)
-         $ error "checkAltM: fark"
+         $ throw $ ErrorCaseTooManyBinders xx uCon 
+                        (length tsFields_ctor)
+                        (length bsArg)
 
         -- Merge the field types we get by instantiating the constructor
         -- type with possible annotations from the source program.

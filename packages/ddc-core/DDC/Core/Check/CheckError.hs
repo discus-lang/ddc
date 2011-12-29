@@ -92,6 +92,8 @@ data Error a n
         , errorBoundRegion      :: Bound n
         , errorBindWitness      :: Bind  n }
 
+
+        -- Witnesses --------------------------------------
         -- | Type mismatch in witness application.
         | ErrorWAppMismatch
         { errorWitness          :: Witness n
@@ -124,10 +126,23 @@ data Error a n
         , errorWitness          :: Witness n
         , errorType             :: Type n }
 
+
+        -- Case Expressions -------------------------------
         -- | Discriminant of case expression is not algebraic data.
         | ErrorCaseDiscrimNotAlgebraic
         { errorChecking         :: Exp a n
         , errorTypeDiscrim      :: Type n }
+
+        -- | Case expression has no alternatives.
+        | ErrorCaseNoAlternatives
+        { errorChecking         :: Exp a n }
+
+        -- | Too many binders in alternative.
+        | ErrorCaseTooManyBinders
+        { errorChecking         :: Exp a n
+        , errorCtorBound        :: Bound n
+        , errorCtorFields       :: Int
+        , errorPatternFields    :: Int }
 
         -- | Cannot instantiate constructor type with type args of discriminant.
         | ErrorCaseCannotInstantiate
@@ -156,6 +171,8 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
          -> vcat [ text "Found malformed type: "        <> ppr tt
                  , text "       when checking: "        <> ppr xx ]
 
+
+        -- Application ------------------------------------
         ErrorAppMismatch xx t1 t2
          -> vcat [ text "Type mismatch in application." 
                  , text "     Function expects: "       <> ppr t1
@@ -168,6 +185,8 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "  to argument of type: "       <> ppr t2 
                  , text "       in application: "       <> ppr xx ]
 
+
+        -- Lambda -----------------------------------------
         ErrorLamNotPure xx eff
          -> vcat [ text "Impure type abstraction"
                  , text "           has effect: "       <> ppr eff
@@ -193,12 +212,16 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
          -> vcat [ text "Cannot shadow level-1 binder: " <> ppr b1
                  , text "  when checking: " <> ppr xx ]
         
+
+        -- Let --------------------------------------------
         ErrorLetMismatch xx b t
          -> vcat [ text "Type mismatch in let-binding."
                  , text "       The binder has type: "  <> ppr b
                  , text "     but the body has type: "  <> ppr t
                  , text "             when checking: "  <> ppr xx ]
-                 
+
+
+        -- Letregion --------------------------------------                 
         ErrorLetRegionRebound xx b
          -> vcat [ text "Region variable shadows existing one."
                  , text "           Region variable: "  <> ppr b
@@ -229,6 +252,8 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "  but witness type is: "       <> ppr b2
                  , text "        when checking: "       <> ppr xx]
 
+
+        -- Witnesses --------------------------------------
         ErrorWAppMismatch ww t1 t2
          -> vcat [ text "Type mismatch in witness application."
                  , text "  Constructor expects: "       <> ppr t1
@@ -261,10 +286,23 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "       has type: "             <> ppr t
                  , text "  when checking: "             <> ppr xx ]
 
+
+        -- Case Expressions -------------------------------
         ErrorCaseDiscrimNotAlgebraic xx tDiscrim
-         -> vcat [ text "Discriminant of case expression is not algebraic data"
+         -> vcat [ text "Discriminant of case expression is not algebraic data."
                  , text "     Discriminant type: "      <> ppr tDiscrim
                  , text "         when checking: "      <> ppr xx ]
+
+        ErrorCaseNoAlternatives xx
+         -> vcat [ text "Case expression does not have any alternatives."
+                 , text "         when checking: "      <> ppr xx ]
+
+        ErrorCaseTooManyBinders xx uCtor iCtorFields iPatternFields
+         -> vcat [ text "Pattern has more binders than there are fields in the constructor."
+                 , text "     Contructor: " <> ppr uCtor
+                 , text "            has: " <> ppr iCtorFields      <+> text "fields"
+                 , text "  but there are: " <> ppr iPatternFields   <+> text "binders in the pattern" 
+                 , text "  when checking: " <> ppr xx ]
 
         ErrorCaseAltResultMismatch xx t1 t2
          -> vcat [ text "Mismatch in alternative result types."

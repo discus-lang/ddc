@@ -20,3 +20,11 @@
  case xx1 of {\
      ()  -> ()\
  }
+
+-- Error: pattern binds more fields than provided by constructor.
+:check\
+  let xx = Nil {R0#} {Int R0#} () in\
+  case xx of {\
+    Nil          -> ();\
+    Cons x xs ys -> ();\
+  }

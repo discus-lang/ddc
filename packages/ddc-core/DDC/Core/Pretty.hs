@@ -71,7 +71,15 @@ instance (Pretty n, Eq n) => Pretty (Pat n) where
  ppr pp
   = case pp of
         PDefault        -> text "_"
-        PData u bs      -> ppr u <+> sep (map (parens . ppr) bs)
+        PData u bs      -> ppr u <+> sep (map pprPatBind bs)
+
+
+-- | Pretty print a binder, 
+--   showing its type annotation only if it's not bottom.
+pprPatBind :: (Eq n, Pretty n) => Bind n -> Doc
+pprPatBind b
+        | isBot (typeOfBind b)  = ppr $ binderOfBind b
+        | otherwise             = parens $ ppr b
 
 
 -- Alt ------------------------------------------------------------------------

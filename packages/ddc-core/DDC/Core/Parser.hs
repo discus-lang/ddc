@@ -205,23 +205,11 @@ pPat
  , do   nLit    <- pLit
         return  $ PData (UName nLit (T.tBot T.kData)) []
 
-   -- CON (x1 : TYPE) ...
+   -- CON BIND BIND ...
  , do   nCon    <- pCon 
-        bs      <- P.many (do
-                        pTok KRoundBra
-                        b       <- pBindTyped
-                        pTok KRoundKet
-                        return b)
+        bs      <- P.many pBindPat
         return  $ PData (UName nCon (T.tBot T.kData)) bs]
 
-
--- Bind with type.
-pBindTyped :: Ord n => Parser n (Bind n)
-pBindTyped 
- = do   b       <- T.pBinder
-        pTok KColon
-        t       <- T.pType
-        return  $ T.makeBindFromBinder b t 
 
 
 -- Bind with optional type.
@@ -235,6 +223,26 @@ pBind tDefault
 
          , do   return  $ T.makeBindFromBinder b tDefault]
 
+
+-- Binds in patterns can have no type annotation,
+-- or can have an annotation if the whole thing is in parens.
+pBindPat :: Ord n => Parser n (Bind n)
+pBindPat 
+ = P.choice
+        -- Plain binder.
+ [ do   b       <- T.pBinder
+        return  $ T.makeBindFromBinder b (T.tBot T.kData)
+
+        -- Binder with type, wrapped in parens.
+ , do   pTok KRoundBra
+        b       <- T.pBinder
+        pTok KColon
+        t       <- T.pType
+        pTok KRoundKet
+        return  $ T.makeBindFromBinder b t
+ ]
+        
+        
 
 -- Witnesses ------------------------------------------------------------------
 -- | Top level parser for witnesses.
