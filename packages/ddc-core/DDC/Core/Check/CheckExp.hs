@@ -99,7 +99,7 @@ checkExpM env (XVar _ u)
          --  This shouldn't happen because the parser doesn't add non-bot
          --  annotations to bound variables.
          | Just _tEnv    <- mtEnv
-         = error "checkExpM: annotation on bound does not match that in environment."
+         = error "checkExpM: annotation on bound does not match that in environment."   -- TODO: real error message
 
          -- Variable not in environment, so use annotation.
          --  This happens when checking open terms.
@@ -242,7 +242,7 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
 
         -- The right of the binding should have data kind.
         when (not $ isDataKind k11')
-         $ error $ "checkExpM: LLet does not bind a value variable." ++ (pretty $ ppr k11')
+         $ error $ "checkExpM: LLet does not bind a value variable." ++ (pretty $ ppr k11')     -- TODO: real error message
           
         -- Check the body expression.
         let env1  = Env.extend b11' env
@@ -264,7 +264,7 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
 checkExpM env xx@(XLet _ (LLetRegion b bs) x)
  -- The parser should ensure the bound variable always has region kind.
  | not $ isRegionKind (typeOfBind b)
- = error "checkExpM: LRegion does not bind a region variable."
+ = error "checkExpM: LRegion does not bind a region variable."                                  -- TODO: real error message
 
  | otherwise
  = case takeSubstBoundOfBind b of
@@ -312,7 +312,7 @@ checkExpM env xx@(XLet _ (LLetRegion b bs) x)
 checkExpM env (XLet _ (LWithRegion u) x)
  -- The evaluation function should ensure this is a handle.
  | not $ isRegionKind (typeOfBound u)
- = error "checkExpM: LWithRegion does not contain a region handle"
+ = error "checkExpM: LWithRegion does not contain a region handle"                              -- TODO: real error message
  
  | otherwise
  = do   -- Check the region handle.
@@ -347,6 +347,7 @@ checkExpM env xx@(XCase _ xDiscrim alts)
          $ throw $ ErrorCaseDiscrimNotAlgebraic xx tDiscrim
 
         -- Take the type arguments from the type of the discriminant.
+        -- This should always succeed because of the isAlgDataType check above.
         (_tCon, tsArgs)
                 <- case takeTApps tDiscrim of 
                      []            -> error "checkExpM: tDiscrim did not split"
@@ -444,9 +445,10 @@ checkAltM xx env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
                         = takeTFunArgResult tCtor_inst
 
         -- The result type of the constructor must match the discriminant type.
-        -- TODO: need to implement more data types before we can test this.
         when (tDiscrim /= tResult)
-         $ error "checkAltM: discrim types does not match ctor result type"
+         $ error "checkAltM: discrim types does not match ctor result type"    -- TODO: need to implement more data types
+                                                                               --       before we can test this.
+
 
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
@@ -518,7 +520,7 @@ checkWitnessBindM xx uRegion bsWit bWit
 
             -- The parser should ensure the right of a witness is a 
             -- constructor or variable.
-            _ -> error "checkWitnessBindM: unexpected witness argument"
+            _ -> error "checkWitnessBindM: unexpected witness argument"                 -- TODO: make a real error message
 
    in  case typeOfBind bWit of
         TApp (TCon (TyConWitness TwConGlobal))  t2
