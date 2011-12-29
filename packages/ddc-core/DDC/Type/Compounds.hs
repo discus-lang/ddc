@@ -27,8 +27,8 @@ module DDC.Type.Compounds
 
           -- * Function type construction
         , kFun
-        , kFuns,        takeKFun,       takeKFuns
-        , tFun,         takeTFun
+        , kFuns,        takeKFun,       takeKFuns,      takeResultKind
+        , tFun,         takeTFun,       takeTFunArgResult
         , tFunPE
         , tImpl
 
@@ -261,6 +261,16 @@ takeKFuns kk
         _       -> [kk]
 
 
+-- | Take the result kind of a kind function, or return the same kind
+--   unharmed if it's not a kind function.
+takeResultKind :: Kind n -> Kind n
+takeResultKind kk
+ = case kk of
+        TApp (TApp (TCon (TyConKind KiConFun)) _) k2
+                -> takeResultKind k2
+        _       -> kk
+
+
 -- | Construct a value type function, 
 --   with the provided effect and closure.
 tFun    :: Type n -> Effect n -> Closure n -> Type n -> Type n
@@ -270,7 +280,7 @@ tFun t1 eff clo t2
 infixr `tFun`
 
 
--- | Destruct a value type function.
+-- | Destruct the type of a value function.
 takeTFun :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
 takeTFun tt
  = case tt of
@@ -279,6 +289,16 @@ takeTFun tt
         _ -> Nothing
 
 
+-- | Destruct the type of a value function, returning just the argument
+--   and result types.
+takeTFunArgResult :: Type n -> ([Type n], Type n)
+takeTFunArgResult tt
+ = case tt of
+        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) _eff) _clo) t2
+          -> let (tsMore, tResult) = takeTFunArgResult t2
+             in  (t1 : tsMore, tResult)
+
+        _ -> ([], tt)
 
 
 -- | Construct a pure and empty value type function.

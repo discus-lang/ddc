@@ -335,27 +335,37 @@ checkExpM env (XLet _ (LWithRegion u) x)
                 
 
 -- case expression ------------------------------
-checkExpM env xx@(XCase _ x alts)
+checkExpM env xx@(XCase _ xDiscrim alts)
  = do
         -- Check the discriminant.
         (tDiscrim, effs, clos) 
-                <- checkExpM env x
+                <- checkExpM env xDiscrim
 
+        -- The discriminant type must be that of algebraic data,
+        --   not a function or effect type etc.
+        when (not $ isAlgDataType tDiscrim)
+         $ throw $ ErrorCaseDiscrimNotAlgebraic xx tDiscrim
+
+        -- Take the type arguments from the type of the discriminant.
+        (_tCon, tsArgs)
+                <- case takeTApps tDiscrim of 
+                     []                 -> error "checkExpM: tDiscrim did not split"
+                     tCon : tsArgs      -> return (tCon, tsArgs)
+                        
         -- Check the alternatives.
         (ts, effss, closs)     
                 <- liftM unzip3 
-                $  mapM (checkAltM env tDiscrim) alts
+                $  mapM (checkAltM xx env tDiscrim tsArgs) alts
 
         -- The parser should ensure there is always at least one alternative.
         when (null alts)
          $ error "checkExpM: no alternatives for case expression"
 
-        -- Check that all result types are identical.
+        -- Check that all alternative result types are identical.
         let (tAlt : _)  = ts
         forM_ ts $ \tAlt' 
          -> when (tAlt /= tAlt') $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
 
---         error (pretty $ ppr tDiscrim)
 
         -- TODO: Check that discriminant type matches types of constructors.
 
@@ -411,17 +421,69 @@ checkExpM _env _
 -- | Check a case alternative.
 checkAltM 
         :: (Pretty n, Ord n) 
-        => Env n -> Type n -> Alt a n 
+        => Exp a n              -- Whole case expression, for error messages.
+        -> Env n 
+        -> Type n               -- Type of discriminant.
+        -> [Type n]             -- Args to type constructor of discriminant.
+        -> Alt a n 
         -> CheckM a n (Type n, TypeSum n, Set (TaggedClosure n))
 
-checkAltM env _ (AAlt PDefault xBody)
+checkAltM _xx env _tDiscrim _tsArgs (AAlt PDefault xBody)
         = checkExpM env xBody
 
-checkAltM env _tDiscrim (AAlt (PData _uCon bsArg) xBody)
- = do   let env' = Env.extends bsArg env
+checkAltM xx env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
+ = do   
+        -- Take the type of the constructor and instantiate it with the 
+        -- type arguments we got from the discriminant. 
+        -- If the ctor type doesn't instantiate then it won't have enough foralls 
+        -- on the front, which should have been checked by the def checker.
+        let tCtor       = typeOfBound uCon
+        tCtor_inst      
+         <- case instantiateTs tCtor tsArgs of
+             Nothing -> throw $ ErrorCaseCannotInstantiate xx tDiscrim tCtor
+             Just t  -> return t
         
-        -- TODO: check pattern against type of discriminant
+        -- Split the constructor type into the field and result types.
+        let (tsFields_ctor, tResult) 
+                        = takeTFunArgResult tCtor_inst
+
+        -- The result type of the constructor must match the discriminant type.
+        when (tDiscrim /= tResult)
+         $ error "checkAltM: fark"
+
+        -- There must be at least as many fields as variables in the pattern.
+        -- It's ok to bind less fields than provided by the constructor.
+        when (length tsFields_ctor < length bsArg)
+         $ error "checkAltM: fark"
+
+        -- Merge the field types we get by instantiating the constructor
+        -- type with possible annotations from the source program.
+        -- If the annotations don't match, then we throw an error.
+        tsFields        <- zipWithM mergeAnnot 
+                            (map typeOfBind bsArg)
+                            tsFields_ctor        
+
+        -- Extend the environment with the field types.
+        let bsArg_subst = zipWith replaceTypeOfBind tsFields bsArg
+        let env'        = Env.extends bsArg_subst env
+        
+        -- Check the body in this new environment.
         checkExpM env' xBody
+
+
+-- | Merge a type annotation on a pattern field with a type we get by
+--   instantiating the constructor type.
+mergeAnnot :: Eq n => Type n -> Type n -> CheckM a n (Type n)
+mergeAnnot tAnnot tActual
+        -- Annotation is bottom, so just use the real type.
+        | isBot tAnnot      = return tActual
+
+        -- Annotation matches actual type, all good.
+        | tAnnot == tActual = return tActual
+
+        -- Annotation does not match actual type.
+        | otherwise       
+        = error "mergeAnnot: fark"
 
 
 -------------------------------------------------------------------------------

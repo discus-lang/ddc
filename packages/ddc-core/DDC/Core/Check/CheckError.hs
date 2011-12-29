@@ -124,11 +124,24 @@ data Error a n
         , errorWitness          :: Witness n
         , errorType             :: Type n }
 
+        -- | Discriminant of case expression is not algebraic data.
+        | ErrorCaseDiscrimNotAlgebraic
+        { errorChecking         :: Exp a n
+        , errorTypeDiscrim      :: Type n }
+
+        -- | Cannot instantiate constructor type with type args of discriminant.
+        | ErrorCaseCannotInstantiate
+        { errorChecking         :: Exp a n
+        , errorTypeCtor         :: Type n
+        , errorTypeDiscrim      :: Type n }
+
         -- | Result types of case expression are not identical.
         | ErrorCaseAltResultMismatch
         { errorChecking         :: Exp a n
         , errorAltType1         :: Type n
         , errorAltType2         :: Type n }
+
+
 
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
@@ -248,10 +261,22 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "       has type: "             <> ppr t
                  , text "  when checking: "             <> ppr xx ]
 
+        ErrorCaseDiscrimNotAlgebraic xx tDiscrim
+         -> vcat [ text "Discriminant of case expression is not algebraic data"
+                 , text "     Discriminant type: "      <> ppr tDiscrim
+                 , text "         when checking: "      <> ppr xx ]
+
         ErrorCaseAltResultMismatch xx t1 t2
          -> vcat [ text "Mismatch in alternative result types."
                  , text "   Type of alternative: "      <> ppr t1
                  , text "        does not match: "      <> ppr t2
                  , text "         when checking: "      <> ppr xx ]
 
+        ErrorCaseCannotInstantiate xx tCtor tDiscrim
+         -> vcat [ text "Cannot instantiate constructor type with discriminant type args."
+                 , text " Either the constructor has an invalid type,"
+                 , text " or the type of the discriminant does not match the type of the pattern."
+                 , text "      Constructor type: "      <> ppr tCtor
+                 , text "     Discriminant type: "      <> ppr tDiscrim
+                 , text "         when checking: "      <> ppr xx ]
 

@@ -4,9 +4,16 @@ Mismatch in alternative result types.
         does not match: Unit
          when checking: case 5 {R0#} () of {0  -> 0 {R0#} (); 1  -> ()}
 
+-- Error: discriminant type is not a data type.
+Discriminant of case expression is not algebraic data
+     Discriminant type: Unit -> Unit
+         when checking: case \(x : Unit).x of {_ -> ()}
+
 -- Error: pattern and discriminant types don't match.
-let xx0 = Nil {R0#} {Int R0#} () in let xx1 = Cons {R0#} {Int R0#} (5 {R0#} ()) xx0 in case xx1 of {()  -> ()}
-::  Unit
-:!: Alloc R0#
-:$: Use R0#
+Cannot instantiate constructor type with discriminant type args.
+ Either the constructor has an invalid type,
+ or the type of the discriminant does not match the type of the pattern.
+      Constructor type: List R0# (Int R0#)
+     Discriminant type: Unit
+         when checking: case xx1 of {()  -> ()}
 

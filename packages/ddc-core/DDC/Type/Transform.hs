@@ -15,10 +15,15 @@ module DDC.Type.Transform
           -- * Type substitution
         , SubstituteT   (..)
         , substituteT
-        , substituteTs)
+        , substituteTs
+
+          -- * Type instantiation
+        , instantiateT
+        , instantiateTs)
 where
 import DDC.Type.Transform.Anonymize
 import DDC.Type.Transform.Rename
 import DDC.Type.Transform.Spread
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.SubstituteT
+import DDC.Type.Transform.Instantiate

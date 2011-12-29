@@ -6,9 +6,11 @@ module DDC.Type.Predicates
         , isRegionKind
         , isEffectKind
         , isClosureKind
-        , isWitnessKind)
+        , isWitnessKind
+        , isAlgDataType)
 where
 import DDC.Type.Exp
+import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as T
 
 
@@ -28,6 +30,7 @@ isDataKind tt
  = case tt of
         TCon (TyConKind KiConData)    -> True
         _                             -> False
+
 
 -- | Check if some kind is the region kind.
 isRegionKind :: Region n -> Bool
@@ -60,3 +63,18 @@ isWitnessKind tt
         TCon (TyConKind KiConWitness) -> True
         _                             -> False
 
+
+-- | Check whether this type is that of algebraic data.
+
+-- Algebraic data types are all built from constructors
+-- that have '*' as their result kind.
+-- The function constructor (->) also has this result kind,
+-- but it is in `TyConComp`, so is easy to ignore.
+isAlgDataType :: Eq n => Type n -> Bool
+isAlgDataType tt
+        | Just (tc, _)  <- takeTyConApps tt
+        , TyConBound u  <- tc
+        = takeResultKind (typeOfBound u) == kData
+
+        | otherwise
+        = False

@@ -7,6 +7,11 @@
         1 -> ();\
 }
 
+-- Error: discriminant type is not a data type.
+:check\
+ case \(x : Unit). x of {\
+     _ -> ()\
+ }
 
 -- Error: pattern and discriminant types don't match.
 :check\
