@@ -458,7 +458,7 @@ checkAltM xx env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
         -- Merge the field types we get by instantiating the constructor
         -- type with possible annotations from the source program.
         -- If the annotations don't match, then we throw an error.
-        tsFields        <- zipWithM mergeAnnot 
+        tsFields        <- zipWithM (mergeAnnot xx)
                             (map typeOfBind bsArg)
                             tsFields_ctor        
 
@@ -472,8 +472,8 @@ checkAltM xx env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
 
 -- | Merge a type annotation on a pattern field with a type we get by
 --   instantiating the constructor type.
-mergeAnnot :: Eq n => Type n -> Type n -> CheckM a n (Type n)
-mergeAnnot tAnnot tActual
+mergeAnnot :: Eq n => Exp a n -> Type n -> Type n -> CheckM a n (Type n)
+mergeAnnot xx tAnnot tActual
         -- Annotation is bottom, so just use the real type.
         | isBot tAnnot      = return tActual
 
@@ -482,7 +482,7 @@ mergeAnnot tAnnot tActual
 
         -- Annotation does not match actual type.
         | otherwise       
-        = error "mergeAnnot: fark"
+        = throw $ ErrorCaseFieldTypeMismatch xx tAnnot tActual
 
 
 -------------------------------------------------------------------------------

@@ -5,7 +5,7 @@ Mismatch in alternative result types.
          when checking: case 5 {R0#} () of {0  -> 0 {R0#} (); 1  -> ()}
 
 -- Error: discriminant type is not a data type.
-Discriminant of case expression is not algebraic data
+Discriminant of case expression is not algebraic data.
      Discriminant type: Unit -> Unit
          when checking: case \(x : Unit).x of {_ -> ()}
 
@@ -16,4 +16,18 @@ Cannot instantiate constructor type with discriminant type args.
       Constructor type: List R0# (Int R0#)
      Discriminant type: Unit
          when checking: case xx1 of {()  -> ()}
+
+-- Error: pattern binds more fields than provided by constructor.
+Pattern has more binders than there are fields in the constructor.
+     Contructor: Cons
+            has: 2 fields
+  but there are: 3 binders in the pattern
+  when checking: case xx of {Nil  -> (); Cons x xs ys -> ()}
+
+-- Error: annotation on pattern variable does not match field type
+--        of constructor.
+Annotation on pattern variable does not match type of field.
+       Annotation type: Unit
+            Field type: Int R0#
+         when checking: case xx of {Nil  -> (); Cons (x : Unit) xs -> ()}
 

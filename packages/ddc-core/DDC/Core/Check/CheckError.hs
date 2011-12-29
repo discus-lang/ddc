@@ -156,7 +156,11 @@ data Error a n
         , errorAltType1         :: Type n
         , errorAltType2         :: Type n }
 
-
+        -- | Annotation on pattern variable does not match field type of constructor.
+        | ErrorCaseFieldTypeMismatch
+        { errorChecking         :: Exp a n
+        , errorTypeAnnot        :: Type n
+        , errorTypeField        :: Type n }
 
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
@@ -316,5 +320,11 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text " or the type of the discriminant does not match the type of the pattern."
                  , text "      Constructor type: "      <> ppr tCtor
                  , text "     Discriminant type: "      <> ppr tDiscrim
+                 , text "         when checking: "      <> ppr xx ]
+
+        ErrorCaseFieldTypeMismatch xx tAnnot tField
+         -> vcat [ text "Annotation on pattern variable does not match type of field."
+                 , text "       Annotation type: "      <> ppr tAnnot
+                 , text "            Field type: "      <> ppr tField
                  , text "         when checking: "      <> ppr xx ]
 
