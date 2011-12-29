@@ -278,8 +278,7 @@ checkExpM env _xx@(XLet _ (LRec bxs) xBody)
                 <- liftM unzip3 $ mapM (checkExpM env') xs
 
         -- TODO: check annots against inferred types of right hand sides
-        -- TODO: all bindings need to be pure.
-        -- TODO: all bindings need to have data kind.
+        -- TODO: all bindings need to be lambdas.
 
         -- Check the body expression.
         (tBody, effsBody, closBody) 

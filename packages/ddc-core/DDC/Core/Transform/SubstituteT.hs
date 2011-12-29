@@ -10,9 +10,25 @@ import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
 
 
-instance SubstituteT (Exp a) where
- substituteWithT u t fvs stack xx
+instance SubstituteT Witness where
+ substituteWithT u t fvs stack ww
   = let down    = substituteWithT u t fvs stack
+    in case ww of
+         WCon{}         -> ww
+
+         WVar u'
+          -> let t'  = down (typeOfBound u')
+             in  WVar $ replaceTypeOfBound t' u'
+          
+         WApp  w1 w2    -> WApp  (down w1) (down w2)
+         WJoin w1 w2    -> WJoin (down w1) (down w2)
+         WType t1       -> WType (down t1)
+
+
+
+instance SubstituteT (Exp a) where
+ substituteWithT u t fns stack xx
+  = let down    = substituteWithT u t fns stack
     in  case xx of
          -- Types are never substitute for expression variables, but we do need
          -- to substitute into the annotation.
@@ -30,27 +46,34 @@ instance SubstituteT (Exp a) where
          XLet a (LLet b x1) x2
           -> XLet a (LLet (down b) (down x1)) (down x2)
 
-         XLet{}  -> error "substituteWithT: XLet  not done yet"
-         
-         XLam{}  -> error "substituteWithT: XLam  not done yet"
-         XCase{} -> error "substituteWithT: XCase not done yet"
-         XCast{} -> error "substituteWithT: XCast not done yet"
+         XLet{}  -> error "substituteWithT: XLet not done yet"
 
+         XLam a b xBody
+          -> let b2             = down b
+                 (stack', b3)   = pushBind fns stack b2
+                 xBody'         = substituteWithT u t fns stack' xBody
+             in  XLam a b3 xBody'
+
+
+         XCase a x alts
+          -> XCase a (down x) (map down alts)
+
+         XCast{} -> error "substituteWithT: XCast not done yet"
          
          XType t'         -> XType    (down t')
          XWitness w       -> XWitness (down w)
 
 
-instance SubstituteT Witness where
- substituteWithT u t fvs stack ww
-  = let down    = substituteWithT u t fvs stack
-    in case ww of
-         WCon{}         -> ww
+instance SubstituteT Pat where
+ substituteWithT u t fns stack pat
+  = case pat of
+        PDefault        -> PDefault
+        PData uCon bs   -> PData uCon (map (substituteWithT u t fns stack) bs)
 
-         WVar u'
-          -> let t'  = down (typeOfBound u')
-             in  WVar $ replaceTypeOfBound t' u'
-          
-         WApp  w1 w2    -> WApp  (down w1) (down w2)
-         WJoin w1 w2    -> WJoin (down w1) (down w2)
-         WType t1       -> WType (down t1)
+
+instance SubstituteT (Alt a) where
+ substituteWithT u t fns stack (AAlt pat x)
+  = let down    = substituteWithT u t fns stack
+    in  AAlt (down pat) (down x)
+
+

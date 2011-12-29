@@ -56,7 +56,10 @@ cmdEval str
          | Just (store', x')    <- step store x 
          = case checkExp Env.empty x' of
             Left err
-             -> do    putStrLn "OFF THE RAILS!"
+             -> do    putStrLn $ pretty (ppr x)
+                      putStrLn $ pretty (ppr x')
+                      putStrLn $ pretty (ppr store)
+                      putStrLn "OFF THE RAILS!"
                       putStrLn $ show $ ppr err
                       
             Right (_t, _eff, _clo)

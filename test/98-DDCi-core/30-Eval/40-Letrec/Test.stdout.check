@@ -1,0 +1,168 @@
+-- Simply recursive factorial.
+letrec {fac : [r : %].Int r -> Int r = \(r :%).\(n :Int r).case n of {0  -> 1 {r} (); _ -> mulInt {r} {r} {r} n (fac {r} (subInt {r} {r} {r} n (1 {r} ())))}} in fac {R1#} (5 {R1#} ())
+L1# {R1#} (5 {R1#} ())
+(\(n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}) (5 {R1#} ())
+L3# (5 {R1#} ())
+L3# L4#
+case L4# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L4# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ())))}
+mulInt {R1#} {R1#} {R1#} L4# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ())))
+mulInt {R1#} {R1#} {R1#} L4# ((\(n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}) (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ())))
+mulInt {R1#} {R1#} {R1#} L4# (L5# (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ())))
+mulInt {R1#} {R1#} {R1#} L4# (L5# (subInt {R1#} {R1#} {R1#} L4# L6#))
+mulInt {R1#} {R1#} {R1#} L4# (L5# L7#)
+mulInt {R1#} {R1#} {R1#} L4# case L7# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L7# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ())))}
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# ((\(n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}) (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (L8# (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (L8# (subInt {R1#} {R1#} {R1#} L7# L9#)))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (L8# L10#))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# case L10# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L10# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ())))})
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ())))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# ((\(n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ())))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (L11# (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ())))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (L11# (subInt {R1#} {R1#} {R1#} L10# L12#))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (L11# L13#)))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# case L13# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L13# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ())))}))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# ((\(n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}) (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (L14# (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (L14# (subInt {R1#} {R1#} {R1#} L13# L15#)))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (L14# L16#))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# case L16# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L16# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ())))})))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (mulInt {R1#} {R1#} {R1#} L16# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ())))))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (mulInt {R1#} {R1#} {R1#} L16# ((\(n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}) (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ())))))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (mulInt {R1#} {R1#} {R1#} L16# (L17# (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ())))))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (mulInt {R1#} {R1#} {R1#} L16# (L17# (subInt {R1#} {R1#} {R1#} L16# L18#))))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (mulInt {R1#} {R1#} {R1#} L16# (L17# L19#)))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (mulInt {R1#} {R1#} {R1#} L16# case L19# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L19# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L19# (1 {R1#} ())))}))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (mulInt {R1#} {R1#} {R1#} L16# (1 {R1#} ())))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# (mulInt {R1#} {R1#} {R1#} L16# L20#))))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# (mulInt {R1#} {R1#} {R1#} L13# L21#)))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L10# L22#))
+mulInt {R1#} {R1#} {R1#} L4# (mulInt {R1#} {R1#} {R1#} L7# L23#)
+mulInt {R1#} {R1#} {R1#} L4# L24#
+L25#
+STORE
+ NextLoc: 26
+ NextRgn: 1
+ Regions: {R1#}
+
+ Binds:
+ L1#:R0# -> LAM (r : %).\(n : Int r).case n of {0  -> 1 {r} (); _ -> mulInt {r} {r} {r} n (L1# {r} (subInt {r} {r} {r} n (1 {r} ())))}
+ L3#:R0# -> LAM (n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}
+ L4#:R1# -> OBJ 5
+ L5#:R0# -> LAM (n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}
+ L6#:R1# -> OBJ 1
+ L7#:R1# -> OBJ 4
+ L8#:R0# -> LAM (n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}
+ L9#:R1# -> OBJ 1
+ L10#:R1# -> OBJ 3
+ L11#:R0# -> LAM (n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}
+ L12#:R1# -> OBJ 1
+ L13#:R1# -> OBJ 2
+ L14#:R0# -> LAM (n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}
+ L15#:R1# -> OBJ 1
+ L16#:R1# -> OBJ 1
+ L17#:R0# -> LAM (n : Int R1#).case n of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} n (L1# {R1#} (subInt {R1#} {R1#} {R1#} n (1 {R1#} ())))}
+ L18#:R1# -> OBJ 1
+ L19#:R1# -> OBJ 0
+ L20#:R1# -> OBJ 1
+ L21#:R1# -> OBJ 1
+ L22#:R1# -> OBJ 2
+ L23#:R1# -> OBJ 6
+ L24#:R1# -> OBJ 24
+ L25#:R1# -> OBJ 120
+
+-- Tail recursive factorial.
+letrec {fac : [r : %].Int r -> Int r -> Int r = \(r :%).\(acc n :Int r).case n of {0  -> acc; _ -> fac {r} (mulInt {r} {r} {r} acc n) (subInt {r} {r} {r} n (1 {r} ()))}} in fac {R1#} (1 {R1#} ()) (5 {R1#} ())
+L1# {R1#} (1 {R1#} ()) (5 {R1#} ())
+(\(acc n :Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (1 {R1#} ()) (5 {R1#} ())
+L3# (1 {R1#} ()) (5 {R1#} ())
+L3# L4# (5 {R1#} ())
+(\(n : Int R1#).case n of {0  -> L4#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L4# n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (5 {R1#} ())
+L5# (5 {R1#} ())
+L5# L6#
+case L6# of {0  -> L4#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) (subInt {R1#} {R1#} {R1#} L6# (1 {R1#} ()))}
+L1# {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) (subInt {R1#} {R1#} {R1#} L6# (1 {R1#} ()))
+(\(acc n :Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (mulInt {R1#} {R1#} {R1#} L4# L6#) (subInt {R1#} {R1#} {R1#} L6# (1 {R1#} ()))
+L7# (mulInt {R1#} {R1#} {R1#} L4# L6#) (subInt {R1#} {R1#} {R1#} L6# (1 {R1#} ()))
+(\(n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} L4# L6#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (subInt {R1#} {R1#} {R1#} L6# (1 {R1#} ()))
+L8# (subInt {R1#} {R1#} {R1#} L6# (1 {R1#} ()))
+L8# (subInt {R1#} {R1#} {R1#} L6# L9#)
+L8# L10#
+case L10# of {0  -> mulInt {R1#} {R1#} {R1#} L4# L6#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))}
+L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
+(\(acc n :Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
+L11# (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
+(\(n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
+L12# (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
+L12# (subInt {R1#} {R1#} {R1#} L10# L13#)
+L12# L14#
+case L14# of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) (subInt {R1#} {R1#} {R1#} L14# (1 {R1#} ()))}
+L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) (subInt {R1#} {R1#} {R1#} L14# (1 {R1#} ()))
+(\(acc n :Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) (subInt {R1#} {R1#} {R1#} L14# (1 {R1#} ()))
+L15# (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) (subInt {R1#} {R1#} {R1#} L14# (1 {R1#} ()))
+(\(n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (subInt {R1#} {R1#} {R1#} L14# (1 {R1#} ()))
+L16# (subInt {R1#} {R1#} {R1#} L14# (1 {R1#} ()))
+L16# (subInt {R1#} {R1#} {R1#} L14# L17#)
+L16# L18#
+case L18# of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) (subInt {R1#} {R1#} {R1#} L18# (1 {R1#} ()))}
+L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) (subInt {R1#} {R1#} {R1#} L18# (1 {R1#} ()))
+(\(acc n :Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) (subInt {R1#} {R1#} {R1#} L18# (1 {R1#} ()))
+L19# (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) (subInt {R1#} {R1#} {R1#} L18# (1 {R1#} ()))
+(\(n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (subInt {R1#} {R1#} {R1#} L18# (1 {R1#} ()))
+L20# (subInt {R1#} {R1#} {R1#} L18# (1 {R1#} ()))
+L20# (subInt {R1#} {R1#} {R1#} L18# L21#)
+L20# L22#
+case L22# of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#) (subInt {R1#} {R1#} {R1#} L22# (1 {R1#} ()))}
+L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#) (subInt {R1#} {R1#} {R1#} L22# (1 {R1#} ()))
+(\(acc n :Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#) (subInt {R1#} {R1#} {R1#} L22# (1 {R1#} ()))
+L23# (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#) (subInt {R1#} {R1#} {R1#} L22# (1 {R1#} ()))
+(\(n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}) (subInt {R1#} {R1#} {R1#} L22# (1 {R1#} ()))
+L24# (subInt {R1#} {R1#} {R1#} L22# (1 {R1#} ()))
+L24# (subInt {R1#} {R1#} {R1#} L22# L25#)
+L24# L26#
+case L26# of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#) L26#) (subInt {R1#} {R1#} {R1#} L26# (1 {R1#} ()))}
+mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#
+mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L27# L10#) L14#) L18#) L22#
+mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L28# L14#) L18#) L22#
+mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L29# L18#) L22#
+mulInt {R1#} {R1#} {R1#} L30# L22#
+L31#
+STORE
+ NextLoc: 32
+ NextRgn: 1
+ Regions: {R1#}
+
+ Binds:
+ L1#:R0# -> LAM (r : %).\(acc n :Int r).case n of {0  -> acc; _ -> L1# {r} (mulInt {r} {r} {r} acc n) (subInt {r} {r} {r} n (1 {r} ()))}
+ L3#:R0# -> LAM (acc : Int R1#).\(n : Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L4#:R1# -> OBJ 1
+ L5#:R0# -> LAM (n : Int R1#).case n of {0  -> L4#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L4# n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L6#:R1# -> OBJ 5
+ L7#:R0# -> LAM (acc : Int R1#).\(n : Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L8#:R0# -> LAM (n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} L4# L6#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L9#:R1# -> OBJ 1
+ L10#:R1# -> OBJ 4
+ L11#:R0# -> LAM (acc : Int R1#).\(n : Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L12#:R0# -> LAM (n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L13#:R1# -> OBJ 1
+ L14#:R1# -> OBJ 3
+ L15#:R0# -> LAM (acc : Int R1#).\(n : Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L16#:R0# -> LAM (n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L17#:R1# -> OBJ 1
+ L18#:R1# -> OBJ 2
+ L19#:R0# -> LAM (acc : Int R1#).\(n : Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L20#:R0# -> LAM (n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L21#:R1# -> OBJ 1
+ L22#:R1# -> OBJ 1
+ L23#:R0# -> LAM (acc : Int R1#).\(n : Int R1#).case n of {0  -> acc; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} acc n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L24#:R0# -> LAM (n : Int R1#).case n of {0  -> mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} (mulInt {R1#} {R1#} {R1#} L4# L6#) L10#) L14#) L18#) L22#) n) (subInt {R1#} {R1#} {R1#} n (1 {R1#} ()))}
+ L25#:R1# -> OBJ 1
+ L26#:R1# -> OBJ 0
+ L27#:R1# -> OBJ 5
+ L28#:R1# -> OBJ 20
+ L29#:R1# -> OBJ 60
+ L30#:R1# -> OBJ 120
+ L31#:R1# -> OBJ 120
+

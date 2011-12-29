@@ -14,12 +14,12 @@ module DDCI.Core.Eval.Store
         
         -- * Operators
         , empty
-        , newLoc
+        , newLoc,       newLocs
         , newRgn,       newRgns
         , delRgn
         , hasRgn
         , addBind
-        , allocBind
+        , allocBind,    allocBinds
         , lookupBind
         , lookupRegionBind)
 where
@@ -111,6 +111,18 @@ newLoc store
    in   (store', Loc loc)
 
 
+-- | Create several new locations in the store.
+newLocs :: Int -> Store -> (Store, [Loc])
+newLocs n store
+ = let  lFirst  = storeNextLoc store
+        lLast   = lFirst + n
+        
+        locs    = [lFirst .. lLast]
+        store'  = store { storeNextLoc = lLast + 1 }
+    in  (store', map Loc locs)
+
+
+
 -- | Create a new region in the store.
 newRgn  :: Store -> (Store, Rgn)
 newRgn store
@@ -151,12 +163,25 @@ addBind loc rgn sbind store
         { storeBinds    = Map.insert loc (rgn, sbind) (storeBinds store) }
 
 
--- | Allocate a new binding into the given region, returning the new location.
+-- | Allocate a new binding into the given region,
+--    returning the new location.
 allocBind :: Rgn -> SBind -> Store -> (Store, Loc)
 allocBind rgn sbind store
  = let  (store1, loc)   = newLoc store
         store2          = addBind loc rgn sbind store1
    in   (store2, loc)
+
+
+-- | Alloc some recursive bindings into the given region, 
+--     returning the new locations.
+allocBinds :: ([[Loc] -> (Rgn, SBind)]) -> Store -> (Store, [Loc])
+allocBinds mkSBinds store
+ = let  n               = length mkSBinds
+        (store1, locs)  = newLocs n store
+        rgnBinds        = map (\mk -> mk locs) mkSBinds
+        store2          = foldr (\(l, (r, b)) -> addBind l r b) store1
+                        $ zip locs rgnBinds 
+   in   (store2, locs)
 
 
 -- | Lookup a the binding for a location.

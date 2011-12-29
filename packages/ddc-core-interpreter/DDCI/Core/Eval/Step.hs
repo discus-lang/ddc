@@ -22,6 +22,7 @@ import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Base.Pretty
 
+
 -- step -----------------------------------------------------------------------
 -- | Perform a single step reduction of a core expression.
 step    :: Store                      -- ^ Current store.
@@ -76,8 +77,11 @@ step' store (XApp _ xL1 x2)
         , Just (Rgn 0, SLam b xBody) <- lookupRegionBind l1 store
         , isWnf store x2
         = case takeSubstBoundOfBind b of
-           Nothing      -> Just (store, xBody)
-           Just u       -> Just (store, substituteX u x2 xBody)
+           Nothing -> Just (store, xBody)
+           Just u  
+            | XType    t2 <- x2 -> Just (store, substituteT u t2 xBody)
+            | XWitness w2 <- x2 -> Just (store, substituteW u w2 xBody)
+            | otherwise         -> Just (store, substituteX u x2 xBody)
 
 
 -- (EvApp2): Evaluate the right of an application.
@@ -105,6 +109,37 @@ step' store (XLet _ (LLet b x1) x2)
 step' store (XLet a (LLet b x1) x2)
         | Just (store', x1')    <- step store x1
         = Just (store', XLet a (LLet b x1') x2)
+
+
+-- (EvLetRec): Add recursive bindings to the store.
+step' store (XLet _ (LRec bxs) x2)
+ = let  -- TODO: check this doesn't fail, something.
+        -- Maybe drop binding with non-binder.
+        (bs, xs)        = unzip bxs
+        Just us         = sequence $ map takeSubstBoundOfBind bs
+        ts              = map typeOfBind bs
+
+        -- Allocate new locations in the store to hold the expressions.
+        (store1, ls)    = newLocs (length us) store
+        xls             = [XCon () (UPrim (NameLoc l) t) | (l, t) <- zip ls ts]
+
+        -- Substitute locations into all the bindings.
+        xs'             = map (substituteXs (zip us xls)) xs
+
+        -- Create store objects for each of the bindings.
+        Just os         = sequence 
+                        $ map (\x -> case x of
+                                        XLam _ b xBody  -> Just $ SLam b xBody
+                                        _               -> Nothing)
+                              xs'
+
+        -- Add all the objects to the store.
+        store2          = foldr (\(l, o) -> addBind l (Rgn 0) o) store1
+                        $ zip ls os
+        
+        -- Substitute locations into the body expression.
+        x2'             = substituteXs (zip us xls) x2
+   in   Just (store2, x2')
 
 
 -- (EvCreateRegion): Create a new region.
