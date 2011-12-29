@@ -119,7 +119,17 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                         <+> text "="
                         <+> ppr x
         
-        LRec{}          -> error "ppr[Lets]: not finished"
+        LRec bxs
+         -> let pprLetRecBind (b, x)
+                 =   ppr (binderOfBind b)
+                 <+> text ":"
+                 <+> ppr (typeOfBind b)
+                 <+> text "="
+                 <+> ppr x
+        
+           in   text "letrec"
+                 <+> braces (cat $ punctuate (text "; ") 
+                                 $ map pprLetRecBind bxs)
 
         LLetRegion b []
          -> text "letregion"

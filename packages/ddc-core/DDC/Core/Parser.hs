@@ -40,7 +40,7 @@ pExp
                 $ map (\b -> T.makeBindFromBinder b t) bs
 
 
-        -- Let expression with type annotation.
+        -- let expression
  , do   pTok KLet
         b       <- pBind (T.tBot T.kData)
         pTok KEquals
@@ -49,6 +49,14 @@ pExp
         x2      <- pExp
         return  $ XLet () (LLet b x1) x2
         
+
+        -- letrec expression
+ , do   pTok KLetRec
+        lets    <- P.sepBy1 pLetRecBind (pTok KSemiColon)
+        pTok KIn
+        x       <- pExp
+        return  $ XLet () (LRec lets) x
+
 
         -- Local region binding
         --   let region r1 with { w1 : T1 ... } in T2
@@ -108,6 +116,16 @@ pExp
  ]
 
  <?> "an expression"
+
+
+pLetRecBind :: Ord n => Parser n (Bind n, Exp () n)
+pLetRecBind 
+ = do   b       <- T.pBinder
+        pTok KColon
+        t       <- T.pType
+        pTok KEquals
+        x      <- pExp
+        return  (T.makeBindFromBinder b t, x)
 
 
 -- Applications.

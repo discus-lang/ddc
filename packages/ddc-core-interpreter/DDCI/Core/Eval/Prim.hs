@@ -93,9 +93,14 @@ stepPrimOp
                                 --   if the operator steps, otherwise Nothing.
 
 -- Addition of Ints.
-stepPrimOp (NamePrimOp PrimOpAddInt) [xR1, xR2, xR3, xL1, xL2] store
+stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
         -- unpack the args
-        | Just r1       <- takeHandleX xR1
+        | Just fOp      <- lookup op 
+                                [ (PrimOpAddInt, (+))
+                                , (PrimOpSubInt, (-))
+                                , (PrimOpMulInt, (*))
+                                , (PrimOpDivInt, div) ]
+        , Just r1       <- takeHandleX xR1
         , Just r2       <- takeHandleX xR2
         , XType tR3     <- xR3
         , Just r3       <- takeHandleX xR3        
@@ -114,7 +119,7 @@ stepPrimOp (NamePrimOp PrimOpAddInt) [xR1, xR2, xR3, xL1, xL2] store
         , Store.hasRgn store r3
 
         -- do the actual computation
-        , i3    <- i1 + i2
+        , i3    <- i1 `fOp` i2
         
         -- write the result to a new location in the store
         , (store1, l3)  <- Store.allocBind r3 (SObj (NameInt i3) []) store

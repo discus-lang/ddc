@@ -237,7 +237,7 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
  = do   -- Check the right of the binding.
         (t12, effs12, clo12)  <- checkExpM env x12
 
-        -- Check binder annotation
+        -- Check binder annotation against the type we inferred for the right.
         (b11', k11')    <- checkLetBindOfTypeM xx env t12 b11
 
         -- The right of the binding should have data kind.
@@ -247,6 +247,8 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
         -- Check the body expression.
         let env1  = Env.extend b11' env
         (t2, effs2, clo2)     <- checkExpM env1 x2
+
+        -- TODO: body should have data kind.
 
         -- Mask closure terms due to locally bound value vars.
         let clo2_masked
@@ -259,12 +261,44 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
                , clo12  `Set.union` clo2_masked)
 
 
+-- letrec -----------------------------------------
+checkExpM env _xx@(XLet _ (LRec bxs) xBody)
+ = do   
+        let (bs, xs)    = unzip bxs
+
+        -- Check all the annotations.
+        _ks             <- mapM (checkTypeM env) $ map typeOfBind bs
+        -- TODO: check all the annots have data kind.
+
+        -- All variables are in scope in all right hand sides.
+        let env'        = Env.extends bs env
+
+        -- Check the right hand sides.
+        (_ts, _effssBinds, clossBinds) 
+                <- liftM unzip3 $ mapM (checkExpM env') xs
+
+        -- TODO: check annots against inferred types of right hand sides
+        -- TODO: all bindings need to be pure.
+        -- TODO: all bindings need to have data kind.
+
+        -- Check the body expression.
+        (tBody, effsBody, closBody) 
+                <- checkExpM env' xBody
+
+        -- TODO: mask closure terms.
+        -- TODO: body should have data kind.
+
+        return  ( tBody
+                , effsBody
+                , Set.unions (closBody : clossBinds))
+
+
 -- letregion --------------------------------------
 -- TODO: check well formedness of witness set.
 checkExpM env xx@(XLet _ (LLetRegion b bs) x)
  -- The parser should ensure the bound variable always has region kind.
  | not $ isRegionKind (typeOfBind b)
- = error "checkExpM: LRegion does not bind a region variable."                                  -- TODO: real error message
+ = error "checkExpM: LRegion does not bind a region variable."                  -- TODO: real error message
 
  | otherwise
  = case takeSubstBoundOfBind b of

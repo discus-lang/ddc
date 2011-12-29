@@ -104,6 +104,8 @@ data PrimOp
         = PrimOpNegInt
         | PrimOpAddInt
         | PrimOpSubInt
+        | PrimOpMulInt
+        | PrimOpDivInt
         | PrimOpUpdateInt
         deriving (Show, Eq, Ord)
 
@@ -114,6 +116,8 @@ instance Pretty PrimOp where
         PrimOpNegInt    -> text "negInt"
         PrimOpAddInt    -> text "addInt"
         PrimOpSubInt    -> text "subInt"
+        PrimOpMulInt    -> text "mulInt"
+        PrimOpDivInt    -> text "divInt"
         PrimOpUpdateInt -> text "updateInt"
 
 
@@ -128,6 +132,8 @@ readName str@(c:rest)
                 "negInt"        -> Just $ NamePrimOp PrimOpNegInt
                 "addInt"        -> Just $ NamePrimOp PrimOpAddInt
                 "subInt"        -> Just $ NamePrimOp PrimOpSubInt
+                "mulInt"        -> Just $ NamePrimOp PrimOpMulInt
+                "divInt"        -> Just $ NamePrimOp PrimOpDivInt
                 "updateInt"     -> Just $ NamePrimOp PrimOpUpdateInt
                 _               -> Just $ NameVar str
         

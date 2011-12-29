@@ -68,8 +68,13 @@ instance Spread (Lets a) where
         LLet    b x     
          -> let b'      = spread env b
             in  LLet b' (spread (Env.extend b' env) x)
-                
-        LRec{}          -> error "spread LRec not done"
+        
+        LRec bxs
+         -> let (bs, xs) = unzip bxs
+                bs'      = map (spread env) bs
+                env'     = Env.extends bs' env
+                xs'      = map (spread env') xs
+             in LRec (zip bs' xs')
 
         LLetRegion b bs
          -> let b'      = spread env b
