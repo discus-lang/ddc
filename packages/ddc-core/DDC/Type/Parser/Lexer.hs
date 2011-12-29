@@ -62,7 +62,7 @@ readTwConBuiltin ss
         "DeepMutable"   -> Just TwConDeepMutable
         "Lazy"          -> Just TwConLazy
         "HeadLazy"      -> Just TwConHeadLazy
-        "Direct"        -> Just TwConDirect
+        "Manifest"      -> Just TwConManifest
         "Pure"          -> Just TwConPure
         "Empty"         -> Just TwConEmpty
         _               -> Nothing

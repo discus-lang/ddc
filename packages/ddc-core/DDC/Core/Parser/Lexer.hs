@@ -37,7 +37,7 @@ readWiConBuiltin ss
         "const"         -> Just WiConConst
         "mutable"       -> Just WiConMutable
         "lazy"          -> Just WiConLazy
-        "direct"        -> Just WiConDirect
+        "manifest"      -> Just WiConManifest
         "use"           -> Just WiConUse
         "read"          -> Just WiConRead
         "alloc"         -> Just WiConAlloc

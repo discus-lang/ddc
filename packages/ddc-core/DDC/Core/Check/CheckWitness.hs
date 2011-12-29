@@ -127,8 +127,8 @@ typeOfWiCon wc
         WiConLazy
          -> tForall kRegion $ \r -> tLazy r
 
-        WiConDirect
-         -> tForall kRegion $ \r -> tDirect r
+        WiConManifest
+         -> tForall kRegion $ \r -> tManifest r
 
         WiConUse
          -> tForall kRegion $ \r -> tGlobal r `tImpl` tConst r `tImpl` (tEmpty $ tUse r)

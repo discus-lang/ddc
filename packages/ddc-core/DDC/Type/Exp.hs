@@ -214,8 +214,8 @@ data TwCon
         -- | Laziness of the primary region in some type.
         | TwConHeadLazy         -- :: * ~> @
 
-        -- | Directness of some region (not lazy).
-        | TwConDirect           -- :: % ~> @
+        -- | Manifestness of some region (not lazy).
+        | TwConManifest         -- :: % ~> @
 
         -- | Distinctness \/ Separation of regions.
         --   Arity must be >= 2.

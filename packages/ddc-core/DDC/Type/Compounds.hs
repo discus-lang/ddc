@@ -53,7 +53,7 @@ module DDC.Type.Compounds
         , tConst,       tDeepConst
         , tMutable,     tDeepMutable
         , tLazy,        tHeadLazy
-        , tDirect
+        , tManifest
         , tDistinct
         
         , tConData0,    tConData1)
@@ -352,7 +352,7 @@ tMutable        = twCon1 TwConMutable
 tDeepMutable    = twCon1 TwConDeepMutable
 tLazy           = twCon1 TwConLazy
 tHeadLazy       = twCon1 TwConHeadLazy
-tDirect         = twCon1 TwConDirect
+tManifest       = twCon1 TwConManifest
 tDistinct       = twConN TwConDistinct 
 
 tcCon1 tc t  = (TCon $ TyConComp    tc) `tApp` t

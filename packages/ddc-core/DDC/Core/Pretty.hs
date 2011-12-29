@@ -161,7 +161,7 @@ instance Pretty WiCon where
         WiConConst      -> text "const"
         WiConMutable    -> text "mutable"
         WiConLazy       -> text "lazy"
-        WiConDirect     -> text "direct"
+        WiConManifest   -> text "manifest"
         WiConUse        -> text "use"
         WiConRead       -> text "read"
         WiConAlloc      -> text "alloc"

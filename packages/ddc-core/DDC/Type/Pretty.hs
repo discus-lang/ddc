@@ -166,7 +166,7 @@ instance Pretty TwCon where
         TwConDeepMutable-> text "DeepMutable"
         TwConLazy       -> text "Lazy"
         TwConHeadLazy   -> text "HeadLazy"
-        TwConDirect     -> text "Direct"
+        TwConManifest   -> text "Manifest"
         TwConDistinct n -> text "Distinct" <> (text $ show n)
         
 

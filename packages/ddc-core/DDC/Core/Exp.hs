@@ -143,13 +143,13 @@ data WiCon
 
         -- | Witness that a region is lazy.
         --   This lets is allocate thunks into the region,
-        --   and prevents it from being Direct.
-        | WiConLazy     -- lazy     :: [r: %]. Const r
+        --   and prevents it from being Manifest.
+        | WiConLazy     -- lazy     :: [r: %].Lazy r
         
-        -- | Witness that a region is direct.
+        -- | Witness that a region is manifest.
         --   This ensures there are no thunks in the region,
         --   which prevents it from being Lazy.
-        | WiConDirect   -- direct   :: [r: %]. Mutable r
+        | WiConManifest -- manifest :: [r: %]. Manifest r
 
         -- | Hide the use of a global region.
         --   This lets us empty the closure of an expression, and rely

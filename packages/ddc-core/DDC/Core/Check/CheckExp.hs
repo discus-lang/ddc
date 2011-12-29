@@ -537,11 +537,11 @@ checkWitnessBindM xx uRegion bsWit bWit
          | otherwise    -> checkWitnessArg t2
 
         TApp (TCon (TyConWitness TwConLazy))    t2
-         | Just bConflict <- L.lookup (tDirect t2)  btsWit
+         | Just bConflict <- L.lookup (tManifest t2)  btsWit
          -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
 
-        TApp (TCon (TyConWitness TwConDirect))  t2
+        TApp (TCon (TyConWitness TwConManifest))  t2
          | Just bConflict <- L.lookup (tLazy t2)    btsWit
          -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
