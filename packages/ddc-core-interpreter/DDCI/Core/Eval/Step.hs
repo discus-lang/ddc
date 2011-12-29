@@ -15,11 +15,12 @@ import DDCI.Core.Eval.Name
 import DDCI.Core.Eval.Prim
 import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Compounds
-import DDC.Core.Compounds
+import DDC.Core.Check
 import DDC.Core.Transform
+import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Type.Compounds
-              
+import DDC.Base.Pretty
 
 -- step -----------------------------------------------------------------------
 -- | Perform a single step reduction of a core expression.
@@ -27,6 +28,7 @@ step    :: Store                      -- ^ Current store.
         -> Exp () Name                -- ^ Expression to check.
         -> Maybe (Store, Exp () Name) -- ^ New store and expression.
 
+-- TODO: split casts off the front.
 step store xx
   = step' store xx
 
@@ -34,23 +36,53 @@ step store xx
 -- (EvPrim): Step a primitive operator or constructor defined by the client.
 step' store xx
         | Just (p, xs)          <- takeXPrimApps xx
-        , and $ map isWnf xs
+        , and $ map (isWnf store) xs
         , Just (store', x')     <- stepPrimOp p xs store
         = Just (store', x')
+
+
+-- (EvLam): Add abstractions to the heap.
+-- NOTE: If the abstraction is fully applied we could just reduce its arguments
+--       and do the substitution without going via the heap. We only need the
+--       heap to store partial applications.
+step' store xx@(XLam _ b x)
+ = let  (store', l)             = allocBind (Rgn 0) (SLam b x) store
+
+        -- We need the type of the expression to attach to the location
+        -- This fakes the store typing from the formal typing rules.
+   in   case typeOfExp xx of
+         Left err  -> error $ pretty 
+                    $ text "step: abstracton is mistyped" <+> line <+> ppr err
+         Right t   -> Just (store', XCon () (UPrim (NameLoc l) t))
 
 
 -- (EvAlloc): Construct some data in the heap.
 step' store xx
         | Just (u, xs)          <- takeXConApps xx
-        , and $ map isWnf xs
+        , case u of
+            UName NameCon{}     _     -> True
+            UPrim NamePrimCon{} _     -> True
+            UPrim NameInt{}     _     -> True
+            _                         -> False
+        , and $ map (isWnf store) xs
         = case u of
                 UPrim n _       -> stepPrimCon n xs store
                 _               -> error "step': non primitive constructor"
 
 
+-- (EvAppSubst): Substitute argument into abstraction.
+step' store (XApp _ xL1 x2)
+        | Just l1                    <- takeLocX xL1
+        , Just (Rgn 0, SLam b xBody) <- lookupRegionBind l1 store
+        , isWnf store x2
+        = case takeSubstBoundOfBind b of
+           Nothing      -> Just (store, xBody)
+           Just u       -> Just (store, substituteX u x2 xBody)
+
+
 -- (EvApp2): Evaluate the right of an application.
 step' store (XApp a x1 x2)
-        | isWnf x1
+        | isWnf store x1
         , Just (store', x2')    <- step store x2
         = Just (store', XApp a x1 x2')
 
@@ -63,7 +95,7 @@ step' store (XApp a x1 x2)
 
 -- (EvLetSubst): Substitute in a bound value in a let expression.
 step' store (XLet _ (LLet b x1) x2)
-        | isWnf x1
+        | isWnf store x1
         = case takeSubstBoundOfBind b of
            Nothing      -> Just (store, x2)
            Just u       -> Just (store, substituteX u x1 x2)
@@ -102,7 +134,7 @@ step' store (XLet a (LLetRegion bRegion bws) x)
 
 -- (EvEjectRegion): Eject completed value from the region context, and delete the region.
 step' store (XLet _ (LWithRegion r) x)
-        | isWnf x
+        | isWnf store x
         , Just store'    <- primDelRegion r store
         = Just (store', x)
 
@@ -162,33 +194,41 @@ tagMatchesPat n (PData u' _)
 -- | Check if an expression is a weak normal form (a value).
 --   This is not /strong/ normal form because we don't require expressions
 --   under lambdas to also be values.
-isWnf :: Exp a Name -> Bool
-isWnf xx
+isWnf :: Store -> Exp a Name -> Bool
+isWnf store xx
  = case xx of
          XVar{}         -> True
          XCon{}         -> True
-         XLam{}         -> True
+         XLam{}         -> False
          XLet{}         -> False
          XCase{}        -> False
-         XCast _ _ x    -> isWnf x
+         XCast _ _ x    -> isWnf store x
          XType{}        -> True
          XWitness{}     -> True
 
          XApp _ x1 x2
+
           | Just (n, xs)     <- takeXPrimApps xx
-          , and $ map isWnf xs
+          , and $ map (isWnf store) xs
           , Just a           <- arityOfName n
           , length xs == a
           -> False
 
+          -- Application of a lambda in the store is not wnf.
+          | Just (u, _xs)       <- takeXConApps xx
+          , UPrim (NameLoc l) _ <- u
+          , Just SLam{}         <- lookupBind l store
+          -> False
+
           | Just (u, xs)     <- takeXConApps xx
-          , and $ map isWnf xs
+          , and $ map (isWnf store) xs
           , UPrim n _        <- u
           , Just a           <- arityOfName n
           , length xs == a   
           -> False
 
-          | otherwise   -> isWnf x1 && isWnf x2
+          | otherwise   
+          -> isWnf store x1 && isWnf store x2
 
 
 

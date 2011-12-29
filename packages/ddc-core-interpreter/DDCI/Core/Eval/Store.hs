@@ -23,6 +23,7 @@ module DDCI.Core.Eval.Store
         , lookupBind
         , lookupRegionBind)
 where
+import DDC.Core.Exp
 import DDCI.Core.Eval.Name
 import Control.Monad
 import DDC.Core.Pretty          hiding (empty)
@@ -52,9 +53,15 @@ data Store
 -- | Store binding.
 --   These are "naked objects" that can be allocated directly into the heap.
 data SBind 
+        -- Algebraic data object.
         = SObj
         { sbindDataTag          :: Name
         , sbindDataArgs         :: [Loc] }
+
+        -- Lambda abstraction.
+        | SLam
+        { sbindLamBind          :: Bind Name
+        , sbindLamBody          :: Exp () Name }
         deriving (Eq, Show)
 
 
@@ -80,7 +87,12 @@ instance Pretty SBind where
   = text "OBJ"  <+> ppr tag
                 <+> (sep $ map ppr svs)
  
+ ppr (SLam b x)    
+  = text "LAM"  <+> (parens $ ppr b)
+                <>  text "."
+                <>  ppr x
  
+
 -- Operators ------------------------------------------------------------------
 -- | An empty store, with no bindings or regions.
 empty   :: Store

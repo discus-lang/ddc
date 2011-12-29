@@ -7,8 +7,8 @@ Conflicting witness types with letregion.
 -- Error: conflicting witnesses
 Conflicting witness types with letregion.
       Witness binding: w1 : Lazy r1
-       conflicts with: w2 : Direct r1
-        when checking: letregion r1 with {w1 : Lazy r1; w2 : Direct r1} in ()
+       conflicts with: w2 : Manifest r1
+        when checking: letregion r1 with {w1 : Lazy r1; w2 : Manifest r1} in ()
 
 -- Error: wrong region in witness set
 Witness type is not for bound region.

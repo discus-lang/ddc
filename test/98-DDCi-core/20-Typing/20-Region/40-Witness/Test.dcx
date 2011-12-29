@@ -7,7 +7,7 @@
 
 -- Error: conflicting witnesses
 :check\
- letregion r1 with {w1 : Lazy r1;    w2 : Direct r1} in\
+ letregion r1 with {w1 : Lazy r1;    w2 : Manifest r1} in\
  ()
 
 -- Error: wrong region in witness set

@@ -64,7 +64,10 @@ instance SubstituteX Exp where
 
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
-        XLam{}          -> error "substituteWithX: XLam not done yet"
+        XLam a b xBody
+         -> let (stack', b')    = pushBind fns stack b
+                xBody'          = substituteWithX u x fns stack' xBody
+            in  XLam a b' xBody'
 
         XLet a (LLet b x1) x2
          -> let x1'             = substituteWithX u x fns stack x1
