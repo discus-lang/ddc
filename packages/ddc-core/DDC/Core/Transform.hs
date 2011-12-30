@@ -7,13 +7,17 @@ module DDC.Core.Transform
         , SubstituteT   (..)
         , substituteT
         , substituteTs
+        , substituteBoundT
 
         , SubstituteW   (..)
         , substituteW
         , substituteWs
 
         , SubstituteX   (..)
+        , substituteX
         , substituteXs
+        , substituteXArg
+        , substituteXArgs
 
         , TransformUpMX (..)
         , transformUpX)

@@ -22,8 +22,8 @@ cmdSubstTT ss
 
         goSubstTT (TApp (TForall b t1) t2)
          = case b of
-                BName n t -> putStrLn $ show $ ppr $ T.substituteT (UName n t) t2 t1
-                BAnon t   -> putStrLn $ show $ ppr $ T.substituteT (UIx   0 t) t2 t1
+                BName n t -> putStrLn $ show $ ppr $ T.substituteT (BName n t) t2 t1
+                BAnon t   -> putStrLn $ show $ ppr $ T.substituteT (BAnon t)   t2 t1
                 BNone _   -> putStrLn $ show $ ppr t1
          
         goSubstTT _ 

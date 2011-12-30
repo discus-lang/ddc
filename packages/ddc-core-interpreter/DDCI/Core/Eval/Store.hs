@@ -59,8 +59,8 @@ data SBind
         , sbindDataArgs         :: [Loc] }
 
         -- Lambda abstraction.
-        | SLam
-        { sbindLamBind          :: Bind Name
+        | SLams
+        { sbindLamBinds         :: [Bind Name]
         , sbindLamBody          :: Exp () Name }
         deriving (Eq, Show)
 
@@ -87,8 +87,8 @@ instance Pretty SBind where
   = text "OBJ"  <+> ppr tag
                 <+> (sep $ map ppr svs)
  
- ppr (SLam b x)    
-  = text "LAM"  <+> (parens $ ppr b)
+ ppr (SLams bs x)    
+  = text "LAMS" <+> sep (map (parens . ppr) bs)
                 <>  text "."
                 <>  ppr x
  

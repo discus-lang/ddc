@@ -125,14 +125,9 @@ checkExpM env xx@(XApp _ x1 (XType t2))
         case t1 of
          TForall b11 t12
           | typeOfBind b11 == k2
-          -> case takeSubstBoundOfBind b11 of
-              Just u    -> return ( substituteT u t2 t12
-                                  , substituteT u t2 effs1
-                                  , clos1 `Set.union` taggedClosureOfTyArg t2)
-
-              Nothing   -> return ( t12
-                                  , effs1
-                                  , clos1 `Set.union` taggedClosureOfTyArg t2)
+          -> return ( substituteT b11 t2 t12
+                    , substituteT b11 t2 effs1
+                    , clos1 `Set.union` taggedClosureOfTyArg t2)
 
           | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
          _              -> throw $ ErrorAppNotFun   xx t1 t2

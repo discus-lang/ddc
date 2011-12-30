@@ -2,7 +2,13 @@
 module DDC.Core.Compounds 
         ( bindsOfLets
         , bindsOfPat
+
+          -- * Lambdas
+        , makeXLams
         , takeXLams
+
+          -- * Applications
+        , makeXApps
         , takeXApps
         , takeXConApps
         , takeXPrimApps)
@@ -28,6 +34,14 @@ bindsOfPat pp
         PData _ bs        -> bs
 
 
+-- Lambdas ---------------------------------------------------------------------
+
+-- | Make some nested lambda abstractions.
+makeXLams :: a -> [Bind n] -> Exp a n -> Exp a n
+makeXLams a bs x
+        = foldr (XLam a) x (reverse bs)
+
+
 -- | Split nested lambdas from the front of an expression
 --   or `Nothing` if there was no outer lambda
 takeXLams :: Exp a n -> Maybe ([Bind n], Exp a n)
@@ -37,6 +51,12 @@ takeXLams xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
+
+
+-- Applications ---------------------------------------------------------------
+-- | Build sequence of type applications.
+makeXApps   :: a -> Exp a n -> [Exp a n] -> Exp a n
+makeXApps a t1 ts     = foldl (XApp a) t1 ts
 
 
 -- | Flatten an application into the function parts and arguments, if any.

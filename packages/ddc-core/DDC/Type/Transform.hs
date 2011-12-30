@@ -16,6 +16,7 @@ module DDC.Type.Transform
         , SubstituteT   (..)
         , substituteT
         , substituteTs
+        , substituteBoundT
 
           -- * Type instantiation
         , instantiateT

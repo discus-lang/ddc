@@ -4,6 +4,7 @@ module DDC.Type.Transform.SubstituteT
         ( SubstituteT(..)
         , substituteT
         , substituteTs
+        , substituteBoundT
 
         , BindStack(..)
         , pushBind
@@ -22,24 +23,23 @@ import qualified Data.Set       as Set
 import Data.Set                 (Set)
 
 
-class SubstituteT (c :: * -> *) where
- -- | Substitute a type into some thing.
- --   In the target, if we find a named binder that would capture a free variable
- --   in the type to substitute, then we rewrite that binder to anonymous form,
- --   avoiding the capture.
- substituteWithT
-        :: forall n. Ord n
-        => Bound n              -- ^ Bound variable that we're subsituting into.
-        -> Type n               -- ^ Type to substitute.
-        -> Set  n               -- ^ Names of free varaibles in the type to substitute.
-        -> BindStack n          -- ^ Bind stack.
-        -> c n -> c n
+-- | Substitute a `Type` for the `Bound` corresponding to some `Bind` in a thing.
+substituteT :: (SubstituteT c, Ord n) => Bind n -> Type n -> c n -> c n
+substituteT b t x
+ = case takeSubstBoundOfBind b of
+    Just u      -> substituteBoundT u t x
+    _           -> x
 
 
--- | Wrapper for `substituteWithT` that determines the set of free names in the
---   type being substituted, and starts with an empty binder stack.
-substituteT :: (SubstituteT c, Ord n) => Bound n -> Type n -> c n -> c n
-substituteT u t x
+-- | Wrapper for `substituteT` to substitute multiple things.
+substituteTs :: (SubstituteT c, Ord n) => [(Bind n, Type n)] -> c n -> c n
+substituteTs bts x
+        = foldr (uncurry substituteT) x bts
+
+
+-- | Substitute a `Type` for `Bound` in some thing.
+substituteBoundT :: (SubstituteT c, Ord n) => Bound n -> Type n -> c n -> c n
+substituteBoundT u t x
  = let -- Determine the free names in the type we're subsituting.
        -- We'll need to rename binders with the same names as these
        freeNames       = Set.fromList
@@ -52,10 +52,19 @@ substituteT u t x
   in   substituteWithT u t freeNames stack x
 
 
--- | Wrapper for `substituteT` to substitute multiple things.
-substituteTs :: (SubstituteT c, Ord n) => [(Bound n, Type n)] -> c n -> c n
-substituteTs bts x
-        = foldr (uncurry substituteT) x bts
+-- SubstituteT ----------------------------------------------------------------
+class SubstituteT (c :: * -> *) where
+ -- | Substitute a type into some thing.
+ --   In the target, if we find a named binder that would capture a free variable
+ --   in the type to substitute, then we rewrite that binder to anonymous form,
+ --   avoiding the capture.
+ substituteWithT
+        :: forall n. Ord n
+        => Bound n       -- ^ Bound variable that we're subsituting into.
+        -> Type n        -- ^ Type to substitute.
+        -> Set  n        -- ^ Names of free varaibles in the type to substitute.
+        -> BindStack n   -- ^ Bind stack.
+        -> c n -> c n
 
 
 -- Instances ------------------------------------------------------------------

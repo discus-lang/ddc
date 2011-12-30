@@ -43,11 +43,9 @@ step' store xx
 
 
 -- (EvLam): Add abstractions to the heap.
--- NOTE: If the abstraction is fully applied we could just reduce its arguments
---       and do the substitution without going via the heap. We only need the
---       heap to store partial applications.
-step' store xx@(XLam _ b x)
- = let  (store', l)             = allocBind (Rgn 0) (SLam b x) store
+step' store xx@XLam{}
+ = let  Just (bs, xBody)        = takeXLams xx
+        (store', l)             = allocBind (Rgn 0) (SLams bs xBody) store
 
         -- We need the type of the expression to attach to the location
         -- This fakes the store typing from the formal typing rules.
@@ -71,17 +69,56 @@ step' store xx
                 _               -> error "step': non primitive constructor"
 
 
--- (EvAppSubst): Substitute argument into abstraction.
-step' store (XApp _ xL1 x2)
-        | Just l1                    <- takeLocX xL1
-        , Just (Rgn 0, SLam b xBody) <- lookupRegionBind l1 store
-        , isWnf store x2
-        = case takeSubstBoundOfBind b of
-           Nothing -> Just (store, xBody)
-           Just u  
-            | XType    t2 <- x2 -> Just (store, substituteT u t2 xBody)
-            | XWitness w2 <- x2 -> Just (store, substituteW u w2 xBody)
-            | otherwise         -> Just (store, substituteX u x2 xBody)
+-- (EvAppArgs): Step the left-most non-wnf argument of a lambda.
+step' store xx
+        | xL1 : xsArgs  <- takeXApps xx
+        , Just l1       <- takeLocX xL1
+        , Just (Rgn 0, SLams bs _xBody)  <- lookupRegionBind l1 store
+
+        -- See if an arg to any of the lambdas needs to be stepped.
+        , arity         <- length bs
+        , wnfs          <- map (isWnf store) xsArgs
+        , or (take arity $ map not wnfs) 
+
+        = let -- Step the first non-wnf argument.
+              stepArg _          []     = error "stepArg: no more args"
+              stepArg []         xs     = (store, xs)
+              stepArg (True:ws)  (x:xs)  
+               = let (store', xs') = stepArg ws xs
+                 in  (store', x : xs')
+              stepArg (False:_)  (x:xs)
+               = let Just (store', x')  = step store x
+                 in  (store', x': xs)
+
+              (store2, xsArgs')         = stepArg wnfs xsArgs
+
+          in  Just (store2, makeXApps () xL1 xsArgs')
+
+
+-- (EvAppSubst): Substitute wnf arguments into an abstraction.
+step' store xx
+        | xL1 : xsArgs  <- takeXApps xx
+        , Just l1       <- takeLocX xL1
+        , Just (Rgn 0, SLams bs xBody) <- lookupRegionBind l1 store
+
+        -- Take as many wnfs as possible to satisfy binders.
+        , arity                 <- length bs
+        , (wnfs, nonWnfs)       <- span (isWnf store) xsArgs
+
+        -- If we have any wnfs at all, then we can do a substitution.
+        , not $ null wnfs
+
+        = let   argsToSubst     = take arity wnfs
+                argsOverApplied = drop (length argsToSubst) wnfs
+                argsLeftover    = argsOverApplied ++ nonWnfs
+                
+                bsToSubst       = take (length argsToSubst) bs
+                bsLeftover      = drop (length bsToSubst)   bs
+
+                xResult         = substituteXArgs (zip bsToSubst argsToSubst)
+                                $ makeXLams () bsLeftover xBody
+
+          in    Just (store, makeXApps () xResult argsLeftover)
 
 
 -- (EvApp2): Evaluate the right of an application.
@@ -100,9 +137,7 @@ step' store (XApp a x1 x2)
 -- (EvLetSubst): Substitute in a bound value in a let expression.
 step' store (XLet _ (LLet b x1) x2)
         | isWnf store x1
-        = case takeSubstBoundOfBind b of
-           Nothing      -> Just (store, x2)
-           Just u       -> Just (store, substituteX u x1 x2)
+        = Just (store, substituteX b x1 x2)
 
 
 -- (EvLetStep): Step the binding in a let-expression.
@@ -116,21 +151,20 @@ step' store (XLet _ (LRec bxs) x2)
  = let  -- TODO: check this doesn't fail, something.
         -- Maybe drop binding with non-binder.
         (bs, xs)        = unzip bxs
-        Just us         = sequence $ map takeSubstBoundOfBind bs
         ts              = map typeOfBind bs
 
         -- Allocate new locations in the store to hold the expressions.
-        (store1, ls)    = newLocs (length us) store
+        (store1, ls)    = newLocs (length bs) store
         xls             = [XCon () (UPrim (NameLoc l) t) | (l, t) <- zip ls ts]
 
         -- Substitute locations into all the bindings.
-        xs'             = map (substituteXs (zip us xls)) xs
+        xs'             = map (substituteXs (zip bs xls)) xs
 
         -- Create store objects for each of the bindings.
         Just os         = sequence 
-                        $ map (\x -> case x of
-                                        XLam _ b xBody  -> Just $ SLam b xBody
-                                        _               -> Nothing)
+                        $ map (\x -> case takeXLams x of
+                                        Just (bs', xBody) -> Just $ SLams bs' xBody
+                                        _                 -> Nothing)
                               xs'
 
         -- Add all the objects to the store.
@@ -138,7 +172,7 @@ step' store (XLet _ (LRec bxs) x2)
                         $ zip ls os
         
         -- Substitute locations into the body expression.
-        x2'             = substituteXs (zip us xls) x2
+        x2'             = substituteXs (zip bs xls) x2
    in   Just (store2, x2')
 
 
@@ -148,18 +182,19 @@ step' store (XLet a (LLetRegion bRegion bws) x)
  = let  
         -- Allocation a new region handle for the bound region.
         (store', uHandle) = primNewRegion store
-        tHandle = TCon $ TyConBound uHandle
+        tHandle           = TCon $ TyConBound uHandle
 
         -- Substitute handle into the witness types.
-        bws'    = map (substituteT uRegion tHandle) bws
+        bws'            = map (substituteBoundT uRegion tHandle) bws
 
         -- Build witnesses for each of the witness types.
-        uws'    = [(u, t) | Just u <- map takeSubstBoundOfBind bws'
-                          | Just t <- map regionWitnessOfType $ map typeOfBind bws']
-        
+        Just wits       = sequence 
+                        $ map regionWitnessOfType 
+                        $ map typeOfBind bws'                                   -- TODO: this might fail
+
         -- Substitute handle and witnesses into body.
-        x'      = substituteT  uRegion tHandle
-                $ substituteWs uws' x
+        x'      = substituteBoundT  uRegion tHandle
+                $ substituteWs (zip bws' wits)  x
 
    in   Just (store', XLet a (LWithRegion uHandle) x')
 
@@ -191,12 +226,12 @@ step' store (XCase a xDiscrim alts)
 
            PData _ bsArgs      
             | tsArgs    <- map typeOfBind bsArgs
-            , uxsArgs   <- [ (u, XCon a (UPrim (NameLoc l) t))
-                                | l       <- lsArgs
-                                | t       <- tsArgs
-                                | Just u  <- map takeSubstBoundOfBind bsArgs]
+            , bxsArgs   <- [ (b, XCon a (UPrim (NameLoc l) t))
+                                | l     <- lsArgs
+                                | t     <- tsArgs
+                                | b     <- bsArgs]
             -> Just ( store
-                    , substituteXs uxsArgs xBody)
+                    , substituteXs bxsArgs xBody)
 
 
 -- (EvCaseStep): Evaluation of discriminant.
@@ -252,7 +287,7 @@ isWnf store xx
           -- Application of a lambda in the store is not wnf.
           | Just (u, _xs)       <- takeXConApps xx
           , UPrim (NameLoc l) _ <- u
-          , Just SLam{}         <- lookupBind l store
+          , Just SLams{}        <- lookupBind l store
           -> False
 
           | Just (u, xs)     <- takeXConApps xx
@@ -264,7 +299,6 @@ isWnf store xx
 
           | otherwise   
           -> isWnf store x1 && isWnf store x2
-
 
 
 -- | Get the region witness corresponding to one of the witness types that are

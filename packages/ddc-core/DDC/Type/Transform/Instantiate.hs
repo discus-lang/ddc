@@ -4,19 +4,14 @@ module DDC.Type.Transform.Instantiate
         , instantiateTs)
 where
 import DDC.Type.Exp
-import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
 
 
 -- | Instantiate a type with an argument.
 --   The type to be instantiated must have an outer forall, else `Nothing`.
 instantiateT :: Ord n => Type n -> Type n -> Maybe (Type n)
-instantiateT (TForall b tBody) t2
- = case takeSubstBoundOfBind b of
-        Nothing -> Just $ tBody
-        Just u  -> Just $ substituteT u t2 tBody
-
-instantiateT _ _ = Nothing
+instantiateT (TForall b tBody) t2 = Just $ substituteT b t2 tBody
+instantiateT _ _                  = Nothing
 
 
 -- | Instantiate a type with several arguments.

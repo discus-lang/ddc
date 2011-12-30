@@ -1,9 +1,7 @@
 
 -- | Type substitution.
 module DDC.Core.Transform.SubstituteT
-        ( SubstituteT(..)
-        , substituteT
-        , substituteTs)
+        (module DDC.Type.Transform.SubstituteT)
 where
 import DDC.Core.Exp
 import DDC.Type.Compounds

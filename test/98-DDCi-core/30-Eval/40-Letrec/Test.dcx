@@ -4,12 +4,12 @@
 letrec\
  fac : [r:%]. Int r -> Int r\
    = \(r:%). \(n : Int r).\
-       case n of {\
-        0       -> 1 {r} ();\
-        _       -> mulInt {:r r r:} n\
-                        (fac {r} (subInt {:r r r:} n\
-                                         (1 {r} ())));\
-       }\
+     case n of {\
+      0       -> 1 {r} ();\
+      _       -> mulInt {:r r r:} n\
+                      (fac {r} (subInt {:r r r:} n\
+                                       (1 {r} ())));\
+     }\
 in fac {R1#} (5 {R1#} ())
 
 

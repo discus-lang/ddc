@@ -16,6 +16,31 @@ import qualified Data.Set       as Set
 import Data.Set                 (Set)
 
 
+-- | Wrapper for `substituteWithW` that determines the set of free names in the
+--   type being substituted, and starts with an empty binder stack.
+substituteW :: (SubstituteW c, Ord n) => Bind n -> Witness n -> c n -> c n
+substituteW b w x
+ | Just u       <- takeSubstBoundOfBind b
+ = let -- Determine the free names in the type we're subsituting.
+       -- We'll need to rename binders with the same names as these
+       freeNames       = Set.fromList
+                       $ mapMaybe takeNameOfBound 
+                       $ Set.toList 
+                       $ free Env.empty w
+
+       stack           = BindStack [] 0 0
+ 
+  in   substituteWithW u w freeNames stack x
+
+ | otherwise    = x
+ 
+
+-- | Wrapper for `substituteW` to substitute multiple things.
+substituteWs :: (SubstituteW c, Ord n) => [(Bind n, Witness n)] -> c n -> c n
+substituteWs bts x
+        = foldr (uncurry substituteW) x bts
+
+
 class SubstituteW (c :: * -> *) where
  -- | Substitute a witness into some thing.
  --   In the target, if we find a named binder that would capture a free variable
@@ -28,28 +53,6 @@ class SubstituteW (c :: * -> *) where
         -> Set  n               -- ^ Names of free varaibles in the exp to substitute.
         -> BindStack n          -- ^ Bind stack.
         -> c n -> c n
-
-
--- | Wrapper for `substituteWithW` that determines the set of free names in the
---   type being substituted, and starts with an empty binder stack.
-substituteW :: (SubstituteW c, Ord n) => Bound n -> Witness n -> c n -> c n
-substituteW u w x
- = let -- Determine the free names in the type we're subsituting.
-       -- We'll need to rename binders with the same names as these
-       freeNames       = Set.fromList
-                       $ mapMaybe takeNameOfBound 
-                       $ Set.toList 
-                       $ free Env.empty w
-
-       stack           = BindStack [] 0 0
- 
-  in   substituteWithW u w freeNames stack x
-
-
--- | Wrapper for `substituteW` to substitute multiple things.
-substituteWs :: (SubstituteW c, Ord n) => [(Bound n, Witness n)] -> c n -> c n
-substituteWs bts x
-        = foldr (uncurry substituteW) x bts
 
 
 -- Instances --------------------------------------------------------------------------------------

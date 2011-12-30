@@ -26,7 +26,7 @@ import Control.Monad
 type CheckM a n   = G.CheckM (Error a n)
 
 
--- Witness ----------------------------------------------------------------------------------------
+-- Witness --------------------------------------------------------------------
 typeOfWitness :: Ord n => Witness n -> Either (Error a n) (Type n)
 typeOfWitness ww = result $ checkWitnessM Env.empty ww
 
@@ -67,9 +67,7 @@ checkWitnessM env ww
                 case t1 of
                  TForall b11 t12
                   | typeOfBind b11 == k2
-                  -> case takeSubstBoundOfBind b11 of
-                      Just u    -> return $ substituteT u t2 t12
-                      Nothing   -> return t12
+                  -> return $ substituteT b11 t2 t12
 
                   | otherwise   -> throw $ ErrorWAppMismatch ww (typeOfBind b11) k2
                  _              -> throw $ ErrorWAppNotCtor  ww t1 t2
@@ -143,7 +141,7 @@ typeOfWiCon wc
          -> tForalls (replicate n kRegion) $ \rs -> tDistinct rs
 
 
--- checkType -------------------------------------------------------------------------------------
+-- checkType ------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
 checkTypeM :: Ord n => Env n -> Type n -> CheckM a n (Kind n)
 checkTypeM env tt
