@@ -4,6 +4,6 @@
 
 
 -- Error: bound region is free in the effect of a returned function.
-:check\
- letregion r1 with {w1 : Const r1} in\
- \(x:Unit). (addInt {:r1 r1 R2#:} (2 {r1} ()) (3 {r1} ()))
+:check..
+letregion r1 with {w1 : Const r1} in
+\(x:Unit). (addInt {:r1 r1 R2#:} (2 {r1} ()) (3 {r1} ()));;
