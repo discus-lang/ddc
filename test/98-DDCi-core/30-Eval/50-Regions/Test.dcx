@@ -1,0 +1,10 @@
+
+
+-- Global regions aren't deallocated as we leave the scope of the 
+-- letregion that created it.
+let f = letregion r1 with {w0 : Global r1; w1 : Const r1} in\
+         \(x:Unit). forget <use  {r1} w0 w1>\
+                    purify <read {r1} w1 & alloc {r1} w1>\
+                   (addInt {:r1 R0# R0#:} (2 {r1} ()) (3 {R0#} ()))\
+in  f ()
+

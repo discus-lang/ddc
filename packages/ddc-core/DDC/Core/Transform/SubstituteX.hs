@@ -113,7 +113,7 @@ instance SubstituteX Exp where
                 alts'           = map (substituteWithX u x fns stack) alts
             in  XCase a x1' alts'
 
-        XCast{}         -> error "substituteWithX: XCast not done yet"
+        XCast a cc x1   -> XCast a cc (down x1)
 
         XType{}         -> xx
         XWitness{}      -> xx

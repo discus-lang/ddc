@@ -56,20 +56,6 @@ class SubstituteW (c :: * -> *) where
 
 
 -- Instances --------------------------------------------------------------------------------------
-instance SubstituteW (Exp a) where 
- substituteWithW u w fns stack xx
-  = let down    = substituteWithW u w fns stack 
-    in case xx of
-        XVar{}                  -> xx
-        XCon{}                  -> xx
-        XApp a x1 x2            -> XApp a (down x1) (down x2)
-        XLet a (LLet b x1) x2   -> XLet a (LLet b (down x1)) (down x2)
-        XType{}                 -> xx
-        XWitness w1             -> XWitness (down w1)
-
-        _       -> error "substituteWithW: not done yet"
- 
-
 instance SubstituteW Witness where
  substituteWithW u w fns stack ww
   = let down    = substituteWithW u w fns stack
@@ -84,3 +70,28 @@ instance SubstituteW Witness where
                 Left u''  -> WVar u''
                 Right _n  -> w          -- TODO: liftW by n
 
+
+instance SubstituteW (Exp a) where 
+ substituteWithW u w fns stack xx
+  = let down    = substituteWithW u w fns stack 
+    in case xx of
+        XVar{}                  -> xx
+        XCon{}                  -> xx
+        XApp a x1 x2            -> XApp a (down x1) (down x2)
+        XLam a b x              -> XLam a b (down x)
+        XLet a (LLet b x1) x2   -> XLet a (LLet b (down x1)) (down x2)
+        XLet{}                  -> error "substituetWithW: XLet not done yet"
+        XCase{}                 -> error "substituteWithW: XCase not done yet"
+        XCast a c x             -> XCast a (down c) (down x)
+        XType{}                 -> xx
+        XWitness w1             -> XWitness (down w1)
+
+
+instance SubstituteW Cast where
+ substituteWithW u w fns stack cc
+  = let down    = substituteWithW u w fns stack 
+    in case cc of
+        CastWeakenEffect eff    -> CastWeakenEffect  eff
+        CastWeakenClosure clo   -> CastWeakenClosure clo
+        CastPurify w'           -> CastPurify (down w')
+        CastForget w'           -> CastForget (down w')

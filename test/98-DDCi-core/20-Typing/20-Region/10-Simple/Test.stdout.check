@@ -37,7 +37,8 @@ L3#
 STORE
  NextLoc: 4
  NextRgn: 2
- Regions: {R1# R2#}
+ Regions: {R2#}
+ Global:  {}
 
  Binds:
  L3#:R2# -> OBJ 5

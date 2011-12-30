@@ -56,7 +56,8 @@ instance SubstituteT (Exp a) where
          XCase a x alts
           -> XCase a (down x) (map down alts)
 
-         XCast{} -> error "substituteWithT: XCast not done yet"
+         XCast a c x
+          -> XCast a (down c) (down x)
          
          XType t'         -> XType    (down t')
          XWitness w       -> XWitness (down w)
@@ -74,4 +75,13 @@ instance SubstituteT (Alt a) where
   = let down    = substituteWithT u t fns stack
     in  AAlt (down pat) (down x)
 
+
+instance SubstituteT Cast where
+ substituteWithT u t fns stack tt
+  = let down    = substituteWithT u t fns stack
+    in  case tt of
+         CastWeakenEffect eff   -> CastWeakenEffect  (down eff)
+         CastWeakenClosure clo  -> CastWeakenClosure (down clo)
+         CastPurify w           -> CastPurify (down w)
+         CastForget w           -> CastForget (down w)
 

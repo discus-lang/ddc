@@ -21,7 +21,8 @@ import DDC.Core.Transform
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Type.Compounds
-
+import qualified Data.Set       as Set
+import Debug.Trace
 
 -- StepResult -----------------------------------------------------------------
 -- | The result of stepping some expression.
@@ -59,7 +60,8 @@ step store xx
   = step' store xx
 
 
--- (EvPrim): Step a primitive operator or constructor defined by the client.
+-- (EvPrim)
+-- Step a primitive operator or constructor defined by the client.
 step' store xx
         | Just (p, xs)          <- takeXPrimApps xx
         , and $ map (isWnf store) xs
@@ -67,7 +69,8 @@ step' store xx
         = StepProgress store' x'
 
 
--- (EvLam): Add abstractions to the heap.
+-- (EvLam)
+-- Add abstractions to the heap.
 step' store xx@XLam{}
  = let  Just (bs, xBody)        = takeXLams xx
         (store', l)             = allocBind (Rgn 0) (SLams bs xBody) store
@@ -79,7 +82,8 @@ step' store xx@XLam{}
          Right t   -> StepProgress store' (XCon () (UPrim (NameLoc l) t))
 
 
--- (EvAlloc): Construct some data in the heap.
+-- (EvAlloc)
+-- Construct some data in the heap.
 step' store xx
         | Just (u, xs)          <- takeXConApps xx
         , case u of
@@ -95,11 +99,12 @@ step' store xx
             -> StepProgress store' x'
 
            -- TODO: handle non prim constructors.
-           _  -> error $ "step' (EvAlloc): not a primcon or something broken"
-                        ++ "\n" ++ show xx
+           _  -> trace "step' (EvAlloc): not a primcon or something broken"
+               $ StepStuck
 
 
--- (EvAppArgs): Step the left-most non-wnf argument of a lambda.
+-- (EvAppArgs)
+-- Step the left-most non-wnf argument of a lambda.
 step' store xx
         | xL1 : xsArgs  <- takeXApps xx
         , Just l1       <- takeLocX xL1
@@ -135,7 +140,8 @@ step' store xx
                  -> StepProgress store2 (makeXApps () xL1 xsArgs')
 
 
--- (EvAppSubst): Substitute wnf arguments into an abstraction.
+-- (EvAppSubst)
+-- Substitute wnf arguments into an abstraction.
 step' store xx
         | xL1 : xsArgs  <- takeXApps xx
         , Just l1       <- takeLocX xL1
@@ -161,7 +167,8 @@ step' store xx
           in  StepProgress store (makeXApps () xResult argsLeftover)
 
 
--- (EvApp2): Evaluate the right of an application.
+-- (EvApp2)
+-- Evaluate the right of an application.
 step' store (XApp a x1 x2)
  | isWnf store x1
  = case step store x2 of
@@ -169,27 +176,31 @@ step' store (XApp a x1 x2)
     err                     -> err
 
 
--- (EvApp1): Evaluate the left of an application.
+-- (EvApp1)
+-- Evaluate the left of an application.
 step' store (XApp a x1 x2)
  = case step store x1 of
     StepProgress store' x1' -> StepProgress store' (XApp a x1' x2)
     err                     -> err
 
 
--- (EvLetSubst): Substitute in a bound value in a let expression.
+-- (EvLetSubst)
+-- Substitute in a bound value in a let expression.
 step' store (XLet _ (LLet b x1) x2)
         | isWnf store x1
         = StepProgress store (substituteX b x1 x2)
 
 
--- (EvLetStep): Step the binding in a let-expression.
+-- (EvLetStep)
+-- Step the binding in a let-expression.
 step' store (XLet a (LLet b x1) x2)
  = case step store x1 of
     StepProgress store' x1' -> StepProgress store' (XLet a (LLet b x1') x2)
     err                     -> err
 
 
--- (EvLetRec): Add recursive bindings to the store.
+-- (EvLetRec)
+-- Add recursive bindings to the store.
 step' store (XLet _ (LRec bxs) x2)
  = let  (bs, xs) = unzip bxs
         ts       = map typeOfBind bs
@@ -223,16 +234,18 @@ step' store (XLet _ (LRec bxs) x2)
            in  StepProgress store2 x2'
 
 
--- (EvCreateRegion): Create a new region.
+-- (EvCreateRegion)
+-- Create a new region.
 step' store (XLet a (LLetRegion bRegion bws) x)
-        | Just uRegion      <- takeSubstBoundOfBind bRegion
+        | Just uRegion  <- takeSubstBoundOfBind bRegion
 
         -- Allocate a new region handle for the bound region.
-        , (store', uHandle) <- primNewRegion store
-        , tHandle           <- TCon $ TyConBound uHandle
+        , (store1, uHandle@(UPrim (NameRgn rgn) _))
+                        <- primNewRegion store
+        , tHandle       <- TCon $ TyConBound uHandle
 
         -- Substitute handle into the witness types.
-        , bws'              <- map (substituteBoundT uRegion tHandle) bws
+        , bws'          <- map (substituteBoundT uRegion tHandle) bws
 
         -- Build witnesses for each of the witness types.
         -- This can fail if the set of witness signatures is malformed.
@@ -244,7 +257,18 @@ step' store (XLet a (LLetRegion bRegion bws) x)
                 x'      = substituteBoundT  uRegion tHandle
                         $ substituteWs (zip bws' wits)  x
 
-          in    StepProgress store' (XLet a (LWithRegion uHandle) x')
+                isGlobalBind b
+                 = case typeOfBind b of
+                    TApp (TCon (TyConWitness TwConGlobal)) _ 
+                        -> True
+                    _   -> False
+
+                -- Set region to global if there is a witness for it.
+                store2  = if or $ map isGlobalBind bws
+                                then setGlobal rgn store1
+                                else store1
+
+          in    StepProgress store2 (XLet a (LWithRegion uHandle) x')
 
         -- Region binder was a wildcard, so we can't create the region handle.
         --  No witness sigs can be in the set, because any sig would need
@@ -255,16 +279,20 @@ step' store (XLet a (LLetRegion bRegion bws) x)
           in    StepProgress store' x
 
 
--- (EvEjectRegion): Eject completed value from the region context,
---  and delete the region.
---  TODO: don't delete it if the region is marked as global.
-step' store (XLet _ (LWithRegion r) x)
+-- (EvEjectRegion)
+--  Eject completed value from the region context, and delete the region.
+step' store (XLet _ (LWithRegion r@(UPrim (NameRgn rgn) _)) x)
+        | isWnf store x
+        , Set.member rgn (storeGlobal store)
+        = StepProgress store x
+
         | isWnf store x
         , Just store'    <- primDelRegion r store
         = StepProgress store' x
 
  
--- (EvWithRegion): Reduction within a region context.
+-- (EvWithRegion)
+-- Reduction within a region context.
 step' store (XLet a (LWithRegion uRegion) x)
  = case step store x of
     StepProgress store' x' 
@@ -272,7 +300,8 @@ step' store (XLet a (LWithRegion uRegion) x)
     err   -> err
 
 
--- (EvCaseMatch): Case branching.
+-- (EvCaseMatch)
+-- Case branching.
 step' store (XCase a xDiscrim alts)
         | Just lDiscrim            <- takeLocX xDiscrim
         , Just (SObj nTag lsArgs)  <- lookupBind lDiscrim store
@@ -291,7 +320,8 @@ step' store (XCase a xDiscrim alts)
                     (substituteXs bxsArgs xBody)
 
 
--- (EvCaseStep): Evaluation of discriminant.
+-- (EvCaseStep)
+-- Evaluation of discriminant.
 step' store (XCase a xDiscrim alts)
  = case step store xDiscrim of
     StepProgress store' xDiscrim' 
@@ -299,7 +329,25 @@ step' store (XCase a xDiscrim alts)
     err   -> err
 
 
--- (Done/Stuck): Either already a value, or expression is stuck.
+-- (EvPurifyEject)
+-- Eject values from purify casts as there are no more effects to be had.
+step' store (XCast _ (CastPurify _) x)
+        | isWnf store x
+        = StepProgress store x
+
+
+-- (EvCast)
+-- Evaluate under casts.
+step' store (XCast a cc x)
+ = case step store x of
+    StepProgress store' x'
+          -> StepProgress store' (XCast a cc x')
+    err   -> err
+
+
+
+-- (Done/Stuck)
+-- Either already a value, or expression is stuck.
 step' store xx
  | isWnf store xx       = StepDone
  | otherwise            = StepStuck

@@ -18,6 +18,7 @@ module DDCI.Core.Eval.Store
         , newRgn,       newRgns
         , delRgn
         , hasRgn
+        , setGlobal
         , addBind
         , allocBind,    allocBinds
         , lookupBind
@@ -37,17 +38,21 @@ import qualified Data.Set       as Set
 data Store
         = Store 
         { -- | Next store location to allocate.
-          storeNextLoc  :: Int
+          storeNextLoc          :: Int
 
           -- | Next region handle to allocate.
-        , storeNextRgn  :: Int
+        , storeNextRgn          :: Int
 
           -- | Region handles already allocated.
-        , storeRegions  :: Set Rgn
+        , storeRegions          :: Set Rgn
+
+          -- | Regions that are marked as global, and are not
+          --   deallocated with a stack discipline.
+        , storeGlobal           :: Set Rgn
 
           -- | Map of locations to store bindings,
           --   and the handles for the regions they're in.
-        , storeBinds    :: Map Loc (Rgn, SBind) }
+        , storeBinds            :: Map Loc (Rgn, SBind) }
 
 
 -- | Store binding.
@@ -67,14 +72,17 @@ data SBind
 
 -- Pretty ---------------------------------------------------------------------
 instance Pretty Store where
- ppr (Store nextLoc nextRgn regions binds)
+ ppr (Store nextLoc nextRgn regions global binds)
   = vcat
   [ text "STORE"
   , text " NextLoc: " <> text (show nextLoc)
   , text " NextRgn: " <> text (show nextRgn)
-  , text " Regions: " <> braces (sep    $ punctuate comma 
-                                        $ map ppr 
-                                        $ Set.toList regions)
+
+  , text " Regions: " <> braces (sep  $ punctuate comma 
+                                      $ map ppr $ Set.toList regions)
+
+  , text " Global:  " <> braces (sep  $ punctuate comma
+                                      $ map ppr $ Set.toList global)
   , text ""
   , text " Binds:"
   , vcat $ [ text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind
@@ -95,16 +103,18 @@ instance Pretty SBind where
                 <>  ppr x
  
 
--- Operators ------------------------------------------------------------------
+-- Constructors ---------------------------------------------------------------
 -- | An empty store, with no bindings or regions.
 empty   :: Store
 empty   = Store
         { storeNextLoc  = 1
         , storeNextRgn  = 1
         , storeRegions  = Set.empty
+        , storeGlobal   = Set.empty
         , storeBinds    = Map.empty }
 
 
+-- Locations ------------------------------------------------------------------
 -- | Create a new location in the store.
 newLoc  :: Store -> (Store, Loc)
 newLoc store
@@ -124,7 +134,7 @@ newLocs n store
     in  (store', map Loc locs)
 
 
-
+-- Regions  -------------------------------------------------------------------
 -- | Create a new region in the store.
 newRgn  :: Store -> (Store, Rgn)
 newRgn store
@@ -149,7 +159,9 @@ delRgn :: Rgn -> Store -> Store
 delRgn rgn store
  = let  binds'   = [x | x@(_, (r, _)) <- Map.toList $ storeBinds store
                       , r /= rgn ]  
-   in   store { storeBinds = Map.fromList binds' }
+   in   store   { storeBinds    = Map.fromList binds' 
+                , storeRegions  = Set.delete rgn (storeRegions store)
+                , storeGlobal   = Set.delete rgn (storeGlobal  store) }
 
 
 -- | Check whether a store contains the given region.
@@ -158,6 +170,14 @@ hasRgn store rgn
         = Set.member rgn (storeRegions store)
         
 
+-- | Set a region as being global.
+setGlobal :: Rgn -> Store -> Store
+setGlobal rgn store
+        = store
+        { storeGlobal   = Set.insert rgn (storeGlobal store) }
+
+
+-- Bindings -------------------------------------------------------------------
 -- | Add a store binding to the store, at the given location.
 addBind :: Loc -> Rgn -> SBind -> Store -> Store
 addBind loc rgn sbind store

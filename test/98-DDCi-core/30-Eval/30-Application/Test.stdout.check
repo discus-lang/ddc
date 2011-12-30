@@ -6,6 +6,7 @@ STORE
  NextLoc: 2
  NextRgn: 1
  Regions: {}
+ Global:  {}
 
  Binds:
  L1#:R0# -> LAMS (x : Unit).x
@@ -19,6 +20,7 @@ STORE
  NextLoc: 3
  NextRgn: 1
  Regions: {R1#}
+ Global:  {}
 
  Binds:
  L1#:R0# -> LAMS (i : Int R1#) (x : Unit).i

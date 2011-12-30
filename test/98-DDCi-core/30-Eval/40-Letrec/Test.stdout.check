@@ -34,6 +34,7 @@ STORE
  NextLoc: 20
  NextRgn: 1
  Regions: {R1#}
+ Global:  {}
 
  Binds:
  L1#:R0# -> LAMS (r : %) (n : Int r).case n of {0  -> 1 {r} (); _ -> mulInt {r} {r} {r} n (L1# {r} (subInt {r} {r} {r} n (1 {r} ())))}
@@ -56,44 +57,40 @@ STORE
  L19#:R1# -> OBJ 120
 
 -- Tail recursive factorial.
-letrec {fac : [r : %].Int r -> Int r -> Int r = \(r :%).\(acc n :Int r).case n of {0  -> acc; _ -> fac {r} (mulInt {r} {r} {r} acc n) (subInt {r} {r} {r} n (1 {r} ()))}} in fac {R1#} (1 {R1#} ()) (5 {R1#} ())
+letrec {fac : [r : %].Int r -> Int r -> Int r = \(r :%).\(acc n :Int r).case n of {0  -> acc; 1  -> acc; _ -> fac {r} (mulInt {r} {r} {r} acc n) (subInt {r} {r} {r} n (1 {r} ()))}} in fac {R1#} (1 {R1#} ()) (5 {R1#} ())
 L1# {R1#} (1 {R1#} ()) (5 {R1#} ())
 L1# {R1#} L3# (5 {R1#} ())
 L1# {R1#} L3# L4#
-case L4# of {0  -> L3#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L3# L4#) (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ()))}
+case L4# of {0  -> L3#; 1  -> L3#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L3# L4#) (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ()))}
 L1# {R1#} (mulInt {R1#} {R1#} {R1#} L3# L4#) (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ()))
 L1# {R1#} L5# (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ()))
 L1# {R1#} L5# (subInt {R1#} {R1#} {R1#} L4# L6#)
 L1# {R1#} L5# L7#
-case L7# of {0  -> L5#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L5# L7#) (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))}
+case L7# of {0  -> L5#; 1  -> L5#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L5# L7#) (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))}
 L1# {R1#} (mulInt {R1#} {R1#} {R1#} L5# L7#) (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))
 L1# {R1#} L8# (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))
 L1# {R1#} L8# (subInt {R1#} {R1#} {R1#} L7# L9#)
 L1# {R1#} L8# L10#
-case L10# of {0  -> L8#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L8# L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))}
+case L10# of {0  -> L8#; 1  -> L8#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L8# L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))}
 L1# {R1#} (mulInt {R1#} {R1#} {R1#} L8# L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
 L1# {R1#} L11# (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
 L1# {R1#} L11# (subInt {R1#} {R1#} {R1#} L10# L12#)
 L1# {R1#} L11# L13#
-case L13# of {0  -> L11#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L11# L13#) (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))}
+case L13# of {0  -> L11#; 1  -> L11#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L11# L13#) (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))}
 L1# {R1#} (mulInt {R1#} {R1#} {R1#} L11# L13#) (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))
 L1# {R1#} L14# (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))
 L1# {R1#} L14# (subInt {R1#} {R1#} {R1#} L13# L15#)
 L1# {R1#} L14# L16#
-case L16# of {0  -> L14#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L14# L16#) (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ()))}
-L1# {R1#} (mulInt {R1#} {R1#} {R1#} L14# L16#) (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ()))
-L1# {R1#} L17# (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ()))
-L1# {R1#} L17# (subInt {R1#} {R1#} {R1#} L16# L18#)
-L1# {R1#} L17# L19#
-case L19# of {0  -> L17#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L17# L19#) (subInt {R1#} {R1#} {R1#} L19# (1 {R1#} ()))}
-L17#
+case L16# of {0  -> L14#; 1  -> L14#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L14# L16#) (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ()))}
+L14#
 STORE
- NextLoc: 20
+ NextLoc: 17
  NextRgn: 1
  Regions: {R1#}
+ Global:  {}
 
  Binds:
- L1#:R0# -> LAMS (r : %) (acc : Int r) (n : Int r).case n of {0  -> acc; _ -> L1# {r} (mulInt {r} {r} {r} acc n) (subInt {r} {r} {r} n (1 {r} ()))}
+ L1#:R0# -> LAMS (r : %) (acc : Int r) (n : Int r).case n of {0  -> acc; 1  -> acc; _ -> L1# {r} (mulInt {r} {r} {r} acc n) (subInt {r} {r} {r} n (1 {r} ()))}
  L3#:R1# -> OBJ 1
  L4#:R1# -> OBJ 5
  L5#:R1# -> OBJ 5
@@ -108,7 +105,4 @@ STORE
  L14#:R1# -> OBJ 120
  L15#:R1# -> OBJ 1
  L16#:R1# -> OBJ 1
- L17#:R1# -> OBJ 120
- L18#:R1# -> OBJ 1
- L19#:R1# -> OBJ 0
 
