@@ -1,9 +1,6 @@
 
 import DDCI.Core.Command.Help
-import DDCI.Core.Command.Anon
-import DDCI.Core.Command.Free
 import DDCI.Core.Command.Check
-import DDCI.Core.Command.Subst
 import DDCI.Core.Command.Eval
 import System.IO
 import System.Environment
@@ -159,21 +156,6 @@ handle line ws
         , cmd == ":help" || cmd == ":?"
         = do    putStr help
                 return True
-
-        -- Anonymize --------------------------------------
-        | Just rest     <- splitPrefix ":anonT" line
-        = do    cmdAnonType rest
-                return True
-        
-        -- Free -------------------------------------------
-        | Just rest     <- splitPrefix ":freeT" line
-        = do    cmdFreeType rest
-                return True
-        
-        -- Subst ------------------------------------------
-        | Just rest     <- splitPrefix ":substTT" line
-        = do    cmdSubstTT rest
-                return True
         
         -- Checking ---------------------------------------
         -- Show the kind of a type.
@@ -191,7 +173,7 @@ handle line ws
         = do    cmdShowType ShowTypeAll rest
                 return True 
 
-        -- Show just the value type of an expression.
+        -- Show the value type of an expression.
         | Just rest     <- splitPrefix ":type" line
         = do    cmdShowType ShowTypeValue rest
                 return True
