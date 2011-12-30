@@ -43,7 +43,7 @@ stepPrimCon (NameInt i) [xR, xUnit] store
                 , XCon () (UPrim (NameLoc l) (tInt tR)))
 
 
--- We're handling Nil and Cons specially until we have general data types.
+-- Handle Nil and Cons specially until we have general data types.
 stepPrimCon n@(NamePrimCon PrimDaConNil) [xR, xA, xUnit] store
         -- unpack the args
         | XType tR      <- xR
@@ -92,7 +92,7 @@ stepPrimOp
                  , Exp () Name) -- ^ New store and result expression, 
                                 --   if the operator steps, otherwise Nothing.
 
--- Addition of Ints.
+-- Binary integer primop.
 stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
         -- unpack the args
         | Just fOp      <- lookup op 
@@ -128,7 +128,7 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
                 , XCon () (UPrim (NameLoc l3) (tInt tR3)))
 
 
--- Update of Ints.
+-- Unary integer primop.
 stepPrimOp (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
         -- unpack the args
         | Just r1       <- takeHandleX  xR1
