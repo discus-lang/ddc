@@ -77,9 +77,9 @@ typeOfPrimName nn
                                   (tBot kClosure)
                       $ (tInt r0)
 
-        -- add, sub
+        -- add, sub, mul, div, eq
         NamePrimOp p
-         | elem p [PrimOpAddInt, PrimOpSubInt, PrimOpMulInt, PrimOpDivInt]
+         | elem p [PrimOpAddInt, PrimOpSubInt, PrimOpMulInt, PrimOpDivInt, PrimOpEqInt]
          -> Just $ tForalls [kRegion, kRegion, kRegion] $ \[r2, r1, r0] 
                 -> tFun (tInt r2) (tBot kEffect)
                                   (tBot kClosure)

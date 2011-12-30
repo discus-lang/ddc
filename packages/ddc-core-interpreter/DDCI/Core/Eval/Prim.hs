@@ -99,7 +99,8 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
                                 [ (PrimOpAddInt, (+))
                                 , (PrimOpSubInt, (-))
                                 , (PrimOpMulInt, (*))
-                                , (PrimOpDivInt, div) ]
+                                , (PrimOpDivInt, div) 
+                                , (PrimOpEqInt,  (\x y -> if x == y then 1 else 0))]
         , Just r1       <- takeHandleX xR1
         , Just r2       <- takeHandleX xR2
         , XType tR3     <- xR3

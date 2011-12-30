@@ -106,6 +106,7 @@ data PrimOp
         | PrimOpSubInt
         | PrimOpMulInt
         | PrimOpDivInt
+        | PrimOpEqInt
         | PrimOpUpdateInt
         deriving (Show, Eq, Ord)
 
@@ -118,6 +119,9 @@ instance Pretty PrimOp where
         PrimOpSubInt    -> text "subInt"
         PrimOpMulInt    -> text "mulInt"
         PrimOpDivInt    -> text "divInt"
+
+        PrimOpEqInt     -> text "eqInt"
+
         PrimOpUpdateInt -> text "updateInt"
 
 
@@ -134,6 +138,7 @@ readName str@(c:rest)
                 "subInt"        -> Just $ NamePrimOp PrimOpSubInt
                 "mulInt"        -> Just $ NamePrimOp PrimOpMulInt
                 "divInt"        -> Just $ NamePrimOp PrimOpDivInt
+                "eqInt"         -> Just $ NamePrimOp PrimOpEqInt
                 "updateInt"     -> Just $ NamePrimOp PrimOpUpdateInt
                 _               -> Just $ NameVar str
         

@@ -26,3 +26,20 @@ letrec
                            (subInt {:r r r:} n (1 {r} ()))
     }
 in fac {R1#} (1 {R1#} ()) (5 {R1#} ());;
+
+
+-- Enumeration
+:eval..
+letrec
+ enumFromTo : [r1 r2:%]. Int r1 -> Int r1 -> List r2 (Int r1)
+  = \(r1 r2 : %). \(m n : Int r1). 
+    case eqInt {:r1 r1 r1:} m n of {
+        0       -> Cons {r2} {Int r1} m
+                        (enumFromTo {:r1 r2:}
+                                (addInt {:r1 r1 r1:} m (1 {r1} ()))
+                                n);
+        _       -> Cons {r2} {Int r1} m
+                        (Nil {r2} {Int r1} ());
+    }
+in enumFromTo {:R1# R2#:} (5 {R1#} ()) (9 {R1#} ())
+;;
