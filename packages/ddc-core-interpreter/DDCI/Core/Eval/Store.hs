@@ -72,7 +72,9 @@ instance Pretty Store where
   [ text "STORE"
   , text " NextLoc: " <> text (show nextLoc)
   , text " NextRgn: " <> text (show nextRgn)
-  , text " Regions: " <> braces (sep  (map ppr $ Set.toList regions))
+  , text " Regions: " <> braces (sep    $ punctuate comma 
+                                        $ map ppr 
+                                        $ Set.toList regions)
   , text ""
   , text " Binds:"
   , vcat $ [ text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind

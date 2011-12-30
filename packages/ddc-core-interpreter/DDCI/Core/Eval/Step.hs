@@ -372,11 +372,20 @@ isWnf store xx
 regionWitnessOfType :: Type n -> Maybe (Witness n)
 regionWitnessOfType tt
  = case tt of
+        TApp (TCon (TyConWitness TwConGlobal)) r
+         -> Just $ WApp (WCon WiConGlobal)   (WType r)
+
         TApp (TCon (TyConWitness TwConMutable)) r 
-         -> Just $ WApp (WCon (WiConMutable)) (WType r)
+         -> Just $ WApp (WCon WiConMutable)  (WType r)
         
         TApp (TCon (TyConWitness TwConConst)) r
-         -> Just $ WApp (WCon (WiConConst))   (WType r)
+         -> Just $ WApp (WCon WiConConst)    (WType r)
+
+        TApp (TCon (TyConWitness TwConLazy)) r
+         -> Just $ WApp (WCon WiConLazy)     (WType r)
+
+        TApp (TCon (TyConWitness TwConManifest)) r
+         -> Just $ WApp (WCon WiConManifest) (WType r)
 
         _ -> Nothing
 
