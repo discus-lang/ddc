@@ -8,22 +8,19 @@ STORE
  Regions: {}
 
  Binds:
- L1#:R0# -> LAM (x : Unit).x
+ L1#:R0# -> LAMS (x : Unit).x
 
 -- Substitute into inner lambda.
 (\(i :Int R1#).\(x :Unit).i) (5 {R1#} ()) ()
 L1# (5 {R1#} ()) ()
 L1# L2# ()
-(\(x : Unit).L2#) ()
-L3# ()
 L2#
 STORE
- NextLoc: 4
+ NextLoc: 3
  NextRgn: 1
  Regions: {R1#}
 
  Binds:
- L1#:R0# -> LAM (i : Int R1#).\(x : Unit).i
+ L1#:R0# -> LAMS (i : Int R1#) (x : Unit).i
  L2#:R1# -> OBJ 5
- L3#:R0# -> LAM (x : Unit).L2#
 
