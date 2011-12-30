@@ -10,9 +10,10 @@ import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect
-import qualified DDC.Type.Env                   as Env
-import qualified DDCI.Core.Eval.Store           as Store
-import qualified Data.Set                       as Set
+import DDCI.Core.Eval.Store             (Store)
+import qualified DDCI.Core.Eval.Store   as Store
+import qualified DDC.Type.Env           as Env
+import qualified Data.Set               as Set
 
 
 -- | Parse, check, and single step evaluate an expression.
@@ -30,11 +31,8 @@ cmdStep str
            in   goStep x store
 
         goStep x store
-         = case step store x of
-             Nothing         -> putStrLn $ show $ text "STUCK!"
-             Just (store', x')  
-              -> do     putStrLn $ pretty (ppr x')
-                        putStrLn $ pretty (ppr store')
+         = do   _       <- stepPrint store x
+                return ()
 
 
 -- | Parse, check, and single step evaluate an expression.
@@ -49,26 +47,73 @@ cmdEval str
         goStore (Just (x, _, _, _))
          = let  rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
                 store   = Store.empty { Store.storeRegions = Set.fromList rs }          
-                                                        -- TODO: next region to alloc should be higher than all of these.
-           in   goStep x store
+                      -- TODO: next region to alloc should be higher than all of these.
+           in   goStep store x
 
-        goStep x store
-         | Just (store', x')    <- step store x 
-         = case checkExp Env.empty x' of
-            Left err
-             -> do    putStrLn $ pretty (ppr x)
-                      putStrLn $ pretty (ppr x')
-                      putStrLn $ pretty (ppr store)
-                      putStrLn "OFF THE RAILS!"
-                      putStrLn $ show $ ppr err
-                      
-            Right (_t, _eff, _clo)
-             -> do    putStrLn $ pretty (ppr x)
---                    putStrLn $ pretty (ppr t)
-                      goStep x' store'
-                      
-         | otherwise
-         = do   putStrLn $ pretty (ppr x)
-                putStrLn $ pretty (ppr store)
+        goStep store x
+         = do   mResult <- stepPrint store x
+                case mResult of
+                 Nothing           -> return ()
+                 Just (store', x') -> goStep store' x'
+         
 
+-- | Perform a single step of evaluation and print what happened.
+stepPrint 
+        :: Store 
+        -> Exp () Name 
+        -> IO (Maybe (Store, Exp () Name))
+
+stepPrint store x
+ = case step store x of
+        StepProgress store' x'
+         -> case checkExp Env.empty x' of
+             Left err
+              -> do putStr $ pretty $ vcat
+                        [ ppr x
+                        , ppr x'
+                        , ppr store
+                        , text "OFF THE RAILS!"
+                        , ppr err
+                        , empty]
+                    return $ Nothing
+                      
+             Right (_t, _eff, _clo)
+              -> do putStrLn $ pretty (ppr x)
+                    return $ Just (store', x')
+    
+        StepDone
+         -> do  putStr $ pretty $ vcat
+                 [ ppr x
+                 , ppr store
+                 , empty]
+
+                return Nothing
+        
+        StepStuck
+         -> do  putStr $ pretty $ vcat
+                 [ ppr x
+                 , ppr store
+                 , text "STUCK!"
+                 , empty]
+
+                return Nothing
+
+        StepStuckMistyped err
+         -> do  putStr $ pretty $ vcat
+                 [ ppr x
+                 , ppr store
+                 , ppr "OFF THE RAILS!"
+                 , ppr err
+                 , empty]
+
+                return Nothing
+
+        StepStuckLetrecBindsNotLam
+         -> do  putStr $ pretty $ vcat
+                 [ ppr x
+                 , ppr store
+                 , text "CRASH AND BURN!"
+                 , empty]
+                
+                return Nothing
 
