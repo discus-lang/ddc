@@ -3,9 +3,8 @@
 -- Simply recursive factorial.
 :eval..
 letrec
- fac : [r:%]. Int r -> Int r
-  = \(r:%). \(n : Int r).
-    case n of {
+ fac    [r:%] (n : Int r) {Read r + Alloc r | Use r} : Int r
+  = case n of {
         0       -> 1 {r} ();
         _       -> mulInt {:r r r:} n
                       (fac {r} (subInt {:r r r:} n
@@ -17,9 +16,10 @@ in fac {R1#} (5 {R1#} ());;
 -- Tail recursive factorial.
 :eval..
 letrec
- fac : [r:%]. Int r -> Int r -> Int r
-  = \(r:%). \(acc : Int r). \(n : Int r).
-    case n of {
+ fac    [r:%] 
+        (acc : Int r) {!0 | Use r}
+        (n   : Int r) {Read r + Alloc r | Use r} : Int r
+  = case n of {
         0       -> acc;
         1       -> acc;
         _       -> fac {r} (mulInt {:r r r:} acc n)
@@ -28,18 +28,23 @@ letrec
 in fac {R1#} (1 {R1#} ()) (5 {R1#} ());;
 
 
--- Enumeration
+-- Enumeration.
 :eval..
 letrec
- enumFromTo : [r1 r2:%]. Int r1 -> Int r1 -> List r2 (Int r1)
-  = \(r1 r2 : %). \(m n : Int r1). 
-    case eqInt {:r1 r1 r1:} m n of {
-        0       -> Cons {r2} {Int r1} m
-                        (enumFromTo {:r1 r2:}
-                                (addInt {:r1 r1 r1:} m (1 {r1} ()))
-                                n);
-        _       -> Cons {r2} {Int r1} m
-                        (Nil {r2} {Int r1} ());
-    }
+ enumFromTo 
+        [r1 r2:%]
+        (m : Int r1)  
+        (n : Int r1) {Read r1 + Alloc r1 | Use r1}
+        : List r2 (Int r1)
+  = case eqInt {:r1 r1 r1:} m n of {
+        0 -> Cons {r2} {Int r1} m
+                (enumFromTo {:r1 r2:}
+                        (addInt {:r1 r1 r1:} m (1 {r1} ()))
+                        n);
+        _ -> Cons {r2} {Int r1} m
+                (Nil {r2} {Int r1} ());
+  }
 in enumFromTo {:R1# R2#:} (5 {R1#} ()) (9 {R1#} ())
 ;;
+
+

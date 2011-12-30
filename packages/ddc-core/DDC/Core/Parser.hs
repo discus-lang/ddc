@@ -118,16 +118,6 @@ pExp
  <?> "an expression"
 
 
-pLetRecBind :: Ord n => Parser n (Bind n, Exp () n)
-pLetRecBind 
- = do   b       <- T.pBinder
-        pTok KColon
-        t       <- T.pType
-        pTok KEquals
-        x      <- pExp
-        return  (T.makeBindFromBinder b t, x)
-
-
 -- Applications.
 pExpApp :: Ord n => Parser n (Exp () n)
 pExpApp 
@@ -259,8 +249,108 @@ pBindPat
         pTok KRoundKet
         return  $ T.makeBindFromBinder b t
  ]
+
+
+
+-- Bindings -------------------------------------------------------------------
+pLetRecBind :: Ord n => Parser n (Bind n, Exp () n)
+pLetRecBind 
+ = do   b       <- T.pBinder
+
+        ps      <- liftM concat 
+                $  P.many pBindParamSpec 
         
+        pTok KColon
+        tBody   <- T.pType
+        let t   = funTypeOfParams ps tBody
+
+        pTok KEquals
+        xBody   <- pExp
+        let x   = expOfParams () ps xBody
+
+        return  (T.makeBindFromBinder b t, x)
+
+
+-- | Parse a
+pBindParamSpec :: Ord n => Parser n [ParamSpec n]
+pBindParamSpec
+ = P.choice
+        -- Type parameter
+ [ do   pTok KSquareBra
+        bs      <- P.many1 T.pBinder
+        pTok KColon
+        t       <- T.pType
+        pTok KSquareKet
+        return  $ [ ParamType b
+                        | b     <- zipWith T.makeBindFromBinder bs (repeat t)]
+
+ , do   pTok KRoundBra
+        b       <- T.pBinder
+        pTok KColon
+        t       <- T.pType
+        pTok KRoundKet
+
+        (eff, clo) 
+         <- P.choice
+                [ do    pTok KBraceBra
+                        eff'    <- T.pType
+                        pTok KBar
+                        clo'    <- T.pType
+                        pTok KBraceKet
+                        return  (eff', clo')
+                
+                , do    return  (T.tBot T.kEffect, T.tBot T.kClosure) ]
+                
+
+        return  $ [ParamValue (T.makeBindFromBinder b t) eff clo]
+ ]
+
+
+-- | Specification of a function parameter.
+--   We can determine the contribution to the type of the function, 
+--   as well as its expression based on the parameter.
+data ParamSpec n
+        = ParamType  (Bind n)
+        | ParamValue (Bind n) (Type n) (Type n)
+
+
+-- | Build the type of a function from specifications of its parameters,
+--   and the type of the body.
+funTypeOfParams 
+        :: [ParamSpec n]        -- ^ Spec of parameters.
+        -> Type n               -- ^ Type of body.
+        -> Type n               -- ^ Type of whole function.
+
+funTypeOfParams [] tBody        = tBody
+funTypeOfParams (p:ps) tBody
+ = case p of
+        ParamType  b    
+         -> TForall b 
+                $ funTypeOfParams ps tBody
+
+        ParamValue b eff clo
+         -> T.tFun (T.typeOfBind b) eff clo 
+                $ funTypeOfParams ps tBody
+
+
+-- | Build the expression of a function from specifications of its parameters,
+--   and the expression for the body.
+expOfParams 
+        :: a
+        -> [ParamSpec n]        -- ^ Spec of parameters.
+        -> Exp a n              -- ^ Body of function.
+        -> Exp a n              -- ^ Expression of whole function.
+
+expOfParams _ [] xBody            = xBody
+expOfParams a (p:ps) xBody
+ = case p of
+        ParamType b     
+         -> XLam a b $ expOfParams a ps xBody
         
+        ParamValue b _ _
+         -> XLam a b $ expOfParams a ps xBody
+
+
 
 -- Witnesses ------------------------------------------------------------------
 -- | Top level parser for witnesses.
