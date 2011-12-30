@@ -225,31 +225,39 @@ step' store (XLet _ (LRec bxs) x2)
 
 -- (EvCreateRegion): Create a new region.
 step' store (XLet a (LLetRegion bRegion bws) x)
- | Just uRegion <- takeSubstBoundOfBind bRegion                                 -- TODO: refactor to other subst form.
- = let  
-        -- Allocation a new region handle for the bound region.
-        (store', uHandle) = primNewRegion store
-        tHandle           = TCon $ TyConBound uHandle
+        | Just uRegion      <- takeSubstBoundOfBind bRegion
+
+        -- Allocate a new region handle for the bound region.
+        , (store', uHandle) <- primNewRegion store
+        , tHandle           <- TCon $ TyConBound uHandle
 
         -- Substitute handle into the witness types.
-        bws'            = map (substituteBoundT uRegion tHandle) bws
+        , bws'              <- map (substituteBoundT uRegion tHandle) bws
 
         -- Build witnesses for each of the witness types.
-        Just wits       = sequence 
-                        $ map regionWitnessOfType 
-                        $ map typeOfBind bws'                                   -- TODO: this might fail
+        -- This can fail if the set of witness signatures is malformed.
+        , Just wits     <- sequence 
+                        $  map regionWitnessOfType
+                        $  map typeOfBind bws'
 
-        -- Substitute handle and witnesses into body.
-        x'      = substituteBoundT  uRegion tHandle
-                $ substituteWs (zip bws' wits)  x
+        = let   -- Substitute handle and witnesses into body.
+                x'      = substituteBoundT  uRegion tHandle
+                        $ substituteWs (zip bws' wits)  x
 
-   in   StepProgress store' (XLet a (LWithRegion uHandle) x')
+          in    StepProgress store' (XLet a (LWithRegion uHandle) x')
 
- | otherwise
- = StepProgress store x
+        -- Region binder was a wildcard, so we can't create the region handle.
+        --  No witness sigs can be in the set, because any sig would need
+        --  to reference the region variable. Just create a dummy region in the
+        --  store to simulate what would happen if there was a real binder.
+        | otherwise
+        = let   (store', _)     = primNewRegion store
+          in    StepProgress store' x
 
 
--- (EvEjectRegion): Eject completed value from the region context, and delete the region.
+-- (EvEjectRegion): Eject completed value from the region context,
+--  and delete the region.
+--  TODO: don't delete it if the region is marked as global.
 step' store (XLet _ (LWithRegion r) x)
         | isWnf store x
         , Just store'    <- primDelRegion r store
