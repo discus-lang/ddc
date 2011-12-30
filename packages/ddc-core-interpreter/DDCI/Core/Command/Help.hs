@@ -17,5 +17,4 @@ help    = unlines
         , "  :check         show the type, effect and closure of a value expression"
         , "  :type          show the type    of a value expression"
         , "  :effect        show the effect  of a value expression"
-        , "  :closure       show the closure of a value expression"
-        , "" ]
+        , "  :closure       show the closure of a value expression" ]

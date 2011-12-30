@@ -5,6 +5,7 @@ import DDCI.Core.Command.Eval
 import System.IO
 import System.Environment
 import Data.List
+import Data.Maybe
 import Control.Monad
 
 
@@ -15,11 +16,87 @@ main
          [fileName]
           -> do file    <- readFile fileName
                 runBatch file
-         
+       
          _ -> runInteractive
 
 
--- Interactive ------------------------------------------------------------------------------------
+-- Command --------------------------------------------------------------------
+-- | The commands that the interpreter supports.
+data Command
+        = CommandBlank
+        | CommandUnknown
+        | CommandHelp
+        | CommandKind
+        | CommandWitType
+        | CommandExpCheck
+        | CommandExpType
+        | CommandExpEffect
+        | CommandExpClosure
+        | CommandEval
+        deriving (Eq, Show)
+
+
+-- | Names used to invoke each command.
+commands :: [(String, Command)]
+commands 
+ =      [ (":help",     CommandHelp)
+        , (":?",        CommandHelp)
+        , (":kind",     CommandKind)
+        , (":wtype",    CommandWitType)
+        , (":check",    CommandExpCheck)
+        , (":type",     CommandExpType)
+        , (":effect",   CommandExpEffect)
+        , (":closure",  CommandExpClosure)
+        , (":eval",     CommandEval) ]
+
+
+-- | Read the command from the front of a string.
+readCommand :: String -> Maybe (Command, String)
+readCommand ss
+        | null $ words ss
+        = Just (CommandBlank,   ss)
+
+        | [(cmd, rest)] <- [ (cmd, drop (length str) ss) 
+                                        | (str, cmd)      <- commands
+                                        , isPrefixOf str ss ]
+        = Just (cmd, rest)
+
+        | ':' : _       <- ss
+        = Just (CommandUnknown, ss)
+
+        | otherwise
+        = Nothing
+
+
+-- Input ----------------------------------------------------------------------
+-- | How we're reading the input expression.
+data Input
+        -- | Read input line-by-line, using a backslash at the end of the
+        --   line to continue to the next.
+        = InputLine
+
+        -- | Read input as a block terminated by a double semicolon (;;)
+        | InputBlock
+        deriving (Eq, Show)
+
+
+-- | Read the input mode from the front of a string.
+readInput :: String -> (Input, String)
+readInput ss
+        | isPrefixOf ".." ss
+        = (InputBlock, drop 2 ss)
+
+        | otherwise
+        = (InputLine, ss)
+
+
+-- State ----------------------------------------------------------------------
+-- Interpreter state
+type State
+        = (Maybe Command, Input, String)
+
+
+-- Interactive ----------------------------------------------------------------
 -- | Run an interactive session
 runInteractive :: IO ()
 runInteractive
@@ -34,31 +111,24 @@ runInteractive
 -- | The main REPL loop.
 loopInteractive :: IO ()
 loopInteractive 
- = loop []
- where  loop acc
-         = do   when (null acc)
+ = loop (Nothing, InputLine, [])
+ where  
+        loop state@(mCommand, _, _)
+         = do   -- If this isn't the first line then print the prompt.
+                when (isNothing mCommand)
                  $ do   putStr "> "
                         hFlush stdout
          
+                -- Read a line from the user and echo it back.
                 line    <- getInput []
                 putChar '\n'
                 hFlush stdout
 
-                case line of
-                 []     -> doCmd acc
-                 _
-                  | last line == '\\'
-                  -> loop  (acc ++ init line) 
-          
-                  | otherwise
-                  -> doCmd (acc ++ line)
-
-        doCmd [] = loop []
-        doCmd cmd
-         = do   continue  <- handleCmdLine cmd
-                if continue
-                 then loop []
-                 else return ()
+                if isPrefixOf ":quit" line
+                 then return ()
+                 else do
+                        state'  <- eatLine state line
+                        loop state'
 
 
 -- | Get an input line from the console.
@@ -91,121 +161,106 @@ getInput buf
                 getInput (c : buf)
 
 
--- Batch ------------------------------------------------------------------------------------------
+-- Batch ----------------------------------------------------------------------
 runBatch :: String -> IO ()
 runBatch str
- = loop (lines str) []
+ = loop (lines str) (Nothing, InputLine, [])
  where 
-        loop []         acc   = doCmd [] acc
-        loop ([]:ls) acc      = doCmd ls acc
-        loop (line:ls) acc
-            | last line == '\\'
-            = loop ls (acc ++ init line) 
-          
-            | otherwise
-            = doCmd ls (acc ++ line)
+        -- No more lines, we're done.
+        -- There might be a command in the buffer though.
+        loop [] state
+         = do   eatLine state []
+                return ()
 
-        doCmd [] [] = return ()
-        doCmd ls cmd
-         = do   continue  <- handleCmdLine cmd
-                if continue
-                 then loop ls []
-                 else return ()
+        loop (l:ls) state
+         -- Echo comment lines back.
+         | isPrefixOf "--" l
+         = do   putStrLn l
+                loop ls state
+
+         -- Quit the program.
+         | isPrefixOf ":quit" l
+         = do   return ()
+
+         -- Handle a line of input.
+         | otherwise
+         = do   state'  <- eatLine state l
+                loop ls state'
 
 
--- Commands ---------------------------------------------------------------------------------------
+-- Eat ------------------------------------------------------------------------
+-- Eating input lines.
+
+eatLine :: State -> String -> IO State
+eatLine (mCommand, inputMode, acc) line
+ = do   -- If this is the first line then try to read the command and
+        --  input mode from the front so we know how to continue.
+        -- If we can't read an explicit command then assume this is 
+        --  an expression to evaluate.
+        let (cmd, (input, rest))
+             = case mCommand of
+                Nothing
+                 -> case readCommand line of
+                     Just (cmd', rest') -> (cmd',         readInput rest')
+                     Nothing            -> (CommandEval, (InputLine, line))
+                
+                Just cmd'
+                 -> (cmd', (inputMode, line))
+
+        case input of
+         -- For line-by-line mode, if the line ends with backslash then keep
+         -- reading, otherwise run the command.
+         InputLine
+          | not $ null rest
+          , last rest == '\\'
+          ->    return (Just cmd, input, acc ++ init rest)
+
+          | otherwise
+          -> do handleCmd cmd (acc ++ rest)
+                return (Nothing, InputLine, [])
+
+         -- For block mode, if the line ends with ';;' then run the command,
+         -- otherwise keep reading.
+         InputBlock
+          | isSuffixOf ";;" rest
+          -> do let rest' = take (length rest - 2) rest
+                handleCmd cmd (acc ++ rest')
+                return (Nothing, InputLine, [])
+
+          | otherwise
+          ->    return (Just cmd, input, acc ++ rest)
+
+
+-- Commands -------------------------------------------------------------------
 -- | Handle a single line of input.
-handleCmdLine :: String -> IO Bool
-handleCmdLine line
- = handleCmdLine1 line (words line)
+handleCmd :: Command -> String -> IO ()
+handleCmd CommandBlank _
+ = return ()
 
--- | Handle an input line, and print newline after successful ones.
-handleCmdLine1 :: String -> [String] -> IO Bool
-handleCmdLine1 line ws
-        -- Ignore empty lines.
-        | []    <- ws
-        =       return True
+handleCmd cmd line
+ = do   handleCmd1 cmd line
+        putStr "\n"
 
-        -- Echo comment lines.
-        | w:_   <- ws
-        , isPrefixOf "--" w
-        = do    putStr $ line ++ "\n"
-                return True
+handleCmd1 cmd line
+ = case cmd of
+        CommandBlank
+         -> return ()
 
-        -- Quit the interpreter.
-        | ":quit" : _   <- ws
-        =       return False
+        CommandUnknown
+         -> do  putStr $ unlines
+                 [ "unknown command."
+                 , "use :? for help." ]
 
-        | otherwise
-        = do    handled  <- handle line ws
-                if handled
-                 then do
-                        putStr "\n"
-                        return True
-                 else do
-                        putStrLn $ "unknown command."
-                        putStrLn $ "use :? for help."
-                        return True
+        CommandHelp
+         -> do  putStr help
 
+        CommandKind       -> cmdShowKind      line
+        CommandWitType    -> cmdShowWType     line
 
--- | Handle an input line.
-handle :: String -> [String] -> IO Bool
-handle line ws
-        -- Print the help screen.
-        | cmd : _       <- ws
-        , cmd == ":help" || cmd == ":?"
-        = do    putStr help
-                return True
+        CommandExpCheck   -> cmdShowType ShowTypeAll     line
+        CommandExpType    -> cmdShowType ShowTypeValue   line
+        CommandExpEffect  -> cmdShowType ShowTypeEffect  line
+        CommandExpClosure -> cmdShowType ShowTypeClosure line
+
+        CommandEval       -> cmdEval line
         
-        -- Checking ---------------------------------------
-        -- Show the kind of a type.
-        | Just rest     <- splitPrefix ":kind" line
-        = do    cmdShowKind rest
-                return True
-
-        -- Show the type of a witness.
-        | Just rest     <- splitPrefix ":wtype" line
-        = do    cmdShowWType rest
-                return True
-
-        -- Show the value type, effect and closure of an expression.
-        | Just rest     <- splitPrefix ":check" line
-        = do    cmdShowType ShowTypeAll rest
-                return True 
-
-        -- Show the value type of an expression.
-        | Just rest     <- splitPrefix ":type" line
-        = do    cmdShowType ShowTypeValue rest
-                return True
-
-        -- Show just the effect of an expression.
-        | Just rest     <- splitPrefix ":effect" line
-        = do    cmdShowType ShowTypeEffect rest
-                return True
-
-        -- Show just the closure of an expression.
-        | Just rest     <- splitPrefix ":closure" line
-        = do    cmdShowType ShowTypeClosure rest
-                return True
-        
-        -- Unknown ----------------------------------------
-        -- Some command we don't handle.
-        | (':' : _ ) : _       <- ws
-        = do    return False
-        
-        -- An expression to evaluate.
-        | otherwise
-        = do    cmdEval line
-                return True
-
-
--- | Split a prefix from the front of a string, returning the trailing part.
-splitPrefix :: String -> String -> Maybe String
-splitPrefix prefix str
-        | isPrefixOf prefix str
-        = Just $ drop (length prefix) str
-        
-        | otherwise
-        = Nothing
-        
-
