@@ -196,7 +196,7 @@ pExp0
 pAlt    :: Ord n => Parser n (Alt () n)
 pAlt
  = do   p       <- pPat
-        pTok KTypeFun
+        pTok KArrowDash
         x       <- pExp
         return  $ AAlt p x
 

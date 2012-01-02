@@ -67,10 +67,11 @@ lexExp str
         '(' : ')' : w'  -> tokN (KCon "()")    : lexWord w'
 
         -- Function Constructors
-        '~' : '>' : w'  -> tokA KKindFun       : lexWord w'
-        '-' : '>' : w'  -> tokA KTypeFun       : lexWord w'
-        '-' : '(' : w'  -> tokA KTypeFunBra    : lexWord w'
-        ')' : '>' : w'  -> tokA KTypeFunKet    : lexWord w'
+        '~'  : '>'  : w' -> tokA KArrowTilde    : lexWord w'
+        '-'  : '>'  : w' -> tokA KArrowDash     : lexWord w'
+        '='  : '>'  : w' -> tokA KArrowEquals   : lexWord w'
+        '-'  : '('  : w' -> tokA KTypeFunBra    : lexWord w'
+        ')'  : '>'  : w' -> tokA KTypeFunKet    : lexWord w'
 
         -- Compound Parens
         '['  : ':' : w' -> tokA KSquareColonBra : lexWord w'

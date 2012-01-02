@@ -1,0 +1,11 @@
+
+-- parse kind function operator.
+-- This needs to be fully applied to have a sort.
+:kind (~>) * *
+
+-- parse witness implication operator.
+-- This needs to be fully applied to have a sort.
+:kind (=>) (Const R0#) (Int R0#)
+
+-- parse type function operator.
+:kind (->)

@@ -90,8 +90,18 @@ pTypeFun :: Ord n => Parser n (Type n)
 pTypeFun
  = do   t1      <- pTypeApp
         P.choice 
-         [ -- T1 -> T2
-           do   pTok KTypeFun
+         [ -- T1 ~> T2
+           do   pTok KArrowTilde
+                t2      <- pTypeFun
+                return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
+
+           -- T1 => T2
+         , do   pTok KArrowEquals
+                t2      <- pTypeFun
+                return  $ TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
+
+           -- T1 -> T2
+         , do   pTok KArrowDash
                 t2      <- pTypeFun
                 return  $ t1 `tFunPE` t2
 
@@ -104,10 +114,6 @@ pTypeFun
                 t2      <- pTypeFun
                 return  $ tFun t1 eff clo t2
 
-           -- T1 ~> T2
-         , do   pTok KKindFun
-                t2      <- pTypeFun
-                return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
 
            -- Body type
          , do   return t1 ]
@@ -124,16 +130,25 @@ pTypeApp
 pTypeAtom :: Ord n => Parser n (Type n)
 pTypeAtom  
  = P.choice
-        -- (TYPE2) and (->)
+        -- (~>) and (=>) and (->) and (TYPE2)
         [ do    pTok KRoundBra
                 P.choice
-                 [ do   t       <- pTypeSum
+                 [ do   pTok KArrowTilde
+                        pTok KRoundKet
+                        return (TCon $ TyConKind KiConFun)
+
+                 , do   pTok KArrowEquals
+                        pTok KRoundKet
+                        return (TCon $ TyConWitness TwConImpl)
+
+                 , do   pTok KArrowDash
+                        pTok KRoundKet
+                        return (TCon $ TyConComp TcConFun)
+
+                 , do   t       <- pTypeSum
                         pTok KRoundKet
                         return t 
 
-                 , do   pTok KTypeFun
-                        pTok KRoundKet
-                        return (TCon $ TyConComp TcConFun)
                  ]
 
         -- Named type constructors

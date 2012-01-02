@@ -1,0 +1,11 @@
+-- parse kind function operator.
+-- This needs to be fully applied to have a sort.
+* ~> * :: **
+
+-- parse witness implication operator.
+-- This needs to be fully applied to have a sort.
+Const R0# => Int R0# :: *
+
+-- parse type function operator.
+(->) :: * ~> ! ~> $ ~> * ~> *
+

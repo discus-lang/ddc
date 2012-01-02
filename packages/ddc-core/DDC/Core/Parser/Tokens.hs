@@ -75,8 +75,9 @@ data TokAtom
         | KKindEffect
         | KKindClosure
         | KKindWitness
-        | KKindFun
-        | KTypeFun
+        | KArrowTilde
+        | KArrowDash
+        | KArrowEquals
         | KTypeFunBra
         | KTypeFunKet
 
