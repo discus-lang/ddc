@@ -1,5 +1,5 @@
 -- Construct an empty list.
-Nil {R0#} {Int R0#} ()
+Nil [R0#] [Int R0#] ()
 L1#
 STORE
  NextLoc: 2
@@ -11,9 +11,9 @@ STORE
  L1#:R0# -> OBJ Nil
 
 -- Construct a single element list.
-Cons {R0#} {Int R0#} (5 {R0#} ()) (Nil {R0#} {Int R0#} ())
-Cons {R0#} {Int R0#} L1# (Nil {R0#} {Int R0#} ())
-Cons {R0#} {Int R0#} L1# L2#
+Cons [R0#] [Int R0#] (5 [R0#] ()) (Nil [R0#] [Int R0#] ())
+Cons [R0#] [Int R0#] L1# (Nil [R0#] [Int R0#] ())
+Cons [R0#] [Int R0#] L1# L2#
 L3#
 STORE
  NextLoc: 4
@@ -27,13 +27,13 @@ STORE
  L3#:R0# -> OBJ Cons L1# L2#
 
 -- Contruct and destruct a single element list.
-let i = 5 {R0#} () in let nil = Nil {R0#} {Int R0#} () in let xx = Cons {R0#} {Int R0#} i nil in case xx of {Nil  -> 0 {R0#} (); Cons x xs -> x}
-let i = L1# in let nil = Nil {R0#} {Int R0#} () in let xx = Cons {R0#} {Int R0#} i nil in case xx of {Nil  -> 0 {R0#} (); Cons x xs -> x}
-let nil = Nil {R0#} {Int R0#} () in let xx = Cons {R0#} {Int R0#} L1# nil in case xx of {Nil  -> 0 {R0#} (); Cons x xs -> x}
-let nil = L2# in let xx = Cons {R0#} {Int R0#} L1# nil in case xx of {Nil  -> 0 {R0#} (); Cons x xs -> x}
-let xx = Cons {R0#} {Int R0#} L1# L2# in case xx of {Nil  -> 0 {R0#} (); Cons x xs -> x}
-let xx = L3# in case xx of {Nil  -> 0 {R0#} (); Cons x xs -> x}
-case L3# of {Nil  -> 0 {R0#} (); Cons x xs -> x}
+let i = 5 [R0#] () in let nil = Nil [R0#] [Int R0#] () in let xx = Cons [R0#] [Int R0#] i nil in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
+let i = L1# in let nil = Nil [R0#] [Int R0#] () in let xx = Cons [R0#] [Int R0#] i nil in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
+let nil = Nil [R0#] [Int R0#] () in let xx = Cons [R0#] [Int R0#] L1# nil in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
+let nil = L2# in let xx = Cons [R0#] [Int R0#] L1# nil in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
+let xx = Cons [R0#] [Int R0#] L1# L2# in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
+let xx = L3# in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
+case L3# of {Nil  -> 0 [R0#] (); Cons x xs -> x}
 L1#
 STORE
  NextLoc: 4
@@ -47,9 +47,9 @@ STORE
  L3#:R0# -> OBJ Cons L1# L2#
 
 -- Match on an integer literal.
-case 5 {R0#} () of {5  -> 1 {R0#} (); _ -> 0 {R0#} ()}
-case L1# of {5  -> 1 {R0#} (); _ -> 0 {R0#} ()}
-1 {R0#} ()
+case 5 [R0#] () of {5  -> 1 [R0#] (); _ -> 0 [R0#] ()}
+case L1# of {5  -> 1 [R0#] (); _ -> 0 [R0#] ()}
+1 [R0#] ()
 L2#
 STORE
  NextLoc: 3
@@ -62,9 +62,9 @@ STORE
  L2#:R0# -> OBJ 1
 
 -- Fall through to default alternative.
-case 5 {R0#} () of {6  -> 1 {R0#} (); _ -> 0 {R0#} ()}
-case L1# of {6  -> 1 {R0#} (); _ -> 0 {R0#} ()}
-0 {R0#} ()
+case 5 [R0#] () of {6  -> 1 [R0#] (); _ -> 0 [R0#] ()}
+case L1# of {6  -> 1 [R0#] (); _ -> 0 [R0#] ()}
+0 [R0#] ()
 L2#
 STORE
  NextLoc: 3

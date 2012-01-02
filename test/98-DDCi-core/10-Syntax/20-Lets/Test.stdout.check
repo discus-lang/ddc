@@ -17,19 +17,19 @@ let x : Unit = () in let y : Unit = () in y
 :$: $0
 
 -- Simple letregion.
-letregion r in let x : Int r = 4 {r} () in addInt {r} {r} {R1#} x x
+letregion r in let x : Int r = 4 [r] () in addInt [r] [r] [R1#] x x
 ::  Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 -- Multiple lets and letregion. 
-letregion r1 in letregion r2 in let x1 : Int r1 = 2 {r1} () in let x2 : Int r2 = 3 {r2} () in addInt {r1} {r2} {R1#} x1 x2
+letregion r1 in letregion r2 in let x1 : Int r1 = 2 [r1] () in let x2 : Int r2 = 3 [r2] () in addInt [r1] [r2] [R1#] x1 x2
 ::  Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 -- As above, but no annots on binders.
-letregion r1 in letregion r2 in let x1 = 2 {r1} () in let x2 = 3 {r2} () in addInt {r1} {r2} {R1#} x1 x2
+letregion r1 in letregion r2 in let x1 = 2 [r1] () in let x2 = 3 [r2] () in addInt [r1] [r2] [R1#] x1 x2
 ::  Int R1#
 :!: Alloc R1#
 :$: Use R1#

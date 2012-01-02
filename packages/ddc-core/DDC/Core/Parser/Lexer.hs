@@ -73,8 +73,8 @@ lexExp str
         ')' : '>' : w'  -> tokA KTypeFunKet    : lexWord w'
 
         -- Compound Parens
-        '{'  : ':' : w' -> tokA KBraceColonBra : lexWord w'
-        ':'  : '}' : w' -> tokA KBraceColonKet : lexWord w'
+        '['  : ':' : w' -> tokA KSquareColonBra : lexWord w'
+        ':'  : ']' : w' -> tokA KSquareColonKet : lexWord w'
         '<'  : ':' : w' -> tokA KAngleColonBra : lexWord w'
         ':'  : '>' : w' -> tokA KAngleColonKet : lexWord w'
 

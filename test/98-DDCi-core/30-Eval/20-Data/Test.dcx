@@ -1,38 +1,38 @@
 
 
 -- Construct an empty list.
-Nil {R0#} {Int R0#} ()
+Nil [R0#] [Int R0#] ()
 
 
 -- Construct a single element list.
 :eval..
-Cons {R0#} {Int R0#}
-        (5 {R0#} ())
-        (Nil {R0#} {Int R0#} ());;
+Cons [R0#] [Int R0#]
+        (5 [R0#] ())
+        (Nil [R0#] [Int R0#] ());;
 
 
 -- Contruct and destruct a single element list.
 :eval..
-let i   = 5 {R0#} () in
-let nil = Nil  {R0#} {Int R0#} () in
-let xx  = Cons {R0#} {Int R0#} i nil in
+let i   = 5 [R0#] () in
+let nil = Nil  [R0#] [Int R0#] () in
+let xx  = Cons [R0#] [Int R0#] i nil in
 case xx of {
-        Nil           -> 0 {R0#} ();
+        Nil           -> 0 [R0#] ();
         Cons x xs     -> x
 };;
 
 
 -- Match on an integer literal.
 :eval..
-case 5 {R0#} () of {
-         5 -> 1 {R0#} ();
-        _ -> 0 {R0#} ();
+case 5 [R0#] () of {
+         5 -> 1 [R0#] ();
+        _  -> 0 [R0#] ();
 };;
 
 
 -- Fall through to default alternative.
 :eval..
-case 5 {R0#} () of {
-        6 -> 1 {R0#} ();
-        _ -> 0 {R0#} ();
+case 5 [R0#] () of {
+        6 -> 1 [R0#] ();
+        _ -> 0 [R0#] ();
 };;

@@ -131,16 +131,16 @@ pExpApp
 pArgs   :: Ord n => Parser n [Exp () n]
 pArgs 
  = P.choice
-        -- {TYPE}
- [ do   pTok KBraceBra
+        -- [TYPE]
+ [ do   pTok KSquareBra
         t       <- T.pType 
-        pTok KBraceKet
+        pTok KSquareKet
         return  [XType t]
 
-        -- {: TYPE0 TYPE0 ... :}
- , do   pTok KBraceColonBra
+        -- [: TYPE0 TYPE0 ... :]
+ , do   pTok KSquareColonBra
         ts      <- P.many1 T.pTypeAtom
-        pTok KBraceColonKet
+        pTok KSquareColonKet
         return  $ map XType ts
         
         -- <WITNESS>
@@ -384,10 +384,10 @@ pWitnessApp
 pWitnessArg :: Ord n => Parser n (Witness n)
 pWitnessArg 
  = P.choice
- [ -- {TYPE}
-   do   pTok KBraceBra
+ [ -- [TYPE]
+   do   pTok KSquareBra
         t       <- T.pType
-        pTok KBraceKet
+        pTok KSquareKet
         return  $ WType t
 
    -- WITNESS

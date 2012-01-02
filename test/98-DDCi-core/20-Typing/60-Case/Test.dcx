@@ -2,8 +2,8 @@
 
 -- Error: types of alternatives are not identical.
 :check..
-case 5 {R0#} () of {
-        0 -> 0 {R0#} ();
+case 5 [R0#] () of {
+        0 -> 0 [R0#] ();
         1 -> ();
 };;
 
@@ -17,8 +17,8 @@ case \(x : Unit). x of {
 
 -- Error: pattern and discriminant types don't match.
 :check..
-let xx0  = Nil  {R0#} {Int R0#} () in
-let xx1  = Cons {R0#} {Int R0#} (5 {R0#} ()) xx0 in
+let xx0  = Nil  [R0#] [Int R0#] () in
+let xx1  = Cons [R0#] [Int R0#] (5 [R0#] ()) xx0 in
 case xx1 of {
         ()  -> ()
 };;
@@ -26,7 +26,7 @@ case xx1 of {
 
 -- Error: pattern binds more fields than provided by constructor.
 :check..
-let xx = Nil {R0#} {Int R0#} () in
+let xx = Nil [R0#] [Int R0#] () in
 case xx of {
         Nil          -> ();
         Cons x xs ys -> ();
@@ -36,7 +36,7 @@ case xx of {
 -- Error: annotation on pattern variable does not match field type
 --        of constructor.
 :check..
-let xx = Nil {R0#} {Int R0#} () in
+let xx = Nil [R0#] [Int R0#] () in
 case xx of {
         Nil                  -> ();
         Cons (x:Unit) xs     -> ();

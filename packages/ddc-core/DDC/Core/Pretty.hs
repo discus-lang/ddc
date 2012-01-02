@@ -62,7 +62,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> pprParen (d > 10)
          $  ppr cc <+> pprPrec 11 x
 
-        XType    t      -> braces $ ppr t
+        XType    t      -> text "[" <> ppr t <> text "]"
         XWitness w      -> text "<" <> ppr w <> text ">"
 
 
@@ -159,7 +159,7 @@ instance (Pretty n, Eq n) => Pretty (Witness n) where
         WJoin w1 w2
          -> pprParen (d > 9)  (ppr w1 <+> text "&" <+> ppr w2)
 
-        WType t         -> braces $ ppr t
+        WType t         -> text "[" <> ppr t <> text "]"
 
 
 instance Pretty WiCon where

@@ -4,7 +4,7 @@
 
 
 -- Mutability of some region.
-:wtype mutable {R0#}
+:wtype mutable [R0#]
 
 
 -- Error: type mismatch in witness application.
@@ -12,8 +12,8 @@
 
 
 -- Error: type mismatch in witness application.
-:wtype mutable {Unit}
+:wtype mutable [Unit]
 
 
 -- Error: cannot apply non-constructor witness to argument.
-:wtype mutable {R0#} mutable
+:wtype mutable [R0#] mutable

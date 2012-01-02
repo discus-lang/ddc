@@ -1,34 +1,34 @@
 -- Simply recursive factorial.
-letrec {fac : [r : %].Int r -(Read r + Alloc r | Use r)> Int r = \(r :%).\(n :Int r).case n of {0  -> 1 {r} (); _ -> mulInt {r} {r} {r} n (fac {r} (subInt {r} {r} {r} n (1 {r} ())))}} in fac {R1#} (5 {R1#} ())
-L1# {R1#} (5 {R1#} ())
-L1# {R1#} L3#
-case L3# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L3# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L3# (1 {R1#} ())))}
-mulInt {R1#} {R1#} {R1#} L3# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L3# (1 {R1#} ())))
-mulInt {R1#} {R1#} {R1#} L3# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L3# L4#))
-mulInt {R1#} {R1#} {R1#} L3# (L1# {R1#} L5#)
-mulInt {R1#} {R1#} {R1#} L3# case L5# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L5# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L5# (1 {R1#} ())))}
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L5# (1 {R1#} ()))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L5# L6#)))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (L1# {R1#} L7#))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# case L7# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L7# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ())))})
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ())))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L7# L8#))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (L1# {R1#} L9#)))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# case L9# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L9# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L9# (1 {R1#} ())))}))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L9# (1 {R1#} ()))))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L9# L10#)))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (L1# {R1#} L11#))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# case L11# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L11# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L11# (1 {R1#} ())))})))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (mulInt {R1#} {R1#} {R1#} L11# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L11# (1 {R1#} ())))))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (mulInt {R1#} {R1#} {R1#} L11# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L11# L12#))))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (mulInt {R1#} {R1#} {R1#} L11# (L1# {R1#} L13#)))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (mulInt {R1#} {R1#} {R1#} L11# case L13# of {0  -> 1 {R1#} (); _ -> mulInt {R1#} {R1#} {R1#} L13# (L1# {R1#} (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ())))}))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (mulInt {R1#} {R1#} {R1#} L11# (1 {R1#} ())))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# (mulInt {R1#} {R1#} {R1#} L11# L14#))))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# (mulInt {R1#} {R1#} {R1#} L9# L15#)))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# (mulInt {R1#} {R1#} {R1#} L7# L16#))
-mulInt {R1#} {R1#} {R1#} L3# (mulInt {R1#} {R1#} {R1#} L5# L17#)
-mulInt {R1#} {R1#} {R1#} L3# L18#
+letrec {fac : [r : %].Int r -(Read r + Alloc r | Use r)> Int r = \(r :%).\(n :Int r).case n of {0  -> 1 [r] (); _ -> mulInt [r] [r] [r] n (fac [r] (subInt [r] [r] [r] n (1 [r] ())))}} in fac [R1#] (5 [R1#] ())
+L1# [R1#] (5 [R1#] ())
+L1# [R1#] L3#
+case L3# of {0  -> 1 [R1#] (); _ -> mulInt [R1#] [R1#] [R1#] L3# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L3# (1 [R1#] ())))}
+mulInt [R1#] [R1#] [R1#] L3# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L3# (1 [R1#] ())))
+mulInt [R1#] [R1#] [R1#] L3# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L3# L4#))
+mulInt [R1#] [R1#] [R1#] L3# (L1# [R1#] L5#)
+mulInt [R1#] [R1#] [R1#] L3# case L5# of {0  -> 1 [R1#] (); _ -> mulInt [R1#] [R1#] [R1#] L5# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L5# (1 [R1#] ())))}
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L5# (1 [R1#] ()))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L5# L6#)))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (L1# [R1#] L7#))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# case L7# of {0  -> 1 [R1#] (); _ -> mulInt [R1#] [R1#] [R1#] L7# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L7# (1 [R1#] ())))})
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L7# (1 [R1#] ())))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L7# L8#))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (L1# [R1#] L9#)))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# case L9# of {0  -> 1 [R1#] (); _ -> mulInt [R1#] [R1#] [R1#] L9# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L9# (1 [R1#] ())))}))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L9# (1 [R1#] ()))))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L9# L10#)))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (L1# [R1#] L11#))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# case L11# of {0  -> 1 [R1#] (); _ -> mulInt [R1#] [R1#] [R1#] L11# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L11# (1 [R1#] ())))})))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (mulInt [R1#] [R1#] [R1#] L11# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L11# (1 [R1#] ())))))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (mulInt [R1#] [R1#] [R1#] L11# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L11# L12#))))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (mulInt [R1#] [R1#] [R1#] L11# (L1# [R1#] L13#)))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (mulInt [R1#] [R1#] [R1#] L11# case L13# of {0  -> 1 [R1#] (); _ -> mulInt [R1#] [R1#] [R1#] L13# (L1# [R1#] (subInt [R1#] [R1#] [R1#] L13# (1 [R1#] ())))}))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (mulInt [R1#] [R1#] [R1#] L11# (1 [R1#] ())))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# (mulInt [R1#] [R1#] [R1#] L11# L14#))))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# (mulInt [R1#] [R1#] [R1#] L9# L15#)))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# (mulInt [R1#] [R1#] [R1#] L7# L16#))
+mulInt [R1#] [R1#] [R1#] L3# (mulInt [R1#] [R1#] [R1#] L5# L17#)
+mulInt [R1#] [R1#] [R1#] L3# L18#
 L19#
 STORE
  NextLoc: 20
@@ -37,7 +37,7 @@ STORE
  Global:  {}
 
  Binds:
- L1#:R0# -> LAMS (r : %) (n : Int r).case n of {0  -> 1 {r} (); _ -> mulInt {r} {r} {r} n (L1# {r} (subInt {r} {r} {r} n (1 {r} ())))}
+ L1#:R0# -> LAMS (r : %) (n : Int r).case n of {0  -> 1 [r] (); _ -> mulInt [r] [r] [r] n (L1# [r] (subInt [r] [r] [r] n (1 [r] ())))}
  L3#:R1# -> OBJ 5
  L4#:R1# -> OBJ 1
  L5#:R1# -> OBJ 4
@@ -57,31 +57,31 @@ STORE
  L19#:R1# -> OBJ 120
 
 -- Tail recursive factorial.
-letrec {fac : [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r = \(r :%).\(acc n :Int r).case n of {0  -> acc; 1  -> acc; _ -> fac {r} (mulInt {r} {r} {r} acc n) (subInt {r} {r} {r} n (1 {r} ()))}} in fac {R1#} (1 {R1#} ()) (5 {R1#} ())
-L1# {R1#} (1 {R1#} ()) (5 {R1#} ())
-L1# {R1#} L3# (5 {R1#} ())
-L1# {R1#} L3# L4#
-case L4# of {0  -> L3#; 1  -> L3#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L3# L4#) (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ()))}
-L1# {R1#} (mulInt {R1#} {R1#} {R1#} L3# L4#) (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ()))
-L1# {R1#} L5# (subInt {R1#} {R1#} {R1#} L4# (1 {R1#} ()))
-L1# {R1#} L5# (subInt {R1#} {R1#} {R1#} L4# L6#)
-L1# {R1#} L5# L7#
-case L7# of {0  -> L5#; 1  -> L5#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L5# L7#) (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))}
-L1# {R1#} (mulInt {R1#} {R1#} {R1#} L5# L7#) (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))
-L1# {R1#} L8# (subInt {R1#} {R1#} {R1#} L7# (1 {R1#} ()))
-L1# {R1#} L8# (subInt {R1#} {R1#} {R1#} L7# L9#)
-L1# {R1#} L8# L10#
-case L10# of {0  -> L8#; 1  -> L8#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L8# L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))}
-L1# {R1#} (mulInt {R1#} {R1#} {R1#} L8# L10#) (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
-L1# {R1#} L11# (subInt {R1#} {R1#} {R1#} L10# (1 {R1#} ()))
-L1# {R1#} L11# (subInt {R1#} {R1#} {R1#} L10# L12#)
-L1# {R1#} L11# L13#
-case L13# of {0  -> L11#; 1  -> L11#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L11# L13#) (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))}
-L1# {R1#} (mulInt {R1#} {R1#} {R1#} L11# L13#) (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))
-L1# {R1#} L14# (subInt {R1#} {R1#} {R1#} L13# (1 {R1#} ()))
-L1# {R1#} L14# (subInt {R1#} {R1#} {R1#} L13# L15#)
-L1# {R1#} L14# L16#
-case L16# of {0  -> L14#; 1  -> L14#; _ -> L1# {R1#} (mulInt {R1#} {R1#} {R1#} L14# L16#) (subInt {R1#} {R1#} {R1#} L16# (1 {R1#} ()))}
+letrec {fac : [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r = \(r :%).\(acc n :Int r).case n of {0  -> acc; 1  -> acc; _ -> fac [r] (mulInt [r] [r] [r] acc n) (subInt [r] [r] [r] n (1 [r] ()))}} in fac [R1#] (1 [R1#] ()) (5 [R1#] ())
+L1# [R1#] (1 [R1#] ()) (5 [R1#] ())
+L1# [R1#] L3# (5 [R1#] ())
+L1# [R1#] L3# L4#
+case L4# of {0  -> L3#; 1  -> L3#; _ -> L1# [R1#] (mulInt [R1#] [R1#] [R1#] L3# L4#) (subInt [R1#] [R1#] [R1#] L4# (1 [R1#] ()))}
+L1# [R1#] (mulInt [R1#] [R1#] [R1#] L3# L4#) (subInt [R1#] [R1#] [R1#] L4# (1 [R1#] ()))
+L1# [R1#] L5# (subInt [R1#] [R1#] [R1#] L4# (1 [R1#] ()))
+L1# [R1#] L5# (subInt [R1#] [R1#] [R1#] L4# L6#)
+L1# [R1#] L5# L7#
+case L7# of {0  -> L5#; 1  -> L5#; _ -> L1# [R1#] (mulInt [R1#] [R1#] [R1#] L5# L7#) (subInt [R1#] [R1#] [R1#] L7# (1 [R1#] ()))}
+L1# [R1#] (mulInt [R1#] [R1#] [R1#] L5# L7#) (subInt [R1#] [R1#] [R1#] L7# (1 [R1#] ()))
+L1# [R1#] L8# (subInt [R1#] [R1#] [R1#] L7# (1 [R1#] ()))
+L1# [R1#] L8# (subInt [R1#] [R1#] [R1#] L7# L9#)
+L1# [R1#] L8# L10#
+case L10# of {0  -> L8#; 1  -> L8#; _ -> L1# [R1#] (mulInt [R1#] [R1#] [R1#] L8# L10#) (subInt [R1#] [R1#] [R1#] L10# (1 [R1#] ()))}
+L1# [R1#] (mulInt [R1#] [R1#] [R1#] L8# L10#) (subInt [R1#] [R1#] [R1#] L10# (1 [R1#] ()))
+L1# [R1#] L11# (subInt [R1#] [R1#] [R1#] L10# (1 [R1#] ()))
+L1# [R1#] L11# (subInt [R1#] [R1#] [R1#] L10# L12#)
+L1# [R1#] L11# L13#
+case L13# of {0  -> L11#; 1  -> L11#; _ -> L1# [R1#] (mulInt [R1#] [R1#] [R1#] L11# L13#) (subInt [R1#] [R1#] [R1#] L13# (1 [R1#] ()))}
+L1# [R1#] (mulInt [R1#] [R1#] [R1#] L11# L13#) (subInt [R1#] [R1#] [R1#] L13# (1 [R1#] ()))
+L1# [R1#] L14# (subInt [R1#] [R1#] [R1#] L13# (1 [R1#] ()))
+L1# [R1#] L14# (subInt [R1#] [R1#] [R1#] L13# L15#)
+L1# [R1#] L14# L16#
+case L16# of {0  -> L14#; 1  -> L14#; _ -> L1# [R1#] (mulInt [R1#] [R1#] [R1#] L14# L16#) (subInt [R1#] [R1#] [R1#] L16# (1 [R1#] ()))}
 L14#
 STORE
  NextLoc: 17
@@ -90,7 +90,7 @@ STORE
  Global:  {}
 
  Binds:
- L1#:R0# -> LAMS (r : %) (acc : Int r) (n : Int r).case n of {0  -> acc; 1  -> acc; _ -> L1# {r} (mulInt {r} {r} {r} acc n) (subInt {r} {r} {r} n (1 {r} ()))}
+ L1#:R0# -> LAMS (r : %) (acc : Int r) (n : Int r).case n of {0  -> acc; 1  -> acc; _ -> L1# [r] (mulInt [r] [r] [r] acc n) (subInt [r] [r] [r] n (1 [r] ()))}
  L3#:R1# -> OBJ 1
  L4#:R1# -> OBJ 5
  L5#:R1# -> OBJ 5
@@ -107,38 +107,38 @@ STORE
  L16#:R1# -> OBJ 1
 
 -- Enumeration.
-letrec {enumFromTo : [r1 r2 :%].Int r1 -> Int r1 -(Read r1 + Alloc r1 | Use r1)> List r2 (Int r1) = \(r1 r2 :%).\(m n :Int r1).case eqInt {r1} {r1} {r1} m n of {0  -> Cons {r2} {Int r1} m (enumFromTo {r1} {r2} (addInt {r1} {r1} {r1} m (1 {r1} ())) n); _ -> Cons {r2} {Int r1} m (Nil {r2} {Int r1} ())}} in enumFromTo {R1#} {R2#} (5 {R1#} ()) (9 {R1#} ())
-L1# {R1#} {R2#} (5 {R1#} ()) (9 {R1#} ())
-L1# {R1#} {R2#} L3# (9 {R1#} ())
-L1# {R1#} {R2#} L3# L4#
-case eqInt {R1#} {R1#} {R1#} L3# L4# of {0  -> Cons {R2#} {Int R1#} L3# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L3# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L3# (Nil {R2#} {Int R1#} ())}
-case L5# of {0  -> Cons {R2#} {Int R1#} L3# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L3# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L3# (Nil {R2#} {Int R1#} ())}
-Cons {R2#} {Int R1#} L3# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L3# (1 {R1#} ())) L4#)
-Cons {R2#} {Int R1#} L3# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L3# L6#) L4#)
-Cons {R2#} {Int R1#} L3# (L1# {R1#} {R2#} L7# L4#)
-Cons {R2#} {Int R1#} L3# case eqInt {R1#} {R1#} {R1#} L7# L4# of {0  -> Cons {R2#} {Int R1#} L7# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L7# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L7# (Nil {R2#} {Int R1#} ())}
-Cons {R2#} {Int R1#} L3# case L8# of {0  -> Cons {R2#} {Int R1#} L7# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L7# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L7# (Nil {R2#} {Int R1#} ())}
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L7# (1 {R1#} ())) L4#))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L7# L9#) L4#))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (L1# {R1#} {R2#} L10# L4#))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# case eqInt {R1#} {R1#} {R1#} L10# L4# of {0  -> Cons {R2#} {Int R1#} L10# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L10# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L10# (Nil {R2#} {Int R1#} ())})
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# case L11# of {0  -> Cons {R2#} {Int R1#} L10# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L10# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L10# (Nil {R2#} {Int R1#} ())})
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L10# (1 {R1#} ())) L4#)))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L10# L12#) L4#)))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (L1# {R1#} {R2#} L13# L4#)))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# case eqInt {R1#} {R1#} {R1#} L13# L4# of {0  -> Cons {R2#} {Int R1#} L13# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L13# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L13# (Nil {R2#} {Int R1#} ())}))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# case L14# of {0  -> Cons {R2#} {Int R1#} L13# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L13# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L13# (Nil {R2#} {Int R1#} ())}))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (Cons {R2#} {Int R1#} L13# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L13# (1 {R1#} ())) L4#))))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (Cons {R2#} {Int R1#} L13# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L13# L15#) L4#))))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (Cons {R2#} {Int R1#} L13# (L1# {R1#} {R2#} L16# L4#))))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (Cons {R2#} {Int R1#} L13# case eqInt {R1#} {R1#} {R1#} L16# L4# of {0  -> Cons {R2#} {Int R1#} L16# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L16# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L16# (Nil {R2#} {Int R1#} ())})))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (Cons {R2#} {Int R1#} L13# case L17# of {0  -> Cons {R2#} {Int R1#} L16# (L1# {R1#} {R2#} (addInt {R1#} {R1#} {R1#} L16# (1 {R1#} ())) L4#); _ -> Cons {R2#} {Int R1#} L16# (Nil {R2#} {Int R1#} ())})))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (Cons {R2#} {Int R1#} L13# (Cons {R2#} {Int R1#} L16# (Nil {R2#} {Int R1#} ())))))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (Cons {R2#} {Int R1#} L13# (Cons {R2#} {Int R1#} L16# L18#))))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# (Cons {R2#} {Int R1#} L13# L19#)))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# (Cons {R2#} {Int R1#} L10# L20#))
-Cons {R2#} {Int R1#} L3# (Cons {R2#} {Int R1#} L7# L21#)
-Cons {R2#} {Int R1#} L3# L22#
+letrec {enumFromTo : [r1 r2 :%].Int r1 -> Int r1 -(Read r1 + Alloc r1 | Use r1)> List r2 (Int r1) = \(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+L1# [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+L1# [R1#] [R2#] L3# (9 [R1#] ())
+L1# [R1#] [R2#] L3# L4#
+case eqInt [R1#] [R1#] [R1#] L3# L4# of {0  -> Cons [R2#] [Int R1#] L3# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L3# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L3# (Nil [R2#] [Int R1#] ())}
+case L5# of {0  -> Cons [R2#] [Int R1#] L3# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L3# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L3# (Nil [R2#] [Int R1#] ())}
+Cons [R2#] [Int R1#] L3# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L3# (1 [R1#] ())) L4#)
+Cons [R2#] [Int R1#] L3# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L3# L6#) L4#)
+Cons [R2#] [Int R1#] L3# (L1# [R1#] [R2#] L7# L4#)
+Cons [R2#] [Int R1#] L3# case eqInt [R1#] [R1#] [R1#] L7# L4# of {0  -> Cons [R2#] [Int R1#] L7# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L7# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L7# (Nil [R2#] [Int R1#] ())}
+Cons [R2#] [Int R1#] L3# case L8# of {0  -> Cons [R2#] [Int R1#] L7# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L7# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L7# (Nil [R2#] [Int R1#] ())}
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L7# (1 [R1#] ())) L4#))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L7# L9#) L4#))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (L1# [R1#] [R2#] L10# L4#))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# case eqInt [R1#] [R1#] [R1#] L10# L4# of {0  -> Cons [R2#] [Int R1#] L10# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L10# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L10# (Nil [R2#] [Int R1#] ())})
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# case L11# of {0  -> Cons [R2#] [Int R1#] L10# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L10# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L10# (Nil [R2#] [Int R1#] ())})
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L10# (1 [R1#] ())) L4#)))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L10# L12#) L4#)))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (L1# [R1#] [R2#] L13# L4#)))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# case eqInt [R1#] [R1#] [R1#] L13# L4# of {0  -> Cons [R2#] [Int R1#] L13# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L13# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L13# (Nil [R2#] [Int R1#] ())}))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# case L14# of {0  -> Cons [R2#] [Int R1#] L13# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L13# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L13# (Nil [R2#] [Int R1#] ())}))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (Cons [R2#] [Int R1#] L13# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L13# (1 [R1#] ())) L4#))))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (Cons [R2#] [Int R1#] L13# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L13# L15#) L4#))))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (Cons [R2#] [Int R1#] L13# (L1# [R1#] [R2#] L16# L4#))))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (Cons [R2#] [Int R1#] L13# case eqInt [R1#] [R1#] [R1#] L16# L4# of {0  -> Cons [R2#] [Int R1#] L16# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L16# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L16# (Nil [R2#] [Int R1#] ())})))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (Cons [R2#] [Int R1#] L13# case L17# of {0  -> Cons [R2#] [Int R1#] L16# (L1# [R1#] [R2#] (addInt [R1#] [R1#] [R1#] L16# (1 [R1#] ())) L4#); _ -> Cons [R2#] [Int R1#] L16# (Nil [R2#] [Int R1#] ())})))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (Cons [R2#] [Int R1#] L13# (Cons [R2#] [Int R1#] L16# (Nil [R2#] [Int R1#] ())))))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (Cons [R2#] [Int R1#] L13# (Cons [R2#] [Int R1#] L16# L18#))))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# (Cons [R2#] [Int R1#] L13# L19#)))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# (Cons [R2#] [Int R1#] L10# L20#))
+Cons [R2#] [Int R1#] L3# (Cons [R2#] [Int R1#] L7# L21#)
+Cons [R2#] [Int R1#] L3# L22#
 L23#
 STORE
  NextLoc: 24
@@ -147,7 +147,7 @@ STORE
  Global:  {}
 
  Binds:
- L1#:R0# -> LAMS (r1 : %) (r2 : %) (m : Int r1) (n : Int r1).case eqInt {r1} {r1} {r1} m n of {0  -> Cons {r2} {Int r1} m (L1# {r1} {r2} (addInt {r1} {r1} {r1} m (1 {r1} ())) n); _ -> Cons {r2} {Int r1} m (Nil {r2} {Int r1} ())}
+ L1#:R0# -> LAMS (r1 : %) (r2 : %) (m : Int r1) (n : Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (L1# [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}
  L3#:R1# -> OBJ 5
  L4#:R1# -> OBJ 9
  L5#:R1# -> OBJ 0

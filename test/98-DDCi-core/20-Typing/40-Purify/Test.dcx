@@ -2,28 +2,28 @@
 -- Error: region is free in the return type of the returned function.
 :check..
 letregion r1 with {w1 : Const r1} in
-\(x:Unit). purify <alloc {r1} w1> (5 {r1} ());;
+\(x:Unit). purify <alloc [r1] w1> (5 [r1] ());;
 
 
 -- Error: witness for purify does not witness purity
 -- We've left off the variable for the const witness.
 :check..
 letregion r1 with {w1 : Const r1} in
-\(x:Unit). purify <alloc {r1}> (5 {r1} ());;
+\(x:Unit). purify <alloc [r1]> (5 [r1] ());;
 
 
 -- Error: region is visible in the effect of the returned function.
 :check..
 letregion r1 with {w1 : Const r1} in
-\(x:Unit). addInt {:r1 R0# R0#:} (2 {r1} ()) (3 {R0#} ());;
+\(x:Unit). addInt [:r1 R0# R0#:] (2 [r1] ()) (3 [R0#] ());;
 
 
 -- Error: region is visible in the effect of the returned function.
 -- We've purified the read effect, but the alloc effect is still visible.
 :check..
 letregion r1 with {w1 : Const r1} in
-\(x:Unit). purify <read {r1} w1>
-           (addInt {:r1 R0# R0#:} (2 {r1} ()) (3 {R0#} ()));;
+\(x:Unit). purify <read [r1] w1>
+           (addInt [:r1 R0# R0#:] (2 [r1] ()) (3 [R0#] ()));;
 
 
 -- Error: region is visible in the closure of the returned function.
@@ -32,5 +32,5 @@ letregion r1 with {w1 : Const r1} in
 -- function's closure.
 :check..
 letregion r1 with {w1 : Const r1} in
-\(x:Unit). purify <read {r1} w1 & alloc {r1} w1>
-           (addInt {:r1 R0# R0#:} (2 {r1} ()) (3 {R0#} ()));;
+\(x:Unit). purify <read [r1] w1 & alloc [r1] w1>
+           (addInt [:r1 R0# R0#:] (2 [r1] ()) (3 [R0#] ()));;

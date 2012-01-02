@@ -4,6 +4,6 @@
 -- environment because the new witnesses may conflict with the old ones.
 :check..
 letregion r1 with {w1 : Const r1}   in
-let x : Int r1 = 5 {r1} () in
+let x : Int r1 = 5 [r1] () in
 letregion r1 with {w1 : Mutable r1} in
-updateInt {:r1 r1:} <w1> x (0 {r1} ());;
+updateInt [:r1 r1:] <w1> x (0 [r1] ());;

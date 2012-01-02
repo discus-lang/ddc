@@ -24,8 +24,8 @@ data Tok n
 
 data TokAtom
         -- compound parens
-        = KBraceColonBra
-        | KBraceColonKet
+        = KSquareColonBra
+        | KSquareColonKet
         | KAngleColonBra
         | KAngleColonKet
 

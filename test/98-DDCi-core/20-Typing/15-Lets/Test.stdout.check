@@ -1,11 +1,11 @@
 -- Let expression with explicit type annotation.
-let x : Int R0# = 5 {R0#} () in x
+let x : Int R0# = 5 [R0#] () in x
 ::  Int R0#
 :!: Alloc R0#
 :$: Use R0#
 
 -- Let expression with no type annotation.
-let x = 5 {R0#} () in x
+let x = 5 [R0#] () in x
 ::  Int R0#
 :!: Alloc R0#
 :$: Use R0#

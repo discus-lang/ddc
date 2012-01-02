@@ -2,7 +2,7 @@
 -- We've purified the read and alloc effects, but we can still see
 -- that the function uses the region due to the Use term in the
 -- function's closure.
-letregion r1 with {w0 : Global r1; w1 : Const r1} in \(x : Unit).forget <use {r1} w0 w1> (purify <read {r1} w1 & alloc {r1} w1> (addInt {r1} {R0#} {R0#} (2 {r1} ()) (3 {R0#} ())))
+letregion r1 with {w0 : Global r1; w1 : Const r1} in \(x : Unit).forget <use [r1] w0 w1> (purify <read [r1] w1 & alloc [r1] w1> (addInt [r1] [R0#] [R0#] (2 [r1] ()) (3 [R0#] ())))
 ::  Unit -(Read R0# + Alloc R0# | Use R0#)> Int R0#
 :!: !0
 :$: Use R0#
