@@ -237,13 +237,16 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
 
         -- The right of the binding should have data kind.
         when (not $ isDataKind k11')
-         $ error $ "checkExpM: LLet does not bind a value variable." ++ (pretty $ ppr k11')     -- TODO: real error message
+         $ throw $ ErrorLetBindingNotData xx b11' k11'
           
         -- Check the body expression.
         let env1  = Env.extend b11' env
         (t2, effs2, clo2)     <- checkExpM env1 x2
 
-        -- TODO: body should have data kind.
+        -- The body should have data kind.
+        k2              <- checkTypeM env t2
+        when (not $ isDataKind k2)
+         $ throw $ ErrorLetBodyNotData xx t2 k2
 
         -- Mask closure terms due to locally bound value vars.
         let clo2_masked
@@ -262,9 +265,13 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
         let (bs, xs)    = unzip bxs
 
         -- Check all the annotations.
-        _ks             <- mapM (checkTypeM env) $ map typeOfBind bs
+        ks             <- mapM (checkTypeM env) $ map typeOfBind bs
 
-        -- TODO: check all the annots have data kind.
+        -- Check all the annots have data kind.
+        zipWithM_ (\b k
+         -> when (not $ isDataKind k)
+                $ throw $ ErrorLetBindingNotData xx b k)
+                bs ks
 
         -- All variables are in scope in all right hand sides.
         let env'        = Env.extends bs env
@@ -280,14 +287,17 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
                         else return ())
                 bs tsRight
 
-        -- TODO: all bindings need to be lambdas.
-
         -- Check the body expression.
         (tBody, effsBody, closBody) 
                 <- checkExpM env' xBody
 
+        -- The body should have data kind.
+        kBody   <- checkTypeM env' tBody
+        when (not $ isDataKind kBody)
+         $ throw $ ErrorLetBodyNotData xx tBody kBody
+
         -- TODO: mask closure terms.
-        -- TODO: body should have data kind.
+        -- TODO: all bindings need to be lambdas.
 
         return  ( tBody
                 , effsBody

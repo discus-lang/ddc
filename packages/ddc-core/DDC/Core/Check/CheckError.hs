@@ -24,6 +24,8 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorType             :: Type n }
 
+
+        -- Application ------------------------------------
         -- | Types of parameter and arg don't match when checking application.
         | ErrorAppMismatch
         { errorChecking         :: Exp a n
@@ -36,6 +38,8 @@ data Error a n
         , errorNotFunType       :: Type n
         , errorArgType          :: Type n }
 
+
+        -- Lambda -----------------------------------------
         -- | Non-computation abstractions cannot have visible effects.
         | ErrorLamNotPure
         { errorChecking         :: Exp a n
@@ -59,11 +63,25 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
+
+        -- Let --------------------------------------------
         -- | In let expression, type of binder does not match type of right of binding.
         | ErrorLetMismatch
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorType             :: Type n }
+
+        -- | Let(rec) bindings should have kind '*'
+        | ErrorLetBindingNotData
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorKind             :: Kind n }
+
+        -- | Let(rec) body should have kind '*'
+        | ErrorLetBodyNotData
+        { errorChecking         :: Exp a n
+        , errorType             :: Type n
+        , errorKind             :: Kind n }
 
         -- | Tried to rebind a region variable with the same name as on in the environment.
         | ErrorLetRegionRebound
@@ -199,14 +217,14 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  
         
         ErrorLamBindNotData xx t1 k1
-         -> vcat [ text "Function parameter does not have value kind."
+         -> vcat [ text "Function parameter does not have data kind."
                  , text "    The function parameter:"   <> ppr t1
                  , text "                  has kind: "  <> ppr k1
                  , text "            but it must be: *"
                  , text "             when checking: "  <> ppr xx ]
 
         ErrorLamBodyNotData xx b1 t2 k2
-         -> vcat [ text "Result of function does not have value kind."
+         -> vcat [ text "Result of function does not have data kind."
                  , text "   In function with binder: "  <> ppr b1
                  , text "       the result has type: "  <> ppr t2
                  , text "                 with kind: "  <> ppr k2
@@ -226,8 +244,21 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "     but the body has type: "  <> ppr t
                  , text "             when checking: "  <> ppr xx ]
 
+        ErrorLetBindingNotData xx b k
+         -> vcat [ text "Let binding does not have data kind."
+                 , text "      The binding for: "       <> ppr (binderOfBind b)
+                 , text "             has type: "       <> ppr (typeOfBind b)
+                 , text "            with kind: "       <> ppr k
+                 , text "       but it must be: * "
+                 , text "        when checking: "       <> ppr xx ]
 
-        -- Letregion --------------------------------------                 
+        ErrorLetBodyNotData xx t k
+         -> vcat [ text "Let body does not have data kind."
+                 , text " Body of let has type: "       <> ppr t
+                 , text "            with kind: "       <> ppr k
+                 , text "       but it must be: * "
+                 , text "        when checking: "       <> ppr xx ]
+
         ErrorLetRegionRebound xx b
          -> vcat [ text "Region variable shadows existing one."
                  , text "           Region variable: "  <> ppr b

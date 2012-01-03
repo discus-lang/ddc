@@ -116,3 +116,32 @@ letrec
                 (Nil [r2] [Int r1] ());
   }
 in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+
+
+
+-- Error: binding must have data kind.
+:check..
+ \(e1:!).
+  let e2 : !  = e1
+  in ();;
+
+
+-- Error: binding must have data kind.
+:check..
+ \(e1:!).
+  letrec e2 : !  = e1
+  in ();;
+
+
+-- Error: body must have data kind.
+:check..
+ \(e1:!).
+  let x : Unit  = ()
+  in e1;;
+
+
+-- Error: body must have data kind.
+:check..
+ \(e1:!).
+  letrec x : Unit  = ()
+  in e1;;

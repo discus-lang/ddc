@@ -56,3 +56,33 @@ letrec {enumFromTo : [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1
 :!: Read R1# + Alloc R1# + Alloc R2#
 :$: Use R1# + Use R2#
 
+-- Error: binding must have data kind.
+Let binding does not have data kind.
+      The binding for: e2
+             has type: !
+            with kind: **
+       but it must be: * 
+        when checking: let e2 : ! = e1 in ()
+
+-- Error: binding must have data kind.
+Let binding does not have data kind.
+      The binding for: e2
+             has type: !
+            with kind: **
+       but it must be: * 
+        when checking: letrec {e2 : ! = e1} in ()
+
+-- Error: body must have data kind.
+Let body does not have data kind.
+ Body of let has type: !
+            with kind: **
+       but it must be: * 
+        when checking: let x : Unit = () in e1
+
+-- Error: body must have data kind.
+Let body does not have data kind.
+ Body of let has type: !
+            with kind: **
+       but it must be: * 
+        when checking: letrec {x : Unit = ()} in e1
+
