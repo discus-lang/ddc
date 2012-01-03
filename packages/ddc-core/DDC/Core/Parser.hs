@@ -59,8 +59,8 @@ pExp
 
 
         -- Local region binding
-        --   let region r1 with { w1 : T1 ... } in T2
-        --   let region r1 in T2
+        --   letregion BINDER with { BINDER : TYPE ... } in EXP
+        --   letregion BINDER in EXP
  , do   pTok KLetRegion
         br      <- T.pBinder
         let b   = T.makeBindFromBinder br T.kRegion
@@ -82,6 +82,15 @@ pExp
          , do   pTok KIn
                 x       <- pExp
                 return $ XLet ()  (LLetRegion b []) x ]
+
+
+        -- withregion CON in EXP
+  , do  pTok KWithRegion
+        n       <- pVar
+        pTok KIn
+        x       <- pExp
+        let u   = UName n (T.tBot T.kRegion)
+        return  $ XLet () (LWithRegion u) x
 
 
         -- case EXP of { ALTS }

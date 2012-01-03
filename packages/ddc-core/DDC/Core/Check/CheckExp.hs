@@ -291,7 +291,7 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
         (tBody, effsBody, closBody) 
                 <- checkExpM env' xBody
 
-        -- The body should have data kind.
+        -- The body type must have data kind.
         kBody   <- checkTypeM env' tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
@@ -305,19 +305,18 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
 
 
 -- letregion --------------------------------------
--- TODO: check well formedness of witness set.
 checkExpM env xx@(XLet _ (LLetRegion b bs) x)
- -- The parser should ensure the bound variable always has region kind.
- | not $ isRegionKind (typeOfBind b)
- = error "checkExpM: LRegion does not bind a region variable."                  -- TODO: real error message
-
- | otherwise
  = case takeSubstBoundOfBind b of
      Nothing     -> checkExpM env x
      Just u
       -> do
-        -- Check the region variable.
-        checkTypeM env (typeOfBind b)
+        -- Check the type on the region binder.
+        let k   = typeOfBind b
+        checkTypeM env k
+
+        -- The binder must have region kind.
+        when (not $ isRegionKind k)
+         $ throw $ ErrorLetRegionNotRegion xx b k
 
         -- We can't shadow region binders because we might have witnesses
         -- in the environment that conflict with the ones created here.
@@ -333,13 +332,18 @@ checkExpM env xx@(XLet _ (LLetRegion b bs) x)
         checkWitnessBindsM xx u bs
 
         -- Check the body expression.
-        let env2         = Env.extends bs env1
-        (t, effs, clo)  <- checkExpM env2 x
+        let env2            = Env.extends bs env1
+        (tBody, effs, clo)  <- checkExpM env2 x
+
+        -- The body type must have data kind.
+        kBody               <- checkTypeM env2 tBody
+        when (not $ isDataKind kBody)
+         $ throw $ ErrorLetBodyNotData xx tBody kBody
 
         -- The bound region variable cannot be free in the body type.
-        let fvsT         = free Env.empty t
+        let fvsT         = free Env.empty tBody
         when (Set.member u fvsT)
-         $ throw $ ErrorLetRegionFree xx b t
+         $ throw $ ErrorLetRegionFree xx b tBody
         
         -- Delete effects on the bound region from the result.
         let effs'       = Sum.delete (tRead  (TVar u))
@@ -350,21 +354,26 @@ checkExpM env xx@(XLet _ (LLetRegion b bs) x)
         -- Delete the bound region variable from the closure.
         let clo_masked  = Set.delete (GBoundRgnVar u) clo
         
-        return (t, effs', clo_masked)
+        return (tBody, effs', clo_masked)
 
 
 -- withregion -----------------------------------
-checkExpM env (XLet _ (LWithRegion u) x)
- -- The evaluation function should ensure this is a handle.
- | not $ isRegionKind (typeOfBound u)
- = error "checkExpM: LWithRegion does not contain a region handle"                              -- TODO: real error message
- 
- | otherwise
- = do   -- Check the region handle.
-        checkTypeM env (typeOfBound u)
+checkExpM env xx@(XLet _ (LWithRegion u) x)
+ = do   -- Check the type on the region handle.
+        let k   = typeOfBound u
+        checkTypeM env k
+
+        -- The handle must have region kind.
+        when (not $ isRegionKind k)
+         $ throw $ ErrorWithRegionNotRegion xx u k
         
         -- Check the body expression.
-        (t, effs, clo) <- checkExpM env x
+        (tBody, effs, clo) <- checkExpM env x
+
+        -- The body type must have data kind.
+        kBody              <- checkTypeM env tBody
+        when (not $ isDataKind kBody)
+         $ throw $ ErrorLetBodyNotData xx tBody kBody
         
         -- Delete effects on the bound region from the result.
         let tu          = TCon $ TyConBound u
@@ -376,7 +385,7 @@ checkExpM env (XLet _ (LWithRegion u) x)
         -- Delete the bound region handle from the closure.
         let clo_masked  = Set.delete (GBoundRgnCon u) clo
 
-        return (t, effs', clo_masked)
+        return (tBody, effs', clo_masked)
                 
 
 -- case expression ------------------------------

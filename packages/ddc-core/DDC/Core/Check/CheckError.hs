@@ -77,10 +77,16 @@ data Error a n
         , errorBind             :: Bind n
         , errorKind             :: Kind n }
 
-        -- | Let(rec) body should have kind '*'
+        -- | Let(rec,region,withregion) body should have kind '*'
         | ErrorLetBodyNotData
         { errorChecking         :: Exp a n
         , errorType             :: Type n
+        , errorKind             :: Kind n }
+
+        -- | Region binding does not have region kind.
+        | ErrorLetRegionNotRegion
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n
         , errorKind             :: Kind n }
 
         -- | Tried to rebind a region variable with the same name as on in the environment.
@@ -111,6 +117,11 @@ data Error a n
         , errorBoundRegion      :: Bound n
         , errorBindWitness      :: Bind  n }
 
+        -- | Withregion handle does not have region kind.
+        | ErrorWithRegionNotRegion
+        { errorChecking         :: Exp a n
+        , errorBound            :: Bound n
+        , errorKind             :: Kind n }
 
         -- Witnesses --------------------------------------
         -- | Type mismatch in witness application.
@@ -259,6 +270,13 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "       but it must be: * "
                  , text "        when checking: "       <> ppr xx ]
 
+        ErrorLetRegionNotRegion xx b k
+         -> vcat [ text "Letregion binder does not have region kind."
+                 , text "        Region binder: "       <> ppr b
+                 , text "             has kind: "       <> ppr k
+                 , text "       but is must be: %" 
+                 , text "        when checking: "       <> ppr xx ]
+
         ErrorLetRegionRebound xx b
          -> vcat [ text "Region variable shadows existing one."
                  , text "           Region variable: "  <> ppr b
@@ -289,6 +307,12 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "  but witness type is: "       <> ppr b2
                  , text "        when checking: "       <> ppr xx]
 
+        ErrorWithRegionNotRegion xx u k
+         -> vcat [ text "Withregion handle does not have region kind."
+                 , text "   Region var or ctor: "       <> ppr u
+                 , text "             has kind: "       <> ppr k
+                 , text "       but it must be: %"
+                 , text "        when checking: "       <> ppr xx]
 
         -- Witnesses --------------------------------------
         ErrorWAppMismatch ww t1 t2

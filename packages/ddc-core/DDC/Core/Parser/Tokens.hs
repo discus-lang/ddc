@@ -61,6 +61,7 @@ data TokAtom
         | KLet
         | KLetRec
         | KLetRegion
+        | KWithRegion
         | KCase
         | KPurify
         | KForget

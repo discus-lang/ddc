@@ -179,13 +179,14 @@ lexExp str
 -- | Textual keywords in the core language.
 keywords :: [(String, Tok n)]
 keywords
- =      [ ("in",        KA KIn)
-        , ("of",        KA KOf) 
-        , ("letrec",    KA KLetRec)
-        , ("letregion", KA KLetRegion)
-        , ("let",       KA KLet)
-        , ("case",      KA KCase)
-        , ("purify",    KA KPurify)
-        , ("forget",    KA KForget) 
-        , ("with",      KA KWith)
-        , ("where",     KA KWhere) ]
+ =      [ ("in",         KA KIn)
+        , ("of",         KA KOf) 
+        , ("letrec",     KA KLetRec)
+        , ("letregion",  KA KLetRegion)
+        , ("withregion", KA KWithRegion)
+        , ("let",        KA KLet)
+        , ("case",       KA KCase)
+        , ("purify",     KA KPurify)
+        , ("forget",     KA KForget) 
+        , ("with",       KA KWith)
+        , ("where",      KA KWhere) ]
