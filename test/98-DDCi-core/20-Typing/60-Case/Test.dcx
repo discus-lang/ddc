@@ -4,7 +4,7 @@
 :check..
 case 5 [R0#] () of {
         0 -> 0 [R0#] ();
-        1 -> ();
+        _ -> ();
 };;
 
 
@@ -51,4 +51,19 @@ case xx of {
         Cons x xs -> x;
 };;
 
- 
+
+-- Error: alternatives are not exhaustive, for a Small type.
+:check..
+\(xx:List R0# (Int R1#)).
+case xx of {
+        Cons _ _        -> ()
+};;
+
+
+-- Error: alternatives are not exhaustive, for a Large type.
+:check..
+\(xx:Int R0#).
+case xx of {
+        0       -> ();
+};;
+

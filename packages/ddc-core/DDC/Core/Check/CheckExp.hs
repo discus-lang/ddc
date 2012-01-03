@@ -10,6 +10,7 @@ module DDC.Core.Check.CheckExp
 where
 import DDC.Core.DataDef
 import DDC.Core.Predicates
+import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect.Free
@@ -31,6 +32,7 @@ import qualified DDC.Type.Check         as T
 import qualified Data.Set               as Set
 import Control.Monad
 import Data.List                        as L
+import Data.Maybe
 
 
 -- Wrappers -------------------------------------------------------------------
@@ -414,17 +416,21 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
         (tDiscrim, effs, clos) 
                 <- checkExpM defs env xDiscrim
 
-        -- The discriminant type must be that of algebraic data,
-        --   not a function or effect type etc.
-        when (not $ isAlgDataType tDiscrim)
-         $ throw $ ErrorCaseDiscrimNotAlgebraic xx tDiscrim
+        -- Split the type into the type constructor names and type parameters.
+        -- Also check that it's algebraic data, and not a function or effect
+        -- type etc. 
+        (nTyCon, tsArgs)
+         <- case takeTyConApps tDiscrim of
+                Just (tc, ts)
+                 | TyConBound (UName n t) <- tc
+                 , takeResultKind t == kData
+                 -> return (n, ts)
+                      
+                 | TyConBound (UPrim n t) <- tc
+                 , takeResultKind t == kData
+                 -> return (n, ts)
 
-        -- Take the type arguments from the type of the discriminant.
-        -- This should always succeed because of the isAlgDataType check above.
-        (_tCon, tsArgs)
-                <- case takeTApps tDiscrim of 
-                     []            -> error "checkExpM: tDiscrim did not split"
-                     tCon : tsArgs -> return (tCon, tsArgs)
+                _ -> throw $ ErrorCaseDiscrimNotAlgebraic xx tDiscrim
                         
         -- Check the alternatives.
         (ts, effss, closs)     
@@ -441,9 +447,36 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
          -> when (tAlt /= tAlt') 
              $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
 
-        -- TODO: Check that the alts are exhaustive.
+        -- Get the mode of the data type, 
+        -- this tells us how many constructors there are.
+        mode    <- case lookupModeOfDataType nTyCon defs of
+                        Nothing -> error "no def"
+                        Just m  -> return m
 
         -- TODO: Check for overlapping constructors.
+
+        -- Check the alternatives are exhaustive.
+        (case mode of
+          DataModeSmall nsCtors
+           -- If there is a default alternative then we've covered all the
+           -- possibiliies. We know this we've also checked for overlap.
+           | any isPDefault    [p | AAlt p _ <- alts]
+           -> return ()
+
+           -- Look for unmatched constructors.
+           | nsCtorsMatched <- mapMaybe takeCtorNameOfAlt alts
+           , nsCtorsMissing <- nsCtors \\ nsCtorsMatched
+           , not $ null nsCtorsMissing
+           -> throw $ ErrorCaseNonExhaustive xx nsCtorsMissing
+
+           -- All constructors were matched.
+           | otherwise 
+           -> return ()
+
+          -- TODO: do the check for large types.
+          DataModeLarge 
+           -> return ())
+         
 
         return  ( tAlt
                 , Sum.unions kEffect (effs : effss)

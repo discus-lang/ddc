@@ -11,8 +11,12 @@ module DDC.Core.Compounds
         , makeXApps
         , takeXApps
         , takeXConApps
-        , takeXPrimApps)
+        , takeXPrimApps
+
+          -- * Alternatives
+        , takeCtorNameOfAlt)
 where
+import DDC.Type.Compounds
 import DDC.Core.Exp
 
 
@@ -86,4 +90,15 @@ takeXConApps xx
  = case takeXApps xx of
         XCon _ u : xs   -> Just (u, xs)
         _               -> Nothing
+
+
+-- Alternatives ---------------------------------------------------------------
+-- | Take the constructor name of an alternative, if there is one.
+takeCtorNameOfAlt :: Alt a n -> Maybe n
+takeCtorNameOfAlt aa
+ = case aa of
+        AAlt (PData u _) _      -> takeNameOfBound u
+        _                       -> Nothing
+
+
 

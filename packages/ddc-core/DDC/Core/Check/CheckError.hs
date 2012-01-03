@@ -202,6 +202,11 @@ data Error a n
         , errorTypeAnnot        :: Type n
         , errorTypeField        :: Type n }
 
+        -- | Case expression doesn't match all constructors.
+        | ErrorCaseNonExhaustive
+        { errorChecking         :: Exp a n
+        , errorCtorNamesMissing :: [n] }
+
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
@@ -384,8 +389,10 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         ErrorCaseTooManyBinders xx uCtor iCtorFields iPatternFields
          -> vcat [ text "Pattern has more binders than there are fields in the constructor."
                  , text "     Contructor: " <> ppr uCtor
-                 , text "            has: " <> ppr iCtorFields      <+> text "fields"
-                 , text "  but there are: " <> ppr iPatternFields   <+> text "binders in the pattern" 
+                 , text "            has: " <> ppr iCtorFields      
+                                            <+> text "fields"
+                 , text "  but there are: " <> ppr iPatternFields   
+                                           <+> text "binders in the pattern" 
                  , text "  when checking: " <> ppr xx ]
 
         ErrorCaseAltResultMismatch xx t1 t2
@@ -407,4 +414,10 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "       Annotation type: "      <> ppr tAnnot
                  , text "            Field type: "      <> ppr tField
                  , text "         when checking: "      <> ppr xx ]
+        
+        ErrorCaseNonExhaustive xx ns
+         -> vcat [ text "Case expression is non-exhaustive."
+                 , text " Constructors not matched: "   
+                        <> (sep $ punctuate comma $ map ppr ns)
+                 , text "            when checking: "   <> ppr xx ]
 

@@ -1,6 +1,7 @@
 
 module DDC.Core.Predicates
-        (isXLam)
+        ( isXLam
+        , isPDefault)
 where
 import DDC.Core.Exp
 
@@ -9,3 +10,7 @@ isXLam xx
  = case xx of
         XLam{}  -> True
         _       -> False
+
+isPDefault :: Pat n -> Bool
+isPDefault PDefault     = True
+isPDefault _            = False
