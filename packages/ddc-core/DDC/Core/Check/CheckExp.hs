@@ -576,7 +576,7 @@ checkWitnessBindM xx uRegion bsWit bWit
 
             -- The parser should ensure the right of a witness is a 
             -- constructor or variable.
-            _ -> error "checkWitnessBindM: unexpected witness argument"                 -- TODO: make a real error message
+            _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
 
    in  case typeOfBind bWit of
         TApp (TCon (TyConWitness TwConGlobal))  t2
