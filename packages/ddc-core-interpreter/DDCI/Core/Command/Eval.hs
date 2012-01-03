@@ -3,6 +3,7 @@ module DDCI.Core.Command.Eval
         ( cmdStep
         , cmdEval)
 where
+import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Step
 import DDCI.Core.Eval.Name
 import DDCI.Core.Command.Check
@@ -66,7 +67,7 @@ stepPrint
 stepPrint store x
  = case step store x of
         StepProgress store' x'
-         -> case checkExp Env.empty x' of
+         -> case checkExp primDataDefs Env.empty x' of
              Left err
               -> do putStr $ pretty $ vcat
                         [ ppr x

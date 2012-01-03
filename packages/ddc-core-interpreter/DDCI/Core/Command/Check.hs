@@ -159,7 +159,7 @@ cmdParseCheckExp str
          = let  x'      = C.spread primEnv x
                 fvs     = free     primEnv x'
            in   if Set.null fvs
-                 then   goResult x' (checkExp Env.empty x')
+                 then   goResult x' (checkExp primDataDefs Env.empty x')
                  else do  
                         putStrLn $ pretty $ text "Undefined variables: " <> ppr fvs
                         return Nothing

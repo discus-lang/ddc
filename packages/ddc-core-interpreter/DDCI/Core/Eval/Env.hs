@@ -7,11 +7,13 @@
 --
 module DDCI.Core.Eval.Env
         ( primEnv
+        , primDataDefs
         , typeOfPrimName
         , arityOfName)
 where
 import DDCI.Core.Eval.Compounds
 import DDCI.Core.Eval.Name
+import DDC.Core.DataDef
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Env             (Env)
@@ -123,4 +125,27 @@ arityOfName n
         _ -> Nothing
 
 
+-- DataDefs -------------------------------------------------------------------
+primDataDefs :: DataDefs Name
+primDataDefs
+ = fromListDataDefs
+        -- Unit
+        [ DataDef
+                (NamePrimCon PrimTyConUnit)
+                []
+                (Just [ (NamePrimCon PrimDaConUnit, []) ])
+        
+        -- Int
+        , DataDef
+                (NamePrimCon PrimTyConInt)
+                [kRegion]
+                Nothing
+
+        -- List
+        , DataDef
+                (NamePrimCon PrimTyConList)
+                [kRegion, kData]
+                (Just   [ (NamePrimCon PrimDaConNil,  []) 
+                        , (NamePrimCon PrimDaConCons, [tList (tIx kRegion 1) (tIx kData 0)])])
+        ]
 

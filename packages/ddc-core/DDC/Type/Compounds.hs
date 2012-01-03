@@ -18,11 +18,12 @@ module DDC.Type.Compounds
         , takeSubstBoundOfBind
 
           -- * Type structure
-        , tBot
+        , tIx
         , tApp,         ($:)
         , tApps,        takeTApps,      takeTyConApps
         , tForall
         , tForalls,     takeTForalls
+        , tBot
         , tSum
 
           -- * Function type construction
@@ -166,6 +167,10 @@ takeSubstBoundOfBind bb
         BName n t       -> Just $ UName n t
         BAnon t         -> Just $ UIx 0 t
         BNone _         -> Nothing
+
+
+-- Variables ------------------------------------------------------------------
+tIx k i         = TVar (UIx i k)
 
 
 -- Applications ---------------------------------------------------------------

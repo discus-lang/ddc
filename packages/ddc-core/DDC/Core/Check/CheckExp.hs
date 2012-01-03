@@ -8,6 +8,7 @@ module DDC.Core.Check.CheckExp
         , CheckM(..)
         , TaggedClosure(..))
 where
+import DDC.Core.DataDef
 import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Core.Pretty
@@ -36,10 +37,11 @@ import Data.List                        as L
 -- | Take the kind of a type.
 typeOfExp 
         :: (Ord n, Pretty n)
-        => Exp a n
+        => DataDefs n
+        -> Exp a n
         -> Either (Error a n) (Type n)
-typeOfExp xx 
- = case checkExp Env.empty xx of
+typeOfExp defs xx 
+ = case checkExp defs Env.empty xx of
         Left err        -> Left err
         Right (t, _, _) -> Right t
         
@@ -47,9 +49,9 @@ typeOfExp xx
 -- | Take the kind of a type, or `error` if there isn't one.
 typeOfExp' 
         :: (Pretty n, Ord n) 
-        => Exp a n -> Type n
-typeOfExp' tt
- = case checkExp Env.empty tt of
+        => DataDefs n -> Exp a n -> Type n
+typeOfExp' defs tt
+ = case checkExp defs Env.empty tt of
         Left err        -> error $ show $ ppr err
         Right (t, _, _) -> t
 
@@ -57,13 +59,15 @@ typeOfExp' tt
 -- | Check an expression, returning an error or its type, effect and closure.
 checkExp 
         :: (Ord n, Pretty n)
-        => Env n -> Exp a n
+        => DataDefs n
+        -> Env n 
+        -> Exp a n
         -> Either (Error a n)
                   (Type n, Effect n, Closure n)
 
-checkExp env xx 
+checkExp defs env xx 
  = result
- $ do   (t, effs, clos) <- checkExpM env xx
+ $ do   (t, effs, clos) <- checkExpM defs env xx
         return  ( t
                 , TSum effs
                 , closureOfTaggedSet clos)
@@ -74,12 +78,14 @@ checkExp env xx
 --   returning its type, effect and free value variables.
 checkExpM 
         :: (Ord n, Pretty n)
-        => Env n -> Exp a n
+        => DataDefs n           -- ^ Data type definitions.
+        -> Env n                -- ^ Type environment.
+        -> Exp a n              -- ^ Expression to check.
         -> CheckM a n (Type n, TypeSum n, Set (TaggedClosure n))
 
 
 -- variables and constructors ---------------------
-checkExpM env (XVar _ u)
+checkExpM _defs env (XVar _ u)
  = do   let tBound  = typeOfBound u
         let mtEnv   = Env.lookup u env
 
@@ -115,7 +121,7 @@ checkExpM env (XVar _ u)
                 , Set.singleton $ taggedClosureOfValBound u)
 
 
-checkExpM _env (XCon _ u)
+checkExpM _defs _env (XCon _ u)
  =      return  ( typeOfBound u
                 , Sum.empty kEffect
                 , Set.empty)
@@ -123,8 +129,8 @@ checkExpM _env (XCon _ u)
 
 -- application ------------------------------------
 -- value-type application.
-checkExpM env xx@(XApp _ x1 (XType t2))
- = do   (t1, effs1, clos1)      <- checkExpM  env x1
+checkExpM defs env xx@(XApp _ x1 (XType t2))
+ = do   (t1, effs1, clos1)      <- checkExpM  defs env x1
         k2                      <- checkTypeM env t2
         case t1 of
          TForall b11 t12
@@ -138,8 +144,8 @@ checkExpM env xx@(XApp _ x1 (XType t2))
 
 
 -- value-witness application.
-checkExpM env xx@(XApp _ x1 (XWitness w2))
- =do  (t1, effs1, clos1)      <- checkExpM     env x1
+checkExpM defs env xx@(XApp _ x1 (XWitness w2))
+ =do  (t1, effs1, clos1)      <- checkExpM     defs env x1
       t2                      <- checkWitnessM env w2
       case t1 of
        TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
@@ -151,9 +157,9 @@ checkExpM env xx@(XApp _ x1 (XWitness w2))
                  
 
 -- value-value application.
-checkExpM env xx@(XApp _ x1 x2)
- = do   (t1, effs1, clos1)    <- checkExpM env x1
-        (t2, effs2, clos2)    <- checkExpM env x2
+checkExpM defs env xx@(XApp _ x1 x2)
+ = do   (t1, effs1, clos1)    <- checkExpM defs env x1
+        (t2, effs2, clos2)    <- checkExpM defs env x2
         case t1 of
          TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) _clo) t12
           | t11 == t2   
@@ -166,7 +172,7 @@ checkExpM env xx@(XApp _ x1 x2)
 
 
 -- lambda abstractions ----------------------------
-checkExpM env xx@(XLam _ b1 x2)
+checkExpM defs env xx@(XLam _ b1 x2)
  = do   let t1          =  typeOfBind b1
         k1              <- checkTypeM env t1
         let u1          =  universeFromType2 k1
@@ -179,7 +185,7 @@ checkExpM env xx@(XLam _ b1 x2)
 
         -- Check the body.
         let env'        =  Env.extend b1 env
-        (t2, e2, clo2)  <- checkExpM  env' x2
+        (t2, e2, clo2)  <- checkExpM  defs env' x2
         k2              <- checkTypeM env' t2
 
         -- The form of the function constructor depends on what universe we're
@@ -232,9 +238,9 @@ checkExpM env xx@(XLam _ b1 x2)
 
 
 -- let --------------------------------------------
-checkExpM env xx@(XLet _ (LLet b11 x12) x2)
+checkExpM defs env xx@(XLet _ (LLet b11 x12) x2)
  = do   -- Check the right of the binding.
-        (t12, effs12, clo12)  <- checkExpM env x12
+        (t12, effs12, clo12)  <- checkExpM defs env x12
 
         -- Check binder annotation against the type we inferred for the right.
         (b11', k11')    <- checkLetBindOfTypeM xx env t12 b11
@@ -245,7 +251,7 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
           
         -- Check the body expression.
         let env1  = Env.extend b11' env
-        (t2, effs2, clo2)     <- checkExpM env1 x2
+        (t2, effs2, clo2)     <- checkExpM defs env1 x2
 
         -- The body should have data kind.
         k2              <- checkTypeM env t2
@@ -264,12 +270,12 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
 
 
 -- letrec -----------------------------------------
-checkExpM env xx@(XLet _ (LRec bxs) xBody)
+checkExpM defs env xx@(XLet _ (LRec bxs) xBody)
  = do   
         let (bs, xs)    = unzip bxs
 
         -- Check all the annotations.
-        ks             <- mapM (checkTypeM env) $ map typeOfBind bs
+        ks              <- mapM (checkTypeM env) $  map typeOfBind bs
 
         -- Check all the annots have data kind.
         zipWithM_ (\b k
@@ -287,7 +293,7 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
 
         -- Check the right hand sides.
         (tsRight, _effssBinds, clossBinds) 
-                <- liftM unzip3 $ mapM (checkExpM env') xs
+                <- liftM unzip3 $ mapM (checkExpM defs env') xs
 
         -- Check annots on binders against inferred types of the bindings.
         zipWithM_ (\b t
@@ -298,7 +304,7 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
 
         -- Check the body expression.
         (tBody, effsBody, closBody) 
-                <- checkExpM env' xBody
+                <- checkExpM defs env' xBody
 
         -- The body type must have data kind.
         kBody   <- checkTypeM env' tBody
@@ -318,9 +324,9 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
 
 
 -- letregion --------------------------------------
-checkExpM env xx@(XLet _ (LLetRegion b bs) x)
+checkExpM defs env xx@(XLet _ (LLetRegion b bs) x)
  = case takeSubstBoundOfBind b of
-     Nothing     -> checkExpM env x
+     Nothing     -> checkExpM defs env x
      Just u
       -> do
         -- Check the type on the region binder.
@@ -346,7 +352,7 @@ checkExpM env xx@(XLet _ (LLetRegion b bs) x)
 
         -- Check the body expression.
         let env2            = Env.extends bs env1
-        (tBody, effs, clo)  <- checkExpM env2 x
+        (tBody, effs, clo)  <- checkExpM defs env2 x
 
         -- The body type must have data kind.
         kBody               <- checkTypeM env2 tBody
@@ -371,7 +377,7 @@ checkExpM env xx@(XLet _ (LLetRegion b bs) x)
 
 
 -- withregion -----------------------------------
-checkExpM env xx@(XLet _ (LWithRegion u) x)
+checkExpM defs env xx@(XLet _ (LWithRegion u) x)
  = do   -- Check the type on the region handle.
         let k   = typeOfBound u
         checkTypeM env k
@@ -381,7 +387,7 @@ checkExpM env xx@(XLet _ (LWithRegion u) x)
          $ throw $ ErrorWithRegionNotRegion xx u k
         
         -- Check the body expression.
-        (tBody, effs, clo) <- checkExpM env x
+        (tBody, effs, clo) <- checkExpM defs env x
 
         -- The body type must have data kind.
         kBody              <- checkTypeM env tBody
@@ -402,11 +408,11 @@ checkExpM env xx@(XLet _ (LWithRegion u) x)
                 
 
 -- case expression ------------------------------
-checkExpM env xx@(XCase _ xDiscrim alts)
+checkExpM defs env xx@(XCase _ xDiscrim alts)
  = do
         -- Check the discriminant.
         (tDiscrim, effs, clos) 
-                <- checkExpM env xDiscrim
+                <- checkExpM defs env xDiscrim
 
         -- The discriminant type must be that of algebraic data,
         --   not a function or effect type etc.
@@ -423,7 +429,7 @@ checkExpM env xx@(XCase _ xDiscrim alts)
         -- Check the alternatives.
         (ts, effss, closs)     
                 <- liftM unzip3 
-                $  mapM (checkAltM xx env tDiscrim tsArgs) alts
+                $  mapM (checkAltM xx defs env tDiscrim tsArgs) alts
 
         -- There must be at least one alternative.
         when (null alts)
@@ -446,9 +452,9 @@ checkExpM env xx@(XCase _ xDiscrim alts)
 
 -- type cast -------------------------------------
 -- Purify an effect, given a witness that it is pure.
-checkExpM env xx@(XCast _ (CastPurify w) x1)
+checkExpM defs env xx@(XCast _ (CastPurify w) x1)
  = do   tW              <- checkWitnessM env w
-        (t1, effs, clo) <- checkExpM env x1
+        (t1, effs, clo) <- checkExpM defs env x1
                 
         effs' <- case tW of
                   TApp (TCon (TyConWitness TwConPure)) effMask
@@ -458,9 +464,9 @@ checkExpM env xx@(XCast _ (CastPurify w) x1)
         return (t1, effs', clo)
 
 -- Forget a closure, given a witness that it is empty.
-checkExpM env xx@(XCast _ (CastForget w) x1)
+checkExpM defs env xx@(XCast _ (CastForget w) x1)
  = do   tW               <- checkWitnessM env w
-        (t1, effs, clos) <- checkExpM env x1
+        (t1, effs, clos) <- checkExpM defs env x1
 
         clos' <- case tW of
                   TApp (TCon (TyConWitness TwConEmpty)) cloMask
@@ -474,7 +480,7 @@ checkExpM env xx@(XCast _ (CastForget w) x1)
 
 
 -- some other thing -----------------------------
-checkExpM _env _
+checkExpM _defs _env _
  = error "typeOfExp: not handled yet"
 
 
@@ -482,17 +488,18 @@ checkExpM _env _
 -- | Check a case alternative.
 checkAltM 
         :: (Pretty n, Ord n) 
-        => Exp a n              -- Whole case expression, for error messages.
-        -> Env n 
-        -> Type n               -- Type of discriminant.
-        -> [Type n]             -- Args to type constructor of discriminant.
-        -> Alt a n 
+        => Exp a n              -- ^ Whole case expression, for error messages.
+        -> DataDefs n           -- ^ Data type definitions.
+        -> Env n                -- ^ Type environment.
+        -> Type n               -- ^ Type of discriminant.
+        -> [Type n]             -- ^ Args to type constructor of discriminant.
+        -> Alt a n              -- ^ Alternative to check.
         -> CheckM a n (Type n, TypeSum n, Set (TaggedClosure n))
 
-checkAltM _xx env _tDiscrim _tsArgs (AAlt PDefault xBody)
-        = checkExpM env xBody
+checkAltM _xx defs env _tDiscrim _tsArgs (AAlt PDefault xBody)
+        = checkExpM defs env xBody
 
-checkAltM xx env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
+checkAltM xx defs env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
  = do   
         -- Take the type of the constructor and instantiate it with the 
         -- type arguments we got from the discriminant. 
@@ -533,7 +540,7 @@ checkAltM xx env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
         let env'        = Env.extends bsArg_subst env
         
         -- Check the body in this new environment.
-        (tBody, effsBody, closBody) <- checkExpM env' xBody
+        (tBody, effsBody, closBody) <- checkExpM defs env' xBody
 
         -- Mask bound variables from closure.
         let closBody_masked

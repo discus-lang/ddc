@@ -77,7 +77,7 @@ step' store xx@XLam{}
 
         -- We need the type of the expression to attach to the location
         -- This fakes the store typing from the formal typing rules.
-   in   case typeOfExp xx of
+   in   case typeOfExp primDataDefs xx of
          Left err  -> StepStuckMistyped err
          Right t   -> StepProgress store' (XCon () (UPrim (NameLoc l) t))
 
