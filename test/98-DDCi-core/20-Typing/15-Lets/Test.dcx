@@ -143,5 +143,13 @@ in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 -- Error: body must have data kind.
 :check..
  \(e1:!).
-  letrec x : Unit  = ()
+  letrec foo (x:Unit) : Unit = ()
   in e1;;
+
+
+-- Error: right of letrec binding must be a lambda
+:check..
+ letrec foo : Unit = ()
+ in foo;;
+ 
+

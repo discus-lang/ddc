@@ -88,6 +88,11 @@ data Error a n
         , errorType             :: Type n
         , errorKind             :: Kind n }
 
+        -- | Letrec bindings must be syntactic lambdas.
+        | ErrorLetrecBindingNotLambda
+        { errorChecking         :: Exp a n 
+        , errorExp              :: Exp a n }
+
         -- | Region binding does not have region kind.
         | ErrorLetRegionNotRegion
         { errorChecking         :: Exp a n
@@ -281,6 +286,11 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text " Body of let has type: "       <> ppr t
                  , text "            with kind: "       <> ppr k
                  , text "       but it must be: * "
+                 , text "        when checking: "       <> ppr xx ]
+
+        ErrorLetrecBindingNotLambda xx x
+         -> vcat [ text "Letrec can only bind lambda abstractions."
+                 , text "      This is not one: "       <> ppr x
                  , text "        when checking: "       <> ppr xx ]
 
         ErrorLetRegionNotRegion xx b k

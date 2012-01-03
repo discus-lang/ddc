@@ -84,5 +84,5 @@ Let body does not have data kind.
  Body of let has type: !
             with kind: **
        but it must be: * 
-        when checking: letrec {x : Unit = ()} in e1
+        when checking: letrec {foo : Unit -> Unit = \(x : Unit).()} in e1
 

@@ -8,6 +8,7 @@ module DDC.Core.Check.CheckExp
         , CheckM(..)
         , TaggedClosure(..))
 where
+import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect.Free
@@ -29,6 +30,7 @@ import qualified DDC.Type.Check         as T
 import qualified Data.Set               as Set
 import Control.Monad
 import Data.List                        as L
+
 
 -- Wrappers -------------------------------------------------------------------
 -- | Take the kind of a type.
@@ -275,6 +277,11 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
                 $ throw $ ErrorLetBindingNotData xx b k)
                 bs ks
 
+        -- All right hand sides need to be lambdas.
+        forM_ xs $ \x 
+         -> when (not $ isXLam x)
+                $ throw $ ErrorLetrecBindingNotLambda xx x
+
         -- All variables are in scope in all right hand sides.
         let env'        = Env.extends bs env
 
@@ -299,7 +306,6 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
 
         -- TODO: mask closure terms.
-        -- TODO: all bindings need to be lambdas.
 
         return  ( tBody
                 , effsBody
