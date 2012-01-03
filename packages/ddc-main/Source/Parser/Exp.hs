@@ -96,11 +96,11 @@ pExp1'
 		return	$ XLit sp lit
 
   <|>	-- unterminated string
-	do	Parsec.lookAhead . pTok $ K.Junk "\""
+	do	pTok $ K.Junk "\""
 		fail "unterminated string literal"
 
   <|>	-- unterminated char
-	do	Parsec.lookAhead . pTok $ K.Junk "\'"
+	do	pTok $ K.Junk "\'"
 		fail "unterminated or invalid character literal"
 
   <|>	-- case EXP of { ALT .. }
