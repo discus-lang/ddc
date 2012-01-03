@@ -78,35 +78,37 @@ checkExpM
 
 -- variables and constructors ---------------------
 checkExpM env (XVar _ u)
- = let  tBound  = typeOfBound u
-        mtEnv   = Env.lookup u env
+ = do   let tBound  = typeOfBound u
+        let mtEnv   = Env.lookup u env
 
-        tResult
-         -- When annotation on the bound is bot,
-         --  then use the type from the environment.
-         | Just tEnv    <- mtEnv
-         , isBot tBound
-         = tEnv
+        let mkResult
+             -- When annotation on the bound is bot,
+             --  then use the type from the environment.
+             | Just tEnv    <- mtEnv
+             , isBot tBound
+             = return tEnv
 
-         -- The bound has an explicit type annotation,
-         --  which matches the one from the environment.
-         | Just tEnv    <- mtEnv
-         , tBound == tEnv
-         = tEnv
+             -- The bound has an explicit type annotation,
+             --  which matches the one from the environment.
+             | Just tEnv    <- mtEnv
+             , tBound == tEnv
+             = return tEnv
 
-         -- The bound has an explicit type annotation,
-         --  which does not match the one from the environment.
-         --  This shouldn't happen because the parser doesn't add non-bot
-         --  annotations to bound variables.
-         | Just _tEnv    <- mtEnv
-         = error "checkExpM: annotation on bound does not match that in environment."   -- TODO: real error message
+             -- The bound has an explicit type annotation,
+             --  which does not match the one from the environment.
+             --  This shouldn't happen because the parser doesn't add non-bot
+             --  annotations to bound variables.
+             | Just tEnv    <- mtEnv
+             = throw $ ErrorVarAnnotMismatch u tEnv
 
-         -- Variable not in environment, so use annotation.
-         --  This happens when checking open terms.
-         | otherwise
-         = tBound
+             -- Variable not in environment, so use annotation.
+             --  This happens when checking open terms.
+             | otherwise
+             = return tBound
+        
+        tResult  <- mkResult
 
-   in   return  ( tResult
+        return  ( tResult
                 , Sum.empty kEffect
                 , Set.singleton $ taggedClosureOfValBound u)
 

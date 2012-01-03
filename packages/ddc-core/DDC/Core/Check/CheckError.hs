@@ -24,6 +24,11 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorType             :: Type n }
 
+        -- Var --------------------------------------------
+        -- | Type in environment does not match type annotation on variable.
+        | ErrorVarAnnotMismatch
+        { errorBound            :: Bound n
+        , errorTypeEnv          :: Type n }
 
         -- Application ------------------------------------
         -- | Types of parameter and arg don't match when checking application.
@@ -204,6 +209,14 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         ErrorMalformedType xx tt
          -> vcat [ text "Found malformed type: "        <> ppr tt
                  , text "       when checking: "        <> ppr xx ]
+
+        -- Variable ---------------------------------------
+        ErrorVarAnnotMismatch u t
+         -> vcat [ text "Type mismatch in annotation."
+                 , text "             Variable: "       <> ppr u
+                 , text "       has annotation: "       <> (ppr $ typeOfBound u)
+                 , text " which conflicts with: "       <> ppr t
+                 , text "     from environment." ]
 
 
         -- Application ------------------------------------
