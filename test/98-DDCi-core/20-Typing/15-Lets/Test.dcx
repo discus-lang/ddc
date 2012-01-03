@@ -1,11 +1,118 @@
 
 
--- Let expression with explicit type annotation.
+-- Ok: let expression with explicit type annotation.
 :check let x : Int R0# = 5 [R0#] () in  x
 
--- Let expression with no type annotation.
+
+-- Ok: let expression with no type annotation.
 :check let x = 5 [R0#] () in x
+
 
 -- Error: let binder has incorrect type annotation.
 :check let x : Int R0# = () in x
 
+
+-- Error: outer function is missing a Use annotation.
+:check..
+letrec
+ fac    [r:%] 
+        (acc : Int r) {!0 | $0}
+        (n   : Int r) {Read r + Alloc r | Use r} : Int r
+  = case n of {
+        0       -> acc;
+        1       -> acc;
+        _       -> fac [r] (mulInt [:r r r:] acc n)
+                           (subInt [:r r r:] n (1 [r] ()))
+    }
+in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+
+
+-- Error: inner function is missing an Alloc effect.
+:check..
+letrec
+ fac    [r:%] 
+        (acc : Int r) {!0 | Use r}
+        (n   : Int r) {Read r | Use r} : Int r
+  = case n of {
+        0       -> acc;
+        1       -> acc;
+        _       -> fac [r] (mulInt [:r r r:] acc n)
+                           (subInt [:r r r:] n (1 [r] ()))
+    }
+in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+
+
+-- Error: region var on the Int return type should be r1.
+:check..
+letrec
+ enumFromTo 
+        [r1 r2:%]
+        (m : Int r1) {!0 | Use r1 + Use r2}
+        (n : Int r1) {Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
+        : List r2 (Int r2)
+  = case eqInt [:r1 r1 r1:] m n of {
+        0 -> Cons [r2] [Int r1] m
+                (enumFromTo [:r1 r2:]
+                        (addInt [:r1 r1 r1:] m (1 [r1] ()))
+                        n);
+        _ -> Cons [r2] [Int r1] m
+                (Nil [r2] [Int r1] ());
+  }
+in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+
+
+-- Error: second effect should have Read r1 instead of Read r2.
+:check..
+letrec
+ enumFromTo 
+        [r1 r2:%]
+        (m : Int r1) {!0 | Use r1 + Use r2}
+        (n : Int r1) {Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
+        : List r2 (Int r1)
+  = case eqInt [:r1 r1 r1:] m n of {
+        0 -> Cons [r2] [Int r1] m
+                (enumFromTo [:r1 r2:]
+                        (addInt [:r1 r1 r1:] m (1 [r1] ()))
+                        n);
+        _ -> Cons [r2] [Int r1] m
+                (Nil [r2] [Int r1] ());
+  }
+in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+
+
+-- Should be ok.
+:check..
+letrec
+ enumFromTo 
+        [r1 r2:%]
+        (m : Int r1) {!0 | Use r1 + Use r2}
+        (n : Int r1) {Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
+        : List r2 (Int r1)
+  = case eqInt [:r1 r1 r1:] m n of {
+        0 -> Cons [r2] [Int r1] m
+                (enumFromTo [:r1 r2:]
+                        (addInt [:r1 r1 r1:] m (1 [r1] ()))
+                        n);
+        _ -> Cons [r2] [Int r1] m
+                (Nil [r2] [Int r1] ());
+  }
+in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+
+
+-- Should be ok, and the effect and closure terms are in a different order.
+:check..
+letrec
+ enumFromTo 
+        [r1 r2:%]
+        (m : Int r1) {!0 | Use r2 + Use r1}
+        (n : Int r1) {Alloc r1 + Alloc r2 + Read r1 | Use r1 + Use r2}
+        : List r2 (Int r1)
+  = case eqInt [:r1 r1 r1:] m n of {
+        0 -> Cons [r2] [Int r1] m
+                (enumFromTo [:r1 r2:]
+                        (addInt [:r1 r1 r1:] m (1 [r1] ()))
+                        n);
+        _ -> Cons [r2] [Int r1] m
+                (Nil [r2] [Int r1] ());
+  }
+in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;

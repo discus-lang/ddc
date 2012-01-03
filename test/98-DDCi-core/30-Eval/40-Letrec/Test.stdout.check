@@ -107,7 +107,7 @@ STORE
  L16#:R1# -> OBJ 1
 
 -- Enumeration.
-letrec {enumFromTo : [r1 r2 :%].Int r1 -> Int r1 -(Read r1 + Alloc r1 | Use r1)> List r2 (Int r1) = \(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+letrec {enumFromTo : [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = \(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 L1# [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 L1# [R1#] [R2#] L3# (9 [R1#] ())
 L1# [R1#] [R2#] L3# L4#

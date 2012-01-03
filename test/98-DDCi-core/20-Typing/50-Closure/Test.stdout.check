@@ -24,7 +24,7 @@ let x : Int R0# = 5 [R0#] () in \(z : Unit).addInt [R0#] [R0#] [R1#] x x
 
 -- Multiple levels of binding.
 \(x :Int R0#).\(y :Int R1#).\(z :Int R2#).addInt [R3#] [R0#] [R4#] (addInt [R1#] [R2#] [R3#] y z) x
-::  Int R0# -(!0 | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R1# -(!0 | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R2# -(Read R1# + Read R2# + Read R3# + Read R0# + Alloc R3# + Alloc R4# | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R4#
+::  Int R0# -(!0 | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R1# -(!0 | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R2# -(Read R0# + Read R1# + Read R2# + Read R3# + Alloc R3# + Alloc R4# | Use R0# + Use R1# + Use R2# + Use R3# + Use R4#)> Int R4#
 :!: !0
 :$: Use R0# + Use R1# + Use R2# + Use R3# + Use R4#
 

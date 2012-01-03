@@ -1,7 +1,7 @@
 -- Types of Expressions -------------------------------------------------------
 -- See if we can print out any type.
 addInt
-::  [^^^:%].Int ^2 -> Int ^1 -(Read ^2 + Read ^1 + Alloc ^0 | Use ^2)> Int ^0
+::  [^^^:%].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
 :!: !0
 :$: $0
 
@@ -9,7 +9,7 @@ addInt
 -- Region handles in the expression are automatically added to the store at
 -- startup time.
 addInt [R1#]
-::  [^^:%].Int R1# -> Int ^1 -(Read R1# + Read ^1 + Alloc ^0 | Use R1#)> Int ^0
+::  [^^:%].Int R1# -> Int ^1 -(Read ^1 + Read R1# + Alloc ^0 | Use R1#)> Int ^0
 :!: !0
 :$: Use R1#
 

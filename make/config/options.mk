@@ -21,7 +21,8 @@ GHC_LANGUAGE	:= \
 	-XExistentialQuantification \
 	-XBangPatterns \
 	-XRankNTypes \
-	-XNoMonomorphismRestriction 
+	-XNoMonomorphismRestriction \
+        -XStandaloneDeriving  
 
 
 # -- Warnings -----------------------------------------------------------------

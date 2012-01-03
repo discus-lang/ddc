@@ -7,7 +7,7 @@ module DDC.Type.Exp
         , Bound    (..)
         , Kind,   Sort
         , Region, Effect, Closure
-        , TypeSum  (..),   TyConHash(..)
+        , TypeSum  (..),   TyConHash(..), TypeSumVarCon(..)
         , TyCon    (..)
         , SoCon    (..)
         , KiCon    (..)
@@ -16,6 +16,7 @@ module DDC.Type.Exp
 where
 import Data.Array
 import Data.Map         (Map)
+import Data.Set         (Set)
 
 
 -- Types ------------------------------------------------------------------------------------------
@@ -39,7 +40,7 @@ data Type n
 
         -- | Least upper bound.
         | TSum    (TypeSum n)
-        deriving (Eq, Show)
+        deriving Show
 
 
 type Sort    n = Type n
@@ -55,7 +56,7 @@ data Bind n
         = BNone     (Type n)    -- ^ A variable with no uses in the body doesn't need a name.
         | BAnon     (Type n)    -- ^ Nameless variable on the deBruijn stack.
         | BName n   (Type n)    -- ^ Named variable in the environment.
-        deriving (Eq, Show)
+        deriving Show
 
 
 -- | Represents the binder of a `Bind`, without the type.
@@ -63,7 +64,7 @@ data Binder n
         = RNone
         | RAnon
         | RName n
-        deriving (Eq, Show)
+        deriving Show
 
 
 -- | Bound occurrence of a variable.
@@ -74,33 +75,23 @@ data Bound n
         | UName n   (Type n)    -- ^ Named variable that should be in the environment.
         | UPrim n   (Type n)    -- ^ Named primitive that is not bound in the environment.
                                 --   Prims aren't every counted as being free.
-        deriving (Eq, Show)
-
-
-instance Ord n => Ord (Bound n) where
- compare (UName n1 _) (UName n2 _)      = compare n1 n2
- compare (UIx   i1 _) (UIx   i2 _)      = compare i1 i2
- compare (UPrim n1 _) (UPrim n2 _)      = compare n1 n2
- compare (UIx   _  _) _                 = LT
- compare (UName _  _) (UIx   _ _)       = GT
- compare (UName _  _) (UPrim _ _)       = LT
- compare (UPrim _  _) _                 = GT
+        deriving Show
 
 
 -- Type Sums --------------------------------------------------------------------------------------
 -- | A least upper bound of several types.
 -- 
---   We keep type sums in this normalised format instead of joining them together with the binary
---   operator (+). This makes them much easier to work with, as a given sum type often only has
+--   We keep type sums in this normalised format instead of joining them together with a binary
+--   operator (+). This makes them easier to work with, as a given sum type often only has
 --   a single physical representation.
 data TypeSum n
         = TypeSum
         { -- | The kind of all the elements in this sum.
           typeSumKind           :: Kind n
 
-          -- | Where we can see the outer constructor of a type its argument is inserted into this 
-          --   array. This handles most common cases like Read, Write, Alloc effects.
-        , typeSumElems          :: Array TyConHash [Type n]
+          -- | Where we can see the outer constructor of a type its argument is inserted
+          --   into this array. This handles common cases like Read, Write, Alloc effects.
+        , typeSumElems          :: Array TyConHash (Set (TypeSumVarCon n))
 
           -- | A map for named type variables.
         , typeSumBoundNamed     :: Map n   (Kind n)
@@ -111,14 +102,21 @@ data TypeSum n
           -- | Types that can't be placed in the other fields go here.
           --   INVARIANT: this list doesn't contain other TSum forms.
         , typeSumSpill          :: [Type n] }
-        deriving (Eq, Show)
-        -- TODO: Eq instance is wrong because we much check the spill fields.
+        deriving (Show)
         
+
 -- | Hash value used to insert types into type sums.
---   Only tycons that can be inserted into the sum have a hash value.
+--   Only type constructors that can be inserted into the sum have a hash value.
 data TyConHash 
         = TyConHash !Int
         deriving (Eq, Show, Ord, Ix)
+
+
+-- | Wraps a variable or constructor that can be added to the `typeSumElems` array.
+data TypeSumVarCon n
+        = TypeSumVar (Bound n)
+        | TypeSumCon (Bound n)
+        deriving Show
 
 
 -- TyCon ------------------------------------------------------------------------------------------
@@ -141,7 +139,7 @@ data TyCon n
         
         -- | User defined and primitive constructors.
         | TyConBound   (Bound n)
-        deriving (Eq, Show)
+        deriving Show
 
 
 -- | Sort constructor.

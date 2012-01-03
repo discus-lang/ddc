@@ -257,22 +257,29 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
 
 
 -- letrec -----------------------------------------
-checkExpM env _xx@(XLet _ (LRec bxs) xBody)
+checkExpM env xx@(XLet _ (LRec bxs) xBody)
  = do   
         let (bs, xs)    = unzip bxs
 
         -- Check all the annotations.
         _ks             <- mapM (checkTypeM env) $ map typeOfBind bs
+
         -- TODO: check all the annots have data kind.
 
         -- All variables are in scope in all right hand sides.
         let env'        = Env.extends bs env
 
         -- Check the right hand sides.
-        (_ts, _effssBinds, clossBinds) 
+        (tsRight, _effssBinds, clossBinds) 
                 <- liftM unzip3 $ mapM (checkExpM env') xs
 
-        -- TODO: check annots against inferred types of right hand sides
+        -- Check annots on binders against inferred types of the bindings.
+        zipWithM_ (\b t
+                -> if typeOfBind b /= t
+                        then throw $ ErrorLetMismatch xx b t
+                        else return ())
+                bs tsRight
+
         -- TODO: all bindings need to be lambdas.
 
         -- Check the body expression.

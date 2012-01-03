@@ -5,6 +5,7 @@ module DDC.Core.Check.CheckError
 where
 import DDC.Core.Exp
 import DDC.Core.Pretty
+import DDC.Type.Compounds
 import qualified DDC.Type.Check as T
 
 
@@ -220,7 +221,8 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         -- Let --------------------------------------------
         ErrorLetMismatch xx b t
          -> vcat [ text "Type mismatch in let-binding."
-                 , text "       The binder has type: "  <> ppr b
+                 , text "                The binder: "  <> ppr (binderOfBind b)
+                 , text "                  has type: "  <> ppr (typeOfBind b)
                  , text "     but the body has type: "  <> ppr t
                  , text "             when checking: "  <> ppr xx ]
 

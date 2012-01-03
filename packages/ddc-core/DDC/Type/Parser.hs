@@ -148,7 +148,6 @@ pTypeAtom
                  , do   t       <- pTypeSum
                         pTok KRoundKet
                         return t 
-
                  ]
 
         -- Named type constructors

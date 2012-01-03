@@ -1,8 +1,6 @@
 
 -- | Utilities for working with TypeSums.
 --
--- TODO: default Eq instance is wrong because we much check the spill fields.
---       We want eq operation to be fast.
 module DDC.Type.Sum 
         ( empty
         , singleton
@@ -15,19 +13,23 @@ module DDC.Type.Sum
         , kindOfSum
         , toList, fromList
         , hashTyCon, hashTyConRange
-        , unhashTyCon)
+        , unhashTyCon
+        , takeSumArrayElem
+        , makeSumArrayElem)
 where
 import DDC.Type.Exp
 import Data.Array
 import qualified Data.List      as L
 import qualified Data.Map       as Map
+import qualified Data.Set       as Set
 import Prelude                  hiding (elem)
+
 
 -- | Construct an empty type sum of the given kind.
 empty :: Kind n -> TypeSum n
 empty k = TypeSum
         { typeSumKind           = k
-        , typeSumElems          = listArray hashTyConRange (repeat [])
+        , typeSumElems          = listArray hashTyConRange (repeat Set.empty)
         , typeSumBoundNamed     = Map.empty
         , typeSumBoundAnon      = Map.empty
         , typeSumSpill          = [] }
@@ -56,12 +58,12 @@ insert t ts
         TCon{}           -> ts { typeSumSpill      = t : typeSumSpill ts }
         TForall{}        -> ts { typeSumSpill      = t : typeSumSpill ts }
 
-        TApp (TCon tc) t2
-         |  Just h       <- hashTyCon tc
-         ,  tsThere      <- typeSumElems ts ! h
-         -> if L.elem t2 tsThere
+        TApp (TCon _) _
+         |  Just (h, vc)  <- takeSumArrayElem t
+         ,  tsThere       <- typeSumElems ts ! h
+         -> if Set.member vc tsThere
                 then ts
-                else ts { typeSumElems = (typeSumElems ts) // [(h, t2 : tsThere)] }
+                else ts { typeSumElems = (typeSumElems ts) // [(h, Set.insert vc tsThere)] }
         
         TApp{}           -> ts { typeSumSpill      = t : typeSumSpill ts }
         
@@ -78,10 +80,10 @@ delete t ts
         TCon{}           -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
         TForall{}        -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
         
-        TApp (TCon tc) t2
-         | Just h       <- hashTyCon tc
+        TApp (TCon _) _
+         | Just (h, vc) <- takeSumArrayElem t
          , tsThere      <- typeSumElems ts ! h
-         -> ts { typeSumElems = (typeSumElems ts) // [(h, L.delete t2 tsThere)] }
+         -> ts { typeSumElems = (typeSumElems ts) // [(h, Set.delete vc tsThere)] }
          
         TApp{}          -> ts { typeSumSpill       = L.delete t (typeSumSpill ts) }
         
@@ -124,8 +126,8 @@ toList TypeSum
         , typeSumBoundAnon      = anon
         , typeSumSpill          = spill}
 
- =      [ TApp (TCon (unhashTyCon h)) t 
-                | (h, ts) <- assocs sumElems, t <- ts] 
+ =      [ makeSumArrayElem h vc
+                | (h, ts) <- assocs sumElems, vc <- Set.toList ts] 
         ++ [TVar $ UName n k | (n, k) <- Map.toList named]
         ++ [TVar $ UIx   i k | (i, k) <- Map.toList anon]
         ++ spill
@@ -184,4 +186,82 @@ unhashTyCon (TyConHash i)
         -- with the above 'hashTyCon' function.
         _ -> error $ "DDC.Type.Sum: bad TyConHash " ++ show i
 
+
+-- | If this type can be put in one of our arrays then split it
+--   into the hash and the argument.
+takeSumArrayElem :: Type n -> Maybe (TyConHash, TypeSumVarCon n)
+takeSumArrayElem (TApp (TCon tc) t2)
+        | Just h        <- hashTyCon tc
+        = case t2 of
+                TVar u                  -> Just (h, TypeSumVar u)
+                TCon (TyConBound u)     -> Just (h, TypeSumCon u)
+                _                       -> Nothing
+        
+takeSumArrayElem _ = Nothing
+
+
+-- | Inverse of `takeSumArrayElem`.
+makeSumArrayElem :: TyConHash -> TypeSumVarCon n -> Type n
+makeSumArrayElem h vc
+ = let  tc       = unhashTyCon h
+   in   case vc of
+         TypeSumVar u   -> TApp (TCon tc) (TVar u)
+         TypeSumCon u   -> TApp (TCon tc) (TCon (TyConBound u))
+
+
+-- Type Equality ----------------------------------------------------------------------------------
+-- Code for type equality is in this module because we need to normalise sums when
+-- deciding if two types are equal.
+
+deriving instance Eq n => Eq (TyCon n)
+deriving instance Eq n => Eq (Bound n)
+deriving instance Eq n => Eq (Bind n)
+
+
+instance Eq n => Eq (Type n) where
+ (==) t1 t2
+  = case (normalise t1, normalise t2) of
+        (TVar u1,        TVar u2)        -> u1  == u2
+        (TCon tc1,       TCon tc2)       -> tc1 == tc2
+        (TForall b1 t11, TForall b2 t22) -> b1  == b2  && t11 == t22
+        (TApp t11 t12,   TApp t21 t22)   -> t11 == t21 && t12 == t22
+        (TSum ts1,       TSum ts2)       -> ts1 == ts2
+        (_, _)                           -> False
+
+        -- Unwrap single element sums into plain types.
+  where normalise (TSum ts)
+         | [t'] <- toList ts    = t'
+
+        normalise t'            = t'
+
+
+instance Eq n => Eq (TypeSum n) where
+ (==) ts1 ts2
+
+        -- If the sum is empty, then just compare the kinds.
+        | []    <- toList ts1 
+        , []    <- toList ts2
+        = typeSumKind ts1 == typeSumKind ts2
+
+        -- If the sum has elements, then compare them directly and ignore the
+        -- kind. This allows us to use (tBot sComp) as the typeSumKind field
+        -- when we want to compute the real kind based on the elements. 
+        | otherwise
+        =  typeSumElems ts1      == typeSumElems ts2
+        && typeSumBoundNamed ts1 == typeSumBoundNamed ts2
+        && typeSumBoundAnon  ts1 == typeSumBoundAnon ts2
+        && typeSumSpill      ts1 == typeSumSpill ts2
+
+
+instance Ord n => Ord (Bound n) where
+ compare (UName n1 _) (UName n2 _)      = compare n1 n2
+ compare (UIx   i1 _) (UIx   i2 _)      = compare i1 i2
+ compare (UPrim n1 _) (UPrim n2 _)      = compare n1 n2
+ compare (UIx   _  _) _                 = LT
+ compare (UName _  _) (UIx   _ _)       = GT
+ compare (UName _  _) (UPrim _ _)       = LT
+ compare (UPrim _  _) _                 = GT
+
+deriving instance Eq n  => Eq  (TypeSumVarCon n)
+deriving instance Ord n => Ord (TypeSumVarCon n)
 

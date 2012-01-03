@@ -15,9 +15,10 @@ module DDC.Core.Exp
         , WiCon   (..))
 where
 import DDC.Type.Exp
+import DDC.Type.Sum             ()
 
 
--- Values -----------------------------------------------------------------------------------------
+-- Values ---------------------------------------------------------------------
 -- | A value expression, universe of computation.
 data Exp a n
         -- | Value variable   or primop.
@@ -73,7 +74,8 @@ data Lets a n
         -- | Recursive binding
         | LRec    [(Bind n, Exp a n)]
 
-        -- | Bind a local region variable, and (non-recursive) witnesses to its properties.
+        -- | Bind a local region variable,
+        --   and (non-recursive) witnesses to its properties.
         | LLetRegion  (Bind n) [Bind n]
         
         -- | Holds a region handle during evaluation.
@@ -97,7 +99,7 @@ data Pat n
         deriving (Eq, Show)
         
 
--- Witness ----------------------------------------------------------------------------------------
+-- Witness --------------------------------------------------------------------
 data Witness n
         -- | Witness variable.
         = WVar  (Bound n)
