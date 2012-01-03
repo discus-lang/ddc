@@ -17,6 +17,12 @@
  let x : Int r = 4 [r] () in
  addInt [:r r R1#:] x x;;
 
+-- Simple letregion with letrec.
+:check..
+ letregion r in
+ letrec f (x : Unit) {Alloc r | Use r} : Int r = 4 [r] () in
+ addInt [:r r R1#:] (f ()) (f ());;
+
 -- Multiple lets and letregion. 
 :check..
  letregion r1 in

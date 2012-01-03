@@ -31,3 +31,9 @@ Annotation on pattern variable does not match type of field.
             Field type: Int R0#
          when checking: case xx of {Nil  -> (); Cons (x : Unit) xs -> ()}
 
+-- Ok: check that vars in alts are masked from closure
+let xx = Nil [R0#] [Int R0#] () in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
+::  Int R0#
+:!: Alloc R0#
+:$: Use R0#
+

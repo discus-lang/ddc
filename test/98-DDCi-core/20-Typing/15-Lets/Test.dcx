@@ -153,3 +153,8 @@ in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
  in foo;;
  
 
+-- Ok:
+:check (\(r:%). \(x:Unit). let z = 5 [r] () in ())
+
+
+

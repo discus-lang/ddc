@@ -257,7 +257,7 @@ checkExpM env xx@(XLet _ (LLet b11 x12) x2)
              = case takeSubstBoundOfBind b11' of
                 Nothing -> clo2
                 Just u  -> Set.delete (taggedClosureOfValBound u) clo2
-        
+
         return ( t2
                , effs12 `Sum.union` effs2
                , clo12  `Set.union` clo2_masked)
@@ -305,11 +305,16 @@ checkExpM env xx@(XLet _ (LRec bxs) xBody)
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
 
-        -- TODO: mask closure terms.
+        -- Mask closure terms due to locally bound value vars.
+        let maskClo clo
+             = foldr (\b c -> case takeSubstBoundOfBind b of
+                               Nothing -> c
+                               Just u  -> Set.delete (taggedClosureOfValBound u) c)
+                     clo bs
 
         return  ( tBody
                 , effsBody
-                , Set.unions (closBody : clossBinds))
+                , maskClo $ Set.unions (closBody : clossBinds))
 
 
 -- letregion --------------------------------------
@@ -434,12 +439,9 @@ checkExpM env xx@(XCase _ xDiscrim alts)
 
         -- TODO: Check for overlapping constructors.
 
-        -- TODO: Mask bound variables from closure
-        let closs_masked = closs
-
         return  ( tAlt
                 , Sum.unions kEffect (effs : effss)
-                , Set.unions         (clos : closs_masked) )
+                , Set.unions         (clos : closs) )
 
 
 -- type cast -------------------------------------
@@ -531,7 +533,16 @@ checkAltM xx env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
         let env'        = Env.extends bsArg_subst env
         
         -- Check the body in this new environment.
-        checkExpM env' xBody
+        (tBody, effsBody, closBody) <- checkExpM env' xBody
+
+        -- Mask bound variables from closure.
+        let closBody_masked
+             = foldr (\b c -> case takeSubstBoundOfBind b of
+                               Nothing -> c
+                               Just u  -> Set.delete (taggedClosureOfValBound u) c)
+                     closBody bsArg
+
+        return (tBody, effsBody, closBody_masked)
 
 
 -- | Merge a type annotation on a pattern field with a type we get by

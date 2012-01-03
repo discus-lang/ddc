@@ -44,7 +44,6 @@ letrec
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ())
-;;
+in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 
 

@@ -86,3 +86,14 @@ Let body does not have data kind.
        but it must be: * 
         when checking: letrec {foo : Unit -> Unit = \(x : Unit).()} in e1
 
+-- Error: right of letrec binding must be a lambda
+Letrec can only bind lambda abstractions.
+      This is not one: ()
+        when checking: letrec {foo : Unit = ()} in foo
+
+-- Ok:
+\(r :%).\(x :Unit).let z = 5 [r] () in ()
+::  [r : %].Unit -(Alloc r | Use r)> Unit
+:!: !0
+:$: $0
+
