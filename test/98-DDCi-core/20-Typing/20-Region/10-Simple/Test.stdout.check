@@ -27,19 +27,10 @@ letregion ^ in addInt [^0] [^0] [R2#] (2 [^0] ()) (3 [^0] ())
 :!: Alloc R2#
 :$: Use R2#
 
--- Do the reduction
-letregion r1 in addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
-withregion R1# in addInt [R1#] [R1#] [R2#] (2 [R1#] ()) (3 [R1#] ())
-withregion R1# in addInt [R1#] [R1#] [R2#] L1# (3 [R1#] ())
-withregion R1# in addInt [R1#] [R1#] [R2#] L1# L2#
-withregion R1# in L3#
-L3#
-STORE
- NextLoc: 4
- NextRgn: 2
- Regions: {R2#}
- Global:  {}
-
- Binds:
- L3#:R2# -> OBJ 5
+-- Error: Withregion must contain a region variable or constructor.
+Withregion handle does not have region kind.
+   Region var or ctor: e
+             has kind: !
+       but it must be: %
+        when checking: withregion e in ()
 
