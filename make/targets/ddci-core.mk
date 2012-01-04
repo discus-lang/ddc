@@ -1,10 +1,10 @@
 
 # -- Find Source Files --------------------------------------------------------
 # -- all .hs files in the src dir, including ones we need to preprocess.
-ddci-core_packages      = packages/ddc-base/DDC packages/ddc-core/DDC packages/ddc-core-interpreter/DDCI
+ddci-core_packages      = packages/ddc-base/DDC packages/ddc-core/DDC packages/ddci-core/DDCI
 ddci-core_src_hs_all = \
         $(shell find $(ddci-core_packages) -name "*.hs" -follow) \
-        packages/ddc-core-interpreter/Main.hs
+        packages/ddci-core/Main.hs
 
 # -- Dependencies -------------------------------------------------------------
 make/deps/Makefile-ddci-core.deps : $(ddci-core_src_hs_all)

@@ -44,8 +44,8 @@ packages/ddc-core/%.o : packages/ddc-core/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-core -ipackages/ddc-base
 
-packages/ddc-core-interpreter/%.o : packages/ddc-core-interpreter/%.hs
+packages/ddci-core/%.o : packages/ddci-core/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-core-interpreter -ipackages/ddc-core -ipackages/ddc-base
+		-c $< -ipackages/ddci-core -ipackages/ddc-core -ipackages/ddc-base
 
