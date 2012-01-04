@@ -1,4 +1,5 @@
 
+-- Destructive update of an integer.
 :eval..
 letregion r1 with {w1 : Mutable r1} in
 let x : Int r1 = 0 [r1] () in

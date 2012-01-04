@@ -1,5 +1,4 @@
 
-
 -- Error: types of alternatives are not identical.
 :check..
 case 5 [R0#] () of {

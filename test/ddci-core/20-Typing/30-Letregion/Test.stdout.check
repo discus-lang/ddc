@@ -1,0 +1,56 @@
+-- Parse letregion with no witnesses
+letregion r1 in ()
+::  Unit
+:!: !0
+:$: $0
+
+-- Parse letregion with one witness.
+letregion r1 with {w1 : Const r1} in ()
+::  Unit
+:!: !0
+:$: $0
+
+-- Parse letregion with multiple witnesses.
+letregion r1 with {w1 : Const r1; w2 : Manifest r1} in ()
+::  Unit
+:!: !0
+:$: $0
+
+-- Use the bound region in the body of the expression.
+letregion r1 in addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
+::  Int R2#
+:!: Alloc R2#
+:$: Use R2#
+
+-- As above, but with debruijn indices.
+letregion ^ in addInt [^0] [^0] [R2#] (2 [^0] ()) (3 [^0] ())
+::  Int R2#
+:!: Alloc R2#
+:$: Use R2#
+
+-- Error: withregion must contain a region variable or constructor.
+Withregion handle does not have region kind.
+   Region var or ctor: e
+             has kind: !
+       but it must be: %
+        when checking: withregion e in ()
+
+-- Error: cannot shadow region variables that are already in the
+-- environment because the new witnesses may conflict with the old ones.
+Region variable shadows existing one.
+           Region variable: r1 : %
+     is already in environment
+             when checking: letregion r1 with {w1 : Mutable r1} in updateInt [r1] [r1] <w1> x (0 [r1] ())
+
+-- Error: bound region variable is free in the type of the body of a letregion.
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Int r1
+             when checking: letregion r1 in 4 [r1] ()
+
+-- Error: bound region is free in the effect of a returned function.
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R2# | Use r1 + Use R2#)> Int R2#
+             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
+

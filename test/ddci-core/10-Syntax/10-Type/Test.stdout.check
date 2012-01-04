@@ -1,11 +1,11 @@
--- parse kind function operator.
+-- Parse kind function operator.
 -- This needs to be fully applied to have a sort.
 * ~> * :: **
 
--- parse witness implication operator.
+-- Parse witness implication operator.
 -- This needs to be fully applied to have a sort.
 Const R0# => Int R0# :: *
 
--- parse type function operator.
+-- Parse type function operator.
 (->) :: * ~> ! ~> $ ~> * ~> *
 

@@ -99,7 +99,7 @@ letrec
 in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 
 
--- Should be ok, and the effect and closure terms are in a different order.
+-- Same as above, but the effect and closure terms are in a different order.
 :check..
 letrec
  enumFromTo 
@@ -116,7 +116,6 @@ letrec
                 (Nil [r2] [Int r1] ());
   }
 in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
-
 
 
 -- Error: binding must have data kind.
@@ -152,9 +151,5 @@ in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
  letrec foo : Unit = ()
  in foo;;
  
-
--- Ok:
-:check (\(r:%). \(x:Unit). let z = 5 [r] () in ())
-
 
 

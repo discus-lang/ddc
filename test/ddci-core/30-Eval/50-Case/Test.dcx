@@ -25,7 +25,7 @@ case xx of {
 -- Match on an integer literal.
 :eval..
 case 5 [R0#] () of {
-         5 -> 1 [R0#] ();
+        5  -> 1 [R0#] ();
         _  -> 0 [R0#] ();
 };;
 

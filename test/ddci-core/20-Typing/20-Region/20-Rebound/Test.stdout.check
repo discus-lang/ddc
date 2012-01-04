@@ -1,7 +1,0 @@
--- Error: cannot shadow region variables that are already in the
--- environment because the new witnesses may conflict with the old ones.
-Region variable shadows existing one.
-           Region variable: r1 : %
-     is already in environment
-             when checking: letregion r1 with {w1 : Mutable r1} in updateInt [r1] [r1] <w1> x (0 [r1] ())
-

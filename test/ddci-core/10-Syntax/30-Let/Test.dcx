@@ -2,14 +2,17 @@
 -- Non-binding let.
 :check let _ : Unit = () in ()
 
+
 -- Binding let.
 :check let x : Unit = () in x
+
 
 -- Multiple lets.
 :check..
  let x : Unit = () in
  let y : Unit = () in
  y;;
+
  
 -- Simple letregion.
 :check..
@@ -17,11 +20,13 @@
  let x : Int r = 4 [r] () in
  addInt [:r r R1#:] x x;;
 
+
 -- Simple letregion with letrec.
 :check..
  letregion r in
  letrec f (x : Unit) {Alloc r | Use r} : Int r = 4 [r] () in
  addInt [:r r R1#:] (f ()) (f ());;
+
 
 -- Multiple lets and letregion. 
 :check..
@@ -30,6 +35,7 @@
  let x1 : Int r1 = 2 [r1] () in
  let x2 : Int r2 = 3 [r2] () in
  addInt [:r1 r2 R1#:] x1 x2;;
+
  
 -- As above, but no annots on binders.
 :check..
