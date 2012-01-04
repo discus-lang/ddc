@@ -52,7 +52,7 @@ pExp
 
         -- letrec expression
  , do   pTok KLetRec
-        lets    <- P.sepBy1 pLetRecBind (pTok KSemiColon)
+        lets    <- P.sepEndBy1 pLetRecBind (pTok KSemiColon)
         pTok KIn
         x       <- pExp
         return  $ XLet () (LRec lets) x
@@ -130,8 +130,13 @@ pExp
 -- Applications.
 pExpApp :: Ord n => Parser n (Exp () n)
 pExpApp 
-  = do  (x:xs)  <- liftM concat $ P.many1 pArgs
-        return  $ foldl (XApp ()) x xs
+  = do  x1      <- pExp0
+        
+        P.choice
+         [ do   xs  <- liftM concat $ P.many1 pArgs
+                return  $ foldl (XApp ()) x1 xs
+
+         ,      return x1]
 
  <?> "an expression or application"
 
@@ -168,7 +173,7 @@ pArgs
  , do   x       <- pExp0
         return  [x]
  ]
- <?> "a type type, witness or expression argument"
+ <?> "a type, witness or expression argument"
 
 
 -- Atomics

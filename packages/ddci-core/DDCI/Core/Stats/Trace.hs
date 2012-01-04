@@ -31,7 +31,7 @@ traceStoreX store entered xx
         XCon _ (UPrim n@(NameLoc l) _)
          | not $ Set.member n entered
          , Just sbind   <- lookupBind l store
-         -> traceStoreX' store (Set.insert n entered) (expOfSBind sbind)
+         -> traceStoreX store (Set.insert n entered) (expOfSBind sbind)
 
         XCon{}          -> xx
         XApp  a x1 x2   -> XApp  a (down x1) (down x2)

@@ -92,7 +92,7 @@ stepPrint store x
                 -- , empty]
 
                 -- Load the final expression back from the store to display.
-                putStr $ pretty $ ppr $ traceStoreX store x
+                putStr $ pretty $ ppr $ traceStore store x
 
                 return Nothing
         
