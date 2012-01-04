@@ -34,8 +34,8 @@ pprBinderGroup (rs, t)
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
  pprPrec d xx
   = case xx of
-        XVar  _ n       -> ppr n
-        XCon  _ n       -> ppr n
+        XVar  _ u       -> ppr u
+        XCon  _ tc      -> ppr tc
         
         XLam _ b x      
          | Just (bsMore, xBody) <- takeXLams x

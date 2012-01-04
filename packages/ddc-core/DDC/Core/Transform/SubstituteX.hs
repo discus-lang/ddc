@@ -13,6 +13,7 @@ import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteW
 import DDC.Core.Transform.SubstituteT
+import DDC.Base.Pretty          (Pretty)
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
@@ -22,7 +23,7 @@ import Data.Set                 (Set)
 
 -- | Wrapper for `substituteWithX` that determines the set of free names in the
 --   type being substituted, and starts with an empty binder stack.
-substituteX :: (SubstituteX c, Ord n) => Bind n -> Exp a n -> c a n -> c a n
+substituteX :: (SubstituteX c, Ord n, Pretty n) => Bind n -> Exp a n -> c a n -> c a n
 substituteX b t x
   | Just u      <- takeSubstBoundOfBind b
   = let -- Determine the free names in the type we're subsituting.
@@ -32,7 +33,7 @@ substituteX b t x
                         $ Set.toList 
                         $ free Env.empty t
 
-        stack           = BindStack [] 0 0
+        stack           = BindStack [] [] 0 0
  
    in   substituteWithX u t freeNames stack x
 
@@ -40,7 +41,7 @@ substituteX b t x
 
 
 -- | Wrapper for `substituteX` to substitute multiple expressions.
-substituteXs :: (SubstituteX c, Ord n) => [(Bind n, Exp a n)] -> c a n -> c a n
+substituteXs :: (SubstituteX c, Ord n, Pretty n) => [(Bind n, Exp a n)] -> c a n -> c a n
 substituteXs bts x
         = foldr (uncurry substituteX) x bts
 
@@ -49,7 +50,7 @@ substituteXs bts x
 --   Performtype substitution for an `XType` 
 --    and witness substitution for an `XWitness`
 substituteXArg 
-        :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
+        :: (Ord n, Pretty n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
         => Bind n -> Exp a n -> c a n -> c a n
 
 substituteXArg b arg x
@@ -61,7 +62,7 @@ substituteXArg b arg x
 
 -- | Wrapper for `substituteXArgs` to substitute multiple arguments.
 substituteXArgs
-        :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
+        :: (Ord n, Pretty n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
         => [(Bind n, Exp a n)] -> c a n -> c a n
 substituteXArgs bas x
         = foldr (uncurry substituteXArg) x bas
@@ -101,12 +102,26 @@ instance SubstituteX Exp where
             in  XLam a b' xBody'
 
         XLet a (LLet b x1) x2
-         -> let x1'             = substituteWithX u x fns stack x1
+         -> let x1'             = down x1
                 (stack', b')    = pushBind fns stack b
                 x2'             = substituteWithX u x fns stack' x2
             in  XLet a (LLet b' x1') x2'
 
-        XLet{}          -> error "substituteWitX: XLet not done"
+        XLet a (LRec bxs) x2
+         -> let (bs, xs)        = unzip bxs
+                (stack', bs')   = pushBinds fns stack bs
+                xs'             = map (substituteWithX u x fns stack') xs
+                x2'             = substituteWithX u x fns stack' x2
+            in  XLet a (LRec (zip bs' xs')) x2'
+
+        XLet a (LLetRegion b bs) x2
+         -> let (stack1, b')    = pushBind  fns stack  b
+                (stack2, bs')   = pushBinds fns stack1 bs
+                x2'             = substituteWithX u x fns stack2 x2
+            in  XLet a (LLetRegion b' bs') x2'
+
+        XLet a (LWithRegion uR) x2
+         ->     XLet a (LWithRegion uR) (down x2)
 
         XCase a x1 alts
          -> let x1'             = substituteWithX u x fns stack x1
@@ -131,7 +146,3 @@ instance SubstituteX Alt where
                 xBody'          = substituteWithX u x fns stack' xBody
             in  AAlt (PData uCon bs') xBody'
 
-
-
- 
- 

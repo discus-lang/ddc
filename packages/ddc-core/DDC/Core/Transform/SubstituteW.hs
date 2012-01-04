@@ -28,7 +28,7 @@ substituteW b w x
                        $ Set.toList 
                        $ free Env.empty w
 
-       stack           = BindStack [] 0 0
+       stack           = BindStack [] [] 0 0
  
   in   substituteWithW u w freeNames stack x
 

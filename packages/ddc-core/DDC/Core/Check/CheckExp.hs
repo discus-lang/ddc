@@ -124,7 +124,7 @@ checkExpM _defs env (XVar _ u)
 
 
 checkExpM _defs _env (XCon _ u)
- =      return  ( typeOfBound u
+      = return  ( typeOfBound u
                 , Sum.empty kEffect
                 , Set.empty)
 

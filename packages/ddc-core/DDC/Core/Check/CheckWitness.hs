@@ -27,7 +27,7 @@ type CheckM a n   = G.CheckM (Error a n)
 
 
 -- Witness --------------------------------------------------------------------
-typeOfWitness :: Ord n => Witness n -> Either (Error a n) (Type n)
+typeOfWitness :: (Ord n, Pretty n) => Witness n -> Either (Error a n) (Type n)
 typeOfWitness ww = result $ checkWitnessM Env.empty ww
 
 
@@ -41,7 +41,7 @@ typeOfWitness' ww
 
 -- | Check an expression, returning an error or its type, effect and closure.
 checkWitness
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Env n -> Witness n
         -> Either (Error a n) (Type n)
 
@@ -50,7 +50,7 @@ checkWitness env xx
 
 
 checkWitnessM 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Env n -> Witness n
         -> CheckM a n (Type n)
 

@@ -1,0 +1,23 @@
+
+-- Ackermann's function.
+:eval..
+letrec
+ ack    [r : %] 
+        (m : Int r) {!0 | Use r}
+        (n : Int r) {Read r + Alloc r | Use r}
+        : Int r
+  = let zero = 0 [r] () in
+    let one  = 1 [r] () in
+    case eqInt [:r r r:] m zero of {
+        1 -> addInt [:r r r:] n one;
+        _ -> case eqInt [:r r r:] n zero of {
+                1 -> ack [r] (subInt [:r r r:] m one) 
+                             (1 [r] ());
+                _ -> ack [r] (subInt [:r r r:] m one)
+                             (ack [r] m (subInt [:r r r:] n one));
+        }
+  }
+in ack [R1#] (2 [R1#] ()) (3 [R1#] ());;
+
+
+

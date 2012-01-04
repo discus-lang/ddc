@@ -1,0 +1,26 @@
+
+
+-- Using different input and output regions.
+:eval..
+letrec
+ ack    [r1 r2 r3: %] 
+        (m : Int r1) {!0 | Use r1 + Use r2 + Use r3}
+        (n : Int r2) { Read r1 + Read r2 + Alloc r3
+                     | Use r1  + Use r2  + Use r3}
+        : Int r3
+  = letregion r4 in
+    let zero = 0 [r4] () in
+    let one  = 1 [r4] () in
+    case eqInt [:r1 r4 r4:] m zero of {
+        1 -> addInt [:r2 r4 r3:] n one;
+        _ -> case eqInt [:r2 r4 r4:] n zero of {
+                1 -> ack [:r4 r4 r3:] 
+                         (subInt [:r1 r4 r4:] m one) 
+                         (1 [r4] ());
+
+                _ -> ack [:r4 r4 r3:] 
+                         (subInt [:r1 r4 r4:] m one)
+                         (ack [:r1 r4 r4:] m (subInt [:r2 r4 r4:] n one));
+        }
+  }
+in ack [:R0# R0# R0#:] (2 [R0#] ()) (3 [R0#] ());;

@@ -1,6 +1,5 @@
 
 -- From the Great Computer Language Shootout.
-
 ack m n
 	| m == 0
 	= n + 1

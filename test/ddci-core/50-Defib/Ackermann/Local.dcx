@@ -1,0 +1,22 @@
+
+-- While locally allocating the intermediate integers.
+:eval..
+letrec
+ ack    [r : %] 
+        (m : Int r) {!0 | Use r}
+        (n : Int r) {Read r + Alloc r | Use r}
+        : Int r
+  = letregion r2 in
+    let zero = 0 [r2] () in
+    let one  = 1 [r2] () in
+    case eqInt [:r r2 r:] m zero of {
+        1 -> addInt [:r r2 r:] n one;
+        _ -> case eqInt [:r r2 r:] n zero of {
+                1 -> ack [r] (subInt [:r r2 r:] m one) 
+                             (1 [r] ());
+                _ -> ack [r] (subInt [:r r2 r:] m one)
+                             (ack [r] m (subInt [:r r2 r:] n one));
+        }
+  }
+in ack [R0#] (2 [R0#] ()) (3 [R0#] ());;
+

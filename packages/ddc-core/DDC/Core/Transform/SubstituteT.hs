@@ -6,6 +6,7 @@ where
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
+import Data.List
 
 
 instance SubstituteT Witness where
@@ -28,23 +29,27 @@ instance SubstituteT (Exp a) where
  substituteWithT u t fns stack xx
   = let down    = substituteWithT u t fns stack
     in  case xx of
-         -- Types are never substitute for expression variables, but we do need
-         -- to substitute into the annotation.
+         -- If we've substituted into the type annotation on a binder
+         -- further up, then we also need to replace the annotation
+         -- on the bound occurrence with this new type.
          XVar a u'
-          -> let t' = down (typeOfBound u')
-             in  XVar a $ replaceTypeOfBound t' u'
-             
-         XCon a u'
-          -> let t' = down (typeOfBound u')
-             in  XCon a $ replaceTypeOfBound t' u'
+          -> case u' of
+                UIx i _   
+                 -> case lookup i (zip [0..] (stackEnv stack)) of
+                     Nothing -> xx
+                     Just b  -> XVar a (UIx i $ typeOfBind b)
+
+                UName n _ 
+                 -> case find (boundMatchesBind u') (stackEnv stack) of
+                     Nothing -> xx
+                     Just b  -> XVar a (UName n $ typeOfBind b)
+
+                UPrim{} -> xx
+
+         XCon{} -> xx
          
          XApp a x1 x2           
           -> XApp a (down x1) (down x2)
-
-         XLet a (LLet b x1) x2
-          -> XLet a (LLet (down b) (down x1)) (down x2)
-
-         XLet{}  -> error "substituteWithT: XLet not done yet"
 
          XLam a b xBody
           -> let b2             = down b
@@ -52,6 +57,27 @@ instance SubstituteT (Exp a) where
                  xBody'         = substituteWithT u t fns stack' xBody
              in  XLam a b3 xBody'
 
+         XLet a (LLet b x1) x2
+          -> let x1'            = down x1
+                 (stack', b')   = pushBind fns stack (down b)
+                 x2'            = substituteWithT u t fns stack' x2
+             in  XLet a (LLet b' x1')  x2'
+
+         XLet a (LRec bxs) x2
+          -> let (bs, xs)       = unzip bxs
+                 (stack', bs')  = pushBinds fns stack (map down bs)
+                 xs'            = map (substituteWithT u t fns stack') xs
+                 x2'            = substituteWithT u t fns stack' x2
+             in  XLet a (LRec (zip bs' xs')) x2'
+
+         XLet a (LLetRegion b bs) x2
+          -> let (stack1, b')   = pushBind  fns stack  (down b)
+                 (stack2, bs')  = pushBinds fns stack1 (map down bs)
+                 x2'            = substituteWithT u t fns stack2 x2
+             in  XLet a (LLetRegion b' bs') x2'
+
+         XLet a (LWithRegion uR) x2
+           -> XLet a (LWithRegion uR) (down x2)
 
          XCase a x alts
           -> XCase a (down x) (map down alts)

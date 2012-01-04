@@ -21,10 +21,10 @@ import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import Data.Set                 (Set)
-
+import DDC.Base.Pretty          (Pretty)
 
 -- | Substitute a `Type` for the `Bound` corresponding to some `Bind` in a thing.
-substituteT :: (SubstituteT c, Ord n) => Bind n -> Type n -> c n -> c n
+substituteT :: (SubstituteT c, Ord n, Pretty n) => Bind n -> Type n -> c n -> c n
 substituteT b t x
  = case takeSubstBoundOfBind b of
     Just u      -> substituteBoundT u t x
@@ -32,13 +32,13 @@ substituteT b t x
 
 
 -- | Wrapper for `substituteT` to substitute multiple things.
-substituteTs :: (SubstituteT c, Ord n) => [(Bind n, Type n)] -> c n -> c n
+substituteTs :: (SubstituteT c, Ord n, Pretty n) => [(Bind n, Type n)] -> c n -> c n
 substituteTs bts x
         = foldr (uncurry substituteT) x bts
 
 
 -- | Substitute a `Type` for `Bound` in some thing.
-substituteBoundT :: (SubstituteT c, Ord n) => Bound n -> Type n -> c n -> c n
+substituteBoundT :: (SubstituteT c, Ord n, Pretty n) => Bound n -> Type n -> c n -> c n
 substituteBoundT u t x
  = let -- Determine the free names in the type we're subsituting.
        -- We'll need to rename binders with the same names as these
@@ -47,7 +47,7 @@ substituteBoundT u t x
                        $ Set.toList 
                        $ free Env.empty t
 
-       stack           = BindStack [] 0 0
+       stack           = BindStack [] [] 0 0
  
   in   substituteWithT u t freeNames stack x
 
@@ -59,7 +59,7 @@ class SubstituteT (c :: * -> *) where
  --   in the type to substitute, then we rewrite that binder to anonymous form,
  --   avoiding the capture.
  substituteWithT
-        :: forall n. Ord n
+        :: forall n. (Ord n, Pretty n)
         => Bound n       -- ^ Bound variable that we're subsituting into.
         -> Type n        -- ^ Type to substitute.
         -> Set  n        -- ^ Names of free varaibles in the type to substitute.
@@ -84,6 +84,7 @@ instance SubstituteT Type where
          TSum ss         -> TSum (down ss)
 
          TForall b tBody
+          | otherwise
           -> let -- Substitute into the annotation on the binder.
                  bSub            = down b
 
@@ -115,7 +116,8 @@ instance SubstituteT TypeSum where
 --   and named binders that we're rewriting.
 data BindStack n
         = BindStack
-        { stackBinds    :: [Bind n]
+        { stackBinds    :: [Bind n]     -- only ones we're rewriting
+        , stackEnv      :: [Bind n]     -- all binds.
         , stackAnons    :: Int
         , stackNamed    :: Int }
 
@@ -128,21 +130,25 @@ pushBind
         -> Bind n                 -- ^ Bind to push.
         -> (BindStack n, Bind n)  -- ^ New stack and possibly anonymised bind.
 
-pushBind fns bs@(BindStack stack dAnon dName) bb
+pushBind fns bs@(BindStack stack env dAnon dName) bb
  = case bb of
         -- Push anonymous bind on stack.
         BAnon t                 
-         -> ( BindStack (BAnon t   : stack) (dAnon + 1) dName
+         -> ( BindStack (BAnon t   : stack) (BAnon t : env) (dAnon + 1) dName
             , BAnon t)
             
         -- This binder would capture names in the thing that we're substituting,
         -- to rewrite it to an anonymous one.
         BName n t
          | Set.member n fns     
-         -> ( BindStack (BName n t : stack) dAnon       (dName + 1)
+         -> ( BindStack (BName n t : stack) (BAnon t : env) dAnon       (dName + 1)
             , BAnon t)
 
-        -- Binder was a wildcard or non-capturing name.
+         | otherwise
+         -> ( BindStack stack (BName n t : env) dAnon dName
+            , bb)
+
+        -- Binder was a wildcard 
         _ -> (bs, bb)
 
 
@@ -164,7 +170,7 @@ substBound
                 Int         --   Bound matches, drop the thing being substituted and 
                             --   and lift indices this many steps.
 
-substBound (BindStack binds dAnon dName) u u'
+substBound (BindStack binds _ dAnon dName) u u'
         -- Bound name matches the one that we're substituting for.
         | UName n1 _   <- u
         , UName n2 _   <- u'
