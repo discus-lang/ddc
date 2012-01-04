@@ -177,31 +177,6 @@ data Error a n
         | ErrorCaseNoAlternatives
         { errorChecking         :: Exp a n }
 
-        -- | Too many binders in alternative.
-        | ErrorCaseTooManyBinders
-        { errorChecking         :: Exp a n
-        , errorCtorBound        :: Bound n
-        , errorCtorFields       :: Int
-        , errorPatternFields    :: Int }
-
-        -- | Cannot instantiate constructor type with type args of discriminant.
-        | ErrorCaseCannotInstantiate
-        { errorChecking         :: Exp a n
-        , errorTypeCtor         :: Type n
-        , errorTypeDiscrim      :: Type n }
-
-        -- | Result types of case expression are not identical.
-        | ErrorCaseAltResultMismatch
-        { errorChecking         :: Exp a n
-        , errorAltType1         :: Type n
-        , errorAltType2         :: Type n }
-
-        -- | Annotation on pattern variable does not match field type of constructor.
-        | ErrorCaseFieldTypeMismatch
-        { errorChecking         :: Exp a n
-        , errorTypeAnnot        :: Type n
-        , errorTypeField        :: Type n }
-
         -- | Case alternatives doesn't match all constructors.
         | ErrorCaseNonExhaustive
         { errorChecking         :: Exp a n
@@ -215,6 +190,31 @@ data Error a n
         -- | Case alternatives are overlapping.
         | ErrorCaseOverlapping
         { errorChecking         :: Exp a n }
+
+        -- | Too many binders in alternative.
+        | ErrorCaseTooManyBinders
+        { errorChecking         :: Exp a n
+        , errorCtorBound        :: Bound n
+        , errorCtorFields       :: Int
+        , errorPatternFields    :: Int }
+
+        -- | Cannot instantiate constructor type with type args of discriminant.
+        | ErrorCaseCannotInstantiate
+        { errorChecking         :: Exp a n
+        , errorTypeCtor         :: Type n
+        , errorTypeDiscrim      :: Type n }
+
+        -- | Annotation on pattern variable does not match field type of constructor.
+        | ErrorCaseFieldTypeMismatch
+        { errorChecking         :: Exp a n
+        , errorTypeAnnot        :: Type n
+        , errorTypeField        :: Type n }
+
+        -- | Result types of case expression are not identical.
+        | ErrorCaseAltResultMismatch
+        { errorChecking         :: Exp a n
+        , errorAltType1         :: Type n
+        , errorAltType2         :: Type n }
 
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
@@ -395,35 +395,6 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
          -> vcat [ text "Case expression does not have any alternatives."
                  , text "         when checking: "      <> ppr xx ]
 
-        ErrorCaseTooManyBinders xx uCtor iCtorFields iPatternFields
-         -> vcat [ text "Pattern has more binders than there are fields in the constructor."
-                 , text "     Contructor: " <> ppr uCtor
-                 , text "            has: " <> ppr iCtorFields      
-                                            <+> text "fields"
-                 , text "  but there are: " <> ppr iPatternFields   
-                                           <+> text "binders in the pattern" 
-                 , text "  when checking: " <> ppr xx ]
-
-        ErrorCaseAltResultMismatch xx t1 t2
-         -> vcat [ text "Mismatch in alternative result types."
-                 , text "   Type of alternative: "      <> ppr t1
-                 , text "        does not match: "      <> ppr t2
-                 , text "         when checking: "      <> ppr xx ]
-
-        ErrorCaseCannotInstantiate xx tCtor tDiscrim
-         -> vcat [ text "Cannot instantiate constructor type with discriminant type args."
-                 , text " Either the constructor has an invalid type,"
-                 , text " or the type of the discriminant does not match the type of the pattern."
-                 , text "      Constructor type: "      <> ppr tCtor
-                 , text "     Discriminant type: "      <> ppr tDiscrim
-                 , text "         when checking: "      <> ppr xx ]
-
-        ErrorCaseFieldTypeMismatch xx tAnnot tField
-         -> vcat [ text "Annotation on pattern variable does not match type of field."
-                 , text "       Annotation type: "      <> ppr tAnnot
-                 , text "            Field type: "      <> ppr tField
-                 , text "         when checking: "      <> ppr xx ]
-        
         ErrorCaseNonExhaustive xx ns
          -> vcat [ text "Case alternative is non-exhaustive."
                  , text " Constructors not matched: "   
@@ -438,4 +409,32 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
          -> vcat [ text "Case alternatives are overlapping."
                  , text "  when checking: "             <> ppr xx ]
 
+        ErrorCaseTooManyBinders xx uCtor iCtorFields iPatternFields
+         -> vcat [ text "Pattern has more binders than there are fields in the constructor."
+                 , text "     Contructor: " <> ppr uCtor
+                 , text "            has: " <> ppr iCtorFields      
+                                            <+> text "fields"
+                 , text "  but there are: " <> ppr iPatternFields   
+                                           <+> text "binders in the pattern" 
+                 , text "  when checking: " <> ppr xx ]
+
+        ErrorCaseCannotInstantiate xx tCtor tDiscrim
+         -> vcat [ text "Cannot instantiate constructor type with discriminant type args."
+                 , text " Either the constructor has an invalid type,"
+                 , text " or the type of the discriminant does not match the type of the pattern."
+                 , text "      Constructor type: "      <> ppr tCtor
+                 , text "     Discriminant type: "      <> ppr tDiscrim
+                 , text "         when checking: "      <> ppr xx ]
+
+        ErrorCaseFieldTypeMismatch xx tAnnot tField
+         -> vcat [ text "Annotation on pattern variable does not match type of field."
+                 , text "       Annotation type: "      <> ppr tAnnot
+                 , text "            Field type: "      <> ppr tField
+                 , text "         when checking: "      <> ppr xx ]
+
+        ErrorCaseAltResultMismatch xx t1 t2
+         -> vcat [ text "Mismatch in alternative result types."
+                 , text "   Type of alternative: "      <> ppr t1
+                 , text "        does not match: "      <> ppr t2
+                 , text "         when checking: "      <> ppr xx ]
 
