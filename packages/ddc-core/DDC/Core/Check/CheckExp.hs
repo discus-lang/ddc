@@ -627,7 +627,7 @@ mergeAnnot xx tAnnot tActual
 checkWitnessBindsM :: Ord n => Exp a n -> Bound n -> [Bind n] -> CheckM a n ()
 checkWitnessBindsM xx nRegion bsWits
  = mapM_ (checkWitnessBindM xx nRegion bsWits) bsWits
-        -- want each and others.
+
 
 checkWitnessBindM 
         :: Ord n 
