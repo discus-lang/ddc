@@ -414,7 +414,7 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
  = do
         -- Check the discriminant.
         (tDiscrim, effs, clos) 
-                <- checkExpM defs env xDiscrim
+         <- checkExpM defs env xDiscrim
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
@@ -431,7 +431,14 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
                  -> return (n, ts)
 
                 _ -> throw $ ErrorCaseDiscrimNotAlgebraic xx tDiscrim
-                        
+
+        -- Get the mode of the data type, 
+        --   this tells us how many constructors there are.
+        mode    
+         <- case lookupModeOfDataType nTyCon defs of
+             Nothing -> throw $ ErrorCaseDiscrimTypeUndeclared xx tDiscrim
+             Just m  -> return m
+
         -- Check the alternatives.
         (ts, effss, closs)     
                 <- liftM unzip3 
@@ -442,12 +449,6 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
         forM_ ts $ \tAlt' 
          -> when (tAlt /= tAlt') 
              $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
-
-        -- Get the mode of the data type, 
-        --   this tells us how many constructors there are.
-        mode    <- case lookupModeOfDataType nTyCon defs of
-                        Nothing -> error "undeclared data type"         --- TODO: real error message
-                        Just m  -> return m
 
         -- Check for overlapping alternatives.
         let pats                = [p | AAlt p _ <- alts]
@@ -498,7 +499,7 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
            | any isPDefault [p | AAlt p _ <- alts] -> return ()
            | otherwise  
            -> throw $ ErrorCaseNonExhaustiveLarge xx)
-
+                        
         return  ( tAlt
                 , Sum.unions kEffect (effs : effss)
                 , Set.unions         (clos : closs) )

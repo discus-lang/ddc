@@ -173,6 +173,11 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorTypeDiscrim      :: Type n }
 
+        -- | We don't have a data type declaration for the type of the discriminant.
+        | ErrorCaseDiscrimTypeUndeclared
+        { errorChecking         :: Exp a n 
+        , errorTypeDiscrim      :: Type n }
+
         -- | Case expression has no alternatives.
         | ErrorCaseNoAlternatives
         { errorChecking         :: Exp a n }
@@ -388,6 +393,11 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         -- Case Expressions -------------------------------
         ErrorCaseDiscrimNotAlgebraic xx tDiscrim
          -> vcat [ text "Discriminant of case expression is not algebraic data."
+                 , text "     Discriminant type: "      <> ppr tDiscrim
+                 , text "         when checking: "      <> ppr xx ]
+        
+        ErrorCaseDiscrimTypeUndeclared xx tDiscrim
+         -> vcat [ text "Type of discriminant does not have a data declaration."
                  , text "     Discriminant type: "      <> ppr tDiscrim
                  , text "         when checking: "      <> ppr xx ]
 
