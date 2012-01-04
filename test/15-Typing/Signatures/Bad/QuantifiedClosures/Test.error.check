@@ -1,3 +1,0 @@
-ddc: "./test/15-Typing/Signatures/Bad/QuantifiedClosures/Test.ds" (line 6, column 18):
-unexpected forall
-expecting a closure constraint for '$c1'

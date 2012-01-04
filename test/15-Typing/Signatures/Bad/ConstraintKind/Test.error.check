@@ -1,3 +1,0 @@
-ddc: "./test/15-Typing/Signatures/Bad/ConstraintKind/Test.ds" (line 4, column 18):
-unexpected $
-expecting an effect constraint for '!e1'

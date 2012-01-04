@@ -1,0 +1,4 @@
+ddc: ERROR
+./test/ddc-main/15-Typing/Classing/T71-UnimpClassFns/Test.ds:6:25
+        No instance for Class.Eq.Eq (Test.Foo %r0)
+

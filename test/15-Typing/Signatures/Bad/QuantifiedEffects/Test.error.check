@@ -1,3 +1,0 @@
-ddc: "./test/15-Typing/Signatures/Bad/QuantifiedEffects/Test.ds" (line 5, column 18):
-unexpected forall
-expecting an effect constraint for '!e1'

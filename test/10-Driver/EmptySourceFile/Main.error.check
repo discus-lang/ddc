@@ -1,4 +1,0 @@
-ddc: ERROR
-./test/10-Driver/EmptySourceFile/Main.ds:1:0
-        Parse error: Source file contains no code.
-

@@ -1,0 +1,15 @@
+ddc: ERROR
+./test/ddc-main/15-Typing/Unification/DefDef/Test.ds:8:10
+        Type mismatch during unification.
+            cannot match: Int32
+                    with: String
+        
+              the use of: f1
+                 of type: Int32
+                      at: ./test/ddc-main/15-Typing/Unification/DefDef/Test.ds:8:10
+        
+                conflicts with, 
+              the use of: f2
+                 of type: String
+                      at: ./test/ddc-main/15-Typing/Unification/DefDef/Test.ds:8:14
+

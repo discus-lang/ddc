@@ -1,0 +1,18 @@
+ddc: ERROR
+./test/ddc-main/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
+        Conflicting region constraints.
+        
+              constraint: Const %1
+        which purifies
+              the use of: (+)
+                 of type: (104 2)
+                      at: ./test/ddc-main/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:21
+        due to
+              the use of: suspend2
+                      at: ./test/ddc-main/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
+        
+            conflicts with,
+              constraint: MutableT *2
+         from the use of: (:=)
+                      at: ./test/ddc-main/15-Typing/Purity/PurifyReadWrite3/Test.ds:4:18
+

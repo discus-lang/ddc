@@ -1,0 +1,27 @@
+
+import Base
+import System.File
+import Data.Maybe
+
+name		= "test/ddc-main/40-Library/File/Main.data";
+empty		= "test/ddc-main/40-Library/File/Empty.data";
+nonexistant	= "test/ddc-main/40-Library/File/DoesNotExist.data";
+
+main () = topHandle prog;
+
+prog ()
+ = do	case fileSize name of
+	 Nothing	-> print "failed\n"
+	 Just len	-> print $ "length = " % show len % "\n"
+
+	case readFile name of
+	 Nothing 	-> print "failed\n"
+	 Just ss	-> print $ "data = " % ss % "\n"
+
+	case readFile empty of
+	 Nothing 	-> print "failed\n"
+	 Just ss	-> print $ "data = " % ss % "\n"
+
+	case readFile nonexistant of
+	 Nothing 	-> print "ok\n"
+	 Just ss	-> print "failed\n"

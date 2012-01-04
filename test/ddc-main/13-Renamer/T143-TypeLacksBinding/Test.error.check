@@ -1,0 +1,4 @@
+ddc: ERROR
+./test/ddc-main/13-Renamer/T143-TypeLacksBinding/Test.ds:1:0
+        Type signature for 'whatever' lacks accompanying binding.
+

@@ -1,0 +1,19 @@
+ddc: ERROR
+./test/ddc-main/15-Typing/Signatures/Bad/LargerConstraints/Test.ds:6:8
+        Inferred type:
+            succ
+                :: forall %r1 %r2 %r0
+                .  Int32 %r1 -> Int32 %r0 -(!e0 $c0)> Int32 %r2
+                :- !e0   =  !Read %r0
+                ,  $c0   =  ${Test.x : %r1}
+                ,  Const %r1
+        
+        Is bigger than signature:
+            succ
+                :: forall %r1 %r2 %r0
+                .  Int32 %r1 -> Int32 %r0 -(!e0 $c0)> Int32 %r2
+                :- !e0   =  !Read %r1 + !Read %r0
+                ,  $c0   =  ${xDE109 : %r1}
+        
+        Unexpected constraint:  Const Test.%r1
+

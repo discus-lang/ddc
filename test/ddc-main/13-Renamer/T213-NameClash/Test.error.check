@@ -1,0 +1,21 @@
+ddc: ERROR
+./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:13:0
+        Redefined value variable 'bad_import'
+            first defined at: ./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:12:0
+
+./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:9:0
+        Redefined value variable 'id'
+            first defined at: ./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:7:0
+
+./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:18:0
+        Redefined value variable 'caf'
+            first defined at: ./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:17:0
+
+./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:22:0
+        Redefined value variable 'halfcaf'
+            first defined at: ./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:21:0
+
+./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:28:0
+        Redefined value variable 'inbetween'
+            first defined at: ./test/ddc-main/13-Renamer/T213-NameClash/Test.ds:26:0
+

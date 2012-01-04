@@ -1,4 +1,0 @@
-ddc: ERROR
-./test/15-Typing/Classing/OrphanInstance/Orphan.ds:14:8
-        'Orphan.orphanFun' is not a (visible) method of class 'Orphan.Thing'.
-
