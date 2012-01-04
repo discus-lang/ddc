@@ -1,3 +1,4 @@
+-- Destructive update of an integer.
 letregion r1 with {w1 : Mutable r1} in let x : Int r1 = 0 [r1] () in let _ : Unit = updateInt [r1] [r1] <w1> x (2 [r1] ()) in addInt [r1] [r1] [R2#] x (3 [r1] ())
 withregion R1# in let x : Int R1# = 0 [R1#] () in let _ : Unit = updateInt [R1#] [R1#] <mutable [R1#]> x (2 [R1#] ()) in addInt [R1#] [R1#] [R2#] x (3 [R1#] ())
 withregion R1# in let x : Int R1# = L1# in let _ : Unit = updateInt [R1#] [R1#] <mutable [R1#]> x (2 [R1#] ()) in addInt [R1#] [R1#] [R2#] x (3 [R1#] ())
