@@ -24,8 +24,6 @@ foreign import "primInt64_toString"
 foreign import "primWord64_toString"
  	primWord64_toString  :: Word64# -> Ptr# String# -> Int64# -> Void#
 
-foreign import primCast_Word8U_Word32U :: Word8# -> Word32#
-
 -- Conversions ----------------------------------------------------------------
 -- | Show an `Int32` as a `String`.
 showInt32 :: Int32 -> String
