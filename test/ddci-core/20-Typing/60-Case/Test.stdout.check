@@ -9,14 +9,6 @@ Discriminant of case expression is not algebraic data.
      Discriminant type: Unit -> Unit
          when checking: case \(x : Unit).x of {_ -> ()}
 
--- Error: pattern and discriminant types don't match.
-Cannot instantiate constructor type with discriminant type args.
- Either the constructor has an invalid type,
- or the type of the discriminant does not match the type of the pattern.
-      Constructor type: List R0# (Int R0#)
-     Discriminant type: Unit
-         when checking: case xx1 of {()  -> ()}
-
 -- Error: pattern binds more fields than provided by constructor.
 Pattern has more binders than there are fields in the constructor.
      Contructor: Cons
@@ -31,26 +23,20 @@ Annotation on pattern variable does not match type of field.
             Field type: Int R0#
          when checking: case xx of {Nil  -> (); Cons (x : Unit) xs -> ()}
 
--- Ok: check that vars in alts are masked from closure
-let xx = Nil [R0#] [Int R0#] () in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
-::  Int R0#
-:!: Alloc R0#
-:$: Use R0#
-
 -- Error: alternatives are not exhaustive, for a Small type.
-Case alternative is non-exhaustive.
+Case alternatives are non-exhaustive.
  Constructors not matched: Nil
             when checking: case xx of {Cons _ _ -> ()}
 
 -- Error: alternatives are not exhaustive, for a Large type.
-Case alternative is non-exhaustive.
+Case alternatives are non-exhaustive.
   when checking: case xx of {0  -> ()}
 
--- Error: alternatives are overlapping due to multiple default alts.
+-- Error: alternatives are overlapping due to multiple defaults.
 Case alternatives are overlapping.
   when checking: case xx of {_ -> (); _ -> ()}
 
--- Error: alternatives are overlapping because there is a default alt
+-- Error: alternatives are overlapping because there is a default
 --        earlier in the list.
 Case alternatives are overlapping.
   when checking: case xx of {5  -> (); _ -> (); 0  -> ()}
@@ -59,4 +45,24 @@ Case alternatives are overlapping.
 --        appears multiple times.
 Case alternatives are overlapping.
   when checking: case xx of {0  -> (); 0  -> (); _ -> ()}
+
+-- Error: pattern and discriminant types don't match.
+Cannot instantiate constructor type with discriminant type args.
+ Either the constructor has an invalid type,
+ or the type of the discriminant does not match the type of the pattern.
+      Constructor type: List R0# (Int R0#)
+     Discriminant type: Unit
+         when checking: case xx1 of {()  -> ()}
+
+-- Error: pattern and discriminant types don't match.
+Discriminant type does not match result of pattern type.
+     Discriminant type: Int R0#
+          Pattern type: [^ : *].Unit -(Alloc R0# | $0)> List R0# ^0
+         when checking: case xx of {Nil  -> ()}
+
+-- Ok: check that vars in alts are masked from closure
+let xx = Nil [R0#] [Int R0#] () in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
+::  Int R0#
+:!: Alloc R0#
+:$: Use R0#
 

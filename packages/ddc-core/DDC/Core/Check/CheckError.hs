@@ -209,6 +209,12 @@ data Error a n
         , errorTypeCtor         :: Type n
         , errorTypeDiscrim      :: Type n }
 
+        -- | Type of discriminant does not match type of pattern.
+        | ErrorCaseDiscrimTypeMismatch
+        { errorChecking         :: Exp a n
+        , errorTypeDiscrim      :: Type n
+        , errorTypePattern      :: Type n }
+
         -- | Annotation on pattern variable does not match field type of constructor.
         | ErrorCaseFieldTypeMismatch
         { errorChecking         :: Exp a n
@@ -406,13 +412,13 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "         when checking: "      <> ppr xx ]
 
         ErrorCaseNonExhaustive xx ns
-         -> vcat [ text "Case alternative is non-exhaustive."
+         -> vcat [ text "Case alternatives are non-exhaustive."
                  , text " Constructors not matched: "   
                         <> (sep $ punctuate comma $ map ppr ns)
                  , text "            when checking: "   <> ppr xx ]
 
         ErrorCaseNonExhaustiveLarge xx
-         -> vcat [ text "Case alternative is non-exhaustive."
+         -> vcat [ text "Case alternatives are non-exhaustive."
                  , text "  when checking: "             <> ppr xx ]
 
         ErrorCaseOverlapping xx
@@ -434,6 +440,12 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text " or the type of the discriminant does not match the type of the pattern."
                  , text "      Constructor type: "      <> ppr tCtor
                  , text "     Discriminant type: "      <> ppr tDiscrim
+                 , text "         when checking: "      <> ppr xx ]
+
+        ErrorCaseDiscrimTypeMismatch xx tDiscrim tPattern
+         -> vcat [ text "Discriminant type does not match result of pattern type."
+                 , text "     Discriminant type: "      <> ppr tDiscrim
+                 , text "          Pattern type: "      <> ppr tPattern
                  , text "         when checking: "      <> ppr xx ]
 
         ErrorCaseFieldTypeMismatch xx tAnnot tField

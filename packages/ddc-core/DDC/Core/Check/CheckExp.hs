@@ -571,10 +571,10 @@ checkAltM xx defs env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
                         = takeTFunArgResult tCtor_inst
 
         -- The result type of the constructor must match the discriminant type.
+        --  If it doesn't then the constructor in the pattern probably isn't for
+        --  the discriminant type.
         when (tDiscrim /= tResult)
-         $ error "checkAltM: discrim types does not match ctor result type"    -- TODO: need to implement more data types
-                                                                               --       before we can test this.
-
+         $ throw $ ErrorCaseDiscrimTypeMismatch xx tDiscrim tResult
 
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
