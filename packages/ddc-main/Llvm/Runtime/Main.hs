@@ -15,6 +15,7 @@ import Llvm.Util
 
 import qualified DDC.Main.Arg		as Arg
 
+import Control.Monad
 import Data.ListUtil
 
 
@@ -68,7 +69,8 @@ callModInitFns :: ModuleId -> LlvmM ()
 callModInitFns mid
  = do	let func	= LlvmFunctionDecl ("_ddcInitModule_" ++ modNameOfId mid)
 					External CC_Ccc LMVoid FixedArgs [] ptrAlign
-	addGlobalFuncDecl func
+	currentModId	<- getModuleId
+	when (currentModId /= mid) $ addGlobalFuncDecl func
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) [] []) ]
 
 
@@ -88,7 +90,6 @@ callMainWithHandler modName
 					External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
 	let thandle	= LlvmFunctionDecl "Control_Exception_topHandle"
 					External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
-	addGlobalFuncDecl main
 	addGlobalFuncDecl thandle
 
 	r1		<- allocThunk (pVarLift $ funcVarOfDecl main) 1 0
