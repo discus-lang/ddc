@@ -1,3 +1,3 @@
-ddc: "./test/12-Parser/Types/T190-MissingClosureConstraint/Test.ds" (line 5, column 20):
+ddc: "./test/ddc-main/15-Typing/Closure/T190-MissingClosureConstraint/Test.ds" (line 5, column 20):
 unexpected :
 expecting a closure constraint for '$c1'
