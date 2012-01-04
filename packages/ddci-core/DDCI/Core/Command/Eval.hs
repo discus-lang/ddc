@@ -3,6 +3,7 @@ module DDCI.Core.Command.Eval
         ( cmdStep
         , cmdEval)
 where
+import DDCI.Core.Stats.Trace
 import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Step
 import DDCI.Core.Eval.Name
@@ -79,14 +80,19 @@ stepPrint store x
                     return $ Nothing
                       
              Right (_t, _eff, _clo)
-              -> do putStrLn $ pretty (ppr x)
+              -> do -- TODO: optionall print trace of evaluation
+                    -- putStrLn $ pretty (ppr x)
                     return $ Just (store', x')
     
         StepDone
-         -> do  putStr $ pretty $ vcat
-                 [ ppr x
-                 , ppr store
-                 , empty]
+         -> do  -- TODO: optionally print final exp and store.
+                -- putStr $ pretty $ vcat
+                -- [ ppr x
+                -- , ppr store
+                -- , empty]
+
+                -- Load the final expression back from the store to display.
+                putStr $ pretty $ ppr $ traceStoreX store x
 
                 return Nothing
         
