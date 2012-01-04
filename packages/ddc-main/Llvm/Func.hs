@@ -8,18 +8,21 @@ where
 import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Sea.Pretty
+import DDC.Var
 
 import Llvm
+import LlvmM
 import Llvm.Runtime.Object
 import Llvm.Util
 
+import Control.Monad
 import qualified Data.Map		as Map
 
 
 stage = "Llvm.Stage"
 
-funcDeclOfExp :: Exp a -> LlvmFunctionDecl
-funcDeclOfExp (XVar (NSuper v) t@(TFun at rt))
+mkFuncDecl :: Exp a -> LlvmFunctionDecl
+mkFuncDecl (XVar (NSuper v) t@(TFun at rt))
  = let	(varArgs, params) = specialCaseFuncs (seaVar False v) at
    in	LlvmFunctionDecl {
 		--  Unique identifier of the function
@@ -38,10 +41,21 @@ funcDeclOfExp (XVar (NSuper v) t@(TFun at rt))
 		funcAlign = ptrAlign
 		}
 
-funcDeclOfExp (XVar v t)
- = panic stage $ "funcDeclOfExp (" ++ show __LINE__ ++ ")\n\n"
+mkFuncDecl (XVar v t)
+ = panic stage $ "mkFuncDecl (" ++ show __LINE__ ++ ")\n\n"
 	++ show v ++ "\n\n"
 	++ show t ++ "\n"
+
+
+funcDeclOfExp :: Exp a -> LlvmM LlvmFunctionDecl
+funcDeclOfExp exp@(XVar (NSuper v) _)
+ = do	let fdecl = mkFuncDecl exp
+	modId <- getModuleId
+	-- Only add a global function declaration if the function is external to
+	-- the current module.
+	when (varModuleId v /= modId) $
+		addGlobalFuncDecl fdecl
+	return fdecl
 
 
 funcDeclOfExtern :: Top a -> LlvmFunctionDecl

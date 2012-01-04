@@ -191,7 +191,7 @@ llvmOfXPrim (MApp PAppApply) ((fptr@(XVar n t)):args)
 
 llvmOfXPrim (MAlloc (PAllocThunk v t arity argc)) args
  | length args <= argc
- = do	addGlobalFuncDecl $ funcDeclOfExp (XVar (NSuper v) t)
+ = do	_ <- funcDeclOfExp (XVar (NSuper v) t)
 	allocThunk (toLlvmGlobalVar v t) arity argc
 
 llvmOfXPrim (MAlloc (PAllocData v arity)) []
@@ -388,8 +388,7 @@ primOrFunCall ((XVar (NSuper fv) t):args)
 funCall :: [Exp a] -> LlvmM LlvmVar
 funCall (exp@(XVar (NSuper fv) (TFun at TVoid)):args)
  | length at == length args || (at == [TVoid] && null args)
- = do	let func	= funcDeclOfExp exp
-	addGlobalFuncDecl func
+ = do	func		<- funcDeclOfExp exp
 	params		<- mapM llvmOfExp args
 	dummy		<- newUniqueNamedReg "dummy_do_not_use" $ toLlvmType TVoid
 	addBlock	[ Expr (Call TailCall (funcVarOfDecl func) params []) ]
@@ -397,8 +396,7 @@ funCall (exp@(XVar (NSuper fv) (TFun at TVoid)):args)
 
 funCall (exp@(XVar (NSuper fv) (TFun at rt)):args)
  | length at == length args || (at == [TVoid] && null args)
- = do	let func	= funcDeclOfExp exp
-	addGlobalFuncDecl func
+ = do	func		<- funcDeclOfExp exp
 	params		<- mapM llvmOfExp args
 	result		<- newUniqueNamedReg "result" $ toLlvmType rt
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
