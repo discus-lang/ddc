@@ -52,8 +52,8 @@ funcDeclOfExp exp@(XVar (NSuper v) _)
  = do	let fdecl = mkFuncDecl exp
 	modId <- getModuleId
 	-- Only add a global function declaration if the function is external to
-	-- the current module.
-	when (varModuleId v /= modId) $
+	-- the current module (closures end up with a moduleId of ModuleIdNil).
+	when (varModuleId v /= ModuleIdNil && varModuleId v /= modId) $
 		addGlobalFuncDecl fdecl
 	return fdecl
 
