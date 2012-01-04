@@ -38,13 +38,25 @@ let xx = Nil [R0#] [Int R0#] () in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> 
 :$: Use R0#
 
 -- Error: alternatives are not exhaustive, for a Small type.
-Case expression is non-exhaustive.
+Case alternative is non-exhaustive.
  Constructors not matched: Nil
             when checking: case xx of {Cons _ _ -> ()}
 
 -- Error: alternatives are not exhaustive, for a Large type.
-\(xx : Int R0#).case xx of {0  -> ()}
-::  Int R0# -> Unit
-:!: !0
-:$: $0
+Case alternative is non-exhaustive.
+  when checking: case xx of {0  -> ()}
+
+-- Error: alternatives are overlapping due to multiple default alts.
+Case alternatives are overlapping.
+  when checking: case xx of {_ -> (); _ -> ()}
+
+-- Error: alternatives are overlapping because there is a default alt
+--        earlier in the list.
+Case alternatives are overlapping.
+  when checking: case xx of {5  -> (); _ -> (); 0  -> ()}
+
+-- Error: alternatives are overlapping because the same constructor
+--        appears multiple times.
+Case alternatives are overlapping.
+  when checking: case xx of {0  -> (); 0  -> (); _ -> ()}
 

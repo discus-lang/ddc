@@ -202,10 +202,19 @@ data Error a n
         , errorTypeAnnot        :: Type n
         , errorTypeField        :: Type n }
 
-        -- | Case expression doesn't match all constructors.
+        -- | Case alternatives doesn't match all constructors.
         | ErrorCaseNonExhaustive
         { errorChecking         :: Exp a n
         , errorCtorNamesMissing :: [n] }
+
+        -- | Case alternatives doesn't match all constructors.
+        --   For large types where there are too many missing constructors to list.
+        | ErrorCaseNonExhaustiveLarge
+        { errorChecking         :: Exp a n }
+
+        -- | Case alternatives are overlapping.
+        | ErrorCaseOverlapping
+        { errorChecking         :: Exp a n }
 
 
 instance (Pretty n, Eq n) => Pretty (Error a n) where
@@ -416,8 +425,17 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "         when checking: "      <> ppr xx ]
         
         ErrorCaseNonExhaustive xx ns
-         -> vcat [ text "Case expression is non-exhaustive."
+         -> vcat [ text "Case alternative is non-exhaustive."
                  , text " Constructors not matched: "   
                         <> (sep $ punctuate comma $ map ppr ns)
                  , text "            when checking: "   <> ppr xx ]
+
+        ErrorCaseNonExhaustiveLarge xx
+         -> vcat [ text "Case alternative is non-exhaustive."
+                 , text "  when checking: "             <> ppr xx ]
+
+        ErrorCaseOverlapping xx
+         -> vcat [ text "Case alternatives are overlapping."
+                 , text "  when checking: "             <> ppr xx ]
+
 

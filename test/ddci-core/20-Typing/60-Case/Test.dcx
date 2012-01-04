@@ -67,3 +67,35 @@ case xx of {
         0       -> ();
 };;
 
+
+-- Error: alternatives are overlapping due to multiple default alts.
+:check..
+\(xx:Int R0#).
+case xx of {
+        _       -> ();
+        _       -> ();
+};;
+
+
+-- Error: alternatives are overlapping because there is a default alt
+--        earlier in the list.
+:check..
+\(xx:Int R0#).
+case xx of {
+        5       -> ();
+        _       -> ();
+        0       -> ();
+};;
+
+
+-- Error: alternatives are overlapping because the same constructor
+--        appears multiple times.
+:check..
+\(xx:Int R0#).
+case xx of {
+        0       -> ();
+        0       -> ();
+        _       -> ();
+};;
+
+

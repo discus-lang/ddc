@@ -437,35 +437,54 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
                 <- liftM unzip3 
                 $  mapM (checkAltM xx defs env tDiscrim tsArgs) alts
 
-        -- There must be at least one alternative.
-        when (null alts)
-         $ throw $ ErrorCaseNoAlternatives xx
-
-        -- Check that all alternative result types are identical.
+        -- All alternative result types must be identical.
         let (tAlt : _)  = ts
         forM_ ts $ \tAlt' 
          -> when (tAlt /= tAlt') 
              $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
 
         -- Get the mode of the data type, 
-        -- this tells us how many constructors there are.
+        --   this tells us how many constructors there are.
         mode    <- case lookupModeOfDataType nTyCon defs of
-                        Nothing -> error "no def"
+                        Nothing -> error "undeclared data type"         --- TODO: real error message
                         Just m  -> return m
 
-        -- TODO: Check for overlapping constructors.
+        -- Check for overlapping alternatives.
+        let pats                = [p | AAlt p _ <- alts]
+        let psDefaults          = filter isPDefault pats
+        let nsCtorsMatched      = mapMaybe takeCtorNameOfAlt alts
+
+        -- Alts overlapping because there are multiple defaults.
+        when (length psDefaults > 1)
+         $ throw $ ErrorCaseOverlapping xx
+
+        -- Alts overlapping because the same ctor is used multiple times.
+        when (length (nub nsCtorsMatched) /= length nsCtorsMatched )
+         $ throw $ ErrorCaseOverlapping xx
+
+        -- Check for alts overlapping because a default is not last.
+        -- Also check there is at least one alternative.
+        (case pats of
+          [] -> throw $ ErrorCaseNoAlternatives xx
+
+          _  |  or $ map isPDefault $ init pats 
+             -> throw $ ErrorCaseOverlapping xx
+
+             |  otherwise
+             -> return ())
 
         -- Check the alternatives are exhaustive.
         (case mode of
+
+          -- Small types have some finite number of constructors.
           DataModeSmall nsCtors
            -- If there is a default alternative then we've covered all the
            -- possibiliies. We know this we've also checked for overlap.
-           | any isPDefault    [p | AAlt p _ <- alts]
+           | any isPDefault [p | AAlt p _ <- alts]
            -> return ()
 
            -- Look for unmatched constructors.
-           | nsCtorsMatched <- mapMaybe takeCtorNameOfAlt alts
-           , nsCtorsMissing <- nsCtors \\ nsCtorsMatched
+           | nsCtorsMissing <- nsCtors \\ nsCtorsMatched
            , not $ null nsCtorsMissing
            -> throw $ ErrorCaseNonExhaustive xx nsCtorsMissing
 
@@ -473,10 +492,12 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
            | otherwise 
            -> return ()
 
-          -- TODO: do the check for large types.
+          -- Large types have an effectively infinite number of constructors
+          -- (like integer literals), so there needs to be a default alt.
           DataModeLarge 
-           -> return ())
-         
+           | any isPDefault [p | AAlt p _ <- alts] -> return ()
+           | otherwise  
+           -> throw $ ErrorCaseNonExhaustiveLarge xx)
 
         return  ( tAlt
                 , Sum.unions kEffect (effs : effss)
