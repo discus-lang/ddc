@@ -60,10 +60,17 @@ Discriminant type does not match result of pattern type.
           Pattern type: [^ : *].Unit -(Alloc R0# | $0)> List R0# ^0
          when checking: case xx of {Nil  -> ()}
 
--- Ok: check that vars in alts are masked from closure
---     and effect includes the read of the discriminant.
+-- Check that vars in alts are masked from closure
+-- and effect includes the read of the discriminant.
 let xx = Nil [R0#] [Int R0#] () in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
 ::  Int R0#
 :!: Read R0# + Alloc R0#
 :$: Use R0#
+
+-- Check that the HeadRead effect is crushed out when
+-- the read is on a type with no head region.
+case () of {()  -> ()}
+::  Unit
+:!: !0
+:$: $0
 
