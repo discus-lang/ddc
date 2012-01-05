@@ -5,6 +5,7 @@ module DDC.Core.Transform.SubstituteT
 where
 import DDC.Core.Exp
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.Transform.SubstituteT
 import Data.List
 
@@ -34,15 +35,19 @@ instance SubstituteT (Exp a) where
          -- on the bound occurrence with this new type.
          XVar a u'
           -> case u' of
-                UIx i _   
+                UIx i _ 
                  -> case lookup i (zip [0..] (stackEnv stack)) of
-                     Nothing -> xx
-                     Just b  -> XVar a (UIx i $ typeOfBind b)
+                     Just b  
+                       | not $ isBot $ typeOfBind b  
+                       -> XVar a (UIx i $ typeOfBind b)
+                     _ -> xx
 
                 UName n _ 
                  -> case find (boundMatchesBind u') (stackEnv stack) of
-                     Nothing -> xx
-                     Just b  -> XVar a (UName n $ typeOfBind b)
+                     Just b  
+                       | not $ isBot $ typeOfBind b
+                       -> XVar a (UName n $ typeOfBind b)
+                     _ -> xx
 
                 UPrim{} -> xx
 

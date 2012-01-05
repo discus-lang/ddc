@@ -37,7 +37,7 @@ stepPrimCon (NameInt i) [xR, xUnit] store
         , Store.hasRgn store rgn
 
         -- add the binding to the store.
-        , (store1, l)   <- Store.allocBind rgn (SObj (NameInt i) []) store
+        , (store1, l)   <- Store.allocBind rgn (tInt tR) (SObj (NameInt i) []) store
 
         = Just  ( store1
                 , XCon () (UPrim (NameLoc l) (tInt tR)))
@@ -55,7 +55,7 @@ stepPrimCon n@(NamePrimCon PrimDaConNil) [xR, xA, xUnit] store
         , Store.hasRgn store rgn
 
         -- add the binding to the store
-        , (store1, l)   <- Store.allocBind rgn (SObj n []) store
+        , (store1, l)   <- Store.allocBind rgn (tList tR tA) (SObj n []) store
 
         = Just  ( store1
                 , XCon () (UPrim (NameLoc l) (tList tR tA)))
@@ -73,7 +73,7 @@ stepPrimCon n@(NamePrimCon PrimDaConCons) [xR, xA, xHead, xTail] store
         , Store.hasRgn store rgn
 
         -- add the binding to the store
-        , (store1, l)   <- Store.allocBind rgn (SObj n [lHead, lTail]) store
+        , (store1, l)   <- Store.allocBind rgn (tList tR tA) (SObj n [lHead, lTail]) store
 
         = Just  ( store1
                 , XCon () (UPrim (NameLoc l) (tList tR tA)))
@@ -109,8 +109,8 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
         , Just l2       <- takeLocX xL2
 
         -- get the regions and values of each location
-        , Just (r1', SObj (NameInt i1) [])  <- Store.lookupRegionBind l1 store
-        , Just (r2', SObj (NameInt i2) [])  <- Store.lookupRegionBind l2 store
+        , Just (r1', _, SObj (NameInt i1) [])  <- Store.lookupRegionTypeBind l1 store
+        , Just (r2', _, SObj (NameInt i2) [])  <- Store.lookupRegionTypeBind l2 store
         
         -- the locations must be in the regions the args said they were in
         , r1' == r1
@@ -123,7 +123,7 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
         , i3    <- i1 `fOp` i2
         
         -- write the result to a new location in the store
-        , (store1, l3)  <- Store.allocBind r3 (SObj (NameInt i3) []) store
+        , (store1, l3)  <- Store.allocBind r3 (tInt tR3) (SObj (NameInt i3) []) store
 
         = Just  ( store1
                 , XCon () (UPrim (NameLoc l3) (tInt tR3)))
@@ -142,15 +142,15 @@ stepPrimOp (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
         , r1W == r1
 
         -- get the regions and values of each location
-        , Just (r1L, SObj (NameInt _)  [])  <- Store.lookupRegionBind l1 store
-        , Just (r2L, SObj (NameInt i2) [])  <- Store.lookupRegionBind l2 store
+        , Just (r1L, tX1, SObj (NameInt _)  [])  <- Store.lookupRegionTypeBind l1 store
+        , Just (r2L, _,   SObj (NameInt i2) [])  <- Store.lookupRegionTypeBind l2 store
 
         -- the locations must be in the regions the args said they were in
         , r1L == r1
         , r2L == r2
 
         -- update the destination
-        , store1     <- Store.addBind l1 r1 (SObj (NameInt i2) []) store
+        , store1     <- Store.addBind l1 r1 tX1 (SObj (NameInt i2) []) store
 
         = Just  ( store1
                 , XCon () (UPrim (NamePrimCon PrimDaConUnit) tUnit))

@@ -72,15 +72,15 @@ step' store xx
 -- (EvLam)
 -- Add abstractions to the heap.
 step' store xx@XLam{}
- = let  Just (bs, xBody)        = takeXLams xx
-        (store', l)             = allocBind (Rgn 0) (SLams bs xBody) store
-
         -- We need the type of the expression to attach to the location
         -- This fakes the store typing from the formal typing rules.
-   in   case typeOfExp primDataDefs xx of
-         Left err  -> StepStuckMistyped err
-         Right t   -> StepProgress store' (XCon () (UPrim (NameLoc l) t))
-
+ = case typeOfExp primDataDefs xx of
+        Left err -> StepStuckMistyped err
+        Right t   
+         -> let Just (bs, xBody)  = takeXLams xx
+                (store', l)       = allocBind (Rgn 0) t (SLams bs xBody) store
+            in  StepProgress store' (XCon () (UPrim (NameLoc l) t))
+        
 
 -- (EvAlloc)
 -- Construct some data in the heap.
@@ -108,7 +108,7 @@ step' store xx
 step' store xx
         | xL1 : xsArgs  <- takeXApps xx
         , Just l1       <- takeLocX xL1
-        , Just (Rgn 0, SLams bs _xBody)  <- lookupRegionBind l1 store
+        , Just (Rgn 0, _, SLams bs _xBody)  <- lookupRegionTypeBind l1 store
 
         -- See if an arg to any of the lambdas needs to be stepped.
         , arity         <- length bs
@@ -145,7 +145,7 @@ step' store xx
 step' store xx
         | xL1 : xsArgs  <- takeXApps xx
         , Just l1       <- takeLocX xL1
-        , Just (Rgn 0, SLams bs xBody) <- lookupRegionBind l1 store
+        , Just (Rgn 0, _, SLams bs xBody) <- lookupRegionTypeBind l1 store
 
         -- Take as many wnfs as possible to satisfy binders.
         , arity                 <- length bs
@@ -225,8 +225,8 @@ step' store (XLet _ (LRec bxs) x2)
        Nothing        -> StepStuckLetrecBindsNotLam
        Just os
         -> let -- Add all the objects to the store.
-               store2   = foldr (\(l, o) -> addBind l (Rgn 0) o) store1
-                        $ zip ls os
+               store2   = foldr (\(l, t, o) -> addBind l (Rgn 0) t o) store1
+                        $ zip3 ls ts os
         
                -- Substitute locations into the body expression.
                x2'      = substituteXs (zip bs xls) x2
@@ -305,14 +305,15 @@ step' store (XLet a (LWithRegion uRegion) x)
 step' store (XCase a xDiscrim alts)
         | Just lDiscrim            <- takeLocX xDiscrim
         , Just (SObj nTag lsArgs)  <- lookupBind lDiscrim store
+        , Just tsArgs              
+           <- sequence $ map (\l -> lookupTypeOfLoc l store) lsArgs
         , AAlt pat xBody : _       <- filter (tagMatchesAlt nTag) alts
         = case pat of
            PDefault         
             -> StepProgress store xBody
 
            PData _ bsArgs      
-            | tsArgs    <- map typeOfBind bsArgs
-            , bxsArgs   <- [ (b, XCon a (UPrim (NameLoc l) t))
+            | bxsArgs   <- [ (b, XCon a (UPrim (NameLoc l) t))
                                 | l     <- lsArgs
                                 | t     <- tsArgs
                                 | b     <- bsArgs]

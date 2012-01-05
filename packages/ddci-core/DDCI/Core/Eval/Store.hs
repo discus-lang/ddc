@@ -22,7 +22,8 @@ module DDCI.Core.Eval.Store
         , addBind
         , allocBind,    allocBinds
         , lookupBind
-        , lookupRegionBind)
+        , lookupTypeOfLoc
+        , lookupRegionTypeBind)
 where
 import DDC.Core.Exp
 import DDCI.Core.Eval.Name
@@ -52,7 +53,7 @@ data Store
 
           -- | Map of locations to store bindings,
           --   and the handles for the regions they're in.
-        , storeBinds            :: Map Loc (Rgn, SBind) }
+        , storeBinds            :: Map Loc (Rgn, Type Name, SBind) }
 
 
 -- | Store binding.
@@ -85,8 +86,10 @@ instance Pretty Store where
                                       $ map ppr $ Set.toList global)
   , text ""
   , text " Binds:"
-  , vcat $ [ text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind
-                | (l, (r, sbind)) <- Map.toList binds] ]
+  , vcat $ [  text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind 
+           <> line
+           <> text "      :: " <> ppr t
+                | (l, (r, t, sbind)) <- Map.toList binds] ]
 
 
 instance Pretty SBind where
@@ -157,7 +160,7 @@ newRgns count store
 -- | Delete a region, removing all its bindings.
 delRgn :: Rgn -> Store -> Store
 delRgn rgn store
- = let  binds'   = [x | x@(_, (r, _)) <- Map.toList $ storeBinds store
+ = let  binds'   = [x | x@(_, (r, _, _)) <- Map.toList $ storeBinds store
                       , r /= rgn ]  
    in   store   { storeBinds    = Map.fromList binds' 
                 , storeRegions  = Set.delete rgn (storeRegions store)
@@ -179,29 +182,29 @@ setGlobal rgn store
 
 -- Bindings -------------------------------------------------------------------
 -- | Add a store binding to the store, at the given location.
-addBind :: Loc -> Rgn -> SBind -> Store -> Store
-addBind loc rgn sbind store
+addBind :: Loc -> Rgn -> Type Name -> SBind -> Store -> Store
+addBind loc rgn t sbind store
         = store 
-        { storeBinds    = Map.insert loc (rgn, sbind) (storeBinds store) }
+        { storeBinds    = Map.insert loc (rgn, t, sbind) (storeBinds store) }
 
 
 -- | Allocate a new binding into the given region,
 --    returning the new location.
-allocBind :: Rgn -> SBind -> Store -> (Store, Loc)
-allocBind rgn sbind store
+allocBind :: Rgn -> Type Name -> SBind -> Store -> (Store, Loc)
+allocBind rgn t sbind store
  = let  (store1, loc)   = newLoc store
-        store2          = addBind loc rgn sbind store1
+        store2          = addBind loc rgn t sbind store1
    in   (store2, loc)
 
 
 -- | Alloc some recursive bindings into the given region, 
 --     returning the new locations.
-allocBinds :: ([[Loc] -> (Rgn, SBind)]) -> Store -> (Store, [Loc])
+allocBinds :: ([[Loc] -> (Rgn, Type Name, SBind)]) -> Store -> (Store, [Loc])
 allocBinds mkSBinds store
  = let  n               = length mkSBinds
         (store1, locs)  = newLocs n store
         rgnBinds        = map (\mk -> mk locs) mkSBinds
-        store2          = foldr (\(l, (r, b)) -> addBind l r b) store1
+        store2          = foldr (\(l, (r, t, b)) -> addBind l r t b) store1
                         $ zip locs rgnBinds 
    in   (store2, locs)
 
@@ -209,11 +212,19 @@ allocBinds mkSBinds store
 -- | Lookup a the binding for a location.
 lookupBind :: Loc -> Store -> Maybe SBind
 lookupBind loc store
-        = liftM snd $ Map.lookup loc (storeBinds store)
+        = liftM (\(_, _, sb) -> sb) 
+        $ Map.lookup loc (storeBinds store)
 
+
+-- | Lookup the type of a store location.
+lookupTypeOfLoc :: Loc -> Store -> Maybe (Type Name)
+lookupTypeOfLoc loc store
+ = case Map.lookup loc (storeBinds store) of
+        Nothing         -> Nothing
+        Just (_, t, _)  -> Just t
 
 -- | Lookup the region handle and binding for a location.
-lookupRegionBind :: Loc -> Store -> Maybe (Rgn, SBind)
-lookupRegionBind loc store
+lookupRegionTypeBind :: Loc -> Store -> Maybe (Rgn, Type Name, SBind)
+lookupRegionTypeBind loc store
         = Map.lookup loc (storeBinds store)
 
