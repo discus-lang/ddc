@@ -17,6 +17,7 @@ import DDC.Core.Collect.Free
 import DDC.Core.Check.CheckError
 import DDC.Core.Check.CheckWitness
 import DDC.Core.Check.TaggedClosure
+import DDC.Type.Transform.Crush
 import DDC.Type.Operators.Trim
 import DDC.Type.Transform
 import DDC.Type.Universe
@@ -413,7 +414,7 @@ checkExpM defs env xx@(XLet _ (LWithRegion u) x)
 checkExpM defs env xx@(XCase _ xDiscrim alts)
  = do
         -- Check the discriminant.
-        (tDiscrim, effs, clos) 
+        (tDiscrim, effsDiscrim, closDiscrim) 
          <- checkExpM defs env xDiscrim
 
         -- Split the type into the type constructor names and type parameters.
@@ -499,10 +500,14 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
            | any isPDefault [p | AAlt p _ <- alts] -> return ()
            | otherwise  
            -> throw $ ErrorCaseNonExhaustiveLarge xx)
-                        
+
+        let effsMatch    
+                = Sum.singleton kEffect 
+                $ crushT $ tHeadRead tDiscrim
+
         return  ( tAlt
-                , Sum.unions kEffect (effs : effss)
-                , Set.unions         (clos : closs) )
+                , Sum.unions kEffect (effsDiscrim : effsMatch : effss)
+                , Set.unions         (closDiscrim : closs) )
 
 
 -- type cast -------------------------------------

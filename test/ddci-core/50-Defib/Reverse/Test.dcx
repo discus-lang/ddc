@@ -8,8 +8,8 @@ letrec
   = Cons [:r a:] x (Nil [:r a:] ());
 
  append  [r : %] [a : *]
-         (xx : List r a) {!0      | Use r}
-         (ys : List r a) {Alloc r | Use r + DeepUse a}
+         (xx : List r a) {!0               | Use r}
+         (ys : List r a) {Read r + Alloc r | Use r + DeepUse a}
          : List r a
   = case xx of {
           Nil           -> ys;
@@ -17,7 +17,7 @@ letrec
     };
 
  reverse [r : %] [a : *]
-         (xx : List r a) {Alloc r | Use r}
+         (xx : List r a) {Read r + Alloc r | Use r}
          : List r a
   = case xx of {
          Nil            -> xx;

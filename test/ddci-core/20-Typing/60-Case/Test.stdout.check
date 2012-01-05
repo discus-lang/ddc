@@ -61,8 +61,9 @@ Discriminant type does not match result of pattern type.
          when checking: case xx of {Nil  -> ()}
 
 -- Ok: check that vars in alts are masked from closure
+--     and effect includes the read of the discriminant.
 let xx = Nil [R0#] [Int R0#] () in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> x}
 ::  Int R0#
-:!: Alloc R0#
+:!: Read R0# + Alloc R0#
 :$: Use R0#
 

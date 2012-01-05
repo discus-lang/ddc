@@ -234,6 +234,9 @@ data TcCon
         -- | Read of some region
         | TcConRead             -- :: '% ~> !'
 
+        -- | Read the head region in a value type.
+        | TcConHeadRead         -- :: '* ~> !'
+
         -- | Read of all material regions in value type.
         | TcConDeepRead         -- :: '* ~> !'
         

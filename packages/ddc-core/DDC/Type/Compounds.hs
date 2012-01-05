@@ -40,7 +40,7 @@ module DDC.Type.Compounds
         , kData, kRegion, kEffect, kClosure, kWitness
 
           -- * Effect type constructors
-        , tRead,        tDeepRead
+        , tRead,        tDeepRead,      tHeadRead
         , tWrite,       tDeepWrite
         , tAlloc,       tDeepAlloc
 
@@ -336,6 +336,7 @@ kWitness        = TCon $ TyConKind KiConWitness
 
 -- Effect type constructors
 tRead           = tcCon1 TcConRead
+tHeadRead       = tcCon1 TcConHeadRead
 tDeepRead       = tcCon1 TcConDeepRead
 tWrite          = tcCon1 TcConWrite
 tDeepWrite      = tcCon1 TcConDeepWrite

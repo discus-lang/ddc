@@ -74,6 +74,7 @@ readTcConBuiltin :: String -> Maybe TcCon
 readTcConBuiltin ss
  = case ss of
         "Read"          -> Just TcConRead
+        "HeadRead"      -> Just TcConHeadRead
         "DeepRead"      -> Just TcConDeepRead
         "Write"         -> Just TcConWrite
         "DeepWrite"     -> Just TcConDeepWrite

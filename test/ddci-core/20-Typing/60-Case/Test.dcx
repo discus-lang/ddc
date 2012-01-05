@@ -97,13 +97,20 @@ case xx of {
 };;
 
 
--- Ok: check that vars in alts are masked from closure
+-- Check that vars in alts are masked from closure
+-- and effect includes the read of the discriminant.
 :check..
 let xx = Nil [R0#] [Int R0#] () in
 case xx of {
         Nil       -> 0 [R0#] ();
         Cons x xs -> x;
 };;
+
+
+-- Check that the HeadRead effect is crushed out when
+-- the read is on a type with no head region.
+:check..
+case () of { () -> () };;
 
 
 

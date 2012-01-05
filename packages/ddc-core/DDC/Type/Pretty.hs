@@ -175,6 +175,7 @@ instance Pretty TcCon where
   = case tc of
         TcConFun        -> text "(->)"
         TcConRead       -> text "Read"
+        TcConHeadRead   -> text "HeadRead"
         TcConDeepRead   -> text "DeepRead"
         TcConWrite      -> text "Write"
         TcConDeepWrite  -> text "DeepWrite"
