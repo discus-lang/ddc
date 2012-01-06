@@ -75,9 +75,10 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
 
          | otherwise
          -> pprParen (d > 5)
-         $  ppr t1 <+> text "-(" <> ppr eff <> text " | " <> ppr clo <> text ")>" 
-                   <+> (if isTFun t2 then pprPrec 5 t2 else pprPrec 6 t2)
-
+         $  (if isTFun t1 then pprPrec 6 t1 else pprPrec 5 t1)
+                   <+> text "-(" <> ppr eff <> text " | " <> ppr clo <> text ")>" 
+                   <+> ppr t2
+                   
         -- Standard types.
         TCon tc    -> ppr tc
         TVar b     -> ppr b
