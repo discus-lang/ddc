@@ -7,8 +7,17 @@
 (\(i:Int R1#). \(x:Unit). i) (5 [R1#] ()) ()
 
 
--- Handle under-applied primitive constructors.
+-- Under-applied primitive constructor.
 5
 
--- Handle under-applied primitive constructors.
+-- Under-applied primitive constructor.
 5 [R0#]
+
+-- Over-applied abstraction.
+:eval..
+letrec thing [a:*] (x:a) : a = x;
+in  thing [[^^^:%].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0] 
+          addInt
+          [:R0# R0# R0#:]
+          (10 [R0#] ())
+          (20 [R0#] ());;
