@@ -1,7 +1,7 @@
 
 -- | Given a term containing some store locations, a closure is an upper 
 --   bound on the regions those locations are in.
-module DDC.Type.Operators.Trim 
+module DDC.Type.Transform.Trim 
         (trimClosure)
 where
 import DDC.Type.Check.CheckCon
@@ -89,7 +89,7 @@ trimDeepUsedD tt
          -> case takeTyConApps tt of
              Just (tc, args)     
               | Just k          <- takeKindOfTyCon tc
-              , Just cs         <- sequence $ zipWith makeUsed (takeKFuns k) args
+              , Just cs         <- sequence $ zipWith makeUsed (takeKFuns' k) args
               ->  Sum.fromList kClosure cs
 
              _ -> Sum.singleton kClosure $ tDeepUse tt

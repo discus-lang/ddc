@@ -15,6 +15,8 @@ import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Collect.Free
 import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.Crush
+import DDC.Type.Transform.Trim
 import Data.Maybe
 import Data.List
 import qualified DDC.Type.Sum   as Sum
@@ -80,8 +82,28 @@ instance SubstituteT Type where
     in  case tt of
          TCon{}          -> tt
 
-         TApp t1 t2      -> TApp (down t1) (down t2)
-         TSum ss         -> TSum (down ss)
+         -- Crush out compound effects and closures as we substitute them.
+         TApp t1 t2
+          -> case t1 of
+                TCon (TyConComp TcConHeadRead)  
+                  -> crushT      (TApp t1 (down t2))
+
+                TCon (TyConComp TcConDeepRead)  
+                  -> crushT      (TApp t1 (down t2))
+
+                TCon (TyConComp TcConDeepWrite) 
+                  -> crushT      (TApp t1 (down t2))
+
+                TCon (TyConComp TcConDeepAlloc) 
+                  -> crushT      (TApp t1 (down t2))
+
+                TCon (TyConComp TcConDeepUse)
+                  -> trimClosure (TApp t1 (down t2))
+
+                _ -> TApp (down t1) (down t2)
+
+         TSum ss        
+          -> TSum (down ss)
 
          TForall b tBody
           | otherwise

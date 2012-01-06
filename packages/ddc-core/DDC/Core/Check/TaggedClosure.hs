@@ -7,7 +7,7 @@ module DDC.Core.Check.TaggedClosure
         , taggedClosureOfTyArg
         , maskFromTaggedSet)
 where
-import DDC.Type.Operators.Trim
+import DDC.Type.Transform.Trim
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Pretty

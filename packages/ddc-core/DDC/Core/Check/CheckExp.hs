@@ -18,7 +18,7 @@ import DDC.Core.Check.CheckError
 import DDC.Core.Check.CheckWitness
 import DDC.Core.Check.TaggedClosure
 import DDC.Type.Transform.Crush
-import DDC.Type.Operators.Trim
+import DDC.Type.Transform.Trim
 import DDC.Type.Transform
 import DDC.Type.Universe
 import DDC.Type.Compounds

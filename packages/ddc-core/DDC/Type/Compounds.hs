@@ -28,7 +28,8 @@ module DDC.Type.Compounds
 
           -- * Function type construction
         , kFun
-        , kFuns,        takeKFun,       takeKFuns,      takeResultKind
+        , kFuns,        takeKFun
+        , takeKFuns,    takeKFuns',     takeResultKind
         , tFun,         takeTFun,       takeTFunArgResult
         , tFunPE
         , tImpl
@@ -258,12 +259,21 @@ takeKFun kk
 
 
 -- | Destruct a chain of kind functions into the arguments
-takeKFuns :: Kind n -> [Kind n]
+takeKFuns :: Kind n -> ([Kind n], Kind n)
 takeKFuns kk
  = case kk of
         TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
-                -> [k1] ++ takeKFuns k2
-        _       -> [kk]
+          |  (ks, k2') <- takeKFuns k2
+          -> (k1 : ks, k2')
+
+        _ -> ([], kk)
+
+
+-- | Like takeKFuns, but return argument and return kinds in the same list.
+takeKFuns' :: Kind n -> [Kind n]
+takeKFuns' kk 
+        | (ks, k1) <- takeKFuns kk
+        = ks ++ [k1]
 
 
 -- | Take the result kind of a kind function, or return the same kind

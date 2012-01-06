@@ -1,0 +1,50 @@
+
+
+-- Check that HeadRead in result effect is crushed.
+:check..
+let xx = Nil [R0#] [Int R0#] () in
+case xx of {
+        Nil       -> 0 [R0#] ();
+        Cons x xs -> x;
+};;
+
+
+-- Check that the HeadRead effect is crushed out when
+-- the read is on a type with no head region.
+:check..
+case () of { () -> () };;
+
+
+-- Check substituted effects are crushed under HeadRead.
+:check..
+\(f:[a:*].a -(HeadRead a | DeepUse a)> a). 
+        f [Int R0#] (5 [R0#] ()));;
+
+
+-- Check substituted effects are crushed under DeepRead
+:check..
+\(f:[a:*].a -(DeepRead a | DeepUse a)> a). 
+        f [Int R0#] (5 [R0#] ()));;
+
+
+-- Check substituted effects are crushed under DeepWrite
+:check..
+\(f:[a:*].a -(DeepWrite a | DeepUse a)> a). 
+        f [Int R0#] (5 [R0#] ()));;
+
+
+-- Check substituted effects are crushed under DeepAlloc
+:check..
+\(f:[a:*].a -(DeepAlloc a | DeepUse a)> a). 
+        f [Int R0#] (5 [R0#] ()));;
+
+
+-- Using a polymorphic addition function requires DeepRead and DeepAlloc
+:check..
+letrec double [a:*] 
+           (add : a -> a -( DeepRead a + DeepAlloc a | DeepUse a)> a)
+           (x   : a)      { DeepRead a + DeepAlloc a | DeepUse a}
+           : a
+        = add x x;
+in double [Int R0#] (addInt [:R0# R0# R0#:]) (5 [R0#] ());;
+

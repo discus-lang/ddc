@@ -31,7 +31,7 @@ let x : Int R0# = 5 [R0#] () in \(z : Unit).addInt [R0#] [R0#] [R1#] x x
 -- Inner function has a value in the closure whose type contains
 -- a higher kinded type variable.
 \(a :% ~> *).\(x :a R1#).\(f :a R1# -> a R1#).f x
-::  [a : % ~> *].a R1# -> a R1# -> a R1# -(!0 | DeepUse (a R1#))> a R1#
+::  [a : % ~> *].a R1# -> (a R1# -> a R1#) -(!0 | DeepUse (a R1#))> a R1#
 :!: !0
 :$: $0
 
