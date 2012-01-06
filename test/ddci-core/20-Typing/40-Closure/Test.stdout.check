@@ -58,7 +58,7 @@ let x : Int R0# = 5 [R0#] () in \(z : Unit).addInt [R0#] [R0#] [R1#] x x
 
 -- Region handle in the type argument should show up in the overall closure.
 (\(a :*).\(f :a -> a).\(x :a).f x) [Int R1#]
-::  (Int R1# -> Int R1#) -> Int R1# -(!0 | DeepUse (Int R1#))> Int R1#
+::  (Int R1# -> Int R1#) -> Int R1# -(!0 | Use R1#)> Int R1#
 :!: !0
 :$: $0
 
