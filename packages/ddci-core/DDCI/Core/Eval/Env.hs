@@ -111,7 +111,7 @@ arityOfName n
         NameInt{}                       -> Just 2
 
         NamePrimCon PrimDaConUnit       -> Just 0        
-        NamePrimCon PrimDaConNil        -> Just 2
+        NamePrimCon PrimDaConNil        -> Just 3
 
         NamePrimCon PrimDaConCons       -> Just 4
 

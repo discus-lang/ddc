@@ -22,7 +22,7 @@ import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import qualified Data.Set       as Set
-import Debug.Trace
+
 
 -- StepResult -----------------------------------------------------------------
 -- | The result of stepping some expression.
@@ -84,23 +84,23 @@ step' store xx@XLam{}
 
 -- (EvAlloc)
 -- Construct some data in the heap.
+-- TODO: handle non primitive constructos.
 step' store xx
-        | Just (u, xs)          <- takeXConApps xx
+        | Just (u, xs)  <- takeXConApps xx
         , case u of
-            UName NameCon{}     _               -> True
+            -- Unit constructors are not allocated into the store.
             UPrim (NamePrimCon PrimDaConUnit) _ -> False
             UPrim NamePrimCon{} _               -> True
             UPrim NameInt{}     _               -> True
+            UPrim NameCon{}     _               -> True
             _                                   -> False
-        , and $ map (isWnf store) xs
-        = case u of
-           UPrim n _       
-            | Just (store', x') <- stepPrimCon n xs store
-            -> StepProgress store' x'
 
-           -- TODO: handle non prim constructors.
-           _  -> trace "step' (EvAlloc): not a primcon or something broken"
-               $ StepStuck
+        , UPrim n _     <- u
+        , Just arity    <- arityOfName n
+        , length xs == arity
+        , and $ map (isWnf store) xs
+        , Just (store', x')     <- stepPrimCon n xs store
+        = StepProgress store' x'
 
 
 -- (EvAppArgs)

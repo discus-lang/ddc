@@ -5,3 +5,10 @@
 
 -- Substitute into inner lambda.
 (\(i:Int R1#). \(x:Unit). i) (5 [R1#] ()) ()
+
+
+-- Handle under-applied primitive constructors.
+5
+
+-- Handle under-applied primitive constructors.
+5 [R0#]

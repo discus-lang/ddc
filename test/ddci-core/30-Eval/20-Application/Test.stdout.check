@@ -2,3 +2,7 @@
 ()
 -- Substitute into inner lambda.
 5
+-- Handle under-applied primitive constructors.
+5
+-- Handle under-applied primitive constructors.
+5 [R0#]
