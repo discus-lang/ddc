@@ -1,13 +1,5 @@
 
--- Need to use proper type equivalence checker, 
--- not just syntactic equality.
---
--- When we hit a sum, call the appropriate normaliser based on the kind
--- annotation on the sum. When we hit an isolated DeepRead etc, then 
--- call the crusher on it before continuing. Should be able do to the 
--- crushing incrementally in the equiv checker, instead of indiscriminately.
-
--- Type equivalence checker must crush effect and closure terms.
+-- Equivalence checker must crush effect and closure terms.
 :check..
 \(x : Int R0#).
 \(y : Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit).
@@ -18,7 +10,7 @@ case x of {
 };;
 
 
--- Type equivalence checker must anonymise abstractions.
+-- Equivalence checker must handle alpha-equivalence.
 :check..
 \(x : Int R0#).
 \(y : [a:*]. a -> a).

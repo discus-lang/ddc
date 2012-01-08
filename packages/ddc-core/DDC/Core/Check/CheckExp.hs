@@ -705,7 +705,7 @@ checkTypeM env tt
 --   If the annotation is Bot then we just replace the annotation,
 --   otherwise it must match that for the right of the binding.
 checkLetBindOfTypeM 
-        :: (Eq n, Ord n) 
+        :: (Eq n, Ord n, Pretty n) 
         => Exp a n -> Env n -> Type n -> Bind n 
         -> CheckM a n (Bind n, Kind n)
 
