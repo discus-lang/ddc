@@ -40,6 +40,12 @@ letregion r in let x : Int r = 4 [r] () in addInt [r] [r] [R1#] x x
 :!: Alloc R1#
 :$: Use R1#
 
+-- Letregion with explicitly empty witness set.
+letregion r in let x : Int r = 4 [r] () in addInt [r] [r] [R1#] x x
+::  Int R1#
+:!: Alloc R1#
+:$: Use R1#
+
 -- Simple letregion with letrec using explicit type annotation
 letregion r in letrec {f : Unit -(Alloc r | Use r)> Int r = \(x : Unit).4 [r] ()} in addInt [r] [r] [R1#] (f ()) (f ())
 ::  Int R1#

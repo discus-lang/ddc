@@ -71,7 +71,7 @@ pExp
         P.choice 
          [ do   pTok KWith
                 pTok KBraceBra
-                wits    <- P.sepBy1 
+                wits    <- P.sepBy
                            (do  w       <- pVar
                                 pTok KColon
                                 t       <- T.pTypeApp

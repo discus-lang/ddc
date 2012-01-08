@@ -37,6 +37,13 @@
  addInt [:r r R1#:] x x;;
 
 
+-- Letregion with explicitly empty witness set.
+:check..
+ letregion r with {} in
+ let x : Int r = 4 [r] () in
+ addInt [:r r R1#:] x x;;
+
+
 -- Simple letregion with letrec using explicit type annotation
 :check..
  letregion r in
