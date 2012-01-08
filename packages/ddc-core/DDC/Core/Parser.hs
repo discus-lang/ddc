@@ -26,6 +26,7 @@ pExp    :: Ord n => Parser n (Exp () n)
 pExp 
  = P.choice
         -- Lambda abstractions
+        -- \(x1 x2 ... : TYPE) (y1 y2 ... : TYPE) ... . EXP
  [ do   pTok KBackSlash
 
         bs      <- liftM concat
@@ -44,18 +45,16 @@ pExp
 
         -- let expression
  , do   pTok KLet
-        b       <- pBind (T.tBot T.kData)
-        pTok KEquals
-        x1      <- pExp
+        (b1, x1)        <- pLetBinding
         pTok KIn
         x2      <- pExp
-        return  $ XLet () (LLet b x1) x2
+        return  $ XLet () (LLet b1 x1) x2
         
 
         -- letrec expression
  , do   pTok KLetRec
         pTok KBraceBra
-        lets    <- P.sepEndBy1 pLetRecBind (pTok KSemiColon)
+        lets    <- P.sepEndBy1 pLetRecBinding (pTok KSemiColon)
         pTok KBraceKet
         pTok KIn
         x       <- pExp
@@ -237,19 +236,6 @@ pPat
         return  $ PData (UName nCon (T.tBot T.kData)) bs]
 
 
-
--- Bind with optional type.
-pBind :: Ord n => Type n -> Parser n (Bind n)
-pBind tDefault
- = do   b       <- T.pBinder
-        P.choice 
-         [ do   pTok KColon
-                t       <- T.pType
-                return  $ T.makeBindFromBinder b t
-
-         , do   return  $ T.makeBindFromBinder b tDefault]
-
-
 -- Binds in patterns can have no type annotation,
 -- or can have an annotation if the whole thing is in parens.
 pBindPat :: Ord n => Parser n (Bind n)
@@ -269,27 +255,105 @@ pBindPat
  ]
 
 
-
 -- Bindings -------------------------------------------------------------------
-pLetRecBind :: Ord n => Parser n (Bind n, Exp () n)
-pLetRecBind 
+-- | A binding for let expression.
+pLetBinding :: Ord n => Parser n (Bind n, Exp () n)
+pLetBinding 
  = do   b       <- T.pBinder
 
-        ps      <- liftM concat 
-                $  P.many pBindParamSpec 
+        P.choice
+         [ do   -- Binding with full type signature.
+                --  BINDER : TYPE = EXP
+                pTok KColon
+                t       <- T.pType
+
+                pTok KEquals
+                xBody   <- pExp
+
+                return  $ (T.makeBindFromBinder b t, xBody) 
+
+
+         , do   -- Non-function binding with no type signature.
+                -- This form can't be used with letrec as we can't use it
+                -- to build the full type sig for the let-bound variable.
+                --  BINDER = EXP
+                pTok KEquals
+                xBody   <- pExp
+                let t   = T.tBot T.kData
+                return  $ (T.makeBindFromBinder b t, xBody)
+
+
+         , do   -- Binding using function syntax.
+                ps      <- liftM concat 
+                        $  P.many pBindParamSpec 
         
-        pTok KColon
-        tBody   <- T.pType
-        let t   = funTypeOfParams ps tBody
+                P.choice
+                 [ do   -- Function syntax with a return type.
+                        -- We can make the full type sig for the let-bound variable.
+                        --   BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
+                        pTok KColon
+                        tBody   <- T.pType
+                        pTok KEquals
+                        xBody   <- pExp
 
-        pTok KEquals
-        xBody   <- pExp
-        let x   = expOfParams () ps xBody
+                        let x   = expOfParams () ps xBody
+                        let t   = funTypeOfParams ps tBody
+                        return  (T.makeBindFromBinder b t, x)
 
-        return  (T.makeBindFromBinder b t, x)
+                        -- Function syntax with no return type.
+                        -- We can't make the type sig for the let-bound variable,
+                        -- but we can create lambda abstractions with the given 
+                        -- parameter types.
+                        --  BINDER PARAM1 PARAM2 .. PARAMN = EXP
+                 , do   pTok KEquals
+                        xBody   <- pExp
+
+                        let x   = expOfParams () ps xBody
+                        let t   = T.tBot T.kData
+                        return  (T.makeBindFromBinder b t, x) ]
+         ]
 
 
--- | Parse a
+
+-- | Letrec bindings must have a full type signature, 
+--   or use function syntax with a return type so that we can make one.
+pLetRecBinding :: Ord n => Parser n (Bind n, Exp () n)
+pLetRecBinding 
+ = do   b       <- T.pBinder
+
+        P.choice
+         [ do   -- Binding with full type signature.
+                --  BINDER : TYPE = EXP
+                pTok KColon
+                t       <- T.pType
+                pTok KEquals
+                xBody   <- pExp
+
+                return  $ (T.makeBindFromBinder b t, xBody) 
+
+
+         , do   -- Binding using function syntax.
+                --  BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
+                ps      <- liftM concat 
+                        $  P.many pBindParamSpec 
+        
+                pTok KColon
+                tBody   <- T.pType
+                let t   = funTypeOfParams ps tBody
+
+                pTok KEquals
+                xBody   <- pExp
+                let x   = expOfParams () ps xBody
+
+                return  (T.makeBindFromBinder b t, x) ]
+
+
+-- | Parse a parameter specification.
+--
+--       [BIND1 BIND2 .. BINDN : TYPE]
+--   or  (BIND : TYPE)
+--   or  (BIND : TYPE) { EFFECT | CLOSURE }
+--
 pBindParamSpec :: Ord n => Parser n [ParamSpec n]
 pBindParamSpec
  = P.choice

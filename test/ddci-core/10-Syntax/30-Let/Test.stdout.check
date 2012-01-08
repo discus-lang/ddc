@@ -10,6 +10,24 @@ let x : Unit = () in x
 :!: !0
 :$: $0
 
+-- Let-bound function with full signature.
+let f : Unit -> Unit = \(x : Unit).x in ()
+::  Unit
+:!: !0
+:$: $0
+
+-- Let using function syntax with a return type.
+let f : Unit -> Unit = \(x : Unit).x in f ()
+::  Unit
+:!: !0
+:$: $0
+
+-- Let using function syntax without a return type.
+let f = \(x : Unit).x in f ()
+::  Unit
+:!: !0
+:$: $0
+
 -- Multiple lets.
 let x : Unit = () in let y : Unit = () in y
 ::  Unit
@@ -22,7 +40,13 @@ letregion r in let x : Int r = 4 [r] () in addInt [r] [r] [R1#] x x
 :!: Alloc R1#
 :$: Use R1#
 
--- Simple letregion with letrec.
+-- Simple letregion with letrec using explicit type annotation
+letregion r in letrec {f : Unit -(Alloc r | Use r)> Int r = \(x : Unit).4 [r] ()} in addInt [r] [r] [R1#] (f ()) (f ())
+::  Int R1#
+:!: Alloc R1#
+:$: Use R1#
+
+-- Simple letregion with letrec using function syntax.
 letregion r in letrec {f : Unit -(Alloc r | Use r)> Int r = \(x : Unit).4 [r] ()} in addInt [r] [r] [R1#] (f ()) (f ())
 ::  Int R1#
 :!: Alloc R1#

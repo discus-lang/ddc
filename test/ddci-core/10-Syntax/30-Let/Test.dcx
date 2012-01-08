@@ -7,6 +7,22 @@
 :check let x : Unit = () in x
 
 
+-- Let-bound function with full signature.
+:check let f : Unit -> Unit = \(x:Unit). x in ()
+
+
+-- Let using function syntax with a return type.
+:check..
+ let f (x:Unit) : Unit = x
+ in  f ();;
+
+
+-- Let using function syntax without a return type.
+:check..
+ let f (x:Unit) = x
+ in  f ();;
+
+
 -- Multiple lets.
 :check..
  let x : Unit = () in
@@ -21,7 +37,14 @@
  addInt [:r r R1#:] x x;;
 
 
--- Simple letregion with letrec.
+-- Simple letregion with letrec using explicit type annotation
+:check..
+ letregion r in
+ letrec { f : Unit -(Alloc r | Use r)> Int r = \(x : Unit). 4 [r] () } 
+ in addInt [:r r R1#:] (f ()) (f ());;
+
+
+-- Simple letregion with letrec using function syntax.
 :check..
  letregion r in
  letrec { f (x : Unit) {Alloc r | Use r} : Int r = 4 [r] () } in
@@ -44,3 +67,4 @@
  let x1 = 2 [r1] () in
  let x2 = 3 [r2] () in
  addInt [:r1 r2 R1#:] x1 x2;;
+
