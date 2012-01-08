@@ -15,7 +15,7 @@
 
 -- Over-applied abstraction.
 :eval..
-letrec thing [a:*] (x:a) : a = x;
+letrec { thing [a:*] (x:a) : a = x }
 in  thing [[^^^:%].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0] 
           addInt
           [:R0# R0# R0#:]

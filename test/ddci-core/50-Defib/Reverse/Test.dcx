@@ -1,6 +1,6 @@
 
 :eval..
-letrec
+letrec {
  singleton 
          [r : %] [a : *] 
          (x : a) {Alloc r | Use r}
@@ -36,7 +36,7 @@ letrec
     (Cons [r] [Int r] (9 [r] ())
     (Nil  [r] [Int r] ())));
 
-in reverse [R0#] [Int R0#]
+} in reverse [R0#] [Int R0#]
      (append [R0#] [Int R0#] 
        (list1 [R0#] ()) 
        (list2 [R0#] ()));;

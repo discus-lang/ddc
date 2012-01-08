@@ -41,10 +41,11 @@ case () of { () -> () };;
 
 -- Using a polymorphic addition function requires DeepRead and DeepAlloc
 :check..
-letrec double [a:*] 
+letrec {
+ double [a:*] 
            (add : a -> a -( DeepRead a + DeepAlloc a | DeepUse a)> a)
            (x   : a)      { DeepRead a + DeepAlloc a | DeepUse a}
            : a
         = add x x;
-in double [Int R0#] (addInt [:R0# R0# R0#:]) (5 [R0#] ());;
+} in double [Int R0#] (addInt [:R0# R0# R0#:]) (5 [R0#] ());;
 

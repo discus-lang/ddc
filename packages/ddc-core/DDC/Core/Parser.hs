@@ -52,7 +52,9 @@ pExp
 
         -- letrec expression
  , do   pTok KLetRec
+        pTok KBraceBra
         lets    <- P.sepEndBy1 pLetRecBind (pTok KSemiColon)
+        pTok KBraceKet
         pTok KIn
         x       <- pExp
         return  $ XLet () (LRec lets) x

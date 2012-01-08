@@ -14,7 +14,7 @@
 
 -- Error: outer function is missing a Use annotation.
 :check..
-letrec
+letrec {
  fac    [r:%] 
         (acc : Int r) {!0 | $0}
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
@@ -24,12 +24,12 @@ letrec
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
 
 
 -- Error: inner function is missing an Alloc effect.
 :check..
-letrec
+letrec {
  fac    [r:%] 
         (acc : Int r) {!0 | Use r}
         (n   : Int r) {Read r | Use r} : Int r
@@ -39,12 +39,12 @@ letrec
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
 
 
 -- Error: region var on the Int return type should be r1.
 :check..
-letrec
+letrec {
  enumFromTo 
         [r1 r2:%]
         (m : Int r1) {!0 | Use r1 + Use r2}
@@ -58,12 +58,12 @@ letrec
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 
 
 -- Error: second effect should have Read r1 instead of Read r2.
 :check..
-letrec
+letrec {
  enumFromTo 
         [r1 r2:%]
         (m : Int r1) {!0 | Use r1 + Use r2}
@@ -77,12 +77,12 @@ letrec
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 
 
 -- Should be ok.
 :check..
-letrec
+letrec {
  enumFromTo 
         [r1 r2:%]
         (m : Int r1) {!0 | Use r1 + Use r2}
@@ -96,12 +96,12 @@ letrec
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 
 
 -- Same as above, but the effect and closure terms are in a different order.
 :check..
-letrec
+letrec {
  enumFromTo 
         [r1 r2:%]
         (m : Int r1) {!0 | Use r2 + Use r1}
@@ -115,7 +115,7 @@ letrec
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 
 
 -- Error: binding must have data kind.
@@ -128,7 +128,7 @@ in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 -- Error: binding must have data kind.
 :check..
  \(e1:!).
-  letrec e2 : !  = e1
+  letrec { e2 : !  = e1 }
   in ();;
 
 
@@ -142,13 +142,13 @@ in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 -- Error: body must have data kind.
 :check..
  \(e1:!).
-  letrec foo (x:Unit) : Unit = ()
+  letrec { foo (x:Unit) : Unit = () }
   in e1;;
 
 
 -- Error: right of letrec binding must be a lambda
 :check..
- letrec foo : Unit = ()
+ letrec { foo : Unit = () }
  in foo;;
  
 

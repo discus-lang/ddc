@@ -2,7 +2,7 @@
 
 -- Simply recursive factorial.
 :eval..
-letrec
+letrec {
  fac    [r:%] (n : Int r) {Read r + Alloc r | Use r} : Int r
   = case n of {
         0       -> 1 [r] ();
@@ -10,13 +10,13 @@ letrec
                       (fac [r] (subInt [:r r r:] n
                                        (1 [r] ())));
      }
-in fac [R1#] (5 [R1#] ());;
+} in fac [R1#] (5 [R1#] ());;
 
 
 -- Tail recursive factorial.
 :eval..
-letrec
- fac    [r:%] 
+letrec {
+ fac   [r:%] 
         (acc : Int r) {!0 | Use r}
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
   = case n of {
@@ -25,12 +25,12 @@ letrec
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
 
 
 -- Enumeration.
 :eval..
-letrec
+letrec {
  enumFromTo 
         [r1 r2:%]
         (m : Int r1) {!0 | Use r1 + Use r2}
@@ -44,6 +44,6 @@ letrec
         _ -> Cons [r2] [Int r1] m
                 (Nil [r2] [Int r1] ());
   }
-in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+} in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
 
 

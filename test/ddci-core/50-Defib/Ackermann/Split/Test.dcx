@@ -2,7 +2,7 @@
 
 -- Using different input and output regions.
 :eval..
-letrec
+letrec {
  ack    [r1 r2 r3: %] 
         (m : Int r1) {!0 | Use r1 + Use r2 + Use r3}
         (n : Int r2) { Read r1 + Read r2 + Alloc r3
@@ -23,4 +23,4 @@ letrec
                          (ack [:r1 r4 r4:] m (subInt [:r2 r4 r4:] n one));
         }
   }
-in ack [:R0# R0# R0#:] (2 [R0#] ()) (3 [R0#] ());;
+} in ack [:R0# R0# R0#:] (2 [R0#] ()) (3 [R0#] ());;

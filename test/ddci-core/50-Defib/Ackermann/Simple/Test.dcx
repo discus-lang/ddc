@@ -1,7 +1,7 @@
 
 -- Ackermann's function.
 :eval..
-letrec
+letrec {
  ack    [r : %] 
         (m : Int r) {!0 | Use r}
         (n : Int r) {Read r + Alloc r | Use r}
@@ -17,7 +17,7 @@ letrec
                              (ack [r] m (subInt [:r r r:] n one));
         }
   }
-in ack [R1#] (2 [R1#] ()) (3 [R1#] ());;
+} in ack [R1#] (2 [R1#] ()) (3 [R1#] ());;
 
 
 

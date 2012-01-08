@@ -2,7 +2,7 @@
 
 -- Tail recursive factorial.
 :eval..
-letrec
+letrec {
  fac    [r:%] 
         (acc : Int r) {!0 | Use r}
         (n   : Int r) {Read r + Alloc r | Use r} : Int r
@@ -12,4 +12,4 @@ letrec
         _       -> fac [r] (mulInt [:r r r:] acc n)
                            (subInt [:r r r:] n (1 [r] ()))
     }
-in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
