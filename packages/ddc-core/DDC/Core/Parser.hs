@@ -27,17 +27,19 @@ pExp
  = P.choice
         -- Lambda abstractions
  [ do   pTok KBackSlash
-        pTok KRoundBra
-        bs      <- P.many1 T.pBinder
-        pTok KColon
-        t       <- T.pType
-        pTok KRoundKet
+
+        bs      <- liftM concat
+                $  P.many1 
+                $  do   pTok KRoundBra
+                        bs'     <- P.many1 T.pBinder
+                        pTok KColon
+                        t       <- T.pType
+                        pTok KRoundKet
+                        return (map (\b -> T.makeBindFromBinder b t) bs')
+
         pTok KDot
-
         xBody   <- pExp
-
-        return  $ foldr (XLam ()) xBody
-                $ map (\b -> T.makeBindFromBinder b t) bs
+        return  $ foldr (XLam ()) xBody bs
 
 
         -- let expression
