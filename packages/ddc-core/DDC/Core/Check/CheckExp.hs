@@ -20,6 +20,7 @@ import DDC.Core.Check.TaggedClosure
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Type.Transform
+import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -152,7 +153,7 @@ checkExpM defs env xx@(XApp _ x1 (XWitness w2))
       t2                      <- checkWitnessM env w2
       case t1 of
        TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
-        | t11 == t2   
+        | t11 `equivT` t2   
         -> return (t12, effs1, clos1)
 
         | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
@@ -165,7 +166,7 @@ checkExpM defs env xx@(XApp _ x1 x2)
         (t2, effs2, clos2)    <- checkExpM defs env x2
         case t1 of
          TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) _clo) t12
-          | t11 == t2   
+          | t11 `equivT` t2   
           , effs    <- Sum.fromList kEffect  [eff]
           -> return ( t12
                     , effs1 `Sum.union` effs2 `Sum.union` effs
@@ -300,7 +301,7 @@ checkExpM defs env xx@(XLet _ (LRec bxs) xBody)
 
         -- Check annots on binders against inferred types of the bindings.
         zipWithM_ (\b t
-                -> if typeOfBind b /= t
+                -> if not $ equivT (typeOfBind b) t
                         then throw $ ErrorLetMismatch xx b t
                         else return ())
                 bs tsRight
@@ -448,7 +449,7 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
         -- All alternative result types must be identical.
         let (tAlt : _)  = ts
         forM_ ts $ \tAlt' 
-         -> when (tAlt /= tAlt') 
+         -> when (not $ equivT tAlt tAlt') 
              $ throw $ ErrorCaseAltResultMismatch xx tAlt tAlt'
 
         -- Check for overlapping alternatives.
@@ -578,7 +579,7 @@ checkAltM xx defs env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
         -- The result type of the constructor must match the discriminant type.
         --  If it doesn't then the constructor in the pattern probably isn't for
         --  the discriminant type.
-        when (tDiscrim /= tResult)
+        when (not $ equivT tDiscrim tResult)
          $ throw $ ErrorCaseDiscrimTypeMismatch xx tDiscrim tResult
 
         -- There must be at least as many fields as variables in the pattern.
@@ -716,7 +717,7 @@ checkLetBindOfTypeM xx env tRight b
                         , k)
 
         -- The type of the binder must match that of the right of the binding.
-        | typeOfBind b /= tRight
+        | not $ equivT (typeOfBind b) tRight
         = throw $ ErrorLetMismatch xx b tRight
 
         | otherwise
