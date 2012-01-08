@@ -23,40 +23,56 @@ Library
         mtl             == 2.0.*
 
   Exposed-modules:
-        DDC.Type.Compounds
+        DDC.Core.Check.CheckError
+        DDC.Core.Check.CheckExp
+        DDC.Core.Check.CheckWitness
+        DDC.Core.Check.TaggedClosure
+        DDC.Core.Collect.Free
+        DDC.Core.Collect.GatherBound
+        DDC.Core.Parser.Lexer
+        DDC.Core.Parser.Tokens
+        DDC.Core.Transform.LiftX
+        DDC.Core.Transform.Spread
+        DDC.Core.Transform.SubstituteT
+        DDC.Core.Transform.SubstituteW
+        DDC.Core.Transform.SubstituteX
+        DDC.Core.Transform.TransformX
+        DDC.Core.Check
+        DDC.Core.Collect
+        DDC.Core.Compounds
+        DDC.Core.DataDef
+        DDC.Core.Exp
+        DDC.Core.Parser
+        DDC.Core.Predicates
+        DDC.Core.Pretty
+        DDC.Core.Transform
+        DDC.Type.Check.CheckCon
+        DDC.Type.Check.CheckError
+        DDC.Type.Check.Monad
         DDC.Type.Collect.Free
         DDC.Type.Collect.GatherBound
-        DDC.Type.Check
-        DDC.Type.Env
-        DDC.Type.Check.Monad
-        DDC.Type.Exp
-        DDC.Type.Parser.Tokens
         DDC.Type.Parser.Lexer
+        DDC.Type.Parser.Tokens
+        DDC.Type.Transform.Anonymize
+        DDC.Type.Transform.Crush
+        DDC.Type.Transform.Instantiate
+        DDC.Type.Transform.LiftT
+        DDC.Type.Transform.Rename
+        DDC.Type.Transform.Spread
+        DDC.Type.Transform.SubstituteT
+        DDC.Type.Transform.Trim
+        DDC.Type.Check
+        DDC.Type.Compounds
+        DDC.Type.Env
+        DDC.Type.Equiv
+        DDC.Type.Exp
         DDC.Type.Parser
         DDC.Type.Predicates
         DDC.Type.Pretty
         DDC.Type.Sum
         DDC.Type.Transform
         DDC.Type.Universe
-        DDC.Core.Exp
-        DDC.Core.Check
-        DDC.Core.Pretty
-        DDC.Core.Parser
-        DDC.Core.Parser.Tokens
-        DDC.Core.Parser.Lexer
-        DDC.Core.Transform
-        DDC.Core.Step
-        
-  Other-modules:
-        DDC.Type.Check.CheckCon
-        DDC.Type.Check.CheckError
-        DDC.Type.Transform.Rename
-        DDC.Type.Transform.Spread
-        DDC.Core.Check.CheckError
-        DDC.Core.Transform.Spread
-        DDC.Core.Transform.TransformX
-        
-
+                
 
   GHC-options:
         -Werror
@@ -75,4 +91,6 @@ Library
         KindSignatures
         NoMonomorphismRestriction
         ScopedTypeVariables
+        StandaloneDeriving
+        DoAndIfThenElse
         

@@ -6,7 +6,7 @@ module DDC.Core.Check.CheckWitness
         , typeOfWitness, typeOfWitness'
         , typeOfWiCon
         , checkWitnessM
-        , CheckM(..))
+        , CheckM)
 where
 import DDC.Core.Exp
 import DDC.Core.Pretty

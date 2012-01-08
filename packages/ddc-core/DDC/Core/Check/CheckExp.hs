@@ -5,7 +5,7 @@ module DDC.Core.Check.CheckExp
         , typeOfExp
         , typeOfExp'
         , checkExpM
-        , CheckM(..)
+        , CheckM
         , TaggedClosure(..))
 where
 import DDC.Core.DataDef
