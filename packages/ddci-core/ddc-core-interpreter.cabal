@@ -17,6 +17,7 @@ Executable ddci-core
   Build-depends:
         base            == 4.*,
         containers      == 0.4.*,
+	readline,
         ddc-base        == 0.4.*,
         ddc-core        == 0.4.*
 

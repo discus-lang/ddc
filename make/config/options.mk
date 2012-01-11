@@ -109,5 +109,6 @@ DDC_PACKAGES	:= \
 	-package text \
 	-package stm \
 	-package random \
+	-package readline \
 	-package mainland-pretty \
 	-package transformers 

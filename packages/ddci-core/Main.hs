@@ -8,6 +8,8 @@ import Data.List
 import Data.Maybe
 import Control.Monad
 
+import qualified System.Console.Readline as R
+
 
 main :: IO ()
 main 
@@ -103,62 +105,41 @@ runInteractive
  = do   putStrLn "DDCi-core, version 0.4.0: http://disciple.ouroborus.net  :? for help"
 
         -- Setup terminal mode.
-        hSetBuffering stdin NoBuffering
-        hSetEcho stdin False
+	R.initialize
         loopInteractive
 
 
 -- | The main REPL loop.
 loopInteractive :: IO ()
 loopInteractive 
- = loop (Nothing, InputLine, [])
+ = loop (Nothing, InputLine, []) []
  where  
-        loop state@(mCommand, _, _)
+        loop state@(mCommand, _, _) history
          = do   -- If this isn't the first line then print the prompt.
-                when (isNothing mCommand)
-                 $ do   putStr "> "
-                        hFlush stdout
+		let prompt = if isNothing mCommand then "> " else ""
          
                 -- Read a line from the user and echo it back.
-                line    <- getInput []
-                putChar '\n'
-                hFlush stdout
+                line    <- getInput prompt
 
                 if isPrefixOf ":quit" line
                  then return ()
                  else do
-                        state'  <- eatLine state line
-                        loop state'
+                        state'@(mCommand', _, _)  <- eatLine state line
+
+			-- Record entire input block in history
+			let acc = history ++ "\n" ++ line
+			history' <- if isNothing mCommand'
+				then R.addHistory (tail acc) >> return []
+				else return acc
+
+                        loop state' history'
 
 
--- | Get an input line from the console.
---   TODO: We'd prefer to have proper readline support.
---         For now we just handle backspace.
+-- | Get an input line from the console, using given prompt
 getInput :: String -> IO String
-getInput buf
- = do   c       <- hGetChar stdin
-        getInput' c
- where
-  getInput' c
-        | c == '\n'
-        = return (reverse buf)
-
-        | _:bs  <- buf
-        , c == '\DEL'
-        = do    putStr "\b"
-                putStr " "
-                putStr "\b"
-                hFlush stdout
-                getInput bs
-        
-        | []    <- buf
-        , c == '\DEL'
-        = getInput []
-
-        | otherwise
-        = do    putStr [c]
-                hFlush stdout
-                getInput (c : buf)
+getInput prompt
+ = do	line <- R.readline prompt
+	return (fromMaybe ":quit" line)
 
 
 -- Batch ----------------------------------------------------------------------
