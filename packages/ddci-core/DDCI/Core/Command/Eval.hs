@@ -9,6 +9,7 @@ import DDCI.Core.Eval.Step
 import DDCI.Core.Eval.Name
 import DDCI.Core.Command.Check
 import DDCI.Core.State
+import DDC.Type.Equiv
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
@@ -29,13 +30,13 @@ cmdStep state str
         goStore Nothing
          = return ()
 
-        goStore (Just (x, _, _, _))
+        goStore (Just (x, tX, effX, cloX))
          = let  rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
                 store   = Store.empty { Store.storeRegions = Set.fromList rs }
-           in   goStep store x
+           in   goStep store x tX effX cloX
 
-        goStep store x
-         = do   _       <- stepPrint state store x
+        goStep store x tX effX cloX
+         = do   _       <- stepPrint state store x tX effX cloX
                 return ()
 
 
@@ -48,7 +49,7 @@ cmdEval state str
         goStore Nothing
          = return ()
 
-        goStore (Just (x, _, _, _))
+        goStore (Just (x, tX, effX, cloX))
          = do   let rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
                 let store   = Store.empty { Store.storeRegions = Set.fromList rs }          
                       -- TODO: next region to alloc should be higher than all of these.
@@ -61,38 +62,39 @@ cmdEval state str
                 when (Set.member TraceStore $ stateModes state)
                  $ putStrLn $ pretty (ppr store)
 
+                goStep store x tX effX cloX
 
-                goStep store x
-
-        goStep store x
-         = do   mResult <- stepPrint state store x
-                case mResult of
-                 Nothing           -> return ()
-                 Just (store', x') -> goStep store' x'
+        goStep store0 x0 tX effX cloX
+         = go store0 x0
+         where go store x
+                = do mResult <- stepPrint state store x tX effX cloX
+                     case mResult of
+                      Nothing           -> return ()
+                      Just (store', x') -> go store' x'
          
 
 -- | Perform a single step of evaluation and print what happened.
 stepPrint 
         :: State
         -> Store 
-        -> Exp () Name 
+        -> Exp ()  Name 
+        -> Type    Name
+        -> Effect  Name
+        -> Closure Name
         -> IO (Maybe (Store, Exp () Name))
 
-stepPrint state store x
+stepPrint state store x tX _effX _cloX
  = case step store x of
         StepProgress store' x'
          -> case checkExp primDataDefs Env.empty x' of
              Left err
               -> do putStr $ pretty $ vcat
-                        [ ppr x
-                        , ppr x'
-                        , ppr store
-                        , text "OFF THE RAILS!"
+                        [ text "* OFF THE RAILS!"
                         , ppr err
                         , empty]
                     return $ Nothing
                       
-             Right (_t, _eff, _clo)
+             Right (tX', _effX', _cloX')
               -> do 
                     -- Print intermediate expression.
                     when (Set.member TraceEval  $ stateModes state)
@@ -101,11 +103,21 @@ stepPrint state store x
                     -- Print intermediate store
                     when (Set.member TraceStore $ stateModes state)
                      $ putStrLn $ pretty (ppr store')
-
-                    -- TODO: check expression has same type as before,
-                    --       also check it has a smaller effect and closure.
                 
-                    return $ Just (store', x')
+                    -- Check expression has the same type as before.
+                    -- TODO: also check the effect and closure is no greater.
+                    let deathT = not $ equivT tX tX'
+                    let death  = deathT
+
+                    when deathT
+                     $ putStr $ pretty $ vcat
+                            [ text "* OFF THE RAILS!"
+                            , ppr tX
+                            , ppr tX' ]
+                
+                    if death 
+                     then return Nothing
+                     else return $ Just (store', x')
     
         StepDone
          -> do  -- Load the final expression back from the store to display.
@@ -115,23 +127,23 @@ stepPrint state store x
         
         StepStuck
          -> do  putStr $ pretty $ vcat
-                 [ text "STUCK!"
-                 , empty]
-
-                return Nothing
-
-        StepStuckMistyped err
-         -> do  putStr $ pretty $ vcat
-                 [ ppr "OFF THE RAILS!"
-                 , ppr err
+                 [ text "* STUCK!"
                  , empty]
 
                 return Nothing
 
         StepStuckLetrecBindsNotLam
          -> do  putStr $ pretty $ vcat
-                 [ text "CRASH AND BURN!"
+                 [ text "* STUCK!"
                  , empty]
                 
+                return Nothing
+
+        StepStuckMistyped err
+         -> do  putStr $ pretty $ vcat
+                 [ ppr "* OFF THE RAILS!"
+                 , ppr err
+                 , empty]
+
                 return Nothing
 
