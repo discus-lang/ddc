@@ -1,5 +1,7 @@
 
+import DDCI.Core.State
 import DDCI.Core.Command.Help
+import DDCI.Core.Command.Set
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import System.IO
@@ -28,6 +30,7 @@ data Command
         = CommandBlank
         | CommandUnknown
         | CommandHelp
+        | CommandSet
         | CommandKind
         | CommandWitType
         | CommandExpCheck
@@ -43,6 +46,7 @@ commands :: [(String, Command)]
 commands 
  =      [ (":help",     CommandHelp)
         , (":?",        CommandHelp)
+        , (":set",      CommandSet)
         , (":kind",     CommandKind)
         , (":wtype",    CommandWitType)
         , (":check",    CommandExpCheck)
@@ -94,7 +98,7 @@ readInput ss
 
 -- State ----------------------------------------------------------------------
 -- Interpreter state
-type State
+type InputState
         = (Maybe Command, Input, String)
 
 
@@ -112,9 +116,9 @@ runInteractive
 -- | The main REPL loop.
 loopInteractive :: IO ()
 loopInteractive 
- = loop (Nothing, InputLine, []) []
+ = loop (Nothing, InputLine, [])
  where  
-        loop state@(mCommand, _, _) history
+        loop state@(mCommand, _, _)
          = do   -- If this isn't the first line then print the prompt.
 		let prompt = if isNothing mCommand then "> " else ""
          
@@ -124,7 +128,8 @@ loopInteractive
                 if isPrefixOf ":quit" line
                  then return ()
                  else do
-                        state'@(mCommand', _, _)  <- eatLine state line
+                        state'  <- eatLine state line
+                        loop state'
 
 			-- Record entire input block in history
 			let acc = history ++ "\n" ++ line
@@ -145,19 +150,19 @@ getInput prompt
 -- Batch ----------------------------------------------------------------------
 runBatch :: String -> IO ()
 runBatch str
- = loop (lines str) (Nothing, InputLine, [])
+ = loop initState (Nothing, InputLine, []) (lines str)
  where 
         -- No more lines, we're done.
         -- There might be a command in the buffer though.
-        loop [] state
-         = do   eatLine state []
+        loop state inputState []
+         = do   eatLine state inputState []
                 return ()
 
-        loop (l:ls) state
+        loop state inputState (l:ls)
          -- Echo comment lines back.
          | isPrefixOf "--" l
          = do   putStrLn l
-                loop ls state
+                loop state inputState ls
 
          -- Quit the program.
          | isPrefixOf ":quit" l
@@ -165,15 +170,15 @@ runBatch str
 
          -- Handle a line of input.
          | otherwise
-         = do   state'  <- eatLine state l
-                loop ls state'
+         = do   (state', inputState')  <- eatLine state inputState l
+                loop state' inputState' ls
 
 
 -- Eat ------------------------------------------------------------------------
 -- Eating input lines.
 
-eatLine :: State -> String -> IO State
-eatLine (mCommand, inputMode, acc) line
+eatLine :: State -> InputState -> String -> IO (State, InputState)
+eatLine state (mCommand, inputMode, acc) line
  = do   -- If this is the first line then try to read the command and
         --  input mode from the front so we know how to continue.
         -- If we can't read an explicit command then assume this is 
@@ -194,54 +199,80 @@ eatLine (mCommand, inputMode, acc) line
          InputLine
           | not $ null rest
           , last rest == '\\'
-          ->    return (Just cmd, input, acc ++ init rest)
+          ->    return (state, (Just cmd, input, acc ++ init rest))
 
           | otherwise
-          -> do handleCmd cmd (acc ++ rest)
-                return (Nothing, InputLine, [])
+          -> do state'  <- handleCmd state cmd (acc ++ rest)
+                return (state', (Nothing, InputLine, []))
 
          -- For block mode, if the line ends with ';;' then run the command,
          -- otherwise keep reading.
          InputBlock
           | isSuffixOf ";;" rest
           -> do let rest' = take (length rest - 2) rest
-                handleCmd cmd (acc ++ rest')
-                return (Nothing, InputLine, [])
+                state'  <- handleCmd state cmd (acc ++ rest')
+                return (state', (Nothing, InputLine, []))
 
           | otherwise
-          ->    return (Just cmd, input, acc ++ rest)
+          ->    return (state, (Just cmd, input, acc ++ rest))
 
 
 -- Commands -------------------------------------------------------------------
 -- | Handle a single line of input.
-handleCmd :: Command -> String -> IO ()
-handleCmd CommandBlank _
- = return ()
+handleCmd :: State -> Command -> String -> IO State
+handleCmd state CommandBlank _
+ = return state
 
-handleCmd cmd line
- = do   handleCmd1 cmd line
+handleCmd state cmd line
+ = do   state'  <- handleCmd1 state cmd line
         putStr "\n"
+        return state'
 
-handleCmd1 cmd line
+handleCmd1 state cmd line
  = case cmd of
         CommandBlank
-         -> return ()
+         -> return state
 
         CommandUnknown
          -> do  putStr $ unlines
                  [ "unknown command."
                  , "use :? for help." ]
 
+                return state
+
         CommandHelp
          -> do  putStr help
+                return state
 
-        CommandKind       -> cmdShowKind      line
-        CommandWitType    -> cmdShowWType     line
+        CommandSet        
+         -> do  state'  <- cmdSet line state
+                return state'
 
-        CommandExpCheck   -> cmdShowType ShowTypeAll     line
-        CommandExpType    -> cmdShowType ShowTypeValue   line
-        CommandExpEffect  -> cmdShowType ShowTypeEffect  line
-        CommandExpClosure -> cmdShowType ShowTypeClosure line
+        CommandKind       
+         -> do  cmdShowKind      line
+                return state
 
-        CommandEval       -> cmdEval line
+        CommandWitType    
+         -> do  cmdShowWType     line
+                return state
+
+        CommandExpCheck   
+         -> do  cmdShowType ShowTypeAll     line
+                return state
+
+        CommandExpType  
+         -> do  cmdShowType ShowTypeValue   line
+                return state
+
+        CommandExpEffect  
+         -> do  cmdShowType ShowTypeEffect  line
+                return state
+
+        CommandExpClosure 
+         -> do  cmdShowType ShowTypeClosure line
+                return state
+
+        CommandEval       
+         -> do  cmdEval state line
+                return state
         
