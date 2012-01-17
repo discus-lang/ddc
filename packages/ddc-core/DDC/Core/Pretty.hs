@@ -49,13 +49,15 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XApp _ x1 x2
          -> pprParen (d > 10)
-         $  pprPrec 2 x1 <+> pprPrec 11 x2
+         $  pprPrec 10 x1 <+> pprPrec 11 x2
 
         XLet _ lts x
-         -> ppr lts <+> text "in" <+> ppr x
+         -> pprParen (d > 2)
+         $  ppr lts <+> text "in" <+> ppr x
 
         XCase _ x alts
-         -> text "case" <+> ppr x <+> text "of"
+         -> pprParen (d > 2) 
+         $  text "case" <+> ppr x <+> text "of"
                 <+> braces (sep $ punctuate semi $ map ppr alts)
 
         XCast _ cc x
