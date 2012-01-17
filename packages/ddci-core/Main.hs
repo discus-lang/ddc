@@ -9,8 +9,8 @@ import System.Environment
 import Data.List
 import Data.Maybe
 import Control.Monad
-
-import qualified System.Console.Readline as R
+import qualified System.Console.Haskeline       as HL
+import qualified System.Console.Haskeline.IO    as HL
 
 
 main :: IO ()
@@ -109,41 +109,35 @@ runInteractive
  = do   putStrLn "DDCi-core, version 0.4.0: http://disciple.ouroborus.net  :? for help"
 
         -- Setup terminal mode.
-	R.initialize
         loopInteractive
 
 
 -- | The main REPL loop.
 loopInteractive :: IO ()
 loopInteractive 
- = loop (Nothing, InputLine, [])
+ = do   hlState <- HL.initializeInput HL.defaultSettings
+        loop initState (Nothing, InputLine, []) hlState
  where  
-        loop state@(mCommand, _, _)
+        loop state inputState@(mCommand, _, _) hlState 
          = do   -- If this isn't the first line then print the prompt.
 		let prompt = if isNothing mCommand then "> " else ""
          
                 -- Read a line from the user and echo it back.
-                line    <- getInput prompt
+                line    <- getInput hlState prompt
 
                 if isPrefixOf ":quit" line
                  then return ()
                  else do
-                        state'  <- eatLine state line
-                        loop state'
+                        (state', inputState')
+                                <- eatLine state inputState line
 
-			-- Record entire input block in history
-			let acc = history ++ "\n" ++ line
-			history' <- if isNothing mCommand'
-				then R.addHistory (tail acc) >> return []
-				else return acc
-
-                        loop state' history'
+                        loop state' inputState' hlState
 
 
 -- | Get an input line from the console, using given prompt
-getInput :: String -> IO String
-getInput prompt
- = do	line <- R.readline prompt
+getInput :: HL.InputState -> String -> IO String
+getInput hlState prompt
+ = do	line <- HL.queryInput hlState (HL.getInputLine prompt)
 	return (fromMaybe ":quit" line)
 
 
