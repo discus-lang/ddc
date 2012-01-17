@@ -75,18 +75,18 @@ data SBind
 instance Pretty Store where
  ppr (Store nextLoc nextRgn regions global binds)
   = vcat
-  [ text "STORE"
-  , text " NextLoc: " <> text (show nextLoc)
-  , text " NextRgn: " <> text (show nextRgn)
+  [ text "* STORE"
+  , text "  NextLoc: " <> text (show nextLoc)
+  , text "  NextRgn: " <> text (show nextRgn)
 
-  , text " Regions: " <> braces (sep  $ punctuate comma 
+  , text "  Regions: " <> braces (sep  $ punctuate comma 
                                       $ map ppr $ Set.toList regions)
 
-  , text " Global:  " <> braces (sep  $ punctuate comma
+  , text "  Global:  " <> braces (sep  $ punctuate comma
                                       $ map ppr $ Set.toList global)
   , text ""
-  , text " Binds:"
-  , vcat $ [  text " " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind 
+  , text "  Binds:"
+  , vcat $ [  text "   " <> ppr l <> colon <> ppr r <> text " -> " <> ppr sbind 
            <> line
            <> text "      :: " <> ppr t
                 | (l, (r, t, sbind)) <- Map.toList binds] ]

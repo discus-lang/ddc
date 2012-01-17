@@ -49,10 +49,20 @@ cmdEval state str
          = return ()
 
         goStore (Just (x, _, _, _))
-         = let  rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
-                store   = Store.empty { Store.storeRegions = Set.fromList rs }          
+         = do   let rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
+                let store   = Store.empty { Store.storeRegions = Set.fromList rs }          
                       -- TODO: next region to alloc should be higher than all of these.
-           in   goStep store x
+
+                -- Print starting expression.
+                when (Set.member TraceEval  $ stateModes state)
+                 $ putStrLn $ pretty (text "* STEP: " <> ppr x)
+
+                -- Print starting store.
+                when (Set.member TraceStore $ stateModes state)
+                 $ putStrLn $ pretty (ppr store)
+
+
+                goStep store x
 
         goStep store x
          = do   mResult <- stepPrint state store x
@@ -85,8 +95,12 @@ stepPrint state store x
              Right (_t, _eff, _clo)
               -> do 
                     -- Print intermediate expression.
-                    when (Set.member TraceEval $ stateModes state)
-                     $ putStrLn $ pretty (ppr x)
+                    when (Set.member TraceEval  $ stateModes state)
+                     $ putStrLn $ pretty (text "* STEP: " <> ppr x')
+
+                    -- Print intermediate store
+                    when (Set.member TraceStore $ stateModes state)
+                     $ putStrLn $ pretty (ppr store')
 
                     -- TODO: check expression has same type as before,
                     --       also check it has a smaller effect and closure.
@@ -94,31 +108,21 @@ stepPrint state store x
                     return $ Just (store', x')
     
         StepDone
-         -> do  -- TODO: optionally print final exp and store.
-                -- putStr $ pretty $ vcat
-                -- [ ppr x
-                -- , ppr store
-                -- , empty]
-
-                -- Load the final expression back from the store to display.
+         -> do  -- Load the final expression back from the store to display.
                 putStr $ pretty $ ppr $ traceStore store x
 
                 return Nothing
         
         StepStuck
          -> do  putStr $ pretty $ vcat
-                 [ ppr x
-                 , ppr store
-                 , text "STUCK!"
+                 [ text "STUCK!"
                  , empty]
 
                 return Nothing
 
         StepStuckMistyped err
          -> do  putStr $ pretty $ vcat
-                 [ ppr x
-                 , ppr store
-                 , ppr "OFF THE RAILS!"
+                 [ ppr "OFF THE RAILS!"
                  , ppr err
                  , empty]
 
@@ -126,9 +130,7 @@ stepPrint state store x
 
         StepStuckLetrecBindsNotLam
          -> do  putStr $ pretty $ vcat
-                 [ ppr x
-                 , ppr store
-                 , text "CRASH AND BURN!"
+                 [ text "CRASH AND BURN!"
                  , empty]
                 
                 return Nothing
