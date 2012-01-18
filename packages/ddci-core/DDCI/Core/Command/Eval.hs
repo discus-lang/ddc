@@ -30,9 +30,11 @@ cmdStep state str
         goStore Nothing
          = return ()
 
+        -- Expression is well-typed.
         goStore (Just (x, tX, effX, cloX))
-         = let  rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
-                store   = Store.empty { Store.storeRegions = Set.fromList rs }
+         = let  -- Create the initial store.
+                store   = startingStoreForExp x
+
            in   goStep store x tX effX cloX
 
         goStep store x tX effX cloX
@@ -49,10 +51,10 @@ cmdEval state str
         goStore Nothing
          = return ()
 
+        -- Expression is well-typed.
         goStore (Just (x, tX, effX, cloX))
-         = do   let rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound x]
-                let store   = Store.empty { Store.storeRegions = Set.fromList rs }          
-                      -- TODO: next region to alloc should be higher than all of these.
+         = do   -- Create the initial store.
+                let store = startingStoreForExp x
 
                 -- Print starting expression.
                 when (Set.member TraceEval  $ stateModes state)
@@ -72,6 +74,32 @@ cmdEval state str
                       Nothing           -> return ()
                       Just (store', x') -> go store' x'
          
+
+-- | Create a starting store for the given expression.
+--   We pre-allocate any region handles in the expression, 
+--   and ensure that the next region to be allocated is higher
+--   than all of these.
+startingStoreForExp :: Exp () Name -> Store
+startingStoreForExp xx
+ =  let
+        -- Gather up all the region handles already in the expression.
+        rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound xx]
+
+        -- Decide what new region should be allocated first.
+        -- Region 0 is reserved for thunks.
+        iFirstAlloc
+         | _ : _         <- rs
+         , Rgn iR        <- maximum rs
+         = iR + 1
+
+         | otherwise
+         = 1
+
+    in Store.empty 
+        { Store.storeNextRgn = iFirstAlloc 
+        , Store.storeRegions = Set.fromList (Rgn 0 : rs)
+        , Store.storeGlobal  = Set.fromList (Rgn 0 : rs) }
+
 
 -- | Perform a single step of evaluation and print what happened.
 stepPrint 
