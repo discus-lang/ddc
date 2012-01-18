@@ -35,7 +35,8 @@ instance GatherBound n (Alt a n) where
 instance GatherBound n (Lets a n) where
  gatherBound xx
   = case xx of
-        LLet b x        -> Set.unions [gatherBound b, gatherBound x]
+        LLet _ b x
+         -> Set.unions [gatherBound b, gatherBound x]
  
         LRec bxs        
          -> Set.unions

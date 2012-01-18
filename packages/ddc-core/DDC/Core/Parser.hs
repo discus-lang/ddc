@@ -48,7 +48,15 @@ pExp
         (b1, x1)        <- pLetBinding
         pTok KIn
         x2      <- pExp
-        return  $ XLet () (LLet b1 x1) x2
+        return  $ XLet () (LLet LetStrict b1 x1) x2
+
+
+        -- laz expression
+ , do   pTok KLaz
+        (b1, x1)        <- pLetBinding
+        pTok KIn
+        x2      <- pExp
+        return  $ XLet () (LLet LetLazy b1 x1) x2
         
 
         -- letrec expression

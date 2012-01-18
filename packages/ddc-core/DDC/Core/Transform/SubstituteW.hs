@@ -79,7 +79,7 @@ instance SubstituteW (Exp a) where
         XCon{}                  -> xx
         XApp a x1 x2            -> XApp a (down x1) (down x2)
         XLam a b x              -> XLam a b (down x)
-        XLet a (LLet b x1) x2   -> XLet a (LLet b (down x1)) (down x2)
+        XLet a (LLet m b x1) x2 -> XLet a (LLet m b (down x1)) (down x2)
         XLet{}                  -> error "substituetWithW: XLet not done yet"
         XCase{}                 -> error "substituteWithW: XCase not done yet"
         XCast a c x             -> XCast a (down c) (down x)

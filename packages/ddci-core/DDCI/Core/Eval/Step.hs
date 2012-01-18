@@ -186,16 +186,16 @@ step' store (XApp a x1 x2)
 
 -- (EvLetSubst)
 -- Substitute in a bound value in a let expression.
-step' store (XLet _ (LLet b x1) x2)
+step' store (XLet _ (LLet LetStrict b x1) x2)
         | isWnf store x1
         = StepProgress store (substituteX b x1 x2)
 
 
 -- (EvLetStep)
 -- Step the binding in a let-expression.
-step' store (XLet a (LLet b x1) x2)
+step' store (XLet a (LLet LetStrict b x1) x2)
  = case step store x1 of
-    StepProgress store' x1' -> StepProgress store' (XLet a (LLet b x1') x2)
+    StepProgress store' x1' -> StepProgress store' (XLet a (LLet LetStrict b x1') x2)
     err                     -> err
 
 

@@ -242,7 +242,7 @@ checkExpM defs env xx@(XLam _ b1 x2)
 
 
 -- let --------------------------------------------
-checkExpM defs env xx@(XLet _ (LLet b11 x12) x2)
+checkExpM defs env xx@(XLet _ (LLet _mode b11 x12) x2)
  = do   -- Check the right of the binding.
         (t12, effs12, clo12)  <- checkExpM defs env x12
 

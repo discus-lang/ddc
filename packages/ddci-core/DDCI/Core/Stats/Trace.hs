@@ -48,7 +48,7 @@ traceStoreLs :: Store -> Set Name -> Lets () Name -> Lets () Name
 traceStoreLs store entered ls
  = let down = traceStoreX store entered 
    in case ls of
-        LLet b x        -> LLet b (down x)
+        LLet m b x      -> LLet m b (down x)
         LRec bxs        -> LRec [(b, down x) | (b, x) <- bxs]
         LLetRegion{}    -> ls
         LWithRegion{}   -> ls

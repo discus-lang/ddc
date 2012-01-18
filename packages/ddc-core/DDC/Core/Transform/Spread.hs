@@ -65,9 +65,9 @@ instance Spread (Alt a) where
 instance Spread (Lets a) where
  spread env lts
   = case lts of
-        LLet    b x     
+        LLet m b x     
          -> let b'      = spread env b
-            in  LLet b' (spread (Env.extend b' env) x)
+            in  LLet m b' (spread (Env.extend b' env) x)
         
         LRec bxs
          -> let (bs, xs) = unzip bxs

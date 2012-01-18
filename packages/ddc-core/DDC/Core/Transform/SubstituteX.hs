@@ -101,11 +101,11 @@ instance SubstituteX Exp where
                 xBody'          = substituteWithX u x fns stack' xBody
             in  XLam a b' xBody'
 
-        XLet a (LLet b x1) x2
+        XLet a (LLet m b x1) x2
          -> let x1'             = down x1
                 (stack', b')    = pushBind fns stack b
                 x2'             = substituteWithX u x fns stack' x2
-            in  XLet a (LLet b' x1') x2'
+            in  XLet a (LLet m b' x1') x2'
 
         XLet a (LRec bxs) x2
          -> let (bs, xs)        = unzip bxs

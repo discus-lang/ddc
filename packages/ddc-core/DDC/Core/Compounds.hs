@@ -24,7 +24,7 @@ import DDC.Core.Exp
 bindsOfLets :: Lets a n -> [Bind n]
 bindsOfLets ll
  = case ll of
-        LLet b _          -> [b]
+        LLet _ b _        -> [b]
         LRec bxs          -> map fst bxs
         LLetRegion   b bs -> b : bs
         LWithRegion{}     -> []

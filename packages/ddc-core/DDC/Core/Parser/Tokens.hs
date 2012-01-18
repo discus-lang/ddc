@@ -59,6 +59,7 @@ data TokAtom
         | KIn
         | KOf
         | KLet
+        | KLaz
         | KLetRec
         | KLetRegion
         | KWithRegion

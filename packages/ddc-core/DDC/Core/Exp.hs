@@ -4,11 +4,12 @@ module DDC.Core.Exp
         ( module DDC.Type.Exp
 
           -- * Computation expressions
-        , Exp  (..)
-        , Cast (..)
-        , Lets (..)
-        , Alt  (..)
-        , Pat  (..)
+        , Exp     (..)
+        , Cast    (..)
+        , Lets    (..)
+        , LetMode (..)
+        , Alt     (..)
+        , Pat     (..)
                         
           -- * Witnesses expressions
         , Witness (..)
@@ -69,8 +70,8 @@ data Cast n
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive binding
-        = LLet    (Bind n) (Exp a n)
-        
+        = LLet    LetMode (Bind n) (Exp a n)
+
         -- | Recursive binding
         | LRec    [(Bind n, Exp a n)]
 
@@ -80,6 +81,16 @@ data Lets a n
         
         -- | Holds a region handle during evaluation.
         | LWithRegion (Bound n)
+        deriving (Eq, Show)
+
+
+-- | Describes how a let binding should be handled.
+data LetMode
+        -- | Evaluate binding before substituting.
+        = LetStrict
+
+        -- | Substitute binding before evaluating.
+        | LetLazy
         deriving (Eq, Show)
 
 

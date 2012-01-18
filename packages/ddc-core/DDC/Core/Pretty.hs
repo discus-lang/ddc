@@ -68,6 +68,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XWitness w      -> text "<" <> ppr w <> text ">"
 
 
+
 -- Pat ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Pat n) where
  ppr pp
@@ -110,17 +111,17 @@ instance (Pretty n, Eq n) => Pretty (Cast n) where
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  ppr lts
   = case lts of
-        LLet b x
+        LLet m b x
          | isBot $ typeOfBind b 
-         -> text "let"  <+> ppr (binderOfBind b)
+         -> ppr m       <+> ppr (binderOfBind b)
                         <+> text "="
                         <+> ppr x
 
          | otherwise
-         -> text "let"  <+> ppr b
+         -> ppr m       <+> ppr b
                         <+> text "="
                         <+> ppr x
-        
+
         LRec bxs
          -> let pprLetRecBind (b, x)
                  =   ppr (binderOfBind b)
@@ -132,6 +133,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
            in   text "letrec"
                  <+> braces (cat $ punctuate (text "; ") 
                                  $ map pprLetRecBind bxs)
+
 
         LLetRegion b []
          -> text "letregion"
@@ -146,6 +148,13 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
         LWithRegion b
          -> text "withregion"
                 <+> ppr b
+
+
+instance Pretty LetMode where
+ ppr lm
+  = case lm of
+        LetStrict       -> text "let"
+        LetLazy         -> text "laz"
 
 
 -- Witness --------------------------------------------------------------------

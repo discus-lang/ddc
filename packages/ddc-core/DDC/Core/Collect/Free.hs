@@ -49,7 +49,7 @@ instance Free n (Alt a n) where
 instance Free n (Lets a n) where
  free env lts 
   = case lts of
-        LLet b x        
+        LLet _ b x        
          -> Set.unions [ free env b
                        , free (Env.extend b env) x]
 
