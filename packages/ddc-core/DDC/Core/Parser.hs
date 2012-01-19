@@ -106,20 +106,22 @@ pExp
         return  $ XCase () x alts
 
 
-        -- purify <WITNESS> EXP
+        -- purify <WITNESS> in EXP
   , do  pTok KPurify
         pTok KAngleBra
         w       <- pWitness
         pTok KAngleKet
+        pTok KIn
         x       <- pExp
         return  $ XCast () (CastPurify w) x
 
 
-        -- forget <WITNESS> EXP
+        -- forget <WITNESS> in EXP
   , do  pTok KForget
         pTok KAngleBra
         w       <- pWitness
         pTok KAngleKet
+        pTok KIn
         x       <- pExp
         return  $ XCast () (CastForget w) x
 
@@ -326,11 +328,15 @@ pLetMode
  = do   P.choice
                 -- lazy <WITNESS>
          [ do   pTok (KWiConBuiltin WiConLazy)
-                pTok KAngleBra
-                w       <- pWitness
-                pTok KAngleKet
-                return  $ LetLazy w
-        
+
+                P.choice
+                 [ do   pTok KAngleBra
+                        w       <- pWitness
+                        pTok KAngleKet
+                        return  $ LetLazy (Just w)
+                 
+                 , do   return  $ LetLazy Nothing ]
+
          , do   return  $ LetStrict ]
 
 

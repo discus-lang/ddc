@@ -4,7 +4,7 @@
 
 
 -- Non-binding lazy.
-:check laz _ : Unit = () in ()
+:check let _ : Unit lazy = () in ()
 
 
 -- Binding let.
@@ -12,7 +12,7 @@
 
 
 -- Binding lazy.
-:check laz x : Unit = () in ()
+:check let x : Unit lazy = () in ()
 
 
 -- Let-bound function with full signature.
@@ -20,7 +20,7 @@
 
 
 -- Lazy-bound function with full signature.
-:check laz f : Unit -> Unit = \(x:Unit). x in ()
+:check let  f : Unit -> Unit lazy = \(x:Unit). x in ()
 
 
 -- Let using function syntax with a return type.
@@ -31,7 +31,7 @@
 
 -- Lazy using function syntax with a return type.
 :check..
- laz f (x:Unit) : Unit = x
+ let f (x:Unit) : Unit lazy = x
  in  f ();;
 
 
@@ -57,7 +57,7 @@
 -- Let and lazy
 :check..
  let x : Unit = () in
- laz y : Unit = () in
+ let y : Unit lazy = () in
  y;;
 
  

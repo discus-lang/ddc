@@ -2,14 +2,14 @@
 Region variable escapes scope of letregion.
        The region variable: r1 : %
   is free in the body type: Unit -(!0 | Use r1)> Int r1
-             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <alloc [r1] w1> (5 [r1] ())
+             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <alloc [r1] w1> in 5 [r1] ()
 
 -- Error: witness for purify does not witness purity
 -- We've left off the variable for the const witness.
 Witness for a purify does not witness purity.
         Witness: alloc [r1]
        has type: Const r1 => Pure (Alloc r1)
-  when checking: purify <alloc [r1]> (5 [r1] ())
+  when checking: purify <alloc [r1]> in 5 [r1] ()
 
 -- Error: region is visible in the effect of the returned function.
 Region variable escapes scope of letregion.
@@ -22,7 +22,7 @@ Region variable escapes scope of letregion.
 Region variable escapes scope of letregion.
        The region variable: r1 : %
   is free in the body type: Unit -(Read R0# + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
-             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <read [r1] w1> (addInt [r1] [R0#] [R0#] (2 [r1] ()) (3 [R0#] ()))
+             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <read [r1] w1> in addInt [r1] [R0#] [R0#] (2 [r1] ()) (3 [R0#] ())
 
 -- Error: region is visible in the closure of the returned function.
 -- We've purified the read and alloc effects, but we can still see
@@ -31,5 +31,5 @@ Region variable escapes scope of letregion.
 Region variable escapes scope of letregion.
        The region variable: r1 : %
   is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
-             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <read [r1] w1 & alloc [r1] w1> (addInt [r1] [R0#] [R0#] (2 [r1] ()) (3 [R0#] ()))
+             when checking: letregion r1 with {w1 : Const r1} in \(x : Unit).purify <read [r1] w1 & alloc [r1] w1> in addInt [r1] [R0#] [R0#] (2 [r1] ()) (3 [R0#] ())
 

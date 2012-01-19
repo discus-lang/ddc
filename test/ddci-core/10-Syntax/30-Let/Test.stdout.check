@@ -5,7 +5,7 @@ let _ : Unit = () in ()
 :$: $0
 
 -- Non-binding lazy.
-laz _ : Unit = () in ()
+let _ : Unit lazy = () in ()
 ::  Unit
 :!: !0
 :$: $0
@@ -17,7 +17,7 @@ let x : Unit = () in x
 :$: $0
 
 -- Binding lazy.
-laz x : Unit = () in ()
+let x : Unit lazy = () in ()
 ::  Unit
 :!: !0
 :$: $0
@@ -29,7 +29,7 @@ let f : Unit -> Unit = \(x : Unit).x in ()
 :$: $0
 
 -- Lazy-bound function with full signature.
-laz f : Unit -> Unit = \(x : Unit).x in ()
+let f : Unit -> Unit lazy = \(x : Unit).x in ()
 ::  Unit
 :!: !0
 :$: $0
@@ -41,7 +41,7 @@ let f : Unit -> Unit = \(x : Unit).x in f ()
 :$: $0
 
 -- Lazy using function syntax with a return type.
-laz f : Unit -> Unit = \(x : Unit).x in f ()
+let f : Unit -> Unit lazy = \(x : Unit).x in f ()
 ::  Unit
 :!: !0
 :$: $0
@@ -65,7 +65,7 @@ let x : Unit = () in let y : Unit = () in y
 :$: $0
 
 -- Let and lazy
-let x : Unit = () in laz y : Unit = () in y
+let x : Unit = () in let y : Unit lazy = () in y
 ::  Unit
 :!: !0
 :$: $0

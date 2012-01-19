@@ -90,8 +90,9 @@ data LetMode n
         = LetStrict
 
         -- | Substitute binding before evaluating.
-        --   Witness shows that the head region of the bound type is lazy.
-        | LetLazy (Witness n)
+        --   Witness shows that the head region of the bound type is lazy, 
+        --   or Nothing if there is no head region.
+        | LetLazy (Maybe (Witness n))
         deriving (Eq, Show)
 
 

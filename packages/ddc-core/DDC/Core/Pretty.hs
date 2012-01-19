@@ -62,7 +62,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XCast _ cc x
          -> pprParen (d > 10)
-         $  ppr cc <+> pprPrec 10 x
+         $  ppr cc <+> text "in" <+> pprPrec 10 x
 
         XType    t      -> text "[" <> ppr t <> text "]"
         XWitness w      -> text "<" <> ppr w <> text ">"
@@ -113,13 +113,14 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
   = case lts of
         LLet m b x
          | isBot $ typeOfBind b 
-         -> ppr (binderOfBind b)
+         -> text "let"  <+> ppr (binderOfBind b)
                         <>  ppr m
                         <+> text "="
                         <+> ppr x
 
          | otherwise
-         -> ppr b       <>  ppr m
+         -> text "let"  <+> ppr b
+                        <>  ppr m
                         <+> text "="
                         <+> ppr x
 
@@ -154,8 +155,9 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
 instance (Pretty n, Eq n) => Pretty (LetMode n) where
  ppr lm
   = case lm of
-        LetStrict       -> empty
-        LetLazy w       -> text " lazy <" <> ppr w <> text ">"
+        LetStrict        -> empty
+        LetLazy Nothing  -> text " lazy"
+        LetLazy (Just w) -> text " lazy <" <> ppr w <> text ">"
 
 
 -- Witness --------------------------------------------------------------------
