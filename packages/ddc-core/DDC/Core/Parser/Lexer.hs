@@ -185,7 +185,6 @@ keywords
         , ("letregion",  KA KLetRegion)
         , ("withregion", KA KWithRegion)
         , ("let",        KA KLet)
-        , ("laz",        KA KLaz)
         , ("case",       KA KCase)
         , ("purify",     KA KPurify)
         , ("forget",     KA KForget) 

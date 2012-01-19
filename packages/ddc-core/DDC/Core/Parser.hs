@@ -45,19 +45,10 @@ pExp
 
         -- let expression
  , do   pTok KLet
-        (b1, x1)        <- pLetBinding
+        (mode1, b1, x1)  <- pLetBinding
         pTok KIn
-        x2      <- pExp
-        return  $ XLet () (LLet LetStrict b1 x1) x2
-
-
-        -- laz expression
- , do   pTok KLaz
-        (b1, x1)        <- pLetBinding
-        pTok KIn
-        x2      <- pExp
-        return  $ XLet () (LLet LetLazy b1 x1) x2
-        
+        x2              <- pExp
+        return  $ XLet () (LLet mode1 b1 x1) x2
 
         -- letrec expression
  , do   pTok KLetRec
@@ -66,6 +57,7 @@ pExp
         pTok KBraceKet
         pTok KIn
         x       <- pExp
+
         return  $ XLet () (LRec lets) x
 
 
@@ -265,7 +257,7 @@ pBindPat
 
 -- Bindings -------------------------------------------------------------------
 -- | A binding for let expression.
-pLetBinding :: Ord n => Parser n (Bind n, Exp () n)
+pLetBinding :: Ord n => Parser n (LetMode n, Bind n, Exp () n)
 pLetBinding 
  = do   b       <- T.pBinder
 
@@ -274,21 +266,22 @@ pLetBinding
                 --  BINDER : TYPE = EXP
                 pTok KColon
                 t       <- T.pType
-
+                mode    <- pLetMode
                 pTok KEquals
                 xBody   <- pExp
 
-                return  $ (T.makeBindFromBinder b t, xBody) 
+                return  $ (mode, T.makeBindFromBinder b t, xBody) 
 
 
          , do   -- Non-function binding with no type signature.
                 -- This form can't be used with letrec as we can't use it
                 -- to build the full type sig for the let-bound variable.
                 --  BINDER = EXP
+                mode    <- pLetMode
                 pTok KEquals
                 xBody   <- pExp
                 let t   = T.tBot T.kData
-                return  $ (T.makeBindFromBinder b t, xBody)
+                return  $ (mode, T.makeBindFromBinder b t, xBody)
 
 
          , do   -- Binding using function syntax.
@@ -301,26 +294,44 @@ pLetBinding
                         --   BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
                         pTok KColon
                         tBody   <- T.pType
+                        mode    <- pLetMode
                         pTok KEquals
                         xBody   <- pExp
 
                         let x   = expOfParams () ps xBody
                         let t   = funTypeOfParams ps tBody
-                        return  (T.makeBindFromBinder b t, x)
+                        return  (mode, T.makeBindFromBinder b t, x)
 
                         -- Function syntax with no return type.
                         -- We can't make the type sig for the let-bound variable,
                         -- but we can create lambda abstractions with the given 
                         -- parameter types.
                         --  BINDER PARAM1 PARAM2 .. PARAMN = EXP
-                 , do   pTok KEquals
+                 , do   mode    <- pLetMode
+                        pTok KEquals
                         xBody   <- pExp
 
                         let x   = expOfParams () ps xBody
                         let t   = T.tBot T.kData
-                        return  (T.makeBindFromBinder b t, x) ]
+                        return  (mode, T.makeBindFromBinder b t, x) ]
          ]
 
+-- | Parse a let mode specifier.
+--   Only allow the lazy specifier with non-recursive bindings.
+--   We don't support value recursion, so the right of all recursive
+--   bindings must be explicit lambda abstractions anyway, so there's 
+--   no point suspending them.
+pLetMode :: Ord n => Parser n (LetMode n)
+pLetMode
+ = do   P.choice
+                -- lazy <WITNESS>
+         [ do   pTok (KWiConBuiltin WiConLazy)
+                pTok KAngleBra
+                w       <- pWitness
+                pTok KAngleKet
+                return  $ LetLazy w
+        
+         , do   return  $ LetStrict ]
 
 
 -- | Letrec bindings must have a full type signature, 

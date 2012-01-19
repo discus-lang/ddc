@@ -70,7 +70,7 @@ data Cast n
 -- | Possibly recursive bindings.
 data Lets a n
         -- | Non-recursive binding
-        = LLet    LetMode (Bind n) (Exp a n)
+        = LLet    (LetMode n) (Bind n) (Exp a n)
 
         -- | Recursive binding
         | LRec    [(Bind n, Exp a n)]
@@ -85,12 +85,13 @@ data Lets a n
 
 
 -- | Describes how a let binding should be handled.
-data LetMode
+data LetMode n
         -- | Evaluate binding before substituting.
         = LetStrict
 
         -- | Substitute binding before evaluating.
-        | LetLazy
+        --   Witness shows that the head region of the bound type is lazy.
+        | LetLazy (Witness n)
         deriving (Eq, Show)
 
 
