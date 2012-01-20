@@ -62,7 +62,8 @@ cmdEval state str
 
                 -- Print starting store.
                 when (Set.member TraceStore $ stateModes state)
-                 $ putStrLn $ pretty (ppr store)
+                 $ do   putStrLn $ pretty (ppr store) 
+                        putStr "\n"
 
                 goStep store x tX effX cloX
 
@@ -130,7 +131,8 @@ stepPrint state store x tX _effX _cloX
 
                     -- Print intermediate store
                     when (Set.member TraceStore $ stateModes state)
-                     $ putStrLn $ pretty (ppr store')
+                     $ do putStrLn $ pretty (ppr store')
+                          putStr "\n"
                 
                     -- Check expression has the same type as before.
                     -- TODO: also check the effect and closure is no greater.
@@ -149,8 +151,7 @@ stepPrint state store x tX _effX _cloX
     
         StepDone
          -> do  -- Load the final expression back from the store to display.
-                putStr $ pretty $ ppr $ traceStore store x
-
+                putStrLn $ pretty $ ppr $ traceStore store x
                 return Nothing
         
         StepStuck

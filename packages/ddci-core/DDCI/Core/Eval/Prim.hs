@@ -105,8 +105,8 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
         , Just r2       <- takeHandleX xR2
         , XType tR3     <- xR3
         , Just r3       <- takeHandleX xR3        
-        , Just l1       <- takeLocX xL1
-        , Just l2       <- takeLocX xL2
+        , Just l1       <- stripLocX xL1
+        , Just l2       <- stripLocX xL2
 
         -- get the regions and values of each location
         , Just (r1', _, SObj (NameInt i1) [])  <- Store.lookupRegionTypeBind l1 store
@@ -129,14 +129,14 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
                 , XCon () (UPrim (NameLoc l3) (tInt tR3)))
 
 
--- Unary integer primop.
+-- Update integer primop.
 stepPrimOp (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
         -- unpack the args
         | Just r1       <- takeHandleX  xR1
         , Just r2       <- takeHandleX  xR2
         , Just r1W      <- takeMutableX xMutR1
-        , Just l1       <- takeLocX     xL1
-        , Just l2       <- takeLocX     xL2      
+        , Just l1       <- stripLocX     xL1
+        , Just l2       <- stripLocX     xL2      
 
         -- the witness must be for the destination region
         , r1W == r1

@@ -9,6 +9,7 @@ ok
 
   Binds:
 
+
 * STEP: withregion R3# in addInt [R1#] [R3#] [R2#] (5 [R1#] ()) (6 [R3#] ())
 * STORE
   NextLoc: 1
@@ -17,6 +18,7 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
+
 
 * STEP: withregion R3# in addInt [R1#] [R3#] [R2#] L1# (6 [R3#] ())
 * STORE
@@ -28,6 +30,7 @@ ok
   Binds:
    L1#:R1# -> OBJ 5
       :: Int R1#
+
 * STEP: withregion R3# in addInt [R1#] [R3#] [R2#] L1# L2#
 * STORE
   NextLoc: 3
@@ -40,6 +43,7 @@ ok
       :: Int R1#
    L2#:R3# -> OBJ 6
       :: Int R3#
+
 * STEP: withregion R3# in L3#
 * STORE
   NextLoc: 4
@@ -54,6 +58,7 @@ ok
       :: Int R3#
    L3#:R2# -> OBJ 11
       :: Int R2#
+
 * STEP: L3#
 * STORE
   NextLoc: 4
@@ -66,4 +71,6 @@ ok
       :: Int R1#
    L3#:R2# -> OBJ 11
       :: Int R2#
+
 11
+

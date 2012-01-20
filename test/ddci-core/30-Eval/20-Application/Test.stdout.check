@@ -1,10 +1,15 @@
 -- Identity function.
 ()
+
 -- Substitute into inner lambda.
 5
+
 -- Under-applied primitive constructor.
 5
+
 -- Under-applied primitive constructor.
 5 [R0#]
+
 -- Over-applied abstraction.
 30
+

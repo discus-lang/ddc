@@ -116,7 +116,8 @@ arityOfName n
         NamePrimCon PrimDaConCons       -> Just 4
 
         NamePrimOp p
-         | elem p [PrimOpAddInt, PrimOpSubInt, PrimOpMulInt, PrimOpDivInt]
+         | elem p [ PrimOpAddInt, PrimOpSubInt, PrimOpMulInt, PrimOpDivInt
+                  , PrimOpEqInt]
          -> Just 5
          
         NamePrimOp PrimOpUpdateInt

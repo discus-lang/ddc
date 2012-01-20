@@ -268,6 +268,9 @@ checkExpM defs env xx@(XLet _ (LLet _mode b11 x12) x2)
                 Nothing -> clo2
                 Just u  -> Set.delete (taggedClosureOfValBound u) clo2
 
+        -- TODO: check purity and emptiness for lazy bindings
+        -- TODO: also check region witness.
+
         return ( t2
                , effs12 `Sum.union` effs2
                , clo12  `Set.union` clo2_masked)

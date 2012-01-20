@@ -8,7 +8,7 @@ module DDCI.Core.Eval.Compounds
         , isUnitX
         , takeHandleT
         , takeHandleX
-        , takeLocX
+        , takeLocX,     stripLocX
         , takeMutableX
 
           -- Store
@@ -75,6 +75,19 @@ takeLocX xx
         XCon _ (UPrim (NameLoc l) _)
                 -> Just l
         _       -> Nothing
+
+
+-- | Take a store location from an expression, reaching under any 'forget' casts.
+stripLocX :: Exp a Name -> Maybe Loc
+stripLocX xx
+ = case xx of
+        XCast _ (CastForget _) x
+          -> stripLocX x
+
+        XCon _ (UPrim (NameLoc l) _) 
+          -> Just l
+
+        _ -> Nothing
 
 
 -- | Take a witness of mutability from an expression.

@@ -64,10 +64,14 @@ data SBind
         { sbindDataTag          :: Name
         , sbindDataArgs         :: [Loc] }
 
-        -- Lambda abstraction.
+        -- Lambda abstraction, used for recursive bindings.
         | SLams
         { sbindLamBinds         :: [Bind Name]
         , sbindLamBody          :: Exp () Name }
+
+        -- Thunk, used for lazy evaluation.
+        | SThunk
+        { sbindThunkExp         :: Exp () Name }
         deriving (Eq, Show)
 
 
@@ -104,6 +108,9 @@ instance Pretty SBind where
   = text "LAMS" <+> sep (map (parens . ppr) bs)
                 <>  text "."
                 <>  ppr x
+
+ ppr (SThunk x)
+  = text "THUNK" <+> ppr x
  
 
 -- Constructors ---------------------------------------------------------------

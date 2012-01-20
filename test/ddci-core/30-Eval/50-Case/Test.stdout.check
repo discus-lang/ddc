@@ -1,10 +1,15 @@
 -- Construct an empty list.
 Nil
+
 -- Construct a single element list.
 Cons 5 Nil
+
 -- Contruct and destruct a single element list.
 5
+
 -- Match on an integer literal.
 1
+
 -- Fall through to default alternative.
 0
+

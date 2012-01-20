@@ -75,16 +75,41 @@ instance SubstituteW (Exp a) where
  substituteWithW u w fns stack xx
   = let down    = substituteWithW u w fns stack 
     in case xx of
-        XVar{}                  -> xx
-        XCon{}                  -> xx
-        XApp a x1 x2            -> XApp a (down x1) (down x2)
-        XLam a b x              -> XLam a b (down x)
-        XLet a (LLet m b x1) x2 -> XLet a (LLet m b (down x1)) (down x2)
-        XLet{}                  -> error "substituetWithW: XLet not done yet"
-        XCase{}                 -> error "substituteWithW: XCase not done yet"
-        XCast a c x             -> XCast a (down c) (down x)
-        XType{}                 -> xx
-        XWitness w1             -> XWitness (down w1)
+        XVar{}          -> xx
+        XCon{}          -> xx
+        XApp  a x1 x2   -> XApp  a   (down x1)  (down x2)
+        XLam  a b x     -> XLam  a b (down x)
+        XLet  a ls1  x2 -> XLet  a   (down ls1) (down x2)
+        XCase a x alts  -> XCase a   (down x)   (map down alts)
+        XCast a c x     -> XCast a   (down c)   (down x)
+        XType{}         -> xx
+        XWitness w1     -> XWitness (down w1)
+
+
+instance SubstituteW (Lets a) where
+ substituteWithW u f fns stack ll
+  = let down = substituteWithW u f fns stack
+    in case ll of
+        LLet m b x      -> LLet (down m) b (down x)
+        LRec bxs        -> LRec [ (b, down x) | (b, x) <- bxs ]
+        LLetRegion{}    -> ll
+        LWithRegion{}   -> ll
+
+
+instance SubstituteW LetMode where
+ substituteWithW u f fns stack lm
+  = let down = substituteWithW u f fns stack
+    in case lm of
+        LetStrict        -> lm
+        LetLazy Nothing  -> LetLazy Nothing
+        LetLazy (Just w) -> LetLazy (Just (down w))
+
+
+instance SubstituteW (Alt a) where
+ substituteWithW u f fns stack alt
+  = let down = substituteWithW u f fns stack
+    in case alt of
+        AAlt p x -> AAlt p (down x)
 
 
 instance SubstituteW Cast where

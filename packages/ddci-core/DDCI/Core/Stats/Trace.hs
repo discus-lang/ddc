@@ -70,6 +70,9 @@ expOfSBind sbind
         SLams bs x
          -> makeXLams () bs x
 
+        SThunk x
+         -> x
+
 
 -- | Convert a data constructor tag to a constructor expression.
 expOfTag :: Name -> Exp () Name

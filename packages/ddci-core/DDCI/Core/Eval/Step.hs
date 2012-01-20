@@ -8,7 +8,8 @@
 module DDCI.Core.Eval.Step 
         ( step
         , StepResult(..)
-        , isWnf
+        , isValue
+        , isWeakValue
         , regionWitnessOfType )
 where
 import DDCI.Core.Eval.Store
@@ -49,29 +50,39 @@ data StepResult
         deriving (Show)
 
 
+-- force ----------------------------------------------------------------------
+force   :: Store        -- ^ Current store.
+        -> Exp () Name  -- ^ Expression to force.
+        -> StepResult   -- ^ Result of stepping it.
+
+force store xx
+        | XCon _ (UPrim (NameLoc l) _)  <- xx
+        , Just (rgn, t, SThunk x)       <- lookupRegionTypeBind l store
+        = case force store x of
+                StepProgress store' x'
+                 -> let store2 = addBind l rgn t (SThunk x') store'
+                    in  StepProgress store2 xx
+                
+                StepDone 
+                 -> StepProgress store x
+
+                err -> err
+
+        | otherwise
+        = step store xx
+
+
 -- step -----------------------------------------------------------------------
 -- | Perform a single step reduction of a core expression.
+--   This evaluates expressions to a weak value.
 step    :: Store        -- ^ Current store.
         -> Exp () Name  -- ^ Expression to step.
         -> StepResult   -- ^ Result of stepping it.
 
--- TODO: split casts off the front.
-step store xx
-  = step' store xx
-
-
--- (EvPrim)
--- Step a primitive operator or constructor defined by the client.
-step' store xx
-        | Just (p, xs)          <- takeXPrimApps xx
-        , and $ map (isWnf store) xs
-        , Just (store', x')     <- stepPrimOp p xs store
-        = StepProgress store' x'
-
 
 -- (EvLam)
 -- Add abstractions to the heap.
-step' store xx@XLam{}
+step store xx@XLam{}
         -- We need the type of the expression to attach to the location
         -- This fakes the store typing from the formal typing rules.
  = case typeOfExp primDataDefs xx of
@@ -85,7 +96,7 @@ step' store xx@XLam{}
 -- (EvAlloc)
 -- Construct some data in the heap.
 -- TODO: handle non primitive constructos.
-step' store xx
+step store xx
         | Just (u, xs)  <- takeXConApps xx
         , case u of
             -- Unit constructors are not allocated into the store.
@@ -98,21 +109,56 @@ step' store xx
         , UPrim n _     <- u
         , Just arity    <- arityOfName n
         , length xs == arity
-        , and $ map (isWnf store) xs
+        , and $ map (isWeakValue store) xs
         , Just (store', x')     <- stepPrimCon n xs store
         = StepProgress store' x'
 
 
+-- (EvPrim)
+-- Step a primitive operator or constructor defined by the client.
+step store xx
+        | x1@(XVar _ (UPrim p _)) : xs  <- takeXApps xx
+        , Just arity                    <- arityOfName p
+        = let
+                -- TODO: we're not allowing over-applied primops
+                stepArg i _acc []
+                 | i == arity
+                 , Just  (store', x') <- stepPrimOp p xs store
+                 = Right (store', x')
+
+                 -- The arguments are all values, but the primop didn't step.
+                 | otherwise
+                 = Left StepStuck
+
+                stepArg i acc (ax:axs)
+                 = case force store ax of
+                    StepProgress store' x' 
+                     -> Right (store', makeXApps () x1 (reverse acc ++ (x' : axs)))
+
+                    StepDone
+                     -> case stepArg (i + 1) (ax : acc) axs of
+                         Left  err      -> Left err
+                         result         -> result
+
+                    err  -> Left err
+
+          in case stepArg 0 [] xs of
+                Left err                -> err
+                Right (store', x')      -> StepProgress store' x'
+
+
+
 -- (EvAppArgs)
 -- Step the left-most non-wnf argument of a lambda.
-step' store xx
+-- TODO: handle cast wrapped around function.
+step store xx
         | xL1 : xsArgs  <- takeXApps xx
         , Just l1       <- takeLocX xL1
         , Just (Rgn 0, _, SLams bs _xBody)  <- lookupRegionTypeBind l1 store
 
         -- See if an arg to any of the lambdas needs to be stepped.
         , arity         <- length bs
-        , wnfs          <- map (isWnf store) xsArgs
+        , wnfs          <- map (isWeakValue store) xsArgs
         , or (take arity $ map not wnfs) 
 
         = let -- Step the first non-wnf argument.        
@@ -142,14 +188,15 @@ step' store xx
 
 -- (EvAppSubst)
 -- Substitute wnf arguments into an abstraction.
-step' store xx
+-- TODO: handle cast wrapped around function.
+step store xx
         | xL1 : xsArgs  <- takeXApps xx
         , Just l1       <- takeLocX xL1
         , Just (Rgn 0, _, SLams bs xBody) <- lookupRegionTypeBind l1 store
 
         -- Take as many wnfs as possible to satisfy binders.
         , arity                 <- length bs
-        , (wnfs, nonWnfs)       <- span (isWnf store) xsArgs
+        , (wnfs, nonWnfs)       <- span (isWeakValue store) xsArgs
 
         -- If we have any wnfs at all, then we can do a substitution.
         , not $ null wnfs
@@ -167,41 +214,48 @@ step' store xx
           in  StepProgress store (makeXApps () xResult argsLeftover)
 
 
--- (EvApp2)
--- Evaluate the right of an application.
-step' store (XApp a x1 x2)
- | isWnf store x1
- = case step store x2 of
-    StepProgress store' x2' -> StepProgress store' (XApp a x1 x2')
-    err                     -> err
-
-
--- (EvApp1)
--- Evaluate the left of an application.
-step' store (XApp a x1 x2)
+-- (EvApp1 / EvApp2)
+-- Evaluate the components of an application.
+step store (XApp a x1 x2)
  = case step store x1 of
-    StepProgress store' x1' -> StepProgress store' (XApp a x1' x2)
-    err                     -> err
+    StepProgress store' x1' 
+     -> StepProgress store' (XApp a x1' x2)
+
+    StepDone 
+     -> case step store x2 of
+         StepProgress store' x2'
+          -> StepProgress store' (XApp a x1 x2')
+        
+         err -> err
+
+    err      -> err
 
 
--- (EvLetSubst)
+-- (EvLetStrictStep / EvLetStrictSubst)
 -- Substitute in a bound value in a let expression.
-step' store (XLet _ (LLet LetStrict b x1) x2)
-        | isWnf store x1
-        = StepProgress store (substituteX b x1 x2)
-
-
--- (EvLetStep)
--- Step the binding in a let-expression.
-step' store (XLet a (LLet LetStrict b x1) x2)
+step store (XLet a (LLet LetStrict b x1) x2)
  = case step store x1 of
-    StepProgress store' x1' -> StepProgress store' (XLet a (LLet LetStrict b x1') x2)
-    err                     -> err
+    StepProgress store' x1' 
+     -> StepProgress store' (XLet a (LLet LetStrict b x1') x2)
+
+    StepDone
+     -> StepProgress store (substituteX b x1 x2)
+
+    err -> err
+
+
+-- (EvLetLazyAlloc)
+-- Allocate a lazy binding in the heap.
+step store (XLet _ (LLet (LetLazy _w) b x1) x2)
+        | t1            <- typeOfBind b
+        , (store1, l)   <- allocBind (Rgn 0) t1 (SThunk x1) store
+        , x1'           <- XCon () (UPrim (NameLoc l) t1)
+        = StepProgress store1 (substituteX b x1' x2)
 
 
 -- (EvLetRec)
 -- Add recursive bindings to the store.
-step' store (XLet _ (LRec bxs) x2)
+step store (XLet _ (LRec bxs) x2)
  = let  (bs, xs) = unzip bxs
         ts       = map typeOfBind bs
 
@@ -236,7 +290,7 @@ step' store (XLet _ (LRec bxs) x2)
 
 -- (EvCreateRegion)
 -- Create a new region.
-step' store (XLet a (LLetRegion bRegion bws) x)
+step store (XLet a (LLetRegion bRegion bws) x)
         | Just uRegion  <- takeSubstBoundOfBind bRegion
 
         -- Allocate a new region handle for the bound region.
@@ -281,34 +335,39 @@ step' store (XLet a (LLetRegion bRegion bws) x)
 
 -- (EvEjectRegion)
 --  Eject completed value from the region context, and delete the region.
-step' store (XLet _ (LWithRegion r@(UPrim (NameRgn rgn) _)) x)
-        | isWnf store x
+step store (XLet _ (LWithRegion r@(UPrim (NameRgn rgn) _)) x)
+        | isWeakValue store x
         , Set.member rgn (storeGlobal store)
         = StepProgress store x
 
-        | isWnf store x
+        | isWeakValue store x
         , Just store'    <- primDelRegion r store
         = StepProgress store' x
 
  
 -- (EvWithRegion)
 -- Reduction within a region context.
-step' store (XLet a (LWithRegion uRegion) x)
+step store (XLet a (LWithRegion uRegion) x)
  = case step store x of
     StepProgress store' x' 
           -> StepProgress store' (XLet a (LWithRegion uRegion) x')
     err   -> err
 
 
--- (EvCaseMatch)
+-- (EvCaseStep / EvCaseMatch)
 -- Case branching.
-step' store (XCase a xDiscrim alts)
-        | Just lDiscrim            <- takeLocX xDiscrim
-        , Just (SObj nTag lsArgs)  <- lookupBind lDiscrim store
-        , Just tsArgs              
-           <- sequence $ map (\l -> lookupTypeOfLoc l store) lsArgs
-        , AAlt pat xBody : _       <- filter (tagMatchesAlt nTag) alts
-        = case pat of
+-- TODO: handle cast wrapped around discriminant.
+step store (XCase a xDiscrim alts)
+ = case force store xDiscrim of
+    StepProgress store' xDiscrim'
+     -> StepProgress store' (XCase a xDiscrim' alts)
+
+    StepDone
+     | Just lDiscrim            <- takeLocX xDiscrim
+     , Just (SObj nTag lsArgs)  <- lookupBind lDiscrim store
+     , Just tsArgs              <- sequence $ map (\l -> lookupTypeOfLoc l store) lsArgs
+     , AAlt pat xBody : _       <- filter (tagMatchesAlt nTag) alts
+     -> case pat of
            PDefault         
             -> StepProgress store xBody
 
@@ -320,37 +379,32 @@ step' store (XCase a xDiscrim alts)
             -> StepProgress store
                     (substituteXs bxsArgs xBody)
 
+     | otherwise
+     -> StepStuck
 
--- (EvCaseStep)
--- Evaluation of discriminant.
-step' store (XCase a xDiscrim alts)
- = case step store xDiscrim of
-    StepProgress store' xDiscrim' 
-          -> StepProgress store' (XCase a xDiscrim' alts)
-    err   -> err
+    err -> err
 
 
 -- (EvPurifyEject)
 -- Eject values from purify casts as there are no more effects to be had.
-step' store (XCast _ (CastPurify _) x)
-        | isWnf store x
+step store (XCast _ (CastPurify _) x)
+        | isWeakValue store x
         = StepProgress store x
 
 
 -- (EvCast)
 -- Evaluate under casts.
-step' store (XCast a cc x)
+step store (XCast a cc x)
  = case step store x of
     StepProgress store' x'
           -> StepProgress store' (XCast a cc x')
     err   -> err
 
 
-
 -- (Done/Stuck)
 -- Either already a value, or expression is stuck.
-step' store xx
- | isWnf store xx       = StepDone
+step store xx
+ | isWeakValue store xx = StepDone
  | otherwise            = StepStuck
         
 
@@ -371,19 +425,40 @@ tagMatchesPat n (PData u' _)
         _       -> False
 
         
--- isWnf ----------------------------------------------------------------------
--- | Check if an expression is a weak normal form (a value).
---   This is not /strong/ normal form because we don't require expressions
---   under lambdas to also be values.
-isWnf :: Store -> Exp a Name -> Bool
-isWnf store xx
+-- isValue ----------------------------------------------------------------
+-- | Check if an expression is a value.
+--   These are all the values, and locations that point to thunks.
+isWeakValue :: Store -> Exp a Name -> Bool
+isWeakValue store xx
+        = isSomeValue True store xx
+
+isValue :: Store -> Exp a Name -> Bool
+isValue store xx
+        = isSomeValue False store xx
+
+
+-- | Check if an expression is a weak value.
+isSomeValue :: Bool -> Store -> Exp a Name -> Bool
+isSomeValue weak store xx
  = case xx of
          XVar{}         -> True
+
+         XCon _ (UPrim (NameLoc l) _)
+          | Just SThunk{}       <- lookupBind l store
+          -> weak
+
          XCon{}         -> True
+
          XLam{}         -> False
          XLet{}         -> False
          XCase{}        -> False
-         XCast _ _ x    -> isWnf store x
+
+         XCast _ (CastPurify _) _ 
+          -> False
+
+         XCast _ _ x    
+          -> isSomeValue weak store x
+
          XType{}        -> True
          XWitness{}     -> True
 
@@ -391,7 +466,7 @@ isWnf store xx
 
           -- Application if a primop to enough args is not wnf.
           | Just (n, xs)     <- takeXPrimApps xx
-          , and $ map (isWnf store) xs
+          , and $ map (isSomeValue weak store) xs
           , Just a           <- arityOfName n
           , length xs >= a
           -> False
@@ -404,7 +479,7 @@ isWnf store xx
 
           -- Application of a data constructor to enough args is not wnf.
           | Just (u, xs)     <- takeXConApps xx
-          , and $ map (isWnf store) xs
+          , and $ map (isSomeValue weak store) xs
           , UPrim n _        <- u
           , Just a           <- arityOfName n
           , length xs >= a   
@@ -413,7 +488,8 @@ isWnf store xx
           -- Application of some other expression, 
           --  maybe an under-applied primop or data constructor.
           | otherwise   
-          -> isWnf store x1 && isWnf store x2
+          -> isSomeValue weak store x1 
+          && isSomeValue weak store x2
 
 
 -- | Get the region witness corresponding to one of the witness types that are
