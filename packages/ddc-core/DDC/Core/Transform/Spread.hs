@@ -66,8 +66,9 @@ instance Spread (Lets a) where
  spread env lts
   = case lts of
         LLet m b x     
-         -> let b'      = spread env b
-            in  LLet m b' (spread (Env.extend b' env) x)
+         -> let m'      = spread env m
+                b'      = spread env b
+            in  LLet m' b' (spread (Env.extend b' env) x)
         
         LRec bxs
          -> let (bs, xs) = unzip bxs
@@ -84,6 +85,14 @@ instance Spread (Lets a) where
 
         LWithRegion b
          -> LWithRegion (spread env b)
+
+
+instance Spread LetMode where
+ spread env lm
+  = case lm of
+        LetStrict        -> LetStrict
+        LetLazy Nothing  -> LetLazy Nothing
+        LetLazy (Just w) -> LetLazy (Just $ spread env w)
 
 
 instance Spread Witness where

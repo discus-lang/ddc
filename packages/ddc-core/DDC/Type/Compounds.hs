@@ -19,10 +19,11 @@ module DDC.Type.Compounds
 
           -- * Type structure
         , tIx
-        , tApp,         ($:)
-        , tApps,        takeTApps,      takeTyConApps
+        , tApp,          ($:)
+        , tApps,         takeTApps
+        , takeTyConApps, takeDataTyConApps
         , tForall
-        , tForalls,     takeTForalls
+        , tForalls,      takeTForalls
         , tBot
         , tSum
 
@@ -201,6 +202,23 @@ takeTyConApps tt
  = case takeTApps tt of
         TCon tc : args  -> Just $ (tc, args)
         _               -> Nothing
+
+
+-- | Flatten a sequence of type applications, returning the type constructor
+--   and arguments, if there is one. Only accept data type constructors.
+takeDataTyConApps :: Type n -> Maybe (TyCon n, [Type n])
+takeDataTyConApps tt
+ = case takeTApps tt of
+        TCon tc : args  
+         | TyConBound (UName _ t)       <- tc
+         , TCon (TyConKind KiConData)   <- takeResultKind t
+         -> Just (tc, args)
+
+         | TyConBound (UPrim _ t)       <- tc
+         , TCon (TyConKind KiConData)   <- takeResultKind t
+         -> Just (tc, args)
+
+        _ -> Nothing
 
 
 -- Foralls --------------------------------------------------------------------

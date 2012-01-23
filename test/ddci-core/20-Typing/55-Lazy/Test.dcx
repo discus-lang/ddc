@@ -25,3 +25,23 @@ let x : Int r1 lazy <w2>
      = forget <use [r1] w3 w1> in
        2 [r1] () 
 in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
+
+
+-- Error: lazy let has no witness, but type of binding has a head region.
+:check..
+letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
+let x : Int r1 lazy
+     = purify <alloc [r1] w1>  in
+       forget <use [r1] w3 w1> in
+       2 [r1] () 
+in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
+
+
+-- Error: lazy let has a witness of the wrong type.
+:check..
+letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
+let x : Int r1 lazy <w1>
+     = purify <alloc [r1] w1>  in
+       forget <use [r1] w3 w1> in
+       2 [r1] () 
+in addInt [:r1 R0# R0#:] x (3 [R0#] ());;

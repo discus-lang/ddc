@@ -269,10 +269,9 @@ checkExpM defs env xx@(XLet _ (LLet mode b11 x12) x2)
                 Just u  -> Set.delete (taggedClosureOfValBound u) clo2
 
         -- Check purity and emptiness for lazy bindings.
-        -- TODO: also check region witness.
         (case mode of
           LetStrict     -> return ()
-          LetLazy _mWit
+          LetLazy _
            -> do let eff12' = TSum effs12
                  when (not $ isBot eff12')
                   $ throw $ ErrorLetLazyNotPure xx b11 eff12'
@@ -281,6 +280,32 @@ checkExpM defs env xx@(XLet _ (LLet mode b11 x12) x2)
                  when (not $ isBot clo12')
                   $ throw $ ErrorLetLazyNotEmpty xx b11 clo12')
 
+        -- Check region witness for lazy bindings.
+        (case mode of
+          LetStrict     -> return ()
+
+          -- Type of lazy binding has no head region, like Unit and (->).
+          LetLazy Nothing
+           -> do case takeDataTyConApps t12 of
+                  Just (_tc, t1 : _)
+                   ->  do k1 <- checkTypeM env t1
+                          when (isRegionKind k1)
+                           $ throw $ ErrorLetLazyNoWitness xx b11 t12
+
+                  _ -> return ()
+
+          -- Type of lazy binding might have a head region,
+          -- so we need a Lazy witness for it.
+          LetLazy (Just wit)
+           -> do tWit        <- checkWitnessM env wit
+                 let tWitExp =  case takeDataTyConApps t12 of
+                                 Just (_tc, tR : _ts) -> tLazy tR
+                                 _                    -> tHeadLazy t12
+
+                 when (not $ equivT tWit tWitExp)
+                  $ throw $ ErrorLetLazyWitnessTypeMismatch 
+                                 xx b11 tWit t12 tWitExp)
+                                     
 
         return ( t2
                , effs12 `Sum.union` effs2

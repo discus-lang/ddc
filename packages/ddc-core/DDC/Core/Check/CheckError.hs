@@ -88,6 +88,8 @@ data Error a n
         , errorType             :: Type n
         , errorKind             :: Kind n }
 
+
+        -- Let Lazy ---------------------------------------
         -- | Lazy let binding is not pure.
         | ErrorLetLazyNotPure
         { errorChecking         :: Exp a n
@@ -100,11 +102,30 @@ data Error a n
         , errorBind             :: Bind n
         , errorClosure          :: Closure n }
 
+        -- | Lazy let binding has no Lazy witness, but the type of the binding
+        --   has a head region.
+        | ErrorLetLazyNoWitness
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorType             :: Type n }
+
+        -- | Witness provided to lazy let binding has the wrong type.
+        | ErrorLetLazyWitnessTypeMismatch 
+        { errorChecking          :: Exp a n
+        , errorBind              :: Bind n
+        , errorWitnessTypeHave   :: Type n
+        , errorBindType          :: Type n
+        , errorWitnessTypeExpect :: Type n }
+
+
+        -- Letrec -----------------------------------------
         -- | Letrec bindings must be syntactic lambdas.
         | ErrorLetrecBindingNotLambda
         { errorChecking         :: Exp a n 
         , errorExp              :: Exp a n }
 
+
+        -- Letregion --------------------------------------
         -- | Region binding does not have region kind.
         | ErrorLetRegionNotRegion
         { errorChecking         :: Exp a n
@@ -144,6 +165,7 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorBound            :: Bound n
         , errorKind             :: Kind n }
+
 
         -- Witnesses --------------------------------------
         -- | Type mismatch in witness application.
@@ -325,23 +347,42 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "       but it must be: * "
                  , text "        when checking: "       <> ppr xx ]
 
+
+        -- Let Lazy ---------------------------------------
         ErrorLetLazyNotEmpty xx b clo
          -> vcat [ text "Lazy let binding is not empty."
-                 , text "      The binding for: "       <> ppr b
+                 , text "      The binding for: "       <> ppr (binderOfBind b)
                  , text "          has closure: "       <> ppr clo
                  , text "        when checking: "       <> ppr xx ]
 
         ErrorLetLazyNotPure xx b eff
          -> vcat [ text "Lazy let binding is not pure."
-                 , text "      The binding for: "       <> ppr b
+                 , text "      The binding for: "       <> ppr (binderOfBind b)
                  , text "           has effect: "       <> ppr eff
                  , text "        when checking: "       <> ppr xx ]
 
+        ErrorLetLazyNoWitness xx b t
+         -> vcat [ text "Lazy let binding has no witness but the bound value may have a head region."
+                 , text "      The binding for: "       <> ppr (binderOfBind b)
+                 , text "             Has type: "       <> ppr t
+                 , text "        when checking: "       <> ppr xx ]
+
+        ErrorLetLazyWitnessTypeMismatch xx b tWitGot tBind tWitExp
+         -> vcat [ text "Unexpected witness type in lazy let binding."
+                 , text "          The binding for: "   <> ppr (binderOfBind b)
+                 , text "    has a witness of type: "   <> ppr tWitGot
+                 , text "           but is type is: "   <> ppr tBind
+                 , text " so the witness should be: "   <> ppr tWitExp 
+                 , text "            when checking: "   <> ppr xx ]
+
+        -- Letrec -----------------------------------------
         ErrorLetrecBindingNotLambda xx x
          -> vcat [ text "Letrec can only bind lambda abstractions."
                  , text "      This is not one: "       <> ppr x
                  , text "        when checking: "       <> ppr xx ]
 
+
+        -- Letregion --------------------------------------
         ErrorLetRegionNotRegion xx b k
          -> vcat [ text "Letregion binder does not have region kind."
                  , text "        Region binder: "       <> ppr b
