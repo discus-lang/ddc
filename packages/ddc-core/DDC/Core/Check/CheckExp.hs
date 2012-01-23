@@ -242,7 +242,7 @@ checkExpM defs env xx@(XLam _ b1 x2)
 
 
 -- let --------------------------------------------
-checkExpM defs env xx@(XLet _ (LLet _mode b11 x12) x2)
+checkExpM defs env xx@(XLet _ (LLet mode b11 x12) x2)
  = do   -- Check the right of the binding.
         (t12, effs12, clo12)  <- checkExpM defs env x12
 
@@ -268,8 +268,19 @@ checkExpM defs env xx@(XLet _ (LLet _mode b11 x12) x2)
                 Nothing -> clo2
                 Just u  -> Set.delete (taggedClosureOfValBound u) clo2
 
-        -- TODO: check purity and emptiness for lazy bindings
+        -- Check purity and emptiness for lazy bindings.
         -- TODO: also check region witness.
+        (case mode of
+          LetStrict     -> return ()
+          LetLazy _mWit
+           -> do let eff12' = TSum effs12
+                 when (not $ isBot eff12')
+                  $ throw $ ErrorLetLazyNotPure xx b11 eff12'
+
+                 let clo12' = closureOfTaggedSet clo12
+                 when (not $ isBot clo12')
+                  $ throw $ ErrorLetLazyNotEmpty xx b11 clo12')
+
 
         return ( t2
                , effs12 `Sum.union` effs2

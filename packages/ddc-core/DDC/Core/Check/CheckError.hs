@@ -88,6 +88,18 @@ data Error a n
         , errorType             :: Type n
         , errorKind             :: Kind n }
 
+        -- | Lazy let binding is not pure.
+        | ErrorLetLazyNotPure
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorEffect           :: Effect n }
+
+        -- | Lazy let binding is not empty.
+        | ErrorLetLazyNotEmpty
+        { errorChecking         :: Exp a n
+        , errorBind             :: Bind n
+        , errorClosure          :: Closure n }
+
         -- | Letrec bindings must be syntactic lambdas.
         | ErrorLetrecBindingNotLambda
         { errorChecking         :: Exp a n 
@@ -311,6 +323,18 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text " Body of let has type: "       <> ppr t
                  , text "            with kind: "       <> ppr k
                  , text "       but it must be: * "
+                 , text "        when checking: "       <> ppr xx ]
+
+        ErrorLetLazyNotEmpty xx b clo
+         -> vcat [ text "Lazy let binding is not empty."
+                 , text "      The binding for: "       <> ppr b
+                 , text "          has closure: "       <> ppr clo
+                 , text "        when checking: "       <> ppr xx ]
+
+        ErrorLetLazyNotPure xx b eff
+         -> vcat [ text "Lazy let binding is not pure."
+                 , text "      The binding for: "       <> ppr b
+                 , text "           has effect: "       <> ppr eff
                  , text "        when checking: "       <> ppr xx ]
 
         ErrorLetrecBindingNotLambda xx x

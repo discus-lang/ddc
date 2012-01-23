@@ -15,7 +15,6 @@ import DDCI.Core.Eval.Name
 import DDC.Core.Exp
 import qualified DDCI.Core.Eval.Store   as Store
 
-
 -------------------------------------------------------------------------------
 -- | Single step a primitive constructor.
 stepPrimCon

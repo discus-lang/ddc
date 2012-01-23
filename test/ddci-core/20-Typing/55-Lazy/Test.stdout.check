@@ -1,5 +1,18 @@
+-- Suspend the allocation of a value.
 letregion r1 with {w1 : Const r1; w2 : Lazy r1; w3 : Global r1} in let x : Int r1 lazy <w2> = purify <alloc [r1] w1> in forget <use [r1] w3 w1> in 2 [r1] () in addInt [r1] [R0#] [R0#] x (3 [R0#] ())
 ::  Int R0#
 :!: Read R0# + Alloc R0#
 :$: Use R0#
+
+-- Error: lazy let binding is not empty.
+Lazy let binding is not empty.
+      The binding for: x : Int r1
+          has closure: Use r1
+        when checking: let x : Int r1 lazy <w2> = purify <alloc [r1] w1> in 2 [r1] () in addInt [r1] [R0#] [R0#] x (3 [R0#] ())
+
+-- Error: lazy let binding is not pure.
+Lazy let binding is not pure.
+      The binding for: x : Int r1
+           has effect: Alloc r1
+        when checking: let x : Int r1 lazy <w2> = forget <use [r1] w3 w1> in 2 [r1] () in addInt [r1] [R0#] [R0#] x (3 [R0#] ())
 

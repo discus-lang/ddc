@@ -9,18 +9,18 @@ import DDC.Type.Universe
 
 
 class LiftX (c :: * -> *) where
- -- | Lift type indices that are at least a certain depth by the given number of levels.
+ -- | Lift exp indices that are at least a certain depth by the given number of levels.
  liftAtDepthX
         :: forall n. Ord n
         => Int          -- ^ Number of levels to lift.
         -> Int          -- ^ Current binding depth.
-        -> c n          -- ^ Lift type indices in this thing.
+        -> c n          -- ^ Lift exp indices in this thing.
         -> c n
  
  -- | Wrapper for `liftAtDepthX` that starts at depth 0.       
  liftX  :: forall n. Ord n
         => Int          -- ^ Number of levels to lift
-        -> c n          -- ^ Lift type indices in this thing.
+        -> c n          -- ^ Lift exp indices in this thing.
         -> c n
         
  liftX n xx  = liftAtDepthX n 0 xx
@@ -53,7 +53,8 @@ instance LiftX (Exp a) where
          
         XLet{}          -> error "liftX XLet not done yet"
         XCase{}         -> error "liftX XCase not done yet"
-        XCast{}         -> error "liftX XCast not done yet"
+
+        XCast a cc x    -> XCast a cc (down x)
         
         XType{}         -> xx
         XWitness{}      -> xx

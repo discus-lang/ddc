@@ -56,12 +56,13 @@ force   :: Store        -- ^ Current store.
         -> StepResult   -- ^ Result of stepping it.
 
 force store xx
-        | XCon _ (UPrim (NameLoc l) _)  <- xx
+        | (casts, xx')                  <- unwrapCasts xx
+        , XCon _ (UPrim (NameLoc l) _)  <- xx'
         , Just (rgn, t, SThunk x)       <- lookupRegionTypeBind l store
         = case force store x of
                 StepProgress store' x'
                  -> let store2 = addBind l rgn t (SThunk x') store'
-                    in  StepProgress store2 xx
+                    in  StepProgress store2 (wrapCasts casts xx)
                 
                 StepDone 
                  -> StepProgress store x
@@ -356,14 +357,14 @@ step store (XLet a (LWithRegion uRegion) x)
 
 -- (EvCaseStep / EvCaseMatch)
 -- Case branching.
--- TODO: handle cast wrapped around discriminant.
 step store (XCase a xDiscrim alts)
  = case force store xDiscrim of
     StepProgress store' xDiscrim'
      -> StepProgress store' (XCase a xDiscrim' alts)
 
     StepDone
-     | Just lDiscrim            <- takeLocX xDiscrim
+     | (casts, xDiscrim')       <- unwrapCasts xDiscrim
+     , Just lDiscrim            <- takeLocX xDiscrim'
      , Just (SObj nTag lsArgs)  <- lookupBind lDiscrim store
      , Just tsArgs              <- sequence $ map (\l -> lookupTypeOfLoc l store) lsArgs
      , AAlt pat xBody : _       <- filter (tagMatchesAlt nTag) alts
@@ -372,7 +373,7 @@ step store (XCase a xDiscrim alts)
             -> StepProgress store xBody
 
            PData _ bsArgs      
-            | bxsArgs   <- [ (b, XCon a (UPrim (NameLoc l) t))
+            | bxsArgs   <- [ (b, wrapCasts casts (XCon a (UPrim (NameLoc l) t)))
                                 | l     <- lsArgs
                                 | t     <- tsArgs
                                 | b     <- bsArgs]
@@ -407,6 +408,25 @@ step store xx
  | isWeakValue store xx = StepDone
  | otherwise            = StepStuck
         
+
+-- Casts ----------------------------------------------------------------------
+-- Unwrap casts from the front of an expression.
+unwrapCasts :: Exp () n -> ([Cast n], Exp () n)
+unwrapCasts xx
+ = case xx of
+        XCast _ c x       
+         -> let (cs, x') = unwrapCasts x 
+            in  (c : cs, x')
+        
+        _ -> ([], xx)
+
+
+-- Wrap casts around an expression.
+wrapCasts   :: [Cast n] -> Exp () n -> Exp () n
+wrapCasts cc xx
+ = case cc of
+        []      -> xx
+        c : cs  -> XCast () c (wrapCasts cs xx)
 
 
 -- Alternatives ---------------------------------------------------------------

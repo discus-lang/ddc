@@ -69,9 +69,13 @@ takeHandleX xx
 
 
 -- | Take a store location from an expression.
+--   We strip off 'forget' casts along the way
 takeLocX :: Exp a Name -> Maybe Loc
 takeLocX xx
  = case xx of
+        XCast _ (CastForget _) x
+         -> takeLocX x
+
         XCon _ (UPrim (NameLoc l) _)
                 -> Just l
         _       -> Nothing
