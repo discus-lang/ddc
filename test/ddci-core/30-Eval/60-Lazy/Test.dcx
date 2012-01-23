@@ -1,0 +1,39 @@
+
+:set +TraceEval +TraceStore
+
+-- Suspend a single binding.
+:eval..
+letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
+let x : Int r1 lazy <w2> 
+     = purify <alloc [r1] w1>  in
+       forget <use [r1] w3 w1> in
+       2 [r1] () 
+in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
+
+
+-- Take some elements from an infinite list.
+-- TODO: need purify and forget on lazy binding, type checker needs to check this.
+-- TODO: why didn't it complain about the lack of effect annots on 'take'?
+:eval..
+letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
+letrec { 
+ moar (_ : Unit) { Alloc r1 + Alloc R0# | Use r1 + Use R0#} 
+      : List r1 (Int R0#)
+  = let rest : List r1 (Int R0#) lazy <w1> = moar () in
+    Cons [r1] [Int R0#] (5 [R0#] ()) rest;
+
+ take [r:%] [a:*] 
+      (n : Int r) (xx : List r a) 
+      : List R0# a
+  = case eqInt [:r r r:] n (0 [r] ()) of {
+     0 -> case xx of {
+           Nil        
+            -> Nil  [R0#] [a] ();
+
+           Cons x xs  
+            -> Cons [R0#] [a] x 
+                    (take [:r a:] (subInt [:r r r:] n (1 [r] ())) xs)
+          };
+     _ -> Nil [R0#] [a] ()
+  }
+} in  take [r1] [Int R0#] (4 [r1] ()) (moar ());;
