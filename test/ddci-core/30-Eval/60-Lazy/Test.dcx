@@ -1,6 +1,4 @@
 
-:set +TraceEval +TraceStore
-
 -- Suspend a single binding.
 :eval..
 letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
@@ -12,20 +10,20 @@ in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 
 
 -- Take some elements from an infinite list.
--- TODO: why didn't it complain about the lack of effect annots on 'take'?
 :eval..
 letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 letrec { 
- moar (_ : Unit) { !0 | $0} 
-      : List r1 (Int R0#)
+ moar (_ : Unit) : List r1 (Int R0#)
   = let rest : List r1 (Int R0#) lazy <w1> 
          = forget <use   [r1] w3 w1 & use   [R0#] (global [R0#]) (const [R0#]) > 
            in moar () 
+    in forget     <use   [r1] w3 w1 & use   [R0#] (global [R0#]) (const [R0#]) >
     in purify     <alloc [r1] w1    & alloc [R0#] (const [R0#]) > 
     in Cons [r1] [Int R0#] (5 [R0#] ()) rest;
 
  take [r:%] [a:*] 
-      (n : Int r) (xx : List r a) 
+      (n : Int r)     { !0                           | Use r + Use R0# }
+      (xx : List r a) { Read r + Alloc r + Alloc R0# | Use r + Use R0# }
       : List R0# a
   = case eqInt [:r r r:] n (0 [r] ()) of {
      0 -> case xx of {

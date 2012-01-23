@@ -62,11 +62,12 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
         
         -- Sums are equivalent if all of their components are.
         (TSum ts1,        TSum ts2)                             -- TODO: doesn't handle types in the spill list.
-         -> and
-         $  zipWith (equivT' stack1 depth1 stack2 depth2) 
-                (Sum.toList ts1)
-                (Sum.toList ts2)
+         -> let ts1'    = Sum.toList ts1
+                ts2'    = Sum.toList ts2
 
+            in  and     $ (length ts1' == length ts2')
+                        :  zipWith (equivT' stack1 depth1 stack2 depth2) 
+                                  ts1' ts2'
 
         (_, _)  -> False
 

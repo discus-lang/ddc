@@ -1,0 +1,6 @@
+-- Suspend a single binding.
+5
+
+-- Take some elements from an infinite list.
+Cons 5 (Cons 5 (Cons 5 (Cons 5 Nil)))
+
