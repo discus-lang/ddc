@@ -51,7 +51,7 @@ instance Free n (Lets a n) where
   = case lts of
         LLet _ b x        
          -> Set.unions [ free env b
-                       , free (Env.extend b env) x]
+                       , free env x]
 
         LRec bxs        
          -> let (bs, xs) = unzip bxs
