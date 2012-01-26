@@ -132,7 +132,7 @@ makeDeepGlobal :: Kind n -> Type n -> Maybe (Type n)
 makeDeepGlobal k t
         | isRegionKind  k       = Just $ tGlobal t
         | isDataKind    k       = Just $ tDeepGlobal t
-        | isClosureKind k       = Nothing                  -- TODO: need constructor for this
+        | isClosureKind k       = Nothing
         | isEffectKind  k       = Just $ tBot kEffect
         | otherwise             = Nothing
 

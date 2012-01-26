@@ -1,4 +1,5 @@
 
+-- | Collect the free variables of a type.
 module DDC.Type.Collect.Free
         (Free(..))
 where

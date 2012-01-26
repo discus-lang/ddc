@@ -1,4 +1,5 @@
 
+-- | Algebraic data type definitions.
 module DDC.Core.DataDef
         ( DataDef    (..)
         , DataType   (..)

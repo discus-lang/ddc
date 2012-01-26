@@ -583,8 +583,14 @@ checkExpM defs env xx@(XCast _ (CastForget w) x1)
 
 
 -- some other thing -----------------------------
-checkExpM _defs _env _
- = error "typeOfExp: not handled yet"
+checkExpM _defs _env xx@(XType _)
+        = throw $ ErrorNakedType xx 
+
+checkExpM _defs _env xx@(XWitness _)
+        = throw $ ErrorNakedWitness xx
+
+checkExpM _defs _env _xx
+        = error "checkExpM: not finished"
 
 
 -------------------------------------------------------------------------------

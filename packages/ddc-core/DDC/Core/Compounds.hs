@@ -39,7 +39,6 @@ bindsOfPat pp
 
 
 -- Lambdas ---------------------------------------------------------------------
-
 -- | Make some nested lambda abstractions.
 makeXLams :: a -> [Bind n] -> Exp a n -> Exp a n
 makeXLams a bs x

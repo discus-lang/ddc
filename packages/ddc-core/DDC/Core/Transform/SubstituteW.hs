@@ -68,7 +68,7 @@ instance SubstituteW Witness where
         WVar u'
          -> case substBound stack u u' of
                 Left u''  -> WVar u''
-                Right _n  -> w          -- TODO: liftW by n
+                Right _n  -> w                                                                   -- TODO: liftW by n
 
 
 instance SubstituteW (Exp a) where 

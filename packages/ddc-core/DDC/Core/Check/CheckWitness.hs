@@ -1,5 +1,4 @@
 
-
 -- | Type checker for the DDC core language.
 module DDC.Core.Check.CheckWitness
         ( checkWitness

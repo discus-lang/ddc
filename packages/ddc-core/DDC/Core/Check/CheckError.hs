@@ -24,6 +24,14 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorType             :: Type n }
 
+        -- | Found a naked type that wasn't the argument of an application.
+        | ErrorNakedType
+        { errorChecking         :: Exp a n }
+
+        -- | Found a naked witness that wasn't the argument of an application.
+        | ErrorNakedWitness
+        { errorChecking         :: Exp a n }
+
         -- Var --------------------------------------------
         -- | Type in environment does not match type annotation on variable.
         | ErrorVarAnnotMismatch
@@ -272,6 +280,14 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
         
         ErrorMalformedType xx tt
          -> vcat [ text "Found malformed type: "        <> ppr tt
+                 , text "       when checking: "        <> ppr xx ]
+
+        ErrorNakedType xx
+         -> vcat [ text "Found naked type in core program."
+                 , text "       when checking: "        <> ppr xx ]
+
+        ErrorNakedWitness xx
+         -> vcat [ text "Found naked witness in core program."
                  , text "       when checking: "        <> ppr xx ]
 
         -- Variable ---------------------------------------

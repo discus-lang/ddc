@@ -41,7 +41,7 @@ readWiConBuiltin ss
         "use"           -> Just WiConUse
         "read"          -> Just WiConRead
         "alloc"         -> Just WiConAlloc
-        _               -> Nothing                                              -- TODO: add distinctN
+        _               -> Nothing
 
 
 -------------------------------------------------------------------------------

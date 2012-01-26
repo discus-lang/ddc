@@ -1,5 +1,5 @@
 
--- | Reference lexer for the type parser. Slow but Simple.
+-- | Reference lexer for the type parser. Simple but Slow.
 module DDC.Type.Parser.Lexer
         ( -- * Constructors
           isConName, isConStart, isConBody
