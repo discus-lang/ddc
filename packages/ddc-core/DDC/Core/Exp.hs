@@ -185,13 +185,5 @@ data WiCon
         --   This lets us increase the sharing of constant objects,
         --   because we can't tell constant objects of the same value apart.
         | WiConAlloc    -- alloc    :: [r: %]. Const r => Pure (Alloc r)
-
-        -- | Witness that some regions are distinct.
-        --   This ensures that the regions are physically seprate, so reads
-        --   and writes into one won't interfere with reads and writes
-        --   to the other. We have a family of constructors of arbitray arity,
-        --   that encode that number of regions all being distinct from each 
-        --   other.
-        | WiConDistinct Int     -- distinct :: [r0 r1 ... rn : %]. Distinct_n r0 r1 .. rn
         deriving (Eq, Show)
 

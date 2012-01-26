@@ -189,6 +189,5 @@ instance Pretty WiCon where
         WiConUse        -> text "use"
         WiConRead       -> text "read"
         WiConAlloc      -> text "alloc"
-        WiConDistinct n -> text "distinct" <> (text $ show n)
 
 

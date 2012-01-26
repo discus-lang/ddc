@@ -57,8 +57,6 @@ module DDC.Type.Compounds
         , tMutable,     tDeepMutable
         , tLazy,        tHeadLazy
         , tManifest
-        , tDistinct
-        
         , tConData0,    tConData1)
 where
 import DDC.Type.Exp
@@ -387,11 +385,9 @@ tDeepMutable    = twCon1 TwConDeepMutable
 tLazy           = twCon1 TwConLazy
 tHeadLazy       = twCon1 TwConHeadLazy
 tManifest       = twCon1 TwConManifest
-tDistinct       = twConN TwConDistinct 
 
 tcCon1 tc t  = (TCon $ TyConComp    tc) `tApp` t
 twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
-twConN tc ts = (TCon $ TyConWitness   (tc (length ts))) `tApps` ts
 
 
 -- | Build a nullary type constructor of the given kind.

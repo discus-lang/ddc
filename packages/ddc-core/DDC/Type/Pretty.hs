@@ -168,7 +168,6 @@ instance Pretty TwCon where
         TwConLazy       -> text "Lazy"
         TwConHeadLazy   -> text "HeadLazy"
         TwConManifest   -> text "Manifest"
-        TwConDistinct n -> text "Distinct" <> (text $ show n)
         
 
 instance Pretty TcCon where

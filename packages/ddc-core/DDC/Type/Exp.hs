@@ -214,11 +214,6 @@ data TwCon
 
         -- | Manifestness of some region (not lazy).
         | TwConManifest         -- :: % ~> @
-
-        -- | Distinctness \/ Separation of regions.
-        --   Arity must be >= 2.
-        | TwConDistinct Int     -- :: % ~> % ... ~> @
-
         deriving (Eq, Show)
 
 
@@ -228,7 +223,6 @@ data TcCon
         -- | The function type constructor is baked in so we 
         --   represent it separately.
         = TcConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
-
 
         -- Effect type constructors -------------
         -- | Read of some region

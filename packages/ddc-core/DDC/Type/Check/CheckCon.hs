@@ -53,7 +53,6 @@ kindOfTwCon tc
         TwConLazy       -> kRegion  `kFun` kWitness
         TwConHeadLazy   -> kData    `kFun` kWitness
         TwConManifest   -> kRegion  `kFun` kWitness
-        TwConDistinct n -> kFuns (replicate n kRegion) kWitness
 
 
 -- | Take the kind of a computation type constructor.

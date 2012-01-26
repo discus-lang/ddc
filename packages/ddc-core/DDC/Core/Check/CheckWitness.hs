@@ -137,9 +137,6 @@ typeOfWiCon wc
         WiConAlloc
          -> tForall kRegion $ \r -> tConst  r     `tImpl` (tPure $ tAlloc r)
 
-        WiConDistinct n
-         -> tForalls (replicate n kRegion) $ \rs -> tDistinct rs
-
 
 -- checkType ------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
