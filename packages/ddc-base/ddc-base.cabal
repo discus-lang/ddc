@@ -1,17 +1,17 @@
 Name:                ddc-base
-Version:             0.4.0.0
+Version:             0.2.0.0
 License:             MIT
 License-file:        LICENSE
 Author:              Ben Lippmeier
 Maintainer:          benl@ouroborus.net
 Build-Type:          Simple
 Cabal-Version:       >=1.6
-Stability:           provisional
-Category:            Graphics
+Stability:           experimental
+Category:            Compilers/Interpreters
 Homepage:            http://disciple.ouroborus.net
 Bug-reports:         disciple@ouroborus.net
 Description:
-        Common definitions and dependencies for the Discipled Disciple Compiler.
+        Disciple Core base definitions.
 
 Library
   Build-Depends: 
@@ -25,9 +25,7 @@ Library
         DDC.Base.Lexer
         DDC.Base.Parser
         DDC.Base.Pretty
-        DDC.Base.Names.Enscope
         
-
   GHC-options:
         -Werror
         -Wall
