@@ -12,10 +12,10 @@ import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser
 import DDC.Core.Collect.Free
+import DDC.Core.Transform.Spread        as C
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
-import qualified DDC.Core.Transform     as C
 import qualified DDC.Base.Parser        as BP
 import qualified Data.Set               as Set
 

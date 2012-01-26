@@ -1,0 +1,39 @@
+Name:                ddc-core-simpl
+Version:             0.2.0.0
+License:             MIT
+License-file:        LICENSE
+Author:              Ben Lippmeier
+Maintainer:          benl@ouroborus.net
+Build-Type:          Simple
+Cabal-Version:       >=1.6
+Stability:           experimental
+Category:            Compilers/Interpreters
+Homepage:            http://disciple.ouroborus.net
+Bug-reports:         disciple@ouroborus.net
+Description:
+        Disciple Core simplifying code transforms.
+
+Library
+  Build-Depends: 
+        base            == 4.*,
+        containers      == 0.4.*,
+        array           == 0.3.*,
+        transformers    == 0.2.*,
+        mtl             == 2.0.*,
+        ddc-base        == 0.2.0.*,
+        ddc-core        == 0.2.0.*
+
+  Exposed-modules:
+        DDC.Type.Transform.Anonymize
+
+  GHC-options:
+        -Werror
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        ExplicitForAll
+        KindSignatures
+        PatternGuards

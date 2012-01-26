@@ -45,7 +45,6 @@ Library
         DDC.Core.Parser
         DDC.Core.Predicates
         DDC.Core.Pretty
-        DDC.Core.Transform
         DDC.Type.Check.CheckCon
         DDC.Type.Check.CheckError
         DDC.Type.Check.Monad
@@ -53,7 +52,6 @@ Library
         DDC.Type.Collect.GatherBound
         DDC.Type.Parser.Lexer
         DDC.Type.Parser.Tokens
-        DDC.Type.Transform.Anonymize
         DDC.Type.Transform.Crush
         DDC.Type.Transform.Instantiate
         DDC.Type.Transform.LiftT
@@ -70,7 +68,6 @@ Library
         DDC.Type.Predicates
         DDC.Type.Pretty
         DDC.Type.Sum
-        DDC.Type.Transform
         DDC.Type.Universe
                 
 

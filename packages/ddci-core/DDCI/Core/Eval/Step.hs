@@ -17,12 +17,14 @@ import DDCI.Core.Eval.Name
 import DDCI.Core.Eval.Prim
 import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Compounds
+import DDC.Core.Transform.SubstituteW
+import DDC.Core.Transform.SubstituteX
+import DDC.Core.Transform.SubstituteT
 import DDC.Core.Check
-import DDC.Core.Transform
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Type.Compounds
-import qualified Data.Set       as Set
+import qualified Data.Set               as Set
 
 
 -- StepResult -----------------------------------------------------------------
