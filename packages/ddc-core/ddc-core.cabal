@@ -51,7 +51,6 @@ Library
         DDC.Type.Collect.Free
         DDC.Type.Collect.GatherBound
         DDC.Type.Parser.Lexer
-        DDC.Type.Parser.Tokens
         DDC.Type.Transform.Crush
         DDC.Type.Transform.Instantiate
         DDC.Type.Transform.LiftT
