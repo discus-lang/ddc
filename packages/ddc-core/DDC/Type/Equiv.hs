@@ -90,10 +90,11 @@ crushSome tt
  = case tt of
         (TApp (TCon tc) _)
          -> case tc of
-                TyConComp TcConDeepRead   -> crushT tt
-                TyConComp TcConDeepWrite  -> crushT tt
-                TyConComp TcConDeepAlloc  -> crushT tt
-                TyConComp TcConDeepUse    -> trimClosure tt
+                TyConComp    TcConDeepRead   -> crushT tt
+                TyConComp    TcConDeepWrite  -> crushT tt
+                TyConComp    TcConDeepAlloc  -> crushT tt
+                TyConComp    TcConDeepUse    -> trimClosure tt
+                TyConWitness TwConDeepGlobal -> crushT tt
                 _                         -> tt
 
         _ -> tt

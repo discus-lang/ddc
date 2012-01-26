@@ -383,14 +383,28 @@ pBindParamSpec :: Ord n => Parser n [ParamSpec n]
 pBindParamSpec
  = P.choice
         -- Type parameter
+        -- [BIND1 BIND2 .. BINDN : TYPE]
  [ do   pTok KSquareBra
         bs      <- P.many1 T.pBinder
         pTok KColon
         t       <- T.pType
         pTok KSquareKet
-        return  $ [ ParamType b
-                        | b     <- zipWith T.makeBindFromBinder bs (repeat t)]
+        return  [ ParamType b 
+                | b <- zipWith T.makeBindFromBinder bs (repeat t)]
 
+
+        -- Witness parameter
+        -- <BIND : TYPE>
+ , do   pTok KAngleBra
+        b       <- T.pBinder
+        pTok KColon
+        t       <- T.pType
+        pTok KAngleKet
+        return  [ ParamWitness $ T.makeBindFromBinder b t]
+
+        -- Value parameter
+        -- (BIND : TYPE) 
+        -- (BIND : TYPE) { TYPE | TYPE }
  , do   pTok KRoundBra
         b       <- T.pBinder
         pTok KColon
@@ -417,8 +431,9 @@ pBindParamSpec
 --   We can determine the contribution to the type of the function, 
 --   as well as its expression based on the parameter.
 data ParamSpec n
-        = ParamType  (Bind n)
-        | ParamValue (Bind n) (Type n) (Type n)
+        = ParamType    (Bind n)
+        | ParamWitness (Bind n)
+        | ParamValue   (Bind n) (Type n) (Type n)
 
 
 -- | Build the type of a function from specifications of its parameters,
@@ -433,6 +448,10 @@ funTypeOfParams (p:ps) tBody
  = case p of
         ParamType  b    
          -> TForall b 
+                $ funTypeOfParams ps tBody
+
+        ParamWitness b
+         -> T.tImpl (T.typeOfBind b)
                 $ funTypeOfParams ps tBody
 
         ParamValue b eff clo
@@ -454,6 +473,9 @@ expOfParams a (p:ps) xBody
         ParamType b     
          -> XLam a b $ expOfParams a ps xBody
         
+        ParamWitness b
+         -> XLam a b $ expOfParams a ps xBody
+
         ParamValue b _ _
          -> XLam a b $ expOfParams a ps xBody
 

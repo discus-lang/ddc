@@ -76,6 +76,19 @@ crushT tt
 
              _ -> tt
 
+
+         -- Deep Global
+         -- See Note: Crushing with higher kinded type vars.
+         | Just (TyConWitness TwConDeepGlobal, [t]) <- takeTyConApps tt
+         -> case takeTyConApps t of
+             Just (TyConBound u, ts)
+              | (ks, _)  <- takeKFuns (typeOfBound u)
+              , length ks == length ts
+              , Just props       <- sequence $ zipWith makeDeepGlobal ks ts
+              -> crushT $ TSum $ Sum.fromList kWitness props
+
+             _ -> tt 
+
          | otherwise
          -> TApp (crushT t1) (crushT t2)
 
@@ -109,6 +122,17 @@ makeDeepAlloc k t
         | isRegionKind  k       = Just $ tAlloc t
         | isDataKind    k       = Just $ tDeepAlloc t
         | isClosureKind k       = Just $ tBot kEffect
+        | isEffectKind  k       = Just $ tBot kEffect
+        | otherwise             = Nothing
+
+
+-- | If this type has first order kind then wrap with the 
+--   appropriate read effect.
+makeDeepGlobal :: Kind n -> Type n -> Maybe (Type n)
+makeDeepGlobal k t
+        | isRegionKind  k       = Just $ tGlobal t
+        | isDataKind    k       = Just $ tDeepGlobal t
+        | isClosureKind k       = Nothing                  -- TODO: need constructor for this
         | isEffectKind  k       = Just $ tBot kEffect
         | otherwise             = Nothing
 

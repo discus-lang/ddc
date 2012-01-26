@@ -1,0 +1,66 @@
+
+-- Sum up list elements produced via a lazy map.
+-- The lazy map is written so that the worker function must be
+-- expliclty pure and empty. This means we need to mask 
+-- effects out of the argument before we pass it in.
+:eval..
+letrec {
+ mapL   [r1 r2: %] [a b : *]
+        <w1g : Global r1>  <w1c : Const r1>
+        <w2g : Global r2>  <w2c : Const r2> <w2l : Lazy r2>
+        <wag : Empty (DeepUse a) >
+        <wbg : Empty (DeepUse b) >
+        (f  : a -> b) (xx : List r1 a)
+        : List r2 b
+  = purify <read [r1] w1c & alloc [r2] w2c> in
+    forget <use  [r2] w2g> in
+    case xx of {
+        Nil             
+         -> Nil [:r2 b:] ();
+
+        Cons x xs
+         -> let xs' lazy <w2l>   
+                  = forget < use [r1] w1g & use [r2] w2g & wag & wbg >
+                  in mapL [:r1 r2 a b:] <:w1g w1c w2g w2c w2l wag wbg:> f xs 
+            in  Cons [r2] [b] (f x) xs'
+  };
+
+
+ sum    [r1 r2 r3 : %]
+        (xx : List r1 (Int r2)) 
+                { Read r1 + Read r2 + Read r3 + Alloc r3
+                | Use  r1 + Use  r2 + Use r3 }
+        : Int r3
+  = case xx of {
+        Nil
+         -> 0 [r3] ();
+
+        Cons x xs     
+         -> addInt [:r2 r3 r3:] x 
+                   (sum [:r1 r2 r3:] xs);
+  };
+
+
+ list1  [r1 r2 : %] 
+        (_:Unit)    {Alloc r1 + Alloc r2 | Use r1 + Use r2} 
+        : List r1 (Int r2)
+  = Cons [r1] [Int r2] (5 [r2] ())
+     (Cons [r1] [Int r2] (6 [r2] ())
+      (Cons [r1] [Int r2] (7 [r2] ()) 
+       (Nil  [r1] [Int r2] ())));
+
+} in 
+let list        = list1 [R0#] [R1#] () in
+let result      
+     = mapL     [:R0# R0# (Int R1#) (Int R1#):]
+                <global [R0#]> <const [R0#]>
+                <global [R0#]> <const [R0#]> <lazy [R0#]>
+                <use [R1#] (global [R1#]) > 
+                <use [R1#] (global [R1#]) >
+                (\(x : Int R1#). 
+                        purify < read [R1#] (const [R1#]) & alloc [R1#] (const [R1#]) > in
+                        forget < use  [R1#] (global [R1#]) > in
+                        addInt [:R1# R1# R1#:] (1 [R1#] ()) x)
+                list 
+in sum [:R0# R1# R1#:] result;;
+

@@ -4,7 +4,7 @@
 letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 let x : Int r1 lazy <w2> 
      = purify <alloc [r1] w1>  in
-       forget <use [r1] w3 w1> in
+       forget <use   [r1] w3> in
        2 [r1] () 
 in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 
@@ -15,10 +15,10 @@ letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 letrec { 
  moar (_ : Unit) : List r1 (Int R0#)
   = let rest : List r1 (Int R0#) lazy <w2> 
-         = forget <use   [r1] w3 w1 & use   [R0#] (global [R0#]) (const [R0#]) > 
+         = forget <use   [r1] w3 & use   [R0#] (global [R0#]) > 
            in moar () 
-    in forget     <use   [r1] w3 w1 & use   [R0#] (global [R0#]) (const [R0#]) >
-    in purify     <alloc [r1] w1    & alloc [R0#] (const [R0#]) > 
+    in forget     <use   [r1] w3 & use   [R0#] (global [R0#]) >
+    in purify     <alloc [r1] w1 & alloc [R0#] (const [R0#]) > 
     in Cons [r1] [Int R0#] (5 [R0#] ()) rest;
 
  take [r:%] [a:*] 

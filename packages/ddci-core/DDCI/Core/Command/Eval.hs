@@ -117,7 +117,17 @@ stepPrint state store x tX _effX _cloX
         StepProgress store' x'
          -> case checkExp primDataDefs Env.empty x' of
              Left err
-              -> do putStr $ pretty $ vcat
+              -> do 
+                    -- Print intermediate expression.
+                    when (Set.member TraceEval  $ stateModes state)
+                     $ putStrLn $ pretty (text "* STEP: " <> ppr x')
+
+                    -- Print intermediate store
+                    when (Set.member TraceStore $ stateModes state)
+                     $ do putStrLn $ pretty (ppr store')
+                          putStr "\n"
+                
+                    putStr $ pretty $ vcat
                         [ text "* OFF THE RAILS!"
                         , ppr err
                         , empty]

@@ -1,0 +1,6 @@
+-- Sum up list elements produced via a lazy map.
+-- The lazy map is written so that the worker function must be
+-- expliclty pure and empty. This means we need to mask 
+-- effects out of the argument before we pass it in.
+21
+

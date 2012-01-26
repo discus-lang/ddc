@@ -4,7 +4,7 @@
 letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 let x : Int r1 lazy <w2> 
      = purify <alloc [r1] w1>  in
-       forget <use [r1] w3 w1> in
+       forget <use   [r1] w3> in
        2 [r1] () 
 in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 
@@ -22,7 +22,7 @@ in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 :check..
 letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 let x : Int r1 lazy <w2> 
-     = forget <use [r1] w3 w1> in
+     = forget <use [r1] w3> in
        2 [r1] () 
 in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 
@@ -32,7 +32,7 @@ in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 let x : Int r1 lazy
      = purify <alloc [r1] w1>  in
-       forget <use [r1] w3 w1> in
+       forget <use   [r1] w3> in
        2 [r1] () 
 in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 
@@ -42,6 +42,6 @@ in addInt [:r1 R0# R0#:] x (3 [R0#] ());;
 letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in
 let x : Int r1 lazy <w1>
      = purify <alloc [r1] w1>  in
-       forget <use [r1] w3 w1> in
+       forget <use   [r1] w3> in
        2 [r1] () 
 in addInt [:r1 R0# R0#:] x (3 [R0#] ());;

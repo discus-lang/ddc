@@ -5,6 +5,6 @@
 -- function's closure.
 :check..
 letregion r1 with {w0 : Global r1; w1 : Const r1} in
-\(x:Unit). forget <use  [r1] w0 w1> in
+\(x:Unit). forget <use  [r1] w0 > in
            purify <read [r1] w1 & alloc [r1] w1> in
            addInt [:r1 R0# R0#:] (2 [r1] ()) (3 [R0#] ());;

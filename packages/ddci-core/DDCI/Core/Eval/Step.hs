@@ -248,10 +248,14 @@ step store (XLet a (LLet LetStrict b x1) x2)
 -- (EvLetLazyAlloc)
 -- Allocate a lazy binding in the heap.
 step store (XLet _ (LLet (LetLazy _w) b x1) x2)
-        | t1            <- typeOfBind b
-        , (store1, l)   <- allocBind (Rgn 0) t1 (SThunk x1) store
-        , x1'           <- XCon () (UPrim (NameLoc l) t1)
-        = StepProgress store1 (substituteX b x1' x2)
+        -- We need the type of the expression to attach to the location
+        -- This fakes the store typing from the formal typing rules.
+ = case typeOfExp primDataDefs x1 of
+        Left err -> StepStuckMistyped err
+        Right t1
+         -> let (store1, l)   = allocBind (Rgn 0) t1 (SThunk x1) store
+                x1'           = XCon () (UPrim (NameLoc l) t1)
+            in  StepProgress store1 (substituteX b x1' x2)
 
 
 -- (EvLetRec)

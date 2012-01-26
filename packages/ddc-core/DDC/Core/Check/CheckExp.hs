@@ -122,7 +122,9 @@ checkExpM _defs env (XVar _ u)
 
         return  ( tResult
                 , Sum.empty kEffect
-                , Set.singleton $ taggedClosureOfValBound u)
+                , Set.singleton 
+                        $ taggedClosureOfValBound 
+                        $ replaceTypeOfBound tResult u)
 
 
 checkExpM _defs _env (XCon _ u)

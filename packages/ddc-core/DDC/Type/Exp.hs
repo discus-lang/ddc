@@ -192,7 +192,7 @@ data TwCon
         | TwConGlobal           -- :: % ~> @
 
         -- | Globalness of material regions in some type.
-        | TwConDeepGlobal       -- :: % ~> @
+        | TwConDeepGlobal       -- :: * ~> @
         
         -- | Constancy of some region.
         | TwConConst            -- :: % ~> @

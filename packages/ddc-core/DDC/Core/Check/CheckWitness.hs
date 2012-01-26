@@ -129,13 +129,13 @@ typeOfWiCon wc
          -> tForall kRegion $ \r -> tManifest r
 
         WiConUse
-         -> tForall kRegion $ \r -> tGlobal r `tImpl` tConst r `tImpl` (tEmpty $ tUse r)
+         -> tForall kRegion $ \r -> tGlobal r     `tImpl` (tEmpty $ tUse r)
 
         WiConRead
-         -> tForall kRegion $ \r -> tConst r `tImpl` (tPure  $ tRead r)
+         -> tForall kRegion $ \r -> tConst  r     `tImpl` (tPure  $ tRead r)
 
         WiConAlloc
-         -> tForall kRegion $ \r -> tConst r `tImpl` (tPure $ tAlloc r)
+         -> tForall kRegion $ \r -> tConst  r     `tImpl` (tPure $ tAlloc r)
 
         WiConDistinct n
          -> tForalls (replicate n kRegion) $ \rs -> tDistinct rs
