@@ -54,6 +54,13 @@
  y;;
 
 
+-- Mutltiple lets with debruijn indices.
+-- If the bound variable is pushed on the stack when checking
+-- the right of the non-recursive binding then this is mistyped.
+:check..
+let ^ : Unit = () in
+let ^ : Int R0# = 23 [R0#] ^0 in ^0;;
+
 
 -- Let and lazy
 :check..

@@ -64,6 +64,14 @@ let x : Unit = () in let y : Unit = () in y
 :!: !0
 :$: $0
 
+-- Mutltiple lets with debruijn indices.
+-- If the bound variable is pushed on the stack when checking
+-- the right of the non-recursive binding then this is mistyped.
+let ^ : Unit = () in let ^ : Int R0# = 23 [R0#] ^0 in ^0
+::  Int R0#
+:!: Alloc R0#
+:$: Use R0#
+
 -- Let and lazy
 let x : Unit = () in let y : Unit lazy = () in y
 ::  Unit
