@@ -66,21 +66,19 @@ lexExp str
         -- The unit data constructor
         '(' : ')' : w'  -> tokN (KCon "()")    : lexWord w'
 
+        -- Compound Parens
+        '['  : ':' : w' -> tokA KSquareColonBra : lexWord w'
+        ':'  : ']' : w' -> tokA KSquareColonKet : lexWord w'
+        '<'  : ':' : w' -> tokA KAngleColonBra  : lexWord w'
+        ':'  : '>' : w' -> tokA KAngleColonKet  : lexWord w'
+
         -- Function Constructors
         '~'  : '>'  : w' -> tokA KArrowTilde    : lexWord w'
         '-'  : '>'  : w' -> tokA KArrowDash     : lexWord w'
         '='  : '>'  : w' -> tokA KArrowEquals   : lexWord w'
-        '-'  : '('  : w' -> tokA KTypeFunBra    : lexWord w'
-        ')'  : '>'  : w' -> tokA KTypeFunKet    : lexWord w'
-
-        -- Compound Parens
-        '['  : ':' : w' -> tokA KSquareColonBra : lexWord w'
-        ':'  : ']' : w' -> tokA KSquareColonKet : lexWord w'
-        '<'  : ':' : w' -> tokA KAngleColonBra : lexWord w'
-        ':'  : '>' : w' -> tokA KAngleColonKet : lexWord w'
 
         -- Compound symbols
-        ':'  : ':' : w' -> tokA KHasType       : lexWord w'
+        ':'  : ':' : w'  -> tokA KColonColon    : lexWord w'
 
         -- Debruijn indices
         '^'  : cs
@@ -110,6 +108,7 @@ lexExp str
         '_'  : w'       -> tokA KUnderscore    : lexWord w'
         '='  : w'       -> tokA KEquals        : lexWord w'
         '&'  : w'       -> tokA KAmpersand     : lexWord w'
+        '-'  : w'       -> tokA KDash          : lexWord w'
         
         -- Bottoms
         '!' : '0' : w'  -> tokA KBotEffect     : lexWord w'

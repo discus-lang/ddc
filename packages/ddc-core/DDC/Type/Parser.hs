@@ -100,11 +100,13 @@ pTypeFun
                 return  $ t1 `tFunPE` t2
 
            -- T1 -(TSUM | TSUM)> t2
-         , do   pTok KTypeFunBra
+         , do   pTok KDash
+                pTok KRoundBra
                 eff     <- pTypeSum
                 pTok KBar
                 clo     <- pTypeSum
-                pTok KTypeFunKet
+                pTok KRoundKet
+                pTok KAngleKet
                 t2      <- pTypeFun
                 return  $ tFun t1 eff clo t2
 

@@ -20,7 +20,7 @@ letrec {
 
         Cons x xs
          -> let xs' lazy <w2l>   
-                  = forget < use [r1] w1g & use [r2] w2g & wag & wbg >
+                  = forget <use [r1] w1g & use [r2] w2g & wag & wbg>
                   in mapL [:r1 r2 a b:] <:w1g w1c w2g w2c w2l wag wbg:> f xs 
             in  Cons [r2] [b] (f x) xs'
   };
@@ -55,11 +55,11 @@ let result
      = mapL     [:R0# R0# (Int R1#) (Int R1#):]
                 <global [R0#]> <const [R0#]>
                 <global [R0#]> <const [R0#]> <lazy [R0#]>
-                <use [R1#] (global [R1#]) > 
-                <use [R1#] (global [R1#]) >
+                <use [R1#] (global [R1#])> 
+                <use [R1#] (global [R1#])>
                 (\(x : Int R1#). 
-                        purify < read [R1#] (const [R1#]) & alloc [R1#] (const [R1#]) > in
-                        forget < use  [R1#] (global [R1#]) > in
+                        purify <read [R1#] (const [R1#]) & alloc [R1#] (const [R1#])> in
+                        forget <use  [R1#] (global [R1#])> in
                         addInt [:R1# R1# R1#:] (1 [R1#] ()) x)
                 list 
 in sum [:R0# R1# R1#:] result;;

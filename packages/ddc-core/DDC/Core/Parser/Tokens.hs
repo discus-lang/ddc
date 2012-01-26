@@ -23,14 +23,9 @@ data Tok n
         
 
 data TokAtom
-        -- compound parens
-        = KSquareColonBra
-        | KSquareColonKet
-        | KAngleColonBra
-        | KAngleColonKet
 
         -- parens
-        | KRoundBra
+        = KRoundBra
         | KRoundKet
         | KSquareBra
         | KSquareKet
@@ -39,8 +34,11 @@ data TokAtom
         | KAngleBra
         | KAngleKet
 
-        -- compound symbols
-        | KHasType
+        -- compound parens
+        | KSquareColonBra
+        | KSquareColonKet
+        | KAngleColonBra
+        | KAngleColonKet
 
         -- punctuation
         | KDot
@@ -54,6 +52,24 @@ data TokAtom
         | KUnderscore
         | KEquals
         | KAmpersand
+        | KDash
+        | KColonColon
+
+        -- symbolic constructors
+        | KSortComp
+        | KSortProp
+        | KKindValue
+        | KKindRegion
+        | KKindEffect
+        | KKindClosure
+        | KKindWitness
+        | KArrowTilde
+        | KArrowDash
+        | KArrowEquals
+
+        -- bottoms
+        | KBotEffect
+        | KBotClosure
 
         -- expression keywords
         | KIn
@@ -68,24 +84,6 @@ data TokAtom
         | KForget
         | KWith
         | KWhere
-
-        -- symbolic constructors
-        | KSortComp
-        | KSortProp
-        | KKindValue
-        | KKindRegion
-        | KKindEffect
-        | KKindClosure
-        | KKindWitness
-        | KArrowTilde
-        | KArrowDash
-        | KArrowEquals
-        | KTypeFunBra
-        | KTypeFunKet
-
-        -- bottoms
-        | KBotEffect
-        | KBotClosure
         
         -- debruijn indices
         | KIndex Int
