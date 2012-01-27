@@ -554,6 +554,41 @@ checkExpM defs env xx@(XCase _ xDiscrim alts)
 
 
 -- type cast -------------------------------------
+-- Weaken an effect, adding in the given terms.
+checkExpM defs env xx@(XCast _ (CastWeakenEffect eff) x1)
+ = do   
+        -- Check the effect term.
+        kEff            <- checkTypeM env eff
+        when (not $ isEffectKind kEff)
+         $ throw $ ErrorMaxeffNotEff xx eff kEff
+
+        -- Check the body.
+        (t1, effs, clo) <- checkExpM defs env x1
+
+        return  ( t1, Sum.insert eff effs, clo)
+
+
+-- Weaken a closure, adding in the given terms.
+checkExpM defs env xx@(XCast _ (CastWeakenClosure clo2) x1)
+ = do   
+        -- Check the closure term.
+        kClo             <- checkTypeM env clo2
+        when (not $ isClosureKind kClo)
+         $ throw $ ErrorMaxcloNotClo xx clo2 kClo
+
+        -- The closure supplied to weakclo can only contain Use terms
+        -- of region variables.
+        clos2
+         <- case taggedClosureOfWeakClo clo2 of
+             Nothing     -> throw $ ErrorMaxcloMalformed xx clo2
+             Just clos2' -> return clos2'
+
+        -- Check the body.
+        (t1, effs, clos) <- checkExpM defs env x1
+
+        return  (t1, effs, Set.union clos clos2)
+
+
 -- Purify an effect, given a witness that it is pure.
 checkExpM defs env xx@(XCast _ (CastPurify w) x1)
  = do   tW              <- checkWitnessM env w
@@ -582,15 +617,13 @@ checkExpM defs env xx@(XCast _ (CastForget w) x1)
         return (t1, effs, clos')
 
 
--- some other thing -----------------------------
+-- Type and witness expressions can only appear as the arguments 
+-- to  applications.
 checkExpM _defs _env xx@(XType _)
         = throw $ ErrorNakedType xx 
 
 checkExpM _defs _env xx@(XWitness _)
         = throw $ ErrorNakedWitness xx
-
-checkExpM _defs _env _xx
-        = error "checkExpM: not finished"
 
 
 -------------------------------------------------------------------------------

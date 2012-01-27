@@ -270,6 +270,26 @@ data Error a n
         , errorAltType2         :: Type n }
 
 
+        -- Casts ------------------------------------------
+        -- | Type provided to a 'maxeff' does not have effect kind.
+        | ErrorMaxeffNotEff
+        { errorChecking         :: Exp a n
+        , errorEffect           :: Effect n
+        , errorKind             :: Kind n }
+
+        -- | Type provided to a 'maxclo' does not have effect kind.
+        | ErrorMaxcloNotClo
+        { errorChecking         :: Exp a n
+        , errorClosure          :: Closure n
+        , errorKind             :: Kind n }
+
+        -- | Closure provided to a 'maxclo' is malformed.
+        --   It can only contain 'Use' terms.
+        | ErrorMaxcloMalformed
+        { errorChecking         :: Exp a n 
+        , errorClosure          :: Closure n }
+
+
 instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
   = case err of
@@ -541,3 +561,23 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "        does not match: "      <> ppr t2
                  , text "         when checking: "      <> ppr xx ]
 
+
+        -- Casts ------------------------------------------
+        ErrorMaxeffNotEff xx eff k
+         -> vcat [ text "Type provided for a 'maxeff' does not have effect kind."
+                 , text "           Type: "             <> ppr eff
+                 , text "       has kind: "             <> ppr k
+                 , text "  when checking: "             <> ppr xx ]
+
+        ErrorMaxcloNotClo xx clo k
+         -> vcat [ text "Type provided for a 'maxclo' does not have closure kind."
+                 , text "           Type: "             <> ppr clo
+                 , text "       has kind: "             <> ppr k
+                 , text "  when checking: "             <> ppr xx ]
+
+        ErrorMaxcloMalformed xx clo
+         -> vcat [ text "Type provided for a 'maxclo' is malformed."
+                 , text "        Closure: "             <> ppr clo
+                 , text " can only contain 'Use' terms."
+                 , text "  when checking: "             <> ppr xx ]
+        

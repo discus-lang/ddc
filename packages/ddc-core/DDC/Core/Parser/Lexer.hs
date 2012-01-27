@@ -55,7 +55,9 @@ keywords
         , ("let",        KA KLet)
         , ("case",       KA KCase)
         , ("purify",     KA KPurify)
-        , ("forget",     KA KForget) 
+        , ("forget",     KA KForget)
+        , ("weakeff",    KA KWeakEff)
+        , ("weakclo",    KA KWeakClo)
         , ("with",       KA KWith)
         , ("where",      KA KWhere) ]
 

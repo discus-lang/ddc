@@ -1,4 +1,5 @@
 
+-- | Core language parser.
 module DDC.Core.Parser
         ( module DDC.Base.Parser
         , Parser
@@ -61,7 +62,7 @@ pExp
         return  $ XLet () (LRec lets) x
 
 
-        -- Local region binding
+        -- Local region binding.
         --   letregion BINDER with { BINDER : TYPE ... } in EXP
         --   letregion BINDER in EXP
  , do   pTok KLetRegion
@@ -88,7 +89,7 @@ pExp
 
 
         -- withregion CON in EXP
-  , do  pTok KWithRegion
+ , do   pTok KWithRegion
         n       <- pVar
         pTok KIn
         x       <- pExp
@@ -97,7 +98,7 @@ pExp
 
 
         -- case EXP of { ALTS }
-  , do  pTok KCase
+ , do   pTok KCase
         x       <- pExp
         pTok KOf 
         pTok KBraceBra
@@ -106,8 +107,28 @@ pExp
         return  $ XCase () x alts
 
 
+        -- weakeff [TYPE] in EXP
+ , do   pTok KWeakEff
+        pTok KSquareBra
+        t       <- T.pType
+        pTok KSquareKet
+        pTok KIn
+        x       <- pExp
+        return  $ XCast () (CastWeakenEffect t) x
+
+
+        -- weakclo [TYPE] in EXP
+ , do   pTok KWeakClo
+        pTok KSquareBra
+        t       <- T.pType
+        pTok KSquareKet
+        pTok KIn
+        x       <- pExp
+        return  $ XCast () (CastWeakenClosure t) x
+
+
         -- purify <WITNESS> in EXP
-  , do  pTok KPurify
+ , do   pTok KPurify
         pTok KAngleBra
         w       <- pWitness
         pTok KAngleKet
@@ -117,7 +138,7 @@ pExp
 
 
         -- forget <WITNESS> in EXP
-  , do  pTok KForget
+ , do   pTok KForget
         pTok KAngleBra
         w       <- pWitness
         pTok KAngleKet
@@ -224,15 +245,15 @@ pAlt
 pPat    :: Ord n => Parser n (Pat n)
 pPat
  = P.choice
- [ -- _
+ [      -- Wildcard
    do   pTok KUnderscore
         return  $ PDefault
 
-   -- LIT
+        -- LIT
  , do   nLit    <- pLit
         return  $ PData (UName nLit (T.tBot T.kData)) []
 
-   -- CON BIND BIND ...
+        -- CON BIND BIND ...
  , do   nCon    <- pCon 
         bs      <- P.many pBindPat
         return  $ PData (UName nCon (T.tBot T.kData)) bs]
@@ -575,3 +596,4 @@ pLit :: Parser n n
 pLit    = P.pTokMaybe f
  where  f (KN (KLit n)) = Just n
         f _             = Nothing
+

@@ -5,6 +5,7 @@ module DDC.Core.Check.TaggedClosure
         , closureOfTaggedSet
         , taggedClosureOfValBound
         , taggedClosureOfTyArg
+        , taggedClosureOfWeakClo
         , maskFromTaggedSet)
 where
 import DDC.Type.Transform.Trim
@@ -12,6 +13,7 @@ import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Pretty
 import DDC.Type.Exp
+import Control.Monad
 import Data.Maybe
 import Data.Set                 (Set)
 import qualified DDC.Type.Sum   as Sum
@@ -70,7 +72,10 @@ closureOfTaggedSet clos
 
 
 -- | Take the tagged closure of a value variable.
-taggedClosureOfValBound :: (Ord n, Pretty n) => Bound n -> TaggedClosure n
+taggedClosureOfValBound 
+        :: (Ord n, Pretty n) 
+        => Bound n  -> TaggedClosure n
+
 taggedClosureOfValBound u
         = GBoundVal u 
         $ Sum.singleton kClosure 
@@ -78,7 +83,10 @@ taggedClosureOfValBound u
 
 
 -- | Take the tagged closure of a type argument.
-taggedClosureOfTyArg :: (Ord n, Pretty n) => Type n -> Set (TaggedClosure n)
+taggedClosureOfTyArg 
+        :: (Ord n, Pretty n) 
+        => Type n -> Set (TaggedClosure n)
+
 taggedClosureOfTyArg tt
  = case tt of
         TVar u
@@ -90,6 +98,29 @@ taggedClosureOfTyArg tt
          ->  Set.singleton $ GBoundRgnCon u
 
         _ -> Set.empty
+
+
+-- | Convert the closure provided as a 'weakclo' to tagged form.
+--   Only terms of form 'Use r' can be converted.
+taggedClosureOfWeakClo 
+        :: (Ord n, Pretty n)
+        => Closure n -> Maybe (Set (TaggedClosure n))
+
+taggedClosureOfWeakClo clo
+ = liftM Set.fromList
+         $ sequence
+         $ map convert 
+         $ Sum.toList $ Sum.singleton kClosure clo
+
+ where  convert c
+         = case takeTyConApps c of
+            Just (TyConComp TcConUse, [TVar u])
+              -> Just $ GBoundRgnVar u
+
+            Just (TyConComp TcConUse, [TCon (TyConBound u)])
+              -> Just $ GBoundRgnVar u
+
+            _ -> Nothing
 
 
 -- | Mask a closure term from a tagged closure.

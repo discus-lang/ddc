@@ -15,6 +15,10 @@ import DDC.Type.Transform.Rename
 
 
 -- TokenFamily ----------------------------------------------------------------
+-- | The family of a token.
+--   This is used to help generate parser error messages,
+--   so we can say "the constructor 'Cons'"
+--             and "the keyword 'case'" etc.
 data TokenFamily
         = Symbol
         | Keyword
@@ -36,14 +40,14 @@ describeTokenFamily tf
 
 -- Tok ------------------------------------------------------------------------
 -- | Tokens accepted by the core language parser.
---
---   * This is a conservative extension of the type tokens, 
---     as core expressions contain types.
---
 data Tok n
-        -- some junk that corresponds to a lexer error
+        -- Some junk symbol that isn't part of the language.
         = KJunk Char
+
+        -- An atomic token.
         | KA    !TokAtom 
+
+        -- A named token.
         | KN    !(TokNamed n)
         deriving (Eq, Show)
 
@@ -114,19 +118,21 @@ data TokAtom
         | KBotClosure
 
         -- expression keywords
+        | KWith
+        | KWhere
         | KIn
-        | KOf
         | KLet
         | KLazy
         | KLetRec
         | KLetRegion
         | KWithRegion
         | KCase
+        | KOf
+        | KWeakEff
+        | KWeakClo
         | KPurify
         | KForget
-        | KWith
-        | KWhere
-        
+
         -- debruijn indices
         | KIndex Int
 
@@ -194,18 +200,20 @@ describeTokAtom' ta
         KBotClosure             -> (Constructor, "!$")
 
         -- expression keywords
+        KWith                   -> (Keyword, "with")
+        KWhere                  -> (Keyword, "where")
         KIn                     -> (Keyword, "in")
-        KOf                     -> (Keyword, "of")
         KLet                    -> (Keyword, "let")
         KLazy                   -> (Keyword, "lazy")
         KLetRec                 -> (Keyword, "letrec")
         KLetRegion              -> (Keyword, "letregion")
         KWithRegion             -> (Keyword, "withregion")
         KCase                   -> (Keyword, "case")
+        KOf                     -> (Keyword, "of")
+        KWeakEff                -> (Keyword, "weakeff")
+        KWeakClo                -> (Keyword, "weakclo")
         KPurify                 -> (Keyword, "purify")
         KForget                 -> (Keyword, "forget")
-        KWith                   -> (Keyword, "with")
-        KWhere                  -> (Keyword, "where")
         
         -- debruijn indices
         KIndex i                -> (Index,   "^" ++ show i)

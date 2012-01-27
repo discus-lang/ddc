@@ -95,10 +95,10 @@ instance (Pretty n, Eq n) => Pretty (Cast n) where
  ppr cc
   = case cc of
         CastWeakenEffect  eff   
-         -> text "weakeff" <+> parens (ppr eff)
+         -> text "weakeff" <+> brackets (ppr eff)
 
         CastWeakenClosure clo
-         -> text "weakclo" <+> parens (ppr clo)
+         -> text "weakclo" <+> brackets (ppr clo)
 
         CastPurify w
          -> text "purify"  <+> text "<" <> ppr w <> text ">"
