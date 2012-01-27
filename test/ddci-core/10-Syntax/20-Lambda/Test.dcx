@@ -1,5 +1,3 @@
-
-
 -- Simple lambda abstraction
 :check \(x:Unit). x
 

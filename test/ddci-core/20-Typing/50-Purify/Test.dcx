@@ -1,4 +1,3 @@
-
 -- Error: region is free in the return type of the returned function.
 :check..
 letregion r1 with {w1 : Const r1} in

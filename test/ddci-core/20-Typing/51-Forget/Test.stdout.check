@@ -6,4 +6,3 @@ letregion r1 with {w0 : Global r1; w1 : Const r1} in \(x : Unit).forget <use [r1
 ::  Unit -(Read R0# + Alloc R0# | Use R0#)> Int R0#
 :!: !0
 :$: Use R0#
-

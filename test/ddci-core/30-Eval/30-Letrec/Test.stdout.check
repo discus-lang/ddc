@@ -1,9 +1,10 @@
 -- Simply recursive factorial.
 120
 
+
 -- Tail recursive factorial.
 120
 
+
 -- Enumeration.
 Cons 5 (Cons 6 (Cons 7 (Cons 8 (Cons 9 Nil))))
-

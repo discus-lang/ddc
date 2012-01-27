@@ -4,9 +4,9 @@
 :!: !0
 :$: $0
 
+
 -- Equivalence checker must handle alpha-equivalence.
 \(x :Int R0#).\(y :[a : *].a -> a).\(z :[^ : *].^0 -> ^0).case x of {0  -> y; _ -> z}
 ::  Int R0# -> ([a : *].a -> a) -(!0 | Use R0#)> ([^ : *].^0 -> ^0) -(Read R0# | Use R0#)> [a : *].a -> a
 :!: !0
 :$: $0
-

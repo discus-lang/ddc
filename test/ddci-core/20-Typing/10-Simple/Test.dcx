@@ -1,4 +1,3 @@
-
 -- See if we can print out any type.
 :check addInt
 
@@ -34,4 +33,3 @@
 
 -- Addition should also read the args, and alloc the result.
 :check addInt [:R1# R2# R3#:] (2 [R1#] ()) (3 [R2#] ())
-

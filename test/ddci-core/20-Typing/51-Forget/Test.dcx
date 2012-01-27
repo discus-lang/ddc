@@ -1,4 +1,3 @@
-
 -- Error: region is visible in the closure of the returned function.
 -- We've purified the read and alloc effects, but we can still see
 -- that the function uses the region due to the Use term in the

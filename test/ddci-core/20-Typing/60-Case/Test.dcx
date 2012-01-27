@@ -1,4 +1,3 @@
-
 -- Error: types of alternatives are not identical.
 :check..
 case 5 [R0#] () of {
@@ -111,6 +110,3 @@ case xx of {
 -- the read is on a type with no head region.
 :check..
 case () of { () -> () };;
-
-
-

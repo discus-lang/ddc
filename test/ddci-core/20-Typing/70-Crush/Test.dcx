@@ -1,5 +1,3 @@
-
-
 -- Check that HeadRead in result effect is crushed.
 :check..
 let xx = Nil [R0#] [Int R0#] () in
@@ -48,4 +46,3 @@ letrec {
            : a
         = add x x;
 } in double [Int R0#] (addInt [:R0# R0# R0#:]) (5 [R0#] ());;
-

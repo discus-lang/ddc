@@ -1,2 +1,2 @@
+-- Construct a list then immediately reverse it.
 Cons 9 (Cons 8 (Cons 7 (Cons 6 (Cons 5 Nil))))
-

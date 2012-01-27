@@ -1,4 +1,3 @@
-
 -- Non-binding let.
 :check let _ : Unit = () in ()
 

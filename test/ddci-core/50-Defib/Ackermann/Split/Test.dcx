@@ -1,5 +1,3 @@
-
-
 -- Using different input and output regions.
 :eval..
 letrec {

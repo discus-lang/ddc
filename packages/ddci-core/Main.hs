@@ -169,8 +169,18 @@ runBatch str
 
         loop state inputState (l:ls)
          -- Echo comment lines back.
-         | isPrefixOf "--" l
+         |  isPrefixOf "--" l
          = do   putStrLn l
+                let inputState'
+                        = inputState 
+                        { inputLineNumber = inputLineNumber inputState + 1 }
+
+                loop state inputState' ls
+
+         -- Echo blank lines back if we're between commands.
+         | Nothing      <- inputCommand inputState
+         , null l
+         = do   putStr "\n"
                 let inputState'
                         = inputState 
                         { inputLineNumber = inputLineNumber inputState + 1 }
@@ -252,7 +262,6 @@ handleCmd state CommandBlank _ _
 
 handleCmd state cmd lineStart line
  = do   state'  <- handleCmd1 state cmd lineStart line
-        putStr "\n"
         return state'
 
 handleCmd1 state cmd lineStart line

@@ -1,4 +1,4 @@
-
+-- Construct a list then immediately reverse it.
 :eval..
 letrec {
  singleton 

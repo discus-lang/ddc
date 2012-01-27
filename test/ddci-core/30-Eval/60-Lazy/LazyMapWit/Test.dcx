@@ -1,4 +1,3 @@
-
 -- Sum up list elements produced via a lazy map.
 -- The lazy map takes a witness that the parameter function is pure and empty, 
 -- instead of requiring it to be explicitly so. This means we don't need to 
@@ -66,4 +65,3 @@ let result
                 (addInt [:R1# R1# R1#:] (1 [R1#] ()))
                 list 
 in sum [:R0# R1# R1#:] result;;
-

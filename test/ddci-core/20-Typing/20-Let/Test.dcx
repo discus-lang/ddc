@@ -1,5 +1,3 @@
-
-
 -- Ok: let expression with explicit type annotation.
 :check let x : Int R0# = 5 [R0#] () in  x
 
@@ -151,5 +149,3 @@ letrec {
  letrec { foo : Unit = () }
  in foo;;
  
-
-

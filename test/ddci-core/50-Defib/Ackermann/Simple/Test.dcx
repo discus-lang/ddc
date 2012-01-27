@@ -1,4 +1,3 @@
-
 -- Ackermann's function.
 :eval..
 letrec {
@@ -18,6 +17,3 @@ letrec {
         }
   }
 } in ack [R1#] (2 [R1#] ()) (3 [R1#] ());;
-
-
-

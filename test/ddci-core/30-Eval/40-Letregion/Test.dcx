@@ -1,6 +1,4 @@
- 
-
--- Global regions aren't deallocated as we leave the scope of the 
+ -- Global regions aren't deallocated as we leave the scope of the 
 -- letregion that created it.
 :eval..
 let f = letregion r1 with {w0 : Global r1; w1 : Const r1} in

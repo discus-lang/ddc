@@ -4,6 +4,7 @@ let xx = Nil [R0#] [Int R0#] () in case xx of {Nil  -> 0 [R0#] (); Cons x xs -> 
 :!: Read R0# + Alloc R0#
 :$: Use R0#
 
+
 -- Check that the HeadRead effect is crushed out when
 -- the read is on a type with no head region.
 case () of {()  -> ()}
@@ -11,11 +12,13 @@ case () of {()  -> ()}
 :!: !0
 :$: $0
 
+
 -- Check substituted effects are crushed under HeadRead.
 \(f : [a : *].a -(HeadRead a | DeepUse a)> a).f [Int R0#] (5 [R0#] ())
 ::  ([a : *].a -(HeadRead a | DeepUse a)> a) -(Read R0# + Alloc R0# | Use R0#)> Int R0#
 :!: !0
 :$: Use R0#
+
 
 -- Check substituted effects are crushed under DeepRead
 \(f : [a : *].a -(DeepRead a | DeepUse a)> a).f [Int R0#] (5 [R0#] ())
@@ -23,11 +26,13 @@ case () of {()  -> ()}
 :!: !0
 :$: Use R0#
 
+
 -- Check substituted effects are crushed under DeepWrite
 \(f : [a : *].a -(DeepWrite a | DeepUse a)> a).f [Int R0#] (5 [R0#] ())
 ::  ([a : *].a -(DeepWrite a | DeepUse a)> a) -(Write R0# + Alloc R0# | Use R0#)> Int R0#
 :!: !0
 :$: Use R0#
+
 
 -- Check substituted effects are crushed under DeepAlloc
 \(f : [a : *].a -(DeepAlloc a | DeepUse a)> a).f [Int R0#] (5 [R0#] ())
@@ -35,9 +40,9 @@ case () of {()  -> ()}
 :!: !0
 :$: Use R0#
 
+
 -- Using a polymorphic addition function requires DeepRead and DeepAlloc
 letrec {double : [a : *].(a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a) -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a = \(a :*).\(add :a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a).\(x :a).add x x} in double [Int R0#] (addInt [R0#] [R0#] [R0#]) (5 [R0#] ())
 ::  Int R0#
 :!: Read R0# + Alloc R0#
 :$: Use R0#
-

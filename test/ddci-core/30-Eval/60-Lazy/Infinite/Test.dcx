@@ -1,4 +1,3 @@
-
 -- Suspend a single binding.
 :eval..
 letregion r1 with { w1 : Const r1; w2 : Lazy r1; w3 : Global r1 } in

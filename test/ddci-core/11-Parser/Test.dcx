@@ -1,5 +1,3 @@
-
-
 -- Error: Junk ? symbol in program.
 :check..
 letrec {

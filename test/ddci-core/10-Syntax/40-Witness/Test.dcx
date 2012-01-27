@@ -1,4 +1,3 @@
-
 -- Show the type of the mutable constructor.
 :wtype mutable
 
