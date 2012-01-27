@@ -44,137 +44,6 @@ readWiConBuiltin ss
         _               -> Nothing
 
 
--------------------------------------------------------------------------------
--- | Lex a string into type tokens.
---   
---   * This is a conservative extension of the core type parser.
---   * If there are any `Nothing` elements in the returned list then there was
---     a lexical error.
-lexExp :: String -> [Token (Tok String)]
-lexExp str
- = concatMap lexWord $ words str
- where 
-  -- make a token
-  tok t = Token t (SourcePos Nothing 0 0)                                       -- TODO: maintain real sourcepos
-  tokA  = tok . KA
-  tokN  = tok . KN
-
-  lexWord w
-   = case w of
-        []              -> []        
-
-        -- The unit data constructor
-        '(' : ')' : w'  -> tokN (KCon "()")    : lexWord w'
-
-        -- Compound Parens
-        '['  : ':' : w' -> tokA KSquareColonBra : lexWord w'
-        ':'  : ']' : w' -> tokA KSquareColonKet : lexWord w'
-        '<'  : ':' : w' -> tokA KAngleColonBra  : lexWord w'
-        ':'  : '>' : w' -> tokA KAngleColonKet  : lexWord w'
-
-        -- Function Constructors
-        '~'  : '>'  : w' -> tokA KArrowTilde    : lexWord w'
-        '-'  : '>'  : w' -> tokA KArrowDash     : lexWord w'
-        '='  : '>'  : w' -> tokA KArrowEquals   : lexWord w'
-
-        -- Compound symbols
-        ':'  : ':' : w'  -> tokA KColonColon    : lexWord w'
-
-        -- Debruijn indices
-        '^'  : cs
-         |  (ds, rest)   <- span isDigit cs
-         ,  length ds >= 1
-         -> tokA (KIndex (read ds)) : lexWord rest         
-
-        -- Parens
-        '('  : w'       -> tokA KRoundBra      : lexWord w'
-        ')'  : w'       -> tokA KRoundKet      : lexWord w'
-        '['  : w'       -> tokA KSquareBra     : lexWord w'
-        ']'  : w'       -> tokA KSquareKet     : lexWord w'
-        '{'  : w'       -> tokA KBraceBra      : lexWord w'
-        '}'  : w'       -> tokA KBraceKet      : lexWord w'
-        '<'  : w'       -> tokA KAngleBra      : lexWord w'
-        '>'  : w'       -> tokA KAngleKet      : lexWord w'            
-
-        -- Punctuation
-        '.'  : w'       -> tokA KDot           : lexWord w'
-        '|'  : w'       -> tokA KBar           : lexWord w'
-        '^'  : w'       -> tokA KHat           : lexWord w'
-        '+'  : w'       -> tokA KPlus          : lexWord w'
-        ':'  : w'       -> tokA KColon         : lexWord w'
-        ','  : w'       -> tokA KComma         : lexWord w'
-        '\\' : w'       -> tokA KBackSlash     : lexWord w'
-        ';'  : w'       -> tokA KSemiColon     : lexWord w'
-        '_'  : w'       -> tokA KUnderscore    : lexWord w'
-        '='  : w'       -> tokA KEquals        : lexWord w'
-        '&'  : w'       -> tokA KAmpersand     : lexWord w'
-        '-'  : w'       -> tokA KDash          : lexWord w'
-        
-        -- Bottoms
-        '!' : '0' : w'  -> tokA KBotEffect     : lexWord w'
-        '$' : '0' : w'  -> tokA KBotClosure    : lexWord w'
-
-        -- Sort Constructors
-        '*' : '*' : w'  -> tokA KSortComp      : lexWord w'
-        '@' : '@' : w'  -> tokA KSortProp      : lexWord w'        
-
-        -- Kind Constructors
-        '*' : w'        -> tokA KKindValue     : lexWord w'
-        '%' : w'        -> tokA KKindRegion    : lexWord w'
-        '!' : w'        -> tokA KKindEffect    : lexWord w'
-        '$' : w'        -> tokA KKindClosure   : lexWord w'
-        '@' : w'        -> tokA KKindWitness   : lexWord w'
-        
-        -- Literal values
-        c : cs
-         | isDigit c
-         , (body, rest)         <- span isDigit cs
-         -> tokN (KLit (c:body)) : lexWord rest
-        
-        -- Named Constructors
-        c : cs
-         | isConStart c
-         , (body,  rest)        <- span isConBody cs
-         , (body', rest')       <- case rest of
-                                        '#' : rest'     -> (body ++ "#", rest')
-                                        _               -> (body, rest)
-         -> let readNamedCon s
-                 | Just twcon   <- readTwConBuiltin s
-                 = tokA (KTwConBuiltin twcon) : lexWord rest'
-                 
-                 | Just tccon   <- readTcConBuiltin s
-                 = tokA (KTcConBuiltin tccon) : lexWord rest'
-                 
-                 | Just con     <- readCon s
-                 = tokN (KCon con)    : lexWord rest'
-               
-                 | otherwise    = [tok (KJunk s)]
-                 
-            in  readNamedCon (c : body')
-
-        -- Keywords
-        _
-         | Just (key, t) <- find (\(key, _) -> isPrefixOf key w) keywords
-         -> tok t : lexWord (drop (length key) w)
-
-        -- Named Variables and Witness constructors
-        c : cs
-         | isVarStart c
-         , (body, rest)         <- span isVarBody cs
-         -> let readNamedVar s
-                 | Just wc      <- readWiConBuiltin s
-                 = tokA (KWiConBuiltin wc) : lexWord rest
-         
-                 | Just v       <- readVar s
-                 = tokN (KVar v)   : lexWord rest
-
-                 | otherwise    = [tok (KJunk s)]
-            in  readNamedVar (c:body)
-
-        -- Error
-        _               -> [tok $ KJunk w]
-        
-
 -- | Textual keywords in the core language.
 keywords :: [(String, Tok n)]
 keywords
@@ -189,3 +58,144 @@ keywords
         , ("forget",     KA KForget) 
         , ("with",       KA KWith)
         , ("where",      KA KWhere) ]
+
+
+-------------------------------------------------------------------------------
+-- | Lex a string into tokens.
+--
+lexExp :: String -> [Token (Tok String)]
+lexExp str
+ = lexWord 1 1 str
+ where 
+
+  lexWord :: Int -> Int -> String -> [Token (Tok String)]
+  lexWord line column w
+   = let  tok t = Token t (SourcePos Nothing line column)
+          tokA  = tok . KA
+          tokN  = tok . KN
+
+          lexMore n rest
+           = lexWord line (column + n) rest
+
+     in case w of
+        []               -> []        
+
+        ' '  : w'        -> lexMore 1 w'
+        '\t' : w'        -> lexMore 8 w'
+        '\n' : w'        -> lexWord (line + 1) 1 w'
+
+
+        -- The unit data constructor
+        '(' : ')' : w'   -> tokN (KCon "()")     : lexMore 2 w'
+
+        -- Compound Parens
+        '['  : ':' : w'  -> tokA KSquareColonBra : lexMore 2 w'
+        ':'  : ']' : w'  -> tokA KSquareColonKet : lexMore 2 w'
+        '<'  : ':' : w'  -> tokA KAngleColonBra  : lexMore 2 w'
+        ':'  : '>' : w'  -> tokA KAngleColonKet  : lexMore 2 w'
+
+        -- Function Constructors
+        '~'  : '>'  : w' -> tokA KArrowTilde     : lexMore 2 w'
+        '-'  : '>'  : w' -> tokA KArrowDash      : lexMore 2 w'
+        '='  : '>'  : w' -> tokA KArrowEquals    : lexMore 2 w'
+
+        -- Compound symbols
+        ':'  : ':' : w'  -> tokA KColonColon     : lexMore 2 w'
+
+        -- Debruijn indices
+        '^'  : cs
+         |  (ds, rest)   <- span isDigit cs
+         ,  length ds >= 1
+         -> tokA (KIndex (read ds))              : lexMore (1 + length ds) rest         
+
+        -- Parens
+        '('  : w'       -> tokA KRoundBra        : lexMore 1 w'
+        ')'  : w'       -> tokA KRoundKet        : lexMore 1 w'
+        '['  : w'       -> tokA KSquareBra       : lexMore 1 w'
+        ']'  : w'       -> tokA KSquareKet       : lexMore 1 w'
+        '{'  : w'       -> tokA KBraceBra        : lexMore 1 w'
+        '}'  : w'       -> tokA KBraceKet        : lexMore 1 w'
+        '<'  : w'       -> tokA KAngleBra        : lexMore 1 w'
+        '>'  : w'       -> tokA KAngleKet        : lexMore 1 w'            
+
+        -- Punctuation
+        '.'  : w'       -> tokA KDot             : lexMore 1 w'
+        '|'  : w'       -> tokA KBar             : lexMore 1 w'
+        '^'  : w'       -> tokA KHat             : lexMore 1 w'
+        '+'  : w'       -> tokA KPlus            : lexMore 1 w'
+        ':'  : w'       -> tokA KColon           : lexMore 1 w'
+        ','  : w'       -> tokA KComma           : lexMore 1 w'
+        '\\' : w'       -> tokA KBackSlash       : lexMore 1 w'
+        ';'  : w'       -> tokA KSemiColon       : lexMore 1 w'
+        '_'  : w'       -> tokA KUnderscore      : lexMore 1 w'
+        '='  : w'       -> tokA KEquals          : lexMore 1 w'
+        '&'  : w'       -> tokA KAmpersand       : lexMore 1 w'
+        '-'  : w'       -> tokA KDash            : lexMore 1 w'
+        
+        -- Bottoms
+        '!' : '0' : w'  -> tokA KBotEffect       : lexMore 2 w'
+        '$' : '0' : w'  -> tokA KBotClosure      : lexMore 2 w'
+
+        -- Sort Constructors
+        '*' : '*' : w'  -> tokA KSortComp        : lexMore 2 w'
+        '@' : '@' : w'  -> tokA KSortProp        : lexMore 2 w'        
+
+        -- Kind Constructors
+        '*' : w'        -> tokA KKindValue       : lexMore 1 w'
+        '%' : w'        -> tokA KKindRegion      : lexMore 1 w'
+        '!' : w'        -> tokA KKindEffect      : lexMore 1 w'
+        '$' : w'        -> tokA KKindClosure     : lexMore 1 w'
+        '@' : w'        -> tokA KKindWitness     : lexMore 1 w'
+        
+        -- Literal values
+        c : cs
+         | isDigit c
+         , (body, rest)         <- span isDigit cs
+         -> tokN (KLit (c:body))                 : lexMore (length (c:body)) rest
+        
+        -- Named Constructors
+        c : cs
+         | isConStart c
+         , (body,  rest)        <- span isConBody cs
+         , (body', rest')       <- case rest of
+                                        '#' : rest'     -> (body ++ "#", rest')
+                                        _               -> (body, rest)
+         -> let readNamedCon s
+                 | Just twcon   <- readTwConBuiltin s
+                 = tokA (KTwConBuiltin twcon)    : lexMore (length s) rest'
+                 
+                 | Just tccon   <- readTcConBuiltin s
+                 = tokA (KTcConBuiltin tccon)    : lexMore (length s) rest'
+                 
+                 | Just con     <- readCon s
+                 = tokN (KCon con)               : lexMore (length s) rest'
+               
+                 | otherwise    
+                 = [tok (KJunk s)]
+                 
+            in  readNamedCon (c : body')
+
+        -- Keywords
+        _
+         | Just (key, t) <- find (\(key, _) -> isPrefixOf key w) keywords
+         -> tok t : lexMore (length key) (drop (length key) w)
+
+        -- Named Variables and Witness constructors
+        c : cs
+         | isVarStart c
+         , (body, rest)         <- span isVarBody cs
+         -> let readNamedVar s
+                 | Just wc      <- readWiConBuiltin s
+                 = tokA (KWiConBuiltin wc) : lexMore (length s) rest
+         
+                 | Just v       <- readVar s
+                 = tokN (KVar v)           : lexMore (length s) rest
+
+                 | otherwise
+                 = [tok (KJunk s)]
+
+            in  readNamedVar (c:body)
+
+        -- Error
+        c : _   -> [tok $ KJunk [c]]
+        

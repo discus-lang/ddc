@@ -170,7 +170,6 @@ runBatch str
 
 -- Eat ------------------------------------------------------------------------
 -- Eating input lines.
-
 eatLine :: State -> InputState -> String -> IO (State, InputState)
 eatLine state (mCommand, inputMode, acc) line
  = do   -- If this is the first line then try to read the command and
@@ -190,10 +189,14 @@ eatLine state (mCommand, inputMode, acc) line
         case input of
          -- For line-by-line mode, if the line ends with backslash then keep
          -- reading, otherwise run the command.
+         -- We also convert the backslash to a newline so the source
+         -- position comes out right in parser error messages.
          InputLine
           | not $ null rest
           , last rest == '\\'
-          ->    return (state, (Just cmd, input, acc ++ init rest))
+          ->    return (state, ( Just cmd
+                               , input
+                               , acc ++ init rest ++ "\n"))
 
           | otherwise
           -> do state'  <- handleCmd state cmd (acc ++ rest)
@@ -208,7 +211,9 @@ eatLine state (mCommand, inputMode, acc) line
                 return (state', (Nothing, InputLine, []))
 
           | otherwise
-          ->    return (state, (Just cmd, input, acc ++ rest))
+          ->    return (state, ( Just cmd
+                               , input
+                               , acc ++ rest ++ "\n"))
 
 
 -- Commands -------------------------------------------------------------------
