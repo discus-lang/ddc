@@ -14,7 +14,7 @@ import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect.Free
-import DDC.Core.Check.CheckError
+import DDC.Core.Check.Error
 import DDC.Core.Check.CheckWitness
 import DDC.Core.Check.TaggedClosure
 import DDC.Core.Transform.SubstituteT
@@ -600,6 +600,7 @@ checkExpM defs env xx@(XCast _ (CastPurify w) x1)
                   _ -> throw  $ ErrorWitnessNotPurity xx w tW
 
         return (t1, effs', clo)
+
 
 -- Forget a closure, given a witness that it is empty.
 checkExpM defs env xx@(XCast _ (CastForget w) x1)

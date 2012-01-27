@@ -5,6 +5,7 @@ module DDC.Core.Check
         , typeOfWiCon
         , Error(..))
 where
-import DDC.Core.Check.CheckError
+import DDC.Core.Check.Error
+import DDC.Core.Check.ErrorMessage      ()
 import DDC.Core.Check.CheckExp
 import DDC.Core.Check.CheckWitness

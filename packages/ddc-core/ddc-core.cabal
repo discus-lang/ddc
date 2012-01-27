@@ -23,9 +23,10 @@ Library
         mtl             == 2.0.*
 
   Exposed-modules:
-        DDC.Core.Check.CheckError
         DDC.Core.Check.CheckExp
         DDC.Core.Check.CheckWitness
+        DDC.Core.Check.Error
+        DDC.Core.Check.ErrorMessage
         DDC.Core.Check.TaggedClosure
         DDC.Core.Collect.Free
         DDC.Core.Collect.GatherBound
