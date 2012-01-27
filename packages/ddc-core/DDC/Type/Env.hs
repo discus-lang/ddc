@@ -1,7 +1,9 @@
 
 -- | Type environments.
---
---      * TODO: Store the current depth separately, to avoid checking the length all the time in `depth`.
+--   The type environment contains the types of
+--     named bound variables,
+--     named primitives, 
+--     and a deBruijn stack for anonymous variables.
 --
 module DDC.Type.Env
         ( Env(..)
@@ -23,37 +25,45 @@ import qualified Data.Map       as Map
 import qualified Prelude        as P
 import Control.Monad
 
--- | Type environment used when checking.
+
+-- | Type environment.
 data Env n
         = Env
         { -- | Types of named binders.
-          envMap        :: Map n (Type n)
+          envMap         :: Map n (Type n)
 
           -- | Types of anonymous deBruijn binders.
-        , envStack      :: [Type n] 
+        , envStack       :: [Type n] 
         
+          -- | The length of the above stack.
+        , envStackLength :: Int
+
           -- | Types of baked in, primitive names.
-        , envPrimFun    :: n -> Maybe (Type n) }
+        , envPrimFun     :: n -> Maybe (Type n) }
 
 
 -- | An empty environment.
 empty :: Env n
 empty   = Env
-        { envMap        = Map.empty
-        , envStack      = [] 
-        , envPrimFun    = \_ -> Nothing }
+        { envMap         = Map.empty
+        , envStack       = [] 
+        , envStackLength = 0
+        , envPrimFun     = \_ -> Nothing }
 
 
 -- | Extend an environment with a new binding.
+--   Replaces bindings with the same name already in the environment.
 extend :: Ord n => Bind n -> Env n -> Env n
 extend bb env
  = case bb of
-         BName n k      -> env { envMap   = Map.insert n k (envMap env) }
-         BAnon   k      -> env { envStack = k : envStack env }
+         BName n k      -> env { envMap         = Map.insert n k (envMap env) }
+         BAnon   k      -> env { envStack       = k : envStack env 
+                               , envStackLength = envStackLength env + 1 }
          BNone{}        -> env
 
 
--- | Extend an environment with a list of new bindings
+-- | Extend an environment with a list of new bindings.
+--   Replaces bindings with the same name already in the environment.
 extends :: Ord n => [Bind n] -> Env n -> Env n
 extends bs env
         = foldr extend env bs
@@ -65,11 +75,10 @@ setPrimFun f env
         = env { envPrimFun = f }
 
 
--- | Check whether a name is known by the `primFun`.
+-- | Check the type of a name is defined by the `envPrimFun`.
 isPrim :: Env n -> n -> Bool
 isPrim env n
         = isJust $ envPrimFun env n
-
 
 
 -- | Convert a list of `Bind`s to an environment.
@@ -78,14 +87,16 @@ fromList bs
         = foldr extend empty bs
 
 
--- | Combine two environments, 
---   bindings in the second environment take preference.
+-- | Combine two environments.
+--   If both environments have a binding with the same name,
+--   then the one in the second environment takes preference.
 combine :: Ord n => Env n -> Env n -> Env n
 combine env1 env2
         = Env  
-        { envMap        = envMap   env1  `Map.union` envMap   env2
-        , envStack      = envStack env2 ++ envStack env1
-        , envPrimFun    = \n -> envPrimFun env2 n `mplus` envPrimFun env1 n }
+        { envMap         = envMap env1 `Map.union` envMap env2
+        , envStack       = envStack       env2  ++ envStack       env1
+        , envStackLength = envStackLength env2  +  envStackLength env1
+        , envPrimFun     = \n -> envPrimFun env2 n `mplus` envPrimFun env1 n }
 
 
 -- | Check whether a bound variable is present in an environment.
@@ -124,13 +135,13 @@ lookupName n env
         = Map.lookup n (envMap env)
 
 
--- | Yield the depth of the debruijn stack.
+-- | Yield the depth of the deBruijn stack.
 depth :: Env n -> Int
-depth env       = length $ envStack env
+depth env       = envStackLength env
 
 
--- | Wrap locally bound (non primitive) variables defined in an environment around a type
---   as new foralls.
+-- | Wrap locally bound (non primitive) variables defined in an environment
+--   around a type as new foralls.
 wrapTForalls :: Ord n => Env n -> Type n -> Type n
 wrapTForalls env tBody
  = let  bsNamed = [BName b t | (b, t) <- Map.toList $ envMap env ]
