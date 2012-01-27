@@ -11,6 +11,7 @@ import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser
+import DDC.Core.Parser.Tokens
 import DDC.Core.Collect.Free
 import DDC.Core.Transform.Spread        as C
 import qualified DDC.Type.Env           as Env
@@ -25,7 +26,7 @@ cmdShowKind ss
  = goParse (lexString ss)
  where
         goParse toks                
-         = case BP.runTokenParser show "<interactive>" T.pType toks of 
+         = case BP.runTokenParser describeTok "<interactive>" T.pType toks of 
                 Left err        -> putStrLn $ "parse error " ++ show err
                 Right t         -> goCheck t
 
@@ -62,7 +63,7 @@ cmdParseCheckWitness str
  where
         -- Lex and parse the string.
         goParse toks                
-         = case BP.runTokenParser show "<interactive>" pWitness toks of
+         = case BP.runTokenParser describeTok "<interactive>" pWitness toks of
                 Left err 
                  -> do  putStrLn $ "parse error " ++ show err
                         return Nothing
@@ -145,9 +146,9 @@ cmdParseCheckExp str
  where
         -- Lex and parse the string.
         goParse toks                
-         = case BP.runTokenParser show "<interactive>" pExp toks of
+         = case BP.runTokenParser describeTok "<interactive>" pExp toks of
                 Left err 
-                 -> do  putStrLn $ "parse error " ++ show err
+                 -> do  putStrLn $ pretty $ ppr err
                         return Nothing
                 
                 Right x  -> goCheck x

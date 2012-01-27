@@ -171,7 +171,7 @@ lexExp str
                  = tokN (KCon con)               : lexMore (length s) rest'
                
                  | otherwise    
-                 = [tok (KJunk s)]
+                 = [tok (KJunk c)]
                  
             in  readNamedCon (c : body')
 
@@ -192,10 +192,10 @@ lexExp str
                  = tokN (KVar v)           : lexMore (length s) rest
 
                  | otherwise
-                 = [tok (KJunk s)]
+                 = [tok (KJunk c)]
 
             in  readNamedVar (c:body)
 
         -- Error
-        c : _   -> [tok $ KJunk [c]]
+        c : _   -> [tok $ KJunk c]
         

@@ -25,6 +25,7 @@ type Parser n a
 -- | Top level parser for types.
 pType   :: Ord n => Parser n (Type n)
 pType   = pTypeSum
+ <?> "a type"
 
 
 -- Sums
@@ -39,6 +40,8 @@ pTypeSum
                 return  $ TSum $ TS.fromList (tBot sComp) [t1, t2]
                 
          , do   return t1 ]
+ <?> "a type"
+
 
 -- Binds
 pBinder :: Ord n => Parser n (Binder n)
@@ -55,6 +58,7 @@ pBinder
         -- Vacant binders.
         , do    pTok KUnderscore
                 return  $ RNone ]
+ <?> "a binder"
 
 
 -- Foralls.
@@ -77,6 +81,7 @@ pTypeForall
 
            -- Body type
          , do   pTypeFun]
+ <?> "a type"
 
 
 -- Functions
@@ -113,6 +118,7 @@ pTypeFun
 
            -- Body type
          , do   return t1 ]
+ <?> "an atomic type or type application"
 
 
 -- Applications
@@ -120,6 +126,7 @@ pTypeApp :: Ord n => Parser n (Type n)
 pTypeApp  
  = do   (t:ts)  <- P.many1 pTypeAtom
         return  $  foldl TApp t ts
+ <?> "an atomic type or type application"
 
 
 -- Atomics
@@ -179,37 +186,43 @@ pTypeAtom
         , do    i       <- pIndex
                 return  $  TVar (UIx (fromIntegral i) (tBot sComp))
         ]
- <?> "atomic type"
+ <?> "an atomic type"
 
 
 -------------------------------------------------------------------------------
 -- | Parse a builtin `TcCon`
 pTcCon :: Parser n TcCon
-pTcCon  = P.pTokMaybe f
+pTcCon  =   P.pTokMaybe f
+        <?> "a type constructor"
  where f (KA (KTcConBuiltin c)) = Just c
        f _                      = Nothing 
 
 -- | Parse a builtin `TwCon`
 pTwCon :: Parser n TwCon
-pTwCon  = P.pTokMaybe f
+pTwCon  =   P.pTokMaybe f
+        <?> "a witness constructor"
  where f (KA (KTwConBuiltin c)) = Just c
        f _                      = Nothing
 
 -- | Parse a user `TcCon`
 pTyConNamed :: Parser n (TyCon n)
-pTyConNamed  = P.pTokMaybe f
+pTyConNamed  
+        =   P.pTokMaybe f
+        <?> "a type constructor"
  where  f (KN (KCon n))          = Just (TyConBound (UName n (tBot kData)))
         f _                      = Nothing
 
 -- | Parse a variable.
 pVar :: Parser n n
-pVar    = P.pTokMaybe f
+pVar    =   P.pTokMaybe f
+        <?> "a variable"
  where  f (KN (KVar n))         = Just n
         f _                     = Nothing
 
 -- | Parse a debuijn index
 pIndex :: Parser n Int
-pIndex = P.pTokMaybe f
+pIndex  =   P.pTokMaybe f
+        <?> "an index"
  where  f (KA (KIndex i))       = Just i
         f _                     = Nothing
 
@@ -221,5 +234,4 @@ pTok k     = P.pTok (KA k)
 -- | Parse an atomic token and return some value.
 pTokAs :: TokAtom -> a -> Parser n a
 pTokAs k x = P.pTokAs (KA k) x
-
 
