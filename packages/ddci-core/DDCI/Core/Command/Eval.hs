@@ -22,9 +22,9 @@ import qualified Data.Set               as Set
 
 
 -- | Parse, check, and single step evaluate an expression.
-cmdStep :: State -> String -> IO ()
-cmdStep state str
- = cmdParseCheckExp str >>= goStore 
+cmdStep :: State -> Int -> String -> IO ()
+cmdStep state lineStart str
+ = cmdParseCheckExp lineStart str >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -43,9 +43,9 @@ cmdStep state str
 
 
 -- | Parse, check, and single step evaluate an expression.
-cmdEval :: State -> String -> IO ()
-cmdEval state str
- = cmdParseCheckExp str >>= goStore
+cmdEval :: State -> Int -> String -> IO ()
+cmdEval state lineStart str
+ = cmdParseCheckExp lineStart str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing

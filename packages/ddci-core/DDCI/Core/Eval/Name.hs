@@ -183,8 +183,8 @@ readName_ str
 
 
 -- | Lex a string to tokens, using our own names.
-lexString :: String -> [Token (Tok Name)]
-lexString str
- = map rn $ lexExp str
+lexString :: Int -> String -> [Token (Tok Name)]
+lexString lineStart str
+ = map rn $ lexExp lineStart str
  where rn (Token t sp) = Token (rename readName_ t) sp
  

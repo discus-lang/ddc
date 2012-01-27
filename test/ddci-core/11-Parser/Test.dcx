@@ -13,3 +13,8 @@ letrec {
                            (subInt [:r r r:] n (1 [r] ()))
     }
 } in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+
+
+-- Error: Like above, but ensure the line number has advanced
+-- between interpreter commands.
+:check ( ?? )

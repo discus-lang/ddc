@@ -74,7 +74,24 @@ readCommand ss
         = Nothing
 
 
--- Input ----------------------------------------------------------------------
+-- InputState ----------------------------------------------------------------------
+-- Interpreter input state
+data InputState
+        = InputState
+        { -- Command that we're still receiving input for,
+          -- along with the line number it started on.
+          inputCommand     :: Maybe (Command, Int)
+
+          -- Input mode.
+        , _inputMode        :: Input
+
+          -- Current line number, used for parse error messages.
+        , inputLineNumber   :: Int
+
+          -- Accumulation of current input buffer.
+        , _inputAcc         :: String }
+
+
 -- | How we're reading the input expression.
 data Input
         -- | Read input line-by-line, using a backslash at the end of the
@@ -96,12 +113,6 @@ readInput ss
         = (InputLine, ss)
 
 
--- State ----------------------------------------------------------------------
--- Interpreter state
-type InputState
-        = (Maybe Command, Input, String)
-
-
 -- Interactive ----------------------------------------------------------------
 -- | Run an interactive session
 runInteractive :: IO ()
@@ -115,12 +126,15 @@ runInteractive
 -- | The main REPL loop.
 loopInteractive :: IO ()
 loopInteractive 
- = do   hlState <- HL.initializeInput HL.defaultSettings
-        loop initState (Nothing, InputLine, []) hlState
+ = do   hlState         <- HL.initializeInput HL.defaultSettings
+        let inputState  = InputState Nothing InputLine 1 []
+        loop initState inputState hlState
  where  
-        loop state inputState@(mCommand, _, _) hlState 
+        loop state inputState hlState 
          = do   -- If this isn't the first line then print the prompt.
-		let prompt = if isNothing mCommand then "> " else ""
+		let prompt = if isNothing (inputCommand inputState)
+                                then "> "
+                                else ""
          
                 -- Read a line from the user and echo it back.
                 line    <- getInput hlState prompt
@@ -144,7 +158,8 @@ getInput hlState prompt
 -- Batch ----------------------------------------------------------------------
 runBatch :: String -> IO ()
 runBatch str
- = loop initState (Nothing, InputLine, []) (lines str)
+ = do   let inputState  = InputState Nothing InputLine 1 []
+        loop initState inputState (lines str)
  where 
         -- No more lines, we're done.
         -- There might be a command in the buffer though.
@@ -156,7 +171,11 @@ runBatch str
          -- Echo comment lines back.
          | isPrefixOf "--" l
          = do   putStrLn l
-                loop state inputState ls
+                let inputState'
+                        = inputState 
+                        { inputLineNumber = inputLineNumber inputState + 1 }
+
+                loop state inputState' ls
 
          -- Quit the program.
          | isPrefixOf ":quit" l
@@ -171,20 +190,20 @@ runBatch str
 -- Eat ------------------------------------------------------------------------
 -- Eating input lines.
 eatLine :: State -> InputState -> String -> IO (State, InputState)
-eatLine state (mCommand, inputMode, acc) line
+eatLine state (InputState mCommand inputMode lineNumber acc) line
  = do   -- If this is the first line then try to read the command and
         --  input mode from the front so we know how to continue.
         -- If we can't read an explicit command then assume this is 
         --  an expression to evaluate.
-        let (cmd, (input, rest))
+        let (cmd, lineStart, (input, rest))
              = case mCommand of
                 Nothing
                  -> case readCommand line of
-                     Just (cmd', rest') -> (cmd',         readInput rest')
-                     Nothing            -> (CommandEval, (InputLine, line))
+                     Just (cmd', rest') -> (cmd',        lineNumber, readInput rest')
+                     Nothing            -> (CommandEval, lineNumber, (InputLine, line))
                 
-                Just cmd'
-                 -> (cmd', (inputMode, line))
+                Just (cmd', lineStart')
+                 -> (cmd', lineStart', (inputMode, line))
 
         case input of
          -- For line-by-line mode, if the line ends with backslash then keep
@@ -194,40 +213,49 @@ eatLine state (mCommand, inputMode, acc) line
          InputLine
           | not $ null rest
           , last rest == '\\'
-          ->    return (state, ( Just cmd
-                               , input
-                               , acc ++ init rest ++ "\n"))
+          -> do return ( state
+                       , InputState (Just (cmd, lineStart)) input
+                                (lineNumber + 1)
+                                (acc ++ init rest ++ "\n"))
 
           | otherwise
-          -> do state'  <- handleCmd state cmd (acc ++ rest)
-                return (state', (Nothing, InputLine, []))
+          -> do state'  <- handleCmd state cmd lineStart (acc ++ rest)
+                return ( state'
+                       , InputState Nothing InputLine
+                                (lineNumber + 1)
+                                [])
+
 
          -- For block mode, if the line ends with ';;' then run the command,
          -- otherwise keep reading.
          InputBlock
           | isSuffixOf ";;" rest
           -> do let rest' = take (length rest - 2) rest
-                state'  <- handleCmd state cmd (acc ++ rest')
-                return (state', (Nothing, InputLine, []))
+                state'  <- handleCmd state cmd lineStart (acc ++ rest')
+                return ( state'
+                       , InputState Nothing InputLine
+                                (lineNumber + 1)
+                                [])
 
           | otherwise
-          ->    return (state, ( Just cmd
-                               , input
-                               , acc ++ rest ++ "\n"))
+          ->    return ( state
+                       , InputState (Just (cmd, lineStart)) input
+                                (lineNumber + 1)
+                                (acc ++ rest ++ "\n"))
 
 
 -- Commands -------------------------------------------------------------------
 -- | Handle a single line of input.
-handleCmd :: State -> Command -> String -> IO State
-handleCmd state CommandBlank _
+handleCmd :: State -> Command -> Int -> String -> IO State
+handleCmd state CommandBlank _ _
  = return state
 
-handleCmd state cmd line
- = do   state'  <- handleCmd1 state cmd line
+handleCmd state cmd lineStart line
+ = do   state'  <- handleCmd1 state cmd lineStart line
         putStr "\n"
         return state'
 
-handleCmd1 state cmd line
+handleCmd1 state cmd lineStart line
  = case cmd of
         CommandBlank
          -> return state
@@ -248,30 +276,30 @@ handleCmd1 state cmd line
                 return state'
 
         CommandKind       
-         -> do  cmdShowKind      line
+         -> do  cmdShowKind  lineStart line
                 return state
 
         CommandWitType    
-         -> do  cmdShowWType     line
+         -> do  cmdShowWType lineStart line
                 return state
 
         CommandExpCheck   
-         -> do  cmdShowType ShowTypeAll     line
+         -> do  cmdShowType ShowTypeAll     lineStart line
                 return state
 
         CommandExpType  
-         -> do  cmdShowType ShowTypeValue   line
+         -> do  cmdShowType ShowTypeValue   lineStart line
                 return state
 
         CommandExpEffect  
-         -> do  cmdShowType ShowTypeEffect  line
+         -> do  cmdShowType ShowTypeEffect  lineStart line
                 return state
 
         CommandExpClosure 
-         -> do  cmdShowType ShowTypeClosure line
+         -> do  cmdShowType ShowTypeClosure lineStart line
                 return state
 
         CommandEval       
-         -> do  cmdEval state line
+         -> do  cmdEval state lineStart line
                 return state
         

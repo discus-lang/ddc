@@ -63,9 +63,9 @@ keywords
 -------------------------------------------------------------------------------
 -- | Lex a string into tokens.
 --
-lexExp :: String -> [Token (Tok String)]
-lexExp str
- = lexWord 1 1 str
+lexExp :: Int -> String -> [Token (Tok String)]
+lexExp lineStart str
+ = lexWord lineStart 1 str
  where 
 
   lexWord :: Int -> Int -> String -> [Token (Tok String)]

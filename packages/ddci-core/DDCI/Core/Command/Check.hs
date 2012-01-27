@@ -21,9 +21,9 @@ import qualified DDC.Base.Parser        as BP
 import qualified Data.Set               as Set
 
 -- kind -------------------------------------------------------------------------------------------
-cmdShowKind :: String -> IO ()
-cmdShowKind ss
- = goParse (lexString ss)
+cmdShowKind :: Int -> String -> IO ()
+cmdShowKind lineStart ss
+ = goParse (lexString lineStart ss)
  where
         goParse toks                
          = case BP.runTokenParser describeTok "<interactive>" T.pType toks of 
@@ -39,9 +39,9 @@ cmdShowKind ss
 
 -- wtype ------------------------------------------------------------------------------------------
 -- | Show the type of a witness.
-cmdShowWType :: String -> IO ()
-cmdShowWType ss
- = cmdParseCheckWitness ss >>= goResult
+cmdShowWType :: Int -> String -> IO ()
+cmdShowWType lineStart ss
+ = cmdParseCheckWitness lineStart ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -55,11 +55,12 @@ cmdShowWType ss
 --   If the expression had a parse error, undefined vars, or type error
 --   then print this to the console.
 cmdParseCheckWitness
-        :: String 
+        :: Int                  -- Starting line number for lexer.
+        -> String 
         -> IO (Maybe (Witness Name, Type Name))
 
-cmdParseCheckWitness str
- = goParse (lexString str)
+cmdParseCheckWitness lineStart str
+ = goParse (lexString lineStart str)
  where
         -- Lex and parse the string.
         goParse toks                
@@ -103,9 +104,9 @@ data ShowTypeMode
 
 
 -- | Show the type of an expression.
-cmdShowType :: ShowTypeMode -> String -> IO ()
-cmdShowType mode ss
- = cmdParseCheckExp ss >>= goResult
+cmdShowType :: ShowTypeMode -> Int -> String -> IO ()
+cmdShowType mode lineStart ss
+ = cmdParseCheckExp lineStart ss >>= goResult
  where
         -- Expression passed type checking, 
         --   print out the requested information.
@@ -137,12 +138,13 @@ cmdShowType mode ss
 --   If the expression had a parse error, undefined vars, or type error
 --   then print this to the console.
 cmdParseCheckExp 
-        :: String 
+        :: Int          -- Starting line number.
+        -> String 
         -> IO (Maybe ( Exp () Name
                      , Type Name, Effect Name, Closure Name))
 
-cmdParseCheckExp str
- = goParse (lexString str)
+cmdParseCheckExp lineStart str
+ = goParse (lexString lineStart str)
  where
         -- Lex and parse the string.
         goParse toks                

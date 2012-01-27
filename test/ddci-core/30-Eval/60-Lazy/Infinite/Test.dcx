@@ -31,7 +31,7 @@ letrec {
             -> Nil  [R0#] [a] ();
 
            Cons x xs  
-            -> Cons [R0#] [a] x 
+            -> Cons [R0#] [a] x
                     (take [:r a:] (subInt [:r r r:] n (1 [r] ())) xs)
           };
      _ -> Nil [R0#] [a] ()
