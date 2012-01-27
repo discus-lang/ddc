@@ -46,12 +46,16 @@ instance LiftX (Exp a) where
 
         XLam a b x
          | Just UniverseComp <- universeFromType1 (typeOfBind b)
+	 , BAnon _	     <- b
          -> XLam a b (liftAtDepthX n (d + 1) x)
          
          | otherwise 
          -> XLam a b (down x)
          
-        XLet{}          -> error "liftX XLet not done yet"
+        XLet a lets x   ->
+	    let (lets', inc) = liftAtDepthXLets n d lets in
+	    XLet a lets' (liftAtDepthX n (d+inc) x)
+
         XCase{}         -> error "liftX XCase not done yet"
 
         XCast a cc x    -> XCast a cc (down x)
@@ -60,5 +64,28 @@ instance LiftX (Exp a) where
         XWitness{}      -> xx
          
         
-        
-        
+
+liftAtDepthXLets
+        :: forall a n. Ord n
+        => Int             -- ^ Number of levels to lift.
+        -> Int             -- ^ Current binding depth.
+        -> Lets a n        -- ^ Lift exp indices in this thing.
+        -> (Lets a n, Int) -- ^ Lifted, and how much to increase depth by
+
+liftAtDepthXLets _ _ xx@(LLet _ b _)
+    = (xx, countBAnons [b])
+
+liftAtDepthXLets n d (LRec bs)
+ =  let inc = countBAnons (map fst bs) in
+    let bs' = map (\(b,e) -> (b, liftAtDepthX n (d+inc) e)) bs in
+    (LRec bs', inc)
+
+liftAtDepthXLets _ _ xx@(LLetRegion b bs)
+    = (xx, countBAnons (b:bs))
+
+liftAtDepthXLets _ _ xx@(LWithRegion _)
+    = (xx, 0)
+
+countBAnons = length . filter isAnon
+ where	isAnon (BAnon _) = True
+	isAnon _	 = False
