@@ -10,6 +10,7 @@ import DDC.Type.Pretty
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Collect.Free
+import Control.Monad
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum
@@ -17,47 +18,59 @@ import qualified Data.Set       as Set
 
 
 -- | Trim a closure.
-trimClosure :: (Pretty n, Ord n) => Closure n -> Closure n
+--
+--   This function assumes the closure is well-kinded, 
+--   and may return Nothing if this is not the case.
+trimClosure 
+        :: (Pretty n, Ord n) 
+        => Closure n 
+        -> Maybe (Closure n)
+
 trimClosure cc
-        = TSum $ trimToSumC cc
+        = liftM TSum $ trimToSumC cc
 
 
 -- | Trim a closure down to a closure sum.
---   This can `error` if the closure is mis-kinded.
-trimToSumC :: forall n. (Pretty n, Free n (TypeSum n), Ord n) => Closure n -> TypeSum n
+--   May return 'Nothing' if the closure is mis-kinded.
+trimToSumC 
+        :: forall n. (Pretty n, Free n (TypeSum n), Ord n) 
+        => Closure n -> Maybe (TypeSum n)
+
 trimToSumC cc
  = case cc of
         -- Keep closure variables.
-        TVar{}          -> Sum.singleton kClosure cc
+        TVar{}          -> Just $ Sum.singleton kClosure cc
 
         -- There aren't any naked constructors of closure type.
-        TCon{}          -> error "trimToSumC: found naked closure constructor"
+        -- If we find a constructor the closure is miskinded.
+        TCon{}          -> Nothing
         
-        -- The body of a forall should have data or witness kind.       -- TODO: enforce this in kinding rules.
-        TForall{}       -> error "trimToSumC: found forall"
+        -- The body of a forall should have data or witness kind.
+        -- If we find a forall then the closure is miskinded.
+        TForall{}       -> Nothing
 
         -- Keep use constructor applied to a region.
         TApp (TCon (TyConComp TcConUse)) _
-         -> Sum.singleton kClosure cc
+         -> Just $ Sum.singleton kClosure cc
         
         -- Trim DeepUse constructor applied to a data type.
         TApp (TCon (TyConComp TcConDeepUse)) t2 
-         -> trimDeepUsedD t2
+         -> Just $ trimDeepUsedD t2
 
         -- Some other constructor we don't know about,
         --  perhaps using a type variable of higher kind.
-        TApp{}          -> Sum.singleton kClosure cc
+        TApp{}          -> Just $ Sum.singleton kClosure cc
 
         -- Trim components of a closure sum and rebuild the sum.
         TSum ts
-         -> Sum.fromList kClosure 
-          $ concatMap (Sum.toList . trimToSumC)
-          $ Sum.toList ts
-        
+         -> case sequence $ map trimToSumC $ Sum.toList ts of
+                Nothing         -> Nothing
+                Just sums       -> Just $ Sum.fromList kClosure
+                                $  concatMap Sum.toList sums
+
 
 -- | Trim the argument of a DeepUsed constructor down to a closure sum.
 --   The argument is of data kind.
----
 trimDeepUsedD :: forall n. (Pretty n, Free n (TypeSum n), Ord n) => Type n -> TypeSum n
 trimDeepUsedD tt
  = case tt of

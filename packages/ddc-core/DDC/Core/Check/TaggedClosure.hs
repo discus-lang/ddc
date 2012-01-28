@@ -79,7 +79,8 @@ taggedClosureOfValBound
 taggedClosureOfValBound u
         = GBoundVal u 
         $ Sum.singleton kClosure 
-        $ trimClosure $ tDeepUse $ typeOfBound u
+        $ (let clo = tDeepUse $ typeOfBound u
+           in  fromMaybe clo (trimClosure clo))
 
 
 -- | Take the tagged closure of a type argument.

@@ -6,6 +6,7 @@ import DDC.Type.Exp
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Base.Pretty
+import Data.Maybe
 import qualified DDC.Type.Sum   as Sum
 
 
@@ -93,9 +94,13 @@ crushSome tt
                 TyConComp    TcConDeepRead   -> crushT tt
                 TyConComp    TcConDeepWrite  -> crushT tt
                 TyConComp    TcConDeepAlloc  -> crushT tt
-                TyConComp    TcConDeepUse    -> trimClosure tt
+
+                -- If a closure is miskinded then 'trimClosure' 
+                -- can return Nothing, so we just leave the term untrimmed.
+                TyConComp    TcConDeepUse    -> fromMaybe tt (trimClosure tt)
+
                 TyConWitness TwConDeepGlobal -> crushT tt
-                _                         -> tt
+                _                            -> tt
 
         _ -> tt
 

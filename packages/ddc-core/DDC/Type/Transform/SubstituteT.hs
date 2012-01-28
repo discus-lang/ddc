@@ -97,8 +97,10 @@ instance SubstituteT Type where
                 TCon (TyConComp TcConDeepAlloc) 
                   -> crushT      (TApp t1 (down t2))
 
+                -- If the closure is miskinded then trimClosure can 
+                -- return Nothing, so we leave it untrimmed.
                 TCon (TyConComp TcConDeepUse)
-                  -> trimClosure (TApp t1 (down t2))
+                  -> fromMaybe tt (trimClosure (TApp t1 (down t2)))
 
                 _ -> TApp (down t1) (down t2)
 

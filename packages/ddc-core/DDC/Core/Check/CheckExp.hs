@@ -210,8 +210,11 @@ checkExpM defs env xx@(XLam _ b1 x2)
                      _      -> clo2
 
                  -- Trim the closure before we annotate the returned function
-                 -- type with it.
-                 clos2_captured
+                 -- type with it. 
+                 -- This should always succeed because trimClosure only returns
+                 -- Nothing if the closure is miskinded, and we've already
+                 -- allready checked that.
+                 Just clos2_captured
                   = trimClosure $ closureOfTaggedSet clos2_masked
 
              in  return ( tFun t1 (TSum e2) clos2_captured t2
