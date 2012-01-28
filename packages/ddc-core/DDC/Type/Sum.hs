@@ -42,10 +42,44 @@ singleton k t
 
 
 -- | Check whether an element is a member of a sum.
---   TODO: Do the check directly instead of flattening the sum to a list.
+--
+--   * Returns True when the first argument is $0 or !0.
+--   * Returns False when the first argument is another sum.
+--   * May return False if the first argument is miskinded but still
+--     alpha-equivalent to some component of the sum.
 elem :: (Eq n, Ord n) => Type n -> TypeSum n -> Bool
 elem t ts 
-        = L.elem t (toList ts)
+ = case t of
+        TVar (UName n _) -> Map.member n (typeSumBoundNamed ts)
+        TVar (UPrim n _) -> Map.member n (typeSumBoundNamed ts)
+        TVar (UIx   i _) -> Map.member i (typeSumBoundAnon  ts)
+        TCon{}           -> L.elem t (typeSumSpill ts)
+
+        -- Foralls can't be a part of well-kinded sums.
+        --  Just check whether the types are strucutrally equal
+        --  without worring about alpha-equivalence.
+        TForall{}        -> L.elem t (typeSumSpill ts)
+
+        TApp (TCon _) _
+         |  Just (h, vc) <- takeSumArrayElem t
+         ,  tsThere      <- typeSumElems ts ! h
+         -> Set.member vc tsThere
+
+        TApp{}           -> L.elem t (typeSumSpill ts) 
+
+        -- Treat bottom effect and closures as always
+        -- being part of the sum.
+        TSum ts1
+         -> case toList ts1 of
+             [] | TCon (TyConKind KiConEffect)  <- typeSumKind ts1 
+                , TCon (TyConKind KiConEffect)  <- typeSumKind ts
+                -> True
+
+                | TCon (TyConKind KiConClosure) <- typeSumKind ts1
+                , TCon (TyConKind KiConClosure) <- typeSumKind ts
+                -> True
+
+             _ -> False
 
 
 -- | Insert a new element into a sum.
@@ -56,6 +90,10 @@ insert t ts
         TVar (UPrim n k) -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
         TVar (UIx   i k) -> ts { typeSumBoundAnon  = Map.insert i k (typeSumBoundAnon  ts) }
         TCon{}           -> ts { typeSumSpill      = t : typeSumSpill ts }
+
+        -- Foralls can't be part of well-kinded sums.
+        --  Just add them to the splill lists so that we can still
+        --  pretty print such mis-kinded types.
         TForall{}        -> ts { typeSumSpill      = t : typeSumSpill ts }
 
         TApp (TCon _) _
