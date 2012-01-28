@@ -16,6 +16,11 @@ data Error n
         = ErrorUndefined        
         { errorBound            :: Bound n }
 
+        -- | Type in environment does not match type annotation on variable.
+        | ErrorVarAnnotMismatch
+        { errorBound            :: Bound n
+        , errorTypeEnv          :: Type n }
+
         -- | Tried to check a sort.
         | ErrorNakedSort
         { errorSort             :: Sort n }
@@ -79,8 +84,14 @@ instance (Eq n, Pretty n) => Pretty (Error n) where
 
         ErrorUndefined u
          -> text "Undefined type variable when checking type: " <> ppr u
-         
-
+        
+        ErrorVarAnnotMismatch u t
+         -> vcat [ text "Type mismatch in annotation."
+                 , text "             Variable: "       <> ppr u
+                 , text "       has annotation: "       <> (ppr $ typeOfBound u)
+                 , text " which conflicts with: "       <> ppr t
+                 , text "     from environment." ]
+ 
         ErrorAppArgMismatch tt t1 t2
          -> vcat [ text "Core type mismatch in application."
                  , text "             type: " <> ppr t1

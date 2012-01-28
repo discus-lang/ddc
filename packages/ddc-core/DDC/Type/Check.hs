@@ -1,3 +1,4 @@
+-- | Check the kind of a type.
 module DDC.Type.Check
         ( -- * Kinds of Types
           checkType
@@ -27,11 +28,11 @@ import qualified DDC.Type.Sum           as TS
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check.Monad   as G
 
-
+-- | The type checker monad.
 type CheckM n   = G.CheckM (Error n)
 
 
--- Wrappers ---------------------------------------------------------------------------------------
+-- Wrappers -------------------------------------------------------------------
 -- | Check a type in the given environment, returning an error or its kind.
 checkType :: Ord n => Env n -> Type n -> Either (Error n) (Kind n)
 checkType env tt = result $ checkTypeM env tt
@@ -42,7 +43,8 @@ kindOfType  :: Ord n => Type n -> Either (Error n) (Kind n)
 kindOfType tt = result $ checkTypeM Env.empty tt
 
 
--- | Check a type in an empty environment, returning its kind, or `error` if there isn't one.
+-- | Check a type in an empty environment, returning its kind, 
+--   or `error` if there isn't one.
 kindOfType' :: (Ord n, Pretty n) => Type n -> Kind n
 kindOfType' tt
  = case kindOfType tt of
@@ -50,13 +52,41 @@ kindOfType' tt
         Right k         -> k
 
 
--- checkType --------------------------------------------------------------------------------------
+-- checkType ------------------------------------------------------------------
 -- | Check a type, returning its kind.
---   TODO: check that existing annotations have the same kinds as from the environment.
---         add a function to check that a type has kind annots in the right places.
 checkTypeM :: Ord n => Env n -> Type n -> CheckM n (Kind n)
 checkTypeM env tt
  = case tt of
+        -- Variables ------------------
+        TVar u
+         -> do  let tBound      = typeOfBound u
+                let mtEnv       = Env.lookup u env
+
+                let mkResult
+                        -- If the annot is Bot then just use the type
+                        -- from the environment.
+                        | Just tEnv     <- mtEnv
+                        , isBot tBound
+                        = return tEnv
+
+                        -- The bound has an explicit type annotation,
+                        --   that matches the one from the environment.
+                        | Just tEnv     <- mtEnv
+                        , tBound == tEnv
+                        = return tBound
+
+                        -- The bound has an explicit type annotation,
+                        --  that does not match the one from the environment. 
+                        | Just tEnv     <- mtEnv
+                        = throw $ ErrorVarAnnotMismatch u tEnv
+
+                        -- Type variables must be in the environment.
+                        | _             <- mtEnv
+                        = throw $ ErrorUndefined u
+
+                mkResult
+        
+        
         -- Constructors ---------------
         -- Sorts don't have a higher classification.
         TCon (TyConSort _)
@@ -74,13 +104,6 @@ checkTypeM env tt
         TCon (TyConBound u)     -> return $ typeOfBound u
 
 
-        -- Variables ------------------
-        TVar uu
-         -> case Env.lookup uu env of
-                Nothing -> throw  $ ErrorUndefined uu
-                Just k  -> return k 
-        
-        
         -- Quantifiers ----------------
         TForall b1 t2
          -> do  _       <- checkTypeM env (typeOfBind b1)
@@ -95,15 +118,16 @@ checkTypeM env tt
 
 
         -- Applications ---------------
-        -- Applications of the kind function constructor are handled directly because
-        -- the constructor doesn't have a sort by itself.
+        -- Applications of the kind function constructor are handled directly
+        -- because the constructor doesn't have a sort by itself.
         TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
          -> do  _       <- checkTypeM env k1
                 s2      <- checkTypeM env k2
                 return  s2
 
 
-        -- The implication constructor is overloaded and can have the following kinds:
+        -- The implication constructor is overloaded and can have the
+        -- following kinds:
         --   (=>) :: @ ~> @ ~> @,  for witness implication.
         --   (=>) :: @ ~> * ~> *,  for a context.
         TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
@@ -137,7 +161,8 @@ checkTypeM env tt
                 k <- case nub ks of     
                          []     -> return $ TS.kindOfSum ts
                          [k]    -> return k
-                         _      -> throw $ ErrorSumKindMismatch (TS.kindOfSum ts) ts ks
+                         _      -> throw $ ErrorSumKindMismatch 
+                                                (TS.kindOfSum ts) ts ks
                 
                 -- Check that the kind of the elements is a valid one.
                 -- Only effects and closures can be summed.
