@@ -12,8 +12,19 @@ import DDC.Type.Pretty
 -- | Type errors.
 data Error n
 
+        -- | Found an undefined variable.
+        = ErrorUndefined        
+        { errorBound            :: Bound n }
+
+        -- | Tried to check a sort.
+        | ErrorNakedSort
+        { errorSort             :: Sort n }
+
+        -- | Found an unapplied kind function constructor.
+        | ErrorUnappliedKindFun 
+
         -- | Kinds of paramter and arg don't match when checking type application.
-        = ErrorAppArgMismatch   
+        | ErrorAppArgMismatch   
         { errorChecking         :: Type n
         , errorParamKind        :: Kind n
         , errorArgKind          :: Kind n }
@@ -26,17 +37,6 @@ data Error n
         , errorArgType          :: Type n
         , errorArgTypeKind      :: Kind n }
 
-        -- | Found an unapplied kind function constructor.
-        | ErrorUnappliedKindFun 
-
-        -- | Tried to check a sort.
-        | ErrorNakedSort
-        { errorSort             :: Sort n }
-
-        -- | Found an undefined variable.
-        | ErrorUndefined        
-        { errorBound            :: Bound n }
-        
         -- | Found types with multiple kinds in a sum.
         --   If the kind hasn't been attached to the `TypeSum` yet then it may
         --   be holding the placeholder value (tBot sComp).
@@ -49,6 +49,13 @@ data Error n
         --   Sums can only have effect or closure kind.
         | ErrorSumKindInvalid
         { errorCheckingSum      :: TypeSum n
+        , errorKind             :: Kind n }
+
+        -- | Found a forall with an invalid body kind.
+        --   The body can only have data or witness kind.
+        | ErrorForallKindInvalid
+        { errorChecking         :: Type n
+        , errorBody             :: Type n
         , errorKind             :: Kind n }
 
         -- | Found a witness implication whose types have invalid kinds.
@@ -64,6 +71,16 @@ data Error n
 instance (Eq n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
+        ErrorUnappliedKindFun 
+         -> text "Can't take sort of unapplied kind function constructor."
+        
+        ErrorNakedSort s
+         -> text "Can't check a naked sort: " <> ppr s
+
+        ErrorUndefined u
+         -> text "Undefined type variable when checking type: " <> ppr u
+         
+
         ErrorAppArgMismatch tt t1 t2
          -> vcat [ text "Core type mismatch in application."
                  , text "             type: " <> ppr t1
@@ -78,15 +95,6 @@ instance (Eq n, Pretty n) => Pretty (Error n) where
                  , text "               of kind: " <> ppr k1
                  , text "         in appliction: " <> ppr tt]
                 
-        ErrorUnappliedKindFun 
-         -> text "Can't take sort of unapplied kind function constructor."
-        
-        ErrorNakedSort s
-         -> text "Can't check a naked sort: " <> ppr s
-
-        ErrorUndefined u
-         -> text "Undefined type variable when checking type: " <> ppr u
-         
         ErrorSumKindMismatch k ts ks
          -> vcat 
               $  [ text "Core type mismatch in sum."
@@ -101,6 +109,13 @@ instance (Eq n, Pretty n) => Pretty (Error n) where
                  , text "         the type sum: " <> ppr ts
                  , text "             has kind: " <> ppr k
                  , text "  but it must be ! or $" ]
+
+        ErrorForallKindInvalid tt t k
+         -> vcat [ text "Invalid kind for body of quantified type."
+                 , text "        the body type: " <> ppr t
+                 , text "             has kind: " <> ppr k
+                 , text "  but it must be * or @" 
+                 , text "        when checking: " <> ppr tt ]
         
         ErrorWitnessImplInvalid tt t1 k1 t2 k2
          -> vcat [ text "Invalid args for witness implication."

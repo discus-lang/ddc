@@ -1,4 +1,3 @@
-{-# OPTIONS -fwarn-unused-matches -fwarn-incomplete-patterns -fwarn-name-shadowing #-}
 module DDC.Type.Check
         ( -- * Kinds of Types
           checkType
@@ -20,6 +19,7 @@ import DDC.Type.Predicates
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List
+import Control.Monad
 import DDC.Type.Check.Monad             (throw, result)
 import DDC.Type.Pretty                  ()
 import DDC.Type.Env                     (Env)
@@ -73,6 +73,7 @@ checkTypeM env tt
         TCon (TyConComp tc)     -> return $ kindOfTcCon tc
         TCon (TyConBound u)     -> return $ typeOfBound u
 
+
         -- Variables ------------------
         TVar uu
          -> case Env.lookup uu env of
@@ -83,8 +84,15 @@ checkTypeM env tt
         -- Quantifiers ----------------
         TForall b1 t2
          -> do  _       <- checkTypeM env (typeOfBind b1)
-                checkTypeM (Env.extend b1 env) t2
-        
+                k2      <- checkTypeM (Env.extend b1 env) t2
+
+                -- The body must have data or witness kind.
+                when (  (not $ isDataKind k2)
+                     && (not $ isWitnessKind k2))
+                 $ throw $ ErrorForallKindInvalid tt t2 k2
+
+                return k2
+
 
         -- Applications ---------------
         -- Applications of the kind function constructor are handled directly because
@@ -105,13 +113,10 @@ checkTypeM env tt
                  then     return kWitness
                 else if isWitnessKind k1 && isDataKind k2
                  then     return kData
-                else    throw $ ErrorWitnessImplInvalid tt t1 k2 t2 k2
+                else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
 
-        -- TODO: need to use type equiv judgement intead
-        --       beacuse           Pure (e1 + e2)
-        --       won't match with  Pure (e2 + e1)
-        --       no, this will be fine when we move to type sums
+        -- Type application.
         TApp t1 t2
          -> do  k1      <- checkTypeM env t1
                 k2      <- checkTypeM env t2
@@ -132,11 +137,11 @@ checkTypeM env tt
                 k <- case nub ks of     
                          []     -> return $ TS.kindOfSum ts
                          [k]    -> return k
-                         _      -> (throw $ ErrorSumKindMismatch (TS.kindOfSum ts) ts ks)
+                         _      -> throw $ ErrorSumKindMismatch (TS.kindOfSum ts) ts ks
                 
                 -- Check that the kind of the elements is a valid one.
                 -- Only effects and closures can be summed.
                 if (k == kEffect || k == kClosure)
                  then return k
-                 else (throw $ ErrorSumKindInvalid ts k)
+                 else throw $ ErrorSumKindInvalid ts k
 
