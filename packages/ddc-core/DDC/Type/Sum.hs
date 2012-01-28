@@ -128,9 +128,7 @@ delete t ts
         TSum ts'        -> foldr delete ts (toList ts')
 
 
--- | Add two type sum.
--- 
---   TODO: make this more efficient. Directly combine the components.
+-- | Add two type sums.
 union     :: Ord n => TypeSum n -> TypeSum n -> TypeSum n
 union ts1 ts2 
         = foldr insert ts2 (toList ts1)
