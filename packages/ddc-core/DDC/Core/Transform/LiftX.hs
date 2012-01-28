@@ -56,13 +56,20 @@ instance LiftX (Exp a) where
 	    let (lets', inc) = liftAtDepthXLets n d lets in
 	    XLet a lets' (liftAtDepthX n (d+inc) x)
 
-        XCase{}         -> error "liftX XCase not done yet"
+        XCase a x alts  -> XCase a (down x) (map down alts)
 
         XCast a cc x    -> XCast a cc (down x)
         
         XType{}         -> xx
         XWitness{}      -> xx
          
+instance LiftX (Alt a) where
+ liftAtDepthX n d (AAlt p x)
+  = case p of
+	PDefault -> AAlt PDefault (liftAtDepthX n d x)
+	PData _ bs ->
+	    let d' = d + countBAnons bs
+	    in AAlt p (liftAtDepthX n d' x)
         
 
 liftAtDepthXLets
