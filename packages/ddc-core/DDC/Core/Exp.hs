@@ -173,17 +173,17 @@ data WiCon
         --   have such a region in their closure, because the type of the
         --   returned thunk doesn't reveal that it holds on to objects in 
         --   that region.
-        | WiConUse      -- use      :: [r: %]. Global r     => Empty (Use r)
+        | WiConUse      -- use      :: [r: %]. Global r => Empty (Use r)
 
         -- | Purify a read effect from a constant region.
         --   This lets us suspend applications that read constant objects,
         --   because it doesn't matter if the read is delayed, we'll always
         --   ge the same result.
-        | WiConRead     -- read     :: [r: %]. Const r => Pure (Read r)
+        | WiConRead     -- read     :: [r: %]. Const r  => Pure (Read r)
 
         -- | Purify an allocation effect into a constant region.
         --   This lets us increase the sharing of constant objects,
         --   because we can't tell constant objects of the same value apart.
-        | WiConAlloc    -- alloc    :: [r: %]. Const r => Pure (Alloc r)
+        | WiConAlloc    -- alloc    :: [r: %]. Const r  => Pure (Alloc r)
         deriving (Eq, Show)
 

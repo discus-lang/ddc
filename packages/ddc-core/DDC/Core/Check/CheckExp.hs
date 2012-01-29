@@ -68,7 +68,10 @@ checkExp
         -> Env n 
         -> Exp a n
         -> Either (Error a n)
-                  (Exp a n, Type n, Effect n, Closure n)
+                  ( Exp a n
+                  , Type n
+                  , Effect n
+                  , Closure n)
 
 checkExp defs env xx 
  = result

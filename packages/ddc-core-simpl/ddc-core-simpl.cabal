@@ -24,7 +24,11 @@ Library
         ddc-core        == 0.2.0.*
 
   Exposed-modules:
+        DDC.Core.Transform.Anonymize
+        DDC.Core.Transform.TransformX
+
         DDC.Type.Transform.Anonymize
+        DDC.Type.Transform.Rename
 
   GHC-options:
         -Werror
@@ -37,3 +41,6 @@ Library
         ExplicitForAll
         KindSignatures
         PatternGuards
+        MultiParamTypeClasses
+        FlexibleContexts
+        FlexibleInstances
