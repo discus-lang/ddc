@@ -133,7 +133,7 @@ stepPrint state store x tX _effX _cloX
                         , empty]
                     return $ Nothing
                       
-             Right (tX', _effX', _cloX')
+             Right (_, tX', _effX', _cloX')
               -> do 
                     -- Print intermediate expression.
                     when (Set.member TraceEval  $ stateModes state)

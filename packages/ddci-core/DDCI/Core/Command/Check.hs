@@ -162,16 +162,16 @@ cmdParseCheckExp lineStart str
          = let  x'      = C.spread primEnv x
                 fvs     = free     primEnv x'
            in   if Set.null fvs
-                 then   goResult x' (checkExp primDataDefs Env.empty x')
+                 then   goResult (checkExp primDataDefs Env.empty x')
                  else do  
                         putStrLn $ pretty $ text "Undefined variables: " <> ppr fvs
                         return Nothing
 
         -- Expression had a type error.
-        goResult _ (Left err)
+        goResult (Left err)
          = do   putStrLn $ pretty $ ppr err
                 return  Nothing
          
-        goResult x (Right (t, eff, clo))
-         =      return $ Just (x, t, eff, clo)
+        goResult (Right (x', t, eff, clo))
+         =      return $ Just (x', t, eff, clo)
 
