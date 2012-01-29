@@ -81,7 +81,10 @@ checkExp defs env xx
 
 -- checkExp -------------------------------------------------------------------
 -- | Check an expression, 
---   returning its type, effect and free value variables.
+--   returning a fully annotated version, its type, effect and closure.
+--
+--   The annotated version has type annotations on all binding occurrences 
+--   of variables.
 checkExpM 
         :: (Ord n, Pretty n)
         => DataDefs n           -- ^ Data type definitions.
@@ -328,7 +331,7 @@ checkExpM defs env xx@(XLet a (LLet mode b11 x12) x2)
                                  xx b11 tWit t12 tWitExp)
                                      
 
-        return ( XLet a (LLet mode b11 x12') x2'
+        return ( XLet a (LLet mode b11' x12') x2'
                , t2
                , effs12 `Sum.union` effs2
                , clo12  `Set.union` clo2_masked)
@@ -728,8 +731,8 @@ checkAltM xx defs env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
                             tsFields_ctor        
 
         -- Extend the environment with the field types.
-        let bsArg_subst = zipWith replaceTypeOfBind tsFields bsArg
-        let env'        = Env.extends bsArg_subst env
+        let bsArg'      = zipWith replaceTypeOfBind tsFields bsArg
+        let env'        = Env.extends bsArg' env
         
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, closBody)
@@ -742,7 +745,7 @@ checkAltM xx defs env tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
                                Just u  -> Set.delete (taggedClosureOfValBound u) c)
                      closBody bsArg
 
-        return  ( AAlt (PData uCon bsArg) xBody'
+        return  ( AAlt (PData uCon bsArg') xBody'
                 , tBody
                 , effsBody
                 , closBody_masked)

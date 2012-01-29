@@ -2,6 +2,7 @@ module DDCI.Core.Command.Check
         ( cmdShowKind
         , cmdShowWType
         , cmdShowType
+        , cmdExpRecon
         , ShowTypeMode(..)
         , cmdParseCheckExp)
 where
@@ -108,8 +109,6 @@ cmdShowType :: ShowTypeMode -> Int -> String -> IO ()
 cmdShowType mode lineStart ss
  = cmdParseCheckExp lineStart ss >>= goResult
  where
-        -- Expression passed type checking, 
-        --   print out the requested information.
         goResult Nothing
          = return ()
 
@@ -130,6 +129,18 @@ cmdShowType mode lineStart ss
 
                 ShowTypeClosure
                  -> putStrLn $ pretty (ppr x <> text " :$ " <> ppr clo)
+
+
+-- | Check expression and reconstruct type annotations on binders.
+cmdExpRecon   :: Int -> String -> IO ()
+cmdExpRecon lineStart ss
+ = cmdParseCheckExp lineStart ss >>= goResult
+ where
+        goResult Nothing
+         = return ()
+
+        goResult (Just (x, _, _, _))
+         = putStrLn $ pretty (ppr x)
 
 
 -- | Parse the given core expression, 

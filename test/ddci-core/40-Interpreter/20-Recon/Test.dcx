@@ -1,0 +1,13 @@
+-- Check reconstruction of annotation on let-bound variable.
+:recon..
+let x = 5 [R0#] ()
+in  x;;
+
+-- Check reconstruction of annotations on case-bound variables.
+:recon..
+\(r1 : %). \(xx : List r1 (Int r1)).
+case xx of {
+        Nil             -> Nil  [r1] [Int r1] ();
+        Cons x xs       -> Cons [r1] [Int r1] x (Cons [r1] [Int r1] x xs);
+};;
+

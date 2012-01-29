@@ -34,6 +34,7 @@ data Command
         | CommandKind
         | CommandWitType
         | CommandExpCheck
+        | CommandExpRecon
         | CommandExpType
         | CommandExpEffect
         | CommandExpClosure
@@ -50,6 +51,7 @@ commands
         , (":kind",     CommandKind)
         , (":wtype",    CommandWitType)
         , (":check",    CommandExpCheck)
+        , (":recon",    CommandExpRecon)
         , (":type",     CommandExpType)
         , (":effect",   CommandExpEffect)
         , (":closure",  CommandExpClosure)
@@ -306,6 +308,10 @@ handleCmd1 state cmd lineStart line
 
         CommandExpClosure 
          -> do  cmdShowType ShowTypeClosure lineStart line
+                return state
+
+        CommandExpRecon
+         -> do  cmdExpRecon lineStart line
                 return state
 
         CommandEval       
