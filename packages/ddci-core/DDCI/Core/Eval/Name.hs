@@ -12,7 +12,6 @@ import DDC.Base.Pretty
 import DDC.Base.Lexer
 import DDC.Core.Parser.Lexer
 import DDC.Core.Parser.Tokens
-import DDC.Type.Transform.Rename
 import Data.Char
 import Data.Maybe
 
@@ -186,5 +185,5 @@ readName_ str
 lexString :: Int -> String -> [Token (Tok Name)]
 lexString lineStart str
  = map rn $ lexExp lineStart str
- where rn (Token t sp) = Token (rename readName_ t) sp
+ where rn (Token t sp) = Token (renameTok readName_ t) sp
  

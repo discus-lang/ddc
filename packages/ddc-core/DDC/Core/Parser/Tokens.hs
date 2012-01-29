@@ -2,6 +2,7 @@
 module DDC.Core.Parser.Tokens
         ( Tok      (..)
         , describeTok
+        , renameTok
 
         , TokAtom  (..)
         , describeTokAtom
@@ -11,7 +12,6 @@ module DDC.Core.Parser.Tokens
 where
 import DDC.Core.Pretty
 import DDC.Core.Exp
-import DDC.Type.Transform.Rename
 
 
 -- TokenFamily ----------------------------------------------------------------
@@ -60,12 +60,16 @@ describeTok kk
         KN tn           -> describeTokNamed tn
 
 
-instance Rename Tok where
- rename f kk
-  = case kk of
+-- | Apply a function to all the names in a `TokN`.
+renameTok
+        :: Ord n2
+        => (n1 -> n2) -> Tok n1 -> Tok n2
+
+renameTok f kk
+ = case kk of
         KJunk s -> KJunk s
         KA t    -> KA t
-        KN t    -> KN $ rename f t
+        KN t    -> KN $ renameTokNamed f t
 
 
 -- TokAtom --------------------------------------------------------------------
@@ -241,8 +245,12 @@ describeTokNamed tn
         KLit n  -> pretty $ text "literal"     <+> (dquotes $ ppr n)
 
 
-instance Rename TokNamed where
- rename f kk
+-- | Apply a function to all the names in a `TokNamed`.
+renameTokNamed 
+        :: Ord n2
+        => (n1 -> n2) -> TokNamed n1 -> TokNamed n2
+
+renameTokNamed f kk
   = case kk of
         KCon c           -> KCon $ f c
         KVar c           -> KVar $ f c
