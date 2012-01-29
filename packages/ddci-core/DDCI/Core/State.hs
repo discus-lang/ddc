@@ -1,12 +1,14 @@
 
 module DDCI.Core.State
         ( State(..)
+        , TransformSpec(..)
         , initState
 
         , Mode (..)
-        , applyMode)
+        , adjustMode)
 where
 import DDCI.Core.Mode
+import DDCI.Core.TransformSpec
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 
@@ -14,20 +16,28 @@ import qualified Data.Set       as Set
 -- | Interpreter state.
 data State
         = State
-        { stateModes    :: Set Mode }
+        { stateModes            :: Set Mode 
+        , stateTransformSpec    :: TransformSpec }
 
 
--- | Apply a mode setting to the state.
-applyMode :: Bool -> Mode -> State -> State
-applyMode True mode state
+-- | Adjust a mode setting in the state.
+adjustMode 
+        :: Bool         -- ^ Whether to enable or disable the mode.        
+        -> Mode         -- ^ Mode to adjust.
+        -> State
+        -> State
+
+adjustMode True mode state
         = state { stateModes    = Set.insert mode (stateModes state) }
 
-applyMode False mode state
+adjustMode False mode state
         = state { stateModes    = Set.delete mode (stateModes state) }
 
 
+-- | The initial state.
 initState :: State
 initState
         = State
-        { stateModes    = Set.empty }
+        { stateModes            = Set.empty 
+        , stateTransformSpec    = None }
 

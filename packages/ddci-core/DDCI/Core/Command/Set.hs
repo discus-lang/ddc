@@ -5,7 +5,9 @@ module DDCI.Core.Command.Set
         , cmdSet)
 where
 import DDCI.Core.State
+import DDCI.Core.TransformSpec
 import DDCI.Core.Mode
+import DDC.Base.Pretty
 import Data.List
 import Data.Char
 import qualified Data.Set       as Set
@@ -15,22 +17,38 @@ cmdSet :: String -> State -> IO State
 
 -- Display the active modes.
 cmdSet [] state
- = do   putStrLn $ show
-                 $ Set.toList 
-                 $ stateModes state
+ = do   putStrLn $ "mode      = "
+                 ++ (show
+                         $ Set.toList 
+                         $ stateModes state)
+        
+        putStrLn $ "transform = "
+                 ++ (pretty $ ppr (stateTransformSpec state))
 
         return state
 
 -- Toggle active modes.
 cmdSet cmd state
- | Just changes <- parseModeChanges cmd
- = do   let state'        = foldr (uncurry applyMode) state changes
-        putStrLn "ok"
-        return state'
+ | "transform" : rest      <- words cmd
+ = do   case parseTransformSpec (concat rest) of
+         Just spec       
+          -> do putStrLn "ok"
+                return $ state { stateTransformSpec = spec }
+
+         Nothing
+          -> do putStrLn "transform spec parse error"
+                return state
 
  | otherwise
- = do   putStrLn "mode parse error"
-        return state
+ = case parseModeChanges cmd of
+        Just changes
+         -> do  let state'  = foldr (uncurry adjustMode) state changes
+                putStrLn "ok"
+                return state'
+        
+        Nothing
+         -> do  putStrLn "mode parse error"
+                return state
 
 
 -- | Parse a string of mode changes.
