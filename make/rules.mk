@@ -42,10 +42,16 @@ packages/ddc-base/%.o : packages/ddc-base/%.hs
 packages/ddc-core/%.o : packages/ddc-core/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-core -ipackages/ddc-base
+		-c $< -ipackages/ddc-base -ipackages/ddc-core
+
+packages/ddc-core-simpl/%.o : packages/ddc-core-simpl/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-simpl
 
 packages/ddci-core/%.o : packages/ddci-core/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddci-core -ipackages/ddc-core -ipackages/ddc-base
+		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-simpl \
+                      -ipackages/ddci-core
 
