@@ -37,7 +37,7 @@ import qualified Data.Set               as Set
 import Control.Monad
 import Data.List                        as L
 import Data.Maybe
-
+import Debug.Trace
 
 -- Wrappers -------------------------------------------------------------------
 -- | Take the kind of a type.
@@ -54,7 +54,7 @@ typeOfExp defs xx
 
 -- | Take the kind of a type, or `error` if there isn't one.
 typeOfExp' 
-        :: (Pretty n, Ord n) 
+        :: (Ord n, Pretty n)
         => DataDefs n -> Exp a n -> Type n
 typeOfExp' defs tt
  = case checkExp defs Env.empty tt of
@@ -100,8 +100,18 @@ checkExpM
                 , TypeSum n
                 , Set (TaggedClosure n))
 
--- variables and constructors ---------------------
-checkExpM _defs env (XVar a u)
+checkExpM defs env xx
+ = do   (xx', t, eff, clo) <- checkExpM' defs env xx
+        trace (pretty $ vcat 
+                [ text "checkExpM:  " <+> ppr xx 
+                , text "        ::  " <+> ppr t 
+                , text "        :!: " <+> ppr eff
+                , text "        :$: " <+> ppr clo
+                , text ""])
+         $ return (xx', t, eff, clo)
+
+-- variables ------------------------------------
+checkExpM' _defs env (XVar a u)
  = do   let tBound  = typeOfBound u
         let mtEnv   = Env.lookup u env
 
@@ -151,7 +161,8 @@ checkExpM _defs env (XVar a u)
                         $ replaceTypeOfBound tResult u)
 
 
-checkExpM _defs _env (XCon a u)
+-- constructors ---------------------------------
+checkExpM' _defs _env (XCon a u)
       = return  ( XCon a u
                 , typeOfBound u
                 , Sum.empty kEffect
@@ -160,7 +171,7 @@ checkExpM _defs _env (XCon a u)
 
 -- application ------------------------------------
 -- value-type application.
-checkExpM defs env xx@(XApp a x1 (XType t2))
+checkExpM' defs env xx@(XApp a x1 (XType t2))
  = do   (x1', t1, effs1, clos1) <- checkExpM  defs env x1
         k2                      <- checkTypeM env t2
         case t1 of
@@ -176,7 +187,7 @@ checkExpM defs env xx@(XApp a x1 (XType t2))
 
 
 -- value-witness application.
-checkExpM defs env xx@(XApp a x1 (XWitness w2))
+checkExpM' defs env xx@(XApp a x1 (XWitness w2))
  = do   (x1', t1, effs1, clos1) <- checkExpM     defs env x1
         t2                      <- checkWitnessM env w2
         case t1 of
@@ -192,7 +203,7 @@ checkExpM defs env xx@(XApp a x1 (XWitness w2))
                  
 
 -- value-value application.
-checkExpM defs env xx@(XApp a x1 x2)
+checkExpM' defs env xx@(XApp a x1 x2)
  = do   (x1', t1, effs1, clos1)    <- checkExpM defs env x1
         (x2', t2, effs2, clos2)    <- checkExpM defs env x2
         case t1 of
@@ -209,7 +220,7 @@ checkExpM defs env xx@(XApp a x1 x2)
 
 
 -- lambda abstractions ----------------------------
-checkExpM defs env xx@(XLam a b1 x2)
+checkExpM' defs env xx@(XLam a b1 x2)
  = do   let t1          =  typeOfBind b1
         k1              <- checkTypeM env t1
         let u1          =  universeFromType2 k1
@@ -281,7 +292,7 @@ checkExpM defs env xx@(XLam a b1 x2)
 
 
 -- let --------------------------------------------
-checkExpM defs env xx@(XLet a (LLet mode b11 x12) x2)
+checkExpM' defs env xx@(XLet a (LLet mode b11 x12) x2)
  = do   -- Check the right of the binding.
         (x12', t12, effs12, clo12)  <- checkExpM defs env x12
 
@@ -353,7 +364,7 @@ checkExpM defs env xx@(XLet a (LLet mode b11 x12) x2)
 
 
 -- letrec -----------------------------------------
-checkExpM defs env xx@(XLet a (LRec bxs) xBody)
+checkExpM' defs env xx@(XLet a (LRec bxs) xBody)
  = do   
         let (bs, xs)    = unzip bxs
 
@@ -408,7 +419,7 @@ checkExpM defs env xx@(XLet a (LRec bxs) xBody)
 
 
 -- letregion --------------------------------------
-checkExpM defs env xx@(XLet a (LLetRegion b bs) x)
+checkExpM' defs env xx@(XLet a (LLetRegion b bs) x)
  = case takeSubstBoundOfBind b of
      Nothing     -> checkExpM defs env x
      Just u
@@ -464,7 +475,7 @@ checkExpM defs env xx@(XLet a (LLetRegion b bs) x)
 
 
 -- withregion -----------------------------------
-checkExpM defs env xx@(XLet a (LWithRegion u) x)
+checkExpM' defs env xx@(XLet a (LWithRegion u) x)
  = do   -- Check the type on the region handle.
         let k   = typeOfBound u
         checkTypeM env k
@@ -498,7 +509,7 @@ checkExpM defs env xx@(XLet a (LWithRegion u) x)
                 
 
 -- case expression ------------------------------
-checkExpM defs env xx@(XCase a xDiscrim alts)
+checkExpM' defs env xx@(XCase a xDiscrim alts)
  = do
         -- Check the discriminant.
         (xDiscrim', tDiscrim, effsDiscrim, closDiscrim) 
@@ -600,7 +611,7 @@ checkExpM defs env xx@(XCase a xDiscrim alts)
 
 -- type cast -------------------------------------
 -- Weaken an effect, adding in the given terms.
-checkExpM defs env xx@(XCast a c@(CastWeakenEffect eff) x1)
+checkExpM' defs env xx@(XCast a c@(CastWeakenEffect eff) x1)
  = do   
         -- Check the effect term.
         kEff            <- checkTypeM env eff
@@ -617,7 +628,7 @@ checkExpM defs env xx@(XCast a c@(CastWeakenEffect eff) x1)
 
 
 -- Weaken a closure, adding in the given terms.
-checkExpM defs env xx@(XCast a c@(CastWeakenClosure clo2) x1)
+checkExpM' defs env xx@(XCast a c@(CastWeakenClosure clo2) x1)
  = do   
         -- Check the closure term.
         kClo             <- checkTypeM env clo2
@@ -641,7 +652,7 @@ checkExpM defs env xx@(XCast a c@(CastWeakenClosure clo2) x1)
 
 
 -- Purify an effect, given a witness that it is pure.
-checkExpM defs env xx@(XCast a c@(CastPurify w) x1)
+checkExpM' defs env xx@(XCast a c@(CastPurify w) x1)
  = do   tW                   <- checkWitnessM env w
         (x1', t1, effs, clo) <- checkExpM defs env x1
                 
@@ -657,7 +668,7 @@ checkExpM defs env xx@(XCast a c@(CastPurify w) x1)
 
 
 -- Forget a closure, given a witness that it is empty.
-checkExpM defs env xx@(XCast a c@(CastForget w) x1)
+checkExpM' defs env xx@(XCast a c@(CastForget w) x1)
  = do   tW                    <- checkWitnessM env w
         (x1', t1, effs, clos) <- checkExpM defs env x1
 
@@ -677,10 +688,10 @@ checkExpM defs env xx@(XCast a c@(CastForget w) x1)
 
 -- Type and witness expressions can only appear as the arguments 
 -- to  applications.
-checkExpM _defs _env xx@(XType _)
+checkExpM' _defs _env xx@(XType _)
         = throw $ ErrorNakedType xx 
 
-checkExpM _defs _env xx@(XWitness _)
+checkExpM' _defs _env xx@(XWitness _)
         = throw $ ErrorNakedWitness xx
 
 
@@ -845,7 +856,7 @@ checkWitnessBindM xx uRegion bsWit bWit
 
 -------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
-checkTypeM :: Ord n => Env n -> Type n -> CheckM a n (Kind n)
+checkTypeM :: (Ord n, Pretty n) => Env n -> Type n -> CheckM a n (Kind n)
 checkTypeM env tt
  = case T.checkType env tt of
         Left err        -> throw $ ErrorType err

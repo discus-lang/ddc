@@ -140,7 +140,7 @@ typeOfWiCon wc
 
 -- checkType ------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
-checkTypeM :: Ord n => Env n -> Type n -> CheckM a n (Kind n)
+checkTypeM :: (Ord n, Pretty n) => Env n -> Type n -> CheckM a n (Kind n)
 checkTypeM env tt
  = case T.checkType env tt of
         Left err        -> throw $ ErrorType err

@@ -28,6 +28,7 @@ import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Sum           as TS
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check.Monad   as G
+import Debug.Trace
 
 -- | The type checker monad.
 type CheckM n   = G.CheckM (Error n)
@@ -35,12 +36,12 @@ type CheckM n   = G.CheckM (Error n)
 
 -- Wrappers -------------------------------------------------------------------
 -- | Check a type in the given environment, returning an error or its kind.
-checkType :: Ord n => Env n -> Type n -> Either (Error n) (Kind n)
+checkType  :: (Ord n, Pretty n) => Env n -> Type n -> Either (Error n) (Kind n)
 checkType env tt = result $ checkTypeM env tt
 
 
 -- | Check a type in an empty environment, returning an error or its kind.
-kindOfType  :: Ord n => Type n -> Either (Error n) (Kind n)
+kindOfType :: (Ord n, Pretty n) => Type n -> Either (Error n) (Kind n)
 kindOfType tt = result $ checkTypeM Env.empty tt
 
 
@@ -60,10 +61,13 @@ kindOfType' tt
 --   (==) instead of equivT. This is because kinds do not contain quantifiers
 --   that need to be compared up to alpha-equivalence, nor do they contain
 --   crushable components terms.
-checkTypeM :: Ord n => Env n -> Type n -> CheckM n (Kind n)
+checkTypeM :: (Ord n, Pretty n) => Env n -> Type n -> CheckM n (Kind n)
+checkTypeM env tt
+ = trace (pretty $ text "checkTypeM:" <+> ppr tt)
+ $ checkTypeM' env tt
 
 -- Variables ------------------
-checkTypeM env (TVar u)
+checkTypeM' env (TVar u)
  = do   let tBound      = typeOfBound u
         let mtEnv       = Env.lookup u env
 
@@ -98,12 +102,13 @@ checkTypeM env (TVar u)
 
                 -- Type variables must be in the environment.
                 | _             <- mtEnv
-                = throw $ ErrorUndefined u
+                = trace (pretty $ ppr $ Env.envStack env)
+                $ throw $ ErrorUndefined u
 
         mkResult
 
 -- Constructors ---------------
-checkTypeM _env tt@(TCon tc)
+checkTypeM' _env tt@(TCon tc)
  = case tc of
         -- Sorts don't have a higher classification.
         TyConSort _      -> throw $ ErrorNakedSort tt
@@ -121,7 +126,7 @@ checkTypeM _env tt@(TCon tc)
 
 
 -- Quantifiers ----------------
-checkTypeM env tt@(TForall b1 t2)
+checkTypeM' env tt@(TForall b1 t2)
  = do   _       <- checkTypeM env (typeOfBind b1)
         k2      <- checkTypeM (Env.extend b1 env) t2
 
@@ -135,7 +140,7 @@ checkTypeM env tt@(TForall b1 t2)
 -- Applications ---------------
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
-checkTypeM env (TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
+checkTypeM' env (TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
  = do   _       <- checkTypeM env k1
         s2      <- checkTypeM env k2
         return  s2
@@ -144,7 +149,7 @@ checkTypeM env (TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
 -- following kinds:
 --   (=>) :: @ ~> @ ~> @,  for witness implication.
 --   (=>) :: @ ~> * ~> *,  for a context.
-checkTypeM env tt@(TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2)
+checkTypeM' env tt@(TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2)
  = do   k1      <- checkTypeM env t1
         k2      <- checkTypeM env t2
         if      isWitnessKind k1 && isWitnessKind k2
@@ -154,7 +159,7 @@ checkTypeM env tt@(TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2)
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
 -- Type application.
-checkTypeM env tt@(TApp t1 t2)
+checkTypeM' env tt@(TApp t1 t2)
  = do   k1      <- checkTypeM env t1
         k2      <- checkTypeM env t2
         case k1 of
@@ -164,9 +169,8 @@ checkTypeM env tt@(TApp t1 t2)
                   
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
-
 -- Sums -----------------------
-checkTypeM env (TSum ts)
+checkTypeM' env (TSum ts)
  = do   ks      <- mapM (checkTypeM env) $ TS.toList ts
 
         -- Check that all the types in the sum have a single kind, 
