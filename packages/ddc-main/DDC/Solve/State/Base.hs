@@ -18,11 +18,11 @@ module DDC.Solve.State.Base
 	  -- * Naming
 	, newVarN
 	, lookupSigmaVar
-	
+
 	  -- * Path Management
 	, pathEnter
-	, pathLeave 
-	
+	, pathLeave
+
 	  -- * Bits and pieces
 	, graphInstantiatesAdd)
 where
@@ -36,7 +36,6 @@ import DDC.Var
 import Data.IORef
 import Data.Maybe
 import System.IO
-import Control.Monad.State.Strict
 import qualified DDC.Main.Arg	as Arg
 import qualified Data.Set	as Set
 import qualified Data.MapUtil	as Map
@@ -74,13 +73,13 @@ traceM p
  	case mHandle of
 	 Nothing	-> return ()
 	 Just handle
-	  -> do 
-	  	liftIO (hPutStr handle 
-				$ indentSpace i 
+	  -> do
+	  	liftIO (hPutStr handle
+				$ indentSpace i
 				$ pprStr (catMaybes $ map Arg.takePrettyModeOfArg $ Set.toList args) p)
 	  	liftIO (hFlush  handle)
 
-	
+
 -- | Do some solver thing, while indenting anything it adds to the trace.
 traceI :: SquidM a -> SquidM a
 traceI fun
@@ -91,12 +90,12 @@ traceI fun
 
 traceIE :: SquidM ()
 traceIE	= stateTraceIndent `modifyRef` \i -> i + 4
- 
+
 traceIL :: SquidM ()
 traceIL	= stateTraceIndent `modifyRef` \i -> i - 4
 
 
--- Error Handling --------------------------------------------------------------------------------- 
+-- Error Handling ---------------------------------------------------------------------------------
 -- | Add some errors to the monad.
 --	These'll be regular user-level type errors from the compiled program.
 addErrors ::	[Error]	-> SquidM ()
@@ -114,20 +113,20 @@ gotErrors
 -- Naming ----------------------------------------------------------------------------------------
 -- | Make a new variable in this namespace
 newVarN :: NameSpace ->	SquidM Var
-newVarN	space	
+newVarN	space
  = do 	Just vid	<- liftM (Map.lookup space)
 			$  getsRef stateVarGen
-	
+
 	let vid'	= incVarId vid
 
-	stateVarGen `modifyRef` \varGen -> 
+	stateVarGen `modifyRef` \varGen ->
 		Map.insert space vid' varGen
-	
+
 	let name	= pprStrPlain vid
 	let var'	= (varWithName name)
-			{ varNameSpace	= space 
+			{ varNameSpace	= space
 			, varId		= vid }
-			
+
 	return var'
 
 
@@ -143,8 +142,8 @@ lookupSigmaVar	v
 --	This records the fact that we've entered a branch.
 pathEnter :: CBind -> SquidM ()
 pathEnter BNothing	= return ()
-pathEnter v	
-	= statePath `modifyRef` \path -> v : path 
+pathEnter v
+	= statePath `modifyRef` \path -> v : path
 
 
 -- | Pop a var off the path queue.
@@ -157,7 +156,7 @@ pathLeave bind
 	  	-- pop matching binders off the path
 		b1 : bs
 		 | bind == b1	-> bs
-	
+
 		-- nothing matched.. :(
 		_ -> panic stage $ "pathLeave: can't leave " % bind % "\n"
 
@@ -167,9 +166,9 @@ pathLeave bind
 -- | Add to the who instantiates who list
 graphInstantiatesAdd :: CBind -> CBind -> SquidM ()
 graphInstantiatesAdd    vBranch vInst
- = stateInstantiates `modifyRef` \instantiates -> 
-	Map.adjustWithDefault 
-		(Set.insert vInst) 
+ = stateInstantiates `modifyRef` \instantiates ->
+	Map.adjustWithDefault
+		(Set.insert vInst)
 		Set.empty
 		vBranch
 		instantiates

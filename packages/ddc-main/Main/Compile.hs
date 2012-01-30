@@ -453,7 +453,7 @@ compileFile setup scrapes sModule blessMain
         -- Pass off to back-end compiler --------------------------------------
 	-- TODO : Put the parameters into a struct and call compileViaX with just
 	-- a single parameter.
-	if elem Arg.ViaLLVM ?args
+	if True -- elem Arg.ViaLLVM ?args
 	  then compileViaLlvm
 		setup modName eInit eHeader
 		pathDS pathDI
