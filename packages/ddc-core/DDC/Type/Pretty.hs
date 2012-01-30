@@ -45,7 +45,7 @@ pprBinderGroup (rs, t)
 
 
 -- Bound ------------------------------------------------------------------------------------------
-instance Pretty n => Pretty (Bound n) where
+instance (Pretty n, Eq n) => Pretty (Bound n) where
  ppr nn
   = case nn of
         UName n _       -> ppr n
@@ -125,7 +125,7 @@ instance (Pretty n, Eq n) => Pretty (TypeSum n) where
 
 
 -- TCon -------------------------------------------------------------------------------------------
-instance Pretty n => Pretty (TyCon n) where
+instance (Eq n, Pretty n) => Pretty (TyCon n) where
  ppr tt
   = case tt of
         TyConSort sc    -> ppr sc

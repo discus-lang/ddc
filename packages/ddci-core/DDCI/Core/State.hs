@@ -1,14 +1,14 @@
 
 module DDCI.Core.State
         ( State(..)
-        , TransformSpec(..)
+        , Transform(..)
         , initState
 
         , Mode (..)
         , adjustMode)
 where
 import DDCI.Core.Mode
-import DDCI.Core.TransformSpec
+import DDCI.Core.Transform
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 
@@ -17,7 +17,7 @@ import qualified Data.Set       as Set
 data State
         = State
         { stateModes            :: Set Mode 
-        , stateTransformSpec    :: TransformSpec }
+        , stateTransform        :: Transform }
 
 
 -- | Adjust a mode setting in the state.
@@ -39,5 +39,5 @@ initState :: State
 initState
         = State
         { stateModes            = Set.empty 
-        , stateTransformSpec    = None }
+        , stateTransform        = None }
 

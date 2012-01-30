@@ -5,7 +5,7 @@ module DDCI.Core.Command.Set
         , cmdSet)
 where
 import DDCI.Core.State
-import DDCI.Core.TransformSpec
+import DDCI.Core.Transform
 import DDCI.Core.Mode
 import DDC.Base.Pretty
 import Data.List
@@ -17,23 +17,23 @@ cmdSet :: String -> State -> IO State
 
 -- Display the active modes.
 cmdSet [] state
- = do   putStrLn $ "mode      = "
+ = do   putStrLn $ "mode  = "
                  ++ (show
                          $ Set.toList 
                          $ stateModes state)
         
-        putStrLn $ "transform = "
-                 ++ (pretty $ ppr (stateTransformSpec state))
+        putStrLn $ "trans = "
+                 ++ (pretty $ ppr (stateTransform state))
 
         return state
 
 -- Toggle active modes.
 cmdSet cmd state
- | "transform" : rest      <- words cmd
- = do   case parseTransformSpec (concat rest) of
+ | "trans" : rest      <- words cmd
+ = do   case parseTransform (concat rest) of
          Just spec       
           -> do putStrLn "ok"
-                return $ state { stateTransformSpec = spec }
+                return $ state { stateTransform = spec }
 
          Nothing
           -> do putStrLn "transform spec parse error"

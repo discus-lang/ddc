@@ -26,11 +26,12 @@ class Anonymize (c :: * -> *) where
 pushAnonymizeBind :: Ord n => Bind n -> [Bind n] -> (Bind n, [Bind n])
 pushAnonymizeBind b stack
  = let  b'      = anonymize stack b
+        t'      = typeOfBind b'
         stack'  = case b' of
                         BName{} -> b' : stack
                         BAnon{} -> b' : stack
                         _       -> stack
-   in   (b', stack')
+   in   (BAnon t', stack')
 
 
 -- Instances ------------------------------------------------------------------
@@ -44,9 +45,12 @@ instance Anonymize Bound where
   = case bb of
         UName _ t
          | Just ix      <- findIndex (boundMatchesBind bb) stack    
-         -> UIx ix t
+         -> UIx ix (anonymize stack t)
          
         _ -> bb
+
+
+
         
 
 instance Anonymize Type where
