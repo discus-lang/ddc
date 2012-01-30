@@ -135,7 +135,7 @@ lookupName n env
         = Map.lookup n (envMap env)
 
 
--- | Yield the depth of the deBruijn stack.
+-- | Yield the total depth of the deBruijn stack.
 depth :: Env n -> Int
 depth env       = envStackLength env
 

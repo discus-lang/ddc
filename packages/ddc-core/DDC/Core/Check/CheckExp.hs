@@ -21,6 +21,7 @@ import DDC.Core.Transform.SubstituteT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Type.Transform.Instantiate
+import DDC.Type.Transform.LiftT
 import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Type.Compounds
@@ -113,8 +114,19 @@ checkExpM _defs env (XVar a u)
 
              -- The bound has an explicit type annotation,
              --  which matches the one from the environment.
+             -- 
+             --  When the bound is a deBruijn index we need to lift the
+             --  annotation on the original binder through any lambdas
+             --  between the binding occurrence and the use.
              | Just tEnv    <- mtEnv
-             , tBound == tEnv
+             , UIx i _      <- u
+             , equivT tBound (liftT (i + 1) tEnv) 
+             = return tBound
+
+             -- The bound has an explicit type annotation,
+             --  which matches the one from the environment.
+             | Just tEnv    <- mtEnv
+             , equivT tBound tEnv
              = return tEnv
 
              -- The bound has an explicit type annotation,

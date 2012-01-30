@@ -10,7 +10,7 @@ import qualified DDC.Type.Sum           as Sum
 
 stage   = "DDC.Type.Pretty"
 
--- Bind -------------------------------------------------------------------------------------------
+-- Bind -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Bind n) where
  ppr bb
   = case bb of
@@ -19,7 +19,7 @@ instance (Pretty n, Eq n) => Pretty (Bind n) where
         BNone   t       -> text "_"  <+> text ":" <+> ppr t
 
 
--- Binder -----------------------------------------------------------------------------------------
+-- Binder ---------------------------------------------------------------------
 instance Pretty n => Pretty (Binder n) where
  ppr bb
   = case bb of
@@ -41,19 +41,21 @@ pprBinderSep bb
 -- | Print a group of binders with the same type.
 pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
 pprBinderGroup (rs, t)
-        =  (brackets $ (cat $ map pprBinderSep rs) <> text ":"  <> ppr t) <> dot
+        =  (brackets $ (cat $ map pprBinderSep rs) <> text ":"  <> ppr t) 
+        <> dot
 
 
--- Bound ------------------------------------------------------------------------------------------
+-- Bound ----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Bound n) where
  ppr nn
   = case nn of
         UName n _       -> ppr n
         UPrim n _       -> ppr n
-        UIx i _         -> text "^" <> ppr i
+        UIx i t         -> parens (text "^" <> ppr i <> text ":" <> ppr t)
+--        UIx i _         -> text "^" <> ppr i
 
 
--- Type -------------------------------------------------------------------------------------------
+-- Type -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Type n) where
  pprPrec d tt
   = case tt of
@@ -119,12 +121,12 @@ instance (Pretty n, Eq n) => Pretty (TypeSum n) where
       [] | isEffectKind  $ Sum.kindOfSum ss -> text "!0"
          | isClosureKind $ Sum.kindOfSum ss -> text "$0"
          | isDataKind    $ Sum.kindOfSum ss -> text "*0"
-         | otherwise                       -> error $ stage ++ ": malformed sum"
+         | otherwise     -> error $ stage ++ ": malformed sum"
          
       ts  -> sep $ punctuate (text " +") (map ppr ts)
 
 
--- TCon -------------------------------------------------------------------------------------------
+-- TyCon ----------------------------------------------------------------------
 instance (Eq n, Pretty n) => Pretty (TyCon n) where
  ppr tt
   = case tt of

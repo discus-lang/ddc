@@ -17,6 +17,7 @@ import DDC.Type.Check.CheckError
 import DDC.Type.Check.CheckCon
 import DDC.Type.Compounds
 import DDC.Type.Predicates
+import DDC.Type.Transform.LiftT
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List
@@ -54,6 +55,11 @@ kindOfType' tt
 
 -- checkType ------------------------------------------------------------------
 -- | Check a type, returning its kind.
+---
+--   Note that when comparing kinds, we can just use plain equality
+--   (==) instead of equivT. This is because kinds do not contain quantifiers
+--   that need to be compared up to alpha-equivalence, nor do they contain
+--   crushable components terms.
 checkTypeM :: Ord n => Env n -> Type n -> CheckM n (Kind n)
 checkTypeM env tt
  = case tt of
@@ -68,6 +74,17 @@ checkTypeM env tt
                         | Just tEnv     <- mtEnv
                         , isBot tBound
                         = return tEnv
+
+                        -- The bound has an explicit type annotation,
+                        --  which matches the one from the environment.
+                        -- 
+                        --  When the bound is a deBruijn index we need to lift the
+                        --  annotation on the original binder through any lambdas
+                        --  between the binding occurrence and the use.
+                        | Just tEnv    <- mtEnv
+                        , UIx i _      <- u
+                        , tBound == liftT (i + 1) tEnv
+                        = return tBound
 
                         -- The bound has an explicit type annotation,
                         --   that matches the one from the environment.
