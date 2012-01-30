@@ -51,8 +51,8 @@ instance (Pretty n, Eq n) => Pretty (Bound n) where
   = case nn of
         UName n _       -> ppr n
         UPrim n _       -> ppr n
-        UIx i t         -> parens (text "^" <> ppr i <> text ":" <> ppr t)
---        UIx i _         -> text "^" <> ppr i
+--        UIx i t         -> parens (text "^" <> ppr i <> text ":" <> ppr t)
+        UIx i _         -> text "^" <> ppr i
 
 
 -- Type -----------------------------------------------------------------------
