@@ -42,16 +42,16 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
          -- Variables aren't name equivalent, but they might be equivalent
          -- if we renamed them. See if the binding occurrence has the same type.
          | depth1 == depth2
-         , Just t1a      <- getBindType stack1 u1
-         , Just t2a      <- getBindType stack2 u2
-         -> equivT' stack1 depth1 stack2 depth2 t1a t2a
+         , Just t1a      <- getBindType stack1 u1               -- TODO: this is wrong.
+         , Just t2a      <- getBindType stack2 u2               --  [a a b:*]. T3 a a b  is different from [a b b:*]. T3 a b b
+         -> equivT' stack1 depth1 stack2 depth2 t1a t2a         --  both vars need to point to the same place in their stacks.
 
         -- Constructor names must be equal.
         (TCon tc1,        TCon tc2)
          -> tc1 == tc2
 
         -- Push binders on the stack as we enter foralls.
-        (TForall b11 t12, TForall b21 t22)
+        (TForall b11 t12, TForall b21 t22)                      -- TODO: check kinds of binders are the same
          -> equivT' (b11 : stack1) (depth1 + 1) 
                     (b21 : stack2) (depth2 + 1) 
                     t12 t22

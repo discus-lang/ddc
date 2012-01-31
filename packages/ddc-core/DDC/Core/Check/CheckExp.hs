@@ -281,7 +281,8 @@ checkExpM' defs env xx@(XLam a b1 x2)
           -> return ( XLam a b1 x2'
                     , tImpl t1 t2
                     , Sum.empty kEffect
-                    , clo2) 
+                    , clo2)                                                             -- TODO: also lower this closure.
+                                                                                        -- witnesses can be on the deBruijn stack
                       
          Just UniverseSpec
           | e2 /= Sum.empty kEffect  -> throw $ ErrorLamNotPure     xx (TSum e2)
