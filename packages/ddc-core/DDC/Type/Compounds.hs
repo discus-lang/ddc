@@ -148,13 +148,15 @@ replaceTypeOfBound t uu
         UIx   i _       -> UIx   i t
 
 
--- | Check whether named `Bound` matches a named `Bind`.
---  
+-- | Check whether a bound maches a bind.
+--    `UName`    and `BName` match if they have the same name.
+--    `UIx 0 _`  and `BAnon _` always match.
 --   Yields `False` for other combinations of bounds and binds.
 boundMatchesBind :: Eq n => Bound n -> Bind n -> Bool
 boundMatchesBind u b
  = case (u, b) of
         (UName n1 _, BName n2 _) -> n1 == n2
+        (UIx 0 _,    BAnon _   ) -> True
         _                        -> False
 
 -- | Convert a `Bound` to a `Bind`, ready for substitution.

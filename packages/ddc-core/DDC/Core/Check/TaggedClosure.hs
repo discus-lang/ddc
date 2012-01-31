@@ -6,8 +6,10 @@ module DDC.Core.Check.TaggedClosure
         , taggedClosureOfValBound
         , taggedClosureOfTyArg
         , taggedClosureOfWeakClo
-        , maskFromTaggedSet)
+        , maskFromTaggedSet
+        , cutTaggedClosure)
 where
+import DDC.Type.Transform.LowerT
 import DDC.Type.Transform.Trim
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -51,6 +53,15 @@ instance (Eq n, Pretty n) => Pretty (TaggedClosure n) where
         GBoundVal    u clos -> text "CLOVAL   " <+> ppr u <+> text ":" <+> ppr clos
         GBoundRgnVar u      -> text "CLORGNVAR" <+> ppr u
         GBoundRgnCon u      -> text "CLORGNCON" <+> ppr u
+
+
+instance LowerT TaggedClosure where
+ lowerAtDepthT n d cc
+  = let down = lowerAtDepthT n d
+    in case cc of
+        GBoundVal u ts    -> GBoundVal (down u) (down ts)
+        GBoundRgnVar u1   -> GBoundRgnVar (down u1)
+        GBoundRgnCon u2   -> GBoundRgnCon u2
 
 
 -- | Convert a tagged clousure to a regular closure by dropping the tag variables.
@@ -147,4 +158,23 @@ maskFromTaggedSet ts1 set
                                 -> Nothing
             | otherwise         -> Just gg
 
+
+-- | Cut the terms due to the outermost binder from a tagged closure.
+cutTaggedClosure 
+        :: (Eq n, Ord n) 
+        => Bind n 
+        -> TaggedClosure n 
+        -> Maybe (TaggedClosure n)
+
+cutTaggedClosure b1 cc
+ = case cc of
+        GBoundVal u2 ts
+         | boundMatchesBind u2 b1  -> Nothing
+         | otherwise               -> Just $ GBoundVal    (lowerT 1 u2) (lowerT 1 ts)
+
+        GBoundRgnVar u2 
+         | boundMatchesBind u2 b1  -> Nothing
+         | otherwise               -> Just $ GBoundRgnVar (lowerT 1 u2)
+
+        GBoundRgnCon u2            -> Just $ GBoundRgnCon u2
 

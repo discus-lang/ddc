@@ -1,5 +1,6 @@
 
 -- | Lifting of type variable indices.
+--   TODO: merge this code with LiftT.
 module DDC.Type.Transform.LowerT
         (LowerT(..))
 where

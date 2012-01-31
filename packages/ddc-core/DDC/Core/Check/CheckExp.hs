@@ -22,6 +22,7 @@ import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.LowerT
 import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Type.Compounds
@@ -37,7 +38,6 @@ import qualified Data.Set               as Set
 import Control.Monad
 import Data.List                        as L
 import Data.Maybe
-import Debug.Trace
 
 -- Wrappers -------------------------------------------------------------------
 -- | Take the kind of a type.
@@ -101,7 +101,9 @@ checkExpM
                 , Set (TaggedClosure n))
 
 checkExpM defs env xx
- = do   (xx', t, eff, clo) <- checkExpM' defs env xx
+ = checkExpM' defs env xx
+ {-
+   do   (xx', t, eff, clo) <- checkExpM' defs env xx
         trace (pretty $ vcat 
                 [ text "checkExpM:  " <+> ppr xx 
                 , text "        ::  " <+> ppr t 
@@ -109,6 +111,7 @@ checkExpM defs env xx
                 , text "        :$: " <+> ppr clo
                 , text ""])
          $ return (xx', t, eff, clo)
+-}
 
 -- variables ------------------------------------
 checkExpM' _defs env (XVar a u)
@@ -244,24 +247,32 @@ checkExpM' defs env xx@(XLam a b1 x2)
           |  not $ isDataKind k1     -> throw $ ErrorLamBindNotData xx t1 k1
           |  not $ isDataKind k2     -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
           |  otherwise
-          -> let -- Mask closure terms due to locally bound value vars.
-                 clos2_masked
-                  = case takeSubstBoundOfBind b1 of
-                     Just u -> Set.delete (taggedClosureOfValBound u) clo2
-                     _      -> clo2
+          -> let 
+                 -- Lower type indices in the type and effect of the body, 
+                 -- to account for the lambda that we're removing.
+                 -- If value and type binders were stored on different deBruijn
+                 -- stacks then we wouldn't need to do this.
+                 t2_lowered = lowerT 1 t2
+                 e2_lowered = lowerT 1 e2
+
+                 -- Cut closure terms due to locally bound value vars.
+                 -- This also lowers deBruijn indices in un-cut closure terms.
+                 c2_lowered = Set.fromList
+                            $ mapMaybe (cutTaggedClosure b1)
+                            $ Set.toList clo2
 
                  -- Trim the closure before we annotate the returned function
                  -- type with it. 
-                 -- This should always succeed because trimClosure only returns
-                 -- Nothing if the closure is miskinded, and we've already
-                 -- allready checked that.
-                 Just clos2_captured
-                  = trimClosure $ closureOfTaggedSet clos2_masked
+                 --  This should always succeed because trimClosure only returns
+                 --  Nothing if the closure is miskinded, and we've already
+                 --  allready checked that.
+                 Just c2_captured
+                  = trimClosure $ closureOfTaggedSet c2_lowered
 
              in  return ( XLam a b1 x2'
-                        , tFun t1 (TSum e2) clos2_captured t2
+                        , tFun t1 (TSum e2_lowered) c2_captured t2_lowered
                         , Sum.empty kEffect
-                        , clos2_masked) 
+                        , c2_lowered) 
 
          Just UniverseWitness
           | e2 /= Sum.empty kEffect  -> throw $ ErrorLamNotPure     xx (TSum e2)
@@ -278,15 +289,14 @@ checkExpM' defs env xx@(XLam a b1 x2)
           | otherwise                
           -> let 
                  -- Mask closure terms due to locally bound region vars.
-                 clos2_masked 
-                  = case takeSubstBoundOfBind b1 of
-                     Just u -> Set.difference clo2 (taggedClosureOfTyArg (TVar u))
-                     _      -> clo2
+                 c2_lowered = Set.fromList
+                            $ mapMaybe (cutTaggedClosure b1)
+                            $ Set.toList clo2
 
              in  return ( XLam a b1 x2'
                         , TForall b1 t2
                         , Sum.empty kEffect
-                        , clos2_masked)
+                        , c2_lowered)
 
          _ -> throw $ ErrorMalformedType xx k1
 

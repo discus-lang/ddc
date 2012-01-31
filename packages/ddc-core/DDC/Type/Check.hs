@@ -28,7 +28,7 @@ import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Sum           as TS
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check.Monad   as G
-import Debug.Trace
+-- import Debug.Trace
 
 -- | The type checker monad.
 type CheckM n   = G.CheckM (Error n)
@@ -63,8 +63,8 @@ kindOfType' tt
 --   crushable components terms.
 checkTypeM :: (Ord n, Pretty n) => Env n -> Type n -> CheckM n (Kind n)
 checkTypeM env tt
- = trace (pretty $ text "checkTypeM:" <+> ppr tt)
- $ checkTypeM' env tt
+        = -- trace (pretty $ text "checkTypeM:" <+> ppr tt) $
+          checkTypeM' env tt
 
 -- Variables ------------------
 checkTypeM' env (TVar u)
@@ -102,8 +102,7 @@ checkTypeM' env (TVar u)
 
                 -- Type variables must be in the environment.
                 | _             <- mtEnv
-                = trace (pretty $ ppr $ Env.envStack env)
-                $ throw $ ErrorUndefined u
+                = throw $ ErrorUndefined u
 
         mkResult
 
