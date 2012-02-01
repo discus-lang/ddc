@@ -1,7 +1,8 @@
 
 module DDC.Type.Transform.Anonymize
         ( Anonymize(..)
-        , pushAnonymizeBind)
+        , pushAnonymizeBind
+        , pushAnonymizeBinds)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -23,15 +24,22 @@ class Anonymize (c :: * -> *) where
 -- Push a binding occurrence on the stack, 
 --  returning the anonyized binding occurrence and the new stack.
 -- Used in the definition of `anonymize`.
-pushAnonymizeBind :: Ord n => Bind n -> [Bind n] -> (Bind n, [Bind n])
-pushAnonymizeBind b stack
+pushAnonymizeBind :: Ord n => [Bind n] -> Bind n -> ([Bind n], Bind n)
+pushAnonymizeBind stack b
  = let  b'      = anonymize stack b
         t'      = typeOfBind b'
         stack'  = case b' of
                         BName{} -> b' : stack
                         BAnon{} -> b' : stack
                         _       -> stack
-   in   (BAnon t', stack')
+   in   (stack', BAnon t')
+
+
+-- Push a binding occurrence on the stack, 
+--  returning the anonyized binding occurrence and the new stack.
+-- Used in the definition of `anonymize`.
+pushAnonymizeBinds :: Ord n => [Bind n] -> [Bind n] -> ([Bind n], [Bind n])
+pushAnonymizeBinds  = mapAccumL pushAnonymizeBind
 
 
 -- Instances ------------------------------------------------------------------
@@ -50,9 +58,6 @@ instance Anonymize Bound where
         _ -> bb
 
 
-
-        
-
 instance Anonymize Type where
  anonymize stack tt
   = case tt of
@@ -63,7 +68,7 @@ instance Anonymize Type where
          -> tt
 
         TForall b t     
-         -> let (b', stack')    = pushAnonymizeBind b stack 
+         -> let (stack', b')     = pushAnonymizeBind stack b
             in  TForall b' (anonymize stack' t)
 
 

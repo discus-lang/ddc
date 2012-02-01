@@ -4,6 +4,7 @@ module DDC.Core.Transform.Anonymize
 where
 import DDC.Core.Exp
 import DDC.Type.Transform.Anonymize
+import Control.Monad
 
 
 instance Anonymize (Exp a) where
@@ -19,11 +20,11 @@ instance Anonymize (Exp a) where
          -> XApp a (anonymize stack x1) (anonymize stack x2)
 
         XLam a b x
-         -> let (b', stack')    = pushAnonymizeBind b stack
+         -> let (stack', b')    = pushAnonymizeBind stack b
             in  XLam a b' (anonymize stack' x)
 
         XLet a lts x
-         -> let (lts', stack')  = pushAnonymizeLets lts stack
+         -> let (stack', lts')  = pushAnonymizeLets stack lts
             in  XLet a lts' (anonymize stack' x)
 
         XCase a x alts
@@ -52,8 +53,12 @@ instance Anonymize Cast where
          -> CastForget (anonymize stack w)
 
 
-instance Anonymize (Lets a) where
- anonymize = error "anonymize lets"
+instance Anonymize LetMode where
+ anonymize stack lm
+  = case lm of
+        LetStrict       -> lm
+        LetLazy mw      -> LetLazy $ liftM (anonymize stack) mw
+
 
 instance Anonymize (Alt a) where
  anonymize = error "anonymize alts"
@@ -62,6 +67,18 @@ instance Anonymize Witness where
  anonymize = error "anonymize witness"
 
 
-pushAnonymizeLets :: Ord n => Lets a n -> [Bind n] -> (Lets a n, [Bind n])
-pushAnonymizeLets 
-        = error "anonymize lets"
+pushAnonymizeLets :: Ord n => [Bind n] -> Lets a n -> ([Bind n], Lets a n)
+pushAnonymizeLets stack lts
+ = case lts of
+        LLet mode b x
+         -> let mode'           = anonymize stack mode
+                (stack', b')    = pushAnonymizeBind stack b
+                x'              = anonymize stack x
+            in  (stack', LLet mode' b' x')
+
+        LLetRegion b bs
+         -> let (stack1,  b')   = pushAnonymizeBind stack b
+                (stack2, bs')   = pushAnonymizeBinds stack1 bs
+            in  (stack2, LLetRegion b' bs')
+
+        _ -> error "anonymize lets"

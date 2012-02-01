@@ -474,10 +474,13 @@ checkExpM' defs env xx@(XLet a (LLetRegion b bs) x)
         let effs'       = Sum.delete (tRead  (TVar u))
                         $ Sum.delete (tWrite (TVar u))
                         $ Sum.delete (tAlloc (TVar u))
-                        $ effs
+                        $ lowerT (length bs) effs
 
         -- Delete the bound region variable from the closure.
-        let clo_masked  = Set.delete (GBoundRgnVar u) clo
+        let clo_masked  = Set.delete (GBoundRgnVar u) 
+                        $ Set.fromList 
+                        $ map (lowerT (length bs))
+                        $ Set.toList clo
         
         return  ( XLet a (LLetRegion b bs) xBody'
                 , tBody

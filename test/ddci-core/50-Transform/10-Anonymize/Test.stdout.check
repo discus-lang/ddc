@@ -1,3 +1,28 @@
--- Anonymize a simple expression.
 ok
+
+
+-- Anonymize lambdas and applications.
 \(^:%).\(^:Int ^0).\(^:Int ^1).addInt [^2] [^2] [^2] ^1 ^0
+
+
+-- Single let
+let ^ : Unit = () in ^0
+
+
+-- Multiple lets
+let ^ : Unit = () in let ^ : Int R1# = 5 [R1#] () in ^1
+
+
+-- letregion
+letregion ^ with {^ : Const ^0} in addInt [^1] [^1] [R0#] (2 [^1] ()) (2 [^1] ())
+
+
+-- TODO: this is broken.
+--       need to split type enviroment into types and vals
+--       so debruijn indices work out without needing lowerT
+-- letregion and lets
+-- :trans..
+-- letregion r with {w : Const r} in
+-- let x = 2 [r] () in
+-- let y = 3 [r] () in
+-- addInt [:r r R0#:] x y;;
