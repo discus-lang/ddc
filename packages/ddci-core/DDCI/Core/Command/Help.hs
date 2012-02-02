@@ -18,6 +18,7 @@ help    = unlines
         , "  :type         Show the type    of a value expression"
         , "  :effect       Show the effect  of a value expression"
         , "  :closure      Show the closure of a value expression" 
+        , "  :ast          Show the abstract syntax tree of a value expression" 
         , ""
         , "Modes"
         , "  :set          Display active modes and transform"

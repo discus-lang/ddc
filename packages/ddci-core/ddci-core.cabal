@@ -18,6 +18,7 @@ Executable ddci-core
         base            == 4.*,
         containers      == 0.4.*,
         haskeline       == 0.6.4.*,
+	haskell-src-exts== 1.*,
         ddc-base        == 0.2.*,
         ddc-core        == 0.2.*
 
@@ -25,6 +26,7 @@ Executable ddci-core
         Main.hs
 
   Other-modules:
+        DDCI.Core.Command.Ast
         DDCI.Core.Command.Check
         DDCI.Core.Command.Eval
         DDCI.Core.Command.Help

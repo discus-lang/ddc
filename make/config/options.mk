@@ -110,5 +110,6 @@ DDC_PACKAGES	:= \
 	-package stm \
 	-package random \
 	-package haskeline \
+	-package haskell-src-exts \
 	-package mainland-pretty \
 	-package transformers 

@@ -5,6 +5,7 @@ import DDCI.Core.Command.Set
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
+import DDCI.Core.Command.Ast
 import System.IO
 import System.Environment
 import Data.List
@@ -41,6 +42,7 @@ data Command
         | CommandExpClosure
         | CommandEval
         | CommandTrans
+	| CommandAst
         deriving (Eq, Show)
 
 
@@ -57,8 +59,9 @@ commands
         , (":type",     CommandExpType)
         , (":effect",   CommandExpEffect)
         , (":closure",  CommandExpClosure)
-        , (":eval",     CommandEval) 
-        , (":trans",    CommandTrans) ]
+        , (":eval",     CommandEval)
+        , (":trans",    CommandTrans)
+        , (":ast",	CommandAst) ]
 
 
 -- | Read the command from the front of a string.
@@ -323,5 +326,9 @@ handleCmd1 state cmd lineStart line
 
         CommandTrans
          -> do  cmdTrans state lineStart line
+                return state
+        
+        CommandAst
+         -> do  cmdAst lineStart line
                 return state
         
