@@ -13,9 +13,7 @@ import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser
 import DDC.Core.Parser.Tokens
-import DDC.Core.Collect.Free
-import DDC.Core.Transform.Spread        as C
-import qualified DDC.Type.Env           as Env
+import DDC.Core.Collect.FreeX
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
 import qualified DDC.Base.Parser        as BP
@@ -32,7 +30,7 @@ cmdShowKind lineStart ss
                 Right t         -> goCheck t
 
         goCheck t
-         = case T.checkType Env.empty (C.spread primEnv t) of
+         = case T.checkType primKindEnv t of
                 Left err        -> putStrLn $ pretty $ ppr err
                 Right k         -> putStrLn $ pretty $ (ppr t <> text " :: " <> ppr k)
 
@@ -76,10 +74,9 @@ cmdParseCheckWitness lineStart str
         --   check for undefined variables, 
         --   and check its type.
         goCheck x
-         = let  x'      = C.spread primEnv x
-                fvs     = free     primEnv x'
+         = let  fvs     = freeX primTypeEnv x                   -- TODO: also check for free type vars
            in   if Set.null fvs
-                 then   goResult x' (checkWitness Env.empty x')
+                 then   goResult x (checkWitness primKindEnv primTypeEnv x)
                  else do  
                         putStrLn $ pretty $ text "Undefined variables: " <> ppr fvs
                         return Nothing
@@ -170,10 +167,9 @@ cmdParseCheckExp lineStart str
         --   check for undefined variables, 
         --   and check its type.
         goCheck x
-         = let  x'      = C.spread primEnv x
-                fvs     = free     primEnv x'
+         = let  fvs     = freeX primTypeEnv x                        -- TODO also check for free type vars
            in   if Set.null fvs
-                 then   goResult (checkExp primDataDefs Env.empty x')
+                 then   goResult (checkExp primDataDefs primKindEnv primTypeEnv x)
                  else do  
                         putStrLn $ pretty $ text "Undefined variables: " <> ppr fvs
                         return Nothing

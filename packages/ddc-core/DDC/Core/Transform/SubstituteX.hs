@@ -8,7 +8,7 @@ module DDC.Core.Transform.SubstituteX
         , substituteXArgs)
 where
 import DDC.Core.Exp
-import DDC.Core.Collect.Free
+import DDC.Core.Collect.FreeX
 import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteW
@@ -31,7 +31,7 @@ substituteX b t x
         freeNames       = Set.fromList
                         $ mapMaybe takeNameOfBound 
                         $ Set.toList 
-                        $ free Env.empty t
+                        $ freeX Env.empty t                             -- TODO: type vars may be captured by type binders
 
         stack           = BindStack [] [] 0 0
  

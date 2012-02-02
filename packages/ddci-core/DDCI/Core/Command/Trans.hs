@@ -10,7 +10,6 @@ import DDCI.Core.State
 import DDCI.Core.Command.Check
 import DDCI.Core.Eval.Env
 import DDC.Base.Pretty
-import qualified DDC.Type.Env   as Env
 
 
 -- | Apply the current transform to an expression.
@@ -26,7 +25,7 @@ cmdTrans state lineStart str
         goStore (Just (x, t1, eff1, clo1))
          = do   let x'  = applyTransformX (stateTransform state) x
 
-                case checkExp primDataDefs Env.empty x' of
+                case checkExp primDataDefs primKindEnv primTypeEnv x' of
                   Right (_, t2, eff2, clo2)
                    |  equivT t1 t2
                    ,  equivT eff1 eff2

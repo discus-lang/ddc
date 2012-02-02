@@ -6,9 +6,9 @@
 --   Disciple programs, we should use the primops defined by the real compiler.
 --
 module DDCI.Core.Eval.Env
-        ( primEnv
-        , primDataDefs
-        , typeOfPrimName
+        ( primDataDefs
+        , primKindEnv, kindOfPrimName
+        , primTypeEnv, typeOfPrimName
         , arityOfName)
 where
 import DDCI.Core.Eval.Compounds
@@ -20,9 +20,14 @@ import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
 
 
--- | Environment containing just the primitive names.
-primEnv :: Env Name
-primEnv = Env.setPrimFun typeOfPrimName Env.empty
+-- | Environment containing just the primitive type names.
+primKindEnv :: Env Name
+primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
+
+
+-- | Environment containing just the primitive value names.
+primTypeEnv :: Env Name
+primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 
 
 -- | Take the type of a primitive name.
@@ -30,24 +35,37 @@ primEnv = Env.setPrimFun typeOfPrimName Env.empty
 --   Returns `Nothing` if the name isn't primitive. During checking, non-primitive
 --   names should be bound in the type environment.
 --
-typeOfPrimName :: Name -> Maybe (Type Name)
-typeOfPrimName nn
+kindOfPrimName :: Name -> Maybe (Kind Name)
+kindOfPrimName nn
  = case nn of
         NameRgn _
          -> Just $ kRegion
 
-        -- Unit -----------------------------
+        -- Unit
         NamePrimCon PrimTyConUnit
          -> Just $ kData
+        
+        -- List
+        NamePrimCon PrimTyConList
+         -> Just $ kRegion `kFun` kData `kFun` kData
 
+         -- Int
+        NamePrimCon PrimTyConInt
+         -> Just $ kFun kRegion kData
+
+        _ -> Nothing
+
+
+
+typeOfPrimName :: Name -> Maybe (Type Name)
+typeOfPrimName nn
+ = case nn of
+        -- Unit
         NamePrimCon PrimDaConUnit
          -> Just $ tUnit 
 
         
-        -- List -----------------------------
-        NamePrimCon PrimTyConList
-         -> Just $ kRegion `kFun` kData `kFun` kData
-
+        -- List
         NamePrimCon PrimDaConNil        
          -> Just $ tForalls [kRegion, kData] $ \[tR, tA]
                 -> tFun tUnit (tAlloc tR)
@@ -62,10 +80,7 @@ typeOfPrimName nn
                                       (tSum kClosure [tDeepUse tA])
                  $ tList tR tA
 
-        -- Int ------------------------------
-        NamePrimCon PrimTyConInt
-         -> Just $ kFun kRegion kData
-
+        -- Int
         NameInt _
          -> Just $ tForall kRegion
           $ \r  -> tFun tUnit (tAlloc r)

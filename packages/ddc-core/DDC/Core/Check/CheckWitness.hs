@@ -27,7 +27,9 @@ type CheckM a n   = G.CheckM (Error a n)
 
 -- Witness --------------------------------------------------------------------
 typeOfWitness :: (Ord n, Pretty n) => Witness n -> Either (Error a n) (Type n)
-typeOfWitness ww = result $ checkWitnessM Env.empty ww
+typeOfWitness ww 
+        = result 
+        $ checkWitnessM Env.empty Env.empty ww
 
 
 -- | Take the kind of a type, or `error` if there isn't one.
@@ -41,28 +43,32 @@ typeOfWitness' ww
 -- | Check an expression, returning an error or its type, effect and closure.
 checkWitness
         :: (Ord n, Pretty n)
-        => Env n -> Witness n
+        => Env n                -- ^ Kind Environment.
+        -> Env n                -- ^ Type Environment.
+        -> Witness n
         -> Either (Error a n) (Type n)
 
-checkWitness env xx
-        = result $ checkWitnessM env xx
+checkWitness kenv tenv xx
+        = result $ checkWitnessM kenv tenv xx
 
 
 checkWitnessM 
         :: (Ord n, Pretty n)
-        => Env n -> Witness n
+        => Env n 
+        -> Env n
+        -> Witness n
         -> CheckM a n (Type n)
 
-checkWitnessM env ww
+checkWitnessM kenv tenv ww
  = case ww of
         -- variables and constructors.
-        WVar u  -> return $ typeOfBound u
+        WVar u  -> return $ typeOfBound u                       -- TODO: check types against environment.
         WCon wc -> return $ typeOfWiCon wc
 
         -- value-type application
         WApp w1 (WType t2)
-         -> do  t1      <- checkWitnessM  env w1
-                k2      <- checkTypeM     env t2
+         -> do  t1      <- checkWitnessM  kenv tenv w1
+                k2      <- checkTypeM     kenv t2
                 case t1 of
                  TForall b11 t12
                   | typeOfBind b11 == k2
@@ -74,8 +80,8 @@ checkWitnessM env ww
 
         -- witness-witness application
         WApp w1 w2
-         -> do  t1      <- checkWitnessM env w1
-                t2      <- checkWitnessM env w2
+         -> do  t1      <- checkWitnessM kenv tenv w1
+                t2      <- checkWitnessM kenv tenv w2
                 case t1 of
                  TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
                   | t11 == t2   
@@ -86,8 +92,8 @@ checkWitnessM env ww
 
         -- join witnesses
         WJoin w1 w2
-         -> do  t1      <- checkWitnessM env w1
-                t2      <- checkWitnessM env w2
+         -> do  t1      <- checkWitnessM kenv tenv w1
+                t2      <- checkWitnessM kenv tenv w2
                 case (t1, t2) of
                  (   TApp (TCon (TyConWitness TwConPure)) eff1
                   ,  TApp (TCon (TyConWitness TwConPure)) eff2)
@@ -102,7 +108,7 @@ checkWitnessM env ww
                  _ -> throw $ ErrorCannotJoin ww w1 t1 w2 t2
 
         -- embedded types
-        WType t -> checkTypeM env t
+        WType t -> checkTypeM kenv t
         
 
 -- | Take the type of a witness constructor.
@@ -140,8 +146,8 @@ typeOfWiCon wc
 -- checkType ------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
 checkTypeM :: (Ord n, Pretty n) => Env n -> Type n -> CheckM a n (Kind n)
-checkTypeM env tt
- = case T.checkType env tt of
+checkTypeM kenv tt
+ = case T.checkType kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 

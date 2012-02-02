@@ -9,7 +9,7 @@ import DDC.Type.Exp
 import DDC.Type.Pretty
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Collect.Free
+import DDC.Type.Collect.FreeT
 import Control.Monad
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
@@ -33,7 +33,7 @@ trimClosure cc
 -- | Trim a closure down to a closure sum.
 --   May return 'Nothing' if the closure is mis-kinded.
 trimToSumC 
-        :: forall n. (Pretty n, Free n (TypeSum n), Ord n) 
+        :: forall n. (Pretty n, FreeT n (TypeSum n), Ord n) 
         => Closure n -> Maybe (TypeSum n)
 
 trimToSumC cc
@@ -71,7 +71,10 @@ trimToSumC cc
 
 -- | Trim the argument of a DeepUsed constructor down to a closure sum.
 --   The argument is of data kind.
-trimDeepUsedD :: forall n. (Pretty n, Free n (TypeSum n), Ord n) => Type n -> TypeSum n
+trimDeepUsedD 
+        :: forall n. (Pretty n, FreeT n (TypeSum n), Ord n)
+        => Type n -> TypeSum n
+
 trimDeepUsedD tt
  = case tt of
         -- Keep type variables.
@@ -91,7 +94,7 @@ trimDeepUsedD tt
         -- Add locally bound variable to the environment.
         -- See Note: Trimming Foralls. 
         TForall{}
-         -> let ns      = free Env.empty tt  :: Set (Bound n)
+         -> let ns      = freeT Env.empty tt  :: Set (Bound n)
             in  if Set.size ns == 0
                  then Sum.empty kClosure
                  else Sum.singleton kClosure $ tDeepUse tt

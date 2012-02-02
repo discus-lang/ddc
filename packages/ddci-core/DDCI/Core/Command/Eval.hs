@@ -17,7 +17,6 @@ import DDC.Core.Collect
 import Control.Monad
 import DDCI.Core.Eval.Store             (Store)
 import qualified DDCI.Core.Eval.Store   as Store
-import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
 
 
@@ -115,7 +114,7 @@ stepPrint
 stepPrint state store x tX _effX _cloX
  = case step store x of
         StepProgress store' x'
-         -> case checkExp primDataDefs Env.empty x' of
+         -> case checkExp primDataDefs primKindEnv primTypeEnv x' of
              Left err
               -> do 
                     -- Print intermediate expression.

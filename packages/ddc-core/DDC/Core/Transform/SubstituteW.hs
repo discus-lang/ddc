@@ -6,7 +6,7 @@ module DDC.Core.Transform.SubstituteW
         , substituteWs)
 where
 import DDC.Core.Exp
-import DDC.Core.Collect.Free
+import DDC.Core.Collect.FreeX
 -- import DDC.Core.Transform.LiftW
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
@@ -23,10 +23,12 @@ substituteW b w x
  | Just u       <- takeSubstBoundOfBind b
  = let -- Determine the free names in the type we're subsituting.
        -- We'll need to rename binders with the same names as these
-       freeNames       = Set.fromList
-                       $ mapMaybe takeNameOfBound 
-                       $ Set.toList 
-                       $ free Env.empty w
+       freeNames        = Set.fromList
+                        $ mapMaybe takeNameOfBound 
+                        $ Set.toList 
+                        $ freeX Env.empty w            -- TODO: type vars won't be captured.
+                                                                --       shouldn't rename them.
+                                                                -- Need to split type names vs valwit names.
 
        stack           = BindStack [] [] 0 0
  
@@ -68,7 +70,7 @@ instance SubstituteW Witness where
         WVar u'
          -> case substBound stack u u' of
                 Left u''  -> WVar u''
-                Right _n  -> w                                                                   -- TODO: liftW by n
+                Right _n  -> w                                                  -- TODO: liftW by n
 
 
 instance SubstituteW (Exp a) where 
@@ -78,7 +80,7 @@ instance SubstituteW (Exp a) where
         XVar{}          -> xx
         XCon{}          -> xx
         XApp  a x1 x2   -> XApp  a   (down x1)  (down x2)
-        XLam  a b x     -> XLam  a b (down x)
+        XLam  a b x     -> XLam  a b (down x)                                   -- TODO: handle var capture on lambda
         XLet  a ls1  x2 -> XLet  a   (down ls1) (down x2)
         XCase a x alts  -> XCase a   (down x)   (map down alts)
         XCast a c x     -> XCast a   (down c)   (down x)

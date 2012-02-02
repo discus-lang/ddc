@@ -3,8 +3,9 @@
 
 
 -- Lambda with multiple binders of the same type.
-:check \(r1 r2 r3 :%). \(x: Int r1). x
+:check /\(r1 r2 r3 :%). \(x: Int r1). x
 
 
 -- Lambda with multiple binders after the same lambda token.
-:check \(r1 r2 : %) (x : Int r1). x
+:check /\(r1 : %) (r2 : %). \(x : Int r1). x
+

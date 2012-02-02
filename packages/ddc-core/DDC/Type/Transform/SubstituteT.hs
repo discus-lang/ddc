@@ -13,7 +13,7 @@ module DDC.Type.Transform.SubstituteT
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
-import DDC.Type.Collect.Free
+import DDC.Type.Collect.FreeT
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
@@ -24,6 +24,7 @@ import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import Data.Set                 (Set)
 import DDC.Base.Pretty          (Pretty)
+
 
 -- | Substitute a `Type` for the `Bound` corresponding to some `Bind` in a thing.
 substituteT :: (SubstituteT c, Ord n, Pretty n) => Bind n -> Type n -> c n -> c n
@@ -47,7 +48,7 @@ substituteBoundT u t x
        freeNames       = Set.fromList
                        $ mapMaybe takeNameOfBound 
                        $ Set.toList 
-                       $ free Env.empty t
+                       $ freeT Env.empty t
 
        stack           = BindStack [] [] 0 0
  

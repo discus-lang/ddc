@@ -1,7 +1,7 @@
 
 module DDC.Core.Collect
-        ( Free(..)
+        ( FreeX (..)
         , GatherBound(..))
 where
-import DDC.Core.Collect.Free
+import DDC.Core.Collect.FreeX
 import DDC.Core.Collect.GatherBound

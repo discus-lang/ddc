@@ -90,7 +90,7 @@ fromList bs
 -- | Combine two environments.
 --   If both environments have a binding with the same name,
 --   then the one in the second environment takes preference.
-combine :: Ord n => Env n -> Env n -> Env n
+combine :: Ord n => Env n -> Env n -> Env n                                     -- TODO: rename to union
 combine env1 env2
         = Env  
         { envMap         = envMap env1 `Map.union` envMap env2

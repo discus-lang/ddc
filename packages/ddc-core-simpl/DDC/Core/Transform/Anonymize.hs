@@ -77,7 +77,7 @@ pushAnonymizeLets stack lts
             in  (stack', LLet mode' b' x')
 
         LLetRegion b bs
-         -> let (stack1,  b')   = pushAnonymizeBind stack b
+         -> let (stack1, b')    = pushAnonymizeBind stack b
                 (stack2, bs')   = pushAnonymizeBinds stack1 bs
             in  (stack2, LLetRegion b' bs')
 
