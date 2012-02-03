@@ -6,6 +6,7 @@ module Llvm.GhcReplace.PprBase where
 import Data.Array.ST
 import Control.Monad.ST
 import Data.Word
+import qualified Data.Array.Unsafe      as Unsafe
 
 doubleToBytes :: Double -> [Int]
 doubleToBytes d
@@ -25,5 +26,5 @@ doubleToBytes d
      )
 
 castDoubleToWord8Array :: STUArray s Int Double -> ST s (STUArray s Int Word8)
-castDoubleToWord8Array = castSTUArray
+castDoubleToWord8Array = Unsafe.castSTUArray
 

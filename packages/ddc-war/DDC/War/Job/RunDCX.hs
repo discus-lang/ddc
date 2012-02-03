@@ -6,8 +6,6 @@ import DDC.War.Result
 import DDC.War.Job
 import BuildBox
 import System.Directory
-import Data.ListUtil
-import Control.Monad
 
 
 -- | Compile a Haskell Source File

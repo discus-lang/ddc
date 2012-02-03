@@ -7,15 +7,15 @@ module Data.MapUtil
 	, adjustWithDefault
 	, collate)
 where
-import Data.Map	
-
+import Data.Map
+import Prelude  as P
 
 -- | Build a map of occurrences of each value in the list.
 --   If there are no occurrences then there will be no corresponding element
 --   in the resulting list.
 populationCount :: Ord a => [a] -> Map a Int
 populationCount xx
- 	= foldl (flip $ adjustWithDefault (\a -> a + 1) 0)
+ 	= P.foldl (flip $ adjustWithDefault (\a -> a + 1) 0)
 		empty
 		xx
 
@@ -43,6 +43,6 @@ collate	:: Ord k
 	-> Map k [a]
  
 collate xs
- = foldr (\(k, a) m -> adjustWithDefault (\x -> a : x) [] k m)
+ = P.foldr (\(k, a) m -> adjustWithDefault (\x -> a : x) [] k m)
 	empty
 	xs

@@ -17,9 +17,6 @@ renderWithMode :: mode -> StrMode mode -> String
 renderWithMode mode str
 	= T.unpack $ B.toLazyText $ snd $ render mode 0 0 str
 
-(<>)		:: Monoid a => a -> a -> a
-(<>)		= mappend
-
 fromString	= B.fromLazyText . T.pack
 
 -- | Render a pretty string.
