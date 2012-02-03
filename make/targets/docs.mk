@@ -14,12 +14,13 @@ nodoc	= \
 # names are shared. When the ddc-core package is ready we can make the main compiler
 # use it and eliminate the duplication.
 docs	:
-	@echo "* Building haddock documentation ---------------------------------------------------"
-	@$(MAKE) docs-main
-	@$(MAKE) docs-core
+#	@echo "* Building haddock documentation ---------------------------------------------------"
+#	@$(MAKE) docs-main
+#	@$(MAKE) docs-core
 
 docs-main :
 	@haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-main \
+                $(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(ddc-main_src_hs_all))
 
