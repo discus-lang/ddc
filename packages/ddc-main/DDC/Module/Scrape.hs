@@ -19,11 +19,11 @@ import Util
 import System.IO
 import System.Directory
 import System.FilePath
-import DDC.Main.Pretty					()
-import qualified DDC.Main.Arg				as Arg
-import qualified DDC.Main.ParseArgs			as Arg
-import qualified System.Exit				as System
-import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
+import DDC.Main.Pretty			()
+import qualified DDC.Main.Arg		as Arg
+import qualified DDC.Main.ParseArgs	as Arg
+import qualified System.Exit		as System
+import qualified Text.Parsec.Prim	as Parsec
 
 stage = "DDC.Module.Scrape"
 

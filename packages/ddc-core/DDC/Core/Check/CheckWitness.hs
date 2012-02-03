@@ -20,7 +20,6 @@ import DDC.Base.Pretty                  ()
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Monad   as G
-import Control.Monad
 
 
 type CheckM a n   = G.CheckM (Error a n)

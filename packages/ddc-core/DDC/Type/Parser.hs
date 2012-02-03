@@ -11,7 +11,6 @@ where
 import DDC.Core.Parser.Tokens   
 import DDC.Type.Exp
 import DDC.Type.Compounds
-import Control.Monad
 import DDC.Base.Parser                  ((<?>))
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Sum           as TS

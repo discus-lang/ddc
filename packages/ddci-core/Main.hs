@@ -5,12 +5,10 @@ import DDCI.Core.Command.Set
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
-import DDCI.Core.Command.Ast
 import System.IO
 import System.Environment
 import Data.List
 import Data.Maybe
-import Control.Monad
 import qualified System.Console.Haskeline       as HL
 import qualified System.Console.Haskeline.IO    as HL
 

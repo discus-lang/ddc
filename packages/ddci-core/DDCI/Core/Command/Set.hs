@@ -8,7 +8,6 @@ import DDCI.Core.State
 import DDCI.Core.Transform
 import DDCI.Core.Mode
 import DDC.Base.Pretty
-import Data.List
 import Data.Char
 import qualified Data.Set       as Set
 
