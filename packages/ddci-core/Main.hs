@@ -5,7 +5,7 @@ import DDCI.Core.Command.Set
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
-import System.IO
+-- import DDCI.Core.Command.Ast         -- TODO Amos: need missing module
 import System.Environment
 import Data.List
 import Data.Maybe
@@ -40,7 +40,7 @@ data Command
         | CommandExpClosure
         | CommandEval
         | CommandTrans
-	| CommandAst
+--	| CommandAst                                 -- TODO Amos: need missing module
         deriving (Eq, Show)
 
 
@@ -58,8 +58,8 @@ commands
         , (":effect",   CommandExpEffect)
         , (":closure",  CommandExpClosure)
         , (":eval",     CommandEval)
-        , (":trans",    CommandTrans)
-        , (":ast",	CommandAst) ]
+        , (":trans",    CommandTrans) ]
+--        , (":ast",	CommandAst) ]                      -- TODO Amos: need missing module
 
 
 -- | Read the command from the front of a string.
@@ -326,7 +326,7 @@ handleCmd1 state cmd lineStart line
          -> do  cmdTrans state lineStart line
                 return state
         
-        CommandAst
+{-        CommandAst                                            -- TODO Amos: need missing module
          -> do  cmdAst lineStart line
                 return state
-        
+-}      
