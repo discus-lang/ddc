@@ -42,13 +42,23 @@
 all 	:
 	@$(MAKE) allWithConfig
 
+
+# Include all the configuration.
+# These need to come before all the rules after this point in the Makefile.
 include make/build.mk
 
+
+# Build everything, now that we have the configuration included above.
+#   We need to build bin/war before bin/ddc because they share source files,
+#   and the former is built with -threaded while the latter is not.
+#   If we build bin/ddc then bin/war then the Makefile would try to build
+#   bin/ddc again because some of its .o files get clobbered.
 .PHONY	: allWithConfig
 allWithConfig :
 	@$(MAKE) packages/ddc-main/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc bin/ddci-core bin/war runtime external libs -j $(THREADS)
+	@$(MAKE) bin/war
+	@$(MAKE) runtime bin/ddc bin/ddci-core external libs -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)

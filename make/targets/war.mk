@@ -13,7 +13,7 @@ bin/war : $(war_hs)
 
 # Run the testsuite with the C and LLVM backends interactively
 .PHONY 	: war
-war : bin/ddc runtime bin/war library/Prelude.di
+war : allWithConfig
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		+compway std \
@@ -22,21 +22,21 @@ war : bin/ddc runtime bin/war library/Prelude.di
 
 # Run the testsuite with the C backend interactively
 .PHONY 	: cwar
-cwar : bin/ddc runtime bin/war library/Prelude.di
+cwar : allWithConfig
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS)
 	@echo
 
 # Run the testsuite with the LLVM backend interactively
 .PHONY 	: llvmwar
-llvmwar : bin/ddc runtime bin/war library/Prelude.di
+llvmwar : allWithConfig
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) +compway llvm -fvia-llvm
 	@echo
 
 # Run tests in all ways interactively
 .PHONY  : totalwar
-totalwar : bin/ddc bin/war library/Prelude.di
+totalwar : allWithConfig
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		+compway std \
@@ -46,7 +46,7 @@ totalwar : bin/ddc bin/war library/Prelude.di
 
 # Run the tests,  logging failures to war.failed
 .PHONY : logwar
-logwar : bin/ddc bin/war library/Prelude.di
+logwar : allWithConfig
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		-batch -logFailed "war.failed"
@@ -54,7 +54,7 @@ logwar : bin/ddc bin/war library/Prelude.di
 
 # Run tests in all ways interactively, logging failures to war.failed
 .PHONY  : totallogwar
-totallogwar : bin/ddc bin/war library/Prelude.di
+totallogwar : allWithConfig
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		-batch -logFailed "war.failed" \
