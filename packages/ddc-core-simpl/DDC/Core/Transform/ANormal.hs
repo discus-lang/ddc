@@ -4,6 +4,7 @@ module DDC.Core.Transform.ANormal
 where
 import DDC.Core.Exp
 import qualified DDC.Type.Compounds as T
+import qualified DDC.Core.Transform.LiftX as L
 
 import qualified Data.Map as Map
 
@@ -120,21 +121,21 @@ isNormal (XWitness{}) = True
 isNormal (XLam{}) = True
 isNormal _ = False
 	
-makeLets _ar f args = go (f:args)
+makeLets _ar f args = go 0 (f:args)
  where
     tBot = T.tBot T.kData
 
-    go [] = goApps 0 $ reverse (f:args)
-    go (x:xs) | isNormal x = go xs
-    go (x:xs) = 
-	XLet (annotOf x) (LLet LetStrict (BAnon tBot) x)
-	    (go xs)
+    go lift [] = goApps lift 0 $ reverse (f:args)
+    go i (x:xs) | isNormal x = go i xs
+    go i (x:xs) = 
+	XLet (annotOf x) (LLet LetStrict (BAnon tBot) (L.liftX i x))
+	    (go (i+1) xs)
     
-    goApps _ [] = error "ANormal.makeLets.goApps: impossible!"
-    goApps _ [x] | isNormal x	= x
-    goApps i [x]		= XVar (annotOf x) $ UIx i tBot
-    goApps i (x:xs) | isNormal x= XApp (annotOf x) (goApps i xs) x
-    goApps i (x:xs)             = XApp (annotOf x) (goApps (i+1) xs) (XVar (annotOf x) $ UIx i tBot)
+    goApps _ _ [] = error "ANormal.makeLets.goApps: impossible!"
+    goApps l _ [x] | isNormal x	= (L.liftX l x)
+    goApps _ i [x]		= XVar (annotOf x) $ UIx i tBot
+    goApps l i (x:xs) | isNormal x= XApp (annotOf x) (goApps l i xs) (L.liftX l x)
+    goApps l i (x:xs)             = XApp (annotOf x) (goApps l (i+1) xs) (XVar (annotOf x) $ UIx i tBot)
 
 {-
 [x, y, z] ->
