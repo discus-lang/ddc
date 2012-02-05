@@ -1,6 +1,6 @@
 
 module DDC.Core.Transform.ANormal
-    (anormalise,arGet)
+    (anormalise)
 where
 import DDC.Core.Exp
 import qualified DDC.Type.Compounds as T
@@ -27,16 +27,16 @@ arGet :: Ord n => Arities n -> Bound n -> Int
 -- TODO unsafe ix
 arGet (_named, anon) (UIx ix _)	  = anon !! ix
 arGet (named, _anon) (UName n _)  = named Map.! n
--- Get a primitive's arity from its type
-arGet (_named,_anon) (UPrim _ t)  = arityOfType t 
+-- TODO Get a primitive's arity from its type
+-- Actually I don't think it really matters:
+--   if it's overapplied, it's a type error,
+--   if it's underapplied, there's nothing we can do.
+-- Assuming no higher order primitives.
+arGet (_named,_anon) (UPrim _ t)  = 100
 
 -- **** Finding arities of expressions etc
 
--- TODO Need to count arrows in data universe...
--- But only until first arrow with effect?
-arityOfType :: Ord n => Type n -> Int
-arityOfType _ = 0
-
+-- TODO ignore non-data binders?
 arityOfExp :: Ord n => Exp a n -> Int
 arityOfExp (XLam _ _ e)	= 1 + arityOfExp e
 arityOfExp _		= 0
@@ -113,29 +113,53 @@ anormal ar x args
 
 anormalise x = anormal arEmpty x []
 
-isNormal :: Ord n => Exp a n -> Bool
-isNormal (XVar{}) = True
-isNormal (XCon{}) = True
-isNormal (XType{}) = True
-isNormal (XWitness{}) = True
-isNormal (XLam{}) = True
-isNormal _ = False
+isVar :: Ord n => Exp a n -> Bool
+isVar (XVar{}) = True
+isVar (XCon{}) = True
+isVar (XType{}) = True
+isVar (XWitness{}) = True
+-- nah..
+--isVar (XLam{}) = True
+isVar _ = False
 	
-makeLets _ar f args = go 0 (f:args)
+makeLets ar f0 args = go 0 f0 (findArity f0) args []
  where
     tBot = T.tBot T.kData
 
-    go lift [] = goApps lift 0 $ reverse (f:args)
-    go i (x:xs) | isNormal x = go i xs
-    go i (x:xs) = 
-	XLet (annotOf x) (LLet LetStrict (BAnon tBot) (L.liftX i x))
-	    (go (i+1) xs)
+    -- sending arity of f to this is a hack because we should really be building up ar ctx?
+    go i f _arf []  acc = mkApps i 0 $ acc ++ [f]
+    -- f is fully applied, and we *do* have arguments left to add
+    go i f arf (x:xs) acc | length acc >= arf
+     =  XLet (annotOf x) (LLet LetStrict (BAnon tBot) (mkApps i 0 $ acc ++ [f]))
+            (go i (XVar (annotOf x) $ UIx 0 tBot) 1 (x:xs) [])
+    -- application to variable, don't bother binding
+    go i f arf (x:xs) acc | isVar x
+     =  go i f arf xs (x:acc)
+    -- create binding
+    go i f arf (x:xs) acc
+     =  XLet (annotOf x) (LLet LetStrict (BAnon tBot) (L.liftX i x))
+	    (go (i+1) f arf xs (x:acc))
     
-    goApps _ _ [] = error "ANormal.makeLets.goApps: impossible!"
-    goApps l _ [x] | isNormal x	= (L.liftX l x)
-    goApps _ i [x]		= XVar (annotOf x) $ UIx i tBot
-    goApps l i (x:xs) | isNormal x= XApp (annotOf x) (goApps l i xs) (L.liftX l x)
-    goApps l i (x:xs)             = XApp (annotOf x) (goApps l (i+1) xs) (XVar (annotOf x) $ UIx i tBot)
+    mkApps _ _ [] = error "ANormal.makeLets.mkApps: impossible!"
+    mkApps l _ [x] | isVar x	= (L.liftX l x)
+    mkApps _ i [x]		= XVar (annotOf x) $ UIx i tBot
+    mkApps l i (x:xs) | isVar x = XApp (annotOf x) (mkApps l i xs) (L.liftX l x)
+    mkApps l i (x:xs)           = XApp (annotOf x) (mkApps l (i+1) xs) (XVar (annotOf x) $ UIx i tBot)
+
+    findArity (XVar _ b) = max (arGet ar b) 1
+    findArity x          = max (arityOfExp x) 1
+
+{-
+let f = \f. \g. \x. f (g x) in
+let up = \n. addInt [:R0# R0# R0#:] n (1 [R0#] ()) in
+f up up (1 [R0#] ())
+==>
+let f = \f. \g. \x. f (g x) in
+let up = \n. let ^ = 1 [R0#] () in addInt [:R0# R0# R0#:] n ^0 in
+let ^ = f up up in
+let ^ = 1 [R0#] () in
+^1 ^0
+-}
 
 {-
 [x, y, z] ->
@@ -155,6 +179,6 @@ let ap = \x. \y. x y in
 let ap = \x. \y. x y in
 let ^ = ap ap in
 let ^ = (\x. x) in
-let ^ = (\x . x) in
+let ^ = (\x. x) in
 (^2 ^1) ^0
 -}
