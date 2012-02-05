@@ -1,0 +1,33 @@
+:set trans Anonymize
+
+
+-- Anonymize lambdas and applications.
+:trans..
+\(r:%) (x : Int r) (y : Int r). addInt [:r r r:] x y;;
+
+
+-- Single let
+:trans..
+let x = () in x;;
+
+
+-- Multiple lets
+:trans..
+let x = () in let y = 5 [R1#] () in x;;
+
+
+-- letregion
+:trans..
+letregion r with {w : Const r} in
+addInt [:r r R0#:] (2 [r] ()) (2 [r] ());;
+
+
+-- TODO: this is broken.
+--       need to split type enviroment into types and vals
+--       so debruijn indices work out without needing lowerT
+-- letregion and lets
+-- :trans..
+-- letregion r with {w : Const r} in
+-- let x = 2 [r] () in
+-- let y = 3 [r] () in
+-- addInt [:r r R0#:] x y;;
