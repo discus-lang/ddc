@@ -29,32 +29,32 @@ let x : Int R0# = 5 [R0#] () in
 -- Inner function has a value in the closure whose type contains
 -- a higher kinded type variable.
 :check..
-\(a:% ~> *). \(x:a R1#). \(f: a R1# -> a R1#). f x;;
+/\(a:% ~> *). \(x:a R1#). \(f: a R1# -> a R1#). f x;;
 
 
 -- Inner funtion has a value in the clousre whose type contains
 -- a closure variable.
 :check..
-\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x;;
+/\(e:!). /\(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x;;
 
 
 -- Like above, and we've also instantiated the variable with a
 -- pre-trimmed closure.
 :check..
-(\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)
+(/\(e:!). /\(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)
 [Read R0#] [Use R1#];;
 
 
 -- Like above, and we've also instantiated the variable with a closure that
 -- could be trimmed, but because it's explicit in the term we don't do so. 
 :check..
-(\(e:!). \(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)
+(/\(e:!). /\(c:$). \(f: Unit -(e | c)> Unit). \(x: Unit). f x)
 [Read R0#] [DeepUse (Int R1#)];;
 
 
 -- Region handle in the type argument should show up in the overall closure.
 :check..
-(\(a:*). \(f:a -> a). \(x:a). f x) [Int R1#];;
+(/\(a:*). \(f:a -> a). \(x:a). f x) [Int R1#];;
 
 
 -- Local region should not appear in the closure of the overall term.

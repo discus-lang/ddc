@@ -35,7 +35,7 @@ let x : Int R0# = 5 [R0#] () in \(z : Unit).addInt [R0#] [R0#] [R1#] x x
 
 -- Inner function has a value in the closure whose type contains
 -- a higher kinded type variable.
-\(a :% ~> *).\(x :a R1#).\(f :a R1# -> a R1#).f x
+/\(a : % ~> *).\(x :a R1#).\(f :a R1# -> a R1#).f x
 ::  [a : % ~> *].a R1# -> (a R1# -> a R1#) -(!0 | DeepUse (a R1#))> a R1#
 :!: !0
 :$: $0
@@ -43,7 +43,7 @@ let x : Int R0# = 5 [R0#] () in \(z : Unit).addInt [R0#] [R0#] [R1#] x x
 
 -- Inner funtion has a value in the clousre whose type contains
 -- a closure variable.
-\(e :!).\(c :$).\(f :Unit -(e | c)> Unit).\(x :Unit).f x
+/\(e :!)./\(c :$).\(f :Unit -(e | c)> Unit).\(x :Unit).f x
 ::  [e :!].[c :$].(Unit -(e | c)> Unit) -> Unit -(e | c)> Unit
 :!: !0
 :$: $0
@@ -51,7 +51,7 @@ let x : Int R0# = 5 [R0#] () in \(z : Unit).addInt [R0#] [R0#] [R1#] x x
 
 -- Like above, and we've also instantiated the variable with a
 -- pre-trimmed closure.
-(\(e :!).\(c :$).\(f :Unit -(e | c)> Unit).\(x :Unit).f x) [Read R0#] [Use R1#]
+(/\(e :!)./\(c :$).\(f :Unit -(e | c)> Unit).\(x :Unit).f x) [Read R0#] [Use R1#]
 ::  (Unit -(Read R0# | Use R1#)> Unit) -> Unit -(Read R0# | Use R1#)> Unit
 :!: !0
 :$: $0
@@ -59,14 +59,14 @@ let x : Int R0# = 5 [R0#] () in \(z : Unit).addInt [R0#] [R0#] [R1#] x x
 
 -- Like above, and we've also instantiated the variable with a closure that
 -- could be trimmed, but because it's explicit in the term we don't do so. 
-(\(e :!).\(c :$).\(f :Unit -(e | c)> Unit).\(x :Unit).f x) [Read R0#] [DeepUse (Int R1#)]
+(/\(e :!)./\(c :$).\(f :Unit -(e | c)> Unit).\(x :Unit).f x) [Read R0#] [DeepUse (Int R1#)]
 ::  (Unit -(Read R0# | DeepUse (Int R1#))> Unit) -> Unit -(Read R0# | DeepUse (Int R1#))> Unit
 :!: !0
 :$: $0
 
 
 -- Region handle in the type argument should show up in the overall closure.
-(\(a :*).\(f :a -> a).\(x :a).f x) [Int R1#]
+(/\(a : *).\(f :a -> a).\(x :a).f x) [Int R1#]
 ::  (Int R1# -> Int R1#) -> Int R1# -(!0 | Use R1#)> Int R1#
 :!: !0
 :$: $0

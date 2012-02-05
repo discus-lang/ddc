@@ -24,10 +24,13 @@ pprBinderSep bb
 
 
 -- | Print a group of binders with the same type.
-pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
-pprBinderGroup (rs, t)
-        = parens ((cat $ map pprBinderSep rs) 
-        <> text ":"  <> ppr t) <> dot
+pprLamBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc                            -- TODO: refactor into below
+pprLamBinderGroup (rs, t)
+        = text "\\"  <> parens ((cat $ map pprBinderSep rs) <> text ":"  <> ppr t) <> dot
+
+pprLAMBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
+pprLAMBinderGroup (rs, t)
+        = text "/\\" <> parens ((cat $ map pprBinderSep rs) <> text ":"  <> ppr t) <> dot
 
 
 -- Exp ------------------------------------------------------------------------
@@ -41,7 +44,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          | Just (bsMore, xBody) <- takeXLAMs x
          -> let groups = partitionBindsByType (b:bsMore)
             in  pprParen (d > 1)
-                 $ text "/\\" <> (cat $ map pprBinderGroup groups) <> ppr xBody
+                 $ (cat $ map pprLAMBinderGroup groups) <> ppr xBody
 
          | otherwise 
          -> pprParen (d > 1) 
@@ -51,7 +54,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          | Just (bsMore, xBody) <- takeXLams x
          -> let groups = partitionBindsByType (b:bsMore)
             in  pprParen (d > 1)
-                 $ text "\\" <> (cat $ map pprBinderGroup groups) <> ppr xBody
+                 $ (cat $ map pprLamBinderGroup groups) <>  ppr xBody
 
          | otherwise 
          -> pprParen (d > 1) 
