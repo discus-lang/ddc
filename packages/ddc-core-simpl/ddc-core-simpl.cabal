@@ -25,6 +25,7 @@ Library
 
   Exposed-modules:
         DDC.Core.Transform.Anonymize
+        DDC.Core.Transform.ANormal
         DDC.Core.Transform.TransformX
 
         DDC.Type.Transform.Anonymize
