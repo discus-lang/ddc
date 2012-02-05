@@ -38,6 +38,7 @@ import Control.Monad
 import Data.List                        as L
 import Data.Maybe
 
+
 -- Wrappers -------------------------------------------------------------------
 -- | Take the kind of a type.
 typeOfExp 
@@ -103,8 +104,7 @@ checkExpM
 
 checkExpM defs kenv tenv xx
  = checkExpM' defs kenv tenv xx
- {-
-   do   (xx', t, eff, clo) <- checkExpM' defs env xx
+{-   do   (xx', t, eff, clo) <- checkExpM' defs kenv tenv xx
         trace (pretty $ vcat 
                 [ text "checkExpM:  " <+> ppr xx 
                 , text "        ::  " <+> ppr t 
@@ -248,7 +248,7 @@ checkExpM' defs kenv tenv xx@(XLAM a b1 x2)
 
         -- Mask closure terms due to locally bound region vars.
         let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosure b1)
+                        $ mapMaybe (cutTaggedClosureT b1)
                         $ Set.toList c2
 
         return ( XLAM a b1 x2'
@@ -276,9 +276,9 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
           |  otherwise
           -> let 
                  -- Cut closure terms due to locally bound value vars.
-                 -- This also lowers deBruijn indices in un-cut closure terms.          -- TODO: don't need to lower anymore
+                 -- This also lowers deBruijn indices in un-cut closure terms.
                  c2_cut  = Set.fromList
-                         $ mapMaybe (cutTaggedClosure b1)
+                         $ mapMaybe (cutTaggedClosureX b1)
                          $ Set.toList clo2
 
                  -- Trim the closure before we annotate the returned function
@@ -322,7 +322,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
           
         -- Check the body expression.
         let tenv1  = Env.extend b11' tenv
-        (x2', t2, effs2, clo2)  <- checkExpM defs kenv tenv1 x2
+        (x2', t2, effs2, c2)    <- checkExpM defs kenv tenv1 x2
 
         -- The body should have data kind.
         k2 <- checkTypeM kenv t2
@@ -330,10 +330,9 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
          $ throw $ ErrorLetBodyNotData xx t2 k2
 
         -- Mask closure terms due to locally bound value vars.
-        let clo2_masked
-             = case takeSubstBoundOfBind b11' of
-                Nothing -> clo2
-                Just u  -> Set.delete (taggedClosureOfValBound u) clo2
+        let c2_cut      = Set.fromList
+                        $ mapMaybe (cutTaggedClosureX b11')
+                        $ Set.toList c2
 
         -- Check purity and emptiness for lazy bindings.
         (case mode of
@@ -377,7 +376,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
         return ( XLet a (LLet mode b11' x12') x2'
                , t2
                , effs12 `Sum.union` effs2
-               , clo12  `Set.union` clo2_masked)
+               , clo12  `Set.union` c2_cut)
 
 
 -- letrec -----------------------------------------
@@ -454,20 +453,20 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
         when (Env.memberBind b kenv)
          $ throw $ ErrorLetRegionRebound xx b
         
-        -- Check type correctness of the witness types.
-        let kenv1         = Env.extend b kenv
-        mapM_ (checkTypeM kenv1) $ map typeOfBind bs
+        -- Check the witness types.
+        let kenv'         = Env.extend b kenv
+        mapM_ (checkTypeM kenv') $ map typeOfBind bs
 
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
         checkWitnessBindsM xx u bs
 
         -- Check the body expression.
-        let kenv2            = Env.extends bs kenv1
-        (xBody', tBody, effs, clo)  <- checkExpM defs kenv2 tenv x
+        let tenv'       = Env.extends bs tenv
+        (xBody', tBody, effs, clo)  <- checkExpM defs kenv' tenv' x
 
         -- The body type must have data kind.
-        kBody               <- checkTypeM kenv2 tBody
+        kBody           <- checkTypeM kenv' tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
 

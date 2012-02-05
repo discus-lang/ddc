@@ -6,7 +6,7 @@ module DDCI.Core.Transform
 where
 import DDC.Base.Pretty
 import DDC.Core.Exp
-import DDC.Core.Transform.Anonymize
+import DDC.Core.Transform.AnonymizeX
 
 
 -- | Desription of the transforms to apply to a core program.
@@ -34,4 +34,4 @@ applyTransformX :: Ord n => Transform -> Exp a n -> Exp a n
 applyTransformX spec xx
  = case spec of
         None            -> xx
-        Anonymize       -> anonymize [] xx
+        Anonymize       -> anonymizeX [] [] xx

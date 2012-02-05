@@ -7,7 +7,8 @@ module DDC.Core.Check.TaggedClosure
         , taggedClosureOfTyArg
         , taggedClosureOfWeakClo
         , maskFromTaggedSet
-        , cutTaggedClosure)
+        , cutTaggedClosureX
+        , cutTaggedClosureT)
 where
 import DDC.Type.Transform.LowerT
 import DDC.Type.Transform.Trim
@@ -159,22 +160,41 @@ maskFromTaggedSet ts1 set
             | otherwise         -> Just gg
 
 
--- | Cut the terms due to the outermost binder from a tagged closure.
-cutTaggedClosure 
+-- | Cut the terms due to the outermost binder from a tagged closure.           -- TODO: refactor this into below.
+cutTaggedClosureT 
         :: (Eq n, Ord n) 
         => Bind n 
         -> TaggedClosure n 
         -> Maybe (TaggedClosure n)
 
-cutTaggedClosure b1 cc
+cutTaggedClosureT b1 cc
  = case cc of
         GBoundVal u2 ts
          | boundMatchesBind u2 b1  -> Nothing
-         | otherwise               -> Just $ GBoundVal    (lowerT 1 u2) (lowerT 1 ts)
+         | otherwise               -> Just $ GBoundVal    u2 ts
 
         GBoundRgnVar u2 
          | boundMatchesBind u2 b1  -> Nothing
          | otherwise               -> Just $ GBoundRgnVar (lowerT 1 u2)
 
-        GBoundRgnCon u2            -> Just $ GBoundRgnCon u2
+        GBoundRgnCon u2            -> Just $ GBoundRgnCon (lowerT 1 u2)
 
+
+-- | Cut the terms due to the outermost binder from a tagged closure.
+cutTaggedClosureX
+        :: (Eq n, Ord n) 
+        => Bind n 
+        -> TaggedClosure n 
+        -> Maybe (TaggedClosure n)
+
+cutTaggedClosureX b1 cc
+ = case cc of
+        GBoundVal u2 ts
+         | boundMatchesBind u2 b1  -> Nothing
+         | otherwise               -> Just $ GBoundVal    (lowerT 1 u2) ts
+
+        GBoundRgnVar u2 
+         | boundMatchesBind u2 b1  -> Nothing
+         | otherwise               -> Just $ GBoundRgnVar u2
+
+        GBoundRgnCon u2            -> Just $ GBoundRgnCon u2

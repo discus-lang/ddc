@@ -1,8 +1,10 @@
+
 ok
 
-
 -- Anonymize lambdas and applications.
-\(^:%).\(^:Int ^0).\(^:Int ^1).addInt [^2] [^2] [^2] ^1 ^0
+-- Broken: the Use closure term on the first function arrow is lost
+-- :trans..
+-- /\(r:%).\(x : Int r) (y : Int r). addInt [:r r r:] x y;;
 
 
 -- Single let
@@ -14,15 +16,8 @@ let ^ : Unit = () in let ^ : Int R1# = 5 [R1#] () in ^1
 
 
 -- letregion
-letregion ^ with {^ : Const ^0} in addInt [^1] [^1] [R0#] (2 [^1] ()) (2 [^1] ())
+letregion ^ with {^ : Const ^0} in addInt [^0] [^0] [R0#] (2 [^0] ()) (2 [^0] ())
 
 
--- TODO: this is broken.
---       need to split type enviroment into types and vals
---       so debruijn indices work out without needing lowerT
 -- letregion and lets
--- :trans..
--- letregion r with {w : Const r} in
--- let x = 2 [r] () in
--- let y = 3 [r] () in
--- addInt [:r r R0#:] x y;;
+letregion ^ with {^ : Const ^0} in let ^ : Int ^0 = 2 [^0] () in let ^ : Int ^0 = 3 [^0] () in addInt [^0] [^0] [R0#] ^1 ^0
