@@ -91,7 +91,7 @@ step store xx@XLam{}
  = case typeOfExp primDataDefs xx of
         Left err -> StepStuckMistyped err
         Right t   
-         -> let Just (bs, xBody)  = takeXLams xx
+         -> let Just (bs, xBody)  = takeXLamFlags xx
                 (store', l)       = allocBind (Rgn 0) t (SLams bs xBody) store
             in  StepProgress store' (XCon () (UPrim (NameLoc l) t))
         
@@ -195,10 +195,10 @@ step store xx
 step store xx
         | xL1 : xsArgs  <- takeXApps xx
         , Just l1       <- takeLocX xL1
-        , Just (Rgn 0, _, SLams bs xBody) <- lookupRegionTypeBind l1 store
+        , Just (Rgn 0, _, SLams fbs xBody) <- lookupRegionTypeBind l1 store
 
         -- Take as many wnfs as possible to satisfy binders.
-        , arity                 <- length bs
+        , arity                 <- length fbs
         , (wnfs, nonWnfs)       <- span (isWeakValue store) xsArgs
 
         -- If we have any wnfs at all, then we can do a substitution.
@@ -208,11 +208,12 @@ step store xx
               argsOverApplied = drop (length argsToSubst) wnfs
               argsLeftover    = argsOverApplied ++ nonWnfs
                 
+              bs              = map snd fbs
               bsToSubst       = take (length argsToSubst) bs
-              bsLeftover      = drop (length bsToSubst)   bs
+              bsLeftover      = drop (length bsToSubst)   fbs
 
               xResult         = substituteXArgs (zip bsToSubst argsToSubst)
-                              $ makeXLams () bsLeftover xBody
+                              $ makeXLamFlags () bsLeftover xBody
 
           in  StepProgress store (makeXApps () xResult argsLeftover)
 
@@ -275,9 +276,9 @@ step store (XLet _ (LRec bxs) x2)
 
 
         -- Create store objects for each of the bindings.
-        mos      = map (\x -> case takeXLams x of
-                               Just (bs', xBody) -> Just $ SLams bs' xBody
-                               _                 -> Nothing)
+        mos      = map (\x -> case takeXLamFlags x of
+                               Just (fbs', xBody) -> Just $ SLams fbs' xBody
+                               _                  -> Nothing)
                        xs'
 
       -- If this fails then some of the bindings did not have lambdas out the

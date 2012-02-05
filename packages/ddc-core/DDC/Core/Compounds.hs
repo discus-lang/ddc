@@ -11,6 +11,8 @@ module DDC.Core.Compounds
           -- * Lambdas
         , makeXLAMs, makeXLams
         , takeXLAMs, takeXLams
+        , takeXLamFlags
+        , makeXLamFlags
 
           -- * Applications
         , makeXApps
@@ -70,7 +72,7 @@ makeXLAMs a bs x
         = foldr (XLAM a) x (reverse bs)
 
 
--- | Split nested lambdas from the front of an expression
+-- | Split nested value and witness lambdas from the front of an expression
 --   or `Nothing` if there was no outer lambda
 takeXLAMs :: Exp a n -> Maybe ([Bind n], Exp a n)
 takeXLAMs xx
@@ -87,7 +89,7 @@ makeXLams a bs x
         = foldr (XLam a) x (reverse bs)
 
 
--- | Split nested lambdas from the front of an expression
+-- | Split nested spec lambdas from the front of an expression
 --   or `Nothing` if there was no outer lambda
 takeXLams :: Exp a n -> Maybe ([Bind n], Exp a n)
 takeXLams xx
@@ -96,6 +98,30 @@ takeXLams xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
+
+
+-- | Split nested lambdas from the front of an expression, 
+--   with a flag indicating whether the lambda was a level-1 (True), 
+--   or level-0 (False) binder.
+takeXLamFlags :: Exp a n -> Maybe ([(Bool, Bind n)], Exp a n)
+takeXLamFlags xx
+ = let  go bs (XLAM _ b x) = go ((True,  b):bs) x
+        go bs (XLam _ b x) = go ((False, b):bs) x
+        go bs x            = (reverse bs, x)
+   in   case go [] xx of
+         ([], _)        -> Nothing
+         (bs, body)     -> Just (bs, body)
+
+
+-- | Make some nested lambda abstractions,
+--   using a flag to indicate whether the lambda is a
+--   level-1 (True), or level-0 (False) binder.
+makeXLamFlags :: a -> [(Bool, Bind n)] -> Exp a n -> Exp a n
+makeXLamFlags a fbs x
+ = foldr (\(f, b) x'
+           -> if f then XLAM a b x'
+                   else XLam a b x')
+                x (reverse fbs)
 
 
 -- Applications ---------------------------------------------------------------

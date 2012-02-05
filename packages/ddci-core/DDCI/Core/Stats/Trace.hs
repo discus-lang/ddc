@@ -68,8 +68,8 @@ expOfSBind sbind
         SObj nTag lsArgs
          -> makeXApps () (expOfTag nTag) (map expOfLoc lsArgs)
 
-        SLams bs x
-         -> makeXLams () bs x
+        SLams fbs x
+         -> makeXLamFlags () fbs x
 
         SThunk x
          -> x

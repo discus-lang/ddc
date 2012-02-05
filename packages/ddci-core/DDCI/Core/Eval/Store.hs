@@ -65,8 +65,9 @@ data SBind
         , sbindDataArgs         :: [Loc] }
 
         -- Lambda abstraction, used for recursive bindings.
+        -- The flag indicates whether the is level-1 (True) or level-0 (False)
         | SLams
-        { sbindLamBinds         :: [Bind Name]
+        { sbindLamBinds         :: [(Bool, Bind Name)]
         , sbindLamBody          :: Exp () Name }
 
         -- Thunk, used for lazy evaluation.
@@ -104,8 +105,8 @@ instance Pretty SBind where
   = text "OBJ"  <+> ppr tag
                 <+> (sep $ map ppr svs)
  
- ppr (SLams bs x)    
-  = text "LAMS" <+> sep (map (parens . ppr) bs)
+ ppr (SLams fbs x)    
+  = text "LAMS" <+> sep (map (parens . ppr) fbs)
                 <>  text "."
                 <>  ppr x
 
