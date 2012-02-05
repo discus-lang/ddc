@@ -223,31 +223,52 @@ checkExpM' defs kenv tenv xx@(XApp a x1 x2)
          _              -> throw $ ErrorAppNotFun xx t1 t2
 
 
--- spec lambda abstractions -----------------------
-checkExpM' _defs _kenv _tenv _xx@(XLAM _ _ _)
-        = error "checkExpM XLAM"
+-- spec abstraction -----------------------------
+checkExpM' defs kenv tenv xx@(XLAM a b1 x2)
+ = do   let t1          = typeOfBind b1
+        _               <- checkTypeM kenv t1
 
+        -- We can't shadow spec binders because subsequent types will depend
+        -- on the original version.
+        when (Env.memberBind b1 kenv)
+         $ throw $ ErrorLamReboundSpec xx b1
 
--- lambda abstractions ----------------------------
+        -- Check the body
+        let kenv'         =  Env.extend b1 kenv
+        (x2', t2, e2, c2) <- checkExpM defs kenv' tenv x2
+        k2                <- checkTypeM kenv' t2
+
+        -- The body of a spec abstraction must be pure.
+        when (e2 /= Sum.empty kEffect)
+         $ throw $ ErrorLamNotPure xx (TSum e2)
+
+        -- The body of a spec abstraction must have data kind.
+        when (not $ isDataKind k2)
+         $ throw $ ErrorLamBodyNotData xx b1 t2 k2
+
+        -- Mask closure terms due to locally bound region vars.
+        let c2_cut      = Set.fromList
+                        $ mapMaybe (cutTaggedClosure b1)
+                        $ Set.toList c2
+
+        return ( XLAM a b1 x2'
+               , TForall b1 t2
+               , Sum.empty kEffect
+               , c2_cut)
+         
+
+-- function abstractions ------------------------
 checkExpM' defs kenv tenv xx@(XLam a b1 x2)
  = do   let t1          =  typeOfBind b1
         k1              <- checkTypeM kenv t1
-        let u1          =  universeFromType2 k1
-
-        -- We can't shadow level 1 binders because subsequent types will depend 
-        -- on the original version.
-        when (  u1 == Just UniverseSpec
-             && Env.memberBind b1 kenv)
-         $ throw $ ErrorLamReboundSpec xx b1
 
         -- Check the body.
-        let tenv'            =  Env.extend b1 tenv                                      -- TODO: Env to extend dep on universe
+        let tenv'            =  Env.extend b1 tenv
         (x2', t2, e2, clo2)  <- checkExpM  defs kenv tenv' x2   
-        k2                   <- checkTypeM kenv t2                                      -- TODO: wrong. use correct env
+        k2                   <- checkTypeM kenv t2
 
-        -- The form of the function constructor depends on what universe we're
-        -- dealing with. Note that only the computation abstraction can suspend
-        -- visible effects.
+        -- The form of the function constructor depends on what universe the 
+        -- binder is in.
         case universeFromType2 k1 of
          Just UniverseComp
           |  not $ isDataKind k1     -> throw $ ErrorLamBindNotData xx t1 k1
@@ -255,7 +276,7 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
           |  otherwise
           -> let 
                  -- Cut closure terms due to locally bound value vars.
-                 -- This also lowers deBruijn indices in un-cut closure terms.
+                 -- This also lowers deBruijn indices in un-cut closure terms.          -- TODO: don't need to lower anymore
                  c2_cut  = Set.fromList
                          $ mapMaybe (cutTaggedClosure b1)
                          $ Set.toList clo2
@@ -281,21 +302,6 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
                     , tImpl t1 t2
                     , Sum.empty kEffect
                     , clo2)
-                      
-         Just UniverseSpec
-          | e2 /= Sum.empty kEffect  -> throw $ ErrorLamNotPure     xx (TSum e2)
-          | not $ isDataKind k2      -> throw $ ErrorLamBodyNotData xx b1 t2 k2
-          | otherwise                
-          -> let 
-                 -- Mask closure terms due to locally bound region vars.
-                 c2_cut     = Set.fromList
-                            $ mapMaybe (cutTaggedClosure b1)
-                            $ Set.toList clo2
-
-             in  return ( XLam a b1 x2'
-                        , TForall b1 t2
-                        , Sum.empty kEffect
-                        , c2_cut)
 
          _ -> throw $ ErrorMalformedType xx k1
 
@@ -432,7 +438,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LRec bxs) xBody)
 -- letregion --------------------------------------
 checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
  = case takeSubstBoundOfBind b of
-     Nothing     -> checkExpM defs kenv tenv x                          -- TODO: if b is wildcard, bs must be empty
+     Nothing     -> checkExpM defs kenv tenv x                      -- TODO: if b is wildcard, bs must be empty
      Just u
       -> do
         -- Check the type on the region binder.

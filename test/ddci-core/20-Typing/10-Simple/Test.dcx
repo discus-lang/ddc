@@ -24,7 +24,7 @@
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
-:check \(r1 r2 r3:%).addInt [:r1 r2 r3:]
+:check /\(r1 r2 r3:%).addInt [:r1 r2 r3:]
 
 
 -- A fully applied integer constructor should cause an alloc effect.

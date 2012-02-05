@@ -26,7 +26,7 @@ type Parser n a
 pExp    :: Ord n => Parser n (Exp () n)
 pExp 
  = P.choice
-        -- Lambda abstractions
+        -- Level-0 lambda abstractions
         -- \(x1 x2 ... : TYPE) (y1 y2 ... : TYPE) ... . EXP
  [ do   pTok KBackSlash
 
@@ -42,6 +42,23 @@ pExp
         pTok KDot
         xBody   <- pExp
         return  $ foldr (XLam ()) xBody bs
+
+        -- Level-1 lambda abstractions.
+        -- /\(x1 x2 ... : TYPE) (y1 y2 ... : TYPE) ... . EXP
+ , do   pTok KBigLambda
+
+        bs      <- liftM concat
+                $  P.many1 
+                $  do   pTok KRoundBra
+                        bs'     <- P.many1 T.pBinder
+                        pTok KColon
+                        t       <- T.pType
+                        pTok KRoundKet
+                        return (map (\b -> T.makeBindFromBinder b t) bs')
+
+        pTok KDot
+        xBody   <- pExp
+        return  $ foldr (XLAM ()) xBody bs
 
 
         -- let expression

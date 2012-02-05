@@ -104,6 +104,7 @@ data TokAtom
         | KAmpersand
         | KDash
         | KColonColon
+        | KBigLambda
 
         -- symbolic constructors
         | KSortComp
@@ -186,6 +187,7 @@ describeTokAtom' ta
         KAmpersand              -> (Symbol, "&")
         KDash                   -> (Symbol, "-")
         KColonColon             -> (Symbol, "::")
+        KBigLambda              -> (Symbol, "/\\")
 
         -- symbolic constructors
         KSortComp               -> (Constructor, "**")

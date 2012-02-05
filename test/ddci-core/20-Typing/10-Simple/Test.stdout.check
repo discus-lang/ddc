@@ -39,7 +39,7 @@ addInt [R1#] [R1#] [R1#]
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
-\(r1 r2 r3 :%).addInt [r1] [r2] [r3]
+/\(r1 r2 r3 :%).addInt [r1] [r2] [r3]
 ::  [r1 r2 r3 :%].Int r1 -> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1)> Int r3
 :!: !0
 :$: $0
