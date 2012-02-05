@@ -1,7 +1,8 @@
 
 module DDCI.Core.Command.Eval
         ( cmdStep
-        , cmdEval)
+        , cmdEval
+        , evalExp)
 where
 import DDCI.Core.Stats.Trace
 import DDCI.Core.Eval.Env
@@ -41,39 +42,43 @@ cmdStep state lineStart str
                 return ()
 
 
--- | Parse, check, and single step evaluate an expression.
+-- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Int -> String -> IO ()
 cmdEval state lineStart str
- = cmdParseCheckExp lineStart str >>= goStore
+ = cmdParseCheckExp lineStart str >>= goEval
  where
-        -- Expression had a parse or type error.
-        goStore Nothing
-         = return ()
+    -- Expression had a parse or type error.
+    goEval Nothing
+     =	return ()
+    -- Expression is well-typed.
+    goEval (Just expr)
+     =	evalExp state expr
 
-        -- Expression is well-typed.
-        goStore (Just (x, tX, effX, cloX))
-         = do   -- Create the initial store.
-                let store = startingStoreForExp x
+-- | Evaluate an already parsed and type-checked expression.
+-- Exported so transforms can test with it.
+evalExp :: State -> (Exp () Name, Type Name, Effect Name, Closure Name) -> IO ()
+evalExp state (x, tX, effX, cloX)
+ = do   -- Create the initial store.
+	let store = startingStoreForExp x
 
-                -- Print starting expression.
-                when (Set.member TraceEval  $ stateModes state)
-                 $ putStrLn $ pretty (text "* STEP: " <> ppr x)
+	-- Print starting expression.
+	when (Set.member TraceEval  $ stateModes state)
+	 $ putStrLn $ pretty (text "* STEP: " <> ppr x)
 
-                -- Print starting store.
-                when (Set.member TraceStore $ stateModes state)
-                 $ do   putStrLn $ pretty (ppr store) 
-                        putStr "\n"
+	-- Print starting store.
+	when (Set.member TraceStore $ stateModes state)
+	 $ do   putStrLn $ pretty (ppr store) 
+		putStr "\n"
 
-                goStep store x tX effX cloX
-
-        goStep store0 x0 tX effX cloX
-         = go store0 x0
-         where go store x
-                = do mResult <- stepPrint state store x tX effX cloX
-                     case mResult of
-                      Nothing           -> return ()
-                      Just (store', x') -> go store' x'
-         
+	goStep store x
+    where
+	goStep store x0
+	 = do
+	    mResult <- stepPrint state store x0 tX effX cloX
+	    case mResult of
+	      Nothing           -> return ()
+	      Just (store', x0') -> goStep store' x0'
+ 
 
 -- | Create a starting store for the given expression.
 --   We pre-allocate any region handles in the expression, 
