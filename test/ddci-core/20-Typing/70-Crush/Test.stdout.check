@@ -42,7 +42,7 @@ case () of {()  -> ()}
 
 
 -- Using a polymorphic addition function requires DeepRead and DeepAlloc
-letrec {double : [a : *].(a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a) -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a = \(a :*).\(add :a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a).\(x :a).add x x} in double [Int R0#] (addInt [R0#] [R0#] [R0#]) (5 [R0#] ())
+letrec {double : [a : *].(a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a) -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a = /\(a : *).\(add :a -> a -(DeepRead a + DeepAlloc a | DeepUse a)> a).\(x :a).add x x} in double [Int R0#] (addInt [R0#] [R0#] [R0#]) (5 [R0#] ())
 ::  Int R0#
 :!: Read R0# + Alloc R0#
 :$: Use R0#
