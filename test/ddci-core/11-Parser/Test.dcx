@@ -16,3 +16,8 @@ letrec {
 -- Error: Like above, but ensure the line number has advanced
 -- between interpreter commands.
 :check ( ?? )
+
+
+-- Ok: should allow variable named 'inc'.
+:check let inc = () in inc
+

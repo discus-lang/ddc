@@ -18,7 +18,6 @@ where
 import DDC.Base.Lexer
 import DDC.Core.Exp
 import DDC.Core.Parser.Tokens
-import Data.List
 import Data.Char
 
 
@@ -177,16 +176,14 @@ lexExp lineStart str
                  
             in  readNamedCon (c : body')
 
-        -- Keywords
-        _
-         | Just (key, t) <- find (\(key, _) -> isPrefixOf key w) keywords
-         -> tok t : lexMore (length key) (drop (length key) w)
-
-        -- Named Variables and Witness constructors
+        -- Keywords, Named Variables and Witness constructors
         c : cs
          | isVarStart c
          , (body, rest)         <- span isVarBody cs
          -> let readNamedVar s
+                 | Just t <- lookup s keywords
+                 = tok t : lexMore (length s) rest
+
                  | Just wc      <- readWiConBuiltin s
                  = tokA (KWiConBuiltin wc) : lexMore (length s) rest
          
