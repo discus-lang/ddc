@@ -4,6 +4,7 @@ module DDC.Core.Transform.ANormal
 where
 import DDC.Core.Exp
 import qualified DDC.Type.Compounds as T
+import qualified DDC.Type.Universe as U
 import qualified DDC.Core.Transform.LiftX as L
 
 import qualified Data.Map as Map
@@ -36,10 +37,19 @@ arGet (_named,_anon) (UPrim _ _)  = 100
 
 -- **** Finding arities of expressions etc
 
--- TODO ignore non-data binders?
 arityOfExp :: Ord n => Exp a n -> Int
-arityOfExp (XLam _ _ e)	= 1 + arityOfExp e
-arityOfExp _		= 0
+arityOfExp (XLam _ b e)
+    -- only count data binders
+    | isComp $ U.universeOfType (T.typeOfBind b)
+    = 1 + arityOfExp e
+ where
+    -- TODO I don't understand why these are spec universe
+    isComp (Just U.UniverseSpec) = True
+    isComp _                     = False
+arityOfExp (XLam _ _ e)
+    = arityOfExp e
+arityOfExp _
+    = 0
 
 -- ha! we don't know anything about their values.
 -- but we need to record them as 0 anyway (shadowing, de bruijn)
