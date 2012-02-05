@@ -86,6 +86,8 @@ anormal ar x args
     go (XType{}) = x
     go (XWitness{}) = x
 
+    go (XLAM a b e) =
+	XLAM a b (down [(b,0)] e)
     go (XLam a b e) =
 	XLam a b (down [(b,0)] e)
 
@@ -184,6 +186,7 @@ annotOf :: Exp a n -> a
 annotOf (XVar a _) = a
 annotOf (XCon a _) = a
 annotOf (XApp a _ _) = a
+annotOf (XLAM a _ _) = a
 annotOf (XLam a _ _) = a
 annotOf (XLet a _ _) = a
 annotOf (XCase a _ _) = a

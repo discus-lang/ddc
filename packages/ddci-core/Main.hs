@@ -40,6 +40,7 @@ data Command
         | CommandExpClosure
         | CommandEval
         | CommandTrans
+        | CommandTransEval
 	| CommandAst
         deriving (Eq, Show)
 
@@ -59,6 +60,7 @@ commands
         , (":closure",  CommandExpClosure)
         , (":eval",     CommandEval)
         , (":trans",    CommandTrans)
+        , (":trun",     CommandTransEval)
         , (":ast",	CommandAst) ]
 
 
@@ -324,6 +326,10 @@ handleCmd1 state cmd lineStart line
 
         CommandTrans
          -> do  cmdTrans state lineStart line
+                return state
+        
+        CommandTransEval
+         -> do  cmdTransEval state lineStart line
                 return state
         
         CommandAst
