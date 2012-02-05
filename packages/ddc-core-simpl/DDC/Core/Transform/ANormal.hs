@@ -32,7 +32,7 @@ arGet (named, _anon) (UName n _)  = named Map.! n
 --   if it's overapplied, it's a type error,
 --   if it's underapplied, there's nothing we can do.
 -- Assuming no higher order primitives.
-arGet (_named,_anon) (UPrim _ t)  = 100
+arGet (_named,_anon) (UPrim _ _)  = 100
 
 -- **** Finding arities of expressions etc
 
@@ -169,8 +169,17 @@ let ^ = 1 [R0#] () in
 	    (^2 ^1) ^0)))
 -}
 
--- todo...
-annotOf _ = undefined
+-- does this exist elsewhere? ought it?
+annotOf :: Exp a n -> a
+annotOf (XVar a _) = a
+annotOf (XCon a _) = a
+annotOf (XApp a _ _) = a
+annotOf (XLam a _ _) = a
+annotOf (XLet a _ _) = a
+annotOf (XCase a _ _) = a
+annotOf (XCast a _ _) = a
+annotOf (XType{}) = error "DDC.Core.Transform.ANormal.annotOf: XType"
+annotOf (XWitness{}) = error "DDC.Core.Transform.ANormal.annotOf: XWitness"
 
 {-
 let ap = \x. \y. x y in
