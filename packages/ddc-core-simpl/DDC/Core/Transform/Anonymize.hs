@@ -19,6 +19,9 @@ instance Anonymize (Exp a) where
         XApp a x1 x2
          -> XApp a (anonymize stack x1) (anonymize stack x2)
 
+        XLAM a b x
+          -> XLAM a b (anonymize stack x)                               -- TODO: push bind on kstack
+
         XLam a b x
          -> let (stack', b')    = pushAnonymizeBind stack b
             in  XLam a b' (anonymize stack' x)

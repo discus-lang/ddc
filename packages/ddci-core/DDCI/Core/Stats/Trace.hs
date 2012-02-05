@@ -35,6 +35,7 @@ traceStoreX store entered xx
 
         XCon{}          -> xx
         XApp  a x1 x2   -> XApp  a (down x1) (down x2)
+        XLAM  a b x     -> XLAM  a b (down x)
         XLam  a b  x    -> XLam  a b (down x)
         XLet  a ls x    -> XLet  a (traceStoreLs store entered ls) (down x)
         XCase a x alts  -> XCase a (down x) (map (traceStoreA store entered) alts)

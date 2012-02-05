@@ -96,6 +96,9 @@ instance SubstituteX Exp where
 
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
+        XLAM a b xBody  -> XLAM a b (down xBody)                               -- TODO: handle var capture on lambda
+                                                                                -- push bind on kenv
+
         XLam a b xBody
          -> let (stack', b')    = pushBind fns stack b
                 xBody'          = substituteWithX u x fns stack' xBody

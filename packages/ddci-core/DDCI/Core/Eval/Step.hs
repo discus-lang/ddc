@@ -475,7 +475,11 @@ isSomeValue weak store xx
 
          XCon{}         -> True
 
+         -- Plain lambdas aren't weak values because we always add them
+         -- to the store. The resulting store location is then a value.
+         XLAM{}         -> False                        
          XLam{}         -> False
+
          XLet{}         -> False
          XCase{}        -> False
 

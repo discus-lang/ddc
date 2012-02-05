@@ -4,8 +4,6 @@ module DDC.Core.Transform.LiftX
         (LiftX(..))
 where
 import DDC.Core.Exp
-import DDC.Type.Compounds
-import DDC.Type.Universe
 
 
 class LiftX (c :: * -> *) where
@@ -41,20 +39,18 @@ instance LiftX (Exp a) where
   = let down = liftAtDepthX n d
     in case xx of
         XVar a u        -> XVar a (down u)
+
         XCon{}          -> xx
+
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
-        XLam a b x
-         | Just UniverseComp <- universeFromType1 (typeOfBind b)
-	 , BAnon _	     <- b
-         -> XLam a b (liftAtDepthX n (d + 1) x)
+        XLAM a b x      -> XLAM a b (down x)
+
+        XLam a b x      -> XLam a b (liftAtDepthX n (d + 1) x)
          
-         | otherwise 
-         -> XLam a b (down x)
-         
-        XLet a lets x   ->
-	    let (lets', inc) = liftAtDepthXLets n d lets in
-	    XLet a lets' (liftAtDepthX n (d+inc) x)
+        XLet a lets x   
+         -> let (lets', levels) = liftAtDepthXLets n d lets 
+            in  XLet a lets' (liftAtDepthX n (d + levels) x)
 
         XCase a x alts  -> XCase a (down x) (map down alts)
 
@@ -63,13 +59,16 @@ instance LiftX (Exp a) where
         XType{}         -> xx
         XWitness{}      -> xx
          
+
 instance LiftX (Alt a) where
  liftAtDepthX n d (AAlt p x)
   = case p of
-	PDefault -> AAlt PDefault (liftAtDepthX n d x)
-	PData _ bs ->
-	    let d' = d + countBAnons bs
-	    in AAlt p (liftAtDepthX n d' x)
+	PDefault 
+         -> AAlt PDefault (liftAtDepthX n d x)
+
+	PData _ bs 
+         -> let d' = d + countBAnons bs
+	    in  AAlt p (liftAtDepthX n d' x)
         
 
 liftAtDepthXLets
@@ -80,15 +79,15 @@ liftAtDepthXLets
         -> (Lets a n, Int) -- ^ Lifted, and how much to increase depth by
 
 liftAtDepthXLets _ _ xx@(LLet _ b _)
-    = (xx, countBAnons [b])
+ = (xx, countBAnons [b])
 
 liftAtDepthXLets n d (LRec bs)
- =  let inc = countBAnons (map fst bs) in
-    let bs' = map (\(b,e) -> (b, liftAtDepthX n (d+inc) e)) bs in
-    (LRec bs', inc)
+ = let  inc = countBAnons (map fst bs)
+        bs' = map (\(b,e) -> (b, liftAtDepthX n (d+inc) e)) bs
+   in   (LRec bs', inc)
 
-liftAtDepthXLets _ _ xx@(LLetRegion b bs)
-    = (xx, countBAnons (b:bs))
+liftAtDepthXLets _ _ xx@(LLetRegion _b bs)
+    = (xx, countBAnons bs)
 
 liftAtDepthXLets _ _ xx@(LWithRegion _)
     = (xx, 0)
@@ -96,3 +95,5 @@ liftAtDepthXLets _ _ xx@(LWithRegion _)
 countBAnons = length . filter isAnon
  where	isAnon (BAnon _) = True
 	isAnon _	 = False
+
+

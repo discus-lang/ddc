@@ -2,8 +2,8 @@
 module DDC.Core.Compounds 
         ( -- * Lets
           bindsOfLets
-        , l1BindsOfLets
-        , l0BindsOfLets
+        , specBindsOfLets
+        , valwitBindsOfLets
 
           -- * Patterns
         , bindsOfPat
@@ -36,8 +36,8 @@ bindsOfLets ll
 
 
 -- | Like `bindsOfLets` but only take the type binders.
-l1BindsOfLets :: Lets a n -> [Bind n]
-l1BindsOfLets ll
+specBindsOfLets :: Lets a n -> [Bind n]
+specBindsOfLets ll
  = case ll of
         LLet _ _ _       -> []
         LRec _           -> []
@@ -46,8 +46,8 @@ l1BindsOfLets ll
 
 
 -- | Like `bindsOfLets` but only take the value and witness binders.
-l0BindsOfLets :: Lets a n -> [Bind n]
-l0BindsOfLets ll
+valwitBindsOfLets :: Lets a n -> [Bind n]
+valwitBindsOfLets ll
  = case ll of
         LLet _ b _       -> [b]
         LRec bxs         -> map fst bxs

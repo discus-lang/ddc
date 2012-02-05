@@ -26,9 +26,7 @@ substituteW b w x
        freeNames        = Set.fromList
                         $ mapMaybe takeNameOfBound 
                         $ Set.toList 
-                        $ freeX Env.empty w            -- TODO: type vars won't be captured.
-                                                                --       shouldn't rename them.
-                                                                -- Need to split type names vs valwit names.
+                        $ freeX Env.empty w                                            -- TODO: need both xvars and tvars 
 
        stack           = BindStack [] [] 0 0
  
@@ -80,6 +78,7 @@ instance SubstituteW (Exp a) where
         XVar{}          -> xx
         XCon{}          -> xx
         XApp  a x1 x2   -> XApp  a   (down x1)  (down x2)
+        XLAM  a b x     -> XLAM  a b (down x)                                   -- TODO: handle var capture on lambda
         XLam  a b x     -> XLam  a b (down x)                                   -- TODO: handle var capture on lambda
         XLet  a ls1  x2 -> XLet  a   (down ls1) (down x2)
         XCase a x alts  -> XCase a   (down x)   (map down alts)

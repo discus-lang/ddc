@@ -15,6 +15,7 @@ instance GatherBound n (Exp a n) where
         XVar  _ u       -> gatherBound u
         XCon  _ u       -> gatherBound u
         XApp  _ x1 x2   -> Set.unions [gatherBound x1, gatherBound x2]
+        XLAM  _ b  x    -> Set.unions [gatherBound b,  gatherBound x]
         XLam  _ b  x    -> Set.unions [gatherBound b,  gatherBound x]
         XLet  _ lt x    -> Set.unions [gatherBound lt, gatherBound x]
         XCase _ x alts  -> Set.unions [gatherBound x,  Set.unions $ map gatherBound alts]

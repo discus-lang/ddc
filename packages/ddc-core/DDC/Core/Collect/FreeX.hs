@@ -5,8 +5,6 @@ module DDC.Core.Collect.FreeX
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
-import DDC.Type.Universe
-import DDC.Type.Compounds
 import DDC.Type.Pretty
 import DDC.Type.Env                     (Env)
 import Data.Set                         (Set)
@@ -45,23 +43,11 @@ instance Pretty n => FreeX n (Exp a n) where
          -> Set.unions  [ freeX tenv x1
                         , freeX tenv x2]
 
-        -- TODO: Urgh. 
-        -- We shouldn't need to look at the universe to know what environment
-        -- to push the variable onto. Maybe we just need to add a second
-        -- lambda form.
+        XLAM _ _ x
+         -> freeX tenv x
+
         XLam _ b  x
-         -> case universeFromType1 (typeOfBind b) of
-             Just UniverseComp
-              -> freeX (Env.extend b tenv) x
-
-             Just UniverseWitness
-              -> freeX (Env.extend b tenv) x
-
-             Just UniverseSpec
-              -> freeX tenv x 
-
-             _ -> error $ "freeX: malformed type" 
-                        ++ (pretty $ ppr (typeOfBind b) <+> text (show (universeOfType (typeOfBind b))))
+         -> freeX (Env.extend b tenv) x
 
         XLet _ lts x    
          -> freeX (Env.extends (valwitBindsOfLets lts) tenv) x
