@@ -6,13 +6,19 @@ module DDCI.Core.Transform
 where
 import DDC.Base.Pretty
 import DDC.Core.Exp
-import DDC.Core.Transform.Anonymize
+import DDC.Core.Transform.AnonymizeX
+import DDC.Core.Transform.ANormal
+import DDC.Core.Transform.Beta
+import DDCI.Core.Eval.Env
+import DDCI.Core.Eval.Name
 
 
 -- | Desription of the transforms to apply to a core program.
 data Transform
         = None
         | Anonymize
+        | ANormal
+        | Beta
         deriving (Eq, Show)
 
 parseTransform :: String -> Maybe Transform
@@ -20,6 +26,8 @@ parseTransform str
  = case str of
         "None"          -> Just None
         "Anonymize"     -> Just Anonymize
+        "ANormal"	-> Just ANormal
+        "Beta"          -> Just Beta
         _               -> Nothing
 
 instance Pretty Transform where
@@ -27,6 +35,8 @@ instance Pretty Transform where
   = case ss of
         None            -> text "None"
         Anonymize       -> text "Anonymize"
+        ANormal         -> text "ANormal"
+        Beta            -> text "Beta"
 
 
 -- Apply ----------------------------------------------------------------------
@@ -37,4 +47,7 @@ applyTransformX
 applyTransformX spec xx
  = case spec of
         None            -> xx
-        Anonymize       -> anonymize [] xx
+        Anonymize       -> anonymizeX [] [] xx
+        ANormal         -> anormalise xx
+        Beta            -> betaReduce primKindEnv primTypeEnv xx
+
