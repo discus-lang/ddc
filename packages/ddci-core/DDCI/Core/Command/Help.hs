@@ -33,7 +33,7 @@ help    = unlines
         , "  :set trans  SPEC  Set the current transform."
         , ""
         , " Specs are:"
-        , "  SPEC ::= None | Anonymize"
+        , "  SPEC ::= None | Anonymize | Beta"
         , ""
         ]
 
