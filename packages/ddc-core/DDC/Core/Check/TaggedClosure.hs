@@ -169,9 +169,7 @@ cutTaggedClosureT
 
 cutTaggedClosureT b1 cc
  = case cc of
-        GBoundVal u2 ts
-         | boundMatchesBind u2 b1  -> Nothing
-         | otherwise               -> Just $ GBoundVal    u2 ts
+        GBoundVal u2 ts            -> Just $ GBoundVal u2 (lowerT 1 ts)
 
         GBoundRgnVar u2 
          | boundMatchesBind u2 b1  -> Nothing
@@ -193,8 +191,5 @@ cutTaggedClosureX b1 cc
          | boundMatchesBind u2 b1  -> Nothing
          | otherwise               -> Just $ GBoundVal    (lowerT 1 u2) ts
 
-        GBoundRgnVar u2 
-         | boundMatchesBind u2 b1  -> Nothing
-         | otherwise               -> Just $ GBoundRgnVar u2
-
+        GBoundRgnVar u2            -> Just $ GBoundRgnVar u2
         GBoundRgnCon u2            -> Just $ GBoundRgnCon u2

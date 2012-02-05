@@ -5,7 +5,7 @@ in  x;;
 
 -- Check reconstruction of annotations on case-bound variables.
 :recon..
-\(r1 : %). \(xx : List r1 (Int r1)).
+/\(r1 : %). \(xx : List r1 (Int r1)).
 case xx of {
         Nil             -> Nil  [r1] [Int r1] ();
         Cons x xs       -> Cons [r1] [Int r1] x (Cons [r1] [Int r1] x xs);

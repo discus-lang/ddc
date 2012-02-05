@@ -37,7 +37,7 @@ import qualified Data.Set               as Set
 import Control.Monad
 import Data.List                        as L
 import Data.Maybe
-
+-- import Debug.Trace
 
 -- Wrappers -------------------------------------------------------------------
 -- | Take the kind of a type.
@@ -104,8 +104,9 @@ checkExpM
 
 checkExpM defs kenv tenv xx
  = checkExpM' defs kenv tenv xx
-{-   do   (xx', t, eff, clo) <- checkExpM' defs kenv tenv xx
-        trace (pretty $ vcat 
+{-
+ = do (xx', t, eff, clo) <- checkExpM' defs kenv tenv xx
+      trace (pretty $ vcat 
                 [ text "checkExpM:  " <+> ppr xx 
                 , text "        ::  " <+> ppr t 
                 , text "        :!: " <+> ppr eff
@@ -264,7 +265,7 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
 
         -- Check the body.
         let tenv'            =  Env.extend b1 tenv
-        (x2', t2, e2, clo2)  <- checkExpM  defs kenv tenv' x2   
+        (x2', t2, e2, c2)    <- checkExpM  defs kenv tenv' x2   
         k2                   <- checkTypeM kenv t2
 
         -- The form of the function constructor depends on what universe the 
@@ -279,7 +280,7 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
                  -- This also lowers deBruijn indices in un-cut closure terms.
                  c2_cut  = Set.fromList
                          $ mapMaybe (cutTaggedClosureX b1)
-                         $ Set.toList clo2
+                         $ Set.toList c2
 
                  -- Trim the closure before we annotate the returned function
                  -- type with it. 
@@ -301,7 +302,7 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
           -> return ( XLam a b1 x2'
                     , tImpl t1 t2
                     , Sum.empty kEffect
-                    , clo2)
+                    , c2)
 
          _ -> throw $ ErrorMalformedType xx k1
 

@@ -3,8 +3,8 @@
 
 -- Anonymize lambdas and applications.
 -- Broken: the Use closure term on the first function arrow is lost
--- :trans..
--- /\(r:%).\(x : Int r) (y : Int r). addInt [:r r r:] x y;;
+:trans..
+/\(r:%).\(x : Int r) (y : Int r). addInt [:r r r:] x y;;
 
 
 -- Single let
