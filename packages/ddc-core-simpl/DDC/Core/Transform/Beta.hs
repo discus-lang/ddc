@@ -10,7 +10,7 @@ import DDC.Core.Transform.SubstituteX
 import DDC.Type.Env     (Env)
 
 -- Beta-reduce applications of a explicit lambda abstractions 
--- to variables or other abstractions.
+-- to variables and values.
 betaReduce  :: Ord n => Env n -> Env n -> Exp a n -> Exp a n
 betaReduce 
         = transformUpX betaReduce1
@@ -37,12 +37,22 @@ betaReduce1 _ _ xx
 
 -- | Check whether we can safely substitute this expression during beta
 --   evaluation. 
---   We allow variables and abstractions, as duplicating these expressions
---   is guaranteed not to duplicate work at runtime.
+-- 
+--   We allow variables, abstractions, type and witness applications.
+--   Duplicating these expressions is guaranteed not to duplicate work
+--   at runtime,
 canBetaSubstX :: Exp a n -> Bool
 canBetaSubstX xx
  = case xx of
         XVar{}  -> True
         XLam{}  -> True
         XLAM{}  -> True
+
+        XApp _ x1 (XType _)
+         -> canBetaSubstX x1
+
+        XApp _ x1 (XWitness _)
+         -> canBetaSubstX x1 
+
         _       -> False
+

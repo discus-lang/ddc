@@ -1,5 +1,5 @@
 
--- | Collect the free variables in a core expression.
+-- | Collect the free value and witness variables in a core expression.
 module DDC.Core.Collect.FreeX
         (FreeX(..))
 where
@@ -40,7 +40,7 @@ instance FreeX n (Exp a n) where
 
         XApp _ x1 x2    
          -> Set.unions  [ freeX tenv x1
-                        , freeX tenv x2]
+                        , freeX tenv x2 ]
 
         XLAM _ _ x
          -> freeX tenv x
@@ -55,7 +55,10 @@ instance FreeX n (Exp a n) where
          -> Set.unions  [ freeX tenv x
                         , Set.unions $ map (freeX tenv) alts]
 
-        XCast _ x _    -> freeX tenv x
+        XCast _ c x
+         -> Set.unions  [ freeX tenv c
+                        , freeX tenv x ]
+
         XType _        -> Set.empty
         XWitness w     -> freeX tenv w
 

@@ -9,6 +9,7 @@ module DDC.Core.Transform.SubstituteX
 where
 import DDC.Core.Exp
 import DDC.Core.Collect.FreeX
+import DDC.Core.Collect.FreeT
 import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteW
@@ -19,28 +20,36 @@ import qualified Data.Set       as Set
 import Data.Set                 (Set)
 
 
-
 -- | Wrapper for `substituteWithX` that determines the set of free names in the
 --   type being substituted, and starts with an empty binder stack.
-substituteX :: (SubstituteX c, Ord n) => Bind n -> Exp a n -> c a n -> c a n
-substituteX b t x
+substituteX 
+        :: ( Ord n, SubstituteX c)
+        => Bind n -> Exp a n -> c a n -> c a n
+substituteX b x' xx
   | Just u      <- takeSubstBoundOfBind b
   = let -- Determine the free names in the type we're subsituting.
         -- We'll need to rename binders with the same names as these
-        freeNames       = Set.fromList
-                        $ mapMaybe takeNameOfBound 
-                        $ Set.toList 
-                        $ freeX Env.empty t                             -- TODO: type vars may be captured by type binders
+        fnsX    = Set.fromList
+                $ mapMaybe takeNameOfBound 
+                $ Set.toList 
+                $ freeX Env.empty x'
+
+        fnsT    = Set.fromList
+                $ mapMaybe takeNameOfBound 
+                $ Set.toList 
+                $ freeT Env.empty x'
 
         stack           = BindStack [] [] 0 0
  
-   in   substituteWithX u t freeNames stack x
+   in   substituteWithX u x' fnsT fnsX stack stack xx
 
-  | otherwise = x
+  | otherwise = xx
 
 
 -- | Wrapper for `substituteX` to substitute multiple expressions.
-substituteXs :: (SubstituteX c, Ord n) => [(Bind n, Exp a n)] -> c a n -> c a n
+substituteXs 
+        :: (Ord n, SubstituteX c)
+        => [(Bind n, Exp a n)] -> c a n -> c a n
 substituteXs bts x
         = foldr (uncurry substituteX) x bts
 
@@ -63,6 +72,7 @@ substituteXArg b arg x
 substituteXArgs
         :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
         => [(Bind n, Exp a n)] -> c a n -> c a n
+
 substituteXArgs bas x
         = foldr (uncurry substituteXArg) x bas
 
@@ -75,19 +85,21 @@ class SubstituteX (c :: * -> * -> *) where
  --   avoiding the capture.
  substituteWithX
         :: forall a n. Ord n
-        => Bound n              -- ^ Bound variable that we're subsituting into.
-        -> Exp a n              -- ^ Exp to substituteX.
-        -> Set  n               -- ^ Names of free varaibles in the exp to substitute.
-        -> BindStack n          -- ^ Bind stack.
+        => Bound n              -- ^ Bound variable that we're subsituting for..
+        -> Exp a n              -- ^ Exp to substitute.
+        -> Set n                -- ^ Names of free spec   vars in the argument.
+        -> Set n                -- ^ Names of free valwit vars in the environment.
+        -> BindStack n          -- ^ Bind stack for spec names.
+        -> BindStack n          -- ^ Bind stack for valwit names.
         -> c a n -> c a n
 
 
 instance SubstituteX Exp where 
- substituteWithX u x fns stack xx
-  = let down    = substituteWithX u x fns stack 
+ substituteWithX u x fnsT fnsX stackT stackX xx
+  = let down    = substituteWithX u x fnsT fnsX stackT stackX
     in case xx of
         XVar a u'
-         -> case substBound stack u u' of
+         -> case substBound stackX u u' of
                 Left u'' -> XVar a u''
                 Right n  -> liftX n x
 
@@ -95,56 +107,58 @@ instance SubstituteX Exp where
 
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
-        XLAM a b xBody  -> XLAM a b (down xBody)                               -- TODO: handle var capture on lambda
-                                                                                -- push bind on kenv
+        XLAM a b xBody
+         -> let (stackT', b')   = pushBind fnsT stackT b
+                xBody'          = substituteWithX u x fnsT fnsX stackT' stackX xBody
+            in  XLAM a b' xBody'
 
         XLam a b xBody
-         -> let (stack', b')    = pushBind fns stack b
-                xBody'          = substituteWithX u x fns stack' xBody
+         -> let (stackX', b')   = pushBind fnsX stackX b
+                xBody'          = substituteWithX u x fnsT fnsX stackT stackX' xBody
             in  XLam a b' xBody'
 
         XLet a (LLet m b x1) x2
          -> let x1'             = down x1
-                (stack', b')    = pushBind fns stack b
-                x2'             = substituteWithX u x fns stack' x2
+                (stackX', b')   = pushBind fnsX stackX b
+                x2'             = substituteWithX u x fnsT fnsX stackT stackX' x2
             in  XLet a (LLet m b' x1') x2'
 
         XLet a (LRec bxs) x2
          -> let (bs, xs)        = unzip bxs
-                (stack', bs')   = pushBinds fns stack bs
-                xs'             = map (substituteWithX u x fns stack') xs
-                x2'             = substituteWithX u x fns stack' x2
+                (stackX', bs')  = pushBinds fnsX stackX bs
+                xs'             = map (substituteWithX u x fnsT fnsX stackT stackX') xs
+                x2'             = substituteWithX u x fnsT fnsX stackT stackX' x2
             in  XLet a (LRec (zip bs' xs')) x2'
 
         XLet a (LLetRegion b bs) x2
-         -> let (stack1, b')    = pushBind  fns stack  b
-                (stack2, bs')   = pushBinds fns stack1 bs
-                x2'             = substituteWithX u x fns stack2 x2
+         -> let (stackT', b')   = pushBind  fnsT stackT b
+                (stackX', bs')  = pushBinds fnsX stackX bs
+                x2'             = substituteWithX u x fnsT fnsX stackT' stackX' x2
             in  XLet a (LLetRegion b' bs') x2'
 
         XLet a (LWithRegion uR) x2
-         ->     XLet a (LWithRegion uR) (down x2)
+         -> XLet a (LWithRegion uR) (down x2)
 
         XCase a x1 alts
-         -> let x1'             = substituteWithX u x fns stack x1
-                alts'           = map (substituteWithX u x fns stack) alts
-            in  XCase a x1' alts'
+         -> XCase a (down x1) 
+                    (map (substituteWithX u x fnsT fnsX stackT stackX) alts)
 
-        XCast a cc x1   -> XCast a cc (down x1)
+        XCast a cc x1   
+         -> XCast a cc (down x1)
 
         XType{}         -> xx
         XWitness{}      -> xx
  
 
 instance SubstituteX Alt where
- substituteWithX u x fns stack aa
-  = let down = substituteWithX u x fns stack
+ substituteWithX u x fnsT fnsX stackT stackX aa
+  = let down = substituteWithX u x fnsT fnsX stackT stackX
     in case aa of
         AAlt PDefault xBody
          -> AAlt PDefault $ down xBody
         
         AAlt (PData uCon bs) xBody
-         -> let (stack', bs')   = pushBinds fns stack bs
-                xBody'          = substituteWithX u x fns stack' xBody
+         -> let (stackX', bs')  = pushBinds fnsX stackX bs
+                xBody'          = substituteWithX u x fnsT fnsX stackT stackX' xBody
             in  AAlt (PData uCon bs') xBody'
 

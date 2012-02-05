@@ -1,0 +1,37 @@
+
+ok
+
+-- Identity function
+(\(x : Unit).x) ()
+
+
+-- Avoid capture of value var by value lambda in value subst.
+let x : Unit = () in \(^ : Unit).x
+
+
+-- Avoid capture of value var by let binding in value subst.
+let x : Unit = () in let ^ : Int R0# = 2 [R0#] x in addInt [R0#] [R0#] [R0#] ^0 (3 [R0#] x)
+
+
+-- Avoid capture of value var by letrec binding in value subst.
+let x : Unit = () in letrec {^ : Int R0# -> Int R0# = \(z : Int R0#).z} in addInt [R0#] [R0#] [R0#] (^0 (2 [R0#] x)) (3 [R0#] x)
+
+-- Avoid capture of value var by match bining in value subst.
+-- TODO: tranformUpX for case not finished
+-- :trans..
+-- let x = () in
+-- (\(y : Unit).
+--        case Nil [R0#] [Int R0#] () of {
+--         Nil            -> 0 [R0#] ();
+--         Cons x xs      -> addInt [:R0# R0# R0#:]
+--                                  (3 [R0#] y)
+--                                  x
+--        })
+--        x;;
+
+-- Avoid capture of type var by type lambda in value subst.
+-- TODO: this test shadows a l1 binder. Check this again.
+-- :trans..
+-- /\(a : *).
+-- let f [b : *] = () in
+-- (\(y : Unit). /\(a : *). y) (f [a]);;
