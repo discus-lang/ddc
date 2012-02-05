@@ -25,7 +25,7 @@ Type mismatch in let-binding.
                 The binder: fac
                   has type: [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
      but the body has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
-             when checking: letrec {fac : [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r = \(r :%).\(acc n :Int r).case n of {0  -> acc; 1  -> acc; _ -> fac [r] (mulInt [r] [r] [r] acc n) (subInt [r] [r] [r] n (1 [r] ()))}} in fac [R1#] (1 [R1#] ()) (5 [R1#] ())
+             when checking: letrec {fac : [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r = /\(r : %).\(acc n :Int r).case n of {0  -> acc; 1  -> acc; _ -> fac [r] (mulInt [r] [r] [r] acc n) (subInt [r] [r] [r] n (1 [r] ()))}} in fac [R1#] (1 [R1#] ()) (5 [R1#] ())
 
 
 -- Error: inner function is missing an Alloc effect.
@@ -33,7 +33,7 @@ Type mismatch in let-binding.
                 The binder: fac
                   has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r
      but the body has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
-             when checking: letrec {fac : [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r = \(r :%).\(acc n :Int r).case n of {0  -> acc; 1  -> acc; _ -> fac [r] (mulInt [r] [r] [r] acc n) (subInt [r] [r] [r] n (1 [r] ()))}} in fac [R1#] (1 [R1#] ()) (5 [R1#] ())
+             when checking: letrec {fac : [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r = /\(r : %).\(acc n :Int r).case n of {0  -> acc; 1  -> acc; _ -> fac [r] (mulInt [r] [r] [r] acc n) (subInt [r] [r] [r] n (1 [r] ()))}} in fac [R1#] (1 [R1#] ()) (5 [R1#] ())
 
 
 -- Error: region var on the Int return type should be r1.
@@ -48,18 +48,18 @@ Type mismatch in let-binding.
                 The binder: enumFromTo
                   has type: [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
      but the body has type: [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-             when checking: letrec {enumFromTo : [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = \(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+             when checking: letrec {enumFromTo : [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = /\(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 
 
 -- Should be ok.
-letrec {enumFromTo : [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = \(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+letrec {enumFromTo : [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = /\(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 ::  List R2# (Int R1#)
 :!: Read R1# + Alloc R1# + Alloc R2#
 :$: Use R1# + Use R2#
 
 
 -- Same as above, but the effect and closure terms are in a different order.
-letrec {enumFromTo : [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = \(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+letrec {enumFromTo : [r1 r2 :%].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = /\(r1 r2 :%).\(m n :Int r1).case eqInt [r1] [r1] [r1] m n of {0  -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ())}} in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 ::  List R2# (Int R1#)
 :!: Read R1# + Alloc R1# + Alloc R2#
 :$: Use R1# + Use R2#

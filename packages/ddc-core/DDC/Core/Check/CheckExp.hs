@@ -396,7 +396,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LRec bxs) xBody)
 
         -- All right hand sides need to be lambdas.
         forM_ xs $ \x 
-         -> when (not $ isXLam x)
+         -> when (not $ (isXLam x || isXLAM x))
                 $ throw $ ErrorLetrecBindingNotLambda xx x
 
         -- All variables are in scope in all right hand sides.

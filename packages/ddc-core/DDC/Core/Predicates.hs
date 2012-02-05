@@ -1,10 +1,19 @@
 
 -- | Simple predicates on core expressions.
 module DDC.Core.Predicates
-        ( isXLam
+        ( isXLAM
+        , isXLam
         , isPDefault)
 where
 import DDC.Core.Exp
+
+
+-- | Check whether an expression is a Lambda abstraction.
+isXLAM :: Exp a n -> Bool
+isXLAM xx
+ = case xx of
+        XLAM{}  -> True
+        _       -> False
 
 
 -- | Check whether an expression is a Lambda abstraction.

@@ -509,7 +509,7 @@ expOfParams _ [] xBody            = xBody
 expOfParams a (p:ps) xBody
  = case p of
         ParamType b     
-         -> XLam a b $ expOfParams a ps xBody
+         -> XLAM a b $ expOfParams a ps xBody
         
         ParamWitness b
          -> XLam a b $ expOfParams a ps xBody

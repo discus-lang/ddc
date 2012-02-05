@@ -45,7 +45,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
          | otherwise 
          -> pprParen (d > 1) 
-              $ text "\\" <> parens (ppr b) <> text "." <> ppr x
+              $ text "/\\" <> parens (ppr b) <> text "." <> ppr x
 
         XLam _ b x      
          | Just (bsMore, xBody) <- takeXLams x
