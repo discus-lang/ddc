@@ -6,7 +6,6 @@ module DDC.Type.Transform.Trim
 where
 import DDC.Type.Check.CheckCon
 import DDC.Type.Exp
-import DDC.Type.Pretty
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Collect.FreeT
@@ -22,7 +21,7 @@ import qualified Data.Set       as Set
 --   This function assumes the closure is well-kinded, 
 --   and may return Nothing if this is not the case.
 trimClosure 
-        :: (Pretty n, Ord n) 
+        :: Ord n
         => Closure n 
         -> Maybe (Closure n)
 
@@ -33,7 +32,7 @@ trimClosure cc
 -- | Trim a closure down to a closure sum.
 --   May return 'Nothing' if the closure is mis-kinded.
 trimToSumC 
-        :: forall n. (Pretty n, FreeT n (TypeSum n), Ord n) 
+        :: forall n. (FreeT n (TypeSum n), Ord n)
         => Closure n -> Maybe (TypeSum n)
 
 trimToSumC cc
@@ -72,7 +71,7 @@ trimToSumC cc
 -- | Trim the argument of a DeepUsed constructor down to a closure sum.
 --   The argument is of data kind.
 trimDeepUsedD 
-        :: forall n. (Pretty n, FreeT n (TypeSum n), Ord n)
+        :: forall n. (FreeT n (TypeSum n), Ord n)
         => Type n -> TypeSum n
 
 trimDeepUsedD tt
@@ -117,7 +116,7 @@ trimDeepUsedD tt
 
 -- | Make the appropriate Use term for a type of the given kind, or `Nothing` if
 --  there isn't one. Also recursively trim types of data kind.
-makeUsed :: (Eq n, Pretty n, Ord n) => Kind n -> Type n -> Maybe (Closure n)
+makeUsed :: (Eq n, Ord n) => Kind n -> Type n -> Maybe (Closure n)
 makeUsed k t
         | isRegionKind k        = Just $ tUse t
         | isDataKind   k        = Just $ TSum $ trimDeepUsedD t

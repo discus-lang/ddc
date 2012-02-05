@@ -5,7 +5,6 @@ module DDC.Core.Collect.FreeX
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
-import DDC.Type.Pretty
 import DDC.Type.Env                     (Env)
 import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
@@ -33,7 +32,7 @@ instance FreeX n (Bound n) where
         UIx i t         -> Set.singleton $ UIx (i - Env.depth tenv) t
 
 
-instance Pretty n => FreeX n (Exp a n) where
+instance FreeX n (Exp a n) where
  freeX tenv xx
   = case xx of
         XVar _ u       -> freeX tenv u
@@ -61,14 +60,14 @@ instance Pretty n => FreeX n (Exp a n) where
         XWitness w     -> freeX tenv w
 
 
-instance Pretty n => FreeX n (Alt a n) where
+instance FreeX n (Alt a n) where
  freeX tenv alt
   = case alt of
         AAlt p x
          -> freeX (Env.extends (bindsOfPat p) tenv) x
 
 
-instance Pretty n => FreeX n (Lets a n) where
+instance FreeX n (Lets a n) where
  freeX tenv lts 
   = case lts of
         LLet m _ x        

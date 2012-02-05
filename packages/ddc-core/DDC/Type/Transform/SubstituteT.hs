@@ -23,11 +23,10 @@ import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import Data.Set                 (Set)
-import DDC.Base.Pretty          (Pretty)
 
 
 -- | Substitute a `Type` for the `Bound` corresponding to some `Bind` in a thing.
-substituteT :: (SubstituteT c, Ord n, Pretty n) => Bind n -> Type n -> c n -> c n
+substituteT :: (SubstituteT c, Ord n) => Bind n -> Type n -> c n -> c n
 substituteT b t x
  = case takeSubstBoundOfBind b of
     Just u      -> substituteBoundT u t x
@@ -35,13 +34,13 @@ substituteT b t x
 
 
 -- | Wrapper for `substituteT` to substitute multiple things.
-substituteTs :: (SubstituteT c, Ord n, Pretty n) => [(Bind n, Type n)] -> c n -> c n
+substituteTs :: (SubstituteT c, Ord n) => [(Bind n, Type n)] -> c n -> c n
 substituteTs bts x
         = foldr (uncurry substituteT) x bts
 
 
 -- | Substitute a `Type` for `Bound` in some thing.
-substituteBoundT :: (SubstituteT c, Ord n, Pretty n) => Bound n -> Type n -> c n -> c n
+substituteBoundT :: (SubstituteT c, Ord n) => Bound n -> Type n -> c n -> c n
 substituteBoundT u t x
  = let -- Determine the free names in the type we're subsituting.
        -- We'll need to rename binders with the same names as these
@@ -62,7 +61,7 @@ class SubstituteT (c :: * -> *) where
  --   in the type to substitute, then we rewrite that binder to anonymous form,
  --   avoiding the capture.
  substituteWithT
-        :: forall n. (Ord n, Pretty n)
+        :: forall n. Ord n
         => Bound n       -- ^ Bound variable that we're subsituting into.
         -> Type n        -- ^ Type to substitute.
         -> Set  n        -- ^ Names of free varaibles in the type to substitute.

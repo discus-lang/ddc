@@ -5,11 +5,10 @@ import DDC.Type.Predicates
 import DDC.Type.Compounds
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as Sum
-import DDC.Type.Pretty
 
 
 -- | Crush compound effect terms into their components.
-crushT :: (Ord n, Pretty n) => Type n -> Type n
+crushT :: Ord n => Type n -> Type n
 crushT tt
  = case tt of
         TVar{}          -> tt

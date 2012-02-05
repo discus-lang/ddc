@@ -13,7 +13,6 @@ import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteW
 import DDC.Core.Transform.SubstituteT
-import DDC.Base.Pretty          (Pretty)
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
@@ -23,7 +22,7 @@ import Data.Set                 (Set)
 
 -- | Wrapper for `substituteWithX` that determines the set of free names in the
 --   type being substituted, and starts with an empty binder stack.
-substituteX :: (SubstituteX c, Ord n, Pretty n) => Bind n -> Exp a n -> c a n -> c a n
+substituteX :: (SubstituteX c, Ord n) => Bind n -> Exp a n -> c a n -> c a n
 substituteX b t x
   | Just u      <- takeSubstBoundOfBind b
   = let -- Determine the free names in the type we're subsituting.
@@ -41,7 +40,7 @@ substituteX b t x
 
 
 -- | Wrapper for `substituteX` to substitute multiple expressions.
-substituteXs :: (SubstituteX c, Ord n, Pretty n) => [(Bind n, Exp a n)] -> c a n -> c a n
+substituteXs :: (SubstituteX c, Ord n) => [(Bind n, Exp a n)] -> c a n -> c a n
 substituteXs bts x
         = foldr (uncurry substituteX) x bts
 
@@ -50,7 +49,7 @@ substituteXs bts x
 --   Performtype substitution for an `XType` 
 --    and witness substitution for an `XWitness`
 substituteXArg 
-        :: (Ord n, Pretty n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
+        :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
         => Bind n -> Exp a n -> c a n -> c a n
 
 substituteXArg b arg x
@@ -62,7 +61,7 @@ substituteXArg b arg x
 
 -- | Wrapper for `substituteXArgs` to substitute multiple arguments.
 substituteXArgs
-        :: (Ord n, Pretty n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
+        :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
         => [(Bind n, Exp a n)] -> c a n -> c a n
 substituteXArgs bas x
         = foldr (uncurry substituteXArg) x bas
