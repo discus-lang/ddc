@@ -72,7 +72,7 @@ anormal ar x args
     case args of
 	[] -> x'
 	_  -> -- there are arguments. we must apply them.
-	    makeLets ar x args
+	    makeLets ar x' args
  where
     -- helper for descent
     down ars e = anormal (arExtends ar ars) e []
@@ -153,8 +153,7 @@ makeLets ar f0 args = go 0 f0 (findArity f0) args []
 	    (go (i+1) f arf xs (x:acc))
     
     mkApps _ _ [] = error "ANormal.makeLets.mkApps: impossible!"
-    mkApps l _ [x] | isVar x	= (L.liftX l x)
-    mkApps _ i [x]		= XVar (annotOf x) $ UIx i tBot
+    mkApps l _ [x]              = (L.liftX l x)
     mkApps l i (x:xs) | isVar x = XApp (annotOf x) (mkApps l i xs) (L.liftX l x)
     mkApps l i (x:xs)           = XApp (annotOf x) (mkApps l (i+1) xs) (XVar (annotOf x) $ UIx i tBot)
 
