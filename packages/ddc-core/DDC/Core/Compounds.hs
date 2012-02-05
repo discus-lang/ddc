@@ -2,15 +2,15 @@
 module DDC.Core.Compounds 
         ( -- * Lets
           bindsOfLets
-        , typeBindsOfLets
-        , valwitBindsOfLets
+        , l1BindsOfLets
+        , l0BindsOfLets
 
           -- * Patterns
         , bindsOfPat
 
           -- * Lambdas
-        , makeXLams
-        , takeXLams
+        , makeXLAMs, makeXLams
+        , takeXLAMs, takeXLams
 
           -- * Applications
         , makeXApps
@@ -36,8 +36,8 @@ bindsOfLets ll
 
 
 -- | Like `bindsOfLets` but only take the type binders.
-typeBindsOfLets :: Lets a n -> [Bind n]
-typeBindsOfLets ll
+l1BindsOfLets :: Lets a n -> [Bind n]
+l1BindsOfLets ll
  = case ll of
         LLet _ _ _       -> []
         LRec _           -> []
@@ -46,8 +46,8 @@ typeBindsOfLets ll
 
 
 -- | Like `bindsOfLets` but only take the value and witness binders.
-valwitBindsOfLets :: Lets a n -> [Bind n]
-valwitBindsOfLets ll
+l0BindsOfLets :: Lets a n -> [Bind n]
+l0BindsOfLets ll
  = case ll of
         LLet _ b _       -> [b]
         LRec bxs         -> map fst bxs
@@ -64,6 +64,23 @@ bindsOfPat pp
 
 
 -- Lambdas ---------------------------------------------------------------------
+-- | Make some nested lambda abstractions.
+makeXLAMs :: a -> [Bind n] -> Exp a n -> Exp a n
+makeXLAMs a bs x
+        = foldr (XLAM a) x (reverse bs)
+
+
+-- | Split nested lambdas from the front of an expression
+--   or `Nothing` if there was no outer lambda
+takeXLAMs :: Exp a n -> Maybe ([Bind n], Exp a n)
+takeXLAMs xx
+ = let  go bs (XLAM _ b x) = go (b:bs) x
+        go bs x            = (reverse bs, x)
+   in   case go [] xx of
+         ([], _)        -> Nothing
+         (bs, body)     -> Just (bs, body)
+
+
 -- | Make some nested lambda abstractions.
 makeXLams :: a -> [Bind n] -> Exp a n -> Exp a n
 makeXLams a bs x

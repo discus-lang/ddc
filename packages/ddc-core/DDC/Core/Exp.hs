@@ -28,11 +28,14 @@ data Exp a n
         -- | Data constructor or literal.
         | XCon  a  (Bound n)
 
-        -- | Value application.
-        | XApp  a  (Exp a n)  (Exp a n)
+        -- | Type abstraction.
+        | XLAM  a  (Bind n)   (Exp a n)
 
-        -- | Function abstraction.
+        -- | Value and Witness abstraction.
         | XLam  a  (Bind n)   (Exp a n)
+
+        -- | Application.
+        | XApp  a  (Exp a n)  (Exp a n)
 
         -- | Some possibly recursive definitions.
         | XLet  a  (Lets a n) (Exp a n)

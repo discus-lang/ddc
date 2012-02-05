@@ -25,7 +25,7 @@ instance SubstituteT Witness where
          WType t1       -> WType (down t1)
 
 
-
+-- TODO: only need to push type names, the stack is a type stack.
 instance SubstituteT (Exp a) where
  substituteWithT u t fns stack xx
   = let down    = substituteWithT u t fns stack
@@ -55,6 +55,12 @@ instance SubstituteT (Exp a) where
          
          XApp a x1 x2           
           -> XApp a (down x1) (down x2)
+
+         XLAM a b xBody
+          -> let b2             = down b
+                 (stack', b3)   = pushBind fns stack b2
+                 xBody'         = substituteWithT u t fns stack' xBody
+             in  XLAM a b3 xBody'
 
          XLam a b xBody
           -> let b2             = down b

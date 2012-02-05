@@ -26,8 +26,8 @@ pprBinderSep bb
 -- | Print a group of binders with the same type.
 pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
 pprBinderGroup (rs, t)
- =  text "\\"   <> parens ((cat $ map pprBinderSep rs) 
-                <> text ":"  <> ppr t) <> dot
+        = parens ((cat $ map pprBinderSep rs) 
+        <> text ":"  <> ppr t) <> dot
 
 
 -- Exp ------------------------------------------------------------------------
@@ -37,11 +37,21 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XVar  _ u       -> ppr u
         XCon  _ tc      -> ppr tc
         
+        XLAM _ b x      
+         | Just (bsMore, xBody) <- takeXLAMs x
+         -> let groups = partitionBindsByType (b:bsMore)
+            in  pprParen (d > 1)
+                 $ text "/\\" <> (cat $ map pprBinderGroup groups) <> ppr xBody
+
+         | otherwise 
+         -> pprParen (d > 1) 
+              $ text "\\" <> parens (ppr b) <> text "." <> ppr x
+
         XLam _ b x      
          | Just (bsMore, xBody) <- takeXLams x
          -> let groups = partitionBindsByType (b:bsMore)
             in  pprParen (d > 1)
-                 $ (cat $ map pprBinderGroup groups) <> ppr xBody
+                 $ text "\\" <> (cat $ map pprBinderGroup groups) <> ppr xBody
 
          | otherwise 
          -> pprParen (d > 1) 

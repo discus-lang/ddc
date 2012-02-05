@@ -223,6 +223,11 @@ checkExpM' defs kenv tenv xx@(XApp a x1 x2)
          _              -> throw $ ErrorAppNotFun xx t1 t2
 
 
+-- spec lambda abstractions -----------------------
+checkExpM' _defs _kenv _tenv _xx@(XLAM _ _ _)
+        = error "checkExpM XLAM"
+
+
 -- lambda abstractions ----------------------------
 checkExpM' defs kenv tenv xx@(XLam a b1 x2)
  = do   let t1          =  typeOfBind b1
