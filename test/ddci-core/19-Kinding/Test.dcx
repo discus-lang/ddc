@@ -25,4 +25,4 @@
 
 
 -- Error: invalid kind for type sum.
-:kind [r:%]. (() + ())
+:kind [r:%]. (Const + Const)

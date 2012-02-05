@@ -42,6 +42,6 @@ Core type mismatch in sum.
 
 -- Error: invalid kind for type sum.
 Invalid kind for type sum.
-         the type sum: () + ()
-             has kind: Unit
+         the type sum: Const + Const
+             has kind: % ~> @
   but it must be ! or $
