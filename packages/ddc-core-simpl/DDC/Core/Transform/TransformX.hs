@@ -11,6 +11,20 @@ import Control.Monad
 import qualified DDC.Type.Env   as Env
 
 
+-- | Bottom up rewrite of all core expressions in a thing.
+transformUpX
+        :: forall (c :: * -> * -> *) a n
+        .  (Ord n, TransformUpMX Identity c)
+        => (Env n -> Env n -> Exp a n -> Exp a n) 
+        ->  Env n -> Env n -> c a n   -> c a n
+
+transformUpX f kenv tenv xx
+        = runIdentity 
+        $ transformUpMX 
+                (\kenv' tenv' x -> return (f kenv' tenv' x)) 
+                kenv tenv xx
+
+
 class TransformUpMX m (c :: * -> * -> *) where
  -- | Bottom-up monadic rewrite of all core expressions in a thing.
  transformUpMX
@@ -45,6 +59,11 @@ instance Monad m => TransformUpMX m Exp where
                 x'        <- transformUpMX f kenv' tenv' x
                 return  $ XLet a lts' x'
                 
+        XCase a x alts
+         -> liftM3 XCase (return a)
+                         (transformUpMX f kenv tenv x)
+                         (mapM (transformUpMX f kenv tenv) alts)
+
         XCast a c x       
          -> liftM3 XCast
                         (return a) (return c)
@@ -52,7 +71,6 @@ instance Monad m => TransformUpMX m Exp where
 
         XType _         -> return xx
         XWitness _      -> return xx
-        _               -> error "transformUpX: not finished"
 
 
 instance Monad m => TransformUpMX m Lets where
@@ -72,16 +90,14 @@ instance Monad m => TransformUpMX m Lets where
         LWithRegion{}    -> return xx
 
 
+instance Monad m => TransformUpMX m Alt where
+ transformUpMX f kenv tenv alt
+  = case alt of
+        AAlt p@(PData _ bsArg) x
+         -> let tenv'   = Env.extends bsArg tenv
+            in  liftM2  AAlt (return p) 
+                        (transformUpMX f kenv tenv' x)
 
--- | Bottom up rewrite of all core expressions in a thing.
-transformUpX
-        :: forall (c :: * -> * -> *) a n
-        .  (Ord n, TransformUpMX Identity c)
-        => (Env n -> Env n -> Exp a n -> Exp a n) 
-        ->  Env n -> Env n -> c a n   -> c a n
-
-transformUpX f kenv tenv xx
-        = runIdentity 
-        $ transformUpMX 
-                (\kenv' tenv' x -> return (f kenv' tenv' x)) 
-                kenv tenv xx
+        AAlt PDefault x
+         ->     liftM2  AAlt (return PDefault)
+                        (transformUpMX f kenv tenv x) 
