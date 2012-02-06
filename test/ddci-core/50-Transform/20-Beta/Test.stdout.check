@@ -2,19 +2,32 @@
 ok
 
 -- Identity function
-(\(x : Unit).x) ()
+()
+
+
+-- Identify function with indices.
+()
 
 
 -- Avoid capture of value var by value lambda in value subst.
 let x : Unit = () in \(^ : Unit).x
 
 
+-- Don't substitute past binder with the same name.
+let u : Unit = () in \(x : Unit).x
+
+
 -- Avoid capture of value var by let binding in value subst.
 let x : Unit = () in let ^ : Int R0# = 2 [R0#] x in addInt [R0#] [R0#] [R0#] ^0 (3 [R0#] x)
 
 
+-- Don't substitute past binder with the same name.
+let u : Unit = () in let x : Int R0# = 2 [R0#] u in addInt [R0#] [R0#] [R0#] x (3 [R0#] u)
+
+
 -- Avoid capture of value var by letrec binding in value subst.
 let x : Unit = () in letrec {^ : Int R0# -> Int R0# = \(z : Int R0#).z} in addInt [R0#] [R0#] [R0#] (^0 (2 [R0#] x)) (3 [R0#] x)
+
 
 -- Avoid capture of value var by match bining in value subst.
 let x : Unit = () in case Nil [R0#] [Int R0#] () of {Nil  -> 0 [R0#] (); Cons (^ : Int R0#) (xs : List R0# (Int R0#)) -> addInt [R0#] [R0#] [R0#] (3 [R0#] x) ^0}

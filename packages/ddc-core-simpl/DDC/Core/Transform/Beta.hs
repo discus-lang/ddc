@@ -45,6 +45,7 @@ canBetaSubstX :: Exp a n -> Bool
 canBetaSubstX xx
  = case xx of
         XVar{}  -> True
+        XCon{}  -> True
         XLam{}  -> True
         XLAM{}  -> True
 

@@ -15,6 +15,7 @@ module DDC.Type.Compounds
         , takeNameOfBound
         , replaceTypeOfBound
         , boundMatchesBind
+        , namedBoundMatchesBind
         , takeSubstBoundOfBind
 
           -- * Type structure
@@ -158,6 +159,18 @@ boundMatchesBind u b
         (UName n1 _, BName n2 _) -> n1 == n2
         (UIx 0 _,    BAnon _   ) -> True
         _                        -> False
+
+
+-- | Check whether a named bound matches a named bind, 
+--   yielding False if they're not named, 
+--   or they have different names.
+namedBoundMatchesBind :: Eq n => Bound n -> Bind n -> Bool
+namedBoundMatchesBind u b
+ = case (u, b) of
+        (UName n1 _, BName n2 _) -> n1 == n2
+        _                        -> False
+
+
 
 -- | Convert a `Bound` to a `Bind`, ready for substitution.
 --   

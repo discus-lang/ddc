@@ -5,10 +5,20 @@
 :trans (\(x : Unit). x) ()
 
 
+-- Identify function with indices.
+:trans (\(^ : Unit). ^0) ()
+
+
 -- Avoid capture of value var by value lambda in value subst.
 :trans..
 let x = () in 
 (\(y : Unit). \(x : Unit). y) x;;
+
+
+-- Don't substitute past binder with the same name.
+:trans..
+let u = () in
+(\(x : Unit). \(x : Unit). x) u;;
 
 
 -- Avoid capture of value var by let binding in value subst.
@@ -19,6 +29,14 @@ let x = () in
         in addInt [:R0# R0# R0#:] x (3 [R0#] y)) x;;
 
 
+-- Don't substitute past binder with the same name.
+:trans..
+let u = () in 
+(\(x : Unit). 
+        let x = 2 [R0#] u 
+        in addInt [:R0# R0# R0#:] x (3 [R0#] u)) u;;
+
+
 -- Avoid capture of value var by letrec binding in value subst.
 :trans..
 let x = () in 
@@ -26,6 +44,7 @@ let x = () in
         letrec { x (z : Int R0#) : Int R0# = z } 
         in addInt [:R0# R0# R0#:] (x (2 [R0#] y)) (3 [R0#] y)) 
         x;;
+
 
 -- Avoid capture of value var by match bining in value subst.
 :trans..

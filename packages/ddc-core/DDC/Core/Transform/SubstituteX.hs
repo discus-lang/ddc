@@ -108,25 +108,34 @@ instance SubstituteX Exp where
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
         XLAM a b xBody
+         | namedBoundMatchesBind u b -> xx
+         | otherwise
          -> let (stackT', b')   = pushBind fnsT stackT b
                 xBody'          = substituteWithX u x fnsT fnsX stackT' stackX xBody
             in  XLAM a b' xBody'
 
         XLam a b xBody
+         | namedBoundMatchesBind u b -> xx
+         | otherwise
          -> let (stackX', b')   = pushBind fnsX stackX b
                 xBody'          = substituteWithX u x fnsT fnsX stackT stackX' xBody
             in  XLam a b' xBody'
 
         XLet a (LLet m b x1) x2
+         | namedBoundMatchesBind u b -> xx
+         | otherwise
          -> let x1'             = down x1
                 (stackX', b')   = pushBind fnsX stackX b
                 x2'             = substituteWithX u x fnsT fnsX stackT stackX' x2
             in  XLet a (LLet m b' x1') x2'
 
         XLet a (LRec bxs) x2
-         -> let (bs, xs)        = unzip bxs
-                (stackX', bs')  = pushBinds fnsX stackX bs
-                xs'             = map (substituteWithX u x fnsT fnsX stackT stackX') xs
+         -> let (stackX', bs')  = pushBinds fnsX stackX $ map fst bxs
+                xs'             = [ if namedBoundMatchesBind u b 
+                                        then xRight
+                                        else substituteWithX u x fnsT fnsX stackT stackX' xRight
+                                  | (b, xRight) <- bxs ]
+
                 x2'             = substituteWithX u x fnsT fnsX stackT stackX' x2
             in  XLet a (LRec (zip bs' xs')) x2'
 
@@ -158,6 +167,8 @@ instance SubstituteX Alt where
          -> AAlt PDefault $ down xBody
         
         AAlt (PData uCon bs) xBody
+         | any (namedBoundMatchesBind u) bs -> aa
+         | otherwise
          -> let (stackX', bs')  = pushBinds fnsX stackX bs
                 xBody'          = substituteWithX u x fnsT fnsX stackT stackX' xBody
             in  AAlt (PData uCon bs') xBody'
