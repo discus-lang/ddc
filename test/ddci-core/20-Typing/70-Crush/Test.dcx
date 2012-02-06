@@ -42,7 +42,7 @@ case () of { () -> () };;
 letrec {
  double [a:*] 
            (add : a -> a -( DeepRead a + DeepAlloc a | DeepUse a)> a)
-           (x   : a)      { DeepRead a + DeepAlloc a | DeepUse a}
+           (x   : a)      { DeepRead a + DeepAlloc a | $0}
            : a
         = add x x;
 } in double [Int R0#] (addInt [:R0# R0# R0#:]) (5 [R0#] ());;

@@ -20,3 +20,4 @@ in  thing [[^^^:%].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> In
           [:R0# R0# R0#:]
           (10 [R0#] ())
           (20 [R0#] ());;
+

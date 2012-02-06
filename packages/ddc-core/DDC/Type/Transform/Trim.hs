@@ -98,6 +98,11 @@ trimDeepUsedD tt
                  then Sum.empty kClosure
                  else Sum.singleton kClosure $ tDeepUse tt
 
+        -- Trim function constructors.
+        -- See Note: Material variables and the interpreter
+        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) _t1) _eff) clo) _t2
+         -> Sum.singleton kClosure clo
+
         -- Trim a type application.
         -- See Note: Trimming with higher kinded type vars.
         TApp{}
@@ -139,5 +144,16 @@ makeUsed k t
    For now we just drop the forall if the free vars list is empty. This is ok because
    we only do this at top-level, so don't need to lower debruijn indices to account for
    deleted intermediate quantifiers.
+
+   [Note: Material variables and the interpreter]
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   Even though we're not tracking material vars properly yet, 
+   for the interpreter we need to ignore the non-material parameters of the
+   function constructor so that we can treat store location constructors as
+   having an empty closure. For example:
+
+    L2# :: Int R1# -> Int R1#
+   
+   This does not capture the R1# region, even the handle for it is in its type.
 -}
 

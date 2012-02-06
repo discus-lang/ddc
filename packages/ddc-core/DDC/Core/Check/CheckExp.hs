@@ -104,8 +104,7 @@ checkExpM
 
 checkExpM defs kenv tenv xx
  = checkExpM' defs kenv tenv xx
-{-
- = do (xx', t, eff, clo) <- checkExpM' defs kenv tenv xx
+{- = do (xx', t, eff, clo) <- checkExpM' defs kenv tenv xx
       trace (pretty $ vcat 
                 [ text "checkExpM:  " <+> ppr xx 
                 , text "        ::  " <+> ppr t 
