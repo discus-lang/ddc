@@ -62,7 +62,8 @@ runtimeEnter count
 		, Assignment enter3 (Compare LM_CMP_Ult enter1 enter2)
 		, BranchIf enter3 (LMLocalVar egood LMLabel) (LMLocalVar epanic LMLabel)
 		, MkLabel epanic
-		, Expr (Call StdCall (LMGlobalVar "_panicOutOfSlots" (LMFunction panicOutOfSlots) External Nothing Nothing True) [] [NoReturn])
+		, Expr (Call StdCall (LMGlobalVar "_panicOutOfSlots" (LMFunction panicOutOfSlots) 
+                                External Nothing Nothing True) [] [NoReturn])
 		, Branch (LMLocalVar egood LMLabel)
 		, MkLabel egood
 		, Comment ["----- Slot initialization -----"]
@@ -110,7 +111,10 @@ slotInit initstart n
 		[ Branch (LMLocalVar initloop LMLabel)
 
 		, MkLabel initloop
-		, Assignment index (Phi llvmWord [(llvmWordLitVar (0 :: Int), LMLocalVar initstart LMLabel), (indexNext, LMLocalVar initloop LMLabel)])
+		, Assignment index (Phi llvmWord 
+                        [(llvmWordLitVar (0 :: Int)
+                        , LMLocalVar initstart LMLabel)
+                        , (indexNext, LMLocalVar initloop LMLabel)])
 
 		, Assignment target (GetElemPtr False localSlotBase [index])
 		, Store nullObj target

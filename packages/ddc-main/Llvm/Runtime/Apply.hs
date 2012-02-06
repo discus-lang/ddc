@@ -17,16 +17,20 @@ stage = "Llvm.Runtime.Apply"
 -- LLVM declarations for functions in runtime/Apply.(c|h).
 
 apply1FD :: LlvmFunctionDecl
-apply1FD = LlvmFunctionDecl "_apply1" External CC_Ccc pObj FixedArgs [(pObj, []), (pObj, [])] ptrAlign
+apply1FD = LlvmFunctionDecl "_apply1" External CC_Ccc pObj FixedArgs 
+                [(pObj, []), (pObj, [])] ptrAlign
 
 apply2FD :: LlvmFunctionDecl
-apply2FD = LlvmFunctionDecl "_apply2" External CC_Ccc pObj FixedArgs [(pObj, []), (pObj, []), (pObj, [])] ptrAlign
+apply2FD = LlvmFunctionDecl "_apply2" External CC_Ccc pObj FixedArgs 
+                [(pObj, []), (pObj, []), (pObj, [])] ptrAlign
 
 apply3FD :: LlvmFunctionDecl
-apply3FD = LlvmFunctionDecl "_apply3" External CC_Ccc pObj FixedArgs [(pObj, []), (pObj, []), (pObj, []), (pObj, [])] ptrAlign
+apply3FD = LlvmFunctionDecl "_apply3" External CC_Ccc pObj FixedArgs 
+                [(pObj, []), (pObj, []), (pObj, []), (pObj, [])] ptrAlign
 
 apply4FD :: LlvmFunctionDecl
-apply4FD = LlvmFunctionDecl "_apply4" External CC_Ccc pObj FixedArgs [(pObj, []), (pObj, []), (pObj, []), (pObj, []), (pObj, [])] ptrAlign
+apply4FD = LlvmFunctionDecl "_apply4" External CC_Ccc pObj FixedArgs 
+                [(pObj, []), (pObj, []), (pObj, []), (pObj, []), (pObj, [])] ptrAlign
 
 
 apply1 :: LlvmVar -> LlvmVar -> LlvmM LlvmVar

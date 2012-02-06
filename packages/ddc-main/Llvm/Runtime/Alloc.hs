@@ -64,7 +64,8 @@ allocateVarSize size name typ
 		, BranchIf r3 bb bb1
 
 		, MkLabel (uniqueOfLlvmVar bb)
-		, Expr (Call StdCall (LMGlobalVar "_allocCollect" (LMFunction allocCollect) External Nothing Nothing True) [size] [])
+		, Expr (Call StdCall (LMGlobalVar "_allocCollect" (LMFunction allocCollect) External Nothing Nothing True) 
+                                        [size] [])
 		, Assignment pre (Load ddcHeapPtr)
 		, Branch bb1
 
@@ -178,7 +179,10 @@ allocDataRSbyType tag dataSize pType
 	payload		<- newUniqueNamedReg "payload" pType
 	ret		<- newUniqueNamedReg "allocated.DataRS" pObj
 
-	addBlock	[ Assignment ptr (GetElemPtr True pDataRS [i32LitVar 0, i32LitVar $ fst $ structFieldLookup ddcDataRS "payload", i32LitVar 0 ])
+	addBlock	[ Assignment ptr (GetElemPtr True pDataRS 
+                                        [ i32LitVar 0
+                                        , i32LitVar $ fst $ structFieldLookup ddcDataRS "payload"
+                                        , i32LitVar 0 ])
 			, Assignment payload (Cast LM_Bitcast ptr pType)
 			, Assignment ret (Cast LM_Bitcast pDataRS pObj) ]
 	return		(ret, payload)

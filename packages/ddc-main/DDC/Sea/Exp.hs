@@ -81,24 +81,24 @@ data Top a
 	-- | The program entry point.
 	| PMain
 		{ -- | Name of the module containis the C main function.
-		  topMainModuleName	:: String
+		  topMainModuleName	   :: String
 
 		  -- | Names of modules imported by the main module.
-		, topMainImported	:: [String]
+		, topMainImported	   :: [String]
 
 		  -- | Whether to wrap the Disciple main fn in the top-level
 		  --   exception handler from the prelude.
 		  --   TODO: Handle this in the desugarer in instead.
-		, topDefaultHandler	:: Bool
+		, topDefaultHandler	   :: Bool
 
 		  -- | Starting size of heap,          or Nothing for default.
-		, topStartHeapSize		:: Maybe Integer
+		, topStartHeapSize	   :: Maybe Integer
 
 		  -- | Starting size of slot stack,    or Nothing for default.
-		, topStartSlotStackSize		:: Maybe Integer
+		, topStartSlotStackSize	   :: Maybe Integer
 
 		  -- | STarting size of context stack, or Nothing for default.
-		, topStartContextStackSize	:: Maybe Integer }
+		, topStartContextStackSize :: Maybe Integer }
 
 	deriving (Show, Eq)
 
@@ -106,60 +106,102 @@ data Top a
 -- | Meta-data about a constructor.
 --   Note that we need to remember the indicies of each field so we can convert
 ---  pattern matches using labels to Sea form.
---
 data CtorDef
 	= CtorDef
-	{ ctorDefName 		:: Var 		-- ^ name of constructor
-	, ctorDefType		:: Type		-- ^ type of constructor
-	, ctorDefArity		:: Int		-- ^ arity of constructor (number of params)
-	, ctorDefTag		:: Int		-- ^ tag of constructor   (order in original data type decl)
-	, ctorDefFields		:: Map Var Int	-- ^ map of field names to indexes in the constructor.
-	, ctorDefFieldTypes	:: [Type] }	-- ^ map of field names to indexes in the constructor.
+	{ -- | Name of the constructor.
+          ctorDefName 		:: Var 
+
+          -- | Type of the constructor.
+	, ctorDefType		:: Type
+
+          -- | Number of parameters to constructor.
+	, ctorDefArity		:: Int	
+
+          -- | Tag of constructor.
+          --   This is the order of the constructor in the original 
+          --   data type declaration.
+	, ctorDefTag		:: Int
+
+          -- | Map of field names to field indices.
+	, ctorDefFields		:: Map Var Int
+
+          -- | Types of constructor fields.
+	, ctorDefFieldTypes	:: [Type] }
 	deriving (Show, Eq)
 
 
 -- | An Abstract C statement.
 data Stmt a
-	-- misc
-	= SBlank				-- ^ a blank line, makes output code easier to read
-	| SComment	String			-- ^ a comment, mostly used for debugging.
+        -- commenting -----------------
+        -- | Add a blank line to the output file.
+        = SBlank				
 
-	-- stack
-	| SAuto		Var Type		-- Define an automatic var.
-	| SEnter	Int 			-- Expands to function entry code, pushing slots onto the stack.
-	| SLeave	Int			-- Expands to function exit code,  popping slots from the stack.
+        -- | Add a comment the output file.
+	| SComment	String			
 
-	-- assignment
-	| SAssign	(Exp a) Type (Exp a)	-- An assigment.
-	| SStmt		(Exp a)			-- Exp must be a XCall or an XApply
+	-- stack ----------------------
+        -- | Define an automatic var.
+	| SAuto		Var Type		
 
-	-- control flow
-	| SLabel	Var			-- Label for goto
-	| SGoto		Var			-- Goto some label
+        -- | Function entry code,
+        --   push slots on the GC shadow stack.
+	| SEnter	Int 			
 
-	| SReturn	(Exp a)			-- Return from super
+        -- | Function exit code,
+        --   pop slots from the stack.
+	| SLeave	Int			
 
-	| SMatch	[Alt a]			-- Pattern matching
+	-- assignment -----------------
+        -- | Evaluate an expression and assign it to to lvalue.
+	| SAssign	(Exp a) Type (Exp a)	
 
-	| SIf		(Exp a) [Stmt a]	-- If-then-else expression.
+        -- | Evaluate an expression.
+        --   The Exp must be a XCall or an XApply
+	| SStmt		(Exp a)			
 
-	| SSwitch	(Exp a) [Alt a]		-- Switch on an expression.
+	-- control flow ---------------
+        -- | Label for goto
+	| SLabel	Var			
+
+        -- | Goto some label
+	| SGoto		Var			
+
+        -- | Return from curent supercombinator.
+	| SReturn	(Exp a)			
+
+        -- | Pattern matching
+	| SMatch	[Alt a]			
+
+        -- | If-then-else expression.
+	| SIf		(Exp a) [Stmt a]	
+
+        -- | Switch on an expression.
+	| SSwitch	(Exp a) [Alt a]		
+
+        -- errors ---------------------
+        -- | Emit a case 
 	| SCaseFail	SourcePos
 	deriving (Show, Eq)
 
 
 -- | A case or switch alternative.
 data Alt a
-	= AAlt		[Guard a] [Stmt a]	-- If all the guards succeed then run the stmts.
+        -- | If all the guards succeed then run the stmts.
+	= AAlt		[Guard a] [Stmt a]	
+
 	| ASwitch	(Exp a)   [Stmt a]
 
-	| ACaseSusp	(Exp a) Var		-- _CASESUSP (exp, label);
-						--	// if exp is a susp, force and jump to label
+        -- _CASESUSP (exp, label)
+        -- | If expression is a suspension then force it and jump to label.
+	| ACaseSusp	(Exp a) Var		
 
-	| ACaseIndir	(Exp a) Var		-- _CASEINDIR (exp, label);
-						--	// if exp is an indirection, follow it and jump to label
+        -- _CASEINDIR (exp, label)
+        -- | If expression is an indirection then follow it and jump to label.
+	| ACaseIndir	(Exp a) Var		
 
-	| ACaseDeath 	SourcePos		-- _CASEDEATH (file, line, column);
+        -- _CASEDEATH (file, line, column)
+        -- | Throw an inexhaustive alternatives error.
+	| ACaseDeath 	SourcePos
 
 	| ADefault	[Stmt a]
 	deriving (Show, Eq)
@@ -168,12 +210,12 @@ data Alt a
 -- | A case guard.
 data Guard a
 	-- Run some stmts then check if two objects have the same tag
-	= GCase					-- a guard in a case expression
-			SourcePos		-- source filename, line and column
-			Bool			-- true if the case object is in a lazy region
-			[Stmt a] 		-- run these statements
-			(Exp a)			-- check if this value (the case object)
-			(Exp a)			-- matches this one (always a var)
+	= GCase			-- a guard in a case expression
+	        SourcePos	-- source filename, line and column
+		Bool		-- true if the case object is in a lazy region
+		[Stmt a] 	-- run these statements
+		(Exp a)		-- check if this value (the case object)
+		(Exp a)		-- matches this one (always a var)
 	deriving (Show, Eq)
 
 
