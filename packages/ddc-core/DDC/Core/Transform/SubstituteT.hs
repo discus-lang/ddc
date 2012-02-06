@@ -25,7 +25,8 @@ instance SubstituteT Witness where
          WType t1       -> WType (down t1)
 
 
--- TODO: only need to push type names, the stack is a type stack.
+-- TODO: Need to push both type and value names so we can switch to 
+--       spread mode when we hit a binder with the same name.
 instance SubstituteT (Exp a) where
  substituteWithT u t fns stack xx
   = let down    = substituteWithT u t fns stack

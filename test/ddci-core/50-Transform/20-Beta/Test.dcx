@@ -9,6 +9,16 @@
 :trans (\(^ : Unit). ^0) ()
 
 
+-- Avoid capture of type var by type lambda in value subst.
+:trans..
+/\(a : *).
+let f [b : *] = () in
+(\(y : Unit). /\(a : *). y) (f [a]);;
+
+
+-- TODO: check avoid capture by letregion binder in value subst.
+
+
 -- Avoid capture of value var by value lambda in value subst.
 :trans..
 let x = () in 
@@ -59,10 +69,19 @@ let x = () in
        x;;
 
 
--- Avoid capture of type var by type lambda in value subst.
-:trans..
-/\(a : *).
-let f [b : *] = () in
-(\(y : Unit). /\(a : *). y) (f [a]);;
-
+-- Avoid capture of witness var by lambda in witness subst.
+-- TODO: this is wrong. inner wc binder doesn't get anonymised, but
+--       we don't get a type error.
+--:trans..
+--letregion r0 with { wc : Const r0; wg : Global r0 } in
+--let x = 5 [r0] () in
+--addInt [:r0 r0 R0#:]
+--        ((\(wc' : Const r0) (wg' : Global r0). \(_ : Unit).
+--                letregion r1 with { wc : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
+--                let x lazy <wc> = purify <read [r0] wc' & alloc [r1] w1> in
+--                                  forget <use  [r0] wg' & use   [r1] w2> in
+--                                  addInt [:r0 r0 r1:] x x
+--                in  addInt [:r1 r1 r0:] x x)
+--                <:wc wg:> ())
+--        (5 [r0] ());;
 
