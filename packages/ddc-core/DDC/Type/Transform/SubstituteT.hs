@@ -141,7 +141,7 @@ instance SubstituteT TypeSum where
 data BindStack n
         = BindStack
         { stackBinds    :: [Bind n]     -- only ones we're rewriting
-        , stackEnv      :: [Bind n]     -- all binds.
+        , stackAll      :: [Bind n]     -- all binds.
         , stackAnons    :: Int
         , stackNamed    :: Int }
 

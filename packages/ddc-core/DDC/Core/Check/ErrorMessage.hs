@@ -72,10 +72,6 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "            but it must be: *"
                  , text "             when checking: "  <> ppr xx ]
 
-        ErrorLamReboundSpec xx b1
-         -> vcat [ text "Cannot shadow level-1 binder: " <> ppr b1
-                 , text "  when checking: " <> ppr xx ]
-        
 
         -- Let --------------------------------------------
         ErrorLetMismatch xx b t

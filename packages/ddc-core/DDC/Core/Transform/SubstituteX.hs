@@ -108,8 +108,6 @@ instance SubstituteX Exp where
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
         XLAM a b xBody
-         | namedBoundMatchesBind u b -> xx
-         | otherwise
          -> let (stackT', b')   = pushBind fnsT stackT b
                 xBody'          = substituteWithX u x fnsT fnsX stackT' stackX xBody
             in  XLAM a b' xBody'

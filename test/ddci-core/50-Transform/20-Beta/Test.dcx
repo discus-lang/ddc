@@ -58,9 +58,11 @@ let x = () in
        })
        x;;
 
+
 -- Avoid capture of type var by type lambda in value subst.
--- TODO: this test shadows a l1 binder. Check this again.
--- :trans..
--- /\(a : *).
--- let f [b : *] = () in
--- (\(y : Unit). /\(a : *). y) (f [a]);;
+:trans..
+/\(a : *).
+let f [b : *] = () in
+(\(y : Unit). /\(a : *). y) (f [a]);;
+
+

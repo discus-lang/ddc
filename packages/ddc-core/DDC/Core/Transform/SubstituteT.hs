@@ -36,14 +36,14 @@ instance SubstituteT (Exp a) where
          XVar a u'
           -> case u' of
                 UIx i _ 
-                 -> case lookup i (zip [0..] (stackEnv stack)) of
+                 -> case lookup i (zip [0..] (stackAll stack)) of
                      Just b  
                        | not $ isBot $ typeOfBind b  
                        -> XVar a (UIx i $ typeOfBind b)
                      _ -> xx
 
                 UName n _ 
-                 -> case find (boundMatchesBind u') (stackEnv stack) of
+                 -> case find (boundMatchesBind u') (stackAll stack) of
                      Just b  
                        | not $ isBot $ typeOfBind b
                        -> XVar a (UName n $ typeOfBind b)
@@ -57,6 +57,8 @@ instance SubstituteT (Exp a) where
           -> XApp a (down x1) (down x2)
 
          XLAM a b xBody
+          -- TODO: switch to spread mode if u matches b, 
+          -- still need to update types.
           -> let b2             = down b
                  (stack', b3)   = pushBind fns stack b2
                  xBody'         = substituteWithT u t fns stack' xBody

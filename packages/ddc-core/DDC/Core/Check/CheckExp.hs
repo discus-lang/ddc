@@ -228,11 +228,6 @@ checkExpM' defs kenv tenv xx@(XLAM a b1 x2)
  = do   let t1          = typeOfBind b1
         _               <- checkTypeM kenv t1
 
-        -- We can't shadow spec binders because subsequent types will depend
-        -- on the original version.
-        when (Env.memberBind b1 kenv)
-         $ throw $ ErrorLamReboundSpec xx b1
-
         -- Check the body
         let kenv'         =  Env.extend b1 kenv
         (x2', t2, e2, c2) <- checkExpM defs kenv' tenv x2

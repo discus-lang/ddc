@@ -67,11 +67,6 @@ data Error a n
         , errorBind             :: Bind n
         , errorType             :: Type n
         , errorKind             :: Kind n }
-        
-        -- | Tried to shadow a level-1 binder.
-        | ErrorLamReboundSpec
-        { errorChecking         :: Exp a n
-        , errorBind             :: Bind n }
 
 
         -- Let --------------------------------------------
