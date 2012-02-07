@@ -265,7 +265,7 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
         -- The form of the function constructor depends on what universe the 
         -- binder is in.
         case universeFromType2 k1 of
-         Just UniverseComp
+         Just UniverseData
           |  not $ isDataKind k1     -> throw $ ErrorLamBindNotData xx t1 k1
           |  not $ isDataKind k2     -> throw $ ErrorLamBodyNotData xx b1 t2 k2 
           |  otherwise

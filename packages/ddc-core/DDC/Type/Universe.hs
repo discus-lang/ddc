@@ -23,7 +23,7 @@ data Universe
         | UniverseKind
 
         -- | (level 1). The universe of specifications.
-        --   Specifications classify both witnesses and computations.
+        --   Specifications classify both witnesses and data values.
         --   In the vanilla Haskell world \"specifications\" are known as \"types\", but in DDC we use
         --   the former term because we overload the word \"type\" to refer to kinds and sorts as well.
         | UniverseSpec
@@ -34,10 +34,9 @@ data Universe
         --   objects in that region will not be updated.
         | UniverseWitness
 
-        -- | (level 0). The universe of computation.
-        --   Data constructors, functions, effects, regions and closures live here.
-        --   These are the things that do something useful at runtime.
-        | UniverseComp
+        -- | (level 0). The universe of data values.
+        --   These are the things that physical things that take up space at runtime.
+        | UniverseData
         deriving (Show, Eq) 
 
 
@@ -47,7 +46,7 @@ universeFromType3 :: Type n -> Maybe Universe
 universeFromType3 ss
  = case ss of
         TCon (TyConSort SoConProp) -> Just UniverseWitness
-        TCon (TyConSort SoConComp) -> Just UniverseComp
+        TCon (TyConSort SoConComp) -> Just UniverseData
         _                          -> Nothing
 
 
@@ -62,10 +61,7 @@ universeFromType2 tt
         TCon (TyConKind kc)     
          -> case kc of
                 KiConWitness    -> Just UniverseWitness
-                KiConData       -> Just UniverseComp
-                KiConRegion     -> Just UniverseComp
-                KiConEffect     -> Just UniverseComp
-                KiConClosure    -> Just UniverseComp
+                KiConData       -> Just UniverseData
                 _               -> Nothing
 
         TCon (TyConWitness _)   -> Nothing
@@ -81,15 +77,16 @@ universeFromType2 tt
 universeFromType1 :: Type n -> Maybe Universe
 universeFromType1 tt
  = case tt of
-        TVar u                  -> universeFromType2 (typeOfBound u)
-        TCon (TyConSort _)      -> Just UniverseKind
-        TCon (TyConKind _)      -> Just UniverseSpec
-        TCon (TyConWitness _)   -> Just UniverseWitness
-        TCon (TyConComp _)      -> Just UniverseComp
-        TCon (TyConBound u)     -> universeFromType2 (typeOfBound u)
-        TForall _ t2            -> universeFromType1 t2
-        TApp _ t2               -> universeFromType1 t2
-        TSum _                  -> Nothing
+        TVar u                    -> universeFromType2 (typeOfBound u)
+        TCon (TyConSort _)        -> Just UniverseKind
+        TCon (TyConKind _)        -> Just UniverseSpec
+        TCon (TyConWitness _)     -> Just UniverseWitness
+        TCon (TyConComp TcConFun) -> Just UniverseData
+        TCon (TyConComp _)        -> Nothing
+        TCon (TyConBound u)       -> universeFromType2 (typeOfBound u)
+        TForall _ t2              -> universeFromType1 t2
+        TApp _ t2                 -> universeFromType1 t2
+        TSum _                    -> Nothing
 
 
 -- | Yield the universe of some type.
