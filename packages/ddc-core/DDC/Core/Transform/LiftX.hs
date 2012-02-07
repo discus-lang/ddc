@@ -39,13 +39,9 @@ instance LiftX (Exp a) where
   = let down = liftAtDepthX n d
     in case xx of
         XVar a u        -> XVar a (down u)
-
         XCon{}          -> xx
-
         XApp a x1 x2    -> XApp a (down x1) (down x2)
-
         XLAM a b x      -> XLAM a b (down x)
-
         XLam a b x      -> XLam a b (liftAtDepthX n (d + 1) x)
          
         XLet a lets x   
@@ -53,9 +49,7 @@ instance LiftX (Exp a) where
             in  XLet a lets' (liftAtDepthX n (d + levels) x)
 
         XCase a x alts  -> XCase a (down x) (map down alts)
-
         XCast a cc x    -> XCast a cc (down x)
-        
         XType{}         -> xx
         XWitness{}      -> xx
          
@@ -78,19 +72,18 @@ liftAtDepthXLets
         -> Lets a n        -- ^ Lift exp indices in this thing.
         -> (Lets a n, Int) -- ^ Lifted, and how much to increase depth by
 
-liftAtDepthXLets _ _ xx@(LLet _ b _)
- = (xx, countBAnons [b])
+liftAtDepthXLets n d lts
+ = case lts of
+        LLet _ b _       -> (lts, countBAnons [b])
 
-liftAtDepthXLets n d (LRec bs)
- = let  inc = countBAnons (map fst bs)
-        bs' = map (\(b,e) -> (b, liftAtDepthX n (d+inc) e)) bs
-   in   (LRec bs', inc)
+        LRec bs
+         -> let inc = countBAnons (map fst bs)
+                bs' = map (\(b,e) -> (b, liftAtDepthX n (d+inc) e)) bs
+            in  (LRec bs', inc)
 
-liftAtDepthXLets _ _ xx@(LLetRegion _b bs)
-    = (xx, countBAnons bs)
+        LLetRegion _b bs -> (lts, countBAnons bs)
+        LWithRegion _    -> (lts, 0)
 
-liftAtDepthXLets _ _ xx@(LWithRegion _)
-    = (xx, 0)
 
 countBAnons = length . filter isAnon
  where	isAnon (BAnon _) = True
