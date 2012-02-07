@@ -55,17 +55,10 @@ instance SpreadX (Exp a) where
 instance SpreadX Cast where
  spreadX kenv tenv cc
   = case cc of
-        CastWeakenEffect eff    
-         -> CastWeakenEffect  (spreadT kenv eff)
-
-        CastWeakenClosure clo   
-         -> CastWeakenClosure (spreadT kenv clo)
-
-        CastPurify w
-         -> CastPurify        (spreadX kenv tenv w)
-
-        CastForget w
-         -> CastForget        (spreadX kenv tenv w)
+        CastWeakenEffect eff  -> CastWeakenEffect  (spreadT kenv eff)
+        CastWeakenClosure clo -> CastWeakenClosure (spreadT kenv clo)
+        CastPurify w          -> CastPurify        (spreadX kenv tenv w)
+        CastForget w          -> CastForget        (spreadX kenv tenv w)
 
 
 instance SpreadX Pat where
@@ -80,8 +73,8 @@ instance SpreadX (Alt a) where
  spreadX kenv tenv alt
   = case alt of
         AAlt p x
-         -> let p'      = spreadX kenv tenv p
-                tenv'   = Env.extends (bindsOfPat p') tenv
+         -> let p'       = spreadX kenv tenv p
+                tenv'    = Env.extends (bindsOfPat p') tenv
             in  AAlt p' (spreadX kenv tenv' x)
 
 
@@ -89,9 +82,9 @@ instance SpreadX (Lets a) where
  spreadX kenv tenv lts
   = case lts of
         LLet m b x     
-         -> let m'      = spreadX kenv tenv m
-                b'      = spreadX kenv tenv b
-                x'      = spreadX kenv tenv x
+         -> let m'       = spreadX kenv tenv m
+                b'       = spreadX kenv tenv b
+                x'       = spreadX kenv tenv x
             in  LLet m' b' x'
         
         LRec bxs
@@ -102,9 +95,9 @@ instance SpreadX (Lets a) where
              in LRec (zip bs' xs')
 
         LLetRegion b bs
-         -> let b'      = spreadT kenv b
-                kenv'   = Env.extend b' kenv
-                bs'     = map (spreadX kenv' tenv) bs
+         -> let b'       = spreadT kenv b
+                kenv'    = Env.extend b' kenv
+                bs'      = map (spreadX kenv' tenv) bs
             in  LLetRegion b' bs'
 
         LWithRegion b
@@ -122,36 +115,34 @@ instance SpreadX LetMode where
 instance SpreadX Witness where
  spreadX kenv tenv ww
   = case ww of
-        WCon  wicon     -> WCon wicon
-        WVar  u         -> WVar  (spreadX kenv tenv u)
-        WApp  w1 w2     -> WApp  (spreadX kenv tenv w1) (spreadX kenv tenv w2)
-        WJoin w1 w2     -> WJoin (spreadX kenv tenv w1) (spreadX kenv tenv w2)
-        WType t1        -> WType (spreadT kenv t1)
+        WCon  wicon      -> WCon wicon
+        WVar  u          -> WVar  (spreadX kenv tenv u)
+        WApp  w1 w2      -> WApp  (spreadX kenv tenv w1) (spreadX kenv tenv w2)
+        WJoin w1 w2      -> WJoin (spreadX kenv tenv w1) (spreadX kenv tenv w2)
+        WType t1         -> WType (spreadT kenv t1)
 
 
 instance SpreadX Bind where
  spreadX kenv _tenv bb
   = case bb of
-        BName n t       -> BName n (spreadT kenv t)
-        BAnon t         -> BAnon (spreadT kenv t)
-        BNone t         -> BNone (spreadT kenv t)
+        BName n t        -> BName n (spreadT kenv t)
+        BAnon t          -> BAnon (spreadT kenv t)
+        BNone t          -> BNone (spreadT kenv t)
 
 
 instance SpreadX Bound where
  spreadX _kenv tenv uu
+  | Just t'     <- Env.lookup uu tenv
   = case uu of
-        UIx ix _      
-         | Just t'       <- Env.lookup uu tenv
-         -> UIx ix t'
-         
+        UIx ix _         -> UIx ix t'
+        UPrim n _        -> UPrim n t'
+
         UName n _
-         | Just t'      <- Env.lookup uu tenv
          -> if Env.isPrim tenv n 
                  then UPrim n t'                         -- TODO: recursively spread into dropped type, but do occ check.
                  else UName n t'
-                 
-        UPrim n _
-         | Just t'      <- Env.lookup uu tenv
-         -> UPrim n t'
-        
-        _ -> uu
+
+
+  | otherwise   = uu        
+
+

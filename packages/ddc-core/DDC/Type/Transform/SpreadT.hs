@@ -45,7 +45,7 @@ instance SpreadT Bind where
         BNone t         -> BNone (spreadT kenv t)
 
 
-instance SpreadT Bound where
+instance SpreadT Bound where                            -- TODO: refactor to pull Env.lookup out front
  spreadT kenv uu
   = case uu of
         UIx ix _      
