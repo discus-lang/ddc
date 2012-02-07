@@ -39,7 +39,7 @@ substituteX b x' xx
                 $ Set.toList 
                 $ freeT Env.empty x'
 
-        stack           = BindStack [] [] 0 0
+        stack   = BindStack [] [] 0 0
  
    in   substituteWithX u x' fnsT fnsX stack stack xx
 
@@ -122,8 +122,8 @@ instance SubstituteX Exp where
         XLet a (LLet m b x1) x2
          | namedBoundMatchesBind u b -> xx
          | otherwise
-         -> let x1'             = down x1
-                (stackX', b')   = pushBind fnsX stackX b
+         -> let (stackX', b')   = pushBind fnsX stackX b
+                x1'             = down x1
                 x2'             = substituteWithX u x fnsT fnsX stackT stackX' x2
             in  XLet a (LLet m b' x1') x2'
 
@@ -146,13 +146,8 @@ instance SubstituteX Exp where
         XLet a (LWithRegion uR) x2
          -> XLet a (LWithRegion uR) (down x2)
 
-        XCase a x1 alts
-         -> XCase a (down x1) 
-                    (map (substituteWithX u x fnsT fnsX stackT stackX) alts)
-
-        XCast a cc x1   
-         -> XCast a cc (down x1)
-
+        XCase a x1 alts -> XCase a    (down x1) (map down alts)
+        XCast a cc x1   -> XCast a cc (down x1)
         XType{}         -> xx
         XWitness{}      -> xx
  

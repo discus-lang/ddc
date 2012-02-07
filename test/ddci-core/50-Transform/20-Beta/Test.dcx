@@ -69,19 +69,47 @@ let x = () in
        x;;
 
 
--- Avoid capture of witness var by lambda in witness subst.
--- TODO: this is wrong. inner wc binder doesn't get anonymised, but
---       we don't get a type error.
---:trans..
---letregion r0 with { wc : Const r0; wg : Global r0 } in
---let x = 5 [r0] () in
---addInt [:r0 r0 R0#:]
---        ((\(wc' : Const r0) (wg' : Global r0). \(_ : Unit).
---                letregion r1 with { wc : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
---                let x lazy <wc> = purify <read [r0] wc' & alloc [r1] w1> in
---                                  forget <use  [r0] wg' & use   [r1] w2> in
---                                  addInt [:r0 r0 r1:] x x
---                in  addInt [:r1 r1 r0:] x x)
---                <:wc wg:> ())
---        (5 [r0] ());;
+-- Should be ok.
+:trans..
+letregion r0 with { wc : Const r0; wg : Global r0 } in
+let x = 5 [r0] () in
+addInt [:r0 r0 R0#:]
+        ((\(wc' : Const r0) (wg' : Global r0). \(_ : Unit).
+                letregion r1 with { wl : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
+                let x lazy <wl> = purify <read [r0] wc' & alloc [r1] w1> in
+                                  forget <use  [r0] wg' & use   [r1] w2> in
+                                  addInt [:r0 r0 r1:] x x
+                in  addInt [:r1 r1 r0:] x x)
+                <:wc wg:> ())
+        (5 [r0] ());;
+
+
+-- Avoid capture of witness var by witness lambda in witness subst.
+:trans..
+letregion r0 with { wc : Const r0; wg : Global r0 } in
+let x = 5 [r0] () in
+addInt [:r0 r0 R0#:]
+        ((\(wc' : Const r0) (wc : Global r0). \(_ : Unit).
+                letregion r1 with { wl : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
+                let x lazy <wl> = purify <read [r0] wc' & alloc [r1] w1> in
+                                  forget <use  [r0] wc  & use   [r1] w2> in
+                                  addInt [:r0 r0 r1:] x x
+                in  addInt [:r1 r1 r0:] x x)
+                <:wc wg:> ())
+        (5 [r0] ());;
+
+
+-- Avoid capture of witness var by witness binding in witness subst.
+:trans..
+letregion r0 with { wc : Const r0; wg : Global r0 } in
+let x = 5 [r0] () in
+addInt [:r0 r0 R0#:]
+        ((\(wc' : Const r0) (wg : Global r0). \(_ : Unit).
+                letregion r1 with { wc : Lazy r1 ; w1 : Const r1; w2 : Global r1 } in
+                let x lazy <wc> = purify <read [r0] wc' & alloc [r1] w1> in
+                                  forget <use  [r0] wg  & use   [r1] w2> in
+                                  addInt [:r0 r0 r1:] x x
+                in  addInt [:r1 r1 r0:] x x)
+                <:wc wg:> ())
+        (5 [r0] ());;
 
