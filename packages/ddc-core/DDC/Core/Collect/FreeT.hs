@@ -13,49 +13,30 @@ import qualified Data.Set               as Set
 instance FreeT n (Exp a n) where
  freeT kenv xx
   = case xx of
-        XVar{}         -> Set.empty
-        XCon{}         -> Set.empty
+        XVar{}          -> Set.empty
+        XCon{}          -> Set.empty
+        XApp _ x1 x2    -> Set.unions [freeT kenv x1, freeT kenv x2]
+        XLAM _ b x      -> freeT (Env.extend b kenv) x
+        XLam _ b x      -> Set.unions [ freeT kenv b, freeT kenv x ]
 
-        XApp _ x1 x2    
-         -> Set.unions  [ freeT kenv x1
-                        , freeT kenv x2 ]
+        XLet _ lts x    -> Set.unions [ freeT kenv lts
+                                      , freeT (Env.extends (specBindsOfLets lts) kenv) x ]
 
-        XLAM _ b x
-         -> freeT (Env.extend b kenv) x
-
-        XLam _ b x
-         -> Set.unions  [ freeT kenv b
-                        , freeT kenv x ]
-
-        XLet _ lts x    
-         -> Set.unions  [ freeT kenv lts
-                        , freeT (Env.extends (specBindsOfLets lts) kenv) x ]
-
-        XCase _ x alts
-         -> Set.unions  [ freeT kenv x
-                        , Set.unions $ map (freeT kenv) alts]
-
-        XCast _ c x    
-         -> Set.unions  [ freeT kenv c
-                        , freeT kenv x ]
-
-        XType t        -> freeT kenv t
-        XWitness w     -> freeT kenv w
+        XCase _ x alts  -> Set.unions (freeT kenv x : map (freeT kenv) alts)
+        XCast _ c x     -> Set.unions [freeT kenv c, freeT kenv x ]
+        XType t         -> freeT kenv t
+        XWitness w      -> freeT kenv w
 
 
 instance FreeT n (Alt a n) where
- freeT kenv alt
-  = case alt of
-        AAlt _ x        -> freeT kenv x
+ freeT kenv (AAlt _ x)  =  freeT kenv x
 
 
 instance FreeT n (Lets a n) where
  freeT kenv lts 
   = case lts of
         LLet m b x        
-         -> Set.unions  [ freeT kenv m
-                        , freeT kenv b
-                        , freeT kenv x ]
+         -> Set.unions  [freeT kenv m, freeT kenv b, freeT kenv x]
 
         LRec bxs        
          -> let (bs, xs) = unzip bxs
@@ -67,8 +48,7 @@ instance FreeT n (Lets a n) where
          -> let kenv'   = Env.extend b kenv
             in  Set.unions $ map (freeT kenv') bs
 
-        LWithRegion{}
-         -> Set.empty
+        LWithRegion{}   -> Set.empty
        
 
 instance FreeT n (LetMode n) where
@@ -93,14 +73,7 @@ instance FreeT n (Witness n) where
   = case ww of
         WCon{}          -> Set.empty
         WVar{}          -> Set.empty
-
-        WApp  w1 w2     
-         -> Set.unions  [ freeT kenv w1
-                        , freeT kenv w2 ]
-
-        WJoin w1 w2     
-         -> Set.unions  [ freeT kenv w1
-                        , freeT kenv w2 ]
-
+        WApp  w1 w2     -> Set.unions [freeT kenv w1, freeT kenv w2]
+        WJoin w1 w2     -> Set.unions [freeT kenv w1, freeT kenv w2]
         WType t         -> freeT kenv t
 
