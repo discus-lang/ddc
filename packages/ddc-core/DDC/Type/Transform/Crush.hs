@@ -24,7 +24,7 @@ crushT tt
 
         TApp t1 t2
          -- Head Read.
-         |  Just (TyConComp TcConHeadRead, [t]) <- takeTyConApps tt
+         |  Just (TyConSpec TcConHeadRead, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
 
              -- Type has a head region.
@@ -41,7 +41,7 @@ crushT tt
 
          -- Deep Read.
          -- See Note: Crushing with higher kinded type vars.
-         | Just (TyConComp TcConDeepRead, [t]) <- takeTyConApps tt
+         | Just (TyConSpec TcConDeepRead, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
              Just (TyConBound u, ts)
               | (ks, _)  <- takeKFuns (typeOfBound u)
@@ -53,7 +53,7 @@ crushT tt
 
          -- Deep Write
          -- See Note: Crushing with higher kinded type vars.
-         | Just (TyConComp TcConDeepWrite, [t]) <- takeTyConApps tt
+         | Just (TyConSpec TcConDeepWrite, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
              Just (TyConBound u, ts)
               | (ks, _)  <- takeKFuns (typeOfBound u)
@@ -65,7 +65,7 @@ crushT tt
 
          -- Deep Alloc
          -- See Note: Crushing with higher kinded type vars.
-         | Just (TyConComp TcConDeepAlloc, [t]) <- takeTyConApps tt
+         | Just (TyConSpec TcConDeepAlloc, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
              Just (TyConBound u, ts)
               | (ks, _)  <- takeKFuns (typeOfBound u)

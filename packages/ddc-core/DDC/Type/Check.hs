@@ -120,7 +120,7 @@ checkTypeM' _env tt@(TCon tc)
                 Nothing  -> throw $ ErrorUnappliedKindFun
 
         TyConWitness tcw -> return $ kindOfTwCon tcw
-        TyConComp    tcc -> return $ kindOfTcCon tcc
+        TyConSpec    tcc -> return $ kindOfTcCon tcc
         TyConBound    u  -> return $ typeOfBound u
 
 

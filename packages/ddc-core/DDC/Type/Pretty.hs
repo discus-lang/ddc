@@ -68,7 +68,7 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          -> pprParen (d > 5)
          $  ppr k1 <+> text "=>" <+> pprPrec 6 k2
 
-        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) eff) clo) t2
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) eff) clo) t2
          | isBot eff, isBot clo
          -> pprParen (d > 5)
          $  (if isTFun t1 then pprPrec 6 t1 else pprPrec 5 t1)
@@ -110,7 +110,7 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
 isTFun :: Type n -> Bool
 isTFun tt
  = case tt of
-         TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) _) _) _) _
+         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) _) _) _) _
                 -> True
          _      -> False
 
@@ -133,7 +133,7 @@ instance (Eq n, Pretty n) => Pretty (TyCon n) where
         TyConSort sc    -> ppr sc
         TyConKind kc    -> ppr kc
         TyConWitness tc -> ppr tc
-        TyConComp tc    -> ppr tc
+        TyConSpec tc    -> ppr tc
         TyConBound u    -> ppr u
 
 

@@ -35,7 +35,7 @@ data Universe
         | UniverseWitness
 
         -- | (level 0). The universe of data values.
-        --   These are the things that physical things that take up space at runtime.
+        --   These are physical data objects that take up space at runtime.
         | UniverseData
         deriving (Show, Eq) 
 
@@ -65,7 +65,7 @@ universeFromType2 tt
                 _               -> Nothing
 
         TCon (TyConWitness _)   -> Nothing
-        TCon (TyConComp  _)     -> Nothing
+        TCon (TyConSpec  _)     -> Nothing
         TCon (TyConBound _)     -> Nothing
         TForall _ _             -> Nothing
         TApp _ t2               -> universeFromType2 t2
@@ -81,8 +81,8 @@ universeFromType1 tt
         TCon (TyConSort _)        -> Just UniverseKind
         TCon (TyConKind _)        -> Just UniverseSpec
         TCon (TyConWitness _)     -> Just UniverseWitness
-        TCon (TyConComp TcConFun) -> Just UniverseData
-        TCon (TyConComp _)        -> Nothing
+        TCon (TyConSpec TcConFun) -> Just UniverseData
+        TCon (TyConSpec _)        -> Nothing
         TCon (TyConBound u)       -> universeFromType2 (typeOfBound u)
         TForall _ t2              -> universeFromType1 t2
         TApp _ t2                 -> universeFromType1 t2
@@ -97,7 +97,7 @@ universeOfType tt
         TCon (TyConSort _)      -> Just UniverseSort
         TCon (TyConKind _)      -> Just UniverseKind
         TCon (TyConWitness _)   -> Just UniverseSpec
-        TCon (TyConComp _)      -> Just UniverseSpec
+        TCon (TyConSpec _)      -> Just UniverseSpec
         TCon (TyConBound u)     -> universeFromType1 (typeOfBound u)
         TForall _ t2            -> universeOfType t2
         TApp _ t2               -> universeOfType t2

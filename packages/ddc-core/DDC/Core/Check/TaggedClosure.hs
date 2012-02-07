@@ -127,10 +127,10 @@ taggedClosureOfWeakClo clo
 
  where  convert c
          = case takeTyConApps c of
-            Just (TyConComp TcConUse, [TVar u])
+            Just (TyConSpec TcConUse, [TVar u])
               -> Just $ GBoundRgnVar u
 
-            Just (TyConComp TcConUse, [TCon (TyConBound u)])
+            Just (TyConSpec TcConUse, [TCon (TyConBound u)])
               -> Just $ GBoundRgnVar u
 
             _ -> Nothing

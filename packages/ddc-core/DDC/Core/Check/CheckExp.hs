@@ -211,7 +211,7 @@ checkExpM' defs kenv tenv xx@(XApp a x1 x2)
  = do   (x1', t1, effs1, clos1)    <- checkExpM defs kenv tenv x1
         (x2', t2, effs2, clos2)    <- checkExpM defs kenv tenv x2
         case t1 of
-         TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t11) eff) _clo) t12
+         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t11) eff) _clo) t12
           | t11 `equivT` t2   
           , effs    <- Sum.fromList kEffect  [eff]
           -> return ( XApp a x1' x2'

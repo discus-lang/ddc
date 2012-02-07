@@ -49,11 +49,11 @@ trimToSumC cc
         TForall{}       -> Nothing
 
         -- Keep use constructor applied to a region.
-        TApp (TCon (TyConComp TcConUse)) _
+        TApp (TCon (TyConSpec TcConUse)) _
          -> Just $ Sum.singleton kClosure cc
         
         -- Trim DeepUse constructor applied to a data type.
-        TApp (TCon (TyConComp TcConDeepUse)) t2 
+        TApp (TCon (TyConSpec TcConDeepUse)) t2 
          -> Just $ trimDeepUsedD t2
 
         -- Some other constructor we don't know about,
@@ -100,7 +100,7 @@ trimDeepUsedD tt
 
         -- Trim function constructors.
         -- See Note: Material variables and the interpreter
-        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) _t1) _eff) clo) _t2
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) _t1) _eff) clo) _t2
          -> Sum.singleton kClosure clo
 
         -- Trim a type application.

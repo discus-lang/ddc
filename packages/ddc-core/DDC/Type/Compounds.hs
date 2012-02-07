@@ -321,7 +321,7 @@ takeResultKind kk
 --   with the provided effect and closure.
 tFun    :: Type n -> Effect n -> Closure n -> Type n -> Type n
 tFun t1 eff clo t2
-        = (TCon $ TyConComp TcConFun) `tApps` [t1, eff, clo, t2]
+        = (TCon $ TyConSpec TcConFun) `tApps` [t1, eff, clo, t2]
 
 infixr `tFun`
 
@@ -330,7 +330,7 @@ infixr `tFun`
 takeTFun :: Type n -> Maybe (Type n, Effect n, Closure n, Type n)
 takeTFun tt
  = case tt of
-        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) eff) clo) t2
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) eff) clo) t2
          ->  Just (t1, eff, clo, t2)
         _ -> Nothing
 
@@ -340,7 +340,7 @@ takeTFun tt
 takeTFunArgResult :: Type n -> ([Type n], Type n)
 takeTFunArgResult tt
  = case tt of
-        TApp (TApp (TApp (TApp (TCon (TyConComp TcConFun)) t1) _eff) _clo) t2
+        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) _eff) _clo) t2
           -> let (tsMore, tResult) = takeTFunArgResult t2
              in  (t1 : tsMore, tResult)
 
@@ -401,7 +401,7 @@ tLazy           = twCon1 TwConLazy
 tHeadLazy       = twCon1 TwConHeadLazy
 tManifest       = twCon1 TwConManifest
 
-tcCon1 tc t  = (TCon $ TyConComp    tc) `tApp` t
+tcCon1 tc t  = (TCon $ TyConSpec    tc) `tApp` t
 twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
 
 

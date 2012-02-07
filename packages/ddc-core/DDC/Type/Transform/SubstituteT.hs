@@ -85,21 +85,21 @@ instance SubstituteT Type where
          -- Crush out compound effects and closures as we substitute them.
          TApp t1 t2
           -> case t1 of
-                TCon (TyConComp TcConHeadRead)  
+                TCon (TyConSpec TcConHeadRead)  
                   -> crushT      (TApp t1 (down t2))
 
-                TCon (TyConComp TcConDeepRead)  
+                TCon (TyConSpec TcConDeepRead)  
                   -> crushT      (TApp t1 (down t2))
 
-                TCon (TyConComp TcConDeepWrite) 
+                TCon (TyConSpec TcConDeepWrite) 
                   -> crushT      (TApp t1 (down t2))
 
-                TCon (TyConComp TcConDeepAlloc) 
+                TCon (TyConSpec TcConDeepAlloc) 
                   -> crushT      (TApp t1 (down t2))
 
                 -- If the closure is miskinded then trimClosure can 
                 -- return Nothing, so we leave it untrimmed.
-                TCon (TyConComp TcConDeepUse)
+                TCon (TyConSpec TcConDeepUse)
                   -> fromMaybe tt (trimClosure (TApp t1 (down t2)))
 
                 _ -> TApp (down t1) (down t2)

@@ -145,7 +145,7 @@ pTypeAtom
 
                  , do   pTok KArrowDash
                         pTok KRoundKet
-                        return (TCon $ TyConComp TcConFun)
+                        return (TCon $ TyConSpec TcConFun)
 
                  , do   t       <- pTypeSum
                         pTok KRoundKet
@@ -154,7 +154,7 @@ pTypeAtom
 
         -- Named type constructors
         , do    tc      <- pTcCon
-                return  $ TCon (TyConComp tc)
+                return  $ TCon (TyConSpec tc)
 
         , do    tc      <- pTwCon
                 return  $ TCon (TyConWitness tc)

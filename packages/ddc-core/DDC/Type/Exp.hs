@@ -19,11 +19,11 @@ import Data.Map         (Map)
 import Data.Set         (Set)
 
 
--- Types ------------------------------------------------------------------------------------------
+-- Types ----------------------------------------------------------------------
 -- | A value type, kind, or sort.
 --
---   We use the same data type to represent all three universes, as they have a similar
---   algebraic structure.
+--   We use the same data type to represent all three universes, as they have
+--  a similar algebraic structure.
 --
 data Type n
         -- | Variable.
@@ -50,12 +50,17 @@ type Effect  n = Type n
 type Closure n = Type n
 
 
--- Bind -------------------------------------------------------------------------------------------
+-- Bind -----------------------------------------------------------------------
 -- | Binding occurrence of a variable.
 data Bind n
-        = BNone     (Type n)    -- ^ A variable with no uses in the body doesn't need a name.
-        | BAnon     (Type n)    -- ^ Nameless variable on the deBruijn stack.
-        | BName n   (Type n)    -- ^ Named variable in the environment.
+        -- | A variable with no uses in the body doesn't need a name.
+        = BNone     (Type n)
+
+        -- | Nameless variable on the deBruijn stack.
+        | BAnon     (Type n)
+
+        -- | Named variable in the environment.
+        | BName n   (Type n)
         deriving Show
 
 
@@ -69,28 +74,36 @@ data Binder n
 
 -- | Bound occurrence of a variable.
 -- 
---   * If the variables haven't been annotated with their kinds then the kind field will be TBot. 
+--   * If the variables haven't been annotated with their kinds then the kind
+--     field will be TBot. 
+--
 data Bound n
-        = UIx   Int (Type n)    -- ^ Nameless variable that should be on the deBruijn stack.
-        | UName n   (Type n)    -- ^ Named variable that should be in the environment.
-        | UPrim n   (Type n)    -- ^ Named primitive that is not bound in the environment.
-                                --   Prims aren't every counted as being free.
+        -- | Nameless variable that should be on the deBruijn stack.
+        = UIx   Int (Type n)    
+
+        -- | Named variable that should be in the environment.
+        | UName n   (Type n)
+
+        -- | Named primitive that is not bound in the environment.
+        --   Prims aren't every counted as being free.
+        | UPrim n   (Type n)    
         deriving Show
 
 
--- Type Sums --------------------------------------------------------------------------------------
+-- Type Sums ------------------------------------------------------------------
 -- | A least upper bound of several types.
 -- 
---   We keep type sums in this normalised format instead of joining them together with a binary
---   operator (+). This makes them easier to work with, as a given sum type often only has
---   a single physical representation.
+--   We keep type sums in this normalised format instead of joining them
+--   together with a binary operator (+). This makes them easier to work with,
+--   as a given sum type often only has a single physical representation.
 data TypeSum n
         = TypeSum
         { -- | The kind of all the elements in this sum.
           typeSumKind           :: Kind n
 
-          -- | Where we can see the outer constructor of a type its argument is inserted
-          --   into this array. This handles common cases like Read, Write, Alloc effects.
+          -- | Where we can see the outer constructor of a type its argument
+          --   is inserted into this array. This handles common cases like
+          --   Read, Write, Alloc effects.
         , typeSumElems          :: Array TyConHash (Set (TypeSumVarCon n))
 
           -- | A map for named type variables.
@@ -119,24 +132,25 @@ data TypeSumVarCon n
         deriving Show
 
 
--- TyCon ------------------------------------------------------------------------------------------
+-- TyCon ----------------------------------------------------------------------
 -- | Kind, type and witness constructors.
 --
---   These are grouped to make it easy to determine the universe that they belong to.
+--   These are grouped to make it easy to determine the universe that they
+--   belong to.
 -- 
 data TyCon n
-        -- | Builtin Sort constructors               (level 3)
-        = TyConSort    SoCon
+        -- | Sort constructors                          (level 3)
+        = TyConSort     SoCon
 
-        -- | Builtin Kind constructors               (level 2)
-        | TyConKind    KiCon
+        -- | Kind constructors                          (level 2)
+        | TyConKind     KiCon
 
-        -- | Builtin Witness type constructors       (level 1)
-        | TyConWitness TwCon
+        -- | Spec constructors                          (level 1)
+        | TyConSpec     TcCon
 
-        -- | Builtin Computation type constructors   (level 1)
-        | TyConComp    TcCon
-        
+        -- | Spec constructors (for witness specs)      (level 1)
+        | TyConWitness  TwCon
+
         -- | User defined and primitive constructors.
         | TyConBound   (Bound n)
         deriving Show
@@ -217,7 +231,7 @@ data TwCon
         deriving (Eq, Show)
 
 
--- | Builtin computation type constructors.
+-- | Other constructors at the spec level.
 data TcCon
         -- Data type constructors ---------------
         -- | The function type constructor is baked in so we 

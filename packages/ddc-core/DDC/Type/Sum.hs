@@ -179,7 +179,7 @@ fromList k ts
 hashTyCon :: TyCon n -> Maybe TyConHash
 hashTyCon tc
  = case tc of
-        TyConComp tc'   -> hashTcCon tc'
+        TyConSpec tc'   -> hashTcCon tc'
         _               -> Nothing
         
 
@@ -208,7 +208,7 @@ hashTyConRange
 --   or `error` if there isn't one.
 unhashTyCon :: TyConHash -> TyCon n
 unhashTyCon (TyConHash i)
- = TyConComp
+ = TyConSpec
  $ case i of
         0               -> TcConRead
         1               -> TcConDeepRead

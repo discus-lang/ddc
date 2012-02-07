@@ -18,7 +18,7 @@ takeKindOfTyCon tt
  
         TyConKind    kc -> takeSortOfKiCon kc
         TyConWitness tc -> Just $ kindOfTwCon tc
-        TyConComp    tc -> Just $ kindOfTcCon tc
+        TyConSpec    tc -> Just $ kindOfTcCon tc
         TyConBound   u  -> Just $ typeOfBound u
 
 

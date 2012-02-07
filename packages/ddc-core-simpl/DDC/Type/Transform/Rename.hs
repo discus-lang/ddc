@@ -48,6 +48,6 @@ instance Rename TyCon where
         TyConSort sc    -> TyConSort    sc
         TyConKind kc    -> TyConKind    kc
         TyConWitness tc -> TyConWitness tc
-        TyConComp tc    -> TyConComp    tc
+        TyConSpec tc    -> TyConSpec    tc
         TyConBound u    -> TyConBound $ rename f u
 
