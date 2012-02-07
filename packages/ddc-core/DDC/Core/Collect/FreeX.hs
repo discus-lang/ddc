@@ -37,45 +37,24 @@ instance FreeX n (Exp a n) where
   = case xx of
         XVar _ u       -> freeX tenv u
         XCon _ u       -> freeX tenv u
-
-        XApp _ x1 x2    
-         -> Set.unions  [ freeX tenv x1
-                        , freeX tenv x2 ]
-
-        XLAM _ _ x
-         -> freeX tenv x
-
-        XLam _ b  x
-         -> freeX (Env.extend b tenv) x
-
-        XLet _ lts x    
-         -> freeX (Env.extends (valwitBindsOfLets lts) tenv) x
-
-        XCase _ x alts
-         -> Set.unions  [ freeX tenv x
-                        , Set.unions $ map (freeX tenv) alts]
-
-        XCast _ c x
-         -> Set.unions  [ freeX tenv c
-                        , freeX tenv x ]
-
+        XApp _ x1 x2   -> Set.unions [freeX tenv x1, freeX tenv x2]
+        XLAM _ _ x     -> freeX tenv x
+        XLam _ b  x    -> freeX (Env.extend b tenv) x
+        XLet _ lts x   -> freeX (Env.extends (valwitBindsOfLets lts) tenv) x
+        XCase _ x alts -> Set.unions (freeX tenv x : map (freeX tenv) alts)
+        XCast _ c x    -> Set.unions [freeX tenv c,  freeX tenv x ]
         XType _        -> Set.empty
         XWitness w     -> freeX tenv w
 
 
 instance FreeX n (Alt a n) where
- freeX tenv alt
-  = case alt of
-        AAlt p x
-         -> freeX (Env.extends (bindsOfPat p) tenv) x
+ freeX tenv (AAlt p x)  = freeX (Env.extends (bindsOfPat p) tenv) x
 
 
 instance FreeX n (Lets a n) where
  freeX tenv lts 
   = case lts of
-        LLet m _ x        
-         -> Set.unions   [ freeX tenv m
-                         , freeX tenv x ]
+        LLet m _ x      -> Set.unions [freeX tenv m, freeX tenv x]
 
         LRec bxs        
          -> let (bs, xs) = unzip bxs
@@ -107,16 +86,8 @@ instance FreeX n (Witness n) where
  freeX tenv ww
   = case ww of
         WCon{}          -> Set.empty
-
         WVar u          -> freeX tenv u
-
-        WApp  w1 w2     
-         -> Set.unions  [ freeX tenv w1
-                        , freeX tenv w2 ]
-
-        WJoin w1 w2     
-         -> Set.unions  [ freeX tenv w1
-                        , freeX tenv w2 ]
-
+        WApp  w1 w2     -> Set.unions  [freeX tenv w1, freeX tenv w2]
+        WJoin w1 w2     -> Set.unions  [freeX tenv w1, freeX tenv w2]
         WType{}         -> Set.empty
         
