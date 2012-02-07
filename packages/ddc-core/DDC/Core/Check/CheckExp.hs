@@ -104,7 +104,7 @@ checkExpM
 
 checkExpM defs kenv tenv xx
  = checkExpM' defs kenv tenv xx
-{- = do (xx', t, eff, clo) <- checkExpM' defs kenv tenv xx
+{-} = do (xx', t, eff, clo) <- checkExpM' defs kenv tenv xx
       trace (pretty $ vcat 
                 [ text "checkExpM:  " <+> ppr xx 
                 , text "        ::  " <+> ppr t 
@@ -116,8 +116,8 @@ checkExpM defs kenv tenv xx
 
 -- variables ------------------------------------
 checkExpM' _defs _kenv tenv (XVar a u)
- = do   let tBound  = typeOfBound u
-        let mtEnv   = Env.lookup u tenv
+ = do   let tBound      = typeOfBound u
+        let mtEnv       = Env.lookup u tenv
 
         let mkResult
              -- When annotation on the bound is bot,

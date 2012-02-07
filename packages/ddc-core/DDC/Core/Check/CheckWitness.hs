@@ -13,6 +13,9 @@ import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage      ()
 import DDC.Core.Transform.SubstituteT   
 import DDC.Type.Compounds
+import DDC.Type.Predicates
+import DDC.Type.Equiv
+import DDC.Type.Transform.LiftT
 import DDC.Type.Sum                     as Sum
 import DDC.Type.Env                     (Env)
 import DDC.Type.Check.Monad             (result, throw)
@@ -59,56 +62,99 @@ checkWitnessM
         -> Witness n
         -> CheckM a n (Type n)
 
-checkWitnessM kenv tenv ww
- = case ww of
-        -- variables and constructors.
-        WVar u  -> return $ typeOfBound u                       -- TODO: check types against environment.
-        WCon wc -> return $ typeOfWiCon wc
+-- TODO: check types against environment.
+checkWitnessM _kenv tenv (WVar u)
+ = do   let tBound      = typeOfBound u
+        let mtEnv       = Env.lookup u tenv
 
-        -- value-type application
-        WApp w1 (WType t2)
-         -> do  t1      <- checkWitnessM  kenv tenv w1
-                k2      <- checkTypeM     kenv t2
-                case t1 of
-                 TForall b11 t12
-                  | typeOfBind b11 == k2
-                  -> return $ substituteT b11 t2 t12
+        let mkResult
+             -- When annotation on the bound is bot,
+             --  then use the type from the environment.
+             | Just tEnv    <- mtEnv
+             , isBot tBound
+             = return tEnv
 
-                  | otherwise   -> throw $ ErrorWAppMismatch ww (typeOfBind b11) k2
-                 _              -> throw $ ErrorWAppNotCtor  ww t1 t2
+             -- The bound has an explicit type annotation,
+             --  which matches the one from the environment.
+             -- 
+             --  When the bound is a deBruijn index we need to lift the
+             --  annotation on the original binder through any lambdas
+             --  between the binding occurrence and the use.
+             | Just tEnv    <- mtEnv
+             , UIx i _      <- u
+             , equivT tBound (liftT (i + 1) tEnv) 
+             = return tBound
+
+             -- The bound has an explicit type annotation,
+             --  which matches the one from the environment.
+             | Just tEnv    <- mtEnv
+             , equivT tBound tEnv
+             = return tEnv
+
+             -- The bound has an explicit type annotation,
+             --  which does not match the one from the environment.
+             --  This shouldn't happen because the parser doesn't add non-bot
+             --  annotations to bound variables.
+             | Just tEnv    <- mtEnv
+             = throw $ ErrorVarAnnotMismatch u tEnv
+
+             -- Variable not in environment, so use annotation.
+             --  This happens when checking open terms.
+             | otherwise
+             = return tBound
+        
+        tResult  <- mkResult
+        return tResult
 
 
-        -- witness-witness application
-        WApp w1 w2
-         -> do  t1      <- checkWitnessM kenv tenv w1
-                t2      <- checkWitnessM kenv tenv w2
-                case t1 of
-                 TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
-                  | t11 == t2   
-                  -> return t12
-                  | otherwise   -> throw $ ErrorWAppMismatch ww t11 t2
-                 _              -> throw $ ErrorWAppNotCtor  ww t1 t2
+checkWitnessM _kenv _tenv (WCon wc)
+ = return $ typeOfWiCon wc
 
+  
+-- value-type application
+checkWitnessM kenv tenv ww@(WApp w1 (WType t2))
+ = do   t1      <- checkWitnessM  kenv tenv w1
+        k2      <- checkTypeM     kenv t2
+        case t1 of
+         TForall b11 t12
+          |  typeOfBind b11 == k2
+          -> return $ substituteT b11 t2 t12
 
-        -- join witnesses
-        WJoin w1 w2
-         -> do  t1      <- checkWitnessM kenv tenv w1
-                t2      <- checkWitnessM kenv tenv w2
-                case (t1, t2) of
-                 (   TApp (TCon (TyConWitness TwConPure)) eff1
-                  ,  TApp (TCon (TyConWitness TwConPure)) eff2)
-                  -> return $ TApp (TCon (TyConWitness TwConPure))
-                                   (TSum $ Sum.fromList kEffect  [eff1, eff2])
+          | otherwise   -> throw $ ErrorWAppMismatch ww (typeOfBind b11) k2
+         _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
-                 (   TApp (TCon (TyConWitness TwConEmpty)) clo1
-                  ,  TApp (TCon (TyConWitness TwConEmpty)) clo2)
-                  -> return $ TApp (TCon (TyConWitness TwConEmpty))
-                                   (TSum $ Sum.fromList kClosure [clo1, clo2])
+-- witness-witness application
+checkWitnessM kenv tenv ww@(WApp w1 w2)
+ = do   t1      <- checkWitnessM kenv tenv w1
+        t2      <- checkWitnessM kenv tenv w2
+        case t1 of
+         TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
+          |  t11 == t2   
+          -> return t12
 
-                 _ -> throw $ ErrorCannotJoin ww w1 t1 w2 t2
+          | otherwise   -> throw $ ErrorWAppMismatch ww t11 t2
+         _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
-        -- embedded types
-        WType t -> checkTypeM kenv t
+-- witness joining
+checkWitnessM kenv tenv ww@(WJoin w1 w2)
+ = do   t1      <- checkWitnessM kenv tenv w1
+        t2      <- checkWitnessM kenv tenv w2
+        case (t1, t2) of
+         (  TApp (TCon (TyConWitness TwConPure)) eff1
+          , TApp (TCon (TyConWitness TwConPure)) eff2)
+          -> return $ TApp (TCon (TyConWitness TwConPure))
+                           (TSum $ Sum.fromList kEffect  [eff1, eff2])
+
+         (  TApp (TCon (TyConWitness TwConEmpty)) clo1
+          , TApp (TCon (TyConWitness TwConEmpty)) clo2)
+          -> return $ TApp (TCon (TyConWitness TwConEmpty))
+                           (TSum $ Sum.fromList kClosure [clo1, clo2])
+
+         _ -> throw $ ErrorCannotJoin ww w1 t1 w2 t2
+
+-- embedded types
+checkWitnessM kenv _tenv (WType t)
+ = checkTypeM kenv t
         
 
 -- | Take the type of a witness constructor.
