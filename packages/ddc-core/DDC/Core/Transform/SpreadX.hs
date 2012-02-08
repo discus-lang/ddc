@@ -129,7 +129,7 @@ instance SpreadX Bind where
 
 
 instance SpreadX Bound where
- spreadX _kenv tenv uu
+ spreadX kenv tenv uu
   | Just t'     <- Env.lookup uu tenv
   = case uu of
         UIx ix _         -> UIx ix t'
@@ -137,9 +137,8 @@ instance SpreadX Bound where
 
         UName n _
          -> if Env.isPrim tenv n 
-                 then UPrim n t'                         -- TODO: recursively spread into dropped type, but do occ check.
-                 else UName n t'
-
+                 then UPrim n (spreadT kenv t')
+                 else UName n (spreadT kenv t')
 
   | otherwise   = uu        
 
