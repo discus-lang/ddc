@@ -3,6 +3,7 @@ module DDC.Core.Transform.ANormal
     (anormalise)
 where
 import DDC.Core.Exp
+import qualified DDC.Type.Exp as T
 import qualified DDC.Type.Compounds as T
 import qualified DDC.Type.Universe as U
 import qualified DDC.Core.Transform.LiftX as L
@@ -28,28 +29,38 @@ arGet :: Ord n => Arities n -> Bound n -> Int
 -- TODO unsafe ix
 arGet (_named, anon) (UIx ix _)	  = anon !! ix
 arGet (named, _anon) (UName n _)  = named Map.! n
--- TODO Get a primitive's arity from its type
--- Actually I don't think it really matters:
---   if it's overapplied, it's a type error,
---   if it's underapplied, there's nothing we can do.
--- Assuming no higher order primitives.
-arGet (_named,_anon) (UPrim _ _)  = 100
+-- Get a primitive's arity from its type.
+-- Assuming all the primitives defer effects until fully applied.
+arGet (_named,_anon) (UPrim _ t)  = arityOfType t
 
 -- **** Finding arities of expressions etc
+
+-- Count all the arrows, ignoring any effects
+arityOfType :: Ord n => Type n -> Int
+arityOfType (T.TForall _ t)
+ =  1 + arityOfType t
+arityOfType t
+ =  let (args, _) = T.takeTFunArgResult t in
+    length args
 
 arityOfExp :: Ord n => Exp a n -> Int
 arityOfExp (XLam _ b e)
     -- only count data binders
-    | isComp $ U.universeOfType (T.typeOfBind b)
+    | isBinderData b
     = 1 + arityOfExp e
- where
-    -- TODO I don't understand why these are spec universe
-    isComp (Just U.UniverseSpec) = True
-    isComp _                     = False
 arityOfExp (XLam _ _ e)
-    = arityOfExp e
+    = 1 + arityOfExp e
+arityOfExp (XLAM _ _ e)
+    = 1 + arityOfExp e
+arityOfExp (XCon _ (UPrim _ t))
+    = arityOfType t
 arityOfExp _
     = 0
+
+isBinderData :: Ord n => Bind n -> Bool
+isBinderData b | Just U.UniverseData <- U.universeFromType1 (T.typeOfBind b)
+ =  True
+isBinderData _ = False
 
 -- ha! we don't know anything about their values.
 -- but we need to record them as 0 anyway (shadowing, de bruijn)
