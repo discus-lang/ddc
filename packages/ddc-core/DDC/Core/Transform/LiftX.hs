@@ -74,7 +74,10 @@ liftAtDepthXLets
 
 liftAtDepthXLets n d lts
  = case lts of
-        LLet _ b _       -> (lts, countBAnons [b])      -- TODO: decent into right
+        LLet m b x
+         -> let inc = countBAnons [b]
+                x'  = liftAtDepthX n (d+inc) x
+            in  (LLet m b x', inc)
 
         LRec bs
          -> let inc = countBAnons (map fst bs)
