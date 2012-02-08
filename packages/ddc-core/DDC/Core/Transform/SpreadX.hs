@@ -13,60 +13,60 @@ import qualified DDC.Type.Pretty        as P
 
 
 class SpreadX (c :: * -> *) where
- -- | Spread type annotations from the environment and binders
- --   into variables at the leaves.
+
+ -- | Spread type annotations from the environment and binders into
+ --   bound occurrences of variables.
+ --
+ --   Also convert `Bound`s to `UPrim` form if the environment says that
+ --   they are primitive.
  spreadX :: forall n. (Ord n, Show n, P.Pretty n) 
          => Env n -> Env n -> c n -> c n
 
 
 instance SpreadX (Exp a) where
- spreadX kenv tenv xx
-  = case xx of
-        XVar a u        -> XVar a (spreadX kenv tenv u)
-        XCon a u        -> XCon a (spreadX kenv tenv u)
-        XApp a x1 x2    -> XApp a (spreadX kenv tenv x1) (spreadX kenv tenv x2)
+ spreadX kenv tenv xx 
+  = let down = spreadX kenv tenv 
+    in case xx of
+        XVar a u        -> XVar a (down u)
+        XCon a u        -> XCon a (down u)
+        XApp a x1 x2    -> XApp a (down x1) (down x2)
 
         XLAM a b x
          -> let b'      = spreadT kenv b
             in  XLAM a b' (spreadX (Env.extend b' kenv) tenv x)
 
         XLam a b x      
-         -> let b'      = spreadX kenv tenv b
+         -> let b'      = down b
             in  XLam a b' (spreadX kenv (Env.extend b' tenv) x)
             
         XLet a lts x
-         -> let lts'    = spreadX kenv tenv lts
+         -> let lts'    = down lts
                 kenv'   = Env.extends (specBindsOfLets   lts') kenv
                 tenv'   = Env.extends (valwitBindsOfLets lts') tenv
             in  XLet a lts' (spreadX kenv' tenv' x)
          
-        XCase a x alts
-         -> let x'      = spreadX kenv tenv x
-                alts'   = map (spreadX kenv tenv) alts
-            in  XCase a x' alts'
-
-        XCast a c x     -> XCast a  (spreadX kenv tenv c) (spreadX kenv tenv x)
-        
+        XCase a x alts  -> XCase a  (down x) (map down alts)
+        XCast a c x     -> XCast a  (down c) (down x)
         XType t         -> XType    (spreadT kenv t)
-
-        XWitness w      -> XWitness (spreadX kenv tenv w)
+        XWitness w      -> XWitness (down w)
 
 
 instance SpreadX Cast where
  spreadX kenv tenv cc
-  = case cc of
+  = let down = spreadX kenv tenv 
+    in case cc of
         CastWeakenEffect eff  -> CastWeakenEffect  (spreadT kenv eff)
         CastWeakenClosure clo -> CastWeakenClosure (spreadT kenv clo)
-        CastPurify w          -> CastPurify        (spreadX kenv tenv w)
-        CastForget w          -> CastForget        (spreadX kenv tenv w)
+        CastPurify w          -> CastPurify        (down w)
+        CastForget w          -> CastForget        (down w)
 
 
 instance SpreadX Pat where
  spreadX kenv tenv pat
-  = case pat of
+  = let down    = spreadX kenv tenv
+    in case pat of
         PDefault        -> PDefault
-        PData u bs      -> PData (spreadX kenv tenv u) 
-                                 (map (spreadX kenv tenv) bs)
+        PData u bs      -> PData (down u) (map down bs)
 
 
 instance SpreadX (Alt a) where
@@ -80,12 +80,9 @@ instance SpreadX (Alt a) where
 
 instance SpreadX (Lets a) where
  spreadX kenv tenv lts
-  = case lts of
-        LLet m b x     
-         -> let m'       = spreadX kenv tenv m
-                b'       = spreadX kenv tenv b
-                x'       = spreadX kenv tenv x
-            in  LLet m' b' x'
+  = let down = spreadX kenv tenv
+    in case lts of
+        LLet m b x       -> LLet (down m) (down b) (down x)
         
         LRec bxs
          -> let (bs, xs) = unzip bxs
@@ -114,11 +111,12 @@ instance SpreadX LetMode where
 
 instance SpreadX Witness where
  spreadX kenv tenv ww
-  = case ww of
+  = let down = spreadX kenv tenv 
+    in case ww of
         WCon  wicon      -> WCon wicon
-        WVar  u          -> WVar  (spreadX kenv tenv u)
-        WApp  w1 w2      -> WApp  (spreadX kenv tenv w1) (spreadX kenv tenv w2)
-        WJoin w1 w2      -> WJoin (spreadX kenv tenv w1) (spreadX kenv tenv w2)
+        WVar  u          -> WVar  (down u)
+        WApp  w1 w2      -> WApp  (down w1) (down w2)
+        WJoin w1 w2      -> WJoin (down w1) (down w2)
         WType t1         -> WType (spreadT kenv t1)
 
 
