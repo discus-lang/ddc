@@ -45,24 +45,18 @@ instance SpreadT Bind where
         BNone t         -> BNone (spreadT kenv t)
 
 
-instance SpreadT Bound where                            -- TODO: refactor to pull Env.lookup out front
+instance SpreadT Bound where
  spreadT kenv uu
+  | Just t'     <- Env.lookup uu kenv
   = case uu of
-        UIx ix _      
-         | Just t'       <- Env.lookup uu kenv
-         -> UIx ix t'
-         
+        UIx ix _        -> UIx ix t'
+        UPrim n _       -> UPrim n t'
         UName n _
-         | Just t'      <- Env.lookup uu kenv
          -> if Env.isPrim kenv n 
-                 then UPrim n t'                         -- TODO: recursively spread into dropped type, but do occ check.
+                 then UPrim n t'
                  else UName n t'
                  
-        UPrim n _
-         | Just t'      <- Env.lookup uu kenv
-         -> UPrim n t'
-        
-        _ -> uu
+  | otherwise           = uu
 
 
 instance SpreadT TyCon where
