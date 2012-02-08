@@ -9,6 +9,7 @@ module DDC.Type.Transform.SubstituteT
         , BindStack(..)
         , pushBind
         , pushBinds
+        , addBind
         , substBound)
 where
 import DDC.Type.Exp
@@ -140,8 +141,12 @@ instance SubstituteT TypeSum where
 --   and named binders that we're rewriting.
 data BindStack n
         = BindStack
-        { stackBinds    :: [Bind n]     -- only ones we're rewriting
-        , stackAll      :: [Bind n]     -- all binds.
+        { -- | Holds anonymous binders that were already in the program,
+          --   as well as named binders that are being rewritten to anonymous ones.
+          stackBinds    :: [Bind n]
+
+          -- | Holds only anonymous binderst tha
+        , stackAll      :: [Bind n] 
         , stackAnons    :: Int
         , stackNamed    :: Int }
 
@@ -165,15 +170,20 @@ pushBind fns bs@(BindStack stack env dAnon dName) bb
         -- to rewrite it to an anonymous one.
         BName n t
          | Set.member n fns     
-         -> ( BindStack (BName n t : stack) (BAnon t : env) dAnon       (dName + 1)
+         -> ( BindStack (BName n t : stack) (BAnon t : env)  dAnon       (dName + 1)
             , BAnon t)
 
          | otherwise
-         -> ( BindStack stack (BName n t : env) dAnon dName
+         -> ( BindStack stack               (BName n t : env) dAnon dName
             , bb)
 
         -- Binder was a wildcard 
         _ -> (bs, bb)
+
+
+addBind :: Bind n -> BindStack n -> BindStack n
+addBind b (BindStack stack env dAnon dName)
+        = BindStack stack (b : env) dAnon dName
 
 
 -- | Push several binds onto the bind stack,
@@ -201,17 +211,17 @@ substBound (BindStack binds _ dAnon dName) u u'
         , n1 == n2
         = Right (dAnon + dName)
 
-        -- The Bind for this name was rewritten to avoid variable capture,
-        -- so we also have to update the bound occurrence.
-        | UName _ t     <- u'
-        , Just ix       <- findIndex (boundMatchesBind u') binds
-        = Left $ UIx ix t
-
         -- Bound index matches the one that we're substituting for.
         | UIx  i1 _     <- u
         , UIx  i2 _     <- u'
         , i1 + dAnon == i2 
         = Right (dAnon + dName)
+
+        -- The Bind for this name was rewritten to avoid variable capture,
+        -- so we also have to update the bound occurrence.
+        | UName _ t     <- u'
+        , Just ix       <- findIndex (boundMatchesBind u') binds
+        = Left $ UIx ix t
 
         -- Bound index doesn't match, but lower this index by one to account
         -- for the removal of the outer binder.
