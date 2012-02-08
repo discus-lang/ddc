@@ -1,5 +1,5 @@
 
--- | Type substitution.
+-- | Expression substitution.
 module DDC.Core.Transform.SubstituteX
         ( SubstituteX(..)
         , substituteX
@@ -21,13 +21,13 @@ import Data.Set                 (Set)
 
 
 -- | Wrapper for `substituteWithX` that determines the set of free names in the
---   type being substituted, and starts with an empty binder stack.
+--   expression being substituted, and starts with an empty binder stack.
 substituteX 
-        :: ( Ord n, SubstituteX c)
+        :: (Ord n, SubstituteX c)
         => Bind n -> Exp a n -> c a n -> c a n
 substituteX b x' xx
   | Just u      <- takeSubstBoundOfBind b
-  = let -- Determine the free names in the type we're subsituting.
+  = let -- Determine the free names in the expression we're subsituting.
         -- We'll need to rename binders with the same names as these
         fnsX    = Set.fromList
                 $ mapMaybe takeNameOfBound 
@@ -128,16 +128,17 @@ instance SubstituteX Exp where
             in  XLet a (LLet m b' x1') x2'
 
         XLet a (LRec bxs) x2
-         -> let (stackX', bs')  = pushBinds fnsX stackX $ map fst bxs
-                xs'             = [ if namedBoundMatchesBind u b 
-                                        then xRight
-                                        else substituteWithX u x fnsT fnsX stackT stackX' xRight
-                                  | (b, xRight) <- bxs ]
-
+         | any (namedBoundMatchesBind u) $ map fst bxs -> xx
+         | otherwise
+         -> let (bs, xs)        = unzip bxs
+                (stackX', bs')  = pushBinds fnsX stackX bs
+                xs'             = map (substituteWithX u x fnsT fnsX stackT stackX') xs
                 x2'             = substituteWithX u x fnsT fnsX stackT stackX' x2
             in  XLet a (LRec (zip bs' xs')) x2'
 
         XLet a (LLetRegion b bs) x2
+         | any (namedBoundMatchesBind u) bs -> xx
+         | otherwise
          -> let (stackT', b')   = pushBind  fnsT stackT b
                 (stackX', bs')  = pushBinds fnsX stackX bs
                 x2'             = substituteWithX u x fnsT fnsX stackT' stackX' x2
