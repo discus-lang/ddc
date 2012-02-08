@@ -1,6 +1,7 @@
 
 module DDC.Core.Transform.AnonymizeX
-        (AnonymizeX(..))
+        ( anonymizeX
+        , AnonymizeX(..))
 where
 import DDC.Core.Exp
 import DDC.Type.Transform.AnonymizeT
@@ -9,23 +10,29 @@ import Control.Monad
 import Data.List
 
 
+-- | Rewrite all binders in a thing to be of anonymous form.
+anonymizeX :: (Ord n, AnonymizeX c) => c n -> c n
+anonymizeX xx
+        = anonymizeWithX [] [] xx
+
+
+-------------------------------------------------------------------------------
 class AnonymizeX (c :: * -> *) where
 
- -- | Rewrite all binders in a thing to be of anonymous form.
- --   
- --   The stack contains existing anonymous binders that we have entered into,
+ -- | Rewrite all binders in a thing to be anonymous.
+ --   The stacks contains existing anonymous binders that we have entered into,
  --   and named binders that we have rewritten. All bound occurrences of variables
- --   will be replaced by references into this stack.
- anonymizeX 
+ --   will be replaced by references into these stacks.
+ anonymizeWithX 
         :: forall n. Ord n 
-        => [Bind n]     -- ^ Stack for Spec binders (kind environment)
-        -> [Bind n]     -- ^ Stack for Value and Witness binders (type environment)
+        => [Bind n]     -- ^ Stack for Spec binders.
+        -> [Bind n]     -- ^ Stack for Data and Witness binders.
         -> c n -> c n
 
 
 instance AnonymizeX (Exp a) where
- anonymizeX kstack tstack xx
-  = let down = anonymizeX kstack tstack
+ anonymizeWithX kstack tstack xx
+  = let down = anonymizeWithX kstack tstack
     in case xx of
         XVar a u
          -> XVar a (down u)
@@ -38,70 +45,70 @@ instance AnonymizeX (Exp a) where
 
         XLAM a b x
          -> let (kstack', b')   = pushAnonymizeBindT kstack b
-            in  XLAM a b' (anonymizeX kstack' tstack x)
+            in  XLAM a b'   (anonymizeWithX kstack' tstack x)
 
         XLam a b x
          -> let (tstack', b')   = pushAnonymizeBindX kstack tstack b
-            in  XLam a b' (anonymizeX kstack tstack' x)
+            in  XLam a b'   (anonymizeWithX kstack tstack' x)
 
         XLet a lts x
          -> let (kstack', tstack', lts')  
                   = pushAnonymizeLets kstack tstack lts
-            in  XLet a lts' (anonymizeX kstack' tstack' x)
+            in  XLet a lts' (anonymizeWithX kstack' tstack' x)
 
         XCase a x alts
-         -> XCase a (down x) (map (anonymizeX kstack tstack) alts)
+         -> XCase a (down x) (map (anonymizeWithX kstack tstack) alts)
         
         XCast a c x
          -> XCast a (down c) (down x)
 
-        XType t         -> XType    (anonymizeT kstack t)
+        XType t         -> XType    (anonymizeWithT kstack t)
         XWitness w      -> XWitness (down w)
 
 
 instance AnonymizeX Cast where
- anonymizeX kstack tstack cc
+ anonymizeWithX kstack tstack cc
   = case cc of
         CastWeakenEffect eff
-         -> CastWeakenEffect  (anonymizeT kstack eff)
+         -> CastWeakenEffect  (anonymizeWithT kstack eff)
         
         CastWeakenClosure clo
-         -> CastWeakenClosure (anonymizeT kstack clo)
+         -> CastWeakenClosure (anonymizeWithT kstack clo)
 
         CastPurify w
-         -> CastPurify (anonymizeX kstack tstack w)
+         -> CastPurify (anonymizeWithX kstack tstack w)
 
         CastForget w
-         -> CastForget (anonymizeX kstack tstack w)
+         -> CastForget (anonymizeWithX kstack tstack w)
 
 
 instance AnonymizeX LetMode where
- anonymizeX kstack tstack lm
+ anonymizeWithX kstack tstack lm
   = case lm of
         LetStrict       -> lm
-        LetLazy mw      -> LetLazy $ liftM (anonymizeX kstack tstack) mw
+        LetLazy mw      -> LetLazy $ liftM (anonymizeWithX kstack tstack) mw
 
 
 instance AnonymizeX (Alt a) where
- anonymizeX = error "anonymize alts"
+ anonymizeWithX = error "anonymize alts"
 
 
 instance AnonymizeX Witness where
- anonymizeX = error "anonymize witness"
+ anonymizeWithX = error "anonymize witness"
 
 
 instance AnonymizeX Bind where
- anonymizeX kstack _tstack bb
-  = let t'      = anonymizeT kstack $ typeOfBind bb
+ anonymizeWithX kstack _tstack bb
+  = let t'      = anonymizeWithT kstack $ typeOfBind bb
     in  replaceTypeOfBind t' bb 
 
 
 instance AnonymizeX Bound where 
- anonymizeX kstack tstack bb
+ anonymizeWithX kstack tstack bb
   = case bb of
         UName _ t
          | Just ix      <- findIndex (boundMatchesBind bb) tstack
-         -> UIx ix (anonymizeT kstack t)
+         -> UIx ix (anonymizeWithT kstack t)
          
         _ -> bb
 
@@ -117,7 +124,7 @@ pushAnonymizeBindX
         -> ([Bind n], Bind n)
 
 pushAnonymizeBindX kstack tstack b
- = let  b'      = anonymizeX kstack tstack b
+ = let  b'      = anonymizeWithX kstack tstack b
         t'      = typeOfBind b'
         tstack' = case b' of
                         BName{} -> b' : tstack
@@ -150,9 +157,9 @@ pushAnonymizeLets
 pushAnonymizeLets kstack tstack lts
  = case lts of
         LLet mode b x
-         -> let mode'           = anonymizeX kstack tstack mode
+         -> let mode'           = anonymizeWithX kstack tstack mode
                 (tstack', b')   = pushAnonymizeBindX kstack tstack b
-                x'              = anonymizeX kstack tstack' x
+                x'              = anonymizeWithX kstack tstack' x
             in  (kstack, tstack', LLet mode' b' x')
 
         LLetRegion b bs

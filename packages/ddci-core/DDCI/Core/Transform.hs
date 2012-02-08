@@ -47,7 +47,7 @@ applyTransformX
 applyTransformX spec xx
  = case spec of
         None            -> xx
-        Anonymize       -> anonymizeX [] [] xx
+        Anonymize       -> anonymizeX xx
         ANormal         -> anormalise xx
         Beta            -> betaReduce primKindEnv primTypeEnv xx
 
