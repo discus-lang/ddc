@@ -99,21 +99,27 @@ instance SubstituteW (Exp a) where
                 xBody'          = substituteWithW u w fnsT fnsX stackT stackX' xBody
             in  XLam  a b' xBody'
 
-        XLet  a (LLet m b x1) x2                        -- TODO: namedBoundMatchesBind check
+        XLet  a (LLet m b x1) x2
+         | namedBoundMatchesBind u b -> xx
+         | otherwise
          -> let m'              = down m
                 (stackX', b')   = pushBind fnsX stackX b
                 x1'             = down x1
                 x2'             = substituteWithW u w fnsT fnsX stackT stackX' x2
             in  XLet a (LLet m' b' x1') x2'
 
-        XLet a (LRec bxs) x2                            -- TODO: namedBoundMatchesBind checks
+        XLet a (LRec bxs) x2
+         | any (namedBoundMatchesBind u) $ map fst bxs -> xx
+         | otherwise
          -> let (bs, xs)        = unzip bxs
                 (stackX', bs')  = pushBinds fnsX stackX bs
                 xs'             = map (substituteWithW u w fnsT fnsX stackT stackX') xs
                 x2'             = substituteWithW u w fnsT fnsX stackT stackX' x2
             in  XLet a (LRec (zip bs' xs')) x2'
 
-        XLet a (LLetRegion b bs) x2                     -- TODO namedBoundMatchesBind checks on bs
+        XLet a (LLetRegion b bs) x2
+         | any (namedBoundMatchesBind u) bs -> xx
+         | otherwise
          -> let (stackT', b')   = pushBind  fnsT stackT b
                 (stackX', bs')  = pushBinds fnsX stackX bs
                 x2'             = substituteWithW u w fnsT fnsX stackT' stackX' x2
@@ -137,11 +143,19 @@ instance SubstituteW LetMode where
         LetLazy (Just w) -> LetLazy (Just (down w))
 
 
-instance SubstituteW (Alt a) where                      -- TODO: namedBoundMatchesBind checks on bs
- substituteWithW u f fnsT fnsX stackT stackX alt
-  = let down    = substituteWithW u f fnsT fnsX stackT stackX
+instance SubstituteW (Alt a) where
+ substituteWithW u w fnsT fnsX stackT stackX alt
+  = let down    = substituteWithW u w fnsT fnsX stackT stackX
     in case alt of
-        AAlt p x -> AAlt p (down x)
+        AAlt PDefault xBody
+         -> AAlt PDefault $ down xBody
+        
+        AAlt (PData uCon bs) xBody
+         | any (namedBoundMatchesBind u) bs -> alt
+         | otherwise
+         -> let (stackX', bs')  = pushBinds fnsX stackX bs
+                xBody'          = substituteWithW u w fnsT fnsX stackT stackX' xBody
+            in  AAlt (PData uCon bs') xBody'
 
 
 instance SubstituteW Cast where
