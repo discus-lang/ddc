@@ -4,7 +4,7 @@ module DDC.Core.Transform.Beta
 where
 import DDC.Core.Exp
 import DDC.Core.Transform.TransformX
-import DDC.Core.Transform.SubstituteT
+import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Transform.SubstituteW
 import DDC.Core.Transform.SubstituteX
 import DDC.Type.Env     (Env)
@@ -20,7 +20,7 @@ betaReduce1 :: Ord n => Env n -> Env n -> Exp a n -> Exp a n
 betaReduce1 _ _ xx
  = case xx of
         XApp _ (XLAM _ b11 x12) (XType t2)
-         -> substituteT b11 t2 x12
+         -> substituteTX b11 t2 x12
 
         XApp _ (XLam _ b11 x12) (XWitness w2)
          -> substituteW b11 w2 x12

@@ -13,7 +13,8 @@ import DDC.Core.Collect.FreeT
 import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteW
-import DDC.Core.Transform.SubstituteT
+import DDC.Core.Transform.SubstituteTX
+import DDC.Type.Transform.SubstituteT
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
@@ -58,19 +59,19 @@ substituteXs bts x
 --   Performtype substitution for an `XType` 
 --    and witness substitution for an `XWitness`
 substituteXArg 
-        :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
+        :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteTX (c a))
         => Bind n -> Exp a n -> c a n -> c a n
 
 substituteXArg b arg x
  = case arg of
-        XType t         -> substituteT b t x
-        XWitness w      -> substituteW b w x
-        _               -> substituteX b arg x
+        XType t         -> substituteTX b t x
+        XWitness w      -> substituteW  b w x
+        _               -> substituteX  b arg x
 
 
 -- | Wrapper for `substituteXArgs` to substitute multiple arguments.
 substituteXArgs
-        :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteT (c a))
+        :: (Ord n, SubstituteX c, SubstituteW (c a), SubstituteTX (c a))
         => [(Bind n, Exp a n)] -> c a n -> c a n
 
 substituteXArgs bas x

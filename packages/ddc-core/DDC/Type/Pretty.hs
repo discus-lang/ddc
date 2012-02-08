@@ -49,7 +49,10 @@ pprBinderGroup (rs, t)
 instance (Pretty n, Eq n) => Pretty (Bound n) where
  ppr nn
   = case nn of
+--        UName n t       -> parens (ppr n <> text ":" <> ppr t)
         UName n _       -> ppr n
+
+
         UPrim n _       -> ppr n
 --        UIx i t         -> parens (text "^" <> ppr i <> text ":" <> ppr t)
         UIx i _         -> text "^" <> ppr i

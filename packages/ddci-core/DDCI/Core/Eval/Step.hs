@@ -19,7 +19,7 @@ import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Compounds
 import DDC.Core.Transform.SubstituteW
 import DDC.Core.Transform.SubstituteX
-import DDC.Core.Transform.SubstituteT
+import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Check
 import DDC.Core.Compounds
 import DDC.Core.Exp
@@ -307,7 +307,7 @@ step store (XLet a (LLetRegion bRegion bws) x)
         , tHandle       <- TCon $ TyConBound uHandle
 
         -- Substitute handle into the witness types.
-        , bws'          <- map (substituteBoundT uRegion tHandle) bws
+        , bws'          <- map (substituteBoundTX uRegion tHandle) bws
 
         -- Build witnesses for each of the witness types.
         -- This can fail if the set of witness signatures is malformed.
@@ -316,7 +316,7 @@ step store (XLet a (LLetRegion bRegion bws) x)
                         $  map typeOfBind bws'
 
         = let   -- Substitute handle and witnesses into body.
-                x'      = substituteBoundT  uRegion tHandle
+                x'      = substituteBoundTX  uRegion tHandle
                         $ substituteWs (zip bws' wits)  x
 
                 isGlobalBind b

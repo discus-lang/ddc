@@ -11,7 +11,7 @@ import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage      ()
-import DDC.Core.Transform.SubstituteT   
+import DDC.Type.Transform.SubstituteT
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Equiv
