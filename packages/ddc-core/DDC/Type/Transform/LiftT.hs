@@ -44,12 +44,13 @@ instance LiftT Bound where
 
 instance LiftT Type where
  liftAtDepthT n d tt
-  = case tt of
-        TVar uu         -> TVar $ liftAtDepthT n d uu
+  = let down = liftAtDepthT n
+    in case tt of
+        TVar u          -> TVar    (down d u)
         TCon{}          -> tt
-        TForall b t     -> TForall (liftAtDepthT n d b)  (liftAtDepthT n (d + 1) t)
-        TApp t1 t2      -> TApp    (liftAtDepthT n d t1) (liftAtDepthT n d t2)
-        TSum ss         -> TSum $ liftAtDepthT n d ss
+        TForall b t     -> TForall (down d b)  (down (d + 1) t)
+        TApp t1 t2      -> TApp    (down d t1) (down d t2)
+        TSum ss         -> TSum    (down d ss)
 
 
 instance LiftT TypeSum where

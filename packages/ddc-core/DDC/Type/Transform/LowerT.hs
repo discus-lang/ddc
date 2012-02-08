@@ -13,15 +13,15 @@ class LowerT (c :: * -> *) where
  -- | Lower type indices that are at least a certain depth by the given number of levels.
  lowerAtDepthT   
         :: forall n. Ord n
-        => Int          -- ^ Number of levels to lift.
+        => Int          -- ^ Number of levels to lower.
         -> Int          -- ^ Current binding depth.
-        -> c n          -- ^ Lift type indices in this thing.
+        -> c n          -- ^ Lower type indices in this thing.
         -> c n
  
  -- | Wrapper for `liftAtDepthT` that starts at depth 0.       
  lowerT :: forall n. Ord n
-        => Int          -- ^ Number of levels to lift
-        -> c n          -- ^ Lift type indices in this thing.
+        => Int          -- ^ Number of levels to lower.
+        -> c n          -- ^ Lower type indices in this thing.
         -> c n
         
  lowerT n xx  = lowerAtDepthT n 0 xx
