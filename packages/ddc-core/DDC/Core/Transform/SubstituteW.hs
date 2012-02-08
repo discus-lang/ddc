@@ -8,7 +8,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Collect.FreeX
 import DDC.Core.Collect.FreeT
--- import DDC.Core.Transform.LiftW
+import DDC.Core.Transform.LiftW
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
 import Data.Maybe
@@ -54,29 +54,29 @@ class SubstituteW (c :: * -> *) where
  --   avoiding the capture.
  substituteWithW
         :: forall n. Ord n
-        => Bound n              -- ^ Bound variable that we're subsituting into.
-        -> Witness n            -- ^ Witness to substitute.
-        -> Set n                -- ^ Names of free spec names in the exp to substitute.
-        -> Set n                -- ^ Names of free valwit names in the exp to substitute.
-        -> BindStack n          -- ^ Bind stack for spec names.
-        -> BindStack n          -- ^ Bind stack for valwit names.
+        => Bound n      -- ^ Bound variable that we're subsituting into.
+        -> Witness n    -- ^ Witness to substitute.
+        -> Set n        -- ^ Names of free spec names in the exp to substitute.
+        -> Set n        -- ^ Names of free valwit names in the exp to substitute.
+        -> BindStack n  -- ^ Bind stack for spec names.
+        -> BindStack n  -- ^ Bind stack for valwit names.
         -> c n -> c n
 
 
--- Instances --------------------------------------------------------------------------------------
+-- Instances ------------------------------------------------------------------
 instance SubstituteW Witness where
  substituteWithW u w fnsT fnsX stackT stackX ww
   = let down    = substituteWithW u w fnsT fnsX stackT stackX
     in case ww of
+        WVar u'
+         -> case substBound stackX u u' of
+                Left u'' -> WVar u''
+                Right n  -> liftW n w
+
         WCon{}                  -> ww
         WApp  w1 w2             -> WApp  (down w1) (down w2)
         WJoin w1 w2             -> WJoin (down w1) (down w2)
         WType{}                 -> ww
-
-        WVar u'
-         -> case substBound stackX u u' of
-                Left u''  -> WVar u''
-                Right _n  -> w                                                  -- TODO: liftW by n
 
 
 instance SubstituteW (Exp a) where 
