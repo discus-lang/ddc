@@ -1,14 +1,17 @@
 
 -- | Type substitution.
 module DDC.Core.Transform.SubstituteTX
+        ( substituteTX
+        , substituteTXs
+        , substituteBoundTX
+        , SubstituteTX(..))
 where
 import DDC.Core.Collect.FreeT
 import DDC.Core.Exp
+import DDC.Core.Transform.SpreadX
 import DDC.Type.Compounds
-import DDC.Type.Predicates
 import DDC.Type.Transform.SubstituteT
 import Data.Maybe
-import Data.List
 import DDC.Type.Env                     (Env)
 import Data.Set                         (Set)
 import qualified Data.Set               as Set
@@ -60,93 +63,93 @@ class SubstituteTX (c :: * -> *) where
         -> c n -> c n
 
 
--- TODO: Need to push both type and value names so we can switch to 
---       spread mode when we hit a binder with the same name.
 instance SubstituteTX (Exp a) where
  substituteWithTX u t fnsT stackT envX xx
   = let down    = substituteWithTX u t fnsT stackT envX
     in  case xx of
-         -- If we've substituted into the type annotation on a binder
-         -- further up, then we also need to replace the annotation
-         -- on the bound occurrence with this new type.
+         -- If we've substituted into the type annotation on a binder then we 
+         -- also need to replace the annotation on the bound occurrences.
          XVar a u'
-          -> case u' of
-                UIx i _ 
-                 -> case lookup i (zip [0..] (stackAll stackT)) of
-                     Just b  
-                       | not $ isBot $ typeOfBind b  
-                       -> XVar a (UIx i $ typeOfBind b)
-                     _ -> xx
+          -> case Env.lookup u' envX of
+                Nothing -> xx
+                Just t' -> XVar a $ replaceTypeOfBound t' u'
 
-                UName n _ 
-                 -> case find (boundMatchesBind u') (stackAll stackT) of
-                     Just b  
-                       | not $ isBot $ typeOfBind b
-                       -> XVar a (UName n $ typeOfBind b)
-                     _ -> xx
+         XCon{}         -> xx
+         XApp a x1 x2   -> XApp a (down x1) (down x2)
 
-                UPrim{} -> xx
+         XLAM a b xBody
+          |  namedBoundMatchesBind u b
+          -> spreadX (Env.fromList $ stackAll stackT) envX xx
 
-         XCon{} -> xx
-         
-         XApp a x1 x2           
-          -> XApp a (down x1) (down x2)
-
-         XLAM a b xBody                                 -- TODO switch to spread mode if bound matches bind
+          | otherwise
           -> let b2             = down b
-                 (stack', b3)   = pushBind fnsT stackT b2
-                 xBody'         = substituteWithTX u t fnsT stack' envX xBody
+                 (stackT', b3)  = pushBind fnsT stackT b2
+                 xBody'         = substituteWithTX u t fnsT stackT' envX xBody
              in  XLAM a b3 xBody'
 
          XLam a b xBody
-          -> let b2             = down b
-                 (stack', b3)   = pushBind fnsT stackT b2
-                 xBody'         = substituteWithTX u t fnsT stack' envX xBody
-             in  XLam a b3 xBody'
+          -> let b'             = down b
+                 envX'          = Env.extend b' envX
+                 xBody'         = substituteWithTX u t fnsT stackT envX' xBody
+             in  XLam a b' xBody'
 
          XLet a (LLet m b x1) x2
-          -> let x1'            = down x1
-                 (stack', b')   = pushBind fnsT stackT (down b)
-                 x2'            = substituteWithTX u t fnsT stack' envX x2
-             in  XLet a (LLet m b' x1')  x2'
+          -> let m'             = down m
+                 b'             = down b
+                 x1'            = down x1
+                 envX'          = Env.extend b' envX
+                 x2'            = substituteWithTX u t fnsT stackT envX' x2
+             in  XLet a (LLet m' b' x1')  x2'
 
          XLet a (LRec bxs) x2
           -> let (bs, xs)       = unzip bxs
-                 (stack', bs')  = pushBinds fnsT stackT (map down bs)
-                 xs'            = map (substituteWithTX u t fnsT stack' envX) xs
-                 x2'            = substituteWithTX u t fnsT stack' envX x2
+                 bs'            = map down bs
+                 envX'          = Env.extends bs' envX
+                 xs'            = map (substituteWithTX u t fnsT stackT envX') xs
+                 x2'            = substituteWithTX u t fnsT stackT envX' x2
              in  XLet a (LRec (zip bs' xs')) x2'
 
          XLet a (LLetRegion b bs) x2
-          -> let (stack1, b')   = pushBind  fnsT stackT (down b)
-                 (stack2, bs')  = pushBinds fnsT stack1 (map down bs)
-                 x2'            = substituteWithTX u t fnsT stack2 envX x2
+          |  namedBoundMatchesBind u b 
+          -> spreadX (Env.fromList $ stackAll stackT) envX xx
+
+          | otherwise
+          -> let (stackT', b')  = pushBind fnsT stackT b
+                 bs'            = map (substituteWithTX u t fnsT stackT' envX) bs
+                 envX'          = Env.extends bs' envX
+                 x2'            = substituteWithTX u t fnsT stackT' envX' x2
              in  XLet a (LLetRegion b' bs') x2'
 
          XLet a (LWithRegion uR) x2
            -> XLet a (LWithRegion uR) (down x2)
 
-         XCase a x alts
-          -> XCase a (down x) (map down alts)
-
-         XCast a c x
-          -> XCast a (down c) (down x)
-         
-         XType t'         -> XType    (substituteWithT  u t fnsT stackT t')
-         XWitness w       -> XWitness (substituteWithTX u t fnsT stackT envX w)
+         XCase a x alts -> XCase  a (down x) (map down alts)
+         XCast a c x    -> XCast  a (down c) (down x)
+         XType t'       -> XType    (substituteWithT u t fnsT stackT t')
+         XWitness w     -> XWitness (down w)
 
 
-instance SubstituteTX Pat where
- substituteWithTX u t fnsT stackT envX pat
-  = case pat of
-        PDefault        -> PDefault
-        PData uCon bs   -> PData uCon (map (substituteWithTX u t fnsT stackT envX) bs)
+instance SubstituteTX LetMode where
+ substituteWithTX u t fnsT stackT envX lm
+  = let down    = substituteWithTX u t fnsT stackT envX 
+    in case lm of
+        LetStrict         -> lm
+        LetLazy Nothing   -> lm
+        LetLazy (Just w)  -> LetLazy (Just $ down w)
 
 
 instance SubstituteTX (Alt a) where
- substituteWithTX u t fnsT stackT envX (AAlt pat x)
+ substituteWithTX u t fnsT stackT envX alt
   = let down    = substituteWithTX u t fnsT stackT envX
-    in  AAlt (down pat) (down x)
+    in  case alt of
+         AAlt PDefault x        
+          -> AAlt PDefault (down x)
+
+         AAlt (PData uCon bs) x
+          -> let bs'     = map down bs
+                 envX'   = Env.extends bs' envX
+                 x'      = substituteWithTX u t fnsT stackT envX' x
+             in  AAlt (PData uCon bs') x'
 
 
 instance SubstituteTX Cast where
@@ -166,8 +169,9 @@ instance SubstituteTX Witness where
          WCon{}         -> ww
 
          WVar u'
-          -> let t'  = substituteWithT u t fvsT stackT (typeOfBound u')
-             in  WVar $ replaceTypeOfBound t' u'
+          -> case Env.lookup u' envX of
+                Nothing -> ww
+                Just t' -> WVar $ replaceTypeOfBound t' u'
           
          WApp  w1 w2    -> WApp  (down w1) (down w2)
          WJoin w1 w2    -> WJoin (down w1) (down w2)
@@ -176,6 +180,6 @@ instance SubstituteTX Witness where
 
 instance SubstituteTX Bind where
  substituteWithTX u t fnsT stackT _envX bb
-  = let k'      = substituteWithT u t fnsT stackT $ typeOfBind bb
-    in  replaceTypeOfBind k' bb
+  = let t'      = substituteWithT u t fnsT stackT $ typeOfBind bb
+    in  replaceTypeOfBind t' bb
 

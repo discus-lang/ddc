@@ -109,6 +109,7 @@ instance SubstituteT Type where
           -> TSum (down ss)
 
          TForall b tBody
+          | namedBoundMatchesBind u b -> tt
           | otherwise
           -> let -- Substitute into the annotation on the binder.
                  bSub            = down b
@@ -145,7 +146,7 @@ data BindStack n
           --   as well as named binders that are being rewritten to anonymous ones.
           stackBinds    :: [Bind n]
 
-          -- | Holds only anonymous binderst tha
+          -- | Holds all binders.
         , stackAll      :: [Bind n] 
         , stackAnons    :: Int
         , stackNamed    :: Int }

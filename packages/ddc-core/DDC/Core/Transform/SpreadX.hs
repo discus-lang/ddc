@@ -9,7 +9,6 @@ import DDC.Core.Compounds
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
-import qualified DDC.Type.Pretty        as P
 
 
 class SpreadX (c :: * -> *) where
@@ -19,7 +18,7 @@ class SpreadX (c :: * -> *) where
  --
  --   Also convert `Bound`s to `UPrim` form if the environment says that
  --   they are primitive.
- spreadX :: forall n. (Ord n, Show n, P.Pretty n) 
+ spreadX :: forall n. Ord n
          => Env n -> Env n -> c n -> c n
 
 

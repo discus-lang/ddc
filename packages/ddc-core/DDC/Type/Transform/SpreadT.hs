@@ -4,7 +4,6 @@ module DDC.Type.Transform.SpreadT
 where
 import DDC.Type.Exp
 import DDC.Type.Env                     (Env)
-import qualified DDC.Type.Pretty        as P
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Sum           as T
 
@@ -12,7 +11,7 @@ import qualified DDC.Type.Sum           as T
 class SpreadT (c :: * -> *) where
  -- | Spread type annotations from the environment and binders
  --   into variables at the leaves.
- spreadT :: forall n. (Ord n, Show n, P.Pretty n) 
+ spreadT :: forall n. Ord n 
          => Env n -> c n -> c n
         
 

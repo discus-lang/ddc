@@ -33,3 +33,18 @@
 
 -- Addition should also read the args, and alloc the result.
 :check addInt [:R1# R2# R3#:] (2 [R1#] ()) (3 [R2#] ())
+
+
+-- Check that shadowed spec binders are handled properly.
+-- This shouldn't substitute into the inner 'r' variable.
+:check..
+(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) 
+        [R1#];;
+
+
+-- Check that shadowed spec binders are handled properly.
+:check..
+(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) 
+        [R1#] 
+        (5 [R1#] ()) 
+        [R2#];;

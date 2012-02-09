@@ -34,13 +34,13 @@ cmdTrans state lineStart str
 
 -- | Transform an expression, or display errors
 applyTrans :: State -> (Exp () Name, Type Name, Effect Name, Closure Name) -> IO (Maybe (Exp () Name))
-applyTrans state (x, t1, eff1, clo1)
+applyTrans state (x, t1, _eff1, _clo1)
  = do	let x' = applyTransformX (stateTransform state) x
 	case checkExp primDataDefs primKindEnv primTypeEnv x' of
 	  Right (_, t2, eff2, clo2)
 	   |  equivT t1 t2
-	   ,  equivT eff1 eff2
-	   ,  equivT clo1 clo2
+--	   ,  equivT eff1 eff2                 -- TODO: result can have smaller effect
+--	   ,  equivT clo1 clo2                 -- TODO: result can have smaller closure
 	   -> do return (Just x')
 
 	   | otherwise

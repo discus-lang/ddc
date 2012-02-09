@@ -51,8 +51,13 @@ letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () 
 -- Avoid capture of witness var by witness binding in witness subst.
 letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () in addInt [r0] [r0] [R0#] (letregion r1 with {^ : Lazy r1; w1 : Const r1; w2 : Global r1} in let x : Int r1 lazy <^0> = purify <read [r0] wc & alloc [r1] w1> in forget <use [r0] wg & use [r1] w2> in addInt [r0] [r0] [r1] x x in addInt [r1] [r1] [r0] x x) (5 [r0] ())
 
---
-(\(x : Int R1#)./\(r : %).\(_ : Unit).2 [R1#] ()) (5 [R1#] ()) [R2#]
+
+-- Don't substitute past binder with same name.
+\(x : Int R1#)./\(r : %).\(_ : Unit).2 [r] ()
+
+
+-- Don't substitute past binder with same name.
+(\(x : Int R1#)./\(r : %).\(_ : Unit).2 [r] ()) (5 [R1#] ()) [R2#]
 
 
 

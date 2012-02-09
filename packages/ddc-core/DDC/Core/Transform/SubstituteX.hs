@@ -86,7 +86,7 @@ class SubstituteX (c :: * -> * -> *) where
  --   avoiding the capture.
  substituteWithX
         :: forall a n. Ord n
-        => Bound n-- ^ Bound variable that we're subsituting for..
+        => Bound n      -- ^ Bound variable that we're subsituting for..
         -> Exp a n      -- ^ Exp to substitute.
         -> Set n        -- ^ Names of free spec   vars in the argument.
         -> Set n        -- ^ Names of free valwit vars in the environment.
