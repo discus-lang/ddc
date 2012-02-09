@@ -1,0 +1,4 @@
+:eval..
+let id = (/\(t : *).\(x : t).x)
+in  id [List R0# (Int R0#)] (Nil [R0#] [Int R0#] ())
+;;

@@ -85,7 +85,7 @@ step    :: Store        -- ^ Current store.
 
 -- (EvLam)
 -- Add abstractions to the heap.
-step store xx@XLam{}
+step store xx | isLam xx
         -- We need the type of the expression to attach to the location
         -- This fakes the store typing from the formal typing rules.
  = case typeOfExp primDataDefs xx of
@@ -94,6 +94,10 @@ step store xx@XLam{}
          -> let Just (bs, xBody)  = takeXLamFlags xx
                 (store', l)       = allocBind (Rgn 0) t (SLams bs xBody) store
             in  StepProgress store' (XCon () (UPrim (NameLoc l) t))
+ where
+    isLam XLam{} = True
+    isLam XLAM{} = True
+    isLam _      = False
         
 
 -- (EvAlloc)
