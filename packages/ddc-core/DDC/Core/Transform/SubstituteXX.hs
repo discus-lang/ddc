@@ -26,6 +26,7 @@ import Data.Set                 (Set)
 substituteXX 
         :: (Ord n, SubstituteXX c)
         => Bind n -> Exp a n -> c a n -> c a n
+
 substituteXX b x' xx
   | Just u      <- takeSubstBoundOfBind b
   = let -- Determine the free names in the expression we're subsituting.
@@ -80,6 +81,7 @@ substituteXArgs bas x
 
 -- SubstituteX ----------------------------------------------------------------
 class SubstituteXX (c :: * -> * -> *) where
+
  -- | Substitute a type into some thing.
  --   In the target, if we find a named binder that would capture a free variable
  --   in the type to substitute, then we rewrite that binder to anonymous form,

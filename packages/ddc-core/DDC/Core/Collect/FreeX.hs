@@ -12,6 +12,7 @@ import qualified Data.Set               as Set
 
 
 class FreeX n a where
+
  -- | Determine the set of value and witness variables not bound in 
  --   the given environment.
  freeX  :: Ord n 

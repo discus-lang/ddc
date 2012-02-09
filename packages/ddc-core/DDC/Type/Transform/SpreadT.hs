@@ -9,6 +9,7 @@ import qualified DDC.Type.Sum           as T
 
 
 class SpreadT (c :: * -> *) where
+
  -- | Spread type annotations from the environment and binders
  --   into variables at the leaves.
  spreadT :: forall n. Ord n 

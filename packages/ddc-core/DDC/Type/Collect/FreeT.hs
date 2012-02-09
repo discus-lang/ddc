@@ -26,12 +26,12 @@ instance FreeT n (Bind n) where
 --   Use freeX for value or witness variables.
 instance FreeT n (Bound n) where
  freeT env u
-        | Env.member u env      = Set.empty
-        | otherwise             
-        = case u of
-                UName{}         -> Set.singleton u
-                UPrim{}         -> Set.empty
-                UIx i t         -> Set.singleton $ UIx (i - Env.depth env) t
+  | Env.member u env    = Set.empty
+  | otherwise             
+  = case u of
+        UName{}         -> Set.singleton u
+        UPrim{}         -> Set.empty
+        UIx i t         -> Set.singleton $ UIx (i - Env.depth env) t
 
 
 instance FreeT n (Type n) where

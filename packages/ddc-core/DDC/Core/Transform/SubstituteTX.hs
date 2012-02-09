@@ -49,6 +49,7 @@ substituteBoundTX u t x
 
 -------------------------------------------------------------------------------
 class SubstituteTX (c :: * -> *) where
+
  -- | Substitute a type into some thing.
  --   In the target, if we find a named binder that would capture a free variable
  --   in the type to substitute, then we rewrite that binder to anonymous form,

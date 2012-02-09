@@ -10,6 +10,7 @@ import qualified DDC.Type.Sum   as Sum
 
 
 class LiftT (c :: * -> *) where
+
  -- | Lift type indices that are at least a certain depth by the given number of levels.
  liftAtDepthT   
         :: forall n. Ord n

@@ -10,6 +10,7 @@ import qualified DDC.Type.Sum   as Sum
 
 
 class LowerT (c :: * -> *) where
+
  -- | Lower type indices that are at least a certain depth by the given number of levels.
  lowerAtDepthT   
         :: forall n. Ord n
