@@ -5,8 +5,8 @@ where
 import DDC.Core.Exp
 import DDC.Core.Transform.TransformX
 import DDC.Core.Transform.SubstituteTX
-import DDC.Core.Transform.SubstituteW
-import DDC.Core.Transform.SubstituteX
+import DDC.Core.Transform.SubstituteWX
+import DDC.Core.Transform.SubstituteXX
 import DDC.Type.Env     (Env)
 
 -- Beta-reduce applications of a explicit lambda abstractions 
@@ -23,11 +23,11 @@ betaReduce1 _ _ xx
          -> substituteTX b11 t2 x12
 
         XApp _ (XLam _ b11 x12) (XWitness w2)
-         -> substituteW b11 w2 x12
+         -> substituteWX b11 w2 x12
 
         XApp _ (XLam _ b11 x12) x2
          |  canBetaSubstX x2     
-         -> substituteX b11 x2 x12
+         -> substituteXX b11 x2 x12
 
          | otherwise
          -> xx

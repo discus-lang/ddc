@@ -17,8 +17,8 @@ import DDCI.Core.Eval.Name
 import DDCI.Core.Eval.Prim
 import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Compounds
-import DDC.Core.Transform.SubstituteW
-import DDC.Core.Transform.SubstituteX
+import DDC.Core.Transform.SubstituteWX
+import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Check
 import DDC.Core.Compounds
@@ -247,7 +247,7 @@ step store (XLet a (LLet LetStrict b x1) x2)
      -> StepProgress store' (XLet a (LLet LetStrict b x1') x2)
 
     StepDone
-     -> StepProgress store (substituteX b x1 x2)
+     -> StepProgress store (substituteXX b x1 x2)
 
     err -> err
 
@@ -262,7 +262,7 @@ step store (XLet _ (LLet (LetLazy _w) b x1) x2)
         Right t1
          -> let (store1, l)   = allocBind (Rgn 0) t1 (SThunk x1) store
                 x1'           = XCon () (UPrim (NameLoc l) t1)
-            in  StepProgress store1 (substituteX b x1' x2)
+            in  StepProgress store1 (substituteXX b x1' x2)
 
 
 -- (EvLetRec)
@@ -276,7 +276,7 @@ step store (XLet _ (LRec bxs) x2)
         xls           = [XCon () (UPrim (NameLoc l) t) | (l, t) <- zip ls ts]
 
         -- Substitute locations into all the bindings.
-        xs'      = map (substituteXs (zip bs xls)) xs
+        xs'      = map (substituteXXs (zip bs xls)) xs
 
 
         -- Create store objects for each of the bindings.
@@ -295,7 +295,7 @@ step store (XLet _ (LRec bxs) x2)
                         $ zip3 ls ts os
         
                -- Substitute locations into the body expression.
-               x2'      = substituteXs (zip bs xls) x2
+               x2'      = substituteXXs (zip bs xls) x2
 
            in  StepProgress store2 x2'
 
@@ -321,7 +321,7 @@ step store (XLet a (LLetRegion bRegion bws) x)
 
         = let   -- Substitute handle and witnesses into body.
                 x'      = substituteBoundTX  uRegion tHandle
-                        $ substituteWs (zip bws' wits)  x
+                        $ substituteWXs (zip bws' wits)  x
 
                 isGlobalBind b
                  = case typeOfBind b of
@@ -389,7 +389,7 @@ step store (XCase a xDiscrim alts)
                                 | t     <- tsArgs
                                 | b     <- bsArgs]
             -> StepProgress store
-                    (substituteXs bxsArgs xBody)
+                    (substituteXXs bxsArgs xBody)
 
      | otherwise
      -> StepStuck

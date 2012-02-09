@@ -1,9 +1,9 @@
 
 -- | Type substitution.
-module DDC.Core.Transform.SubstituteW
-        ( SubstituteW(..)
-        , substituteW
-        , substituteWs)
+module DDC.Core.Transform.SubstituteWX
+        ( SubstituteWX(..)
+        , substituteWX
+        , substituteWXs)
 where
 import DDC.Core.Exp
 import DDC.Core.Collect.FreeX
@@ -19,8 +19,8 @@ import Data.Set                 (Set)
 
 -- | Wrapper for `substituteWithW` that determines the set of free names in the
 --   type being substituted, and starts with an empty binder stack.
-substituteW :: (SubstituteW c, Ord n) => Bind n -> Witness n -> c n -> c n
-substituteW b w xx
+substituteWX :: (SubstituteWX c, Ord n) => Bind n -> Witness n -> c n -> c n
+substituteWX b w xx
  | Just u       <- takeSubstBoundOfBind b
  = let  -- Determine the free names in the type we're subsituting.
         -- We'll need to rename binders with the same names as these
@@ -36,23 +36,23 @@ substituteW b w xx
        
         stack    = BindStack [] [] 0 0
  
-  in    substituteWithW u w fnsT fnsX stack stack xx
+  in    substituteWithWX u w fnsT fnsX stack stack xx
 
  | otherwise    = xx
  
 
 -- | Wrapper for `substituteW` to substitute multiple things.
-substituteWs :: (SubstituteW c, Ord n) => [(Bind n, Witness n)] -> c n -> c n
-substituteWs bts x
-        = foldr (uncurry substituteW) x bts
+substituteWXs :: (SubstituteWX c, Ord n) => [(Bind n, Witness n)] -> c n -> c n
+substituteWXs bts x
+        = foldr (uncurry substituteWX) x bts
 
 
-class SubstituteW (c :: * -> *) where
+class SubstituteWX (c :: * -> *) where
  -- | Substitute a witness into some thing.
  --   In the target, if we find a named binder that would capture a free variable
  --   in the type to substitute, then we rewrite that binder to anonymous form,
  --   avoiding the capture.
- substituteWithW
+ substituteWithWX
         :: forall n. Ord n
         => Bound n      -- ^ Bound variable that we're subsituting into.
         -> Witness n    -- ^ Witness to substitute.
@@ -64,9 +64,9 @@ class SubstituteW (c :: * -> *) where
 
 
 -- Instances ------------------------------------------------------------------
-instance SubstituteW Witness where
- substituteWithW u w fnsT fnsX stackT stackX ww
-  = let down    = substituteWithW u w fnsT fnsX stackT stackX
+instance SubstituteWX Witness where
+ substituteWithWX u w fnsT fnsX stackT stackX ww
+  = let down    = substituteWithWX u w fnsT fnsX stackT stackX
     in case ww of
         WVar u'
          -> case substBound stackX u u' of
@@ -79,9 +79,9 @@ instance SubstituteW Witness where
         WType{}                 -> ww
 
 
-instance SubstituteW (Exp a) where 
- substituteWithW u w fnsT fnsX stackT stackX xx
-  = let down    = substituteWithW u w fnsT fnsX stackT stackX
+instance SubstituteWX (Exp a) where 
+ substituteWithWX u w fnsT fnsX stackT stackX xx
+  = let down    = substituteWithWX u w fnsT fnsX stackT stackX
     in case xx of
         XVar{}          -> xx
         XCon{}          -> xx
@@ -89,14 +89,14 @@ instance SubstituteW (Exp a) where
 
         XLAM  a b xBody
          -> let (stackT', b')   = pushBind fnsX stackX b
-                xBody'          = substituteWithW u w fnsT fnsX stackT' stackX xBody
+                xBody'          = substituteWithWX u w fnsT fnsX stackT' stackX xBody
             in  XLAM  a b' xBody'
 
         XLam  a b xBody
          | namedBoundMatchesBind u b -> xx
          | otherwise
          -> let (stackX', b')   = pushBind fnsX stackX b
-                xBody'          = substituteWithW u w fnsT fnsX stackT stackX' xBody
+                xBody'          = substituteWithWX u w fnsT fnsX stackT stackX' xBody
             in  XLam  a b' xBody'
 
         XLet  a (LLet m b x1) x2
@@ -105,7 +105,7 @@ instance SubstituteW (Exp a) where
          -> let m'              = down m
                 (stackX', b')   = pushBind fnsX stackX b
                 x1'             = down x1
-                x2'             = substituteWithW u w fnsT fnsX stackT stackX' x2
+                x2'             = substituteWithWX u w fnsT fnsX stackT stackX' x2
             in  XLet a (LLet m' b' x1') x2'
 
         XLet a (LRec bxs) x2
@@ -113,8 +113,8 @@ instance SubstituteW (Exp a) where
          | otherwise
          -> let (bs, xs)        = unzip bxs
                 (stackX', bs')  = pushBinds fnsX stackX bs
-                xs'             = map (substituteWithW u w fnsT fnsX stackT stackX') xs
-                x2'             = substituteWithW u w fnsT fnsX stackT stackX' x2
+                xs'             = map (substituteWithWX u w fnsT fnsX stackT stackX') xs
+                x2'             = substituteWithWX u w fnsT fnsX stackT stackX' x2
             in  XLet a (LRec (zip bs' xs')) x2'
 
         XLet a (LLetRegion b bs) x2
@@ -122,7 +122,7 @@ instance SubstituteW (Exp a) where
          | otherwise
          -> let (stackT', b')   = pushBind  fnsT stackT b
                 (stackX', bs')  = pushBinds fnsX stackX bs
-                x2'             = substituteWithW u w fnsT fnsX stackT' stackX' x2
+                x2'             = substituteWithWX u w fnsT fnsX stackT' stackX' x2
             in  XLet a (LLetRegion b' bs') x2'
 
         XLet a (LWithRegion uR) x2
@@ -134,18 +134,18 @@ instance SubstituteW (Exp a) where
         XWitness w1     -> XWitness (down w1)
 
 
-instance SubstituteW LetMode where
- substituteWithW u f fnsT fnsX stackT stackX lm
-  = let down = substituteWithW u f fnsT fnsX stackT stackX
+instance SubstituteWX LetMode where
+ substituteWithWX u f fnsT fnsX stackT stackX lm
+  = let down = substituteWithWX u f fnsT fnsX stackT stackX
     in case lm of
         LetStrict        -> lm
         LetLazy Nothing  -> LetLazy Nothing
         LetLazy (Just w) -> LetLazy (Just (down w))
 
 
-instance SubstituteW (Alt a) where
- substituteWithW u w fnsT fnsX stackT stackX alt
-  = let down    = substituteWithW u w fnsT fnsX stackT stackX
+instance SubstituteWX (Alt a) where
+ substituteWithWX u w fnsT fnsX stackT stackX alt
+  = let down    = substituteWithWX u w fnsT fnsX stackT stackX
     in case alt of
         AAlt PDefault xBody
          -> AAlt PDefault $ down xBody
@@ -154,13 +154,13 @@ instance SubstituteW (Alt a) where
          | any (namedBoundMatchesBind u) bs -> alt
          | otherwise
          -> let (stackX', bs')  = pushBinds fnsX stackX bs
-                xBody'          = substituteWithW u w fnsT fnsX stackT stackX' xBody
+                xBody'          = substituteWithWX u w fnsT fnsX stackT stackX' xBody
             in  AAlt (PData uCon bs') xBody'
 
 
-instance SubstituteW Cast where
- substituteWithW u w fnsT fnsX stackT stackX cc
-  = let down    = substituteWithW u w fnsT fnsX stackT stackX 
+instance SubstituteWX Cast where
+ substituteWithWX u w fnsT fnsX stackT stackX cc
+  = let down    = substituteWithWX u w fnsT fnsX stackT stackX 
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  eff
         CastWeakenClosure clo   -> CastWeakenClosure clo
