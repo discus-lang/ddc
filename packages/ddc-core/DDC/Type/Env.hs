@@ -66,7 +66,7 @@ extend bb env
 --   Replaces bindings with the same name already in the environment.
 extends :: Ord n => [Bind n] -> Env n -> Env n
 extends bs env
-        = foldr extend env bs
+        = foldl (flip extend) env bs
 
 
 -- | Set the function that knows the types of primitive things.

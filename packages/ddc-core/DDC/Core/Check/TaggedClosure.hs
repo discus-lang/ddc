@@ -8,6 +8,7 @@ module DDC.Core.Check.TaggedClosure
         , taggedClosureOfWeakClo
         , maskFromTaggedSet
         , cutTaggedClosureX
+        , cutTaggedClosureXs
         , cutTaggedClosureT)
 where
 import DDC.Type.Transform.LowerT
@@ -176,6 +177,19 @@ cutTaggedClosureT b1 cc
          | otherwise               -> Just $ GBoundRgnVar (lowerT 1 u2)
 
         GBoundRgnCon u2            -> Just $ GBoundRgnCon (lowerT 1 u2)
+
+
+cutTaggedClosureXs 
+        :: (Eq n, Ord n)
+        => [Bind n]
+        -> TaggedClosure n -> Maybe (TaggedClosure n)
+
+cutTaggedClosureXs bb c 
+ = case bb of
+        []       -> Just c
+        (b:bs)   -> case cutTaggedClosureX b c of
+                        Nothing -> Nothing
+                        Just c' -> cutTaggedClosureXs bs c'
 
 
 -- | Cut the terms due to the outermost binder from a tagged closure.

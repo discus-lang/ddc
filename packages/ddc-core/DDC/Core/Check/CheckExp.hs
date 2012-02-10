@@ -37,7 +37,8 @@ import qualified Data.Set               as Set
 import Control.Monad
 import Data.List                        as L
 import Data.Maybe
--- import Debug.Trace
+--import Debug.Trace
+
 
 -- Wrappers -------------------------------------------------------------------
 -- | Take the kind of a type.
@@ -778,17 +779,18 @@ checkAltM xx defs kenv tenv tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
         (xBody', tBody, effsBody, closBody)
                 <- checkExpM defs kenv tenv' xBody
 
-        -- Mask bound variables from closure.
-        let closBody_masked
-             = foldr (\b c -> case takeSubstBoundOfBind b of
-                               Nothing -> c
-                               Just u  -> Set.delete (taggedClosureOfValBound u) c)
-                     closBody bsArg
+
+        -- Cut closure terms due to locally bound value vars.
+        -- This also lowers deBruijn indices in un-cut closure terms.
+        let closBody_cut 
+                = Set.fromList
+                $ mapMaybe (cutTaggedClosureXs bsArg')
+                $ Set.toList closBody
 
         return  ( AAlt (PData uCon bsArg') xBody'
                 , tBody
                 , effsBody
-                , closBody_masked)
+                , closBody_cut)
 
 
 -- | Merge a type annotation on a pattern field with a type we get by

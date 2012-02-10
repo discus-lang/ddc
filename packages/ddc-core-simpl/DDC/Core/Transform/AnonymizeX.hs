@@ -34,14 +34,9 @@ instance AnonymizeX (Exp a) where
  anonymizeWithX kstack tstack xx
   = let down = anonymizeWithX kstack tstack
     in case xx of
-        XVar a u
-         -> XVar a (down u)
-
-        XCon a u
-         -> XCon a (down u)
-
-        XApp a x1 x2
-         -> XApp a (down x1) (down x2)
+        XVar a u        -> XVar a (down u)
+        XCon a u        -> XCon a (down u)
+        XApp a x1 x2    -> XApp a (down x1) (down x2)
 
         XLAM a b x
          -> let (kstack', b')   = pushAnonymizeBindT kstack b
@@ -53,15 +48,11 @@ instance AnonymizeX (Exp a) where
 
         XLet a lts x
          -> let (kstack', tstack', lts')  
-                  = pushAnonymizeLets kstack tstack lts
+                 = pushAnonymizeLets kstack tstack lts
             in  XLet a lts' (anonymizeWithX kstack' tstack' x)
 
-        XCase a x alts
-         -> XCase a (down x) (map (anonymizeWithX kstack tstack) alts)
-        
-        XCast a c x
-         -> XCast a (down c) (down x)
-
+        XCase a x alts  -> XCase a  (down x) (map down alts)
+        XCast a c x     -> XCast a  (down c) (down x)
         XType t         -> XType    (anonymizeWithT kstack t)
         XWitness w      -> XWitness (down w)
 
@@ -69,17 +60,10 @@ instance AnonymizeX (Exp a) where
 instance AnonymizeX Cast where
  anonymizeWithX kstack tstack cc
   = case cc of
-        CastWeakenEffect eff
-         -> CastWeakenEffect  (anonymizeWithT kstack eff)
-        
-        CastWeakenClosure clo
-         -> CastWeakenClosure (anonymizeWithT kstack clo)
-
-        CastPurify w
-         -> CastPurify (anonymizeWithX kstack tstack w)
-
-        CastForget w
-         -> CastForget (anonymizeWithX kstack tstack w)
+        CastWeakenEffect eff    -> CastWeakenEffect  (anonymizeWithT kstack eff)
+        CastWeakenClosure clo   -> CastWeakenClosure (anonymizeWithT kstack clo)
+        CastPurify w            -> CastPurify   (anonymizeWithX kstack tstack w)
+        CastForget w            -> CastForget   (anonymizeWithX kstack tstack w)
 
 
 instance AnonymizeX LetMode where
@@ -90,11 +74,26 @@ instance AnonymizeX LetMode where
 
 
 instance AnonymizeX (Alt a) where
- anonymizeWithX = error "anonymize alts"
+ anonymizeWithX kstack tstack alt
+  = case alt of
+        AAlt PDefault x
+         -> AAlt PDefault (anonymizeWithX kstack tstack x)
+
+        AAlt (PData uCon bs) x
+         -> let (tstack', bs')  = pushAnonymizeBindXs kstack tstack bs
+                x'              = anonymizeWithX kstack tstack' x
+            in  AAlt (PData uCon bs') x'
 
 
 instance AnonymizeX Witness where
- anonymizeWithX = error "anonymize witness"
+ anonymizeWithX kstack tstack ww
+  = let down = anonymizeWithX kstack tstack 
+    in case ww of
+        WVar  u         -> WVar  (down u)
+        WCon  c         -> WCon  c
+        WApp  w1 w2     -> WApp  (down w1) (down w2)
+        WJoin w1 w2     -> WJoin (down w1) (down w2)
+        WType t         -> WType (anonymizeWithT kstack t)
 
 
 instance AnonymizeX Bind where
@@ -157,16 +156,23 @@ pushAnonymizeLets
 pushAnonymizeLets kstack tstack lts
  = case lts of
         LLet mode b x
-         -> let mode'           = anonymizeWithX kstack tstack mode
+         -> let mode'           = anonymizeWithX     kstack tstack mode
                 (tstack', b')   = pushAnonymizeBindX kstack tstack b
-                x'              = anonymizeWithX kstack tstack' x
+                x'              = anonymizeWithX     kstack tstack' x
             in  (kstack, tstack', LLet mode' b' x')
+
+        LRec bxs 
+         -> let (bs, xs)        = unzip bxs
+                (tstack', bs')  = pushAnonymizeBindXs kstack tstack   bs
+                xs'             = map (anonymizeWithX kstack tstack') xs
+                bxs'            = zip bs' xs'
+            in  (kstack, tstack', LRec bxs')
 
         LLetRegion b bs
          -> let (kstack', b')   = pushAnonymizeBindT  kstack b
                 (tstack', bs')  = pushAnonymizeBindXs kstack' tstack bs
             in  (kstack', tstack', LLetRegion b' bs')
 
-        _ -> error "anonymize lets"
-
+        LWithRegion{}
+         -> (kstack, tstack, lts)
 

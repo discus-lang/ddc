@@ -29,3 +29,27 @@ letregion r with {w : Const r} in
 let x = 2 [r] () in
 let y = 3 [r] () in
 addInt [:r r R0#:] x y;;
+
+
+-- case expressions
+:trans..
+\(xx : List R0# (Int R1#)).
+case xx of {
+        Nil             -> xx;
+        Cons ^ ^        -> Cons [R0#] [Int R1#] ^1 xx;
+};;
+
+
+-- letrec expressions
+:trans..
+letrec {
+ append  [r : %] [a : *]
+         (xx : List r a) {!0               | Use r}
+         (ys : List r a) {Read r + Alloc r | Use r + DeepUse a}
+         : List r a
+  = case xx of {
+          Nil           -> ys;
+          Cons x xs     -> Cons [:r a:] x (append [:r a:] xs ys);
+    }
+} in ();;
+
