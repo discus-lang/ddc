@@ -16,9 +16,6 @@ let f [b : *] = () in
 (\(y : Unit). /\(a : *). y) (f [a]);;
 
 
--- TODO: check avoid capture by letregion binder in value subst.
-
-
 -- Avoid capture of value var by value lambda in value subst.
 :trans..
 let x = () in 

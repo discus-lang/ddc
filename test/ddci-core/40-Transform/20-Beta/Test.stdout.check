@@ -13,9 +13,6 @@ ok
 /\(a : *).let f : [b : *].Unit = /\(b : *).() in /\(^ : *).f [a]
 
 
--- TODO: check avoid capture by letregion binder in value subst.
-
-
 -- Avoid capture of value var by value lambda in value subst.
 let x : Unit = () in \(^ : Unit).x
 
