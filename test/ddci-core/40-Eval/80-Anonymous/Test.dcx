@@ -1,0 +1,60 @@
+
+:set trans Anonymize
+
+-- Tail recursive factorial.
+:trun..
+letrec {
+ fac    [r:%] 
+        (acc : Int r) {!0 | Use r}
+        (n   : Int r) {Read r + Alloc r | Use r} : Int r
+  = case n of {
+        0       -> acc;
+        1       -> acc;
+        _       -> fac [r] (mulInt [:r r r:] acc n)
+                           (subInt [:r r r:] n (1 [r] ()))
+    }
+} in fac [R1#] (1 [R1#] ()) (5 [R1#] ());;
+
+
+-- Construct a list then immediately reverse it.
+:trun..
+letrec {
+ singleton 
+         [r : %] [a : *] 
+         (x : a) {Alloc r | Use r}
+         : List r a
+  = Cons [:r a:] x (Nil [:r a:] ());
+
+ append  [r : %] [a : *]
+         (xx : List r a) {!0               | Use r}
+         (ys : List r a) {Read r + Alloc r | Use r + DeepUse a}
+         : List r a
+  = case xx of {
+          Nil           -> ys;
+          Cons x xs     -> Cons [:r a:] x (append [:r a:] xs ys);
+    };
+
+ reverse [r : %] [a : *]
+         (xx : List r a) {Read r + Alloc r | Use r}
+         : List r a
+  = case xx of {
+         Nil            -> xx;
+         Cons x xs      -> append [:r a:] (reverse   [:r a:] xs) 
+                                          (singleton [:r a:] x)
+  };
+
+ list1  [r : %] (_:Unit) {Alloc r | Use r} : List r (Int r)
+  = (Cons [r] [Int r] (5 [r] ())
+    (Cons [r] [Int r] (6 [r] ())
+    (Cons [r] [Int r] (7 [r] ()) 
+    (Nil  [r] [Int r] ()))));
+
+ list2  [r : %] (_:Unit) {Alloc r | Use r} : List r (Int r)
+  = (Cons [r] [Int r] (8 [r] ())
+    (Cons [r] [Int r] (9 [r] ())
+    (Nil  [r] [Int r] ())));
+
+} in reverse [R0#] [Int R0#]
+     (append [R0#] [Int R0#] 
+       (list1 [R0#] ()) 
+       (list2 [R0#] ()));;
