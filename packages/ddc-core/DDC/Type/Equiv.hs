@@ -3,6 +3,7 @@ module DDC.Type.Equiv
         (equivT)
 where
 import DDC.Type.Exp
+import DDC.Type.Compounds
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Base.Pretty
@@ -51,7 +52,8 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
          -> tc1 == tc2
 
         -- Push binders on the stack as we enter foralls.
-        (TForall b11 t12, TForall b21 t22)                      -- TODO: check kinds of binders are the same
+        (TForall b11 t12, TForall b21 t22)
+         |  equivT  (typeOfBind b11) (typeOfBind b21)
          -> equivT' (b11 : stack1) (depth1 + 1) 
                     (b21 : stack2) (depth2 + 1) 
                     t12 t22

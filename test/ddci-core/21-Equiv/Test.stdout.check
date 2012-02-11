@@ -29,3 +29,7 @@ False
 
 -- False: Second effect is larger.
 False
+
+
+-- False: binders have differing kinds.
+False

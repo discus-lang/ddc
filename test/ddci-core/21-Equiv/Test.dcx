@@ -43,3 +43,9 @@
 :tequiv..
 (Read R0#)
 (Read R0# + Read R1#);;
+
+
+-- False: binders have differing kinds.
+:tequiv..
+([a : %]. Unit)
+([a : *]. Unit);;
