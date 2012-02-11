@@ -26,7 +26,6 @@ Library
         DDC.Core.Check.CheckExp
         DDC.Core.Check.CheckWitness
         DDC.Core.Check.Error
-        DDC.Core.Check.ErrorMessage
         DDC.Core.Check.TaggedClosure
         DDC.Core.Collect.Free
         DDC.Core.Collect.GatherBound
@@ -69,7 +68,10 @@ Library
         DDC.Type.Pretty
         DDC.Type.Sum
         DDC.Type.Universe
-                
+
+  Other-modules:
+        DDC.Core.Check.ErrorMessage
+                  
 
   GHC-options:
         -Werror

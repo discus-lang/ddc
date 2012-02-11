@@ -1,4 +1,5 @@
 
+-- | Lexer utilities.
 module DDC.Base.Lexer
         ( SourcePos     (..)
         
@@ -14,7 +15,7 @@ import qualified Text.Parsec.Pos        as P
 -- | A position in the source file.        
 --
 --   If there is no file path then we assume that the input has been read
---   from an interactive session and display '<interactive>' when pretty printing.
+--   from an interactive session and display ''<interactive>'' when pretty printing.
 data SourcePos 
         = SourcePos
         { sourcePosFile         :: Maybe FilePath
@@ -32,7 +33,7 @@ instance Pretty SourcePos where
 
 
 -- Token-----------------------------------------------------------------------
--- | Wrapper for a token type that gives it a source position.
+-- | Wrapper for primitive token type that gives it a source position.
 data Token t
         = Token
         { tokenTok         :: t
@@ -40,7 +41,7 @@ data Token t
         deriving (Eq, Show)
 
 
--- | Take the parsec style 
+-- | Take the parsec style source position from a token.
 takeParsecSourcePos :: Token k -> P.SourcePos
 takeParsecSourcePos (Token _ sp)
  = case sp of

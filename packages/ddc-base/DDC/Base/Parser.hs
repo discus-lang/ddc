@@ -1,4 +1,5 @@
 
+-- | Parser utilities.
 module DDC.Base.Parser
         ( module Text.Parsec
         , Parser
@@ -17,21 +18,20 @@ import Text.Parsec.Error        as P
 
 
 -- | A generic parser,
---   parameterised over token definition type, token type, name type and return type.
+--   parameterised over token and return types.
 type Parser k a
         =  Eq k
         => P.ParsecT [Token k] (ParserState k) Identity a
 
 
--- | A generic parser state.
+-- | A parser state that keeps track of the name of the source file.
 data ParserState k
         = ParseState
         { stateTokenShow        :: k -> String
         , stateFileName         :: String }
 
 
--- | Run a generic parser,
---   where the tokens are just wrapped strings.
+-- | Run a generic parser.
 runTokenParser
         :: Eq k
         => (k -> String)        -- ^ Show a token.
@@ -49,13 +49,9 @@ runTokenParser tokenShow fileName parser
 
 
 -------------------------------------------------------------------------------
--- | Accept a token.
-pTokMaybe  :: (k -> Maybe a) -> Parser k a
-pTokMaybe f
- = do   state   <- P.getState
-        P.token (stateTokenShow state . tokenTok)
-                (takeParsecSourcePos)
-                (f . tokenTok)
+-- | Accept the given token.
+pTok      :: Eq k => k -> Parser k ()
+pTok k  = pTokMaybe $ \k' -> if k == k' then Just () else Nothing
 
 
 -- | Accept a token and return the given value.
@@ -63,9 +59,13 @@ pTokAs    :: Eq k => k -> t -> Parser k t
 pTokAs k t = pTok k >> return t
 
 
--- | Accept the given token.
-pTok      :: Eq k => k -> Parser k ()
-pTok k  = pTokMaybe $ \k' -> if k == k' then Just () else Nothing
+-- | Accept a token if the function returns `Just`. 
+pTokMaybe  :: (k -> Maybe a) -> Parser k a
+pTokMaybe f
+ = do   state   <- P.getState
+        P.token (stateTokenShow state . tokenTok)
+                (takeParsecSourcePos)
+                (f . tokenTok)
 
 
 -------------------------------------------------------------------------------

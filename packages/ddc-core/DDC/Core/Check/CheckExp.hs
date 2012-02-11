@@ -1,11 +1,10 @@
 
--- | Type checker for the DDC core language.
+-- | Type checker for the Disciple core language.
 module DDC.Core.Check.CheckExp
         ( checkExp
         , typeOfExp
-        , typeOfExp'
-        , checkExpM
         , CheckM
+        , checkExpM
         , TaggedClosure(..))
 where
 import DDC.Core.DataDef
@@ -40,29 +39,16 @@ import Data.Maybe
 
 
 -- Wrappers -------------------------------------------------------------------
--- | Take the kind of a type.
-typeOfExp 
-        :: (Ord n, Pretty n)
-        => DataDefs n
-        -> Exp a n
-        -> Either (Error a n) (Type n)
-typeOfExp defs xx 
- = case checkExp defs Env.empty Env.empty xx of
-        Left err           -> Left err
-        Right (_, t, _, _) -> Right t
-        
-
--- | Take the kind of a type, or `error` if there isn't one.
-typeOfExp' 
-        :: (Ord n, Pretty n)
-        => DataDefs n -> Exp a n -> Type n
-typeOfExp' defs tt
- = case checkExp defs Env.empty Env.empty tt of
-        Left err           -> error $ show $ ppr err
-        Right (_, t, _, _) -> t
-
-
--- | Check an expression, returning an error or its type, effect and closure.
+-- | Type check an expression. 
+--
+--   If it's good, you get a new version with types attached to all the bound
+--   variables, as well its the type, effect and closure. 
+--
+--   If it's bad, you get a description of the error.
+--
+--   As the returned expression has types attached to all variable occurrences, 
+--   you can call `typeOfExp` on any subterm. 
+--
 checkExp 
         :: (Ord n, Pretty n)
         => DataDefs n           -- ^ Data type definitions.
@@ -82,14 +68,28 @@ checkExp defs kenv tenv xx
                 , t
                 , TSum effs
                 , closureOfTaggedSet clos)
-        
+
+
+-- | Like `checkExp`, but check in an empty environment,
+--   and only return the value type of an expression.
+--
+--   As this function is not given an environment, the types of free variables
+--   must be attached directly to the bound occurrences.
+--   This attachment is performed by `checkExp` above.
+--
+typeOfExp 
+        :: (Ord n, Pretty n)
+        => DataDefs n
+        -> Exp a n
+        -> Either (Error a n) (Type n)
+typeOfExp defs xx 
+ = case checkExp defs Env.empty Env.empty xx of
+        Left err           -> Left err
+        Right (_, t, _, _) -> Right t
+
 
 -- checkExp -------------------------------------------------------------------
--- | Check an expression, 
---   returning a fully annotated version, its type, effect and closure.
---
---   The annotated version has type annotations on all binding occurrences 
---   of variables.
+-- | Like `checkExp` but using the `CheckM` monad to handle errors.
 checkExpM 
         :: (Ord n, Pretty n)
         => DataDefs n           -- ^ Data type definitions.

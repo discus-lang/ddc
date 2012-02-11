@@ -2,10 +2,11 @@
 -- | Type checker for the DDC core language.
 module DDC.Core.Check.CheckWitness
         ( checkWitness
-        , typeOfWitness, typeOfWitness'
+        , typeOfWitness
         , typeOfWiCon
-        , checkWitnessM
-        , CheckM)
+
+        , CheckM
+        , checkWitnessM)
 where
 import DDC.Core.Exp
 import DDC.Core.Pretty
@@ -25,44 +26,57 @@ import qualified DDC.Type.Check         as T
 import qualified DDC.Type.Check.Monad   as G
 
 
+-- | Type checker monad. 
+--   Used to manage type errors.
 type CheckM a n   = G.CheckM (Error a n)
 
 
--- Witness --------------------------------------------------------------------
-typeOfWitness :: (Ord n, Pretty n) => Witness n -> Either (Error a n) (Type n)
-typeOfWitness ww 
-        = result 
-        $ checkWitnessM Env.empty Env.empty ww
-
-
--- | Take the kind of a type, or `error` if there isn't one.
-typeOfWitness' :: forall n. (Ord n, Pretty n) => Witness n -> Type n
-typeOfWitness' ww
- = case typeOfWitness ww of
-        Left err        -> error $ show $ ppr (err :: Error () n)
-        Right k         -> k
-
-
--- | Check an expression, returning an error or its type, effect and closure.
+-- Wrappers --------------------------------------------------------------------
+-- | Check a witness.
+--   
+--   If it's good, you get a new version with types attached to all the bound
+--   variables, as well as the type of the overall witness.
+--
+--   If it's bad, you get a description of the error.
+--
+--   As the returned witness has types attached to all variable occurrences, 
+--   you can call `typeOfWitness` on any subterm. 
+--
 checkWitness
         :: (Ord n, Pretty n)
         => Env n                -- ^ Kind Environment.
         -> Env n                -- ^ Type Environment.
-        -> Witness n
+        -> Witness n            -- ^ Witness to check.
         -> Either (Error a n) (Type n)
 
 checkWitness kenv tenv xx
         = result $ checkWitnessM kenv tenv xx
 
 
+-- | Like `checkWitness`, but check in an empty environment.
+--
+--   As this function is not given an environment, the types of free variables
+--   must be attached directly to the bound occurrences.
+--   This attachment is performed by `checkWitness` above.
+--
+typeOfWitness 
+        :: (Ord n, Pretty n) 
+        => Witness n 
+        -> Either (Error a n) (Type n)
+typeOfWitness ww 
+        = result 
+        $ checkWitnessM Env.empty Env.empty ww
+
+
+------------------------------------------------------------------------------
+-- | Like `checkWitness` but using the `CheckM` monad to manage errors.
 checkWitnessM 
         :: (Ord n, Pretty n)
-        => Env n 
-        -> Env n
-        -> Witness n
+        => Env n                -- ^ Kind environment.
+        -> Env n                -- ^ Type environment.
+        -> Witness n            -- ^ Witness to check.
         -> CheckM a n (Type n)
 
--- TODO: check types against environment.
 checkWitnessM _kenv tenv (WVar u)
  = do   let tBound      = typeOfBound u
         let mtEnv       = Env.lookup u tenv

@@ -17,8 +17,8 @@ import DDC.Core.Exp
 -- TokenFamily ----------------------------------------------------------------
 -- | The family of a token.
 --   This is used to help generate parser error messages,
---   so we can say "the constructor 'Cons'"
---             and "the keyword 'case'" etc.
+--   so we can say ''the constructor Cons''
+--             and ''the keyword case'' etc.
 data TokenFamily
         = Symbol
         | Keyword

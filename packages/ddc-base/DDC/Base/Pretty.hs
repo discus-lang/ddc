@@ -1,4 +1,8 @@
 
+-- | Pretty printer utilities.
+--
+--   This is a re-export of Daan Leijens pretty printer package (wl-pprint),
+--   but with a `Pretty` class that includes a `pprPrec` function.
 module DDC.Base.Pretty
         ( module Text.PrettyPrint.Leijen
         , Pretty(..)
@@ -18,13 +22,14 @@ import Text.PrettyPrint.Leijen
        hiding (Pretty(..), renderPretty, putDoc)
 
 
--------------------------------------------------------------------------------
+-- Utils ---------------------------------------------------------------------
 -- | Wrap a `Doc` in parens if the predicate is true.
 pprParen :: Bool -> Doc -> Doc
 pprParen b c
  = if b then parens c
         else c
 
+-- Pretty Class --------------------------------------------------------------
 class Pretty a where
  ppr     :: a   -> Doc
  ppr     = pprPrec 0 
@@ -65,7 +70,7 @@ data RenderMode
         deriving (Eq, Show)
 
 
--- | Render a doc with the given mode
+-- | Render a doc with the given mode.
 render :: RenderMode -> Doc -> String
 render mode doc
  = case mode of
@@ -97,12 +102,12 @@ renderIndent :: Doc -> String
 renderIndent = render RenderIndent
 
 
--- | Put a doc to `stdout` using the given mode.
+-- | Put a `Doc` to `stdout` using the given mode.
 putDoc :: RenderMode -> Doc -> IO ()
 putDoc mode doc
         = putStr   $ render mode doc
 
--- | Put a doc to `stdout` using the given mode.
+-- | Put a `Doc` to `stdout` using the given mode.
 putDocLn  :: RenderMode -> Doc -> IO ()
 putDocLn mode doc
         = putStrLn $ render mode doc

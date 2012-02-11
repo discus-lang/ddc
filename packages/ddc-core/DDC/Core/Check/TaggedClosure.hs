@@ -24,10 +24,15 @@ import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 
 
--- | A closure tagged with the bound variable that the closure term is due to.
+-- | A closure-term tagged with the bound variable that the term is due to.
 data TaggedClosure n
+        -- | Term due to a free value variable.
         = GBoundVal    (Bound n) (TypeSum n)
+
+        -- | Term due to a free region variable.
         | GBoundRgnVar (Bound n)
+
+        -- | Term due to a region handle.
         | GBoundRgnCon (Bound n)
         deriving Show
 
@@ -84,7 +89,7 @@ closureOfTaggedSet clos
                 $ Set.toList clos
 
 
--- | Take the tagged closure of a value variable.
+-- | Yield the tagged closure of a value variable.
 taggedClosureOfValBound 
         :: (Ord n, Pretty n) 
         => Bound n  -> TaggedClosure n
@@ -96,7 +101,7 @@ taggedClosureOfValBound u
            in  fromMaybe clo (trimClosure clo))
 
 
--- | Take the tagged closure of a type argument.
+-- | Yield the tagged closure of a type argument.
 taggedClosureOfTyArg 
         :: (Ord n, Pretty n) 
         => Type n -> Set (TaggedClosure n)
@@ -115,7 +120,7 @@ taggedClosureOfTyArg tt
 
 
 -- | Convert the closure provided as a 'weakclo' to tagged form.
---   Only terms of form 'Use r' can be converted.
+--   Only terms of form `Use r` can be converted.
 taggedClosureOfWeakClo 
         :: (Ord n, Pretty n)
         => Closure n -> Maybe (Set (TaggedClosure n))
@@ -138,6 +143,8 @@ taggedClosureOfWeakClo clo
 
 
 -- | Mask a closure term from a tagged closure.
+--
+--   This is used for the `forget` cast.
 maskFromTaggedSet 
         :: Ord n 
         => TypeSum n 
@@ -179,7 +186,7 @@ cutTaggedClosureT b1 cc
         GBoundRgnCon u2            -> Just $ GBoundRgnCon (lowerT 1 u2)
 
 
--- | Like `cutTaggedClosureX` but cut terms due to sevearl binders.
+-- | Like `cutTaggedClosureX` but cut terms due to several binders.
 cutTaggedClosureXs 
         :: (Eq n, Ord n)
         => [Bind n]

@@ -6,43 +6,47 @@ import DDC.Core.Exp
 import qualified DDC.Type.Check as T
 
 
--- | Type errors.
+-- | All the things that can go wrong when type checking an expression
+--   or witness.
 data Error a n
         -- | Found a kind error when checking a type.
         = ErrorType
         { errorTypeError        :: T.Error n }
 
-        -- | Found a malformed exp, and we don't have a more specific diagnosis.
+        -- | Found a malformed expression, 
+        --   and we don't have a more specific diagnosis.
         | ErrorMalformedExp
         { errorChecking         :: Exp a n }
 
-        -- | Found a malformed type, and we don't have a more specific diagnosis.
+        -- | Found a malformed type,
+        --   and we don't have a more specific diagnosis.
         | ErrorMalformedType
         { errorChecking         :: Exp a n
         , errorType             :: Type n }
 
-        -- | Found a naked type that wasn't the argument of an application.
+        -- | Found a naked `XType` that wasn't the argument of an application.
         | ErrorNakedType
         { errorChecking         :: Exp a n }
 
-        -- | Found a naked witness that wasn't the argument of an application.
+        -- | Found a naked `XWitness` that wasn't the argument of an application.
         | ErrorNakedWitness
         { errorChecking         :: Exp a n }
 
         -- Var --------------------------------------------
-        -- | Type in environment does not match type annotation on variable.
+        -- | A bound occurrence of a variable who's type annotation does not match
+        --   the corresponding annotation in the environment.
         | ErrorVarAnnotMismatch
         { errorBound            :: Bound n
         , errorTypeEnv          :: Type n }
 
         -- Application ------------------------------------
-        -- | Types of parameter and arg don't match when checking application.
+        -- | A function application where the parameter and argument don't match.
         | ErrorAppMismatch
         { errorChecking         :: Exp a n
         , errorParamType        :: Type n
         , errorArgType          :: Type n }
 
-        -- | Tried to apply a non function to an argument.
+        -- | Tried to apply something that is not a function.
         | ErrorAppNotFun
         { errorChecking         :: Exp a n
         , errorNotFunType       :: Type n
@@ -50,18 +54,18 @@ data Error a n
 
 
         -- Lambda -----------------------------------------
-        -- | Non-computation abstractions cannot have visible effects.
+        -- | A type or witness abstraction where the body has a visible side effect.
         | ErrorLamNotPure
         { errorChecking         :: Exp a n
         , errorEffect           :: Effect n }
 
-        -- | Computation lambdas must bind values of data kind.
+        -- | A value function where the parameter does not have data kind.
         | ErrorLamBindNotData
         { errorChecking         :: Exp a n 
         , errorType             :: Type n
         , errorKind             :: Kind n }
 
-        -- | The body of Spec and Witness lambdas must be of data kind.
+        -- | An abstraction where the body does not have data kind.
         | ErrorLamBodyNotData
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
@@ -70,19 +74,20 @@ data Error a n
 
 
         -- Let --------------------------------------------
-        -- | In let expression, type of binder does not match type of right of binding.
+        -- | A let-expression where the type of the binder does not match the right
+        --   of the binding.
         | ErrorLetMismatch
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorType             :: Type n }
 
-        -- | Let(rec) bindings should have kind '*'
+        -- | A let-expression where the right of the binding does not have data kind.
         | ErrorLetBindingNotData
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorKind             :: Kind n }
 
-        -- | Let(rec,region,withregion) body should have kind '*'
+        -- | A let-expression where the body does not have data kind.
         | ErrorLetBodyNotData
         { errorChecking         :: Exp a n
         , errorType             :: Type n
@@ -90,26 +95,25 @@ data Error a n
 
 
         -- Let Lazy ---------------------------------------
-        -- | Lazy let binding is not pure.
+        -- | A lazy let binding that has a visible side effect.
         | ErrorLetLazyNotPure
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorEffect           :: Effect n }
 
-        -- | Lazy let binding is not empty.
+        -- | A lazy let binding with a non-empty closure.
         | ErrorLetLazyNotEmpty
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorClosure          :: Closure n }
 
-        -- | Lazy let binding has no Lazy witness, but the type of the binding
-        --   has a head region.
+        -- | A lazy let binding without a witness that binding is in a lazy region.
         | ErrorLetLazyNoWitness
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorType             :: Type n }
 
-        -- | Witness provided to lazy let binding has the wrong type.
+        -- | A lazy let binding where the witness has the wrong type.
         | ErrorLetLazyWitnessTypeMismatch 
         { errorChecking          :: Exp a n
         , errorBind              :: Bind n
@@ -119,48 +123,54 @@ data Error a n
 
 
         -- Letrec -----------------------------------------
-        -- | Letrec bindings must be syntactic lambdas.
+        -- | A recursive let-expression where the right of the binding is not
+        --   a lambda abstraction.
         | ErrorLetrecBindingNotLambda
         { errorChecking         :: Exp a n 
         , errorExp              :: Exp a n }
 
 
         -- Letregion --------------------------------------
-        -- | Region binding does not have region kind.
+        -- | A letregion-expression where the bound variable does not have
+        --   region kind.
         | ErrorLetRegionNotRegion
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorKind             :: Kind n }
 
-        -- | Tried to rebind a region variable with the same name as on in the environment.
+        -- | A letregion-expression that tried to shadow a pre-existing named
+        --   region variable.
         | ErrorLetRegionRebound
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
-        -- | Bound region variable is free in the type of the body of a letregion.
+        -- | A letregion-expression where the bound region variable is free in
+        --  the type of the body.
         | ErrorLetRegionFree
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n
         , errorType             :: Type n }
 
-        -- | A witness with this type cannot be created at a letregion.
+        -- | A letregion-expression that tried to create a witness with an 
+        --   invalid type.
         | ErrorLetRegionWitnessInvalid
         { errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
-        -- | A witness conflicts with another one defined with the same letregion.
+        -- | A letregion-expression that tried to create conflicting witnesses.
         | ErrorLetRegionWitnessConflict
         { errorChecking         :: Exp a n
         , errorBindWitness1     :: Bind n
         , errorBindWitness2     :: Bind n }
 
-        -- | A witness introduced with a letregion was for some other region.
+        -- | A letregion-expression where a bound witnesses was not for the
+        --   the region variable being introduced.
         | ErrorLetRegionWitnessOther
         { errorChecking         :: Exp a n
         , errorBoundRegion      :: Bound n
         , errorBindWitness      :: Bind  n }
 
-        -- | Withregion handle does not have region kind.
+        -- | A withregion-expression where the handle does not have region kind.
         | ErrorWithRegionNotRegion
         { errorChecking         :: Exp a n
         , errorBound            :: Bound n
@@ -168,19 +178,20 @@ data Error a n
 
 
         -- Witnesses --------------------------------------
-        -- | Type mismatch in witness application.
+        -- | A witness application where the argument type does not match
+        --   the parameter type.
         | ErrorWAppMismatch
         { errorWitness          :: Witness n
         , errorParamType        :: Type n
         , errorArgType          :: Type n }
 
-        -- | Cannot apply a non-constructor witness.
+        -- | Tried to perform a witness application with a non-witness.
         | ErrorWAppNotCtor
         { errorWitness          :: Witness n
         , errorNotFunType       :: Type n
         , errorArgType          :: Type n }
 
-        -- | Cannot join witnesses.
+        -- | An invalid witness join.
         | ErrorCannotJoin
         { errorWitness          :: Witness n
         , errorWitnessLeft      :: Witness n
@@ -188,13 +199,13 @@ data Error a n
         , errorWitnessRight     :: Witness n
         , errorTypeRight        :: Type n }
 
-        -- | Witness provided for a purify does not witness purity.
+        -- | A witness provided for a purify cast that does not witness purity.
         | ErrorWitnessNotPurity
         { errorChecking         :: Exp a n
         , errorWitness          :: Witness n
         , errorType             :: Type n }
 
-        -- | Witness provided for a forget does not witness emptiness.
+        -- | A witness provided for a forget cast that does not witness emptiness.
         | ErrorWitnessNotEmpty
         { errorChecking         :: Exp a n
         , errorWitness          :: Witness n
@@ -202,60 +213,67 @@ data Error a n
 
 
         -- Case Expressions -------------------------------
-        -- | Discriminant of case expression is not algebraic data.
+        -- | A case-expression where the discriminant type is not algebraic.
         | ErrorCaseDiscrimNotAlgebraic
         { errorChecking         :: Exp a n
         , errorTypeDiscrim      :: Type n }
 
-        -- | We don't have a data type declaration for the type of the discriminant.
+        -- | A case-expression where the discriminant type is not in our set
+        --   of data type declarations.
         | ErrorCaseDiscrimTypeUndeclared
         { errorChecking         :: Exp a n 
         , errorTypeDiscrim      :: Type n }
 
-        -- | Case expression has no alternatives.
+        -- | A case-expression with no alternatives.
         | ErrorCaseNoAlternatives
         { errorChecking         :: Exp a n }
 
-        -- | Case alternatives doesn't match all constructors.
+        -- | A case-expression where the alternatives don't cover all the
+        --   possible data constructors.
         | ErrorCaseNonExhaustive
         { errorChecking         :: Exp a n
         , errorCtorNamesMissing :: [n] }
 
-        -- | Case alternatives doesn't match all constructors.
-        --   For large types where there are too many missing constructors to list.
+        -- | A case-expression where the alternatives don't cover all the
+        --   possible constructors, and the type has too many data constructors
+        --   to list.
         | ErrorCaseNonExhaustiveLarge
         { errorChecking         :: Exp a n }
 
-        -- | Case alternatives are overlapping.
+        -- | A case-expression with overlapping alternatives.
         | ErrorCaseOverlapping
         { errorChecking         :: Exp a n }
 
-        -- | Too many binders in alternative.
+        -- | A case-expression where one of the patterns has too many binders.
         | ErrorCaseTooManyBinders
         { errorChecking         :: Exp a n
         , errorCtorBound        :: Bound n
         , errorCtorFields       :: Int
         , errorPatternFields    :: Int }
 
-        -- | Cannot instantiate constructor type with type args of discriminant.
+        -- | A case-expression where the pattern types could not be instantiated
+        --   with the arguments of the discriminant type.
         | ErrorCaseCannotInstantiate
         { errorChecking         :: Exp a n
         , errorTypeCtor         :: Type n
         , errorTypeDiscrim      :: Type n }
 
-        -- | Type of discriminant does not match type of pattern.
+        -- | A case-expression where the type of the discriminant does not match
+        --   the type of the pattern.
         | ErrorCaseDiscrimTypeMismatch
         { errorChecking         :: Exp a n
         , errorTypeDiscrim      :: Type n
         , errorTypePattern      :: Type n }
 
-        -- | Annotation on pattern variable does not match field type of constructor.
+        -- | A case-expression where the annotation on a pattern variable binder
+        --   does not match the field type of the constructor.
         | ErrorCaseFieldTypeMismatch
         { errorChecking         :: Exp a n
         , errorTypeAnnot        :: Type n
         , errorTypeField        :: Type n }
 
-        -- | Result types of case expression are not identical.
+        -- | A case-expression where the result types of the alternatives are not
+        --   identical.
         | ErrorCaseAltResultMismatch
         { errorChecking         :: Exp a n
         , errorAltType1         :: Type n
@@ -263,20 +281,20 @@ data Error a n
 
 
         -- Casts ------------------------------------------
-        -- | Type provided to a 'maxeff' does not have effect kind.
+        -- | A maxeff-cast where the type provided does not have effect kind.
         | ErrorMaxeffNotEff
         { errorChecking         :: Exp a n
         , errorEffect           :: Effect n
         , errorKind             :: Kind n }
 
-        -- | Type provided to a 'maxclo' does not have effect kind.
+        -- | A maxclo-cast where the type provided does not have closure kind.
         | ErrorMaxcloNotClo
         { errorChecking         :: Exp a n
         , errorClosure          :: Closure n
         , errorKind             :: Kind n }
 
-        -- | Closure provided to a 'maxclo' is malformed.
-        --   It can only contain 'Use' terms.
+        -- | A maxclo-case where the closure provided is malformed. 
+        --   It can only contain `Use` terms.
         | ErrorMaxcloMalformed
         { errorChecking         :: Exp a n 
         , errorClosure          :: Closure n }
