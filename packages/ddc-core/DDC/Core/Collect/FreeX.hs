@@ -1,5 +1,5 @@
-
--- | Collect the free value and witness variables in a core expression.
+{-# OPTIONS_HADDOCK hide #-}
+-- | Collect the free value and witness variables in thing.
 module DDC.Core.Collect.FreeX
         (FreeX(..))
 where
@@ -13,16 +13,15 @@ import qualified Data.Set               as Set
 
 class FreeX n a where
 
- -- | Determine the set of value and witness variables not bound in 
- --   the given environment.
+ -- | Collect the free value and witness variables in a thing.
  freeX  :: Ord n 
         => Env n        -- ^ Type environment.
-        -> a            -- ^ Determine free variables in this thing.
+        -> a            -- ^ The thing.
         -> Set (Bound n)
 
 
--- | Add value or witness variables to the set if they are not in the 
---   environment. Use freeT for type variables.
+-- Add value or witness variables to the set if they are not in the 
+-- environment. Use freeT for type variables.
 instance FreeX n (Bound n) where
  freeX tenv u
   | Env.member u tenv   = Set.empty

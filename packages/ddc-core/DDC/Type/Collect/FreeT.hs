@@ -13,8 +13,11 @@ import qualified Data.Set               as Set
 
 
 class FreeT n a where
- -- | Determine the set of type variables not bound in the given environment.
- freeT :: Ord n => Env n -> a -> Set (Bound n)
+ -- | Collect the free type variables in a thing.
+ freeT  :: Ord n 
+        => Env n        -- ^ Kind environment.
+        -> a            -- ^ The thing.
+        -> Set (Bound n)
 
 
 instance FreeT n (Bind n) where
@@ -22,8 +25,8 @@ instance FreeT n (Bind n) where
         = freeT env (typeOfBind b)
 
 
--- | Add type variables to the set if they are not in the environment.
---   Use freeX for value or witness variables.
+-- Add type variables to the set if they are not in the environment.
+-- Use freeX for value or witness variables.
 instance FreeT n (Bound n) where
  freeT env u
   | Env.member u env    = Set.empty

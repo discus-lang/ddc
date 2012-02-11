@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | Gather all bound names in a thing,
 --   independent of whether they are locally bound or not.
 module DDC.Core.Collect.GatherBound

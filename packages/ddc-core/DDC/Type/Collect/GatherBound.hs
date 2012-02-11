@@ -11,7 +11,7 @@ import qualified Data.Set               as Set
 
 class GatherBound n a where
  -- | Gather all bound names used in a thing,
- --   indpendent of whether they are locally bound or not.
+ --   indpendent of whether they are free or not.
  gatherBound :: Ord n => a -> Set (Bound n)
  
 

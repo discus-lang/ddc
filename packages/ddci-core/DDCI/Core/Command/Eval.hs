@@ -15,7 +15,9 @@ import DDC.Type.Equiv
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
-import DDC.Core.Collect
+import DDC.Core.Collect.FreeT
+import DDC.Core.Collect.FreeX
+import DDC.Core.Collect.GatherBound
 import Control.Monad
 import DDCI.Core.Eval.Store             (Store)
 import qualified DDCI.Core.Eval.Store   as Store

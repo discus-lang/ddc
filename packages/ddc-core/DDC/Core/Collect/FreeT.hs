@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | Collect the free type variables in a core expression.
 module DDC.Core.Collect.FreeT
         (FreeT(..))

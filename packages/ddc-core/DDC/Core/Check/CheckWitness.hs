@@ -1,5 +1,5 @@
 
--- | Type checker for the DDC core language.
+-- | Type checker for witness expressions.
 module DDC.Core.Check.CheckWitness
         ( checkWitness
         , typeOfWitness

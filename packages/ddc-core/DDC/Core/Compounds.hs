@@ -9,8 +9,8 @@ module DDC.Core.Compounds
         , bindsOfPat
 
           -- * Lambdas
-        , makeXLAMs, makeXLams
-        , takeXLAMs, takeXLams
+        , makeXLAMs, takeXLAMs
+        , makeXLams, takeXLams
         , takeXLamFlags
         , makeXLamFlags
 
@@ -27,7 +27,7 @@ import DDC.Type.Compounds
 import DDC.Core.Exp
 
 
--- | Take the binds of a `Lets`
+-- | Take the binds of a `Lets`.
 bindsOfLets :: Lets a n -> [Bind n]
 bindsOfLets ll
  = case ll of
@@ -57,7 +57,7 @@ valwitBindsOfLets ll
         LWithRegion{}    -> []
 
 
--- | Take the binds of a `Pat`
+-- | Take the binds of a `Pat`.
 bindsOfPat :: Pat n -> [Bind n]
 bindsOfPat pp
  = case pp of
@@ -66,14 +66,14 @@ bindsOfPat pp
 
 
 -- Lambdas ---------------------------------------------------------------------
--- | Make some nested lambda abstractions.
+-- | Make some nested type lambda abstractions.
 makeXLAMs :: a -> [Bind n] -> Exp a n -> Exp a n
 makeXLAMs a bs x
         = foldr (XLAM a) x (reverse bs)
 
 
--- | Split nested value and witness lambdas from the front of an expression
---   or `Nothing` if there was no outer lambda
+-- | Split nested value and witness lambdas from the front of an expression,
+--   or `Nothing` if there aren't any.
 takeXLAMs :: Exp a n -> Maybe ([Bind n], Exp a n)
 takeXLAMs xx
  = let  go bs (XLAM _ b x) = go (b:bs) x
@@ -83,14 +83,14 @@ takeXLAMs xx
          (bs, body)     -> Just (bs, body)
 
 
--- | Make some nested lambda abstractions.
+-- | Make some nested value or witness lambda abstractions.
 makeXLams :: a -> [Bind n] -> Exp a n -> Exp a n
 makeXLams a bs x
         = foldr (XLam a) x (reverse bs)
 
 
--- | Split nested spec lambdas from the front of an expression
---   or `Nothing` if there was no outer lambda
+-- | Split nested value or witness lambdas from the front of an expression,
+--   or `Nothing` if there aren't any.
 takeXLams :: Exp a n -> Maybe ([Bind n], Exp a n)
 takeXLams xx
  = let  go bs (XLam _ b x) = go (b:bs) x
@@ -138,7 +138,7 @@ takeXApps xx
         _               -> [xx]
 
 
--- | Flatten an application of a primitive variable into the variable
+-- | Flatten an application of a primop into the variable
 --   and its arguments.
 --   
 --   Returns `Nothing` if the expression isn't a primop application.
