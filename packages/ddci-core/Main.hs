@@ -32,6 +32,7 @@ data Command
         | CommandHelp
         | CommandSet
         | CommandKind
+        | CommandEquivType
         | CommandWitType
         | CommandExpCheck
         | CommandExpRecon
@@ -52,6 +53,7 @@ commands
         , (":?",        CommandHelp)
         , (":set",      CommandSet)
         , (":kind",     CommandKind)
+        , (":tequiv",   CommandEquivType)
         , (":wtype",    CommandWitType)
         , (":check",    CommandExpCheck)
         , (":recon",    CommandExpRecon)
@@ -294,6 +296,10 @@ handleCmd1 state cmd lineStart line
 
         CommandKind       
          -> do  cmdShowKind state lineStart line
+                return state
+
+        CommandEquivType
+         -> do  cmdTypeEquiv state lineStart line
                 return state
 
         CommandWitType    
