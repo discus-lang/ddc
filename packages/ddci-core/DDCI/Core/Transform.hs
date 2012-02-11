@@ -9,7 +9,6 @@ import DDC.Core.Exp
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.ANormal
 import DDC.Core.Transform.Beta
-import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Name
 
 
