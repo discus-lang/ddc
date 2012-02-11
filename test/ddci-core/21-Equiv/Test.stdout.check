@@ -1,4 +1,3 @@
-
 -- Constructors are equivalent
 True
 
@@ -23,6 +22,32 @@ True
 True
 
 
+-- Alpha equiv of type constructor.
+True
+
+
+-- Alpha equiv of higher kinded constructors in a sum.
+True
+
+
+-- Alpha equiv of higher kinded constructors in a sum.
+True
+
+
+-- Alpha equiv of higher kinded constructors in a sum.
+True
+
+
+-- Alpha equiv of higher kinded constructors in a sum.
+-- This equivalence relies on the slow sum equivalence check as the components
+-- have different names and are also in a different porder.
+True
+
+
+-- False: constructors are different
+False
+
+
 -- False: Different effects
 False
 
@@ -37,3 +62,12 @@ False
 
 -- False: binders have same kind but they are in different positions.
 False
+
+
+-- False: effect args don't match.
+False
+
+
+-- False: Effect components don't match.
+False
+

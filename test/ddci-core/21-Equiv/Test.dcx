@@ -1,4 +1,3 @@
-
 -- Constructors are equivalent
 :tequiv Int Int
 
@@ -33,6 +32,48 @@
 (Read R0#);;
 
 
+-- Alpha equiv of type constructor.
+:tequiv..
+([c1 : % ~> *]. [r : %]. c1 r)
+([c2 : % ~> *]. [r : %]. c2 r);;
+
+
+-- Alpha equiv of higher kinded constructors in a sum.
+:tequiv..
+([c1 : % ~> !]. [r : %]. Int r -(c1 r | $0)> Int r)
+([c2 : % ~> !]. [r : %]. Int r -(c2 r | $0)> Int r);;
+
+
+-- Alpha equiv of higher kinded constructors in a sum.
+:tequiv..
+([c1 : % ~> !]. [c2 : * ~> !]. [r : %]. [a : *].
+ Int r -(c1 r | $0)> Int r)
+([c2 : % ~> !]. [c1 : * ~> !]. [r : %]. [a : *].
+ Int r -(c2 r | $0)> Int r);;
+
+
+-- Alpha equiv of higher kinded constructors in a sum.
+:tequiv..
+([c1 : % ~> !]. [c2 : * ~> !]. [r : %]. [a : *].
+ Int r -(c1 r + c2 a | $0)> Int r)
+([c2 : % ~> !]. [c1 : * ~> !]. [r : %]. [a : *].
+ Int r -(c2 r + c1 a | $0)> Int r);;
+
+
+-- Alpha equiv of higher kinded constructors in a sum.
+-- This equivalence relies on the slow sum equivalence check as the components
+-- have different names and are also in a different porder.
+:tequiv..
+([c1 : % ~> !]. [c2 : * ~> !]. [r : %]. [a : *].
+ Int r -(c1 r + c2 a | $0)> Int r)
+([c2 : % ~> !]. [c1 : * ~> !]. [r : %]. [a : *].
+ Int r -(c1 a + c2 r | $0)> Int r);;
+
+
+-- False: constructors are different
+:tequiv Int Unit
+
+
 -- False: Different effects
 :tequiv..
 (Read R0#)
@@ -55,3 +96,16 @@
 :tequiv..
 ([r : %]. [a b : *]. List r (List r a))
 ([r : %]. [a b : *]. List r (List r b));;
+
+
+-- False: effect args don't match.
+:tequiv..
+([c1 : % ~> !]. [r : %]. Int r -(c1 r | $0)> Int r)
+([c2 : % ~> !]. [r : %]. Int r -(!0   | $0)> Int r);;
+
+
+-- False: Effect components don't match.
+:tequiv..
+([c1 : % ~> !]. [r : %]. Int r -(c1 r | $0)> Int r)
+([c2 : % ~> !]. [r : %]. Int r -(!0   | $0)> Int r);;
+
