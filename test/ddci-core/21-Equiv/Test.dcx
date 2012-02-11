@@ -49,3 +49,9 @@
 :tequiv..
 ([a : %]. Unit)
 ([a : *]. Unit);;
+
+
+-- False: binders have same kind but they are in different positions.
+:tequiv..
+([r : %]. [a b : *]. List r (List r a))
+([r : %]. [a b : *]. List r (List r b));;

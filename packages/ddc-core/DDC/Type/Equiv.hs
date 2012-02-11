@@ -40,12 +40,13 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
          -- Bound variables are name-equivalent.
          | u1 == u2     -> True
 
-         -- Variables aren't name equivalent, but they might be equivalent
-         -- if we renamed them. See if the binding occurrence has the same type.
+         -- Variables aren't name equivalent, 
+         -- but would be equivalent if we renamed them.
          | depth1 == depth2
-         , Just t1a      <- getBindType stack1 u1               -- TODO: this is wrong.
-         , Just t2a      <- getBindType stack2 u2               --  [a a b:*]. T3 a a b  is different from [a b b:*]. T3 a b b
-         -> equivT' stack1 depth1 stack2 depth2 t1a t2a         --  both vars need to point to the same place in their stacks.
+         , Just (ix1, t1a)   <- getBindType stack1 u1
+         , Just (ix2, t2a)   <- getBindType stack2 u2
+         , ix1 == ix2
+         -> equivT' stack1 depth1 stack2 depth2 t1a t2a
 
         -- Constructor names must be equal.
         (TCon tc1,        TCon tc2)
@@ -110,20 +111,27 @@ crushSome tt
 -- | Lookup the type of a bound thing from the binder stack.
 --   The binder stack contains the binders of all the `TForall`s we've
 --   entered under so far.
-getBindType :: Eq n => [Bind n] -> Bound n -> Maybe (Type n)
-getBindType (BName n1 t : bs) uu@(UName n2 _)
-        | n1 == n2      = Just t
-        | otherwise     = getBindType bs uu
+getBindType :: Eq n => [Bind n] -> Bound n -> Maybe (Int, Type n)
+getBindType bs' u
+ = go 0 bs'
+ where  go n (BName n1 t : bs)
+         | UName n2 _   <- u
+         , n1 == n2     = Just (n, t)
+         | otherwise    = go (n + 1) bs
 
-getBindType (BAnon t : bs)   uu@(UIx i _)
-        | i == 0        = Just t
-        | i <  0        = Nothing
-        | otherwise     = getBindType bs uu
 
-getBindType (_ : bs)         uu@(UIx i _)
-        | i == 0        = Nothing
-        | otherwise     = getBindType bs uu
+        go n (BAnon t   : bs)
+         | UIx i _      <- u
+         , i == 0       = Just (n, t)
 
-getBindType _ _
-        = Nothing
+         | UIx i _      <- u
+         , i < 0        = Nothing
+
+         | otherwise    = go (n + 1) bs
+
+
+        go n (BNone _   : bs)
+         = go (n + 1) bs
+
+        go _ []         = Nothing
 

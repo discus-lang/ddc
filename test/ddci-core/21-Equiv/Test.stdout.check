@@ -33,3 +33,7 @@ False
 
 -- False: binders have differing kinds.
 False
+
+
+-- False: binders have same kind but they are in different positions.
+False

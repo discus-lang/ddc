@@ -28,7 +28,7 @@ import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Sum           as TS
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check.Monad   as G
--- import Debug.Trace
+
 
 -- | The type checker monad.
 type CheckM n   = G.CheckM (Error n)
