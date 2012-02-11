@@ -4,11 +4,11 @@
 module DDC.Type.Transform.Trim 
         (trimClosure)
 where
+import DDC.Core.Collect.BindTree
 import DDC.Type.Check.CheckCon
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Collect.FreeT
 import Control.Monad
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
@@ -32,7 +32,7 @@ trimClosure cc
 -- | Trim a closure down to a closure sum.
 --   May return 'Nothing' if the closure is mis-kinded.
 trimToSumC 
-        :: forall n. (FreeT n (TypeSum n), Ord n)
+        :: forall n. Ord n
         => Closure n -> Maybe (TypeSum n)
 
 trimToSumC cc
@@ -71,7 +71,7 @@ trimToSumC cc
 -- | Trim the argument of a DeepUsed constructor down to a closure sum.
 --   The argument is of data kind.
 trimDeepUsedD 
-        :: forall n. (FreeT n (TypeSum n), Ord n)
+        :: forall n. Ord n
         => Type n -> TypeSum n
 
 trimDeepUsedD tt

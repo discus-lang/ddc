@@ -12,7 +12,7 @@ import DDC.Core.Predicates
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Pretty
-import DDC.Type.Collect.FreeT
+import DDC.Core.Collect.BindTree
 import DDC.Core.Check.Error
 import DDC.Core.Check.CheckWitness
 import DDC.Core.Check.TaggedClosure

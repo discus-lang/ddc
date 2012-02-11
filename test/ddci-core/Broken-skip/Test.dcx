@@ -1,0 +1,6 @@
+
+-- Rewrite outer type binder to avoid shadow conflict on type lambda.
+:trans..
+(\(f : [a : *]. Unit -> Unit). /\(a : *). f [a] ())
+        (/\(a : *). \(_ : Unit). ());;
+

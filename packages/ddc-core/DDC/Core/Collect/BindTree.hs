@@ -2,38 +2,66 @@
 -- | Gather all bound names in a thing,
 --   independent of whether they are locally bound or not.
 module DDC.Core.Collect.BindTree
-        ( gatherBound
-        , boundLevelOfBindWay)
+        ( freeT
+        , freeX
+        , gatherBound)
 where
 import DDC.Type.Compounds
 import DDC.Core.Exp
+import DDC.Type.Env                     (Env)
+import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.Set               as Set
 import Data.Set                         (Set)
 
-data BindTree n
-        = BindDef BindWay    [Bind n] [BindTree n]
-        | BindUse BoundLevel (Bound n)
-        | BindCon BoundLevel (Bound n)
-        deriving (Eq, Show)
 
-data BindWay
-        = BindForall
-        | BindLAM
-        | BindLam
-        | BindLet
-        | BindLetRec
-        | BindLetRegion
-        | BindLetRegionWith
-        | BindCasePat
-        deriving (Eq, Show)
+-- freeT ----------------------------------------------------------------------
+freeT   :: (BindStruct c, Ord n) 
+        => Env n -> c n -> Set (Bound n)
+freeT tenv xx = Set.unions $ map (freeOfTreeT tenv) $ slurpBindTree xx
 
-data BoundLevel
-        = BoundSpec
-        | BoundExpWit
-        deriving (Eq, Show)
+freeOfTreeT :: Ord n => Env n -> BindTree n -> Set (Bound n)
+freeOfTreeT kenv tt
+ = case tt of
+        BindDef way bs ts
+         |  BoundSpec   <- boundLevelOfBindWay way
+         ,  kenv'       <- Env.extends bs kenv
+         -> Set.unions $ map (freeOfTreeT kenv') ts
+
+        BindDef _ _ ts
+         -> Set.unions $ map (freeOfTreeT kenv) ts
+
+        BindUse BoundSpec u
+         | Env.member u kenv -> Set.empty
+         | otherwise         -> Set.singleton u
+        _                    -> Set.empty
 
 
+-- freeX ----------------------------------------------------------------------
+freeX   :: (BindStruct c, Ord n) 
+        => Env n -> c n -> Set (Bound n)
+freeX tenv xx = Set.unions $ map (freeOfTreeX tenv) $ slurpBindTree xx
+
+freeOfTreeX :: Ord n => Env n -> BindTree n -> Set (Bound n)
+freeOfTreeX tenv tt
+ = case tt of
+        BindDef way bs ts
+         |  BoundExpWit <- boundLevelOfBindWay way
+         ,  tenv'       <- Env.extends bs tenv
+         -> Set.unions $ map (freeOfTreeX tenv') ts
+
+        BindDef _ _ ts
+         -> Set.unions $ map (freeOfTreeX  tenv) ts
+
+        BindUse BoundExpWit u
+         | Env.member u tenv -> Set.empty
+         | otherwise         -> Set.singleton u
+        _                    -> Set.empty
+
+
+-- gatherBound ----------------------------------------------------------------
+-- | Gather all the bound variables in a thing, 
+--   independent of whether they are free or not.
 gatherBound :: (BindStruct c, Ord n) => c n -> Set (Bound n)
 gatherBound = Set.unions . map boundsOfTree . slurpBindTree 
 
@@ -45,6 +73,39 @@ boundsOfTree tt
         BindUse _ u     -> Set.singleton u
         BindCon _ u     -> Set.singleton u
 
+
+-------------------------------------------------------------------------------
+-- | A description of the binding structure of some type or expression.
+data BindTree n
+        -- | An abstract binding expression.
+        = BindDef BindWay    [Bind n] [BindTree n]
+
+        -- | Use of a variable.
+        | BindUse BoundLevel (Bound n)
+
+        -- | Use of a constructor.
+        | BindCon BoundLevel (Bound n)
+        deriving (Eq, Show)
+
+
+-- | Describes how a variable was bound.
+data BindWay
+        = BindForall
+        | BindLAM
+        | BindLam
+        | BindLet
+        | BindLetRec
+        | BindLetRegion
+        | BindLetRegionWith
+        | BindCasePat
+        deriving (Eq, Show)
+
+
+-- | What level this binder is at.
+data BoundLevel
+        = BoundSpec
+        | BoundExpWit
+        deriving (Eq, Show)
 
 
 -- | Get the `BoundLevel` corresponding to a `BindWay`.
