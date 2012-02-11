@@ -13,13 +13,14 @@ import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Name
+import DDCI.Core.IO
 import DDC.Base.Pretty
 
 
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Int -> String -> IO ()
 cmdTrans state lineStart str
- = cmdParseCheckExp lineStart str >>= goStore
+ = cmdParseCheckExp state lineStart str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -30,7 +31,8 @@ cmdTrans state lineStart str
          = do   tr <- applyTrans state (x, t1, eff1, clo1)
 		case tr of
 		  Nothing -> return ()
-		  Just x' -> putStrLn (pretty $ ppr x')
+		  Just x' -> outDocLn state $ ppr x'
+
 
 -- | Transform an expression, or display errors
 applyTrans :: State -> (Exp () Name, Type Name, Effect Name, Closure Name) -> IO (Maybe (Exp () Name))
@@ -44,7 +46,7 @@ applyTrans state (x, t1, _eff1, _clo1)
 	   -> do return (Just x')
 
 	   | otherwise
-	   -> do putStrLn $ pretty $ vcat
+	   -> do outDocLn state $ vcat
 		    [ text "* CRASH AND BURN: Transform is not type preserving."
 		    , ppr x'
 		    , text "::"  <+> ppr t2
@@ -53,20 +55,20 @@ applyTrans state (x, t1, _eff1, _clo1)
 		 return Nothing
 
 	  Left err
-	   -> do putStrLn $ pretty $ vcat
+	   -> do outDocLn state $ vcat
 		    [ text "* CRASH AND BURN: Type error in transformed program."
 		    , ppr err
-		    , text ""]
+		    , text "" ]
 
-		 putStrLn "Transformed expression:"
-		 
-		 putStrLn (pretty $ ppr x')
+		 outDocLn state $ text "Transformed expression:"
+		 outDocLn state $ ppr x'
 		 return Nothing
+
 
 -- | Apply the current transform to an expression, then evaluate and display the result
 cmdTransEval :: State -> Int -> String -> IO ()
 cmdTransEval state lineStart str
- = cmdParseCheckExp lineStart str >>= goStore
+ = cmdParseCheckExp state lineStart str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -78,7 +80,7 @@ cmdTransEval state lineStart str
 		case tr of
 		  Nothing -> return ()
 		  Just x'
-		   -> do putStrLn (pretty $ ppr x')
+		   -> do outDocLn state $ ppr x'
 			 evalExp state (x',t1,eff1,clo1)
                          return ()
 

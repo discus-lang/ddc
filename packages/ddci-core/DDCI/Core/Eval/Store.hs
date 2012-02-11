@@ -54,7 +54,8 @@ data Store
           -- | Map of locations to store bindings,
           --   and the handles for the regions they're in.
         , storeBinds            :: Map Loc (Rgn, Type Name, SBind) }
-
+        deriving Show
+        
 
 -- | Store binding.
 --   These are "naked objects" that can be allocated directly into the heap.
@@ -99,19 +100,19 @@ instance Pretty Store where
 
 instance Pretty SBind where
  ppr (SObj tag [])
-  = text "OBJ"  <+> ppr tag
+  = text "OBJ"   <+> ppr tag
 
  ppr (SObj tag svs)    
-  = text "OBJ"  <+> ppr tag
-                <+> (sep $ map ppr svs)
+  = text "OBJ"   <+> ppr tag
+                 <+> (sep $ map ppr svs)
  
  ppr (SLams fbs x)    
-  = text "LAMS" <+> sep (map (parens . ppr) fbs)
-                <>  text "."
-                <>  ppr x
+  = text "LAMS"  <+> sep (map (parens . ppr) fbs)
+                 <>  text "."
+                 <>  text (renderPlain $ ppr x)
 
  ppr (SThunk x)
-  = text "THUNK" <+> ppr x
+  = text "THUNK" <+> text (renderPlain $ ppr x)
  
 
 -- Constructors ---------------------------------------------------------------

@@ -225,9 +225,9 @@ describeTokAtom' ta
         KIndex i                -> (Index,   "^" ++ show i)
 
         -- builtin names
-        KTwConBuiltin tw        -> (Constructor, pretty $ ppr tw)
-        KWiConBuiltin wi        -> (Constructor, pretty $ ppr wi)
-        KTcConBuiltin tc        -> (Constructor, pretty $ ppr tc)
+        KTwConBuiltin tw        -> (Constructor, renderPlain $ ppr tw)
+        KWiConBuiltin wi        -> (Constructor, renderPlain $ ppr wi)
+        KTcConBuiltin tc        -> (Constructor, renderPlain $ ppr tc)
 
 
 -- TokNamed -------------------------------------------------------------------
@@ -242,9 +242,9 @@ data TokNamed n
 describeTokNamed :: Pretty n => TokNamed n -> String
 describeTokNamed tn
  = case tn of
-        KCon n  -> pretty $ text "constructor" <+> (dquotes $ ppr n)
-        KVar n  -> pretty $ text "variable"    <+> (dquotes $ ppr n)
-        KLit n  -> pretty $ text "literal"     <+> (dquotes $ ppr n)
+        KCon n  -> renderPlain $ text "constructor" <+> (dquotes $ ppr n)
+        KVar n  -> renderPlain $ text "variable"    <+> (dquotes $ ppr n)
+        KLit n  -> renderPlain $ text "literal"     <+> (dquotes $ ppr n)
 
 
 -- | Apply a function to all the names in a `TokNamed`.

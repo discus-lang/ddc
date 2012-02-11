@@ -10,15 +10,15 @@ ok
 
 
 -- Avoid capture of type var by type lambda in value subst.
-/\(a : *).let f : [b : *].Unit = /\(b : *).() in /\(^ : *).f [a]
+/\(a : *). let f : [b : *].Unit = /\(b : *). () in /\(^ : *). f [a]
 
 
 -- Avoid capture of value var by value lambda in value subst.
-let x : Unit = () in \(^ : Unit).x
+let x : Unit = () in \(^ : Unit). x
 
 
 -- Don't substitute past binder with the same name.
-let u : Unit = () in \(x : Unit).x
+let u : Unit = () in \(x : Unit). x
 
 
 -- Avoid capture of value var by let binding in value subst.
@@ -30,11 +30,11 @@ let u : Unit = () in let x : Int R0# = 2 [R0#] u in addInt [R0#] [R0#] [R0#] x (
 
 
 -- Avoid capture of value var by letrec binding in value subst.
-let x : Unit = () in letrec {^ : Int R0# -> Int R0# = \(z : Int R0#).z} in addInt [R0#] [R0#] [R0#] (^0 (2 [R0#] x)) (3 [R0#] x)
+let x : Unit = () in letrec { ^ : Int R0# -> Int R0# = \(z : Int R0#). z } in addInt [R0#] [R0#] [R0#] (^0 (2 [R0#] x)) (3 [R0#] x)
 
 
 -- Avoid capture of value var by match bining in value subst.
-let x : Unit = () in case Nil [R0#] [Int R0#] () of {Nil  -> 0 [R0#] (); Cons (^ : Int R0#) (xs : List R0# (Int R0#)) -> addInt [R0#] [R0#] [R0#] (3 [R0#] x) ^0}
+let x : Unit = () in case Nil [R0#] [Int R0#] () of { Nil -> 0 [R0#] (); Cons (^ : Int R0#) (xs : List R0# (Int R0#)) -> addInt [R0#] [R0#] [R0#] (3 [R0#] x) ^0 }
 
 
 -- Should be ok.
@@ -50,12 +50,9 @@ letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () 
 
 
 -- Don't substitute past binder with same name.
-\(x : Int R1#)./\(r : %).\(_ : Unit).2 [r] ()
+\(x : Int R1#). /\(r : %). \(_ : Unit). 2 [r] ()
 
 
 -- Don't substitute past binder with same name.
-(\(x : Int R1#)./\(r : %).\(_ : Unit).2 [r] ()) (5 [R1#] ()) [R2#]
-
-
-
+(\(x : Int R1#). /\(r : %). \(_ : Unit). 2 [r] ()) (5 [R1#] ()) [R2#]
 

@@ -9,6 +9,7 @@ import DDCI.Core.Eval.Env
 import DDCI.Core.Eval.Step
 import DDCI.Core.Eval.Name
 import DDCI.Core.Command.Check
+import DDCI.Core.IO
 import DDCI.Core.State
 import DDC.Type.Equiv
 import DDC.Core.Check
@@ -24,7 +25,7 @@ import qualified Data.Set               as Set
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: State -> Int -> String -> IO ()
 cmdStep state lineStart str
- = cmdParseCheckExp lineStart str >>= goStore 
+ = cmdParseCheckExp state lineStart str >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -45,17 +46,19 @@ cmdStep state lineStart str
 -- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Int -> String -> IO ()
 cmdEval state lineStart str
- = cmdParseCheckExp lineStart str >>= goEval
+ = cmdParseCheckExp state lineStart str >>= goEval
  where
     -- Expression had a parse or type error.
     goEval Nothing
      =	return ()
+
     -- Expression is well-typed.
     goEval (Just expr)
      =	evalExp state expr
 
+
 -- | Evaluate an already parsed and type-checked expression.
--- Exported so transforms can test with it.
+--   Exported so transforms can test with it.
 evalExp :: State -> (Exp () Name, Type Name, Effect Name, Closure Name) -> IO ()
 evalExp state (x, tX, effX, cloX)
  = do   -- Create the initial store.
@@ -63,14 +66,15 @@ evalExp state (x, tX, effX, cloX)
 
 	-- Print starting expression.
 	when (Set.member TraceEval  $ stateModes state)
-	 $ putStrLn $ pretty (text "* STEP: " <> ppr x)
+	 $ outDocLn state (text "* STEP: " <> ppr x)
 
 	-- Print starting store.
 	when (Set.member TraceStore $ stateModes state)
-	 $ do   putStrLn $ pretty (ppr store) 
-		putStr "\n"
+	 $ do   putStrLn $ renderIndent $ ppr store
+		outStr   state "\n"
 
 	goStep store x
+
     where
 	goStep store x0
 	 = do
@@ -124,28 +128,29 @@ stepPrint state store x tX _effX _cloX
               -> do 
                     -- Print intermediate expression.
                     when (Set.member TraceEval  $ stateModes state)
-                     $ putStrLn $ pretty (text "* STEP: " <> ppr x')
+                     $ do outDocLn state $ text "* STEP: " <> ppr x'
 
                     -- Print intermediate store
                     when (Set.member TraceStore $ stateModes state)
-                     $ do putStrLn $ pretty (ppr store')
-                          putStr "\n"
+                     $ do putStrLn $ renderIndent $ ppr store'
+                          outStr   state "\n"
                 
-                    putStr $ pretty $ vcat
-                        [ text "* OFF THE RAILS!"
-                        , ppr err
-                        , empty]
+                    outDocLn state 
+                     $ vcat [ text "* OFF THE RAILS!"
+                            , ppr err
+                            , empty ]
+
                     return $ Nothing
                       
              Right (_, tX', _effX', _cloX')
               -> do 
                     -- Print intermediate expression.
                     when (Set.member TraceEval  $ stateModes state)
-                     $ putStrLn $ pretty (text "* STEP: " <> ppr x')
+                     $ do outDocLn state $ text "* STEP: " <> ppr x'
 
                     -- Print intermediate store
                     when (Set.member TraceStore $ stateModes state)
-                     $ do putStrLn $ pretty (ppr store')
+                     $ do putStrLn $ renderIndent $ ppr store'
                           putStr "\n"
                 
                     -- Check expression has the same type as before.
@@ -154,8 +159,8 @@ stepPrint state store x tX _effX _cloX
                     let death  = deathT
 
                     when deathT
-                     $ putStr $ pretty $ vcat
-                            [ text "* OFF THE RAILS!"
+                     $ outDocLn state 
+                     $ vcat [ text "* OFF THE RAILS!"
                             , ppr tX
                             , ppr tX' ]
                 
@@ -165,28 +170,28 @@ stepPrint state store x tX _effX _cloX
     
         StepDone
          -> do  -- Load the final expression back from the store to display.
-                putStrLn $ pretty $ ppr $ traceStore store x
+                outDocLn state $ ppr $ traceStore store x
                 return Nothing
         
         StepStuck
-         -> do  putStr $ pretty $ vcat
-                 [ text "* STUCK!"
-                 , empty]
+         -> do  outDocLn state 
+                 $ vcat [ text "* STUCK!"
+                        , empty]
 
                 return Nothing
 
         StepStuckLetrecBindsNotLam
-         -> do  putStr $ pretty $ vcat
-                 [ text "* STUCK!"
-                 , empty]
+         -> do  outDocLn state 
+                 $ vcat [ text "* STUCK!"
+                        , empty]
                 
                 return Nothing
 
         StepStuckMistyped err
-         -> do  putStr $ pretty $ vcat
-                 [ ppr "* OFF THE RAILS!"
-                 , ppr err
-                 , empty]
+         -> do  outDocLn state 
+                 $ vcat [ ppr "* OFF THE RAILS!"
+                        , ppr err
+                        , empty]
 
                 return Nothing
 

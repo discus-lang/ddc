@@ -6,6 +6,7 @@ module DDC.Core.Pretty
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
+import DDC.Core.Predicates
 import DDC.Type.Pretty
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -18,7 +19,7 @@ import DDC.Base.Pretty
 pprBinderSep   :: Pretty n => Binder n -> Doc
 pprBinderSep bb
  = case bb of
-        RName v         -> ppr v <> text " "
+        RName v         -> ppr v
         RAnon           -> text "^"
         RNone           -> text "_"
 
@@ -26,11 +27,11 @@ pprBinderSep bb
 -- | Print a group of binders with the same type.
 pprLamBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc                            -- TODO: refactor into below
 pprLamBinderGroup (rs, t)
-        = text "\\"  <> parens ((cat $ map pprBinderSep rs) <> text ":"  <> ppr t) <> dot
+        = text "\\"  <> parens ((cat $ map pprBinderSep rs) <+> text ":" <+> ppr t) <> dot
 
 pprLAMBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
 pprLAMBinderGroup (rs, t)
-        = text "/\\" <> parens ((cat $ map pprBinderSep rs) <> text ":"  <> ppr t) <> dot
+        = text "/\\" <> parens ((cat $ map pprBinderSep rs) <+> text ":" <+> ppr t) <> dot
 
 
 -- Exp ------------------------------------------------------------------------
@@ -40,46 +41,50 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XVar  _ u       -> ppr u
         XCon  _ tc      -> ppr tc
         
-        XLAM _ b x      
-         | Just (bsMore, xBody) <- takeXLAMs x
-         -> let groups = partitionBindsByType (b:bsMore)
-            in  pprParen (d > 1)
-                 $ (cat $ map pprLAMBinderGroup groups) <> ppr xBody
+        XLAM{}
+         -> let Just (bs, xBody) = takeXLAMs xx
+                groups = partitionBindsByType bs
+            in  pprParen' (d > 1)
+                 $  (cat $ map pprLAMBinderGroup groups) 
+                 <>  (if      isXLAM    xBody then empty
+                      else if isXLam    xBody then line <> space
+                      else if isSimpleX xBody then space
+                      else    line)
+                 <>  ppr xBody
 
-         | otherwise 
-         -> pprParen (d > 1) 
-              $ text "/\\" <> parens (ppr b) <> text "." <> ppr x
-
-        XLam _ b x      
-         | Just (bsMore, xBody) <- takeXLams x
-         -> let groups = partitionBindsByType (b:bsMore)
-            in  pprParen (d > 1)
-                 $ (cat $ map pprLamBinderGroup groups) <>  ppr xBody
-
-         | otherwise 
-         -> pprParen (d > 1) 
-              $ text "\\" <> parens (ppr b) <> text "." <> ppr x
+        XLam{}
+         -> let Just (bs, xBody) = takeXLams xx
+                groups = partitionBindsByType bs
+            in  pprParen' (d > 1)
+                 $  (cat $ map pprLamBinderGroup groups) 
+                 <> breakWhen (not $ isSimpleX xBody)
+                 <> ppr xBody
 
         XApp _ x1 x2
-         -> pprParen (d > 10)
-         $  pprPrec 10 x1 <+> pprPrec 11 x2
+         -> pprParen' (d > 10)
+         $  pprPrec 10 x1 
+                <> nest 4 (breakWhen (not $ isSimpleX x2) 
+                           <> pprPrec 11 x2)
 
         XLet _ lts x
-         -> pprParen (d > 2)
-         $  ppr lts <+> text "in" <+> ppr x
+         -> pprParen' (d > 2)
+         $   ppr lts <+> text "in"
+         <$> ppr x
 
         XCase _ x alts
-         -> pprParen (d > 2) 
-         $  text "case" <+> ppr x <+> text "of"
-                <+> braces (sep $ punctuate semi $ map ppr alts)
+         -> pprParen' (d > 2) 
+         $  (nest 2 $ text "case" <+> ppr x <+> text "of" <+> lbrace <> line
+                <> (vcat $ punctuate semi $ map ppr alts))
+         <> line 
+         <> rbrace
 
         XCast _ cc x
-         -> pprParen (d > 10)
-         $  ppr cc <+> text "in" <+> pprPrec 10 x
+         -> pprParen' (d > 10)
+         $  ppr cc <+> text "in" <> line
+         <> pprPrec 10 x
 
         XType    t      -> text "[" <> ppr t <> text "]"
         XWitness w      -> text "<" <> ppr w <> text ">"
-
 
 
 -- Pat ------------------------------------------------------------------------
@@ -100,7 +105,8 @@ pprPatBind b
 
 -- Alt ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
- ppr (AAlt p x)         = ppr p <+> text "->" <+> ppr x
+ ppr (AAlt p x)
+  = ppr p <+> nest 1 (line <> nest 3 (text "->" <+> ppr x))
 
 
 -- Cast -----------------------------------------------------------------------
@@ -114,10 +120,10 @@ instance (Pretty n, Eq n) => Pretty (Cast n) where
          -> text "weakclo" <+> brackets (ppr clo)
 
         CastPurify w
-         -> text "purify"  <+> text "<" <> ppr w <> text ">"
+         -> text "purify"  <+> angles   (ppr w)
 
         CastForget w
-         -> text "forget"  <+> text "<" <> ppr w <> text ">"
+         -> text "forget"  <+> angles   (ppr w)
 
 
 -- Lets -----------------------------------------------------------------------
@@ -125,29 +131,28 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
  ppr lts
   = case lts of
         LLet m b x
-         | isBot $ typeOfBind b 
-         -> text "let"  <+> ppr (binderOfBind b)
-                        <>  ppr m
-                        <+> text "="
-                        <+> ppr x
-
-         | otherwise
-         -> text "let"  <+> ppr b
-                        <>  ppr m
-                        <+> text "="
-                        <+> ppr x
+         -> let dBind = if isBot (typeOfBind b)
+                          then ppr (binderOfBind b)
+                          else ppr b
+            in  text "let"
+                 <+> align (  dBind <> ppr m
+                           <> nest 2 ( breakWhen (not $ isSimpleX x)
+                                     <> text "=" <+> align (ppr x)))
 
         LRec bxs
          -> let pprLetRecBind (b, x)
                  =   ppr (binderOfBind b)
                  <+> text ":"
                  <+> ppr (typeOfBind b)
-                 <+> text "="
-                 <+> ppr x
+                 <>  nest 2 (  breakWhen (not $ isSimpleX x)
+                            <> text "=" <+> align (ppr x))
         
-           in   text "letrec"
-                 <+> braces (cat $ punctuate (text "; ") 
-                                 $ map pprLetRecBind bxs)
+           in   (nest 2 $ text "letrec"
+                  <+> lbrace 
+                  <>  (  line 
+                      <> (vcat $ punctuate (semi <> line)
+                               $ map pprLetRecBind bxs)))
+                <$> rbrace
 
 
         LLetRegion b []
@@ -204,3 +209,53 @@ instance Pretty WiCon where
         WiConAlloc      -> text "alloc"
 
 
+-- Utils ----------------------------------------------------------------------
+breakWhen :: Bool -> Doc
+breakWhen True   = line
+breakWhen False  = space
+
+isAtomT :: Type n -> Bool
+isAtomT tt
+ = case tt of
+        TVar{}          -> True
+        TCon{}          -> True
+        _               -> False
+
+isAtomW :: Witness n -> Bool
+isAtomW ww
+ = case ww of
+        WVar{}          -> True
+        WCon{}          -> True
+        _               -> False
+
+isAtomX :: Exp a n -> Bool
+isAtomX xx
+ = case xx of
+        XVar{}          -> True
+        XCon{}          -> True
+        XType t         -> isAtomT t
+        XWitness w      -> isAtomW w
+        _               -> False
+
+
+
+isSimpleX :: Exp a n -> Bool
+isSimpleX xx
+ = case xx of
+        XVar{}          -> True
+        XCon{}          -> True
+        XType{}         -> True
+        XWitness{}      -> True
+        XApp _ x1 x2    -> isSimpleX x1 && isAtomX x2
+        _               -> False
+
+
+parens' :: Doc -> Doc
+parens' d = lparen <> nest 1 d <> rparen
+
+
+-- | Wrap a `Doc` in parens if the predicate is true.
+pprParen' :: Bool -> Doc -> Doc
+pprParen' b c
+ = if b then parens' c
+        else c

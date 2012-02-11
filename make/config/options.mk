@@ -111,5 +111,5 @@ DDC_PACKAGES	:= \
 	-package random \
 	-package haskeline \
 	-package haskell-src-exts \
-	-package mainland-pretty \
+	-package wl-pprint \
 	-package transformers 

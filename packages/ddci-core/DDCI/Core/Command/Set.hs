@@ -7,27 +7,29 @@ where
 import DDCI.Core.State
 import DDCI.Core.Transform
 import DDCI.Core.Mode
+import DDCI.Core.IO
 import DDC.Base.Pretty
 import Data.Char
 import qualified Data.Set       as Set
 
 
-cmdSet :: String -> State -> IO State
+cmdSet ::  State -> String -> IO State
 
 -- Display the active modes.
-cmdSet [] state
- = do   putStrLn $ "mode  = "
-                 ++ (show
-                         $ Set.toList 
+cmdSet state []
+ = do   outDocLn state
+         $  text "mode  = " 
+         <> text (show   $ Set.toList 
                          $ stateModes state)
         
-        putStrLn $ "trans = "
-                 ++ (pretty $ ppr (stateTransform state))
+        outDocLn state
+         $  text "trans = "
+         <> ppr (stateTransform state)
 
         return state
 
 -- Toggle active modes.
-cmdSet cmd state
+cmdSet state cmd
  | "trans" : rest      <- words cmd
  = do   case parseTransform (concat rest) of
          Just spec       

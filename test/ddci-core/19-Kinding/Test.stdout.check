@@ -37,7 +37,7 @@ Invalid args for witness implication.
 -- Error: types in a sum don't all have the same kind.
 Core type mismatch in sum.
  found multiple types: Read r + Use r
- with differing kinds: [!, $]
+ with differing kinds: [!,$]
 
 
 -- Error: invalid kind for type sum.

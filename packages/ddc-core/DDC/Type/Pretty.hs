@@ -33,7 +33,7 @@ instance Pretty n => Pretty (Binder n) where
 pprBinderSep   :: Pretty n => Binder n -> Doc
 pprBinderSep bb
  = case bb of
-        RName v         -> ppr v <> text " "
+        RName v         -> ppr v
         RAnon           -> text "^"
         RNone           -> text "_"
 
@@ -41,7 +41,7 @@ pprBinderSep bb
 -- | Print a group of binders with the same type.
 pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
 pprBinderGroup (rs, t)
-        =  (brackets $ (cat $ map pprBinderSep rs) <> text ":"  <> ppr t) 
+        =  (brackets $ (sep $ map pprBinderSep rs) <+> text ":"  <+> ppr t) 
         <> dot
 
 
@@ -69,20 +69,19 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
 
         TApp (TApp (TCon (TyConWitness TwConImpl)) k1) k2
          -> pprParen (d > 5)
-         $  ppr k1 <+> text "=>" <+> pprPrec 6 k2
+         $  ppr k1 <+> text "=>" </> pprPrec 6 k2
 
         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) eff) clo) t2
          | isBot eff, isBot clo
          -> pprParen (d > 5)
          $  (if isTFun t1 then pprPrec 6 t1 else pprPrec 5 t1)
-                   <+> text "->" 
-                   <+> ppr t2
+                   <+> text "->" </> ppr t2
 
          | otherwise
          -> pprParen (d > 5)
          $  (if isTFun t1 then pprPrec 6 t1 else pprPrec 5 t1)
                    <+> text "-(" <> ppr eff <> text " | " <> ppr clo <> text ")>" 
-                   <+> ppr t2
+                   </> ppr t2
                    
         -- Standard types.
         TCon tc    -> ppr tc

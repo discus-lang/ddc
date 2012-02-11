@@ -280,3 +280,5 @@ data Error a n
         | ErrorMaxcloMalformed
         { errorChecking         :: Exp a n 
         , errorClosure          :: Closure n }
+        deriving (Show)
+

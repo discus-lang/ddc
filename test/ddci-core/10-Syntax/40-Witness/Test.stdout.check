@@ -10,18 +10,21 @@ mutable [R0#] :: Mutable R0#
 Type cannot apply non-constructor witness
               of type: [^ : %].Mutable ^0
   to argument of type: [^ : %].Mutable ^0
-        when checking: mutable mutable
+
+with: mutable mutable
 
 
 -- Error: type mismatch in witness application.
 Type mismatch in witness application.
   Constructor expects: %
       but argument is: *
-        when checking: mutable [Unit]
+
+with: mutable [Unit]
 
 
 -- Error: cannot apply non-constructor witness to argument.
 Type cannot apply non-constructor witness
               of type: Mutable R0#
   to argument of type: [^ : %].Mutable ^0
-        when checking: mutable [R0#] mutable
+
+with: mutable [R0#] mutable

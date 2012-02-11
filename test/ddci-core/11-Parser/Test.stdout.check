@@ -12,7 +12,7 @@ Expected an expression.
 
 -- Ok: should allow variable named 'inc'.
 let inc : Unit = () in inc
-::  Unit
+:*: Unit
 :!: !0
 :$: $0
 

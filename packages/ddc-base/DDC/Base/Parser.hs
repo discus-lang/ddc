@@ -71,8 +71,9 @@ pTok k  = pTokMaybe $ \k' -> if k == k' then Just () else Nothing
 -------------------------------------------------------------------------------
 instance Pretty P.ParseError where
  ppr err
-  = vcat $  [ text "Parse error in" <+> text (show (P.errorPos err)) ]
-         ++ (map text $ map show $ packMessages $ P.errorMessages err)
+  = vcat $  [  text "Parse error in" <+> text (show (P.errorPos err)) ]
+         ++ (map ppr $ packMessages $ P.errorMessages err)
+         
          
 instance Pretty P.Message where
  ppr msg

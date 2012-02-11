@@ -1,6 +1,6 @@
 -- See if we can print out any type.
 addInt
-::  [^^^:%].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
+:*: [^ ^ ^ : %].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
 :!: !0
 :$: $0
 
@@ -9,21 +9,21 @@ addInt
 -- Region handles in the expression are automatically added to the store at
 -- startup time.
 addInt [R1#]
-::  [^^:%].Int R1# -> Int ^1 -(Read ^1 + Read R1# + Alloc ^0 | Use R1#)> Int ^0
+:*: [^ ^ : %].Int R1# -> Int ^1 -(Read ^1 + Read R1# + Alloc ^0 | Use R1#)> Int ^0
 :!: !0
 :$: Use R1#
 
 
 -- Instantiate all the foralls with different region handles.
 addInt [R1#] [R2#] [R3#]
-::  Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Use R1#)> Int R3#
+:*: Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Use R1#)> Int R3#
 :!: !0
 :$: Use R1# + Use R2# + Use R3#
 
 
 -- Same as above, but with nicer syntax.
 addInt [R1#] [R2#] [R3#]
-::  Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Use R1#)> Int R3#
+:*: Int R1# -> Int R2# -(Read R1# + Read R2# + Alloc R3# | Use R1#)> Int R3#
 :!: !0
 :$: Use R1# + Use R2# + Use R3#
 
@@ -32,43 +32,43 @@ addInt [R1#] [R2#] [R3#]
 -- The 'add' primop causes the effect (Read R1# + Read R1#) which should be 
 -- packed down to just (Read R1#).
 addInt [R1#] [R1#] [R1#]
-::  Int R1# -> Int R1# -(Read R1# + Alloc R1# | Use R1#)> Int R1#
+:*: Int R1# -> Int R1# -(Read R1# + Alloc R1# | Use R1#)> Int R1#
 :!: !0
 :$: Use R1#
 
 
 -- Wrap type lambdas around the 'add' primop and use these to rename the 
 -- anonymous binders in its type.
-/\(r1 r2 r3 :%).addInt [r1] [r2] [r3]
-::  [r1 r2 r3 :%].Int r1 -> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1)> Int r3
+/\(r1 r2 r3 : %). addInt [r1] [r2] [r3]
+:*: [r1 r2 r3 : %].Int r1 -> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1)> Int r3
 :!: !0
 :$: $0
 
 
 -- A fully applied integer constructor should cause an alloc effect.
 2 [R1#] ()
-::  Int R1#
+:*: Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 
 -- Addition should also read the args, and alloc the result.
 addInt [R1#] [R2#] [R3#] (2 [R1#] ()) (3 [R2#] ())
-::  Int R3#
+:*: Int R3#
 :!: Read R1# + Read R2# + Alloc R1# + Alloc R2# + Alloc R3#
 :$: Use R1# + Use R2# + Use R3#
 
 
 -- Check that shadowed spec binders are handled properly.
 -- This shouldn't substitute into the inner 'r' variable.
-(/\(r : %).\(x : Int r)./\(r : %).\(_ : Unit).2 [r] ()) [R1#]
-::  Int R1# -> [r : %].Unit -(Alloc r | Use r)> Int r
+(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) [R1#]
+:*: Int R1# -> [r : %].Unit -(Alloc r | Use r)> Int r
 :!: !0
 :$: Use R1#
 
 
 -- Check that shadowed spec binders are handled properly.
-(/\(r : %).\(x : Int r)./\(r : %).\(_ : Unit).2 [r] ()) [R1#] (5 [R1#] ()) [R2#]
-::  Unit -(Alloc R2# | Use R2#)> Int R2#
+(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) [R1#] (5 [R1#] ()) [R2#]
+:*: Unit -(Alloc R2# | Use R2#)> Int R2#
 :!: Alloc R1#
 :$: Use R1# + Use R2#

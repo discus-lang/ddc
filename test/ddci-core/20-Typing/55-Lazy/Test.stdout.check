@@ -1,6 +1,6 @@
 -- Suspend the allocation of a value.
 letregion r1 with {w1 : Const r1; w2 : Lazy r1; w3 : Global r1} in let x : Int r1 lazy <w2> = purify <alloc [r1] w1> in forget <use [r1] w3> in 2 [r1] () in addInt [r1] [R0#] [R0#] x (3 [R0#] ())
-::  Int R0#
+:*: Int R0#
 :!: Read R0# + Alloc R0#
 :$: Use R0#
 
@@ -9,21 +9,34 @@ letregion r1 with {w1 : Const r1; w2 : Lazy r1; w3 : Global r1} in let x : Int r
 Lazy let binding is not empty.
       The binding for: x
           has closure: Use r1
-        when checking: let x : Int r1 lazy <w2> = purify <alloc [r1] w1> in 2 [r1] () in addInt [r1] [R0#] [R0#] x (3 [R0#] ())
+
+with: let x : Int r1 lazy <w2>
+            = purify <alloc [r1] w1> in
+              2 [r1] () in
+      addInt [r1] [R0#] [R0#] x (3 [R0#] ())
 
 
 -- Error: lazy let binding is not pure.
 Lazy let binding is not pure.
       The binding for: x
            has effect: Alloc r1
-        when checking: let x : Int r1 lazy <w2> = forget <use [r1] w3> in 2 [r1] () in addInt [r1] [R0#] [R0#] x (3 [R0#] ())
+
+with: let x : Int r1 lazy <w2>
+            = forget <use [r1] w3> in
+              2 [r1] () in
+      addInt [r1] [R0#] [R0#] x (3 [R0#] ())
 
 
 -- Error: lazy let has no witness, but type of binding has a head region.
 Lazy let binding has no witness but the bound value may have a head region.
       The binding for: x
              Has type: Int r1
-        when checking: let x : Int r1 lazy = purify <alloc [r1] w1> in forget <use [r1] w3> in 2 [r1] () in addInt [r1] [R0#] [R0#] x (3 [R0#] ())
+
+with: let x : Int r1 lazy
+            = purify <alloc [r1] w1> in
+              forget <use [r1] w3> in
+              2 [r1] () in
+      addInt [r1] [R0#] [R0#] x (3 [R0#] ())
 
 
 -- Error: lazy let has a witness of the wrong type.
@@ -32,4 +45,9 @@ Unexpected witness type in lazy let binding.
     has a witness of type: Const r1
            but is type is: Int r1
  so the witness should be: Lazy r1
-            when checking: let x : Int r1 lazy <w1> = purify <alloc [r1] w1> in forget <use [r1] w3> in 2 [r1] () in addInt [r1] [R0#] [R0#] x (3 [R0#] ())
+
+with: let x : Int r1 lazy <w1>
+            = purify <alloc [r1] w1> in
+              forget <use [r1] w3> in
+              2 [r1] () in
+      addInt [r1] [R0#] [R0#] x (3 [R0#] ())

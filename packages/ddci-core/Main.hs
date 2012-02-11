@@ -289,35 +289,35 @@ handleCmd1 state cmd lineStart line
                 return state
 
         CommandSet        
-         -> do  state'  <- cmdSet line state
+         -> do  state'  <- cmdSet state line
                 return state'
 
         CommandKind       
-         -> do  cmdShowKind  lineStart line
+         -> do  cmdShowKind state lineStart line
                 return state
 
         CommandWitType    
-         -> do  cmdShowWType lineStart line
+         -> do  cmdShowWType state lineStart line
                 return state
 
         CommandExpCheck   
-         -> do  cmdShowType ShowTypeAll     lineStart line
+         -> do  cmdShowType state ShowTypeAll     lineStart line
                 return state
 
         CommandExpType  
-         -> do  cmdShowType ShowTypeValue   lineStart line
+         -> do  cmdShowType state ShowTypeValue   lineStart line
                 return state
 
         CommandExpEffect  
-         -> do  cmdShowType ShowTypeEffect  lineStart line
+         -> do  cmdShowType state ShowTypeEffect  lineStart line
                 return state
 
         CommandExpClosure 
-         -> do  cmdShowType ShowTypeClosure lineStart line
+         -> do  cmdShowType state ShowTypeClosure lineStart line
                 return state
 
         CommandExpRecon
-         -> do  cmdExpRecon lineStart line
+         -> do  cmdExpRecon state lineStart line
                 return state
 
         CommandEval       
@@ -333,5 +333,6 @@ handleCmd1 state cmd lineStart line
                 return state
         
         CommandAst
-         -> do  cmdAst lineStart line
+         -> do  cmdAst state lineStart line
                 return state
+

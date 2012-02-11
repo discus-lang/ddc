@@ -1,17 +1,17 @@
 
 module DDCI.Core.Command.Ast
-        ( cmdAst )
+        (cmdAst)
 where
 import DDCI.Core.Command.Check
-
+import DDCI.Core.State
 import qualified Language.Haskell.Exts.Parser as H
 import qualified Language.Haskell.Exts.Pretty as H
 
 
 -- | Parse, check, and pretty print an expression's internal representation
-cmdAst :: Int -> String -> IO ()
-cmdAst lineStart str
- = cmdParseCheckExp lineStart str >>= goShow
+cmdAst :: State -> Int -> String -> IO ()
+cmdAst state lineStart str
+ = cmdParseCheckExp state lineStart str >>= goShow
  where
         -- Expression had a parse or type error.
         goShow Nothing
