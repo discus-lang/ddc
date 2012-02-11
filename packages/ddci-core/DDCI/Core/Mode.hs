@@ -12,6 +12,9 @@ data Mode
 
         -- | Display the store state at each step in the evaluation.
         |  TraceStore
+
+        -- | Render expressions displayed to user using indenting.
+        |  Indent
         deriving (Eq, Ord, Show)
 
 
@@ -21,5 +24,6 @@ parseMode str
  = case str of
         "TraceEval"     -> Just TraceEval
         "TraceStore"    -> Just TraceStore
+        "Indent"        -> Just Indent
         _               -> Nothing
 

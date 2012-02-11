@@ -5,15 +5,24 @@ module DDCI.Core.IO
 where
 import DDCI.Core.State
 import DDC.Base.Pretty
+import qualified Data.Set       as Set
 
 
 outDoc :: State -> Doc -> IO ()
-outDoc _state doc
-        = putDoc   RenderPlain doc
+outDoc state doc
+        | Set.member Indent $ stateModes state
+        = putDocLn RenderIndent doc
+
+        | otherwise
+        = putDocLn RenderPlain doc
 
 
 outDocLn :: State -> Doc -> IO ()
-outDocLn _state doc
+outDocLn state doc
+        | Set.member Indent $ stateModes state
+        = putDocLn RenderIndent doc
+
+        | otherwise
         = putDocLn RenderPlain doc
 
 

@@ -26,6 +26,7 @@ help    = unlines
         , "  :set -MODE    Disable a mode"
         , ""
         , " Modes are:"
+        , "  Indent        Pretty print expressions with indenting."
         , "  TraceEval     Show the expression at every step in the evaluation."
         , "  TraceStore    Show the store at every step in the evaluation." 
         , ""
