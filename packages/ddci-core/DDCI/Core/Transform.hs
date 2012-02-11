@@ -49,5 +49,5 @@ applyTransformX spec xx
         None            -> xx
         Anonymize       -> anonymizeX xx
         ANormal         -> anormalise xx
-        Beta            -> betaReduce primKindEnv primTypeEnv xx
+        Beta            -> betaReduce xx
 
