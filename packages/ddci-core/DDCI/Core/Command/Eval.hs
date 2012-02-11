@@ -15,7 +15,7 @@ import DDC.Type.Equiv
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
-import DDC.Core.Collect.GatherBound
+import DDC.Core.Collect.BindTree
 import Control.Monad
 import DDCI.Core.Eval.Store             (Store)
 import qualified DDCI.Core.Eval.Store   as Store

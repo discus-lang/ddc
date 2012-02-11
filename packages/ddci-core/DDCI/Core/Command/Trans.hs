@@ -46,7 +46,7 @@ applyTrans state (x, t1, _eff1, _clo1)
 	   -> do return (Just x')
 
 	   | otherwise
-	   -> do outDocLn state $ vcat
+	   -> do putStrLn $ renderIndent $ vcat
 		    [ text "* CRASH AND BURN: Transform is not type preserving."
 		    , ppr x'
 		    , text "::"  <+> ppr t2
@@ -55,7 +55,7 @@ applyTrans state (x, t1, _eff1, _clo1)
 		 return Nothing
 
 	  Left err
-	   -> do outDocLn state $ vcat
+	   -> do putStrLn $ renderIndent $ vcat
 		    [ text "* CRASH AND BURN: Type error in transformed program."
 		    , ppr err
 		    , text "" ]
