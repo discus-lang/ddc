@@ -11,7 +11,7 @@ module DDC.Type.Env
         , extend,       extends
         , setPrimFun,   isPrim
         , fromList
-        , combine
+        , union
         , member,       memberBind
         , lookup,       lookupName
         , depth
@@ -90,8 +90,8 @@ fromList bs
 -- | Combine two environments.
 --   If both environments have a binding with the same name,
 --   then the one in the second environment takes preference.
-combine :: Ord n => Env n -> Env n -> Env n                                     -- TODO: rename to union
-combine env1 env2
+union :: Ord n => Env n -> Env n -> Env n
+union env1 env2
         = Env  
         { envMap         = envMap env1 `Map.union` envMap env2
         , envStack       = envStack       env2  ++ envStack       env1
