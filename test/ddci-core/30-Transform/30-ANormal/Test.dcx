@@ -1,0 +1,56 @@
+:set trans ANormal
+
+-- Identity function
+:trans (\(x:Unit). x) ()
+
+-- Identify function with indices.
+:trans (\(^ : Unit). ^0) ()
+
+-- Primitive
+:trun addInt [:R0# R0# R0#:] (1 [R0#] ()) (2 [R0#] ())
+
+-- Type abstraction
+:trans (/\(t:*).\(x:t).x) [List R0# (Int R0#)] (Nil [R0#] [Int R0#] ())
+
+-- Primitive in case exp
+:trun..
+(\(u:Unit). 
+case 1 [R0#] u of {
+    0 -> 1 [R0#] u;
+    _ -> addInt [:R0# R0# R0#:] (2 [R0#] u) (3 [R0#] u)
+}) ();;
+
+-- Anonymous binders
+:trun..
+let ^ = 5 [R0#] () in
+addInt [: R0# R0# R0# :] ^0 (3 [R0#] ())
+;;
+
+-- Arity
+:trun..
+let cmp = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
+    let f' = f in \(x:Int R0#). f' (g x) in
+let up = \(n : Int R0#). addInt [:R0# R0# R0#:] n (1 [R0#] ()) in
+cmp up up (1 [R0#] ())
+;;
+
+-- Arity anon
+:trun..
+let ^ = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
+    let ^ = f in \(^:Int R0#). ^1 (g ^0) in
+let ^ = \(^ : Int R0#). addInt [:R0# R0# R0#:] ^0 (1 [R0#] ()) in
+^1 ^0 ^0 (1 [R0#] ())
+;;
+
+-- Letrec
+:trun..
+letrec {
+ fac    [r:%] (n : Int r) {Read r + Alloc r | Use r} : Int r
+  = case n of {
+        0       -> 1 [r] ();
+        _       -> mulInt [:r r r:] n
+                      (fac [r] (subInt [:r r r:] n
+                                       (1 [r] ())));
+     }
+} in fac [R1#] (5 [R1#] ());;
+

@@ -1,0 +1,35 @@
+ok
+
+-- Identity function
+(\(x : Unit). x) ()
+
+-- Identify function with indices.
+(\(^ : Unit). ^0) ()
+
+-- Primitive
+let ^ = 1 [R0#] () in let ^ = 2 [R0#] () in addInt [R0#] [R0#] [R0#] ^1 ^0
+3
+
+-- Type abstraction
+let ^ = Nil [R0#] [Int R0#] () in (/\(t : *). \(x : t). x) [List R0# (Int R0#)] ^0
+
+-- Primitive in case exp
+(\(u : Unit). case 1 [R0#] u of { 0 -> 1 [R0#] u; _ -> let ^ = 2 [R0#] u in let ^ = 3 [R0#] u in addInt [R0#] [R0#] [R0#] ^1 ^0 }) ()
+5
+
+-- Anonymous binders
+let ^ : Int R0# = 5 [R0#] () in let ^ = 3 [R0#] () in addInt [R0#] [R0#] [R0#] ^1 ^0
+8
+
+-- Arity
+let cmp : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). let f' : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = f in \(x : Int R0#). let ^ = g x in f' ^0 in let up : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = \(n : Int R0#). let ^ = 1 [R0#] () in addInt [R0#] [R0#] [R0#] n ^0 in let ^ = cmp up up in let ^ = 1 [R0#] () in ^1 ^0
+3
+
+-- Arity anon
+let ^ : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). let ^ : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = f in \(^ : Int R0#). let ^ = g ^0 in ^2 ^0 in let ^ : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = \(^ : Int R0#). let ^ = 1 [R0#] () in addInt [R0#] [R0#] [R0#] ^1 ^0 in let ^ = ^1 ^0 ^0 in let ^ = 1 [R0#] () in ^1 ^0
+3
+
+-- Letrec
+letrec { fac : [r : %].Int r -(Read r + Alloc r | Use r)> Int r = /\(r : %). \(n : Int r). case n of { 0 -> 1 [r] (); _ -> let ^ = let ^ = let ^ = 1 [r] () in subInt [r] [r] [r] n ^0 in fac [r] ^0 in mulInt [r] [r] [r] n ^0 } } in let ^ = 5 [R1#] () in fac [R1#] ^0
+120
+
