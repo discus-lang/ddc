@@ -8,7 +8,6 @@ module DDC.Core.Transform.SubstituteTX
 where
 import DDC.Core.Collect.FreeT
 import DDC.Core.Exp
-import DDC.Core.Transform.SpreadX
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
 import Data.Maybe
@@ -79,9 +78,7 @@ instance SubstituteTX (Exp a) where
          XApp a x1 x2   -> XApp a (down x1) (down x2)
 
          XLAM a b xBody
-          |  namedBoundMatchesBind u b
-          -> spreadX (Env.fromList $ stackAll stackT) envX xx
-
+          | namedBoundMatchesBind u b -> xx 
           | otherwise
           -> let b2             = down b
                  (stackT', b3)  = pushBind fnsT stackT b2
@@ -111,9 +108,7 @@ instance SubstituteTX (Exp a) where
              in  XLet a (LRec (zip bs' xs')) x2'
 
          XLet a (LLetRegion b bs) x2
-          |  namedBoundMatchesBind u b 
-          -> spreadX (Env.fromList $ stackAll stackT) envX xx
-
+          | namedBoundMatchesBind u b -> xx 
           | otherwise
           -> let (stackT', b')  = pushBind fnsT stackT b
                  bs'            = map (substituteWithTX u t fnsT stackT' envX) bs

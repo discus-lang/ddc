@@ -54,6 +54,12 @@ data Error a n
 
 
         -- Lambda -----------------------------------------
+        -- | A type abstraction that tries to shadow a type variable that is
+        --   already in the environment.
+        | ErrorLamShadow
+        { errorChecking         :: Exp a n 
+        , errorBind             :: Bind n }
+
         -- | A type or witness abstraction where the body has a visible side effect.
         | ErrorLamNotPure
         { errorChecking         :: Exp a n

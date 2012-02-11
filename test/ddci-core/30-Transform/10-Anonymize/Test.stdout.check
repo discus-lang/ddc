@@ -2,7 +2,6 @@
 ok
 
 -- Anonymize lambdas and applications.
--- Broken: the Use closure term on the first function arrow is lost
 /\(^ : %). \(^ ^ : Int ^0). addInt [^0] [^0] [^0] ^1 ^0
 
 
@@ -28,3 +27,5 @@ letregion ^ with {^ : Const ^0} in let ^ : Int ^0 = 2 [^0] () in let ^ : Int ^0 
 
 -- letrec expressions
 letrec { ^ : [^ : %]. [^ : *].List ^1 ^0 -(!0 | Use ^1)> List ^1 ^0 -(Read ^1 + Alloc ^1 | Use ^1 + DeepUse ^0)> List ^1 ^0 = /\(^ : %). /\(^ : *). \(^ ^ : List ^1 ^0). case ^1 of { Nil -> ^0; Cons (^ : ^0) (^ : List ^1 ^0) -> Cons [^1] [^0] ^1 (^4 [^1] [^0] ^0 ^2) } } in ()
+
+

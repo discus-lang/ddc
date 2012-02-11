@@ -35,14 +35,23 @@
 :check addInt [:R1# R2# R3#:] (2 [R1#] ()) (3 [R2#] ())
 
 
--- Check that shadowed spec binders are handled properly.
--- This shouldn't substitute into the inner 'r' variable.
+-- Error: cannot shadow spec binders.
+-- This breaks progress if we try to run it.
+:check..
+(/\(r : %). \(x : Int r). /\(r : %). \(y : Int r).
+ case x of {
+        0       -> x;
+        _       -> y;
+ }) [R0#] (2 [R0#] ()) [R1#] (3 [R1#] ());;
+
+
+-- Error: cannot shadow spec binders.
 :check..
 (/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) 
         [R1#];;
 
 
--- Check that shadowed spec binders are handled properly.
+-- Error: cannot shadow spec binders.
 :check..
 (/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) 
         [R1#] 

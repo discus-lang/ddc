@@ -15,8 +15,6 @@ import DDC.Type.Equiv
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
-import DDC.Core.Collect.FreeT
-import DDC.Core.Collect.FreeX
 import DDC.Core.Collect.GatherBound
 import Control.Monad
 import DDCI.Core.Eval.Store             (Store)
@@ -137,7 +135,7 @@ stepPrint state store x tX _effX _cloX
                      $ do putStrLn $ renderIndent $ ppr store'
                           outStr   state "\n"
                 
-                    outDocLn state 
+                    putStrLn $ renderIndent
                      $ vcat [ text "* OFF THE RAILS!"
                             , ppr err
                             , empty ]
@@ -161,7 +159,7 @@ stepPrint state store x tX _effX _cloX
                     let death  = deathT
 
                     when deathT
-                     $ outDocLn state 
+                     $ putStrLn $ renderIndent
                      $ vcat [ text "* OFF THE RAILS!"
                             , ppr tX
                             , ppr tX' ]
@@ -190,7 +188,7 @@ stepPrint state store x tX _effX _cloX
                 return Nothing
 
         StepStuckMistyped err
-         -> do  outDocLn state 
+         -> do  putStrLn $ renderIndent
                  $ vcat [ ppr "* OFF THE RAILS!"
                         , ppr err
                         , empty]

@@ -9,13 +9,6 @@
 :trans (\(^ : Unit). ^0) ()
 
 
--- Avoid capture of type var by type lambda in value subst.
-:trans..
-/\(a : *).
-let f [b : *] = () in
-(\(y : Unit). /\(a : *). y) (f [a]);;
-
-
 -- Avoid capture of value var by value lambda in value subst.
 :trans..
 let x = () in 
@@ -110,17 +103,4 @@ addInt [:r0 r0 R0#:]
                 <:wc wg:> ())
         (5 [r0] ());;
 
-
--- Don't substitute past binder with same name.
-:trans..
-(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) 
-        [R1#];;
-
-
--- Don't substitute past binder with same name.
-:trans..
-(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) 
-        [R1#] 
-        (5 [R1#] ()) 
-        [R2#];;
 

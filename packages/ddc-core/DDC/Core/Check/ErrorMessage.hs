@@ -57,6 +57,12 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
 
 
         -- Lambda -----------------------------------------
+        ErrorLamShadow xx b
+         -> vcat [ text "Cannot shadow named spec variable."
+                 , text "  binder: "                    <> ppr b
+                 , text "  is already in the environment."
+                 , text "with: "                        <> align (ppr xx) ]
+
         ErrorLamNotPure xx eff
          -> vcat [ text "Impure type abstraction"
                  , text "           has effect: "       <> ppr eff

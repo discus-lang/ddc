@@ -59,16 +59,32 @@ addInt [R1#] [R2#] [R3#] (2 [R1#] ()) (3 [R2#] ())
 :$: Use R1# + Use R2# + Use R3#
 
 
--- Check that shadowed spec binders are handled properly.
--- This shouldn't substitute into the inner 'r' variable.
-(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) [R1#]
-:*: Int R1# -> [r : %].Unit -(Alloc r | Use r)> Int r
-:!: !0
-:$: Use R1#
+-- Error: cannot shadow spec binders.
+-- This breaks progress if we try to run it.
+Cannot shadow named spec variable.
+  binder: r : %
+  is already in the environment.
+with: /\(r : %).
+       \(y : Int r).
+      case x of {
+        0  
+         -> x;
+        _ 
+         -> y
+      }
 
 
--- Check that shadowed spec binders are handled properly.
-(/\(r : %). \(x : Int r). /\(r : %). \(_ : Unit). 2 [r] ()) [R1#] (5 [R1#] ()) [R2#]
-:*: Unit -(Alloc R2# | Use R2#)> Int R2#
-:!: Alloc R1#
-:$: Use R1# + Use R2#
+-- Error: cannot shadow spec binders.
+Cannot shadow named spec variable.
+  binder: r : %
+  is already in the environment.
+with: /\(r : %).
+       \(_ : Unit). 2 [r] ()
+
+
+-- Error: cannot shadow spec binders.
+Cannot shadow named spec variable.
+  binder: r : %
+  is already in the environment.
+with: /\(r : %).
+       \(_ : Unit). 2 [r] ()

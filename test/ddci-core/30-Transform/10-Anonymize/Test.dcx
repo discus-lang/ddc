@@ -2,7 +2,6 @@
 :set trans Anonymize
 
 -- Anonymize lambdas and applications.
--- Broken: the Use closure term on the first function arrow is lost
 :trans..
 /\(r:%).\(x : Int r) (y : Int r). addInt [:r r r:] x y;;
 
@@ -52,3 +51,5 @@ letrec {
           Cons x xs     -> Cons [:r a:] x (append [:r a:] xs ys);
     }
 } in ();;
+
+

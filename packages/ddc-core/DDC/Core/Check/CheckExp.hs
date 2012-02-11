@@ -236,6 +236,9 @@ checkExpM' defs kenv tenv xx@(XLAM a b1 x2)
         (x2', t2, e2, c2) <- checkExpM defs kenv' tenv x2
         k2                <- checkTypeM kenv' t2
 
+        when (Env.memberBind b1 kenv)
+         $ throw $ ErrorLamShadow xx b1
+
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
          $ throw $ ErrorLamNotPure xx (TSum e2)
