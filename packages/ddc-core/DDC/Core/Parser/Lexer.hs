@@ -199,7 +199,7 @@ lexExp lineStart str
         c : _   -> [tok $ KJunk c]
         
 
--- TyCon names ------------------------------------------------------------------------------------
+-- TyCon names ----------------------------------------------------------------
 -- | String is a constructor name.
 isConName :: String -> Bool
 isConName str
@@ -274,7 +274,7 @@ readCon ss
         | otherwise     = Nothing
 
 
--- TyVar names ------------------------------------------------------------------------------------
+-- TyVar names ----------------------------------------------------------------
 -- | String is a variable name.
 isVarName :: String -> Bool
 isVarName []          = False

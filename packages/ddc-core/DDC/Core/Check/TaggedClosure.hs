@@ -161,7 +161,7 @@ maskFromTaggedSet ts1 set
             | otherwise         -> Just gg
 
 
--- | Cut the terms due to the outermost binder from a tagged closure.           -- TODO: refactor this into below.
+-- | Cut the terms due to the outermost binder from a tagged closure.
 cutTaggedClosureT 
         :: (Eq n, Ord n) 
         => Bind n 
@@ -179,6 +179,7 @@ cutTaggedClosureT b1 cc
         GBoundRgnCon u2            -> Just $ GBoundRgnCon (lowerT 1 u2)
 
 
+-- | Like `cutTaggedClosureX` but cut terms due to sevearl binders.
 cutTaggedClosureXs 
         :: (Eq n, Ord n)
         => [Bind n]

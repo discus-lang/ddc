@@ -157,10 +157,17 @@ instance SubstituteTX Cast where
  substituteWithTX u t fnsT stackT envX tt
   = let down    = substituteWithTX u t fnsT stackT envX
     in  case tt of
-         CastWeakenEffect eff   -> CastWeakenEffect  (substituteWithT u t fnsT stackT eff)
-         CastWeakenClosure clo  -> CastWeakenClosure (substituteWithT u t fnsT stackT clo)
-         CastPurify w           -> CastPurify (down w)
-         CastForget w           -> CastForget (down w)
+         CastWeakenEffect eff   
+          -> CastWeakenEffect  (substituteWithT u t fnsT stackT eff)
+
+         CastWeakenClosure clo
+          -> CastWeakenClosure (substituteWithT u t fnsT stackT clo)
+
+         CastPurify w
+          -> CastPurify (down w)
+
+         CastForget w
+          -> CastForget (down w)
 
 
 instance SubstituteTX Witness where

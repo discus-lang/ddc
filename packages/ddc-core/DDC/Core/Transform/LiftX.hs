@@ -7,7 +7,8 @@ import DDC.Core.Exp
 
 
 class LiftX (c :: * -> *) where
- -- | Lift exp indices that are at least a certain depth by the given number of levels.
+ -- | Lift exp indices that are at least a certain depth by the given number
+ --   of levels.
  liftAtDepthX
         :: forall n. Ord n
         => Int          -- ^ Number of levels to lift.
