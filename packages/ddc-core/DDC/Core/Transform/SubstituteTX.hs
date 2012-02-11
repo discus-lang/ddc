@@ -1,5 +1,5 @@
 
--- | Type substitution.
+-- | Capture avoiding substitution of types in expressions. 
 module DDC.Core.Transform.SubstituteTX
         ( substituteTX
         , substituteTXs
@@ -26,13 +26,13 @@ substituteTX b t x
     _           -> x
 
 
--- | Wrapper for `substituteT` to substitute multiple things.
+-- | Wrapper for `substituteT` to substitute multiple types.
 substituteTXs :: (SubstituteTX c, Ord n) => [(Bind n, Type n)] -> c n -> c n
 substituteTXs bts x
         = foldr (uncurry substituteTX) x bts
 
 
--- | Substitute a `Type` for `Bound` in some thing.
+-- | Substitute a `Type` for a `Bound` in some thing.
 substituteBoundTX :: (SubstituteTX c, Ord n) => Bound n -> Type n -> c n -> c n
 substituteBoundTX u t x
  = let -- Determine the free names in the type we're subsituting.
@@ -51,9 +51,9 @@ substituteBoundTX u t x
 class SubstituteTX (c :: * -> *) where
 
  -- | Substitute a type into some thing.
- --   In the target, if we find a named binder that would capture a free variable
- --   in the type to substitute, then we rewrite that binder to anonymous form,
- --   avoiding the capture.
+--
+ --   If we find a named binder that would capture a free variable
+ --   then we rewrite that binder to anonymous form, avoiding the capture.
  substituteWithTX
         :: forall n. Ord n
         => Bound n       -- ^ Bound variable that we're subsituting into.

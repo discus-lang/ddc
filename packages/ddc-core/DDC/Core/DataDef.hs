@@ -2,11 +2,13 @@
 -- | Algebraic data type definitions.
 module DDC.Core.DataDef
         ( DataDef    (..)
-        , DataType   (..)
+
+        -- * Data type definition table
+        , DataDefs   (..)
         , DataMode   (..)
+        , DataType   (..)
         , DataCtor   (..)
 
-        , DataDefs
         , emptyDataDefs
         , insertDataDef
         , fromListDataDefs
@@ -18,33 +20,29 @@ import qualified Data.Map       as Map
 import Data.Maybe
 import Control.Monad
 
--- | Some data type declarations.
+
+-- | The definition of a single data type.
+data DataDef n
+        = DataDef
+        { -- | Name of the data type.
+          dataDefTypeName       :: n
+
+          -- | Kinds of type parameters.
+        , dataDefParamKinds     :: [Kind n]
+
+          -- | Constructors of is data type, or Nothing if there are
+          --   too many to list (like with `Int`).
+        , dataDefCtors          :: Maybe [(n, [Type n])] }
+
+
+
+-- DataDefs -------------------------------------------------------------------
+-- | A table of data type definitions,
+--   unpacked into type and data constructors so we can find them easily.
 data DataDefs n
         = DataDefs
         { dataDefsTypes :: Map n (DataType n)
         , dataDefsCtors :: Map n (DataCtor n) }
-
-
--- | A data type declaration.
-data DataDef n
-        = DataDef
-        { dataDefTypeName       :: n
-        , dataDefParamKinds     :: [Kind n]
-        , dataDefCtors          :: Maybe [(n, [Type n])] }
-
-
--- | Describes a data type.
-data DataType n
-        = DataType 
-        { -- | Name of data type constructor.
-          dataTypeName       :: n
-
-          -- | Kinds of type parameters of constructor.
-        , dataTypeParamKinds :: [Kind n]
-
-          -- | Names of data constructors of this data type,
-          --   or Nothing if it has infinitely many constructors.
-        , dataTypeMode       :: DataMode n }
 
 
 -- | The mode of a data type records how many data constructors there are.
@@ -56,7 +54,21 @@ data DataMode n
         | DataModeLarge
 
 
--- | Describes a data constructor.
+-- | Describes a data type constructor, used in the `DataDefs` table.
+data DataType n
+        = DataType 
+        { -- | Name of data type constructor.
+          dataTypeName       :: n
+
+          -- | Kinds of type parameters to constructor.
+        , dataTypeParamKinds :: [Kind n]
+
+          -- | Names of data constructors of this data type,
+          --   or `Nothing` if it has infinitely many constructors.
+        , dataTypeMode       :: DataMode n }
+
+
+-- | Describes a data constructor, used in the `DataDefs` table.
 data DataCtor n
         = DataCtor
         { -- | Name of data constructor.
@@ -69,7 +81,8 @@ data DataCtor n
         , dataCtorTypeName   :: n }
 
 
--- | An empty set of data defs.
+
+-- | An empty table of data type definitions.
 emptyDataDefs :: DataDefs n
 emptyDataDefs
         = DataDefs
@@ -106,15 +119,15 @@ insertDataDef (DataDef nType ks mCtors) dataDefs
                                           <- concat $ maybeToList defCtors] }
 
 
--- | Build a DataDefs from a list of DataDef
+-- | Build a `DataDefs` table from a list of `DataDef`
 fromListDataDefs :: Ord n => [DataDef n] -> DataDefs n
 fromListDataDefs defs
         = foldr insertDataDef emptyDataDefs defs
 
 
 
--- | Get the list of data constructor names for some data type, 
---   or `Nothing` if there are infinitely many constructors.
+-- | Yield the list of data constructor names for some data type, 
+--   or `Nothing` for large types with too many constructors to list.
 lookupModeOfDataType :: Ord n => n -> DataDefs n -> Maybe (DataMode n)
 lookupModeOfDataType n defs
         = liftM dataTypeMode $ Map.lookup n (dataDefsTypes defs)

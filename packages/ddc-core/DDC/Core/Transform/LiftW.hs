@@ -1,5 +1,5 @@
 
--- | Lifting of witness variable indices.
+-- | Lift witness variable indices.
 module DDC.Core.Transform.LiftW
         (LiftW(..))
 where
@@ -7,8 +7,8 @@ import DDC.Core.Exp
 
 
 class LiftW (c :: * -> *) where
- -- | Lift exp indices that are at least a certain depth by the given number 
- --   of levels.
+ -- | Lift indices that are at least a the given depth by some number
+ --   of levels
  liftAtDepthW
         :: forall n. Ord n
         => Int          -- ^ Number of levels to lift.

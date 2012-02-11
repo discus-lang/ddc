@@ -51,7 +51,8 @@ data Tok n
         | KN    !(TokNamed n)
         deriving (Eq, Show)
 
-        
+
+-- | Describe a token for parser error messages.
 describeTok :: Pretty n => Tok n -> String
 describeTok kk
  = case kk of
@@ -60,7 +61,7 @@ describeTok kk
         KN tn           -> describeTokNamed tn
 
 
--- | Apply a function to all the names in a `TokN`.
+-- | Apply a function to all the names in a `Tok`.
 renameTok
         :: Ord n2
         => (n1 -> n2) -> Tok n1 -> Tok n2
@@ -73,6 +74,7 @@ renameTok f kk
 
 
 -- TokAtom --------------------------------------------------------------------
+-- | Atomic tokens, that don't contain user-defined names.
 data TokAtom
         -- parens
         = KRoundBra
@@ -231,6 +233,7 @@ describeTokAtom' ta
 
 
 -- TokNamed -------------------------------------------------------------------
+-- | A token witn a user-defined name.
 data TokNamed n
         = KCon n
         | KVar n

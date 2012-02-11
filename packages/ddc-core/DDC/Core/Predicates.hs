@@ -28,7 +28,7 @@ isXVar xx
         _       -> False
 
 
--- | Check whether an expression is a variable.
+-- | Check whether an expression is a constructor.
 isXCon :: Exp a n -> Bool
 isXCon xx
  = case xx of

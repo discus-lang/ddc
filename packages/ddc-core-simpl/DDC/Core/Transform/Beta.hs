@@ -9,8 +9,8 @@ import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
 import DDC.Type.Env     (Env)
 
--- Beta-reduce applications of a explicit lambda abstractions 
--- to variables and values.
+-- | Beta-reduce applications of a explicit lambda abstractions 
+--   to variables and values.
 betaReduce  :: Ord n => Env n -> Env n -> Exp a n -> Exp a n
 betaReduce 
         = transformUpX betaReduce1

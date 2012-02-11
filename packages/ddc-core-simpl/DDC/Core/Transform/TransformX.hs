@@ -15,8 +15,12 @@ import qualified DDC.Type.Env   as Env
 transformUpX
         :: forall (c :: * -> * -> *) a n
         .  (Ord n, TransformUpMX Identity c)
-        => (Env n -> Env n -> Exp a n -> Exp a n) 
-        ->  Env n -> Env n -> c a n   -> c a n
+        => (Env n -> Env n -> Exp a n -> Exp a n)       
+                        -- ^ The worker function is given the current kind and type environments.
+        -> Env n        -- ^ Initial kind environment.
+        -> Env n        -- ^ Initial type environment.
+        -> c a n        -- ^ Transform this thing.
+        -> c a n
 
 transformUpX f kenv tenv xx
         = runIdentity 
@@ -30,7 +34,11 @@ class TransformUpMX m (c :: * -> * -> *) where
  transformUpMX
         :: Ord n
         => (Env n -> Env n -> Exp a n -> m (Exp a n))
-        ->  Env n -> Env n -> c a n   -> m (c a n)
+                        -- ^ The worker function is given the current kind and type environments.
+        -> Env n        -- ^ Initial kind environment.
+        -> Env n        -- ^ Initial type environment.
+        -> c a n        -- ^ Transform this thing.
+        -> m (c a n)
 
 instance Monad m => TransformUpMX m Exp where
  transformUpMX f kenv tenv xx

@@ -25,8 +25,8 @@ class AnonymizeX (c :: * -> *) where
  --   will be replaced by references into these stacks.
  anonymizeWithX 
         :: forall n. Ord n 
-        => [Bind n]     -- ^ Stack for Spec binders.
-        -> [Bind n]     -- ^ Stack for Data and Witness binders.
+        => [Bind n]     -- ^ Stack for Spec binders (level-1).
+        -> [Bind n]     -- ^ Stack for Data and Witness binders (level-0).
         -> c n -> c n
 
 

@@ -17,12 +17,13 @@ import qualified DDC.Type.Parser        as T
 import Control.Monad.Error
 
 
--- | Parser of core language tokens.
+-- | A parser of core language tokens.
 type Parser n a
         = P.Parser (Tok n) a
 
 
 -- Expressions ----------------------------------------------------------------
+-- | Parse a core language expression.
 pExp    :: Ord n => Parser n (Exp () n)
 pExp 
  = P.choice
@@ -520,7 +521,7 @@ expOfParams a (p:ps) xBody
 
 
 -- Witnesses ------------------------------------------------------------------
--- | Top level parser for witnesses.
+-- | Parse a witness expression.
 pWitness :: Ord n  => Parser n (Witness n)
 pWitness = pWitnessJoin
 

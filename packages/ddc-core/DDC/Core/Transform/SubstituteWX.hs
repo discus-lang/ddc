@@ -1,5 +1,5 @@
 
--- | Type substitution.
+-- | Capture avoiding substitution of witnesses in expressions.
 module DDC.Core.Transform.SubstituteWX
         ( SubstituteWX(..)
         , substituteWX
@@ -59,8 +59,8 @@ class SubstituteWX (c :: * -> *) where
         -> Witness n    -- ^ Witness to substitute.
         -> Set n        -- ^ Names of free spec names in the exp to substitute.
         -> Set n        -- ^ Names of free valwit names in the exp to substitute.
-        -> BindStack n  -- ^ Bind stack for spec names.
-        -> BindStack n  -- ^ Bind stack for valwit names.
+        -> BindStack n  -- ^ Bind stack for Spec names (level-1).
+        -> BindStack n  -- ^ Bind stack for Value and Witness names (level-0).
         -> c n -> c n
 
 

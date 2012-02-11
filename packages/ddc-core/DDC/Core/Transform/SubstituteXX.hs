@@ -1,5 +1,5 @@
 
--- | Expression substitution.
+-- | Capture avoiding substitution of expressions in expressions.
 module DDC.Core.Transform.SubstituteXX
         ( SubstituteXX(..)
         , substituteXX
@@ -57,7 +57,7 @@ substituteXXs bts x
 
 
 -- | Substitute the argument of an application into an expression.
---   Performtype substitution for an `XType` 
+--   Perform type substitution for an `XType` 
 --    and witness substitution for an `XWitness`
 substituteXArg 
         :: (Ord n, SubstituteXX c, SubstituteWX (c a), SubstituteTX (c a))
@@ -90,10 +90,10 @@ class SubstituteXX (c :: * -> * -> *) where
         :: forall a n. Ord n
         => Bound n      -- ^ Bound variable that we're subsituting for..
         -> Exp a n      -- ^ Exp to substitute.
-        -> Set n        -- ^ Names of free spec   vars in the argument.
-        -> Set n        -- ^ Names of free valwit vars in the environment.
-        -> BindStack n  -- ^ Bind stack for spec names.
-        -> BindStack n  -- ^ Bind stack for valwit names.
+        -> Set n        -- ^ Names of free Spec   vars in the argument.
+        -> Set n        -- ^ Names of free Value and Witness vars in the environment.
+        -> BindStack n  -- ^ Bind stack for Spec names (level-1).
+        -> BindStack n  -- ^ Bind stack for Value and Witness names (level-0).
         -> c a n -> c a n
 
 
