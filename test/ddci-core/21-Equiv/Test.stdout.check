@@ -1,0 +1,31 @@
+
+-- Constructors are equivalent
+True
+
+
+-- Alpha equiv of binders
+True
+
+
+-- Region handles.
+True
+
+
+-- Commutativty of effect sum.
+True
+
+
+-- Associativity of effect sum.
+True
+
+
+-- Idempotence of effect sum.
+True
+
+
+-- False: Different effects
+False
+
+
+-- False: Second effect is larger.
+False

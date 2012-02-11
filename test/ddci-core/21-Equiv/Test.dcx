@@ -1,0 +1,45 @@
+
+-- Constructors are equivalent
+:tequiv Int Int
+
+
+-- Alpha equiv of binders
+:tequiv.. 
+([a : *]. a)
+([b : *]. b);;
+
+
+-- Region handles.
+:tequiv..
+(Read R0#)
+(Read R0#);;
+
+
+-- Commutativty of effect sum.
+:tequiv..
+(Read  R0# + Write R1#)
+(Write R1# + Read  R0#);;
+
+
+-- Associativity of effect sum.
+:tequiv..
+(Read  R0# + (Write R1# + Read R2#))
+((Write R1# + Read  R0#) + Read R2#));;
+
+
+-- Idempotence of effect sum.
+:tequiv..
+(Read R0# + Read R0#)
+(Read R0#);;
+
+
+-- False: Different effects
+:tequiv..
+(Read R0#)
+(Read R1#);;
+
+
+-- False: Second effect is larger.
+:tequiv..
+(Read R0#)
+(Read R0# + Read R1#);;
