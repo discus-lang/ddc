@@ -25,13 +25,12 @@ pprBinderSep bb
 
 
 -- | Print a group of binders with the same type.
-pprLamBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc                            -- TODO: refactor into below
-pprLamBinderGroup (rs, t)
-        = text "\\"  <> parens ((cat $ map pprBinderSep rs) <+> text ":" <+> ppr t) <> dot
+pprBinderGroup 
+        :: (Pretty n, Eq n) 
+        => Doc -> ([Binder n], Type n) -> Doc
 
-pprLAMBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
-pprLAMBinderGroup (rs, t)
-        = text "/\\" <> parens ((cat $ map pprBinderSep rs) <+> text ":" <+> ppr t) <> dot
+pprBinderGroup lam (rs, t)
+        = lam <> parens ((cat $ map pprBinderSep rs) <+> text ":" <+> ppr t) <> dot
 
 
 -- Exp ------------------------------------------------------------------------
@@ -45,7 +44,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> let Just (bs, xBody) = takeXLAMs xx
                 groups = partitionBindsByType bs
             in  pprParen' (d > 1)
-                 $  (cat $ map pprLAMBinderGroup groups) 
+                 $  (cat $ map (pprBinderGroup (text "/\\")) groups)
                  <>  (if      isXLAM    xBody then empty
                       else if isXLam    xBody then line <> space
                       else if isSimpleX xBody then space
@@ -56,7 +55,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> let Just (bs, xBody) = takeXLams xx
                 groups = partitionBindsByType bs
             in  pprParen' (d > 1)
-                 $  (cat $ map pprLamBinderGroup groups) 
+                 $  (cat $ map (pprBinderGroup (text "\\")) groups) 
                  <> breakWhen (not $ isSimpleX xBody)
                  <> ppr xBody
 
@@ -213,30 +212,6 @@ instance Pretty WiCon where
 breakWhen :: Bool -> Doc
 breakWhen True   = line
 breakWhen False  = space
-
-isAtomT :: Type n -> Bool
-isAtomT tt
- = case tt of
-        TVar{}          -> True
-        TCon{}          -> True
-        _               -> False
-
-isAtomW :: Witness n -> Bool
-isAtomW ww
- = case ww of
-        WVar{}          -> True
-        WCon{}          -> True
-        _               -> False
-
-isAtomX :: Exp a n -> Bool
-isAtomX xx
- = case xx of
-        XVar{}          -> True
-        XCon{}          -> True
-        XType t         -> isAtomT t
-        XWitness w      -> isAtomW w
-        _               -> False
-
 
 
 isSimpleX :: Exp a n -> Bool

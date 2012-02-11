@@ -2,6 +2,7 @@
 -- | Predicates on type expressions.
 module DDC.Type.Predicates
         ( isBot
+        , isAtomT
         , isDataKind
         , isRegionKind
         , isEffectKind
@@ -14,6 +15,7 @@ import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as T
 
 
+-- Atoms ----------------------------------------------------------------------
 -- | Test if some type is an empty TSum
 isBot :: Type n -> Bool
 isBot tt
@@ -24,6 +26,16 @@ isBot tt
         | otherwise     = False
 
 
+-- | Check whether a type is a `TVar`, `TCon` or is Bottom.
+isAtomT :: Type n -> Bool
+isAtomT tt
+ = case tt of
+        TVar{}          -> True
+        TCon{}          -> True
+        _               -> isBot tt
+
+
+-- Kinds ----------------------------------------------------------------------
 -- | Check if some kind is the data kind.
 isDataKind :: Kind n -> Bool
 isDataKind tt
@@ -64,7 +76,12 @@ isWitnessKind tt
         _                             -> False
 
 
+-- Data Types -----------------------------------------------------------------
 -- | Check whether this type is that of algebraic data.
+--
+--   It needs to have an explicit data constructor out the front,
+--   and not a type variable. The consructor must not be the function
+--   constructor, and must return a value of kind '*'.
 
 -- Algebraic data types are all built from constructors
 -- that have '*' as their result kind.
@@ -78,3 +95,4 @@ isAlgDataType tt
 
         | otherwise
         = False
+
