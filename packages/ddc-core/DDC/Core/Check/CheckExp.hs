@@ -37,7 +37,6 @@ import qualified Data.Set               as Set
 import Control.Monad
 import Data.List                        as L
 import Data.Maybe
---import Debug.Trace
 
 
 -- Wrappers -------------------------------------------------------------------
@@ -417,23 +416,24 @@ checkExpM' defs kenv tenv xx@(XLet a (LRec bxs) xBody)
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
 
-        -- Mask closure terms due to locally bound value vars.
-        let maskClo clo
-             = foldr (\b c -> case takeSubstBoundOfBind b of
-                               Nothing -> c
-                               Just u  -> Set.delete (taggedClosureOfValBound u) c)
-                     clo bs
+        -- Cut closure terms due to locally bound value vars.
+        -- This also lowers deBruijn indices in un-cut closure terms.
+        let clos_cut 
+                = Set.fromList
+                $ mapMaybe (cutTaggedClosureXs bs)
+                $ Set.toList 
+                $ Set.unions (closBody : clossBinds)
 
         return  ( XLet a (LRec (zip bs xsRight')) xBody'
                 , tBody
                 , effsBody
-                , maskClo $ Set.unions (closBody : clossBinds))
+                , clos_cut)
 
 
 -- letregion --------------------------------------
 checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
  = case takeSubstBoundOfBind b of
-     Nothing     -> checkExpM defs kenv tenv x                      -- TODO: if b is wildcard, bs must be empty
+     Nothing     -> checkExpM defs kenv tenv x
      Just u
       -> do
         -- Check the type on the region binder.
@@ -779,7 +779,6 @@ checkAltM xx defs kenv tenv tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
         (xBody', tBody, effsBody, closBody)
                 <- checkExpM defs kenv tenv' xBody
 
-
         -- Cut closure terms due to locally bound value vars.
         -- This also lowers deBruijn indices in un-cut closure terms.
         let closBody_cut 
@@ -909,4 +908,3 @@ checkLetBindOfTypeM xx kenv _tenv tRight b
         = do    k       <- checkTypeM kenv (typeOfBind b)
                 return (b, k)
 
-     
