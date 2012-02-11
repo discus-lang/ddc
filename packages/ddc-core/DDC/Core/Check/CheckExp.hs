@@ -49,6 +49,9 @@ import Data.Maybe
 --   As the returned expression has types attached to all variable occurrences, 
 --   you can call `typeOfExp` on any subterm. 
 --
+--   This function does not check for conflicts between `WiCon` capabilities.
+--   We check that they are well typed individually, but conflicts between
+--   different ones need to be checked for separately.
 checkExp 
         :: (Ord n, Pretty n)
         => DataDefs n           -- ^ Data type definitions.
