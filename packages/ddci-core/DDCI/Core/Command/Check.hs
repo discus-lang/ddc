@@ -17,7 +17,7 @@ import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser
 import DDC.Core.Parser.Tokens
-import DDC.Core.Collect.BindTree
+import DDC.Core.Collect
 import DDC.Core.Transform.SpreadX
 import DDC.Type.Transform.SpreadT
 import qualified DDC.Type.Parser        as T

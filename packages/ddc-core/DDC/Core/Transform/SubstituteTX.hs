@@ -6,7 +6,7 @@ module DDC.Core.Transform.SubstituteTX
         , substituteBoundTX
         , SubstituteTX(..))
 where
-import DDC.Core.Collect.BindTree
+import DDC.Core.Collect
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT

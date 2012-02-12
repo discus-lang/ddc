@@ -4,7 +4,7 @@
 module DDC.Type.Transform.Trim 
         (trimClosure)
 where
-import DDC.Core.Collect.BindTree
+import DDC.Core.Collect
 import DDC.Type.Check.CheckCon
 import DDC.Type.Exp
 import DDC.Type.Compounds

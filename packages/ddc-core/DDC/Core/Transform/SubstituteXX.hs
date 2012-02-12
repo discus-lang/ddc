@@ -8,7 +8,7 @@ module DDC.Core.Transform.SubstituteXX
         , substituteXArgs)
 where
 import DDC.Core.Exp
-import DDC.Core.Collect.BindTree
+import DDC.Core.Collect
 import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteWX

@@ -6,7 +6,7 @@ module DDC.Core.Transform.SubstituteWX
         , substituteWXs)
 where
 import DDC.Core.Exp
-import DDC.Core.Collect.BindTree
+import DDC.Core.Collect
 import DDC.Core.Transform.LiftW
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT

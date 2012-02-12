@@ -14,7 +14,7 @@ module DDC.Type.Transform.SubstituteT
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
-import DDC.Core.Collect.BindTree
+import DDC.Core.Collect
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
