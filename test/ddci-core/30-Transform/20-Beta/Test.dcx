@@ -102,3 +102,23 @@ addInt [:r0 r0 R0#:]
                 in  addInt [:r1 r1 r0:] x x)
                 <:wc wg:> ())
         (5 [r0] ());;
+
+
+-- Rewrite outer type binder to avoid shadow conflict on type lambda.
+:trans..
+(\(f : [a : *]. Unit -> Unit). /\(a : *). f [a] ())
+        (/\(a : *). \(_ : Unit). ());;
+
+
+-- Rewrite quantifier to avoid capture.
+:trans..
+(/\(a : *). 
+    (/\(b : *). \(x : [a : *]. a -> b). ())
+    [a]);;
+
+
+-- Rewrite variables on types of value binders.
+:trans..
+(\(x : Unit -> Unit). /\(r : %). \(y : Int r). y)
+        (\(_ : Unit). letregion r in ());;
+

@@ -21,6 +21,7 @@ import qualified Data.Set       as Set
 import Data.Set                 (Set)
 import Data.List
 
+
 -- | Wrapper for `substituteWithX` that determines the set of free names in the
 --   expression being substituted, and starts with an empty binder stack.
 substituteXX 
@@ -125,10 +126,11 @@ bindT sub b
 -- | Push a level-0 binder on the rewrite stack.
 bindX :: Ord n => Sub n -> Bind n -> (Sub n, Bind n)
 bindX sub b 
- = let  (stackX', b')      = pushBind (subConflict0 sub) (subStack0 sub) b      -- rewrite type of binder
+ = let  b1                  = rewriteWith sub b
+        (stackX', b2)       = pushBind (subConflict0 sub) (subStack0 sub) b1
    in   ( sub { subStack0  = stackX'
-              , subShadow  = namedBoundMatchesBind (subBound sub) b}
-        , b')
+              , subShadow  = namedBoundMatchesBind (subBound sub) b2}
+        , b2)
 
 
 -- | Push some level-0 binders on the rewrite stack.
@@ -147,28 +149,29 @@ useT sub u
         | otherwise
         = u
 
+
 -- | Rewrite witness binder.
 useW    :: Ord n => Sub n -> Bound n -> Bound n
 useW sub u
         | UName _ t             <- u
         , BindStack binds _ _ _ <- subStack0 sub
         , Just ix               <- findIndex (boundMatchesBind u) binds
-        = UIx ix t
+        = UIx ix (rewriteWith sub t)
 
         | otherwise
-        = u
+        = rewriteWith sub u
 
 
--- | Rewrite or substitute into a level-0 variable.             -- check that vars in annots are rewritten if needed 
+-- | Rewrite or substitute into a level-0 variable.
 useX    :: Ord n => Exp a n -> Sub n -> Bound n 
         -> Either (Bound n) (Exp a n)
 
 useX xArg sub u
   = case substBound (subStack0 sub) (subBound sub) u of
-        Left  u' -> Left u'
+        Left  u' -> Left (rewriteWith sub u')
         Right n  
          | not $ subShadow sub  -> Right (liftX n xArg)
-         | otherwise            -> Left u
+         | otherwise            -> Left (rewriteWith sub u)
 
 
 -------------------------------------------------------------------------------
@@ -224,10 +227,10 @@ instance SubstituteXX Exp where
         XLet a (LWithRegion uR) x2
          -> XLet a (LWithRegion uR) (down sub x2)
 
-        XCase a x1 alts -> XCase a    (down sub x1) (map (down sub) alts)
-        XCast a cc x1   -> XCast a cc (down sub x1)                             -- into casts
-        XType t         -> XType      (into sub t)
-        XWitness w      -> XWitness   (into sub w)
+        XCase a x1 alts -> XCase a  (down sub x1) (map (down sub) alts)
+        XCast a cc x1   -> XCast a  (into sub cc) (down sub x1)
+        XType t         -> XType    (into sub t)
+        XWitness w      -> XWitness (into sub w)
  
 
 instance SubstituteXX Alt where
@@ -248,12 +251,32 @@ class Rewrite (c :: * -> *) where
  rewriteWith :: Ord n => Sub n -> c n -> c n 
 
 
+instance Rewrite Bind where
+ rewriteWith sub bb
+  = replaceTypeOfBind  (rewriteWith sub (typeOfBind bb))  bb
+
+
+instance Rewrite Bound where
+ rewriteWith sub uu
+  = replaceTypeOfBound (rewriteWith sub (typeOfBound uu)) uu
+
+
 instance Rewrite LetMode where
  rewriteWith sub lm
   = case lm of
         LetStrict        -> lm
         LetLazy (Just t) -> LetLazy (Just $ rewriteWith sub t) 
         LetLazy Nothing  -> LetLazy Nothing
+
+
+instance Rewrite Cast where
+ rewriteWith sub cc
+  = let down    = rewriteWith sub 
+    in case cc of
+        CastWeakenEffect  eff   -> CastWeakenEffect  (down eff)
+        CastWeakenClosure clo   -> CastWeakenClosure (down clo)
+        CastPurify w            -> CastPurify (down w)
+        CastForget w            -> CastForget (down w)
 
 
 instance Rewrite Type where
