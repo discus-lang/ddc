@@ -9,7 +9,6 @@ module DDC.Type.Transform.SubstituteT
         , BindStack(..)
         , pushBind
         , pushBinds
-        , addBind
         , substBound)
 where
 import DDC.Type.Exp

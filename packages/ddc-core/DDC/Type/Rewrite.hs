@@ -4,12 +4,11 @@ module DDC.Type.Rewrite
         ( Rewrite(..)
         , Sub(..)
         , BindStack(..)
-        , addBind
         , pushBind
         , pushBinds
         , substBound
 
-        , bindT, bindX, bindXs
+        , bind1, bind0, bind0s
         , use1,  use0)
 where
 import DDC.Core.Exp
@@ -63,6 +62,13 @@ data BindStack n
         , stackNamed    :: Int }
 
 
+-- | Push several binds onto the bind stack,
+--   anonymysing them if need be to avoid variable capture.
+pushBinds :: Ord n => Set n -> BindStack n -> [Bind n]  -> (BindStack n, [Bind n])
+pushBinds fns stack bs
+        = mapAccumL (pushBind fns) stack bs
+
+
 -- | Push a bind onto a bind stack, 
 --   anonymising it if need be to avoid variable capture.
 pushBind
@@ -94,18 +100,6 @@ pushBind fns bs@(BindStack stack env dAnon dName) bb
         _ -> (bs, bb)
 
 
--- | Push several binds onto the bind stack,
---   anonymysing them if need be to avoid variable capture.
-pushBinds :: Ord n => Set n -> BindStack n -> [Bind n]  -> (BindStack n, [Bind n])
-pushBinds fns stack bs
-        = mapAccumL (pushBind fns) stack bs
-
-
-addBind :: Bind n -> BindStack n -> BindStack n
-addBind b (BindStack stack env dAnon dName)
-        = BindStack stack (b : env) dAnon dName
-
-
 
 -- | Compare a `Bound` against the one we're substituting for.
 substBound
@@ -114,7 +108,7 @@ substBound
         -> Bound n          -- ^ Bound we're substituting for.
         -> Bound n          -- ^ Bound we're looking at now.
         -> Either 
-                (Bound n)   --   Bound doesn't match, but rewite it to this one.
+                (Bound n)   --   Bound doesn't match, but replace with this one.
                 Int         --   Bound matches, drop the thing being substituted and 
                             --   and lift indices this many steps.
 
@@ -153,15 +147,15 @@ substBound (BindStack binds _ dAnon dName) u u'
 
 -------------------------------------------------------------------------------
 -- | Push a level-1 binder on the rewrite stack.
-bindT :: Ord n => Sub n -> Bind n -> (Sub n, Bind n)
-bindT sub b 
+bind1 :: Ord n => Sub n -> Bind n -> (Sub n, Bind n)
+bind1 sub b 
  = let  (stackT', b')     = pushBind (subConflict1 sub) (subStack1 sub) b
    in   (sub { subStack1  = stackT' }, b')
 
 
 -- | Push a level-0 binder on the rewrite stack.
-bindX :: Ord n => Sub n -> Bind n -> (Sub n, Bind n)
-bindX sub b 
+bind0 :: Ord n => Sub n -> Bind n -> (Sub n, Bind n)
+bind0 sub b 
  = let  b1                  = rewriteWith sub b
         (stackX', b2)       = pushBind (subConflict0 sub) (subStack0 sub) b1
    in   ( sub { subStack0   = stackX'
@@ -170,8 +164,8 @@ bindX sub b
 
 
 -- | Push some level-0 binders on the rewrite stack.
-bindXs :: Ord n => Sub n -> [Bind n] -> (Sub n, [Bind n])
-bindXs = mapAccumL bindX
+bind0s :: Ord n => Sub n -> [Bind n] -> (Sub n, [Bind n])
+bind0s = mapAccumL bind0
 
 
 -- | Rewrite a level-1 binder to anonymous form if need be.
@@ -240,7 +234,7 @@ instance Rewrite Type where
         TCon{}          -> tt
 
         TForall b t
-         -> let (sub1, b')      = bindT sub b
+         -> let (sub1, b')      = bind1 sub b
                 t'              = down  sub1 t
             in  TForall b' t'
 

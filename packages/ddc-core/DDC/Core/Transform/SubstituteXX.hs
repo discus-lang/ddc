@@ -87,20 +87,6 @@ substituteXArgs bas x
         = foldr (uncurry substituteXArg) x bas
 
 
-
-
--- | Rewrite or substitute into a level-0 variable.
-useX    :: Ord n => Exp a n -> Sub n -> Bound n 
-        -> Either (Bound n) (Exp a n)
-
-useX xArg sub u
-  = case substBound (subStack0 sub) (subBound sub) u of
-        Left  u' -> Left (rewriteWith sub u')
-        Right n  
-         | not $ subShadow0 sub -> Right (liftX n xArg)
-         | otherwise            -> Left (rewriteWith sub u)
-
-
 -------------------------------------------------------------------------------
 class SubstituteXX (c :: * -> * -> *) where
  substituteWithXX 
@@ -114,7 +100,7 @@ instance SubstituteXX Exp where
         into    = rewriteWith
     in case xx of
         XVar a u
-         -> case useX xArg sub u of
+         -> case substX xArg sub u of
                 Left  u' -> XVar a u'
                 Right x  -> x
 
@@ -122,33 +108,33 @@ instance SubstituteXX Exp where
         XApp a x1 x2     -> XApp a (down sub x1) (down sub x2)
 
         XLAM a b x
-         -> let (sub1, b')      = bindT sub b
+         -> let (sub1, b')      = bind1 sub b
                 x'              = down  sub1 x
             in  XLAM a b' x'
 
         XLam a b x
-         -> let (sub1, b')      = bindX sub  b
+         -> let (sub1, b')      = bind0 sub  b
                 x'              = down  sub1 x
             in  XLam a b' x'
 
         XLet a (LLet m b x1) x2
          -> let m'              = into  sub  m
                 x1'             = down  sub  x1
-                (sub1, b')      = bindX sub  b
+                (sub1, b')      = bind0 sub  b
                 x2'             = down  sub1 x2
             in  XLet a (LLet m' b' x1') x2'
 
         XLet a (LRec bxs) x2
          -> let (bs, xs)        = unzip  bxs
-                (sub1, bs')     = bindXs sub bs
+                (sub1, bs')     = bind0s sub bs
                 xs'             = map (down sub1) xs
                 x2'             = down sub1 x2
             in  XLet a (LRec (zip bs' xs')) x2'
 
         XLet a (LLetRegion b bs) x2
-         -> let (sub1, b')      = bindT  sub  b
-                (sub2, bs')     = bindXs sub1 bs
-                x2'             = down sub2 x2
+         -> let (sub1, b')      = bind1  sub  b
+                (sub2, bs')     = bind0s sub1 bs
+                x2'             = down   sub2 x2
             in  XLet a (LLetRegion b' bs') x2'
 
         XLet a (LWithRegion uR) x2
@@ -168,9 +154,20 @@ instance SubstituteXX Alt where
          -> AAlt PDefault $ down sub xBody
         
         AAlt (PData uCon bs) x
-         -> let (sub1, bs')     = bindXs sub bs
+         -> let (sub1, bs')     = bind0s sub bs
                 x'              = down   sub1 x
             in  AAlt (PData uCon bs') x'
 
+
+-- | Rewrite or substitute into an expression variable.
+substX  :: Ord n => Exp a n -> Sub n -> Bound n 
+        -> Either (Bound n) (Exp a n)
+
+substX xArg sub u
+  = case substBound (subStack0 sub) (subBound sub) u of
+        Left  u'                -> Left (rewriteWith sub u')
+        Right n  
+         | not $ subShadow0 sub -> Right (liftX n xArg)
+         | otherwise            -> Left (rewriteWith sub u)
 
 
