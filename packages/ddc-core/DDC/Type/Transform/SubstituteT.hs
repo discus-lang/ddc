@@ -195,6 +195,8 @@ pushBinds fns stack bs
         = mapAccumL (pushBind fns) stack bs
 
 
+-- add useBound function to do what useT useW functions do.
+
 -- | Compare a `Bound` against the one we're substituting for.
 substBound
         :: Ord n

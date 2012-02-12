@@ -4,7 +4,8 @@
 module DDC.Core.Collect
         ( freeT
         , freeX
-        , collectBound)
+        , collectBound
+        , collectSpecBinds)
 where
 import DDC.Type.Compounds
 import DDC.Core.Exp
@@ -60,7 +61,7 @@ freeOfTreeX tenv tt
 
 
 -- collectBound ---------------------------------------------------------------
--- | Gather all the bound variables in a thing, 
+-- | Collect all the bound variables in a thing, 
 --   independent of whether they are free or not.
 collectBound :: (BindStruct c, Ord n) => c n -> Set (Bound n)
 collectBound 
@@ -72,6 +73,27 @@ collectBoundOfTree tt
         BindDef _ _ ts  -> Set.unions $ map collectBoundOfTree ts
         BindUse _ u     -> Set.singleton u
         BindCon _ u     -> Set.singleton u
+
+
+-- collectSpecBinds -----------------------------------------------------------
+-- | Collect all the spec binders in a thing.
+collectSpecBinds :: (BindStruct c, Ord n) => c n -> [Bind n]
+collectSpecBinds 
+        = concatMap collectSpecBindsOfTree . slurpBindTree
+        
+
+collectSpecBindsOfTree :: Ord n => BindTree n -> [Bind n]
+collectSpecBindsOfTree tt
+ = case tt of
+        BindDef way bs ts
+         |   BoundSpec <- boundLevelOfBindWay way
+         ->  concat ( bs
+                    : map collectSpecBindsOfTree ts)
+
+         | otherwise
+         ->  concatMap collectSpecBindsOfTree ts
+
+        _ -> []
 
 
 -------------------------------------------------------------------------------

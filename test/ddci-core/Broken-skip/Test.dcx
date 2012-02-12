@@ -1,6 +1,38 @@
 
+:set trans Beta
+
+
 -- Rewrite outer type binder to avoid shadow conflict on type lambda.
 :trans..
 (\(f : [a : *]. Unit -> Unit). /\(a : *). f [a] ())
         (/\(a : *). \(_ : Unit). ());;
 
+
+-- Rewrite quantifier to avoid capture.
+:trans..
+(/\(a : *). 
+    (/\(b : *). \(x : [a : *]. a -> b). ())
+    [a]);;
+
+
+-- Can't stop substituting when we reach a variable that is the same
+-- because we need to continue rewriting variables to avoid capture.
+
+-- This will be because we arbitrarilly lower the exp when
+-- cutting closure terms. Should only lower if the binder is anonymous.
+
+:check..
+let x = () in
+(\(y : Unit). \(x : Int R0#). \(y : Unit). x) x
+;;
+
+:trans..
+let x = () in
+(\(y : Unit). \(x : Int R0#). \(y : Unit). x) x
+;;
+
+
+-- Need to rewrite variables in types of biders.
+:trans..
+(\(x : Unit -> Unit). /\(r : %). \(y : Int r). y)
+        (\(_ : Unit). letregion r in ());;
