@@ -101,7 +101,7 @@ instance SubstituteXX Exp where
     in case xx of
         XVar a u
          -> case substX xArg sub u of
-                Left  u' -> XVar a u'
+                Left  u' -> XVar a (into sub u')
                 Right x  -> x
 
         XCon{}           -> xx

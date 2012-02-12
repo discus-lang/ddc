@@ -157,7 +157,7 @@ instance SubstituteWX Witness where
     in case ww of
         WVar u
          -> case substW wArg sub u of
-                Left u'  -> WVar u'
+                Left u'  -> WVar (into sub u')
                 Right w  -> w
 
         WCon{}                  -> ww
