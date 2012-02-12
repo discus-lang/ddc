@@ -166,7 +166,7 @@ instance SubstituteWX Witness where
         WType t                 -> WType (into sub t)
 
 
--- | Rewrite or substitute into an expression variable.
+-- | Rewrite or substitute into a witness variable.
 substW  :: Ord n => Witness n -> Sub n -> Bound n 
         -> Either (Bound n) (Witness n)
 

@@ -10,9 +10,8 @@ import DDC.Core.Collect
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
+import DDC.Type.Rewrite
 import Data.Maybe
-import DDC.Type.Env                     (Env)
-import Data.Set                         (Set)
 import qualified Data.Set               as Set
 import qualified DDC.Type.Env           as Env
 
@@ -33,156 +32,138 @@ substituteTXs bts x
 
 -- | Substitute a `Type` for a `Bound` in some thing.
 substituteBoundTX :: (SubstituteTX c, Ord n) => Bound n -> Type n -> c n -> c n
-substituteBoundTX u t x
- = let -- Determine the free names in the type we're subsituting.
-       -- We'll need to rename binders with the same names as these
-       fnsT     = Set.fromList
-                $ mapMaybe takeNameOfBound 
-                $ Set.toList 
-                $ freeT Env.empty t
+substituteBoundTX u tArg xx
+ = substituteWithTX tArg
+        ( Sub 
+        { subBound      = u
 
-       stackT   = BindStack [] [] 0 0
- 
-  in   substituteWithTX u t fnsT stackT Env.empty x
+          -- Rewrite level-1 binders that have the same name as any
+          -- of the free variables in the expression to substitute.
+        , subConflict1  
+                = Set.fromList
+                $  (mapMaybe takeNameOfBound $ Set.toList $ freeT Env.empty tArg) 
+
+          -- Rewrite level-0 binders that have the same name as any
+          -- of the free variables in the expression to substitute.
+        , subConflict0  = Set.empty
+        , subStack1     = BindStack [] [] 0 0
+        , subStack0     = BindStack [] [] 0 0
+        , subShadow0    = False })
+        xx
 
 
 -------------------------------------------------------------------------------
 class SubstituteTX (c :: * -> *) where
-
- -- | Substitute a type into some thing.
---
- --   If we find a named binder that would capture a free variable
- --   then we rewrite that binder to anonymous form, avoiding the capture.
  substituteWithTX
         :: forall n. Ord n
-        => Bound n       -- ^ Bound variable that we're subsituting into.
-        -> Type n        -- ^ Type to substitute.
-        -> Set  n        -- ^ Names of free type variables in the type to substitute.
-        -> BindStack n   -- ^ Bind stack for rewriting type variables.
-        -> Env n         -- ^ Current type environment.
-        -> c n -> c n
+        => Type n -> Sub n -> c n -> c n
 
 
-instance SubstituteTX (Exp a) where
- substituteWithTX u t fnsT stackT envX xx
-  = let down    = substituteWithTX u t fnsT stackT envX
-    in  case xx of
-         -- If we've substituted into the type annotation on a binder then we 
-         -- also need to replace the annotation on the bound occurrences.
-         XVar a u'
-          -> case Env.lookup u' envX of
-                Nothing -> xx
-                Just t' -> XVar a $ replaceTypeOfBound t' u'
+instance SubstituteTX (Exp a) where 
+ substituteWithTX tArg sub xx
+  = let down    = substituteWithTX tArg
+    in case xx of
+        XVar a u        -> XVar a (down sub u)
+        XCon{}          -> xx
+        XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 
-         XCon{}         -> xx
-         XApp a x1 x2   -> XApp a (down x1) (down x2)
+        XLAM a b x
+         -> let (sub1, b')      = bind1 sub b
+                x'              = down  sub1 x
+            in  XLAM a b' x'
 
-         XLAM a b xBody
-          | namedBoundMatchesBind u b -> xx 
-          | otherwise
-          -> let b2             = down b
-                 (stackT', b3)  = pushBind fnsT stackT b2
-                 xBody'         = substituteWithTX u t fnsT stackT' envX xBody
-             in  XLAM a b3 xBody'
+        XLam a b x
+         -> let (sub1, b')      = bind0 sub  (down sub b)
+                x'              = down  sub1 x
+            in  XLam a b' x'
 
-         XLam a b xBody
-          -> let b'             = down b
-                 envX'          = Env.extend b' envX
-                 xBody'         = substituteWithTX u t fnsT stackT envX' xBody
-             in  XLam a b' xBody'
+        XLet a (LLet m b x1) x2
+         -> let m'              = down  sub  m
+                x1'             = down  sub  x1
+                (sub1, b')      = bind0 sub  (down sub b)
+                x2'             = down  sub1 x2
+            in  XLet a (LLet m' b' x1') x2'
 
-         XLet a (LLet m b x1) x2
-          -> let m'             = down m
-                 b'             = down b
-                 x1'            = down x1
-                 envX'          = Env.extend b' envX
-                 x2'            = substituteWithTX u t fnsT stackT envX' x2
-             in  XLet a (LLet m' b' x1')  x2'
+        XLet a (LRec bxs) x2
+         -> let (bs, xs)        = unzip  bxs
+                (sub1, bs')     = bind0s sub (map (down sub) bs)
+                xs'             = map (down sub1) xs
+                x2'             = down sub1 x2
+            in  XLet a (LRec (zip bs' xs')) x2'
 
-         XLet a (LRec bxs) x2
-          -> let (bs, xs)       = unzip bxs
-                 bs'            = map down bs
-                 envX'          = Env.extends bs' envX
-                 xs'            = map (substituteWithTX u t fnsT stackT envX') xs
-                 x2'            = substituteWithTX u t fnsT stackT envX' x2
-             in  XLet a (LRec (zip bs' xs')) x2'
+        XLet a (LLetRegion b bs) x2
+         -> let (sub1, b')      = bind1  sub  b
+                (sub2, bs')     = bind0s sub1 (map (down sub1) bs)
+                x2'             = down   sub2 x2
+            in  XLet a (LLetRegion b' bs') x2'
 
-         XLet a (LLetRegion b bs) x2
-          | namedBoundMatchesBind u b -> xx 
-          | otherwise
-          -> let (stackT', b')  = pushBind fnsT stackT b
-                 bs'            = map (substituteWithTX u t fnsT stackT' envX) bs
-                 envX'          = Env.extends bs' envX
-                 x2'            = substituteWithTX u t fnsT stackT' envX' x2
-             in  XLet a (LLetRegion b' bs') x2'
+        XLet a (LWithRegion uR) x2
+         -> XLet a (LWithRegion uR) (down sub x2)
 
-         XLet a (LWithRegion uR) x2
-           -> XLet a (LWithRegion uR) (down x2)
-
-         XCase a x alts -> XCase  a (down x) (map down alts)
-         XCast a c x    -> XCast  a (down c) (down x)
-         XType t'       -> XType    (substituteWithT u t fnsT stackT t')
-         XWitness w     -> XWitness (down w)
+        XCase a x1 alts -> XCase a  (down sub x1) (map (down sub) alts)
+        XCast a cc x1   -> XCast a  (down sub cc) (down sub x1)
+        XType t         -> XType    (down sub t)
+        XWitness w      -> XWitness (down sub w)
 
 
 instance SubstituteTX LetMode where
- substituteWithTX u t fnsT stackT envX lm
-  = let down    = substituteWithTX u t fnsT stackT envX 
+ substituteWithTX tArg sub lm
+  = let down    = substituteWithTX tArg
     in case lm of
         LetStrict         -> lm
         LetLazy Nothing   -> lm
-        LetLazy (Just w)  -> LetLazy (Just $ down w)
+        LetLazy (Just w)  -> LetLazy (Just $ down sub w)
 
 
 instance SubstituteTX (Alt a) where
- substituteWithTX u t fnsT stackT envX alt
-  = let down    = substituteWithTX u t fnsT stackT envX
-    in  case alt of
-         AAlt PDefault x        
-          -> AAlt PDefault (down x)
-
-         AAlt (PData uCon bs) x
-          -> let bs'     = map down bs
-                 envX'   = Env.extends bs' envX
-                 x'      = substituteWithTX u t fnsT stackT envX' x
-             in  AAlt (PData uCon bs') x'
+ substituteWithTX tArg sub aa
+  = let down = substituteWithTX tArg
+    in case aa of
+        AAlt PDefault xBody
+         -> AAlt PDefault $ down sub xBody
+        
+        AAlt (PData uCon bs) x
+         -> let (sub1, bs')     = bind0s sub (map (down sub) bs)
+                x'              = down   sub1 x
+            in  AAlt (PData uCon bs') x'
 
 
 instance SubstituteTX Cast where
- substituteWithTX u t fnsT stackT envX tt
-  = let down    = substituteWithTX u t fnsT stackT envX
-    in  case tt of
-         CastWeakenEffect eff   
-          -> CastWeakenEffect  (substituteWithT u t fnsT stackT eff)
-
-         CastWeakenClosure clo
-          -> CastWeakenClosure (substituteWithT u t fnsT stackT clo)
-
-         CastPurify w
-          -> CastPurify (down w)
-
-         CastForget w
-          -> CastForget (down w)
+ substituteWithTX tArg sub cc
+  = let down    = substituteWithTX tArg
+    in case cc of
+        CastWeakenEffect eff    -> CastWeakenEffect  (down sub eff)
+        CastWeakenClosure clo   -> CastWeakenClosure (down sub clo)
+        CastPurify w            -> CastPurify        (down sub w)
+        CastForget w            -> CastForget        (down sub w)
 
 
 instance SubstituteTX Witness where
- substituteWithTX u t fvsT stackT envX ww
-  = let down    = substituteWithTX u t fvsT stackT envX
+ substituteWithTX tArg sub ww
+  = let down    = substituteWithTX tArg
     in case ww of
-         WCon{}         -> ww
-
-         WVar u'
-          -> case Env.lookup u' envX of
-                Nothing -> ww
-                Just t' -> WVar $ replaceTypeOfBound t' u'
-          
-         WApp  w1 w2    -> WApp  (down w1) (down w2)
-         WJoin w1 w2    -> WJoin (down w1) (down w2)
-         WType t1       -> WType (substituteWithT u t fvsT stackT t1)
+        WVar u                  -> WVar  (down sub u)
+        WCon{}                  -> ww
+        WApp  w1 w2             -> WApp  (down sub w1) (down sub w2)
+        WJoin w1 w2             -> WJoin (down sub w1) (down sub w2)
+        WType t                 -> WType (down sub t)
 
 
 instance SubstituteTX Bind where
- substituteWithTX u t fnsT stackT _envX bb
-  = let t'      = substituteWithT u t fnsT stackT $ typeOfBind bb
-    in  replaceTypeOfBind t' bb
+ substituteWithTX tArg sub bb
+  = replaceTypeOfBind (substituteWithTX tArg sub (typeOfBind bb))  bb
 
+
+instance SubstituteTX Bound where
+ substituteWithTX tArg sub uu
+  = replaceTypeOfBound (substituteWithTX tArg sub (typeOfBound uu)) uu
+
+
+instance SubstituteTX Type where
+ substituteWithTX tArg sub tt
+        = substituteWithT
+                (subBound sub)
+                tArg
+                (subConflict1 sub)
+                (subStack1    sub)
+                tt
