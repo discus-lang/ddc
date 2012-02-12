@@ -18,8 +18,8 @@ import DDC.Core.Collect
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
+import DDC.Type.Rewrite
 import Data.Maybe
-import Data.List
 import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
@@ -139,103 +139,3 @@ instance SubstituteT TypeSum where
 
 
 -------------------------------------------------------------------------------
--- | Stack of anonymous binders that we've entered under, 
---   and named binders that we're rewriting.
-data BindStack n
-        = BindStack
-        { -- | Holds anonymous binders that were already in the program,
-          --   as well as named binders that are being rewritten to anonymous ones.
-          stackBinds    :: [Bind n]
-
-          -- | Holds all binders.
-        , stackAll      :: [Bind n] 
-        , stackAnons    :: Int
-        , stackNamed    :: Int }
-
--- | Push a bind onto a bind stack, 
---   anonymising it if need be to avoid variable capture.
-pushBind
-        :: Ord n
-        => Set n                  -- ^ Names free in the thing we're substiuting.
-        -> BindStack n            -- ^ Current bind stack.
-        -> Bind n                 -- ^ Bind to push.
-        -> (BindStack n, Bind n)  -- ^ New stack and possibly anonymised bind.
-
-pushBind fns bs@(BindStack stack env dAnon dName) bb
- = case bb of
-        -- Push anonymous bind on stack.
-        BAnon t                 
-         -> ( BindStack (BAnon t   : stack) (BAnon t : env) (dAnon + 1) dName
-            , BAnon t)
-            
-        -- This binder would capture names in the thing that we're substituting,
-        -- to rewrite it to an anonymous one.
-        BName n t
-         | Set.member n fns     
-         -> ( BindStack (BName n t : stack) (BAnon t : env)  dAnon       (dName + 1)
-            , BAnon t)
-
-         | otherwise
-         -> ( BindStack stack               (BName n t : env) dAnon dName
-            , bb)
-
-        -- Binder was a wildcard 
-        _ -> (bs, bb)
-
-
-addBind :: Bind n -> BindStack n -> BindStack n
-addBind b (BindStack stack env dAnon dName)
-        = BindStack stack (b : env) dAnon dName
-
-
--- | Push several binds onto the bind stack,
---   anonymysing them if need be to avoid variable capture.
-pushBinds :: Ord n => Set n -> BindStack n -> [Bind n]  -> (BindStack n, [Bind n])
-pushBinds fns stack bs
-        = mapAccumL (pushBind fns) stack bs
-
-
--- add useBound function to do what useT useW functions do.
-
--- | Compare a `Bound` against the one we're substituting for.
-substBound
-        :: Ord n
-        => BindStack n      -- ^ Current Bind stack during substitution.
-        -> Bound n          -- ^ Bound we're substituting for.
-        -> Bound n          -- ^ Bound we're looking at now.
-        -> Either 
-                (Bound n)   --   Bound doesn't match, but rewite it to this one.
-                Int         --   Bound matches, drop the thing being substituted and 
-                            --   and lift indices this many steps.
-
-substBound (BindStack binds _ dAnon dName) u u'
-        -- Bound name matches the one that we're substituting for.
-        | UName n1 _   <- u
-        , UName n2 _   <- u'
-        , n1 == n2
-        = Right (dAnon + dName)
-
-        -- Bound index matches the one that we're substituting for.
-        | UIx  i1 _     <- u
-        , UIx  i2 _     <- u'
-        , i1 + dAnon == i2 
-        = Right (dAnon + dName)
-
-        -- The Bind for this name was rewritten to avoid variable capture,
-        -- so we also have to update the bound occurrence.
-        | UName _ t     <- u'
-        , Just ix       <- findIndex (boundMatchesBind u') binds
-        = Left $ UIx ix t
-
-        -- Bound index doesn't match, but lower this index by one to account
-        -- for the removal of the outer binder.
-        | UIx  i2 t     <- u'
-        , i2 > dAnon
-        , cutOffset     <- case u of
-                                UIx{}   -> 1
-                                _       -> 0
-        = Left $ UIx (i2 + dName - cutOffset) t
-
-        -- Some name that didn't match.
-        | otherwise
-        = Left u'
