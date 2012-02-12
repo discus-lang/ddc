@@ -92,7 +92,7 @@ startingStoreForExp :: Exp () Name -> Store
 startingStoreForExp xx
  =  let
         -- Gather up all the region handles already in the expression.
-        rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ gatherBound xx]
+        rs      = [ r | UPrim (NameRgn r) _ <- Set.toList $ collectBound xx]
 
         -- Decide what new region should be allocated first.
         -- Region 0 is reserved for thunks.

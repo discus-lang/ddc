@@ -4,7 +4,7 @@
 module DDC.Core.Collect
         ( freeT
         , freeX
-        , gatherBound)
+        , collectBound)
 where
 import DDC.Type.Compounds
 import DDC.Core.Exp
@@ -59,17 +59,17 @@ freeOfTreeX tenv tt
         _                    -> Set.empty
 
 
--- gatherBound ----------------------------------------------------------------
+-- collectBound ---------------------------------------------------------------
 -- | Gather all the bound variables in a thing, 
 --   independent of whether they are free or not.
-gatherBound :: (BindStruct c, Ord n) => c n -> Set (Bound n)
-gatherBound = Set.unions . map boundsOfTree . slurpBindTree 
+collectBound :: (BindStruct c, Ord n) => c n -> Set (Bound n)
+collectBound 
+        = Set.unions . map collectBoundOfTree . slurpBindTree 
 
-
-boundsOfTree :: Ord n => BindTree n -> Set (Bound n)
-boundsOfTree tt
+collectBoundOfTree :: Ord n => BindTree n -> Set (Bound n)
+collectBoundOfTree tt
  = case tt of
-        BindDef _ _ ts  -> Set.unions $ map boundsOfTree ts
+        BindDef _ _ ts  -> Set.unions $ map collectBoundOfTree ts
         BindUse _ u     -> Set.singleton u
         BindCon _ u     -> Set.singleton u
 
