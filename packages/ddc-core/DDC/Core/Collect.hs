@@ -16,6 +16,7 @@ import Data.Set                         (Set)
 
 
 -- freeT ----------------------------------------------------------------------
+-- | Collect the free Spec variables in a thing (level-1).
 freeT   :: (BindStruct c, Ord n) 
         => Env n -> c n -> Set (Bound n)
 freeT tenv xx = Set.unions $ map (freeOfTreeT tenv) $ slurpBindTree xx
@@ -38,6 +39,7 @@ freeOfTreeT kenv tt
 
 
 -- freeX ----------------------------------------------------------------------
+-- | Collect the free Data and Witness variables in a thing (level-0).
 freeX   :: (BindStruct c, Ord n) 
         => Env n -> c n -> Set (Bound n)
 freeX tenv xx = Set.unions $ map (freeOfTreeX tenv) $ slurpBindTree xx
