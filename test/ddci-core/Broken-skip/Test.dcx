@@ -1,2 +1,15 @@
 
 
+-- Handle forget around the discriminant.
+:eval..
+letregion r with {w : Global r} in
+let x = forget <use [r] w> in
+        Cons [r] [Int r] (5 [r] ()) (Nil [r] [Int r] ()) in
+case x of {
+        Nil      -> 0 [R0#] ();
+        Cons x _ -> addInt [:r R0# R0#:] x (0 [R0#] ());        -- don't subst past x
+                                                                -- this x shadows the one from the let.
+};;
+
+
+

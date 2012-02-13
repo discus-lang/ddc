@@ -34,3 +34,14 @@ case 5 [R0#] () of {
         6 -> 1 [R0#] ();
         _ -> 0 [R0#] ();
 };;
+
+
+-- Handle forget cast around the discriminant.
+:eval..
+letregion r with {w : Global r} in
+let xx = forget <use [r] w> in 
+        Cons [r] [Int r] (5 [r] ()) (Nil [r] [Int r] ()) in
+case xx of {
+        Nil      -> 0 [R0#] ();
+        Cons x _ -> addInt [:r R0# R0#:] x (0 [R0#] ());
+};;
