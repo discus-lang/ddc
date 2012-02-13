@@ -20,6 +20,7 @@ help    = unlines
         , "  :effect  EXP       Show the effect  of a value expression."
         , "  :closure EXP       Show the closure of a value expression." 
         , "  :ast     EXP       Show the abstract syntax tree of a value expression." 
+        , "  :eval    EXP       Evaluate an expression."
         , ""
         , "Modes"
         , "  :set               Display active modes and transform"

@@ -16,3 +16,7 @@ Cons 5 Nil
 
 -- Fall through to default alternative.
 0
+
+
+-- Handle forget cast around the discriminant.
+5

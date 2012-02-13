@@ -43,3 +43,11 @@ letrec {
                 (Nil [r2] [Int r1] ());
   }
 } in enumFromTo [:R1# R2#:] (5 [R1#] ()) (9 [R1#] ());;
+
+
+-- Handle forget around let-expression.
+:eval..
+letregion r with {w : Global r} in
+forget <use [r] w> in
+let x = () in
+(\(x : Unit). x) x;;
