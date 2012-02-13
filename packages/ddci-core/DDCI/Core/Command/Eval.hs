@@ -5,20 +5,20 @@ module DDCI.Core.Command.Eval
         , evalExp)
 where
 import DDCI.Core.Stats.Trace
-import DDCI.Core.Eval.Env
-import DDCI.Core.Eval.Step
-import DDCI.Core.Eval.Name
 import DDCI.Core.Command.Check
 import DDCI.Core.IO
 import DDCI.Core.State
+import DDC.Core.Eval.Env
+import DDC.Core.Eval.Step
+import DDC.Core.Eval.Name
 import DDC.Type.Equiv
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect
 import Control.Monad
-import DDCI.Core.Eval.Store             (Store)
-import qualified DDCI.Core.Eval.Store   as Store
+import DDC.Core.Eval.Store              (Store)
+import qualified DDC.Core.Eval.Store    as Store
 import qualified Data.Set               as Set
 
 

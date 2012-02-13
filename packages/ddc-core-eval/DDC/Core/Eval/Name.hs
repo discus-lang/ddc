@@ -1,5 +1,5 @@
 
-module DDCI.Core.Eval.Name 
+module DDC.Core.Eval.Name 
         ( Name    (..)
         , Loc     (..)
         , Rgn     (..)

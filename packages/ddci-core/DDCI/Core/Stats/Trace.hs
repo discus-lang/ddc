@@ -2,8 +2,8 @@
 module DDCI.Core.Stats.Trace
         (traceStore)
 where
-import DDCI.Core.Eval.Store
-import DDCI.Core.Eval.Name
+import DDC.Core.Eval.Store
+import DDC.Core.Eval.Name
 import DDC.Type.Compounds
 import DDC.Core.Compounds
 import DDC.Core.Exp

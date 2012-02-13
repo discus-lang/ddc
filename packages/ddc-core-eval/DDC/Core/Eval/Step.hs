@@ -5,18 +5,18 @@
 --   operators and constructors are defined in the interpreter package, 
 --   as they depend on the exact representation of the store.
 --
-module DDCI.Core.Eval.Step 
+module DDC.Core.Eval.Step 
         ( step
         , StepResult(..)
         , isValue
         , isWeakValue
         , regionWitnessOfType )
 where
-import DDCI.Core.Eval.Store
-import DDCI.Core.Eval.Name
-import DDCI.Core.Eval.Prim
-import DDCI.Core.Eval.Env
-import DDCI.Core.Eval.Compounds
+import DDC.Core.Eval.Store
+import DDC.Core.Eval.Name
+import DDC.Core.Eval.Prim
+import DDC.Core.Eval.Env
+import DDC.Core.Eval.Compounds
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Transform.SubstituteTX

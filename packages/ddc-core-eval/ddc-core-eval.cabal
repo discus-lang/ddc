@@ -1,0 +1,47 @@
+Name:           ddc-core-eval
+Version:        0.2.0.0
+License:        MIT
+License-file:   LICENSE
+Author:         Ben Lippmeier
+Maintainer:     benl@ouroborus.net
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Bug-reports:    disciple@ouroborus.net
+Description:    DDC Core language semantic evaluator     
+
+Library
+  Build-Depends: 
+        base            == 4.*,
+        containers      == 0.4.*,
+        array           == 0.3.*,
+        transformers    == 0.2.*,
+        ddc-base        == 0.2.0.*,
+        mtl             == 2.0.*
+
+  Exposed-modules:
+
+
+  GHC-options:
+        -Werror
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        ParallelListComp
+        PatternGuards
+        RankNTypes
+        FlexibleContexts
+        FlexibleInstances
+        MultiParamTypeClasses
+        UndecidableInstances
+        KindSignatures
+        NoMonomorphismRestriction
+        ScopedTypeVariables
+        StandaloneDeriving
+        DoAndIfThenElse
+        

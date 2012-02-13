@@ -1,5 +1,5 @@
 
-module DDCI.Core.Eval.Compounds
+module DDC.Core.Eval.Compounds
         ( tUnit
         , tInt
         , tList 
@@ -15,10 +15,10 @@ module DDCI.Core.Eval.Compounds
         , primNewRegion
         , primDelRegion)
 where
-import DDCI.Core.Eval.Name
+import DDC.Core.Eval.Name
 import DDC.Type.Compounds
 import DDC.Core.Exp
-import DDCI.Core.Eval.Store     as Store
+import DDC.Core.Eval.Store     as Store
 
 
 -- Type -----------------------------------------------------------------------

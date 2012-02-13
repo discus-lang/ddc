@@ -4,16 +4,16 @@ module DDCI.Core.Command.Trans
         ( cmdTrans
 	, cmdTransEval)
 where
+import DDCI.Core.Command.Check
+import DDCI.Core.Command.Eval
+import DDCI.Core.Transform
+import DDCI.Core.State
+import DDCI.Core.IO
+import DDC.Core.Eval.Env
+import DDC.Core.Eval.Name
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Type.Equiv
-import DDCI.Core.Transform
-import DDCI.Core.State
-import DDCI.Core.Command.Check
-import DDCI.Core.Command.Eval
-import DDCI.Core.Eval.Env
-import DDCI.Core.Eval.Name
-import DDCI.Core.IO
 import DDC.Base.Pretty
 
 

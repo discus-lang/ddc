@@ -5,14 +5,14 @@
 --   enough to experiment with the core language. When we end up wanting to interpret full
 --   Disciple programs, we should use the primops defined by the real compiler.
 --
-module DDCI.Core.Eval.Env
+module DDC.Core.Eval.Env
         ( primDataDefs
         , primKindEnv, kindOfPrimName
         , primTypeEnv, typeOfPrimName
         , arityOfName)
 where
-import DDCI.Core.Eval.Compounds
-import DDCI.Core.Eval.Name
+import DDC.Core.Eval.Compounds
+import DDC.Core.Eval.Name
 import DDC.Core.DataDef
 import DDC.Type.Exp
 import DDC.Type.Compounds

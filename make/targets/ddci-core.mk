@@ -5,6 +5,7 @@ ddci-core_packages = \
         packages/ddc-base/DDC \
         packages/ddc-core/DDC \
         packages/ddc-core-simpl/DDC \
+        packages/ddc-core-eval/DDC \
         packages/ddci-core/DDCI
 
 

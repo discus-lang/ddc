@@ -3,17 +3,17 @@
 -- 
 --   This should implements the proper operational semantics of the core language,
 --   so we're careful to check all premises of the evaluation rules are satisfied.
-module DDCI.Core.Eval.Prim
+module DDC.Core.Eval.Prim
         ( stepPrimCon
         , stepPrimOp
         , primNewRegion
         , primDelRegion)
 where
-import DDCI.Core.Eval.Compounds
-import DDCI.Core.Eval.Store
-import DDCI.Core.Eval.Name
+import DDC.Core.Eval.Compounds
+import DDC.Core.Eval.Store
+import DDC.Core.Eval.Name
 import DDC.Core.Exp
-import qualified DDCI.Core.Eval.Store   as Store
+import qualified DDC.Core.Eval.Store   as Store
 
 -------------------------------------------------------------------------------
 -- | Single step a primitive constructor.
