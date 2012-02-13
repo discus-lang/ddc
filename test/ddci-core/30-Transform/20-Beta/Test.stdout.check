@@ -60,3 +60,8 @@ letregion r0 with {wc : Const r0; wg : Global r0} in let x : Int r0 = 5 [r0] () 
 -- Rewrite variables on types of witness binders.
 /\(^ : %). \(y : Int ^0). \(wg : Global ^0). \(wl : Lazy ^0). let x : Int ^0 lazy <wl> = forget <use [^0] wg> in y in x
 
+
+-- In the resulting expression, check that closure variables are only
+-- lowered when the corresponding bind is anonymous.
+let x : Unit = () in \(^ : Int R0#). \(y : Unit). ^0
+

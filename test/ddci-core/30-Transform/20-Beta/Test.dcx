@@ -130,3 +130,10 @@ addInt [:r0 r0 R0#:]
         in x)
         (\(_ : Unit). letregion r in ());;
 
+
+-- In the resulting expression, check that closure variables are only
+-- lowered when the corresponding bind is anonymous.
+:trans..
+let x = () in
+(\(y : Unit). \(x : Int R0#). \(y : Unit). x) x;;
+

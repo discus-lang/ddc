@@ -1,20 +1,2 @@
 
-:set trans Beta
-
--- Can't stop substituting when we reach a variable that is the same
--- because we need to continue rewriting variables to avoid capture.
-
--- This will be because we arbitrarilly lower the exp when
--- cutting closure terms. Should only lower if the binder is anonymous.
-
-:check..
-let x = () in
-(\(y : Unit). \(x : Int R0#). \(y : Unit). x) x
-;;
-
-:trans..
-let x = () in
-(\(y : Unit). \(x : Int R0#). \(y : Unit). x) x
-;;
-
 

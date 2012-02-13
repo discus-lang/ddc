@@ -176,14 +176,17 @@ cutTaggedClosureT
         -> Maybe (TaggedClosure n)
 
 cutTaggedClosureT b1 cc
- = case cc of
-        GBoundVal u2 ts            -> Just $ GBoundVal u2 (lowerT 1 ts)
+ = let lower    = case b1 of
+                        BAnon{} -> lowerT 1
+                        _       -> id
+   in case cc of
+        GBoundVal u2 ts            -> Just $ GBoundVal u2 (lower ts)
 
         GBoundRgnVar u2 
          | boundMatchesBind u2 b1  -> Nothing
-         | otherwise               -> Just $ GBoundRgnVar (lowerT 1 u2)
+         | otherwise               -> Just $ GBoundRgnVar (lower u2)
 
-        GBoundRgnCon u2            -> Just $ GBoundRgnCon (lowerT 1 u2)
+        GBoundRgnCon u2            -> Just $ GBoundRgnCon (lower u2)
 
 
 -- | Like `cutTaggedClosureX` but cut terms due to several binders.
@@ -208,10 +211,13 @@ cutTaggedClosureX
         -> Maybe (TaggedClosure n)
 
 cutTaggedClosureX b1 cc
- = case cc of
+ = let lower    = case b1 of
+                        BAnon{} -> lowerT 1
+                        _       -> id
+   in case cc of
         GBoundVal u2 ts
          | boundMatchesBind u2 b1  -> Nothing
-         | otherwise               -> Just $ GBoundVal    (lowerT 1 u2) ts
+         | otherwise               -> Just $ GBoundVal (lower u2) ts
 
         GBoundRgnVar u2            -> Just $ GBoundRgnVar u2
         GBoundRgnCon u2            -> Just $ GBoundRgnCon u2

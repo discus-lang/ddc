@@ -136,5 +136,3 @@ instance SubstituteT TypeSum where
                 $ map (substituteWithT u n fns stack)
                 $ Sum.toList ss
 
-
--------------------------------------------------------------------------------
