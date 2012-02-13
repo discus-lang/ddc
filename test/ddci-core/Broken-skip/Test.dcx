@@ -25,6 +25,13 @@ case x of {
         Cons x _ -> addInt [:r R0# R0#:] x (0 [R0#] ());
 };;
 
+-- Broken: shadow check.
+:eval..
+letregion r with { w : Const r } in
+let x = 0 [r] () in
+(\(w : [r : %]. Mutable r). \(_ : Unit). 
+        updateInt [:r r:] <w [r]> x (5 [r] ())) <mutable> ();;
+
 
 
 :set +TraceEval
@@ -40,3 +47,14 @@ let x lazy <lazy [R0#]>
           ((forget <use [r] w> in (\(z : Int R0#). addInt [:r R0# R0#:] (2 [r] ()) z))
             (3 [R0#] ()))
 in x;;
+
+
+-- Broken: Don't allow partially applied (or unapplied) capability
+-- constructors in initial expression.
+:eval..
+letregion r with { wc : Const r } in
+let x = 0 [r] () in
+(\(w : [r : %]. Mutable r). \(_ : Unit). 
+        updateInt [:r r:] <w [r]> x (5 [r] ())) <mutable> ();;
+
+
