@@ -1,24 +1,22 @@
 
+-- | Utilities for constructing and destructing compound types and
+--   expressions.
 module DDC.Core.Eval.Compounds
-        ( tUnit
+        ( -- * Types
+          tUnit
         , tInt
         , tList 
 
-        -- Exp
+          -- * Expressions
         , isUnitX
         , takeHandleT
         , takeHandleX
         , takeLocX,     stripLocX
-        , takeMutableX
-
-          -- Store
-        , primNewRegion
-        , primDelRegion)
+        , takeMutableX)
 where
 import DDC.Core.Eval.Name
 import DDC.Type.Compounds
 import DDC.Core.Exp
-import DDC.Core.Eval.Store     as Store
 
 
 -- Type -----------------------------------------------------------------------
@@ -102,19 +100,5 @@ takeMutableX xx
                 -> takeHandleT tR1
         _       -> Nothing
 
-
--- Store ----------------------------------------------------------------------
-primNewRegion :: Store -> (Store, Bound Name)
-primNewRegion store
- = let  (store', rgn)   = Store.newRgn store
-        u               = UPrim (NameRgn rgn) kRegion
-   in   (store', u)
-
-
-primDelRegion :: Bound Name -> Store -> Maybe Store
-primDelRegion uu store
- = case uu of
-        UPrim (NameRgn rgn) _   -> Just $ Store.delRgn rgn store
-        _                       -> Nothing
 
 

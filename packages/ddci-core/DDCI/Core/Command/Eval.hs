@@ -180,13 +180,6 @@ stepPrint state store x tX _effX _cloX
 
                 return Nothing
 
-        StepStuckLetrecBindsNotLam
-         -> do  outDocLn state 
-                 $ vcat [ text "* STUCK!"
-                        , empty]
-                
-                return Nothing
-
         StepStuckMistyped err
          -> do  putStrLn $ renderIndent
                  $ vcat [ ppr "* OFF THE RAILS!"

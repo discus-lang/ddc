@@ -16,24 +16,20 @@ import Data.Char
 import Data.Maybe
 
 
--- | Names of things.
+-- | Names of things recognised by the evaluator.
 -- 
---   Names are defined by the client (this interpreter) instead of in the 
---   ddc-core package. This is so we inject the names of primitive constructors
---   and operators that vary from client to client.
---
 data Name 
         -- Names whose types are bound in the environment.
-        = NameVar     String    -- ^ Variables
-        | NameCon     String    -- ^ Constructors
-        | NameLoc     Loc       -- ^ Store location
-        | NameRgn     Rgn       -- ^ Region handle
+        = NameVar     String    -- ^ User variables.
+        | NameCon     String    -- ^ User constructors.
+        | NameLoc     Loc       -- ^ Store locations.
+        | NameRgn     Rgn       -- ^ Region handles.
 
         -- Names whose types are baked in, and should be attached to 
         -- the `Bound` constructor that they appear in.
-        | NameInt     Integer   -- ^ Integer literals
-        | NamePrimCon PrimCon   -- ^ Primitive constructors (eg Unit)
-        | NamePrimOp  PrimOp    -- ^ Primitive operators    (eg add, sub)
+        | NameInt     Integer   -- ^ Integer literals (which data constructors).
+        | NamePrimCon PrimCon   -- ^ Primitive constructors (eg @List, Nil@).
+        | NamePrimOp  PrimOp    -- ^ Primitive operators    (eg @addInt, subInt@).
         deriving (Show, Eq, Ord)
         
 
@@ -51,6 +47,8 @@ instance Pretty Name where
 
 -- Locs and Rgns --------------------------------------------------------------
 -- | A store location.
+--
+--  These are pretty printed like @L4#@.
 data Loc
         = Loc Int
         deriving (Eq, Ord, Show)
@@ -60,7 +58,9 @@ instance Pretty Loc where
         = text "L" <> text (show l) <> text "#"
  
 
--- | Region handles describe what region a store binding is in.
+-- | A region handle.
+--
+--  These are pretty printed like @R5#@.
 data Rgn
         = Rgn Int
         deriving (Eq, Ord, Show)
@@ -73,15 +73,14 @@ instance Pretty Rgn where
 -- PrimCons -------------------------------------------------------------------
 -- | A primitive constructor.
 data PrimCon
-        = PrimTyConUnit         -- ^ Unit type constructor
-        | PrimDaConUnit         -- ^ Unit data constructor
-        | PrimTyConInt          -- ^ Int  type constructor.
-        | PrimTyConString       -- ^ String type constructor.
+        = PrimTyConUnit         -- ^ Unit type constructor (@Unit@).
+        | PrimDaConUnit         -- ^ Unit data constructor (@()@).
+        | PrimTyConInt          -- ^ @Int@  type constructor.
 
         -- Implement lists as primitives until we have data decls working
-        | PrimTyConList         -- ^ List data type constructor.
-        | PrimDaConNil          -- ^ Nil data constructor.
-        | PrimDaConCons         -- ^ Cons data constructor.
+        | PrimTyConList         -- ^ @List@ data type constructor.
+        | PrimDaConNil          -- ^ @Nil@ data constructor.
+        | PrimDaConCons         -- ^ @Cons@ data constructor.
         deriving (Show, Eq, Ord)
 
 
@@ -91,7 +90,6 @@ instance Pretty PrimCon where
         PrimTyConUnit   -> text "Unit"
         PrimDaConUnit   -> text "()"
         PrimTyConInt    -> text "Int"
-        PrimTyConString -> text "String"
         PrimTyConList   -> text "List"
         PrimDaConNil    -> text "Nil"
         PrimDaConCons   -> text "Cons"
@@ -118,14 +116,12 @@ instance Pretty PrimOp where
         PrimOpSubInt    -> text "subInt"
         PrimOpMulInt    -> text "mulInt"
         PrimOpDivInt    -> text "divInt"
-
         PrimOpEqInt     -> text "eqInt"
-
         PrimOpUpdateInt -> text "updateInt"
 
 
 -- Parsing --------------------------------------------------------------------
--- | Read the name of a primitive operator or constructor.
+-- | Read a primitive name.
 readName :: String -> Maybe Name
 readName []     = Nothing
 readName str@(c:rest)
@@ -181,7 +177,9 @@ readName_ str
         $ readName str
 
 
--- | Lex a string to tokens, using our own names.
+-- | Lex a string to tokens, using primitive names.
+--
+--   The first argument gives the starting source line number.
 lexString :: Int -> String -> [Token (Tok Name)]
 lexString lineStart str
  = map rn $ lexExp lineStart str

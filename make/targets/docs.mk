@@ -28,6 +28,6 @@ docs-core :
 	@haddock -w -h -o doc/haddock-core \
 	        --optghc=-ipackages/ddc-base \
 	        --optghc=-ipackages/ddc-core \
-	        --optghc=-ipackages/ddc-core-interpreter \
+	        --optghc=-ipackages/ddci-core \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(ddci-core_src_hs_all)

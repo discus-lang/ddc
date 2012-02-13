@@ -1,6 +1,6 @@
 
 -- | Single step evaluation of primitive operators and constructors.
--- 
+---
 --   This should implements the proper operational semantics of the core language,
 --   so we're careful to check all premises of the evaluation rules are satisfied.
 module DDC.Core.Eval.Prim
@@ -12,18 +12,19 @@ where
 import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Store
 import DDC.Core.Eval.Name
+import DDC.Type.Compounds
 import DDC.Core.Exp
 import qualified DDC.Core.Eval.Store   as Store
 
 -------------------------------------------------------------------------------
--- | Single step a primitive constructor.
+-- | tep a primitive constructor, which allocates an object in the store.
 stepPrimCon
         :: Name                 -- ^ Name of constructor to allocate.
         -> [Exp () Name]        -- ^ Arguments to constructor.
         -> Store                -- ^ Current store.
         -> Maybe ( Store        
                  , Exp () Name) -- ^ New store and result expression, 
-                                --   if the operator steps, otherwise Nothing.
+                                --   if the operator steps, otherwise `Nothing`.
 
 -- Alloction of Ints.
 stepPrimCon (NameInt i) [xR, xUnit] store
@@ -82,14 +83,14 @@ stepPrimCon _ _ _
 
 
 -------------------------------------------------------------------------------
--- | Single step a primitive operator.
+-- | Steip a primitive operator.
 stepPrimOp
         :: Name                 -- ^ Name of operator to evaluate.
         -> [Exp () Name]        -- ^ Arguments to operator.
         -> Store                -- ^ Current store.
         -> Maybe ( Store        
                  , Exp () Name) -- ^ New store and result expression, 
-                                --   if the operator steps, otherwise Nothing.
+                                --   if the operator steps, otherwise `Nothing`.
 
 -- Binary integer primop.
 stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
@@ -156,4 +157,21 @@ stepPrimOp (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
 
 stepPrimOp _ _ _
         = Nothing
+
+
+-- Store ----------------------------------------------------------------------
+-- | Like `Store.newRgn` but return the region handle wrapped in a `Bound`.
+primNewRegion :: Store -> (Store, Bound Name)
+primNewRegion store
+ = let  (store', rgn)   = Store.newRgn store
+        u               = UPrim (NameRgn rgn) kRegion
+   in   (store', u)
+
+
+-- | Like `Store.delRgn` but accept a region handle wrapped in a `Bound`.
+primDelRegion :: Bound Name -> Store -> Maybe Store
+primDelRegion uu store
+ = case uu of
+        UPrim (NameRgn rgn) _   -> Just $ Store.delRgn rgn store
+        _                       -> Nothing
 

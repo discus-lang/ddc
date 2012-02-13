@@ -1,14 +1,20 @@
 
--- | Primitive types and operators for the interpreter.
+-- | Primitive types and operators for the core language evaluator.
 --
 --   These are only a subset of the primitives supported by the real compiler, there's just
---   enough to experiment with the core language. When we end up wanting to interpret full
---   Disciple programs, we should use the primops defined by the real compiler.
+--   enough to experiment with the core language. 
 --
 module DDC.Core.Eval.Env
-        ( primDataDefs
-        , primKindEnv, kindOfPrimName
-        , primTypeEnv, typeOfPrimName
+        ( -- * Data Type Definitions.
+          primDataDefs
+
+          -- * Kind environment.
+        , primKindEnv
+        , kindOfPrimName
+
+          -- * Type Environment.
+        , primTypeEnv
+        , typeOfPrimName
         , arityOfName)
 where
 import DDC.Core.Eval.Compounds
@@ -20,20 +26,48 @@ import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
 
 
--- | Environment containing just the primitive type names.
+-- DataDefs -------------------------------------------------------------------
+-- | Data type definitions for:
+--
+-- @  Type   Constructors
+--  ----   ------------
+--  Unit   ()
+--  Int    0 1 2 3 ...
+--  List   Nil Cons
+-- @
+primDataDefs :: DataDefs Name
+primDataDefs
+ = fromListDataDefs
+        -- Unit
+        [ DataDef
+                (NamePrimCon PrimTyConUnit)
+                []
+                (Just [ (NamePrimCon PrimDaConUnit, []) ])
+        
+        -- Int
+        , DataDef
+                (NamePrimCon PrimTyConInt)
+                [kRegion]
+                Nothing
+
+        -- List
+        , DataDef
+                (NamePrimCon PrimTyConList)
+                [kRegion, kData]
+                (Just   [ (NamePrimCon PrimDaConNil,  []) 
+                        , (NamePrimCon PrimDaConCons, [tList (tIx kRegion 1) (tIx kData 0)])])
+        ]
+
+
+-- Kinds ----------------------------------------------------------------------
+-- | Kind environment containing kinds of primitive data types.
 primKindEnv :: Env Name
 primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 
 
--- | Environment containing just the primitive value names.
-primTypeEnv :: Env Name
-primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
-
-
--- | Take the type of a primitive name.
+-- | Take the kind of a primitive name.
 --
---   Returns `Nothing` if the name isn't primitive. During checking, non-primitive
---   names should be bound in the type environment.
+--   Returns `Nothing` if the name isn't primitive. 
 --
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
@@ -57,6 +91,21 @@ kindOfPrimName nn
 
 
 
+
+-- Types ----------------------------------------------------------------------
+-- | Type environment containing types of primitive data constructors as well
+--   as the following primitive operators:
+--
+--  @negInt, addInt, subInt, mulInt, divInt, eqInt, updateInt@
+-- 
+primTypeEnv :: Env Name
+primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
+
+
+-- | Take the type of a primitive name.
+--
+--   Returns `Nothing` if the name isn't primitive. 
+--
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName nn
  = case nn of
@@ -87,7 +136,7 @@ typeOfPrimName nn
                               (tBot kClosure)
                  $ tInt r
 
-        -- neg
+        -- negInt
         NamePrimOp PrimOpNegInt
          -> Just $ tForalls [kRegion, kRegion] $ \[r1, r0]
                 -> tFun (tInt r1) (tSum kEffect  [tRead r1, tAlloc r0])
@@ -117,6 +166,9 @@ typeOfPrimName nn
         _ -> Nothing
 
 
+
+-- | Take the arity of a primitive name.
+---
 -- TODO: determine this from the type.
 arityOfName :: Name -> Maybe Int
 arityOfName n
@@ -139,29 +191,4 @@ arityOfName n
          -> Just 5        
          
         _ -> Nothing
-
-
--- DataDefs -------------------------------------------------------------------
-primDataDefs :: DataDefs Name
-primDataDefs
- = fromListDataDefs
-        -- Unit
-        [ DataDef
-                (NamePrimCon PrimTyConUnit)
-                []
-                (Just [ (NamePrimCon PrimDaConUnit, []) ])
-        
-        -- Int
-        , DataDef
-                (NamePrimCon PrimTyConInt)
-                [kRegion]
-                Nothing
-
-        -- List
-        , DataDef
-                (NamePrimCon PrimTyConList)
-                [kRegion, kData]
-                (Just   [ (NamePrimCon PrimDaConNil,  []) 
-                        , (NamePrimCon PrimDaConCons, [tList (tIx kRegion 1) (tIx kData 0)])])
-        ]
 

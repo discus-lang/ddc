@@ -1,10 +1,15 @@
 
+-- | Single step evaluator for the Disciple Core language.
+--
+--   This is a direct implementation of the operational semantics and is by no
+--   means fast, or a substitute for a real interpreter. Programs run with this
+--   evaluator will have an asymptotic complexity much worse than if they were
+--   compiled. This evaluator is intended for experimenting with the language
+--   semantics, and not running actual programs.
 module DDC.Core.Eval
-        ( module DDC.Core.Eval.Name
-        , module DDC.Core.Eval.Step
-        , module DDC.Core.Eval.Env)
+        ( StepResult    (..)
+        , force
+        , step)
 where
-import DDC.Core.Eval.Name
 import DDC.Core.Eval.Step
-import DDC.Core.Eval.Env
         

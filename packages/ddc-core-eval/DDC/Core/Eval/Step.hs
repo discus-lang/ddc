@@ -1,16 +1,12 @@
 
 -- | Single step evalation for the DDC core language.
 --
---   These are the rules for the plain calculus. The rules for primitive
---   operators and constructors are defined in the interpreter package, 
---   as they depend on the exact representation of the store.
---
 module DDC.Core.Eval.Step 
-        ( step
-        , StepResult(..)
+        ( StepResult(..)
+        , force
+        , step
         , isValue
-        , isWeakValue
-        , regionWitnessOfType )
+        , isWeakValue)
 where
 import DDC.Core.Eval.Store
 import DDC.Core.Eval.Name
@@ -30,32 +26,33 @@ import qualified Data.Set               as Set
 -- StepResult -----------------------------------------------------------------
 -- | The result of stepping some expression.
 data StepResult
-        -- | Expression transitioned to a new state.
+        -- | Expression progressed to a new state.
         = StepProgress Store (Exp () Name)
 
-        -- | Expression cannot step, but it is wnf.
+        -- | Expression cannot step and is a (weak) value.
         --   We're done already.
         | StepDone
 
-        -- | Expression cannot step, and is not-wnf.
+
+        -- | Expression cannot step, and is not a (weak) value.
         --   The original expression was mistyped,
         --   or something is wrong with the interpreter.
         | StepStuck
 
         -- | Expression is stuck, and we know for sure it's mistyped.
-        --   This can happen in the EvLam rule.
         | StepStuckMistyped (Error () Name)
-
-        -- | Expression is stuck, and it's because we found some letrec
-        --   bindings that were not lambdas.
-        | StepStuckLetrecBindsNotLam
         deriving (Show)
 
 
 -- force ----------------------------------------------------------------------
+-- | Single step a core expression to a value.
+--
+--   As opposed to `step`, if the provided expression is the location of a
+--   Thunk, then the thunk will be forced.
+--
 force   :: Store        -- ^ Current store.
         -> Exp () Name  -- ^ Expression to force.
-        -> StepResult   -- ^ Result of stepping it.
+        -> StepResult   -- ^ Result of forcing it.
 
 force store xx
         | (casts, xx')                  <- unwrapCasts xx
@@ -76,8 +73,11 @@ force store xx
 
 
 -- step -----------------------------------------------------------------------
--- | Perform a single step reduction of a core expression.
---   This evaluates expressions to a weak value.
+-- | Single step a code expression to a weak value.
+--
+--   As opposed to `force`, if the provided expression is the location of a 
+--   Thunk, then the thunk is not forced.
+--
 step    :: Store        -- ^ Current store.
         -> Exp () Name  -- ^ Expression to step.
         -> StepResult   -- ^ Result of stepping it.
@@ -288,7 +288,7 @@ step store (XLet _ (LRec bxs) x2)
       -- If this fails then some of the bindings did not have lambdas out the
       -- front. We don't support plain value recursion yet.
    in case sequence mos of
-       Nothing        -> StepStuckLetrecBindsNotLam
+       Nothing        -> StepStuck
        Just os
         -> let -- Add all the objects to the store.
                store2   = foldr (\(l, t, o) -> addBind l (Rgn 0) t o) store1

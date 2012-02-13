@@ -1,6 +1,6 @@
 
 -- | Definition of the store.
---
+---
 --   This implements the store in terms of the operational semantics of the
 --   core language, and isn't intended to be efficient in a practical sense.
 --   If we cared about runtime performance we'd want to use an IOArray or
@@ -35,7 +35,6 @@ import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 
 
--- | The store maps locations to store bindings.
 data Store
         = Store 
         { -- | Next store location to allocate.
@@ -52,26 +51,27 @@ data Store
         , storeGlobal           :: Set Rgn
 
           -- | Map of locations to store bindings,
-          --   and the handles for the regions they're in.
+          --   their types, 
+          --   and the handle for the regions they're in.
         , storeBinds            :: Map Loc (Rgn, Type Name, SBind) }
         deriving Show
         
 
 -- | Store binding.
---   These are "naked objects" that can be allocated directly into the heap.
+--   These are naked objects that can be allocated directly into the heap.
 data SBind 
-        -- Algebraic data object.
+        -- | An algebraic data constructor.
         = SObj
         { sbindDataTag          :: Name
         , sbindDataArgs         :: [Loc] }
 
-        -- Lambda abstraction, used for recursive bindings.
-        -- The flag indicates whether the is level-1 (True) or level-0 (False)
+        -- | Lambda abstraction, used for recursive bindings.
+        --   The flag indicates whether each binder is level-1 (True) or level-0 (False).
         | SLams
         { sbindLamBinds         :: [(Bool, Bind Name)]
         , sbindLamBody          :: Exp () Name }
 
-        -- Thunk, used for lazy evaluation.
+        -- | A thunk, used for lazy evaluation.
         | SThunk
         { sbindThunkExp         :: Exp () Name }
         deriving (Eq, Show)
@@ -232,7 +232,7 @@ lookupTypeOfLoc loc store
         Nothing         -> Nothing
         Just (_, t, _)  -> Just t
 
--- | Lookup the region handle and binding for a location.
+-- | Lookup the region handle, type and binding for a location.
 lookupRegionTypeBind :: Loc -> Store -> Maybe (Rgn, Type Name, SBind)
 lookupRegionTypeBind loc store
         = Map.lookup loc (storeBinds store)
