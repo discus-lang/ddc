@@ -102,7 +102,7 @@ step store xx | isLam xx
 
 -- (EvAlloc)
 -- Construct some data in the heap.
--- TODO: handle non primitive constructos.
+-- TODO: handle non primitive constructors.
 step store xx
         | Just (u, xs)  <- takeXConApps xx
         , case u of
