@@ -1,4 +1,5 @@
 
+
 -- Forget cast around lambda.
 -- Ok.
 :eval..
@@ -11,27 +12,6 @@ let x lazy <w0l>
           ((forget <use [r] w> in (\(z : Int r0). addInt [:r r0 r0:] (2 [r] ()) z))
             (3 [r0] ()))
 in addInt [:r0 r0 R0#:] x (1 [r0] ());;
-
-
-
--- Handle forget around the discriminant.
--- Broken: inner 'x' should shadow outer 'x'.
-:eval..
-letregion r with {w : Global r} in
-let x = forget <use [r] w> in
-        Cons [r] [Int r] (5 [r] ()) (Nil [r] [Int r] ()) in
-case x of {
-        Nil      -> 0 [R0#] ();
-        Cons x _ -> addInt [:r R0# R0#:] x (0 [R0#] ());
-};;
-
--- Broken: shadow check.
-:eval..
-letregion r with { w : Const r } in
-let x = 0 [r] () in
-(\(w : [r : %]. Mutable r). \(_ : Unit). 
-        updateInt [:r r:] <w [r]> x (5 [r] ())) <mutable> ();;
-
 
 
 :set +TraceEval
@@ -56,5 +36,4 @@ letregion r with { wc : Const r } in
 let x = 0 [r] () in
 (\(w : [r : %]. Mutable r). \(_ : Unit). 
         updateInt [:r r:] <w [r]> x (5 [r] ())) <mutable> ();;
-
 

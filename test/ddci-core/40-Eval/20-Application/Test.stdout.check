@@ -17,3 +17,6 @@
 -- Over-applied abstraction.
 30
 
+
+-- Handle shadowed witness binders.
+()

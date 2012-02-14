@@ -159,7 +159,8 @@ bind0 sub b
  = let  b1                  = rewriteWith sub b
         (stackX', b2)       = pushBind (subConflict0 sub) (subStack0 sub) b1
    in   ( sub { subStack0   = stackX'
-              , subShadow0  = namedBoundMatchesBind (subBound sub) b2}
+              , subShadow0  =  subShadow0 sub 
+                            || namedBoundMatchesBind (subBound sub) b2 }
         , b2)
 
 

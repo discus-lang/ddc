@@ -145,3 +145,8 @@ case () of { () -> () }
 :*: Unit
 :!: !0
 :$: $0
+
+
+-- Handle forget around the discriminant.
+5
+
