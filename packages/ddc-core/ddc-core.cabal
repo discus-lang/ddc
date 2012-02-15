@@ -1,5 +1,5 @@
 Name:           ddc-core
-Version:        0.2.0.2
+Version:        0.3.0.0
 License:        MIT
 License-file:   LICENSE
 Author:         Ben Lippmeier
@@ -29,7 +29,7 @@ Library
         array           == 0.4.*,
         transformers    == 0.2.*,
         mtl             == 2.0.*,
-        ddc-base        == 0.2.0.*
+        ddc-base        == 0.3.0.*
 
   Exposed-modules:
         DDC.Core.Check.CheckExp

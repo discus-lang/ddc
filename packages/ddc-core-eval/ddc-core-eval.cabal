@@ -1,5 +1,5 @@
 Name:           ddc-core-eval
-Version:        0.2.0.1
+Version:        0.3.0.0
 License:        MIT
 License-file:   LICENSE
 Author:         Ben Lippmeier
@@ -25,8 +25,8 @@ Library
         array           == 0.4.*,
         transformers    == 0.2.*,
         mtl             == 2.0.*,
-        ddc-base        == 0.2.0.*,
-        ddc-core        == 0.2.0.*
+        ddc-base        == 0.3.0.*,
+        ddc-core        == 0.3.0.*
 
   Exposed-modules:
         DDC.Core.Eval.Check
