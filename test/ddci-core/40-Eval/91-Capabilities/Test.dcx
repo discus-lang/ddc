@@ -1,4 +1,3 @@
-
 -- Error: Partially applied capablity constructor.
 :eval..
 letregion r with { wc : Const r } in
@@ -6,3 +5,9 @@ let x = 0 [r] () in
 (\(w : [r : %]. Mutable r). \(_ : Unit). 
         updateInt [:r r:] <w [r]> x (5 [r] ())) <Mutable#> ();;
 
+
+-- Error: Capability constructor applied to a non-constructor.
+:eval..
+letregion r with { wc : Const r } in
+let x = 0 [r] () in
+updateInt [:r r:] <Mutable# [r]> x (5 [r] ());;

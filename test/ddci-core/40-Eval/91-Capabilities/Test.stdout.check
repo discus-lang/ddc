@@ -1,5 +1,8 @@
-
 -- Error: Partially applied capablity constructor.
 Partially applied capability constructor.
 with: Mutable#
 
+
+-- Error: Capability constructor applied to a non-constructor.
+Capability constructor applied to a non-region handle.
+with: Mutable# [r]

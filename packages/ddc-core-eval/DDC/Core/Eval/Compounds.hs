@@ -13,6 +13,7 @@ module DDC.Core.Eval.Compounds
         , wMutable,  wcMutable
         , wLazy,     wcLazy
         , wManifest, wcManifest
+        , isCapConW
 
           -- * Expressions
         , isUnitX
@@ -83,7 +84,16 @@ wcLazy     = WiConBound
 wcManifest :: WiCon Name
 wcManifest = WiConBound
            $ UPrim (NameCap CapManifest) (tForall kRegion $ \r -> tManifest r)
-        
+      
+
+-- | Check whether a witness is a capability constructor.
+isCapConW :: Witness Name -> Bool
+isCapConW ww
+ = case ww of
+        WCon WiConBound{}     -> True
+        _                     -> False
+
+
 
 -- Exp ------------------------------------------------------------------------
 -- | Check whether an expression is the unit constructor.
