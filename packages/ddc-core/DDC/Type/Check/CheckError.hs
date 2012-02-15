@@ -12,29 +12,29 @@ import DDC.Type.Pretty
 -- | Type errors.
 data Error n
 
-        -- | Found an undefined variable.
+        -- | An undefined type variable.
         = ErrorUndefined        
         { errorBound            :: Bound n }
 
-        -- | Type in environment does not match type annotation on variable.
+        -- | The kind annotation on the variables does not match the one in the environment.
         | ErrorVarAnnotMismatch
         { errorBound            :: Bound n
         , errorTypeEnv          :: Type n }
 
-        -- | Tried to check a sort.
+        -- | Found a naked sort constructor.
         | ErrorNakedSort
         { errorSort             :: Sort n }
 
         -- | Found an unapplied kind function constructor.
         | ErrorUnappliedKindFun 
 
-        -- | Kinds of paramter and arg don't match when checking type application.
+        -- | A type application where the parameter and argument kinds don't match.
         | ErrorAppArgMismatch   
         { errorChecking         :: Type n
         , errorParamKind        :: Kind n
         , errorArgKind          :: Kind n }
 
-        -- | Tried to apply a non-functional type to an argument.
+        -- | A type application where the thing being applied is not a function.
         | ErrorAppNotFun
         { errorChecking         :: Type n
         , errorFunType          :: Type n
@@ -42,28 +42,24 @@ data Error n
         , errorArgType          :: Type n
         , errorArgTypeKind      :: Kind n }
 
-        -- | Found types with multiple kinds in a sum.
-        --   If the kind hasn't been attached to the `TypeSum` yet then it may
-        --   be holding the placeholder value (tBot sComp).
+        -- | A type sum where the components have differing kinds.
         | ErrorSumKindMismatch
         { errorKindExpected     :: Kind n
         , errorTypeSum          :: TypeSum n
         , errorKinds            :: [Kind n] }
         
-        -- | Found a sum with an invalid kind.
-        --   Sums can only have effect or closure kind.
+        -- | A type sum that does not have effect or closure kind.
         | ErrorSumKindInvalid
         { errorCheckingSum      :: TypeSum n
         , errorKind             :: Kind n }
 
-        -- | Found a forall with an invalid body kind.
-        --   The body can only have data or witness kind.
+        -- | A forall where the body does not have data or witness kind.
         | ErrorForallKindInvalid
         { errorChecking         :: Type n
         , errorBody             :: Type n
         , errorKind             :: Kind n }
 
-        -- | Found a witness implication whose types have invalid kinds.
+        -- | A witness implication where the premise or conclusion has an invalid kind.
         | ErrorWitnessImplInvalid
         { errorChecking         :: Type n
         , errorLeftType         :: Type n

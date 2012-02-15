@@ -13,13 +13,14 @@ import qualified DDC.Type.Sum   as Sum
 
 -- | Check equivalence of types.
 --
---   We check equivalence upto alpha-renaming, as well as  crushing of effects
+--   Checks equivalence up to alpha-renaming, as well as crushing of effects
 --   and trimming of closures.
 --  
---   * We return False if we find any free variables.
+--   * Return `False` if we find any free variables.
 --
 --   * We assume the types are well-kinded, so that the type annotations on
---     bound variables match the binders.
+--     bound variables match the binders. If this is not the case then you get
+--     an indeterminate result.
 --
 equivT  :: (Ord n, Pretty n) => Type n -> Type n -> Bool
 equivT t1 t2

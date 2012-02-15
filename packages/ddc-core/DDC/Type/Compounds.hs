@@ -66,7 +66,7 @@ import qualified DDC.Type.Sum   as Sum
 
 -- Binds ----------------------------------------------------------------------
 -- | Take the variable name of a bind.
---   If this is an anonymous variable then there won't be a name.
+--   If this is an anonymous binder then there won't be a name.
 takeNameOfBind  :: Bind n -> Maybe n
 takeNameOfBind bb
  = case bb of
@@ -84,7 +84,7 @@ typeOfBind bb
         BNone   t       -> t
 
 
--- | Replace the kind of a bind with a new one.
+-- | Replace the type of a bind with a new one.
 replaceTypeOfBind :: Type n -> Bind n -> Bind n
 replaceTypeOfBind t bb
  = case bb of
@@ -94,6 +94,7 @@ replaceTypeOfBind t bb
 
 
 -- Binders --------------------------------------------------------------------
+-- | Take the binder of a bind.
 binderOfBind :: Bind n -> Binder n
 binderOfBind bb
  = case bb of
@@ -102,6 +103,7 @@ binderOfBind bb
         BNone _         -> RNone
 
 
+-- | Make a bind from a binder and its type.
 makeBindFromBinder :: Binder n -> Type n -> Bind n
 makeBindFromBinder bb t
  = case bb of
@@ -130,8 +132,8 @@ typeOfBound uu
         UIx   _ t       -> t
 
 
--- | Take the variable name of bound variable.
---   If this is an anonymous variable then there won't be a name.
+-- | Take the name of bound variable.
+--   If this is a deBruijn index then there won't be a name.
 takeNameOfBound :: Bound n -> Maybe n
 takeNameOfBound uu
  = case uu of
@@ -151,7 +153,7 @@ replaceTypeOfBound t uu
 
 -- | Check whether a bound maches a bind.
 --    `UName`    and `BName` match if they have the same name.
---    `UIx 0 _`  and `BAnon _` always match.
+--    @UIx 0 _@  and @BAnon _@ always match.
 --   Yields `False` for other combinations of bounds and binds.
 boundMatchesBind :: Eq n => Bound n -> Bind n -> Bool
 boundMatchesBind u b
@@ -161,9 +163,8 @@ boundMatchesBind u b
         _                        -> False
 
 
--- | Check whether a named bound matches a named bind, 
---   yielding False if they're not named, 
---   or they have different names.
+-- | Check whether a named bound matches a named bind. 
+--   Yields `False` if they are not named or have different names.
 namedBoundMatchesBind :: Eq n => Bound n -> Bind n -> Bool
 namedBoundMatchesBind u b
  = case (u, b) of
@@ -174,7 +175,7 @@ namedBoundMatchesBind u b
 
 -- | Convert a `Bound` to a `Bind`, ready for substitution.
 --   
---   Returns `UName` for `BName`, `UIx 0` for `BAnon` 
+--   Returns `UName` for `BName`, @UIx 0@ for `BAnon` 
 --   and `Nothing` for `BNone`, because there's nothing to substitute.
 takeSubstBoundOfBind :: Bind n -> Maybe (Bound n)
 takeSubstBoundOfBind bb
@@ -185,16 +186,23 @@ takeSubstBoundOfBind bb
 
 
 -- Variables ------------------------------------------------------------------
+-- | Construct a deBruijn index.
+tIx :: Kind n -> Int -> Type n
 tIx k i         = TVar (UIx i k)
 
 
 -- Applications ---------------------------------------------------------------
+-- | Construct an empty type sum.
+tBot :: Kind n -> Type n
 tBot k          = TSum $ Sum.empty k
+
+
+-- | Construct a type application.
+tApp, ($:) :: Type n -> Type n -> Type n
 tApp            = TApp
 ($:)            = TApp
 
-
--- | Build sequence of type applications.
+-- | Construct a sequence of type applications.
 tApps   :: Type n -> [Type n] -> Type n
 tApps t1 ts     = foldl TApp t1 ts
 
@@ -300,7 +308,7 @@ takeKFuns kk
         _ -> ([], kk)
 
 
--- | Like takeKFuns, but return argument and return kinds in the same list.
+-- | Like `takeKFuns`, but return argument and return kinds in the same list.
 takeKFuns' :: Kind n -> [Kind n]
 takeKFuns' kk 
         | (ks, k1) <- takeKFuns kk

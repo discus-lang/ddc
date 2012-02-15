@@ -3,7 +3,6 @@ module DDC.Type.Check
         ( -- * Kinds of Types
           checkType
         , kindOfType
-        , kindOfType'
 
           -- * Kinds of Constructors
         , takeSortOfKiCon
@@ -43,15 +42,6 @@ checkType env tt = result $ checkTypeM env tt
 -- | Check a type in an empty environment, returning an error or its kind.
 kindOfType :: (Ord n, Pretty n) => Type n -> Either (Error n) (Kind n)
 kindOfType tt = result $ checkTypeM Env.empty tt
-
-
--- | Check a type in an empty environment, returning its kind, 
---   or `error` if there isn't one.
-kindOfType' :: (Ord n, Pretty n) => Type n -> Kind n
-kindOfType' tt
- = case kindOfType tt of
-        Left err        -> error $ show $ (ppr err)
-        Right k         -> k
 
 
 -- checkType ------------------------------------------------------------------

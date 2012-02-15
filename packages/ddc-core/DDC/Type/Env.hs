@@ -1,6 +1,7 @@
 
 -- | Type environments.
---   The type environment contains the types of
+--
+--   An environment contains the types 
 --     named bound variables,
 --     named primitives, 
 --     and a deBruijn stack for anonymous variables.
@@ -26,7 +27,7 @@ import qualified Prelude        as P
 import Control.Monad
 
 
--- | Type environment.
+-- | A type environment.
 data Env n
         = Env
         { -- | Types of named binders.
@@ -75,7 +76,7 @@ setPrimFun f env
         = env { envPrimFun = f }
 
 
--- | Check the type of a name is defined by the `envPrimFun`.
+-- | Check if the type of a name is defined by the `envPrimFun`.
 isPrim :: Env n -> n -> Bool
 isPrim env n
         = isJust $ envPrimFun env n
@@ -106,7 +107,7 @@ member uu env
 
 
 -- | Check whether a binder is already present in the an environment.
---   This can only return True for named or prim binders, not anonymous ones.
+--   This can only return True for named binders, not anonymous or primitive ones.
 memberBind :: Ord n => Bind n -> Env n -> Bool
 memberBind uu env
  = case uu of

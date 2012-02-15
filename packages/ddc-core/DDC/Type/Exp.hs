@@ -1,12 +1,12 @@
 
 module DDC.Type.Exp
         ( -- * Types, Kinds, and Sorts
-          Type     (..)
-        , Binder  (..)
+          Binder   (..)
         , Bind     (..)
         , Bound    (..)
-        , Kind,   Sort
-        , Region, Effect, Closure
+        , Type     (..)
+        , Kind,    Sort
+        , Region,  Effect, Closure
         , TypeSum  (..),   TyConHash(..), TypeSumVarCon(..)
         , TyCon    (..)
         , SoCon    (..)
@@ -17,6 +17,47 @@ where
 import Data.Array
 import Data.Map         (Map)
 import Data.Set         (Set)
+
+
+-- Bind -----------------------------------------------------------------------
+-- | A variable binder.
+data Binder n
+        = RNone
+        | RAnon
+        | RName n
+        deriving Show
+
+
+-- | A variable binder with its type.
+data Bind n
+        -- | A variable with no uses in the body doesn't need a name.
+        = BNone     (Type n)
+
+        -- | Nameless variable on the deBruijn stack.
+        | BAnon     (Type n)
+
+        -- | Named variable in the environment.
+        | BName n   (Type n)
+        deriving Show
+
+
+
+-- | A bound occurrence of a variable, with its type.
+--
+--   If variable hasn't been annotated with its real type then this 
+--   can be `tBot` (an empty sum).
+
+data Bound n
+        -- | Nameless variable that should be on the deBruijn stack.
+        = UIx   Int (Type n)    
+
+        -- | Named variable that should be in the environment.
+        | UName n   (Type n)
+
+        -- | Named primitive that is not bound in the environment.
+        --   Prims aren't every counted as being free.
+        | UPrim n   (Type n)    
+        deriving Show
 
 
 -- Types ----------------------------------------------------------------------
@@ -50,58 +91,18 @@ type Effect  n = Type n
 type Closure n = Type n
 
 
--- Bind -----------------------------------------------------------------------
--- | Binding occurrence of a variable.
-data Bind n
-        -- | A variable with no uses in the body doesn't need a name.
-        = BNone     (Type n)
-
-        -- | Nameless variable on the deBruijn stack.
-        | BAnon     (Type n)
-
-        -- | Named variable in the environment.
-        | BName n   (Type n)
-        deriving Show
-
-
--- | Represents the binder of a `Bind`, without the type.
-data Binder n
-        = RNone
-        | RAnon
-        | RName n
-        deriving Show
-
-
--- | Bound occurrence of a variable.
--- 
---   * If the variables haven't been annotated with their kinds then the kind
---     field will be TBot. 
---
-data Bound n
-        -- | Nameless variable that should be on the deBruijn stack.
-        = UIx   Int (Type n)    
-
-        -- | Named variable that should be in the environment.
-        | UName n   (Type n)
-
-        -- | Named primitive that is not bound in the environment.
-        --   Prims aren't every counted as being free.
-        | UPrim n   (Type n)    
-        deriving Show
-
-
 -- Type Sums ------------------------------------------------------------------
 -- | A least upper bound of several types.
 -- 
 --   We keep type sums in this normalised format instead of joining them
---   together with a binary operator (+). This makes them easier to work with,
---   as a given sum type often only has a single physical representation.
+--   together with a binary operator (like @(+)@). This makes sums easier to work
+--   with, as a given sum type often only has a single physical representation.
 data TypeSum n
         = TypeSum
-        { -- | The kind of all the elements in this sum.
+        { -- | The kind of the elements in this sum.
           typeSumKind           :: Kind n
 
-          -- | Where we can see the outer constructor of a type its argument
+          -- | Where we can see the outer constructor of a type, its argument
           --   is inserted into this array. This handles common cases like
           --   Read, Write, Alloc effects.
         , typeSumElems          :: Array TyConHash (Set (TypeSumVarCon n))
@@ -113,19 +114,19 @@ data TypeSum n
         , typeSumBoundAnon      :: Map Int (Kind n)
 
           -- | Types that can't be placed in the other fields go here.
-          --   INVARIANT: this list doesn't contain other TSum forms.
+          -- 
+          --   INVARIANT: this list doesn't contain more `TSum`s.
         , typeSumSpill          :: [Type n] }
         deriving (Show)
         
 
--- | Hash value used to insert types into type sums.
---   Only type constructors that can be inserted into the sum have a hash value.
+-- | Hash value used to insert types into the `typeSumElems` array of a `TypeSum`.
 data TyConHash 
         = TyConHash !Int
         deriving (Eq, Show, Ord, Ix)
 
 
--- | Wraps a variable or constructor that can be added to the `typeSumElems` array.
+-- | Wraps a variable or constructor that can be added the `typeSumElems` array.
 data TypeSumVarCon n
         = TypeSumVar (Bound n)
         | TypeSumCon (Bound n)
@@ -139,17 +140,17 @@ data TypeSumVarCon n
 --   belong to.
 -- 
 data TyCon n
-        -- | Sort constructors                          (level 3)
+        -- | (level 3) Builtin Sort constructors.
         = TyConSort     SoCon
 
-        -- | Kind constructors                          (level 2)
+        -- | (level 2) Builtin Kind constructors.
         | TyConKind     KiCon
 
-        -- | Spec constructors                          (level 1)
-        | TyConSpec     TcCon
-
-        -- | Spec constructors (for witness specs)      (level 1)
+        -- | (level 1) Builtin Spec constructors for the types of witnesses.
         | TyConWitness  TwCon
+
+        -- | (level 1) Builtin Spec constructors for types of other kinds.
+        | TyConSpec     TcCon
 
         -- | User defined and primitive constructors.
         | TyConBound   (Bound n)
@@ -169,7 +170,7 @@ data SoCon
 -- | Kind constructor.
 data KiCon
         -- | Function kind constructor.
-        --   This is only well formed, and has a sort, when it is fully applied.
+        --   This is only well formed when it is fully applied.
         = KiConFun              -- (~>)
 
         -- Witness kinds ------------------------
@@ -239,32 +240,32 @@ data TcCon
         = TcConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
 
         -- Effect type constructors -------------
-        -- | Read of some region
+        -- | Read of some region.
         | TcConRead             -- :: '% ~> !'
 
-        -- | Read the head region in a value type.
+        -- | Read the head region in a data type.
         | TcConHeadRead         -- :: '* ~> !'
 
-        -- | Read of all material regions in value type.
+        -- | Read of all material regions in a data type.
         | TcConDeepRead         -- :: '* ~> !'
         
         -- | Write of some region.
         | TcConWrite            -- :: '% ~> !'
 
-        -- | Write to all material regions in some type.
+        -- | Write to all material regions in some data type.
         | TcConDeepWrite        -- :: '* ~> !'
         
         -- | Allocation into some region.
         | TcConAlloc            -- :: '% ~> !'
 
-        -- | Allocation into all material regions in some type.
+        -- | Allocation into all material regions in some data type.
         | TcConDeepAlloc        -- :: '* ~> !'
         
         -- Closure type constructors ------------
-        -- | Some region is captured in a closure.
+        -- | Region is captured in a closure.
         | TcConUse              -- :: '% ~> $'
         
-        -- | All material regions in a type are captured in a closure.
+        -- | All material regions in a data type are captured in a closure.
         | TcConDeepUse          -- :: '* ~> $'
         deriving (Eq, Show)
 
