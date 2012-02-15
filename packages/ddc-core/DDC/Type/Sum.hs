@@ -44,7 +44,9 @@ singleton k t
 -- | Check whether an element is a member of a sum.
 --
 --   * Returns True when the first argument is $0 or !0.
+--
 --   * Returns False when the first argument is another sum.
+--
 --   * May return False if the first argument is miskinded but still
 --     alpha-equivalent to some component of the sum.
 elem :: (Eq n, Ord n) => Type n -> TypeSum n -> Bool

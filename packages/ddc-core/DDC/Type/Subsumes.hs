@@ -8,8 +8,8 @@ import qualified DDC.Type.Sum   as Sum
 
 -- | Check whether the first type subsumes the second.
 --
---   This only works for types of Effect and Closure kind.
---   If applied to other type it will return `False`.
+--   Both arguments are converted to sums, and we check that every
+--   element of the second sum is equivalent to an element in the first.
 subsumesT :: Ord n => Kind n -> Type n -> Type n -> Bool
 subsumesT k t1 t2
         | ts1   <- Sum.singleton k $ crushT t1
