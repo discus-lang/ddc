@@ -15,7 +15,7 @@ Description:    Disciple Core language simplifying code transformations.
 
 Library
   Build-Depends: 
-        base            == 4.*,
+        base            == 4.5.*,
         containers      == 0.4.*,
         array           >= 0.3   && < 0.5,
         transformers    == 0.2.*,

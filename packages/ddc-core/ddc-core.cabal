@@ -1,5 +1,5 @@
 Name:           ddc-core
-Version:        0.2.0.1
+Version:        0.2.0.2
 License:        MIT
 License-file:   LICENSE
 Author:         Ben Lippmeier
@@ -52,8 +52,6 @@ Library
         DDC.Core.Pretty
         DDC.Core.Predicates
         DDC.Core.Parser
-        DDC.Type.Check.CheckCon
-        DDC.Type.Check.CheckError
         DDC.Type.Check.Monad
         DDC.Type.Transform.Crush
         DDC.Type.Transform.Instantiate
@@ -76,6 +74,8 @@ Library
 
   Other-modules:
         DDC.Core.Check.ErrorMessage
+        DDC.Type.Check.CheckCon
+        DDC.Type.Check.CheckError
         DDC.Type.Pretty
                   
   GHC-options:

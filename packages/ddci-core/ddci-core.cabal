@@ -1,5 +1,5 @@
 Name:           ddci-core
-Version:        0.2.0.1
+Version:        0.2.0.2
 License:        MIT
 License-file:   LICENSE
 Author:         Ben Lippmeier
@@ -12,12 +12,17 @@ Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
 Synopsis:       Disciple Core language interactive interpreter.
 Description:    
-        DDCi-core is a user-facing interpreter that can type-check, 
-        transform and evaluate expressions.
+        Disciple Core is an explicitly typed language based on System-F2, intended
+        as an intermediate representation for a compiler. In addition to the features of 
+        System-F2 it supports region, effect and closure typing. Evaluation order is 
+        left-to-right call-by-value by default, but explicit lazy evaluation is also supported.
+        There is also a capability system to track whether objects are mutable or constant,
+        and to ensure that computations that perform visible side effects are not suspended with
+        lazy evaluation.
 
 Executable ddci-core
   Build-depends:
-        base            == 4.*,
+        base            == 4.5.*,
         containers      == 0.4.*,
         haskeline       == 0.6.4.*,
         haskell-src-exts== 1.*,
@@ -48,7 +53,6 @@ Executable ddci-core
         FlexibleContexts
 
   ghc-options:
-        -O2
         -Wall
         -fno-warn-missing-signatures
         -fno-warn-unused-do-bind
