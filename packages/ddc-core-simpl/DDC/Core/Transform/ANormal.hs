@@ -134,6 +134,9 @@ anormal ar x args
     go (XCast a c e) =
 	XCast a c (down [] e)
 
+
+-- | (under development)
+anormalise :: Ord n => Exp a n -> Exp a n
 anormalise x = anormal arEmpty x []
 
 -- | Check if an expression needs a binding, or if it's simple enough to just be applied

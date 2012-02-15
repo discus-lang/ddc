@@ -37,7 +37,7 @@ help    = unlines
         , "  :trans EXP         Transform the given expression."
         , "  :trun  EXP         Transform the given expression then evaluate it."
         , ""
-        , "  TRANS ::= None | Anonymize | ANormal | Beta"
+        , "  TRANS ::= None | Anonymize | Beta"
         , ""
         ]
 

@@ -10,7 +10,8 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Description:    Disciple Core simplifying code transformations.
+Synopsis:       Disciple Core language simplifying code transformations.
+Description:    Disciple Core language simplifying code transformations.
 
 Library
   Build-Depends: 
@@ -29,7 +30,7 @@ Library
         DDC.Core.Transform.TransformX
         DDC.Type.Transform.AnonymizeT
         DDC.Type.Transform.Rename
-
+        
   GHC-options:
         -Werror
         -Wall

@@ -49,8 +49,9 @@ Library
         DDC.Core.Compounds
         DDC.Core.DataDef
         DDC.Core.Exp
-        DDC.Core.Predicates
         DDC.Core.Pretty
+        DDC.Core.Predicates
+        DDC.Core.Parser
         DDC.Type.Check.CheckCon
         DDC.Type.Check.CheckError
         DDC.Type.Check.Monad
@@ -75,7 +76,6 @@ Library
 
   Other-modules:
         DDC.Core.Check.ErrorMessage
-        DDC.Core.Parser
         DDC.Type.Pretty
                   
   GHC-options:

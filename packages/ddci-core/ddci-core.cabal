@@ -1,17 +1,19 @@
-Name:                ddci-core
-Version:             0.2.0.0
-License:             MIT
-License-file:        LICENSE
-Author:              Ben Lippmeier
-Maintainer:          benl@ouroborus.net
-Build-Type:          Simple
-Cabal-Version:       >=1.6
-Stability:           experimental
-Category:            Compilers/Interpreters
-Homepage:            http://disciple.ouroborus.net
-Bug-reports:         disciple@ouroborus.net
-Description:
-        Disciple Core interpreter.
+Name:           ddci-core
+Version:        0.2.0.0
+License:        MIT
+License-file:   LICENSE
+Author:         Ben Lippmeier
+Maintainer:     benl@ouroborus.net
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Bug-reports:    disciple@ouroborus.net
+Synopsis:       Disciple Core language interactive interpreter.
+Description:    
+        DDCi-core is a user-facing interpreter that can type-check, 
+        transform and evaluate expressions.
 
 Executable ddci-core
   Build-depends:
@@ -19,10 +21,10 @@ Executable ddci-core
         containers      == 0.4.*,
         haskeline       == 0.6.4.*,
         haskell-src-exts== 1.*,
-        ddc-base        == 0.2.*,
-        ddc-core        == 0.2.*,
-        ddc-core-eval   == 0.2.*,
-        ddc-core-simpl  == 0.2.*
+        ddc-base        == 0.2.0.*,
+        ddc-core        == 0.2.0.*,
+        ddc-core-eval   == 0.2.0.*,
+        ddc-core-simpl  == 0.2.0.*
 
   Main-is:
         Main.hs
