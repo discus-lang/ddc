@@ -127,7 +127,7 @@ readInput ss
 -- | Run an interactive session
 runInteractive :: IO ()
 runInteractive
- = do   putStrLn "DDCi-core, version 0.2.0: http://disciple.ouroborus.net  :? for help"
+ = do   putStrLn "DDCi-core, version 0.2.0: http://disciple.ouroborus.net.   :? for help"
 
         -- Setup terminal mode.
         loopInteractive

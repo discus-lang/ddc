@@ -20,7 +20,9 @@ Executable ddci-core
         haskeline       == 0.6.4.*,
         haskell-src-exts== 1.*,
         ddc-base        == 0.2.*,
-        ddc-core        == 0.2.*
+        ddc-core        == 0.2.*,
+        ddc-core-eval   == 0.2.*,
+        ddc-core-simpl  == 0.2.*
 
   Main-is:
         Main.hs
@@ -31,21 +33,17 @@ Executable ddci-core
         DDCI.Core.Command.Eval
         DDCI.Core.Command.Help
         DDCI.Core.Command.Set
-        DDCI.Core.Eval.Compounds
-        DDCI.Core.Eval.Env
-        DDCI.Core.Eval.Name
-        DDCI.Core.Eval.Prim
-        DDCI.Core.Eval.Step
-        DDCI.Core.Eval.Store
+        DDCI.Core.Command.Trans
         DDCI.Core.Stats.Trace
-        DDCI.Core.Eval
+        DDCI.Core.IO
         DDCI.Core.Mode
         DDCI.Core.State
-        
+        DDCI.Core.Transform
 
   Extensions:
         PatternGuards
         ParallelListComp
+        FlexibleContexts
 
   ghc-options:
         -O2

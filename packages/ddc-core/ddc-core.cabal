@@ -1,23 +1,32 @@
-Name:                ddc-core
-Version:             0.2.0.0
-License:             MIT
-License-file:        LICENSE
-Author:              Ben Lippmeier
-Maintainer:          benl@ouroborus.net
-Build-Type:          Simple
-Cabal-Version:       >=1.6
-Stability:           experimental
-Category:            Compilers/Interpreters
-Homepage:            http://disciple.ouroborus.net
-Bug-reports:         disciple@ouroborus.net
-Description:
-        Disciple Core language and type checker.
+Name:           ddc-core
+Version:        0.2.0.0
+License:        MIT
+License-file:   LICENSE
+Author:         Ben Lippmeier
+Maintainer:     benl@ouroborus.net
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Bug-reports:    disciple@ouroborus.net
+Synopsis:       Disciple Core language and type checker.
+Description:    
+        Disciple Core is an explicitly typed language based on System-F2, intended to be used
+        as an intermediate representation of a compiler. In addition to the usual features
+        of System-F2 it supports region, effect and closure typing, as well as explicit
+        lazy evaluation. It also has a capability system to track whether objects are mutable
+        or constant, and to ensure that computations that perform visible side effects are 
+        not suspended. 
+
+
+        See the @ddci-core@ package for a user-facing interpreter.
 
 Library
   Build-Depends: 
         base            == 4.*,
         containers      == 0.4.*,
-        array           == 0.3.*,
+        array           >= 0.3 && < 0.5,
         transformers    == 0.2.*,
         ddc-base        == 0.2.0.*,
         mtl             == 2.0.*
@@ -29,13 +38,14 @@ Library
         DDC.Core.Check.TaggedClosure
         DDC.Core.Parser.Lexer
         DDC.Core.Parser.Tokens
+        DDC.Core.Transform.LiftW
         DDC.Core.Transform.LiftX
-        DDC.Core.Transform.Spread
-        DDC.Core.Transform.SubstituteT
-        DDC.Core.Transform.SubstituteW
-        DDC.Core.Transform.SubstituteX
-        DDC.Core.Transform.TransformX
+        DDC.Core.Transform.SpreadX
+        DDC.Core.Transform.SubstituteTX
+        DDC.Core.Transform.SubstituteWX
+        DDC.Core.Transform.SubstituteXX
         DDC.Core.Check
+        DDC.Core.Collect
         DDC.Core.Compounds
         DDC.Core.DataDef
         DDC.Core.Exp
@@ -45,14 +55,11 @@ Library
         DDC.Type.Check.CheckCon
         DDC.Type.Check.CheckError
         DDC.Type.Check.Monad
-        DDC.Type.Collect.Free
-        DDC.Type.Collect.GatherBound
-        DDC.Type.Parser.Lexer
         DDC.Type.Transform.Crush
         DDC.Type.Transform.Instantiate
         DDC.Type.Transform.LiftT
-        DDC.Type.Transform.Rename
-        DDC.Type.Transform.Spread
+        DDC.Type.Transform.LowerT
+        DDC.Type.Transform.SpreadT
         DDC.Type.Transform.SubstituteT
         DDC.Type.Transform.Trim
         DDC.Type.Check
@@ -63,14 +70,13 @@ Library
         DDC.Type.Parser
         DDC.Type.Predicates
         DDC.Type.Pretty
+        DDC.Type.Rewrite
+        DDC.Type.Subsumes
         DDC.Type.Sum
         DDC.Type.Universe
 
   Other-modules:
         DDC.Core.Check.ErrorMessage
-        DDC.Core.Collect.FreeX
-        DDC.Cpre.Collect.FreeT
-        DDC.Core.Collect.GatherBound
                   
 
   GHC-options:
