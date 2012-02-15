@@ -11,6 +11,7 @@ import DDCI.Core.State
 import DDCI.Core.IO
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
+import DDC.Core.Eval.Check
 import DDC.Type.Equiv
 import DDC.Core.Exp
 import DDC.Core.Check
@@ -202,25 +203,35 @@ cmdParseCheckExp state lineStart str
                  -> do  putStrLn $ renderIndent $ ppr err
                         return Nothing
                 
-                Right x  -> goCheck x
+                Right x  -> goCheckVars x
 
-        -- Spread type annotations into binders,
-        --   check for undefined variables, 
-        --   and check its type.
-        goCheck x
+        -- Check for undefined variables, and spread type annotations into
+        -- bound occurrences of variables.
+        goCheckVars x
          = let  fvs     = freeX   primTypeEnv x                        -- TODO also check for free type vars
                 x'      = spreadX primKindEnv primTypeEnv x
            in   if Set.null fvs
-                 then   goResult (checkExp primDataDefs primKindEnv primTypeEnv x')
-                 else do  
-                        outDocLn state $ text "Undefined variables: " <> ppr fvs
+                 then    goCheckType x'
+                 else do outDocLn state $ text "Undefined variables: " <> ppr fvs
+                         return Nothing
+
+        -- Check the type of the expression.
+        goCheckType x
+         = case checkExp primDataDefs primKindEnv primTypeEnv x of
+                Left err
+                 -> do  putStrLn $ renderIndent $ ppr err
+                        return  Nothing
+
+                Right (x', t, eff, clo)
+                 -> goCheckCaps x' t eff clo
+
+        -- Check the initial capabilities in the expression.
+        goCheckCaps x t eff clo
+         = case checkCapsX x of
+                Left err
+                 -> do  putStrLn $ renderIndent $ ppr err
                         return Nothing
-
-        -- Expression had a type error.
-        goResult (Left err)
-         = do   putStrLn $ renderIndent $ ppr err
-                return  Nothing
+                        
+                Right _
+                 -> return $ Just (x, t, eff, clo)  
          
-        goResult (Right (x', t, eff, clo))
-         =      return $ Just (x', t, eff, clo)
-

@@ -1,8 +1,5 @@
 
-:set +TraceEval
-
--- Broken: Don't allow partially applied (or unapplied) capability
--- constructors in initial expression.
+-- Error: Partially applied capablity constructor.
 :eval..
 letregion r with { wc : Const r } in
 let x = 0 [r] () in
