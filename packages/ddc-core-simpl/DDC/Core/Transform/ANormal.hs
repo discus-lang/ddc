@@ -62,7 +62,7 @@ isBinderData b | Just U.UniverseData <- U.universeFromType1 (T.typeOfBind b)
  =  True
 isBinderData _ = False
 
--- ha! we don't know anything about their values.
+-- We don't know anything about their values,
 -- but we need to record them as 0 anyway (shadowing, de bruijn)
 aritiesOfPat :: Ord n => Pat n -> [(Bind n, Int)]
 aritiesOfPat PDefault = []
@@ -136,60 +136,47 @@ anormal ar x args
 
 anormalise x = anormal arEmpty x []
 
-isVar :: Ord n => Exp a n -> Bool
-isVar (XVar{}) = True
-isVar (XCon{}) = True
-isVar (XType{}) = True
-isVar (XWitness{}) = True
--- nah..
---isVar (XLam{}) = True
-isVar _ = False
+-- | Check if an expression needs a binding, or if it's simple enough to just be applied
+isNormal :: Ord n => Exp a n -> Bool
+isNormal (XVar{}) = True
+isNormal (XCon{}) = True
+isNormal (XType{}) = True
+isNormal (XWitness{}) = True
+isNormal (XCast _ _ x) = isNormal x
+isNormal _ = False
 	
-makeLets ar f0 args = go 0 f0 (findArity f0) args []
+makeLets ar f0 args = go 0 (findArity f0) (f0:args) []
  where
     tBot = T.tBot T.kData
 
     -- sending arity of f to this is a hack because we should really be building up ar ctx?
-    go i f _arf []  acc = mkApps i 0 $ acc ++ [f]
+    go i _arf []  acc = mkApps i 0 acc
     -- f is fully applied, and we *do* have arguments left to add
-    go i f arf (x:xs) acc | length acc >= arf
-     =  XLet (annotOf x) (LLet LetStrict (BAnon tBot) (mkApps i 0 $ acc ++ [f]))
-            (go i (XVar (annotOf x) $ UIx 0 tBot) 1 (x:xs) [])
+    go i arf (x:xs) acc | length acc > arf
+     =  XLet (annotOf x) (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
+            (go i 1 (x:xs) [XVar (annotOf x) $ UIx 0 tBot])
     -- application to variable, don't bother binding
-    go i f arf (x:xs) acc | isVar x
-     =  go i f arf xs (x:acc)
+    go i arf (x:xs) acc | isNormal x
+     =  go i arf xs (x:acc)
     -- create binding
-    go i f arf (x:xs) acc
+    go i arf (x:xs) acc
      =  XLet (annotOf x) (LLet LetStrict (BAnon tBot) (L.liftX i x))
-	    (go (i+1) f arf xs (x:acc))
+	    (go (i+1) arf xs (x:acc))
     
-    mkApps _ _ [] = error "ANormal.makeLets.mkApps: impossible!"
-    mkApps l _ [x]              = (L.liftX l x)
-    mkApps l i (x:xs) | isVar x = XApp (annotOf x) (mkApps l i xs) (L.liftX l x)
-    mkApps l i (x:xs)           = XApp (annotOf x) (mkApps l (i+1) xs) (XVar (annotOf x) $ UIx i tBot)
+    mkApps _ _ []
+     = error "ANormal.makeLets.mkApps: impossible empty list"
+    mkApps l _ [x] | isNormal x
+     = L.liftX l x
+    mkApps _ i [x]
+     = XVar (annotOf x) $ UIx i tBot
+
+    mkApps l i (x:xs) | isNormal x
+     = XApp (annotOf x) (mkApps l i xs) (L.liftX l x)
+    mkApps l i (x:xs)
+     = XApp (annotOf x) (mkApps l (i+1) xs) (XVar (annotOf x) $ UIx i tBot)
 
     findArity (XVar _ b) = max (arGet ar b) 1
     findArity x          = max (arityOfExp x) 1
-
-{-
-let f = \f. \g. \x. f (g x) in
-let up = \n. addInt [:R0# R0# R0#:] n (1 [R0#] ()) in
-f up up (1 [R0#] ())
-==>
-let f = \f. \g. \x. f (g x) in
-let up = \n. let ^ = 1 [R0#] () in addInt [:R0# R0# R0#:] n ^0 in
-let ^ = f up up in
-let ^ = 1 [R0#] () in
-^1 ^0
--}
-
-{-
-[x, y, z] ->
-(let ^=x in
-    (let ^=y in
-	(let ^=z in
-	    (^2 ^1) ^0)))
--}
 
 -- does this exist elsewhere? ought it?
 annotOf :: Exp a n -> a
@@ -204,13 +191,3 @@ annotOf (XCast a _ _) = a
 annotOf (XType{}) = error "DDC.Core.Transform.ANormal.annotOf: XType"
 annotOf (XWitness{}) = error "DDC.Core.Transform.ANormal.annotOf: XWitness"
 
-{-
-let ap = \x. \y. x y in
-(ap ap) (\x. x) (\x. x)
-
-let ap = \x. \y. x y in
-let ^ = ap ap in
-let ^ = (\x. x) in
-let ^ = (\x. x) in
-(^2 ^1) ^0
--}

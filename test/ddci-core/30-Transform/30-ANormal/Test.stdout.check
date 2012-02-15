@@ -1,20 +1,20 @@
 ok
 
 -- Identity function
-(\(x : Unit). x) ()
+let ^ = \(x : Unit). x in ^0 ()
 
 -- Identify function with indices.
-(\(^ : Unit). ^0) ()
+let ^ = \(^ : Unit). ^0 in ^0 ()
 
 -- Primitive
 let ^ = 1 [R0#] () in let ^ = 2 [R0#] () in addInt [R0#] [R0#] [R0#] ^1 ^0
 3
 
 -- Type abstraction
-let ^ = Nil [R0#] [Int R0#] () in (/\(t : *). \(x : t). x) [List R0# (Int R0#)] ^0
+let ^ = /\(t : *). \(x : t). x in let ^ = Nil [R0#] [Int R0#] () in ^1 [List R0# (Int R0#)] ^0
 
 -- Primitive in case exp
-(\(u : Unit). case 1 [R0#] u of { 0 -> 1 [R0#] u; _ -> let ^ = 2 [R0#] u in let ^ = 3 [R0#] u in addInt [R0#] [R0#] [R0#] ^1 ^0 }) ()
+let ^ = \(u : Unit). case 1 [R0#] u of { 0 -> 1 [R0#] u; _ -> let ^ = 2 [R0#] u in let ^ = 3 [R0#] u in addInt [R0#] [R0#] [R0#] ^1 ^0 } in ^0 ()
 5
 
 -- Anonymous binders
