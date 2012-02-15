@@ -80,7 +80,7 @@ data Lets a n
         -- | Non-recursive expression binding.
         = LLet    (LetMode n) (Bind n) (Exp a n)
 
-        -- | Recursively binding of lambda abstractions.
+        -- | Recursive binding of lambda abstractions.
         | LRec    [(Bind n, Exp a n)]
 
         -- | Bind a local region variable,
@@ -154,32 +154,45 @@ data WiCon n
 
 -- | Built-in witness constructors.
 --
---   These are used to build proofs that certain properties are true.
+--   These are used to convert a runtime capability into a witness that
+--   the corresponding property is true.
 data WbCon
-        -- | The pure effect is pure.
-        = WbConPure     -- pure     :: Pure (!0)
+        -- | (axiom) The pure effect is pure.
+        -- 
+        --   @pure     :: Pure !0@
+        = WbConPure 
 
-        -- | The empty closure is empty.
-        | WbConEmpty    -- empty    :: Empty ($0)
+        -- | (axiom) The empty closure is empty.
+        --
+        --   @empty    :: Empty $0@
+        | WbConEmpty
 
-        -- | Hide the use of a global region.
-        --   This lets us empty the closure of an expression, and rely
-        --   on the garbage collector to reclaim objects in that region.
-        --   This is needed when we suspend function applications that 
-        --   have such a region in their closure, because the type of the
-        --   returned thunk doesn't reveal that it holds on to objects in 
-        --   that region.
-        | WbConUse      -- use      :: [r: %]. Global r => Empty (Use r)
+        -- | Convert a capability guaranteeing that a region is in the global
+        --   heap into a witness that a closure using this region is empty.
+        --   This lets us rely on the garbage collector to reclaim objects
+        --   in the region. It is needed when we suspend the evaluation of 
+        --   expressions that have a region in their closure, because the
+        --   type of the returned thunk may not reveal that it references
+        --   objects in that region.
+        -- 
+        --  @use      :: [r: %]. Global r => Empty (Use r)@
+        | WbConUse      
 
-        -- | Purify a read effect from a constant region.
+        -- | Convert a capability guaranteeing the constancy of a region into
+        --   a witness that a read from that region is pure.
         --   This lets us suspend applications that read constant objects,
         --   because it doesn't matter if the read is delayed, we'll always
-        --   ge the same result.
-        | WbConRead     -- read     :: [r: %]. Const r  => Pure (Read r)
+        --   get the same result.
+        --
+        --   @read     :: [r: %]. Const r  => Pure (Read r)@
+        | WbConRead     
 
-        -- | Purify an allocation effect into a constant region.
+        -- | Convert a capability guaranteeing the constancy of a region into
+        --   a witness that allocation into that region is pure.
         --   This lets us increase the sharing of constant objects,
         --   because we can't tell constant objects of the same value apart.
-        | WbConAlloc    -- alloc    :: [r: %]. Const r  => Pure (Alloc r)
+        -- 
+        --  @alloc    :: [r: %]. Const r  => Pure (Alloc r)@
+        | WbConAlloc
         deriving (Eq, Show)
 

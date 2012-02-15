@@ -1,5 +1,5 @@
 
--- | Lift witness variable indices.
+-- | Lift deBruijn indices in witnesses.
 module DDC.Core.Transform.LiftW
         (LiftW(..))
 where

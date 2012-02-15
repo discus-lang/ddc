@@ -58,7 +58,7 @@ isAtomX xx
 
 
 -- Lambdas --------------------------------------------------------------------
--- | Check whether an expression is a type abstraction.
+-- | Check whether an expression is a spec abstraction (level-1).
 isXLAM :: Exp a n -> Bool
 isXLAM xx
  = case xx of
@@ -66,7 +66,7 @@ isXLAM xx
         _       -> False
 
 
--- | Check whether an expression is a (value) function abstraction.
+-- | Check whether an expression is a value or witness abstraction (level-0).
 isXLam :: Exp a n -> Bool
 isXLam xx
  = case xx of
@@ -74,14 +74,14 @@ isXLam xx
         _       -> False
 
 
--- | Check whether an expression is type or function abstraction.
+-- | Check whether an expression is a spec, value, or witness abstraction.
 isLambdaX :: Exp a n -> Bool
 isLambdaX xx
         = isXLAM xx || isXLam xx
 
 
 -- Applications ---------------------------------------------------------------
--- | Check whether an expression is an XApp
+-- | Check whether an expression is an `XApp`.
 isXApp :: Exp a n -> Bool
 isXApp xx
  = case xx of
@@ -90,7 +90,7 @@ isXApp xx
 
 
 -- Patterns -------------------------------------------------------------------
--- | Check whether an alternative is the default alternative.
+-- | Check whether an alternative is a `PDefault`.
 isPDefault :: Pat n -> Bool
 isPDefault PDefault     = True
 isPDefault _            = False

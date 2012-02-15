@@ -1,4 +1,5 @@
 
+-- | Utilities for constructing and destructing compound expressions.
 module DDC.Core.Compounds 
         ( -- * Lets
           bindsOfLets

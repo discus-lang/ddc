@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Type.Pretty 
         (module DDC.Base.Pretty)
 where

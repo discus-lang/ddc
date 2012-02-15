@@ -1,5 +1,5 @@
 
--- | Lifting of expression variable indices.
+-- | Lift deBruijn indices in expressions.
 module DDC.Core.Transform.LiftX
         (LiftX(..))
 where

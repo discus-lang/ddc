@@ -1,5 +1,5 @@
 
--- | Type checker for the Disciple core language.
+-- | Type checker for the Disciple Core language.
 module DDC.Core.Check.CheckExp
         ( checkExp
         , typeOfExp
@@ -46,12 +46,8 @@ import Data.Maybe
 --
 --   If it's bad, you get a description of the error.
 --
---   As the returned expression has types attached to all variable occurrences, 
---   you can call `typeOfExp` on any subterm. 
---
---   This function does not check for conflicts between `WiCon` capabilities.
---   We check that they are well typed individually, but conflicts between
---   different ones need to be checked for separately.
+--   The returned expression has types attached to all variable occurrences, 
+--   so you can call `typeOfExp` on any open subterm.
 checkExp 
         :: (Ord n, Pretty n)
         => DataDefs n           -- ^ Data type definitions.

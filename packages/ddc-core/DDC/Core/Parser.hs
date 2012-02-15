@@ -1,4 +1,3 @@
-
 -- | Core language parser.
 module DDC.Core.Parser
         ( module DDC.Base.Parser

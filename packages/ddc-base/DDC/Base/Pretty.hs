@@ -1,7 +1,7 @@
 
 -- | Pretty printer utilities.
 --
---   This is a re-export of Daan Leijens pretty printer package (wl-pprint),
+--   This is a re-export of Daan Leijen's pretty printer package (@wl-pprint@),
 --   but with a `Pretty` class that includes a `pprPrec` function.
 module DDC.Base.Pretty
         ( module Text.PrettyPrint.Leijen

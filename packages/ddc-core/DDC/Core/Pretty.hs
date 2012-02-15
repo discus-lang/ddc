@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | Pretty printing for core expressions.
 module DDC.Core.Pretty 
         ( module DDC.Type.Pretty

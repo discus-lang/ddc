@@ -1,5 +1,8 @@
 
 -- | Capture avoiding substitution of witnesses in expressions.
+--
+--   If a binder would capture a variable then it is anonymized
+--   to deBruijn form.
 module DDC.Core.Transform.SubstituteWX
         ( SubstituteWX(..)
         , substituteWX

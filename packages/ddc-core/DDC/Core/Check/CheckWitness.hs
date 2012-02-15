@@ -40,8 +40,8 @@ type CheckM a n   = G.CheckM (Error a n)
 --
 --   If it's bad, you get a description of the error.
 --
---   As the returned witness has types attached to all variable occurrences, 
---   you can call `typeOfWitness` on any subterm. 
+--   The returned expression has types attached to all variable occurrences, 
+--   so you can call `typeOfWitness` on any open subterm.
 --
 checkWitness
         :: (Ord n, Pretty n)

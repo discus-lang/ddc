@@ -1,5 +1,5 @@
--- | Gather all bound names in a thing,
---   independent of whether they are locally bound or not.
+
+-- | Collecting sets of variables and constructors.
 module DDC.Core.Collect
         ( freeT
         , freeX
@@ -77,7 +77,7 @@ collectBoundOfTree tt
 
 
 -- collectSpecBinds -----------------------------------------------------------
--- | Collect all the spec binders in a thing.
+-- | Collect all the Spec binders in a thing.
 collectSpecBinds :: (BindStruct c, Ord n) => c n -> [Bind n]
 collectSpecBinds 
         = concatMap collectSpecBindsOfTree . slurpBindTree

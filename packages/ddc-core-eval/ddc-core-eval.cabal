@@ -10,17 +10,23 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Description:    DDC Core language semantic evaluator     
+Synopsis:       Disciple Core langauge semantic evaluator.
+Description:
+        This is a direct implementation of the operational semantics and is by no
+        means fast, or a substitute for a real interpreter. Programs run with this
+        evaluator will have an asymptotic complexity much worse than if they were
+        compiled. This evaluator is intended for experimenting with the language
+        semantics, and not running actual programs.
 
 Library
   Build-Depends: 
         base            == 4.*,
         containers      == 0.4.*,
-        array           >= 0.3  && < 0.5,
+        array           == 0.4.*,
         transformers    == 0.2.*,
-        ddc-base        == 0.2.0.*,
         mtl             == 2.0.*,
-        ddc-core        == 0.2.*
+        ddc-base        == 0.2.0.*,
+        ddc-core        == 0.2.0.*
 
   Exposed-modules:
         DDC.Core.Eval.Check

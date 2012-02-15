@@ -13,23 +13,23 @@ Bug-reports:    disciple@ouroborus.net
 Synopsis:       Disciple Core language and type checker.
 Description:    
         Disciple Core is an explicitly typed language based on System-F2, intended to be used
-        as an intermediate representation of a compiler. In addition to the usual features
-        of System-F2 it supports region, effect and closure typing, as well as explicit
-        lazy evaluation. It also has a capability system to track whether objects are mutable
-        or constant, and to ensure that computations that perform visible side effects are 
-        not suspended. 
-
+        as an intermediate representation in a compiler. In addition to the features
+        of System-F2 it supports region, effect and closure typing. Evaluation order is 
+        left-to-right call-by-value as default, but explicit lazy evaluation is also supported.
+        There is also has a capability system to track whether objects are mutable or constant,
+        and to ensure that computations that perform visible side effects are not suspended with
+        lazy evaluation.
 
         See the @ddci-core@ package for a user-facing interpreter.
 
 Library
   Build-Depends: 
-        base            == 4.*,
+        base            == 4.5.*,
         containers      == 0.4.*,
-        array           >= 0.3 && < 0.5,
+        array           == 0.4.*,
         transformers    == 0.2.*,
-        ddc-base        == 0.2.0.*,
-        mtl             == 2.0.*
+        mtl             == 2.0.*,
+        ddc-base        == 0.2.0.*
 
   Exposed-modules:
         DDC.Core.Check.CheckExp
@@ -49,7 +49,6 @@ Library
         DDC.Core.Compounds
         DDC.Core.DataDef
         DDC.Core.Exp
-        DDC.Core.Parser
         DDC.Core.Predicates
         DDC.Core.Pretty
         DDC.Type.Check.CheckCon
@@ -69,7 +68,6 @@ Library
         DDC.Type.Exp
         DDC.Type.Parser
         DDC.Type.Predicates
-        DDC.Type.Pretty
         DDC.Type.Rewrite
         DDC.Type.Subsumes
         DDC.Type.Sum
@@ -77,8 +75,9 @@ Library
 
   Other-modules:
         DDC.Core.Check.ErrorMessage
+        DDC.Core.Parser
+        DDC.Type.Pretty
                   
-
   GHC-options:
         -Werror
         -Wall

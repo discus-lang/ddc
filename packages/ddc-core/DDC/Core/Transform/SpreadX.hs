@@ -1,6 +1,6 @@
 
--- | Spreading of type annotations from binders and the environment into bound
---   variables and constructors.
+-- | Spread type annotations from binders and the environment into bound
+--   occurrences of variables and constructors.
 module DDC.Core.Transform.SpreadX
         (SpreadX(..))
 where
@@ -13,8 +13,8 @@ import qualified DDC.Type.Env           as Env
 
 class SpreadX (c :: * -> *) where
 
- -- | Spread type annotations from the environment and binders into
- --   bound occurrences of variables.
+ -- | Spread type annotations from binders and the environment into bound
+ --   occurrences of variables and constructors.
  --
  --   Also convert `Bound`s to `UPrim` form if the environment says that
  --   they are primitive.
