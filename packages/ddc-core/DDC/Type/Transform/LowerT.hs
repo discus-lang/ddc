@@ -1,5 +1,6 @@
 
--- | Lifting of type variable indices.
+-- | Lowering of deBruijn indices in a type.
+---
 --   TODO: merge this code with LiftT.
 module DDC.Type.Transform.LowerT
         (LowerT(..))
@@ -19,7 +20,7 @@ class LowerT (c :: * -> *) where
         -> c n          -- ^ Lower type indices in this thing.
         -> c n
  
- -- | Wrapper for `liftAtDepthT` that starts at depth 0.       
+ -- | Wrapper for `lowerAtDepthT` that starts at depth 0.       
  lowerT :: forall n. Ord n
         => Int          -- ^ Number of levels to lower.
         -> c n          -- ^ Lower type indices in this thing.

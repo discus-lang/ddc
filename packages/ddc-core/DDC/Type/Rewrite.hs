@@ -1,5 +1,5 @@
 
--- | Utils for rewriting variables to anonymous form to avoid variable capture.
+-- | Rewriting of variable binders to anonymous form to avoid capture.
 module DDC.Type.Rewrite
         ( Rewrite(..)
         , Sub(..)
@@ -21,14 +21,16 @@ import qualified Data.Set               as Set
 
 -- | Substitution state.
 --   Keeps track of the binders in the environment that have been rewrittten
---   to avoid variable capture or spec conflict.
+--   to avoid variable capture or spec binder shadowing.
 data Sub n
         = Sub
         { -- | Bound variable that we're substituting for.
           subBound      :: Bound n
 
           -- | We've decended past a binder that shadows the one that we're
-          --   substituting for.  This can only happen for level-0 names.
+          --   substituting for. We're no longer substituting, but still may
+          --   need to anonymise variables in types. 
+          --   This can only happen for level-0 named binders.
         , subShadow0    :: Bool 
 
           -- | Level-1 names that need to be rewritten to avoid capture.
@@ -63,14 +65,14 @@ data BindStack n
 
 
 -- | Push several binds onto the bind stack,
---   anonymysing them if need be to avoid variable capture.
+--   anonymyzing them if need be to avoid variable capture.
 pushBinds :: Ord n => Set n -> BindStack n -> [Bind n]  -> (BindStack n, [Bind n])
 pushBinds fns stack bs
         = mapAccumL (pushBind fns) stack bs
 
 
 -- | Push a bind onto a bind stack, 
---   anonymising it if need be to avoid variable capture.
+--   anonymizing it if need be to avoid variable capture.
 pushBind
         :: Ord n
         => Set n                  -- ^ Names that need to be rewritten.
@@ -169,7 +171,7 @@ bind0s :: Ord n => Sub n -> [Bind n] -> (Sub n, [Bind n])
 bind0s = mapAccumL bind0
 
 
--- | Rewrite a level-1 binder to anonymous form if need be.
+-- | Rewrite a use of a level-1 binder if need be.
 use1 :: Ord n => Sub n -> Bound n -> Bound n
 use1 sub u
         | UName _ t             <- u
@@ -181,7 +183,7 @@ use1 sub u
         = u
 
 
--- | Rewrite a level-0 binder to anonymous form if need be.
+-- | Rewrite the use of a level-0 binder if need be.
 use0 :: Ord n => Sub n -> Bound n -> Bound n
 use0 sub u
         | UName _ t             <- u
@@ -195,7 +197,8 @@ use0 sub u
 
 -------------------------------------------------------------------------------
 class Rewrite (c :: * -> *) where
- -- | Rewrite names in some thing to anonymous form if need be.
+ -- | Rewrite names in some thing to anonymous form if they conflict with
+--    any names in the `Sub` state.
  rewriteWith :: Ord n => Sub n -> c n -> c n 
 
 

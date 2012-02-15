@@ -621,7 +621,7 @@ checkExpM' defs kenv tenv xx@(XCase a xDiscrim alts)
 
         let effsMatch    
                 = Sum.singleton kEffect 
-                $ crushT $ tHeadRead tDiscrim
+                $ crushEffect $ tHeadRead tDiscrim
 
         return  ( XCase a xDiscrim' alts'
                 , tAlt

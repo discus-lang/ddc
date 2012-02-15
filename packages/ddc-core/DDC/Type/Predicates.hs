@@ -80,7 +80,7 @@ isWitnessKind tt
 -- | Check whether this type is that of algebraic data.
 --
 --   It needs to have an explicit data constructor out the front,
---   and not a type variable. The consructor must not be the function
+--   and not a type variable. The constructor must not be the function
 --   constructor, and must return a value of kind '*'.
 
 -- Algebraic data types are all built from constructors

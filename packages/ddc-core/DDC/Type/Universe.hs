@@ -1,5 +1,5 @@
 
--- | Determine the universe that something belongs to based on its type.
+-- | Universes of the Disciple Core language.
 module DDC.Type.Universe
         ( Universe(..)
         , universeFromType3
@@ -12,7 +12,7 @@ import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as T
 
 
--- | These are the universes of the Disciple core language.
+-- | Universes of the Disciple Core language.
 data Universe 
         -- | (level 3). The universe of sorts.
         --   Sorts classify kinds.
@@ -24,18 +24,23 @@ data Universe
 
         -- | (level 1). The universe of specifications.
         --   Specifications classify both witnesses and data values.
-        --   In the vanilla Haskell world \"specifications\" are known as \"types\", but in DDC we use
-        --   the former term because we overload the word \"type\" to refer to kinds and sorts as well.
+        --   In the vanilla Haskell world \"specifications\" are known as
+        --   \"types\", but here we use the former term because we overload
+        --   the word \"type\" to refer to kinds and sorts as well.
         | UniverseSpec
 
         -- | (level 0). The universe of witnesses.
-        --   The existence of a witness in the program guarantees some property about how it 
-        --   operates at runtime. For example, a witness of constancy of some region guarantees
-        --   objects in that region will not be updated.
+        --   The existence of a witness in the program guarantees that some
+        --   property about how it operates at runtime. For example, a witness
+        --   of constancy of some region guarantees objects in that region will
+        --   not be updated. This is like the @Prop@ universe in constructive
+        --   logic.
         | UniverseWitness
 
         -- | (level 0). The universe of data values.
         --   These are physical data objects that take up space at runtime.
+        --   This is like the @Set@ universe in constructive logic, but the 
+        --   expressions may diverge or cause side effects.
         | UniverseData
         deriving (Show, Eq) 
 
@@ -90,6 +95,11 @@ universeFromType1 tt
 
 
 -- | Yield the universe of some type.
+--
+-- @  universeOfType (tBot kEffect) = UniverseSpec
+--  universeOfType kRegion        = UniverseKind
+-- @
+--
 universeOfType :: Type n -> Maybe Universe
 universeOfType tt
  = case tt of

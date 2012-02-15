@@ -27,7 +27,7 @@ pType   = pTypeSum
  <?> "a type"
 
 
--- Sums
+--  | Parse a type sum.
 pTypeSum :: Ord n => Parser n (Type n)
 pTypeSum 
  = do   t1      <- pTypeForall
@@ -42,7 +42,7 @@ pTypeSum
  <?> "a type"
 
 
--- Binds
+-- | Parse a binder.
 pBinder :: Ord n => Parser n (Binder n)
 pBinder
  = P.choice
@@ -60,7 +60,7 @@ pBinder
  <?> "a binder"
 
 
--- Foralls.
+-- | Parse a quantified type.
 pTypeForall :: Ord n => Parser n (Type n)
 pTypeForall
  = P.choice
@@ -83,7 +83,7 @@ pTypeForall
  <?> "a type"
 
 
--- Functions
+-- | Parse a function type.
 pTypeFun :: Ord n => Parser n (Type n)
 pTypeFun
  = do   t1      <- pTypeApp
@@ -120,7 +120,7 @@ pTypeFun
  <?> "an atomic type or type application"
 
 
--- Applications
+-- | Parse a type application.
 pTypeApp :: Ord n => Parser n (Type n)
 pTypeApp  
  = do   (t:ts)  <- P.many1 pTypeAtom
@@ -128,7 +128,7 @@ pTypeApp
  <?> "an atomic type or type application"
 
 
--- Atomics
+-- | Parse a variable, constructor or parenthesised type.
 pTypeAtom :: Ord n => Parser n (Type n)
 pTypeAtom  
  = P.choice
@@ -218,7 +218,7 @@ pVar    =   P.pTokMaybe f
  where  f (KN (KVar n))         = Just n
         f _                     = Nothing
 
--- | Parse a debuijn index
+-- | Parse a deBruijn index
 pIndex :: Parser n Int
 pIndex  =   P.pTokMaybe f
         <?> "an index"

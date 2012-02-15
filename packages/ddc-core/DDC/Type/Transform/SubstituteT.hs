@@ -1,5 +1,5 @@
 
--- | Type substitution.
+-- | Capture avoiding substitution of types in types.
 module DDC.Type.Transform.SubstituteT
         ( SubstituteT(..)
         , substituteT
@@ -87,16 +87,16 @@ instance SubstituteT Type where
          TApp t1 t2
           -> case t1 of
                 TCon (TyConSpec TcConHeadRead)  
-                  -> crushT      (TApp t1 (down t2))
+                  -> crushEffect      (TApp t1 (down t2))
 
                 TCon (TyConSpec TcConDeepRead)  
-                  -> crushT      (TApp t1 (down t2))
+                  -> crushEffect      (TApp t1 (down t2))
 
                 TCon (TyConSpec TcConDeepWrite) 
-                  -> crushT      (TApp t1 (down t2))
+                  -> crushEffect      (TApp t1 (down t2))
 
                 TCon (TyConSpec TcConDeepAlloc) 
-                  -> crushT      (TApp t1 (down t2))
+                  -> crushEffect      (TApp t1 (down t2))
 
                 -- If the closure is miskinded then trimClosure can 
                 -- return Nothing, so we leave it untrimmed.

@@ -1,5 +1,5 @@
 module DDC.Type.Transform.Crush
-        (crushT)
+        (crushEffect)
 where
 import DDC.Type.Predicates
 import DDC.Type.Compounds
@@ -8,18 +8,23 @@ import qualified DDC.Type.Sum   as Sum
 
 
 -- | Crush compound effect terms into their components.
-crushT :: Ord n => Type n -> Type n
-crushT tt
+--
+--   This is like `trimClosure` but for effects instead of closures.
+-- 
+--   For example, crushing @DeepRead (List r1 (Int r2))@ yields @(Read r1 + Read r2)@.
+--
+crushEffect :: Ord n => Effect n -> Effect n
+crushEffect tt
  = case tt of
         TVar{}          -> tt
         TCon{}          -> tt
         TForall b t
-         -> TForall b (crushT t)
+         -> TForall b (crushEffect t)
 
         TSum ts         
          -> TSum
           $ Sum.fromList (Sum.kindOfSum ts)   
-          $ map crushT 
+          $ map crushEffect
           $ Sum.toList ts
 
         TApp t1 t2
@@ -47,7 +52,7 @@ crushT tt
               | (ks, _)  <- takeKFuns (typeOfBound u)
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepRead ks ts
-              -> crushT $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt
 
@@ -59,7 +64,7 @@ crushT tt
               | (ks, _)  <- takeKFuns (typeOfBound u)
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepWrite ks ts
-              -> crushT $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt 
 
@@ -71,11 +76,12 @@ crushT tt
               | (ks, _)  <- takeKFuns (typeOfBound u)
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepAlloc ks ts
-              -> crushT $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt
 
-
+         -- TODO: we're hijacking crushEffect to work on witnesses as well.
+         --       we should split this into another function.
          -- Deep Global
          -- See Note: Crushing with higher kinded type vars.
          | Just (TyConWitness TwConDeepGlobal, [t]) <- takeTyConApps tt
@@ -84,12 +90,12 @@ crushT tt
               | (ks, _)  <- takeKFuns (typeOfBound u)
               , length ks == length ts
               , Just props       <- sequence $ zipWith makeDeepGlobal ks ts
-              -> crushT $ TSum $ Sum.fromList kWitness props
+              -> crushEffect $ TSum $ Sum.fromList kWitness props
 
              _ -> tt 
 
          | otherwise
-         -> TApp (crushT t1) (crushT t2)
+         -> TApp (crushEffect t1) (crushEffect t2)
 
 
 -- | If this type has first order kind then wrap with the 

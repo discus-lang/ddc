@@ -1,5 +1,5 @@
 
--- | Utilities for working with TypeSums.
+-- | Utilities for working with `TypeSum`s.
 --
 module DDC.Type.Sum 
         ( empty
@@ -199,15 +199,14 @@ hashTcCon tc
         _               -> Nothing
 
 
--- | Range of hashes that can be produced by `hashTyCon`.
+-- | The range of hashes that can be produced by `hashTyCon`.
 hashTyConRange :: (TyConHash, TyConHash)
 hashTyConRange
  =      ( TyConHash 0
         , TyConHash 6)
                 
 
--- | Yield the TyCon corresponding to a TyConHash, 
---   or `error` if there isn't one.
+-- | Yield the `TyCon` corresponding to a `TyConHash`, or `error` if there isn't one.
 unhashTyCon :: TyConHash -> TyCon n
 unhashTyCon (TyConHash i)
  = TyConSpec
@@ -247,9 +246,9 @@ makeSumArrayElem h vc
          TypeSumCon u   -> TApp (TCon tc) (TCon (TyConBound u))
 
 
--- Type Equality ----------------------------------------------------------------------------------
--- Code for type equality is in this module because we need to normalise sums when
--- deciding if two types are equal.
+-- Type Equality --------------------------------------------------------------
+-- Code for type equality is in this module because we need to normalise sums
+-- when deciding if two types are equal.
 
 deriving instance Eq n => Eq (TyCon n)
 deriving instance Eq n => Eq (Bound n)

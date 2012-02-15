@@ -106,15 +106,15 @@ crushSomeT tt
  = case tt of
         (TApp (TCon tc) _)
          -> case tc of
-                TyConSpec    TcConDeepRead   -> crushT tt
-                TyConSpec    TcConDeepWrite  -> crushT tt
-                TyConSpec    TcConDeepAlloc  -> crushT tt
+                TyConSpec    TcConDeepRead   -> crushEffect tt
+                TyConSpec    TcConDeepWrite  -> crushEffect tt
+                TyConSpec    TcConDeepAlloc  -> crushEffect tt
 
                 -- If a closure is miskinded then 'trimClosure' 
                 -- can return Nothing, so we just leave the term untrimmed.
                 TyConSpec    TcConDeepUse    -> fromMaybe tt (trimClosure tt)
 
-                TyConWitness TwConDeepGlobal -> crushT tt
+                TyConWitness TwConDeepGlobal -> crushEffect tt
                 _                            -> tt
 
         _ -> tt

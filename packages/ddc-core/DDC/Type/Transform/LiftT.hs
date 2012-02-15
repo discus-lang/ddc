@@ -1,5 +1,6 @@
 
--- | Lifting of type variable indices.
+-- | Lifting of deBruijn indices in a type.
+---
 --   TODO: merge this code with LowerT
 module DDC.Type.Transform.LiftT
         (LiftT(..))

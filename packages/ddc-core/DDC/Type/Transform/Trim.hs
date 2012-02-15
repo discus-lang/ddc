@@ -1,6 +1,4 @@
 
--- | Given a term containing some store locations, a closure is an upper 
---   bound on the regions those locations are in.
 module DDC.Type.Transform.Trim 
         (trimClosure)
 where
@@ -16,10 +14,16 @@ import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 
 
--- | Trim a closure.
+-- | Trim compound closures into their components. 
 --
---   This function assumes the closure is well-kinded, 
---   and may return Nothing if this is not the case.
+--   This is like `crushEffect`, but for closures instead of effects.
+--
+--   For example, trimming @Int r2 -(Read r1 | Use r1)> Int r2@ yields just @Use r1@. 
+--   Only @r1@ might contain an actual store object that is reachable from a function
+--   closure with such a type.
+--
+--   This function assumes the closure is well-kinded, and may return `Nothing` if
+--   this is not the case.
 trimClosure 
         :: Ord n
         => Closure n 
