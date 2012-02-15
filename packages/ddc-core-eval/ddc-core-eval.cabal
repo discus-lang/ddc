@@ -10,7 +10,7 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple Core langauge semantic evaluator.
+Synopsis:       Disciple Core language semantic evaluator.
 Description:
         This is a direct implementation of the operational semantics and is by no
         means fast, or a substitute for a real interpreter. Programs run with this

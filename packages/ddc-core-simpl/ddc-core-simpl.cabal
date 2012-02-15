@@ -10,8 +10,7 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Description:
-        Disciple Core simplifying code transforms.
+Description:    Disciple Core simplifying code transformations.
 
 Library
   Build-Depends: 

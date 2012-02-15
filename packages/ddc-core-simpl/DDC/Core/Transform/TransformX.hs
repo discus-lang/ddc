@@ -1,4 +1,5 @@
 
+-- | General purpose tree walking boilerplate.
 module DDC.Core.Transform.TransformX
         ( TransformUpMX(..)
         , transformUpX)

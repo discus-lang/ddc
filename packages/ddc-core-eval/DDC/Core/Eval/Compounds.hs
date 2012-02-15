@@ -8,11 +8,12 @@ module DDC.Core.Eval.Compounds
         , tList 
 
           -- * Witnesses
-        , wGlobal,   wcGlobal
-        , wConst,    wcConst
-        , wMutable,  wcMutable
-        , wLazy,     wcLazy
-        , wManifest, wcManifest
+        , wGlobal
+        , wConst,    wMutable
+        , wLazy,     wManifest
+        , wcGlobal
+        , wcConst,   wcMutable
+        , wcLazy,    wcManifest
         , isCapConW
 
           -- * Expressions

@@ -17,7 +17,7 @@ import DDC.Core.Exp
 import qualified DDC.Core.Eval.Store   as Store
 
 -------------------------------------------------------------------------------
--- | tep a primitive constructor, which allocates an object in the store.
+-- | Step a primitive constructor, which allocates an object in the store.
 stepPrimCon
         :: Name                 -- ^ Name of constructor to allocate.
         -> [Exp () Name]        -- ^ Arguments to constructor.
@@ -83,7 +83,7 @@ stepPrimCon _ _ _
 
 
 -------------------------------------------------------------------------------
--- | Steip a primitive operator.
+-- | Step a primitive operator.
 stepPrimOp
         :: Name                 -- ^ Name of operator to evaluate.
         -> [Exp () Name]        -- ^ Arguments to operator.

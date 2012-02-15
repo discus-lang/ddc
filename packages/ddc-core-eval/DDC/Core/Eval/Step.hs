@@ -1,6 +1,5 @@
 
--- | Single step evalation for the DDC core language.
---
+-- | Single step evalation for the Disciple Core language.
 module DDC.Core.Eval.Step 
         ( StepResult(..)
         , force
@@ -457,14 +456,20 @@ tagMatchesPat n (PData u' _)
         
 -- isValue ----------------------------------------------------------------
 -- | Check if an expression is a value.
+--   Values can't be progressed any further, with either `force` or `step`.
+isValue :: Store -> Exp a Name -> Bool
+isValue store xx
+        = isSomeValue False store xx
+
+
+-- | Check if an expression is a weak values.
 --   These are all the values, and locations that point to thunks.
+--
+--   Weak values can be progressed with `force`, but not `step`.
 isWeakValue :: Store -> Exp a Name -> Bool
 isWeakValue store xx
         = isSomeValue True store xx
 
-isValue :: Store -> Exp a Name -> Bool
-isValue store xx
-        = isSomeValue False store xx
 
 
 -- | Check if an expression is a weak value.

@@ -12,11 +12,11 @@ Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
 Synopsis:       Disciple Core language and type checker.
 Description:    
-        Disciple Core is an explicitly typed language based on System-F2, intended to be used
-        as an intermediate representation in a compiler. In addition to the features
-        of System-F2 it supports region, effect and closure typing. Evaluation order is 
-        left-to-right call-by-value as default, but explicit lazy evaluation is also supported.
-        There is also has a capability system to track whether objects are mutable or constant,
+        Disciple Core is an explicitly typed language based on System-F2, intended
+        as an intermediate representation for a compiler. In addition to the features of 
+        System-F2 it supports region, effect and closure typing. Evaluation order is 
+        left-to-right call-by-value by default, but explicit lazy evaluation is also supported.
+        There is also a capability system to track whether objects are mutable or constant,
         and to ensure that computations that perform visible side effects are not suspended with
         lazy evaluation.
 

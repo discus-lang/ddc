@@ -90,7 +90,6 @@ data Error
         , errorCap2     :: Cap }
 
         -- | A partially applied capability constructor.
-        --  
         --   In the formal semantics, capabilities are atomic, so this isn't
         --   a problem. However, as we're representing them with general witness
         --   appliction we need to ensure the constructors aren't partially 
@@ -99,7 +98,6 @@ data Error
         { errorWitness  :: Witness Name }
 
         -- | A capability constructor applied to a non-region handle.
-        --
         --   As with `ErrorPartial` we only need to check for this because we're
         --   using general witness application to represent capabilities, instead
         --   of having an atomic form. 
