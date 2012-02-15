@@ -563,6 +563,10 @@ checkExpM' defs kenv tenv xx@(XCase a xDiscrim alts)
                 <- liftM unzip4
                 $  mapM (checkAltM xx defs kenv tenv tDiscrim tsArgs) alts
 
+        -- There must be at least one alternative
+        when (null ts)
+         $ throw $ ErrorCaseNoAlternatives xx
+
         -- All alternative result types must be identical.
         let (tAlt : _)  = ts
         forM_ ts $ \tAlt' 
