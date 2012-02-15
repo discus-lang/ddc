@@ -33,8 +33,8 @@ equivT' :: (Ord n, Pretty n)
         -> Bool
 
 equivT' stack1 depth1 stack2 depth2 t1 t2
- = let  t1'     = unpackSum $ crushSome t1
-        t2'     = unpackSum $ crushSome t2
+ = let  t1'     = unpackSumT $ crushSomeT t1
+        t2'     = unpackSumT $ crushSomeT t2
    in case (t1', t2') of
         (TVar u1,         TVar u2)
          -- Bound variables are name-equivalent.
@@ -88,10 +88,10 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
 
 
 -- | Unpack single element sums into plain types.
-unpackSum :: Type n -> Type n
-unpackSum (TSum ts)
+unpackSumT :: Type n -> Type n
+unpackSumT (TSum ts)
         | [t]   <- Sum.toList ts = t
-unpackSum tt                     = tt
+unpackSumT tt                     = tt
 
 
 -- | Crush compound effects and closure terms.
@@ -100,8 +100,8 @@ unpackSum tt                     = tt
 --   As equivT is already recursive, we don't want a doubly-recursive function
 --   that tries to re-crush the same non-crushable type over and over.
 --
-crushSome :: (Ord n, Pretty n) => Type n -> Type n
-crushSome tt
+crushSomeT :: (Ord n, Pretty n) => Type n -> Type n
+crushSomeT tt
  = case tt of
         (TApp (TCon tc) _)
          -> case tc of

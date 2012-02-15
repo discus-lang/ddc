@@ -11,11 +11,13 @@ import DDCI.Core.State
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
-import DDC.Type.Equiv
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Collect
+import DDC.Type.Equiv
+import DDC.Type.Subsumes
+import DDC.Type.Compounds
 import Control.Monad
 import DDC.Core.Eval.Store              (Store)
 import qualified DDC.Core.Eval.Store    as Store
@@ -120,7 +122,7 @@ forcePrint
         -> Closure Name
         -> IO (Maybe (Store, Exp () Name))
 
-forcePrint state store x tX _effX _cloX
+forcePrint state store x tX effX cloX
  = case force store x of
         StepProgress store' x'
          -> case checkExp primDataDefs primKindEnv primTypeEnv x' of
@@ -142,7 +144,7 @@ forcePrint state store x tX _effX _cloX
 
                     return $ Nothing
                       
-             Right (_, tX', _effX', _cloX')
+             Right (_, tX', effX', cloX')
               -> do 
                     -- Print intermediate expression.
                     when (Set.member TraceEval  $ stateModes state)
@@ -153,10 +155,12 @@ forcePrint state store x tX _effX _cloX
                      $ do putStrLn $ renderIndent $ ppr store'
                           putStr "\n"
                 
-                    -- Check expression has the same type as before.
-                    -- TODO: also check the effect and closure is no greater.
-                    let deathT = not $ equivT tX tX'
-                    let death  = deathT
+                    -- Check expression has the same type as before,
+                    -- and that the effect and closure are no greater.
+                    let deathT = not $ equivT    tX tX'
+                    let deathE = not $ subsumesT kEffect  effX effX'
+                    let deathC = not $ subsumesT kClosure cloX cloX'
+                    let death  = deathT || deathE || deathC
 
                     when deathT
                      $ putStrLn $ renderIndent
