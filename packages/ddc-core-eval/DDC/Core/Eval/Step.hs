@@ -18,6 +18,7 @@ import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Check
 import DDC.Core.Compounds
+import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import qualified Data.Set               as Set
@@ -85,24 +86,21 @@ step    :: Store        -- ^ Current store.
 
 -- (EvLam)
 -- Add abstractions to the heap.
-step store xx | isLam xx
-        -- We need the type of the expression to attach to the location
-        -- This fakes the store typing from the formal typing rules.
- = case typeOfExp primDataDefs xx of
+-- We need the type of the expression to attach to the location
+-- This fakes the store typing from the formal typing rules.
+step store xx
+ | (casts, xp)  <- unwrapCasts xx
+ , isLambdaX xp
+ = case typeOfExp primDataDefs xp of
         Left err -> StepStuckMistyped err
         Right t   
-         -> let Just (bs, xBody)  = takeXLamFlags xx
+         -> let Just (bs, xBody)  = takeXLamFlags xp
                 (store', l)       = allocBind (Rgn 0) t (SLams bs xBody) store
-            in  StepProgress store' (XCon () (UPrim (NameLoc l) t))
- where
-    isLam XLam{} = True
-    isLam XLAM{} = True
-    isLam _      = False
-        
+            in  StepProgress store' (wrapCasts casts $ XCon () (UPrim (NameLoc l) t))
+
 
 -- (EvAlloc)
 -- Construct some data in the heap.
--- TODO: handle non primitive constructors.
 step store xx
         | Just (u, xs)  <- takeXConApps xx
         , case u of
@@ -154,13 +152,11 @@ step store xx
                 Right (store', x')      -> StepProgress store' x'
 
 
-
 -- (EvAppArgs)
 -- Step the left-most non-wnf argument of a lambda.
--- TODO: handle cast wrapped around function.
 step store xx
-        | xL1 : xsArgs  <- takeXApps xx
-        , Just l1       <- takeLocX xL1
+        | x1 : xsArgs   <- takeXApps xx
+        , Just l1       <- takeLocX x1
         , Just (Rgn 0, _, SLams bs _xBody)  <- lookupRegionTypeBind l1 store
 
         -- See if an arg to any of the lambdas needs to be stepped.
@@ -190,15 +186,16 @@ step store xx
            in case stepArg wnfs xsArgs of
                 Left err        -> err
                 Right (store2, xsArgs')
-                 -> StepProgress store2 (makeXApps () xL1 xsArgs')
+                 -> StepProgress store2 (makeXApps () x1 xsArgs')
 
 
 -- (EvAppSubst)
 -- Substitute wnf arguments into an abstraction.
--- TODO: handle cast wrapped around function.
 step store xx
-        | xL1 : xsArgs  <- takeXApps xx
+        | x1 : xsArgs   <- takeXApps xx
+        , (casts, xL1)  <- unwrapCasts x1
         , Just l1       <- takeLocX xL1
+
         , Just (Rgn 0, _, SLams fbs xBody) <- lookupRegionTypeBind l1 store
 
         -- Take as many wnfs as possible to satisfy binders.
@@ -219,15 +216,17 @@ step store xx
               xResult         = substituteXArgs (zip bsToSubst argsToSubst)
                               $ makeXLamFlags () bsLeftover xBody
 
-          in  StepProgress store (makeXApps () xResult argsLeftover)
+          in  StepProgress store 
+                $ wrapCasts casts (makeXApps () xResult argsLeftover)
 
 
 -- (EvApp1 / EvApp2)
 -- Evaluate the components of an application.
 step store (XApp a x1 x2)
- = case step store x1 of
-    StepProgress store' x1' 
-     -> StepProgress store' (XApp a x1' x2)
+ | (casts, x1p)         <- unwrapCasts x1
+ = case force store x1p of
+    StepProgress store' x1p' 
+     -> StepProgress store' (XApp a (wrapCasts casts x1p') x2)
 
     StepDone 
      -> case step store x2 of

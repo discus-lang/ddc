@@ -1,33 +1,9 @@
 
 
--- Forget cast around lambda.
--- Ok.
-:eval..
-letregion r0 with { w0g : Global r0; w0l : Lazy r0; w0c : Const r0 } in
-letregion r  with { w   : Global r;  wl  : Lazy r;   wc : Const r }  in
-let x lazy <w0l> 
-        = purify <read [r]  wc   & alloc [r]  wc>  in
-          purify <read [r0] w0c  & alloc [r0] w0c> in
-          forget <use  [r0] w0g> in 
-          ((forget <use [r] w> in (\(z : Int r0). addInt [:r r0 r0:] (2 [r] ()) z))
-            (3 [r0] ()))
-in addInt [:r0 r0 R0#:] x (1 [r0] ());;
+
 
 
 :set +TraceEval
-
--- Forget cast around lambda.
--- Broken: need to unwrap casts from lambdas in application.
-:eval..
-letregion r  with { w   : Global r;  wl  : Lazy r;   wc : Const r }  in
-let x lazy <lazy [R0#]> 
-        = purify <read [r]  wc              & alloc [r]  wc>  in
-          purify <read [R0#] (const  [R0#]) & alloc [R0#] (const [R0#])> in
-          forget <use  [R0#] (global [R0#])> in 
-          ((forget <use [r] w> in (\(z : Int R0#). addInt [:r R0# R0#:] (2 [r] ()) z))
-            (3 [R0#] ()))
-in x;;
-
 
 -- Broken: Don't allow partially applied (or unapplied) capability
 -- constructors in initial expression.
@@ -36,4 +12,3 @@ letregion r with { wc : Const r } in
 let x = 0 [r] () in
 (\(w : [r : %]. Mutable r). \(_ : Unit). 
         updateInt [:r r:] <w [r]> x (5 [r] ())) <mutable> ();;
-

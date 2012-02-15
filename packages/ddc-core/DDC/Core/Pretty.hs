@@ -66,7 +66,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
                            <> pprPrec 11 x2)
 
         XLet _ lts x
-         -> pprParen' (d > 2)
+         ->  pprParen' (d > 2)
          $   ppr lts <+> text "in"
          <$> ppr x
 
@@ -78,9 +78,9 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          <> rbrace
 
         XCast _ cc x
-         -> pprParen' (d > 10)
-         $  ppr cc <+> text "in" <> line
-         <> pprPrec 10 x
+         ->  pprParen' (d > 2)
+         $   ppr cc <+> text "in"
+         <$> ppr x
 
         XType    t      -> text "[" <> ppr t <> text "]"
         XWitness w      -> text "<" <> ppr w <> text ">"

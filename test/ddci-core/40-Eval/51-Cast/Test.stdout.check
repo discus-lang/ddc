@@ -1,0 +1,11 @@
+
+-- Forget cast around lambda.
+6
+
+
+-- Forget cast around lambda.
+forget <use [R0#] (global [R0#])> in forget <use [R1#] (global [R1#])> in 5
+
+
+-- Forget cast around lambda.
+forget <use [R0#] (global [R0#])> in 5

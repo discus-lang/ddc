@@ -39,7 +39,7 @@ cmdStep state lineStart str
            in   goStep store x tX effX cloX
 
         goStep store x tX effX cloX
-         = do   _       <- stepPrint state store x tX effX cloX
+         = do   _       <- forcePrint state store x tX effX cloX
                 return ()
 
 
@@ -78,7 +78,7 @@ evalExp state (x, tX, effX, cloX)
     where
 	goStep store x0
 	 = do
-	    mResult <- stepPrint state store x0 tX effX cloX
+	    mResult <- forcePrint state store x0 tX effX cloX
 	    case mResult of
 	      Nothing           -> return ()
 	      Just (store', x0') -> goStep store' x0'
@@ -111,7 +111,7 @@ startingStoreForExp xx
 
 
 -- | Perform a single step of evaluation and print what happened.
-stepPrint 
+forcePrint 
         :: State
         -> Store 
         -> Exp ()  Name 
@@ -120,8 +120,8 @@ stepPrint
         -> Closure Name
         -> IO (Maybe (Store, Exp () Name))
 
-stepPrint state store x tX _effX _cloX
- = case step store x of
+forcePrint state store x tX _effX _cloX
+ = case force store x of
         StepProgress store' x'
          -> case checkExp primDataDefs primKindEnv primTypeEnv x' of
              Left err
