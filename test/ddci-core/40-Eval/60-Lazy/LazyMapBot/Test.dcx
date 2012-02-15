@@ -52,13 +52,13 @@ letrec {
 let list        = list1 [R0#] [R1#] () in
 let result      
      = mapL     [:R0# R0# (Int R1#) (Int R1#):]
-                <global [R0#]> <const [R0#]>
-                <global [R0#]> <const [R0#]> <lazy [R0#]>
-                <use [R1#] (global [R1#])> 
-                <use [R1#] (global [R1#])>
+                <Global# [R0#]> <Const# [R0#]>
+                <Global# [R0#]> <Const# [R0#]> <Lazy# [R0#]>
+                <use [R1#] (Global# [R1#])> 
+                <use [R1#] (Global# [R1#])>
                 (\(x : Int R1#). 
-                        purify <read [R1#] (const [R1#]) & alloc [R1#] (const [R1#])> in
-                        forget <use  [R1#] (global [R1#])> in
+                        purify <read [R1#] (Const# [R1#]) & alloc [R1#] (Const# [R1#])> in
+                        forget <use  [R1#] (Global# [R1#])> in
                         addInt [:R1# R1# R1#:] (1 [R1#] ()) x)
                 list 
 in sum [:R0# R1# R1#:] result;;

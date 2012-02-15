@@ -112,11 +112,19 @@ instance SpreadX Witness where
  spreadX kenv tenv ww
   = let down = spreadX kenv tenv 
     in case ww of
-        WCon  wicon      -> WCon wicon
+        WCon  wc         -> WCon  (down wc)
         WVar  u          -> WVar  (down u)
         WApp  w1 w2      -> WApp  (down w1) (down w2)
         WJoin w1 w2      -> WJoin (down w1) (down w2)
         WType t1         -> WType (spreadT kenv t1)
+
+
+instance SpreadX WiCon where
+ spreadX kenv tenv wc
+  = let down = spreadX kenv tenv
+    in case wc of
+        WiConBound u     -> WiConBound (down u)
+        WiConBuiltin{}   -> wc
 
 
 instance SpreadX Bind where

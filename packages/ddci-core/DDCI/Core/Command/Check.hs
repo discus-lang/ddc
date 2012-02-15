@@ -85,7 +85,7 @@ cmdShowWType state lineStart ss
          = return ()
 
         goResult (Just (w, t))
-         = outDocLn state $ ppr w <> text " :: " <> ppr t
+         = putStrLn $ renderIndent $ ppr w <> text " :: " <> ppr t
 
 
 -- | Parse the given witness, and return it along with its type. 
@@ -105,7 +105,7 @@ cmdParseCheckWitness state lineStart str
         goParse toks                
          = case BP.runTokenParser describeTok "<interactive>" pWitness toks of
                 Left err 
-                 -> do  outDocLn state $ text "parse error " <> ppr err
+                 -> do  putStrLn $ renderIndent $ text "parse error " <> ppr err
                         return Nothing
                 
                 Right x  -> goCheck x

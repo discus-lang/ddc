@@ -145,7 +145,7 @@ data TokAtom
 
         -- builtin names
         | KTwConBuiltin TwCon
-        | KWiConBuiltin WiCon
+        | KWbConBuiltin WbCon
         | KTcConBuiltin TcCon
         deriving (Eq, Show)
 
@@ -228,7 +228,7 @@ describeTokAtom' ta
 
         -- builtin names
         KTwConBuiltin tw        -> (Constructor, renderPlain $ ppr tw)
-        KWiConBuiltin wi        -> (Constructor, renderPlain $ ppr wi)
+        KWbConBuiltin wi        -> (Constructor, renderPlain $ ppr wi)
         KTcConBuiltin tc        -> (Constructor, renderPlain $ ppr tc)
 
 

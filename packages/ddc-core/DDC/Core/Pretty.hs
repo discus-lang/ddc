@@ -181,8 +181,8 @@ instance (Pretty n, Eq n) => Pretty (LetMode n) where
 instance (Pretty n, Eq n) => Pretty (Witness n) where
  pprPrec d ww
   = case ww of
-        WCon wc         -> ppr wc
         WVar n          -> ppr n
+        WCon wc         -> ppr wc
 
         WApp w1 w2
          -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
@@ -193,19 +193,21 @@ instance (Pretty n, Eq n) => Pretty (Witness n) where
         WType t         -> text "[" <> ppr t <> text "]"
 
 
-instance Pretty WiCon where
+instance (Pretty n, Eq n) => Pretty (WiCon n) where
  ppr wc
   = case wc of
-        WiConPure       -> text "pure"
-        WiConEmpty      -> text "empty"
-        WiConGlobal     -> text "global"
-        WiConConst      -> text "const"
-        WiConMutable    -> text "mutable"
-        WiConLazy       -> text "lazy"
-        WiConManifest   -> text "manifest"
-        WiConUse        -> text "use"
-        WiConRead       -> text "read"
-        WiConAlloc      -> text "alloc"
+        WiConBuiltin wb -> ppr wb
+        WiConBound   u  -> ppr u
+
+
+instance Pretty WbCon where
+ ppr wb
+  = case wb of
+        WbConPure       -> text "pure"
+        WbConEmpty      -> text "empty"
+        WbConUse        -> text "use"
+        WbConRead       -> text "read"
+        WbConAlloc      -> text "alloc"
 
 
 -- Utils ----------------------------------------------------------------------

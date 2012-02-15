@@ -230,7 +230,7 @@ pExp0
         pTok KRoundKet
         return  $ t
         
-        -- Named type constructors
+        -- Named constructors
  , do   con     <- pCon
         return  $ XCon () (UName con (T.tBot T.kData)) 
 
@@ -366,7 +366,7 @@ pLetMode :: Ord n => Parser n (LetMode n)
 pLetMode
  = do   P.choice
                 -- lazy <WITNESS>
-         [ do   pTok (KWiConBuiltin WiConLazy)
+         [ do   pTok KLazy
 
                 P.choice
                  [ do   pTok KAngleBra
@@ -572,9 +572,14 @@ pWitnessAtom
          pTok KRoundKet
          return  $ w
 
-   -- Named witness constructors.
- , do    wc     <- pWiCon
-         return $ WCon wc 
+   -- Named constructors
+ , do   con     <- pCon
+        return  $ WCon (WiConBound $ UName con (T.tBot T.kWitness)) 
+
+   -- Baked-in witness constructors.
+ , do    wb     <- pWbCon
+         return $ WCon (WiConBuiltin wb)
+
                 
    -- Debruijn indices
  , do    i       <- T.pIndex
@@ -589,9 +594,9 @@ pWitnessAtom
 
 -------------------------------------------------------------------------------
 -- | Parse a builtin named `WiCon`
-pWiCon :: Parser n WiCon
-pWiCon  = P.pTokMaybe f
- where  f (KA (KWiConBuiltin wc)) = Just wc
+pWbCon :: Parser n WbCon
+pWbCon  = P.pTokMaybe f
+ where  f (KA (KWbConBuiltin wb)) = Just wb
         f _                       = Nothing
 
 

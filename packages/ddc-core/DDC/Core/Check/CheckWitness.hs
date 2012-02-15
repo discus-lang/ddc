@@ -4,6 +4,7 @@ module DDC.Core.Check.CheckWitness
         ( checkWitness
         , typeOfWitness
         , typeOfWiCon
+        , typeOfWbCon
 
         , CheckM
         , checkWitnessM)
@@ -172,35 +173,22 @@ checkWitnessM kenv _tenv (WType t)
         
 
 -- | Take the type of a witness constructor.
-typeOfWiCon :: WiCon -> Type n
+typeOfWiCon :: WiCon n -> Type n
 typeOfWiCon wc
  = case wc of
-        WiConPure     -> tPure  (tBot kEffect)
-        WiConEmpty    -> tEmpty (tBot kClosure)
+    WiConBuiltin wb -> typeOfWbCon wb
+    WiConBound u    -> typeOfBound u
 
-        WiConGlobal
-         -> tForall kRegion $ \r -> tGlobal r
 
-        WiConConst    
-         -> tForall kRegion $ \r -> tConst r
-
-        WiConMutable
-         -> tForall kRegion $ \r -> tMutable r
-
-        WiConLazy
-         -> tForall kRegion $ \r -> tLazy r
-
-        WiConManifest
-         -> tForall kRegion $ \r -> tManifest r
-
-        WiConUse
-         -> tForall kRegion $ \r -> tGlobal r     `tImpl` (tEmpty $ tUse r)
-
-        WiConRead
-         -> tForall kRegion $ \r -> tConst  r     `tImpl` (tPure  $ tRead r)
-
-        WiConAlloc
-         -> tForall kRegion $ \r -> tConst  r     `tImpl` (tPure $ tAlloc r)
+-- | Take the type of a builtin witness constructor.
+typeOfWbCon :: WbCon -> Type n
+typeOfWbCon wb
+ = case wb of
+    WbConPure    -> tPure  (tBot kEffect)
+    WbConEmpty   -> tEmpty (tBot kClosure)
+    WbConUse     -> tForall kRegion $ \r -> tGlobal r `tImpl` (tEmpty $ tUse r)
+    WbConRead    -> tForall kRegion $ \r -> tConst  r `tImpl` (tPure  $ tRead r)
+    WbConAlloc   -> tForall kRegion $ \r -> tConst  r `tImpl` (tPure  $ tAlloc r)
 
 
 -- checkType ------------------------------------------------------------------

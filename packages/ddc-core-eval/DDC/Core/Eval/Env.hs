@@ -162,7 +162,13 @@ typeOfPrimName nn
                 $  tFun  (tInt r2) (tSum kEffect  [tWrite r1, tRead r2])
                                    (tSum kClosure [tUse r1])
                 $  tUnit
-                 
+
+        NameCap CapGlobal       -> Just $ tForall kRegion $ \r -> tGlobal   r
+        NameCap CapConst        -> Just $ tForall kRegion $ \r -> tConst    r
+        NameCap CapMutable      -> Just $ tForall kRegion $ \r -> tMutable  r
+        NameCap CapLazy         -> Just $ tForall kRegion $ \r -> tLazy     r
+        NameCap CapManifest     -> Just $ tForall kRegion $ \r -> tManifest r
+
         _ -> Nothing
 
 

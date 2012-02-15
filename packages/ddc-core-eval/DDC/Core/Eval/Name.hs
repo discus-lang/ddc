@@ -1,10 +1,11 @@
 
 module DDC.Core.Eval.Name 
         ( Name    (..)
-        , Loc     (..)
-        , Rgn     (..)
         , PrimCon (..)
         , PrimOp  (..)
+        , Loc     (..)
+        , Rgn     (..)
+        , Cap     (..)
         , readName
         , lexString)
 where
@@ -19,17 +20,20 @@ import Data.Maybe
 -- | Names of things recognised by the evaluator.
 -- 
 data Name 
-        -- Names whose types are bound in the environment.
-        = NameVar     String    -- ^ User variables.
-        | NameCon     String    -- ^ User constructors.
-        | NameLoc     Loc       -- ^ Store locations.
-        | NameRgn     Rgn       -- ^ Region handles.
+        -- Names whose types are bound in the environments.
+        = NameVar     String     -- ^ User variables.
+        | NameCon     String     -- ^ User constructors.
 
         -- Names whose types are baked in, and should be attached to 
         -- the `Bound` constructor that they appear in.
-        | NameInt     Integer   -- ^ Integer literals (which data constructors).
-        | NamePrimCon PrimCon   -- ^ Primitive constructors (eg @List, Nil@).
-        | NamePrimOp  PrimOp    -- ^ Primitive operators    (eg @addInt, subInt@).
+        | NameInt     Integer    -- ^ Integer literals (which data constructors).
+        | NamePrimCon PrimCon    -- ^ Primitive constructors (eg @List, Nil@).
+        | NamePrimOp  PrimOp     -- ^ Primitive operators    (eg @addInt, subInt@).
+
+        | NameLoc     Loc        -- ^ Store locations.
+        | NameRgn     Rgn        -- ^ Region handles.
+        | NameCap     Cap        -- ^ Store capabilities.
+
         deriving (Show, Eq, Ord)
         
 
@@ -39,13 +43,14 @@ instance Pretty Name where
         NameVar     v   -> text v
         NameCon     c   -> text c
         NameInt     i   -> text (show i)
-        NameLoc     l   -> ppr l
-        NameRgn     r   -> ppr r
         NamePrimCon c   -> ppr c
         NamePrimOp  op  -> ppr op
+        NameLoc     l   -> ppr l
+        NameRgn     r   -> ppr r
+        NameCap     p   -> ppr p
 
 
--- Locs and Rgns --------------------------------------------------------------
+-- Locations ------------------------------------------------------------------
 -- | A store location.
 --
 --  These are pretty printed like @L4#@.
@@ -58,6 +63,7 @@ instance Pretty Loc where
         = text "L" <> text (show l) <> text "#"
  
 
+-- Regions --------------------------------------------------------------------
 -- | A region handle.
 --
 --  These are pretty printed like @R5#@.
@@ -68,6 +74,51 @@ data Rgn
 instance Pretty Rgn where
  ppr (Rgn r)    
         = text "R" <> text (show r) <> text "#"
+
+
+-- Capabilities --------------------------------------------------------------
+-- | These are primitive witnesses that guarantee the associated property
+--   of the program. Ostensibly, they are only introduced by the system
+--   at runtime, but for testing purposes we can also inject them into
+--   the source program.
+data Cap
+        -- | Witness that a region is global.
+        --   Global regions live for the duration of the program and are not
+        --   deallocated in a stack like manner. This lets us hide the use of
+        --   such regions, and rely on the garbage collector to reclaim the
+        --   space.
+        = CapGlobal   -- global   :: [r: %]. Global r
+
+        -- | Witness that a region is constant.
+        --   This lets us purify read and allocation effects on it,
+        --   and prevents it from being Mutable.
+        | CapConst    -- const    :: [r: %]. Const r
+        
+        -- | Witness that a region is mutable.
+        --   This lets us update objects in the region, 
+        --   and prevents it from being Constant.
+        | CapMutable  -- mutable  :: [r: %]. Mutable r
+
+        -- | Witness that a region is lazy.
+        --   This lets is allocate thunks into the region,
+        --   and prevents it from being Manifest.
+        | CapLazy     -- lazy     :: [r: %].Lazy r
+        
+        -- | Witness that a region is manifest.
+        --   This ensures there are no thunks in the region,
+        --   which prevents it from being Lazy.
+        | CapManifest -- manifest :: [r: %]. Manifest r
+        deriving (Eq, Ord, Show)
+
+
+instance Pretty Cap where
+ ppr cp
+  = case cp of
+        CapGlobal       -> text "Global#"
+        CapConst        -> text "Const#"
+        CapMutable      -> text "Mutable#"
+        CapLazy         -> text "Lazy#"
+        CapManifest     -> text "Manifest#"
 
 
 -- PrimCons -------------------------------------------------------------------
@@ -136,33 +187,40 @@ readName str@(c:rest)
                 "eqInt"         -> Just $ NamePrimOp PrimOpEqInt
                 "updateInt"     -> Just $ NamePrimOp PrimOpUpdateInt
                 _               -> Just $ NameVar str
+
+        -- units
+        | str == "Unit"         = Just $ NamePrimCon PrimTyConUnit
+        | str == "()"           = Just $ NamePrimCon PrimDaConUnit
+
+        -- integers
+        | str == "Int"          = Just $ NamePrimCon PrimTyConInt
+
+        | (ds, "")              <- span isDigit str
+        = Just $ NameInt (read ds)        
+        
+        -- implement lists as primitive until we have data type decls implemented
+        | str == "List"         = Just $ NamePrimCon PrimTyConList
+        | str == "Nil"          = Just $ NamePrimCon PrimDaConNil
+        | str == "Cons"         = Just $ NamePrimCon PrimDaConCons
         
         -- region handles
         | c == 'R'
-        , (ds, "#")     <- span isDigit rest
+        , (ds, "#")             <- span isDigit rest
         , not $ null ds
         = Just $ NameRgn (Rgn $ read ds)
         
         -- store locations
         | c == 'L'
-        , (ds, "#")     <- span isDigit rest
+        , (ds, "#")             <- span isDigit rest
         , not $ null ds
         = Just $ NameLoc (Loc $ read ds)
         
-        -- units
-        | str == "Unit" = Just $ NamePrimCon PrimTyConUnit
-        | str == "()"   = Just $ NamePrimCon PrimDaConUnit
-
-        -- integers
-        | str == "Int"  = Just $ NamePrimCon PrimTyConInt
-
-        | (ds, "")      <- span isDigit str
-        = Just $ NameInt (read ds)        
-        
-        -- implement lists as primitive until we have data type decls implemented
-        | str == "List" = Just $ NamePrimCon PrimTyConList
-        | str == "Nil"  = Just $ NamePrimCon PrimDaConNil
-        | str == "Cons" = Just $ NamePrimCon PrimDaConCons
+        -- store capabilities
+        | str == "Global#"      = Just $ NameCap CapGlobal
+        | str == "Const#"       = Just $ NameCap CapConst
+        | str == "Mutable#"     = Just $ NameCap CapMutable
+        | str == "Lazy#"        = Just $ NameCap CapLazy
+        | str == "Manifest#"    = Just $ NameCap CapManifest
 
         -- other constructors
         | isUpper c

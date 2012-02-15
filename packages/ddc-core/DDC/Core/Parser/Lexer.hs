@@ -5,7 +5,7 @@ module DDC.Core.Parser.Lexer
           isConName, isConStart, isConBody
         , readTwConBuiltin
         , readTcConBuiltin
-        , readWiConBuiltin
+        , readWbConBuiltin
         , readCon
         
           -- * Variables
@@ -21,24 +21,16 @@ import DDC.Core.Parser.Tokens
 import Data.Char
 
 
--- WiCon names ----------------------------------------------------------------
--- | Read a `WiCon`.
----
---   This should function should have a case for every `WiCon`.
---
-readWiConBuiltin :: String -> Maybe WiCon
-readWiConBuiltin ss
+-- WbCon names ----------------------------------------------------------------
+-- | Read a `WbCon`.
+readWbConBuiltin :: String -> Maybe WbCon
+readWbConBuiltin ss
  = case ss of
-        "pure"          -> Just WiConPure
-        "empty"         -> Just WiConEmpty
-        "global"        -> Just WiConGlobal
-        "const"         -> Just WiConConst
-        "mutable"       -> Just WiConMutable
-        "lazy"          -> Just WiConLazy
-        "manifest"      -> Just WiConManifest
-        "use"           -> Just WiConUse
-        "read"          -> Just WiConRead
-        "alloc"         -> Just WiConAlloc
+        "pure"          -> Just WbConPure
+        "empty"         -> Just WbConEmpty
+        "use"           -> Just WbConUse
+        "read"          -> Just WbConRead
+        "alloc"         -> Just WbConAlloc
         _               -> Nothing
 
 
@@ -51,6 +43,7 @@ keywords
         , ("letregion",  KA KLetRegion)
         , ("withregion", KA KWithRegion)
         , ("let",        KA KLet)
+        , ("lazy",       KA KLazy)
         , ("case",       KA KCase)
         , ("purify",     KA KPurify)
         , ("forget",     KA KForget)
@@ -179,13 +172,13 @@ lexExp lineStart str
         -- Keywords, Named Variables and Witness constructors
         c : cs
          | isVarStart c
-         , (body, rest)         <- span isVarBody cs
+         , (body,  rest)        <- span isVarBody cs
          -> let readNamedVar s
                  | Just t <- lookup s keywords
-                 = tok t : lexMore (length s) rest
+                 = tok t                   : lexMore (length s) rest
 
-                 | Just wc      <- readWiConBuiltin s
-                 = tokA (KWiConBuiltin wc) : lexMore (length s) rest
+                 | Just wc      <- readWbConBuiltin s
+                 = tokA (KWbConBuiltin wc) : lexMore (length s) rest
          
                  | Just v       <- readVar s
                  = tokN (KVar v)           : lexMore (length s) rest
@@ -193,7 +186,7 @@ lexExp lineStart str
                  | otherwise
                  = [tok (KJunk c)]
 
-            in  readNamedVar (c:body)
+            in  readNamedVar (c : body)
 
         -- Error
         c : _   -> [tok $ KJunk c]
@@ -277,8 +270,8 @@ readCon ss
 -- TyVar names ----------------------------------------------------------------
 -- | String is a variable name.
 isVarName :: String -> Bool
-isVarName []          = False
-isVarName (c:cs)      = isVarStart c && and (map isVarBody cs)
+isVarName []     = False
+isVarName (c:cs) = isVarStart c && (and $ map isVarBody cs)
 
 
 -- | Charater can start a variable name.

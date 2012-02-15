@@ -24,9 +24,3 @@ in  thing [[^^^:%].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> In
           (20 [R0#] ());;
 
 
--- Handle shadowed witness binders.
-:eval..
-letregion r with { w : Const r } in
-let x = 0 [r] () in
-(\(w : [r : %]. Mutable r). \(_ : Unit). 
-        updateInt [:r r:] <w [r]> x (5 [r] ())) <mutable> ();;

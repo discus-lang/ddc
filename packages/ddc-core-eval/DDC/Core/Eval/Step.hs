@@ -528,23 +528,13 @@ isSomeValue weak store xx
 
 -- | Get the region witness corresponding to one of the witness types that are
 --   permitted in a letregion.
-regionWitnessOfType :: Type n -> Maybe (Witness n)
+regionWitnessOfType :: Type Name -> Maybe (Witness Name)
 regionWitnessOfType tt
  = case tt of
-        TApp (TCon (TyConWitness TwConGlobal)) r
-         -> Just $ WApp (WCon WiConGlobal)   (WType r)
-
-        TApp (TCon (TyConWitness TwConMutable)) r 
-         -> Just $ WApp (WCon WiConMutable)  (WType r)
-        
-        TApp (TCon (TyConWitness TwConConst)) r
-         -> Just $ WApp (WCon WiConConst)    (WType r)
-
-        TApp (TCon (TyConWitness TwConLazy)) r
-         -> Just $ WApp (WCon WiConLazy)     (WType r)
-
-        TApp (TCon (TyConWitness TwConManifest)) r
-         -> Just $ WApp (WCon WiConManifest) (WType r)
-
-        _ -> Nothing
+        TApp (TCon (TyConWitness TwConGlobal))   r -> Just $ wGlobal   r
+        TApp (TCon (TyConWitness TwConMutable))  r -> Just $ wMutable  r
+        TApp (TCon (TyConWitness TwConConst))    r -> Just $ wConst    r 
+        TApp (TCon (TyConWitness TwConLazy))     r -> Just $ wLazy     r
+        TApp (TCon (TyConWitness TwConManifest)) r -> Just $ wManifest r
+        _                                          -> Nothing
 

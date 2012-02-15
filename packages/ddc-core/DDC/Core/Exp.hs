@@ -13,7 +13,8 @@ module DDC.Core.Exp
                         
           -- * Witnesses expressions
         , Witness (..)
-        , WiCon   (..))
+        , WiCon   (..)
+        , WbCon   (..))
 where
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
@@ -127,7 +128,7 @@ data Witness n
         = WVar  (Bound n)
         
         -- | Witness constructor.
-        | WCon  WiCon 
+        | WCon  (WiCon n)
         
         -- | Witness application.
         | WApp  (Witness n) (Witness n)
@@ -141,67 +142,44 @@ data Witness n
 
 
 -- | Witness constructors.
+data WiCon n
+        -- | Witness constructors baked into the language.
+        = WiConBuiltin WbCon
+
+        -- | Witness constructors defined in the environment.
+        --   In the interpreter we use this to hold runtime capabilities.
+        | WiConBound (Bound n)
+        deriving (Eq, Show)
+
+
+-- | Built-in witness constructors.
 --
 --   These are used to build proofs that certain properties are true.
---
---   The constructors marked (axiom) witness properties that are always true,
---   or combine existing witnesses in sound ways. 
---
---   The constructors marked (capability) are not normally present in the
---   initial program, but may be created by a `LLetRegion` during evaluation.
-data WiCon
-        -- | (axiom) The pure effect is pure.
-        = WiConPure     -- pure     :: Pure (!0)
+data WbCon
+        -- | The pure effect is pure.
+        = WbConPure     -- pure     :: Pure (!0)
 
-        -- | (axiom) The empty closure is empty.
-        | WiConEmpty    -- empty    :: Empty ($0)
+        -- | The empty closure is empty.
+        | WbConEmpty    -- empty    :: Empty ($0)
 
-        -- | (axiom) Hide the use of a global region.
+        -- | Hide the use of a global region.
         --   This lets us empty the closure of an expression, and rely
         --   on the garbage collector to reclaim objects in that region.
         --   This is needed when we suspend function applications that 
         --   have such a region in their closure, because the type of the
         --   returned thunk doesn't reveal that it holds on to objects in 
         --   that region.
-        | WiConUse      -- use      :: [r: %]. Global r => Empty (Use r)
+        | WbConUse      -- use      :: [r: %]. Global r => Empty (Use r)
 
-        -- | (axiom) Purify a read effect from a constant region.
+        -- | Purify a read effect from a constant region.
         --   This lets us suspend applications that read constant objects,
         --   because it doesn't matter if the read is delayed, we'll always
         --   ge the same result.
-        | WiConRead     -- read     :: [r: %]. Const r  => Pure (Read r)
+        | WbConRead     -- read     :: [r: %]. Const r  => Pure (Read r)
 
-        -- | (axiom) Purify an allocation effect into a constant region.
+        -- | Purify an allocation effect into a constant region.
         --   This lets us increase the sharing of constant objects,
         --   because we can't tell constant objects of the same value apart.
-        | WiConAlloc    -- alloc    :: [r: %]. Const r  => Pure (Alloc r)
-
-        -- | (capability) Witness that a region is global.
-        --   Global regions live for the duration of the program and are not
-        --   deallocated in a stack like manner. This lets us hide the use of
-        --   such regions, and rely on the garbage collector to reclaim the
-        --   space.
-        | WiConGlobal   -- global   :: [r: %]. Global r
-
-        -- | (capability) Witness that a region is constant.
-        --   This lets us purify read and allocation effects on it,
-        --   and prevents it from being Mutable.
-        | WiConConst    -- const    :: [r: %]. Const r
-        
-        -- | (capability) Witness that a region is mutable.
-        --   This lets us update objects in the region, 
-        --   and prevents it from being Constant.
-        | WiConMutable  -- mutable  :: [r: %]. Mutable r
-
-        -- | (capability) Witness that a region is lazy.
-        --   This lets is allocate thunks into the region,
-        --   and prevents it from being Manifest.
-        | WiConLazy     -- lazy     :: [r: %].Lazy r
-        
-        -- | (capability) Witness that a region is manifest.
-        --   This ensures there are no thunks in the region,
-        --   which prevents it from being Lazy.
-        | WiConManifest -- manifest :: [r: %]. Manifest r
-
+        | WbConAlloc    -- alloc    :: [r: %]. Const r  => Pure (Alloc r)
         deriving (Eq, Show)
 
