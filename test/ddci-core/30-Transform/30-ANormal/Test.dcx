@@ -1,3 +1,4 @@
+:set +Indent
 :set trans ANormal
 
 -- Identity function
