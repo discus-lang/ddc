@@ -6,26 +6,88 @@ where
 import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Name
 import DDC.Core.Exp
-import DDC.Type.Check.Monad             (throw, result)
 import DDC.Base.Pretty
-import qualified DDC.Type.Check.Monad   as G
 import Control.Monad
 import Data.Maybe
+import DDC.Type.Check.Monad             (throw, result)
+import Data.Set                         (Set)
+import qualified DDC.Type.Check.Monad   as G
+import qualified Data.Set               as Set
 
-type CheckM a = G.CheckM (Error a)
+type CheckM a = G.CheckM Error
+
+-- | Check for conflicting store capabilities in the program.
+checkCapsX :: Exp a Name -> Maybe Error
+checkCapsX xx 
+ = case result $ checkCapsXM xx of
+        Left err        -> Just err
+        Right ws
+         -> let caps    = foldr mustInsertCap emptyCapSet ws
+            in  checkCapSet caps
 
 
-checkCapsX :: Exp a Name -> Either (Error a) [Witness Name]
-checkCapsX xx = result $ checkCapsXM xx
+-- CapSet --------------------------------------------------------------------
+data CapSet 
+        = CapSet
+        { capsGlobal    :: Set Rgn 
+        , capsConst     :: Set Rgn
+        , capsMutable   :: Set Rgn
+        , capsLazy      :: Set Rgn
+        , capsManifest  :: Set Rgn }
+        deriving Show
+
+-- | An empty capability set
+emptyCapSet :: CapSet
+emptyCapSet 
+        = CapSet
+        { capsGlobal    = Set.empty
+        , capsConst     = Set.empty
+        , capsMutable   = Set.empty
+        , capsLazy      = Set.empty
+        , capsManifest  = Set.empty }
+
+
+-- | Insert a capability, or `error` if this isn't one.
+mustInsertCap :: Witness Name -> CapSet -> CapSet
+mustInsertCap ww caps
+ | WApp (WCon  (WiConBound       (UPrim nc _))) 
+        (WType (TCon (TyConBound (UPrim nh _)))) <- ww
+ , NameCap c     <- nc
+ , NameRgn r     <- nh
+ = case c of
+        CapGlobal       -> caps { capsGlobal   = Set.insert r (capsGlobal  caps) }
+        CapConst        -> caps { capsConst    = Set.insert r (capsConst   caps) }
+        CapMutable      -> caps { capsMutable  = Set.insert r (capsMutable caps) }
+        CapLazy         -> caps { capsLazy     = Set.insert r (capsLazy    caps) }
+        CapManifest     -> caps { capsManifest = Set.insert r (capsManifest caps)}
+
+ | otherwise
+ = error "mustInsertCap: not a capability"
+
+
+-- | Check a capability set for conflicts between the capabilities.
+checkCapSet :: CapSet -> Maybe Error
+checkCapSet cs 
+        | r : _  <- Set.toList 
+                 $  Set.intersection (capsConst cs) (capsMutable  cs)
+        = Just $ ErrorConflict r CapConst CapMutable 
+
+        | r : _  <- Set.toList 
+                 $  Set.intersection (capsLazy  cs) (capsManifest cs)
+        = Just $ ErrorConflict r CapLazy  CapManifest
+
+        | otherwise
+        = Nothing
 
 
 -- Error ----------------------------------------------------------------------
 -- | Things that can go wrong with the capabilities in a program.
-data Error a 
+data Error 
         -- | Conflicting capabilities in program.
         = ErrorConflict 
-        { errorWitness1 :: Witness Name
-        , errorWitness2 :: Witness Name }
+        { errorRegions  :: Rgn
+        , errorCap1     :: Cap
+        , errorCap2     :: Cap }
 
         -- | A partially applied capability constructor.
         --  
@@ -45,13 +107,14 @@ data Error a
         { errorWitness  :: Witness Name }
 
 
-instance Pretty (Error a) where
+instance Pretty Error where
  ppr err
   = case err of
-        ErrorConflict w1 w2
+        ErrorConflict r c1 c2
          -> vcat [ text "Conflicting capabilities in core program."
-                 , text "      capability: "            <> ppr w1
-                 , text "  conflicts with: "            <> ppr w2 ]
+                 , text "        region: "              <> ppr r
+                 , text " can't be both: "              <> ppr c1
+                 , text "           and: "              <> ppr c2 ]
 
         ErrorPartial w1
          -> vcat [ text "Partially applied capability constructor."

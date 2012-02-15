@@ -228,10 +228,10 @@ cmdParseCheckExp state lineStart str
         -- Check the initial capabilities in the expression.
         goCheckCaps x t eff clo
          = case checkCapsX x of
-                Left err
+                Just err
                  -> do  putStrLn $ renderIndent $ ppr err
                         return Nothing
                         
-                Right _
+                Nothing
                  -> return $ Just (x, t, eff, clo)  
          
