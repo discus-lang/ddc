@@ -97,6 +97,10 @@ kindOfPrimName nn
 --   as the following primitive operators:
 --
 --  @negInt, addInt, subInt, mulInt, divInt, eqInt, updateInt@
+--
+--   It also contains types for the primitive capability constructors:
+--
+--  @Global\#, Const\#, Mutable\#, Lazy\#, Manifest\#@
 -- 
 primTypeEnv :: Env Name
 primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
