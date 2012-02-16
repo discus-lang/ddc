@@ -5,7 +5,6 @@ where
 import DDC.Core.Exp
 import qualified DDC.Type.Exp as T
 import qualified DDC.Type.Compounds as T
-import qualified DDC.Type.Universe as U
 import qualified DDC.Core.Transform.LiftX as L
 
 import qualified Data.Map as Map
@@ -75,13 +74,13 @@ aritiesOfPat (PData _b bs) = zip bs (repeat 0)
 anormal :: Ord n
 	=> Arities n	-- ^ environment, arities of bound variables
 	-> Exp a n	-- ^ expression to transform
-	-> [Exp a n]	-- ^ arguments being applied to current expression
+	-> [(Exp a n,a)]-- ^ arguments being applied to current expression
 	-> Exp a n
 
 -- Application: just record argument and descend into function
-anormal ar (XApp _ lhs rhs) args
+anormal ar (XApp a lhs rhs) args
  =  -- normalise rhs and add to arguments
-    let args' = anormal ar rhs [] : args in
+    let args' = (anormal ar rhs [], a) : args in
     -- descend into lhs, remembering all args
     anormal ar lhs args'
 
@@ -167,9 +166,10 @@ isNormal _ = False
 makeLets :: Ord n
 	=> Arities n	-- ^ environment, arities of bound variables
 	-> Exp a n	-- ^ function
-	-> [Exp a n]	-- ^ arguments being applied to current expression
+	-> [(Exp a n,a)]-- ^ arguments being applied to current expression
 	-> Exp a n
-makeLets ar f0 args = go 0 (findArity f0) (f0:args) []
+makeLets _  f0 [] = f0
+makeLets ar f0 args@((_,annot):_) = go 0 (findArity f0) ((f0,annot):args) []
  where
     tBot = T.tBot T.kData
 
@@ -177,16 +177,16 @@ makeLets ar f0 args = go 0 (findArity f0) (f0:args) []
     go i _arf [] acc = mkApps i 0 acc
     -- f is fully applied and we have arguments left to add:
     --	create let for intermediate result
-    go i arf (x:xs) acc | length acc > arf
-     =  XLet (annotOf x) (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
-            (go i 1 (x:xs) [XVar (annotOf x) $ UIx 0 tBot])
+    go i arf ((x,a):xs) acc | length acc > arf
+     =  XLet a (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
+            (go i 1 ((x,a):xs) [(XVar a $ UIx 0 tBot,a)])
     -- application to variable, don't bother binding
-    go i arf (x:xs) acc | isNormal x
-     =  go i arf xs (x:acc)
+    go i arf ((x,a):xs) acc | isNormal x
+     =  go i arf xs ((x,a):acc)
     -- non-trivial argument, create binding
-    go i arf (x:xs) acc
-     =  XLet (annotOf x) (LLet LetStrict (BAnon tBot) (L.liftX i x))
-	    (go (i+1) arf xs (x:acc))
+    go i arf ((x,a):xs) acc
+     =  XLet a (LLet LetStrict (BAnon tBot) (L.liftX i x))
+	    (go (i+1) arf xs ((x,a):acc))
     
     -- fold list into applications
     -- can't create empty app
@@ -194,30 +194,17 @@ makeLets ar f0 args = go 0 (findArity f0) (f0:args) []
      = error "DDC.Core.Transform.ANormal.makeLets.mkApps: impossible empty list"
 
     -- single element - this is the function
-    mkApps l _ [x] | isNormal x
+    mkApps l _ [(x,_)] | isNormal x
      = L.liftX l x
-    mkApps _ i [x]
-     = XVar (annotOf x) $ UIx i tBot
+    mkApps _ i [(_,a)]
+     = XVar a $ UIx i tBot
 
     -- apply this argument and recurse
-    mkApps l i (x:xs) | isNormal x
-     = XApp (annotOf x) (mkApps l i xs) (L.liftX l x)
-    mkApps l i (x:xs)
-     = XApp (annotOf x) (mkApps l (i+1) xs) (XVar (annotOf x) $ UIx i tBot)
+    mkApps l i ((x,a):xs) | isNormal x
+     = XApp a (mkApps l i xs) (L.liftX l x)
+    mkApps l i ((_,a):xs)
+     = XApp a (mkApps l (i+1) xs) (XVar a $ UIx i tBot)
 
     findArity (XVar _ b) = max (arGet ar b) 1
     findArity x          = max (arityOfExp x) 1
-
--- does this exist elsewhere? ought it?
-annotOf :: Exp a n -> a
-annotOf (XVar a _) = a
-annotOf (XCon a _) = a
-annotOf (XApp a _ _) = a
-annotOf (XLAM a _ _) = a
-annotOf (XLam a _ _) = a
-annotOf (XLet a _ _) = a
-annotOf (XCase a _ _) = a
-annotOf (XCast a _ _) = a
-annotOf (XType{}) = error "DDC.Core.Transform.ANormal.annotOf: XType"
-annotOf (XWitness{}) = error "DDC.Core.Transform.ANormal.annotOf: XWitness"
 
