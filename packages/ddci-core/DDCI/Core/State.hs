@@ -9,6 +9,10 @@ module DDCI.Core.State
 where
 import DDCI.Core.Mode
 import DDCI.Core.Transform
+import DDC.Core.Eval.Name (Name)
+import DDC.Core.Rewrite.Rule
+import Data.Map                 (Map)
+import qualified Data.Map       as Map
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 
@@ -17,7 +21,8 @@ import qualified Data.Set       as Set
 data State
         = State
         { stateModes            :: Set Mode 
-        , stateTransform        :: Transform }
+        , stateTransform        :: Transform
+	, stateRewriteRules	:: Map String (RewriteRule () Name) }
 
 
 -- | Adjust a mode setting in the state.
@@ -39,5 +44,6 @@ initState :: State
 initState
         = State
         { stateModes            = Set.empty 
-        , stateTransform        = None }
+        , stateTransform        = None
+	, stateRewriteRules	= Map.empty }
 

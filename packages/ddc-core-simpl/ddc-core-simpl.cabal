@@ -30,7 +30,7 @@ Library
         DDC.Core.Transform.TransformX
         DDC.Type.Transform.AnonymizeT
         DDC.Type.Transform.Rename
-        
+
   GHC-options:
         -Werror
         -Wall

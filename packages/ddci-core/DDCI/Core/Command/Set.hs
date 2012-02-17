@@ -5,12 +5,14 @@ module DDCI.Core.Command.Set
         , cmdSet)
 where
 import DDCI.Core.State
+import qualified DDCI.Core.Rewrite as R
 import DDCI.Core.Transform
 import DDCI.Core.Mode
 import DDCI.Core.IO
 import DDC.Base.Pretty
 import Data.Char
 import qualified Data.Set       as Set
+import qualified Data.Map       as Map
 
 
 cmdSet ::  State -> String -> IO State
@@ -40,6 +42,29 @@ cmdSet state cmd
           -> do putStrLn "transform spec parse error"
                 return state
 
+ | ("rule", rest)	<- R.parseFirstWord cmd
+ = case R.parseRewrite rest of
+	Right (R.SetAdd name rule)
+	 -> do	putStrLn $ "ok, added " ++ name
+		let rules = stateRewriteRules state
+		let rules'= Map.insert name rule rules
+		return $ state { stateRewriteRules = rules' }
+
+	Right (R.SetRemove name)
+	 -> do	putStrLn $ "ok, removed " ++ name
+		let rules = stateRewriteRules state
+		let rules'= Map.delete name rules
+		return $ state { stateRewriteRules = rules' }
+
+	Right (R.SetList)
+	 -> do	let rules = Map.toList $ stateRewriteRules state
+		mapM_ (uncurry $ R.showRule state 0) rules
+		return state
+	
+	Left e
+	 -> do	putStrLn e
+		return state
+
  | otherwise
  = case parseModeChanges cmd of
         Just changes
@@ -50,7 +75,6 @@ cmdSet state cmd
         Nothing
          -> do  putStrLn "mode parse error"
                 return state
-
 
 -- | Parse a string of mode changes.
 parseModeChanges :: String -> Maybe [(Bool, Mode)]

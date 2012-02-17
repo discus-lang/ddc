@@ -44,6 +44,7 @@ Executable ddci-core
         DDCI.Core.Stats.Trace
         DDCI.Core.IO
         DDCI.Core.Mode
+        DDCI.Core.Rewrite
         DDCI.Core.State
         DDCI.Core.Transform
 
