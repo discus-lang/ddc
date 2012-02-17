@@ -17,6 +17,24 @@ let ^ = 2 [R0#] () in
 addInt [R0#] [R0#] [R0#] ^1 ^0
 3
 
+-- Nested applications
+let ^ = 1 [R0#] () in
+let ^ = 2 [R1#] () in
+let ^ = 3 [R3#] () in
+let ^ = 4 [R3#] () in
+let ^ = addInt [R3#] [R3#] [R1#] ^1 ^0 in
+let ^ = addInt [R1#] [R1#] [R1#] ^3 ^0 in
+addInt [R0#] [R1#] [R2#] ^5 ^0
+10
+
+-- Lets in args (inner x must be anonymized)
+let x : Int R1# = 2 [R1#] () in
+let ^ : Unit = () in
+let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 1 in
+let ^ = ^0 [R0#] ^1 in
+addInt [R0#] [R1#] [R2#] ^0 x
+3
+
 -- Type abstraction
 let ^
       = /\(t : *).
@@ -86,11 +104,9 @@ letrec {
         0  
          -> 1 [r] ();
         _ 
-         -> let ^
-                  = let ^
-                          = let ^ = 1 [r] () in
-                            subInt [r] [r] [r] n ^0 in
-                    fac [r] ^0 in
+         -> let ^ = 1 [r] () in
+            let ^ = subInt [r] [r] [r] n ^0 in
+            let ^ = fac [r] ^0 in
             mulInt [r] [r] [r] n ^0
       }
 } in

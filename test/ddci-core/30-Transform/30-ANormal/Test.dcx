@@ -10,6 +10,19 @@
 -- Primitive
 :trun addInt [:R0# R0# R0#:] (1 [R0#] ()) (2 [R0#] ())
 
+-- Nested applications
+:trun addInt [:R0# R1# R2#:] (1 [R0#] ()) (addInt [:R1# R1# R1#:] (2 [R1#] ()) (addInt [:R3# R3# R1#:] (3 [R3#] ()) (4 [R3#] ())))
+
+-- Lets in args (inner x must be anonymized)
+:trun..
+let x = (2 [R1#] ()) in
+addInt [:R0# R1# R2#:]
+    (let x = () in
+     let ^ = 1 in
+     ^0 [R0#] x)
+    x
+;;
+
 -- Type abstraction
 :trans (/\(t:*).\(x:t).x) [List R0# (Int R0#)] (Nil [R0#] [Int R0#] ())
 
