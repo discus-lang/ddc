@@ -1,0 +1,11 @@
+-- Copying integer into new region
+5
+
+-- Copy int out of local region
+0
+
+-- Negate
+-5
+
+-- Double negation
+5

@@ -1,0 +1,14 @@
+-- Copying integer into new region
+copyInt [:R0# R1#:] (5 [R0#] ())
+
+-- Copy int out of local region
+:eval..
+letregion r1 in
+let x : Int r1 = 0 [r1] () in
+copyInt [:r1 R0#:] x;;
+
+-- Negate
+negInt [:R0# R1#:] (5 [R0#] ())
+
+-- Double negation
+negInt [:R1# R2#:] (negInt [:R0# R1#:] (5 [R0#] ()))
