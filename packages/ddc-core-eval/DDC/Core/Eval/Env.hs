@@ -167,6 +167,13 @@ typeOfPrimName nn
                                    (tSum kClosure [tUse r1])
                 $  tUnit
 
+        -- copy :: [r1 r0 : %]. Int r1 -(Read r1 + Alloc r0 | $0)> Int r0
+        NamePrimOp PrimOpCopyInt
+         -> Just $ tForalls [kRegion, kRegion] $ \[r1, r0]
+                -> tFun (tInt r1) (tSum kEffect  [tRead r1, tAlloc r0])
+                                  (tBot kClosure)
+                      $ (tInt r0)
+
         NameCap CapGlobal       -> Just $ tForall kRegion $ \r -> tGlobal   r
         NameCap CapConst        -> Just $ tForall kRegion $ \r -> tConst    r
         NameCap CapMutable      -> Just $ tForall kRegion $ \r -> tMutable  r
@@ -200,5 +207,9 @@ arityOfName n
         NamePrimOp PrimOpUpdateInt
          -> Just 5        
          
+        NamePrimOp p
+	 | elem p [ PrimOpCopyInt, PrimOpNegInt ]
+         -> Just 3
+
         _ -> Nothing
 

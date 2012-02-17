@@ -155,6 +155,35 @@ stepPrimOp (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
         = Just  ( store1
                 , XCon () (UPrim (NamePrimCon PrimDaConUnit) tUnit))
 
+-- Unary integer operations
+stepPrimOp (NamePrimOp op) [xR1, xR2, xL1] store
+        -- unpack the args
+        | Just fOp      <- lookup op
+                                [ (PrimOpCopyInt, id)
+                                , (PrimOpNegInt,  negate) ]
+        , Just r1       <- takeHandleX  xR1
+        , XType tR2     <- xR2
+        , Just r2       <- takeHandleX  xR2
+        , Just l1       <- stripLocX    xL1
+
+        -- get the region and value of the int
+        , Just (r1L, _, SObj (NameInt i1)  []) <- Store.lookupRegionTypeBind l1 store
+
+        -- the locations must be in the regions the args said they were in
+        , r1L == r1
+
+        -- the destination region must exist
+        , Store.hasRgn store r2
+
+	-- calculate
+	, i2 <- fOp i1
+
+        -- write the result to a new location in the store
+        , (store1, l2)  <- Store.allocBind r2 (tInt tR2) (SObj (NameInt i2) []) store
+
+        = Just  ( store1
+                , XCon () (UPrim (NameLoc l2) (tInt tR2)))
+
 stepPrimOp _ _ _
         = Nothing
 

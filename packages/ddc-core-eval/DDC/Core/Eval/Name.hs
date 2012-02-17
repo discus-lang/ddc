@@ -156,6 +156,7 @@ data PrimOp
         | PrimOpDivInt
         | PrimOpEqInt
         | PrimOpUpdateInt
+        | PrimOpCopyInt
         deriving (Show, Eq, Ord)
 
 
@@ -169,6 +170,7 @@ instance Pretty PrimOp where
         PrimOpDivInt    -> text "divInt"
         PrimOpEqInt     -> text "eqInt"
         PrimOpUpdateInt -> text "updateInt"
+        PrimOpCopyInt	-> text "copyInt"
 
 
 -- Parsing --------------------------------------------------------------------
@@ -186,6 +188,7 @@ readName str@(c:rest)
                 "divInt"        -> Just $ NamePrimOp PrimOpDivInt
                 "eqInt"         -> Just $ NamePrimOp PrimOpEqInt
                 "updateInt"     -> Just $ NamePrimOp PrimOpUpdateInt
+                "copyInt"	-> Just $ NamePrimOp PrimOpCopyInt
                 _               -> Just $ NameVar str
 
         -- units
