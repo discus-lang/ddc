@@ -31,6 +31,9 @@ Library
         DDC.Type.Transform.AnonymizeT
         DDC.Type.Transform.Rename
 
+        DDC.Core.Rewrite.Rule
+        DDC.Core.Rewrite.Parser
+
   GHC-options:
         -Werror
         -Wall
