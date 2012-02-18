@@ -1,0 +1,161 @@
+-- These are the examples from "Getting Started with Disciple Core"
+-- tutorial on the wiki.
+
+
+-- Evaluation -----------------------------------------------------------------
+42
+
+5
+
+
+-- Typing ---------------------------------------------------------------------
+42 :: [^ : %].Unit -(Alloc ^0 | $0)> Int ^0
+
+addInt :: [^ ^ ^ : %].Int ^2 -> Int ^1 -(Read ^1 + Read ^2 + Alloc ^0 | Use ^2)> Int ^0
+
+42 [R0#] ()
+:*: Int R0#
+:!: Alloc R0#
+:$: Use R0#
+
+
+-- Kinding --------------------------------------------------------------------
+Int :: % ~> *
+
+R0# :: %
+
+(->) :: * ~> ! ~> $ ~> * ~> *
+
+Read :: % ~> !
+
+
+-- Tracing --------------------------------------------------------------------
+ok
+
+* STEP: addInt [R0#] [R1#] [R2#] (2 [R0#] ()) (3 [R1#] ())
+* STORE
+  NextLoc: 1
+  NextRgn: 3
+  Regions: {R0#, R1#, R2#}
+  Global:  {R0#, R1#, R2#}
+
+  Binds:
+
+
+* STEP: addInt [R0#] [R1#] [R2#] L1# (3 [R1#] ())
+* STORE
+  NextLoc: 2
+  NextRgn: 3
+  Regions: {R0#, R1#, R2#}
+  Global:  {R0#, R1#, R2#}
+
+  Binds:
+   L1#:R0# -> OBJ 2
+      :: Int R0#
+
+* STEP: addInt [R0#] [R1#] [R2#] L1# L2#
+* STORE
+  NextLoc: 3
+  NextRgn: 3
+  Regions: {R0#, R1#, R2#}
+  Global:  {R0#, R1#, R2#}
+
+  Binds:
+   L1#:R0# -> OBJ 2
+      :: Int R0#
+   L2#:R1# -> OBJ 3
+      :: Int R1#
+
+* STEP: L3#
+* STORE
+  NextLoc: 4
+  NextRgn: 3
+  Regions: {R0#, R1#, R2#}
+  Global:  {R0#, R1#, R2#}
+
+  Binds:
+   L1#:R0# -> OBJ 2
+      :: Int R0#
+   L2#:R1# -> OBJ 3
+      :: Int R1#
+   L3#:R2# -> OBJ 5
+      :: Int R2#
+
+5
+
+ok
+
+
+-- Let-expressions and type application sugar ---------------------------------
+5
+
+
+-- Recursion, type abstraction and function bindings --------------------------
+-- Using lambdas.
+3628800
+
+
+-- Using function binding syntax.
+3628800
+
+
+-- Local regions, witnesses and destructive update ----------------------------
+3628800
+
+
+updateInt :: [^ ^ : %].Mutable ^1 => (Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use ^1)> Unit)
+
+
+-- Exercise 2: Refactor fac so arg and return values are in different regions.
+-- Tail recursive factorial.
+-- With argument and return values in different regions.
+3628800
+
+
+-- Exercise 3: With argument and return regions holding only the argument
+-- and return values.
+3628800
+
+
+-- Exercise 4: Without copying the result out.
+3628800
+
+
+-- Local objects cannot escape ------------------------------------------------
+-- Error: local region visible in return type.
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Int r1
+
+with: letregion r1 in
+      5 [r1] ()
+
+
+-- Error: local region visible in return type.
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
+
+with: letregion r1 in
+      let z = 5 [r1] () in
+      \(x : Unit).
+      addInt [r1] [r1] [R0#] z (1 [r1] ())
+
+
+-- Error: local region visible in return type.
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+
+with: letregion r1 in
+      let z = 5 [r1] () in
+      \(x : Unit).
+      let xs
+            = Cons [R0#] [Int r1] z
+                  (Nil [R0#] [Int r1] ()) in
+      case xs of {
+        Nil  
+         -> 1 [R0#] ();
+        Cons _ _ 
+         -> 2 [R0#] ()
+      }

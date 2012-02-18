@@ -12,18 +12,3 @@
 -- Using destructive update.
 3628800
 
-
--- Tail recursive factorial.
--- With argument and return values in different regions.
-3628800
-
-
--- Tail recursive factorial.
--- With argument and return regions holding only the
--- argument and return values.
-3628800
-
-
--- Tail recursive factorial.
--- Without copying out.
-3628800

@@ -1,0 +1,194 @@
+-- These are the examples from "Getting Started with Disciple Core"
+-- tutorial on the wiki.
+
+
+-- Evaluation -----------------------------------------------------------------
+42 [R0#] ()
+
+addInt [R0#] [R1#] [R3#] (2 [R0#] ()) (3 [R1#] ())
+
+
+-- Typing ---------------------------------------------------------------------
+:type 42
+
+:type addInt
+
+:check 42 [R0#] ()
+
+
+-- Kinding --------------------------------------------------------------------
+:kind Int
+
+:kind R0#
+
+:kind (->)
+
+:kind Read
+
+
+-- Tracing --------------------------------------------------------------------
+:set +TraceEval +TraceStore
+
+addInt [R0#] [R1#] [R2#] (2 [R0#] ()) (3 [R1#] ())
+
+:set -TraceEval -TraceStore
+
+
+-- Let-expressions and type application sugar ---------------------------------
+:eval..
+let x = 2 [R0#] () in
+let y = 3 [R0#] () in
+addInt [:R0# R0# R0#:] x y;;
+
+
+-- Recursion, type abstraction and function bindings --------------------------
+-- Using lambdas.
+:eval..
+letrec {
+ fac : [r : %]. Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
+  = /\(r : %). \(acc n : Int r)
+  . case n of {
+        0     -> acc;
+        1     -> acc;
+        _     -> fac [r] (mulInt [:r r r:] acc n)
+                         (subInt [:r r r:] n (1 [r] ()))
+  }
+} in fac [R0#] (1 [R0#] ()) (10 [R0#] ());;
+
+
+-- Using function binding syntax.
+:eval..
+letrec {
+ fac    [r:%] 
+        (acc : Int r) {!0 | Use r}
+        (n   : Int r) {Read r + Alloc r | Use r} : Int r
+  = case n of {
+        0       -> acc;
+        1       -> acc;
+        _       -> fac [r] (mulInt [:r r r:] acc n)
+                           (subInt [:r r r:] n (1 [r] ()))
+    }
+} in fac [R0#] (1 [R0#] ()) (10 [R0#] ());;
+
+
+-- Local regions, witnesses and destructive update ----------------------------
+:eval..
+let fac  [r1:%] 
+         (n   : Int r1) {Read r1 + Alloc r1 | Use r1} : Int r1
+     = letregion r2 with { w : Mutable r2 } in
+       let acc = 1 [r2] () in
+       let one = 1 [r2] () in
+       letrec { 
+        loop (i : Int r1) { Read r1 + Read r2 + Write r2 + Alloc r1 + Alloc r2
+                          | Use  r1 + Use r2 } : Int r1
+         = case i of {
+            0    -> copyInt [:r2 r1:] acc;
+            1    -> copyInt [:r2 r1:] acc;
+            _    -> let _ = updateInt [:r2 r2:] <w> acc 
+                                    (mulInt [:r2 r1 r2:] acc i)
+                    in  loop (subInt [:r1 r2 r1:] i one);
+         }
+       } in loop n
+in fac [R0#] (10 [R0#] ());;
+
+
+:type updateInt
+
+
+-- Exercise 2: Refactor fac so arg and return values are in different regions.
+-- Tail recursive factorial.
+-- With argument and return values in different regions.
+:eval..
+let fac  [r1:%] [r3:%]
+         (n   : Int r1) {Read r1 + Alloc r1 + Alloc r3 | Use r1 + Use r3} : Int r3
+     = letregion r2 with { w : Mutable r2 } in
+       let acc = 1 [r2] () in
+       let one = 1 [r2] () in
+       letrec { 
+        loop (i : Int r1) { Read r1 + Read r2 + Write r2 + Alloc r1 + Alloc r2 + Alloc r3
+                          | Use  r1 + Use r2  + Use r3 } : Int r3
+         = case i of {
+            0  -> copyInt [:r2 r3:] acc;
+            1  -> copyInt [:r2 r3:] acc;
+            _  -> let _ = updateInt [:r2 r2:] <w> acc 
+                                    (mulInt [:r2 r1 r2:] acc i)
+                  in  loop (subInt [:r1 r2 r1:] i one);
+         }
+       } in loop n
+in fac [R1#] [R2#] (10 [R1#] ());;
+
+
+-- Exercise 3: With argument and return regions holding only the argument
+-- and return values.
+:eval..
+let fac  [r1:%] [r3:%]
+         (n   : Int r1) {Read r1 + Alloc r1 + Alloc r3 | Use r1 + Use r3} : Int r3
+     = letregion r2 with { w : Mutable r2 } in
+       let acc = 1 [r2] () in
+       let one = 1 [r2] () in
+       letrec { 
+        loop (i : Int r2) { Read r1 + Read r2 + Write r2 + Alloc r1 + Alloc r2 + Alloc r3
+                          | Use  r1 + Use r2  + Use r3 } : Int r3
+         = case i of {
+            0  -> copyInt [:r2 r3:] acc;
+            1  -> copyInt [:r2 r3:] acc;
+            _  -> let _ = updateInt [:r2 r2:] <w> acc 
+                                    (mulInt [:r2 r2 r2:] acc i)
+                  in  loop (subInt [:r2 r2 r2:] i one);
+         }
+       } in loop (copyInt [:r1 r2:] n)
+in fac [R1#] [R2#] (10 [R1#] ());;
+
+
+-- Exercise 4: Without copying the result out.
+:eval..
+let fac  [r1:%] [r3:%]
+         (n   : Int r1) { Read r1 + Alloc r3 
+                        | Use r1  + Use r3} : Int r3
+     = letregion r2 with { w : Mutable r2 } in
+       letrec { 
+        loop0 (i : Int r1) { Read r1 + Read r2 + Write r2 + Alloc r2 + Alloc r3
+                           | Use r1  + Use r2  + Use r3 } : Int r3
+         = case i of {
+                0 -> 1 [r3] ();
+                1 -> 1 [r3] ();
+                _ -> let acc = 1 [r2] () in
+                     letrec {
+                        loop1 (j : Int r2) { Read r1 + Read r2 + Write r2 + Alloc r2 + Alloc r3
+                                           | Use r1  + Use r2  + Use r3 } : Int r3
+                         = case j of {
+                                0 -> 0 [r3] ();
+                                1 -> 0 [r3] ();
+                                2 -> mulInt [:r2 r2 r3:] j acc;
+                                _ -> let _ = updateInt [:r2 r2:] <w> acc 
+                                                       (mulInt [:r2 r2 r2:] acc j)
+                                     in loop1 (subInt [:r2 r2 r2:] j (1 [r2] ()));
+                         }
+                     } in loop1 (copyInt [:r1 r2:] i);
+           }
+       } in loop0 n
+in fac [R1#] [R2#] (10 [R1#] ());;
+
+
+-- Local objects cannot escape ------------------------------------------------
+-- Error: local region visible in return type.
+letregion r1 in 5 [r1] ()
+
+
+-- Error: local region visible in return type.
+:eval..
+letregion r1 in 
+let z = 5 [r1] () 
+in \(x : Unit). addInt [:r1 r1 R0#:] z (1 [r1] ());;
+
+
+-- Error: local region visible in return type.
+:eval..
+letregion r1 in
+let z  = 5 [r1] () in
+\(x : Unit).
+ let xs = Cons [R0#] [Int r1] z (Nil [R0#] [Int r1] ()) in
+ case xs of {
+        Nil      -> 1 [R0#] ();
+        Cons _ _ -> 2 [R0#] ();
+ };;
