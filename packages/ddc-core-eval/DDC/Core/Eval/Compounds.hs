@@ -5,6 +5,7 @@ module DDC.Core.Eval.Compounds
         ( -- * Types
           tUnit
         , tInt
+        , tPair
         , tList 
 
           -- * Witnesses
@@ -29,18 +30,26 @@ import DDC.Core.Exp
 
 
 -- Type -----------------------------------------------------------------------
--- | Application of the Unit data type constructor.
+-- | Application of the Unit type constructor.
 tUnit :: Type Name
 tUnit   = TCon (TyConBound (UPrim (NamePrimCon PrimTyConUnit) kData))
 
 
--- | Application of the Int data type constructor.
+-- | Application of the Int type constructor.
 tInt :: Region Name -> Type Name
 tInt r1 = TApp  (TCon (TyConBound (UPrim (NamePrimCon PrimTyConInt) 
                                   (kFun kRegion kData))))
                 r1
 
--- | Application of the List data type constructor.
+-- | Application of the Pair type constructor.
+tPair :: Region Name -> Type Name -> Type Name -> Type Name
+tPair tR tA tB
+        = tApps (TCon  (TyConBound (UPrim (NamePrimCon PrimTyConPair)
+                                          (kFuns [kRegion, kData, kData] kData))))
+                [tR, tA, tB]
+
+
+-- | Application of the List type constructor.
 tList :: Region Name -> Type Name -> Type Name
 tList tR tA
         = tApps (TCon  (TyConBound (UPrim (NamePrimCon PrimTyConList)

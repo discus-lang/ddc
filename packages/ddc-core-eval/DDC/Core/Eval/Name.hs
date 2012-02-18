@@ -124,24 +124,29 @@ instance Pretty Cap where
 -- PrimCons -------------------------------------------------------------------
 -- | A primitive constructor.
 data PrimCon
+        -- Type constructors
         = PrimTyConUnit         -- ^ Unit type constructor (@Unit@).
-        | PrimDaConUnit         -- ^ Unit data constructor (@()@).
         | PrimTyConInt          -- ^ @Int@  type constructor.
+        | PrimTyConPair         -- ^ @Pair@ type constructor.
+        | PrimTyConList         -- ^ @List@ type constructor.
 
         -- Implement lists as primitives until we have data decls working
-        | PrimTyConList         -- ^ @List@ data type constructor.
+        | PrimDaConUnit         -- ^ Unit data constructor (@()@).
+        | PrimDaConPr           -- ^ @P@ data construct (pairs).
         | PrimDaConNil          -- ^ @Nil@ data constructor.
         | PrimDaConCons         -- ^ @Cons@ data constructor.
         deriving (Show, Eq, Ord)
-
 
 instance Pretty PrimCon where
  ppr con
   = case con of
         PrimTyConUnit   -> text "Unit"
-        PrimDaConUnit   -> text "()"
         PrimTyConInt    -> text "Int"
+        PrimTyConPair   -> text "Pair"
         PrimTyConList   -> text "List"
+
+        PrimDaConUnit   -> text "()"
+        PrimDaConPr     -> text "Pr"
         PrimDaConNil    -> text "Nil"
         PrimDaConCons   -> text "Cons"
 
@@ -200,8 +205,12 @@ readName str@(c:rest)
 
         | (ds, "")              <- span isDigit str
         = Just $ NameInt (read ds)        
+
+        -- pairs
+        | str == "Pair"         = Just $ NamePrimCon PrimTyConPair
+        | str == "Pr"           = Just $ NamePrimCon PrimDaConPr
         
-        -- implement lists as primitive until we have data type decls implemented
+        -- lists 
         | str == "List"         = Just $ NamePrimCon PrimTyConList
         | str == "Nil"          = Just $ NamePrimCon PrimDaConNil
         | str == "Cons"         = Just $ NamePrimCon PrimDaConCons

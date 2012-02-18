@@ -50,6 +50,13 @@ primDataDefs
                 [kRegion]
                 Nothing
 
+        -- Pair
+        , DataDef
+                (NamePrimCon PrimTyConPair)
+                [kRegion, kData, kData]
+                (Just   [ ( NamePrimCon PrimDaConPr
+                          , [tIx kData 1, tIx kData 0]) ])
+
         -- List
         , DataDef
                 (NamePrimCon PrimTyConList)
@@ -78,14 +85,19 @@ kindOfPrimName nn
         -- Unit
         NamePrimCon PrimTyConUnit
          -> Just $ kData
+
+        -- Int
+        NamePrimCon PrimTyConInt
+         -> Just $ kFun kRegion kData
+
+        -- Pair
+        NamePrimCon PrimTyConPair
+         -> Just $ kRegion `kFun` kData `kFun` kData `kFun` kData
         
         -- List
         NamePrimCon PrimTyConList
          -> Just $ kRegion `kFun` kData `kFun` kData
 
-         -- Int
-        NamePrimCon PrimTyConInt
-         -> Just $ kFun kRegion kData
 
         _ -> Nothing
 
@@ -117,6 +129,14 @@ typeOfPrimName nn
         NamePrimCon PrimDaConUnit
          -> Just $ tUnit 
 
+        -- Pair
+        NamePrimCon PrimDaConPr
+         -> Just $ tForalls [kRegion, kData, kData] $ \[tR, tA, tB]
+                 -> tFun tA             (tBot kEffect)
+                                        (tBot kClosure)
+                 $  tFun tB             (tSum kEffect  [tAlloc   tR])
+                                        (tSum kClosure [tDeepUse tA])
+                 $  tPair tR tA tB
         
         -- List
         NamePrimCon PrimDaConNil        
@@ -127,51 +147,51 @@ typeOfPrimName nn
 
         NamePrimCon PrimDaConCons
          -> Just $ tForalls [kRegion, kData] $ \[tR, tA] 
-                -> tFun tA            (tBot kEffect)
-                                      (tBot kClosure)
-                 $ tFun (tList tR tA) (tSum kEffect  [tAlloc   tR])
-                                      (tSum kClosure [tDeepUse tA])
+                -> tFun tA              (tBot kEffect)
+                                        (tBot kClosure)
+                 $ tFun (tList tR tA)   (tSum kEffect  [tAlloc   tR])
+                                        (tSum kClosure [tDeepUse tA])
                  $ tList tR tA
 
         -- Int
         NameInt _
          -> Just $ tForall kRegion
-          $ \r  -> tFun tUnit (tAlloc r)
-                              (tBot kClosure)
+          $ \r  -> tFun tUnit           (tAlloc r)
+                                        (tBot kClosure)
                  $ tInt r
 
         -- negInt
         NamePrimOp PrimOpNegInt
          -> Just $ tForalls [kRegion, kRegion] $ \[r1, r0]
-                -> tFun (tInt r1) (tSum kEffect  [tRead r1, tAlloc r0])
-                                  (tBot kClosure)
+                -> tFun (tInt r1)       (tSum kEffect  [tRead r1, tAlloc r0])
+                                        (tBot kClosure)
                       $ (tInt r0)
 
         -- add, sub, mul, div, eq
         NamePrimOp p
          | elem p [PrimOpAddInt, PrimOpSubInt, PrimOpMulInt, PrimOpDivInt, PrimOpEqInt]
          -> Just $ tForalls [kRegion, kRegion, kRegion] $ \[r2, r1, r0] 
-                -> tFun (tInt r2) (tBot kEffect)
-                                  (tBot kClosure)
-                 $ tFun (tInt r1) (tSum kEffect  [tRead r2, tRead r1, tAlloc r0])
-                                  (tSum kClosure [tUse r2])
+                -> tFun (tInt r2)       (tBot kEffect)
+                                        (tBot kClosure)
+                 $ tFun (tInt r1)       (tSum kEffect  [tRead r2, tRead r1, tAlloc r0])
+                                        (tSum kClosure [tUse r2])
                  $ tInt r0
 
         -- update :: [r1 r2 : %]. Mutable r1 => Int r1 -> Int r2 -(Write r1 + Read r2 | Share r1)> ()
         NamePrimOp PrimOpUpdateInt
          -> Just $ tForalls [kRegion, kRegion] $ \[r1, r2]
                 -> tImpl (tMutable r1)
-                $  tFun  (tInt r1) (tBot kEffect)
-                                   (tBot kClosure)
-                $  tFun  (tInt r2) (tSum kEffect  [tWrite r1, tRead r2])
-                                   (tSum kClosure [tUse r1])
+                $  tFun  (tInt r1)      (tBot kEffect)
+                                        (tBot kClosure)
+                $  tFun  (tInt r2)      (tSum kEffect  [tWrite r1, tRead r2])
+                                        (tSum kClosure [tUse r1])
                 $  tUnit
 
         -- copy :: [r1 r0 : %]. Int r1 -(Read r1 + Alloc r0 | $0)> Int r0
         NamePrimOp PrimOpCopyInt
          -> Just $ tForalls [kRegion, kRegion] $ \[r1, r0]
-                -> tFun (tInt r1) (tSum kEffect  [tRead r1, tAlloc r0])
-                                  (tBot kClosure)
+                -> tFun (tInt r1)       (tSum kEffect  [tRead r1, tAlloc r0])
+                                        (tBot kClosure)
                       $ (tInt r0)
 
         NameCap CapGlobal       -> Just $ tForall kRegion $ \r -> tGlobal   r
@@ -195,21 +215,21 @@ arityOfName n
         NameInt{}                       -> Just 2
 
         NamePrimCon PrimDaConUnit       -> Just 0        
+        NamePrimCon PrimDaConPr         -> Just 5
         NamePrimCon PrimDaConNil        -> Just 3
-
         NamePrimCon PrimDaConCons       -> Just 4
 
         NamePrimOp p
          | elem p [ PrimOpAddInt, PrimOpSubInt, PrimOpMulInt, PrimOpDivInt
                   , PrimOpEqInt]
          -> Just 5
+
+        NamePrimOp p
+         | elem p [ PrimOpCopyInt, PrimOpNegInt ]
+         -> Just 3
          
         NamePrimOp PrimOpUpdateInt
          -> Just 5        
          
-        NamePrimOp p
-	 | elem p [ PrimOpCopyInt, PrimOpNegInt ]
-         -> Just 3
-
         _ -> Nothing
 

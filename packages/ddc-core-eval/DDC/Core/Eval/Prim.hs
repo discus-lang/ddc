@@ -43,6 +43,26 @@ stepPrimCon (NameInt i) [xR, xUnit] store
                 , XCon () (UPrim (NameLoc l) (tInt tR)))
 
 
+-- Handle Pair specially until we have general data types.
+stepPrimCon n@(NamePrimCon PrimDaConPr) [xR, xA, xB, x1, x2] store
+        -- unpack the args
+        | XType tR      <- xR
+        , Just rgn      <- takeHandleT tR
+        , XType tA      <- xA
+        , XType tB      <- xB
+        , Just l1       <- takeLocX x1
+        , Just l2       <- takeLocX x2
+
+        -- the store must contain the region we're going to allocate into.
+        , Store.hasRgn store rgn
+
+        -- add the binding to the store
+        , (store1, l)   <- Store.allocBind rgn (tPair tR tA tB) (SObj n [l1, l2]) store
+
+        = Just  ( store1
+                , XCon () (UPrim (NameLoc l) (tPair tR tA tB)))
+
+
 -- Handle Nil and Cons specially until we have general data types.
 stepPrimCon n@(NamePrimCon PrimDaConNil) [xR, xA, xUnit] store
         -- unpack the args

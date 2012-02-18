@@ -122,7 +122,7 @@ makeXLamFlags a fbs x
  = foldr (\(f, b) x'
            -> if f then XLAM a b x'
                    else XLam a b x')
-                x (reverse fbs)
+                x fbs
 
 
 -- Applications ---------------------------------------------------------------

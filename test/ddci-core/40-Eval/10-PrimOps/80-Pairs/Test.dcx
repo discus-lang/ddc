@@ -1,0 +1,11 @@
+-- Construction and destruction of a pair.
+:eval..
+let fst = /\(r : %) (a b : *). \(p : Pair r a b).
+          case p of { 
+            Pr x _  -> x
+          } in
+fst  [R0#] [Int R1#] [Int R2#]
+ (Pr [R0#] [Int R1#] [Int R2#] 
+     (5 [R1#] ()) 
+     (6 [R2#] ()));;
+
