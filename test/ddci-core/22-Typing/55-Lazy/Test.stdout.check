@@ -51,3 +51,22 @@ with: let x : Int r1 lazy <w1>
               forget <use [r1] w3> in
               2 [r1] () in
       addInt [r1] [R0#] [R0#] x (3 [R0#] ())
+
+
+-- Error: suspended binding has a visible effect and closure.
+Lazy let binding is not pure.
+      The binding for: y
+           has effect: Read r1 + Alloc r1
+
+with: let y lazy <w2>
+            = addInt [r1] [r1] [r1] x (3 [r1] ()) in
+      copyInt [r1] [R0#] y
+
+
+-- Ok: Suspend an an expression that reads another variable.
+letregion r1 with {w1 : Const r1; w2 : Lazy r1; w3 : Global r1} in let x : Int r1 = 2 [r1] () in let y : Int r1 lazy <w2> = purify <alloc [r1] w1 & read [r1] w1> in forget <use [r1] w3> in addInt [r1] [r1] [r1] x (3 [r1] ()) in copyInt [r1] [R0#] y
+:*: Int R0#
+:!: Alloc R0#
+:$: Use R0#
+
+

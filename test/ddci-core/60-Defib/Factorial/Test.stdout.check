@@ -1,2 +1,29 @@
 -- Tail recursive factorial.
-120
+-- Using an explicit typesig.
+3628800
+
+
+-- Tail recursive factorial.
+-- Using function binding syntax.
+3628800
+
+
+-- Tail recursive factorial.
+-- Using destructive update.
+3628800
+
+
+-- Tail recursive factorial.
+-- With argument and return values in different regions.
+3628800
+
+
+-- Tail recursive factorial.
+-- With argument and return regions holding only the
+-- argument and return values.
+3628800
+
+
+-- Tail recursive factorial.
+-- Without copying out.
+3628800

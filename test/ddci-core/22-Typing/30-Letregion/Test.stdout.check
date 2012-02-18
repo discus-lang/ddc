@@ -80,3 +80,23 @@ Region variable escapes scope of letregion.
 with: letregion r1 with {w1 : Const r1} in
       \(x : Unit).
       addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
+
+
+-- Error: region variable appears in closure term
+Region variable escapes scope of letregion.
+       The region variable: r1 : %
+  is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+
+with: letregion r1 in
+      let z = 5 [r1] () in
+      \(x : Unit).
+      let xs
+            = Cons [R0#] [Int r1] z
+                  (Nil [R0#] [Int r1] ()) in
+      case xs of {
+        Nil  
+         -> 1 [R0#] ();
+        Cons _ _ 
+         -> 2 [R0#] ()
+      }
+
