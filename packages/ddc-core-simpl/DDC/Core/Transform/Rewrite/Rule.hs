@@ -1,6 +1,6 @@
 
 -- | Rewriting one expression to another
-module DDC.Core.Rewrite.Rule 
+module DDC.Core.Transform.Rewrite.Rule 
         (RewriteRule(..)
 	,mkRewriteRule
 	,Constraint(..))

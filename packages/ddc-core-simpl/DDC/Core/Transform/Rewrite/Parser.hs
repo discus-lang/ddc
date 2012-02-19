@@ -1,6 +1,6 @@
 
 -- | Core language parser.
-module DDC.Core.Rewrite.Parser
+module DDC.Core.Transform.Rewrite.Parser
         (pRule)
         
 where
@@ -11,7 +11,7 @@ import DDC.Type.Parser                  (pTok)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Parser        as T
-import qualified DDC.Core.Rewrite.Rule  as R
+import qualified DDC.Core.Transform.Rewrite.Rule  as R
 
 
 -- Rewrite Rules ----------------------------------------------------------------

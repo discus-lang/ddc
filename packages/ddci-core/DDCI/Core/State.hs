@@ -10,7 +10,7 @@ where
 import DDCI.Core.Mode
 import DDCI.Core.Transform
 import DDC.Core.Eval.Name (Name)
-import DDC.Core.Rewrite.Rule
+import DDC.Core.Transform.Rewrite.Rule
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import Data.Set                 (Set)

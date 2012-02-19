@@ -9,8 +9,8 @@ import DDC.Base.Pretty
 import qualified DDC.Base.Parser        as BP
 import DDC.Core.Eval.Name
 import DDC.Core.Parser.Tokens
-import DDC.Core.Rewrite.Rule
-import DDC.Core.Rewrite.Parser
+import DDC.Core.Transform.Rewrite.Rule
+import DDC.Core.Transform.Rewrite.Parser
 import DDCI.Core.State
 import DDCI.Core.IO
 import Data.Char
