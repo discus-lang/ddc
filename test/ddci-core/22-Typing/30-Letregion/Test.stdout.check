@@ -100,3 +100,12 @@ with: letregion r1 in
          -> 2 [R0#] ()
       }
 
+
+-- Error: witness types with a letregion must use explicit type constructors.
+Invalid witness type with letregion.
+          The witness: w : c r1
+  cannot be created with a letregion
+
+with: letregion r1 with {w : c r1} in
+      ()
+

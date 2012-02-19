@@ -61,3 +61,10 @@ let z  = 5 [r1] () in
         Cons _ _ -> 2 [R0#] ();
  };;
 
+
+-- Error: witness types with a letregion must use explicit type constructors.
+:check..
+/\(c : % ~> @).
+letregion r1 with { w : c r1 } in
+();;
+
