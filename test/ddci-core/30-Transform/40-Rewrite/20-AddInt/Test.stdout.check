@@ -1,0 +1,29 @@
+ok
+-- add zero on right. make copy
+ok, added add0r
+ok, added add0l
+
+-- should work with any regions
+copyInt [R0#] [R0#] (5 [R0#] ())
+copyInt [R1#] [R3#] (5 [R1#] ())
+
+-- addInt is strict & closure free so we can reduce any copies in its args
+ok, added addCopy1
+
+ok, added addCopy2
+
+
+-- simplify some nested zeroes
+copyInt [R0#] [R2#] (copyInt [R0#] [R0#] (5 [R0#] ()))
+
+
+-- we can simplify out a copy of a literal.
+ok, added copyLit
+-- and a copy of a copy
+ok, added copyCopy
+
+-- some more nested zeroes
+5 [R2#] ()
+
+-- add a let binding
+let x : Int R9# = 5 [R9#] () in copyInt [R9#] [R2#] x
