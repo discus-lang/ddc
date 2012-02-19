@@ -1,6 +1,7 @@
 
 module DDCI.Core.State
         ( State(..)
+	, stateRewriteRulesList
         , Transform(..)
         , initState
 
@@ -46,4 +47,8 @@ initState
         { stateModes            = Set.empty 
         , stateTransform        = None
 	, stateRewriteRules	= Map.empty }
+
+stateRewriteRulesList :: State -> [RewriteRule () Name]
+stateRewriteRulesList State { stateRewriteRules = rules }
+ = map snd $ Map.toList rules
 

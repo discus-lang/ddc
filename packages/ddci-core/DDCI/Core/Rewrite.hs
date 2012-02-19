@@ -8,9 +8,11 @@ where
 import DDC.Base.Pretty
 import qualified DDC.Base.Parser        as BP
 import DDC.Core.Eval.Name
+import DDC.Core.Eval.Env
 import DDC.Core.Parser.Tokens
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Transform.Rewrite.Parser
+import DDC.Core.Transform.SpreadX
 import DDCI.Core.State
 import DDCI.Core.IO
 import Data.Char
@@ -50,7 +52,12 @@ parseAdd str
         goParse name toks                
          = case BP.runTokenParser describeTok "<interactive>" pRule toks of
                 Left err -> Left $ renderIndent $ ppr err
-                Right x  -> Right $ SetAdd name x
+                Right (RewriteRule bs cs lhs rhs)
+		    -> Right $ SetAdd name $
+			RewriteRule bs cs
+			    -- TODO typecheck and make sure they're comparable
+			    (spreadX primKindEnv primTypeEnv lhs)
+			    (spreadX primKindEnv primTypeEnv rhs)
 
 -- | Display rule
 showRule :: State -> Int -> String -> RewriteRule () Name -> IO ()

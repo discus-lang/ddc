@@ -1,0 +1,17 @@
+-- commutativity. doesn't change (weaken) type. only for regions
+ok
+-- add is commutative. particular regions so it only runs once (ie terminates)
+ok, added add_comm
+
+-- swap the 1 and 2
+addInt [R1#] [R0#] [R2#] (2 [R1#] ()) (1 [R0#] ())
+
+-- don't swap because they're all R0.
+addInt [R0#] [R0#] [R0#] (1 [R0#] ()) (2 [R0#] ())
+
+-- swap the whole whiz-bang
+addInt [R1#] [R0#] [R2#] (3 [R1#] ()) (addInt [R0#] [R0#] [R0#] (1 [R0#] ()) (2 [R0#] ()))
+
+-- don't rewrite if it's not an addInt
+mulInt [R0#] [R1#] [R2#] (1 [R0#] ()) (2 [R1#] ())
+
