@@ -16,9 +16,11 @@ module DDC.Type.Env
         , member,       memberBind
         , lookup,       lookupName
         , depth
+        , lift
         , wrapTForalls)
 where
 import DDC.Type.Exp
+import DDC.Type.Transform.LiftT
 import Data.Maybe
 import Data.Map                 (Map)
 import Prelude                  hiding (lookup)
@@ -139,6 +141,18 @@ lookupName n env
 -- | Yield the total depth of the deBruijn stack.
 depth :: Env n -> Int
 depth env       = envStackLength env
+
+
+-- | Lift all free deBruijn indices in the environment by the given number of steps.
+--   TODO: Delay this, only lift when we extract the final type.
+--         will also need to update the 'member' function.
+lift  :: Ord n => Int -> Env n -> Env n
+lift n env
+        = Env
+        { envMap         = Map.map (liftT n) (envMap env)
+        , envStack       = map (liftT n) (envStack env)
+        , envStackLength = envStackLength env
+        , envPrimFun     = envPrimFun     env }
 
 
 -- | Wrap locally bound (non primitive) variables defined in an environment

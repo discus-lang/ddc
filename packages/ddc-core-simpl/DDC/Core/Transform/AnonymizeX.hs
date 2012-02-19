@@ -157,8 +157,8 @@ pushAnonymizeLets kstack tstack lts
  = case lts of
         LLet mode b x
          -> let mode'           = anonymizeWithX     kstack tstack mode
+                x'              = anonymizeWithX     kstack tstack x
                 (tstack', b')   = pushAnonymizeBindX kstack tstack b
-                x'              = anonymizeWithX     kstack tstack' x
             in  (kstack, tstack', LLet mode' b' x')
 
         LRec bxs 

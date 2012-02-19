@@ -53,3 +53,17 @@ letrec {
 } in ();;
 
 
+-- Mixed spec and value binders.
+:trans..
+let foo [r1 r2 : %] (_ : Unit)
+     = let x = 5 [r1] () in
+       let y = letregion r3 in
+               addInt [:r1 r3 r2:] x (1 [r3] ()) in
+       Pr [r1] [Int r1] [Int r2] x y
+
+in  letregion r4 in
+    letregion r5 in
+    case foo [:r4 r5:] () of {
+            Pr _ y -> copyInt [:r5 R0#:] y
+    };;
+

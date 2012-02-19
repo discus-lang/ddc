@@ -21,6 +21,7 @@ import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.LiftT
+import DDC.Type.Transform.LowerT
 import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Type.Compounds
@@ -228,8 +229,9 @@ checkExpM' defs kenv tenv xx@(XLAM a b1 x2)
         _               <- checkTypeM kenv t1
 
         -- Check the body
-        let kenv'         =  Env.extend b1 kenv
-        (x2', t2, e2, c2) <- checkExpM defs kenv' tenv x2
+        let kenv'         = Env.extend b1 kenv
+        let tenv'         = Env.lift   1  tenv
+        (x2', t2, e2, c2) <- checkExpM defs kenv' tenv' x2
         k2                <- checkTypeM kenv' t2
 
         when (Env.memberBind b1 kenv)
@@ -452,7 +454,8 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
          $ throw $ ErrorLetRegionRebound xx b
         
         -- Check the witness types.
-        let kenv'         = Env.extend b kenv
+        let kenv'       = Env.extend b kenv
+        let tenv'       = Env.lift 1 tenv
         mapM_ (checkTypeM kenv') $ map typeOfBind bs
 
         -- Check that the witnesses bound here are for the region,
@@ -460,8 +463,8 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
         checkWitnessBindsM xx u bs
 
         -- Check the body expression.
-        let tenv'       = Env.extends bs tenv
-        (xBody', tBody, effs, clo)  <- checkExpM defs kenv' tenv' x
+        let tenv2       = Env.extends bs tenv'
+        (xBody', tBody, effs, clo)  <- checkExpM defs kenv' tenv2 x
 
         -- The body type must have data kind.
         kBody           <- checkTypeM kenv' tBody
@@ -480,13 +483,15 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
                         $ effs
 
         -- Delete the bound region variable from the closure.
-        let clo_masked  = Set.delete (GBoundRgnVar u) 
-                        $ clo
-        
+        -- Mask closure terms due to locally bound region vars.
+        let c2_cut      = Set.fromList
+                        $ mapMaybe (cutTaggedClosureT b)
+                        $ Set.toList clo
+
         return  ( XLet a (LLetRegion b bs) xBody'
-                , tBody
-                , effs'
-                , clo_masked)
+                , lowerT 1 tBody
+                , lowerT 1 effs'
+                , c2_cut)
 
 
 -- withregion -----------------------------------
