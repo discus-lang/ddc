@@ -159,3 +159,33 @@ with: letregion r1 in
         Cons _ _ 
          -> 2 [R0#] ()
       }
+
+
+-- Laziness and purification -------------------------------------------------
+-- Original expression with no laziness.
+6
+
+
+-- Suspend the 'y' binding.
+6
+
+
+-- Program transformation ----------------------------------------------------
+-- Anonymize first example from the previous section.
+ok
+ok
+let ^ : [^ ^ : %].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> Pair ^1 (Int ^1) (Int ^0)
+      = /\(^^ : %).
+         \(^ : Unit).
+        let ^ : Int ^1 = 5 [^1] () in
+        let ^ : Int ^0
+              = letregion ^ in
+                addInt [^2] [^0] [^1] ^0 (1 [^0] ()) in
+        Pr [^1] [Int ^1] [Int ^0] ^1 ^0 in
+letregion ^ in
+letregion ^ in
+case ^0 [^1] [^0] () of {
+  Pr (^ : Int ^1) (^ : Int ^0) 
+   -> copyInt [^0] [R0#] ^0
+}
+
