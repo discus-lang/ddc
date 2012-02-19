@@ -125,10 +125,7 @@ pushAnonymizeBindX
 pushAnonymizeBindX kstack tstack b
  = let  b'      = anonymizeWithX kstack tstack b
         t'      = typeOfBind b'
-        tstack' = case b' of
-                        BName{} -> b' : tstack
-                        BAnon{} -> b' : tstack
-                        _       -> tstack
+        tstack' = b' : tstack
    in   (tstack', BAnon t')
 
 

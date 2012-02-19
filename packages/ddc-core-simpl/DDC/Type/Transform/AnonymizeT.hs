@@ -70,9 +70,6 @@ instance AnonymizeT Bound where
 pushAnonymizeBindT :: Ord n => [Bind n] -> Bind n -> ([Bind n], Bind n)
 pushAnonymizeBindT kstack b
  = let  t'      = typeOfBind b
-        kstack' = case b of
-                        BName{} -> b : kstack
-                        BAnon{} -> b : kstack
-                        _       -> kstack
+        kstack' = b : kstack
    in   (kstack', BAnon t')
 
