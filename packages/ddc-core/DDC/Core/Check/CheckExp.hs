@@ -226,6 +226,9 @@ checkExpM' defs kenv tenv xx@(XApp a x1 (XWitness w2))
 checkExpM' defs kenv tenv xx@(XApp a x1 x2)
  = do   (x1', t1, effs1, clos1)    <- checkExpM defs kenv tenv x1
         (x2', t2, effs2, clos2)    <- checkExpM defs kenv tenv x2
+
+        -- Note: we don't need to use the closure of the function because
+        --       all of its components will already be part of clos1 above.
         case t1 of
          TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t11) eff) _clo) t12
           | t11 `equivT` t2   
