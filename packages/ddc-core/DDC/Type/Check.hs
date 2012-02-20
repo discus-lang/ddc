@@ -17,6 +17,7 @@ import DDC.Type.Check.CheckCon
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Transform.LiftT
+import DDC.Core.DataDef
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List
@@ -27,6 +28,7 @@ import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Sum           as TS
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check.Monad   as G
+import qualified Data.Map               as Map
 
 
 -- | The type checker monad.
@@ -35,13 +37,24 @@ type CheckM n   = G.CheckM (Error n)
 
 -- Wrappers -------------------------------------------------------------------
 -- | Check a type in the given environment, returning an error or its kind.
-checkType  :: (Ord n, Pretty n) => Env n -> Type n -> Either (Error n) (Kind n)
-checkType env tt = result $ checkTypeM env tt
+checkType  :: (Ord n, Pretty n) 
+           => DataDefs n 
+           -> Env n 
+           -> Type n 
+           -> Either (Error n) (Kind n)
+
+checkType defs env tt 
+        = result $ checkTypeM defs env tt
 
 
 -- | Check a type in an empty environment, returning an error or its kind.
-kindOfType :: (Ord n, Pretty n) => Type n -> Either (Error n) (Kind n)
-kindOfType tt = result $ checkTypeM Env.empty tt
+kindOfType :: (Ord n, Pretty n) 
+           => DataDefs n
+           -> Type n 
+           -> Either (Error n) (Kind n)
+
+kindOfType defs tt
+        = result $ checkTypeM defs Env.empty tt
 
 
 -- checkType ------------------------------------------------------------------
@@ -51,13 +64,19 @@ kindOfType tt = result $ checkTypeM Env.empty tt
 --   (==) instead of equivT. This is because kinds do not contain quantifiers
 --   that need to be compared up to alpha-equivalence, nor do they contain
 --   crushable components terms.
-checkTypeM :: (Ord n, Pretty n) => Env n -> Type n -> CheckM n (Kind n)
-checkTypeM env tt
+checkTypeM 
+        :: (Ord n, Pretty n) 
+        => DataDefs n
+        -> Env n
+        -> Type n 
+        -> CheckM n (Kind n)
+
+checkTypeM defs env tt
         = -- trace (pretty $ text "checkTypeM:" <+> ppr tt) $
-          checkTypeM' env tt
+          checkTypeM' defs env tt
 
 -- Variables ------------------
-checkTypeM' env (TVar u)
+checkTypeM' _defs env (TVar u)
  = do   let tBound      = typeOfBound u
         let mtEnv       = Env.lookup u env
 
@@ -97,7 +116,7 @@ checkTypeM' env (TVar u)
         mkResult
 
 -- Constructors ---------------
-checkTypeM' _env tt@(TCon tc)
+checkTypeM' defs _env tt@(TCon tc)
  = case tc of
         -- Sorts don't have a higher classification.
         TyConSort _      -> throw $ ErrorNakedSort tt
@@ -111,13 +130,25 @@ checkTypeM' _env tt@(TCon tc)
 
         TyConWitness tcw -> return $ kindOfTwCon tcw
         TyConSpec    tcc -> return $ kindOfTcCon tcc
-        TyConBound    u  -> return $ typeOfBound u
+
+        -- User defined type constructors need to be in the set of data defs.
+        TyConBound    u  
+         -> case u of
+                UName n _
+                 | Just _ <- Map.lookup n (dataDefsTypes defs)
+                 -> return $ typeOfBound u
+
+                 | otherwise
+                 -> throw $ ErrorUndefinedCtor u
+
+                UPrim{} -> return $ typeOfBound u
+                UIx{}   -> error "sorry"
 
 
 -- Quantifiers ----------------
-checkTypeM' env tt@(TForall b1 t2)
- = do   _       <- checkTypeM env (typeOfBind b1)
-        k2      <- checkTypeM (Env.extend b1 env) t2
+checkTypeM' defs env tt@(TForall b1 t2)
+ = do   _       <- checkTypeM defs env (typeOfBind b1)
+        k2      <- checkTypeM defs (Env.extend b1 env) t2
 
         -- The body must have data or witness kind.
         when (  (not $ isDataKind k2)
@@ -129,18 +160,18 @@ checkTypeM' env tt@(TForall b1 t2)
 -- Applications ---------------
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
-checkTypeM' env (TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
- = do   _       <- checkTypeM env k1
-        s2      <- checkTypeM env k2
+checkTypeM' defs env (TApp (TApp (TCon (TyConKind KiConFun)) k1) k2)
+ = do   _       <- checkTypeM defs env k1
+        s2      <- checkTypeM defs env k2
         return  s2
 
 -- The implication constructor is overloaded and can have the
 -- following kinds:
 --   (=>) :: @ ~> @ ~> @,  for witness implication.
 --   (=>) :: @ ~> * ~> *,  for a context.
-checkTypeM' env tt@(TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2)
- = do   k1      <- checkTypeM env t1
-        k2      <- checkTypeM env t2
+checkTypeM' defs env tt@(TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2)
+ = do   k1      <- checkTypeM defs env t1
+        k2      <- checkTypeM defs env t2
         if      isWitnessKind k1 && isWitnessKind k2
          then     return kWitness
         else if isWitnessKind k1 && isDataKind k2
@@ -148,9 +179,9 @@ checkTypeM' env tt@(TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2)
         else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
 -- Type application.
-checkTypeM' env tt@(TApp t1 t2)
- = do   k1      <- checkTypeM env t1
-        k2      <- checkTypeM env t2
+checkTypeM' defs env tt@(TApp t1 t2)
+ = do   k1      <- checkTypeM defs env t1
+        k2      <- checkTypeM defs env t2
         case k1 of
          TApp (TApp (TCon (TyConKind KiConFun)) k11) k12
           | k11 == k2   -> return k12
@@ -159,8 +190,8 @@ checkTypeM' env tt@(TApp t1 t2)
          _              -> throw $ ErrorAppNotFun tt t1 k1 t2 k2
 
 -- Sums -----------------------
-checkTypeM' env (TSum ts)
- = do   ks      <- mapM (checkTypeM env) $ TS.toList ts
+checkTypeM' defs env (TSum ts)
+ = do   ks      <- mapM (checkTypeM defs env) $ TS.toList ts
 
         -- Check that all the types in the sum have a single kind, 
         -- and return that kind.

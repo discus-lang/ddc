@@ -30,7 +30,7 @@ data DataDef n
           -- | Kinds of type parameters.
         , dataDefParamKinds     :: [Kind n]
 
-          -- | Constructors of is data type, or Nothing if there are
+          -- | Constructors of the data type, or Nothing if there are
           --   too many to list (like with `Int`).
         , dataDefCtors          :: Maybe [(n, [Type n])] }
 

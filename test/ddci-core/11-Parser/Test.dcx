@@ -20,4 +20,3 @@ letrec {
 
 -- Ok: should allow variable named 'inc'.
 :check let inc = () in inc
-

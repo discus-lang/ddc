@@ -16,6 +16,10 @@ data Error n
         = ErrorUndefined        
         { errorBound            :: Bound n }
 
+        -- | An undefined type constructor.
+        | ErrorUndefinedCtor
+        { errorBound            :: Bound n }
+
         -- | The kind annotation on the variables does not match the one in the environment.
         | ErrorVarAnnotMismatch
         { errorBound            :: Bound n
@@ -72,14 +76,17 @@ data Error n
 instance (Eq n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
+        ErrorUndefined u
+         -> text "Undefined type variable:  " <> ppr u
+
+        ErrorUndefinedCtor u
+         -> text "Undefined type constructor:  " <> ppr u
+
         ErrorUnappliedKindFun 
          -> text "Can't take sort of unapplied kind function constructor."
         
         ErrorNakedSort s
          -> text "Can't check a naked sort: " <> ppr s
-
-        ErrorUndefined u
-         -> text "Undefined type variable:  " <> ppr u
         
         ErrorVarAnnotMismatch u t
          -> vcat [ text "Type mismatch in annotation."

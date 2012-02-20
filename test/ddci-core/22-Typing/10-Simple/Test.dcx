@@ -57,3 +57,23 @@
         [R1#] 
         (5 [R1#] ()) 
         [R2#];;
+
+
+-- Type variable not in environment.
+:kind a
+
+
+-- Type constructor not in environment.
+:kind Whatever
+
+
+-- Data constructor not in environment.
+:type Whatever
+
+
+-- Type constructor used as a data constructor.
+:type Unit
+
+
+-- Data constructor used as a type constructor.
+:kind ()

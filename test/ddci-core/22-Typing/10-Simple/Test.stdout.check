@@ -88,3 +88,23 @@ Cannot shadow named spec variable.
   is already in the environment.
 with: /\(r : %).
        \(_ : Unit). 2 [r] ()
+
+
+-- Type variable not in environment.
+Undefined type variable:  a
+
+
+-- Type constructor not in environment.
+Undefined type constructor:  Whatever
+
+
+-- Data constructor not in environment.
+Undefined data constructor: Whatever
+
+
+-- Type constructor used as a data constructor.
+Undefined data constructor: Unit
+
+
+-- Data constructor used as a type constructor.
+Undefined type constructor:  ()

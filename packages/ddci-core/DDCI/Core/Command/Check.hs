@@ -18,13 +18,11 @@ import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Parser
 import DDC.Core.Parser.Tokens
-import DDC.Core.Collect
 import DDC.Core.Transform.SpreadX
 import DDC.Type.Transform.SpreadT
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
 import qualified DDC.Base.Parser        as BP
-import qualified Data.Set               as Set
 
 
 -- kind ------------------------------------------------------------------------
@@ -39,7 +37,7 @@ cmdShowKind state lineStart ss
                 Right t   -> goCheck t
 
         goCheck t
-         = case T.checkType primKindEnv (spreadT primKindEnv t) of
+         = case T.checkType primDataDefs primKindEnv (spreadT primKindEnv t) of
                 Left err  -> putStrLn $ renderIndent $ ppr err
                 Right k   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
 
@@ -67,7 +65,7 @@ cmdTypeEquiv _state lineStart ss
                  else return ()
 
         checkT t
-         = case T.checkType primKindEnv (spreadT primKindEnv t) of
+         = case T.checkType primDataDefs primKindEnv (spreadT primKindEnv t) of
                 Left err 
                  -> do  putStrLn $ renderIndent $ ppr err
                         return False
@@ -99,7 +97,7 @@ cmdParseCheckWitness
         -> String 
         -> IO (Maybe (Witness Name, Type Name))
 
-cmdParseCheckWitness state lineStart str
+cmdParseCheckWitness _state lineStart str
  = goParse (lexString lineStart str)
  where
         -- Lex and parse the string.
@@ -109,28 +107,16 @@ cmdParseCheckWitness state lineStart str
                  -> do  putStrLn $ renderIndent $ text "parse error " <> ppr err
                         return Nothing
                 
-                Right x  -> goCheck x
+                Right x  -> goCheck (spreadX primKindEnv primTypeEnv x)
 
-        -- Spread type annotations into binders,
-        --   check for undefined variables, 
-        --   and check its type.
         goCheck x
-         = let  fvs     = freeX primTypeEnv x                   -- TODO: also check for free type vars
-                x'      = spreadX primKindEnv primTypeEnv x
-           in   if Set.null fvs
-                 then   goResult x' (checkWitness primKindEnv primTypeEnv x')
-                 else do  
-                        outDocLn state $ text "Undefined variables: " <> ppr fvs
-                        return Nothing
+         = case checkWitness primDataDefs primKindEnv primTypeEnv x of
+                Left err
+                 -> do  putStrLn $ renderIndent $ ppr err
+                        return  Nothing
 
-        -- Expression had a type error.
-        goResult _ (Left err)
-         = do   putStrLn $ renderIndent $ ppr err
-                return  Nothing
-         
-        goResult x (Right t)
-         =      return $ Just (x, t)
-
+                Right t
+                 ->     return $ Just (x, t)
 
 
 -- check / type / effect / closure --------------------------------------------
@@ -193,7 +179,7 @@ cmdParseCheckExp
         -> IO (Maybe ( Exp () Name
                      , Type Name, Effect Name, Closure Name))
 
-cmdParseCheckExp state lineStart str
+cmdParseCheckExp _state lineStart str
  = goParse (lexString lineStart str)
  where
         -- Lex and parse the string.
@@ -203,17 +189,7 @@ cmdParseCheckExp state lineStart str
                  -> do  putStrLn $ renderIndent $ ppr err
                         return Nothing
                 
-                Right x  -> goCheckVars x
-
-        -- Check for undefined variables, and spread type annotations into
-        -- bound occurrences of variables.
-        goCheckVars x
-         = let  fvs     = freeX   primTypeEnv x                        -- TODO also check for free type vars
-                x'      = spreadX primKindEnv primTypeEnv x
-           in   if Set.null fvs
-                 then    goCheckType x'
-                 else do outDocLn state $ text "Undefined variables: " <> ppr fvs
-                         return Nothing
+                Right x  -> goCheckType (spreadX primKindEnv primTypeEnv x)
 
         -- Check the type of the expression.
         goCheckType x

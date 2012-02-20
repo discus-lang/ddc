@@ -40,6 +40,11 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
                  , text "     from environment." ]
 
 
+        -- Constructor ------------------------------------
+        ErrorUndefinedCtor xx
+         -> vcat [ text "Undefined data constructor: "  <> ppr xx ]
+
+
         -- Application ------------------------------------
         ErrorAppMismatch xx t1 t2
          -> vcat [ text "Type mismatch in application." 

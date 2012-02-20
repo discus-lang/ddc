@@ -39,6 +39,11 @@ data Error a n
         { errorBound            :: Bound n
         , errorTypeEnv          :: Type n }
 
+        -- Con --------------------------------------------
+        -- | A data constructor that wasn't in the set of data definitions.
+        | ErrorUndefinedCtor
+        { errorChecking         :: Exp a n }
+
         -- Application ------------------------------------
         -- | A function application where the parameter and argument don't match.
         | ErrorAppMismatch

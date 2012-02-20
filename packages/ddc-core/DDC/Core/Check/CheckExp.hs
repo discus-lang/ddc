@@ -34,6 +34,7 @@ import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified Data.Set               as Set
+import qualified Data.Map               as Map
 import Control.Monad
 import Data.List                        as L
 import Data.Maybe
@@ -166,18 +167,33 @@ checkExpM' _defs _kenv tenv (XVar a u)
 
 
 -- constructors ---------------------------------
-checkExpM' _defs _kenv _tenv (XCon a u)
-      = return  ( XCon a u
-                , typeOfBound u
-                , Sum.empty kEffect
-                , Set.empty)
+checkExpM' defs _kenv _tenv xx@(XCon a u)
+        | UName n _     <- u
+        = case Map.lookup n (dataDefsCtors defs) of
+           Nothing -> throw $ ErrorUndefinedCtor xx
+           Just _  
+            -> return  
+                  ( XCon a u
+                  , typeOfBound u
+                  , Sum.empty kEffect
+                  , Set.empty)
+
+        | UPrim{}       <- u
+        = return  ( XCon a u
+                  , typeOfBound u
+                  , Sum.empty kEffect
+                  , Set.empty)
+
+        -- Constructors can't be locally bound.
+        | otherwise
+        = throw $ ErrorMalformedExp xx
 
 
 -- application ------------------------------------
 -- value-type application.
 checkExpM' defs kenv tenv xx@(XApp a x1 (XType t2))
  = do   (x1', t1, effs1, clos1) <- checkExpM  defs kenv tenv x1
-        k2                      <- checkTypeM kenv t2
+        k2                      <- checkTypeM defs kenv t2
         case t1 of
          TForall b11 t12
           | typeOfBind b11 == k2
@@ -193,7 +209,7 @@ checkExpM' defs kenv tenv xx@(XApp a x1 (XType t2))
 -- value-witness application.
 checkExpM' defs kenv tenv xx@(XApp a x1 (XWitness w2))
  = do   (x1', t1, effs1, clos1) <- checkExpM     defs kenv tenv x1
-        t2                      <- checkWitnessM      kenv tenv w2
+        t2                      <- checkWitnessM defs kenv tenv w2
         case t1 of
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
           | t11 `equivT` t2   
@@ -226,13 +242,13 @@ checkExpM' defs kenv tenv xx@(XApp a x1 x2)
 -- spec abstraction -----------------------------
 checkExpM' defs kenv tenv xx@(XLAM a b1 x2)
  = do   let t1          = typeOfBind b1
-        _               <- checkTypeM kenv t1
+        _               <- checkTypeM defs kenv t1
 
         -- Check the body
         let kenv'         = Env.extend b1 kenv
         let tenv'         = Env.lift   1  tenv
-        (x2', t2, e2, c2) <- checkExpM defs kenv' tenv' x2
-        k2                <- checkTypeM kenv' t2
+        (x2', t2, e2, c2) <- checkExpM  defs kenv' tenv' x2
+        k2                <- checkTypeM defs kenv' t2
 
         when (Env.memberBind b1 kenv)
          $ throw $ ErrorLamShadow xx b1
@@ -258,13 +274,13 @@ checkExpM' defs kenv tenv xx@(XLAM a b1 x2)
 
 -- function abstractions ------------------------
 checkExpM' defs kenv tenv xx@(XLam a b1 x2)
- = do   let t1          =  typeOfBind b1
-        k1              <- checkTypeM kenv t1
+ = do   let t1               =  typeOfBind b1
+        k1                   <- checkTypeM defs kenv t1
 
         -- Check the body.
         let tenv'            =  Env.extend b1 tenv
         (x2', t2, e2, c2)    <- checkExpM  defs kenv tenv' x2   
-        k2                   <- checkTypeM kenv t2
+        k2                   <- checkTypeM defs kenv t2
 
         -- The form of the function constructor depends on what universe the 
         -- binder is in.
@@ -313,7 +329,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
 
         -- Check binder annotation against the type we inferred for the right.
         (b11', k11')    
-         <- checkLetBindOfTypeM xx kenv tenv t12 b11
+         <- checkLetBindOfTypeM xx defs kenv tenv t12 b11
 
         -- The right of the binding should have data kind.
         when (not $ isDataKind k11')
@@ -324,7 +340,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
         (x2', t2, effs2, c2)    <- checkExpM defs kenv tenv1 x2
 
         -- The body should have data kind.
-        k2 <- checkTypeM kenv t2
+        k2 <- checkTypeM defs kenv t2
         when (not $ isDataKind k2)
          $ throw $ ErrorLetBodyNotData xx t2 k2
 
@@ -353,7 +369,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
           LetLazy Nothing
            -> do case takeDataTyConApps t12 of
                   Just (_tc, t1 : _)
-                   ->  do k1 <- checkTypeM kenv t1
+                   ->  do k1 <- checkTypeM defs kenv t1
                           when (isRegionKind k1)
                            $ throw $ ErrorLetLazyNoWitness xx b11 t12
 
@@ -362,7 +378,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
           -- Type of lazy binding might have a head region,
           -- so we need a Lazy witness for it.
           LetLazy (Just wit)
-           -> do tWit        <- checkWitnessM kenv tenv wit
+           -> do tWit        <- checkWitnessM defs kenv tenv wit
                  let tWitExp =  case takeDataTyConApps t12 of
                                  Just (_tc, tR : _ts) -> tLazy tR
                                  _                    -> tHeadLazy t12
@@ -384,7 +400,8 @@ checkExpM' defs kenv tenv xx@(XLet a (LRec bxs) xBody)
         let (bs, xs)    = unzip bxs
 
         -- Check all the annotations.
-        ks              <- mapM (checkTypeM kenv) $ map typeOfBind bs
+        ks              <- mapM (checkTypeM defs kenv) 
+                        $  map typeOfBind bs
 
         -- Check all the annots have data kind.
         zipWithM_ (\b k
@@ -416,7 +433,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LRec bxs) xBody)
                 <- checkExpM defs kenv tenv' xBody
 
         -- The body type must have data kind.
-        kBody   <- checkTypeM kenv tBody
+        kBody   <- checkTypeM defs kenv tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
 
@@ -442,7 +459,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
       -> do
         -- Check the type on the region binder.
         let k   = typeOfBind b
-        checkTypeM kenv k
+        checkTypeM defs kenv k
 
         -- The binder must have region kind.
         when (not $ isRegionKind k)
@@ -456,7 +473,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
         -- Check the witness types.
         let kenv'       = Env.extend b kenv
         let tenv'       = Env.lift 1 tenv
-        mapM_ (checkTypeM kenv') $ map typeOfBind bs
+        mapM_ (checkTypeM defs kenv') $ map typeOfBind bs
 
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
@@ -467,7 +484,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
         (xBody', tBody, effs, clo)  <- checkExpM defs kenv' tenv2 x
 
         -- The body type must have data kind.
-        kBody           <- checkTypeM kenv' tBody
+        kBody           <- checkTypeM defs kenv' tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
 
@@ -498,7 +515,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
 checkExpM' defs kenv tenv xx@(XLet a (LWithRegion u) x)
  = do   -- Check the type on the region handle.
         let k   = typeOfBound u
-        checkTypeM kenv k
+        checkTypeM defs kenv k
 
         -- The handle must have region kind.
         when (not $ isRegionKind k)
@@ -509,7 +526,7 @@ checkExpM' defs kenv tenv xx@(XLet a (LWithRegion u) x)
                <- checkExpM defs kenv tenv x
 
         -- The body type must have data kind.
-        kBody  <- checkTypeM kenv tBody
+        kBody  <- checkTypeM defs kenv tBody
         when (not $ isDataKind kBody)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
         
@@ -639,7 +656,7 @@ checkExpM' defs kenv tenv xx@(XCase a xDiscrim alts)
 checkExpM' defs kenv tenv xx@(XCast a c@(CastWeakenEffect eff) x1)
  = do   
         -- Check the effect term.
-        kEff    <- checkTypeM kenv eff
+        kEff    <- checkTypeM defs kenv eff
         when (not $ isEffectKind kEff)
          $ throw $ ErrorMaxeffNotEff xx eff kEff
 
@@ -656,7 +673,7 @@ checkExpM' defs kenv tenv xx@(XCast a c@(CastWeakenEffect eff) x1)
 checkExpM' defs kenv tenv xx@(XCast a c@(CastWeakenClosure clo2) x1)
  = do   
         -- Check the closure term.
-        kClo    <- checkTypeM kenv clo2
+        kClo    <- checkTypeM defs kenv clo2
         when (not $ isClosureKind kClo)
          $ throw $ ErrorMaxcloNotClo xx clo2 kClo
 
@@ -678,8 +695,8 @@ checkExpM' defs kenv tenv xx@(XCast a c@(CastWeakenClosure clo2) x1)
 
 -- Purify an effect, given a witness that it is pure.
 checkExpM' defs kenv tenv xx@(XCast a c@(CastPurify w) x1)
- = do   tW                   <- checkWitnessM  kenv tenv w
-        (x1', t1, effs, clo) <- checkExpM defs kenv tenv x1
+ = do   tW                   <- checkWitnessM defs kenv tenv w
+        (x1', t1, effs, clo) <- checkExpM     defs kenv tenv x1
                 
         effs' <- case tW of
                   TApp (TCon (TyConWitness TwConPure)) effMask
@@ -694,8 +711,8 @@ checkExpM' defs kenv tenv xx@(XCast a c@(CastPurify w) x1)
 
 -- Forget a closure, given a witness that it is empty.
 checkExpM' defs kenv tenv xx@(XCast a c@(CastForget w) x1)
- = do   tW                    <- checkWitnessM  kenv tenv w
-        (x1', t1, effs, clos) <- checkExpM defs kenv tenv x1
+ = do   tW                    <- checkWitnessM defs kenv tenv w
+        (x1', t1, effs, clos) <- checkExpM     defs kenv tenv x1
 
         clos' <- case tW of
                   TApp (TCon (TyConWitness TwConEmpty)) cloMask
@@ -882,10 +899,14 @@ checkWitnessBindM xx uRegion bsWit bWit
 
 -------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
-checkTypeM :: (Ord n, Pretty n) => Env n -> Type n -> CheckM a n (Kind n)
+checkTypeM :: (Ord n, Pretty n) 
+           => DataDefs n 
+           -> Env n 
+           -> Type n 
+           -> CheckM a n (Kind n)
 
-checkTypeM kenv tt
- = case T.checkType kenv tt of
+checkTypeM defs kenv tt
+ = case T.checkType defs kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 
@@ -898,16 +919,17 @@ checkTypeM kenv tt
 checkLetBindOfTypeM 
         :: (Eq n, Ord n, Pretty n) 
         => Exp a n 
+        -> DataDefs n           -- Data type definitions.
         -> Env n                -- Kind environment. 
         -> Env n                -- Type environment.
         -> Type n 
         -> Bind n 
         -> CheckM a n (Bind n, Kind n)
 
-checkLetBindOfTypeM xx kenv _tenv tRight b
+checkLetBindOfTypeM xx defs kenv _tenv tRight b
         -- If the annotation is Bot then just replace it.
         | isBot (typeOfBind b)
-        = do    k       <- checkTypeM kenv tRight
+        = do    k       <- checkTypeM defs kenv tRight
                 return  ( replaceTypeOfBind tRight b 
                         , k)
 
@@ -916,6 +938,6 @@ checkLetBindOfTypeM xx kenv _tenv tRight b
         = throw $ ErrorLetMismatch xx b tRight
 
         | otherwise
-        = do    k       <- checkTypeM kenv (typeOfBind b)
+        = do    k       <- checkTypeM defs kenv (typeOfBind b)
                 return (b, k)
 
