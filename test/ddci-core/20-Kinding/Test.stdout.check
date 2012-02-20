@@ -45,3 +45,7 @@ Invalid kind for type sum.
          the type sum: Const + Const
              has kind: % ~> @
   but it must be ! or $
+
+
+-- #242 Error: Undefined type constructor ().
+Undefined type constructor:  ()

@@ -26,3 +26,7 @@
 
 -- Error: invalid kind for type sum.
 :kind [r:%]. (Const + Const)
+
+
+-- #242 Error: Undefined type constructor ().
+:kind [r:%]. (() + ())
