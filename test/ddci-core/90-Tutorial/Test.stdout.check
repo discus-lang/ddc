@@ -103,7 +103,7 @@ ok
 3628800
 
 
-updateInt :: [^ ^ : %].Mutable ^1 => (Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use ^1)> Unit)
+updateInt :: [^ ^ : %].Mutable ^1 => Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use ^1)> Unit
 
 
 -- Exercise 2: Refactor fac so arg and return values are in different regions.

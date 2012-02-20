@@ -67,21 +67,20 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          -> pprParen (d > 5)
          $  ppr k1 <+> text "~>" <+> ppr k2
 
-        TApp (TApp (TCon (TyConWitness TwConImpl)) k1) k2
+        TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
          -> pprParen (d > 5)
-         $  ppr k1 <+> text "=>" </> pprPrec 6 k2
+         $  pprPrec 6 t1 <+> text "=>" </> pprPrec 5 t2
 
         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t1) eff) clo) t2
          | isBot eff, isBot clo
          -> pprParen (d > 5)
-         $  (if isTFun t1 then pprPrec 6 t1 else pprPrec 5 t1)
-                   <+> text "->" </> ppr t2
+         $  pprPrec 6 t1 <+> text "->"  </> pprPrec 5 t2
 
          | otherwise
          -> pprParen (d > 5)
-         $  (if isTFun t1 then pprPrec 6 t1 else pprPrec 5 t1)
-                   <+> text "-(" <> ppr eff <> text " | " <> ppr clo <> text ")>" 
-                   </> ppr t2
+         $  pprPrec 6 t1
+                <+> text "-(" <> ppr eff <> text " | " <> ppr clo <> text ")>" 
+                </> pprPrec 5 t2
                    
         -- Standard types.
         TCon tc    -> ppr tc
@@ -90,11 +89,11 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
         TForall b t
          | Just (bsMore, tBody) <- takeTForalls t
          -> let groups  = partitionBindsByType (b:bsMore)
-            in  pprParen (d > 1) 
+            in  pprParen (d > 5) 
                  $ (cat $ map pprBinderGroup groups) <> ppr tBody
                         
          | otherwise
-         -> pprParen (d > 1)
+         -> pprParen (d > 5)
                 $ brackets (ppr b) <> dot <> ppr t
 
         TApp t1 t2
@@ -107,14 +106,6 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          
          | otherwise
          -> pprParen (d > 9) $  ppr ts
-
-
-isTFun :: Type n -> Bool
-isTFun tt
- = case tt of
-         TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) _) _) _) _
-                -> True
-         _      -> False
 
 
 instance (Pretty n, Eq n) => Pretty (TypeSum n) where
