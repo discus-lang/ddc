@@ -1,0 +1,35 @@
+import DDC.Runtime.Debug
+import DDC.Runtime.Store
+
+eqAddress :: a -> b -> Bool#
+eqAddress a b = primAddrU_eq (peekDataR_payload a)
+                              (peekDataR_payload b)
+
+eqAddr :: a -> b -> Bool
+eqAddr a b = boxBool (eqAddress a b)
+
+toString True = "Passed" % "\n"
+toString False = "Failed" % "\n"
+
+isSharedPrint a b = print $ toString $ eqAddr a b
+
+data TBool = T | F | N
+
+main () = do
+    x = True -- Standard Boolean
+    y = True
+    a = T    -- Custom Enumeration
+    b = T
+    c = ()   -- Unit
+    d = ()
+
+    orig = True
+    shared = orig
+
+    isSharedPrint x y
+    isSharedPrint a b
+    isSharedPrint c d
+    isSharedPrint orig shared
+    ()
+
+
