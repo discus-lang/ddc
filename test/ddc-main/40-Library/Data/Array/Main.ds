@@ -56,7 +56,12 @@ main ()
     runTestConst arrayUI_fill2 1000 42
     
     runTestInc arrayUI_set 1000 0
-    --runTestInc arrayUI_fill2 1000 13
-
+    
+    tempArray = makeArray arrayUI_fill 100 10
+    arrayUI_set tempArray 20 23
+    result = case arrayUI_get tempArray 20 == 23 of
+                True -> "Passed"
+                False -> "Failed"
+    putStrLn result
     ()
 
