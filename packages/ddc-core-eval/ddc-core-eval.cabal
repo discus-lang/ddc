@@ -2,8 +2,8 @@ Name:           ddc-core-eval
 Version:        0.3.0.0
 License:        MIT
 License-file:   LICENSE
-Author:         Ben Lippmeier
-Maintainer:     benl@ouroborus.net
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
 Build-Type:     Simple
 Cabal-Version:  >=1.6
 Stability:      experimental
