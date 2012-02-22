@@ -2,5 +2,9 @@
 5
 
 
+-- Suspend a single binding, without a type sig on the let-bound variable.
+5
+
+
 -- Take some elements from an infinite list.
 Cons 5 (Cons 5 (Cons 5 (Cons 5 Nil)))
