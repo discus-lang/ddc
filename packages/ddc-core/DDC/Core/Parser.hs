@@ -68,15 +68,25 @@ pExp
         x2              <- pExp
         return  $ XLet () (LLet mode1 b1 x1) x2
 
+
         -- letrec expression
  , do   pTok KLetRec
-        pTok KBraceBra
-        lets    <- P.sepEndBy1 pLetRecBinding (pTok KSemiColon)
-        pTok KBraceKet
-        pTok KIn
-        x       <- pExp
 
-        return  $ XLet () (LRec lets) x
+        P.choice
+         -- Multiple bindings in braces
+         [ do   pTok KBraceBra
+                lets    <- P.sepEndBy1 pLetRecBinding (pTok KSemiColon)
+                pTok KBraceKet
+                pTok KIn
+                x       <- pExp
+                return  $ XLet () (LRec lets) x
+
+         -- A single binding without braces.
+         , do   ll      <- pLetRecBinding
+                pTok KIn
+                x       <- pExp
+                return  $ XLet () (LRec [ll]) x
+         ]      
 
 
         -- Local region binding.

@@ -96,6 +96,13 @@ let ^ : Int R0# = 23 [R0#] ^0 in ^0;;
  addInt [:r r R1#:] (f ()) (f ());;
 
 
+-- Letrec with a single binding and no braces around it.
+:check..
+ letregion r in
+ letrec f (x : Unit) {Alloc r | Use r} : Int r = 4 [r] () in
+ addInt [:r r R1#:] (f ()) (f ());;
+
+
 -- Multiple lets and letregion. 
 :check..
  letregion r1 in

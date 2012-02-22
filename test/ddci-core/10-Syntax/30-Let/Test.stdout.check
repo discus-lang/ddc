@@ -118,6 +118,13 @@ letregion r in letrec { f : Unit -(Alloc r | Use r)> Int r = \(x : Unit). 4 [r] 
 :$: Use R1#
 
 
+-- Letrec with a single binding and no braces around it.
+letregion r in letrec { f : Unit -(Alloc r | Use r)> Int r = \(x : Unit). 4 [r] () } in addInt [r] [r] [R1#] (f ()) (f ())
+:*: Int R1#
+:!: Alloc R1#
+:$: Use R1#
+
+
 -- Multiple lets and letregion. 
 letregion r1 in letregion r2 in let x1 : Int r1 = 2 [r1] () in let x2 : Int r2 = 3 [r2] () in addInt [r1] [r2] [R1#] x1 x2
 :*: Int R1#
