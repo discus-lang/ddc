@@ -5,6 +5,11 @@ ok
 /\(^ : %). \(^ ^ : Int ^0). addInt [^0] [^0] [^0] ^1 ^0
 
 
+-- Anonymize lambdas and applications.
+-- Spec and value binder have the same name.
+/\(^ : %). \(^ : Int ^0). addInt [^0] [^0] [^0] ^0 ^0
+
+
 -- Single let
 let ^ : Unit = () in ^0
 

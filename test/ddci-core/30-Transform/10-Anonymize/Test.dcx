@@ -6,6 +6,12 @@
 /\(r:%).\(x : Int r) (y : Int r). addInt [:r r r:] x y;;
 
 
+-- Anonymize lambdas and applications.
+-- Spec and value binder have the same name.
+:trans..
+/\(x : %).\(x : Int x). addInt [:x x x:] x x;;
+
+
 -- Single let
 :trans..
 let x = () in x;;
