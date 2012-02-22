@@ -13,7 +13,8 @@ module DDC.Core.Eval.Store
         , SBind  (..)
         
         -- * Operators
-        , empty
+        , initial
+        , locUnit,      isUnitOrLocX
         , newLoc,       newLocs
         , newRgn,       newRgns
         , delRgn
@@ -27,6 +28,7 @@ module DDC.Core.Eval.Store
 where
 import DDC.Core.Exp
 import DDC.Core.Eval.Name
+import DDC.Core.Eval.Compounds
 import Control.Monad
 import DDC.Core.Pretty          hiding (empty)
 import Data.Map                 (Map)
@@ -116,14 +118,36 @@ instance Pretty SBind where
  
 
 -- Constructors ---------------------------------------------------------------
--- | An empty store, with no bindings or regions.
-empty   :: Store
-empty   = Store
+-- | Initial store containing the preallocated regions and bindings.
+initial :: Store
+initial = Store
         { storeNextLoc  = 1
         , storeNextRgn  = 1
-        , storeRegions  = Set.empty
-        , storeGlobal   = Set.empty
-        , storeBinds    = Map.empty }
+
+        , storeRegions  
+           = Set.fromList [Rgn 0]
+
+        , storeGlobal   
+           = Set.fromList [Rgn 0]
+
+        , storeBinds    
+           = Map.fromList 
+                [ (Loc 0, (Rgn 0, tUnit, SObj (NamePrimCon PrimDaConUnit) []))]
+        }
+
+-- | Location of the static unit object.
+locUnit :: Loc
+locUnit = Loc 0
+
+
+-- | Check whether an expression is the unit constructor, 
+--   or its static heap location.
+isUnitOrLocX :: Exp a Name -> Bool
+isUnitOrLocX xx
+ = case xx of
+        XCon _  (UPrim (NamePrimCon PrimDaConUnit) _)   -> True
+        XCon _  (UPrim (NameLoc l) _)                   -> l == locUnit
+        _                                               -> False
 
 
 -- Locations ------------------------------------------------------------------

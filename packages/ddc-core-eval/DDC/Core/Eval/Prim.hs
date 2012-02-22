@@ -26,12 +26,20 @@ stepPrimCon
                  , Exp () Name) -- ^ New store and result expression, 
                                 --   if the operator steps, otherwise `Nothing`.
 
+
+-- Redirect the unit constructor.
+-- All unit values point to the same object in the store.
+stepPrimCon (NamePrimCon PrimDaConUnit) [] store
+        = Just  ( store
+                , XCon () (UPrim (NameLoc locUnit) tUnit) )
+
+
 -- Alloction of Ints.
 stepPrimCon (NameInt i) [xR, xUnit] store
         -- unpack the args
         | XType tR      <- xR
         , Just rgn      <- takeHandleT tR
-        , isUnitX xUnit
+        , isUnitOrLocX xUnit
 
         -- the store must contain the region we're going to allocate into.
         , Store.hasRgn store rgn
@@ -69,7 +77,7 @@ stepPrimCon n@(NamePrimCon PrimDaConNil) [xR, xA, xUnit] store
         | XType tR      <- xR
         , Just rgn      <- takeHandleT tR
         , XType tA      <- xA
-        , isUnitX xUnit
+        , isUnitOrLocX xUnit
 
         -- the store must contain the region we're going to allocate into.
         , Store.hasRgn store rgn

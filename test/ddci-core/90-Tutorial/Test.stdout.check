@@ -40,7 +40,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
-
+   L0#:R0# -> OBJ ()
+      :: Unit
 
 * STEP: addInt [R0#] [R1#] [R2#] L1# (3 [R1#] ())
 * STORE
@@ -50,6 +51,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
+   L0#:R0# -> OBJ ()
+      :: Unit
    L1#:R0# -> OBJ 2
       :: Int R0#
 
@@ -61,6 +64,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
+   L0#:R0# -> OBJ ()
+      :: Unit
    L1#:R0# -> OBJ 2
       :: Int R0#
    L2#:R1# -> OBJ 3
@@ -74,6 +79,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
+   L0#:R0# -> OBJ ()
+      :: Unit
    L1#:R0# -> OBJ 2
       :: Int R0#
    L2#:R1# -> OBJ 3

@@ -20,3 +20,13 @@ Cons 5 Nil
 
 -- Handle forget cast around the discriminant.
 5
+
+
+-- Should be able to build a pair of unit
+-- All unit values share a single location.
+()
+
+
+-- Let-bound loc gets redirected to a static store location,
+-- and the integer constructor needs to accept this.
+3

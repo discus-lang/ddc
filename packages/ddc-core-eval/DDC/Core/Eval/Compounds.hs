@@ -110,9 +110,8 @@ isCapConW ww
 isUnitX :: Exp a Name -> Bool
 isUnitX xx
  = case xx of
-        XCon _   (UPrim (NamePrimCon PrimDaConUnit) _)  
-                -> True
-        _       -> False
+        XCon _   (UPrim (NamePrimCon PrimDaConUnit) _)  -> True
+        _                                               -> False
 
 
 -- | Take a region handle from a type.

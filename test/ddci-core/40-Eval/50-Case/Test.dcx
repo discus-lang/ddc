@@ -45,3 +45,21 @@ case xx of {
         Nil      -> 0 [R0#] ();
         Cons x _ -> addInt [:r R0# R0#:] x (0 [R0#] ());
 };;
+
+
+-- Should be able to build a pair of unit
+-- All unit values share a single location.
+:eval..
+case Pr [R0#] [Unit] [Int R0#] () (5 [R0#] ()) of {
+        Pr x _ -> x
+};;
+
+
+-- Let-bound loc gets redirected to a static store location,
+-- and the integer constructor needs to accept this.
+:eval..
+let x : Int R1# = 2 [R1#] () in
+let ^ : Unit    = () in
+let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 1 in
+let ^           = ^0 [R0#] ^1 in
+addInt [R0#] [R1#] [R2#] ^0 x;;

@@ -8,7 +8,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
-
+   L0#:R0# -> OBJ ()
+      :: Unit
 
 * STEP: withregion R3# in addInt [R1#] [R3#] [R2#] (5 [R1#] ()) (6 [R3#] ())
 * STORE
@@ -18,7 +19,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
-
+   L0#:R0# -> OBJ ()
+      :: Unit
 
 * STEP: withregion R3# in addInt [R1#] [R3#] [R2#] L1# (6 [R3#] ())
 * STORE
@@ -28,6 +30,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
+   L0#:R0# -> OBJ ()
+      :: Unit
    L1#:R1# -> OBJ 5
       :: Int R1#
 
@@ -39,6 +43,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
+   L0#:R0# -> OBJ ()
+      :: Unit
    L1#:R1# -> OBJ 5
       :: Int R1#
    L2#:R3# -> OBJ 6
@@ -52,6 +58,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
+   L0#:R0# -> OBJ ()
+      :: Unit
    L1#:R1# -> OBJ 5
       :: Int R1#
    L2#:R3# -> OBJ 6
@@ -67,6 +75,8 @@ ok
   Global:  {R0#, R1#, R2#}
 
   Binds:
+   L0#:R0# -> OBJ ()
+      :: Unit
    L1#:R1# -> OBJ 5
       :: Int R1#
    L3#:R2# -> OBJ 11

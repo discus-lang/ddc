@@ -104,7 +104,6 @@ step store xx
         | Just (u, xs)  <- takeXConApps xx
         , case u of
             -- Unit constructors are not allocated into the store.
-            UPrim (NamePrimCon PrimDaConUnit) _ -> False
             UPrim NamePrimCon{} _               -> True
             UPrim NameInt{}     _               -> True
             UPrim NameCon{}     _               -> True

@@ -98,18 +98,20 @@ startingStoreForExp xx
 
         -- Decide what new region should be allocated first.
         -- Region 0 is reserved for thunks.
-        iFirstAlloc
+        iAllocBump
          | _ : _         <- rs
          , Rgn iR        <- maximum rs
-         = iR + 1
+         = iR
 
          | otherwise
-         = 1
+         = 0
 
-    in Store.empty 
-        { Store.storeNextRgn = iFirstAlloc 
-        , Store.storeRegions = Set.fromList (Rgn 0 : rs)
-        , Store.storeGlobal  = Set.fromList (Rgn 0 : rs) }
+        store  = Store.initial
+
+    in  store
+        { Store.storeNextRgn = Store.storeNextRgn store + iAllocBump
+        , Store.storeRegions = Store.storeRegions store `Set.union` Set.fromList rs
+        , Store.storeGlobal  = Store.storeGlobal  store `Set.union` Set.fromList rs }
 
 
 -- | Perform a single step of evaluation and print what happened.
