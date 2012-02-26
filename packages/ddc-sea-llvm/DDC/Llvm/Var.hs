@@ -1,7 +1,10 @@
 
 module DDC.Llvm.Var
-        ( -- * Variables
-          LlvmVar  (..)
+        ( -- * Uniques
+          Unique
+
+          -- * Variables
+        , LlvmVar  (..)
         , LMSection
         , isGlobal
         , getLink
@@ -14,7 +17,6 @@ module DDC.Llvm.Var
         , LlvmLit  (..))
 where
 import DDC.Llvm.Attr
-import DDC.Llvm.Base
 import DDC.Llvm.Type
 import DDC.Base.Pretty
 import Data.Char
@@ -23,6 +25,12 @@ import Data.Array.ST
 import Control.Monad.ST
 import Data.Word
 import qualified Data.Array.Unsafe      as Unsafe
+
+
+-- Unique -----------------------------------------------------------------------------------------
+-- | Unique id.
+type Unique
+        = Int
 
 
 -- Var --------------------------------------------------------------------------------------------

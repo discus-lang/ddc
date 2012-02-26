@@ -23,7 +23,6 @@ Library
         ddc-base        == 0.3.0.*
 
   Exposed-modules:
-        DDC.Llvm.Base
         DDC.Llvm.Attr
         DDC.Llvm.Type
         DDC.Llvm.Prim

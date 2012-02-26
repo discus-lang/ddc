@@ -1,7 +1,10 @@
 
 module DDC.Llvm.Type
-        ( -- * Types
-          LlvmType         (..)
+        ( -- * Base
+          LMString
+
+          -- * Types
+        , LlvmType         (..)
         , LlvmAlias
         , isInt
         , isFloat
@@ -21,8 +24,12 @@ module DDC.Llvm.Type
         , LMAlign)
 where
 import DDC.Llvm.Attr
-import DDC.Llvm.Base
 import DDC.Base.Pretty
+
+-- Base -------------------------------------------------------------------------------------------
+-- | A String in LLVM
+type LMString 
+        = String
 
 
 -- Type -------------------------------------------------------------------------------------------

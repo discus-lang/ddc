@@ -12,11 +12,10 @@ import DDC.Llvm.Statement
 import DDC.Llvm.Var
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
-import DDC.Llvm.Base
         
 
 -- Function -------------------------------------------------------------------
--- | An LLVM Function
+-- | A LLVM Function
 data LlvmFunction 
         = LlvmFunction 
         { -- | The signature of this declared function.

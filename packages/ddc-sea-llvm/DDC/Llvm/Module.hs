@@ -12,27 +12,26 @@ where
 import DDC.Llvm.Function
 import DDC.Llvm.Var
 import DDC.Llvm.Type
-import DDC.Llvm.Base
 import DDC.Base.Pretty
 
 
 -- Module ---------------------------------------------------------------------
--- | An LLVM Module. This is a top level container in LLVM.
+-- | This is a top level container in LLVM.
 data LlvmModule 
         = LlvmModule  
         { -- | Comments to include at the start of the module.
           modComments  :: [LMString]
 
-          -- | LLVM Alias type definitions.
+          -- | Alias type definitions.
         , modAliases   :: [LlvmAlias]
 
           -- | Global variables to include in the module.
         , modGlobals   :: [LMGlobal]
 
-        -- | LLVM Functions used in this module but defined in other modules.
+          -- | Functions used in this module but defined in other modules.
         , modFwdDecls  :: LlvmFunctionDecls
 
-        -- | LLVM Functions defined in this module.
+          -- | Functions defined in this module.
         , modFuncs     :: LlvmFunctions
         }
 
@@ -55,44 +54,44 @@ getGlobalVar (v, _) = v
 -- | Llvm Static Data.
 --  These represent the possible global level variables and constants.
 data LlvmStatic
-        -- | A comment in a static section
+        -- | A comment in a static section.
         = LMComment       LMString
 
-        -- | A static variant of a literal value
+        -- | A static variant of a literal value.
         | LMStaticLit     LlvmLit
 
-        -- | For uninitialised data
+        -- | For uninitialised data.
         | LMUninitType    LlvmType
 
-        -- | Defines a static 'LMString'
+        -- | Defines a static 'LMString'.
         | LMStaticStr     LMString     LlvmType
 
-        -- | A static array
+        -- | A static array.
         | LMStaticArray   [LlvmStatic] LlvmType
 
-        -- | A static structure type
+        -- | A static structure type.
         | LMStaticStruc   [LlvmStatic] LlvmType
 
-        -- | A pointer to other data
+        -- | A pointer to other data.
         | LMStaticPointer LlvmVar
 
         -- static expressions, could split out but leave
         -- for moment for ease of use. Not many of them.
-        -- | Pointer to Pointer conversion
+        -- | Pointer to Pointer conversion.
         | LMBitc LlvmStatic LlvmType                    
 
-        -- | Pointer to Integer conversion
+        -- | Pointer to Integer conversion.
         | LMPtoI LlvmStatic LlvmType                    
 
-        -- | Constant addition operation
+        -- | Constant addition operation.
         | LMAdd  LlvmStatic LlvmStatic                 
 
-        -- | Constant subtraction operation
+        -- | Constant subtraction operation.
         | LMSub  LlvmStatic LlvmStatic  
         deriving (Show)                
 
 
--- | Return the 'LlvmType' of the 'LlvmStatic'
+-- | Return the 'LlvmType' of the 'LlvmStatic'.
 getStatType :: LlvmStatic -> LlvmType
 getStatType (LMStaticLit   l  ) = getLitType l
 getStatType (LMUninitType    t) = t

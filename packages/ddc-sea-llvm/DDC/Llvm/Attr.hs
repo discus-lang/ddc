@@ -9,47 +9,43 @@ import DDC.Base.Pretty
 
  
 -- FuncAttr ---------------------------------------------------------------------------------------
--- | Llvm Function Attributes.
---
---   Function attributes are set to communicate additional information about a
+-- | Function attributes are set to communicate additional information about a
 --   function. Function attributes are considered to be part of the function,
 --   not of the function type, so functions with different parameter attributes
 --   can have the same function type. Functions can have multiple attributes.
 --
 --   Descriptions taken from <http://llvm.org/docs/LangRef.html#fnattrs>
 data LlvmFuncAttr
-        -- | This attribute indicates that the inliner should attempt to inline this
-        --   function into callers whenever possible, ignoring any active inlining
-        --   size threshold for this caller.
+        -- | The inliner should attempt to inline this function into callers
+        --   whenever possible, ignoring any active inlining size threshold for
+        --   this caller.
         = AlwaysInline
 
-        -- | This attribute indicates that the source code contained a hint that
-        --   inlining this function is desirable (such as the \"inline\" keyword in
-        --   C/C++). It is just a hint; it imposes no requirements on the inliner.
+        -- | The source code contained a hint that inlining this function is
+        --   desirable (such as the \"inline\" keyword in C/C++). 
+        --   It is just a hint; it imposes no requirements on the inliner.
         | InlineHint
 
-        -- | This attribute indicates that the inliner should never inline this
-        --   function in any situation. This attribute may not be used together
-        --   with the alwaysinline attribute.
+        -- | The inliner should never inline this function in any situation. 
+        --   This attribute may not be used together with the alwaysinline attribute.
         | NoInline
 
-        -- | This attribute suggests that optimization passes and code generator
-        --   passes make choices that keep the code size of this function low, and
-        --   otherwise do optimizations specifically to reduce code size.
+        -- | Suggests that optimization passes and code generator passes make choices
+        --   that keep the code size of this function low, and otherwise do
+        --   optimizations specifically to reduce code size.
         | OptSize
 
-        -- | This function attribute indicates that the function never returns
-        --   normally. This produces undefined behavior at runtime if the function
-        --   ever does dynamically return.
+        -- | The function never returns normally. 
+        --   This produces undefined behavior at runtime if the function ever does
+        --   dynamically return.
         | NoReturn
 
-        -- | This function attribute indicates that the function never returns with
-        --   an unwind or exceptional control flow. If the function does unwind, its
-        --   runtime behavior is undefined.
+        -- | The function never returns with an unwind or exceptional control flow. 
+        --   If the function does unwind, its runtime behavior is undefined.
         | NoUnwind
 
-        -- | This attribute indicates that the function computes its result (or
-        --   decides to unwind an exception) based strictly on its arguments, without
+        -- | The function computes its result (or decides to unwind an exception) 
+        --   based strictly on its arguments, without
         --   dereferencing any pointer arguments or otherwise accessing any mutable
         --   state (e.g. memory, control registers, etc) visible to caller functions.
         --   It does not write through any pointer arguments (including byval
@@ -58,7 +54,7 @@ data LlvmFuncAttr
         --   methods, but could use the unwind instruction.
         | ReadNone
 
-        -- | This attribute indicates that the function does not write through any
+        -- | The function does not write through any
         --   pointer arguments (including byval arguments) or otherwise modify any
         --   state (e.g. memory, control registers, etc) visible to caller functions.
         --   It may dereference pointer arguments and read state that may be set in
@@ -68,33 +64,31 @@ data LlvmFuncAttr
         --   throwing methods, but may use the unwind instruction.
         | ReadOnly
 
-        -- | This attribute indicates that the function should emit a stack smashing
-        --   protector. It is in the form of a \"canary\"—a random value placed on the
+        -- | The function should emit a stack smashing protector. 
+        --   It is in the form of a \"canary\"—a random value placed on the
         --   stack before the local variables that's checked upon return from the
         --   function to see if it has been overwritten. A heuristic is used to
         --   determine if a function needs stack protectors or not.
-        --
         --   If a function that has an ssp attribute is inlined into a function that
         --   doesn't have an ssp attribute, then the resulting function will have an
         --   ssp attribute.
         | Ssp
 
-        -- | This attribute indicates that the function should always emit a stack
-        --   smashing protector. This overrides the ssp function attribute.
-        --
+        -- | The function should always emit a stack smashing protector. 
+        --   This overrides the ssp function attribute.
         --   If a function that has an sspreq attribute is inlined into a function
         --   that doesn't have an sspreq attribute or which has an ssp attribute,
         --   then the resulting function will have an sspreq attribute.
         | SspReq
 
-        -- | This attribute indicates that the code generator should not use a red
-        --   zone, even if the target-specific ABI normally permits it.
+        -- | The code generator should not use a red zone, even if the
+        --   target-specific ABI normally permits it.
         | NoRedZone
 
-        -- | This attributes disables implicit floating point instructions.
+        -- | Disables implicit floating point instructions.
         | NoImplicitFloat
 
-        -- | This attribute disables prologue / epilogue emission for the function.
+        -- | Disables prologue / epilogue emission for the function.
         --   This can have very system-specific consequences.
         | Naked
         deriving (Eq, Show)
@@ -120,45 +114,36 @@ instance Pretty LlvmFuncAttr where
 
 
 -- ParamAttr --------------------------------------------------------------------------------------
--- | LLVM Parameter Attributes.
---
---   Parameter attributes are used to communicate additional information about
+-- | Parameter attributes are used to communicate additional information about
 --   the result or parameters of a function
 data LlvmParamAttr
-        -- | This indicates to the code generator that the parameter or return value
-        --   should be zero-extended to a 32-bit value by the caller (for a parameter)
-        --   or the callee (for a return value).
+        -- | That the parameter or return value should be zero-extended to a 32-bit value
+        --   by the caller (for a parameter) or the callee (for a return value).
         = ZeroExt
 
-        -- | This indicates to the code generator that the parameter or return value
-        --   should be sign-extended to a 32-bit value by the caller (for a parameter)
-        --   or the callee (for a return value).
+        -- | The parameter or return value should be sign-extended to a 32-bit value
+        --   by the caller (for a parameter) or the callee (for a return value).
         | SignExt
 
-        -- | This indicates that this parameter or return value should be treated in
-        --   a special target-dependent fashion during while emitting code for a
-        --   function call or return (usually, by putting it in a register as opposed
-        --   to memory).
+        -- | The parameter or return value should be treated in a special target-dependent
+        --   fashion during while emitting code for a function call or return (usually,
+        --   by putting it in a register as opposed to memory).
         | InReg
 
-        -- | This indicates that the pointer parameter should really be passed by
-        --   value to the function.
+        -- | The pointer parameter should really be passed by value to the function.
         | ByVal
 
-        -- | This indicates that the pointer parameter specifies the address of a
-        --   structure that is the return value of the function in the source program.
+        -- | The pointer parameter specifies the address of a structure that is the
+        --   return value of the function in the source program.
         | SRet
 
-        -- | This indicates that the pointer does not alias any global or any other
-        --   parameter.
+        -- | The pointer does not alias any global or any other parameter.
         | NoAlias
 
-        -- | This indicates that the callee does not make any copies of the pointer
-        --   that outlive the callee itself
+        -- | The callee does not make any copies of the pointer that outlive the callee itself.
         | NoCapture
 
-        -- | This indicates that the pointer parameter can be excised using the
-        --   trampoline intrinsics.
+        -- | The pointer parameter can be excised using the trampoline intrinsics.
         | Nest
         deriving (Eq, Show)
 
