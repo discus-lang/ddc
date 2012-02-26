@@ -23,9 +23,9 @@ data Name
 	-- | A slot of the GC shadow stack.
 	--   All pointers to objects in the heap must be on the slot stack
 	--   when we do something that might cause a garbage collection.
-	| NSlot 
-		{ -- | The original variable this slot is standing in for.
+	| NSlot { -- The original variable this slot is standing in for.
 		  nameSlotVar 	:: Var
+
 		  -- | Number of the slot in the current frame.
 		, nameSlotNum	:: Int}
 

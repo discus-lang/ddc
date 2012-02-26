@@ -16,8 +16,8 @@ import DDC.Var.PrimId
 stage = "DDC.Sea.Exp"
 
 -- | Sea types.
---	By the time we've reached the Sea language we only care about operational information.
---	We need to distinguish between boxed and unboxed values, but not much else.
+--   By the time we've reached the Sea language we only care about operational information.
+--   We need to distinguish between boxed and unboxed values, but not much else.
 data Type
 	-- | The void type.
 	= TVoid

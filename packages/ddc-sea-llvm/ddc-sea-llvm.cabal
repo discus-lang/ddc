@@ -23,6 +23,8 @@ Library
         ddc-base        == 0.3.0.*
 
   Exposed-modules:
+        DDC.Sea.Type
+        DDC.Sea.Exp
         DDC.Llvm.Attr
         DDC.Llvm.Type
         DDC.Llvm.Prim
