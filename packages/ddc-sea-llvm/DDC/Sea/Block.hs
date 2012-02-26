@@ -8,6 +8,9 @@ module DDC.Sea.Block
         , Alt           (..)
         , Pat           (..))
 where
+import DDC.Sea.Type
+import DDC.Sea.Exp
+
 
 -- | A code label that can be jumped to.
 data Label n

@@ -2,8 +2,7 @@
 module DDC.Sea.Exp
         ( Exp   (..)
         , Lit   (..)
-        , Var   (..)
-        , Proj  (..))
+        , Var   (..))
 where
 import DDC.Sea.Prim
 
@@ -16,9 +15,6 @@ data Exp n
 
         -- | A value variable.
         | XVar          (Var n)
-
-        -- | Projection of some other object.
-        | XProj         (Proj n) (Exp  n)
 
         -- | Invoke a primitive operator.
         | XPrim         Prim [Exp  n]
@@ -87,18 +83,6 @@ data Var n
         --   This is formed by dereferencing the corresponding CafPtr once only.
         | VCaf      n
         deriving (Show, Eq)
-
-
--- Proj -----------------------------------------------------------------------
--- | A projection of some other object.
-data Proj n
-        -- | Take the tag of a boxed object.
-        = PTag          (Exp n)
-
-        -- | Take a numbered field from some boxed data object.
-        | PBoxedField   (Exp n) Int
-        deriving (Show, Eq)
-
 
 
 

@@ -32,6 +32,9 @@ data    Prim
         -- | Invoke a primitive arithmetic operator.
         = MOp           PrimOp
 
+        -- | Project something from an object.
+        | MProj         PrimProj
+
         -- | Casting between numeric types.
         | MCast         PrimCast
 
@@ -69,6 +72,17 @@ data PrimOp
         -- boolean
         | OpAnd
         | OpOr
+        deriving (Show, Eq)
+
+
+-- Proj -----------------------------------------------------------------------
+-- | A projection of some other object.
+data PrimProj
+        -- | Take the tag of a boxed object.
+        = PrimProjTag
+
+        -- | Take a numbered field from some boxed data object.
+        | PrimProjField
         deriving (Show, Eq)
 
 

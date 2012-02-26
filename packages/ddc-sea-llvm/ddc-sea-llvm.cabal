@@ -24,7 +24,9 @@ Library
 
   Exposed-modules:
         DDC.Sea.Type
+        DDC.Sea.Prim
         DDC.Sea.Exp
+        DDC.Sea.Block
         DDC.Llvm.Attr
         DDC.Llvm.Type
         DDC.Llvm.Prim
