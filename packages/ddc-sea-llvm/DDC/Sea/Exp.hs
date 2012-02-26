@@ -28,7 +28,7 @@ data Lit n
         = LNull
 
         -- | The tag of a data constructor.
-        | LDataTag      n
+        | LTag          n
 
         -- | A natural number used as an argument to some function or primitive
         --   in the runtime system. These don't hold values defined by the 
