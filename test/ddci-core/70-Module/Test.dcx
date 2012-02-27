@@ -1,0 +1,35 @@
+
+-- :drop 
+-- for dropping modules.
+
+-- :read..
+-- another module that uses the previous one.
+
+-- :read.. 
+-- recursive modules.
+
+
+
+-- Read a module definition.
+-- Use let/letrec to sequence caf initialisation.
+-- CAFs cannot have visible side effects, though may diverge.
+-- Using let/letrec forces an initialisation sequence.
+:read..
+module Foo 
+exports {
+        double :: [r : %]. Int r -(Read r + Alloc r)> Int r;
+        thing  :: [r : %]. Int r -(Read r + Alloc r)> Int r;
+}
+imports {
+        Thing.whatever 
+         with foo :: Int r1 -> Int r1;
+}
+letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
+let     one = purify <read [rt] w1> in 1 [rt] () in
+letrec { 
+        double [r : %] (x : Int r)
+         = mulInt [:r r r:] x (2 [r] ());
+
+        thing  [r : %] (x : Int r)
+         = addInt [:r rt r:] one x
+};;
