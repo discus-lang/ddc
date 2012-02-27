@@ -43,13 +43,15 @@ pModule
                 pTok KBraceKet
                 return specs
 
+        lts     <- P.sepBy1 pLets (pTok KIn)
+
         return  $ ModuleCore
                 { moduleName            = name
                 , moduleExportKinds     = Map.empty
                 , moduleExportTypes     = Map.fromList tExports
                 , moduleImportKinds     = Map.empty
                 , moduleImportTypes     = Map.fromList tImports
-                , moduleLets            = [] }
+                , moduleLets            = lts }
 
 
 -- | Parse a type signature.
