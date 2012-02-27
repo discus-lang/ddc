@@ -338,20 +338,6 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
         when (not $ isDataKind k11')
          $ throw $ ErrorLetBindingNotData xx b11' k11'
           
-        -- Check the body expression.
-        let tenv1  = Env.extend b11' tenv
-        (x2', t2, effs2, c2)    <- checkExpM defs kenv tenv1 x2
-
-        -- The body should have data kind.
-        k2 <- checkTypeM defs kenv t2
-        when (not $ isDataKind k2)
-         $ throw $ ErrorLetBodyNotData xx t2 k2
-
-        -- Mask closure terms due to locally bound value vars.
-        let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureX b11')
-                        $ Set.toList c2
-
         -- Check purity and emptiness for lazy bindings.
         (case mode of
           LetStrict     -> return ()
@@ -389,7 +375,20 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
                  when (not $ equivT tWit tWitExp)
                   $ throw $ ErrorLetLazyWitnessTypeMismatch 
                                  xx b11 tWit t12 tWitExp)
-                                     
+
+        -- Check the body expression.
+        let tenv1  = Env.extend b11' tenv
+        (x2', t2, effs2, c2)    <- checkExpM defs kenv tenv1 x2
+
+        -- The body should have data kind.
+        k2 <- checkTypeM defs kenv t2
+        when (not $ isDataKind k2)
+         $ throw $ ErrorLetBodyNotData xx t2 k2
+
+        -- Mask closure terms due to locally bound value vars.
+        let c2_cut      = Set.fromList
+                        $ mapMaybe (cutTaggedClosureX b11')
+                        $ Set.toList c2
 
         return ( XLet a (LLet mode b11' x12') x2'
                , t2
