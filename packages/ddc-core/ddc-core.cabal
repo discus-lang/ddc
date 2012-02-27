@@ -38,6 +38,7 @@ Library
         DDC.Core.Check.TaggedClosure
         DDC.Core.Parser.Lexer
         DDC.Core.Parser.Tokens
+        DDC.Core.Parser.Param
         DDC.Core.Transform.LiftW
         DDC.Core.Transform.LiftX
         DDC.Core.Transform.SpreadX
@@ -49,6 +50,7 @@ Library
         DDC.Core.Compounds
         DDC.Core.DataDef
         DDC.Core.Exp
+        DDC.Core.Module
         DDC.Core.Pretty
         DDC.Core.Predicates
         DDC.Core.Parser
