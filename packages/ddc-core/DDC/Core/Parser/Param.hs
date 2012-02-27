@@ -8,15 +8,11 @@ module DDC.Core.Parser.Param
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Tokens
+import DDC.Core.Parser.Base
 import DDC.Type.Parser                  (pTok)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Parser        as T
-
-
--- | A parser of core language tokens.
-type Parser n a
-        = P.Parser (Tok n) a
 
 
 -- | Specification of a function parameter.

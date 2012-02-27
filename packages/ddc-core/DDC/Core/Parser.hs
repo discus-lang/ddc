@@ -2,12 +2,14 @@
 module DDC.Core.Parser
         ( module DDC.Base.Parser
         , module DDC.Core.Parser.Param
-        , pExp
-        , pWitness)
+        , module DDC.Core.Parser.Witness
+        , pExp)
 where
 import DDC.Core.Exp
+import DDC.Core.Parser.Witness
 import DDC.Core.Parser.Param
 import DDC.Core.Parser.Tokens
+import DDC.Core.Parser.Base
 import DDC.Base.Parser                  ((<?>))
 import DDC.Type.Parser                  (pTok)
 import qualified DDC.Base.Parser        as P
@@ -414,105 +416,4 @@ pLetRecBinding
                 let x   = expOfParams () ps xBody
 
                 return  (T.makeBindFromBinder b t, x) ]
-
-
--- Witnesses ------------------------------------------------------------------
--- | Parse a witness expression.
-pWitness :: Ord n  => Parser n (Witness n)
-pWitness = pWitnessJoin
-
-
--- Witness Joining
-pWitnessJoin :: Ord n => Parser n (Witness n)
-pWitnessJoin 
-   -- WITNESS  or  WITNESS & WITNESS
- = do   w1      <- pWitnessApp
-        P.choice 
-         [ do   pTok KAmpersand
-                w2      <- pWitnessJoin
-                return  (WJoin w1 w2)
-
-         , do   return w1 ]
-
-
--- Applications
-pWitnessApp :: Ord n => Parser n (Witness n)
-pWitnessApp 
-  = do  (x:xs)  <- P.many1 pWitnessArg
-        return  $ foldl WApp x xs
-
- <?> "a witness expression or application"
-
-
--- Function argument
-pWitnessArg :: Ord n => Parser n (Witness n)
-pWitnessArg 
- = P.choice
- [ -- [TYPE]
-   do   pTok KSquareBra
-        t       <- T.pType
-        pTok KSquareKet
-        return  $ WType t
-
-   -- WITNESS
- , do   pWitnessAtom ]
-
-
--- Atomics
-pWitnessAtom :: Ord n => Parser n (Witness n)
-pWitnessAtom 
- = P.choice
-   -- (WITNESS)
- [ do    pTok KRoundBra
-         w       <- pWitness
-         pTok KRoundKet
-         return  $ w
-
-   -- Named constructors
- , do   con     <- pCon
-        return  $ WCon (WiConBound $ UName con (T.tBot T.kWitness)) 
-
-   -- Baked-in witness constructors.
- , do    wb     <- pWbCon
-         return $ WCon (WiConBuiltin wb)
-
-                
-   -- Debruijn indices
- , do    i       <- T.pIndex
-         return  $ WVar (UIx   i   (T.tBot T.kWitness))
-
-   -- Variables
- , do    var     <- pVar
-         return  $ WVar (UName var (T.tBot T.kWitness)) ]
-
- <?> "a witness"
-
-
--------------------------------------------------------------------------------
--- | Parse a builtin named `WiCon`
-pWbCon :: Parser n WbCon
-pWbCon  = P.pTokMaybe f
- where  f (KA (KWbConBuiltin wb)) = Just wb
-        f _                       = Nothing
-
-
--- | Parse a variable name
-pVar :: Parser n n
-pVar    = P.pTokMaybe f
- where  f (KN (KVar n)) = Just n
-        f _             = Nothing
-
-
--- | Parse a constructor name
-pCon :: Parser n n
-pCon    = P.pTokMaybe f
- where  f (KN (KCon n)) = Just n
-        f _             = Nothing
-
-
--- | Parse a literal
-pLit :: Parser n n
-pLit    = P.pTokMaybe f
- where  f (KN (KLit n)) = Just n
-        f _             = Nothing
 
