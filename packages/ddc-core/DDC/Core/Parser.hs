@@ -3,19 +3,77 @@ module DDC.Core.Parser
         ( module DDC.Base.Parser
         , module DDC.Core.Parser.Param
         , module DDC.Core.Parser.Witness
+        , pModule
         , pExp)
 where
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Parser.Witness
 import DDC.Core.Parser.Param
 import DDC.Core.Parser.Tokens
 import DDC.Core.Parser.Base
+import DDC.Base.Pretty
 import DDC.Base.Parser                  ((<?>))
 import DDC.Type.Parser                  (pTok)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 import qualified DDC.Type.Parser        as T
+import qualified Data.Map               as Map
 import Control.Monad.Error
+
+
+-- Module ---------------------------------------------------------------------
+pModule :: (Ord n, Pretty n) 
+        => Parser n (Module () n)
+pModule 
+ = do   pTok KModule
+        name    <- pModuleName
+
+        tExports 
+         <- do  pTok KExports
+                pTok KBraceBra
+                sigs    <- P.sepEndBy1 pTypeSig (pTok KSemiColon)
+                pTok KBraceKet
+                return sigs
+
+        tImports
+         <- do  pTok KImports
+                pTok KBraceBra
+                specs    <- P.sepEndBy1 pImportTypeSpec (pTok KSemiColon)
+                pTok KBraceKet
+                return specs
+
+        return  $ ModuleCore
+                { moduleName            = name
+                , moduleExportKinds     = Map.empty
+                , moduleExportTypes     = Map.fromList tExports
+                , moduleImportKinds     = Map.empty
+                , moduleImportTypes     = Map.fromList tImports
+                , moduleLets            = [] }
+
+
+-- | Parse a type signature.
+pTypeSig :: Ord n => Parser n (n, Type n)        
+pTypeSig
+ = do   var     <- pVar
+        pTok KColonColon
+        t       <- T.pType
+        return  (var, t)
+
+
+-- | Parse the type signature of an imported variable.
+pImportTypeSpec 
+        :: (Ord n, Pretty n) 
+        => Parser n (n, (QualName n, Type n))
+
+pImportTypeSpec 
+ = do   qn      <- pQualName
+        pTok KWith
+        n       <- pName
+        pTok KColonColon
+        t       <- T.pType
+        return  (n, (qn, t))
+        
 
 
 -- Expressions ----------------------------------------------------------------

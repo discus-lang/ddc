@@ -37,7 +37,10 @@ readWbConBuiltin ss
 -- | Textual keywords in the core language.
 keywords :: [(String, Tok n)]
 keywords
- =      [ ("in",         KA KIn)
+ =      [ ("module",     KA KModule)
+        , ("imports",    KA KImports)
+        , ("exports",    KA KExports)
+        , ("in",         KA KIn)
         , ("of",         KA KOf) 
         , ("letrec",     KA KLetRec)
         , ("letregion",  KA KLetRegion)

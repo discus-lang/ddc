@@ -125,6 +125,9 @@ data TokAtom
         | KBotClosure
 
         -- expression keywords
+        | KModule
+        | KImports
+        | KExports
         | KWith
         | KWhere
         | KIn
@@ -208,6 +211,9 @@ describeTokAtom' ta
         KBotClosure             -> (Constructor, "!$")
 
         -- expression keywords
+        KModule                 -> (Keyword, "module")
+        KImports                -> (Keyword, "imports")
+        KExports                -> (Keyword, "exports")
         KWith                   -> (Keyword, "with")
         KWhere                  -> (Keyword, "where")
         KIn                     -> (Keyword, "in")

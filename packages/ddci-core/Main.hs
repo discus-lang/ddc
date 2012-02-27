@@ -2,6 +2,7 @@
 import DDCI.Core.State
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Set
+import DDCI.Core.Command.Load
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
@@ -27,22 +28,23 @@ main
 -- Command --------------------------------------------------------------------
 -- | The commands that the interpreter supports.
 data Command
-        = CommandBlank
-        | CommandUnknown
-        | CommandHelp
-        | CommandSet
-        | CommandKind
-        | CommandEquivType
-        | CommandWitType
-        | CommandExpCheck
-        | CommandExpRecon
-        | CommandExpType
-        | CommandExpEffect
-        | CommandExpClosure
-        | CommandEval
-        | CommandTrans
-        | CommandTransEval
-	| CommandAst
+        = CommandBlank          -- ^ No command was entered.
+        | CommandUnknown        -- ^ Some unknown (invalid) command.
+        | CommandHelp           -- ^ Display the interpreter help.
+        | CommandSet            -- ^ Set a mode.
+        | CommandLoad           -- ^ Load a module.
+        | CommandKind           -- ^ Show the kind of a type.
+        | CommandEquivType      -- ^ Check if two types are equivalent.
+        | CommandWitType        -- ^ Show the type of a witness.
+        | CommandExpCheck       -- ^ Check an expression.
+        | CommandExpType        -- ^ Check an expression, showing its type.
+        | CommandExpEffect      -- ^ Check an expression, showing its effect.
+        | CommandExpClosure     -- ^ Check an expression, showing its closure.
+        | CommandExpRecon       -- ^ Reconstruct type annotations on binders.
+        | CommandEval           -- ^ Evaluate an expression.
+        | CommandTrans          -- ^ Transform an expression.
+        | CommandTransEval      -- ^ Transform then evaluate an expression.
+	| CommandAst            -- ^ Show the AST of an expression.
         deriving (Eq, Show)
 
 
@@ -52,6 +54,7 @@ commands
  =      [ (":help",     CommandHelp)
         , (":?",        CommandHelp)
         , (":set",      CommandSet)
+        , (":load",     CommandLoad)
         , (":kind",     CommandKind)
         , (":tequiv",   CommandEquivType)
         , (":wtype",    CommandWitType)
@@ -293,6 +296,10 @@ handleCmd1 state cmd lineStart line
         CommandSet        
          -> do  state'  <- cmdSet state line
                 return state'
+
+        CommandLoad
+         -> do  cmdLoad state lineStart line
+                return state
 
         CommandKind       
          -> do  cmdShowKind state lineStart line
