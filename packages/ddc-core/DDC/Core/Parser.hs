@@ -123,34 +123,6 @@ pExp
         return  $ XLet () lts x2
 
 
-
-
-        -- Local region binding.
-        --   letregion BINDER with { BINDER : TYPE ... } in EXP
-        --   letregion BINDER in EXP
- , do   pTok KLetRegion
-        br      <- T.pBinder
-        let b   = T.makeBindFromBinder br T.kRegion
-
-        P.choice 
-         [ do   pTok KWith
-                pTok KBraceBra
-                wits    <- P.sepBy
-                           (do  w       <- pVar
-                                pTok KColon
-                                t       <- T.pTypeApp
-                                return  (BName w t))
-                           (pTok KSemiColon)
-                pTok KBraceKet
-                pTok KIn
-                x       <- pExp 
-                return  $ XLet () (LLetRegion b wits) x 
-
-         , do   pTok KIn
-                x       <- pExp
-                return $ XLet ()  (LLetRegion b []) x ]
-
-
         -- withregion CON in EXP
  , do   pTok KWithRegion
         n       <- pVar
