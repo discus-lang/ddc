@@ -3,7 +3,7 @@
 module Foo 
 exports {
         double :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r;
-        thing  :: [r : %]. Int r -(Read r + Allco r | $0)> Int r;
+        thing  :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r;
 }
 imports {
         Thing.whatever 

@@ -117,31 +117,12 @@ pExp
 
 
         -- let expression
- , do   pTok KLet
-        (mode1, b1, x1)  <- pLetBinding
-        pTok KIn
-        x2              <- pExp
-        return  $ XLet () (LLet mode1 b1 x1) x2
+ , do   lts     <- pLets
+        pTok    KIn
+        x2      <- pExp
+        return  $ XLet () lts x2
 
 
-        -- letrec expression
- , do   pTok KLetRec
-
-        P.choice
-         -- Multiple bindings in braces
-         [ do   pTok KBraceBra
-                lets    <- P.sepEndBy1 pLetRecBinding (pTok KSemiColon)
-                pTok KBraceKet
-                pTok KIn
-                x       <- pExp
-                return  $ XLet () (LRec lets) x
-
-         -- A single binding without braces.
-         , do   ll      <- pLetRecBinding
-                pTok KIn
-                x       <- pExp
-                return  $ XLet () (LRec [ll]) x
-         ]      
 
 
         -- Local region binding.
@@ -361,6 +342,50 @@ pBindPat
 
 
 -- Bindings -------------------------------------------------------------------
+pLets :: Ord n => Parser n (Lets () n)
+pLets
+ = P.choice
+    [ -- non-recursive let.
+      do pTok KLet
+         (mode1, b1, x1) <- pLetBinding
+         return  $ LLet mode1 b1 x1
+
+      -- recursive let.
+    , do pTok KLetRec
+         P.choice
+          -- Multiple bindings in braces
+          [ do   pTok KBraceBra
+                 lets    <- P.sepEndBy1 pLetRecBinding (pTok KSemiColon)
+                 pTok KBraceKet
+                 return $ LRec lets
+
+          -- A single binding without braces.
+          , do   ll      <- pLetRecBinding
+                 return  $ LRec [ll]
+          ]      
+
+      -- Local region binding.
+      --   letregion BINDER with { BINDER : TYPE ... } in EXP
+      --   letregion BINDER in EXP
+    , do pTok KLetRegion
+         br      <- T.pBinder
+         let b   = T.makeBindFromBinder br T.kRegion
+         P.choice 
+          [ do   pTok KWith
+                 pTok KBraceBra
+                 wits    <- P.sepBy
+                            (do  w       <- pVar
+                                 pTok KColon
+                                 t       <- T.pTypeApp
+                                 return  (BName w t))
+                            (pTok KSemiColon)
+                 pTok KBraceKet
+                 return (LLetRegion b wits)
+
+          , do   return (LLetRegion b [])
+          ]
+    ]
+
 -- | A binding for let expression.
 pLetBinding :: Ord n => Parser n (LetMode n, Bind n, Exp () n)
 pLetBinding 
