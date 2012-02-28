@@ -7,7 +7,7 @@ exports {
 }
 imports {
         Thing.whatever 
-         with foo :: Int r1 -> Int r1;
+         with foo :: [r1 : %]. Int r1 -> Int r1;
 }
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
 let     one = purify <read [rt] w1> in 1 [rt] ()  in
@@ -18,4 +18,3 @@ letrec {
         thing  [r : %] (x : Int r) : Int r
          = addInt [:r rt r:] one x
 };;
-

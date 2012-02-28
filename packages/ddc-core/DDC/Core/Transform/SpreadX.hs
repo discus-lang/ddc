@@ -4,12 +4,13 @@
 module DDC.Core.Transform.SpreadX
         (SpreadX(..))
 where
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
-
+import qualified Data.Map               as Map
 
 class SpreadX (c :: * -> *) where
 
@@ -20,6 +21,21 @@ class SpreadX (c :: * -> *) where
  --   they are primitive.
  spreadX :: forall n. Ord n
          => Env n -> Env n -> c n -> c n
+
+
+instance SpreadX (Module a) where
+ spreadX kenv tenv mm@ModuleCore{}
+        = mm
+        { moduleExportKinds = Map.map (spreadT kenv)  (moduleExportKinds mm)
+        , moduleExportTypes = Map.map (spreadT kenv)  (moduleExportTypes mm)
+        , moduleImportKinds = Map.map (liftSnd (spreadT kenv))  (moduleImportKinds mm)
+        , moduleImportTypes = Map.map (liftSnd (spreadT kenv))  (moduleImportTypes mm)
+        , moduleLets        = map (spreadX kenv tenv) (moduleLets mm) }
+
+        where liftSnd f (x, y) = (x, f y)
+
+ spreadX _kenv _tenv _mm@ModuleForeign{}
+  = error "spreadX: not finished"
 
 
 instance SpreadX (Exp a) where

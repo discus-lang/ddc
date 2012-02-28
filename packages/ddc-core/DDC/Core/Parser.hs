@@ -45,6 +45,8 @@ pModule
 
         lts     <- P.sepBy1 pLets (pTok KIn)
 
+        -- TODO: make having duplicate names in the imports 
+        --       or exports list a parse error, so we never build a bad map. 
         return  $ ModuleCore
                 { moduleName            = name
                 , moduleExportKinds     = Map.empty
