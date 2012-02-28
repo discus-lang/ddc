@@ -325,59 +325,19 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
 
 
 -- let --------------------------------------------
-checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
- = do   -- Check the right of the binding.
-        (x12', t12, effs12, clo12)  
-         <- checkExpM defs kenv tenv x12
+checkExpM' defs kenv tenv xx@(XLet a lts x2)
+ | case lts of
+        LLet{}  -> True
+        LRec{}  -> True
+        _       -> False
 
-        -- Check binder annotation against the type we inferred for the right.
-        (b11', k11')    
-         <- checkLetBindOfTypeM xx defs kenv tenv t12 b11
-
-        -- The right of the binding should have data kind.
-        when (not $ isDataKind k11')
-         $ throw $ ErrorLetBindingNotData xx b11' k11'
-          
-        -- Check purity and emptiness for lazy bindings.
-        (case mode of
-          LetStrict     -> return ()
-          LetLazy _
-           -> do let eff12' = TSum effs12
-                 when (not $ isBot eff12')
-                  $ throw $ ErrorLetLazyNotPure xx b11 eff12'
-
-                 let clo12' = closureOfTaggedSet clo12
-                 when (not $ isBot clo12')
-                  $ throw $ ErrorLetLazyNotEmpty xx b11 clo12')
-
-        -- Check region witness for lazy bindings.
-        (case mode of
-          LetStrict     -> return ()
-
-          -- Type of lazy binding has no head region, like Unit and (->).
-          LetLazy Nothing
-           -> do case takeDataTyConApps t12 of
-                  Just (_tc, t1 : _)
-                   ->  do k1 <- checkTypeM defs kenv t1
-                          when (isRegionKind k1)
-                           $ throw $ ErrorLetLazyNoWitness xx b11 t12
-
-                  _ -> return ()
-
-          -- Type of lazy binding might have a head region,
-          -- so we need a Lazy witness for it.
-          LetLazy (Just wit)
-           -> do tWit        <- checkWitnessM defs kenv tenv wit
-                 let tWitExp =  case takeDataTyConApps t12 of
-                                 Just (_tc, tR : _ts) -> tLazy tR
-                                 _                    -> tHeadLazy t12
-
-                 when (not $ equivT tWit tWitExp)
-                  $ throw $ ErrorLetLazyWitnessTypeMismatch 
-                                 xx b11 tWit t12 tWitExp)
+ = do
+        -- Check the bindings
+        (lts', bs', effs12, clo12)
+                <- checkLetsM xx defs kenv tenv lts
 
         -- Check the body expression.
-        let tenv1  = Env.extend b11' tenv
+        let tenv1  = Env.extends bs' tenv
         (x2', t2, effs2, c2)    <- checkExpM defs kenv tenv1 x2
 
         -- The body should have data kind.
@@ -387,70 +347,13 @@ checkExpM' defs kenv tenv xx@(XLet a (LLet mode b11 x12) x2)
 
         -- Mask closure terms due to locally bound value vars.
         let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureX b11')
+                        $ mapMaybe (cutTaggedClosureXs bs')
                         $ Set.toList c2
 
-        return ( XLet a (LLet mode b11' x12') x2'
+        return ( XLet a lts' x2'
                , t2
                , effs12 `Sum.union` effs2
                , clo12  `Set.union` c2_cut)
-
-
--- letrec -----------------------------------------
-checkExpM' defs kenv tenv xx@(XLet a (LRec bxs) xBody)
- = do   
-        let (bs, xs)    = unzip bxs
-
-        -- Check all the annotations.
-        ks              <- mapM (checkTypeM defs kenv) 
-                        $  map typeOfBind bs
-
-        -- Check all the annots have data kind.
-        zipWithM_ (\b k
-         -> when (not $ isDataKind k)
-                $ throw $ ErrorLetBindingNotData xx b k)
-                bs ks
-
-        -- All right hand sides need to be lambdas.
-        forM_ xs $ \x 
-         -> when (not $ (isXLam x || isXLAM x))
-                $ throw $ ErrorLetrecBindingNotLambda xx x
-
-        -- All variables are in scope in all right hand sides.
-        let tenv'       = Env.extends bs tenv
-
-        -- Check the right hand sides.
-        (xsRight', tsRight, _effssBinds, clossBinds) 
-                <- liftM unzip4 $ mapM (checkExpM defs kenv tenv') xs
-
-        -- Check annots on binders against inferred types of the bindings.
-        zipWithM_ (\b t
-                -> if not $ equivT (typeOfBind b) t
-                        then throw $ ErrorLetMismatch xx b t
-                        else return ())
-                bs tsRight
-
-        -- Check the body expression.
-        (xBody', tBody, effsBody, closBody) 
-                <- checkExpM defs kenv tenv' xBody
-
-        -- The body type must have data kind.
-        kBody   <- checkTypeM defs kenv tBody
-        when (not $ isDataKind kBody)
-         $ throw $ ErrorLetBodyNotData xx tBody kBody
-
-        -- Cut closure terms due to locally bound value vars.
-        -- This also lowers deBruijn indices in un-cut closure terms.
-        let clos_cut 
-                = Set.fromList
-                $ mapMaybe (cutTaggedClosureXs bs)
-                $ Set.toList 
-                $ Set.unions (closBody : clossBinds)
-
-        return  ( XLet a (LRec (zip bs xsRight')) xBody'
-                , tBody
-                , effsBody
-                , clos_cut)
 
 
 -- letregion --------------------------------------
@@ -737,6 +640,131 @@ checkExpM' _defs _kenv _tenv xx@(XType _)
 
 checkExpM' _defs _kenv _tenv xx@(XWitness _)
         = throw $ ErrorNakedWitness xx
+
+checkExpM' _ _ _ _
+        = error "checkExpM: bogus warning killer"
+
+-------------------------------------------------------------------------------
+-- | Check some let bindings.
+checkLetsM 
+        :: (Pretty n, Ord n)
+        => Exp a n              -- ^ Enclosing expression, for error messages.
+        -> DataDefs n
+        -> Env n
+        -> Env n
+        -> Lets a n
+        -> CheckM a n
+                ( Lets a n
+                , [Bind n]
+                , TypeSum n
+                , Set (TaggedClosure n))
+
+checkLetsM xx defs kenv tenv (LLet mode b11 x12)
+ = do
+        -- Check the right of the binding.
+        (x12', t12, effs12, clo12)  
+         <- checkExpM defs kenv tenv x12
+
+        -- Check binder annotation against the type we inferred for the right.
+        (b11', k11')    
+         <- checkLetBindOfTypeM xx defs kenv tenv t12 b11
+
+        -- The right of the binding should have data kind.
+        when (not $ isDataKind k11')
+         $ throw $ ErrorLetBindingNotData xx b11' k11'
+          
+        -- Check purity and emptiness for lazy bindings.
+        (case mode of
+          LetStrict     -> return ()
+          LetLazy _
+           -> do let eff12' = TSum effs12
+                 when (not $ isBot eff12')
+                  $ throw $ ErrorLetLazyNotPure xx b11 eff12'
+
+                 let clo12' = closureOfTaggedSet clo12
+                 when (not $ isBot clo12')
+                  $ throw $ ErrorLetLazyNotEmpty xx b11 clo12')
+
+        -- Check region witness for lazy bindings.
+        (case mode of
+          LetStrict     -> return ()
+
+          -- Type of lazy binding has no head region, like Unit and (->).
+          LetLazy Nothing
+           -> do case takeDataTyConApps t12 of
+                  Just (_tc, t1 : _)
+                   ->  do k1 <- checkTypeM defs kenv t1
+                          when (isRegionKind k1)
+                           $ throw $ ErrorLetLazyNoWitness xx b11 t12
+
+                  _ -> return ()
+
+          -- Type of lazy binding might have a head region,
+          -- so we need a Lazy witness for it.
+          LetLazy (Just wit)
+           -> do tWit        <- checkWitnessM defs kenv tenv wit
+                 let tWitExp =  case takeDataTyConApps t12 of
+                                 Just (_tc, tR : _ts) -> tLazy tR
+                                 _                    -> tHeadLazy t12
+
+                 when (not $ equivT tWit tWitExp)
+                  $ throw $ ErrorLetLazyWitnessTypeMismatch 
+                                 xx b11 tWit t12 tWitExp)
+        
+        return  ( LLet mode b11' x12'
+                , [b11']
+                , effs12
+                , clo12)
+
+-- letrec ---------------------------------------
+checkLetsM xx defs kenv tenv (LRec bxs)
+ = do
+        let (bs, xs)    = unzip bxs
+
+        -- Check all the annotations.
+        ks              <- mapM (checkTypeM defs kenv) 
+                        $  map typeOfBind bs
+
+        -- Check all the annots have data kind.
+        zipWithM_ (\b k
+         -> when (not $ isDataKind k)
+                $ throw $ ErrorLetBindingNotData xx b k)
+                bs ks
+
+        -- All right hand sides need to be lambdas.
+        forM_ xs $ \x 
+         -> when (not $ (isXLam x || isXLAM x))
+                $ throw $ ErrorLetrecBindingNotLambda xx x
+
+        -- All variables are in scope in all right hand sides.
+        let tenv'       = Env.extends bs tenv
+
+        -- Check the right hand sides.
+        (xsRight', tsRight, _effssBinds, clossBinds) 
+                <- liftM unzip4 $ mapM (checkExpM defs kenv tenv') xs
+
+        -- Check annots on binders against inferred types of the bindings.
+        zipWithM_ (\b t
+                -> if not $ equivT (typeOfBind b) t
+                        then throw $ ErrorLetMismatch xx b t
+                        else return ())
+                bs tsRight
+
+        -- Cut closure terms due to locally bound value vars.
+        let clos_cut 
+                = Set.fromList
+                $ mapMaybe (cutTaggedClosureXs bs)
+                $ Set.toList 
+                $ Set.unions clossBinds
+
+        return  ( LRec (zip bs xsRight')
+                , zipWith replaceTypeOfBind tsRight bs
+                , Sum.empty kEffect
+                , clos_cut)
+
+
+checkLetsM _xx _defs _kenv _tenv _lts
+        = error "checkLetsM: not done yet"
 
 
 -------------------------------------------------------------------------------
