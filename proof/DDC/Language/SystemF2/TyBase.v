@@ -11,11 +11,11 @@ Hint Constructors tycon.
 
 
 Fixpoint tycon_beq t1 t2 :=
-  match t1, t2 with
-  | TyConFun,       TyConFun       => true
-  | TyConData n1 _, TyConData n2 _ => beq_nat n1 n2
-  | _,              _              => false
-  end.
+ match t1, t2 with
+ | TyConFun,       TyConFun       => true
+ | TyConData n1 _, TyConData n2 _ => beq_nat n1 n2
+ | _,              _              => false
+ end.
 
 
 Definition isTyConFun  (tc: tycon) : Prop :=
