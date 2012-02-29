@@ -20,3 +20,7 @@ Require Export DDC.Language.DiscipleKernel.TyLift.
 
 (* Substitution of types in types. *)
 Require Export DDC.Language.DiscipleKernel.TySubst.
+
+(* Witness expressions *)
+Require Export DDC.Language.DiscipleKernel.WiExp.
+
