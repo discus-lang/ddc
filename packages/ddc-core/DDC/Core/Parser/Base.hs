@@ -1,6 +1,6 @@
 
 module DDC.Core.Parser.Base
-        ( Parser(..)
+        ( Parser
         , pWbCon
         , pModuleName
         , pQualName

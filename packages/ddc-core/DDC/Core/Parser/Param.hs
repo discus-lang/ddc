@@ -1,6 +1,6 @@
 
 module DDC.Core.Parser.Param
-        ( Parser        (..)
+        ( Parser
         , ParamSpec     (..)
         , funTypeOfParams
         , expOfParams
