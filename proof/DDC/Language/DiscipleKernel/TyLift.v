@@ -6,18 +6,18 @@ Require Export DDC.Language.DiscipleKernel.TyWfT.
 (*******************************************************************)
 (* Lift type indices that are at least a certain depth. *)
 Fixpoint liftTT (n: nat) (d: nat) (tt: ty) : ty :=
-  match tt with
-  |  TVar ix
-  => if le_gt_dec d ix
-      then TVar (ix + n)
-      else tt
+ match tt with
+ |  TVar ix
+ => if le_gt_dec d ix
+     then TVar (ix + n)
+     else tt
 
-  |  TCon _      => tt
-  |  TForall k t => TForall k (liftTT n (S d) t)
-  |  TApp t1 t2  => TApp      (liftTT n d t1) (liftTT n d t2)
-  |  TSum t1 t2  => TSum      (liftTT n d t1) (liftTT n d t2)
-  |  TBot k      => TBot k
-  end.
+ |  TCon _      => tt
+ |  TForall k t => TForall k (liftTT n (S d) t)
+ |  TApp t1 t2  => TApp      (liftTT n d t1) (liftTT n d t2)
+ |  TSum t1 t2  => TSum      (liftTT n d t1) (liftTT n d t2)
+ |  TBot k      => TBot k
+ end.
 Hint Unfold liftTT.
 
 

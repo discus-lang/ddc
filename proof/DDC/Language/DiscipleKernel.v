@@ -1,16 +1,22 @@
 (* Disciple Kernel. *)
 
-(* Kinds and Sorts *)
+(* Kinds and Sorts. *)
 Require Export DDC.Language.DiscipleKernel.Ki.
 
-(* Type Constructors *)
+(* Type Constructors. *)
 Require Export DDC.Language.DiscipleKernel.TyCon.
 
-(* Type Expressions *)
+(* Type Expressions. *)
 Require Export DDC.Language.DiscipleKernel.TyExp.
 
-(* Well formeness of type expressions *)
+(* Well formeness of type expressions. *)
 Require Export DDC.Language.DiscipleKernel.TyWfT.
 
-(* Well formeness of type expressions *)
+(* Kinds of types. *)
 Require Export DDC.Language.DiscipleKernel.KiJudge.
+
+(* Lifting of type indices in types. *)
+Require Export DDC.Language.DiscipleKernel.TyLift.
+
+(* Substitution of types in types. *)
+Require Export DDC.Language.DiscipleKernel.TySubst.
