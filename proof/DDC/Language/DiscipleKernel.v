@@ -11,3 +11,6 @@ Require Export DDC.Language.DiscipleKernel.TyExp.
 
 (* Well formeness of type expressions *)
 Require Export DDC.Language.DiscipleKernel.TyWfT.
+
+(* Well formeness of type expressions *)
+Require Export DDC.Language.DiscipleKernel.KiJudge.
