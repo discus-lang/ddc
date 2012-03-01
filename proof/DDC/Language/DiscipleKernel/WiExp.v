@@ -23,7 +23,7 @@ Inductive wit : Type :=
  | WVar      : nat    -> wit
  | WCap      : cap    -> wit
  | WCon      : wicon  -> wit
- | WSat      : wit    -> wit -> wit
+ | WApp      : wit    -> wit -> wit
  | WAPP      : wit    -> ty  -> wit
  | WJoin     : wit    -> wit -> wit.
 Hint Constructors wit.
