@@ -5,57 +5,57 @@ Require Export DDC.Language.DiscipleKernel.TyWfT.
 
 (* Only types of effect and closure kinds can be used in sums. *)
 Definition sumkind (k : ki) : Prop
- := k = KEffect \/ k = KClosure.
+  := k = KEffect \/ k = KClosure.
 Hint Unfold sumkind.
 
 
 (* Kinds judgement assigns a kind to a type *)
 Inductive KIND : kienv -> ty -> ki -> Prop :=
- | KiConImplWitness
-   :  forall ke
-   ,  KIND ke (TCon TyConImpl)
-              (KFun KWitness (KFun KWitness KWitness))
+  | KiConImplWitness
+    :  forall ke
+    ,  KIND ke (TCon TyConImpl)
+               (KFun KWitness (KFun KWitness KWitness))
 
- | KiConImplContext
-   :  forall ke
-   ,  KIND ke (TCon TyConImpl)
-              (KFun KWitness (KFun KData KData))
+  | KiConImplContext
+    :  forall ke
+    ,  KIND ke (TCon TyConImpl)
+               (KFun KWitness (KFun KData KData))
 
- | KIConFun
-   :  forall ke
-   ,  KIND ke (TCon TyConFun) 
-              (KFun KData (KFun KEffect (KFun KClosure (KFun KData KData))))
+  | KIConFun
+    :  forall ke
+    ,  KIND ke (TCon TyConFun) 
+               (KFun KData (KFun KEffect (KFun KClosure (KFun KData KData))))
 
- | KIConData
-   :  forall ke i k
-   ,  KIND ke (TCon (TyConData i k)) k
+  | KIConData
+    :  forall ke i k
+    ,  KIND ke (TCon (TyConData i k)) k
 
- | KIVar
-   :  forall ke i k
-   ,  get i ke = Some k
-   -> KIND ke (TVar i) k
+  | KIVar
+    :  forall ke i k
+    ,  get i ke = Some k
+    -> KIND ke (TVar i) k
 
- | KIForall
-   :  forall ke k t
-   ,  KIND (ke :> k) t             KData
-   -> KIND ke        (TForall k t) KData
+  | KIForall
+    :  forall ke k t
+    ,  KIND (ke :> k) t             KData
+    -> KIND ke        (TForall k t) KData
 
- | KIApp 
-   :  forall ke t1 t2 k11 k12
-   ,  KIND ke t1 (KFun k11 k12)
-   -> KIND ke t2 k11
-   -> KIND ke (TApp t1 t2) k12
+  | KIApp 
+    :  forall ke t1 t2 k11 k12
+    ,  KIND ke t1 (KFun k11 k12)
+    -> KIND ke t2 k11
+    -> KIND ke (TApp t1 t2) k12
 
- | KISum
-   :  forall ke k t1 t2
-   ,  sumkind k
-   -> KIND ke t1 k -> KIND ke t2 k
-   -> KIND ke (TSum t1 t2) k
+  | KISum
+    :  forall ke k t1 t2
+    ,  sumkind k
+    -> KIND ke t1 k -> KIND ke t2 k
+    -> KIND ke (TSum t1 t2) k
 
- | KIBot
-   :  forall ke k
-   ,  sumkind k
-   -> KIND ke (TBot k) k.
+  | KIBot
+    :  forall ke k
+    ,  sumkind k
+    -> KIND ke (TBot k) k.
 Hint Constructors KIND.
 
 

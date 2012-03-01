@@ -24,3 +24,6 @@ Require Export DDC.Language.DiscipleKernel.TySubst.
 (* Witness expressions *)
 Require Export DDC.Language.DiscipleKernel.WiExp.
 
+(* Value expressions *)
+Require Export DDC.Language.DiscipleKernel.VaExp.
+

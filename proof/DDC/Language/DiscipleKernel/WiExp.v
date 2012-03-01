@@ -14,17 +14,25 @@ Inductive cap : Type :=
 (* Witness constructors *)
 Inductive wicon : Type :=
  | IPure     : wicon
+ | IEmpty    : wicon
  | IRead     : wicon
+ | IAlloc    : wicon
  | ICut      : list nat -> wicon.
 
 
 (* Witness Expressions *)
 Inductive wit : Type :=
  | WVar      : nat    -> wit
- | WCap      : cap    -> wit
- | WCon      : wicon  -> wit
  | WApp      : wit    -> wit -> wit
  | WAPP      : wit    -> ty  -> wit
- | WJoin     : wit    -> wit -> wit.
+ | WJoin     : wit    -> wit -> wit
+ | WCap      : cap    -> wit
+ | WCon      : wicon  -> wit.
 Hint Constructors wit.
+
+
+Definition wPure  e1    := WAPP (WCon IPure)  e1.
+Definition wEmpty c1    := WAPP (WCon IEmpty) c1.
+Definition wRead  r  w  := WApp (WAPP (WCon IRead)  r) w.
+Definition wAlloc r  w  := WApp (WAPP (WCon IAlloc) r) w.
 

@@ -31,18 +31,18 @@ Hint Constructors op3.
 (* Values *)
 Inductive val : Type := 
   | VVar    : nat   -> val
-  | VConst  : const -> val
   | VLam    : ty    -> exp -> val
   | VLAM    : ki    -> exp -> val
   | VFix    : ty    -> val -> val
+  | VSat    : val   -> wit -> val
+  | VAPP    : val   -> ty  -> val
+  | VConst  : const -> val
 
 (* Expressions *)
 with     exp : Type :=
   | XVal    : val -> exp
   | XLet    : ty  -> exp -> exp -> exp
-  | XSat    : val -> wit -> exp
   | XApp    : val -> val -> exp
-  | XAPP    : val -> ty  -> exp
   | XIf     : val -> exp -> exp -> exp
   | XOp1    : op1 -> val -> exp
   | XOp2    : op2 -> val -> val -> exp
@@ -57,15 +57,15 @@ Lemma exp_mutind : forall
     (PX : exp -> Prop)
     (PV : val -> Prop)
  ,  (forall n,                                     PV (VVar n))
- -> (forall c,                                     PV (VConst c))
  -> (forall t x,        PX x                    -> PV (VLam t x))
  -> (forall k x,        PX x                    -> PV (VLAM k x))
  -> (forall t v,        PV v                    -> PV (VFix t v))
+ -> (forall v w,        PV v                    -> PV (VSat v  w))
+ -> (forall v  t,       PV v                    -> PV (VAPP v  t))
+ -> (forall c,                                     PV (VConst c))
  -> (forall v,          PV v                    -> PX (XVal v))
  -> (forall t x1 x2,    PX x1 -> PX x2          -> PX (XLet t x1 x2))
- -> (forall v w,        PV v                    -> PX (XSat v  w))
  -> (forall v1 v2,      PV v1 -> PV v2          -> PX (XApp v1 v2))
- -> (forall v  t,       PV v                    -> PX (XAPP v  t))
  -> (forall v1 x2 x3,   PV v1 -> PX x2 -> PX x3 -> PX (XIf v1 x2 x3))
  -> (forall o v,        PV v                    -> PX (XOp1 o v))
  -> (forall o v1 v2,    PV v1 -> PV v2          -> PX (XOp2 o v1 v2))
@@ -73,7 +73,7 @@ Lemma exp_mutind : forall
  ->  forall x, PX x.
 Proof. 
  intros PX PV.
- intros hVar hConst hLam hLAM hFix hVal hLet hSat hApp hAPP hIf hOp1 hOp2 hOp3.
+ intros hVar hLam hLAM hFix hSat hAPP hConst hVal hLet hApp hIf hOp1 hOp2 hOp3.
  refine (fix  IHX x : PX x := _
          with IHV v : PV v := _
          for  IHX).
@@ -82,9 +82,7 @@ Proof.
  case x; intros.
  apply hVal. apply IHV.
  apply hLet. apply IHX. apply IHX.
- apply hSat. apply IHV.
  apply hApp. apply IHV. apply IHV.
- apply hAPP. apply IHV.
  apply hIf.  apply IHV. apply IHX. apply IHX.
  apply hOp1. apply IHV.
  apply hOp2. apply IHV. apply IHV.
@@ -93,9 +91,11 @@ Proof.
  (* values *)
  case v; intros.
  apply hVar.
- apply hConst.
  apply hLam. apply IHX.
  apply hLAM. apply IHX.
  apply hFix. apply IHV.
+ apply hSat. apply IHV.
+ apply hAPP. apply IHV.
+ apply hConst.
 Qed.
 
