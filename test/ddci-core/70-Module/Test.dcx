@@ -4,10 +4,11 @@ module Foo
 exports {
         double :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r;
         thing  :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r;
+        zero   :: Unit;
 }
 imports {
         Thing.whatever 
-         with foo :: [r1 : %]. Int r1 -> Int r1;
+         with two :: [r5 : %]. Unit -(Alloc r5 | $0)> Int r5;
 }
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
 let     one = purify <read [rt] w1> in 1 [rt] ()  in
@@ -15,7 +16,7 @@ letrec {
         double  [r : %] (x : Int r) 
                 { Read r + Alloc r | Use r } 
          : Int r
-         = mulInt [:r r r:] x (2 [r] ());
+         = mulInt [:r r r:] x (two [r] ());
 
         thing   [r : %] (x : Int r) 
                 { Read r + Read rt + Alloc r | Use r + Use rt} 

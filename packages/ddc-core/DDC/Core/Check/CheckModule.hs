@@ -80,6 +80,8 @@ checkModuleM defs kenv tenv mm@ModuleCore{}
         -- Check our let bindings (with the dummy expression on the end)
         (_, _, _effs, _) <- checkExpM defs kenv' tenv' xCheck
 
+        -- TODO: check that types of bindings match types of exports.
+        -- TODO: check that all exported bindings are defined.
         -- TODO: don't permit top-level let-bindings to have visible effects.
 
         return mm
