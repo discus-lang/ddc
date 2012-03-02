@@ -52,15 +52,6 @@ data Module a n
         }
 
 
-        -- | A module that imports foreign functions.
-        | ModuleForeign
-        { -- | Name of this module.
-          moduleName            :: ModuleName
-
-          -- | External values defined by the module.
-        , moduleExternTypes     :: Map n (Extern n) }
-
-
 -- | Definition of some external thing.
 data Extern n
         -- | Import a function from Sea land.

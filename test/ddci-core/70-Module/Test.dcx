@@ -12,9 +12,13 @@ imports {
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
 let     one = purify <read [rt] w1> in 1 [rt] ()  in
 letrec { 
-        double [r : %] (x : Int r) : Int r
+        double  [r : %] (x : Int r) 
+                { Read r + Alloc r | Use r } 
+         : Int r
          = mulInt [:r r r:] x (2 [r] ());
 
-        thing  [r : %] (x : Int r) : Int r
-         = addInt [:r rt r:] one x
+        thing   [r : %] (x : Int r) 
+                { Read r + Read rt + Alloc r | Use r + Use rt} 
+         : Int r
+         = addInt [:r rt r:] x one
 };;
