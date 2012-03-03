@@ -176,20 +176,23 @@ lexExp lineStart str
         c : cs
          | isVarStart c
          , (body,  rest)        <- span isVarBody cs
+         , (body', rest')       <- case rest of
+                                        '#' : rest'     -> (body ++ "#", rest')
+                                        _               -> (body, rest)
          -> let readNamedVar s
                  | Just t <- lookup s keywords
-                 = tok t                   : lexMore (length s) rest
+                 = tok t                   : lexMore (length s) rest'
 
                  | Just wc      <- readWbConBuiltin s
-                 = tokA (KWbConBuiltin wc) : lexMore (length s) rest
+                 = tokA (KWbConBuiltin wc) : lexMore (length s) rest'
          
                  | Just v       <- readVar s
-                 = tokN (KVar v)           : lexMore (length s) rest
+                 = tokN (KVar v)           : lexMore (length s) rest'
 
                  | otherwise
                  = [tok (KJunk c)]
 
-            in  readNamedVar (c : body)
+            in  readNamedVar (c : body')
 
         -- Error
         c : _   -> [tok $ KJunk c]
@@ -271,10 +274,24 @@ readCon ss
 
 
 -- TyVar names ----------------------------------------------------------------
--- | String is a variable name.
+-- | String is a variable name
 isVarName :: String -> Bool
-isVarName []     = False
-isVarName (c:cs) = isVarStart c && (and $ map isVarBody cs)
+isVarName str
+ = case str of
+     []          -> False
+     (c:cs)      
+        | isVarStart c 
+        , and (map isVarBody cs)
+        -> True
+        
+        | _ : _         <- cs
+        , isVarStart c
+        , and (map isVarBody (init cs))
+        , last cs == '#'
+        -> True
+
+        | otherwise
+        -> False
 
 
 -- | Charater can start a variable name.

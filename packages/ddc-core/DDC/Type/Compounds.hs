@@ -278,7 +278,6 @@ tSum k ts
 -- | Construct a kind function.
 kFun :: Kind n -> Kind n -> Kind n
 kFun k1 k2      = ((TCon $ TyConKind KiConFun)`TApp` k1) `TApp` k2
-
 infixr `kFun`
 
 
@@ -330,7 +329,6 @@ takeResultKind kk
 tFun    :: Type n -> Effect n -> Closure n -> Type n -> Type n
 tFun t1 eff clo t2
         = (TCon $ TyConSpec TcConFun) `tApps` [t1, eff, clo, t2]
-
 infixr `tFun`
 
 
@@ -358,13 +356,13 @@ takeTFunArgResult tt
 -- | Construct a pure and empty value type function.
 tFunPE  :: Type n -> Type n -> Type n
 tFunPE t1 t2    = tFun t1 (tBot kEffect) (tBot kClosure) t2
+infixr `tFunPE`
 
 
 -- | Construct a witness implication type.
 tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
         = ((TCon $ TyConWitness TwConImpl) `tApp` t1) `tApp` t2
-
 infixr `tImpl`
 
 

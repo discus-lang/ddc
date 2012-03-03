@@ -3,6 +3,7 @@
 --   Some of the primop types are also used by the SeaOutput profile.
 module DDC.Core.Sea.Base.Name
         ( Name          (..)
+        , DataTyCon     (..)
         , PrimTyCon     (..)
         , PrimOp        (..)
         , primOpNames)
@@ -18,6 +19,9 @@ data Name
         -- | A user defined constructor.
         | NameCon       String
 
+        -- | Baked in data type constructors.
+        | NameDataTyCon DataTyCon
+
         -- | A primitive type constructor.
         | NamePrimTyCon PrimTyCon
 
@@ -29,15 +33,39 @@ data Name
 
         -- | A integer literal.
         | NameInt       Integer
-        deriving (Eq, Show)
+        deriving (Eq, Ord, Show)
+
+
+instance Pretty Name where
+ ppr nn
+  = case nn of
+        NameVar  v              -> text v
+        NameCon  c              -> text c
+        NameDataTyCon dc        -> ppr dc
+        NamePrimTyCon tc        -> ppr tc
+        NamePrimDaCon dc        -> ppr dc
+        NamePrimOp op           -> ppr op
+        NameInt i               -> text (show i)
 
 
 -- PrimTyCon -----------------------------------------------------------------
 -- | Primitive type constructors.
 data PrimTyCon
-        -- Unboxed data types ---------
+        -- | Type of store pointers
+        = PrimTyConPtr
+
         -- | Type of machine addresses.
-        = PrimTyConAddr
+        | PrimTyConAddr
+
+        -- | Type of natural numbers,
+        --   Used for field indices and general counters.
+        | PrimTyConNat
+
+        -- | Type of data type tags.
+        | PrimTyConTag
+
+        -- | Type of booleans.
+        | PrimTyConBool
 
         -- | Unsigned words of the given length.
         | PrimTyConWord   Int
@@ -47,12 +75,36 @@ data PrimTyCon
 
         -- | Floating point numbers of the given length.
         | PrimTyConFloat  Int
+        deriving (Eq, Ord, Show)
 
-        -- Algebraic data types -------
-        | PrimTyConUnit         -- ^ Unit type constructor.
-        | PrimTyConPair         -- ^ @Pair@ data constructor.
-        | PrimTyConList         -- ^ @List@ type constructor.
-        deriving (Show, Eq)
+
+instance Pretty PrimTyCon where
+ ppr tc
+  = case tc of
+        PrimTyConPtr            -> text "Ptr#"
+        PrimTyConAddr           -> text "Addr#"
+        PrimTyConNat            -> text "Nat#"
+        PrimTyConTag            -> text "Tag#"
+        PrimTyConBool           -> text "Bool#"
+        PrimTyConWord  bits     -> text "Word"  <> int bits <> text "#"
+        PrimTyConInt   bits     -> text "Int"   <> int bits <> text "#"
+        PrimTyConFloat bits     -> text "Float" <> int bits <> text "#"
+
+
+-- DataTyCon ------------------------------------------------------------------
+data DataTyCon
+        = DataTyConUnit         -- ^ Unit type constructor.
+        | DataTyConPair         -- ^ @Pair@ data constructor.
+        | DataTyConList         -- ^ @List@ type constructor.
+        deriving (Eq, Ord, Show)
+
+
+instance Pretty DataTyCon where
+ ppr dc
+  = case dc of
+        DataTyConUnit           -> text "Unit"
+        DataTyConPair           -> text "Pair"
+        DataTyConList           -> text "List"
 
 
 -- PrimDaCon ------------------------------------------------------------------
@@ -62,6 +114,14 @@ data PrimDaCon
         | PrimDaConNil          -- ^ @Nil@ data constructor.
         | PrimDaConCons         -- ^ @Cons@ data constructor.
         deriving (Show, Eq, Ord)
+
+instance Pretty PrimDaCon where
+ ppr dc
+  = case dc of
+        PrimDaConUnit           -> text "Unit"
+        PrimDaConPr             -> text "Pr"
+        PrimDaConNil            -> text "Nil"
+        PrimDaConCons           -> text "Cons"
 
 
 -- PrimOp ---------------------------------------------------------------------
@@ -87,7 +147,7 @@ data PrimOp
         -- boolean
         | PrimOpAnd
         | PrimOpOr
-        deriving (Show, Eq)
+        deriving (Eq, Ord, Show)
 
 
 instance Pretty PrimOp where
@@ -112,3 +172,4 @@ primOpNames
         , (PrimOpLe , "le#" )
         , (PrimOpAnd, "and#")
         , (PrimOpOr , "or#" ) ]
+

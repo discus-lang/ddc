@@ -102,8 +102,6 @@ kindOfPrimName nn
         _ -> Nothing
 
 
-
-
 -- Types ----------------------------------------------------------------------
 -- | Type environment containing types of primitive data constructors as well
 --   as the following primitive operators:

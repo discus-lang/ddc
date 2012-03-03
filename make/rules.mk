@@ -64,5 +64,5 @@ packages/ddci-core/%.o : packages/ddci-core/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-simpl \
-		      -ipackages/ddc-core-eval -ipackages/ddci-core
+		      -ipackages/ddc-core-eval -ipackages/ddc-core-sea -ipackages/ddci-core
 

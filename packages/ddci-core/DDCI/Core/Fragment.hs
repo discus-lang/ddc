@@ -13,6 +13,8 @@ import qualified DDC.Core.Parser.Lexer          as Core
 import qualified DDC.Core.Eval.Profile          as Eval
 import qualified DDC.Core.Eval.Name             as Eval
 import qualified DDC.Core.Eval.Check            as Eval
+import qualified DDC.Core.Sea.Output.Profile    as SeaOutput
+import qualified DDC.Core.Sea.Output.Name       as SeaOutput
 
 
 -- | Language profile wrapper 
@@ -26,7 +28,8 @@ data StateProfile
 stateProfiles :: [(String, StateProfile)]
 stateProfiles
  =      [ ("Zero",      StateProfile (zeroProfile :: Profile ZeroName))
-        , ("Eval",      StateProfile Eval.evalProfile)]
+        , ("Eval",      StateProfile Eval.evalProfile)
+        , ("Sea",       StateProfile SeaOutput.outputProfile) ]
 
 
 -- | Defines the functions we need for each language fragment.
@@ -61,8 +64,16 @@ lexStringZero lineStart str
 
 
 -- Eval -----------------------------------------------------------------------
+-- | Fragment accepted by the evaluator.
 instance Fragment Eval.Name Eval.Error where
- fragmentLex      = Eval.lexString
- fragmentCheck    = Eval.checkCapsX
+ fragmentLex    = Eval.lexString
+ fragmentCheck  = Eval.checkCapsX
+
+
+-- SeaOutput ------------------------------------------------------------------
+-- | Fragment that maps directly onto the C language.
+instance Fragment SeaOutput.Name String where
+ fragmentLex    = SeaOutput.lexString
+ fragmentCheck  = const Nothing
 
 

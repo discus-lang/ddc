@@ -182,7 +182,7 @@ instance Pretty PrimOp where
 readName :: String -> Maybe Name
 readName []     = Nothing
 readName str@(c:rest)
-        -- primops
+        -- primops and variables.
         | isLower c    
         = case (c:rest) of
                 "negInt"        -> Just $ NamePrimOp PrimOpNegInt
