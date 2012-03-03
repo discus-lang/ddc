@@ -33,7 +33,6 @@ data Name
         | NameLoc     Loc        -- ^ Store locations.
         | NameRgn     Rgn        -- ^ Region handles.
         | NameCap     Cap        -- ^ Store capabilities.
-
         deriving (Show, Eq, Ord)
         
 

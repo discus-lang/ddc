@@ -1,37 +1,55 @@
 
-module DDC.Core.Sea.Name
+-- | Names used in the Sea language profile.
+--   These map directly onto names used in the C output language.
+module DDC.Core.Sea.NameSea
         ( Name          (..)
-        , TyConPrim     (..)
         , Prim          (..)
+        , PrimTyCon     (..)
         , PrimOp        (..)
         , PrimProj      (..)
         , PrimCast      (..)
         , PrimCall      (..)
-        , PrimAlloc     (..))
+        , PrimAlloc     (..)
+        , readName)
 where
+import DDC.Base.Pretty
+import Data.Char
+import Data.List
 
 
+-- Names of things recognised by the Sea backend.
 data Name
-        = NameBound     String
+        -- | A type constructor.
+        = NamePrimTyCon PrimTyCon
+
+        -- | A variable on the stack.
         | NameAuto      String
+
+        -- | A function defined at top-level.
+        | NameFun       String
+
+        -- | A primitive operator.
         | NamePrim      Prim
+
+        -- | A integer literal.
+        | NameInt       Integer
         deriving (Eq, Show)
 
 
--- TyConPrim -----------------------------------------------------------------
+-- PrimTyCon -----------------------------------------------------------------
 -- | Primitive type constructors.
-data TyConPrim
+data PrimTyCon
         -- | Type of machine addresses.
-        = TyConPrimAddr
+        = PrimTyConAddr
 
         -- | Unsigned words of the given length.
-        | TyConPrimWord   Int
+        | PrimTyConWord   Int
 
         -- | Signed integers of the given length.
-        | TyConPrimInt    Int
+        | PrimTyConInt    Int
 
         -- | Floating point numbers of the given length.
-        | TyConPrimFloat  Int
+        | PrimTyConFloat  Int
         deriving (Show, Eq)
 
 
@@ -39,19 +57,19 @@ data TyConPrim
 -- | Primitive operators implemented directly by the machine or runtime system.
 data    Prim
         -- | Invoke a primitive arithmetic operator.
-        = MOp           PrimOp
+        = PrimOp        PrimOp
 
         -- | Project something from an object.
-        | MProj         PrimProj
+        | PrimProj      PrimProj
 
         -- | Casting between numeric types.
-        | MCast         PrimCast
+        | PrimCast      PrimCast
 
         -- | Calling functions, internal or external.
-        | MCall         PrimCall
+        | PrimCall      PrimCall
 
         -- | Allocate an object.
-        | MAlloc        PrimAlloc
+        | PrimAlloc     PrimAlloc
         deriving (Show, Eq)
 
 
@@ -60,25 +78,49 @@ data    Prim
 --   We expect the backend/machine to be able to implement these directly.
 data PrimOp
         -- arithmetic
-        = OpNeg
-        | OpAdd
-        | OpSub
-        | OpMul
-        | OpDiv
-        | OpMod
+        = PrimOpNeg
+        | PrimOpAdd
+        | PrimOpSub
+        | PrimOpMul
+        | PrimOpDiv
+        | PrimOpMod
 
         -- comparison
-        | OpEq
-        | OpNeq
-        | OpGt
-        | OpGe
-        | OpLt
-        | OpLe
+        | PrimOpEq
+        | PrimOpNeq
+        | PrimOpGt
+        | PrimOpGe
+        | PrimOpLt
+        | PrimOpLe
 
         -- boolean
-        | OpAnd
-        | OpOr
+        | PrimOpAnd
+        | PrimOpOr
         deriving (Show, Eq)
+
+
+instance Pretty PrimOp where
+ ppr op 
+  = let Just str        = lookup op primOpNames
+    in  text str
+
+
+-- | Names of primitve operators.
+primOpNames :: [(PrimOp, String)]
+primOpNames
+ =      [ (PrimOpNeg, "neg#")
+        , (PrimOpAdd, "add#")
+        , (PrimOpSub, "sub#")
+        , (PrimOpMul, "mul#")
+        , (PrimOpDiv, "div#")
+        , (PrimOpMod, "mod#")
+        , (PrimOpEq , "eq#" )
+        , (PrimOpNeq, "neq#")
+        , (PrimOpGt , "gt#" )
+        , (PrimOpLt , "lt#" )
+        , (PrimOpLe , "le#" )
+        , (PrimOpAnd, "and#")
+        , (PrimOpOr , "or#" ) ]
 
 
 -- Proj -----------------------------------------------------------------------
@@ -95,7 +137,7 @@ data PrimProj
 -- PrimCast -------------------------------------------------------------------
 -- | Primitive cast between two types.
 data PrimCast
-        = PrimCast TyConPrim TyConPrim
+        = PrimCastOf PrimTyCon PrimTyCon
         deriving (Show, Eq)
 
 
@@ -136,3 +178,17 @@ data PrimAlloc
         --   size.
         | PAllocDataM
         deriving (Show, Eq)
+
+
+-- Parsing --------------------------------------------------------------------
+readName :: String -> Maybe Name
+readName []     = Nothing
+readName str@(c:_)
+        -- primops
+        | isLower c
+        , Just (op, _) <- find (\(_, name) -> str == name) primOpNames
+        = Just $ NamePrim $ PrimOp op
+
+        | otherwise
+        = Nothing
+

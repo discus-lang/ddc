@@ -6,7 +6,7 @@ import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Sea.Name
+import DDC.Core.Sea.NameSea
 import DDC.Base.Pretty
 
 
@@ -69,9 +69,9 @@ instance Convert (Exp () Name) where
 
 convertPrimApp :: Prim -> [Exp () Name] -> Doc
 convertPrimApp p xs
-        | MOp op                <- p
+        | PrimOp op             <- p
         , [XType _t, x1, x2]    <- xs
-        , elem op [OpAdd, OpSub, OpMul, OpDiv, OpMod]
+        , elem op [PrimOpAdd, PrimOpSub, PrimOpMul, PrimOpDiv, PrimOpMod]
         = parensConvertX x1 <+> convert op <+> parensConvertX x2
 
         | otherwise 
@@ -110,7 +110,7 @@ instance Convert Name where
 instance Convert Prim where
  convert nn
   = case nn of
-        MOp op          -> convert op
+        PrimOp op       -> convert op
         _               -> error "convert[Prim]: sorry"
 
 
@@ -118,21 +118,21 @@ instance Convert PrimOp where
  convert nn
   = case nn of
         -- arithmetic   
-        OpNeg           -> text "-"
-        OpAdd           -> text "+"
-        OpSub           -> text "-"
-        OpMul           -> text "*"
-        OpDiv           -> text "/"
-        OpMod           -> text "%"
+        PrimOpNeg       -> text "-"
+        PrimOpAdd       -> text "+"
+        PrimOpSub       -> text "-"
+        PrimOpMul       -> text "*"
+        PrimOpDiv       -> text "/"
+        PrimOpMod       -> text "%"
 
         -- comparison
-        OpEq            -> text "=="
-        OpNeq           -> text "!="
-        OpGt            -> text ">"
-        OpGe            -> text ">="
-        OpLt            -> text "<"
-        OpLe            -> text "<="
+        PrimOpEq        -> text "=="
+        PrimOpNeq       -> text "!="
+        PrimOpGt        -> text ">"
+        PrimOpGe        -> text ">="
+        PrimOpLt        -> text "<"
+        PrimOpLe        -> text "<="
 
         -- boolean
-        OpAnd           -> text "&&"
-        OpOr            -> text "||"
+        PrimOpAnd       -> text "&&"
+        PrimOpOr        -> text "||"
