@@ -16,11 +16,8 @@ import DDC.Core.Eval.Check
 import DDC.Type.Equiv
 import DDC.Core.Load
 import DDC.Core.Exp
-import DDC.Core.Check
 import DDC.Core.Pretty
-import DDC.Core.Parser
 import DDC.Core.Parser.Tokens
-import DDC.Core.Transform.SpreadX
 import DDC.Type.Transform.SpreadT
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
@@ -142,29 +139,20 @@ cmdParseCheckExp
                      , Type Name, Effect Name, Closure Name))
 
 cmdParseCheckExp _state lineStart str
- = goParse (lexString lineStart str)
+ = goLoad (lexString lineStart str)
  where
-        -- Lex and parse the string.
-        goParse toks                
-         = case BP.runTokenParser describeTok "<interactive>" pExp toks of
-                Left err 
-                 -> do  putStrLn $ renderIndent $ ppr err
+        -- Parse and type check the expression.
+        goLoad toks
+         = case loadExp evalProfile "<interactive>" toks of
+              Left err
+               -> do    putStrLn $ renderIndent $ ppr err
                         return Nothing
-                
-                Right x  -> goCheckType (spreadX primKindEnv primTypeEnv x)
 
-        -- Check the type of the expression.
-        goCheckType x
-         = case checkExp primDataDefs primKindEnv primTypeEnv x of
-                Left err
-                 -> do  putStrLn $ renderIndent $ ppr err
-                        return  Nothing
-
-                Right (x', t, eff, clo)
-                 -> goCheckCaps x' t eff clo
+              Right result
+               -> goCheckCaps result
 
         -- Check the initial capabilities in the expression.
-        goCheckCaps x t eff clo
+        goCheckCaps (x, t, eff, clo)
          = case checkCapsX x of
                 Just err
                  -> do  putStrLn $ renderIndent $ ppr err

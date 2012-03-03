@@ -3,7 +3,8 @@
 module DDC.Core.Load
         ( loadModule
         , loadType
-        , loadWitness)
+        , loadWitness
+        , loadExp)
 where
 import DDC.Core.Transform.SpreadX
 import DDC.Core.Language.Profile
@@ -122,3 +123,36 @@ loadWitness profile sourceName toks'
          = case C.checkWitness defs kenv tenv w of
                 Left err  -> Left (ErrorCheckExp err)
                 Right k   -> Right (w, k)
+
+
+-- Exp ------------------------------------------------------------------------
+-- | Parse and check an expression
+--   returning it along with its spec, effect and closure
+loadExp
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Profile n
+        -> String 
+        -> [Token (Tok n)] 
+        -> Either (Error n) 
+                  (Exp () n, Type n, Effect n, Closure n)
+
+loadExp profile sourceName toks'
+ = goParse toks'
+ where  defs    = profilePrimDataDefs profile
+        kenv    = profilePrimKinds    profile
+        tenv    = profilePrimTypes    profile
+
+        -- Parse the tokens.
+        goParse toks                
+         = case BP.runTokenParser describeTok sourceName C.pExp toks of
+                Left err  -> Left (ErrorParser err)
+                Right t   -> goCheckType (spreadX kenv tenv t)
+
+        -- Check the kind of the type.
+        goCheckType x
+         = case C.checkExp defs kenv tenv x of
+                Left err            -> Left  (ErrorCheckExp err)
+                Right (x', t, e, c) -> Right (x', t, e, c)
+
+
+
