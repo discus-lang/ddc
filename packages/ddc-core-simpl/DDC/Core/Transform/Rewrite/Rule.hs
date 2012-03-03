@@ -16,10 +16,10 @@ import DDC.Type.Pretty()
 -- rhs should have same or weaker type as lhs
 data RewriteRule a n
         = RewriteRule
-	    [Bind n]		-- ^ bindings & their types
-	    [Constraint n]	-- ^ requirements for rules to fire
-	    (Exp a n)		-- ^ left-hand side to match on
-	    (Exp a n)		-- ^ replacement
+	    [Bind n]		--  bindings & their types
+	    [Constraint n]	--  requirements for rules to fire
+	    (Exp a n)		--  left-hand side to match on
+	    (Exp a n)		--  replacement
         deriving (Eq, Show)
 
 instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
@@ -47,8 +47,8 @@ mkRewriteRule _ _ _ _ = Nothing
 -- this is probably dumb, would just a Type n on its own be better?
 data Constraint n
 	= Constraint
-	    (Type n) -- ^ typeclass/thing
-	    [Type n] -- ^ arguments
+	    (Type n) --  typeclass/thing
+	    [Type n] --  arguments
 	deriving (Eq, Show)
 
 instance (Pretty n, Eq n) => Pretty (Constraint n) where
