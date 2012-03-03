@@ -9,16 +9,18 @@ module DDCI.Core.Command.Check
 where
 import DDCI.Core.State
 import DDCI.Core.IO
-import DDC.Core.Eval.Profile
-import DDC.Core.Eval.Env
-import DDC.Core.Eval.Name
-import DDC.Core.Eval.Check
-import DDC.Type.Equiv
+import qualified DDC.Core.Eval.Profile            as Eval
+import qualified DDC.Core.Eval.Env                as Eval
+import qualified DDC.Core.Eval.Name               as Eval
+import qualified DDC.Core.Eval.Check              as Eval
+import DDC.Core.Language.Profile
 import DDC.Core.Load
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Parser.Tokens
+import DDC.Type.Equiv
 import DDC.Type.Transform.SpreadT
+import DDC.Base.Lexer
 import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
 import qualified DDC.Base.Parser        as BP
@@ -28,8 +30,8 @@ import qualified DDC.Base.Parser        as BP
 -- | Show the kind of a type.
 cmdShowKind :: State -> Int -> String -> IO ()
 cmdShowKind state lineStart str
- = let  toks    = lexString lineStart str
-        eTK     = loadType evalProfile "<interactive>" toks
+ = let  toks    = fragmentLex lineStart str
+        eTK     = loadType Eval.evalProfile "<interactive>" toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
@@ -39,7 +41,7 @@ cmdShowKind state lineStart str
 -- | Check if two types are equivlant.
 cmdTypeEquiv :: State -> Int -> String -> IO ()
 cmdTypeEquiv _state lineStart ss
- = goParse (lexString lineStart ss)
+ = goParse (fragmentLex lineStart ss)
  where
         goParse toks
          = case BP.runTokenParser describeTok "<interactive>"
@@ -58,7 +60,7 @@ cmdTypeEquiv _state lineStart ss
                  else return ()
 
         checkT t
-         = case T.checkType primDataDefs primKindEnv (spreadT primKindEnv t) of
+         = case T.checkType Eval.primDataDefs Eval.primKindEnv (spreadT Eval.primKindEnv t) of
                 Left err 
                  -> do  putStrLn $ renderIndent $ ppr err
                         return False
@@ -71,8 +73,8 @@ cmdTypeEquiv _state lineStart ss
 -- | Show the type of a witness.
 cmdShowWType :: State -> Int -> String -> IO ()
 cmdShowWType state lineStart str
- = let  toks    = lexString lineStart str
-        eTK     = loadWitness evalProfile "<interactive>" toks
+ = let  toks    = fragmentLex lineStart str
+        eTK     = loadWitness Eval.evalProfile "<interactive>" toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
@@ -91,7 +93,7 @@ data ShowTypeMode
 -- | Show the type of an expression.
 cmdShowType :: State -> ShowTypeMode -> Int -> String -> IO ()
 cmdShowType state mode lineStart ss
- = cmdParseCheckExp state lineStart ss >>= goResult
+ = cmdParseCheckExp state Eval.evalProfile lineStart ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -117,7 +119,7 @@ cmdShowType state mode lineStart ss
 -- | Check expression and reconstruct type annotations on binders.
 cmdExpRecon :: State -> Int -> String -> IO ()
 cmdExpRecon state lineStart ss
- = cmdParseCheckExp state lineStart ss >>= goResult
+ = cmdParseCheckExp state Eval.evalProfile lineStart ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -132,32 +134,48 @@ cmdExpRecon state lineStart ss
 --   If the expression had a parse error, undefined vars, or type error
 --   then print this to the console.
 cmdParseCheckExp 
-        :: State
+        :: ( Fragment n err
+           , Ord n, Show n, Pretty n
+           , Pretty err)
+        => State
+        -> Profile n
         -> Int          -- Starting line number.
         -> String 
-        -> IO (Maybe ( Exp () Name
-                     , Type Name, Effect Name, Closure Name))
+        -> IO (Maybe ( Exp () n
+                     , Type n, Effect n, Closure n))
 
-cmdParseCheckExp _state lineStart str
- = goLoad (lexString lineStart str)
+cmdParseCheckExp _state profile lineStart str
+ = goLoad (fragmentLex lineStart str)
  where
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExp evalProfile "<interactive>" toks of
+         = case loadExp profile "<interactive>" toks of
               Left err
                -> do    putStrLn $ renderIndent $ ppr err
                         return Nothing
 
               Right result
-               -> goCheckCaps result
+               -> goCheckFragment result
 
-        -- Check the initial capabilities in the expression.
-        goCheckCaps (x, t, eff, clo)
-         = case checkCapsX x of
-                Just err
-                 -> do  putStrLn $ renderIndent $ ppr err
+        -- Do fragment specific checks.
+        goCheckFragment (x, t, e, c)
+         = case fragmentCheck x of
+             Just err 
+              -> do     putStrLn $ renderIndent $ ppr err
                         return Nothing
-                        
-                Nothing
-                 -> return $ Just (x, t, eff, clo)  
-         
+
+             Nothing  
+              -> do     return (Just (x, t, e, c))
+
+
+class Fragment n err | n -> err where
+ fragmentLex    :: Int     -> String -> [Token (Tok n)] 
+ fragmentCheck  :: Exp a n -> Maybe err 
+
+
+instance Fragment Eval.Name Eval.Error where
+ fragmentLex    = Eval.lexString
+ fragmentCheck  = Eval.checkCapsX
+
+
+

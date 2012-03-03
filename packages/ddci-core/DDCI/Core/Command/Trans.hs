@@ -9,6 +9,7 @@ import DDCI.Core.Command.Eval
 import DDCI.Core.Transform
 import DDCI.Core.State
 import DDCI.Core.IO
+import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
 import DDC.Core.Check
@@ -20,7 +21,7 @@ import DDC.Base.Pretty
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Int -> String -> IO ()
 cmdTrans state lineStart str
- = cmdParseCheckExp state lineStart str >>= goStore
+ = cmdParseCheckExp state evalProfile lineStart str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -68,7 +69,7 @@ applyTrans state (x, t1, _eff1, _clo1)
 -- | Apply the current transform to an expression, then evaluate and display the result
 cmdTransEval :: State -> Int -> String -> IO ()
 cmdTransEval state lineStart str
- = cmdParseCheckExp state lineStart str >>= goStore
+ = cmdParseCheckExp state evalProfile lineStart str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing

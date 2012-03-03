@@ -8,6 +8,7 @@ import DDCI.Core.Stats.Trace
 import DDCI.Core.Command.Check
 import DDCI.Core.IO
 import DDCI.Core.State
+import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
@@ -27,7 +28,7 @@ import qualified Data.Set               as Set
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: State -> Int -> String -> IO ()
 cmdStep state lineStart str
- = cmdParseCheckExp state lineStart str >>= goStore 
+ = cmdParseCheckExp state evalProfile lineStart str >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -48,7 +49,7 @@ cmdStep state lineStart str
 -- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Int -> String -> IO ()
 cmdEval state lineStart str
- = cmdParseCheckExp state lineStart str >>= goEval
+ = cmdParseCheckExp state evalProfile lineStart str >>= goEval
  where
     -- Expression had a parse or type error.
     goEval Nothing
