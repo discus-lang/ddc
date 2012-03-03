@@ -9,10 +9,12 @@ module DDCI.Core.Command.Check
 where
 import DDCI.Core.State
 import DDCI.Core.IO
+import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
 import DDC.Core.Eval.Check
 import DDC.Type.Equiv
+import DDC.Core.Load
 import DDC.Core.Exp
 import DDC.Core.Check
 import DDC.Core.Pretty
@@ -28,18 +30,12 @@ import qualified DDC.Base.Parser        as BP
 -- kind ------------------------------------------------------------------------
 -- | Show the kind of a type.
 cmdShowKind :: State -> Int -> String -> IO ()
-cmdShowKind state lineStart ss
- = goParse (lexString lineStart ss)
- where
-        goParse toks                
-         = case BP.runTokenParser describeTok "<interactive>" T.pType toks of 
-                Left err  -> putStrLn $ renderIndent $ text "parse error " <> ppr err
-                Right t   -> goCheck t
-
-        goCheck t
-         = case T.checkType primDataDefs primKindEnv (spreadT primKindEnv t) of
-                Left err  -> putStrLn $ renderIndent $ ppr err
-                Right k   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
+cmdShowKind state lineStart str
+ = let  toks    = lexString lineStart str
+        eTK     = loadType evalProfile "<interactive>" toks
+   in   case eTK of
+         Left err       -> putStrLn $ renderIndent $ ppr err
+         Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
 
 
 -- tequiv ---------------------------------------------------------------------
@@ -77,46 +73,12 @@ cmdTypeEquiv _state lineStart ss
 -- wtype ----------------------------------------------------------------------
 -- | Show the type of a witness.
 cmdShowWType :: State -> Int -> String -> IO ()
-cmdShowWType state lineStart ss
- = cmdParseCheckWitness state lineStart ss >>= goResult
- where
-        goResult Nothing
-         = return ()
-
-        goResult (Just (w, t))
-         = putStrLn $ renderIndent $ ppr w <> text " :: " <> ppr t
-
-
--- | Parse the given witness, and return it along with its type. 
---
---   If the expression had a parse error, undefined vars, or type error
---   then print this to the console.
-cmdParseCheckWitness
-        :: State
-        -> Int                  -- Starting line number for lexer.
-        -> String 
-        -> IO (Maybe (Witness Name, Type Name))
-
-cmdParseCheckWitness _state lineStart str
- = goParse (lexString lineStart str)
- where
-        -- Lex and parse the string.
-        goParse toks                
-         = case BP.runTokenParser describeTok "<interactive>" pWitness toks of
-                Left err 
-                 -> do  putStrLn $ renderIndent $ text "parse error " <> ppr err
-                        return Nothing
-                
-                Right x  -> goCheck (spreadX primKindEnv primTypeEnv x)
-
-        goCheck x
-         = case checkWitness primDataDefs primKindEnv primTypeEnv x of
-                Left err
-                 -> do  putStrLn $ renderIndent $ ppr err
-                        return  Nothing
-
-                Right t
-                 ->     return $ Just (x, t)
+cmdShowWType state lineStart str
+ = let  toks    = lexString lineStart str
+        eTK     = loadWitness evalProfile "<interactive>" toks
+   in   case eTK of
+         Left err       -> putStrLn $ renderIndent $ ppr err
+         Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
 
 
 -- check / type / effect / closure --------------------------------------------
