@@ -1,7 +1,7 @@
 
 module DDC.Core.Sea.Name
-        ( Name
-        , TyConPrim
+        ( Name          (..)
+        , TyConPrim     (..)
         , Prim          (..)
         , PrimOp        (..)
         , PrimProj      (..)
@@ -66,9 +66,6 @@ data PrimOp
         | OpMul
         | OpDiv
         | OpMod
-
-        -- tests
-        | OpIsZero
 
         -- comparison
         | OpEq
