@@ -32,7 +32,17 @@ cmdSet state []
 
 -- Toggle active modes.
 cmdSet state cmd
- | "trans" : rest      <- words cmd
+ | ["lang", name]       <- words cmd
+ = do   case lookup name stateProfiles of
+         Just profile   
+          -> do putStrLn "ok"
+                return $ state { stateProfile = profile }
+
+         Nothing
+          -> do putStrLn "unknown language fragment"
+                return state
+
+ | "trans" : rest       <- words cmd
  = do   case parseTransform (concat rest) of
          Just spec       
           -> do putStrLn "ok"

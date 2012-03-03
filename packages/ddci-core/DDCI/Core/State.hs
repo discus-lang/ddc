@@ -2,6 +2,7 @@
 module DDCI.Core.State
         ( State         (..)
         , StateProfile  (..)
+        , stateProfiles
 	, stateRewriteRulesList
         , Transform(..)
         , initState
@@ -12,7 +13,6 @@ where
 import DDCI.Core.Fragment
 import DDCI.Core.Mode
 import DDCI.Core.Transform
-import DDC.Core.Language.Profile
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Name               (Name)
@@ -29,10 +29,6 @@ data State
         , stateTransform        :: Transform
 	, stateRewriteRules	:: Map String (RewriteRule () Name) 
         , stateProfile          :: StateProfile }
-
-data StateProfile
-        = forall n err. Fragment n err
-        => StateProfile (Profile n)
 
 
 -- | Adjust a mode setting in the state.
