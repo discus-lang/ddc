@@ -1,18 +1,24 @@
 -- Load a module definition.
 :load..
-module Foo 
+module Main
 exports {
-        double :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r;
-        thing  :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r;
-        zero   :: Unit;
+        main    :: Unit -> Unit;
+        double  :: [r : %]. Int r -(Read r + Alloc r | $0)> Int r;
 }
 imports {
         Thing.whatever 
          with two :: [r5 : %]. Unit -(Alloc r5 | $0)> Int r5;
 }
 letregion rt with { w1 : Const rt ; w2 : Lazy rt} in
-let     one = purify <read [rt] w1> in 1 [rt] ()  in
+
+let     one = purify <read [rt] w1> in 
+              1 [rt] ()  in
+
 letrec { 
+        main (_ : Unit) : Unit
+         = letregion r0 in
+           ();
+
         double  [r : %] (x : Int r) 
                 { Read r + Alloc r | Use r } 
          : Int r
@@ -21,5 +27,5 @@ letrec {
         thing   [r : %] (x : Int r) 
                 { Read r + Read rt + Alloc r | Use r + Use rt} 
          : Int r
-         = addInt [:r rt r:] x one
+         = addInt [:r rt r:] x one;
 };;

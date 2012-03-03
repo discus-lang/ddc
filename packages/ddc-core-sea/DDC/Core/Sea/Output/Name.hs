@@ -1,7 +1,7 @@
 
--- | Names used in the Sea language profile.
+-- | Names used in the SeaOutput language profile.
 --   These map directly onto names used in the C output language.
-module DDC.Core.Sea.NameSea
+module DDC.Core.Sea.Output.Name
         ( Name          (..)
         , Prim          (..)
         , PrimTyCon     (..)
@@ -12,7 +12,7 @@ module DDC.Core.Sea.NameSea
         , PrimAlloc     (..)
         , readName)
 where
-import DDC.Base.Pretty
+import DDC.Core.Sea.Base.Name   (PrimOp(..), primOpNames)
 import Data.Char
 import Data.List
 
@@ -71,56 +71,6 @@ data    Prim
         -- | Allocate an object.
         | PrimAlloc     PrimAlloc
         deriving (Show, Eq)
-
-
--- PrimOp ---------------------------------------------------------------------
--- | Primitive numeric, comparison or logic operators.
---   We expect the backend/machine to be able to implement these directly.
-data PrimOp
-        -- arithmetic
-        = PrimOpNeg
-        | PrimOpAdd
-        | PrimOpSub
-        | PrimOpMul
-        | PrimOpDiv
-        | PrimOpMod
-
-        -- comparison
-        | PrimOpEq
-        | PrimOpNeq
-        | PrimOpGt
-        | PrimOpGe
-        | PrimOpLt
-        | PrimOpLe
-
-        -- boolean
-        | PrimOpAnd
-        | PrimOpOr
-        deriving (Show, Eq)
-
-
-instance Pretty PrimOp where
- ppr op 
-  = let Just str        = lookup op primOpNames
-    in  text str
-
-
--- | Names of primitve operators.
-primOpNames :: [(PrimOp, String)]
-primOpNames
- =      [ (PrimOpNeg, "neg#")
-        , (PrimOpAdd, "add#")
-        , (PrimOpSub, "sub#")
-        , (PrimOpMul, "mul#")
-        , (PrimOpDiv, "div#")
-        , (PrimOpMod, "mod#")
-        , (PrimOpEq , "eq#" )
-        , (PrimOpNeq, "neq#")
-        , (PrimOpGt , "gt#" )
-        , (PrimOpLt , "lt#" )
-        , (PrimOpLe , "le#" )
-        , (PrimOpAnd, "and#")
-        , (PrimOpOr , "or#" ) ]
 
 
 -- Proj -----------------------------------------------------------------------

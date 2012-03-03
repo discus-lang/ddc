@@ -7,9 +7,11 @@
 --   compiled. This evaluator is intended for experimenting with the language
 --   semantics, and not running actual programs.
 module DDC.Core.Eval
-        ( StepResult    (..)
+        ( evalProfile
+        , StepResult    (..)
         , force
         , step)
 where
+import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Step
         

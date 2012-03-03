@@ -9,6 +9,7 @@ module DDC.Core.Language.Profile
         , setFeature)
 where
 import DDC.Core.Language.Feature
+import DDC.Core.DataDef
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 
@@ -24,6 +25,7 @@ data Profile n
         , profileFeatures               :: Features
 
           -- | Primitive operations
+        , profilePrimDataDefs           :: DataDefs n
         , profilePrimKinds              :: Env n
         , profilePrimTypes              :: Env n  }
 
@@ -34,6 +36,7 @@ zeroProfile
         = Profile
         { profileName                   = "Zero"
         , profileFeatures               = zeroFeatures
+        , profilePrimDataDefs           = emptyDataDefs
         , profilePrimKinds              = Env.empty
         , profilePrimTypes              = Env.empty }
 
@@ -41,8 +44,7 @@ zeroProfile
 -- | A flattened set of features, for easy lookup.
 data Features 
         = Features
-        { 
-          -- General features
+        { -- General features
           featuresRecursion             :: Bool
         , featuresPartialApplication    :: Bool
         , featuresPartialPrims          :: Bool

@@ -1,17 +1,18 @@
 
-module DDC.Core.Sea.Convert
+module DDC.Core.Sea.Output.Convert
         (Convert(..))
 where
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Sea.NameSea
+import DDC.Core.Sea.Output.Name
 import DDC.Base.Pretty
 
 
--- | Convert a term that matches the Sea language profile into a Sea expression.
---   If the term doesn't match the profile you may get `error`.
+-- | Convert a term that complies with the SeaOutput language profile into
+--   a Sea expression.
+--   If the term doesn't comply with the profile you may get `error`.
 class Convert a where
  convert :: a -> Doc
 
