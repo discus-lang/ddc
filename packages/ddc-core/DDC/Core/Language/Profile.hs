@@ -2,15 +2,19 @@
 -- | A language profile determines what features a program can use.
 module DDC.Core.Language.Profile
         ( Profile (..)
+        , zeroProfile
+
         , Features(..)
+        , zeroFeatures
         , setFeature)
 where
 import DDC.Core.Language.Feature
-import DDC.Type.Env     (Env)
+import DDC.Type.Env                     (Env)
+import qualified DDC.Type.Env           as Env
 
 
--- | The profile holds the types of primitives, and a flattened set of language
---   flags. See `Flag` for a description of these.
+-- | The profile holds the types of primitives, 
+--   and a set of language features.
 data Profile n
         = Profile
         { -- | The name of this profile.
@@ -24,44 +28,82 @@ data Profile n
         , profilePrimTypes              :: Env n  }
 
 
+-- | A language profile with no features
+zeroProfile :: Profile n
+zeroProfile
+        = Profile
+        { profileName                   = "Zero"
+        , profileFeatures               = zeroFeatures
+        , profilePrimKinds              = Env.empty
+        , profilePrimTypes              = Env.empty }
+
+
 -- | A flattened set of features, for easy lookup.
 data Features 
         = Features
-        { -- Primitive operations
-          featuresPartialPrims           :: Bool
-
+        { 
           -- General features
-        , featuresPartialApplication     :: Bool
-        , featuresNestedFunctions        :: Bool
-        , featuresLazyBindings           :: Bool
-        , featuresDataCtors              :: Bool
+          featuresRecursion             :: Bool
+        , featuresPartialApplication    :: Bool
+        , featuresPartialPrims          :: Bool
+        , featuresGeneralApplication    :: Bool
+        , featuresNestedFunctions       :: Bool
+        , featuresLazyBindings          :: Bool
+        , featuresDataCtors             :: Bool
+        , featuresDebruijnBinders       :: Bool
 
           -- Regions
-        , featuresLetRegion              :: Bool
-        , featuresMutableRegions         :: Bool
-        , featuresLocalRegions           :: Bool
-        , featuresGlobalRegions          :: Bool
+        , featuresLetRegion             :: Bool
+        , featuresMutableRegions        :: Bool
+        , featuresLocalRegions          :: Bool
+        , featuresGlobalRegions         :: Bool
 
           -- Foreign modules
-        , featuresImports                :: Bool
+        , featuresImports               :: Bool
 
           -- Sanity checking
-        , featuresNameShadowing          :: Bool
-        , featuresUnusedBindings         :: Bool
-        , featuresUnusedMatches          :: Bool
-        , featuresUnusedImports          :: Bool
+        , featuresNameShadowing         :: Bool
+        , featuresUnusedBindings        :: Bool
+        , featuresUnusedMatches         :: Bool
+        , featuresUnusedImports         :: Bool
         }
+
+
+-- | An emtpy feature set, with all flags set to `False`.
+zeroFeatures :: Features
+zeroFeatures
+        = Features
+        { featuresRecursion             = False
+        , featuresPartialApplication    = False
+        , featuresPartialPrims          = False
+        , featuresGeneralApplication    = False
+        , featuresNestedFunctions       = False
+        , featuresLazyBindings          = False
+        , featuresDataCtors             = False
+        , featuresDebruijnBinders       = False
+        , featuresLetRegion             = False
+        , featuresMutableRegions        = False
+        , featuresLocalRegions          = False
+        , featuresGlobalRegions         = False
+        , featuresImports               = False
+        , featuresNameShadowing         = False
+        , featuresUnusedBindings        = False
+        , featuresUnusedMatches         = False
+        , featuresUnusedImports         = False }
 
 
 -- | Set a language `Flag` in the `Profile`.
 setFeature :: Feature -> Bool -> Features -> Features
 setFeature feature val features
  = case feature of
-        PartialPrims            -> features { featuresPartialPrims        = val }
+        Recursion               -> features { featuresRecursion           = val }
         PartialApplication      -> features { featuresPartialApplication  = val }
+        PartialPrims            -> features { featuresPartialPrims        = val }
+        GeneralApplication      -> features { featuresGeneralApplication  = val }
         NestedFunctions         -> features { featuresNestedFunctions     = val }
         LazyBindings            -> features { featuresLazyBindings        = val }
         DataCtors               -> features { featuresDataCtors           = val }
+        DebruijnBinders         -> features { featuresDebruijnBinders     = val }
         LetRegion               -> features { featuresLetRegion           = val }
         MutableRegions          -> features { featuresMutableRegions      = val }
         LocalRegions            -> features { featuresLocalRegions        = val }
