@@ -54,6 +54,12 @@ packages/ddc-core-eval/%.o : packages/ddc-core-eval/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-eval
 
+packages/ddc-core-sea/%.o : packages/ddc-core-sea/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-simpl \
+                      -ipackages/ddc-core-sea
+
 packages/ddci-core/%.o : packages/ddci-core/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \

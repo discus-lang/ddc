@@ -6,7 +6,8 @@ ddci-core_packages = \
         packages/ddc-core/DDC \
         packages/ddc-core-simpl/DDC \
         packages/ddc-core-eval/DDC \
-        packages/ddci-core/DDCI
+        packages/ddc-core-sea/DDC \
+        packages/ddci-core/DDCI 
 
 
 ddci-core_src_hs_all = \
