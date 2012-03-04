@@ -1,0 +1,92 @@
+
+-- See if we've managed to changed modes.
+ok
+add#
+:*: [^ : *].^0 -> ^0 -> ^0
+:!: !0
+:$: $0
+
+
+-- Check types of tailcallN# prims.
+tailcall0#
+:*: *0
+:!: !0
+:$: DeepUse *0
+
+tailcall1#
+:*: [^ ^ : *].(^1 -> ^0) -> ^1 -> ^0
+:!: !0
+:$: $0
+
+tailcall4#
+:*: [^ ^ ^ ^ ^ : *].(^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^4 -> ^3 -> ^2 -> ^1 -> ^0
+:!: !0
+:$: $0
+
+
+-- Check types of callN# prims.
+call0#
+:*: *0
+:!: !0
+:$: DeepUse *0
+
+call1#
+:*: [^ ^ : *].(^1 -> ^0) -> ^1 -> ^0
+:!: !0
+:$: $0
+
+call4#
+:*: [^ ^ ^ ^ ^ : *].(^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^4 -> ^3 -> ^2 -> ^1 -> ^0
+:!: !0
+:$: $0
+
+
+-- Check types of partialNofM# prims.
+partial0of0#
+:*: *0
+:!: !0
+:$: DeepUse *0
+
+parital4of2#
+:*: *0
+:!: !0
+:$: DeepUse *0
+
+partial4of4#
+:*: *0
+:!: !0
+:$: DeepUse *0
+
+partial2of4#
+:*: (Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj) -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+:!: !0
+:$: $0
+
+partial1of5#
+:*: (Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj) -> Ptr# Obj -> Ptr# Obj
+:!: !0
+:$: $0
+
+
+-- Check types of applyN# prims.
+apply0#
+:*: *0
+:!: !0
+:$: DeepUse *0
+
+apply1#
+:*: Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+:!: !0
+:$: $0
+
+apply4#
+:*: Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+:!: !0
+:$: $0
+
+
+-- Check type of force# prim.
+force#
+:*: Ptr# Obj -> Ptr# Obj
+:!: !0
+:$: $0
