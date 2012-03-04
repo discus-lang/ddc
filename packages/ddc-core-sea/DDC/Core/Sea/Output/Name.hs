@@ -15,7 +15,7 @@ where
 import DDC.Core.Sea.Base.Name   (PrimTyCon(..), PrimOp(..))
 import DDC.Base.Pretty
 import Data.Char
-
+import Data.List
 
 -- Names of things recognised by the Sea backend.
 data Name
@@ -146,8 +146,6 @@ instance Pretty PrimCall where
          -> text "force#"
 
 
-
-
 -- PrimAlloc ------------------------------------------------------------------
 -- | Allocation of objects.
 data PrimAlloc
@@ -203,15 +201,49 @@ readName str@(c:_)
         | str == "tag#"         = Just $ NamePrim $ PrimProj  PrimProjTag
         | str == "field#"       = Just $ NamePrim $ PrimProj  PrimProjField
         | str == "cast#"        = Just $ NamePrim $ PrimCast  PrimCastOp
---      | str == "tail#"        = Just $ NamePrim $ PrimCall  PrimCallTail
---      | str == "call#"        = Just $ NamePrim $ PrimCall  PrimCallSuper
---      | str == "partial#"     = Just $ NamePrim $ PrimCall  PrimCallPartial
---      | str == "apply#"       = Just $ NamePrim $ PrimCall  PrimCallApply
         | str == "force#"       = Just $ NamePrim $ PrimCall  PrimCallForce
         | str == "thunk#"       = Just $ NamePrim $ PrimAlloc PrimAllocThunk
         | str == "boxed#"       = Just $ NamePrim $ PrimAlloc PrimAllocBoxed
         | str == "raw#"         = Just $ NamePrim $ PrimAlloc PrimAllocRaw
         | str == "mixed#"       = Just $ NamePrim $ PrimAlloc PrimAllocMixed
+
+        -- tailcallN#
+        | Just rest     <- stripPrefix "tailcall" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n > 0
+        = Just $ NamePrim $ PrimCall (PrimCallTail n)
+
+        -- callN#
+        | Just rest     <- stripPrefix "call" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n > 0
+        = Just $ NamePrim $ PrimCall (PrimCallSuper n)
+
+        -- partialNofM#
+        | Just  rest    <- stripPrefix "partial" str
+        , (dsn, rest2)  <- span isDigit rest
+        , Just  rest3   <- stripPrefix "of" rest2
+        , (dsm, "#")    <- span isDigit rest3
+        , not $ null dsn
+        , n             <- read dsn
+        , n > 0
+        , not $ null dsm
+        , m             <- read dsm
+        , m > 0
+        , n < m
+        = Just $ NamePrim $ PrimCall (PrimCallPartial n m)
+
+        -- applyN#
+        | Just  rest    <- stripPrefix "apply" str
+        , (dsn, "#")    <- span isDigit rest
+        , not $ null dsn
+        , n             <- read dsn
+        , n > 0
+        = Just $ NamePrim $ PrimCall (PrimCallApply n)
 
         -- Variable names.
         | isLower c      = Just $ NameVar str

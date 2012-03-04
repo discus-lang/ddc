@@ -1,3 +1,44 @@
 
+-- See if we've managed to changed modes.
 :set lang Sea
 :check add#
+
+
+-- Check types of tailcallN# prims.
+:check tailcall0#
+
+:check tailcall1#
+
+:check tailcall4#
+
+
+-- Check types of callN# prims.
+:check call0#
+
+:check call1#
+
+:check call4#
+
+
+-- Check types of partialNofM# prims.
+:check partial0of0#
+
+:check parital4of2#
+
+:check partial4of4#
+
+:check partial2of4#
+
+:check partial1of5#
+
+
+-- Check types of applyN# prims.
+:check apply0#
+
+:check apply1#
+
+:check apply4#
+
+
+-- Check type of force# prim.
+:check force#

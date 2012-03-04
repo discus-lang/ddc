@@ -4,6 +4,7 @@ module DDC.Core.Sea.Output.Env
         , primTypeEnv
 
         , tObj
+        , tPtr
         , tAddr, tNat, tTag, tBool
         , tInt)
 where
@@ -72,6 +73,7 @@ typeOfPrim pp
         PrimOp op       -> typeOfPrimOp   op
         PrimProj j      -> typeOfPrimProj j
         PrimCast cc     -> typeOfPrimCast cc
+        PrimCall pc     -> typeOfPrimCall pc
         _               -> error "typeOfPrim: sorry"
 
 
@@ -116,12 +118,51 @@ typeOfPrimCast cc
 
 
 -- | Take the type of a primitive call operator.
-{-
 typeOfPrimCall :: PrimCall -> Type Name
 typeOfPrimCall cc
  = case cc of
-        PrimCallTail    -> 
--}
+        PrimCallTail    arity       -> makePrimCallType    arity
+        PrimCallSuper   arity       -> makePrimCallType    arity
+        PrimCallPartial arity args  -> makePrimPartialType arity args
+        PrimCallApply   arity       -> makePrimApplyType   arity
+        PrimCallForce               -> tFunPE (tPtr tObj) (tPtr tObj)
+
+-- | Make the type of the @callN#@ and @tailcallN@ primitives.
+makePrimCallType :: Int -> Type Name
+makePrimCallType arity
+ = let  tSuper   = foldr tFunPE 
+                         (TVar (UIx 0 kData))
+                         (reverse [TVar (UIx i kData) | i <- [1..arity]])
+
+        tCall    = foldr TForall (tSuper `tFunPE` tSuper) 
+                         [BAnon k | k <- replicate (arity + 1) kData]
+
+   in   tCall
+
+
+-- | Make the type of a @partialN@ primitive.
+makePrimPartialType :: Int -> Int -> Type Name
+makePrimPartialType args arity
+ = let  tSuper  = foldr tFunPE 
+                        (tPtr tObj)
+                        (replicate arity (tPtr tObj))
+
+        tOp     = foldr tFunPE
+                        (tPtr tObj)
+                        (replicate args  (tPtr tObj))
+
+   in   tSuper `tFunPE` tOp
+
+
+-- | Make the type of an @apply@ primitive.
+makePrimApplyType :: Int -> Type Name
+makePrimApplyType arity
+ = let  tCall   = foldr tFunPE
+                        (tPtr tObj)
+                        (replicate arity (tPtr tObj))
+
+   in   tPtr tObj `tFunPE` tCall
+
 
 -- Type -----------------------------------------------------------------------
 tObj, tAddr, tTag, tNat, tBool :: Type Name
@@ -130,6 +171,10 @@ tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr) kData))
 tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)  kData))
 tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)  kData))
 tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData))
+
+tPtr :: Type Name -> Type Name
+tPtr t    = TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr)  (kFun kData kData))))
+                 t
 
 tInt :: Int -> Type Name
 tInt bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt bits)) kData))
