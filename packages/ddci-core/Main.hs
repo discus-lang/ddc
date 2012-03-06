@@ -7,6 +7,7 @@ import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
 import DDCI.Core.Command.Ast
+import DDCI.Core.Command.Sea
 import System.Environment
 import Data.List
 import Data.Maybe
@@ -45,6 +46,7 @@ data Command
         | CommandTrans          -- ^ Transform an expression.
         | CommandTransEval      -- ^ Transform then evaluate an expression.
 	| CommandAst            -- ^ Show the AST of an expression.
+        | CommandSeaOut         -- ^ Convert a SeaOut core module to C code.
         deriving (Eq, Show)
 
 
@@ -66,7 +68,8 @@ commands
         , (":eval",     CommandEval)
         , (":trans",    CommandTrans)
         , (":trun",     CommandTransEval)
-        , (":ast",	CommandAst) ]
+        , (":ast",	CommandAst) 
+        , (":seaout",   CommandSeaOut) ]
 
 
 -- | Read the command from the front of a string.
@@ -347,5 +350,9 @@ handleCmd1 state cmd lineStart line
         
         CommandAst
          -> do  cmdAst state lineStart line
+                return state
+
+        CommandSeaOut
+         -> do  cmdSeaOut state lineStart line
                 return state
 

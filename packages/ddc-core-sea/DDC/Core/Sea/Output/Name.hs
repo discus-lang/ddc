@@ -8,8 +8,9 @@ module DDC.Core.Sea.Output.Name
         , PrimOp        (..)
         , PrimProj      (..)
         , PrimCast      (..)
-        , PrimCall      (..)
         , PrimAlloc     (..)
+        , PrimCall      (..)
+        , PrimControl   (..)
         , readName)
 where
 import DDC.Core.Sea.Base.Name   (PrimTyCon(..), PrimOp(..))
@@ -58,11 +59,14 @@ data    Prim
         -- | Casting between numeric types.
         | PrimCast      PrimCast
 
+        -- | Allocate an object.
+        | PrimAlloc     PrimAlloc
+
         -- | Calling functions, internal or external.
         | PrimCall      PrimCall
 
-        -- | Allocate an object.
-        | PrimAlloc     PrimAlloc
+        -- | Control flow.
+        | PrimControl   PrimControl
         deriving (Eq, Ord, Show)
 
 
@@ -74,6 +78,7 @@ instance Pretty Prim where
         PrimCast c      -> ppr c
         PrimCall c      -> ppr c
         PrimAlloc a     -> ppr a
+        PrimControl c   -> ppr c
 
 
 -- Proj -----------------------------------------------------------------------
@@ -105,6 +110,39 @@ instance Pretty PrimCast where
  ppr c
   = case c of
         PrimCastOp      -> text "cast#"
+
+
+-- PrimAlloc ------------------------------------------------------------------
+-- | Allocation of objects.
+data PrimAlloc
+        -- | Allocate a suspended or partial application,
+        --   and fill in the function pointer, function arity, 
+        --   and number of args in the thunk.
+        = PrimAllocThunk
+
+        -- | Allocate a fresh DataBoxed object,
+        --   and fill in the constructor tag and arity.
+        | PrimAllocBoxed
+
+        -- | Allocate a fresh DataRaw object
+        --   and fill in the constructor tag, and raw payload size.
+        | PrimAllocRaw
+
+        -- | Allocate a fresh DataMixed object,
+        --   and fill in the constructor tag, 
+        --     number of boxed objects,
+        --     and the raw payload size.
+        | PrimAllocMixed
+        deriving (Eq, Ord, Show)
+
+
+instance Pretty PrimAlloc where
+ ppr pa
+  = case pa of
+        PrimAllocThunk          -> text "thunk#"
+        PrimAllocBoxed          -> text "boxed#"
+        PrimAllocRaw            -> text "raw#"
+        PrimAllocMixed          -> text "mixed#"
 
 
 -- PrimCall -------------------------------------------------------------------
@@ -146,37 +184,18 @@ instance Pretty PrimCall where
          -> text "force#"
 
 
--- PrimAlloc ------------------------------------------------------------------
--- | Allocation of objects.
-data PrimAlloc
-        -- | Allocate a suspended or partial application,
-        --   and fill in the function pointer, function arity, 
-        --   and number of args in the thunk.
-        = PrimAllocThunk
-
-        -- | Allocate a fresh DataBoxed object,
-        --   and fill in the constructor tag and arity.
-        | PrimAllocBoxed
-
-        -- | Allocate a fresh DataRaw object
-        --   and fill in the constructor tag, and raw payload size.
-        | PrimAllocRaw
-
-        -- | Allocate a fresh DataMixed object,
-        --   and fill in the constructor tag, 
-        --     number of boxed objects,
-        --     and the raw payload size.
-        | PrimAllocMixed
+-- PrimControl ----------------------------------------------------------------
+-- | Primitive control flow.
+data PrimControl
+        -- | Return from the enclosing function with the given value.
+        = PrimControlReturn
         deriving (Eq, Ord, Show)
 
-
-instance Pretty PrimAlloc where
- ppr pa
-  = case pa of
-        PrimAllocThunk          -> text "thunk#"
-        PrimAllocBoxed          -> text "boxed#"
-        PrimAllocRaw            -> text "raw#"
-        PrimAllocMixed          -> text "mixed#"
+instance Pretty PrimControl where
+ ppr pc
+  = case pc of
+        PrimControlReturn 
+         -> text "return#"
 
 
 -- Parsing --------------------------------------------------------------------
@@ -198,14 +217,15 @@ readName str@(c:_)
         | str == "or#"          = Just $ NamePrim $ PrimOp    PrimOpOr
 
         -- Primops sea specific
-        | str == "tag#"         = Just $ NamePrim $ PrimProj  PrimProjTag
-        | str == "field#"       = Just $ NamePrim $ PrimProj  PrimProjField
-        | str == "cast#"        = Just $ NamePrim $ PrimCast  PrimCastOp
-        | str == "force#"       = Just $ NamePrim $ PrimCall  PrimCallForce
-        | str == "thunk#"       = Just $ NamePrim $ PrimAlloc PrimAllocThunk
-        | str == "boxed#"       = Just $ NamePrim $ PrimAlloc PrimAllocBoxed
-        | str == "raw#"         = Just $ NamePrim $ PrimAlloc PrimAllocRaw
-        | str == "mixed#"       = Just $ NamePrim $ PrimAlloc PrimAllocMixed
+        | str == "tag#"         = Just $ NamePrim $ PrimProj    PrimProjTag
+        | str == "field#"       = Just $ NamePrim $ PrimProj    PrimProjField
+        | str == "cast#"        = Just $ NamePrim $ PrimCast    PrimCastOp
+        | str == "force#"       = Just $ NamePrim $ PrimCall    PrimCallForce
+        | str == "thunk#"       = Just $ NamePrim $ PrimAlloc   PrimAllocThunk
+        | str == "boxed#"       = Just $ NamePrim $ PrimAlloc   PrimAllocBoxed
+        | str == "raw#"         = Just $ NamePrim $ PrimAlloc   PrimAllocRaw
+        | str == "mixed#"       = Just $ NamePrim $ PrimAlloc   PrimAllocMixed
+        | str == "return#"      = Just $ NamePrim $ PrimControl PrimControlReturn
 
         -- tailcallN#
         | Just rest     <- stripPrefix "tailcall" str
@@ -257,6 +277,13 @@ readName str@(c:_)
         | str == "Addr#" = Just $ NamePrimTyCon PrimTyConAddr
         | str == "Tag#"  = Just $ NamePrimTyCon PrimTyConTag
         | str == "Bool#" = Just $ NamePrimTyCon PrimTyConBool
+
+        -- IntN#
+        | Just rest     <- stripPrefix "Int" str
+        , (ds, "#")     <- span isDigit rest
+        , n             <- read ds
+        , elem n [8, 16, 32, 64]
+        = Just $ NamePrimTyCon (PrimTyConInt n)
 
         | otherwise
         = Nothing

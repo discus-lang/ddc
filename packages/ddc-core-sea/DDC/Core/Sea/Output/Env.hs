@@ -74,9 +74,11 @@ typeOfPrim pp
         PrimProj j      -> typeOfPrimProj j
         PrimCast cc     -> typeOfPrimCast cc
         PrimCall pc     -> typeOfPrimCall pc
+        PrimControl pc  -> typeOfPrimControl pc
         _               -> error "typeOfPrim: sorry"
 
 
+-- PrimOp ---------------------------------------------------------------------
 -- | Take the type of a primitive operator.
 typeOfPrimOp :: PrimOp -> Type Name
 typeOfPrimOp op
@@ -102,6 +104,7 @@ typeOfPrimOp op
         PrimOpOr        -> tBool `tFunPE` tBool `tFunPE` tBool
 
 
+-- PrimProj -------------------------------------------------------------------
 -- | Take the type of a primitive projection.
 typeOfPrimProj :: PrimProj -> Type Name
 typeOfPrimProj jj
@@ -110,6 +113,7 @@ typeOfPrimProj jj
         PrimProjField   -> tForall kData $ \t -> tObj `tFunPE` tNat `tFunPE` t
 
 
+-- PrimCast -------------------------------------------------------------------
 -- | Take the type of a primitive cast.
 typeOfPrimCast :: PrimCast -> Type Name
 typeOfPrimCast cc
@@ -117,6 +121,7 @@ typeOfPrimCast cc
         PrimCastOp      -> tForalls [kData, kData] $ \[t1, t2] -> t1 `tFunPE` t2
 
 
+-- PrimCall -------------------------------------------------------------------
 -- | Take the type of a primitive call operator.
 typeOfPrimCall :: PrimCall -> Type Name
 typeOfPrimCall cc
@@ -163,6 +168,13 @@ makePrimApplyType arity
 
    in   tPtr tObj `tFunPE` tCall
 
+
+-- PrimControl ----------------------------------------------------------------
+typeOfPrimControl :: PrimControl -> Type Name
+typeOfPrimControl pc
+ = case pc of
+        PrimControlReturn       -> tForall kData $ \t -> t `tFunPE` t
+        
 
 -- Type -----------------------------------------------------------------------
 tObj, tAddr, tTag, tNat, tBool :: Type Name

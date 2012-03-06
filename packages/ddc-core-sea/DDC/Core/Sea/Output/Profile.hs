@@ -38,5 +38,5 @@ lexString lineStart str
  where rn (Token t sp) = Token (renameTok readName_ t) sp
 
        readName_ str'
-        = fromMaybe (error $ "DDC.Core.Sea.Output.Name: can't rename token " ++ str')
+        = fromMaybe (error $ "DDC.Core.Sea.Output.Profile: can't rename token " ++ str')
         $ readName str'

@@ -33,7 +33,15 @@ instance Convert (Type Name) where
   = case tt of
         TVar u                          -> convert u
         TCon (TyConBound (UName n _))   -> convert n
-        _                               -> error "convert[Type]: sorry" 
+
+        TCon (TyConBound (UPrim (NamePrimTyCon tc) _))
+         -> case tc of
+                PrimTyConInt bits       -> text "int" <> int bits <> text "_t"
+                _                       -> error "convert[Type]: sort"
+
+
+        _                               -> text "dunno"
+--        _                               -> error ("convert[Type]: sorry" ++ show tt)
 
 
 -- Top level function ---------------------------------------------------------
@@ -47,7 +55,8 @@ convertTop (b , xx)
                 <+> encloseSep lparen rparen (comma <> space) 
                         (map convert bsParam))
 
-        <$$> braces (convert xBody) 
+        <$$> braces (convert xBody <> semi)
+        <>   line 
 
 
         | otherwise
@@ -65,19 +74,29 @@ instance Convert (Exp () Name) where
          |  Just (NamePrim p, xs)     <- takeXPrimApps xx
          -> convertPrimApp p xs 
 
-        _ -> error "convert: sorry"
+        XLet _ (LLet LetStrict b x) x2
+         -> vcat [ convert b <+> text "=" <+> convert x <> semi
+                 , convert x2 ]
+
+        _ -> error "convert[Exp]: sorry"
  
 
 convertPrimApp :: Prim -> [Exp () Name] -> Doc
 convertPrimApp p xs
+        -- binary primops
         | PrimOp op             <- p
         , [XType _t, x1, x2]    <- xs
         , elem op [PrimOpAdd, PrimOpSub, PrimOpMul, PrimOpDiv, PrimOpMod]
         = parensConvertX x1 <+> convert op <+> parensConvertX x2
 
+        -- Control
+        | PrimControl PrimControlReturn <- p
+        , [XType _t, x]         <- xs
+        = text "return" <+> parens (convert x)
+
+
         | otherwise 
         = error "convertPrimApp: sorry"
-
 
 parensConvertX xx
  = case xx of
@@ -104,7 +123,8 @@ instance Convert Name where
  convert nn
   = case nn of
         NamePrim p      -> convert p
-        _               -> error "convert[Name]: sorry"
+        NameVar  str    -> text str
+        _               -> error ("convert[Name]: sorry" ++ show nn)
 
 
 -- Prims ----------------------------------------------------------------------
@@ -112,7 +132,7 @@ instance Convert Prim where
  convert nn
   = case nn of
         PrimOp op       -> convert op
-        _               -> error "convert[Prim]: sorry"
+        _               -> error ("convert[Prim]: sorry" ++ show nn)
 
 
 instance Convert PrimOp where

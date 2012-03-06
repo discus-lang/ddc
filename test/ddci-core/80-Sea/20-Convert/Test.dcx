@@ -1,0 +1,25 @@
+
+-- Convert a module in the SeaOutput fragment into raw C code.
+:set +Indent
+:seaout..
+module Main
+exports {
+        double  :: Int32# -> Int32#;
+}
+imports {
+        Thing.foo with foo :: Int32#;
+}
+letrec {
+        double (x : Int32#) : Int32#
+         = return# [Int32#] (add# [Int32#] x x);
+
+        double2 (x : Int32#) : Int32#
+         = let z  : Int32#      = add# [Int32#] x x in
+           return# [Int32#] z;
+
+        triple  (x : Int32#) : Int32#
+         = let z1 : Int32#       = add# [Int32#] x  x in
+           let z2 : Int32#      = add# [Int32#] z1 x in
+           return# [Int32#] z2;
+
+};;
