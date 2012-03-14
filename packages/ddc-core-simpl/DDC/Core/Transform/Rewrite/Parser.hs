@@ -24,12 +24,11 @@ import qualified DDC.Core.Transform.Rewrite.Rule  as R
 pRule	:: Ord n => Parser n (R.RewriteRule () n)
 pRule
  = do	bs  <- pRuleBinders
-	lhs <- pExp
+	(cs,lhs) <- pRuleCsLhs
 	pTok KEquals
 	rhs <- pExp
 
-	Just r <- return $ R.mkRewriteRule bs [] lhs rhs
-	return r
+	return $ R.RewriteRule bs cs lhs rhs
 
 pRuleBinders
  = P.choice
@@ -37,6 +36,19 @@ pRuleBinders
 	pTok KDot
 	return $ concat bs
  , return []
+ ]
+
+pRuleCsLhs :: Ord n => Parser n ([Type n], Exp () n)
+pRuleCsLhs
+ = P.choice
+ [ do	cs <- P.many1 $ P.try (do
+		c <- T.pTypeApp
+		pTok KArrowEquals
+		return c)
+	lhs <- pExp
+	return (cs,lhs)
+ , do	lhs <- pExp
+	return ([],lhs)
  ]
 
 -- | Parse rewrite binders

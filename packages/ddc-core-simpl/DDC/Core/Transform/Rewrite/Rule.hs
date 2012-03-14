@@ -3,7 +3,7 @@
 module DDC.Core.Transform.Rewrite.Rule 
         (RewriteRule(..)
 	,mkRewriteRule
-	,Constraint(..))
+	)
 
 where
 import DDC.Core.Exp
@@ -17,7 +17,7 @@ import DDC.Type.Pretty()
 data RewriteRule a n
         = RewriteRule
 	    [Bind n]		--  bindings & their types
-	    [Constraint n]	--  requirements for rules to fire
+	    [Type n]		--  requirements for rules to fire
 	    (Exp a n)		--  left-hand side to match on
 	    (Exp a n)		--  replacement
         deriving (Eq, Show)
@@ -37,24 +37,11 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 -- Make sure expressions are valid, lhs is only allowed to contain XApps
 mkRewriteRule
     :: Ord n
-    => [Bind n] -> [Constraint n] -> Exp a n -> Exp a n
+    => [Bind n] -> [Type n] -> Exp a n -> Exp a n
     -> Maybe (RewriteRule a n)
 mkRewriteRule bs cs lhs rhs | isLhsOk lhs
  = Just $ RewriteRule bs cs lhs rhs
 mkRewriteRule _ _ _ _ = Nothing
-
--- | Constraints over rules,
--- this is probably dumb, would just a Type n on its own be better?
-data Constraint n
-	= Constraint
-	    (Type n) --  typeclass/thing
-	    [Type n] --  arguments
-	deriving (Eq, Show)
-
-instance (Pretty n, Eq n) => Pretty (Constraint n) where
- ppr (Constraint t ts)
-  = ppr t <> ppr ts <> text "=>"
-
 
 -- | Check if expression is valid as a rule left-hand side
 -- (Only simple applications, no binders)
