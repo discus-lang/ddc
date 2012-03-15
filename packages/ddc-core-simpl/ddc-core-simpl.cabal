@@ -31,6 +31,8 @@ Library
         DDC.Type.Transform.AnonymizeT
         DDC.Type.Transform.Rename
 
+        DDC.Core.Transform.Rewrite
+        DDC.Core.Transform.Rewrite.Error
         DDC.Core.Transform.Rewrite.Rule
         DDC.Core.Transform.Rewrite.Parser
 

@@ -54,7 +54,7 @@ rewrite rules x0
 	Just x  -> go x []
 
 rewriteX :: (Show n, Show a, Ord n) => RewriteRule a n -> Exp a n -> [(Exp a n,a)] -> Maybe (Exp a n)
-rewriteX (RewriteRule bs _constrs lhs rhs) f args
+rewriteX (RewriteRule bs _constrs lhs rhs _eff _clo) f args
  = do	let m	= Map.empty
 	l:ls   <- return $ flatApps lhs
 	m'     <- constrain m bs l f

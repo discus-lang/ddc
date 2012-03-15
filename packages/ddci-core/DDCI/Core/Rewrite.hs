@@ -52,12 +52,18 @@ parseAdd str
         goParse name toks                
          = case BP.runTokenParser describeTok "<interactive>" pRule toks of
                 Left err -> Left $ renderIndent $ ppr err
-                Right (RewriteRule bs cs lhs rhs)
-		    -> Right $ SetAdd name $
+                Right (RewriteRule bs cs lhs rhs e c) ->
+		    Right $ SetAdd name $
 			RewriteRule bs cs
-			    -- TODO typecheck and make sure they're comparable
 			    (spreadX primKindEnv primTypeEnv lhs)
 			    (spreadX primKindEnv primTypeEnv rhs)
+			    e c
+		{-
+                Right rule ->
+		  case checkRewriteRule primDataDefs primKindEnv primTypeEnv rule of
+		    Left err -> Left $ renderIndent $ ppr err
+		    Right rule' -> Right $ SetAdd name rule'
+		    -}
 
 -- | Display rule
 showRule :: State -> Int -> String -> RewriteRule () Name -> IO ()

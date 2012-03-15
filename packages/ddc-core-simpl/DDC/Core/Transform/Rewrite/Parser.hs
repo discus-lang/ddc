@@ -28,7 +28,7 @@ pRule
 	pTok KEquals
 	rhs <- pExp
 
-	return $ R.RewriteRule bs cs lhs rhs
+	return $ R.mkRewriteRule bs cs lhs rhs
 
 pRuleBinders
  = P.choice
