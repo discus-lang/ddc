@@ -30,6 +30,7 @@ pRule
 
 	return $ R.mkRewriteRule bs cs lhs rhs
 
+pRuleBinders :: Ord n => Parser n [(R.BindMode,Bind n)]
 pRuleBinders
  = P.choice
  [ do	bs <- P.many1 pBinders
@@ -57,21 +58,22 @@ pRuleCsLhs
 --       [BIND1 BIND2 .. BINDN : TYPE]
 --   or  (BIND : TYPE)
 --
-pBinders :: Ord n => Parser n [Bind n]
+pBinders :: Ord n => Parser n [(R.BindMode, Bind n)]
 pBinders
  = P.choice
- [ pBindersBetween (pTok KSquareBra) (pTok KSquareKet)
- , pBindersBetween (pTok KRoundBra) (pTok KRoundKet)
- , pBindersBetween (pTok KAngleBra) (pTok KAngleKet)
+ [ pBindersBetween R.BMKind (pTok KSquareBra) (pTok KSquareKet)
+ , pBindersBetween R.BMType (pTok KRoundBra) (pTok KRoundKet)
  ]
 
-pBindersBetween :: Ord n => Parser n () -> Parser n () -> Parser n [Bind n]
-pBindersBetween bra ket
+pBindersBetween :: Ord n => R.BindMode ->
+		    Parser n () -> Parser n () ->
+		    Parser n [(R.BindMode,Bind n)]
+pBindersBetween bm bra ket
  = do	bra
         bs      <- P.many1 T.pBinder
         pTok KColon
         t       <- T.pType
         ket
-        return $ zipWith T.makeBindFromBinder bs (repeat t)
-
+        return $ map (mk t) bs
+ where mk t b = (bm,T.makeBindFromBinder b t)
 

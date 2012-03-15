@@ -12,7 +12,6 @@ import DDC.Core.Eval.Env
 import DDC.Core.Parser.Tokens
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Transform.Rewrite.Parser
-import DDC.Core.Transform.SpreadX
 import DDCI.Core.State
 import DDCI.Core.IO
 import Data.Char
@@ -52,18 +51,10 @@ parseAdd str
         goParse name toks                
          = case BP.runTokenParser describeTok "<interactive>" pRule toks of
                 Left err -> Left $ renderIndent $ ppr err
-                Right (RewriteRule bs cs lhs rhs e c) ->
-		    Right $ SetAdd name $
-			RewriteRule bs cs
-			    (spreadX primKindEnv primTypeEnv lhs)
-			    (spreadX primKindEnv primTypeEnv rhs)
-			    e c
-		{-
                 Right rule ->
 		  case checkRewriteRule primDataDefs primKindEnv primTypeEnv rule of
 		    Left err -> Left $ renderIndent $ ppr err
 		    Right rule' -> Right $ SetAdd name rule'
-		    -}
 
 -- | Display rule
 showRule :: State -> Int -> String -> RewriteRule () Name -> IO ()

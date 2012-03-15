@@ -54,12 +54,14 @@ rewrite rules x0
 	Just x  -> go x []
 
 rewriteX :: (Show n, Show a, Ord n) => RewriteRule a n -> Exp a n -> [(Exp a n,a)] -> Maybe (Exp a n)
-rewriteX (RewriteRule bs _constrs lhs rhs _eff _clo) f args
+rewriteX (RewriteRule binds _constrs lhs rhs _eff _clo) f args
  = do	let m	= Map.empty
 	l:ls   <- return $ flatApps lhs
 	m'     <- constrain m bs l f
 	go m' ls args
  where
+    bs = map snd binds
+
     go m [] rest
      =	    return $ mkApps (subst m) rest
     go m (l:ls) ((r,_):rs)
