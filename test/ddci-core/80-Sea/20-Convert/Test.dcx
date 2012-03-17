@@ -31,9 +31,9 @@ letrec {
                                              (read# [Int32#] (field# [Int32#] 4 y)) in
                         write# [Int32#] (field# [Int32#] 4 y) r;
 
-                _ -> fail# [Void#];
+                _ -> fail#;
                };
-               _ -> fail# [Void#];
+               _ -> fail#;
               } in
           return# [Ptr# Obj] y;
 

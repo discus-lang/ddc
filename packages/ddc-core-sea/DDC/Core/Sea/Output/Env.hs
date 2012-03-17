@@ -216,7 +216,7 @@ makePrimApplyType arity
 typeOfPrimControl :: PrimControl -> Type Name
 typeOfPrimControl pc
  = case pc of
-        PrimControlFail         -> tForall kData $ \t -> t
+        PrimControlFail         -> tVoid
         PrimControlReturn       -> tForall kData $ \t -> t `tFunPE` t
 
 

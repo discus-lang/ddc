@@ -79,6 +79,9 @@ convertTop (b , xx)
 instance Convert (Exp () Name) where
  convert xx 
   = case xx of
+        XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)
+         -> text "_fail()"
+
         XVar _ (UName n _)
          -> convert n
 
@@ -125,34 +128,30 @@ convertPrimApp p xs
         = parensConvertX x1 <+> convert op <+> parensConvertX x2
 
         -- Control
-        | PrimControl PrimControlFail   <- p
-        , [XType _t]            <- xs
-        = text "_fail()"
-
         | PrimControl PrimControlReturn <- p
-        , [XType _t, x]         <- xs
+        , [XType _t, x]                 <- xs
         = text "return" <+> convert x
 
         -- Cast
         | PrimCast (PrimCastNatToInt bits) <- p
-        , [x1]                  <- xs
+        , [x1]                          <- xs
         = parens (text "int" <> int bits <> text "_t") 
                 <> parens (convert x1)
 
         -- Store 
-        | PrimStore PrimStoreRead <- p
-        , [XType _t, x]         <- xs
+        | PrimStore PrimStoreRead       <- p
+        , [XType _t, x]                 <- xs
         = text "_read"  <+> parens (convert x)
 
-        | PrimStore PrimStoreWrite <- p
-        , [XType _t, x1, x2]    <- xs
+        | PrimStore PrimStoreWrite      <- p
+        , [XType _t, x1, x2]            <- xs
         = text "_write" <+> convertArgs [x1, x2]
 
-        | PrimStore PrimStoreProjTag <- p
+        | PrimStore PrimStoreProjTag    <- p
         = text "_tag"   <+> convertArgs xs
 
-        | PrimStore PrimStoreProjField <- p
-        , [XType t, x1, x2]    <- xs
+        | PrimStore PrimStoreProjField  <- p
+        , [XType t, x1, x2]             <- xs
         =   text "_field" 
         <+> encloseSep lparen rparen (comma <> space)
                 [ convert t
