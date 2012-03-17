@@ -107,6 +107,15 @@ instance Convert (Exp () Name) where
                  , convert x2 ]
 
         -- TODO: frag check that we only switch on Nats and Tags.
+        XCase _ x [ AAlt (PData u []) x1
+                  , AAlt PDefault 
+                         xFail@(XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)) ]
+         -> vcat [ text "if" 
+                        <+> parens (convert x <+> text "!=" <+> convert u)
+                        <+> convert xFail
+                        <> semi
+                 , convert x1 ]
+
         XCase _ x alts
          ->   text "switch" <> parens (convert x) <+> lbrace
          <$$> (indent 1 (vcat $ map convert alts))
@@ -199,6 +208,7 @@ convertArgs xs
 
 
 -- Alt ------------------------------------------------------------------------
+-- TODO: frag check result of alts is always Void#
 instance Convert (Alt () Name) where
  convert alt
   = case alt of
