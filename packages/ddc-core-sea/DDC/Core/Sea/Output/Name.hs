@@ -5,12 +5,11 @@ module DDC.Core.Sea.Output.Name
         ( Name          (..)
         , Prim          (..)
         , PrimTyCon     (..)
-        , PrimOp        (..)
-        , PrimProj      (..)
         , PrimCast      (..)
-        , PrimAlloc     (..)
         , PrimCall      (..)
         , PrimControl   (..)
+        , PrimStore     (..)
+        , PrimOp        (..)
         , PrimString    (..)
         , PrimIO        (..)
         , readName)
@@ -34,8 +33,11 @@ data Name
         -- | A primitive operator.
         | NamePrim      Prim
 
-        -- | A natural number literal
+        -- | A natural number literal.
         | NameNat       Integer
+
+        -- | A constructor tag literal.
+        | NameTag       Integer
         deriving (Eq, Ord, Show)
 
 
@@ -46,7 +48,8 @@ instance Pretty Name where
         NamePrimTyCon tc  -> ppr tc
         NameVar  n        -> text n
         NamePrim p        -> ppr p
-        NameNat  i        -> text (show i)
+        NameNat  i        -> integer i
+        NameTag  i        -> text "TAG" <> integer i
 
 
 -- Prim -----------------------------------------------------------------------
@@ -55,20 +58,17 @@ data    Prim
         -- | Invoke a primitive arithmetic operator.
         = PrimOp        PrimOp
 
-        -- | Project something from an object.
-        | PrimProj      PrimProj
-
         -- | Casting between numeric types.
         | PrimCast      PrimCast
 
-        -- | Calling functions, internal or external.
+        -- | Funtion calls.
         | PrimCall      PrimCall
-
-        -- | Allocate an object.
-        | PrimAlloc     PrimAlloc
 
         -- | Control flow.
         | PrimControl   PrimControl
+
+        -- | Store actions.
+        | PrimStore     PrimStore
 
         -- | Strings.
         | PrimString    PrimString
@@ -82,31 +82,12 @@ instance Pretty Prim where
  ppr pp
   = case pp of
         PrimOp op       -> ppr op
-        PrimProj j      -> ppr j
         PrimCast c      -> ppr c
         PrimCall c      -> ppr c
-        PrimAlloc a     -> ppr a
         PrimControl c   -> ppr c
+        PrimStore p     -> ppr p
         PrimString s    -> ppr s
         PrimIO i        -> ppr i
-
-
--- Proj -----------------------------------------------------------------------
--- | A projection of some other object.
-data PrimProj
-        -- | Take the tag of a boxed object.
-        = PrimProjTag
-
-        -- | Take a numbered field from some boxed data object.
-        | PrimProjField
-        deriving (Eq, Ord, Show)
-
-
-instance Pretty PrimProj where
- ppr j
-  = case j of
-        PrimProjTag     -> text "tag#"
-        PrimProjField   -> text "field#"
 
 
 -- PrimCast -------------------------------------------------------------------
@@ -124,39 +105,6 @@ instance Pretty PrimCast where
 
         PrimCastNatToInt bits
          -> text "i" <> int bits <> text "#"
-
-
--- PrimAlloc ------------------------------------------------------------------
--- | Allocation of objects.
-data PrimAlloc
-        -- | Allocate a suspended or partial application,
-        --   and fill in the function pointer, function arity, 
-        --   and number of args in the thunk.
-        = PrimAllocThunk
-
-        -- | Allocate a fresh DataBoxed object,
-        --   and fill in the constructor tag and arity.
-        | PrimAllocBoxed
-
-        -- | Allocate a fresh DataRaw object
-        --   and fill in the constructor tag, and raw payload size.
-        | PrimAllocRaw
-
-        -- | Allocate a fresh DataMixed object,
-        --   and fill in the constructor tag, 
-        --     number of boxed objects,
-        --     and the raw payload size.
-        | PrimAllocMixed
-        deriving (Eq, Ord, Show)
-
-
-instance Pretty PrimAlloc where
- ppr pa
-  = case pa of
-        PrimAllocThunk          -> text "thunk#"
-        PrimAllocBoxed          -> text "boxed#"
-        PrimAllocRaw            -> text "raw#"
-        PrimAllocMixed          -> text "mixed#"
 
 
 -- PrimCall -------------------------------------------------------------------
@@ -195,15 +143,79 @@ instance Pretty PrimCall where
 -- PrimControl ----------------------------------------------------------------
 -- | Primitive control flow.
 data PrimControl
+        -- | Ungraceful failure -- just abort the program.
+        --   This is called on internal errors in the runtime system.
+        --   There is no further debugging info provided, so you'll need to 
+        --   look at the stack trace to debug it.
+        = PrimControlFail
+
         -- | Return from the enclosing function with the given value.
-        = PrimControlReturn
+        | PrimControlReturn
         deriving (Eq, Ord, Show)
 
 instance Pretty PrimControl where
  ppr pc
   = case pc of
-        PrimControlReturn 
-         -> text "return#"
+        PrimControlFail         -> text "fail#"
+        PrimControlReturn       -> text "return#"
+
+
+-- Store -----------------------------------------------------------------------
+-- | A projection of some other object.
+data PrimStore
+        -- Read and Write -------------
+        -- | Read a value from the store.
+        = PrimStoreRead
+
+        -- | Write a value to the store.
+        | PrimStoreWrite
+
+        -- Projections ----------------
+        -- | Take the tag of a boxed object.
+        | PrimStoreProjTag
+
+        -- | Take a numbered field from some boxed data object.
+        | PrimStoreProjField
+
+        -- Allocation -----------------
+        -- | Allocate a suspended or partial application,
+        --   and fill in the function pointer, function arity, 
+        --   and number of args in the thunk.
+        | PrimStoreAllocThunk
+
+        -- | Allocate a fresh DataBoxed object,
+        --   and fill in the constructor tag and arity.
+        | PrimStoreAllocBoxed
+
+        -- | Allocate a fresh DataRaw object
+        --   and fill in the constructor tag, and raw payload size.
+        | PrimStoreAllocRaw
+
+        -- | Allocate a fresh DataMixed object,
+        --   and fill in the constructor tag, 
+        --     number of boxed objects,
+        --     and the raw payload size.
+        | PrimStoreAllocMixed
+
+        deriving (Eq, Ord, Show)
+
+
+instance Pretty PrimStore where
+ ppr p
+  = case p of
+        -- Read and Write
+        PrimStoreRead           -> text "read#"
+        PrimStoreWrite          -> text "write#"
+
+        -- Projections  
+        PrimStoreProjTag        -> text "tag#"
+        PrimStoreProjField      -> text "field#"
+
+        -- Alloction
+        PrimStoreAllocThunk     -> text "thunk#"
+        PrimStoreAllocBoxed     -> text "boxed#"
+        PrimStoreAllocRaw       -> text "raw#"
+        PrimStoreAllocMixed     -> text "mixed#"
 
 
 -- PrimString -----------------------------------------------------------------
@@ -258,17 +270,19 @@ readName str@(c:_)
         | str == "Obj"
         = Just $ NameObjTyCon
 
-        -- Sea Primops ------------------------------------
-        | str == "tag#"         = Just $ NamePrim $ PrimProj    PrimProjTag
-        | str == "field#"       = Just $ NamePrim $ PrimProj    PrimProjField
-        | str == "cast#"        = Just $ NamePrim $ PrimCast    PrimCastOp
-        | str == "force#"       = Just $ NamePrim $ PrimCall    PrimCallForce
-        | str == "thunk#"       = Just $ NamePrim $ PrimAlloc   PrimAllocThunk
-        | str == "boxed#"       = Just $ NamePrim $ PrimAlloc   PrimAllocBoxed
-        | str == "raw#"         = Just $ NamePrim $ PrimAlloc   PrimAllocRaw
-        | str == "mixed#"       = Just $ NamePrim $ PrimAlloc   PrimAllocMixed
-        | str == "return#"      = Just $ NamePrim $ PrimControl PrimControlReturn
 
+        -- Casts ------------------------------------------
+        -- Cast Nat to Int
+        | Just rest     <- stripPrefix "i" str
+        , (ds, "#")     <- span isDigit rest
+        , bits          <- read ds
+        , elem bits [8, 16, 32, 64]
+        = Just $ NamePrim $ PrimCast $ PrimCastNatToInt bits
+
+        | str == "cast#"        = Just $ NamePrim $ PrimCast    PrimCastOp
+
+
+        -- Sea Calls --------------------------------------
         -- tailcallN#
         | Just rest     <- stripPrefix "tailcall" str
         , (ds, "#")     <- span isDigit rest
@@ -299,13 +313,24 @@ readName str@(c:_)
         , n > 0
         = Just $ NamePrim $ PrimCall (PrimCallApply n)
 
-        -- Casts ------------------------------------------
-        -- Cast Nat to Int
-        | Just rest     <- stripPrefix "i" str
-        , (ds, "#")     <- span isDigit rest
-        , bits          <- read ds
-        , elem bits [8, 16, 32, 64]
-        = Just $ NamePrim $ PrimCast $ PrimCastNatToInt bits
+        | str == "force#"       = Just $ NamePrim $ PrimCall    PrimCallForce
+
+
+        -- Sea Control ------------------------------------
+        | str == "fail#"        = Just $ NamePrim $ PrimControl PrimControlFail
+        | str == "return#"      = Just $ NamePrim $ PrimControl PrimControlReturn
+
+
+        -- Sea Store --------------------------------------
+        | str == "read#"        = Just $ NamePrim $ PrimStore PrimStoreRead
+        | str == "write#"       = Just $ NamePrim $ PrimStore PrimStoreWrite
+        | str == "tag#"         = Just $ NamePrim $ PrimStore PrimStoreProjTag
+        | str == "field#"       = Just $ NamePrim $ PrimStore PrimStoreProjField
+        | str == "thunk#"       = Just $ NamePrim $ PrimStore PrimStoreAllocThunk
+        | str == "boxed#"       = Just $ NamePrim $ PrimStore PrimStoreAllocBoxed
+        | str == "raw#"         = Just $ NamePrim $ PrimStore PrimStoreAllocRaw
+        | str == "mixed#"       = Just $ NamePrim $ PrimStore PrimStoreAllocMixed
+
 
         -- Arithmetic Primops -----------------------------
         | str == "add#"         = Just $ NamePrim $ PrimOp PrimOpAdd
@@ -337,9 +362,14 @@ readName str@(c:_)
         | isLower c      = Just $ NameVar str
 
         -- literals ---------------------------------------
+        -- Naturals
         | (ds, "")              <- span isDigit str
         = Just $ NameNat (read ds)        
 
+        -- Tags
+        | Just rest     <- stripPrefix "TAG" str
+        , (ds, "#")     <- span isDigit rest
+        = Just $ NameTag (read ds)
 
         | otherwise
         = Nothing

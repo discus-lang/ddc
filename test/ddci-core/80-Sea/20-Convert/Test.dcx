@@ -22,6 +22,17 @@ letrec {
            let z2 : Int32#      = add# [Int32#] z1 x in
            return# [Int32#] z2;
 
+        addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Int32#
+         = case tag# x of {
+            TAG0# -> case tag# y of {
+                   TAG0# -> add# [Int32#] 
+                                (read# [Int32#] (field# [Int32#] 4 x))
+                                (read# [Int32#] (field# [Int32#] 4 y));
+                   _ -> fail# [Int32#];
+                  };
+            _ -> fail# [Int32#];
+            };
+
         main (argc : Nat#) (argv : Ptr# String#) : Nat#
          = let x   : Int32#     = twice (i32# 5) in
            let str : String#    = showInt32# x in

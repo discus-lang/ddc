@@ -1,6 +1,7 @@
 
 module DDC.Core.Sea.Output.Env
-        ( primKindEnv
+        ( primDataDefs
+        , primKindEnv
         , primTypeEnv
 
         , tObj
@@ -8,11 +9,36 @@ module DDC.Core.Sea.Output.Env
         , tAddr, tNat, tTag, tBool
         , tInt)
 where
+import DDC.Core.DataDef
 import DDC.Core.Sea.Output.Name
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Env                             (Env)
 import qualified DDC.Type.Env                   as Env
+
+
+-- DataDefs -------------------------------------------------------------------
+-- | Data type definitions for:
+--
+-- @  Type   Constructors
+--  ----   ------------
+--  Nat    ... -2 -1 0 1 2 ...
+--  Tag    0 1 2 ...
+-- @
+primDataDefs :: DataDefs Name
+primDataDefs
+ = fromListDataDefs
+        -- Nat
+        [ DataDef
+                (NamePrimTyCon PrimTyConNat)
+                []
+                Nothing
+
+        , DataDef
+                (NamePrimTyCon PrimTyConTag)
+                []
+                Nothing
+        ]
 
 
 -- Kinds ----------------------------------------------------------------------
@@ -65,6 +91,7 @@ typeOfName nn
  = case nn of
         NamePrim p      -> Just $ typeOfPrim p
         NameNat  _      -> Just $ tNat
+        NameTag  _      -> Just $ tTag
         _               -> Nothing
 
 
@@ -73,13 +100,12 @@ typeOfPrim :: Prim -> Type Name
 typeOfPrim pp
  = case pp of
         PrimOp      op  -> typeOfPrimOp      op
-        PrimProj    j   -> typeOfPrimProj    j
         PrimCast    cc  -> typeOfPrimCast    cc
         PrimCall    pc  -> typeOfPrimCall    pc
         PrimControl pc  -> typeOfPrimControl pc
+        PrimStore   ps  -> typeOfPrimStore   ps
         PrimString  ps  -> typeOfPrimString  ps
         PrimIO      ps  -> typeOfPrimIO      ps
-        _               -> error "typeOfPrim: sorry"
 
 
 tObj, tAddr, tTag, tNat, tBool, tString :: Type Name
@@ -124,15 +150,6 @@ typeOfPrimOp op
         -- Boolean
         PrimOpAnd       -> tBool `tFunPE` tBool `tFunPE` tBool
         PrimOpOr        -> tBool `tFunPE` tBool `tFunPE` tBool
-
-
--- PrimProj -------------------------------------------------------------------
--- | Take the type of a primitive projection.
-typeOfPrimProj :: PrimProj -> Type Name
-typeOfPrimProj jj
- = case jj of
-        PrimProjTag     -> tObj `tFunPE` tTag
-        PrimProjField   -> tForall kData $ \t -> tObj `tFunPE` tNat `tFunPE` t
 
 
 -- PrimCast -------------------------------------------------------------------
@@ -199,8 +216,29 @@ makePrimApplyType arity
 typeOfPrimControl :: PrimControl -> Type Name
 typeOfPrimControl pc
  = case pc of
+        PrimControlFail         -> tForall kData $ \t -> t
         PrimControlReturn       -> tForall kData $ \t -> t `tFunPE` t
-        
+
+
+-- PrimStore ------------------------------------------------------------------
+-- | Take the type of a primitive projection.
+typeOfPrimStore :: PrimStore -> Type Name
+typeOfPrimStore jj
+ = case jj of
+        PrimStoreRead        
+         -> tForall kData $ \t -> tPtr t `tFunPE` t
+
+        PrimStoreWrite
+         -> tForall kData $ \t -> tPtr t `tFunPE` t `tFunPE` tVoid
+
+        PrimStoreProjTag
+         -> tPtr tObj `tFunPE` tTag
+
+        PrimStoreProjField   
+         -> tForall kData $ \t -> tNat `tFunPE` tPtr tObj `tFunPE` tPtr t
+
+        _ -> error "typeOfPrimStore: sorry"
+
 
 -- PrimString -----------------------------------------------------------------
 typeOfPrimString :: PrimString -> Type Name

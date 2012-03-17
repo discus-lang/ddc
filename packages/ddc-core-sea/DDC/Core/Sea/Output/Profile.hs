@@ -3,7 +3,6 @@ module DDC.Core.Sea.Output.Profile
         ( outputProfile
         , lexString)
 where
-import DDC.Core.DataDef
 import DDC.Core.Parser.Lexer
 import DDC.Core.Language.Profile
 import DDC.Core.Sea.Output.Env
@@ -20,7 +19,7 @@ outputProfile
         = Profile
         { profileName           = "Sea"
         , profileFeatures       = outputFeatures
-        , profilePrimDataDefs   = emptyDataDefs
+        , profilePrimDataDefs   = primDataDefs
         , profilePrimKinds      = primKindEnv
         , profilePrimTypes      = primTypeEnv }
 
