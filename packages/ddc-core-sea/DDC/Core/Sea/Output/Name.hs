@@ -2,16 +2,17 @@
 -- | Names used in the SeaOutput language profile.
 --   These map directly onto names used in the C output language.
 module DDC.Core.Sea.Output.Name
-        ( Name          (..)
-        , Prim          (..)
-        , PrimTyCon     (..)
-        , PrimCast      (..)
-        , PrimCall      (..)
-        , PrimControl   (..)
-        , PrimStore     (..)
-        , PrimOp        (..)
-        , PrimString    (..)
-        , PrimIO        (..)
+        ( Name            (..)
+        , Prim            (..)
+        , PrimTyCon       (..)
+        , PrimCast        (..)
+        , PrimCall        (..)
+        , PrimControl     (..)
+        , PrimStore       (..)
+        , PrimStoreLayout (..)
+        , PrimOp          (..)
+        , PrimString      (..)
+        , PrimIO          (..)
         , readName)
 where
 import DDC.Core.Sea.Base.Name   (PrimTyCon(..), PrimOp(..))
@@ -175,7 +176,7 @@ data PrimStore
         | PrimStoreProjTag
 
         -- | Take a numbered field from some boxed data object.
-        | PrimStoreProjField
+        | PrimStoreProjField PrimStoreLayout
 
         -- Allocation -----------------
         -- | Allocate a suspended or partial application,
@@ -183,20 +184,16 @@ data PrimStore
         --   and number of args in the thunk.
         | PrimStoreAllocThunk
 
-        -- | Allocate a fresh DataBoxed object,
-        --   and fill in the constructor tag and arity.
-        | PrimStoreAllocBoxed
+        -- | Allocate a fresh Data object.
+        | PrimStoreAllocData    PrimStoreLayout
+        deriving (Eq, Ord, Show)
 
-        -- | Allocate a fresh DataRaw object
-        --   and fill in the constructor tag, and raw payload size.
-        | PrimStoreAllocRaw
 
-        -- | Allocate a fresh DataMixed object,
-        --   and fill in the constructor tag, 
-        --     number of boxed objects,
-        --     and the raw payload size.
-        | PrimStoreAllocMixed
-
+-- | Possible layout of objects.
+data PrimStoreLayout
+        = PrimStoreLayoutRaw
+        | PrimStoreLayoutBoxed
+        | PrimStoreLayoutMixed
         deriving (Eq, Ord, Show)
 
 
@@ -204,18 +201,24 @@ instance Pretty PrimStore where
  ppr p
   = case p of
         -- Read and Write
-        PrimStoreRead           -> text "read#"
-        PrimStoreWrite          -> text "write#"
+        PrimStoreRead             -> text "read#"
+        PrimStoreWrite            -> text "write#"
 
         -- Projections  
-        PrimStoreProjTag        -> text "tag#"
-        PrimStoreProjField      -> text "field#"
+        PrimStoreProjTag          -> text "tag#"
+        PrimStoreProjField layout -> text "field" <> ppr layout <> text "#"
 
         -- Alloction
-        PrimStoreAllocThunk     -> text "thunk#"
-        PrimStoreAllocBoxed     -> text "boxed#"
-        PrimStoreAllocRaw       -> text "raw#"
-        PrimStoreAllocMixed     -> text "mixed#"
+        PrimStoreAllocThunk       -> text "thunk#"
+        PrimStoreAllocData layout -> text "alloc" <> ppr layout <> text "#"
+
+
+instance Pretty PrimStoreLayout where
+ ppr layout
+  = case layout of
+        PrimStoreLayoutRaw      -> text "Raw"
+        PrimStoreLayoutBoxed    -> text "Boxed"
+        PrimStoreLayoutMixed    -> text "Mixed"
 
 
 -- PrimString -----------------------------------------------------------------
@@ -324,12 +327,28 @@ readName str@(c:_)
         -- Sea Store --------------------------------------
         | str == "read#"        = Just $ NamePrim $ PrimStore PrimStoreRead
         | str == "write#"       = Just $ NamePrim $ PrimStore PrimStoreWrite
+
         | str == "tag#"         = Just $ NamePrim $ PrimStore PrimStoreProjTag
-        | str == "field#"       = Just $ NamePrim $ PrimStore PrimStoreProjField
+
+        | str == "fieldRaw#"    
+        = Just $ NamePrim $ PrimStore (PrimStoreProjField PrimStoreLayoutRaw)
+
+        | str == "fieldBoxed#"  
+        = Just $ NamePrim $ PrimStore (PrimStoreProjField PrimStoreLayoutBoxed)
+
+        | str == "fieldRaw#"    
+        = Just $ NamePrim $ PrimStore (PrimStoreProjField PrimStoreLayoutMixed)
+
         | str == "thunk#"       = Just $ NamePrim $ PrimStore PrimStoreAllocThunk
-        | str == "boxed#"       = Just $ NamePrim $ PrimStore PrimStoreAllocBoxed
-        | str == "raw#"         = Just $ NamePrim $ PrimStore PrimStoreAllocRaw
-        | str == "mixed#"       = Just $ NamePrim $ PrimStore PrimStoreAllocMixed
+
+        | str == "allocRaw#"
+        = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutRaw)
+
+        | str == "allocBoxed#"  
+        = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutBoxed)
+
+        | str == "allocMixed#"
+        = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutMixed)
 
 
         -- Arithmetic Primops -----------------------------

@@ -79,13 +79,13 @@ convertTop (b , xx)
 instance Convert (Exp () Name) where
  convert xx 
   = case xx of
-        XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)
-         -> text "_fail()"
-
         XVar _ (UName n _)
          -> convert n
 
         XCon _ (UPrim (NameNat n) _)
+         -> integer n
+
+        XCon _ (UPrim (NameTag n) _)
          -> integer n
 
         -- TODO: frag check fully applied primops.
@@ -109,7 +109,8 @@ instance Convert (Exp () Name) where
         -- TODO: frag check that we only switch on Nats and Tags.
         XCase _ x [ AAlt (PData u []) x1
                   , AAlt PDefault 
-                         xFail@(XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)) ]
+                         xFail@(XApp _ 
+                                 (XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)) _)]
          -> vcat [ text "if" 
                         <+> parens (convert x <+> text "!=" <+> convert u)
                         <+> convert xFail
@@ -141,6 +142,10 @@ convertPrimApp p xs
         , [XType _t, x]                 <- xs
         = text "return" <+> convert x
 
+        | PrimControl PrimControlFail   <- p
+        , [XType _t]                    <- xs
+        = text "_fail()"
+
         -- Cast
         | PrimCast (PrimCastNatToInt bits) <- p
         , [x1]                          <- xs
@@ -159,13 +164,17 @@ convertPrimApp p xs
         | PrimStore PrimStoreProjTag    <- p
         = text "_tag"   <+> convertArgs xs
 
-        | PrimStore PrimStoreProjField  <- p
+        | PrimStore (PrimStoreProjField PrimStoreLayoutRaw) <- p
         , [XType t, x1, x2]             <- xs
-        =   text "_field" 
+        =   text "_fieldRaw" 
         <+> encloseSep lparen rparen (comma <> space)
                 [ convert t
                 , convert x1
                 , convert x2]
+
+        | PrimStore (PrimStoreAllocData PrimStoreLayoutRaw) <- p
+        , [xTag, xArity]                <- xs
+        =   text "_allocRaw" <+> convertArgs [xTag, xArity]
 
         -- String
         | PrimString op         <- p

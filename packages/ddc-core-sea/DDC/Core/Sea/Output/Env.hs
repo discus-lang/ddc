@@ -216,7 +216,7 @@ makePrimApplyType arity
 typeOfPrimControl :: PrimControl -> Type Name
 typeOfPrimControl pc
  = case pc of
-        PrimControlFail         -> tVoid
+        PrimControlFail         -> tForall kData $ \t -> t
         PrimControlReturn       -> tForall kData $ \t -> t `tFunPE` t
 
 
@@ -234,8 +234,11 @@ typeOfPrimStore jj
         PrimStoreProjTag
          -> tPtr tObj `tFunPE` tTag
 
-        PrimStoreProjField   
+        PrimStoreProjField PrimStoreLayoutRaw  
          -> tForall kData $ \t -> tNat `tFunPE` tPtr tObj `tFunPE` tPtr t
+
+        PrimStoreAllocData PrimStoreLayoutRaw
+         -> tTag `tFunPE` tNat `tFunPE` tPtr tObj
 
         _ -> error "typeOfPrimStore: sorry"
 
