@@ -4,16 +4,16 @@
 :seaout..
 module Main
 exports {
-        double  :: Int32# -> Int32#;
+        twice  :: Int32# -> Int32#;
 }
 imports {
         Thing.foo with foo :: Int32#;
 }
 letrec {
-        double (x : Int32#) : Int32#
+        twice (x : Int32#) : Int32#
          = return# [Int32#] (add# [Int32#] x x);
 
-        double2 (x : Int32#) : Int32#
+        twice2 (x : Int32#) : Int32#
          = let z  : Int32#      = add# [Int32#] x x in
            return# [Int32#] z;
 
@@ -23,7 +23,7 @@ letrec {
            return# [Int32#] z2;
 
         main (argc : Nat#) (argv : Ptr# String#) : Int32#
-         = let x   : Int32#     = double (i32# 5) in
+         = let x   : Int32#     = twice (i32# 5) in
            let str : String#    = showInt32# x in
            let _   : Void#      = putStr# str in
            return# [Int32#] (i32# 0);

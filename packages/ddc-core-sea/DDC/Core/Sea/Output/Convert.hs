@@ -37,13 +37,19 @@ instance Convert (Type Name) where
         TCon (TyConBound (UPrim (NamePrimTyCon tc) _))
          -> case tc of
                 PrimTyConVoid           -> text "void"
-                PrimTyConNat            -> text "int"
+                PrimTyConAddr           -> text "addr_t"
+                PrimTyConNat            -> text "nat_t"
+                PrimTyConTag            -> text "tag_t"
+                PrimTyConBool           -> text "bool_t"
                 PrimTyConInt bits       -> text "int" <> int bits <> text "_t"
-                PrimTyConString         -> text "char*"
+                PrimTyConString         -> text "string_t"
                 _                       -> error $ "convert[Type]: " ++ show tt
 
         TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
          -> convert t2 <> text "*"
+
+        TCon (TyConBound (UPrim NameObjTyCon _))
+         -> text "Obj"
 
         _                               -> error ("convert[Type]: sorry" ++ show tt)
 

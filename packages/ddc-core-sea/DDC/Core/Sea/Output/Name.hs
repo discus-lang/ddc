@@ -61,11 +61,11 @@ data    Prim
         -- | Casting between numeric types.
         | PrimCast      PrimCast
 
-        -- | Allocate an object.
-        | PrimAlloc     PrimAlloc
-
         -- | Calling functions, internal or external.
         | PrimCall      PrimCall
+
+        -- | Allocate an object.
+        | PrimAlloc     PrimAlloc
 
         -- | Control flow.
         | PrimControl   PrimControl
