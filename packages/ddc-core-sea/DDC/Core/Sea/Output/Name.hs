@@ -151,9 +151,6 @@ data PrimCall
         -- | Tailcall a top level function..
         = PrimCallTail    Int
 
-        -- | Call a top level function
-        | PrimCallSuper   Int
-
         -- | Build a partial application.
         | PrimCallPartial Int Int
 
@@ -170,9 +167,6 @@ instance Pretty PrimCall where
   = case pc of
         PrimCallTail    arity
          -> text "tailcall" <> int arity <> text "#"
-
-        PrimCallSuper   arity
-         -> text "call"     <> int arity <> text "#"
 
         PrimCallPartial arity args 
          -> text "partial"  <> int arity <> text "of" <> int args <> text "#"
@@ -234,14 +228,6 @@ readName str@(c:_)
         , n             <- read ds
         , n > 0
         = Just $ NamePrim $ PrimCall (PrimCallTail n)
-
-        -- callN#
-        | Just rest     <- stripPrefix "call" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
-        , n > 0
-        = Just $ NamePrim $ PrimCall (PrimCallSuper n)
 
         -- partialNofM#
         | Just  rest    <- stripPrefix "partial" str

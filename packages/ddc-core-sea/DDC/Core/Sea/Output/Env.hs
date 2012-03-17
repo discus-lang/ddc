@@ -127,10 +127,10 @@ typeOfPrimCall :: PrimCall -> Type Name
 typeOfPrimCall cc
  = case cc of
         PrimCallTail    arity       -> makePrimCallType    arity
-        PrimCallSuper   arity       -> makePrimCallType    arity
         PrimCallPartial arity args  -> makePrimPartialType arity args
         PrimCallApply   arity       -> makePrimApplyType   arity
         PrimCallForce               -> tFunPE (tPtr tObj) (tPtr tObj)
+
 
 -- | Make the type of the @callN#@ and @tailcallN@ primitives.
 makePrimCallType :: Int -> Type Name
