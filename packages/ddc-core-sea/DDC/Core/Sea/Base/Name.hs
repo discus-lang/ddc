@@ -51,8 +51,11 @@ instance Pretty Name where
 -- PrimTyCon -----------------------------------------------------------------
 -- | Primitive type constructors.
 data PrimTyCon
+        -- | The Void type.
+        = PrimTyConVoid
+
         -- | Type of store pointers
-        = PrimTyConPtr
+        | PrimTyConPtr
 
         -- | Type of machine addresses.
         | PrimTyConAddr
@@ -75,20 +78,25 @@ data PrimTyCon
 
         -- | Floating point numbers of the given length.
         | PrimTyConFloat  Int
+
+        -- | String of UTF8 characters.
+        | PrimTyConString 
         deriving (Eq, Ord, Show)
 
 
 instance Pretty PrimTyCon where
  ppr tc
   = case tc of
+        PrimTyConVoid           -> text "Void#"
         PrimTyConPtr            -> text "Ptr#"
         PrimTyConAddr           -> text "Addr#"
         PrimTyConNat            -> text "Nat#"
         PrimTyConTag            -> text "Tag#"
         PrimTyConBool           -> text "Bool#"
-        PrimTyConWord  bits     -> text "Word"  <> int bits <> text "#"
-        PrimTyConInt   bits     -> text "Int"   <> int bits <> text "#"
-        PrimTyConFloat bits     -> text "Float" <> int bits <> text "#"
+        PrimTyConWord   bits    -> text "Word"  <> int bits <> text "#"
+        PrimTyConInt    bits    -> text "Int"   <> int bits <> text "#"
+        PrimTyConFloat  bits    -> text "Float" <> int bits <> text "#"
+        PrimTyConString         -> text "String#"
 
 
 -- DataTyCon ------------------------------------------------------------------

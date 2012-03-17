@@ -25,12 +25,10 @@ kindOfName nn
 
 
 -- | Take the kind of a primitive name.
---
---   Returns `Nothing` if the name isn't primitive. 
---
 kindOfPrimTyCon :: PrimTyCon -> Kind Name
 kindOfPrimTyCon tc
  = case tc of
+        PrimTyConVoid    -> kData
         PrimTyConPtr     -> kData `kFun` kData
         PrimTyConAddr    -> kData
         PrimTyConNat     -> kData
@@ -39,6 +37,7 @@ kindOfPrimTyCon tc
         PrimTyConWord  _ -> kData
         PrimTyConInt   _ -> kData
         PrimTyConFloat _ -> kData
+        PrimTyConString  -> kData
 
 
 

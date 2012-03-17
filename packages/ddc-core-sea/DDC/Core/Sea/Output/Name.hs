@@ -11,6 +11,8 @@ module DDC.Core.Sea.Output.Name
         , PrimAlloc     (..)
         , PrimCall      (..)
         , PrimControl   (..)
+        , PrimString    (..)
+        , PrimIO        (..)
         , readName)
 where
 import DDC.Core.Sea.Base.Name   (PrimTyCon(..), PrimOp(..))
@@ -32,19 +34,19 @@ data Name
         -- | A primitive operator.
         | NamePrim      Prim
 
-        -- | A integer literal.
-        | NameInt Int   Integer
+        -- | A natural number literal
+        | NameNat       Integer
         deriving (Eq, Ord, Show)
 
 
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameObjTyCon            -> text "Obj"
-        NamePrimTyCon tc        -> ppr tc
-        NameVar  n              -> text n
-        NamePrim p              -> ppr p
-        NameInt  bits i         -> text (show i) <> text "#" <> text (show bits)
+        NameObjTyCon      -> text "Obj"
+        NamePrimTyCon tc  -> ppr tc
+        NameVar  n        -> text n
+        NamePrim p        -> ppr p
+        NameNat  i        -> text (show i)
 
 
 -- Prim -----------------------------------------------------------------------
@@ -67,6 +69,12 @@ data    Prim
 
         -- | Control flow.
         | PrimControl   PrimControl
+
+        -- | Strings.
+        | PrimString    PrimString
+
+        -- | IO.
+        | PrimIO        PrimIO
         deriving (Eq, Ord, Show)
 
 
@@ -79,6 +87,8 @@ instance Pretty Prim where
         PrimCall c      -> ppr c
         PrimAlloc a     -> ppr a
         PrimControl c   -> ppr c
+        PrimString s    -> ppr s
+        PrimIO i        -> ppr i
 
 
 -- Proj -----------------------------------------------------------------------
@@ -103,6 +113,7 @@ instance Pretty PrimProj where
 -- | Primitive cast between two types.
 data PrimCast
         = PrimCastOp
+        | PrimCastNatToInt Int
         deriving (Eq, Ord, Show)
 
 
@@ -110,6 +121,9 @@ instance Pretty PrimCast where
  ppr c
   = case c of
         PrimCastOp      -> text "cast#"
+
+        PrimCastNatToInt bits
+         -> text "i" <> int bits <> text "#"
 
 
 -- PrimAlloc ------------------------------------------------------------------
@@ -192,25 +206,59 @@ instance Pretty PrimControl where
          -> text "return#"
 
 
+-- PrimString -----------------------------------------------------------------
+-- | String funtions.
+--   We're treating these as primops until we get the FFI working.
+data PrimString 
+        = PrimStringShowInt Int
+        deriving (Eq, Ord, Show)
+
+instance Pretty PrimString where
+ ppr ps
+  = case ps of
+        PrimStringShowInt i
+         -> text "showInt" <> int i <> text "#"
+
+
+-- PrimIO ---------------------------------------------------------------------
+-- | IO functions.
+--   We're treating these as primops until we get the FFI working.
+data PrimIO
+        = PrimIOPutStr
+        deriving (Eq, Ord, Show)
+
+instance Pretty PrimIO where
+ ppr ps
+  = case ps of
+        PrimIOPutStr
+         -> text "putStr#"
+
+
 -- Parsing --------------------------------------------------------------------
 readName :: String -> Maybe Name
 readName []     = Nothing
 readName str@(c:_)
-        -- Primops arithmetic
-        | str == "add#"         = Just $ NamePrim $ PrimOp    PrimOpAdd
-        | str == "sub#"         = Just $ NamePrim $ PrimOp    PrimOpSub
-        | str == "mul#"         = Just $ NamePrim $ PrimOp    PrimOpMul
-        | str == "div#"         = Just $ NamePrim $ PrimOp    PrimOpDiv
-        | str == "mod#"         = Just $ NamePrim $ PrimOp    PrimOpMod
-        | str == "eq#"          = Just $ NamePrim $ PrimOp    PrimOpEq
-        | str == "neq#"         = Just $ NamePrim $ PrimOp    PrimOpNeq
-        | str == "gt#"          = Just $ NamePrim $ PrimOp    PrimOpGt
-        | str == "lt#"          = Just $ NamePrim $ PrimOp    PrimOpLt
-        | str == "le#"          = Just $ NamePrim $ PrimOp    PrimOpLe
-        | str == "and#"         = Just $ NamePrim $ PrimOp    PrimOpAnd
-        | str == "or#"          = Just $ NamePrim $ PrimOp    PrimOpOr
+        -- Primitive tycons
+        | str == "Void#"   = Just $ NamePrimTyCon PrimTyConVoid
+        | str == "Ptr#"    = Just $ NamePrimTyCon PrimTyConPtr
+        | str == "Addr#"   = Just $ NamePrimTyCon PrimTyConAddr
+        | str == "Nat#"    = Just $ NamePrimTyCon PrimTyConNat
+        | str == "Tag#"    = Just $ NamePrimTyCon PrimTyConTag
+        | str == "Bool#"   = Just $ NamePrimTyCon PrimTyConBool
+        | str == "String#" = Just $ NamePrimTyCon PrimTyConString
 
-        -- Primops sea specific
+        -- IntN#
+        | Just rest     <- stripPrefix "Int" str
+        , (ds, "#")     <- span isDigit rest
+        , n             <- read ds
+        , elem n [8, 16, 32, 64]
+        = Just $ NamePrimTyCon (PrimTyConInt n)
+
+        -- Obj
+        | str == "Obj"
+        = Just $ NameObjTyCon
+
+        -- Sea Primops ------------------------------------
         | str == "tag#"         = Just $ NamePrim $ PrimProj    PrimProjTag
         | str == "field#"       = Just $ NamePrim $ PrimProj    PrimProjField
         | str == "cast#"        = Just $ NamePrim $ PrimCast    PrimCastOp
@@ -251,25 +299,47 @@ readName str@(c:_)
         , n > 0
         = Just $ NamePrim $ PrimCall (PrimCallApply n)
 
+        -- Casts ------------------------------------------
+        -- Cast Nat to Int
+        | Just rest     <- stripPrefix "i" str
+        , (ds, "#")     <- span isDigit rest
+        , bits          <- read ds
+        , elem bits [8, 16, 32, 64]
+        = Just $ NamePrim $ PrimCast $ PrimCastNatToInt bits
+
+        -- Arithmetic Primops -----------------------------
+        | str == "add#"         = Just $ NamePrim $ PrimOp PrimOpAdd
+        | str == "sub#"         = Just $ NamePrim $ PrimOp PrimOpSub
+        | str == "mul#"         = Just $ NamePrim $ PrimOp PrimOpMul
+        | str == "div#"         = Just $ NamePrim $ PrimOp PrimOpDiv
+        | str == "mod#"         = Just $ NamePrim $ PrimOp PrimOpMod
+        | str == "eq#"          = Just $ NamePrim $ PrimOp PrimOpEq
+        | str == "neq#"         = Just $ NamePrim $ PrimOp PrimOpNeq
+        | str == "gt#"          = Just $ NamePrim $ PrimOp PrimOpGt
+        | str == "lt#"          = Just $ NamePrim $ PrimOp PrimOpLt
+        | str == "le#"          = Just $ NamePrim $ PrimOp PrimOpLe
+        | str == "and#"         = Just $ NamePrim $ PrimOp PrimOpAnd
+        | str == "or#"          = Just $ NamePrim $ PrimOp PrimOpOr
+
+        -- Strings ----------------------------------------
+        -- showIntN#
+        | Just rest     <- stripPrefix "showInt" str
+        , (ds, "#")     <- span isDigit rest
+        , bits          <- read ds
+        , elem bits [8, 16, 32, 64]
+        = Just $ NamePrim $ PrimString $ PrimStringShowInt bits
+
+        -- IO Primops -------------------------------------
+        | str == "putStr#"      = Just $ NamePrim $ PrimIO PrimIOPutStr
+
+        -- variables --------------------------------------
         -- Variable names.
         | isLower c      = Just $ NameVar str
 
-        -- Obj
-        | str == "Obj"
-        = Just $ NameObjTyCon
+        -- literals ---------------------------------------
+        | (ds, "")              <- span isDigit str
+        = Just $ NameNat (read ds)        
 
-        -- Primitive tycons
-        | str == "Ptr#"  = Just $ NamePrimTyCon PrimTyConPtr
-        | str == "Addr#" = Just $ NamePrimTyCon PrimTyConAddr
-        | str == "Tag#"  = Just $ NamePrimTyCon PrimTyConTag
-        | str == "Bool#" = Just $ NamePrimTyCon PrimTyConBool
-
-        -- IntN#
-        | Just rest     <- stripPrefix "Int" str
-        , (ds, "#")     <- span isDigit rest
-        , n             <- read ds
-        , elem n [8, 16, 32, 64]
-        = Just $ NamePrimTyCon (PrimTyConInt n)
 
         | otherwise
         = Nothing

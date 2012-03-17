@@ -28,8 +28,8 @@ kindOfName nn
  = case nn of
         NameObjTyCon      -> Just $ kData
         NamePrimTyCon tc  -> Just $ kindOfPrimTyCon tc
-        NameInt _ _       -> Just $ kData
         NamePrim _        -> Just $ kData
+        NameNat  _        -> Just $ kData
         _                 -> Nothing
 
 
@@ -40,6 +40,7 @@ kindOfName nn
 kindOfPrimTyCon :: PrimTyCon -> Kind Name
 kindOfPrimTyCon tc
  = case tc of
+        PrimTyConVoid    -> kData
         PrimTyConPtr     -> (kData `kFun` kData)
         PrimTyConAddr    -> kData
         PrimTyConNat     -> kData
@@ -48,6 +49,7 @@ kindOfPrimTyCon tc
         PrimTyConWord  _ -> kData
         PrimTyConInt   _ -> kData
         PrimTyConFloat _ -> kData
+        PrimTyConString  -> kData
 
 
 -- Types ----------------------------------------------------------------------
@@ -62,7 +64,7 @@ typeOfName :: Name -> Maybe (Type Name)
 typeOfName nn
  = case nn of
         NamePrim p      -> Just $ typeOfPrim p
-        NameInt bits _  -> Just $ tInt bits
+        NameNat  _      -> Just $ tNat
         _               -> Nothing
 
 
@@ -70,12 +72,32 @@ typeOfName nn
 typeOfPrim :: Prim -> Type Name
 typeOfPrim pp
  = case pp of
-        PrimOp op       -> typeOfPrimOp   op
-        PrimProj j      -> typeOfPrimProj j
-        PrimCast cc     -> typeOfPrimCast cc
-        PrimCall pc     -> typeOfPrimCall pc
+        PrimOp      op  -> typeOfPrimOp      op
+        PrimProj    j   -> typeOfPrimProj    j
+        PrimCast    cc  -> typeOfPrimCast    cc
+        PrimCall    pc  -> typeOfPrimCall    pc
         PrimControl pc  -> typeOfPrimControl pc
+        PrimString  ps  -> typeOfPrimString  ps
+        PrimIO      ps  -> typeOfPrimIO      ps
         _               -> error "typeOfPrim: sorry"
+
+
+tObj, tAddr, tTag, tNat, tBool, tString :: Type Name
+tObj      = TCon (TyConBound (UPrim  NameObjTyCon                   kData))
+tVoid     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)   kData))
+tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr)   kData))
+tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)    kData))
+tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)    kData))
+tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)   kData))
+tString   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConString) kData))
+
+tPtr :: Type Name -> Type Name
+tPtr t    = TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr)  (kFun kData kData))))
+                 t
+
+tInt :: Int -> Type Name
+tInt bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt bits)) kData))
+
 
 
 -- PrimOp ---------------------------------------------------------------------
@@ -118,7 +140,11 @@ typeOfPrimProj jj
 typeOfPrimCast :: PrimCast -> Type Name
 typeOfPrimCast cc
  = case cc of
-        PrimCastOp      -> tForalls [kData, kData] $ \[t1, t2] -> t1 `tFunPE` t2
+        PrimCastOp      
+         -> tForalls [kData, kData] $ \[t1, t2] -> t1 `tFunPE` t2
+
+        PrimCastNatToInt bits
+         -> tNat `tFunPE` tInt bits
 
 
 -- PrimCall -------------------------------------------------------------------
@@ -176,19 +202,16 @@ typeOfPrimControl pc
         PrimControlReturn       -> tForall kData $ \t -> t `tFunPE` t
         
 
--- Type -----------------------------------------------------------------------
-tObj, tAddr, tTag, tNat, tBool :: Type Name
-tObj      = TCon (TyConBound (UPrim  NameObjTyCon                 kData))
-tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr) kData))
-tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)  kData))
-tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)  kData))
-tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData))
+-- PrimString -----------------------------------------------------------------
+typeOfPrimString :: PrimString -> Type Name
+typeOfPrimString ps
+ = case ps of
+        PrimStringShowInt bits  -> tInt bits `tFunPE` tString
 
-tPtr :: Type Name -> Type Name
-tPtr t    = TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr)  (kFun kData kData))))
-                 t
 
-tInt :: Int -> Type Name
-tInt bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt bits)) kData))
-
+-- PrimIO ---------------------------------------------------------------------
+typeOfPrimIO :: PrimIO -> Type Name
+typeOfPrimIO ps
+ = case ps of
+        PrimIOPutStr            -> tString `tFunPE` tVoid
 

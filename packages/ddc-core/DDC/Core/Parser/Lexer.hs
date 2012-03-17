@@ -264,9 +264,6 @@ readTcConBuiltin ss
 
 
 -- | Read a named, user defined `TcCon`.
---
---   We won't know its kind, so fill this in with the Bottom element for 
---   computatation kinds (**0).
 readCon :: String -> Maybe String
 readCon ss
         | isConName ss  = Just ss
