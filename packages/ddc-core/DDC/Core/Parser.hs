@@ -145,6 +145,16 @@ pExp
         pTok KBraceKet
         return  $ XCase () x alts
 
+        -- match PAT <- EXP else EXP in EXP
+ , do   pTok KMatch
+        p       <- pPat
+        pTok KArrowDashLeft
+        x1      <- pExp 
+        pTok KElse
+        x2      <- pExp 
+        pTok KIn
+        x3      <- pExp
+        return  $ XCase () x1 [AAlt p x3, AAlt PDefault x2]
 
         -- weakeff [TYPE] in EXP
  , do   pTok KWeakEff

@@ -24,15 +24,13 @@ letrec {
 
         addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
          = let z : Ptr# Obj = allocRaw# TAG0# 4 in
-           case tag# x of { TAG0# -> 
-           case tag# y of { TAG0# -> 
-             let r : Int32# = add# [Int32#] 
+           match TAG0# <- tag# x else fail# [Ptr# Obj] in
+           match TAG0# <- tag# y else fail# [Ptr# Obj] in
+           let r : Int32# = add# [Int32#] 
                                   (read# [Int32#] (fieldRaw# [Int32#] 0 x))
                                   (read# [Int32#] (fieldRaw# [Int32#] 0 y)) in
-             let _ : Void#  = write# [Int32#] (fieldRaw# [Int32#] 0 z) r
-             in return# [Ptr# Obj] z;
-            _ -> fail#  [Ptr# Obj]; };
-            _ -> fail#  [Ptr# Obj]; };
+           let _ : Void#  = write# [Int32#] (fieldRaw# [Int32#] 0 z) r in
+           return# [Ptr# Obj] z;
 
         main (argc : Nat#) (argv : Ptr# String#) : Nat#
          = let x   : Int32#     = twice (i32# 5) in

@@ -118,13 +118,14 @@ data TokAtom
         | KKindWitness
         | KArrowTilde
         | KArrowDash
+        | KArrowDashLeft
         | KArrowEquals
 
         -- bottoms
         | KBotEffect
         | KBotClosure
 
-        -- expression keywords
+        -- core keywords
         | KModule
         | KImports
         | KExports
@@ -142,6 +143,10 @@ data TokAtom
         | KWeakClo
         | KPurify
         | KForget
+
+        -- sugar keywords
+        | KMatch
+        | KElse
 
         -- debruijn indices
         | KIndex Int
@@ -204,6 +209,7 @@ describeTokAtom' ta
         KKindWitness            -> (Constructor, "@")
         KArrowTilde             -> (Constructor, "~>")
         KArrowDash              -> (Constructor, "->")
+        KArrowDashLeft          -> (Constructor, "<-")
         KArrowEquals            -> (Constructor, "=>")
 
         -- bottoms
@@ -228,7 +234,11 @@ describeTokAtom' ta
         KWeakClo                -> (Keyword, "weakclo")
         KPurify                 -> (Keyword, "purify")
         KForget                 -> (Keyword, "forget")
-        
+
+        -- sugar keywords
+        KMatch                  -> (Keyword, "match")
+        KElse                   -> (Keyword, "else")
+
         -- debruijn indices
         KIndex i                -> (Index,   "^" ++ show i)
 

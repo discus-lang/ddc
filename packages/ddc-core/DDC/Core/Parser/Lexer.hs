@@ -53,7 +53,9 @@ keywords
         , ("weakeff",    KA KWeakEff)
         , ("weakclo",    KA KWeakClo)
         , ("with",       KA KWith)
-        , ("where",      KA KWhere) ]
+        , ("where",      KA KWhere) 
+        , ("match",      KA KMatch)
+        , ("else",       KA KElse) ]
 
 
 -------------------------------------------------------------------------------
@@ -93,6 +95,7 @@ lexExp lineStart str
         -- Function Constructors
         '~'  : '>'  : w' -> tokA KArrowTilde     : lexMore 2 w'
         '-'  : '>'  : w' -> tokA KArrowDash      : lexMore 2 w'
+        '<'  : '-'  : w' -> tokA KArrowDashLeft  : lexMore 2 w'
         '='  : '>'  : w' -> tokA KArrowEquals    : lexMore 2 w'
 
         -- Compound symbols
