@@ -22,9 +22,9 @@ letrec {
            let z2 : Int32#      = add# [Int32#] z1 x in
            return# [Int32#] z2;
 
-        main (argc : Nat#) (argv : Ptr# String#) : Int32#
+        main (argc : Nat#) (argv : Ptr# String#) : Nat#
          = let x   : Int32#     = twice (i32# 5) in
            let str : String#    = showInt32# x in
            let _   : Void#      = putStr# str in
-           return# [Int32#] (i32# 0);
+           return# [Nat#] 0;
 };;

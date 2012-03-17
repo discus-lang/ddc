@@ -65,7 +65,9 @@ convertTop (b , xx)
                 <+> encloseSep lparen rparen (comma <> space) 
                         (map convert bsParam))
 
-        <$$> braces (convert xBody <> semi)
+        <$$> lbrace <> line
+        <>  (indent 8 (convert xBody <> semi)) 
+        <>   line   <> rbrace
         <>   line 
 
 
@@ -96,7 +98,7 @@ instance Convert (Exp () Name) where
                  , convert x2 ]
 
         XLet _ (LLet LetStrict b x) x2
-         -> vcat [ convert b <+> text "=" <+> convert x <> semi
+         -> vcat [ fill 12 (convert b) <+> text "=" <+> convert x <> semi
                  , convert x2 ]
 
         _ -> error $ unlines
