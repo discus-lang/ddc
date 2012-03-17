@@ -85,10 +85,12 @@ instance Convert (Exp () Name) where
         XCon _ (UPrim (NameNat n) _)
          -> integer n
 
+        -- TODO: frag check fully applied primops.
         XApp{}
          |  Just (NamePrim p, xs)       <- takeXPrimApps xx
          -> convertPrimApp p xs 
 
+        -- TODO: frag check fully applied calls.
         XApp{}
          |  (XVar _ (UName n _) : args) <- takeXApps xx
          -> convertFunApp n args
@@ -100,6 +102,13 @@ instance Convert (Exp () Name) where
         XLet _ (LLet LetStrict b x) x2
          -> vcat [ fill 12 (convert b) <+> text "=" <+> convert x <> semi
                  , convert x2 ]
+
+        -- TODO: frag check that we only switch on Nats and Tags.
+        XCase _ x alts
+         ->   text "switch" <> parens (convert x) <+> lbrace
+         <$$> (indent 1 (vcat $ map convert alts))
+         <$$> rbrace 
+
 
         _ -> error $ unlines
                    [ "convert[Exp] failed"      
@@ -116,6 +125,10 @@ convertPrimApp p xs
         = parensConvertX x1 <+> convert op <+> parensConvertX x2
 
         -- Control
+        | PrimControl PrimControlFail   <- p
+        , [XType _t]            <- xs
+        = text "_fail()"
+
         | PrimControl PrimControlReturn <- p
         , [XType _t, x]         <- xs
         = text "return" <+> convert x
@@ -125,6 +138,26 @@ convertPrimApp p xs
         , [x1]                  <- xs
         = parens (text "int" <> int bits <> text "_t") 
                 <> parens (convert x1)
+
+        -- Store 
+        | PrimStore PrimStoreRead <- p
+        , [XType _t, x]         <- xs
+        = text "_read"  <+> parens (convert x)
+
+        | PrimStore PrimStoreWrite <- p
+        , [XType _t, x1, x2]    <- xs
+        = text "_write" <+> convertArgs [x1, x2]
+
+        | PrimStore PrimStoreProjTag <- p
+        = text "_tag"   <+> convertArgs xs
+
+        | PrimStore PrimStoreProjField <- p
+        , [XType t, x1, x2]    <- xs
+        =   text "_field" 
+        <+> encloseSep lparen rparen (comma <> space)
+                [ convert t
+                , convert x1
+                , convert x2]
 
         -- String
         | PrimString op         <- p
@@ -166,6 +199,24 @@ convertArgs xs
                 (map convert xs)
 
 
+-- Alt ------------------------------------------------------------------------
+instance Convert (Alt () Name) where
+ convert alt
+  = case alt of
+        AAlt PDefault x 
+         -> text "default:" 
+                <+> convert x
+
+        AAlt (PData u []) x
+         -> vcat [ text "case" <+> convert u <> colon
+                 , indent 7 (vcat [ convert x    <> semi
+                                  , text "break" <> semi 
+                                  , empty] ) ]
+
+        AAlt{}
+         -> error "convert[Alt]: sorry"
+
+
 -- Bind and Bound -------------------------------------------------------------
 instance Convert (Bind Name) where
  convert bb
@@ -177,6 +228,7 @@ instance Convert (Bound Name) where
  convert uu
   = case uu of
         UName n _       -> convert n
+        UPrim n _       -> convert n
         _               -> error "convert[Bound]: sorry"
 
 
@@ -186,6 +238,8 @@ instance Convert Name where
   = case nn of
         NamePrim p      -> convert p
         NameVar  str    -> text str
+        NameTag  i      -> integer i
+        NameNat  i      -> integer i
         _               -> error ("convert[Name]: sorry" ++ show nn)
 
 

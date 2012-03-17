@@ -22,16 +22,20 @@ letrec {
            let z2 : Int32#      = add# [Int32#] z1 x in
            return# [Int32#] z2;
 
-        addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Int32#
-         = case tag# x of {
-            TAG0# -> case tag# y of {
-                   TAG0# -> add# [Int32#] 
-                                (read# [Int32#] (field# [Int32#] 4 x))
-                                (read# [Int32#] (field# [Int32#] 4 y));
-                   _ -> fail# [Int32#];
-                  };
-            _ -> fail# [Int32#];
-            };
+        addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+         = let _ : Void#
+            = case tag# x of {
+               TAG0# -> case tag# y of {
+               TAG0# -> let r : Int32# = add# [Int32#] 
+                                             (read# [Int32#] (field# [Int32#] 4 x))
+                                             (read# [Int32#] (field# [Int32#] 4 y)) in
+                        write# [Int32#] (field# [Int32#] 4 y) r;
+
+                _ -> fail# [Void#];
+               };
+               _ -> fail# [Void#];
+              } in
+          return# [Ptr# Obj] y;
 
         main (argc : Nat#) (argv : Ptr# String#) : Nat#
          = let x   : Int32#     = twice (i32# 5) in
@@ -39,3 +43,12 @@ letrec {
            let _   : Void#      = putStr# str in
            return# [Nat#] 0;
 };;
+
+
+-- SUGAR
+-- TAG0# <- tag# x else fail#
+-- TAG0# <- tag# y else fail#
+-- r : Int32# = add# [Int32#]
+--            (read# [Int32#] (field# [Int32#] 4 x))
+--            (read# [Int32#] (field# [Int32#] 4 y));
+-- write# [Int32#] (field [Int32#] 4 y) r;
