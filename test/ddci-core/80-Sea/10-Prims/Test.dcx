@@ -12,14 +12,6 @@
 :check tailcall4#
 
 
--- Check types of callN# prims.
-:check call0#
-
-:check call1#
-
-:check call4#
-
-
 -- Check types of partialNofM# prims.
 :check partial0of0#
 

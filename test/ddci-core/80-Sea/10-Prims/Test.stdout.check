@@ -24,23 +24,6 @@ tailcall4#
 :$: $0
 
 
--- Check types of callN# prims.
-call0#
-:*: *0
-:!: !0
-:$: DeepUse *0
-
-call1#
-:*: [^ ^ : *].(^1 -> ^0) -> ^1 -> ^0
-:!: !0
-:$: $0
-
-call4#
-:*: [^ ^ ^ ^ ^ : *].(^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^4 -> ^3 -> ^2 -> ^1 -> ^0
-:!: !0
-:$: $0
-
-
 -- Check types of partialNofM# prims.
 partial0of0#
 :*: *0
