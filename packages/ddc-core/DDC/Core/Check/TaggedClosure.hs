@@ -137,7 +137,7 @@ taggedClosureOfWeakClo clo
               -> Just $ GBoundRgnVar u
 
             Just (TyConSpec TcConUse, [TCon (TyConBound u)])
-              -> Just $ GBoundRgnVar u
+              -> Just $ GBoundRgnCon u
 
             _ -> Nothing
 
