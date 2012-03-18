@@ -13,6 +13,7 @@ import qualified DDC.Core.Transform.LiftX as L
 
 -}
 import qualified DDC.Core.Transform.SubstituteXX as S
+import qualified DDC.Type.Transform.SubstituteT as S
 
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -54,7 +55,7 @@ rewrite rules x0
 	Just x  -> go x []
 
 rewriteX :: (Show n, Show a, Ord n) => RewriteRule a n -> Exp a n -> [(Exp a n,a)] -> Maybe (Exp a n)
-rewriteX (RewriteRule binds _constrs lhs rhs _eff _clo) f args
+rewriteX (RewriteRule binds _constrs lhs rhs eff clo) f args
  = do	let m	= Map.empty
 	l:ls   <- return $ flatApps lhs
 	m'     <- constrain m bs l f
@@ -74,7 +75,20 @@ rewriteX (RewriteRule binds _constrs lhs rhs _eff _clo) f args
     -- TODO constraints
     subst m
      =	    let bas = Maybe.catMaybes $ map (lookupz m) bs in
-	    S.substituteXArgs bas rhs
+	    weakeff bas eff $ weakclo bas clo $ S.substituteXArgs bas rhs
+    
+    anno = snd $ head args
+
+    weakeff _ Nothing x = x
+    weakeff bas (Just e) x
+     = XCast anno (CastWeakenEffect $ S.substituteTs (Maybe.catMaybes $ map lookupT bas) e) x
+
+    weakclo _ Nothing x = x
+    weakclo bas (Just c) x
+     = XCast anno (CastWeakenClosure $ S.substituteTs (Maybe.catMaybes $ map lookupT bas) c) x
+
+    lookupT (b,XType t) = Just (b,t)
+    lookupT _ = Nothing
 
     lookupz m b@(BName n _)
      = do   x <- Map.lookup n m

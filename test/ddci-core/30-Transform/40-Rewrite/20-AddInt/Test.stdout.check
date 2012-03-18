@@ -4,8 +4,8 @@ ok, added add0r
 ok, added add0l
 
 -- should work with any regions
-copyInt [R0#] [R0#] (5 [R0#] ())
-copyInt [R1#] [R3#] (5 [R1#] ())
+weakeff [Read R0# + Alloc R0#] in weakclo [Use R0#] in copyInt [R0#] [R0#] (5 [R0#] ())
+weakeff [Read R1# + Read R2# + Alloc R2# + Alloc R3#] in weakclo [Use R1# + Use R2# + Use R3#] in copyInt [R1#] [R3#] (5 [R1#] ())
 
 -- addInt is strict & closure free so we can reduce any copies in its args
 ok, added addCopy1
@@ -14,7 +14,7 @@ ok, added addCopy2
 
 
 -- simplify some nested zeroes
-copyInt [R0#] [R2#] (copyInt [R0#] [R0#] (5 [R0#] ()))
+weakeff [Read R0# + Read R1# + Alloc R1# + Alloc R2#] in weakclo [Use R0# + Use R1# + Use R2#] in copyInt [R0#] [R2#] (weakeff [Read R0# + Alloc R0#] in weakclo [Use R0#] in copyInt [R0#] [R0#] (5 [R0#] ()))
 
 
 -- we can simplify out a copy of a literal.
@@ -23,7 +23,7 @@ ok, added copyLit
 ok, added copyCopy
 
 -- some more nested zeroes
-5 [R2#] ()
+weakeff [Read R0# + Read R1# + Alloc R1# + Alloc R2#] in weakclo [Use R0# + Use R1# + Use R2#] in copyInt [R0#] [R2#] (weakeff [Read R0# + Alloc R0#] in weakclo [Use R0#] in weakeff [Read R0# + Alloc R0#] in weakclo [Use R0#] in 5 [R0#] ())
 
 -- add a let binding
-let x : Int R9# = 5 [R9#] () in copyInt [R9#] [R2#] x
+let x : Int R9# = 5 [R9#] () in weakeff [Read R1# + Read R7# + Alloc R1# + Alloc R2#] in weakclo [Use R1# + Use R2# + Use R7#] in copyInt [R7#] [R2#] (weakeff [Read R8# + Read R9# + Alloc R7# + Alloc R8#] in weakclo [Use R7# + Use R8# + Use R9#] in copyInt [R9#] [R7#] x)
