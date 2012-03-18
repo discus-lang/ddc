@@ -1,3 +1,4 @@
+:set Indent
 :set trans Rewrite
 -- add zero on right. make copy
 :set rule add0r [r1 r2 r3 : %] (x : Int r1). addInt [:r1 r2 r3:] x (0 [r2] ()) = copyInt [:r1 r3:] x
@@ -5,6 +6,7 @@
 
 -- should work with any regions
 :trans addInt [:R0# R0# R0#:] (5 [R0#] ()) (0 [R0#] ())
+
 :trans addInt [:R1# R2# R3#:] (5 [R1#] ()) (0 [R2#] ())
 
 -- addInt is strict & closure free so we can reduce any copies in its args
