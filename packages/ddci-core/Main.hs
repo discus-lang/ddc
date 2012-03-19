@@ -21,6 +21,11 @@ main
         case args of
          []      -> runInteractive
 
+         [fileName]
+          | isSuffixOf ".dcx" fileName
+          -> do file    <- readFile fileName
+                runBatch file
+
          ["--batch", fileName]
           -> do file    <- readFile fileName
                 runBatch file

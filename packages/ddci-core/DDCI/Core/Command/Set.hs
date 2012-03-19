@@ -72,7 +72,7 @@ cmdSet state cmd
 		return state
 	
 	Left e
-	 -> do	putStrLn e
+	 -> do	chatStrLn state e
 		return state
 
  | otherwise

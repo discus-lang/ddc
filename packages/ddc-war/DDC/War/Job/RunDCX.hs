@@ -24,7 +24,7 @@ jobRunDCX (JobRunDCX
 	(time, (code, strOut, strErr))
 	  <- runTimedCommand
 	  $  systemTee False
-		(ddciBin' ++ " " ++ srcDCX)
+		(ddciBin' ++ " --batch " ++ srcDCX)
 		""
 	atomicWriteFile testRunStdout strOut
 	atomicWriteFile testRunStderr strErr
