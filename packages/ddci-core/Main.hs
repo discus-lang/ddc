@@ -19,11 +19,13 @@ main :: IO ()
 main 
  = do   args    <- getArgs
         case args of
-         [fileName]
+         []      -> runInteractive
+
+         ["--batch", fileName]
           -> do file    <- readFile fileName
                 runBatch file
        
-         _ -> runInteractive
+         _       -> runArgs args
 
 
 -- Command --------------------------------------------------------------------
@@ -46,7 +48,7 @@ data Command
         | CommandTrans          -- ^ Transform an expression.
         | CommandTransEval      -- ^ Transform then evaluate an expression.
 	| CommandAst            -- ^ Show the AST of an expression.
-        | CommandSeaOut         -- ^ Convert a SeaOut core module to C code.
+        | CommandSea            -- ^ Convert a Sea core module to C code.
         deriving (Eq, Show)
 
 
@@ -69,7 +71,7 @@ commands
         , (":trans",    CommandTrans)
         , (":trun",     CommandTransEval)
         , (":ast",	CommandAst) 
-        , (":seaout",   CommandSeaOut) ]
+        , (":sea",      CommandSea) ]
 
 
 -- | Read the command from the front of a string.
@@ -130,7 +132,7 @@ readInput ss
 
 
 -- Interactive ----------------------------------------------------------------
--- | Run an interactive session
+-- | Run an interactive session, reading commands from the console.
 runInteractive :: IO ()
 runInteractive
  = do   putStrLn "DDCi-core, version 0.3.0: http://disciple.ouroborus.net.   :? for help"
@@ -143,8 +145,9 @@ runInteractive
 loopInteractive :: IO ()
 loopInteractive 
  = do   hlState         <- HL.initializeInput HL.defaultSettings
+        let state       = initState InputInteractive
         let inputState  = InputState Nothing InputLine 1 []
-        loop initState inputState hlState
+        loop state inputState hlState
  where  
         loop state inputState hlState 
          = do   -- If this isn't the first line then print the prompt.
@@ -172,10 +175,12 @@ getInput hlState prompt
 
 
 -- Batch ----------------------------------------------------------------------
+-- | Run in batch mode, reading commands from the given string.
 runBatch :: String -> IO ()
 runBatch str
- = do   let inputState  = InputState Nothing InputLine 1 []
-        loop initState inputState (lines str)
+ = do   let state       = initState InputBatch
+        let inputState  = InputState Nothing InputLine 1 []
+        loop state inputState (lines str)
  where 
         -- No more lines, we're done.
         -- There might be a command in the buffer though.
@@ -211,6 +216,34 @@ runBatch str
          | otherwise
          = do   (state', inputState')  <- eatLine state inputState l
                 loop state' inputState' ls
+
+
+-- Args -----------------------------------------------------------------------
+-- | Run in unix command-line mode, reading commands from a list of arguments.
+runArgs :: [String] -> IO ()
+runArgs args
+ = do   let state    = initState InputArgs
+        loop state args
+ where 
+        -- No more args, we're done.
+        loop _state []
+         = do   return ()
+
+        loop state (('-':cmdColon) : file : rest)
+         | isSuffixOf ":" cmdColon
+         , cmdStr               <- init cmdColon
+         , Just (cmd, [])       <- readCommand (':' : cmdStr)
+         = do   contents        <- readFile file
+                state'          <- handleCmd state cmd 0 contents
+                loop state' rest
+
+        loop state (('-':cmdStr) : arg : rest)
+         | Just (cmd, [])       <- readCommand (':' : cmdStr)
+         = do   state'          <- handleCmd state cmd 0 arg
+                loop state' rest
+
+        loop _state xs
+         = error $ "bad args " ++ (show xs)
 
 
 -- Eat ------------------------------------------------------------------------
@@ -268,6 +301,8 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
                        , InputState (Just (cmd, lineStart)) input
                                 (lineNumber + 1)
                                 (acc ++ rest ++ "\n"))
+
+
 
 
 -- Commands -------------------------------------------------------------------
@@ -352,7 +387,7 @@ handleCmd1 state cmd lineStart line
          -> do  cmdAst state lineStart line
                 return state
 
-        CommandSeaOut
+        CommandSea
          -> do  cmdSeaOut state lineStart line
                 return state
 

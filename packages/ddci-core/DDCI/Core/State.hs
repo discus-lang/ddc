@@ -1,6 +1,7 @@
 
 module DDCI.Core.State
         ( State         (..)
+        , InputMode     (..)
         , StateProfile  (..)
         , stateProfiles
 	, stateRewriteRulesList
@@ -25,11 +26,17 @@ import qualified Data.Set               as Set
 -- | Interpreter state.
 data State
         = State
-        { stateModes            :: Set Mode 
+        { stateInput            :: InputMode
+        , stateModes            :: Set Mode 
         , stateTransform        :: Transform
 	, stateRewriteRules	:: Map String (RewriteRule () Name) 
         , stateProfile          :: StateProfile }
 
+data InputMode
+        = InputArgs
+        | InputBatch
+        | InputInteractive
+        deriving (Eq, Show)
 
 -- | Adjust a mode setting in the state.
 adjustMode 
@@ -46,10 +53,11 @@ adjustMode False mode state
 
 
 -- | The initial state.
-initState :: State
-initState
+initState :: InputMode -> State
+initState inputMode
         = State
-        { stateModes            = Set.empty 
+        { stateInput            = inputMode
+        , stateModes            = Set.empty 
         , stateTransform        = None
 	, stateRewriteRules	= Map.empty 
         , stateProfile          = StateProfile evalProfile }

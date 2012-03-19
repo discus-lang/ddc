@@ -35,7 +35,7 @@ cmdSet state cmd
  | ["lang", name]       <- words cmd
  = do   case lookup name stateProfiles of
          Just profile   
-          -> do putStrLn "ok"
+          -> do chatStrLn state "ok"
                 return $ state { stateProfile = profile }
 
          Nothing
@@ -45,7 +45,7 @@ cmdSet state cmd
  | "trans" : rest       <- words cmd
  = do   case parseTransform (concat rest) of
          Just spec       
-          -> do putStrLn "ok"
+          -> do chatStrLn state "ok"
                 return $ state { stateTransform = spec }
 
          Nothing
@@ -55,13 +55,13 @@ cmdSet state cmd
  | ("rule", rest)	<- R.parseFirstWord cmd
  = case R.parseRewrite rest of
 	Right (R.SetAdd name rule)
-	 -> do	putStrLn $ "ok, added " ++ name
+	 -> do	chatStrLn state $ "ok, added " ++ name
 		let rules = stateRewriteRules state
 		let rules'= Map.insert name rule rules
 		return $ state { stateRewriteRules = rules' }
 
 	Right (R.SetRemove name)
-	 -> do	putStrLn $ "ok, removed " ++ name
+	 -> do	chatStrLn state $ "ok, removed " ++ name
 		let rules = stateRewriteRules state
 		let rules'= Map.delete name rules
 		return $ state { stateRewriteRules = rules' }
@@ -79,11 +79,11 @@ cmdSet state cmd
  = case parseModeChanges cmd of
         Just changes
          -> do  let state'  = foldr (uncurry adjustMode) state changes
-                putStrLn "ok"
+                chatStrLn state "ok"
                 return state'
         
         Nothing
-         -> do  putStrLn "mode parse error"
+         -> do  chatStrLn state "mode parse error"
                 return state
 
 -- | Parse a string of mode changes.
