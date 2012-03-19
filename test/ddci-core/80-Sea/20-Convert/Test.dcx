@@ -10,31 +10,28 @@ imports {
         Thing.foo with foo :: Int32#;
 }
 letrec {
-        twice (x : Int32#) : Int32#
-         = return# [Int32#] (add# [Int32#] x x);
-
-        twice2 (x : Int32#) : Int32#
-         = let z  : Int32#      = add# [Int32#] x x in
-           return# [Int32#] z;
-
-        triple  (x : Int32#) : Int32#
-         = let z1 : Int32#      = add# [Int32#] x  x in
-           let z2 : Int32#      = add# [Int32#] z1 x in
-           return# [Int32#] z2;
-
         addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
-         = let z : Ptr# Obj = allocRaw# TAG0# 4 in
-           match TAG0# <- tag# x else fail# [Ptr# Obj] in
-           match TAG0# <- tag# y else fail# [Ptr# Obj] in
-           let r : Int32# = add# [Int32#] 
-                                  (read# [Int32#] (fieldRaw# [Int32#] 0 x))
-                                  (read# [Int32#] (fieldRaw# [Int32#] 0 y)) in
-           let _ : Void#  = write# [Int32#] (fieldRaw# [Int32#] 0 z) r in
+         = let z : Ptr# Obj     = allocRaw# TAG0# 4 in
+           match TAG0#  <- tag# x else fail# [Ptr# Obj] in
+           match TAG0#  <- tag# y else fail# [Ptr# Obj] in
+           let r : Int32#       = add# [Int32#] 
+                                        (read# [Int32#] (fieldRaw# [Int32#] 0 x))
+                                        (read# [Int32#] (fieldRaw# [Int32#] 0 y)) in
+           let _ : Void#        = write# [Int32#] (fieldRaw# [Int32#] 0 z) r in
            return# [Ptr# Obj] z;
 
+        boxInt32 (x : Int32#) : Ptr# Obj
+         = let z : Ptr# Obj     = allocRaw# TAG0# 4 in
+           let _ : Void#        = write# [Int32#] (fieldRaw# [Int32#] 0 z) x in
+           return# [Ptr# Obj] z;
+
+        unboxInt32 (x : Ptr# Obj) : Int32#
+         = return# [Int32#] (read# [Int32#] (fieldRaw# [Int32#] 0 x));
+
         main (argc : Nat#) (argv : Ptr# String#) : Nat#
-         = let x   : Int32#     = twice (i32# 5) in
-           let str : String#    = showInt32# x in
+         = let x   : Ptr# Obj   = boxInt32 (i32# 5) in
+           let x2  : Ptr# Obj   = addInt32 x x in
+           let str : String#    = showInt32# (unboxInt32 x2) in
            let _   : Void#      = putStr# str in
            return# [Nat#] 0;
 };;
