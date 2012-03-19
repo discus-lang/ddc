@@ -43,9 +43,7 @@ outStrLn _state str
 --   These are only displayed in the InputInteractive and InputBatch modes.
 chatStrLn :: State -> String -> IO ()
 chatStrLn state str
-        |   stateInput state == InputInteractive
-         || stateInput state == InputBatch
-        = putStrLn str
-
-        | otherwise
-        = return ()
+ = case stateInput state of
+        InputInteractive        -> putStrLn str
+        InputBatch _            -> putStrLn str
+        _                       -> return ()

@@ -33,8 +33,13 @@ data State
         , stateProfile          :: StateProfile }
 
 data InputMode
+        -- | Read commands from unix command-line args.
         = InputArgs
-        | InputBatch
+
+        -- | Commands were read from the file with this name.
+        | InputBatch    FilePath
+
+        -- | Read commands form the console.
         | InputInteractive
         deriving (Eq, Show)
 

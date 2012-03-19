@@ -21,14 +21,14 @@ main
         case args of
          []      -> runInteractive
 
-         [fileName]
-          | isSuffixOf ".dcx" fileName
-          -> do file    <- readFile fileName
-                runBatch file
+         [filePath]
+          | isSuffixOf ".dcx" filePath
+          -> do file    <- readFile filePath
+                runBatch filePath file
 
-         ["--batch", fileName]
-          -> do file    <- readFile fileName
-                runBatch file
+         ["--batch", filePath]
+          -> do file    <- readFile filePath
+                runBatch filePath file
        
          _       -> runArgs args
 
@@ -181,9 +181,9 @@ getInput hlState prompt
 
 -- Batch ----------------------------------------------------------------------
 -- | Run in batch mode, reading commands from the given string.
-runBatch :: String -> IO ()
-runBatch str
- = do   let state       = initState InputBatch
+runBatch :: FilePath -> String -> IO ()
+runBatch filePath str
+ = do   let state       = initState (InputBatch filePath)
         let inputState  = InputState Nothing InputLine 1 []
         loop state inputState (lines str)
  where 
