@@ -240,13 +240,14 @@ instance Pretty PrimString where
 --   We're treating these as primops until we get the FFI working.
 data PrimIO
         = PrimIOPutStr
+        | PrimIOPutStrLn
         deriving (Eq, Ord, Show)
 
 instance Pretty PrimIO where
  ppr ps
   = case ps of
-        PrimIOPutStr
-         -> text "putStr#"
+        PrimIOPutStr    -> text "putStr#"
+        PrimIOPutStrLn  -> text "putStrLn#"
 
 
 -- Parsing --------------------------------------------------------------------
@@ -375,6 +376,7 @@ readName str@(c:_)
 
         -- IO Primops -------------------------------------
         | str == "putStr#"      = Just $ NamePrim $ PrimIO PrimIOPutStr
+        | str == "putStrLn#"    = Just $ NamePrim $ PrimIO PrimIOPutStrLn
 
         -- variables --------------------------------------
         -- Variable names.

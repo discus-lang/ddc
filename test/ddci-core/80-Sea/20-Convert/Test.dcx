@@ -28,10 +28,10 @@ letrec {
         unboxInt32 (x : Ptr# Obj) : Int32#
          = return# [Int32#] (read# [Int32#] (fieldRaw# [Int32#] 0 x));
 
-        main (argc : Nat#) (argv : Ptr# String#) : Nat#
+        main (argc : Nat#) (argv : Ptr# String#) : Int32#
          = let x   : Ptr# Obj   = boxInt32 (i32# 5) in
            let x2  : Ptr# Obj   = addInt32 x x in
            let str : String#    = showInt32# (unboxInt32 x2) in
-           let _   : Void#      = putStr# str in
-           return# [Nat#] 0;
+           let _   : Void#      = putStrLn# str in
+           return# [Int32#] (i32# 0);
 };;

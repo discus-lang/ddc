@@ -255,4 +255,5 @@ typeOfPrimIO :: PrimIO -> Type Name
 typeOfPrimIO ps
  = case ps of
         PrimIOPutStr            -> tString `tFunPE` tVoid
+        PrimIOPutStrLn          -> tString `tFunPE` tVoid
 

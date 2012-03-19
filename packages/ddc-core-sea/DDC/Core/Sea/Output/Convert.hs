@@ -296,10 +296,10 @@ instance Convert PrimOp where
 instance Convert PrimString where
  convert nn 
   = case nn of
-        PrimStringShowInt b 
-         -> text "showInt" <> int b
+        PrimStringShowInt b     -> text "_showInt" <> int b
 
 instance Convert PrimIO where
  convert nn 
   = case nn of
-        PrimIOPutStr    -> text "putStr"
+        PrimIOPutStr            -> text "_putStr"
+        PrimIOPutStrLn          -> text "_putStrLn"

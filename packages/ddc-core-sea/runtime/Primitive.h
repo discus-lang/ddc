@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 // Show an integer.
-//   TODO: Define in source program to allocate into a heap object.
+//   TODO: This should be defined in an external module.
 static inline
 string_t _showInt32 (int32_t i)
 {       string_t str = malloc(32);
@@ -22,9 +22,19 @@ string_t _showInt32 (int32_t i)
 
 
 // Print a string to stdout.
+//   TODO: This should really be imported via the FFI.
 static inline
 void _putStr (string_t str)
 {       fputs(str, stdout);
+}
+
+
+// Print a string to stdout, with a newline.
+//   TODO: This should really be imported via the FFI.
+static inline
+void _putStrLn (string_t str)
+{       fputs(str,  stdout);
+        fputs("\n", stdout);
 }
 
 
