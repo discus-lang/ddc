@@ -1,32 +1,30 @@
-#ifndef _DDC_Disciple
-#define _DDC_Disciple
 
 // Minimal interface to the DDC runtime, imported by Sea Generated Modules.
-//   It defines the types, macros and primops that generated Sea code uses.
+//   It defines the types and macros thatgenerated Sea code uses.
 //   We want to keep this API under tight control, so everything exported
 //   to the generated modules is explicitly defined in this one file.
 //
 //   Everything should also be static-inlined, so we can run programs without
-//   needing to link against external code. Primops that need manifest code
-//   should be defined somewhere else.
+//   needing to link against external code. 
 //   
+#ifndef _DDC_Disciple
+#define _DDC_Disciple
+
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <abort.h>
 
 
 // -- Types -------------------------------------------------------------------
 // An unsigned natural number.
 //   Used for object sizes and field counts.
 //   Big enough to represent the number of allocatable bytes.
-typedef nat_t    size_t;
+typedef size_t   nat_t;
 
 // A constructor tag.
-typedef tag_t    uint32_t;
+typedef uint32_t tag_t;
 
 // A UTF8 string.
-typedef string_t char*;
+typedef char*    string_t;
 
 
 // -- Object Format -----------------------------------------------------------
@@ -93,11 +91,11 @@ enum _ObjType
 {       _ObjTypeUnknown,
         _ObjTypeForward,
         _ObjTypeThunk,
-        _ObjTypeData,
-        _ObjTypeDataR,
-        _ObjTypeDataM,
+        _ObjTypeDataBoxed,
+        _ObjTypeDataRaw,
+        _ObjTypeDataMixed,
         _ObjTypeSuspIndir,
-        _ObjTypeDataRS
+        _ObjTypeDataRawSmall
 };
 
 
@@ -108,7 +106,7 @@ enum _ObjType
 enum _ObjMode
 {       _ObjModeForward         = 0x00,
         _ObjModeFixed           = 0x01,
-        _ObjModeDataRS          = 0x03
+        _ObjModeDataRawSmall    = 0x03
 };
 
 // Use this mask to select the object mode portion of the format field.
@@ -120,9 +118,9 @@ enum _ObjMode
 //      the format field with the following mask and testing against this enum.
 enum _ObjFixed
 {       _ObjFixedThunk          = 0x11,
-        _ObjFixedData           = 0x21,
-        _ObjFixedDataR          = 0x31,
-        _ObjFixedDataM          = 0x41,
+        _ObjFixedDataBoxed      = 0x21,
+        _ObjFixedDataRaw        = 0x31,
+        _ObjFixedDataMixed      = 0x41,
         _ObjFixedSuspIndir      = 0x51,
         _ObjFixedMapped         = 0x71
 };
@@ -202,7 +200,7 @@ uint8_t  _format (Obj* obj)
 }
 
 // Get a field of a DataRaw Object.
-#define _fieldRaw(TYPE,offset,var) ((TYPE)((DataRaw*)var)->payload + offset)
+#define _fieldRaw(TYPE,offset,var) ((TYPE*)((DataRaw*)var)->payload + offset)
 
 // Read from a field of an Object.
 //   We use an explicit macro to make it easier to see what is happening in
@@ -247,30 +245,13 @@ Obj* _allocRaw (tag_t tag, size_t payloadSizeBytes)
         DataRawSmall* obj       = (DataRawSmall*)_alloc(objectSizeBytes);
 
         // Write the tag and format in the header.
-        data ->tagFlags = (tag << 8) 
-                        | _ObjModeDataRawSmall 
-                        | (dataSizeWords << 4);
+        obj ->tagFormat         = (tag << 8) 
+                                | _ObjModeDataRawSmall 
+                                | (payloadSizeWords << 4);
 
         return (Obj*)obj;
 }
 
-
-// -- Primops -----------------------------------------------------------------
-// Show an integer.
-//   TODO: Define in source program to allocate into a heap object.
-static inline
-string_t _showInt32 (int32_t i)
-{       string_t str = malloc(32);
-        snprintf(str, 32, "%d", i);
-        return str;
-}
-
-
-// Print a string to stdout.
-static inline
-void _putStr (string_t* str)
-{       fputs(stdout, str);
-}
 
 #endif
 
