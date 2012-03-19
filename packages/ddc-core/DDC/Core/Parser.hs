@@ -29,20 +29,29 @@ pModule
  = do   pTok KModule
         name    <- pModuleName
 
+        -- exprots { SIG;+ }
         tExports 
-         <- do  pTok KExports
+         <- P.choice
+            [do pTok KExports
                 pTok KBraceBra
                 sigs    <- P.sepEndBy1 pTypeSig (pTok KSemiColon)
                 pTok KBraceKet
                 return sigs
 
+            ,   return []]
+
+        -- imports { SIG;+ }
         tImports
-         <- do  pTok KImports
+         <- P.choice
+            [do pTok KImports
                 pTok KBraceBra
                 specs    <- P.sepEndBy1 pImportTypeSpec (pTok KSemiColon)
                 pTok KBraceKet
                 return specs
 
+            ,   return []]
+
+        -- LET;+
         lts     <- P.sepBy1 pLets (pTok KIn)
 
         -- TODO: make having duplicate names in the imports 

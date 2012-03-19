@@ -3,12 +3,6 @@
 :set +Indent
 :seaout..
 module Main
-exports {
-        twice  :: Int32# -> Int32#;
-}
-imports {
-        Thing.foo with foo :: Int32#;
-}
 letrec {
         addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
          = let z : Ptr# Obj     = allocRaw# TAG0# 4 in

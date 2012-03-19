@@ -21,7 +21,10 @@ class Convert a where
 instance Convert (Module () Name) where
  convert mm@(ModuleCore{})
         | [LRec bxs]    <- moduleLets mm
-        = vcat $ map convertTop bxs
+        = vcat  $  [ text "#include <Disciple.h>"
+                   , text "#include <Primitive.h>" 
+                   , empty]
+                ++ (map convertTop bxs)
 
         | otherwise
         = error "convert[Module]: sorry"
