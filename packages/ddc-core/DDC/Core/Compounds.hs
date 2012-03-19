@@ -21,6 +21,9 @@ module DDC.Core.Compounds
         , takeXConApps
         , takeXPrimApps
 
+          -- * Lets
+        , splitXLets 
+
           -- * Alternatives
         , takeCtorNameOfAlt)
 where
@@ -158,6 +161,18 @@ takeXConApps xx
  = case takeXApps xx of
         XCon _ u : xs   -> Just (u, xs)
         _               -> Nothing
+
+
+-- Lets -----------------------------------------------------------------------
+-- | Split let-bindings from the front of an expression, if any.
+splitXLets :: Exp a n -> ([Lets a n], Exp a n)
+splitXLets xx
+ = case xx of
+        XLet _ lts x 
+         -> let (lts', x')      = splitXLets x
+            in  (lts : lts', x')
+
+        _ -> ([], xx)
 
 
 -- Alternatives ---------------------------------------------------------------

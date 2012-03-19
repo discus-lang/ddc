@@ -8,6 +8,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Check.CheckExp
 import DDC.Core.Check.Error
+import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Base.Pretty
 import DDC.Type.Env             (Env)
@@ -78,13 +79,17 @@ checkModuleM defs kenv tenv mm@ModuleCore{}
                          $ Env.union tenv $ Env.fromList btsImport
                 
         -- Check our let bindings (with the dummy expression on the end)
-        (_, _, _effs, _) <- checkExpM defs kenv' tenv' xCheck
+        (x', _, _effs, _) <- checkExpM defs kenv' tenv' xCheck
+        let (lts', _)   = splitXLets x'
 
         -- TODO: check that types of bindings match types of exports.
         -- TODO: check that all exported bindings are defined.
         -- TODO: don't permit top-level let-bindings to have visible effects.
 
-        return mm
+        -- Return the checked bindings as they have explicit type annotations.
+        let mm'         = mm { moduleLets = lts' }
+
+        return mm'
 
 
 -------------------------------------------------------------------------------
