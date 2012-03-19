@@ -1,11 +1,11 @@
 
-// Minimal interface to the DDC runtime, imported by Sea Generated Modules.
-//   It defines the types and macros thatgenerated Sea code uses.
-//   We want to keep this API under tight control, so everything exported
-//   to the generated modules is explicitly defined in this one file.
+// Interface to the DDC runtime.
+//   This is imported by Sea generated modules and defines the types and macros
+//   that those modules uses.
 //
 //   Everything should also be static-inlined, so we can run programs without
-//   needing to link against external code. 
+//   needing to link against external code. Primops that are implemented with
+//   manifest object code should be imported separately.
 //   
 #ifndef _DDC_Disciple
 #define _DDC_Disciple
