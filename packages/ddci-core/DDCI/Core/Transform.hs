@@ -23,6 +23,7 @@ data Transform
 	| Rewrite
         deriving (Eq, Show)
 
+
 parseTransform :: String -> Maybe Transform
 parseTransform str
  = case str of
@@ -32,6 +33,7 @@ parseTransform str
         "Beta"          -> Just Beta
         "Rewrite"       -> Just Rewrite
         _               -> Nothing
+
 
 instance Pretty Transform where
  ppr ss

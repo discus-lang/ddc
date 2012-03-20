@@ -1,5 +1,5 @@
 
--- | 
+-- | Check that a core module fits within the Sea fragment.
 module DDC.Core.Sea.Output.Check
         ( Error(..)
         , checkModule)

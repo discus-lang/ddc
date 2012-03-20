@@ -9,6 +9,7 @@ import DDCI.Core.Fragment
 import DDCI.Core.State
 import DDCI.Core.IO
 import DDC.Base.Pretty
+import qualified Data.Set               as Set
 
 
 -- | Parse, check, and fully evaluate an expression.
@@ -24,8 +25,27 @@ cmdSeaOut state lineStart str
 
         goFragmentCheck mm
          = case fragmentCheckModule mm of
-                Nothing  -> outDocLn state $ convert mm
-                Just err -> putStrLn 
-                                $ renderIndent 
-                                $ vcat  [ text "Fragment violation in SeaOut module."
-                                        , indent 2 (ppr err) ]
+                Just err 
+                 -> putStrLn 
+                        $ renderIndent 
+                        $ vcat  [ text "Fragment violation in SeaOut module."
+                                , indent 2 (ppr err) ]
+
+                Nothing  
+                 -> goOutput mm
+
+        goOutput mm
+         = let  -- Include the Sea Prelude if we were asked for it.
+                prelude  
+                 | Set.member SeaPrelude (stateModes state)
+                 = vcat  [ text "#include <Disciple.h>"
+                         , text "#include <Primitive.h>" 
+                         , empty ]
+
+                 | otherwise
+                 = empty
+
+           in   outDocLn state 
+                 $    prelude
+                 <$$> convert mm
+

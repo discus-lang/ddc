@@ -15,6 +15,10 @@ data Mode
 
         -- | Render expressions displayed to user using indenting.
         |  Indent
+
+        -- | When pretty printing Sea modules, include the #includes etc
+        --   needed for compilation.
+        |  SeaPrelude
         deriving (Eq, Ord, Show)
 
 
@@ -25,5 +29,6 @@ parseMode str
         "TraceEval"     -> Just TraceEval
         "TraceStore"    -> Just TraceStore
         "Indent"        -> Just Indent
+        "SeaPrelude"    -> Just SeaPrelude
         _               -> Nothing
 
