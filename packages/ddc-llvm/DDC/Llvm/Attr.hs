@@ -2,8 +2,8 @@
 module DDC.Llvm.Attr
         ( FuncAttr       (..)
         , ParamAttr      (..)
-        , CallConvention (..)
-        , LinkageType    (..))
+        , CallConv      (..)
+        , Linkage       (..))
 where
 import DDC.Base.Pretty
 
@@ -163,7 +163,7 @@ instance Pretty ParamAttr where
 
 -- CallConvention ---------------------------------------------------------------------------------
 -- | Different calling conventions a function can use.
-data CallConvention
+data CallConv
         -- | The C calling convention.
         --   This calling convention (the default if no other calling convention is
         --   specified) matches the target C calling conventions. This calling
@@ -201,13 +201,13 @@ data CallConvention
         deriving (Eq, Show)
 
 
-instance Pretty CallConvention where
+instance Pretty CallConv where
  ppr cc
   = case cc of
         CC_Ccc          -> text "ccc"
         CC_Fastcc       -> text "fastcc"
         CC_Coldcc       -> text "coldcc"
-        (CC_Ncc i)      -> text "cc "  <> int i
+        CC_Ncc i        -> text "cc "  <> int i
         CC_X86_Stdcc    -> text "x86_stdcallcc"
 
 
@@ -217,7 +217,7 @@ instance Pretty CallConvention where
 --   The description of the constructors is copied from the Llvm Assembly Language
 --   Reference Manual <http://www.llvm.org/docs/LangRef.html#linkage>, because
 --   they correspond to the Llvm linkage types.
-data LinkageType
+data Linkage
         -- | Global values with internal linkage are only directly accessible by
         --  objects in the current module. In particular, linking code into a module
         --  with an internal global value may cause the internal to be renamed as
@@ -263,7 +263,7 @@ data LinkageType
         deriving (Eq, Show)
 
 
-instance Pretty LinkageType where
+instance Pretty Linkage where
  ppr lt
   = case lt of
         Internal          -> text "internal"

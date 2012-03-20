@@ -57,12 +57,12 @@ pprFunctionHeader
                       _otherwise            -> empty
 
         align' = case alignment of
-                        AlignmentNone       -> empty
-                        AlignmentBytes b    -> text " align" <+> ppr b
+                        AlignNone       -> empty
+                        AlignBytes b    -> text " align" <+> ppr b
 
         args'  = [ ppr ty <+> hsep (map ppr attrs) <+> text "%" <> text nParam
-                        | Parameter ty attrs <- params
-                        | nParam             <- nsParam ]
+                        | Param ty attrs <- params
+                        | nParam         <- nsParam ]
 
     in ppr linkage
         <+> ppr callConv

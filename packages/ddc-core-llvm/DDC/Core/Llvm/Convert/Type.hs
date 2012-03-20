@@ -10,27 +10,27 @@ import DDC.Llvm.Type
 import DDC.Core.Llvm.Runtime.Object
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
-import DDC.Core.Exp
 import DDC.Core.Sea.Output.Name
 import DDC.Type.Compounds
+import qualified DDC.Core.Exp   as C
 
 
 -- | Convert a Sea type to an LlvmType.
-toLlvmType :: Platform -> Type Name -> LlvmType
+toLlvmType :: Platform -> C.Type Name -> Type
 toLlvmType platform tt
  = case tt of
         -- A primitive type.
-        TCon tc
+        C.TCon tc
           -> llvmTypeOfTyCon platform tc
 
         -- A pointer to a primitive type.
-        TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
-         -> LMPointer (toLlvmType platform t2)
+        C.TApp (C.TCon (C.TyConBound (C.UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
+         -> TPointer (toLlvmType platform t2)
 
         -- Function types become pointers to functions.
-        TApp{}
+        C.TApp{}
          |  (tsArgs, tResult) <- takeTFunArgResult tt
-         -> LMPointer $ LMFunction 
+         -> TPointer $ TFunction 
          $  FunctionDecl
              { declName          = "dummy.function.name"
              , declLinkage       = Internal
@@ -38,36 +38,36 @@ toLlvmType platform tt
              , declReturnType    = toLlvmType platform tResult
              , declParamListType = FixedArgs
              , declParams        = map (llvmParameterOfType platform) tsArgs
-             , declAlign         = AlignmentBytes (platformAlignFunctions platform) }
+             , declAlign         = AlignBytes (platformAlignFunctions platform) }
 
 
         _ -> die "invalid type"
 
 
 -- | Convert a Sea TyCon to a LlvmType.
-llvmTypeOfTyCon :: Platform -> TyCon Name -> LlvmType
+llvmTypeOfTyCon :: Platform -> C.TyCon Name -> Type
 llvmTypeOfTyCon platform tycon
  = case tycon of
-        TyConBound (UPrim NameObjTyCon _)
+        C.TyConBound (C.UPrim NameObjTyCon _)
          -> tHeapObj platform
 
-        TyConBound (UPrim (NamePrimTyCon tc) _)
+        C.TyConBound (C.UPrim (NamePrimTyCon tc) _)
          -> case tc of
-                PrimTyConVoid           -> LMVoid
-                PrimTyConAddr           -> LMPointer (LMInt 8)
-                PrimTyConNat            -> LMInt (platformAddrWidth platform)
-                PrimTyConTag            -> LMInt (platformTagWidth  platform)
-                PrimTyConBool           -> LMInt 1
-                PrimTyConWord bits      -> LMInt bits
-                PrimTyConInt  bits      -> LMInt bits
-                PrimTyConString         -> LMPointer (LMInt 8)
+                PrimTyConVoid           -> TVoid
+                PrimTyConAddr           -> TPointer (TInt 8)
+                PrimTyConNat            -> TInt (platformAddrWidth platform)
+                PrimTyConTag            -> TInt (platformTagWidth  platform)
+                PrimTyConBool           -> TInt 1
+                PrimTyConWord bits      -> TInt bits
+                PrimTyConInt  bits      -> TInt bits
+                PrimTyConString         -> TPointer (TInt 8)
 
                 PrimTyConFloat bits
                  -> case bits of
-                        32              -> LMFloat
-                        64              -> LMDouble
-                        80              -> LMFloat80
-                        128             -> LMFloat128
+                        32              -> TFloat
+                        64              -> TDouble
+                        80              -> TFloat80
+                        128             -> TFloat128
                         _               -> die "invalid float tycon"
 
                 _                       -> die "invalid prim tycon"
@@ -76,9 +76,9 @@ llvmTypeOfTyCon platform tycon
 
 
 -- | Convert a parameter type to a LlvmParameter decl.
-llvmParameterOfType :: Platform -> Type Name -> Parameter
+llvmParameterOfType :: Platform -> C.Type Name -> Param
 llvmParameterOfType platform tt
-        = Parameter
-        { parameterType     = toLlvmType platform tt
-        , parameterAttrs    = [] }
+        = Param
+        { paramType     = toLlvmType platform tt
+        , paramAttrs    = [] }
 

@@ -41,7 +41,7 @@ type LMGlobal
 
 
 -- | Return the 'LlvmType' of the 'LMGlobal'
-getGlobalType :: LMGlobal -> LlvmType
+getGlobalType :: LMGlobal -> Type
 getGlobalType (v, _)            = typeOfVar v
 
 
@@ -67,16 +67,16 @@ data LlvmStatic
         | LMStaticLit     Lit
 
         -- | For uninitialised data.
-        | LMUninitType    LlvmType
+        | LMUninitType    Type
 
         -- | Defines a static 'LMString'.
-        | LMStaticStr     String      LlvmType
+        | LMStaticStr     String       Type
 
         -- | A static array.
-        | LMStaticArray   [LlvmStatic] LlvmType
+        | LMStaticArray   [LlvmStatic] Type
 
         -- | A static structure type.
-        | LMStaticStruc   [LlvmStatic] LlvmType
+        | LMStaticStruc   [LlvmStatic] Type
 
         -- | A pointer to other data.
         | LMStaticPointer Var
@@ -84,10 +84,10 @@ data LlvmStatic
         -- static expressions, could split out but leave
         -- for moment for ease of use. Not many of them.
         -- | Pointer to Pointer conversion.
-        | LMBitc LlvmStatic LlvmType                    
+        | LMBitc LlvmStatic Type                    
 
         -- | Pointer to Integer conversion.
-        | LMPtoI LlvmStatic LlvmType                    
+        | LMPtoI LlvmStatic Type                    
 
         -- | Constant addition operation.
         | LMAdd  LlvmStatic LlvmStatic                 
@@ -98,7 +98,7 @@ data LlvmStatic
 
 
 -- | Return the 'LlvmType' of the 'LlvmStatic'.
-getStatType :: LlvmStatic -> LlvmType
+getStatType :: LlvmStatic -> Type
 getStatType (LMStaticLit   l  ) = typeOfLit l
 getStatType (LMUninitType    t) = t
 getStatType (LMStaticStr   _ t) = t

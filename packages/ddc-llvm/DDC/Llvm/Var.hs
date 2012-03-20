@@ -9,7 +9,7 @@ module DDC.Llvm.Var
           -- * Variables
         , Var           (..)
         , isGlobal
-        , linkageTypeOfVar
+        , linkageOfVar
         , typeOfVar
 
           -- * Literals
@@ -51,18 +51,18 @@ data Var
         -- | Variables with a global scope.
         = VarGlobal
                 String 
-                LlvmType 
-                LinkageType
+                Type 
+                Linkage
                 Section
-                Alignment
+                Align
                 LMConst
 
         -- | Variables local to a function or parameters.
-        | VarLocal      Unique  LlvmType
+        | VarLocal      Unique  Type
 
         -- | Named local variables. Sometimes we need to be able to explicitly name
         --   variables (e.g for function arguments).
-        | VarNamedLocal String  LlvmType
+        | VarNamedLocal String  Type
 
         -- | A constant variable
         | VarLit        Lit
@@ -103,7 +103,7 @@ plainNameOfVar vv
 
 
 -- | Return the 'LlvmType' of the 'LlvmVar'
-typeOfVar :: Var -> LlvmType
+typeOfVar :: Var -> Type
 typeOfVar vv
  = case vv of
         VarGlobal _ t _ _ _ _   -> t
@@ -119,9 +119,9 @@ isGlobal vv
         VarGlobal{}             -> True
         _                       -> False
 
--- | Return the 'LlvmLinkageType' for a 'LlvmVar'
-linkageTypeOfVar :: Var -> LinkageType
-linkageTypeOfVar vv
+-- | Yield the linkage of a var.
+linkageOfVar :: Var -> Linkage
+linkageOfVar vv
  = case vv of
         VarGlobal _ _ l _ _ _   -> l
         _                       -> Internal
@@ -132,16 +132,16 @@ linkageTypeOfVar vv
 --   These can be used inline in expressions.
 data Lit
         -- | Refers to an integer constant (i64 42).
-        = LMIntLit   Integer LlvmType
+        = LMIntLit   Integer Type
 
         -- | Floating point literal
-        | LMFloatLit Double  LlvmType
+        | LMFloatLit Double  Type
 
         -- | Literal NULL, only applicable to pointer types
-        | LMNullLit  LlvmType
+        | LMNullLit  Type
 
         -- | Undefined value, random bit pattern. Useful for optimisations.
-        | LMUndefLit LlvmType
+        | LMUndefLit Type
         deriving (Eq, Show)
 
 
@@ -150,7 +150,7 @@ instance Pretty Lit where
 
 
 -- | Return the 'LlvmType' of a 'LlvmLit'
-typeOfLit :: Lit -> LlvmType
+typeOfLit :: Lit -> Type
 typeOfLit ll
  = case ll of
         LMIntLit   _ t          -> t
@@ -164,8 +164,8 @@ showLit :: Lit -> String
 showLit ll
  = case ll of
         LMIntLit   i _          -> show i
-        LMFloatLit r LMFloat    -> fToStr $ realToFrac r
-        LMFloatLit r LMDouble   -> dToStr r
+        LMFloatLit r TFloat     -> fToStr $ realToFrac r
+        LMFloatLit r TDouble    -> dToStr r
         LMFloatLit _ _          -> error $ "Can't print this float literal!" ++ show ll
         LMNullLit _             -> "null"
         LMUndefLit _            -> "undef"

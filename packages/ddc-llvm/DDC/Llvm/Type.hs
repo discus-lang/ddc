@@ -1,14 +1,14 @@
 
 module DDC.Llvm.Type
         ( -- * Function Declarations.
-          FunctionDecl          (..)
-        , ParameterListType     (..)
-        , Parameter             (..)
-        , Alignment             (..)
+          FunctionDecl  (..)
+        , ParamListType (..)
+        , Param         (..)
+        , Align         (..)
 
           -- * Types
-        , LlvmType              (..)
-        , TypeAlias             (..)
+        , Type          (..)
+        , TypeAlias     (..)
 
         , isInt
         , isFloat
@@ -26,50 +26,50 @@ data FunctionDecl
           declName              :: String
 
           -- | LinkageType of the function
-        , declLinkage           :: LinkageType
+        , declLinkage           :: Linkage
 
         -- | The calling convention of the function
-        , declCallConv          :: CallConvention
+        , declCallConv          :: CallConv
 
         -- | Type of the returned value
-        , declReturnType        :: LlvmType
+        , declReturnType        :: Type
 
         -- | Indicates if this function uses varargs
-        , declParamListType     :: ParameterListType
+        , declParamListType     :: ParamListType
 
         -- | Parameter types and attributes
-        , declParams            :: [Parameter]
+        , declParams            :: [Param]
 
         -- | Function align value, must be power of 2
-        , declAlign             :: Alignment }
+        , declAlign             :: Align }
         deriving (Eq, Show)
 
 
 -- | Functions can have a fixed amount of parameters, or a variable amount.
-data ParameterListType
+data ParamListType
         = FixedArgs           -- ^ Fixed amount of arguments.
         | VarArgs             -- ^ Variable amount of arguments.
         deriving (Eq,Show)
 
 
 -- | Describes a function parameter.
-data Parameter 
-        = Parameter
-        { parameterType         :: LlvmType
-        , parameterAttrs        :: [ParamAttr] }
+data Param 
+        = Param
+        { paramType         :: Type
+        , paramAttrs        :: [ParamAttr] }
         deriving (Show, Eq)
 
 
 -- | Alignment.
-data Alignment
-        = AlignmentNone
-        | AlignmentBytes Int 
+data Align
+        = AlignNone
+        | AlignBytes Int 
         deriving (Show, Eq)
 
 
-instance Pretty Parameter where
+instance Pretty Param where
  -- By default we don't print the attrs.
- ppr (Parameter t _attrs)
+ ppr (Param t _attrs)
         = ppr t
 
 
@@ -81,8 +81,8 @@ instance Pretty FunctionDecl where
                  _otherwise             -> empty
 
         align' = case a of
-                  AlignmentNone         -> empty
-                  AlignmentBytes a'     -> text " align " <+> ppr a'
+                  AlignNone         -> empty
+                  AlignBytes a'     -> text " align " <+> ppr a'
 
         args' = hcat $ punctuate comma $ map ppr params
 
@@ -95,43 +95,45 @@ instance Pretty FunctionDecl where
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Llvm Types.
-data LlvmType
-        = LMInt Int                     -- ^ An integer with a given width in bits.
-        | LMFloat                       -- ^ 32 bit floating point
-        | LMDouble                      -- ^ 64 bit floating point
-        | LMFloat80                     -- ^ 80 bit (x86 only) floating point
-        | LMFloat128                    -- ^ 128 bit floating point
-        | LMPointer     LlvmType        -- ^ A pointer to a 'LlvmType'
-        | LMArray       Int LlvmType    -- ^ An array of 'LlvmType'
-        | LMLabel                       -- ^ A 'LlvmVar' can represent a label (address)
-        | LMVoid                        -- ^ Void type
-        | LMStruct      [LlvmType]      -- ^ Structure type
-        | LMAlias       TypeAlias       -- ^ A type alias
-        | LMFunction    FunctionDecl    -- ^ Function type, used to create pointers to functions
+data Type
+        = TInt Int                      -- ^ An integer with a given width in bits.
+        | TFloat                        -- ^ 32 bit floating point
+        | TDouble                       -- ^ 64 bit floating point
+        | TFloat80                      -- ^ 80 bit (x86 only) floating point
+        | TFloat128                     -- ^ 128 bit floating point
+        | TPointer     Type             -- ^ A pointer to a 'LlvmType'
+        | TArray       Int Type         -- ^ An array of 'LlvmType'
+        | TLabel                        -- ^ A 'LlvmVar' can represent a label (address)
+        | TVoid                         -- ^ Void type
+        | TStruct      [Type]           -- ^ Structure type
+        | TAlias       TypeAlias        -- ^ A type alias
+        | TFunction    FunctionDecl     -- ^ Function type, used to create pointers to functions
         deriving (Eq, Show)
 
 
 -- | A type alias.
 data TypeAlias 
-        = TypeAlias String LlvmType
+        = TypeAlias     String Type
         deriving (Eq, Show)
 
 
-instance Pretty LlvmType where
+instance Pretty Type where
  ppr lt
   = case lt of
-        LMInt size      -> text "i" <> int size
-        LMFloat         -> text "float"
-        LMDouble        -> text "double"
-        LMFloat80       -> text "x86_fp80"
-        LMFloat128      -> text "fp128"
-        LMPointer x     -> ppr x <> text "*"
-        LMArray nr tp   -> brackets (int nr <> text " x " <> ppr tp)
-        LMLabel         -> text "label"
-        LMVoid          -> text "void"
-        LMStruct tys    -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
+        TInt size      -> text "i" <> int size
+        TFloat         -> text "float"
+        TDouble        -> text "double"
+        TFloat80       -> text "x86_fp80"
+        TFloat128      -> text "fp128"
+        TPointer x     -> ppr x <> text "*"
+        TArray nr tp   -> brackets (int nr <> text " x " <> ppr tp)
+        TLabel         -> text "label"
+        TVoid          -> text "void"
+        TStruct tys    -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
 
-        LMFunction (FunctionDecl _ _ _ r varg params _)
+        TAlias (TypeAlias s _)  -> text "%" <> ppr s
+
+        TFunction (FunctionDecl _ _ _ r varg params _)
          -> let varg' = case varg of
                         VarArgs | null params -> text "..."
                                 | otherwise   -> text ", ..."
@@ -142,32 +144,30 @@ instance Pretty LlvmType where
 
             in ppr r <> brackets (args <> varg')
 
-        LMAlias (TypeAlias s _)  -> text "%" <> ppr s
-
 
 -- | Test if the given 'LlvmType' is an integer
-isInt :: LlvmType -> Bool
+isInt :: Type -> Bool
 isInt tt
  = case tt of
-        LMInt _         -> True
+        TInt _          -> True
         _               -> False
 
 
 -- | Test if the given 'LlvmType' is a floating point type
-isFloat :: LlvmType -> Bool
+isFloat :: Type -> Bool
 isFloat tt
  = case tt of
-        LMFloat         -> True
-        LMDouble        -> True
-        LMFloat80       -> True
-        LMFloat128      -> True
+        TFloat          -> True
+        TDouble         -> True
+        TFloat80        -> True
+        TFloat128       -> True
         _               -> False
 
 
 -- | Test if the given 'LlvmType' is an 'LMPointer' construct
-isPointer :: LlvmType -> Bool
+isPointer :: Type -> Bool
 isPointer tt
  = case tt of
-        LMPointer _     -> True
+        TPointer _      -> True
         _               -> False
 

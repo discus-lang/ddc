@@ -14,8 +14,8 @@ import DDC.Llvm.Type
 
 -- | Type of Heap objects.
 --   All objects have a 32bit header word out the front.
-sHeapObj :: Platform -> LlvmType
+sHeapObj :: Platform -> Type
 sHeapObj platform
-        = LMStruct [LMInt (platformHeaderWidth platform)]
+        = TStruct [TInt (platformHeaderWidth platform)]
 
 tHeapObj = sHeapObj

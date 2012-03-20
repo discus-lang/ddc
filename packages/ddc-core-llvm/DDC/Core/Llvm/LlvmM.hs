@@ -49,14 +49,14 @@ newUnique name
 
 
 -- | Generate a new unique register variable with the specified `LlvmType`.
-newUniqueVar :: LlvmType -> LlvmM Var
+newUniqueVar :: Type -> LlvmM Var
 newUniqueVar t
  = do   u <- newUnique "r"
         return $ VarLocal u t
 
 
 -- | Generate a new unique named register variable with the specified `LlvmType`.
-newUniqueNamedVar :: String -> LlvmType -> LlvmM Var
+newUniqueNamedVar :: String -> Type -> LlvmM Var
 newUniqueNamedVar name t
  = do   u <- newUnique name
         return $ VarLocal u t
@@ -66,4 +66,4 @@ newUniqueNamedVar name t
 newUniqueLabel :: String -> LlvmM Var
 newUniqueLabel name
  = do   u <- newUnique name
-        return $ VarLocal u LMLabel
+        return $ VarLocal u TLabel
