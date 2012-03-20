@@ -32,6 +32,9 @@ instance (Pretty n, Show n, Eq n) => Pretty (Error a n) where
                  , text "with: "                        <> align (ppr xx) ]
 
         -- Variable ---------------------------------------
+        ErrorUndefinedVar u
+         -> vcat [ text "Undefined variable: "          <> ppr u ]
+
         ErrorVarAnnotMismatch u t
          -> vcat [ text "Type mismatch in annotation."
                  , text "             Variable: "       <> ppr u

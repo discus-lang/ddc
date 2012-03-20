@@ -33,6 +33,10 @@ data Error a n
         { errorChecking         :: Exp a n }
 
         -- Var --------------------------------------------
+        -- | An undefined variable.
+        | ErrorUndefinedVar
+        { errorBound            :: Bound n }
+
         -- | A bound occurrence of a variable who's type annotation does not match
         --   the corresponding annotation in the environment.
         | ErrorVarAnnotMismatch

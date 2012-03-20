@@ -121,38 +121,42 @@ checkExpM' _defs _kenv tenv (XVar a u)
         let mtEnv       = Env.lookup u tenv
 
         let mkResult
-             -- When annotation on the bound is bot,
-             --  then use the type from the environment.
-             | Just tEnv    <- mtEnv
-             , isBot tBound
-             = return tEnv
-
-             -- The bound has an explicit type annotation,
-             --  which matches the one from the environment.
-             -- 
-             --  When the bound is a deBruijn index we need to lift the
-             --  annotation on the original binder through any lambdas
-             --  between the binding occurrence and the use.
+             -- There is a type for this var in the environment.
+             --
+             --    When the bound is a deBruijn index we need to lift the
+             --    annotation on the original binder through any lambdas
+             --    between the binding occurrence and the use.
              | Just tEnv    <- mtEnv
              , UIx i _      <- u
              , equivT tBound (liftT (i + 1) tEnv) 
              = return tBound
 
-             -- The bound has an explicit type annotation,
-             --  which matches the one from the environment.
+             --    As above, but for UName and UPrim.
              | Just tEnv    <- mtEnv
              , equivT tBound tEnv
              = return tEnv
 
+             --    When the annotation on the variable is a bot
+             --    then just use the type from the environment.
+             | Just tEnv    <- mtEnv
+             , isBot tBound
+             = return tEnv
+
              -- The bound has an explicit type annotation,
              --  which does not match the one from the environment.
-             --  This shouldn't happen because the parser doesn't add non-bot
-             --  annotations to bound variables.
              | Just tEnv    <- mtEnv
              = throw $ ErrorVarAnnotMismatch u tEnv
 
-             -- Variable not in environment, so use annotation.
-             --  This happens when checking open terms.
+             -- The variable is not in the environment, 
+             --     and the annotation is bot. 
+             --     This happens when the variable is undefined.
+             | Nothing      <- mtEnv
+             , isBot tBound
+             = throw  $ ErrorUndefinedVar u
+
+             -- The variable is not in the environment, 
+             --    but there is a non-bot type annotation attached to it.
+             --    This happens when checking open terms.
              | otherwise
              = return tBound
         

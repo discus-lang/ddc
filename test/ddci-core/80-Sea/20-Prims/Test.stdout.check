@@ -8,10 +8,7 @@ add#
 
 
 -- Check types of tailcallN# prims.
-tailcall0#
-:*: *0
-:!: !0
-:$: DeepUse *0
+Undefined variable: tailcall0#
 
 tailcall1#
 :*: [^ ^ : *].(^1 -> ^0) -> ^1 -> ^0
@@ -25,20 +22,11 @@ tailcall4#
 
 
 -- Check types of partialNofM# prims.
-partial0of0#
-:*: *0
-:!: !0
-:$: DeepUse *0
+Undefined variable: partial0of0#
 
-parital4of2#
-:*: *0
-:!: !0
-:$: DeepUse *0
+Undefined variable: parital4of2#
 
-partial4of4#
-:*: *0
-:!: !0
-:$: DeepUse *0
+Undefined variable: partial4of4#
 
 partial2of4#
 :*: (Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj) -> Ptr# Obj -> Ptr# Obj -> Ptr# Obj
@@ -52,10 +40,7 @@ partial1of5#
 
 
 -- Check types of applyN# prims.
-apply0#
-:*: *0
-:!: !0
-:$: DeepUse *0
+Undefined variable: apply0#
 
 apply1#
 :*: Ptr# Obj -> Ptr# Obj -> Ptr# Obj
