@@ -5,8 +5,7 @@
 --   They need to be kept in sync with the ones in runtime/Disciple.h
 --
 module DDC.Core.Llvm.Runtime.Object
-        ( sHeapObj 
-        , tHeapObj )
+        ( sObj, tObj, aObj)
 where
 import DDC.Core.Llvm.Platform
 import DDC.Llvm.Type
@@ -14,8 +13,9 @@ import DDC.Llvm.Type
 
 -- | Type of Heap objects.
 --   All objects have a 32bit header word out the front.
-sHeapObj :: Platform -> Type
-sHeapObj platform
-        = TStruct [TInt (platformHeaderWidth platform)]
+sObj, tObj :: Platform -> Type
+sObj platform   = TStruct [TInt (platformHeaderWidth platform)]
+tObj platform   = TAlias (aObj platform)
 
-tHeapObj = sHeapObj
+aObj :: Platform -> TypeAlias
+aObj platform   = TypeAlias "struct.Obj" (sObj platform)

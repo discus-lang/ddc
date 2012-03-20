@@ -7,6 +7,7 @@ import DDC.Llvm.Function
 import DDC.Llvm.Module
 import DDC.Llvm.Type
 import DDC.Llvm.Var
+import DDC.Core.Llvm.Runtime.Object
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
@@ -34,7 +35,7 @@ llvmOfModuleM platform mm@(C.ModuleCore{})
  | [LRec bxs]   <- C.moduleLets mm   
  =      return  $ Module 
                 { modComments   = []
-                , modAliases    = []
+                , modAliases    = [aObj platform]
                 , modGlobals    = []
                 , modFwdDecls   = []
                 , modFuncs      = map (uncurry (llvmFunctionOfSuper platform)) bxs }

@@ -49,7 +49,7 @@ llvmTypeOfTyCon :: Platform -> C.TyCon Name -> Type
 llvmTypeOfTyCon platform tycon
  = case tycon of
         C.TyConBound (C.UPrim NameObjTyCon _)
-         -> tHeapObj platform
+         -> tObj platform
 
         C.TyConBound (C.UPrim (NamePrimTyCon tc) _)
          -> case tc of

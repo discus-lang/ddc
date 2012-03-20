@@ -93,6 +93,18 @@ instance Pretty FunctionDecl where
                 <> align'
 
 
+-- TypeAlias --------------------------------------------------------------------------------------
+-- | A type alias.
+data TypeAlias 
+        = TypeAlias     String Type
+        deriving (Eq, Show)
+
+
+instance Pretty TypeAlias where
+ ppr (TypeAlias name ty)
+        = text "%" <> text name <+> equals <+> text "type" <+> ppr ty
+
+
 -- Type -------------------------------------------------------------------------------------------
 -- | Llvm Types.
 data Type
@@ -111,12 +123,6 @@ data Type
         deriving (Eq, Show)
 
 
--- | A type alias.
-data TypeAlias 
-        = TypeAlias     String Type
-        deriving (Eq, Show)
-
-
 instance Pretty Type where
  ppr lt
   = case lt of
@@ -131,7 +137,8 @@ instance Pretty Type where
         TVoid          -> text "void"
         TStruct tys    -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
 
-        TAlias (TypeAlias s _)  -> text "%" <> ppr s
+        TAlias (TypeAlias s _)  
+         -> text "%" <> text s
 
         TFunction (FunctionDecl _ _ _ r varg params _)
          -> let varg' = case varg of
@@ -170,4 +177,5 @@ isPointer tt
  = case tt of
         TPointer _      -> True
         _               -> False
+
 
