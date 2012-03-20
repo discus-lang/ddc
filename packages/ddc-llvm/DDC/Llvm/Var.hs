@@ -35,11 +35,11 @@ data Unique
 data LlvmVar
         -- | Variables with a global scope.
         = LMGlobalVar 
-                LMString 
+                String 
                 LlvmType 
-                LlvmLinkageType
+                LinkageType
                 LMSection
-                LlvmAlign
+                Alignment
                 LMConst
 
         -- | Variables local to a function or parameters.
@@ -47,7 +47,7 @@ data LlvmVar
 
         -- | Named local variables. Sometimes we need to be able to explicitly name
         --   variables (e.g for function arguments).
-        | LMNLocalVar LMString LlvmType
+        | LMNLocalVar String LlvmType
 
         -- | A constant variable
         | LMLitVar LlvmLit
@@ -61,7 +61,7 @@ instance Pretty LlvmVar where
         _               -> ppr (getVarType lv) <+> text (getName lv)
 
 
-type LMSection  = Maybe LMString
+type LMSection  = Maybe String
 
 
 -- | Determines whether a variable is a constant or not.
@@ -98,7 +98,7 @@ isGlobal (LMGlobalVar _ _ _ _ _ _) = True
 isGlobal _                         = False
 
 -- | Return the 'LlvmLinkageType' for a 'LlvmVar'
-getLink :: LlvmVar -> LlvmLinkageType
+getLink :: LlvmVar -> LinkageType
 getLink (LMGlobalVar _ _ l _ _ _) = l
 getLink _                         = Internal
 

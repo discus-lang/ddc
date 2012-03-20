@@ -1,9 +1,9 @@
 
 module DDC.Llvm.Attr
-        ( LlvmFuncAttr       (..)
-        , LlvmParamAttr      (..)
-        , LlvmCallConvention (..)
-        , LlvmLinkageType    (..))
+        ( FuncAttr       (..)
+        , ParamAttr      (..)
+        , CallConvention (..)
+        , LinkageType    (..))
 where
 import DDC.Base.Pretty
 
@@ -15,7 +15,7 @@ import DDC.Base.Pretty
 --   can have the same function type. Functions can have multiple attributes.
 --
 --   Descriptions taken from <http://llvm.org/docs/LangRef.html#fnattrs>
-data LlvmFuncAttr
+data FuncAttr
         -- | The inliner should attempt to inline this function into callers
         --   whenever possible, ignoring any active inlining size threshold for
         --   this caller.
@@ -94,7 +94,7 @@ data LlvmFuncAttr
         deriving (Eq, Show)
 
 
-instance Pretty LlvmFuncAttr where
+instance Pretty FuncAttr where
  ppr attr
   = case attr of
         AlwaysInline    -> text "alwaysinline"
@@ -116,7 +116,7 @@ instance Pretty LlvmFuncAttr where
 -- ParamAttr --------------------------------------------------------------------------------------
 -- | Parameter attributes are used to communicate additional information about
 --   the result or parameters of a function
-data LlvmParamAttr
+data ParamAttr
         -- | That the parameter or return value should be zero-extended to a 32-bit value
         --   by the caller (for a parameter) or the callee (for a return value).
         = ZeroExt
@@ -148,7 +148,7 @@ data LlvmParamAttr
         deriving (Eq, Show)
 
 
-instance Pretty LlvmParamAttr where
+instance Pretty ParamAttr where
  ppr attr
   = case attr of
         ZeroExt         -> text "zeroext"
@@ -163,7 +163,7 @@ instance Pretty LlvmParamAttr where
 
 -- CallConvention ---------------------------------------------------------------------------------
 -- | Different calling conventions a function can use.
-data LlvmCallConvention
+data CallConvention
         -- | The C calling convention.
         --   This calling convention (the default if no other calling convention is
         --   specified) matches the target C calling conventions. This calling
@@ -201,7 +201,7 @@ data LlvmCallConvention
         deriving (Eq, Show)
 
 
-instance Pretty LlvmCallConvention where
+instance Pretty CallConvention where
  ppr cc
   = case cc of
         CC_Ccc          -> text "ccc"
@@ -217,7 +217,7 @@ instance Pretty LlvmCallConvention where
 --   The description of the constructors is copied from the Llvm Assembly Language
 --   Reference Manual <http://www.llvm.org/docs/LangRef.html#linkage>, because
 --   they correspond to the Llvm linkage types.
-data LlvmLinkageType
+data LinkageType
         -- | Global values with internal linkage are only directly accessible by
         --  objects in the current module. In particular, linking code into a module
         --  with an internal global value may cause the internal to be renamed as
@@ -263,7 +263,7 @@ data LlvmLinkageType
         deriving (Eq, Show)
 
 
-instance Pretty LlvmLinkageType where
+instance Pretty LinkageType where
  ppr lt
   = case lt of
         Internal          -> text "internal"

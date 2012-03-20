@@ -20,7 +20,7 @@ import DDC.Base.Pretty
 data LlvmModule 
         = LlvmModule  
         { -- | Comments to include at the start of the module.
-          modComments  :: [LMString]
+          modComments  :: [String]
 
           -- | Alias type definitions.
         , modAliases   :: [LlvmAlias]
@@ -29,7 +29,7 @@ data LlvmModule
         , modGlobals   :: [LMGlobal]
 
           -- | Functions used in this module but defined in other modules.
-        , modFwdDecls  :: LlvmFunctionDecls
+        , modFwdDecls  :: [LlvmFunctionDecl]
 
           -- | Functions defined in this module.
         , modFuncs     :: [LlvmFunction]
@@ -61,7 +61,7 @@ instance Pretty LlvmModule where
 --  These represent the possible global level variables and constants.
 data LlvmStatic
         -- | A comment in a static section.
-        = LMComment       LMString
+        = LMComment       String
 
         -- | A static variant of a literal value.
         | LMStaticLit     LlvmLit
@@ -70,7 +70,7 @@ data LlvmStatic
         | LMUninitType    LlvmType
 
         -- | Defines a static 'LMString'.
-        | LMStaticStr     LMString     LlvmType
+        | LMStaticStr     String     LlvmType
 
         -- | A static array.
         | LMStaticArray   [LlvmStatic] LlvmType

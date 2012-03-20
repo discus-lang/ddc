@@ -38,7 +38,7 @@ toLlvmType platform tt
              , decReturnType    = toLlvmType platform tResult
              , decParamListType = FixedArgs
              , decParams        = map (llvmParameterOfType platform) tsArgs
-             , decAlign         = LlvmAlignBytes (platformAlignFunctions platform) }
+             , decAlign         = AlignmentBytes (platformAlignFunctions platform) }
 
 
         _ -> die "invalid type"
@@ -76,9 +76,9 @@ llvmTypeOfTyCon platform tycon
 
 
 -- | Convert a parameter type to a LlvmParameter decl.
-llvmParameterOfType :: Platform -> Type Name -> LlvmParameter
+llvmParameterOfType :: Platform -> Type Name -> Parameter
 llvmParameterOfType platform tt
-        = LlvmParameter
-        { llvmParameterType     = toLlvmType platform tt
-        , llvmParameterAttrs    = [] }
+        = Parameter
+        { parameterType     = toLlvmType platform tt
+        , parameterAttrs    = [] }
 

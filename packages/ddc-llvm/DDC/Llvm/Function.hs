@@ -22,10 +22,10 @@ data LlvmFunction
           funcDecl      :: LlvmFunctionDecl
 
           -- | The function parameter names.
-        , funcParams    :: [LMString]
+        , funcParams    :: [String]
 
           -- | The function attributes.
-        , funcAttrs     :: [LlvmFuncAttr]
+        , funcAttrs     :: [FuncAttr]
 
           -- | The section to put the function into,
         , funcSect      :: LlvmSection
@@ -51,22 +51,22 @@ instance Pretty LlvmFunction where
 
 
 -- | Print out a function defenition header.
-pprLlvmFunctionHeader :: LlvmFunctionDecl -> [LMString] -> Doc
+pprLlvmFunctionHeader :: LlvmFunctionDecl -> [String] -> Doc
 pprLlvmFunctionHeader 
         (LlvmFunctionDecl name linkage callConv tReturn varg params alignment)
         nsParam
   = let varg' = case varg of
                       VarArgs | null params -> text "..."
                               | otherwise   -> text ", ..."
-                      _otherwise          -> empty
+                      _otherwise            -> empty
 
         align' = case alignment of
-                        LlvmAlignNone     -> empty
-                        LlvmAlignBytes b  -> text " align" <+> ppr b
+                        AlignmentNone       -> empty
+                        AlignmentBytes b    -> text " align" <+> ppr b
 
         args'  = [ ppr ty <+> hsep (map ppr attrs) <+> text "%" <> text nParam
-                        | LlvmParameter ty attrs <- params
-                        | nParam                 <- nsParam ]
+                        | Parameter ty attrs <- params
+                        | nParam             <- nsParam ]
 
     in ppr linkage
         <+> ppr callConv
@@ -76,9 +76,6 @@ pprLlvmFunctionHeader
         <>  (hcat $ punctuate (comma <> space) args') <> varg' 
         <>  rparen 
         <>  align'
-
-
-
 
 
 -- Section --------------------------------------------------------------------

@@ -59,7 +59,7 @@ llvmFunctionOfSuper platform (BName n tSuper) x
                 , decReturnType         = toLlvmType platform tResult
                 , decParamListType      = FixedArgs
                 , decParams             = map (llvmParameterOfType platform) tsArgs
-                , decAlign              = LlvmAlignBytes (platformAlignFunctions platform) }
+                , decAlign              = AlignmentBytes (platformAlignFunctions platform) }
 
    in   LlvmFunction
                 { funcDecl              = decl

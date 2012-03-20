@@ -20,7 +20,7 @@ type LlvmBlockId
 -- | LLVM Statements
 data LlvmStatement
         -- | Plain comment  
-        = Comment       [LMString]
+        = Comment       [String]
 
         -- A nop LLVM statement. Useful as its often more efficient to use this
         -- then to wrap LLvmStatement in a Just or [].
@@ -31,7 +31,7 @@ data LlvmStatement
 
         -- | Raise an expression to a statement (if don't want result or want to use
         --   Llvm unnamed values.
-        | Expr LlvmExpression
+        | Expr          LlvmExpression
 
         -- | Assign an expression to an variable:
         | Assignment    LlvmVar LlvmExpression
@@ -109,7 +109,7 @@ data LlvmExpression
         --
         --    * attrs:     A list of function attributes for the call. Only NoReturn,
         --                 NoUnwind, ReadOnly and ReadNone are valid here.
-        | Call  LlvmCallType LlvmVar [LlvmVar] [LlvmFuncAttr]
+        | Call  LlvmCallType LlvmVar [LlvmVar] [FuncAttr]
 
         -- | Merge variables from different basic blocks which are predecessors of this
         --   basic block in a new variable of type tp.
@@ -136,7 +136,7 @@ data LlvmExpression
         --
         --    * alignstack: Should the stack be conservatively aligned before this
         --                  expression is executed.
-        | Asm   LMString LMString LlvmType [LlvmVar] Bool Bool
+        | Asm   String String LlvmType [LlvmVar] Bool Bool
         deriving (Show, Eq)
 
 
