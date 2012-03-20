@@ -1,0 +1,4 @@
+-- Check for fragment violations.
+
+-- Unknown primop.
+Undefined variable: foo#

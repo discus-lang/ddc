@@ -167,7 +167,7 @@ cmdParseCheckExp _state profile lineStart str
 
         -- Do fragment specific checks.
         goCheckFragment (x, t, e, c)
-         = case fragmentCheck x of
+         = case fragmentCheckExp x of
              Just err 
               -> do     putStrLn $ renderIndent $ ppr err
                         return Nothing

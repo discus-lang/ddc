@@ -27,7 +27,7 @@ instance Convert (Module () Name) where
                 ++ (map convertTop bxs)
 
         | otherwise
-        = error "convert[Module]: sorry"
+        = error "convert[Module]: module must contain top-level letrecs"
 
 
 -- Type -----------------------------------------------------------------------

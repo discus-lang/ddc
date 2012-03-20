@@ -5,6 +5,7 @@ where
 import DDC.Core.Load
 import DDC.Core.Sea.Output.Profile
 import DDC.Core.Sea.Output.Convert
+import DDCI.Core.Fragment
 import DDCI.Core.State
 import DDCI.Core.IO
 import DDC.Base.Pretty
@@ -14,12 +15,17 @@ import DDC.Base.Pretty
 cmdSeaOut :: State -> Int -> String -> IO ()
 cmdSeaOut state lineStart str
  = let  toks    = lexString lineStart str
-        eModule = loadModule outputProfile "<interactive>"  toks
+   in   goLoad toks
 
-   in case eModule of
-        Left err  
-         -> putStrLn $ renderIndent $ ppr err
+ where  goLoad toks
+         = case loadModule outputProfile "<interactive>"  toks of
+                Left err -> putStrLn $ renderIndent $ ppr err
+                Right mm -> goFragmentCheck mm
 
-        Right mm 
-         -> do  outDocLn state $ convert mm
-                return ()
+        goFragmentCheck mm
+         = case fragmentCheckModule mm of
+                Nothing  -> outDocLn state $ convert mm
+                Just err -> putStrLn 
+                                $ renderIndent 
+                                $ vcat  [ text "Fragment violation in SeaOut module."
+                                        , indent 2 (ppr err) ]

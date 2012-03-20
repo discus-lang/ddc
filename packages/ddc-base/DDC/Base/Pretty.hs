@@ -37,6 +37,8 @@ class Pretty a where
  pprPrec :: Int -> a -> Doc
  pprPrec _ = ppr
 
+instance Pretty () where
+ ppr = text . show
 
 instance Pretty Bool where
  ppr = text . show
