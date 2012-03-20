@@ -40,7 +40,7 @@ cmdSeaOut state lineStart str
                  | Set.member SeaPrelude (stateModes state)
                  = vcat  [ text "#include <Disciple.h>"
                          , text "#include <Primitive.h>" 
-                         , empty ]
+                         , line ]
 
                  | otherwise
                  = empty

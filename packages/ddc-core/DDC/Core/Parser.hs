@@ -51,6 +51,8 @@ pModule
 
             ,   return []]
 
+        pTok KWith
+
         -- LET;+
         lts     <- P.sepBy1 pLets (pTok KIn)
 
@@ -136,6 +138,15 @@ pExp
         return  $ XLet () lts x2
 
 
+        -- do { STMTS }
+        --   Sugar for a let-expression.
+ , do   pTok    KDo
+        pTok    KBraceBra
+        xx      <- pStmts
+        pTok    KBraceKet
+        return  $ xx
+
+
         -- withregion CON in EXP
  , do   pTok KWithRegion
         n       <- pVar
@@ -154,7 +165,9 @@ pExp
         pTok KBraceKet
         return  $ XCase () x alts
 
+
         -- match PAT <- EXP else EXP in EXP
+        --  Sugar for a case-expression.
  , do   pTok KMatch
         p       <- pPat
         pTok KArrowDashLeft
@@ -164,6 +177,7 @@ pExp
         pTok KIn
         x3      <- pExp
         return  $ XCase () x1 [AAlt p x3, AAlt PDefault x2]
+
 
         -- weakeff [TYPE] in EXP
  , do   pTok KWeakEff
@@ -495,3 +509,76 @@ pLetRecBinding
 
                 return  (T.makeBindFromBinder b t, x) ]
 
+
+-- Stmts ----------------------------------------------------------------------
+data Stmt n
+        = StmtBind  (Bind n) (Exp () n)
+        | StmtMatch (Pat n)  (Exp () n) (Exp () n)
+        | StmtNone  (Exp () n)
+
+
+-- | Parse a single statement.
+pStmt :: Ord n => Parser n (Stmt n)
+pStmt 
+ = P.choice
+ [ -- BINDER = EXP ;
+   -- We need the 'try' because a VARIABLE binders can also be parsed
+   --   as a function name in a non-binding statement.
+   --  
+   P.try $ 
+    do  br      <- T.pBinder
+        pTok    KEquals
+        x1      <- pExp
+        let t   = T.tBot T.kData
+        let b   = T.makeBindFromBinder br t
+        return  $ StmtBind b x1
+
+   -- PAT <- EXP else EXP;
+   -- Sugar for a case-expression.
+   -- We need the 'try' because the PAT can also be parsed
+   --  as a function name in a non-binding statement.
+ , P.try $
+    do  p       <- pPat
+        pTok KArrowDashLeft
+        x1      <- pExp 
+        pTok KElse
+        x2      <- pExp 
+        return  $ StmtMatch p x1 x2
+
+        -- EXP
+ , do   x       <- pExp
+        return  $ StmtNone x
+ ]
+
+
+-- | Parse some statements.
+pStmts :: Ord n => Parser n (Exp () n)
+pStmts
+ = do   stmts   <- P.sepEndBy1 pStmt (pTok KSemiColon)
+        case makeStmts stmts of
+         Nothing -> P.unexpected "do-block must end with a statement"
+         Just x  -> return x
+
+
+-- | Make an expression from some statements.
+makeStmts :: [Stmt n] -> Maybe (Exp () n)
+makeStmts ss
+ = case ss of
+        [StmtNone x]    
+         -> Just x
+
+        StmtNone x1 : rest
+         | Just x2      <- makeStmts rest
+         -> Just $ XLet () (LLet LetStrict (BNone (T.tBot T.kData)) x1) x2
+
+        StmtBind b x1 : rest
+         | Just x2      <- makeStmts rest
+         -> Just $ XLet () (LLet LetStrict b x1) x2
+
+        StmtMatch p x1 x2 : rest
+         | Just x3      <- makeStmts rest
+         -> Just $ XCase () x1 
+                 [ AAlt p x3
+                 , AAlt PDefault x2]
+
+        _ -> Nothing

@@ -54,6 +54,7 @@ keywords
         , ("weakclo",    KA KWeakClo)
         , ("with",       KA KWith)
         , ("where",      KA KWhere) 
+        , ("do",         KA KDo)
         , ("match",      KA KMatch)
         , ("else",       KA KElse) ]
 

@@ -145,6 +145,7 @@ data TokAtom
         | KForget
 
         -- sugar keywords
+        | KDo
         | KMatch
         | KElse
 
@@ -236,6 +237,7 @@ describeTokAtom' ta
         KForget                 -> (Keyword, "forget")
 
         -- sugar keywords
+        KDo                     -> (Keyword, "do")
         KMatch                  -> (Keyword, "match")
         KElse                   -> (Keyword, "else")
 

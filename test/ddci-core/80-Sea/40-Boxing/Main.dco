@@ -1,43 +1,46 @@
 
-module Main
-letrec {
+module Main with letrec {
 addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- =      let z   = allocRaw# TAG0# 4 in
-        match TAG0#  <- tag# x else fail# [Ptr# Obj] in
-        match TAG0#  <- tag# y else fail# [Ptr# Obj] in
-        let r   = add# [Int32#] 
+ = do { z   = allocRaw# TAG0# 4;
+        TAG0#  <- tag# x else fail# [Ptr# Obj];
+        TAG0#  <- tag# y else fail# [Ptr# Obj];
+        r   = add# [Int32#] 
                        (read# [Int32#] (fieldRaw# [Int32#] 0 x))
-                       (read# [Int32#] (fieldRaw# [Int32#] 0 y)) in
-        let _   = write# [Int32#] (fieldRaw# [Int32#] 0 z) r in
+                       (read# [Int32#] (fieldRaw# [Int32#] 0 y));
+        write# [Int32#] (fieldRaw# [Int32#] 0 z) r;
         return# [Ptr# Obj] z;
+      };
 
 
 subInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- =      let z   = allocRaw# TAG0# 4 in
-        match TAG0#  <- tag# x else fail# [Ptr# Obj] in
-        match TAG0#  <- tag# y else fail# [Ptr# Obj] in
-        let r   = sub# [Int32#] 
-                       (read# [Int32#] (fieldRaw# [Int32#] 0 x))
-                       (read# [Int32#] (fieldRaw# [Int32#] 0 y)) in
-        let _   = write# [Int32#] (fieldRaw# [Int32#] 0 z) r in
+ = do { z   = allocRaw# TAG0# 4;
+        TAG0#  <- tag# x else fail# [Ptr# Obj];
+        TAG0#  <- tag# y else fail# [Ptr# Obj];
+        r   = sub# [Int32#] 
+                        (read# [Int32#] (fieldRaw# [Int32#] 0 x))
+                        (read# [Int32#] (fieldRaw# [Int32#] 0 y));
+        write# [Int32#] (fieldRaw# [Int32#] 0 z) r;
         return# [Ptr# Obj] z;
+      };
 
 
 mulInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- =      let z   = allocRaw# TAG0# 4 in
-        match TAG0#  <- tag# x else fail# [Ptr# Obj] in
-        match TAG0#  <- tag# y else fail# [Ptr# Obj] in
-        let r   = mul# [Int32#] 
-                       (read# [Int32#] (fieldRaw# [Int32#] 0 x))
-                       (read# [Int32#] (fieldRaw# [Int32#] 0 y)) in
-        let _   = write# [Int32#] (fieldRaw# [Int32#] 0 z) r in
+ = do { z   = allocRaw# TAG0# 4;
+        TAG0#  <- tag# x else fail# [Ptr# Obj];
+        TAG0#  <- tag# y else fail# [Ptr# Obj];
+        r   = mul# [Int32#] 
+                        (read# [Int32#] (fieldRaw# [Int32#] 0 x))
+                        (read# [Int32#] (fieldRaw# [Int32#] 0 y));
+        write# [Int32#] (fieldRaw# [Int32#] 0 z) r;
         return# [Ptr# Obj] z;
+      };
 
 
 boxInt32 (x : Int32#) : Ptr# Obj
- =      let z   = allocRaw# TAG0# 4 in
-        let _   = write# [Int32#] (fieldRaw# [Int32#] 0 z) x in
+ = do { z   = allocRaw# TAG0# 4;
+        write# [Int32#] (fieldRaw# [Int32#] 0 z) x;
         return# [Ptr# Obj] z;
+      };
 
 
 unboxInt32 (x : Ptr# Obj) : Int32#
@@ -53,9 +56,10 @@ fac (x: Ptr# Obj) : Ptr# Obj
 
 
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
- =      let x   = boxInt32 (i32# 10) in
-        let x2  = fac x in
-        let str = showInt32# (unboxInt32 x2) in
-        let _   = putStrLn# str in
+ = do { x       = boxInt32 (i32# 10);
+        x2      = fac x;
+        str     = showInt32# (unboxInt32 x2);
+        _       = putStrLn# str;
         return# [Int32#] (i32# 0);
+      };
 }
