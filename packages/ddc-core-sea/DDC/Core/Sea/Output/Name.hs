@@ -39,6 +39,9 @@ data Name
 
         -- | A constructor tag literal.
         | NameTag       Integer
+
+        -- | A boolean literal.
+        | NameBool      Bool
         deriving (Eq, Ord, Show)
 
 
@@ -51,6 +54,8 @@ instance Pretty Name where
         NamePrim p        -> ppr p
         NameNat  i        -> integer i
         NameTag  i        -> text "TAG" <> integer i
+        NameBool True     -> text "True#"
+        NameBool False    -> text "False#"
 
 
 -- Prim -----------------------------------------------------------------------
@@ -391,6 +396,10 @@ readName str@(c:_)
         | Just rest     <- stripPrefix "TAG" str
         , (ds, "#")     <- span isDigit rest
         = Just $ NameTag (read ds)
+
+        -- Bools
+        | str == "True#"        = Just $ NameBool True
+        | str == "False#"       = Just $ NameBool False
 
         | otherwise
         = Nothing

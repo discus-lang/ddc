@@ -110,6 +110,7 @@ instance Convert (Exp () Name) where
                  , convert x2 ]
 
         -- TODO: frag check that we only switch on Nats and Tags.
+        -- Special case tag check to make output easier to read.
         XCase _ x [ AAlt (PData u []) x1
                   , AAlt PDefault 
                          xFail@(XApp _ 
@@ -120,9 +121,16 @@ instance Convert (Exp () Name) where
                         <> semi
                  , convert x1 ]
 
+        -- Special case if-then-else to make output easier to read.
+        XCase _ x [ AAlt (PData (UPrim (NameBool True)  _) []) x1
+                  , AAlt (PData (UPrim (NameBool False) _) []) x2 ]
+         -> vcat [ text "if" <+> parens (convert x)
+                 , lbrace    <>  (indent 7 $ convert x1) <> semi <> line <> rbrace
+                 , lbrace    <>  (indent 7 $ convert x2) <> semi <> line <> rbrace ]
+
         XCase _ x alts
-         ->   text "switch" <> parens (convert x) <+> lbrace
-         <$$> (indent 1 (vcat $ map convert alts))
+         ->   text "switch" <> parens (convert x) 
+         <$$> lbrace <> (indent 1 (vcat $ map convert alts))
          <$$> rbrace 
 
 
@@ -137,7 +145,9 @@ convertPrimApp p xs
         -- binary primops
         | PrimOp op             <- p
         , [XType _t, x1, x2]    <- xs
-        , elem op [PrimOpAdd, PrimOpSub, PrimOpMul, PrimOpDiv, PrimOpMod]
+        , elem op [ PrimOpAdd, PrimOpSub, PrimOpMul, PrimOpDiv, PrimOpMod
+                  , PrimOpEq,  PrimOpNeq
+                  , PrimOpGt,  PrimOpLt,  PrimOpGe, PrimOpLe]
         = parensConvertX x1 <+> convert op <+> parensConvertX x2
 
         -- Control
@@ -226,13 +236,16 @@ instance Convert (Alt () Name) where
   = case alt of
         AAlt PDefault x 
          -> text "default:" 
-                <+> convert x
+                <+> convert x <> semi
 
         AAlt (PData u []) x
          -> vcat [ text "case" <+> convert u <> colon
-                 , indent 7 (vcat [ convert x    <> semi
-                                  , text "break" <> semi 
-                                  , empty] ) ]
+                 , lbrace 
+                        <> indent 5 (vcat [ convert x    <> semi]) 
+                        <> line
+                        <> rbrace 
+                        <> empty 
+                 ]
 
         AAlt{}
          -> error "convert[Alt]: sorry"
@@ -261,6 +274,8 @@ instance Convert Name where
         NameVar  str    -> text str
         NameTag  i      -> integer i
         NameNat  i      -> integer i
+        NameBool True   -> int 1
+        NameBool False  -> int 0
         _               -> error ("convert[Name]: sorry" ++ show nn)
 
 

@@ -1,7 +1,7 @@
 
 -- Convert a module in the SeaOutput fragment into raw C code.
 :set +Indent
-:seaout..
+:sea..
 module Main
 letrec {
         addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj

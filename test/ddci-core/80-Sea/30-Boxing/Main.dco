@@ -12,6 +12,17 @@ addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
         return# [Ptr# Obj] z;
 
 
+subInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ =      let z   = allocRaw# TAG0# 4 in
+        match TAG0#  <- tag# x else fail# [Ptr# Obj] in
+        match TAG0#  <- tag# y else fail# [Ptr# Obj] in
+        let r   = sub# [Int32#] 
+                       (read# [Int32#] (fieldRaw# [Int32#] 0 x))
+                       (read# [Int32#] (fieldRaw# [Int32#] 0 y)) in
+        let _   = write# [Int32#] (fieldRaw# [Int32#] 0 z) r in
+        return# [Ptr# Obj] z;
+
+
 mulInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
  =      let z   = allocRaw# TAG0# 4 in
         match TAG0#  <- tag# x else fail# [Ptr# Obj] in
@@ -34,16 +45,16 @@ unboxInt32 (x : Ptr# Obj) : Int32#
 
 
 fac (x: Ptr# Obj) : Ptr# Obj
- =      let x'  = unboxInt32 x in
-        case eq# [Int32#] x' (i32# 0) of {
-         1  -> boxInt32 (i32 1);
-         0  -> mulInt32 x (fac (subInt32 x (i32 1)));
+ =      let x2  = unboxInt32 x in
+        case eq# [Int32#] x2 (i32# 0) of {
+         True#  -> return# [Ptr# Obj] (boxInt32 (i32# 1));
+         False# -> return# [Ptr# Obj] (mulInt32 x (fac (subInt32 x (boxInt32 (i32# 1)))));
         };
 
 
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
- =      let x   = boxInt32 (i32# 5) in
-        let x2  = addInt32 x x in
+ =      let x   = boxInt32 (i32# 10) in
+        let x2  = fac x in
         let str = showInt32# (unboxInt32 x2) in
         let _   = putStrLn# str in
         return# [Int32#] (i32# 0);

@@ -38,6 +38,12 @@ primDataDefs
                 (NamePrimTyCon PrimTyConTag)
                 []
                 Nothing
+
+        , DataDef
+                (NamePrimTyCon PrimTyConBool)
+                []
+                (Just   [ (NameBool True,  [])
+                        , (NameBool False, []) ])
         ]
 
 
@@ -92,6 +98,7 @@ typeOfName nn
         NamePrim p      -> Just $ typeOfPrim p
         NameNat  _      -> Just $ tNat
         NameTag  _      -> Just $ tTag
+        NameBool _      -> Just $ tBool
         _               -> Nothing
 
 
