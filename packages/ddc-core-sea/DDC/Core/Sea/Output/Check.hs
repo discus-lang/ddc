@@ -19,7 +19,7 @@ type CheckM a = G.CheckM (Error a)
 
 
 -- Module ---------------------------------------------------------------------
--- | Check for Sea language fragment violiations in a module.
+-- | Check for Sea language fragment violations in a module.
 --  
 --   This checker only accepts core language expressions that can be mapped
 --   directly onto the C language. 

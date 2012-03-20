@@ -10,11 +10,17 @@ import DDC.Core.Sea.Output.Name
 import DDC.Base.Pretty
 
 
--- | Convert a term that complies with the SeaOutput language profile into
---   a Sea expression.
---   If the term doesn't comply with the profile you may get `error`.
+-- | Convert a thing to the C language.
+--
+--   The thing must have passed the Sea langauge fragment checker, 
+--   else you may get `error`.
 class Convert a where
  convert :: a -> Doc
+
+
+-- | Called when we find a thing that cannot be converted to C.
+die :: String -> a
+die msg = error $ "DDC.Core.Sea.Output.Convert " ++ msg
 
 
 -- Module ---------------------------------------------------------------------
@@ -24,7 +30,7 @@ instance Convert (Module () Name) where
         = vcat $ map convertTop bxs
 
         | otherwise
-        = error "convert[Module]: module must contain top-level letrecs"
+        = die "module must contain top-level letrecs"
 
 
 -- Type -----------------------------------------------------------------------
@@ -43,15 +49,15 @@ instance Convert (Type Name) where
                 PrimTyConBool           -> text "bool_t"
                 PrimTyConInt bits       -> text "int" <> int bits <> text "_t"
                 PrimTyConString         -> text "string_t"
-                _                       -> error $ "convert[Type]: " ++ show tt
+                _                       -> die "invalid tycon"
 
         TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
          -> convert t2 <> text "*"
 
         TCon (TyConBound (UPrim NameObjTyCon _))
-         -> text "Obj"
+           -> text "Obj"
 
-        _                               -> error ("convert[Type]: sorry" ++ show tt)
+        _  -> die "invalid type"
 
 
 -- Top level function ---------------------------------------------------------
@@ -72,7 +78,7 @@ convertTop (b , xx)
 
 
         | otherwise
-        = error "convertTop: sorry"
+        = die "invalid top-level declaration"
 
 
 -- Exp ------------------------------------------------------------------------
@@ -131,9 +137,7 @@ instance Convert (Exp () Name) where
          <$$> rbrace 
 
 
-        _ -> error $ unlines
-                   [ "convert[Exp] failed"      
-                   , show xx ]
+        _ -> die "invalid expression"
  
 
 -- | Convert a primop application to Sea.
@@ -199,9 +203,7 @@ convertPrimApp p xs
 
 
         | otherwise 
-        = error $ unlines 
-                [ "convertPrimApp failed"
-                , show (p, xs) ]
+        = die "invalid primitive application"
 
 
 -- | Convert a function application to Sea.
@@ -213,9 +215,8 @@ convertFunApp n xs
                 (map convert xs)
 
         | otherwise
-        = error $ unlines
-                [ "convertFunApp failed"
-                , show (n, xs) ]
+        = die "invalid function application"
+
 
 parensConvertX xx
  = case xx of
@@ -248,7 +249,7 @@ instance Convert (Alt () Name) where
                  ]
 
         AAlt{}
-         -> error "convert[Alt]: sorry"
+         -> die "invalid alternative"
 
 
 -- Bind and Bound -------------------------------------------------------------
@@ -256,14 +257,14 @@ instance Convert (Bind Name) where
  convert bb
   = case bb of
         BName n t       -> convert t <+> convert n
-        _               -> error "convert[Bind]: sorry"
+        _               -> die "invalid bind"
 
 instance Convert (Bound Name) where
  convert uu
   = case uu of
         UName n _       -> convert n
         UPrim n _       -> convert n
-        _               -> error "convert[Bound]: sorry"
+        _               -> die "invalid bound"
 
 
 -- Names ----------------------------------------------------------------------
@@ -276,7 +277,7 @@ instance Convert Name where
         NameNat  i      -> integer i
         NameBool True   -> int 1
         NameBool False  -> int 0
-        _               -> error ("convert[Name]: sorry" ++ show nn)
+        _               -> die $ "unexpected name " ++ show nn
 
 
 -- Prims ----------------------------------------------------------------------
@@ -284,7 +285,7 @@ instance Convert Prim where
  convert nn
   = case nn of
         PrimOp op       -> convert op
-        _               -> error ("convert[Prim]: sorry" ++ show nn)
+        _               -> die $ "unexpected prim " ++ show nn 
 
 
 instance Convert PrimOp where
