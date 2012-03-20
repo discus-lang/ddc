@@ -8,6 +8,7 @@
 #
 #       deps            -- build dependencies (should be automatic with the 'all' target)
 #       bin/ddc         -- build the compiler binary
+#       bin/ddci-core   -- build the interactive shell for the core language
 #       bin/war         -- build the test driver
 #       bin/plate       -- build the boilerplate generator
 #	runtime		-- build the runtime system
