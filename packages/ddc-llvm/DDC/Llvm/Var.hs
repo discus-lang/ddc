@@ -1,7 +1,7 @@
 
 module DDC.Llvm.Var
         ( -- * Uniques
-          Unique        (..)
+          Unique
 
           -- * Sections
         , Section       (..)
@@ -29,9 +29,7 @@ import qualified Data.Array.Unsafe      as Unsafe
 
 -- Unique ---------------------------------------------------------------------
 -- | Unique id.
-data Unique
-        = Unique !Int !String
-        deriving (Eq, Ord, Show)
+type Unique      = Int
 
 
 -- Section --------------------------------------------------------------------
@@ -58,11 +56,7 @@ data Var
                 LMConst
 
         -- | Variables local to a function or parameters.
-        | VarLocal      Unique  Type
-
-        -- | Named local variables. Sometimes we need to be able to explicitly name
-        --   variables (e.g for function arguments).
-        | VarNamedLocal String  Type
+        | VarLocal      String  Type
 
         -- | A constant variable
         | VarLit        Lit
@@ -87,7 +81,6 @@ nameOfVar v
  = case v of
         VarGlobal{}     -> "@" ++ plainNameOfVar v
         VarLocal{}      -> "%" ++ plainNameOfVar v
-        VarNamedLocal{} -> "%" ++ plainNameOfVar v
         VarLit{}        -> plainNameOfVar v
 
 
@@ -97,8 +90,7 @@ plainNameOfVar :: Var -> String
 plainNameOfVar vv
  = case vv of
         VarGlobal x _ _ _ _ _   -> x
-        VarLocal  x _           -> show x
-        VarNamedLocal x _       -> x
+        VarLocal  x _           -> x
         VarLit    x             -> showLit x
 
 
@@ -108,7 +100,6 @@ typeOfVar vv
  = case vv of
         VarGlobal _ t _ _ _ _   -> t
         VarLocal  _ t           -> t
-        VarNamedLocal _ t       -> t
         VarLit l                -> typeOfLit l
 
 

@@ -41,7 +41,7 @@ toLlvmType platform tt
              , declAlign         = AlignBytes (platformAlignFunctions platform) }
 
 
-        _ -> die "invalid type"
+        _ -> die ("invalid type " ++ show tt)
 
 
 -- | Convert a Sea TyCon to a LlvmType.

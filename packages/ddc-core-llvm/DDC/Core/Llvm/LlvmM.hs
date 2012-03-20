@@ -9,13 +9,20 @@ module DDC.Core.Llvm.LlvmM
         , newUnique
         , newUniqueVar
         , newUniqueNamedVar
-        , newUniqueLabel)
+        , newUniqueLabel
+        , newUniqueBlockId)
 where
+import DDC.Core.Llvm.Platform
+import DDC.Llvm.Stmt
 import DDC.Llvm.Type
 import DDC.Llvm.Var
 import Control.Monad.State.Strict
 
 type LlvmM = State LlvmState
+
+-- | Called when we find a thing that cannot be converted to C.
+die :: String -> a
+die msg = error $ "DDC.Core.Llvm.Convert " ++ msg
 
 
 -- LlvmState ------------------------------------------------------------------
@@ -23,47 +30,52 @@ type LlvmM = State LlvmState
 data LlvmState
         = LlvmState
         { -- Unique name generator.
-          llvmStateUnique       :: Int }
+          llvmStateUnique       :: Int 
+
+          -- The current platform.
+        , llvmStatePlatform      :: Platform }
 
 
 -- | Initial LLVM state.
-llvmStateInit :: LlvmState
-llvmStateInit
+llvmStateInit :: Platform -> LlvmState
+llvmStateInit platform
         = LlvmState
-        { llvmStateUnique       = 1 }
-
-
--- | Called when we find a thing that cannot be converted to C.
-die :: String -> a
-die msg = error $ "DDC.Core.Llvm.Convert " ++ msg
+        { llvmStateUnique       = 1 
+        , llvmStatePlatform     = platform }
 
 
 -- Unique ---------------------------------------------------------------------
 -- | Unique name generation.
-newUnique :: String -> LlvmM Unique
-newUnique name 
+newUnique :: LlvmM Unique
+newUnique 
  = do   s       <- get
         let u   = llvmStateUnique s
         put     $ s { llvmStateUnique = u + 1 }
-        return  $ Unique u name        
+        return  $ u
 
 
 -- | Generate a new unique register variable with the specified `LlvmType`.
 newUniqueVar :: Type -> LlvmM Var
 newUniqueVar t
- = do   u <- newUnique "r"
-        return $ VarLocal u t
+ = do   u <- newUnique
+        return $ VarLocal ("_v" ++ show u) t
 
 
 -- | Generate a new unique named register variable with the specified `LlvmType`.
 newUniqueNamedVar :: String -> Type -> LlvmM Var
 newUniqueNamedVar name t
- = do   u <- newUnique name
-        return $ VarLocal u t
+ = do   u <- newUnique 
+        return $ VarLocal ("_v" ++ show u ++ "_" ++ name) t
 
 
 -- | Generate a new unique label.
 newUniqueLabel :: String -> LlvmM Var
 newUniqueLabel name
- = do   u <- newUnique name
-        return $ VarLocal u TLabel
+ = do   u <- newUnique
+        return $ VarLocal ("_l" ++ show u ++ "_" ++ name) TLabel
+
+
+-- | Generate a new unique blockid.
+newUniqueBlockId :: LlvmM BlockId
+ = do   u <- newUnique
+        return   $ BlockId u

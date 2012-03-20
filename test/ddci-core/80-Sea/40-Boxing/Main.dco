@@ -44,7 +44,9 @@ boxInt32 (x : Int32#) : Ptr# Obj
 
 
 unboxInt32 (x : Ptr# Obj) : Int32#
- =      return# [Int32#] (read# [Int32#] (fieldRaw# [Int32#] 0 x));
+ = do { r       = read# [Int32#] (fieldRaw# [Int32#] 0 x);
+        return# [Int32#] r;
+      };
 
 
 fac (x: Ptr# Obj) : Ptr# Obj

@@ -55,7 +55,7 @@ instance Pretty Module where
  ppr (Module _comments aliases _globals _decls funcs)
   =    (vcat $ map ppr aliases)
   <$$> empty
-  <$$> (vcat $ map ppr funcs)
+  <$$> (vcat $ punctuate line $ map ppr funcs)
 
 
 -- Static ---------------------------------------------------------------------

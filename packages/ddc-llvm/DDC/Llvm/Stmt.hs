@@ -1,18 +1,24 @@
 
 module DDC.Llvm.Stmt
-        ( BlockId
+        ( BlockId       (..)
         , Block         (..)
         , Stmt          (..))
 where
 import DDC.Llvm.Exp
+import DDC.Llvm.Type
 import DDC.Llvm.Var
 import DDC.Base.Pretty
 
 
 -- BlockId --------------------------------------------------------------------
 -- | Block labels
-type BlockId 
-        = Unique
+data BlockId 
+        = BlockId Unique
+        deriving (Eq, Show)
+
+instance Pretty BlockId where
+ ppr (BlockId i)
+        = text "block" <> int i
 
 
 -- Block ----------------------------------------------------------------------
@@ -29,7 +35,9 @@ data Block
 
 
 instance Pretty Block where
- ppr _ = text "BLOCK"
+ ppr (Block blockId stmts)
+        =    ppr (SMkLabel blockId)
+        <$$> indent 8 (vcat $ map ppr stmts)
 
 
 -- Stmt -----------------------------------------------------------------------
@@ -74,4 +82,25 @@ data Stmt
         -- | Return a result.
         | SReturn       (Maybe Var)
         deriving (Show, Eq)
+
+
+instance Pretty Stmt where
+ ppr ss
+  = case ss of
+        SNop                    -> empty
+        SUnreachable            -> text "unreachable"
+
+        SMkLabel blockId
+         -> ppr blockId <> colon
+
+        SReturn (Just var)
+         -> text "ret" <+> ppr var
+
+        SReturn Nothing
+         -> text "ret" <+> ppr TVoid
+
+        -----------------------------------------
+
+        _                       -> text "STMT" <> text (show ss)
+
 
