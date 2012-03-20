@@ -3,6 +3,7 @@ module DDC.Core.Llvm.LlvmM
         ( LlvmM
         , LlvmState(..)
         , llvmStateInit 
+        , die
 
           -- * Uniques
         , newUnique
@@ -30,6 +31,11 @@ llvmStateInit :: LlvmState
 llvmStateInit
         = LlvmState
         { llvmStateUnique       = 1 }
+
+
+-- | Called when we find a thing that cannot be converted to C.
+die :: String -> a
+die msg = error $ "DDC.Core.Llvm.Convert " ++ msg
 
 
 -- Unique ---------------------------------------------------------------------

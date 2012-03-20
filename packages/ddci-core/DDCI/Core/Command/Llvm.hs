@@ -1,20 +1,19 @@
 
-module DDCI.Core.Command.Sea
-        (cmdSeaOut)
+module DDCI.Core.Command.Llvm
+        (cmdLlvmOut)
 where
 import DDC.Core.Load
+import DDC.Core.Llvm.Convert
 import DDC.Core.Sea.Output.Profile
-import DDC.Core.Sea.Output.Convert
 import DDCI.Core.Fragment
 import DDCI.Core.State
 import DDCI.Core.IO
 import DDC.Base.Pretty
-import qualified Data.Set               as Set
 
 
--- | Parse, check, and fully evaluate an expression.
-cmdSeaOut :: State -> Int -> String -> IO ()
-cmdSeaOut state lineStart str
+-- | Parse, check and convert a Sea module to LLVM.
+cmdLlvmOut :: State -> Int -> String -> IO ()
+cmdLlvmOut state lineStart str
  = let  toks    = lexString lineStart str
    in   goLoad toks
 
@@ -35,16 +34,4 @@ cmdSeaOut state lineStart str
                  -> goOutput mm
 
         goOutput mm
-         = let  -- Include the Sea Prelude if we were asked for it.
-                prelude  
-                 | Set.member SeaPrelude (stateModes state)
-                 = vcat  [ text "#include <Disciple.h>"
-                         , text "#include <Primitive.h>" 
-                         , line ]
-
-                 | otherwise
-                 = empty
-
-           in   outDocLn state 
-                 $    prelude <> convert mm
-
+         = outDocLn state $ ppr $ convertModule mm

@@ -6,24 +6,21 @@ module DDC.Llvm.Type
           -- * Types
         , LlvmType         (..)
         , LlvmAlias
+
         , isInt
         , isFloat
         , isPointer
-        , llvmWidthInBits
-        , pLift
-        , pLower
-        , i128, i64, i32, i16, i8, i1
-        , i8Ptr
 
           -- * Function Declarations.
-        , LlvmFunctionDecl (..)
+        , LlvmFunctionDecl      (..)
         , LlvmFunctionDecls
-        , LlvmParameterListType
-        , LlvmParameter
-        , LMAlign)
+        , LlvmParameterListType (..)
+        , LlvmParameter         (..)
+        , LlvmAlign             (..))
 where
 import DDC.Llvm.Attr
 import DDC.Base.Pretty
+
 
 -- Base -------------------------------------------------------------------------------------------
 -- | A String in LLVM
@@ -68,14 +65,14 @@ instance Pretty LlvmType where
         LMVoid          -> text "void"
         LMStruct tys    -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
 
-        LMFunction (LlvmFunctionDecl _ _ _ r varg p _)
+        LMFunction (LlvmFunctionDecl _ _ _ r varg params _)
          -> let varg' = case varg of
-                        VarArgs | null p    -> text "..."
-                                | otherwise -> text ", ..."
-                        _otherwise          -> empty
+                        VarArgs | null params -> text "..."
+                                | otherwise   -> text ", ..."
+                        _otherwise            -> empty
 
                 -- by default we don't print param attributes
-                args    = hcat $ punctuate comma $ map (ppr . fst) p
+                args    = hcat $ punctuate comma $ map ppr params
 
             in ppr r <> brackets (args <> varg')
 
@@ -109,86 +106,31 @@ isPointer tt
         _               -> False
 
 
--- | Width in bits of an 'LlvmType', returns 0 if not applicable        -- TODO: make this return Nothing
-llvmWidthInBits :: LlvmType -> Int
-llvmWidthInBits tt
- = case tt of
-        LMInt n         -> n
-        LMFloat         -> 32
-        LMDouble        -> 64
-        LMFloat80       -> 80
-        LMFloat128      -> 128
-
-        -- Could return either a pointer width here or the width of what
-        -- it points to. We will go with the former for now.
-        LMPointer{}     -> llvmWidthInBits llvmWord
-        LMArray{}       -> llvmWidthInBits llvmWord
-        LMLabel         -> 0
-        LMVoid          -> 0
-        LMStruct tys    -> sum $ map llvmWidthInBits tys
-        LMFunction{}    -> 0
-        LMAlias (_,t)   -> llvmWidthInBits t
-
-
--- | The target architectures word size                                 -- TODO: cleanup this mess
-llvmWord :: LlvmType
-llvmWord    = LMInt (wORD_SIZE * 8)
-
-wORD_SIZE       = 32                                                    -- TODO: parameterise this
-
-
--- | Add a pointer indirection to the supplied type. 'LMLabel' and 'LMVoid'
--- cannot be lifted.
-pLift :: LlvmType -> LlvmType
-pLift (LMLabel) = error "Labels are unliftable"
-pLift (LMVoid)  = error "Voids are unliftable"
-pLift x         = LMPointer x
-
-
--- | Remove the pointer indirection of the supplied type. Only 'LMPointer'
--- constructors can be lowered.
-pLower :: LlvmType -> LlvmType
-pLower (LMPointer x) = x
-pLower x  = error $ show x ++ " is a unlowerable type, need a pointer"
-
-
--- | Shortcut for Common Types
-i128, i64, i32, i16, i8, i1, i8Ptr :: LlvmType
-i128  = LMInt 128
-i64   = LMInt  64
-i32   = LMInt  32
-i16   = LMInt  16
-i8    = LMInt   8
-i1    = LMInt   1
-i8Ptr = pLift i8
-
-
-
 
 -- FunctionDecl -----------------------------------------------------------------------------------
 -- | An LLVM Function
 data LlvmFunctionDecl 
         = LlvmFunctionDecl 
         { -- | Unique identifier of the function
-          decName       :: LMString
+          decName               :: LMString
 
           -- | LinkageType of the function
-        , funcLinkage   :: LlvmLinkageType
+        , decLinkage            :: LlvmLinkageType
 
         -- | The calling convention of the function
-        , funcCc        :: LlvmCallConvention
+        , decCallConv           :: LlvmCallConvention
 
         -- | Type of the returned value
-        , decReturnType :: LlvmType
+        , decReturnType         :: LlvmType
 
         -- | Indicates if this function uses varargs
-        , decVarargs    :: LlvmParameterListType
+        , decParamListType      :: LlvmParameterListType
 
         -- | Parameter types and attributes
-        , decParams     :: [LlvmParameter]
+        , decParams             :: [LlvmParameter]
 
         -- | Function align value, must be power of 2
-        , funcAlign     :: LMAlign }
+        , decAlign              :: LlvmAlign }
         deriving (Eq, Show)
 
 
@@ -204,30 +146,41 @@ data LlvmParameterListType
 
 
 -- | Describes a function parameter.
-type LlvmParameter 
-        = (LlvmType, [LlvmParamAttr])
+data LlvmParameter 
+        = LlvmParameter
+        { llvmParameterType     :: LlvmType
+        , llvmParameterAttrs    :: [LlvmParamAttr] }
+        deriving (Show, Eq)
 
 -- | Alignment.
-type LMAlign    = Maybe Int
+data LlvmAlign    
+        = LlvmAlignNone
+        | LlvmAlignBytes Int 
+        deriving (Show, Eq)
+
+instance Pretty LlvmParameter where
+ -- By default we don't print the attrs.
+ ppr (LlvmParameter t _attrs)
+        = ppr t
 
 
 instance Pretty LlvmFunctionDecl where
- ppr (LlvmFunctionDecl n l c r varg p a)
+ ppr (LlvmFunctionDecl n l c r varg params a)
   = let varg' = case varg of
-                 VarArgs | null args -> text "..."
-                         | otherwise -> text ", ..."
-                 _otherwise          -> empty
+                 VarArgs | null params -> text "..."
+                         | otherwise   -> text ", ..."
+                 _otherwise            -> empty
 
         align' = case a of
-                 Just a' -> text " align " <+> ppr a'
-                 Nothing -> empty
+                  LlvmAlignNone     -> empty
+                  LlvmAlignBytes a' -> text " align " <+> ppr a'
 
-        -- by default we don't print param attributes
-        args  = map (show . fst) p
-        args' = hcat $ punctuate comma $ map ppr args
+        args' = hcat $ punctuate comma $ map ppr params
 
-    in  ppr l <+> ppr c <+> ppr r <+> text " @" <> ppr n <>
-                brackets (args' <> varg') 
+    in  ppr l   <+> ppr c 
+                <+> ppr r 
+                <+> text " @" 
+                <> ppr n <> brackets (args' <> varg') 
                 <> align'
 
 

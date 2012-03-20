@@ -5,11 +5,8 @@ module DDC.Llvm.Var
 
           -- * Variables
         , LlvmVar  (..)
-        , LMSection
         , isGlobal
         , getLink
-        , pVarLift
-        , pVarLower
         , getVarType
         , getLitType
 
@@ -42,7 +39,7 @@ data LlvmVar
                 LlvmType 
                 LlvmLinkageType
                 LMSection
-                LMAlign
+                LlvmAlign
                 LMConst
 
         -- | Variables local to a function or parameters.
@@ -64,9 +61,8 @@ instance Pretty LlvmVar where
         _               -> ppr (getVarType lv) <+> text (getName lv)
 
 
--- | An LLVM section definition.
---   If Nothing then let LLVM decide the section
 type LMSection  = Maybe LMString
+
 
 -- | Determines whether a variable is a constant or not.
 type LMConst    = Bool
@@ -95,13 +91,6 @@ getVarType (LMLocalVar  _ y        )    = y
 getVarType (LMNLocalVar _ y        )    = y
 getVarType (LMLitVar    l          )    = getLitType l
 
--- | Lower a variable of 'LMPointer' type.
-pVarLower :: LlvmVar -> LlvmVar
-pVarLower (LMGlobalVar s t l x a c) = LMGlobalVar s (pLower t) l x a c
-pVarLower (LMLocalVar  s t        ) = LMLocalVar  s (pLower t)
-pVarLower (LMNLocalVar s t        ) = LMNLocalVar s (pLower t)
-pVarLower (LMLitVar    _          ) = error $ "Can't lower a literal type!"
-
 
 -- | Test if a 'LlvmVar' is global.
 isGlobal :: LlvmVar -> Bool
@@ -112,13 +101,6 @@ isGlobal _                         = False
 getLink :: LlvmVar -> LlvmLinkageType
 getLink (LMGlobalVar _ _ l _ _ _) = l
 getLink _                         = Internal
-
--- | Lower a variable of 'LMPointer' type.
-pVarLift :: LlvmVar -> LlvmVar
-pVarLift (LMGlobalVar s t l x a c) = LMGlobalVar s (pLift t) l x a c
-pVarLift (LMLocalVar  s t        ) = LMLocalVar  s (pLift t)
-pVarLift (LMNLocalVar s t        ) = LMNLocalVar s (pLift t)
-pVarLift (LMLitVar    _          ) = error $ "Can't lower a literal type!"
 
 
 -- Lit --------------------------------------------------------------------------------------------

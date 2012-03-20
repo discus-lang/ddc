@@ -32,7 +32,7 @@ data LlvmModule
         , modFwdDecls  :: LlvmFunctionDecls
 
           -- | Functions defined in this module.
-        , modFuncs     :: LlvmFunctions
+        , modFuncs     :: [LlvmFunction]
         }
 
 -- | A global mutable variable. Maybe defined or external
@@ -48,6 +48,12 @@ getGlobalType (v, _)            = getVarType v
 -- | Return the 'LlvmVar' part of a 'LMGlobal'
 getGlobalVar :: LMGlobal -> LlvmVar
 getGlobalVar (v, _) = v
+
+
+-- | Print out a whole LLVM module.
+instance Pretty LlvmModule where
+ ppr (LlvmModule _comments _aliases _globals _decls funcs)
+  = vcat $ map ppr funcs
 
 
 -- Static ---------------------------------------------------------------------
