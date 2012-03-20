@@ -46,6 +46,5 @@ cmdSeaOut state lineStart str
                  = empty
 
            in   outDocLn state 
-                 $    prelude
-                 <$$> convert mm
+                 $    prelude <> convert mm
 
