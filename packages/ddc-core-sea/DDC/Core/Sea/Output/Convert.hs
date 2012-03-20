@@ -21,10 +21,7 @@ class Convert a where
 instance Convert (Module () Name) where
  convert mm@(ModuleCore{})
         | [LRec bxs]    <- moduleLets mm
-        = vcat  $  [ text "#include <Disciple.h>"
-                   , text "#include <Primitive.h>" 
-                   , empty]
-                ++ (map convertTop bxs)
+        = vcat $ map convertTop bxs
 
         | otherwise
         = error "convert[Module]: module must contain top-level letrecs"
@@ -150,6 +147,7 @@ convertPrimApp p xs
                   , PrimOpGt,  PrimOpLt,  PrimOpGe, PrimOpLe]
         = parensConvertX x1 <+> convert op <+> parensConvertX x2
 
+
         -- Control
         | PrimControl PrimControlReturn <- p
         , [XType _t, x]                 <- xs
@@ -170,10 +168,6 @@ convertPrimApp p xs
         , [XType _t, x]                 <- xs
         = text "_read"  <+> parens (convert x)
 
-        | PrimStore PrimStoreWrite      <- p
-        , [XType _t, x1, x2]            <- xs
-        = text "_write" <+> convertArgs [x1, x2]
-
         | PrimStore PrimStoreProjTag    <- p
         = text "_tag"   <+> convertArgs xs
 
@@ -188,6 +182,12 @@ convertPrimApp p xs
         | PrimStore (PrimStoreAllocData PrimStoreLayoutRaw) <- p
         , [xTag, xArity]                <- xs
         =   text "_allocRaw" <+> convertArgs [xTag, xArity]
+
+        -- Stmt
+        | PrimStmt PrimStmtWrite      <- p
+        , [XType _t, x1, x2]            <- xs
+        = text "_write" <+> convertArgs [x1, x2]
+
 
         -- String
         | PrimString op         <- p

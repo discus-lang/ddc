@@ -10,6 +10,7 @@ module DDC.Core.Sea.Output.Name
         , PrimControl     (..)
         , PrimStore       (..)
         , PrimStoreLayout (..)
+        , PrimStmt        (..)
         , PrimOp          (..)
         , PrimString      (..)
         , PrimIO          (..)
@@ -73,8 +74,11 @@ data    Prim
         -- | Control flow.
         | PrimControl   PrimControl
 
-        -- | Store actions.
+        -- | Store expressions.
         | PrimStore     PrimStore
+
+        -- | Statements with some global effect.
+        | PrimStmt      PrimStmt
 
         -- | Strings.
         | PrimString    PrimString
@@ -92,6 +96,7 @@ instance Pretty Prim where
         PrimCall c      -> ppr c
         PrimControl c   -> ppr c
         PrimStore p     -> ppr p
+        PrimStmt  p     -> ppr p
         PrimString s    -> ppr s
         PrimIO i        -> ppr i
 
@@ -114,9 +119,10 @@ instance Pretty PrimCast where
 
 
 -- PrimCall -------------------------------------------------------------------
--- | Primitive ways of invoking a function.
+-- | Primitive ways of invoking a function, 
+--   where control flow returns back to the caller.
 data PrimCall
-        -- | Tailcall a top level function..
+        -- | Tailcall a function
         = PrimCallTail    Int
 
         -- | Build a partial application.
@@ -147,7 +153,7 @@ instance Pretty PrimCall where
 
 
 -- PrimControl ----------------------------------------------------------------
--- | Primitive control flow.
+-- | Primitive non-returning control flow.
 data PrimControl
         -- | Ungraceful failure -- just abort the program.
         --   This is called on internal errors in the runtime system.
@@ -169,21 +175,15 @@ instance Pretty PrimControl where
 -- Store -----------------------------------------------------------------------
 -- | A projection of some other object.
 data PrimStore
-        -- Read and Write -------------
         -- | Read a value from the store.
         = PrimStoreRead
 
-        -- | Write a value to the store.
-        | PrimStoreWrite
-
-        -- Projections ----------------
         -- | Take the tag of a boxed object.
         | PrimStoreProjTag
 
         -- | Take a numbered field from some boxed data object.
         | PrimStoreProjField PrimStoreLayout
 
-        -- Allocation -----------------
         -- | Allocate a suspended or partial application,
         --   and fill in the function pointer, function arity, 
         --   and number of args in the thunk.
@@ -204,16 +204,12 @@ data PrimStoreLayout
 
 instance Pretty PrimStore where
  ppr p
-  = case p of
-        -- Read and Write
+  = case p of        
         PrimStoreRead             -> text "read#"
-        PrimStoreWrite            -> text "write#"
 
-        -- Projections  
         PrimStoreProjTag          -> text "tag#"
         PrimStoreProjField layout -> text "field" <> ppr layout <> text "#"
 
-        -- Alloction
         PrimStoreAllocThunk       -> text "thunk#"
         PrimStoreAllocData layout -> text "alloc" <> ppr layout <> text "#"
 
@@ -224,6 +220,21 @@ instance Pretty PrimStoreLayout where
         PrimStoreLayoutRaw      -> text "Raw"
         PrimStoreLayoutBoxed    -> text "Boxed"
         PrimStoreLayoutMixed    -> text "Mixed"
+
+
+-- PrimStmt -------------------------------------------------------------------
+-- | Primitive statements that do not return a value.
+--   These have some global effect on the state of the system,
+--   and cannot be used in an expression.
+data PrimStmt
+        -- | Write a value to the store.
+        = PrimStmtWrite
+        deriving (Eq, Ord, Show)
+
+instance Pretty PrimStmt where
+ ppr ps
+  = case ps of
+        PrimStmtWrite          -> text "write#"
 
 
 -- PrimString -----------------------------------------------------------------
@@ -332,7 +343,6 @@ readName str@(c:_)
 
         -- Sea Store --------------------------------------
         | str == "read#"        = Just $ NamePrim $ PrimStore PrimStoreRead
-        | str == "write#"       = Just $ NamePrim $ PrimStore PrimStoreWrite
 
         | str == "tag#"         = Just $ NamePrim $ PrimStore PrimStoreProjTag
 
@@ -355,6 +365,9 @@ readName str@(c:_)
 
         | str == "allocMixed#"
         = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutMixed)
+
+        -- Sea Stmt ---------------------------------------
+        | str == "write#"       = Just $ NamePrim $ PrimStmt PrimStmtWrite
 
 
         -- Arithmetic Primops -----------------------------

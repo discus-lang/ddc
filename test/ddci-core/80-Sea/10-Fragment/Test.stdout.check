@@ -1,4 +1,106 @@
 -- Check for fragment violations.
+ok
+ok
 
--- Unknown primop.
+
+-- Error: Unknown primop.
 Undefined variable: foo#
+
+
+-- Error: Module does not have a top-level letrec.
+Fragment violation in SeaOut module.
+  Module does not have a top-level letrec.
+  
+
+
+-- Ok: Function finishes with a return statement.
+int32_t foo (int32_t x)
+{
+        return x;
+}
+
+
+
+-- Error: Function does not pass control.
+Fragment violation in SeaOut module.
+  Invalid function definition.
+  
+  with: x
+
+
+-- Ok: Statements in function.
+int32_t foo (int32_t x)
+{
+        int32_t y    = x + x;
+        return y;
+}
+
+
+
+-- Error: Function does not pass control
+Fragment violation in SeaOut module.
+  The final statement in a function must pass control
+    You need an explicit return# or fail#.
+  
+  this isn't one:  add# [Int32#] y y
+
+
+-- Error: Function does not pass control
+Fragment violation in SeaOut module.
+  Invalid function body.
+  
+  with: True#
+
+
+-- Ok: Function explicitly fails.
+int32_t foo (int32_t x)
+{
+        int32_t y    = x + x;
+        _fail();
+}
+
+
+
+-- Ok: assignment between variables.
+int32_t foo (int32_t x)
+{
+        int32_t y    = x;
+        return y;
+}
+
+
+
+-- Ok: assignment from a literal.
+nat_t foo (nat_t x)
+{
+        nat_t y      = 5;
+        return y;
+}
+
+
+
+-- Error: assignment from primop.
+Fragment violation in SeaOut module.
+  Invalid R-value.
+  
+  with: add#
+
+
+-- Error: cannot discard non-void return value.
+Fragment violation in SeaOut module.
+  Invalid function body.
+  
+  with: let _ : Int32# = x in
+        return# [Int32#] x
+
+
+-- Ok: can discard non-void return value.
+Obj* foo (int32_t x)
+{
+        Obj* x       = _allocRaw (0, 4);
+        _write (_fieldRaw (int32_t, 0, x), (int32_t)(5));
+        return x;
+}
+
+
+

@@ -39,12 +39,12 @@ import qualified DDC.Type.Transform.SpreadT as S
 -- no.. should be fine....
 data RewriteRule a n
         = RewriteRule
-	    [(BindMode,Bind n)]	-- ^ bindings & their types
-	    [Type n]		-- ^ requirements for rules to fire
-	    (Exp a n)		-- ^ left-hand side to match on
-	    (Exp a n)		-- ^ replacement
-	    (Maybe (Effect n))	-- ^ effect of lhs if needs weaken
-	    (Maybe (Closure n)) -- ^ closure of lhs if needs weaken
+	    [(BindMode,Bind n)]	--  bindings & their types
+	    [Type n]		--  requirements for rules to fire
+	    (Exp a n)		--  left-hand side to match on
+	    (Exp a n)		--  replacement
+	    (Maybe (Effect n))	--  effect of lhs if needs weaken
+	    (Maybe (Closure n)) --  closure of lhs if needs weaken
         deriving (Eq, Show)
 
 data BindMode = BMKind | BMType

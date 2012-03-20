@@ -111,6 +111,7 @@ typeOfPrim pp
         PrimCall    pc  -> typeOfPrimCall    pc
         PrimControl pc  -> typeOfPrimControl pc
         PrimStore   ps  -> typeOfPrimStore   ps
+        PrimStmt    ps  -> typeOfPrimStmt    ps
         PrimString  ps  -> typeOfPrimString  ps
         PrimIO      ps  -> typeOfPrimIO      ps
 
@@ -235,9 +236,6 @@ typeOfPrimStore jj
         PrimStoreRead        
          -> tForall kData $ \t -> tPtr t `tFunPE` t
 
-        PrimStoreWrite
-         -> tForall kData $ \t -> tPtr t `tFunPE` t `tFunPE` tVoid
-
         PrimStoreProjTag
          -> tPtr tObj `tFunPE` tTag
 
@@ -248,6 +246,14 @@ typeOfPrimStore jj
          -> tTag `tFunPE` tNat `tFunPE` tPtr tObj
 
         _ -> error "typeOfPrimStore: sorry"
+
+
+-- PrimStmt -------------------------------------------------------------------
+typeOfPrimStmt :: PrimStmt -> Type Name
+typeOfPrimStmt ss
+ = case ss of
+        PrimStmtWrite
+         -> tForall kData $ \t -> tPtr t `tFunPE` t `tFunPE` tVoid
 
 
 -- PrimString -----------------------------------------------------------------
