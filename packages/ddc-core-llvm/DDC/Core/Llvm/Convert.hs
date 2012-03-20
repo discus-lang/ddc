@@ -6,6 +6,7 @@ import DDC.Llvm.Attr
 import DDC.Llvm.Function
 import DDC.Llvm.Module
 import DDC.Llvm.Type
+import DDC.Llvm.Var
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM

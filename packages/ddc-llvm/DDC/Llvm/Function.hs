@@ -1,12 +1,12 @@
 
 module DDC.Llvm.Function
         ( Function  (..)
-        , Section   (..)
         , Block     (..))
 where
 import DDC.Llvm.Statement
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
+import DDC.Llvm.Var
 import DDC.Base.Pretty
 
 
@@ -72,18 +72,6 @@ pprFunctionHeader
         <>  (hcat $ punctuate (comma <> space) args') <> varg' 
         <>  rparen 
         <>  align'
-
-
--- Section --------------------------------------------------------------------
--- | The section name to put the function in.
-data Section
-        -- | Let the LLVM decide what section to put this in.
-        = SectionAuto
-
-        -- | Put it in this specific section.
-        | SectionSpecific String
-        deriving (Eq, Show)
-
 
 
 -- Block ----------------------------------------------------------------------

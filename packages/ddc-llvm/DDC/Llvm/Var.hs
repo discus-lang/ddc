@@ -1,17 +1,20 @@
 
 module DDC.Llvm.Var
         ( -- * Uniques
-          Unique(..)
+          Unique        (..)
+
+          -- * Sections
+        , Section       (..)
 
           -- * Variables
-        , LlvmVar  (..)
+        , Var           (..)
         , isGlobal
-        , getLink
-        , getVarType
-        , getLitType
+        , linkageTypeOfVar
+        , typeOfVar
 
           -- * Literals
-        , LlvmLit  (..))
+        , Lit           (..)
+        , typeOfLit)
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
@@ -24,89 +27,110 @@ import Data.Word
 import qualified Data.Array.Unsafe      as Unsafe
 
 
--- Unique -----------------------------------------------------------------------------------------
+-- Unique ---------------------------------------------------------------------
 -- | Unique id.
 data Unique
         = Unique !Int !String
         deriving (Eq, Ord, Show)
 
--- Var --------------------------------------------------------------------------------------------
+
+-- Section --------------------------------------------------------------------
+-- | The section name to put the function in.
+data Section
+        -- | Let the LLVM decide what section to put this in.
+        = SectionAuto
+
+        -- | Put it in this specific section.
+        | SectionSpecific String
+        deriving (Eq, Show)
+
+
+-- Var ------------------------------------------------------------------------
 -- | Llvm Variables
-data LlvmVar
+data Var
         -- | Variables with a global scope.
-        = LMGlobalVar 
+        = VarGlobal
                 String 
                 LlvmType 
                 LinkageType
-                LMSection
+                Section
                 Alignment
                 LMConst
 
         -- | Variables local to a function or parameters.
-        | LMLocalVar  Unique LlvmType
+        | VarLocal      Unique  LlvmType
 
         -- | Named local variables. Sometimes we need to be able to explicitly name
         --   variables (e.g for function arguments).
-        | LMNLocalVar String LlvmType
+        | VarNamedLocal String  LlvmType
 
         -- | A constant variable
-        | LMLitVar LlvmLit
+        | VarLit        Lit
         deriving (Eq, Show)
 
 
-instance Pretty LlvmVar where
+instance Pretty Var where
  ppr lv
    = case lv of
-        LMLitVar x      -> ppr x
-        _               -> ppr (getVarType lv) <+> text (getName lv)
-
-
-type LMSection  = Maybe String
+        VarLit x        -> ppr x
+        _               -> ppr (typeOfVar lv) <+> text (nameOfVar lv)
 
 
 -- | Determines whether a variable is a constant or not.
 type LMConst    = Bool
 
+
 -- | Return the variable name or value of the 'LlvmVar'
 --   in Llvm IR textual representation (e.g. @\@x@, @%y@ or @42@).
-getName :: LlvmVar -> String
-getName v@(LMGlobalVar _ _ _ _ _ _)     = "@" ++ getPlainName v
-getName v@(LMLocalVar  _ _        )     = "%" ++ getPlainName v
-getName v@(LMNLocalVar _ _        )     = "%" ++ getPlainName v
-getName v@(LMLitVar    _          )     = getPlainName v
+nameOfVar :: Var -> String
+nameOfVar v
+ = case v of
+        VarGlobal{}     -> "@" ++ plainNameOfVar v
+        VarLocal{}      -> "%" ++ plainNameOfVar v
+        VarNamedLocal{} -> "%" ++ plainNameOfVar v
+        VarLit{}        -> plainNameOfVar v
 
 
 -- | Return the variable name or value of the 'LlvmVar'
 --   in a plain textual representation (e.g. @x@, @y@ or @42@).
-getPlainName :: LlvmVar -> String
-getPlainName (LMGlobalVar x _ _ _ _ _)  = x
-getPlainName (LMLocalVar  x _        )  = show x
-getPlainName (LMNLocalVar x _        )  = x
-getPlainName (LMLitVar    x          )  = getLit x
+plainNameOfVar :: Var -> String
+plainNameOfVar vv
+ = case vv of
+        VarGlobal x _ _ _ _ _   -> x
+        VarLocal  x _           -> show x
+        VarNamedLocal x _       -> x
+        VarLit    x             -> showLit x
+
 
 -- | Return the 'LlvmType' of the 'LlvmVar'
-getVarType :: LlvmVar -> LlvmType
-getVarType (LMGlobalVar _ y _ _ _ _)    = y
-getVarType (LMLocalVar  _ y        )    = y
-getVarType (LMNLocalVar _ y        )    = y
-getVarType (LMLitVar    l          )    = getLitType l
+typeOfVar :: Var -> LlvmType
+typeOfVar vv
+ = case vv of
+        VarGlobal _ t _ _ _ _   -> t
+        VarLocal  _ t           -> t
+        VarNamedLocal _ t       -> t
+        VarLit l                -> typeOfLit l
 
 
 -- | Test if a 'LlvmVar' is global.
-isGlobal :: LlvmVar -> Bool
-isGlobal (LMGlobalVar _ _ _ _ _ _) = True
-isGlobal _                         = False
+isGlobal :: Var -> Bool
+isGlobal vv
+ = case vv of
+        VarGlobal{}             -> True
+        _                       -> False
 
 -- | Return the 'LlvmLinkageType' for a 'LlvmVar'
-getLink :: LlvmVar -> LinkageType
-getLink (LMGlobalVar _ _ l _ _ _) = l
-getLink _                         = Internal
+linkageTypeOfVar :: Var -> LinkageType
+linkageTypeOfVar vv
+ = case vv of
+        VarGlobal _ _ l _ _ _   -> l
+        _                       -> Internal
 
 
 -- Lit --------------------------------------------------------------------------------------------
 -- | Llvm Literal Data.
 --   These can be used inline in expressions.
-data LlvmLit
+data Lit
         -- | Refers to an integer constant (i64 42).
         = LMIntLit   Integer LlvmType
 
@@ -121,26 +145,30 @@ data LlvmLit
         deriving (Eq, Show)
 
 
-instance Pretty LlvmLit where
-  ppr l = ppr (getLitType l) <+> text (getLit l)
+instance Pretty Lit where
+  ppr l = ppr (typeOfLit l) <+> text (showLit l)
 
 
 -- | Return the 'LlvmType' of a 'LlvmLit'
-getLitType :: LlvmLit -> LlvmType
-getLitType (LMIntLit   _ t)     = t
-getLitType (LMFloatLit _ t)     = t
-getLitType (LMNullLit    t)     = t
-getLitType (LMUndefLit   t)     = t
+typeOfLit :: Lit -> LlvmType
+typeOfLit ll
+ = case ll of
+        LMIntLit   _ t          -> t
+        LMFloatLit _ t          -> t
+        LMNullLit    t          -> t
+        LMUndefLit   t          -> t
 
 
 -- | Print a literal value. No type.
-getLit :: LlvmLit -> String
-getLit (LMIntLit   i _       )          = show i
-getLit (LMFloatLit r LMFloat )          = fToStr $ realToFrac r
-getLit (LMFloatLit r LMDouble)          = dToStr r
-getLit f@(LMFloatLit _ _)               = error $ "Can't print this float literal!" ++ show f
-getLit (LMNullLit _     )               = "null"
-getLit (LMUndefLit _    )               = "undef"
+showLit :: Lit -> String
+showLit ll
+ = case ll of
+        LMIntLit   i _          -> show i
+        LMFloatLit r LMFloat    -> fToStr $ realToFrac r
+        LMFloatLit r LMDouble   -> dToStr r
+        LMFloatLit _ _          -> error $ "Can't print this float literal!" ++ show ll
+        LMNullLit _             -> "null"
+        LMUndefLit _            -> "undef"
 
 
 -- | Convert a Haskell Double to an LLVM hex encoded floating point form. In    -- TODO: shift this into pretty module

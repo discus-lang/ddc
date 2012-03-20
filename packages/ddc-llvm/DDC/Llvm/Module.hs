@@ -37,16 +37,16 @@ data LlvmModule
 
 -- | A global mutable variable. Maybe defined or external
 type LMGlobal 
-        = (LlvmVar, Maybe LlvmStatic)
+        = (Var, Maybe LlvmStatic)
 
 
 -- | Return the 'LlvmType' of the 'LMGlobal'
 getGlobalType :: LMGlobal -> LlvmType
-getGlobalType (v, _)            = getVarType v
+getGlobalType (v, _)            = typeOfVar v
 
 
 -- | Return the 'LlvmVar' part of a 'LMGlobal'
-getGlobalVar :: LMGlobal -> LlvmVar
+getGlobalVar :: LMGlobal -> Var
 getGlobalVar (v, _) = v
 
 
@@ -64,13 +64,13 @@ data LlvmStatic
         = LMComment       String
 
         -- | A static variant of a literal value.
-        | LMStaticLit     LlvmLit
+        | LMStaticLit     Lit
 
         -- | For uninitialised data.
         | LMUninitType    LlvmType
 
         -- | Defines a static 'LMString'.
-        | LMStaticStr     String     LlvmType
+        | LMStaticStr     String      LlvmType
 
         -- | A static array.
         | LMStaticArray   [LlvmStatic] LlvmType
@@ -79,7 +79,7 @@ data LlvmStatic
         | LMStaticStruc   [LlvmStatic] LlvmType
 
         -- | A pointer to other data.
-        | LMStaticPointer LlvmVar
+        | LMStaticPointer Var
 
         -- static expressions, could split out but leave
         -- for moment for ease of use. Not many of them.
@@ -99,12 +99,12 @@ data LlvmStatic
 
 -- | Return the 'LlvmType' of the 'LlvmStatic'.
 getStatType :: LlvmStatic -> LlvmType
-getStatType (LMStaticLit   l  ) = getLitType l
+getStatType (LMStaticLit   l  ) = typeOfLit l
 getStatType (LMUninitType    t) = t
 getStatType (LMStaticStr   _ t) = t
 getStatType (LMStaticArray _ t) = t
 getStatType (LMStaticStruc _ t) = t
-getStatType (LMStaticPointer v) = getVarType v
+getStatType (LMStaticPointer v) = typeOfVar v
 getStatType (LMBitc        _ t) = t
 getStatType (LMPtoI        _ t) = t
 getStatType (LMAdd         t _) = getStatType t
