@@ -31,14 +31,14 @@ toLlvmType platform tt
         TApp{}
          |  (tsArgs, tResult) <- takeTFunArgResult tt
          -> LMPointer $ LMFunction 
-         $  LlvmFunctionDecl
-             { decName          = "dummy.function.name"
-             , decLinkage       = Internal
-             , decCallConv      = CC_Ccc
-             , decReturnType    = toLlvmType platform tResult
-             , decParamListType = FixedArgs
-             , decParams        = map (llvmParameterOfType platform) tsArgs
-             , decAlign         = AlignmentBytes (platformAlignFunctions platform) }
+         $  FunctionDecl
+             { declName          = "dummy.function.name"
+             , declLinkage       = Internal
+             , declCallConv      = CC_Ccc
+             , declReturnType    = toLlvmType platform tResult
+             , declParamListType = FixedArgs
+             , declParams        = map (llvmParameterOfType platform) tsArgs
+             , declAlign         = AlignmentBytes (platformAlignFunctions platform) }
 
 
         _ -> die "invalid type"

@@ -23,16 +23,16 @@ data LlvmModule
           modComments  :: [String]
 
           -- | Alias type definitions.
-        , modAliases   :: [LlvmAlias]
+        , modAliases   :: [TypeAlias]
 
           -- | Global variables to include in the module.
         , modGlobals   :: [LMGlobal]
 
           -- | Functions used in this module but defined in other modules.
-        , modFwdDecls  :: [LlvmFunctionDecl]
+        , modFwdDecls  :: [FunctionDecl]
 
           -- | Functions defined in this module.
-        , modFuncs     :: [LlvmFunction]
+        , modFuncs     :: [Function]
         }
 
 -- | A global mutable variable. Maybe defined or external

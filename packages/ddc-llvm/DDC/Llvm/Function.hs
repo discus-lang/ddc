@@ -1,12 +1,8 @@
 
 module DDC.Llvm.Function
-        ( -- * Function
-          LlvmFunction  (..)
-        , LlvmSection   (..)
-
-          -- * Blocks
-        , LlvmBlock     (..)
-        , LlvmBlocks)
+        ( Function  (..)
+        , Section   (..)
+        , Block     (..))
 where
 import DDC.Llvm.Statement
 import DDC.Llvm.Attr
@@ -16,34 +12,34 @@ import DDC.Base.Pretty
 
 -- Function -------------------------------------------------------------------
 -- | A LLVM Function
-data LlvmFunction 
-        = LlvmFunction 
+data Function 
+        = Function 
         { -- | The signature of this declared function.
-          funcDecl      :: LlvmFunctionDecl
+          functionDecl          :: FunctionDecl
 
           -- | The function parameter names.
-        , funcParams    :: [String]
+        , functionParams        :: [String]
 
           -- | The function attributes.
-        , funcAttrs     :: [FuncAttr]
+        , functionAttrs         :: [FuncAttr]
 
           -- | The section to put the function into,
-        , funcSect      :: LlvmSection
+        , functionSection       :: Section
 
           -- | The body of the functions.
-        , funcBody      :: LlvmBlocks
+        , functionBlocks        :: [Block]
         }
 
 
-instance Pretty LlvmFunction where
- ppr (LlvmFunction decl paramNames attrs sec body) 
+instance Pretty Function where
+ ppr (Function decl paramNames attrs sec body) 
   = let attrDoc = hsep $ map ppr attrs
         secDoc  = case sec of
-                        LlvmSectionAuto       -> empty
-                        LlvmSectionSpecific s -> text "section" <+> (dquotes $ text s)
+                        SectionAuto       -> empty
+                        SectionSpecific s -> text "section" <+> (dquotes $ text s)
 
     in text "define" 
-        <+> pprLlvmFunctionHeader decl paramNames
+        <+> pprFunctionHeader decl paramNames
                 <+> attrDoc <+> secDoc
         <$> lbrace
         <$> vcat (map ppr body)
@@ -51,11 +47,11 @@ instance Pretty LlvmFunction where
 
 
 -- | Print out a function defenition header.
-pprLlvmFunctionHeader :: LlvmFunctionDecl -> [String] -> Doc
-pprLlvmFunctionHeader 
-        (LlvmFunctionDecl name linkage callConv tReturn varg params alignment)
+pprFunctionHeader :: FunctionDecl -> [String] -> Doc
+pprFunctionHeader 
+        (FunctionDecl name linkage callConv tReturn varg params alignment)
         nsParam
-  = let varg' = case varg of
+  = let varg'  = case varg of
                       VarArgs | null params -> text "..."
                               | otherwise   -> text ", ..."
                       _otherwise            -> empty
@@ -80,20 +76,20 @@ pprLlvmFunctionHeader
 
 -- Section --------------------------------------------------------------------
 -- | The section name to put the function in.
-data LlvmSection
+data Section
         -- | Let the LLVM decide what section to put this in.
-        = LlvmSectionAuto
+        = SectionAuto
 
         -- | Put it in this specific section.
-        | LlvmSectionSpecific String
+        | SectionSpecific String
         deriving (Eq, Show)
 
 
 
 -- Block ----------------------------------------------------------------------
 -- | A block of LLVM code.
-data LlvmBlock 
-        = LlvmBlock 
+data Block 
+        = Block 
         { -- | The code label for this block
           blockLabel :: LlvmBlockId
 
@@ -102,9 +98,7 @@ data LlvmBlock
         , blockStmts :: [LlvmStatement]
         }
 
-type LlvmBlocks 
-        = [LlvmBlock]
 
-instance Pretty LlvmBlock where
+instance Pretty Block where
  ppr _ = text "BLOCK"
 

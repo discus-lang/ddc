@@ -1,14 +1,14 @@
 
 module DDC.Llvm.Type
         ( -- * Function Declarations.
-          LlvmFunctionDecl      (..)
+          FunctionDecl          (..)
         , ParameterListType     (..)
         , Parameter             (..)
         , Alignment             (..)
 
           -- * Types
         , LlvmType              (..)
-        , LlvmAlias
+        , TypeAlias             (..)
 
         , isInt
         , isFloat
@@ -20,28 +20,28 @@ import DDC.Base.Pretty
 
 -- FunctionDecl -----------------------------------------------------------------------------------
 -- | An LLVM Function
-data LlvmFunctionDecl 
-        = LlvmFunctionDecl 
+data FunctionDecl 
+        = FunctionDecl 
         { -- | Unique identifier of the function
-          decName               :: String
+          declName              :: String
 
           -- | LinkageType of the function
-        , decLinkage            :: LinkageType
+        , declLinkage           :: LinkageType
 
         -- | The calling convention of the function
-        , decCallConv           :: CallConvention
+        , declCallConv          :: CallConvention
 
         -- | Type of the returned value
-        , decReturnType         :: LlvmType
+        , declReturnType        :: LlvmType
 
         -- | Indicates if this function uses varargs
-        , decParamListType      :: ParameterListType
+        , declParamListType     :: ParameterListType
 
         -- | Parameter types and attributes
-        , decParams             :: [Parameter]
+        , declParams            :: [Parameter]
 
         -- | Function align value, must be power of 2
-        , decAlign              :: Alignment }
+        , declAlign             :: Alignment }
         deriving (Eq, Show)
 
 
@@ -73,8 +73,8 @@ instance Pretty Parameter where
         = ppr t
 
 
-instance Pretty LlvmFunctionDecl where
- ppr (LlvmFunctionDecl n l c r varg params a)
+instance Pretty FunctionDecl where
+ ppr (FunctionDecl n l c r varg params a)
   = let varg' = case varg of
                  VarArgs | null params  -> text "..."
                          | otherwise    -> text ", ..."
@@ -106,14 +106,14 @@ data LlvmType
         | LMLabel                       -- ^ A 'LlvmVar' can represent a label (address)
         | LMVoid                        -- ^ Void type
         | LMStruct      [LlvmType]      -- ^ Structure type
-        | LMAlias       LlvmAlias       -- ^ A type alias
-        | LMFunction LlvmFunctionDecl   -- ^ Function type, used to create pointers to functions
+        | LMAlias       TypeAlias       -- ^ A type alias
+        | LMFunction    FunctionDecl    -- ^ Function type, used to create pointers to functions
         deriving (Eq, Show)
 
 
 -- | A type alias.
-data LlvmAlias 
-        = LlvmAlias String LlvmType
+data TypeAlias 
+        = TypeAlias String LlvmType
         deriving (Eq, Show)
 
 
@@ -131,7 +131,7 @@ instance Pretty LlvmType where
         LMVoid          -> text "void"
         LMStruct tys    -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
 
-        LMFunction (LlvmFunctionDecl _ _ _ r varg params _)
+        LMFunction (FunctionDecl _ _ _ r varg params _)
          -> let varg' = case varg of
                         VarArgs | null params -> text "..."
                                 | otherwise   -> text ", ..."
@@ -142,7 +142,7 @@ instance Pretty LlvmType where
 
             in ppr r <> brackets (args <> varg')
 
-        LMAlias (LlvmAlias s _)  -> text "%" <> ppr s
+        LMAlias (TypeAlias s _)  -> text "%" <> ppr s
 
 
 -- | Test if the given 'LlvmType' is an integer

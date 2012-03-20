@@ -43,7 +43,7 @@ llvmOfModuleM platform mm@(ModuleCore{})
 
 -- Super ------------------------------------------------------------------------------------------
 -- | Convert a top-level supercombinator to LLVM.
-llvmFunctionOfSuper :: Platform -> Bind Name -> Exp () Name -> LlvmFunction
+llvmFunctionOfSuper :: Platform -> Bind Name -> Exp () Name -> Function
 llvmFunctionOfSuper platform (BName n tSuper) x
  | Just (bsParam, _xBody)     <- takeXLams x
  = let  
@@ -52,21 +52,21 @@ llvmFunctionOfSuper platform (BName n tSuper) x
                 = takeTFunArgResult tSuper
 
         -- Declaration of the super.
-        decl    = LlvmFunctionDecl 
-                { decName               = renderPlain $ ppr n
-                , decLinkage            = External
-                , decCallConv           = CC_Ccc
-                , decReturnType         = toLlvmType platform tResult
-                , decParamListType      = FixedArgs
-                , decParams             = map (llvmParameterOfType platform) tsArgs
-                , decAlign              = AlignmentBytes (platformAlignFunctions platform) }
+        decl    = FunctionDecl 
+                { declName               = renderPlain $ ppr n
+                , declLinkage            = External
+                , declCallConv           = CC_Ccc
+                , declReturnType         = toLlvmType platform tResult
+                , declParamListType      = FixedArgs
+                , declParams             = map (llvmParameterOfType platform) tsArgs
+                , declAlign              = AlignmentBytes (platformAlignFunctions platform) }
 
-   in   LlvmFunction
-                { funcDecl              = decl
-                , funcParams            = map llvmNameOfParam bsParam
-                , funcAttrs             = [] 
-                , funcSect              = LlvmSectionAuto
-                , funcBody              = [] }
+   in   Function
+                { functionDecl           = decl
+                , functionParams         = map llvmNameOfParam bsParam
+                , functionAttrs          = [] 
+                , functionSection        = SectionAuto
+                , functionBlocks         = [] }
 
 llvmFunctionOfSuper _ _ _
         = die "invalid super"
