@@ -164,42 +164,41 @@ instance Pretty LlvmParamAttr where
 -- CallConvention ---------------------------------------------------------------------------------
 -- | Different calling conventions a function can use.
 data LlvmCallConvention
+        -- | The C calling convention.
+        --   This calling convention (the default if no other calling convention is
+        --   specified) matches the target C calling conventions. This calling
+        --   convention supports varargs function calls and tolerates some mismatch in
+        --   the declared prototype and implemented declaration of the function (as
+        --   does normal C).
+        = CC_Ccc
 
-  -- | The C calling convention.
-  --   This calling convention (the default if no other calling convention is
-  --   specified) matches the target C calling conventions. This calling
-  --   convention supports varargs function calls and tolerates some mismatch in
-  --   the declared prototype and implemented declaration of the function (as
-  --   does normal C).
-  = CC_Ccc
+        -- | This calling convention attempts to make calls as fast as possible
+        --   (e.g. by passing things in registers). This calling convention allows
+        --   the target to use whatever tricks it wants to produce fast code for the
+        --   target, without having to conform to an externally specified ABI
+        --   (Application Binary Interface). Implementations of this convention should
+        --   allow arbitrary tail call optimization to be supported. This calling
+        --   convention does not support varargs and requires the prototype of al
+        --   callees to exactly match the prototype of the function definition.
+        | CC_Fastcc
 
-  -- | This calling convention attempts to make calls as fast as possible
-  --   (e.g. by passing things in registers). This calling convention allows
-  --   the target to use whatever tricks it wants to produce fast code for the
-  --   target, without having to conform to an externally specified ABI
-  --   (Application Binary Interface). Implementations of this convention should
-  --   allow arbitrary tail call optimization to be supported. This calling
-  --   convention does not support varargs and requires the prototype of al
-  --   callees to exactly match the prototype of the function definition.
-  | CC_Fastcc
+        -- | This calling convention attempts to make code in the caller as efficient
+        --   as possible under the assumption that the call is not commonly executed.
+        --   As such, these calls often preserve all registers so that the call does
+        --   not break any live ranges in the caller side. This calling convention
+        --   does not support varargs and requires the prototype of all callees to
+        --   exactly match the prototype of the function definition.
+        | CC_Coldcc
 
-  -- | This calling convention attempts to make code in the caller as efficient
-  --   as possible under the assumption that the call is not commonly executed.
-  --   As such, these calls often preserve all registers so that the call does
-  --   not break any live ranges in the caller side. This calling convention
-  --   does not support varargs and requires the prototype of all callees to
-  --   exactly match the prototype of the function definition.
-  | CC_Coldcc
+        -- | Any calling convention may be specified by number, allowing
+        --   target-specific calling conventions to be used. Target specific calling
+        --   conventions start at 64.
+        | CC_Ncc Int
 
-  -- | Any calling convention may be specified by number, allowing
-  --   target-specific calling conventions to be used. Target specific calling
-  --   conventions start at 64.
-  | CC_Ncc Int
-
-  -- | X86 Specific 'StdCall' convention. LLVM includes a specific alias for it
-  --   rather than just using CC_Ncc.
-  | CC_X86_Stdcc
-  deriving (Eq, Show)
+        -- | X86 Specific 'StdCall' convention. LLVM includes a specific alias for it
+        --   rather than just using CC_Ncc.
+        | CC_X86_Stdcc
+        deriving (Eq, Show)
 
 
 instance Pretty LlvmCallConvention where
@@ -219,50 +218,49 @@ instance Pretty LlvmCallConvention where
 --   Reference Manual <http://www.llvm.org/docs/LangRef.html#linkage>, because
 --   they correspond to the Llvm linkage types.
 data LlvmLinkageType
+        -- | Global values with internal linkage are only directly accessible by
+        --  objects in the current module. In particular, linking code into a module
+        --  with an internal global value may cause the internal to be renamed as
+        --  necessary to avoid collisions. Because the symbol is internal to the
+        --  module, all references can be updated. This corresponds to the notion
+        --  of the @static@ keyword in C.
+        = Internal
 
-  -- | Global values with internal linkage are only directly accessible by
-  --  objects in the current module. In particular, linking code into a module
-  --  with an internal global value may cause the internal to be renamed as
-  --  necessary to avoid collisions. Because the symbol is internal to the
-  --  module, all references can be updated. This corresponds to the notion
-  --  of the @static@ keyword in C.
-  = Internal
+        -- | Globals with @linkonce@ linkage are merged with other globals of the
+        --  same name when linkage occurs. This is typically used to implement
+        --  inline functions, templates, or other code which must be generated
+        --  in each translation unit that uses it. Unreferenced linkonce globals are
+        --  allowed to be discarded.
+        | LinkOnce
 
-  -- | Globals with @linkonce@ linkage are merged with other globals of the
-  --  same name when linkage occurs. This is typically used to implement
-  --  inline functions, templates, or other code which must be generated
-  --  in each translation unit that uses it. Unreferenced linkonce globals are
-  --  allowed to be discarded.
-  | LinkOnce
+        -- | @weak@ linkage is exactly the same as linkonce linkage, except that
+        --  unreferenced weak globals may not be discarded. This is used for globals
+        --  that may be emitted in multiple translation units, but that are not
+        --  guaranteed to be emitted into every translation unit that uses them. One
+        --  example of this are common globals in C, such as @int X;@ at global
+        --  scope.
+        | Weak
 
-  -- | @weak@ linkage is exactly the same as linkonce linkage, except that
-  --  unreferenced weak globals may not be discarded. This is used for globals
-  --  that may be emitted in multiple translation units, but that are not
-  --  guaranteed to be emitted into every translation unit that uses them. One
-  --  example of this are common globals in C, such as @int X;@ at global
-  --  scope.
-  | Weak
+        -- | @appending@ linkage may only be applied to global variables of pointer
+        --  to array type. When two global variables with appending linkage are
+        --  linked together, the two global arrays are appended together. This is
+        --  the Llvm, typesafe, equivalent of having the system linker append
+        --  together @sections@ with identical names when .o files are linked.
+        | Appending
 
-  -- | @appending@ linkage may only be applied to global variables of pointer
-  --  to array type. When two global variables with appending linkage are
-  --  linked together, the two global arrays are appended together. This is
-  --  the Llvm, typesafe, equivalent of having the system linker append
-  --  together @sections@ with identical names when .o files are linked.
-  | Appending
+        -- | The semantics of this linkage follow the ELF model: the symbol is weak
+        --  until linked, if not linked, the symbol becomes null instead of being an
+        --  undefined reference.
+        | ExternWeak
 
-  -- | The semantics of this linkage follow the ELF model: the symbol is weak
-  --  until linked, if not linked, the symbol becomes null instead of being an
-  --  undefined reference.
-  | ExternWeak
+        -- | The symbol participates in linkage and can be used to resolve external
+        --   symbol references.
+        | ExternallyVisible
 
-  -- | The symbol participates in linkage and can be used to resolve external
-  --   symbol references.
-  | ExternallyVisible
-
-  -- | Alias for 'ExternallyVisible' but with explicit textual form in LLVM
-  --   assembly.
-  | External
-  deriving (Eq, Show)
+        -- | Alias for 'ExternallyVisible' but with explicit textual form in LLVM
+        --   assembly.
+        | External
+        deriving (Eq, Show)
 
 
 instance Pretty LlvmLinkageType where

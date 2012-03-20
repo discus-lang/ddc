@@ -1,7 +1,7 @@
 
 module DDC.Llvm.Var
         ( -- * Uniques
-          Unique
+          Unique(..)
 
           -- * Variables
         , LlvmVar  (..)
@@ -29,9 +29,9 @@ import qualified Data.Array.Unsafe      as Unsafe
 
 -- Unique -----------------------------------------------------------------------------------------
 -- | Unique id.
-type Unique
-        = Int
-
+data Unique
+        = Unique !Int !String
+        deriving (Eq, Ord, Show)
 
 -- Var --------------------------------------------------------------------------------------------
 -- | Llvm Variables

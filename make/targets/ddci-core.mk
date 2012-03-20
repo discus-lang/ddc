@@ -7,6 +7,8 @@ ddci-core_packages = \
         packages/ddc-core-simpl/DDC \
         packages/ddc-core-eval/DDC \
         packages/ddc-core-sea/DDC \
+        packages/ddc-llvm/DDC \
+        packages/ddc-core-llvm/DDC \
         packages/ddci-core/DDCI 
 
 

@@ -1,4 +1,4 @@
-Name:           ddc-sea-llvm
+Name:           ddc-llvm
 Version:        0.3.0.0
 License:        MIT
 License-file:   LICENSE
@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Bug-reports:    disciple@ouroborus.net
-Synopsis:       Disciple Core translation to C and LLVM.
-Description:    Disciple Core translation to C and LLVM.
+Synopsis:       Disciple LLVM language binding.
+Description:    Disciple LLVM language binding.
 
 Library
   Build-Depends: 
@@ -23,10 +23,6 @@ Library
         ddc-base        == 0.3.0.*
 
   Exposed-modules:
-        DDC.Sea.Type
-        DDC.Sea.Prim
-        DDC.Sea.Exp
-        DDC.Sea.Block
         DDC.Llvm.Attr
         DDC.Llvm.Type
         DDC.Llvm.Prim

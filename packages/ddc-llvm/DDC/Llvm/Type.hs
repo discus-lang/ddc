@@ -15,7 +15,6 @@ module DDC.Llvm.Type
         , i128, i64, i32, i16, i8, i1
         , i8Ptr
 
-
           -- * Function Declarations.
         , LlvmFunctionDecl (..)
         , LlvmFunctionDecls

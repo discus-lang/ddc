@@ -8,6 +8,7 @@ import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
 import DDCI.Core.Command.Ast
 import DDCI.Core.Command.Sea
+import DDCI.Core.Command.Llvm
 import System.Environment
 import Data.List
 import Data.Maybe
@@ -54,6 +55,7 @@ data Command
         | CommandTransEval      -- ^ Transform then evaluate an expression.
 	| CommandAst            -- ^ Show the AST of an expression.
         | CommandSea            -- ^ Convert a Sea core module to C code.
+        | CommandLlvm           -- ^ Convert a Sea core module to LLVM code.
         deriving (Eq, Show)
 
 
@@ -76,7 +78,8 @@ commands
         , (":trans",    CommandTrans)
         , (":trun",     CommandTransEval)
         , (":ast",	CommandAst) 
-        , (":sea",      CommandSea) ]
+        , (":sea",      CommandSea)
+        , (":llvm",     CommandLlvm) ]
 
 
 -- | Read the command from the front of a string.
@@ -396,3 +399,6 @@ handleCmd1 state cmd lineStart line
          -> do  cmdSeaOut state lineStart line
                 return state
 
+        CommandLlvm
+         -> do  cmdLlvmOut state lineStart line
+                return state
