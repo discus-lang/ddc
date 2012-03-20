@@ -1,13 +1,13 @@
 
 module DDC.Llvm.Module
         ( -- * Modules
-          LlvmModule    (..)
-        , getGlobalType
-        , getGlobalVar
+          Module    (..)
+        , typeOfGlobal
+        , varOfGlobal
 
           -- * Static data.
-        , LlvmStatic    (..)
-        , getStatType)
+        , Static    (..)
+        , typeOfStatic)
 where
 import DDC.Llvm.Function
 import DDC.Llvm.Var
@@ -17,8 +17,8 @@ import DDC.Base.Pretty
 
 -- Module ---------------------------------------------------------------------
 -- | This is a top level container in LLVM.
-data LlvmModule 
-        = LlvmModule  
+data Module 
+        = Module  
         { -- | Comments to include at the start of the module.
           modComments  :: [String]
 
@@ -26,7 +26,7 @@ data LlvmModule
         , modAliases   :: [TypeAlias]
 
           -- | Global variables to include in the module.
-        , modGlobals   :: [LMGlobal]
+        , modGlobals   :: [Global]
 
           -- | Functions used in this module but defined in other modules.
         , modFwdDecls  :: [FunctionDecl]
@@ -36,105 +36,108 @@ data LlvmModule
         }
 
 -- | A global mutable variable. Maybe defined or external
-type LMGlobal 
-        = (Var, Maybe LlvmStatic)
+data Global
+        = Global Var (Maybe Static)
 
 
 -- | Return the 'LlvmType' of the 'LMGlobal'
-getGlobalType :: LMGlobal -> Type
-getGlobalType (v, _)            = typeOfVar v
+typeOfGlobal :: Global -> Type
+typeOfGlobal (Global v _)       = typeOfVar v
 
 
 -- | Return the 'LlvmVar' part of a 'LMGlobal'
-getGlobalVar :: LMGlobal -> Var
-getGlobalVar (v, _) = v
+varOfGlobal :: Global -> Var
+varOfGlobal  (Global v _)       = v
 
 
 -- | Print out a whole LLVM module.
-instance Pretty LlvmModule where
- ppr (LlvmModule _comments _aliases _globals _decls funcs)
+instance Pretty Module where
+ ppr (Module _comments _aliases _globals _decls funcs)
   = vcat $ map ppr funcs
 
 
 -- Static ---------------------------------------------------------------------
 -- | Llvm Static Data.
 --  These represent the possible global level variables and constants.
-data LlvmStatic
+data Static
         -- | A comment in a static section.
-        = LMComment       String
+        = StaticComment       String
 
         -- | A static variant of a literal value.
-        | LMStaticLit     Lit
+        | StaticLit             Lit
 
         -- | For uninitialised data.
-        | LMUninitType    Type
+        | StaticUninitType      Type
 
         -- | Defines a static 'LMString'.
-        | LMStaticStr     String       Type
+        | StaticStr             String   Type
 
         -- | A static array.
-        | LMStaticArray   [LlvmStatic] Type
+        | StaticArray           [Static] Type
 
         -- | A static structure type.
-        | LMStaticStruc   [LlvmStatic] Type
+        | StaticStruct          [Static] Type
 
         -- | A pointer to other data.
-        | LMStaticPointer Var
+        | StaticPointer         Var
 
-        -- static expressions, could split out but leave
-        -- for moment for ease of use. Not many of them.
+        -- Static expressions.
         -- | Pointer to Pointer conversion.
-        | LMBitc LlvmStatic Type                    
+        | StaticBitc            Static Type                    
 
         -- | Pointer to Integer conversion.
-        | LMPtoI LlvmStatic Type                    
+        | StaticPtoI            Static Type                    
 
         -- | Constant addition operation.
-        | LMAdd  LlvmStatic LlvmStatic                 
+        | StaticAdd             Static Static                 
 
         -- | Constant subtraction operation.
-        | LMSub  LlvmStatic LlvmStatic  
+        | StaticSub             Static Static  
         deriving (Show)                
 
 
 -- | Return the 'LlvmType' of the 'LlvmStatic'.
-getStatType :: LlvmStatic -> Type
-getStatType (LMStaticLit   l  ) = typeOfLit l
-getStatType (LMUninitType    t) = t
-getStatType (LMStaticStr   _ t) = t
-getStatType (LMStaticArray _ t) = t
-getStatType (LMStaticStruc _ t) = t
-getStatType (LMStaticPointer v) = typeOfVar v
-getStatType (LMBitc        _ t) = t
-getStatType (LMPtoI        _ t) = t
-getStatType (LMAdd         t _) = getStatType t
-getStatType (LMSub         t _) = getStatType t
-getStatType (LMComment       _) = error "Can't call getStatType on LMComment!"
+typeOfStatic :: Static -> Type
+typeOfStatic ss
+ = case ss of
+        StaticComment{}         -> error "Can't call getStatType on LMComment!"
+        StaticLit   l           -> typeOfLit l
+        StaticUninitType t      -> t
+        StaticStr    _ t        -> t
+        StaticArray  _ t        -> t
+        StaticStruct _ t        -> t
+        StaticPointer v         -> typeOfVar v
+        StaticBitc   _ t        -> t
+        StaticPtoI   _ t        -> t
+        StaticAdd    t _        -> typeOfStatic t
+        StaticSub    t _        -> typeOfStatic t
 
 
-instance Pretty LlvmStatic where
+instance Pretty Static where
   ppr ss
    = case ss of
-        LMComment       s  -> text "; " <> text s
-        LMStaticLit   l    -> ppr l
-        LMUninitType    t  -> ppr t <> text " undef"
-        LMStaticStr   s t  -> ppr t <> text " c\"" <> text s <> text "\\00\""
-        LMStaticArray d t  -> ppr t <> text " [" <> hcat (punctuate comma $ map ppr d) <> text "]"
-        LMStaticStruc d t  -> ppr t <> text "<{" <> hcat (punctuate comma $ map ppr d) <> text "}>"
-        LMStaticPointer v  -> ppr v
-        LMBitc v t         -> ppr t <>  text " bitcast" <+> brackets (ppr v <> text " to " <> ppr t)
-        LMPtoI v t         -> ppr t <> text " ptrtoint" <+> brackets (ppr v <> text " to " <> ppr t)
+        StaticComment       s   -> text "; " <> text s
+        StaticLit     l         -> ppr l
+        StaticUninitType    t   -> ppr t <> text " undef"
+        StaticStr     s t       -> ppr t <> text " c\"" <> text s <> text "\\00\""
+        StaticArray   d t       -> ppr t <> text " [" <> hcat (punctuate comma $ map ppr d) <> text "]"
+        StaticStruct  d t       -> ppr t <> text "<{" <> hcat (punctuate comma $ map ppr d) <> text "}>"
+        StaticPointer v         -> ppr v
+        StaticBitc    v t       -> ppr t <>  text " bitcast" <+> brackets (ppr v <> text " to " <> ppr t)
+        StaticPtoI    v t       -> ppr t <> text " ptrtoint" <+> brackets (ppr v <> text " to " <> ppr t)
 
-        LMAdd s1 s2
-         -> let ty1 = getStatType s1
+        StaticAdd s1 s2
+         -> let ty1 = typeOfStatic s1
                 op  = if isFloat ty1 then text " fadd (" else text " add ("
-            in if ty1 == getStatType s2
+            in if ty1 == typeOfStatic s2
                 then ppr ty1 <> op <> ppr s1 <> comma <> ppr s2 <> text ")"
                 else error $ "LMAdd with different types!"
 
-        LMSub s1 s2
-         -> let ty1 = getStatType s1
+        StaticSub s1 s2
+         -> let ty1 = typeOfStatic s1
                 op  = if isFloat ty1 then text " fsub (" else text " sub ("
-            in if ty1 == getStatType s2
+            in if ty1 == typeOfStatic s2
                 then ppr ty1 <> op <> ppr s1 <> comma <> ppr s2 <> text ")"
                 else error $ "LMSub with different types!"
+
+

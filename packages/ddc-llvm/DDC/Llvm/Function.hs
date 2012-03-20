@@ -1,9 +1,8 @@
 
 module DDC.Llvm.Function
-        ( Function  (..)
-        , Block     (..))
+        ( Function  (..))
 where
-import DDC.Llvm.Statement
+import DDC.Llvm.Stmt
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
 import DDC.Llvm.Var
@@ -72,21 +71,4 @@ pprFunctionHeader
         <>  (hcat $ punctuate (comma <> space) args') <> varg' 
         <>  rparen 
         <>  align'
-
-
--- Block ----------------------------------------------------------------------
--- | A block of LLVM code.
-data Block 
-        = Block 
-        { -- | The code label for this block
-          blockLabel :: LlvmBlockId
-
-          -- | A list of LlvmStatement's representing the code for this block.
-          -- This list must end with a control flow statement.
-        , blockStmts :: [LlvmStatement]
-        }
-
-
-instance Pretty Block where
- ppr _ = text "BLOCK"
 

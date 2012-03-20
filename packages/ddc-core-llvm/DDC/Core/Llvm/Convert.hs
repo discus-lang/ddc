@@ -12,27 +12,27 @@ import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Core.Module
 import DDC.Core.Sea.Output.Name
 import DDC.Type.Compounds
 import DDC.Base.Pretty
 import Control.Monad.State.Strict       (evalState)
+import qualified DDC.Core.Module        as C
 
 
 -- Module -----------------------------------------------------------------------------------------
-convertModule :: Module () Name -> LlvmModule
+convertModule :: C.Module () Name -> Module
 convertModule mm
         = evalState (llvmOfModuleM (defaultPlatform 4) mm) llvmStateInit
 
 
 llvmOfModuleM 
         :: Platform
-        -> Module () Name 
-        -> LlvmM LlvmModule
+        -> C.Module () Name 
+        -> LlvmM Module
 
-llvmOfModuleM platform mm@(ModuleCore{})
- | [LRec bxs]   <- moduleLets mm   
- =      return  $ LlvmModule 
+llvmOfModuleM platform mm@(C.ModuleCore{})
+ | [LRec bxs]   <- C.moduleLets mm   
+ =      return  $ Module 
                 { modComments   = []
                 , modAliases    = []
                 , modGlobals    = []
