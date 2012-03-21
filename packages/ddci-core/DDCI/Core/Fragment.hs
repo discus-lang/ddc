@@ -16,7 +16,6 @@ import qualified DDC.Core.Eval.Name             as Eval
 import qualified DDC.Core.Eval.Check            as Eval
 import qualified DDC.Core.Sea.Output.Profile    as SeaOutput
 import qualified DDC.Core.Sea.Output.Name       as SeaOutput
-import qualified DDC.Core.Sea.Output.Check      as SeaOutput
 
 
 -- | Language profile wrapper 
@@ -77,9 +76,9 @@ instance Fragment Eval.Name Eval.Error where
 
 -- SeaOutput ------------------------------------------------------------------
 -- | Fragment that maps directly onto the C language.
-instance Fragment SeaOutput.Name (SeaOutput.Error ()) where
+instance Fragment SeaOutput.Name String where
  fragmentLex            = SeaOutput.lexString
- fragmentCheckModule    = SeaOutput.checkModule
+ fragmentCheckModule    = const Nothing
  fragmentCheckExp       = const Nothing
 
 

@@ -5,7 +5,6 @@ where
 import DDC.Core.Load
 import DDC.Core.Sea.Output.Profile
 import DDC.Core.Sea.Output.Convert
-import DDCI.Core.Fragment
 import DDCI.Core.State
 import DDCI.Core.IO
 import DDC.Base.Pretty
@@ -21,18 +20,7 @@ cmdSeaOut state lineStart str
  where  goLoad toks
          = case loadModule outputProfile "<interactive>"  toks of
                 Left err -> putStrLn $ renderIndent $ ppr err
-                Right mm -> goFragmentCheck mm
-
-        goFragmentCheck mm
-         = case fragmentCheckModule mm of
-                Just err 
-                 -> putStrLn 
-                        $ renderIndent 
-                        $ vcat  [ text "Fragment violation in SeaOut module."
-                                , indent 2 (ppr err) ]
-
-                Nothing  
-                 -> goOutput mm
+                Right mm -> goOutput mm
 
         goOutput mm
          = let  -- Include the Sea Prelude if we were asked for it.
@@ -48,9 +36,10 @@ cmdSeaOut state lineStart str
            in   case convertModule mm of
                  Left err
                   -> putStrLn
-                        $ renderIndent
-                        $ vcat  [ text "Fragment violation when converting to C."
-                                , indent 2 (ppr err) ]
+                   $ renderIndent
+                   $ vcat  [ text "Fragment violation."
+                           , text "  Program uses language features that have no C equivalent."
+                           , indent 2 (ppr err) ]
 
                  Right doc
                   -> outDocLn state
