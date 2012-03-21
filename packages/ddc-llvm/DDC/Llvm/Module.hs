@@ -11,7 +11,6 @@ module DDC.Llvm.Module
 where
 import DDC.Llvm.Function
 import DDC.Llvm.Var
-import DDC.Llvm.Type
 import DDC.Base.Pretty
 
 

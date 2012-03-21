@@ -2,10 +2,7 @@
 module DDC.Llvm.Function
         ( Function  (..))
 where
-import DDC.Llvm.Stmt
-import DDC.Llvm.Attr
-import DDC.Llvm.Type
-import DDC.Llvm.Var
+import DDC.Llvm.Instr
 import DDC.Base.Pretty
 
 

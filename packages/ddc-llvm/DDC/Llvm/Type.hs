@@ -12,10 +12,12 @@ module DDC.Llvm.Type
 
         , isInt
         , isFloat
-        , isPointer)
+        , isPointer
+        , takeBytesOfType)
 where
 import DDC.Llvm.Attr
 import DDC.Base.Pretty
+import Control.Monad
 
 
 -- FunctionDecl -----------------------------------------------------------------------------------
@@ -63,7 +65,7 @@ data Param
 -- | Alignment.
 data Align
         = AlignNone
-        | AlignBytes Int 
+        | AlignBytes Integer
         deriving (Show, Eq)
 
 
@@ -108,31 +110,31 @@ instance Pretty TypeAlias where
 -- Type -------------------------------------------------------------------------------------------
 -- | Llvm Types.
 data Type
-        = TInt Int                      -- ^ An integer with a given width in bits.
+        = TInt          Integer         -- ^ An integer with a given width in bits.
         | TFloat                        -- ^ 32 bit floating point
         | TDouble                       -- ^ 64 bit floating point
         | TFloat80                      -- ^ 80 bit (x86 only) floating point
         | TFloat128                     -- ^ 128 bit floating point
-        | TPointer     Type             -- ^ A pointer to a 'LlvmType'
-        | TArray       Int Type         -- ^ An array of 'LlvmType'
+        | TPointer      Type            -- ^ A pointer to a 'LlvmType'
+        | TArray        Integer Type    -- ^ An array of 'LlvmType'
         | TLabel                        -- ^ A 'LlvmVar' can represent a label (address)
         | TVoid                         -- ^ Void type
-        | TStruct      [Type]           -- ^ Structure type
-        | TAlias       TypeAlias        -- ^ A type alias
-        | TFunction    FunctionDecl     -- ^ Function type, used to create pointers to functions
+        | TStruct       [Type]          -- ^ Structure type
+        | TAlias        TypeAlias       -- ^ A type alias
+        | TFunction     FunctionDecl    -- ^ Function type, used to create pointers to functions
         deriving (Eq, Show)
 
 
 instance Pretty Type where
  ppr lt
   = case lt of
-        TInt size      -> text "i" <> int size
+        TInt size      -> text "i" <> integer size
         TFloat         -> text "float"
         TDouble        -> text "double"
         TFloat80       -> text "x86_fp80"
         TFloat128      -> text "fp128"
         TPointer x     -> ppr x <> text "*"
-        TArray nr tp   -> brackets (int nr <> text " x " <> ppr tp)
+        TArray nr tp   -> brackets (integer nr <> text " x " <> ppr tp)
         TLabel         -> text "label"
         TVoid          -> text "void"
         TStruct tys    -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
@@ -179,3 +181,28 @@ isPointer tt
         _               -> False
 
 
+-- | Calculate the size in bytes of a Type, given the size of pointers.
+takeBytesOfType :: Integer -> Type -> Maybe Integer
+takeBytesOfType bytesPtr tt
+ = case tt of
+        TInt bits       -> Just $ fromIntegral $ div bits 8
+        TFloat          -> Just 4
+        TDouble         -> Just 8
+        TFloat80        -> Just 10
+        TFloat128       -> Just 16
+        TPointer{}      -> Just bytesPtr
+
+        TArray n t
+         | Just s <- takeBytesOfType bytesPtr t
+         -> Just (n * s)
+
+        TLabel{}        -> Nothing
+        TVoid{}         -> Nothing
+
+        TStruct tys     
+         -> liftM sum $ sequence $ map (takeBytesOfType bytesPtr) tys
+
+        TAlias (TypeAlias _ t)
+         -> takeBytesOfType bytesPtr t
+
+        _               -> Nothing

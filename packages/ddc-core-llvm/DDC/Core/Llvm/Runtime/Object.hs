@@ -5,17 +5,24 @@
 --   They need to be kept in sync with the ones in runtime/Disciple.h
 --
 module DDC.Core.Llvm.Runtime.Object
-        ( sObj, tObj, aObj)
+        ( tObj,          sObj,          aObj
+        , tDataRawSmall, aDataRawSmall)
 where
+import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
 import DDC.Llvm.Type
+import qualified Data.Map as Map
 
 
--- | Type of Heap objects.
---   All objects have a 32bit header word out the front.
-sObj, tObj :: Platform -> Type
-sObj platform   = TStruct [TInt (platformHeaderBytes platform * 8)]
-tObj platform   = TAlias (aObj platform)
 
-aObj :: Platform -> TypeAlias
-aObj platform   = TypeAlias "struct.Obj" (sObj platform)
+-- DataRawSmall ---------------------------------------------------------------
+-- | Small raw objects.
+tDataRawSmall :: Platform -> Type
+tDataRawSmall platform  
+        = TAlias (aDataRawSmall platform)
+
+aDataRawSmall :: Platform -> TypeAlias
+aDataRawSmall platform  
+ = let  Just struct     = Map.lookup "DataRawSmall" $ platformStructs platform
+   in   TypeAlias "struct.DataRawSmall" 
+                $ convStruct struct

@@ -1,13 +1,18 @@
 
 module DDC.Llvm.Var
-        ( -- * Uniques
-          Unique
+        ( module DDC.Llvm.Attr
+        , module DDC.Llvm.Type
+
+          -- * Uniques
+        , Unique
 
           -- * Sections
         , Section       (..)
 
           -- * Variables
         , Var           (..)
+        , Ptr, Value
+
         , isGlobal
         , linkageOfVar
         , typeOfVar
@@ -62,6 +67,8 @@ data Var
         | VarLit        Lit
         deriving (Eq, Show)
 
+type Ptr        = Var
+type Value      = Var
 
 instance Pretty Var where
  ppr lv

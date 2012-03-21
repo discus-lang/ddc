@@ -1,23 +1,43 @@
 
 -- | Convert Sea types to LLVM types.
 module DDC.Core.Llvm.Convert.Type
-        ( toLlvmType
+        ( -- * Type conversion.
+          convTypeM
+        , convType
+        , llvmParameterOfType
+
+          -- * Builtin Types
+        , tObj, sObj, aObj
+        , tPtr
+
+          -- * Type Constructors
         , llvmTypeOfTyCon
-        , llvmParameterOfType)
+
+          -- * Structure definitions
+        , convStruct
+        , convField)
+
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
-import DDC.Core.Llvm.Runtime.Object
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Sea.Output.Name
 import DDC.Type.Compounds
+import Control.Monad.State.Strict
 import qualified DDC.Core.Exp   as C
 
 
+-- Type -----------------------------------------------------------------------
+convTypeM :: C.Type Name -> LlvmM Type
+convTypeM tt
+ = do   platform <- gets llvmStatePlatform
+        return   $ convType platform tt
+
+
 -- | Convert a Sea type to an LlvmType.
-toLlvmType :: Platform -> C.Type Name -> Type
-toLlvmType platform tt
+convType :: Platform -> C.Type Name -> Type
+convType platform tt
  = case tt of
         -- A primitive type.
         C.TCon tc
@@ -25,7 +45,7 @@ toLlvmType platform tt
 
         -- A pointer to a primitive type.
         C.TApp (C.TCon (C.TyConBound (C.UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
-         -> TPointer (toLlvmType platform t2)
+         -> TPointer (convType platform t2)
 
         -- Function types become pointers to functions.
         C.TApp{}
@@ -35,7 +55,7 @@ toLlvmType platform tt
              { declName          = "dummy.function.name"
              , declLinkage       = Internal
              , declCallConv      = CC_Ccc
-             , declReturnType    = toLlvmType platform tResult
+             , declReturnType    = convType platform tResult
              , declParamListType = FixedArgs
              , declParams        = map (llvmParameterOfType platform) tsArgs
              , declAlign         = AlignBytes (platformFunctionAlignBytes platform) }
@@ -43,7 +63,15 @@ toLlvmType platform tt
 
         _ -> die ("invalid type " ++ show tt)
 
+-- | Convert a parameter type to a LlvmParameter decl.
+llvmParameterOfType :: Platform -> C.Type Name -> Param
+llvmParameterOfType platform tt
+        = Param
+        { paramType     = convType platform tt
+        , paramAttrs    = [] }
 
+
+-- TyCon ----------------------------------------------------------------------
 -- | Convert a Sea TyCon to a LlvmType.
 llvmTypeOfTyCon :: Platform -> C.TyCon Name -> Type
 llvmTypeOfTyCon platform tycon
@@ -58,8 +86,8 @@ llvmTypeOfTyCon platform tycon
                 PrimTyConNat            -> TInt (8 * platformAddrBytes platform)
                 PrimTyConTag            -> TInt (8 * platformTagBytes  platform)
                 PrimTyConBool           -> TInt 1
-                PrimTyConWord bits      -> TInt bits
-                PrimTyConInt  bits      -> TInt bits
+                PrimTyConWord bits      -> TInt (fromIntegral bits)
+                PrimTyConInt  bits      -> TInt (fromIntegral bits)
                 PrimTyConString         -> TPointer (TInt 8)
 
                 PrimTyConFloat bits
@@ -75,10 +103,31 @@ llvmTypeOfTyCon platform tycon
         _ -> die "invalid tycon"
 
 
--- | Convert a parameter type to a LlvmParameter decl.
-llvmParameterOfType :: Platform -> C.Type Name -> Param
-llvmParameterOfType platform tt
-        = Param
-        { paramType     = toLlvmType platform tt
-        , paramAttrs    = [] }
+-- | Type of Heap objects.
+sObj, tObj :: Platform -> Type
+sObj platform   = TStruct [TInt (platformHeaderBytes platform * 8)]
+tObj platform   = TAlias (aObj platform)
+
+aObj :: Platform -> TypeAlias
+aObj platform   = TypeAlias "struct.Obj" (sObj platform)
+
+
+-- | Alias for pointer type.
+tPtr :: Type -> Type
+tPtr t = TPointer t
+
+
+-- Struct ---------------------------------------------------------------------
+-- | Convert a Structure definition to an LLVM type.
+convStruct :: Struct -> Type
+convStruct (Struct _ fields)
+ = TStruct $ map convField fields
+
+
+-- | Convert a field definition to an LLVM type.
+convField :: Field -> Type
+convField ff
+ = case ff of
+        Field _ t       -> t
+        Pad   bytes     -> TInt (8 * bytes)
 

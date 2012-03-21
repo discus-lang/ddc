@@ -46,6 +46,9 @@ instance Pretty Bool where
 instance Pretty Int where
  ppr = text . show
 
+instance Pretty Integer where
+ ppr = text . show
+
 instance Pretty Char where
  ppr = text . show
 

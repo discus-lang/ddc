@@ -10,12 +10,18 @@ module DDC.Core.Llvm.LlvmM
         , newUniqueVar
         , newUniqueNamedVar
         , newUniqueLabel
-        , newUniqueBlockId)
+        , newUniqueBlockId
+
+          -- * Platform Specific
+        , getPrimVarM
+        , getStructM
+        , getBytesOfTypeM
+        , getBytesOfStructM)
 where
 import DDC.Core.Llvm.Platform
-import DDC.Llvm.Stmt
-import DDC.Llvm.Type
-import DDC.Llvm.Var
+import DDC.Llvm.Instr
+import Data.Map                 (Map)
+import qualified Data.Map       as Map
 import Control.Monad.State.Strict
 
 type LlvmM = State LlvmState
@@ -33,15 +39,19 @@ data LlvmState
           llvmStateUnique       :: Int 
 
           -- The current platform.
-        , llvmStatePlatform      :: Platform }
+        , llvmStatePlatform     :: Platform 
+
+          -- Primitives in the global environment.
+        , llvmStatePrimVars     :: Map String Var }
 
 
 -- | Initial LLVM state.
-llvmStateInit :: Platform -> LlvmState
-llvmStateInit platform
+llvmStateInit :: Platform -> Map String Var -> LlvmState
+llvmStateInit platform prims
         = LlvmState
         { llvmStateUnique       = 1 
-        , llvmStatePlatform     = platform }
+        , llvmStatePlatform     = platform
+        , llvmStatePrimVars     = prims }
 
 
 -- Unique ---------------------------------------------------------------------
@@ -79,3 +89,34 @@ newUniqueLabel name
 newUniqueBlockId :: LlvmM BlockId
  = do   u <- newUnique
         return   $ BlockId u
+
+
+-- Platform Specific ----------------------------------------------------------
+-- | Get a primitive variable.
+getPrimVarM :: String -> LlvmM Var
+getPrimVarM name
+ = do   prims   <- gets llvmStatePrimVars 
+        case Map.lookup name prims of
+         Just var       -> return var
+         _              -> error $ "getPrimVar: unknown prim " ++ show name
+
+-- | Get a structure definition.
+getStructM :: String -> LlvmM Struct
+getStructM name
+ = do   platform        <- gets llvmStatePlatform
+        let Just struct = Map.lookup name $ platformStructs platform
+        return struct
+
+
+-- | Get the size of a type on this platform, in bytes.
+getBytesOfTypeM :: Type -> LlvmM Integer
+getBytesOfTypeM tt
+ = do   platform        <- gets llvmStatePlatform
+        let Just bytes  = takeBytesOfType (platformAddrBytes platform) tt
+        return bytes
+
+
+-- | Get the size of a struct on this platform, in bytes.
+getBytesOfStructM :: Struct -> LlvmM Integer
+getBytesOfStructM _struct
+        = return 5
