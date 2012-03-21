@@ -38,7 +38,7 @@ toLlvmType platform tt
              , declReturnType    = toLlvmType platform tResult
              , declParamListType = FixedArgs
              , declParams        = map (llvmParameterOfType platform) tsArgs
-             , declAlign         = AlignBytes (platformAlignFunctions platform) }
+             , declAlign         = AlignBytes (platformFunctionAlignBytes platform) }
 
 
         _ -> die ("invalid type " ++ show tt)
@@ -55,8 +55,8 @@ llvmTypeOfTyCon platform tycon
          -> case tc of
                 PrimTyConVoid           -> TVoid
                 PrimTyConAddr           -> TPointer (TInt 8)
-                PrimTyConNat            -> TInt (platformAddrWidth platform)
-                PrimTyConTag            -> TInt (platformTagWidth  platform)
+                PrimTyConNat            -> TInt (8 * platformAddrBytes platform)
+                PrimTyConTag            -> TInt (8 * platformTagBytes  platform)
                 PrimTyConBool           -> TInt 1
                 PrimTyConWord bits      -> TInt bits
                 PrimTyConInt  bits      -> TInt bits

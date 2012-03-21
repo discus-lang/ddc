@@ -8,17 +8,17 @@ where
 -- | Enough information about the platform to generate LLVM code for it.
 data Platform
         = Platform
-        { -- Width of an address on this platform in bits.
-          platformAddrWidth     :: Int 
+        { -- Width of an address on this platform, in bytes.
+          platformAddrBytes             :: Int 
 
-          -- Width of a constructor tag in bits.
-        , platformTagWidth      :: Int 
+          -- Width of a constructor tag, in bytes.
+        , platformTagBytes              :: Int 
 
-          -- Width of the object header word in bits.
-        , platformHeaderWidth   :: Int 
+          -- Width of the object header word, in bytes.
+        , platformHeaderBytes           :: Int 
 
           -- Align functions on this boundary, in bytes
-        , platformAlignFunctions :: Int }
+        , platformFunctionAlignBytes    :: Int }
 
 
 -- | Default platform setup with the given word size, in bytes.
@@ -28,9 +28,9 @@ data Platform
 defaultPlatform :: Int -> Platform
 defaultPlatform bytes
         = Platform
-        { platformAddrWidth             = bytes * 8
-        , platformTagWidth              = 32
-        , platformHeaderWidth           = 32
-        , platformAlignFunctions        = bytes }
+        { platformAddrBytes             = bytes
+        , platformTagBytes              = 4
+        , platformHeaderBytes           = 4
+        , platformFunctionAlignBytes    = bytes }
 
 

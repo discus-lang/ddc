@@ -14,7 +14,7 @@ import DDC.Llvm.Type
 -- | Type of Heap objects.
 --   All objects have a 32bit header word out the front.
 sObj, tObj :: Platform -> Type
-sObj platform   = TStruct [TInt (platformHeaderWidth platform)]
+sObj platform   = TStruct [TInt (platformHeaderBytes platform * 8)]
 tObj platform   = TAlias (aObj platform)
 
 aObj :: Platform -> TypeAlias

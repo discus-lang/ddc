@@ -71,7 +71,7 @@ llvmFunctionOfSuper (C.BName n tSuper) x
                 , declReturnType         = toLlvmType platform tResult
                 , declParamListType      = FixedArgs
                 , declParams             = map (llvmParameterOfType platform) tsArgs
-                , declAlign              = AlignBytes (platformAlignFunctions platform) }
+                , declAlign              = AlignBytes (platformFunctionAlignBytes platform) }
 
         blockId <- newUniqueBlockId
         blocks  <- llvmBlocksOfBody [] blockId [] xBody
