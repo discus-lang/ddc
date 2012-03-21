@@ -13,7 +13,7 @@ import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Compounds
 import DDC.Type.Compounds
-import Data.Sequence                            (Seq, (|>), (><))
+import Data.Sequence                            (Seq, (<|), (|>), (><))
 import Data.Map                                 (Map)
 import qualified DDC.Core.Sea.Output.Name       as E
 import qualified DDC.Core.Sea.Output.Env        as E
@@ -25,7 +25,8 @@ import qualified Data.Sequence                  as Seq
 import qualified Data.Foldable                  as Seq
 import Control.Monad.State.Strict               (evalState)
 import Control.Monad.State.Strict               (gets)
-
+import Control.Monad
+import Data.Maybe
 
 -- Module ---------------------------------------------------------------------
 convertModule :: C.Module () E.Name -> Module
@@ -142,11 +143,65 @@ llvmBlocksOfBody blocks label instrs xx
                 llvmBlocksOfBody blocks label (instrs >< instrs') x2
 
 
+         -- Case statement.
+         C.XCase _ x1 alts
+          | Just x1'@(Var{})    <- takeLocalV platform x1
+          -> do altResults      <- mapM convAltM alts
+
+                let altTable    = mapMaybe takeAltCase altResults
+                let altBlocks   = join $ fmap altResultBlocks $ Seq.fromList altResults
+
+                let switchBlock = Block label
+                                $ instrs |> ISwitch (XVar x1') (Label "foo") altTable
+
+                return  $ switchBlock <| altBlocks
+
+
          -- TODO: Debugging only
          _ -> return $  blocks
                      |> Block label (instrs |> IUnreachable)
 
          -- die "invalid body statement"
+
+
+-- Alt ------------------------------------------------------------------------
+data AltResult 
+        = AltDefault        Label (Seq Block)
+        | AltCase       Lit Label (Seq Block)
+
+
+altResultBlocks :: AltResult -> Seq Block
+altResultBlocks aa
+ = case aa of
+        AltDefault _ blocks     -> blocks
+        AltCase _ _  blocks     -> blocks
+
+
+takeAltCase :: AltResult -> Maybe (Lit, Label)
+takeAltCase (AltCase lit label _)       = Just (lit, label)
+takeAltCase _                           = Nothing
+
+
+convAltM :: C.Alt () E.Name -> LlvmM AltResult
+convAltM aa
+ = case aa of
+        C.AAlt C.PDefault x
+         -> do  label   <- newUniqueLabel "default"
+                blocks  <- llvmBlocksOfBody Seq.empty label Seq.empty x
+                return  $  AltDefault label blocks
+
+        C.AAlt (C.PData u []) x
+         -> do  label   <- newUniqueLabel "alt"
+                blocks  <- llvmBlocksOfBody Seq.empty label Seq.empty x
+                let lit =  convPatBound u
+                return  $  AltCase lit label blocks
+
+        _ -> error "convAltM: sorry"
+
+
+convPatBound :: C.Bound E.Name -> Lit
+convPatBound _
+        = LitUndef (TInt 32)
 
 
 -- Exp ------------------------------------------------------------------------
@@ -181,6 +236,7 @@ llvmGetResult _ _ xx
         $ IComment [ "llvmGetResult: cannot convert " ++ show xx ]
 
 
+-- Prim call ------------------------------------------------------------------
 -- | Convert a primitive call to LLVM.
 convPrimCallM 
         :: Show a 
@@ -210,10 +266,22 @@ convPrimCallM pp dst p xs
                    then IConv dst ConvSext  val
                    else ISet  dst val
 
+        E.PrimString (E.PrimStringShowInt bitsInt)
+         |  [xVal]              <- xs
+         ,  Just val            <- takeAtomX pp xVal
+         -> return
+                $ Seq.singleton
+                $ ICall dst 
+                        CallTypeStd 
+                        (tPtr (TInt 8)) 
+                        (NameGlobal $ "showInt" ++ show bitsInt)
+                        [val] []
+
         _ -> return $ Seq.singleton 
           $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
 
 
+-- Utils ----------------------------------------------------------------------
 -- | Take a variable or literal from an expression.
 --   Returned literals are also represented as `Var`.
 takeAtomX :: Platform -> C.Exp a E.Name -> Maybe Exp
@@ -230,7 +298,7 @@ takeAtomX pp xx
 
         _ -> Nothing
 
-{-
+
 -- | Take a variable from an expression as a local var, if any.
 takeLocalV  :: Platform -> C.Exp a E.Name -> Maybe Var
 takeLocalV pp xx
@@ -238,7 +306,7 @@ takeLocalV pp xx
         C.XVar _ (C.UName (E.NameVar str) t)
           -> Just $ Var (NameLocal str) (convType pp t)
         _ -> Nothing
--}
+
 
 -- | Take a variable from an expression as a local var, if any.
 takeGlobalV  :: Platform -> C.Exp a E.Name -> Maybe Var
