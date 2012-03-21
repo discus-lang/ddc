@@ -1,0 +1,7 @@
+main ()
+ = do
+    x = 1
+    print "hi"
+{-
+Unclosed comment block.
+

@@ -22,6 +22,9 @@ data Error
 	-- | Explicit close brace must match explicit open brace. 
 	| ErrorLayoutNoBraceMatch 	TokenP
 
+    -- | Unclosed comment block.
+    | ErrorUnterminatedCommentBlock TokenP
+
 	-- | Found a token which is a string with tabs in it.
 	| ErrorLexicalStringTabs	TokenP
 
@@ -126,6 +129,10 @@ instance Pretty Error PMode where
  	= tokErr tok
 	$ "Layout error: Explicit close brace must match an explicit open brace."
  
+ ppr (ErrorUnterminatedCommentBlock tok)
+    = tokErr tok
+    $ "Parse error: Unterminated comment block."
+
  ppr (ErrorLexicalStringTabs tok)
 	= tokErr tok
 	$ "Lexer error: Literal string contains tab characters."

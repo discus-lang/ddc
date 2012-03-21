@@ -58,11 +58,12 @@ tokens :-
  \{ \-			{ ptag CommentBlockStart	}
  \- \}			{ ptag CommentBlockEnd		}
 
--- This is required to fix lexing of things like "{-\n=-}".
--- This may be working around an Alex bug.
- \= \- \}		{ ptag CommentBlockEnd		}
 
  \{ \- \# .* \# \- \}	{ ptags CommentPragma		}
+
+-- This is required to fix lexing of things like "{-\n=-}".
+-- This may be working around an Alex bug.
+ .* \- \}       { ptag CommentBlockEnd      }
 
  pragma			{ ptag Pragma			}
 
@@ -369,22 +370,22 @@ dropTokComments	(t@TokenP { token = tok } : xs)
 	= dropTokComments $ dropWhile (\t -> not $ isToken t NewLine) xs
 
 	| CommentBlockStart	<- tok
-	= dropTokComments $ dropTokCommentBlock xs
+	= dropTokComments $ dropTokCommentBlock xs t 
 
 	| otherwise
 	= t : dropTokComments xs
 
-dropTokCommentBlock :: [TokenP] -> [TokenP]
-dropTokCommentBlock	[]	= []
-dropTokCommentBlock	(t@TokenP { token = tok } : xs)
+dropTokCommentBlock :: [TokenP] -> TokenP -> [TokenP]
+dropTokCommentBlock	[]	terror = dieWithUserError [ErrorUnterminatedCommentBlock terror]
+dropTokCommentBlock	(t@TokenP { token = tok } : xs) terror
 	| CommentBlockStart	<- tok
-	= dropTokCommentBlock $ dropTokCommentBlock xs
+	= dropTokCommentBlock (dropTokCommentBlock xs t) terror
 
 	| CommentBlockEnd	<- tok
 	= xs
 
 	| otherwise
-	= dropTokCommentBlock xs
+	= dropTokCommentBlock xs terror
 
 
 -- dropStrComments --------------------------------------------------------------------------------
