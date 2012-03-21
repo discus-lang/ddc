@@ -1,296 +1,379 @@
 
 module DDC.Core.Sea.Output.Convert
-        (Convert(..))
+        (convertModule)
 where
+import DDC.Core.Sea.Output.Error
+import DDC.Core.Sea.Output.Name
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Sea.Output.Name
 import DDC.Base.Pretty
+import DDC.Type.Check.Monad             (result)
+import qualified DDC.Type.Check.Monad   as G
 
 
--- | Convert a thing to the C language.
---
---   The thing must have passed the Sea langauge fragment checker, 
---   else you may get `error`.
-class Convert a where
- convert :: a -> Doc
+-- | Convert a module in the Sea fragment to the C-source text.
+convertModule :: Show a => Module a Name -> Either (Error a) Doc
+convertModule mm
+ = result $ convModuleM mm
 
 
--- | Called when we find a thing that cannot be converted to C.
-die :: String -> a
-die msg = error $ "DDC.Core.Sea.Output.Convert " ++ msg
+-- | Conversion Monad
+type ConvertM a x = G.CheckM (Error a) x
 
 
 -- Module ---------------------------------------------------------------------
-instance Convert (Module () Name) where
- convert mm@(ModuleCore{})
+-- | Convert a Sea module to C source text.
+convModuleM :: Show a => Module a Name -> ConvertM a Doc
+convModuleM mm@(ModuleCore{})
         | [LRec bxs]    <- moduleLets mm
-        = vcat $ map convertTop bxs
+        = do    supers' <- mapM (uncurry convSuperM) bxs
+                return  $ vcat supers'
 
         | otherwise
-        = die "module must contain top-level letrecs"
+        = error "module must contain top-level letrecs"
 
 
 -- Type -----------------------------------------------------------------------
-instance Convert (Type Name) where
- convert tt
+-- | Convert a Sea type to C source text.
+convTypeM :: Type Name -> ConvertM a Doc
+convTypeM tt
   = case tt of
-        TVar u                          -> convert u
-        TCon (TyConBound (UName n _))   -> convert n
-
         TCon (TyConBound (UPrim (NamePrimTyCon tc) _))
-         -> case tc of
-                PrimTyConVoid           -> text "void"
-                PrimTyConAddr           -> text "addr_t"
-                PrimTyConNat            -> text "nat_t"
-                PrimTyConTag            -> text "tag_t"
-                PrimTyConBool           -> text "bool_t"
-                PrimTyConInt bits       -> text "int" <> int bits <> text "_t"
-                PrimTyConString         -> text "string_t"
-                _                       -> die "invalid tycon"
+         |  Just doc     <- convPrimTyCon tc
+         -> return doc
 
         TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
-         -> convert t2 <> text "*"
+         -> do  t2'     <- convTypeM t2
+                return  $ t2' <> text "*"
 
         TCon (TyConBound (UPrim NameObjTyCon _))
-           -> text "Obj"
+           ->   return  $ text "Obj"
 
-        _  -> die "invalid type"
-
-
--- Top level function ---------------------------------------------------------
-convertTop :: (Bind Name, Exp () Name) -> Doc
-convertTop (b , xx)
-        | BName nTop tTop         <- b 
-        , Just (bsParam, xBody)   <- takeXLams xx
-        ,  (_, tResult)           <- takeTFunArgResult tTop
-        =  (convert tResult 
-                <+> convert nTop
-                <+> encloseSep lparen rparen (comma <> space) 
-                        (map convert bsParam))
-
-        <$$> lbrace <> line
-        <>  (indent 8 (convert xBody <> semi)) 
-        <>   line   <> rbrace
-        <>   line 
+        _  -> error "invalid type"
 
 
-        | otherwise
-        = die "invalid top-level declaration"
+-- | Convert a primitive type constructor to C source text.
+convPrimTyCon :: PrimTyCon -> Maybe Doc
+convPrimTyCon tc
+ = case tc of
+        PrimTyConVoid           -> Just $ text "void"
+        PrimTyConAddr           -> Just $ text "addr_t"
+        PrimTyConNat            -> Just $ text "nat_t"
+        PrimTyConTag            -> Just $ text "tag_t"
+        PrimTyConBool           -> Just $ text "bool_t"
+        PrimTyConInt bits       -> Just $ text "int" <> int bits <> text "_t"
+        PrimTyConString         -> Just $ text "string_t"
+        _                       -> Nothing
 
 
--- Exp ------------------------------------------------------------------------
-instance Convert (Exp () Name) where
- convert xx 
-  = case xx of
-        XVar _ (UName n _)
-         -> convert n
+-- Super definition -----------------------------------------------------------
+-- | Convert a super to C source text.
+convSuperM :: Show a => Bind Name -> Exp a Name -> ConvertM a Doc
+convSuperM b x
+ | BName (NameVar nTop) tTop       <- b 
+ , Just (bsParam, xBody) <- takeXLams x
+ ,  (_, tResult)         <- takeTFunArgResult tTop
+ = do    
+        bsParam'        <- mapM convBind bsParam
+        tResult'        <- convTypeM tResult
+        xBody'          <- convBodyM xBody
 
-        XCon _ (UPrim (NameNat n) _)
-         -> integer n
+        return  $ vcat
+                [ tResult'
+                         <+> text nTop
+                         <+> parenss bsParam'
+                , lbrace <> line
+                         <> indent 8 (xBody' <> semi) <> line
+                         <> rbrace
+                         <> line ]
 
-        XCon _ (UPrim (NameTag n) _)
-         -> integer n
+ | otherwise    
+ = error "invalid top-level declaration"
 
-        -- TODO: frag check fully applied primops.
+
+-- | Convert a function parameter binding to C source text.
+convBind :: Bind Name -> ConvertM a Doc
+convBind (BName (NameVar str) t)
+ = do   t'      <- convTypeM t
+        return  $ text str <+> t'
+
+convBind _ = error "invalid function parameter"
+
+
+-- Super body -----------------------------------------------------------------
+-- | Convert a super body to C source text.
+convBodyM :: Show a => Exp a Name -> ConvertM a Doc
+convBodyM xx
+ = case xx of
+
+        -- End of function body must explicitly pass control.
         XApp{}
-         |  Just (NamePrim p, xs)       <- takeXPrimApps xx
-         -> convertPrimApp p xs 
+         -> case takeXPrimApps xx of
+             Just (NamePrim p, xs)
+              | isControlPrim p -> convPrimCallM p xs
+             _                  -> error "body must pass control"
 
-        -- TODO: frag check fully applied calls.
-        XApp{}
-         |  (XVar _ (UName n _) : args) <- takeXApps xx
-         -> convertFunApp n args
+        -- Variable assignment.
+        XLet _ (LLet LetStrict (BName (NameVar n) t) x1) x2
+         -> do  t'      <- convTypeM   t
+                x1'     <- convRValueM x1
+                x2'     <- convBodyM   x2
 
-        XLet _ (LLet LetStrict (BNone _) x) x2
-         -> vcat [ convert x <> semi
-                 , convert x2 ]
+                return  $ vcat
+                        [ fill 12 (t' <+> text n) <+> equals <+> x1' <> semi
+                        , x2' ]
 
-        XLet _ (LLet LetStrict b x) x2
-         -> vcat [ fill 12 (convert b) <+> text "=" <+> convert x <> semi
-                 , convert x2 ]
+        -- Non-binding statement.
+        -- These are only permitted to return Void#.
+        XLet _ (LLet LetStrict (BNone t) x1) x2
+         | isVoidT t
+         -> do  x1'     <- convStmtM x1
+                x2'     <- convBodyM x2
 
-        -- TODO: frag check that we only switch on Nats and Tags.
-        -- Special case tag check to make output easier to read.
-        XCase _ x [ AAlt (PData u []) x1
-                  , AAlt PDefault 
-                         xFail@(XApp _ 
-                                 (XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)) _)]
-         -> vcat [ text "if" 
-                        <+> parens (convert x <+> text "!=" <+> convert u)
-                        <+> convert xFail
-                        <> semi
-                 , convert x1 ]
+                return  $ vcat
+                        [ x1' <> semi
+                        , x2' ]
 
-        -- Special case if-then-else to make output easier to read.
+        -- Case-expression.
+        --   Prettier printing for case-expression that just checks for failure.
+        --   TODO: check type of discrim
+        XCase _ x [ AAlt (PData (UPrim n _) []) x1
+                  , AAlt PDefault     xFail]
+         | isFailX xFail
+         , Just n'      <- convDaConName n
+         -> do  
+                x'      <- convRValueM x
+                x1'     <- convBodyM   x1
+                xFail'  <- convBodyM   xFail
+
+                return  $ vcat
+                        [ text "if"
+                                <+> parens (x' <+> text "!=" <+> n')
+                                <+> xFail' <> semi
+                        , x1' ]
+
+        -- Case-expression.
+        --   Prettier printing for if-then-else.
         XCase _ x [ AAlt (PData (UPrim (NameBool True)  _) []) x1
                   , AAlt (PData (UPrim (NameBool False) _) []) x2 ]
-         -> vcat [ text "if" <+> parens (convert x)
-                 , lbrace    <>  (indent 7 $ convert x1) <> semi <> line <> rbrace
-                 , lbrace    <>  (indent 7 $ convert x2) <> semi <> line <> rbrace ]
+         -> do  x'      <- convRValueM x
+                x1'     <- convBodyM   x1
+                x2'     <- convBodyM   x2
 
+                return  $ vcat
+                        [ text "if" <> parens x'
+                        , lbrace <> indent 7 x1' <> semi <> line <> rbrace
+                        , lbrace <> indent 7 x2' <> semi <> line <> rbrace ]
+
+        -- Case-expression.
+        --   In the general case we use the C-switch statement.
         XCase _ x alts
-         ->   text "switch" <> parens (convert x) 
-         <$$> lbrace <> (indent 1 (vcat $ map convert alts))
-         <$$> rbrace 
+         -> do  x'      <- convRValueM x
+                alts'   <- mapM convAltM alts
+
+                return  $ vcat
+                        [ text "switch" <+> parens x'
+                        , lbrace <> indent 1 (vcat alts')
+                        , rbrace ]
+
+        _ -> error "invalid function body"
 
 
-        _ -> die "invalid expression"
- 
-
--- | Convert a primop application to Sea.
-convertPrimApp :: Prim -> [Exp () Name] -> Doc
-convertPrimApp p xs
-        -- binary primops
-        | PrimOp op             <- p
-        , [XType _t, x1, x2]    <- xs
-        , elem op [ PrimOpAdd, PrimOpSub, PrimOpMul, PrimOpDiv, PrimOpMod
-                  , PrimOpEq,  PrimOpNeq
-                  , PrimOpGt,  PrimOpLt,  PrimOpGe, PrimOpLe]
-        = parensConvertX x1 <+> convert op <+> parensConvertX x2
+-- | Check whether this primop passes control.
+isControlPrim :: Prim -> Bool
+isControlPrim pp
+ = case pp of
+        PrimControl _   -> True
+        _               -> False
 
 
-        -- Control
-        | PrimControl PrimControlReturn <- p
-        , [XType _t, x]                 <- xs
-        = text "return" <+> convert x
-
-        | PrimControl PrimControlFail   <- p
-        , [XType _t]                    <- xs
-        = text "_fail()"
-
-        -- Cast
-        | PrimCast (PrimCastNatToInt bits) <- p
-        , [x1]                          <- xs
-        = parens (text "int" <> int bits <> text "_t") 
-                <> parens (convert x1)
-
-        -- Store 
-        | PrimStore PrimStoreRead       <- p
-        , [XType _t, x]                 <- xs
-        = text "_read"  <+> parens (convert x)
-
-        | PrimStore PrimStoreProjTag    <- p
-        = text "_tag"   <+> convertArgs xs
-
-        | PrimStore (PrimStoreProjField PrimStoreLayoutRaw) <- p
-        , [XType t, x1, x2]             <- xs
-        =   text "_fieldRaw" 
-        <+> encloseSep lparen rparen (comma <> space)
-                [ convert t
-                , convert x1
-                , convert x2]
-
-        | PrimStore (PrimStoreAllocData PrimStoreLayoutRaw) <- p
-        , [xTag, xArity]                <- xs
-        =   text "_allocRaw" <+> convertArgs [xTag, xArity]
-
-        -- Stmt
-        | PrimStmt PrimStmtWrite      <- p
-        , [XType _t, x1, x2]            <- xs
-        = text "_write" <+> convertArgs [x1, x2]
+-- | Check whether this is the Void# type.
+isVoidT :: Type Name -> Bool
+isVoidT (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid) _))) = True
+isVoidT _ = False
 
 
-        -- String
-        | PrimString op         <- p
-        = convert op <+> convertArgs xs
-
-        -- IO
-        | PrimIO op             <- p
-        = convert op <+> convertArgs xs
+-- | Check whether this an applicatin of the fail# primop.
+isFailX  :: Exp a Name -> Bool
+isFailX (XApp _ (XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)) _) = True
+isFailX _ = False
 
 
-        | otherwise 
-        = die "invalid primitive application"
-
-
--- | Convert a function application to Sea.
-convertFunApp :: Name -> [Exp () Name] -> Doc
-convertFunApp n xs
-        | NameVar str           <- n
-        =   text str
-        <+> encloseSep lparen rparen (comma <> space)
-                (map convert xs)
-
-        | otherwise
-        = die "invalid function application"
-
-
-parensConvertX xx
+-- Stmt -----------------------------------------------------------------------
+-- | Convert an effectful statement to C source text.
+convStmtM :: Show a => Exp a Name -> ConvertM a Doc
+convStmtM xx
  = case xx of
-        XVar{}  -> convert xx
-        _       -> parens (convert xx)
+        XApp{}
+         -> case takeXPrimApps xx of
+              Just (NamePrim p, xs)
+               | PrimStmt PrimStmtWrite <- p
+               , [XType _t, x1, x2]     <- xs
+               -> do    x1' <- convRValueM x1
+                        x2' <- convRValueM x2
+
+                        return  $ text "_write" <+> parenss [x1', x2']
+
+               | PrimIO op              <- p
+               -> do    let op' = convPrimIO op
+                        xs'     <- mapM convRValueM xs
+                        return  $ op' <+> parenss xs'
 
 
-convertArgs :: [Exp () Name] -> Doc
-convertArgs xs
- = encloseSep lparen rparen (comma <> space)
-                (map convert xs)
+              _ -> error $ "invalid stmt prim"
+
+        _ -> error "invalid stmt"
 
 
 -- Alt ------------------------------------------------------------------------
--- TODO: frag check result of alts is always Void#
-instance Convert (Alt () Name) where
- convert alt
-  = case alt of
-        AAlt PDefault x 
-         -> text "default:" 
-                <+> convert x <> semi
-
-        AAlt (PData u []) x
-         -> vcat [ text "case" <+> convert u <> colon
-                 , lbrace 
-                        <> indent 5 (vcat [ convert x    <> semi]) 
-                        <> line
-                        <> rbrace 
-                        <> empty 
-                 ]
-
-        AAlt{}
-         -> die "invalid alternative"
+-- | Convert a case alternative to C source text.
+convAltM :: Show a => Alt a Name -> ConvertM a Doc
+convAltM aa
+ = case aa of
+        AAlt PDefault x1 
+         -> do  x1'     <- convBodyM x1
+                return  $ text "default:" <+> x1' <> semi
 
 
--- Bind and Bound -------------------------------------------------------------
-instance Convert (Bind Name) where
- convert bb
-  = case bb of
-        BName n t       -> convert t <+> convert n
-        _               -> die "invalid bind"
+        AAlt (PData (UPrim n _) []) x1
+         | Just n'      <- convDaConName n
+         -> do  x1'     <- convBodyM x1
+                return  $ vcat
+                        [ text "case" <+> n' <> colon
+                        , lbrace <> indent 5 (x1' <> semi)
+                                 <> line
+                                 <> rbrace]
 
-instance Convert (Bound Name) where
- convert uu
-  = case uu of
-        UName n _       -> convert n
-        UPrim n _       -> convert n
-        _               -> die "invalid bound"
+        AAlt{} -> error "invalid alternative"
+
+convDaConName :: Name -> Maybe Doc
+convDaConName nn
+ = case nn of
+        NameNat i       -> Just $ integer i
+        NameTag i       -> Just $ integer i
+        NameBool True   -> Just $ int 1
+        NameBool False  -> Just $ int 0
+        _               -> Nothing
 
 
--- Names ----------------------------------------------------------------------
-instance Convert Name where
- convert nn
-  = case nn of
-        NamePrim p      -> convert p
-        NameVar  str    -> text str
-        NameTag  i      -> integer i
-        NameNat  i      -> integer i
-        NameBool True   -> int 1
-        NameBool False  -> int 0
-        _               -> die $ "unexpected name " ++ show nn
+
+-- RValue ---------------------------------------------------------------------
+-- | Convert an r-value to C source text.
+convRValueM :: Show a => Exp a Name -> ConvertM a Doc
+convRValueM xx
+ = case xx of
+
+        -- Plain variable.
+        XVar _ (UName n _)
+         | NameVar str  <- n
+         -> return $ text str
+
+        -- Literals
+        XCon _ (UPrim (NameNat n) _)
+         -> return $ integer n
+
+        XCon _ (UPrim (NameTag n) _)    
+         -> return $ integer n
+
+        -- Primop application.
+        -- TODO: check this is fully applied.
+        XApp{}
+         |  Just (NamePrim p, args)      <- takeXPrimApps xx
+         -> convPrimCallM p args
+
+        -- Super application.
+        XApp{}
+         |  (XVar _ (UName n _) : args)  <- takeXApps xx
+         ,  NameVar str <- n
+         -> do  args'   <- mapM convRValueM args
+
+                return  $ text str <+> parenss args'
+
+        _ -> error "invalid rvalue"
+
+
+-- PrimCalls ------------------------------------------------------------------
+-- | Convert a call to a primitive operator to C source text.
+convPrimCallM :: Show a => Prim -> [Exp a Name] -> ConvertM a Doc
+convPrimCallM p xs
+ = case p of
+
+        -- Binary arithmetic primops.
+        PrimOp op
+         | [XType _t, x1, x2]    <- xs
+         , elem op [ PrimOpAdd, PrimOpSub, PrimOpMul, PrimOpDiv, PrimOpMod
+                   , PrimOpEq,  PrimOpNeq
+                   , PrimOpGt,  PrimOpLt,  PrimOpGe, PrimOpLe]
+         -> do     
+                x1'     <- convRValueM x1
+                x2'     <- convRValueM x2
+                let op' =  convPrimOp op
+                return  $ parens (x1' <+> op' <+> x2')
+
+
+        -- Control primops.
+        PrimControl PrimControlReturn
+         | [XType _t, x1]       <- xs
+         -> do  x1'     <- convRValueM x1
+                return  $ text "return" <+> x1'
+
+        PrimControl PrimControlFail
+         | [XType _t]           <- xs
+         -> do  return  $ text "_fail()"
+
+
+        -- Cast primops.
+        PrimCast (PrimCastNatToInt bits)
+         | [x1]                 <- xs
+         -> do  x1'     <- convRValueM x1
+                return  $  parens (text "int" <> int bits <> text "_t") 
+                        <> parens  x1'
+
+
+        -- Store primops.
+        PrimStore PrimStoreRead
+         | [XType _t, x1]       <- xs
+         -> do  x1'     <- convRValueM x1
+                return  $ text "_read" <+> parens  x1'
+
+        PrimStore PrimStoreProjTag
+         -> do  xs'     <- mapM convRValueM xs
+                return  $ text "_tag"  <+> parenss xs'
+
+        PrimStore (PrimStoreProjField PrimStoreLayoutRaw)
+         | [XType t, x1, x2]    <- xs
+         -> do  t'      <- convTypeM t
+                x1'     <- convRValueM x1
+                x2'     <- convRValueM x2
+                return  $ text "_fieldRaw"   <+> parenss [t', x1', x2']
+
+        PrimStore (PrimStoreAllocData PrimStoreLayoutRaw)
+         | [xTag, xArity]       <- xs
+         -> do  xTag'   <- convRValueM xTag
+                xArity' <- convRValueM xArity
+                return  $ text "_allocRaw" <+> parenss [xTag', xArity']
+
+
+        -- String primops.
+        PrimString op 
+         -> do  let op' = convPrimString op
+                xs'     <- mapM convRValueM xs
+                return  $ op' <+> parenss xs'
+
+        _ -> error "invalid primitive application"
+
+
+parenss :: [Doc] -> Doc
+parenss xs = encloseSep lparen rparen (comma <> space) xs
 
 
 -- Prims ----------------------------------------------------------------------
-instance Convert Prim where
- convert nn
-  = case nn of
-        PrimOp op       -> convert op
-        _               -> die $ "unexpected prim " ++ show nn 
-
-
-instance Convert PrimOp where
- convert nn
-  = case nn of
+-- | Convert an arithmetic primop name to C source text.
+convPrimOp :: PrimOp -> Doc
+convPrimOp pp
+ = case pp of
         -- arithmetic   
         PrimOpNeg       -> text "-"
         PrimOpAdd       -> text "+"
@@ -312,13 +395,17 @@ instance Convert PrimOp where
         PrimOpOr        -> text "||"
 
 
-instance Convert PrimString where
- convert nn 
-  = case nn of
+-- | Convert a String primop name to C source text.
+convPrimString :: PrimString -> Doc
+convPrimString pp
+ = case pp of
         PrimStringShowInt b     -> text "_showInt" <> int b
 
-instance Convert PrimIO where
- convert nn 
-  = case nn of
+
+-- | Convert an IO primop name to C source text.
+convPrimIO :: PrimIO -> Doc
+convPrimIO pp
+ = case pp of
         PrimIOPutStr            -> text "_putStr"
         PrimIOPutStrLn          -> text "_putStrLn"
+

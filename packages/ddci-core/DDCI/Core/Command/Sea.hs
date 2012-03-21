@@ -45,6 +45,14 @@ cmdSeaOut state lineStart str
                  | otherwise
                  = empty
 
-           in   outDocLn state 
-                 $    prelude <> convert mm
+           in   case convertModule mm of
+                 Left err
+                  -> putStrLn
+                        $ renderIndent
+                        $ vcat  [ text "Fragment violation when converting to C."
+                                , indent 2 (ppr err) ]
+
+                 Right doc
+                  -> outDocLn state
+                        $ prelude <> doc
 
