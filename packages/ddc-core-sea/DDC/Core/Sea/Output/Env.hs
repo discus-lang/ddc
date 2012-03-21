@@ -1,4 +1,5 @@
 
+-- | Types of SeaOutput primops.
 module DDC.Core.Sea.Output.Env
         ( primDataDefs
         , primKindEnv

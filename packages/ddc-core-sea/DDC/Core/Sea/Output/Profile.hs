@@ -1,4 +1,5 @@
 
+-- | Language profile for the SeaOutput fragment of Disciple Core.
 module DDC.Core.Sea.Output.Profile
         ( outputProfile
         , lexString)
@@ -12,8 +13,7 @@ import DDC.Base.Lexer
 import DDC.Core.Parser.Tokens
 
 
--- | Profile of the core language fragment that can be converted
---   directly to the Sea language.
+-- | Profile for the SeaOutput fragment.
 outputProfile :: Profile Name 
 outputProfile
         = Profile
@@ -24,6 +24,7 @@ outputProfile
         , profilePrimTypes      = primTypeEnv }
 
 
+-- | The SeaOutput fragment doesn't support many features of Disciple Core.
 outputFeatures :: Features
 outputFeatures = zeroFeatures
 

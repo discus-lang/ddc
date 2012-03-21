@@ -1,4 +1,9 @@
 
+-- | Things that can go wrong when converting the SeaOutput fragment 
+--   of Disciple-Core to real C-code.
+--
+--   If we get any of these then the program doesn't map onto the 
+--   features of the C-language.
 module DDC.Core.Sea.Output.Error
         (Error(..))
 where
@@ -7,7 +12,8 @@ import DDC.Core.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
 
-
+-- | Things that can go wrong when converting the Sea fragment
+--   to real C-code.
 data Error a
         -- Modules must contain a top-level letrec.
         = ErrorNoTopLevelLetrec
