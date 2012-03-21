@@ -10,7 +10,6 @@ module DDC.Core.Llvm.LlvmM
         , newUniqueVar
         , newUniqueNamedVar
         , newUniqueLabel
-        , newUniqueBlockId
 
           -- * Platform Specific
         , getPrimVarM
@@ -56,7 +55,7 @@ llvmStateInit platform prims
 
 -- Unique ---------------------------------------------------------------------
 -- | Unique name generation.
-newUnique :: LlvmM Unique
+newUnique :: LlvmM Int
 newUnique 
  = do   s       <- get
         let u   = llvmStateUnique s
@@ -68,27 +67,22 @@ newUnique
 newUniqueVar :: Type -> LlvmM Var
 newUniqueVar t
  = do   u <- newUnique
-        return $ VarLocal ("_v" ++ show u) t
+        return $ Var (NameLocal ("_v" ++ show u)) t
 
 
 -- | Generate a new unique named register variable with the specified `LlvmType`.
 newUniqueNamedVar :: String -> Type -> LlvmM Var
 newUniqueNamedVar name t
  = do   u <- newUnique 
-        return $ VarLocal ("_v" ++ show u ++ "_" ++ name) t
+        return $ Var (NameLocal ("_v" ++ show u ++ "_" ++ name)) t
 
 
 -- | Generate a new unique label.
-newUniqueLabel :: String -> LlvmM Var
+newUniqueLabel :: String -> LlvmM Label
 newUniqueLabel name
  = do   u <- newUnique
-        return $ VarLocal ("_l" ++ show u ++ "_" ++ name) TLabel
+        return $ Label ("l" ++ show u ++ "." ++ name)
 
-
--- | Generate a new unique blockid.
-newUniqueBlockId :: LlvmM BlockId
- = do   u <- newUnique
-        return   $ BlockId u
 
 
 -- Platform Specific ----------------------------------------------------------

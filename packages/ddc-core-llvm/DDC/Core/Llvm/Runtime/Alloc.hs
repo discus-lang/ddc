@@ -6,7 +6,7 @@ module DDC.Core.Llvm.Runtime.Alloc
 where
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
-import DDC.Llvm.Var
+import DDC.Llvm.Exp
 import DDC.Llvm.Instr
 import Control.Monad.State.Strict
 import Data.Sequence            (Seq, (<|))
@@ -18,11 +18,12 @@ import qualified Data.Sequence  as Seq
 allocBytes :: Var -> Integer -> LlvmM (Seq Instr)
 allocBytes vObj bytes
  = do   platform        <- gets llvmStatePlatform
-        vMalloc         <- getPrimVarM "malloc"
+        Var nMalloc _   <- getPrimVarM "malloc"
         let bytes'      = roundUpBytes (platformHeapAlignBytes platform) bytes
+        let tResult     = typeOfVar vObj
         return  $ Seq.fromList
                 [ IComment ["allocBytes " ++ show bytes]
-                , ICall vObj StdCall vMalloc [litNat platform bytes'] []]
+                , ICall vObj CallTypeStd tResult nMalloc [XLit $ litNat platform bytes'] []]
 
 
 -- | Allocate a DataRaw object.
@@ -71,6 +72,10 @@ roundUpBytes align n
         = n + (align - mod n align)
 
 
-litNat :: Platform -> Integer -> Var
+litNat :: Platform -> Integer -> Lit
 litNat platform i
-        = VarLit $ LMIntLit (fromIntegral i) (TInt (8 * platformAddrBytes platform))
+        = LitInt (TInt (8 * platformAddrBytes platform))
+                 (fromIntegral i) 
+
+
+

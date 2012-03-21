@@ -112,15 +112,15 @@ instance Pretty TypeAlias where
 -- Type -------------------------------------------------------------------------------------------
 -- | Llvm Types.
 data Type
-        = TInt          Integer         -- ^ An integer with a given width in bits.
+        = TVoid                         -- ^ Void type
+        | TInt          Integer         -- ^ An integer with a given width in bits.
         | TFloat                        -- ^ 32 bit floating point
         | TDouble                       -- ^ 64 bit floating point
         | TFloat80                      -- ^ 80 bit (x86 only) floating point
         | TFloat128                     -- ^ 128 bit floating point
+        | TLabel                        -- ^ A 'LlvmVar' can represent a label (address)
         | TPointer      Type            -- ^ A pointer to a 'LlvmType'
         | TArray        Integer Type    -- ^ An array of 'LlvmType'
-        | TLabel                        -- ^ A 'LlvmVar' can represent a label (address)
-        | TVoid                         -- ^ Void type
         | TStruct       [Type]          -- ^ Structure type
         | TAlias        TypeAlias       -- ^ A type alias
         | TFunction     FunctionDecl    -- ^ Function type, used to create pointers to functions
@@ -130,16 +130,20 @@ data Type
 instance Pretty Type where
  ppr lt
   = case lt of
+        TVoid          -> text "void"
         TInt size      -> text "i" <> integer size
         TFloat         -> text "float"
         TDouble        -> text "double"
         TFloat80       -> text "x86_fp80"
         TFloat128      -> text "fp128"
-        TPointer x     -> ppr x <> text "*"
-        TArray nr tp   -> brackets (integer nr <> text " x " <> ppr tp)
         TLabel         -> text "label"
-        TVoid          -> text "void"
-        TStruct tys    -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
+        TPointer x     -> ppr x <> text "*"
+
+        TStruct tys
+         -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
+
+        TArray nr tp
+         -> brackets (integer nr <> text " x " <> ppr tp)
 
         TAlias (TypeAlias s _)  
          -> text "%" <> text s

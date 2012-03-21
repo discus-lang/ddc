@@ -1,29 +1,30 @@
 
 module DDC.Llvm.Instr
-        ( module DDC.Llvm.Prim
+        ( module DDC.Llvm.Exp
         , module DDC.Llvm.Type
-        , module DDC.Llvm.Var
-        , BlockId       (..)
+        , module DDC.Llvm.Prim
+        , Label         (..)
         , Block         (..)
-        , Instr         (..)
-        , CallType      (..))
+        , Index         (..)
+        , CallType      (..)
+        , Instr         (..))
 where
 import DDC.Llvm.Prim
 import DDC.Llvm.Type
-import DDC.Llvm.Var
+import DDC.Llvm.Exp
 import DDC.Base.Pretty
 import Data.Sequence            (Seq)
 import qualified Data.Foldable  as Seq
 
--- BlockId --------------------------------------------------------------------
--- | Block labels
-data BlockId 
-        = BlockId Unique
+
+-- Label ----------------------------------------------------------------------
+-- | Block labels.
+data Label
+        = Label String
         deriving (Eq, Show)
 
-instance Pretty BlockId where
- ppr (BlockId i)
-        = text "block" <> int i
+instance Pretty Label where
+ ppr (Label str)        = text str
 
 
 -- Block ----------------------------------------------------------------------
@@ -31,7 +32,7 @@ instance Pretty BlockId where
 data Block 
         = Block 
         { -- | The code label for this block
-          blockId       :: BlockId
+          blockLabel    :: Label
 
           -- | A list of LlvmStatement's representing the code for this block.
           -- This list must end with a control flow statement.
@@ -40,9 +41,41 @@ data Block
 
 
 instance Pretty Block where
- ppr (Block blockId instrs)
-        =    ppr blockId <> colon
+ ppr (Block label instrs)
+        =    ppr label <> colon
         <$$> indent 8 (vcat $ map ppr $ Seq.toList instrs)
+
+
+-- Index ----------------------------------------------------------------------
+-- | Index for the GetElemPtr instruction
+data Index
+        = Index 
+        { indexBits     :: Int          -- ^ Width of index value.
+        , indexValue    :: Integer  }   -- ^ Index value.
+        deriving (Eq, Show)
+
+
+instance Pretty Index where
+ ppr (Index bits value)
+        = text "i" <> int bits <+> integer value
+
+
+-- CallType -------------------------------------------------------------------
+-- | Different types to call a function.
+data CallType
+        -- | Normal call, allocate a new stack frame.
+        = CallTypeStd
+
+        -- | Tail call, perform the call in the current stack frame.
+        | CallTypeTail
+        deriving (Eq,Show)
+
+
+instance Pretty CallType where
+ ppr ct
+  = case ct of
+        CallTypeStd     -> empty
+        CallTypeTail    -> text "tail"
 
 
 -- Instr ----------------------------------------------------------------------
@@ -51,44 +84,45 @@ data Instr
         -- | Comment meta-instruction.
         = IComment      [String]
 
+        -- | Set meta instruction v1 = value.
+        | ISet          Var     Exp
 
         -- Terminator Instructions ------------------------
         -- | Return a result.
-        | IReturn       (Maybe Value)
+        | IReturn       (Maybe Exp)
 
         -- | Unconditional branch to the target label.
-        | IBranch       Var
+        | IBranch       Label
 
         -- | Conditional branch.
-        | IBranchIf     Var     Var     Var
+        | IBranchIf     Exp     Label   Label
 
         -- | Mutliway branch.
-        --   Contains the scrutinee, default label if there is no match, and a list
-        --   of alternatives. If the scrutinee matches the first var then jump 
-        --   to the label in the second.
-        | ISwitch       Var     Var     [(Var, Var)]
+        --   If scruitniee matches one of the literals in the list then jump
+        --   to the corresponding label, otherwise jump to the default.
+        | ISwitch       Exp     Label   [(Lit, Label)]
 
-        -- | This instruction is used to inform the optimizer that a particular
-        --   portion of the code is not reachable.   
+        -- | Informs the optimizer that instructions after this point are unreachable.
         | IUnreachable
 
 
         -- Binary Operations ------------------------------
-        | IOp           Var     Op      Var     Var
+        | IOp           Var     Op      Exp     Exp
 
 
         -- Conversion Operations --------------------------
         -- | Cast the variable from to the to type. This is an abstraction of three
         --   cast operators in Llvm, inttoptr, prttoint and bitcast.
-        | IConv         Var     Conv    Var     Type
+        | IConv         Var     Conv    Exp
 
 
         -- Memory Access and Addressing -------------------
         -- | Load a value from memory.
-        | ILoad         Var     Ptr
+        | ILoad         Var     Exp
 
         -- | Store a value to memory.
-        | IStore        Value   Ptr
+        --   First expression gives the destination pointer.
+        | IStore        Exp     Exp
 
         -- | Navigate in an structure, selecting elements.
         --      
@@ -97,52 +131,36 @@ data Instr
         --   * location: Location of the structure.
         --
         --   * indices:  A list of indices to select the final value.
-        | XGetElemPtr   Var     Bool    Var     [Var]
+        | XGetElemPtr   Var     Bool    Exp     [Index]
 
 
         -- Other Operations -------------------------------
         -- | Integer comparison.
-        | IICmp         Var     ICond   Var     Var
+        | IICmp         Var     ICond   Exp     Exp
 
         -- | Floating-point comparison.
-        | IFCmp         Var     FCond   Var     Var
+        | IFCmp         Var     FCond   Exp     Exp
 
 
         -- | Call a function. 
-        --
-        --   * tailJumps: CallType to signal if the function should be tail called.
-        --
-        --   * fnptrval:  An LLVM value containing a pointer to a function to be invoked.
-        --
-        --   * args:      Arguments for the parameters.
-        --
-        --   * attrs:     A list of function attributes for the call. 
-        --                Only NoReturn, NoUnwind, ReadOnly and ReadNone are valid here.
-        | ICall         Var     CallType Ptr [Var] [FuncAttr]
+        --   Only NoReturn, NoUnwind and ReadNone attributes are valid.
+        | ICall         Var     CallType Type Name [Exp] [FuncAttr]
         deriving (Show, Eq)
 
 
--- | Different types to call a function.
-data CallType
-        -- | Normal call, allocate a new stack frame.
-        = StdCall
-
-        -- | Tail call, perform the call in the current stack frame.
-        | TailCall
-        deriving (Eq,Show)
-
-instance Pretty CallType where
- ppr ct
-  = case ct of
-        StdCall         -> empty
-        TailCall        -> text "tail"
 
 
 instance Pretty Instr where
  ppr ii
   = case ii of
-        -- | Comment meta-instruction
-        IComment strs           -> vcat $ map (semi <+>) $ map text strs
+        -- Meta-instructions -------------------------------
+        IComment strs           
+         -> vcat $ map (semi <+>) $ map text strs
+
+        ISet dst val
+         -> hsep [ fill 12 (ppr $ nameOfVar dst)
+                 , equals
+                 , ppr val ]
 
         -- Terminator Instructions ------------------------
         IReturn Nothing         
@@ -165,18 +183,24 @@ instance Pretty Instr where
 
         -- Binary Operations ------------------------------
         IOp dst op v1 v2
-         -> hcat [ fill 20 (ppr dst)
+         -> hcat [ fill 12 (ppr $ nameOfVar dst)
                  , equals
                  , ppr op, ppr v1, comma, ppr v2]
 
 
         -- Other operations -------------------------------
-        ICall dst callType vFun vsArgs attrs
-         -> hsep [ fill 20 (ppr dst)
+        ICall dst callType tResult name xsArgs attrs
+         -> let call'
+                 = case callType of
+                        CallTypeTail    -> text "tail call"
+                        _               -> text "call"
+            in  hsep 
+                 [ fill 12 (ppr $ nameOfVar dst)
                  , equals
-                 , ppr callType, text "call"
-                 , text (nameOfVar vFun)
-                 , encloseSep lparen rparen (comma <> space) (map ppr vsArgs)
+                 , call'
+                 , ppr tResult
+                 , ppr name
+                 , encloseSep lparen rparen (comma <> space) (map ppr xsArgs)
                  , hsep $ map ppr attrs ]
 
         _ -> text "INSTR" <> text (show ii)

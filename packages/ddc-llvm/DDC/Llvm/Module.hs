@@ -10,7 +10,7 @@ module DDC.Llvm.Module
         , typeOfStatic)
 where
 import DDC.Llvm.Function
-import DDC.Llvm.Var
+import DDC.Llvm.Exp
 import DDC.Base.Pretty
 
 

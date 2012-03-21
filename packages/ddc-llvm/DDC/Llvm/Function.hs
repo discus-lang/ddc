@@ -1,9 +1,21 @@
 
 module DDC.Llvm.Function
-        ( Function  (..))
+        ( Section   (..)
+        , Function  (..))
 where
 import DDC.Llvm.Instr
 import DDC.Base.Pretty
+
+
+-- Section --------------------------------------------------------------------
+-- | The section name to put the function in.
+data Section
+        -- | Let the LLVM decide what section to put this in.
+        = SectionAuto
+
+        -- | Put it in this specific section.
+        | SectionSpecific String
+        deriving (Eq, Show)
 
 
 -- Function -------------------------------------------------------------------
