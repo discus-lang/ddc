@@ -14,12 +14,15 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Core.Compounds
 import DDC.Core.Sea.Output.Name
 import DDC.Type.Compounds
+import Data.Sequence                            (Seq, (|>), (><))
 import Data.Map                                 (Map)
 import qualified DDC.Core.Sea.Output.Env        as E
 import qualified DDC.Base.Pretty                as P
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Map                       as Map
+import qualified Data.Sequence                  as Seq
+import qualified Data.Foldable                  as Seq
 import Control.Monad.State.Strict               (evalState)
 import Control.Monad.State.Strict               (gets)
 
@@ -89,14 +92,14 @@ llvmFunctionOfSuper (C.BName n tSuper) x
                 , declAlign              = align }
 
         blockId <- newUniqueBlockId
-        blocks  <- llvmBlocksOfBody [] blockId [] xBody
+        blocks  <- llvmBlocksOfBody Seq.empty blockId Seq.empty xBody
 
         return  $ Function
                 { functionDecl           = decl
                 , functionParams         = map llvmNameOfParam bsParam
                 , functionAttrs          = [] 
                 , functionSection        = SectionAuto
-                , functionBlocks         = blocks }
+                , functionBlocks         = Seq.toList blocks }
 
 llvmFunctionOfSuper _ _
         = die "invalid super"
@@ -112,11 +115,11 @@ llvmNameOfParam bb
 
 -- Body -----------------------------------------------------------------------
 llvmBlocksOfBody 
-        :: [Block]              -- ^ Previous blocks.
+        :: Seq Block            -- ^ Previous blocks.
         -> BlockId              -- ^ Id of current block.
-        -> [Instr]              -- ^ Instrs in current block.
+        -> Seq Instr            -- ^ Instrs in current block.
         -> C.Exp () Name        -- ^ Expression being converted.
-        -> LlvmM [Block]        -- ^ Final blocks of function body.
+        -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
 llvmBlocksOfBody blocks blockId instrs xx
  = do   platform        <- gets llvmStatePlatform
@@ -128,20 +131,20 @@ llvmBlocksOfBody blocks blockId instrs xx
           ,  PrimControl PrimControlReturn <- p
           ,  [C.XType t, x]                <- xs
           ,  Just v                        <- takeVarOfTypedExp platform t x
-          -> return  $  blocks 
-                     ++ [Block blockId (reverse instrs ++ [IReturn (Just v)])]
+          -> return  $   blocks 
+                     |>  Block blockId (instrs |> IReturn (Just v))
 
          -- Variable assignment.
          C.XLet _ (C.LLet C.LetStrict (C.BName (NameVar str) t) x1) x2
           -> do t'       <- convTypeM t
                 let dst  = VarLocal str t'
                 instrs'  <- llvmGetResult dst x1
-                llvmBlocksOfBody blocks blockId (instrs' ++ instrs) x2
+                llvmBlocksOfBody blocks blockId (instrs >< instrs') x2
 
 
          -- TODO: Debugging only
          _ -> return $  blocks
-                     ++ [Block blockId (reverse instrs ++ [IUnreachable])]
+                     |> Block blockId (instrs |> IUnreachable)
 
          -- die "invalid body statement"
 
@@ -158,22 +161,28 @@ takeVarOfTypedExp platform t xx
 llvmGetResult
         :: Var  
         -> C.Exp () Name
-        -> LlvmM [Instr]
+        -> LlvmM (Seq Instr)
 
 llvmGetResult dst (C.XVar _ (C.UName (NameVar str) t))
  = do   t'      <- convTypeM t
-        return  [ IStore dst (VarLocal str t') ]
+        return  $ Seq.singleton $ IStore dst (VarLocal str t')
 
 llvmGetResult dst xx@C.XApp{}
         | Just (NamePrim p, args)      <- takeXPrimApps xx
         = convPrimCallM dst p args
 
 llvmGetResult _ _
- = return []
+ = return Seq.empty
 
 
 -- | Convert a primitive call to LLVM.
-convPrimCallM :: Show a => Var -> Prim -> [C.Exp a Name] -> LlvmM [Instr]
+convPrimCallM 
+        :: Show a 
+        => Var 
+        -> Prim 
+        -> [C.Exp a Name] 
+        -> LlvmM (Seq Instr)
+
 convPrimCallM dst p xs
  = case p of
         PrimStore (PrimStoreAllocData PrimStoreLayoutRaw)
@@ -182,7 +191,7 @@ convPrimCallM dst p xs
          , Just size            <- takeLitNat xSize
          -> allocDataRaw dst tag size
 
-        _ -> return [] -- die $ "convPrimCallM: cannot convert " ++ show (p, xs)
+        _ -> return Seq.empty -- die $ "convPrimCallM: cannot convert " ++ show (p, xs)
 
 
 {-

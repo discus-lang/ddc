@@ -1,7 +1,9 @@
 
 module DDC.Llvm.Type
-        ( -- * Function Declarations.
-          FunctionDecl  (..)
+        ( module DDC.Llvm.Attr
+
+          -- * Function Declarations.
+        , FunctionDecl  (..)
         , ParamListType (..)
         , Param         (..)
         , Align         (..)

@@ -12,7 +12,8 @@ import DDC.Llvm.Prim
 import DDC.Llvm.Type
 import DDC.Llvm.Var
 import DDC.Base.Pretty
-
+import Data.Sequence            (Seq)
+import qualified Data.Foldable  as Seq
 
 -- BlockId --------------------------------------------------------------------
 -- | Block labels
@@ -34,14 +35,14 @@ data Block
 
           -- | A list of LlvmStatement's representing the code for this block.
           -- This list must end with a control flow statement.
-        , blockStmts    :: [Instr]
+        , blockStmts    :: Seq Instr
         }
 
 
 instance Pretty Block where
  ppr (Block blockId instrs)
         =    ppr blockId <> colon
-        <$$> indent 8 (vcat $ map ppr instrs)
+        <$$> indent 8 (vcat $ map ppr $ Seq.toList instrs)
 
 
 -- Instr ----------------------------------------------------------------------
@@ -142,16 +143,16 @@ instance Pretty Instr where
          -> text "ret void"
 
         IReturn (Just value)    
-         -> text "ret" <+> ppr (typeOfVar value) <+> ppr value
+         -> text "ret" <+> ppr value
 
         IBranch label
-         -> text "br label" <+> ppr label
+         -> text "br"  <+> ppr label
 
         IBranchIf cond labelTrue labelFalse
          -> hsep [ text "br"
-                 , text "i1",    ppr cond,      comma
-                 , text "label", ppr labelTrue, comma
-                 , text "label", ppr labelFalse ]
+                 , ppr cond,      comma
+                 , ppr labelTrue, comma
+                 , ppr labelFalse ]
 
         IUnreachable
          -> text "unreachable"
