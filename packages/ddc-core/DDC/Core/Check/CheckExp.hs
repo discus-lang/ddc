@@ -161,13 +161,13 @@ checkExpM' _defs _kenv tenv (XVar a u)
              = return tBound
         
         tResult  <- mkResult
+        let u'  = replaceTypeOfBound tResult u
 
-        return  ( XVar a u 
+        return  ( XVar a u'
                 , tResult
                 , Sum.empty kEffect
                 , Set.singleton 
-                        $ taggedClosureOfValBound 
-                        $ replaceTypeOfBound tResult u)
+                        $ taggedClosureOfValBound u')
 
 
 -- constructors ---------------------------------

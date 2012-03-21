@@ -138,7 +138,7 @@ llvmBlocksOfBody blocks blockId instrs xx
          C.XLet _ (C.LLet C.LetStrict (C.BName (NameVar str) t) x1) x2
           -> do t'       <- convTypeM t
                 let dst  = VarLocal str t'
-                instrs'  <- llvmGetResult dst x1
+                instrs'  <- llvmGetResult platform dst x1
                 llvmBlocksOfBody blocks blockId (instrs >< instrs') x2
 
 
@@ -159,20 +159,31 @@ takeVarOfTypedExp platform t xx
 
 -- Exp ------------------------------------------------------------------------
 llvmGetResult
-        :: Var  
+        :: Platform
+        -> Var  
         -> C.Exp () Name
         -> LlvmM (Seq Instr)
 
-llvmGetResult dst (C.XVar _ (C.UName (NameVar str) t))
+llvmGetResult _  dst (C.XVar _ (C.UName (NameVar str) t))
  = do   t'      <- convTypeM t
         return  $ Seq.singleton $ IStore dst (VarLocal str t')
 
-llvmGetResult dst xx@C.XApp{}
-        | Just (NamePrim p, args)      <- takeXPrimApps xx
+llvmGetResult pp dst xx@C.XApp{}
+        -- Primitive operation.
+        | Just (NamePrim p, args)       <- takeXPrimApps xx
         = convPrimCallM dst p args
 
-llvmGetResult _ _
- = return Seq.empty
+        -- Super call.
+        | (xFun : xsArgs) <- takeXApps xx
+        , Just vFun       <- takeVar pp xFun
+        , Just vsArgs     <- sequence $ map (takeVar pp) xsArgs
+        = return 
+                $ Seq.singleton
+                $ ICall dst StdCall vFun vsArgs []
+
+llvmGetResult _ _ xx
+        = return $ Seq.singleton 
+        $ IComment [ "llvmGetResult: cannot convert " ++ show xx ]
 
 
 -- | Convert a primitive call to LLVM.
@@ -191,16 +202,19 @@ convPrimCallM dst p xs
          , Just size            <- takeLitNat xSize
          -> allocDataRaw dst tag size
 
-        _ -> return Seq.empty -- die $ "convPrimCallM: cannot convert " ++ show (p, xs)
 
 
-{-
-takeVar :: Platform -> C.Exp a Name -> Var
+        _ -> return $ Seq.singleton 
+          $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+
+
+takeVar :: Platform -> C.Exp a Name -> Maybe Var
 takeVar pp xx
  = case xx of
         C.XVar _ (C.UName (NameVar str) t)
-         -> VarLocal str (convType pp t)
--}
+          -> Just $ VarLocal str (convType pp t)
+        _ -> Nothing
+
 
 takeLitTag :: C.Exp a Name -> Maybe Integer
 takeLitTag xx

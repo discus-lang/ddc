@@ -131,6 +131,12 @@ data CallType
         | TailCall
         deriving (Eq,Show)
 
+instance Pretty CallType where
+ ppr ct
+  = case ct of
+        StdCall         -> empty
+        TailCall        -> text "tail"
+
 
 instance Pretty Instr where
  ppr ii
@@ -159,9 +165,19 @@ instance Pretty Instr where
 
         -- Binary Operations ------------------------------
         IOp dst op v1 v2
-         -> hcat [ fill 12 (ppr dst)
+         -> hcat [ fill 20 (ppr dst)
                  , equals
                  , ppr op, ppr v1, comma, ppr v2]
+
+
+        -- Other operations -------------------------------
+        ICall dst callType vFun vsArgs attrs
+         -> hsep [ fill 20 (ppr dst)
+                 , equals
+                 , ppr callType, text "call"
+                 , text (nameOfVar vFun)
+                 , encloseSep lparen rparen (comma <> space) (map ppr vsArgs)
+                 , hsep $ map ppr attrs ]
 
         _ -> text "INSTR" <> text (show ii)
 

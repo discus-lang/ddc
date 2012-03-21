@@ -15,6 +15,7 @@ module DDC.Llvm.Var
 
         , isGlobal
         , linkageOfVar
+        , nameOfVar
         , typeOfVar
 
           -- * Literals

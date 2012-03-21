@@ -109,7 +109,7 @@ sObj platform   = TStruct [TInt (platformHeaderBytes platform * 8)]
 tObj platform   = TAlias (aObj platform)
 
 aObj :: Platform -> TypeAlias
-aObj platform   = TypeAlias "struct.Obj" (sObj platform)
+aObj platform   = TypeAlias "s.Obj" (sObj platform)
 
 
 -- | Alias for pointer type.

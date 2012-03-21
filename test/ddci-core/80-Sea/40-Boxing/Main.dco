@@ -44,7 +44,8 @@ boxInt32 (x : Int32#) : Ptr# Obj
 
 
 unboxInt32 (x : Ptr# Obj) : Int32#
- = do { r       = read# [Int32#] (fieldRaw# [Int32#] 0 x);
+ = do { p       = fieldRaw# [Int32#] 0 x;
+        r       = read# [Int32#] p;
         return# [Int32#] r;
       };
 
@@ -58,10 +59,14 @@ fac (x: Ptr# Obj) : Ptr# Obj
       };
 
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
- = do { x       = boxInt32 (i32# 10);
+ = do { i       = i32# 10;
+        x       = boxInt32 i;
         x2      = fac x;
-        str     = showInt32# (unboxInt32 x2);
-        _       = putStrLn# str;
-        return# [Int32#] (i32# 0);
+        x2'     = unboxInt32 x2;
+        str     = showInt32# x2';
+        putStrLn# str;
+
+        i0      = i32# 0;
+        return# [Int32#] i0;
       };
 }
