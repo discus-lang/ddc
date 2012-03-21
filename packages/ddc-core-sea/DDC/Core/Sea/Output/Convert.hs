@@ -9,7 +9,7 @@ import DDC.Type.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty
-import DDC.Type.Check.Monad             (result)
+import DDC.Type.Check.Monad             (throw, result)
 import qualified DDC.Type.Check.Monad   as G
 
 
@@ -32,7 +32,7 @@ convModuleM mm@(ModuleCore{})
                 return  $ vcat supers'
 
         | otherwise
-        = error "module must contain top-level letrecs"
+        = throw $ ErrorNoTopLevelLetrec mm
 
 
 -- Type -----------------------------------------------------------------------
@@ -51,7 +51,7 @@ convTypeM tt
         TCon (TyConBound (UPrim NameObjTyCon _))
            ->   return  $ text "Obj"
 
-        _  -> error "invalid type"
+        _  -> throw $ ErrorTypeInvalid tt
 
 
 -- | Convert a primitive type constructor to C source text.
@@ -90,7 +90,7 @@ convSuperM b x
                          <> line ]
 
  | otherwise    
- = error "invalid top-level declaration"
+ = throw $ ErrorFunctionInvalid x
 
 
 -- | Convert a function parameter binding to C source text.
@@ -99,7 +99,8 @@ convBind (BName (NameVar str) t)
  = do   t'      <- convTypeM t
         return  $ text str <+> t'
 
-convBind _ = error "invalid function parameter"
+convBind b 
+ = throw $ ErrorParameterInvalid b
 
 
 -- Super body -----------------------------------------------------------------
@@ -113,7 +114,7 @@ convBodyM xx
          -> case takeXPrimApps xx of
              Just (NamePrim p, xs)
               | isControlPrim p -> convPrimCallM p xs
-             _                  -> error "body must pass control"
+             _                  -> throw $ ErrorBodyInvalid xx
 
         -- Variable assignment.
         XLet _ (LLet LetStrict (BName (NameVar n) t) x1) x2
@@ -178,8 +179,7 @@ convBodyM xx
                         , lbrace <> indent 1 (vcat alts')
                         , rbrace ]
 
-        _ -> error "invalid function body"
-
+        _ -> throw $ ErrorBodyMustPassControl xx
 
 -- | Check whether this primop passes control.
 isControlPrim :: Prim -> Bool
@@ -222,9 +222,9 @@ convStmtM xx
                         return  $ op' <+> parenss xs'
 
 
-              _ -> error $ "invalid stmt prim"
+              _ -> throw $ ErrorStmtInvalid xx
 
-        _ -> error "invalid stmt"
+        _ -> throw $ ErrorStmtInvalid xx
 
 
 -- Alt ------------------------------------------------------------------------
@@ -246,7 +246,8 @@ convAltM aa
                                  <> line
                                  <> rbrace]
 
-        AAlt{} -> error "invalid alternative"
+        AAlt{} -> throw $ ErrorAltInvalid aa
+
 
 convDaConName :: Name -> Maybe Doc
 convDaConName nn
@@ -291,7 +292,7 @@ convRValueM xx
 
                 return  $ text str <+> parenss args'
 
-        _ -> error "invalid rvalue"
+        _ -> throw $ ErrorRValueInvalid xx
 
 
 -- PrimCalls ------------------------------------------------------------------

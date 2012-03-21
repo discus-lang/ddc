@@ -13,12 +13,18 @@ data Error a
         = ErrorNoTopLevelLetrec
         { errorModule   :: Module a Name }
 
-        -- Function definitions -------
+        -- | An invalid type.
+        | ErrorTypeInvalid 
+        { errorType     :: Type Name }
+
         -- | An invalid function definition.
         | ErrorFunctionInvalid
         { errorExp      :: Exp a Name }
 
-        -- Function bodies ------------
+        -- | An invalid function parameter.
+        | ErrorParameterInvalid
+        { errorBind     :: Bind Name }
+
         -- | An invalid function body.
         | ErrorBodyInvalid
         { errorExp      :: Exp a Name }
@@ -27,15 +33,26 @@ data Error a
         | ErrorBodyMustPassControl
         { errorExp      :: Exp a Name }
 
-        -- RValues --------------------
+        -- | An invalid statement.
+        | ErrorStmtInvalid
+        { errorExp      :: Exp a Name }
+
+        -- | An invalid alternative.
+        | ErrorAltInvalid
+        { errorAlt      :: Alt a Name }
+
         -- | An invalid RValue.
         | ErrorRValueInvalid
         { errorExp      :: Exp a Name }
 
-        -- Function arguments ---------
-        -- | An invalid functino argument.
+        -- | An invalid function argument.
         | ErrorArgInvalid
         { errorExp      :: Exp a Name }
+
+        -- | An invalid primitive call
+        | ErrorPrimCallInvalid
+        { errorPrim     :: Prim
+        , errorArgs     :: [Exp a Name]}
 
 
 instance (Show a, Pretty a) => Pretty (Error a) where
@@ -47,10 +64,20 @@ instance (Show a, Pretty a) => Pretty (Error a) where
 --                 , text "with:"                         <> align (ppr mm) ]
                 -- TODO: need pretty printer for modules.
 
+        ErrorTypeInvalid xx
+         -> vcat [ text "Invalid type definition."
+                 , empty
+                 , text "with:"                                 <+> align (ppr xx) ]
+
         ErrorFunctionInvalid xx
          -> vcat [ text "Invalid function definition."
                  , empty
                  , text "with:"                                 <+> align (ppr xx) ]
+
+        ErrorParameterInvalid b
+         -> vcat [ text "Invalid function parameter."
+                 , empty
+                 , text "with:"                                 <+> align (ppr b) ]
 
         ErrorBodyInvalid xx
          -> vcat [ text "Invalid function body."
@@ -63,6 +90,16 @@ instance (Show a, Pretty a) => Pretty (Error a) where
                  , empty
                  , text "this isn't one: "                      <+> align (ppr xx) ]
 
+        ErrorStmtInvalid xx
+         -> vcat [ text "Invalid statement."
+                 , empty
+                 , text "with:"                                 <+> align (ppr xx) ]
+
+        ErrorAltInvalid xx
+         -> vcat [ text "Invalid case-alternative."
+                 , empty
+                 , text "with:"                                 <+> align (ppr xx) ]
+
         ErrorRValueInvalid xx
          -> vcat [ text "Invalid R-value."
                  , empty
@@ -72,3 +109,8 @@ instance (Show a, Pretty a) => Pretty (Error a) where
          -> vcat [ text "Invalid argument."
                  , empty
                  , text "with:"                                 <+> align (ppr xx) ]
+
+        ErrorPrimCallInvalid p xs
+         -> vcat [ text "Invalid primCall."
+                 , text "   primitive: "                        <+> align (ppr p)
+                 , text "        args:  "                       <+> align (ppr xs) ]
