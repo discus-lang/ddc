@@ -37,6 +37,10 @@ data Error a
         | ErrorStmtInvalid
         { errorExp      :: Exp a Name }
 
+        -- | Cannot discard non-void return value.
+        | ErrorStmtNoDiscard
+        { errorExp      :: Exp a Name }
+
         -- | An invalid alternative.
         | ErrorAltInvalid
         { errorAlt      :: Alt a Name }
@@ -92,6 +96,11 @@ instance (Show a, Pretty a) => Pretty (Error a) where
 
         ErrorStmtInvalid xx
          -> vcat [ text "Invalid statement."
+                 , empty
+                 , text "with:"                                 <+> align (ppr xx) ]
+
+        ErrorStmtNoDiscard xx
+         -> vcat [ text "Cannot discard non-void return value."
                  , empty
                  , text "with:"                                 <+> align (ppr xx) ]
 

@@ -8,7 +8,7 @@ Undefined variable: foo#
 
 
 -- Error: Module does not have a top-level letrec.
-Fragment violation in SeaOut module.
+Sea fragment violation.
   Module does not have a top-level letrec.
   
 
@@ -22,8 +22,8 @@ int32_t foo (int32_t x)
 
 
 -- Error: Function does not pass control.
-Fragment violation in SeaOut module.
-  Invalid function definition.
+Sea fragment violation.
+  Invalid function body.
   
   with: x
 
@@ -31,14 +31,14 @@ Fragment violation in SeaOut module.
 -- Ok: Statements in function.
 int32_t foo (int32_t x)
 {
-        int32_t y    = x + x;
+        int32_t y    = (x + x);
         return y;
 }
 
 
 
 -- Error: Function does not pass control
-Fragment violation in SeaOut module.
+Sea fragment violation.
   The final statement in a function must pass control
     You need an explicit return# or fail#.
   
@@ -46,7 +46,7 @@ Fragment violation in SeaOut module.
 
 
 -- Error: Function does not pass control
-Fragment violation in SeaOut module.
+Sea fragment violation.
   Invalid function body.
   
   with: True#
@@ -55,7 +55,7 @@ Fragment violation in SeaOut module.
 -- Ok: Function explicitly fails.
 int32_t foo (int32_t x)
 {
-        int32_t y    = x + x;
+        int32_t y    = (x + x);
         _fail();
 }
 
@@ -80,15 +80,15 @@ nat_t foo (nat_t x)
 
 
 -- Error: assignment from primop.
-Fragment violation in SeaOut module.
-  Invalid R-value.
+Sea fragment violation.
+  Invalid type definition.
   
-  with: add#
+  with: [^ : *].^0 -> ^0 -> ^0
 
 
 -- Error: cannot discard non-void return value.
-Fragment violation in SeaOut module.
-  Invalid function body.
+Sea fragment violation.
+  Cannot discard non-void return value.
   
   with: let _ : Int32# = x in
         return# [Int32#] x

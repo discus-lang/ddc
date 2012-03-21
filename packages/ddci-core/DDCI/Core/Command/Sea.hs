@@ -37,8 +37,7 @@ cmdSeaOut state lineStart str
                  Left err
                   -> putStrLn
                    $ renderIndent
-                   $ vcat  [ text "Fragment violation."
-                           , text "  Program uses language features that have no C equivalent."
+                   $ vcat  [ text "Sea fragment violation."
                            , indent 2 (ppr err) ]
 
                  Right doc

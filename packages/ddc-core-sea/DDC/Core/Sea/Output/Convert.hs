@@ -97,7 +97,7 @@ convSuperM b x
 convBind :: Bind Name -> ConvertM a Doc
 convBind (BName (NameVar str) t)
  = do   t'      <- convTypeM t
-        return  $ text str <+> t'
+        return  $ t' <+> text str
 
 convBind b 
  = throw $ ErrorParameterInvalid b
@@ -114,7 +114,7 @@ convBodyM xx
          -> case takeXPrimApps xx of
              Just (NamePrim p, xs)
               | isControlPrim p -> convPrimCallM p xs
-             _                  -> throw $ ErrorBodyInvalid xx
+             _                  -> throw $ ErrorBodyMustPassControl xx
 
         -- Variable assignment.
         XLet _ (LLet LetStrict (BName (NameVar n) t) x1) x2
@@ -136,6 +136,9 @@ convBodyM xx
                 return  $ vcat
                         [ x1' <> semi
                         , x2' ]
+
+         |  otherwise
+         -> throw $ ErrorStmtNoDiscard xx
 
         -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
@@ -179,7 +182,7 @@ convBodyM xx
                         , lbrace <> indent 1 (vcat alts')
                         , rbrace ]
 
-        _ -> throw $ ErrorBodyMustPassControl xx
+        _ -> throw $ ErrorBodyInvalid xx
 
 -- | Check whether this primop passes control.
 isControlPrim :: Prim -> Bool
