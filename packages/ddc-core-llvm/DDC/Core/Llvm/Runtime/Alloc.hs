@@ -23,7 +23,7 @@ allocBytes vObj bytes
         let tResult     = typeOfVar vObj
         return  $ Seq.fromList
                 [ IComment ["allocBytes " ++ show bytes]
-                , ICall vObj CallTypeStd tResult nMalloc [XLit $ litNat platform bytes'] []]
+                , ICall (Just vObj) CallTypeStd tResult nMalloc [XLit $ litNat platform bytes'] []]
 
 
 -- | Allocate a DataRaw object.

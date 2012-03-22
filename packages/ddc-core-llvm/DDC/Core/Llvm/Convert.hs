@@ -142,6 +142,11 @@ llvmBlocksOfBody blocks label instrs xx
                 instrs'  <- llvmGetResult platform dst x1
                 llvmBlocksOfBody blocks label (instrs >< instrs') x2
 
+         -- Non-binding statment.
+         C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
+          | isVoidT t
+          -> do instrs'   <- convStmtM platform x1
+                llvmBlocksOfBody blocks label (instrs >< instrs')   x2
 
          -- Case statement.
          C.XCase _ x1 alts
@@ -159,29 +164,18 @@ llvmBlocksOfBody blocks label instrs xx
 
          -- TODO: Debugging only
          _ -> return $  blocks
-                     |> Block label (instrs |> IUnreachable)
+                    |> Block label (instrs |> IUnreachable)
 
          -- die "invalid body statement"
 
 
+-- | Check whether this is the Void# type.
+isVoidT :: C.Type E.Name -> Bool
+isVoidT (C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon E.PrimTyConVoid) _))) = True
+isVoidT _ = False
+
+
 -- Alt ------------------------------------------------------------------------
-data AltResult 
-        = AltDefault        Label (Seq Block)
-        | AltCase       Lit Label (Seq Block)
-
-
-altResultBlocks :: AltResult -> Seq Block
-altResultBlocks aa
- = case aa of
-        AltDefault _ blocks     -> blocks
-        AltCase _ _  blocks     -> blocks
-
-
-takeAltCase :: AltResult -> Maybe (Lit, Label)
-takeAltCase (AltCase lit label _)       = Just (lit, label)
-takeAltCase _                           = Nothing
-
-
 convAltM :: C.Alt () E.Name -> LlvmM AltResult
 convAltM aa
  = case aa of
@@ -202,6 +196,23 @@ convAltM aa
 convPatBound :: C.Bound E.Name -> Lit
 convPatBound _
         = LitUndef (TInt 32)
+
+
+data AltResult 
+        = AltDefault        Label (Seq Block)
+        | AltCase       Lit Label (Seq Block)
+
+
+altResultBlocks :: AltResult -> Seq Block
+altResultBlocks aa
+ = case aa of
+        AltDefault _ blocks     -> blocks
+        AltCase _ _  blocks     -> blocks
+
+
+takeAltCase :: AltResult -> Maybe (Lit, Label)
+takeAltCase (AltCase lit label _)       = Just (lit, label)
+takeAltCase _                           = Nothing
 
 
 -- Exp ------------------------------------------------------------------------
@@ -229,7 +240,7 @@ llvmGetResult pp dst xx@C.XApp{}
         , Just xsArgs'          <- sequence $ map (takeAtomX pp) xsArgs
         = return 
                 $ Seq.singleton
-                $ ICall dst CallTypeStd (convType pp tResult) nFun xsArgs' []
+                $ ICall (Just dst) CallTypeStd (convType pp tResult) nFun xsArgs' []
 
 llvmGetResult _ _ xx
         = return $ Seq.singleton 
@@ -271,7 +282,7 @@ convPrimCallM pp dst p xs
          ,  Just val            <- takeAtomX pp xVal
          -> return
                 $ Seq.singleton
-                $ ICall dst 
+                $ ICall (Just dst)
                         CallTypeStd 
                         (tPtr (TInt 8)) 
                         (NameGlobal $ "showInt" ++ show bitsInt)
@@ -279,6 +290,55 @@ convPrimCallM pp dst p xs
 
         _ -> return $ Seq.singleton 
           $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+
+
+-- Stmt -----------------------------------------------------------------------
+convStmtM :: Platform -> C.Exp () E.Name -> LlvmM (Seq Instr)
+convStmtM pp xx
+ = case xx of
+        C.XApp{}
+         |  C.XVar _ (C.UPrim (E.NamePrim p) t) : xs <- takeXApps xx
+         -> convPrimStmtM pp p t xs
+
+        _ -> error "convStmtM: sorry"
+
+
+-- | Convert a primitive statement to LLvM.
+convPrimStmtM 
+        :: Show a 
+        => Platform
+        -> E.Prim 
+        -> C.Type E.Name
+        -> [C.Exp a E.Name] 
+        -> LlvmM (Seq Instr)
+
+convPrimStmtM pp prim tPrim xs
+ = case prim of
+        E.PrimStmt E.PrimStmtWrite
+         |  [C.XType _t, x1, x2] <- xs
+         ,  Just x1'            <- takeAtomX pp x1
+         ,  Just x2'            <- takeAtomX pp x2
+         -> return $ Seq.singleton
+                   $ IStore x1' x2'
+
+        E.PrimIO op
+         | Just xs'             <- sequence $ map (takeAtomX pp) xs
+         , (_, tResult)         <- takeTFunArgResult tPrim
+         , tResult'             <- convType pp tResult
+         , name                 <- nameOfPrimIO op
+         -> return $ Seq.singleton
+                   $ ICall Nothing  CallTypeStd
+                           tResult' name xs' []
+
+        -- debugging
+        _ -> return $ Seq.singleton IUnreachable
+
+nameOfPrimIO :: E.PrimIO -> Name
+nameOfPrimIO pp
+ = case pp of
+        E.PrimIOPutStr          -> NameGlobal "putStr"
+        E.PrimIOPutStrLn        -> NameGlobal "putStrLn"
+
 
 
 -- Utils ----------------------------------------------------------------------
