@@ -271,7 +271,6 @@ convPrimCallM pp dst p xs
          , Just size            <- takeNat xSize
          -> allocDataRaw dst tag size
 
-        -- Conversion.
         E.PrimCast (E.PrimCastNatToInt bitsInt)
          | [xVal]               <- xs
          , Just val             <- takeAtomX pp xVal

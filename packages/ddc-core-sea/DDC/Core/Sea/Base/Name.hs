@@ -120,6 +120,14 @@ data PrimOp
         -- boolean
         | PrimOpAnd
         | PrimOpOr
+
+        -- bitwise
+        | PrimOpShl
+        | PrimOpAShr
+        | PrimOpLShr
+        | PrimOpBAnd
+        | PrimOpBOr
+        | PrimOpBXOr
         deriving (Eq, Ord, Show)
 
 
@@ -139,17 +147,23 @@ readPrimOp str
 -- | Names of primitve operators.
 primOpNames :: [(PrimOp, String)]
 primOpNames
- =      [ (PrimOpNeg, "neg#")
-        , (PrimOpAdd, "add#")
-        , (PrimOpSub, "sub#")
-        , (PrimOpMul, "mul#")
-        , (PrimOpDiv, "div#")
-        , (PrimOpMod, "mod#")
-        , (PrimOpEq , "eq#" )
-        , (PrimOpNeq, "neq#")
-        , (PrimOpGt , "gt#" )
-        , (PrimOpLt , "lt#" )
-        , (PrimOpLe , "le#" )
-        , (PrimOpAnd, "and#")
-        , (PrimOpOr , "or#" ) ]
+ =      [ (PrimOpNeg,           "neg#")
+        , (PrimOpAdd,           "add#")
+        , (PrimOpSub,           "sub#")
+        , (PrimOpMul,           "mul#")
+        , (PrimOpDiv,           "div#")
+        , (PrimOpMod,           "mod#")
+        , (PrimOpEq ,           "eq#" )
+        , (PrimOpNeq,           "neq#")
+        , (PrimOpGt ,           "gt#" )
+        , (PrimOpLt ,           "lt#" )
+        , (PrimOpLe ,           "le#" )
+        , (PrimOpAnd,           "and#")
+        , (PrimOpOr ,           "or#" ) 
+        , (PrimOpShl,           "shl#")
+        , (PrimOpAShr,          "ashr#")
+        , (PrimOpLShr,          "lshr#")
+        , (PrimOpBAnd,          "band#")
+        , (PrimOpBOr,           "bor#")
+        , (PrimOpBXOr,          "bxor#") ]
 

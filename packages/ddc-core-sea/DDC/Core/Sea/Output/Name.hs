@@ -193,35 +193,38 @@ instance Pretty Prim where
 -- PrimCast -------------------------------------------------------------------
 -- | Primitive cast between two types.
 data PrimCast
-        = PrimCastOp
-        | PrimCastNatToInt Int
+        -- | Promote a value to one of a larger or similar size, 
+        --   without loss of precision.
+        = PrimCastPromote
+
+        -- | Convert an raw address to a pointer.
+        | PrimCastMakePtr
+
+        -- | Convert a pointer to a raw address.
+        | PrimCastTakePtr
+
+        -- | Cast between pointer types.
+        | PrimCastPtr
         deriving (Eq, Ord, Show)
 
 
 instance Pretty PrimCast where
  ppr c
   = case c of
-        PrimCastOp      -> text "cast#"
-
-        PrimCastNatToInt bits
-         -> text "i" <> int bits <> text "#"
+        PrimCastPromote         -> text "promote#"
+        PrimCastMakePtr         -> text "makePtr#"
+        PrimCastTakePtr         -> text "takePtr#"
+        PrimCastPtr             -> text "castPtr#"
 
 
 readPrimCast :: String -> Maybe PrimCast
 readPrimCast str
-        -- General cast.
-        | str == "cast#"
-        = Just $ PrimCastOp
-
-        -- Cast Nat to Int
-        | Just rest     <- stripPrefix "i" str
-        , (ds, "#")     <- span isDigit rest
-        , bits          <- read ds
-        , elem bits [8, 16, 32, 64]
-        = Just $ PrimCastNatToInt bits
-
-        | otherwise
-        = Nothing
+ = case str of
+        "promote#"              -> Just PrimCastPromote
+        "makePtr#"              -> Just PrimCastMakePtr
+        "takePtr#"              -> Just PrimCastTakePtr
+        "castPtr#"              -> Just PrimCastPtr
+        _                       -> Nothing
 
 
 -- PrimCall -------------------------------------------------------------------

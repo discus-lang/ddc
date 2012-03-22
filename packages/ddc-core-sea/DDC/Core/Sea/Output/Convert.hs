@@ -315,11 +315,11 @@ convPrimCallM p xs
 
 
         -- Cast primops.
-        PrimCast (PrimCastNatToInt bits)
-         | [x1]                 <- xs
-         -> do  x1'     <- convRValueM x1
-                return  $  parens (text "int" <> int bits <> text "_t") 
-                        <> parens  x1'
+        PrimCast PrimCastPromote
+         | [XType tTo, XType _tFrom, x1] <- xs
+         -> do  tTo'    <- convTypeM   tTo
+                x1'     <- convRValueM x1
+                return  $  parens tTo' <> parens x1'
 
 
         -- Store primops.
@@ -378,6 +378,13 @@ convPrimOp pp
         PrimOpAnd               -> text "&&"
         PrimOpOr                -> text "||"
 
+        -- bitwise
+        PrimOpShl               -> text "<<"
+        PrimOpAShr              -> text ">>"    -- TODO: check these are done right.
+        PrimOpLShr              -> text ">>"
+        PrimOpBAnd              -> text "&"
+        PrimOpBOr               -> text "|"
+        PrimOpBXOr              -> text "^"
 
 -- | Convert an external primop name to C source text.
 convPrimExternal :: PrimExternal -> Doc

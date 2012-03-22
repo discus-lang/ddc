@@ -163,17 +163,32 @@ typeOfPrimOp op
         PrimOpAnd       -> tBool `tFunPE` tBool `tFunPE` tBool
         PrimOpOr        -> tBool `tFunPE` tBool `tFunPE` tBool
 
+        -- Bitwise
+        PrimOpShl       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpAShr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpLShr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpBAnd      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpBOr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpBXOr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+
 
 -- PrimCast -------------------------------------------------------------------
 -- | Take the type of a primitive cast.
 typeOfPrimCast :: PrimCast -> Type Name
 typeOfPrimCast cc
  = case cc of
-        PrimCastOp      
-         -> tForalls [kData, kData] $ \[t1, t2] -> t1 `tFunPE` t2
+        PrimCastPromote
+         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFunPE` t1
 
-        PrimCastNatToInt bits
-         -> tNat `tFunPE` tInt bits
+        PrimCastMakePtr
+         -> tForall kData $ \t -> tAddr `tFunPE` tPtr t
+
+        PrimCastTakePtr
+         -> tForall kData $ \t -> tPtr t `tFunPE` tAddr
+
+        PrimCastPtr
+         -> tForalls [kData, kData] $ \[t1, t2] -> tPtr t2 `tFunPE` tPtr t1
+
 
 
 -- PrimCall -------------------------------------------------------------------
@@ -211,13 +226,13 @@ typeOfPrimStore :: PrimStore -> Type Name
 typeOfPrimStore jj
  = case jj of
         PrimStoreRead        
-         -> tForall kData $ \t -> tPtr t `tFunPE` t
+         -> tForall kData $ \t -> tAddr `tFunPE` t
 
         PrimStoreWrite
-         -> tForall kData $ \t -> tPtr t `tFunPE` t `tFunPE` tVoid
+         -> tForall kData $ \t -> tAddr `tFunPE` t `tFunPE` tVoid
 
         PrimStoreAlloc
-         -> tNat `tFunPE` tPtr tObj
+         -> tNat `tFunPE` tAddr
 
 
 -- PrimExternal --------------------------------------------------------------
