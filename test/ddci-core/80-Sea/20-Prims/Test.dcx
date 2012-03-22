@@ -11,26 +11,3 @@
 
 :check tailcall4#
 
-
--- Check types of partialNofM# prims.
-:check partial0of0#
-
-:check parital4of2#
-
-:check partial4of4#
-
-:check partial2of4#
-
-:check partial1of5#
-
-
--- Check types of applyN# prims.
-:check apply0#
-
-:check apply1#
-
-:check apply4#
-
-
--- Check type of force# prim.
-:check force#

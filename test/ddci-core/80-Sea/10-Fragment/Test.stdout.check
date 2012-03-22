@@ -94,13 +94,3 @@ Sea fragment violation.
         return# [Int32#] x
 
 
--- Ok: can discard non-void return value.
-Obj* foo (int32_t x)
-{
-        Obj* x       = _allocRaw (0, 4);
-        _write (_fieldRaw (int32_t, 0, x), (int32_t)(5));
-        return x;
-}
-
-
-

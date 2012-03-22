@@ -64,7 +64,8 @@ convPrimTyCon tc
         PrimTyConNat            -> Just $ text "nat_t"
         PrimTyConTag            -> Just $ text "tag_t"
         PrimTyConBool           -> Just $ text "bool_t"
-        PrimTyConInt bits       -> Just $ text "int" <> int bits <> text "_t"
+        PrimTyConInt  bits      -> Just $ text "int"  <> int bits <> text "_t"
+        PrimTyConWord bits      -> Just $ text "uint" <> int bits <> text "_t"
         PrimTyConString         -> Just $ text "string_t"
         _                       -> Nothing
 
@@ -267,6 +268,12 @@ convRValueM xx
         XCon _ (UPrim (NameTag n) _)    
          -> return $ integer n
 
+        XCon _ (UPrim (NameInt n _) _)    
+         -> return $ integer n
+
+        XCon _ (UPrim (NameWord n _) _)    
+         -> return $ integer n
+
         -- Primop application.
         -- TODO: check this is fully applied.
         XApp{}
@@ -338,7 +345,6 @@ convPrimCallM p xs
          | [xBytes]       <- xs
          -> do  xBytes' <- convRValueM xBytes
                 return  $ text "_alloc" <+> parenss [xBytes']
-
 
         -- External primops.
         PrimExternal op 

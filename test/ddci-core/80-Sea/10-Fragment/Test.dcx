@@ -91,12 +91,3 @@ foo (x : Int32#) : Int32#
    in  return# [Int32#] x;;
 
 
--- Ok: can discard non-void return value.
-:sea..
-module Main with letrec
-foo (x : Int32#) : Ptr# Obj
- = let x        = allocRaw# TAG0# 4  in
-   let _        = write# [Int32#] (fieldRaw# [Int32#] 0 x) (i32# 5) in
-   return# [Ptr# Obj] x;;
-
-
