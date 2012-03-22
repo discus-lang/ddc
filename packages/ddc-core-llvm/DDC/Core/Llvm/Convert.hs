@@ -28,6 +28,7 @@ import Control.Monad.State.Strict               (gets)
 import Control.Monad
 import Data.Maybe
 
+
 -- Module ---------------------------------------------------------------------
 convertModule :: C.Module () E.Name -> Module
 convertModule mm
@@ -44,7 +45,7 @@ llvmOfModuleM
 llvmOfModuleM mm@(C.ModuleCore{})
  | [C.LRec bxs]         <- C.moduleLets mm   
  = do   platform        <- gets llvmStatePlatform
-        functions       <- mapM (uncurry (llvmFunctionOfSuper)) bxs
+        functions       <- mapM (uncurry (convSuperM)) bxs
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
@@ -65,12 +66,12 @@ primGlobals platform
 
 -- Super ----------------------------------------------------------------------
 -- | Convert a top-level supercombinator to LLVM.
-llvmFunctionOfSuper 
+convSuperM 
         :: C.Bind E.Name 
         -> C.Exp () E.Name 
         -> LlvmM Function
 
-llvmFunctionOfSuper (C.BName n tSuper) x
+convSuperM (C.BName n tSuper) x
  | Just (bsParam, xBody)     <- takeXLams x
  = do   platform        <- gets llvmStatePlatform
 
@@ -78,7 +79,10 @@ llvmFunctionOfSuper (C.BName n tSuper) x
         let (tsArgs, tResult)       
                 = takeTFunArgResult tSuper
 
+        -- Make parameter binders.
         let params      = map (llvmParameterOfType platform) tsArgs
+
+        -- All functions are set to a specific alignment.
         let align       = AlignBytes (platformFunctionAlignBytes platform)
 
         -- Declaration of the super.
@@ -92,37 +96,40 @@ llvmFunctionOfSuper (C.BName n tSuper) x
                 , declParams             = params
                 , declAlign              = align }
 
+        -- Convert function body to basic blocks.
         label   <- newUniqueLabel "entry"
-        blocks  <- llvmBlocksOfBody Seq.empty label Seq.empty xBody
+        blocks  <- convBodyM Seq.empty label Seq.empty xBody
 
+        -- Build the function.
         return  $ Function
                 { functionDecl           = decl
-                , functionParams         = map llvmNameOfParam bsParam
+                , functionParams         = map nameOfParam bsParam
                 , functionAttrs          = [] 
                 , functionSection        = SectionAuto
                 , functionBlocks         = Seq.toList blocks }
 
-llvmFunctionOfSuper _ _
+convSuperM _ _
         = die "invalid super"
 
 
 -- | Take the string name to use for a function parameter.
-llvmNameOfParam :: C.Bind E.Name -> String
-llvmNameOfParam bb
+nameOfParam :: C.Bind E.Name -> String
+nameOfParam bb
  = case bb of
         C.BName n _     -> P.renderPlain $ P.ppr n
         _               -> die "invalid parameter name"
 
 
 -- Body -----------------------------------------------------------------------
-llvmBlocksOfBody 
+-- | Convert a Core function body to LLVM blocks.
+convBodyM 
         :: Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
         -> Seq Instr            -- ^ Instrs in current block.
         -> C.Exp () E.Name      -- ^ Expression being converted.
         -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
-llvmBlocksOfBody blocks label instrs xx
+convBodyM blocks label instrs xx
  = do   platform        <- gets llvmStatePlatform
         case xx of
 
@@ -131,7 +138,7 @@ llvmBlocksOfBody blocks label instrs xx
           |  Just (E.NamePrim p, xs)           <- takeXPrimApps xx
           ,  E.PrimControl E.PrimControlReturn <- p
           ,  [C.XType _t, x]                   <- xs
-          ,  Just x'                           <- takeAtomX platform x
+          ,  Just x'                           <- mconvAtom platform x
           -> return  $   blocks 
                      |>  Block label (instrs |> IReturn (Just x'))
 
@@ -139,14 +146,14 @@ llvmBlocksOfBody blocks label instrs xx
          C.XLet _ (C.LLet C.LetStrict (C.BName (E.NameVar str) t) x1) x2
           -> do t'       <- convTypeM t
                 let dst  = Var (NameLocal str) t'
-                instrs'  <- llvmGetResult platform dst x1
-                llvmBlocksOfBody blocks label (instrs >< instrs') x2
+                instrs'  <- convExpM platform dst x1
+                convBodyM blocks label (instrs >< instrs') x2
 
          -- Non-binding statment.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           | isVoidT t
           -> do instrs'   <- convStmtM platform x1
-                llvmBlocksOfBody blocks label (instrs >< instrs')   x2
+                convBodyM blocks label (instrs >< instrs')   x2
 
          -- Case statement.
          C.XCase _ x1 alts
@@ -162,9 +169,9 @@ llvmBlocksOfBody blocks label instrs xx
                 return  $ switchBlock <| altBlocks
 
 
-         -- TODO: Debugging only
+         -- TODO: Debugging
          _ -> return $  blocks
-                    |> Block label (instrs |> IUnreachable)
+                     |> Block label (instrs |> IComment [show xx])
 
          -- die "invalid body statement"
 
@@ -176,33 +183,34 @@ isVoidT _ = False
 
 
 -- Alt ------------------------------------------------------------------------
+-- | Holds the result of converting an alternative.
+data AltResult 
+        = AltDefault        Label (Seq Block)
+        | AltCase       Lit Label (Seq Block)
+
 convAltM :: C.Alt () E.Name -> LlvmM AltResult
 convAltM aa
  = case aa of
         C.AAlt C.PDefault x
          -> do  label   <- newUniqueLabel "default"
-                blocks  <- llvmBlocksOfBody Seq.empty label Seq.empty x
+                blocks  <- convBodyM Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
         C.AAlt (C.PData u []) x
          -> do  label   <- newUniqueLabel "alt"
-                blocks  <- llvmBlocksOfBody Seq.empty label Seq.empty x
+                blocks  <- convBodyM Seq.empty label Seq.empty x
                 let lit =  convPatBound u
                 return  $  AltCase lit label blocks
 
         _ -> error "convAltM: sorry"
 
 
-convPatBound :: C.Bound E.Name -> Lit
+convPatBound :: C.Bound E.Name -> Lit           -- TODO: finish me
 convPatBound _
         = LitUndef (TInt 32)
 
 
-data AltResult 
-        = AltDefault        Label (Seq Block)
-        | AltCase       Lit Label (Seq Block)
-
-
+-- | Take the blocks from an `AltResult`.
 altResultBlocks :: AltResult -> Seq Block
 altResultBlocks aa
  = case aa of
@@ -210,64 +218,68 @@ altResultBlocks aa
         AltCase _ _  blocks     -> blocks
 
 
+-- | Take the `Lit` and `Label` from an `AltResult`
 takeAltCase :: AltResult -> Maybe (Lit, Label)
 takeAltCase (AltCase lit label _)       = Just (lit, label)
 takeAltCase _                           = Nothing
 
 
 -- Exp ------------------------------------------------------------------------
-llvmGetResult
-        :: Platform
-        -> Var  
-        -> C.Exp () E.Name
+-- Convert a Core expression to LLVM instructions.
+convExpM
+        :: Platform             -- ^ Current platform.
+        -> Var                  -- ^ Assign result to this var.
+        -> C.Exp () E.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
-llvmGetResult _  dst (C.XVar _ (C.UName (E.NameVar str) t))
+convExpM _  dst (C.XVar _ (C.UName (E.NameVar str) t))
  = do   t'      <- convTypeM t
         return  $ Seq.singleton 
-                $ IStore (XVar dst) (XVar (Var (NameLocal str) t'))
+                $ ISet dst (XVar (Var (NameLocal str) t'))
 
-llvmGetResult pp dst xx@C.XApp{}
-        -- Primitive operation.
-        | Just (E.NamePrim p, args)       <- takeXPrimApps xx
+convExpM pp dst xx@C.XApp{}
+
+        -- Call to primop.
+        | Just (E.NamePrim p, args)     <- takeXPrimApps xx
         = convPrimCallM pp dst p args
 
-        -- Super call.
-        | xFun : xsArgs         <- takeXApps xx
-        , C.XVar _ b            <- xFun
-        , Just (Var nFun _)     <- takeGlobalV pp xFun
-        , (_, tResult)          <- takeTFunArgResult $ typeOfBound b
-        , Just xsArgs'          <- sequence $ map (takeAtomX pp) xsArgs
-        = return 
-                $ Seq.singleton
-                $ ICall (Just dst) CallTypeStd (convType pp tResult) nFun xsArgs' []
+        -- Call to top-level super.
+        | xFun@(C.XVar _ b) : xsArgs    <- takeXApps xx
+        , Just (Var nFun _)             <- takeGlobalV pp xFun
+        , (_, tResult)                  <- takeTFunArgResult $ typeOfBound b
+        , Just xsArgs'                  <- sequence $ map (mconvAtom pp) xsArgs
+        = return $ Seq.singleton
+                 $ ICall (Just dst) CallTypeStd 
+                         (convType pp tResult) nFun xsArgs' []
 
-llvmGetResult _ _ xx
+convExpM _ _ xx
         = return $ Seq.singleton 
-        $ IComment [ "llvmGetResult: cannot convert " ++ show xx ]
+        $ IComment [ "convExpM: cannot convert " ++ show xx ]
 
 
 -- Prim call ------------------------------------------------------------------
 -- | Convert a primitive call to LLVM.
 convPrimCallM 
         :: Show a 
-        => Platform
-        -> Var 
-        -> E.Prim 
-        -> [C.Exp a E.Name] 
+        => Platform             -- ^ Current platform.
+        -> Var                  -- ^ Assign result to this var.
+        -> E.Prim               -- ^ Prim to call.
+        -> [C.Exp a E.Name]     -- ^ Arguments to prim.
         -> LlvmM (Seq Instr)
 
 convPrimCallM pp dst p xs
  = case p of
+        -- Allocation.
         E.PrimStore (E.PrimStoreAllocData E.PrimStoreLayoutRaw)
          | [xTag, xSize]        <- xs
          , Just tag             <- takeTag xTag
          , Just size            <- takeNat xSize
          -> allocDataRaw dst tag size
 
+        -- Conversion.
         E.PrimCast (E.PrimCastNatToInt bitsInt)
          | [xVal]               <- xs
-         , Just val             <- takeAtomX pp xVal
+         , Just val             <- mconvAtom pp xVal
          -> let bitsNat = 8 * platformAddrBytes pp
             in  return 
                  $ Seq.singleton
@@ -277,19 +289,23 @@ convPrimCallM pp dst p xs
                    then IConv dst ConvSext  val
                    else ISet  dst val
 
-        E.PrimString (E.PrimStringShowInt bitsInt)
+        -- String primops.
+        E.PrimString op
          |  [xVal]              <- xs
-         ,  Just val            <- takeAtomX pp xVal
-         -> return
-                $ Seq.singleton
-                $ ICall (Just dst)
-                        CallTypeStd 
-                        (tPtr (TInt 8)) 
-                        (NameGlobal $ "showInt" ++ show bitsInt)
-                        [val] []
+         ,  Just val            <- mconvAtom pp xVal
+         ,  name                <- nameOfPrimString op
+         -> return $ Seq.singleton
+                   $ ICall (Just dst) CallTypeStd 
+                           (tPtr (TInt 8)) name [val] []
 
         _ -> return $ Seq.singleton 
-          $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+           $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+
+
+nameOfPrimString :: E.PrimString -> Name
+nameOfPrimString pp
+ = case pp of
+        E.PrimStringShowInt bits -> NameGlobal $ "showInt" ++ show bits
 
 
 -- Stmt -----------------------------------------------------------------------
@@ -314,15 +330,17 @@ convPrimStmtM
 
 convPrimStmtM pp prim tPrim xs
  = case prim of
+        -- Write to the heap.
         E.PrimStmt E.PrimStmtWrite
          |  [C.XType _t, x1, x2] <- xs
-         ,  Just x1'            <- takeAtomX pp x1
-         ,  Just x2'            <- takeAtomX pp x2
+         ,  Just x1'            <- mconvAtom pp x1
+         ,  Just x2'            <- mconvAtom pp x2
          -> return $ Seq.singleton
                    $ IStore x1' x2'
 
+        -- Call a function that does some IO.
         E.PrimIO op
-         | Just xs'             <- sequence $ map (takeAtomX pp) xs
+         | Just xs'             <- sequence $ map (mconvAtom pp) xs
          , (_, tResult)         <- takeTFunArgResult tPrim
          , tResult'             <- convType pp tResult
          , name                 <- nameOfPrimIO op
@@ -331,7 +349,9 @@ convPrimStmtM pp prim tPrim xs
                            tResult' name xs' []
 
         -- debugging
-        _ -> return $ Seq.singleton IUnreachable
+        _ -> return $ Seq.singleton
+                    $ IComment [show (prim, xs)]
+
 
 nameOfPrimIO :: E.PrimIO -> Name
 nameOfPrimIO pp
@@ -340,12 +360,11 @@ nameOfPrimIO pp
         E.PrimIOPutStrLn        -> NameGlobal "putStrLn"
 
 
-
--- Utils ----------------------------------------------------------------------
+-- Atoms ----------------------------------------------------------------------
 -- | Take a variable or literal from an expression.
---   Returned literals are also represented as `Var`.
-takeAtomX :: Platform -> C.Exp a E.Name -> Maybe Exp
-takeAtomX pp xx
+--   These can be used directly in instructions.
+mconvAtom :: Platform -> C.Exp a E.Name -> Maybe Exp
+mconvAtom pp xx
  = case xx of
         C.XVar _ (C.UName (E.NameVar str) t)
          -> Just $ XVar (Var (NameLocal str) (convType pp t))
@@ -359,6 +378,7 @@ takeAtomX pp xx
         _ -> Nothing
 
 
+-- Utils ----------------------------------------------------------------------
 -- | Take a variable from an expression as a local var, if any.
 takeLocalV  :: Platform -> C.Exp a E.Name -> Maybe Var
 takeLocalV pp xx

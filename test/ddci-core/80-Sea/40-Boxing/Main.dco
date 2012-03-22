@@ -1,8 +1,9 @@
 
 module Main with letrec {
 addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = do { z   = allocRaw# TAG0# 4;
-        TAG0#  <- tag# x else fail# [Ptr# Obj];
+ = do { z       = allocRaw# TAG0# 4;
+        gx      = tag# x;
+        TAG0#  <- gx else fail# [Ptr# Obj];
         TAG0#  <- tag# y else fail# [Ptr# Obj];
         r   = add# [Int32#] 
                        (read# [Int32#] (fieldRaw# [Int32#] 0 x))
@@ -25,20 +26,32 @@ subInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
 
 
 mulInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = do { z   = allocRaw# TAG0# 4;
-        TAG0#  <- tag# x else fail# [Ptr# Obj];
-        TAG0#  <- tag# y else fail# [Ptr# Obj];
-        r   = mul# [Int32#] 
-                        (read# [Int32#] (fieldRaw# [Int32#] 0 x))
-                        (read# [Int32#] (fieldRaw# [Int32#] 0 y));
-        write# [Int32#] (fieldRaw# [Int32#] 0 z) r;
+ = do { z       = allocRaw# TAG0# 4;
+
+        gx      = tag# x;
+        TAG0#  <- gx else fail# [Ptr# Obj];
+
+        gy      = tag# y;
+        TAG0#  <- gy else fail# [Ptr# Obj];
+
+        fx      = fieldRaw# [Int32#] 0 x;
+        nx      = read# [Int32#] fx;
+
+        fy      = fieldRaw# [Int32#] 0 y;
+        ny      = read# [Int32#] fy;
+
+        r       = mul# [Int32#] nx ny;
+
+        fx      = fieldRaw# [Int32#] 0 z;
+        write# [Int32#] fx r;
         return# [Ptr# Obj] z;
       };
 
 
 boxInt32 (x : Int32#) : Ptr# Obj
- = do { z   = allocRaw# TAG0# 4;
-        write# [Int32#] (fieldRaw# [Int32#] 0 z) x;
+ = do { z       = allocRaw# TAG0# 4;
+        fz      = fieldRaw# [Int32#] 0 z;
+        write#  [Int32#] fz x;
         return# [Ptr# Obj] z;
       };
 
