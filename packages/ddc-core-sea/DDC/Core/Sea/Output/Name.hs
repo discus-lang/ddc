@@ -14,21 +14,22 @@ module DDC.Core.Sea.Output.Name
         , PrimExternal    (..)
         , readName)
 where
-import DDC.Core.Sea.Base.Name   (PrimTyCon(..), PrimOp(..))
+import DDC.Core.Sea.Base.Name
 import DDC.Base.Pretty
 import Data.Char
 import Data.List
 
+
 -- Names of things recognised by the Sea backend.
 data Name
+        -- | A type or value variable
+        = NameVar       String
+
         -- | The object type constructor.
-        = NameObjTyCon
+        | NameObjTyCon
 
         -- | A type primitive constructor.
         | NamePrimTyCon PrimTyCon
-
-        -- | A type or value variable
-        | NameVar       String
 
         -- | A primitive operator.
         | NamePrim      Prim
@@ -47,14 +48,72 @@ data Name
 instance Pretty Name where
  ppr nn
   = case nn of
+        NameVar  n        -> text n
         NameObjTyCon      -> text "Obj"
         NamePrimTyCon tc  -> ppr tc
-        NameVar  n        -> text n
         NamePrim p        -> ppr p
         NameNat  i        -> integer i
         NameTag  i        -> text "TAG" <> integer i
         NameBool True     -> text "True#"
         NameBool False    -> text "False#"
+
+
+readName :: String -> Maybe Name
+readName str
+        -- Obj 
+        | str == "Obj"
+        = Just $ NameObjTyCon
+
+        -- PrimTyCon
+        | Just p        <- readPrimTyCon str
+        = Just $ NamePrimTyCon p
+
+        -- PrimOp
+        | Just p        <- readPrimOp str
+        = Just $ NamePrim $ PrimOp p
+
+        -- PrimCast
+        | Just p        <- readPrimCast str
+        = Just $ NamePrim $ PrimCast p
+
+        -- PrimCall
+        | Just p        <- readPrimCall str
+        = Just $ NamePrim $ PrimCall p
+
+        -- PrimControl
+        | Just p        <- readPrimControl str
+        = Just $ NamePrim $ PrimControl p
+
+        -- PrimStore
+        | Just p        <- readPrimStore str
+        = Just $ NamePrim $ PrimStore p
+
+        -- PrimExternal
+        | Just p        <- readPrimExternal str
+        = Just $ NamePrim $ PrimExternal p
+
+        -- Literal Nats.
+        | (ds, "")        <- span isDigit str
+        = Just $ NameNat (read ds)        
+
+        -- Literal Tags
+        | Just rest       <- stripPrefix "TAG" str
+        , (ds, "#")       <- span isDigit rest
+        = Just $ NameTag (read ds)
+
+        -- Literal Bools
+        | str == "True#"  = Just $ NameBool True
+        | str == "False#" = Just $ NameBool False
+
+        -- Variables.
+        -- This needs to come last because the primops can also be parsed
+        -- as variables.
+        | c : _         <- str
+        , isLower c      
+        = Just $ NameVar str
+
+        | otherwise
+        = Nothing
 
 
 -- Prim -----------------------------------------------------------------------
@@ -109,6 +168,23 @@ instance Pretty PrimCast where
          -> text "i" <> int bits <> text "#"
 
 
+readPrimCast :: String -> Maybe PrimCast
+readPrimCast str
+        -- General cast.
+        | str == "cast#"
+        = Just $ PrimCastOp
+
+        -- Cast Nat to Int
+        | Just rest     <- stripPrefix "i" str
+        , (ds, "#")     <- span isDigit rest
+        , bits          <- read ds
+        , elem bits [8, 16, 32, 64]
+        = Just $ PrimCastNatToInt bits
+
+        | otherwise
+        = Nothing
+
+
 -- PrimCall -------------------------------------------------------------------
 -- | Primitive ways of invoking a function, 
 --   where control flow returns back to the caller.
@@ -143,6 +219,47 @@ instance Pretty PrimCall where
          -> text "force#"
 
 
+readPrimCall :: String -> Maybe PrimCall
+readPrimCall str
+
+        -- tailcallN#
+        | Just rest     <- stripPrefix "tailcall" str
+        , (ds, "#")     <- span isDigit rest
+        , not $ null ds
+        , n             <- read ds
+        , n > 0
+        = Just $ PrimCallTail n
+
+        -- partialNofM#
+        | Just  rest    <- stripPrefix "partial" str
+        , (dsn, rest2)  <- span isDigit rest
+        , Just  rest3   <- stripPrefix "of" rest2
+        , (dsm, "#")    <- span isDigit rest3
+        , not $ null dsn
+        , n             <- read dsn
+        , n > 0
+        , not $ null dsm
+        , m             <- read dsm
+        , m > 0
+        , n < m
+        = Just $ PrimCallPartial n m
+
+        -- applyN#
+        | Just  rest    <- stripPrefix "apply" str
+        , (dsn, "#")    <- span isDigit rest
+        , not $ null dsn
+        , n             <- read dsn
+        , n > 0
+        = Just $ PrimCallApply n
+
+        -- force#
+        | str == "force#"       
+        = Just $ PrimCallForce
+
+        | otherwise
+        = Nothing
+
+
 -- PrimControl ----------------------------------------------------------------
 -- | Primitive non-returning control flow.
 data PrimControl
@@ -156,12 +273,20 @@ data PrimControl
         | PrimControlReturn
         deriving (Eq, Ord, Show)
 
+
 instance Pretty PrimControl where
  ppr pc
   = case pc of
         PrimControlFail         -> text "fail#"
         PrimControlReturn       -> text "return#"
 
+
+readPrimControl :: String -> Maybe PrimControl
+readPrimControl str
+ = case str of
+        "fail#"         -> Just $ PrimControlFail
+        "return#"       -> Just $ PrimControlReturn
+        _               -> Nothing
 
 -- Store -----------------------------------------------------------------------
 -- | A projection of some other object.
@@ -196,10 +321,8 @@ instance Pretty PrimStore where
   = case p of        
         PrimStoreRead             -> text "read#"
         PrimStoreWrite            -> text "write#"
-
         PrimStoreProjTag          -> text "tag#"
         PrimStoreProjField layout -> text "field" <> ppr layout <> text "#"
-
         PrimStoreAllocData layout -> text "alloc" <> ppr layout <> text "#"
 
 
@@ -211,6 +334,21 @@ instance Pretty PrimStoreLayout where
         PrimStoreLayoutMixed    -> text "Mixed"
 
 
+readPrimStore :: String -> Maybe PrimStore
+readPrimStore str
+ = case str of
+        "read#"         -> Just $ PrimStoreRead
+        "write#"        -> Just $ PrimStoreWrite
+        "tag#"          -> Just $ PrimStoreProjTag
+        "fieldRaw#"     -> Just $ (PrimStoreProjField PrimStoreLayoutRaw)
+        "fieldBoxed#"   -> Just $ (PrimStoreProjField PrimStoreLayoutBoxed)
+        "fieldMixed#"   -> Just $ (PrimStoreProjField PrimStoreLayoutMixed)
+        "allocRaw#"     -> Just $ (PrimStoreAllocData PrimStoreLayoutRaw)
+        "allocBoxed#"   -> Just $ (PrimStoreAllocData PrimStoreLayoutBoxed)
+        "allocMixed#"   -> Just $ (PrimStoreAllocData PrimStoreLayoutMixed)
+        _               -> Nothing
+
+
 -- PrimExternal ---------------------------------------------------------------
 -- | String funtions.
 --   We're treating these as primops until we get the FFI working.
@@ -220,6 +358,7 @@ data PrimExternal
         | PrimExternalPutStrLn
         deriving (Eq, Ord, Show)
 
+
 instance Pretty PrimExternal where
  ppr ps
   = case ps of
@@ -228,148 +367,21 @@ instance Pretty PrimExternal where
         PrimExternalPutStrLn    -> text "putStrLn#"
 
 
-
--- Parsing --------------------------------------------------------------------
-readName :: String -> Maybe Name
-readName []     = Nothing
-readName str@(c:_)
-        -- Primitive tycons
-        | str == "Void#"   = Just $ NamePrimTyCon PrimTyConVoid
-        | str == "Ptr#"    = Just $ NamePrimTyCon PrimTyConPtr
-        | str == "Addr#"   = Just $ NamePrimTyCon PrimTyConAddr
-        | str == "Nat#"    = Just $ NamePrimTyCon PrimTyConNat
-        | str == "Tag#"    = Just $ NamePrimTyCon PrimTyConTag
-        | str == "Bool#"   = Just $ NamePrimTyCon PrimTyConBool
-        | str == "String#" = Just $ NamePrimTyCon PrimTyConString
-
-        -- IntN#
-        | Just rest     <- stripPrefix "Int" str
-        , (ds, "#")     <- span isDigit rest
-        , n             <- read ds
-        , elem n [8, 16, 32, 64]
-        = Just $ NamePrimTyCon (PrimTyConInt n)
-
-        -- Obj
-        | str == "Obj"
-        = Just $ NameObjTyCon
-
-        -- Arithmetic and Bitwise -------------------------
-        | str == "add#"         = Just $ NamePrim $ PrimOp PrimOpAdd
-        | str == "sub#"         = Just $ NamePrim $ PrimOp PrimOpSub
-        | str == "mul#"         = Just $ NamePrim $ PrimOp PrimOpMul
-        | str == "div#"         = Just $ NamePrim $ PrimOp PrimOpDiv
-        | str == "mod#"         = Just $ NamePrim $ PrimOp PrimOpMod
-        | str == "eq#"          = Just $ NamePrim $ PrimOp PrimOpEq
-        | str == "neq#"         = Just $ NamePrim $ PrimOp PrimOpNeq
-        | str == "gt#"          = Just $ NamePrim $ PrimOp PrimOpGt
-        | str == "lt#"          = Just $ NamePrim $ PrimOp PrimOpLt
-        | str == "le#"          = Just $ NamePrim $ PrimOp PrimOpLe
-        | str == "and#"         = Just $ NamePrim $ PrimOp PrimOpAnd
-        | str == "or#"          = Just $ NamePrim $ PrimOp PrimOpOr
-
-
-        -- Casts ------------------------------------------
-        -- Cast Nat to Int
-        | Just rest     <- stripPrefix "i" str
-        , (ds, "#")     <- span isDigit rest
-        , bits          <- read ds
-        , elem bits [8, 16, 32, 64]
-        = Just $ NamePrim $ PrimCast $ PrimCastNatToInt bits
-
-        | str == "cast#"        = Just $ NamePrim $ PrimCast    PrimCastOp
-
-
-        -- Calls ------------------------------------------
-        -- tailcallN#
-        | Just rest     <- stripPrefix "tailcall" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
-        , n > 0
-        = Just $ NamePrim $ PrimCall (PrimCallTail n)
-
-        -- partialNofM#
-        | Just  rest    <- stripPrefix "partial" str
-        , (dsn, rest2)  <- span isDigit rest
-        , Just  rest3   <- stripPrefix "of" rest2
-        , (dsm, "#")    <- span isDigit rest3
-        , not $ null dsn
-        , n             <- read dsn
-        , n > 0
-        , not $ null dsm
-        , m             <- read dsm
-        , m > 0
-        , n < m
-        = Just $ NamePrim $ PrimCall (PrimCallPartial n m)
-
-        -- applyN#
-        | Just  rest    <- stripPrefix "apply" str
-        , (dsn, "#")    <- span isDigit rest
-        , not $ null dsn
-        , n             <- read dsn
-        , n > 0
-        = Just $ NamePrim $ PrimCall (PrimCallApply n)
-
-        | str == "force#"       = Just $ NamePrim $ PrimCall    PrimCallForce
-
-
-        -- Control ----------------------------------------
-        | str == "fail#"        = Just $ NamePrim $ PrimControl PrimControlFail
-        | str == "return#"      = Just $ NamePrim $ PrimControl PrimControlReturn
-
-
-        -- Store ------------------------------------------
-        | str == "read#"        = Just $ NamePrim $ PrimStore PrimStoreRead
-        | str == "write#"       = Just $ NamePrim $ PrimStore PrimStoreWrite
-
-        | str == "tag#"         = Just $ NamePrim $ PrimStore PrimStoreProjTag
-
-        | str == "fieldRaw#"    
-        = Just $ NamePrim $ PrimStore (PrimStoreProjField PrimStoreLayoutRaw)
-
-        | str == "fieldBoxed#"  
-        = Just $ NamePrim $ PrimStore (PrimStoreProjField PrimStoreLayoutBoxed)
-
-        | str == "fieldRaw#"    
-        = Just $ NamePrim $ PrimStore (PrimStoreProjField PrimStoreLayoutMixed)
-
-        | str == "allocRaw#"
-        = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutRaw)
-
-        | str == "allocBoxed#"  
-        = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutBoxed)
-
-        | str == "allocMixed#"
-        = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutMixed)
-
-        -- External ----------------------------------------
+readPrimExternal :: String -> Maybe PrimExternal
+readPrimExternal str
         -- showIntN#
         | Just rest     <- stripPrefix "showInt" str
         , (ds, "#")     <- span isDigit rest
         , bits          <- read ds
         , elem bits [8, 16, 32, 64]
-        = Just $ NamePrim $ PrimExternal $ PrimExternalShowInt bits
+        = Just $ PrimExternalShowInt bits
 
-        | str == "putStr#"      = Just $ NamePrim $ PrimExternal PrimExternalPutStr
-        | str == "putStrLn#"    = Just $ NamePrim $ PrimExternal PrimExternalPutStrLn
+        | str == "putStr#"      
+        = Just $ PrimExternalPutStr
 
-        -- variables --------------------------------------
-        -- Variable names.
-        | isLower c      = Just $ NameVar str
-
-        -- literals ---------------------------------------
-        -- Naturals
-        | (ds, "")              <- span isDigit str
-        = Just $ NameNat (read ds)        
-
-        -- Tags
-        | Just rest     <- stripPrefix "TAG" str
-        , (ds, "#")     <- span isDigit rest
-        = Just $ NameTag (read ds)
-
-        -- Bools
-        | str == "True#"        = Just $ NameBool True
-        | str == "False#"       = Just $ NameBool False
+        | str == "putStrLn#"    
+        = Just $ PrimExternalPutStrLn
 
         | otherwise
         = Nothing
+
