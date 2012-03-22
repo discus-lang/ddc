@@ -211,22 +211,8 @@ convStmtM :: Show a => Exp a Name -> ConvertM a Doc
 convStmtM xx
  = case xx of
         XApp{}
-         -> case takeXPrimApps xx of
-              Just (NamePrim p, xs)
-               | PrimStmt PrimStmtWrite <- p
-               , [XType _t, x1, x2]     <- xs
-               -> do    x1' <- convRValueM x1
-                        x2' <- convRValueM x2
-
-                        return  $ text "_write" <+> parenss [x1', x2']
-
-               | PrimIO op              <- p
-               -> do    let op' = convPrimIO op
-                        xs'     <- mapM convRValueM xs
-                        return  $ op' <+> parenss xs'
-
-
-              _ -> throw $ ErrorStmtInvalid xx
+          |  Just (NamePrim p, xs) <- takeXPrimApps xx
+          -> convPrimCallM p xs
 
         _ -> throw $ ErrorStmtInvalid xx
 
@@ -343,6 +329,12 @@ convPrimCallM p xs
          -> do  x1'     <- convRValueM x1
                 return  $ text "_read" <+> parens  x1'
 
+        PrimStore PrimStoreWrite
+         | [XType _t, x1, x2]   <- xs
+         -> do  x1' <- convRValueM x1
+                x2' <- convRValueM x2
+                return  $ text "_write" <+> parenss [x1', x2']
+
         PrimStore PrimStoreProjTag
          -> do  xs'     <- mapM convRValueM xs
                 return  $ text "_tag"  <+> parenss xs'
@@ -362,8 +354,8 @@ convPrimCallM p xs
 
 
         -- String primops.
-        PrimString op 
-         -> do  let op' = convPrimString op
+        PrimExternal op 
+         -> do  let op' = convPrimExternal op
                 xs'     <- mapM convRValueM xs
                 return  $ op' <+> parenss xs'
 
@@ -380,37 +372,31 @@ convPrimOp :: PrimOp -> Doc
 convPrimOp pp
  = case pp of
         -- arithmetic   
-        PrimOpNeg       -> text "-"
-        PrimOpAdd       -> text "+"
-        PrimOpSub       -> text "-"
-        PrimOpMul       -> text "*"
-        PrimOpDiv       -> text "/"
-        PrimOpMod       -> text "%"
+        PrimOpNeg               -> text "-"
+        PrimOpAdd               -> text "+"
+        PrimOpSub               -> text "-"
+        PrimOpMul               -> text "*"
+        PrimOpDiv               -> text "/"
+        PrimOpMod               -> text "%"
 
         -- comparison
-        PrimOpEq        -> text "=="
-        PrimOpNeq       -> text "!="
-        PrimOpGt        -> text ">"
-        PrimOpGe        -> text ">="
-        PrimOpLt        -> text "<"
-        PrimOpLe        -> text "<="
+        PrimOpEq                -> text "=="
+        PrimOpNeq               -> text "!="
+        PrimOpGt                -> text ">"
+        PrimOpGe                -> text ">="
+        PrimOpLt                -> text "<"
+        PrimOpLe                -> text "<="
 
         -- boolean
-        PrimOpAnd       -> text "&&"
-        PrimOpOr        -> text "||"
+        PrimOpAnd               -> text "&&"
+        PrimOpOr                -> text "||"
 
 
--- | Convert a String primop name to C source text.
-convPrimString :: PrimString -> Doc
-convPrimString pp
+-- | Convert an external primop name to C source text.
+convPrimExternal :: PrimExternal -> Doc
+convPrimExternal pp
  = case pp of
-        PrimStringShowInt b     -> text "_showInt" <> int b
-
-
--- | Convert an IO primop name to C source text.
-convPrimIO :: PrimIO -> Doc
-convPrimIO pp
- = case pp of
-        PrimIOPutStr            -> text "_putStr"
-        PrimIOPutStrLn          -> text "_putStrLn"
+        PrimExternalShowInt b   -> text "_showInt" <> int b
+        PrimExternalPutStr      -> text "_putStr"
+        PrimExternalPutStrLn    -> text "_putStrLn"
 

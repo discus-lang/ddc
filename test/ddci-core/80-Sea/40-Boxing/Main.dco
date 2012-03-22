@@ -56,6 +56,7 @@ boxInt32 (x : Int32#) : Ptr# Obj
       };
 
 
+
 unboxInt32 (x : Ptr# Obj) : Int32#
  = do { p       = fieldRaw# [Int32#] 0 x;
         r       = read# [Int32#] p;

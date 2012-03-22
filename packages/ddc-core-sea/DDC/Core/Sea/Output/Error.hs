@@ -1,9 +1,8 @@
 
--- | Things that can go wrong when converting the SeaOutput fragment 
---   of Disciple-Core to real C-code.
+-- | Things that can go wrong when converting Disciple Sea to real C-code.
 --
---   If we get any of these then the program doesn't map onto the 
---   features of the C-language.
+--   If we get any of these then the program doesn't map onto the features
+--   of the C-language.
 module DDC.Core.Sea.Output.Error
         (Error(..))
 where

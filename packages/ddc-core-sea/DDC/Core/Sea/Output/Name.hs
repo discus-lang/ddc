@@ -5,15 +5,13 @@ module DDC.Core.Sea.Output.Name
         ( Name            (..)
         , Prim            (..)
         , PrimTyCon       (..)
+        , PrimOp          (..)
         , PrimCast        (..)
         , PrimCall        (..)
         , PrimControl     (..)
         , PrimStore       (..)
         , PrimStoreLayout (..)
-        , PrimStmt        (..)
-        , PrimOp          (..)
-        , PrimString      (..)
-        , PrimIO          (..)
+        , PrimExternal    (..)
         , readName)
 where
 import DDC.Core.Sea.Base.Name   (PrimTyCon(..), PrimOp(..))
@@ -62,7 +60,7 @@ instance Pretty Name where
 -- Prim -----------------------------------------------------------------------
 -- | Primitive operators implemented directly by the machine or runtime system.
 data    Prim
-        -- | Invoke a primitive arithmetic operator.
+        -- | Arithmetic and bitwise-operators.
         = PrimOp        PrimOp
 
         -- | Casting between numeric types.
@@ -74,31 +72,24 @@ data    Prim
         -- | Control flow.
         | PrimControl   PrimControl
 
-        -- | Store expressions.
+        -- | Store access.
         | PrimStore     PrimStore
 
-        -- | Statements with some global effect.
-        | PrimStmt      PrimStmt
-
-        -- | Strings.
-        | PrimString    PrimString
-
-        -- | IO.
-        | PrimIO        PrimIO
+        -- | External things that should really be imported with an FFI.
+        --   We'll remove these when we get the FFI working.
+        | PrimExternal  PrimExternal
         deriving (Eq, Ord, Show)
 
 
 instance Pretty Prim where
  ppr pp
   = case pp of
-        PrimOp op       -> ppr op
-        PrimCast c      -> ppr c
-        PrimCall c      -> ppr c
-        PrimControl c   -> ppr c
-        PrimStore p     -> ppr p
-        PrimStmt  p     -> ppr p
-        PrimString s    -> ppr s
-        PrimIO i        -> ppr i
+        PrimOp       op -> ppr op
+        PrimCast     c  -> ppr c
+        PrimCall     c  -> ppr c
+        PrimControl  c  -> ppr c
+        PrimStore    p  -> ppr p
+        PrimExternal p  -> ppr p
 
 
 -- PrimCast -------------------------------------------------------------------
@@ -178,16 +169,14 @@ data PrimStore
         -- | Read a value from the store.
         = PrimStoreRead
 
+        -- | Write a value to the store.
+        | PrimStoreWrite
+
         -- | Take the tag of a boxed object.
         | PrimStoreProjTag
 
         -- | Take a numbered field from some boxed data object.
-        | PrimStoreProjField PrimStoreLayout
-
-        -- | Allocate a suspended or partial application,
-        --   and fill in the function pointer, function arity, 
-        --   and number of args in the thunk.
-        | PrimStoreAllocThunk
+        | PrimStoreProjField    PrimStoreLayout
 
         -- | Allocate a fresh Data object.
         | PrimStoreAllocData    PrimStoreLayout
@@ -206,11 +195,11 @@ instance Pretty PrimStore where
  ppr p
   = case p of        
         PrimStoreRead             -> text "read#"
+        PrimStoreWrite            -> text "write#"
 
         PrimStoreProjTag          -> text "tag#"
         PrimStoreProjField layout -> text "field" <> ppr layout <> text "#"
 
-        PrimStoreAllocThunk       -> text "thunk#"
         PrimStoreAllocData layout -> text "alloc" <> ppr layout <> text "#"
 
 
@@ -222,48 +211,22 @@ instance Pretty PrimStoreLayout where
         PrimStoreLayoutMixed    -> text "Mixed"
 
 
--- PrimStmt -------------------------------------------------------------------
--- | Primitive statements that do not return a value.
---   These have some global effect on the state of the system,
---   and cannot be used in an expression.
-data PrimStmt
-        -- | Write a value to the store.
-        = PrimStmtWrite
-        deriving (Eq, Ord, Show)
-
-instance Pretty PrimStmt where
- ppr ps
-  = case ps of
-        PrimStmtWrite          -> text "write#"
-
-
--- PrimString -----------------------------------------------------------------
+-- PrimExternal ---------------------------------------------------------------
 -- | String funtions.
 --   We're treating these as primops until we get the FFI working.
-data PrimString 
-        = PrimStringShowInt Int
+data PrimExternal
+        = PrimExternalShowInt Int
+        | PrimExternalPutStr
+        | PrimExternalPutStrLn
         deriving (Eq, Ord, Show)
 
-instance Pretty PrimString where
+instance Pretty PrimExternal where
  ppr ps
   = case ps of
-        PrimStringShowInt i
-         -> text "showInt" <> int i <> text "#"
+        PrimExternalShowInt i   -> text "showInt" <> int i <> text "#"
+        PrimExternalPutStr      -> text "putStr#"
+        PrimExternalPutStrLn    -> text "putStrLn#"
 
-
--- PrimIO ---------------------------------------------------------------------
--- | IO functions.
---   We're treating these as primops until we get the FFI working.
-data PrimIO
-        = PrimIOPutStr
-        | PrimIOPutStrLn
-        deriving (Eq, Ord, Show)
-
-instance Pretty PrimIO where
- ppr ps
-  = case ps of
-        PrimIOPutStr    -> text "putStr#"
-        PrimIOPutStrLn  -> text "putStrLn#"
 
 
 -- Parsing --------------------------------------------------------------------
@@ -290,6 +253,20 @@ readName str@(c:_)
         | str == "Obj"
         = Just $ NameObjTyCon
 
+        -- Arithmetic and Bitwise -------------------------
+        | str == "add#"         = Just $ NamePrim $ PrimOp PrimOpAdd
+        | str == "sub#"         = Just $ NamePrim $ PrimOp PrimOpSub
+        | str == "mul#"         = Just $ NamePrim $ PrimOp PrimOpMul
+        | str == "div#"         = Just $ NamePrim $ PrimOp PrimOpDiv
+        | str == "mod#"         = Just $ NamePrim $ PrimOp PrimOpMod
+        | str == "eq#"          = Just $ NamePrim $ PrimOp PrimOpEq
+        | str == "neq#"         = Just $ NamePrim $ PrimOp PrimOpNeq
+        | str == "gt#"          = Just $ NamePrim $ PrimOp PrimOpGt
+        | str == "lt#"          = Just $ NamePrim $ PrimOp PrimOpLt
+        | str == "le#"          = Just $ NamePrim $ PrimOp PrimOpLe
+        | str == "and#"         = Just $ NamePrim $ PrimOp PrimOpAnd
+        | str == "or#"          = Just $ NamePrim $ PrimOp PrimOpOr
+
 
         -- Casts ------------------------------------------
         -- Cast Nat to Int
@@ -302,7 +279,7 @@ readName str@(c:_)
         | str == "cast#"        = Just $ NamePrim $ PrimCast    PrimCastOp
 
 
-        -- Sea Calls --------------------------------------
+        -- Calls ------------------------------------------
         -- tailcallN#
         | Just rest     <- stripPrefix "tailcall" str
         , (ds, "#")     <- span isDigit rest
@@ -336,13 +313,14 @@ readName str@(c:_)
         | str == "force#"       = Just $ NamePrim $ PrimCall    PrimCallForce
 
 
-        -- Sea Control ------------------------------------
+        -- Control ----------------------------------------
         | str == "fail#"        = Just $ NamePrim $ PrimControl PrimControlFail
         | str == "return#"      = Just $ NamePrim $ PrimControl PrimControlReturn
 
 
-        -- Sea Store --------------------------------------
+        -- Store ------------------------------------------
         | str == "read#"        = Just $ NamePrim $ PrimStore PrimStoreRead
+        | str == "write#"       = Just $ NamePrim $ PrimStore PrimStoreWrite
 
         | str == "tag#"         = Just $ NamePrim $ PrimStore PrimStoreProjTag
 
@@ -355,8 +333,6 @@ readName str@(c:_)
         | str == "fieldRaw#"    
         = Just $ NamePrim $ PrimStore (PrimStoreProjField PrimStoreLayoutMixed)
 
-        | str == "thunk#"       = Just $ NamePrim $ PrimStore PrimStoreAllocThunk
-
         | str == "allocRaw#"
         = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutRaw)
 
@@ -366,35 +342,16 @@ readName str@(c:_)
         | str == "allocMixed#"
         = Just $ NamePrim $ PrimStore (PrimStoreAllocData PrimStoreLayoutMixed)
 
-        -- Sea Stmt ---------------------------------------
-        | str == "write#"       = Just $ NamePrim $ PrimStmt PrimStmtWrite
-
-
-        -- Arithmetic Primops -----------------------------
-        | str == "add#"         = Just $ NamePrim $ PrimOp PrimOpAdd
-        | str == "sub#"         = Just $ NamePrim $ PrimOp PrimOpSub
-        | str == "mul#"         = Just $ NamePrim $ PrimOp PrimOpMul
-        | str == "div#"         = Just $ NamePrim $ PrimOp PrimOpDiv
-        | str == "mod#"         = Just $ NamePrim $ PrimOp PrimOpMod
-        | str == "eq#"          = Just $ NamePrim $ PrimOp PrimOpEq
-        | str == "neq#"         = Just $ NamePrim $ PrimOp PrimOpNeq
-        | str == "gt#"          = Just $ NamePrim $ PrimOp PrimOpGt
-        | str == "lt#"          = Just $ NamePrim $ PrimOp PrimOpLt
-        | str == "le#"          = Just $ NamePrim $ PrimOp PrimOpLe
-        | str == "and#"         = Just $ NamePrim $ PrimOp PrimOpAnd
-        | str == "or#"          = Just $ NamePrim $ PrimOp PrimOpOr
-
-        -- Strings ----------------------------------------
+        -- External ----------------------------------------
         -- showIntN#
         | Just rest     <- stripPrefix "showInt" str
         , (ds, "#")     <- span isDigit rest
         , bits          <- read ds
         , elem bits [8, 16, 32, 64]
-        = Just $ NamePrim $ PrimString $ PrimStringShowInt bits
+        = Just $ NamePrim $ PrimExternal $ PrimExternalShowInt bits
 
-        -- IO Primops -------------------------------------
-        | str == "putStr#"      = Just $ NamePrim $ PrimIO PrimIOPutStr
-        | str == "putStrLn#"    = Just $ NamePrim $ PrimIO PrimIOPutStrLn
+        | str == "putStr#"      = Just $ NamePrim $ PrimExternal PrimExternalPutStr
+        | str == "putStrLn#"    = Just $ NamePrim $ PrimExternal PrimExternalPutStrLn
 
         -- variables --------------------------------------
         -- Variable names.

@@ -289,8 +289,7 @@ convPrimCallM pp dst p xs
                    then IConv dst ConvSext  val
                    else ISet  dst val
 
-        -- String primops.
-        E.PrimString op
+        E.PrimString (E.PrimStringShowInt bitsInt)
          |  [xVal]              <- xs
          ,  Just val            <- mconvAtom pp xVal
          ,  name                <- nameOfPrimString op

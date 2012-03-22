@@ -107,16 +107,15 @@ typeOfName nn
 typeOfPrim :: Prim -> Type Name
 typeOfPrim pp
  = case pp of
-        PrimOp      op  -> typeOfPrimOp      op
-        PrimCast    cc  -> typeOfPrimCast    cc
-        PrimCall    pc  -> typeOfPrimCall    pc
-        PrimControl pc  -> typeOfPrimControl pc
-        PrimStore   ps  -> typeOfPrimStore   ps
-        PrimStmt    ps  -> typeOfPrimStmt    ps
-        PrimString  ps  -> typeOfPrimString  ps
-        PrimIO      ps  -> typeOfPrimIO      ps
+        PrimOp       op -> typeOfPrimOp       op
+        PrimCast     cc -> typeOfPrimCast     cc
+        PrimCall     pc -> typeOfPrimCall     pc
+        PrimControl  pc -> typeOfPrimControl  pc
+        PrimStore    ps -> typeOfPrimStore    ps
+        PrimExternal ps -> typeOfPrimExternal ps
 
 
+-- Shorthands -----------------------------------------------------------------
 tObj, tAddr, tTag, tNat, tBool, tString :: Type Name
 tObj      = TCon (TyConBound (UPrim  NameObjTyCon                   kData))
 tVoid     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)   kData))
@@ -125,6 +124,7 @@ tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)    kData))
 tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)    kData))
 tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)   kData))
 tString   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConString) kData))
+
 
 tPtr :: Type Name -> Type Name
 tPtr t    = TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr)  (kFun kData kData))))
@@ -237,6 +237,9 @@ typeOfPrimStore jj
         PrimStoreRead        
          -> tForall kData $ \t -> tPtr t `tFunPE` t
 
+        PrimStoreWrite
+         -> tForall kData $ \t -> tPtr t `tFunPE` t `tFunPE` tVoid
+
         PrimStoreProjTag
          -> tPtr tObj `tFunPE` tTag
 
@@ -249,25 +252,11 @@ typeOfPrimStore jj
         _ -> error "typeOfPrimStore: sorry"
 
 
--- PrimStmt -------------------------------------------------------------------
-typeOfPrimStmt :: PrimStmt -> Type Name
-typeOfPrimStmt ss
- = case ss of
-        PrimStmtWrite
-         -> tForall kData $ \t -> tPtr t `tFunPE` t `tFunPE` tVoid
-
-
--- PrimString -----------------------------------------------------------------
-typeOfPrimString :: PrimString -> Type Name
-typeOfPrimString ps
+-- PrimExternal --------------------------------------------------------------
+typeOfPrimExternal :: PrimExternal -> Type Name
+typeOfPrimExternal ps
  = case ps of
-        PrimStringShowInt bits  -> tInt bits `tFunPE` tString
-
-
--- PrimIO ---------------------------------------------------------------------
-typeOfPrimIO :: PrimIO -> Type Name
-typeOfPrimIO ps
- = case ps of
-        PrimIOPutStr            -> tString `tFunPE` tVoid
-        PrimIOPutStrLn          -> tString `tFunPE` tVoid
+        PrimExternalPutStr        -> tString   `tFunPE` tVoid
+        PrimExternalPutStrLn      -> tString   `tFunPE` tVoid
+        PrimExternalShowInt bits  -> tInt bits `tFunPE` tString
 
