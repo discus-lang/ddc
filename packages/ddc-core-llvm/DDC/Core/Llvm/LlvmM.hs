@@ -13,9 +13,7 @@ module DDC.Core.Llvm.LlvmM
 
           -- * Platform Specific
         , getPrimVarM
-        , getStructM
-        , getBytesOfTypeM
-        , getBytesOfStructM)
+        , getBytesOfTypeM)
 where
 import DDC.Core.Llvm.Platform
 import DDC.Llvm.Instr
@@ -94,13 +92,6 @@ getPrimVarM name
          Just var       -> return var
          _              -> error $ "getPrimVar: unknown prim " ++ show name
 
--- | Get a structure definition.
-getStructM :: String -> LlvmM Struct
-getStructM name
- = do   platform        <- gets llvmStatePlatform
-        let Just struct = Map.lookup name $ platformStructs platform
-        return struct
-
 
 -- | Get the size of a type on this platform, in bytes.
 getBytesOfTypeM :: Type -> LlvmM Integer
@@ -109,8 +100,3 @@ getBytesOfTypeM tt
         let Just bytes  = takeBytesOfType (platformAddrBytes platform) tt
         return bytes
 
-
--- | Get the size of a struct on this platform, in bytes.
-getBytesOfStructM :: Struct -> LlvmM Integer
-getBytesOfStructM _struct
-        = return 5

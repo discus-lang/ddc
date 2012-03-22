@@ -151,7 +151,7 @@ lexExp lineStart str
         -- Literal values
         c : cs
          | isDigit c
-         , (body, rest)         <- span isDigit cs
+         , (body, rest)         <- span isLiteralish cs
          -> tokN (KLit (c:body))                 : lexMore (length (c:body)) rest
         
         -- Named Constructors
@@ -200,7 +200,14 @@ lexExp lineStart str
 
         -- Error
         c : _   -> [tok $ KJunk c]
-        
+
+
+isLiteralish :: Char -> Bool
+isLiteralish c
+        =  isDigit c
+        || c == 'w' || c == 'i' 
+        || c == '#'
+
 
 -- TyCon names ----------------------------------------------------------------
 -- | String is a constructor name.
@@ -311,4 +318,5 @@ readVar :: String -> Maybe String
 readVar ss
         | isVarName ss  = Just ss
         | otherwise     = Nothing
+
 

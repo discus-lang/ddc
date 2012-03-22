@@ -10,7 +10,6 @@ module DDC.Core.Sea.Output.Name
         , PrimCall        (..)
         , PrimControl     (..)
         , PrimStore       (..)
-        , PrimStoreLayout (..)
         , PrimExternal    (..)
         , readName)
 where
@@ -42,6 +41,12 @@ data Name
 
         -- | A boolean literal.
         | NameBool      Bool
+
+        -- | A WordN literal, of the given width.
+        | NameWord      Integer Int
+
+        -- | An IntN literal, of the given width.
+        | NameInt       Integer Int
         deriving (Eq, Ord, Show)
 
 
@@ -56,6 +61,8 @@ instance Pretty Name where
         NameTag  i        -> text "TAG" <> integer i
         NameBool True     -> text "True#"
         NameBool False    -> text "False#"
+        NameWord i bits   -> integer i <> text "w" <> int bits
+        NameInt  i bits   -> integer i <> text "i" <> int bits
 
 
 readName :: String -> Maybe Name
@@ -105,6 +112,14 @@ readName str
         | str == "True#"  = Just $ NameBool True
         | str == "False#" = Just $ NameBool False
 
+        -- Literal Words
+        | Just (val, bits) <- readWordOfBits str
+        = Just $ NameWord val bits
+
+        -- Literal Ints
+        | Just (val, bits) <- readIntOfBits str
+        = Just $ NameInt  val bits
+
         -- Variables.
         -- This needs to come last because the primops can also be parsed
         -- as variables.
@@ -115,6 +130,30 @@ readName str
         | otherwise
         = Nothing
 
+
+-- Read a word like 1234w32
+readWordOfBits :: String -> Maybe (Integer, Int)
+readWordOfBits str1
+        | (ds, str2)    <- span isDigit str1
+        , Just str3     <- stripPrefix "w" str2
+        , (bs, "#")     <- span isDigit str3
+        = Just $ (read ds, read bs)
+
+        | otherwise
+        = Nothing
+
+
+-- Read an integer like 1234i32.
+-- TODO hande negative literals.
+readIntOfBits :: String -> Maybe (Integer, Int)
+readIntOfBits str1
+        | (ds, str2)    <- span isDigit str1
+        , Just str3     <- stripPrefix "i" str2
+        , (bs, "#")     <- span isDigit str3
+        = Just $ (read ds, read bs)
+
+        | otherwise
+        = Nothing
 
 -- Prim -----------------------------------------------------------------------
 -- | Primitive operators implemented directly by the machine or runtime system.
@@ -191,15 +230,6 @@ readPrimCast str
 data PrimCall
         -- | Tailcall a function
         = PrimCallTail    Int
-
-        -- | Build a partial application.
-        | PrimCallPartial Int Int
-
-        -- | Apply a partial application.
-        | PrimCallApply   Int
-
-        -- | Force a suspended application
-        | PrimCallForce
         deriving (Eq, Ord, Show)
 
 
@@ -208,15 +238,6 @@ instance Pretty PrimCall where
   = case pc of
         PrimCallTail    arity
          -> text "tailcall" <> int arity <> text "#"
-
-        PrimCallPartial arity args 
-         -> text "partial"  <> int arity <> text "of" <> int args <> text "#"
-
-        PrimCallApply   args
-         -> text "apply"    <> int args  <> text "#"
-
-        PrimCallForce
-         -> text "force#"
 
 
 readPrimCall :: String -> Maybe PrimCall
@@ -229,32 +250,6 @@ readPrimCall str
         , n             <- read ds
         , n > 0
         = Just $ PrimCallTail n
-
-        -- partialNofM#
-        | Just  rest    <- stripPrefix "partial" str
-        , (dsn, rest2)  <- span isDigit rest
-        , Just  rest3   <- stripPrefix "of" rest2
-        , (dsm, "#")    <- span isDigit rest3
-        , not $ null dsn
-        , n             <- read dsn
-        , n > 0
-        , not $ null dsm
-        , m             <- read dsm
-        , m > 0
-        , n < m
-        = Just $ PrimCallPartial n m
-
-        -- applyN#
-        | Just  rest    <- stripPrefix "apply" str
-        , (dsn, "#")    <- span isDigit rest
-        , not $ null dsn
-        , n             <- read dsn
-        , n > 0
-        = Just $ PrimCallApply n
-
-        -- force#
-        | str == "force#"       
-        = Just $ PrimCallForce
 
         | otherwise
         = Nothing
@@ -288,6 +283,7 @@ readPrimControl str
         "return#"       -> Just $ PrimControlReturn
         _               -> Nothing
 
+
 -- Store -----------------------------------------------------------------------
 -- | A projection of some other object.
 data PrimStore
@@ -297,41 +293,17 @@ data PrimStore
         -- | Write a value to the store.
         | PrimStoreWrite
 
-        -- | Take the tag of a boxed object.
-        | PrimStoreProjTag
-
-        -- | Take a numbered field from some boxed data object.
-        | PrimStoreProjField    PrimStoreLayout
-
-        -- | Allocate a fresh Data object.
-        | PrimStoreAllocData    PrimStoreLayout
-        deriving (Eq, Ord, Show)
-
-
--- | Possible layout of objects.
-data PrimStoreLayout
-        = PrimStoreLayoutRaw
-        | PrimStoreLayoutBoxed
-        | PrimStoreLayoutMixed
+        -- | Allocate some space on the heap.
+        | PrimStoreAlloc
         deriving (Eq, Ord, Show)
 
 
 instance Pretty PrimStore where
  ppr p
   = case p of        
-        PrimStoreRead             -> text "read#"
-        PrimStoreWrite            -> text "write#"
-        PrimStoreProjTag          -> text "tag#"
-        PrimStoreProjField layout -> text "field" <> ppr layout <> text "#"
-        PrimStoreAllocData layout -> text "alloc" <> ppr layout <> text "#"
-
-
-instance Pretty PrimStoreLayout where
- ppr layout
-  = case layout of
-        PrimStoreLayoutRaw      -> text "Raw"
-        PrimStoreLayoutBoxed    -> text "Boxed"
-        PrimStoreLayoutMixed    -> text "Mixed"
+        PrimStoreRead           -> text "read#"
+        PrimStoreWrite          -> text "write#"
+        PrimStoreAlloc          -> text "alloc#"
 
 
 readPrimStore :: String -> Maybe PrimStore
@@ -339,13 +311,7 @@ readPrimStore str
  = case str of
         "read#"         -> Just $ PrimStoreRead
         "write#"        -> Just $ PrimStoreWrite
-        "tag#"          -> Just $ PrimStoreProjTag
-        "fieldRaw#"     -> Just $ (PrimStoreProjField PrimStoreLayoutRaw)
-        "fieldBoxed#"   -> Just $ (PrimStoreProjField PrimStoreLayoutBoxed)
-        "fieldMixed#"   -> Just $ (PrimStoreProjField PrimStoreLayoutMixed)
-        "allocRaw#"     -> Just $ (PrimStoreAllocData PrimStoreLayoutRaw)
-        "allocBoxed#"   -> Just $ (PrimStoreAllocData PrimStoreLayoutBoxed)
-        "allocMixed#"   -> Just $ (PrimStoreAllocData PrimStoreLayoutMixed)
+        "alloc#"        -> Just $ PrimStoreAlloc
         _               -> Nothing
 
 

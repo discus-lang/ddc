@@ -8,7 +8,7 @@ module DDC.Core.Sea.Output.Env
         , tObj
         , tPtr
         , tAddr, tNat, tTag, tBool
-        , tInt)
+        , tInt,  tWord)
 where
 import DDC.Core.DataDef
 import DDC.Core.Sea.Output.Name
@@ -61,8 +61,6 @@ kindOfName nn
  = case nn of
         NameObjTyCon      -> Just $ kData
         NamePrimTyCon tc  -> Just $ kindOfPrimTyCon tc
-        NamePrim _        -> Just $ kData
-        NameNat  _        -> Just $ kData
         _                 -> Nothing
 
 
@@ -100,6 +98,8 @@ typeOfName nn
         NameNat  _      -> Just $ tNat
         NameTag  _      -> Just $ tTag
         NameBool _      -> Just $ tBool
+        NameWord _ bits -> Just $ tWord bits
+        NameInt  _ bits -> Just $ tInt  bits
         _               -> Nothing
 
 
@@ -131,8 +131,11 @@ tPtr t    = TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr)  (kFun kD
                  t
 
 tInt :: Int -> Type Name
-tInt bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt bits)) kData))
+tInt bits  = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt  bits)) kData))
 
+
+tWord :: Int -> Type Name
+tWord bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData))
 
 
 -- PrimOp ---------------------------------------------------------------------
@@ -179,9 +182,6 @@ typeOfPrimCall :: PrimCall -> Type Name
 typeOfPrimCall cc
  = case cc of
         PrimCallTail    arity       -> makePrimCallType    arity
-        PrimCallPartial arity args  -> makePrimPartialType arity args
-        PrimCallApply   arity       -> makePrimApplyType   arity
-        PrimCallForce               -> tFunPE (tPtr tObj) (tPtr tObj)
 
 
 -- | Make the type of the @callN#@ and @tailcallN@ primitives.
@@ -195,30 +195,6 @@ makePrimCallType arity
                          [BAnon k | k <- replicate (arity + 1) kData]
 
    in   tCall
-
-
--- | Make the type of a @partialN@ primitive.
-makePrimPartialType :: Int -> Int -> Type Name
-makePrimPartialType args arity
- = let  tSuper  = foldr tFunPE 
-                        (tPtr tObj)
-                        (replicate arity (tPtr tObj))
-
-        tOp     = foldr tFunPE
-                        (tPtr tObj)
-                        (replicate args  (tPtr tObj))
-
-   in   tSuper `tFunPE` tOp
-
-
--- | Make the type of an @apply@ primitive.
-makePrimApplyType :: Int -> Type Name
-makePrimApplyType arity
- = let  tCall   = foldr tFunPE
-                        (tPtr tObj)
-                        (replicate arity (tPtr tObj))
-
-   in   tPtr tObj `tFunPE` tCall
 
 
 -- PrimControl ----------------------------------------------------------------
@@ -240,16 +216,8 @@ typeOfPrimStore jj
         PrimStoreWrite
          -> tForall kData $ \t -> tPtr t `tFunPE` t `tFunPE` tVoid
 
-        PrimStoreProjTag
-         -> tPtr tObj `tFunPE` tTag
-
-        PrimStoreProjField PrimStoreLayoutRaw  
-         -> tForall kData $ \t -> tNat `tFunPE` tPtr tObj `tFunPE` tPtr t
-
-        PrimStoreAllocData PrimStoreLayoutRaw
-         -> tTag `tFunPE` tNat `tFunPE` tPtr tObj
-
-        _ -> error "typeOfPrimStore: sorry"
+        PrimStoreAlloc
+         -> tNat `tFunPE` tPtr tObj
 
 
 -- PrimExternal --------------------------------------------------------------

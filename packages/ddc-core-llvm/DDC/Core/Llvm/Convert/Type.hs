@@ -11,12 +11,7 @@ module DDC.Core.Llvm.Convert.Type
         , tPtr
 
           -- * Type Constructors
-        , llvmTypeOfTyCon
-
-          -- * Structure definitions
-        , convStruct
-        , convField)
-
+        , llvmTypeOfTyCon)
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
@@ -58,7 +53,7 @@ convType platform tt
              , declReturnType    = convType platform tResult
              , declParamListType = FixedArgs
              , declParams        = map (llvmParameterOfType platform) tsArgs
-             , declAlign         = AlignBytes (platformFunctionAlignBytes platform) }
+             , declAlign         = AlignBytes (platformAlignBytes platform) }
 
 
         _ -> die ("invalid type " ++ show tt)
@@ -105,7 +100,7 @@ llvmTypeOfTyCon platform tycon
 
 -- | Type of Heap objects.
 sObj, tObj :: Platform -> Type
-sObj platform   = TStruct [TInt (platformHeaderBytes platform * 8)]
+sObj platform   = TStruct [TInt (8 * platformObjBytes platform)]
 tObj platform   = TAlias (aObj platform)
 
 aObj :: Platform -> TypeAlias
@@ -115,19 +110,4 @@ aObj platform   = TypeAlias "s.Obj" (sObj platform)
 -- | Alias for pointer type.
 tPtr :: Type -> Type
 tPtr t = TPointer t
-
-
--- Struct ---------------------------------------------------------------------
--- | Convert a Structure definition to an LLVM type.
-convStruct :: Struct -> Type
-convStruct (Struct _ fields)
- = TStruct $ map convField fields
-
-
--- | Convert a field definition to an LLVM type.
-convField :: Field -> Type
-convField ff
- = case ff of
-        Field _ t       -> t
-        Pad   bytes     -> TInt (8 * bytes)
 

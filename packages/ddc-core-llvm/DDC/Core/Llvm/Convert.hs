@@ -6,8 +6,6 @@ import DDC.Llvm.Attr
 import DDC.Llvm.Instr
 import DDC.Llvm.Function
 import DDC.Llvm.Module
-import DDC.Core.Llvm.Runtime.Alloc
-import DDC.Core.Llvm.Runtime.Object
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
@@ -81,8 +79,6 @@ convSuperM (C.BName n tSuper) x
 
         -- Make parameter binders.
         let params      = map (llvmParameterOfType platform) tsArgs
-
-        -- All functions are set to a specific alignment.
         let align       = AlignBytes (platformFunctionAlignBytes platform)
 
         -- Declaration of the super.
@@ -269,7 +265,6 @@ convPrimCallM
 
 convPrimCallM pp dst p xs
  = case p of
-        -- Allocation.
         E.PrimStore (E.PrimStoreAllocData E.PrimStoreLayoutRaw)
          | [xTag, xSize]        <- xs
          , Just tag             <- takeTag xTag
@@ -279,7 +274,7 @@ convPrimCallM pp dst p xs
         -- Conversion.
         E.PrimCast (E.PrimCastNatToInt bitsInt)
          | [xVal]               <- xs
-         , Just val             <- mconvAtom pp xVal
+         , Just val             <- takeAtomX pp xVal
          -> let bitsNat = 8 * platformAddrBytes pp
             in  return 
                  $ Seq.singleton
@@ -291,11 +286,14 @@ convPrimCallM pp dst p xs
 
         E.PrimString (E.PrimStringShowInt bitsInt)
          |  [xVal]              <- xs
-         ,  Just val            <- mconvAtom pp xVal
-         ,  name                <- nameOfPrimString op
-         -> return $ Seq.singleton
-                   $ ICall (Just dst) CallTypeStd 
-                           (tPtr (TInt 8)) name [val] []
+         ,  Just val            <- takeAtomX pp xVal
+         -> return
+                $ Seq.singleton
+                $ ICall (Just dst)
+                        CallTypeStd 
+                        (tPtr (TInt 8)) 
+                        (NameGlobal $ "showInt" ++ show bitsInt)
+                        [val] []
 
         _ -> return $ Seq.singleton 
            $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
@@ -394,20 +392,4 @@ takeGlobalV pp xx
         C.XVar _ (C.UName (E.NameVar str) t)
           -> Just $ Var (NameGlobal str) (convType pp t)
         _ -> Nothing
-
-
--- | Take an integer tag from an expression, if any.
-takeTag :: C.Exp a E.Name -> Maybe Integer
-takeTag xx
- = case xx of
-        C.XCon _ (C.UPrim (E.NameTag tag) _)    -> Just tag
-        _                                       -> Nothing
-
-
--- | Take an natural number from an expression, if any.
-takeNat :: C.Exp a E.Name -> Maybe Integer
-takeNat xx
- = case xx of
-        C.XCon _ (C.UPrim (E.NameNat nat) _)    -> Just nat
-        _                                       -> Nothing
 

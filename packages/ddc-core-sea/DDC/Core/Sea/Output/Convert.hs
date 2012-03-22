@@ -249,7 +249,6 @@ convDaConName nn
         _               -> Nothing
 
 
-
 -- RValue ---------------------------------------------------------------------
 -- | Convert an r-value to C source text.
 convRValueM :: Show a => Exp a Name -> ConvertM a Doc
@@ -331,29 +330,17 @@ convPrimCallM p xs
 
         PrimStore PrimStoreWrite
          | [XType _t, x1, x2]   <- xs
-         -> do  x1' <- convRValueM x1
-                x2' <- convRValueM x2
+         -> do  x1'     <- convRValueM x1
+                x2'     <- convRValueM x2
                 return  $ text "_write" <+> parenss [x1', x2']
 
-        PrimStore PrimStoreProjTag
-         -> do  xs'     <- mapM convRValueM xs
-                return  $ text "_tag"  <+> parenss xs'
-
-        PrimStore (PrimStoreProjField PrimStoreLayoutRaw)
-         | [XType t, x1, x2]    <- xs
-         -> do  t'      <- convTypeM t
-                x1'     <- convRValueM x1
-                x2'     <- convRValueM x2
-                return  $ text "_fieldRaw"   <+> parenss [t', x1', x2']
-
-        PrimStore (PrimStoreAllocData PrimStoreLayoutRaw)
-         | [xTag, xArity]       <- xs
-         -> do  xTag'   <- convRValueM xTag
-                xArity' <- convRValueM xArity
-                return  $ text "_allocRaw" <+> parenss [xTag', xArity']
+        PrimStore PrimStoreAlloc
+         | [xBytes]       <- xs
+         -> do  xBytes' <- convRValueM xBytes
+                return  $ text "_alloc" <+> parenss [xBytes']
 
 
-        -- String primops.
+        -- External primops.
         PrimExternal op 
          -> do  let op' = convPrimExternal op
                 xs'     <- mapM convRValueM xs
