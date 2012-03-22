@@ -1,12 +1,16 @@
 
-module DDC.Core.Sea.Base.Env
-        ( primKindEnv
-        , kindOfPrimTyCon
+module DDC.Core.Sea.Lite.Env
+        ( -- * Kinds
+          primKindEnv
+        , kindOfName 
+
+          -- * Types
         , primTypeEnv)
 where
+import DDC.Core.Sea.Lite.Name
 import DDC.Core.Sea.Base.Name
-import DDC.Type.Exp
 import DDC.Type.Compounds
+import DDC.Type.Exp
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
 
@@ -15,13 +19,6 @@ import qualified DDC.Type.Env   as Env
 -- | Kind environment containing kinds of primitive data types.
 primKindEnv :: Env Name
 primKindEnv = Env.setPrimFun kindOfName Env.empty
-
-
-kindOfName :: Name -> Maybe (Kind Name)
-kindOfName nn
- = case nn of
-        NamePrimTyCon tc  -> Just $ kindOfPrimTyCon tc
-        _                 -> Nothing
 
 
 -- | Take the kind of a primitive name.
@@ -39,6 +36,12 @@ kindOfPrimTyCon tc
         PrimTyConFloat _ -> kData
         PrimTyConString  -> kData
 
+
+kindOfName :: Name -> Maybe (Kind Name)
+kindOfName nn
+ = case nn of
+        NamePrimTyCon tc  -> Just $ kindOfPrimTyCon tc
+        _                 -> Nothing
 
 
 -- Types ----------------------------------------------------------------------

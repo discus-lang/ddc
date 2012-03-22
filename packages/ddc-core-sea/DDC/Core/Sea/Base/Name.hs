@@ -2,9 +2,7 @@
 -- | Names used by the Sea core language profile.
 --   Some of the primop types are also used by the SeaOutput profile.
 module DDC.Core.Sea.Base.Name
-        ( Name          (..)
-        , DataTyCon     (..)
-        , PrimTyCon     (..)
+        ( PrimTyCon     (..)
         , PrimOp        (..)
         , primOpNames)
 where

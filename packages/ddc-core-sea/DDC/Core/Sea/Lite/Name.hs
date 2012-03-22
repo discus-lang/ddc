@@ -2,9 +2,11 @@
 module DDC.Core.Sea.Lite.Name
         ( Name(..) )
 where
+import DDC.Core.Sea.Base.Name
+import DDC.Base.Pretty
 
 
--- Names of things used in the Sea core language profile.
+-- | Names of things used in Disciple-Core-Lite.
 data Name
         -- | User defined variables.
         = NameVar       String
