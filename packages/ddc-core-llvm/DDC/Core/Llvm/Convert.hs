@@ -79,7 +79,7 @@ convSuperM (C.BName n tSuper) x
 
         -- Make parameter binders.
         let params      = map (llvmParameterOfType platform) tsArgs
-        let align       = AlignBytes (platformFunctionAlignBytes platform)
+        let align       = AlignBytes (platformAlignBytes platform)
 
         -- Declaration of the super.
         let decl 
@@ -237,7 +237,7 @@ convExpM pp dst xx@C.XApp{}
 
         -- Call to primop.
         | Just (E.NamePrim p, args)     <- takeXPrimApps xx
-        = convPrimCallM pp dst p args
+        = convPrimCallM pp (Just dst) p args
 
         -- Call to top-level super.
         | xFun@(C.XVar _ b) : xsArgs    <- takeXApps xx
@@ -258,37 +258,29 @@ convExpM _ _ xx
 convPrimCallM 
         :: Show a 
         => Platform             -- ^ Current platform.
-        -> Var                  -- ^ Assign result to this var.
+        -> Maybe Var            -- ^ Assign result to this var.
         -> E.Prim               -- ^ Prim to call.
         -> [C.Exp a E.Name]     -- ^ Arguments to prim.
         -> LlvmM (Seq Instr)
 
-convPrimCallM pp dst p xs
+convPrimCallM pp mdst p xs
  = case p of
-        E.PrimStore (E.PrimStoreAllocData E.PrimStoreLayoutRaw)
-         | [xTag, xSize]        <- xs
-         , Just tag             <- takeTag xTag
-         , Just size            <- takeNat xSize
-         -> allocDataRaw dst tag size
-
-        E.PrimCast (E.PrimCastNatToInt bitsInt)
-         | [xVal]               <- xs
-         , Just val             <- takeAtomX pp xVal
-         -> let bitsNat = 8 * platformAddrBytes pp
-            in  return 
-                 $ Seq.singleton
-                 $ if      bitsNat > fromIntegral bitsInt
-                   then IConv dst ConvTrunc val
-                   else if bitsNat < fromIntegral bitsInt
-                   then IConv dst ConvSext  val
-                   else ISet  dst val
-
-        E.PrimString (E.PrimStringShowInt bitsInt)
-         |  [xVal]              <- xs
-         ,  Just val            <- takeAtomX pp xVal
+        E.PrimStore E.PrimStoreAlloc
+         | [xBytes]     <- xs
+         , Just xBytes' <- mconvAtom pp xBytes
          -> return
                 $ Seq.singleton
-                $ ICall (Just dst)
+                $ ICall mdst CallTypeStd
+                        (tPtr (TInt 8)) (NameGlobal "malloc") 
+                        [xBytes'] []
+
+
+        E.PrimExternal (E.PrimExternalShowInt bitsInt)
+         |  [xVal]      <- xs
+         ,  Just val    <- mconvAtom pp xVal
+         -> return
+                $ Seq.singleton
+                $ ICall mdst
                         CallTypeStd 
                         (tPtr (TInt 8)) 
                         (NameGlobal $ "showInt" ++ show bitsInt)
@@ -298,62 +290,16 @@ convPrimCallM pp dst p xs
            $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
 
 
-nameOfPrimString :: E.PrimString -> Name
-nameOfPrimString pp
- = case pp of
-        E.PrimStringShowInt bits -> NameGlobal $ "showInt" ++ show bits
-
 
 -- Stmt -----------------------------------------------------------------------
 convStmtM :: Platform -> C.Exp () E.Name -> LlvmM (Seq Instr)
 convStmtM pp xx
  = case xx of
         C.XApp{}
-         |  C.XVar _ (C.UPrim (E.NamePrim p) t) : xs <- takeXApps xx
-         -> convPrimStmtM pp p t xs
+         |  C.XVar _ (C.UPrim (E.NamePrim p) _) : xs <- takeXApps xx
+         -> convPrimCallM pp Nothing p xs
 
         _ -> error "convStmtM: sorry"
-
-
--- | Convert a primitive statement to LLvM.
-convPrimStmtM 
-        :: Show a 
-        => Platform
-        -> E.Prim 
-        -> C.Type E.Name
-        -> [C.Exp a E.Name] 
-        -> LlvmM (Seq Instr)
-
-convPrimStmtM pp prim tPrim xs
- = case prim of
-        -- Write to the heap.
-        E.PrimStmt E.PrimStmtWrite
-         |  [C.XType _t, x1, x2] <- xs
-         ,  Just x1'            <- mconvAtom pp x1
-         ,  Just x2'            <- mconvAtom pp x2
-         -> return $ Seq.singleton
-                   $ IStore x1' x2'
-
-        -- Call a function that does some IO.
-        E.PrimIO op
-         | Just xs'             <- sequence $ map (mconvAtom pp) xs
-         , (_, tResult)         <- takeTFunArgResult tPrim
-         , tResult'             <- convType pp tResult
-         , name                 <- nameOfPrimIO op
-         -> return $ Seq.singleton
-                   $ ICall Nothing  CallTypeStd
-                           tResult' name xs' []
-
-        -- debugging
-        _ -> return $ Seq.singleton
-                    $ IComment [show (prim, xs)]
-
-
-nameOfPrimIO :: E.PrimIO -> Name
-nameOfPrimIO pp
- = case pp of
-        E.PrimIOPutStr          -> NameGlobal "putStr"
-        E.PrimIOPutStrLn        -> NameGlobal "putStrLn"
 
 
 -- Atoms ----------------------------------------------------------------------
