@@ -31,7 +31,7 @@ Sea fragment violation.
 -- Ok: Statements in function.
 int32_t foo (int32_t x)
 {
-        int32_t y    = (x + x);
+        int32_t y        = (x + x);
         return y;
 }
 
@@ -55,7 +55,7 @@ Sea fragment violation.
 -- Ok: Function explicitly fails.
 int32_t foo (int32_t x)
 {
-        int32_t y    = (x + x);
+        int32_t y        = (x + x);
         _fail();
 }
 
@@ -64,7 +64,7 @@ int32_t foo (int32_t x)
 -- Ok: assignment between variables.
 int32_t foo (int32_t x)
 {
-        int32_t y    = x;
+        int32_t y        = x;
         return y;
 }
 
@@ -73,7 +73,7 @@ int32_t foo (int32_t x)
 -- Ok: assignment from a literal.
 nat_t foo (nat_t x)
 {
-        nat_t y      = 5;
+        nat_t y          = 5;
         return y;
 }
 
