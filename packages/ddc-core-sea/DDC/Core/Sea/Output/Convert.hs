@@ -125,7 +125,7 @@ convBodyM xx
                 x2'     <- convBodyM   x2
 
                 return  $ vcat
-                        [ fill 12 (t' <+> text n) <+> equals <+> x1' <> semi
+                        [ fill 16 (t' <+> text n) <+> equals <+> x1' <> semi
                         , x2' ]
 
         -- Non-binding statement.
@@ -288,7 +288,13 @@ convRValueM xx
 
                 return  $ text str <+> parenss args'
 
+        -- Type argument.
+        XType t
+         -> do  t'      <- convTypeM t
+                return  $ t'
+
         _ -> throw $ ErrorRValueInvalid xx
+
 
 
 -- PrimCalls ------------------------------------------------------------------
@@ -299,15 +305,27 @@ convPrimCallM p xs
 
         -- Binary arithmetic primops.
         PrimOp op
-         | [XType _t, x1, x2]    <- xs
-         , elem op [ PrimOpAdd, PrimOpSub, PrimOpMul, PrimOpDiv, PrimOpMod
-                   , PrimOpEq,  PrimOpNeq
-                   , PrimOpGt,  PrimOpLt,  PrimOpGe, PrimOpLe]
-         -> do     
-                x1'     <- convRValueM x1
+         | [XType _t, x1, x2]   <- xs
+         , Just op'             <- convPrimOp2 op
+         -> do  x1'     <- convRValueM x1
                 x2'     <- convRValueM x2
-                let op' =  convPrimOp op
                 return  $ parens (x1' <+> op' <+> x2')
+
+
+        -- Cast primops.
+        -- TODO: check for valid promotion
+        PrimCast PrimCastPromote
+         | [XType tTo, XType _tFrom, x1] <- xs
+         -> do  tTo'    <- convTypeM   tTo
+                x1'     <- convRValueM x1
+                return  $  parens tTo' <> parens x1'
+
+        -- TODO: check for valid truncate
+        PrimCast PrimCastTruncate
+         | [XType tTo, XType _tFrom, x1] <- xs
+         -> do  tTo'    <- convTypeM   tTo
+                x1'     <- convRValueM x1
+                return  $  parens tTo' <> parens x1'
 
 
         -- Control primops.
@@ -321,30 +339,12 @@ convPrimCallM p xs
          -> do  return  $ text "_fail()"
 
 
-        -- Cast primops.
-        PrimCast PrimCastPromote
-         | [XType tTo, XType _tFrom, x1] <- xs
-         -> do  tTo'    <- convTypeM   tTo
-                x1'     <- convRValueM x1
-                return  $  parens tTo' <> parens x1'
-
-
         -- Store primops.
-        PrimStore PrimStoreRead
-         | [XType _t, x1]       <- xs
-         -> do  x1'     <- convRValueM x1
-                return  $ text "_read" <+> parens  x1'
+        PrimStore op
+         -> do  let op'  = convPrimStore op
+                xs'     <- mapM convRValueM xs
+                return  $ op' <+> parenss xs'
 
-        PrimStore PrimStoreWrite
-         | [XType _t, x1, x2]   <- xs
-         -> do  x1'     <- convRValueM x1
-                x2'     <- convRValueM x2
-                return  $ text "_write" <+> parenss [x1', x2']
-
-        PrimStore PrimStoreAlloc
-         | [xBytes]       <- xs
-         -> do  xBytes' <- convRValueM xBytes
-                return  $ text "_alloc" <+> parenss [xBytes']
 
         -- External primops.
         PrimExternal op 
@@ -352,7 +352,7 @@ convPrimCallM p xs
                 xs'     <- mapM convRValueM xs
                 return  $ op' <+> parenss xs'
 
-        _ -> error "invalid primitive application"
+        _ -> error ("invalid primitive call" ++ show (p, xs))
 
 
 parenss :: [Doc] -> Doc
@@ -360,37 +360,55 @@ parenss xs = encloseSep lparen rparen (comma <> space) xs
 
 
 -- Prims ----------------------------------------------------------------------
--- | Convert an arithmetic primop name to C source text.
-convPrimOp :: PrimOp -> Doc
-convPrimOp pp
+-- | Convert an binary arithmetic primop name to C source text.
+convPrimOp2 :: PrimOp -> Maybe Doc
+convPrimOp2 pp
  = case pp of
         -- arithmetic   
-        PrimOpNeg               -> text "-"
-        PrimOpAdd               -> text "+"
-        PrimOpSub               -> text "-"
-        PrimOpMul               -> text "*"
-        PrimOpDiv               -> text "/"
-        PrimOpMod               -> text "%"
+        PrimOpNeg               -> Just $ text "-"
+        PrimOpAdd               -> Just $ text "+"
+        PrimOpSub               -> Just $ text "-"
+        PrimOpMul               -> Just $ text "*"
+        PrimOpDiv               -> Just $ text "/"
+        PrimOpMod               -> Just $ text "%"
 
         -- comparison
-        PrimOpEq                -> text "=="
-        PrimOpNeq               -> text "!="
-        PrimOpGt                -> text ">"
-        PrimOpGe                -> text ">="
-        PrimOpLt                -> text "<"
-        PrimOpLe                -> text "<="
+        PrimOpEq                -> Just $ text "=="
+        PrimOpNeq               -> Just $ text "!="
+        PrimOpGt                -> Just $ text ">"
+        PrimOpGe                -> Just $ text ">="
+        PrimOpLt                -> Just $ text "<"
+        PrimOpLe                -> Just $ text "<="
 
         -- boolean
-        PrimOpAnd               -> text "&&"
-        PrimOpOr                -> text "||"
+        PrimOpAnd               -> Just $ text "&&"
+        PrimOpOr                -> Just $ text "||"
 
         -- bitwise
-        PrimOpShl               -> text "<<"
-        PrimOpAShr              -> text ">>"    -- TODO: check these are done right.
-        PrimOpLShr              -> text ">>"
-        PrimOpBAnd              -> text "&"
-        PrimOpBOr               -> text "|"
-        PrimOpBXOr              -> text "^"
+        PrimOpShl               -> Just $ text "<<"
+        PrimOpShr               -> Just $ text ">>"
+        PrimOpBAnd              -> Just $ text "&"
+        PrimOpBOr               -> Just $ text "|"
+        PrimOpBXOr              -> Just $ text "^"
+
+
+-- | Convert a store primop name to C source text.
+convPrimStore :: PrimStore -> Doc
+convPrimStore pp
+ = case pp of
+        PrimStoreAlloc          -> text "_alloc"
+        PrimStoreRead           -> text "_read"
+        PrimStoreWrite          -> text "_write"
+        PrimStorePlusAddr       -> text "_plusAddr"
+        PrimStoreMinusAddr      -> text "_minusAddr"
+        PrimStorePeek           -> text "_peek"
+        PrimStorePoke           -> text "_poke"
+        PrimStorePlusPtr        -> text "_plusPtr"
+        PrimStoreMinusPtr       -> text "_minusPtr"
+        PrimStoreMakePtr        -> text "_makePtr"
+        PrimStoreTakePtr        -> text "_takePtr"
+        PrimStoreCastPtr        -> text "_castPtr"
+
 
 -- | Convert an external primop name to C source text.
 convPrimExternal :: PrimExternal -> Doc
@@ -399,4 +417,5 @@ convPrimExternal pp
         PrimExternalShowInt b   -> text "_showInt" <> int b
         PrimExternalPutStr      -> text "_putStr"
         PrimExternalPutStrLn    -> text "_putStrLn"
+
 

@@ -123,8 +123,7 @@ data PrimOp
 
         -- bitwise
         | PrimOpShl
-        | PrimOpAShr
-        | PrimOpLShr
+        | PrimOpShr
         | PrimOpBAnd
         | PrimOpBOr
         | PrimOpBXOr
@@ -161,8 +160,7 @@ primOpNames
         , (PrimOpAnd,           "and#")
         , (PrimOpOr ,           "or#" ) 
         , (PrimOpShl,           "shl#")
-        , (PrimOpAShr,          "ashr#")
-        , (PrimOpLShr,          "lshr#")
+        , (PrimOpShr,           "shr#")
         , (PrimOpBAnd,          "band#")
         , (PrimOpBOr,           "bor#")
         , (PrimOpBXOr,          "bxor#") ]

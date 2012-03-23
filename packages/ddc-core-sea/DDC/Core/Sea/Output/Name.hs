@@ -155,6 +155,7 @@ readIntOfBits str1
         | otherwise
         = Nothing
 
+
 -- Prim -----------------------------------------------------------------------
 -- | Primitive operators implemented directly by the machine or runtime system.
 data    Prim
@@ -197,14 +198,9 @@ data PrimCast
         --   without loss of precision.
         = PrimCastPromote
 
-        -- | Convert an raw address to a pointer.
-        | PrimCastMakePtr
-
-        -- | Convert a pointer to a raw address.
-        | PrimCastTakePtr
-
-        -- | Cast between pointer types.
-        | PrimCastPtr
+        -- | Truncate a value to a new width, 
+        --   possibly losing precision.
+        | PrimCastTruncate
         deriving (Eq, Ord, Show)
 
 
@@ -212,18 +208,14 @@ instance Pretty PrimCast where
  ppr c
   = case c of
         PrimCastPromote         -> text "promote#"
-        PrimCastMakePtr         -> text "makePtr#"
-        PrimCastTakePtr         -> text "takePtr#"
-        PrimCastPtr             -> text "castPtr#"
+        PrimCastTruncate        -> text "truncate#"
 
 
 readPrimCast :: String -> Maybe PrimCast
 readPrimCast str
  = case str of
         "promote#"              -> Just PrimCastPromote
-        "makePtr#"              -> Just PrimCastMakePtr
-        "takePtr#"              -> Just PrimCastTakePtr
-        "castPtr#"              -> Just PrimCastPtr
+        "truncate#"             -> Just PrimCastTruncate
         _                       -> Nothing
 
 
@@ -290,32 +282,84 @@ readPrimControl str
 -- Store -----------------------------------------------------------------------
 -- | A projection of some other object.
 data PrimStore
-        -- | Read a value from the store.
-        = PrimStoreRead
+        -- | Allocate some space on the heap.
+        = PrimStoreAlloc
 
-        -- | Write a value to the store.
+        -- Addr operations ------------
+        -- | Read a value from the store at a given address and offset.
+        | PrimStoreRead
+
+        -- | Write a value to the store at the given address and offset.
         | PrimStoreWrite
 
-        -- | Allocate some space on the heap.
-        | PrimStoreAlloc
+        -- | Add an offset to an address.
+        | PrimStorePlusAddr
+
+        -- | Subtract an offset from an address.
+        | PrimStoreMinusAddr
+
+        -- Ptr operations -------------
+        -- | Read a value from a pointer plus the given offset.
+        | PrimStorePeek
+
+        -- | Write a value to a pointer plus the given offset.
+        | PrimStorePoke
+
+        -- | Add an offset to a pointer.
+        | PrimStorePlusPtr
+
+        -- | Subtract an offset from a pointer.
+        | PrimStoreMinusPtr
+
+        -- | Convert an raw address to a pointer.
+        | PrimStoreMakePtr
+
+        -- | Convert a pointer to a raw address.
+        | PrimStoreTakePtr
+
+        -- | Cast between pointer types.
+        | PrimStoreCastPtr
         deriving (Eq, Ord, Show)
 
 
 instance Pretty PrimStore where
  ppr p
   = case p of        
+        PrimStoreAlloc          -> text "alloc#"
+
         PrimStoreRead           -> text "read#"
         PrimStoreWrite          -> text "write#"
-        PrimStoreAlloc          -> text "alloc#"
+        PrimStorePlusAddr       -> text "plusAddr#"
+        PrimStoreMinusAddr      -> text "minusAddr#"
+
+        PrimStorePeek           -> text "peek#"
+        PrimStorePoke           -> text "poke#"
+        PrimStorePlusPtr        -> text "plusPtr#"
+        PrimStoreMinusPtr       -> text "minusPtr#"
+        PrimStoreMakePtr        -> text "makePtr#"
+        PrimStoreTakePtr        -> text "takePtr#"
+        PrimStoreCastPtr        -> text "castPtr#"
 
 
 readPrimStore :: String -> Maybe PrimStore
 readPrimStore str
  = case str of
-        "read#"         -> Just $ PrimStoreRead
-        "write#"        -> Just $ PrimStoreWrite
-        "alloc#"        -> Just $ PrimStoreAlloc
-        _               -> Nothing
+        "alloc#"                -> Just PrimStoreAlloc
+
+        "read#"                 -> Just PrimStoreRead
+        "write#"                -> Just PrimStoreWrite
+        "plusAddr#"             -> Just PrimStorePlusAddr
+        "minusAddr#"            -> Just PrimStoreMinusAddr
+
+        "peek#"                 -> Just PrimStorePeek
+        "poke#"                 -> Just PrimStorePoke
+        "plusPtr#"              -> Just PrimStorePlusPtr
+        "minusPtr#"             -> Just PrimStoreMinusPtr
+        "makePtr#"              -> Just PrimStoreMakePtr
+        "takePtr#"              -> Just PrimStoreTakePtr
+        "castPtr#"              -> Just PrimStoreCastPtr
+
+        _                       -> Nothing
 
 
 -- PrimExternal ---------------------------------------------------------------

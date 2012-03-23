@@ -165,8 +165,7 @@ typeOfPrimOp op
 
         -- Bitwise
         PrimOpShl       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpAShr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpLShr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpShr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimOpBAnd      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimOpBOr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimOpBXOr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
@@ -180,15 +179,8 @@ typeOfPrimCast cc
         PrimCastPromote
          -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFunPE` t1
 
-        PrimCastMakePtr
-         -> tForall kData $ \t -> tAddr `tFunPE` tPtr t
-
-        PrimCastTakePtr
-         -> tForall kData $ \t -> tPtr t `tFunPE` tAddr
-
-        PrimCastPtr
-         -> tForalls [kData, kData] $ \[t1, t2] -> tPtr t2 `tFunPE` tPtr t1
-
+        PrimCastTruncate
+         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFunPE` t1
 
 
 -- PrimCall -------------------------------------------------------------------
@@ -225,14 +217,42 @@ typeOfPrimControl pc
 typeOfPrimStore :: PrimStore -> Type Name
 typeOfPrimStore jj
  = case jj of
-        PrimStoreRead        
-         -> tForall kData $ \t -> tAddr `tFunPE` t
-
-        PrimStoreWrite
-         -> tForall kData $ \t -> tAddr `tFunPE` t `tFunPE` tVoid
-
         PrimStoreAlloc
          -> tNat `tFunPE` tAddr
+
+        PrimStoreRead           
+         -> tForall kData $ \t -> tAddr  `tFunPE` tNat `tFunPE` t
+
+        PrimStoreWrite
+         -> tForall kData $ \t -> tAddr  `tFunPE` tNat `tFunPE` t `tFunPE` tVoid
+
+        PrimStorePlusAddr
+         -> tAddr  `tFunPE` tNat `tFunPE` tAddr
+
+        PrimStoreMinusAddr
+         -> tAddr  `tFunPE` tNat `tFunPE` tAddr
+
+        PrimStorePeek
+         -> tForall kData $ \t -> tPtr t `tFunPE` tNat `tFunPE` t
+
+        PrimStorePoke
+         -> tForall kData $ \t -> tPtr t `tFunPE` tNat `tFunPE` t `tFunPE` tVoid
+
+        PrimStorePlusPtr
+         -> tForall kData $ \t -> tPtr t `tFunPE` tNat `tFunPE` tPtr t
+
+        PrimStoreMinusPtr
+         -> tForall kData $ \t -> tPtr t `tFunPE` tNat `tFunPE` tPtr t
+
+        PrimStoreMakePtr
+         -> tForall kData $ \t -> tAddr `tFunPE` tPtr t
+
+        PrimStoreTakePtr
+         -> tForall kData $ \t -> tPtr t `tFunPE` tAddr
+
+        PrimStoreCastPtr
+         -> tForalls [kData, kData] $ \[t1, t2] -> tPtr t2 `tFunPE` tPtr t1
+
 
 
 -- PrimExternal --------------------------------------------------------------
