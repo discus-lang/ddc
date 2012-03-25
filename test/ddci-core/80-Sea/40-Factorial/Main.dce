@@ -72,8 +72,9 @@ fac (x: Ptr# Obj) : Ptr# Obj
          False# -> do {
                 n2      = boxInt32 1i32#;
                 n3      = subInt32 x n2;
-                n4      = mulInt32 x n3;
-                return# [Ptr# Obj] n4;
+                n4      = fac (n3);
+                n5      = mulInt32 x n4;
+                return# [Ptr# Obj] n5;
          };
         }
       };
@@ -81,8 +82,8 @@ fac (x: Ptr# Obj) : Ptr# Obj
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
  = do { x       = boxInt32 10i32#;
         x2      = fac x;
-        x2'     = unboxInt32 x2;
-        str     = showInt32# x2';
+        x2u     = unboxInt32 x2;
+        str     = showInt32# x2u;
         putStrLn# str;
 
         return# [Int32#] 0i32#;

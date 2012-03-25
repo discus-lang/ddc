@@ -15,10 +15,16 @@
 
 
 // -- Types -------------------------------------------------------------------
+// Boolean type.
+typedef int     bool_t;
+
 // An unsigned natural number.
 //   Used for object sizes and field counts.
 //   Big enough to represent the number of allocatable bytes.
 typedef size_t   nat_t;
+
+// Generic address tpye.
+typedef uint8_t* addr_t;
 
 // A constructor tag.
 typedef uint32_t tag_t;
@@ -199,18 +205,20 @@ uint8_t  _format (Obj* obj)
 {       return (uint8_t)(obj ->tagFormat & 0x0f);
 }
 
-// Get a field of a DataRaw Object.
-#define _fieldRaw(TYPE,offset,var) ((TYPE*)((DataRaw*)var)->payload + offset)
 
 // Read from a field of an Object.
 //   We use an explicit macro to make it easier to see what is happening in
 //   the generated code.
-#define _read(ptr)                 (*ptr)
+#define _read(type,addr,offset)         (*((type *)(addr + offset)))
 
 // Write to a field of an Object.
 //   We use an explicit macro to make it easier to see what is happening in
 //   the generated code.
-#define _write(ptr,val)            ((*ptr)=(val))
+#define _write(type,addr,offset,val)    ((*((type *)(addr + offset))) = val)
+
+// Pointer to address conversions.
+#define _makePtr(type,addr)             ((type *)addr)
+#define _takePtr(type,ptr)              ((addr_t)ptr)
 
 
 // -- Error Handling ----------------------------------------------------------
@@ -226,30 +234,8 @@ void _fail(void)
 // Alloc some space on the heap.
 //   TODO: We're just calling malloc until the GC works again.
 static inline 
-Obj* _alloc (size_t size)
-{       return (Obj*)malloc(size);
-}
-
-// Allocate a Raw Object on the heap.
-//   The payloadSize must be a multiple of the word size,
-//   otherwise you'll misalign the heap.
-static inline 
-Obj* _allocRaw (tag_t tag, size_t payloadSizeBytes)
-{       // Size of the payload in four byte words.
-        size_t payloadSizeWords = payloadSizeBytes / 4;
-
-        // Size of the whole object in bytes.
-        size_t objectSizeBytes  = sizeof(DataRawSmall) + payloadSizeBytes;
-
-        // Allocate the object.
-        DataRawSmall* obj       = (DataRawSmall*)_alloc(objectSizeBytes);
-
-        // Write the tag and format in the header.
-        obj ->tagFormat         = (tag << 8) 
-                                | _ObjModeDataRawSmall 
-                                | (payloadSizeWords << 4);
-
-        return (Obj*)obj;
+addr_t  _alloc (size_t size)
+{       return (addr_t)malloc(size);
 }
 
 

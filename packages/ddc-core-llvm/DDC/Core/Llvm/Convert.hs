@@ -311,11 +311,17 @@ mconvAtom pp xx
         C.XVar _ (C.UName (E.NameVar str) t)
          -> Just $ XVar (Var (NameLocal str) (convType pp t))
 
-        C.XCon _ (C.UPrim (E.NameTag tag) t)
+        C.XCon _ (C.UPrim (E.NameTag  tag) t)
          -> Just $ XLit (LitInt (convType pp t) tag)
 
-        C.XCon _ (C.UPrim (E.NameNat nat) t)
+        C.XCon _ (C.UPrim (E.NameNat  nat) t)
          -> Just $ XLit (LitInt (convType pp t) nat)
+
+        C.XCon _ (C.UPrim (E.NameInt  val _) t)
+         -> Just $ XLit (LitInt (convType pp t) val)
+
+        C.XCon _ (C.UPrim (E.NameWord val _) t)
+         -> Just $ XLit (LitInt (convType pp t) val)
 
         _ -> Nothing
 
