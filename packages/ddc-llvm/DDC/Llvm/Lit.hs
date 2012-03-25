@@ -1,6 +1,7 @@
 
 module DDC.Llvm.Lit
         ( Lit(..)
+        , pprPlainL
         , typeOfLit )
 where
 import DDC.Llvm.Type
@@ -28,6 +29,16 @@ instance Pretty Lit where
  ppr ll
   = case ll of
         LitInt   t i    -> ppr t <+> integer i
+        LitFloat{}      -> error "ppr[Lit]: floats aren't handled yet"
+        LitNull  _      -> text "null"
+        LitUndef _      -> text "undef"
+
+
+-- | Pretty print a literal without its type.
+pprPlainL :: Lit -> Doc
+pprPlainL ll
+ = case ll of
+        LitInt _ i      -> integer i
         LitFloat{}      -> error "ppr[Lit]: floats aren't handled yet"
         LitNull  _      -> text "null"
         LitUndef _      -> text "undef"

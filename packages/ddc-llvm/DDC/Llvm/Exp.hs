@@ -12,7 +12,8 @@ module DDC.Llvm.Exp
         , typeOfVar
 
           -- * Expressions
-        , Exp   (..))
+        , Exp   (..)
+        , pprPlainX)
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
@@ -68,4 +69,15 @@ instance Pretty Exp where
   = case xx of
         XVar v  -> ppr v
         XLit l  -> ppr l
+
+
+-- Pretty print an expression without its type.
+pprPlainX :: Exp -> Doc
+pprPlainX xx
+ = case xx of
+        XVar v  -> ppr $ nameOfVar v
+        XLit l  -> pprPlainL l
+
+
+
 

@@ -107,7 +107,7 @@ data Instr
 
 
         -- Binary Operations ------------------------------
-        | IOp           Var     Op      Exp     Exp
+        | IOp           Var     Op      Type    Exp     Exp
 
 
         -- Conversion Operations --------------------------
@@ -182,10 +182,13 @@ instance Pretty Instr where
          -> text "unreachable"
 
         -- Binary Operations ------------------------------
-        IOp dst op v1 v2
-         -> hcat [ fill 12 (ppr $ nameOfVar dst)
-                 , equals
-                 , ppr op, ppr v1, comma, ppr v2]
+        IOp dst op t v1 v2
+         -> (fill 12 (ppr $ nameOfVar dst))
+                <+> equals
+                <+> ppr op
+                <+> ppr t
+                <+> pprPlainX v1 <> comma 
+                <+> pprPlainX v2
 
 
         -- Other operations -------------------------------

@@ -253,6 +253,17 @@ convExpM _ _ xx
         $ IComment [ "convExpM: cannot convert " ++ show xx ]
 
 
+-- Stmt -----------------------------------------------------------------------
+convStmtM :: Platform -> C.Exp () E.Name -> LlvmM (Seq Instr)
+convStmtM pp xx
+ = case xx of
+        C.XApp{}
+         |  C.XVar _ (C.UPrim (E.NamePrim p) _) : xs <- takeXApps xx
+         -> convPrimCallM pp Nothing p xs
+
+        _ -> error "convStmtM: sorry"
+
+
 -- Prim call ------------------------------------------------------------------
 -- | Convert a primitive call to LLVM.
 convPrimCallM 
@@ -265,41 +276,78 @@ convPrimCallM
 
 convPrimCallM pp mdst p xs
  = case p of
+        E.PrimOp op
+         | [C.XType t, x1, x2] <- xs
+         , t'           <- convType    pp t
+         , Just x1'     <- mconvAtom   pp x1
+         , Just x2'     <- mconvAtom   pp x2
+         , Just op'     <- convPrimOp2 op t
+         , Just dst     <- mdst
+         -> return      $ Seq.singleton
+                        $ IOp dst op' t' x1' x2'
+
+
         E.PrimStore E.PrimStoreAlloc
          | [xBytes]     <- xs
          , Just xBytes' <- mconvAtom pp xBytes
-         -> return
-                $ Seq.singleton
-                $ ICall mdst CallTypeStd
-                        (tPtr (TInt 8)) (NameGlobal "malloc") 
-                        [xBytes'] []
+         -> return      $ Seq.singleton
+                        $ ICall mdst CallTypeStd
+                                (tPtr (TInt 8)) (NameGlobal "malloc") 
+                                [xBytes'] []
 
 
         E.PrimExternal (E.PrimExternalShowInt bitsInt)
          |  [xVal]      <- xs
          ,  Just val    <- mconvAtom pp xVal
-         -> return
-                $ Seq.singleton
-                $ ICall mdst
-                        CallTypeStd 
-                        (tPtr (TInt 8)) 
-                        (NameGlobal $ "showInt" ++ show bitsInt)
-                        [val] []
+         -> return      $ Seq.singleton
+                        $ ICall mdst
+                                CallTypeStd 
+                                (tPtr (TInt 8)) 
+                                (NameGlobal $ "showInt" ++ show bitsInt)
+                                [val] []
 
         _ -> return $ Seq.singleton 
            $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
 
 
+-- | Convert a binary primop from Core Sea to LLVM form.
+convPrimOp2 :: E.PrimOp -> C.Type E.Name -> Maybe Op
+convPrimOp2 op t
+ = case op of
+        E.PrimOpAdd     -> Just OpAdd
+        E.PrimOpSub     -> Just OpSub
+        E.PrimOpMul     -> Just OpMul
 
--- Stmt -----------------------------------------------------------------------
-convStmtM :: Platform -> C.Exp () E.Name -> LlvmM (Seq Instr)
-convStmtM pp xx
- = case xx of
-        C.XApp{}
-         |  C.XVar _ (C.UPrim (E.NamePrim p) _) : xs <- takeXApps xx
-         -> convPrimCallM pp Nothing p xs
+        E.PrimOpDiv
+         | Just True    <- isSignedT t  
+         -> Just OpSDiv
 
-        _ -> error "convStmtM: sorry"
+         | otherwise
+         -> Just OpUDiv
+
+        E.PrimOpMod
+         | Just True    <- isSignedT t
+         -> Just OpSRem
+
+         | otherwise    
+         -> Just OpURem
+
+        _               -> Nothing
+
+
+isSignedT :: C.Type E.Name -> Maybe Bool
+isSignedT tt
+ = case tt of
+        -- A primitive type.
+        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+         -> case n of
+                E.PrimTyConNat          -> Just False
+                E.PrimTyConWord  _      -> Just False
+                E.PrimTyConInt   _      -> Just True
+                E.PrimTyConFloat _      -> Just True
+                _                       -> Nothing
+
+        _                               -> Nothing
 
 
 -- Atoms ----------------------------------------------------------------------
