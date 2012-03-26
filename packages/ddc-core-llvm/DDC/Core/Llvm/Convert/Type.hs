@@ -11,13 +11,19 @@ module DDC.Core.Llvm.Convert.Type
         , tPtr
 
           -- * Type Constructors
-        , llvmTypeOfTyCon)
+        , llvmTypeOfTyCon
+
+          -- * Predicates
+        , isSignedT
+        , isUnsignedT
+        , isIntegralT
+        , isFloatingT)
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
-import DDC.Core.Sea.Output.Name
+import DDC.Core.Sea.Output.Name as E
 import DDC.Type.Compounds
 import Control.Monad.State.Strict
 import qualified DDC.Core.Exp   as C
@@ -110,4 +116,53 @@ aObj platform   = TypeAlias "s.Obj" (sObj platform)
 -- | Alias for pointer type.
 tPtr :: Type -> Type
 tPtr t = TPointer t
+
+
+-- Predicates -----------------------------------------------------------------
+-- | Check whether some type is signed: IntN or FloatN.
+isSignedT :: C.Type E.Name -> Bool
+isSignedT tt
+ = case tt of
+        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+         -> case n of
+                E.PrimTyConInt   _      -> True
+                E.PrimTyConFloat _      -> True
+                _                       -> False
+        _                               -> False
+
+
+-- | Check whether some type is unsigned: NatN or WordN
+isUnsignedT :: C.Type E.Name -> Bool
+isUnsignedT tt
+ = case tt of
+        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+         -> case n of
+                E.PrimTyConNat          -> True
+                E.PrimTyConWord _       -> True
+                _                       -> False
+        _                               -> False
+
+
+-- | Check whether some type is an integral type. Nat, IntN or WordN.
+isIntegralT :: C.Type E.Name -> Bool
+isIntegralT tt
+ = case tt of
+        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+         -> case n of
+                E.PrimTyConNat          -> True
+                E.PrimTyConInt   _      -> True
+                E.PrimTyConWord  _      -> True
+                _                       -> False
+        _                               -> False
+
+
+-- | Check whether some type is an integral type. Nat, IntN or WordN.
+isFloatingT :: C.Type E.Name -> Bool
+isFloatingT tt
+ = case tt of
+        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+         -> case n of
+                E.PrimTyConFloat  _     -> True
+                _                       -> False
+        _                               -> False
 

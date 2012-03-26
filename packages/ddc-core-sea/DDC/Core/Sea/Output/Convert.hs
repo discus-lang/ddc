@@ -370,7 +370,7 @@ convPrimOp2 pp
         PrimOpSub               -> Just $ text "-"
         PrimOpMul               -> Just $ text "*"
         PrimOpDiv               -> Just $ text "/"
-        PrimOpMod               -> Just $ text "%"
+        PrimOpRem               -> Just $ text "%"
 
         -- comparison
         PrimOpEq                -> Just $ text "=="

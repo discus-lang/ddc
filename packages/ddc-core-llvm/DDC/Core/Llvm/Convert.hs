@@ -314,38 +314,44 @@ convPrimCallM pp mdst p xs
 convPrimOp2 :: E.PrimOp -> C.Type E.Name -> Maybe Op
 convPrimOp2 op t
  = case op of
-        E.PrimOpAdd     -> Just OpAdd
-        E.PrimOpSub     -> Just OpSub
-        E.PrimOpMul     -> Just OpMul
+        E.PrimOpAdd     
+         | isIntegralT t                -> Just OpAdd
+         | isFloatingT t                -> Just OpFAdd 
+
+        E.PrimOpSub      
+         | isIntegralT t                -> Just OpSub
+         | isFloatingT t                -> Just OpFSub
+
+        E.PrimOpMul 
+         | isIntegralT t                -> Just OpMul
+         | isFloatingT t                -> Just OpFMul
 
         E.PrimOpDiv
-         | Just True    <- isSignedT t  
-         -> Just OpSDiv
+         | isIntegralT t, isUnsignedT t -> Just OpUDiv
+         | isIntegralT t, isSignedT t   -> Just OpSDiv
+         | isFloatingT t                -> Just OpFDiv
 
-         | otherwise
-         -> Just OpUDiv
-
-        E.PrimOpMod
-         | Just True    <- isSignedT t
-         -> Just OpSRem
-
-         | otherwise    
-         -> Just OpURem
-
-        _               -> Nothing
+        E.PrimOpRem
+         | isIntegralT t, isUnsignedT t -> Just OpURem
+         | isIntegralT t, isSignedT t   -> Just OpSRem
+         | isFloatingT t                -> Just OpFRem
 
 
-isSignedT :: C.Type E.Name -> Maybe Bool
-isSignedT tt
- = case tt of
-        -- A primitive type.
-        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
-         -> case n of
-                E.PrimTyConNat          -> Just False
-                E.PrimTyConWord  _      -> Just False
-                E.PrimTyConInt   _      -> Just True
-                E.PrimTyConFloat _      -> Just True
-                _                       -> Nothing
+        E.PrimOpShl
+         | isIntegralT t                -> Just OpShl
+
+        E.PrimOpShr
+         | isIntegralT t, isUnsignedT t -> Just OpLShr
+         | isIntegralT t, isSignedT t   -> Just OpAShr
+
+        E.PrimOpBAnd
+         | isIntegralT t                -> Just OpAnd
+
+        E.PrimOpBOr
+         | isIntegralT t                -> Just OpOr
+
+        E.PrimOpBXOr
+         | isIntegralT t                -> Just OpXor
 
         _                               -> Nothing
 

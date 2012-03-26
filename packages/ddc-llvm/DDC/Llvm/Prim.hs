@@ -16,7 +16,7 @@ data Op
         | OpMul     -- ^ multiply ..
         | OpUDiv    -- ^ unsigned integer or vector division.
         | OpSDiv    -- ^ signed integer ..
-        | OpURem    -- ^ unsigned integer or vector remainder (mod)
+        | OpURem    -- ^ unsigned integer or vector remainder
         | OpSRem    -- ^ signed ...
 
         | OpFAdd    -- ^ add two floating point or vector values.

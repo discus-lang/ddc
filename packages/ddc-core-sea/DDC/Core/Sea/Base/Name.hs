@@ -2,8 +2,11 @@
 -- | Names used by the Sea core language profile.
 --   Some of the primop types are also used by the SeaOutput profile.
 module DDC.Core.Sea.Base.Name
-        ( PrimTyCon     (..),   readPrimTyCon
-        , PrimOp        (..),   readPrimOp)
+        ( PrimTyCon     (..)
+        , readPrimTyCon
+
+        , PrimOp        (..)
+        , readPrimOp)
 where
 import DDC.Base.Pretty
 import Data.Char
@@ -107,7 +110,7 @@ data PrimOp
         | PrimOpSub
         | PrimOpMul
         | PrimOpDiv
-        | PrimOpMod
+        | PrimOpRem
 
         -- comparison
         | PrimOpEq
@@ -151,7 +154,7 @@ primOpNames
         , (PrimOpSub,           "sub#")
         , (PrimOpMul,           "mul#")
         , (PrimOpDiv,           "div#")
-        , (PrimOpMod,           "mod#")
+        , (PrimOpRem,           "rem#")
         , (PrimOpEq ,           "eq#" )
         , (PrimOpNeq,           "neq#")
         , (PrimOpGt ,           "gt#" )

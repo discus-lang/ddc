@@ -149,7 +149,7 @@ typeOfPrimOp op
         PrimOpSub       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimOpMul       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
         PrimOpDiv       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimOpMod       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpRem       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
 
         -- Comparison
         PrimOpEq        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
