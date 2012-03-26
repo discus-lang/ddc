@@ -136,10 +136,10 @@ data Instr
 
         -- Other Operations -------------------------------
         -- | Integer comparison.
-        | IICmp         Var     ICond   Exp     Exp
+        | IICmp         Var     ICond   Type    Exp     Exp
 
         -- | Floating-point comparison.
-        | IFCmp         Var     FCond   Exp     Exp
+        | IFCmp         Var     FCond   Type    Exp     Exp
 
 
         -- | Call a function. 
@@ -182,16 +182,29 @@ instance Pretty Instr where
          -> text "unreachable"
 
         -- Binary Operations ------------------------------
-        IOp dst op t v1 v2
+        IOp dst op t x1 x2
          -> (fill 12 (ppr $ nameOfVar dst))
                 <+> equals
-                <+> ppr op
-                <+> ppr t
-                <+> pprPlainX v1 <> comma 
-                <+> pprPlainX v2
+                <+> ppr op      <+> ppr t
+                <+> pprPlainX x1 <> comma 
+                <+> pprPlainX x2
 
 
         -- Other operations -------------------------------
+        IICmp dst icond t x1 x2
+         -> (fill 12 (ppr $ nameOfVar dst))
+                <+> equals
+                <+> text "icmp"  <+> ppr icond  <+> ppr t
+                <+> pprPlainX x1 <> comma
+                <+> pprPlainX x2
+
+        IFCmp dst fcond t x1 x2
+         -> (fill 12 (ppr $ nameOfVar dst))
+                <+> equals
+                <+> text "fcmp"  <+> ppr fcond  <+> ppr t
+                <+> pprPlainX x1 <> comma
+                <+> pprPlainX x2
+
         ICall mdst callType tResult name xsArgs attrs
          -> let call'
                  = case callType of

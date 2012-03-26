@@ -6,6 +6,7 @@ import DDC.Llvm.Attr
 import DDC.Llvm.Instr
 import DDC.Llvm.Function
 import DDC.Llvm.Module
+import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
@@ -281,10 +282,21 @@ convPrimCallM pp mdst p xs
          , t'           <- convType    pp t
          , Just x1'     <- mconvAtom   pp x1
          , Just x2'     <- mconvAtom   pp x2
-         , Just op'     <- convPrimOp2 op t
          , Just dst     <- mdst
-         -> return      $ Seq.singleton
-                        $ IOp dst op' t' x1' x2'
+         -> let result
+                 | Just op'     <- convPrimOp2 op t
+                 = IOp dst op' t' x1' x2'
+
+                 | Just icond'  <- convPrimICond op t
+                 = IICmp dst icond' t' x1' x2'
+
+                 | Just fcond'  <- convPrimFCond op t
+                 = IFCmp dst fcond' t' x1' x2'
+
+                 | otherwise
+                 = IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+
+           in   return $ Seq.singleton result
 
 
         E.PrimStore E.PrimStoreAlloc
@@ -308,52 +320,6 @@ convPrimCallM pp mdst p xs
 
         _ -> return $ Seq.singleton 
            $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
-
-
--- | Convert a binary primop from Core Sea to LLVM form.
-convPrimOp2 :: E.PrimOp -> C.Type E.Name -> Maybe Op
-convPrimOp2 op t
- = case op of
-        E.PrimOpAdd     
-         | isIntegralT t                -> Just OpAdd
-         | isFloatingT t                -> Just OpFAdd 
-
-        E.PrimOpSub      
-         | isIntegralT t                -> Just OpSub
-         | isFloatingT t                -> Just OpFSub
-
-        E.PrimOpMul 
-         | isIntegralT t                -> Just OpMul
-         | isFloatingT t                -> Just OpFMul
-
-        E.PrimOpDiv
-         | isIntegralT t, isUnsignedT t -> Just OpUDiv
-         | isIntegralT t, isSignedT t   -> Just OpSDiv
-         | isFloatingT t                -> Just OpFDiv
-
-        E.PrimOpRem
-         | isIntegralT t, isUnsignedT t -> Just OpURem
-         | isIntegralT t, isSignedT t   -> Just OpSRem
-         | isFloatingT t                -> Just OpFRem
-
-
-        E.PrimOpShl
-         | isIntegralT t                -> Just OpShl
-
-        E.PrimOpShr
-         | isIntegralT t, isUnsignedT t -> Just OpLShr
-         | isIntegralT t, isSignedT t   -> Just OpAShr
-
-        E.PrimOpBAnd
-         | isIntegralT t                -> Just OpAnd
-
-        E.PrimOpBOr
-         | isIntegralT t                -> Just OpOr
-
-        E.PrimOpBXOr
-         | isIntegralT t                -> Just OpXor
-
-        _                               -> Nothing
 
 
 -- Atoms ----------------------------------------------------------------------
