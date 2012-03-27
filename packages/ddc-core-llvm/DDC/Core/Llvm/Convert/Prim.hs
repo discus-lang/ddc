@@ -1,13 +1,24 @@
 
 module DDC.Core.Llvm.Convert.Prim
-        ( convPrimOp2
+        ( convPrimExtern
+        , convPrimOp2
         , convPrimICond
         , convPrimFCond)
 where
 import DDC.Core.Llvm.Convert.Type
 import DDC.Llvm.Prim
+import DDC.Llvm.Exp
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Sea.Output.Name       as E
+
+
+-- | Get the symbol name of an external primitive.
+convPrimExtern :: E.PrimExternal -> C.Type E.Name -> Maybe Name
+convPrimExtern p _t
+ = case p of
+        E.PrimExternalShowInt bits      -> Just $ NameGlobal ("showInt" ++ show bits ++ "#")
+        E.PrimExternalPutStr            -> Just $ NameGlobal "putStr"
+        E.PrimExternalPutStrLn          -> Just $ NameGlobal "putStrLn"
 
 
 -- | Convert a binary primop from Core Sea to LLVM form.

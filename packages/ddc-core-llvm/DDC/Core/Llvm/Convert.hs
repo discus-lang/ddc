@@ -237,8 +237,9 @@ convExpM _  dst (C.XVar _ (C.UName (E.NameVar str) t))
 convExpM pp dst xx@C.XApp{}
 
         -- Call to primop.
-        | Just (E.NamePrim p, args)     <- takeXPrimApps xx
-        = convPrimCallM pp (Just dst) p args
+        | (C.XVar _ (C.UPrim (E.NamePrim p) tPrim) : args) 
+                <- takeXApps xx
+        = convPrimCallM pp (Just dst) p tPrim args
 
         -- Call to top-level super.
         | xFun@(C.XVar _ b) : xsArgs    <- takeXApps xx
@@ -259,8 +260,8 @@ convStmtM :: Platform -> C.Exp () E.Name -> LlvmM (Seq Instr)
 convStmtM pp xx
  = case xx of
         C.XApp{}
-         |  C.XVar _ (C.UPrim (E.NamePrim p) _) : xs <- takeXApps xx
-         -> convPrimCallM pp Nothing p xs
+         |  C.XVar _ (C.UPrim (E.NamePrim p) tPrim) : xs <- takeXApps xx
+         -> convPrimCallM pp Nothing p tPrim xs
 
         _ -> error "convStmtM: sorry"
 
@@ -272,10 +273,11 @@ convPrimCallM
         => Platform             -- ^ Current platform.
         -> Maybe Var            -- ^ Assign result to this var.
         -> E.Prim               -- ^ Prim to call.
+        -> C.Type E.Name        -- ^ Type of prim.
         -> [C.Exp a E.Name]     -- ^ Arguments to prim.
         -> LlvmM (Seq Instr)
 
-convPrimCallM pp mdst p xs
+convPrimCallM pp mdst p tPrim xs
  = case p of
         E.PrimOp op
          | [C.XType t, x1, x2] <- xs
@@ -308,15 +310,14 @@ convPrimCallM pp mdst p xs
                                 [xBytes'] []
 
 
-        E.PrimExternal (E.PrimExternalShowInt bitsInt)
-         |  [xVal]      <- xs
-         ,  Just val    <- mconvAtom pp xVal
+        E.PrimExternal prim
+         |  Just xs'     <- sequence $ map (mconvAtom pp) xs
+         ,  (_, tResult) <- takeTFunArgResult tPrim
+         ,  tResult'     <- convType pp tResult
+         ,  Just name'   <- convPrimExtern prim tPrim
          -> return      $ Seq.singleton
-                        $ ICall mdst
-                                CallTypeStd 
-                                (tPtr (TInt 8)) 
-                                (NameGlobal $ "showInt" ++ show bitsInt)
-                                [val] []
+                        $ ICall mdst CallTypeStd tResult'
+                                name' xs' []
 
         _ -> return $ Seq.singleton 
            $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
