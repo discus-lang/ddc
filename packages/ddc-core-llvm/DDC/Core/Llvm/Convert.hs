@@ -155,15 +155,25 @@ convBodyM blocks label instrs xx
          -- Case statement.
          C.XCase _ x1 alts
           | Just x1'@(Var{})    <- takeLocalV platform x1
-          -> do altResults      <- mapM convAltM alts
+          -> do alts'@(_:_)     <- mapM convAltM alts
 
-                let altTable    = mapMaybe takeAltCase altResults
-                let altBlocks   = join $ fmap altResultBlocks $ Seq.fromList altResults
+                -- Determine what default alternative to use for the instruction. 
+                (lDefault, blocksDefault)
+                 <- case last alts' of
+                        AltDefault l bs -> return (l, bs)
+                        AltCase _  l bs -> return (l, bs)
+
+                -- Alts that aren't the default.
+                let altsTable   = init alts'
+
+                -- Build the jump table of non-default alts.
+                let table       = mapMaybe takeAltCase altsTable
+                let blocksTable = join $ fmap altResultBlocks $ Seq.fromList altsTable
 
                 let switchBlock = Block label
-                                $ instrs |> ISwitch (XVar x1') (Label "foo") altTable
+                                $ instrs |> ISwitch (XVar x1') lDefault table
 
-                return  $ switchBlock <| altBlocks
+                return  $ blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
 
          -- TODO: Debugging
@@ -219,6 +229,7 @@ altResultBlocks aa
 takeAltCase :: AltResult -> Maybe (Lit, Label)
 takeAltCase (AltCase lit label _)       = Just (lit, label)
 takeAltCase _                           = Nothing
+
 
 
 -- Exp ------------------------------------------------------------------------
