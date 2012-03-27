@@ -178,6 +178,15 @@ instance Pretty Instr where
                  , ppr labelTrue, comma
                  , ppr labelFalse ]
 
+        ISwitch x1 lDefault alts
+         -> text "switch"
+                <+> ppr x1 <> comma
+                <+> text "label" <+> ppr lDefault
+                <+> (hsep [ ppr discrim 
+                                <> comma
+                                <> text "label" <+> ppr dest
+                                | (discrim, dest) <- alts ])
+
         IUnreachable
          -> text "unreachable"
 

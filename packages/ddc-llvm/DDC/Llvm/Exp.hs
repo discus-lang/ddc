@@ -13,7 +13,8 @@ module DDC.Llvm.Exp
 
           -- * Expressions
         , Exp   (..)
-        , pprPlainX)
+        , pprPlainX
+        , typeOfExp)
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
@@ -71,7 +72,7 @@ instance Pretty Exp where
         XLit l  -> ppr l
 
 
--- Pretty print an expression without its type.
+-- | Pretty print an expression without its type.
 pprPlainX :: Exp -> Doc
 pprPlainX xx
  = case xx of
@@ -79,5 +80,9 @@ pprPlainX xx
         XLit l  -> pprPlainL l
 
 
-
-
+-- | Take the type of an expression.
+typeOfExp :: Exp -> Type 
+typeOfExp xx
+ = case xx of
+        XVar var        -> typeOfVar var
+        XLit lit        -> typeOfLit lit
