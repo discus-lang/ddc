@@ -320,6 +320,19 @@ convPrimCallM pp mdst p tPrim xs
                                 (tPtr (TInt 8)) (NameGlobal "malloc") 
                                 [xBytes'] []
 
+        E.PrimStore E.PrimStoreRead
+         | [C.XType t, xAddr, xOffset] <- xs
+         , _t'                         <- convType pp t
+         , Just xAddr'                 <- mconvAtom pp xAddr
+         , Just xOffset'               <- mconvAtom pp xOffset
+         , Just vDst@(Var nDst tDst)   <- mdst
+         -> let vOff    = Var (bumpName nDst "off") (TInt 32)
+                vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
+            in  return  $ Seq.fromList
+                        [ IOp   vOff OpAdd (typeOfVar vOff) xAddr' xOffset'     -- TODO: fix this, nats must be same width as addrs
+                        , IConv vPtr ConvInttoptr xAddr'                        --       change addr to a non ptr type.
+                        , ILoad vDst (XVar vPtr) ]
+
 
         E.PrimExternal prim
          |  Just xs'     <- sequence $ map (mconvAtom pp) xs
@@ -332,6 +345,13 @@ convPrimCallM pp mdst p tPrim xs
 
         _ -> return $ Seq.singleton 
            $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+
+
+bumpName :: Name -> String -> Name
+bumpName nn s
+ = case nn of
+        NameLocal str   -> NameLocal  (str ++ "." ++ s)
+        NameGlobal str  -> NameGlobal (str ++ "." ++ s)
 
 
 -- Atoms ----------------------------------------------------------------------

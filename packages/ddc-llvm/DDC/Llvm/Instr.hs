@@ -190,14 +190,29 @@ instance Pretty Instr where
         IUnreachable
          -> text "unreachable"
 
-        -- Binary Operations ------------------------------
-        IOp dst op t x1 x2
+        -- Memory Operations ------------------------------
+        ILoad dst x1
          -> (fill 12 (ppr $ nameOfVar dst))
+                <+> equals
+                <+> text "load"
+                <+> ppr x1
+
+        -- Binary Operations ------------------------------
+        IOp vDst op t x1 x2
+         -> (fill 12 (ppr $ nameOfVar vDst))
                 <+> equals
                 <+> ppr op      <+> ppr t
                 <+> pprPlainX x1 <> comma 
                 <+> pprPlainX x2
 
+        -- Conversion operations --------------------------
+        IConv vDst conv xSrc
+         -> (fill 12 (ppr $ nameOfVar vDst))
+                <+> equals
+                <+> ppr conv
+                <+> ppr xSrc
+                <+> text "to"
+                <+> ppr (typeOfVar vDst)
 
         -- Other operations -------------------------------
         IICmp dst icond t x1 x2
