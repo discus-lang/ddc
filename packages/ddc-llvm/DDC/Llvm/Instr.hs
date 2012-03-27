@@ -152,7 +152,11 @@ data Instr
 
 instance Pretty Instr where
  ppr ii
-  = case ii of
+  = let -- Pad binding occurrence of variable.
+        padVar  var
+         = fill 12 (ppr $ nameOfVar var)
+
+    in  case ii of
         -- Meta-instructions -------------------------------
         IComment strs           
          -> vcat $ map (semi <+>) $ map text strs
@@ -191,15 +195,20 @@ instance Pretty Instr where
          -> text "unreachable"
 
         -- Memory Operations ------------------------------
-        ILoad dst x1
-         -> (fill 12 (ppr $ nameOfVar dst))
+        ILoad vDst x1
+         -> padVar vDst
                 <+> equals
                 <+> text "load"
                 <+> ppr x1
 
+        IStore xDst xSrc
+         -> text "store"
+                <+> ppr xSrc  <> comma
+                <+> ppr xDst
+
         -- Binary Operations ------------------------------
         IOp vDst op t x1 x2
-         -> (fill 12 (ppr $ nameOfVar vDst))
+         -> padVar vDst
                 <+> equals
                 <+> ppr op      <+> ppr t
                 <+> pprPlainX x1 <> comma 
@@ -207,7 +216,7 @@ instance Pretty Instr where
 
         -- Conversion operations --------------------------
         IConv vDst conv xSrc
-         -> (fill 12 (ppr $ nameOfVar vDst))
+         -> padVar vDst
                 <+> equals
                 <+> ppr conv
                 <+> ppr xSrc
@@ -215,15 +224,15 @@ instance Pretty Instr where
                 <+> ppr (typeOfVar vDst)
 
         -- Other operations -------------------------------
-        IICmp dst icond t x1 x2
-         -> (fill 12 (ppr $ nameOfVar dst))
+        IICmp vDst icond t x1 x2
+         -> padVar vDst
                 <+> equals
                 <+> text "icmp"  <+> ppr icond  <+> ppr t
                 <+> pprPlainX x1 <> comma
                 <+> pprPlainX x2
 
-        IFCmp dst fcond t x1 x2
-         -> (fill 12 (ppr $ nameOfVar dst))
+        IFCmp vDst fcond t x1 x2
+         -> padVar vDst
                 <+> equals
                 <+> text "fcmp"  <+> ppr fcond  <+> ppr t
                 <+> pprPlainX x1 <> comma

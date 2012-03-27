@@ -7,8 +7,8 @@ module DDC.Core.Llvm.Convert.Type
         , llvmParameterOfType
 
           -- * Builtin Types
-        , tObj, sObj, aObj
-        , tPtr
+        , tObj, sObj,  aObj
+        , tPtr, tAddr, tNat, tTag
 
           -- * Type Constructors
         , llvmTypeOfTyCon
@@ -83,7 +83,7 @@ llvmTypeOfTyCon platform tycon
         C.TyConBound (C.UPrim (NamePrimTyCon tc) _)
          -> case tc of
                 PrimTyConVoid           -> TVoid
-                PrimTyConAddr           -> TPointer (TInt 8)
+                PrimTyConAddr           -> TInt (8 * platformAddrBytes platform)
                 PrimTyConNat            -> TInt (8 * platformAddrBytes platform)
                 PrimTyConTag            -> TInt (8 * platformTagBytes  platform)
                 PrimTyConBool           -> TInt 1
@@ -116,6 +116,18 @@ aObj platform   = TypeAlias "s.Obj" (sObj platform)
 -- | Alias for pointer type.
 tPtr :: Type -> Type
 tPtr t = TPointer t
+
+-- | Alias for address type.
+tAddr :: Platform -> Type
+tAddr pp = TInt (8 * platformAddrBytes pp)
+
+-- | Alias for address type.
+tNat :: Platform -> Type
+tNat pp = TInt (8 * platformAddrBytes pp)
+
+-- | Alias for address type.
+tTag :: Platform -> Type
+tTag pp = TInt (8 * platformTagBytes  pp)
 
 
 -- Predicates -----------------------------------------------------------------

@@ -72,7 +72,7 @@ newUniqueVar t
 newUniqueNamedVar :: String -> Type -> LlvmM Var
 newUniqueNamedVar name t
  = do   u <- newUnique 
-        return $ Var (NameLocal ("_v" ++ show u ++ "_" ++ name)) t
+        return $ Var (NameLocal ("_v" ++ show u ++ "." ++ name)) t
 
 
 -- | Generate a new unique label.

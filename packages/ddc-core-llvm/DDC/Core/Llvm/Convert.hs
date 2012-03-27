@@ -326,13 +326,24 @@ convPrimCallM pp mdst p tPrim xs
          , Just xAddr'                 <- mconvAtom pp xAddr
          , Just xOffset'               <- mconvAtom pp xOffset
          , Just vDst@(Var nDst tDst)   <- mdst
-         -> let vOff    = Var (bumpName nDst "off") (TInt 32)
+         -> let vOff    = Var (bumpName nDst "off") (tAddr pp)
                 vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
             in  return  $ Seq.fromList
-                        [ IOp   vOff OpAdd (typeOfVar vOff) xAddr' xOffset'     -- TODO: fix this, nats must be same width as addrs
-                        , IConv vPtr ConvInttoptr xAddr'                        --       change addr to a non ptr type.
+                        [ IOp   vOff OpAdd (tAddr pp) xAddr' xOffset'
+                        , IConv vPtr ConvInttoptr xAddr'
                         , ILoad vDst (XVar vPtr) ]
 
+        E.PrimStore E.PrimStoreWrite
+         | [C.XType _t, xAddr, xOffset, xVal] <- xs
+         , Just xAddr'   <- mconvAtom pp xAddr
+         , Just xOffset' <- mconvAtom pp xOffset
+         , Just xVal'    <- mconvAtom pp xVal
+         -> do  vOff     <- newUniqueNamedVar "off" (tAddr pp)
+                vPtr     <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
+                return  $ Seq.fromList
+                        [ IOp    vOff OpAdd (tAddr pp) xAddr' xOffset'
+                        , IConv  vPtr ConvInttoptr xAddr'
+                        , IStore (XVar vPtr) xVal' ]
 
         E.PrimExternal prim
          |  Just xs'     <- sequence $ map (mconvAtom pp) xs
