@@ -49,6 +49,16 @@ convPrimCallM pp mdst p tPrim xs
 
            in   return $ Seq.singleton result
 
+        -- Cast primops ---------------
+        E.PrimCast E.PrimCastPromote
+         | [C.XType tDst, C.XType tSrc, xSrc] <- xs
+         , Just vDst    <- mdst
+         , Just xSrc'   <- mconvAtom pp xSrc
+         , minstr       <- convPrimPromote pp tDst vDst tSrc xSrc'
+         -> case minstr of
+                Just instr      -> return $ Seq.singleton instr
+                Nothing         -> error $ "convPrimCallM: invalid promotion " ++ show (tSrc, tDst)
+
 
         -- Store primops --------------
         E.PrimStore E.PrimStoreAlloc
@@ -163,6 +173,55 @@ convPrimOp2 op t
          | isIntegralT t                -> Just OpXor
 
         _                               -> Nothing
+
+
+-- Cast -----------------------------------------------------------------------
+convPrimPromote 
+        :: Platform 
+        -> C.Type E.Name -> Var
+        -> C.Type E.Name -> Exp
+        -> Maybe Instr
+
+convPrimPromote pp tDst vDst tSrc xSrc
+ = let  tDst'   = convType pp tDst
+        tSrc'   = convType pp tSrc
+        
+        -- TODO: add Float and Int -> Float promotions
+        result
+         -- Same sized integers
+         | TInt bitsDst <- tDst'
+         , TInt bitsSrc <- tSrc'
+         , bitsDst == bitsSrc
+         = Just $ ISet vDst xSrc
+
+         -- Both Unsigned
+         | TInt bitsDst <- tDst'
+         , TInt bitsSrc <- tSrc'
+         , isUnsignedT tSrc
+         , isUnsignedT tDst
+         , bitsDst > bitsSrc
+         = Just $ IConv vDst ConvZext xSrc
+
+         -- Both Signed
+         | TInt bitsDst <- tDst'
+         , TInt bitsSrc <- tSrc'
+         , isSignedT tSrc
+         , isSignedT tDst
+         , bitsDst > bitsSrc
+         = Just $ IConv vDst ConvSext xSrc
+
+         -- Unsigned to Signed
+         | TInt bitsDst <- tDst'
+         , TInt bitsSrc <- tSrc'
+         , isUnsignedT tSrc
+         , isSignedT   tDst
+         , bitsDst > bitsSrc
+         = Just $ IConv vDst ConvZext xSrc
+
+         | otherwise
+         = Nothing
+
+   in   result
 
 
 -- Cond -----------------------------------------------------------------------

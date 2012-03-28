@@ -150,6 +150,7 @@ isUnsignedT tt
         C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
          -> case n of
                 E.PrimTyConNat          -> True
+                E.PrimTyConTag          -> True
                 E.PrimTyConWord _       -> True
                 _                       -> False
         _                               -> False
