@@ -1,4 +1,5 @@
 
+-- | LLVM types.
 module DDC.Llvm.Type
         ( module DDC.Llvm.Attr
 
@@ -22,7 +23,7 @@ import DDC.Base.Pretty
 import Control.Monad
 
 
--- FunctionDecl -----------------------------------------------------------------------------------
+-- FunctionDecl ---------------------------------------------------------------
 -- | An LLVM Function
 data FunctionDecl 
         = FunctionDecl 
@@ -97,7 +98,7 @@ instance Pretty FunctionDecl where
                 <> align'
 
 
--- TypeAlias --------------------------------------------------------------------------------------
+-- TypeAlias ------------------------------------------------------------------
 -- | A type alias.
 data TypeAlias 
         = TypeAlias     String Type
@@ -109,21 +110,44 @@ instance Pretty TypeAlias where
         = text "%" <> text name <+> equals <+> text "type" <+> ppr ty
 
 
--- Type -------------------------------------------------------------------------------------------
+-- Type -----------------------------------------------------------------------
 -- | Llvm Types.
 data Type
-        = TVoid                         -- ^ Void type
-        | TInt          Integer         -- ^ An integer with a given width in bits.
-        | TFloat                        -- ^ 32 bit floating point
-        | TDouble                       -- ^ 64 bit floating point
-        | TFloat80                      -- ^ 80 bit (x86 only) floating point
-        | TFloat128                     -- ^ 128 bit floating point
-        | TLabel                        -- ^ A 'LlvmVar' can represent a label (address)
-        | TPointer      Type            -- ^ A pointer to a 'LlvmType'
-        | TArray        Integer Type    -- ^ An array of 'LlvmType'
-        | TStruct       [Type]          -- ^ Structure type
-        | TAlias        TypeAlias       -- ^ A type alias
-        | TFunction     FunctionDecl    -- ^ Function type, used to create pointers to functions
+        -- | Void type
+        = TVoid                         
+
+        -- | An integer with a given width in bits.
+        | TInt          Integer         
+
+        -- | 32-bit floating point
+        | TFloat
+
+        -- | 64-bit floating point
+        | TDouble                       
+
+        -- | 80 bit (x86 only) floating point
+        | TFloat80                      
+
+        -- | 128 bit floating point
+        | TFloat128                     
+
+        -- |  A block label.
+        | TLabel                       
+
+        -- | A pointer to another type of thing.
+        | TPointer      Type           
+
+        -- | An array of things.
+        | TArray        Integer Type
+
+        -- | A structure type.
+        | TStruct       [Type]
+
+        -- | A type alias.
+        | TAlias        TypeAlias
+
+        -- | Function type, used to create pointers to functions.
+        | TFunction     FunctionDecl
         deriving (Eq, Show)
 
 
