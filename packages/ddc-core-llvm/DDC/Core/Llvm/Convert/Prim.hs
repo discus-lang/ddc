@@ -1,26 +1,125 @@
 
 module DDC.Core.Llvm.Convert.Prim
-        ( convPrimExtern
-        , convPrimOp2
-        , convPrimICond
-        , convPrimFCond)
+        (convPrimCallM)
 where
+import DDC.Llvm.Instr
+import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Type
-import DDC.Llvm.Prim
-import DDC.Llvm.Exp
+import DDC.Core.Llvm.Platform
+import DDC.Core.Llvm.LlvmM
+import DDC.Type.Compounds
+import Data.Sequence                            (Seq)
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Sea.Output.Name       as E
+import qualified Data.Sequence                  as Seq
 
 
--- | Get the symbol name of an external primitive.
-convPrimExtern :: E.PrimExternal -> C.Type E.Name -> Maybe Name
-convPrimExtern p _t
+-- Prim call ------------------------------------------------------------------
+-- | Convert a primitive call to LLVM.
+convPrimCallM 
+        :: Show a 
+        => Platform             -- ^ Current platform.
+        -> Maybe Var            -- ^ Assign result to this var.
+        -> E.Prim               -- ^ Prim to call.
+        -> C.Type E.Name        -- ^ Type of prim.
+        -> [C.Exp a E.Name]     -- ^ Arguments to prim.
+        -> LlvmM (Seq Instr)
+
+convPrimCallM pp mdst p tPrim xs
  = case p of
-        E.PrimExternalShowInt bits      -> Just $ NameGlobal ("showInt" ++ show bits ++ "#")
-        E.PrimExternalPutStr            -> Just $ NameGlobal "putStr"
-        E.PrimExternalPutStrLn          -> Just $ NameGlobal "putStrLn"
+        -- Binary operations ----------
+        E.PrimOp op
+         | [C.XType t, x1, x2] <- xs
+         , t'           <- convType    pp t
+         , Just x1'     <- mconvAtom   pp x1
+         , Just x2'     <- mconvAtom   pp x2
+         , Just dst     <- mdst
+         -> let result
+                 | Just op'     <- convPrimOp2 op t
+                 = IOp dst op' t' x1' x2'
+
+                 | Just icond'  <- convPrimICond op t
+                 = IICmp dst icond' t' x1' x2'
+
+                 | Just fcond'  <- convPrimFCond op t
+                 = IFCmp dst fcond' t' x1' x2'
+
+                 | otherwise
+                 = IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+
+           in   return $ Seq.singleton result
 
 
+        -- Store primops --------------
+        E.PrimStore E.PrimStoreAlloc
+         | [xBytes]     <- xs
+         , Just xBytes' <- mconvAtom pp xBytes
+         -> return      $ Seq.singleton
+                        $ ICall mdst CallTypeStd
+                                (tPtr (TInt 8)) (NameGlobal "malloc") 
+                                [xBytes'] []
+
+        E.PrimStore E.PrimStoreRead
+         | [C.XType t, xAddr, xOffset] <- xs
+         , _t'                         <- convType pp t
+         , Just xAddr'                 <- mconvAtom pp xAddr
+         , Just xOffset'               <- mconvAtom pp xOffset
+         , Just vDst@(Var nDst tDst)   <- mdst
+         -> let vOff    = Var (bumpName nDst "off") (tAddr pp)
+                vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
+            in  return  $ Seq.fromList
+                        [ IOp   vOff OpAdd (tAddr pp) xAddr' xOffset'
+                        , IConv vPtr ConvInttoptr (XVar vOff)
+                        , ILoad vDst (XVar vPtr) ]
+
+        E.PrimStore E.PrimStoreWrite
+         | [C.XType _t, xAddr, xOffset, xVal] <- xs
+         , Just xAddr'   <- mconvAtom pp xAddr
+         , Just xOffset' <- mconvAtom pp xOffset
+         , Just xVal'    <- mconvAtom pp xVal
+         -> do  vOff     <- newUniqueNamedVar "off" (tAddr pp)
+                vPtr     <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
+                return  $ Seq.fromList
+                        [ IOp    vOff OpAdd (tAddr pp) xAddr' xOffset'
+                        , IConv  vPtr ConvInttoptr xAddr'
+                        , IStore (XVar vPtr) xVal' ]
+
+        E.PrimStore E.PrimStoreMakePtr
+         | [C.XType _t, xAddr]          <- xs
+         , Just xAddr'  <- mconvAtom pp xAddr
+         , Just vDst    <- mdst
+         ->     return  $ Seq.singleton
+                        $ IConv vDst ConvInttoptr xAddr'
+
+        E.PrimStore E.PrimStoreTakePtr
+         | [C.XType _t, xPtr]          <- xs
+         , Just xPtr'   <- mconvAtom pp xPtr
+         , Just vDst    <- mdst
+         ->     return  $ Seq.singleton
+                        $ IConv vDst ConvPtrtoint xPtr'
+
+        -- External Primops -----------
+        E.PrimExternal prim
+         |  Just xs'     <- sequence $ map (mconvAtom pp) xs
+         ,  (_, tResult) <- takeTFunArgResult tPrim
+         ,  tResult'     <- convType pp tResult
+         ,  Just name'   <- convPrimExtern prim tPrim
+         -> return      $ Seq.singleton
+                        $ ICall mdst CallTypeStd tResult'
+                                name' xs' []
+
+        _ -> return $ Seq.singleton 
+           $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+
+
+bumpName :: Name -> String -> Name
+bumpName nn s
+ = case nn of
+        NameLocal str   -> NameLocal  (str ++ "." ++ s)
+        NameGlobal str  -> NameGlobal (str ++ "." ++ s)
+
+
+-- Op -------------------------------------------------------------------------
 -- | Convert a binary primop from Core Sea to LLVM form.
 convPrimOp2 :: E.PrimOp -> C.Type E.Name -> Maybe Op
 convPrimOp2 op t
@@ -66,6 +165,7 @@ convPrimOp2 op t
         _                               -> Nothing
 
 
+-- Cond -----------------------------------------------------------------------
 -- | Convert an integer comparison from Core Sea to LLVM form.
 convPrimICond :: E.PrimOp -> C.Type E.Name -> Maybe ICond
 convPrimICond op t
@@ -98,4 +198,17 @@ convPrimFCond op t
  | otherwise            =  Nothing
 
 
+-- Extern ---------------------------------------------------------------------
+-- | Get the symbol name of an external primitive.
+convPrimExtern :: E.PrimExternal -> C.Type E.Name -> Maybe Name
+convPrimExtern p _t
+ = case p of
+        E.PrimExternalShowInt bits      
+         -> Just $ NameGlobal ("showInt" ++ show bits ++ "#")
+
+        E.PrimExternalPutStr
+         -> Just $ NameGlobal "putStr"
+
+        E.PrimExternalPutStrLn
+         -> Just $ NameGlobal "putStrLn"
 
