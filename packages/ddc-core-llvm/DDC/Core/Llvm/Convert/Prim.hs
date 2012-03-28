@@ -65,7 +65,7 @@ convPrimCallM pp mdst p tPrim xs
          , Just xBytes' <- mconvAtom pp xBytes
          -> return      $ Seq.singleton
                         $ ICall mdst CallTypeStd
-                                (tPtr (TInt 8)) (NameGlobal "malloc") 
+                                (tAddr pp) (NameGlobal "malloc") 
                                 [xBytes'] []
 
         E.PrimStore E.PrimStoreRead

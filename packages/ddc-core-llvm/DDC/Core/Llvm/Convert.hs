@@ -1,4 +1,5 @@
 
+-- | Conversion of Disciple Core-Sea to LLVM.
 module DDC.Core.Llvm.Convert
         (convertModule)
 where
@@ -29,32 +30,31 @@ import Data.Maybe
 
 
 -- Module ---------------------------------------------------------------------
+-- | Convert a module to LLVM.                                                  -- TODO: allow platform to be set.
 convertModule :: C.Module () E.Name -> Module
 convertModule mm
  = let  platform        = platform32
         prims           = primGlobals platform
         state           = llvmStateInit platform prims
-   in   evalState (llvmOfModuleM mm) state
+   in   evalState (convModuleM mm) state
 
 
-llvmOfModuleM 
-        :: C.Module () E.Name 
-        -> LlvmM Module
-
-llvmOfModuleM mm@(C.ModuleCore{})
+convModuleM :: C.Module () E.Name -> LlvmM Module
+convModuleM mm@(C.ModuleCore{})
  | [C.LRec bxs]         <- C.moduleLets mm   
  = do   platform        <- gets llvmStatePlatform
         functions       <- mapM (uncurry (convSuperM)) bxs
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
-                , modGlobals    = []
+                , modGlobals    = []                                            -- TODO: defined globals.
                 , modFwdDecls   = []
                 , modFuncs      = functions }
 
  | otherwise    = die "invalid module"
 
 
+-- | Global variables used directly by the conversion.
 primGlobals :: Platform -> Map String Var
 primGlobals platform
         = Map.fromList
@@ -64,15 +64,15 @@ primGlobals platform
 
 
 -- Super ----------------------------------------------------------------------
--- | Convert a top-level supercombinator to LLVM.
+-- | Convert a top-level supercombinator to a LLVM function.
 convSuperM 
-        :: C.Bind E.Name 
-        -> C.Exp () E.Name 
+        :: C.Bind E.Name                -- ^ Bind for the super.
+        -> C.Exp () E.Name              -- ^ Super body.
         -> LlvmM Function
 
 convSuperM (C.BName n tSuper) x
- | Just (bsParam, xBody)     <- takeXLams x
- = do   platform        <- gets llvmStatePlatform
+ | Just (bsParam, xBody)  <- takeXLams x
+ = do   platform          <- gets llvmStatePlatform
 
         -- Split off the argument and result types.
         let (tsArgs, tResult)       
@@ -105,8 +105,7 @@ convSuperM (C.BName n tSuper) x
                 , functionSection        = SectionAuto
                 , functionBlocks         = Seq.toList blocks }
 
-convSuperM _ _
-        = die "invalid super"
+convSuperM _ _          = die "invalid super"
 
 
 -- | Take the string name to use for a function parameter.
@@ -118,7 +117,7 @@ nameOfParam bb
 
 
 -- Body -----------------------------------------------------------------------
--- | Convert a Core function body to LLVM blocks.
+-- | Convert a function body to LLVM blocks.
 convBodyM 
         :: Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
@@ -183,10 +182,16 @@ convBodyM blocks label instrs xx
          -- die "invalid body statement"
 
 
--- | Check whether this is the Void# type.
-isVoidT :: C.Type E.Name -> Bool
-isVoidT (C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon E.PrimTyConVoid) _))) = True
-isVoidT _ = False
+-- Stmt -----------------------------------------------------------------------
+-- | Convert a Core statement to LLVM instructions.
+convStmtM :: Platform -> C.Exp () E.Name -> LlvmM (Seq Instr)
+convStmtM pp xx
+ = case xx of
+        C.XApp{}
+         |  C.XVar _ (C.UPrim (E.NamePrim p) tPrim) : xs <- takeXApps xx
+         -> convPrimCallM pp Nothing p tPrim xs
+
+        _ -> error "convStmtM: sorry"
 
 
 -- Alt ------------------------------------------------------------------------
@@ -195,6 +200,11 @@ data AltResult
         = AltDefault        Label (Seq Block)
         | AltCase       Lit Label (Seq Block)
 
+
+-- | Convert a case alternative to LLVM.
+--
+--   This only works for zero-arity constructors.
+--   The client should extrac the fields of algebraic data objects manually.
 convAltM :: C.Alt () E.Name -> LlvmM AltResult
 convAltM aa
  = case aa of
@@ -231,9 +241,12 @@ takeAltCase (AltCase lit label _)       = Just (lit, label)
 takeAltCase _                           = Nothing
 
 
-
 -- Exp ------------------------------------------------------------------------
--- Convert a Core expression to LLVM instructions.
+-- | Convert a Core expression to LLVM instructions.
+--
+--   This only works for variables, literals, and full applications of
+--   primitive operators. The client should ensure the program is in this form 
+--   before converting it.
 convExpM
         :: Platform             -- ^ Current platform.
         -> Var                  -- ^ Assign result to this var.
@@ -254,6 +267,10 @@ convExpM pp vDst (C.XCon _ (C.UPrim name _t))
 
         E.NameWord w bits
          -> return $ Seq.singleton
+                   $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
+
+        E.NameInt  w bits
+         -> return $ Seq.singleton 
                    $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
         _ -> error "convExpM: cannot convert literal"
@@ -277,18 +294,4 @@ convExpM pp dst xx@C.XApp{}
 convExpM _ _ xx
         = return $ Seq.singleton 
         $ IComment [ "convExpM: cannot convert " ++ show xx ]
-
-
--- Stmt -----------------------------------------------------------------------
-convStmtM :: Platform -> C.Exp () E.Name -> LlvmM (Seq Instr)
-convStmtM pp xx
- = case xx of
-        C.XApp{}
-         |  C.XVar _ (C.UPrim (E.NamePrim p) tPrim) : xs <- takeXApps xx
-         -> convPrimCallM pp Nothing p tPrim xs
-
-        _ -> error "convStmtM: sorry"
-
-
-
 

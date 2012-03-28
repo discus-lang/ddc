@@ -11,9 +11,10 @@ module DDC.Core.Llvm.Convert.Type
         , tPtr, tAddr, tNat, tTag
 
           -- * Type Constructors
-        , llvmTypeOfTyCon
+        , convTyCon
 
           -- * Predicates
+        , isVoidT
         , isSignedT
         , isUnsignedT
         , isIntegralT
@@ -42,7 +43,7 @@ convType platform tt
  = case tt of
         -- A primitive type.
         C.TCon tc
-          -> llvmTypeOfTyCon platform tc
+          -> convTyCon platform tc
 
         -- A pointer to a primitive type.
         C.TApp (C.TCon (C.TyConBound (C.UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
@@ -74,8 +75,8 @@ llvmParameterOfType platform tt
 
 -- TyCon ----------------------------------------------------------------------
 -- | Convert a Sea TyCon to a LlvmType.
-llvmTypeOfTyCon :: Platform -> C.TyCon Name -> Type
-llvmTypeOfTyCon platform tycon
+convTyCon :: Platform -> C.TyCon Name -> Type
+convTyCon platform tycon
  = case tycon of
         C.TyConBound (C.UPrim NameObjTyCon _)
          -> tObj platform
@@ -131,6 +132,12 @@ tTag pp = TInt (8 * platformTagBytes  pp)
 
 
 -- Predicates -----------------------------------------------------------------
+-- | Check whether this is the Void# type.
+isVoidT :: C.Type E.Name -> Bool
+isVoidT (C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon E.PrimTyConVoid) _))) = True
+isVoidT _ = False
+
+
 -- | Check whether some type is signed: IntN or FloatN.
 isSignedT :: C.Type E.Name -> Bool
 isSignedT tt
