@@ -5,7 +5,6 @@ module DDC.Llvm.Instr
         , module DDC.Llvm.Prim
         , Label         (..)
         , Block         (..)
-        , Index         (..)
         , CallType      (..)
         , Instr         (..))
 where
@@ -46,20 +45,6 @@ instance Pretty Block where
         <$$> indent 8 (vcat $ map ppr $ Seq.toList instrs)
 
 
--- Index ----------------------------------------------------------------------
--- | Index for the GetElemPtr instruction
-data Index
-        = Index 
-        { indexBits     :: Int          -- ^ Width of index value.
-        , indexValue    :: Integer  }   -- ^ Index value.
-        deriving (Eq, Show)
-
-
-instance Pretty Index where
- ppr (Index bits value)
-        = text "i" <> int bits <+> integer value
-
-
 -- CallType -------------------------------------------------------------------
 -- | Different types to call a function.
 data CallType
@@ -85,7 +70,11 @@ data Instr
         = IComment      [String]
 
         -- | Set meta instruction v1 = value.
+        --   Note: This is a useful instruction to have, but the LLVM compiler
+        --   doesn't accept it directly. Use the Clean transform to inline all
+        --   set-instructions before passing it to the LLVM compiler.
         | ISet          Var     Exp
+
 
         -- Terminator Instructions ------------------------
         -- | Return a result.
@@ -124,15 +113,6 @@ data Instr
         --   First expression gives the destination pointer.
         | IStore        Exp     Exp
 
-        -- | Navigate in an structure, selecting elements.
-        --      
-        --   * flag:     Whether the computer computed pointer is inbounds.
-        --
-        --   * location: Location of the structure.
-        --
-        --   * indices:  A list of indices to select the final value.
-        | XGetElemPtr   Var     Bool    Exp     [Index]
-
 
         -- Other Operations -------------------------------
         -- | Integer comparison.
@@ -145,7 +125,6 @@ data Instr
         --   Only NoReturn, NoUnwind and ReadNone attributes are valid.
         | ICall         (Maybe Var) CallType Type Name [Exp] [FuncAttr]
         deriving (Show, Eq)
-
 
 
 
@@ -184,11 +163,13 @@ instance Pretty Instr where
         ISwitch x1 lDefault alts
          -> text "switch"
                 <+> ppr x1 <> comma
-                <+> text "label" <+> ppr lDefault
+                <+> text "label %" <> ppr lDefault
+                <+> lbracket
                 <+> (hsep [ ppr discrim 
                                 <> comma
-                                <> text "label" <+> ppr dest
+                                <> text "label %" <> ppr dest
                                 | (discrim, dest) <- alts ])
+                <+> rbracket
 
         IUnreachable
          -> text "unreachable"
@@ -253,7 +234,4 @@ instance Pretty Instr where
                          , ppr name
                          , encloseSep lparen rparen (comma <> space) (map ppr xsArgs)
                          , hsep $ map ppr attrs ]
-
-        _ -> text "INSTR" <> text (show ii)
-
 

@@ -23,19 +23,19 @@ data Section
 data Function 
         = Function 
         { -- | The signature of this declared function.
-          functionDecl          :: FunctionDecl
+          funDecl          :: FunctionDecl
 
           -- | The function parameter names.
-        , functionParams        :: [String]
+        , funParams        :: [String]
 
           -- | The function attributes.
-        , functionAttrs         :: [FuncAttr]
+        , funAttrs         :: [FuncAttr]
 
           -- | The section to put the function into,
-        , functionSection       :: Section
+        , funSection       :: Section
 
           -- | The body of the functions.
-        , functionBlocks        :: [Block]
+        , funBlocks        :: [Block]
         }
 
 

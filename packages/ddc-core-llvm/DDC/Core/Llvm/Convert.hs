@@ -3,6 +3,7 @@
 module DDC.Core.Llvm.Convert
         (convertModule)
 where
+import DDC.Llvm.Transform.Clean
 import DDC.Llvm.Module
 import DDC.Llvm.Function
 import DDC.Llvm.Instr
@@ -35,7 +36,7 @@ convertModule :: Platform -> C.Module () E.Name -> Module
 convertModule platform mm
  = let  prims           = primGlobals platform
         state           = llvmStateInit platform prims
-   in   evalState (convModuleM mm) state
+   in   clean $ evalState (convModuleM mm) state
 
 
 convModuleM :: C.Module () E.Name -> LlvmM Module
@@ -100,11 +101,11 @@ convSuperM (C.BName n tSuper) x
 
         -- Build the function.
         return  $ Function
-                { functionDecl           = decl
-                , functionParams         = map nameOfParam bsParam
-                , functionAttrs          = [] 
-                , functionSection        = SectionAuto
-                , functionBlocks         = Seq.toList blocks }
+                { funDecl               = decl
+                , funParams             = map nameOfParam bsParam
+                , funAttrs              = [] 
+                , funSection            = SectionAuto
+                , funBlocks             = Seq.toList blocks }
 
 convSuperM _ _          = die "invalid super"
 

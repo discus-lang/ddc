@@ -78,17 +78,22 @@ typeOfVar (Var _ t)     = t
 instance Pretty Var where
  ppr (Var n t)  = ppr t <+> ppr n
 
+instance Ord Var where
+ compare (Var n1 _) (Var n2 _)
+        = compare n1 n2
+
 
 -- Name -----------------------------------------------------------------------
 -- | Names of variables.
 data Name
         = NameGlobal String
         | NameLocal  String
-        deriving (Eq, Show)
+        deriving (Show, Eq, Ord)
 
 instance Pretty Name where
  ppr (NameGlobal str)   = text "@" <> text str
  ppr (NameLocal  str)   = text "%" <> text str
+
 
 
 -- Lit ------------------------------------------------------------------------

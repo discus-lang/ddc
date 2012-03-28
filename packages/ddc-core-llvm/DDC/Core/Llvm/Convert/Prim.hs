@@ -262,7 +262,7 @@ convPrimExtern :: E.PrimExternal -> C.Type E.Name -> Maybe Name
 convPrimExtern p _t
  = case p of
         E.PrimExternalShowInt bits      
-         -> Just $ NameGlobal ("showInt" ++ show bits ++ "#")
+         -> Just $ NameGlobal ("showInt" ++ show bits)
 
         E.PrimExternalPutStr
          -> Just $ NameGlobal "putStr"
