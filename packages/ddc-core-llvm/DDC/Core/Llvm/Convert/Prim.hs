@@ -30,19 +30,18 @@ convPrimCallM pp mdst p tPrim xs
         -- Binary operations ----------
         E.PrimOp op
          | [C.XType t, x1, x2] <- xs
-         , t'           <- convType    pp t
          , Just x1'     <- mconvAtom   pp x1
          , Just x2'     <- mconvAtom   pp x2
          , Just dst     <- mdst
          -> let result
                  | Just op'     <- convPrimOp2 op t
-                 = IOp dst op' t' x1' x2'
+                 = IOp dst op' x1' x2'
 
                  | Just icond'  <- convPrimICond op t
-                 = IICmp dst icond' t' x1' x2'
+                 = IICmp dst icond' x1' x2'
 
                  | Just fcond'  <- convPrimFCond op t
-                 = IFCmp dst fcond' t' x1' x2'
+                 = IFCmp dst fcond' x1' x2'
 
                  | otherwise
                  = IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
@@ -78,7 +77,7 @@ convPrimCallM pp mdst p tPrim xs
          -> let vOff    = Var (bumpName nDst "off") (tAddr pp)
                 vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
             in  return  $ Seq.fromList
-                        [ IOp   vOff OpAdd (tAddr pp) xAddr' xOffset'
+                        [ IOp   vOff OpAdd xAddr' xOffset'
                         , IConv vPtr ConvInttoptr (XVar vOff)
                         , ILoad vDst (XVar vPtr) ]
 
@@ -90,7 +89,7 @@ convPrimCallM pp mdst p tPrim xs
          -> do  vOff     <- newUniqueNamedVar "off" (tAddr pp)
                 vPtr     <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
                 return  $ Seq.fromList
-                        [ IOp    vOff OpAdd (tAddr pp) xAddr' xOffset'
+                        [ IOp    vOff OpAdd xAddr' xOffset'
                         , IConv  vPtr ConvInttoptr xAddr'
                         , IStore (XVar vPtr) xVal' ]
 

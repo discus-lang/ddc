@@ -2,10 +2,9 @@
 module DDC.Core.Llvm.Convert
         (convertModule)
 where
-import DDC.Llvm.Attr
-import DDC.Llvm.Instr
-import DDC.Llvm.Function
 import DDC.Llvm.Module
+import DDC.Llvm.Function
+import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
@@ -213,7 +212,7 @@ convAltM aa
         _ -> error "convAltM: sorry"
 
 
-convPatBound :: C.Bound E.Name -> Lit           -- TODO: finish me
+convPatBound :: C.Bound E.Name -> Lit                                           -- TODO: finish me
 convPatBound _
         = LitUndef (TInt 32)
 
@@ -241,13 +240,26 @@ convExpM
         -> C.Exp () E.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
-convExpM _  dst (C.XVar _ (C.UName (E.NameVar str) t))
+convExpM _  vDst (C.XVar _ (C.UName (E.NameVar str) t))
  = do   t'      <- convTypeM t
         return  $ Seq.singleton 
-                $ ISet dst (XVar (Var (NameLocal str) t'))
+                $ ISet vDst (XVar (Var (NameLocal str) t'))
+
+
+convExpM pp vDst (C.XCon _ (C.UPrim name _t))
+ = case name of
+        E.NameNat i
+         -> return $ Seq.singleton
+                   $ ISet vDst (XLit (LitInt (tNat pp) i))
+
+        E.NameWord w bits
+         -> return $ Seq.singleton
+                   $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
+
+        _ -> error "convExpM: cannot convert literal"
 
 convExpM pp dst xx@C.XApp{}
-
+        
         -- Call to primop.
         | (C.XVar _ (C.UPrim (E.NamePrim p) tPrim) : args) 
                 <- takeXApps xx

@@ -107,7 +107,7 @@ data Instr
 
 
         -- Binary Operations ------------------------------
-        | IOp           Var     Op      Type    Exp     Exp
+        | IOp           Var     Op      Exp     Exp
 
 
         -- Conversion Operations --------------------------
@@ -136,11 +136,10 @@ data Instr
 
         -- Other Operations -------------------------------
         -- | Integer comparison.
-        | IICmp         Var     ICond   Type    Exp     Exp
+        | IICmp         Var     ICond   Exp     Exp
 
         -- | Floating-point comparison.
-        | IFCmp         Var     FCond   Type    Exp     Exp
-
+        | IFCmp         Var     FCond   Exp     Exp
 
         -- | Call a function. 
         --   Only NoReturn, NoUnwind and ReadNone attributes are valid.
@@ -207,10 +206,10 @@ instance Pretty Instr where
                 <+> ppr xDst
 
         -- Binary Operations ------------------------------
-        IOp vDst op t x1 x2
+        IOp vDst op x1 x2
          -> padVar vDst
                 <+> equals
-                <+> ppr op      <+> ppr t
+                <+> ppr op      <+> ppr (typeOfExp x1)
                 <+> pprPlainX x1 <> comma 
                 <+> pprPlainX x2
 
@@ -224,17 +223,17 @@ instance Pretty Instr where
                 <+> ppr (typeOfVar vDst)
 
         -- Other operations -------------------------------
-        IICmp vDst icond t x1 x2
+        IICmp vDst icond x1 x2
          -> padVar vDst
                 <+> equals
-                <+> text "icmp"  <+> ppr icond  <+> ppr t
+                <+> text "icmp"  <+> ppr icond  <+> ppr (typeOfExp x1)
                 <+> pprPlainX x1 <> comma
                 <+> pprPlainX x2
 
-        IFCmp vDst fcond t x1 x2
+        IFCmp vDst fcond x1 x2
          -> padVar vDst
                 <+> equals
-                <+> text "fcmp"  <+> ppr fcond  <+> ppr t
+                <+> text "fcmp"  <+> ppr fcond  <+> ppr (typeOfExp x1)
                 <+> pprPlainX x1 <> comma
                 <+> pprPlainX x2
 
