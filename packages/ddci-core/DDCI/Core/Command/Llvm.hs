@@ -3,13 +3,13 @@ module DDCI.Core.Command.Llvm
         (cmdLlvmOut)
 where
 import DDC.Core.Load
-import DDC.Core.Llvm.Convert
 import DDC.Core.Sea.Output.Profile
 import DDCI.Core.Fragment
 import DDCI.Core.State
 import DDCI.Core.IO
 import DDC.Base.Pretty
-
+import qualified DDC.Core.Llvm.Platform as L
+import qualified DDC.Core.Llvm.Convert  as L
 
 -- | Parse, check and convert a Sea module to LLVM.
 cmdLlvmOut :: State -> Int -> String -> IO ()
@@ -34,4 +34,4 @@ cmdLlvmOut state lineStart str
                  -> goOutput mm
 
         goOutput mm
-         = outDocLn state $ ppr $ convertModule mm
+         = outDocLn state $ ppr $ L.convertModule L.platform32 mm

@@ -30,11 +30,10 @@ import Data.Maybe
 
 
 -- Module ---------------------------------------------------------------------
--- | Convert a module to LLVM.                                                  -- TODO: allow platform to be set.
-convertModule :: C.Module () E.Name -> Module
-convertModule mm
- = let  platform        = platform32
-        prims           = primGlobals platform
+-- | Convert a module to LLVM
+convertModule :: Platform -> C.Module () E.Name -> Module
+convertModule platform mm
+ = let  prims           = primGlobals platform
         state           = llvmStateInit platform prims
    in   evalState (convModuleM mm) state
 
@@ -126,7 +125,7 @@ convBodyM
         -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
 convBodyM blocks label instrs xx
- = do   platform        <- gets llvmStatePlatform
+ = do   pp      <- gets llvmStatePlatform
         case xx of
 
          -- End of function body must explicitly pass control.
@@ -134,7 +133,7 @@ convBodyM blocks label instrs xx
           |  Just (E.NamePrim p, xs)           <- takeXPrimApps xx
           ,  E.PrimControl E.PrimControlReturn <- p
           ,  [C.XType _t, x]                   <- xs
-          ,  Just x'                           <- mconvAtom platform x
+          ,  Just x'                           <- mconvAtom pp x
           -> return  $   blocks 
                      |>  Block label (instrs |> IReturn (Just x'))
 
@@ -142,18 +141,18 @@ convBodyM blocks label instrs xx
          C.XLet _ (C.LLet C.LetStrict (C.BName (E.NameVar str) t) x1) x2
           -> do t'       <- convTypeM t
                 let dst  = Var (NameLocal str) t'
-                instrs'  <- convExpM platform dst x1
+                instrs'  <- convExpM pp dst x1
                 convBodyM blocks label (instrs >< instrs') x2
 
          -- Non-binding statment.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           | isVoidT t
-          -> do instrs'   <- convStmtM platform x1
+          -> do instrs'   <- convStmtM pp x1
                 convBodyM blocks label (instrs >< instrs')   x2
 
          -- Case statement.
          C.XCase _ x1 alts
-          | Just x1'@(Var{})    <- takeLocalV platform x1
+          | Just x1'@(Var{})    <- takeLocalV pp x1
           -> do alts'@(_:_)     <- mapM convAltM alts
 
                 -- Determine what default alternative to use for the instruction. 
@@ -207,24 +206,35 @@ data AltResult
 --   The client should extrac the fields of algebraic data objects manually.
 convAltM :: C.Alt () E.Name -> LlvmM AltResult
 convAltM aa
- = case aa of
-        C.AAlt C.PDefault x
-         -> do  label   <- newUniqueLabel "default"
+ = do   pp      <- gets llvmStatePlatform
+        case aa of
+         C.AAlt C.PDefault x
+          -> do label   <- newUniqueLabel "default"
                 blocks  <- convBodyM Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
-        C.AAlt (C.PData u []) x
-         -> do  label   <- newUniqueLabel "alt"
+         C.AAlt (C.PData u []) x
+          | Just lit     <- convPatBound pp u
+          -> do label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM Seq.empty label Seq.empty x
-                let lit =  convPatBound u
                 return  $  AltCase lit label blocks
 
-        _ -> error "convAltM: sorry"
+         _ -> error $ "convAltM: sorry " ++ show aa
 
 
-convPatBound :: C.Bound E.Name -> Lit                                           -- TODO: finish me
-convPatBound _
-        = LitUndef (TInt 32)
+-- | Convert a pattern to a LLVM literal.
+convPatBound :: Platform -> C.Bound E.Name -> Maybe Lit
+convPatBound pp (C.UPrim name _)
+ = case name of
+        E.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
+        E.NameNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        E.NameInt  i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
+        E.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
+        E.NameBool True   -> Just $ LitInt (TInt 1) 1
+        E.NameBool False  -> Just $ LitInt (TInt 1) 0
+        _                 -> Nothing
+
+convPatBound _ _          = Nothing
 
 
 -- | Take the blocks from an `AltResult`.
