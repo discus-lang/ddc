@@ -26,6 +26,7 @@ Library
         transformers    == 0.2.*,
         mtl             == 2.0.*,
         ddc-base        == 0.3.0.*,
+        ddc-type        == 0.3.0.*,
         ddc-core        == 0.3.0.*
 
   Exposed-modules:
@@ -34,6 +35,7 @@ Library
         DDC.Core.Eval.Env
         DDC.Core.Eval.Name
         DDC.Core.Eval.Prim
+        DDC.Core.Eval.Profile
         DDC.Core.Eval.Step
         DDC.Core.Eval.Store
         DDC.Core.Eval

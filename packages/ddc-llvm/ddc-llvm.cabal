@@ -23,13 +23,14 @@ Library
         ddc-base        == 0.3.0.*
 
   Exposed-modules:
+        DDC.Llvm.Transform.Clean
         DDC.Llvm.Attr
-        DDC.Llvm.Type
-        DDC.Llvm.Prim
-        DDC.Llvm.Var
-        DDC.Llvm.Statement
+        DDC.Llvm.Exp
         DDC.Llvm.Function
+        DDC.Llvm.Instr
         DDC.Llvm.Module
+        DDC.Llvm.Prim
+        DDC.Llvm.Type
                   
   GHC-options:
         -Werror
@@ -44,4 +45,5 @@ Library
         ScopedTypeVariables
         StandaloneDeriving
         PatternGuards
+        ParallelListComp
         

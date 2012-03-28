@@ -20,12 +20,19 @@ Library
         array           == 0.4.*,
         transformers    == 0.2.*,
         mtl             == 2.0.*,
-        ddc-base        == 0.3.0.*
+        ddc-base        == 0.3.0.*,
+        ddc-type        == 0.3.0.*,
+        ddc-core        == 0.3.0.*
 
   Exposed-modules:
-        DDC.Core.Sea.Profile
-        DDC.Core.Sea.Convert
-        
+        DDC.Core.Sea.Base.Name
+        DDC.Core.Sea.Lite.Env
+        DDC.Core.Sea.Lite.Name
+        DDC.Core.Sea.Output.Convert
+        DDC.Core.Sea.Output.Env
+        DDC.Core.Sea.Output.Error
+        DDC.Core.Sea.Output.Name
+        DDC.Core.Sea.Output.Profile
                   
   GHC-options:
         -Werror

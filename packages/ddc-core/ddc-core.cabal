@@ -37,9 +37,17 @@ Library
         DDC.Core.Check.CheckModule
         DDC.Core.Check.CheckWitness
         DDC.Core.Check.Error
+        DDC.Core.Check.ErrorMessage
         DDC.Core.Check.TaggedClosure
+        DDC.Core.Language.Compliance
+        DDC.Core.Language.Feature
+        DDC.Core.Language.Profile
+        DDC.Core.Parser.Base
         DDC.Core.Parser.Lexer
+        DDC.Core.Parser.Param
         DDC.Core.Parser.Tokens
+        DDC.Core.Parser.Type
+        DDC.Core.Parser.Witness
         DDC.Core.Transform.LiftW
         DDC.Core.Transform.LiftX
         DDC.Core.Transform.SpreadX
@@ -50,16 +58,13 @@ Library
         DDC.Core.Collect
         DDC.Core.Compounds
         DDC.Core.Exp
+        DDC.Core.Load
         DDC.Core.Module
-        DDC.Core.Pretty
-        DDC.Core.Predicates
         DDC.Core.Parser
+        DDC.Core.Predicates
+        DDC.Core.Pretty
+        DDC.Core.Rewrite
 
-  Other-modules:
-        DDC.Core.Parser.Type
-        DDC.Core.Parser.Param
-        DDC.Core.Parser.Base
-        DDC.Core.Check.ErrorMessage
                   
   GHC-options:
         -Werror

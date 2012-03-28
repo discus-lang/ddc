@@ -1,4 +1,4 @@
-Name:           ddc-llvm
+Name:           ddc-core-llvm
 Version:        0.3.0.0
 License:        MIT
 License-file:   LICENSE
@@ -20,16 +20,19 @@ Library
         array           == 0.4.*,
         transformers    == 0.2.*,
         mtl             == 2.0.*,
-        ddc-base        == 0.3.0.*
+        ddc-base        == 0.3.0.*,
+        ddc-llvm        == 0.3.0.*,
+        ddc-type        == 0.3.0.*,
+        ddc-core        == 0.3.0.*,
+        ddc-core-sea    == 0.3.0.*
 
   Exposed-modules:
-        DDC.Llvm.Attr
-        DDC.Llvm.Type
-        DDC.Llvm.Prim
-        DDC.Llvm.Var
-        DDC.Llvm.Statement
-        DDC.Llvm.Function
-        DDC.Llvm.Module
+        DDC.Core.Llvm.Convert.Atom
+        DDC.Core.Llvm.Convert.Prim
+        DDC.Core.Llvm.Convert.Type
+        DDC.Core.Llvm.Convert
+        DDC.Core.Llvm.LlvmM
+        DDC.Core.Llvm.Platform
                   
   GHC-options:
         -Werror

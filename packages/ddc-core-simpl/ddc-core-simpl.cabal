@@ -21,6 +21,7 @@ Library
         transformers    == 0.2.*,
         mtl             == 2.0.*,
         ddc-base        == 0.3.0.*,
+        ddc-type        == 0.3.0.*,
         ddc-core        == 0.3.0.*
 
   Exposed-modules:
@@ -30,7 +31,6 @@ Library
         DDC.Core.Transform.TransformX
         DDC.Type.Transform.AnonymizeT
         DDC.Type.Transform.Rename
-
         DDC.Core.Transform.Rewrite
         DDC.Core.Transform.Rewrite.Error
         DDC.Core.Transform.Rewrite.Rule
@@ -51,3 +51,4 @@ Library
         MultiParamTypeClasses
         FlexibleContexts
         FlexibleInstances
+        RankNTypes
