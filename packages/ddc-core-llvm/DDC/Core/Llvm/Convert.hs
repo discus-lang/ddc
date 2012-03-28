@@ -43,10 +43,12 @@ convModuleM mm@(C.ModuleCore{})
  | [C.LRec bxs]         <- C.moduleLets mm   
  = do   platform        <- gets llvmStatePlatform
         functions       <- mapM (uncurry (convSuperM)) bxs
+        let globals     = [Global v Nothing 
+                                | v <- Map.elems $ primGlobals platform ]
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
-                , modGlobals    = []                                            -- TODO: defined globals.
+                , modGlobals    = globals
                 , modFwdDecls   = []
                 , modFuncs      = functions }
 

@@ -2,6 +2,7 @@
 module DDC.Llvm.Module
         ( -- * Modules
           Module    (..)
+        , Global    (..)
         , typeOfGlobal
         , varOfGlobal
 
