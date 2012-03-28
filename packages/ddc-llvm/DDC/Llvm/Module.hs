@@ -60,6 +60,7 @@ instance Pretty Module where
   <$$> empty
   <$$> (vcat    $ punctuate line 
                 $ map ppr funcs)
+  <$$> line
 
 
 -- Static ---------------------------------------------------------------------

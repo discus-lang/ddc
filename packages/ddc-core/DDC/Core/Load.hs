@@ -1,7 +1,8 @@
 
 -- | Parsing and type checking of core language constructs.
 module DDC.Core.Load
-        ( loadModule
+        ( Error(..)
+        , loadModule
         , loadType
         , loadWitness
         , loadExp)

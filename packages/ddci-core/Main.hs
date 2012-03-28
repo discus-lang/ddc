@@ -1,5 +1,6 @@
 
 import DDCI.Core.State
+import DDCI.Core.Build.Make
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Set
 import DDCI.Core.Command.Load
@@ -22,6 +23,7 @@ main
         case args of
          []      -> runInteractive
 
+         -- Run a Disciple-Core-Exchange file.
          [filePath]
           | isSuffixOf ".dcx" filePath
           -> do file    <- readFile filePath
@@ -30,7 +32,12 @@ main
          ["--batch", filePath]
           -> do file    <- readFile filePath
                 runBatch filePath file
-       
+
+         -- Make a file, depending on what the extension is.
+         ["--make",  filePath]
+          -> do let state       = initState (InputBatch filePath)
+                makeFile state filePath
+        
          _       -> runArgs args
 
 

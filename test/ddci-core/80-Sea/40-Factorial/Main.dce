@@ -82,7 +82,7 @@ fac (x: Ptr# Obj) : Ptr# Obj
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
  = do { x       = boxInt32 10i32#;
         x2      = fac x;
-        x2u     = unboxInt32 x2;
+        x2u     = unboxInt32 x;
         str     = showInt32# x2u;
         putStrLn# str;
 
