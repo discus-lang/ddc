@@ -7,7 +7,6 @@ module DDC.Core.Check.CheckExp
         , checkExpM
         , TaggedClosure(..))
 where
-import DDC.Core.DataDef
 import DDC.Core.Predicates
 import DDC.Core.Compounds
 import DDC.Core.Exp
@@ -22,6 +21,7 @@ import DDC.Type.Transform.Trim
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.LowerT
+import DDC.Type.DataDef
 import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Type.Compounds

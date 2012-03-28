@@ -10,10 +10,10 @@ module DDC.Core.Sea.Output.Env
         , tAddr, tNat, tTag, tBool
         , tInt,  tWord)
 where
-import DDC.Core.DataDef
 import DDC.Core.Sea.Output.Name
-import DDC.Type.Exp
+import DDC.Type.DataDef
 import DDC.Type.Compounds
+import DDC.Type.Exp
 import DDC.Type.Env                             (Env)
 import qualified DDC.Type.Env                   as Env
 

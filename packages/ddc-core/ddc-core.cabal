@@ -29,7 +29,8 @@ Library
         array           == 0.4.*,
         transformers    == 0.2.*,
         mtl             == 2.0.*,
-        ddc-base        == 0.3.0.*
+        ddc-base        == 0.3.0.*,
+        ddc-type        == 0.3.0.*
 
   Exposed-modules:
         DDC.Core.Check.CheckExp
@@ -48,39 +49,17 @@ Library
         DDC.Core.Check
         DDC.Core.Collect
         DDC.Core.Compounds
-        DDC.Core.DataDef
         DDC.Core.Exp
         DDC.Core.Module
         DDC.Core.Pretty
         DDC.Core.Predicates
         DDC.Core.Parser
-        DDC.Type.Check.Monad
-        DDC.Type.Transform.Crush
-        DDC.Type.Transform.Instantiate
-        DDC.Type.Transform.LiftT
-        DDC.Type.Transform.LowerT
-        DDC.Type.Transform.SpreadT
-        DDC.Type.Transform.SubstituteT
-        DDC.Type.Transform.Trim
-        DDC.Type.Check
-        DDC.Type.Compounds
-        DDC.Type.Env
-        DDC.Type.Equiv
-        DDC.Type.Exp
-        DDC.Type.Parser
-        DDC.Type.Predicates
-        DDC.Type.Rewrite
-        DDC.Type.Subsumes
-        DDC.Type.Sum
-        DDC.Type.Universe
 
   Other-modules:
+        DDC.Core.Parser.Type
         DDC.Core.Parser.Param
         DDC.Core.Parser.Base
         DDC.Core.Check.ErrorMessage
-        DDC.Type.Check.CheckCon
-        DDC.Type.Check.CheckError
-        DDC.Type.Pretty
                   
   GHC-options:
         -Werror

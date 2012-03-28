@@ -11,13 +11,13 @@ module DDC.Type.Transform.SubstituteT
         , pushBinds
         , substBound)
 where
-import DDC.Type.Exp
+import DDC.Type.Collect
 import DDC.Type.Compounds
-import DDC.Core.Collect
 import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Type.Rewrite
+import DDC.Type.Exp
 import Data.Maybe
 import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env

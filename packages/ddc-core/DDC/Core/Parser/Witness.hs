@@ -3,15 +3,12 @@ module DDC.Core.Parser.Witness
         ( pWitness
         , pWitnessAtom) 
 where
-import DDC.Core.Exp
-import DDC.Core.Parser.Param
+import DDC.Core.Parser.Type
 import DDC.Core.Parser.Tokens
 import DDC.Core.Parser.Base
-import DDC.Base.Parser                  ((<?>))
-import DDC.Type.Parser                  (pTok)
+import DDC.Core.Exp
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
-import qualified DDC.Type.Parser        as T
  
 
 -- | Parse a witness expression.
@@ -47,7 +44,7 @@ pWitnessArg
  = P.choice
  [ -- [TYPE]
    do   pTok KSquareBra
-        t       <- T.pType
+        t       <- pType
         pTok KSquareKet
         return  $ WType t
 
@@ -75,7 +72,7 @@ pWitnessAtom
 
                 
    -- Debruijn indices
- , do    i       <- T.pIndex
+ , do    i       <- pIndex
          return  $ WVar (UIx   i   (T.tBot T.kWitness))
 
    -- Variables

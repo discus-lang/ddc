@@ -2,7 +2,7 @@
 module DDC.Type.Transform.Trim 
         (trimClosure)
 where
-import DDC.Core.Collect
+import DDC.Type.Collect
 import DDC.Type.Check.CheckCon
 import DDC.Type.Exp
 import DDC.Type.Compounds

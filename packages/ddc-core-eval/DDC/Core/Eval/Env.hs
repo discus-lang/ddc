@@ -19,7 +19,7 @@ module DDC.Core.Eval.Env
 where
 import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Name
-import DDC.Core.DataDef
+import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Env             (Env)

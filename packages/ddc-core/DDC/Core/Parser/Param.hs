@@ -7,12 +7,10 @@ module DDC.Core.Parser.Param
         , pBindParamSpec)
 where
 import DDC.Core.Exp
+import DDC.Core.Parser.Type
 import DDC.Core.Parser.Tokens
-import DDC.Core.Parser.Base
-import DDC.Type.Parser                  (pTok)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
-import qualified DDC.Type.Parser        as T
 
 
 -- | Specification of a function parameter.
@@ -80,9 +78,9 @@ pBindParamSpec
         -- Type parameter
         -- [BIND1 BIND2 .. BINDN : TYPE]
  [ do   pTok KSquareBra
-        bs      <- P.many1 T.pBinder
+        bs      <- P.many1 pBinder
         pTok KColon
-        t       <- T.pType
+        t       <- pType
         pTok KSquareKet
         return  [ ParamType b 
                 | b <- zipWith T.makeBindFromBinder bs (repeat t)]
@@ -91,9 +89,9 @@ pBindParamSpec
         -- Witness parameter
         -- <BIND : TYPE>
  , do   pTok KAngleBra
-        b       <- T.pBinder
+        b       <- pBinder
         pTok KColon
-        t       <- T.pType
+        t       <- pType
         pTok KAngleKet
         return  [ ParamWitness $ T.makeBindFromBinder b t]
 
@@ -101,17 +99,17 @@ pBindParamSpec
         -- (BIND : TYPE) 
         -- (BIND : TYPE) { TYPE | TYPE }
  , do   pTok KRoundBra
-        b       <- T.pBinder
+        b       <- pBinder
         pTok KColon
-        t       <- T.pType
+        t       <- pType
         pTok KRoundKet
 
         (eff, clo) 
          <- P.choice
                 [ do    pTok KBraceBra
-                        eff'    <- T.pType
+                        eff'    <- pType
                         pTok KBar
-                        clo'    <- T.pType
+                        clo'    <- pType
                         pTok KBraceKet
                         return  (eff', clo')
                 

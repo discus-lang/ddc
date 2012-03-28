@@ -1,6 +1,6 @@
 
 -- | Algebraic data type definitions.
-module DDC.Core.DataDef
+module DDC.Type.DataDef
         ( DataDef    (..)
 
         -- * Data type definition table

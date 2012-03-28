@@ -14,10 +14,10 @@ import DDC.Core.Language.Profile
 import DDC.Core.Load
 import DDC.Core.Exp
 import DDC.Core.Pretty
+import DDC.Core.Parser
 import DDC.Core.Parser.Tokens
 import DDC.Type.Equiv
 import DDC.Type.Transform.SpreadT
-import qualified DDC.Type.Parser        as T
 import qualified DDC.Type.Check         as T
 import qualified DDC.Base.Parser        as BP
 
@@ -42,8 +42,8 @@ cmdTypeEquiv state lineStart ss
  = let
         goParse toks
          = case BP.runTokenParser describeTok "<interactive>"
-                        (do t1 <- T.pTypeAtom
-                            t2 <- T.pTypeAtom
+                        (do t1 <- pTypeAtom
+                            t2 <- pTypeAtom
                             return (t1, t2))
                         toks
             of Left err -> putStrLn $ renderIndent $ text "parse error " <> ppr err

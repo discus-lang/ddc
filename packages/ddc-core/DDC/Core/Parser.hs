@@ -4,20 +4,22 @@ module DDC.Core.Parser
         , module DDC.Core.Parser.Param
         , module DDC.Core.Parser.Witness
         , pModule
-        , pExp)
+        , pExp
+        , pType
+        , pTypeApp
+        , pTypeAtom)
 where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Parser.Witness
 import DDC.Core.Parser.Param
+import DDC.Core.Parser.Type
 import DDC.Core.Parser.Tokens
 import DDC.Core.Parser.Base
 import DDC.Base.Pretty
 import DDC.Base.Parser                  ((<?>))
-import DDC.Type.Parser                  (pTok)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
-import qualified DDC.Type.Parser        as T
 import qualified Data.Map               as Map
 import Control.Monad.Error
 
@@ -72,7 +74,7 @@ pTypeSig :: Ord n => Parser n (n, Type n)
 pTypeSig
  = do   var     <- pVar
         pTok KColonColon
-        t       <- T.pType
+        t       <- pType
         return  (var, t)
 
 
@@ -86,7 +88,7 @@ pImportTypeSpec
         pTok KWith
         n       <- pName
         pTok KColonColon
-        t       <- T.pType
+        t       <- pType
         return  (n, (qn, t))
         
 
@@ -103,9 +105,9 @@ pExp
         bs      <- liftM concat
                 $  P.many1 
                 $  do   pTok KRoundBra
-                        bs'     <- P.many1 T.pBinder
+                        bs'     <- P.many1 pBinder
                         pTok KColon
-                        t       <- T.pType
+                        t       <- pType
                         pTok KRoundKet
                         return (map (\b -> T.makeBindFromBinder b t) bs')
 
@@ -120,9 +122,9 @@ pExp
         bs      <- liftM concat
                 $  P.many1 
                 $  do   pTok KRoundBra
-                        bs'     <- P.many1 T.pBinder
+                        bs'     <- P.many1 pBinder
                         pTok KColon
-                        t       <- T.pType
+                        t       <- pType
                         pTok KRoundKet
                         return (map (\b -> T.makeBindFromBinder b t) bs')
 
@@ -182,7 +184,7 @@ pExp
         -- weakeff [TYPE] in EXP
  , do   pTok KWeakEff
         pTok KSquareBra
-        t       <- T.pType
+        t       <- pType
         pTok KSquareKet
         pTok KIn
         x       <- pExp
@@ -192,7 +194,7 @@ pExp
         -- weakclo [TYPE] in EXP
  , do   pTok KWeakClo
         pTok KSquareBra
-        t       <- T.pType
+        t       <- pType
         pTok KSquareKet
         pTok KIn
         x       <- pExp
@@ -245,13 +247,13 @@ pArgs
  = P.choice
         -- [TYPE]
  [ do   pTok KSquareBra
-        t       <- T.pType 
+        t       <- pType 
         pTok KSquareKet
         return  [XType t]
 
         -- [: TYPE0 TYPE0 ... :]
  , do   pTok KSquareColonBra
-        ts      <- P.many1 T.pTypeAtom
+        ts      <- P.many1 pTypeAtom
         pTok KSquareColonKet
         return  $ map XType ts
         
@@ -293,7 +295,7 @@ pExp0
         return  $ XCon () (UName lit (T.tBot T.kData))
 
         -- Debruijn indices
- , do   i       <- T.pIndex
+ , do   i       <- pIndex
         return  $ XVar () (UIx   i   (T.tBot T.kData))
 
         -- Variables
@@ -337,14 +339,14 @@ pBindPat :: Ord n => Parser n (Bind n)
 pBindPat 
  = P.choice
         -- Plain binder.
- [ do   b       <- T.pBinder
+ [ do   b       <- pBinder
         return  $ T.makeBindFromBinder b (T.tBot T.kData)
 
         -- Binder with type, wrapped in parens.
  , do   pTok KRoundBra
-        b       <- T.pBinder
+        b       <- pBinder
         pTok KColon
-        t       <- T.pType
+        t       <- pType
         pTok KRoundKet
         return  $ T.makeBindFromBinder b t
  ]
@@ -377,7 +379,7 @@ pLets
       --   letregion BINDER with { BINDER : TYPE ... } in EXP
       --   letregion BINDER in EXP
     , do pTok KLetRegion
-         br      <- T.pBinder
+         br      <- pBinder
          let b   = T.makeBindFromBinder br T.kRegion
          P.choice 
           [ do   pTok KWith
@@ -385,7 +387,7 @@ pLets
                  wits    <- P.sepBy
                             (do  w       <- pVar
                                  pTok KColon
-                                 t       <- T.pTypeApp
+                                 t       <- pTypeApp
                                  return  (BName w t))
                             (pTok KSemiColon)
                  pTok KBraceKet
@@ -398,13 +400,13 @@ pLets
 -- | A binding for let expression.
 pLetBinding :: Ord n => Parser n (LetMode n, Bind n, Exp () n)
 pLetBinding 
- = do   b       <- T.pBinder
+ = do   b       <- pBinder
 
         P.choice
          [ do   -- Binding with full type signature.
                 --  BINDER : TYPE = EXP
                 pTok KColon
-                t       <- T.pType
+                t       <- pType
                 mode    <- pLetMode
                 pTok KEquals
                 xBody   <- pExp
@@ -432,7 +434,7 @@ pLetBinding
                         -- We can make the full type sig for the let-bound variable.
                         --   BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
                         pTok KColon
-                        tBody   <- T.pType
+                        tBody   <- pType
                         mode    <- pLetMode
                         pTok KEquals
                         xBody   <- pExp
@@ -481,13 +483,13 @@ pLetMode
 --   or use function syntax with a return type so that we can make one.
 pLetRecBinding :: Ord n => Parser n (Bind n, Exp () n)
 pLetRecBinding 
- = do   b       <- T.pBinder
+ = do   b       <- pBinder
 
         P.choice
          [ do   -- Binding with full type signature.
                 --  BINDER : TYPE = EXP
                 pTok KColon
-                t       <- T.pType
+                t       <- pType
                 pTok KEquals
                 xBody   <- pExp
 
@@ -500,7 +502,7 @@ pLetRecBinding
                         $  P.many pBindParamSpec 
         
                 pTok KColon
-                tBody   <- T.pType
+                tBody   <- pType
                 let t   = funTypeOfParams ps tBody
 
                 pTok KEquals
@@ -526,7 +528,7 @@ pStmt
    --   as a function name in a non-binding statement.
    --  
    P.try $ 
-    do  br      <- T.pBinder
+    do  br      <- pBinder
         pTok    KEquals
         x1      <- pExp
         let t   = T.tBot T.kData

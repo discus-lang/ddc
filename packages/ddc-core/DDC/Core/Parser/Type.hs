@@ -1,6 +1,6 @@
 
 -- | Parser for type expressions.
-module DDC.Type.Parser
+module DDC.Core.Parser.Type
         ( module DDC.Base.Parser
         , Parser
         , pType, pTypeAtom, pTypeApp
@@ -8,17 +8,13 @@ module DDC.Type.Parser
         , pIndex
         , pTok, pTokAs)
 where
+import DDC.Core.Parser.Base
 import DDC.Core.Parser.Tokens   
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Base.Parser                  ((<?>))
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Sum           as TS
-
-
--- | Parser of type tokens.
-type Parser n a
-        = P.Parser (Tok n) a
 
 
 -- | Top level parser for types.
@@ -210,27 +206,4 @@ pTyConNamed
         <?> "a type constructor"
  where  f (KN (KCon n))          = Just (TyConBound (UName n (tBot kData)))
         f _                      = Nothing
-
--- | Parse a variable.
-pVar :: Parser n n
-pVar    =   P.pTokMaybe f
-        <?> "a variable"
- where  f (KN (KVar n))         = Just n
-        f _                     = Nothing
-
--- | Parse a deBruijn index
-pIndex :: Parser n Int
-pIndex  =   P.pTokMaybe f
-        <?> "an index"
- where  f (KA (KIndex i))       = Just i
-        f _                     = Nothing
-
--- | Parse an atomic token.
-pTok :: TokAtom -> Parser n ()
-pTok k     = P.pTok (KA k)
-
-
--- | Parse an atomic token and return some value.
-pTokAs :: TokAtom -> a -> Parser n a
-pTokAs k x = P.pTokAs (KA k) x
 

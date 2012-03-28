@@ -11,8 +11,8 @@ module DDC.Type.Rewrite
         , bind1, bind0, bind0s
         , use1,  use0)
 where
-import DDC.Core.Exp
 import DDC.Type.Compounds
+import DDC.Type.Exp
 import Data.List
 import Data.Set                         (Set)
 import qualified DDC.Type.Sum           as Sum
@@ -212,24 +212,6 @@ instance Rewrite Bound where
   = replaceTypeOfBound (rewriteWith sub (typeOfBound uu)) uu
 
 
-instance Rewrite LetMode where
- rewriteWith sub lm
-  = case lm of
-        LetStrict        -> lm
-        LetLazy (Just t) -> LetLazy (Just $ rewriteWith sub t) 
-        LetLazy Nothing  -> LetLazy Nothing
-
-
-instance Rewrite Cast where
- rewriteWith sub cc
-  = let down    = rewriteWith sub 
-    in case cc of
-        CastWeakenEffect  eff   -> CastWeakenEffect  (down eff)
-        CastWeakenClosure clo   -> CastWeakenClosure (down clo)
-        CastPurify w            -> CastPurify (down w)
-        CastForget w            -> CastForget (down w)
-
-
 instance Rewrite Type where
  rewriteWith sub tt 
   = let down    = rewriteWith 
@@ -252,13 +234,3 @@ instance Rewrite TypeSum where
         $ map (rewriteWith sub)
         $ Sum.toList ts
 
-
-instance Rewrite Witness where
- rewriteWith sub ww
-  = let down    = rewriteWith 
-    in case ww of
-        WVar u          -> WVar  (use0 sub u)
-        WCon{}          -> ww
-        WApp  w1 w2     -> WApp  (down sub w1) (down sub w2)
-        WJoin w1 w2     -> WJoin (down sub w1) (down sub w2)
-        WType t         -> WType (down sub t)

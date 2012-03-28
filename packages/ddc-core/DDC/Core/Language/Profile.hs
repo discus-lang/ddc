@@ -9,7 +9,7 @@ module DDC.Core.Language.Profile
         , setFeature)
 where
 import DDC.Core.Language.Feature
-import DDC.Core.DataDef
+import DDC.Type.DataDef
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 

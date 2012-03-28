@@ -3,6 +3,7 @@
 # -- all .hs files in the src dir, including ones we need to preprocess.
 ddci-core_packages = \
         packages/ddc-base/DDC \
+        packages/ddc-type/DDC \
         packages/ddc-core/DDC \
         packages/ddc-core-simpl/DDC \
         packages/ddc-core-eval/DDC \

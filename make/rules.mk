@@ -39,25 +39,34 @@ packages/ddc-base/%.o : packages/ddc-base/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base
 
+packages/ddc-type/%.o : packages/ddc-type/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base -ipackages/ddc-type
+
 packages/ddc-core/%.o : packages/ddc-core/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base -ipackages/ddc-core
+		-c $< -ipackages/ddc-base -ipackages/ddc-type \
+                      -ipackages/ddc-core
 
 packages/ddc-core-simpl/%.o : packages/ddc-core-simpl/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-simpl
+		-c $< -ipackages/ddc-base -ipackages/ddc-type \
+                      -ipackages/ddc-core -ipackages/ddc-core-simpl
 
 packages/ddc-core-eval/%.o : packages/ddc-core-eval/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-eval
+		-c $< -ipackages/ddc-base -ipackages/ddc-type \
+                      -ipackages/ddc-core -ipackages/ddc-core-eval
 
 packages/ddc-core-sea/%.o : packages/ddc-core-sea/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-simpl \
+		-c $< -ipackages/ddc-base -ipackages/ddc-type \
+                      -ipackages/ddc-core -ipackages/ddc-core-simpl \
                       -ipackages/ddc-core-sea
 
 packages/ddc-llvm/%.o : packages/ddc-llvm/%.hs
@@ -68,13 +77,16 @@ packages/ddc-llvm/%.o : packages/ddc-llvm/%.hs
 packages/ddc-core-llvm/%.o : packages/ddc-core-llvm/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-simpl \
-		      -ipackages/ddc-core-sea -ipackages/ddc-llvm -ipackages/ddc-core-llvm
+		-c $< -ipackages/ddc-base -ipackages/ddc-type \
+                      -ipackages/ddc-core -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-sea \
+                      -ipackages/ddc-llvm -ipackages/ddc-core-llvm
 
 packages/ddci-core/%.o : packages/ddci-core/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base -ipackages/ddc-core -ipackages/ddc-core-simpl \
+		-c $< -ipackages/ddc-base -ipackages/ddc-type \
+                      -ipackages/ddc-core -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-eval \
                       -ipackages/ddc-core-sea \
                       -ipackages/ddc-core-llvm -ipackages/ddc-llvm \

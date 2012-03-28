@@ -1,0 +1,75 @@
+Name:           ddc-type
+Version:        0.3.0.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Bug-reports:    disciple@ouroborus.net
+Synopsis:       Disciple Core language and type checker.
+Description:
+        Disciple types.
+        
+        See the @ddci-core@ package for a user-facing interpreter.
+
+Library
+  Build-Depends: 
+        base            == 4.5.*,
+        containers      == 0.4.*,
+        array           == 0.4.*,
+        transformers    == 0.2.*,
+        mtl             == 2.0.*,
+        ddc-base        == 0.3.0.*
+
+  Exposed-modules:
+        DDC.Type.Check.Monad
+        DDC.Type.Transform.Crush
+        DDC.Type.Transform.Instantiate
+        DDC.Type.Transform.LiftT
+        DDC.Type.Transform.LowerT
+        DDC.Type.Transform.SpreadT
+        DDC.Type.Transform.SubstituteT
+        DDC.Type.Transform.Trim
+        DDC.Type.DataDef
+        DDC.Type.Check
+        DDC.Type.Compounds
+        DDC.Type.Collect
+        DDC.Type.Env
+        DDC.Type.Equiv
+        DDC.Type.Exp
+        DDC.Type.Predicates
+        DDC.Type.Pretty
+        DDC.Type.Rewrite
+        DDC.Type.Subsumes
+        DDC.Type.Sum
+        DDC.Type.Universe
+
+  Other-modules:
+        DDC.Type.Check.CheckCon
+        DDC.Type.Check.CheckError
+                  
+  GHC-options:
+        -Werror
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        ParallelListComp
+        PatternGuards
+        RankNTypes
+        FlexibleContexts
+        FlexibleInstances
+        MultiParamTypeClasses
+        UndecidableInstances
+        KindSignatures
+        NoMonomorphismRestriction
+        ScopedTypeVariables
+        StandaloneDeriving
+        DoAndIfThenElse
+        

@@ -18,7 +18,6 @@ import DDC.Base.Pretty
 import qualified DDC.Core.Parser        as C
 import qualified DDC.Core.Check         as C
 import qualified DDC.Type.Check         as T
-import qualified DDC.Type.Parser        as T
 import qualified DDC.Base.Parser        as BP
 
 
@@ -84,7 +83,7 @@ loadType profile sourceName toks'
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName T.pType toks of
+         = case BP.runTokenParser describeTok sourceName C.pType toks of
                 Left err  -> Left (ErrorParser err)
                 Right t   -> goCheckType (spreadT kenv t)
 

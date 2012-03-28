@@ -12,12 +12,12 @@ module DDC.Type.Check
           -- * Errors
         , Error(..))
 where
+import DDC.Type.DataDef
 import DDC.Type.Check.CheckError
 import DDC.Type.Check.CheckCon
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Transform.LiftT
-import DDC.Core.DataDef
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List

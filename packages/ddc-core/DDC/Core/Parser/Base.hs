@@ -6,14 +6,17 @@ module DDC.Core.Parser.Base
         , pQualName
         , pName
         , pCon
+        , pLit
+        , pIndex
         , pVar
-        , pLit)
+        , pTok
+        , pTokAs)
 where
 import DDC.Base.Pretty
-import DDC.Type.Parser                  (pTok)
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Parser.Tokens
+import DDC.Base.Parser                  ((<?>))
 import qualified DDC.Base.Parser        as P
 
 
@@ -59,16 +62,35 @@ pCon    = P.pTokMaybe f
         f _             = Nothing
 
 
--- | Parse a variable name.
-pVar :: Parser n n
-pVar    = P.pTokMaybe f
- where  f (KN (KVar n)) = Just n
-        f _             = Nothing
-
-
 -- | Parse a literal
 pLit :: Parser n n
 pLit    = P.pTokMaybe f
  where  f (KN (KLit n)) = Just n
         f _             = Nothing
+
+
+-- | Parse a variable.
+pVar :: Parser n n
+pVar    =   P.pTokMaybe f
+        <?> "a variable"
+ where  f (KN (KVar n))         = Just n
+        f _                     = Nothing
+
+
+-- | Parse a deBruijn index
+pIndex :: Parser n Int
+pIndex  =   P.pTokMaybe f
+        <?> "an index"
+ where  f (KA (KIndex i))       = Just i
+        f _                     = Nothing
+
+
+-- | Parse an atomic token.
+pTok :: TokAtom -> Parser n ()
+pTok k     = P.pTok (KA k)
+
+
+-- | Parse an atomic token and return some value.
+pTokAs :: TokAtom -> a -> Parser n a
+pTokAs k x = P.pTokAs (KA k) x
 

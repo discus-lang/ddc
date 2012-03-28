@@ -10,9 +10,10 @@ module DDC.Core.Transform.SubstituteWX
 where
 import DDC.Core.Exp
 import DDC.Core.Collect
+import DDC.Core.Rewrite
 import DDC.Core.Transform.LiftW
-import DDC.Type.Compounds
 import DDC.Type.Rewrite
+import DDC.Type.Compounds
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set

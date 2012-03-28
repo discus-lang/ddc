@@ -3,12 +3,12 @@ module DDC.Core.Check.CheckModule
         ( checkModule
         , checkModuleM)
 where
-import DDC.Core.DataDef
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Check.CheckExp
 import DDC.Core.Check.Error
 import DDC.Core.Compounds
+import DDC.Type.DataDef
 import DDC.Type.Compounds
 import DDC.Base.Pretty
 import DDC.Type.Env             (Env)

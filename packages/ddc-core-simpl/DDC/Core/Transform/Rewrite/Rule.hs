@@ -1,30 +1,24 @@
 
 -- | Rewriting one expression to another
 module DDC.Core.Transform.Rewrite.Rule 
-        (RewriteRule(..)
-	,BindMode(..)
-	,checkRewriteRule
-	,mkRewriteRule
-	)
-
+        ( RewriteRule   (..)
+	, BindMode     (..)
+	, checkRewriteRule
+	, mkRewriteRule)
 where
 import DDC.Core.Exp
 import DDC.Base.Pretty
 import DDC.Core.Pretty()
 import DDC.Type.Pretty()
-
 import DDC.Core.Transform.Rewrite.Error
-
-import qualified DDC.Core.DataDef as C
-import qualified DDC.Core.Check.CheckExp as C
-
-import qualified DDC.Type.Compounds as T
-import qualified DDC.Type.Env as T
-import qualified DDC.Type.Equiv as T
-import qualified DDC.Type.Subsumes as T
-
-import qualified DDC.Core.Transform.SpreadX as S
-import qualified DDC.Type.Transform.SpreadT as S
+import qualified DDC.Core.Check.CheckExp        as C
+import qualified DDC.Core.Transform.SpreadX     as S
+import qualified DDC.Type.DataDef               as T
+import qualified DDC.Type.Compounds             as T
+import qualified DDC.Type.Env                   as T
+import qualified DDC.Type.Equiv                 as T
+import qualified DDC.Type.Subsumes              as T
+import qualified DDC.Type.Transform.SpreadT     as S
 
 
 -- | A substitution rule
@@ -72,11 +66,11 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 -- | Create rule
 -- Make sure expressions are valid, lhs is only allowed to contain XApps
 checkRewriteRule
-    :: (Ord n, Pretty n)
-    => C.DataDefs n           -- ^ Data type definitions.
-    -> T.Env n                -- ^ Kind environment.
-    -> T.Env n                -- ^ Type environment.
-    -> RewriteRule a n	      -- ^ Rule to check
+    :: (Ord n, Pretty n)        
+    => T.DataDefs n             -- ^ Data type definitions.
+    -> T.Env n                  -- ^ Kind environment.
+    -> T.Env n                  -- ^ Type environment.
+    -> RewriteRule a n	        -- ^ Rule to check
     -> Either (Error a n)
 	      (RewriteRule a n)
 checkRewriteRule defs kenv tenv

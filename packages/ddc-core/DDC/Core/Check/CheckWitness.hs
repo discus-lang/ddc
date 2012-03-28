@@ -9,11 +9,11 @@ module DDC.Core.Check.CheckWitness
         , CheckM
         , checkWitnessM)
 where
-import DDC.Core.DataDef
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage      ()
+import DDC.Type.DataDef
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Compounds
 import DDC.Type.Predicates
