@@ -52,10 +52,14 @@ varOfGlobal  (Global v _)       = v
 
 -- | Print out a whole LLVM module.
 instance Pretty Module where
- ppr (Module _comments aliases _globals _decls funcs)
+ ppr (Module _comments aliases _globals decls funcs)
   =    (vcat $ map ppr aliases)
   <$$> empty
-  <$$> (vcat $ punctuate line $ map ppr funcs)
+  <$$> (vcat    $ map (\decl ->  text "declare" 
+                             <+> pprFunctionHeader decl Nothing) decls)
+  <$$> empty
+  <$$> (vcat    $ punctuate line 
+                $ map ppr funcs)
 
 
 -- Static ---------------------------------------------------------------------

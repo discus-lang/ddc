@@ -17,7 +17,6 @@ import DDC.Type.Compounds
 import Data.Sequence                            (Seq, (<|), (|>), (><))
 import Data.Map                                 (Map)
 import qualified DDC.Core.Sea.Output.Name       as E
-import qualified DDC.Core.Sea.Output.Env        as E
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Base.Pretty                as P
@@ -34,7 +33,7 @@ import Data.Maybe
 -- | Convert a module to LLVM
 convertModule :: Platform -> C.Module () E.Name -> Module
 convertModule platform mm
- = let  prims           = primGlobals platform
+ = let  prims           = primDeclsMap platform
         state           = llvmStateInit platform prims
    in   clean $ evalState (convModuleM mm) state
 
@@ -44,25 +43,52 @@ convModuleM mm@(C.ModuleCore{})
  | [C.LRec bxs]         <- C.moduleLets mm   
  = do   platform        <- gets llvmStatePlatform
         functions       <- mapM (uncurry (convSuperM)) bxs
-        let globals     = [Global v Nothing 
-                                | v <- Map.elems $ primGlobals platform ]
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
-                , modGlobals    = globals
-                , modFwdDecls   = []
+                , modGlobals    = []
+                , modFwdDecls   = primDecls platform
                 , modFuncs      = functions }
 
  | otherwise    = die "invalid module"
 
 
--- | Global variables used directly by the conversion.
-primGlobals :: Platform -> Map String Var
-primGlobals platform
+primDeclsMap :: Platform -> Map String FunctionDecl
+primDeclsMap pp
         = Map.fromList
-        [ ( "malloc"
-          , Var (NameGlobal "malloc")
-                (convType platform (E.tNat `tFunPE` E.tPtr E.tObj))) ]
+        $ [ (declName decl, decl) | decl <- primDecls pp ]
+
+
+-- | Global variables used directly by the conversion.
+primDecls :: Platform -> [FunctionDecl]
+primDecls pp
+ = [    FunctionDecl
+        { declName              = "malloc"
+        , declLinkage           = External
+        , declCallConv          = CC_Ccc
+        , declReturnType        = tAddr pp
+        , declParamListType     = FixedArgs
+        , declParams            = [Param (tNat pp) []]
+        , declAlign             = AlignBytes (platformAlignBytes pp) }
+
+   ,    FunctionDecl
+        { declName              = "putStrLn"
+        , declLinkage           = External
+        , declCallConv          = CC_Ccc
+        , declReturnType        = TVoid
+        , declParamListType     = FixedArgs
+        , declParams            = [Param (tPtr (TInt 8)) []]
+        , declAlign             = AlignBytes (platformAlignBytes pp) } 
+
+   ,    FunctionDecl
+        { declName              = "showInt32"
+        , declLinkage           = External
+        , declCallConv          = CC_Ccc
+        , declReturnType        = tPtr (TInt 8)
+        , declParamListType     = FixedArgs
+        , declParams            = [Param (TInt 32) []]
+        , declAlign             = AlignBytes (platformAlignBytes pp) } ]
+
 
 
 -- Super ----------------------------------------------------------------------

@@ -12,7 +12,7 @@ module DDC.Core.Llvm.LlvmM
         , newUniqueLabel
 
           -- * Platform Specific
-        , getPrimVarM
+        , getPrimDeclM
         , getBytesOfTypeM)
 where
 import DDC.Core.Llvm.Platform
@@ -39,16 +39,20 @@ data LlvmState
         , llvmStatePlatform     :: Platform 
 
           -- Primitives in the global environment.
-        , llvmStatePrimVars     :: Map String Var }
+        , llvmStatePrimDecls    :: Map String FunctionDecl }
 
 
 -- | Initial LLVM state.
-llvmStateInit :: Platform -> Map String Var -> LlvmState
+llvmStateInit 
+        :: Platform 
+        -> Map String FunctionDecl 
+        -> LlvmState
+
 llvmStateInit platform prims
         = LlvmState
         { llvmStateUnique       = 1 
         , llvmStatePlatform     = platform
-        , llvmStatePrimVars     = prims }
+        , llvmStatePrimDecls    = prims }
 
 
 -- Unique ---------------------------------------------------------------------
@@ -84,13 +88,11 @@ newUniqueLabel name
 
 
 -- Platform Specific ----------------------------------------------------------
--- | Get a primitive variable.
-getPrimVarM :: String -> LlvmM Var
-getPrimVarM name
- = do   prims   <- gets llvmStatePrimVars 
-        case Map.lookup name prims of
-         Just var       -> return var
-         _              -> error $ "getPrimVar: unknown prim " ++ show name
+-- | Get the declaration of a primitive function
+getPrimDeclM :: String -> LlvmM (Maybe FunctionDecl)
+getPrimDeclM name
+ = do   prims   <- gets llvmStatePrimDecls
+        return  $ Map.lookup name prims 
 
 
 -- | Get the size of a type on this platform, in bytes.

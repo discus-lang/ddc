@@ -1,7 +1,8 @@
 
 module DDC.Llvm.Function
         ( Section   (..)
-        , Function  (..))
+        , Function  (..)
+        , pprFunctionHeader)
 where
 import DDC.Llvm.Instr
 import DDC.Base.Pretty
@@ -47,7 +48,7 @@ instance Pretty Function where
                         SectionSpecific s -> text "section" <+> (dquotes $ text s)
 
     in text "define" 
-        <+> pprFunctionHeader decl paramNames
+        <+> pprFunctionHeader decl (Just paramNames)
                 <+> attrDoc <+> secDoc
         <$> lbrace
         <$> vcat (map ppr body)
@@ -55,10 +56,10 @@ instance Pretty Function where
 
 
 -- | Print out a function defenition header.
-pprFunctionHeader :: FunctionDecl -> [String] -> Doc
+pprFunctionHeader :: FunctionDecl -> Maybe [String] -> Doc
 pprFunctionHeader 
         (FunctionDecl name linkage callConv tReturn varg params alignment)
-        nsParam
+        mnsParams
   = let varg'  = case varg of
                       VarArgs | null params -> text "..."
                               | otherwise   -> text ", ..."
@@ -68,9 +69,16 @@ pprFunctionHeader
                         AlignNone       -> empty
                         AlignBytes b    -> text " align" <+> ppr b
 
-        args'  = [ ppr ty <+> hsep (map ppr attrs) <+> text "%" <> text nParam
+        args'  
+         = case mnsParams of
+             Just nsParams      
+              -> [ ppr ty <+> hsep (map ppr attrs) <+> text "%" <> text nParam
                         | Param ty attrs <- params
-                        | nParam         <- nsParam ]
+                        | nParam         <- nsParams ]
+
+             Nothing
+              -> [ ppr ty <+> hsep (map ppr attrs)
+                        | Param ty attrs <- params ]
 
     in ppr linkage
         <+> ppr callConv
