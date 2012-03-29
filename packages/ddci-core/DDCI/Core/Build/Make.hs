@@ -90,7 +90,7 @@ data Builder
 
 builder_I386_Darwin
  = let  buildLlc' llFile sFile
-         = doCmd $ "llc -march=x86 " 
+         = doCmd $ "llc -O3 -march=x86 " 
                  ++ llFile 
                  ++ " -o " ++ sFile
 

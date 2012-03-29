@@ -90,7 +90,7 @@ convPrimCallM pp mdst p tPrim xs
                 vPtr     <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
                 return  $ Seq.fromList
                         [ IOp    vOff OpAdd xAddr' xOffset'
-                        , IConv  vPtr ConvInttoptr xAddr'
+                        , IConv  vPtr ConvInttoptr (XVar vOff)
                         , IStore (XVar vPtr) xVal' ]
 
         E.PrimStore E.PrimStoreMakePtr
