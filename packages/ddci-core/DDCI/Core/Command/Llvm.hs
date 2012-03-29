@@ -4,7 +4,7 @@ module DDCI.Core.Command.Llvm
 where
 import DDC.Core.Load
 import DDC.Core.Sea.Output.Profile
-import DDCI.Core.Fragment
+import DDCI.Core.Pipeline.Fragment
 import DDCI.Core.State
 import DDC.Base.Pretty
 import qualified DDC.Core.Llvm.Platform as L

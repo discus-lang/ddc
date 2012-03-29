@@ -62,6 +62,7 @@ data Error a
         | ErrorPrimCallInvalid
         { errorPrim     :: Prim
         , errorArgs     :: [Exp a Name]}
+        deriving Show
 
 
 instance (Show a, Pretty a) => Pretty (Error a) where

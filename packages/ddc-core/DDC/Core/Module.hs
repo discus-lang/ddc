@@ -19,6 +19,7 @@ data ModuleName
 --   including the name of the module it is from.
 data QualName n
         = QualName ModuleName n
+        deriving Show
 
 
 -- | A module can be mutually recursive with other modules.
@@ -50,6 +51,7 @@ data Module a n
           --   which are initialised on startup.
         , moduleLets            :: [Lets a n] 
         }
+        deriving Show
 
 
 -- | Definition of some external thing.

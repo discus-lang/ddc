@@ -1,5 +1,5 @@
 
-module DDCI.Core.Rewrite
+module DDCI.Core.Interface.Rewrite
         ( SetRuleCommand(..)
         , parseFirstWord
 	, parseRewrite

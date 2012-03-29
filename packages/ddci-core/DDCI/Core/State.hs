@@ -11,9 +11,9 @@ module DDCI.Core.State
         , Mode (..)
         , adjustMode)
 where
-import DDCI.Core.Fragment
 import DDCI.Core.Mode
-import DDCI.Core.Transform
+import DDCI.Core.Pipeline.Fragment
+import DDCI.Core.Pipeline.Transform
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Name               (Name)

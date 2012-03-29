@@ -1,7 +1,8 @@
 
 -- | Convert the SeaOutput fragment of Disciple Core to real C-code.
 module DDC.Core.Sea.Output.Convert
-        (convertModule)
+        ( convertModule
+        , Error(..))
 where
 import DDC.Core.Sea.Output.Error
 import DDC.Core.Sea.Output.Name

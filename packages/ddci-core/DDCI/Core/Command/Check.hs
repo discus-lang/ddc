@@ -7,7 +7,7 @@ module DDCI.Core.Command.Check
         , ShowTypeMode(..)
         , cmdParseCheckExp)
 where
-import DDCI.Core.Fragment
+import DDCI.Core.Pipeline.Fragment
 import DDCI.Core.State
 import DDCI.Core.IO
 import DDC.Core.Language.Profile

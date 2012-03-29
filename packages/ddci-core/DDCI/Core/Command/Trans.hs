@@ -6,7 +6,7 @@ module DDCI.Core.Command.Trans
 where
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
-import DDCI.Core.Transform
+import DDCI.Core.Pipeline.Transform
 import DDCI.Core.State
 import DDCI.Core.IO
 import DDC.Core.Eval.Profile

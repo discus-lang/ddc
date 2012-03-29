@@ -5,8 +5,8 @@ module DDCI.Core.Command.Set
         , cmdSet)
 where
 import DDCI.Core.State
-import qualified DDCI.Core.Rewrite as R
-import DDCI.Core.Transform
+import qualified DDCI.Core.Interface.Rewrite as R
+import DDCI.Core.Pipeline.Transform
 import DDCI.Core.Mode
 import DDCI.Core.IO
 import DDC.Base.Pretty

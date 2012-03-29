@@ -1,5 +1,5 @@
 
-module DDCI.Core.Transform
+module DDCI.Core.Pipeline.Transform
         ( Transform (..)
         , parseTransform
         , applyTransformX)

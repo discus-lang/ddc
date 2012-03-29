@@ -1,6 +1,7 @@
 
-module DDCI.Core.Fragment
-        ( Fragment      (..)
+module DDCI.Core.Pipeline.Fragment
+        ( CoreFragment  (..)
+        , Fragment      (..)
         , StateProfile  (..)
         , stateProfiles)
 where
@@ -17,6 +18,12 @@ import qualified DDC.Core.Eval.Check            as Eval
 import qualified DDC.Core.Sea.Output.Profile    as SeaOutput
 import qualified DDC.Core.Sea.Output.Name       as SeaOutput
 
+
+data CoreFragment
+        = CoreFragmentZero
+        | CoreFragmentEval
+        | CoreFragmentSea
+        deriving (Show, Eq)
 
 -- | Language profile wrapper 
 data StateProfile
