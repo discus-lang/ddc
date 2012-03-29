@@ -212,6 +212,8 @@ pBracketExp startPos exp1 =
   <|>	do	pTok K.RKet
 		return 	$ XParens startPos exp1
 
+  <?>   "pBracketExp" -- unclosed paren
+
 
 pBackslashExp :: SP -> Parser (Exp SP)
 pBackslashExp startPos =
