@@ -173,7 +173,7 @@ pipeLlvmModule mm pp
                 writeFile llPath llSrc
 
                 -- Compile LLVM source file into .s file.
-                let builder     = builder_I386_Darwin
+                let builder     = builder_I386_Darwin           -- add this to the pipeline structure
                 buildLlc builder llPath sPath
 
                 -- Assemble .s file into .o file
@@ -200,7 +200,7 @@ pipeSink str tg
          -> do  return []
 
         SinkStdout
-         -> do  putStr str
+         -> do  putStrLn str
                 return []
 
         SinkFile path

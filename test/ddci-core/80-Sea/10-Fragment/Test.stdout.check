@@ -8,7 +8,7 @@ Undefined variable: foo#
 
 
 -- Error: Module does not have a top-level letrec.
-Sea fragment violation.
+Fragment violation when converting Sea module to C code.
   Module does not have a top-level letrec.
   
 
@@ -22,7 +22,7 @@ int32_t foo (int32_t x)
 
 
 -- Error: Function does not pass control.
-Sea fragment violation.
+Fragment violation when converting Sea module to C code.
   Invalid function body.
   
   with: x
@@ -38,7 +38,7 @@ int32_t foo (int32_t x)
 
 
 -- Error: Function does not pass control
-Sea fragment violation.
+Fragment violation when converting Sea module to C code.
   The final statement in a function must pass control
     You need an explicit return# or fail#.
   
@@ -46,7 +46,7 @@ Sea fragment violation.
 
 
 -- Error: Function does not pass control
-Sea fragment violation.
+Fragment violation when converting Sea module to C code.
   Invalid function body.
   
   with: True#
@@ -80,14 +80,14 @@ nat_t foo (nat_t x)
 
 
 -- Error: assignment from primop.
-Sea fragment violation.
+Fragment violation when converting Sea module to C code.
   Invalid type definition.
   
   with: [^ : *].^0 -> ^0 -> ^0
 
 
 -- Error: cannot discard non-void return value.
-Sea fragment violation.
+Fragment violation when converting Sea module to C code.
   Cannot discard non-void return value.
   
   with: let _ : Int32# = x in
