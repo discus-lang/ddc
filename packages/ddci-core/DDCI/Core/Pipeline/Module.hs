@@ -164,8 +164,8 @@ pipeLlvmModule
 
 pipeLlvmModule mm pp
  = case pp of
-        PipeLlvmModulePrint _
-         -> error "need module pretty printer"
+        PipeLlvmModulePrint sink
+         ->     pipeSink (renderIndent $ ppr mm) sink
 
         PipeLlvmModuleCompile llPath sPath oPath exePath
          -> do  -- Write out the LLVM source file.
