@@ -1,13 +1,12 @@
-
 module DDC.Core.Transform.Rewrite
     (rewrite)
 where
 import DDC.Core.Exp
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Type.Sum()
-{-
 import qualified DDC.Type.Exp as T
 import qualified DDC.Type.Compounds as T
+{-
 import qualified DDC.Core.Transform.AnonymizeX as A
 import qualified DDC.Core.Transform.LiftX as L
 
@@ -22,40 +21,60 @@ import qualified Data.Maybe as Maybe
 -- so that we can record how many times each rule is fired?
 rewrite :: (Show a, Show n, Ord n) => [RewriteRule a n] -> Exp a n -> Exp a n
 rewrite rules x0
- =  down x0
+ =  down x0 emptyWitness
  where
-    down x = go x []
-    go (XApp a f arg)	args = go f ((down arg,a):args)
-    go x@(XVar{})	args = rewrites x args
-    go x@(XCon{})	args = rewrites x args
-    go (XLAM a b e)	args = rewrites (XLAM a b $ down e) args
-    go (XLam a b e)	args = rewrites (XLam a b $ down e) args
-    go (XLet a l e)	args = rewrites (XLet a (goLets l) (down e)) args
-    go (XCase a e alts)	args = rewrites (XCase a (down e) (map goAlts alts)) args
-    go (XCast a c e)	args = rewrites (XCast a c $ down e) args
-    go x@(XType{})	args = rewrites x args
-    go x@(XWitness{})	args = rewrites x args
+    down x ws = go x [] ws
+    go (XApp a f arg)	args ws = go f ((down arg ws,a):args) ws
+    go x@(XVar{})	args ws = rewrites x args ws
+    go x@(XCon{})	args ws = rewrites x args ws
+    go (XLAM a b e)	args ws = rewrites (XLAM a b $ down e ws) args ws
+    go (XLam a b e)	args ws = rewrites (XLam a b $ down e (extendWitness b ws)) args ws
+    go (XLet a l e)	args ws = rewrites (XLet a (goLets l ws) (down e (extendWitLets l ws))) args ws
+    go (XCase a e alts)	args ws = rewrites (XCase a (down e ws) (map (goAlts ws) alts)) args ws
+    go (XCast a c e)	args ws = rewrites (XCast a c $ down e ws) args ws
+    go x@(XType{})	args ws = rewrites x args ws
+    go x@(XWitness{})	args ws = rewrites x args ws
 
-    goLets (LLet lm b e)
-     = LLet lm b $ down e
-    goLets (LRec bs)
-     = LRec $ zip (map fst bs) (map (down.snd) bs)
-    goLets l
+    goLets (LLet lm b e) ws
+     = LLet lm b $ down e ws
+    goLets (LRec bs) ws
+     = LRec $ zip (map fst bs) (map (flip down ws.snd) bs)
+    goLets l _
      = l
 
-    goAlts (AAlt p e)
-     = AAlt p (down e)
+    goAlts ws (AAlt p e)
+     = AAlt p (down e ws)
 
-    rewrites f args = rewrites' rules f args
-    rewrites' [] f args
+    rewrites f args ws = rewrites' rules f args ws
+    rewrites' [] f args _
      = mkApps f args
-    rewrites' (r:rs) f args
-     = case rewriteX r f args of
-	Nothing -> rewrites' rs f args
-	Just x  -> go x []
+    rewrites' (r:rs) f args ws
+     = case rewriteX r f args ws of
+	Nothing -> rewrites' rs f args ws
+	Just x  -> go x [] ws
 
-rewriteX :: (Show n, Show a, Ord n) => RewriteRule a n -> Exp a n -> [(Exp a n,a)] -> Maybe (Exp a n)
-rewriteX (RewriteRule binds _constrs lhs rhs eff clo) f args
+emptyWitness :: Ord n => [T.Type n]
+emptyWitness = []
+extendWitness :: (Ord n,Show n) => Bind n -> [T.Type n] -> [T.Type n]
+-- originally was checking universe here but type of binds is
+-- TApp (TCon TyConWitness) (TVar "r"...)
+-- which isn't in wit?
+extendWitness b ws
+    = ty : ws
+ where ty = T.typeOfBind b
+
+extendWitLets (LLetRegion _ cs) ws =
+    foldl (flip extendWitness) ws cs
+extendWitLets _ ws = ws
+
+rewriteX
+    :: (Show n, Show a, Ord n)
+    => RewriteRule a n
+    -> Exp a n
+    -> [(Exp a n,a)]
+    -> [Type n]
+    -> Maybe (Exp a n)
+rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
  = do	let m	= Map.empty
 	l:ls   <- return $ flatApps lhs
 	m'     <- constrain m bs l f
@@ -64,7 +83,8 @@ rewriteX (RewriteRule binds _constrs lhs rhs eff clo) f args
     bs = map snd binds
 
     go m [] rest
-     =	    return $ mkApps (subst m) rest
+     = do   s <- subst m
+	    return $ mkApps s rest
     go m (l:ls) ((r,_):rs)
      = do   m' <- constrain m bs l r
 	    go m' ls rs
@@ -75,7 +95,7 @@ rewriteX (RewriteRule binds _constrs lhs rhs eff clo) f args
     -- TODO constraints
     subst m
      =	    let bas = Maybe.catMaybes $ map (lookupz m) bs in
-	    weakeff bas eff $ weakclo bas clo $ S.substituteXArgs bas rhs
+	    checkConstrs bas constrs $ weakeff bas eff $ weakclo bas clo $ S.substituteXArgs bas rhs
     
     anno = snd $ head args
 
@@ -86,6 +106,13 @@ rewriteX (RewriteRule binds _constrs lhs rhs eff clo) f args
     weakclo _ Nothing x = x
     weakclo bas (Just c) x
      = XCast anno (CastWeakenClosure $ S.substituteTs (Maybe.catMaybes $ map lookupT bas) c) x
+
+    checkConstrs _ [] x = Just x
+    checkConstrs bas (c:cs) x = do
+	let c' = S.substituteTs (Maybe.catMaybes $ map lookupT bas) c
+	if c' `elem` ws
+	    then checkConstrs bas cs x
+	    else Nothing
 
     lookupT (b,XType t) = Just (b,t)
     lookupT _ = Nothing

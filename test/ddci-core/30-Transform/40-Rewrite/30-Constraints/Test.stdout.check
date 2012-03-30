@@ -1,4 +1,20 @@
+ok
+ok
+
 ok, added copyConst
 
 copyConst [r1 : %] (x : Int r1) . Const r1 => copyInt [r1] [r1] x = x
 
+-- don't do for any region
+letregion r in
+(\(x : Int r). ())
+    (copyInt [r] [r] (23 [r] ()))
+
+-- do it for consts
+letregion r with {w : Const r} in
+(\(x : Int r). ())
+    (weakeff [Read r + Alloc r] in
+     23 [r] ())
+
+-- todo more tests with de bruijns
+-- and with witnesses as lambda arguments
