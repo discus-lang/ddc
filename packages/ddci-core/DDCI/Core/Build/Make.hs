@@ -9,10 +9,10 @@ import DDC.Core.Sea.Output.Profile
 import DDCI.Core.State
 import Data.List
 import System.FilePath
+import qualified DDCI.Core.Language             as I
 import qualified DDC.Core.Sea.Output.Name       as E
 import qualified DDC.Core.Llvm.Platform         as L
 import qualified DDC.Core.Llvm.Convert          as L
-import qualified DDCI.Core.Pipeline.Fragment    as I
 import qualified DDC.Core.Load                  as C
 
 

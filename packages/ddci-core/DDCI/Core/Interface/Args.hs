@@ -2,8 +2,9 @@
 module DDCI.Core.Interface.Args
         (runArgs)
 where
-import DDCI.Core.State
+import DDCI.Core.Command.Help
 import DDCI.Core.Command
+import DDCI.Core.State
 import Data.List
 
 
@@ -11,7 +12,13 @@ import Data.List
 runArgs :: [String] -> IO ()
 runArgs args
  = do   let state    = initState InterfaceArgs
-        loop state args
+
+        -- If the help command is one of the arguments then just
+        -- display the help and don't do anything else.
+        if elem "--help" args 
+         then putStr help
+         else loop state args
+
  where 
         -- No more args, we're done.
         loop _state []

@@ -5,7 +5,7 @@ module DDCI.Core.Mode
 where
 
 
--- | Interpreter mode flags.
+-- | DDCI mode flags.
 data Mode
         -- | Display the expression at each step in the evaluation.
         =  TraceEval

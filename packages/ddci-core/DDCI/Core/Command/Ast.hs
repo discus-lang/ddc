@@ -11,7 +11,7 @@ import qualified Language.Haskell.Exts.Pretty as H
 -- | Parse, check, and pretty print an expression's internal representation
 cmdAst :: State -> Int -> String -> IO ()
 cmdAst state lineStart str
- | StateProfile profile <- stateProfile state
+ | Language profile <- stateLanguage state
  = cmdParseCheckExp state profile lineStart str >>= goShow
  where
         -- Expression had a parse or type error.

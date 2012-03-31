@@ -3,8 +3,8 @@ module DDCI.Core.State
         ( State         (..)
         , Interface     (..)
 
-        , StateProfile  (..)
-        , stateProfiles
+        , Language  (..)
+        , languages
 	, stateRewriteRulesList
 
         , Transform(..)
@@ -13,9 +13,9 @@ module DDCI.Core.State
         , Mode (..)
         , adjustMode)
 where
-import DDCI.Core.Mode
-import DDCI.Core.Pipeline.Fragment
 import DDCI.Core.Pipeline.Transform
+import DDCI.Core.Language
+import DDCI.Core.Mode
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Name               (Name)
@@ -30,9 +30,9 @@ data State
         = State
         { stateInterface        :: Interface
         , stateModes            :: Set Mode 
+        , stateLanguage         :: Language
         , stateTransform        :: Transform
-	, stateRewriteRules	:: Map String (RewriteRule () Name) 
-        , stateProfile          :: StateProfile }
+	, stateRewriteRules	:: Map String (RewriteRule () Name) }
 
 
 -- | What interface is being used.
@@ -68,9 +68,9 @@ initState interface
         = State
         { stateInterface        = interface
         , stateModes            = Set.empty 
+        , stateLanguage         = Language evalProfile 
         , stateTransform        = None
-	, stateRewriteRules	= Map.empty 
-        , stateProfile          = StateProfile evalProfile }
+	, stateRewriteRules	= Map.empty  }
 
 stateRewriteRulesList :: State -> [RewriteRule () Name]
 stateRewriteRulesList State { stateRewriteRules = rules }

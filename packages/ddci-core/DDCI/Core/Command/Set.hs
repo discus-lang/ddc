@@ -33,13 +33,13 @@ cmdSet state []
 -- Toggle active modes.
 cmdSet state cmd
  | ["lang", name]       <- words cmd
- = do   case lookup name stateProfiles of
+ = do   case lookup name languages of
          Just profile   
           -> do chatStrLn state "ok"
-                return $ state { stateProfile = profile }
+                return $ state { stateLanguage = profile }
 
          Nothing
-          -> do putStrLn "unknown language fragment"
+          -> do putStrLn "unknown language"
                 return state
 
  | "trans" : rest       <- words cmd

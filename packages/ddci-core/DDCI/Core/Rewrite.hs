@@ -23,15 +23,18 @@ data SetRuleCommand
         | SetRemove String
 	| SetList
         deriving (Eq, Show)
+
 type Error = String
+
 
 -- | Return first word and remainder of string
 parseFirstWord :: String -> (String,String)
 parseFirstWord s = break isSpace $ dropWhile isSpace s
 
+
 -- | Parse a :set rule command
--- +name rule, name rule: add rewrite rule
--- -name: remove rule
+--   +name rule, name rule:  add rewrite rule
+--   -name                   remove rule
 parseRewrite :: String -> Either Error SetRuleCommand
 parseRewrite str
  = case dropWhile isSpace str of
@@ -40,6 +43,7 @@ parseRewrite str
 	('-':rest)	-> let (name,_) = parseFirstWord rest in
 			   Right $ SetRemove name
 	rest		-> parseAdd rest
+
 
 -- | Parse add rule
 parseAdd :: String -> Either Error SetRuleCommand
@@ -55,6 +59,7 @@ parseAdd str
 		  case checkRewriteRule primDataDefs primKindEnv primTypeEnv rule of
 		    Left err -> Left $ renderIndent $ ppr err
 		    Right rule' -> Right $ SetAdd name rule'
+
 
 -- | Display rule
 showRule :: State -> Int -> String -> RewriteRule () Name -> IO ()

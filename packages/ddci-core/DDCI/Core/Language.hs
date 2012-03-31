@@ -1,9 +1,9 @@
 
-module DDCI.Core.Pipeline.Fragment
-        ( CoreFragment  (..)
-        , Fragment      (..)
-        , StateProfile  (..)
-        , stateProfiles)
+module DDCI.Core.Language
+        ( Fragment      (..)
+        , CoreFragment  (..)
+        , Language      (..)
+        , languages)
 where
 import DDC.Core.Language.Profile
 import DDC.Core.Parser.Tokens
@@ -19,25 +19,27 @@ import qualified DDC.Core.Sea.Output.Profile    as SeaOutput
 import qualified DDC.Core.Sea.Output.Name       as SeaOutput
 
 
+-- | Language profile wrapper 
+data Language
+        = forall n err. Fragment n err
+        => Language (Profile n)
+
+
 data CoreFragment
         = CoreFragmentZero
         | CoreFragmentEval
         | CoreFragmentSea
         deriving (Show, Eq)
 
--- | Language profile wrapper 
-data StateProfile
-        = forall n err. Fragment n err
-        => StateProfile (Profile n)
 
 -- | Supported language profiles.
 --   
---   One of @Zero@, @Eval@.
-stateProfiles :: [(String, StateProfile)]
-stateProfiles
- =      [ ("Zero",      StateProfile (zeroProfile :: Profile ZeroName))
-        , ("Eval",      StateProfile Eval.evalProfile)
-        , ("Sea",       StateProfile SeaOutput.outputProfile) ]
+--   One of @Zero@, @Eval@, @Sea@.
+languages :: [(String, Language)]
+languages
+ =      [ ("Zero",      Language (zeroProfile :: Profile ZeroName))
+        , ("Eval",      Language Eval.evalProfile)
+        , ("Sea",       Language SeaOutput.outputProfile) ]
 
 
 -- | Defines the functions we need for each language fragment.

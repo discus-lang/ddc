@@ -1,3 +1,4 @@
+
 module DDCI.Core.Command.Check
         ( cmdShowKind
         , cmdTypeEquiv
@@ -7,7 +8,7 @@ module DDCI.Core.Command.Check
         , ShowTypeMode(..)
         , cmdParseCheckExp)
 where
-import DDCI.Core.Pipeline.Fragment
+import DDCI.Core.Language
 import DDCI.Core.State
 import DDCI.Core.Output
 import DDC.Core.Language.Profile
@@ -26,7 +27,7 @@ import qualified DDC.Base.Parser        as BP
 -- | Show the kind of a type.
 cmdShowKind :: State -> Int -> String -> IO ()
 cmdShowKind state lineStart str
- | StateProfile profile  <- stateProfile state
+ | Language profile  <- stateLanguage state
  = let  toks    = fragmentLex lineStart str
         eTK     = loadType profile "<interactive>" toks
    in   case eTK of
@@ -38,7 +39,7 @@ cmdShowKind state lineStart str
 -- | Check if two types are equivlant.
 cmdTypeEquiv :: State -> Int -> String -> IO ()
 cmdTypeEquiv state lineStart ss
- | StateProfile profile  <- stateProfile state
+ | Language profile  <- stateLanguage state
  = let
         goParse toks
          = case BP.runTokenParser describeTok "<interactive>"
@@ -76,7 +77,7 @@ cmdTypeEquiv state lineStart ss
 -- | Show the type of a witness.
 cmdShowWType :: State -> Int -> String -> IO ()
 cmdShowWType state lineStart str
- | StateProfile profile  <- stateProfile state
+ | Language profile  <- stateLanguage state
  = let  toks    = fragmentLex lineStart str
         eTK     = loadWitness profile "<interactive>" toks
    in   case eTK of
@@ -97,7 +98,7 @@ data ShowTypeMode
 -- | Show the type of an expression.
 cmdShowType :: State -> ShowTypeMode -> Int -> String -> IO ()
 cmdShowType state mode lineStart ss
- | StateProfile profile <- stateProfile state
+ | Language profile <- stateLanguage state
  = cmdParseCheckExp state profile lineStart ss >>= goResult
  where
         goResult Nothing
@@ -125,7 +126,7 @@ cmdShowType state mode lineStart ss
 -- | Check expression and reconstruct type annotations on binders.
 cmdExpRecon :: State -> Int -> String -> IO ()
 cmdExpRecon state lineStart ss
- | StateProfile profile <- stateProfile state
+ | Language profile <- stateLanguage state
  = cmdParseCheckExp state profile lineStart ss >>= goResult
  where
         goResult Nothing
