@@ -22,6 +22,5 @@ cmdLoad state source str
         Left err  
          -> putStrLn $ renderIndent $ ppr err
 
-        Right _mm 
-         -> do  putStrLn "ok"
-                return ()
+        Right mm 
+         -> putStrLn $ renderIndent $ ppr mm

@@ -3,6 +3,7 @@ module DDC.Core.Pretty
         ( module DDC.Type.Pretty
         , module DDC.Base.Pretty)
 where
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Core.Predicates
@@ -10,26 +11,23 @@ import DDC.Type.Pretty
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Base.Pretty
+import Data.List
 
+-- ModuleName -----------------------------------------------------------------
+instance Pretty ModuleName where
+ ppr (ModuleName parts)
+        = text $ intercalate "." parts
 
--- Binder ---------------------------------------------------------------------
--- | Pretty print a binder, adding spaces after names.
---   The RAnon and None binders don't need spaces, as they're single symbols.
-pprBinderSep   :: Pretty n => Binder n -> Doc
-pprBinderSep bb
- = case bb of
-        RName v         -> ppr v
-        RAnon           -> text "^"
-        RNone           -> text "_"
-
-
--- | Print a group of binders with the same type.
-pprBinderGroup 
-        :: (Pretty n, Eq n) 
-        => Doc -> ([Binder n], Type n) -> Doc
-
-pprBinderGroup lam (rs, t)
-        = lam <> parens ((cat $ map pprBinderSep rs) <+> text ":" <+> ppr t) <> dot
+-- Module ---------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Module a n) where
+ ppr ModuleCore { moduleName            = name
+                , moduleExportKinds     = _exportKinds
+                , moduleExportTypes     = _exportTypes
+                , moduleImportKinds     = _importKinds
+                , moduleImportTypes     = _importTypes
+                , moduleLets            = lets }
+  =    text "module" <+> ppr name <+> text "with"
+  <$$> (vcat $ map ppr lets)
 
 
 -- Exp ------------------------------------------------------------------------
@@ -207,6 +205,26 @@ instance Pretty WbCon where
         WbConUse        -> text "use"
         WbConRead       -> text "read"
         WbConAlloc      -> text "alloc"
+
+
+-- Binder ---------------------------------------------------------------------
+-- | Pretty print a binder, adding spaces after names.
+--   The RAnon and None binders don't need spaces, as they're single symbols.
+pprBinderSep   :: Pretty n => Binder n -> Doc
+pprBinderSep bb
+ = case bb of
+        RName v         -> ppr v
+        RAnon           -> text "^"
+        RNone           -> text "_"
+
+
+-- | Print a group of binders with the same type.
+pprBinderGroup 
+        :: (Pretty n, Eq n) 
+        => Doc -> ([Binder n], Type n) -> Doc
+
+pprBinderGroup lam (rs, t)
+        = lam <> parens ((cat $ map pprBinderSep rs) <+> text ":" <+> ppr t) <> dot
 
 
 -- Utils ----------------------------------------------------------------------

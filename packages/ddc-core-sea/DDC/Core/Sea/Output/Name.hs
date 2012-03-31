@@ -24,6 +24,9 @@ data Name
         -- | A type or value variable
         = NameVar       String
 
+        -- | We still need a constructor-like name for modules.
+        | NameCon       String
+
         -- | The object type constructor.
         | NameObjTyCon
 
@@ -54,6 +57,7 @@ instance Pretty Name where
  ppr nn
   = case nn of
         NameVar  n        -> text n
+        NameCon  n        -> text n
         NameObjTyCon      -> text "Obj"
         NamePrimTyCon tc  -> ppr tc
         NamePrim p        -> ppr p
@@ -121,9 +125,12 @@ readName str
         | Just (val, bits) <- readLitPrimIntOfBits str
         = Just $ NameInt  val bits
 
+        -- Constructors.
+        | c : _         <- str
+        , isUpper c      
+        = Just $ NameVar str
+
         -- Variables.
-        -- This needs to come last because the primops can also be parsed
-        -- as variables.
         | c : _         <- str
         , isLower c      
         = Just $ NameVar str
