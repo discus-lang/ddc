@@ -4,6 +4,7 @@ module DDCI.Core.Command.Make
 where
 import DDCI.Core.Build.Builder
 import DDCI.Core.Pipeline.Module
+import DDCI.Core.Mode
 import DDCI.Core.State
 import DDC.Core.Pretty
 import Data.List
@@ -11,21 +12,21 @@ import System.FilePath
 import Data.Char
 
 
-cmdMake :: State -> Int -> String -> IO ()
-cmdMake state lineStart str
+cmdMake :: State -> Source -> String -> IO ()
+cmdMake state source str
  = let  filePath = dropWhile isSpace str
-   in   makeFile state lineStart filePath
+   in   makeFile state source filePath
 
-makeFile state lineStart filePath
+makeFile state source filePath
         | isSuffixOf ".dce" filePath
-        = makeDCE state lineStart filePath
+        = makeDCE state source filePath
 
         | otherwise
         = error $ "Don't know how to make " ++ filePath
 
  
-makeDCE :: State -> Int -> FilePath -> IO ()
-makeDCE _state lineStart filePath
+makeDCE :: State -> Source -> FilePath -> IO ()
+makeDCE _state source filePath
  = do   let llPath      = replaceExtension filePath ".ddc.ll"
         let sPath       = replaceExtension filePath ".ddc.s"
         let oPath       = replaceExtension filePath ".o"
@@ -34,8 +35,7 @@ makeDCE _state lineStart filePath
         -- TODO check that it exists.
         src     <- readFile filePath
 
-        -- TODO: refactor to take Source instead of lineStart
-        errs    <- pipeTextModule lineStart src
+        errs    <- pipeTextModule source src
                 $  PipeTextModuleLoadSea
                 [  PipeSeaModuleToLlvm 
                 [  PipeLlvmModuleCompile 

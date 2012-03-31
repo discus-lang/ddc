@@ -21,9 +21,9 @@ import DDC.Base.Pretty
 
 
 -- | Apply the current transform to an expression.
-cmdTrans :: State -> Int -> String -> IO ()
-cmdTrans state lineStart str
- = cmdParseCheckExp state evalProfile lineStart str >>= goStore
+cmdTrans :: State -> Source -> String -> IO ()
+cmdTrans state source str
+ = cmdParseCheckExp state evalProfile source str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -38,7 +38,10 @@ cmdTrans state lineStart str
 
 
 -- | Transform an expression, or display errors
-applyTrans :: State -> (Exp () Name, Type Name, Effect Name, Closure Name) -> IO (Maybe (Exp () Name))
+applyTrans 
+        :: State 
+        -> (Exp () Name, Type Name, Effect Name, Closure Name) 
+        -> IO (Maybe (Exp () Name))
 applyTrans state (x, t1, eff1, clo1)
  = do	let x' = applyTransformX (stateTransform state) (stateRewriteRulesList state) x
 	case checkExp primDataDefs primKindEnv primTypeEnv x' of
@@ -69,9 +72,9 @@ applyTrans state (x, t1, eff1, clo1)
 
 
 -- | Apply the current transform to an expression, then evaluate and display the result
-cmdTransEval :: State -> Int -> String -> IO ()
-cmdTransEval state lineStart str
- = cmdParseCheckExp state evalProfile lineStart str >>= goStore
+cmdTransEval :: State -> Source -> String -> IO ()
+cmdTransEval state source str
+ = cmdParseCheckExp state evalProfile source str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing

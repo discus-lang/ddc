@@ -89,15 +89,15 @@ readCommand ss
 
 -- Commands -------------------------------------------------------------------
 -- | Handle a single line of input.
-handleCmd :: State -> Command -> Int -> String -> IO State
+handleCmd :: State -> Command -> Source -> String -> IO State
 handleCmd state CommandBlank _ _
  = return state
 
-handleCmd state cmd lineStart line
- = do   state'  <- handleCmd1 state cmd lineStart line
+handleCmd state cmd source line
+ = do   state'  <- handleCmd1 state cmd source line
         return state'
 
-handleCmd1 state cmd lineStart line
+handleCmd1 state cmd source line
  = case cmd of
         CommandBlank
          -> return state
@@ -118,66 +118,66 @@ handleCmd1 state cmd lineStart line
                 return state'
 
         CommandLoad
-         -> do  cmdLoad state lineStart line
+         -> do  cmdLoad state source line
                 return state
 
         CommandKind       
-         -> do  cmdShowKind state lineStart line
+         -> do  cmdShowKind state source line
                 return state
 
         CommandEquivType
-         -> do  cmdTypeEquiv state lineStart line
+         -> do  cmdTypeEquiv state source line
                 return state
 
         CommandWitType    
-         -> do  cmdShowWType state lineStart line
+         -> do  cmdShowWType state source line
                 return state
 
         CommandExpCheck   
-         -> do  cmdShowType state ShowTypeAll     lineStart line
+         -> do  cmdShowType state ShowTypeAll source line
                 return state
 
         CommandExpType  
-         -> do  cmdShowType state ShowTypeValue   lineStart line
+         -> do  cmdShowType state ShowTypeValue source line
                 return state
 
         CommandExpEffect  
-         -> do  cmdShowType state ShowTypeEffect  lineStart line
+         -> do  cmdShowType state ShowTypeEffect source line
                 return state
 
         CommandExpClosure 
-         -> do  cmdShowType state ShowTypeClosure lineStart line
+         -> do  cmdShowType state ShowTypeClosure source line
                 return state
 
         CommandExpRecon
-         -> do  cmdExpRecon state lineStart line
+         -> do  cmdExpRecon state source line
                 return state
 
         CommandEval       
-         -> do  cmdEval state lineStart line
+         -> do  cmdEval state source line
                 return state
 
         CommandTrans
-         -> do  cmdTrans state lineStart line
+         -> do  cmdTrans state source line
                 return state
         
         CommandTransEval
-         -> do  cmdTransEval state lineStart line
+         -> do  cmdTransEval state source line
                 return state
         
         CommandAst
-         -> do  cmdAst state lineStart line
+         -> do  cmdAst state source line
                 return state
 
         CommandSea
-         -> do  cmdSeaOut state lineStart line
+         -> do  cmdSeaOut state source line
                 return state
 
         CommandLlvm
-         -> do  cmdLlvmOut state lineStart line
+         -> do  cmdLlvmOut state source line
                 return state
 
         CommandMake
-         -> do  cmdMake state lineStart line
+         -> do  cmdMake state source line
                 return state
 

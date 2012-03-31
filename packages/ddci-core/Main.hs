@@ -29,7 +29,7 @@ main
          -- so we behave more like GHC.
          ["--make",  filePath]
           -> do let state       = initState (InterfaceBatch filePath)
-                cmdMake state 0 filePath
+                cmdMake state (SourceFile filePath) filePath
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]

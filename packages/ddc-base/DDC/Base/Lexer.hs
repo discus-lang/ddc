@@ -18,18 +18,15 @@ import qualified Text.Parsec.Pos        as P
 --   from an interactive session and display ''<interactive>'' when pretty printing.
 data SourcePos 
         = SourcePos
-        { sourcePosFile         :: Maybe FilePath
+        { sourcePosSource       :: String
         , sourcePosLine         :: Int
         , sourcePosColumn       :: Int }
         deriving (Eq, Show)
 
 
 instance Pretty SourcePos where
- ppr (SourcePos (Just f) l c)	
-	= ppr $ f ++ ":"         ++ show l ++ ":" ++ show c
-
- ppr (SourcePos Nothing  l c)	
-	= ppr $ "<interactive>:" ++ show l ++ ":" ++ show c
+ ppr (SourcePos source l c)	
+	= ppr $ source ++ ":" ++ show l ++ ":" ++ show c
 
 
 -- Token-----------------------------------------------------------------------
@@ -45,5 +42,5 @@ data Token t
 takeParsecSourcePos :: Token k -> P.SourcePos
 takeParsecSourcePos (Token _ sp)
  = case sp of
-        SourcePos Nothing  l c   -> P.newPos "<interactive>" l c
-        SourcePos (Just f) l c   -> P.newPos f l c
+        SourcePos source l c
+         -> P.newPos source l c

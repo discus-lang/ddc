@@ -44,6 +44,6 @@ outStrLn _state str
 chatStrLn :: State -> String -> IO ()
 chatStrLn state str
  = case stateInterface state of
-        InterfaceInteractive    -> putStrLn str
+        InterfaceConsole        -> putStrLn str
         InterfaceBatch _        -> putStrLn str
         _                       -> return ()

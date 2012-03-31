@@ -2,15 +2,16 @@
 module DDCI.Core.State
         ( State         (..)
         , Interface     (..)
+        , Source        (..)
 
-        , Language  (..)
+        , Language      (..)
         , languages
 	, stateRewriteRulesList
 
-        , Transform(..)
+        , Transform     (..)
         , initState
 
-        , Mode (..)
+        , Mode          (..)
         , adjustMode)
 where
 import DDCI.Core.Pipeline.Transform
@@ -40,11 +41,11 @@ data Interface
         -- | Read commands from unix command-line args.
         = InterfaceArgs
 
-        -- | Read commands from the file with this name.
-        | InterfaceBatch    FilePath
-
         -- | Read commands interactively from the console.
-        | InterfaceInteractive
+        | InterfaceConsole
+
+        -- | Read commands from the file with this name.
+        | InterfaceBatch        FilePath
         deriving (Eq, Show)
 
 

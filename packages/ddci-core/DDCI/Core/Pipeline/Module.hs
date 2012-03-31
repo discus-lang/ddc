@@ -16,6 +16,7 @@ module DDCI.Core.Pipeline.Module
         , Sink                  (..)
         , pipeSink)
 where
+import DDCI.Core.Mode
 import DDCI.Core.Build.Builder
 import DDCI.Core.Pipeline.Transform
 import DDC.Base.Pretty
@@ -55,12 +56,12 @@ data PipeTextModule
         deriving (Show)
 
 pipeTextModule
-        :: Int
+        :: Source
         -> String
         -> PipeTextModule
         -> IO [Error]
 
-pipeTextModule lineStart str pp
+pipeTextModule source str pp
  = case pp of
         PipeTextModuleOutput sink
          -> pipeSink str sink
@@ -69,8 +70,10 @@ pipeTextModule lineStart str pp
          -> error "finish me"
 
         PipeTextModuleLoadSea pipes
-         -> let toks    = Output.lexString lineStart str
-            in  case Core.loadModule Output.profile "<interactive>" toks of
+         -> let toks    = Output.lexString
+                                (nameOfSource source) 
+                                (lineStartOfSource source) str
+            in  case Core.loadModule Output.profile (nameOfSource source) toks of
                  Left err -> return [ErrorSeaLoad err]
                  Right mm -> liftM concat $ mapM (pipeSeaModule mm) pipes
 

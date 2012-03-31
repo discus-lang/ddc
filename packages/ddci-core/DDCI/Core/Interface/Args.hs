@@ -24,18 +24,20 @@ runArgs args
         loop _state []
          = do   return ()
 
-        loop state (('-':cmdColon) : file : rest)
+        loop state (('-':cmdColon) : filePath : rest)
          | isSuffixOf ":" cmdColon
          , cmdStr               <- init cmdColon
          , Just (cmd, [])       <- readCommand (':' : cmdStr)
-         = do   contents        <- readFile file
-                state'          <- handleCmd state cmd 0 contents
+         = do   contents        <- readFile filePath
+                state'          <- handleCmd state cmd (SourceFile filePath) 
+                                        contents
                 loop state' rest
 
         loop state (('-':cmdStr) : rest)
          | Just (cmd, [])       <- readCommand (':' : cmdStr)
          , (argss, more)        <- break (isPrefixOf "-") rest
-         = do   state'          <- handleCmd state cmd 0 (concat $ intersperse " " argss)
+         = do   state'          <- handleCmd state cmd SourceArgs 
+                                        (concat $ intersperse " " argss)
                 loop state' more
 
         loop _state xs

@@ -5,6 +5,7 @@ module DDCI.Core.Language
         , Language      (..)
         , languages)
 where
+import DDCI.Core.Mode
 import DDC.Core.Language.Profile
 import DDC.Core.Parser.Tokens
 import DDC.Core.Module
@@ -47,7 +48,7 @@ languages
 -- | Defines the functions we need for each language fragment.
 class (Ord n, Show n, Pretty n, Pretty err) 
         => Fragment n err | n -> err where
- fragmentLex           :: Int         -> String -> [Token (Tok n)] 
+ fragmentLex           :: Source      -> String -> [Token (Tok n)] 
  fragmentCheckModule   :: Module () n -> Maybe err
  fragmentCheckExp      :: Exp    () n -> Maybe err 
 
@@ -55,7 +56,7 @@ class (Ord n, Show n, Pretty n, Pretty err)
 -- Zero -----------------------------------------------------------------------
 -- | No features, no primops.
 instance Fragment ZeroName String where
- fragmentLex            = lexStringZero
+ fragmentLex            = lexStringZero 
  fragmentCheckModule    = const Nothing
  fragmentCheckExp       = const Nothing
 
@@ -71,16 +72,16 @@ instance Pretty ZeroName where
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexStringZero :: Int -> String -> [Token (Tok ZeroName)]
-lexStringZero lineStart str
- = map rn $ Core.lexExp lineStart str
+lexStringZero :: Source -> String -> [Token (Tok ZeroName)]
+lexStringZero source str
+ = map rn $ Core.lexExp (nameOfSource source) (lineStartOfSource source) str
  where rn (Token t sp) = Token (renameTok ZeroName t) sp
 
 
 -- Eval -----------------------------------------------------------------------
 -- | Fragment accepted by the evaluator.
 instance Fragment Eval.Name Eval.Error where
- fragmentLex            = Eval.lexString
+ fragmentLex s          = Eval.lexString (nameOfSource s) (lineStartOfSource s)
  fragmentCheckModule    = error "fragmentCheckModule[Eval]: finish me"
  fragmentCheckExp       = Eval.checkCapsX
 
@@ -88,7 +89,7 @@ instance Fragment Eval.Name Eval.Error where
 -- Lite -----------------------------------------------------------------------
 -- | Core langauge with some builtin data types.
 instance Fragment Lite.Name String where
- fragmentLex            = Lite.lexString
+ fragmentLex s          = Lite.lexString (nameOfSource s) (lineStartOfSource s)
  fragmentCheckModule    = const Nothing
  fragmentCheckExp       = const Nothing
 
@@ -96,7 +97,7 @@ instance Fragment Lite.Name String where
 -- Output ------------------------------------------------------------------
 -- | Fragment that maps directly onto the C language.
 instance Fragment Output.Name String where
- fragmentLex            = Output.lexString
+ fragmentLex s          = Output.lexString (nameOfSource s) (lineStartOfSource s)
  fragmentCheckModule    = const Nothing
  fragmentCheckExp       = const Nothing
 

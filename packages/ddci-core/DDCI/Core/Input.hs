@@ -1,7 +1,7 @@
 
 module DDCI.Core.Input
-        ( InputState(..)
-        , Input (..) 
+        ( InputState    (..)
+        , Input         (..) 
         , readInput
         , eatLine)
 where
@@ -23,7 +23,7 @@ data InputState
           -- Input mode.
         , _inputMode        :: Input
 
-          -- Current line number, used for parse error messages.
+          -- The current line number in the command stream.
         , inputLineNumber   :: Int
 
           -- Accumulation of current input buffer.
@@ -40,7 +40,7 @@ data Input
         | InputBlock
 
         -- | Read input from a file specified on the prompt
-        | InputFile
+        | InputFile     FilePath
         deriving (Eq, Show)
 
 
@@ -51,7 +51,8 @@ readInput ss
         = (InputBlock, drop 2 ss)
 
         | isPrefixOf "-" ss
-        = (InputFile, drop 1 ss)
+        , filePath      <- dropWhile isSpace (drop 1 ss)
+        = (InputFile filePath, drop (length filePath) ss)
 
         | otherwise
         = (InputLine, ss)
@@ -61,19 +62,39 @@ readInput ss
 -- Eating input lines.
 eatLine :: State -> InputState -> String -> IO (State, InputState)
 eatLine state (InputState mCommand inputMode lineNumber acc) line
- = do   -- If this is the first line then try to read the command and
+ = do   
+        -- If this is the first line then try to read the command and
         --  input mode from the front so we know how to continue.
         -- If we can't read an explicit command then assume this is 
         --  an expression to evaluate.
         let (cmd, lineStart, (input, rest))
              = case mCommand of
+                -- We haven't started a command yet.
                 Nothing
                  -> case readCommand line of
                      Just (cmd', rest') -> (cmd',        lineNumber, readInput rest')
                      Nothing            -> (CommandEval, lineNumber, (InputLine, line))
                 
+                -- We've already started a command, and this is more input for it.
                 Just (cmd', lineStart')
                  -> (cmd', lineStart', (inputMode, line))
+
+        let source 
+                -- We were instructed to read the program from a file.
+                -- Report this file as the source location, independent
+                -- of how we were instructed to read it.
+                | InputFile filePath    <- input
+                = SourceFile filePath
+
+                -- The program was embedded in the command stream.
+                | otherwise
+                = case stateInterface state of
+                        InterfaceArgs           -> SourceArgs
+                        InterfaceConsole        -> SourceConsole lineStart
+                        InterfaceBatch file     -> SourceBatch   file lineStart
+
+
+        putStrLn $ show source
 
         case input of
          -- For line-by-line mode, if the line ends with backslash then keep
@@ -89,7 +110,7 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
                                 (acc ++ init rest ++ "\n"))
 
           | otherwise
-          -> do state'  <- handleCmd state cmd lineStart (acc ++ rest)
+          -> do state'  <- handleCmd state cmd source (acc ++ rest)
                 return ( state'
                        , InputState Nothing InputLine
                                 (lineNumber + 1)
@@ -101,7 +122,7 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
          InputBlock
           | isSuffixOf ";;" rest
           -> do let rest' = take (length rest - 2) rest
-                state'  <- handleCmd state cmd lineStart (acc ++ rest')
+                state'  <- handleCmd state cmd source (acc ++ rest')
                 return ( state'
                        , InputState Nothing InputLine
                                 (lineNumber + 1)
@@ -114,13 +135,12 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
                                 (acc ++ rest ++ "\n"))
 
          -- Read input from a file
-         InputFile 
-          -> do let filePath    = dropWhile isSpace rest
-                exists          <- doesFileExist filePath
+         InputFile filePath
+          -> do exists          <- doesFileExist filePath
                 if exists 
                  then do        
                         contents  <- readFile filePath
-                        state'    <- handleCmd state cmd lineStart contents
+                        state'    <- handleCmd state cmd source contents
                         return  ( state'
                                 , InputState Nothing InputLine
                                         (lineNumber + 1)

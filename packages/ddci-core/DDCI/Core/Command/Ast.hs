@@ -9,10 +9,10 @@ import qualified Language.Haskell.Exts.Pretty as H
 
 
 -- | Parse, check, and pretty print an expression's internal representation
-cmdAst :: State -> Int -> String -> IO ()
-cmdAst state lineStart str
+cmdAst :: State -> Source -> String -> IO ()
+cmdAst state source str
  | Language profile <- stateLanguage state
- = cmdParseCheckExp state profile lineStart str >>= goShow
+ = cmdParseCheckExp state profile source str >>= goShow
  where
         -- Expression had a parse or type error.
         goShow Nothing

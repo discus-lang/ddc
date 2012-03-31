@@ -8,6 +8,7 @@ module DDCI.Core.Command.Check
         , ShowTypeMode(..)
         , cmdParseCheckExp)
 where
+import DDCI.Core.Mode
 import DDCI.Core.Language
 import DDCI.Core.State
 import DDCI.Core.Output
@@ -25,11 +26,11 @@ import qualified DDC.Base.Parser        as BP
 
 -- kind ------------------------------------------------------------------------
 -- | Show the kind of a type.
-cmdShowKind :: State -> Int -> String -> IO ()
-cmdShowKind state lineStart str
+cmdShowKind :: State -> Source -> String -> IO ()
+cmdShowKind state source str
  | Language profile  <- stateLanguage state
- = let  toks    = fragmentLex lineStart str
-        eTK     = loadType profile "<interactive>" toks
+ = let  toks    = fragmentLex source str
+        eTK     = loadType profile (nameOfSource source) toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
@@ -37,12 +38,12 @@ cmdShowKind state lineStart str
 
 -- tequiv ---------------------------------------------------------------------
 -- | Check if two types are equivlant.
-cmdTypeEquiv :: State -> Int -> String -> IO ()
-cmdTypeEquiv state lineStart ss
+cmdTypeEquiv :: State -> Source -> String -> IO ()
+cmdTypeEquiv state source ss
  | Language profile  <- stateLanguage state
  = let
         goParse toks
-         = case BP.runTokenParser describeTok "<interactive>"
+         = case BP.runTokenParser describeTok (nameOfSource source)
                         (do t1 <- pTypeAtom
                             t2 <- pTypeAtom
                             return (t1, t2))
@@ -69,17 +70,17 @@ cmdTypeEquiv state lineStart ss
                 Right{} 
                  ->     return True
 
-   in goParse (fragmentLex lineStart ss)
+   in goParse (fragmentLex source ss)
 
 
 
 -- wtype ----------------------------------------------------------------------
 -- | Show the type of a witness.
-cmdShowWType :: State -> Int -> String -> IO ()
-cmdShowWType state lineStart str
+cmdShowWType :: State -> Source -> String -> IO ()
+cmdShowWType state source str
  | Language profile  <- stateLanguage state
- = let  toks    = fragmentLex lineStart str
-        eTK     = loadWitness profile "<interactive>" toks
+ = let  toks    = fragmentLex source str
+        eTK     = loadWitness profile (nameOfSource source) toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
@@ -96,10 +97,10 @@ data ShowTypeMode
 
 
 -- | Show the type of an expression.
-cmdShowType :: State -> ShowTypeMode -> Int -> String -> IO ()
-cmdShowType state mode lineStart ss
+cmdShowType :: State -> ShowTypeMode -> Source -> String -> IO ()
+cmdShowType state mode source ss
  | Language profile <- stateLanguage state
- = cmdParseCheckExp state profile lineStart ss >>= goResult
+ = cmdParseCheckExp state profile source ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -124,10 +125,10 @@ cmdShowType state mode lineStart ss
 
 -- Recon ----------------------------------------------------------------------
 -- | Check expression and reconstruct type annotations on binders.
-cmdExpRecon :: State -> Int -> String -> IO ()
-cmdExpRecon state lineStart ss
+cmdExpRecon :: State -> Source -> String -> IO ()
+cmdExpRecon state source ss
  | Language profile <- stateLanguage state
- = cmdParseCheckExp state profile lineStart ss >>= goResult
+ = cmdParseCheckExp state profile source ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -148,17 +149,17 @@ cmdParseCheckExp
            , Pretty err)
         => State
         -> Profile n
-        -> Int          -- Starting line number.
+        -> Source
         -> String 
         -> IO (Maybe ( Exp () n
                      , Type n, Effect n, Closure n))
 
-cmdParseCheckExp _state profile lineStart str
- = goLoad (fragmentLex lineStart str)
+cmdParseCheckExp _state profile source str
+ = goLoad (fragmentLex source str)
  where
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExp profile "<interactive>" toks of
+         = case loadExp profile (nameOfSource source) toks of
               Left err
                -> do    putStrLn $ renderIndent $ ppr err
                         return Nothing

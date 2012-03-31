@@ -62,14 +62,14 @@ keywords
 -------------------------------------------------------------------------------
 -- | Lex a string into tokens.
 --
-lexExp :: Int -> String -> [Token (Tok String)]
-lexExp lineStart str
+lexExp :: String -> Int -> String -> [Token (Tok String)]
+lexExp sourceName lineStart str
  = lexWord lineStart 1 str
  where 
 
   lexWord :: Int -> Int -> String -> [Token (Tok String)]
   lexWord line column w
-   = let  tok t = Token t (SourcePos Nothing line column)
+   = let  tok t = Token t (SourcePos sourceName line column)
           tokA  = tok . KA
           tokN  = tok . KN
 

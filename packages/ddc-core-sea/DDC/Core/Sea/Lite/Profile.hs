@@ -51,9 +51,9 @@ features
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexString :: Int -> String -> [Token (Tok Name)]
-lexString lineStart str
- = map rn $ lexExp lineStart str
+lexString :: String -> Int -> String -> [Token (Tok Name)]
+lexString sourceName lineStart str
+ = map rn $ lexExp sourceName lineStart str
  where rn (Token t sp) = Token (renameTok readName_ t) sp
 
        readName_ str'
