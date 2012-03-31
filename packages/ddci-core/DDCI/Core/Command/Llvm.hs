@@ -19,3 +19,4 @@ cmdLlvmOut _state lineStart str
         mapM_ (putStrLn . renderIndent . ppr) errs
 
 -- TODO: set platform
+-- builder_I386_Darwin

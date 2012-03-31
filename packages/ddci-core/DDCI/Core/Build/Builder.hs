@@ -8,9 +8,14 @@ import System.Cmd
 
 data Builder
         = Builder
-        { buildLlc      :: FilePath -> FilePath -> IO Bool 
+        { builderName   :: String
+        , buildLlc      :: FilePath -> FilePath -> IO Bool 
         , buildAs       :: FilePath -> FilePath -> IO Bool 
         , buildLdExe    :: FilePath -> FilePath -> IO Bool }
+
+instance Show Builder where
+ show (Builder name _ _ _)
+        = "Builder " ++ show name
 
 builder_I386_Darwin
  = let  buildLlc' llFile sFile
@@ -33,5 +38,5 @@ builder_I386_Darwin
          = do   _ <- system cmd
                 return True
 
-   in   Builder buildLlc' buildAs' buildLdExe'
+   in   Builder "i386-darwin" buildLlc' buildAs' buildLdExe'
 

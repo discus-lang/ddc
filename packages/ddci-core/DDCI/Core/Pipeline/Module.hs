@@ -149,7 +149,8 @@ data PipeLlvmModule
         = PipeLlvmModulePrint     Sink
 
         | PipeLlvmModuleCompile   
-        { pipeFileLlvm          :: FilePath
+        { pipeBuilder           :: Builder
+        , pipeFileLlvm          :: FilePath
         , pipeFileAsm           :: FilePath
         , pipeFileObject        :: FilePath
         , pipeFileExe           :: FilePath }
@@ -167,13 +168,12 @@ pipeLlvmModule mm pp
         PipeLlvmModulePrint sink
          ->     pipeSink (renderIndent $ ppr mm) sink
 
-        PipeLlvmModuleCompile llPath sPath oPath exePath
+        PipeLlvmModuleCompile builder llPath sPath oPath exePath
          -> do  -- Write out the LLVM source file.
                 let llSrc       = renderIndent $ ppr mm
                 writeFile llPath llSrc
 
                 -- Compile LLVM source file into .s file.
-                let builder     = builder_I386_Darwin           -- add this to the pipeline structure
                 buildLlc builder llPath sPath
 
                 -- Assemble .s file into .o file
