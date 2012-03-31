@@ -40,10 +40,10 @@ outStrLn _state str
 
 
 -- | Output chatty 'ok' type responses.
---   These are only displayed in the InputInteractive and InputBatch modes.
+--   These are only displayed in the Interactive and Batch interfaces.
 chatStrLn :: State -> String -> IO ()
 chatStrLn state str
- = case stateInput state of
-        InputInteractive        -> putStrLn str
-        InputBatch _            -> putStrLn str
+ = case stateInterface state of
+        InterfaceInteractive    -> putStrLn str
+        InterfaceBatch _        -> putStrLn str
         _                       -> return ()

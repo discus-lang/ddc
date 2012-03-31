@@ -1,5 +1,5 @@
 
-module DDCI.Core.Interface.Input
+module DDCI.Core.Input
         ( InputState(..)
         , Input (..) 
         , readInput

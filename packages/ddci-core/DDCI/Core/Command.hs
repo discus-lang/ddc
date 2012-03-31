@@ -84,7 +84,7 @@ readCommand ss
         = Nothing
 
 
-        -- Commands -------------------------------------------------------------------
+-- Commands -------------------------------------------------------------------
 -- | Handle a single line of input.
 handleCmd :: State -> Command -> Int -> String -> IO State
 handleCmd state CommandBlank _ _

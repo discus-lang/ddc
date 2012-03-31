@@ -2,7 +2,7 @@
 module DDCI.Core.Interface.Interactive
         ( runInteractive)
 where
-import DDCI.Core.Interface.Input
+import DDCI.Core.Input
 import DDCI.Core.State
 import Data.List
 import Data.Maybe
@@ -24,7 +24,7 @@ runInteractive
 loopInteractive :: IO ()
 loopInteractive 
  = do   hlState         <- HL.initializeInput HL.defaultSettings
-        let state       = initState InputInteractive
+        let state       = initState InterfaceInteractive
         let inputState  = InputState Nothing InputLine 1 []
         loop state inputState hlState
  where  

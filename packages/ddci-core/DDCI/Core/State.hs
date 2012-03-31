@@ -1,10 +1,12 @@
 
 module DDCI.Core.State
         ( State         (..)
-        , InputMode     (..)
+        , Interface     (..)
+
         , StateProfile  (..)
         , stateProfiles
 	, stateRewriteRulesList
+
         , Transform(..)
         , initState
 
@@ -26,22 +28,25 @@ import qualified Data.Set               as Set
 -- | Interpreter state.
 data State
         = State
-        { stateInput            :: InputMode
+        { stateInterface        :: Interface
         , stateModes            :: Set Mode 
         , stateTransform        :: Transform
 	, stateRewriteRules	:: Map String (RewriteRule () Name) 
         , stateProfile          :: StateProfile }
 
-data InputMode
+
+-- | What interface is being used.
+data Interface
         -- | Read commands from unix command-line args.
-        = InputArgs
+        = InterfaceArgs
 
-        -- | Commands were read from the file with this name.
-        | InputBatch    FilePath
+        -- | Read commands from the file with this name.
+        | InterfaceBatch    FilePath
 
-        -- | Read commands form the console.
-        | InputInteractive
+        -- | Read commands interactively from the console.
+        | InterfaceInteractive
         deriving (Eq, Show)
+
 
 -- | Adjust a mode setting in the state.
 adjustMode 
@@ -58,10 +63,10 @@ adjustMode False mode state
 
 
 -- | The initial state.
-initState :: InputMode -> State
-initState inputMode
+initState :: Interface -> State
+initState interface
         = State
-        { stateInput            = inputMode
+        { stateInterface        = interface
         , stateModes            = Set.empty 
         , stateTransform        = None
 	, stateRewriteRules	= Map.empty 
