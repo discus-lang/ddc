@@ -19,7 +19,7 @@ import DDC.Core.Parser.Tokens
 profile :: Profile Name 
 profile
         = Profile
-        { profileName           = "Output"
+        { profileName           = "Sea"
         , profileFeatures       = features
         , profilePrimDataDefs   = primDataDefs
         , profilePrimKinds      = primKindEnv

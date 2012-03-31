@@ -41,7 +41,7 @@ languages
  =      [ ("Zero",      Language (zeroProfile :: Profile ZeroName))
         , ("Eval",      Language Eval.evalProfile)
         , ("Lite",      Language Lite.profile)
-        , ("Output",    Language Output.profile)  ]
+        , ("Sea",       Language Output.profile)  ]
 
 
 -- | Defines the functions we need for each language fragment.
