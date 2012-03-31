@@ -13,6 +13,9 @@ case "$cpu-$bits" in
 	i?86-32)
 		echo "x86"
 		;;
+        i?86-64)
+                echo "x86_64"
+                ;;
 	x86_64-64)
 		echo "x86_64"
 		;;
