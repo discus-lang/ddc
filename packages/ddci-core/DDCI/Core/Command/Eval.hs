@@ -6,7 +6,7 @@ module DDCI.Core.Command.Eval
 where
 import DDCI.Core.Stats.Trace
 import DDCI.Core.Command.Check
-import DDCI.Core.IO
+import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Env

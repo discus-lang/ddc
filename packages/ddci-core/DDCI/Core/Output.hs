@@ -1,5 +1,5 @@
 
-module DDCI.Core.IO
+module DDCI.Core.Output
         ( outDoc, outDocLn
         , outStr, outStrLn
         , chatStrLn)

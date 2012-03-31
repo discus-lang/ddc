@@ -6,15 +6,15 @@ module DDCI.Core.Rewrite
 	, showRule )
 where
 import DDC.Base.Pretty
-import qualified DDC.Base.Parser        as BP
 import DDC.Core.Eval.Name
 import DDC.Core.Eval.Env
 import DDC.Core.Parser.Tokens
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Transform.Rewrite.Parser
 import DDCI.Core.State
-import DDCI.Core.IO
+import DDCI.Core.Output
 import Data.Char
+import qualified DDC.Base.Parser        as BP
 
 
 -- | :set rule command

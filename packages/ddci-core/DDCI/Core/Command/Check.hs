@@ -9,7 +9,7 @@ module DDCI.Core.Command.Check
 where
 import DDCI.Core.Pipeline.Fragment
 import DDCI.Core.State
-import DDCI.Core.IO
+import DDCI.Core.Output
 import DDC.Core.Language.Profile
 import DDC.Core.Load
 import DDC.Core.Exp

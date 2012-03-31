@@ -5,12 +5,12 @@ module DDCI.Core.Command.Set
         , cmdSet)
 where
 import DDCI.Core.State
-import qualified DDCI.Core.Rewrite as R
 import DDCI.Core.Pipeline.Transform
 import DDCI.Core.Mode
-import DDCI.Core.IO
+import DDCI.Core.Output
 import DDC.Base.Pretty
 import Data.Char
+import qualified DDCI.Core.Rewrite as R
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map
 

@@ -7,8 +7,8 @@ where
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Pipeline.Transform
+import DDCI.Core.Output
 import DDCI.Core.State
-import DDCI.Core.IO
 import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
