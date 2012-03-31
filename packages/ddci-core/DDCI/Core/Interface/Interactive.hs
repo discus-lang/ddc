@@ -38,7 +38,8 @@ loopInteractive
                 -- Read a line from the user and echo it back.
                 line    <- getInput hlState prompt
 
-                if isPrefixOf ":quit" line
+                if  isPrefixOf ":quit" line
+                 || isPrefixOf ":q"    line
                  then return ()
                  else do
                         (state', inputState')

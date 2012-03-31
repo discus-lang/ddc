@@ -10,7 +10,7 @@ help    = unlines
         , "      $ ddci-core -check \"\\(x : Unit). x\""
         , ""
         , "   Read input from a file with ':'"
-        , "      $ ddci-core -load: SomeFile.dce"
+        , "      $ ddci-core -set lang Sea -load: SomeFile.dce"
         , ""
         , " Interactively"
         , "   Prefix commands with ':'"

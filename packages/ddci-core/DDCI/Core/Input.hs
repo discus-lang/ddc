@@ -7,7 +7,10 @@ module DDCI.Core.Input
 where
 import DDCI.Core.State
 import DDCI.Core.Command
+import System.Directory
 import Data.List
+import Data.Char
+
 
 
 -- InputState ----------------------------------------------------------------------
@@ -36,6 +39,9 @@ data Input
 
         -- | Read input as a block terminated by a double semicolon (;;)
         | InputBlock
+
+        -- | Read input from a file specified on the prompt
+        | InputFile
         deriving (Eq, Show)
 
 
@@ -44,6 +50,9 @@ readInput :: String -> (Input, String)
 readInput ss
         | isPrefixOf ".." ss
         = (InputBlock, drop 2 ss)
+
+        | isPrefixOf "-" ss
+        = (InputFile, drop 1 ss)
 
         | otherwise
         = (InputLine, ss)
@@ -105,4 +114,22 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
                                 (lineNumber + 1)
                                 (acc ++ rest ++ "\n"))
 
+         -- Read input from a file
+         InputFile 
+          -> do let filePath    = dropWhile isSpace rest
+                exists          <- doesFileExist filePath
+                if exists 
+                 then do        
+                        contents  <- readFile filePath
+                        state'    <- handleCmd state cmd lineStart contents
+                        return  ( state'
+                                , InputState Nothing InputLine
+                                        (lineNumber + 1)
+                                        [])
+                 else do
+                        putStrLn "No such file."
+                        return  ( state
+                                , InputState Nothing InputLine
+                                        (lineNumber + 1)
+                                        [])
 
