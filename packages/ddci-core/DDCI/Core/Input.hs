@@ -94,8 +94,6 @@ eatLine state (InputState mCommand inputMode lineNumber acc) line
                         InterfaceBatch file     -> SourceBatch   file lineStart
 
 
-        putStrLn $ show source
-
         case input of
          -- For line-by-line mode, if the line ends with backslash then keep
          -- reading, otherwise run the command.
