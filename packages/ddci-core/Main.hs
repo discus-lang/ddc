@@ -1,10 +1,10 @@
 
+import DDCI.Core.Command.Make
 import DDCI.Core.Command.Help
 import DDCI.Core.Interface.Args
 import DDCI.Core.Interface.Batch
 import DDCI.Core.Interface.Interactive
 import DDCI.Core.State
-import DDCI.Core.Build.Make
 import System.Environment
 import Data.List
 
@@ -25,9 +25,11 @@ main
                 runBatch filePath file
 
          -- Make a file, depending on what the extension is.
+         -- This gets us  --make on the command line as well as -make
+         -- so we behave more like GHC.
          ["--make",  filePath]
           -> do let state       = initState (InterfaceBatch filePath)
-                makeFile state filePath
+                cmdMake state 0 filePath
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]
@@ -37,5 +39,4 @@ main
 
         
          _       -> runArgs args
-
 

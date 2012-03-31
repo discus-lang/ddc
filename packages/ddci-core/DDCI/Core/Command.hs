@@ -14,6 +14,7 @@ import DDCI.Core.Command.Trans
 import DDCI.Core.Command.Ast
 import DDCI.Core.Command.Sea
 import DDCI.Core.Command.Llvm
+import DDCI.Core.Command.Make
 import DDCI.Core.State
 import Data.List
 
@@ -40,6 +41,7 @@ data Command
         | CommandAst            -- ^ Show the AST of an expression.
         | CommandSea            -- ^ Convert a Sea core module to C code.
         | CommandLlvm           -- ^ Convert a Sea core module to LLVM code.
+        | CommandMake           -- ^ Compile a file.
         deriving (Eq, Show)
 
 
@@ -63,7 +65,8 @@ commands
         , (":trun",     CommandTransEval)
         , (":ast",      CommandAst) 
         , (":sea",      CommandSea)
-        , (":llvm",     CommandLlvm) ]
+        , (":llvm",     CommandLlvm)
+        , (":make",     CommandMake) ]
 
 
 -- | Read the command from the front of a string.
@@ -173,3 +176,8 @@ handleCmd1 state cmd lineStart line
         CommandLlvm
          -> do  cmdLlvmOut state lineStart line
                 return state
+
+        CommandMake
+         -> do  cmdMake state lineStart line
+                return state
+

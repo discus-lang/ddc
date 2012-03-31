@@ -39,5 +39,6 @@ runArgs args
                 loop state' more
 
         loop _state xs
-         = error $ "bad args " ++ (show xs)
+         = error $  "Cannot parse arguments: "
+                 ++ intercalate " " xs
 

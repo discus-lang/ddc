@@ -12,7 +12,6 @@ import Data.List
 import Data.Char
 
 
-
 -- InputState ----------------------------------------------------------------------
 -- Interpreter input state
 data InputState
