@@ -29,7 +29,6 @@ main
           -> do let state       = initState (InterfaceBatch filePath)
                 makeFile state filePath
 
-
          -- Run a Disciple-Core-Exchange file.
          [filePath]
           | isSuffixOf ".dcx" filePath

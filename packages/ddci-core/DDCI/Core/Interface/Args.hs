@@ -25,10 +25,11 @@ runArgs args
                 state'          <- handleCmd state cmd 0 contents
                 loop state' rest
 
-        loop state (('-':cmdStr) : arg : rest)
+        loop state (('-':cmdStr) : rest)
          | Just (cmd, [])       <- readCommand (':' : cmdStr)
-         = do   state'          <- handleCmd state cmd 0 arg
-                loop state' rest
+         , (argss, more)        <- break (isPrefixOf "-") rest
+         = do   state'          <- handleCmd state cmd 0 (concat $ intersperse " " argss)
+                loop state' more
 
         loop _state xs
          = error $ "bad args " ++ (show xs)
