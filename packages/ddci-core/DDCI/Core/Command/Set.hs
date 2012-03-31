@@ -8,6 +8,7 @@ import DDCI.Core.State
 import DDCI.Core.Pipeline.Transform
 import DDCI.Core.Mode
 import DDCI.Core.Output
+import DDC.Core.Language.Profile
 import DDC.Base.Pretty
 import Data.Char
 import qualified DDCI.Core.Rewrite as R
@@ -19,14 +20,16 @@ cmdSet ::  State -> String -> IO State
 
 -- Display the active modes.
 cmdSet state []
- = do   outDocLn state
-         $  text "mode  = " 
-         <> text (show   $ Set.toList 
-                         $ stateModes state)
-        
-        outDocLn state
-         $  text "trans = "
-         <> ppr (stateTransform state)
+ = do   let langName    = case stateLanguage state of
+                                Language profile -> profileName profile
+
+        putStrLn $ renderIndent
+         $ vcat [ text "mode  = " <> text (show $ Set.toList 
+                                                $ stateModes state)
+
+                , text "lang  = " <> text langName
+
+                , text "trans = " <> ppr (stateTransform state) ]
 
         return state
 

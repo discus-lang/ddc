@@ -1,10 +1,13 @@
 
 module DDC.Core.Sea.Lite.Name
-        ( Name(..) )
+        ( Name          (..) 
+        , DataTyCon     (..)
+        , PrimDaCon     (..)
+        , readName)
 where
 import DDC.Core.Sea.Base.Name
 import DDC.Base.Pretty
-
+import Data.Char
 
 -- | Names of things used in Disciple-Core-Lite.
 data Name
@@ -43,9 +46,36 @@ instance Pretty Name where
         NameInt i               -> text (show i)
 
 
+readName :: String -> Maybe Name
+readName str
+        |  Just name    <- readDataTyCon str
+        =  Just $ NameDataTyCon name
+
+        |  Just name    <- readPrimTyCon str
+        =  Just $ NamePrimTyCon name
+
+        |  Just name    <- readPrimDaCon str
+        =  Just $ NamePrimDaCon name
+
+        -- Variables.
+        | c : _         <- str
+        , isLower c      
+        = Just $ NameVar str
+
+        -- Constructors.
+        | c : _         <- str
+        , isUpper c
+        = Just $ NameCon str
+
+        | otherwise
+        = Nothing
+
+
+
 -- DataTyCon ------------------------------------------------------------------
 data DataTyCon
         = DataTyConUnit         -- ^ Unit type constructor.
+        | DataTyConInt          -- ^ Int  type constructor.
         | DataTyConPair         -- ^ @Pair@ data constructor.
         | DataTyConList         -- ^ @List@ type constructor.
         deriving (Eq, Ord, Show)
@@ -55,8 +85,19 @@ instance Pretty DataTyCon where
  ppr dc
   = case dc of
         DataTyConUnit           -> text "Unit"
+        DataTyConInt            -> text "Int"
         DataTyConPair           -> text "Pair"
         DataTyConList           -> text "List"
+
+
+readDataTyCon :: String -> Maybe DataTyCon
+readDataTyCon str
+ = case str of
+        "Unit"  -> Just DataTyConUnit
+        "Int"   -> Just DataTyConInt
+        "Pair"  -> Just DataTyConPair
+        "List"  -> Just DataTyConList
+        _       -> Nothing
 
 
 -- PrimDaCon ------------------------------------------------------------------
@@ -67,6 +108,7 @@ data PrimDaCon
         | PrimDaConCons         -- ^ @Cons@ data constructor.
         deriving (Show, Eq, Ord)
 
+
 instance Pretty PrimDaCon where
  ppr dc
   = case dc of
@@ -74,4 +116,16 @@ instance Pretty PrimDaCon where
         PrimDaConPr             -> text "Pr"
         PrimDaConNil            -> text "Nil"
         PrimDaConCons           -> text "Cons"
+
+
+readPrimDaCon :: String -> Maybe PrimDaCon
+readPrimDaCon str
+ = case str of
+        "Unit"  -> Just PrimDaConUnit
+        "Pr"    -> Just PrimDaConPr
+        "Nil"   -> Just PrimDaConNil
+        "Cons"  -> Just PrimDaConCons
+        _       -> Nothing
+
+
 

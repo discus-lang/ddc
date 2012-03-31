@@ -65,6 +65,7 @@ instance Pretty Name where
         NameInt  i bits   -> integer i <> text "i" <> int bits
 
 
+-- | Read the name of a variable, constructor or literal.
 readName :: String -> Maybe Name
 readName str
         -- Obj 

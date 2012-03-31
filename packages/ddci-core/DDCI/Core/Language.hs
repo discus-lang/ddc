@@ -15,8 +15,9 @@ import qualified DDC.Core.Parser.Lexer          as Core
 import qualified DDC.Core.Eval.Profile          as Eval
 import qualified DDC.Core.Eval.Name             as Eval
 import qualified DDC.Core.Eval.Check            as Eval
-import qualified DDC.Core.Sea.Output.Profile    as SeaOutput
-import qualified DDC.Core.Sea.Output.Name       as SeaOutput
+import qualified DDC.Core.Sea.Lite.Profile      as Lite
+import qualified DDC.Core.Sea.Lite.Name         as Lite
+import qualified DDC.Core.Sea.Output            as Output
 
 
 -- | Language profile wrapper 
@@ -39,7 +40,8 @@ languages :: [(String, Language)]
 languages
  =      [ ("Zero",      Language (zeroProfile :: Profile ZeroName))
         , ("Eval",      Language Eval.evalProfile)
-        , ("Sea",       Language SeaOutput.outputProfile) ]
+        , ("Lite",      Language Lite.profile)
+        , ("Output",    Language Output.profile)  ]
 
 
 -- | Defines the functions we need for each language fragment.
@@ -78,15 +80,23 @@ lexStringZero lineStart str
 -- Eval -----------------------------------------------------------------------
 -- | Fragment accepted by the evaluator.
 instance Fragment Eval.Name Eval.Error where
- fragmentLex          = Eval.lexString
- fragmentCheckModule  = error "fragmentCheckModule[Eval]: finish me"
- fragmentCheckExp     = Eval.checkCapsX
+ fragmentLex            = Eval.lexString
+ fragmentCheckModule    = error "fragmentCheckModule[Eval]: finish me"
+ fragmentCheckExp       = Eval.checkCapsX
 
 
--- SeaOutput ------------------------------------------------------------------
+-- Lite -----------------------------------------------------------------------
+-- | Core langauge with some builtin data types.
+instance Fragment Lite.Name String where
+ fragmentLex            = Lite.lexString
+ fragmentCheckModule    = const Nothing
+ fragmentCheckExp       = const Nothing
+
+
+-- Output ------------------------------------------------------------------
 -- | Fragment that maps directly onto the C language.
-instance Fragment SeaOutput.Name String where
- fragmentLex            = SeaOutput.lexString
+instance Fragment Output.Name String where
+ fragmentLex            = Output.lexString
  fragmentCheckModule    = const Nothing
  fragmentCheckExp       = const Nothing
 

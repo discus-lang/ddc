@@ -23,16 +23,16 @@ import qualified DDC.Core.Load                  as Core
 import qualified DDC.Core.Module                as Core
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Llvm.Platform         as Llvm
-import qualified DDC.Core.Sea.Output.Convert    as Sea
-import qualified DDC.Core.Sea.Output.Profile    as Sea
-import qualified DDC.Core.Sea.Output.Name       as Sea
+import qualified DDC.Core.Sea.Output.Convert    as Output
+import qualified DDC.Core.Sea.Output.Profile    as Output
+import qualified DDC.Core.Sea.Output.Name       as Output
 import qualified DDC.Llvm.Module                as Llvm
 import Control.Monad
 
 -- Error ----------------------------------------------------------------------
 data Error
-        = ErrorSeaLoad    (Core.Error Sea.Name)
-        | ErrorSeaConvert (Sea.Error ())
+        = ErrorSeaLoad    (Core.Error Output.Name)
+        | ErrorSeaConvert (Output.Error ())
         deriving (Show)
 
 instance Pretty Error where
@@ -69,8 +69,8 @@ pipeTextModule lineStart str pp
          -> error "finish me"
 
         PipeTextModuleLoadSea pipes
-         -> let toks    = Sea.lexString lineStart str
-            in  case Core.loadModule Sea.outputProfile "<interactive>" toks of
+         -> let toks    = Output.lexString lineStart str
+            in  case Core.loadModule Output.profile "<interactive>" toks of
                  Left err -> return [ErrorSeaLoad err]
                  Right mm -> liftM concat $ mapM (pipeSeaModule mm) pipes
 
@@ -106,7 +106,7 @@ data PipeSeaModule
 
 -- | Process a Core Sea module.
 pipeSeaModule 
-        :: Core.Module () Sea.Name 
+        :: Core.Module () Output.Name 
         -> PipeSeaModule 
         -> IO [Error]
 
@@ -116,7 +116,7 @@ pipeSeaModule mm pp
          -> error "need module pretty printer"
 
         PipeSeaModulePrint withPrelude sink
-         -> case Sea.convertModule mm of
+         -> case Output.convertModule mm of
                 Left  err 
                  ->     return $ [ErrorSeaConvert err]
 

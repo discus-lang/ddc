@@ -116,8 +116,7 @@ typeOfPrim pp
 
 
 -- Shorthands -----------------------------------------------------------------
-tObj, tAddr, tTag, tNat, tBool, tString :: Type Name
-tObj      = TCon (TyConBound (UPrim  NameObjTyCon                   kData))
+tAddr, tTag, tNat, tBool, tString :: Type Name
 tVoid     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)   kData))
 tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr)   kData))
 tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)    kData))
@@ -125,6 +124,8 @@ tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)    kData))
 tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)   kData))
 tString   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConString) kData))
 
+tObj :: Type Name
+tObj      = TCon (TyConBound (UPrim  NameObjTyCon kData))
 
 tPtr :: Type Name -> Type Name
 tPtr t    = TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr)  (kFun kData kData))))
@@ -138,7 +139,7 @@ tWord :: Int -> Type Name
 tWord bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData))
 
 
--- PrimOp ---------------------------------------------------------------------
+-- PrimOps --------------------------------------------------------------------
 -- | Take the type of a primitive operator.
 typeOfPrimOp :: PrimOp -> Type Name
 typeOfPrimOp op
