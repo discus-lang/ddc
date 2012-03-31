@@ -8,8 +8,8 @@
 #ifndef _DDC_Primitive
 #define _DDC_Primitive
 
-#include <Disciple.h>
 #include <stdio.h>
+#include "Disciple.h"
 
 // Show an integer.
 //   TODO: This should be defined in an external module.

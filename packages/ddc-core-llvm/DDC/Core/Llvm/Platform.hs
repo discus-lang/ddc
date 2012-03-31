@@ -1,7 +1,8 @@
 
 module DDC.Core.Llvm.Platform
         ( Platform      (..)
-        , platform32)
+        , platform32
+        , platform64)
 where
 
 
@@ -34,4 +35,15 @@ platform32
         , platformTagBytes      = 4
         , platformNatBytes      = 4
         , platformAlignBytes    = 4 
+        , platformObjBytes      = 8 }
+
+
+-- | 64-bit platform.
+platform64 :: Platform
+platform64 
+        = Platform
+        { platformAddrBytes     = 8
+        , platformTagBytes      = 4
+        , platformNatBytes      = 8
+        , platformAlignBytes    = 8
         , platformObjBytes      = 8 }

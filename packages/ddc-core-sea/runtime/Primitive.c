@@ -1,8 +1,8 @@
 
 // Primitive operations that sea code uses.
 // In future we'll just import these with the FFI.
-#include <Disciple.h>
 #include <stdio.h>
+#include "Disciple.h"
 
 
 // Show an integer.

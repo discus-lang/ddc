@@ -1,5 +1,7 @@
 # Runtime system
 
+# -----------------------------------------------------------------------------
+# Runtime for old compiler
 # Find source files for the runtime system.
 runtime_c = \
 	$(shell ls runtime/*.c) \
@@ -26,12 +28,19 @@ runtime/libddc-runtime.a  : $(runtime_o)
 	@echo
 
 
+# -----------------------------------------------------------------------------
+# Runtime for new compiler
+packages/ddc-core-sea/runtime/Primitive.o : packages/ddc-core-sea/runtime/Primitive.c
+	gcc -m32 -c $< -o $@
+
+# -----------------------------------------------------------------------------
 # Build runtime system.
 #   The shared runtime is only built if SHARED_SUFFIX is defined.
 .PHONY  : runtime
 runtime : $(runtime_dep) \
 		runtime/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),)
+		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),) \
+                packages/ddc-core-sea/runtime/Primitive.o
 
 
 # Clean objects in the runtime system
