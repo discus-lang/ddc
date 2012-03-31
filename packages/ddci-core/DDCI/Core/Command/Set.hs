@@ -101,7 +101,7 @@ parseModeChange str
          | Just mode    <- parseMode strMode
          -> Just (True, mode)
         
-        ('-' : strMode)
+        ('/' : strMode)
          | Just mode    <- parseMode strMode
          -> Just (False, mode)
 

@@ -1,4 +1,5 @@
 
+import DDCI.Core.Command.Help
 import DDCI.Core.Interface.Args
 import DDCI.Core.Interface.Batch
 import DDCI.Core.Interface.Interactive
@@ -14,12 +15,11 @@ main
         case args of
          []      -> runInteractive
 
-         -- Run a Disciple-Core-Exchange file.
-         [filePath]
-          | isSuffixOf ".dcx" filePath
-          -> do file    <- readFile filePath
-                runBatch filePath file
+         -- Display the help.
+         ["--help"]
+          ->    putStr help
 
+         -- Run commands from a file in batch mode.
          ["--batch", filePath]
           -> do file    <- readFile filePath
                 runBatch filePath file
@@ -28,6 +28,14 @@ main
          ["--make",  filePath]
           -> do let state       = initState (InterfaceBatch filePath)
                 makeFile state filePath
+
+
+         -- Run a Disciple-Core-Exchange file.
+         [filePath]
+          | isSuffixOf ".dcx" filePath
+          -> do file    <- readFile filePath
+                runBatch filePath file
+
         
          _       -> runArgs args
 

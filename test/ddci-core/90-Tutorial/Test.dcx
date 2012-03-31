@@ -31,7 +31,7 @@ addInt [R0#] [R1#] [R3#] (2 [R0#] ()) (3 [R1#] ())
 
 addInt [R0#] [R1#] [R2#] (2 [R0#] ()) (3 [R1#] ())
 
-:set -TraceEval -TraceStore
+:set /TraceEval /TraceStore
 
 
 -- Let-expressions and type application sugar ---------------------------------
