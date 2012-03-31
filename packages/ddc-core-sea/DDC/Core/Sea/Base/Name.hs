@@ -6,7 +6,11 @@ module DDC.Core.Sea.Base.Name
         , readPrimTyCon
 
         , PrimOp        (..)
-        , readPrimOp)
+        , readPrimOp
+
+        , readLitInt
+        , readLitPrimWordOfBits
+        , readLitPrimIntOfBits)
 where
 import DDC.Base.Pretty
 import Data.Char
@@ -168,3 +172,40 @@ primOpNames
         , (PrimOpBOr,           "bor#")
         , (PrimOpBXOr,          "bxor#") ]
 
+
+-- Literals -------------------------------------------------------------------
+-- Read a signed integer.
+-- TODO: handle negative literals.
+readLitInt :: String -> Maybe Integer
+readLitInt str
+        | (ds, "")      <- span isDigit str
+        = Just $ read ds
+
+        | otherwise
+        = Nothing
+        
+
+-- Read a word like 1234w32
+-- TODO: handle binary literals.
+readLitPrimWordOfBits :: String -> Maybe (Integer, Int)
+readLitPrimWordOfBits str1
+        | (ds, str2)    <- span isDigit str1
+        , Just str3     <- stripPrefix "w" str2
+        , (bs, "#")     <- span isDigit str3
+        = Just $ (read ds, read bs)
+
+        | otherwise
+        = Nothing
+
+
+-- Read an integer like 1234i32.
+-- TODO hande negative literals.
+readLitPrimIntOfBits :: String -> Maybe (Integer, Int)
+readLitPrimIntOfBits str1
+        | (ds, str2)    <- span isDigit str1
+        , Just str3     <- stripPrefix "i" str2
+        , (bs, "#")     <- span isDigit str3
+        = Just $ (read ds, read bs)
+
+        | otherwise
+        = Nothing

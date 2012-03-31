@@ -114,11 +114,11 @@ readName str
         | str == "False#" = Just $ NameBool False
 
         -- Literal Words
-        | Just (val, bits) <- readWordOfBits str
+        | Just (val, bits) <- readLitPrimWordOfBits str
         = Just $ NameWord val bits
 
         -- Literal Ints
-        | Just (val, bits) <- readIntOfBits str
+        | Just (val, bits) <- readLitPrimIntOfBits str
         = Just $ NameInt  val bits
 
         -- Variables.
@@ -127,31 +127,6 @@ readName str
         | c : _         <- str
         , isLower c      
         = Just $ NameVar str
-
-        | otherwise
-        = Nothing
-
-
--- Read a word like 1234w32
-readWordOfBits :: String -> Maybe (Integer, Int)
-readWordOfBits str1
-        | (ds, str2)    <- span isDigit str1
-        , Just str3     <- stripPrefix "w" str2
-        , (bs, "#")     <- span isDigit str3
-        = Just $ (read ds, read bs)
-
-        | otherwise
-        = Nothing
-
-
--- Read an integer like 1234i32.
--- TODO hande negative literals.
-readIntOfBits :: String -> Maybe (Integer, Int)
-readIntOfBits str1
-        | (ds, str2)    <- span isDigit str1
-        , Just str3     <- stripPrefix "i" str2
-        , (bs, "#")     <- span isDigit str3
-        = Just $ (read ds, read bs)
 
         | otherwise
         = Nothing

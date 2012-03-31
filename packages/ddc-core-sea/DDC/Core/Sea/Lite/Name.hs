@@ -57,6 +57,10 @@ readName str
         |  Just name    <- readPrimDaCon str
         =  Just $ NamePrimDaCon name
 
+        -- Integers
+        |  Just i       <- readLitInt str
+        =  Just $ NameInt i
+
         -- Variables.
         | c : _         <- str
         , isLower c      
