@@ -18,33 +18,33 @@ import DDC.Core.Eval.Name
 
 -- | Desription of the transforms to apply to a core program.
 data Transform
-        = None
-        | Anonymize
-        | ANormal
-        | Beta
-	| Rewrite
+        = TransformId
+        | TransformAnonymize
+        | TransformANormal
+        | TransformBeta
+	| TransformRewrite
         deriving (Eq, Show)
 
 
 parseTransform :: String -> Maybe Transform
 parseTransform str
  = case str of
-        "None"          -> Just None
-        "Anonymize"     -> Just Anonymize
-        "ANormal"	-> Just ANormal
-        "Beta"          -> Just Beta
-        "Rewrite"       -> Just Rewrite
-        _               -> Nothing
+        "None"                  -> Just TransformId
+        "Anonymize"             -> Just TransformAnonymize
+        "ANormal"               -> Just TransformANormal
+        "Beta"                  -> Just TransformBeta
+        "Rewrite"               -> Just TransformRewrite
+        _                       -> Nothing
 
 
 instance Pretty Transform where
  ppr ss
   = case ss of
-        None            -> text "None"
-        Anonymize       -> text "Anonymize"
-        ANormal         -> text "ANormal"
-        Beta            -> text "Beta"
-        Rewrite         -> text "Rewrite"
+        TransformId             -> text "None"
+        TransformAnonymize      -> text "Anonymize"
+        TransformANormal        -> text "ANormal"
+        TransformBeta           -> text "Beta"
+        TransformRewrite        -> text "Rewrite"
 
 
 -- Apply ----------------------------------------------------------------------
@@ -55,9 +55,9 @@ applyTransform
         -> Module a n
 applyTransform spec mm
  = case spec of
-        None            -> mm
-        Anonymize       -> anonymizeX mm
-        _               -> error "applyTransform: finish me"
+        TransformId             -> mm
+        TransformAnonymize      -> anonymizeX mm
+        _                       -> error "applyTransform: finish me"
 
 
 applyTransformX 
@@ -69,9 +69,9 @@ applyTransformX
 
 applyTransformX spec rules xx
  = case spec of
-        None            -> xx
-        Anonymize       -> anonymizeX xx
-        ANormal         -> anormalise xx
-        Beta            -> betaReduce xx
-        Rewrite         -> rewrite rules xx
+        TransformId             -> xx
+        TransformAnonymize      -> anonymizeX xx
+        TransformANormal        -> anormalise xx
+        TransformBeta           -> betaReduce xx
+        TransformRewrite        -> rewrite rules xx
 

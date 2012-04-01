@@ -45,7 +45,7 @@ help    = unlines
         , "    Eval                The fragment accepted by the evaluator."
         , ""
         , "   TRANS ::="
-        , "    None | Anonymize | ANormal | Beta"
+        , "    Id | Anonymize | ANormal | Beta"
         , ""
         , "Type Commands"
         , "    kind    TYPE        Show the kind of a type."

@@ -69,7 +69,7 @@ initState interface
         { stateInterface        = interface
         , stateModes            = Set.empty 
         , stateLanguage         = Language fragmentEval
-        , stateTransform        = None
+        , stateTransform        = TransformId
 	, stateRewriteRules	= Map.empty  }
 
 stateRewriteRulesList :: State -> [RewriteRule () Name]
