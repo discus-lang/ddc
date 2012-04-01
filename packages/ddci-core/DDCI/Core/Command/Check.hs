@@ -28,8 +28,8 @@ import qualified DDC.Base.Parser        as BP
 -- | Show the kind of a type.
 cmdShowKind :: State -> Source -> String -> IO ()
 cmdShowKind state source str
- | Language profile  <- stateLanguage state
- = let  toks    = fragmentLex source str
+ | Language (Fragment profile lexString _ _)  <- stateLanguage state
+ = let  toks    = lexString source str
         eTK     = loadType profile (nameOfSource source) toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
@@ -40,7 +40,7 @@ cmdShowKind state source str
 -- | Check if two types are equivlant.
 cmdTypeEquiv :: State -> Source -> String -> IO ()
 cmdTypeEquiv state source ss
- | Language profile  <- stateLanguage state
+ | Language (Fragment profile lexString _ _) <- stateLanguage state
  = let
         goParse toks
          = case BP.runTokenParser describeTok (nameOfSource source)
@@ -70,7 +70,7 @@ cmdTypeEquiv state source ss
                 Right{} 
                  ->     return True
 
-   in goParse (fragmentLex source ss)
+   in goParse (lexString source ss)
 
 
 
@@ -78,8 +78,8 @@ cmdTypeEquiv state source ss
 -- | Show the type of a witness.
 cmdShowWType :: State -> Source -> String -> IO ()
 cmdShowWType state source str
- | Language profile  <- stateLanguage state
- = let  toks    = fragmentLex source str
+ | Language (Fragment profile lexString _ _) <- stateLanguage state
+ = let  toks    = lexString source str
         eTK     = loadWitness profile (nameOfSource source) toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
@@ -127,8 +127,8 @@ cmdShowType state mode source ss
 -- | Check expression and reconstruct type annotations on binders.
 cmdExpRecon :: State -> Source -> String -> IO ()
 cmdExpRecon state source ss
- | Language profile <- stateLanguage state
- = cmdParseCheckExp state profile source ss >>= goResult
+ | Language fragment    <- stateLanguage state
+ = cmdParseCheckExp state fragment source ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -144,18 +144,18 @@ cmdExpRecon state source ss
 --   If the expression had a parse error, undefined vars, or type error
 --   then print this to the console.
 cmdParseCheckExp 
-        :: ( Fragment n err
-           , Ord n, Show n, Pretty n
-           , Pretty err)
+        :: (Ord n, Show n, Pretty n, Pretty (err ()))
         => State
-        -> Profile n
+        -> Fragment n err
         -> Source
         -> String 
         -> IO (Maybe ( Exp () n
                      , Type n, Effect n, Closure n))
 
-cmdParseCheckExp _state profile source str
- = goLoad (fragmentLex source str)
+cmdParseCheckExp _state 
+        (Fragment profile lexString _ checkX)
+        source str
+ = goLoad (lexString source str)
  where
         -- Parse and type check the expression.
         goLoad toks
@@ -169,10 +169,12 @@ cmdParseCheckExp _state profile source str
 
         -- Do fragment specific checks.
         goCheckFragment (x, t, e, c)
-         = case fragmentCheckExp x of
+         = case checkX x of
              Just err 
               -> do     putStrLn $ renderIndent $ ppr err
                         return Nothing
 
              Nothing  
               -> do     return (Just (x, t, e, c))
+
+

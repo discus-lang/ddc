@@ -4,12 +4,12 @@ module DDCI.Core.Command.Trans
         ( cmdTrans
 	, cmdTransEval)
 where
+import DDCI.Core.Language
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Pipeline.Transform
 import DDCI.Core.Output
 import DDCI.Core.State
-import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
 import DDC.Core.Check
@@ -23,7 +23,7 @@ import DDC.Base.Pretty
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
- = cmdParseCheckExp state evalProfile source str >>= goStore
+ = cmdParseCheckExp state fragmentEval source str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -42,6 +42,7 @@ applyTrans
         :: State 
         -> (Exp () Name, Type Name, Effect Name, Closure Name) 
         -> IO (Maybe (Exp () Name))
+
 applyTrans state (x, t1, eff1, clo1)
  = do	let x' = applyTransformX (stateTransform state) (stateRewriteRulesList state) x
 	case checkExp primDataDefs primKindEnv primTypeEnv x' of
@@ -74,7 +75,7 @@ applyTrans state (x, t1, eff1, clo1)
 -- | Apply the current transform to an expression, then evaluate and display the result
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
- = cmdParseCheckExp state evalProfile source str >>= goStore
+ = cmdParseCheckExp state fragmentEval source str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing

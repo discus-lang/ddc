@@ -4,11 +4,11 @@ module DDCI.Core.Command.Eval
         , cmdEval
         , evalExp)
 where
+import DDCI.Core.Language
 import DDCI.Core.Stats.Trace
 import DDCI.Core.Command.Check
 import DDCI.Core.Output
 import DDCI.Core.State
-import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
@@ -28,7 +28,7 @@ import qualified Data.Set               as Set
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: State -> Source -> String -> IO ()
 cmdStep state source str
- = cmdParseCheckExp state evalProfile source str >>= goStore 
+ = cmdParseCheckExp state fragmentEval source str >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -49,7 +49,7 @@ cmdStep state source str
 -- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Source -> String -> IO ()
 cmdEval state source str
- = cmdParseCheckExp state evalProfile source str >>= goEval
+ = cmdParseCheckExp state fragmentEval source str >>= goEval
  where
     -- Expression had a parse or type error.
     goEval Nothing

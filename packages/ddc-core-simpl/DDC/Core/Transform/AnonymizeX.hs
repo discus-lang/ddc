@@ -3,6 +3,7 @@ module DDC.Core.Transform.AnonymizeX
         ( anonymizeX
         , AnonymizeX(..))
 where
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Transform.AnonymizeT
 import DDC.Type.Compounds
@@ -28,6 +29,18 @@ class AnonymizeX (c :: * -> *) where
         => [Bind n]     -- ^ Stack for Spec binders (level-1).
         -> [Bind n]     -- ^ Stack for Data and Witness binders (level-0).
         -> c n -> c n
+
+instance AnonymizeX (Module a) where
+ anonymizeWithX kstack tstack mm@ModuleCore{}
+  = let lets'   = anonymizeLets kstack tstack (moduleLets mm)
+    in  mm { moduleLets = lets' }
+
+anonymizeLets :: Ord n => [Bind n] -> [Bind n] -> [Lets a n] -> [Lets a n]
+anonymizeLets _ _ []    = []
+anonymizeLets kstack tstack (ll : rest)
+ = let  (kstack', tstack', ll') = pushAnonymizeLets kstack tstack ll
+   in   ll' : anonymizeLets kstack' tstack' rest
+
 
 
 instance AnonymizeX (Exp a) where
@@ -146,7 +159,8 @@ pushAnonymizeBindXs kstack tstack bs
 
 pushAnonymizeLets 
         :: Ord n 
-        => [Bind n] -> [Bind n] 
+        => [Bind n] 
+        -> [Bind n] 
         -> Lets a n 
         -> ([Bind n], [Bind n], Lets a n)
 

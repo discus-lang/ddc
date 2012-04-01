@@ -17,6 +17,7 @@ module DDCI.Core.Pipeline.Module
         , pipeSink)
 where
 import DDCI.Core.Mode
+import DDCI.Core.Language
 import DDCI.Core.Build.Builder
 import DDCI.Core.Pipeline.Transform
 import DDC.Base.Pretty
@@ -25,7 +26,6 @@ import qualified DDC.Core.Module                as Core
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Llvm.Platform         as Llvm
 import qualified DDC.Core.Sea.Output.Convert    as Output
-import qualified DDC.Core.Sea.Output.Profile    as Output
 import qualified DDC.Core.Sea.Output.Name       as Output
 import qualified DDC.Llvm.Module                as Llvm
 import Control.Monad
@@ -34,7 +34,8 @@ import Control.Monad
 data Error
         = ErrorSeaLoad    (Core.Error Output.Name)
         | ErrorSeaConvert (Output.Error ())
-        deriving (Show)
+        | forall err. Pretty err => ErrorLoad err
+
 
 instance Pretty Error where
  ppr err
@@ -47,11 +48,14 @@ instance Pretty Error where
          -> vcat [ text "Fragment violation when converting Sea module to C code."
                  , indent 2 (ppr err') ]
 
+        ErrorLoad err'
+         -> vcat [ text "Error loading module"
+                 , indent 2 (ppr err') ]
 
 -- PipeSource -----------------------------------------------------------------
 data PipeTextModule
         = PipeTextModuleOutput   Sink
-        | PipeTextModuleLoadCore [PipeCoreModule]
+        | PipeTextModuleLoadCore Language [PipeCoreModule]
         | PipeTextModuleLoadSea  [PipeSeaModule]
         deriving (Show)
 
@@ -66,15 +70,22 @@ pipeTextModule source str pp
         PipeTextModuleOutput sink
          -> pipeSink str sink
 
-        PipeTextModuleLoadCore _
-         -> error "finish me"
+        PipeTextModuleLoadCore language pipes
+         | Language (Fragment profile lexString _ _)     <- language
+         -> let sourceName      = nameOfSource source
+                toks            = lexString source str
+
+            in case Core.loadModule profile sourceName toks of
+                 Left err -> return $ [ErrorLoad err]
+                 Right mm -> liftM concat $ mapM (pipeCoreModule mm) pipes
 
         PipeTextModuleLoadSea pipes
-         -> let toks    = Output.lexString
-                                (nameOfSource source) 
-                                (lineStartOfSource source) str
-            in  case Core.loadModule Output.profile (nameOfSource source) toks of
-                 Left err -> return [ErrorSeaLoad err]
+         | Fragment profile lexString _ _       <- fragmentSea
+         -> let sourceName      = nameOfSource source
+                toks            = lexString source str
+
+            in case Core.loadModule profile sourceName toks of
+                 Left err -> return $ [ErrorLoad err]
                  Right mm -> liftM concat $ mapM (pipeSeaModule mm) pipes
 
 
@@ -84,6 +95,19 @@ data PipeCoreModule
         | PipeCoreModuleTransform Transform [PipeCoreModule]
         | PipeCoreModuleToSea     [PipeSeaModule]
         deriving (Show)
+
+pipeCoreModule
+        :: (Eq n, Pretty n)
+        => Core.Module () n
+        -> PipeCoreModule
+        -> IO [Error]
+
+pipeCoreModule mm pp
+ = case pp of
+        PipeCoreModuleOutput sink
+         -> pipeSink (renderIndent $ ppr mm) sink
+
+        _       -> error "pipeCoreModule: finish me"
 
 
 -- PipeSeaModule --------------------------------------------------------------

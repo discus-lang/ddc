@@ -66,6 +66,7 @@ Executable ddci-core
         FunctionalDependencies
         TypeSynonymInstances
         FlexibleInstances
+        StandaloneDeriving
 
   ghc-options:
         -Wall

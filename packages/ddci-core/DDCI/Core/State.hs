@@ -18,7 +18,6 @@ import DDCI.Core.Pipeline.Transform
 import DDCI.Core.Language
 import DDCI.Core.Mode
 import DDC.Core.Transform.Rewrite.Rule
-import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Name               (Name)
 import Data.Map                         (Map)
 import Data.Set                         (Set)
@@ -69,7 +68,7 @@ initState interface
         = State
         { stateInterface        = interface
         , stateModes            = Set.empty 
-        , stateLanguage         = Language evalProfile 
+        , stateLanguage         = Language fragmentEval
         , stateTransform        = None
 	, stateRewriteRules	= Map.empty  }
 

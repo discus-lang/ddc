@@ -1,9 +1,11 @@
 
 module DDCI.Core.Language
-        ( Fragment      (..)
-        , CoreFragment  (..)
-        , Language      (..)
-        , languages)
+        ( Language      (..)
+        , Fragment      (..)
+        , languages
+        , fragmentZero
+        , fragmentEval
+        , fragmentSea)
 where
 import DDCI.Core.Mode
 import DDC.Core.Language.Profile
@@ -16,22 +18,16 @@ import qualified DDC.Core.Parser.Lexer          as Core
 import qualified DDC.Core.Eval.Profile          as Eval
 import qualified DDC.Core.Eval.Name             as Eval
 import qualified DDC.Core.Eval.Check            as Eval
-import qualified DDC.Core.Sea.Lite.Profile      as Lite
-import qualified DDC.Core.Sea.Lite.Name         as Lite
+-- import qualified DDC.Core.Sea.Lite.Profile      as Lite
+-- import qualified DDC.Core.Sea.Lite.Name         as Lite
 import qualified DDC.Core.Sea.Output            as Output
 
 
--- | Language profile wrapper 
 data Language
-        = forall n err. Fragment n err
-        => Language (Profile n)
+        = forall n err. (Ord n, Show n, Pretty n, Pretty (err ()))
+        => Language (Fragment n err)
 
-
-data CoreFragment
-        = CoreFragmentZero
-        | CoreFragmentEval
-        | CoreFragmentSea
-        deriving (Show, Eq)
+deriving instance Show Language
 
 
 -- | Supported language profiles.
@@ -39,26 +35,58 @@ data CoreFragment
 --   One of @Zero@, @Eval@, @Sea@.
 languages :: [(String, Language)]
 languages
- =      [ ("Zero",      Language (zeroProfile :: Profile ZeroName))
-        , ("Eval",      Language Eval.evalProfile)
-        , ("Lite",      Language Lite.profile)
-        , ("Sea",       Language Output.profile)  ]
+ =      [ ( "Zero",     Language fragmentZero)
+        , ( "Eval",     Language fragmentEval)
+        , ( "Sea",      Language fragmentSea) ]
 
 
--- | Defines the functions we need for each language fragment.
-class (Ord n, Show n, Pretty n, Pretty err) 
-        => Fragment n err | n -> err where
- fragmentLex           :: Source      -> String -> [Token (Tok n)] 
- fragmentCheckModule   :: Module () n -> Maybe err
- fragmentCheckExp      :: Exp    () n -> Maybe err 
+fragmentZero :: Fragment ZeroName ZeroError
+fragmentZero 
+        = Fragment
+        { fragmentProfile       = (zeroProfile :: Profile ZeroName)
+        , fragmentLex           = lexStringZero 
+        , fragmentCheckModule   = const Nothing
+        , fragmentCheckExp      = const Nothing }
 
 
--- Zero -----------------------------------------------------------------------
--- | No features, no primops.
-instance Fragment ZeroName String where
- fragmentLex            = lexStringZero 
- fragmentCheckModule    = const Nothing
- fragmentCheckExp       = const Nothing
+fragmentEval :: Fragment Eval.Name Eval.Error
+fragmentEval
+        = Fragment
+        { fragmentProfile       = Eval.evalProfile
+        , fragmentLex           = \s str -> Eval.lexString (nameOfSource s) (lineStartOfSource s) str
+        , fragmentCheckModule   = error "languages: finish me"
+        , fragmentCheckExp      = Eval.checkCapsX }
+
+
+fragmentSea :: Fragment  Output.Name Output.Error
+fragmentSea 
+        = Fragment
+        { fragmentProfile       = Output.profile 
+        , fragmentLex           = \s str -> Output.lexString (nameOfSource s) (lineStartOfSource s) str
+        , fragmentCheckModule   = const Nothing
+        , fragmentCheckExp      = const Nothing }
+
+
+-- Fragment -------------------------------------------------------------------
+-- | Language profile wrapper 
+data Fragment n (err :: * -> *)
+        = Fragment
+        { fragmentProfile      :: Profile n
+        , fragmentLex          :: Source -> String -> [Token (Tok n)]
+        , fragmentCheckModule  :: forall a. Module a n -> Maybe (err a)
+        , fragmentCheckExp     :: forall a. Exp a n    -> Maybe (err a) }
+
+instance Show (Fragment n err) where
+ show frag
+  = profileName $ fragmentProfile frag
+
+
+data ZeroError a
+        = ZeroError
+        deriving Show
+
+instance Pretty (ZeroError a) where
+ ppr ZeroError  = text (show ZeroError)
 
 -- Wrap the names we use for the zero fragment, 
 -- so they get pretty printed properly.
@@ -76,31 +104,4 @@ lexStringZero :: Source -> String -> [Token (Tok ZeroName)]
 lexStringZero source str
  = map rn $ Core.lexExp (nameOfSource source) (lineStartOfSource source) str
  where rn (Token t sp) = Token (renameTok ZeroName t) sp
-
-
--- Eval -----------------------------------------------------------------------
--- | Fragment accepted by the evaluator.
-instance Fragment Eval.Name Eval.Error where
- fragmentLex s          = Eval.lexString (nameOfSource s) (lineStartOfSource s)
- fragmentCheckModule    = error "fragmentCheckModule[Eval]: finish me"
- fragmentCheckExp       = Eval.checkCapsX
-
-
--- Lite -----------------------------------------------------------------------
--- | Core langauge with some builtin data types.
-instance Fragment Lite.Name String where
- fragmentLex s          = Lite.lexString (nameOfSource s) (lineStartOfSource s)
- fragmentCheckModule    = const Nothing
- fragmentCheckExp       = const Nothing
-
-
--- Output ------------------------------------------------------------------
--- | Fragment that maps directly onto the C language.
-instance Fragment Output.Name String where
- fragmentLex s          = Output.lexString (nameOfSource s) (lineStartOfSource s)
- fragmentCheckModule    = const Nothing
- fragmentCheckExp       = const Nothing
-
-
-
 

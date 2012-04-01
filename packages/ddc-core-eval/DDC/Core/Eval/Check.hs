@@ -14,10 +14,10 @@ import Data.Set                         (Set)
 import qualified DDC.Type.Check.Monad   as G
 import qualified Data.Set               as Set
 
-type CheckM a = G.CheckM Error
+type CheckM a x = G.CheckM (Error a) x
 
 -- | Check for conflicting store capabilities in the program.
-checkCapsX :: Exp a Name -> Maybe Error
+checkCapsX :: Exp a Name -> Maybe (Error a)
 checkCapsX xx 
  = case result $ checkCapsXM xx of
         Left err        -> Just err
@@ -66,7 +66,7 @@ mustInsertCap ww caps
 
 
 -- | Check a capability set for conflicts between the capabilities.
-checkCapSet :: CapSet -> Maybe Error
+checkCapSet :: CapSet -> Maybe (Error a)
 checkCapSet cs 
         | r : _  <- Set.toList 
                  $  Set.intersection (capsConst cs) (capsMutable  cs)
@@ -82,7 +82,7 @@ checkCapSet cs
 
 -- Error ----------------------------------------------------------------------
 -- | Things that can go wrong with the capabilities in a program.
-data Error 
+data Error a
         -- | Conflicting capabilities in program.
         = ErrorConflict 
         { errorRegions  :: Rgn
@@ -105,7 +105,7 @@ data Error
         { errorWitness  :: Witness Name }
 
 
-instance Pretty Error where
+instance Pretty (Error a) where
  ppr err
   = case err of
         ErrorConflict r c1 c2

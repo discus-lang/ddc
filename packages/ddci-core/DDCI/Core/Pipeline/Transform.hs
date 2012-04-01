@@ -2,9 +2,11 @@
 module DDCI.Core.Pipeline.Transform
         ( Transform (..)
         , parseTransform
+        , applyTransform
         , applyTransformX)
 where
 import DDC.Base.Pretty
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.ANormal
@@ -46,9 +48,25 @@ instance Pretty Transform where
 
 
 -- Apply ----------------------------------------------------------------------
+applyTransform
+        :: (Show a, Ord Name)
+        => Transform
+        -> [R.RewriteRule a Name]
+        -> Module a Name
+        -> Module a Name
+applyTransform spec _rules mm
+ = case spec of
+        None            -> mm
+        Anonymize       -> anonymizeX mm
+        _               -> error "applyTransform: finish me"
+
+
 applyTransformX 
-        :: (Show a, Ord Name )
-        => Transform -> [R.RewriteRule a Name] -> Exp a Name -> Exp a Name
+        :: (Show a, Ord Name)
+        => Transform 
+        -> [R.RewriteRule a Name] 
+        -> Exp a Name 
+        -> Exp a Name
 
 applyTransformX spec rules xx
  = case spec of
