@@ -208,10 +208,8 @@ instance Pretty WbCon where
 
 
 -- Binder ---------------------------------------------------------------------
--- | Pretty print a binder, adding spaces after names.
---   The RAnon and None binders don't need spaces, as they're single symbols.
-pprBinderSep   :: Pretty n => Binder n -> Doc
-pprBinderSep bb
+pprBinder   :: Pretty n => Binder n -> Doc
+pprBinder bb
  = case bb of
         RName v         -> ppr v
         RAnon           -> text "^"
@@ -224,7 +222,7 @@ pprBinderGroup
         => Doc -> ([Binder n], Type n) -> Doc
 
 pprBinderGroup lam (rs, t)
-        = lam <> parens ((cat $ map pprBinderSep rs) <+> text ":" <+> ppr t) <> dot
+        = lam <> parens ((hsep $ map pprBinder rs) <+> text ":" <+> ppr t) <> dot
 
 
 -- Utils ----------------------------------------------------------------------

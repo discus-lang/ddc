@@ -62,11 +62,11 @@ instance Pretty Name where
         NamePrimTyCon tc  -> ppr tc
         NamePrim p        -> ppr p
         NameNat  i        -> integer i
-        NameTag  i        -> text "TAG" <> integer i
+        NameTag  i        -> text "TAG" <> integer i <> text "#"
         NameBool True     -> text "True#"
         NameBool False    -> text "False#"
-        NameWord i bits   -> integer i <> text "w" <> int bits
-        NameInt  i bits   -> integer i <> text "i" <> int bits
+        NameWord i bits   -> integer i <> text "w" <> int bits <> text "#"
+        NameInt  i bits   -> integer i <> text "i" <> int bits <> text "#"
 
 
 -- | Read the name of a variable, constructor or literal.
