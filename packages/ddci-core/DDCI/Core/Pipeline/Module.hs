@@ -17,6 +17,7 @@ module DDCI.Core.Pipeline.Module
         , pipeSink)
 where
 import DDCI.Core.Mode
+import DDCI.Core.State
 import DDCI.Core.Language
 import DDCI.Core.Build.Builder
 import DDCI.Core.Pipeline.Transform
@@ -97,7 +98,7 @@ data PipeCoreModule
         deriving (Show)
 
 pipeCoreModule
-        :: (Eq n, Pretty n)
+        :: (Eq n, Ord n, Pretty n)
         => Core.Module () n
         -> PipeCoreModule
         -> IO [Error]
@@ -106,6 +107,10 @@ pipeCoreModule mm pp
  = case pp of
         PipeCoreModuleOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
+
+        PipeCoreModuleTransform trans pipes
+         -> let mm'     = applyTransform trans mm 
+            in  liftM concat $ mapM (pipeCoreModule mm') pipes
 
         _       -> error "pipeCoreModule: finish me"
 

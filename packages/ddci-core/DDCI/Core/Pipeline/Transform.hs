@@ -49,12 +49,11 @@ instance Pretty Transform where
 
 -- Apply ----------------------------------------------------------------------
 applyTransform
-        :: (Show a, Ord Name)
+        :: (Show a, Ord n)
         => Transform
-        -> [R.RewriteRule a Name]
-        -> Module a Name
-        -> Module a Name
-applyTransform spec _rules mm
+        -> Module a n
+        -> Module a n
+applyTransform spec mm
  = case spec of
         None            -> mm
         Anonymize       -> anonymizeX mm
