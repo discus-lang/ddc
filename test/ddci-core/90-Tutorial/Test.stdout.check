@@ -182,7 +182,7 @@ with: letregion r1 in
 ok
 ok
 let ^ : [^ ^ : %].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> Pair ^1 (Int ^1) (Int ^0)
-      = /\(^^ : %).
+      = /\(^ ^ : %).
          \(^ : Unit).
         let ^ : Int ^1 = 5 [^1] () in
         let ^ : Int ^0

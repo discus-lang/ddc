@@ -131,7 +131,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                           then ppr (binderOfBind b)
                           else ppr b
             in  text "let"
-                 <+> align (  fill 16 (dBind <> ppr m)
+                 <+> align (  dBind <> ppr m
                            <> nest 2 ( breakWhen (not $ isSimpleX x)
                                      <> text "=" <+> align (ppr x)))
 

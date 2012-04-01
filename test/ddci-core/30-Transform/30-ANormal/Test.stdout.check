@@ -65,7 +65,7 @@ addInt [R0#] [R0#] [R0#] ^1 ^0
 
 -- Arity
 let cmp : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(fg : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
+      = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
         let f' : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = f in
         \(x : Int R0#).
         let ^ = g x in
@@ -81,7 +81,7 @@ let ^ = 1 [R0#] () in
 
 -- Arity anon
 let ^ : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-      = \(fg : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
+      = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
         let ^ : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0# = f in
         \(^ : Int R0#).
         let ^ = g ^0 in
