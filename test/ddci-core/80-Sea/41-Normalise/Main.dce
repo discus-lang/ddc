@@ -1,0 +1,64 @@
+
+module Main with letrec {
+
+allocRaw (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
+ = do { bytesObj        = add# [Nat#] 8 bytesPayload;
+        addr            = alloc# bytesObj;
+
+        format          = 42w32#;
+        tag32           = promote# [Word32#] [Tag#] tag;
+        tagShift        = shl# [Word32#] tag32 8w32#;
+        header          = bor# [Word32#] tagShift format;
+        write# [Word32#] addr 0 header;
+
+        bytesObj32      = promote# [Word32#] [Nat#] bytesObj;
+        write# [Word32#] addr 4 bytesObj32;
+
+        return# [Ptr# Obj] (makePtr# [Obj] addr);
+     };
+
+
+boxInt32 (x : Int32#) : Ptr# Obj
+ = do { obj     = allocRaw TAG0# 4;
+        addr    = takePtr# [Obj] obj;
+        write#  [Int32#] addr 8 x;
+        return# [Ptr# Obj] obj;
+      };
+
+
+unboxInt32 (obj : Ptr# Obj) : Int32#
+ = do { addr    = takePtr# [Obj] obj;
+        x       = read#   [Int32#] addr 8;
+        return# [Int32#] x;
+      };
+
+
+addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt32 (add# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+
+
+subInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt32 (sub# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+
+
+mulInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt32 (mul# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+
+
+fac (x: Ptr# Obj) : Ptr# Obj
+ = do { cc      = eq# [Int32#] (unboxInt32 x) 0i32#;
+        case cc of {
+         True#  -> return# [Ptr# Obj] (boxInt32 1i32#);
+         False# -> return# [Ptr# Obj] (mulInt32 x (fac (subInt32 x (boxInt32 1i32#))));
+        };
+      };
+
+
+main (argc : Nat#) (argv : Ptr# String#) : Int32#
+ = do { x       = boxInt32 10i32#;
+        str     = showInt32# (unboxInt32 (fac x));
+        putStrLn# str;
+
+        return# [Int32#] 0i32#;
+      };
+}

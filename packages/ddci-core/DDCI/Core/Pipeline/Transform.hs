@@ -57,7 +57,7 @@ applyTransform spec mm
  = case spec of
         TransformId             -> mm
         TransformAnonymize      -> anonymizeX mm
---        TransformANormal        -> anormalise
+        TransformANormal        -> anormalise mm
         _                       -> error "applyTransform: finish me"
 
 
