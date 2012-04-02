@@ -5,10 +5,9 @@ module DDC.Core.Transform.ANormal
 where
 import DDC.Core.Module
 import DDC.Core.Exp
+import qualified DDC.Core.Transform.LiftX       as L
 import qualified DDC.Type.Exp                   as T
 import qualified DDC.Type.Compounds             as T
--- import qualified DDC.Core.Transform.AnonymizeX  as A
-import qualified DDC.Core.Transform.LiftX       as L
 import qualified Data.Map                       as Map
 
 

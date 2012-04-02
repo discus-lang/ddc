@@ -2,8 +2,10 @@
 -- | General purpose tree walking boilerplate.
 module DDC.Core.Transform.TransformX
         ( TransformUpMX(..)
-        , transformUpX)
+        , transformUpX
+        , transformUpX')
 where
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Type.Env             (Env)
@@ -30,16 +32,39 @@ transformUpX f kenv tenv xx
                 kenv tenv xx
 
 
+-- | Like transformUpX, but without using environments.
+transformUpX'
+        :: forall (c :: * -> * -> *) a n
+        .  (Ord n, TransformUpMX Identity c)
+        => (Exp a n -> Exp a n)       
+                        -- ^ The worker function is given the current
+                        --      kind and type environments.
+        -> c a n        -- ^ Transform this thing.
+        -> c a n
+
+transformUpX' f xx
+        = transformUpX (\_ _ -> f) Env.empty Env.empty xx
+
+
+-------------------------------------------------------------------------------
 class TransformUpMX m (c :: * -> * -> *) where
  -- | Bottom-up monadic rewrite of all core expressions in a thing.
  transformUpMX
         :: Ord n
         => (Env n -> Env n -> Exp a n -> m (Exp a n))
-                        -- ^ The worker function is given the current kind and type environments.
+                        -- ^ The worker function is given the current
+                        --      kind and type environments.
         -> Env n        -- ^ Initial kind environment.
         -> Env n        -- ^ Initial type environment.
         -> c a n        -- ^ Transform this thing.
         -> m (c a n)
+
+
+instance Monad m => TransformUpMX m Module where
+ transformUpMX f kenv tenv mm
+  = do  lts'    <- mapM (transformUpMX f kenv tenv) $ moduleLets mm
+        return  $ mm { moduleLets = lts' }
+
 
 instance Monad m => TransformUpMX m Exp where
  transformUpMX f kenv tenv xx

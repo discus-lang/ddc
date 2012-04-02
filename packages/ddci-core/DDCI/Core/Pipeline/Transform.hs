@@ -10,6 +10,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.ANormal
+import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Rewrite
 import qualified DDC.Core.Transform.Rewrite.Rule as R
@@ -21,6 +22,7 @@ data Transform
         = TransformId
         | TransformAnonymize
         | TransformANormal
+        | TransformFlatten
         | TransformBeta
 	| TransformRewrite
         deriving (Eq, Show)
@@ -32,6 +34,7 @@ parseTransform str
         "None"                  -> Just TransformId
         "Anonymize"             -> Just TransformAnonymize
         "ANormal"               -> Just TransformANormal
+        "Flatten"               -> Just TransformFlatten
         "Beta"                  -> Just TransformBeta
         "Rewrite"               -> Just TransformRewrite
         _                       -> Nothing
@@ -43,6 +46,7 @@ instance Pretty Transform where
         TransformId             -> text "None"
         TransformAnonymize      -> text "Anonymize"
         TransformANormal        -> text "ANormal"
+        TransformFlatten        -> text "Flatten"
         TransformBeta           -> text "Beta"
         TransformRewrite        -> text "Rewrite"
 
@@ -58,6 +62,7 @@ applyTransform spec mm
         TransformId             -> mm
         TransformAnonymize      -> anonymizeX mm
         TransformANormal        -> anormalise mm
+        TransformFlatten        -> flatten mm
         _                       -> error "applyTransform: finish me"
 
 
@@ -73,6 +78,7 @@ applyTransformX spec rules xx
         TransformId             -> xx
         TransformAnonymize      -> anonymizeX xx
         TransformANormal        -> anormalise xx
+        TransformFlatten        -> flatten xx
         TransformBeta           -> betaReduce xx
         TransformRewrite        -> rewrite rules xx
 
