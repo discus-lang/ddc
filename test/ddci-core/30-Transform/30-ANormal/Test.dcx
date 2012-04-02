@@ -1,5 +1,5 @@
 :set +Indent
-:set trans ANormal <> Flatten
+:set trans anormalize
 
 -- Identity function
 :trans (\(x:Unit). x) ()

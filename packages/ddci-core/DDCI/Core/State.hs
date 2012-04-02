@@ -1,6 +1,8 @@
 
 module DDCI.Core.State
         ( State         (..)
+        , initState
+
         , Interface     (..)
         , Source        (..)
 
@@ -8,19 +10,17 @@ module DDCI.Core.State
         , languages
 	, stateRewriteRulesList
 
-        , Transform     (..)
-        , initState
-
         , Mode          (..)
         , adjustMode)
 where
 import DDCI.Core.Language
 import DDCI.Core.Mode
-import DDC.Core.Simplifier
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Eval.Name               (Name)
 import Data.Map                         (Map)
 import Data.Set                         (Set)
+import DDC.Core.Simplifier              (Simplifier)
+import qualified DDC.Core.Simplifier    as S
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 
@@ -69,7 +69,7 @@ initState interface
         { stateInterface        = interface
         , stateModes            = Set.empty 
         , stateLanguage         = Language fragmentEval
-        , stateSimplifier       = SimplifierTrans TransformId
+        , stateSimplifier       = S.Trans S.Id
 	, stateRewriteRules	= Map.empty  }
 
 stateRewriteRulesList :: State -> [RewriteRule () Name]

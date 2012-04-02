@@ -1,7 +1,7 @@
 
--- | Conversion to administrative-normal form.
-module DDC.Core.Transform.ANormal
-        (ANormalise(..))
+-- | Snip out applications.
+module DDC.Core.Transform.Snip
+        (Snip(..))
 where
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -11,41 +11,40 @@ import qualified DDC.Type.Compounds             as T
 import qualified Data.Map                       as Map
 
 
-class ANormalise (c :: * -> *) where
- -- | Convert a thing to a-normal form.
- anormalise :: Ord n => c n -> c n
+class Snip (c :: * -> *) where
+ -- | Snip out applications.
+ snip :: Ord n => c n -> c n
 
 
-instance ANormalise (Module a) where
- anormalise mm
+instance Snip (Module a) where
+ snip mm
   = let arities  = concatMap arityOfLets    $ moduleLets mm
         arities' = extendsArities emptyArities arities
-        ls       = map (anormalTop arities') $ moduleLets mm
+        ls       = map (snipTop arities') $ moduleLets mm
     in  mm { moduleLets = ls }
 
 
-instance ANormalise (Exp a) where
- anormalise x = anormalX emptyArities x []
+instance Snip (Exp a) where
+ snip x = snipX emptyArities x []
 
 
 
 -- ANormal --------------------------------------------------------------------
 -- | Convert the expression in a top-level binding to A-normal form.
-anormalTop
-        :: Ord n
+snipTop :: Ord n
         => Arities n    -- ^ Arities of functions in environment.
         -> Lets a n
         -> Lets a n
 
-anormalTop arities ll
+snipTop arities ll
  = case ll of
-        LLet mode b x   -> LLet mode b $ anormalX arities x []
-        LRec bxs        -> LRec [(b, anormalX arities x []) | (b, x) <- bxs]
+        LLet mode b x   -> LLet mode b $ snipX arities x []
+        LRec bxs        -> LRec [(b, snipX arities x []) | (b, x) <- bxs]
         _               -> ll
 
 
 -- | Convert an expression into A-normal form.
-anormalX 
+snipX 
         :: Ord n
         => Arities n    -- ^ Arities of functions in environment.
         -> Exp a n      -- ^ Expression to transform.
@@ -53,17 +52,17 @@ anormalX
         -> Exp a n
 
 -- Application: just record argument and descend into function
-anormalX ar (XApp a lhs rhs) args
+snipX ar (XApp a lhs rhs) args
  = let  -- normalise rhs and add to arguments.
-        args' = (anormalX ar rhs [], a) : args
+        args' = (snipX ar rhs [], a) : args
 
         -- descend into lhs, remembering all args.
-   in   anormalX ar lhs args'
+   in   snipX ar lhs args'
 
 
 -- Anything other than application: if we're applied to arguments add bindings,
 -- otherwise just recurse.
-anormalX ar x args
+snipX ar x args
  =  let x' = go x 
     in case args of
         -- if there are no args, we're done
@@ -75,7 +74,7 @@ anormalX ar x args
  where
         -- helper for descent
         down ars e 
-         = anormalX (extendsArities ar ars) e []
+         = snipX (extendsArities ar ars) e []
 
         -- we know x isn't an app.
         go XApp{}           

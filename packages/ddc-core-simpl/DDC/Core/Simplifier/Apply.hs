@@ -11,7 +11,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.AnonymizeX
-import DDC.Core.Transform.ANormal
+import DDC.Core.Transform.Snip
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Rewrite
@@ -26,10 +26,10 @@ applySimplifier
 
 applySimplifier spec mm
  = case spec of
-        SimplifierSeq t1 t2      
+        Seq t1 t2      
          -> applySimplifier t2 (applySimplifier t1 mm)
 
-        SimplifierTrans t1
+        Trans t1
          -> applyTransform t1 mm
 
 
@@ -40,11 +40,11 @@ applyTransform
 
 applyTransform spec mm
  = case spec of
-        TransformId             -> mm
-        TransformAnonymize      -> anonymizeX mm
-        TransformANormal        -> anormalise mm
-        TransformFlatten        -> flatten mm
-        _                       -> error "applyTransform: finish me"
+        Id              -> mm
+        Anonymize       -> anonymizeX mm
+        Snip            -> snip mm
+        Flatten         -> flatten mm
+        _               -> error "applyTransform: finish me"
 
 
 -- Expressions ----------------------------------------------------------------
@@ -56,10 +56,10 @@ applySimplifierX
 
 applySimplifierX spec rules xx
  = case spec of
-        SimplifierSeq t1 t2
+        Seq t1 t2
          -> applySimplifierX t2 rules (applySimplifierX t1 rules xx)
 
-        SimplifierTrans t1
+        Trans t1
          -> applyTransformX t1 rules xx
 
 
@@ -71,9 +71,9 @@ applyTransformX
 
 applyTransformX spec rules xx
  = case spec of
-        TransformId             -> xx
-        TransformAnonymize      -> anonymizeX xx
-        TransformANormal        -> anormalise xx
-        TransformFlatten        -> flatten xx
-        TransformBeta           -> betaReduce xx
-        TransformRewrite        -> rewrite rules xx
+        Id              -> xx
+        Anonymize       -> anonymizeX xx
+        Snip            -> snip xx
+        Flatten         -> flatten xx
+        Beta            -> betaReduce xx
+        Rewrite         -> rewrite rules xx
