@@ -43,7 +43,7 @@ lexSimplifier ss
  = case ss of
         []              -> []
 
-        (';' : cs)
+        ('<' : '>' : cs)
          -> KSemi  : lexSimplifier cs
 
         (c : cs)

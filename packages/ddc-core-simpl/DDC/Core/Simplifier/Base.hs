@@ -4,14 +4,22 @@ module DDC.Core.Simplifier.Base
         , Transform(..))
 where
 import DDC.Base.Pretty
+import Data.Monoid
 
--- | Desription of how to simplify a core program.
+
+-- Simplifier -----------------------------------------------------------------
+-- | Desription of how to simplify a core program
 data Simplifier
         = SimplifierSeq      Simplifier Simplifier
         | SimplifierTrans    Transform
         deriving (Eq, Show)
 
+instance Monoid Simplifier where
+ mempty  = SimplifierTrans TransformId
+ mappend = SimplifierSeq
 
+
+-- Transform ------------------------------------------------------------------
 -- | Represents individual transforms to apply during simplification.
 --   TODO: turn application of rewrite rules into its own transform.
 data Transform
