@@ -20,7 +20,7 @@ import DDCI.Core.Mode
 import DDCI.Core.State
 import DDCI.Core.Language
 import DDCI.Core.Build.Builder
-import DDCI.Core.Pipeline.Transform
+import DDC.Core.Simplifier
 import DDC.Base.Pretty
 import qualified DDC.Core.Load                  as Core
 import qualified DDC.Core.Module                as Core
@@ -93,7 +93,7 @@ pipeTextModule source str pp
 -- PipeCoreModule -------------------------------------------------------------
 data PipeCoreModule
         = PipeCoreModuleOutput    Sink
-        | PipeCoreModuleTransform Transform [PipeCoreModule]
+        | PipeCoreModuleSimplify  Simplifier [PipeCoreModule]
         | PipeCoreModuleToSea     [PipeSeaModule]
         deriving (Show)
 
@@ -108,8 +108,8 @@ pipeCoreModule mm pp
         PipeCoreModuleOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeCoreModuleTransform trans pipes
-         -> let mm'     = applyTransform trans mm 
+        PipeCoreModuleSimplify simpl pipes
+         -> let mm'     = applySimplifier simpl mm 
             in  liftM concat $ mapM (pipeCoreModule mm') pipes
 
         _       -> error "pipeCoreModule: finish me"

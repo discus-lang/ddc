@@ -6,10 +6,10 @@ module DDCI.Core.Command.Set
 where
 import DDCI.Core.Language
 import DDCI.Core.State
-import DDCI.Core.Pipeline.Transform
 import DDCI.Core.Mode
 import DDCI.Core.Output
 import DDC.Core.Language.Profile
+import DDC.Core.Simplifier
 import DDC.Base.Pretty
 import Data.Char
 import qualified DDCI.Core.Rewrite as R
@@ -32,7 +32,7 @@ cmdSet state []
 
                 , text "lang  = " <> text langName
 
-                , text "trans = " <> ppr (stateTransform state) ]
+                , text "simpl = " <> ppr (stateSimplifier state) ]
 
         return state
 
@@ -49,10 +49,10 @@ cmdSet state cmd
                 return state
 
  | "trans" : rest       <- words cmd
- = do   case parseTransform (concat rest) of
-         Just spec       
+ = do   case parseSimplifier (concat rest) of
+         Just simpl
           -> do chatStrLn state "ok"
-                return $ state { stateTransform = spec }
+                return $ state { stateSimplifier = simpl }
 
          Nothing
           -> do putStrLn "transform spec parse error"

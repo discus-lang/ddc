@@ -14,8 +14,8 @@ import DDC.Core.Pretty
 cmdLoad :: State -> Source -> String -> IO ()
 cmdLoad state source str
  = do   errs    <- pipeTextModule source str
-                $  PipeTextModuleLoadCore  (stateLanguage  state)
-                [  PipeCoreModuleTransform (stateTransform state)
+                $  PipeTextModuleLoadCore  (stateLanguage   state)
+                [  PipeCoreModuleSimplify  (stateSimplifier state)
                 [  PipeCoreModuleOutput    SinkStdout ]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs

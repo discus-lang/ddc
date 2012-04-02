@@ -7,11 +7,11 @@ where
 import DDCI.Core.Language
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
-import DDCI.Core.Pipeline.Transform
 import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
+import DDC.Core.Simplifier
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Type.Compounds
@@ -44,7 +44,7 @@ applyTrans
         -> IO (Maybe (Exp () Name))
 
 applyTrans state (x, t1, eff1, clo1)
- = do	let x' = applyTransformX (stateTransform state) (stateRewriteRulesList state) x
+ = do	let x' = applySimplifierX (stateSimplifier state) (stateRewriteRulesList state) x
 	case checkExp primDataDefs primKindEnv primTypeEnv x' of
 	  Right (_, t2, eff2, clo2)
 	   |  equivT t1 t2

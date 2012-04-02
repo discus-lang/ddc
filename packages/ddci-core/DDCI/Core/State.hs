@@ -14,9 +14,9 @@ module DDCI.Core.State
         , Mode          (..)
         , adjustMode)
 where
-import DDCI.Core.Pipeline.Transform
 import DDCI.Core.Language
 import DDCI.Core.Mode
+import DDC.Core.Simplifier
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Eval.Name               (Name)
 import Data.Map                         (Map)
@@ -31,7 +31,7 @@ data State
         { stateInterface        :: Interface
         , stateModes            :: Set Mode 
         , stateLanguage         :: Language
-        , stateTransform        :: Transform
+        , stateSimplifier       :: Simplifier
 	, stateRewriteRules	:: Map String (RewriteRule () Name) }
 
 
@@ -69,7 +69,7 @@ initState interface
         { stateInterface        = interface
         , stateModes            = Set.empty 
         , stateLanguage         = Language fragmentEval
-        , stateTransform        = Transform1 TransformId
+        , stateSimplifier       = SimplifierTrans TransformId
 	, stateRewriteRules	= Map.empty  }
 
 stateRewriteRulesList :: State -> [RewriteRule () Name]
