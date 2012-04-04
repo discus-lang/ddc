@@ -16,9 +16,10 @@ cmdSeaOut state source str
  = do   errs    <- pipeTextModule source str
                 $  PipeTextModuleLoadCore  fragmentSea
                 [  PipeCoreModuleSimplify  (stateSimplifier state)
+                [  PipeCoreModuleCheck     fragmentSea 
                 [  PipeCoreModuleAsSea
                 [  PipeSeaModulePrint 
                         (Set.member SeaPrelude (stateModes state))
-                        SinkStdout ]]]
+                        SinkStdout ]]]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs

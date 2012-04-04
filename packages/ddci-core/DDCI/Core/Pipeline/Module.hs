@@ -20,9 +20,11 @@ import DDCI.Core.Mode
 import DDCI.Core.Language
 import DDCI.Core.Build.Builder
 import DDC.Core.Simplifier
+import DDC.Core.Language.Profile
 import DDC.Base.Pretty
-import qualified DDC.Core.Load                  as Core
-import qualified DDC.Core.Module                as Core
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Module                as C
+import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Llvm.Platform         as Llvm
 import qualified DDC.Core.Sea.Output.Convert    as Output
@@ -32,9 +34,16 @@ import Control.Monad
 
 -- Error ----------------------------------------------------------------------
 data Error
-        = ErrorSeaLoad    (Core.Error Output.Name)
+        = ErrorSeaLoad    (CL.Error Output.Name)
         | ErrorSeaConvert (Output.Error ())
-        | forall err. Pretty err => ErrorLoad err
+
+        -- | Error when loading a module.
+        --   Blame it on the user.
+        | forall err. Pretty err => ErrorLoad  err
+
+        -- | Error when type checking a transformed module.
+        --   Blame it on the compiler.
+        | forall err. Pretty err => ErrorLint err
 
 
 instance Pretty Error where
@@ -50,6 +59,10 @@ instance Pretty Error where
 
         ErrorLoad err'
          -> vcat [ text "Error loading module"
+                 , indent 2 (ppr err') ]
+
+        ErrorLint err'
+         -> vcat [ text "Error in transformed module."
                  , indent 2 (ppr err') ]
 
 
@@ -88,7 +101,7 @@ pipeTextModule source str pp
          -> let sourceName      = nameOfSource source
                 toks            = lexString source str
 
-            in case Core.loadModule profile sourceName toks of
+            in case CL.loadModule profile sourceName toks of
                  Left err -> return $ [ErrorLoad err]
                  Right mm -> liftM concat $ mapM (pipeCoreModule mm) pipes
 
@@ -103,7 +116,8 @@ data PipeCoreModule n where
 
   -- | Type check the module.
   PipeCoreModuleCheck      
-        :: [PipeCoreModule n]
+        :: Fragment n err
+        -> [PipeCoreModule n]
         -> PipeCoreModule n
 
   -- | Apply a simplifier to the module.
@@ -122,8 +136,8 @@ deriving instance Show (PipeCoreModule n)
 
 -- | Core module pipeline.
 pipeCoreModule
-        :: (Eq n, Ord n, Pretty n)
-        => Core.Module () n
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => C.Module () n
         -> PipeCoreModule n
         -> IO [Error]
 
@@ -132,8 +146,14 @@ pipeCoreModule mm pp
         PipeCoreModuleOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeCoreModuleCheck{}
-         -> error "finish me"
+        PipeCoreModuleCheck fragment pipes
+         -> let profile         = fragmentProfile fragment
+                primDataDefs    = profilePrimDataDefs   profile
+                primKindEnv     = profilePrimKinds      profile
+                primTypeEnv     = profilePrimTypes      profile
+            in  case C.checkModule primDataDefs primKindEnv primTypeEnv mm of
+                  Left err  -> return $ [ErrorLint err]
+                  Right mm' -> liftM concat $ mapM (pipeCoreModule mm') pipes
 
         PipeCoreModuleSimplify simpl pipes
          -> let mm'     = applySimplifier simpl mm 
@@ -164,7 +184,7 @@ data PipeSeaModule
 
 -- | Process a Core Sea module.
 pipeSeaModule 
-        :: Core.Module () Output.Name 
+        :: C.Module () Output.Name 
         -> PipeSeaModule 
         -> IO [Error]
 

@@ -13,10 +13,11 @@ import DDC.Base.Pretty
 cmdLlvmOut :: State -> Source -> String -> IO ()
 cmdLlvmOut state source str
  = do   errs    <- pipeTextModule source str
-                $  PipeTextModuleLoadCore fragmentSea
+                $  PipeTextModuleLoadCore  fragmentSea
                 [  PipeCoreModuleSimplify  (stateSimplifier state)
+                [  PipeCoreModuleCheck     fragmentSea
                 [  PipeCoreModuleAsSea
                 [  PipeSeaModuleToLlvm 
-                [  PipeLlvmModulePrint SinkStdout ]]]]
+                [  PipeLlvmModulePrint SinkStdout ]]]]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs

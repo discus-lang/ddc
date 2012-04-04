@@ -37,8 +37,9 @@ makeDCE state source filePath
         src     <- readFile filePath
 
         errs    <- pipeTextModule source src
-                $  PipeTextModuleLoadCore fragmentSea
+                $  PipeTextModuleLoadCore  fragmentSea
                 [  PipeCoreModuleSimplify  (stateSimplifier state)
+                [  PipeCoreModuleCheck     fragmentSea
                 [  PipeCoreModuleAsSea
                 [  PipeSeaModuleToLlvm 
                 [  PipeLlvmModuleCompile 
@@ -46,6 +47,6 @@ makeDCE state source filePath
                         , pipeFileLlvm          = llPath
                         , pipeFileAsm           = sPath
                         , pipeFileObject        = oPath
-                        , pipeFileExe           = exePath } ]]]]
+                        , pipeFileExe           = exePath } ]]]]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs

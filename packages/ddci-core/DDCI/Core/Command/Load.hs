@@ -17,6 +17,7 @@ cmdLoad state source str
  = do   errs    <- pipeTextModule source str
                 $  PipeTextModuleLoadCore  fragment
                 [  PipeCoreModuleSimplify  (stateSimplifier state)
-                [  PipeCoreModuleOutput    SinkStdout ]]
+                [  PipeCoreModuleCheck     fragment
+                [  PipeCoreModuleOutput    SinkStdout ]]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs
