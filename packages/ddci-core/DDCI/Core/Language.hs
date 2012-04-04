@@ -18,8 +18,6 @@ import qualified DDC.Core.Parser.Lexer          as Core
 import qualified DDC.Core.Eval.Profile          as Eval
 import qualified DDC.Core.Eval.Name             as Eval
 import qualified DDC.Core.Eval.Check            as Eval
--- import qualified DDC.Core.Sea.Lite.Profile      as Lite
--- import qualified DDC.Core.Sea.Lite.Name         as Lite
 import qualified DDC.Core.Sea.Output            as Output
 
 

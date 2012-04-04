@@ -1,18 +1,25 @@
 
 module DDCI.Core.Pipeline.Module
-        ( Error(..)
+        ( -- * Things that can go wrong
+          Error(..)
 
+          -- * Processing text source code
         , PipeTextModule        (..)
         , pipeTextModule
 
+          -- * Processing core modules
         , PipeCoreModule        (..)
+        , pipeCoreModule
 
+          -- * Processing core Sea modules
         , PipeSeaModule         (..)
         , pipeSeaModule
 
+          -- * Processing LLVM modules
         , PipeLlvmModule        (..)
         , pipeLlvmModule
 
+          -- * Emitting output
         , Sink                  (..)
         , pipeSink)
 where
@@ -174,9 +181,6 @@ data PipeSeaModule
         { pipeWithSeaPrelude    :: Bool
         , pipeModuleSink        :: Sink }
 
-        -- | Compile the module into an object file.
-        | PipeSeaModuleCompile    FilePath
-
         -- | Convert the module to LLVM.
         | PipeSeaModuleToLlvm     [PipeLlvmModule]
         deriving (Show)
@@ -209,9 +213,6 @@ pipeSeaModule mm pp
 
                  | otherwise
                  -> pipeSink (renderIndent doc)  sink
-
-        PipeSeaModuleCompile _
-         -> error "finish me"
 
         PipeSeaModuleToLlvm more
          -> do  let mm'     =  Llvm.convertModule Llvm.platform32 mm
