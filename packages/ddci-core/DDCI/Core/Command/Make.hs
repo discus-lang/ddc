@@ -4,6 +4,7 @@ module DDCI.Core.Command.Make
 where
 import DDCI.Core.Build.Builder
 import DDCI.Core.Pipeline.Module
+import DDCI.Core.Language
 import DDCI.Core.Mode
 import DDCI.Core.State
 import DDC.Core.Pretty
@@ -26,7 +27,7 @@ makeFile state source filePath
 
  
 makeDCE :: State -> Source -> FilePath -> IO ()
-makeDCE _state source filePath
+makeDCE state source filePath
  = do   let llPath      = replaceExtension filePath ".ddc.ll"
         let sPath       = replaceExtension filePath ".ddc.s"
         let oPath       = replaceExtension filePath ".o"
@@ -36,13 +37,15 @@ makeDCE _state source filePath
         src     <- readFile filePath
 
         errs    <- pipeTextModule source src
-                $  PipeTextModuleLoadSea
+                $  PipeTextModuleLoadCore fragmentSea
+                [  PipeCoreModuleSimplify  (stateSimplifier state)
+                [  PipeCoreModuleAsSea
                 [  PipeSeaModuleToLlvm 
                 [  PipeLlvmModuleCompile 
                         { pipeBuilder           = builder_I386_Darwin
                         , pipeFileLlvm          = llPath
                         , pipeFileAsm           = sPath
                         , pipeFileObject        = oPath
-                        , pipeFileExe           = exePath } ]]
+                        , pipeFileExe           = exePath } ]]]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs

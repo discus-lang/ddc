@@ -22,7 +22,8 @@ GHC_LANGUAGE	:= \
 	-XBangPatterns \
 	-XRankNTypes \
 	-XNoMonomorphismRestriction \
-        -XStandaloneDeriving  
+        -XStandaloneDeriving \
+        -XGADTs
 
 
 # -- Warnings -----------------------------------------------------------------

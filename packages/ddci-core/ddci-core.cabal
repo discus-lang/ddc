@@ -67,6 +67,7 @@ Executable ddci-core
         TypeSynonymInstances
         FlexibleInstances
         StandaloneDeriving
+        GADTs
 
   ghc-options:
         -Wall

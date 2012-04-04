@@ -17,7 +17,6 @@ module DDCI.Core.Pipeline.Module
         , pipeSink)
 where
 import DDCI.Core.Mode
-import DDCI.Core.State
 import DDCI.Core.Language
 import DDCI.Core.Build.Builder
 import DDC.Core.Simplifier
@@ -53,17 +52,30 @@ instance Pretty Error where
          -> vcat [ text "Error loading module"
                  , indent 2 (ppr err') ]
 
--- PipeSource -----------------------------------------------------------------
-data PipeTextModule
-        = PipeTextModuleOutput   Sink
-        | PipeTextModuleLoadCore Language [PipeCoreModule]
-        | PipeTextModuleLoadSea  [PipeSeaModule]
-        deriving (Show)
 
+-- PipeSource -----------------------------------------------------------------
+-- | Process program text.
+data PipeTextModule n (err :: * -> *) where
+  -- | Output the current module text.
+  PipeTextModuleOutput 
+        :: Sink
+        -> PipeTextModule n err
+
+  -- | Parse and type check the text as a core module.
+  PipeTextModuleLoadCore 
+        :: (Ord n, Show n, Pretty n)
+        => Fragment n err
+        -> [PipeCoreModule n]
+        -> PipeTextModule n err
+
+deriving instance Show (PipeTextModule n err)
+
+
+-- | Text module pipeline.
 pipeTextModule
         :: Source
         -> String
-        -> PipeTextModule
+        -> PipeTextModule n err
         -> IO [Error]
 
 pipeTextModule source str pp
@@ -71,8 +83,8 @@ pipeTextModule source str pp
         PipeTextModuleOutput sink
          -> pipeSink str sink
 
-        PipeTextModuleLoadCore language pipes
-         | Language (Fragment profile lexString _ _)     <- language
+        PipeTextModuleLoadCore fragment pipes
+         | (Fragment profile lexString _ _)     <- fragment
          -> let sourceName      = nameOfSource source
                 toks            = lexString source str
 
@@ -80,27 +92,39 @@ pipeTextModule source str pp
                  Left err -> return $ [ErrorLoad err]
                  Right mm -> liftM concat $ mapM (pipeCoreModule mm) pipes
 
-        PipeTextModuleLoadSea pipes
-         | Fragment profile lexString _ _       <- fragmentSea
-         -> let sourceName      = nameOfSource source
-                toks            = lexString source str
-
-            in case Core.loadModule profile sourceName toks of
-                 Left err -> return $ [ErrorLoad err]
-                 Right mm -> liftM concat $ mapM (pipeSeaModule mm) pipes
-
 
 -- PipeCoreModule -------------------------------------------------------------
-data PipeCoreModule
-        = PipeCoreModuleOutput    Sink
-        | PipeCoreModuleSimplify  Simplifier [PipeCoreModule]
-        | PipeCoreModuleToSea     [PipeSeaModule]
-        deriving (Show)
+-- | Process a core module.
+data PipeCoreModule n where
+  -- | Output the module in core language syntax.
+  PipeCoreModuleOutput    
+        :: Sink 
+        -> PipeCoreModule n
 
+  -- | Type check the module.
+  PipeCoreModuleCheck      
+        :: [PipeCoreModule n]
+        -> PipeCoreModule n
+
+  -- | Apply a simplifier to the module.
+  PipeCoreModuleSimplify  
+        :: Simplifier 
+        -> [PipeCoreModule n] 
+        -> PipeCoreModule n
+
+  -- | Specialised processing for modules in the Core Sea fragment.
+  PipeCoreModuleAsSea
+        :: [PipeSeaModule] 
+        -> PipeCoreModule Output.Name
+
+deriving instance Show (PipeCoreModule n)
+
+
+-- | Core module pipeline.
 pipeCoreModule
         :: (Eq n, Ord n, Pretty n)
         => Core.Module () n
-        -> PipeCoreModule
+        -> PipeCoreModule n
         -> IO [Error]
 
 pipeCoreModule mm pp
@@ -108,14 +132,19 @@ pipeCoreModule mm pp
         PipeCoreModuleOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
+        PipeCoreModuleCheck{}
+         -> error "finish me"
+
         PipeCoreModuleSimplify simpl pipes
          -> let mm'     = applySimplifier simpl mm 
             in  liftM concat $ mapM (pipeCoreModule mm') pipes
 
-        _       -> error "pipeCoreModule: finish me"
+        PipeCoreModuleAsSea pipes
+         -> liftM concat $ mapM (pipeSeaModule mm) pipes
 
 
 -- PipeSeaModule --------------------------------------------------------------
+-- | Process a Core Sea module.
 data PipeSeaModule
         -- | Output the module in core language syntax.
         = PipeSeaModuleOutput     Sink
@@ -127,9 +156,6 @@ data PipeSeaModule
 
         -- | Compile the module into an object file.
         | PipeSeaModuleCompile    FilePath
-
-        -- | Type check the module.
-        | PipeSeaModuleCheck      [PipeSeaModule]
 
         -- | Convert the module to LLVM.
         | PipeSeaModuleToLlvm     [PipeLlvmModule]
@@ -144,8 +170,8 @@ pipeSeaModule
 
 pipeSeaModule mm pp
  = case pp of
-        PipeSeaModuleOutput _sink
-         -> error "need module pretty printer"
+        PipeSeaModuleOutput sink
+         -> pipeSink (renderIndent $ ppr mm) sink
 
         PipeSeaModulePrint withPrelude sink
          -> case Output.convertModule mm of
@@ -167,9 +193,6 @@ pipeSeaModule mm pp
         PipeSeaModuleCompile _
          -> error "finish me"
 
-        PipeSeaModuleCheck _
-         -> error "finish me"
-
         PipeSeaModuleToLlvm more
          -> do  let mm'     =  Llvm.convertModule Llvm.platform32 mm
                 results <- mapM (pipeLlvmModule mm') more
@@ -177,6 +200,7 @@ pipeSeaModule mm pp
 
 
 -- PipeLlvmModule -------------------------------------------------------------
+-- | Process an LLVM module.
 data PipeLlvmModule
         = PipeLlvmModulePrint     Sink
 
@@ -218,10 +242,16 @@ pipeLlvmModule mm pp
 
 
 -- Target ---------------------------------------------------------------------
+-- | What to do with program text.
 data Sink
+        -- | Drop it on the floor.
         = SinkDiscard
+
+        -- | Emit it to stdout.
         | SinkStdout
-        | SinkFile            FilePath
+
+        -- | Write it to this file.
+        | SinkFile FilePath
         deriving (Show)
 
 

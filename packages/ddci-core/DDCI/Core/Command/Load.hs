@@ -13,8 +13,9 @@ import DDC.Core.Pretty
 -- | Load and transform a module.
 cmdLoad :: State -> Source -> String -> IO ()
 cmdLoad state source str
+ | Language fragment    <- stateLanguage state
  = do   errs    <- pipeTextModule source str
-                $  PipeTextModuleLoadCore  (stateLanguage   state)
+                $  PipeTextModuleLoadCore  fragment
                 [  PipeCoreModuleSimplify  (stateSimplifier state)
                 [  PipeCoreModuleOutput    SinkStdout ]]
 
