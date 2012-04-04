@@ -12,12 +12,12 @@ import DDC.Base.Pretty
 -- | Parse, check and convert a Sea module to LLVM.
 cmdLlvmOut :: State -> Source -> String -> IO ()
 cmdLlvmOut state source str
- = do   errs    <- pipeTextModule source str
-                $  PipeTextModuleLoadCore  fragmentSea
-                [  PipeCoreModuleSimplify  (stateSimplifier state)
-                [  PipeCoreModuleCheck     fragmentSea
-                [  PipeCoreModuleAsSea
-                [  PipeSeaModuleToLlvm 
-                [  PipeLlvmModulePrint SinkStdout ]]]]]
+ = do   errs    <- pipeText source str
+                $  PipeTextLoadCore  fragmentSea
+                [  PipeCoreSimplify  (stateSimplifier state)
+                [  PipeCoreCheck     fragmentSea
+                [  PipeCoreAsSea
+                [  PipeSeaToLlvm 
+                [  PipeLlvmPrint SinkStdout ]]]]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs

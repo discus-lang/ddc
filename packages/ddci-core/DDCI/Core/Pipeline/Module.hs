@@ -1,23 +1,23 @@
-
+{-# LANGUAGE GADTs #-}
 module DDCI.Core.Pipeline.Module
         ( -- * Things that can go wrong
           Error(..)
 
           -- * Processing text source code
-        , PipeTextModule        (..)
-        , pipeTextModule
+        , PipeText        (..)
+        , pipeText
 
           -- * Processing core modules
-        , PipeCoreModule        (..)
-        , pipeCoreModule
+        , PipeCore        (..)
+        , pipeCore
 
           -- * Processing core Sea modules
-        , PipeSeaModule         (..)
-        , pipeSeaModule
+        , PipeSea         (..)
+        , pipeSea
 
           -- * Processing LLVM modules
-        , PipeLlvmModule        (..)
-        , pipeLlvmModule
+        , PipeLlvm        (..)
+        , pipeLlvm
 
           -- * Emitting output
         , Sink                  (..)
@@ -75,129 +75,122 @@ instance Pretty Error where
 
 -- PipeSource -----------------------------------------------------------------
 -- | Process program text.
-data PipeTextModule n (err :: * -> *) where
-  -- | Output the current module text.
-  PipeTextModuleOutput 
+data PipeText n (err :: * -> *) where
+  PipeTextOutput 
         :: Sink
-        -> PipeTextModule n err
+        -> PipeText n err
 
-  -- | Parse and type check the text as a core module.
-  PipeTextModuleLoadCore 
+  PipeTextLoadCore 
         :: (Ord n, Show n, Pretty n)
         => Fragment n err
-        -> [PipeCoreModule n]
-        -> PipeTextModule n err
+        -> [PipeCore n]
+        -> PipeText n err
 
-deriving instance Show (PipeTextModule n err)
+deriving instance Show (PipeText n err)
 
 
 -- | Text module pipeline.
-pipeTextModule
+pipeText
         :: Source
         -> String
-        -> PipeTextModule n err
+        -> PipeText n err
         -> IO [Error]
 
-pipeTextModule source str pp
+pipeText source str pp
  = case pp of
-        PipeTextModuleOutput sink
+        PipeTextOutput sink
          -> pipeSink str sink
 
-        PipeTextModuleLoadCore fragment pipes
+        PipeTextLoadCore fragment pipes
          | (Fragment profile lexString _ _)     <- fragment
          -> let sourceName      = nameOfSource source
                 toks            = lexString source str
 
             in case CL.loadModule profile sourceName toks of
                  Left err -> return $ [ErrorLoad err]
-                 Right mm -> liftM concat $ mapM (pipeCoreModule mm) pipes
+                 Right mm -> liftM concat $ mapM (pipeCore mm) pipes
 
 
 -- PipeCoreModule -------------------------------------------------------------
 -- | Process a core module.
-data PipeCoreModule n where
-  -- | Output the module in core language syntax.
-  PipeCoreModuleOutput    
+data PipeCore n where
+  PipeCoreOutput    
         :: Sink 
-        -> PipeCoreModule n
+        -> PipeCore n
 
-  -- | Type check the module.
-  PipeCoreModuleCheck      
+  PipeCoreCheck      
         :: Fragment n err
-        -> [PipeCoreModule n]
-        -> PipeCoreModule n
+        -> [PipeCore n]
+        -> PipeCore n
 
-  -- | Apply a simplifier to the module.
-  PipeCoreModuleSimplify  
+  PipeCoreSimplify  
         :: Simplifier 
-        -> [PipeCoreModule n] 
-        -> PipeCoreModule n
+        -> [PipeCore n] 
+        -> PipeCore n
 
-  -- | Specialised processing for modules in the Core Sea fragment.
-  PipeCoreModuleAsSea
-        :: [PipeSeaModule] 
-        -> PipeCoreModule Output.Name
+  PipeCoreAsSea
+        :: [PipeSea] 
+        -> PipeCore Output.Name
 
-deriving instance Show (PipeCoreModule n)
+deriving instance Show (PipeCore n)
 
 
 -- | Core module pipeline.
-pipeCoreModule
+pipeCore
         :: (Eq n, Ord n, Show n, Pretty n)
         => C.Module () n
-        -> PipeCoreModule n
+        -> PipeCore n
         -> IO [Error]
 
-pipeCoreModule mm pp
+pipeCore mm pp
  = case pp of
-        PipeCoreModuleOutput sink
+        PipeCoreOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeCoreModuleCheck fragment pipes
+        PipeCoreCheck fragment pipes
          -> let profile         = fragmentProfile fragment
                 primDataDefs    = profilePrimDataDefs   profile
                 primKindEnv     = profilePrimKinds      profile
                 primTypeEnv     = profilePrimTypes      profile
             in  case C.checkModule primDataDefs primKindEnv primTypeEnv mm of
                   Left err  -> return $ [ErrorLint err]
-                  Right mm' -> liftM concat $ mapM (pipeCoreModule mm') pipes
+                  Right mm' -> liftM concat $ mapM (pipeCore mm') pipes
 
-        PipeCoreModuleSimplify simpl pipes
+        PipeCoreSimplify simpl pipes
          -> let mm'     = applySimplifier simpl mm 
-            in  liftM concat $ mapM (pipeCoreModule mm') pipes
+            in  liftM concat $ mapM (pipeCore mm') pipes
 
-        PipeCoreModuleAsSea pipes
-         -> liftM concat $ mapM (pipeSeaModule mm) pipes
+        PipeCoreAsSea pipes
+         -> liftM concat $ mapM (pipeSea mm) pipes
 
 
 -- PipeSeaModule --------------------------------------------------------------
 -- | Process a Core Sea module.
-data PipeSeaModule
+data PipeSea
         -- | Output the module in core language syntax.
-        = PipeSeaModuleOutput     Sink
+        = PipeSeaOutput     Sink
 
         -- | Print the module as a C source code.
-        | PipeSeaModulePrint      
+        | PipeSeaPrint      
         { pipeWithSeaPrelude    :: Bool
         , pipeModuleSink        :: Sink }
 
         -- | Convert the module to LLVM.
-        | PipeSeaModuleToLlvm     [PipeLlvmModule]
+        | PipeSeaToLlvm     [PipeLlvm]
         deriving (Show)
 
 
 -- | Process a Core Sea module.
-pipeSeaModule 
-        :: C.Module () Output.Name 
-        -> PipeSeaModule 
+pipeSea :: C.Module () Output.Name 
+        -> PipeSea 
         -> IO [Error]
 
-pipeSeaModule mm pp
+pipeSea mm pp
  = case pp of
-        PipeSeaModuleOutput sink
+        PipeSeaOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeSeaModulePrint withPrelude sink
+        PipeSeaPrint withPrelude sink
          -> case Output.convertModule mm of
                 Left  err 
                  ->     return $ [ErrorSeaConvert err]
@@ -214,18 +207,18 @@ pipeSeaModule mm pp
                  | otherwise
                  -> pipeSink (renderIndent doc)  sink
 
-        PipeSeaModuleToLlvm more
+        PipeSeaToLlvm more
          -> do  let mm'     =  Llvm.convertModule Llvm.platform32 mm
-                results <- mapM (pipeLlvmModule mm') more
+                results <- mapM (pipeLlvm mm') more
                 return  $ concat results
 
 
 -- PipeLlvmModule -------------------------------------------------------------
 -- | Process an LLVM module.
-data PipeLlvmModule
-        = PipeLlvmModulePrint     Sink
+data PipeLlvm
+        = PipeLlvmPrint     Sink
 
-        | PipeLlvmModuleCompile   
+        | PipeLlvmCompile   
         { pipeBuilder           :: Builder
         , pipeFileLlvm          :: FilePath
         , pipeFileAsm           :: FilePath
@@ -235,17 +228,17 @@ data PipeLlvmModule
 
 
 -- | Process an LLVM module.
-pipeLlvmModule 
+pipeLlvm 
         :: Llvm.Module 
-        -> PipeLlvmModule 
+        -> PipeLlvm 
         -> IO [Error]
 
-pipeLlvmModule mm pp
+pipeLlvm mm pp
  = case pp of
-        PipeLlvmModulePrint sink
+        PipeLlvmPrint sink
          ->     pipeSink (renderIndent $ ppr mm) sink
 
-        PipeLlvmModuleCompile builder llPath sPath oPath exePath
+        PipeLlvmCompile builder llPath sPath oPath exePath
          -> do  -- Write out the LLVM source file.
                 let llSrc       = renderIndent $ ppr mm
                 writeFile llPath llSrc

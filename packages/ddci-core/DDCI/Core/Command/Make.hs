@@ -36,13 +36,13 @@ makeDCE state source filePath
         -- TODO check that it exists.
         src     <- readFile filePath
 
-        errs    <- pipeTextModule source src
-                $  PipeTextModuleLoadCore  fragmentSea
-                [  PipeCoreModuleSimplify  (stateSimplifier state)
-                [  PipeCoreModuleCheck     fragmentSea
-                [  PipeCoreModuleAsSea
-                [  PipeSeaModuleToLlvm 
-                [  PipeLlvmModuleCompile 
+        errs    <- pipeText source src
+                $  PipeTextLoadCore  fragmentSea
+                [  PipeCoreSimplify  (stateSimplifier state)
+                [  PipeCoreCheck     fragmentSea
+                [  PipeCoreAsSea
+                [  PipeSeaToLlvm 
+                [  PipeLlvmCompile 
                         { pipeBuilder           = builder_I386_Darwin
                         , pipeFileLlvm          = llPath
                         , pipeFileAsm           = sPath

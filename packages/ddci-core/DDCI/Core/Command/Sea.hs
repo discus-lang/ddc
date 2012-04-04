@@ -13,12 +13,12 @@ import qualified Data.Set               as Set
 -- | Parse, check, and fully evaluate an expression.
 cmdSeaOut :: State -> Source -> String -> IO ()
 cmdSeaOut state source str
- = do   errs    <- pipeTextModule source str
-                $  PipeTextModuleLoadCore  fragmentSea
-                [  PipeCoreModuleSimplify  (stateSimplifier state)
-                [  PipeCoreModuleCheck     fragmentSea 
-                [  PipeCoreModuleAsSea
-                [  PipeSeaModulePrint 
+ = do   errs    <- pipeText source str
+                $  PipeTextLoadCore  fragmentSea
+                [  PipeCoreSimplify  (stateSimplifier state)
+                [  PipeCoreCheck     fragmentSea 
+                [  PipeCoreAsSea
+                [  PipeSeaPrint 
                         (Set.member SeaPrelude (stateModes state))
                         SinkStdout ]]]]
 

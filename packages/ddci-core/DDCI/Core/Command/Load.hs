@@ -14,10 +14,10 @@ import DDC.Core.Pretty
 cmdLoad :: State -> Source -> String -> IO ()
 cmdLoad state source str
  | Language fragment    <- stateLanguage state
- = do   errs    <- pipeTextModule source str
-                $  PipeTextModuleLoadCore  fragment
-                [  PipeCoreModuleSimplify  (stateSimplifier state)
-                [  PipeCoreModuleCheck     fragment
-                [  PipeCoreModuleOutput    SinkStdout ]]]
+ = do   errs    <- pipeText source str
+                $  PipeTextLoadCore  fragment
+                [  PipeCoreSimplify  (stateSimplifier state)
+                [  PipeCoreCheck     fragment
+                [  PipeCoreOutput    SinkStdout ]]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs
