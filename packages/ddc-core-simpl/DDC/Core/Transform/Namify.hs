@@ -1,3 +1,5 @@
+
+-- | Renaming binders.
 module DDC.Core.Transform.Namify
         ( Namifier      (..)
         , makeNamifier
@@ -5,6 +7,7 @@ module DDC.Core.Transform.Namify
 where
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Type.Compounds
 import Control.Monad
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Sum   as Sum
@@ -12,6 +15,8 @@ import qualified DDC.Type.Env   as Env
 import Control.Monad.State.Strict
 
 
+-- | Holds a function to rename binders, 
+--   and the state of the renamer as we decend into the tree.
 data Namifier s n
         = Namifier
         { -- | Create a new name for this bind that is not in the given
@@ -25,9 +30,14 @@ data Namifier s n
           --   namification.
         , namifierStack :: [Bind n] }
 
+
+-- | Construct a new namifier.
 makeNamifier 
-        :: (Env n -> Bind n -> State s n)
-        -> Env n
+        :: (Env n -> Bind n -> State s n)       
+                        -- ^ Function to rename binders.
+                        --   The name chosen cannot be a member of the given
+                        ---  environment.
+        -> Env n        -- ^ Starting environment of names we cannot use.
         -> Namifier s n
 
 makeNamifier new env
@@ -36,7 +46,7 @@ makeNamifier new env
 
 -- Namify ---------------------------------------------------------------------
 class Namify (c :: * -> *) where
- namify :: Ord n
+ namify :: (Ord n, Show n)
         => Namifier s n
         -> Namifier s n
         -> c n -> State s (c n)
@@ -46,15 +56,11 @@ instance Namify Type where
  namify tnam xnam tt
   = let down = namify tnam xnam
     in case tt of
-        TVar (UIx i k)
-         -> do  let (BName n _) = namifierStack tnam !! i
-                return  $ TVar (UName n k)
-
-        TVar{}          -> return tt
+        TVar u          -> return $ TVar (rewrite tnam u)
         TCon{}          -> return tt
 
         TForall b t
-         -> do  (tnam', b')     <- push tnam b
+         -> do  (tnam', b')     <- pushT tnam b
                 t'              <- namify tnam' xnam t
                 return  $ TForall b' t'
 
@@ -70,15 +76,23 @@ instance Namify (Module a) where
         return  $ mm { moduleLets = lts' }
 
 
+-- TODO: refactor module to contain an expression, so we don't need 
+-- separate cases for top-level definitions.
 instance Namify (Lets a) where
  namify tnam xnam ll
   = let down = namify tnam xnam
     in case ll of
         LLet mode b x
          -> do  mode'           <- down mode           
-                (xnam', b')     <- push xnam b
+                (xnam', b')     <- pushX  tnam xnam b
                 x'              <- namify tnam xnam' x
-                return          $ LLet mode' b' x'
+                return  $ LLet mode' b' x'
+
+        LRec bxs
+         -> do  let (bs, xs)    = unzip bxs
+                (xnam', bs')    <- pushXs tnam xnam bs
+                xs'             <- mapM (namify tnam xnam') xs
+                return  $ LRec (zip bs' xs')
 
         _       -> error "namify finish me"
 
@@ -95,11 +109,7 @@ instance Namify Witness where
  namify tnam xnam ww
   = let down = namify tnam xnam
     in case ww of
-        WVar (UIx i t)
-         -> do  let (BName n _) = namifierStack xnam !! i
-                return  $ WVar (UName n t)
-
-        WVar{}          -> return ww
+        WVar u          -> return $ WVar (rewrite xnam u)
         WCon{}          -> return ww
         WApp  w1 w2     -> liftM2 WApp  (down w1) (down w2)
         WJoin w1 w2     -> liftM2 WJoin (down w1) (down w2)
@@ -110,32 +120,128 @@ instance Namify (Exp a) where
  namify tnam xnam xx
   = let down = namify tnam xnam
     in case xx of
-        XVar a (UIx i t)
-         -> do  let (BName n _)  = namifierStack xnam !! i
-                return  $ XVar a (UName n t)
-
-        XVar{}          -> return xx
+        XVar a u        -> return $ XVar a (rewrite xnam u)
         XCon{}          -> return xx
 
         XLAM a b x
-         -> do  (tnam', b')     <- push tnam b
+         -> do  (tnam', b')     <- pushT  tnam b
                 x'              <- namify tnam' xnam x
                 return $ XLAM a b' x'
 
         XLam a b x
-         -> do  (xnam', b')     <- push xnam b
+         -> do  (xnam', b')     <- pushX  tnam xnam b
                 x'              <- namify tnam xnam' x
                 return $ XLam a b' x'
 
-        XApp a x1 x2    -> liftM3 XApp  (return a) (down x1) (down x2)
-        XCase a x1 alts -> liftM3 XCase (return a) (down x1) (mapM down alts)
+        XApp  a x1 x2   
+         -> liftM3 XApp     (return a) (down x1)  (down x2)
 
-        _ -> error "finish me"
+        XLet  a (LLet mode b x1) x2
+         -> do  mode'           <- down mode
+                x1'             <- namify tnam xnam x1
+                (xnam', b')     <- pushX  tnam xnam b
+                x2'             <- namify tnam xnam' x2
+                return $ XLet a (LLet mode' b' x1') x2'
+
+        XLet a (LRec bxs) x2
+         -> do  let (bs, xs)    = unzip bxs
+                (xnam', bs')    <- pushXs tnam xnam bs
+                xs'             <- mapM (namify tnam xnam') xs
+                x2'             <- namify tnam xnam' x2
+                return $ XLet a (LRec (zip bs' xs')) x2'
+
+        XLet a (LLetRegion b bs) x2
+         -> do  (tnam', b')     <- pushT tnam b
+                (xnam', bs')    <- pushXs tnam' xnam bs
+                x2'             <- namify tnam' xnam' x2
+                return $ XLet a (LLetRegion b' bs') x2'
+
+        XLet a (LWithRegion u) x2
+         -> do  let u'          =  rewrite xnam u
+                x2'             <- down x2
+                return  $ XLet a (LWithRegion u') x2'
+
+        XCase a x1 alts -> liftM3 XCase    (return a) (down x1)  (mapM down alts)
+        XCast a c  x    -> liftM3 XCast    (return a) (down c)   (down x)
+        XType t         -> liftM  XType    (down t)
+        XWitness w      -> liftM  XWitness (down w)
 
 
 instance Namify (Alt a) where
- namify 
-  = error "finish me"
+ namify tnam xnam (AAlt PDefault x)
+  = liftM (AAlt PDefault) (namify tnam xnam x)
+
+ namify tnam xnam (AAlt (PData u bs) x)
+  = do  (xnam', bs')    <- pushXs tnam xnam bs
+        x'              <- namify tnam xnam' x
+        return  $ AAlt (PData u bs') x'
+
+
+instance Namify Cast where
+ namify tnam xnam cc
+  = let down = namify tnam xnam
+    in case cc of
+        CastWeakenEffect  eff   -> liftM CastWeakenEffect  (down eff)
+        CastWeakenClosure clo   -> liftM CastWeakenClosure (down clo)
+        CastPurify w            -> liftM CastPurify (down w)
+        CastForget w            -> liftM CastForget (down w)
+
+
+-- | Rewrite anonymous binders to use the 
+rewrite  :: Show n
+        => Namifier s n
+        -> Bound n
+        -> Bound n
+rewrite nam u
+ = case u of
+        UIx i t
+         -> case lookup i (zip [0..] (namifierStack nam)) of
+                Just (BName n _) -> UName n t
+                _                -> u
+
+        _       -> u
+
+
+-- Push -----------------------------------------------------------------------
+-- Chosing new names for anonymous binders and pushing them on the stack.
+
+-- | Push a level-0 binder on the stack.
+--   When we do this we also rewrite any indices in its type annotation.
+pushX   :: (Ord n, Show n)
+        => Namifier s n
+        -> Namifier s n
+        -> Bind n
+        -> State s (Namifier s n, Bind n) 
+
+pushX tnam xnam b
+ = do   t'      <- namify tnam xnam (typeOfBind b)
+        let b'  = replaceTypeOfBind t' b
+        push xnam b'
+
+
+-- | Push some level-0 binders on the stack.
+--   When we do this we also rewrite their type annotations.
+pushXs   :: (Ord n, Show n)
+        => Namifier s n
+        -> Namifier s n
+        -> [Bind n]
+        -> State s (Namifier s n, [Bind n])
+
+pushXs _tnam xnam []    
+        = return (xnam, [])
+
+pushXs tnam xnam (b:bs)
+ = do   (xnam1, b')      <- pushX  tnam xnam  b
+        (xnam2, bs')     <- pushXs tnam xnam1 bs
+        return (xnam2, b' : bs')
+
+
+-- | Push a level-1 binder on the stack.
+pushT   :: Ord n
+        => Namifier s n
+        -> Bind n
+        -> State s (Namifier s n, Bind n)
+pushT   = push
 
 
 -- | Rewrite an anonymous binder and push it on the stack.
@@ -154,4 +260,3 @@ push nam b
                         , b' )
         _ ->    return  ( nam   { namifierEnv   = Env.extend b (namifierEnv nam) }
                         , b)
-

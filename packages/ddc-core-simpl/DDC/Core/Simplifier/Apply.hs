@@ -25,7 +25,7 @@ import Control.Monad.State.Strict
 --
 --   The state monad holds a fresh name generator.
 applySimplifier 
-        :: (Show a, Ord n) 
+        :: (Show a, Ord n, Show n) 
         => Simplifier           -- ^ Simplifier to apply.
         -> Namifier s n         -- ^ Type namifier.
         -> Namifier s n         -- ^ Exp  namifier
@@ -44,7 +44,7 @@ applySimplifier spec namT namX mm
 
 -- | Apply a transform to a module.
 applyTransform
-        :: (Show a, Ord n)
+        :: (Show a, Ord n, Show n)
         => Transform            -- ^ Transform to apply.
         -> Namifier s n         -- ^ Type namifier.
         -> Namifier s n         -- ^ Exp  namifier.
