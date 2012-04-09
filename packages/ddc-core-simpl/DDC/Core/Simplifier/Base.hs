@@ -29,6 +29,7 @@ data Transform
         | Flatten
         | Beta
         | Rewrite
+        | Namify
         deriving (Eq, Show)
 
 
@@ -45,9 +46,10 @@ instance Pretty Simplifier where
 instance Pretty Transform where
  ppr ss
   = case ss of
-        Id             -> text "Id"
-        Anonymize      -> text "Anonymize"
-        Snip           -> text "Snip"
-        Flatten        -> text "Flatten"
-        Beta           -> text "Beta"
-        Rewrite        -> text "Rewrite"
+        Id              -> text "Id"
+        Anonymize       -> text "Anonymize"
+        Snip            -> text "Snip"
+        Flatten         -> text "Flatten"
+        Beta            -> text "Beta"
+        Rewrite         -> text "Rewrite"
+        Namify          -> text "Namify"

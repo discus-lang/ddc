@@ -3,7 +3,7 @@
 module DDC.Type.Collect
         ( freeT
         , collectBound
-        , collectSpecBinds
+        , collectBinds
         , BindTree   (..)
         , BindWay    (..)
         , BindStruct (..)
@@ -59,10 +59,16 @@ collectBoundOfTree tt
 
 
 -- collectSpecBinds -----------------------------------------------------------
--- | Collect all the Spec binders in a thing.
-collectSpecBinds :: (BindStruct c, Ord n) => c n -> [Bind n]
-collectSpecBinds 
-        = concatMap collectSpecBindsOfTree . slurpBindTree
+-- | Collect all the spec and exp binders in a thing.
+collectBinds 
+        :: (BindStruct c, Ord n) 
+        => c n 
+        -> ([Bind n], [Bind n])
+
+collectBinds thing
+ = let  tree    = slurpBindTree thing
+   in   ( concatMap collectSpecBindsOfTree tree
+        , concatMap collectExpBindsOfTree  tree)
         
 
 collectSpecBindsOfTree :: Ord n => BindTree n -> [Bind n]
@@ -75,6 +81,20 @@ collectSpecBindsOfTree tt
 
          | otherwise
          ->  concatMap collectSpecBindsOfTree ts
+
+        _ -> []
+
+
+collectExpBindsOfTree :: Ord n => BindTree n -> [Bind n]
+collectExpBindsOfTree tt
+ = case tt of
+        BindDef way bs ts
+         |   BoundExpWit <- boundLevelOfBindWay way
+         ->  concat ( bs
+                    : map collectExpBindsOfTree ts)
+
+         | otherwise
+         ->  concatMap collectExpBindsOfTree ts
 
         _ -> []
 

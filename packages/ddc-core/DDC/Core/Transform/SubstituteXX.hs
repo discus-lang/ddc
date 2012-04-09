@@ -41,7 +41,7 @@ substituteXX b xArg xx
         , subConflict1  
                 = Set.fromList
                 $  (mapMaybe takeNameOfBound $ Set.toList $ freeT Env.empty xArg) 
-                ++ (mapMaybe takeNameOfBind  $ collectSpecBinds xArg)
+                ++ (mapMaybe takeNameOfBind  $ fst $ collectBinds xArg)
 
           -- Rewrite level-0 binders that have the same name as any
           -- of the free variables in the expression to substitute.

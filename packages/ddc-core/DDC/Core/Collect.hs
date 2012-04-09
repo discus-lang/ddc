@@ -4,7 +4,7 @@ module DDC.Core.Collect
         ( freeT
         , freeX
         , collectBound
-        , collectSpecBinds)
+        , collectBinds)
 where
 import DDC.Type.Collect
 import DDC.Type.Compounds

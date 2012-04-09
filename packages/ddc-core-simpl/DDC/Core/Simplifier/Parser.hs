@@ -41,6 +41,7 @@ parseTransform (KCon name)
         "Flatten"       -> Just Flatten
         "Beta"          -> Just Beta
         "Rewrite"       -> Just Rewrite
+        "Namify"        -> Just Namify
         _               -> Nothing
 
 parseTransform _        

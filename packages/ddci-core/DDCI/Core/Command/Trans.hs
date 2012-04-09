@@ -18,6 +18,10 @@ import DDC.Type.Compounds
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Base.Pretty
+import DDC.Core.Transform.Namify
+import DDC.Type.Env                             (Env)
+import qualified Control.Monad.State.Strict     as S
+import qualified DDC.Type.Env                   as Env
 
 
 -- | Apply the current transform to an expression.
@@ -44,7 +48,14 @@ applyTrans
         -> IO (Maybe (Exp () Name))
 
 applyTrans state (x, t1, eff1, clo1)
- = do	let x' = applySimplifierX (stateSimplifier state) (stateRewriteRulesList state) x
+ = do	let (k)
+        let x' = flip S.evalState 0
+                $ applySimplifierX 
+                        (stateSimplifier state) 
+                        (stateRewriteRulesList state)
+                        namifierT namifierV
+                        x
+
 	case checkExp primDataDefs primKindEnv primTypeEnv x' of
 	  Right (_, t2, eff2, clo2)
 	   |  equivT t1 t2
@@ -72,7 +83,8 @@ applyTrans state (x, t1, eff1, clo1)
 		 return Nothing
 
 
--- | Apply the current transform to an expression, then evaluate and display the result
+-- | Apply the current transform to an expression,
+--   then evaluate and display the result
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
  = cmdParseCheckExp state fragmentEval source str >>= goStore
@@ -90,4 +102,37 @@ cmdTransEval state source str
 		   -> do outDocLn state $ ppr x'
 			 evalExp state (x',t1,eff1,clo1)
                          return ()
+
+
+-- Namifiers ------------------------------------------------------------------
+-- | Namifier for type names.
+namifierT :: Env Name -> Namifier Int Name
+namifierT tbinds
+ = makeNamifier tbinds freshT
+
+-- | Create a new type variable name that is not in the given environment.
+freshT :: Env Name -> Bind Name -> S.State Int Name
+freshT env bb
+ = do   i       <- S.get
+        S.put (i + 1)
+        let n =  NameVar ("t" ++ show i)
+        case Env.lookupName n env of
+         Nothing -> return n
+         _       -> freshT env bb
+
+
+-- | Namifier for value names.
+namifierV :: Env Name -> Namifier Int Name
+namifierV kbinds
+ = makeNamifier kbinds freshV
+
+-- | Create a new value variable name that is not in the given environment.
+freshV :: Env Name -> Bind Name -> S.State Int Name
+freshV env bb
+ = do   i       <- S.get
+        S.put (i + 1)
+        let n = NameVar ("v" ++ show i)
+        case Env.lookupName n env of
+         Nothing -> return n
+         _       -> freshV env bb
 

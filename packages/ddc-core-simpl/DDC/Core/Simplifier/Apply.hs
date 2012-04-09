@@ -16,6 +16,8 @@ import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Transform.Rewrite.Rule
+import DDC.Core.Transform.Namify
+import Control.Monad.State.Strict
 
 
 -- Modules --------------------------------------------------------------------
@@ -51,29 +53,41 @@ applyTransform spec mm
 -- | Apply a simplifier to an expression.
 applySimplifierX 
         :: (Show a, Show n, Ord n)
-        => Simplifier -> [RewriteRule a n] 
-        -> Exp a n    -> Exp a n
+        => Simplifier 
+        -> [RewriteRule a n] 
+        -> Namifier s n
+        -> Namifier s n
+        -> Exp a n    
+        -> State s (Exp a n)
 
-applySimplifierX spec rules xx
+applySimplifierX spec rules namK namT xx
  = case spec of
         Seq t1 t2
-         -> applySimplifierX t2 rules (applySimplifierX t1 rules xx)
+         -> do  xx'     <- applySimplifierX t1 rules namK namT xx
+                applySimplifierX t2 rules namK namT xx'
 
         Trans t1
-         -> applyTransformX t1 rules xx
+         -> applyTransformX  t1 rules namK namT xx
 
 
 -- | Apply a transform to an expression.
 applyTransformX 
         :: (Show a, Show n, Ord n)
-        => Transform  -> [RewriteRule a n] 
-        -> Exp a n    -> Exp a n
+        => Transform  
+        -> [RewriteRule a n] 
+        -> Namifier s n
+        -> Namifier s n
+        -> Exp a n    
+        -> State s (Exp a n)
 
-applyTransformX spec rules xx
+applyTransformX spec rules namK namT xx
  = case spec of
-        Id              -> xx
-        Anonymize       -> anonymizeX xx
-        Snip            -> snip xx
-        Flatten         -> flatten xx
-        Beta            -> betaReduce xx
-        Rewrite         -> rewrite rules xx
+        Id              -> return xx
+        Anonymize       -> return $ anonymizeX xx
+        Snip            -> return $ snip xx
+        Flatten         -> return $ flatten xx
+        Beta            -> return $ betaReduce xx
+        Rewrite         -> return $ rewrite rules xx
+        Namify          -> namify namK namT xx
+
+
