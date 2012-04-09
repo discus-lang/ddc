@@ -1,0 +1,14 @@
+
+
+ok
+
+-- Simple namification
+\(v0 : Int R0#). v0
+
+-- Two names
+\(v0 : Int R0# -> Int R1#). \(v1 : Int R0#). v0 v1
+
+-- Don't introduce names already used on binders.
+\(v1 : Int R0#). \(v0 : Int R1#). v1
+
+

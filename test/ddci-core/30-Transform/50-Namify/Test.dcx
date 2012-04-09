@@ -1,0 +1,14 @@
+
+
+:set trans Namify
+
+-- Simple namification
+:trans (\(^ : Int R0#). ^0)
+
+-- Two names
+:trans (\(^ : Int R0# -> Int R1#) (^ : Int R0#). ^1 ^0)
+
+-- Don't introduce names already used on binders.
+:trans (\(^ : Int R0#) (v0 : Int R1#). ^0)
+
+

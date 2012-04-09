@@ -12,6 +12,7 @@ import DDCI.Core.State
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
 import DDC.Core.Simplifier
+import DDC.Core.Collect
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Type.Compounds
@@ -48,12 +49,14 @@ applyTrans
         -> IO (Maybe (Exp () Name))
 
 applyTrans state (x, t1, eff1, clo1)
- = do	let (k)
+ = do	let (tbinds, vbinds) = collectBinds x
+        let kenv        = Env.fromList tbinds
+        let tenv        = Env.fromList vbinds
         let x' = flip S.evalState 0
                 $ applySimplifierX 
                         (stateSimplifier state) 
                         (stateRewriteRulesList state)
-                        namifierT namifierV
+                        (namifierT kenv) (namifierV tenv)
                         x
 
 	case checkExp primDataDefs primKindEnv primTypeEnv x' of
@@ -107,8 +110,8 @@ cmdTransEval state source str
 -- Namifiers ------------------------------------------------------------------
 -- | Namifier for type names.
 namifierT :: Env Name -> Namifier Int Name
-namifierT tbinds
- = makeNamifier tbinds freshT
+namifierT kbinds
+ = makeNamifier freshT kbinds
 
 -- | Create a new type variable name that is not in the given environment.
 freshT :: Env Name -> Bind Name -> S.State Int Name
@@ -123,8 +126,8 @@ freshT env bb
 
 -- | Namifier for value names.
 namifierV :: Env Name -> Namifier Int Name
-namifierV kbinds
- = makeNamifier kbinds freshV
+namifierV tbinds
+ = makeNamifier freshV tbinds
 
 -- | Create a new value variable name that is not in the given environment.
 freshV :: Env Name -> Bind Name -> S.State Int Name
