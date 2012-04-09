@@ -1,6 +1,7 @@
 
 module DDC.Core.Transform.Flatten
-        (flatten)
+        ( flatten
+        , flatten1)
 where
 import DDC.Core.Transform.TransformX
 import qualified DDC.Core.Transform.LiftX       as L
@@ -8,21 +9,22 @@ import qualified DDC.Core.Transform.AnonymizeX  as A
 import DDC.Core.Exp
 import Data.Functor.Identity
 
-
+-- | Flatten all nested let-expressions in a thing.
 flatten :: Ord n 
         => (TransformUpMX Identity c)
         => c a n -> c a n
 flatten = transformUpX' flatten1
 
 
--- | Perform let-floating on strict non-recursive lets
---   Only does the top level, to clean up the ones directly produced by makeLets.
---   let b1 = (let b2 = def2 in x2)
---   in x1
---   ==>
---   let b2 = def2
---   in let b1 = x2
---   in x1
+-- | Flatten a single nested let-expression.
+--
+-- @
+--      let b1 = (let b2 = def2 in x2) in x1
+--  ==> let b2 = def2 in let b1 = x2 in x1
+-- @
+--
+---
+-- TODO: make this work on lazy lets as well.
 flatten1
         :: Ord n
         => Exp a n

@@ -7,8 +7,8 @@ where
 import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
-import qualified DDC.Core.Sea.Output.Name       as E
-import qualified DDC.Core.Exp                   as C
+import qualified DDC.Core.Sea.Output    as E
+import qualified DDC.Core.Exp           as C
 
 
 -- Atoms ----------------------------------------------------------------------

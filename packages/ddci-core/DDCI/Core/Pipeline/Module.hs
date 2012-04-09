@@ -35,8 +35,7 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Llvm.Platform         as Llvm
-import qualified DDC.Core.Sea.Output.Convert    as Output
-import qualified DDC.Core.Sea.Output.Name       as Output
+import qualified DDC.Core.Sea.Output            as Output
 import qualified DDC.Llvm.Module                as Llvm
 import qualified DDC.Type.Env                   as Env
 import qualified Control.Monad.State.Strict     as S

@@ -28,18 +28,22 @@ Executable ddci-core
         filepath        == 1.3.*,
         haskeline       == 0.6.4.*,
         haskell-src-exts== 1.*,
+        directory       == 1.1.*,
+        mtl             == 2.0.*,
         ddc-base        == 0.3.0.*,
         ddc-type        == 0.3.0.*,
         ddc-core        == 0.3.0.*,
         ddc-core-eval   == 0.3.0.*,
         ddc-core-simpl  == 0.3.0.*,
         ddc-core-sea    == 0.3.0.*,
-        ddc-core-llvm   == 0.3.0.*
+        ddc-core-llvm   == 0.3.0.*,
+        ddc-llvm        == 0.3.0.*
 
   Main-is:
         Main.hs
-
+  
   Other-modules:
+        DDCI.Core.Build.Builder
         DDCI.Core.Command.Ast
         DDCI.Core.Command.Check
         DDCI.Core.Command.Eval
@@ -49,13 +53,22 @@ Executable ddci-core
         DDCI.Core.Command.Sea
         DDCI.Core.Command.Set
         DDCI.Core.Command.Trans
+        DDCI.Core.Language.Base
+        DDCI.Core.Language.Eval
+        DDCI.Core.Language.Sea
+        DDCI.Core.Language.Zero
+        DDCI.Core.Pipeline.Module
+        DDCI.Core.Interface.Args
+        DDCI.Core.Interface.Batch
+        DDCI.Core.Interface.Interactive
         DDCI.Core.Stats.Trace
-        DDCI.Core.Fragment
-        DDCI.Core.IO
+        DDCI.Core.Command
+        DDCI.Core.Input
+        DDCI.Core.Language
         DDCI.Core.Mode
+        DDCI.Core.Output
         DDCI.Core.Rewrite
         DDCI.Core.State
-        DDCI.Core.Transform
 
   Extensions:
         PatternGuards
@@ -67,7 +80,8 @@ Executable ddci-core
         TypeSynonymInstances
         FlexibleInstances
         StandaloneDeriving
-        GADTs
+        KindSignatures
+        RankNTypes
 
   ghc-options:
         -Wall

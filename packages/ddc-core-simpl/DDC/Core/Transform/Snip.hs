@@ -1,5 +1,5 @@
 
--- | Snip out applications.
+-- | Snip out nested applications.
 module DDC.Core.Transform.Snip
         (Snip(..))
 where
@@ -13,7 +13,13 @@ import qualified Data.Map                       as Map
 
 
 class Snip (c :: * -> *) where
- -- | Snip out applications.
+
+ -- | Snip out nested applications as anonymous bindings.
+ -- 
+ -- @
+ --      f (g x) (h y)
+ --  ==> let ^ = g x in ^ = h y in f ^1 ^0
+ -- @
  snip :: Ord n => c n -> c n
 
 

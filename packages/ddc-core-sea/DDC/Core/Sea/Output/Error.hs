@@ -12,7 +12,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 
 -- | Things that can go wrong when converting the Sea fragment
---   to real C-code.
+--   to C source text.
 data Error a
         -- Modules must contain a top-level letrec.
         = ErrorNoTopLevelLetrec

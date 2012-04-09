@@ -6,7 +6,8 @@ where
 import DDC.Core.Simplifier.Base
 import Data.Monoid
 
+-- | Conversion to administrative normal-form.
 anormalize :: Simplifier
-anormalize = Trans Snip <> Trans Flatten
+anormalize = Trans Snip <> Trans Flatten <> Trans Namify
 
 

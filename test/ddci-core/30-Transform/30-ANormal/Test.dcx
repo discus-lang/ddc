@@ -1,5 +1,5 @@
 :set +Indent
-:set trans anormalize
+:set trans Snip <> Flatten
 
 -- Identity function
 :trans (\(x:Unit). x) ()

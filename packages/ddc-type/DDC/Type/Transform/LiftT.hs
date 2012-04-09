@@ -3,11 +3,21 @@
 ---
 --   TODO: merge this code with LowerT
 module DDC.Type.Transform.LiftT
-        (LiftT(..))
+        ( liftT
+        , LiftT(..))
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as Sum
+
+-- | Lift type indices in a thing the given number of levels.       
+liftT  :: (Ord n, LiftT c)
+       => Int          -- ^ Number of levels to lift
+       -> c n          -- ^ Lift type indices in this thing.
+       -> c n
+        
+liftT n xx  = liftAtDepthT n 0 xx
+
 
 
 class LiftT (c :: * -> *) where
@@ -20,15 +30,7 @@ class LiftT (c :: * -> *) where
         -> c n          -- ^ Lift type indices in this thing.
         -> c n
  
- -- | Wrapper for `liftAtDepthT` that starts at depth 0.       
- liftT  :: forall n. Ord n
-        => Int          -- ^ Number of levels to lift
-        -> c n          -- ^ Lift type indices in this thing.
-        -> c n
-        
- liftT n xx  = liftAtDepthT n 0 xx
  
-
 instance LiftT Bind where
  liftAtDepthT n d bb
   = replaceTypeOfBind (liftAtDepthT n d $ typeOfBind bb) bb

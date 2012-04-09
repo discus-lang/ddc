@@ -21,6 +21,7 @@ instance Monoid Simplifier where
 
 -- Transform ------------------------------------------------------------------
 -- | Represents individual transforms to apply during simplification.
+---
 --   TODO: turn application of rewrite rules into its own transform.
 data Transform
         = Id

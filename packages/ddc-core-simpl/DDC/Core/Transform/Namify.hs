@@ -1,9 +1,9 @@
 
--- | Renaming binders.
+-- | Rewriting of anonymous binders to named binders.
 module DDC.Core.Transform.Namify
-        ( Namifier      (..)
-        , makeNamifier
-        , namify)
+        ( Namify        (..)
+        , Namifier      (..)
+        , makeNamifier)
 where
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -46,10 +46,12 @@ makeNamifier new env
 
 -- Namify ---------------------------------------------------------------------
 class Namify (c :: * -> *) where
+ -- | Rewrite anonymous binders to named binders in a thing.
  namify :: (Ord n, Show n)
-        => Namifier s n
-        -> Namifier s n
-        -> c n -> State s (c n)
+        => Namifier s n         -- ^ Namifier for type names (level-1)
+        -> Namifier s n         -- ^ Namifier for exp names (level-0)
+        -> c n                  -- ^ Rewrite binders in this thing.
+        -> State s (c n)
 
 
 instance Namify Type where

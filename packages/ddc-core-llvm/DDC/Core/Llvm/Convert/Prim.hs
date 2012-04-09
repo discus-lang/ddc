@@ -8,10 +8,10 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
 import DDC.Type.Compounds
-import Data.Sequence                            (Seq)
-import qualified DDC.Core.Exp                   as C
-import qualified DDC.Core.Sea.Output.Name       as E
-import qualified Data.Sequence                  as Seq
+import Data.Sequence                    (Seq)
+import qualified DDC.Core.Exp           as C
+import qualified DDC.Core.Sea.Output    as E
+import qualified Data.Sequence          as Seq
 
 
 -- Prim call ------------------------------------------------------------------

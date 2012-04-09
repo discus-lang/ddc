@@ -1,10 +1,10 @@
 
 -- | Capture avoiding substitution of types in types.
 module DDC.Type.Transform.SubstituteT
-        ( SubstituteT(..)
-        , substituteT
+        ( substituteT
         , substituteTs
         , substituteBoundT
+        , SubstituteT(..)
 
         , BindStack(..)
         , pushBind

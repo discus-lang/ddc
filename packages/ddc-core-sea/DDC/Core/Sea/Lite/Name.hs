@@ -9,7 +9,7 @@ import DDC.Core.Sea.Base.Name
 import DDC.Base.Pretty
 import Data.Char
 
--- | Names of things used in Disciple-Core-Lite.
+-- | Names of things used in Lite fragment of Disciple Core.
 data Name
         -- | User defined variables.
         = NameVar       String
@@ -46,6 +46,7 @@ instance Pretty Name where
         NameInt i               -> text (show i)
 
 
+-- | Read the name of a variable, constructor or literal.
 readName :: String -> Maybe Name
 readName str
         |  Just name    <- readDataTyCon str

@@ -69,6 +69,7 @@ instance Pretty PrimTyCon where
         PrimTyConFloat  bits    -> text "Float" <> int bits <> text "#"
 
 
+-- | Read a primitive typ constructor.
 readPrimTyCon :: String -> Maybe PrimTyCon
 readPrimTyCon str
         | str == "Void#"   = Just $ PrimTyConVoid
@@ -143,6 +144,7 @@ instance Pretty PrimOp where
     in  (text n)
 
 
+-- | Read a primitive operator.
 readPrimOp :: String -> Maybe PrimOp
 readPrimOp str
   =  case find (\(_, n) -> str == n) primOpNames of
@@ -174,8 +176,8 @@ primOpNames
 
 
 -- Literals -------------------------------------------------------------------
--- Read a signed integer.
--- TODO: handle negative literals.
+-- | Read a signed integer.
+--- TODO: handle negative literals.
 readLitInt :: String -> Maybe Integer
 readLitInt str
         | (ds, "")      <- span isDigit str
@@ -185,8 +187,8 @@ readLitInt str
         = Nothing
         
 
--- Read a word like 1234w32
--- TODO: handle binary literals.
+-- | Read a word with an explicit format speficier like @1234w32@
+--- TODO: handle binary literals.
 readLitPrimWordOfBits :: String -> Maybe (Integer, Int)
 readLitPrimWordOfBits str1
         | (ds, str2)    <- span isDigit str1
@@ -198,8 +200,8 @@ readLitPrimWordOfBits str1
         = Nothing
 
 
--- Read an integer like 1234i32.
--- TODO hande negative literals.
+-- | Read an integer with an explicit format specifier like @1234i32@.
+--- TODO hande negative literals.
 readLitPrimIntOfBits :: String -> Maybe (Integer, Int)
 readLitPrimIntOfBits str1
         | (ds, str2)    <- span isDigit str1

@@ -1,5 +1,8 @@
 
--- | Inline ISet meta-instructions.
+-- | Inline `ISet` meta-instructions.
+--
+--   It is helpful to be able to emit these during code generation,
+--   but the LLVM compiler doesn't accept them directly.
 module DDC.Llvm.Transform.Clean
         (Clean(..))
 where

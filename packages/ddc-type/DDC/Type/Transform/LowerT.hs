@@ -3,11 +3,21 @@
 ---
 --   TODO: merge this code with LiftT.
 module DDC.Type.Transform.LowerT
-        (LowerT(..))
+        ( lowerT
+        , LowerT(..))
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as Sum
+
+-- | Lower type indices in a thing the given number of levels.       
+lowerT :: (Ord n, LowerT c)
+       => Int          -- ^ Number of levels to lower.
+       -> c n          -- ^ Lower type indices in this thing.
+       -> c n
+        
+lowerT n xx  = lowerAtDepthT n 0 xx
+ 
 
 
 class LowerT (c :: * -> *) where
@@ -19,14 +29,6 @@ class LowerT (c :: * -> *) where
         -> Int          -- ^ Current binding depth.
         -> c n          -- ^ Lower type indices in this thing.
         -> c n
- 
- -- | Wrapper for `lowerAtDepthT` that starts at depth 0.       
- lowerT :: forall n. Ord n
-        => Int          -- ^ Number of levels to lower.
-        -> c n          -- ^ Lower type indices in this thing.
-        -> c n
-        
- lowerT n xx  = lowerAtDepthT n 0 xx
  
 
 instance LowerT Bind where

@@ -1,4 +1,5 @@
 
+-- | Attributes for functions and parameters.
 module DDC.Llvm.Attr
         ( FuncAttr       (..)
         , ParamAttr      (..)

@@ -24,7 +24,7 @@ import DDC.Llvm.Attr
 import DDC.Llvm.Type
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
-import DDC.Core.Sea.Output.Name as E
+import DDC.Core.Sea.Output      as E
 import DDC.Type.Compounds
 import Control.Monad.State.Strict
 import qualified DDC.Core.Exp   as C

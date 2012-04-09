@@ -14,8 +14,6 @@ import DDC.Core.Parser.Tokens
 
 
 -- | Profile for the Lite fragment of Disciple Core.
---
---   This has builtin Unit, Int, List and Pair data type.
 profile :: Profile Name 
 profile
         = Profile

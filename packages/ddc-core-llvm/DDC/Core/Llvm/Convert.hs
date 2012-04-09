@@ -16,7 +16,7 @@ import DDC.Core.Compounds
 import DDC.Type.Compounds
 import Data.Sequence                            (Seq, (<|), (|>), (><))
 import Data.Map                                 (Map)
-import qualified DDC.Core.Sea.Output.Name       as E
+import qualified DDC.Core.Sea.Output            as E
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Base.Pretty                as P
