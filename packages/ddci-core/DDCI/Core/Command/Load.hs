@@ -16,7 +16,7 @@ cmdLoad state source str
  | Language fragment    <- stateLanguage state
  = do   errs    <- pipeText source str
                 $  PipeTextLoadCore  fragment
-                [  PipeCoreSimplify  (stateSimplifier state)
+                [  PipeCoreSimplify  fragment (stateSimplifier state)
                 [  PipeCoreCheck     fragment
                 [  PipeCoreOutput    SinkStdout ]]]
 

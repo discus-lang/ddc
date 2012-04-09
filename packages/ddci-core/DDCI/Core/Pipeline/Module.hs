@@ -28,6 +28,7 @@ import DDCI.Core.Language
 import DDCI.Core.Build.Builder
 import DDC.Core.Simplifier
 import DDC.Core.Language.Profile
+import DDC.Core.Collect
 import DDC.Base.Pretty
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
@@ -37,6 +38,8 @@ import qualified DDC.Core.Llvm.Platform         as Llvm
 import qualified DDC.Core.Sea.Output.Convert    as Output
 import qualified DDC.Core.Sea.Output.Name       as Output
 import qualified DDC.Llvm.Module                as Llvm
+import qualified DDC.Type.Env                   as Env
+import qualified Control.Monad.State.Strict     as S
 import Control.Monad
 
 -- Error ----------------------------------------------------------------------
@@ -101,12 +104,10 @@ pipeText source str pp
         PipeTextOutput sink
          -> pipeSink str sink
 
-        PipeTextLoadCore fragment pipes
-         | (Fragment profile lexString _ _)     <- fragment
+        PipeTextLoadCore frag pipes
          -> let sourceName      = nameOfSource source
-                toks            = lexString source str
-
-            in case CL.loadModule profile sourceName toks of
+                toks            = fragmentLex frag source str
+            in case CL.loadModule (fragmentProfile frag) sourceName toks of
                  Left err -> return $ [ErrorLoad err]
                  Right mm -> liftM concat $ mapM (pipeCore mm) pipes
 
@@ -124,7 +125,8 @@ data PipeCore n where
         -> PipeCore n
 
   PipeCoreSimplify  
-        :: Simplifier 
+        :: Fragment n err
+        -> Simplifier 
         -> [PipeCore n] 
         -> PipeCore n
 
@@ -156,8 +158,22 @@ pipeCore mm pp
                   Left err  -> return $ [ErrorLint err]
                   Right mm' -> liftM concat $ mapM (pipeCore mm') pipes
 
-        PipeCoreSimplify simpl pipes
-         -> let mm'     = applySimplifier simpl mm 
+        PipeCoreSimplify frag simpl pipes
+         | Fragment _ _ _ _ makeNamifierT makeNamifierX nameZero <- frag
+         -> let 
+                -- Collect up names used as binders,
+                -- We pass these to the namifiers so they know not to
+                -- return these names when asked for a fresh variable.
+                (tbinds, xbinds) = collectBinds mm
+                kenv    = Env.fromList tbinds
+                tenv    = Env.fromList xbinds
+                mm'     = flip S.evalState nameZero
+                        $ applySimplifier 
+                                simpl 
+                                (makeNamifierT kenv)
+                                (makeNamifierX tenv)
+                                mm 
+
             in  liftM concat $ mapM (pipeCore mm') pipes
 
         PipeCoreAsSea pipes

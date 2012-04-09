@@ -15,7 +15,7 @@ cmdSeaOut :: State -> Source -> String -> IO ()
 cmdSeaOut state source str
  = do   errs    <- pipeText source str
                 $  PipeTextLoadCore  fragmentSea
-                [  PipeCoreSimplify  (stateSimplifier state)
+                [  PipeCoreSimplify  fragmentSea (stateSimplifier state)
                 [  PipeCoreCheck     fragmentSea 
                 [  PipeCoreAsSea
                 [  PipeSeaPrint 

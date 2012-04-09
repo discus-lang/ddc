@@ -28,9 +28,9 @@ import qualified DDC.Base.Parser        as BP
 -- | Show the kind of a type.
 cmdShowKind :: State -> Source -> String -> IO ()
 cmdShowKind state source str
- | Language (Fragment profile lexString _ _)  <- stateLanguage state
- = let  toks    = lexString source str
-        eTK     = loadType profile (nameOfSource source) toks
+ | Language frag  <- stateLanguage state
+ = let  toks    = fragmentLex frag source str
+        eTK     = loadType (fragmentProfile frag) (nameOfSource source) toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
@@ -40,7 +40,7 @@ cmdShowKind state source str
 -- | Check if two types are equivlant.
 cmdTypeEquiv :: State -> Source -> String -> IO ()
 cmdTypeEquiv state source ss
- | Language (Fragment profile lexString _ _) <- stateLanguage state
+ | Language frag <- stateLanguage state
  = let
         goParse toks
          = case BP.runTokenParser describeTok (nameOfSource source)
@@ -58,8 +58,8 @@ cmdTypeEquiv state source ss
                  then putStrLn $ show $ equivT t1 t2    
                  else return ()
 
-        defs    = profilePrimDataDefs profile
-        kenv    = profilePrimKinds    profile
+        defs    = profilePrimDataDefs (fragmentProfile frag)
+        kenv    = profilePrimKinds    (fragmentProfile frag)
 
         checkT t
          = case T.checkType defs kenv (spreadT kenv t) of
@@ -70,7 +70,7 @@ cmdTypeEquiv state source ss
                 Right{} 
                  ->     return True
 
-   in goParse (lexString source ss)
+   in goParse (fragmentLex frag source ss)
 
 
 
@@ -78,9 +78,9 @@ cmdTypeEquiv state source ss
 -- | Show the type of a witness.
 cmdShowWType :: State -> Source -> String -> IO ()
 cmdShowWType state source str
- | Language (Fragment profile lexString _ _) <- stateLanguage state
- = let  toks    = lexString source str
-        eTK     = loadWitness profile (nameOfSource source) toks
+ | Language frag <- stateLanguage state
+ = let  toks    = fragmentLex frag source str
+        eTK     = loadWitness (fragmentProfile frag) (nameOfSource source) toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
@@ -152,14 +152,13 @@ cmdParseCheckExp
         -> IO (Maybe ( Exp () n
                      , Type n, Effect n, Closure n))
 
-cmdParseCheckExp _state 
-        (Fragment profile lexString _ checkX)
+cmdParseCheckExp _state frag
         source str
- = goLoad (lexString source str)
+ = goLoad (fragmentLex frag source str)
  where
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExp profile (nameOfSource source) toks of
+         = case loadExp (fragmentProfile frag) (nameOfSource source) toks of
               Left err
                -> do    putStrLn $ renderIndent $ ppr err
                         return Nothing
@@ -169,7 +168,7 @@ cmdParseCheckExp _state
 
         -- Do fragment specific checks.
         goCheckFragment (x, t, e, c)
-         = case checkX x of
+         = case fragmentCheckExp frag x of
              Just err 
               -> do     putStrLn $ renderIndent $ ppr err
                         return Nothing

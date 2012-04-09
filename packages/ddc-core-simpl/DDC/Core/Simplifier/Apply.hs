@@ -22,42 +22,56 @@ import Control.Monad.State.Strict
 
 -- Modules --------------------------------------------------------------------
 -- | Apply a simplifier to a module.
+--
+--   The state monad holds a fresh name generator.
 applySimplifier 
         :: (Show a, Ord n) 
-        => Simplifier -> Module a n -> Module a n
+        => Simplifier           -- ^ Simplifier to apply.
+        -> Namifier s n         -- ^ Type namifier.
+        -> Namifier s n         -- ^ Exp  namifier
+        -> Module a n           -- ^ Module to simplify.
+        -> State s (Module a n)
 
-applySimplifier spec mm
+applySimplifier spec namT namX mm
  = case spec of
-        Seq t1 t2      
-         -> applySimplifier t2 (applySimplifier t1 mm)
+        Seq t1 t2
+         -> do  mm'     <- applySimplifier t1 namT namX mm
+                applySimplifier t2 namT namX mm'
 
         Trans t1
-         -> applyTransform t1 mm
+         -> applyTransform t1 namT namX mm
 
 
 -- | Apply a transform to a module.
 applyTransform
         :: (Show a, Ord n)
-        => Transform -> Module a n -> Module a n
+        => Transform            -- ^ Transform to apply.
+        -> Namifier s n         -- ^ Type namifier.
+        -> Namifier s n         -- ^ Exp  namifier.
+        -> Module a n           -- ^ Module to simplify.
+        -> State s (Module a n)
 
-applyTransform spec mm
+applyTransform spec namK namT mm
  = case spec of
-        Id              -> mm
-        Anonymize       -> anonymizeX mm
-        Snip            -> snip mm
-        Flatten         -> flatten mm
+        Id              -> return mm
+        Anonymize       -> return $ anonymizeX mm
+        Snip            -> return $ snip mm
+        Flatten         -> return $ flatten mm
+        Namify          -> namify namK namT mm
         _               -> error "applyTransform: finish me"
 
 
 -- Expressions ----------------------------------------------------------------
 -- | Apply a simplifier to an expression.
+--
+--   The state monad holds a fresh name generator.
 applySimplifierX 
         :: (Show a, Show n, Ord n)
-        => Simplifier 
-        -> [RewriteRule a n] 
-        -> Namifier s n
-        -> Namifier s n
-        -> Exp a n    
+        => Simplifier           -- ^ Simplifier to apply.
+        -> [RewriteRule a n]    -- ^ Rules to apply in the rewrite transform.
+        -> Namifier s n         -- ^ Type namifier.
+        -> Namifier s n         -- ^ Exp  namifier
+        -> Exp a n              -- ^ Exp to simplify.
         -> State s (Exp a n)
 
 applySimplifierX spec rules namK namT xx
@@ -73,11 +87,11 @@ applySimplifierX spec rules namK namT xx
 -- | Apply a transform to an expression.
 applyTransformX 
         :: (Show a, Show n, Ord n)
-        => Transform  
-        -> [RewriteRule a n] 
-        -> Namifier s n
-        -> Namifier s n
-        -> Exp a n    
+        => Transform            -- ^ Transform to apply.
+        -> [RewriteRule a n]    -- ^ Rules to apply in the rewrite transform.
+        -> Namifier s n         -- ^ Type namifier.
+        -> Namifier s n         -- ^ Exp  namifier
+        -> Exp a n              -- ^ Exp  to transform.
         -> State s (Exp a n)
 
 applyTransformX spec rules namK namT xx
@@ -89,5 +103,4 @@ applyTransformX spec rules namK namT xx
         Beta            -> return $ betaReduce xx
         Rewrite         -> return $ rewrite rules xx
         Namify          -> namify namK namT xx
-
 

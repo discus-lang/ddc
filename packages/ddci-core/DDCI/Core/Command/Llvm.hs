@@ -14,7 +14,7 @@ cmdLlvmOut :: State -> Source -> String -> IO ()
 cmdLlvmOut state source str
  = do   errs    <- pipeText source str
                 $  PipeTextLoadCore  fragmentSea
-                [  PipeCoreSimplify  (stateSimplifier state)
+                [  PipeCoreSimplify  fragmentSea (stateSimplifier state)
                 [  PipeCoreCheck     fragmentSea
                 [  PipeCoreAsSea
                 [  PipeSeaToLlvm 

@@ -1,10 +1,7 @@
 
 module DDC.Type.Exp
         ( -- * Types, Kinds, and Sorts
-          Binder   (..)
-        , Bind     (..)
-        , Bound    (..)
-        , Type     (..)
+          Type     (..)
         , Kind,    Sort
         , Region,  Effect, Closure
         , TypeSum  (..),   TyConHash(..), TypeSumVarCon(..)
@@ -12,7 +9,10 @@ module DDC.Type.Exp
         , SoCon    (..)
         , KiCon    (..)
         , TwCon    (..)
-        , TcCon    (..))
+        , TcCon    (..)
+        , Binder   (..)
+        , Bind     (..)
+        , Bound    (..))
 where
 import Data.Array
 import Data.Map         (Map)

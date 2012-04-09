@@ -8,6 +8,7 @@ module DDC.Core.Collect
 where
 import DDC.Type.Collect
 import DDC.Type.Compounds
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
@@ -38,6 +39,42 @@ freeOfTreeX tenv tt
         _                    -> Set.empty
 
 
+-- Module ---------------------------------------------------------------------
+instance BindStruct (Module a) where
+ slurpBindTree mm
+        = slurpBindTreeTops
+        $ moduleLets mm
+
+slurpBindTreeTops :: [Lets a n] -> [BindTree n]
+slurpBindTreeTops lts
+ = case lts of
+        []      -> []
+
+        LLet m b x1 : rest
+         -> slurpBindTree m
+         ++ slurpBindTree x1
+         ++ [BindDef BindLet [b]
+                $  (slurpBindTree $ typeOfBind b)
+                ++  slurpBindTreeTops rest]
+
+        LRec bxs : rest
+         -> concatMap (slurpBindTree . typeOfBind) (map fst bxs)
+         ++ [BindDef BindLetRec (map fst bxs)
+                $  (concatMap slurpBindTree $ map snd bxs)
+                ++ slurpBindTreeTops rest ]
+
+        LLetRegion b bs : rest
+         -> [ BindDef BindLetRegion [b]
+                $  (concatMap (slurpBindTree . typeOfBind) bs)
+                ++ [BindDef BindLetRegionWith bs
+                        (slurpBindTreeTops rest)]]
+
+        LWithRegion u : rest
+         -> BindUse BoundExpWit u
+         :  slurpBindTreeTops rest
+
+
+-- Exp ------------------------------------------------------------------------
 instance BindStruct (Exp a) where
  slurpBindTree xx
   = case xx of
@@ -71,10 +108,11 @@ instance BindStruct (Exp a) where
 
 
 instance BindStruct LetMode where
- slurpBindTree mm
-  = case mm of
-        LetLazy (Just w) -> slurpBindTree w
-        _                -> []
+ slurpBindTree mode
+  = case mode of
+        LetStrict               -> []
+        LetLazy Nothing         -> []
+        LetLazy (Just ww)       -> slurpBindTree ww
 
 
 instance BindStruct Cast where

@@ -38,7 +38,7 @@ makeDCE state source filePath
 
         errs    <- pipeText source src
                 $  PipeTextLoadCore  fragmentSea
-                [  PipeCoreSimplify  (stateSimplifier state)
+                [  PipeCoreSimplify  fragmentSea (stateSimplifier state)
                 [  PipeCoreCheck     fragmentSea
                 [  PipeCoreAsSea
                 [  PipeSeaToLlvm 

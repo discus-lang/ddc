@@ -23,8 +23,8 @@ cmdSet ::  State -> String -> IO State
 cmdSet state []
  = do   let langName
                 = case stateLanguage state of
-                   Language (Fragment profile _ _ _)
-                    -> profileName profile
+                   Language frag
+                    -> profileName (fragmentProfile frag)
 
         putStrLn $ renderIndent
          $ vcat [ text "mode  = " <> text (show $ Set.toList 

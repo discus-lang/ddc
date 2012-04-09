@@ -1,9 +1,9 @@
 
 module DDC.Core.Module
-        ( ModuleName    (..)
+        ( Module        (..)
+        , Extern        (..)
         , QualName      (..)
-        , Module        (..)
-        , Extern        (..))
+        , ModuleName    (..))
 where
 import DDC.Core.Exp
 import Data.Map         (Map)
