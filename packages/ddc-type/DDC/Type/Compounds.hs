@@ -253,8 +253,8 @@ tForall k f
 tForalls  :: [Kind n] -> ([Type n] -> Type n) -> Type n
 tForalls ks f
  = let  bs      = [BAnon k | k <- ks]
-        us      = reverse [TVar (UIx n  k) | k <- ks | n <- [0..]]
-   in   foldr TForall (f us) bs
+        us      = zipWith ($) (reverse [(\n -> TVar (UIx n  k)) | k <- ks]) [0..]
+   in   foldr TForall (f $ reverse us) bs
 
 
 -- | Split nested foralls from the front of a type, 
