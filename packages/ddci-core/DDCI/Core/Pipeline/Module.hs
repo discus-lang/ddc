@@ -155,7 +155,7 @@ pipeCore mm pp
                 primKindEnv     = profilePrimKinds      profile
                 primTypeEnv     = profilePrimTypes      profile
             in  case C.checkModule primDataDefs primKindEnv primTypeEnv mm of
-                  Left _err -> liftM concat $ mapM (pipeCore mm ) pipes -- return $ [ErrorLint err]
+                  Left err  -> return $ [ErrorLint err]
                   Right mm' -> liftM concat $ mapM (pipeCore mm') pipes
 
         PipeCoreSimplify frag simpl pipes
