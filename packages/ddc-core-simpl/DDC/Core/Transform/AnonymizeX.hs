@@ -32,16 +32,8 @@ class AnonymizeX (c :: * -> *) where
 
 instance AnonymizeX (Module a) where
  anonymizeWithX kstack tstack mm@ModuleCore{}
-  = let lets'   = anonymizeLets kstack tstack (moduleLets mm)
-    in  mm { moduleLets = lets' }
-
-anonymizeLets :: Ord n => [Bind n] -> [Bind n] -> [Lets a n] -> [Lets a n]
-anonymizeLets _ _ []    = []
-anonymizeLets kstack tstack (ll : rest)
- = let  (kstack', tstack', ll') = pushAnonymizeLets kstack tstack ll
-   in   ll' : anonymizeLets kstack' tstack' rest
-
-
+  = let x'   = anonymizeWithX kstack tstack (moduleBody mm)
+    in  mm { moduleBody = x' }
 
 instance AnonymizeX (Exp a) where
  anonymizeWithX kstack tstack xx

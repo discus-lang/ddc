@@ -31,26 +31,10 @@ instance SpreadX (Module a) where
         , moduleExportTypes = Map.map (spreadT kenv)  (moduleExportTypes mm)
         , moduleImportKinds = Map.map (liftSnd (spreadT kenv))  (moduleImportKinds mm)
         , moduleImportTypes = Map.map (liftSnd (spreadT kenv))  (moduleImportTypes mm)
-        , moduleLets        = spreadManyLets kenv tenv (moduleLets mm) }
+        , moduleBody        = spreadX kenv tenv (moduleBody mm) }
 
         where liftSnd f (x, y) = (x, f y)
-
-
--- When spreading in the let bindings of a module, we need to carray types
--- from each binder into subsequent let-bindings. This function does that.
--- It's not needed for normal expressions because subsequent let-bindings
--- appear in the body of the outer ones.
-spreadManyLets 
-        :: (Ord n, SpreadX (Lets a))
-        => Env n -> Env n -> [Lets a n] -> [Lets a n]
-
-spreadManyLets _ _ [] = []
-spreadManyLets kenv tenv (l:lts)
- = let  l'      = spreadX kenv tenv l
-        kenv'   = Env.extends (specBindsOfLets l') kenv
-        tenv'   = Env.extends (specBindsOfLets l') tenv
-   in   l' : spreadManyLets kenv' tenv' lts
-
+        
 
 -------------------------------------------------------------------------------
 instance SpreadX (Exp a) where

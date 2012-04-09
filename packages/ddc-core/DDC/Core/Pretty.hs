@@ -25,9 +25,10 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
                 , moduleExportTypes     = _exportTypes
                 , moduleImportKinds     = _importKinds
                 , moduleImportTypes     = _importTypes
-                , moduleLets            = lets }
-  =    text "module" <+> ppr name <+> text "with"
-  <$$> (vcat $ map ppr lets)
+                , moduleBody            = body }
+  = let (lts, _)        = splitXLets body
+    in  text "module" <+> ppr name <+> text "with"
+  <$$> (vcat $ map ppr lts)
 
 
 -- Exp ------------------------------------------------------------------------

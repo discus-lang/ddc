@@ -29,7 +29,7 @@ type ConvertM a x = G.CheckM (Error a) x
 -- | Convert a Sea module to C source text.
 convModuleM :: Show a => Module a Name -> ConvertM a Doc
 convModuleM mm@(ModuleCore{})
-        | [LRec bxs]    <- moduleLets mm
+        | ([LRec bxs], _) <- splitXLets $ moduleBody mm
         = do    supers' <- mapM (uncurry convSuperM) bxs
                 return  $ vcat supers'
 

@@ -7,7 +7,6 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Check.CheckExp
 import DDC.Core.Check.Error
-import DDC.Core.Compounds
 import DDC.Type.DataDef
 import DDC.Type.Compounds
 import DDC.Base.Pretty
@@ -61,33 +60,25 @@ checkModuleM defs kenv tenv mm@ModuleCore{}
         mapM_ (checkTypeM defs kenv) $ map typeOfBind bksImport
         mapM_ (checkTypeM defs kenv) $ map typeOfBind btsImport
 
-        -- We want to check all the let expressions in the module, but the type
-        -- checker wants needs a full expression, instead of a sequence bindings.
-        --  We'll add a dummy expression on the end to make do.
-        --  The dummy annotation here should never be forced by the checker.
-        let aDummy       = error "checkModuleM: dummy annotation"
-        let tDummy       = TVar (UIx 0 kData)
-        let xDummy       = XLam aDummy (BAnon tDummy) (XVar aDummy (UIx 0 tDummy))
-        let xCheck       = foldr (XLet aDummy) xDummy (moduleLets mm)
 
         -- Build the compound environments.
         -- These contain primitive types as well as the imported ones.
         let kenv'        = Env.extend (BAnon kData)
                          $ Env.union kenv $ Env.fromList bksImport
 
+        let tDummy       = TVar (UIx 0 kData)                                   -- TODO: why did we need this?
         let tenv'        = Env.extend (BAnon tDummy)
                          $ Env.union tenv $ Env.fromList btsImport
                 
         -- Check our let bindings (with the dummy expression on the end)
-        (x', _, _effs, _) <- checkExpM defs kenv' tenv' xCheck
-        let (lts', _)   = splitXLets x'
+        (x', _, _effs, _) <- checkExpM defs kenv' tenv' (moduleBody mm)
 
         -- TODO: check that types of bindings match types of exports.
         -- TODO: check that all exported bindings are defined.
         -- TODO: don't permit top-level let-bindings to have visible effects.
 
         -- Return the checked bindings as they have explicit type annotations.
-        let mm'         = mm { moduleLets = lts' }
+        let mm'         = mm { moduleBody = x' }
 
         return mm'
 

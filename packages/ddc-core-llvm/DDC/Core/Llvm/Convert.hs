@@ -40,7 +40,7 @@ convertModule platform mm
 
 convModuleM :: C.Module () E.Name -> LlvmM Module
 convModuleM mm@(C.ModuleCore{})
- | [C.LRec bxs]         <- C.moduleLets mm   
+ | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   platform        <- gets llvmStatePlatform
         functions       <- mapM (uncurry (convSuperM)) bxs
         return  $ Module 

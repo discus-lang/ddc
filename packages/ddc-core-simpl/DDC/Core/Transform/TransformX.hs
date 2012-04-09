@@ -62,8 +62,8 @@ class TransformUpMX m (c :: * -> * -> *) where
 
 instance Monad m => TransformUpMX m Module where
  transformUpMX f kenv tenv mm
-  = do  lts'    <- mapM (transformUpMX f kenv tenv) $ moduleLets mm
-        return  $ mm { moduleLets = lts' }
+  = do  x'    <- transformUpMX f kenv tenv $ moduleBody mm
+        return  $ mm { moduleBody = x' }
 
 
 instance Monad m => TransformUpMX m Exp where

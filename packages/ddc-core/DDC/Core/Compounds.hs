@@ -22,6 +22,7 @@ module DDC.Core.Compounds
         , takeXPrimApps
 
           -- * Lets
+        , makeXLets
         , splitXLets 
 
           -- * Alternatives
@@ -164,6 +165,11 @@ takeXConApps xx
 
 
 -- Lets -----------------------------------------------------------------------
+-- | Wrap some let-bindings around an expression.
+makeXLets :: a -> [Lets a n] -> Exp a n -> Exp a n
+makeXLets a lts x
+ = foldr (XLet a) x lts
+
 -- | Split let-bindings from the front of an expression, if any.
 splitXLets :: Exp a n -> ([Lets a n], Exp a n)
 splitXLets xx

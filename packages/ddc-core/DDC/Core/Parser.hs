@@ -16,6 +16,7 @@ import DDC.Core.Parser.Param
 import DDC.Core.Parser.Type
 import DDC.Core.Parser.Tokens
 import DDC.Core.Parser.Base
+import DDC.Core.Compounds
 import DDC.Base.Pretty
 import DDC.Base.Parser                  ((<?>))
 import qualified DDC.Base.Parser        as P
@@ -58,6 +59,10 @@ pModule
         -- LET;+
         lts     <- P.sepBy1 pLets (pTok KIn)
 
+        -- We use this hole as a place holder, so we have
+        -- something to wrap around the let-expressions.
+        let hole = (XVar () (UHole (TVar (UHole T.kData)))) 
+
         -- TODO: make having duplicate names in the imports 
         --       or exports list a parse error, so we never build a bad map. 
         return  $ ModuleCore
@@ -66,7 +71,7 @@ pModule
                 , moduleExportTypes     = Map.fromList tExports
                 , moduleImportKinds     = Map.empty
                 , moduleImportTypes     = Map.fromList tImports
-                , moduleLets            = lts }
+                , moduleBody            = makeXLets () lts hole }
 
 
 -- | Parse a type signature.

@@ -121,6 +121,10 @@ checkExpM' _defs _kenv tenv (XVar a u)
         let mtEnv       = Env.lookup u tenv
 
         let mkResult
+             -- If the variable is a hole then just use the annotation
+             | UHole t      <- u
+             = return t
+
              -- There is a type for this var in the environment.
              --
              --    When the bound is a deBruijn index we need to lift the

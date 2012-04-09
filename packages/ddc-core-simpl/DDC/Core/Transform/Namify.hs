@@ -72,29 +72,8 @@ instance Namify Type where
 
 instance Namify (Module a) where
  namify tnam xnam mm 
-  = do  lts'    <- mapM (namify tnam xnam) $ moduleLets mm
-        return  $ mm { moduleLets = lts' }
-
-
--- TODO: refactor module to contain an expression, so we don't need 
--- separate cases for top-level definitions.
-instance Namify (Lets a) where
- namify tnam xnam ll
-  = let down = namify tnam xnam
-    in case ll of
-        LLet mode b x
-         -> do  mode'           <- down mode           
-                (xnam', b')     <- pushX  tnam xnam b
-                x'              <- namify tnam xnam' x
-                return  $ LLet mode' b' x'
-
-        LRec bxs
-         -> do  let (bs, xs)    = unzip bxs
-                (xnam', bs')    <- pushXs tnam xnam bs
-                xs'             <- mapM (namify tnam xnam') xs
-                return  $ LRec (zip bs' xs')
-
-        _       -> error "namify finish me"
+  = do  body'    <- namify tnam xnam $ moduleBody mm
+        return  $ mm { moduleBody = body' }
 
 
 instance Namify LetMode where

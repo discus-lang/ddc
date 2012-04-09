@@ -5,6 +5,7 @@ module DDC.Core.Transform.Snip
 where
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Compounds
 import qualified DDC.Core.Transform.LiftX       as L
 import qualified DDC.Type.Exp                   as T
 import qualified DDC.Type.Compounds             as T
@@ -18,10 +19,11 @@ class Snip (c :: * -> *) where
 
 instance Snip (Module a) where
  snip mm
-  = let arities  = concatMap arityOfLets    $ moduleLets mm
-        arities' = extendsArities emptyArities arities
-        ls       = map (snipTop arities') $ moduleLets mm
-    in  mm { moduleLets = ls }
+  = let (lts, _)    = splitXLets $ moduleBody mm
+        arities     = concatMap arityOfLets  lts
+        arities'    = extendsArities emptyArities arities
+        body'       = snipX arities' (moduleBody mm) []
+    in  mm { moduleBody = body'  }
 
 
 instance Snip (Exp a) where
@@ -30,19 +32,6 @@ instance Snip (Exp a) where
 
 
 -- ANormal --------------------------------------------------------------------
--- | Convert the expression in a top-level binding to A-normal form.
-snipTop :: Ord n
-        => Arities n    -- ^ Arities of functions in environment.
-        -> Lets a n
-        -> Lets a n
-
-snipTop arities ll
- = case ll of
-        LLet mode b x   -> LLet mode b $ snipX arities x []
-        LRec bxs        -> LRec [(b, snipX arities x []) | (b, x) <- bxs]
-        _               -> ll
-
-
 -- | Convert an expression into A-normal form.
 snipX 
         :: Ord n

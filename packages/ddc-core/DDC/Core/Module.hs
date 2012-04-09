@@ -47,9 +47,10 @@ data Module a n
         , moduleImportTypes     :: Map n (QualName n, Type n)
 
           -- Local --------------------
-          -- | Non-recursive bindings defined in this module, 
-          --   which are initialised on startup.
-        , moduleLets            :: [Lets a n]
+          -- | The module body consists of some let-bindings
+          --   wrapping a hole. We're only interested in the bindings, 
+          --   with the hole being just a place-holder.
+        , moduleBody            :: Exp a n
         }
         deriving Show
 

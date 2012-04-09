@@ -42,36 +42,7 @@ freeOfTreeX tenv tt
 -- Module ---------------------------------------------------------------------
 instance BindStruct (Module a) where
  slurpBindTree mm
-        = slurpBindTreeTops
-        $ moduleLets mm
-
-slurpBindTreeTops :: [Lets a n] -> [BindTree n]
-slurpBindTreeTops lts
- = case lts of
-        []      -> []
-
-        LLet m b x1 : rest
-         -> slurpBindTree m
-         ++ slurpBindTree x1
-         ++ [BindDef BindLet [b]
-                $  (slurpBindTree $ typeOfBind b)
-                ++  slurpBindTreeTops rest]
-
-        LRec bxs : rest
-         -> concatMap (slurpBindTree . typeOfBind) (map fst bxs)
-         ++ [BindDef BindLetRec (map fst bxs)
-                $  (concatMap slurpBindTree $ map snd bxs)
-                ++ slurpBindTreeTops rest ]
-
-        LLetRegion b bs : rest
-         -> [ BindDef BindLetRegion [b]
-                $  (concatMap (slurpBindTree . typeOfBind) bs)
-                ++ [BindDef BindLetRegionWith bs
-                        (slurpBindTreeTops rest)]]
-
-        LWithRegion u : rest
-         -> BindUse BoundExpWit u
-         :  slurpBindTreeTops rest
+        = slurpBindTree $ moduleBody mm
 
 
 -- Exp ------------------------------------------------------------------------

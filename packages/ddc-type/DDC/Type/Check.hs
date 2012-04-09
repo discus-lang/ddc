@@ -81,6 +81,10 @@ checkTypeM' _defs env (TVar u)
         let mtEnv       = Env.lookup u env
 
         let mkResult
+                -- If the variable is a hole then just use the annotation.
+                | UHole t       <- u
+                = return t
+
                 -- If the annot is Bot then just use the type
                 -- from the environment.
                 | Just tEnv     <- mtEnv
