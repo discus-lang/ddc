@@ -40,6 +40,7 @@ instance Rename Bound where
         UIx   i k       -> UIx   i     (rename f k)
         UName n k       -> UName (f n) (rename f k)
         UPrim n k       -> UName (f n) (rename f k)
+        UHole k         -> UHole (rename f k)
 
 
 instance Rename TyCon where

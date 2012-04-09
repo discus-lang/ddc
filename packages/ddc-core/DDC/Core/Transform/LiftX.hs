@@ -30,6 +30,7 @@ instance LiftX Bound where
   = case uu of
         UName{}         -> uu
         UPrim{}         -> uu
+        UHole{}         -> uu
         UIx i t 
          | d <= i       -> UIx (i + n) t
          | otherwise    -> uu

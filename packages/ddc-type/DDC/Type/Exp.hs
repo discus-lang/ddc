@@ -57,6 +57,12 @@ data Bound n
         -- | Named primitive that is not bound in the environment.
         --   Prims aren't every counted as being free.
         | UPrim n   (Type n)    
+
+        -- | A hole in the expression.
+        --   In the type or witness unifers this is something we need to infer.
+        --   In the data universe, inspecting the hole is a run-time error.
+        --   It its not equal to other `Bound`, hole or otherwise.
+        | UHole     (Type n)
         deriving Show
 
 

@@ -230,6 +230,7 @@ extendsArities arity exts = foldl go arity exts
 getArity :: Ord n => Arities n -> Bound n -> Int
 getArity (_named, anon) (UIx ix _)   = anon !! ix
 getArity (named, _anon) (UName n _)  = named Map.! n
+getArity _              (UHole _)    = 0
 -- Get a primitive's arity from its type
 getArity (_named,_anon) (UPrim _ t)  = arityFromType t
 

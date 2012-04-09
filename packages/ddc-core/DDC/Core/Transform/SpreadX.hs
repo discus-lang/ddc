@@ -170,8 +170,9 @@ instance SpreadX Bound where
  spreadX kenv tenv uu
   | Just t'     <- Env.lookup uu tenv
   = case uu of
-        UIx ix _         -> UIx ix t'
-        UPrim n _        -> UPrim n t'
+        UIx ix _        -> UIx ix t'
+        UPrim n _       -> UPrim n t'
+        UHole{}         -> uu
 
         UName n _
          -> if Env.isPrim tenv n 

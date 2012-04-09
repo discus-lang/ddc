@@ -142,7 +142,8 @@ checkTypeM' defs _env tt@(TCon tc)
                  -> throw $ ErrorUndefinedCtor u
 
                 UPrim{} -> return $ typeOfBound u
-                UIx{}   -> error "sorry"
+                UIx{}   -> throw $ ErrorUndefinedCtor u
+                UHole{} -> throw $ ErrorUndefinedCtor u
 
 
 -- Quantifiers ----------------

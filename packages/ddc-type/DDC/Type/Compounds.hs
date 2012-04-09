@@ -130,6 +130,7 @@ typeOfBound uu
         UName _ t       -> t
         UPrim _ t       -> t
         UIx   _ t       -> t
+        UHole t         -> t
 
 
 -- | Take the name of bound variable.
@@ -140,6 +141,7 @@ takeNameOfBound uu
         UName n _       -> Just n
         UPrim n _       -> Just n
         UIx _ _         -> Nothing
+        UHole _         -> Nothing
 
 
 -- | Replace the type of a bound with a new one.
@@ -149,6 +151,7 @@ replaceTypeOfBound t uu
         UName n _       -> UName n t
         UPrim n _       -> UPrim n t
         UIx   i _       -> UIx   i t
+        UHole _         -> UHole t
 
 
 -- | Check whether a bound maches a bind.

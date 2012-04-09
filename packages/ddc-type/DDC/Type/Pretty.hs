@@ -56,7 +56,7 @@ instance (Pretty n, Eq n) => Pretty (Bound n) where
         UPrim n _       -> ppr n
 --        UIx i t         -> parens (text "^" <> ppr i <> text ":" <> ppr t)
         UIx i _         -> text "^" <> ppr i
-
+        UHole _         -> text "_"
 
 -- Type -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Type n) where

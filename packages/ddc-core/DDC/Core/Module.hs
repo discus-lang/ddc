@@ -49,7 +49,7 @@ data Module a n
           -- Local --------------------
           -- | Non-recursive bindings defined in this module, 
           --   which are initialised on startup.
-        , moduleLets            :: [Lets a n] 
+        , moduleLets            :: [Lets a n]
         }
         deriving Show
 
