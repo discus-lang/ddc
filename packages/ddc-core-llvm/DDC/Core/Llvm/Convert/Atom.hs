@@ -1,6 +1,7 @@
 
 module DDC.Core.Llvm.Convert.Atom
         ( mconvAtom
+        , mconvAtoms
         , takeLocalV
         , takeGlobalV)
 where
@@ -33,6 +34,12 @@ mconvAtom pp xx
          -> Just $ XLit (LitInt (convType pp t) val)
 
         _ -> Nothing
+
+
+-- | Convert several atoms to core.
+mconvAtoms :: Platform -> [C.Exp a E.Name] -> Maybe [Exp]
+mconvAtoms pp xs
+        = sequence $ map (mconvAtom pp) xs
 
 
 -- Utils ----------------------------------------------------------------------
