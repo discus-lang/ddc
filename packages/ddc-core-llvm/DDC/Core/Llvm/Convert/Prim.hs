@@ -44,8 +44,7 @@ convPrimCallM pp mdst p tPrim xs
                  = IFCmp dst fcond' x1' x2'
 
                  | otherwise
-                 = IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
-
+                 = die "invalid binary primop"
            in   return $ Seq.singleton result
 
         -- Cast primops ---------------
@@ -56,7 +55,7 @@ convPrimCallM pp mdst p tPrim xs
          , minstr       <- convPrimPromote pp tDst vDst tSrc xSrc'
          -> case minstr of
                 Just instr      -> return $ Seq.singleton instr
-                Nothing         -> error $ "convPrimCallM: invalid promotion " ++ show (tSrc, tDst)
+                Nothing         -> die "invalid promotion"
 
         -- Store primops --------------
         E.PrimStore E.PrimStoreAlloc
@@ -193,8 +192,7 @@ convPrimCallM pp mdst p tPrim xs
                         $ ICall mdst CallTypeStd tResult'
                                 name' xs' []
 
-        _ -> return $ Seq.singleton 
-           $ IComment ["convPrimCallM: cannot convert " ++ show (p, xs)]
+        _ -> die "invalid primcall"
 
 
 bumpName :: Name -> String -> Name

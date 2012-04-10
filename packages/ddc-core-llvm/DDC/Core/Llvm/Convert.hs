@@ -202,13 +202,8 @@ convBodyM blocks label instrs xx
 
                 return  $ blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
-
-         -- TODO: Debugging
-         _ -> return $  blocks
-                     |> Block label (instrs |> IComment [show xx])
-
-         -- die "invalid body statement"
-
+         _ -> die "invalid body statement"
+ 
 
 -- Stmt -----------------------------------------------------------------------
 -- | Convert a Core statement to LLVM instructions.
@@ -219,7 +214,7 @@ convStmtM pp xx
          |  C.XVar _ (C.UPrim (E.NamePrim p) tPrim) : xs <- takeXApps xx
          -> convPrimCallM pp Nothing p tPrim xs
 
-        _ -> error "convStmtM: sorry"
+        _ -> die "invalid statement"
 
 
 -- Alt ------------------------------------------------------------------------
@@ -248,7 +243,7 @@ convAltM aa
                 blocks  <- convBodyM Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
-         _ -> error $ "convAltM: sorry " ++ show aa
+         _ -> die "invalid alternative"
 
 
 -- | Convert a pattern to a LLVM literal.
@@ -312,7 +307,7 @@ convExpM pp vDst (C.XCon _ (C.UPrim name _t))
          -> return $ Seq.singleton 
                    $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
-        _ -> error "convExpM: cannot convert literal"
+        _ -> die "invalid literal"
 
 convExpM pp dst xx@C.XApp{}
         
@@ -330,7 +325,7 @@ convExpM pp dst xx@C.XApp{}
                  $ ICall (Just dst) CallTypeStd 
                          (convType pp tResult) nFun xsArgs' []
 
-convExpM _ _ xx
-        = return $ Seq.singleton 
-        $ IComment [ "convExpM: cannot convert " ++ show xx ]
+convExpM _ _ _
+        = die "invalid expression"
+
 
