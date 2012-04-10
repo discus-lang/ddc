@@ -57,6 +57,16 @@ convPrimCallM pp mdst p tPrim xs
                 Just instr      -> return $ Seq.singleton instr
                 Nothing         -> die "invalid promotion"
 
+
+        E.PrimCast E.PrimCastTruncate
+         | [C.XType tDst, C.XType tSrc, xSrc] <- xs
+         , Just vDst    <- mdst
+         , Just xSrc'   <- mconvAtom pp xSrc
+         , minstr       <- convPrimTruncate pp tDst vDst tSrc xSrc'
+         -> case minstr of
+                Just instr      -> return $ Seq.singleton instr
+                Nothing         -> die "invalid truncation"
+
         -- Store primops --------------
         E.PrimStore E.PrimStoreAlloc
          | [xBytes]     <- xs
@@ -249,6 +259,8 @@ convPrimOp2 op t
 
 
 -- Cast -----------------------------------------------------------------------
+
+-- | Convert a primitive promotion to LLVM.
 convPrimPromote 
         :: Platform 
         -> C.Type E.Name -> Var
@@ -258,43 +270,54 @@ convPrimPromote
 convPrimPromote pp tDst vDst tSrc xSrc
  = let  tDst'   = convType pp tDst
         tSrc'   = convType pp tSrc
-        
-        -- TODO: add Float and Int -> Float promotions
-        result
+   in case (tDst', tSrc') of
+        (TInt bitsDst, TInt bitsSrc)
          -- Same sized integers
-         | TInt bitsDst <- tDst'
-         , TInt bitsSrc <- tSrc'
-         , bitsDst == bitsSrc
-         = Just $ ISet vDst xSrc
+         | bitsDst == bitsSrc       
+         -> Just $ ISet vDst xSrc
 
          -- Both Unsigned
-         | TInt bitsDst <- tDst'
-         , TInt bitsSrc <- tSrc'
-         , isUnsignedT tSrc
+         | isUnsignedT tSrc
          , isUnsignedT tDst
-         , bitsDst > bitsSrc
-         = Just $ IConv vDst ConvZext xSrc
+         , bitsDst > bitsSrc        
+         -> Just $ IConv vDst ConvZext xSrc
 
          -- Both Signed
-         | TInt bitsDst <- tDst'
-         , TInt bitsSrc <- tSrc'
-         , isSignedT tSrc
+         | isSignedT tSrc
          , isSignedT tDst
          , bitsDst > bitsSrc
-         = Just $ IConv vDst ConvSext xSrc
+         -> Just $ IConv vDst ConvSext xSrc
 
          -- Unsigned to Signed
-         | TInt bitsDst <- tDst'
-         , TInt bitsSrc <- tSrc'
-         , isUnsignedT tSrc
+         | isUnsignedT tSrc
          , isSignedT   tDst
          , bitsDst > bitsSrc
-         = Just $ IConv vDst ConvZext xSrc
+         -> Just $ IConv vDst ConvZext xSrc
 
-         | otherwise
-         = Nothing
+        _ -> Nothing
 
-   in   result
+
+-- | Convert a primitive truncation to LLVM.
+convPrimTruncate
+        :: Platform 
+        -> C.Type E.Name -> Var
+        -> C.Type E.Name -> Exp
+        -> Maybe Instr
+
+convPrimTruncate pp tDst vDst tSrc xSrc
+ = let  tDst'   = convType pp tDst
+        tSrc'   = convType pp tSrc
+   in case (tDst', tSrc') of
+        (TInt bitsDst, TInt bitsSrc)
+         -- Same sized integers
+         | bitsDst == bitsSrc       
+         -> Just $ ISet vDst xSrc
+
+         -- Destination is smaller
+         | bitsDst < bitsSrc        
+         -> Just $ IConv vDst ConvTrunc xSrc
+
+        _ -> Nothing
 
 
 -- Cond -----------------------------------------------------------------------
@@ -343,4 +366,5 @@ convPrimExtern p _t
 
         E.PrimExternalPutStrLn
          -> Just $ NameGlobal "putStrLn"
+
 
