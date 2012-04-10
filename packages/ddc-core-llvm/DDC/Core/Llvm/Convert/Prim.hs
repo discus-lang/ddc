@@ -58,7 +58,6 @@ convPrimCallM pp mdst p tPrim xs
                 Just instr      -> return $ Seq.singleton instr
                 Nothing         -> error $ "convPrimCallM: invalid promotion " ++ show (tSrc, tDst)
 
-
         -- Store primops --------------
         E.PrimStore E.PrimStoreAlloc
          | [xBytes]     <- xs
