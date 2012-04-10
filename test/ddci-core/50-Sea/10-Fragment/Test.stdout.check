@@ -83,7 +83,7 @@ nat_t foo (nat_t x)
 Fragment violation when converting Sea module to C code.
   Invalid type definition.
   
-  with: [^ : *].^0 -> ^0 -> ^0
+  with: [t0 : *].t0 -> t0 -> t0
 
 
 -- Error: cannot discard non-void return value.
