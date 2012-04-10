@@ -187,17 +187,31 @@ readLitInt str
         = Nothing
         
 
--- | Read a word with an explicit format speficier like @1234w32@
---- TODO: handle binary literals.
+-- | Read a word with an explicit format speficier.
 readLitPrimWordOfBits :: String -> Maybe (Integer, Int)
 readLitPrimWordOfBits str1
+        -- binary like 0b01001w32#
+        | Just str2     <- stripPrefix "0b" str1
+        , (ds, str3)    <- span (\c -> c == '0' || c == '1') str2
+        , Just str4     <- stripPrefix "w" str3
+        , (bs, "#")     <- span isDigit str4
+        , bits          <- read bs
+        , length ds     <= bits
+        = Just (readBinary ds, bits)
+
+        -- decimal like 1234w32#
         | (ds, str2)    <- span isDigit str1
         , Just str3     <- stripPrefix "w" str2
         , (bs, "#")     <- span isDigit str3
-        = Just $ (read ds, read bs)
+        = Just (read ds, read bs)
 
         | otherwise
         = Nothing
+
+readBinary :: (Num a, Read a) => String -> a
+readBinary digits
+        = foldl' (\ acc b -> if b then 2 * acc + 1 else 2 * acc) 0
+        $ map (/= '0') digits
 
 
 -- | Read an integer with an explicit format specifier like @1234i32@.

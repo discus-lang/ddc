@@ -205,6 +205,7 @@ lexExp sourceName lineStart str
 isLiteralish :: Char -> Bool
 isLiteralish c
         =  isDigit c
+        || c == 'b' || c == 'o' || c == 'x'
         || c == 'w' || c == 'i' 
         || c == '#'
 

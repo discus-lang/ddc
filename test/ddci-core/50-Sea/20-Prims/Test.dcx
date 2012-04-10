@@ -39,3 +39,12 @@
 
 -- Error: not a valid bit width
 :check 42w42#
+
+-- Binary literals
+:check 0b0100w32#
+
+:check 0b10000000w8#
+
+-- Error: Binary literal is wider than word size.
+:check 0b100000000w8#
+

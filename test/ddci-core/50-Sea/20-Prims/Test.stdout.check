@@ -82,3 +82,20 @@ Expected an expression.
 Parse error in "<batch>" (line 1, column 1)
 Unexpected character "lexical error".
 Expected an expression.
+
+-- Binary literals
+4w32#
+:*: Word32#
+:!: !0
+:$: $0
+
+128w8#
+:*: Word8#
+:!: !0
+:$: $0
+
+-- Error: Binary literal is wider than word size.
+Parse error in "<batch>" (line 1, column 1)
+Unexpected character "lexical error".
+Expected an expression.
+

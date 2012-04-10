@@ -6,7 +6,7 @@ allocRaw (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
         addr            = alloc# bytesObj;
 
         tag32           = promote# [Word32#] [Tag#] tag;
-        format          = 42w32#;
+        format          = 0b00110001w32#;
         tagShift        = shl# [Word32#] tag32 8w32#;
         header          = bor# [Word32#] tagShift format;
         write# [Word32#] addr 0 header;
