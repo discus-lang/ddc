@@ -12,6 +12,7 @@ module DDC.Core.Parser.Tokens
 where
 import DDC.Core.Pretty
 import DDC.Core.Exp
+import Control.Monad
 
 
 -- TokenFamily ----------------------------------------------------------------
@@ -42,7 +43,7 @@ describeTokenFamily tf
 -- | Tokens accepted by the core language parser.
 data Tok n
         -- Some junk symbol that isn't part of the language.
-        = KJunk Char
+        = KJunk String
 
         -- An atomic token.
         | KA    !TokAtom 
@@ -64,13 +65,15 @@ describeTok kk
 -- | Apply a function to all the names in a `Tok`.
 renameTok
         :: Ord n2
-        => (n1 -> n2) -> Tok n1 -> Tok n2
+        => (n1 -> Maybe n2) 
+        -> Tok n1 
+        -> Maybe (Tok n2)
 
 renameTok f kk
  = case kk of
-        KJunk s -> KJunk s
-        KA t    -> KA t
-        KN t    -> KN $ renameTokNamed f t
+        KJunk s -> Just $ KJunk s
+        KA t    -> Just $ KA t
+        KN t    -> liftM KN $ renameTokNamed f t
 
 
 -- TokAtom --------------------------------------------------------------------
@@ -271,11 +274,13 @@ describeTokNamed tn
 -- | Apply a function to all the names in a `TokNamed`.
 renameTokNamed 
         :: Ord n2
-        => (n1 -> n2) -> TokNamed n1 -> TokNamed n2
+        => (n1 -> Maybe n2) 
+        -> TokNamed n1 
+        -> Maybe (TokNamed n2)
 
 renameTokNamed f kk
   = case kk of
-        KCon c           -> KCon $ f c
-        KVar c           -> KVar $ f c
-        KLit c           -> KLit $ f c
+        KCon c           -> liftM KCon $ f c
+        KVar c           -> liftM KVar $ f c
+        KLit c           -> liftM KLit $ f c
 

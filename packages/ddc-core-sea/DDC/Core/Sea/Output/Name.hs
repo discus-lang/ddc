@@ -119,10 +119,12 @@ readName str
 
         -- Literal Words
         | Just (val, bits) <- readLitPrimWordOfBits str
+        , elem bits [8, 16, 32, 64]
         = Just $ NameWord val bits
 
         -- Literal Ints
         | Just (val, bits) <- readLitPrimIntOfBits str
+        , elem bits [8, 16, 32, 64]
         = Just $ NameInt  val bits
 
         -- Constructors.

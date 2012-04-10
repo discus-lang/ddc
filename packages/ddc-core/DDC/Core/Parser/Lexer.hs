@@ -172,7 +172,7 @@ lexExp sourceName lineStart str
                  = tokN (KCon con)               : lexMore (length s) rest'
                
                  | otherwise    
-                 = [tok (KJunk c)]
+                 = [tok (KJunk [c])]
                  
             in  readNamedCon (c : body')
 
@@ -194,12 +194,12 @@ lexExp sourceName lineStart str
                  = tokN (KVar v)           : lexMore (length s) rest'
 
                  | otherwise
-                 = [tok (KJunk c)]
+                 = [tok (KJunk [c])]
 
             in  readNamedVar (c : body')
 
         -- Error
-        c : _   -> [tok $ KJunk c]
+        c : _   -> [tok $ KJunk [c]]
 
 
 isLiteralish :: Char -> Bool

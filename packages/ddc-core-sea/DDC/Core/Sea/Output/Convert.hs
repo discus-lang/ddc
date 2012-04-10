@@ -275,7 +275,6 @@ convRValueM xx
          -> return $ integer n
 
         -- Primop application.
-        -- TODO: check this is fully applied.
         XApp{}
          |  Just (NamePrim p, args)      <- takeXPrimApps xx
          -> convPrimCallM p args

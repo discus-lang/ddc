@@ -20,3 +20,65 @@ tailcall4#
 :!: !0
 :$: $0
 
+
+-- Literals
+42
+:*: Nat#
+:!: !0
+:$: $0
+
+TAG42#
+:*: Tag#
+:!: !0
+:$: $0
+
+42w8#
+:*: Word8#
+:!: !0
+:$: $0
+
+42w16#
+:*: Word16#
+:!: !0
+:$: $0
+
+42w32#
+:*: Word32#
+:!: !0
+:$: $0
+
+42w64#
+:*: Word64#
+:!: !0
+:$: $0
+
+96i8#
+:*: Int8#
+:!: !0
+:$: $0
+
+96i16#
+:*: Int16#
+:!: !0
+:$: $0
+
+96i32#
+:*: Int32#
+:!: !0
+:$: $0
+
+96i64#
+:*: Int64#
+:!: !0
+:$: $0
+
+-- Error: lex error
+-- no unboxed literals in this fragment.
+Parse error in "<batch>" (line 1, column 1)
+Unexpected character "lexical error".
+Expected an expression.
+
+-- Error: not a valid bit width
+Parse error in "<batch>" (line 1, column 1)
+Unexpected character "lexical error".
+Expected an expression.

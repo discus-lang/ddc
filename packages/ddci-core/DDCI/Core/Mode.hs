@@ -64,7 +64,7 @@ nameOfSource ss
  = case ss of
         SourceFile f            -> f
         SourceArgs              -> "<arg>"
-        SourceConsole{}         -> "<sdfdsf>"
+        SourceConsole{}         -> "<console>"
         SourceBatch{}           -> "<batch>"
 
 

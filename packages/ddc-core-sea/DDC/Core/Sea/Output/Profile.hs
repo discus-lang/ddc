@@ -8,7 +8,6 @@ import DDC.Core.Parser.Lexer
 import DDC.Core.Language.Profile
 import DDC.Core.Sea.Output.Env
 import DDC.Core.Sea.Output.Name
-import Data.Maybe
 import DDC.Base.Lexer
 import DDC.Core.Parser.Tokens
 
@@ -38,8 +37,7 @@ lexString
          -> [Token (Tok Name)]
 lexString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
- where rn (Token t sp) = Token (renameTok readName_ t) sp
-
-       readName_ str'
-        = fromMaybe (error $ "DDC.Core.Sea.Output.Profile: unknown name " ++ show str')
-        $ readName str'
+ where rn (Token strTok sp) 
+        = case renameTok readName strTok of
+                Just t' -> Token t' sp
+                Nothing -> Token (KJunk "lexical error") sp

@@ -14,7 +14,6 @@ import DDC.Base.Lexer
 import DDC.Core.Parser.Lexer
 import DDC.Core.Parser.Tokens
 import Data.Char
-import Data.Maybe
 
 
 -- | Names of things recognised by the evaluator.
@@ -240,11 +239,6 @@ readName str@(c:rest)
         | otherwise
         = Nothing
 
-readName_ :: String -> Name
-readName_ str
-        = fromMaybe (error $ "can't rename token " ++ str)
-        $ readName str
-
 
 -- | Lex a string to tokens, using primitive names.
 --
@@ -252,5 +246,9 @@ readName_ str
 lexString :: String -> Int -> String -> [Token (Tok Name)]
 lexString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
- where rn (Token t sp) = Token (renameTok readName_ t) sp
+ where rn (Token strTok sp) 
+        = case renameTok readName strTok of
+                Just t' -> Token t' sp
+                Nothing -> Token (KJunk "lexical error") sp
+
  

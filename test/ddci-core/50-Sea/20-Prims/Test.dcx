@@ -11,3 +11,31 @@
 
 :check tailcall4#
 
+
+-- Literals
+:check 42
+
+:check TAG42#
+
+:check 42w8#
+
+:check 42w16#
+
+:check 42w32#
+
+:check 42w64#
+
+:check 96i8#
+
+:check 96i16#
+
+:check 96i32#
+
+:check 96i64#
+
+-- Error: lex error
+-- no unboxed literals in this fragment.
+:check 42w32
+
+-- Error: not a valid bit width
+:check 42w42#

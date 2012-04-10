@@ -52,7 +52,10 @@ instance Pretty Name where
 lexStringZero :: Source -> String -> [Token (Tok Name)]
 lexStringZero source str
  = map rn $ Core.lexExp (nameOfSource source) (lineStartOfSource source) str
- where rn (Token t sp) = Token (renameTok Name t) sp
+ where rn (Token t sp) 
+        = case renameTok (Just . Name) t of
+                Just t' -> Token t' sp
+                Nothing -> Token (KJunk "lexical error") sp
 
 
 -- | Create a new type variable name that is not in the given environment.
