@@ -16,5 +16,33 @@ letregion r with {w : Const r} in
     (weakeff [Read r + Alloc r] in
      23 [r] ())
 
--- todo more tests with de bruijns
+-- do it
+letregion ^ with {w : Const ^0} in
+(\(x : Int ^0). ())
+    (weakeff [Read ^0 + Alloc ^0] in
+     23 [^0] ())
+
+-- lift de bruijns: don't do it
+letregion ^ with {w : Const ^0} in
+letregion ^ in
+(\(x : Int ^0). ())
+    (copyInt [^0] [^0] (23 [^0] ()))
+
+-- lift de bruijns: do it
+letregion ^ with {w : Const ^0} in
+letregion ^ in
+(\(x : Int ^1). ())
+    (weakeff [Read ^1 + Alloc ^1] in
+     23 [^1] ())
+
 -- and with witnesses as lambda arguments
+-- TODO
+-- :trans..
+-- (\(w : Const R0#). \(u : Unit).
+-- 	(copyInt [:R0# R0#:] (23 [R0#] ())))
+-- ;;
+
+-- don't: lambda arguments for a different region
+\(w : Const R0#).\(u : Unit).
+copyInt [R1#] [R1#] (23 [R1#] ())
+

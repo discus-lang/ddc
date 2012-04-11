@@ -8,7 +8,8 @@ module DDC.Type.Predicates
         , isEffectKind
         , isClosureKind
         , isWitnessKind
-        , isAlgDataType)
+        , isAlgDataType
+	, isWitnessType)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -96,3 +97,9 @@ isAlgDataType tt
         | otherwise
         = False
 
+-- | Check whether type is a witness constructor
+isWitnessType :: Eq n => Type n -> Bool
+isWitnessType tt
+ = case tt of
+	TApp (TCon (TyConWitness _)) _ -> True
+	_			   -> False

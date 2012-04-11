@@ -6,6 +6,8 @@ import DDC.Core.Transform.Rewrite.Rule
 import DDC.Type.Sum()
 import qualified DDC.Type.Exp as T
 import qualified DDC.Type.Compounds as T
+import qualified DDC.Type.Predicates as T
+import qualified DDC.Type.Transform.LiftT as L
 {-
 import qualified DDC.Core.Transform.AnonymizeX as A
 import qualified DDC.Core.Transform.LiftX as L
@@ -27,7 +29,7 @@ rewrite rules x0
     go (XApp a f arg)	args ws = go f ((down arg ws,a):args) ws
     go x@(XVar{})	args ws = rewrites x args ws
     go x@(XCon{})	args ws = rewrites x args ws
-    go (XLAM a b e)	args ws = rewrites (XLAM a b $ down e ws) args ws
+    go (XLAM a b e)	args ws = rewrites (XLAM a b $ down e (liftWitness b ws)) args ws
     go (XLam a b e)	args ws = rewrites (XLam a b $ down e (extendWitness b ws)) args ws
     go (XLet a l e)	args ws = rewrites (XLet a (goLets l ws) (down e (extendWitLets l ws))) args ws
     go (XCase a e alts)	args ws = rewrites (XCase a (down e ws) (map (goAlts ws) alts)) args ws
@@ -53,26 +55,43 @@ rewrite rules x0
 	Nothing -> rewrites' rs f args ws
 	Just x  -> go x [] ws
 
-emptyWitness :: Ord n => [T.Type n]
+type WitMap n = [[T.Type n]]
+emptyWitness :: Ord n => WitMap n
 emptyWitness = []
-extendWitness :: (Ord n,Show n) => Bind n -> [T.Type n] -> [T.Type n]
+extendWitness :: (Ord n,Show n) => Bind n -> WitMap n -> WitMap n
 -- originally was checking universe here but type of binds is
 -- TApp (TCon TyConWitness) (TVar "r"...)
 -- which isn't in wit?
-extendWitness b ws
-    = ty : ws
+extendWitness b (w:ws)
+    | T.isWitnessType ty
+    = (ty:w) : ws
  where ty = T.typeOfBind b
+extendWitness _ ws
+    = ws
 
-extendWitLets (LLetRegion _ cs) ws =
-    foldl (flip extendWitness) ws cs
+extendWitLets (LLetRegion b cs) ws =
+    foldl (flip extendWitness) (liftWitness b ws) cs
 extendWitLets _ ws = ws
+
+-- | check if witness map contains given type
+-- tries each set, lowering c by -1 after each failure
+-- c may end up with negative indices,
+-- not such a big deal since sets certainly won't match that
+containsWitness c (w:ws) =
+    c `elem` w || containsWitness (L.liftT (-1) c) ws
+containsWitness _ [] = False
+
+-- | raise all elements in witness map if binder is anonymous
+-- only call with type binders ie XLAM, not XLam
+liftWitness (BAnon _) ws = []:ws
+liftWitness _ ws = []:ws
 
 rewriteX
     :: (Show n, Show a, Ord n)
     => RewriteRule a n
     -> Exp a n
     -> [(Exp a n,a)]
-    -> [Type n]
+    -> WitMap n
     -> Maybe (Exp a n)
 rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
  = do	let m	= Map.empty
@@ -110,7 +129,7 @@ rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
     checkConstrs _ [] x = Just x
     checkConstrs bas (c:cs) x = do
 	let c' = S.substituteTs (Maybe.catMaybes $ map lookupT bas) c
-	if c' `elem` ws
+	if containsWitness c' ws
 	    then checkConstrs bas cs x
 	    else Nothing
 
