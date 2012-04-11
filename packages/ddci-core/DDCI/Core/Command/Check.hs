@@ -21,7 +21,7 @@ import DDC.Core.Load
 import DDC.Core.Exp
 import DDC.Core.Pretty
 import DDC.Core.Parser
-import DDC.Core.Parser.Tokens
+import DDC.Core.Lexer
 import DDC.Type.Equiv
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe

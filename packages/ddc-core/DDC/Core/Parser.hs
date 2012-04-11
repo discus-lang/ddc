@@ -14,8 +14,8 @@ import DDC.Core.Exp
 import DDC.Core.Parser.Witness
 import DDC.Core.Parser.Param
 import DDC.Core.Parser.Type
-import DDC.Core.Parser.Tokens
 import DDC.Core.Parser.Base
+import DDC.Core.Lexer.Tokens
 import DDC.Core.Compounds
 import DDC.Base.Pretty
 import DDC.Base.Parser                  ((<?>))

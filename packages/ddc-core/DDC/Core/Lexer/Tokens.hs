@@ -1,5 +1,5 @@
 
-module DDC.Core.Parser.Tokens
+module DDC.Core.Lexer.Tokens
         ( Tok      (..)
         , describeTok
         , renameTok

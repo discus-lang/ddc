@@ -9,7 +9,7 @@ module DDC.Core.Load
 where
 import DDC.Core.Transform.SpreadX
 import DDC.Core.Language.Profile
-import DDC.Core.Parser.Tokens
+import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp
 import DDC.Type.Transform.SpreadT
 import DDC.Core.Module

@@ -1,23 +1,15 @@
 
 -- | Reference lexer for core langauge parser. Slow but Simple.
-module DDC.Core.Parser.Lexer
-        ( -- * Constructors
-          isConName, isConStart, isConBody
-        , readTwConBuiltin
-        , readTcConBuiltin
-        , readWbConBuiltin
-        , readCon
-        
-          -- * Variables
-        , isVarName, isVarStart, isVarBody
-        , readVar
+module DDC.Core.Lexer
+        ( module DDC.Core.Lexer.Tokens
+        , module DDC.Core.Lexer.Names
 
           -- * Lexer
         , lexExp)
 where
 import DDC.Base.Lexer
-import DDC.Core.Parser.Tokens
-import DDC.Core.Parser.Names
+import DDC.Core.Lexer.Tokens
+import DDC.Core.Lexer.Names
 import Data.Char
 
 

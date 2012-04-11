@@ -8,7 +8,7 @@ module DDC.Core.Parser.Param
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Type
-import DDC.Core.Parser.Tokens
+import DDC.Core.Lexer.Tokens
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T
 

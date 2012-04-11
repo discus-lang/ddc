@@ -4,12 +4,11 @@ module DDC.Core.Sea.Output.Profile
         ( profile
         , lexString)
 where
-import DDC.Core.Parser.Lexer
-import DDC.Core.Language.Profile
 import DDC.Core.Sea.Output.Env
 import DDC.Core.Sea.Output.Name
+import DDC.Core.Language.Profile
+import DDC.Core.Lexer
 import DDC.Base.Lexer
-import DDC.Core.Parser.Tokens
 
 
 -- | Language profile for the Sea Output fragment of Disciple Core.

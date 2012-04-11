@@ -8,7 +8,7 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Eval.Name
 import DDC.Core.Eval.Env
-import DDC.Core.Parser.Tokens
+import DDC.Core.Lexer
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Transform.Rewrite.Parser
 import DDCI.Core.State

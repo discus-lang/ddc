@@ -11,8 +11,7 @@ module DDC.Core.Eval.Name
 where
 import DDC.Base.Pretty
 import DDC.Base.Lexer
-import DDC.Core.Parser.Lexer
-import DDC.Core.Parser.Tokens
+import DDC.Core.Lexer
 import Data.Char
 
 

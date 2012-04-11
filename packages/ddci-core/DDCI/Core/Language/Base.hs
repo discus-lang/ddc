@@ -5,7 +5,7 @@ module DDCI.Core.Language.Base
 where
 import DDCI.Core.Mode
 import DDC.Core.Language.Profile
-import DDC.Core.Parser.Tokens
+import DDC.Core.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty

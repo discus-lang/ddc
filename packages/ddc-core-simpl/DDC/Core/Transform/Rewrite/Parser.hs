@@ -5,8 +5,8 @@ module DDC.Core.Transform.Rewrite.Parser
 where
 import DDC.Core.Exp
 import DDC.Core.Parser.Type
-import DDC.Core.Parser.Tokens
 import DDC.Core.Parser
+import DDC.Core.Lexer.Tokens
 import qualified DDC.Base.Parser                 as P
 import qualified DDC.Type.Compounds              as T
 import qualified DDC.Core.Transform.Rewrite.Rule as R

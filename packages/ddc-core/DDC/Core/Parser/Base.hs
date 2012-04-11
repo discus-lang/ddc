@@ -15,7 +15,7 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Parser.Tokens
+import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>))
 import qualified DDC.Base.Parser        as P
 

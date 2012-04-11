@@ -4,12 +4,11 @@ module DDC.Core.Sea.Lite.Profile
         ( profile
         , lexString)
 where
-import DDC.Core.Parser.Lexer
-import DDC.Core.Language.Profile
 import DDC.Core.Sea.Lite.Env
 import DDC.Core.Sea.Lite.Name
+import DDC.Core.Language.Profile
+import DDC.Core.Lexer
 import DDC.Base.Lexer
-import DDC.Core.Parser.Tokens
 
 
 -- | Profile for the Lite fragment of Disciple Core.

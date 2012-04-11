@@ -4,8 +4,8 @@ module DDC.Core.Parser.Witness
         , pWitnessAtom) 
 where
 import DDC.Core.Parser.Type
-import DDC.Core.Parser.Tokens
 import DDC.Core.Parser.Base
+import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T

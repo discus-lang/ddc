@@ -9,7 +9,7 @@ module DDC.Core.Parser.Type
         , pTok, pTokAs)
 where
 import DDC.Core.Parser.Base
-import DDC.Core.Parser.Tokens   
+import DDC.Core.Lexer.Tokens   
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Base.Parser                  ((<?>))

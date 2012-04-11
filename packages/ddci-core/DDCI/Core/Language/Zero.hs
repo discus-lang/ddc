@@ -5,14 +5,13 @@ where
 import DDCI.Core.Mode
 import DDCI.Core.Language.Base
 import DDC.Core.Language.Profile
-import DDC.Core.Parser.Tokens
 import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
 import DDC.Base.Lexer
 import DDC.Type.Env                     (Env)
 import DDC.Type.Exp
 import Control.Monad.State.Strict
-import qualified DDC.Core.Parser.Lexer  as Core
+import DDC.Core.Lexer                   as Core
 import qualified DDC.Type.Env           as Env
 
 

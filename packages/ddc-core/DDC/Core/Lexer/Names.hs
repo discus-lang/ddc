@@ -1,5 +1,5 @@
 
-module DDC.Core.Parser.Names
+module DDC.Core.Lexer.Names
         ( -- * Keywords
           keywords
 
@@ -21,7 +21,7 @@ module DDC.Core.Parser.Names
         , readVar)
 where
 import DDC.Core.Exp
-import DDC.Core.Parser.Tokens
+import DDC.Core.Lexer.Tokens
 import Data.Char
 
 
