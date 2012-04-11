@@ -10,6 +10,7 @@ where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as T
+import DDC.Base.Pretty
 
 
 -- | Universes of the Disciple Core language.
@@ -43,6 +44,16 @@ data Universe
         --   expressions may diverge or cause side effects.
         | UniverseData
         deriving (Show, Eq) 
+
+
+instance Pretty Universe where
+ ppr u
+  = case u of
+        UniverseSort    -> text "Sort"
+        UniverseKind    -> text "Kind"
+        UniverseSpec    -> text "Spec"
+        UniverseWitness -> text "Witness"
+        UniverseData    -> text "Data"
 
 
 -- | Given the type of the type of the type of some thing (up three levels),
@@ -90,7 +101,7 @@ universeFromType1 tt
         TCon (TyConSpec _)        -> Nothing
         TCon (TyConBound u)       -> universeFromType2 (typeOfBound u)
         TForall _ t2              -> universeFromType1 t2
-        TApp _ t2                 -> universeFromType1 t2
+        TApp t1 _                 -> universeFromType1 t1
         TSum _                    -> Nothing
 
 

@@ -1,0 +1,28 @@
+
+
+-- In the kind universe
+:universe %
+:universe *
+:universe % ~> *
+
+-- In the spec universe
+:universe Int R0#
+:universe Unit
+:universe R0#
+:universe [a : *]. a
+:universe1 !
+:universe1 *
+:universe1 % ~> !
+
+-- From the witness universe
+:universe1 Const R0#
+:universe1 Mutable R0#
+:universe2 @
+:universe3 @@
+
+-- From the data universe
+:universe1 Int R0#
+:universe1 Unit
+:universe2 *
+:universe3 **
+

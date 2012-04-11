@@ -28,6 +28,10 @@ data Command
         | CommandSet            -- ^ Set a mode.
         | CommandLoad           -- ^ Load a module.
         | CommandKind           -- ^ Show the kind of a type.
+        | CommandUniverse       -- ^ Show the universe of a type.
+        | CommandUniverse1      -- ^ Given a type, show the universe of the original thing.
+        | CommandUniverse2      -- ^ Given a kind, show the universe of the original thing.
+        | CommandUniverse3      -- ^ Given a sort, show the universe of the original thing.
         | CommandEquivType      -- ^ Check if two types are equivalent.
         | CommandWitType        -- ^ Show the type of a witness.
         | CommandExpCheck       -- ^ Check an expression.
@@ -48,25 +52,29 @@ data Command
 -- | Names used to invoke each command.
 commands :: [(String, Command)]
 commands 
- =      [ (":help",     CommandHelp)
-        , (":?",        CommandHelp)
-        , (":set",      CommandSet)
-        , (":load",     CommandLoad)
-        , (":kind",     CommandKind)
-        , (":tequiv",   CommandEquivType)
-        , (":wtype",    CommandWitType)
-        , (":check",    CommandExpCheck)
-        , (":recon",    CommandExpRecon)
-        , (":type",     CommandExpType)
-        , (":effect",   CommandExpEffect)
-        , (":closure",  CommandExpClosure)
-        , (":eval",     CommandEval)
-        , (":trans",    CommandTrans)
-        , (":trun",     CommandTransEval)
-        , (":ast",      CommandAst) 
-        , (":sea",      CommandSea)
-        , (":llvm",     CommandLlvm)
-        , (":make",     CommandMake) ]
+ =      [ (":help",             CommandHelp)
+        , (":?",                CommandHelp)
+        , (":set",              CommandSet)
+        , (":load",             CommandLoad)
+        , (":kind",             CommandKind)
+        , (":universe1",        CommandUniverse1)
+        , (":universe2",        CommandUniverse2)
+        , (":universe3",        CommandUniverse3)
+        , (":universe",         CommandUniverse)
+        , (":tequiv",           CommandEquivType)
+        , (":wtype",            CommandWitType)
+        , (":check",            CommandExpCheck)
+        , (":recon",            CommandExpRecon)
+        , (":type",             CommandExpType)
+        , (":effect",           CommandExpEffect)
+        , (":closure",          CommandExpClosure)
+        , (":eval",             CommandEval)
+        , (":trans",            CommandTrans)
+        , (":trun",             CommandTransEval)
+        , (":ast",              CommandAst) 
+        , (":sea",              CommandSea)
+        , (":llvm",             CommandLlvm)
+        , (":make",             CommandMake) ]
 
 
 -- | Read the command from the front of a string.
@@ -75,7 +83,7 @@ readCommand ss
         | null $ words ss
         = Just (CommandBlank,   ss)
 
-        | [(cmd, rest)] <- [ (cmd, drop (length str) ss) 
+        | (cmd, rest) : _ <- [ (cmd, drop (length str) ss) 
                                         | (str, cmd)      <- commands
                                         , isPrefixOf str ss ]
         = Just (cmd, rest)
@@ -123,6 +131,22 @@ handleCmd1 state cmd source line
 
         CommandKind       
          -> do  cmdShowKind state source line
+                return state
+
+        CommandUniverse
+         -> do  cmdUniverse state source line
+                return state
+
+        CommandUniverse1
+         -> do  cmdUniverse1 state source line
+                return state
+
+        CommandUniverse2
+         -> do  cmdUniverse2 state source line
+                return state
+
+        CommandUniverse3
+         -> do  cmdUniverse3 state source line
                 return state
 
         CommandEquivType

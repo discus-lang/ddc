@@ -1,6 +1,10 @@
 
 module DDCI.Core.Command.Check
         ( cmdShowKind
+        , cmdUniverse
+        , cmdUniverse1
+        , cmdUniverse2
+        , cmdUniverse3
         , cmdTypeEquiv
         , cmdShowWType
         , cmdShowType
@@ -20,6 +24,7 @@ import DDC.Core.Parser
 import DDC.Core.Parser.Tokens
 import DDC.Type.Equiv
 import DDC.Type.Transform.SpreadT
+import DDC.Type.Universe
 import qualified DDC.Type.Check         as T
 import qualified DDC.Base.Parser        as BP
 
@@ -34,6 +39,92 @@ cmdShowKind state source str
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
+
+
+-- universe -------------------------------------------------------------------
+-- | Show the universe of some type.
+cmdUniverse :: State -> Source -> String -> IO ()
+cmdUniverse state source str
+ | Language frag  <- stateLanguage state
+ = do   result  <- cmdParseCheckType state source frag str
+        case result of
+         Just (t, _)
+          | Just u      <- universeOfType t
+          ->    outDocLn state $ ppr u
+
+         _ ->   outDocLn state (text "no universe")
+
+
+-- | Given the type of some thing (up one level)
+--   show the universe of the thing.
+cmdUniverse1 :: State -> Source -> String -> IO ()
+cmdUniverse1 state source str
+ | Language frag  <- stateLanguage state
+ = do   result  <- cmdParseCheckType state source frag str
+        case result of
+         Just (t, _)
+          | Just u      <- universeFromType1 t
+          ->    outDocLn state $ ppr u
+
+         _ ->   outDocLn state (text "no universe")
+
+
+-- | Given the kind of some thing (up two levels)
+--   show the universe of the thing.
+cmdUniverse2 :: State -> Source -> String -> IO ()
+cmdUniverse2 state source str
+ | Language frag  <- stateLanguage state
+ = do   result  <- cmdParseCheckType state source frag str
+        case result of
+         Just (t, _)
+          | Just u      <- universeFromType2 t
+          ->    outDocLn state $ ppr u
+
+         _ ->   outDocLn state (text "no universe")
+
+
+-- | Given the sort of some thing (up three levels)
+--   show the universe of the thing.
+--   We can't type check naked sorts, so just parse them.
+cmdUniverse3 :: State -> Source -> String -> IO ()
+cmdUniverse3 state source str
+ | Language frag  <- stateLanguage state
+ = let  profile = fragmentProfile frag
+        kenv    = profilePrimKinds profile
+
+        -- Parse the tokens.
+        goParse toks                
+         = case BP.runTokenParser describeTok (nameOfSource source) pType toks of
+            Left err    -> outDocLn state $ ppr err
+            Right t     -> goUniverse3 (spreadT kenv t)
+
+        goUniverse3 tt
+         = case universeFromType3 tt of
+            Just u      -> outDocLn state $ ppr u
+            Nothing     -> outDocLn state (text "no universe")
+
+   in   goParse (fragmentLex frag source str)
+
+
+-- | Parse a core type, and check its kind.
+cmdParseCheckType 
+        :: (Ord n, Show n, Pretty n)
+        => State 
+        -> Source 
+        -> Fragment n err
+        -> String 
+        -> IO (Maybe (Type n, Kind n))
+
+cmdParseCheckType _state source frag str
+ = let  toks    = fragmentLex frag source str
+        eTK     = loadType (fragmentProfile frag) (nameOfSource source) toks
+   in   case eTK of
+         Left err       
+          -> do putStrLn $ renderIndent $ ppr err
+                return Nothing
+
+         Right (t, k)
+          ->    return $ Just (t, k)
 
 
 -- tequiv ---------------------------------------------------------------------
