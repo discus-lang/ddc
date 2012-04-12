@@ -4,6 +4,9 @@ module DDC.Core.Lexer.Tokens
         , describeTok
         , renameTok
 
+        , TokMeta  (..)
+        , describeTokMeta
+
         , TokAtom  (..)
         , describeTokAtom
 
@@ -45,6 +48,9 @@ data Tok n
         -- Some junk symbol that isn't part of the language.
         = KJunk String
 
+        -- A meta-token
+        | KM    !TokMeta
+
         -- An atomic token.
         | KA    !TokAtom 
 
@@ -58,6 +64,7 @@ describeTok :: Pretty n => Tok n -> String
 describeTok kk
  = case kk of
         KJunk c         -> "character " ++ show c
+        KM tm           -> describeTokMeta  tm
         KA ta           -> describeTokAtom  ta
         KN tn           -> describeTokNamed tn
 
@@ -72,8 +79,28 @@ renameTok
 renameTok f kk
  = case kk of
         KJunk s -> Just $ KJunk s
+        KM t    -> Just $ KM t
         KA t    -> Just $ KA t
         KN t    -> liftM KN $ renameTokNamed f t
+
+
+-- TokMeta --------------------------------------------------------------------
+-- | Meta tokens that get eliminated before parsing.
+data TokMeta
+        = KNewLine
+        | KCommentLineStart
+        | KCommentBlockStart
+        | KCommentBlockEnd
+        deriving (Eq, Show)
+
+-- | Describe a TokMeta, for lexer error messages.
+describeTokMeta :: TokMeta -> String
+describeTokMeta tm
+ = case tm of
+        KNewLine                -> "new line"
+        KCommentLineStart       -> "comment start"
+        KCommentBlockStart      -> "block comment start"
+        KCommentBlockEnd        -> "block comment end"
 
 
 -- TokAtom --------------------------------------------------------------------

@@ -10,20 +10,27 @@ where
 import DDC.Base.Lexer
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Lexer.Names
+import DDC.Core.Lexer.Comments
 import Data.Char
 
 
 -------------------------------------------------------------------------------
 -- | Lex a string into tokens.
 --
+--   Automatically drop comments from the token stream along the way.
+--
 lexExp :: String -> Int -> String -> [Token (Tok String)]
 lexExp sourceName lineStart str
- = lexWord lineStart 1 str
+ = toksDropped
  where 
+  toksRaw       = lexWord lineStart 1 str
+  toksDropped   = dropComments toksRaw
+
 
   lexWord :: Int -> Int -> String -> [Token (Tok String)]
   lexWord line column w
    = let  tok t = Token t (SourcePos sourceName line column)
+          tokM  = tok . KM
           tokA  = tok . KA
           tokN  = tok . KN
 
@@ -35,7 +42,10 @@ lexExp sourceName lineStart str
 
         ' '  : w'        -> lexMore 1 w'
         '\t' : w'        -> lexMore 8 w'
-        '\n' : w'        -> lexWord (line + 1) 1 w'
+
+        -- Meta tokens
+        '-'  : '-' : w'  -> tokM KCommentLineStart : lexMore 2 w'
+        '\n' : w'        -> tokM KNewLine          : lexWord (line + 1) 1 w'
 
 
         -- The unit data constructor
@@ -152,8 +162,9 @@ lexExp sourceName lineStart str
 
             in  readNamedVar (c : body')
 
-        -- Error
-        c : _   -> [tok $ KJunk [c]]
+        -- Some unrecognised character.
+        -- We still need to keep lexing as this may be in a comment.
+        c : cs   -> (tok $ KJunk [c]) : lexMore 1 cs
 
 
 isLiteralish :: Char -> Bool

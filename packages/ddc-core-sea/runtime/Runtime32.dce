@@ -1,8 +1,70 @@
 
+-- | Primitives for constructing and destructing 32-bit heap objects.
+--
+--   All 32-bit heap objects start with a word containg the constructor tag
+--   of the object and a format field in the least-significant byte.
+--
+--   OBJECT
+--   ~~~~~~
+--   byte    3    2    1     0          (in MSB order)
+--          TAG2 TAG1 TAG0 FORMAT ... 
+--
+--
+--   FORMAT field
+--   ~~~~~~~~~~~~
+--   bit     7  6  5  4  3  2  1  0
+--           -- arg ---  -- obj ---
+--           X  X  X  X  X  X  0  0  -- Forward / Broken-Heart
+--           X  X  X  X  a  X  X  X  -- Anchor flag
+--           0  0  0  1  a  0  0  1  -- Thunk
+--           0  0  1  0  a  0  0  1  -- DataBoxed
+--           0  0  1  1  a  0  0  1  -- DataRaw
+--           0  1  0  0  a  0  0  1  -- DataMixed
+--           0  1  0  1  a  0  0  1  -- SuspIndir
+--           -- size --  a  0  1  1  -- DataRawSmall
+-- 
+--   * GC Forwarding / Broken-Heart pointers.
+--     During garbage collection, after the GC copies an object to the
+--     "to-space" its header in the "from-space" is overwritten with a pointer
+--     to where the "to-space" version of the object is.
+-- 
+--     We can identify these pointers because their lowest 2 bits are always 00.
+--     This is because objects in the heap are always 4-byte aligned.
+-- 
+--     For all other values of the format field, we ensure the lowest two bits
+--     are not 00.
+-- 
+--   * Anchor flag
+--     If bit 3 in the format field is set then the GC is not permitted to move
+--     the object. This is useful when the object has been allocated by malloc
+--     and exists outside the DDC runtime's garbage collected heap.
+-- 
+--   * Data{Boxed, Mixed, Raw, RawSmall}
+--     There are four data object formats:
+--      DataBoxed:    A boxed object containing pointers to more heap objects.
+--      DataMixed:    Some heap pointers, and some raw data.
+--      DataRaw:      Contains raw data and no pointers.
+--      DataRawSmall: Contains raw data where the size is small enough to 
+--                    encode directly in the format field.
+-- 
+--     The -obj- (object mode) portion of the format field can be used to
+--     determine if the object is a forwarding pointer, has a fixed value for
+--     its format field, or is a DataRS object.
+-- 
+--   Note: 64-bit floats.
+--   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--   The various object formats always contain an even number of 32-bit words
+--   in the header portion, before the payload. This ensures that the payloads
+--   of all heap objects are 8-byte aligned. We do this to support architectures
+--   that cannot load misaligned double precision floats (Float64). Architectures
+--   that can load them typically suffer a penalty, so it is good to align heap
+--   objects anyway.
+--
 module Runtime with 
 letrec {
 
-getTag          (obj : Ptr# Obj) : Tag#
+-- | Get the constructor tag of an object.
+getTag (obj : Ptr# Obj) : Tag#
  = do { ptr             = castPtr# [Word32#] [Obj] obj;
         header          = peek# [Word32#] ptr 0;
         tag32           = shr#  [Word32#] header 8w32#;
@@ -11,7 +73,18 @@ getTag          (obj : Ptr# Obj) : Tag#
       };
 
 
-allocBoxed      (tag : Tag#) (arity : Nat#) : Ptr# Obj
+-- Boxed ----------------------------------------------------------------------
+-- | Allocate a Boxed Data Object.
+--   The payload contains pointers to other heap objects.
+--
+--   typedef struct
+--   {    uint32_t  tagFormat;    // Constructor tag and format field.
+--        uint32_t  arity;        // Arity of the data constructor.
+--                                //  (The number of pointers in the payload)
+--        Obj*      payload[];    
+--   } DataBoxed;
+--    
+allocBoxed (tag : Tag#) (arity : Nat#) : Ptr# Obj
  = do { bytesPayload    = shl# [Nat#] 2 arity;
         bytesObj        = add# [Nat#] 8 bytesPayload;
         addr            = alloc# bytesObj;
@@ -28,13 +101,26 @@ allocBoxed      (tag : Tag#) (arity : Nat#) : Ptr# Obj
       };
 
 
-fieldOfBoxed    (obj : Ptr# Obj) (index : Nat#) : Ptr# Obj
+-- | Get one of the pointers from a boxed data object.
+fieldOfBoxed (obj : Ptr# Obj) (index : Nat#) : Ptr# Obj
  = do { offset          = add# [Nat#] 8 (shl# [Nat#] index 2);
         return# [Ptr# Obj] (plusPtr# [Obj] obj offset);
       };
 
 
-allocMixed      (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# Obj
+-- Mixed ----------------------------------------------------------------------
+-- | Allocate a Mixed Data Object.
+--   The payload contains some pointers followed by raw data.
+--
+--   typedef struct 
+--   {       uint32_t  tagFormat;
+--           uint32_t  padding;      // Padding to ensure payload is 8 byte aligned.
+--           uint32_t  size;         // Size of the whole object, in bytes.
+--           uint32_t  ptrCount;     // Number of pointers at the start of the payload.
+--           Obj*      payload[];    // Contains ptrCount pointers, then raw data.
+--   } DataMixed;
+--
+allocMixed (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# Obj
  = do { bytesPtrs       = shl# [Nat#] 2 arity;
         bytesObj        = add# [Nat#] 16 (add# [Nat#] bytesPtrs bytesRaw);
         addr            = alloc# bytesObj;
@@ -55,17 +141,30 @@ allocMixed      (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# Obj
       };
 
 
-fieldOfMixed    (obj : Ptr# Obj) (index : Nat#) : Ptr# Obj
+-- | Get one of the pointers from a mixed data object.
+fieldOfMixed (obj : Ptr# Obj) (index : Nat#) : Ptr# Obj
  = do { offset          = add# [Nat#] 16 (shl# [Nat#] index 2);
         return# [Ptr# Obj] (plusPtr# [Obj] obj offset);
       };
 
 
+-- | Get the address of the raw data payload from a mixed object.
 payloadOfMixed  (obj : Ptr# Obj) : Addr#
  =      return# [Addr#] (plusAddr# (takePtr# [Obj] obj) 16);
 
 
-allocRaw        (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
+-- Raw ------------------------------------------------------------------------
+-- | A Raw Data Object.
+--   A raw data object does not contain heap pointers that need to be traced
+--   by the garbage collector.
+--
+--   typedef struct 
+--   {       uint32_t  tagFormat;    // Constructor tag and format field.
+--           uint32_t  size;         // Size of the whole object, in bytes.
+--           uint8_t   payload[];    // Raw data that does not contain heap pointers.
+--   } DataRaw;
+--
+allocRaw (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
  = do { bytesObj        = add# [Nat#] 8 bytesPayload;
         addr            = alloc# bytesObj;
 
@@ -81,10 +180,21 @@ allocRaw        (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
      };
 
 
+-- | Get the address of the payload data from a raw object.
 payloadOfRaw    (obj : Ptr# Obj) : Addr#
  =      return# [Addr#] (plusAddr# (takePtr# [Obj] obj) 8);
 
 
+-- RawSmall -------------------------------------------------------------------
+-- | A Small Raw object.
+--   The object size is encoded as part of format field.
+--   This saves us from needing to include a separate arity field.
+--
+--   typedef struct 
+--   {       uint32_t  tagFormat;    // Constructor tag and format field.
+--           uint8_t   payload[];    // Raw data that does not contain heap pointers.
+--   } DataRawSmall;
+--
 allocRawSmall   (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
  = do { bytesObj        = add# [Nat#] 4 bytesPayload;
         addr            = alloc# bytesObj;
@@ -102,6 +212,7 @@ allocRawSmall   (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
      };
 
 
+-- | Get the address of the payload data from a raw small object.
 payloadOfRawSmall (obj : Ptr# Obj) : Addr#
  =      return# [Addr#] (plusAddr# (takePtr# [Obj] obj) 4);
  
