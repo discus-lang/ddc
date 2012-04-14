@@ -5,6 +5,8 @@ module DDC.Base.Lexer
         
           -- * Tokens
         , Token         (..)
+        , tokenLine
+        , tokenColumn
         , takeParsecSourcePos)
 where
 import DDC.Base.Pretty
@@ -44,3 +46,14 @@ takeParsecSourcePos (Token _ sp)
  = case sp of
         SourcePos source l c
          -> P.newPos source l c
+
+
+-- | Take the line number of a token.
+tokenLine :: Token t -> Int
+tokenLine (Token _ (SourcePos _ l _))   = l
+
+
+-- | Take the column number of a token.
+tokenColumn :: Token t -> Int
+tokenColumn (Token _ (SourcePos _ _ c)) = c
+

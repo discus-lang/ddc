@@ -27,7 +27,8 @@ deriving instance Show Language
 data Fragment n (err :: * -> *)
         = forall s. Fragment
         { fragmentProfile       :: Profile n
-        , fragmentLex           :: Source -> String -> [Token (Tok n)]
+        , fragmentLexModule     :: Source -> String -> [Token (Tok n)]
+        , fragmentLexExp        :: Source -> String -> [Token (Tok n)]
         , fragmentCheckModule   :: forall a. Module a n -> Maybe (err a)
         , fragmentCheckExp      :: forall a. Exp a n    -> Maybe (err a) 
 

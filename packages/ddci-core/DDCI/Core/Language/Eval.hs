@@ -18,7 +18,13 @@ fragmentEval :: Fragment Name Error
 fragmentEval
         = Fragment
         { fragmentProfile       = evalProfile
-        , fragmentLex           = \s str -> lexString (nameOfSource s) (lineStartOfSource s) str
+
+        , fragmentLexModule
+                = \s str -> lexModuleString (nameOfSource s) (lineStartOfSource s) str
+
+        , fragmentLexExp        
+                = \s str -> lexExpString    (nameOfSource s) (lineStartOfSource s) str
+
         , fragmentCheckModule   = error "languages: finish me"
         , fragmentCheckExp      = checkCapsX 
         , fragmentMakeNamifierT = makeNamifier freshT

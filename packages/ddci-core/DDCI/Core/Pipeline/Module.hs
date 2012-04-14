@@ -105,7 +105,7 @@ pipeText source str pp
 
         PipeTextLoadCore frag pipes
          -> let sourceName      = nameOfSource source
-                toks            = fragmentLex frag source str
+                toks            = fragmentLexModule frag source str
             in case CL.loadModule (fragmentProfile frag) sourceName toks of
                  Left err -> return $ [ErrorLoad err]
                  Right mm -> liftM concat $ mapM (pipeCore mm) pipes
@@ -158,7 +158,7 @@ pipeCore mm pp
                   Right mm' -> liftM concat $ mapM (pipeCore mm') pipes
 
         PipeCoreSimplify frag simpl pipes
-         | Fragment _ _ _ _ makeNamifierT makeNamifierX nameZero <- frag
+         | Fragment _ _ _ _ _ makeNamifierT makeNamifierX nameZero <- frag
          -> let 
                 -- Collect up names used as binders,
                 -- We pass these to the namifiers so they know not to

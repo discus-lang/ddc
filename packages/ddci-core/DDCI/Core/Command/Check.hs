@@ -34,7 +34,7 @@ import qualified DDC.Base.Parser        as BP
 cmdShowKind :: State -> Source -> String -> IO ()
 cmdShowKind state source str
  | Language frag  <- stateLanguage state
- = let  toks    = fragmentLex frag source str
+ = let  toks    = fragmentLexExp frag source str
         eTK     = loadType (fragmentProfile frag) (nameOfSource source) toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
@@ -103,7 +103,7 @@ cmdUniverse3 state source str
             Just u      -> outDocLn state $ ppr u
             Nothing     -> outDocLn state (text "no universe")
 
-   in   goParse (fragmentLex frag source str)
+   in   goParse (fragmentLexExp frag source str)
 
 
 -- | Parse a core type, and check its kind.
@@ -116,7 +116,7 @@ cmdParseCheckType
         -> IO (Maybe (Type n, Kind n))
 
 cmdParseCheckType _state source frag str
- = let  toks    = fragmentLex frag source str
+ = let  toks    = fragmentLexExp frag source str
         eTK     = loadType (fragmentProfile frag) (nameOfSource source) toks
    in   case eTK of
          Left err       
@@ -161,7 +161,7 @@ cmdTypeEquiv state source ss
                 Right{} 
                  ->     return True
 
-   in goParse (fragmentLex frag source ss)
+   in goParse (fragmentLexExp frag source ss)
 
 
 
@@ -170,7 +170,7 @@ cmdTypeEquiv state source ss
 cmdShowWType :: State -> Source -> String -> IO ()
 cmdShowWType state source str
  | Language frag <- stateLanguage state
- = let  toks    = fragmentLex frag source str
+ = let  toks    = fragmentLexExp frag source str
         eTK     = loadWitness (fragmentProfile frag) (nameOfSource source) toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
@@ -245,7 +245,7 @@ cmdParseCheckExp
 
 cmdParseCheckExp _state frag
         source str
- = goLoad (fragmentLex frag source str)
+ = goLoad (fragmentLexExp frag source str)
  where
         -- Parse and type check the expression.
         goLoad toks

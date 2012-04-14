@@ -20,7 +20,8 @@ module DDC.Core.Sea.Output
         , PrimStore     (..)
         , PrimExternal  (..)
         , readName
-        , lexString)
+        , lexModuleString
+        , lexExpString)
 
 where
 import DDC.Core.Sea.Base

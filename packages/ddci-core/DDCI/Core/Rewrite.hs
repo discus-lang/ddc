@@ -49,7 +49,7 @@ parseRewrite str
 parseAdd :: String -> Either Error SetRuleCommand
 parseAdd str
  =  let (name,rest) = parseFirstWord str in
-    goParse name (lexString "<interactive>" 0 rest)
+    goParse name (lexExpString "<interactive>" 0 rest)
  where
         -- Lex and parse the string.
         goParse name toks                

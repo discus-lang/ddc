@@ -7,7 +7,8 @@ module DDC.Core.Eval.Name
         , Rgn     (..)
         , Cap     (..)
         , readName
-        , lexString)
+        , lexModuleString
+        , lexExpString)
 where
 import DDC.Base.Pretty
 import DDC.Base.Lexer
@@ -242,8 +243,20 @@ readName str@(c:rest)
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexString :: String -> Int -> String -> [Token (Tok Name)]
-lexString sourceName lineStart str
+lexModuleString :: String -> Int -> String -> [Token (Tok Name)]
+lexModuleString sourceName lineStart str
+ = map rn $ lexModuleWithOffside sourceName lineStart str
+ where rn (Token strTok sp) 
+        = case renameTok readName strTok of
+                Just t' -> Token t' sp
+                Nothing -> Token (KJunk "lexical error") sp
+
+
+-- | Lex a string to tokens, using primitive names.
+--
+--   The first argument gives the starting source line number.
+lexExpString :: String -> Int -> String -> [Token (Tok Name)]
+lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
  where rn (Token strTok sp) 
         = case renameTok readName strTok of

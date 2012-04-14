@@ -2,7 +2,8 @@
 -- | Language profile for the Sea Output fragment of Disciple Core.
 module DDC.Core.Sea.Output.Profile
         ( profile
-        , lexString)
+        , lexModuleString
+        , lexExpString)
 where
 import DDC.Core.Sea.Output.Env
 import DDC.Core.Sea.Output.Name
@@ -29,12 +30,26 @@ features = zeroFeatures
 
 
 -- | Lex a string to tokens, using primitive names.
-lexString
+lexModuleString
          :: String      -- ^ Source file name.
          -> Int         -- ^ Starting line number.
          -> String      -- ^ String to parse.
          -> [Token (Tok Name)]
-lexString sourceName lineStart str
+lexModuleString sourceName lineStart str
+ = map rn $ lexModuleWithOffside sourceName lineStart str
+ where rn (Token strTok sp) 
+        = case renameTok readName strTok of
+                Just t' -> Token t' sp
+                Nothing -> Token (KJunk "lexical error") sp
+
+
+-- | Lex a string to tokens, using primitive names.
+lexExpString
+         :: String      -- ^ Source file name.
+         -> Int         -- ^ Starting line number.
+         -> String      -- ^ String to parse.
+         -> [Token (Tok Name)]
+lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
  where rn (Token strTok sp) 
         = case renameTok readName strTok of

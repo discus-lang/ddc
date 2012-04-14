@@ -5,28 +5,44 @@ module DDC.Core.Lexer
         , module DDC.Core.Lexer.Names
 
           -- * Lexer
+        , lexModuleWithOffside
         , lexExp)
 where
 import DDC.Base.Lexer
-import DDC.Core.Lexer.Tokens
-import DDC.Core.Lexer.Names
+import DDC.Core.Lexer.Offside
 import DDC.Core.Lexer.Comments
+import DDC.Core.Lexer.Names
+import DDC.Core.Lexer.Tokens
 import Data.Char
 
 
--------------------------------------------------------------------------------
+-- Module ---------------------------------------------------------------------
+-- | Lex a module and apply the offside rule.
+lexModuleWithOffside :: String -> Int -> String -> [Token (Tok String)]
+lexModuleWithOffside sourceName lineStart str
+        = applyOffside []
+        $ addStarts
+        $ dropComments 
+        $ lexString sourceName lineStart str
+
+
+-- Exp ------------------------------------------------------------------------
 -- | Lex a string into tokens.
 --
 --   Automatically drop comments from the token stream along the way.
 --
 lexExp :: String -> Int -> String -> [Token (Tok String)]
 lexExp sourceName lineStart str
- = toksDropped
+        = dropNewLines
+        $ dropComments
+        $ lexString sourceName lineStart str
+
+
+-- Generic --------------------------------------------------------------------
+lexString :: String -> Int -> String -> [Token (Tok String)]
+lexString sourceName lineStart str
+        = lexWord lineStart 1 str
  where 
-  toksRaw       = lexWord lineStart 1 str
-  toksDropped   = dropComments toksRaw
-
-
   lexWord :: Int -> Int -> String -> [Token (Tok String)]
   lexWord line column w
    = let  tok t = Token t (SourcePos sourceName line column)
@@ -173,7 +189,3 @@ isLiteralish c
         || c == 'b' || c == 'o' || c == 'x'
         || c == 'w' || c == 'i' 
         || c == '#'
-
-
-
-

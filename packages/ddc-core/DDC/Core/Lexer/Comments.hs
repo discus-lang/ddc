@@ -1,6 +1,7 @@
 
 module DDC.Core.Lexer.Comments
-        (dropComments)
+        ( dropComments
+        , dropNewLines)
 where
 import DDC.Base.Lexer
 import DDC.Core.Lexer.Tokens
@@ -19,18 +20,18 @@ dropComments (t@(Token tok _) : xs)
         KM KCommentBlockStart 
          -> dropComments $ dropCommentBlock xs t
 
-        KM KNewLine
-         -> dropComments xs
-
         _ -> t : dropComments xs
 
 
+-- | Drop block comments form a token stream.
 dropCommentBlock 
         :: Eq n
-        => [Token (Tok n)] -> Token (Tok n) -> [Token (Tok n)]
+        => [Token (Tok n)] 
+        -> Token (Tok n) 
+        -> [Token (Tok n)]
 
 dropCommentBlock [] _terr
-        = error "unterminated comment block"
+        = error "DDC.Core.Lexer.Comments.dropCommentBlock: unterminated comment block"
 
 dropCommentBlock (t@(Token tok _) : xs) terr
  = case tok of
@@ -45,5 +46,17 @@ dropCommentBlock (t@(Token tok _) : xs) terr
         _ -> dropCommentBlock xs terr
 
 
+-- | Drop newline tokens from this list.
+dropNewLines :: Eq n => [Token (Tok n)] -> [Token (Tok n)]
+dropNewLines [] = []
+dropNewLines (t:ts)
+        | isToken t (KM KNewLine)
+        = dropNewLines ts
+
+        | otherwise
+        = t : dropNewLines ts
+
+
 isToken :: Eq n => Token (Tok n) -> Tok n -> Bool
 isToken (Token tok _) tok2 = tok == tok2
+

@@ -19,7 +19,8 @@ fragmentZero :: Fragment Name Error
 fragmentZero 
         = Fragment
         { fragmentProfile       = (zeroProfile :: Profile Name)
-        , fragmentLex           = lexStringZero 
+        , fragmentLexModule     = lexModuleZero
+        , fragmentLexExp        = lexExpZero
         , fragmentCheckModule   = const Nothing
         , fragmentCheckExp      = const Nothing 
         , fragmentMakeNamifierT = makeNamifier freshT
@@ -48,8 +49,20 @@ instance Pretty Name where
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexStringZero :: Source -> String -> [Token (Tok Name)]
-lexStringZero source str
+lexModuleZero :: Source -> String -> [Token (Tok Name)]
+lexModuleZero source str
+ = map rn $ Core.lexModuleWithOffside (nameOfSource source) (lineStartOfSource source) str
+ where rn (Token t sp) 
+        = case renameTok (Just . Name) t of
+                Just t' -> Token t' sp
+                Nothing -> Token (KJunk "lexical error") sp
+
+
+-- | Lex a string to tokens, using primitive names.
+--
+--   The first argument gives the starting source line number.
+lexExpZero :: Source -> String -> [Token (Tok Name)]
+lexExpZero source str
  = map rn $ Core.lexExp (nameOfSource source) (lineStartOfSource source) str
  where rn (Token t sp) 
         = case renameTok (Just . Name) t of

@@ -16,7 +16,13 @@ fragmentSea :: Fragment Name Error
 fragmentSea 
         = Fragment
         { fragmentProfile       = profile 
-        , fragmentLex           = \s str -> lexString (nameOfSource s) (lineStartOfSource s) str
+
+        , fragmentLexModule
+                = \s str -> lexModuleString (nameOfSource s) (lineStartOfSource s) str
+
+        , fragmentLexExp
+                = \s str -> lexExpString    (nameOfSource s) (lineStartOfSource s) str
+
         , fragmentCheckModule   = const Nothing
         , fragmentCheckExp      = const Nothing
         , fragmentMakeNamifierT = makeNamifier freshT 
