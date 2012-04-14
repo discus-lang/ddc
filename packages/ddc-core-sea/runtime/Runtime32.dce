@@ -85,8 +85,8 @@ getTag (obj : Ptr# Obj) : Tag#
 --    
 allocBoxed (tag : Tag#) (arity : Nat#) : Ptr# Obj
  = do   
-        bytesPayload    = shl# [Nat#] 2 arity
-        bytesObj        = add# [Nat#] 8 bytesPayload
+        bytesPayload'    = shl# [Nat#] 2 arity
+        bytesObj        = add# [Nat#] 8 bytesPayload'
         addr            = alloc# bytesObj
 
         tag32           = promote# [Word32#] [Tag#] tag

@@ -8,6 +8,7 @@ where
 import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
+import DDC.Core.Sea.Base.Sanitize
 import qualified DDC.Core.Sea.Output    as E
 import qualified DDC.Core.Exp           as C
 
@@ -18,8 +19,9 @@ import qualified DDC.Core.Exp           as C
 mconvAtom :: Platform -> C.Exp a E.Name -> Maybe Exp
 mconvAtom pp xx
  = case xx of
-        C.XVar _ (C.UName (E.NameVar str) t)
-         -> Just $ XVar (Var (NameLocal str) (convType pp t))
+        C.XVar _ (C.UName (E.NameVar n) t)
+         -> let n' = sanitizeName n
+            in  Just $ XVar (Var (NameLocal n') (convType pp t))
 
         C.XCon _ (C.UPrim (E.NameTag  tag) t)
          -> Just $ XLit (LitInt (convType pp t) tag)

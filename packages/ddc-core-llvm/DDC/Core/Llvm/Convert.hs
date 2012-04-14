@@ -12,6 +12,7 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
+import DDC.Core.Sea.Base.Sanitize
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import Data.Sequence                            (Seq, (<|), (|>), (><))
@@ -19,7 +20,6 @@ import Data.Map                                 (Map)
 import qualified DDC.Core.Sea.Output            as E
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
-import qualified DDC.Base.Pretty                as P
 import qualified Data.Map                       as Map
 import qualified Data.Sequence                  as Seq
 import qualified Data.Foldable                  as Seq
@@ -98,13 +98,15 @@ convSuperM
         -> C.Exp () E.Name              -- ^ Super body.
         -> LlvmM Function
 
-convSuperM (C.BName n tSuper) x
+convSuperM (C.BName (E.NameVar nTop) tSuper) x
  | Just (bsParam, xBody)  <- takeXLams x
  = do   platform          <- gets llvmStatePlatform
 
+        let nTop' = sanitizeName nTop
+
         -- Split off the argument and result types.
         let (tsArgs, tResult)       
-                = takeTFunArgResult tSuper
+                  = takeTFunArgResult tSuper
 
         -- Make parameter binders.
         let params      = map (llvmParameterOfType platform) tsArgs
@@ -113,7 +115,7 @@ convSuperM (C.BName n tSuper) x
         -- Declaration of the super.
         let decl 
                 = FunctionDecl 
-                { declName               = P.renderPlain $ P.ppr n
+                { declName               = nTop'
                 , declLinkage            = External
                 , declCallConv           = CC_Ccc
                 , declReturnType         = convType platform tResult
@@ -140,8 +142,10 @@ convSuperM _ _          = die "invalid super"
 nameOfParam :: C.Bind E.Name -> String
 nameOfParam bb
  = case bb of
-        C.BName n _     -> P.renderPlain $ P.ppr n
-        _               -> die "invalid parameter name"
+        C.BName (E.NameVar n) _ 
+           -> sanitizeName n
+
+        _  -> die "invalid parameter name"
 
 
 -- Body -----------------------------------------------------------------------
@@ -167,9 +171,10 @@ convBodyM blocks label instrs xx
                      |>  Block label (instrs |> IReturn (Just x'))
 
          -- Variable assignment.
-         C.XLet _ (C.LLet C.LetStrict (C.BName (E.NameVar str) t) x1) x2
+         C.XLet _ (C.LLet C.LetStrict (C.BName (E.NameVar n) t) x1) x2
           -> do t'       <- convTypeM t
-                let dst  = Var (NameLocal str) t'
+                let n'   = sanitizeName n
+                let dst  = Var (NameLocal n') t'
                 instrs'  <- convExpM pp dst x1
                 convBodyM blocks label (instrs >< instrs') x2
 
@@ -287,10 +292,11 @@ convExpM
         -> C.Exp () E.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
-convExpM _  vDst (C.XVar _ (C.UName (E.NameVar str) t))
- = do   t'      <- convTypeM t
+convExpM _  vDst (C.XVar _ (C.UName (E.NameVar n) t))
+ = do   let n'  = sanitizeName n
+        t'      <- convTypeM t
         return  $ Seq.singleton 
-                $ ISet vDst (XVar (Var (NameLocal str) t'))
+                $ ISet vDst (XVar (Var (NameLocal n') t'))
 
 
 convExpM pp vDst (C.XCon _ (C.UPrim name _t))

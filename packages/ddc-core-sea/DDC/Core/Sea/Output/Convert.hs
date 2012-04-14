@@ -79,13 +79,14 @@ convSuperM b x
  , Just (bsParam, xBody) <- takeXLams x
  ,  (_, tResult)         <- takeTFunArgResult tTop
  = do    
+        let nTop'       =  text $ sanitizeName nTop
         bsParam'        <- mapM convBind bsParam
         tResult'        <- convTypeM tResult
         xBody'          <- convBodyM xBody
 
         return  $ vcat
                 [ tResult'
-                         <+> text nTop
+                         <+> nTop'
                          <+> parenss bsParam'
                 , lbrace <> line
                          <> indent 8 (xBody' <> semi) <> line
@@ -284,10 +285,10 @@ convRValueM xx
         -- Super application.
         XApp{}
          |  (XVar _ (UName n _) : args)  <- takeXApps xx
-         ,  NameVar str <- n
-         -> do  args'   <- mapM convRValueM args
-
-                return  $ text str <+> parenss args'
+         ,  NameVar nTop <- n
+         -> do  let nTop' = sanitizeName nTop
+                args'     <- mapM convRValueM args
+                return  $ text nTop' <+> parenss args'
 
         -- Type argument.
         XType t
