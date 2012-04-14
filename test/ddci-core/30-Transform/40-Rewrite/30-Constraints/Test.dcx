@@ -43,11 +43,10 @@ letregion ^ in
 ;;
 
 -- and with witnesses as lambda arguments
--- TODO
--- :trans..
--- (\(w : Const R0#). \(u : Unit).
--- 	(copyInt [:R0# R0#:] (23 [R0#] ())))
--- ;;
+:trans..
+(\(w : Const R0#). \(u : Unit).
+	(copyInt [:R0# R0#:] (23 [R0#] ())))
+;;
 
 -- don't: lambda arguments for a different region
 :trans..

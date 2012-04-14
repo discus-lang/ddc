@@ -62,10 +62,13 @@ extendWitness :: (Ord n,Show n) => Bind n -> WitMap n -> WitMap n
 -- originally was checking universe here but type of binds is
 -- TApp (TCon TyConWitness) (TVar "r"...)
 -- which isn't in wit?
-extendWitness b (w:ws)
+extendWitness b ws
     | T.isWitnessType ty
-    = (ty:w) : ws
- where ty = T.typeOfBind b
+    = extend ws
+ where
+    ty = T.typeOfBind b
+    extend (w:ws')	= (ty:w) : ws'
+    extend []		= [[ty]]
 extendWitness _ ws
     = ws
 
