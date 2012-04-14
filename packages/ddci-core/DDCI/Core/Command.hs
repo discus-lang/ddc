@@ -14,6 +14,7 @@ import DDCI.Core.Command.Trans
 import DDCI.Core.Command.Ast
 import DDCI.Core.Command.Sea
 import DDCI.Core.Command.Llvm
+import DDCI.Core.Command.Compile
 import DDCI.Core.Command.Make
 import DDCI.Core.State
 import Data.List
@@ -45,7 +46,8 @@ data Command
         | CommandAst            -- ^ Show the AST of an expression.
         | CommandSea            -- ^ Convert a Sea core module to C code.
         | CommandLlvm           -- ^ Convert a Sea core module to LLVM code.
-        | CommandMake           -- ^ Compile a file.
+        | CommandCompile        -- ^ Compile a file.
+        | CommandMake           -- ^ Compile and link and executable.
         deriving (Eq, Show)
 
 
@@ -74,6 +76,7 @@ commands
         , (":ast",              CommandAst) 
         , (":sea",              CommandSea)
         , (":llvm",             CommandLlvm)
+        , (":compile",          CommandCompile)
         , (":make",             CommandMake) ]
 
 
@@ -199,6 +202,10 @@ handleCmd1 state cmd source line
 
         CommandLlvm
          -> do  cmdLlvmOut state source line
+                return state
+
+        CommandCompile
+         -> do  cmdCompile state source line
                 return state
 
         CommandMake

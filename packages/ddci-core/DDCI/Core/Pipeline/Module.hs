@@ -238,7 +238,7 @@ data PipeLlvm
         , pipeFileLlvm          :: FilePath
         , pipeFileAsm           :: FilePath
         , pipeFileObject        :: FilePath
-        , pipeFileExe           :: FilePath }
+        , pipeFileExe           :: Maybe FilePath }
         deriving (Show)
 
 
@@ -253,7 +253,7 @@ pipeLlvm mm pp
         PipeLlvmPrint sink
          ->     pipeSink (renderIndent $ ppr mm) sink
 
-        PipeLlvmCompile builder llPath sPath oPath exePath
+        PipeLlvmCompile builder llPath sPath oPath mExePath
          -> do  -- Write out the LLVM source file.
                 let llSrc       = renderIndent $ ppr mm
                 writeFile llPath llSrc
@@ -264,8 +264,12 @@ pipeLlvm mm pp
                 -- Assemble .s file into .o file
                 buildAs builder  sPath  oPath
 
-                -- Link .o file into an executable.
-                buildLdExe builder oPath exePath
+                -- Link .o file into an executable if we were asked for one.      
+                (case mExePath of
+                  Nothing -> return ()
+                  Just exePath
+                   -> do buildLdExe builder oPath exePath
+                         return ())
 
                 return []
 
