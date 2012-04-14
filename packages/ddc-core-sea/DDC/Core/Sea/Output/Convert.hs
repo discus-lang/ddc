@@ -5,6 +5,7 @@ module DDC.Core.Sea.Output.Convert
 where
 import DDC.Core.Sea.Output.Error
 import DDC.Core.Sea.Output.Name
+import DDC.Core.Sea.Base.Sanitize
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Core.Module
@@ -99,7 +100,7 @@ convSuperM b x
 convBind :: Bind Name -> ConvertM a Doc
 convBind (BName (NameVar str) t)
  = do   t'      <- convTypeM t
-        return  $ t' <+> text str
+        return  $ t' <+> (text $ sanitizeName str)
 
 convBind b 
  = throw $ ErrorParameterInvalid b
@@ -123,9 +124,10 @@ convBodyM xx
          -> do  t'      <- convTypeM   t
                 x1'     <- convRValueM x1
                 x2'     <- convBodyM   x2
+                let n'  = text $ sanitizeName n
 
                 return  $ vcat
-                        [ fill 16 (t' <+> text n) <+> equals <+> x1' <> semi
+                        [ fill 16 (t' <+> n') <+> equals <+> x1' <> semi
                         , x2' ]
 
         -- Non-binding statement.
@@ -259,7 +261,7 @@ convRValueM xx
         -- Plain variable.
         XVar _ (UName n _)
          | NameVar str  <- n
-         -> return $ text str
+         -> return $ text $ sanitizeName str
 
         -- Literals
         XCon _ (UPrim (NameNat n) _)

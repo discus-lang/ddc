@@ -1,0 +1,5 @@
+
+module Test with letrec
+
+thing (x' : Nat#) : Nat#
+ = return# [Nat#] (add# [Nat#] x' 1)
