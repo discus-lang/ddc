@@ -89,12 +89,21 @@ pImportTypeSpec
         => Parser n (n, (QualName n, Type n))
 
 pImportTypeSpec 
- = do   qn      <- pQualName
+ = P.choice
+ [      -- Import with an explicit external name.
+        -- Module.varExternal with varLocal
+   do   qn      <- pQualName
         pTok KWith
         n       <- pName
         pTok KColonColon
         t       <- pType
         return  (n, (qn, t))
+
+ , do   n       <- pName
+        pTok KColonColon
+        t       <- pType
+        return  (n, (QualName (ModuleName []) n, t))
+ ]        
         
 
 

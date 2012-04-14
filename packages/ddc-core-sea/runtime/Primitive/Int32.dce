@@ -1,8 +1,7 @@
 
 module Int32 
 imports {
-        Runtime32.allocRawSmall
-         with allocRawSmall :: Tag# -> Nat# -> Ptr# Obj;
+        allocRawSmall :: Tag# -> Nat# -> Ptr# Obj;
 } 
 with 
 letrec {
