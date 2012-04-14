@@ -133,8 +133,10 @@ makeLets
         -> Exp a n
 makeLets _  f0 [] = f0
 makeLets ar f0 args@((_,annot):_) 
- = go 0 (findArity f0) ((f0,annot):args) []
+ = go 0 f0Arity ((f0,annot):args) []
  where
+        Just f0Arity    = findArity f0
+
         tBot = T.tBot T.kData
 
         -- out of arguments, create XApps out of leftovers
@@ -179,8 +181,12 @@ makeLets ar f0 args@((_,annot):_)
         mkApps l i ((_,a):xs)
          = XApp a (mkApps l (i+1) xs) (XVar a $ UIx i tBot)
 
-        findArity (XVar _ b) = max (getArity ar b) 1
-        findArity x          = max (arityOfExp x)  1
+        findArity (XVar _ b) 
+         | Just arity   <- getArity ar b
+         = Just (max arity 1)
+
+        findArity x
+         = Just (max (arityOfExp x) 1)
 
 
 -- | Check if an expression needs a binding, or if it's simple enough to be applied as-is
@@ -222,12 +228,12 @@ extendsArities arity exts = foldl go arity exts
 
 
 -- | Look up a binder's arity
-getArity :: Ord n => Arities n -> Bound n -> Int
-getArity (_named, anon) (UIx ix _)   = anon !! ix
-getArity (named, _anon) (UName n _)  = named Map.! n
-getArity _              (UHole _)    = 0
+getArity :: Ord n => Arities n -> Bound n -> Maybe Int
+getArity (_named, anon) (UIx ix _)   = Just (anon !! ix)
+getArity (named, _anon) (UName n _)  = Map.lookup n named
+getArity _              (UHole _)    = Just 0
 -- Get a primitive's arity from its type
-getArity (_named,_anon) (UPrim _ t)  = arityFromType t
+getArity (_named,_anon) (UPrim _ t)  = Just $ arityFromType t
 
 
 -- | Get the arities of a `Lets`

@@ -52,7 +52,7 @@ checkModuleM defs kenv tenv mm@ModuleCore{}
         mapM_ (checkTypeM defs kenv) $ Map.elems $ moduleExportKinds mm
         mapM_ (checkTypeM defs kenv) $ Map.elems $ moduleExportTypes mm
 
-        -- Convert the imorted kind and type map to a list of binds.
+        -- Convert the imported kind and type map to a list of binds.
         let bksImport  = [BName n k |  (n, (_, k)) <- Map.toList $ moduleImportKinds mm]
         let btsImport  = [BName n t |  (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
 

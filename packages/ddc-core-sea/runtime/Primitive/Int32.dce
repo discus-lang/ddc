@@ -1,0 +1,32 @@
+
+module Int32 
+imports {
+        Runtime32.allocRawSmall
+         with allocRawSmall :: Tag# -> Nat# -> Ptr# Obj;
+} 
+with 
+letrec {
+
+boxInt32 (x : Int32#) : Ptr# Obj
+ = do { obj     = allocRawSmall TAG0# 4;
+        addr    = takePtr# [Obj] obj;
+        write#  [Int32#] addr 8 x;
+        return# [Ptr# Obj] obj;
+ };
+
+unboxInt32 (obj : Ptr# Obj) : Int32#
+ = do { addr    = takePtr# [Obj] obj;
+        x       = read#   [Int32#] addr 8;
+        return# [Int32#] x;
+ };
+
+addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt32 (add# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+
+subInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt32 (sub# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+
+mulInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt32 (mul# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+
+}

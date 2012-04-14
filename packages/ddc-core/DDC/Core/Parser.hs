@@ -32,7 +32,7 @@ pModule
  = do   pTok KModule
         name    <- pModuleName
 
-        -- exprots { SIG;+ }
+        -- exports { SIG;+ }
         tExports 
          <- P.choice
             [do pTok KExports
