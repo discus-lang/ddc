@@ -178,10 +178,15 @@ primOpNames
 -- Literals -------------------------------------------------------------------
 -- | Read a signed integer.
 readLitInteger :: String -> Maybe Integer
-readLitInteger str
-        | (ds, "")      <- span (\c -> isDigit c || c == '-') str
-        = Just $ read ds
+readLitInteger []       = Nothing
+readLitInteger str@(c:cs)
+        | '-'   <- c
+        , all isDigit cs
+        = Just $ read str
 
+        | all isDigit str
+        = Just $ read str
+        
         | otherwise
         = Nothing
         

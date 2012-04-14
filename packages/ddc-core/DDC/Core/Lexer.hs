@@ -60,14 +60,17 @@ lexString sourceName lineStart str
         ' '  : w'        -> lexMore 1 w'
         '\t' : w'        -> lexMore 8 w'
 
-
         -- Literal values
         -- This needs to come before the rule for '-'
         c : cs
-         | isLitStart c
+         | isDigit c
          , (body, rest)         <- span isLitBody cs
          -> tokN (KLit (c:body))                 : lexMore (length (c:body)) rest
 
+        '-' : c : cs
+         | isDigit c
+         , (body, rest)         <- span isLitBody cs
+         -> tokN (KLit ('-':c:body))                 : lexMore (length (c:body)) rest
 
         -- Meta tokens
         '-'  : '-' : w'  -> tokM KCommentLineStart : lexMore 2 w'
@@ -138,7 +141,7 @@ lexString sourceName lineStart str
         '$' : w'        -> tokA KKindClosure     : lexMore 1 w'
         '@' : w'        -> tokA KKindWitness     : lexMore 1 w'
         
-        
+
         -- Named Constructors
         c : cs
          | isConStart c

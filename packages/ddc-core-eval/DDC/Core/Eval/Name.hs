@@ -201,8 +201,12 @@ readName str@(c:rest)
         -- integers
         | str == "Int"          = Just $ NamePrimCon PrimTyConInt
 
-        | (ds, "")              <- span isDigit str
-        = Just $ NameInt (read ds)        
+        | c == '-'
+        , all isDigit rest
+        = Just $ NameInt (read str)
+
+        | all isDigit str
+        = Just $ NameInt (read str)
 
         -- pairs
         | str == "Pair"         = Just $ NamePrimCon PrimTyConPair

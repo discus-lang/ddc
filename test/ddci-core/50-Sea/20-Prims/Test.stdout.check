@@ -27,6 +27,11 @@ tailcall4#
 :!: !0
 :$: $0
 
+-5
+:*: Nat#
+:!: !0
+:$: $0
+
 TAG42#
 :*: Tag#
 :!: !0
@@ -71,6 +76,7 @@ TAG42#
 :*: Int64#
 :!: !0
 :$: $0
+
 
 -- Error: lex error
 -- no unboxed literals in this fragment.
