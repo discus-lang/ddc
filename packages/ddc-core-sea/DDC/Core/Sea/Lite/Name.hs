@@ -59,7 +59,7 @@ readName str
         =  Just $ NamePrimDaCon name
 
         -- Integers
-        |  Just i       <- readLitInt str
+        |  Just i       <- readLitInteger str
         =  Just $ NameInt i
 
         -- Variables.

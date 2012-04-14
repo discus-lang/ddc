@@ -8,7 +8,7 @@ module DDC.Core.Sea.Base
         , PrimOp        (..)
         , readPrimOp
 
-        , readLitInt
+        , readLitInteger
         , readLitPrimWordOfBits
         , readLitPrimIntOfBits)
 where

@@ -8,7 +8,7 @@ module DDC.Core.Sea.Base.Name
         , PrimOp        (..)
         , readPrimOp
 
-        , readLitInt
+        , readLitInteger
         , readLitPrimWordOfBits
         , readLitPrimIntOfBits)
 where
@@ -177,10 +177,9 @@ primOpNames
 
 -- Literals -------------------------------------------------------------------
 -- | Read a signed integer.
---- TODO: handle negative literals.
-readLitInt :: String -> Maybe Integer
-readLitInt str
-        | (ds, "")      <- span isDigit str
+readLitInteger :: String -> Maybe Integer
+readLitInteger str
+        | (ds, "")      <- span (\c -> isDigit c || c == '-') str
         = Just $ read ds
 
         | otherwise

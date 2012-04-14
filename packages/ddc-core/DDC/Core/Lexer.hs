@@ -56,8 +56,18 @@ lexString sourceName lineStart str
      in case w of
         []               -> []        
 
+        -- Whitespace
         ' '  : w'        -> lexMore 1 w'
         '\t' : w'        -> lexMore 8 w'
+
+
+        -- Literal values
+        -- This needs to come before the rule for '-'
+        c : cs
+         | isLitStart c
+         , (body, rest)         <- span isLitBody cs
+         -> tokN (KLit (c:body))                 : lexMore (length (c:body)) rest
+
 
         -- Meta tokens
         '-'  : '-' : w'  -> tokM KCommentLineStart : lexMore 2 w'
@@ -128,11 +138,6 @@ lexString sourceName lineStart str
         '$' : w'        -> tokA KKindClosure     : lexMore 1 w'
         '@' : w'        -> tokA KKindWitness     : lexMore 1 w'
         
-        -- Literal values
-        c : cs
-         | isDigit c
-         , (body, rest)         <- span isLiteralish cs
-         -> tokN (KLit (c:body))                 : lexMore (length (c:body)) rest
         
         -- Named Constructors
         c : cs
@@ -182,10 +187,3 @@ lexString sourceName lineStart str
         -- We still need to keep lexing as this may be in a comment.
         c : cs   -> (tok $ KJunk [c]) : lexMore 1 cs
 
-
-isLiteralish :: Char -> Bool
-isLiteralish c
-        =  isDigit c
-        || c == 'b' || c == 'o' || c == 'x'
-        || c == 'w' || c == 'i' 
-        || c == '#'

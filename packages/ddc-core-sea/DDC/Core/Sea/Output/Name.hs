@@ -105,12 +105,12 @@ readName str
         = Just $ NamePrim $ PrimExternal p
 
         -- Literal Nats.
-        | (ds, "")        <- span isDigit str
-        = Just $ NameNat (read ds)        
+        | Just i        <- readLitInteger str
+        = Just $ NameNat i     
 
         -- Literal Tags
-        | Just rest       <- stripPrefix "TAG" str
-        , (ds, "#")       <- span isDigit rest
+        | Just rest     <- stripPrefix "TAG" str
+        , (ds, "#")     <- span isDigit rest
         = Just $ NameTag (read ds)
 
         -- Literal Bools

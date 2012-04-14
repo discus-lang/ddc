@@ -33,6 +33,8 @@
 
 :check 96i64#
 
+:check -5
+
 -- Error: lex error
 -- no unboxed literals in this fragment.
 :check 42w32

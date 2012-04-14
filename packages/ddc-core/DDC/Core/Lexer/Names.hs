@@ -8,17 +8,22 @@ module DDC.Core.Lexer.Names
         , readTcConBuiltin
         , readWbConBuiltin
 
+          -- * Variable names.
+        , isVarName
+        , isVarStart
+        , isVarBody
+        , readVar
+
           -- * Construct names.
         , isConName
         , isConStart
         , isConBody
         , readCon
 
-          -- * Variable names.
-        , isVarName
-        , isVarStart
-        , isVarBody
-        , readVar)
+          -- * Literal names.
+        , isLitName
+        , isLitStart
+        , isLitBody)
 where
 import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
@@ -97,53 +102,13 @@ readWbConBuiltin ss
         _               -> Nothing
 
 
-
-
--- Con names ------------------------------------------------------------------
--- | String is a constructor name.
-isConName :: String -> Bool
-isConName str
- = case str of
-     []          -> False
-     (c:cs)      
-        | isConStart c 
-        , and (map isConBody cs)
-        -> True
-        
-        | _ : _         <- cs
-        , isConStart c
-        , and (map isConBody (init cs))
-        , last cs == '#'
-        -> True
-
-        | otherwise
-        -> False
-
--- | Character can start a constructor name.
-isConStart :: Char -> Bool
-isConStart = isUpper
-
-
--- | Charater can be part of a constructor body.
-isConBody  :: Char -> Bool
-isConBody c           = isUpper c || isLower c || isDigit c || c == '_'
-        
-
-
--- | Read a named, user defined `TcCon`.
-readCon :: String -> Maybe String
-readCon ss
-        | isConName ss  = Just ss
-        | otherwise     = Nothing
-
-
--- Var names ------------------------------------------------------------------
+-- Variable names -------------------------------------------------------------
 -- | String is a variable name
 isVarName :: String -> Bool
 isVarName str
  = case str of
      []          -> False
-     (c:cs)      
+     c : cs 
         | isVarStart c 
         , and (map isVarBody cs)
         -> True
@@ -175,4 +140,69 @@ readVar ss
         | isVarName ss  = Just ss
         | otherwise     = Nothing
 
+
+-- Constructor names ----------------------------------------------------------
+-- | String is a constructor name.
+isConName :: String -> Bool
+isConName str
+ = case str of
+     []          -> False
+     c : cs 
+        | isConStart c 
+        , and (map isConBody cs)
+        -> True
+        
+        | _ : _         <- cs
+        , isConStart c
+        , and (map isConBody (init cs))
+        , last cs == '#'
+        -> True
+
+        | otherwise
+        -> False
+
+-- | Character can start a constructor name.
+isConStart :: Char -> Bool
+isConStart = isUpper
+
+
+-- | Charater can be part of a constructor body.
+isConBody  :: Char -> Bool
+isConBody c           = isUpper c || isLower c || isDigit c || c == '_'
+        
+
+
+-- | Read a named, user defined `TcCon`.
+readCon :: String -> Maybe String
+readCon ss
+        | isConName ss  = Just ss
+        | otherwise     = Nothing
+
+
+-- Literal names --------------------------------------------------------------
+isLitName :: String -> Bool
+isLitName str
+ = case str of
+        []      -> False
+        c : cs
+         | isLitStart c
+         , and (map isLitBody cs)
+         -> True
+
+         | otherwise
+         -> False
+
+-- | Character can start a literal.
+isLitStart :: Char -> Bool
+isLitStart c
+        =   isDigit c
+        ||  c == '-'
+
+-- | Character can be part of a literal body.
+isLitBody :: Char -> Bool
+isLitBody c
+        =  isDigit c
+        || c == 'b' || c == 'o' || c == 'x'
+        || c == 'w' || c == 'i' 
+        || c == '#'
 
