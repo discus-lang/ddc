@@ -42,12 +42,20 @@ convModuleM :: C.Module () E.Name -> LlvmM Module
 convModuleM mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   platform        <- gets llvmStatePlatform
+
+        -- Forward declarations for imported functions.
+        let Just importDecls 
+                = sequence
+                $ [ importedFunctionDeclOfType platform External n t
+                  | (n, t)   <- Map.elems $ C.moduleImportTypes mm ]
+
+
         functions       <- mapM (uncurry (convSuperM)) bxs
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
                 , modGlobals    = []
-                , modFwdDecls   = primDecls platform
+                , modFwdDecls   = primDecls platform ++ importDecls
                 , modFuncs      = functions }
 
  | otherwise    = die "invalid module"

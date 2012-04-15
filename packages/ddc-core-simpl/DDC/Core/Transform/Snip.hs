@@ -25,16 +25,22 @@ class Snip (c :: * -> *) where
 
 instance Snip (Module a) where
  snip mm
-  = let (lts, _)    = splitXLets $ moduleBody mm
-        arities     = concatMap arityOfLets  lts
-        arities'    = extendsArities emptyArities arities
-        body'       = snipX arities' (moduleBody mm) []
+  = let (lts, _)        = splitXLets $ moduleBody mm
+        aritiesLets     = concatMap arityOfLets  lts
+
+        aritiesImports  = [ (BName n t, arityFromType t)        
+                          | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
+
+        arities         = emptyArities
+                        `extendsArities` aritiesImports
+                        `extendsArities` aritiesLets
+
+        body'       = snipX arities (moduleBody mm) []
     in  mm { moduleBody = body'  }
 
 
 instance Snip (Exp a) where
  snip x = snipX emptyArities x []
-
 
 
 -- ANormal --------------------------------------------------------------------
