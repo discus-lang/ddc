@@ -15,23 +15,39 @@ runtime_o	= $(patsubst %.c,%.o,$(runtime_c))
 
 
 # Link runtime libraries
-runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
-	@echo
-	@echo "* Linking $@"
-	@$(GCC_LINK_SHARED) -o $@ $^
-	@echo
-
 runtime/libddc-runtime.a  : $(runtime_o)
 	@echo
 	@echo "* Linking $@"
 	@ar r $@ $^
 	@echo
 
+runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
+	@echo
+	@echo "* Linking $@"
+	@$(GCC_LINK_SHARED) -o $@ $^
+	@echo
+
 
 # -----------------------------------------------------------------------------
 # Runtime for new compiler
-packages/ddc-core-sea/runtime/Primitive.o : packages/ddc-core-sea/runtime/Primitive.c
-	gcc -m32 -c $< -o $@
+sea-runtime_dce = $(shell find packages/ddc-core-sea/runtime/src -name "*.dce")
+sea-runtime_c   = $(shell find packages/ddc-core-sea/runtime/src -name "*.c")
+
+sea-runtime_o   = $(patsubst %.dce,%.o,$(sea-runtime_dce)) \
+		  $(patsubst %.c,%.o,$(sea-runtime_c))
+
+packages/ddc-core-sea/runtime/libddc-runtime.a : $(sea-runtime_o)
+	@echo
+	@echo "* Linking $@"
+	@ar r $@ $^
+	@echo
+
+packages/ddc-core-sea/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(sea-runtime_o)
+	@echo
+	@echo "* Linking $@"
+	@$(GCC_LINK_SHARED) -m32 -o $@ $^
+	@echo
+
 
 # -----------------------------------------------------------------------------
 # Build runtime system.
@@ -39,8 +55,7 @@ packages/ddc-core-sea/runtime/Primitive.o : packages/ddc-core-sea/runtime/Primit
 .PHONY  : runtime
 runtime : $(runtime_dep) \
 		runtime/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),) \
-                packages/ddc-core-sea/runtime/Primitive.o
+		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),)
 
 
 # Clean objects in the runtime system

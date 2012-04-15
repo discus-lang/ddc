@@ -2,25 +2,14 @@
 include make/build.mk
 include make/config/target.mk
 
-%.hs : %.x
-	@echo "* Preprocessing $<"
-	@alex -g $<
-
-
-%.hi : %.o
-	@true
-
-
-%.o : %.c
+# -----------------------------------------------------------------------------
+# Runtime system 
+packages/ddc-core-sea/runtime/src/%.o : packages/ddc-core-sea/runtime/src/%.c
 	@echo "* Compiling $<"
-	@gcc $(GCC_FLAGS) -c $< -o $@ 
+	@gcc $(GCC_FLAGS) -m32 -Ipackages/ddc-core-sea/runtime/include -c $< -o $@ 
 
 
-%.dep : %.c
-	@echo "* Building Deps $<"
-	@gcc $(GCC_FLAGS) -MM $< -MT $(patsubst %.dep,%.o,$@) -o $@
-
-
+# -----------------------------------------------------------------------------
 # Some of the module names are reused between ddc-main and ddc-core, 
 #   so we need to write these rules specific to the package.
 #   Writing specific rules for each package also means that we can control
@@ -91,4 +80,29 @@ packages/ddci-core/%.o : packages/ddci-core/%.hs
                       -ipackages/ddc-core-sea \
                       -ipackages/ddc-core-llvm -ipackages/ddc-llvm \
                       -ipackages/ddci-core
+
+
+# -- Generic Rules ------------------------------------------------------------
+%.hs : %.x
+	@echo "* Preprocessing $<"
+	@alex -g $<
+
+
+%.hi : %.o
+	@true
+
+
+%.dep : %.c
+	@echo "* Building Deps $<"
+	@gcc $(GCC_FLAGS) -MM $< -MT $(patsubst %.dep,%.o,$@) -o $@
+
+
+%.o : %.c
+	echo "* Compiling $<"
+	gcc $(GCC_FLAGS) -c $< -o $@ 
+
+
+%.o : %.dce 
+	@echo "* Compiling $<"
+	@bin/ddci-core -compile $<
 
