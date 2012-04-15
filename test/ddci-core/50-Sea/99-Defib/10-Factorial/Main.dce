@@ -1,73 +1,26 @@
 
-module Main with letrec
-
-
-boxInt32 (x : Int32#) : Ptr# Obj
- = do { obj     = allocRaw TAG0# 4;
-        addr    = takePtr# [Obj] obj;
-        write#  [Int32#] addr 8 x;
-        return# [Ptr# Obj] obj;
-      };
-
-unboxInt32 (obj : Ptr# Obj) : Int32#
- = do { addr    = takePtr# [Obj] obj;
-        x       = read#   [Int32#] addr 8;
-        return# [Int32#] x;
-      };
-
-
-addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = do { xu      = unboxInt32 x;
-        yu      = unboxInt32 y;
-        zu      = add# [Int32#] xu yu;
-        z       = boxInt32 zu;
-        return# [Ptr# Obj] z;
-      };
-
-
-subInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = do { xu      = unboxInt32 x;
-        yu      = unboxInt32 y;
-        zu      = sub# [Int32#] xu yu;
-        z       = boxInt32 zu;
-        return# [Ptr# Obj] z;
-      };
-
-
-mulInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = do { xu      = unboxInt32 x;
-        yu      = unboxInt32 y;
-        zu      = mul# [Int32#] xu yu;
-        z       = boxInt32 zu;
-        return# [Ptr# Obj] z;
-      };
-
+module Main
+imports {
+        boxInt32        :: Int32#   -> Ptr# Obj;
+        unboxInt32      :: Ptr# Obj -> Int32#;
+        subInt32        :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
+        mulInt32        :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
+}
+with letrec 
 
 fac (x: Ptr# Obj) : Ptr# Obj
- = do { x2      = unboxInt32 x;
-        cc      = eq# [Int32#] x2 0i32#;
-        case cc of {
-         True# -> do {
-                r       = boxInt32 1i32#;
-                return# [Ptr# Obj] r;
-         };
+ = do   cc      = eq# [Int32#] (unboxInt32 x) 0i32#
+        case cc of 
+         True#  
+          -> return# [Ptr# Obj] 
+                (boxInt32 1i32#)
 
-         False# -> do {
-                n2      = boxInt32 1i32#;
-                n3      = subInt32 x n2;
-                n4      = fac n3;
-                n5      = mulInt32 x n4;
-                return# [Ptr# Obj] n5;
-         };
-        }
-      };
+         False# 
+          -> return# [Ptr# Obj] 
+                (mulInt32 x (fac (subInt32 x (boxInt32 1i32#))))
+
 
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
- = do { x       = boxInt32 10i32#;
-        x2      = fac x;
-        x2u     = unboxInt32 x2;
-        str     = showInt32# x2u;
-        putStrLn# str;
-
-        return# [Int32#] 0i32#;
-      };
+ = do   x2      = fac (boxInt32 10i32#)
+        putStrLn# (showInt32# (unboxInt32 x2))
+        return# [Int32#] 0i32#
