@@ -3,6 +3,7 @@ module DDC.War.JobDispatch
 	(dispatchJob)
 where
 import DDC.War.Job.CompileHS
+import DDC.War.Job.CompileDCE
 import DDC.War.Job.Compile
 import DDC.War.Job.Run
 import DDC.War.Job.RunDCX
@@ -15,11 +16,12 @@ import BuildBox
 dispatchJob :: Job -> Build [Result]
 dispatchJob job
  = case job of
-	JobCompile{}	-> jobCompile	job
-	JobCompileHS{}	-> jobCompileHS	job
-	JobRun{}	-> jobRun	job
-	JobRunDCX{}     -> jobRunDCX    job
-	JobShell{}	-> jobShell	job
-	JobDiff{}	-> jobDiff 	job
+	JobCompile{}	-> jobCompile	 job
+        JobCompileDCE{} -> jobCompileDCE job
+	JobCompileHS{}	-> jobCompileHS	 job
+	JobRun{}	-> jobRun	 job
+	JobRunDCX{}     -> jobRunDCX     job
+	JobShell{}	-> jobShell	 job
+	JobDiff{}	-> jobDiff 	 job
 
 

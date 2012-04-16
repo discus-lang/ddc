@@ -11,7 +11,7 @@ allocRaw (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
         header          = bor# [Word32#] tagShift format;
         write# [Word32#] addr 0 header;
 
-        bytesObj32      = promote# [Word32#] [Nat#] bytesObj;
+        bytesObj32      = truncate# [Word32#] [Nat#] bytesObj;
         write# [Word32#] addr 4 bytesObj32;
 
         return# [Ptr# Obj] (makePtr# [Obj] addr);

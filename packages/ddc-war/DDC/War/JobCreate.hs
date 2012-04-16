@@ -112,6 +112,56 @@ createJobs config way allFiles filePath
 			++ (if shouldDiffStderr then [diffStderr] else [])
 
 
+         -- For Main.ds files, build and run them with DDC.
+         FileMainDCE
+          -> let mainSH           = sourceDir </> "Main.sh"
+                 mainBin          = buildDir  </> "Main.bin"
+                 mainCompStdout   = buildDir  </> "Main.compile.stdout"
+                 mainCompStderr   = buildDir  </> "Main.compile.stderr"
+                 mainCompDiff     = buildDir  </> "Main.compile.stderr.diff"
+                 mainRunStdout    = buildDir  </> "Main.run.stdout"
+                 mainRunStderr    = buildDir  </> "Main.run.stderr"
+
+                 mainErrorCheck   = sourceDir </> "Main.error.check"
+                 shouldSucceed    = not $ Set.member mainErrorCheck allFiles
+
+                 mainStdoutCheck  = sourceDir </> "Main.stdout.check"
+                 mainStdoutDiff   = buildDir  </> "Main.run.stdout.diff"
+                 shouldDiffStdout = Set.member mainStdoutCheck allFiles
+
+                 mainStderrCheck  = sourceDir </> "Main.stderr.check"
+                 mainStderrDiff   = buildDir  </> "Main.run.stderr.diff"
+                 shouldDiffStderr = Set.member mainStderrCheck allFiles
+
+                 -- compile the .ds into a .bin
+                 compile        = JobCompileDCE testName (wayName way) filePath
+                                                buildDir mainCompStdout mainCompStderr
+                                                (Just mainBin) shouldSucceed
+
+                 -- run the binary
+                 run            = JobRun        testName (wayName way) filePath mainBin
+                                                mainRunStdout mainRunStderr
+
+                 -- diff errors produced by the compilation
+                 diffError      = JobDiff       testName (wayName way) mainErrorCheck
+                                                mainCompStderr mainCompDiff
+
+                 -- diff the stdout of the run
+                 diffStdout     = JobDiff       testName (wayName way) mainStdoutCheck
+                                                mainRunStdout mainStdoutDiff
+
+                 -- diff the stderr of the run
+                 diffStderr     = JobDiff       testName (wayName way) mainStderrCheck
+                                                mainRunStderr mainStderrDiff
+
+             in if Set.member mainSH allFiles
+                 then []
+                 else [compile]
+                        ++ (if shouldSucceed    then [run]        else [diffError])
+                        ++ (if shouldDiffStdout then [diffStdout] else [])
+                        ++ (if shouldDiffStderr then [diffStderr] else [])
+
+
 	 -- If there is no Main.ds or Main.sh in the same directory, but there is some
 	 -- other .ds file, then compile it. If we also have Test.error.check
 	 -- then expect failure and check DDC's stdout against the file.

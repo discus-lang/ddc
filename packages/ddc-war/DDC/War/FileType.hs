@@ -19,8 +19,11 @@ data FileType
 	-- | A Main.sh script we should run.
 	| FileMainSH
 
-	-- | A Main.ds file we should make into an executable with DDC.
+	-- | A Main.ds file that we should compile into an executable and run.
 	| FileMainDS
+
+        -- | A Main.dce file that we should compile into an executable and run.
+        | FileMainDCE
 
 	-- | A Test.ds file we should compile, but not into an executale.
 	| FileTestDS
@@ -50,12 +53,13 @@ data FileType
 classifyFile :: FilePath -> FileType
 classifyFile path
 	-- Main files
-	| name	== "Main.hs"			= FileMainHS
-	| name	== "Main.sh"			= FileMainSH
-	| name	== "Main.ds"			= FileMainDS
+	| name == "Main.hs"			= FileMainHS
+	| name == "Main.sh"			= FileMainSH
+	| name == "Main.ds"			= FileMainDS
+        | name == "Main.dce"                    = FileMainDCE
 	
 	-- Test compile files
-	| (_base, ext) <- splitExtension path
+	| (_base, ext)  <- splitExtension path
 	, ext == ".ds"				= FileTestDS
 
         -- Test DDCi-core files

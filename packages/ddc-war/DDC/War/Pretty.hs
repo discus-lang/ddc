@@ -64,6 +64,26 @@ diagnoseJobResults width useColor workingDir job aspects
 		        Blue	(text "time" <> (parens $ padR 7 $ ppr time)))
 
 
+        -- CompileDCE ------------------------------
+        -- compile should have succeeded, but didn't.
+        JobCompileDCE{}
+         | or $ map isResultUnexpectedFailure aspects
+         -> (False, pprResult (jobFile job) "compile" 
+                        Red     (text "failed"))
+                
+        -- compile should have failed, but didn't.
+        JobCompileDCE{}
+         | or $ map isResultUnexpectedSuccess aspects
+         -> (False, pprResult (jobFile job) "compile" 
+                        Red     (text "unexpected success"))
+        
+        -- compile did was was expected of it.
+        JobCompileDCE{}
+         | Just time    <- takeResultTime aspects 
+         -> (True, pprResult (jobFile job) "compile" 
+                        Blue    (text "time" <> (parens $ padR 7 $ ppr time)))
+
+
 	-- CompileHS ----------------------------
 	JobCompileHS{}
 	 | Just time	<- takeResultTime aspects

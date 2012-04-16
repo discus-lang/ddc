@@ -37,6 +37,33 @@ data Job
 		-- | True if the compile is expected to succeed, else not.
 		, jobShouldSucceed	:: Bool }
 
+        -- | Use ddci-core to compile/make file a DCE file
+        | JobCompileDCE {
+                -- | Name of the test this job is a part of.
+                  jobTestName           :: String
+
+                -- | Name of the way we're running this test.
+                , jobWayName            :: String
+                
+                -- | Root source file of the program (the 'Main.ds')
+                , jobFile               :: FilePath 
+                                
+                -- | Scratch dir to do the build in.
+                , jobScratchDir         :: String
+
+                -- | Put what DDC says to stdout here.
+                , jobCompileStdout      :: FilePath
+                
+                -- | Put what DDC says to stderr here.
+                , jobCompileStderr      :: FilePath 
+
+                -- | If Just, then we're making an executable, and put the binary here.
+                --   Otherwise simply compile it
+                , jobMaybeMainBin       :: Maybe FilePath 
+                
+                -- | True if the compile is expected to succeed, else not.
+                , jobShouldSucceed      :: Bool }
+
 
 	-- | Use GHC to compile/make file.
 	| JobCompileHS {
