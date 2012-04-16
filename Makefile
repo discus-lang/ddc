@@ -59,7 +59,7 @@ allWithConfig :
 	@$(MAKE) packages/ddc-main/Source/Lexer.hs
 	@$(MAKE) deps
 	@$(MAKE) bin/war
-	@$(MAKE) runtime bin/ddc bin/ddci-core external libs -j $(THREADS)
+	@$(MAKE) bin/ddc bin/ddci-core runtime external libs -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)

@@ -102,7 +102,7 @@ packages/ddci-core/%.o : packages/ddci-core/%.hs
 	@gcc $(GCC_FLAGS) -c $< -o $@ 
 
 
-%.o : %.dce 
+%.o : %.dce bin/ddci-core
 	@echo "* Compiling $<"
 	@bin/ddci-core -compile $<
 
