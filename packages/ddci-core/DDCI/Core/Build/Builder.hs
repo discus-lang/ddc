@@ -80,6 +80,12 @@ determineDefaultBuilder config
          Just (Platform ArchX86_64 OsDarwin)    
                 -> return $ Just (builder_X8664_Darwin config)
 
+	 Just (Platform ArchX86_32 OsLinux)
+		-> return $ Just (builder_X8632_Linux  config)
+
+	 Just (Platform ArchX86_64 OsLinux)
+		-> return $ Just (builder_X8664_Linux  config)
+
          _      -> return Nothing
 
 
@@ -154,7 +160,7 @@ builder_X8632_Linux config
 
         , buildAs
                 = \sFile oFile
-                -> doCmd $  "as -arch i386"  
+                -> doCmd $  "as --32"  
                 ++ " -o " ++ oFile
                 ++ " "    ++ sFile  
 
@@ -176,13 +182,13 @@ builder_X8664_Linux config
 
         , buildLlc    
                 = \llFile sFile
-                -> doCmd $ "llc -O3 -march=x86_64 " 
+                -> doCmd $ "llc -O3 -march=x86-64 " 
                 ++ llFile 
                 ++ " -o " ++ sFile
 
         , buildAs
                 = \sFile oFile
-                -> doCmd $  "as -arch x86_64"  
+                -> doCmd $  "as --64"  
                 ++ " -o " ++ oFile
                 ++ " "    ++ sFile  
 
