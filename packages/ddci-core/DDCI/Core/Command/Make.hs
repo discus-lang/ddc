@@ -40,7 +40,7 @@ makeDCE state source filePath
 
         -- Determine the default builder,
         -- assuming the host and target platforms are the same.
-        mBuilder        <- determineDefaultBuilder
+        mBuilder        <- determineDefaultBuilder defaultBuilderConfig
         let builder     =  fromMaybe    (error "Can not determine host platform")
                                         mBuilder
 
