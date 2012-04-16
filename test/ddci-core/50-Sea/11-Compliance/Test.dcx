@@ -18,3 +18,17 @@ foo (x : Int32#) : Int32#
  = let x = 0i32# 
    in  return# [Int32#] x;;
 
+
+-- Error: use of debruijn binders
+:sea..
+module Main with letrec
+foo (^ : Int32#) : Int32#
+ = return# [Int32#] ^0;;
+
+
+-- Error: general application
+:sea..
+module Main with letrec
+foo (^ : Int32#) : Int32#
+ = (case 0 of {_ -> add# })
+   [Int32#] ^0 ^0;;

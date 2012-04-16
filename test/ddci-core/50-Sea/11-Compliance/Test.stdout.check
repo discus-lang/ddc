@@ -13,3 +13,12 @@ Error loading module
 Error loading module
   ErrorShadowedBind (NameVar "x")
 
+
+-- Error: use of debruijn binders
+Error loading module
+  ErrorUnsupported DebruijnBinders
+
+
+-- Error: general application
+Error loading module
+  ErrorUnsupported GeneralApplication

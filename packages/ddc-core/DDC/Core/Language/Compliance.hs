@@ -47,6 +47,8 @@ instance Show a => Complies (Module a) where
   = compliesX profile kenv tenv (moduleBody mm)
 
 
+-- TODO: check types of binders.
+-- We'll mark type vars that only appear in types of binders as unused.
 instance Show a => Complies (Exp a) where
  compliesX profile kenv tenv xx
   = let has f   = f $ profileFeatures profile
@@ -73,7 +75,6 @@ instance Show a => Complies (Exp a) where
          | otherwise             -> throw $ ErrorUnsupported DataCtors
 
         -- spec binders -------------------------
-        -- TODO: check for deburuijn binders
         XLAM _ b x
          -> do  (tUsed, vUsed)  <- compliesX profile (Env.extend b kenv) tenv x
                 tUsed'          <- checkBind profile kenv b tUsed
@@ -81,29 +82,29 @@ instance Show a => Complies (Exp a) where
 
         -- value and witness abstraction --------
         -- TODO: check for nested functions
-        -- TODO: check for debruijn binders
         XLam _ b x
          -> do  (tUsed, vUsed)  <- compliesX profile kenv (Env.extend b tenv) x
                 vUsed'          <- checkBind profile tenv b vUsed
                 return (tUsed, vUsed')
        
         -- application --------------------------
-        -- TODO: check for general application
         -- TODO: check for partial application
         XApp _ x1 XType{}
-         ->     compliesX profile kenv tenv x1
+         -> do  checkFunction profile x1
+                compliesX     profile kenv tenv x1
 
         XApp _ x1 XWitness{}
-         ->     compliesX profile kenv tenv x1
+         -> do  checkFunction profile x1
+                compliesX     profile kenv tenv x1
 
         XApp _ x1 x2
-         -> do  (tUsed1, vUsed1) <- compliesX profile kenv tenv x1
+         -> do  checkFunction profile x1
+                (tUsed1, vUsed1) <- compliesX profile kenv tenv x1
                 (tUsed2, vUsed2) <- compliesX profile kenv tenv x2
                 return  ( Set.union tUsed1 tUsed2
                         , Set.union vUsed1 vUsed2)
 
         -- let ----------------------------------
-        -- TODO: check for debruijn binders.
         XLet _ (LLet mode b1 x1) x2
          -> do  let tenv'        = Env.extend b1 tenv
                 (tUsed1, vUsed1) <- compliesX profile kenv tenv  x1
@@ -136,12 +137,13 @@ instance Show a => Complies (Exp a) where
                 return (tUseds, vUseds')
 
 
-        -- TODO: check for unused binders
-        XLet _ LLetRegion{} x2
-         -> do  (tUsed2, vUsed2) <- compliesX profile kenv tenv x2
+        XLet _ (LLetRegion r bs) x2
+         -> do  (tUsed2, vUsed2) <- compliesX profile
+                                        (Env.extend  r  kenv) 
+                                        (Env.extends bs tenv) x2
                 return (tUsed2, vUsed2)
 
-        XLet _ LWithRegion{} x2
+        XLet _ (LWithRegion _) x2
          -> do  (tUsed2, vUsed2) <- compliesX profile kenv tenv x2
                 return (tUsed2, vUsed2)
 
@@ -176,6 +178,7 @@ instance Show a => Complies (Alt a) where
                 return (tUsed1, vUsed1')
 
 
+-- Bind -----------------------------------------------------------------------
 -- | Check for compliance violations at a binding site.
 checkBind 
         :: Ord n 
@@ -200,6 +203,10 @@ checkBind profile env bb used
          | otherwise
          -> return $ Set.delete n used
 
+        BAnon{}
+         | not $ has featuresDebruijnBinders
+         -> throw $ ErrorUnsupported DebruijnBinders
+
         _ -> return used
 
 
@@ -217,6 +224,22 @@ checkBinds profile env bs used
         (b : bs')        
          -> do  used'   <- checkBinds profile env bs' used
                 checkBind profile env b used'
+
+
+-- Function -------------------------------------------------------------------
+-- | Check the function part of an application.
+checkFunction :: Profile n -> Exp a n -> CheckM n ()
+checkFunction profile xx 
+ = let  has f   = f $ profileFeatures profile
+        ok       = return ()
+   in case xx of
+        XVar{}  -> ok
+        XCon{}  -> ok
+        XApp{}  -> ok
+        XCast{} -> ok
+        _
+         | has featuresGeneralApplication -> return ()
+         | otherwise    -> throw $ ErrorUnsupported GeneralApplication
 
 
 -- Error ----------------------------------------------------------------------
