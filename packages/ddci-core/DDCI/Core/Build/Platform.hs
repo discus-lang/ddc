@@ -62,7 +62,7 @@ determineHostPlatform
 determineHostArch :: IO (Maybe Arch)
 determineHostArch
  = do   (exitCode, strArch, _) 
-         <- readProcessWithExitCode "arch" [] ""
+         <- readProcessWithExitCode "uname -m" [] ""
 
         let result
                 | ExitFailure{} <- exitCode     = Nothing
