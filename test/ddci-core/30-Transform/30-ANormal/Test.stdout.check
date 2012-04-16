@@ -1,21 +1,25 @@
 ok
 ok
 
+
 -- Identity function
 let ^
       = \(x : Unit). x in
 ^0 ()
+
 
 -- Identify function with indices.
 let ^
       = \(^ : Unit). ^0 in
 ^0 ()
 
+
 -- Primitive
 let ^ = 1 [R0#] () in
 let ^ = 2 [R0#] () in
 addInt [R0#] [R0#] [R0#] ^1 ^0
 3
+
 
 -- Nested applications
 let ^ = 1 [R0#] () in
@@ -27,6 +31,7 @@ let ^ = addInt [R1#] [R1#] [R1#] ^3 ^0 in
 addInt [R0#] [R1#] [R2#] ^5 ^0
 10
 
+
 -- Lets in args (inner x must be anonymized)
 let x : Int R1# = 2 [R1#] () in
 let ^ : Unit = () in
@@ -34,6 +39,7 @@ let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 1 in
 let ^ = ^0 [R0#] ^1 in
 addInt [R0#] [R1#] [R2#] ^0 x
 3
+
 
 -- Type abstraction
 let ^
@@ -43,10 +49,12 @@ let ^
       = Nil [R0#] [Int R0#] () in
 ^1 [List R0# (Int R0#)] ^0
 
+
 -- Primitive in case exp
 let ^
       = \(u : Unit).
-        case 1 [R0#] u of {
+        let ^ = 1 [R0#] u in
+        case ^0 of {
           0  
            -> 1 [R0#] u;
           _ 
@@ -57,11 +65,13 @@ let ^
 ^0 ()
 5
 
+
 -- Anonymous binders
 let ^ : Int R0# = 5 [R0#] () in
 let ^ = 3 [R0#] () in
 addInt [R0#] [R0#] [R0#] ^1 ^0
 8
+
 
 -- Arity
 let cmp : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
@@ -79,6 +89,7 @@ let ^ = 1 [R0#] () in
 ^1 ^0
 3
 
+
 -- Arity anon
 let ^ : (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -> (Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#) -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
       = \(f g : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#).
@@ -94,6 +105,7 @@ let ^ = ^1 ^0 ^0 in
 let ^ = 1 [R0#] () in
 ^1 ^0
 3
+
 
 -- Letrec
 letrec {
@@ -113,4 +125,15 @@ letrec {
 let ^ = 5 [R1#] () in
 fac [R1#] ^0
 120
+
+
+-- Snip out discriminants of case expressions
+let ^
+      = \(x : Int R0#). x in
+let ^ = 5 [R0#] () in
+let ^ = ^1 ^0 in
+case ^0 of {
+  _ 
+   -> ()
+}
 

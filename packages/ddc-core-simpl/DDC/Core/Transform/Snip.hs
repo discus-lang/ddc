@@ -52,17 +52,18 @@ snipX
         -> [(Exp a n,a)]-- ^ Arguments being applied to current expression.
         -> Exp a n
 
--- Application: just record argument and descend into function
+-- For applications, remember the argument that the function is being 
+-- applied to, and decend into the funciton part.
 snipX ar (XApp a lhs rhs) args
- = let  -- normalise rhs and add to arguments.
+ = let  -- Normalise the argument and add to the argument list.
         args' = (snipX ar rhs [], a) : args
 
-        -- descend into lhs, remembering all args.
+        -- Decent into the function.
    in   snipX ar lhs args'
 
-
--- Anything other than application: if we're applied to arguments add bindings,
--- otherwise just recurse.
+-- Non-applications.
+-- If this expression is being applied to arguments then split it out into
+-- its own binding, otherwise just decend into it.
 snipX ar x args
  =  let x' = go x 
     in case args of
@@ -77,11 +78,11 @@ snipX ar x args
         down ars e 
          = snipX (extendsArities ar ars) e []
 
-        -- we know x isn't an app.
+        -- The snipX function shouldn't have called us with an XApp.
         go XApp{}           
          = error "DDC.Core.Transform.ANormal.anormal: unexpected XApp"
 
-        -- leafy ones
+        -- leafy constructors
         go XVar{}           = x
         go XCon{}           = x
         go XType{}          = x
@@ -119,11 +120,20 @@ snipX ar x args
          = XLet a (LWithRegion b) (down [] re)
 
         -- case
+        -- Split out non-atomic discriminants into their own bindings.
         go (XCase a e alts) 
+         | isNormal e
          = let  e'      = down [] e 
                 alts'   = map (\(AAlt pat ae) 
                               -> AAlt pat (down (aritiesOfPat pat) ae)) alts 
            in   XCase a e' alts'
+
+         | otherwise
+         = let  e'      = down [] e
+                alts'   = [AAlt pat (down (aritiesOfPat pat) ae) | AAlt pat ae <- alts]
+
+           in   XLet a  (LLet LetStrict (BAnon (T.tBot T.kData)) (L.liftX 1 e'))
+                        (XCase a (XVar a $ UIx 0 (T.tBot T.kData)) alts')
 
         -- cast
         go (XCast a c e) 
@@ -195,7 +205,8 @@ makeLets ar f0 args@((_,annot):_)
          = Just (max (arityOfExp x) 1)
 
 
--- | Check if an expression needs a binding, or if it's simple enough to be applied as-is
+-- | Check if an expression needs a binding, or if it's simple enough to be
+--   applied as-is.
 isNormal :: Ord n => Exp a n -> Bool
 isNormal xx
  = case xx of
