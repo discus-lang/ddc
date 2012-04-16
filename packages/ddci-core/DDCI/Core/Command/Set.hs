@@ -112,16 +112,16 @@ parseModeChange  :: String -> Maybe (Bool, Mode)
 parseModeChange str
  = case str of
         ('+' : strMode)
-         | Just mode    <- parseMode strMode
+         | Just mode    <- readMode strMode
          -> Just (True, mode)
         
         ('/' : strMode)
-         | Just mode    <- parseMode strMode
+         | Just mode    <- readMode strMode
          -> Just (False, mode)
 
         (c : strMode)
          | isUpper c 
-         , Just mode    <- parseMode (c : strMode)
+         , Just mode    <- readMode (c : strMode)
          -> Just (True, mode)
 
         _ -> Nothing

@@ -15,10 +15,11 @@ import DDC.Type.Transform.SpreadT
 import DDC.Core.Module
 import DDC.Base.Lexer
 import DDC.Base.Pretty
-import qualified DDC.Core.Parser        as C
-import qualified DDC.Core.Check         as C
-import qualified DDC.Type.Check         as T
-import qualified DDC.Base.Parser        as BP
+import qualified DDC.Core.Language.Compliance   as I
+import qualified DDC.Core.Parser                as C
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Type.Check                 as T
+import qualified DDC.Base.Parser                as BP
 
 
 -- | Things that can go wrong when loading.
@@ -26,15 +27,17 @@ data Error n
         = ErrorParser     BP.ParseError
         | ErrorCheckType  (T.Error n)      
         | ErrorCheckExp   (C.Error () n)
+        | ErrorCompliance (I.Error n)
         deriving Show
 
 
 instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
-        ErrorParser     err'  -> ppr err'
-        ErrorCheckType  err'  -> ppr err'
-        ErrorCheckExp   err'  -> ppr err'
+        ErrorParser     err'    -> ppr err'
+        ErrorCheckType  err'    -> ppr err'
+        ErrorCheckExp   err'    -> ppr err'
+        ErrorCompliance err'    -> ppr err'
 
 
 -- Module ---------------------------------------------------------------------
@@ -58,11 +61,17 @@ loadModule profile sourceName toks'
                 Left err  -> Left (ErrorParser err)
                 Right mm  -> goCheckType (spreadX kenv tenv mm)
 
-        -- Check the type of the expression.
+        -- Check that the module is type sound.
         goCheckType mm
          = case C.checkModule defs kenv tenv mm of
                 Left err  -> Left (ErrorCheckExp err)
-                Right mm' -> Right mm'
+                Right mm' -> goCheckCompliance mm'
+
+        -- Check that the module compiles with the language fragment.
+        goCheckCompliance mm
+         = case I.complies profile mm of
+                Just err  -> Left (ErrorCompliance err)
+                Nothing   -> Right mm
 
 
 -- Type -----------------------------------------------------------------------
@@ -152,7 +161,11 @@ loadExp profile sourceName toks'
         goCheckType x
          = case C.checkExp defs kenv tenv x of
                 Left err            -> Left  (ErrorCheckExp err)
-                Right (x', t, e, c) -> Right (x', t, e, c)
+                Right (x', t, e, c) -> goCheckCompliance x' t e c
 
-
+        -- Check that the module compiles with the language fragment.
+        goCheckCompliance x t e c
+         = case I.complies profile x of
+                Just err  -> Left (ErrorCompliance err)
+                Nothing   -> Right (x, t, e, c)
 

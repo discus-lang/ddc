@@ -1,7 +1,7 @@
 
 module DDCI.Core.Mode
         ( Mode(..)
-        , parseMode
+        , readMode
 
         , Source        (..)
         , lineStartOfSource
@@ -27,8 +27,8 @@ data Mode
 
 
 -- | Parse a mode from a string.
-parseMode :: String -> Maybe Mode
-parseMode str
+readMode :: String -> Maybe Mode
+readMode str
  = case str of
         "TraceEval"     -> Just TraceEval
         "TraceStore"    -> Just TraceStore

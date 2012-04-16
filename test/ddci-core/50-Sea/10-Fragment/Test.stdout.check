@@ -92,5 +92,3 @@ Fragment violation when converting Sea module to C code.
   
   with: let _ : Int32# = x in
         return# [Int32#] x
-
-

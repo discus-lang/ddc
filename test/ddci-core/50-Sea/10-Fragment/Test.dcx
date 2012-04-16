@@ -89,5 +89,3 @@ module Main with letrec
 foo (x : Int32#) : Int32#
  = let _        = x
    in  return# [Int32#] x;;
-
-
