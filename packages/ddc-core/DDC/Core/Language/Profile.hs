@@ -45,8 +45,7 @@ zeroProfile
 data Features 
         = Features
         { -- General features
-          featuresRecursion             :: Bool
-        , featuresPartialApplication    :: Bool
+          featuresPartialApplication    :: Bool
         , featuresPartialPrims          :: Bool
         , featuresGeneralApplication    :: Bool
         , featuresNestedFunctions       :: Bool
@@ -75,8 +74,7 @@ data Features
 zeroFeatures :: Features
 zeroFeatures
         = Features
-        { featuresRecursion             = False
-        , featuresPartialApplication    = False
+        { featuresPartialApplication    = False
         , featuresPartialPrims          = False
         , featuresGeneralApplication    = False
         , featuresNestedFunctions       = False
@@ -98,7 +96,6 @@ zeroFeatures
 setFeature :: Feature -> Bool -> Features -> Features
 setFeature feature val features
  = case feature of
-        Recursion               -> features { featuresRecursion           = val }
         PartialApplication      -> features { featuresPartialApplication  = val }
         PartialPrims            -> features { featuresPartialPrims        = val }
         GeneralApplication      -> features { featuresGeneralApplication  = val }

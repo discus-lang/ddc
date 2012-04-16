@@ -26,8 +26,7 @@ profile
 features :: Features
 features 
         = Features
-        { featuresRecursion             = True
-        , featuresPartialApplication    = True
+        { featuresPartialApplication    = True
         , featuresPartialPrims          = False
         , featuresGeneralApplication    = True
         , featuresNestedFunctions       = True

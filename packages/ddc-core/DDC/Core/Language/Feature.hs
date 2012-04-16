@@ -7,14 +7,9 @@ where
 data Feature
 
         -- General features -------------------------------
-        -- | Recursive let-bindings.
-        --   Turning this off, along with conflicting primops, forces the
-        --   language to total (terminating).
-        = Recursion
-
         -- | Partial application of functions.
         --   Turning this off means the runtime system won't need to build PAPs.
-        | PartialApplication
+        = PartialApplication
 
         -- | Accept partially applied primops.
         --   Runtime systems usually can't handle this.
