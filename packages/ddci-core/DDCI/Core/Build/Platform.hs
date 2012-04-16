@@ -1,7 +1,10 @@
 
 module DDCI.Core.Build.Platform
         ( Platform      (..)
+
         , Arch          (..)
+        , archPointerWidth
+
         , Os            (..)
 
         -- * Host platform
@@ -13,12 +16,14 @@ import System.Process
 import System.Exit
 import Data.List
 
+
 -- | Describes a build or target platform.
 data Platform
         = Platform
         { platformArch  :: Arch
         , platformOs    :: Os }
         deriving (Eq, Show)
+
 
 -- | Processor Architecture.
 data Arch
@@ -37,6 +42,15 @@ data Os
         deriving (Eq, Show)
 
 
+-- | Get the width of a pointer on the architecture, in bits.
+archPointerWidth :: Arch -> Int
+archPointerWidth arch
+ = case arch of
+        ArchX86_32      -> 32
+        ArchX86_64      -> 64
+        ArchPPC_32      -> 32
+        ArchPPC_64      -> 64
+
 
 -- | Determine the default host platform.
 --
@@ -51,8 +65,6 @@ determineHostPlatform :: IO (Maybe Platform)
 determineHostPlatform
  = do   mArch   <- determineHostArch
         mOs     <- determineHostOs
-
-        putStrLn $ show (mArch, mOs)
 
         case (mArch, mOs) of
          (Just arch, Just os)   -> return $ Just (Platform arch os)

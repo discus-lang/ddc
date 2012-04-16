@@ -40,7 +40,7 @@ compileDCE state source filePath
         -- Determine the default builder,
         -- assuming the host and target platforms are the same.
         mBuilder        <- determineDefaultBuilder defaultBuilderConfig
-        let builder     =  fromMaybe    (error "Can not determine host platform")
+        let builder     =  fromMaybe    (error "Can not determine host platform.")
                                         mBuilder
 
         errs    <- pipeText source src
@@ -49,8 +49,8 @@ compileDCE state source filePath
                                      (stateSimplifier state <> Simpl.anormalize)
                 [  PipeCoreCheck     fragmentSea
                 [  PipeCoreAsSea
-                [  PipeSeaToLlvm 
-                [  PipeLlvmCompile 
+                [  PipeSeaToLlvm     (buildSpec builder)
+                [  PipeLlvmCompile   
                         { pipeBuilder           = builder
                         , pipeFileLlvm          = llPath
                         , pipeFileAsm           = sPath

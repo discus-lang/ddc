@@ -8,6 +8,7 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
 import DDC.Type.Compounds
+import DDC.Base.Pretty
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Sea.Output    as E
@@ -54,7 +55,10 @@ convPrimCallM pp mdst p tPrim xs
          , minstr               <- convPrimPromote pp tDst vDst tSrc xSrc'
          -> case minstr of
                 Just instr      -> return $ Seq.singleton instr
-                Nothing         -> die "invalid promotion"
+                Nothing         -> dieDoc $ vcat
+                                [ text "invalid numeric promotion"
+                                , text "  from type: " <> ppr tSrc
+                                , text "    to type: " <> ppr tDst]
 
 
         E.PrimCast E.PrimCastTruncate

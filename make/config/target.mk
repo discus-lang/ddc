@@ -47,41 +47,48 @@ ifeq "$(Target)" "linux-x86"
 GCC_FLAGS		+= -fPIC -D BITS=32
 GCC_LINK_SHARED		:= gcc -shared
 SHARED_SUFFIX		:= so
+BITS                    := 32
 
 # -- Linux on x86_64
 else ifeq "$(Target)" "linux-x86_64"
 GCC_FLAGS		+= -fPIC -D BITS=64 -m64
 GCC_LINK_SHARED		:= gcc -shared
 SHARED_SUFFIX		:= so
+BITS                    := 64
 
 # -- Linux on ppc
 else ifeq "$(Target)" "linux-ppc"
 GCC_FLAGS		+= -fPIC -D BITS=32 -m32
 GCC_LINK_SHARED		:= gcc -shared
 SHARED_SUFFIX		:= so
+BITS                    := 32
 
 # -- FreeBSD on x86
 else ifeq "$(Target)" "freebsd-x86"
 GCC_FLAGS		+= -fPIC -D BITS=32
 GCC_LINK_SHARED		:= gcc -shared
 SHARED_SUFFIX		:= so 
+BITS                    := 32
 
 # -- Darwin on x86
 else ifeq "$(Target)" "darwin-x86"
 GCC_FLAGS		+= -fPIC -D BITS=32 -m32
 GCC_LINK_SHARED		:= gcc -m32 -dynamiclib -undefined dynamic_lookup 
 SHARED_SUFFIX		:= dylib
+BITS                    := 32
 
 # -- Darwin on x86_64
 else ifeq "$(Target)" "darwin-x86_64"
 GCC_FLAGS		+= -fPIC -D BITS=64 -m64
 GCC_LINK_SHARED		:= gcc -m64 -dynamiclib -undefined dynamic_lookup 
 SHARED_SUFFIX		:= dylib
+BITS                    := 64
 
 # -- WindowsXP/Cygwin on x86
 else ifeq "$(Target)" "cygwin-x86"
 GCC_FLAGS		+= -D BITS=32 -m32
 GCC_LINK_SHARED		:= gcc -shared
+BITS                    := 32
 
 else
 all : $(error "Unknown Target '$(Target)'. Set this in make/config.mk")

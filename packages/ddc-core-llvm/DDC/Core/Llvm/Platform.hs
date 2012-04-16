@@ -23,6 +23,7 @@ data Platform
 
           -- Minimum size of a heap object.
         , platformObjBytes      :: Integer }
+        deriving Show
 
 
 -- | 32-bit platform.

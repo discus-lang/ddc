@@ -191,7 +191,7 @@ data PipeSea
         , pipeModuleSink        :: Sink }
 
         -- | Convert the module to LLVM.
-        | PipeSeaToLlvm     [PipeLlvm]
+        | PipeSeaToLlvm         Llvm.Platform [PipeLlvm]
         deriving (Show)
 
 
@@ -222,8 +222,8 @@ pipeSea mm pp
                  | otherwise
                  -> pipeSink (renderIndent doc)  sink
 
-        PipeSeaToLlvm more
-         -> do  let mm'     =  Llvm.convertModule Llvm.platform32 mm
+        PipeSeaToLlvm platform more
+         -> do  let mm'     =  Llvm.convertModule platform mm
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results
 

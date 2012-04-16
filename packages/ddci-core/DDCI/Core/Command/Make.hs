@@ -50,7 +50,7 @@ makeDCE state source filePath
                                      (stateSimplifier state <> Simpl.anormalize)
                 [  PipeCoreCheck     fragmentSea
                 [  PipeCoreAsSea
-                [  PipeSeaToLlvm 
+                [  PipeSeaToLlvm     (buildSpec builder)
                 [  PipeLlvmCompile 
                         { pipeBuilder           = builder
                         , pipeFileLlvm          = llPath

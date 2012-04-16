@@ -1,4 +1,7 @@
 
+// TODO: This only works for 32-bit objects. 
+//       The 64-bit bit objects have a different layout.
+
 // Interface to the DDC runtime.
 //   This is imported by Sea generated modules and defines the types and macros
 //   that those modules uses.

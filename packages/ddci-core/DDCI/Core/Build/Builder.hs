@@ -11,6 +11,7 @@ where
 import DDCI.Core.Build.Platform
 import System.Cmd
 import System.FilePath
+import qualified DDC.Core.Llvm.Platform         as Llvm
 
 -- | Configuration information for a builder that is not platform specific.
 data BuilderConfig
@@ -30,6 +31,10 @@ data Builder
 
           -- | The platform we're compiling code for.
         , buildTarget   :: Platform
+
+          -- | The LLVM target specification
+          --   Gives the widths of pointers and primitive numeric types.
+        , buildSpec     :: Llvm.Platform
 
           -- | Invoke the LLVM compiler
           --   to compile a .ll file into a .s file.
@@ -95,6 +100,7 @@ builder_X8632_Darwin config
         { builderName   = "x86_32-darwin" 
         , buildHost     = Platform ArchX86_32 OsDarwin
         , buildTarget   = Platform ArchX86_32 OsDarwin
+        , buildSpec     = Llvm.platform32
 
         , buildLlc    
                 = \llFile sFile
@@ -123,6 +129,7 @@ builder_X8664_Darwin config
         { builderName   = "x86_64-darwin"
         , buildHost     = Platform ArchX86_64 OsDarwin
         , buildTarget   = Platform ArchX86_64 OsDarwin
+        , buildSpec     = Llvm.platform64
 
         , buildLlc    
                 = \llFile sFile
@@ -151,6 +158,7 @@ builder_X8632_Linux config
         { builderName   = "x86_32-linux"
         , buildHost     = Platform ArchX86_32 OsLinux
         , buildTarget   = Platform ArchX86_32 OsLinux
+        , buildSpec     = Llvm.platform32
 
         , buildLlc    
                 = \llFile sFile
@@ -179,6 +187,7 @@ builder_X8664_Linux config
         { builderName   = "x86_64-linux"
         , buildHost     = Platform ArchX86_32 OsLinux
         , buildTarget   = Platform ArchX86_32 OsLinux
+        , buildSpec     = Llvm.platform64
 
         , buildLlc    
                 = \llFile sFile

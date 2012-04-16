@@ -26,7 +26,10 @@ runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 
 # -----------------------------------------------------------------------------
 # Runtime for new compiler
-sea-runtime_dce = $(shell find packages/ddc-core-sea/runtime/src -name "*.dce")
+sea-runtime_dce = \
+	packages/ddc-core-sea/runtime/src/storage/Object${BITS}.dce \
+	$(shell find packages/ddc-core-sea/runtime/src/primitive -name "*.dce")
+
 sea-runtime_c   = $(shell find packages/ddc-core-sea/runtime/src -name "*.c")
 
 sea-runtime_o   = $(patsubst %.dce,%.o,$(sea-runtime_dce)) \

@@ -4,6 +4,7 @@ module DDC.Core.Llvm.LlvmM
         , LlvmState(..)
         , llvmStateInit 
         , die
+        , dieDoc
 
           -- * Uniques
         , newUnique
@@ -20,12 +21,21 @@ import DDC.Llvm.Instr
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import Control.Monad.State.Strict
+import DDC.Base.Pretty
 
 type LlvmM = State LlvmState
 
--- | Called when we find a thing that cannot be converted to C.
+
+-- | Called when we find a thing that cannot be converted to Llvm.
 die :: String -> a
-die msg = error $ "DDC.Core.Llvm.Convert " ++ msg
+die msg = dieDoc (text msg)
+
+dieDoc :: Doc -> a
+dieDoc msg 
+        = error $ renderIndent
+        $    text "DDC.Core.Llvm.Convert LLVM conversion failed"
+        <$$> msg
+
 
 
 -- LlvmState ------------------------------------------------------------------
