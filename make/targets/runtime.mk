@@ -1,7 +1,7 @@
 # Runtime system
 
 # -----------------------------------------------------------------------------
-# Runtime for old compiler
+# Runtime for alpha compiler
 # Find source files for the runtime system.
 runtime_c = \
 	$(shell ls runtime/*.c) \
@@ -55,7 +55,9 @@ packages/ddc-core-sea/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(sea-runtime_o)
 .PHONY  : runtime
 runtime : $(runtime_dep) \
 		runtime/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),)
+		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),) \
+		packages/ddc-core-sea/runtime/libddc-runtime.a \
+		$(if $(SHARED_SUFFIX),packages/ddc-core-sea/runtime/libddc-runtime.$(SHARED_SUFFIX),)
 
 
 # Clean objects in the runtime system
@@ -69,4 +71,13 @@ cleanRuntime :
 		-o	-name "*.dylib" \
 		-o	-name "*.a" \
 		-o	-name "*~" \
+		-follow | xargs -n 1 rm -f
+
+	@find packages/ddc-core-sea/runtime \
+		        -name "*.o" \
+		-o      -name "*.dep" \
+		-o      -name "*.so" \
+		-o      -name "*.dylib" \
+		-o      -name "*.a" \
+		-o      -name "*~" \
 		-follow | xargs -n 1 rm -f

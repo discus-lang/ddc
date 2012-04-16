@@ -11,6 +11,7 @@ import System.FilePath
 import Data.Char
 import Data.List
 import Data.Monoid
+import Data.Maybe
 import DDC.Core.Simplifier.Recipie      as Simpl
 import qualified DDC.Core.Pretty        as P
 
@@ -37,6 +38,12 @@ makeDCE state source filePath
 
         src     <- readFile filePath                                    -- TODO check that it exists.
 
+        -- Determine the default builder,
+        -- assuming the host and target platforms are the same.
+        mBuilder        <- determineDefaultBuilder
+        let builder     =  fromMaybe    (error "Can not determine host platform")
+                                        mBuilder
+
         errs    <- pipeText source src
                 $  PipeTextLoadCore  fragmentSea
                 [  PipeCoreSimplify  fragmentSea 
@@ -45,7 +52,7 @@ makeDCE state source filePath
                 [  PipeCoreAsSea
                 [  PipeSeaToLlvm 
                 [  PipeLlvmCompile 
-                        { pipeBuilder           = builder_I386_Darwin
+                        { pipeBuilder           = builder
                         , pipeFileLlvm          = llPath
                         , pipeFileAsm           = sPath
                         , pipeFileObject        = oPath
