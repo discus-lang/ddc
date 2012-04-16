@@ -56,10 +56,9 @@ convPrimCallM pp mdst p tPrim xs
          -> case minstr of
                 Just instr      -> return $ Seq.singleton instr
                 Nothing         -> dieDoc $ vcat
-                                [ text "invalid numeric promotion"
+                                [ text "Invalid promotion of numeric value."
                                 , text "  from type: " <> ppr tSrc
                                 , text "    to type: " <> ppr tDst]
-
 
         E.PrimCast E.PrimCastTruncate
          | [C.XType tDst, C.XType tSrc, xSrc] <- xs
@@ -68,7 +67,10 @@ convPrimCallM pp mdst p tPrim xs
          , minstr               <- convPrimTruncate pp tDst vDst tSrc xSrc'
          -> case minstr of
                 Just instr      -> return $ Seq.singleton instr
-                Nothing         -> die "invalid truncation"
+                Nothing         -> dieDoc $ vcat
+                                [ text "Invalid truncation of numeric value."
+                                , text " from type: " <> ppr tSrc
+                                , text "   to type: " <> ppr tDst ]
 
         -- Store primops --------------
         E.PrimStore E.PrimStoreAlloc
