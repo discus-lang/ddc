@@ -52,6 +52,8 @@ determineHostPlatform
  = do   mArch   <- determineHostArch
         mOs     <- determineHostOs
 
+        putStrLn $ show (mArch, mOs)
+
         case (mArch, mOs) of
          (Just arch, Just os)   -> return $ Just (Platform arch os)
          _                      -> return Nothing
@@ -62,7 +64,7 @@ determineHostPlatform
 determineHostArch :: IO (Maybe Arch)
 determineHostArch
  = do   (exitCode, strArch, _) 
-         <- readProcessWithExitCode "uname -m" [] ""
+         <- readProcessWithExitCode "uname" ["-m"] ""
 
         let result
                 | ExitFailure{} <- exitCode     = Nothing
