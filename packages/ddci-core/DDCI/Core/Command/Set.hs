@@ -81,6 +81,13 @@ cmdSet state cmd
 	 -> do	chatStrLn state e
 		return state
 
+ | "outputDir" : dir : []    <- words cmd
+ = return $ state { stateOutputDir  = Just dir }
+
+ | "output" : file : []      <- words cmd
+ = return $ state { stateOutputFile = Just file }
+
+
  | otherwise
  = case parseModeChanges cmd of
         Just changes
@@ -91,6 +98,7 @@ cmdSet state cmd
         Nothing
          -> do  chatStrLn state "mode parse error"
                 return state
+
 
 -- | Parse a string of mode changes.
 parseModeChanges :: String -> Maybe [(Bool, Mode)]

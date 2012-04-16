@@ -26,13 +26,29 @@ import qualified Data.Set               as Set
 
 
 -- | Interpreter state.
+--   This is adjusted by interpreter commands.
 data State
         = State
-        { stateInterface        :: Interface
+        { -- | ddci interface state.
+          stateInterface        :: Interface
+
+          -- | ddci mode flags.
         , stateModes            :: Set Mode 
+
+          -- | Source language to accept.
         , stateLanguage         :: Language
+
+          -- | Simplifier to apply to core program.
         , stateSimplifier       :: Simplifier
-	, stateRewriteRules	:: Map String (RewriteRule () Name) }
+
+          -- | Rewrite rules to apply during simplification.
+	, stateRewriteRules	:: Map String (RewriteRule () Name) 
+
+          -- | Output file for @compile@ and @make@ commands.
+        , stateOutputFile       :: Maybe FilePath 
+
+          -- | Output dir for @compile@ and @make@ commands
+        , stateOutputDir        :: Maybe FilePath }
 
 
 -- | What interface is being used.
@@ -70,7 +86,10 @@ initState interface
         , stateModes            = Set.empty 
         , stateLanguage         = Language fragmentEval
         , stateSimplifier       = S.Trans S.Id
-	, stateRewriteRules	= Map.empty  }
+	, stateRewriteRules	= Map.empty  
+        , stateOutputFile       = Nothing
+        , stateOutputDir        = Nothing }
+
 
 stateRewriteRulesList :: State -> [RewriteRule () Name]
 stateRewriteRulesList State { stateRewriteRules = rules }

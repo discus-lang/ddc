@@ -8,6 +8,8 @@ import DDCI.Core.Language
 import DDCI.Core.Mode
 import DDCI.Core.State
 import System.FilePath
+import System.Directory
+import Control.Monad
 import Data.List
 import Data.Char
 import Data.Monoid
@@ -31,11 +33,20 @@ compileFile state source filePath
  
 compileDCE :: State -> Source -> FilePath -> IO ()
 compileDCE state source filePath
- = do   let llPath      = replaceExtension filePath ".ddc.ll"
-        let sPath       = replaceExtension filePath ".ddc.s"
-        let oPath       = replaceExtension filePath ".o"
+ = do   -- Read in the source file.
+        exists  <- doesFileExist filePath
+        when (not exists)
+         $ error $ "No such file " ++ show filePath
 
-        src             <- readFile filePath            -- TODO check that it exists.
+        src     <- readFile filePath
+
+        -- Decide where to put the build products.
+        let outputDir      = fromMaybe (takeDirectory filePath) (stateOutputDir state)
+        let outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
+        let llPath         = outputDirBase ++ ".ddc.ll"
+        let sPath          = outputDirBase ++ ".ddc.s"
+        let oPathDefault   = outputDirBase ++ ".o"
+        let oPath          = fromMaybe oPathDefault (stateOutputFile state)
 
         -- Determine the default builder,
         -- assuming the host and target platforms are the same.
@@ -43,6 +54,7 @@ compileDCE state source filePath
         let builder     =  fromMaybe    (error "Can not determine host platform.")
                                         mBuilder
 
+        -- Run the build pipeline.
         errs    <- pipeText source src
                 $  PipeTextLoadCore  fragmentSea
                 [  PipeCoreSimplify  fragmentSea
@@ -58,3 +70,4 @@ compileDCE state source filePath
                         , pipeFileExe           = Nothing } ]]]]]
 
         mapM_ (putStrLn . P.renderIndent . P.ppr) errs
+

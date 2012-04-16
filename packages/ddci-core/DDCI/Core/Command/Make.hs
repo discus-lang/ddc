@@ -8,9 +8,11 @@ import DDCI.Core.Language
 import DDCI.Core.Mode
 import DDCI.Core.State
 import System.FilePath
+import System.Directory
 import Data.Char
 import Data.List
 import Data.Monoid
+import Control.Monad
 import Data.Maybe
 import DDC.Core.Simplifier.Recipie      as Simpl
 import qualified DDC.Core.Pretty        as P
@@ -31,12 +33,22 @@ makeFile state source filePath
  
 makeDCE :: State -> Source -> FilePath -> IO ()
 makeDCE state source filePath
- = do   let llPath      = replaceExtension filePath ".ddc.ll"
-        let sPath       = replaceExtension filePath ".ddc.s"
-        let oPath       = replaceExtension filePath ".o"
-        let exePath     = "Main"
+ = do   
+        -- Read in the source file.
+        exists  <- doesFileExist filePath
+        when (not exists)
+         $ error $ "No such file " ++ show filePath
 
-        src     <- readFile filePath                                    -- TODO check that it exists.
+        src     <- readFile filePath
+
+        -- Decide where to place the build products.
+        let outputDir      = fromMaybe (takeDirectory filePath) (stateOutputDir state)
+        let outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
+        let llPath         = outputDirBase ++ ".ddc.ll"
+        let sPath          = outputDirBase ++ ".ddc.s"
+        let oPath          = outputDirBase ++ ".o"
+        let exePathDefault = outputDirBase
+        let exePath        = fromMaybe exePathDefault (stateOutputFile state)
 
         -- Determine the default builder,
         -- assuming the host and target platforms are the same.
@@ -44,6 +56,7 @@ makeDCE state source filePath
         let builder     =  fromMaybe    (error "Can not determine host platform")
                                         mBuilder
 
+        -- Run the build pipeline.
         errs    <- pipeText source src
                 $  PipeTextLoadCore  fragmentSea
                 [  PipeCoreSimplify  fragmentSea 
@@ -59,3 +72,4 @@ makeDCE state source filePath
                         , pipeFileExe           = Just exePath } ]]]]]
 
         mapM_ (putStrLn . P.renderIndent . P.ppr) errs
+
