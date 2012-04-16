@@ -154,7 +154,7 @@ builder_X8632_Linux config
 
         , buildLlc    
                 = \llFile sFile
-                -> doCmd $ "llc -O3 -march=x86 " 
+                -> doCmd $ "llc -O3 -march=x86 -relocation-model=pic " 
                 ++ llFile 
                 ++ " -o " ++ sFile
 
@@ -182,7 +182,7 @@ builder_X8664_Linux config
 
         , buildLlc    
                 = \llFile sFile
-                -> doCmd $ "llc -O3 -march=x86-64 " 
+                -> doCmd $ "llc -O3 -march=x86-64 -relocation-model=pic " 
                 ++ llFile 
                 ++ " -o " ++ sFile
 

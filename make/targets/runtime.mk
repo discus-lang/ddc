@@ -16,16 +16,12 @@ runtime_o	= $(patsubst %.c,%.o,$(runtime_c))
 
 # Link runtime libraries
 runtime/libddc-runtime.a  : $(runtime_o)
-	@echo
 	@echo "* Linking $@"
 	@ar r $@ $^
-	@echo
 
 runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
-	@echo
 	@echo "* Linking $@"
 	@$(GCC_LINK_SHARED) -o $@ $^
-	@echo
 
 
 # -----------------------------------------------------------------------------
@@ -37,16 +33,12 @@ sea-runtime_o   = $(patsubst %.dce,%.o,$(sea-runtime_dce)) \
 		  $(patsubst %.c,%.o,$(sea-runtime_c))
 
 packages/ddc-core-sea/runtime/libddc-runtime.a : $(sea-runtime_o)
-	@echo
 	@echo "* Linking $@"
 	@ar r $@ $^
-	@echo
 
 packages/ddc-core-sea/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(sea-runtime_o)
-	@echo
 	@echo "* Linking $@"
-	@$(GCC_LINK_SHARED) -m32 -o $@ $^
-	@echo
+	@$(GCC_LINK_SHARED) -o $@ $^
 
 
 # -----------------------------------------------------------------------------

@@ -6,7 +6,7 @@ include make/config/target.mk
 # Runtime system 
 packages/ddc-core-sea/runtime/src/%.o : packages/ddc-core-sea/runtime/src/%.c
 	@echo "* Compiling $<"
-	gcc $(GCC_FLAGS) -Ipackages/ddc-core-sea/runtime/include -c $< -o $@ 
+	@gcc $(GCC_FLAGS) -Ipackages/ddc-core-sea/runtime/include -c $< -o $@ 
 
 
 # -----------------------------------------------------------------------------
@@ -98,8 +98,8 @@ packages/ddci-core/%.o : packages/ddci-core/%.hs
 
 
 %.o : %.c
-	echo "* Compiling $<"
-	gcc $(GCC_FLAGS) -c $< -o $@ 
+	@echo "* Compiling $<"
+	@gcc $(GCC_FLAGS) -c $< -o $@ 
 
 
 %.o : %.dce 
