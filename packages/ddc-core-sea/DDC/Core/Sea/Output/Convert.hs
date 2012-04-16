@@ -147,7 +147,6 @@ convBodyM xx
 
         -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
-        --   TODO: check type of discrim
         XCase _ x [ AAlt (PData (UPrim n _) []) x1
                   , AAlt PDefault     xFail]
          | isFailX xFail

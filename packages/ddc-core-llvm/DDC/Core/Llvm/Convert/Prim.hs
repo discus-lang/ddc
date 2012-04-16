@@ -44,7 +44,7 @@ convPrimCallM pp mdst p tPrim xs
                  = IFCmp dst fcond' x1' x2'
 
                  | otherwise
-                 = die "invalid binary primop"
+                 = die "Invalid binary primop."
            in   return $ Seq.singleton result
 
         -- Cast primops ---------------
@@ -193,7 +193,7 @@ convPrimCallM pp mdst p tPrim xs
                         $ ICall mdst CallTypeStd tResult'
                                 name' xs' []
 
-        _ -> die "invalid primcall"
+        _ -> die "Invalid prim call."
 
 
 

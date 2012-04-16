@@ -66,7 +66,7 @@ convType platform tt
              , declAlign         = AlignBytes (platformAlignBytes platform) }
 
 
-        _ -> die ("invalid type " ++ show tt)
+        _ -> die ("Invalid Type " ++ show tt)
 
 
 -- | Convert an imported function type to a LLVM declaration.
@@ -125,11 +125,11 @@ convTyCon platform tycon
                         64              -> TDouble
                         80              -> TFloat80
                         128             -> TFloat128
-                        _               -> die "invalid float tycon"
+                        _               -> die "Invalid width for float type constructor."
 
-                _                       -> die "invalid prim tycon"
+                _                       -> die "Invalid primitive type constructor."
 
-        _ -> die "invalid tycon"
+        _ -> die "Invalid type constructor."
 
 
 -- | Type of Heap objects.
