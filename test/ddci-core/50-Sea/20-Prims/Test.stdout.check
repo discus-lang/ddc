@@ -6,6 +6,15 @@ add#
 :!: !0
 :$: $0
 
+-- Type constructors
+Int64# :: *
+Int32# :: *
+
+-- Error: invalid type constructors
+Undefined type constructor:  Int#
+
+Undefined type constructor:  Int65#
+
 
 -- Check types of tailcallN# prims.
 Undefined variable: tailcall0#

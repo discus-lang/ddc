@@ -3,6 +3,15 @@
 :set lang Sea
 :check add#
 
+-- Type constructors
+:kind Int64#
+:kind Int32#
+
+-- Error: invalid type constructors
+:kind Int#
+
+:kind Int65#
+
 
 -- Check types of tailcallN# prims.
 :check tailcall0#

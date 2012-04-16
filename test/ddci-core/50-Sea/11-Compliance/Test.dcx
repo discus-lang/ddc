@@ -1,0 +1,20 @@
+
+-- Check for language compliance violations that would confuse
+-- the backend compiler.
+:set lang Sea
+
+
+-- Error: name shadowing in function definition
+:sea..
+module Main with letrec
+foo (x : Int32#) (x : Int32#) : Int32#
+ = return# [Int32#] x;;
+
+
+-- Error: name shadowing in let-expression
+:sea..
+module Main with letrec
+foo (x : Int32#) : Int32#
+ = let x = 0i32# 
+   in  return# [Int32#] x;;
+

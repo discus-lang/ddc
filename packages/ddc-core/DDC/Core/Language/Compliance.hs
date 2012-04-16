@@ -66,7 +66,6 @@ instance Show a => Complies (Exp a) where
         XVar _ _
          -> ok
 
-
         -- constructors -------------------------
         XCon _ UPrim{}           -> ok
         XCon _ _                
@@ -74,37 +73,18 @@ instance Show a => Complies (Exp a) where
          | otherwise             -> throw $ ErrorUnsupported DataCtors
 
         -- spec binders -------------------------
-        -- TODO: check for shadowing
         -- TODO: check for deburuijn binders
         XLAM _ b x
-         -> do  (tUsed, vUsed) <- compliesX profile (Env.extend b kenv) tenv x
-
-                tUsed'
-                 <- case b of
-                     BName n _
---                    | not $ Set.member n tUsed -> throw  $ ErrorUnusedBind n
-                      | otherwise                -> return $ Set.delete n tUsed
-                     _                           -> return tUsed
-
+         -> do  (tUsed, vUsed)  <- compliesX profile (Env.extend b kenv) tenv x
+                tUsed'          <- checkBind profile kenv b tUsed
                 return (tUsed', vUsed)
 
         -- value and witness abstraction --------
-        -- TODO: check for shadowing
         -- TODO: check for nested functions
         -- TODO: check for debruijn binders
         XLam _ b x
-         -> do  (tUsed, vUsed) <- compliesX profile kenv (Env.extend b tenv) x
-
-                vUsed'
-                 <- case b of
-                     BName n _
-                      | not $ Set.member n vUsed 
-                      , not $ has featuresUnusedBindings 
-                      -> throw  $ ErrorUnusedBind n
-
-                      | otherwise       -> return $ Set.delete n vUsed
-                     _                  -> return vUsed
-
+         -> do  (tUsed, vUsed)  <- compliesX profile kenv (Env.extend b tenv) x
+                vUsed'          <- checkBind profile tenv b vUsed
                 return (tUsed, vUsed')
        
         -- application --------------------------
@@ -124,11 +104,11 @@ instance Show a => Complies (Exp a) where
 
         -- let ----------------------------------
         -- TODO: check for debruijn binders.
-        -- TODO: check for unused binders
         XLet _ (LLet mode b1 x1) x2
          -> do  let tenv'        = Env.extend b1 tenv
                 (tUsed1, vUsed1) <- compliesX profile kenv tenv  x1
                 (tUsed2, vUsed2) <- compliesX profile kenv tenv' x2
+                vUsed2'          <- checkBind profile tenv b1 vUsed2
 
                 -- Check for unsupported lazy bindings.
                 (case mode of
@@ -137,17 +117,6 @@ instance Show a => Complies (Exp a) where
                    | has featuresLazyBindings -> return ()
                    | otherwise          
                    -> throw $ ErrorUnsupported LazyBindings)
-
-                -- Check that the bound variable is used.
-                vUsed2'
-                 <- case b1 of
-                     BName n _ 
-                      | not $ Set.member n vUsed2 
-                      , not $ has featuresUnusedBindings
-                      -> throw $ ErrorUnusedBind n
-
-                      | otherwise       -> return $ Set.delete n vUsed2
-                     _                  -> return vUsed2
 
                 return  ( Set.union tUsed1 tUsed2
                         , Set.union vUsed1 vUsed2')
@@ -160,9 +129,11 @@ instance Show a => Complies (Exp a) where
                                    $  mapM (compliesX profile kenv tenv') xs
 
                 (tUsed2,  vUsed2)  <- compliesX profile kenv tenv' x2
+                let tUseds      = Set.unions (tUsed2 : tUseds1)
+                let vUseds      = Set.unions (vUsed2 : vUseds1)
 
-                return  ( Set.unions $ tUsed2 : tUseds1
-                        , Set.unions $ vUsed2 : vUseds1)
+                vUseds'            <- checkBinds profile tenv bs vUseds
+                return (tUseds, vUseds')
 
 
         -- TODO: check for unused binders
@@ -200,19 +171,60 @@ instance Show a => Complies (Alt a) where
                 return  (tUsed1, vUsed1)
 
         AAlt (PData _ bs) x
-         -> do  let tenv'       = Env.extends bs tenv
-                (tUsed1, vUsed1)  <- compliesX profile kenv tenv' x
-                return (tUsed1, vUsed1)
+         -> do  (tUsed1, vUsed1) <- compliesX profile kenv (Env.extends bs tenv) x
+                vUsed1'          <- checkBinds profile tenv bs vUsed1 
+                return (tUsed1, vUsed1')
+
+
+-- | Check for compliance violations at a binding site.
+checkBind 
+        :: Ord n 
+        => Profile n            -- ^ The current language profile.
+        -> Env n                -- ^ The current environment
+        -> Bind n               -- ^ The binder at this site.
+        -> Set n                -- ^ Names used under the binder.
+        -> CheckM n (Set n)     -- ^ Names used above the binder.
+
+checkBind profile env bb used
+ = let has f   = f $ profileFeatures profile
+   in case bb of
+        BName n _
+         | not $ Set.member n used
+         , not $ has featuresUnusedBindings 
+         -> throw $ ErrorUnusedBind n
+
+         | Env.memberBind bb env
+         , not $ has featuresNameShadowing 
+         -> throw $ ErrorShadowedBind n
+
+         | otherwise
+         -> return $ Set.delete n used
+
+        _ -> return used
+
+
+-- | Check for compliance violations at a binding site.
+--   The binders must all be at the same level.
+checkBinds 
+        :: Ord n  
+        => Profile n 
+        -> Env n  -> [Bind n] -> Set n 
+        -> CheckM n (Set n)
+
+checkBinds profile env bs used
+ = case bs of
+        []              -> return used
+        (b : bs')        
+         -> do  used'   <- checkBinds profile env bs' used
+                checkBind profile env b used'
 
 
 -- Error ----------------------------------------------------------------------
 data Error n
         = ErrorUnsupported      Feature
         | ErrorUndefinedPrim    n 
-        | ErrorShadow           n
+        | ErrorShadowedBind     n
         | ErrorUnusedBind       n
-        | ErrorUnusedMatch      n
-        | ErrorUnusedImport     n
         | ErrorNakedType        (Type    n)
         | ErrorNakedWitness     (Witness n)
         deriving (Eq, Show)

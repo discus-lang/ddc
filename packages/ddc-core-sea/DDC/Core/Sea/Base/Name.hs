@@ -83,6 +83,7 @@ readPrimTyCon str
         -- WordN#
         | Just rest     <- stripPrefix "Word" str
         , (ds, "#")     <- span isDigit rest
+        , not $ null ds
         , n             <- read ds
         , elem n [8, 16, 32, 64]
         = Just $ PrimTyConWord n
@@ -90,6 +91,7 @@ readPrimTyCon str
         -- IntN#
         | Just rest     <- stripPrefix "Int" str
         , (ds, "#")     <- span isDigit rest
+        , not $ null ds
         , n             <- read ds
         , elem n [8, 16, 32, 64]
         = Just $ PrimTyConInt n
@@ -97,6 +99,7 @@ readPrimTyCon str
         -- FloatN#
         | Just rest     <- stripPrefix "Float" str
         , (ds, "#")     <- span isDigit rest
+        , not $ null ds
         , n             <- read ds
         , elem n [32, 64]
         = Just $ PrimTyConInt n
@@ -197,16 +200,20 @@ readLitPrimWordOfBits str1
         -- binary like 0b01001w32#
         | Just str2     <- stripPrefix "0b" str1
         , (ds, str3)    <- span (\c -> c == '0' || c == '1') str2
+        , not $ null ds
         , Just str4     <- stripPrefix "w" str3
         , (bs, "#")     <- span isDigit str4
+        , not $ null bs
         , bits          <- read bs
         , length ds     <= bits
         = Just (readBinary ds, bits)
 
         -- decimal like 1234w32#
         | (ds, str2)    <- span isDigit str1
+        , not $ null ds
         , Just str3     <- stripPrefix "w" str2
         , (bs, "#")     <- span isDigit str3
+        , not $ null bs
         = Just (read ds, read bs)
 
         | otherwise
@@ -223,8 +230,10 @@ readBinary digits
 readLitPrimIntOfBits :: String -> Maybe (Integer, Int)
 readLitPrimIntOfBits str1
         | (ds, str2)    <- span isDigit str1
+        , not $ null ds
         , Just str3     <- stripPrefix "i" str2
         , (bs, "#")     <- span isDigit str3
+        , not $ null bs
         = Just $ (read ds, read bs)
 
         | otherwise

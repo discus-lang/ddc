@@ -1,0 +1,15 @@
+
+-- Check for language compliance violations that would confuse
+-- the backend compiler.
+ok
+
+
+-- Error: name shadowing in function definition
+Error loading module
+  ErrorShadowedBind (NameVar "x")
+
+
+-- Error: name shadowing in let-expression
+Error loading module
+  ErrorShadowedBind (NameVar "x")
+

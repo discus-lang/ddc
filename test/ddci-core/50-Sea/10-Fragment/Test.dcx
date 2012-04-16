@@ -1,4 +1,5 @@
 -- Check for fragment violations.
+-- The errors come from the Core -> Sea or Core -> LLVM conversion.
 :set +Indent
 :set lang Sea
 
@@ -89,3 +90,4 @@ module Main with letrec
 foo (x : Int32#) : Int32#
  = let _        = x
    in  return# [Int32#] x;;
+
