@@ -1,0 +1,5 @@
+
+
+-- Error: fragment error with partially applied primop
+-- This would get stuck if we tried to evaluate it.
+ErrorUnsupported PartialPrims
