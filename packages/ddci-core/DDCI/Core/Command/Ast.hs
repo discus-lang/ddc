@@ -12,7 +12,7 @@ import qualified Language.Haskell.Exts.Pretty as H
 cmdAst :: State -> Source -> String -> IO ()
 cmdAst state source str
  | Language profile <- stateLanguage state
- = cmdParseCheckExp state profile source str >>= goShow
+ = cmdParseCheckExp state profile True source str >>= goShow
  where
         -- Expression had a parse or type error.
         goShow Nothing

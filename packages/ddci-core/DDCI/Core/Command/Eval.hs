@@ -28,7 +28,7 @@ import qualified Data.Set               as Set
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: State -> Source -> String -> IO ()
 cmdStep state source str
- = cmdParseCheckExp state fragmentEval source str >>= goStore 
+ = cmdParseCheckExp state fragmentEval False source str >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -49,7 +49,7 @@ cmdStep state source str
 -- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Source -> String -> IO ()
 cmdEval state source str
- = cmdParseCheckExp state fragmentEval source str >>= goEval
+ = cmdParseCheckExp state fragmentEval False source str >>= goEval
  where
     -- Expression had a parse or type error.
     goEval Nothing

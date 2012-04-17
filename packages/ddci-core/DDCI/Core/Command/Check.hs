@@ -190,8 +190,8 @@ data ShowTypeMode
 -- | Show the type of an expression.
 cmdShowType :: State -> ShowTypeMode -> Source -> String -> IO ()
 cmdShowType state mode source ss
- | Language profile <- stateLanguage state
- = cmdParseCheckExp state profile source ss >>= goResult
+ | Language frag <- stateLanguage state
+ = cmdParseCheckExp state frag True source ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -219,7 +219,7 @@ cmdShowType state mode source ss
 cmdExpRecon :: State -> Source -> String -> IO ()
 cmdExpRecon state source ss
  | Language fragment    <- stateLanguage state
- = cmdParseCheckExp state fragment source ss >>= goResult
+ = cmdParseCheckExp state fragment True source ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -234,22 +234,37 @@ cmdExpRecon state source ss
 --
 --   If the expression had a parse error, undefined vars, or type error
 --   then print this to the console.
+--
+--   We include a flag to override the language profile to allow partially
+--   applied primitives. Although a paticular evaluator (or backend) may not
+--   support partially applied primitives, we want to accept them if we are
+--   only loading an expression to check its type.
+--
 cmdParseCheckExp 
         :: (Ord n, Show n, Pretty n, Pretty (err ()))
-        => State
-        -> Fragment n err
-        -> Source
-        -> String 
+        => State                -- ^ Interpreter state.
+        -> Fragment n err       -- ^ The current language fragment.
+        -> Bool                 -- ^ Allow partial application of primitives.
+        -> Source               -- ^ Where this expression was sourced from.
+        -> String               -- ^ Text to parse.
         -> IO (Maybe ( Exp () n
                      , Type n, Effect n, Closure n))
 
-cmdParseCheckExp _state frag
-        source str
+cmdParseCheckExp _state frag permitPartialPrims source str
  = goLoad (fragmentLexExp frag source str)
  where
+        -- Override profile to allow partially applied primitives if we were
+        -- told to do so.
+        profile   = fragmentProfile frag
+        features  = profileFeatures profile
+        features' = features { featuresPartialPrims 
+                             = featuresPartialPrims features || permitPartialPrims}
+        profile'  = profile  { profileFeatures  = features' }
+        frag'     = frag     { fragmentProfile  = profile'  }
+
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExp (fragmentProfile frag) (nameOfSource source) toks of
+         = case loadExp (fragmentProfile frag') (nameOfSource source) toks of
               Left err
                -> do    putStrLn $ renderIndent $ ppr err
                         return Nothing
@@ -259,7 +274,7 @@ cmdParseCheckExp _state frag
 
         -- Do fragment specific checks.
         goCheckFragment (x, t, e, c)
-         = case fragmentCheckExp frag x of
+         = case fragmentCheckExp frag' x of
              Just err 
               -> do     putStrLn $ renderIndent $ ppr err
                         return Nothing

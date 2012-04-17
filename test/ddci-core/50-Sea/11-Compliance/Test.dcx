@@ -32,3 +32,11 @@ module Main with letrec
 foo (^ : Int32#) : Int32#
  = (case 0 of {_ -> add# })
    [Int32#] ^0 ^0;;
+
+
+-- Error: partially applied primop
+:sea..
+module Main with letrec
+foo (x : Int32#) : Int32#
+ = let f = add# [Int32#] x
+   in  return# [Int32#] (f x);;

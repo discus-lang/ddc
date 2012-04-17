@@ -34,6 +34,7 @@ module DDC.Type.Compounds
         , takeKFuns,    takeKFuns',     takeResultKind
         , tFun,         takeTFun,       takeTFunArgResult
         , tFunPE
+        , arityOfType
         , tImpl
 
           -- * Sort construction
@@ -354,6 +355,15 @@ takeTFunArgResult tt
              in  (t1 : tsMore, tResult)
 
         _ -> ([], tt)
+
+
+-- | Determine the arity of an expression by looking at its type.
+--   Count all the function arrows, and foralls.
+arityOfType :: Type n -> Int
+arityOfType tt
+ = case tt of
+        TForall _ t     -> 1 + arityOfType t
+        t               -> length $ fst $ takeTFunArgResult t
 
 
 -- | Construct a pure and empty value type function.

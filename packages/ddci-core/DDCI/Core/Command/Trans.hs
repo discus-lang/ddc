@@ -26,7 +26,7 @@ import qualified DDC.Type.Env                   as Env
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
- = cmdParseCheckExp state fragmentEval source str >>= goStore
+ = cmdParseCheckExp state fragmentEval True source str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -94,7 +94,7 @@ applyTrans state (x, t1, eff1, clo1)
 --   then evaluate and display the result
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
- = cmdParseCheckExp state fragmentEval source str >>= goStore
+ = cmdParseCheckExp state fragmentEval False source str >>= goStore
  where
         -- Expression had a parse or type error.
         goStore Nothing

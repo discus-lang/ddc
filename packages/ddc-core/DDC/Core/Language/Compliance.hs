@@ -8,8 +8,10 @@ import DDC.Core.Language.Feature
 import DDC.Core.Language.Profile
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Type.Compounds
 import DDC.Base.Pretty
 import Control.Monad
+import Data.Maybe
 import DDC.Type.Env             (Env)
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
@@ -19,16 +21,18 @@ complies
         :: forall n c. (Ord n, Show n, Complies c)
         => Profile n -> c n -> Maybe (Error n)
 complies profile thing
- = let  merr    = result $ compliesX 
+ = let  merr    = result 
+                $ compliesX 
                         profile 
                         (profilePrimKinds profile)
                         (profilePrimTypes profile)
-                        thing
+                        contextTop thing
    in   case merr of
          Left err -> Just err
          Right _  -> Nothing
 
 
+-- Complies -------------------------------------------------------------------
 class Complies (c :: * -> *) where
  -- Check compliance of a well typed term with a language profile.
  -- If it is not well typed then this can return a bad result.
@@ -37,20 +41,21 @@ class Complies (c :: * -> *) where
         => Profile n 
         -> Env n                -- Kind environment.
         -> Env n                -- Type environment.
+        -> Context
         -> c n 
         -> CheckM n
                 (Set n, Set n)  -- Used type and value names.
 
 
 instance Show a => Complies (Module a) where
- compliesX profile kenv tenv mm
-  = compliesX profile kenv tenv (moduleBody mm)
+ compliesX profile kenv tenv context mm
+  = compliesX profile kenv tenv context (moduleBody mm)
 
 
 -- TODO: check types of binders.
 -- We'll mark type vars that only appear in types of binders as unused.
 instance Show a => Complies (Exp a) where
- compliesX profile kenv tenv xx
+ compliesX profile kenv tenv context xx
   = let has f   = f $ profileFeatures profile
         ok      = return (Set.empty, Set.empty)
     in case xx of
@@ -58,12 +63,19 @@ instance Show a => Complies (Exp a) where
         XVar _ (UName n _)
          ->     return (Set.empty, Set.singleton n)
 
-        XVar _ u@(UPrim n _)
-         |  Env.member u (profilePrimTypes profile)
+        XVar _ u@(UPrim n t)
+         |  not $ Env.member u (profilePrimTypes profile)
+         -> throw $ ErrorUndefinedPrim n
+
+         |  args        <- fromMaybe 0 $ contextFunArgs context
+         ,  arity       <- arityOfType t
+         ,  args < arity
+         ,  not $ has featuresPartialPrims
+         -> throw $ ErrorUnsupported PartialPrims
+
+         | otherwise
          -> return (Set.empty, Set.empty)
 
-         |  otherwise            
-         -> throw $ ErrorUndefinedPrim n
 
         XVar{}          -> ok
 
@@ -72,39 +84,44 @@ instance Show a => Complies (Exp a) where
 
         -- spec binders -------------------------
         XLAM _ b x
-         -> do  (tUsed, vUsed)  <- compliesX profile (Env.extend b kenv) tenv x
+         -> do  (tUsed, vUsed)  <- compliesX profile 
+                                        (Env.extend b kenv) tenv 
+                                        (setBody context) x
+
                 tUsed'          <- checkBind profile kenv b tUsed
                 return (tUsed', vUsed)
 
         -- value and witness abstraction --------
         -- TODO: check for nested functions
         XLam _ b x
-         -> do  (tUsed, vUsed)  <- compliesX profile kenv (Env.extend b tenv) x
+         -> do  (tUsed, vUsed)  <- compliesX profile 
+                                        kenv (Env.extend b tenv)
+                                        (setBody context) x
+
                 vUsed'          <- checkBind profile tenv b vUsed
                 return (tUsed, vUsed')
        
         -- application --------------------------
-        -- TODO: check for partial application
         XApp _ x1 XType{}
          -> do  checkFunction profile x1
-                compliesX     profile kenv tenv x1
+                compliesX     profile kenv tenv (addArg context) x1
 
         XApp _ x1 XWitness{}
          -> do  checkFunction profile x1
-                compliesX     profile kenv tenv x1
+                compliesX     profile kenv tenv (addArg context) x1
 
         XApp _ x1 x2
          -> do  checkFunction profile x1
-                (tUsed1, vUsed1) <- compliesX profile kenv tenv x1
-                (tUsed2, vUsed2) <- compliesX profile kenv tenv x2
+                (tUsed1, vUsed1) <- compliesX profile kenv tenv (addArg context) x1
+                (tUsed2, vUsed2) <- compliesX profile kenv tenv context x2
                 return  ( Set.union tUsed1 tUsed2
                         , Set.union vUsed1 vUsed2)
 
         -- let ----------------------------------
         XLet _ (LLet mode b1 x1) x2
          -> do  let tenv'        = Env.extend b1 tenv
-                (tUsed1, vUsed1) <- compliesX profile kenv tenv  x1
-                (tUsed2, vUsed2) <- compliesX profile kenv tenv' x2
+                (tUsed1, vUsed1) <- compliesX profile kenv tenv  (reset context) x1
+                (tUsed2, vUsed2) <- compliesX profile kenv tenv' (reset context) x2
                 vUsed2'          <- checkBind profile tenv b1 vUsed2
 
                 -- Check for unsupported lazy bindings.
@@ -122,39 +139,45 @@ instance Show a => Complies (Exp a) where
          -> do  let (bs, xs)    = unzip bxs
                 let tenv'       = Env.extends bs tenv
 
-                (tUseds1, vUseds1) <- liftM unzip
-                                   $  mapM (compliesX profile kenv tenv') xs
+                (tUseds1, vUseds1) 
+                 <- liftM unzip
+                 $  mapM (compliesX profile kenv tenv' (reset context)) 
+                         xs
 
-                (tUsed2,  vUsed2)  <- compliesX profile kenv tenv' x2
-                let tUseds      = Set.unions (tUsed2 : tUseds1)
-                let vUseds      = Set.unions (vUsed2 : vUseds1)
+                (tUsed2,  vUsed2) <- compliesX profile kenv tenv' (reset context) x2
+                let tUseds        = Set.unions (tUsed2 : tUseds1)
+                let vUseds        = Set.unions (vUsed2 : vUseds1)
 
-                vUseds'            <- checkBinds profile tenv bs vUseds
+                vUseds'           <- checkBinds profile tenv bs vUseds
                 return (tUseds, vUseds')
 
 
         XLet _ (LLetRegion r bs) x2
-         -> do  (tUsed2, vUsed2) <- compliesX profile
-                                        (Env.extend  r  kenv) 
-                                        (Env.extends bs tenv) x2
+         -> do  (tUsed2, vUsed2) 
+                 <- compliesX profile   (Env.extend  r  kenv) 
+                                        (Env.extends bs tenv) 
+                                        (reset context) x2
                 return (tUsed2, vUsed2)
 
         XLet _ (LWithRegion _) x2
-         -> do  (tUsed2, vUsed2) <- compliesX profile kenv tenv x2
+         -> do  (tUsed2, vUsed2) <- compliesX profile kenv tenv 
+                                        (reset context) x2
                 return (tUsed2, vUsed2)
 
         -- case ---------------------------------
         XCase _ x1 alts
-         -> do  (tUsed1,  vUsed1)  <- compliesX profile kenv tenv x1
+         -> do  (tUsed1,  vUsed1)  
+                 <- compliesX profile kenv tenv (reset context) x1
+
                 (tUseds2, vUseds2) <- liftM unzip 
-                                   $  mapM (compliesX profile kenv tenv) alts
+                                   $  mapM (compliesX profile kenv tenv (reset context)) alts
 
                 return  ( Set.unions $ tUsed1 : tUseds2
                         , Set.unions $ vUsed1 : vUseds2)
 
 
         -- cast ---------------------------------
-        XCast _ _ x     -> compliesX profile kenv tenv x
+        XCast _ _ x     -> compliesX profile kenv tenv (reset context) x
 
         -- type and witness ---------------------
         XType t         -> throw $ ErrorNakedType    t
@@ -162,14 +185,16 @@ instance Show a => Complies (Exp a) where
 
 
 instance Show a => Complies (Alt a) where
- compliesX profile kenv tenv aa
+ compliesX profile kenv tenv context aa
   = case aa of
         AAlt PDefault x
-         -> do  (tUsed1, vUsed1)  <- compliesX profile kenv tenv x
+         -> do  (tUsed1, vUsed1)  <- compliesX profile kenv tenv 
+                                        (reset context) x
                 return  (tUsed1, vUsed1)
 
         AAlt (PData _ bs) x
-         -> do  (tUsed1, vUsed1) <- compliesX profile kenv (Env.extends bs tenv) x
+         -> do  (tUsed1, vUsed1) <- compliesX profile kenv (Env.extends bs tenv) 
+                                        (reset context) x
                 vUsed1'          <- checkBinds profile tenv bs vUsed1 
                 return (tUsed1, vUsed1')
 
@@ -250,6 +275,40 @@ data Error n
 
 instance Show n => Pretty (Error n) where
  ppr err        = text (show err)
+
+
+-- Context --------------------------------------------------------------------
+data Context
+        = Context
+        { contextAbsBody        :: Bool 
+        , contextFunArgs        :: Maybe Int }
+        deriving (Eq, Show)
+
+
+-- | The top level context, used at the top-level scope of a module.
+contextTop :: Context
+contextTop
+        = Context
+        { contextAbsBody        = False
+        , contextFunArgs        = Nothing }
+
+
+-- | Record that we've entered into an abstraction body.
+setBody :: Context -> Context
+setBody context = context { contextAbsBody = True }
+
+
+-- | Record that the expression is being directly applied to an argument.
+addArg  :: Context -> Context
+addArg context
+ = case contextFunArgs context of
+        Nothing         -> context { contextFunArgs = Just 1 }
+        Just args       -> context { contextFunArgs = Just (args + 1) }
+
+
+-- | Reset the argument counter of a context.
+reset   :: Context -> Context
+reset context   = context { contextFunArgs = Nothing } 
 
 
 -- Monad ----------------------------------------------------------------------
