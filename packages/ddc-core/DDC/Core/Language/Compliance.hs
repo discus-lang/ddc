@@ -65,14 +65,10 @@ instance Show a => Complies (Exp a) where
          |  otherwise            
          -> throw $ ErrorUndefinedPrim n
 
-        XVar _ _
-         -> ok
+        XVar{}          -> ok
 
         -- constructors -------------------------
-        XCon _ UPrim{}           -> ok
-        XCon _ _                
-         | has featuresDataCtors -> ok
-         | otherwise             -> throw $ ErrorUnsupported DataCtors
+        XCon{}          -> ok
 
         -- spec binders -------------------------
         XLAM _ b x

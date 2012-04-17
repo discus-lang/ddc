@@ -44,29 +44,14 @@ zeroProfile
 -- | A flattened set of features, for easy lookup.
 data Features 
         = Features
-        { -- General features
-          featuresPartialApplication    :: Bool
-        , featuresPartialPrims          :: Bool
+        { featuresPartialPrims          :: Bool
         , featuresGeneralApplication    :: Bool
         , featuresNestedFunctions       :: Bool
         , featuresLazyBindings          :: Bool
-        , featuresDataCtors             :: Bool
         , featuresDebruijnBinders       :: Bool
-
-          -- Regions
-        , featuresLetRegion             :: Bool
-        , featuresMutableRegions        :: Bool
-        , featuresLocalRegions          :: Bool
-        , featuresGlobalRegions         :: Bool
-
-          -- Foreign modules
-        , featuresImports               :: Bool
-
-          -- Sanity checking
         , featuresNameShadowing         :: Bool
         , featuresUnusedBindings        :: Bool
         , featuresUnusedMatches         :: Bool
-        , featuresUnusedImports         :: Bool
         }
 
 
@@ -74,41 +59,25 @@ data Features
 zeroFeatures :: Features
 zeroFeatures
         = Features
-        { featuresPartialApplication    = False
-        , featuresPartialPrims          = False
+        { featuresPartialPrims          = False
         , featuresGeneralApplication    = False
         , featuresNestedFunctions       = False
         , featuresLazyBindings          = False
-        , featuresDataCtors             = False
         , featuresDebruijnBinders       = False
-        , featuresLetRegion             = False
-        , featuresMutableRegions        = False
-        , featuresLocalRegions          = False
-        , featuresGlobalRegions         = False
-        , featuresImports               = False
         , featuresNameShadowing         = False
         , featuresUnusedBindings        = False
-        , featuresUnusedMatches         = False
-        , featuresUnusedImports         = False }
+        , featuresUnusedMatches         = False }
 
 
 -- | Set a language `Flag` in the `Profile`.
 setFeature :: Feature -> Bool -> Features -> Features
 setFeature feature val features
  = case feature of
-        PartialApplication      -> features { featuresPartialApplication  = val }
         PartialPrims            -> features { featuresPartialPrims        = val }
         GeneralApplication      -> features { featuresGeneralApplication  = val }
         NestedFunctions         -> features { featuresNestedFunctions     = val }
         LazyBindings            -> features { featuresLazyBindings        = val }
-        DataCtors               -> features { featuresDataCtors           = val }
         DebruijnBinders         -> features { featuresDebruijnBinders     = val }
-        LetRegion               -> features { featuresLetRegion           = val }
-        MutableRegions          -> features { featuresMutableRegions      = val }
-        LocalRegions            -> features { featuresLocalRegions        = val }
-        GlobalRegions           -> features { featuresGlobalRegions       = val }
-        Imports                 -> features { featuresImports             = val }
         NameShadowing           -> features { featuresNameShadowing       = val }
         UnusedBindings          -> features { featuresUnusedBindings      = val }
         UnusedMatches           -> features { featuresUnusedMatches       = val }
-        UnusedImports           -> features { featuresUnusedImports       = val }

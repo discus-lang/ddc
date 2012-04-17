@@ -22,20 +22,12 @@ evalProfile
 evalFeatures :: Features
 evalFeatures 
         = Features
-        { featuresPartialApplication    = True
-        , featuresPartialPrims          = False
+        { featuresPartialPrims          = False
         , featuresGeneralApplication    = True
         , featuresNestedFunctions       = True
         , featuresLazyBindings          = True
-        , featuresDataCtors             = True
         , featuresDebruijnBinders       = True
-        , featuresLetRegion             = True
-        , featuresMutableRegions        = True
-        , featuresLocalRegions          = True
-        , featuresGlobalRegions         = True
-        , featuresImports               = True
         , featuresNameShadowing         = True
         , featuresUnusedBindings        = True
-        , featuresUnusedMatches         = True
-        , featuresUnusedImports         = True }
+        , featuresUnusedMatches         = True }
 
