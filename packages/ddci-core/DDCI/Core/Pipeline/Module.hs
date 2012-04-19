@@ -27,7 +27,7 @@ import DDCI.Core.Mode
 import DDCI.Core.Language
 import DDCI.Core.Build.Builder
 import DDC.Core.Simplifier
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Collect
 import DDC.Base.Pretty
 import qualified DDC.Core.Check                 as C

@@ -4,7 +4,7 @@ module DDCI.Core.Language.Zero
 where
 import DDCI.Core.Mode
 import DDCI.Core.Language.Base
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
 import DDC.Base.Lexer

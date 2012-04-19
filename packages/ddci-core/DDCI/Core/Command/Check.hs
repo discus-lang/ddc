@@ -16,7 +16,7 @@ import DDCI.Core.Mode
 import DDCI.Core.Language
 import DDCI.Core.State
 import DDCI.Core.Output
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Load
 import DDC.Core.Exp
 import DDC.Core.Pretty

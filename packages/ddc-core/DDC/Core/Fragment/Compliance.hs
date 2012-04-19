@@ -1,11 +1,11 @@
 
-module DDC.Core.Language.Compliance
+module DDC.Core.Fragment.Compliance
         ( complies
         , Complies      (..)
         , Error         (..))
 where
-import DDC.Core.Language.Feature
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Feature
+import DDC.Core.Fragment.Profile
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Compounds

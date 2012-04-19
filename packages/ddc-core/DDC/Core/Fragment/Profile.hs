@@ -1,6 +1,6 @@
 
 -- | A language profile determines what features a program can use.
-module DDC.Core.Language.Profile
+module DDC.Core.Fragment.Profile
         ( Profile (..)
         , zeroProfile
 
@@ -8,7 +8,7 @@ module DDC.Core.Language.Profile
         , zeroFeatures
         , setFeature)
 where
-import DDC.Core.Language.Feature
+import DDC.Core.Fragment.Feature
 import DDC.Type.DataDef
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env

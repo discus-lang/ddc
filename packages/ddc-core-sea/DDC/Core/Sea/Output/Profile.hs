@@ -7,7 +7,7 @@ module DDC.Core.Sea.Output.Profile
 where
 import DDC.Core.Sea.Output.Env
 import DDC.Core.Sea.Output.Name
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
 import DDC.Base.Lexer
 

@@ -8,14 +8,14 @@ module DDC.Core.Load
         , loadExp)
 where
 import DDC.Core.Transform.SpreadX
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp
 import DDC.Type.Transform.SpreadT
 import DDC.Core.Module
 import DDC.Base.Lexer
 import DDC.Base.Pretty
-import qualified DDC.Core.Language.Compliance   as I
+import qualified DDC.Core.Fragment.Compliance   as I
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T

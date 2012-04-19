@@ -8,7 +8,7 @@ import DDCI.Core.Language
 import DDCI.Core.State
 import DDCI.Core.Mode
 import DDCI.Core.Output
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
 import DDC.Base.Pretty
 import Data.Char

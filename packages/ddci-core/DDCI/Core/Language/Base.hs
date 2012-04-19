@@ -4,7 +4,7 @@ module DDCI.Core.Language.Base
         , Fragment (..))
 where
 import DDCI.Core.Mode
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp

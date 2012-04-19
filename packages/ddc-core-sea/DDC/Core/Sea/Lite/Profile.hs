@@ -7,7 +7,7 @@ module DDC.Core.Sea.Lite.Profile
 where
 import DDC.Core.Sea.Lite.Env
 import DDC.Core.Sea.Lite.Name
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
 import DDC.Base.Lexer
 

@@ -3,7 +3,7 @@
 module DDC.Core.Eval.Profile
         (evalProfile)
 where
-import DDC.Core.Language.Profile
+import DDC.Core.Fragment.Profile
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
 

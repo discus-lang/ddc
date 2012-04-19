@@ -1,5 +1,5 @@
 
-module DDC.Core.Language.Feature
+module DDC.Core.Fragment.Feature
         (Feature(..))
 where
 
