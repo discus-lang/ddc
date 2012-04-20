@@ -26,8 +26,11 @@ typedef int     bool_t;
 //   Big enough to represent the number of allocatable bytes.
 typedef size_t   nat_t;
 
-// Generic address tpye.
+// Generic address type.
+//   #ifdef because Cygwin already defines it.
+#ifndef __addr_t_defined
 typedef uint8_t* addr_t;
+#endif
 
 // A constructor tag.
 typedef uint32_t tag_t;

@@ -91,6 +91,9 @@ determineDefaultBuilder config
 	 Just (Platform ArchX86_64 OsLinux)
 		-> return $ Just (builder_X8664_Linux  config)
 
+	 Just (Platform ArchX86_32 OsCygwin)
+		-> return $ Just (builder_X8632_Cygwin config)
+
          _      -> return Nothing
 
 
@@ -207,6 +210,37 @@ builder_X8664_Linux config
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
                 ++ " "    ++ (builderConfigRuntime config </> "libddc-runtime.so")
+        }
+
+
+-- x86_32-cygwin ---------------------------------------------------------------
+builder_X8632_Cygwin config
+ =      Builder
+        { builderName   = "x86_32-cygwin"
+        , buildHost     = Platform ArchX86_32 OsCygwin
+        , buildTarget   = Platform ArchX86_32 OsCygwin
+        , buildSpec     = Llvm.platform32
+
+        , buildLlc    
+                = \llFile sFile
+                -> doCmd $ "llc -O3 -march=x86 " 
+                ++ (normalise llFile)
+                ++ " -o " ++ (normalise sFile)
+
+        , buildAs
+                = \sFile oFile
+                -> doCmd $  "as --32"  
+                ++ " -o " ++ (normalise oFile)
+                ++ " "    ++ (normalise sFile)
+
+	-- Note on Cygwin we need to use 'gcc-4' explicitly because plain 'gcc'
+	-- is a symlink, which Windows doesn't really support.
+        , buildLdExe  
+                = \oFile binFile
+                -> doCmd $  "gcc-4 -m32" 
+                ++ " -o " ++ (normalise binFile)
+                ++ " "    ++ (normalise oFile)
+                ++ " "    ++ (normalise $ builderConfigRuntime config </> "libddc-runtime.a")
         }
 
 

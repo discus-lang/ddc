@@ -14,7 +14,8 @@ include make/config.mk
 TARGET_OS \
 	:= $(shell uname -s \
 		| tr 'A-Z' 'a-z' \
-		| sed 's/cygwin_nt-5.1/cygwin/')
+		| sed 's/cygwin_nt-5.1/cygwin/' \
+		| sed 's/cygwin_nt-6.1/cygwin/')
 
 # Autodetect the build architecture.
 #   This works for 'i386', 'i686', 'x86_64' and 'ppc'.
@@ -84,7 +85,7 @@ GCC_LINK_SHARED		:= gcc -m64 -dynamiclib -undefined dynamic_lookup
 SHARED_SUFFIX		:= dylib
 BITS                    := 64
 
-# -- WindowsXP/Cygwin on x86
+# -- Windows{XP,7}/Cygwin on x86
 else ifeq "$(Target)" "cygwin-x86"
 GCC_FLAGS		+= -D BITS=32 -m32
 GCC_LINK_SHARED		:= gcc -shared
