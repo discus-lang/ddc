@@ -84,7 +84,7 @@ createJobs config way allFiles filePath
 
 		 -- compile the .ds into a .bin
 		 compile 	= JobCompile 	testName (wayName way) filePath
-		 				(wayOptsComp way) ["-M40M"]
+		 				(wayOptsComp way) ["-M50M"]
 						buildDir mainCompStdout mainCompStderr
 						(Just mainBin) shouldSucceed
 
@@ -176,7 +176,7 @@ createJobs config way allFiles filePath
 		 shouldSucceed	= not $ Set.member testErrorCheck allFiles
 
 		 compile	= JobCompile	testName (wayName way) filePath
-						(wayOptsComp way) ["-M30M"]
+						(wayOptsComp way) ["-M40M"]
 						buildDir testCompStdout testCompStderr
 						Nothing shouldSucceed
 
@@ -208,7 +208,7 @@ createJobs config way allFiles filePath
 						testDDCiStdout testStdoutDiff
 
 	     in [jobRun] ++ (if shouldDiffStdout then [jobDiff] else [])
-	 
+
 
 	 -- For Main.hs files, compile with GHC and run them
 	 FileMainHS
