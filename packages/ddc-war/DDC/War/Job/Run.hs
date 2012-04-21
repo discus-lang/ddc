@@ -4,6 +4,9 @@ module DDC.War.Job.Run
 where
 import DDC.War.Job
 import DDC.War.Result
+import BuildBox.Command.File
+import BuildBox.Command.System
+import BuildBox.Build.Benchmark
 import BuildBox
 
 
@@ -15,12 +18,12 @@ jobRun (JobRun	testName _wayName _fileName
  
 	-- Run the binary.
 	(time, (code, strOut, strErr))
-	 <- runTimedCommand 
+	 <- timeBuild
 	 $  systemTee False mainBin ""
 
 	-- Write its output to files.
 	atomicWriteFile mainRunOut strOut
 	atomicWriteFile mainRunErr strErr
 	
-	return [ResultAspect $ Time TotalWall `secs` (fromRational $ toRational time)]
+	return [ResultSuccess] -- [ResultAspect $ Time TotalWall `secs` (fromRational $ toRational time)]
 	

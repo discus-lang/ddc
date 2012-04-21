@@ -4,6 +4,9 @@ module DDC.War.Job.Shell
 where
 import DDC.War.Job
 import DDC.War.Result
+import BuildBox.Command.File
+import BuildBox.Command.System
+import BuildBox.Build.Benchmark
 import BuildBox
 
 
@@ -18,7 +21,7 @@ jobShell (JobShell testName _wayName
 	
 	-- Run the binary.
 	(time, (code, strOut, strErr))
-	 <- runTimedCommand 
+	 <- timeBuild
 	 $  systemTee False 
 		("sh " ++ mainSH ++ " " ++ sourceDir ++ " " ++ scratchDir) 
 		""
@@ -27,10 +30,10 @@ jobShell (JobShell testName _wayName
 	atomicWriteFile mainRunOut strOut
 	atomicWriteFile mainRunErr strErr
 		
-	return  $  [ ResultAspect $ Time TotalWall `secs` (fromRational $ toRational time)]
+	return  -- $  [ ResultAspect $ Time TotalWall `secs` (fromRational $ toRational time)]
 
 		-- check for unexpected failure
-		++ (if shouldSucceed && code /= ExitSuccess 
+		$  (if shouldSucceed && code /= ExitSuccess 
 			then [ResultUnexpectedFailure] else [])
 
 		-- check for unexpected success

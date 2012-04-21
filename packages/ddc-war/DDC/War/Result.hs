@@ -3,19 +3,16 @@
 module DDC.War.Result
 	( Result(..)
 	, isResultUnexpectedFailure
-	, isResultUnexpectedSuccess
-	, takeResultTime
-	, takeResultDiff
-	, takeQuirks )
+	, isResultUnexpectedSuccess)
+--	, takeResultTime
+--	, takeResultDiff
+--	, takeQuirks )
 where
-import BuildBox
-import Data.Maybe
 
 data Result
 	= ResultUnexpectedFailure
 	| ResultUnexpectedSuccess
-	| ResultAspect 	(WithUnits (Aspect Single))
-	| ResultQuirk  	Quirk
+	| ResultSuccess
 	| ResultDiff   	FilePath FilePath FilePath
 	deriving Show
 
@@ -31,6 +28,7 @@ isResultUnexpectedSuccess rr
 	ResultUnexpectedSuccess{}	-> True
 	_				-> False
 
+{-
 takeResultTime :: [Result] -> Maybe Seconds
 takeResultTime as
  	= listToMaybe [t | ResultAspect (WithSeconds (Time TotalWall (Single t))) <- as]
@@ -45,3 +43,4 @@ takeResultDiff as
 takeQuirks :: [Result] -> [Quirk]
 takeQuirks rs
 	= [q | ResultQuirk q <- rs]
+-}

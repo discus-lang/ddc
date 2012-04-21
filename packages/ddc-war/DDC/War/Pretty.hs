@@ -6,10 +6,10 @@ where
 import DDC.War.Job
 import DDC.War.Result
 import Util.Terminal.VT100
-import BuildBox
+import BuildBox.Pretty
+--import BuildBox
 import System.FilePath
 import Data.List
-
 
 pprJobResult :: Int -> Bool -> FilePath	-> Job -> [Result] -> Doc
 pprJobResult width useColor workingDir job results
@@ -59,9 +59,9 @@ diagnoseJobResults width useColor workingDir job aspects
 	
 	-- compile did was was expected of it.
 	JobCompile{}
-	 | Just time	<- takeResultTime aspects 
-	 -> (True, pprResult (jobFile job) "compile" 
-		        Blue	(text "time" <> (parens $ padR 7 $ ppr time)))
+--	 | Just time	<- takeResultTime aspects 
+	 -> (True, pprResult (jobFile job) "compile" Blue (text "success"))
+--		        Blue	(text "time" <> (parens $ padR 7 $ ppr time)))
 
 
         -- CompileDCE ------------------------------
@@ -79,16 +79,16 @@ diagnoseJobResults width useColor workingDir job aspects
         
         -- compile did was was expected of it.
         JobCompileDCE{}
-         | Just time    <- takeResultTime aspects 
-         -> (True, pprResult (jobFile job) "compile" 
-                        Blue    (text "time" <> (parens $ padR 7 $ ppr time)))
+  --       | Just time    <- takeResultTime aspects 
+         -> (True, pprResult (jobFile job) "compile" Blue (text "success"))
+--                        Blue    (text "time" <> (parens $ padR 7 $ ppr time)))
 
 
 	-- CompileHS ----------------------------
 	JobCompileHS{}
-	 | Just time	<- takeResultTime aspects
-	 -> (True, pprResult (jobFile job) "compile" 
-		        Black	(text "time" <> (parens $ padR 7 $ ppr time)))
+--	 | Just time	<- takeResultTime aspects
+	 -> (True, pprResult (jobFile job) "compile" Black (text "success"))
+--		        Black	(text "time" <> (parens $ padR 7 $ ppr time)))
 
 		
 	-- Run ----------------------------------
@@ -98,9 +98,10 @@ diagnoseJobResults width useColor workingDir job aspects
 	 -> (False, pprResult (jobFileBin job) "run"
 		        Red 	(text "failed"))
 
-	 | Just time	<- takeResultTime aspects
-	 -> (True, pprResult (jobFileBin job) "run"
-		        Green	(text "time" <> (parens $ padR 7 $ ppr time)))
+--	 | Just time	<- takeResultTime aspects
+         | otherwise
+	 -> (True, pprResult (jobFileBin job) "run" Green (text "success"))
+--		        Green	(text "time" <> (parens $ padR 7 $ ppr time)))
 
         -- RunDCX -------------------------------
 	-- run was ok.
@@ -109,9 +110,10 @@ diagnoseJobResults width useColor workingDir job aspects
 	 -> (False, pprResult (jobFile job) "run"
 		        Red 	(text "failed"))
 
-	 | Just time	<- takeResultTime aspects
-	 -> (True, pprResult (jobFile job) "run"
-		        Green	(text "time" <> (parens $ padR 7 $ ppr time)))
+--	 | Just time	<- takeResultTime aspects
+         | otherwise
+	 -> (True, pprResult (jobFile job) "run" Green (text "success"))
+--		        Green	(text "time" <> (parens $ padR 7 $ ppr time)))
 
 	
 	-- Shell --------------------------------
@@ -124,16 +126,17 @@ diagnoseJobResults width useColor workingDir job aspects
 	 -> (False, pprResult (jobShellSource job) "shell"
 		        Red 	(text "unexpected success"))
 
-	 | Just time	<- takeResultTime aspects
-	 -> (True, pprResult (jobShellSource job) "shell"
-		        Black 	(text "time" <> (parens $ padR 7 $ ppr time)))
+--	 | Just time	<- takeResultTime aspects
+         | otherwise
+	 -> (True, pprResult (jobShellSource job) "shell" Black (text "success"))
+--		        Black 	(text "time" <> (parens $ padR 7 $ ppr time)))
 	
 	-- Diff ---------------------------------
 	-- diffed files were different.
-	JobDiff{}
-   	 | Just _		<- takeResultDiff aspects
-	 -> (False, pprResult (jobFileOut job) "diff"
-		        Red	(text "failed"))
+--	JobDiff{}
+--   	 | Just _		<- takeResultDiff aspects
+--	 -> (False, pprResult (jobFileOut job) "diff"
+--		        Red	(text "failed"))
 
 	-- diffed files were identical, all ok.
 	JobDiff{}

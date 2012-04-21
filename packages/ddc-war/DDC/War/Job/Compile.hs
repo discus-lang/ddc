@@ -4,6 +4,10 @@ module DDC.War.Job.Compile
 where
 import DDC.War.Job
 import DDC.War.Result
+import BuildBox.Command.File
+import BuildBox.Command.System
+import BuildBox.Build.Benchmark
+import BuildBox.IO.Directory
 import BuildBox
 import System.FilePath
 import System.Directory
@@ -45,7 +49,7 @@ jobCompile job@(JobCompile
 			qssystem $ "rm -f " ++ mainBin
 
 			-- Build the program.
-	 		runTimedCommand 
+	 		timeBuild 
 	 		 $ systemTee False 
 				(ddcBin'
 				++ " -v -make "	  ++ srcDS
@@ -58,7 +62,7 @@ jobCompile job@(JobCompile
 
 		-- Compile the program.
 		| otherwise
-		= do	runTimedCommand 
+		= do	timeBuild
 	 		 $ systemTee False
 				(ddcBin'
 				++ " -c "	  ++ srcDS
@@ -86,6 +90,7 @@ jobCompile job@(JobCompile
 	atomicWriteFile mainCompOut strOut
 	atomicWriteFile mainCompErr strErr
 
-	return (ResultAspect (Time TotalWall `secs` (fromRational $ toRational time)) 
-		: result)
+	return result
+--                (ResultAspect (Time TotalWall `secs` (fromRational $ toRational time)) 
+--		: result)
 	

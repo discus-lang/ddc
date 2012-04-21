@@ -4,6 +4,10 @@ module DDC.War.Job.CompileHS
 where
 import DDC.War.Result
 import DDC.War.Job
+import BuildBox.Command.File
+import BuildBox.Command.System
+import BuildBox.Build.Benchmark
+import BuildBox.IO.Directory
 import BuildBox
 import System.FilePath
 import System.Directory
@@ -48,15 +52,16 @@ jobCompileHS (JobCompileHS
 	genBuildMk buildMk mainBin' srcCopyHS'
 	
 	(time, (code, strOut, strErr))
-	  <- runTimedCommand
+	  <- timeBuild
 	  $  systemTee False
 		("make -f " ++ buildMk)
 		""
 	atomicWriteFile mainCompOut strOut
 	atomicWriteFile mainCompErr strErr
 
-	let ftime	= fromRational $ toRational time
-	return [ ResultAspect $ Time TotalWall `secs` ftime ]
+--	let ftime	= fromRational $ toRational time
+	return [ResultSuccess]
+--        [ ResultAspect $ Time TotalWall `secs` ftime ]
 	
 	
 genBuildMk :: FilePath -> String -> String -> Build ()

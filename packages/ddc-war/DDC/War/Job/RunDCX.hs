@@ -4,6 +4,9 @@ module DDC.War.Job.RunDCX
 where
 import DDC.War.Result
 import DDC.War.Job
+import BuildBox.Command.File
+import BuildBox.Command.System
+import BuildBox.Build.Benchmark
 import BuildBox
 import System.Directory
 
@@ -22,7 +25,7 @@ jobRunDCX (JobRunDCX
 	ddciBin' <- io $ canonicalizePath "bin/ddci-core"
 
 	(time, (code, strOut, strErr))
-	  <- runTimedCommand
+	  <- timeBuild
 	  $  systemTee False
 		(ddciBin' ++ " --batch " ++ srcDCX)
 		""
@@ -34,9 +37,9 @@ jobRunDCX (JobRunDCX
                         ExitFailure _   -> [ResultUnexpectedFailure]
                         _               -> []
                 
-	let ftime	= fromRational $ toRational time
+--	let ftime	= fromRational $ toRational time
 
 	return  $  result 
-	        ++ [ ResultAspect $ Time TotalWall `secs` ftime ]
+--	        ++ [ ResultAspect $ Time TotalWall `secs` ftime ]
 	
 	

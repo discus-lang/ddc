@@ -4,6 +4,8 @@ module DDC.War.Job.Diff
 where
 import DDC.War.Job
 import DDC.War.Result
+import BuildBox.Command.File
+import BuildBox.Command.System
 import BuildBox
 
 

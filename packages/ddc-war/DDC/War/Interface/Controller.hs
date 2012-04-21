@@ -8,7 +8,8 @@ import DDC.War.Interface.Config
 import DDC.War.Job
 import DDC.War.Result
 import DDC.War.Pretty
-import BuildBox
+import BuildBox.Pretty
+import BuildBox.Control.Gang
 import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad.STM
