@@ -1,11 +1,11 @@
 
-import DDC.War.Options
-import DDC.War.Way
-import DDC.War.Config
+import DDC.War.Interface.Controller
+import DDC.War.Interface.Options
+import DDC.War.Interface.Config
+
 import DDC.War.Job
 import DDC.War.JobCreate
 import DDC.War.JobDispatch
-import DDC.War.Controller
 import DDC.War.Pretty
 import Util.Options
 import Util.Options.Help

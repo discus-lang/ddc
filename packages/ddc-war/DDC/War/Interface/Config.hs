@@ -1,11 +1,20 @@
 
-module DDC.War.Config
-	( Config(..)
+module DDC.War.Interface.Config
+	( Way          (..)
+        , Config       (..)
 	, loadConfig)
 where
-import DDC.War.Options
-import DDC.War.Way
+import DDC.War.Interface.Options
 import Util
+
+-- | A way to build the test
+--      This holds extra options to pass to the program.
+data Way
+        = Way   { wayName       :: String 
+                , wayOptsComp   :: [String] 
+                , wayOptsRun    :: [String] }
+        deriving (Eq, Ord, Show)
+
 
 -- | Configuration information read from command line arguments.
 data Config

@@ -2,9 +2,8 @@
 module DDC.War.JobCreate
 	(createJobs)
 where
-import DDC.War.Config
+import DDC.War.Interface.Config
 import DDC.War.Job
-import DDC.War.Way
 import DDC.War.FileType
 import System.FilePath
 import qualified Data.Set	as Set

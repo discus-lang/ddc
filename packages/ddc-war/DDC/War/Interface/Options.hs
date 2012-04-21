@@ -1,5 +1,5 @@
 
-module DDC.War.Options
+module DDC.War.Interface.Options
 	( Opt(..)
 	, warOptions)
 where

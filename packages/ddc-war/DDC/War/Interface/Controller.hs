@@ -1,12 +1,12 @@
 
-module DDC.War.Controller
+module DDC.War.Interface.Controller
 	( JobResult(..)
 	, ChanResult
 	, controller)
 where
+import DDC.War.Interface.Config
 import DDC.War.Job
 import DDC.War.Result
-import DDC.War.Config
 import DDC.War.Pretty
 import BuildBox
 import Control.Concurrent
