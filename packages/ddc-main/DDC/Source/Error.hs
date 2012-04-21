@@ -16,14 +16,14 @@ import qualified Source.TokenShow 	as Token
 -- | All the errors that the parser and renamer can generate
 data Error
 	-- Parser Errors ------------------------------------------------------
-	-- | Nested block starts to left of enclosing one. 
+	-- | Nested block starts to left of enclosing one.
 	= ErrorLayoutLeft		TokenP
 
-	-- | Explicit close brace must match explicit open brace. 
+	-- | Explicit close brace must match explicit open brace.
 	| ErrorLayoutNoBraceMatch 	TokenP
 
-    -- | Unclosed comment block.
-    | ErrorUnterminatedCommentBlock TokenP
+        -- | Unclosed comment block.
+        | ErrorUnterminatedCommentBlock TokenP
 
 	-- | Found a token which is a string with tabs in it.
 	| ErrorLexicalStringTabs	TokenP
@@ -41,9 +41,9 @@ data Error
 	| ErrorParseBefore		[TokenP]
 
 	-- | Parse error at end of input.
-	| ErrorParseEnd		
+	| ErrorParseEnd
 
-	
+
 	-- Defixer Errors -----------------------------------------------------
 	-- | Can't have > 1 non-assoc op in the same string.
 	| ErrorDefixNonAssoc		[Var]
@@ -51,10 +51,10 @@ data Error
 	-- | Can't have ops of mixed assoc but same precedence in same string.
 	| ErrorDefixMixedAssoc		[Var]
 
-	
+
 	-- Renamer Errors -----------------------------------------------------
 	-- | Variable is undefined / out of scope.
-	| ErrorUndefinedVar	
+	| ErrorUndefinedVar
 		{ eUndefined		:: Var }
 
 	-- | Occurance of a type variable in a TForall shadows another
@@ -62,7 +62,7 @@ data Error
 		{ eShadowVar		:: Var }
 
 	-- | Variable is redefined in the same scope.
-	| ErrorRedefinedVar	
+	| ErrorRedefinedVar
 		{ eFirstDefined		:: Var
 		, eRedefined		:: Var }
 
@@ -102,18 +102,18 @@ data Error
 	| ErrorNotMethodOfClass
 		{ eInstVar		:: Var
 		, eClassVar		:: Var }
-		
+
 	-- | Type signature quantifies a material variable.
-	| ErrorQuantifiedMaterialVar	
+	| ErrorQuantifiedMaterialVar
 		{ eVarSig		:: Var
-		, eTypeSig		:: Type 
+		, eTypeSig		:: Type
 		, eVarQuantified	:: Var }
 
 	-- | Type signature quantifies a dangerous variable.
 	| ErrorQuantifiedDangerousVar
 		{ eVar			:: Var }
 
-	deriving Show		
+	deriving Show
 
 
 -- Pretty Printer ---------------------------------------------------------------------------------
@@ -128,10 +128,10 @@ instance Pretty Error PMode where
  ppr (ErrorLayoutNoBraceMatch tok)
  	= tokErr tok
 	$ "Layout error: Explicit close brace must match an explicit open brace."
- 
+
  ppr (ErrorUnterminatedCommentBlock tok)
-    = tokErr tok
-    $ "Parse error: Unterminated comment block."
+        = tokErr tok
+        $ "Parse error: Unterminated comment block."
 
  ppr (ErrorLexicalStringTabs tok)
 	= tokErr tok
@@ -150,14 +150,14 @@ instance Pretty Error PMode where
 	$ "Parse error: " % str
 
  ppr (ErrorParseBefore tt)
-	| Just toks	<- sequence 
-			$ map takeToken 
+	| Just toks	<- sequence
+			$ map takeToken
 			$ take 10 tt
 
  	= let	Just t1	= takeHead tt
- 	  in	tokErr t1 
+ 	  in	tokErr t1
 		 $ "Parse error before: " % hsep (map Token.showSource toks) % " ..."
-		
+
 	| otherwise
 	= ppr $ indent "Parse error at start of module"
 
@@ -195,7 +195,7 @@ instance Pretty Error PMode where
 
  ppr err@(ErrorShadowForall{})
 	= varErr (eShadowVar err)
-	$ "Shadowed type variable" 
+	$ "Shadowed type variable"
 			%% quotes (eShadowVar err)
 			%% "in forall quantifier."
 
@@ -205,7 +205,7 @@ instance Pretty Error PMode where
 	%! "    first defined at:"	%% prettyPos (eFirstDefined err)
 
 	where var = eFirstDefined err
-	      thing 
+	      thing
 		| isCtorName var
 		, varNameSpace var == NameValue
 		= ppr "data constructor"
@@ -213,7 +213,7 @@ instance Pretty Error PMode where
 		| isCtorName var
 		, varNameSpace var == NameType
 		= ppr "type constructor"
-		
+
 		| otherwise
 		= (shortNameOfSpace $ varNameSpace var) %% "variable"
 
@@ -233,7 +233,7 @@ instance Pretty Error PMode where
  -- Desugarer Errors ----------------------------------------------------------
  ppr err@(ErrorProjectRedefDataField{})
 	= varErr (eRedefined err)
-	$  "Projection"	%% quotes (eFirstDefined err) 
+	$  "Projection"	%% quotes (eFirstDefined err)
 			%% "over data type" %% quotes (eDataVar err)
 	%! "    collides with a field name at: " % prettyPos (eFirstDefined err)
 
@@ -243,11 +243,11 @@ instance Pretty Error PMode where
 			%% quotes (varName (eClass err))
 			%% quotes (varName (eFirstDefined err))
 	%! blank
-	%! "    first defined at: " % prettyPos (eFirstDefined err) 
+	%! "    first defined at: " % prettyPos (eFirstDefined err)
 	%! "     is redefined at: " % prettyPos (eRedefined err)
 
  ppr (ErrorBindingAirity var1 airity1 var2 airity2)
- 	= varErr var1 
+ 	= varErr var1
 	$  "Bindings for" %% quotes var1 %% "have a differing number of arguments."
 	%! blank
 	%! "  the binding at:" %% prettyPos var1
@@ -255,7 +255,7 @@ instance Pretty Error PMode where
 	%! blank
 	%! "             but:" %% prettyPos var2
 	%! "             has:" %% airity2
-	
+
  ppr (ErrorNotMethodOfClass vInst vClass)
 	= varErr vInst
 	$ quotes vInst %% "is not a (visible) method of class" %% quotes vClass % "."
@@ -271,9 +271,9 @@ instance Pretty Error PMode where
  ppr (ErrorQuantifiedDangerousVar vDanger)
   	= varErr vDanger
 	$ "Variable" %% quotes vDanger %% "cannot be quantified because it is dangerous in this type."
-	
 
--- Utils ------------------------------------------------------------------------------------------	
+
+-- Utils ------------------------------------------------------------------------------------------
 prettyVT v t
  	= "    " % varName v % nl
 	%> ("::" %% prettyTypeSplit t)
