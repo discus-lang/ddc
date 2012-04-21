@@ -83,9 +83,9 @@ main
 		   ways	-> ways
 
 	let chains :: [Chain]
-	    chains
-	       = concat [ concat $ map (\way -> create way testFilesSortedSet file) ways'
-			     | file <- testFilesSorted]
+	    chains = concat 
+                [ concat $ map (\way -> create way testFilesSortedSet file) ways'
+		| file <- testFilesSorted]
 
 	-- Channel for threads to write their results to.
 	(chanResult :: ChanResult)
@@ -130,7 +130,7 @@ runChains config chanResult chains
 	
 	-- Fork a gang to run all the job chains.
 	gang	<- forkGangActions (configThreads config)
-	 	$ zipWith (runChain config chanResult chainsTotal)
+	 	$ zipWith (runChain config (Just chanResult) chainsTotal)
 			[1..]
 			chains
 
@@ -149,7 +149,7 @@ runChains config chanResult chains
 	-- Wait until the gang is finished running chains, 
 	-- or has been killed by the controller.
 	joinGang gang
-	
+
 	return results
 	
 
@@ -157,14 +157,14 @@ runChains config chanResult chains
 -- | Run a job chain, printing the results to the console.
 --   If any job in the chain fails, then skip the rest.
 runChain 
-	:: Config	-- ^ war configuration
-	-> ChanResult	-- ^ channel to write job results to
-	-> Int		-- ^ total number of chains
-	-> Int		-- ^ index of this chain
-	-> Chain       	-- ^ chain of jobs to run
+	:: Config	       -- ^ war configuration
+	-> Maybe ChanResult    -- ^ channel to write job results to
+	-> Int	               -- ^ total number of chains
+	-> Int		       -- ^ index of this chain
+	-> Chain       	       -- ^ chain of jobs to run
 	-> IO ()
 
-runChain config chanResult chainsTotal chainNum (Chain jobs)
+runChain config mChanResult chainsTotal chainNum (Chain jobs)
  = do	uid		<- getUniqueId
 	let state	= (buildStateDefault uid "/tmp")
 			{ buildStateLogSystem
@@ -172,35 +172,39 @@ runChain config chanResult chainsTotal chainNum (Chain jobs)
 					then Just stderr
 					else Nothing }
 	
-	runBuildWithState state
- 	 $ zipWithM_ (runJob config chanResult chainNum) [1..] jobs
+        runBuildWithState state
+         $  zipWithM (runJob config mChanResult chainNum) 
+                [1..] jobs
 
-	return ()
-
+        return ()
 
 -- | Dispatch a single job of a chain.
 runJob
 	:: Config 		-- ^ war configuration
-	-> ChanResult		-- ^ channel to write results to
+	-> Maybe ChanResult	-- ^ channel to write results to
 	-> Int			-- ^ index of this chain
 	-> Int			-- ^ index of this job of the chain
 	-> Job			-- ^ the job to run
-	-> Build ()
+	-> Build JobResult
 
-runJob config chanResult chainNum jobNum job@(Job spec builder)
+runJob config mChanResult chainNum jobNum job@(Job spec builder)  
  = do	
 	-- Run the job.
         result          <- builder
 
         -- Convert the result into the product the controller wants.
         let product     = productOfResult spec result
-	
-	-- Push the job product into the channel for display.
-	io $ atomically $ writeTChan chanResult 
-		(JobResult chainNum jobNum job product)
-		
-	return ()
+	let jobResult   = JobResult chainNum jobNum job product
 
+        case mChanResult of
+         Just chanResult
+          -> do -- Push the job product into the channel for display.
+        	io $ atomically $ writeTChan chanResult jobResult
+                return jobResult
+
+         Nothing 
+          ->    return jobResult
+		
 
 -- | Get a unique(ish) id for this process.
 --   The random seeds the global generator with the cpu time in psecs,

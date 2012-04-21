@@ -50,7 +50,7 @@ instance Pretty Result where
 build :: Spec -> Build Result
 build (Spec     testName _wayName 
 		fileRef fileOut fileDiff)
- = do	needs fileRef
+ = do   needs fileRef
 	needs fileOut
 	
 	let diffExe	= "diff"
