@@ -8,6 +8,7 @@ import BuildBox.Build.Benchmark
 import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Data.Physical
+import BuildBox.Pretty
 import BuildBox
 
 
@@ -38,6 +39,13 @@ data Result
         = ResultFailure
         | ResultSuccess Seconds
         deriving Show
+
+
+instance Pretty Result where
+ ppr result 
+  = case result of
+        ResultSuccess _time     -> text "success"
+        ResultFailure           -> text "failure"
 
 
 -- | Run a binary

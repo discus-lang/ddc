@@ -6,6 +6,7 @@ module DDC.War.Job.Diff
 where
 import BuildBox.Command.File
 import BuildBox.Command.System
+import BuildBox.Pretty
 import BuildBox
 
 
@@ -26,6 +27,7 @@ data Spec
                 
           -- | Put the result of the diff here.
         , specFileDiff   :: FilePath }
+        deriving Show
 
 
 data Result
@@ -35,6 +37,13 @@ data Result
         { resultFileRef  :: FilePath
         , resultFileOut  :: FilePath
         , resultFileDiff :: FilePath }
+
+
+instance Pretty Result where
+ ppr result
+  = case result of
+        ResultSame      -> text "ok"
+        ResultDiff{}    -> text "diff"
 
 
 -- | Compare two files for differences.

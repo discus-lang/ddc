@@ -1,6 +1,7 @@
 
 module DDC.War.Job.CompileDS
-	( Spec (..)
+	( Spec         (..)
+        , Result       (..)
         , build)
 where
 import BuildBox.Command.File
@@ -8,6 +9,7 @@ import BuildBox.Command.System
 import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
 import BuildBox.IO.Directory
+import BuildBox.Pretty
 import BuildBox
 import System.FilePath
 import System.Directory
@@ -47,6 +49,7 @@ data Spec
                 
           -- | True if the compile is expected to succeed, else not.
         , specShouldSucceed      :: Bool }
+        deriving Show
 
 
 data Result
@@ -54,6 +57,14 @@ data Result
         | ResultUnexpectedSuccess
         | ResultUnexpectedFailure
         deriving Show
+
+
+instance Pretty Result where
+ ppr result 
+  = case result of
+        ResultSuccess _time      -> text "success"
+        ResultUnexpectedSuccess  -> text "unexpected success"
+        ResultUnexpectedFailure  -> text "unexpected failure"
 
 
 -- | Compile a Disciple source file.

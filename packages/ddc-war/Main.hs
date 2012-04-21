@@ -2,7 +2,9 @@ import DDC.War.Interface.Controller
 import DDC.War.Interface.Options
 import DDC.War.Interface.Config
 
+import DDC.War.Create
 import DDC.War.Job
+
 import Util.Options
 import Util.Options.Help
 import BuildBox.Build.BuildState
@@ -65,31 +67,32 @@ main
 		$  Seq.mapM canonicalizePath
 		$  testFilesRaw
 
-	let _testFilesSorted
+	let testFilesSorted
 		= filter (not . isInfixOf "skip-")	-- skip over skippable files.
 		$ filter (not . isInfixOf "-skip")
 		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
 		$ Set.toList testFilesSet
 
+        let testFilesSortedSet
+                = Set.fromList testFilesSorted
+
 	-- Create test chains based on the files we have.
-	let _ways'
+	let ways'
 		= case configWays config of
 		   []	-> [Way "std" [] []]
 		   ways	-> ways
 
-	let jobChains :: [[Job]]
-	    jobChains = []
-{-}		= concat
-		$ map (filter (not . null))
-		$ [ map (\way -> createJobs config way testFilesSet file) ways'
-			| file <- testFilesSorted]
--}
+	let chains :: [Chain]
+	    chains
+	       = concat [ concat $ map (\way -> create way testFilesSortedSet file) ways'
+			     | file <- testFilesSorted]
+
 	-- Channel for threads to write their results to.
 	(chanResult :: ChanResult)
 		<- atomically $ newTChan
 
 	-- Run all the chains.
-	results <- runJobChains config chanResult jobChains
+	results <- runChains config chanResult chains
 
 	-- Write out a log of failed tests if we were asked to
 	when (isJust $ configLogFailed config)
@@ -114,22 +117,22 @@ main
 
 
 -- | Run some job chains.
-runJobChains 
+runChains
 	:: Config 	-- ^ war configuration
 	-> ChanResult	-- ^ channel to write job results to
-	-> [[Job]]	-- ^ chains of jobs
+	-> [Chain]      -- ^ chains of jobs
 	-> IO [JobResult]
 
-runJobChains config chanResult jcs
+runChains config chanResult chains
  = do	
 	-- Count the total number of chains for the status display.
-	let chainsTotal	= length jcs
+	let chainsTotal	= length chains
 	
 	-- Fork a gang to run all the job chains.
 	gang	<- forkGangActions (configThreads config)
-	 	$ zipWith (runJobChain config chanResult chainsTotal)
+	 	$ zipWith (runChain config chanResult chainsTotal)
 			[1..]
-			jcs
+			chains
 
 	-- Fork the gang controller that manages the console and handles
 	-- user input.
@@ -153,15 +156,15 @@ runJobChains config chanResult jcs
 
 -- | Run a job chain, printing the results to the console.
 --   If any job in the chain fails, then skip the rest.
-runJobChain 
-	:: Config		-- ^ war configuration
-	-> ChanResult		-- ^ channel to write job results to
-	-> Int			-- ^ total number of chains
-	-> Int			-- ^ index of this chain
-	-> [Job]		-- ^ chain of jobs to run
+runChain 
+	:: Config	-- ^ war configuration
+	-> ChanResult	-- ^ channel to write job results to
+	-> Int		-- ^ total number of chains
+	-> Int		-- ^ index of this chain
+	-> Chain       	-- ^ chain of jobs to run
 	-> IO ()
 
-runJobChain config chanResult chainsTotal chainNum chain
+runChain config chanResult chainsTotal chainNum (Chain jobs)
  = do	uid		<- getUniqueId
 	let state	= (buildStateDefault uid "/tmp")
 			{ buildStateLogSystem
@@ -170,7 +173,7 @@ runJobChain config chanResult chainsTotal chainNum chain
 					else Nothing }
 	
 	runBuildWithState state
- 	 $ zipWithM_ (runJob config chanResult chainNum) [1..] chain
+ 	 $ zipWithM_ (runJob config chanResult chainNum) [1..] jobs
 
 	return ()
 

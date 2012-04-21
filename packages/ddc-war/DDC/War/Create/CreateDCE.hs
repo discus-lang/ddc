@@ -2,14 +2,26 @@
 module DDC.War.Create.CreateDCE
         (create)
 where
+import DDC.War.Interface.Config
 import DDC.War.Job
+import System.FilePath
+import Data.List
+import Data.Set                                 (Set)
+import qualified DDC.War.Job.CompileDCE         as CompileDCE
+import qualified DDC.War.Job.RunExe             as RunExe
+import qualified DDC.War.Job.Diff               as Diff
+import qualified Data.Set                       as Set
 
 
--- Create ---------------------------------------------------------------------
-create :: FilePath -> Maybe Chain
-create file
- | isSuffixOf ".dce"
+-- | Compile and run .dce files.
+create :: Way -> Set FilePath -> FilePath -> Maybe Chain
+create way allFiles filePath
+ | isSuffixOf ".dce" filePath
  = let  
+        sourceDir        = takeDirectory  filePath
+        buildDir         = sourceDir </> "war-" ++ wayName way
+        testName         = sourceDir
+
         mainSH           = sourceDir </> "Main.sh"
         mainBin          = buildDir  </> "Main.bin"
         mainCompStdout   = buildDir  </> "Main.compile.stdout"
@@ -30,28 +42,28 @@ create file
         shouldDiffStderr = Set.member mainStderrCheck allFiles
 
         -- compile the .ds into a .bin
-        compile         = Job   $ CompileDCE.build $ CompileDCE.Spec
+        compile         = make $ CompileDCE.Spec
                                 testName (wayName way) filePath
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) shouldSucceed
 
         -- run the binary
-        run             = Job   $ RunExe.build $ RunExe.Spec
+        run             = make $ RunExe.Spec
                                 testName (wayName way) filePath mainBin
                                 mainRunStdout mainRunStderr
 
         -- diff errors produced by the compilation
-        diffError      = Job    $ RunDiff.build $ RunDiff.Spec
+        diffError       = make $ Diff.Spec
                                 testName (wayName way) mainErrorCheck
                                 mainCompStderr mainCompDiff
 
         -- diff the stdout of the run
-        diffStdout     = Job    $ RunDiff.build $ RunDiff.Spec
+        diffStdout      = make $ Diff.Spec
                                 testName (wayName way) mainStdoutCheck
                                 mainRunStdout mainStdoutDiff
 
         -- diff the stderr of the run
-        diffStderr     = Job    $ RunDiff.build $ RunDiff.spec
+        diffStderr      = make $ Diff.Spec
                                 testName (wayName way) mainStderrCheck
                                 mainRunStderr mainStderrDiff
 

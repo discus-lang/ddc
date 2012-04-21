@@ -45,6 +45,7 @@ data Spec
                 
         -- | True if the compile is expected to succeed, else not.
         , specShouldSucceed      :: Bool }
+        deriving Show
 
 
 data Result

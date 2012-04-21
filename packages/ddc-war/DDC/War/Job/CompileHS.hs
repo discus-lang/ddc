@@ -9,6 +9,7 @@ import BuildBox.Command.System
 import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
 import BuildBox.IO.Directory
+import BuildBox.Pretty
 import BuildBox
 import System.FilePath
 import System.Directory
@@ -43,12 +44,20 @@ data Spec
           -- | If Just, then we're making an executable, and put the binary here.
           --   Otherwise simply compile it
         , specMainBin            :: FilePath }
+        deriving Show
 
 
 data Result
         = ResultSuccess Seconds
         | ResultFailure
         deriving Show
+
+
+instance Pretty Result where
+ ppr result 
+  = case result of
+        ResultSuccess _time     -> text "success"
+        ResultFailure           -> text "failure"
 
 
 -- | Compile a Haskell Source File

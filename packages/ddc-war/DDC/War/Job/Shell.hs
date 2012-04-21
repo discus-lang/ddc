@@ -7,6 +7,8 @@ where
 import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Build.Benchmark
+import BuildBox.Data.Physical
+import BuildBox.Pretty
 import BuildBox
 
 
@@ -36,13 +38,22 @@ data Spec
 
           -- | True if the compile is expected to succeed, else not.
         , specShouldSucceed      :: Bool }
+        deriving Show
 
 
 data Result
-        = ResultSuccess
+        = ResultSuccess Seconds
         | ResultUnexpectedSuccess
         | ResultUnexpectedFailure
         deriving Show
+
+
+instance Pretty Result where
+ ppr result 
+  = case result of
+        ResultSuccess _time      -> text "success"
+        ResultUnexpectedSuccess  -> text "unexpected success"
+        ResultUnexpectedFailure  -> text "unexpected failure"
 
 
 -- | Run a binary
@@ -68,10 +79,10 @@ build   (Spec   testName _wayName
 		
         case code of
          ExitSuccess
-          | shouldSucceed       -> return ResultSuccess
+          | shouldSucceed       -> return $ ResultSuccess time
           | otherwise           -> return ResultUnexpectedSuccess
 
          ExitFailure _
           | shouldSucceed       -> return ResultUnexpectedFailure
-          | otherwise           -> return ResultSuccess
+          | otherwise           -> return $ ResultSuccess time
 
