@@ -187,15 +187,17 @@ runJob
 	-> Job			-- ^ the job to run
 	-> Build ()
 
-runJob config chanResult chainNum jobNum job
+runJob config chanResult chainNum jobNum job@(Job spec builder)
  = do	
-	-- Run the job
---	results		<- dispatchJob job
-        let results      = ()
+	-- Run the job.
+        result          <- builder
+
+        -- Convert the result into the product the controller wants.
+        let product     = produce spec result
 	
-	-- Push the results into the channel for display
+	-- Push the job product into the channel for display.
 	io $ atomically $ writeTChan chanResult 
-		(JobResult chainNum jobNum job results)
+		(JobResult chainNum jobNum job product)
 		
 	return ()
 

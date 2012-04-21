@@ -109,9 +109,10 @@ build   (Spec   testName _wayName srcDCE
                                 ++ " -set outputdir "   ++ buildDir
                                 ++ " -compile "         ++ srcDCE)
                                 ""
-
+        io $ putStrLn "compiling"
         (time, (code, strOut, strErr))
                 <- compile
+        io $ print code
 
         atomicWriteFile mainCompOut strOut
         atomicWriteFile mainCompErr strErr

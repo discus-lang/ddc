@@ -75,3 +75,5 @@ create way allFiles filePath
                 ++ (if shouldDiffStdout then [diffStdout] else [])
                 ++ (if shouldDiffStderr then [diffStderr] else [])
 
+ | otherwise = Nothing
+

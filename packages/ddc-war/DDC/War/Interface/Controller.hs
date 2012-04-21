@@ -1,33 +1,36 @@
 
 module DDC.War.Interface.Controller
-	( JobResult(..)
+	( JobResult    (..)
+        , Product      (..)
 	, ChanResult
 	, controller)
 where
 import DDC.War.Interface.Config
 import DDC.War.Job
---import BuildBox.Pretty
+import BuildBox.Pretty
 import BuildBox.Control.Gang
+import System.IO
+import System.Directory
 import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad.STM
 import Control.Monad
-import System.IO
---import System.Directory
---import qualified System.Cmd
+import qualified System.Cmd
 
 
--- | Carries the result of a single test job.
+-- | Description of a job and the product we got from running it.
 data JobResult
  	= JobResult 
 	{ jobResultChainIx	:: Int
 	, jobResultJobIx	:: Int
 	, jobResultJob		:: Job
-	, jobResultResults	:: () } -- [Result] }
+	, jobResultProduct	:: Product }
+
 
 -- | Channel to write test job results to.
 type ChanResult
 	= TChan JobResult
+
 	
 -- | Gang controller and user interface for the war test driver.
 --   This should be forked into its own thread, so it runs concurrently
@@ -85,23 +88,46 @@ controller config gang chainsTotal chanResult
 		 else do
 			killGang gang
 			return (jobResult : jobResults)
-			
 
 
 -- | Handle a job result.
 --   Returns True if the controller should continue, 
 --   or False if we should shut down and return to the caller.
 handleResult :: Config -> Gang -> Int -> JobResult -> IO Bool
-handleResult config gang chainsTotal (JobResult chainIx jobIx job results)
+handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
+ | ProductStatus status <- product
+ = do   dirWorking      <- getCurrentDirectory
+        let _useColor    = not $ configBatch config
+        let _width       = configFormatPathWidth config
 
-{-}
- -- In interactive mode, if the test result is different than expected
- -- then ask the user what to do about it.
- | ResultDiff fileRef fileOut fileDiff : _ <- [r | r@ResultDiff{} <- results]
+        putStrLn 
+         $ render 
+         $ parens (padR (length $ show chainsTotal)
+                        (ppr $ chainIx) 
+                        <> text "."
+                        <> ppr jobIx
+                        <> text "/" 
+                        <> ppr chainsTotal)
+           <> space
+           <> status
+
+        hFlush stdout
+        return True
+
+
+ -- If a file is different than expected in batch mode,
+ --   then just print the status.
+ | ProductDiff{}        <- product
+ , configBatch config
+ = handleResult config gang chainsTotal 
+        (JobResult chainIx jobIx job (ProductStatus (text "diff")))
+
+
+ -- If a file is different than expected in interactive mode,
+ --   then ask the user what to do about it.
+ | ProductDiff fileRef fileOut fileDiff <- product
  , not $ configBatch config
  = do	
-	printResult config chainsTotal chainIx jobIx job results
-		
 	putStr	$  "\n"
 		++ "-- Output Differs  -------------------------------------------------------------\n"
 		++ "   expected file: " ++ fileRef	++	"\n"
@@ -121,13 +147,9 @@ handleResult config gang chainsTotal (JobResult chainIx jobIx job results)
 	 $ resumeGang gang
 
 	return keepGoing
--}
- -- Just print the test result to stdout.
- | otherwise
- = do	printResult config chainsTotal chainIx jobIx job results
-	return True
 
-{-}
+
+handleResult_askDiff :: FilePath -> FilePath -> FilePath -> IO Bool
 handleResult_askDiff fileRef fileOut fileDiff
  = do	putStr	$  replicate 80 '-' ++ "\n"
 		++ "    (ENTER) continue   (e) show expected    (a) show actual\n"
@@ -170,25 +192,4 @@ handleResult_askDiff fileRef fileOut fileDiff
 			handleResult_askDiff fileRef fileOut fileDiff
 	
 	result
--}
 
-printResult config chainsTotal chainIx jobIx job results
- = error "printReuslt finish me"
-
- {- do	dirWorking	<- getCurrentDirectory
-	let useColor	= not $ configBatch config
-	let width	= configFormatPathWidth config
-
-	putStrLn 
-	 $ render 
-	 $ parens (padR (length $ show chainsTotal)
-			(ppr $ chainIx) 
-			<> text "."
-			<> ppr jobIx
-			<> text "/" 
-			<> ppr chainsTotal)
-	   <> space
-	   <> pprJobResult width useColor dirWorking job results
-
-	hFlush stdout
--}
