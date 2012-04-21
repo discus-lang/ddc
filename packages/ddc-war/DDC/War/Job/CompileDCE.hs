@@ -58,9 +58,9 @@ data Result
 instance Pretty Result where
  ppr result
   = case result of 
-        ResultSuccess _         -> text "success"
-        ResultUnexpectedFailure -> text "unexpected failure"
-        ResultUnexpectedSuccess -> text "unexpected success"
+        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
+        ResultUnexpectedFailure -> text "failed"
+        ResultUnexpectedSuccess -> text "unexpected"
 
 
 -- Build ----------------------------------------------------------------------
@@ -109,10 +109,8 @@ build   (Spec   testName _wayName srcDCE
                                 ++ " -set outputdir "   ++ buildDir
                                 ++ " -compile "         ++ srcDCE)
                                 ""
-        io $ putStrLn "compiling"
         (time, (code, strOut, strErr))
                 <- compile
-        io $ print code
 
         atomicWriteFile mainCompOut strOut
         atomicWriteFile mainCompErr strErr

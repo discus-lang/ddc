@@ -57,7 +57,7 @@ instance Pretty Result where
  ppr result 
   = case result of
         ResultSuccess _time     -> text "success"
-        ResultFailure           -> text "failure"
+        ResultFailure           -> text "failed"
 
 
 -- | Compile a Haskell Source File

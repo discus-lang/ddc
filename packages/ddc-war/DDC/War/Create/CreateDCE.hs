@@ -20,7 +20,7 @@ create way allFiles filePath
  = let  
         sourceDir        = takeDirectory  filePath
         buildDir         = sourceDir </> "war-" ++ wayName way
-        testName         = sourceDir
+        testName         = filePath
 
         mainSH           = sourceDir </> "Main.sh"
         mainBin          = buildDir  </> "Main.bin"
@@ -42,28 +42,28 @@ create way allFiles filePath
         shouldDiffStderr = Set.member mainStderrCheck allFiles
 
         -- compile the .ds into a .bin
-        compile         = make $ CompileDCE.Spec
+        compile         = jobOfSpec $ CompileDCE.Spec
                                 testName (wayName way) filePath
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) shouldSucceed
 
         -- run the binary
-        run             = make $ RunExe.Spec
+        run             = jobOfSpec $ RunExe.Spec
                                 testName (wayName way) filePath mainBin
                                 mainRunStdout mainRunStderr
 
         -- diff errors produced by the compilation
-        diffError       = make $ Diff.Spec
+        diffError       = jobOfSpec $ Diff.Spec
                                 testName (wayName way) mainErrorCheck
                                 mainCompStderr mainCompDiff
 
         -- diff the stdout of the run
-        diffStdout      = make $ Diff.Spec
+        diffStdout      = jobOfSpec $ Diff.Spec
                                 testName (wayName way) mainStdoutCheck
                                 mainRunStdout mainStdoutDiff
 
         -- diff the stderr of the run
-        diffStderr      = make $ Diff.Spec
+        diffStderr      = jobOfSpec $ Diff.Spec
                                 testName (wayName way) mainStderrCheck
                                 mainRunStderr mainStderrDiff
 

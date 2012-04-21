@@ -63,8 +63,8 @@ instance Pretty Result where
  ppr result 
   = case result of
         ResultSuccess _time      -> text "success"
-        ResultUnexpectedSuccess  -> text "unexpected success"
-        ResultUnexpectedFailure  -> text "unexpected failure"
+        ResultUnexpectedFailure  -> text "failed"
+        ResultUnexpectedSuccess  -> text "unexpected"
 
 
 -- | Compile a Disciple source file.

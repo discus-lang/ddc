@@ -5,7 +5,8 @@ module DDC.War.Interface.Config
 	, loadConfig)
 where
 import DDC.War.Interface.Options
-import Util
+import Data.Maybe
+import Data.List
 
 -- | A way to build the test
 --      This holds extra options to pass to the program.
@@ -54,7 +55,7 @@ loadConfig options
 	--	If no options are given for comp or run, then just use
 	--	a "normal" way with no options.
 	makeWayPair (name:opts)	= (name, opts)
-	makeWayPair way		= error $ "bad way specification " ++ catInt " " way
+	makeWayPair way		= error $ "bad way specification " ++ intercalate " " way
 
 	compWayPairs_		= [makeWayPair opts | OptCompWay opts	<- options ]
 	compWayPairs		= if null compWayPairs_ 
@@ -80,4 +81,7 @@ loadConfig options
 	, configClean		= elem OptClean options
 	, configFormatPathWidth	= 80
 	}
+
+takeLast []             = Nothing
+takeLast xs@(_:_)       = Just (last xs)
 

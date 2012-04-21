@@ -27,10 +27,15 @@ data Job
 --   This is all the information that the interactive interface needs 
 --   to worry about.
 data Product
-        = ProductStatus Doc
+        = ProductStatus 
+        { productJobName        :: String
+        , productTestName       :: String
+        , productStatus         :: Doc }
 
         | ProductDiff   
-        { productDiffRef        :: FilePath
+        { productJobName        :: String
+        , productTestName       :: String
+        , productDiffRef        :: FilePath
         , productDiffOut        :: FilePath
         , productDiffDiff       :: FilePath }
 
@@ -41,41 +46,56 @@ class (Show spec, Pretty result)
         => Spec spec result | spec -> result where
 
  -- | Wrap a specification into a job.
- make    :: spec -> Job
- make s    = Job s (build s)
+ jobOfSpec        :: spec -> Job
+ jobOfSpec s    = Job s (buildFromSpec s)
 
  -- | Create a builder for this job specification.
- build   :: spec -> Build result
+ buildFromSpec    :: spec -> Build result
 
  -- | Make the job product from its result.
  --   This cuts away information that the controller doesn't care about.
- produce :: spec -> result -> Product
- produce _ r = ProductStatus (ppr r)
+ productOfResult  :: spec -> result -> Product
 
 
 -- Instances ------------------------------------------------------------------
 instance Spec CompileDCE.Spec CompileDCE.Result where
- build          = CompileDCE.build
+ buildFromSpec                  
+  = CompileDCE.build
+ productOfResult spec result    
+  = ProductStatus "compile" (CompileDCE.specTestName spec) (ppr result)
 
 instance Spec CompileDS.Spec  CompileDS.Result where
- build          = CompileDS.build
+ buildFromSpec  = CompileDS.build
+ productOfResult spec result    
+  = ProductStatus "compile" (CompileDS.specTestName spec) (ppr result)
 
 instance Spec CompileHS.Spec  CompileHS.Result where
- build          = CompileHS.build
+ buildFromSpec  = CompileHS.build
+ productOfResult spec result    
+  = ProductStatus "compile" (CompileHS.specTestName spec) (ppr result)
 
 instance Spec RunDCX.Spec     RunDCX.Result where
- build          = RunDCX.build
+ buildFromSpec  = RunDCX.build
+ productOfResult spec result    
+  = ProductStatus "run" (RunDCX.specTestName spec) (ppr result)
 
 instance Spec RunExe.Spec     RunExe.Result where
- build          = RunExe.build
+ buildFromSpec  = RunExe.build
+ productOfResult spec result    
+  = ProductStatus "run" (RunExe.specTestName spec) (ppr result)
 
 instance Spec Shell.Spec      Shell.Result where
- build          = Shell.build
+ buildFromSpec  = Shell.build
+ productOfResult spec result    
+  = ProductStatus "shell" (Shell.specTestName spec) (ppr result)
 
 instance Spec Diff.Spec       Diff.Result where
- build          = Diff.build
- produce _ r
+ buildFromSpec  = Diff.build
+ productOfResult spec r
   = case r of
-        Diff.ResultSame                 -> ProductStatus (ppr r)
-        Diff.ResultDiff ref out diff    -> ProductDiff ref out diff
+        Diff.ResultSame                 
+         -> ProductStatus "diff" (Diff.specTestName spec) (ppr r)
+
+        Diff.ResultDiff ref out diff    
+         -> ProductDiff "diff"   (Diff.specTestName spec) ref out diff
 

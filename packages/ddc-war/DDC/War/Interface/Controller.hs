@@ -15,6 +15,9 @@ import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad.STM
 import Control.Monad
+import Util.Terminal.VT100      as VT100
+import Data.Maybe
+import Data.List
 import qualified System.Cmd
 
 
@@ -95,10 +98,11 @@ controller config gang chainsTotal chanResult
 --   or False if we should shut down and return to the caller.
 handleResult :: Config -> Gang -> Int -> JobResult -> IO Bool
 handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
- | ProductStatus status <- product
+ | ProductStatus jobName testName status <- product
  = do   dirWorking      <- getCurrentDirectory
-        let _useColor    = not $ configBatch config
-        let _width       = configFormatPathWidth config
+        let testName2    = fromMaybe testName  (stripPrefix dirWorking testName)
+        let testName3    = fromMaybe testName2 (stripPrefix "/"        testName2)
+        let width       = configFormatPathWidth config
 
         putStrLn 
          $ render 
@@ -108,8 +112,9 @@ handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
                         <> ppr jobIx
                         <> text "/" 
                         <> ppr chainsTotal)
-           <> space
-           <> status
+           <+> padL width (text testName3)
+           <+> padL 8     (text jobName)
+           <+> colorizeStatus config jobName (render status)
 
         hFlush stdout
         return True
@@ -117,15 +122,16 @@ handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
 
  -- If a file is different than expected in batch mode,
  --   then just print the status.
- | ProductDiff{}        <- product
+ | ProductDiff jobName testName _ _ _        <- product
  , configBatch config
  = handleResult config gang chainsTotal 
-        (JobResult chainIx jobIx job (ProductStatus (text "diff")))
+        $ JobResult chainIx jobIx job 
+        $ ProductStatus testName jobName (text "failed")
 
 
  -- If a file is different than expected in interactive mode,
  --   then ask the user what to do about it.
- | ProductDiff fileRef fileOut fileDiff <- product
+ | ProductDiff _ _ fileRef fileOut fileDiff <- product
  , not $ configBatch config
  = do	
 	putStr	$  "\n"
@@ -193,3 +199,33 @@ handleResult_askDiff fileRef fileOut fileDiff
 	
 	result
 
+
+colorizeStatus :: Config -> String -> String -> Doc
+colorizeStatus config jobName status
+        | configBatch config                   
+        = text status
+
+        | isPrefixOf "ok" status
+        = colorDoc [Foreground Green] (text status)
+
+        | isPrefixOf "success" status
+        , jobName == "compile"
+        = colorDoc [Foreground Blue]  (text status)
+
+        | isPrefixOf "success" status
+        , jobName == "run"
+        = colorDoc [Foreground Green, Bold] (text status)
+
+        | isPrefixOf "failed"  status
+        = colorDoc [Foreground Red]   (text status)
+
+        | otherwise
+        = text status
+
+
+colorDoc :: [VT100.Mode] -> Doc -> Doc
+colorDoc mode doc
+        = text 
+        $ concat [ setMode mode
+                 , render doc
+                 , setMode [Reset] ]

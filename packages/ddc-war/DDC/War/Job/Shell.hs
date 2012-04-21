@@ -51,9 +51,9 @@ data Result
 instance Pretty Result where
  ppr result 
   = case result of
-        ResultSuccess _time      -> text "success"
-        ResultUnexpectedSuccess  -> text "unexpected success"
-        ResultUnexpectedFailure  -> text "unexpected failure"
+        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
+        ResultUnexpectedFailure -> text "failed"
+        ResultUnexpectedSuccess -> text "unexpected"
 
 
 -- | Run a binary

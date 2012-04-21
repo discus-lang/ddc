@@ -193,7 +193,7 @@ runJob config chanResult chainNum jobNum job@(Job spec builder)
         result          <- builder
 
         -- Convert the result into the product the controller wants.
-        let product     = produce spec result
+        let product     = productOfResult spec result
 	
 	-- Push the job product into the channel for display.
 	io $ atomically $ writeTChan chanResult 

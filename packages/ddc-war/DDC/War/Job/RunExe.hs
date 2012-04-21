@@ -44,8 +44,8 @@ data Result
 instance Pretty Result where
  ppr result 
   = case result of
-        ResultSuccess _time     -> text "success"
-        ResultFailure           -> text "failure"
+        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
+        ResultFailure           -> text "failed"
 
 
 -- | Run a binary
