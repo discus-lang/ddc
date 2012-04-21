@@ -1,22 +1,58 @@
 
 module DDC.War.Job.Shell
-	(jobShell)
+	( Spec     (..)
+        , Result   (..)
+        , build)
 where
-import DDC.War.Job
-import DDC.War.Result
 import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Build.Benchmark
 import BuildBox
 
 
+-- | Run a shell script.
+data Spec
+        = Spec
+        { -- | Name of the test this job is a part of.
+          specTestName           :: String
+
+          -- | Name of the way we're running this test.
+        , specWayName            :: String
+
+          -- | Shell script to run
+        , specShellSource        :: FilePath
+
+          -- | Source dir that the script is in.
+        , specSourceDir          :: FilePath
+
+          -- | Scratch dir that the script can write files to.
+        , specScratchDir         :: FilePath
+
+          -- | Put what DDC says to stdout here.
+        , specShellStdout        :: FilePath
+                
+          -- | Put what DDC says to stderr here.
+        , specShellStderr        :: FilePath 
+
+          -- | True if the compile is expected to succeed, else not.
+        , specShouldSucceed      :: Bool }
+
+
+data Result
+        = ResultSuccess
+        | ResultUnexpectedSuccess
+        | ResultUnexpectedFailure
+        deriving Show
+
+
 -- | Run a binary
-jobShell :: Job -> Build [Result]
-jobShell (JobShell testName _wayName
+build :: Spec -> Build Result
+build   (Spec   testName _wayName
 		mainSH sourceDir scratchDir
 		mainRunOut mainRunErr
 		shouldSucceed)
- = do	needs mainSH
+ = do	
+        needs mainSH
 	ensureDir scratchDir
 	
 	-- Run the binary.
@@ -30,12 +66,12 @@ jobShell (JobShell testName _wayName
 	atomicWriteFile mainRunOut strOut
 	atomicWriteFile mainRunErr strErr
 		
-	return  -- $  [ ResultAspect $ Time TotalWall `secs` (fromRational $ toRational time)]
+        case code of
+         ExitSuccess
+          | shouldSucceed       -> return ResultSuccess
+          | otherwise           -> return ResultUnexpectedSuccess
 
-		-- check for unexpected failure
-		$  (if shouldSucceed && code /= ExitSuccess 
-			then [ResultUnexpectedFailure] else [])
+         ExitFailure _
+          | shouldSucceed       -> return ResultUnexpectedFailure
+          | otherwise           -> return ResultSuccess
 
-		-- check for unexpected success
-		++ (if not shouldSucceed && code == ExitSuccess
-			then [ResultUnexpectedSuccess] else [])		 	

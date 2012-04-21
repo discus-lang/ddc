@@ -1,7 +1,8 @@
 
 module DDC.War.JobCreate
-	(createJobs)
+--	(createJobs)
 where
+{-
 import DDC.War.Interface.Config
 import DDC.War.Job
 import DDC.War.FileType
@@ -225,3 +226,5 @@ createJobs config way allFiles filePath
 						mainRunStdout mainRunStderr
 
 	     in	 [compile, run]
+
+-}

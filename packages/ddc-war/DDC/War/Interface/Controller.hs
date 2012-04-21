@@ -6,17 +6,15 @@ module DDC.War.Interface.Controller
 where
 import DDC.War.Interface.Config
 import DDC.War.Job
-import DDC.War.Result
-import DDC.War.Pretty
-import BuildBox.Pretty
+--import BuildBox.Pretty
 import BuildBox.Control.Gang
 import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad.STM
 import Control.Monad
 import System.IO
-import System.Directory
-import qualified System.Cmd
+--import System.Directory
+--import qualified System.Cmd
 
 
 -- | Carries the result of a single test job.
@@ -25,7 +23,7 @@ data JobResult
 	{ jobResultChainIx	:: Int
 	, jobResultJobIx	:: Int
 	, jobResultJob		:: Job
-	, jobResultResults	:: [Result] }
+	, jobResultResults	:: () } -- [Result] }
 
 -- | Channel to write test job results to.
 type ChanResult
@@ -96,6 +94,7 @@ controller config gang chainsTotal chanResult
 handleResult :: Config -> Gang -> Int -> JobResult -> IO Bool
 handleResult config gang chainsTotal (JobResult chainIx jobIx job results)
 
+{-}
  -- In interactive mode, if the test result is different than expected
  -- then ask the user what to do about it.
  | ResultDiff fileRef fileOut fileDiff : _ <- [r | r@ResultDiff{} <- results]
@@ -122,13 +121,13 @@ handleResult config gang chainsTotal (JobResult chainIx jobIx job results)
 	 $ resumeGang gang
 
 	return keepGoing
-
+-}
  -- Just print the test result to stdout.
  | otherwise
  = do	printResult config chainsTotal chainIx jobIx job results
 	return True
 
-
+{-}
 handleResult_askDiff fileRef fileOut fileDiff
  = do	putStr	$  replicate 80 '-' ++ "\n"
 		++ "    (ENTER) continue   (e) show expected    (a) show actual\n"
@@ -171,10 +170,12 @@ handleResult_askDiff fileRef fileOut fileDiff
 			handleResult_askDiff fileRef fileOut fileDiff
 	
 	result
-
+-}
 
 printResult config chainsTotal chainIx jobIx job results
- = do	dirWorking	<- getCurrentDirectory
+ = error "printReuslt finish me"
+
+ {- do	dirWorking	<- getCurrentDirectory
 	let useColor	= not $ configBatch config
 	let width	= configFormatPathWidth config
 
@@ -190,3 +191,4 @@ printResult config chainsTotal chainIx jobIx job results
 	   <> pprJobResult width useColor dirWorking job results
 
 	hFlush stdout
+-}

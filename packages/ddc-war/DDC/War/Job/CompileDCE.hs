@@ -1,23 +1,71 @@
 
 module DDC.War.Job.CompileDCE
-        (jobCompileDCE)
+        ( Spec  (..)
+        , Result(..)
+        , build)
 where
-import DDC.War.Job
-import DDC.War.Result
 import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Build.Benchmark
+import BuildBox.Data.Physical
 import BuildBox.IO.Directory
+import BuildBox.Pretty
 import BuildBox
 import System.FilePath
 import System.Directory
 import Data.ListUtil
 import Control.Monad
 
+
+-- Spec -----------------------------------------------------------------------
+-- | Use ddci-core to compile/make file a DCE file
+data Spec
+        = Spec
+        { -- | Name of the test this job is a part of.
+          specTestName           :: String
+
+        -- | Name of the way we're running this test.
+        , specWayName            :: String
+                
+        -- | Root source file of the program (the 'Main.ds')
+        , specFile               :: FilePath 
+                                
+        -- | Scratch dir to do the build in.
+        , specScratchDir         :: String
+
+        -- | Put what DDC says to stdout here.
+        , specCompileStdout      :: FilePath
+                
+        -- | Put what DDC says to stderr here.
+        , specCompileStderr      :: FilePath 
+
+        -- | If Just, then we're making an executable, and put the binary here.
+        --   Otherwise simply compile it
+        , specMaybeMainBin       :: Maybe FilePath 
+                
+        -- | True if the compile is expected to succeed, else not.
+        , specShouldSucceed      :: Bool }
+
+
+data Result
+        = ResultSuccess Seconds
+        | ResultUnexpectedFailure
+        | ResultUnexpectedSuccess
+        deriving Show
+
+
+instance Pretty Result where
+ ppr result
+  = case result of 
+        ResultSuccess _         -> text "success"
+        ResultUnexpectedFailure -> text "unexpected failure"
+        ResultUnexpectedSuccess -> text "unexpected success"
+
+
+-- Build ----------------------------------------------------------------------
 -- | Compile a Disciple Core Sea source file.
-jobCompileDCE :: Job -> Build [Result]
-jobCompileDCE job@(JobCompileDCE
-                testName _wayName srcDCE
+build :: Spec -> Build Result
+build   (Spec   testName _wayName srcDCE
                 buildDir mainCompOut mainCompErr
                 mMainBin shouldSucceed)
 
@@ -63,24 +111,16 @@ jobCompileDCE job@(JobCompileDCE
 
         (time, (code, strOut, strErr))
                 <- compile
-        
-        -- Decide if it was supposed to succeed or fail.
-        let result
-                | shouldSucceed
-                , ExitFailure _ <- code 
-                = [ResultUnexpectedFailure]
 
-                | not shouldSucceed
-                , ExitSuccess   <- code
-                = [ResultUnexpectedSuccess]
-                
-                | otherwise
-                = []
-                        
         atomicWriteFile mainCompOut strOut
         atomicWriteFile mainCompErr strErr
 
-        return result
---        (ResultAspect (Time TotalWall `secs` (fromRational $ toRational time)) 
---                : result)
+        case code of
+         ExitFailure _
+          | shouldSucceed       -> return ResultUnexpectedFailure
         
+         ExitSuccess
+          | not shouldSucceed   -> return ResultUnexpectedSuccess
+
+         _                      -> return $ ResultSuccess time
+

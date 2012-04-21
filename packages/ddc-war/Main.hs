@@ -1,12 +1,8 @@
-
 import DDC.War.Interface.Controller
 import DDC.War.Interface.Options
 import DDC.War.Interface.Config
 
 import DDC.War.Job
-import DDC.War.JobCreate
-import DDC.War.JobDispatch
-import DDC.War.Pretty
 import Util.Options
 import Util.Options.Help
 import BuildBox.Build.BuildState
@@ -69,25 +65,25 @@ main
 		$  Seq.mapM canonicalizePath
 		$  testFilesRaw
 
-	let testFilesSorted
+	let _testFilesSorted
 		= filter (not . isInfixOf "skip-")	-- skip over skippable files.
 		$ filter (not . isInfixOf "-skip")
 		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
 		$ Set.toList testFilesSet
 
 	-- Create test chains based on the files we have.
-	let ways'
+	let _ways'
 		= case configWays config of
 		   []	-> [Way "std" [] []]
 		   ways	-> ways
 
 	let jobChains :: [[Job]]
-	    jobChains
-		= concat
+	    jobChains = []
+{-}		= concat
 		$ map (filter (not . null))
 		$ [ map (\way -> createJobs config way testFilesSet file) ways'
 			| file <- testFilesSorted]
-
+-}
 	-- Channel for threads to write their results to.
 	(chanResult :: ChanResult)
 		<- atomically $ newTChan
@@ -99,7 +95,7 @@ main
 	when (isJust $ configLogFailed config)
 	 $ do   let Just fileLog = configLogFailed config
 	        workingDir       <- getCurrentDirectory
-
+{-}
 	        let diag jr      = diagnoseJobResults
 	                                (configFormatPathWidth config)
 	                                False -- no color
@@ -109,7 +105,9 @@ main
 	                                
 	        let ssResults    = [doc | (success, doc) <- map diag results
 	                                , not success ]
-	        
+-}
+                let ssResults = []
+
 	        writeFile fileLog ((render $ vcat ssResults) ++ "\n")
 	
 	return ()
@@ -189,7 +187,8 @@ runJob
 runJob config chanResult chainNum jobNum job
  = do	
 	-- Run the job
-	results		<- dispatchJob job
+--	results		<- dispatchJob job
+        let results      = ()
 	
 	-- Push the results into the channel for display
 	io $ atomically $ writeTChan chanResult 

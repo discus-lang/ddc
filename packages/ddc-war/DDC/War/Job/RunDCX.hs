@@ -1,20 +1,48 @@
 
 module DDC.War.Job.RunDCX
-	(jobRunDCX)
+	( Spec    (..)
+        , Result  (..)
+        , build)
 where
-import DDC.War.Result
-import DDC.War.Job
 import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Build.Benchmark
+import BuildBox.Data.Physical
 import BuildBox
 import System.Directory
 
 
+-- | Feed a file into DDCi-core        
+data Spec
+        = Spec
+        { -- | Name of the test this job is a part of.
+          specTestName           :: String
+
+          -- | Name of the way we're running this test.
+        , specWayName            :: String
+                
+          -- | Root source file of the program (the 'Main.ds')
+        , specFile               :: FilePath 
+                
+          -- | Scratch dir to do the build in.
+        , specScratchDir         :: String
+
+          -- | Put what DDC says to stdout here.
+        , specCompileStdout      :: FilePath
+                
+          -- | Put what DDC says to stderr here.
+        , specCompileStderr      :: FilePath }
+
+
+data Result
+        = ResultSuccess Seconds
+        | ResultFailure
+        deriving Show
+
+
 -- | Compile a Haskell Source File
-jobRunDCX :: Job -> Build [Result]
-jobRunDCX (JobRunDCX
-		testName _wayName srcDCX
+build :: Spec -> Build Result
+build (Spec     testName _wayName srcDCX
 		buildDir testRunStdout testRunStderr)
 
  = do	needs srcDCX
@@ -32,14 +60,7 @@ jobRunDCX (JobRunDCX
 	atomicWriteFile testRunStdout strOut
 	atomicWriteFile testRunStderr strErr
 
-        let result 
-                = case code of
-                        ExitFailure _   -> [ResultUnexpectedFailure]
-                        _               -> []
-                
---	let ftime	= fromRational $ toRational time
+        case code of
+         ExitSuccess    -> return $ ResultSuccess time
+         _              -> return $ ResultFailure
 
-	return  $  result 
---	        ++ [ ResultAspect $ Time TotalWall `secs` ftime ]
-	
-	

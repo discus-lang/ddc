@@ -1,12 +1,13 @@
 
 module DDC.War.Job.CompileHS
-	(jobCompileHS)
+	( Spec         (..)
+        , Result       (..)
+        , build)
 where
-import DDC.War.Result
-import DDC.War.Job
 import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Build.Benchmark
+import BuildBox.Data.Physical
 import BuildBox.IO.Directory
 import BuildBox
 import System.FilePath
@@ -15,10 +16,44 @@ import Data.ListUtil
 import Control.Monad
 
 
+-- | Use GHC to compile/make file.
+data Spec
+        = Spec 
+        { -- | Name of the test this job is a part of.
+          specTestName           :: String
+
+          -- | Name of the way we're running this test.
+        , specWayName            :: String
+                
+          -- | Root source file of the program (the 'Main.ds')
+        , specFile               :: FilePath 
+                
+          -- | Extra DDC options for building in this way.
+        , specOptionsGHC         :: [String] 
+                                
+          -- | Scratch dir to do the build in.
+        , specScratchDir         :: String
+
+          -- | Put what DDC says to stdout here.
+        , specCompileStdout      :: FilePath
+                
+          -- | Put what DDC says to stderr here.
+        , specCompileStderr      :: FilePath 
+
+          -- | If Just, then we're making an executable, and put the binary here.
+          --   Otherwise simply compile it
+        , specMainBin            :: FilePath }
+
+
+data Result
+        = ResultSuccess Seconds
+        | ResultFailure
+        deriving Show
+
+
 -- | Compile a Haskell Source File
-jobCompileHS :: Job -> Build [Result]
-jobCompileHS (JobCompileHS
-		testName _wayName srcHS optionsGHC
+build :: Spec -> Build Result
+build  (Spec    testName _wayName srcHS optionsGHC
 		buildDir mainCompOut mainCompErr
 		mainBin)
 
@@ -59,11 +94,11 @@ jobCompileHS (JobCompileHS
 	atomicWriteFile mainCompOut strOut
 	atomicWriteFile mainCompErr strErr
 
---	let ftime	= fromRational $ toRational time
-	return [ResultSuccess]
---        [ ResultAspect $ Time TotalWall `secs` ftime ]
-	
-	
+        case code of
+         ExitSuccess    -> return $ ResultSuccess time
+         ExitFailure _  -> return ResultFailure
+		
+
 genBuildMk :: FilePath -> String -> String -> Build ()
 genBuildMk outfile mainBin mainHs
  = do	let str	= "# Generated Makefile\n\n"
