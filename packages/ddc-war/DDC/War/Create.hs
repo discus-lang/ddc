@@ -6,6 +6,7 @@ import DDC.War.Interface.Config
 import DDC.War.Job
 import Data.Maybe
 import Data.Set                                 (Set)
+import qualified DDC.War.Create.CreateDCX       as CreateDCX
 import qualified DDC.War.Create.CreateDCE       as CreateDCE
 import qualified DDC.War.Create.CreateMainDS    as CreateMainDS
 import qualified DDC.War.Create.CreateTestDS    as CreateTestDS
@@ -17,7 +18,8 @@ create way allFiles filePath
  =      catMaybes
         [ creat way allFiles filePath
         | creat <- 
-                [ CreateDCE.create 
+                [ CreateDCX.create
+                , CreateDCE.create 
                 , CreateMainDS.create
                 , CreateTestDS.create
                 , CreateMainSH.create ]]

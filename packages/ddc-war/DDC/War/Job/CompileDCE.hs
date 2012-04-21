@@ -71,7 +71,7 @@ build   (Spec   testName _wayName srcDCE
                 mMainBin shouldSucceed)
 
  = do   needs srcDCE
-        
+ 
         -- The directory holding the Main.dce file.
         let (srcDir, _srcFile)  = splitFileName srcDCE
                 
