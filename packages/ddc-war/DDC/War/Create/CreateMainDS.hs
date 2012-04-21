@@ -1,5 +1,5 @@
 
-module DDC.War.Create.CreateDCE
+module DDC.War.Create.CreateMainDS
         (create)
 where
 import DDC.War.Interface.Config
@@ -7,20 +7,20 @@ import DDC.War.Job
 import System.FilePath
 import Data.List
 import Data.Set                                 (Set)
-import qualified DDC.War.Job.CompileDCE         as CompileDCE
+import qualified DDC.War.Job.CompileDS          as CompileDS
 import qualified DDC.War.Job.RunExe             as RunExe
 import qualified DDC.War.Job.Diff               as Diff
 import qualified Data.Set                       as Set
 
 
--- | Compile and run .dce files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | isSuffixOf ".dce" filePath
+ | isSuffixOf "Main.ds" filePath
  = let  
         sourceDir        = takeDirectory  filePath
         buildDir         = sourceDir </> "war-" ++ wayName way
         testName         = filePath
+
 
         mainSH           = sourceDir </> "Main.sh"
         mainBin          = buildDir  </> "Main.bin"
@@ -42,8 +42,9 @@ create way allFiles filePath
         shouldDiffStderr = Set.member mainStderrCheck allFiles
 
         -- compile the .ds into a .bin
-        compile          = jobOfSpec $ CompileDCE.Spec
+        compile          = jobOfSpec $ CompileDS.Spec
                                 testName (wayName way) filePath
+                                (wayOptsComp way) ["-M40M"]
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) shouldSucceed
 

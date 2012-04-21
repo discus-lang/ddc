@@ -62,7 +62,7 @@ data Result
 instance Pretty Result where
  ppr result 
   = case result of
-        ResultSuccess _time      -> text "success"
+        ResultSuccess seconds    -> text "success" <+> parens (ppr seconds)
         ResultUnexpectedFailure  -> text "failed"
         ResultUnexpectedSuccess  -> text "unexpected"
 
