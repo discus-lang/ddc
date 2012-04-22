@@ -12,6 +12,7 @@ import qualified DDC.War.Job.Diff               as Diff
 import qualified Data.Set                       as Set
 
 
+-- | Compile Test.ds files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
  | isSuffixOf ".ds" filePath
@@ -23,10 +24,11 @@ create way allFiles filePath
 
         mainDS          = sourceDir </> "Main.ds"
         mainSH          = sourceDir </> "Main.sh"
+        testErrorCheck  = sourceDir </> replaceExtension fileName ".error.check"
+
         testCompStdout  = buildDir  </> replaceExtension fileName ".compile.stdout"
         testCompStderr  = buildDir  </> replaceExtension fileName ".compile.stderr"
         testCompDiff    = buildDir  </> replaceExtension fileName ".compile.stderr.diff"
-        testErrorCheck  = sourceDir </> replaceExtension fileName ".error.check"
         shouldSucceed   = not $ Set.member testErrorCheck allFiles
 
         -- Compile the .ds file

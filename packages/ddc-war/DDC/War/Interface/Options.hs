@@ -1,9 +1,11 @@
 
+-- | Parsing of command-line options.
 module DDC.War.Interface.Options
 	( Opt(..)
 	, warOptions)
 where
 import Util.Options.Option
+
 
 -- | Command line options
 data Opt

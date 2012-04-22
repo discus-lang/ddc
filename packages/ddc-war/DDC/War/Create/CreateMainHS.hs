@@ -11,6 +11,7 @@ import qualified DDC.War.Job.CompileHS          as CompileHS
 import qualified DDC.War.Job.RunExe             as RunExe
 
 
+-- | Compile and run Main.hs files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
  | isSuffixOf "Main.hs" filePath

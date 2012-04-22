@@ -1,4 +1,5 @@
 
+
 module DDC.War.Create.CreateDCE
         (create)
 where
@@ -16,7 +17,7 @@ import qualified Data.Set                       as Set
 -- | Compile and run .dce files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | isSuffixOf ".dce" filePath
+ | isSuffixOf "Main.dce" filePath
  = let  
         sourceDir        = takeDirectory  filePath
         buildDir         = sourceDir </> "war-" ++ wayName way

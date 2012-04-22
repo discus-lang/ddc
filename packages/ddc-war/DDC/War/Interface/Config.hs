@@ -8,6 +8,7 @@ import DDC.War.Interface.Options
 import Data.Maybe
 import Data.List
 
+
 -- | A way to build the test
 --      This holds extra options to pass to the program.
 data Way

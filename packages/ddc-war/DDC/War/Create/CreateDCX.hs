@@ -12,9 +12,10 @@ import qualified DDC.War.Job.Diff               as Diff
 import qualified Data.Set                       as Set
 
 
+-- | Run .dcx files with the interpreter.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | isSuffixOf ".dcx" filePath
+ | isSuffixOf "Test.dcx" filePath
  = let  
         fileName         = takeFileName filePath
         sourceDir        = takeDirectory  filePath

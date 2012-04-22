@@ -41,7 +41,8 @@ data Product
 
 
 -- Spec -----------------------------------------------------------------------
--- | Job specifications.
+
+-- | Class of Job specifications.
 class (Show spec, Pretty result)
         => Spec spec result | spec -> result where
 

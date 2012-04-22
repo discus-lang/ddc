@@ -16,8 +16,9 @@ import System.Directory
 import Data.ListUtil
 import Control.Monad
 
+
+-- | Use DDC to compile a source file.
 data Spec
-        -- | Use DDC to compile/make file.
         = Spec
         { -- | Name of the test this job is a part of.
           specTestName           :: String

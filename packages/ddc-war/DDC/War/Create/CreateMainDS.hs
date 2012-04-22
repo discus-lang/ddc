@@ -13,6 +13,7 @@ import qualified DDC.War.Job.Diff               as Diff
 import qualified Data.Set                       as Set
 
 
+-- | Compile and run Main.ds files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
  | isSuffixOf "Main.ds" filePath

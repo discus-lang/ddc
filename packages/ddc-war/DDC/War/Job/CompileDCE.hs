@@ -17,7 +17,6 @@ import Data.ListUtil
 import Control.Monad
 
 
--- Spec -----------------------------------------------------------------------
 -- | Use ddci-core to compile/make file a DCE file
 data Spec
         = Spec

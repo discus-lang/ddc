@@ -1,4 +1,5 @@
 
+-- | Gang controller and user interface.
 module DDC.War.Interface.Controller
 	( JobResult    (..)
         , Product      (..)
