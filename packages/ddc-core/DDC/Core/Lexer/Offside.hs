@@ -122,7 +122,7 @@ addStarts :: Eq n => [Token (Tok n)] -> [Lexeme n]
 addStarts ts
  = case dropNewLines ts of
 
-        -- | If the first lexeme of a module is not '{' then start a new block.
+        -- If the first lexeme of a module is not '{' then start a new block.
         (t1 : tsRest)
           |  not $ or $ map (isToken t1) [KA KBraceBra]
           -> LexemeStartBlock (tokenColumn t1) : addStarts' (t1 : tsRest)
