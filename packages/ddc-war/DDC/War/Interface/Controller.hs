@@ -14,9 +14,9 @@ import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad.STM
 import Control.Monad
-import Util.Terminal.VT100      as VT100
 import Data.Maybe
 import Data.List
+import DDC.War.Interface.VT100      as VT100
 import qualified System.Cmd
 
 
