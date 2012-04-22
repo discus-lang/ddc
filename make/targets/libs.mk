@@ -8,11 +8,11 @@ libs_ds	=  $(shell find library -name "*.ds" -follow)
 libs	: library/Graphics.di
 
 library/Prelude.di library/Graphics.di : bin/ddc $(libs_ds)
-	@echo "* Building base libraries ----------------------------------------------------------"
+	@echo "* Building base library"
 	@bin/ddc $(config_ddc_flags) -O -build library/Prelude.ds
 	@touch library/Prelude.di
 
-	@echo
+	@echo "* Building graphics library"
 	@bin/ddc $(config_ddc_flags) -O -build library/Graphics.ds
 	@touch library/Graphics.di
 	@echo

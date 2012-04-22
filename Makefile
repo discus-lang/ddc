@@ -50,16 +50,35 @@ include make/build.mk
 
 
 # Build everything, now that we have the configuration included above.
-#   We need to build bin/war before bin/ddc because they share source files,
-#   and the former is built with -threaded while the latter is not.
-#   If we build bin/ddc then bin/war then the Makefile would try to build
-#   bin/ddc again because some of its .o files get clobbered.
 .PHONY	: allWithConfig
 allWithConfig :
+	@echo "-- Chasing dependencies -----------------------------------------------------"
 	@$(MAKE) packages/ddc-main/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/war
-	@$(MAKE) bin/ddc bin/ddci-core runtime external libs -j $(THREADS)
+
+	@echo
+	@echo "-- Building ddc -------------------------------------------------------------"
+	@$(MAKE) bin/ddc 	 -j $(THREADS)
+
+	@echo
+	@echo "-- Building ddci-core -------------------------------------------------------"
+	@$(MAKE) bin/ddci-core 	 -j $(THREADS)
+
+	@echo
+	@echo "-- Building runtime ---------------------------------------------------------"
+	@$(MAKE) runtime 	 -j $(THREADS)       
+
+	@echo
+	@echo "-- Building external libraries ----------------------------------------------"
+	@$(MAKE) external	 -j $(THREADS)
+
+	@echo
+	@echo "-- Building Disciple libraries ----------------------------------------------"
+	@$(MAKE) libs 		
+
+	@echo
+	@echo "-- Build war test driver ----------------------------------------------------"
+	@$(MAKE) bin/war         -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)

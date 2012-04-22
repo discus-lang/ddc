@@ -93,7 +93,7 @@ packages/ddci-core/%.o : packages/ddci-core/%.hs
 
 
 %.dep : %.c
-	@echo "* Building Deps $<"
+	@echo "* Dependencies for $<"
 	@gcc $(GCC_FLAGS) -MM $< -MT $(patsubst %.dep,%.o,$@) -o $@
 
 
