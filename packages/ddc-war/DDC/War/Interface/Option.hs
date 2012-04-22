@@ -42,7 +42,7 @@ parseOptions args0 config0
  where
   eat [] config = config
   eat args@(arg : rest) config
-        | "-help" : _        <- args
+        | elem arg ["-help", "--help"]
         = printUsage Nothing
 
         | elem arg ["-d", "-debug"]
@@ -79,10 +79,13 @@ parseOptions args0 config0
    = error $ unlines
         [ "invalid argument " ++ fromMaybe "" badArg
         , " Usage: war [flags]"
-        , "  -help        Display this help"
-        , "  -debug, -d   Emit debugging info for the war test driver"
-        , "  -batch, -b   Don't interactively ask what to do if a test fails"
-        , "  -clean       Cleanup ddc generated files after each test"
-        , "  -j <INT>     Set number of threads (jobs) to use." ]
-
+        , "  -help                      Display this help"
+        , "  -debug, -d                 Emit debugging info for the war test driver"
+        , "  -batch, -b                 Don't interactively ask what to do if a test fails"
+        , "  -clean                     Cleanup ddc generated files after each test"
+        , "  -j <INT>                   Set number of threads (jobs) to use." 
+        , "  -logFailed <FILE>          Log failed tests to this file."
+        , "  +compway <NAME> [OPTIONS]  Also compile with these DDC options."
+        , "  +runway  <NAME> [OPTIONS]  Also run executables with these options."
+        ]
 
