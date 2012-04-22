@@ -10,7 +10,6 @@ import DDC.War.Driver.Gang
 import Util.Options
 import Util.Options.Help
 import BuildBox.Control.Gang
-import BuildBox.Pretty
 import BuildBox.IO.Directory
 import System.Environment
 import System.Directory
@@ -21,7 +20,6 @@ import Control.Monad
 import Control.Monad.STM
 import Control.Exception
 import Data.List
-import Data.Maybe
 import qualified Data.Sequence		as Seq
 import qualified Data.Foldable		as Seq
 import qualified Data.Set		as Set
@@ -65,10 +63,12 @@ main
 		$  Seq.mapM canonicalizePath
 		$  testFilesRaw
 
+        -- Skip over files with 'skip' in the path,
+        --  and don't decend into our own build dirs.
 	let testFilesSorted
-		= filter (not . isInfixOf "skip-")	-- skip over skippable files.
+		= filter (not . isInfixOf "skip-")
 		$ filter (not . isInfixOf "-skip")
-		$ filter (not . isInfixOf "war-")	-- don't look at srcs in copied build dirs.
+		$ filter (not . isInfixOf "war-")
 		$ Set.toList testFilesSet
 
         let testFilesSortedSet
@@ -91,25 +91,6 @@ main
 
 	-- Run all the chains.
 	results <- runChains config chanResult chains
-
-	-- Write out a log of failed tests if we were asked to
-	when (isJust $ configLogFailed config)
-	 $ do   let Just fileLog = configLogFailed config
-	        workingDir       <- getCurrentDirectory
-{-}
-	        let diag jr      = diagnoseJobResults
-	                                (configFormatPathWidth config)
-	                                False -- no color
-	                                workingDir
-	                                (jobResultJob jr)
-	                                (jobResultResults jr)
-	                                
-	        let ssResults    = [doc | (success, doc) <- map diag results
-	                                , not success ]
--}
-                let ssResults = []
-
-	        writeFile fileLog ((render $ vcat ssResults) ++ "\n")
 	
 	return ()
 
