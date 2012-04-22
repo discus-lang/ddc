@@ -1,32 +1,32 @@
 -- churn error
-v8      
+v8
  = \v9 -> v9 (\v10 -> v10 (\v11 -> v11 (\v12 -> \v13 -> 58) (\v14 -> v14 (\v15 -> ()))));
 
-{-- 
+{-
 
 PANIC in Core.Reconstruct
         reconX: Closure error in core.
             caller = Just Core.Lift.LiftLambdas.bindFreeVarsP
             in lambda abstraction:
-                \  (v10              :: (((*v12 -(!eTS0 $cTC8)> *v13 -(!eTS1 $cTC8)> Base.Int %rTC0) 
-					-(!eTC7 $cTS2)> (((*v15 -(!eTS2 ($cTC11 :> Base.Unit : Base.Unit))> Base.Unit) -(!eTC8 $cTS3)> *tTC411) 
-					-(!eTC8 $cTC11)> *tTC411) -(!eTC5 $cTS4)> *tTC401) -((!eTC4 :> !{!eTC7; !eTC5}) ($cTC4 :> ${$cTS0; $cTS1}))> *tTC401) 
+                \  (v10              :: (((*v12 -(!eTS0 $cTC8)> *v13 -(!eTS1 $cTC8)> Base.Int %rTC0)
+					-(!eTC7 $cTS2)> (((*v15 -(!eTS2 ($cTC11 :> Base.Unit : Base.Unit))> Base.Unit) -(!eTC8 $cTS3)> *tTC411)
+					-(!eTC8 $cTC11)> *tTC411) -(!eTC5 $cTS4)> *tTC401) -((!eTC4 :> !{!eTC7; !eTC5}) ($cTC4 :> ${$cTS0; $cTS1}))> *tTC401)
 					-(!eTC2 $cTS5)> *tTC397)
 
                                      of !eTC2
                                         ($cTC2 :> $cTC4 :> ${$cTC8; $cTC11}) ->
                 do {
                         xCS3    = v8_vCL3 $cTC8 $cTC11 $cTS2 $cTS3 $cTS4 !eTC5 !eTC7 !eTC8 !eTS0 !eTS1 !eTS2 %rTC0 *tTC401 *v12 *v13 *tTC411 *v15;
-                        
+
                         v10 xCS3;
                 }
-        
+
             reconstructed closure of body:
                 v8_vCL3 : forall ($cTC8 :: $). forall ($cTC11 :: $). $cTC4 :> ${$cTC8; $cTC11}
-        
+
             is not <: annot on lambda:
                 $cTC2 :> $cTC4 :> ${$cTC8; $cTC11}
-        
+
 
 
 
@@ -39,29 +39,29 @@ chopInnerS2: new super
                                         ($cTC4 :> ${$cTC8; $cTC11}) ->
                 do {
                         xCS1    = v8_vCL0 %rTC0 *v12 *v13;
-                        
+
                         xCS2    = v8_vCL2 $cTC11 $cTS3 !eTC8 !eTS2 *tTC411 *v15;
-                        
+
                         v11 xCS1 xCS2;
                 };
 
  forall ($cTC8 :: $).
- forall ($cTC11 :: $). 
- forall ($cTS2 :: $). 
- forall ($cTS3 :: $). 
- forall ($cTS4 :: $). 
- forall (!eTC5 :: !). 
- forall (!eTC7 :: !). 
- forall (!eTC8 :: !). 
- forall (!eTS0 :: !). 
- forall (!eTS1 :: !). 
+ forall ($cTC11 :: $).
+ forall ($cTS2 :: $).
+ forall ($cTS3 :: $).
+ forall ($cTS4 :: $).
+ forall (!eTC5 :: !).
+ forall (!eTC7 :: !).
+ forall (!eTC8 :: !).
+ forall (!eTS0 :: !).
+ forall (!eTS1 :: !).
  forall (!eTS2 :: !).
- forall (%rTC0 :: %). 
- forall (*tTC401 :: *). 
- forall (*v12 :: *). 
- forall (*v13 :: *). 
- forall (*tTC411 :: *). 
- forall (*v15 :: *). 
+ forall (%rTC0 :: %).
+ forall (*tTC401 :: *).
+ forall (*v12 :: *).
+ forall (*v13 :: *).
+ forall (*tTC411 :: *).
+ forall (*v15 :: *).
  ((*v12 -(!eTS0 $cTC8)> *v13 -(!eTS1 $cTC8)> Base.Int %rTC0) -(!eTC7 $cTS2)> (((*v15 -(!eTS2 ($cTC11 :> Base.Unit : Base.Unit))> Base.Unit) -(!eTC8 $cTS3)> *tTC411) -(!eTC8 $cTC11)> *tTC411) -(!eTC5 $cTS4)> *tTC401) -(!{!eTC7; !eTC5} ($cTC4 :> ${$cTC8; $cTC11}))> *tTC401
 
---}
+-}

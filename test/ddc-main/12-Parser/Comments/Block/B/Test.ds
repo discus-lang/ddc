@@ -1,0 +1,7 @@
+
+d = 42
+
+-- This is a bad comment.
+{-}
+
+
