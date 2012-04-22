@@ -52,33 +52,9 @@ include make/build.mk
 # Build everything, now that we have the configuration included above.
 .PHONY	: allWithConfig
 allWithConfig :
-	@echo "-- Chasing dependencies -----------------------------------------------------"
 	@$(MAKE) packages/ddc-main/Source/Lexer.hs
 	@$(MAKE) deps
-
-	@echo
-	@echo "-- Building ddc -------------------------------------------------------------"
-	@$(MAKE) bin/ddc 	 -j $(THREADS)
-
-	@echo
-	@echo "-- Building ddci-core -------------------------------------------------------"
-	@$(MAKE) bin/ddci-core 	 -j $(THREADS)
-
-	@echo
-	@echo "-- Building runtime ---------------------------------------------------------"
-	@$(MAKE) runtime 	 -j $(THREADS)       
-
-	@echo
-	@echo "-- Building external libraries ----------------------------------------------"
-	@$(MAKE) external	 -j $(THREADS)
-
-	@echo
-	@echo "-- Building Disciple libraries ----------------------------------------------"
-	@$(MAKE) libs 		
-
-	@echo
-	@echo "-- Build war test driver ----------------------------------------------------"
-	@$(MAKE) bin/war         -j $(THREADS)
+	@$(MAKE) bin/ddc bin/ddci-core runtime external libs bin/war -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
