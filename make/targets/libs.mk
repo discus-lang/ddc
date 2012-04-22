@@ -12,10 +12,10 @@ library/Prelude.di library/Graphics.di : bin/ddc $(libs_ds)
 	@bin/ddc $(config_ddc_flags) -O -build library/Prelude.ds
 	@touch library/Prelude.di
 
+	@echo
 	@echo "* Building graphics library"
 	@bin/ddc $(config_ddc_flags) -O -build library/Graphics.ds
 	@touch library/Graphics.di
-	@echo
 
 
 # -- clean objects in the runtime system

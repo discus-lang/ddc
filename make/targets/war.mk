@@ -13,7 +13,7 @@ bin/war : $(war_hs)
 # Run the testsuite with the C and LLVM backends interactively
 .PHONY 	: war
 war : allWithConfig
-	@echo "* Running tests --------------------------------------------------------------------"
+	@echo "* Running tests -------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		+compway std \
 		+compway llvm -fvia-llvm
@@ -22,21 +22,21 @@ war : allWithConfig
 # Run the testsuite with the C backend interactively
 .PHONY 	: cwar
 cwar : allWithConfig
-	@echo "* Running tests --------------------------------------------------------------------"
+	@echo "* Running tests -------------------------------------------------------------"
 	bin/war test -j $(THREADS)
 	@echo
 
 # Run the testsuite with the LLVM backend interactively
 .PHONY 	: llvmwar
 llvmwar : allWithConfig
-	@echo "* Running tests --------------------------------------------------------------------"
+	@echo "* Running tests -------------------------------------------------------------"
 	bin/war test -j $(THREADS) +compway llvm -fvia-llvm
 	@echo
 
 # Run tests in all ways interactively
 .PHONY  : totalwar
 totalwar : allWithConfig
-	@echo "* Running tests --------------------------------------------------------------------"
+	@echo "* Running tests -------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		+compway std \
 		+compway opt  -O \
@@ -46,7 +46,7 @@ totalwar : allWithConfig
 # Run the tests,  logging failures to war.failed
 .PHONY : logwar
 logwar : allWithConfig
-	@echo "* Running tests --------------------------------------------------------------------"
+	@echo "* Running tests -------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		-batch -logFailed "war.failed"
 	@echo
@@ -54,7 +54,7 @@ logwar : allWithConfig
 # Run tests in all ways interactively, logging failures to war.failed
 .PHONY  : totallogwar
 totallogwar : allWithConfig
-	@echo "* Running tests --------------------------------------------------------------------"
+	@echo "* Running tests -------------------------------------------------------------"
 	bin/war test -j $(THREADS) \
 		-batch -logFailed "war.failed" \
 		+compway std \
@@ -94,3 +94,4 @@ cleanWar :
 		-o	-name "*.stderr" \
 		-o	-name "war-*" \
 		-follow | xargs -n 1 rm -Rf
+
