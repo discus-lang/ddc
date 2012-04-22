@@ -103,7 +103,7 @@ handleResult config gang chainsTotal (Result chainIx jobIx job product)
                         <> text "/" 
                         <> ppr chainsTotal)
            <+> padL width (text testName3)
-           <+> padL 8     (text wayName)
+           <+> padL 5     (text wayName)
            <+> padL 8     (text jobName)
            <+> colorizeStatus config jobName (render status)
 
