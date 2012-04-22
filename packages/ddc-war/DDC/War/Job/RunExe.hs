@@ -10,7 +10,7 @@ import BuildBox.Command.System
 import BuildBox.Data.Physical
 import BuildBox.Pretty
 import BuildBox
-
+import Data.List
 
 -- | Run a binary.
 data Spec
@@ -27,6 +27,9 @@ data Spec
           -- | Binary to run.
         , specFileBin    :: FilePath 
         
+          -- | Command line arguments to pass.
+        , specCmdArgs    :: [String]
+
           -- | Put what binary said on stdout here.
         , specRunStdout  :: FilePath
                 
@@ -56,7 +59,8 @@ instance Pretty Result where
 -- | Run a binary
 build :: Spec -> Build Result
 build (Spec     testName _wayName _fileName
-		mainBin mainRunOut mainRunErr
+		mainBin args 
+                mainRunOut mainRunErr
                 shouldSucceed)
  = do	
         needs mainBin
@@ -64,7 +68,7 @@ build (Spec     testName _wayName _fileName
 	-- Run the binary.
 	(time, (code, strOut, strErr))
 	 <- timeBuild
-	 $  systemTee False mainBin ""
+	 $  systemTee False (mainBin ++ " " ++ intercalate " " args) ""
 
 	-- Write its output to files.
 	atomicWriteFile mainRunOut strOut

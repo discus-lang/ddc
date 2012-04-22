@@ -3,6 +3,8 @@ import Data.Char
 import Data.List
 import Data.List.Split
 import System.Exit
+import System.Environment
+import System.FilePath
 
 -- Data constructors are given tag values (0, 1, ..) based on the order of their
 -- definition so that for somehting like:
@@ -21,7 +23,8 @@ import System.Exit
 
 main :: IO ()
 main
- = do	testCtorOrder "test/18-ImportExport/T210-CtorOrder/A.di" "X" "ABC"
+ = do	[buildDir] <- getArgs
+        testCtorOrder (buildDir </> "A.di") "X" "ABC"
 	testCtorOrder "library/Base.di" "Bool" "FalseTrue"
 	testCtorOrder "library/Data/List.di" "List" "NilCons"
 

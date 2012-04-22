@@ -49,7 +49,8 @@ create way allFiles filePath
 
         -- run the binary
         run              = jobOfSpec $ RunExe.Spec
-                                testName (wayName way) filePath mainBin
+                                testName (wayName way) filePath 
+                                mainBin []
                                 mainRunStdout mainRunStderr
                                 True
 

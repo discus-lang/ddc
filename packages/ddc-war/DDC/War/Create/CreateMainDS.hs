@@ -68,7 +68,8 @@ create way allFiles filePath
         shouldRunExe        = compShouldSucceed
         runShouldSucceed    = not $ Set.member mainRunErrorCheck allFiles
         jobRunExe           = jobOfSpec $ RunExe.Spec
-                                testName (wayName way) filePath mainBin
+                                testName (wayName way) filePath 
+                                mainBin []
                                 mainRunStdout mainRunStderr
                                 runShouldSucceed
 
