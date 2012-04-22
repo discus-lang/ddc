@@ -1,5 +1,5 @@
 
-top = ../../../
+top = ../../../../
 
 DDC = $(top)bin/ddc -basedir $(top)
 
