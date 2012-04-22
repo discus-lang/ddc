@@ -54,16 +54,17 @@ tokens :-
  $white # \n		;
 
  \n			{ ptag NewLine			}
- \- \- \-*		{ ptag CommentLineStart		}
+
+-- Comment pragma before comment block comments.
+ \{ \- \# .* \# \- \}	{ ptags CommentPragma		}
+
  \{ \-			{ ptag CommentBlockStart	}
  \- \}			{ ptag CommentBlockEnd		}
 
+-- Need this so so that things like '#-}' and '+-}' are correctly detected as CommentBlockEnd tokens.
+ $sym \- \}		{ ptag CommentBlockEnd		}
 
- \{ \- \# .* \# \- \}	{ ptags CommentPragma		}
-
--- This is required to fix lexing of things like "{-\n=-}".
--- This may be working around an Alex bug.
- .* \- \}       { ptag CommentBlockEnd      }
+ \- \- \-*		{ ptag CommentLineStart		}
 
  pragma			{ ptag Pragma			}
 
@@ -370,7 +371,7 @@ dropTokComments	(t@TokenP { token = tok } : xs)
 	= dropTokComments $ dropWhile (\t -> not $ isToken t NewLine) xs
 
 	| CommentBlockStart	<- tok
-	= dropTokComments $ dropTokCommentBlock xs t 
+	= dropTokComments $ dropTokCommentBlock xs t
 
 	| otherwise
 	= t : dropTokComments xs
