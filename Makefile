@@ -56,21 +56,27 @@ allWithConfig :
 	@$(MAKE) packages/ddc-main/Source/Lexer.hs
 	@$(MAKE) deps
 
+	@echo
 	@echo "-- Building ddc -------------------------------------------------------------"
 	@$(MAKE) bin/ddc 	 -j $(THREADS)
 
+	@echo
 	@echo "-- Building ddci-core -------------------------------------------------------"
 	@$(MAKE) bin/ddci-core 	 -j $(THREADS)
 
+	@echo
 	@echo "-- Building runtime ---------------------------------------------------------"
 	@$(MAKE) runtime 	 -j $(THREADS)       
 
+	@echo
 	@echo "-- Building external libraries ----------------------------------------------"
 	@$(MAKE) external	 -j $(THREADS)
 
+	@echo
 	@echo "-- Building Disciple libraries ----------------------------------------------"
 	@$(MAKE) libs 		
 
+	@echo
 	@echo "-- Build war test driver ----------------------------------------------------"
 	@$(MAKE) bin/war         -j $(THREADS)
 
