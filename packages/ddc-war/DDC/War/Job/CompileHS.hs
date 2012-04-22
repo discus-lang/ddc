@@ -56,7 +56,7 @@ data Result
 instance Pretty Result where
  ppr result 
   = case result of
-        ResultSuccess _time     -> text "success"
+        ResultSuccess time      -> text "success" <+> parens (ppr seconds)
         ResultFailure           -> text "failed"
 
 
@@ -113,5 +113,6 @@ genBuildMk outfile mainBin mainHs
  = do	let str	= "# Generated Makefile\n\n"
  		++ "include make/build.mk\n\n"
                 ++ mainBin ++ " : " ++ mainHs ++ "\n"
-                ++ "\t$(GHC) $(GHC_LANGUAGE) $(DDC_PACKAGES) -isrc --make $^ -o $@\n\n"
+                ++ "\t$(GHC) $(GHC_LANGUAGE) $(DDC_PACKAGES) -ipackages/ddc-main --make $^ -o $@\n\n"
 	io $ writeFile outfile str
+

@@ -236,13 +236,13 @@ builder_X8632_Cygwin config
 
         , buildLlc    
                 = \llFile sFile
-                -> doCmd $ "llc -O3 -march=x86 " 
+                -> doCmd "LLVM compiler" $ "llc -O3 -march=x86 " 
                 ++ (normalise llFile)
                 ++ " -o " ++ (normalise sFile)
 
         , buildAs
                 = \sFile oFile
-                -> doCmd $  "as --32"  
+                -> doCmd "assembler" $  "as --32"  
                 ++ " -o " ++ (normalise oFile)
                 ++ " "    ++ (normalise sFile)
 
@@ -250,7 +250,7 @@ builder_X8632_Cygwin config
 	-- is a symlink, which Windows doesn't really support.
         , buildLdExe  
                 = \oFile binFile
-                -> doCmd $  "gcc-4 -m32" 
+                -> doCmd "linker" $  "gcc-4 -m32" 
                 ++ " -o " ++ (normalise binFile)
                 ++ " "    ++ (normalise oFile)
                 ++ " "    ++ (normalise $ builderConfigRuntime config </> "libddc-runtime.a")

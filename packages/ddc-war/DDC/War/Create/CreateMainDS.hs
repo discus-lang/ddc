@@ -21,7 +21,6 @@ create way allFiles filePath
         buildDir         = sourceDir </> "war-" ++ wayName way
         testName         = filePath
 
-
         mainSH           = sourceDir </> "Main.sh"
         mainBin          = buildDir  </> "Main.bin"
         mainCompStdout   = buildDir  </> "Main.compile.stdout"
