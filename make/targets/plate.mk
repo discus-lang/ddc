@@ -1,9 +1,9 @@
 # The boilerplate generator and generated boilerplate.
 
 # Build the boiler plate generator
-bin/plate : packages/ddc-plate/Main.hs packages/ddc-main/Config/Config.hs
+bin/plate : packages/ddc-plate/Main.hs
 	@echo "* Building boilerplate generator ---------------------------------------------------"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -ipackages/ddc-main -ipackages/ddc-plate -o bin/plate --make $^
+	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -ipackages/ddc-plate -o bin/plate --make $^
 
 
 # Generate boilerplate

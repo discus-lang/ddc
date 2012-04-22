@@ -2,37 +2,20 @@
 -- | Tool to generate tree-walking boilerplate code for our expression data types.
 --	It's pretty boring to write these ourselves.
 --	and marginally less boring to write the boiler-plate generator
---	It might be better to move this to template Haskell, but it might be easier
+--	It may be better to move this to template Haskell, but it might be easier
 --	to leave it like this for future bootstrapping.
 import System.Environment
 import Language.Haskell.Syntax
 import Language.Haskell.Parser
 import Language.Haskell.Pretty
-import Util
+import Data.List
+import Data.Maybe
 
-
--- Helpers -----------------------------------------------------------------------------------------
-ident x		= HsIdent x
-uIdent x	= UnQual (HsIdent x)
-
-var x		= HsVar (UnQual (HsIdent x))
-
-tyVar m		= HsTyVar (HsIdent m)
-tyCon x		= HsTyCon (UnQual (HsIdent x))
-tyApp x1 x2	= HsTyApp x1 x2
-
-pVar x		= HsPVar (HsIdent x)
-
-makeApp :: [HsExp] 	-> HsExp
-makeApp [x]		= x
-makeApp	(x1:x2:xs)	= makeApp ((HsApp x1 x2) : xs)
-	
-
-----------------------------------------------------------------------------------------------------
 main 
  = do	[fileIn, fileStub, fileOut] <- getArgs
 	expandFile fileIn fileStub fileOut
-	
+
+
 -- make boiler plate for this file
 expandFile :: FilePath -> FilePath -> FilePath -> IO ()
 expandFile fileIn fileStub fileOut
@@ -51,7 +34,7 @@ expandFile fileIn fileStub fileOut
 	
 	writeFile fileOut 
 		$  srcStub ++ "\n\n" 
-		++ catInt "\n" (map prettyPrint decls')
+		++ intercalate "\n" (map prettyPrint decls')
 
 	return ()
 
@@ -61,7 +44,7 @@ expandModule :: HsModule -> [HsDecl]
 expandModule mod
  = case mod of
  	HsModule loc m@(Module name) exports imports decls
-	 -> catMap expandDecl decls
+	 -> concatMap expandDecl decls
 
 -- make boilerplate for a data type
 expandDecl :: HsDecl -> [HsDecl]
@@ -73,7 +56,7 @@ expandDecl dd
 	_	-> []
 
 
--- TransM ------------------------------------------------------------------------------------------
+-- TransM ---------------------------------------------------------------------
 expandTransM :: HsDecl -> Maybe HsDecl
 expandTransM (HsDataDecl src context (HsIdent con1) args decls derive)
  = let	sTrans	= HsFunBind
@@ -82,13 +65,13 @@ expandTransM (HsDataDecl src context (HsIdent con1) args decls derive)
 			[ pVar "table", pVar "xx"]
 			(HsUnGuardedRhs 
 				$ makeApp 
-					[ var "transMe" 
-					, HsParen (HsApp (var $ "trans" ++ con1) (var "table"))
-					, HsParen (HsApp (var $ "trans" ++ con1 ++ "_enter") (var "table"))
-					, HsParen (HsApp (var $ "trans" ++ con1 ++ "_leave") (var "table"))
-					, var "table"
-					, var "xx"
-					])
+				[ var "transMe" 
+				, HsParen (HsApp (var $ "trans" ++ con1) (var "table"))
+				, HsParen (HsApp (var $ "trans" ++ con1 ++ "_enter") (var "table"))
+				, HsParen (HsApp (var $ "trans" ++ con1 ++ "_leave") (var "table"))
+				, var "table"
+				, var "xx"
+				])
 			[]
 		]
  
@@ -129,22 +112,19 @@ transM_decl decl
 
 	
 transM_decl' src name types
- = let	tmps		= map (\ix -> ("x" ++ show ix)) [0.. length types -1]
-	tmps'		= map (\v -> v ++ "'") tmps
+ = let	tmps	 = map (\ix -> ("x" ++ show ix)) [0.. length types -1]
+	tmps'	 = map (\v -> v ++ "'") tmps
 
-	ssFollow	= zipWith (transM_stmt src types) [0..] types
-	sRet		= HsQualifier $
-				HsApp 	(var "return")
-					(HsParen $ makeApp (HsVar (UnQual name) : map var tmps'))
+	ssFollow = zipWith (transM_stmt src types) [0..] types
+	sRet	 = HsQualifier 
+                 $ HsApp (var "return")
+		 	 (HsParen $ makeApp (HsVar (UnQual name) : map var tmps'))
 	
-   in
-	HsAlt src 
+   in   HsAlt src 
 		(HsPApp (UnQual name) (map pVar tmps))
 		(HsUnGuardedAlt
 			$ HsDo 	(ssFollow ++ [sRet]))
 		[]
-
-
 
 
 transM_stmt 
@@ -158,8 +138,7 @@ transM_stmt src tArgs ix ta@(HsUnBangedTy tt)
 
 	-- if the first type arg is a variable, treat it as the
 	--	annotation type and transform it with transN
-	| Just t1@(HsUnBangedTy (HsTyVar _))	
-			<- takeHead tArgs
+	| t1@(HsUnBangedTy (HsTyVar _)) : _ <- tArgs
 	, ta == t1
 	= HsGenerator src 
 		(pVar 	$ "x" ++ show ix ++ "'") 
@@ -171,4 +150,22 @@ transM_stmt src tArgs ix ta@(HsUnBangedTy tt)
 		(pVar 	$ "x" ++ show ix ++ "'") 
 		(makeApp [var "transZM", var "table", var $ "x" ++ show ix])
 
+
+
+-- Helpers --------------------------------------------------------------------
+ident x         = HsIdent x
+uIdent x        = UnQual (HsIdent x)
+
+var x           = HsVar (UnQual (HsIdent x))
+
+tyVar m         = HsTyVar (HsIdent m)
+tyCon x         = HsTyCon (UnQual (HsIdent x))
+tyApp x1 x2     = HsTyApp x1 x2
+
+pVar x          = HsPVar (HsIdent x)
+
+makeApp :: [HsExp]      -> HsExp
+makeApp [x]             = x
+makeApp (x1:x2:xs)      = makeApp ((HsApp x1 x2) : xs)
+        
 
