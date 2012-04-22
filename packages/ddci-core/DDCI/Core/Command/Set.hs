@@ -81,12 +81,11 @@ cmdSet state cmd
 	 -> do	chatStrLn state e
 		return state
 
- | "outputDir" : dir : []    <- words cmd
+ | "outputdir" : dir : []    <- words cmd
  = return $ state { stateOutputDir  = Just dir }
 
  | "output" : file : []      <- words cmd
  = return $ state { stateOutputFile = Just file }
-
 
  | otherwise
  = case parseModeChanges cmd of
