@@ -5,7 +5,6 @@ where
 import DDC.War.Interface.Config
 import DDC.War.Job
 import System.FilePath
-import Data.List
 import Data.Set                                 (Set)
 import qualified DDC.War.Job.CompileHS          as CompileHS
 import qualified DDC.War.Job.RunExe             as RunExe
@@ -14,7 +13,7 @@ import qualified DDC.War.Job.RunExe             as RunExe
 -- | Compile and run Main.hs files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | isSuffixOf "Main.hs" filePath
+ | takeFileName filePath == "Main.hs"
  = let  
         sourceDir       = takeDirectory  filePath
         buildDir        = sourceDir </> "war-" ++ wayName way

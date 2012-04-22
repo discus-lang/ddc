@@ -5,7 +5,6 @@ where
 import DDC.War.Interface.Config
 import DDC.War.Job
 import System.FilePath
-import Data.List
 import Data.Set                                 (Set)
 import qualified DDC.War.Job.RunDCX             as RunDCX
 import qualified DDC.War.Job.Diff               as Diff
@@ -15,7 +14,7 @@ import qualified Data.Set                       as Set
 -- | Run .dcx files with the interpreter.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | isSuffixOf "Test.dcx" filePath
+ | takeFileName filePath == "Test.dcx"
  = let  
         fileName         = takeFileName filePath
         sourceDir        = takeDirectory  filePath

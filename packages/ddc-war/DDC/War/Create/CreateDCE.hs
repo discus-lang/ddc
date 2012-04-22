@@ -6,7 +6,6 @@ where
 import DDC.War.Interface.Config
 import DDC.War.Job
 import System.FilePath
-import Data.List
 import Data.Set                                 (Set)
 import qualified DDC.War.Job.CompileDCE         as CompileDCE
 import qualified DDC.War.Job.RunExe             as RunExe
@@ -17,7 +16,7 @@ import qualified Data.Set                       as Set
 -- | Compile and run .dce files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | isSuffixOf "Main.dce" filePath
+ | takeFileName filePath == "Main.dce"
  = let  
         sourceDir        = takeDirectory  filePath
         buildDir         = sourceDir </> "war-" ++ wayName way

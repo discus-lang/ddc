@@ -99,11 +99,11 @@ controller config gang chainsTotal chanResult
 --   or False if we should shut down and return to the caller.
 handleResult :: Config -> Gang -> Int -> JobResult -> IO Bool
 handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
- | ProductStatus jobName testName status <- product
+ | ProductStatus jobName wayName testName status <- product
  = do   dirWorking      <- getCurrentDirectory
         let testName2    = fromMaybe testName  (stripPrefix dirWorking testName)
         let testName3    = fromMaybe testName2 (stripPrefix "/"        testName2)
-        let width       = configFormatPathWidth config
+        let width        = configFormatPathWidth config
 
         putStrLn 
          $ render 
@@ -114,6 +114,7 @@ handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
                         <> text "/" 
                         <> ppr chainsTotal)
            <+> padL width (text testName3)
+           <+> padL 8     (text wayName)
            <+> padL 8     (text jobName)
            <+> colorizeStatus config jobName (render status)
 
@@ -123,16 +124,16 @@ handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
 
  -- If a file is different than expected in batch mode,
  --   then just print the status.
- | ProductDiff jobName testName _ _ _        <- product
+ | ProductDiff jobName wayName testName _ _ _        <- product
  , configBatch config
  = handleResult config gang chainsTotal 
         $ JobResult chainIx jobIx job 
-        $ ProductStatus testName jobName (text "failed")
+        $ ProductStatus testName wayName jobName (text "failed")
 
 
  -- If a file is different than expected in interactive mode,
  --   then ask the user what to do about it.
- | ProductDiff _ _ fileRef fileOut fileDiff <- product
+ | ProductDiff _ _ _ fileRef fileOut fileDiff <- product
  , not $ configBatch config
  = do	
 	putStr	$  "\n"
@@ -210,12 +211,12 @@ colorizeStatus config jobName status
         = colorDoc [Foreground Green] (text status)
 
         | isPrefixOf "success" status
-        , jobName == "compile"
-        = colorDoc [Foreground Blue]  (text status)
+        , jobName == "run"
+        = colorDoc [Foreground Green] (text status)
 
         | isPrefixOf "success" status
-        , jobName == "run"
-        = colorDoc [Foreground Green, Bold] (text status)
+        , jobName == "compile"
+        = colorDoc [Foreground Blue]  (text status)
 
         | isPrefixOf "failed"  status
         = colorDoc [Foreground Red]   (text status)

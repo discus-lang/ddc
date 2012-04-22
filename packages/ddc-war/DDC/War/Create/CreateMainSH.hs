@@ -5,7 +5,6 @@ where
 import DDC.War.Interface.Config
 import DDC.War.Job
 import System.FilePath
-import Data.List
 import Data.Set                                 (Set)
 import qualified DDC.War.Job.Shell              as Shell
 import qualified DDC.War.Job.Diff               as Diff
@@ -15,7 +14,7 @@ import qualified Data.Set                       as Set
 -- | Run Main.sh files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | isSuffixOf "Main.sh" filePath
+ | takeFileName filePath == "Main.sh"
  = let
         sourceDir       = takeDirectory  filePath
         buildDir        = sourceDir </> "war-" ++ wayName way
