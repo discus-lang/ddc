@@ -56,7 +56,7 @@ data Result
 instance Pretty Result where
  ppr result 
   = case result of
-        ResultSuccess time      -> text "success" <+> parens (ppr seconds)
+        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
         ResultFailure           -> text "failed"
 
 
