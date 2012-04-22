@@ -7,7 +7,7 @@ module DDC.War.Interface.Controller
 	, controller)
 where
 import DDC.War.Interface.Config
-import DDC.War.Job
+import DDC.War.Driver
 import BuildBox.Pretty
 import BuildBox.Control.Gang
 import System.IO

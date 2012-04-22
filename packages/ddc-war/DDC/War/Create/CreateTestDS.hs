@@ -3,9 +3,10 @@ module DDC.War.Create.CreateTestDS
         (create)
 where
 import DDC.War.Interface.Config
-import DDC.War.Job
+import DDC.War.Driver
 import System.FilePath
 import Data.List
+import DDC.War.Job                              ()
 import Data.Set                                 (Set)
 import qualified DDC.War.Job.CompileDS          as CompileDS
 import qualified DDC.War.Job.Diff               as Diff

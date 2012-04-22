@@ -4,8 +4,9 @@ module DDC.War.Create.CreateDCE
         (create)
 where
 import DDC.War.Interface.Config
-import DDC.War.Job
+import DDC.War.Driver
 import System.FilePath
+import DDC.War.Job                              ()
 import Data.Set                                 (Set)
 import qualified DDC.War.Job.CompileDCE         as CompileDCE
 import qualified DDC.War.Job.RunExe             as RunExe

@@ -29,7 +29,7 @@ module DDC.War.Create
         (create)
 where
 import DDC.War.Interface.Config
-import DDC.War.Job
+import DDC.War.Driver
 import Data.Maybe
 import Data.Set                                 (Set)
 import qualified DDC.War.Create.CreateMainSH    as CreateMainSH

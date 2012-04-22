@@ -3,9 +3,10 @@ module DDC.War.Create.CreateMainSH
         (create)
 where
 import DDC.War.Interface.Config
-import DDC.War.Job
+import DDC.War.Driver
 import System.FilePath
 import Data.Set                                 (Set)
+import DDC.War.Job                              ()
 import qualified DDC.War.Job.Shell              as Shell
 import qualified DDC.War.Job.Diff               as Diff
 import qualified Data.Set                       as Set

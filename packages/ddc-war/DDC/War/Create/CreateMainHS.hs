@@ -3,8 +3,9 @@ module DDC.War.Create.CreateMainHS
         (create)
 where
 import DDC.War.Interface.Config
-import DDC.War.Job
+import DDC.War.Driver
 import System.FilePath
+import DDC.War.Job                              ()
 import Data.Set                                 (Set)
 import qualified DDC.War.Job.CompileHS          as CompileHS
 import qualified DDC.War.Job.RunExe             as RunExe

@@ -3,9 +3,10 @@ module DDC.War.Create.CreateMainDS
         (create)
 where
 import DDC.War.Interface.Config
-import DDC.War.Job
+import DDC.War.Driver
 import System.FilePath
 import Data.Set                                 (Set)
+import DDC.War.Job                              ()
 import qualified DDC.War.Job.CompileDS          as CompileDS
 import qualified DDC.War.Job.RunExe             as RunExe
 import qualified DDC.War.Job.Diff               as Diff
