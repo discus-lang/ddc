@@ -1,9 +1,7 @@
 
 -- | Gang controller and user interface.
 module DDC.War.Interface.Controller
-	( JobResult    (..)
-        , Product      (..)
-	, ChanResult
+	( ChanResult
 	, controller)
 where
 import DDC.War.Interface.Config
@@ -22,18 +20,9 @@ import Data.List
 import qualified System.Cmd
 
 
--- | Description of a job and the product we got from running it.
-data JobResult
- 	= JobResult 
-	{ jobResultChainIx	:: Int
-	, jobResultJobIx	:: Int
-	, jobResultJob		:: Job
-	, jobResultProduct	:: Product }
-
-
 -- | Channel to write test job results to.
 type ChanResult
-	= TChan JobResult
+	= TChan Result
 
 	
 -- | Gang controller and user interface for the war test driver.
@@ -44,13 +33,13 @@ controller
 	-> Gang
 	-> Int		-- ^ total number of chains
 	-> ChanResult	-- ^ channel to receive results from
-	-> IO [JobResult]
+	-> IO [Result]
 
 controller config gang chainsTotal chanResult
  = liftM reverse $ go_start []
  where	
 	-- See if there is an input on the console.
-        go_start :: [JobResult] -> IO [JobResult]
+        go_start :: [Result] -> IO [Result]
 	go_start jobResults
 	 =  hReady stdin >>= \gotInput
 	 -> if gotInput
@@ -97,8 +86,8 @@ controller config gang chainsTotal chanResult
 -- | Handle a job result.
 --   Returns True if the controller should continue, 
 --   or False if we should shut down and return to the caller.
-handleResult :: Config -> Gang -> Int -> JobResult -> IO Bool
-handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
+handleResult :: Config -> Gang -> Int -> Result -> IO Bool
+handleResult config gang chainsTotal (Result chainIx jobIx job product)
  | ProductStatus jobName wayName testName status <- product
  = do   dirWorking      <- getCurrentDirectory
         let testName2    = fromMaybe testName  (stripPrefix dirWorking testName)
@@ -127,7 +116,7 @@ handleResult config gang chainsTotal (JobResult chainIx jobIx job product)
  | ProductDiff jobName wayName testName _ _ _        <- product
  , configBatch config
  = handleResult config gang chainsTotal 
-        $ JobResult chainIx jobIx job 
+        $ Result chainIx jobIx job 
         $ ProductStatus testName wayName jobName (text "failed")
 
 

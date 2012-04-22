@@ -3,26 +3,30 @@ module DDC.War.Driver.Base
         ( Job           (..)
         , Chain         (..)
         , Product       (..)
+        , Result        (..)
         , Spec          (..))
 where
 import BuildBox.Pretty
 import BuildBox
 
+
 -- | A single job to run.
+--   The exact specification and action is defined by the client.
 data Job
         =  forall spec result. Spec spec result
         => Job spec (Build result)
 
 
 -- | A chain of jobs to run one after another.
---   If one job in the chain fails then we skip the rest.
+--   Jobs later in the list are dependent on earlier ones, so if a job fails
+--   then we skip the rest.
 data Chain
         = Chain [Job]
 
 
 -- | The product that we got when running a job.
---   This is all the information that the interactive interface needs 
---   to worry about.
+--   This is the information that the interactive interface needs to decide
+--   how to proceed. 
 data Product
         = ProductStatus 
         { productJobName        :: String
@@ -37,6 +41,15 @@ data Product
         , productDiffRef        :: FilePath
         , productDiffOut        :: FilePath
         , productDiffDiff       :: FilePath }
+
+
+-- | Description of a job and the product we got from running it.
+data Result
+        = Result 
+        { resultChainIx      :: Int
+        , resultJobIx        :: Int
+        , resultJob          :: Job
+        , resultProduct      :: Product }
 
 
 -- Spec -----------------------------------------------------------------------

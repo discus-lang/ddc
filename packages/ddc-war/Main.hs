@@ -121,7 +121,7 @@ runChains
 	:: Config 	-- ^ war configuration
 	-> ChanResult	-- ^ channel to write job results to
 	-> [Chain]      -- ^ chains of jobs
-	-> IO [JobResult]
+	-> IO [Result]
 
 runChains config chanResult chains
  = do	
@@ -185,7 +185,7 @@ runJob
 	-> Int			-- ^ index of this chain
 	-> Int			-- ^ index of this job of the chain
 	-> Job			-- ^ the job to run
-	-> Build JobResult
+	-> Build Result
 
 runJob config mChanResult chainNum jobNum job@(Job spec builder)  
  = do	
@@ -194,7 +194,7 @@ runJob config mChanResult chainNum jobNum job@(Job spec builder)
 
         -- Convert the result into the product the controller wants.
         let product     = productOfResult spec result
-	let jobResult   = JobResult chainNum jobNum job product
+	let jobResult   = Result chainNum jobNum job product
 
         case mChanResult of
          Just chanResult
