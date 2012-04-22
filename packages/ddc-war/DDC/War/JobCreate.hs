@@ -84,7 +84,7 @@ createJobs config way allFiles filePath
 
 		 -- compile the .ds into a .bin
 		 compile 	= JobCompile 	testName (wayName way) filePath
-		 				(wayOptsComp way) ["-M50M"]
+		 				(wayOptsComp way) ["-M60M"]
 						buildDir mainCompStdout mainCompStderr
 						(Just mainBin) shouldSucceed
 
