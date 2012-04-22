@@ -4,6 +4,7 @@ import DDC.War.Interface.Config
 
 import DDC.War.Create
 import DDC.War.Driver
+import DDC.War.Driver.Chain
 
 import Util.Options
 import Util.Options.Help
@@ -130,7 +131,7 @@ runChains config chanResult chains
 	
 	-- Fork a gang to run all the job chains.
 	gang	<- forkGangActions (configThreads config)
-	 	$ zipWith (runChain config (Just chanResult) chainsTotal)
+	 	$ zipWith (runChainIO config (Just chanResult))
 			[1..]
 			chains
 
@@ -153,58 +154,26 @@ runChains config chanResult chains
 	return results
 	
 
+-- | Run a chain of jobs in the IO monad,
+--   writing job results to the given channel when they finish.
+runChainIO 
+        :: Config
+        -> Maybe (TChan Result)
+        -> Int
+        -> Chain
+        -> IO ()
 
--- | Run a job chain, printing the results to the console.
---   If any job in the chain fails, then skip the rest.
-runChain 
-	:: Config	       -- ^ war configuration
-	-> Maybe ChanResult    -- ^ channel to write job results to
-	-> Int	               -- ^ total number of chains
-	-> Int		       -- ^ index of this chain
-	-> Chain       	       -- ^ chain of jobs to run
-	-> IO ()
-
-runChain config mChanResult chainsTotal chainNum (Chain jobs)
- = do	uid		<- getUniqueId
-	let state	= (buildStateDefault uid "/tmp")
-			{ buildStateLogSystem
-				= if configDebug config
-					then Just stderr
-					else Nothing }
-	
+runChainIO config mChanResult ixChain chain
+ = do   uid             <- getUniqueId
+        let hLog        = if configDebug config then Just stderr else Nothing
+        let state       = (buildStateDefault uid "/tmp")
+                                { buildStateLogSystem = hLog }
+        
         runBuildWithState state
-         $  zipWithM (runJob config mChanResult chainNum) 
-                [1..] jobs
+         $ runChainWithTChan mChanResult ixChain chain
 
-        return ()
+	return ()
 
--- | Dispatch a single job of a chain.
-runJob
-	:: Config 		-- ^ war configuration
-	-> Maybe ChanResult	-- ^ channel to write results to
-	-> Int			-- ^ index of this chain
-	-> Int			-- ^ index of this job of the chain
-	-> Job			-- ^ the job to run
-	-> Build Result
-
-runJob config mChanResult chainNum jobNum job@(Job spec builder)  
- = do	
-	-- Run the job.
-        result          <- builder
-
-        -- Convert the result into the product the controller wants.
-        let product     = productOfResult spec result
-	let jobResult   = Result chainNum jobNum job product
-
-        case mChanResult of
-         Just chanResult
-          -> do -- Push the job product into the channel for display.
-        	io $ atomically $ writeTChan chanResult jobResult
-                return jobResult
-
-         Nothing 
-          ->    return jobResult
-		
 
 -- | Get a unique(ish) id for this process.
 --   The random seeds the global generator with the cpu time in psecs,
