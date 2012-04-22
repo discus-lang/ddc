@@ -4,19 +4,16 @@ import DDC.War.Interface.Config
 
 import DDC.War.Create
 import DDC.War.Driver
-import DDC.War.Driver.Chain
+import DDC.War.Driver.Gang
+
 
 import Util.Options
 import Util.Options.Help
-import BuildBox.Build.BuildState
-import BuildBox
 import BuildBox.Control.Gang
 import BuildBox.Pretty
 import BuildBox.IO.Directory
 import System.Environment
 import System.Directory
-import System.IO
-import System.Random
 import System.Exit
 import Control.Concurrent
 import Control.Concurrent.STM.TChan
@@ -129,22 +126,22 @@ runChains config chanResult chains
 	-- Count the total number of chains for the status display.
 	let chainsTotal	= length chains
 	
-	-- Fork a gang to run all the job chains.
-	gang	<- forkGangActions (configThreads config)
-	 	$ zipWith (runChainIO config (Just chanResult))
-			[1..]
-			chains
+        -- Fork a gang to run all the job chains.
+        gang    <- forkChainsIO 
+                        (configThreads config) ("/tmp")
+                        (Just chanResult) chains
 
-	-- Fork the gang controller that manages the console and handles
-	-- user input.
-	varResults	<- newEmptyMVar
-	jobResults      
-	 <- forkIO 
-	 $ do   results <- controller config gang chainsTotal chanResult
-	        putMVar varResults results
-	 `finally` (putMVar varResults [])
+        -- Fork the gang controller that manages the console and handles
+        -- user input.
+        varResults      <- newEmptyMVar
+        jobResults      
+         <- forkIO 
+         $ do   results <- controller config gang chainsTotal chanResult
+                putMVar varResults results
+         `finally` (putMVar varResults [])
 
-	-- Wait until the controller to finished
+
+	-- Wait for the controller to finish.
 	results <- takeMVar varResults
 
 	-- Wait until the gang is finished running chains, 
@@ -154,31 +151,4 @@ runChains config chanResult chains
 	return results
 	
 
--- | Run a chain of jobs in the IO monad,
---   writing job results to the given channel when they finish.
-runChainIO 
-        :: Config
-        -> Maybe (TChan Result)
-        -> Int
-        -> Chain
-        -> IO ()
-
-runChainIO config mChanResult ixChain chain
- = do   uid             <- getUniqueId
-        let hLog        = if configDebug config then Just stderr else Nothing
-        let state       = (buildStateDefault uid "/tmp")
-                                { buildStateLogSystem = hLog }
-        
-        runBuildWithState state
-         $ runChainWithTChan mChanResult ixChain chain
-
-	return ()
-
-
--- | Get a unique(ish) id for this process.
---   The random seeds the global generator with the cpu time in psecs,
---   which should be good enough.
-getUniqueId :: IO Integer
-getUniqueId
- 	= randomRIO (0, 1000000000)	
 
