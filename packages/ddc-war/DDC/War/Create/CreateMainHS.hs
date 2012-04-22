@@ -33,6 +33,7 @@ create way allFiles filePath
         run             = jobOfSpec $ RunExe.Spec
                                 testName (wayName way) filePath mainBin
                                 mainRunStdout mainRunStderr
+                                True
 
    in   Just $ Chain [compile, run]
 

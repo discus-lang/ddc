@@ -51,6 +51,7 @@ create way allFiles filePath
         run              = jobOfSpec $ RunExe.Spec
                                 testName (wayName way) filePath mainBin
                                 mainRunStdout mainRunStderr
+                                True
 
         -- diff errors produced by the compilation
         diffError        = jobOfSpec $ Diff.Spec

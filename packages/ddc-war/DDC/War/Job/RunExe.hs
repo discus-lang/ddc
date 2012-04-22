@@ -31,13 +31,17 @@ data Spec
         , specRunStdout  :: FilePath
                 
           -- | Put what binary said on stderr here.
-        , specRunStderr  :: FilePath }
+        , specRunStderr  :: FilePath 
+
+          -- | True if we expect the executable to succeed.
+        , specShouldSucceed :: Bool }
         deriving Show
 
 
 data Result
-        = ResultFailure
-        | ResultSuccess Seconds
+        = ResultSuccess Seconds
+        | ResultUnexpectedFailure
+        | ResultUnexpectedSuccess
         deriving Show
 
 
@@ -45,13 +49,15 @@ instance Pretty Result where
  ppr result 
   = case result of
         ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
-        ResultFailure           -> text "failed"
+        ResultUnexpectedFailure -> text "failed"
+        ResultUnexpectedSuccess -> text "unexpected"
 
 
 -- | Run a binary
 build :: Spec -> Build Result
 build (Spec     testName _wayName _fileName
-		mainBin mainRunOut mainRunErr)
+		mainBin mainRunOut mainRunErr
+                shouldSucceed)
  = do	
         needs mainBin
  
@@ -65,7 +71,10 @@ build (Spec     testName _wayName _fileName
 	atomicWriteFile mainRunErr strErr
 	
         case code of
-         ExitSuccess    -> return $ ResultSuccess time
-         _              -> return $ ResultFailure
+         ExitFailure _
+          | shouldSucceed       -> return ResultUnexpectedFailure
 
-	
+         ExitSuccess    
+          | not shouldSucceed   -> return ResultUnexpectedSuccess
+
+         _                      -> return $ ResultSuccess time
