@@ -34,7 +34,7 @@ create way allFiles filePath
         -- Compile the .ds file
         compile         = jobOfSpec $ CompileDS.Spec
                                 testName (wayName way) filePath
-                                (wayOptsComp way) ["-M30M"]
+                                (wayOptsComp way) ["-M50M"]
                                 buildDir testCompStdout testCompStderr
                                 Nothing shouldSucceed
 

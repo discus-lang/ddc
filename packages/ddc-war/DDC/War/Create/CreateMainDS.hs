@@ -52,7 +52,7 @@ create way allFiles filePath
         compShouldSucceed  = not $ Set.member mainErrorCheck allFiles
         jobCompile         = jobOfSpec $ CompileDS.Spec
                                 testName (wayName way) filePath
-                                (wayOptsComp way) ["-M40M"]
+                                (wayOptsComp way) ["-M60M"]
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) compShouldSucceed
 
