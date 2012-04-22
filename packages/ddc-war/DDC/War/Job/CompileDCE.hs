@@ -13,8 +13,8 @@ import BuildBox.Pretty
 import BuildBox
 import System.FilePath
 import System.Directory
-import Data.ListUtil
 import Control.Monad
+import Data.List
 
 
 -- | Use ddci-core to compile/make file a DCE file
@@ -79,7 +79,7 @@ build   (Spec   testName _wayName srcDCE
                 $  liftM (filter (\f -> isSuffixOf ".dce" f))
                 $  lsFilesIn srcDir
 
-        qssystem $ "touch " ++ (catInt " " sources)
+        qssystem $ "touch " ++ (intercalate " " sources)
 
         -- ensure the output directory exists
         ensureDir buildDir

@@ -13,8 +13,8 @@ import BuildBox.Pretty
 import BuildBox
 import System.FilePath
 import System.Directory
-import Data.ListUtil
 import Control.Monad
+import Data.List
 
 
 -- | Use GHC to compile/make file.
@@ -79,7 +79,7 @@ build  (Spec    testName _wayName srcHS optionsGHC
 		$  liftM (filter (\f -> isSuffixOf ".hs" f))
 		$  lsFilesIn srcDir
 
-	qssystem $ "cp " ++ (catInt " " sources) ++ " " ++ buildDir
+	qssystem $ "cp " ++ (intercalate " " sources) ++ " " ++ buildDir
 
 	-- The copied version of the root source file.
 	let srcCopyHS	= buildDir ++ "/" ++ srcFile

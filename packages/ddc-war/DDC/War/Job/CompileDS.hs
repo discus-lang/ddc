@@ -13,8 +13,8 @@ import BuildBox.Pretty
 import BuildBox
 import System.FilePath
 import System.Directory
-import Data.ListUtil
 import Control.Monad
+import Data.List
 
 
 -- | Use DDC to compile a source file.
@@ -84,7 +84,7 @@ build (Spec     testName _wayName srcDS optionsDDC optionsRTS
 		$  liftM (filter (\f -> isSuffixOf ".ds" f || isSuffixOf ".build" f))
 		$  lsFilesIn srcDir
 
-	qssystem $ "touch " ++ (catInt " " sources)
+	qssystem $ "touch " ++ (intercalate " " sources)
 
 	-- ensure the output directory exists
 	ensureDir buildDir
@@ -104,8 +104,8 @@ build (Spec     testName _wayName srcDS optionsDDC optionsRTS
 				++ " -v -make "	  ++ srcDS
 				++ " -o "	  ++ mainBin
 				++ " -outputdir " ++ buildDir
-				++ " " 		  ++ catInt " " optionsDDC
-				++ " +RTS "	  ++ catInt " " optionsRTS)
+				++ " " 		  ++ intercalate " " optionsDDC
+				++ " +RTS "	  ++ intercalate " " optionsRTS)
 				""
 
 
@@ -116,8 +116,8 @@ build (Spec     testName _wayName srcDS optionsDDC optionsRTS
 				(ddcBin'
 				++ " -c "	  ++ srcDS
 				++ " -outputdir " ++ buildDir
-				++ " " 		  ++ catInt " " optionsDDC
-				++ " +RTS "	  ++ catInt " " optionsRTS)
+				++ " " 		  ++ intercalate " " optionsDDC
+				++ " +RTS "	  ++ intercalate " " optionsRTS)
 				""
 
 	(time, (code, strOut, strErr))
