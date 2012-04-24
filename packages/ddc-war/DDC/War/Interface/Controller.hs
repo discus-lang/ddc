@@ -41,15 +41,13 @@ controller config gang chainsTotal chanResult
 	-- See if there is an input on the console.
         go_start :: [Result] -> IO [Result]
 	go_start jobResults
-	 = do  putStrLn "check eof"
-               hIsEOF stdin >>= \eof
+	 = hIsEOF stdin >>= \eof
                  -> if eof 
                         then go_checkResult jobResults
                         else go_start2 jobResults
 
         go_start2 jobResults
-         = do   putStrLn "check hReady"
-                hReady stdin >>= \gotInput
+         = hReady stdin >>= \gotInput
         	 -> if gotInput
 	       	       then go_input jobResults
         	       else go_checkResult jobResults
