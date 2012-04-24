@@ -1,9 +1,21 @@
 
 module DDC.War.Interface.Config
-	( Way          (..)
+	( Mode         (..)
+        , Way          (..)
         , Config       (..)
         , defaultConfig)
 where
+
+
+-- | Operation mode.
+data Mode
+        -- | Just run the tests from the current directory.
+        = ModeTest
+
+        -- | Download the repo.
+        | ModeNightly
+        deriving (Eq, Show)
+
 
 -- | A way to build the test.
 --   This holds extra options to pass to the program.
@@ -20,6 +32,9 @@ data Config
 	= Config 
         { -- | Whether to emit debugging info for war.
 	  configDebug		:: Bool
+
+          -- | Operation mode
+        , configMode            :: Mode
 
         -- | Whether to run in batch mode with no color and no interactive
         --      test failure resolution.
@@ -50,6 +65,7 @@ defaultConfig :: Config
 defaultConfig
         = Config
         { configDebug           = False
+        , configMode            = ModeTest
         , configBatch           = False
         , configClean           = False
         , configThreads         = 1

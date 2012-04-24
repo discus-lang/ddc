@@ -45,6 +45,9 @@ parseOptions args0 config0
         | elem arg ["-help", "--help"]
         = printUsage Nothing
 
+        | elem arg ["-nightly"]
+        = eat rest $ config { configMode  = ModeNightly }
+
         | elem arg ["-d", "-debug"]
         = eat rest $ config { configDebug = True }
 

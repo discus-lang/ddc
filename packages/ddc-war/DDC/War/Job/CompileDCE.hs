@@ -79,7 +79,7 @@ build   (Spec   testName _wayName srcDCE
                 $  liftM (filter (\f -> isSuffixOf ".dce" f))
                 $  lsFilesIn srcDir
 
-        qssystem $ "touch " ++ (intercalate " " sources)
+        ssystemq $ "touch " ++ (intercalate " " sources)
 
         -- ensure the output directory exists
         ensureDir buildDir
@@ -89,7 +89,7 @@ build   (Spec   testName _wayName srcDCE
         let compile
                 | Just mainBin  <- mMainBin
                 = do    -- If there is an existing binary then remove it.
-                        qssystem $ "rm -f " ++ mainBin
+                        ssystemq $ "rm -f " ++ mainBin
 
                         -- Build the program.
                         timeBuild

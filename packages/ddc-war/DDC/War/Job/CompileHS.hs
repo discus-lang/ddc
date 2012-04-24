@@ -79,7 +79,7 @@ build  (Spec    testName _wayName srcHS optionsGHC
 		$  liftM (filter (\f -> isSuffixOf ".hs" f))
 		$  lsFilesIn srcDir
 
-	qssystem $ "cp " ++ (intercalate " " sources) ++ " " ++ buildDir
+	ssystemq $ "cp " ++ (intercalate " " sources) ++ " " ++ buildDir
 
 	-- The copied version of the root source file.
 	let srcCopyHS	= buildDir ++ "/" ++ srcFile

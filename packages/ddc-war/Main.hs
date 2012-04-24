@@ -7,8 +7,13 @@ import DDC.War.Create
 import DDC.War.Driver
 import DDC.War.Driver.Gang
 
+import qualified DDC.War.Task.Nightly   as Nightly
+
 import BuildBox.Control.Gang
 import BuildBox.IO.Directory
+import BuildBox.Pretty
+import BuildBox
+
 import System.Environment
 import System.Directory
 import Control.Concurrent
@@ -23,12 +28,40 @@ import qualified Data.Set		as Set
 import qualified Data.Traversable	as Seq
 
 
+
 main :: IO ()
 main 
  = do	-- Parse command line options, and exit if they're no good.
 	args           <- getArgs
 	let config      = parseOptions args defaultConfig
-		
+	
+        case configMode config of
+         ModeNightly    -> mainNightly config
+         ModeTest       -> mainTest config
+
+
+-- | Run the nightly build.
+mainNightly :: Config -> IO ()
+mainNightly config
+ = let spec
+         = Nightly.Spec
+         { Nightly.specRemoteSnapshotURL = "http://code.ouroborus.net/ddc/snapshot/ddc-head-latest.tgz"
+         , Nightly.specRemoteRepoURL     = "http://code.ouroborus.net/ddc/ddc-head"
+         , Nightly.specLocalBuildDir     = "." 
+         , Nightly.specRelPackageDir     = "ddc-head" 
+         , Nightly.specBuildThreads      = 4 }
+
+   in do
+        result  <- runBuild "/tmp" $ Nightly.build spec
+        case result of
+         Left err       -> error    $ render $ ppr err
+         Right result   -> putStrLn $ render $ ppr result
+
+
+-- | Run tests from the provided directories
+mainTest :: Config -> IO ()
+mainTest config
+ = do	
 	-- All the starting test directories from the command line.
 	testDirs       <- mapM (makeRelativeToCurrentDirectory <=< canonicalizePath)
                         $  configTestDirs config

@@ -84,7 +84,7 @@ build (Spec     testName _wayName srcDS optionsDDC optionsRTS
 		$  liftM (filter (\f -> isSuffixOf ".ds" f || isSuffixOf ".build" f))
 		$  lsFilesIn srcDir
 
-	qssystem $ "touch " ++ (intercalate " " sources)
+	ssystemq $ "touch " ++ (intercalate " " sources)
 
 	-- ensure the output directory exists
 	ensureDir buildDir
@@ -95,7 +95,7 @@ build (Spec     testName _wayName srcDS optionsDDC optionsRTS
 		| Just mainBin	<- mMainBin
 		= do	
 			-- If there is an existing binary then remove it.
-			qssystem $ "rm -f " ++ mainBin
+			ssystemq $ "rm -f " ++ mainBin
 
 			-- Build the program.
 	 		timeBuild 
