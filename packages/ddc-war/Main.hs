@@ -104,6 +104,8 @@ mainTest config
 	-- Run all the chains.
 	results <- runChains config chanResult chains
 	
+        -- TODO: gather up failed tests and write to file.
+
 	return ()
 
 

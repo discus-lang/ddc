@@ -38,8 +38,15 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
  = do   
         ensureDir dirBuild
         inDir     dirBuild
-         $ do {- outLn "* Downloading snapshot"
-                ssystem $ "wget --progress=bar " ++ urlSnapshot
+         $ do 
+                {-
+                outLn "* Creating log directory"
+                ensureDir "log"
+                
+                outLn "* Downloading snapshot"
+                (getOut, getErr) <- ssystem $ "wget --progress=bar " ++ urlSnapshot
+                io $ writeFile "log/01-wget.stdout" getOut
+                io $ writeFile "log/01-wget.stderr" getErr
 
                 needs (takeFileName urlSnapshot)
                 outLn "* Unpacking snapshot"
@@ -47,7 +54,9 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
                 -}
                 inDir dirPackage
                  $ do{-   outLn "* Updating shapshot"
-                        ssystem $ "darcs pull -av " ++ urlRepo
+                        (darcsOut, darcsErr) <- ssystem $ "darcs pull -av " ++ urlRepo
+                        io $ writeFile "../log/02-darcs.stdout" darcsOut
+                        io $ writeFile "../log/02-darcs.stderr" darcsErr
 
                         outLn "* Writing build config"
                         needs "make"
@@ -55,13 +64,22 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
                            $ unlines ["THREADS = " ++ show buildThreads]
 
                         outLn "* Building project"
+                        needs "Makefile"
                         ssystem $ "make nightly"
                      -}
                         outLn "* Building project"
-                        ssystemTee True ("make totallogwar") ""
+                        (makeOut, makeErr) <- ssystem "make totallogwar"
+                        io $ writeFile "../log/03-make.stdout" makeOut
+                        io $ writeFile "../log/03-make.stderr" makeErr
+
+                        -- TODO: make test mode drop summary of test results
+                        -- TODO: copy results into log dir
+
+                        -- TODO: scp results to log server
+                        -- TODO: mail results
+
                         return ()
 
-                        -- TODO: need to make controller keep running if we hit eof.
 
 
         return ResultSuccess
