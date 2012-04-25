@@ -66,7 +66,7 @@ runJob ixChain ixJob job@(Job spec builder)
 
         -- Convert the result into the product the controller wants.
         let product     = productOfResult spec result
-        let jobResult   = Result ixChain ixJob job product
+        let jobResult   = Result ixChain ixJob product
 
         return jobResult
 

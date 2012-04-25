@@ -90,49 +90,60 @@ build spec
                 [ concat $ map (\way -> create way testFilesSortedSet file) ways'
                 | file <- testFilesSorted]
 
-        -- Channel for threads to write their results to.
-        (chanResult :: Controller.ChanResult)
-                <- io $ atomically $ newTChan
-
         -- Run all the chains.
-        results <- io $ runChains spec chanResult chains
+        results <- io $ runChainsWithControllerIO spec chains
         
         -- TODO: gather up failed tests and write to file.
 
         return ResultSuccess
 
 
--- | Run some job chains.
-runChains
-        :: Spec                    -- ^ war configuration
-        -> Controller.ChanResult   -- ^ channel to write job results to
-        -> [Chain]                 -- ^ chains of jobs
+-- | Fork threads to run job chains.
+--      We display test results interactivly on the console,
+--      as well as allowing the user to interrupt by pressing ENTER.
+--
+--      In batch mode: if we get a ResultDiff saying a test file is different
+--      then just treat it as failed.
+--
+--      In non-batch mode: if we get a ResultDiff then use the controller
+--      to ask the user what to do about it interactively.
+--
+runChainsWithControllerIO
+        :: Spec                 -- ^ Build configuration.
+        -> [Chain]              -- ^ Chains of jobs to run.
         -> IO [Driver.Result]
 
-runChains spec chanResult chains
+runChainsWithControllerIO spec chains
  = do   
         -- Count the total number of chains for the status display.
         let chainsTotal = length chains
-        
-        let configController
-                = Controller.Config
-                { Controller.configFormatPathWidth      = specFormatPathWidth spec
-                , Controller.configBatch                = specBatch spec }
 
+        -- Create a new channel to communicate between the test driver  and the
+        -- controller. As each test finishes, the driver writes the result to the
+        -- channel, and the controller reads the results and displays them 
+        -- on the console.
+        (chanResult :: TChan Driver.Result)
+                <- atomically $ newTChan
+        
         -- Fork a gang to run all the job chains.
         gang    <- Driver.forkChainsIO 
-                        (specThreads spec) ("/tmp")
+                        (specThreads spec) "/tmp"
                         (Just chanResult) chains
 
-        -- Fork the gang controller that manages the console and handles
-        -- user input.
+        -- Fork the controller to display results and manage user input.
+        --   When the controller it done it also writes all the results
+        --   it received to an MVar to send them back to the main thread.
+        let configController
+                = Controller.Config
+                { Controller.configFormatPathWidth = specFormatPathWidth spec
+                , Controller.configBatch           = specBatch spec }
+
         varResults      <- newEmptyMVar
         jobResults      
          <- forkIO 
          $ do   results <- Controller.controller configController gang chainsTotal chanResult
                 putMVar varResults results
          `finally` (putMVar varResults [])
-
 
         -- Wait for the controller to finish.
         results <- takeMVar varResults

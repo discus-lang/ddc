@@ -1,6 +1,7 @@
 
 module DDC.War.Driver.Base
         ( Job           (..)
+        , JobId         (..)
         , Chain         (..)
         , Product       (..)
         , Result        (..)
@@ -16,6 +17,12 @@ data Job
         =  forall spec result. Spec spec result
         => Job spec (Build result)
 
+data JobId
+        = JobId
+        { jobIdName             :: String
+        , jobIdWay              :: String
+        , jobIdTestName         :: String }
+        deriving Show
 
 -- | A chain of jobs to run one after another.
 --   Jobs later in the list are dependent on earlier ones, so if a job fails
@@ -29,26 +36,20 @@ data Chain
 --   how to proceed. 
 data Product
         = ProductStatus 
-        { productJobName        :: String
-        , productWayName        :: String
-        , productTestName       :: String
+        { productJobId          :: JobId
         , productStatus         :: Doc }
 
         | ProductDiff   
-        { productJobName        :: String
-        , productWayName        :: String
-        , productTestName       :: String
+        { productJobId          :: JobId
         , productDiffRef        :: FilePath
         , productDiffOut        :: FilePath
         , productDiffDiff       :: FilePath }
-
 
 -- | Description of a job and the product we got from running it.
 data Result
         = Result 
         { resultChainIx      :: Int
         , resultJobIx        :: Int
-        , resultJob          :: Job
         , resultProduct      :: Product }
 
 

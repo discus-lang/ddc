@@ -41,8 +41,12 @@ import qualified DDC.War.Create.CreateDCX       as CreateDCX
 import qualified DDC.War.Create.CreateDCE       as CreateDCE
 
 
--- | Create job chains based no this file.
-create :: Way -> Set FilePath -> FilePath -> [Chain]
+-- | Create job chains based on this file.
+create  :: Way                  -- ^ Create tests for this way.
+        -> Set FilePath         -- ^ All files in the test directory.
+        -> FilePath             -- ^ Create test chains based on this file.
+        -> [Chain]
+
 create way allFiles filePath
  =      catMaybes
         [ creat way allFiles filePath

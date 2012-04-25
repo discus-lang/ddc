@@ -1,8 +1,7 @@
 
 -- | Gang controller and user interface.
 module DDC.War.Interface.Controller
-	( ChanResult
-        , Config        (..)
+	( Config        (..)
 	, controller)
 where
 import DDC.War.Driver
@@ -20,10 +19,6 @@ import DDC.War.Interface.VT100      as VT100
 import qualified System.Cmd
 
 
--- | Channel to write test job results to.
-type ChanResult
-	= TChan Result
-
 data Config
         = Config
         { configFormatPathWidth :: Int
@@ -37,8 +32,8 @@ data Config
 controller 
 	:: Config
 	-> Gang
-	-> Int		-- ^ total number of chains
-	-> ChanResult	-- ^ channel to receive results from
+	-> Int		       -- ^ Total number of chains.
+	-> TChan Result        -- ^ Channel to receive results from.
 	-> IO [Result]
 
 controller config gang chainsTotal chanResult
@@ -99,8 +94,8 @@ controller config gang chainsTotal chanResult
 --   Returns True if the controller should continue, 
 --   or False if we should shut down and return to the caller.
 handleResult :: Config -> Gang -> Int -> Result -> IO Bool
-handleResult config gang chainsTotal (Result chainIx jobIx job product)
- | ProductStatus jobName wayName testName status <- product
+handleResult config gang chainsTotal (Result chainIx jobIx product)
+ | ProductStatus (JobId jobName wayName testName) status <- product
  = do   dirWorking      <- getCurrentDirectory
         let testName2    = fromMaybe testName  (stripPrefix dirWorking testName)
         let testName3    = fromMaybe testName2 (stripPrefix "/"        testName2)
@@ -125,16 +120,16 @@ handleResult config gang chainsTotal (Result chainIx jobIx job product)
 
  -- If a file is different than expected in batch mode,
  --   then just print the status.
- | ProductDiff jobName wayName testName _ _ _        <- product
+ | ProductDiff jobId _ _ _        <- product
  , configBatch config
  = handleResult config gang chainsTotal 
-        $ Result chainIx jobIx job 
-        $ ProductStatus testName wayName jobName (text "failed")
+        $ Result chainIx jobIx 
+        $ ProductStatus jobId (text "failed")
 
 
  -- If a file is different than expected in interactive mode,
  --   then ask the user what to do about it.
- | ProductDiff _ _ _ fileRef fileOut fileDiff <- product
+ | ProductDiff _ fileRef fileOut fileDiff <- product
  , not $ configBatch config
  = do	
 	putStr	$  "\n"
