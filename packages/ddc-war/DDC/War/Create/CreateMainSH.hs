@@ -28,14 +28,15 @@ create way allFiles filePath
         mainErrorCheck          = sourceDir </> "Main.error.check"
         shouldSucceed           = not $ Set.member mainErrorCheck allFiles
 
-        shell           = jobOfSpec $ Shell.Spec 
-                                testName (wayName way)
+        shell           = jobOfSpec (JobId testName (wayName way))
+                        $ Shell.Spec 
                                 filePath sourceDir buildDir
                                 mainShellStdout mainShellStderr
                                 shouldSucceed
 
-        diffError       = jobOfSpec $ Diff.Spec
-                                testName (wayName way) mainErrorCheck
+        diffError       = jobOfSpec (JobId testName (wayName way))
+                        $ Diff.Spec
+                                mainErrorCheck
                                 mainShellStderr mainShellStderrDiff
 
    in   Just $ Chain 

@@ -43,31 +43,36 @@ create way allFiles filePath
         shouldDiffStderr = Set.member mainStderrCheck allFiles
 
         -- compile the .ds into a .bin
-        compile          = jobOfSpec $ CompileDCE.Spec
-                                testName (wayName way) filePath
+        compile          = jobOfSpec (JobId testName (wayName way))
+                         $ CompileDCE.Spec
+                                filePath
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) shouldSucceed
 
         -- run the binary
-        run              = jobOfSpec $ RunExe.Spec
-                                testName (wayName way) filePath 
+        run              = jobOfSpec (JobId testName (wayName way))
+                         $ RunExe.Spec
+                                filePath 
                                 mainBin []
                                 mainRunStdout mainRunStderr
                                 True
 
         -- diff errors produced by the compilation
-        diffError        = jobOfSpec $ Diff.Spec
-                                testName (wayName way) mainErrorCheck
+        diffError        = jobOfSpec (JobId testName (wayName way))
+                         $ Diff.Spec
+                                mainErrorCheck
                                 mainCompStderr mainCompDiff
 
         -- diff the stdout of the run
-        diffStdout       = jobOfSpec $ Diff.Spec
-                                testName (wayName way) mainStdoutCheck
+        diffStdout       = jobOfSpec (JobId testName (wayName way))
+                         $ Diff.Spec
+                                mainStdoutCheck
                                 mainRunStdout mainStdoutDiff
 
         -- diff the stderr of the run
-        diffStderr       = jobOfSpec $ Diff.Spec
-                                testName (wayName way) mainStderrCheck
+        diffStderr       = jobOfSpec (JobId testName (wayName way))
+                         $ Diff.Spec
+                                mainStderrCheck
                                 mainRunStderr mainStderrDiff
 
    in   if Set.member mainSH allFiles

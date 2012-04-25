@@ -15,14 +15,8 @@ import Data.List
 -- | Run a binary.
 data Spec
         = Spec
-        { -- | Name of the test this job is a part of.
-          specTestName   :: String
-
-          -- | Name of the way we're running this test.
-        , specWayName    :: String
-
-          -- | The main source file this binary was built from.
-        , specFileSrc    :: FilePath
+        { -- | The main source file this binary was built from.
+          specFileSrc    :: FilePath
 
           -- | Binary to run.
         , specFileBin    :: FilePath 
@@ -58,7 +52,7 @@ instance Pretty Result where
 
 -- | Run a binary
 build :: Spec -> Build Result
-build (Spec     testName _wayName _fileName
+build (Spec     _fileName
 		mainBin args 
                 mainRunOut mainRunErr
                 shouldSucceed)

@@ -16,14 +16,8 @@ import System.Directory
 -- | Feed a file into DDCi-core        
 data Spec
         = Spec
-        { -- | Name of the test this job is a part of.
-          specTestName           :: String
-
-          -- | Name of the way we're running this test.
-        , specWayName            :: String
-                
-          -- | Root source file of the program (the 'Main.ds')
-        , specFile               :: FilePath 
+        { -- | Root source file of the program (the 'Main.ds')
+          specFile               :: FilePath 
                 
           -- | Scratch dir to do the build in.
         , specScratchDir         :: String
@@ -51,7 +45,7 @@ instance Pretty Result where
 
 -- | Compile a Haskell Source File
 build :: Spec -> Build Result
-build (Spec     testName _wayName srcDCX
+build (Spec     srcDCX
 		buildDir testRunStdout testRunStderr)
 
  = do	needs srcDCX

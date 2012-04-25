@@ -91,7 +91,7 @@ build spec
                 | file <- testFilesSorted]
 
         -- Run all the chains.
-        results <- io $ runChainsWithControllerIO spec chains
+        _results <- io $ runChainsWithControllerIO spec chains
         
         -- TODO: gather up failed tests and write to file.
 
@@ -118,6 +118,8 @@ runChainsWithControllerIO spec chains
         -- Count the total number of chains for the status display.
         let chainsTotal = length chains
 
+        putStrLn $ render $ ppr chains
+
         -- Create a new channel to communicate between the test driver  and the
         -- controller. As each test finishes, the driver writes the result to the
         -- channel, and the controller reads the results and displays them 
@@ -138,13 +140,15 @@ runChainsWithControllerIO spec chains
                 { Controller.configFormatPathWidth = specFormatPathWidth spec
                 , Controller.configBatch           = specBatch spec }
 
+        putStrLn "Forking controller"
         varResults      <- newEmptyMVar
-        jobResults      
+        _jobResults      
          <- forkIO 
          $ do   results <- Controller.controller configController gang chainsTotal chanResult
                 putMVar varResults results
          `finally` (putMVar varResults [])
 
+        putStrLn "Waiting for controller"
         -- Wait for the controller to finish.
         results <- takeMVar varResults
 

@@ -20,14 +20,8 @@ import Data.List
 -- | Use DDC to compile a source file.
 data Spec
         = Spec
-        { -- | Name of the test this job is a part of.
-          specTestName           :: String
-
-          -- | Name of the way we're running this test.
-        , specWayName            :: String
-                
-          -- | Root source file of the program (the 'Main.ds')
-        , specFile               :: FilePath 
+        { -- | Root source file of the program (the 'Main.ds')
+          specFile               :: FilePath 
                 
           -- | Extra DDC options for building in this way.
         , specOptionsDDC         :: [String] 
@@ -70,7 +64,7 @@ instance Pretty Result where
 
 -- | Compile a Disciple source file.
 build :: Spec -> Build Result
-build (Spec     testName _wayName srcDS optionsDDC optionsRTS
+build (Spec     srcDS optionsDDC optionsRTS
 		buildDir mainCompOut mainCompErr
 		mMainBin shouldSucceed)
 

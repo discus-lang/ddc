@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fno-warn-missing-signatures #-}
 -- | Generation of VT100 terminal control codes.
 module DDC.War.Interface.VT100 
         ( Color(..),            codeOfColor

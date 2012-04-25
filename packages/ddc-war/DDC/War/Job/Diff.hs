@@ -13,14 +13,8 @@ import BuildBox
 -- | Diff two files.
 data Spec
         = Spec
-        { -- | Name of the test this job is a part of.
-          specTestName   :: String
-
-          -- | Name of the way we're running this test.
-        , specWayName    :: String
-
-          -- | The baseline file.
-        , specFile       :: FilePath 
+        { -- | The baseline file.
+          specFile       :: FilePath 
                 
           -- | File produced that we want to compare with the baseline.
         , specFileOut    :: FilePath 
@@ -48,15 +42,14 @@ instance Pretty Result where
 
 -- | Compare two files for differences.
 build :: Spec -> Build Result
-build (Spec     testName _wayName 
-		fileRef fileOut fileDiff)
+build (Spec fileRef fileOut fileDiff)
  = do   needs fileRef
 	needs fileOut
 	
 	let diffExe	= "diff"
 	
 	-- Run the binary.
-	(code, strOut, strErr)
+	(_code, strOut, _strErr)
 	 <- systemTee False 
 	 	(diffExe ++ " " ++ fileRef ++ " " ++ fileOut)
 		""

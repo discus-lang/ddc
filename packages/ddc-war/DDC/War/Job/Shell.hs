@@ -15,14 +15,8 @@ import BuildBox
 -- | Run a shell script.
 data Spec
         = Spec
-        { -- | Name of the test this job is a part of.
-          specTestName           :: String
-
-          -- | Name of the way we're running this test.
-        , specWayName            :: String
-
-          -- | Shell script to run
-        , specShellSource        :: FilePath
+        { -- | Shell script to run
+          specShellSource        :: FilePath
 
           -- | Source dir that the script is in.
         , specSourceDir          :: FilePath
@@ -58,8 +52,7 @@ instance Pretty Result where
 
 -- | Run a binary
 build :: Spec -> Build Result
-build   (Spec   testName _wayName
-		mainSH sourceDir scratchDir
+build   (Spec   mainSH sourceDir scratchDir
 		mainRunOut mainRunErr
 		shouldSucceed)
  = do	

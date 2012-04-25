@@ -51,8 +51,9 @@ create way allFiles filePath
         -- compile the .ds into a .bin
         --   We expect the compile to fail if there is a Main.error.check file.
         compShouldSucceed  = not $ Set.member mainErrorCheck allFiles
-        jobCompile         = jobOfSpec $ CompileDS.Spec
-                                testName (wayName way) filePath
+        jobCompile         = jobOfSpec (JobId testName (wayName way))
+                           $ CompileDS.Spec
+                                filePath
                                 (wayOptsComp way) ["-M60M"]
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) compShouldSucceed
@@ -60,16 +61,18 @@ create way allFiles filePath
         -- If we expect the compile to fail, 
         --   then diff errors produced by the compilation
         shouldDiffCompError = not $ compShouldSucceed
-        jobDiffCompError    = jobOfSpec $ Diff.Spec
-                                testName (wayName way) mainErrorCheck
+        jobDiffCompError    = jobOfSpec (JobId testName (wayName way))
+                            $ Diff.Spec
+                                mainErrorCheck
                                 mainCompStderr mainCompStderrDiff
 
         -- If we expect the compile to succeed, then run the resulting binary.
         --   We expect the run to fail if there is a Main.runerror.check file.
         shouldRunExe        = compShouldSucceed
         runShouldSucceed    = not $ Set.member mainRunErrorCheck allFiles
-        jobRunExe           = jobOfSpec $ RunExe.Spec
-                                testName (wayName way) filePath 
+        jobRunExe           = jobOfSpec (JobId testName (wayName way))
+                            $ RunExe.Spec
+                                filePath 
                                 mainBin []
                                 mainRunStdout mainRunStderr
                                 runShouldSucceed
@@ -77,15 +80,17 @@ create way allFiles filePath
         -- If we expect the run to succeed,
         --   then diff the stdout of the run.
         shouldDiffStdout    = shouldRunExe && Set.member mainStdoutCheck allFiles
-        jobDiffStdout       = jobOfSpec $ Diff.Spec
-                                testName (wayName way) mainStdoutCheck
+        jobDiffStdout       = jobOfSpec (JobId testName (wayName way))
+                            $ Diff.Spec
+                                mainStdoutCheck
                                 mainRunStdout mainRunStdoutDiff
 
         -- If we expect the run to succeed,
         --   then diff the stderr of the run.
         shouldDiffStderr    = shouldRunExe && Set.member mainStderrCheck allFiles
-        jobDiffStderr       = jobOfSpec $ Diff.Spec
-                                testName (wayName way) mainStderrCheck
+        jobDiffStderr       = jobOfSpec (JobId testName (wayName way))
+                            $ Diff.Spec
+                                mainStderrCheck
                                 mainRunStderr mainRunStderrDiff
 
    in   if Set.member mainSH allFiles

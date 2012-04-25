@@ -14,7 +14,7 @@ import qualified DDC.War.Job.RunExe             as RunExe
 -- | Compile and run Main.hs files.
 --   When we run the exectuable, pass it out build dir as the first argument.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
-create way allFiles filePath
+create way _allFiles filePath
  | takeFileName filePath == "Main.hs"
  = let  
         sourceDir       = takeDirectory  filePath
@@ -27,13 +27,15 @@ create way allFiles filePath
         mainRunStdout   = buildDir </> "Main.run.stdout"
         mainRunStderr   = buildDir </> "Main.run.stderr"
 
-        compile         = jobOfSpec $ CompileHS.Spec
-                                testName (wayName way) filePath []
+        compile         = jobOfSpec (JobId testName (wayName way))
+                        $ CompileHS.Spec
+                                filePath []
                                 buildDir mainCompStdout mainCompStderr
                                 mainBin
 
-        run             = jobOfSpec $ RunExe.Spec
-                                testName (wayName way) filePath 
+        run             = jobOfSpec (JobId testName (wayName way))
+                        $ RunExe.Spec
+                                filePath 
                                 mainBin [buildDir]
                                 mainRunStdout mainRunStderr
                                 True

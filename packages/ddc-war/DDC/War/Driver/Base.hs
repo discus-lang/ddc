@@ -11,18 +11,25 @@ import BuildBox.Pretty
 import BuildBox
 
 
--- | A single job to run.
---   The exact specification and action is defined by the client.
-data Job
-        =  forall spec result. Spec spec result
-        => Job spec (Build result)
-
+-- | A printable job identifier.
 data JobId
         = JobId
-        { jobIdName             :: String
-        , jobIdWay              :: String
-        , jobIdTestName         :: String }
+        { jobIdName             :: String 
+        , jobIdWay              :: String }
         deriving Show
+
+
+
+-- | A single job to run.
+--   The exact specification is defined by the client.
+data Job
+        =  forall spec result. Spec spec result
+        => Job JobId String spec (Build result)
+
+instance Pretty Job where
+ ppr (Job jobId actionName spec _)
+  = text "Job" <+> text (show jobId) <+> text actionName <+> text (show spec)
+
 
 -- | A chain of jobs to run one after another.
 --   Jobs later in the list are dependent on earlier ones, so if a job fails
@@ -30,27 +37,31 @@ data JobId
 data Chain
         = Chain [Job]
 
+instance Pretty Chain where
+ ppr (Chain jobs)
+  =   text "Chain"
+  <+> ppr jobs
 
 -- | The product that we got when running a job.
 --   This is the information that the interactive interface needs to decide
 --   how to proceed. 
 data Product
         = ProductStatus 
-        { productJobId          :: JobId
-        , productStatus         :: Doc }
+        { productStatus         :: Doc }
 
         | ProductDiff   
-        { productJobId          :: JobId
-        , productDiffRef        :: FilePath
+        { productDiffRef        :: FilePath
         , productDiffOut        :: FilePath
         , productDiffDiff       :: FilePath }
 
 -- | Description of a job and the product we got from running it.
 data Result
         = Result 
-        { resultChainIx      :: Int
-        , resultJobIx        :: Int
-        , resultProduct      :: Product }
+        { resultChainIx         :: Int
+        , resultJobIx           :: Int
+        , resultJobId           :: JobId
+        , resultJobActionName   :: String
+        , resultProduct         :: Product }
 
 
 -- Spec -----------------------------------------------------------------------
@@ -58,9 +69,11 @@ data Result
 class (Show spec, Pretty result)
         => Spec spec result | spec -> result where
 
+ jobActionName :: spec -> String
+
  -- | Wrap a specification into a job.
- jobOfSpec        :: spec -> Job
- jobOfSpec s    = Job s (buildFromSpec s)
+ jobOfSpec         :: JobId -> spec -> Job
+ jobOfSpec jobId s = Job jobId (jobActionName s) s (buildFromSpec s)
 
  -- | Create a builder for this job specification.
  buildFromSpec    :: spec -> Build result

@@ -59,14 +59,14 @@ runJob   :: Int                 -- ^ Index of this chain.
          -> Job                 -- ^ The job to run.
          -> Build Result
 
-runJob ixChain ixJob job@(Job spec builder)  
+runJob ixChain ixJob (Job jobId actionName spec builder)
  = do   
         -- Run the job.
         result          <- builder
 
         -- Convert the result into the product the controller wants.
-        let product     = productOfResult spec result
-        let jobResult   = Result ixChain ixJob product
+        let product'    = productOfResult spec result
+        let jobResult   = Result ixChain ixJob jobId actionName product'
 
         return jobResult
 

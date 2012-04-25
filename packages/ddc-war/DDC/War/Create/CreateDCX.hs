@@ -29,12 +29,14 @@ create way allFiles filePath
         testStdoutDiff   = buildDir  </> "Test.stdout.check.diff"
         shouldDiffStdout = Set.member testStdoutCheck allFiles
 
-        jobRun           = jobOfSpec $ RunDCX.Spec
-                                testName (wayName way) filePath
+        jobRun           = jobOfSpec (JobId testName (wayName way))
+                         $ RunDCX.Spec
+                                filePath
                                 buildDir testDDCiStdout testDDCiStderr
 
-        jobDiff          = jobOfSpec  $ Diff.Spec
-                                testName (wayName way) testStdoutCheck
+        jobDiff          = jobOfSpec (JobId testName (wayName way))
+                         $ Diff.Spec
+                                testStdoutCheck
                                 testDDCiStdout testStdoutDiff
 
    in   Just $ Chain 

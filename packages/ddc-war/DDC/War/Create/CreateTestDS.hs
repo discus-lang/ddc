@@ -33,14 +33,16 @@ create way allFiles filePath
         shouldSucceed   = not $ Set.member testErrorCheck allFiles
 
         -- Compile the .ds file
-        compile         = jobOfSpec $ CompileDS.Spec
-                                testName (wayName way) filePath
+        compile         = jobOfSpec (JobId testName (wayName way))
+                        $ CompileDS.Spec
+                                filePath
                                 (wayOptsComp way) ["-M50M"]
                                 buildDir testCompStdout testCompStderr
                                 Nothing shouldSucceed
 
-        diffError       = jobOfSpec $ Diff.Spec
-                                testName (wayName way) testErrorCheck
+        diffError       = jobOfSpec (JobId testName (wayName way))
+                        $ Diff.Spec
+                                testErrorCheck
                                 testCompStderr testCompDiff
 
    in   -- Don't do anything if there is a Main.ds here.

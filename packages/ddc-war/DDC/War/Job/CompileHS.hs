@@ -20,14 +20,8 @@ import Data.List
 -- | Use GHC to compile/make file.
 data Spec
         = Spec 
-        { -- | Name of the test this job is a part of.
-          specTestName           :: String
-
-          -- | Name of the way we're running this test.
-        , specWayName            :: String
-                
-          -- | Root source file of the program (the 'Main.ds')
-        , specFile               :: FilePath 
+        { -- | Root source file of the program (the 'Main.ds')
+          specFile               :: FilePath 
                 
           -- | Extra DDC options for building in this way.
         , specOptionsGHC         :: [String] 
@@ -62,7 +56,7 @@ instance Pretty Result where
 
 -- | Compile a Haskell Source File
 build :: Spec -> Build Result
-build  (Spec    testName _wayName srcHS optionsGHC
+build  (Spec    srcHS _optionsGHC
 		buildDir mainCompOut mainCompErr
 		mainBin)
 
@@ -79,7 +73,7 @@ build  (Spec    testName _wayName srcHS optionsGHC
 		$  liftM (filter (\f -> isSuffixOf ".hs" f))
 		$  lsFilesIn srcDir
 
-	ssystemq $ "cp " ++ (intercalate " " sources) ++ " " ++ buildDir
+	_ <- ssystemq $ "cp " ++ (intercalate " " sources) ++ " " ++ buildDir
 
 	-- The copied version of the root source file.
 	let srcCopyHS	= buildDir ++ "/" ++ srcFile

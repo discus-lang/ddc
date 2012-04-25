@@ -20,29 +20,23 @@ import Data.List
 -- | Use ddci-core to compile/make file a DCE file
 data Spec
         = Spec
-        { -- | Name of the test this job is a part of.
-          specTestName           :: String
-
-        -- | Name of the way we're running this test.
-        , specWayName            :: String
-                
-        -- | Root source file of the program (the 'Main.ds')
-        , specFile               :: FilePath 
+        { -- | Root source file of the program (the 'Main.ds')
+          specFile               :: FilePath 
                                 
-        -- | Scratch dir to do the build in.
+          -- | Scratch dir to do the build in.
         , specScratchDir         :: String
 
-        -- | Put what DDC says to stdout here.
+           -- | Put what DDC says to stdout here.
         , specCompileStdout      :: FilePath
                 
-        -- | Put what DDC says to stderr here.
+           -- | Put what DDC says to stderr here.
         , specCompileStderr      :: FilePath 
 
-        -- | If Just, then we're making an executable, and put the binary here.
-        --   Otherwise simply compile it
+          -- | If Just, then we're making an executable, and put the binary here.
+          --   Otherwise simply compile it
         , specMaybeMainBin       :: Maybe FilePath 
                 
-        -- | True if the compile is expected to succeed, else not.
+          -- | True if the compile is expected to succeed, else not.
         , specShouldSucceed      :: Bool }
         deriving Show
 
@@ -65,7 +59,7 @@ instance Pretty Result where
 -- Build ----------------------------------------------------------------------
 -- | Compile a Disciple Core Sea source file.
 build :: Spec -> Build Result
-build   (Spec   testName _wayName srcDCE
+build   (Spec   srcDCE
                 buildDir mainCompOut mainCompErr
                 mMainBin shouldSucceed)
 

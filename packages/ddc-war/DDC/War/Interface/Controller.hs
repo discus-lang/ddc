@@ -61,8 +61,8 @@ controller config gang chainsTotal chanResult
 
 	-- See if any job results have been written to our input channel.
 	go_checkResult jobResults
-	 =  (atomically $ isEmptyTChan chanResult) >>= \isEmpty
-	 -> if isEmpty
+	 =  (atomically $ isEmptyTChan chanResult) >>= \empty'
+	 -> if empty'
 	     then do
 		gangState	<- getGangState gang
 		if gangState == GangFinished
@@ -94,8 +94,10 @@ controller config gang chainsTotal chanResult
 --   Returns True if the controller should continue, 
 --   or False if we should shut down and return to the caller.
 handleResult :: Config -> Gang -> Int -> Result -> IO Bool
-handleResult config gang chainsTotal (Result chainIx jobIx product)
- | ProductStatus (JobId jobName wayName testName) status <- product
+handleResult config gang chainsTotal
+        (Result chainIx jobIx jobId actionName product')
+ | JobId testName wayName       <- jobId
+ , ProductStatus status         <- product'
  = do   dirWorking      <- getCurrentDirectory
         let testName2    = fromMaybe testName  (stripPrefix dirWorking testName)
         let testName3    = fromMaybe testName2 (stripPrefix "/"        testName2)
@@ -111,8 +113,8 @@ handleResult config gang chainsTotal (Result chainIx jobIx product)
                         <> ppr chainsTotal)
            <+> padL width (text testName3)
            <+> padL 5     (text wayName)
-           <+> padL 8     (text jobName)
-           <+> colorizeStatus config jobName (render status)
+           <+> padL 8     (text actionName)
+           <+> colorizeStatus config actionName (render status)
 
         hFlush stdout
         return True
@@ -120,16 +122,16 @@ handleResult config gang chainsTotal (Result chainIx jobIx product)
 
  -- If a file is different than expected in batch mode,
  --   then just print the status.
- | ProductDiff jobId _ _ _        <- product
+ | ProductDiff{}        <- product'
  , configBatch config
  = handleResult config gang chainsTotal 
-        $ Result chainIx jobIx 
-        $ ProductStatus jobId (text "failed")
+        $ Result chainIx jobIx jobId actionName
+        $ ProductStatus (text "failed")
 
 
  -- If a file is different than expected in interactive mode,
  --   then ask the user what to do about it.
- | ProductDiff _ fileRef fileOut fileDiff <- product
+ | ProductDiff fileRef fileOut fileDiff <- product'
  , not $ configBatch config
  = do	
 	putStr	$  "\n"
@@ -151,6 +153,10 @@ handleResult config gang chainsTotal (Result chainIx jobIx product)
 	 $ resumeGang gang
 
 	return keepGoing
+
+  -- bogus pattern to suppress warning
+  | otherwise
+  = error "handleResult: no match"
 
 
 handleResult_askDiff :: FilePath -> FilePath -> FilePath -> IO Bool

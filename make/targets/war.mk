@@ -4,7 +4,7 @@ war_hs	= $(shell find packages/ddc-war -name "*.hs") \
           $(shell find packages/ddc-main/Util -name "*.hs")
 
 bin/war : $(war_hs)
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -O2 -threaded  \
+	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -Wall -fno-warn-unused-do-bind -O2 -threaded  \
 		-ipackages/ddc-war --make packages/ddc-war/Main.hs -o bin/war
 
 # -- Running tests --------------------------------------------------------------------------------

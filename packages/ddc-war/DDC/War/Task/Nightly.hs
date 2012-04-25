@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fno-warn-unused-matches #-}
 -- | Run the nightly DDC build.
 module DDC.War.Task.Nightly
         ( Spec   (..)

@@ -21,7 +21,7 @@ main
 
 -- | Run the nightly build.
 mainNightly :: Config -> IO ()
-mainNightly config
+mainNightly _config
  = let spec
          = Nightly.Spec
          { Nightly.specRemoteSnapshotURL = "http://code.ouroborus.net/ddc/snapshot/ddc-head-latest.tgz"
@@ -34,7 +34,7 @@ mainNightly config
         result  <- runBuild "/tmp" $ Nightly.build spec
         case result of
          Left err       -> error    $ render $ ppr err
-         Right result   -> putStrLn $ render $ ppr result
+         Right result'  -> putStrLn $ render $ ppr result'
 
 
 -- | Run tests from the provided directories
@@ -51,7 +51,7 @@ mainTest config
         result  <- runBuild "/tmp" $ Test.build spec
         case result of
          Left err       -> error    $ render $ ppr err
-         Right result   -> putStrLn $ render $ ppr result
+         Right result'  -> putStrLn $ render $ ppr result'
 
 
 
