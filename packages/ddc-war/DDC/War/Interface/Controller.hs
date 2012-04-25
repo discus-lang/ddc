@@ -8,7 +8,6 @@ import DDC.War.Driver
 import BuildBox.Pretty
 import BuildBox.Control.Gang
 import System.IO
-import System.Directory
 import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad.STM
@@ -29,7 +28,13 @@ data Config
         , configColoredOutput   :: Bool
 
           -- | Pad test names out to this column width.
-        , configFormatPathWidth :: Int }
+        , configFormatPathWidth :: Int 
+
+          -- | Suppress this prefix from the front of displayed test names.
+          --   Test names usually have fully qualified paths,
+          --   but we wont want to display the "/Users/whoever/devel/code/ddc/test"
+          --   prefix.
+        , configSuppressPrefix  :: String }
         deriving Show
 
 	
@@ -107,9 +112,9 @@ handleResult config gang chainsTotal
         (Result chainIx jobIx jobId actionName product')
  | JobId testName wayName       <- jobId
  , ProductStatus status         <- product'
- = do   dirWorking      <- getCurrentDirectory
-        let testName2    = fromMaybe testName  (stripPrefix dirWorking testName)
-        let testName3    = fromMaybe testName2 (stripPrefix "/"        testName2)
+ = do   let testName2    = fromMaybe testName 
+                                (stripPrefix (configSuppressPrefix config) testName)
+
         let width        = configFormatPathWidth config
 
         putStrLn 
@@ -120,7 +125,7 @@ handleResult config gang chainsTotal
                         <> ppr jobIx
                         <> text "/" 
                         <> ppr chainsTotal)
-           <+> padL width (text testName3)
+           <+> padL width (text testName2)
            <+> padL 5     (text wayName)
            <+> padL 8     (text actionName)
            <+> colorizeStatus config actionName (render status)

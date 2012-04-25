@@ -31,13 +31,29 @@ import qualified Data.Set               as Set
 import qualified Data.Traversable       as Seq
 
 
+-- | Run regression tests.
 data Spec
         = Spec
-        { specTestDirs          :: [FilePath]
+        { -- | Start looking for tests from these directories.
+          specTestDirs          :: [FilePath]
+
+          -- | Ways to run each test.
         , specWays              :: [Way]
+
+          -- | Number of concurrent threads to use.
         , specThreads           :: Int
+
+          -- | Ask user what to do about unexpected test outputs interactively.
+        , specInteractive       :: Bool 
+
+          -- | Pad test names out to this column width in log files.
         , specFormatPathWidth   :: Int
-        , specBatch             :: Bool }
+
+          -- | Write all test results to this file.
+        , specResultsFileAll    :: Maybe FilePath
+
+          -- | Write only failed test results to this file
+        , specResultsFileFailed :: Maybe FilePath }
         deriving Show
 
 
@@ -55,6 +71,8 @@ instance Pretty Result where
 build :: Spec -> Build Result
 build spec
  = do
+        currentDir      <- io $ getCurrentDirectory
+
         -- All the starting test directories from the command line.
         testDirs       <- io $ mapM (makeRelativeToCurrentDirectory <=< canonicalizePath)
                         $ specTestDirs spec
@@ -90,10 +108,24 @@ build spec
                 [ concat $ map (\way -> create way testFilesSortedSet file) ways'
                 | file <- testFilesSorted]
 
+        -- Suppress this prefix from the front of test names when we display them.
+        let prefix = currentDir ++ "/"
+
         -- Run all the chains.
-        _results <- io $ runChainsWithControllerIO spec chains
+        results <- io $ runChainsWithControllerIO prefix spec chains
         
-        -- TODO: gather up failed tests and write to file.
+        -- Write results file if we were asked for it
+        let chainsTotal = length chains
+        let pathWidth   = specFormatPathWidth spec
+        let pprResult   = render . Driver.prettyResult chainsTotal prefix pathWidth
+        (case specResultsFileAll spec of
+          Nothing       -> return ()
+          Just file     -> io   $ writeFile file 
+                                $ unlines 
+                                $ map pprResult
+                                $ results)
+
+        -- TODO: also write just failed tests
 
         return ResultSuccess
 
@@ -109,11 +141,12 @@ build spec
 --      to ask the user what to do about it interactively.
 --
 runChainsWithControllerIO
-        :: Spec                 -- ^ Build configuration.
+        :: String               -- ^ Suppress this prefix from the front of test names.
+        -> Spec                 -- ^ Build configuration.
         -> [Chain]              -- ^ Chains of jobs to run.
         -> IO [Driver.Result]
 
-runChainsWithControllerIO spec chains
+runChainsWithControllerIO prefix spec chains
  = do   
         -- Count the total number of chains for the status display.
         let chainsTotal = length chains
@@ -136,12 +169,12 @@ runChainsWithControllerIO spec chains
         let configController
                 = Controller.Config
                 { Controller.configFormatPathWidth = specFormatPathWidth spec
-                , Controller.configInteractive     = not $ specBatch spec 
-                , Controller.configColoredOutput   = not $ specBatch spec }
+                , Controller.configInteractive     = specInteractive spec 
+                , Controller.configColoredOutput   = specInteractive spec
+                , Controller.configSuppressPrefix  = prefix }
 
         varResults      <- newEmptyMVar
-        _jobResults      
-         <- forkIO 
+        forkIO 
          $ do   results <- Controller.controller configController gang chainsTotal chanResult
                 putMVar varResults results
          `finally` (putMVar varResults [])
@@ -154,4 +187,3 @@ runChainsWithControllerIO spec chains
         joinGang gang
 
         return results
-        

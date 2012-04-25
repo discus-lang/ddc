@@ -30,14 +30,8 @@ data Config
         --      test failure resolution.
         , configBatch           :: Bool 
 
-        -- | Clean up ddc generated files after each test
-        , configClean           :: Bool 
-
 	-- | Number of threads to use when running tests.
 	, configThreads		:: Int 
-
-	-- | Where to write the list of failed tests to.
-	, configLogFailed	:: Maybe FilePath 
 
 	-- | What ways to compile the tests with.
 	, configWays		:: [Way] 
@@ -46,7 +40,13 @@ data Config
 	, configFormatPathWidth	:: Int 
 
         -- | Directories to recursively search for tests.
-        , configTestDirs       :: [FilePath] }
+        , configTestDirs       :: [FilePath] 
+
+        -- | Write all tests results fo this file.
+        , configResultsAll      :: Maybe FilePath
+
+        -- | Write failed test results to this file.
+        , configResultsFailed   :: Maybe FilePath }
 	deriving (Show, Eq)
 
 
@@ -57,10 +57,10 @@ defaultConfig
         { configDebug           = False
         , configMode            = ModeTest
         , configBatch           = False
-        , configClean           = False
         , configThreads         = 1
-        , configLogFailed       = Nothing
         , configWays            = []
-        , configFormatPathWidth = 80 
-        , configTestDirs        = [] }
+        , configFormatPathWidth = 70 
+        , configTestDirs        = []
+        , configResultsAll      = Nothing
+        , configResultsFailed   = Nothing }
 

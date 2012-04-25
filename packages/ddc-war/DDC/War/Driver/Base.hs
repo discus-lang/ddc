@@ -5,11 +5,13 @@ module DDC.War.Driver.Base
         , Chain         (..)
         , Product       (..)
         , Result        (..)
-        , Spec       (..))
+        , prettyResult
+        , Spec          (..))
 where
 import BuildBox.Pretty
 import BuildBox
-
+import Data.Maybe
+import Data.List
 
 -- | A printable job identifier.
 data JobId
@@ -55,6 +57,7 @@ data Product
         , productDiffOut        :: FilePath
         , productDiffDiff       :: FilePath }
 
+
 -- | Description of a job and the product we got from running it.
 data Result
         = Result 
@@ -65,6 +68,28 @@ data Result
         , resultProduct         :: Product }
 
 
+prettyResult :: Int -> String -> Int -> Result -> Doc
+prettyResult chainsTotal prefix padWidth result
+        | Result chainIx jobIx jobId actionName product' <- result
+        , JobId  testName wayName                       <- jobId
+        = let   status
+                 = case product' of
+                        ProductStatus s -> s
+                        ProductDiff{}   -> text "diff"
+
+                testName'
+                 = fromMaybe testName (stripPrefix prefix testName)
+
+          in   parens (padR  (length $ show chainsTotal)
+                             (ppr chainIx)
+                   <>  text "."
+                   <>        (ppr jobIx))
+           <+> padL padWidth (text testName') 
+           <+> padL 5        (text wayName)
+           <+> padL 8        (text actionName)
+           <+> status
+
+        where 
 -- Spec -----------------------------------------------------------------------
 -- | Class of Job specifications.
 class (Show spec, Pretty result)

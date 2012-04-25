@@ -8,34 +8,6 @@ import Data.Maybe
 import Data.Char
 
 
--- | Command line options
-data Option
-        -- | Show command help.
-        = Help                          
-
-        -- | Emit debugging info for the war test driver.
-        | Debug                         
-
-        -- | Don't interactively ask what to do if a test fails.
-        | Batch                         
-
-        -- | Cleanup ddc generated files after each test.
-        | Clean                         
-
-        -- | Use this many threads when running tests.
-        | Threads   Int                 
-
-        -- | Log failed tests to this file.
-        | LogFailed String              
-
-        -- | Flags to compile tests with.
-        | CompWay   [String]            
-
-        -- | Flags to run tests with.
-        | RunWay    [String]            
-        deriving (Show, Eq)
-
-
 parseOptions :: [String] -> Config -> Config
 parseOptions args0 config0
  = eat args0 config0
@@ -55,15 +27,15 @@ parseOptions args0 config0
         | elem arg ["-b", "-batch"]
         = eat rest $ config { configBatch = True }
 
-        | elem arg ["-c", "-clean"]
-        = eat rest $ config { configClean = True }
-
         | "-j" : sThreads : more     <- args
         , all isDigit sThreads
         = eat more $ config { configThreads   = read sThreads}
 
-        | "-logFailed" : file : more <- args
-        = eat more $ config { configLogFailed = Just file}
+        | "-results" : file : more <- args
+        = eat more $ config { configResultsAll    = Just file }
+
+        | "-results-failed" : file : more <- args
+        = eat more $ config { configResultsFailed = Just file }
 
         | "+compway" : name : flags  <- args
         , (wayFlags, more)           <- break (\x -> take 1 x == "+") flags
@@ -86,9 +58,9 @@ parseOptions args0 config0
         , "  -help                      Display this help"
         , "  -debug, -d                 Emit debugging info for the war test driver"
         , "  -batch, -b                 Don't interactively ask what to do if a test fails"
-        , "  -clean                     Cleanup ddc generated files after each test"
         , "  -j <INT>                   Set number of threads (jobs) to use." 
-        , "  -logFailed <FILE>          Log failed tests to this file."
+        , "  -results        <FILE>     Log test results to this file."
+        , "  -results-failed <FILE>     Log failed tests to this file."
         , "  +compway <NAME> [OPTIONS]  Also compile with these DDC options."
         , "  +runway  <NAME> [OPTIONS]  Also run executables with these options."
         ]

@@ -46,12 +46,14 @@ mainTest config
         , Test.specWays                 = configWays     config
         , Test.specThreads              = configThreads  config
         , Test.specFormatPathWidth      = configFormatPathWidth config
-        , Test.specBatch                = configBatch config }
+        , Test.specInteractive          = not $ configBatch config 
+        , Test.specResultsFileAll       = Just "war.results"
+        , Test.specResultsFileFailed    = Nothing }
    in do
         result  <- runBuild "/tmp" $ Test.build spec
         case result of
          Left err       -> error    $ render $ ppr err
-         Right result'  -> putStrLn $ render $ ppr result'
+         Right _        -> return ()
 
 
 
