@@ -118,8 +118,6 @@ runChainsWithControllerIO spec chains
         -- Count the total number of chains for the status display.
         let chainsTotal = length chains
 
-        putStrLn $ render $ ppr chains
-
         -- Create a new channel to communicate between the test driver  and the
         -- controller. As each test finishes, the driver writes the result to the
         -- channel, and the controller reads the results and displays them 
@@ -138,9 +136,9 @@ runChainsWithControllerIO spec chains
         let configController
                 = Controller.Config
                 { Controller.configFormatPathWidth = specFormatPathWidth spec
-                , Controller.configBatch           = specBatch spec }
+                , Controller.configInteractive     = not $ specBatch spec 
+                , Controller.configColoredOutput   = not $ specBatch spec }
 
-        putStrLn "Forking controller"
         varResults      <- newEmptyMVar
         _jobResults      
          <- forkIO 
@@ -148,7 +146,6 @@ runChainsWithControllerIO spec chains
                 putMVar varResults results
          `finally` (putMVar varResults [])
 
-        putStrLn "Waiting for controller"
         -- Wait for the controller to finish.
         results <- takeMVar varResults
 

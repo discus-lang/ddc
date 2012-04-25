@@ -42,6 +42,7 @@ instance Pretty Chain where
   =   text "Chain"
   <+> ppr jobs
 
+
 -- | The product that we got when running a job.
 --   This is the information that the interactive interface needs to decide
 --   how to proceed. 

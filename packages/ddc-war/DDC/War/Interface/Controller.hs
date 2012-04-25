@@ -21,11 +21,19 @@ import qualified System.Cmd
 
 data Config
         = Config
-        { configFormatPathWidth :: Int
-        , configBatch           :: Bool }
+        { -- | Allow the user to control the driver from the console, 
+          --   and ask what to do interactively if a file is different than expected.
+          configInteractive     :: Bool 
+
+          -- | Use VT100 colors in the output.
+        , configColoredOutput   :: Bool
+
+          -- | Pad test names out to this column width.
+        , configFormatPathWidth :: Int }
         deriving Show
 
 	
+
 -- | Gang controller and user interface for the war test driver.
 --   This should be forked into its own thread, so it runs concurrently
 --   with the gang that is actually executing the tests.
@@ -42,16 +50,16 @@ controller config gang chainsTotal chanResult
 	-- See if there is an input on the console.
         go_start :: [Result] -> IO [Result]
 	go_start jobResults
-	 = hIsEOF stdin >>= \eof
-                 -> if eof 
-                        then go_checkResult jobResults
-                        else go_start2 jobResults
 
-        go_start2 jobResults
+         | configInteractive config
          = hReady stdin >>= \gotInput
-        	 -> if gotInput
-	       	       then go_input jobResults
-        	       else go_checkResult jobResults
+           -> if gotInput
+                then go_input jobResults
+                else go_checkResult jobResults
+
+         | otherwise
+         = go_checkResult jobResults
+
 	
 	-- We've got input on the console, wait for already running tests then bail out.
 	go_input jobResults
@@ -59,9 +67,10 @@ controller config gang chainsTotal chanResult
 	 	flushGang gang
 	 	return jobResults
 
+
 	-- See if any job results have been written to our input channel.
 	go_checkResult jobResults
-	 =  (atomically $ isEmptyTChan chanResult) >>= \empty'
+ 	 =  (atomically $ isEmptyTChan chanResult) >>= \empty'
 	 -> if empty'
 	     then do
 		gangState	<- getGangState gang
@@ -119,20 +128,10 @@ handleResult config gang chainsTotal
         hFlush stdout
         return True
 
-
- -- If a file is different than expected in batch mode,
- --   then just print the status.
- | ProductDiff{}        <- product'
- , configBatch config
- = handleResult config gang chainsTotal 
-        $ Result chainIx jobIx jobId actionName
-        $ ProductStatus (text "failed")
-
-
  -- If a file is different than expected in interactive mode,
  --   then ask the user what to do about it.
  | ProductDiff fileRef fileOut fileDiff <- product'
- , not $ configBatch config
+ , configInteractive config
  = do	
 	putStr	$  "\n"
 		++ "-- Output Differs  -------------------------------------------------------------\n"
@@ -154,9 +153,16 @@ handleResult config gang chainsTotal
 
 	return keepGoing
 
-  -- bogus pattern to suppress warning
-  | otherwise
-  = error "handleResult: no match"
+ -- If a file is different than expected in batch mode,
+ --   then just print the status.
+ | ProductDiff{}        <- product'
+ = handleResult config gang chainsTotal 
+        $ Result chainIx jobIx jobId actionName
+        $ ProductStatus (text "failed")
+
+ -- Bogus pattern match to avoid warning.
+ | otherwise
+ = error "DDC.War.Interface.Controller.handleResult: no match"
 
 
 handleResult_askDiff :: FilePath -> FilePath -> FilePath -> IO Bool
@@ -206,7 +212,7 @@ handleResult_askDiff fileRef fileOut fileDiff
 
 colorizeStatus :: Config -> String -> String -> Doc
 colorizeStatus config jobName status
-        | configBatch config                   
+        | not $ configColoredOutput config
         = text status
 
         | isPrefixOf "ok" status
