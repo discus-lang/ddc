@@ -135,7 +135,7 @@ build spec
           Just file     -> io   $ writeFile file
                                 $ unlines
                                 $ map pprResult
-                                $ filter (wasSuccess . Driver.resultProduct)
+                                $ filter (not . wasSuccess . Driver.resultProduct)
                                 $ results)
 
         return ResultSuccess
