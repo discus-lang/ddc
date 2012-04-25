@@ -10,53 +10,55 @@ bin/war : $(war_hs)
 # -- Running tests --------------------------------------------------------------------------------
 # .. for the war against bugs.
 
-# Run the testsuite with the C and LLVM backends interactively
+# Run the testsuite in just the standard way.
 .PHONY 	: war
 war : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	bin/war test -j $(THREADS) \
-		+compway std \
-		+compway llvm -fvia-llvm
+	@bin/war test \
+                -j $(THREADS) \
+                -results        war.results \
+                -results-failed war.failed \
+		+compway std
 	@echo
 
-# Run the testsuite with the C backend interactively
-.PHONY 	: cwar
-cwar : allWithConfig
-	@echo "* Running tests -------------------------------------------------------------"
-	bin/war test -j $(THREADS)
-	@echo
 
-# Run the testsuite with the LLVM backend interactively
+# Run the testsuite with the LLVM backend.
 .PHONY 	: llvmwar
 llvmwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	bin/war test -j $(THREADS) +compway llvm -fvia-llvm
+	@bin/war test \
+                -j $(THREADS) \
+                -results        war.results \
+                -results-failed war.failed \
+                +compway llvm -fvia-llvm
 	@echo
 
-# Run tests in all ways interactively
+
+# Run tests in all ways.
 .PHONY  : totalwar
 totalwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	bin/war test -j $(THREADS) \
+	@bin/war test \
+                -j $(THREADS) \
+                -results        war.results \
+                -results-failed war.failed \
 		+compway std \
 		+compway opt  -O \
 		+compway llvm -O -fvia-llvm
 	@echo
 
-# Run the tests,  logging failures to war.failed
-.PHONY : logwar
-logwar : allWithConfig
-	@echo "* Running tests -------------------------------------------------------------"
-	bin/war test -j $(THREADS) \
-		-batch -logFailed "war.failed"
-	@echo
 
-# Run tests in all ways interactively, logging failures to war.failed
-.PHONY  : totallogwar
-totallogwar : allWithConfig
+
+# Run tests in all ways in batch mode.
+# This is used by the nightly build
+.PHONY  : batchwar
+batchwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	bin/war test -j $(THREADS) \
-		-batch -logFailed "war.failed" \
+	@bin/war test \
+                -batch \
+                -j $(THREADS) \
+                -results        war.results \
+                -results-failed war.failed \
 		+compway std \
 		+compway opt -O \
 		+compway llvm -O -fvia-llvm
