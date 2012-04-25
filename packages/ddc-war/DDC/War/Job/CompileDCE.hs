@@ -2,6 +2,7 @@
 module DDC.War.Job.CompileDCE
         ( Spec  (..)
         , Result(..)
+        , resultSuccess
         , build)
 where
 import BuildBox.Command.File
@@ -45,6 +46,12 @@ data Result
         | ResultUnexpectedFailure
         | ResultUnexpectedSuccess
         deriving Show
+
+resultSuccess :: Result -> Bool
+resultSuccess result
+ = case result of
+        ResultSuccess{} -> True
+        _               -> False
 
 
 instance Pretty Result where

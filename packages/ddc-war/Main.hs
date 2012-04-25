@@ -45,10 +45,10 @@ mainTest config
         { Test.specTestDirs             = configTestDirs config
         , Test.specWays                 = configWays     config
         , Test.specThreads              = configThreads  config
-        , Test.specFormatPathWidth      = configFormatPathWidth config
-        , Test.specInteractive          = not $ configBatch config 
-        , Test.specResultsFileAll       = Just "war.results"
-        , Test.specResultsFileFailed    = Nothing }
+        , Test.specFormatPathWidth      = configFormatPathWidth   config
+        , Test.specInteractive          = not $ configBatch       config 
+        , Test.specResultsFileAll       = configResultsFileAll    config
+        , Test.specResultsFileFailed    = configResultsFileFailed config }
    in do
         result  <- runBuild "/tmp" $ Test.build spec
         case result of

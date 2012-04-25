@@ -111,7 +111,7 @@ handleResult :: Config -> Gang -> Int -> Result -> IO Bool
 handleResult config gang chainsTotal
         (Result chainIx jobIx jobId actionName product')
  | JobId testName wayName       <- jobId
- , ProductStatus status         <- product'
+ , ProductStatus status _       <- product'
  = do   let testName2    = fromMaybe testName 
                                 (stripPrefix (configSuppressPrefix config) testName)
 
@@ -163,7 +163,7 @@ handleResult config gang chainsTotal
  | ProductDiff{}        <- product'
  = handleResult config gang chainsTotal 
         $ Result chainIx jobIx jobId actionName
-        $ ProductStatus (text "failed")
+        $ ProductStatus (text "failed") False
 
  -- Bogus pattern match to avoid warning.
  | otherwise

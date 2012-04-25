@@ -114,7 +114,7 @@ build spec
         -- Run all the chains.
         results <- io $ runChainsWithControllerIO prefix spec chains
         
-        -- Write results file if we were asked for it
+        -- Write all results to file if we were asked for it
         let chainsTotal = length chains
         let pathWidth   = specFormatPathWidth spec
         let pprResult   = render . Driver.prettyResult chainsTotal prefix pathWidth
@@ -125,7 +125,18 @@ build spec
                                 $ map pprResult
                                 $ results)
 
-        -- TODO: also write just failed tests
+        -- Write failed results to file if we were asked for it.
+        let wasSuccess p
+                = case p of
+                        Driver.ProductStatus _ True     -> True
+                        _                               -> False
+        (case specResultsFileFailed spec of 
+          Nothing       -> return ()
+          Just file     -> io   $ writeFile file
+                                $ unlines
+                                $ map pprResult
+                                $ filter (wasSuccess . Driver.resultProduct)
+                                $ results)
 
         return ResultSuccess
 

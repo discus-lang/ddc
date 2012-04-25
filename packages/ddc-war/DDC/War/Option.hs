@@ -32,10 +32,10 @@ parseOptions args0 config0
         = eat more $ config { configThreads   = read sThreads}
 
         | "-results" : file : more <- args
-        = eat more $ config { configResultsAll    = Just file }
+        = eat more $ config { configResultsFileAll    = Just file }
 
         | "-results-failed" : file : more <- args
-        = eat more $ config { configResultsFailed = Just file }
+        = eat more $ config { configResultsFileFailed = Just file }
 
         | "+compway" : name : flags  <- args
         , (wayFlags, more)           <- break (\x -> take 1 x == "+") flags

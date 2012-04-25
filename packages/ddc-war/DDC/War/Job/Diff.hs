@@ -1,7 +1,8 @@
 
 module DDC.War.Job.Diff
 	( Spec         (..)
-        , Result       (..) 
+        , Result       (..)
+        , resultSuccess 
         , build)
 where
 import BuildBox.Command.File
@@ -33,11 +34,19 @@ data Result
         , resultFileDiff :: FilePath }
 
 
+resultSuccess :: Result -> Bool
+resultSuccess result
+ = case result of
+        ResultSame{}    -> True
+        _               -> False
+
+
 instance Pretty Result where
  ppr result
   = case result of
         ResultSame      -> text "ok"
         ResultDiff{}    -> text "diff"
+
 
 
 -- | Compare two files for differences.

@@ -13,51 +13,57 @@ import BuildBox.Pretty
 
 
 instance Spec CompileDCE.Spec CompileDCE.Result where
- jobActionName _                = "compile"
+ specActionName _               = "compile"
  buildFromSpec                  = CompileDCE.build
- productOfResult _ result       = ProductStatus (ppr result) 
+ productOfResult _ result       
+        = ProductStatus (ppr result) (CompileDCE.resultSuccess result)
 
 
 instance Spec CompileDS.Spec  CompileDS.Result where
- jobActionName _                = "compile"
+ specActionName _               = "compile"
  buildFromSpec                  = CompileDS.build
- productOfResult _ result       = ProductStatus (ppr result)
+ productOfResult _ result       
+        = ProductStatus (ppr result) (CompileDS.resultSuccess result)
 
 
 instance Spec CompileHS.Spec  CompileHS.Result where
- jobActionName _                = "compile"
+ specActionName _               = "compile"
  buildFromSpec                  = CompileHS.build
- productOfResult _ result       = ProductStatus (ppr result)
+ productOfResult _ result
+        = ProductStatus (ppr result) (CompileHS.resultSuccess result)
 
 
 instance Spec Diff.Spec       Diff.Result where
- jobActionName _                = "diff"
+ specActionName _               = "diff"
  buildFromSpec                  = Diff.build
- productOfResult _ r
-  = case r of
+ productOfResult _ result
+  = case result of
         Diff.ResultSame                 
-         -> ProductStatus (ppr r)
+         -> ProductStatus (ppr result) True
 
         Diff.ResultDiff ref out diff    
          -> ProductDiff ref out diff
 
 
 instance Spec RunDCX.Spec     RunDCX.Result where
- jobActionName _                = "run"
+ specActionName _               = "run"
  buildFromSpec                  = RunDCX.build
- productOfResult _ result = ProductStatus (ppr result)
+ productOfResult _ result
+        = ProductStatus (ppr result) (RunDCX.resultSuccess result)
 
 
 instance Spec RunExe.Spec     RunExe.Result where
- jobActionName _                = "run"
+ specActionName _               = "run"
  buildFromSpec                  = RunExe.build
- productOfResult _ result       = ProductStatus (ppr result)
+ productOfResult _ result
+        = ProductStatus (ppr result) (RunExe.resultSuccess result)
 
 
 instance Spec Shell.Spec      Shell.Result where
- jobActionName _                = "shell"
+ specActionName _               = "shell"
  buildFromSpec                  = Shell.build
- productOfResult _ result       = ProductStatus (ppr result)
+ productOfResult _ result
+        = ProductStatus (ppr result) (Shell.resultSuccess result)
 
 
 

@@ -21,32 +21,32 @@ data Mode
 data Config
 	= Config 
         { -- | Whether to emit debugging info for war.
-	  configDebug		:: Bool
+	  configDebug		       :: Bool
 
           -- | Operation mode
-        , configMode            :: Mode
+        , configMode                   :: Mode
 
         -- | Whether to run in batch mode with no color and no interactive
         --      test failure resolution.
-        , configBatch           :: Bool 
+        , configBatch                  :: Bool 
 
 	-- | Number of threads to use when running tests.
-	, configThreads		:: Int 
+	, configThreads                :: Int 
 
 	-- | What ways to compile the tests with.
-	, configWays		:: [Way] 
+	, configWays                   :: [Way] 
 
         -- | Width of reports.
-	, configFormatPathWidth	:: Int 
+	, configFormatPathWidth        :: Int 
 
         -- | Directories to recursively search for tests.
-        , configTestDirs       :: [FilePath] 
+        , configTestDirs               :: [FilePath] 
 
         -- | Write all tests results fo this file.
-        , configResultsAll      :: Maybe FilePath
+        , configResultsFileAll         :: Maybe FilePath
 
         -- | Write failed test results to this file.
-        , configResultsFailed   :: Maybe FilePath }
+        , configResultsFileFailed      :: Maybe FilePath }
 	deriving (Show, Eq)
 
 
@@ -54,13 +54,13 @@ data Config
 defaultConfig :: Config
 defaultConfig
         = Config
-        { configDebug           = False
-        , configMode            = ModeTest
-        , configBatch           = False
-        , configThreads         = 1
-        , configWays            = []
-        , configFormatPathWidth = 70 
-        , configTestDirs        = []
-        , configResultsAll      = Nothing
-        , configResultsFailed   = Nothing }
+        { configDebug               = False
+        , configMode                = ModeTest
+        , configBatch               = False
+        , configThreads             = 1
+        , configWays                = []
+        , configFormatPathWidth     = 70 
+        , configTestDirs            = []
+        , configResultsFileAll      = Nothing
+        , configResultsFileFailed   = Nothing }
 

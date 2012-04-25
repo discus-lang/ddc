@@ -50,7 +50,8 @@ instance Pretty Chain where
 --   how to proceed. 
 data Product
         = ProductStatus 
-        { productStatus         :: Doc }
+        { productStatusMsg      :: Doc
+        , productStatusSuccess  :: Bool }
 
         | ProductDiff   
         { productDiffRef        :: FilePath
@@ -74,8 +75,8 @@ prettyResult chainsTotal prefix padWidth result
         , JobId  testName wayName                       <- jobId
         = let   status
                  = case product' of
-                        ProductStatus s -> s
-                        ProductDiff{}   -> text "diff"
+                        ProductStatus s _ -> s
+                        ProductDiff{}     -> text "diff"
 
                 testName'
                  = fromMaybe testName (stripPrefix prefix testName)
@@ -90,16 +91,19 @@ prettyResult chainsTotal prefix padWidth result
            <+> status
 
         where 
+
 -- Spec -----------------------------------------------------------------------
 -- | Class of Job specifications.
 class (Show spec, Pretty result)
         => Spec spec result | spec -> result where
 
- jobActionName :: spec -> String
+ -- | Get a short name to describe the job that this spec describes, 
+ --   eg "compile" or "run"
+ specActionName    :: spec -> String
 
  -- | Wrap a specification into a job.
  jobOfSpec         :: JobId -> spec -> Job
- jobOfSpec jobId s = Job jobId (jobActionName s) s (buildFromSpec s)
+ jobOfSpec jobId s = Job jobId (specActionName s) s (buildFromSpec s)
 
  -- | Create a builder for this job specification.
  buildFromSpec    :: spec -> Build result
@@ -107,4 +111,6 @@ class (Show spec, Pretty result)
  -- | Make the job product from its result.
  --   This cuts away information that the controller doesn't care about.
  productOfResult  :: spec -> result -> Product
+
+
 

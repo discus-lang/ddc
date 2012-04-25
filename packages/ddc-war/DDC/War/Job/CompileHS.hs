@@ -2,6 +2,7 @@
 module DDC.War.Job.CompileHS
 	( Spec         (..)
         , Result       (..)
+        , resultSuccess
         , build)
 where
 import BuildBox.Command.File
@@ -45,6 +46,12 @@ data Result
         = ResultSuccess Seconds
         | ResultFailure
         deriving Show
+
+resultSuccess :: Result -> Bool
+resultSuccess result
+ = case result of
+        ResultSuccess{} -> True
+        _               -> False
 
 
 instance Pretty Result where
