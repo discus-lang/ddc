@@ -26,9 +26,10 @@
 --       Test.stdout.check       Diff run stdout with this file.
 --       
 module DDC.War.Create
-        (create)
+        ( Way   (..)
+        , create)
 where
-import DDC.War.Interface.Config
+import DDC.War.Create.Way
 import DDC.War.Driver
 import Data.Maybe
 import Data.Set                                 (Set)

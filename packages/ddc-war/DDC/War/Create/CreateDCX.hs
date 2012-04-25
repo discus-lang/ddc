@@ -2,7 +2,7 @@
 module DDC.War.Create.CreateDCX
         (create)
 where
-import DDC.War.Interface.Config
+import DDC.War.Create.Way
 import DDC.War.Driver
 import System.FilePath
 import DDC.War.Job                              ()

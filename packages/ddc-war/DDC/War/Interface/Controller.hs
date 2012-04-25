@@ -2,9 +2,9 @@
 -- | Gang controller and user interface.
 module DDC.War.Interface.Controller
 	( ChanResult
+        , Config        (..)
 	, controller)
 where
-import DDC.War.Interface.Config
 import DDC.War.Driver
 import BuildBox.Pretty
 import BuildBox.Control.Gang
@@ -23,6 +23,12 @@ import qualified System.Cmd
 -- | Channel to write test job results to.
 type ChanResult
 	= TChan Result
+
+data Config
+        = Config
+        { configFormatPathWidth :: Int
+        , configBatch           :: Bool }
+        deriving Show
 
 	
 -- | Gang controller and user interface for the war test driver.

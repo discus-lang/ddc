@@ -1,8 +1,9 @@
 
-module DDC.War.Interface.Option
+module DDC.War.Option
         (parseOptions)
 where
-import DDC.War.Interface.Config
+import DDC.War.Create.Way
+import DDC.War.Config
 import Data.Maybe
 import Data.Char
 

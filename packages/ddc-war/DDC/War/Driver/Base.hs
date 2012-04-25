@@ -4,7 +4,7 @@ module DDC.War.Driver.Base
         , Chain         (..)
         , Product       (..)
         , Result        (..)
-        , Spec          (..))
+        , Spec       (..))
 where
 import BuildBox.Pretty
 import BuildBox

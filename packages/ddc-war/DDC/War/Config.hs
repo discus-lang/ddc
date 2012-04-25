@@ -1,10 +1,10 @@
 
-module DDC.War.Interface.Config
+module DDC.War.Config
 	( Mode         (..)
-        , Way          (..)
         , Config       (..)
         , defaultConfig)
 where
+import DDC.War.Create.Way
 
 
 -- | Operation mode.
@@ -15,16 +15,6 @@ data Mode
         -- | Download the repo.
         | ModeNightly
         deriving (Eq, Show)
-
-
--- | A way to build the test.
---   This holds extra options to pass to the program.
-data Way
-        = Way   
-        { wayName       :: String 
-        , wayOptsComp   :: [String] 
-        , wayOptsRun    :: [String] }
-        deriving (Eq, Ord, Show)
 
 
 -- | Configuration information read from command line arguments.

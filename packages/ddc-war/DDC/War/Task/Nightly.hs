@@ -39,8 +39,7 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
         ensureDir dirBuild
         inDir     dirBuild
          $ do 
-                {-
-                outLn "* Creating log directory"
+{-}                outLn "* Creating log directory"
                 ensureDir "log"
                 
                 outLn "* Downloading snapshot"
@@ -51,9 +50,10 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
                 needs (takeFileName urlSnapshot)
                 outLn "* Unpacking snapshot"
                 ssystem $ "tar zxf " ++ takeFileName urlSnapshot
-                -}
+-}
                 inDir dirPackage
-                 $ do{-   outLn "* Updating shapshot"
+                 $ do
+{-}                        outLn "* Updating shapshot"
                         (darcsOut, darcsErr) <- ssystem $ "darcs pull -av " ++ urlRepo
                         io $ writeFile "../log/02-darcs.stdout" darcsOut
                         io $ writeFile "../log/02-darcs.stderr" darcsErr
@@ -62,11 +62,14 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
                         needs "make"
                         io $ writeFile "make/config-override.mk" 
                            $ unlines ["THREADS = " ++ show buildThreads]
-
+-}
                         outLn "* Building project"
                         needs "Makefile"
-                        ssystem $ "make nightly"
-                     -}
+                        (makeOut, makeErr) <- ssystem $ "make nightly"
+                        io $ writeFile "../log/03-make.stdout" makeOut
+                        io $ writeFile "../log/03-make.stderr" makeErr
+
+{-
                         outLn "* Building project"
                         (makeOut, makeErr) <- ssystem "make totallogwar"
                         io $ writeFile "../log/03-make.stdout" makeOut
@@ -77,7 +80,7 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
 
                         -- TODO: scp results to log server
                         -- TODO: mail results
-
+-}
                         return ()
 
 
