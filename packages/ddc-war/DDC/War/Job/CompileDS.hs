@@ -12,7 +12,6 @@ import BuildBox.IO.Directory
 import BuildBox.Pretty
 import BuildBox
 import System.FilePath
-import System.Directory
 import Control.Monad
 import Data.List
 
@@ -69,6 +68,7 @@ build (Spec     srcDS optionsDDC optionsRTS
 		mMainBin shouldSucceed)
 
  = do	needs srcDS
+        needs "bin/ddc"
 	
 	-- The directory holding the Main.ds file.
 	let (srcDir, _srcFile)	= splitFileName srcDS
@@ -84,7 +84,6 @@ build (Spec     srcDS optionsDDC optionsRTS
 	ensureDir buildDir
 
 	-- Do the compile.
-	ddcBin'		<- io $ canonicalizePath "bin/ddc"
 	let compile
 		| Just mainBin	<- mMainBin
 		= do	
@@ -94,7 +93,7 @@ build (Spec     srcDS optionsDDC optionsRTS
 			-- Build the program.
 	 		timeBuild 
 	 		 $ systemTee False 
-				(ddcBin'
+				("bin/ddc"
 				++ " -v -make "	  ++ srcDS
 				++ " -o "	  ++ mainBin
 				++ " -outputdir " ++ buildDir
@@ -107,7 +106,7 @@ build (Spec     srcDS optionsDDC optionsRTS
 		| otherwise
 		= do	timeBuild
 	 		 $ systemTee False
-				(ddcBin'
+				("bin/ddc"
 				++ " -c "	  ++ srcDS
 				++ " -outputdir " ++ buildDir
 				++ " " 		  ++ intercalate " " optionsDDC

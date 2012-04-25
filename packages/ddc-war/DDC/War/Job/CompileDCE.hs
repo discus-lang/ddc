@@ -12,7 +12,6 @@ import BuildBox.IO.Directory
 import BuildBox.Pretty
 import BuildBox
 import System.FilePath
-import System.Directory
 import Control.Monad
 import Data.List
 
@@ -64,7 +63,8 @@ build   (Spec   srcDCE
                 mMainBin shouldSucceed)
 
  = do   needs srcDCE
- 
+        needs "bin/ddci-core"
+
         -- The directory holding the Main.dce file.
         let (srcDir, _srcFile)  = splitFileName srcDCE
                 
@@ -79,7 +79,6 @@ build   (Spec   srcDCE
         ensureDir buildDir
 
         -- Do the compile.
-        ddciCoreBin'         <- io $ canonicalizePath "bin/ddci-core"
         let compile
                 | Just mainBin  <- mMainBin
                 = do    -- If there is an existing binary then remove it.
@@ -88,7 +87,7 @@ build   (Spec   srcDCE
                         -- Build the program.
                         timeBuild
                          $ systemTee False 
-                                (ddciCoreBin'
+                                ("bin/ddci-core"
                                 ++ " -set output "      ++ mainBin
                                 ++ " -set outputdir "   ++ buildDir
                                 ++ " -make "            ++ srcDCE)
@@ -98,7 +97,7 @@ build   (Spec   srcDCE
                 | otherwise
                 = do    timeBuild
                          $ systemTee False
-                                (ddciCoreBin'
+                                ("bin/ddci-core"
                                 ++ " -set outputdir "   ++ buildDir
                                 ++ " -compile "         ++ srcDCE)
                                 ""
