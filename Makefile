@@ -62,7 +62,7 @@ allWithConfig :
 total	:
 	@$(MAKE) allWithConfig
 	@$(MAKE) docs
-	@$(MAKE) totallogwar
+	@$(MAKE) batchwar
 
 
 # -- Same as 'total', but do a full clean first

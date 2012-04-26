@@ -2,6 +2,7 @@
 import DDC.War.Option
 import DDC.War.Config
 import BuildBox.Pretty
+import BuildBox.Command.Mail                    (Mailer(..))
 import BuildBox
 import System.Environment
 import qualified DDC.War.Task.Nightly           as Nightly
@@ -28,7 +29,10 @@ mainNightly _config
          , Nightly.specRemoteRepoURL     = "http://code.ouroborus.net/ddc/ddc-head"
          , Nightly.specLocalBuildDir     = "." 
          , Nightly.specRelPackageDir     = "ddc-head" 
-         , Nightly.specBuildThreads      = 4 }
+         , Nightly.specBuildThreads      = 4 
+         , Nightly.specMailer            = Just $ MailerSendmail "sendmail" [] 
+         , Nightly.specMailFrom          = "DDC Buildbot <overlord@ouroborus.net>"
+         , Nightly.specMailTo            = "benl@ouroborus.net" }
 
    in do
         result  <- runBuild "/tmp" $ Nightly.build spec

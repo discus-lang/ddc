@@ -5,11 +5,15 @@ module DDC.War.Task.Nightly
         , Result (..)
         , build)
 where
+import BuildBox.Command.Mail
 import BuildBox.Command.System
 import BuildBox.Command.File
+import BuildBox.Command.Environment
 import BuildBox.Pretty
 import BuildBox
 --import System.FilePath
+import Control.Monad
+import Data.Char
 
 data Spec
         = Spec
@@ -17,7 +21,11 @@ data Spec
         , specRemoteRepoURL     :: String 
         , specLocalBuildDir     :: FilePath 
         , specRelPackageDir     :: String
-        , specBuildThreads      :: Int }
+        , specBuildThreads      :: Int
+
+        , specMailer            :: Maybe Mailer
+        , specMailFrom          :: String 
+        , specMailTo            :: String }
         deriving Show
 
 
@@ -34,10 +42,10 @@ instance Pretty Result where
 
 -- | Run the nightly DDC build.
 build :: Spec -> Build Result
-build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
+build spec
  = do   
-        ensureDir dirBuild
-        inDir     dirBuild
+        ensureDir (specLocalBuildDir spec)
+        inDir     (specLocalBuildDir spec)
          $ do 
 {-}                outLn "* Creating log directory"
                 ensureDir "log"
@@ -51,7 +59,7 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
                 outLn "* Unpacking snapshot"
                 ssystem $ "tar zxf " ++ takeFileName urlSnapshot
 -}
-                inDir dirPackage
+                inDir (specRelPackageDir spec)
                  $ do
 {-}                        outLn "* Updating shapshot"
                         (darcsOut, darcsErr) <- ssystem $ "darcs pull -av " ++ urlRepo
@@ -62,28 +70,51 @@ build (Spec urlSnapshot urlRepo dirBuild dirPackage buildThreads)
                         needs "make"
                         io $ writeFile "make/config-override.mk" 
                            $ unlines ["THREADS = " ++ show buildThreads]
--}
+
                         outLn "* Building project"
                         needs "Makefile"
                         (makeOut, makeErr) <- ssystem $ "make nightly"
                         io $ writeFile "../log/03-make.stdout" makeOut
                         io $ writeFile "../log/03-make.stderr" makeErr
-
-{-
-                        outLn "* Building project"
-                        (makeOut, makeErr) <- ssystem "make totallogwar"
-                        io $ writeFile "../log/03-make.stdout" makeOut
-                        io $ writeFile "../log/03-make.stderr" makeErr
-
-                        -- TODO: make test mode drop summary of test results
-                        -- TODO: copy results into log dir
-
-                        -- TODO: scp results to log server
-                        -- TODO: mail results
 -}
+                        outLn "* Copying results"
+                        needs "war.results"
+                        needs "war.failed"
+                        ssystem "cp war.results ../log"
+                        ssystem "cp war.failed  ../log"
+
                         return ()
 
-
+                outLn "* Sending mail"
+                (case specMailer spec of
+                  Nothing       -> return ()
+                  Just mailer   -> build_mail spec mailer)
 
         return ResultSuccess
+
+build_mail :: Spec -> Mailer -> Build ()
+build_mail spec mailer
+ = do   
+        -- Create message subject.
+        hostName        <- getHostName
+        machName        <- liftM (takeWhile (not . isSpace)) $ sesystemq "uname -m"
+        osName          <- liftM (takeWhile (not . isSpace)) $ sesystemq "uname"
+
+        let subject     
+                =  "DDC Build Success"
+                ++ " (" ++ hostName ++ "." ++ machName ++ "." ++ osName ++ ")" 
+
+        -- Create message body.
+        resultsFailed   <- io $ readFile "log/war.failed"
+        let body        = resultsFailed
+
+        -- Send the mail
+        mail    <- createMailWithCurrentTime 
+                        (specMailFrom spec) (specMailTo spec) subject body
+
+        let str = render $ renderMail mail
+        io $ writeFile "war.mail" str
+
+        sendMailWithMailer mail mailer
+
 

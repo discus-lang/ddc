@@ -22,6 +22,11 @@ war : allWithConfig
 	@echo
 
 
+# Alias for war
+.PHONY  : test
+test    : war
+
+
 # Run the testsuite with the LLVM backend.
 .PHONY 	: llvmwar
 llvmwar : allWithConfig
@@ -48,7 +53,6 @@ totalwar : allWithConfig
 	@echo
 
 
-
 # Run tests in all ways in batch mode.
 # This is used by the nightly build
 .PHONY  : batchwar
@@ -63,10 +67,6 @@ batchwar : allWithConfig
 		+compway opt -O \
 		+compway llvm -O -fvia-llvm
 	@echo
-
-# Alias for war
-.PHONY	: test
-test	: war
 
 
 # -- Clean junk dropped while testing -------------------------------------------------------------
