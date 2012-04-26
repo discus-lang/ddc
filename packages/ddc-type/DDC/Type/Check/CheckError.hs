@@ -73,7 +73,7 @@ data Error n
         deriving Show
 
 
-instance (Eq n, Pretty n) => Pretty (Error n) where
+instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
         ErrorUndefined u
@@ -91,7 +91,7 @@ instance (Eq n, Pretty n) => Pretty (Error n) where
         ErrorVarAnnotMismatch u t
          -> vcat [ text "Type mismatch in annotation."
                  , text "             Variable: "       <> ppr u
-                 , text "       has annotation: "       <> (ppr $ typeOfBound u)
+                 , text "       has annotation: "       <> ppr u
                  , text " which conflicts with: "       <> ppr t
                  , text "     from environment." ]
  

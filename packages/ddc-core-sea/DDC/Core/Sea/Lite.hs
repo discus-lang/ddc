@@ -6,6 +6,8 @@
 module DDC.Core.Sea.Lite
         ( -- * Language profile
           profile
+        , lexModuleString
+        , lexExpString
 
           -- * Names of variables and constructors.
         , Name          (..)

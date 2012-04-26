@@ -1,0 +1,49 @@
+
+
+:set lang Lite
+
+
+-- Literals
+:check 5
+
+
+-- Primitives
+:check..
+add#;;
+
+:kind Int
+:kind Bool
+
+
+-- Boxing bools
+:check..
+/\(r : %). \(x : Bool#). B# [r] x;;
+
+
+-- Unboxing bools.
+:check..
+/\(r : %). \(x : Bool r). case x of { B# b -> b };;
+
+
+-- Boxing ints
+:check..
+/\(r : %). \(x : Int32#). I32# [r] x;;
+
+
+-- Unboxing ints
+:check..
+/\(r : %). \(x : Int r). case x of { I32# i -> i };;
+
+
+-- Boxed integer add
+:check..
+let unboxInt = /\(r : %). \(x : Int r). case x of { I32# i -> i } in
+let addInt [r1 r2 r3 : %] 
+        (x : Int r1) { !0 | Use r3 } 
+        (y : Int r2) { Read r1 + Read r2 | Use r1 + Use r3 }
+        : Int r3
+     =  case x of { I32# i1 
+     -> case y of { I32# i2 
+     -> I32# [r3] (add# [Int32#] i1 i2) } } in
+letregion r1 in
+unboxInt [r1] (addInt [:r1 r1 r1:] (2 [r1] ()) (3 [r1] ()));;

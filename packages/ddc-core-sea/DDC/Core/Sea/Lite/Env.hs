@@ -2,7 +2,9 @@
 module DDC.Core.Sea.Lite.Env
         ( primDataDefs
         , primKindEnv
-        , primTypeEnv)
+        , primTypeEnv
+
+        , tBoolU)
 where
 import DDC.Core.Sea.Lite.Compounds
 import DDC.Core.Sea.Lite.Name
@@ -31,12 +33,20 @@ primDataDefs
                 (NameDataTyCon DataTyConUnit)
                 []
                 (Just [ (NamePrimDaCon PrimDaConUnit, []) ])
+
+        -- Bool
+        , DataDef
+                (NameDataTyCon DataTyConBool)
+                [kRegion]
+                (Just   [ ( NamePrimDaCon PrimDaConBoolU
+                          , [tBoolU]) ])
         
         -- Int
         , DataDef
                 (NameDataTyCon DataTyConInt)
                 [kRegion]
-                Nothing
+                (Just   [ ( NamePrimDaCon PrimDaConInt32U
+                          , [tInt32U]) ])
 
         -- Pair
         , DataDef
@@ -87,6 +97,10 @@ kindOfPrimName nn
         NameDataTyCon DataTyConUnit
          -> Just $ kData
 
+        -- Bool
+        NameDataTyCon DataTyConBool
+         -> Just $ kFun kRegion kData
+
         -- Int
         NameDataTyCon DataTyConInt
          -> Just $ kFun kRegion kData
@@ -116,6 +130,13 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
+        -- B#
+        NamePrimDaCon PrimDaConBoolU
+         -> Just $ tForall kRegion $ \r -> tBoolU `tFunPE` tBool r
+
+        -- I32#
+        NamePrimDaCon PrimDaConInt32U
+         -> Just $ tForall kRegion $ \r -> tInt32U `tFunPE` tInt r
 
         -- Unit
         NamePrimDaCon PrimDaConUnit
@@ -145,6 +166,10 @@ typeOfPrimName dc
                                         (tSum kClosure [tDeepUse tA])
                  $ tList tR tA
 
+        -- Primitive operators
+        NamePrimOp p
+         -> Just $ typeOfPrimOp p
+
         -- Int
         NameInt _
          -> Just $ tForall kRegion
@@ -153,4 +178,36 @@ typeOfPrimName dc
                  $ tInt r
 
         _ -> Nothing
+
+
+-- | Take the type of a primitive operator.
+typeOfPrimOp :: PrimOp -> Type Name
+typeOfPrimOp op
+ = case op of
+        -- Arithmetic
+        PrimOpNeg       -> tForall kData $ \t -> t `tFunPE` t
+        PrimOpAdd       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpSub       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpMul       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpDiv       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpRem       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+
+        -- Comparison
+        PrimOpEq        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimOpNeq       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimOpGt        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimOpLt        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimOpLe        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+        PrimOpGe        -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBoolU
+
+        -- Boolean
+        PrimOpAnd       -> tBoolU `tFunPE` tBoolU `tFunPE` tBoolU
+        PrimOpOr        -> tBoolU `tFunPE` tBoolU `tFunPE` tBoolU
+
+        -- Bitwise
+        PrimOpShl       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpShr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpBAnd      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpBOr       -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimOpBXOr      -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
 

@@ -58,6 +58,10 @@ readName str
         |  Just name    <- readPrimDaCon str
         =  Just $ NamePrimDaCon name
 
+        -- PrimOp
+        | Just p        <- readPrimOp str
+        = Just $ NamePrimOp p
+
         -- Integers
         |  Just i       <- readLitInteger str
         =  Just $ NameInt i
@@ -72,6 +76,9 @@ readName str
         , isUpper c
         = Just $ NameCon str
 
+        | str == "()"
+        = Just $ NamePrimDaCon PrimDaConUnit
+
         | otherwise
         = Nothing
 
@@ -79,9 +86,10 @@ readName str
 
 -- DataTyCon ------------------------------------------------------------------
 data DataTyCon
-        = DataTyConUnit         -- ^ Unit type constructor.
-        | DataTyConInt          -- ^ Int  type constructor.
-        | DataTyConPair         -- ^ @Pair@ data constructor.
+        = DataTyConUnit         -- ^ Unit   type constructor.
+        | DataTyConBool         -- ^ Bool   type constructor.
+        | DataTyConInt          -- ^ Int    type constructor.
+        | DataTyConPair         -- ^ @Pair@ type constructor.
         | DataTyConList         -- ^ @List@ type constructor.
         deriving (Eq, Ord, Show)
 
@@ -90,6 +98,7 @@ instance Pretty DataTyCon where
  ppr dc
   = case dc of
         DataTyConUnit           -> text "Unit"
+        DataTyConBool           -> text "Bool"
         DataTyConInt            -> text "Int"
         DataTyConPair           -> text "Pair"
         DataTyConList           -> text "List"
@@ -99,6 +108,7 @@ readDataTyCon :: String -> Maybe DataTyCon
 readDataTyCon str
  = case str of
         "Unit"  -> Just DataTyConUnit
+        "Bool"  -> Just DataTyConBool
         "Int"   -> Just DataTyConInt
         "Pair"  -> Just DataTyConPair
         "List"  -> Just DataTyConList
@@ -107,9 +117,12 @@ readDataTyCon str
 
 -- PrimDaCon ------------------------------------------------------------------
 data PrimDaCon
-        = PrimDaConUnit         -- ^ Unit data constructor (@()@).
-        | PrimDaConPr           -- ^ @Pr@ data construct (pairs).
-        | PrimDaConNil          -- ^ @Nil@ data constructor.
+        = PrimDaConBoolU        -- ^ @B#@    data constructor.
+        | PrimDaConInt32U       -- ^ @I32#@  data constructor.
+
+        | PrimDaConUnit         -- ^ Unit   data constructor (@()@).
+        | PrimDaConPr           -- ^ @Pr@   data construct (pairs).
+        | PrimDaConNil          -- ^ @Nil@  data constructor.
         | PrimDaConCons         -- ^ @Cons@ data constructor.
         deriving (Show, Eq, Ord)
 
@@ -117,7 +130,10 @@ data PrimDaCon
 instance Pretty PrimDaCon where
  ppr dc
   = case dc of
-        PrimDaConUnit           -> text "Unit"
+        PrimDaConBoolU          -> text "B#"
+        PrimDaConInt32U         -> text "I32#"
+
+        PrimDaConUnit           -> text "()"
         PrimDaConPr             -> text "Pr"
         PrimDaConNil            -> text "Nil"
         PrimDaConCons           -> text "Cons"
@@ -126,6 +142,9 @@ instance Pretty PrimDaCon where
 readPrimDaCon :: String -> Maybe PrimDaCon
 readPrimDaCon str
  = case str of
+        "B#"    -> Just PrimDaConBoolU
+        "I32#"  -> Just PrimDaConInt32U
+
         "Unit"  -> Just PrimDaConUnit
         "Pr"    -> Just PrimDaConPr
         "Nil"   -> Just PrimDaConNil
