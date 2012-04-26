@@ -6,10 +6,10 @@ module DDC.Core.Fragment.Compliance
 where
 import DDC.Core.Fragment.Feature
 import DDC.Core.Fragment.Profile
+import DDC.Core.Fragment.Error
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Compounds
-import DDC.Base.Pretty
 import Control.Monad
 import Data.Maybe
 import DDC.Type.Env             (Env)
@@ -261,20 +261,6 @@ checkFunction profile xx
         _
          | has featuresGeneralApplication -> return ()
          | otherwise    -> throw $ ErrorUnsupported GeneralApplication
-
-
--- Error ----------------------------------------------------------------------
-data Error n
-        = ErrorUnsupported      Feature
-        | ErrorUndefinedPrim    n 
-        | ErrorShadowedBind     n
-        | ErrorUnusedBind       n
-        | ErrorNakedType        (Type    n)
-        | ErrorNakedWitness     (Witness n)
-        deriving (Eq, Show)
-
-instance Show n => Pretty (Error n) where
- ppr err        = text (show err)
 
 
 -- Context --------------------------------------------------------------------
