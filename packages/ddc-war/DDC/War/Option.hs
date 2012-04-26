@@ -114,6 +114,9 @@ parseOptions args0 config0
         , t > 0
         = eatn more $ spec { N.specBuildThreads = t}
 
+        | "-build-flavour" : flavour : more <- args
+        = eatn more $ spec { N.specBuildFlavour = flavour }
+
   eatn (arg : _) _
         = Left arg
 

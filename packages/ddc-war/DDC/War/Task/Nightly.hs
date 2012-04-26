@@ -33,8 +33,11 @@ data Spec
           -- | URL of DDC repository, used to update the snapshot.
         , specRemoteRepoURL     :: String 
 
-          -- | Number of threads to use when building.
+          -- | Inject this number of threads into the config-override.mk file
         , specBuildThreads      :: Int
+
+          -- | Inject this build flavour into the config-override.mk file
+        , specBuildFlavour      :: String
 
           -- | Cleanup after build
         , specCleanup           :: Bool
@@ -45,7 +48,6 @@ data Spec
           -- | If we're doing a continuous build, also build once on startup
         , specNow               :: Bool
 
-
           -- | Mailer to use to send build results,
           --   or Nothing if to not send mail.
         , specMailer            :: Maybe Mailer
@@ -55,7 +57,6 @@ data Spec
 
           -- | Send mail to this address.
         , specMailTo            :: Maybe String 
-
 
           -- | User and host name to copy logs to eg 'overlord@deluge.ouroborus.net'
         , specLogUserHost       :: Maybe String
@@ -128,6 +129,7 @@ buildProject spec
         let urlSnapshot  = specRemoteSnapshotURL spec
         let urlRepo      = specRemoteRepoURL     spec
         let buildThreads = specBuildThreads      spec
+        let buildFlavour = specBuildFlavour      spec
 
         ensureDir buildDir
         inDir     buildDir
@@ -154,7 +156,9 @@ buildProject spec
                         outLn "* Writing build config"
                         needs "make"
                         io $ writeFile "make/config-override.mk" 
-                           $ unlines ["THREADS = " ++ show buildThreads]
+                           $ unlines [ "THREADS = " ++ show buildThreads
+                                     , "BUILDFLAVOUR = " ++ show buildFlavour 
+                                     , "" ]
 
                         outLn "* Building project"
                         needs "Makefile"
