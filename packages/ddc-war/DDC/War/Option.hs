@@ -4,9 +4,9 @@ module DDC.War.Option
 where
 import DDC.War.Create.Way
 import DDC.War.Config
-import Data.Maybe
 import Data.Char
-import DDC.War.Task.Nightly             (Spec(..))
+import DDC.War.Task.Test                as T
+import DDC.War.Task.Nightly             as N
 import qualified BuildBox.Command.Mail  as B
 import qualified BuildBox.Data.Schedule as B
 
@@ -29,86 +29,91 @@ parseOptions args0 config0
         | elem arg ["-d", "-debug"]
         = eat rest $ config { configDebug = True }
 
-        -- Test mode ----------------------------
-        | elem arg ["-b", "-batch"]
-        = eat rest $ config { configBatch = True }
-
-        | "-j" : sThreads : more     <- args
-        , all isDigit sThreads
-        = eat more $ config { configThreads   = read sThreads}
-
-        | "-results" : file : more <- args
-        = eat more $ config { configResultsFileAll    = Just file }
-
-        | "-results-failed" : file : more <- args
-        = eat more $ config { configResultsFileFailed = Just file }
-
-        | "+compway" : name : flags  <- args
-        , (wayFlags, more)           <- break (\x -> take 1 x == "+") flags
-        = eat more $ config { configWays = configWays config ++ [Way name wayFlags []] }
-
-        | "+runway"  : name : flags  <- args
-        , (wayFlags, more)           <- break (\x -> take 1 x == "+") flags
-        = eat more $ config { configWays = configWays config ++ [Way name [] wayFlags] }
-
-        -- Nightly mode ------------------------
         | "-nightly" : dir : more     <- args
-        = case eatn more defaultNightly of
+        = case eatn more defaultNightlySpec of
            Left  badArg  -> error $ "Invalid argument " ++ show badArg
            Right nspec   -> config { configNightly = Just (nspec { specLocalBuildDir = Just dir }) }
 
-        -- Other stuff -------------------------
+        | otherwise
+        = case eatt args defaultTestSpec of
+           Left  badArg  -> error $ "Invalid argument " ++ show badArg
+           Right tspec   -> config { configTest    = Just tspec }
+
+
+  -- Parse options for test mode
+  eatt [] spec = Right spec
+  eatt args@(arg : rest) spec
+        | elem arg ["-b", "-batch"]
+        = eatt rest $ spec { T.specInteractive = False }
+
+        | "-j" : sThreads : more     <- args
+        , all isDigit sThreads
+        = eatt more $ spec { T.specThreads       = read sThreads}
+
+        | "-results" : file : more <- args
+        = eatt more $ spec { T.specResultsFileAll    = Just file }
+
+        | "-results-failed" : file : more <- args
+        = eatt more $ spec { T.specResultsFileFailed = Just file }
+
+        | "+compway" : name : flags  <- args
+        , (wayFlags, more)           <- break (\x -> take 1 x == "+") flags
+        = eatt more $ spec { T.specWays = T.specWays spec ++ [Way name wayFlags []] }
+
+        | "+runway"  : name : flags  <- args
+        , (wayFlags, more)           <- break (\x -> take 1 x == "+") flags
+        = eatt more $ spec { T.specWays = T.specWays spec ++ [Way name [] wayFlags] }
+
         | '-' : _       <- arg
-        = error $ "Invalid argument " ++ show arg
+        = Left arg
 
         -- Accept dirs for test mode
-        | isNothing $ configNightly config
-        = eat rest  $ config { configTestDirs  = configTestDirs config ++ [arg]}
-
         | otherwise
-        = error $ "Invalid argument " ++ show arg
+        = eatt rest  $ spec { specTestDirs  = specTestDirs spec ++ [arg]}
+
 
   -- Parse options for nightly mode.
   eatn [] spec = Right spec
   eatn args@(_arg:_rest) spec
         | "-build-dir" : dir : more     <- args
-        = eatn more $ spec { specLocalBuildDir = Just dir }
+        = eatn more $ spec { N.specLocalBuildDir = Just dir }
 
         | "-daily" : time : more   <- args
-        = eatn more $ spec { specContinuous = Just $ B.Daily $ read time }
+        = eatn more $ spec { N.specContinuous = Just $ B.Daily $ read time }
 
         | "-now" : more                 <- args
-        = eatn more $ spec { specNow = True }
+        = eatn more $ spec { N.specNow = True }
 
         | "-sendmail" : more            <- args
-        = eatn more $ spec { specMailer   = Just $ B.MailerSendmail "sendmail" [] }
+        = eatn more $ spec { N.specMailer   = Just $ B.MailerSendmail "sendmail" [] }
 
         | "-msmtp" : port : more        <- args
-        = eatn more $ spec { specMailer   = Just $ B.MailerMSMTP "msmtp" (Just $ read port) }
+        = eatn more $ spec { N.specMailer   = Just $ B.MailerMSMTP "msmtp" (Just $ read port) }
 
         | "-mail-from" : addr : more    <- args
-        = eatn more $ spec { specMailFrom = Just addr }
+        = eatn more $ spec { N.specMailFrom = Just addr }
 
         | "-mail-to" : addr : more      <- args
-        = eatn more $ spec { specMailTo   = Just addr }
+        = eatn more $ spec { N.specMailTo   = Just addr }
 
         | "-log-userhost" : str : more  <- args
-        = eatn more $ spec { specLogUserHost = Just str }
+        = eatn more $ spec { N.specLogUserHost = Just str }
 
         | "-log-remote-dir" : dir : more <- args
-        = eatn more $ spec { specLogRemoteDir = Just dir }
+        = eatn more $ spec { N.specLogRemoteDir = Just dir }
 
         | "-log-remote-url" : url : more <- args
-        = eatn more $ spec { specLogRemoteURL = Just url }
+        = eatn more $ spec { N.specLogRemoteURL = Just url }
 
         | "-build-threads" : threads : more <- args
         , all isDigit threads
         , t     <- read threads
         , t > 0
-        = eatn more $ spec { specBuildThreads = t}
+        = eatn more $ spec { N.specBuildThreads = t}
 
   eatn (arg : _) _
         = Left arg
+
 
 printUsage :: Maybe String -> IO ()
 printUsage badArg

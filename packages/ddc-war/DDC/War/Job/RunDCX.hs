@@ -57,6 +57,7 @@ build (Spec     srcDCX
 		buildDir testRunStdout testRunStderr)
 
  = do	needs srcDCX
+        needs "bin/ddci-core"
 
 	-- ensure the output directory exists
 	ensureDir buildDir
