@@ -239,8 +239,8 @@ colorizeStatus config jobName status
 
 
 colorDoc :: [VT100.Mode] -> Doc -> Doc
-colorDoc mode doc
+colorDoc vmode doc
         = text 
-        $ concat [ setMode mode
+        $ concat [ setMode vmode
                  , render doc
                  , setMode [Reset] ]

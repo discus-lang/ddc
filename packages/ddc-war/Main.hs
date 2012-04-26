@@ -1,7 +1,7 @@
 
-import DDC.War.Option
 import DDC.War.Config
-import BuildBox.Pretty
+import DDC.War.Option
+import BuildBox.Pretty
 import BuildBox
 import System.Environment
 import qualified DDC.War.Task.Nightly           as N
