@@ -84,6 +84,9 @@ parseOptions args0 config0
         | "-now" : more                 <- args
         = eatn more $ spec { N.specNow = True }
 
+        | "-cleanup" : more             <- args
+        = eatn more $ spec { N.specCleanup = True }
+
         | "-sendmail" : more            <- args
         = eatn more $ spec { N.specMailer   = Just $ B.MailerSendmail "sendmail" [] }
 
@@ -134,6 +137,7 @@ printUsage badArg
         , "  +runway  <NAME> [OPTIONS]     Also run executables with these RTS options."
         , ""
         , " Buildbot mode: war -nightly <DIR> [flags] ..."
+        , "  -cleanup                      Delete build dir after a successful build."
         , "  -daily          <HH:MM:SS>    Build every day at this time (in UTC)"
         , "  -now                           ... and also do a build right now."
         , ""

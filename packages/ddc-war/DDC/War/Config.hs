@@ -52,14 +52,12 @@ defaultNightlySpec
         , N.specRemoteSnapshotURL       = "http://code.ouroborus.net/ddc/snapshot/ddc-head-latest.tgz"
         , N.specRemoteRepoURL           = "http://code.ouroborus.net/ddc/ddc-head"
         , N.specBuildThreads            = 1
-
+        , N.specCleanup                 = False
         , N.specContinuous              = Nothing
         , N.specNow                     = False
-
         , N.specLogUserHost             = Just $ "overlord@deluge.ouroborus.net"
         , N.specLogRemoteDir            = Just $ "log/desire/ddc/head"
         , N.specLogRemoteURL            = Just $ "http://log.ouroborus.net/desire/ddc/head"
-
         , N.specMailer                  = Just $ B.MailerSendmail "sendmail" [] 
         , N.specMailFrom                = Just $ "DDC Buildbot <overlord@ouroborus.net>"
         , N.specMailTo                  = Just $ "benl@ouroborus.net" }

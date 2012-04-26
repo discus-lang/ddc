@@ -36,6 +36,8 @@ data Spec
           -- | Number of threads to use when building.
         , specBuildThreads      :: Int
 
+          -- | Cleanup after build
+        , specCleanup           :: Bool
 
           -- | If set build continuously
         , specContinuous        :: Maybe When
@@ -174,6 +176,10 @@ buildProject spec
                 -- Send mail reporting build success including failed tests.
                 strFailed       <- io $ readFile "log/war.failed"
                 postSuccess spec strTime strFailed
+
+        when (specCleanup spec)
+         $ do   outLn "* Cleaning up"
+                clobberDir buildDir
 
         return ResultSuccess
 
