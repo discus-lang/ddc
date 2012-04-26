@@ -9,6 +9,7 @@ import BuildBox.Command.Mail
 import BuildBox.Command.System
 import BuildBox.Command.File
 import BuildBox.Command.Environment
+import BuildBox.Control.Cron
 import BuildBox.Pretty
 import BuildBox.Build
 import BuildBox.Time
@@ -23,27 +24,25 @@ import System.FilePath          as Local
 -- Spec -----------------------------------------------------------------------
 data Spec
         = Spec
-        { -- | URL of DDC snapshot.tgz
-          specRemoteSnapshotURL :: String
+        {  -- | Use this scratch directory to perform the build.
+          specLocalBuildDir     :: Maybe FilePath 
+
+          -- | URL of DDC snapshot.tgz
+        , specRemoteSnapshotURL :: String
 
           -- | URL of DDC repository, used to update the snapshot.
         , specRemoteRepoURL     :: String 
-
-          -- | Use this scratch directory to perform the build.
-        , specLocalBuildDir     :: FilePath 
 
           -- | Number of threads to use when building.
         , specBuildThreads      :: Int
 
 
-          -- | User and host name to copy logs to eg 'overlord@deluge.ouroborus.net'
-        , specLogUserHost       :: Maybe String
+          -- | If set build continuously
+        , specContinuous        :: Maybe When
 
-          -- | Copy logs into this directory on the server
-        , specLogRemoteDir      :: Maybe String
+          -- | If we're doing a continuous build, also build once on startup
+        , specNow               :: Bool
 
-          -- | HTTP address of where the above logs appear
-        , specLogRemoteURL      :: Maybe String
 
           -- | Mailer to use to send build results,
           --   or Nothing if to not send mail.
@@ -53,7 +52,19 @@ data Spec
         , specMailFrom          :: Maybe String 
 
           -- | Send mail to this address.
-        , specMailTo            :: Maybe String }
+        , specMailTo            :: Maybe String 
+
+
+          -- | User and host name to copy logs to eg 'overlord@deluge.ouroborus.net'
+        , specLogUserHost       :: Maybe String
+
+          -- | Copy logs into this directory on the server
+        , specLogRemoteDir      :: Maybe String
+
+          -- | HTTP address of where the above logs appear
+        , specLogRemoteURL      :: Maybe String }
+
+
         deriving Show
 
 
@@ -74,17 +85,43 @@ instance Pretty Result where
 -- | Run the nightly DDC build.
 build :: Spec -> Build Result
 build spec
+ = case specContinuous spec of
+        -- Do a one-shot build.
+        Nothing         
+         -> buildCatch spec
+
+        -- Continuous build
+        Just whence 
+         -> do  outLn $ "* Starting cron loop"
+                cronLoop 
+                 $  makeSchedule 
+                        [ ("nightly"
+                          , whence
+                          , if specNow spec 
+                                then Just Immediate 
+                                else Nothing
+                          , buildCatch spec >> return ()) ]
+
+                -- The cron loop will quit if the build died and we couldn't
+                -- send a failure message. If that happens then give up completely.
+                return ResultFailure
+
+
+buildCatch :: Spec -> Build Result
+buildCatch spec
  = BuildBox.catch 
         (buildProject spec) 
         (\err -> do
                 postFailure spec err
                 return  ResultFailure)
 
+
 buildProject :: Spec -> Build Result
 buildProject spec
  = do   
         strTime         <- io $ getStampyTime
-        let buildDir    = specLocalBuildDir spec Local.</> strTime
+        let Just localBuildDir = specLocalBuildDir spec 
+        let buildDir           = localBuildDir Local.</> strTime
 
         let urlSnapshot  = specRemoteSnapshotURL spec
         let urlRepo      = specRemoteRepoURL     spec
@@ -187,7 +224,7 @@ postSuccess spec strTime strFailed
         let strLog      
                 = case specLogRemoteURL spec of
                    Nothing  -> ""
-                   Just url -> "Logs are at: " ++ url ++ "/" ++ strTime ++ "\n"
+                   Just url -> "Logs are at: " ++ url ++ "/" ++ strTime ++ "\n\n"
 
         let body        = strLog ++ strFailed
 

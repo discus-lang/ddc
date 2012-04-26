@@ -1,48 +1,24 @@
 
 import DDC.War.Option
 import DDC.War.Config
+--import BuildBox.Command.Mail                    (Mailer(..))
+--import BuildBox.Data.Schedule
 import BuildBox.Pretty
-import BuildBox.Command.Mail                    (Mailer(..))
 import BuildBox
 import System.Environment
-import qualified DDC.War.Task.Nightly           as Nightly
+import qualified DDC.War.Task.Nightly           as N
 import qualified DDC.War.Task.Test              as Test
 
 
 main :: IO ()
 main 
  = do	-- Parse command line options, and exit if they're no good.
-	args           <- getArgs
-	let config      = parseOptions args defaultConfig
+	args    <- getArgs
+	config  <- parseOptions args defaultConfig
 	
-        case configMode config of
-         ModeNightly    -> mainNightly config
-         ModeTest       -> mainTest    config
-
-
--- | Run the nightly build.
-mainNightly :: Config -> IO ()
-mainNightly _config
- = let spec
-         = Nightly.Spec
-         { Nightly.specRemoteSnapshotURL = "http://code.ouroborus.net/ddc/snapshot/ddc-head-latest.tgz"
-         , Nightly.specRemoteRepoURL     = "http://code.ouroborus.net/ddc/ddc-head"
-         , Nightly.specLocalBuildDir     = "." 
-         , Nightly.specBuildThreads      = 4 
-
-         , Nightly.specLogUserHost       = Just $ "overlord@deluge.ouroborus.net"
-         , Nightly.specLogRemoteDir      = Just $ "log/desire/ddc/head"
-         , Nightly.specLogRemoteURL      = Just $ "http://log.ouroborus.net/desire/ddc/head"
-
-         , Nightly.specMailer            = Just $ MailerSendmail "sendmail" [] 
-         , Nightly.specMailFrom          = Just $ "DDC Buildbot <overlord@ouroborus.net>"
-         , Nightly.specMailTo            = Just $ "benl@ouroborus.net" }
-
-   in do
-        result  <- runBuild "/tmp" $ Nightly.build spec
-        case result of
-         Left err       -> error    $ render $ ppr err
-         Right result'  -> putStrLn $ render $ ppr result'
+        case configNightly config of
+         Nothing        -> mainTest    config
+         Just spec      -> mainNightly spec
 
 
 -- | Run tests from the provided directories
@@ -64,4 +40,10 @@ mainTest config
          Right _        -> return ()
 
 
-
+-- | Run the nightly build.
+mainNightly :: N.Spec -> IO ()
+mainNightly spec
+ = do   result  <- runBuild "/tmp"  $ N.build spec
+        case result of
+         Left err       -> error    $ render $ ppr err
+         Right result'  -> putStrLn $ render $ ppr result'
