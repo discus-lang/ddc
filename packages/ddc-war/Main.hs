@@ -1,9 +1,7 @@
 
 import DDC.War.Option
 import DDC.War.Config
---import BuildBox.Command.Mail                    (Mailer(..))
---import BuildBox.Data.Schedule
-import BuildBox.Pretty
+import BuildBox.Pretty
 import BuildBox
 import System.Environment
 import qualified DDC.War.Task.Nightly           as N

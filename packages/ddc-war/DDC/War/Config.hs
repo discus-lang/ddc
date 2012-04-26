@@ -60,7 +60,7 @@ defaultNightlySpec
         , N.specLogRemoteURL            = Just $ "http://log.ouroborus.net/desire/ddc/head"
         , N.specMailer                  = Just $ B.MailerSendmail "sendmail" [] 
         , N.specMailFrom                = Just $ "DDC Buildbot <overlord@ouroborus.net>"
-        , N.specMailTo                  = Just $ "benl@ouroborus.net" }
+        , N.specMailTo                  = Just $ "disciple-cafe@googlegroups.com" }
 
 
 
