@@ -157,7 +157,7 @@ buildProject spec
                         needs "make"
                         io $ writeFile "make/config-override.mk" 
                            $ unlines [ "THREADS = " ++ show buildThreads
-                                     , "BUILDFLAVOUR = " ++ show buildFlavour 
+                                     , "BUILDFLAVOUR = " ++ buildFlavour 
                                      , "" ]
 
                         outLn "* Building project"
