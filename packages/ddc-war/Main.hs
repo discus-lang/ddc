@@ -28,11 +28,15 @@ mainNightly _config
          { Nightly.specRemoteSnapshotURL = "http://code.ouroborus.net/ddc/snapshot/ddc-head-latest.tgz"
          , Nightly.specRemoteRepoURL     = "http://code.ouroborus.net/ddc/ddc-head"
          , Nightly.specLocalBuildDir     = "." 
-         , Nightly.specRelPackageDir     = "ddc-head" 
          , Nightly.specBuildThreads      = 4 
+
+         , Nightly.specLogUserHost       = Just $ "overlord@deluge.ouroborus.net"
+         , Nightly.specLogRemoteDir      = Just $ "log/desire/ddc/head"
+         , Nightly.specLogRemoteURL      = Just $ "http://log.ouroborus.net/desire/ddc/head"
+
          , Nightly.specMailer            = Just $ MailerSendmail "sendmail" [] 
-         , Nightly.specMailFrom          = "DDC Buildbot <overlord@ouroborus.net>"
-         , Nightly.specMailTo            = "benl@ouroborus.net" }
+         , Nightly.specMailFrom          = Just $ "DDC Buildbot <overlord@ouroborus.net>"
+         , Nightly.specMailTo            = Just $ "benl@ouroborus.net" }
 
    in do
         result  <- runBuild "/tmp" $ Nightly.build spec

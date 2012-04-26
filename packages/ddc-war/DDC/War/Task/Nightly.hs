@@ -10,44 +10,90 @@ import BuildBox.Command.System
 import BuildBox.Command.File
 import BuildBox.Command.Environment
 import BuildBox.Pretty
-import BuildBox
---import System.FilePath
+import BuildBox.Build
+import BuildBox.Time
+import BuildBox                 as BuildBox
 import Control.Monad
 import Data.Char
 
+import System.FilePath.Posix    as Remote
+import System.FilePath          as Local
+
+
+-- Spec -----------------------------------------------------------------------
 data Spec
         = Spec
-        { specRemoteSnapshotURL :: String
+        { -- | URL of DDC snapshot.tgz
+          specRemoteSnapshotURL :: String
+
+          -- | URL of DDC repository, used to update the snapshot.
         , specRemoteRepoURL     :: String 
+
+          -- | Use this scratch directory to perform the build.
         , specLocalBuildDir     :: FilePath 
-        , specRelPackageDir     :: String
+
+          -- | Number of threads to use when building.
         , specBuildThreads      :: Int
 
+
+          -- | User and host name to copy logs to eg 'overlord@deluge.ouroborus.net'
+        , specLogUserHost       :: Maybe String
+
+          -- | Copy logs into this directory on the server
+        , specLogRemoteDir      :: Maybe String
+
+          -- | HTTP address of where the above logs appear
+        , specLogRemoteURL      :: Maybe String
+
+          -- | Mailer to use to send build results,
+          --   or Nothing if to not send mail.
         , specMailer            :: Maybe Mailer
-        , specMailFrom          :: String 
-        , specMailTo            :: String }
+
+          -- | Send mail from this address.
+        , specMailFrom          :: Maybe String 
+
+          -- | Send mail to this address.
+        , specMailTo            :: Maybe String }
         deriving Show
 
 
--- TODO: add log files to the ResultSuccess constructor
+-- Result ---------------------------------------------------------------------
 data Result
         = ResultSuccess
+        | ResultFailure
 
 
 instance Pretty Result where
  ppr result
   = case result of
         ResultSuccess   -> text "success"
+        ResultFailure   -> text "failure"
 
 
+-- Build ----------------------------------------------------------------------
 -- | Run the nightly DDC build.
 build :: Spec -> Build Result
 build spec
+ = BuildBox.catch 
+        (buildProject spec) 
+        (\err -> do
+                postFailure spec err
+                return  ResultFailure)
+
+buildProject :: Spec -> Build Result
+buildProject spec
  = do   
-        ensureDir (specLocalBuildDir spec)
-        inDir     (specLocalBuildDir spec)
+        strTime         <- io $ getStampyTime
+        let buildDir    = specLocalBuildDir spec Local.</> strTime
+
+        let urlSnapshot  = specRemoteSnapshotURL spec
+        let urlRepo      = specRemoteRepoURL     spec
+        let buildThreads = specBuildThreads      spec
+
+        ensureDir buildDir
+        inDir     buildDir
          $ do 
-{-}                outLn "* Creating log directory"
+                outLn "* Creating log directory"
                 ensureDir "log"
                 
                 outLn "* Downloading snapshot"
@@ -58,10 +104,10 @@ build spec
                 needs (takeFileName urlSnapshot)
                 outLn "* Unpacking snapshot"
                 ssystem $ "tar zxf " ++ takeFileName urlSnapshot
--}
-                inDir (specRelPackageDir spec)
+
+                inDir "ddc-head"
                  $ do
-{-}                        outLn "* Updating shapshot"
+                        outLn "* Updating shapshot"
                         (darcsOut, darcsErr) <- ssystem $ "darcs pull -av " ++ urlRepo
                         io $ writeFile "../log/02-darcs.stdout" darcsOut
                         io $ writeFile "../log/02-darcs.stderr" darcsErr
@@ -76,7 +122,7 @@ build spec
                         (makeOut, makeErr) <- ssystem $ "make nightly"
                         io $ writeFile "../log/03-make.stdout" makeOut
                         io $ writeFile "../log/03-make.stderr" makeErr
--}
+
                         outLn "* Copying results"
                         needs "war.results"
                         needs "war.failed"
@@ -85,36 +131,106 @@ build spec
 
                         return ()
 
-                outLn "* Sending mail"
-                (case specMailer spec of
-                  Nothing       -> return ()
-                  Just mailer   -> build_mail spec mailer)
+                -- Copy logs to remote host.
+                copyLogs spec strTime
+
+                -- Send mail reporting build success including failed tests.
+                strFailed       <- io $ readFile "log/war.failed"
+                postSuccess spec strTime strFailed
 
         return ResultSuccess
 
-build_mail :: Spec -> Mailer -> Build ()
-build_mail spec mailer
- = do   
-        -- Create message subject.
-        hostName        <- getHostName
-        machName        <- liftM (takeWhile (not . isSpace)) $ sesystemq "uname -m"
-        osName          <- liftM (takeWhile (not . isSpace)) $ sesystemq "uname"
 
+-- | Copy logs to the remote host
+copyLogs :: Spec -> String -> Build ()
+copyLogs spec strTime
+ | Just userHost <- specLogUserHost  spec
+ , Just logDir   <- specLogRemoteDir spec
+ = do   
+        outLn $ "* Copying logs to " ++ userHost
+
+        let dir = logDir Remote.</> strTime
+
+        -- Make the destination directory.
+        sesystemq $ "ssh " ++ userHost ++ " mkdir -p " ++ dir
+
+        -- Copy the files.
+        sesystemq $ "scp -r log/* " ++ userHost ++ ":" ++ dir
+
+        return ()
+
+ | otherwise    = return ()
+
+
+-- | Send mail reporting build success.
+postSuccess :: Spec -> String -> String -> Build ()
+postSuccess spec strTime strFailed
+ | Just mailer          <- specMailer   spec
+ , Just addrFrom        <- specMailFrom spec
+ , Just addrTo          <- specMailTo   spec
+ = do   
+        outLn "* Reporting build success"
+
+        -- The overall build succeeded, but some tests might have failed.
+        let nFailed     =  length $ lines strFailed
+
+        -- Create message subject.
+        hostId          <- getHostId
         let subject     
-                =  "DDC Build Success"
-                ++ " (" ++ hostName ++ "." ++ machName ++ "." ++ osName ++ ")" 
+                | nFailed == 0  
+                = "DDC Build Success (" ++ hostId ++ ")"
+
+                | otherwise     
+                = "DDC Build Success (" ++ hostId ++ ") with " ++ show nFailed ++ " failed tests"
 
         -- Create message body.
-        resultsFailed   <- io $ readFile "log/war.failed"
-        let body        = resultsFailed
+        let strLog      
+                = case specLogRemoteURL spec of
+                   Nothing  -> ""
+                   Just url -> "Logs are at: " ++ url ++ "/" ++ strTime ++ "\n"
+
+        let body        = strLog ++ strFailed
 
         -- Send the mail
-        mail    <- createMailWithCurrentTime 
-                        (specMailFrom spec) (specMailTo spec) subject body
-
-        let str = render $ renderMail mail
-        io $ writeFile "war.mail" str
+        mail    <- createMailWithCurrentTime addrFrom addrTo subject body
 
         sendMailWithMailer mail mailer
 
+-- don't send mail.
+postSuccess _ _ _       = return ()
+
+
+-- | Send mail reporting build failure.
+postFailure :: Spec -> BuildError -> Build ()
+postFailure spec err
+ | Just mailer          <- specMailer   spec
+ , Just addrFrom        <- specMailFrom spec
+ , Just addrTo          <- specMailTo   spec
+ = do   
+        outLn "* Reporting build failure"
+
+        -- Create message subject.
+        hostId          <- getHostId
+        let subject     =  "DDC Build FAILURE (" ++ hostId ++ ")"
+
+        -- Create message body.
+        let body        = render $ ppr err
+
+        -- Send the mail
+        mail    <- createMailWithCurrentTime addrFrom addrTo subject body
+
+        sendMailWithMailer mail mailer
+
+-- don't send mail
+postFailure spec strFailed = return ()
+
+
+-- | Build a string identifying this host
+getHostId :: Build String
+getHostId
+ = do
+        hostName        <- liftM (takeWhile (not . (==) '.')) $ getHostName
+        machName        <- liftM (takeWhile (not . isSpace))  $ sesystemq "uname -m"
+        osName          <- liftM (takeWhile (not . isSpace))  $ sesystemq "uname"
+        return $ hostName ++ "." ++ machName ++ "." ++ osName
 
