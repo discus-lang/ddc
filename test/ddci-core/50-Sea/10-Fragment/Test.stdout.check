@@ -82,7 +82,7 @@ nat_t foo (nat_t x)
 
 -- Error: assignment from primop.
 Error loading module
-  ErrorUnsupported PartialPrims
+  Unsupported feature: PartialPrims
 
 
 -- Error: cannot discard non-void return value.

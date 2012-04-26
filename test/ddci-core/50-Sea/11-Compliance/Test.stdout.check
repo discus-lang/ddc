@@ -6,24 +6,24 @@ ok
 
 -- Error: name shadowing in function definition
 Error loading module
-  ErrorShadowedBind (NameVar "x")
+  Binding shadows existing name: x
 
 
 -- Error: name shadowing in let-expression
 Error loading module
-  ErrorShadowedBind (NameVar "x")
+  Binding shadows existing name: x
 
 
 -- Error: use of debruijn binders
 Error loading module
-  ErrorUnsupported DebruijnBinders
+  Unsupported feature: DebruijnBinders
 
 
 -- Error: general application
 Error loading module
-  ErrorUnsupported GeneralApplication
+  Unsupported feature: GeneralApplication
 
 
 -- Error: partially applied primop
 Error loading module
-  ErrorUnsupported PartialPrims
+  Unsupported feature: PartialPrims
