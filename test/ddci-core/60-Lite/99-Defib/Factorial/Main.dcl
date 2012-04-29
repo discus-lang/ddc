@@ -8,7 +8,7 @@ with letrec
 
 
 unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
- = case x of { I32# i -> i }
+ = case x of { I32# i -> i; _ -> 0i32# }
 
 
 --subInt [r1 r2 r3 : %] 

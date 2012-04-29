@@ -46,7 +46,7 @@ primDataDefs
                 (NameDataTyCon DataTyConInt)
                 [kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConInt32U
-                          , [tInt32U]) ])
+                          , [tIntU 32]) ])
 
         -- Pair
         , DataDef
@@ -136,7 +136,7 @@ typeOfPrimName dc
 
         -- I32#
         NamePrimDaCon PrimDaConInt32U
-         -> Just $ tForall kRegion $ \r -> tInt32U `tFunPE` tInt r
+         -> Just $ tForall kRegion $ \r -> tIntU 32 `tFunPE` tInt r
 
         -- Unit
         NamePrimDaCon PrimDaConUnit
@@ -170,12 +170,21 @@ typeOfPrimName dc
         NamePrimOp p
          -> Just $ typeOfPrimOp p
 
-        -- Int
-        NameInt _
+        -- Integer
+        NameInteger _
          -> Just $ tForall kRegion
           $ \r  -> tFun tUnit           (tAlloc r)
                                         (tBot kClosure)
                  $ tInt r
+
+        NameBool _
+         -> Just $ tBoolU
+
+        NameInt _ bits
+         -> Just $ tIntU bits
+
+        NameWord _ bits
+         -> Just $ tWordU bits
 
         _ -> Nothing
 

@@ -74,6 +74,9 @@ data DataCtor n
         { -- | Name of data constructor.
           dataCtorName       :: n
 
+          -- | Tag of constructor (order in data type declaration)
+        , dataCtorTag        :: Int
+
           -- | Field types of constructor.
         , dataCtorFieldTypes :: [Type n]
 
@@ -102,21 +105,22 @@ insertDataDef (DataDef nType ks mCtors) dataDefs
                    Nothing    -> DataModeLarge
                    Just ctors -> DataModeSmall (map fst ctors)
 
-        makeDefCtor (nCtor, tsFields)
+        makeDefCtor tag (nCtor, tsFields)
                 = DataCtor
                 { dataCtorName       = nCtor
+                , dataCtorTag        = tag
                 , dataCtorFieldTypes = tsFields
                 , dataCtorTypeName   = nType }
 
         defCtors = case mCtors of
                     Nothing  -> Nothing
-                    Just cs  -> Just $ map makeDefCtor cs
+                    Just cs  -> Just $ zipWith makeDefCtor [0..] cs
 
    in   dataDefs
          { dataDefsTypes = Map.insert nType defType (dataDefsTypes dataDefs)
          , dataDefsCtors = Map.union (dataDefsCtors dataDefs)
-                         $ Map.fromList [(n, def) | def@(DataCtor n _ _) 
-                                          <- concat $ maybeToList defCtors] }
+                         $ Map.fromList [(n, def) 
+                                | def@(DataCtor n _ _ _) <- concat $ maybeToList defCtors ]}
 
 
 -- | Build a `DataDefs` table from a list of `DataDef`

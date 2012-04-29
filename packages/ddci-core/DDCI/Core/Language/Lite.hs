@@ -12,7 +12,7 @@ import DDC.Core.Brine.Lite
 import qualified DDC.Type.Env           as Env
 
 
-fragmentLite :: Fragment Name Error
+fragmentLite :: Fragment Name Error 
 fragmentLite
         = Fragment
         { fragmentProfile       = profile 

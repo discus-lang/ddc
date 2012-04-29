@@ -1,7 +1,8 @@
 
 module DDC.Core.Brine.Lite.Compounds
         ( tBoolU
-        , tInt32U
+        , tIntU
+        , tWordU
 
         , tUnit
         , tBool
@@ -19,8 +20,11 @@ import DDC.Type.Compounds
 tBoolU :: Type Name
 tBoolU  = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData))
 
-tInt32U :: Type Name
-tInt32U = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt 32)) kData))
+tIntU :: Int -> Type Name
+tIntU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt bits)) kData))
+
+tWordU :: Int -> Type Name
+tWordU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData))
 
 
 -- | Application of the Unit type constructor.

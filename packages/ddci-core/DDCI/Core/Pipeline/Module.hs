@@ -222,7 +222,7 @@ pipeLite mm pp
          -> pipeSink (renderIndent $ ppr mm) sink
 
         PipeLiteToBrine pipes
-         -> case Lite.toBrine mm of
+         -> case Lite.toBrine (profilePrimDataDefs Lite.profile) mm of
                 Left  err       -> return [ErrorLiteConvert err]
                 Right mm'       -> liftM concat $ mapM (pipeCore mm') pipes
 

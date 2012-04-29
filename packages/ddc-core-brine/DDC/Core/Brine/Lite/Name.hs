@@ -29,8 +29,17 @@ data Name
         -- | A primitive operator.
         | NamePrimOp    PrimOp
 
-        -- | A integer literal.
-        | NameInt       Integer
+        -- | A boxed integer literal.
+        | NameInteger   Integer
+
+        -- | An unboxed integer literal.
+        | NameInt       Integer Int
+
+        -- | An unboxed word literal
+        | NameWord      Integer Int
+
+        -- | An Unboxed boolean literal
+        | NameBool      Bool
         deriving (Eq, Ord, Show)
 
 
@@ -43,7 +52,11 @@ instance Pretty Name where
         NamePrimTyCon tc        -> ppr tc
         NamePrimDaCon dc        -> ppr dc
         NamePrimOp op           -> ppr op
-        NameInt i               -> text (show i)
+        NameInteger i           -> text (show i)
+        NameBool True           -> text "True#"
+        NameBool False          -> text "False#"
+        NameWord i bits         -> integer i <> text "w" <> int bits <> text "#"
+        NameInt  i bits         -> integer i <> text "i" <> int bits <> text "#"
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -62,10 +75,6 @@ readName str
         | Just p        <- readPrimOp str
         = Just $ NamePrimOp p
 
-        -- Integers
-        |  Just i       <- readLitInteger str
-        =  Just $ NameInt i
-
         -- Variables.
         | c : _         <- str
         , isLower c      
@@ -78,6 +87,24 @@ readName str
 
         | str == "()"
         = Just $ NamePrimDaCon PrimDaConUnit
+
+        -- Integers
+        |  Just i       <- readLitInteger str
+        =  Just $ NameInteger i
+
+        -- Literal Bools
+        | str == "True#"  = Just $ NameBool True
+        | str == "False#" = Just $ NameBool False
+
+        -- Literal Words
+        | Just (val, bits) <- readLitPrimWordOfBits str
+        , elem bits [8, 16, 32, 64]
+        = Just $ NameWord val bits
+
+        -- Literal Ints
+        | Just (val, bits) <- readLitPrimIntOfBits str
+        , elem bits [8, 16, 32, 64]
+        = Just $ NameInt  val bits
 
         | otherwise
         = Nothing

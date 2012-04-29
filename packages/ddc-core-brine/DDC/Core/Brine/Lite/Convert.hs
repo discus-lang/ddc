@@ -8,6 +8,8 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Compounds
+import DDC.Type.Universe
+import DDC.Type.DataDef
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad                     (throw, result)
 import qualified DDC.Type.Check.Monad           as G
@@ -20,30 +22,44 @@ import Control.Monad
 
 -- | Convert a Disciple Lite module to Disciple Brine.
 --
+--   Case expressions on alrebraic data values are converted into ones that just
+--   check the tag, while data constructors are unfolded into explicit allocation
+--   and field initialization primops. 
+--
+--   TODO: Add the alternatives that force and follow lazy thunks and indirections.
+--   TODO: Expand partial and over-applications into code that explicitly builds
+--         and applies thunks.
+--
 --   The input module needs to be well typed, and have all functions defined at
 --   top-level, and be a-normalised. If not then `Error`.
--- 
---   Partial application and over-application are ok. These are expanded
---   to code that explicitly builds and applies thunks.
---
---   In the result, the types of algebraic data is converted to a generaic
---   "Ptr# Obj" type, and objects are explicitly constructed and destructed
---   with raw memory primops.
 --
 toBrine
         :: Show a 
-        => Module a L.Name 
+        => DataDefs L.Name
+        -> Module a L.Name 
         -> Either (Error a) (Module a O.Name)
-toBrine mm
- = result $ convertM mm
+toBrine defs mm
+ = result $ convertM defs mm
 
 -- | Conversion Monad
 type ConvertM a x = G.CheckM (Error a) x
 
+
+-- | Things that can go wrong during the conversion.
 data Error a
-        -- | This program is definately not well typed.
+        -- | The program is definately not well typed.
         = ErrorMistyped 
+
+        -- | The program wasn't in a-normal form.
+        | ErrorNotNormalized
+
+        -- | An invalid name used in a binding position
+        | ErrorInvalidBinder L.Name
+
+        -- | An invalid name used for the constructor of an alternative.
+        | ErrorInvalidAlt
         deriving Show
+
 
 instance Pretty (Error a) where
  ppr err
@@ -51,20 +67,24 @@ instance Pretty (Error a) where
         ErrorMistyped
          -> vcat [ text "Module is mistyped."]
 
+        ErrorNotNormalized
+         -> vcat [ text "Module is not in a-normal form."]
 
--------------------------------------------------------------------------------
-class Convert (c :: * -> *) n where
- -- | Convert a thing to the Core Brine fragment.
- --   The thing needs to be type correct, else this might `error`.
- convertM       :: c n -> ConvertM a (c O.Name)
+        ErrorInvalidBinder n
+         -> vcat [ text "Invalid name used in bidner " <> ppr n ]
+
+        ErrorInvalidAlt
+         -> vcat [ text "Invalid alternative" ]
 
 
-instance Convert (Module a) L.Name where
- convertM m
-  = do  x'      <- convertM $ moduleBody m
+-- Module ---------------------------------------------------------------------
+convertM :: DataDefs L.Name -> Module a L.Name -> ConvertM a (Module a O.Name)
+convertM defsPrim mm
+  = do  let defs = defsPrim
+        x'       <- convertX defs $ moduleBody mm
 
         return $ ModuleCore
-         { moduleName           = moduleName m
+         { moduleName           = moduleName mm
          , moduleExportKinds    = Map.empty
          , moduleExportTypes    = Map.empty
          , moduleImportKinds    = Map.empty
@@ -72,69 +92,107 @@ instance Convert (Module a) L.Name where
          , moduleBody           = x' }
 
 
-instance Convert (Exp a) L.Name where
- convertM xx
+-- Exp -------------------------------------------------------------------------
+convertX :: DataDefs L.Name -> Exp a L.Name -> ConvertM a (Exp a O.Name)
+convertX defs xx
   = case xx of
-        XVar{}  -> error "toBrineX: XVar"        
-        XCon{}  -> error "toBrineX: XCon"        
-        XLAM{}  -> error "toBrineX: XLAM"        
-        XLam{}  -> error "toBrineX: XLam"        
+        XVar a u        -> liftM2 XVar (return a) (convertU u)
+
+        XCon a u        -> convertC defs a u
+
+        -- Type lambdas don't appear in Core Brine.
+        XLAM _ _ x
+         -> convertX defs x
+
+        -- Keep value binders but ditch witness binders for now.
+        -- TODO: if expresion is not another lambda or case then
+        --       wrap it in a return#.
+        XLam a b x
+         -> case universeFromType1 (typeOfBind b) of
+             Just UniverseData    -> liftM3 XLam (return a) (convertB b) (convertX defs x)
+             Just UniverseWitness -> convertX defs x
+             _                    -> throw ErrorMistyped
+
         XApp{}  -> error "toBrineX: XApp"
 
         XLet a (LRec bxs) x2
          -> do  let (bs, xs)    = unzip bxs
-                bs'             <- mapM convertM bs
-                xs'             <- mapM convertM xs
-                x2'             <- convertM x2
+                bs'             <- mapM convertB bs
+                xs'             <- mapM (convertX defs) xs
+                x2'             <- convertX defs x2
                 return $ XLet a (LRec $ zip bs' xs') x2'
 
         XLet{}          -> error "toBrineX: XLet"
-        XCase{}         -> error "toBrineX: XCase"
-        XCast{}         -> error "toBrineX: XCast"
+
+        -- TODO: add default alternative to check for other tags
+        --       if there isn't one already.
+        XCase a x@(XVar _ uX) alts  
+         -> do  x'              <- convertX defs x
+                alts'           <- mapM (convertA defs uX) alts
+                return  $ XCase a (XApp a (xGetTag a) x') alts'
+
+        XCase{}         -> throw $ ErrorNotNormalized
+
+        XCast _ _ x     -> convertX defs x
 
         XType{}         -> throw $ ErrorMistyped
         XWitness{}      -> throw $ ErrorMistyped
 
 
-instance Convert Bind L.Name where
- convertM bb
-  = case bb of
-        BNone t         -> liftM  BNone (convertM t)        
-        BAnon t         -> liftM  BAnon (convertM t)
-        BName n t       -> liftM2 BName (convertBindNameM n) (convertM t)
+-- Alt ------------------------------------------------------------------------
+
+-- TODO: if expression is not another case then wrap it in a return#.
+convertA :: DataDefs L.Name 
+         -> Bound L.Name -> Alt a L.Name -> ConvertM a (Alt a O.Name)
+convertA defs _u alt
+ = case alt of
+        AAlt PDefault x
+         -> do  x'      <- convertX defs x
+                return  $ AAlt PDefault x'
+
+        AAlt (PData u _bs) x
+         | Just nCtor    <- case u of
+                                UName n _ -> Just n
+                                UPrim n _ -> Just n
+                                _         -> Nothing
+         , Just ctor     <- Map.lookup nCtor $ dataDefsCtors defs
+         , tag           <- fromIntegral $ dataCtorTag ctor
+         -> do  x'       <- convertX defs x
+                let uTag = UPrim (O.NameTag tag) O.tTag
+                return  $ AAlt (PData uTag []) x'
 
 
-instance Convert Bound L.Name where
- convertM uu
-  = case uu of
-        UIx i t         -> liftM2 UIx   (return i) (convertM t)
-        UName n t       -> liftM2 UName (convertBoundNameM n) (convertM t)
-        UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertM t)
-        UHole   t       -> liftM  UHole (convertM t)
+        AAlt{}          -> throw ErrorInvalidAlt
 
 
-instance Convert Type L.Name where
- convertM tt
+-- Data Constructor -----------------------------------------------------------
+convertC :: DataDefs L.Name
+         -> a -> Bound L.Name -> ConvertM a (Exp a O.Name)
+convertC _defs a uu
+ = case uu of
+        UPrim (L.NameInt i bits) _   
+          -> return $ XVar a (UPrim (O.NameInt i bits) (O.tInt bits))
+
+        _ -> error "convertC"
+
+
+-- Type -----------------------------------------------------------------------
+convertT :: Type L.Name -> ConvertM a (Type O.Name)
+convertT tt
   = case tt of
-        -- Convert type variables.
-        TVar u          -> liftM TVar (convertM u)
+        -- Convert type variables an constructors.
+        TVar u          -> liftM TVar (convertU u)
+        TCon tc         -> convertTyCon tc
 
-        -- Decend into foralls, as the Brine fragment doesn't
-        -- care about quantifiers.
-        TForall _ t     -> convertM t
-
-        -- Handle constructors and applications together.
-        TCon{}          
-         | otherwise
-         -> return $ O.tPtr O.tObj       -- TODO: check for primitive types.
+        -- Strip off foralls, as the Brine fragment doesn't care about quantifiers.
+        TForall _ t     -> convertT t
 
         TApp{}  
          -- Strip off effect and closure information.
          |  Just (t1, _, _, t2)  <- takeTFun tt
-         -> liftM2 tFunPE (convertM t1) (convertM t2)
+         -> liftM2 tFunPE (convertT t1) (convertT t2)
 
-         -- Application of some type constructor or type variable, 
-         -- is a standard boxed object.
+         -- Boxed data values are represented in generic form.
          | otherwise
          -> return $ O.tPtr O.tObj
 
@@ -143,10 +201,77 @@ instance Convert Type L.Name where
         TSum{}          -> throw ErrorMistyped
 
 
+-- | Convert a simple type constructor to a Brine type.
+convertTyCon :: TyCon L.Name -> ConvertM a (Type O.Name)
+convertTyCon tc
+ = case tc of
+        -- Higher universe constructors are passed through unharmed.
+        TyConSort    c           -> return $ TCon $ TyConSort    c 
+        TyConKind    c           -> return $ TCon $ TyConKind    c 
+        TyConWitness c           -> return $ TCon $ TyConWitness c 
+        TyConSpec    c           -> return $ TCon $ TyConSpec    c 
+
+        -- Convert primitive TyCons to Brine form.
+        TyConBound   (UPrim n _) -> convertTyConPrim n
+
+        -- Boxed data values are represented in generic form.
+        TyConBound   _           -> return $ O.tPtr O.tObj
+
+
+-- | Convert a primitive type constructor to Brine form.
+convertTyConPrim :: L.Name -> ConvertM a (Type O.Name)
+convertTyConPrim n
+ = case n of
+        L.NamePrimTyCon pc      
+          -> return $ TCon $ TyConBound (UPrim (O.NamePrimTyCon pc) kData)
+        _ -> throw ErrorMistyped
+
+
+-- Names ----------------------------------------------------------------------
+convertB :: Bind L.Name -> ConvertM a (Bind O.Name)
+convertB bb
+  = case bb of
+        BNone t         -> liftM  BNone (convertT t)        
+        BAnon t         -> liftM  BAnon (convertT t)
+        BName n t       -> liftM2 BName (convertBindNameM n) (convertT t)
+
+
+convertU :: Bound L.Name -> ConvertM a (Bound O.Name)
+convertU uu
+  = case uu of
+        UIx i t         -> liftM2 UIx   (return i) (convertT t)
+        UName n t       -> liftM2 UName (convertBoundNameM n) (convertT t)
+        UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertT t)
+        UHole   t       -> liftM  UHole (convertT t)
+
+
 convertBindNameM :: L.Name -> ConvertM a O.Name
-convertBindNameM = error "toBrineBindName: finish me"
+convertBindNameM nn
+ = case nn of
+        L.NameVar str   -> return $ O.NameVar str
+        _               -> throw $ ErrorInvalidBinder nn
+
 
 convertBoundNameM :: L.Name -> ConvertM a O.Name
-convertBoundNameM = error "toBrineBoundName: finish me"
+convertBoundNameM nn
+ = case nn of
+        L.NameVar str   -> return $ O.NameVar str
+        _               -> error "convertBoundName"
 
+
+-- Runtime --------------------------------------------------------------------
+-- These functions need to be defined in the runtime system.
+-- TODO: import functions via the module interface.
+
+{-
+xFail   :: a -> Type O.Name -> Exp a O.Name
+xFail a t       
+ = XApp a (XVar a (UPrim (O.NamePrim (O.PrimControl O.PrimControlFail))
+                         (TForall (BAnon kData) (TVar $ UIx 0 kData))))
+          (XType t)
+-}
+
+xGetTag :: a -> Exp a O.Name
+xGetTag a       = XVar a (UName (O.NameVar "getTag")
+                                (tFunPE (O.tPtr O.tObj) O.tTag))
 
