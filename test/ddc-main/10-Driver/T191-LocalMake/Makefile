@@ -8,12 +8,13 @@ export DYLD_LIBRARY_PATH = $(top)runtime
 all : Main.bin
 
 clean :
-	rm -f *.o *.ddc.* *.di *.bin *.stdout
+	echo buildDir = ${BUILDDIR}
+	rm -f ${BUILDDIR}/*
 
-check : Main.sea.bin
-	./Main.sea.bin > Main.sea.stdout
-	cmp Main.sea.stdout Main.stdout.check
+check : ${BUILDDIR}/Main.sea.bin
+	${BUILDDIR}/Main.sea.bin > ${BUILDDIR}/Main.sea.stdout
+	cmp ${BUILDDIR}/Main.sea.stdout Main.stdout.check
 
-Main.sea.bin: Main.ds
-	$(DDC) --make $< -o $@
+${BUILDDIR}/Main.sea.bin: Main.ds
+	$(DDC) --make $< -o $@ -outputdir ${BUILDDIR}
 
