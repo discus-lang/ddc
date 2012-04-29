@@ -3,29 +3,37 @@
 :set lang Brine
 :set +Indent
 :to-c..
-module Main with letrec {
+module Main 
+imports {
+        allocRaw :: Tag# -> Nat# -> Ptr# Obj;
+        getTag   :: Ptr# Obj -> Tag#;
+}
+with letrec {
 addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- =      let z : Ptr# Obj     = allocRaw# TAG0# 4 in
-        match TAG0#  <- tag# x else fail# [Ptr# Obj] in
-        match TAG0#  <- tag# y else fail# [Ptr# Obj] in
-        let r : Int32#       = add# [Int32#] 
-                                        (read# [Int32#] (fieldRaw# [Int32#] 0 x))
-                                        (read# [Int32#] (fieldRaw# [Int32#] 0 y)) in
-        let _ : Void#        = write# [Int32#] (fieldRaw# [Int32#] 0 z) r in
+ =      let x'  = unboxInt32 x in
+        let y'  = unboxInt32 y in
+        let r   = add# [Int32#] x' y' in
+        let z   = boxInt32 r in
         return# [Ptr# Obj] z;
 
 boxInt32 (x : Int32#) : Ptr# Obj
- =      let z : Ptr# Obj     = allocRaw# TAG0# 4 in
-        let _ : Void#        = write# [Int32#] (fieldRaw# [Int32#] 0 z) x in
-        return# [Ptr# Obj] z;
+ = do { obj     = allocRaw TAG0# 4;
+        addr    = takePtr# [Obj] obj;
+        write#  [Int32#] addr 8 x;
+        return# [Ptr# Obj] obj;
+      };
 
-unboxInt32 (x : Ptr# Obj) : Int32#
- =      return# [Int32#] (read# [Int32#] (fieldRaw# [Int32#] 0 x));
+unboxInt32 (obj : Ptr# Obj) : Int32#
+ = do { addr    = takePtr# [Obj] obj;
+        x       = read#   [Int32#] addr 8;
+        return# [Int32#] x;
+      };
+
 
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
- =      let x   : Ptr# Obj   = boxInt32 (i32# 5) in
+ =      let x   : Ptr# Obj   = boxInt32 5i32# in
         let x2  : Ptr# Obj   = addInt32 x x in
         let str : String#    = showInt32# (unboxInt32 x2) in
         let _   : Void#      = putStrLn# str in
-        return# [Int32#] (i32# 0);
+        return# [Int32#] 0i32#;
 };;
