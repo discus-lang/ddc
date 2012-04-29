@@ -119,30 +119,30 @@ pipeText source str pp
 -- PipeCoreModule -------------------------------------------------------------
 -- | Process a core module.
 data PipeCore n where
-  -- | Output a module to console or file.
+  -- Output a module to console or file.
   PipeCoreOutput    
         :: Sink 
         -> PipeCore n
 
-  -- | Type check a module.
+  -- Type check a module.
   PipeCoreCheck      
         :: Fragment n err
         -> [PipeCore n]
         -> PipeCore n
 
-  -- | Apply a simplifier to a module.
+  -- Apply a simplifier to a module.
   PipeCoreSimplify  
         :: Fragment n err
         -> Simplifier 
         -> [PipeCore n] 
         -> PipeCore n
 
-  -- | Treat a module as belonging to the Core Lite fragment from now on.
+  -- Treat a module as belonging to the Core Lite fragment from now on.
   PipeCoreAsLite
         :: [PipeLite]
         -> PipeCore Lite.Name
 
-  -- | Treat a module as beloning to the Core Brine fragment from now on.
+  -- Treat a module as beloning to the Core Brine fragment from now on.
   PipeCoreAsBrine
         :: [PipeBrine] 
         -> PipeCore Output.Name
