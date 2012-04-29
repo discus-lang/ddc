@@ -203,7 +203,7 @@ data PipeLite
         = PipeLiteOutput    Sink
 
         -- | Convert the module to the Core Sea Fragment.
-        | PipeLiteToBrine     [PipeBrine]
+        | PipeLiteToBrine     [PipeCore Output.Name]
         deriving Show
 
 pipeLite :: C.Module () Lite.Name
@@ -217,7 +217,7 @@ pipeLite mm pp
 
         PipeLiteToBrine pipes
          -> do  let mm'     = Lite.toBrine mm
-                results     <- mapM (pipeBrine mm') pipes
+                results     <- mapM (pipeCore mm') pipes
                 return      $ concat results
 
 

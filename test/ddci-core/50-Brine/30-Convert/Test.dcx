@@ -1,5 +1,6 @@
 
 -- Convert a Core Brine module into raw C code.
+:set lang Brine
 :set +Indent
 :to-c..
 module Main with letrec {

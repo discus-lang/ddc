@@ -5,7 +5,8 @@ module DDCI.Core.Language
         , languages
         , fragmentZero
         , fragmentEval
-        , fragmentBrine)
+        , fragmentBrine
+        , fragmentLite)
 where
 import DDCI.Core.Language.Base
 import DDCI.Core.Language.Zero
