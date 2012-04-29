@@ -23,12 +23,12 @@ module DDC.Core.Llvm.Convert.Type
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
-import DDC.Core.Sea.Base.Sanitize
+import DDC.Core.Brine.Base.Sanitize
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
-import DDC.Core.Sea.Output      as E
 import DDC.Type.Compounds
 import Control.Monad.State.Strict
+import DDC.Core.Brine.Output            as E
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 

@@ -66,7 +66,7 @@ builders config
 
 defaultBuilderConfig
         = BuilderConfig
-        { builderConfigRuntime  = "packages/ddc-core-sea/runtime" }
+        { builderConfigRuntime  = "packages/ddc-core-brine/runtime" }
 
 
 -- defaultBuilder -------------------------------------------------------------

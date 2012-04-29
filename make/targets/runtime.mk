@@ -26,20 +26,20 @@ runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 
 # -----------------------------------------------------------------------------
 # Runtime for new compiler
-sea-runtime_dce = \
-	packages/ddc-core-sea/runtime/src/Storage/Object${BITS}.dce \
-	$(shell find packages/ddc-core-sea/runtime/src/Primitive -name "*.dce")
+brine-runtime_dce = \
+	packages/ddc-core-brine/runtime/src/Storage/Object${BITS}.dce \
+	$(shell find packages/ddc-core-brine/runtime/src/Primitive -name "*.dce")
 
-sea-runtime_c   = $(shell find packages/ddc-core-sea/runtime/src -name "*.c")
+brine-runtime_c   = $(shell find packages/ddc-core-brine/runtime/src -name "*.c")
 
-sea-runtime_o   = $(patsubst %.dce,%.o,$(sea-runtime_dce)) \
-		  $(patsubst %.c,%.o,$(sea-runtime_c))
+brine-runtime_o   = $(patsubst %.dce,%.o,$(brine-runtime_dce)) \
+	  	    $(patsubst %.c,%.o,$(brine-runtime_c))
 
-packages/ddc-core-sea/runtime/libddc-runtime.a : $(sea-runtime_o)
+packages/ddc-core-brine/runtime/libddc-runtime.a : $(brine-runtime_o)
 	@echo "* Linking $@"
 	@ar r $@ $^
 
-packages/ddc-core-sea/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(sea-runtime_o)
+packages/ddc-core-brine/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(brine-runtime_o)
 	@echo "* Linking $@"
 	@$(GCC_LINK_SHARED) -o $@ $^
 
@@ -51,8 +51,8 @@ packages/ddc-core-sea/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(sea-runtime_o)
 runtime : $(runtime_dep) \
 		runtime/libddc-runtime.a \
 		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),) \
-		packages/ddc-core-sea/runtime/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),packages/ddc-core-sea/runtime/libddc-runtime.$(SHARED_SUFFIX),)
+		packages/ddc-core-brine/runtime/libddc-runtime.a \
+		$(if $(SHARED_SUFFIX),packages/ddc-core-brine/runtime/libddc-runtime.$(SHARED_SUFFIX),)
 
 
 # Clean objects in the runtime system
@@ -68,7 +68,7 @@ cleanRuntime :
 		-o	-name "*~" \
 		-follow | xargs -n 1 rm -f
 
-	@find packages/ddc-core-sea/runtime \
+	@find packages/ddc-core-brine/runtime \
 		        -name "*.o" \
 		-o      -name "*.dep" \
 		-o      -name "*.so" \

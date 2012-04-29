@@ -11,7 +11,7 @@ import DDC.Type.Compounds
 import DDC.Base.Pretty
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
-import qualified DDC.Core.Sea.Output    as E
+import qualified DDC.Core.Brine.Output  as E
 import qualified Data.Sequence          as Seq
 
 

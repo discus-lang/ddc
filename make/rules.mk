@@ -4,9 +4,9 @@ include make/config/target.mk
 
 # -----------------------------------------------------------------------------
 # Runtime system 
-packages/ddc-core-sea/runtime/src/%.o : packages/ddc-core-sea/runtime/src/%.c
+packages/ddc-core-brine/runtime/src/%.o : packages/ddc-core-brine/runtime/src/%.c
 	@echo "* Compiling $<"
-	@gcc $(GCC_FLAGS) -Ipackages/ddc-core-sea/runtime/include -c $< -o $@ 
+	@gcc $(GCC_FLAGS) -Ipackages/ddc-core-brine/runtime/include -c $< -o $@ 
 
 
 # -----------------------------------------------------------------------------
@@ -51,12 +51,12 @@ packages/ddc-core-eval/%.o : packages/ddc-core-eval/%.hs
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core -ipackages/ddc-core-eval
 
-packages/ddc-core-sea/%.o : packages/ddc-core-sea/%.hs
+packages/ddc-core-brine/%.o : packages/ddc-core-brine/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core -ipackages/ddc-core-simpl \
-                      -ipackages/ddc-core-sea
+                      -ipackages/ddc-core-brine
 
 packages/ddc-llvm/%.o : packages/ddc-llvm/%.hs
 	@echo "* Compiling $<"
@@ -68,7 +68,7 @@ packages/ddc-core-llvm/%.o : packages/ddc-core-llvm/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core -ipackages/ddc-core-simpl \
-		      -ipackages/ddc-core-sea \
+		      -ipackages/ddc-core-brine \
                       -ipackages/ddc-llvm -ipackages/ddc-core-llvm
 
 packages/ddci-core/%.o : packages/ddci-core/%.hs
@@ -77,7 +77,7 @@ packages/ddci-core/%.o : packages/ddci-core/%.hs
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-eval \
-                      -ipackages/ddc-core-sea \
+                      -ipackages/ddc-core-brine \
                       -ipackages/ddc-core-llvm -ipackages/ddc-llvm \
                       -ipackages/ddci-core
 

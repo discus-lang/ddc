@@ -11,9 +11,13 @@ module DDCI.Core.Pipeline.Module
         , PipeCore        (..)
         , pipeCore
 
-          -- * Processing core Sea modules
-        , PipeSea         (..)
-        , pipeSea
+          -- * Processing Core Lite modules
+        , PipeLite        (..)
+        , pipeLite
+
+          -- * Processing Core Brine modules
+        , PipeBrine       (..)
+        , pipeBrine
 
           -- * Processing LLVM modules
         , PipeLlvm        (..)
@@ -35,7 +39,8 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Llvm.Platform         as Llvm
-import qualified DDC.Core.Sea.Output            as Output
+import qualified DDC.Core.Brine.Lite            as Lite
+import qualified DDC.Core.Brine.Output          as Output
 import qualified DDC.Llvm.Module                as Llvm
 import qualified DDC.Type.Env                   as Env
 import qualified Control.Monad.State.Strict     as S
@@ -43,8 +48,8 @@ import Control.Monad
 
 -- Error ----------------------------------------------------------------------
 data Error
-        = ErrorSeaLoad    (CL.Error Output.Name)
-        | ErrorSeaConvert (Output.Error ())
+        = ErrorBrineLoad    (CL.Error Output.Name)
+        | ErrorBrineConvert (Output.Error ())
 
         -- | Error when loading a module.
         --   Blame it on the user.
@@ -58,12 +63,12 @@ data Error
 instance Pretty Error where
  ppr err
   = case err of
-        ErrorSeaLoad err'
-         -> vcat [ text "Type error when loading Sea module."
+        ErrorBrineLoad err'
+         -> vcat [ text "Type error when loading Brine module."
                  , indent 2 (ppr err') ]
 
-        ErrorSeaConvert err'
-         -> vcat [ text "Fragment violation when converting Sea module to C code."
+        ErrorBrineConvert err'
+         -> vcat [ text "Fragment violation when converting Brine module to C code."
                  , indent 2 (ppr err') ]
 
         ErrorLoad err'
@@ -114,23 +119,32 @@ pipeText source str pp
 -- PipeCoreModule -------------------------------------------------------------
 -- | Process a core module.
 data PipeCore n where
+  -- | Output a module to console or file.
   PipeCoreOutput    
         :: Sink 
         -> PipeCore n
 
+  -- | Type check a module.
   PipeCoreCheck      
         :: Fragment n err
         -> [PipeCore n]
         -> PipeCore n
 
+  -- | Apply a simplifier to a module.
   PipeCoreSimplify  
         :: Fragment n err
         -> Simplifier 
         -> [PipeCore n] 
         -> PipeCore n
 
-  PipeCoreAsSea
-        :: [PipeSea] 
+  -- | Treat a module as belonging to the Core Lite fragment from now on.
+  PipeCoreAsLite
+        :: [PipeLite]
+        -> PipeCore Lite.Name
+
+  -- | Treat a module as beloning to the Core Brine fragment from now on.
+  PipeCoreAsBrine
+        :: [PipeBrine] 
         -> PipeCore Output.Name
 
 deriving instance Show (PipeCore n)
@@ -175,40 +189,68 @@ pipeCore mm pp
 
             in  liftM concat $ mapM (pipeCore mm') pipes
 
-        PipeCoreAsSea pipes
-         -> liftM concat $ mapM (pipeSea mm) pipes
+        PipeCoreAsLite pipes
+         -> liftM concat $ mapM (pipeLite mm) pipes
+
+        PipeCoreAsBrine pipes
+         -> liftM concat $ mapM (pipeBrine mm) pipes
+
+
+-- PipeLiteModule -------------------------------------------------------------
+-- | Process a Core Lite module.
+data PipeLite
+        -- | Output the module in core language syntax.
+        = PipeLiteOutput    Sink
+
+        -- | Convert the module to the Core Sea Fragment.
+        | PipeLiteToBrine     [PipeBrine]
+        deriving Show
+
+pipeLite :: C.Module () Lite.Name
+         -> PipeLite
+         -> IO [Error]
+
+pipeLite mm pp
+ = case pp of
+        PipeLiteOutput sink
+         -> pipeSink (renderIndent $ ppr mm) sink
+
+        PipeLiteToBrine pipes
+         -> do  let mm'     = Lite.toBrine mm
+                results     <- mapM (pipeBrine mm') pipes
+                return      $ concat results
 
 
 -- PipeSeaModule --------------------------------------------------------------
 -- | Process a Core Sea module.
-data PipeSea
+data PipeBrine
         -- | Output the module in core language syntax.
-        = PipeSeaOutput     Sink
+        = PipeBrineOutput     Sink
 
         -- | Print the module as a C source code.
-        | PipeSeaPrint      
-        { pipeWithSeaPrelude    :: Bool
+        | PipeBrinePrint      
+        { pipeWithBrinePrelude  :: Bool
         , pipeModuleSink        :: Sink }
 
         -- | Convert the module to LLVM.
-        | PipeSeaToLlvm         Llvm.Platform [PipeLlvm]
+        | PipeBrineToLlvm        Llvm.Platform [PipeLlvm]
         deriving (Show)
 
 
--- | Process a Core Sea module.
-pipeSea :: C.Module () Output.Name 
-        -> PipeSea 
-        -> IO [Error]
+-- | Process a Core Brine module.
+pipeBrine :: C.Module () Output.Name 
+          -> PipeBrine
+          -> IO [Error]
 
-pipeSea mm pp
+pipeBrine mm pp
  = case pp of
-        PipeSeaOutput sink
+        PipeBrineOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeSeaPrint withPrelude sink
+        PipeBrinePrint withPrelude sink
          -> case Output.convertModule mm of
                 Left  err 
-                 ->     return $ [ErrorSeaConvert err]
+                 ->     return $ [ErrorBrineConvert err]
 
                 Right doc 
                  | withPrelude
@@ -222,7 +264,7 @@ pipeSea mm pp
                  | otherwise
                  -> pipeSink (renderIndent doc)  sink
 
-        PipeSeaToLlvm platform more
+        PipeBrineToLlvm platform more
          -> do  let mm'     =  Llvm.convertModule platform mm
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results

@@ -1,0 +1,57 @@
+Name:           ddc-core-Brine
+Version:        0.3.0.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Bug-reports:    disciple@ouroborus.net
+Synopsis:       Disciple Core translation to C
+Description:    Disciple Core translation to C
+
+Library
+  Build-Depends: 
+        base            == 4.5.*,
+        containers      == 0.4.*,
+        array           == 0.4.*,
+        transformers    == 0.2.*,
+        mtl             == 2.0.*,
+        ddc-base        == 0.3.0.*,
+        ddc-type        == 0.3.0.*,
+        ddc-core        == 0.3.0.*
+
+  Exposed-modules:
+        DDC.Core.Brine.Base
+        DDC.Core.Brine.Lite
+        DDC.Core.Brine.Output
+
+  Other-modules:
+        DDC.Core.Brine.Lite.Compounds
+        DDC.Core.Brine.Lite.Env
+        DDC.Core.Brine.Lite.Name
+        DDC.Core.Brine.Lite.Profile
+        DDC.Core.Brine.Output.Convert
+        DDC.Core.Brine.Output.Env
+        DDC.Core.Brine.Output.Error
+        DDC.Core.Brine.Output.Name
+        DDC.Core.Brine.Output.Profile
+
+                  
+  GHC-options:
+        -Werror
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        KindSignatures
+        NoMonomorphismRestriction
+        ScopedTypeVariables
+        StandaloneDeriving
+        PatternGuards
+        

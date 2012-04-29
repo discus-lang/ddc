@@ -8,8 +8,8 @@ where
 import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Platform
-import DDC.Core.Sea.Base.Sanitize
-import qualified DDC.Core.Sea.Output    as E
+import DDC.Core.Brine.Base.Sanitize
+import qualified DDC.Core.Brine.Output  as E
 import qualified DDC.Core.Exp           as C
 
 

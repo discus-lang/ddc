@@ -12,10 +12,10 @@ import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
 import DDCI.Core.Command.Ast
-import DDCI.Core.Command.Sea
-import DDCI.Core.Command.Llvm
 import DDCI.Core.Command.Compile
 import DDCI.Core.Command.Make
+import DDCI.Core.Command.ToC
+import DDCI.Core.Command.ToLlvm
 import DDCI.Core.State
 import Data.List
 
@@ -44,10 +44,12 @@ data Command
         | CommandTrans          -- ^ Transform an expression.
         | CommandTransEval      -- ^ Transform then evaluate an expression.
         | CommandAst            -- ^ Show the AST of an expression.
-        | CommandSea            -- ^ Convert a Sea core module to C code.
-        | CommandLlvm           -- ^ Convert a Sea core module to LLVM code.
+
         | CommandCompile        -- ^ Compile a file.
         | CommandMake           -- ^ Compile and link and executable.
+
+        | CommandToC            -- ^ Convert a module to C code.
+        | CommandToLlvm         -- ^ Convert a module to LLVM code.
         deriving (Eq, Show)
 
 
@@ -74,10 +76,10 @@ commands
         , (":trans",            CommandTrans)
         , (":trun",             CommandTransEval)
         , (":ast",              CommandAst) 
-        , (":sea",              CommandSea)
-        , (":llvm",             CommandLlvm)
         , (":compile",          CommandCompile)
-        , (":make",             CommandMake) ]
+        , (":make",             CommandMake)
+        , (":to-c",             CommandToC)
+        , (":to-llvm",          CommandToLlvm) ]
 
 
 -- | Read the command from the front of a string.
@@ -196,12 +198,12 @@ handleCmd1 state cmd source line
          -> do  cmdAst state source line
                 return state
 
-        CommandSea
-         -> do  cmdSeaOut state source line
+        CommandToC
+         -> do  cmdToC state source line
                 return state
 
-        CommandLlvm
-         -> do  cmdLlvmOut state source line
+        CommandToLlvm
+         -> do  cmdToLlvm state source line
                 return state
 
         CommandCompile
