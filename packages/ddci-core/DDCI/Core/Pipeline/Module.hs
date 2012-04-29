@@ -51,6 +51,8 @@ data Error
         = ErrorBrineLoad    (CL.Error Output.Name)
         | ErrorBrineConvert (Output.Error ())
 
+        | ErrorLiteConvert  (Lite.Error ())
+
         -- | Error when loading a module.
         --   Blame it on the user.
         | forall err. Pretty err => ErrorLoad  err
@@ -69,6 +71,10 @@ instance Pretty Error where
 
         ErrorBrineConvert err'
          -> vcat [ text "Fragment violation when converting Brine module to C code."
+                 , indent 2 (ppr err') ]
+
+        ErrorLiteConvert err'
+         -> vcat [ text "Fragment violation when converting Lite module to Brine module."
                  , indent 2 (ppr err') ]
 
         ErrorLoad err'
@@ -216,9 +222,9 @@ pipeLite mm pp
          -> pipeSink (renderIndent $ ppr mm) sink
 
         PipeLiteToBrine pipes
-         -> do  let mm'     = Lite.toBrine mm
-                results     <- mapM (pipeCore mm') pipes
-                return      $ concat results
+         -> case Lite.toBrine mm of
+                Left  err       -> return [ErrorLiteConvert err]
+                Right mm'       -> liftM concat $ mapM (pipeCore mm') pipes
 
 
 -- PipeSeaModule --------------------------------------------------------------

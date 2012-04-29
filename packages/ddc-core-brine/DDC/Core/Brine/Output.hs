@@ -3,7 +3,8 @@
 --
 --   This fragment includes just those features that can be easily mapped onto
 --   C or LLVM code. It has functions, case expressions and primops, but no 
---   partial application, or nested functions etc.
+--   partial application, data types, or nested functions etc. All operations
+--   on algebraic data need to have been expanded to raw memory operations.
 --
 module DDC.Core.Brine.Output
         ( -- * Language profile

@@ -5,11 +5,10 @@ where
 import DDCI.Core.Mode
 import DDCI.Core.Language.Base
 import DDC.Core.Transform.Namify
-import DDC.Core.Brine.Lite
 import DDC.Type.Exp
-import DDC.Base.Pretty
 import Control.Monad.State.Strict
 import DDC.Type.Env                     (Env)
+import DDC.Core.Brine.Lite
 import qualified DDC.Type.Env           as Env
 
 
@@ -30,12 +29,6 @@ fragmentLite
         , fragmentMakeNamifierX = makeNamifier freshX 
         , fragmentNameZero      = (0 :: Int) }
 
-
-data Error a
-        = Error String
-
-instance Pretty (Error a) where
- ppr (Error str) = text str
 
 
 -- | Create a new type variable name that is not in the given environment.
