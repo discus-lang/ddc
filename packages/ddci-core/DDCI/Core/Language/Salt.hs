@@ -1,19 +1,19 @@
 
-module DDCI.Core.Language.Lite
-        (fragmentLite)
+module DDCI.Core.Language.Salt
+        (fragmentSalt)
 where
 import DDCI.Core.Mode
 import DDCI.Core.Language.Base
 import DDC.Core.Transform.Namify
 import DDC.Type.Exp
+import DDC.Core.Salt.Output
 import Control.Monad.State.Strict
 import DDC.Type.Env                     (Env)
-import DDC.Core.Salt.Lite
 import qualified DDC.Type.Env           as Env
 
 
-fragmentLite :: Fragment Name Error 
-fragmentLite
+fragmentSalt :: Fragment Name Error
+fragmentSalt 
         = Fragment
         { fragmentProfile       = profile 
 
@@ -28,7 +28,6 @@ fragmentLite
         , fragmentMakeNamifierT = makeNamifier freshT 
         , fragmentMakeNamifierX = makeNamifier freshX 
         , fragmentNameZero      = (0 :: Int) }
-
 
 
 -- | Create a new type variable name that is not in the given environment.

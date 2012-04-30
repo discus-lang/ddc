@@ -1,0 +1,42 @@
+
+-- Check for language compliance violations that would confuse
+-- the backend compiler.
+:set lang Salt
+
+
+-- Error: name shadowing in function definition
+:to-c..
+module Main with letrec
+foo (x : Int32#) (x : Int32#) : Int32#
+ = return# [Int32#] x;;
+
+
+-- Error: name shadowing in let-expression
+:to-c..
+module Main with letrec
+foo (x : Int32#) : Int32#
+ = let x = 0i32# 
+   in  return# [Int32#] x;;
+
+
+-- Error: use of debruijn binders
+:to-c..
+module Main with letrec
+foo (^ : Int32#) : Int32#
+ = return# [Int32#] ^0;;
+
+
+-- Error: general application
+:to-c..
+module Main with letrec
+foo (^ : Int32#) : Int32#
+ = (case 0 of {_ -> add# })
+   [Int32#] ^0 ^0;;
+
+
+-- Error: partially applied primop
+:to-c..
+module Main with letrec
+foo (x : Int32#) : Int32#
+ = let f = add# [Int32#] x
+   in  return# [Int32#] (f x);;

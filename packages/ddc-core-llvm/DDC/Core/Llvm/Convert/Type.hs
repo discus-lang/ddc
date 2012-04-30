@@ -23,12 +23,12 @@ module DDC.Core.Llvm.Convert.Type
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
-import DDC.Core.Brine.Base.Sanitize
+import DDC.Core.Salt.Base.Sanitize
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
 import DDC.Type.Compounds
 import Control.Monad.State.Strict
-import DDC.Core.Brine.Output            as E
+import DDC.Core.Salt.Output             as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 
@@ -160,56 +160,56 @@ tTag pp = TInt (8 * platformTagBytes  pp)
 
 -- Predicates -----------------------------------------------------------------
 -- | Check whether this is the Void# type.
-isVoidT :: C.Type E.Name -> Bool
-isVoidT (C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon E.PrimTyConVoid) _))) = True
+isVoidT :: C.Type A.Name -> Bool
+isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid) _))) = True
 isVoidT _ = False
 
 
 -- | Check whether some type is signed: IntN or FloatN.
-isSignedT :: C.Type E.Name -> Bool
+isSignedT :: C.Type A.Name -> Bool
 isSignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
          -> case n of
-                E.PrimTyConInt   _      -> True
-                E.PrimTyConFloat _      -> True
+                A.PrimTyConInt   _      -> True
+                A.PrimTyConFloat _      -> True
                 _                       -> False
         _                               -> False
 
 
 -- | Check whether some type is unsigned: NatN or WordN
-isUnsignedT :: C.Type E.Name -> Bool
+isUnsignedT :: C.Type A.Name -> Bool
 isUnsignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
          -> case n of
-                E.PrimTyConNat          -> True
-                E.PrimTyConTag          -> True
-                E.PrimTyConWord _       -> True
+                A.PrimTyConNat          -> True
+                A.PrimTyConTag          -> True
+                A.PrimTyConWord _       -> True
                 _                       -> False
         _                               -> False
 
 
 -- | Check whether some type is an integral type. Nat, IntN or WordN.
-isIntegralT :: C.Type E.Name -> Bool
+isIntegralT :: C.Type A.Name -> Bool
 isIntegralT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
          -> case n of
-                E.PrimTyConNat          -> True
-                E.PrimTyConInt   _      -> True
-                E.PrimTyConWord  _      -> True
+                A.PrimTyConNat          -> True
+                A.PrimTyConInt   _      -> True
+                A.PrimTyConWord  _      -> True
                 _                       -> False
         _                               -> False
 
 
 -- | Check whether some type is an integral type. Nat, IntN or WordN.
-isFloatingT :: C.Type E.Name -> Bool
+isFloatingT :: C.Type A.Name -> Bool
 isFloatingT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (E.NamePrimTyCon n) _))
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
          -> case n of
-                E.PrimTyConFloat  _     -> True
+                A.PrimTyConFloat  _     -> True
                 _                       -> False
         _                               -> False
 

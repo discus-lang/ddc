@@ -20,9 +20,9 @@ data Mode
         -- | Render expressions displayed to user using indenting.
         |  Indent
 
-        -- | When pretty printing Brine modules as C code,
+        -- | When pretty printing Salt modules as C code,
         --  include the #includes etc needed for compilation.
-        |  BrinePrelude
+        |  SaltPrelude
         deriving (Eq, Ord, Show)
 
 
@@ -33,7 +33,7 @@ readMode str
         "TraceEval"     -> Just TraceEval
         "TraceStore"    -> Just TraceStore
         "Indent"        -> Just Indent
-        "BrinePrelude"  -> Just BrinePrelude
+        "SaltPrelude"   -> Just SaltPrelude
         _               -> Nothing
 
 

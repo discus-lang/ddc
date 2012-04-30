@@ -4,9 +4,9 @@ include make/config/target.mk
 
 # -----------------------------------------------------------------------------
 # Runtime system 
-packages/ddc-core-brine/runtime/src/%.o : packages/ddc-core-brine/runtime/src/%.c
+packages/ddc-core-salt/runtime/src/%.o : packages/ddc-core-salt/runtime/src/%.c
 	@echo "* Compiling $<"
-	@gcc $(GCC_FLAGS) -Ipackages/ddc-core-brine/runtime/include -c $< -o $@ 
+	@gcc $(GCC_FLAGS) -Ipackages/ddc-core-salt/runtime/include -c $< -o $@ 
 
 
 # -----------------------------------------------------------------------------
@@ -39,6 +39,11 @@ packages/ddc-core/%.o : packages/ddc-core/%.hs
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core
 
+packages/ddc-llvm/%.o : packages/ddc-llvm/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base -ipackages/ddc-llvm
+
 packages/ddc-core-simpl/%.o : packages/ddc-core-simpl/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
@@ -51,24 +56,19 @@ packages/ddc-core-eval/%.o : packages/ddc-core-eval/%.hs
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core -ipackages/ddc-core-eval
 
-packages/ddc-core-brine/%.o : packages/ddc-core-brine/%.hs
+packages/ddc-core-salt/%.o : packages/ddc-core-salt/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core -ipackages/ddc-core-simpl \
-                      -ipackages/ddc-core-brine
-
-packages/ddc-llvm/%.o : packages/ddc-llvm/%.hs
-	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base -ipackages/ddc-llvm
+                      -ipackages/ddc-core-salt
 
 packages/ddc-core-llvm/%.o : packages/ddc-core-llvm/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core -ipackages/ddc-core-simpl \
-		      -ipackages/ddc-core-brine \
+		      -ipackages/ddc-core-salt \
                       -ipackages/ddc-llvm -ipackages/ddc-core-llvm
 
 packages/ddci-core/%.o : packages/ddci-core/%.hs
@@ -77,7 +77,7 @@ packages/ddci-core/%.o : packages/ddci-core/%.hs
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
                       -ipackages/ddc-core -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-eval \
-                      -ipackages/ddc-core-brine \
+                      -ipackages/ddc-core-salt \
                       -ipackages/ddc-core-llvm -ipackages/ddc-llvm \
                       -ipackages/ddci-core
 

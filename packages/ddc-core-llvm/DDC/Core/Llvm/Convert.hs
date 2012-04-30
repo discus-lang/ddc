@@ -12,12 +12,12 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
-import DDC.Core.Brine.Base.Sanitize
+import DDC.Core.Salt.Base.Sanitize
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import Data.Sequence                            (Seq, (<|), (|>), (><))
 import Data.Map                                 (Map)
-import qualified DDC.Core.Brine.Output          as E
+import qualified DDC.Core.Salt.Output           as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Map                       as Map
@@ -31,14 +31,14 @@ import Data.Maybe
 
 -- Module ---------------------------------------------------------------------
 -- | Convert a module to LLVM
-convertModule :: Platform -> C.Module () E.Name -> Module
+convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm
  = let  prims           = primDeclsMap platform
         state           = llvmStateInit platform prims
    in   clean $ evalState (convModuleM mm) state
 
 
-convModuleM :: C.Module () E.Name -> LlvmM Module
+convModuleM :: C.Module () A.Name -> LlvmM Module
 convModuleM mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   platform        <- gets llvmStatePlatform
@@ -102,11 +102,11 @@ primDecls pp
 -- Super ----------------------------------------------------------------------
 -- | Convert a top-level supercombinator to a LLVM function.
 convSuperM 
-        :: C.Bind E.Name                -- ^ Bind for the super.
-        -> C.Exp () E.Name              -- ^ Super body.
+        :: C.Bind A.Name                -- ^ Bind for the super.
+        -> C.Exp () A.Name              -- ^ Super body.
         -> LlvmM Function
 
-convSuperM (C.BName (E.NameVar nTop) tSuper) x
+convSuperM (C.BName (A.NameVar nTop) tSuper) x
  | Just (bsParam, xBody)  <- takeXLams x
  = do   platform          <- gets llvmStatePlatform
 
@@ -147,10 +147,10 @@ convSuperM _ _          = die "invalid super"
 
 
 -- | Take the string name to use for a function parameter.
-nameOfParam :: C.Bind E.Name -> String
+nameOfParam :: C.Bind A.Name -> String
 nameOfParam bb
  = case bb of
-        C.BName (E.NameVar n) _ 
+        C.BName (A.NameVar n) _ 
            -> sanitizeName n
 
         _  -> die "invalid parameter name"
@@ -162,7 +162,7 @@ convBodyM
         :: Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
         -> Seq Instr            -- ^ Instrs in current block.
-        -> C.Exp () E.Name      -- ^ Expression being converted.
+        -> C.Exp () A.Name      -- ^ Expression being converted.
         -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
 convBodyM blocks label instrs xx
@@ -171,15 +171,15 @@ convBodyM blocks label instrs xx
 
          -- End of function body must explicitly pass control.
          C.XApp{}
-          |  Just (E.NamePrim p, xs)           <- takeXPrimApps xx
-          ,  E.PrimControl E.PrimControlReturn <- p
+          |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
+          ,  A.PrimControl A.PrimControlReturn <- p
           ,  [C.XType _t, x]                   <- xs
           ,  Just x'                           <- mconvAtom pp x
           -> return  $   blocks 
                      |>  Block label (instrs |> IReturn (Just x'))
 
          -- Variable assignment.
-         C.XLet _ (C.LLet C.LetStrict (C.BName (E.NameVar n) t) x1) x2
+         C.XLet _ (C.LLet C.LetStrict (C.BName (A.NameVar n) t) x1) x2
           -> do t'       <- convTypeM t
                 let n'   = sanitizeName n
                 let dst  = Var (NameLocal n') t'
@@ -220,11 +220,11 @@ convBodyM blocks label instrs xx
 
 -- Stmt -----------------------------------------------------------------------
 -- | Convert a Core statement to LLVM instructions.
-convStmtM :: Platform -> C.Exp () E.Name -> LlvmM (Seq Instr)
+convStmtM :: Platform -> C.Exp () A.Name -> LlvmM (Seq Instr)
 convStmtM pp xx
  = case xx of
         C.XApp{}
-         |  C.XVar _ (C.UPrim (E.NamePrim p) tPrim) : xs <- takeXApps xx
+         |  C.XVar _ (C.UPrim (A.NamePrim p) tPrim) : xs <- takeXApps xx
          -> convPrimCallM pp Nothing p tPrim xs
 
         _ -> die "invalid statement"
@@ -241,7 +241,7 @@ data AltResult
 --
 --   This only works for zero-arity constructors.
 --   The client should extrac the fields of algebraic data objects manually.
-convAltM :: C.Alt () E.Name -> LlvmM AltResult
+convAltM :: C.Alt () A.Name -> LlvmM AltResult
 convAltM aa
  = do   pp      <- gets llvmStatePlatform
         case aa of
@@ -260,15 +260,15 @@ convAltM aa
 
 
 -- | Convert a pattern to a LLVM literal.
-convPatBound :: Platform -> C.Bound E.Name -> Maybe Lit
+convPatBound :: Platform -> C.Bound A.Name -> Maybe Lit
 convPatBound pp (C.UPrim name _)
  = case name of
-        E.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
-        E.NameNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
-        E.NameInt  i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
-        E.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
-        E.NameBool True   -> Just $ LitInt (TInt 1) 1
-        E.NameBool False  -> Just $ LitInt (TInt 1) 0
+        A.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
+        A.NameNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameInt  i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
+        A.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
+        A.NameBool True   -> Just $ LitInt (TInt 1) 1
+        A.NameBool False  -> Just $ LitInt (TInt 1) 0
         _                 -> Nothing
 
 convPatBound _ _          = Nothing
@@ -297,10 +297,10 @@ takeAltCase _                           = Nothing
 convExpM
         :: Platform             -- ^ Current platform.
         -> Var                  -- ^ Assign result to this var.
-        -> C.Exp () E.Name      -- ^ Expression to convert.
+        -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
-convExpM _  vDst (C.XVar _ (C.UName (E.NameVar n) t))
+convExpM _  vDst (C.XVar _ (C.UName (A.NameVar n) t))
  = do   let n'  = sanitizeName n
         t'      <- convTypeM t
         return  $ Seq.singleton 
@@ -309,15 +309,15 @@ convExpM _  vDst (C.XVar _ (C.UName (E.NameVar n) t))
 
 convExpM pp vDst (C.XCon _ (C.UPrim name _t))
  = case name of
-        E.NameNat i
+        A.NameNat i
          -> return $ Seq.singleton
                    $ ISet vDst (XLit (LitInt (tNat pp) i))
 
-        E.NameWord w bits
+        A.NameWord w bits
          -> return $ Seq.singleton
                    $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
-        E.NameInt  w bits
+        A.NameInt  w bits
          -> return $ Seq.singleton 
                    $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
@@ -326,7 +326,7 @@ convExpM pp vDst (C.XCon _ (C.UPrim name _t))
 convExpM pp dst xx@C.XApp{}
         
         -- Call to primop.
-        | (C.XVar _ (C.UPrim (E.NamePrim p) tPrim) : args) 
+        | (C.XVar _ (C.UPrim (A.NamePrim p) tPrim) : args) 
                 <- takeXApps xx
         = convPrimCallM pp (Just dst) p tPrim args
 

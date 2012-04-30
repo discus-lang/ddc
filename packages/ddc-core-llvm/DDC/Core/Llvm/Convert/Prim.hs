@@ -11,7 +11,7 @@ import DDC.Type.Compounds
 import DDC.Base.Pretty
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
-import qualified DDC.Core.Brine.Output  as E
+import qualified DDC.Core.Salt.Output   as A
 import qualified Data.Sequence          as Seq
 
 
@@ -21,15 +21,15 @@ convPrimCallM
         :: Show a 
         => Platform             -- ^ Current platform.
         -> Maybe Var            -- ^ Assign result to this var.
-        -> E.Prim               -- ^ Prim to call.
-        -> C.Type E.Name        -- ^ Type of prim.
-        -> [C.Exp a E.Name]     -- ^ Arguments to prim.
+        -> A.Prim               -- ^ Prim to call.
+        -> C.Type A.Name        -- ^ Type of prim.
+        -> [C.Exp a A.Name]     -- ^ Arguments to prim.
         -> LlvmM (Seq Instr)
 
 convPrimCallM pp mdst p tPrim xs
  = case p of
         -- Binary operations ----------
-        E.PrimOp op
+        A.PrimOp op
          | C.XType t : args     <- xs
          , Just [x1', x2']      <- mconvAtoms pp args
          , Just dst             <- mdst
@@ -48,7 +48,7 @@ convPrimCallM pp mdst p tPrim xs
            in   return $ Seq.singleton result
 
         -- Cast primops ---------------
-        E.PrimCast E.PrimCastPromote
+        A.PrimCast A.PrimCastPromote
          | [C.XType tDst, C.XType tSrc, xSrc] <- xs
          , Just xSrc'           <- mconvAtom pp xSrc
          , Just vDst            <- mdst
@@ -60,7 +60,7 @@ convPrimCallM pp mdst p tPrim xs
                                 , text "  from type: " <> ppr tSrc
                                 , text "    to type: " <> ppr tDst]
 
-        E.PrimCast E.PrimCastTruncate
+        A.PrimCast A.PrimCastTruncate
          | [C.XType tDst, C.XType tSrc, xSrc] <- xs
          , Just xSrc'           <- mconvAtom pp xSrc
          , Just vDst            <- mdst
@@ -73,14 +73,14 @@ convPrimCallM pp mdst p tPrim xs
                                 , text "   to type: " <> ppr tDst ]
 
         -- Store primops --------------
-        E.PrimStore E.PrimStoreAlloc
+        A.PrimStore A.PrimStoreAlloc
          | Just [xBytes']       <- mconvAtoms pp xs
          -> return      $ Seq.singleton
                         $ ICall mdst CallTypeStd
                                 (tAddr pp) (NameGlobal "malloc") 
                                 [xBytes'] []
 
-        E.PrimStore E.PrimStoreRead
+        A.PrimStore A.PrimStoreRead
          | C.XType _t : args             <- xs
          , Just [xAddr', xOffset']      <- mconvAtoms pp args
          , Just vDst@(Var nDst tDst)    <- mdst
@@ -91,7 +91,7 @@ convPrimCallM pp mdst p tPrim xs
                         , IConv vPtr ConvInttoptr (XVar vOff)
                         , ILoad vDst (XVar vPtr) ]
 
-        E.PrimStore E.PrimStoreWrite
+        A.PrimStore A.PrimStoreWrite
          | C.XType _t : args              <- xs
          , Just [xAddr', xOffset', xVal'] <- mconvAtoms pp args      
          -> do  vOff    <- newUniqueNamedVar "off" (tAddr pp)
@@ -101,19 +101,19 @@ convPrimCallM pp mdst p tPrim xs
                         , IConv  vPtr ConvInttoptr (XVar vOff)
                         , IStore (XVar vPtr) xVal' ]
 
-        E.PrimStore E.PrimStorePlusAddr
+        A.PrimStore A.PrimStorePlusAddr
          | Just [xAddr', xOffset']      <- mconvAtoms pp xs
          , Just vDst                    <- mdst
          ->     return  $ Seq.singleton
                         $ IOp vDst OpAdd xAddr' xOffset'
 
-        E.PrimStore E.PrimStoreMinusAddr
+        A.PrimStore A.PrimStoreMinusAddr
          | Just [xAddr', xOffset']      <- mconvAtoms pp xs
          , Just vDst                    <- mdst
          ->     return  $ Seq.singleton
                         $ IOp vDst OpSub xAddr' xOffset'
 
-        E.PrimStore E.PrimStorePeek
+        A.PrimStore A.PrimStorePeek
          | C.XType tDst : args          <- xs
          , Just [xPtr', xOffset']       <- mconvAtoms pp args
          , Just vDst@(Var nDst _)       <- mdst
@@ -127,7 +127,7 @@ convPrimCallM pp mdst p tPrim xs
                         , IConv vPtr   ConvInttoptr (XVar vAddr2)
                         , ILoad vDst  (XVar vPtr) ]
 
-        E.PrimStore E.PrimStorePoke
+        A.PrimStore A.PrimStorePoke
          | C.XType tDst : args           <- xs
          , Just [xPtr', xOffset', xVal'] <- mconvAtoms pp args
          , tDst'                         <- convType pp tDst
@@ -140,7 +140,7 @@ convPrimCallM pp mdst p tPrim xs
                         , IConv vPtr   ConvInttoptr (XVar vAddr2)
                         , IStore (XVar vPtr) xVal' ]
 
-        E.PrimStore E.PrimStorePlusPtr
+        A.PrimStore A.PrimStorePlusPtr
          | _xType : args                <- xs
          , Just [xPtr', xOffset']       <- mconvAtoms pp args
          , Just vDst                    <- mdst
@@ -151,7 +151,7 @@ convPrimCallM pp mdst p tPrim xs
                         , IOp   vAddr2 OpAdd (XVar vAddr) xOffset'
                         , IConv vDst   ConvInttoptr (XVar vAddr2) ]
 
-        E.PrimStore E.PrimStoreMinusPtr
+        A.PrimStore A.PrimStoreMinusPtr
          | _xType : args                <- xs
          , Just [xPtr', xOffset']       <- mconvAtoms pp args
          , Just vDst                    <- mdst
@@ -162,21 +162,21 @@ convPrimCallM pp mdst p tPrim xs
                         , IOp   vAddr2 OpSub (XVar vAddr) xOffset'
                         , IConv vDst   ConvInttoptr (XVar vAddr2) ]
 
-        E.PrimStore E.PrimStoreMakePtr
+        A.PrimStore A.PrimStoreMakePtr
          | [C.XType _t, xAddr]          <- xs
          , Just xAddr'  <- mconvAtom pp xAddr
          , Just vDst    <- mdst
          ->     return  $ Seq.singleton
                         $ IConv vDst ConvInttoptr xAddr'
 
-        E.PrimStore E.PrimStoreTakePtr
+        A.PrimStore A.PrimStoreTakePtr
          | [C.XType _t, xPtr]          <- xs
          , Just xPtr'   <- mconvAtom pp xPtr
          , Just vDst    <- mdst
          ->     return  $ Seq.singleton
                         $ IConv vDst ConvPtrtoint xPtr'
 
-        E.PrimStore E.PrimStoreCastPtr
+        A.PrimStore A.PrimStoreCastPtr
          | [C.XType _tSrc, C.XType _tDst, xPtr] <- xs
          , Just xPtr'   <- mconvAtom pp xPtr
          , Just vDst    <- mdst
@@ -184,7 +184,7 @@ convPrimCallM pp mdst p tPrim xs
                         $ IConv vDst ConvBitcast xPtr'
 
         -- External Primops -----------
-        E.PrimExternal prim
+        A.PrimExternal prim
          |  Just xs'     <- sequence $ map (mconvAtom pp) xs
          ,  (_, tResult) <- takeTFunArgResult tPrim
          ,  tResult'     <- convType pp tResult
@@ -206,45 +206,45 @@ bumpName nn s
 
 -- Op -------------------------------------------------------------------------
 -- | Convert a binary primop from Core Sea to LLVM form.
-convPrimOp2 :: E.PrimOp -> C.Type E.Name -> Maybe Op
+convPrimOp2 :: A.PrimOp -> C.Type A.Name -> Maybe Op
 convPrimOp2 op t
  = case op of
-        E.PrimOpAdd     
+        A.PrimOpAdd     
          | isIntegralT t                -> Just OpAdd
          | isFloatingT t                -> Just OpFAdd 
 
-        E.PrimOpSub      
+        A.PrimOpSub      
          | isIntegralT t                -> Just OpSub
          | isFloatingT t                -> Just OpFSub
 
-        E.PrimOpMul 
+        A.PrimOpMul 
          | isIntegralT t                -> Just OpMul
          | isFloatingT t                -> Just OpFMul
 
-        E.PrimOpDiv
+        A.PrimOpDiv
          | isIntegralT t, isUnsignedT t -> Just OpUDiv
          | isIntegralT t, isSignedT t   -> Just OpSDiv
          | isFloatingT t                -> Just OpFDiv
 
-        E.PrimOpRem
+        A.PrimOpRem
          | isIntegralT t, isUnsignedT t -> Just OpURem
          | isIntegralT t, isSignedT t   -> Just OpSRem
          | isFloatingT t                -> Just OpFRem
 
-        E.PrimOpShl
+        A.PrimOpShl
          | isIntegralT t                -> Just OpShl
 
-        E.PrimOpShr
+        A.PrimOpShr
          | isIntegralT t, isUnsignedT t -> Just OpLShr
          | isIntegralT t, isSignedT t   -> Just OpAShr
 
-        E.PrimOpBAnd
+        A.PrimOpBAnd
          | isIntegralT t                -> Just OpAnd
 
-        E.PrimOpBOr
+        A.PrimOpBOr
          | isIntegralT t                -> Just OpOr
 
-        E.PrimOpBXOr
+        A.PrimOpBXOr
          | isIntegralT t                -> Just OpXor
 
         _                               -> Nothing
@@ -255,8 +255,8 @@ convPrimOp2 op t
 -- | Convert a primitive promotion to LLVM.
 convPrimPromote 
         :: Platform 
-        -> C.Type E.Name -> Var
-        -> C.Type E.Name -> Exp
+        -> C.Type A.Name -> Var
+        -> C.Type A.Name -> Exp
         -> Maybe Instr
 
 convPrimPromote pp tDst vDst tSrc xSrc
@@ -292,8 +292,8 @@ convPrimPromote pp tDst vDst tSrc xSrc
 -- | Convert a primitive truncation to LLVM.
 convPrimTruncate
         :: Platform 
-        -> C.Type E.Name -> Var
-        -> C.Type E.Name -> Exp
+        -> C.Type A.Name -> Var
+        -> C.Type A.Name -> Exp
         -> Maybe Instr
 
 convPrimTruncate pp tDst vDst tSrc xSrc
@@ -314,32 +314,32 @@ convPrimTruncate pp tDst vDst tSrc xSrc
 
 -- Cond -----------------------------------------------------------------------
 -- | Convert an integer comparison from Core Sea to LLVM form.
-convPrimICond :: E.PrimOp -> C.Type E.Name -> Maybe ICond
+convPrimICond :: A.PrimOp -> C.Type A.Name -> Maybe ICond
 convPrimICond op t
  | isIntegralT t
  = case op of
-        E.PrimOpEq      -> Just ICondEq
-        E.PrimOpNeq     -> Just ICondNe
-        E.PrimOpGt      -> Just ICondUgt
-        E.PrimOpGe      -> Just ICondUge
-        E.PrimOpLt      -> Just ICondUlt
-        E.PrimOpLe      -> Just ICondUle
+        A.PrimOpEq      -> Just ICondEq
+        A.PrimOpNeq     -> Just ICondNe
+        A.PrimOpGt      -> Just ICondUgt
+        A.PrimOpGe      -> Just ICondUge
+        A.PrimOpLt      -> Just ICondUlt
+        A.PrimOpLe      -> Just ICondUle
         _               -> Nothing
 
  | otherwise            =  Nothing
 
 
 -- | Convert a floating point comparison from Core Sea to LLVM form.
-convPrimFCond :: E.PrimOp -> C.Type E.Name -> Maybe FCond
+convPrimFCond :: A.PrimOp -> C.Type A.Name -> Maybe FCond
 convPrimFCond op t
  | isIntegralT t
  = case op of
-        E.PrimOpEq      -> Just FCondOeq
-        E.PrimOpNeq     -> Just FCondOne
-        E.PrimOpGt      -> Just FCondOgt
-        E.PrimOpGe      -> Just FCondOge
-        E.PrimOpLt      -> Just FCondOlt
-        E.PrimOpLe      -> Just FCondOle
+        A.PrimOpEq      -> Just FCondOeq
+        A.PrimOpNeq     -> Just FCondOne
+        A.PrimOpGt      -> Just FCondOgt
+        A.PrimOpGe      -> Just FCondOge
+        A.PrimOpLt      -> Just FCondOlt
+        A.PrimOpLe      -> Just FCondOle
         _               -> Nothing
 
  | otherwise            =  Nothing
@@ -347,16 +347,16 @@ convPrimFCond op t
 
 -- Extern ---------------------------------------------------------------------
 -- | Get the symbol name of an external primitive.
-convPrimExtern :: E.PrimExternal -> C.Type E.Name -> Maybe Name
+convPrimExtern :: A.PrimExternal -> C.Type A.Name -> Maybe Name
 convPrimExtern p _t
  = case p of
-        E.PrimExternalShowInt bits      
+        A.PrimExternalShowInt bits      
          -> Just $ NameGlobal ("showInt" ++ show bits)
 
-        E.PrimExternalPutStr
+        A.PrimExternalPutStr
          -> Just $ NameGlobal "putStr"
 
-        E.PrimExternalPutStrLn
+        A.PrimExternalPutStrLn
          -> Just $ NameGlobal "putStrLn"
 
 

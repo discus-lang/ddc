@@ -10,7 +10,7 @@ import DDCI.Core.State
 import DDC.Core.Fragment.Profile
 import System.FilePath
 import DDC.Core.Simplifier.Recipie      as Simpl
-import qualified DDC.Core.Brine.Output  as E
+import qualified DDC.Core.Salt.Output   as A
 import qualified DDC.Base.Pretty        as P
 import Data.Monoid
 import Data.Maybe
@@ -33,8 +33,8 @@ cmdToLlvm state source str
         let builder     =  fromMaybe    (error "Can not determine host platform.")
                                         mBuilder
 
-        if      fragName == "Brine" || mSuffix == Just ".dce"
-         then cmdBrineToLlvm state source str builder
+        if      fragName == "Salt"  || mSuffix == Just ".dce"
+         then cmdSaltToLlvm state source str builder
         else if fragName == "Lite"  || mSuffix == Just ".dcl"
          then cmdLiteToLlvm  state source str builder
         else error $ "Don't know how to convert Disciple " ++ fragName ++ " module to C code."
@@ -46,25 +46,25 @@ cmdLiteToLlvm state source str builder
  = (pipeText source str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
-        [  PipeLiteToBrine
-        [  pipeCore_brineToLlvm state builder]]])
+        [  PipeLiteToSalt
+        [  pipeCore_saltToLlvm state builder]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
--- | Convert a Disciple Brine module to Llvm code.
-cmdBrineToLlvm :: State -> Source -> String -> Builder -> IO ()
-cmdBrineToLlvm state source str builder
+-- | Convert a Disciple Salt module to Llvm code.
+cmdSaltToLlvm :: State -> Source -> String -> Builder -> IO ()
+cmdSaltToLlvm state source str builder
  = (pipeText source str
-        $  PipeTextLoadCore     fragmentBrine
-        [  pipeCore_brineToLlvm state builder])
+        $  PipeTextLoadCore     fragmentSalt
+        [  pipeCore_saltToLlvm state builder])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
-pipeCore_brineToLlvm :: State -> Builder -> PipeCore E.Name
-pipeCore_brineToLlvm state builder
-        = PipeCoreSimplify     fragmentBrine   
+pipeCore_saltToLlvm :: State -> Builder -> PipeCore A.Name
+pipeCore_saltToLlvm state builder
+        = PipeCoreSimplify     fragmentSalt
                                (stateSimplifier state <> Simpl.anormalize)
-        [  PipeCoreCheck       fragmentBrine
-        [  PipeCoreAsBrine
-        [  PipeBrineToLlvm      (buildSpec builder)
+        [  PipeCoreCheck       fragmentSalt
+        [  PipeCoreAsSalt
+        [  PipeSaltToLlvm      (buildSpec builder)
         [  PipeLlvmPrint SinkStdout ]]]]

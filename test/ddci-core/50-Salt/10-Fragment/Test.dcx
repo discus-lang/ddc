@@ -1,0 +1,93 @@
+-- Check for fragment violations.
+-- The errors come from the Salt -> C or Salt -> LLVM conversion.
+:set +Indent
+:set lang Salt
+
+
+-- Error: Unknown primop.
+:check foo#
+
+
+-- Error: Module does not have a top-level letrec.
+:to-c..
+module Main with let
+x = 5;;
+
+
+-- Ok: Function finishes with a return statement.
+:to-c..
+module Main with letrec
+foo (x : Int32#) : Int32#   
+ = return# [Int32#] x;;
+
+
+-- Error: Function does not pass control.
+:to-c..
+module Main with letrec 
+foo (x : Int32#) : Int32#   
+ = x;;
+
+
+-- Ok: Statements in function.
+:to-c..
+module Main with letrec 
+foo (x : Int32#) : Int32#
+ = let  y       = add# [Int32#]  x x
+   in   return# [Int32#] y;;
+
+
+-- Error: Function does not pass control
+:to-c..
+module Main with letrec 
+foo (x : Int32#) : Int32#
+ = let  y       = add# [Int32#]  x x
+   in   add# [Int32#] y y;;
+
+
+-- Error: Function does not pass control
+:to-c..
+module Main with letrec
+foo (x : Int32#) : Bool#
+ = let  y       = add# [Int32#]  x x
+   in   True#;;
+
+
+-- Ok: Function explicitly fails.
+:to-c..
+module Main with letrec
+foo (x : Int32#) : Int32#
+ = let  y       = add# [Int32#]  x x
+   in   fail# [Int32#];;
+
+
+-- Ok: assignment between variables.
+:to-c..
+module Main with letrec
+foo (x : Int32#) : Int32#
+ = let y        = x
+   in  return# [Int32#] y;;
+
+
+-- Ok: assignment from a literal.
+:to-c..
+module Main with letrec
+foo (x : Nat#) : Nat#
+ = let  y       = 5
+   in   return# [Nat#] y;;
+
+
+-- Error: assignment from primop.
+:to-c..
+module Main with letrec
+foo (x : Int32#) : Int32#
+ = let y        = add#
+   in  return# [Int32#] x;;
+
+
+-- Error: cannot discard non-void return value.
+:to-c..
+module Main with letrec
+foo (x : Int32#) : Int32#
+ = let _        = x
+   in  return# [Int32#] x;;
+

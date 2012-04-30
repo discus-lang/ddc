@@ -5,25 +5,25 @@ module DDCI.Core.Language
         , languages
         , fragmentZero
         , fragmentEval
-        , fragmentBrine
-        , fragmentLite)
+        , fragmentLite
+        , fragmentSalt)
 where
 import DDCI.Core.Language.Base
 import DDCI.Core.Language.Zero
 import DDCI.Core.Language.Eval
-import DDCI.Core.Language.Brine
 import DDCI.Core.Language.Lite
+import DDCI.Core.Language.Salt
 
 
 -- | Supported language profiles.
 --   
---   One of @Zero@, @Eval@, @Sea@.
+--   One of @Zero@, @Eval@, @Lite@m, @Salt@.
 languages :: [(String, Language)]
 languages
  =      [ ( "Zero",     Language fragmentZero)
         , ( "Eval",     Language fragmentEval)
-        , ( "Brine",    Language fragmentBrine) 
-        , ( "Lite",     Language fragmentLite) ]
+        , ( "Lite",     Language fragmentLite) 
+        , ( "Salt",     Language fragmentSalt) ]
 
 
 

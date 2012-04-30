@@ -15,9 +15,9 @@ module DDCI.Core.Pipeline.Module
         , PipeLite        (..)
         , pipeLite
 
-          -- * Processing Core Brine modules
-        , PipeBrine       (..)
-        , pipeBrine
+          -- * Processing Core Salt modules
+        , PipeSalt        (..)
+        , pipeSalt
 
           -- * Processing LLVM modules
         , PipeLlvm        (..)
@@ -39,8 +39,8 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Llvm.Platform         as Llvm
-import qualified DDC.Core.Brine.Lite            as Lite
-import qualified DDC.Core.Brine.Output          as Output
+import qualified DDC.Core.Salt.Lite             as Lite
+import qualified DDC.Core.Salt.Output           as Output
 import qualified DDC.Llvm.Module                as Llvm
 import qualified DDC.Type.Env                   as Env
 import qualified Control.Monad.State.Strict     as S
@@ -48,8 +48,8 @@ import Control.Monad
 
 -- Error ----------------------------------------------------------------------
 data Error
-        = ErrorBrineLoad    (CL.Error Output.Name)
-        | ErrorBrineConvert (Output.Error ())
+        = ErrorSaltLoad    (CL.Error Output.Name)
+        | ErrorSaltConvert (Output.Error ())
 
         | ErrorLiteConvert  (Lite.Error ())
 
@@ -65,12 +65,12 @@ data Error
 instance Pretty Error where
  ppr err
   = case err of
-        ErrorBrineLoad err'
-         -> vcat [ text "Type error when loading Brine module."
+        ErrorSaltLoad err'
+         -> vcat [ text "Type error when loading Salt module."
                  , indent 2 (ppr err') ]
 
-        ErrorBrineConvert err'
-         -> vcat [ text "Fragment violation when converting Brine module to C code."
+        ErrorSaltConvert err'
+         -> vcat [ text "Fragment violation when converting Salt module to C code."
                  , indent 2 (ppr err') ]
 
         ErrorLiteConvert err'
@@ -149,8 +149,8 @@ data PipeCore n where
         -> PipeCore Lite.Name
 
   -- Treat a module as beloning to the Core Brine fragment from now on.
-  PipeCoreAsBrine
-        :: [PipeBrine] 
+  PipeCoreAsSalt
+        :: [PipeSalt] 
         -> PipeCore Output.Name
 
 deriving instance Show (PipeCore n)
@@ -198,8 +198,8 @@ pipeCore mm pp
         PipeCoreAsLite pipes
          -> liftM concat $ mapM (pipeLite mm) pipes
 
-        PipeCoreAsBrine pipes
-         -> liftM concat $ mapM (pipeBrine mm) pipes
+        PipeCoreAsSalt pipes
+         -> liftM concat $ mapM (pipeSalt mm) pipes
 
 
 -- PipeLiteModule -------------------------------------------------------------
@@ -208,8 +208,8 @@ data PipeLite
         -- | Output the module in core language syntax.
         = PipeLiteOutput    Sink
 
-        -- | Convert the module to the Core Sea Fragment.
-        | PipeLiteToBrine     [PipeCore Output.Name]
+        -- | Convert the module to the Core Salt Fragment.
+        | PipeLiteToSalt     [PipeCore Output.Name]
         deriving Show
 
 pipeLite :: C.Module () Lite.Name
@@ -221,42 +221,42 @@ pipeLite mm pp
         PipeLiteOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeLiteToBrine pipes
-         -> case Lite.toBrine (profilePrimDataDefs Lite.profile) mm of
+        PipeLiteToSalt pipes
+         -> case Lite.toSalt (profilePrimDataDefs Lite.profile) mm of
                 Left  err       -> return [ErrorLiteConvert err]
                 Right mm'       -> liftM concat $ mapM (pipeCore mm') pipes
 
 
--- PipeSeaModule --------------------------------------------------------------
--- | Process a Core Sea module.
-data PipeBrine
+-- PipeSaltModule --------------------------------------------------------------
+-- | Process a Core Salt module.
+data PipeSalt
         -- | Output the module in core language syntax.
-        = PipeBrineOutput     Sink
+        = PipeSaltOutput     Sink
 
         -- | Print the module as a C source code.
-        | PipeBrinePrint      
-        { pipeWithBrinePrelude  :: Bool
-        , pipeModuleSink        :: Sink }
+        | PipeSaltPrint      
+        { pipeWithSaltPrelude  :: Bool
+        , pipeModuleSink       :: Sink }
 
         -- | Convert the module to LLVM.
-        | PipeBrineToLlvm        Llvm.Platform [PipeLlvm]
+        | PipeSaltToLlvm        Llvm.Platform [PipeLlvm]
         deriving (Show)
 
 
--- | Process a Core Brine module.
-pipeBrine :: C.Module () Output.Name 
-          -> PipeBrine
+-- | Process a Core Salt module.
+pipeSalt  :: C.Module () Output.Name 
+          -> PipeSalt
           -> IO [Error]
 
-pipeBrine mm pp
+pipeSalt mm pp
  = case pp of
-        PipeBrineOutput sink
+        PipeSaltOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeBrinePrint withPrelude sink
+        PipeSaltPrint withPrelude sink
          -> case Output.convertModule mm of
                 Left  err 
-                 ->     return $ [ErrorBrineConvert err]
+                 ->     return $ [ErrorSaltConvert err]
 
                 Right doc 
                  | withPrelude
@@ -270,7 +270,7 @@ pipeBrine mm pp
                  | otherwise
                  -> pipeSink (renderIndent doc)  sink
 
-        PipeBrineToLlvm platform more
+        PipeSaltToLlvm platform more
          -> do  let mm'     =  Llvm.convertModule platform mm
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results

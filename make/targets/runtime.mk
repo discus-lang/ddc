@@ -26,20 +26,20 @@ runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 
 # -----------------------------------------------------------------------------
 # Runtime for new compiler
-brine-runtime_dce = \
-	packages/ddc-core-brine/runtime/src/Storage/Object${BITS}.dce \
-	$(shell find packages/ddc-core-brine/runtime/src/Primitive -name "*.dce")
+salt-runtime_dce = \
+	packages/ddc-core-salt/runtime/src/Storage/Object${BITS}.dce \
+	$(shell find packages/ddc-core-salt/runtime/src/Primitive -name "*.dce")
 
-brine-runtime_c   = $(shell find packages/ddc-core-brine/runtime/src -name "*.c")
+salt-runtime_c   = $(shell find packages/ddc-core-salt/runtime/src -name "*.c")
 
-brine-runtime_o   = $(patsubst %.dce,%.o,$(brine-runtime_dce)) \
-	  	    $(patsubst %.c,%.o,$(brine-runtime_c))
+salt-runtime_o   = $(patsubst %.dce,%.o,$(salt-runtime_dce)) \
+	  	   $(patsubst %.c,%.o,$(salt-runtime_c))
 
-packages/ddc-core-brine/runtime/libddc-runtime.a : $(brine-runtime_o)
+packages/ddc-core-salt/runtime/libddc-runtime.a : $(salt-runtime_o)
 	@echo "* Linking $@"
 	@ar r $@ $^
 
-packages/ddc-core-brine/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(brine-runtime_o)
+packages/ddc-core-salt/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
 	@echo "* Linking $@"
 	@$(GCC_LINK_SHARED) -o $@ $^
 
@@ -51,8 +51,8 @@ packages/ddc-core-brine/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(brine-runtim
 runtime : $(runtime_dep) \
 		runtime/libddc-runtime.a \
 		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),) \
-		packages/ddc-core-brine/runtime/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),packages/ddc-core-brine/runtime/libddc-runtime.$(SHARED_SUFFIX),)
+		packages/ddc-core-salt/runtime/libddc-runtime.a \
+		$(if $(SHARED_SUFFIX),packages/ddc-core-salt/runtime/libddc-runtime.$(SHARED_SUFFIX),)
 
 
 # Clean objects in the runtime system

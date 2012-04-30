@@ -56,12 +56,12 @@ compileDCE state source filePath
 
         -- Run the build pipeline.
         errs    <- pipeText source src
-                $  PipeTextLoadCore  fragmentBrine
-                [  PipeCoreSimplify  fragmentBrine
+                $  PipeTextLoadCore  fragmentSalt
+                [  PipeCoreSimplify  fragmentSalt
                                      (stateSimplifier state <> Simpl.anormalize)
-                [  PipeCoreCheck     fragmentBrine
-                [  PipeCoreAsBrine
-                [  PipeBrineToLlvm   (buildSpec builder)
+                [  PipeCoreCheck     fragmentSalt
+                [  PipeCoreAsSalt
+                [  PipeSaltToLlvm   (buildSpec builder)
                 [  PipeLlvmCompile   
                         { pipeBuilder           = builder
                         , pipeFileLlvm          = llPath

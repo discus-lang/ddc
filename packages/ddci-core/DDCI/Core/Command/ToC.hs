@@ -9,7 +9,7 @@ import DDCI.Core.Language
 import DDC.Core.Fragment.Profile
 import System.FilePath
 import DDC.Core.Simplifier.Recipie              as Simpl
-import qualified DDC.Core.Brine.Output          as E
+import qualified DDC.Core.Salt.Output           as A
 import qualified Data.Set                       as Set
 import qualified DDC.Base.Pretty                as P
 import Data.Monoid
@@ -27,8 +27,8 @@ cmdToC state source str
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
-   in   if      fragName == "Brine" || mSuffix == Just ".dce"
-         then cmdBrineToC state source str
+   in   if      fragName == "Salt" || mSuffix  == Just ".dce"
+         then cmdSaltToC state source str
         else if fragName == "Lite"  || mSuffix == Just ".dcl"
          then cmdLiteToC  state source str
         else error $ "Don't know how to convert Disciple " ++ fragName ++ " module to C code."
@@ -40,26 +40,26 @@ cmdLiteToC state source str
  = (pipeText source str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
-        [  PipeLiteToBrine
-        [  pipeCore_brineToC state ]]])
+        [  PipeLiteToSalt
+        [  pipeCore_saltToC state ]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
--- | Convert a Disciple Brine module to C code.
-cmdBrineToC :: State -> Source -> String -> IO ()
-cmdBrineToC state source str
+-- | Convert a Disciple Salt module to C code.
+cmdSaltToC :: State -> Source -> String -> IO ()
+cmdSaltToC state source str
  = (pipeText source str
-        $  PipeTextLoadCore     fragmentBrine
-        [  pipeCore_brineToC state])
+        $  PipeTextLoadCore     fragmentSalt
+        [  pipeCore_saltToC state])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
-pipeCore_brineToC :: State -> PipeCore E.Name
-pipeCore_brineToC state
-        = PipeCoreSimplify     fragmentBrine   
+pipeCore_saltToC :: State -> PipeCore A.Name
+pipeCore_saltToC state
+        = PipeCoreSimplify     fragmentSalt
                                (stateSimplifier state <> Simpl.anormalize)
-        [  PipeCoreCheck       fragmentBrine
-        [  PipeCoreAsBrine
-        [  PipeBrinePrint 
-                (Set.member BrinePrelude (stateModes state))
+        [  PipeCoreCheck       fragmentSalt
+        [  PipeCoreAsSalt
+        [  PipeSaltPrint 
+                (Set.member SaltPrelude (stateModes state))
                 SinkStdout ]]]

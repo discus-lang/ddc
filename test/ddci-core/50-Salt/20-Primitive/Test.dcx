@@ -1,0 +1,62 @@
+
+-- See if we've managed to changed modes.
+:set lang Salt
+:check add#
+
+-- Type constructors
+:kind Int64#
+:kind Int32#
+
+-- Error: invalid type constructors
+:kind Int#
+
+:kind Int65#
+
+
+-- Check types of tailcallN# prims.
+:check tailcall0#
+
+:check tailcall1#
+
+:check tailcall4#
+
+
+-- Literals
+:check 42
+
+:check -5
+
+:check TAG42#
+
+:check 42w8#
+
+:check 42w16#
+
+:check 42w32#
+
+:check 42w64#
+
+:check 96i8#
+
+:check 96i16#
+
+:check 96i32#
+
+:check 96i64#
+
+
+-- Error: lex error
+-- no unboxed literals in this fragment.
+:check 42w32
+
+-- Error: not a valid bit width
+:check 42w42#
+
+-- Binary literals
+:check 0b0100w32#
+
+:check 0b10000000w8#
+
+-- Error: Binary literal is wider than word size.
+:check 0b100000000w8#
+
