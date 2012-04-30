@@ -24,7 +24,7 @@ Library
         ddc-llvm        == 0.3.0.*,
         ddc-type        == 0.3.0.*,
         ddc-core        == 0.3.0.*,
-        ddc-core-sea    == 0.3.0.*
+        ddc-core-salt    == 0.3.0.*
 
   Exposed-modules:
         DDC.Core.Llvm.Convert.Atom

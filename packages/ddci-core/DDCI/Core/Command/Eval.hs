@@ -4,11 +4,11 @@ module DDCI.Core.Command.Eval
         , cmdEval
         , evalExp)
 where
-import DDCI.Core.Language
 import DDCI.Core.Stats.Trace
 import DDCI.Core.Command.Check
 import DDCI.Core.Output
 import DDCI.Core.State
+import DDC.Build.Language
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name

@@ -1,5 +1,5 @@
 
-module DDCI.Core.Language
+module DDC.Build.Language
         ( Language      (..)
         , Fragment      (..)
         , languages
@@ -8,11 +8,11 @@ module DDCI.Core.Language
         , fragmentLite
         , fragmentSalt)
 where
-import DDCI.Core.Language.Base
-import DDCI.Core.Language.Zero
-import DDCI.Core.Language.Eval
-import DDCI.Core.Language.Lite
-import DDCI.Core.Language.Salt
+import DDC.Build.Language.Base
+import DDC.Build.Language.Zero
+import DDC.Build.Language.Eval
+import DDC.Build.Language.Lite
+import DDC.Build.Language.Salt
 
 
 -- | Supported language profiles.

@@ -4,10 +4,10 @@ module DDCI.Core.Command.Set
         ( Mode(..)
         , cmdSet)
 where
-import DDCI.Core.Language
 import DDCI.Core.State
 import DDCI.Core.Mode
 import DDCI.Core.Output
+import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
 import DDC.Base.Pretty

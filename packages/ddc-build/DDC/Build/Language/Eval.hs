@@ -1,31 +1,25 @@
 
-module DDCI.Core.Language.Eval
+module DDC.Build.Language.Eval
         (fragmentEval)
 where
-import DDCI.Core.Mode
-import DDCI.Core.Language.Base
-import Control.Monad.State.Strict
-import DDC.Type.Env                             (Env)
-import DDC.Type.Exp
+import DDC.Build.Language.Base
 import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Name
 import DDC.Core.Eval.Check
 import DDC.Core.Transform.Namify
+import DDC.Type.Exp
+import DDC.Type.Env                             (Env)
 import qualified DDC.Type.Env                   as Env
+import Control.Monad.State.Strict
 
 
 fragmentEval :: Fragment Name Error
 fragmentEval
         = Fragment
         { fragmentProfile       = evalProfile
-
-        , fragmentLexModule
-                = \s str -> lexModuleString (nameOfSource s) (lineStartOfSource s) str
-
-        , fragmentLexExp        
-                = \s str -> lexExpString    (nameOfSource s) (lineStartOfSource s) str
-
-        , fragmentCheckModule   = error "languages: finish me"
+        , fragmentLexModule     = lexModuleString
+        , fragmentLexExp        = lexExpString
+        , fragmentCheckModule   = error "DDC.Core.Language.Eval: finish me"
         , fragmentCheckExp      = checkCapsX 
         , fragmentMakeNamifierT = makeNamifier freshT
         , fragmentMakeNamifierX = makeNamifier freshX 

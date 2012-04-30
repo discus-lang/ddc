@@ -2,11 +2,11 @@
 module DDCI.Core.Command.Compile
         (cmdCompile)
 where
-import DDCI.Core.Build.Builder
-import DDCI.Core.Pipeline.Module
-import DDCI.Core.Language
 import DDCI.Core.Mode
 import DDCI.Core.State
+import DDC.Build.Builder
+import DDC.Build.Pipeline
+import DDC.Build.Language
 import System.FilePath
 import System.Directory
 import Control.Monad
@@ -55,7 +55,7 @@ compileDCE state source filePath
                                         mBuilder
 
         -- Run the build pipeline.
-        errs    <- pipeText source src
+        errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore  fragmentSalt
                 [  PipeCoreSimplify  fragmentSalt
                                      (stateSimplifier state <> Simpl.anormalize)

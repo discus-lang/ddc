@@ -13,9 +13,9 @@ module DDCI.Core.Command.Check
         , cmdParseCheckExp)
 where
 import DDCI.Core.Mode
-import DDCI.Core.Language
 import DDCI.Core.State
 import DDCI.Core.Output
+import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Core.Load
 import DDC.Core.Exp
@@ -34,8 +34,10 @@ import qualified DDC.Base.Parser        as BP
 cmdShowKind :: State -> Source -> String -> IO ()
 cmdShowKind state source str
  | Language frag  <- stateLanguage state
- = let  toks    = fragmentLexExp frag source str
-        eTK     = loadType (fragmentProfile frag) (nameOfSource source) toks
+ = let  srcName = nameOfSource source
+        srcLine = lineStartOfSource source
+        toks    = fragmentLexExp frag srcName srcLine str
+        eTK     = loadType (fragmentProfile frag) srcName toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
@@ -89,12 +91,14 @@ cmdUniverse2 state source str
 cmdUniverse3 :: State -> Source -> String -> IO ()
 cmdUniverse3 state source str
  | Language frag  <- stateLanguage state
- = let  profile = fragmentProfile frag
+ = let  srcName = nameOfSource source
+        srcLine = lineStartOfSource source
+        profile = fragmentProfile frag
         kenv    = profilePrimKinds profile
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok (nameOfSource source) pType toks of
+         = case BP.runTokenParser describeTok srcName pType toks of
             Left err    -> outDocLn state $ ppr err
             Right t     -> goUniverse3 (spreadT kenv t)
 
@@ -103,7 +107,7 @@ cmdUniverse3 state source str
             Just u      -> outDocLn state $ ppr u
             Nothing     -> outDocLn state (text "no universe")
 
-   in   goParse (fragmentLexExp frag source str)
+   in   goParse (fragmentLexExp frag srcName srcLine str)
 
 
 -- | Parse a core type, and check its kind.
@@ -116,8 +120,10 @@ cmdParseCheckType
         -> IO (Maybe (Type n, Kind n))
 
 cmdParseCheckType _state source frag str
- = let  toks    = fragmentLexExp frag source str
-        eTK     = loadType (fragmentProfile frag) (nameOfSource source) toks
+ = let  srcName = nameOfSource source
+        srcLine = lineStartOfSource source
+        toks    = fragmentLexExp frag srcName srcLine str
+        eTK     = loadType (fragmentProfile frag) srcName toks
    in   case eTK of
          Left err       
           -> do putStrLn $ renderIndent $ ppr err
@@ -132,7 +138,9 @@ cmdParseCheckType _state source frag str
 cmdTypeEquiv :: State -> Source -> String -> IO ()
 cmdTypeEquiv state source ss
  | Language frag <- stateLanguage state
- = let
+ = let  srcName = nameOfSource source
+        srcLine = lineStartOfSource source
+        
         goParse toks
          = case BP.runTokenParser describeTok (nameOfSource source)
                         (do t1 <- pTypeAtom
@@ -161,7 +169,7 @@ cmdTypeEquiv state source ss
                 Right{} 
                  ->     return True
 
-   in goParse (fragmentLexExp frag source ss)
+   in goParse (fragmentLexExp frag srcName srcLine ss)
 
 
 
@@ -170,8 +178,10 @@ cmdTypeEquiv state source ss
 cmdShowWType :: State -> Source -> String -> IO ()
 cmdShowWType state source str
  | Language frag <- stateLanguage state
- = let  toks    = fragmentLexExp frag source str
-        eTK     = loadWitness (fragmentProfile frag) (nameOfSource source) toks
+ = let  srcName = nameOfSource source
+        srcLine = lineStartOfSource source
+        toks    = fragmentLexExp frag srcName srcLine str
+        eTK     = loadWitness (fragmentProfile frag) srcName toks
    in   case eTK of
          Left err       -> putStrLn $ renderIndent $ ppr err
          Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
@@ -251,7 +261,7 @@ cmdParseCheckExp
                      , Type n, Effect n, Closure n))
 
 cmdParseCheckExp _state frag permitPartialPrims source str
- = goLoad (fragmentLexExp frag source str)
+ = goLoad (fragmentLexExp frag (nameOfSource source) (lineStartOfSource source) str)
  where
         -- Override profile to allow partially applied primitives if we were
         -- told to do so.

@@ -2,11 +2,11 @@
 module DDCI.Core.Command.ToLlvm
         (cmdToLlvm)
 where
-import DDCI.Core.Build.Builder
-import DDCI.Core.Language
 import DDCI.Core.Mode
-import DDCI.Core.Pipeline.Module
 import DDCI.Core.State
+import DDC.Build.Pipeline
+import DDC.Build.Builder
+import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import System.FilePath
 import DDC.Core.Simplifier.Recipie      as Simpl
@@ -43,7 +43,7 @@ cmdToLlvm state source str
 -- | Convert a Disciple Lite module to Llvm code.
 cmdLiteToLlvm :: State -> Source -> String -> Builder -> IO ()
 cmdLiteToLlvm state source str builder
- = (pipeText source str
+ = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
         [  PipeLiteToSalt
@@ -54,7 +54,7 @@ cmdLiteToLlvm state source str builder
 -- | Convert a Disciple Salt module to Llvm code.
 cmdSaltToLlvm :: State -> Source -> String -> Builder -> IO ()
 cmdSaltToLlvm state source str builder
- = (pipeText source str
+ = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentSalt
         [  pipeCore_saltToLlvm state builder])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)

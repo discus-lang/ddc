@@ -1,9 +1,8 @@
 
-module DDCI.Core.Language.Base
+module DDC.Build.Language.Base
         ( Language (..)
         , Fragment (..))
 where
-import DDCI.Core.Mode
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
 import DDC.Core.Module
@@ -15,6 +14,8 @@ import DDC.Type.Env                     (Env)
 
 
 -- Language ------------------------------------------------------------------
+-- | Existential container for a language fragment, and the dictionaries
+--   we need to work with its type parameters.
 data Language
         = forall n err. (Ord n, Show n, Pretty n, Pretty (err ()))
         => Language (Fragment n err)
@@ -23,17 +24,34 @@ deriving instance Show Language
         
 
 -- Fragment -------------------------------------------------------------------
--- | Language profile wrapper 
+-- | Carries all the information we need to work on a particular 
+--   fragment of the Disciple Core language.
 data Fragment n (err :: * -> *)
         = forall s. Fragment
-        { fragmentProfile       :: Profile n
-        , fragmentLexModule     :: Source -> String -> [Token (Tok n)]
-        , fragmentLexExp        :: Source -> String -> [Token (Tok n)]
+        { -- | Language profile for this fragment.
+          fragmentProfile       :: Profile n
+
+          -- | Lex module source into tokens,
+          --   given the source name and starting line number. 
+        , fragmentLexModule     :: String -> Int -> String -> [Token (Tok n)]
+
+          -- | Lex expression source into tokens,
+          --   given the source name and starting line number.
+        , fragmentLexExp        :: String -> Int -> String -> [Token (Tok n)]
+
+          -- | Perform language fragment specific checks on a module.
         , fragmentCheckModule   :: forall a. Module a n -> Maybe (err a)
+
+          -- | Perform language fragment specific checks on an expression.
         , fragmentCheckExp      :: forall a. Exp a n    -> Maybe (err a) 
 
+          -- | Make a namifier for level-1 names.
         , fragmentMakeNamifierT :: Env n -> Namifier s n
+
+          -- | Make a namifier for level-0 names.
         , fragmentMakeNamifierX :: Env n -> Namifier s n 
+
+          -- | Initial state for above namifiers.
         , fragmentNameZero      :: s }
 
 

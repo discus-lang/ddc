@@ -36,12 +36,14 @@ Library
         DDC.Core.Transform.Snip
         DDC.Core.Transform.TransformX
         DDC.Core.Simplifier
+        DDC.Core.Simplifier.Recipie
+        DDC.Type.Transform.AnonymizeT
+        DDC.Type.Transform.Rename
 
   Other-modules:
         DDC.Core.Simplifier.Apply
         DDC.Core.Simplifier.Base
         DDC.Core.Simplifier.Parser
-        DDC.Core.Simplifier.Recipie
 
   GHC-options:
         -Werror

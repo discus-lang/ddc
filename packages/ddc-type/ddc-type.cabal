@@ -34,10 +34,10 @@ Library
         DDC.Type.Transform.SpreadT
         DDC.Type.Transform.SubstituteT
         DDC.Type.Transform.Trim
-        DDC.Type.DataDef
         DDC.Type.Check
-        DDC.Type.Compounds
         DDC.Type.Collect
+        DDC.Type.Compounds
+        DDC.Type.DataDef
         DDC.Type.Env
         DDC.Type.Equiv
         DDC.Type.Exp

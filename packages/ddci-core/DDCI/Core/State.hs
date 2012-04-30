@@ -13,8 +13,8 @@ module DDCI.Core.State
         , Mode          (..)
         , adjustMode)
 where
-import DDCI.Core.Language
 import DDCI.Core.Mode
+import DDC.Build.Language
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Eval.Name               (Name)
 import Data.Map                         (Map)

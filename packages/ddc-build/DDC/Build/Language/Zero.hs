@@ -1,18 +1,17 @@
 
-module DDCI.Core.Language.Zero
+module DDC.Build.Language.Zero
         (fragmentZero)
 where
-import DDCI.Core.Mode
-import DDCI.Core.Language.Base
+import DDC.Build.Language.Base
 import DDC.Core.Fragment.Profile
 import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
 import DDC.Base.Lexer
-import DDC.Type.Env                     (Env)
 import DDC.Type.Exp
-import Control.Monad.State.Strict
+import DDC.Type.Env                     (Env)
 import DDC.Core.Lexer                   as Core
 import qualified DDC.Type.Env           as Env
+import Control.Monad.State.Strict
 
 
 fragmentZero :: Fragment Name Error
@@ -49,9 +48,9 @@ instance Pretty Name where
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexModuleZero :: Source -> String -> [Token (Tok Name)]
-lexModuleZero source str
- = map rn $ Core.lexModuleWithOffside (nameOfSource source) (lineStartOfSource source) str
+lexModuleZero :: String -> Int -> String -> [Token (Tok Name)]
+lexModuleZero srcName srcLine str
+ = map rn $ Core.lexModuleWithOffside srcName srcLine str
  where rn (Token t sp) 
         = case renameTok (Just . Name) t of
                 Just t' -> Token t' sp
@@ -61,9 +60,9 @@ lexModuleZero source str
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexExpZero :: Source -> String -> [Token (Tok Name)]
-lexExpZero source str
- = map rn $ Core.lexExp (nameOfSource source) (lineStartOfSource source) str
+lexExpZero :: String -> Int -> String -> [Token (Tok Name)]
+lexExpZero srcName srcLine str
+ = map rn $ Core.lexExp srcName srcLine str
  where rn (Token t sp) 
         = case renameTok (Just . Name) t of
                 Just t' -> Token t' sp

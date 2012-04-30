@@ -68,7 +68,7 @@ cleanRuntime :
 		-o	-name "*~" \
 		-follow | xargs -n 1 rm -f
 
-	@find packages/ddc-core-brine/runtime \
+	@find packages/ddc-core-salt/runtime \
 		        -name "*.o" \
 		-o      -name "*.dep" \
 		-o      -name "*.so" \

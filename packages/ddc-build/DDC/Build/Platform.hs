@@ -1,5 +1,5 @@
 
-module DDCI.Core.Build.Platform
+module DDC.Build.Platform
         ( Platform      (..)
 
         , Arch          (..)

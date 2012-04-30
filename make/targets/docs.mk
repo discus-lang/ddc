@@ -27,7 +27,14 @@ docs-main :
 docs-core :
 	@haddock -w -h -o doc/haddock-core \
 	        --optghc=-ipackages/ddc-base \
+                --optghc=-ipackages/ddc-build \
 	        --optghc=-ipackages/ddc-core \
+                --optghc=-ipackages/ddc-core-eval \
+                --optghc=-ipackages/ddc-core-llvm \
+                --optghc=-ipackages/ddc-core-salt \
+                --optghc=-ipackages/ddc-core-simpl \
+                --optghc=-ipackages/ddc-core-llvm \
+                --optghc=-ipackages/ddc-type \
 	        --optghc=-ipackages/ddci-core \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(ddci-core_src_hs_all)

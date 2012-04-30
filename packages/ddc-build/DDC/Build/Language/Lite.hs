@@ -1,34 +1,27 @@
 
-module DDCI.Core.Language.Lite
+module DDC.Build.Language.Lite
         (fragmentLite)
 where
-import DDCI.Core.Mode
-import DDCI.Core.Language.Base
+import DDC.Build.Language.Base
 import DDC.Core.Transform.Namify
-import DDC.Type.Exp
-import Control.Monad.State.Strict
-import DDC.Type.Env                     (Env)
 import DDC.Core.Salt.Lite
+import DDC.Type.Exp
+import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
+import Control.Monad.State.Strict
 
 
 fragmentLite :: Fragment Name Error 
 fragmentLite
         = Fragment
         { fragmentProfile       = profile 
-
-        , fragmentLexModule
-                = \s str -> lexModuleString (nameOfSource s) (lineStartOfSource s) str
-
-        , fragmentLexExp
-                = \s str -> lexExpString    (nameOfSource s) (lineStartOfSource s) str
-
+        , fragmentLexModule     = lexModuleString
+        , fragmentLexExp        = lexExpString
         , fragmentCheckModule   = const Nothing
         , fragmentCheckExp      = const Nothing
         , fragmentMakeNamifierT = makeNamifier freshT 
         , fragmentMakeNamifierX = makeNamifier freshX 
         , fragmentNameZero      = (0 :: Int) }
-
 
 
 -- | Create a new type variable name that is not in the given environment.

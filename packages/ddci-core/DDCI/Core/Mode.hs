@@ -66,5 +66,3 @@ nameOfSource ss
         SourceArgs              -> "<arg>"
         SourceConsole{}         -> "<console>"
         SourceBatch{}           -> "<batch>"
-
-

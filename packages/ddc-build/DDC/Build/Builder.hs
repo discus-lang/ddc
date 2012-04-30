@@ -1,5 +1,5 @@
 
-module DDCI.Core.Build.Builder
+module DDC.Build.Builder
         ( BuilderConfig (..)
         , defaultBuilderConfig
 
@@ -8,7 +8,7 @@ module DDCI.Core.Build.Builder
 
         , determineDefaultBuilder)
 where
-import DDCI.Core.Build.Platform
+import DDC.Build.Platform
 import System.FilePath
 import System.Exit
 import System.Cmd

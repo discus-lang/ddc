@@ -25,12 +25,15 @@ Library
         ddc-core        == 0.3.0.*
 
   Exposed-modules:
+        DDC.Core.Salt.Base.Name
+        DDC.Core.Salt.Base.Sanitize
         DDC.Core.Salt.Base
         DDC.Core.Salt.Lite
         DDC.Core.Salt.Output
 
   Other-modules:
         DDC.Core.Salt.Lite.Compounds
+        DDC.Core.Salt.Lite.Convert
         DDC.Core.Salt.Lite.Env
         DDC.Core.Salt.Lite.Name
         DDC.Core.Salt.Lite.Profile

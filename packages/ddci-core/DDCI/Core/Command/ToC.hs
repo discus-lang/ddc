@@ -3,9 +3,9 @@ module DDCI.Core.Command.ToC
         (cmdToC)
 where
 import DDCI.Core.Mode
-import DDCI.Core.Pipeline.Module
 import DDCI.Core.State
-import DDCI.Core.Language
+import DDC.Build.Pipeline
+import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import System.FilePath
 import DDC.Core.Simplifier.Recipie              as Simpl
@@ -37,7 +37,7 @@ cmdToC state source str
 -- | Convert a Disciple Lite module to C code.
 cmdLiteToC :: State -> Source -> String -> IO ()
 cmdLiteToC state source str
- = (pipeText source str
+ = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
         [  PipeLiteToSalt
@@ -48,7 +48,7 @@ cmdLiteToC state source str
 -- | Convert a Disciple Salt module to C code.
 cmdSaltToC :: State -> Source -> String -> IO ()
 cmdSaltToC state source str
- = (pipeText source str
+ = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentSalt
         [  pipeCore_saltToC state])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)

@@ -1,28 +1,22 @@
 
-module DDCI.Core.Language.Salt
+module DDC.Build.Language.Salt
         (fragmentSalt)
 where
-import DDCI.Core.Mode
-import DDCI.Core.Language.Base
+import DDC.Build.Language.Base
 import DDC.Core.Transform.Namify
-import DDC.Type.Exp
 import DDC.Core.Salt.Output
-import Control.Monad.State.Strict
+import DDC.Type.Exp
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
+import Control.Monad.State.Strict
 
 
 fragmentSalt :: Fragment Name Error
 fragmentSalt 
         = Fragment
         { fragmentProfile       = profile 
-
-        , fragmentLexModule
-                = \s str -> lexModuleString (nameOfSource s) (lineStartOfSource s) str
-
-        , fragmentLexExp
-                = \s str -> lexExpString    (nameOfSource s) (lineStartOfSource s) str
-
+        , fragmentLexModule     = lexModuleString
+        , fragmentLexExp        = lexExpString
         , fragmentCheckModule   = const Nothing
         , fragmentCheckExp      = const Nothing
         , fragmentMakeNamifierT = makeNamifier freshT 

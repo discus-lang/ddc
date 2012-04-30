@@ -1,0 +1,30 @@
+--------------------------------------------------------------------------------
+The Disciplined Disciple Compiler License (MIT style)
+
+Copyrite (K) 2007-2012 The Disciplined Disciple Compiler Strike Force
+All rights reversed.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+-------------------------------------------------------------------------------
+Under Australian law copyright is free and automatic.
+By contributing to DDC authors grant all rights they have regarding their
+contributions to the other members of the Disciplined Disciple Compiler Strike
+Force, past, present and future, as well as placing their contributions under
+the above license.
+
+Use "darcs show authors" to get a list of Strike Force members.
+
+--------------------------------------------------------------------------------
+Redistributions of libraries in ./external are governed by their own licenses:
+
+  - TinyPTC   GNU Lesser General Public License
+  

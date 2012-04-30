@@ -4,11 +4,11 @@ module DDCI.Core.Command.Trans
         ( cmdTrans
 	, cmdTransEval)
 where
-import DDCI.Core.Language
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Output
 import DDCI.Core.State
+import DDC.Build.Language
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
 import DDC.Core.Simplifier

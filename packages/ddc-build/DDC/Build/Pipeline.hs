@@ -1,5 +1,5 @@
 {-# LANGUAGE GADTs #-}
-module DDCI.Core.Pipeline.Module
+module DDC.Build.Pipeline
         ( -- * Things that can go wrong
           Error(..)
 
@@ -27,11 +27,10 @@ module DDCI.Core.Pipeline.Module
         , Sink                  (..)
         , pipeSink)
 where
-import DDCI.Core.Mode
-import DDCI.Core.Language
-import DDCI.Core.Build.Builder
-import DDC.Core.Simplifier
+import DDC.Build.Language
+import DDC.Build.Builder
 import DDC.Core.Fragment.Profile
+import DDC.Core.Simplifier
 import DDC.Core.Collect
 import DDC.Base.Pretty
 import qualified DDC.Core.Check                 as C
@@ -104,20 +103,20 @@ deriving instance Show (PipeText n err)
 
 -- | Text module pipeline.
 pipeText
-        :: Source
+        :: String
+        -> Int
         -> String
         -> PipeText n err
         -> IO [Error]
 
-pipeText source str pp
+pipeText srcName srcLine str pp
  = case pp of
         PipeTextOutput sink
          -> pipeSink str sink
 
         PipeTextLoadCore frag pipes
-         -> let sourceName      = nameOfSource source
-                toks            = fragmentLexModule frag source str
-            in case CL.loadModule (fragmentProfile frag) sourceName toks of
+         -> let toks            = fragmentLexModule frag srcName srcLine str
+            in case CL.loadModule (fragmentProfile frag) srcName toks of
                  Left err -> return $ [ErrorLoad err]
                  Right mm -> liftM concat $ mapM (pipeCore mm) pipes
 
