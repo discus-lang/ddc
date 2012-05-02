@@ -81,7 +81,7 @@ instance Pretty (Error a) where
 convertM :: DataDefs L.Name -> Module a L.Name -> ConvertM a (Module a O.Name)
 convertM defsPrim mm
   = do  let defs = defsPrim
-        x'       <- convertX defs $ moduleBody mm
+        x'       <- convertBodyX defs $ moduleBody mm
 
         return $ ModuleCore
          { moduleName           = moduleName mm
@@ -93,24 +93,28 @@ convertM defsPrim mm
 
 
 -- Exp -------------------------------------------------------------------------
-convertX :: DataDefs L.Name -> Exp a L.Name -> ConvertM a (Exp a O.Name)
-convertX defs xx
-  = case xx of
-        XVar a u        -> liftM2 XVar (return a) (convertU u)
+convertBodyX :: DataDefs L.Name -> Exp a L.Name -> ConvertM a (Exp a O.Name)
+convertBodyX defs xx
+ = case xx of
+        XVar a u
+         -> do  u'      <- convertU u
+                let xx' =  XVar a u'
+                t'      <- convertT $ typeOfBound u
+                return  $  xReturn a t' xx'
 
-        XCon a u        -> convertC defs a u
+        XCon a u
+         -> do  (xx', t') <- convertC defs a u
+                return  $  xReturn a t' xx'
 
-        -- Type lambdas don't appear in Core Brine.
+        -- Strip out type lambdas.
         XLAM _ _ x
-         -> convertX defs x
+         -> convertBodyX defs x
 
         -- Keep value binders but ditch witness binders for now.
-        -- TODO: if expresion is not another lambda or case then
-        --       wrap it in a return#.
         XLam a b x
          -> case universeFromType1 (typeOfBind b) of
-             Just UniverseData    -> liftM3 XLam (return a) (convertB b) (convertX defs x)
-             Just UniverseWitness -> convertX defs x
+             Just UniverseData    -> liftM3 XLam (return a) (convertB b) (convertBodyX defs x)
+             Just UniverseWitness -> convertBodyX defs x
              _                    -> throw ErrorMistyped
 
         XApp{}  -> error "toBrineX: XApp"
@@ -118,8 +122,8 @@ convertX defs xx
         XLet a (LRec bxs) x2
          -> do  let (bs, xs)    = unzip bxs
                 bs'             <- mapM convertB bs
-                xs'             <- mapM (convertX defs) xs
-                x2'             <- convertX defs x2
+                xs'             <- mapM (convertBodyX defs) xs
+                x2'             <- convertBodyX defs x2
                 return $ XLet a (LRec $ zip bs' xs') x2'
 
         XLet{}          -> error "toBrineX: XLet"
@@ -127,29 +131,52 @@ convertX defs xx
         -- TODO: add default alternative to check for other tags
         --       if there isn't one already.
         XCase a x@(XVar _ uX) alts  
-         -> do  x'              <- convertX defs x
+         -> do  x'              <- convertArgX defs x
                 alts'           <- mapM (convertA defs uX) alts
                 return  $ XCase a (XApp a (xGetTag a) x') alts'
 
         XCase{}         -> throw $ ErrorNotNormalized
 
-        XCast _ _ x     -> convertX defs x
+        XCast _ _ x     -> convertBodyX defs x
 
         XType{}         -> throw $ ErrorMistyped
         XWitness{}      -> throw $ ErrorMistyped
 
 
+
+-- | Convert a function argument.
+convertArgX :: DataDefs L.Name -> Exp a L.Name -> ConvertM a (Exp a O.Name)
+convertArgX defs xx
+  = case xx of
+        XVar a u        -> liftM2 XVar (return a) (convertU u)
+        XCon a u        -> liftM fst $ convertC defs a u
+        XApp{}          -> error "toBrineX: XApp"
+        XCast _ _ x     -> convertArgX defs x
+
+        -- Lambdas, should have been split out to top-level bindintg.
+        XLAM{}          -> throw ErrorNotNormalized
+        XLam{}          -> throw ErrorNotNormalized
+
+        -- Lets and cases should 
+        XLet{}          -> throw ErrorNotNormalized
+        XCase{}         -> throw ErrorNotNormalized 
+
+        -- Types and witness arguments should have been discarded already.
+        XType{}         -> throw ErrorMistyped
+        XWitness{}      -> throw ErrorMistyped
+
+
 -- Alt ------------------------------------------------------------------------
 
--- TODO: if expression is not another case then wrap it in a return#.
 convertA :: DataDefs L.Name 
          -> Bound L.Name -> Alt a L.Name -> ConvertM a (Alt a O.Name)
 convertA defs _u alt
  = case alt of
         AAlt PDefault x
-         -> do  x'      <- convertX defs x
+         -> do  x'      <- convertBodyX defs x
                 return  $ AAlt PDefault x'
 
+        -- TODO: project out fields for pattern matched variables.
         AAlt (PData u _bs) x
          | Just nCtor    <- case u of
                                 UName n _ -> Just n
@@ -157,7 +184,7 @@ convertA defs _u alt
                                 _         -> Nothing
          , Just ctor     <- Map.lookup nCtor $ dataDefsCtors defs
          , tag           <- fromIntegral $ dataCtorTag ctor
-         -> do  x'       <- convertX defs x
+         -> do  x'       <- convertBodyX defs x
                 let uTag = UPrim (O.NameTag tag) O.tTag
                 return  $ AAlt (PData uTag []) x'
 
@@ -167,12 +194,14 @@ convertA defs _u alt
 
 -- Data Constructor -----------------------------------------------------------
 convertC :: DataDefs L.Name
-         -> a -> Bound L.Name -> ConvertM a (Exp a O.Name)
+         -> a -> Bound L.Name -> ConvertM a (Exp a O.Name, Type O.Name)
 convertC _defs a uu
  = case uu of
         UPrim (L.NameInt i bits) _   
-          -> return $ XVar a (UPrim (O.NameInt i bits) (O.tInt bits))
+          -> return ( XCon a (UPrim (O.NameInt i bits) (O.tInt bits))
+                    , O.tInt bits)
 
+        -- TODO: expand out code to construct algebraic data.
         _ -> error "convertC"
 
 
@@ -274,4 +303,11 @@ xFail a t
 xGetTag :: a -> Exp a O.Name
 xGetTag a       = XVar a (UName (O.NameVar "getTag")
                                 (tFunPE (O.tPtr O.tObj) O.tTag))
+
+xReturn :: a -> Type O.Name -> Exp a O.Name -> Exp a O.Name
+xReturn a t x
+ = XApp a (XApp a (XVar a (UPrim (O.NamePrim (O.PrimControl O.PrimControlReturn))
+                          (tForall kData $ \t1 -> t1 `tFunPE` t1)))
+                (XType t))
+           x
 
