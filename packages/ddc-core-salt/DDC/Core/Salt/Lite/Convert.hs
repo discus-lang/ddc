@@ -246,8 +246,8 @@ bindCtorFields pp a uScrut ctorDef bsFields xBody
         let uPayload    = UIx 0 O.tAddr
         let lsFields    = [ LLet LetStrict bField (xRead a tField (XVar a uPayload) offset) 
                                 | bField        <- bsFields
-                                , tField        <- map typeOfBind bsFields
-                                , offset        <- offsets ]
+                                | tField        <- map typeOfBind bsFields
+                                | offset        <- offsets ]
 
         -- TODO: lift body expression
         return  $ foldr (XLet a) xBody
