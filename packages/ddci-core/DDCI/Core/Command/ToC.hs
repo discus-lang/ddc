@@ -4,6 +4,7 @@ module DDCI.Core.Command.ToC
 where
 import DDCI.Core.Mode
 import DDCI.Core.State
+import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
@@ -12,8 +13,8 @@ import DDC.Core.Simplifier.Recipie              as Simpl
 import qualified DDC.Core.Salt.Output           as A
 import qualified Data.Set                       as Set
 import qualified DDC.Base.Pretty                as P
+import Data.Maybe
 import Data.Monoid
-
 
 -- | Parse, check, and fully evaluate an expression.
 ---
@@ -22,25 +23,31 @@ import Data.Monoid
 cmdToC :: State -> Source -> String -> IO ()
 cmdToC state source str
  | Language fragment    <- stateLanguage state
- = let  fragName = profileName (fragmentProfile fragment)
-        mSuffix  = case source of 
+ = do   let fragName = profileName (fragmentProfile fragment)
+        let mSuffix  = case source of 
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
-   in   if      fragName == "Salt" || mSuffix  == Just ".dce"
+        -- Determine the default builder,
+        -- assuming the host and target platforms are the same.
+        mBuilder        <- determineDefaultBuilder defaultBuilderConfig
+        let builder     =  fromMaybe    (error "Can not determine host platform.")
+                                        mBuilder
+
+        if      fragName == "Salt" || mSuffix  == Just ".dce"
          then cmdSaltToC state source str
         else if fragName == "Lite"  || mSuffix == Just ".dcl"
-         then cmdLiteToC  state source str
+         then cmdLiteToC  state source builder str
         else error $ "Don't know how to convert Disciple " ++ fragName ++ " module to C code."
 
 
 -- | Convert a Disciple Lite module to C code.
-cmdLiteToC :: State -> Source -> String -> IO ()
-cmdLiteToC state source str
+cmdLiteToC :: State -> Source -> Builder -> String -> IO ()
+cmdLiteToC state source builder str
  = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
-        [  PipeLiteToSalt
+        [  PipeLiteToSalt       (buildSpec builder)
         [  pipeCore_saltToC state ]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 

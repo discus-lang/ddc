@@ -5,6 +5,7 @@ module DDC.Core.Salt.Lite.Convert
         ( toSalt
         , Error(..))
 where
+import DDC.Core.Salt.Platform
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Compounds
@@ -13,6 +14,7 @@ import DDC.Type.DataDef
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad                     (throw, result)
 import qualified DDC.Type.Check.Monad           as G
+--import qualified DDC.Core.Salt.Lite.Layout      as L
 import qualified DDC.Core.Salt.Lite.Name        as L
 import qualified DDC.Core.Salt.Output.Name      as O
 import qualified DDC.Core.Salt.Output.Env       as O
@@ -35,11 +37,12 @@ import Control.Monad
 --
 toSalt
         :: Show a 
-        => DataDefs L.Name
+        => Platform
+        -> DataDefs L.Name
         -> Module a L.Name 
         -> Either (Error a) (Module a O.Name)
-toSalt defs mm
- = result $ convertM defs mm
+toSalt pp defs mm
+ = result $ convertM pp defs mm
 
 -- | Conversion Monad
 type ConvertM a x = G.CheckM (Error a) x
@@ -78,10 +81,15 @@ instance Pretty (Error a) where
 
 
 -- Module ---------------------------------------------------------------------
-convertM :: DataDefs L.Name -> Module a L.Name -> ConvertM a (Module a O.Name)
-convertM defsPrim mm
+convertM 
+        :: Platform
+        -> DataDefs L.Name 
+        -> Module a L.Name 
+        -> ConvertM a (Module a O.Name)
+
+convertM pp defsPrim mm
   = do  let defs = defsPrim
-        x'       <- convertBodyX defs $ moduleBody mm
+        x'       <- convertBodyX pp defs $ moduleBody mm
 
         return $ ModuleCore
          { moduleName           = moduleName mm
@@ -93,8 +101,12 @@ convertM defsPrim mm
 
 
 -- Exp -------------------------------------------------------------------------
-convertBodyX :: DataDefs L.Name -> Exp a L.Name -> ConvertM a (Exp a O.Name)
-convertBodyX defs xx
+convertBodyX 
+        :: Platform
+        -> DataDefs L.Name 
+        -> Exp a L.Name -> ConvertM a (Exp a O.Name)
+
+convertBodyX pp defs xx
  = case xx of
         XVar a u
          -> do  u'      <- convertU u
@@ -108,13 +120,13 @@ convertBodyX defs xx
 
         -- Strip out type lambdas.
         XLAM _ _ x
-         -> convertBodyX defs x
+         -> convertBodyX pp defs x
 
         -- Keep value binders but ditch witness binders for now.
         XLam a b x
          -> case universeFromType1 (typeOfBind b) of
-             Just UniverseData    -> liftM3 XLam (return a) (convertB b) (convertBodyX defs x)
-             Just UniverseWitness -> convertBodyX defs x
+             Just UniverseData    -> liftM3 XLam (return a) (convertB b) (convertBodyX pp defs x)
+             Just UniverseWitness -> convertBodyX pp defs x
              _                    -> throw ErrorMistyped
 
         XApp{}  -> error "toBrineX: XApp"
@@ -122,8 +134,8 @@ convertBodyX defs xx
         XLet a (LRec bxs) x2
          -> do  let (bs, xs)    = unzip bxs
                 bs'             <- mapM convertB bs
-                xs'             <- mapM (convertBodyX defs) xs
-                x2'             <- convertBodyX defs x2
+                xs'             <- mapM (convertBodyX pp defs) xs
+                x2'             <- convertBodyX pp defs x2
                 return $ XLet a (LRec $ zip bs' xs') x2'
 
         XLet{}          -> error "toBrineX: XLet"
@@ -131,13 +143,13 @@ convertBodyX defs xx
         -- TODO: add default alternative to check for other tags
         --       if there isn't one already.
         XCase a x@(XVar _ uX) alts  
-         -> do  x'              <- convertArgX defs x
-                alts'           <- mapM (convertA defs uX) alts
+         -> do  x'              <- convertArgX pp defs x
+                alts'           <- mapM (convertA pp defs a uX) alts
                 return  $ XCase a (XApp a (xGetTag a) x') alts'
 
         XCase{}         -> throw $ ErrorNotNormalized
 
-        XCast _ _ x     -> convertBodyX defs x
+        XCast _ _ x     -> convertBodyX pp defs x
 
         XType{}         -> throw $ ErrorMistyped
         XWitness{}      -> throw $ ErrorMistyped
@@ -145,13 +157,18 @@ convertBodyX defs xx
 
 
 -- | Convert a function argument.
-convertArgX :: DataDefs L.Name -> Exp a L.Name -> ConvertM a (Exp a O.Name)
-convertArgX defs xx
+convertArgX
+        :: Platform
+        -> DataDefs L.Name
+        -> Exp a L.Name
+        -> ConvertM a (Exp a O.Name)
+
+convertArgX pp defs xx
   = case xx of
         XVar a u        -> liftM2 XVar (return a) (convertU u)
         XCon a u        -> liftM fst $ convertC defs a u
         XApp{}          -> error "toBrineX: XApp"
-        XCast _ _ x     -> convertArgX defs x
+        XCast _ _ x     -> convertArgX pp defs x
 
         -- Lambdas, should have been split out to top-level bindintg.
         XLAM{}          -> throw ErrorNotNormalized
@@ -168,30 +185,41 @@ convertArgX defs xx
 
 -- Alt ------------------------------------------------------------------------
 
-convertA :: DataDefs L.Name 
-         -> Bound L.Name -> Alt a L.Name -> ConvertM a (Alt a O.Name)
-convertA defs _u alt
+convertA 
+        :: Platform
+        -> DataDefs L.Name 
+        -> a
+        -> Bound L.Name -> Alt a L.Name 
+        -> ConvertM a (Alt a O.Name)
+
+convertA pp defs a uScrut alt
  = case alt of
         AAlt PDefault x
-         -> do  x'      <- convertBodyX defs x
+         -> do  x'      <- convertBodyX pp defs x
                 return  $ AAlt PDefault x'
 
-        -- TODO: project out fields for pattern matched variables.
+
         AAlt (PData u _bs) x
          | Just nCtor    <- case u of
                                 UName n _ -> Just n
                                 UPrim n _ -> Just n
                                 _         -> Nothing
-         , Just ctor     <- Map.lookup nCtor $ dataDefsCtors defs
+         , Just ctor      <- Map.lookup nCtor $ dataDefsCtors defs
+--         , Just bsOffsets <- liftM (zip bs) $ L.fieldOffsetsOfDataCtor pp ctor
          -> do  
+                xScrut          <- convertArgX pp defs (XVar a uScrut)
+
                 -- Get the tag of this alternative
                 let iTag        = fromIntegral $ dataCtorTag ctor
                 let uTag        = UPrim (O.NameTag iTag) O.tTag
 
---                let btsFields   = zip bs $ dataCtorFieldTypes ctor
+                let bPayload    = BAnon O.tAddr
+                let xPayload    = xPayloadOfRawSmall a xScrut
 
-                x'       <- convertBodyX defs x
-                return  $ AAlt (PData uTag []) x'
+                x'              <- convertBodyX pp defs x
+                return  $ AAlt (PData uTag []) 
+                        $ XLet a (LLet LetStrict bPayload xPayload)
+                        x'      -- TODO: lift body
 
 
         AAlt{}          -> throw ErrorInvalidAlt
@@ -309,6 +337,22 @@ xGetTag :: a -> Exp a O.Name
 xGetTag a       = XVar a (UName (O.NameVar "getTag")
                                 (tFunPE (O.tPtr O.tObj) O.tTag))
 
+
+-- | Get the address of the payload of a RawSmall object.
+xPayloadOfRawSmall :: a -> Exp a O.Name -> Exp a O.Name
+xPayloadOfRawSmall a x2
+ = XApp a (XVar a vPayloadOfRawSmall) x2
+
+vPayloadOfRawSmall :: Bound O.Name
+vPayloadOfRawSmall 
+        = UName (O.NameVar "payloadOfRawSmall")
+                (tFunPE (O.tPtr O.tObj) O.tAddr)
+
+
+-- | Return a value.
+--    
+--   like  (return# [Int32#] x)
+--
 xReturn :: a -> Type O.Name -> Exp a O.Name -> Exp a O.Name
 xReturn a t x
  = XApp a (XApp a (XVar a (UPrim (O.NamePrim (O.PrimControl O.PrimControlReturn))

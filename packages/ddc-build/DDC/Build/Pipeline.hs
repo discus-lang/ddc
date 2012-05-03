@@ -208,7 +208,7 @@ data PipeLite
         = PipeLiteOutput    Sink
 
         -- | Convert the module to the Core Salt Fragment.
-        | PipeLiteToSalt     [PipeCore Output.Name]
+        | PipeLiteToSalt     Salt.Platform [PipeCore Output.Name]
         deriving Show
 
 pipeLite :: C.Module () Lite.Name
@@ -220,8 +220,8 @@ pipeLite mm pp
         PipeLiteOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeLiteToSalt pipes
-         -> case Lite.toSalt (profilePrimDataDefs Lite.profile) mm of
+        PipeLiteToSalt platform pipes
+         -> case Lite.toSalt platform (profilePrimDataDefs Lite.profile) mm of
                 Left  err       -> return [ErrorLiteConvert err]
                 Right mm'       -> liftM concat $ mapM (pipeCore mm') pipes
 

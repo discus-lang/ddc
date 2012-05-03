@@ -59,3 +59,5 @@ tList tR tA
         = tApps (TCon  (TyConBound (UPrim (NameDataTyCon DataTyConList)
                                           (kRegion `kFun` kData `kFun` kData))))
                 [tR, tA]
+
+

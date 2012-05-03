@@ -46,7 +46,7 @@ cmdLiteToLlvm state source str builder
  = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
-        [  PipeLiteToSalt
+        [  PipeLiteToSalt       (buildSpec builder)
         [  pipeCore_saltToLlvm state builder]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
