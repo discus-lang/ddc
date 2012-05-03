@@ -14,7 +14,7 @@ import DDC.Type.DataDef
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad                     (throw, result)
 import qualified DDC.Type.Check.Monad           as G
---import qualified DDC.Core.Salt.Lite.Layout      as L
+import qualified DDC.Core.Salt.Lite.Layout      as L
 import qualified DDC.Core.Salt.Lite.Name        as L
 import qualified DDC.Core.Salt.Output.Name      as O
 import qualified DDC.Core.Salt.Output.Env       as O
@@ -184,7 +184,6 @@ convertArgX pp defs xx
 
 
 -- Alt ------------------------------------------------------------------------
-
 convertA 
         :: Platform
         -> DataDefs L.Name 
@@ -199,30 +198,64 @@ convertA pp defs a uScrut alt
                 return  $ AAlt PDefault x'
 
 
-        AAlt (PData u _bs) x
-         | Just nCtor    <- case u of
+        AAlt (PData uCtor bsFields) x
+         | Just nCtor    <- case uCtor of
                                 UName n _ -> Just n
                                 UPrim n _ -> Just n
                                 _         -> Nothing
-         , Just ctor      <- Map.lookup nCtor $ dataDefsCtors defs
---         , Just bsOffsets <- liftM (zip bs) $ L.fieldOffsetsOfDataCtor pp ctor
+         , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
-                xScrut          <- convertArgX pp defs (XVar a uScrut)
+                uScrut'         <- convertU uScrut
 
-                -- Get the tag of this alternative
-                let iTag        = fromIntegral $ dataCtorTag ctor
+                -- Get the tag of this alternative.
+                let iTag        = fromIntegral $ dataCtorTag ctorDef
                 let uTag        = UPrim (O.NameTag iTag) O.tTag
 
-                let bPayload    = BAnon O.tAddr
-                let xPayload    = xPayloadOfRawSmall a xScrut
+                -- Get the address of the payload.
+                bsFields'       <- mapM convertB bsFields
 
-                x'              <- convertBodyX pp defs x
-                return  $ AAlt (PData uTag []) 
-                        $ XLet a (LLet LetStrict bPayload xPayload)
-                        x'      -- TODO: lift body
+                -- TODO: lift body
+                xBody1          <- convertBodyX pp defs x
+
+                -- Let bindings to unpack the constructor
+                xBody2          <- bindCtorFields pp a uScrut' ctorDef bsFields' xBody1
+
+                return  $ AAlt (PData uTag []) xBody2
 
 
         AAlt{}          -> throw ErrorInvalidAlt
+
+
+bindCtorFields 
+        :: Platform 
+        -> a
+        -> Bound O.Name         -- ^ Bound of Scruitinee
+        -> DataCtor L.Name      -- ^ Definition of data constructor to unpack
+        -> [Bind O.Name]        -- ^ Binds for each of the fields.
+        -> Exp a O.Name         -- ^ Body expression that uses the field binders.
+        -> ConvertM a (Exp a O.Name)
+
+bindCtorFields pp a uScrut ctorDef bsFields xBody
+ | Just offsets <- L.fieldOffsetsOfDataCtor pp ctorDef
+ = do   
+        -- Get the address of the payload.
+        let bPayload    = BAnon O.tAddr
+        let xPayload    = xPayloadOfRawSmall a (XVar a uScrut)
+
+        -- Bind pattern variables to the fields.
+        let uPayload    = UIx 0 O.tAddr
+        let lsFields    = [ LLet LetStrict bField (xRead a tField (XVar a uPayload) offset) 
+                                | bField        <- bsFields
+                                , tField        <- map typeOfBind bsFields
+                                , offset        <- offsets ]
+
+        -- TODO: lift body expression
+        return  $ foldr (XLet a) xBody
+                $ LLet LetStrict bPayload xPayload
+                : lsFields
+
+ | otherwise
+ = throw ErrorInvalidAlt
 
 
 -- Data Constructor -----------------------------------------------------------
@@ -333,22 +366,38 @@ xFail a t
           (XType t)
 -}
 
+-- Read -------------------------------
+xRead   :: a -> Type O.Name -> Exp a O.Name -> Integer -> Exp a O.Name
+xRead a tField xAddr offset
+        = XApp a (XApp a (XApp a (XVar a uRead) 
+                               (XType tField))
+                          xAddr)
+                 (XCon a (UPrim (O.NameNat offset) O.tNat))
+
+uRead   :: Bound O.Name
+uRead   = UPrim (O.NamePrim $ O.PrimStore $ O.PrimStoreRead)
+                (tForall kData $ \t -> O.tAddr `tFunPE` O.tNat `tFunPE` t)
+
+
+-- GetTag -----------------------------
 xGetTag :: a -> Exp a O.Name
 xGetTag a       = XVar a (UName (O.NameVar "getTag")
                                 (tFunPE (O.tPtr O.tObj) O.tTag))
 
 
+-- Payload ----------------------------
 -- | Get the address of the payload of a RawSmall object.
 xPayloadOfRawSmall :: a -> Exp a O.Name -> Exp a O.Name
 xPayloadOfRawSmall a x2
- = XApp a (XVar a vPayloadOfRawSmall) x2
+ = XApp a (XVar a uPayloadOfRawSmall) x2
 
-vPayloadOfRawSmall :: Bound O.Name
-vPayloadOfRawSmall 
+uPayloadOfRawSmall :: Bound O.Name
+uPayloadOfRawSmall 
         = UName (O.NameVar "payloadOfRawSmall")
                 (tFunPE (O.tPtr O.tObj) O.tAddr)
 
 
+-- Return -----------------------------
 -- | Return a value.
 --    
 --   like  (return# [Int32#] x)

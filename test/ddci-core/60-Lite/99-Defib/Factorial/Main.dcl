@@ -10,6 +10,15 @@ with letrec
 unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
  = case x of { I32# i -> i; _ -> 0i32# }
 
+head [r : %]
+        (xDefault : Int r) 
+        (xs : List r (Int r)) 
+        { Read r | Use r} : Int r
+ = case xs of {
+        Cons x xs       -> x ;
+        _               -> xDefault;
+ }
+
 
 --subInt [r1 r2 r3 : %] 
 --        (x : Int r1) { !0 | Use r3 } 

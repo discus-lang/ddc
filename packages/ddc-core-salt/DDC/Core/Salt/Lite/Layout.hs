@@ -11,7 +11,7 @@ import DDC.Core.Salt.Base.Name
 import DDC.Core.Salt.Platform
 import DDC.Type.DataDef
 import DDC.Type.Exp
-
+import Control.Monad
 
 -- HeapObject -----------------------------------------------------------------
 -- | Enumerates the heap object formats that can be used to store
@@ -51,7 +51,9 @@ heapObjectOfDataCtor ctor
 --   because the size of the header is only known by the runtime system.
 fieldOffsetsOfDataCtor :: Platform -> DataCtor Name -> Maybe [Integer]
 fieldOffsetsOfDataCtor platform ctor
-        = sequence $ map (fieldSizeOfType platform) 
+        = liftM (init . scanl (+) 0)
+        $ sequence 
+        $ map (fieldSizeOfType platform) 
         $ dataCtorFieldTypes ctor
 
 
