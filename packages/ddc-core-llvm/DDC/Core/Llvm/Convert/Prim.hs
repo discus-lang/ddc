@@ -5,8 +5,8 @@ where
 import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
+import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
 import DDC.Base.Pretty
 import Data.Sequence                    (Seq)

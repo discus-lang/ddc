@@ -37,7 +37,7 @@ import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
-import qualified DDC.Core.Llvm.Platform         as Llvm
+import qualified DDC.Core.Salt.Platform         as Salt
 import qualified DDC.Core.Salt.Lite             as Lite
 import qualified DDC.Core.Salt.Output           as Output
 import qualified DDC.Llvm.Module                as Llvm
@@ -238,7 +238,7 @@ data PipeSalt
         , pipeModuleSink       :: Sink }
 
         -- | Convert the module to LLVM.
-        | PipeSaltToLlvm        Llvm.Platform [PipeLlvm]
+        | PipeSaltToLlvm        Salt.Platform [PipeLlvm]
         deriving (Show)
 
 

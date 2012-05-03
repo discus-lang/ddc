@@ -1,12 +1,14 @@
 
-module DDC.Core.Llvm.Platform
+module DDC.Core.Salt.Platform
         ( Platform      (..)
         , platform32
         , platform64)
 where
 
 
--- | Enough information about the platform to generate LLVM code for it.
+-- | Enough information about the platform to generate code for it.
+--   We need to know the pointer size, and alignment constraints
+--   so that we can lay out heap objects.
 data Platform
         = Platform
         { -- Width of an address.

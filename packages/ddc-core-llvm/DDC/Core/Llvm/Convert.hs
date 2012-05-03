@@ -10,8 +10,8 @@ import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
-import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
+import DDC.Core.Salt.Platform
 import DDC.Core.Salt.Base.Sanitize
 import DDC.Core.Compounds
 import DDC.Type.Compounds

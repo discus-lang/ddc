@@ -183,9 +183,14 @@ convertA defs _u alt
                                 UPrim n _ -> Just n
                                 _         -> Nothing
          , Just ctor     <- Map.lookup nCtor $ dataDefsCtors defs
-         , tag           <- fromIntegral $ dataCtorTag ctor
-         -> do  x'       <- convertBodyX defs x
-                let uTag = UPrim (O.NameTag tag) O.tTag
+         -> do  
+                -- Get the tag of this alternative
+                let iTag        = fromIntegral $ dataCtorTag ctor
+                let uTag        = UPrim (O.NameTag iTag) O.tTag
+
+--                let btsFields   = zip bs $ dataCtorFieldTypes ctor
+
+                x'       <- convertBodyX defs x
                 return  $ AAlt (PData uTag []) x'
 
 

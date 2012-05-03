@@ -16,7 +16,7 @@ module DDC.Core.Llvm.LlvmM
         , getPrimDeclM
         , getBytesOfTypeM)
 where
-import DDC.Core.Llvm.Platform
+import DDC.Core.Salt.Platform
 import DDC.Llvm.Instr
 import Data.Map                 (Map)
 import qualified Data.Map       as Map

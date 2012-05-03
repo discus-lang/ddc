@@ -23,9 +23,9 @@ module DDC.Core.Llvm.Convert.Type
 where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
-import DDC.Core.Salt.Base.Sanitize
-import DDC.Core.Llvm.Platform
 import DDC.Core.Llvm.LlvmM
+import DDC.Core.Salt.Base.Sanitize
+import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
 import Control.Monad.State.Strict
 import DDC.Core.Salt.Output             as A

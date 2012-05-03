@@ -12,7 +12,7 @@ import DDC.Build.Platform
 import System.FilePath
 import System.Exit
 import System.Cmd
-import qualified DDC.Core.Llvm.Platform         as Llvm
+import qualified DDC.Core.Salt.Platform         as Llvm
 
 -- | Configuration information for a builder that is not platform specific.
 data BuilderConfig
