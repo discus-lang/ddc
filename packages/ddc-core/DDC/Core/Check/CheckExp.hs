@@ -43,7 +43,7 @@ import Data.Maybe
 
 -- Annot ----------------------------------------------------------------------
 data AnTEC a n
-        = Annot
+        = AnTEC
         { annotType     :: Type    n
         , annotEffect   :: Effect  n
         , annotClosure  :: Closure n 
@@ -695,7 +695,7 @@ returnX :: Ord n
 returnX a f t es cs
  = let  e       = TSum es
         c       = closureOfTaggedSet cs
-   in   return  (f (Annot t e c a)
+   in   return  (f (AnTEC t e c a)
                 , t, es, cs)
 
 

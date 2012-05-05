@@ -245,7 +245,7 @@ data PipeLite
 
         -- | Convert the module to the Core Salt Fragment.
         | PipeLiteToSalt Salt.Platform 
-                         [PipeCore (C.AnTEC () Lite.Name) Output.Name]
+                         [PipeCore () Output.Name]
         deriving Show
 
 pipeLite :: C.Module (C.AnTEC () Lite.Name) Lite.Name

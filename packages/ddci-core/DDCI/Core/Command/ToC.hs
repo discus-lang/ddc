@@ -49,7 +49,7 @@ cmdLiteToC state source builder str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
         [  PipeLiteToSalt       (buildSpec builder)
-        [  PipeCoreReCheck      fragmentSalt 
+        [  PipeCoreCheck        fragmentSalt 
         [  pipeCore_saltToC state ]]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 

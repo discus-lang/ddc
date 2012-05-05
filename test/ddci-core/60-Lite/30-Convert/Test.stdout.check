@@ -32,7 +32,7 @@ letrec {
             let i : Int32# = read# [Int32#] x0 0 in
             return# [Int32#] i;
         _ 
-         -> return# [Int32#] 0i32#
+         -> fail# [Int32#]
       }
 }
 

@@ -7,12 +7,14 @@ module DDC.Core.Salt.Lite.Convert
 where
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
+import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad                     (throw, result)
+import DDC.Core.Check                           (AnTEC(..))
 import qualified DDC.Type.Check.Monad           as G
 import qualified DDC.Core.Salt.Lite.Layout      as L
 import qualified DDC.Core.Salt.Lite.Name        as L
@@ -43,7 +45,7 @@ toSalt
         :: Show a 
         => Platform
         -> DataDefs L.Name
-        -> Module a L.Name 
+        -> Module (AnTEC a L.Name) L.Name 
         -> Either (Error a) (Module a O.Name)
 toSalt pp defs mm
  = result $ convertM pp defs mm
@@ -88,7 +90,7 @@ instance Pretty (Error a) where
 convertM 
         :: Platform
         -> DataDefs L.Name 
-        -> Module a L.Name 
+        -> Module (AnTEC a L.Name) L.Name 
         -> ConvertM a (Module a O.Name)
 
 convertM pp defsPrim mm
@@ -108,19 +110,23 @@ convertM pp defsPrim mm
 convertBodyX 
         :: Platform
         -> DataDefs L.Name 
-        -> Exp a L.Name -> ConvertM a (Exp a O.Name)
+        -> Exp (AnTEC a L.Name) L.Name 
+        -> ConvertM a (Exp a O.Name)
 
 convertBodyX pp defs xx
  = case xx of
         XVar a u
-         -> do  u'      <- convertU u
-                let xx' =  XVar a u'
+         -> do  let a'  = annotTail a
+                u'      <- convertU u
+
+                let xx' =  XVar a' u'
                 t'      <- convertT $ typeOfBound u
-                return  $  O.xReturn a t' xx'
+                return  $  O.xReturn a' t' xx'
 
         XCon a u
-         -> do  (xx', t') <- convertC defs a u
-                return  $  O.xReturn a t' xx'
+         -> do  let a'  = annotTail a
+                (xx', t') <- convertC defs a' u
+                return  $  O.xReturn a' t' xx'
 
         -- Strip out type lambdas.
         XLAM _ _ x
@@ -129,8 +135,15 @@ convertBodyX pp defs xx
         -- Keep value binders but ditch witness binders for now.
         XLam a b x
          -> case universeFromType1 (typeOfBind b) of
-             Just UniverseData    -> liftM3 XLam (return a) (convertB b) (convertBodyX pp defs x)
-             Just UniverseWitness -> convertBodyX pp defs x
+             Just UniverseData    
+              -> liftM3 XLam 
+                        (return $ annotTail a) 
+                        (convertB b) 
+                        (convertBodyX pp defs x)
+
+             Just UniverseWitness 
+              -> convertBodyX pp defs x
+
              _                    -> throw ErrorMistyped
 
         XApp{}  -> error "toBrineX: XApp"
@@ -140,16 +153,26 @@ convertBodyX pp defs xx
                 bs'             <- mapM convertB bs
                 xs'             <- mapM (convertBodyX pp defs) xs
                 x2'             <- convertBodyX pp defs x2
-                return $ XLet a (LRec $ zip bs' xs') x2'
+                return $ XLet (annotTail a) (LRec $ zip bs' xs') x2'
 
         XLet{}          -> error "toBrineX: XLet"
 
         -- TODO: add default alternative to check for other tags
         --       if there isn't one already.
-        XCase a x@(XVar _ uX) alts  
+        XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
          -> do  x'              <- convertArgX pp defs x
-                alts'           <- mapM (convertA pp defs a uX) alts
-                return  $ XCase a (XApp a (O.xGetTag a) x') alts'
+                t'              <- convertT t
+                alts'           <- mapM (convertA pp defs a' uX) alts
+
+                let asDefault
+                        | any isPDefault [p | AAlt p _ <- alts]   
+                        = []
+
+                        | otherwise     
+                        = [AAlt PDefault (O.xFail a' t')]
+
+                return  $ XCase a' (XApp a' (O.xGetTag a') x') 
+                        $ alts' ++ asDefault
 
         XCase{}         -> throw $ ErrorNotNormalized
 
@@ -164,13 +187,17 @@ convertBodyX pp defs xx
 convertArgX
         :: Platform
         -> DataDefs L.Name
-        -> Exp a L.Name
+        -> Exp (AnTEC a L.Name) L.Name
         -> ConvertM a (Exp a O.Name)
 
 convertArgX pp defs xx
   = case xx of
-        XVar a u        -> liftM2 XVar (return a) (convertU u)
-        XCon a u        -> liftM fst $ convertC defs a u
+        XVar a u        
+         -> liftM2 XVar (return $ annotTail a) (convertU u)
+
+        XCon a u
+         -> liftM fst $ convertC defs (annotTail a) u
+
         XApp{}          -> error "toBrineX: XApp"
         XCast _ _ x     -> convertArgX pp defs x
 
@@ -192,7 +219,8 @@ convertA
         :: Platform
         -> DataDefs L.Name 
         -> a
-        -> Bound L.Name -> Alt a L.Name 
+        -> Bound L.Name 
+        -> Alt (AnTEC a L.Name) L.Name 
         -> ConvertM a (Alt a O.Name)
 
 convertA pp defs a uScrut alt
@@ -280,7 +308,10 @@ bindCtorFields pp a uScrut ctorDef bsFields xBody
 
 -- Data Constructor -----------------------------------------------------------
 convertC :: DataDefs L.Name
-         -> a -> Bound L.Name -> ConvertM a (Exp a O.Name, Type O.Name)
+         -> a 
+         -> Bound L.Name 
+         -> ConvertM a (Exp a O.Name, Type O.Name)
+
 convertC _defs a uu
  = case uu of
         UPrim (L.NameInt i bits) _   
