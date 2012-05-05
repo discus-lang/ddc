@@ -16,6 +16,7 @@ import DDC.Type.Check.Monad                     (throw, result)
 import qualified DDC.Type.Check.Monad           as G
 import qualified DDC.Core.Salt.Lite.Layout      as L
 import qualified DDC.Core.Salt.Lite.Name        as L
+import qualified DDC.Core.Salt.Output.Runtime   as O
 import qualified DDC.Core.Salt.Output.Name      as O
 import qualified DDC.Core.Salt.Output.Env       as O
 import qualified Data.Map                       as Map
@@ -112,11 +113,11 @@ convertBodyX pp defs xx
          -> do  u'      <- convertU u
                 let xx' =  XVar a u'
                 t'      <- convertT $ typeOfBound u
-                return  $  xReturn a t' xx'
+                return  $  O.xReturn a t' xx'
 
         XCon a u
          -> do  (xx', t') <- convertC defs a u
-                return  $  xReturn a t' xx'
+                return  $  O.xReturn a t' xx'
 
         -- Strip out type lambdas.
         XLAM _ _ x
@@ -145,7 +146,7 @@ convertBodyX pp defs xx
         XCase a x@(XVar _ uX) alts  
          -> do  x'              <- convertArgX pp defs x
                 alts'           <- mapM (convertA pp defs a uX) alts
-                return  $ XCase a (XApp a (xGetTag a) x') alts'
+                return  $ XCase a (XApp a (O.xGetTag a) x') alts'
 
         XCase{}         -> throw $ ErrorNotNormalized
 
@@ -226,25 +227,40 @@ convertA pp defs a uScrut alt
         AAlt{}          -> throw ErrorInvalidAlt
 
 
+-- | Wrap an body expression let-binding which bind the fields of a 
+--   data constructor.
 bindCtorFields 
         :: Platform 
         -> a
-        -> Bound O.Name         -- ^ Bound of Scruitinee
-        -> DataCtor L.Name      -- ^ Definition of data constructor to unpack
-        -> [Bind O.Name]        -- ^ Binds for each of the fields.
+        -> Bound O.Name         -- ^ Bound of Scruitinee.
+        -> DataCtor L.Name      -- ^ Definition of the data constructor to unpack
+        -> [Bind O.Name]        -- ^ Binders for each of the fields.
         -> Exp a O.Name         -- ^ Body expression that uses the field binders.
         -> ConvertM a (Exp a O.Name)
 
 bindCtorFields pp a uScrut ctorDef bsFields xBody
- | Just offsets <- L.fieldOffsetsOfDataCtor pp ctorDef
+
+ | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
+ = do   
+        -- Bind pattern variables to each of the fields.
+        let lsFields    = [ LLet LetStrict bField 
+                                (O.xFieldOfBoxed a (XVar a uScrut) ix)
+                                | bField        <- bsFields
+                                | ix            <- [0..] ]
+
+        return  $ foldr (XLet a) xBody lsFields
+
+ | Just L.HeapObjectRawSmall <- L.heapObjectOfDataCtor ctorDef
+ , Just offsets              <- L.fieldOffsetsOfDataCtor pp ctorDef
  = do   
         -- Get the address of the payload.
         let bPayload    = BAnon O.tAddr
-        let xPayload    = xPayloadOfRawSmall a (XVar a uScrut)
+        let xPayload    = O.xPayloadOfRawSmall a (XVar a uScrut)
 
         -- Bind pattern variables to the fields.
         let uPayload    = UIx 0 O.tAddr
-        let lsFields    = [ LLet LetStrict bField (xRead a tField (XVar a uPayload) offset) 
+        let lsFields    = [ LLet LetStrict bField 
+                                (O.xRead a tField (XVar a uPayload) offset) 
                                 | bField        <- bsFields
                                 | tField        <- map typeOfBind bsFields
                                 | offset        <- offsets ]
@@ -253,6 +269,7 @@ bindCtorFields pp a uScrut ctorDef bsFields xBody
         return  $ foldr (XLet a) xBody
                 $ LLet LetStrict bPayload xPayload
                 : lsFields
+
 
  | otherwise
  = throw ErrorInvalidAlt
@@ -352,60 +369,4 @@ convertBoundNameM nn
  = case nn of
         L.NameVar str   -> return $ O.NameVar str
         _               -> error "convertBoundName"
-
-
--- Runtime --------------------------------------------------------------------
--- These functions need to be defined in the runtime system.
--- TODO: import functions via the module interface.
-
-{-
-xFail   :: a -> Type O.Name -> Exp a O.Name
-xFail a t       
- = XApp a (XVar a (UPrim (O.NamePrim (O.PrimControl O.PrimControlFail))
-                         (TForall (BAnon kData) (TVar $ UIx 0 kData))))
-          (XType t)
--}
-
--- Read -------------------------------
-xRead   :: a -> Type O.Name -> Exp a O.Name -> Integer -> Exp a O.Name
-xRead a tField xAddr offset
-        = XApp a (XApp a (XApp a (XVar a uRead) 
-                               (XType tField))
-                          xAddr)
-                 (XCon a (UPrim (O.NameNat offset) O.tNat))
-
-uRead   :: Bound O.Name
-uRead   = UPrim (O.NamePrim $ O.PrimStore $ O.PrimStoreRead)
-                (tForall kData $ \t -> O.tAddr `tFunPE` O.tNat `tFunPE` t)
-
-
--- GetTag -----------------------------
-xGetTag :: a -> Exp a O.Name
-xGetTag a       = XVar a (UName (O.NameVar "getTag")
-                                (tFunPE (O.tPtr O.tObj) O.tTag))
-
-
--- Payload ----------------------------
--- | Get the address of the payload of a RawSmall object.
-xPayloadOfRawSmall :: a -> Exp a O.Name -> Exp a O.Name
-xPayloadOfRawSmall a x2
- = XApp a (XVar a uPayloadOfRawSmall) x2
-
-uPayloadOfRawSmall :: Bound O.Name
-uPayloadOfRawSmall 
-        = UName (O.NameVar "payloadOfRawSmall")
-                (tFunPE (O.tPtr O.tObj) O.tAddr)
-
-
--- Return -----------------------------
--- | Return a value.
---    
---   like  (return# [Int32#] x)
---
-xReturn :: a -> Type O.Name -> Exp a O.Name -> Exp a O.Name
-xReturn a t x
- = XApp a (XApp a (XVar a (UPrim (O.NamePrim (O.PrimControl O.PrimControlReturn))
-                          (tForall kData $ \t1 -> t1 `tFunPE` t1)))
-                (XType t))
-           x
 

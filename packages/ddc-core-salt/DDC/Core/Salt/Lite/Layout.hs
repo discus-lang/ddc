@@ -1,8 +1,14 @@
 
 -- | Layout of algebraic data.
 module DDC.Core.Salt.Lite.Layout
-        ( heapObjectOfDataCtor
+        ( -- * Heap Objects
+          HeapObject(..)
+        , heapObjectOfDataCtor
+
+          -- * Field Offsets
         , fieldOffsetsOfDataCtor
+
+          -- * Field types
         , isUnboxedType
         , isFixedSizePrimTyCon)
 where
@@ -30,6 +36,13 @@ data HeapObject
 -- | Decide which heap object to use to represent a data contructor.
 heapObjectOfDataCtor :: DataCtor Name -> Maybe HeapObject
 heapObjectOfDataCtor ctor
+
+        -- If all the fields are boxed objects then used a Boxed heap object, 
+        -- as these just contain pointer fields.
+        | tsFields              <- dataCtorFieldTypes ctor
+        , Just unboxeds         <- sequence $ map isUnboxedType tsFields
+        , all not unboxeds
+        = Just HeapObjectBoxed
 
         -- All of the fixed size primitive types will fit in a RawSmall object.
         | [t@(TCon tc)]          <- dataCtorFieldTypes ctor

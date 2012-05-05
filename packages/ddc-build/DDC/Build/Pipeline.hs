@@ -73,7 +73,7 @@ instance Pretty Error where
                  , indent 2 (ppr err') ]
 
         ErrorLiteConvert err'
-         -> vcat [ text "Fragment violation when converting Lite module to Brine module."
+         -> vcat [ text "Fragment violation when converting Lite module to Salt module."
                  , indent 2 (ppr err') ]
 
         ErrorLoad err'
