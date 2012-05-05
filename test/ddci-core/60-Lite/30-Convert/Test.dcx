@@ -2,9 +2,28 @@
 :set lang Lite
 :set +Indent +SuppressImports
 
--- Integer unboxing
+
+-- Take the head of a list,
+--      unpacks a Boxed object.
+:to-salt..
+module Main with letrec
+head    [r : %] (def : Int r) 
+        (xs : List r (Int r))   { Read r | Use r } 
+        : Int r
+ = case xs of 
+        Cons x xs'      -> def
+        _               -> def
+;;
+
+
+-- Integer unboxing,
+--      unpacks a RawSmall Object.
 :to-salt..
 module Main with letrec
 unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
- = case x of { I32# i -> i; _ -> 0i32# };;
+ = case x of 
+        I32# i  -> i
+        _       -> 0i32#
+;;
+
 

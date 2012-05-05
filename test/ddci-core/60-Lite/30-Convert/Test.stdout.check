@@ -2,7 +2,26 @@
 ok
 ok
 
--- Integer unboxing
+
+-- Take the head of a list,
+--      unpacks a Boxed object.
+module Main with
+letrec {
+  head : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+    = \(def xs : Ptr# Obj).
+      case getTag xs of {
+        TAG1#  
+         -> let x : Ptr# Obj = fieldOfBoxed xs 0 in
+            let xs' : Ptr# Obj = fieldOfBoxed xs 1 in
+            return# [Ptr# Obj] def;
+        _ 
+         -> return# [Ptr# Obj] def
+      }
+}
+
+
+-- Integer unboxing,
+--      unpacks a RawSmall Object.
 module Main with
 letrec {
   unboxInt : Ptr# Obj -> Int32#
@@ -16,4 +35,5 @@ letrec {
          -> return# [Int32#] 0i32#
       }
 }
+
 
