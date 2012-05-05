@@ -39,6 +39,7 @@ help    = unlines
         , "    Indent              Pretty print expressions with indenting."
         , "    TraceEval           Show the expression at every step"
         , "    TraceStore          Show the store at every step." 
+        , "    SuppressImports     Suppress import list when printing core modules."
         , ""
         , "   FRAG ::="
         , "    Zero                No features, no primops."

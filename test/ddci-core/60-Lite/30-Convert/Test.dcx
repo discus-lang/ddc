@@ -1,6 +1,6 @@
 
 :set lang Lite
-:set +Indent
+:set +Indent +SuppressImports
 
 -- Integer unboxing
 :to-salt..

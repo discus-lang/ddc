@@ -35,15 +35,15 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         docsImportTypes  = [ ppr n <+> text "::" <+> ppr t 
                                 | (n, (_, t))   <- Map.toList importTypes]
 
-    in  vcat 
-         $  [ text "module" <+> ppr name]
-         ++ (if Map.null importTypes 
-                then [] 
-                else [text "import" <+> lbrace 
+    in  text "module" <+> ppr name 
+         <+> (if Map.null importTypes 
+                then empty
+                else line 
+                        <> text "import" <+> lbrace 
                         <> (nest 8 $ line <> vcat docsImportTypes)
                         <> line 
-                        <> rbrace])
-         ++ [text "with" <$$> (vcat $ map ppr lts)]
+                        <> rbrace)
+         <> text "with" <$$> (vcat $ map ppr lts)
 
 
 -- Exp ------------------------------------------------------------------------

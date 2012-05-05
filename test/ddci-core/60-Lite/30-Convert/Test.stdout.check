@@ -1,0 +1,19 @@
+
+ok
+ok
+
+-- Integer unboxing
+module Main with
+letrec {
+  unboxInt : Ptr# Obj -> Int32#
+    = \(x : Ptr# Obj).
+      case getTag x of {
+        TAG0#  
+         -> let x0 : Addr# = payloadOfRawSmall x in
+            let i : Int32# = read# [Int32#] x0 0 in
+            return# [Int32#] i;
+        _ 
+         -> return# [Int32#] 0i32#
+      }
+}
+
