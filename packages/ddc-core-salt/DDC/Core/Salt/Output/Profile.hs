@@ -27,7 +27,7 @@ profile
 --   No nested functions, no partial application and so on.
 features :: Features
 features = zeroFeatures
-        { featuresUnusedBindings = True }
+        { featuresUnusedBindings        = True }
 
 
 -- | Lex a string to tokens, using primitive names.

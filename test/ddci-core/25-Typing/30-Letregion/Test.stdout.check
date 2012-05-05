@@ -34,78 +34,85 @@ letregion ^ in addInt [^0] [^0] [R2#] (2 [^0] ()) (3 [^0] ())
 
 
 -- Error: withregion must contain a region variable or constructor.
-Withregion handle does not have region kind.
-   Region var or ctor: e
-             has kind: !
-       but it must be: %
-
-with: withregion e in
-      ()
+When checking expression.
+  Withregion handle does not have region kind.
+     Region var or ctor: e
+               has kind: !
+         but it must be: %
+  
+  with: withregion e in
+        ()
 
 
 -- Error: letregion cannot shadow region variables that are already in the
 -- environment because the new witnesses may conflict with the old ones.
-Region variable shadows existing one.
-           Region variable: r1 : %
-     is already in environment
-
-with: letregion r1 with {w1 : Mutable r1} in
-      updateInt [r1] [r1] <w1> x (0 [r1] ())
+When checking expression.
+  Region variable shadows existing one.
+             Region variable: r1 : %
+       is already in environment
+  
+  with: letregion r1 with {w1 : Mutable r1} in
+        updateInt [r1] [r1] <w1> x (0 [r1] ())
 
 
 -- Error: letregion can't shadow region variables that are already in the
 -- environment.
-Region variable shadows existing one.
-           Region variable: r : %
-     is already in environment
-
-with: letregion r with {w1 : Mutable r} in
-      updateInt [r] [r] <w1> x (0 [r] ())
+When checking expression.
+  Region variable shadows existing one.
+             Region variable: r : %
+       is already in environment
+  
+  with: letregion r with {w1 : Mutable r} in
+        updateInt [r] [r] <w1> x (0 [r] ())
 
 
 -- Error: bound region variable is free in the type of the body of a letregion.
-Region variable escapes scope of letregion.
-       The region variable: r1 : %
-  is free in the body type: Int r1
-
-with: letregion r1 in
-      4 [r1] ()
+When checking expression.
+  Region variable escapes scope of letregion.
+         The region variable: r1 : %
+    is free in the body type: Int r1
+  
+  with: letregion r1 in
+        4 [r1] ()
 
 
 -- Error: bound region is free in the effect of a returned function.
-Region variable escapes scope of letregion.
-       The region variable: r1 : %
-  is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R2# | Use r1 + Use R2#)> Int R2#
-
-with: letregion r1 with {w1 : Const r1} in
-      \(x : Unit).
-      addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
+When checking expression.
+  Region variable escapes scope of letregion.
+         The region variable: r1 : %
+    is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R2# | Use r1 + Use R2#)> Int R2#
+  
+  with: letregion r1 with {w1 : Const r1} in
+        \(x : Unit).
+        addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
 
 
 -- Error: region variable appears in closure term
-Region variable escapes scope of letregion.
-       The region variable: r1 : %
-  is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
-
-with: letregion r1 in
-      let z = 5 [r1] () in
-      \(x : Unit).
-      let xs
-            = Cons [R0#] [Int r1] z
-                  (Nil [R0#] [Int r1] ()) in
-      case xs of {
-        Nil  
-         -> 1 [R0#] ();
-        Cons _ _ 
-         -> 2 [R0#] ()
-      }
+When checking expression.
+  Region variable escapes scope of letregion.
+         The region variable: r1 : %
+    is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+  
+  with: letregion r1 in
+        let z = 5 [r1] () in
+        \(x : Unit).
+        let xs
+              = Cons [R0#] [Int r1] z
+                    (Nil [R0#] [Int r1] ()) in
+        case xs of {
+          Nil  
+           -> 1 [R0#] ();
+          Cons _ _ 
+           -> 2 [R0#] ()
+        }
 
 
 -- Error: witness types with a letregion must use explicit type constructors.
-Invalid witness type with letregion.
-          The witness: w : c r1
-  cannot be created with a letregion
-
-with: letregion r1 with {w : c r1} in
-      ()
+When checking expression.
+  Invalid witness type with letregion.
+            The witness: w : c r1
+    cannot be created with a letregion
+  
+  with: letregion r1 with {w : c r1} in
+        ()
 

@@ -49,6 +49,7 @@ data Features
         , featuresNestedFunctions       :: Bool
         , featuresLazyBindings          :: Bool
         , featuresDebruijnBinders       :: Bool
+        , featuresUnboundLevel0Vars     :: Bool
         , featuresNameShadowing         :: Bool
         , featuresUnusedBindings        :: Bool
         , featuresUnusedMatches         :: Bool
@@ -64,6 +65,7 @@ zeroFeatures
         , featuresNestedFunctions       = False
         , featuresLazyBindings          = False
         , featuresDebruijnBinders       = False
+        , featuresUnboundLevel0Vars     = False
         , featuresNameShadowing         = False
         , featuresUnusedBindings        = False
         , featuresUnusedMatches         = False }
@@ -78,6 +80,7 @@ setFeature feature val features
         NestedFunctions         -> features { featuresNestedFunctions     = val }
         LazyBindings            -> features { featuresLazyBindings        = val }
         DebruijnBinders         -> features { featuresDebruijnBinders     = val }
+        UnboundLevel0Vars       -> features { featuresUnboundLevel0Vars   = val }
         NameShadowing           -> features { featuresNameShadowing       = val }
         UnusedBindings          -> features { featuresUnusedBindings      = val }
         UnusedMatches           -> features { featuresUnusedMatches       = val }

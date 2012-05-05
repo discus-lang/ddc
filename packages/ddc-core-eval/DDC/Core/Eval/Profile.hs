@@ -27,6 +27,7 @@ evalFeatures
         , featuresNestedFunctions       = True
         , featuresLazyBindings          = True
         , featuresDebruijnBinders       = True
+        , featuresUnboundLevel0Vars     = False
         , featuresNameShadowing         = True
         , featuresUnusedBindings        = True
         , featuresUnusedMatches         = True }

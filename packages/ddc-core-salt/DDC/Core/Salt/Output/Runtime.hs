@@ -72,7 +72,7 @@ uPayloadOfRawSmall
 -- | Get a field of a Boxed object.
 xFieldOfBoxed :: a -> Exp a Name -> Integer -> Exp a Name
 xFieldOfBoxed a x2 offset
- = XApp a (XApp a (XVar a uFieldOfBoxed) x2) (XVar a (UPrim (NameNat offset) tNat))
+ = XApp a (XApp a (XVar a uFieldOfBoxed) x2) (XCon a (UPrim (NameNat offset) tNat))
 
 uFieldOfBoxed :: Bound Name
 uFieldOfBoxed

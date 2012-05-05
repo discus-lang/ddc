@@ -130,42 +130,45 @@ updateInt :: [^ ^ : %].Mutable ^1 => Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use
 
 -- Local objects cannot escape ------------------------------------------------
 -- Error: local region visible in return type.
-Region variable escapes scope of letregion.
-       The region variable: r1 : %
-  is free in the body type: Int r1
-
-with: letregion r1 in
-      5 [r1] ()
-
-
--- Error: local region visible in return type.
-Region variable escapes scope of letregion.
-       The region variable: r1 : %
-  is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
-
-with: letregion r1 in
-      let z = 5 [r1] () in
-      \(x : Unit).
-      addInt [r1] [r1] [R0#] z (1 [r1] ())
+When checking expression.
+  Region variable escapes scope of letregion.
+         The region variable: r1 : %
+    is free in the body type: Int r1
+  
+  with: letregion r1 in
+        5 [r1] ()
 
 
 -- Error: local region visible in return type.
-Region variable escapes scope of letregion.
-       The region variable: r1 : %
-  is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+When checking expression.
+  Region variable escapes scope of letregion.
+         The region variable: r1 : %
+    is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
+  
+  with: letregion r1 in
+        let z = 5 [r1] () in
+        \(x : Unit).
+        addInt [r1] [r1] [R0#] z (1 [r1] ())
 
-with: letregion r1 in
-      let z = 5 [r1] () in
-      \(x : Unit).
-      let xs
-            = Cons [R0#] [Int r1] z
-                  (Nil [R0#] [Int r1] ()) in
-      case xs of {
-        Nil  
-         -> 1 [R0#] ();
-        Cons _ _ 
-         -> 2 [R0#] ()
-      }
+
+-- Error: local region visible in return type.
+When checking expression.
+  Region variable escapes scope of letregion.
+         The region variable: r1 : %
+    is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
+  
+  with: letregion r1 in
+        let z = 5 [r1] () in
+        \(x : Unit).
+        let xs
+              = Cons [R0#] [Int r1] z
+                    (Nil [R0#] [Int r1] ()) in
+        case xs of {
+          Nil  
+           -> 1 [R0#] ();
+          Cons _ _ 
+           -> 2 [R0#] ()
+        }
 
 
 -- Laziness and purification -------------------------------------------------

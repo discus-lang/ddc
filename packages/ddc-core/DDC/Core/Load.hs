@@ -34,10 +34,22 @@ data Error n
 instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
-        ErrorParser     err'    -> ppr err'
-        ErrorCheckType  err'    -> ppr err'
-        ErrorCheckExp   err'    -> ppr err'
-        ErrorCompliance err'    -> ppr err'
+        ErrorParser     err'    
+         -> vcat [ text "While parsing."
+                 , indent 2 $ ppr err' ]
+
+        ErrorCheckType  err'
+         -> vcat [ text "When checking type."
+                 , indent 2 $ ppr err' ]
+
+
+        ErrorCheckExp   err'    
+         -> vcat [ text "When checking expression."
+                 , indent 2 $ ppr err' ]
+
+        ErrorCompliance err'    
+         -> vcat [ text "During fragment compliance check."
+                 , indent 2 $ ppr err' ]
 
 
 -- Module ---------------------------------------------------------------------

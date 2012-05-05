@@ -77,7 +77,7 @@ instance (Show a, Pretty a) => Pretty (Error a) where
         ErrorTypeInvalid xx
          -> vcat [ text "Invalid type definition."
                  , empty
-                 , text "with:"                                 <+> align (ppr xx) ]
+                 , text "with:"                                 <+> align (text $ show xx) ]
 
         ErrorFunctionInvalid xx
          -> vcat [ text "Invalid function definition."

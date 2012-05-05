@@ -13,92 +13,97 @@ let x : Int R0# = 5 [R0#] () in x
 
 
 -- Error: let binder has incorrect type annotation.
-Type mismatch in let-binding.
-                The binder: x
-                  has type: Int R0#
-     but the body has type: Unit
-
-with: let x : Int R0# = () in
-      x
+When checking expression.
+  Type mismatch in let-binding.
+                  The binder: x
+                    has type: Int R0#
+       but the body has type: Unit
+  
+  with: let x : Int R0# = () in
+        x
 
 
 -- Error: outer function is missing a Use annotation.
-Type mismatch in let-binding.
-                The binder: fac
-                  has type: [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
-     but the body has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
-
-with: letrec {
-        fac : [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
-          = /\(r : %).
-             \(acc n : Int r).
-            case n of {
-              0  
-               -> acc;
-              1  
-               -> acc;
-              _ 
-               -> fac [r] (mulInt [r] [r] [r] acc n)
-                      (subInt [r] [r] [r] n (1 [r] ()))
-            }
-      } in
-      fac [R1#] (1 [R1#] ()) (5 [R1#] ())
+When checking expression.
+  Type mismatch in let-binding.
+                  The binder: fac
+                    has type: [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
+       but the body has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
+  
+  with: letrec {
+          fac : [r : %].Int r -> Int r -(Read r + Alloc r | Use r)> Int r
+            = /\(r : %).
+               \(acc n : Int r).
+              case n of {
+                0  
+                 -> acc;
+                1  
+                 -> acc;
+                _ 
+                 -> fac [r] (mulInt [r] [r] [r] acc n)
+                        (subInt [r] [r] [r] n (1 [r] ()))
+              }
+        } in
+        fac [R1#] (1 [R1#] ()) (5 [R1#] ())
 
 
 -- Error: inner function is missing an Alloc effect.
-Type mismatch in let-binding.
-                The binder: fac
-                  has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r
-     but the body has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
-
-with: letrec {
-        fac : [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r
-          = /\(r : %).
-             \(acc n : Int r).
-            case n of {
-              0  
-               -> acc;
-              1  
-               -> acc;
-              _ 
-               -> fac [r] (mulInt [r] [r] [r] acc n)
-                      (subInt [r] [r] [r] n (1 [r] ()))
-            }
-      } in
-      fac [R1#] (1 [R1#] ()) (5 [R1#] ())
+When checking expression.
+  Type mismatch in let-binding.
+                  The binder: fac
+                    has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r
+       but the body has type: [r : %].Int r -(!0 | Use r)> Int r -(Read r + Alloc r | Use r)> Int r
+  
+  with: letrec {
+          fac : [r : %].Int r -(!0 | Use r)> Int r -(Read r | Use r)> Int r
+            = /\(r : %).
+               \(acc n : Int r).
+              case n of {
+                0  
+                 -> acc;
+                1  
+                 -> acc;
+                _ 
+                 -> fac [r] (mulInt [r] [r] [r] acc n)
+                        (subInt [r] [r] [r] n (1 [r] ()))
+              }
+        } in
+        fac [R1#] (1 [R1#] ()) (5 [R1#] ())
 
 
 -- Error: region var on the Int return type should be r1.
-Type mismatch in application.
-     Function expects: List r2 (Int r1)
-      but argument is: List r2 (Int r2)
-
-with: Cons [r2] [Int r1] m
-          (enumFromTo [r1] [r2]
-               (addInt [r1] [r1] [r1] m (1 [r1] ())) n)
+When checking expression.
+  Type mismatch in application.
+       Function expects: List r2 (Int r1)
+        but argument is: List r2 (Int r2)
+  
+  with: Cons [r2] [Int r1] m
+            (enumFromTo [r1] [r2]
+                 (addInt [r1] [r1] [r1] m (1 [r1] ())) n)
 
 
 -- Error: second effect should have Read r1 instead of Read r2.
-Type mismatch in let-binding.
-                The binder: enumFromTo
-                  has type: [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-     but the body has type: [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-
-with: letrec {
-        enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
-          = /\(r1 r2 : %).
-             \(m n : Int r1).
-            case eqInt [r1] [r1] [r1] m n of {
-              0  
-               -> Cons [r2] [Int r1] m
-                      (enumFromTo [r1] [r2]
-                           (addInt [r1] [r1] [r1] m (1 [r1] ())) n);
-              _ 
-               -> Cons [r2] [Int r1] m
-                      (Nil [r2] [Int r1] ())
-            }
-      } in
-      enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+When checking expression.
+  Type mismatch in let-binding.
+                  The binder: enumFromTo
+                    has type: [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+       but the body has type: [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+  
+  with: letrec {
+          enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+            = /\(r1 r2 : %).
+               \(m n : Int r1).
+              case eqInt [r1] [r1] [r1] m n of {
+                0  
+                 -> Cons [r2] [Int r1] m
+                        (enumFromTo [r1] [r2]
+                             (addInt [r1] [r1] [r1] m (1 [r1] ())) n);
+                _ 
+                 -> Cons [r2] [Int r1] m
+                        (Nil [r2] [Int r1] ())
+              }
+        } in
+        enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 
 
 -- Should be ok.
@@ -116,57 +121,62 @@ letrec { enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read 
 
 
 -- Error: binding must have data kind.
-Let binding does not have data kind.
-      The binding for: e2
-             has type: !
-            with kind: **
-       but it must be: * 
-
-with: let e2 : ! = e1 in
-      ()
+When checking expression.
+  Let binding does not have data kind.
+        The binding for: e2
+               has type: !
+              with kind: **
+         but it must be: * 
+  
+  with: let e2 : ! = e1 in
+        ()
 
 
 -- Error: binding must have data kind.
-Let binding does not have data kind.
-      The binding for: e2
-             has type: !
-            with kind: **
-       but it must be: * 
-
-with: letrec {
-        e2 : ! = e1
-      } in
-      ()
-
-
--- Error: body must have data kind.
-Let body does not have data kind.
- Body of let has type: !
-            with kind: **
-       but it must be: * 
-
-with: let x : Unit = () in
-      e1
+When checking expression.
+  Let binding does not have data kind.
+        The binding for: e2
+               has type: !
+              with kind: **
+         but it must be: * 
+  
+  with: letrec {
+          e2 : ! = e1
+        } in
+        ()
 
 
 -- Error: body must have data kind.
-Let body does not have data kind.
- Body of let has type: !
-            with kind: **
-       but it must be: * 
+When checking expression.
+  Let body does not have data kind.
+   Body of let has type: !
+              with kind: **
+         but it must be: * 
+  
+  with: let x : Unit = () in
+        e1
 
-with: letrec {
-        foo : Unit -> Unit
-          = \(x : Unit). ()
-      } in
-      e1
+
+-- Error: body must have data kind.
+When checking expression.
+  Let body does not have data kind.
+   Body of let has type: !
+              with kind: **
+         but it must be: * 
+  
+  with: letrec {
+          foo : Unit -> Unit
+            = \(x : Unit). ()
+        } in
+        e1
 
 
 -- Error: right of letrec binding must be a lambda
-Letrec can only bind lambda abstractions.
-      This is not one: ()
-
-with: letrec {
-        foo : Unit = ()
-      } in
-      foo
+When checking expression.
+  Letrec can only bind lambda abstractions.
+        This is not one: ()
+  
+  with: letrec {
+          foo : Unit = ()
+        } in
+        foo

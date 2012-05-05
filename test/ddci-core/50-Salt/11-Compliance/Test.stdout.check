@@ -6,24 +6,29 @@ ok
 
 -- Error: name shadowing in function definition
 Error loading module
-  Binding shadows existing name: x
+  During fragment compliance check.
+    Binding shadows existing name: x
 
 
 -- Error: name shadowing in let-expression
 Error loading module
-  Binding shadows existing name: x
+  During fragment compliance check.
+    Binding shadows existing name: x
 
 
 -- Error: use of debruijn binders
 Error loading module
-  Unsupported feature: DebruijnBinders
+  During fragment compliance check.
+    Unsupported feature: DebruijnBinders
 
 
 -- Error: general application
 Error loading module
-  Unsupported feature: GeneralApplication
+  During fragment compliance check.
+    Unsupported feature: GeneralApplication
 
 
 -- Error: partially applied primop
 Error loading module
-  Unsupported feature: PartialPrims
+  During fragment compliance check.
+    Unsupported feature: PartialPrims

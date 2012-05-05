@@ -61,50 +61,58 @@ addInt [R1#] [R2#] [R3#] (2 [R1#] ()) (3 [R2#] ())
 
 -- Error: cannot shadow spec binders.
 -- This breaks progress if we try to run it.
-Cannot shadow named spec variable.
-  binder: r : %
-  is already in the environment.
-with: /\(r : %).
-       \(y : Int r).
-      case x of {
-        0  
-         -> x;
-        _ 
-         -> y
-      }
+When checking expression.
+  Cannot shadow named spec variable.
+    binder: r : %
+    is already in the environment.
+  with: /\(r : %).
+         \(y : Int r).
+        case x of {
+          0  
+           -> x;
+          _ 
+           -> y
+        }
 
 
 -- Error: cannot shadow spec binders.
-Cannot shadow named spec variable.
-  binder: r : %
-  is already in the environment.
-with: /\(r : %).
-       \(_ : Unit). 2 [r] ()
+When checking expression.
+  Cannot shadow named spec variable.
+    binder: r : %
+    is already in the environment.
+  with: /\(r : %).
+         \(_ : Unit). 2 [r] ()
 
 
 -- Error: cannot shadow spec binders.
-Cannot shadow named spec variable.
-  binder: r : %
-  is already in the environment.
-with: /\(r : %).
-       \(_ : Unit). 2 [r] ()
+When checking expression.
+  Cannot shadow named spec variable.
+    binder: r : %
+    is already in the environment.
+  with: /\(r : %).
+         \(_ : Unit). 2 [r] ()
 
 
 -- Type variable not in environment.
-Undefined type variable:  a
+When checking type.
+  Undefined type variable:  a
 
 
 -- Type constructor not in environment.
-Undefined type constructor:  Whatever
+When checking type.
+  Undefined type constructor:  Whatever
 
 
 -- Data constructor not in environment.
-Undefined data constructor: Whatever
+When checking expression.
+  Undefined data constructor: Whatever
 
 
 -- Type constructor used as a data constructor.
-Undefined data constructor: Unit
+When checking expression.
+  Undefined data constructor: Unit
 
 
 -- Data constructor used as a type constructor.
-Undefined type constructor:  ()
+When checking type.
+  Undefined type constructor:  ()

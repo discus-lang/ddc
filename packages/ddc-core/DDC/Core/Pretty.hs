@@ -12,23 +12,38 @@ import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Base.Pretty
 import Data.List
+import qualified Data.Map       as Map
+
 
 -- ModuleName -----------------------------------------------------------------
 instance Pretty ModuleName where
  ppr (ModuleName parts)
         = text $ intercalate "." parts
 
+
 -- Module ---------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Module a n) where
- ppr ModuleCore { moduleName            = name
-                , moduleExportKinds     = _exportKinds
-                , moduleExportTypes     = _exportTypes
-                , moduleImportKinds     = _importKinds
-                , moduleImportTypes     = _importTypes
-                , moduleBody            = body }
-  = let (lts, _)        = splitXLets body
-    in  text "module" <+> ppr name <+> text "with"
-  <$$> (vcat $ map ppr lts)
+ ppr ModuleCore 
+        { moduleName            = name
+        , moduleExportKinds     = _exportKinds
+        , moduleExportTypes     = _exportTypes
+        , moduleImportKinds     = _importKinds
+        , moduleImportTypes     = importTypes
+        , moduleBody            = body }
+  = let (lts, _)         = splitXLets body
+
+        docsImportTypes  = [ ppr n <+> text "::" <+> ppr t 
+                                | (n, (_, t))   <- Map.toList importTypes]
+
+    in  vcat 
+         $  [ text "module" <+> ppr name]
+         ++ (if Map.null importTypes 
+                then [] 
+                else [text "import" <+> lbrace 
+                        <> (nest 8 $ line <> vcat docsImportTypes)
+                        <> line 
+                        <> rbrace])
+         ++ [text "with" <$$> (vcat $ map ppr lts)]
 
 
 -- Exp ------------------------------------------------------------------------

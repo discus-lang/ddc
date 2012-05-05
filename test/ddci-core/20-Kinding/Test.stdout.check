@@ -1,51 +1,59 @@
 -- Error: sorts don't have a higher classification
-Can't check a naked sort: @@
+When checking type.
+  Can't check a naked sort: @@
 
 
 -- Error: can't sort-check the naked kind function, 
 -- because its sort depends on how it's instantiated, 
 -- and we don't have sort polymorphism.
-Can't take sort of unapplied kind function constructor.
+When checking type.
+  Can't take sort of unapplied kind function constructor.
 
 
 -- Error: body of a forall must have data or witness kind.
-Invalid kind for body of quantified type.
-        the body type: Read r
-             has kind: !
-  but it must be * or @
-        when checking: [r : %].Read r
+When checking type.
+  Invalid kind for body of quantified type.
+          the body type: Read r
+               has kind: !
+    but it must be * or @
+          when checking: [r : %].Read r
 
 
 -- Error: witness implication is invalid.
-Invalid args for witness implication.
-            left type: r
-             has kind: %
-           right type: Int r
-             has kind: *
-        when checking: r => Int r
+When checking type.
+  Invalid args for witness implication.
+              left type: r
+               has kind: %
+             right type: Int r
+               has kind: *
+          when checking: r => Int r
 
 
 -- Error: witness implication is invalid.
-Invalid args for witness implication.
-            left type: r
-             has kind: %
-           right type: Mutable r
-             has kind: @
-        when checking: r => Mutable r
+When checking type.
+  Invalid args for witness implication.
+              left type: r
+               has kind: %
+             right type: Mutable r
+               has kind: @
+          when checking: r => Mutable r
 
 
 -- Error: types in a sum don't all have the same kind.
-Core type mismatch in sum.
- found multiple types: Read r + Use r
- with differing kinds: [!,$]
+When checking type.
+  Core type mismatch in sum.
+   found multiple types: Read r + Use r
+   with differing kinds: [!,$]
 
 
 -- Error: invalid kind for type sum.
-Invalid kind for type sum.
-         the type sum: Const + Const
-             has kind: % ~> @
-  but it must be ! or $
+When checking type.
+  Invalid kind for type sum.
+           the type sum: Const + Const
+               has kind: % ~> @
+    but it must be ! or $
 
 
 -- #242 Error: Undefined type constructor ().
-Undefined type constructor:  ()
+When checking type.
+  Undefined type constructor:  ()

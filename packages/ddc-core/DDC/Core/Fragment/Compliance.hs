@@ -16,6 +16,8 @@ import DDC.Type.Env             (Env)
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
+import qualified Data.Map       as Map
+
 
 complies 
         :: forall n c. (Ord n, Show n, Complies c)
@@ -49,7 +51,10 @@ class Complies (c :: * -> *) where
 
 instance Show a => Complies (Module a) where
  compliesX profile kenv tenv context mm
-  = compliesX profile kenv tenv context (moduleBody mm)
+  = do  let bs          = [ BName n t 
+                                | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
+        let tenv'       = Env.extends bs tenv
+        compliesX profile kenv tenv' context (moduleBody mm)
 
 
 -- TODO: check types of binders.
@@ -60,7 +65,12 @@ instance Show a => Complies (Exp a) where
         ok      = return (Set.empty, Set.empty)
     in case xx of
         -- variables ----------------------------
-        XVar _ (UName n _)
+        XVar _ u@(UName n _)
+         |  not $ Env.member u tenv
+         ,  not $ has featuresUnboundLevel0Vars 
+         -> throw $ ErrorUndefinedVar n
+
+         | otherwise
          ->     return (Set.empty, Set.singleton n)
 
         XVar _ u@(UPrim n t)
@@ -75,7 +85,6 @@ instance Show a => Complies (Exp a) where
 
          | otherwise
          -> return (Set.empty, Set.empty)
-
 
         XVar{}          -> ok
 

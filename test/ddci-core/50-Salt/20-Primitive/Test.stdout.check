@@ -11,13 +11,16 @@ Int64# :: *
 Int32# :: *
 
 -- Error: invalid type constructors
-Undefined type constructor:  Int#
+When checking type.
+  Undefined type constructor:  Int#
 
-Undefined type constructor:  Int65#
+When checking type.
+  Undefined type constructor:  Int65#
 
 
 -- Check types of tailcallN# prims.
-Undefined variable: tailcall0#
+When checking expression.
+  Undefined variable: tailcall0#
 
 tailcall1#
 :*: [^ ^ : *].(^1 -> ^0) -> ^1 -> ^0
@@ -89,14 +92,16 @@ TAG42#
 
 -- Error: lex error
 -- no unboxed literals in this fragment.
-Parse error in "<batch>" (line 1, column 1)
-Unexpected character "lexical error".
-Expected an expression.
+While parsing.
+  Parse error in "<batch>" (line 1, column 1)
+  Unexpected character "lexical error".
+  Expected an expression.
 
 -- Error: not a valid bit width
-Parse error in "<batch>" (line 1, column 1)
-Unexpected character "lexical error".
-Expected an expression.
+While parsing.
+  Parse error in "<batch>" (line 1, column 1)
+  Unexpected character "lexical error".
+  Expected an expression.
 
 -- Binary literals
 4w32#
@@ -110,7 +115,8 @@ Expected an expression.
 :$: $0
 
 -- Error: Binary literal is wider than word size.
-Parse error in "<batch>" (line 1, column 1)
-Unexpected character "lexical error".
-Expected an expression.
+While parsing.
+  Parse error in "<batch>" (line 1, column 1)
+  Unexpected character "lexical error".
+  Expected an expression.
 

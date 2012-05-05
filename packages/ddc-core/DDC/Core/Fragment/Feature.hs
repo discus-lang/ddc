@@ -27,6 +27,10 @@ data Feature
         --   Most backends will want to use real names, instead of indexed binders.
         | DebruijnBinders
 
+        -- | Allow data and witness vars without binding occurrences if they are annotated
+        --   directly with their types.
+        | UnboundLevel0Vars
+
         -- Sanity -----------------------------------------
         -- | Allow name shadowing.
         | NameShadowing

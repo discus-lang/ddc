@@ -33,6 +33,7 @@ import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
 import DDC.Core.Collect
 import DDC.Base.Pretty
+import qualified DDC.Core.Fragment.Compliance   as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
@@ -172,9 +173,18 @@ pipeCore mm pp
                 primDataDefs    = profilePrimDataDefs   profile
                 primKindEnv     = profilePrimKinds      profile
                 primTypeEnv     = profilePrimTypes      profile
-            in  case C.checkModule primDataDefs primKindEnv primTypeEnv mm of
-                  Left err  -> return $ [ErrorLint err]
-                  Right mm' -> liftM concat $ mapM (pipeCore mm') pipes
+
+                goCheck mm1
+                 = case C.checkModule primDataDefs primKindEnv primTypeEnv mm1 of
+                        Left err   -> return [ErrorLint err]
+                        Right mm2  -> goComplies mm2
+
+                goComplies mm1
+                 = case C.complies profile mm1 of
+                        Just err   -> return [ErrorLint err]
+                        Nothing    -> liftM concat $ mapM (pipeCore mm1) pipes
+
+             in goCheck mm
 
         PipeCoreSimplify frag simpl pipes
          | Fragment _ _ _ _ _ makeNamifierT makeNamifierX nameZero <- frag

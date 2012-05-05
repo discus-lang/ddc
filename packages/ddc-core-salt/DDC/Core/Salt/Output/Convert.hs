@@ -38,7 +38,7 @@ convModuleM mm@(ModuleCore{})
 
 
 -- Type -----------------------------------------------------------------------
--- | Convert a Brine type to C source text.
+-- | Convert a Salt type to C source text.
 convTypeM :: Type Name -> ConvertM a Doc
 convTypeM tt
   = case tt of
@@ -53,7 +53,7 @@ convTypeM tt
         TCon (TyConBound (UPrim NameObjTyCon _))
            ->   return  $ text "Obj"
 
-        _  -> throw $ ErrorTypeInvalid tt
+        _  -> return $ text "DUNNO" -- throw $ ErrorTypeInvalid tt
 
 
 -- | Convert a primitive type constructor to C source text.
@@ -294,7 +294,7 @@ convRValueM xx
          -> do  t'      <- convTypeM t
                 return  $ t'
 
-        _ -> throw $ ErrorRValueInvalid xx
+        _ -> error (show xx) -- throw $ ErrorRValueInvalid xx
 
 
 

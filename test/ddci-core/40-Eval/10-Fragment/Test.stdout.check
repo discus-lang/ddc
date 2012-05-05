@@ -2,4 +2,5 @@
 
 -- Error: fragment error with partially applied primop
 -- This would get stuck if we tried to evaluate it.
-Unsupported feature: PartialPrims
+During fragment compliance check.
+  Unsupported feature: PartialPrims

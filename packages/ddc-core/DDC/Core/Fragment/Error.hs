@@ -10,6 +10,7 @@ import DDC.Core.Pretty
 data Error n
         = ErrorUnsupported      Feature
         | ErrorUndefinedPrim    n 
+        | ErrorUndefinedVar     n
         | ErrorShadowedBind     n
         | ErrorUnusedBind       n
         | ErrorNakedType        (Type    n)
@@ -24,7 +25,10 @@ instance (Pretty n, Eq n) => Pretty (Error n) where
          -> vcat [ text "Unsupported feature: " <> text (show feature) ]
 
         ErrorUndefinedPrim n
-         -> vcat [ text "Undefined primitive name: " <> ppr n ]
+         -> vcat [ text "Undefined primitive: " <> ppr n ]
+
+        ErrorUndefinedVar n
+         -> vcat [ text "Undefined variable: " <> ppr n ]
 
         ErrorShadowedBind n
          -> vcat [ text "Binding shadows existing name: " <> ppr n ]

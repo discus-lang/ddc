@@ -5,7 +5,8 @@ ok
 
 
 -- Error: Unknown primop.
-Undefined variable: foo#
+When checking expression.
+  Undefined variable: foo#
 
 
 -- Error: Module does not have a top-level letrec.
@@ -82,7 +83,8 @@ nat_t foo (nat_t x)
 
 -- Error: assignment from primop.
 Error loading module
-  Unsupported feature: PartialPrims
+  During fragment compliance check.
+    Unsupported feature: PartialPrims
 
 
 -- Error: cannot discard non-void return value.

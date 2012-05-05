@@ -1,13 +1,15 @@
 -- Error: Junk ? symbol in program.
-Parse error in "<batch>" (line 9, column 25)
-Unexpected character "?".
+While parsing.
+  Parse error in "<batch>" (line 9, column 25)
+  Unexpected character "?".
 
 
 -- Error: Like above, but ensure the line number has advanced
 -- between interpreter commands.
-Parse error in "<batch>" (line 18, column 4)
-Unexpected character "?".
-Expected an expression.
+While parsing.
+  Parse error in "<batch>" (line 18, column 4)
+  Unexpected character "?".
+  Expected an expression.
 
 
 -- Ok: should allow variable named 'inc'.
