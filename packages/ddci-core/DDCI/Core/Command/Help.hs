@@ -66,8 +66,9 @@ help    = unlines
         , ""
         , "Module Commands"
         , "    load    MODULE      Type check and desugar a module."
-        , "    sea     MODULE      Convert a Core Sea module to C code."
-        , "    llvm    MODULE      Convert a Core Sea module to LLVM code."
+        , "    to-salt MODULE      Convert a Core module to Disciple Salt."
+        , "    to-c    MODULE      Convert a Core module to C code."
+        , "    to-llvm MODULE      Convert a Core module to LLVM code."
         , ""
         ]
 
