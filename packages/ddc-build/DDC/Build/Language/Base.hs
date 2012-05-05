@@ -8,7 +8,7 @@ import DDC.Core.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty
-import DDC.Base.Lexer
+import DDC.Data.Token
 import DDC.Core.Transform.Namify        (Namifier)
 import DDC.Type.Env                     (Env)
 

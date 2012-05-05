@@ -8,11 +8,12 @@ module DDC.Core.Lexer
         , lexModuleWithOffside
         , lexExp)
 where
-import DDC.Base.Lexer
 import DDC.Core.Lexer.Offside
 import DDC.Core.Lexer.Comments
 import DDC.Core.Lexer.Names
 import DDC.Core.Lexer.Tokens
+import DDC.Data.SourcePos
+import DDC.Data.Token
 import Data.Char
 
 

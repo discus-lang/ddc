@@ -9,7 +9,7 @@ import DDC.Core.Salt.Lite.Env
 import DDC.Core.Salt.Lite.Name
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
-import DDC.Base.Lexer
+import DDC.Data.Token
 
 
 -- | Profile for Disciple Core Lite.

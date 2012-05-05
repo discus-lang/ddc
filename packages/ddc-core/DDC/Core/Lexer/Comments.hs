@@ -3,8 +3,8 @@ module DDC.Core.Lexer.Comments
         ( dropComments
         , dropNewLines)
 where
-import DDC.Base.Lexer
 import DDC.Core.Lexer.Tokens
+import DDC.Data.Token
 
 
 -- | Drop all the comments and newline tokens in this stream.

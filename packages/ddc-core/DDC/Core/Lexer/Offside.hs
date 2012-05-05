@@ -6,7 +6,8 @@ module DDC.Core.Lexer.Offside
         , addStarts)
 where
 import DDC.Core.Lexer.Tokens
-import DDC.Base.Lexer
+import DDC.Data.SourcePos
+import DDC.Data.Token
 
 
 -- | Holds a real token or start symbol which is used to apply the offside rule.

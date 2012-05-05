@@ -1,0 +1,10 @@
+
+:set lang Lite
+:set +Indent
+
+-- Integer unboxing
+:to-salt..
+module Main with letrec
+unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
+ = case x of { I32# i -> i; _ -> 0i32# };;
+

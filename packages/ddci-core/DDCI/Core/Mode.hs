@@ -20,6 +20,9 @@ data Mode
         -- | Render expressions displayed to user using indenting.
         |  Indent
 
+        -- | Suppress import lists when printing modules
+        |  SuppressImports
+
         -- | When pretty printing Salt modules as C code,
         --  include the #includes etc needed for compilation.
         |  SaltPrelude
@@ -30,11 +33,12 @@ data Mode
 readMode :: String -> Maybe Mode
 readMode str
  = case str of
-        "TraceEval"     -> Just TraceEval
-        "TraceStore"    -> Just TraceStore
-        "Indent"        -> Just Indent
-        "SaltPrelude"   -> Just SaltPrelude
-        _               -> Nothing
+        "TraceEval"             -> Just TraceEval
+        "TraceStore"            -> Just TraceStore
+        "Indent"                -> Just Indent
+        "SuppressImports"       -> Just SuppressImports
+        "SaltPrelude"           -> Just SaltPrelude
+        _                       -> Nothing
 
 
 -- | The source of some program text.

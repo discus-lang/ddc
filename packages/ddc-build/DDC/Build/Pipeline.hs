@@ -33,6 +33,7 @@ import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
 import DDC.Core.Collect
 import DDC.Base.Pretty
+import DDC.Data.Canned
 import qualified DDC.Core.Fragment.Compliance   as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
@@ -153,6 +154,14 @@ data PipeCore n where
         :: [PipeSalt] 
         -> PipeCore Output.Name
 
+  -- Apply a canned function to a module.
+  -- This is helpful for debugging, and tweaking the output before pretty printing.
+  -- More reusable transforms should be made into their own pipeline stage.
+  PipeCoreHacks
+        :: (Canned (C.Module () n -> IO (C.Module () n)))
+        -> [PipeCore n]
+        -> PipeCore n
+
 deriving instance Show (PipeCore n)
 
 
@@ -209,6 +218,10 @@ pipeCore mm pp
 
         PipeCoreAsSalt pipes
          -> liftM concat $ mapM (pipeSalt mm) pipes
+
+        PipeCoreHacks (Canned f) pipes
+         -> do  mm'     <- f mm
+                liftM concat $ mapM (pipeCore mm') pipes
 
 
 -- PipeLiteModule -------------------------------------------------------------

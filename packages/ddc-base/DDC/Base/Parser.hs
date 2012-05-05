@@ -9,8 +9,8 @@ module DDC.Base.Parser
         , pTokAs
         , pTok)
 where
-import DDC.Base.Lexer
 import DDC.Base.Pretty
+import DDC.Data.Token
 import Data.Functor.Identity
 import Text.Parsec
 import Text.Parsec              as P

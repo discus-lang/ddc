@@ -9,8 +9,7 @@ import DDC.Core.Salt.Output.Env
 import DDC.Core.Salt.Output.Name
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
-import DDC.Base.Lexer
-
+import DDC.Data.Token
 
 -- | Language profile for Disciple Core Salt.
 profile :: Profile Name 

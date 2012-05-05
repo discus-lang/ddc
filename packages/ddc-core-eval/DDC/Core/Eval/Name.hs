@@ -10,9 +10,9 @@ module DDC.Core.Eval.Name
         , lexModuleString
         , lexExpString)
 where
-import DDC.Base.Pretty
-import DDC.Base.Lexer
 import DDC.Core.Lexer
+import DDC.Base.Pretty
+import DDC.Data.Token
 import Data.Char
 
 

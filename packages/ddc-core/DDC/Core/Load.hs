@@ -13,8 +13,8 @@ import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp
 import DDC.Type.Transform.SpreadT
 import DDC.Core.Module
-import DDC.Base.Lexer
 import DDC.Base.Pretty
+import DDC.Data.Token
 import qualified DDC.Core.Fragment.Compliance   as I
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C

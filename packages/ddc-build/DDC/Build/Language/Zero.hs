@@ -6,7 +6,7 @@ import DDC.Build.Language.Base
 import DDC.Core.Fragment.Profile
 import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
-import DDC.Base.Lexer
+import DDC.Data.Token
 import DDC.Type.Exp
 import DDC.Type.Env                     (Env)
 import DDC.Core.Lexer                   as Core
