@@ -14,6 +14,7 @@ import DDCI.Core.Command.Trans
 import DDCI.Core.Command.Ast
 import DDCI.Core.Command.Compile
 import DDCI.Core.Command.Make
+import DDCI.Core.Command.ToSalt
 import DDCI.Core.Command.ToC
 import DDCI.Core.Command.ToLlvm
 import DDCI.Core.State
@@ -48,6 +49,7 @@ data Command
         | CommandCompile        -- ^ Compile a file.
         | CommandMake           -- ^ Compile and link and executable.
 
+        | CommandToSalt         -- ^ Convert a module to Disciple Salt.
         | CommandToC            -- ^ Convert a module to C code.
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
         deriving (Eq, Show)
@@ -78,6 +80,7 @@ commands
         , (":ast",              CommandAst) 
         , (":compile",          CommandCompile)
         , (":make",             CommandMake)
+        , (":to-salt",          CommandToSalt)
         , (":to-c",             CommandToC)
         , (":to-llvm",          CommandToLlvm) ]
 
@@ -197,6 +200,10 @@ handleCmd1 state cmd source line
         CommandAst
          -> do  cmdAst state source line
                 return state
+
+        CommandToSalt
+         -> do  cmdToSalt state source line
+                return    state
 
         CommandToC
          -> do  cmdToC state source line
