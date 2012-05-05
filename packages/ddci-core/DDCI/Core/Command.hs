@@ -129,7 +129,7 @@ handleCmd1 state cmd source line
          -> do  putStr help
                 return state
 
-        CommandSet        
+        CommandSet
          -> do  state'  <- cmdSet state line
                 return state'
 

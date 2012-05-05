@@ -104,7 +104,10 @@ type Closure n = Type n
 --   together with a binary operator (like @(+)@). This makes sums easier to work
 --   with, as a given sum type often only has a single physical representation.
 data TypeSum n
-        = TypeSum
+        = TypeSumBot
+        { typeSumKind           :: Kind n }
+
+        | TypeSumSet
         { -- | The kind of the elements in this sum.
           typeSumKind           :: Kind n
 

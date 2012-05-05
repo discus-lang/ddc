@@ -27,7 +27,14 @@ import Prelude                  hiding (elem)
 
 -- | Construct an empty type sum of the given kind.
 empty :: Kind n -> TypeSum n
-empty k = TypeSum
+empty k = TypeSumBot k
+
+
+-- | Construct an empty type sum of the given kind, but in `TypeSumSet` form.
+--   This isn't exported.
+emptySet :: Kind n -> TypeSum n
+emptySet k 
+        = TypeSumSet
         { typeSumKind           = k
         , typeSumElems          = listArray hashTyConRange (repeat Set.empty)
         , typeSumBoundNamed     = Map.empty
@@ -50,7 +57,8 @@ singleton k t
 --   * May return False if the first argument is miskinded but still
 --     alpha-equivalent to some component of the sum.
 elem :: (Eq n, Ord n) => Type n -> TypeSum n -> Bool
-elem t ts 
+elem _ TypeSumBot{}      =  False
+elem t ts@TypeSumSet{}
  = case t of
         TVar (UName n _) -> Map.member n (typeSumBoundNamed ts)
         TVar (UPrim n _) -> Map.member n (typeSumBoundNamed ts)
@@ -87,7 +95,8 @@ elem t ts
 
 -- | Insert a new element into a sum.
 insert :: Ord n => Type n -> TypeSum n -> TypeSum n
-insert t ts
+insert t (TypeSumBot k)   = insert t (emptySet k)
+insert t ts@TypeSumSet{}
  = case t of
         TVar (UName n k) -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
         TVar (UPrim n k) -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
@@ -114,7 +123,8 @@ insert t ts
 
 -- | Delete an element from a sum.
 delete :: Ord n => Type n -> TypeSum n -> TypeSum n
-delete t ts
+delete _ ts@TypeSumBot{} = ts
+delete t ts@TypeSumSet{}
  = case t of
         TVar (UName n _) -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
         TVar (UPrim n _) -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
@@ -160,7 +170,10 @@ kindOfSum ts
 
 -- | Flatten out a sum, yielding a list of individual terms.
 toList :: TypeSum n -> [Type n]
-toList TypeSum
+toList TypeSumBot{}       
+ = []
+
+toList TypeSumSet
         { typeSumKind           = _kind
         , typeSumElems          = sumElems
         , typeSumBoundNamed     = named
@@ -271,6 +284,7 @@ instance Eq n => Eq (Type n) where
         -- Unwrap single element sums into plain types.
   where normalise (TSum ts)
          | [t'] <- toList ts    = t'
+         | []   <- toList ts    = TSum $ empty (typeSumKind ts)
 
         normalise t'            = t'
 
@@ -283,6 +297,10 @@ instance Eq n => Eq (TypeSum n) where
         , []    <- toList ts2
         = typeSumKind ts1 == typeSumKind ts2
 
+        | TypeSumBot{}  <- normalise ts1
+        , TypeSumBot{}  <- normalise ts2
+        = typeSumKind ts1 == typeSumKind ts2
+
         -- If the sum has elements, then compare them directly and ignore the
         -- kind. This allows us to use (tBot sComp) as the typeSumKind field
         -- when we want to compute the real kind based on the elements. 
@@ -291,6 +309,10 @@ instance Eq n => Eq (TypeSum n) where
         && typeSumBoundNamed ts1 == typeSumBoundNamed ts2
         && typeSumBoundAnon  ts1 == typeSumBoundAnon ts2
         && typeSumSpill      ts1 == typeSumSpill ts2
+
+  where normalise ts
+         | []   <- toList ts    = empty (typeSumKind ts)
+        normalise ts            = ts
 
 
 instance Ord n => Ord (Bound n) where
