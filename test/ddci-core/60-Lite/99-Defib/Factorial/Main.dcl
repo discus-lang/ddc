@@ -13,9 +13,9 @@ unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
 head [r : %]
         (xDefault : Int r) 
         (xs : List r (Int r)) 
-        { Read r | Use r} : Int r
+        { Read r | Use r } : Int r
  = case xs of {
-        Cons x xs       -> x ;
+        Cons x xs2      -> x ;
         _               -> xDefault;
  }
 

@@ -36,6 +36,9 @@ import Control.Monad
 --   The input module needs to be well typed, and have all functions defined at
 --   top-level, and be a-normalised. If not then `Error`.
 --
+--   The output code contains debruijn indices which need to be eliminateed before
+--   it will pass the Salt fragment checks.
+--
 toSalt
         :: Show a 
         => Platform
@@ -97,7 +100,7 @@ convertM pp defsPrim mm
          , moduleExportKinds    = Map.empty
          , moduleExportTypes    = Map.empty
          , moduleImportKinds    = Map.empty
-         , moduleImportTypes    = Map.empty
+         , moduleImportTypes    = O.runtimeImportSigs 
          , moduleBody           = x' }
 
 

@@ -8,15 +8,18 @@ module DDC.Core.Salt.Output.Runtime
         , xReturn
 
           -- * Runtime
+        , runtimeImportSigs
         , xGetTag
         , xFieldOfBoxed
         , xPayloadOfRawSmall)
 where
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Salt.Output.Env
 import DDC.Core.Salt.Output.Name
 import DDC.Type.Compounds
-
+import qualified Data.Map       as Map
+import Data.Map                 (Map)
 
 -- Primops --------------------------------------------------------------------
 -- | Read a value from an address plus offset.
@@ -51,30 +54,45 @@ xReturn a t x
 
 
 -- Runtime --------------------------------------------------------------------
+-- | Signatures for runtime funtions that we use when converting
+--   to Disciple Salt code.
+runtimeImportSigs :: Map Name (QualName Name, Type Name)
+runtimeImportSigs
+        = Map.fromList
+        [ rn (NameVar "getTag")                 tGetTag
+        , rn (NameVar "fieldOfBoxed")           tFieldOfBoxed
+        , rn (NameVar "payloadOfRawSmall")      tPayloadOfRawSmall ]
+        where   rn n t  = (n, (QualName (ModuleName ["Runtime"]) n, t))
+
+
 -- | Get the constructor tag of an object.
 xGetTag :: a -> Exp a Name
 xGetTag a
- = XVar a (UName (NameVar "getTag")
-                 (tFunPE (tPtr tObj) tTag))
+        = XVar a (UName (NameVar "getTag") tGetTag)
 
-
--- | Get the address of the payload of a RawSmall object.
-xPayloadOfRawSmall :: a -> Exp a Name -> Exp a Name
-xPayloadOfRawSmall a x2
- = XApp a (XVar a uPayloadOfRawSmall) x2
-
-uPayloadOfRawSmall :: Bound Name
-uPayloadOfRawSmall 
- = UName (NameVar "payloadOfRawSmall")
-         (tFunPE (tPtr tObj) tAddr)
+tGetTag :: Type Name
+tGetTag = tFunPE (tPtr tObj) tTag
 
 
 -- | Get a field of a Boxed object.
 xFieldOfBoxed :: a -> Exp a Name -> Integer -> Exp a Name
 xFieldOfBoxed a x2 offset
- = XApp a (XApp a (XVar a uFieldOfBoxed) x2) (XCon a (UPrim (NameNat offset) tNat))
+        = XApp a (XApp a (XVar a u) x2) (XCon a (UPrim (NameNat offset) tNat))
+        where u = UName (NameVar "fieldOfBoxed") tFieldOfBoxed
 
-uFieldOfBoxed :: Bound Name
-uFieldOfBoxed
- = UName (NameVar "fieldOfBoxed")
-         (tPtr tObj `tFunPE` tNat `tFunPE` tPtr tObj)
+tFieldOfBoxed :: Type Name
+tFieldOfBoxed   = tPtr tObj `tFunPE` tNat `tFunPE` tPtr tObj
+
+
+-- | Get the address of the payload of a RawSmall object.
+xPayloadOfRawSmall :: a -> Exp a Name -> Exp a Name
+xPayloadOfRawSmall a x2 
+        = XApp a (XVar a u) x2
+        where u = UName (NameVar "payloadOfRawSmall") tPayloadOfRawSmall
+ 
+tPayloadOfRawSmall :: Type Name
+tPayloadOfRawSmall
+        = tFunPE (tPtr tObj) tAddr
+
+
+

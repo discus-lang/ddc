@@ -32,9 +32,10 @@ features
         , featuresLazyBindings          = True
         , featuresDebruijnBinders       = True
         , featuresUnboundLevel0Vars     = False
-        , featuresNameShadowing         = True
-        , featuresUnusedBindings        = True
-        , featuresUnusedMatches         = True }
+        , featuresNameShadowing         = False
+        , featuresUnusedBindings        = True          -- TODO: need to fix compliance checker to enable this
+                                                        -- type vars are not being marked as used.
+        , featuresUnusedMatches         = False }
 
 
 -- | Lex a string to tokens, using primitive names.
