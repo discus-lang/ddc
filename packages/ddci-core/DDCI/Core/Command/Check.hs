@@ -251,13 +251,13 @@ cmdExpRecon state source ss
 --   only loading an expression to check its type.
 --
 cmdParseCheckExp 
-        :: (Ord n, Show n, Pretty n, Pretty (err ()))
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
         => State                -- ^ Interpreter state.
         -> Fragment n err       -- ^ The current language fragment.
         -> Bool                 -- ^ Allow partial application of primitives.
         -> Source               -- ^ Where this expression was sourced from.
         -> String               -- ^ Text to parse.
-        -> IO (Maybe ( Exp () n
+        -> IO (Maybe ( Exp (AnTEC () n) n
                      , Type n, Effect n, Closure n))
 
 cmdParseCheckExp _state frag permitPartialPrims source str

@@ -7,6 +7,7 @@ import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Check
 import DDC.Base.Pretty
 import DDC.Data.Token
 import DDC.Core.Transform.Namify        (Namifier)
@@ -17,7 +18,7 @@ import DDC.Type.Env                     (Env)
 -- | Existential container for a language fragment, and the dictionaries
 --   we need to work with its type parameters.
 data Language
-        = forall n err. (Ord n, Show n, Pretty n, Pretty (err ()))
+        = forall n err. (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
         => Language (Fragment n err)
 
 deriving instance Show Language

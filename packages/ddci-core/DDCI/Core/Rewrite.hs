@@ -57,13 +57,16 @@ parseAdd str
                 Left err -> Left $ renderIndent $ ppr err
                 Right rule ->
 		  case checkRewriteRule primDataDefs primKindEnv primTypeEnv rule of
-		    Left err -> Left $ renderIndent $ ppr err
+		    Left err    -> Left  $ renderIndent $ ppr err
 		    Right rule' -> Right $ SetAdd name rule'
 
 
 -- | Display rule
-showRule :: State -> Int -> String -> RewriteRule () Name -> IO ()
+showRule :: State -> Int -> String -> RewriteRule a Name -> IO ()
 showRule state indentBy name rule
  = do	putStr $ (take indentBy $ repeat '\t') ++ name ++ " "
 	outDocLn state
 	 $  ppr rule
+
+
+

@@ -11,6 +11,7 @@ import DDCI.Core.State
 import DDC.Build.Language
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Name
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Simplifier
 import DDC.Core.Collect
 import DDC.Core.Check
@@ -33,8 +34,9 @@ cmdTrans state source str
          = do   return ()
 
         -- Expression is well-typed.
-        goStore (Just (x, t1, eff1, clo1))
-         = do   tr <- applyTrans state (x, t1, eff1, clo1)
+        goStore (Just (x_, t1, eff1, clo1))
+         = do   let x  = reannotate (const ()) x_
+                tr <- applyTrans state (x, t1, eff1, clo1)
 		case tr of
 		  Nothing -> return ()
 		  Just x' -> outDocLn state $ ppr x'
@@ -101,8 +103,9 @@ cmdTransEval state source str
          = do   return ()
 
         -- Expression is well-typed.
-        goStore (Just (x, t1, eff1, clo1))
-         = do   tr <- applyTrans state (x, t1, eff1, clo1)
+        goStore (Just (x_, t1, eff1, clo1))
+         = do   let x  = reannotate (const ()) x_
+                tr <- applyTrans state (x, t1, eff1, clo1)
 		case tr of
 		  Nothing -> return ()
 		  Just x'

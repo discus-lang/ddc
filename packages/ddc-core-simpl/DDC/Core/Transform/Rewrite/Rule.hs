@@ -11,6 +11,7 @@ import DDC.Base.Pretty
 import DDC.Core.Pretty()
 import DDC.Type.Pretty()
 import DDC.Core.Transform.Rewrite.Error
+import qualified DDC.Core.Transform.Reannotate  as C
 import qualified DDC.Core.Check.CheckExp        as C
 import qualified DDC.Core.Transform.SpreadX     as S
 import qualified DDC.Type.DataDef               as T
@@ -72,22 +73,36 @@ checkRewriteRule
     -> T.Env n                  -- ^ Type environment.
     -> RewriteRule a n	        -- ^ Rule to check
     -> Either (Error a n)
-	      (RewriteRule a n)
+	      (RewriteRule () n)
+
 checkRewriteRule defs kenv tenv
     (RewriteRule bs cs lhs rhs _ _)
  = do	let (kenv',tenv') = extendBinds bs kenv tenv
 	let cs' = map (S.spreadT kenv') cs
+
 	(lhs',tl,el,cl) <- check defs kenv' tenv' lhs ErrorTypeCheckLhs
 	(rhs',tr,er,cr) <- check defs kenv' tenv' rhs ErrorTypeCheckRhs
-	let err = ErrorTypeConflict (tl,el,cl) (tr,er,cr)
-	equiv tl tr err
-	e <- weaken T.kEffect el er err
-	c <- weaken T.kClosure cl cr err
-	return $ RewriteRule bs cs' lhs' rhs' e c
 
-extendBinds :: Ord n => [(BindMode, Bind n)] ->
-		T.Env n -> T.Env n ->
-		(T.Env n, T.Env n)
+	let err = ErrorTypeConflict (tl,el,cl) (tr,er,cr)
+
+	equiv tl tr err
+	e      <- weaken T.kEffect el er err
+	c      <- weaken T.kClosure cl cr err
+
+	return $ RewriteRule 
+                        bs cs' 
+                        (C.reannotate (const ()) lhs')
+                        (C.reannotate (const ()) rhs')
+                        e c
+
+
+extendBinds 
+        :: Ord n 
+        => [(BindMode, Bind n)] 
+        -> T.Env n 
+        -> T.Env n 
+        -> (T.Env n, T.Env n)
+
 extendBinds [] kenv tenv = (kenv,tenv)
 extendBinds ((bm,b):bs) ke te
  = let b' = S.spreadX ke te b in

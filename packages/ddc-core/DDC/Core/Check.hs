@@ -11,6 +11,9 @@ module DDC.Core.Check
         , checkWitness, typeOfWitness
         , typeOfWiCon
 
+          -- * Annotations
+        , AnTEC(..)
+
           -- * Error messages
         , Error(..))
 where

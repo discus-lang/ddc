@@ -59,7 +59,7 @@ compileDCE state source filePath
                 $  PipeTextLoadCore  fragmentSalt
                 [  PipeCoreSimplify  fragmentSalt
                                      (stateSimplifier state <> Simpl.anormalize)
-                [  PipeCoreCheck     fragmentSalt
+                [  PipeCoreReCheck   fragmentSalt
                 [  PipeCoreAsSalt
                 [  PipeSaltToLlvm   (buildSpec builder)
                 [  PipeLlvmCompile   

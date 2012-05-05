@@ -12,6 +12,7 @@ import DDC.Build.Language
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
@@ -36,10 +37,13 @@ cmdStep state source str
 
         -- Expression is well-typed.
         goStore (Just (x, tX, effX, cloX))
-         = let  -- Create the initial store.
-                store   = startingStoreForExp x
+         = let  -- The evaluator doesn't accept any annotations
+                x'      = reannotate (const ()) x
 
-           in   goStep store x tX effX cloX
+                -- Create the initial store.
+                store   = startingStoreForExp x'
+
+           in   goStep store x' tX effX cloX
 
         goStep store x tX effX cloX
          = do   _       <- forcePrint state store x tX effX cloX
@@ -62,21 +66,24 @@ cmdEval state source str
 
 -- | Evaluate an already parsed and type-checked expression.
 --   Exported so transforms can test with it.
-evalExp :: State -> (Exp () Name, Type Name, Effect Name, Closure Name) -> IO ()
+evalExp :: State -> (Exp a Name, Type Name, Effect Name, Closure Name) -> IO ()
 evalExp state (x, tX, effX, cloX)
- = do   -- Create the initial store.
-	let store = startingStoreForExp x
+ = do   -- The evaluator doesn't want any annotations
+        let x'    = reannotate (const ()) x
+
+        -- Create the initial store.
+	let store = startingStoreForExp x'
 
 	-- Print starting expression.
 	when (Set.member TraceEval  $ stateModes state)
-	 $ outDocLn state (text "* STEP: " <> ppr x)
+	 $ outDocLn state (text "* STEP: " <> ppr x')
 
 	-- Print starting store.
 	when (Set.member TraceStore $ stateModes state)
 	 $ do   putStrLn $ renderIndent $ ppr store
 		outStr   state "\n"
 
-	goStep store x
+	goStep store x'
 
     where
 	goStep store x0

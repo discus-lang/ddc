@@ -30,7 +30,7 @@ checkModule
         -> Env n                -- ^ Primitive kind environment.
         -> Env n                -- ^ Primitive type environment.
         -> Module a n           -- ^ Module to check.
-        -> Either (Error a n) (Module a n)
+        -> Either (Error a n) (Module (AnTEC a n) n)
 
 checkModule defs kenv tenv xx 
  = result $ checkModuleM defs kenv tenv xx
@@ -44,7 +44,7 @@ checkModuleM
         -> Env n                -- ^ Primitive kind environment.
         -> Env n                -- ^ Primitive type environment.
         -> Module a n           -- ^ Module to check.
-        -> CheckM a n (Module a n)
+        -> CheckM a n (Module (AnTEC a n) n)
 
 checkModuleM defs kenv tenv mm@ModuleCore{}
  = do   

@@ -1,7 +1,8 @@
 
 -- | Type checker for the Disciple Core language.
 module DDC.Core.Check.CheckExp
-        ( checkExp
+        ( AnTEC(..)
+        , checkExp
         , typeOfExp
         , CheckM
         , checkExpM
@@ -40,6 +41,19 @@ import Data.List                        as L
 import Data.Maybe
 
 
+-- Annot ----------------------------------------------------------------------
+data AnTEC a n
+        = Annot
+        { annotType     :: Type    n
+        , annotEffect   :: Effect  n
+        , annotClosure  :: Closure n 
+        , annotTail     :: a }
+        deriving Show
+
+instance Pretty (AnTEC a n) where
+ ppr _ = text "AnTEC"        
+
+
 -- Wrappers -------------------------------------------------------------------
 -- | Type check an expression. 
 --
@@ -57,7 +71,7 @@ checkExp
         -> Env n                -- ^ Type environment.
         -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n)
-                  ( Exp a n
+                  ( Exp (AnTEC a n) n
                   , Type n
                   , Effect n
                   , Closure n)
@@ -98,7 +112,7 @@ checkExpM
         -> Env n                -- ^ Type environment.
         -> Exp a n              -- ^ Expression to check.
         -> CheckM a n 
-                ( Exp a n
+                ( Exp (AnTEC a n) n
                 , Type n
                 , TypeSum n
                 , Set (TaggedClosure n))
@@ -164,14 +178,14 @@ checkExpM' _defs _kenv tenv (XVar a u)
              | otherwise
              = return tBound
         
-        tResult  <- mkResult
-        let u'  = replaceTypeOfBound tResult u
+        tResult         <- mkResult
+        let u'          = replaceTypeOfBound tResult u
 
-        return  ( XVar a u'
-                , tResult
-                , Sum.empty kEffect
-                , Set.singleton 
-                        $ taggedClosureOfValBound u')
+        returnX a 
+                (\z -> XVar z u')
+                tResult
+                (Sum.empty kEffect)
+                (Set.singleton $ taggedClosureOfValBound u')
 
 
 -- constructors ---------------------------------
@@ -180,17 +194,18 @@ checkExpM' defs _kenv _tenv xx@(XCon a u)
         = case Map.lookup n (dataDefsCtors defs) of
            Nothing -> throw $ ErrorUndefinedCtor xx
            Just _  
-            -> return  
-                  ( XCon a u
-                  , typeOfBound u
-                  , Sum.empty kEffect
-                  , Set.empty)
+            -> returnX a
+                (\z -> XCon z u)
+                (typeOfBound u)
+                (Sum.empty kEffect)
+                (Set.empty)
 
         | UPrim{}       <- u
-        = return  ( XCon a u
-                  , typeOfBound u
-                  , Sum.empty kEffect
-                  , Set.empty)
+        = returnX a 
+                (\z -> XCon z u)
+                (typeOfBound u)
+                (Sum.empty kEffect)
+                (Set.empty)
 
         -- Constructors can't be locally bound.
         | otherwise
@@ -205,10 +220,11 @@ checkExpM' defs kenv tenv xx@(XApp a x1 (XType t2))
         case t1 of
          TForall b11 t12
           | typeOfBind b11 == k2
-          -> return ( XApp a x1' (XType t2)  
-                    , substituteT b11 t2 t12
-                    , substituteT b11 t2 effs1
-                    , clos1 `Set.union` taggedClosureOfTyArg t2)
+          -> returnX a
+                (\z -> XApp z x1' (XType t2))
+                (substituteT b11 t2 t12)
+                (substituteT b11 t2 effs1)
+                (clos1 `Set.union` taggedClosureOfTyArg t2)
 
           | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
          _              -> throw $ ErrorAppNotFun   xx t1 t2
@@ -221,10 +237,9 @@ checkExpM' defs kenv tenv xx@(XApp a x1 (XWitness w2))
         case t1 of
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
           | t11 `equivT` t2   
-          -> return ( XApp a x1' (XWitness w2)
-                    , t12
-                    , effs1
-                    , clos1)
+          -> returnX a
+                (\z -> XApp z x1' (XWitness w2))
+                t12 effs1 clos1
 
           | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
          _              -> throw $ ErrorAppNotFun   xx t1 t2
@@ -241,10 +256,11 @@ checkExpM' defs kenv tenv xx@(XApp a x1 x2)
          TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFun)) t11) eff) _clo) t12
           | t11 `equivT` t2   
           , effs    <- Sum.fromList kEffect  [eff]
-          -> return ( XApp a x1' x2'
-                    , t12
-                    , effs1 `Sum.union` effs2 `Sum.union` effs
-                    , clos1 `Set.union` clos2)
+          -> returnX a
+                (\z -> XApp z x1' x2')
+                t12
+                (effs1 `Sum.union` effs2 `Sum.union` effs)
+                (clos1 `Set.union` clos2)
 
           | otherwise   -> throw $ ErrorAppMismatch xx t11 t2
          _              -> throw $ ErrorAppNotFun xx t1 t2
@@ -277,10 +293,11 @@ checkExpM' defs kenv tenv xx@(XLAM a b1 x2)
                         $ mapMaybe (cutTaggedClosureT b1)
                         $ Set.toList c2
 
-        return ( XLAM a b1 x2'
-               , TForall b1 t2
-               , Sum.empty kEffect
-               , c2_cut)
+        returnX a
+                (\z -> XLAM z b1 x2')
+                (TForall b1 t2)
+                (Sum.empty kEffect)
+                c2_cut
          
 
 -- function abstractions ------------------------
@@ -315,19 +332,21 @@ checkExpM' defs kenv tenv xx@(XLam a b1 x2)
                  Just c2_captured
                   = trimClosure $ closureOfTaggedSet c2_cut
 
-             in  return ( XLam a b1 x2'
-                        , tFun t1 (TSum e2) c2_captured t2
-                        , Sum.empty kEffect
-                        , c2_cut) 
+             in  returnX a
+                        (\z -> XLam z b1 x2')
+                        (tFun t1 (TSum e2) c2_captured t2)
+                        (Sum.empty kEffect)
+                        c2_cut
 
          Just UniverseWitness
           | e2 /= Sum.empty kEffect  -> throw $ ErrorLamNotPure     xx (TSum e2)
           | not $ isDataKind k2      -> throw $ ErrorLamBodyNotData xx b1 t2 k2
           | otherwise                
-          -> return ( XLam a b1 x2'
-                    , tImpl t1 t2
-                    , Sum.empty kEffect
-                    , c2)
+          -> returnX a
+                (\z -> XLam z b1 x2')
+                (tImpl t1 t2)
+                (Sum.empty kEffect)
+                c2
 
          _ -> throw $ ErrorMalformedType xx k1
 
@@ -358,10 +377,11 @@ checkExpM' defs kenv tenv xx@(XLet a lts x2)
                         $ mapMaybe (cutTaggedClosureXs bs')
                         $ Set.toList c2
 
-        return ( XLet a lts' x2'
-               , t2
-               , effs12 `Sum.union` effs2
-               , clo12  `Set.union` c2_cut)
+        returnX a
+                (\z -> XLet z lts' x2')
+                t2
+                (effs12 `Sum.union` effs2)
+                (clo12  `Set.union` c2_cut)
 
 
 -- letregion --------------------------------------
@@ -418,10 +438,11 @@ checkExpM' defs kenv tenv xx@(XLet a (LLetRegion b bs) x)
                         $ mapMaybe (cutTaggedClosureT b)
                         $ Set.toList clo
 
-        return  ( XLet a (LLetRegion b bs) xBody'
-                , lowerT 1 tBody
-                , lowerT 1 effs'
-                , c2_cut)
+        returnX a
+                (\z -> XLet z (LLetRegion b bs) xBody')
+                (lowerT 1 tBody)
+                (lowerT 1 effs')
+                c2_cut
 
 
 -- withregion -----------------------------------
@@ -453,10 +474,11 @@ checkExpM' defs kenv tenv xx@(XLet a (LWithRegion u) x)
         -- Delete the bound region handle from the closure.
         let clo_masked  = Set.delete (GBoundRgnCon u) clo
 
-        return  ( XLet a (LWithRegion u) xBody'
-                , tBody
-                , effs'
-                , clo_masked)
+        returnX a
+                (\z -> XLet z (LWithRegion u) xBody')
+                tBody
+                effs'
+                clo_masked
                 
 
 -- case expression ------------------------------
@@ -558,10 +580,11 @@ checkExpM' defs kenv tenv xx@(XCase a xDiscrim alts)
                 = Sum.singleton kEffect 
                 $ crushEffect $ tHeadRead tDiscrim
 
-        return  ( XCase a xDiscrim' alts'
-                , tAlt
-                , Sum.unions kEffect (effsDiscrim : effsMatch : effss)
-                , Set.unions         (closDiscrim : closs) )
+        returnX a
+                (\z -> XCase z xDiscrim' alts')
+                tAlt
+                (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
+                (Set.unions         (closDiscrim : closs))
 
 
 -- type cast -------------------------------------
@@ -576,10 +599,11 @@ checkExpM' defs kenv tenv xx@(XCast a c@(CastWeakenEffect eff) x1)
         -- Check the body.
         (x1', t1, effs, clo)    <- checkExpM defs kenv tenv x1
 
-        return  ( XCast a c x1'
-                , t1
-                , Sum.insert eff effs
-                , clo)
+        returnX a
+                (\z -> XCast z c x1')
+                t1
+                (Sum.insert eff effs)
+                clo
 
 
 -- Weaken a closure, adding in the given terms.
@@ -600,10 +624,11 @@ checkExpM' defs kenv tenv xx@(XCast a c@(CastWeakenClosure clo2) x1)
         -- Check the body.
         (x1', t1, effs, clos)   <- checkExpM defs kenv tenv x1
 
-        return  ( XCast a c x1'
-                , t1
-                , effs
-                , Set.union clos clos2)
+        returnX a
+                (\z -> XCast z c x1')
+                t1
+                effs
+                (Set.union clos clos2)
 
 
 -- Purify an effect, given a witness that it is pure.
@@ -616,10 +641,9 @@ checkExpM' defs kenv tenv xx@(XCast a c@(CastPurify w) x1)
                     -> return $ Sum.delete effMask effs
                   _ -> throw  $ ErrorWitnessNotPurity xx w tW
 
-        return  ( XCast a c x1'
-                , t1
-                , effs'
-                , clo)
+        returnX a
+                (\z -> XCast z c x1')
+                t1 effs' clo
 
 
 -- Forget a closure, given a witness that it is empty.
@@ -635,10 +659,9 @@ checkExpM' defs kenv tenv xx@(XCast a c@(CastForget w) x1)
 
                   _ -> throw $ ErrorWitnessNotEmpty xx w tW
 
-        return  ( XCast a c x1'
-                , t1
-                , effs
-                , clos')
+        returnX a
+                (\z -> XCast z c x1')
+                t1 effs clos'
 
 
 -- Type and witness expressions can only appear as the arguments 
@@ -652,6 +675,30 @@ checkExpM' _defs _kenv _tenv xx@(XWitness _)
 checkExpM' _ _ _ _
         = error "checkExpM: bogus warning killer"
 
+
+-- | Helper function for building the return value of checkExpM'
+--   It builts the AnTEC annotation and attaches it to the new AST node,
+--   as well as returning the current effect and closure in the appropriate
+--   form as part of the tuple.
+returnX :: Ord n 
+        => a
+        -> (AnTEC a n -> Exp (AnTEC a n) n)
+        -> Type n 
+        -> TypeSum n
+        -> Set (TaggedClosure n)
+        -> CheckM a n 
+                ( Exp (AnTEC a n) n
+                , Type n
+                , TypeSum n
+                , Set (TaggedClosure n))
+
+returnX a f t es cs
+ = let  e       = TSum es
+        c       = closureOfTaggedSet cs
+   in   return  (f (Annot t e c a)
+                , t, es, cs)
+
+
 -------------------------------------------------------------------------------
 -- | Check some let bindings.
 checkLetsM 
@@ -662,7 +709,7 @@ checkLetsM
         -> Env n
         -> Lets a n
         -> CheckM a n
-                ( Lets a n
+                ( Lets (AnTEC a n) n
                 , [Bind n]
                 , TypeSum n
                 , Set (TaggedClosure n))
@@ -787,7 +834,7 @@ checkAltM
         -> [Type n]             -- ^ Args to type constructor of discriminant.
         -> Alt a n              -- ^ Alternative to check.
         -> CheckM a n 
-                ( Alt a n
+                ( Alt (AnTEC a n) n
                 , Type n
                 , TypeSum n
                 , Set (TaggedClosure n))

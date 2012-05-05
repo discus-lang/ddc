@@ -35,6 +35,7 @@ import DDC.Core.Collect
 import DDC.Base.Pretty
 import DDC.Data.Canned
 import qualified DDC.Core.Fragment.Compliance   as C
+import qualified DDC.Core.Transform.Reannotate  as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
@@ -50,9 +51,9 @@ import Control.Monad
 -- Error ----------------------------------------------------------------------
 data Error
         = ErrorSaltLoad    (CL.Error Output.Name)
-        | ErrorSaltConvert (Output.Error ())
 
-        | ErrorLiteConvert  (Lite.Error ())
+        | forall err. Pretty err => ErrorSaltConvert err
+        | forall err. Pretty err => ErrorLiteConvert err
 
         -- | Error when loading a module.
         --   Blame it on the user.
@@ -97,7 +98,7 @@ data PipeText n (err :: * -> *) where
   PipeTextLoadCore 
         :: (Ord n, Show n, Pretty n)
         => Fragment n err
-        -> [PipeCore n]
+        -> [PipeCore (C.AnTEC () n) n]
         -> PipeText n err
 
 deriving instance Show (PipeText n err)
@@ -125,51 +126,59 @@ pipeText srcName srcLine str pp
 
 -- PipeCoreModule -------------------------------------------------------------
 -- | Process a core module.
-data PipeCore n where
+data PipeCore a n where
   -- Output a module to console or file.
   PipeCoreOutput    
         :: Sink 
-        -> PipeCore n
+        -> PipeCore a n
 
   -- Type check a module.
   PipeCoreCheck      
         :: Fragment n err
-        -> [PipeCore n]
-        -> PipeCore n
+        -> [PipeCore (C.AnTEC a n) n]
+        -> PipeCore a n
+
+  -- Type check a module, discarding previous per-node type annotations.
+  PipeCoreReCheck
+        :: Show a 
+        => Fragment n err
+        -> [PipeCore (C.AnTEC a n)  n]
+        -> PipeCore  (C.AnTEC a n') n
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
         :: Fragment n err
         -> Simplifier 
-        -> [PipeCore n] 
-        -> PipeCore n
+        -> [PipeCore a n] 
+        -> PipeCore a n
 
   -- Treat a module as belonging to the Core Lite fragment from now on.
   PipeCoreAsLite
         :: [PipeLite]
-        -> PipeCore Lite.Name
+        -> PipeCore (C.AnTEC () Lite.Name) Lite.Name
 
-  -- Treat a module as beloning to the Core Brine fragment from now on.
+  -- Treat a module as beloning to the Core Salt fragment from now on.
   PipeCoreAsSalt
-        :: [PipeSalt] 
-        -> PipeCore Output.Name
+        :: Pretty a 
+        => [PipeSalt] 
+        -> PipeCore a Output.Name
 
   -- Apply a canned function to a module.
   -- This is helpful for debugging, and tweaking the output before pretty printing.
   -- More reusable transforms should be made into their own pipeline stage.
   PipeCoreHacks
-        :: (Canned (C.Module () n -> IO (C.Module () n)))
-        -> [PipeCore n]
-        -> PipeCore n
+        :: Canned (C.Module a n -> IO (C.Module a n))
+        -> [PipeCore a n]
+        -> PipeCore a n
 
-deriving instance Show (PipeCore n)
+deriving instance Show (PipeCore a n)
 
 
 -- | Core module pipeline.
 pipeCore
-        :: (Eq n, Ord n, Show n, Pretty n)
-        => C.Module () n
-        -> PipeCore n
+        :: (Show a, Eq n, Ord n, Show n, Pretty n)
+        => C.Module a n
+        -> PipeCore a n
         -> IO [Error]
 
 pipeCore mm pp
@@ -194,6 +203,10 @@ pipeCore mm pp
                         Nothing    -> liftM concat $ mapM (pipeCore mm1) pipes
 
              in goCheck mm
+
+        PipeCoreReCheck fragment pipes
+         -> pipeCore (C.reannotate C.annotTail mm) 
+         $  PipeCoreCheck fragment pipes
 
         PipeCoreSimplify frag simpl pipes
          | Fragment _ _ _ _ _ makeNamifierT makeNamifierX nameZero <- frag
@@ -228,13 +241,14 @@ pipeCore mm pp
 -- | Process a Core Lite module.
 data PipeLite
         -- | Output the module in core language syntax.
-        = PipeLiteOutput    Sink
+        = PipeLiteOutput Sink
 
         -- | Convert the module to the Core Salt Fragment.
-        | PipeLiteToSalt     Salt.Platform [PipeCore Output.Name]
+        | PipeLiteToSalt Salt.Platform 
+                         [PipeCore (C.AnTEC () Lite.Name) Output.Name]
         deriving Show
 
-pipeLite :: C.Module () Lite.Name
+pipeLite :: C.Module (C.AnTEC () Lite.Name) Lite.Name
          -> PipeLite
          -> IO [Error]
 
@@ -266,7 +280,8 @@ data PipeSalt
 
 
 -- | Process a Core Salt module.
-pipeSalt  :: C.Module () Output.Name 
+pipeSalt  :: (Show a, Pretty a)
+          => C.Module a Output.Name 
           -> PipeSalt
           -> IO [Error]
 
@@ -293,7 +308,8 @@ pipeSalt mm pp
                  -> pipeSink (renderIndent doc)  sink
 
         PipeSaltToLlvm platform more
-         -> do  let mm'     =  Llvm.convertModule platform mm
+         -> do  let mm'     = Llvm.convertModule platform 
+                            $ C.reannotate (const ()) mm
                 results <- mapM (pipeLlvm mm') more
                 return  $ concat results
 

@@ -8,6 +8,7 @@ import DDC.Build.Pipeline
 import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
+import DDC.Core.Check
 import System.FilePath
 import DDC.Core.Simplifier.Recipie      as Simpl
 import qualified DDC.Core.Salt.Output   as A
@@ -47,7 +48,8 @@ cmdLiteToLlvm state source str builder
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
         [  PipeLiteToSalt       (buildSpec builder)
-        [  pipeCore_saltToLlvm state builder]]])
+        [  PipeCoreReCheck      fragmentSalt 
+        [  pipeCore_saltToLlvm state builder]]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
@@ -60,11 +62,11 @@ cmdSaltToLlvm state source str builder
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
-pipeCore_saltToLlvm :: State -> Builder -> PipeCore A.Name
+pipeCore_saltToLlvm :: Show a => State -> Builder -> PipeCore (AnTEC a A.Name) A.Name
 pipeCore_saltToLlvm state builder
-        = PipeCoreSimplify     fragmentSalt
+        =  PipeCoreSimplify    fragmentSalt
                                (stateSimplifier state <> Simpl.anormalize)
-        [  PipeCoreCheck       fragmentSalt
+        [  PipeCoreReCheck     fragmentSalt
         [  PipeCoreAsSalt
         [  PipeSaltToLlvm      (buildSpec builder)
         [  PipeLlvmPrint SinkStdout ]]]]

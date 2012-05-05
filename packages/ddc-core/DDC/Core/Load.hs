@@ -1,7 +1,8 @@
 
 -- | Parsing and type checking of core language constructs.
 module DDC.Core.Load
-        ( Error(..)
+        ( C.AnTEC (..)
+        , Error (..)
         , loadModule
         , loadType
         , loadWitness
@@ -59,7 +60,7 @@ loadModule
         => Profile n
         -> String 
         -> [Token (Tok n)] 
-        -> Either (Error n) (Module () n)
+        -> Either (Error n) (Module (C.AnTEC () n) n)
 
 loadModule profile sourceName toks'
  = goParse toks'
@@ -155,7 +156,7 @@ loadExp
         -> String 
         -> [Token (Tok n)] 
         -> Either (Error n) 
-                  (Exp () n, Type n, Effect n, Closure n)
+                  (Exp (C.AnTEC () n) n, Type n, Effect n, Closure n)   -- TODO: don't need to return TEC separately
 
 loadExp profile sourceName toks'
  = goParse toks'
