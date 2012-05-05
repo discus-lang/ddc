@@ -37,3 +37,32 @@ letrec {
 }
 
 
+-- Nested case-expressions.
+module Main with
+letrec {
+  addInt : Ptr# Obj -> Ptr# Obj -> Int32#
+    = \(x y : Ptr# Obj).
+      case getTag x of {
+        TAG0#  
+         -> let x0 : Addr# = payloadOfRawSmall x in
+            let i1 : Int32# = read# [Int32#] x0 0 in
+            case getTag y of {
+              TAG0#  
+               -> let x1 : Addr# = payloadOfRawSmall y in
+                  let i2 : Int32# = read# [Int32#] x1 0 in
+                  return# [Int32#] (add# [Int32#] i1 i2);
+              _ 
+               -> fail# [Int32#]
+            };
+        _ 
+         -> fail# [Int32#]
+      }
+}
+
+
+-- Boxed addition
+-- TODO: this doesn't work because the type of the I32# constructor
+--       isn't attached to it. convertT tries to convert the Bot annotation
+--       on I32#.
+Fragment violation when converting Lite module to Salt module.
+  Module is mistyped.

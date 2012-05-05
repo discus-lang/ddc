@@ -7,6 +7,7 @@ module DDC.Core.Salt.Lite.Convert
 where
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
+import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Type.Compounds
@@ -118,10 +119,7 @@ convertBodyX pp defs xx
         XVar a u
          -> do  let a'  = annotTail a
                 u'      <- convertU u
-
-                let xx' =  XVar a' u'
-                t'      <- convertT $ typeOfBound u
-                return  $  O.xReturn a' t' xx'
+                return  $  O.xReturn a' (typeOfBound u') (XVar a' u')
 
         XCon a u
          -> do  let a'  = annotTail a
@@ -144,25 +142,39 @@ convertBodyX pp defs xx
              Just UniverseWitness 
               -> convertBodyX pp defs x
 
-             _                    -> throw ErrorMistyped
+             _          -> error "toSaltX: unexpected binder" -- throw ErrorMistyped
 
-        XApp{}  -> error "toBrineX: XApp"
+        XApp (AnTEC t _ _ a') _ _
+         | x1 : xsArgs          <- takeXApps xx
+         , XVar _ UPrim{}       <- x1
+         -> do  t'      <- convertT t
+                x1'     <- convertArgX pp defs x1
+                xsArgs' <- mapM (convertArgX pp defs) xsArgs
+                return  $ O.xReturn a' t' 
+                        $ makeXApps a' x1' xsArgs'
+
+        XApp{}          -> error "toSaltX: XApp"
 
         XLet a (LRec bxs) x2
          -> do  let (bs, xs)    = unzip bxs
-                bs'             <- mapM convertB bs
-                xs'             <- mapM (convertBodyX pp defs) xs
-                x2'             <- convertBodyX pp defs x2
+                bs'     <- mapM convertB bs
+                xs'     <- mapM (convertBodyX pp defs) xs
+                x2'     <- convertBodyX pp defs x2
                 return $ XLet (annotTail a) (LRec $ zip bs' xs') x2'
 
-        XLet{}          -> error "toBrineX: XLet"
+        XLet a (LLet LetStrict b x1) x2
+         -> do  b'      <- convertB b
+                x1'     <- convertArgX  pp defs x1
+                x2'     <- convertBodyX pp defs x2
+                return  $ XLet (annotTail a) (LLet LetStrict b' x1') x2'
 
-        -- TODO: add default alternative to check for other tags
-        --       if there isn't one already.
+        XLet{} 
+         -> error "toSaltX: XLEt"
+
         XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
-         -> do  x'              <- convertArgX pp defs x
-                t'              <- convertT t
-                alts'           <- mapM (convertA pp defs a' uX) alts
+         -> do  x'      <- convertArgX pp defs x
+                t'      <- convertT t
+                alts'   <- mapM (convertA pp defs a' uX) alts
 
                 let asDefault
                         | any isPDefault [p | AAlt p _ <- alts]   
@@ -178,8 +190,8 @@ convertBodyX pp defs xx
 
         XCast _ _ x     -> convertBodyX pp defs x
 
-        XType{}         -> throw $ ErrorMistyped
-        XWitness{}      -> throw $ ErrorMistyped
+        XType _         -> throw ErrorMistyped
+        XWitness{}      -> throw ErrorMistyped
 
 
 
@@ -198,7 +210,7 @@ convertArgX pp defs xx
         XCon a u
          -> liftM fst $ convertC defs (annotTail a) u
 
-        XApp{}          -> error "toBrineX: XApp"
+        XApp{}          -> error "toSaltX: XApp"
         XCast _ _ x     -> convertArgX pp defs x
 
         -- Lambdas, should have been split out to top-level bindintg.
@@ -210,8 +222,8 @@ convertArgX pp defs xx
         XCase{}         -> throw ErrorNotNormalized 
 
         -- Types and witness arguments should have been discarded already.
-        XType{}         -> throw ErrorMistyped
-        XWitness{}      -> throw ErrorMistyped
+        XType t         -> liftM XType (convertT t)
+        XWitness{}      -> error "Xwitness as arg" -- throw ErrorMistyped
 
 
 -- Alt ------------------------------------------------------------------------
@@ -323,15 +335,29 @@ convertC _defs a uu
 
 
 -- Type -----------------------------------------------------------------------
-convertT :: Type L.Name -> ConvertM a (Type O.Name)
-convertT tt
+-- | Convert the type of a user-defined function or argument.
+convertT     :: Type L.Name -> ConvertM a (Type O.Name)
+convertT        = convertT' True
+
+-- | Convert the type of a primop.
+--   With primop types we need to keep quantifiers.
+convertPrimT :: Type L.Name -> ConvertM a (Type O.Name)
+convertPrimT    = convertT' False
+
+-- TODO: It would be better to decide what type arguments to erase 
+--       at the binding point of the function, and pass this information down
+--       into the tree while we're doing the main conversion.
+convertT' :: Bool -> Type L.Name -> ConvertM a (Type O.Name)
+convertT' stripForalls tt
   = case tt of
         -- Convert type variables an constructors.
         TVar u          -> liftM TVar (convertU u)
         TCon tc         -> convertTyCon tc
 
         -- Strip off foralls, as the Brine fragment doesn't care about quantifiers.
-        TForall _ t     -> convertT t
+        TForall b t     
+         | stripForalls -> convertT t
+         | otherwise    -> liftM2 TForall (convertB b) (convertPrimT t)
 
         TApp{}  
          -- Strip off effect and closure information.
@@ -364,13 +390,13 @@ convertTyCon tc
         TyConBound   _           -> return $ O.tPtr O.tObj
 
 
--- | Convert a primitive type constructor to Brine form.
+-- | Convert a primitive type constructor to Salt form.
 convertTyConPrim :: L.Name -> ConvertM a (Type O.Name)
 convertTyConPrim n
  = case n of
         L.NamePrimTyCon pc      
           -> return $ TCon $ TyConBound (UPrim (O.NamePrimTyCon pc) kData)
-        _ -> throw ErrorMistyped
+        _ -> error "toSaltX: unknown prim"
 
 
 -- Names ----------------------------------------------------------------------
@@ -387,7 +413,7 @@ convertU uu
   = case uu of
         UIx i t         -> liftM2 UIx   (return i) (convertT t)
         UName n t       -> liftM2 UName (convertBoundNameM n) (convertT t)
-        UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertT t)
+        UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertPrimT t)
         UHole   t       -> liftM  UHole (convertT t)
 
 
@@ -402,5 +428,6 @@ convertBoundNameM :: L.Name -> ConvertM a O.Name
 convertBoundNameM nn
  = case nn of
         L.NameVar str   -> return $ O.NameVar str
-        _               -> error "convertBoundName"
+        L.NamePrimOp op -> return $ O.NamePrim (O.PrimOp op)
+        _               -> error "toSaltX: convertBoundName"
 

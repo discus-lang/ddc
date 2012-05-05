@@ -7,26 +7,13 @@ imports {
 with letrec
 
 
-unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
- = case x of { I32# i -> i; _ -> 0i32# }
-
-head [r : %]
-        (xDefault : Int r) 
-        (xs : List r (Int r)) 
-        { Read r | Use r } : Int r
- = case xs of {
-        Cons x xs2      -> x ;
-        _               -> xDefault;
- }
-
-
---subInt [r1 r2 r3 : %] 
---        (x : Int r1) { !0 | Use r3 } 
---        (y : Int r2) { Read r1 + Read r2 | Use r1 + Use r3 }
---        : Int r3
--- =  case x of { I32# i1 
--- -> case y of { I32# i2 
--- -> I32# [r3] (sub# [Int32#] i1 i2) } }
+subInt [r1 r2 r3 : %] 
+        (x : Int r1) { !0 | Use r3 } 
+        (y : Int r2) { Read r1 + Read r2 | Use r1 + Use r3 }
+        : Int r3
+ =  case x of { I32# i1 
+ -> case y of { I32# i2 
+ -> I32# [r3] (sub# [Int32#] i1 i2) } }
 
 
 --mulInt [r1 r2 r3 : %] 
