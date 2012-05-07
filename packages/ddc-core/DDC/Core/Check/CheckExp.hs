@@ -178,8 +178,8 @@ checkExpM' _defs _kenv tenv (XVar a u)
              | otherwise
              = return tBound
         
-        tResult         <- mkResult
-        let u'          = replaceTypeOfBound tResult u
+        tResult <- mkResult
+        let u'  =  replaceTypeOfBound tResult u
 
         returnX a 
                 (\z -> XVar z u')
@@ -189,27 +189,51 @@ checkExpM' _defs _kenv tenv (XVar a u)
 
 
 -- constructors ---------------------------------
-checkExpM' defs _kenv _tenv xx@(XCon a u)
-        | UName n _     <- u
-        = case Map.lookup n (dataDefsCtors defs) of
-           Nothing -> throw $ ErrorUndefinedCtor xx
-           Just _  
-            -> returnX a
-                (\z -> XCon z u)
-                (typeOfBound u)
+checkExpM' defs _kenv tenv xx@(XCon a u)
+ = do   let tBound      = typeOfBound u
+        let mtEnv       = Env.lookup u tenv
+        let mkResult
+                -- Constructors can't be locally bound
+                | UIx{}         <- u
+                = throw $ ErrorMalformedExp xx
+
+                | UHole{}       <- u
+                = throw $ ErrorMalformedExp xx
+
+                -- Named constructors must be in the defs set.
+                | UName n _      <- u
+                , Nothing        <- Map.lookup n (dataDefsCtors defs)
+                = throw $ ErrorUndefinedCtor xx
+
+                -- Prim constructors don't need to be in the environment.
+                -- This is used for location constructor like L1# in the evaluator.
+                | UPrim{}        <- u
+                , not $ isBot tBound
+                = return tBound
+
+                -- When the annotation on the constructor is bot,
+                -- then just use the type from the environment.
+                | Just  tEnv     <- mtEnv
+                , isBot tBound
+                = return tEnv
+
+                -- Type on bound matches the one in the environment.
+                | Just tEnv      <- mtEnv
+                , equivT tBound tEnv
+                = return tEnv
+
+                -- Constructors can't be locally bound.
+                | otherwise
+                = throw $ ErrorMalformedExp xx
+
+        tResult <- mkResult
+        let u'  = replaceTypeOfBound tResult u
+
+        returnX a
+                (\z -> XCon z u')
+                tResult
                 (Sum.empty kEffect)
                 (Set.empty)
-
-        | UPrim{}       <- u
-        = returnX a 
-                (\z -> XCon z u)
-                (typeOfBound u)
-                (Sum.empty kEffect)
-                (Set.empty)
-
-        -- Constructors can't be locally bound.
-        | otherwise
-        = throw $ ErrorMalformedExp xx
 
 
 -- application ------------------------------------

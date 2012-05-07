@@ -30,7 +30,7 @@ unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
 :to-salt..
 module Main with letrec
 addInt [r1 r2 r3 : %] 
-        (x : Int r1) { !0 | $0} 
+        (x : Int r1) { !0 | $0 } 
         (y : Int r2) { Read r1 + Read r2 | Use r1 }
         : Int32#
  =  case x of { I32# i1 
@@ -40,16 +40,14 @@ addInt [r1 r2 r3 : %]
 
 
 -- Boxed addition
--- TODO: this doesn't work because the type of the I32# constructor
---       isn't attached to it. convertT tries to convert the Bot annotation
---       on I32#.
-:to-salt..
-module Main with letrec
-addInt [r1 r2 r3 : %] 
-        (x : Int r1) { !0 | Use r3 } 
-        (y : Int r2) { Read r1 + Read r2 | Use r1 + Use r3}
-        : Int r3
- =  case x of { I32# i1 
- -> case y of { I32# i2 
- -> I32# [r3] (add# [Int32#] i1 i2) } }
-;;
+-- TODO: this doesn't work yet.
+--:to-salt..
+--module Main with letrec
+--addInt [r1 r2 r3 : %] 
+--        (x : Int r1) { !0 | Use r3 } 
+--        (y : Int r2) { Read r1 + Read r2 | Use r1 + Use r3}
+--        : Int r3
+-- =  case x of { I32# i1 
+-- -> case y of { I32# i2 
+-- -> I32# [r3] (add# [Int32#] i1 i2) } }
+--;;

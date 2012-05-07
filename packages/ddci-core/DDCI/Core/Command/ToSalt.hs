@@ -45,6 +45,7 @@ cmdLiteToSalt state source builder str
  = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreSimplify     fragmentLite (Simpl.anormalize)
+        [  PipeCoreReCheck      fragmentLite 
         [  PipeCoreAsLite
         [  PipeLiteToSalt       (buildSpec builder)
 
@@ -55,5 +56,5 @@ cmdLiteToSalt state source builder str
 
         [  PipeCoreCheck        fragmentSalt
         [  PipeCoreHacks        (Canned (suppressModule state))
-        [  PipeCoreOutput       SinkStdout ]]]]]]])
+        [  PipeCoreOutput       SinkStdout ]]]]]]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)

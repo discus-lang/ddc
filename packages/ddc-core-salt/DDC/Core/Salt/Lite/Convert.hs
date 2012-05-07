@@ -13,6 +13,7 @@ import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Universe
 import DDC.Type.DataDef
+import DDC.Type.Predicates
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad                     (throw, result)
 import DDC.Core.Check                           (AnTEC(..))
@@ -36,14 +37,15 @@ import Control.Monad
 --   TODO: Expand partial and over-applications into code that explicitly builds
 --         and applies thunks.
 --
---   The input module needs to be well typed, and have all functions defined at
---   top-level, and be a-normalised. If not then `Error`.
+--   The input module needs to be well typed, have type annotations on every bound
+--   variable and constructor, have all functions defined at top-level, 
+--   and be a-normalised. If not then `Error`.
 --
 --   The output code contains debruijn indices which need to be eliminateed before
 --   it will pass the Salt fragment checks.
 --
 toSalt
-        :: Show a 
+        :: Show a
         => Platform
         -> DataDefs L.Name
         -> Module (AnTEC a L.Name) L.Name 
@@ -58,27 +60,38 @@ type ConvertM a x = G.CheckM (Error a) x
 -- | Things that can go wrong during the conversion.
 data Error a
         -- | The program is definately not well typed.
-        = ErrorMistyped 
+        = ErrorMistyped  (Exp (AnTEC a L.Name) L.Name)
 
         -- | The program wasn't in a-normal form.
         | ErrorNotNormalized
+
+        -- | The program has bottom type annotations.
+        | ErrorBotAnnot
+
+        -- | Found unexpected type sum.
+        | ErrorUnexpectedSum
 
         -- | An invalid name used in a binding position
         | ErrorInvalidBinder L.Name
 
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
-        deriving Show
 
 
-instance Pretty (Error a) where
+instance Show a => Pretty (Error a) where
  ppr err
   = case err of
-        ErrorMistyped
-         -> vcat [ text "Module is mistyped."]
+        ErrorMistyped xx
+         -> vcat [ text "Module is mistyped." <> (text $ show xx) ]
 
         ErrorNotNormalized
          -> vcat [ text "Module is not in a-normal form."]
+
+        ErrorBotAnnot
+         -> vcat [ text "Found bottom type annotation."]
+
+        ErrorUnexpectedSum
+         -> vcat [ text "Unexpected type sum."]
 
         ErrorInvalidBinder n
          -> vcat [ text "Invalid name used in bidner " <> ppr n ]
@@ -89,7 +102,8 @@ instance Pretty (Error a) where
 
 -- Module ---------------------------------------------------------------------
 convertM 
-        :: Platform
+        :: Show a
+        => Platform
         -> DataDefs L.Name 
         -> Module (AnTEC a L.Name) L.Name 
         -> ConvertM a (Module a O.Name)
@@ -109,7 +123,8 @@ convertM pp defsPrim mm
 
 -- Exp -------------------------------------------------------------------------
 convertBodyX 
-        :: Platform
+        :: Show a 
+        => Platform
         -> DataDefs L.Name 
         -> Exp (AnTEC a L.Name) L.Name 
         -> ConvertM a (Exp a O.Name)
@@ -190,14 +205,15 @@ convertBodyX pp defs xx
 
         XCast _ _ x     -> convertBodyX pp defs x
 
-        XType _         -> throw ErrorMistyped
-        XWitness{}      -> throw ErrorMistyped
+        XType _         -> throw $ ErrorMistyped xx
+        XWitness{}      -> throw $ ErrorMistyped xx
 
 
 
 -- | Convert a function argument.
 convertArgX
-        :: Platform
+        :: Show a 
+        => Platform
         -> DataDefs L.Name
         -> Exp (AnTEC a L.Name) L.Name
         -> ConvertM a (Exp a O.Name)
@@ -228,7 +244,8 @@ convertArgX pp defs xx
 
 -- Alt ------------------------------------------------------------------------
 convertA 
-        :: Platform
+        :: Show a
+        => Platform
         -> DataDefs L.Name 
         -> a
         -> Bound L.Name 
@@ -319,7 +336,8 @@ bindCtorFields pp a uScrut ctorDef bsFields xBody
 
 
 -- Data Constructor -----------------------------------------------------------
-convertC :: DataDefs L.Name
+convertC :: Show a
+         => DataDefs L.Name
          -> a 
          -> Bound L.Name 
          -> ConvertM a (Exp a O.Name, Type O.Name)
@@ -349,7 +367,7 @@ convertPrimT    = convertT' False
 --       into the tree while we're doing the main conversion.
 convertT' :: Bool -> Type L.Name -> ConvertM a (Type O.Name)
 convertT' stripForalls tt
-  = case tt of
+ = case tt of
         -- Convert type variables an constructors.
         TVar u          -> liftM TVar (convertU u)
         TCon tc         -> convertTyCon tc
@@ -368,9 +386,10 @@ convertT' stripForalls tt
          | otherwise
          -> return $ O.tPtr O.tObj
 
-        -- We shouldn't find any TSums, as they should be thrown away by
-        -- toBrineType above. We also don't call this converter on witness types.
-        TSum{}          -> throw ErrorMistyped
+        -- We shouldn't find any TSums.
+        TSum{}          
+         | isBot tt     -> throw $ ErrorBotAnnot
+         | otherwise    -> throw $ ErrorUnexpectedSum
 
 
 -- | Convert a simple type constructor to a Brine type.
