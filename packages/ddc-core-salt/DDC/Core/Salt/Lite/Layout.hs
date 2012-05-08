@@ -5,7 +5,8 @@ module DDC.Core.Salt.Lite.Layout
           HeapObject(..)
         , heapObjectOfDataCtor
 
-          -- * Field Offsets
+          -- * Fields
+        , payloadSizeOfDataCtor
         , fieldOffsetsOfDataCtor
 
           -- * Field types
@@ -57,12 +58,25 @@ heapObjectOfDataCtor ctor
 
 
 -- Field Layout ---------------------------------------------------------------
+-- | Get the size of the payload for this data constructor.
+--   The payload holds all the fields, but does not include
+--   header information such as the constructor tag.
+--
+payloadSizeOfDataCtor :: Platform -> DataCtor Name -> Maybe Integer     -- TODO: insert padding for misaligned fields.
+payloadSizeOfDataCtor platform ctor
+        = liftM sum
+        $ sequence
+        $ map (fieldSizeOfType platform)
+        $ dataCtorFieldTypes ctor
+
+
 -- | Given a constructor definition,
 --   get the offset of each field in the payload of a heap object.
 --
 --   We don't know the offset from the start of the overall object, 
 --   because the size of the header is only known by the runtime system.
-fieldOffsetsOfDataCtor :: Platform -> DataCtor Name -> Maybe [Integer]
+--
+fieldOffsetsOfDataCtor :: Platform -> DataCtor Name -> Maybe [Integer]  -- TODO: insert padding for misaligned fields. 
 fieldOffsetsOfDataCtor platform ctor
         = liftM (init . scanl (+) 0)
         $ sequence 

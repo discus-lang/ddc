@@ -11,6 +11,7 @@ module DDC.Core.Salt.Output.Runtime
         , runtimeImportSigs
         , xGetTag
         , xFieldOfBoxed
+        , xAllocRawSmall
         , xPayloadOfRawSmall)
 where
 import DDC.Core.Module
@@ -61,6 +62,7 @@ runtimeImportSigs
         = Map.fromList
         [ rn (NameVar "getTag")                 tGetTag
         , rn (NameVar "fieldOfBoxed")           tFieldOfBoxed
+        , rn (NameVar "allocRawSmall")          tAllocRawSmall
         , rn (NameVar "payloadOfRawSmall")      tPayloadOfRawSmall ]
         where   rn n t  = (n, (QualName (ModuleName ["Runtime"]) n, t))
 
@@ -82,6 +84,19 @@ xFieldOfBoxed a x2 offset
 
 tFieldOfBoxed :: Type Name
 tFieldOfBoxed   = tPtr tObj `tFunPE` tNat `tFunPE` tPtr tObj
+
+
+-- RawSmall ---------------------------
+-- | Allocate a RawSmall object.
+xAllocRawSmall :: a -> Integer -> Exp a Name -> Exp a Name
+xAllocRawSmall a tag x2
+        = XApp a (XApp a (XVar a u) (XCon a (UPrim (NameTag tag) tTag))) x2
+        where u = UName (NameVar "allocRawSmall") tAllocRawSmall
+
+
+tAllocRawSmall :: Type Name
+tAllocRawSmall
+        = tTag `tFunPE` tNat `tFunPE` tPtr tObj
 
 
 -- | Get the address of the payload of a RawSmall object.

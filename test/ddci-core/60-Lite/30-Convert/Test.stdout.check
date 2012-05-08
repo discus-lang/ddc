@@ -62,13 +62,24 @@ letrec {
 
 -- Boxed addition
 -- TODO: this doesn't work yet.
---:to-salt..
---module Main with letrec
---addInt [r1 r2 r3 : %] 
---        (x : Int r1) { !0 | Use r3 } 
---        (y : Int r2) { Read r1 + Read r2 | Use r1 + Use r3}
---        : Int r3
--- =  case x of { I32# i1 
--- -> case y of { I32# i2 
--- -> I32# [r3] (add# [Int32#] i1 i2) } }
---;;
+module Main with
+letrec {
+  addInt : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+    = \(x y : Ptr# Obj).
+      case getTag x of {
+        TAG0#  
+         -> let x1 : Addr# = payloadOfRawSmall x in
+            let i1 : Int32# = read# [Int32#] x1 0 in
+            case getTag y of {
+              TAG0#  
+               -> let x2 : Addr# = payloadOfRawSmall y in
+                  let i2 : Int32# = read# [Int32#] x2 0 in
+                  let x0 : Int32# = add# [Int32#] i1 i2 in
+                  return# [Ptr# Obj] (allocRawSmall TAG0# 4);
+              _ 
+               -> fail# [Ptr# Obj]
+            };
+        _ 
+         -> fail# [Ptr# Obj]
+      }
+}

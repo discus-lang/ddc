@@ -75,7 +75,7 @@ data DataCtor n
           dataCtorName       :: n
 
           -- | Tag of constructor (order in data type declaration)
-        , dataCtorTag        :: Int
+        , dataCtorTag        :: Integer
 
           -- | Field types of constructor.
         , dataCtorFieldTypes :: [Type n]

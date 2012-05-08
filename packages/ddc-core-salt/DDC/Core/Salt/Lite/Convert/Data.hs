@@ -21,14 +21,30 @@ import qualified DDC.Core.Salt.Output.Env       as O
 constructData
         :: Show a
         => Platform
-        -> DataDefs L.Name
-        -> L.Name
+        -> a
+        -> DataCtor L.Name
         -> [Exp a O.Name]
         -> ConvertM a (Exp a O.Name)
 
-constructData _pp _defs nCtor _xsArgs 
- = error $ "constructData: not finished" ++ show nCtor
+constructData pp a ctorDef _xsArgs 
 
+ | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
+ = error $ "constructData: not finished boxed"
+
+ | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
+ , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
+ , Just _offsets                <- L.fieldOffsetsOfDataCtor pp ctorDef
+ = do   
+        -- Allocate the object
+--        let bObject     = BAnon (O.tPtr O.tObj)
+        let xAlloc      = O.xAllocRawSmall a (dataCtorTag ctorDef)
+                        $ XCon a (UPrim (O.NameNat size) O.tNat)
+
+        return  xAlloc                                                          -- TODO: write the fields.
+
+ | otherwise
+ = error $ "constructData: don't know how to construct a " 
+         ++ (show $ dataCtorName ctorDef)
 
 
 -- | Wrap a expression in let-bindings that binds the fields of a data 

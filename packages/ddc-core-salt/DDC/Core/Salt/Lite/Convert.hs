@@ -183,17 +183,19 @@ convertArgX pp defs xx
                 return  $ makeXApps (annotTail a) x1' xsArgs'
 
         -- Primitive data constructors.
-        XApp (AnTEC _t _ _ _a') _ _
+        XApp (AnTEC _t _ _ a') _ _
          | x1 : xs                <- takeXApps xx
          , XCon _ (UPrim nCtor _) <- x1
+         , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  xs'     <- mapM (convertArgX pp defs) xs
-                constructData pp defs nCtor xs'
+                constructData pp a' ctorDef xs'
 
-        XApp (AnTEC _t _ _ _a') _ _
+        XApp (AnTEC _t _ _ a') _ _
          | x1 : xs                <- takeXApps xx
          , XCon _ (UName nCtor _) <- x1
+         , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  xs'     <- mapM (convertArgX pp defs) xs
-                constructData pp defs nCtor xs'
+                constructData pp a' ctorDef xs'
 
         XApp (AnTEC _t _ _ _a') _ _
          | x1 : _xsArgs          <- takeXApps xx
