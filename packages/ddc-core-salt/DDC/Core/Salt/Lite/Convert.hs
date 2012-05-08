@@ -5,6 +5,9 @@ module DDC.Core.Salt.Lite.Convert
         ( toSalt
         , Error(..))
 where
+import DDC.Core.Salt.Lite.Convert.Data
+import DDC.Core.Salt.Lite.Convert.Type
+import DDC.Core.Salt.Lite.Convert.Base
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
 import DDC.Core.Compounds
@@ -13,12 +16,8 @@ import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Universe
 import DDC.Type.DataDef
-import DDC.Type.Predicates
-import DDC.Base.Pretty
 import DDC.Type.Check.Monad                     (throw, result)
 import DDC.Core.Check                           (AnTEC(..))
-import qualified DDC.Type.Check.Monad           as G
-import qualified DDC.Core.Salt.Lite.Layout      as L
 import qualified DDC.Core.Salt.Lite.Name        as L
 import qualified DDC.Core.Salt.Output.Runtime   as O
 import qualified DDC.Core.Salt.Output.Name      as O
@@ -53,51 +52,6 @@ toSalt
 toSalt pp defs mm
  = result $ convertM pp defs mm
 
--- | Conversion Monad
-type ConvertM a x = G.CheckM (Error a) x
-
-
--- | Things that can go wrong during the conversion.
-data Error a
-        -- | The program is definately not well typed.
-        = ErrorMistyped  (Exp (AnTEC a L.Name) L.Name)
-
-        -- | The program wasn't in a-normal form.
-        | ErrorNotNormalized
-
-        -- | The program has bottom type annotations.
-        | ErrorBotAnnot
-
-        -- | Found unexpected type sum.
-        | ErrorUnexpectedSum
-
-        -- | An invalid name used in a binding position
-        | ErrorInvalidBinder L.Name
-
-        -- | An invalid name used for the constructor of an alternative.
-        | ErrorInvalidAlt
-
-
-instance Show a => Pretty (Error a) where
- ppr err
-  = case err of
-        ErrorMistyped xx
-         -> vcat [ text "Module is mistyped." <> (text $ show xx) ]
-
-        ErrorNotNormalized
-         -> vcat [ text "Module is not in a-normal form."]
-
-        ErrorBotAnnot
-         -> vcat [ text "Found bottom type annotation."]
-
-        ErrorUnexpectedSum
-         -> vcat [ text "Unexpected type sum."]
-
-        ErrorInvalidBinder n
-         -> vcat [ text "Invalid name used in bidner " <> ppr n ]
-
-        ErrorInvalidAlt
-         -> vcat [ text "Invalid alternative" ]
 
 
 -- Module ---------------------------------------------------------------------
@@ -160,15 +114,9 @@ convertBodyX pp defs xx
              _          -> error "toSaltX: unexpected binder" -- throw ErrorMistyped
 
         XApp (AnTEC t _ _ a') _ _
-         | x1 : xsArgs          <- takeXApps xx
-         , XVar _ UPrim{}       <- x1
          -> do  t'      <- convertT t
-                x1'     <- convertArgX pp defs x1
-                xsArgs' <- mapM (convertArgX pp defs) xsArgs
-                return  $ O.xReturn a' t' 
-                        $ makeXApps a' x1' xsArgs'
-
-        XApp{}          -> error "toSaltX: XApp"
+                x'      <- convertArgX pp defs xx
+                return  $ O.xReturn a' t' x'
 
         XLet a (LRec bxs) x2
          -> do  let (bs, xs)    = unzip bxs
@@ -210,7 +158,7 @@ convertBodyX pp defs xx
 
 
 
--- | Convert a function argument.
+-- | Convert a function argument or let binding RHS.
 convertArgX
         :: Show a 
         => Platform
@@ -226,7 +174,36 @@ convertArgX pp defs xx
         XCon a u
          -> liftM fst $ convertC defs (annotTail a) u
 
-        XApp{}          -> error "toSaltX: XApp"
+        -- Primitive operations.
+        XApp a _ _
+         | x1 : xsArgs          <- takeXApps xx
+         , XVar _ UPrim{}       <- x1
+         -> do  x1'     <- convertArgX pp defs x1
+                xsArgs' <- mapM (convertArgX pp defs) xsArgs
+                return  $ makeXApps (annotTail a) x1' xsArgs'
+
+        -- Primitive data constructors.
+        XApp (AnTEC _t _ _ _a') _ _
+         | x1 : xs                <- takeXApps xx
+         , XCon _ (UPrim nCtor _) <- x1
+         -> do  xs'     <- mapM (convertArgX pp defs) xs
+                constructData pp defs nCtor xs'
+
+        XApp (AnTEC _t _ _ _a') _ _
+         | x1 : xs                <- takeXApps xx
+         , XCon _ (UName nCtor _) <- x1
+         -> do  xs'     <- mapM (convertArgX pp defs) xs
+                constructData pp defs nCtor xs'
+
+        XApp (AnTEC _t _ _ _a') _ _
+         | x1 : _xsArgs          <- takeXApps xx
+         -> error $ "toSaltX: XApp " ++ show x1
+
+
+        XApp{}          
+         -> error $ "toSaltX convertArg: " ++ show xx
+
+
         XCast _ _ x     -> convertArgX pp defs x
 
         -- Lambdas, should have been split out to top-level bindintg.
@@ -240,6 +217,7 @@ convertArgX pp defs xx
         -- Types and witness arguments should have been discarded already.
         XType t         -> liftM XType (convertT t)
         XWitness{}      -> error "Xwitness as arg" -- throw ErrorMistyped
+
 
 
 -- Alt ------------------------------------------------------------------------
@@ -279,60 +257,13 @@ convertA pp defs a uScrut alt
                 xBody1          <- convertBodyX pp defs x
 
                 -- Let bindings to unpack the constructor
-                xBody2          <- bindCtorFields pp a uScrut' ctorDef bsFields' xBody1
+                xBody2          <- destructData pp a uScrut' ctorDef bsFields' xBody1
 
                 return  $ AAlt (PData uTag []) xBody2
 
 
         AAlt{}          -> throw ErrorInvalidAlt
 
-
--- | Wrap an body expression let-binding which bind the fields of a 
---   data constructor.
-bindCtorFields 
-        :: Platform 
-        -> a
-        -> Bound O.Name         -- ^ Bound of Scruitinee.
-        -> DataCtor L.Name      -- ^ Definition of the data constructor to unpack
-        -> [Bind O.Name]        -- ^ Binders for each of the fields.
-        -> Exp a O.Name         -- ^ Body expression that uses the field binders.
-        -> ConvertM a (Exp a O.Name)
-
-bindCtorFields pp a uScrut ctorDef bsFields xBody
-
- | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
- = do   
-        -- Bind pattern variables to each of the fields.
-        let lsFields    = [ LLet LetStrict bField 
-                                (O.xFieldOfBoxed a (XVar a uScrut) ix)
-                                | bField        <- bsFields
-                                | ix            <- [0..] ]
-
-        return  $ foldr (XLet a) xBody lsFields
-
- | Just L.HeapObjectRawSmall <- L.heapObjectOfDataCtor ctorDef
- , Just offsets              <- L.fieldOffsetsOfDataCtor pp ctorDef
- = do   
-        -- Get the address of the payload.
-        let bPayload    = BAnon O.tAddr
-        let xPayload    = O.xPayloadOfRawSmall a (XVar a uScrut)
-
-        -- Bind pattern variables to the fields.
-        let uPayload    = UIx 0 O.tAddr
-        let lsFields    = [ LLet LetStrict bField 
-                                (O.xRead a tField (XVar a uPayload) offset) 
-                                | bField        <- bsFields
-                                | tField        <- map typeOfBind bsFields
-                                | offset        <- offsets ]
-
-        -- TODO: lift body expression
-        return  $ foldr (XLet a) xBody
-                $ LLet LetStrict bPayload xPayload
-                : lsFields
-
-
- | otherwise
- = throw ErrorInvalidAlt
 
 
 -- Data Constructor -----------------------------------------------------------
@@ -351,102 +282,4 @@ convertC _defs a uu
         -- TODO: expand out code to construct algebraic data.
         _ -> error "convertC"
 
-
--- Type -----------------------------------------------------------------------
--- | Convert the type of a user-defined function or argument.
-convertT     :: Type L.Name -> ConvertM a (Type O.Name)
-convertT        = convertT' True
-
--- | Convert the type of a primop.
---   With primop types we need to keep quantifiers.
-convertPrimT :: Type L.Name -> ConvertM a (Type O.Name)
-convertPrimT    = convertT' False
-
--- TODO: It would be better to decide what type arguments to erase 
---       at the binding point of the function, and pass this information down
---       into the tree while we're doing the main conversion.
-convertT' :: Bool -> Type L.Name -> ConvertM a (Type O.Name)
-convertT' stripForalls tt
- = case tt of
-        -- Convert type variables an constructors.
-        TVar u          -> liftM TVar (convertU u)
-        TCon tc         -> convertTyCon tc
-
-        -- Strip off foralls, as the Brine fragment doesn't care about quantifiers.
-        TForall b t     
-         | stripForalls -> convertT t
-         | otherwise    -> liftM2 TForall (convertB b) (convertPrimT t)
-
-        TApp{}  
-         -- Strip off effect and closure information.
-         |  Just (t1, _, _, t2)  <- takeTFun tt
-         -> liftM2 tFunPE (convertT t1) (convertT t2)
-
-         -- Boxed data values are represented in generic form.
-         | otherwise
-         -> return $ O.tPtr O.tObj
-
-        -- We shouldn't find any TSums.
-        TSum{}          
-         | isBot tt     -> throw $ ErrorBotAnnot
-         | otherwise    -> throw $ ErrorUnexpectedSum
-
-
--- | Convert a simple type constructor to a Brine type.
-convertTyCon :: TyCon L.Name -> ConvertM a (Type O.Name)
-convertTyCon tc
- = case tc of
-        -- Higher universe constructors are passed through unharmed.
-        TyConSort    c           -> return $ TCon $ TyConSort    c 
-        TyConKind    c           -> return $ TCon $ TyConKind    c 
-        TyConWitness c           -> return $ TCon $ TyConWitness c 
-        TyConSpec    c           -> return $ TCon $ TyConSpec    c 
-
-        -- Convert primitive TyCons to Brine form.
-        TyConBound   (UPrim n _) -> convertTyConPrim n
-
-        -- Boxed data values are represented in generic form.
-        TyConBound   _           -> return $ O.tPtr O.tObj
-
-
--- | Convert a primitive type constructor to Salt form.
-convertTyConPrim :: L.Name -> ConvertM a (Type O.Name)
-convertTyConPrim n
- = case n of
-        L.NamePrimTyCon pc      
-          -> return $ TCon $ TyConBound (UPrim (O.NamePrimTyCon pc) kData)
-        _ -> error "toSaltX: unknown prim"
-
-
--- Names ----------------------------------------------------------------------
-convertB :: Bind L.Name -> ConvertM a (Bind O.Name)
-convertB bb
-  = case bb of
-        BNone t         -> liftM  BNone (convertT t)        
-        BAnon t         -> liftM  BAnon (convertT t)
-        BName n t       -> liftM2 BName (convertBindNameM n) (convertT t)
-
-
-convertU :: Bound L.Name -> ConvertM a (Bound O.Name)
-convertU uu
-  = case uu of
-        UIx i t         -> liftM2 UIx   (return i) (convertT t)
-        UName n t       -> liftM2 UName (convertBoundNameM n) (convertT t)
-        UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertPrimT t)
-        UHole   t       -> liftM  UHole (convertT t)
-
-
-convertBindNameM :: L.Name -> ConvertM a O.Name
-convertBindNameM nn
- = case nn of
-        L.NameVar str   -> return $ O.NameVar str
-        _               -> throw $ ErrorInvalidBinder nn
-
-
-convertBoundNameM :: L.Name -> ConvertM a O.Name
-convertBoundNameM nn
- = case nn of
-        L.NameVar str   -> return $ O.NameVar str
-        L.NamePrimOp op -> return $ O.NamePrim (O.PrimOp op)
-        _               -> error "toSaltX: convertBoundName"
 
