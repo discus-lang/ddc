@@ -92,8 +92,8 @@ convertBodyX pp defs xx
 
         XCon a u
          -> do  let a'  = annotTail a
-                (xx', t') <- convertC defs a' u
-                return  $  O.xReturn a' t' xx'
+                (xx', _) <- convertC defs a' u
+                return  xx'
 
         -- Strip out type lambdas.
         XLAM _ _ x
@@ -113,10 +113,9 @@ convertBodyX pp defs xx
 
              _          -> error "toSaltX: unexpected binder" -- throw ErrorMistyped
 
-        XApp (AnTEC t _ _ a') _ _
-         -> do  t'      <- convertT t
-                x'      <- convertArgX pp defs xx
-                return  $ O.xReturn a' t' x'
+        XApp{}
+         -> do  x'      <- convertArgX pp defs xx
+                return  $ x'
 
         XLet a (LRec bxs) x2
          -> do  let (bs, xs)    = unzip bxs
@@ -187,15 +186,17 @@ convertArgX pp defs xx
          | x1 : xs                <- takeXApps xx
          , XCon _ (UPrim nCtor _) <- x1
          , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
+         , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
          -> do  xs'     <- mapM (convertArgX pp defs) xs
-                constructData pp a' ctorDef xs'
+                constructData pp a' dataDef ctorDef xs'
 
         XApp (AnTEC _t _ _ a') _ _
          | x1 : xs                <- takeXApps xx
          , XCon _ (UName nCtor _) <- x1
          , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
+         , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
          -> do  xs'     <- mapM (convertArgX pp defs) xs
-                constructData pp a' ctorDef xs'
+                constructData pp a' dataDef ctorDef xs'
 
         XApp (AnTEC _t _ _ _a') _ _
          | x1 : _xsArgs          <- takeXApps xx

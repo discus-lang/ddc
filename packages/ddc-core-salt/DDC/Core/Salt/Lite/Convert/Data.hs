@@ -3,6 +3,7 @@ module DDC.Core.Salt.Lite.Convert.Data
         ( constructData
         , destructData)
 where
+import DDC.Core.Salt.Lite.Convert.Type
 import DDC.Core.Salt.Lite.Convert.Base
 import DDC.Core.Salt.Platform
 import DDC.Core.Exp
@@ -15,38 +16,84 @@ import qualified DDC.Core.Salt.Output.Runtime   as O
 import qualified DDC.Core.Salt.Output.Name      as O
 import qualified DDC.Core.Salt.Output.Env       as O
 
-
--- | Build an expression that allocates and initialises a data constructor
+-- Construct ------------------------------------------------------------------
+-- | Build an expression that allocates and initialises a data constructor.
 --   object.
 constructData
         :: Show a
-        => Platform
-        -> a
-        -> DataCtor L.Name
-        -> [Exp a O.Name]
+        => Platform             -- ^ Platform definition.
+        -> a                    -- ^ Annotation to use on expressions.
+        -> DataType L.Name      -- ^ Data Type definition of object.
+        -> DataCtor L.Name      -- ^ Constructor definition of object.
+        -> [Exp a O.Name]       -- ^ Field values.
         -> ConvertM a (Exp a O.Name)
 
-constructData pp a ctorDef _xsArgs 
+constructData pp a dataDef ctorDef xsArgs 
 
  | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
  = error $ "constructData: not finished boxed"
 
  | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
- , Just _offsets                <- L.fieldOffsetsOfDataCtor pp ctorDef
  = do   
-        -- Allocate the object
---        let bObject     = BAnon (O.tPtr O.tObj)
+        -- Allocate the object.
+        let bObject     = BAnon (O.tPtr O.tObj)
         let xAlloc      = O.xAllocRawSmall a (dataCtorTag ctorDef)
                         $ XCon a (UPrim (O.NameNat size) O.tNat)
 
-        return  xAlloc                                                          -- TODO: write the fields.
+        -- Take a pointer to its payload.
+        let bPayload    = BAnon O.tAddr
+        let xPayload    = O.xPayloadOfRawSmall a (XVar a (UIx 0 $ O.tPtr O.tObj))
+
+        -- Write field values to the freshly allocated object.
+        xBody           <- writeFields pp a dataDef ctorDef xsArgs 
+                                (XVar a $ UIx 0 O.tAddr)
+                                (XVar a $ UIx 1 $ O.tPtr O.tObj)
+
+        return  $ XLet a (LLet LetStrict bObject  xAlloc)
+                $ XLet a (LLet LetStrict bPayload xPayload)
+                $ xBody
 
  | otherwise
  = error $ "constructData: don't know how to construct a " 
          ++ (show $ dataCtorName ctorDef)
 
 
+-- | Wrap a body expression with let-bindings to write field values to 
+--   a freshly allocated data object.
+writeFields
+        :: Platform             -- ^ Platform definition.
+        -> a                    -- ^ Annotation to use on expressions.
+        -> DataType L.Name      -- ^ Data Type definition of object.
+        -> DataCtor L.Name      -- ^ Contructor definition of object.
+        -> [Exp a O.Name]       -- ^ Field values.
+        -> Exp a O.Name         -- ^ Address of the payload.
+        -> Exp a O.Name         -- ^ Body of the expression.
+        -> ConvertM a (Exp a O.Name)
+
+writeFields pp a dataDef ctorDef xsArgs xPayload xBody
+ = do   -- Convert the field types.
+        tsFields         <- mapM convertT $ dataCtorFieldTypes ctorDef
+
+        -- We want to write the fields into the newly allocated object.
+        -- The xsArgs list also contains type arguments, so we need to
+        --  drop these off first.
+        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgs
+
+        -- Get the offset of each field.
+        let Just offsets = L.fieldOffsetsOfDataCtor pp ctorDef
+
+        -- Statements to write each of the fields.
+        let lsFields    = [ LLet LetStrict (BNone O.tVoid)
+                                (O.xWrite a tField xPayload offset xField)
+                                | tField        <- tsFields
+                                | offset        <- offsets
+                                | xField        <- xsFields]
+
+        return $ foldr (XLet a) xBody lsFields
+
+
+-- Destruct -------------------------------------------------------------------
 -- | Wrap a expression in let-bindings that binds the fields of a data 
 --   construct object.
 --   This is used when pattern matching in a case expression.

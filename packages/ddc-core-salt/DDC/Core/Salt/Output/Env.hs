@@ -5,6 +5,7 @@ module DDC.Core.Salt.Output.Env
         , primKindEnv
         , primTypeEnv
 
+        , tVoid
         , tObj
         , tPtr
         , tAddr, tNat, tTag, tBool

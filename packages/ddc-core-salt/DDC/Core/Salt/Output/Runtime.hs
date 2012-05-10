@@ -4,6 +4,7 @@
 module DDC.Core.Salt.Output.Runtime
         ( -- * PrimOps
           xRead
+        , xWrite
         , xFail
         , xReturn
 
@@ -22,6 +23,7 @@ import DDC.Type.Compounds
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
+
 -- Primops --------------------------------------------------------------------
 -- | Read a value from an address plus offset.
 xRead   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
@@ -34,6 +36,20 @@ xRead a tField xAddr offset
 uRead   :: Bound Name
 uRead   = UPrim (NamePrim $ PrimStore $ PrimStoreRead)
                 (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t)
+
+
+-- | Write a value to an address pluss offset.
+xWrite   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
+xWrite a tField xAddr offset xVal
+        = XApp a (XApp a (XApp a (XApp a (XVar a uWrite) 
+                                         (XType tField))
+                                  xAddr)
+                          (XCon a (UPrim (NameNat offset) tNat)))
+                  xVal
+
+uWrite   :: Bound Name
+uWrite   = UPrim (NamePrim $ PrimStore $ PrimStoreWrite)
+                (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
 
 
 -- | Fail with an internal error.

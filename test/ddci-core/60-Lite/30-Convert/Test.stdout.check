@@ -50,7 +50,7 @@ letrec {
               TAG0#  
                -> let x1 : Addr# = payloadOfRawSmall y in
                   let i2 : Int32# = read# [Int32#] x1 0 in
-                  return# [Int32#] (add# [Int32#] i1 i2);
+                  add# [Int32#] i1 i2;
               _ 
                -> fail# [Int32#]
             };
@@ -61,7 +61,6 @@ letrec {
 
 
 -- Boxed addition
--- TODO: this doesn't work yet.
 module Main with
 letrec {
   addInt : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
@@ -75,7 +74,10 @@ letrec {
                -> let x2 : Addr# = payloadOfRawSmall y in
                   let i2 : Int32# = read# [Int32#] x2 0 in
                   let x0 : Int32# = add# [Int32#] i1 i2 in
-                  return# [Ptr# Obj] (allocRawSmall TAG0# 4);
+                  let x3 : Ptr# Obj = allocRawSmall TAG0# 4 in
+                  let x4 : Addr# = payloadOfRawSmall x3 in
+                  let _ : Void# = write# [Int32#] x4 0 x0 in
+                  x3;
               _ 
                -> fail# [Ptr# Obj]
             };

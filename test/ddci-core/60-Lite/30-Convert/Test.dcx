@@ -40,7 +40,6 @@ addInt [r1 r2 r3 : %]
 
 
 -- Boxed addition
--- TODO: this doesn't work yet.
 :to-salt..
 module Main with letrec
 addInt [r1 r2 r3 : %] 
