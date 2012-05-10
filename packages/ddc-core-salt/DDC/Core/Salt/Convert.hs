@@ -289,7 +289,7 @@ convRValueM xx
          -> do  t'      <- convTypeM t
                 return  $ t'
 
-        _ -> error (show xx) -- throw $ ErrorRValueInvalid xx
+        _ -> throw $ ErrorRValueInvalid xx
 
 
 
@@ -348,7 +348,7 @@ convPrimCallM p xs
                 xs'     <- mapM convRValueM xs
                 return  $ op' <+> parenss xs'
 
-        _ -> error ("invalid primitive call" ++ show (p, xs))
+        _ -> throw $ ErrorPrimCallInvalid p xs
 
 
 parenss :: [Doc] -> Doc

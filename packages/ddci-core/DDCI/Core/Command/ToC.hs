@@ -50,8 +50,8 @@ cmdLiteToC state source builder str
         [  PipeCoreAsLite
         [  PipeLiteToSalt       (buildSpec builder)
         [  PipeCoreSimplify     fragmentSalt Simpl.anormalize
-        [  PipeCoreCheck        fragmentSalt 
-        [  pipeCore_saltToC state ]]]]])
+        [  PipeCoreCheck        fragmentSalt
+        [  pipeCore_saltToC state True ]]]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
@@ -60,17 +60,20 @@ cmdSaltToC :: State -> Source -> String -> IO ()
 cmdSaltToC state source str
  = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentSalt
-        [  pipeCore_saltToC state])
+        [  pipeCore_saltToC state False ])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
-pipeCore_saltToC :: Show a => State -> PipeCore (AnTEC a A.Name) A.Name
-pipeCore_saltToC state
-        =  PipeCoreSimplify    fragmentSalt
-                               (stateSimplifier state <> Simpl.anormalize)
-        [  PipeCoreReCheck     fragmentSalt
+pipeCore_saltToC 
+        :: Show a 
+        => State -> Bool 
+        -> PipeCore (AnTEC a A.Name) A.Name
+pipeCore_saltToC state doTransfer
+        =  PipeCoreSimplify     fragmentSalt
+                                (stateSimplifier state <> Simpl.anormalize)
+        [  PipeCoreReCheck      fragmentSalt
         [  PipeCoreAsSalt
-        [  PipeSaltTransfer                                     
+        [  (if doTransfer then PipeSaltTransfer else PipeSaltId)
         [  PipeSaltPrint 
                 (Set.member SaltPrelude (stateModes state))
                 SinkStdout ]]]]

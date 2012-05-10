@@ -34,6 +34,7 @@ import DDC.Core.Simplifier
 import DDC.Core.Collect
 import DDC.Base.Pretty
 import DDC.Data.Canned
+import DDC.Core.Check                           (AnTEC)
 import qualified DDC.Core.Fragment.Compliance   as C
 import qualified DDC.Core.Transform.Reannotate  as C
 import qualified DDC.Core.Check                 as C
@@ -128,6 +129,11 @@ pipeText srcName srcLine str pp
 -- PipeCoreModule -------------------------------------------------------------
 -- | Process a core module.
 data PipeCore a n where
+  -- Plumb the module on without transforming it.
+  PipeCoreId
+        :: [PipeCore a n]
+        -> PipeCore a n
+
   -- Output a module to console or file.
   PipeCoreOutput    
         :: Sink 
@@ -161,7 +167,7 @@ data PipeCore a n where
   -- Treat a module as beloning to the Core Salt fragment from now on.
   PipeCoreAsSalt
         :: Pretty a 
-        => [PipeSalt] 
+        => [PipeSalt a] 
         -> PipeCore a Salt.Name
 
   -- Apply a canned function to a module.
@@ -172,7 +178,8 @@ data PipeCore a n where
         -> [PipeCore a n]
         -> PipeCore a n
 
-deriving instance Show (PipeCore a n)
+deriving instance (Show a, Show n) 
+        => Show (PipeCore a n)
 
 
 -- | Core module pipeline.
@@ -184,6 +191,9 @@ pipeCore
 
 pipeCore mm pp
  = case pp of
+        PipeCoreId pipes
+         -> liftM concat $ mapM (pipeCore mm) pipes
+
         PipeCoreOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
@@ -196,7 +206,7 @@ pipeCore mm pp
                 goCheck mm1
                  = case C.checkModule primDataDefs primKindEnv primTypeEnv mm1 of
                         Left err   
-                         -> do  writeFile ("ddc.dump-check." ++ fragmentExtension fragment)
+                         -> do  writeFile ("ddc.failed-check." ++ fragmentExtension fragment)
                                           (renderIndent $ ppr mm1)
                                 return [ErrorLint err]
 
@@ -270,43 +280,61 @@ pipeLite mm pp
 
 -- PipeSaltModule --------------------------------------------------------------
 -- | Process a Core Salt module.
-data PipeSalt
+data PipeSalt a where
+        -- | Plumb the module on without doing anything to it.
+        PipeSaltId
+                :: [PipeSalt a]
+                -> PipeSalt a
+
         -- | Output the module in core language syntax.
-        = PipeSaltOutput     Sink
+        PipeSaltOutput 
+                :: Sink
+                -> PipeSalt a
 
         -- | Insert control-transfer primops.
         --      This needs to be done before we convert the module to C or LLVM.
-        | PipeSaltTransfer    [PipeSalt]  
+        PipeSaltTransfer
+                :: [PipeSalt (AnTEC a Salt.Name)]
+                -> PipeSalt (AnTEC a Salt.Name)
 
         -- | Print the module as a C source code.
-        | PipeSaltPrint      
-        { pipeWithSaltPrelude  :: Bool
-        , pipeModuleSink       :: Sink }
+        PipeSaltPrint      
+                :: Bool         -- with prelide
+                -> Sink 
+                -> PipeSalt a
 
         -- | Convert the module to LLVM.
-        | PipeSaltToLlvm        Salt.Platform [PipeLlvm]
-        deriving (Show)
+        PipeSaltToLlvm
+                :: Salt.Platform 
+                -> [PipeLlvm]
+                -> PipeSalt a
 
+deriving instance Show a => Show (PipeSalt a)
 
 -- | Process a Core Salt module.
 pipeSalt  :: (Show a, Pretty a)
           => C.Module a Salt.Name 
-          -> PipeSalt
+          -> PipeSalt a
           -> IO [Error]
 
 pipeSalt mm pp
  = case pp of
+        PipeSaltId pipes
+         -> liftM concat $ mapM (pipeSalt mm) pipes
+
         PipeSaltOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
         PipeSaltTransfer pipes
-         -> let mm'     = Salt.transferModule mm
-            in  liftM concat $ mapM (pipeSalt mm') pipes
+         -> case Salt.transferModule mm of
+                Left err        -> return [ErrorSaltConvert err]
+                Right mm'       -> liftM concat $ mapM (pipeSalt mm') pipes
 
         PipeSaltPrint withPrelude sink
          -> case Salt.convertModule mm of
                 Left  err 
-                 ->     return $ [ErrorSaltConvert err]
+                 -> do  writeFile ("ddc.failed-saltprint.dce") (renderIndent $ ppr mm)
+                        return $ [ErrorSaltConvert err]
 
                 Right doc 
                  | withPrelude
