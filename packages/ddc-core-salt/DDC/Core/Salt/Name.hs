@@ -1,7 +1,7 @@
 
 -- | Names used in the Disciple Core Salt language profile.
 --   These map directly onto names used in the C output language.
-module DDC.Core.Salt.Output.Name
+module DDC.Core.Salt.Name
         ( Name            (..)
         , Prim            (..)
         , PrimTyCon       (..)
@@ -13,7 +13,7 @@ module DDC.Core.Salt.Output.Name
         , PrimExternal    (..)
         , readName)
 where
-import DDC.Core.Salt.Base.Name
+import DDC.Core.Salt.Prim
 import DDC.Base.Pretty
 import Data.Char
 import Data.List

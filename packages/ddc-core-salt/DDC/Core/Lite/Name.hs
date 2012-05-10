@@ -1,11 +1,11 @@
 
-module DDC.Core.Salt.Lite.Name
+module DDC.Core.Lite.Name
         ( Name          (..) 
         , DataTyCon     (..)
         , PrimDaCon     (..)
         , readName)
 where
-import DDC.Core.Salt.Base.Name
+import DDC.Core.Salt.Prim
 import DDC.Base.Pretty
 import Data.Char
 

@@ -1,11 +1,11 @@
 
 -- | Convert the Disciple Core Salt into to real C code.
-module DDC.Core.Salt.Output.Convert
+module DDC.Core.Salt.Convert
         (convertModule)
 where
-import DDC.Core.Salt.Output.Error
-import DDC.Core.Salt.Output.Name
-import DDC.Core.Salt.Base.Sanitize
+import DDC.Core.Salt.Error
+import DDC.Core.Salt.Name
+import DDC.Core.Salt.Sanitize
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Core.Module

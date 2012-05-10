@@ -1,14 +1,14 @@
 
-module DDC.Core.Salt.Lite.Env
+module DDC.Core.Lite.Env
         ( primDataDefs
         , primKindEnv
         , primTypeEnv
 
         , tBoolU)
 where
-import DDC.Core.Salt.Lite.Compounds
-import DDC.Core.Salt.Lite.Name
-import DDC.Core.Salt.Base.Name
+import DDC.Core.Lite.Compounds
+import DDC.Core.Lite.Name
+import DDC.Core.Salt.Prim
 import DDC.Type.DataDef
 import DDC.Type.Compounds
 import DDC.Type.Exp

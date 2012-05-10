@@ -41,8 +41,8 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Salt.Platform         as Salt
-import qualified DDC.Core.Salt.Lite             as Lite
-import qualified DDC.Core.Salt.Output           as Output
+import qualified DDC.Core.Salt                  as Salt
+import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Llvm.Module                as Llvm
 import qualified DDC.Type.Env                   as Env
 import qualified Control.Monad.State.Strict     as S
@@ -50,7 +50,7 @@ import Control.Monad
 
 -- Error ----------------------------------------------------------------------
 data Error
-        = ErrorSaltLoad    (CL.Error Output.Name)
+        = ErrorSaltLoad    (CL.Error Salt.Name)
 
         | forall err. Pretty err => ErrorSaltConvert err
         | forall err. Pretty err => ErrorLiteConvert err
@@ -161,7 +161,7 @@ data PipeCore a n where
   PipeCoreAsSalt
         :: Pretty a 
         => [PipeSalt] 
-        -> PipeCore a Output.Name
+        -> PipeCore a Salt.Name
 
   -- Apply a canned function to a module.
   -- This is helpful for debugging, and tweaking the output before pretty printing.
@@ -249,7 +249,7 @@ data PipeLite
 
         -- | Convert the module to the Core Salt Fragment.
         | PipeLiteToSalt Salt.Platform 
-                         [PipeCore () Output.Name]
+                         [PipeCore () Salt.Name]
         deriving Show
 
 pipeLite :: C.Module (C.AnTEC () Lite.Name) Lite.Name
@@ -285,7 +285,7 @@ data PipeSalt
 
 -- | Process a Core Salt module.
 pipeSalt  :: (Show a, Pretty a)
-          => C.Module a Output.Name 
+          => C.Module a Salt.Name 
           -> PipeSalt
           -> IO [Error]
 
@@ -295,7 +295,7 @@ pipeSalt mm pp
          -> pipeSink (renderIndent $ ppr mm) sink
 
         PipeSaltPrint withPrelude sink
-         -> case Output.convertModule mm of
+         -> case Salt.convertModule mm of
                 Left  err 
                  ->     return $ [ErrorSaltConvert err]
 

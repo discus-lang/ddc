@@ -8,9 +8,9 @@ where
 import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
-import DDC.Core.Salt.Base.Sanitize
-import qualified DDC.Core.Salt.Output   as A
-import qualified DDC.Core.Exp           as C
+import DDC.Core.Salt.Sanitize
+import qualified DDC.Core.Salt  as A
+import qualified DDC.Core.Exp   as C
 
 
 -- Atoms ----------------------------------------------------------------------

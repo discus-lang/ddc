@@ -1,12 +1,12 @@
 
 -- | Language profile for Disciple Core Lite.
-module DDC.Core.Salt.Lite.Profile
+module DDC.Core.Lite.Profile
         ( profile
         , lexModuleString
         , lexExpString)
 where
-import DDC.Core.Salt.Lite.Env
-import DDC.Core.Salt.Lite.Name
+import DDC.Core.Lite.Env
+import DDC.Core.Lite.Name
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
 import DDC.Data.Token

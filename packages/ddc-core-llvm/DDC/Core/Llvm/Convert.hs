@@ -12,19 +12,19 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
-import DDC.Core.Salt.Base.Sanitize
+import DDC.Core.Salt.Sanitize
 import DDC.Core.Compounds
 import DDC.Type.Compounds
-import Data.Sequence                            (Seq, (<|), (|>), (><))
-import Data.Map                                 (Map)
-import qualified DDC.Core.Salt.Output           as A
-import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Exp                   as C
-import qualified Data.Map                       as Map
-import qualified Data.Sequence                  as Seq
-import qualified Data.Foldable                  as Seq
-import Control.Monad.State.Strict               (evalState)
-import Control.Monad.State.Strict               (gets)
+import Data.Sequence                    (Seq, (<|), (|>), (><))
+import Data.Map                         (Map)
+import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Module        as C
+import qualified DDC.Core.Exp           as C
+import qualified Data.Map               as Map
+import qualified Data.Sequence          as Seq
+import qualified Data.Foldable          as Seq
+import Control.Monad.State.Strict       (evalState)
+import Control.Monad.State.Strict       (gets)
 import Control.Monad
 import Data.Maybe
 

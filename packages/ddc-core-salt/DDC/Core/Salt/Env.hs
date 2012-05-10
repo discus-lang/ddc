@@ -1,6 +1,6 @@
 
 -- | Types of Disciple Core Salt primops.
-module DDC.Core.Salt.Output.Env
+module DDC.Core.Salt.Env
         ( primDataDefs
         , primKindEnv
         , primTypeEnv
@@ -11,7 +11,7 @@ module DDC.Core.Salt.Output.Env
         , tAddr, tNat, tTag, tBool
         , tInt,  tWord)
 where
-import DDC.Core.Salt.Output.Name
+import DDC.Core.Salt.Name
 import DDC.Type.DataDef
 import DDC.Type.Compounds
 import DDC.Type.Exp

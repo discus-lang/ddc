@@ -24,11 +24,11 @@ where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
 import DDC.Core.Llvm.LlvmM
-import DDC.Core.Salt.Base.Sanitize
+import DDC.Core.Salt.Sanitize
 import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
 import Control.Monad.State.Strict
-import DDC.Core.Salt.Output             as A
+import DDC.Core.Salt                    as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 

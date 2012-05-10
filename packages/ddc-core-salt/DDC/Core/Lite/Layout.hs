@@ -1,6 +1,6 @@
 
 -- | Layout of algebraic data.
-module DDC.Core.Salt.Lite.Layout
+module DDC.Core.Lite.Layout
         ( -- * Heap Objects
           HeapObject(..)
         , heapObjectOfDataCtor
@@ -13,8 +13,8 @@ module DDC.Core.Salt.Lite.Layout
         , isUnboxedType
         , isFixedSizePrimTyCon)
 where
-import DDC.Core.Salt.Lite.Name
-import DDC.Core.Salt.Base.Name
+import DDC.Core.Lite.Name
+import DDC.Core.Salt.Prim
 import DDC.Core.Salt.Platform
 import DDC.Type.DataDef
 import DDC.Type.Exp

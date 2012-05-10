@@ -1,5 +1,5 @@
 
-module DDC.Core.Salt.Base.Sanitize
+module DDC.Core.Salt.Sanitize
         (sanitizeName)
 where
 import Data.Maybe

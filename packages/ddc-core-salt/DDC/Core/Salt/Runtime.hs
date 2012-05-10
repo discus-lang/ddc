@@ -1,7 +1,7 @@
 
 -- | Bindings to functions exported by the runtime system,
 --   and wrappers for related primops.
-module DDC.Core.Salt.Output.Runtime
+module DDC.Core.Salt.Runtime
         ( -- * PrimOps
           xRead
         , xWrite
@@ -20,8 +20,8 @@ where
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Salt.Output.Env
-import DDC.Core.Salt.Output.Name
+import DDC.Core.Salt.Env
+import DDC.Core.Salt.Name
 import DDC.Type.Compounds
 import qualified Data.Map       as Map
 import Data.Map                 (Map)

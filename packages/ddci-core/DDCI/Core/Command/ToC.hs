@@ -12,7 +12,7 @@ import DDC.Core.Check
 import System.FilePath
 import DDC.Core.Simplifier.Recipie              as Simpl
 import DDC.Core.Simplifier                      as Simpl
-import qualified DDC.Core.Salt.Output           as A
+import qualified DDC.Core.Salt                  as A
 import qualified Data.Set                       as Set
 import qualified DDC.Base.Pretty                as P
 import Data.Maybe

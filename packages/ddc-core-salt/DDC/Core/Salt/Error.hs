@@ -3,10 +3,10 @@
 --
 --   If we get any of these then the program doesn't map onto the features
 --   of the C-language.
-module DDC.Core.Salt.Output.Error
+module DDC.Core.Salt.Error
         (Error(..))
 where
-import DDC.Core.Salt.Output.Name
+import DDC.Core.Salt.Name
 import DDC.Core.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp

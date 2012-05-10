@@ -1,6 +1,6 @@
 
 -- | Names shared by several language profiles.
-module DDC.Core.Salt.Base.Name
+module DDC.Core.Salt.Prim
         ( PrimTyCon     (..)
         , readPrimTyCon
 

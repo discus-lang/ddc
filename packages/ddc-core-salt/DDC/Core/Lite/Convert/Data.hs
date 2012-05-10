@@ -1,20 +1,20 @@
 
-module DDC.Core.Salt.Lite.Convert.Data
+module DDC.Core.Lite.Convert.Data
         ( constructData
         , destructData)
 where
-import DDC.Core.Salt.Lite.Convert.Type
-import DDC.Core.Salt.Lite.Convert.Base
+import DDC.Core.Lite.Convert.Type
+import DDC.Core.Lite.Convert.Base
 import DDC.Core.Salt.Platform
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.DataDef
-import DDC.Type.Check.Monad                     (throw)
-import qualified DDC.Core.Salt.Lite.Layout      as L
-import qualified DDC.Core.Salt.Lite.Name        as L
-import qualified DDC.Core.Salt.Output.Runtime   as O
-import qualified DDC.Core.Salt.Output.Name      as O
-import qualified DDC.Core.Salt.Output.Env       as O
+import DDC.Type.Check.Monad             (throw)
+import qualified DDC.Core.Lite.Layout   as L
+import qualified DDC.Core.Lite.Name     as L
+import qualified DDC.Core.Salt.Runtime  as O
+import qualified DDC.Core.Salt.Name     as O
+import qualified DDC.Core.Salt.Env      as O
 
 -- Construct ------------------------------------------------------------------
 -- | Build an expression that allocates and initialises a data constructor.

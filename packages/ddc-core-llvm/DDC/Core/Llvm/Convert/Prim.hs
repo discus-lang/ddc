@@ -9,10 +9,10 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
 import DDC.Base.Pretty
-import Data.Sequence                    (Seq)
-import qualified DDC.Core.Exp           as C
-import qualified DDC.Core.Salt.Output   as A
-import qualified Data.Sequence          as Seq
+import Data.Sequence            (Seq)
+import qualified DDC.Core.Exp   as C
+import qualified DDC.Core.Salt  as A
+import qualified Data.Sequence  as Seq
 
 
 -- Prim call ------------------------------------------------------------------

@@ -1,13 +1,13 @@
 
 -- | Conversion of Disciple Lite to Disciple Salt.
 --
-module DDC.Core.Salt.Lite.Convert
+module DDC.Core.Lite.Convert
         ( toSalt
         , Error(..))
 where
-import DDC.Core.Salt.Lite.Convert.Data
-import DDC.Core.Salt.Lite.Convert.Type
-import DDC.Core.Salt.Lite.Convert.Base
+import DDC.Core.Lite.Convert.Data
+import DDC.Core.Lite.Convert.Type
+import DDC.Core.Lite.Convert.Base
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
 import DDC.Core.Compounds
@@ -16,13 +16,13 @@ import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Universe
 import DDC.Type.DataDef
-import DDC.Type.Check.Monad                     (throw, result)
-import DDC.Core.Check                           (AnTEC(..))
-import qualified DDC.Core.Salt.Lite.Name        as L
-import qualified DDC.Core.Salt.Output.Runtime   as O
-import qualified DDC.Core.Salt.Output.Name      as O
-import qualified DDC.Core.Salt.Output.Env       as O
-import qualified Data.Map                       as Map
+import DDC.Type.Check.Monad              (throw, result)
+import DDC.Core.Check                    (AnTEC(..))
+import qualified DDC.Core.Lite.Name      as L
+import qualified DDC.Core.Salt.Runtime   as O
+import qualified DDC.Core.Salt.Name      as O
+import qualified DDC.Core.Salt.Env       as O
+import qualified Data.Map                as Map
 import Control.Monad
 
 

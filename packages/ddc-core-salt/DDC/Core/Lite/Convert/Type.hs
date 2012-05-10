@@ -1,18 +1,18 @@
 
-module DDC.Core.Salt.Lite.Convert.Type
+module DDC.Core.Lite.Convert.Type
         ( convertT
         , convertPrimT
         , convertB
         , convertU)
 where
-import DDC.Core.Salt.Lite.Convert.Base
+import DDC.Core.Lite.Convert.Base
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Check.Monad                     (throw)
-import qualified DDC.Core.Salt.Lite.Name        as L
-import qualified DDC.Core.Salt.Output.Name      as O
-import qualified DDC.Core.Salt.Output.Env       as O
+import DDC.Type.Check.Monad             (throw)
+import qualified DDC.Core.Lite.Name     as L
+import qualified DDC.Core.Salt.Name     as O
+import qualified DDC.Core.Salt.Env      as O
 import Control.Monad
 
 

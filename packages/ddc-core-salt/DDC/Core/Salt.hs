@@ -6,7 +6,7 @@
 --   partial application, data types, or nested functions etc. All operations
 --   on algebraic data need to have been expanded to raw memory operations.
 --
-module DDC.Core.Salt.Output
+module DDC.Core.Salt
         ( -- * Language profile
           profile
 
@@ -16,7 +16,7 @@ module DDC.Core.Salt.Output
 
           -- * Names of variables and constructors
         , Name          (..)
-        , module DDC.Core.Salt.Base
+        , module DDC.Core.Salt.Prim
         , Prim          (..)
         , PrimCast      (..)
         , PrimCall      (..)
@@ -28,8 +28,8 @@ module DDC.Core.Salt.Output
         , lexExpString)
 
 where
-import DDC.Core.Salt.Base
-import DDC.Core.Salt.Output.Name
-import DDC.Core.Salt.Output.Profile
-import DDC.Core.Salt.Output.Convert
-import DDC.Core.Salt.Output.Error
+import DDC.Core.Salt.Prim
+import DDC.Core.Salt.Name
+import DDC.Core.Salt.Profile
+import DDC.Core.Salt.Convert
+import DDC.Core.Salt.Error

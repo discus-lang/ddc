@@ -4,7 +4,7 @@ module DDC.Build.Language.Lite
 where
 import DDC.Build.Language.Base
 import DDC.Core.Transform.Namify
-import DDC.Core.Salt.Lite
+import DDC.Core.Lite
 import DDC.Type.Exp
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env

@@ -11,7 +11,7 @@ import DDC.Core.Fragment.Profile
 import DDC.Core.Check
 import System.FilePath
 import DDC.Core.Simplifier.Recipie      as Simpl
-import qualified DDC.Core.Salt.Output   as A
+import qualified DDC.Core.Salt          as A
 import qualified DDC.Base.Pretty        as P
 import Data.Monoid
 import Data.Maybe

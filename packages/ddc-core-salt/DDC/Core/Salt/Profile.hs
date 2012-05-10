@@ -1,12 +1,12 @@
 
 -- | Language profile for Disciple Core Salt.
-module DDC.Core.Salt.Output.Profile
+module DDC.Core.Salt.Profile
         ( profile
         , lexModuleString
         , lexExpString)
 where
-import DDC.Core.Salt.Output.Env
-import DDC.Core.Salt.Output.Name
+import DDC.Core.Salt.Env
+import DDC.Core.Salt.Name
 import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer
 import DDC.Data.Token

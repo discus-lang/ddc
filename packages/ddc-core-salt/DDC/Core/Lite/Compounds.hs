@@ -1,5 +1,5 @@
 
-module DDC.Core.Salt.Lite.Compounds
+module DDC.Core.Lite.Compounds
         ( tBoolU
         , tIntU
         , tWordU
@@ -10,8 +10,8 @@ module DDC.Core.Salt.Lite.Compounds
         , tPair
         , tList)
 where
-import DDC.Core.Salt.Base.Name
-import DDC.Core.Salt.Lite.Name
+import DDC.Core.Lite.Name
+import DDC.Core.Salt.Prim
 import DDC.Type.Exp
 import DDC.Type.Compounds
 
