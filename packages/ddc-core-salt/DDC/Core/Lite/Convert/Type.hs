@@ -31,12 +31,15 @@ convertPrimT    = convertT' False
 --       into the tree while we're doing the main conversion.
 convertT' :: Bool -> Type L.Name -> ConvertM a (Type O.Name)
 convertT' stripForalls tt
- = case tt of
+ = let down = convertT' stripForalls
+   in case tt of
         -- Convert type variables and constructors.
         TVar u
-         -- Boxed objects are represented as a generic ptr to object.
-         | isDataKind (typeOfBound u)
-         -> return $ O.tPtr O.tObj
+         --  Boxed objects are represented as a generic ptr to object.
+         |  isDataKind (typeOfBound u)
+         -> if stripForalls
+                then return $ O.tPtr O.tObj
+                else liftM TVar (convertU u)
 
          -- Keep region variables.
          | isRegionKind (typeOfBound u)
@@ -51,13 +54,13 @@ convertT' stripForalls tt
 
         -- Strip off foralls, as the Brine fragment doesn't care about quantifiers.
         TForall b t     
-         | stripForalls -> convertT t
+         | stripForalls -> down t
          | otherwise    -> liftM2 TForall (convertB b) (convertPrimT t)
 
         TApp{}  
          -- Strip off effect and closure information.
          |  Just (t1, _, _, t2)  <- takeTFun tt
-         -> liftM2 tFunPE (convertT t1) (convertT t2)
+         -> liftM2 tFunPE (down t1) (down t2)
 
          -- Boxed data values are represented in generic form.
          | otherwise

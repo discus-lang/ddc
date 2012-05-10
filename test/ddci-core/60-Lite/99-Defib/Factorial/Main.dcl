@@ -9,7 +9,7 @@ with letrec
 
 subInt [r1 r2 r3 : %] 
         (x : Int r1) { !0 | Use r3 } 
-        (y : Int r2) { Read r1 + Read r2 | Use r1 + Use r3 }
+        (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3 }
         : Int r3
  =  case x of { I32# i1 
  -> case y of { I32# i2 
