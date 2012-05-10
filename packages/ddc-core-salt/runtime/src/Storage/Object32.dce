@@ -107,11 +107,23 @@ allocBoxed (tag : Tag#) (arity : Nat#) : Ptr# Obj
         return# [Ptr# Obj] (makePtr# [Obj] addr)
 
 
--- | Get one of the pointers from a boxed data object.
-fieldOfBoxed (obj : Ptr# Obj) (index : Nat#) : Ptr# Obj
+---- | Get one of the pointers from a boxed data object.
+getFieldOfBoxed (obj : Ptr# Obj) (index : Nat#) : Ptr# Obj
  = do   
-        offset          = add# [Nat#] 8 (shl# [Nat#] index 2)
-        return# [Ptr# Obj] (plusPtr# [Obj] obj offset)
+        return# [Ptr# Obj]
+         (peek# [Ptr# Obj]
+                (castPtr# [Ptr# Obj] [Obj] obj)
+                (add# [Nat#] 8 (shl# [Nat#] index 2)))
+
+
+-- | Set one of the pointers from a boxed data object.
+setFieldOfBoxed (obj : Ptr# Obj) (index : Nat#) (val : Ptr# Obj) : Void#
+ = do   poke# [Ptr# Obj] 
+                (castPtr# [Ptr# Obj] [Obj] obj)
+                (add# [Nat#] 8 (shl# [Nat#] index 2))
+                val
+
+        return# [Void#] V#
 
 
 -- Mixed ----------------------------------------------------------------------

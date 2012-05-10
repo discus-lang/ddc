@@ -31,6 +31,9 @@ data Error a
         -- | An invalid name used in a binding position
         | ErrorInvalidBinder L.Name
 
+        -- | An invalid name used in a bound position
+        | ErrorInvalidBound  (Bound L.Name)
+
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
 
@@ -52,6 +55,9 @@ instance Show a => Pretty (Error a) where
 
         ErrorInvalidBinder n
          -> vcat [ text "Invalid name used in bidner " <> ppr n ]
+
+        ErrorInvalidBound n
+         -> vcat [ text "Invalid name used in bound occurrence " <> ppr n ]
 
         ErrorInvalidAlt
          -> vcat [ text "Invalid alternative" ]

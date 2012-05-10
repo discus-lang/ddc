@@ -30,8 +30,25 @@ constructData
 
 constructData pp a dataDef ctorDef xsArgs 
 
- | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
- = error $ "constructData: not finished boxed"
+ | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
+ , Just _size                    <- L.payloadSizeOfDataCtor  pp ctorDef
+ = error "constructData boxed"
+
+{-}        -- Allocate the object.
+        let bObject     = BAnon (O.tPtr O.tObj)
+        let xAlloc      = O.xAllocBoxed a (dataCtorTag ctorDef)
+                        $ XCon a (UPrim (O.NameNat size) O.tNat)
+
+        -- Write field values to the freshly allocated object.
+        xBody           <- writeFields pp a dataDef ctorDef xsArgs 
+                                (XVar a $ UIx 0 O.tAddr)
+                                (XVar a $ UIx 1 $ O.tPtr O.tObj)
+
+        return  $ XLet a (LLet LetStrict bObject  xAlloc)
+                $ XLet a (LLet LetStrict bPayload xPayload)
+                $ xBody
+-}
+
 
  | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
@@ -45,34 +62,7 @@ constructData pp a dataDef ctorDef xsArgs
         let bPayload    = BAnon O.tAddr
         let xPayload    = O.xPayloadOfRawSmall a (XVar a (UIx 0 $ O.tPtr O.tObj))
 
-        -- Write field values to the freshly allocated object.
-        xBody           <- writeFields pp a dataDef ctorDef xsArgs 
-                                (XVar a $ UIx 0 O.tAddr)
-                                (XVar a $ UIx 1 $ O.tPtr O.tObj)
-
-        return  $ XLet a (LLet LetStrict bObject  xAlloc)
-                $ XLet a (LLet LetStrict bPayload xPayload)
-                $ xBody
-
- | otherwise
- = error $ "constructData: don't know how to construct a " 
-         ++ (show $ dataCtorName ctorDef)
-
-
--- | Wrap a body expression with let-bindings to write field values to 
---   a freshly allocated data object.
-writeFields
-        :: Platform             -- ^ Platform definition.
-        -> a                    -- ^ Annotation to use on expressions.
-        -> DataType L.Name      -- ^ Data Type definition of object.
-        -> DataCtor L.Name      -- ^ Contructor definition of object.
-        -> [Exp a O.Name]       -- ^ Field values.
-        -> Exp a O.Name         -- ^ Address of the payload.
-        -> Exp a O.Name         -- ^ Body of the expression.
-        -> ConvertM a (Exp a O.Name)
-
-writeFields pp a dataDef ctorDef xsArgs xPayload xBody
- = do   -- Convert the field types.
+        -- Convert the field types.
         tsFields         <- mapM convertT $ dataCtorFieldTypes ctorDef
 
         -- We want to write the fields into the newly allocated object.
@@ -84,13 +74,21 @@ writeFields pp a dataDef ctorDef xsArgs xPayload xBody
         let Just offsets = L.fieldOffsetsOfDataCtor pp ctorDef
 
         -- Statements to write each of the fields.
+        let xObject'    = XVar a $ UIx 0 $ O.tPtr O.tObj
+        let xPayload'   = XVar a $ UIx 0 O.tAddr
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
-                                (O.xWrite a tField xPayload offset xField)
+                                (O.xWrite a tField xPayload' offset xField)
                                 | tField        <- tsFields
                                 | offset        <- offsets
                                 | xField        <- xsFields]
 
-        return $ foldr (XLet a) xBody lsFields
+        return  $ XLet a (LLet LetStrict bObject  xAlloc)
+                $ XLet a (LLet LetStrict bPayload xPayload)
+                $ foldr (XLet a) xObject' lsFields
+
+ | otherwise
+ = error $ "constructData: don't know how to construct a " 
+         ++ (show $ dataCtorName ctorDef)
 
 
 -- Destruct -------------------------------------------------------------------

@@ -26,7 +26,7 @@ import qualified Data.Map                       as Map
 import Control.Monad
 
 
--- | Convert a Disciple Lite module to Disciple Salt.
+-- | Convert a Disciple Core Lite module to Disciple Core Salt.
 --
 --   Case expressions on alrebraic data values are converted into ones that just
 --   check the tag, while data constructors are unfolded into explicit allocation
@@ -36,12 +36,17 @@ import Control.Monad
 --   TODO: Expand partial and over-applications into code that explicitly builds
 --         and applies thunks.
 --
---   The input module needs to be well typed, have type annotations on every bound
---   variable and constructor, have all functions defined at top-level, 
---   and be a-normalised. If not then `Error`.
+--   The input module needs to be:
+--      well typed,
+--      have type annotations on every bound variable and constructor
+--      have all functions defined at top-level,
+--      be fully named,
+--      and a-normalised.
+--      If not then `Error`.
 --
---   The output code contains debruijn indices which need to be eliminateed before
---   it will pass the Salt fragment checks.
+--   The output code contains:
+--      debruijn indices.
+--       these which need to be eliminateed before it will pass the Salt fragment checks.
 --
 toSalt
         :: Show a
@@ -85,6 +90,8 @@ convertBodyX
 
 convertBodyX pp defs xx
  = case xx of
+        -- TODO: check there are no debruijn indices.
+
         XVar a u
          -> do  let a'  = annotTail a
                 u'      <- convertU u
@@ -167,11 +174,16 @@ convertArgX
 
 convertArgX pp defs xx
   = case xx of
+        -- TODO: check there are no debruijn indices.
         XVar a u        
          -> liftM2 XVar (return $ annotTail a) (convertU u)
 
         XCon a u
-         -> liftM fst $ convertC defs (annotTail a) u
+         -> case u of
+                UName nCtor _   -> convertCtorAppX pp (annotTail a) defs nCtor []
+                UPrim nCtor _   -> convertCtorAppX pp (annotTail a) defs nCtor []
+                _               -> throw $ ErrorInvalidBound u
+
 
         -- Primitive operations.
         XApp a _ _
@@ -183,20 +195,14 @@ convertArgX pp defs xx
 
         -- Primitive data constructors.
         XApp (AnTEC _t _ _ a') _ _
-         | x1 : xs                <- takeXApps xx
+         | x1 : xsArgs            <- takeXApps xx
          , XCon _ (UPrim nCtor _) <- x1
-         , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
-         , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
-         -> do  xs'     <- mapM (convertArgX pp defs) xs
-                constructData pp a' dataDef ctorDef xs'
+         -> convertCtorAppX pp a' defs nCtor xsArgs
 
-        XApp (AnTEC _t _ _ a') _ _
-         | x1 : xs                <- takeXApps xx
+        XApp a _ _
+         | x1 : xsArgs            <- takeXApps xx
          , XCon _ (UName nCtor _) <- x1
-         , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
-         , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
-         -> do  xs'     <- mapM (convertArgX pp defs) xs
-                constructData pp a' dataDef ctorDef xs'
+         -> convertCtorAppX pp (annotTail a) defs nCtor xsArgs
 
         XApp (AnTEC _t _ _ _a') _ _
          | x1 : _xsArgs          <- takeXApps xx
@@ -221,6 +227,24 @@ convertArgX pp defs xx
         XType t         -> liftM XType (convertT t)
         XWitness{}      -> error "Xwitness as arg" -- throw ErrorMistyped
 
+
+convertCtorAppX 
+        :: Show a
+        => Platform 
+        -> a
+        -> DataDefs L.Name
+        -> L.Name
+        -> [Exp (AnTEC a L.Name) L.Name]
+        -> ConvertM a (Exp a O.Name)
+
+convertCtorAppX pp a defs nCtor xsArgs
+ | Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
+ , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
+ = do   xs'     <- mapM (convertArgX pp defs) xsArgs
+        constructData pp a dataDef ctorDef xs'
+
+convertCtorAppX _ _ _ _ _
+ = error "toSaltX: convertCtorAppX failed"
 
 
 -- Alt ------------------------------------------------------------------------
@@ -256,10 +280,10 @@ convertA pp defs a uScrut alt
                 -- Get the address of the payload.
                 bsFields'       <- mapM convertB bsFields
 
-                -- TODO: lift body
+                -- Convert the right of the alternative.
                 xBody1          <- convertBodyX pp defs x
 
-                -- Let bindings to unpack the constructor
+                -- Add let bindings to unpack the constructor.
                 xBody2          <- destructData pp a uScrut' ctorDef bsFields' xBody1
 
                 return  $ AAlt (PData uTag []) xBody2
@@ -283,6 +307,6 @@ convertC _defs a uu
                     , O.tInt bits)
 
         -- TODO: expand out code to construct algebraic data.
-        _ -> error "convertC"
+        _ -> error $ show uu
 
 

@@ -36,6 +36,9 @@ data Name
         -- | A primitive operator.
         | NamePrim      Prim
 
+        -- | The void literal.
+        | NameVoid
+
         -- | A natural number literal.
         | NameNat       Integer
 
@@ -61,6 +64,7 @@ instance Pretty Name where
         NameObjTyCon      -> text "Obj"
         NamePrimTyCon tc  -> ppr tc
         NamePrim p        -> ppr p
+        NameVoid          -> text "V#"
         NameNat  i        -> integer i
         NameTag  i        -> text "TAG" <> integer i <> text "#"
         NameBool True     -> text "True#"
@@ -103,6 +107,9 @@ readName str
         -- PrimExternal
         | Just p        <- readPrimExternal str
         = Just $ NamePrim $ PrimExternal p
+
+        -- Literal void
+        | str == "V#" = Just $ NameVoid
 
         -- Literal Nats.
         | Just i        <- readLitInteger str
