@@ -18,6 +18,7 @@ fragmentZero :: Fragment Name Error
 fragmentZero 
         = Fragment
         { fragmentProfile       = (zeroProfile :: Profile Name)
+        , fragmentExtension     = "dcz"
         , fragmentLexModule     = lexModuleZero
         , fragmentLexExp        = lexExpZero
         , fragmentCheckModule   = const Nothing

@@ -11,10 +11,13 @@ module DDC.Core.Salt.Output.Runtime
           -- * Runtime
         , runtimeImportSigs
         , xGetTag
-        , xFieldOfBoxed
+        , xAllocBoxed
+        , xGetFieldOfBoxed
+        , xSetFieldOfBoxed
         , xAllocRawSmall
         , xPayloadOfRawSmall)
 where
+import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Salt.Output.Env
@@ -75,55 +78,84 @@ xReturn a t x
 --   to Disciple Salt code.
 runtimeImportSigs :: Map Name (QualName Name, Type Name)
 runtimeImportSigs
-        = Map.fromList
-        [ rn (NameVar "getTag")                 tGetTag
-        , rn (NameVar "fieldOfBoxed")           tFieldOfBoxed
-        , rn (NameVar "allocRawSmall")          tAllocRawSmall
-        , rn (NameVar "payloadOfRawSmall")      tPayloadOfRawSmall ]
-        where   rn n t  = (n, (QualName (ModuleName ["Runtime"]) n, t))
+ = Map.fromList 
+   [ rn uGetTag
+   , rn uAllocBoxed
+   , rn uGetFieldOfBoxed
+   , rn uSetFieldOfBoxed
+   , rn uAllocRawSmall
+   , rn uPayloadOfRawSmall ]
+ where   rn (UName n t)  = (n, (QualName (ModuleName ["Runtime"]) n, t))
+         rn _            = error "runtimeImportSigs: all runtimed bounds should be named"
 
 
 -- | Get the constructor tag of an object.
 xGetTag :: a -> Exp a Name
-xGetTag a
-        = XVar a (UName (NameVar "getTag") tGetTag)
+xGetTag a = XVar a uGetTag
 
-tGetTag :: Type Name
-tGetTag = tFunPE (tPtr tObj) tTag
+uGetTag :: Bound Name
+uGetTag   = UName (NameVar "getTag")
+          $ tFunPE (tPtr tObj) tTag
+
+
+-- Boxed ------------------------------
+
+-- | Allocate a Boxed object.
+xAllocBoxed :: a -> Integer -> Exp a Name -> Exp a Name
+xAllocBoxed a tag x2
+ = makeXApps a (XVar a uAllocBoxed)
+        [XCon a (UPrim (NameTag tag) tTag), x2]
+
+uAllocBoxed :: Bound Name
+uAllocBoxed
+        = UName (NameVar "allocBoxed")
+        $ tTag `tFunPE` tNat `tFunPE` tPtr tObj
 
 
 -- | Get a field of a Boxed object.
-xFieldOfBoxed :: a -> Exp a Name -> Integer -> Exp a Name
-xFieldOfBoxed a x2 offset
-        = XApp a (XApp a (XVar a u) x2) (XCon a (UPrim (NameNat offset) tNat))
-        where u = UName (NameVar "fieldOfBoxed") tFieldOfBoxed
+xGetFieldOfBoxed :: a -> Exp a Name -> Integer -> Exp a Name
+xGetFieldOfBoxed a x2 offset
+ = makeXApps a (XVar a uGetFieldOfBoxed) 
+        [x2, XCon a (UPrim (NameNat offset) tNat)]
 
-tFieldOfBoxed :: Type Name
-tFieldOfBoxed   = tPtr tObj `tFunPE` tNat `tFunPE` tPtr tObj
+uGetFieldOfBoxed :: Bound Name
+uGetFieldOfBoxed 
+        = UName (NameVar "getFieldOfBoxed")
+        $ tPtr tObj `tFunPE` tNat `tFunPE` tPtr tObj
+
+
+-- | Set a field in a Boxed Object.
+xSetFieldOfBoxed :: a -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
+xSetFieldOfBoxed a x2 offset val
+ = makeXApps a (XVar a uSetFieldOfBoxed) 
+        [x2, XCon a (UPrim (NameNat offset) tNat), val]
+
+uSetFieldOfBoxed :: Bound Name
+uSetFieldOfBoxed 
+        = UName (NameVar "setFieldOfBoxed")
+        $ tPtr tObj `tFunPE` tNat `tFunPE` tPtr tObj `tFunPE` tVoid
 
 
 -- RawSmall ---------------------------
 -- | Allocate a RawSmall object.
 xAllocRawSmall :: a -> Integer -> Exp a Name -> Exp a Name
 xAllocRawSmall a tag x2
-        = XApp a (XApp a (XVar a u) (XCon a (UPrim (NameTag tag) tTag))) x2
-        where u = UName (NameVar "allocRawSmall") tAllocRawSmall
+ = makeXApps a (XVar a uAllocRawSmall)
+        [XCon a (UPrim (NameTag tag) tTag), x2]
 
-
-tAllocRawSmall :: Type Name
-tAllocRawSmall
-        = tTag `tFunPE` tNat `tFunPE` tPtr tObj
+uAllocRawSmall :: Bound Name
+uAllocRawSmall
+        = UName (NameVar "allocRawSmall")
+        $ tTag `tFunPE` tNat `tFunPE` tPtr tObj
 
 
 -- | Get the address of the payload of a RawSmall object.
 xPayloadOfRawSmall :: a -> Exp a Name -> Exp a Name
 xPayloadOfRawSmall a x2 
-        = XApp a (XVar a u) x2
-        where u = UName (NameVar "payloadOfRawSmall") tPayloadOfRawSmall
+        = XApp a (XVar a uPayloadOfRawSmall) x2
  
-tPayloadOfRawSmall :: Type Name
-tPayloadOfRawSmall
-        = tFunPE (tPtr tObj) tAddr
-
-
+uPayloadOfRawSmall :: Bound Name
+uPayloadOfRawSmall
+        = UName (NameVar "payloadOfRawSmall")
+        $ tFunPE (tPtr tObj) tAddr
 

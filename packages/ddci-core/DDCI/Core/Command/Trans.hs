@@ -49,7 +49,7 @@ applyTrans
         -> IO (Maybe (Exp () Name))
 
 applyTrans state (x, t1, eff1, clo1)
- | Fragment _ _ _ _ _ makeNamifierT makeNamifierX nameZero <- fragmentEval
+ | Fragment _ _ _ _ _ _ makeNamifierT makeNamifierX nameZero <- fragmentEval
  = do	-- Collect names already used as binders. 
         -- We won't return these when asked for a fresh name.
         let (tbinds, vbinds) = collectBinds x

@@ -53,7 +53,7 @@ singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 }
  = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
 
 
--- Take the head of a list,
+-- Take the head of an Int list,
 --      unpacks a Boxed object.
 :to-salt..
 module Main with letrec
@@ -61,6 +61,30 @@ head    [r : %] (def : Int r)
         (xs : List r (Int r))   { Read r | Use r } 
         : Int r
  = case xs of 
-        Cons x xs'      -> def
+        Cons x xs'      -> x
         _               -> def;;
+
+
+-- Take the tail of an Int list
+:to-salt..
+module Main with letrec
+tail   [r : %] (def : List r (Int r))
+       (xs : List r (Int r))   { Read r | Use r }
+       : List r (Int r)
+ = case xs of
+        Cons x xs'      -> xs
+        _               -> def;;
+
+
+-- Take the head of a polymorphic list
+:to-salt..
+module Main with letrec
+head    [r : %] [a : *] (def : a)
+        (xs : List r a) {Read r | DeepUse a}
+        : a
+ = case xs of
+        Cons x xs'      -> x
+        _               -> def;;
+
+
 

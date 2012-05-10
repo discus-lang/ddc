@@ -32,6 +32,9 @@ data Fragment n (err :: * -> *)
         { -- | Language profile for this fragment.
           fragmentProfile       :: Profile n
 
+          -- | File extension to use when dumping modules in this fragment.
+        , fragmentExtension     :: String
+
           -- | Lex module source into tokens,
           --   given the source name and starting line number. 
         , fragmentLexModule     :: String -> Int -> String -> [Token (Tok n)]

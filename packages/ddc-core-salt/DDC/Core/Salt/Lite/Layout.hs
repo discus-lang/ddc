@@ -110,6 +110,7 @@ fieldSizeOfType platform tt
 fieldSizeOfPrim :: Platform -> Name -> Maybe Integer
 fieldSizeOfPrim platform nn
  = case nn of
+        NameDataTyCon{}         -> Just $ platformAddrBytes platform
         NamePrimTyCon tc        -> fieldSizeOfPrimTyCon platform tc
         _                       -> Nothing
 

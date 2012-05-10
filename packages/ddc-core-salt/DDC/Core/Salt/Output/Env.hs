@@ -96,6 +96,7 @@ typeOfName :: Name -> Maybe (Type Name)
 typeOfName nn
  = case nn of
         NamePrim p      -> Just $ typeOfPrim p
+        NameVoid        -> Just $ tVoid
         NameNat  _      -> Just $ tNat
         NameTag  _      -> Just $ tTag
         NameBool _      -> Just $ tBool

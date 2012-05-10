@@ -31,23 +31,27 @@ constructData
 constructData pp a dataDef ctorDef xsArgs 
 
  | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
- , Just _size                    <- L.payloadSizeOfDataCtor  pp ctorDef
- = error "constructData boxed"
-
-{-}        -- Allocate the object.
+ , Just size                    <- L.payloadSizeOfDataCtor pp ctorDef
+ = do
+        -- Allocate the object.
         let bObject     = BAnon (O.tPtr O.tObj)
         let xAlloc      = O.xAllocBoxed a (dataCtorTag ctorDef)
                         $ XCon a (UPrim (O.NameNat size) O.tNat)
 
-        -- Write field values to the freshly allocated object.
-        xBody           <- writeFields pp a dataDef ctorDef xsArgs 
-                                (XVar a $ UIx 0 O.tAddr)
-                                (XVar a $ UIx 1 $ O.tPtr O.tObj)
+        -- We want to write the fields into the newly allocated object.
+        -- The xsArgs list also contains type arguments, so we need to
+        --  drop these off first.
+        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgs
 
-        return  $ XLet a (LLet LetStrict bObject  xAlloc)
-                $ XLet a (LLet LetStrict bPayload xPayload)
-                $ xBody
--}
+        -- Statements to write each of the fields.
+        let xObject'    = XVar a $ UIx 0 $ O.tPtr O.tObj
+        let lsFields    = [ LLet LetStrict (BNone O.tVoid)
+                                (O.xSetFieldOfBoxed a xObject' ix xField)
+                                | ix            <- [0..]
+                                | xField        <- xsFields]
+
+        return  $ XLet a (LLet LetStrict bObject xAlloc)
+                $ foldr (XLet a) xObject' lsFields
 
 
  | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
@@ -74,7 +78,7 @@ constructData pp a dataDef ctorDef xsArgs
         let Just offsets = L.fieldOffsetsOfDataCtor pp ctorDef
 
         -- Statements to write each of the fields.
-        let xObject'    = XVar a $ UIx 0 $ O.tPtr O.tObj
+        let xObject'    = XVar a $ UIx 1 $ O.tPtr O.tObj
         let xPayload'   = XVar a $ UIx 0 O.tAddr
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
                                 (O.xWrite a tField xPayload' offset xField)
@@ -87,8 +91,12 @@ constructData pp a dataDef ctorDef xsArgs
                 $ foldr (XLet a) xObject' lsFields
 
  | otherwise
- = error $ "constructData: don't know how to construct a " 
-         ++ (show $ dataCtorName ctorDef)
+ = error $ unlines
+        [ "constructData: don't know how to construct a " 
+                ++ (show $ dataCtorName ctorDef)
+        , "  heapObject = " ++ (show $ L.heapObjectOfDataCtor ctorDef) 
+        , "  fields     = " ++ (show $ dataCtorFieldTypes ctorDef)
+        , "  size       = " ++ (show $ L.payloadSizeOfDataCtor pp ctorDef) ]
 
 
 -- Destruct -------------------------------------------------------------------
@@ -110,7 +118,7 @@ destructData pp a uScrut ctorDef bsFields xBody
  = do   
         -- Bind pattern variables to each of the fields.
         let lsFields    = [ LLet LetStrict bField 
-                                (O.xFieldOfBoxed a (XVar a uScrut) ix)
+                                (O.xGetFieldOfBoxed a (XVar a uScrut) ix)
                                 | bField        <- bsFields
                                 | ix            <- [0..] ]
 

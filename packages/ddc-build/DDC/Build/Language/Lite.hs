@@ -15,6 +15,7 @@ fragmentLite :: Fragment Name Error
 fragmentLite
         = Fragment
         { fragmentProfile       = profile 
+        , fragmentExtension     = "dcl"
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString
         , fragmentCheckModule   = const Nothing

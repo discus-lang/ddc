@@ -32,9 +32,22 @@ convertPrimT    = convertT' False
 convertT' :: Bool -> Type L.Name -> ConvertM a (Type O.Name)
 convertT' stripForalls tt
  = case tt of
-        -- Convert type variables an constructors.
-        TVar u          -> liftM TVar (convertU u)
-        TCon tc         -> convertTyCon tc
+        -- Convert type variables and constructors.
+        TVar u
+         -- Boxed objects are represented as a generic ptr to object.
+         | isDataKind (typeOfBound u)
+         -> return $ O.tPtr O.tObj
+
+         -- Keep region variables.
+         | isRegionKind (typeOfBound u)
+         -> liftM TVar $ convertU u
+
+         | otherwise    
+         -> error $ "convertT': unexpected var kind" ++ show tt
+
+        -- Convert type constructors.
+        TCon tc 
+         -> convertTyCon tc
 
         -- Strip off foralls, as the Brine fragment doesn't care about quantifiers.
         TForall b t     

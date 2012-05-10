@@ -52,7 +52,7 @@ cmdLiteToSalt state source builder str
         -- The Lite -> Salt conversion adds debruijn indices, 
         -- but these aren't part of the Salt Fragment. 
         --   Run the namifier to eliminate the debruijn indices.
-        [  PipeCoreSimplify     fragmentSalt (Simpl.Trans Simpl.Namify)
+        [  PipeCoreSimplify     fragmentSalt (Simpl.anormalize)
 
         [  PipeCoreCheck        fragmentSalt
         [  PipeCoreHacks        (Canned (suppressModule state))

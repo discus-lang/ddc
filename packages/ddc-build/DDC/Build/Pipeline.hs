@@ -194,7 +194,11 @@ pipeCore mm pp
 
                 goCheck mm1
                  = case C.checkModule primDataDefs primKindEnv primTypeEnv mm1 of
-                        Left err   -> return [ErrorLint err]
+                        Left err   
+                         -> do  writeFile ("ddc.dump-check." ++ fragmentExtension fragment)
+                                          (renderIndent $ ppr mm1)
+                                return [ErrorLint err]
+
                         Right mm2  -> goComplies mm2
 
                 goComplies mm1
@@ -209,7 +213,7 @@ pipeCore mm pp
          $  PipeCoreCheck fragment pipes
 
         PipeCoreSimplify frag simpl pipes
-         | Fragment _ _ _ _ _ makeNamifierT makeNamifierX nameZero <- frag
+         | Fragment _ _ _ _ _ _ makeNamifierT makeNamifierX nameZero <- frag
          -> let 
                 -- Collect up names used as binders,
                 -- We pass these to the namifiers so they know not to

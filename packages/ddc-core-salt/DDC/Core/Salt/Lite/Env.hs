@@ -32,7 +32,7 @@ primDataDefs
         [ DataDef
                 (NameDataTyCon DataTyConUnit)
                 []
-                (Just [ (NamePrimDaCon PrimDaConUnit, []) ])
+                (Just [ (NamePrimDaCon PrimDaConUnit, [tUnit]) ])
 
         -- Bool
         , DataDef

@@ -17,6 +17,7 @@ fragmentEval :: Fragment Name Error
 fragmentEval
         = Fragment
         { fragmentProfile       = evalProfile
+        , fragmentExtension     = "dcv"
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString
         , fragmentCheckModule   = error "DDC.Core.Language.Eval: finish me"

@@ -3,23 +3,6 @@ ok
 ok
 
 
--- Take the head of a list,
---      unpacks a Boxed object.
-module Main with
-letrec {
-  head : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-    = \(def xs : Ptr# Obj).
-      case getTag xs of {
-        TAG1#  
-         -> let x : Ptr# Obj = fieldOfBoxed xs 0 in
-            let xs' : Ptr# Obj = fieldOfBoxed xs 1 in
-            return# [Ptr# Obj] def;
-        _ 
-         -> return# [Ptr# Obj] def
-      }
-}
-
-
 -- Integer boxing,
 --      packs a RawSmall Object.
 module Main with
@@ -39,10 +22,11 @@ module Main with
 letrec {
   unboxInt : Ptr# Obj -> Int32#
     = \(x : Ptr# Obj).
-      case getTag x of {
+      let x0 : Tag# = getTag x in
+      case x0 of {
         TAG0#  
-         -> let x0 : Addr# = payloadOfRawSmall x in
-            let i : Int32# = read# [Int32#] x0 0 in
+         -> let x1 : Addr# = payloadOfRawSmall x in
+            let i : Int32# = read# [Int32#] x1 0 in
             return# [Int32#] i;
         _ 
          -> fail# [Int32#]
@@ -51,52 +35,91 @@ letrec {
 
 
 -- Nested case-expressions.
-module Main with
-letrec {
-  addInt : Ptr# Obj -> Ptr# Obj -> Int32#
-    = \(x y : Ptr# Obj).
-      case getTag x of {
-        TAG0#  
-         -> let x0 : Addr# = payloadOfRawSmall x in
-            let i1 : Int32# = read# [Int32#] x0 0 in
-            case getTag y of {
-              TAG0#  
-               -> let x1 : Addr# = payloadOfRawSmall y in
-                  let i2 : Int32# = read# [Int32#] x1 0 in
-                  add# [Int32#] i1 i2;
-              _ 
-               -> fail# [Int32#]
-            };
-        _ 
-         -> fail# [Int32#]
-      }
-}
+Error in transformed module.
+  Type mismatch in annotation.
+               Variable: add#
+         has annotation: [^ : *].Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+   which conflicts with: [^ : *].^0 -> ^0 -> ^0
+       from environment.
 
 
 -- Boxed addition
+Error in transformed module.
+  Type mismatch in annotation.
+               Variable: add#
+         has annotation: [^ : *].Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+   which conflicts with: [^ : *].^0 -> ^0 -> ^0
+       from environment.
+
+
+-- Construct a singleton list,
+--      packs a Boxed objet.
 module Main with
 letrec {
-  addInt : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-    = \(x y : Ptr# Obj).
-      case getTag x of {
-        TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall x in
-            let i1 : Int32# = read# [Int32#] x1 0 in
-            case getTag y of {
-              TAG0#  
-               -> let x2 : Addr# = payloadOfRawSmall y in
-                  let i2 : Int32# = read# [Int32#] x2 0 in
-                  let x0 : Int32# = add# [Int32#] i1 i2 in
-                  let x3 : Ptr# Obj = allocRawSmall TAG0# 4 in
-                  let x4 : Addr# = payloadOfRawSmall x3 in
-                  let _ : Void# = write# [Int32#] x4 0 x0 in
-                  x3;
-              _ 
-               -> fail# [Ptr# Obj]
-            };
+  singleton : Ptr# Obj -> Ptr# Obj
+    = \(x : Ptr# Obj).
+      let x1 : Ptr# Obj = allocBoxed TAG0# 0 in
+      let x2 : Ptr# Obj = allocBoxed TAG0# 8 in
+      let x3 : Ptr# Obj = x2 in
+      let x4 : Void# = setFieldOfBoxed x1 0 x3 in
+      let x0 : Ptr# Obj = x2 in
+      let x5 : Ptr# Obj = allocBoxed TAG1# 8 in
+      let _ : Void# = setFieldOfBoxed x5 0 x in
+      let _ : Void# = setFieldOfBoxed x5 1 x0 in
+      x5
+}
+
+
+-- Take the head of an Int list,
+--      unpacks a Boxed object.
+module Main with
+letrec {
+  head : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+    = \(def xs : Ptr# Obj).
+      let x0 : Tag# = getTag xs in
+      case x0 of {
+        TAG1#  
+         -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
+            let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
+            return# [Ptr# Obj] x;
         _ 
-         -> fail# [Ptr# Obj]
+         -> return# [Ptr# Obj] def
       }
 }
+
+
+-- Take the tail of an Int list
+module Main with
+letrec {
+  tail : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+    = \(def xs : Ptr# Obj).
+      let x0 : Tag# = getTag xs in
+      case x0 of {
+        TAG1#  
+         -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
+            let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
+            return# [Ptr# Obj] xs;
+        _ 
+         -> return# [Ptr# Obj] def
+      }
+}
+
+
+-- Take the head of a polymorphic list
+module Main with
+letrec {
+  head : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+    = \(def xs : Ptr# Obj).
+      let x0 : Tag# = getTag xs in
+      case x0 of {
+        TAG1#  
+         -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
+            let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
+            return# [Ptr# Obj] x;
+        _ 
+         -> return# [Ptr# Obj] def
+      }
+}
+
 
 

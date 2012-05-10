@@ -15,6 +15,7 @@ fragmentSalt :: Fragment Name Error
 fragmentSalt 
         = Fragment
         { fragmentProfile       = profile 
+        , fragmentExtension     = "dce"
         , fragmentLexModule     = lexModuleString
         , fragmentLexExp        = lexExpString
         , fragmentCheckModule   = const Nothing
