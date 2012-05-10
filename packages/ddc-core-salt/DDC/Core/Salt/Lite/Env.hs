@@ -132,11 +132,17 @@ typeOfPrimName dc
  = case dc of
         -- B#
         NamePrimDaCon PrimDaConBoolU
-         -> Just $ tForall kRegion $ \r -> tBoolU `tFunPE` tBool r
+         -> Just $ tForall kRegion $ \tR
+                -> tFun tBoolU          (tAlloc tR)
+                                        (tBot kClosure)
+                 $ tBool tR
 
         -- I32#
         NamePrimDaCon PrimDaConInt32U
-         -> Just $ tForall kRegion $ \r -> tIntU 32 `tFunPE` tInt r
+         -> Just $ tForall kRegion $ \tR
+                 -> tFun (tIntU 32)     (tAlloc tR)
+                                        (tBot kClosure)
+                 $  tInt tR
 
         -- Unit
         NamePrimDaCon PrimDaConUnit

@@ -22,7 +22,7 @@ Bool :: % ~> *
 
 -- Boxing bools
 /\(r : %). \(x : Bool#). B# [r] x
-:*: [r : %].Bool# -(!0 | Use r)> Bool r
+:*: [r : %].Bool# -(Alloc r | Use r)> Bool r
 :!: !0
 :$: $0
 
@@ -36,7 +36,7 @@ Bool :: % ~> *
 
 -- Boxing ints
 /\(r : %). \(x : Int32#). I32# [r] x
-:*: [r : %].Int32# -(!0 | Use r)> Int r
+:*: [r : %].Int32# -(Alloc r | Use r)> Int r
 :!: !0
 :$: $0
 
@@ -49,7 +49,7 @@ Bool :: % ~> *
 
 
 -- Boxed integer add
-let unboxInt : [r : %].Int r -(Read r | $0)> Int32# = /\(r : %). \(x : Int r). case x of { I32# (i : Int32#) -> i } in let addInt : [r1 r2 r3 : %].Int r1 -(!0 | Use r3)> Int r2 -(Read r1 + Read r2 | Use r1 + Use r3)> Int r3 = /\(r1 r2 r3 : %). \(x : Int r1). \(y : Int r2). case x of { I32# (i1 : Int32#) -> case y of { I32# (i2 : Int32#) -> I32# [r3] (add# [Int32#] i1 i2) } } in letregion r1 in unboxInt [r1] (addInt [r1] [r1] [r1] (2 [r1] ()) (3 [r1] ()))
+let unboxInt : [r : %].Int r -(Read r | $0)> Int32# = /\(r : %). \(x : Int r). case x of { I32# (i : Int32#) -> i } in let addInt : [r1 r2 r3 : %].Int r1 -(!0 | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3 = /\(r1 r2 r3 : %). \(x : Int r1). \(y : Int r2). case x of { I32# (i1 : Int32#) -> case y of { I32# (i2 : Int32#) -> I32# [r3] (add# [Int32#] i1 i2) } } in letregion r1 in unboxInt [r1] (addInt [r1] [r1] [r1] (2 [r1] ()) (3 [r1] ()))
 :*: Int32#
 :!: !0
 :$: $0

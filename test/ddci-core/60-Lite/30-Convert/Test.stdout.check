@@ -20,6 +20,19 @@ letrec {
 }
 
 
+-- Integer boxing,
+--      packs a RawSmall Object.
+module Main with
+letrec {
+  boxInt : Int32# -> Ptr# Obj
+    = \(i : Int32#).
+      let x0 : Ptr# Obj = allocRawSmall TAG0# 4 in
+      let x1 : Addr# = payloadOfRawSmall x0 in
+      let _ : Void# = write# [Int32#] x1 0 i in
+      x0
+}
+
+
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
 module Main with
@@ -85,3 +98,5 @@ letrec {
          -> fail# [Ptr# Obj]
       }
 }
+
+

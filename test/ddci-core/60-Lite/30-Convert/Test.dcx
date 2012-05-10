@@ -16,6 +16,14 @@ head    [r : %] (def : Int r)
 ;;
 
 
+-- Integer boxing,
+--      packs a RawSmall Object.
+:to-salt..
+module Main with letrec
+boxInt [r : %] (i : Int32#) { Alloc r | Use r } : Int r
+        = I32# [r] i;;
+
+
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
 :to-salt..
@@ -44,9 +52,11 @@ addInt [r1 r2 r3 : %]
 module Main with letrec
 addInt [r1 r2 r3 : %] 
         (x : Int r1) { !0 | Use r3 } 
-        (y : Int r2) { Read r1 + Read r2 | Use r1 + Use r3}
+        (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
         : Int r3
  =  case x of { I32# i1 
  -> case y of { I32# i2 
  -> I32# [r3] (add# [Int32#] i1 i2) } }
 ;;
+
+
