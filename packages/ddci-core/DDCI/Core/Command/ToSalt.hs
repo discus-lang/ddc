@@ -44,16 +44,11 @@ cmdLiteToSalt :: State -> Source -> Builder -> String -> IO ()
 cmdLiteToSalt state source builder str
  = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentLite
-        [  PipeCoreSimplify     fragmentLite (Simpl.anormalize)
+        [  PipeCoreSimplify     fragmentLite Simpl.anormalize
         [  PipeCoreReCheck      fragmentLite 
         [  PipeCoreAsLite
         [  PipeLiteToSalt       (buildSpec builder)
-
-        -- The Lite -> Salt conversion adds debruijn indices, 
-        -- but these aren't part of the Salt Fragment. 
-        --   Run the namifier to eliminate the debruijn indices.
-        [  PipeCoreSimplify     fragmentSalt (Simpl.anormalize)
-
+        [  PipeCoreSimplify     fragmentSalt Simpl.anormalize
         [  PipeCoreCheck        fragmentSalt
         [  PipeCoreHacks        (Canned (suppressModule state))
         [  PipeCoreOutput       SinkStdout ]]]]]]]])

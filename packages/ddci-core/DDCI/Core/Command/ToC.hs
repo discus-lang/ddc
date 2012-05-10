@@ -11,7 +11,6 @@ import DDC.Core.Fragment.Profile
 import DDC.Core.Check
 import System.FilePath
 import DDC.Core.Simplifier.Recipie              as Simpl
-import DDC.Core.Simplifier                      as Simpl
 import qualified DDC.Core.Salt                  as A
 import qualified Data.Set                       as Set
 import qualified DDC.Base.Pretty                as P
@@ -50,12 +49,7 @@ cmdLiteToC state source builder str
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
         [  PipeLiteToSalt       (buildSpec builder)
-
-        -- The Lite -> Salt conversion adds debruijn indices, 
-        -- but these aren't part of the Salt Fragment. 
-        --   Run the namifier to eliminate the debruijn indices.
-        [  PipeCoreSimplify     fragmentSalt (Simpl.Trans Simpl.Namify)
-
+        [  PipeCoreSimplify     fragmentSalt Simpl.anormalize
         [  PipeCoreCheck        fragmentSalt 
         [  pipeCore_saltToC state ]]]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
@@ -76,6 +70,9 @@ pipeCore_saltToC state
                                (stateSimplifier state <> Simpl.anormalize)
         [  PipeCoreReCheck     fragmentSalt
         [  PipeCoreAsSalt
+        [  PipeSaltTransfer                                     
         [  PipeSaltPrint 
                 (Set.member SaltPrelude (stateModes state))
-                SinkStdout ]]]
+                SinkStdout ]]]]
+
+

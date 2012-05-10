@@ -35,21 +35,57 @@ letrec {
 
 
 -- Nested case-expressions.
-Error in transformed module.
-  Type mismatch in annotation.
-               Variable: add#
-         has annotation: [^ : *].Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-   which conflicts with: [^ : *].^0 -> ^0 -> ^0
-       from environment.
+module Main with
+letrec {
+  addInt : Ptr# Obj -> Ptr# Obj -> Int32#
+    = \(x y : Ptr# Obj).
+      let x0 : Tag# = getTag x in
+      case x0 of {
+        TAG0#  
+         -> let x1 : Addr# = payloadOfRawSmall x in
+            let i1 : Int32# = read# [Int32#] x1 0 in
+            let x2 : Tag# = getTag y in
+            case x2 of {
+              TAG0#  
+               -> let x3 : Addr# = payloadOfRawSmall y in
+                  let i2 : Int32# = read# [Int32#] x3 0 in
+                  add# [Int32#] i1 i2;
+              _ 
+               -> fail# [Int32#]
+            };
+        _ 
+         -> fail# [Int32#]
+      }
+}
 
 
 -- Boxed addition
-Error in transformed module.
-  Type mismatch in annotation.
-               Variable: add#
-         has annotation: [^ : *].Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-   which conflicts with: [^ : *].^0 -> ^0 -> ^0
-       from environment.
+module Main with
+letrec {
+  addInt : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
+    = \(x y : Ptr# Obj).
+      let x1 : Tag# = getTag x in
+      case x1 of {
+        TAG0#  
+         -> let x2 : Addr# = payloadOfRawSmall x in
+            let i1 : Int32# = read# [Int32#] x2 0 in
+            let x3 : Tag# = getTag y in
+            case x3 of {
+              TAG0#  
+               -> let x4 : Addr# = payloadOfRawSmall y in
+                  let i2 : Int32# = read# [Int32#] x4 0 in
+                  let x0 : Int32# = add# [Int32#] i1 i2 in
+                  let x5 : Ptr# Obj = allocRawSmall TAG0# 4 in
+                  let x6 : Addr# = payloadOfRawSmall x5 in
+                  let _ : Void# = write# [Int32#] x6 0 x0 in
+                  x5;
+              _ 
+               -> fail# [Ptr# Obj]
+            };
+        _ 
+         -> fail# [Ptr# Obj]
+      }
+}
 
 
 -- Construct a singleton list,
@@ -120,6 +156,5 @@ letrec {
          -> return# [Ptr# Obj] def
       }
 }
-
 
 

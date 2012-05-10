@@ -1,5 +1,14 @@
 
 -- | Convert the Disciple Core Salt into to real C code.
+--
+--   The input module needs to be:
+--      well typed,
+--      fully named with no deBruijn indices,
+--      have all functions defined at top-level,
+--      a-normalised,
+--      have a control-transfer primop at the end of every function body
+--        (these are added by DDC.Core.Salt.Convert.Transfer)
+--      
 module DDC.Core.Salt.Convert
         (convertModule)
 where

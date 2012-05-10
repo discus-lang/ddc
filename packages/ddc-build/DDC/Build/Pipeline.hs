@@ -40,6 +40,7 @@ import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
+import qualified DDC.Core.Salt.Convert.Transfer as Salt
 import qualified DDC.Core.Salt.Platform         as Salt
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Lite                  as Lite
@@ -273,6 +274,10 @@ data PipeSalt
         -- | Output the module in core language syntax.
         = PipeSaltOutput     Sink
 
+        -- | Insert control-transfer primops.
+        --      This needs to be done before we convert the module to C or LLVM.
+        | PipeSaltTransfer    [PipeSalt]  
+
         -- | Print the module as a C source code.
         | PipeSaltPrint      
         { pipeWithSaltPrelude  :: Bool
@@ -293,6 +298,10 @@ pipeSalt mm pp
  = case pp of
         PipeSaltOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
+
+        PipeSaltTransfer pipes
+         -> let mm'     = Salt.transferModule mm
+            in  liftM concat $ mapM (pipeSalt mm') pipes
 
         PipeSaltPrint withPrelude sink
          -> case Salt.convertModule mm of

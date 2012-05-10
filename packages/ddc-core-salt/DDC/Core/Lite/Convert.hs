@@ -38,15 +38,15 @@ import Control.Monad
 --
 --   The input module needs to be:
 --      well typed,
---      have type annotations on every bound variable and constructor
+--      fully named with no deBruijn indices,
 --      have all functions defined at top-level,
---      be fully named,
---      and a-normalised.
+--      have type annotations on every bound variable and constructor
+--      a-normalised
 --      If not then `Error`.
 --
 --   The output code contains:
 --      debruijn indices.
---       these which need to be eliminateed before it will pass the Salt fragment checks.
+--       these which need to be eliminated before it will pass the Salt fragment checks.
 --
 toSalt
         :: Show a
