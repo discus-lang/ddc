@@ -171,6 +171,14 @@ convBodyM blocks label instrs xx
 
          -- End of function body must explicitly pass control.
          C.XApp{}
+          |  Just (A.NamePrim p, xs)             <- takeXPrimApps xx
+          ,  A.PrimControl A.PrimControlReturn   <- p
+          ,  [C.XType _, C.XCon _ (C.UPrim n _)] <- xs
+          ,  A.NameVoid                          <- n
+          -> return  $   blocks 
+                     |>  Block label (instrs |> IReturn Nothing)
+
+         C.XApp{}
           |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn <- p
           ,  [C.XType _t, x]                   <- xs
@@ -215,7 +223,7 @@ convBodyM blocks label instrs xx
 
                 return  $ blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
-         _ -> die "invalid body statement"
+         _ -> die $ "invalid body statement " ++ show xx
  
 
 -- Stmt -----------------------------------------------------------------------
