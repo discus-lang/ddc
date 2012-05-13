@@ -18,6 +18,7 @@ import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw, result)
 import DDC.Core.Check                    (AnTEC(..))
+import qualified DDC.Core.Lite.Compounds as L
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as O
 import qualified DDC.Core.Salt.Name      as O
@@ -180,8 +181,8 @@ convertArgX pp defs xx
 
         XCon a u
          -> case u of
-                UName nCtor _   -> convertCtorAppX pp (annotTail a) defs nCtor []
-                UPrim nCtor _   -> convertCtorAppX pp (annotTail a) defs nCtor []
+                UName nCtor _   -> convertCtorAppX pp a defs nCtor []
+                UPrim nCtor _   -> convertCtorAppX pp a defs nCtor []
                 _               -> throw $ ErrorInvalidBound u
 
 
@@ -194,15 +195,15 @@ convertArgX pp defs xx
                 return  $ makeXApps (annotTail a) x1' xsArgs'
 
         -- Primitive data constructors.
-        XApp (AnTEC _t _ _ a') _ _
+        XApp a _ _
          | x1 : xsArgs            <- takeXApps xx
          , XCon _ (UPrim nCtor _) <- x1
-         -> convertCtorAppX pp a' defs nCtor xsArgs
+         -> convertCtorAppX pp a defs nCtor xsArgs
 
         XApp a _ _
          | x1 : xsArgs            <- takeXApps xx
          , XCon _ (UName nCtor _) <- x1
-         -> convertCtorAppX pp (annotTail a) defs nCtor xsArgs
+         -> convertCtorAppX pp a defs nCtor xsArgs
 
         XApp (AnTEC _t _ _ _a') _ _
          | x1 : _xsArgs          <- takeXApps xx
@@ -231,20 +232,53 @@ convertArgX pp defs xx
 convertCtorAppX 
         :: Show a
         => Platform 
-        -> a
+        -> AnTEC a L.Name
         -> DataDefs L.Name
         -> L.Name
         -> [Exp (AnTEC a L.Name) L.Name]
         -> ConvertM a (Exp a O.Name)
 
-convertCtorAppX pp a defs nCtor xsArgs
+convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
+
+ -- Pass through unboxed literals.
+ | L.NameBool b         <- nCtor
+ , []                   <- xsArgs
+ = do   t'              <- convertT t
+        return $ XCon (annotTail a) (UPrim (O.NameBool b) t')
+
+ | L.NameWord i bits    <- nCtor
+ , []                   <- xsArgs
+ = do   t'              <- convertT t
+        return $ XCon (annotTail a) (UPrim (O.NameWord i bits) t')
+
+ | L.NameInt i bits     <- nCtor
+ , []                   <- xsArgs
+ = do   t'              <- convertT t
+        return $ XCon (annotTail a) (UPrim (O.NameInt i bits) t')
+
+
+ -- Construct a literal integer.
+ -- TODO: maybe we should eliminate these earlier in the pipeline,
+ --       when producing the core code.
+ | L.NameInteger i      <- nCtor
+ , [XType tR, _]        <- xsArgs
+ = do   
+        let uInt32U = UPrim (L.NamePrimDaCon L.PrimDaConInt32U) 
+                            (L.tIntU 32 `tFunPE` (L.tInt tR))
+
+        convertArgX pp defs 
+         $ XApp a (XCon a uInt32U)
+                  (XCon a (UPrim (L.NameInt i 32) $ L.tIntU 32))
+
+ -- Construct algbraic data that has a finite number of data constructors.
  | Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
  , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
  = do   xs'     <- mapM (convertArgX pp defs) xsArgs
-        constructData pp a dataDef ctorDef xs'
+        constructData pp (annotTail a) dataDef ctorDef xs'
 
-convertCtorAppX _ _ _ _ _
- = error "toSaltX: convertCtorAppX failed"
+
+convertCtorAppX _ _ _ nCtor xsArgs
+ = error $ "toSaltX: convertCtorAppX failed " ++ show (nCtor, xsArgs)
 
 
 -- Alt ------------------------------------------------------------------------
@@ -264,6 +298,8 @@ convertA pp defs a uScrut alt
                 return  $ AAlt PDefault x'
 
 
+        -- Match against algebraic data with a finite number
+        -- of data constructors.
         AAlt (PData uCtor bsFields) x
          | Just nCtor    <- case uCtor of
                                 UName n _ -> Just n
@@ -287,6 +323,17 @@ convertA pp defs a uScrut alt
                 xBody2          <- destructData pp a uScrut' ctorDef bsFields' xBody1
 
                 return  $ AAlt (PData uTag []) xBody2
+
+
+        -- Match against literal integer.
+        AAlt (PData uCtor []) x
+         | UPrim (L.NameInteger iVal) _    <- uCtor
+         -> do  let uTag    = UPrim (O.NameTag iVal) O.tTag
+
+                -- Convert he right of the alternative.
+                xBody1  <- convertBodyX pp defs x
+
+                return  $ AAlt (PData uTag []) xBody1
 
 
         AAlt{}          -> throw ErrorInvalidAlt

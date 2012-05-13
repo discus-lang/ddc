@@ -87,3 +87,53 @@ head    [r : %] [a : *] (def : a)
         _               -> def;;
 
 
+-- Boxed literal patterns.                              -- TODO: result isn't fully constructed
+:to-salt..
+module Main with letrec
+foo     [r : %] (x : Int r) {Read r + Alloc r | Use r}
+        : Int r
+ = case x of
+        0       -> 1 [r] ()
+        1       -> 2 [r] ()
+        5       -> 5 [r] ()
+        _       -> 3 [r] ();;
+
+
+
+-- Unboxed literal patterns
+-- These don't work yet.
+
+--:to-salt..
+--module Main with letrec
+--foo     (x : Bool#) : Bool#
+-- = case x of
+--        True#   -> False#
+--        False#  -> True#;;
+
+
+--:to-salt..
+--module Main with letrec
+--foo     (x : Word16#) : Word16#
+-- = case x of
+--        5w16#   -> 6w16#
+--        7w16#   -> 8w16#
+--        _       -> 0w16#;;
+
+
+--:to-salt..
+--module Main with letrec
+--foo     (x : Int64#) : Int64#
+-- = case x of
+--        5i64#   -> 6i64#
+--        7i64#   -> 8i64#
+--        _       -> 0i64#;;
+
+
+--:to-salt..
+--module Main with letrec
+--foo     (x : Int32#) : Int32#
+-- = case x of
+--        5i32#   -> 6i32#
+--        7i32#   -> 8i32#
+--        _       -> 0i32#;;
+

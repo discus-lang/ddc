@@ -139,7 +139,6 @@ destructData pp a uScrut ctorDef bsFields xBody
                                 | tField        <- map typeOfBind bsFields
                                 | offset        <- offsets ]
 
-        -- TODO: lift body expression
         return  $ foldr (XLet a) xBody
                 $ LLet LetStrict bPayload xPayload
                 : lsFields
@@ -147,3 +146,4 @@ destructData pp a uScrut ctorDef bsFields xBody
 
  | otherwise
  = throw ErrorInvalidAlt
+

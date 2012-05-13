@@ -28,11 +28,32 @@ import qualified DDC.Type.Env   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
+        -- Unboxed --------------------------------------------------
+        -- We need these so that we can match against unboxed patterns
+        -- in case expressions.
+        -- Bool#
+        [ DataDef (NamePrimTyCon PrimTyConBool) [] Nothing
+
+        -- WordN#
+        , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+
+        -- IntN#
+        , DataDef (NamePrimTyCon (PrimTyConInt  64))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConInt  32))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConInt  16))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConInt  8))   [] Nothing
+
+
+        -- Boxed ----------------------------------------------------
         -- Unit
-        [ DataDef
+        , DataDef
                 (NameDataTyCon DataTyConUnit)
                 []
-                (Just [ (NamePrimDaCon PrimDaConUnit, [tUnit]) ])
+                (Just   [ ( NamePrimDaCon PrimDaConUnit
+                          , [tUnit]) ])
 
         -- Bool
         , DataDef
