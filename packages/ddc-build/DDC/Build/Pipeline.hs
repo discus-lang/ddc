@@ -281,29 +281,29 @@ pipeLite mm pp
 -- PipeSaltModule --------------------------------------------------------------
 -- | Process a Core Salt module.
 data PipeSalt a where
-        -- | Plumb the module on without doing anything to it.
+        -- Plumb the module on without doing anything to it.
         PipeSaltId
                 :: [PipeSalt a]
                 -> PipeSalt a
 
-        -- | Output the module in core language syntax.
+        -- Output the module in core language syntax.
         PipeSaltOutput 
                 :: Sink
                 -> PipeSalt a
 
-        -- | Insert control-transfer primops.
+        -- Insert control-transfer primops.
         --      This needs to be done before we convert the module to C or LLVM.
         PipeSaltTransfer
                 :: [PipeSalt (AnTEC a Salt.Name)]
                 -> PipeSalt (AnTEC a Salt.Name)
 
-        -- | Print the module as a C source code.
+        -- Print the module as a C source code.
         PipeSaltPrint      
                 :: Bool         -- with prelide
                 -> Sink 
                 -> PipeSalt a
 
-        -- | Convert the module to LLVM.
+        -- Convert the module to LLVM.
         PipeSaltToLlvm
                 :: Salt.Platform 
                 -> [PipeLlvm]
