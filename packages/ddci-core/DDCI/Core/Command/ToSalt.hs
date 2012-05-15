@@ -13,7 +13,6 @@ import DDC.Data.Canned
 import System.FilePath
 import DDC.Core.Simplifier                      as Simpl
 import qualified DDC.Base.Pretty                as P
-import Data.Maybe
 
 
 -- | Parse, check, and fully evaluate an expression.
@@ -28,11 +27,7 @@ cmdToSalt state source str
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
-        -- Determine the default builder,
-        -- assuming the host and target platforms are the same.
-        mBuilder        <- determineDefaultBuilder defaultBuilderConfig
-        let builder     =  fromMaybe    (error "Can not determine host platform.")
-                                        mBuilder
+        builder         <- getActiveBuilder state
 
         if fragName == "Lite"  || mSuffix == Just ".dcl"
          then cmdLiteToSalt  state source builder str

@@ -9,11 +9,13 @@ module DDCI.Core.State
         , Language      (..)
         , languages
 	, stateRewriteRulesList
+        , getActiveBuilder
 
         , Mode          (..)
         , adjustMode)
 where
 import DDCI.Core.Mode
+import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Eval.Name               (Name)
@@ -43,6 +45,10 @@ data State
 
           -- | Rewrite rules to apply during simplification.
 	, stateRewriteRules	:: Map String (RewriteRule () Name) 
+
+          -- | Force the builder to this one, this sets the address width etc.
+          --   If Nothing then query the host system for the default builder.
+        , stateBuilder          :: Maybe Builder
 
           -- | Output file for @compile@ and @make@ commands.
         , stateOutputFile       :: Maybe FilePath 
@@ -86,7 +92,8 @@ initState interface
         , stateModes            = Set.empty 
         , stateLanguage         = Language fragmentEval
         , stateSimplifier       = S.Trans S.Id
-	, stateRewriteRules	= Map.empty  
+	, stateRewriteRules	= Map.empty
+        , stateBuilder          = Nothing  
         , stateOutputFile       = Nothing
         , stateOutputDir        = Nothing }
 
@@ -95,3 +102,17 @@ stateRewriteRulesList :: State -> [RewriteRule () Name]
 stateRewriteRulesList State { stateRewriteRules = rules }
  = map snd $ Map.toList rules
 
+
+-- | Get the active builder.
+--   If one is set explicitly in the state then use that, 
+--   otherwise query the host system to determine the builder.
+--   If that fails as well then 'error'.
+getActiveBuilder :: State -> IO Builder 
+getActiveBuilder state 
+ = case stateBuilder state of
+        Just builder          -> return builder
+        Nothing         
+         -> do  mBuilder <- determineDefaultBuilder defaultBuilderConfig
+                case mBuilder of
+                 Nothing      -> error "getActiveBuilder unrecognised host platform"
+                 Just builder -> return builder

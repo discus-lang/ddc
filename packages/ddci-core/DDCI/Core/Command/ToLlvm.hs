@@ -14,7 +14,6 @@ import DDC.Core.Simplifier.Recipie      as Simpl
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Base.Pretty        as P
 import Data.Monoid
-import Data.Maybe
 
 -- | Parse, check and convert a  module to LLVM.
 ---
@@ -28,11 +27,7 @@ cmdToLlvm state source str
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
-        -- Determine the default builder,
-        -- assuming the host and target platforms are the same.
-        mBuilder        <- determineDefaultBuilder defaultBuilderConfig
-        let builder     =  fromMaybe    (error "Can not determine host platform.")
-                                        mBuilder
+        builder         <- getActiveBuilder state
 
         if      fragName == "Salt"  || mSuffix == Just ".dce"
          then cmdSaltToLlvm state source str builder

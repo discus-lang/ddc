@@ -2,6 +2,8 @@
 :set lang Lite
 :set +Indent +SuppressImports
 
+-- Set the builder explicitly so we get consistent object layouts.
+:set builder x86_64-darwin
 
 -- Integer boxing,
 --      packs a RawSmall Object.

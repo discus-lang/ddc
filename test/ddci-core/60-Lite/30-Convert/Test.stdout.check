@@ -2,6 +2,8 @@
 ok
 ok
 
+-- Set the builder explicitly so we get consistent object layouts.
+ok
 
 -- Integer boxing,
 --      packs a RawSmall Object.

@@ -14,7 +14,6 @@ import DDC.Core.Simplifier.Recipie              as Simpl
 import qualified DDC.Core.Salt                  as A
 import qualified Data.Set                       as Set
 import qualified DDC.Base.Pretty                as P
-import Data.Maybe
 import Data.Monoid
 
 -- | Parse, check, and fully evaluate an expression.
@@ -29,11 +28,7 @@ cmdToC state source str
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
-        -- Determine the default builder,
-        -- assuming the host and target platforms are the same.
-        mBuilder        <- determineDefaultBuilder defaultBuilderConfig
-        let builder     =  fromMaybe    (error "Can not determine host platform.")
-                                        mBuilder
+        builder         <- getActiveBuilder state
 
         if      fragName == "Salt" || mSuffix  == Just ".dce"
          then cmdSaltToC state source str

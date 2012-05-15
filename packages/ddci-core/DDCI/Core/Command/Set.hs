@@ -7,14 +7,18 @@ where
 import DDCI.Core.State
 import DDCI.Core.Mode
 import DDCI.Core.Output
+import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
 import DDC.Base.Pretty
+import Control.Monad
 import Data.Char
+import Data.List
 import qualified DDCI.Core.Rewrite as R
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map
+
 
 
 cmdSet ::  State -> String -> IO State
@@ -27,12 +31,14 @@ cmdSet state []
                     -> profileName (fragmentProfile frag)
 
         putStrLn $ renderIndent
-         $ vcat [ text "mode  = " <> text (show $ Set.toList 
+         $ vcat [ text "mode    = " <> text (show $ Set.toList 
                                                 $ stateModes state)
 
-                , text "lang  = " <> text langName
+                , text "lang    = " <> text langName
 
-                , text "simpl = " <> ppr (stateSimplifier state) ]
+                , text "simpl   = " <> ppr (stateSimplifier state) 
+
+                , text "builder = " <> text (show $ liftM builderName $ stateBuilder state) ]
 
         return state
 
@@ -80,6 +86,18 @@ cmdSet state cmd
 	Left e
 	 -> do	chatStrLn state e
 		return state
+
+ | "builder" : name : []     <- words cmd
+ = case find (\b -> builderName b == name) 
+          (builders defaultBuilderConfig) of
+        Nothing
+         -> do  putStrLn "unknown builder"
+                return state
+
+        Just builder
+         -> do  chatStrLn state "ok"
+                return state { stateBuilder = Just builder }
+
 
  | "outputdir" : dir : []    <- words cmd
  = return $ state { stateOutputDir  = Just dir }
