@@ -33,7 +33,7 @@ data DataDef n
           -- | Constructors of the data type, or Nothing if there are
           --   too many to list (like with `Int`).
         , dataDefCtors          :: Maybe [(n, [Type n])] }
-
+        deriving Show
 
 
 -- DataDefs -------------------------------------------------------------------
@@ -43,6 +43,7 @@ data DataDefs n
         = DataDefs
         { dataDefsTypes :: Map n (DataType n)
         , dataDefsCtors :: Map n (DataCtor n) }
+        deriving Show
 
 
 -- | The mode of a data type records how many data constructors there are.
@@ -52,6 +53,7 @@ data DataDefs n
 data DataMode n
         = DataModeSmall [n]
         | DataModeLarge
+        deriving Show
 
 
 -- | Describes a data type constructor, used in the `DataDefs` table.
@@ -66,6 +68,7 @@ data DataType n
           -- | Names of data constructors of this data type,
           --   or `Nothing` if it has infinitely many constructors.
         , dataTypeMode       :: DataMode n }
+        deriving Show
 
 
 -- | Describes a data constructor, used in the `DataDefs` table.
@@ -82,7 +85,7 @@ data DataCtor n
 
           -- | Name of result type of constructor.
         , dataCtorTypeName   :: n }
-
+        deriving Show
 
 
 -- | An empty table of data type definitions.

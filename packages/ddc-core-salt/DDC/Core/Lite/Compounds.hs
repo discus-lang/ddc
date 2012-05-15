@@ -21,7 +21,7 @@ tBoolU :: Type Name
 tBoolU  = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData))
 
 tIntU :: Int -> Type Name
-tIntU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt bits)) kData))
+tIntU bits  = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt bits)) kData))
 
 tWordU :: Int -> Type Name
 tWordU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData))

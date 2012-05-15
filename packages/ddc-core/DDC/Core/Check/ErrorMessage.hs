@@ -8,7 +8,7 @@ import DDC.Core.Check.Error
 import DDC.Type.Compounds
 
 
-instance (Pretty n, Show n, Eq n) => Pretty (Error a n) where
+instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
  ppr err
   = case err of
         ErrorType err'  -> ppr err'

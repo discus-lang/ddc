@@ -26,7 +26,7 @@ data Error a n
     { errorTypeLhs	:: (Type n, Effect n, Closure n)
     , errorTypeRhs	:: (Type n, Effect n, Closure n) }
 
-instance (Pretty n, Show n, Eq n) => Pretty (Error a n) where
+instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
  ppr err
   = case err of
         ErrorTypeCheckLhs x e

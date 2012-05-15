@@ -16,6 +16,7 @@ import qualified DDC.Core.Salt.Runtime  as O
 import qualified DDC.Core.Salt.Name     as O
 import qualified DDC.Core.Salt.Env      as O
 
+
 -- Construct ------------------------------------------------------------------
 -- | Build an expression that allocates and initialises a data constructor.
 --   object.

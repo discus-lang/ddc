@@ -89,7 +89,7 @@ head    [r : %] [a : *] (def : a)
         _               -> def;;
 
 
--- Boxed literal patterns.                              -- TODO: result isn't fully constructed
+-- Boxed literal patterns.
 :to-salt..
 module Main with letrec
 foo     [r : %] (x : Int r) {Read r + Alloc r | Use r}
@@ -99,7 +99,6 @@ foo     [r : %] (x : Int r) {Read r + Alloc r | Use r}
         1       -> 2 [r] ()
         5       -> 5 [r] ()
         _       -> 3 [r] ();;
-
 
 
 -- Unboxed literal patterns
@@ -138,4 +137,5 @@ foo     [r : %] (x : Int r) {Read r + Alloc r | Use r}
 --        5i32#   -> 6i32#
 --        7i32#   -> 8i32#
 --        _       -> 0i32#;;
+
 

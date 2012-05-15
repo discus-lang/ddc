@@ -18,7 +18,6 @@ import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw, result)
 import DDC.Core.Check                    (AnTEC(..))
-import qualified DDC.Core.Lite.Compounds as L
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as O
 import qualified DDC.Core.Salt.Name      as O
@@ -263,12 +262,15 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
  | L.NameInteger i      <- nCtor
  , [XType tR, _]        <- xsArgs
  = do   
-        let uInt32U = UPrim (L.NamePrimDaCon L.PrimDaConInt32U) 
-                            (L.tIntU 32 `tFunPE` (L.tInt tR))
+        let nInt32U      = L.NamePrimDaCon L.PrimDaConInt32U
+        let Just ctorDef = Map.lookup nInt32U $ dataDefsCtors defs
+        let Just dataDef = Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
 
-        convertArgX pp defs 
-         $ XApp a (XCon a uInt32U)
-                  (XCon a (UPrim (L.NameInt i 32) $ L.tIntU 32))
+        tR'      <- convertT tR
+
+        constructData pp (annotTail a) dataDef ctorDef
+                [XType tR', XCon (annotTail a) (UPrim (O.NameInt i 32) $ O.tInt 32)]
+
 
  -- Construct algbraic data that has a finite number of data constructors.
  | Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
@@ -325,7 +327,7 @@ convertA pp defs a uScrut alt
                 return  $ AAlt (PData uTag []) xBody2
 
 
-        -- Match against literal integer.
+        -- Match against literal integer.                               -- TODO: this is wrong, match against payload, not the tag.
         AAlt (PData uCtor []) x
          | UPrim (L.NameInteger iVal) _    <- uCtor
          -> do  let uTag    = UPrim (O.NameTag iVal) O.tTag
