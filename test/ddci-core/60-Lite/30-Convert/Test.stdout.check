@@ -160,72 +160,70 @@ letrec {
 }
 
 
--- Boxed literal patterns.
+-- Unboxed literal patterns.
 module Main with
 letrec {
-  foo : Ptr# Obj -> Ptr# Obj
-    = \(x : Ptr# Obj).
-      let x0 : Tag# = getTag x in
-      case x0 of {
-        TAG0#  
-         -> let x1 : Ptr# Obj = allocRawSmall TAG0# 4 in
-            let x2 : Addr# = payloadOfRawSmall x1 in
-            let _ : Void# = write# [Int32#] x2 0 1i32# in
-            x1;
-        TAG1#  
-         -> let x3 : Ptr# Obj = allocRawSmall TAG0# 4 in
-            let x4 : Addr# = payloadOfRawSmall x3 in
-            let _ : Void# = write# [Int32#] x4 0 2i32# in
-            x3;
-        TAG5#  
-         -> let x5 : Ptr# Obj = allocRawSmall TAG0# 4 in
-            let x6 : Addr# = payloadOfRawSmall x5 in
-            let _ : Void# = write# [Int32#] x6 0 5i32# in
-            x5;
+  foo : Word16# -> Word16#
+    = \(x : Word16#).
+      case x of {
+        5w16#  
+         -> 6w16#;
+        7w16#  
+         -> 8w16#;
         _ 
-         -> let x7 : Ptr# Obj = allocRawSmall TAG0# 4 in
-            let x8 : Addr# = payloadOfRawSmall x7 in
-            let _ : Void# = write# [Int32#] x8 0 3i32# in
-            x7
+         -> 0w16#
       }
 }
 
 
--- Unboxed literal patterns
--- These don't work yet.
+module Main with
+letrec {
+  foo : Int32# -> Int32#
+    = \(x : Int32#).
+      case x of {
+        5i32#  
+         -> 6i32#;
+        7i32#  
+         -> 8i32#;
+        _ 
+         -> 0i32#
+      }
+}
 
---:to-salt..
---module Main with letrec
---foo     (x : Bool#) : Bool#
--- = case x of
+module Main with
+letrec {
+  foo : Int64# -> Int64#
+    = \(x : Int64#).
+      case x of {
+        5i64#  
+         -> 6i64#;
+        7i64#  
+         -> 8i64#;
+        _ 
+         -> 0i64#
+      }
+}
+
+
+-- Unboxed Bool pattern.
+--  This don't work yet.
+--  The pattern has lost its type annotation.
+-- :to-salt..
+-- module Main with letrec
+-- foo     (x : Bool#) : Bool#
+--  = case x of
 --        True#   -> False#
 --        False#  -> True#;;
 
 
---:to-salt..
---module Main with letrec
---foo     (x : Word16#) : Word16#
+
+-- Boxed literal patterns.
+-- :to-salt..
+-- module Main with letrec
+-- foo     [r : %] (x : Int r) {Read r + Alloc r | Use r}
+--        : Int r
 -- = case x of
---        5w16#   -> 6w16#
---        7w16#   -> 8w16#
---        _       -> 0w16#;;
-
-
---:to-salt..
---module Main with letrec
---foo     (x : Int64#) : Int64#
--- = case x of
---        5i64#   -> 6i64#
---        7i64#   -> 8i64#
---        _       -> 0i64#;;
-
-
---:to-salt..
---module Main with letrec
---foo     (x : Int32#) : Int32#
--- = case x of
---        5i32#   -> 6i32#
---        7i32#   -> 8i32#
---        _       -> 0i32#;;
-
-
+--        0       -> 1 [r] ()
+--        1       -> 2 [r] ()
+--        5       -> 5 [r] ()
+--        _       -> 3 [r] ();;
