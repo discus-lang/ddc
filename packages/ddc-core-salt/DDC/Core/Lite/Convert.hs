@@ -143,10 +143,11 @@ convertBodyX pp defs xx
         -- We need to grab the unboxed version from the scrutinee, 
         --   and rewrite the alts to use the unboxed version also.
         -- TODO: shift this into a separate desugaring pass.
-        XCase (AnTEC _t _ _ a') (XVar _ uScrut) alts
+{-        XCase (AnTEC _t _ _ _a') (XVar _ uScrut) _alts
          | [tCon, _tR]                          <- takeTApps $ typeOfBound uScrut
          , TCon (TyConBound (UPrim nInt _))     <- tCon
          , L.NameDataTyCon L.DataTyConInt       <- nInt
+         -> error "toSaltX: can't match against boxed literal integer"
          -> do
                 uScrut'         <- convertU uScrut
                 let tScrut'     = O.tInt 32
@@ -172,7 +173,7 @@ convertBodyX pp defs xx
                                 let nInt32U      = L.NamePrimDaCon L.PrimDaConInt32U
                                 let Just ctorDef = Map.lookup nInt32U $ dataDefsCtors defs
                                 xRight2          <- destructData pp a' uScrut' ctorDef [bField'] xRight1
-                                return $ AAlt (PData (UPrim (O.NameTag 0) (O.tTag)) [bField']) xRight2
+                                return $ AAlt (PData (UPrim (O.NameTag 0) (O.tTag)) []) xRight2
 
                     convAlt (AAlt PDefault xRight)
                         = do    xRight' <- convertBodyX pp defs xRight
@@ -185,9 +186,21 @@ convertBodyX pp defs xx
                 return  $ XLet  a' (LLet LetStrict bPayload xPayload)
                         $ XLet  a' (LLet LetStrict bVal     xVal)
                         $ XCase a' (XVar a' (UIx 0 tScrut')) alts'
-
+-}
+        -- Match against literal unboxed values.
+        --  The branch is against the literal value itself.
+        --  TODO: We can't branch against float literals.
+        --        Matches against float literals should be desugared into if-then-else chains.
+        --        Same for string literals.
+        XCase (AnTEC _t _ _ a') xScrut@(XVar _ uScrut) alts
+         | TCon (TyConBound (UPrim nType _))    <- typeOfBound uScrut
+         , L.NamePrimTyCon _                    <- nType
+         -> do  xScrut' <- convertArgX pp defs xScrut
+                alts'   <- mapM (convertA pp defs a' uScrut) alts
+                return  $  XCase a' xScrut' alts'
 
         -- Match against finite algebraic data.
+        --   The branch is against the constructor tag.
         XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
          -> do  x'      <- convertArgX pp defs x
                 t'      <- convertT t
@@ -346,6 +359,13 @@ convertA pp defs a uScrut alt
          -> do  x'      <- convertBodyX pp defs x
                 return  $ AAlt PDefault x'
 
+        -- Match against literal unboxed values.
+        AAlt (PData uCtor []) x
+         | UPrim nCtor _        <- uCtor
+         , Nothing      <- Map.lookup nCtor $ dataDefsCtors defs
+         -> do  uCtor'  <- convertU uCtor
+                xBody1  <- convertBodyX pp defs x
+                return  $ AAlt (PData uCtor' []) xBody1
 
         -- Match against algebraic data with a finite number
         -- of data constructors.
@@ -373,19 +393,8 @@ convertA pp defs a uScrut alt
 
                 return  $ AAlt (PData uTag []) xBody2
 
-
-        -- Match against literal integer.                               -- TODO: this is wrong, match against payload, not the tag.
-        AAlt (PData uCtor []) x
-         | UPrim (L.NameInteger iVal) _    <- uCtor
-         -> do  let uTag    = UPrim (O.NameTag iVal) O.tTag
-
-                -- Convert he right of the alternative.
-                xBody1  <- convertBodyX pp defs x
-
-                return  $ AAlt (PData uTag []) xBody1
-
-
-        AAlt{}          -> throw ErrorInvalidAlt
+        AAlt{}          
+         -> error (show alt) -- throw ErrorInvalidAlt
 
 
 
@@ -398,11 +407,21 @@ convertC :: Show a
 
 convertC _defs a uu
  = case uu of
+        UPrim (L.NameBool v) _   
+          -> return ( XCon a (UPrim (O.NameBool v)      (O.tBool))
+                    , O.tBool)
+
+        UPrim (L.NameWord i bits) _   
+          -> return ( XCon a (UPrim (O.NameWord i bits) (O.tWord bits))
+                    , O.tWord bits)
+
         UPrim (L.NameInt i bits) _   
           -> return ( XCon a (UPrim (O.NameInt i bits) (O.tInt bits))
                     , O.tInt bits)
 
-        -- TODO: expand out code to construct algebraic data.
-        _ -> error $ show uu
+        UPrim (L.NameInteger{}) _
+         -> error $ "convertC: can't construct boxed literal"
+
+        _ -> error $ "convertC failed"
 
 
