@@ -31,21 +31,33 @@ primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
         -- Nat
-        [ DataDef
-                (NamePrimTyCon PrimTyConNat)
-                []
-                Nothing
+        [ DataDef (NamePrimTyCon PrimTyConNat) [] Nothing
 
-        , DataDef
-                (NamePrimTyCon PrimTyConTag)
-                []
-                Nothing
+        -- Tag
+        , DataDef (NamePrimTyCon PrimTyConTag) [] Nothing
 
+        -- Bool
         , DataDef
                 (NamePrimTyCon PrimTyConBool)
                 []
                 (Just   [ (NameBool True,  [])
                         , (NameBool False, []) ])
+
+        -- Word 8, 16, 32, 64
+        , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
+
+        -- Int 8, 16, 32, 64
+        , DataDef (NamePrimTyCon (PrimTyConInt  8))  [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConInt  16)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConInt  32)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConInt  64)) [] Nothing
+
+        -- Float 32, 64
+        , DataDef (NamePrimTyCon (PrimTyConInt  32)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConInt  64)) [] Nothing
         ]
 
 

@@ -25,7 +25,6 @@ import qualified DDC.Core.Salt.Env       as O
 import qualified Data.Map                as Map
 import Control.Monad
 
-
 -- | Convert a Disciple Core Lite module to Disciple Core Salt.
 --
 --   Case expressions on alrebraic data values are converted into ones that just
@@ -140,6 +139,55 @@ convertBodyX pp defs xx
         XLet{} 
          -> error "toSaltX: XLEt"
 
+        -- Match against boxed integer.
+        -- We need to grab the unboxed version from the scrutinee, 
+        --   and rewrite the alts to use the unboxed version also.
+        -- TODO: shift this into a separate desugaring pass.
+        XCase (AnTEC _t _ _ a') (XVar _ uScrut) alts
+         | [tCon, _tR]                          <- takeTApps $ typeOfBound uScrut
+         , TCon (TyConBound (UPrim nInt _))     <- tCon
+         , L.NameDataTyCon L.DataTyConInt       <- nInt
+         -> do
+                uScrut'         <- convertU uScrut
+                let tScrut'     = O.tInt 32
+
+                -- Take a pointer to its payload.
+                let bPayload    = BAnon O.tAddr
+                let xPayload    = O.xPayloadOfRawSmall a' (XVar a' uScrut')
+
+                -- Read out the unboxed version
+                let uPayload    = UIx 0 O.tAddr
+                let bVal        = BAnon tScrut'
+                let xVal        = O.xRead a' tScrut' (XVar a' uPayload) 0
+
+                let convAlt (AAlt (PData (UPrim (L.NameInteger i) _) []) xRight)
+                        = do    xRight' <- convertBodyX pp defs xRight
+                                return $ AAlt (PData (UPrim (O.NameInt i 32) (O.tInt 32)) []) xRight'
+
+                    convAlt (AAlt (PData (UPrim (L.NamePrimDaCon L.PrimDaConInt32U) _) [bField]) xRight)
+                        = do    bField'         <- convertB bField
+                                xRight1         <- convertBodyX pp defs xRight
+
+                                -- Add let bindings to unpack the constructor.
+                                let nInt32U      = L.NamePrimDaCon L.PrimDaConInt32U
+                                let Just ctorDef = Map.lookup nInt32U $ dataDefsCtors defs
+                                xRight2          <- destructData pp a' uScrut' ctorDef [bField'] xRight1
+                                return $ AAlt (PData (UPrim (O.NameTag 0) (O.tTag)) [bField']) xRight2
+
+                    convAlt (AAlt PDefault xRight)
+                        = do    xRight' <- convertBodyX pp defs xRight
+                                return $ AAlt PDefault xRight'
+
+                    convAlt alt = error $ "convAlt failed for boxed integer " ++ show alt
+
+                alts'   <- mapM convAlt alts
+
+                return  $ XLet  a' (LLet LetStrict bPayload xPayload)
+                        $ XLet  a' (LLet LetStrict bVal     xVal)
+                        $ XCase a' (XVar a' (UIx 0 tScrut')) alts'
+
+
+        -- Match against finite algebraic data.
         XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
          -> do  x'      <- convertArgX pp defs x
                 t'      <- convertT t
@@ -256,9 +304,8 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
         return $ XCon (annotTail a) (UPrim (O.NameInt i bits) t')
 
 
- -- Construct a literal integer.
- -- TODO: maybe we should eliminate these earlier in the pipeline,
- --       when producing the core code.
+ -- Construct a literal boxed integer.
+ -- TODO: shift this into a separate desugaring pass.
  | L.NameInteger i      <- nCtor
  , [XType tR, _]        <- xsArgs
  = do   
