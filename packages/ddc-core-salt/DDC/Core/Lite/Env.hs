@@ -197,13 +197,6 @@ typeOfPrimName dc
         NamePrimOp p
          -> Just $ typeOfPrimOp p
 
-        -- Integer
-        NameInteger _
-         -> Just $ tForall kRegion
-          $ \r  -> tFun tUnit           (tAlloc r)
-                                        (tBot kClosure)
-                 $ tInt r
-
         NameBool _
          -> Just $ tBoolU
 

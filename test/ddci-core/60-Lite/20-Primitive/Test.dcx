@@ -4,7 +4,7 @@
 
 
 -- Literals
-:check 5
+:check 5i32#
 
 
 -- Primitives
@@ -46,4 +46,4 @@ let addInt [r1 r2 r3 : %]
      -> case y of { I32# i2 
      -> I32# [r3] (add# [Int32#] i1 i2) } } in
 letregion r1 in
-unboxInt [r1] (addInt [:r1 r1 r1:] (2 [r1] ()) (3 [r1] ()));;
+unboxInt [r1] (addInt [:r1 r1 r1:] (I32# [r1] 2i32#) (I32# [r1] 3i32#));;

@@ -139,54 +139,6 @@ convertBodyX pp defs xx
         XLet{} 
          -> error "toSaltX: XLEt"
 
-        -- Match against boxed integer.
-        -- We need to grab the unboxed version from the scrutinee, 
-        --   and rewrite the alts to use the unboxed version also.
-        -- TODO: shift this into a separate desugaring pass.
-{-        XCase (AnTEC _t _ _ _a') (XVar _ uScrut) _alts
-         | [tCon, _tR]                          <- takeTApps $ typeOfBound uScrut
-         , TCon (TyConBound (UPrim nInt _))     <- tCon
-         , L.NameDataTyCon L.DataTyConInt       <- nInt
-         -> error "toSaltX: can't match against boxed literal integer"
-         -> do
-                uScrut'         <- convertU uScrut
-                let tScrut'     = O.tInt 32
-
-                -- Take a pointer to its payload.
-                let bPayload    = BAnon O.tAddr
-                let xPayload    = O.xPayloadOfRawSmall a' (XVar a' uScrut')
-
-                -- Read out the unboxed version
-                let uPayload    = UIx 0 O.tAddr
-                let bVal        = BAnon tScrut'
-                let xVal        = O.xRead a' tScrut' (XVar a' uPayload) 0
-
-                let convAlt (AAlt (PData (UPrim (L.NameInteger i) _) []) xRight)
-                        = do    xRight' <- convertBodyX pp defs xRight
-                                return $ AAlt (PData (UPrim (O.NameInt i 32) (O.tInt 32)) []) xRight'
-
-                    convAlt (AAlt (PData (UPrim (L.NamePrimDaCon L.PrimDaConInt32U) _) [bField]) xRight)
-                        = do    bField'         <- convertB bField
-                                xRight1         <- convertBodyX pp defs xRight
-
-                                -- Add let bindings to unpack the constructor.
-                                let nInt32U      = L.NamePrimDaCon L.PrimDaConInt32U
-                                let Just ctorDef = Map.lookup nInt32U $ dataDefsCtors defs
-                                xRight2          <- destructData pp a' uScrut' ctorDef [bField'] xRight1
-                                return $ AAlt (PData (UPrim (O.NameTag 0) (O.tTag)) []) xRight2
-
-                    convAlt (AAlt PDefault xRight)
-                        = do    xRight' <- convertBodyX pp defs xRight
-                                return $ AAlt PDefault xRight'
-
-                    convAlt alt = error $ "convAlt failed for boxed integer " ++ show alt
-
-                alts'   <- mapM convAlt alts
-
-                return  $ XLet  a' (LLet LetStrict bPayload xPayload)
-                        $ XLet  a' (LLet LetStrict bVal     xVal)
-                        $ XCase a' (XVar a' (UIx 0 tScrut')) alts'
--}
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
         --  TODO: We can't branch against float literals.
@@ -316,22 +268,6 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
  = do   t'              <- convertT t
         return $ XCon (annotTail a) (UPrim (O.NameInt i bits) t')
 
-
- -- Construct a literal boxed integer.
- -- TODO: shift this into a separate desugaring pass.
- | L.NameInteger i      <- nCtor
- , [XType tR, _]        <- xsArgs
- = do   
-        let nInt32U      = L.NamePrimDaCon L.PrimDaConInt32U
-        let Just ctorDef = Map.lookup nInt32U $ dataDefsCtors defs
-        let Just dataDef = Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
-
-        tR'      <- convertT tR
-
-        constructData pp (annotTail a) dataDef ctorDef
-                [XType tR', XCon (annotTail a) (UPrim (O.NameInt i 32) $ O.tInt 32)]
-
-
  -- Construct algbraic data that has a finite number of data constructors.
  | Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
  , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
@@ -418,9 +354,6 @@ convertC _defs a uu
         UPrim (L.NameInt i bits) _   
           -> return ( XCon a (UPrim (O.NameInt i bits) (O.tInt bits))
                     , O.tInt bits)
-
-        UPrim (L.NameInteger{}) _
-         -> error $ "convertC: can't construct boxed literal"
 
         _ -> error $ "convertC failed"
 

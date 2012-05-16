@@ -215,15 +215,3 @@ letrec {
 --        True#   -> False#
 --        False#  -> True#;;
 
-
-
--- Boxed literal patterns.
--- :to-salt..
--- module Main with letrec
--- foo     [r : %] (x : Int r) {Read r + Alloc r | Use r}
---        : Int r
--- = case x of
---        0       -> 1 [r] ()
---        1       -> 2 [r] ()
---        5       -> 5 [r] ()
---        _       -> 3 [r] ();;

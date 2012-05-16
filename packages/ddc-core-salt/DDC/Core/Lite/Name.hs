@@ -29,9 +29,6 @@ data Name
         -- | A primitive operator.
         | NamePrimOp    PrimOp
 
-        -- | A boxed integer literal.
-        | NameInteger   Integer
-
         -- | An unboxed integer literal.
         | NameInt       Integer Int
 
@@ -52,7 +49,6 @@ instance Pretty Name where
         NamePrimTyCon tc        -> ppr tc
         NamePrimDaCon dc        -> ppr dc
         NamePrimOp op           -> ppr op
-        NameInteger i           -> text (show i)
         NameBool True           -> text "True#"
         NameBool False          -> text "False#"
         NameWord i bits         -> integer i <> text "w" <> int bits <> text "#"
@@ -87,10 +83,6 @@ readName str
 
         | str == "()"
         = Just $ NamePrimDaCon PrimDaConUnit
-
-        -- Integers
-        |  Just i       <- readLitInteger str
-        =  Just $ NameInteger i
 
         -- Literal Bools
         | str == "True#"  = Just $ NameBool True
