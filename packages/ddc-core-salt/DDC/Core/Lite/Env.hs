@@ -56,7 +56,7 @@ primDataDefs
                 (NameDataTyCon DataTyConUnit)
                 []
                 (Just   [ ( NamePrimDaCon PrimDaConUnit
-                          , [tUnit]) ])
+                          , []) ])
 
         -- Bool
         , DataDef
@@ -83,8 +83,8 @@ primDataDefs
         , DataDef
                 (NameDataTyCon DataTyConList)
                 [kRegion, kData]
-                (Just   [ (NamePrimDaCon PrimDaConNil,  []) 
-                        , (NamePrimDaCon PrimDaConCons, [tList (tIx kRegion 1) (tIx kData 0)])])
+                (Just   [ (NamePrimDaCon PrimDaConNil,  [tUnit]) 
+                        , (NamePrimDaCon PrimDaConCons, [tIx kData 0, tList (tIx kRegion 1) (tIx kData 0)])])
         ]
 
 
