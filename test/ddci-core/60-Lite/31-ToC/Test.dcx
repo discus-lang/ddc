@@ -35,9 +35,8 @@ addInt [r1 r2 r3 : %]
 
 -- Construct a singleton list,
 --      packs a Boxed objet.
--- TODO: convert regular function applications
--- :to-c..
--- module Main with letrec
--- singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
---         : List r1 (Int r2)
---  = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
+:to-c..
+module Main with letrec
+singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
+        : List r1 (Int r2)
+ = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;

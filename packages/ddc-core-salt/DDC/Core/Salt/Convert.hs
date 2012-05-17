@@ -203,18 +203,6 @@ isFailX (XApp _ (XVar _ (UPrim (NamePrim (PrimControl PrimControlFail)) _)) _) =
 isFailX _ = False
 
 
--- Stmt -----------------------------------------------------------------------
--- | Convert an effectful statement to C source text.
-convStmtM :: Show a => Exp a Name -> ConvertM a Doc
-convStmtM xx
- = case xx of
-        XApp{}
-          |  Just (NamePrim p, xs) <- takeXPrimApps xx
-          -> convPrimCallM p xs
-
-        _ -> throw $ ErrorStmtInvalid xx
-
-
 -- Alt ------------------------------------------------------------------------
 -- | Convert a case alternative to C source text.
 convAltM :: Show a => Alt a Name -> ConvertM a Doc
@@ -290,6 +278,29 @@ convRValueM xx
                 return  $ t'
 
         _ -> throw $ ErrorRValueInvalid xx
+
+
+-- Stmt -----------------------------------------------------------------------
+-- | Convert an effectful statement to C source text.
+convStmtM :: Show a => Exp a Name -> ConvertM a Doc
+convStmtM xx
+ = case xx of
+        -- Primop application.
+        XApp{}
+          |  Just (NamePrim p, xs) <- takeXPrimApps xx
+          -> convPrimCallM p xs
+
+        -- Super application.
+        XApp{}
+         |  (XVar _ (UName n _) : args)  <- takeXApps xx
+         ,  NameVar nTop <- n
+         -> do  let nTop' = sanitizeName nTop
+                args'     <- mapM convRValueM args
+                return  $ text nTop' <+> parenss args'
+
+        _ -> throw $ ErrorStmtInvalid xx
+
+
 
 
 

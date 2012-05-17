@@ -5,6 +5,43 @@
 -- Set the builder explicitly so we get consistent object layouts.
 :set builder x86_64-darwin
 
+
+-- Unboxed literal patterns.
+:to-salt..
+module Main with letrec
+foo     (x : Word16#) : Word16#
+ = case x of
+        5w16#   -> 6w16#
+        7w16#   -> 8w16#
+        _       -> 0w16#;;
+
+
+:to-salt..
+module Main with letrec
+foo     (x : Int32#) : Int32#
+ = case x of
+        5i32#   -> 6i32#
+        7i32#   -> 8i32#
+        _       -> 0i32#;;
+
+:to-salt..
+module Main with letrec
+foo     (x : Int64#) : Int64#
+ = case x of
+        5i64#   -> 6i64#
+        7i64#   -> 8i64#
+        _       -> 0i64#;;
+
+
+-- Unboxed Bool pattern.
+:to-salt..
+module Main with letrec
+foo     (x : Bool#) : Bool#
+ = case x of
+       True#   -> False#
+       False#  -> True#;;
+
+
 -- Integer boxing,
 --      packs a RawSmall Object.
 :to-salt..
@@ -46,15 +83,6 @@ addInt [r1 r2 r3 : %]
  -> I32# [r3] (add# [Int32#] i1 i2) } };;
 
 
--- Construct a singleton list,
---      packs a Boxed objet.
-:to-salt..
-module Main with letrec
-singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
-        : List r1 (Int r2)
- = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
-
-
 -- Take the head of an Int list,
 --      unpacks a Boxed object.
 :to-salt..
@@ -89,38 +117,10 @@ head    [r : %] [a : *] (def : a)
         _               -> def;;
 
 
--- Unboxed literal patterns.
+-- Construct a singleton list,
+--      packs a Boxed objet.
 :to-salt..
 module Main with letrec
-foo     (x : Word16#) : Word16#
- = case x of
-        5w16#   -> 6w16#
-        7w16#   -> 8w16#
-        _       -> 0w16#;;
-
-
-:to-salt..
-module Main with letrec
-foo     (x : Int32#) : Int32#
- = case x of
-        5i32#   -> 6i32#
-        7i32#   -> 8i32#
-        _       -> 0i32#;;
-
-:to-salt..
-module Main with letrec
-foo     (x : Int64#) : Int64#
- = case x of
-        5i64#   -> 6i64#
-        7i64#   -> 8i64#
-        _       -> 0i64#;;
-
-
--- Unboxed Bool pattern.
-:to-salt..
-module Main with letrec
-foo     (x : Bool#) : Bool#
- = case x of
-       True#   -> False#
-       False#  -> True#;;
-
+singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
+        : List r1 (Int r2)
+ = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
