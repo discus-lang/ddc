@@ -214,7 +214,11 @@ pipeCore mm pp
 
                 goComplies mm1
                  = case C.complies profile mm1 of
-                        Just err   -> return [ErrorLint err]
+                        Just err   
+                         -> do  writeFile ("ddc.failed-complies." ++ fragmentExtension fragment)
+                                          (renderIndent $ ppr mm1)
+                                return [ErrorLint err]
+                                
                         Nothing    -> liftM concat $ mapM (pipeCore mm1) pipes
 
              in goCheck mm
