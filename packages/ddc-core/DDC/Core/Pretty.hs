@@ -39,7 +39,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          <+> (if Map.null importTypes 
                 then empty
                 else line 
-                        <> text "import" <+> lbrace 
+                        <> text "imports" <+> lbrace 
                         <> (nest 8 $ line <> vcat docsImportTypes)
                         <> line 
                         <> rbrace)
