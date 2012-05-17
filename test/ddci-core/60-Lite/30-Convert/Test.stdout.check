@@ -206,12 +206,15 @@ letrec {
 
 
 -- Unboxed Bool pattern.
---  This don't work yet.
---  The pattern has lost its type annotation.
--- :to-salt..
--- module Main with letrec
--- foo     (x : Bool#) : Bool#
---  = case x of
---        True#   -> False#
---        False#  -> True#;;
+module Main with
+letrec {
+  foo : Bool# -> Bool#
+    = \(x : Bool#).
+      case x of {
+        True#  
+         -> False#;
+        False#  
+         -> True#
+      }
+}
 

@@ -65,7 +65,7 @@ instance Pretty (AnTEC a n) where
 --   The returned expression has types attached to all variable occurrences, 
 --   so you can call `typeOfExp` on any open subterm.
 checkExp 
-        :: (Ord n, Pretty n)
+        :: (Ord n, Pretty n, Show n)
         => DataDefs n           -- ^ Data type definitions.
         -> Env n                -- ^ Kind environment.
         -> Env n                -- ^ Type environment.
@@ -93,7 +93,7 @@ checkExp defs kenv tenv xx
 --   This attachment is performed by `checkExp` above.
 --
 typeOfExp 
-        :: (Ord n, Pretty n)
+        :: (Ord n, Pretty n, Show n)
         => DataDefs n
         -> Exp a n
         -> Either (Error a n) (Type n)
@@ -106,7 +106,7 @@ typeOfExp defs xx
 -- checkExp -------------------------------------------------------------------
 -- | Like `checkExp` but using the `CheckM` monad to handle errors.
 checkExpM 
-        :: (Ord n, Pretty n)
+        :: (Show n, Pretty n, Ord n)
         => DataDefs n           -- ^ Data type definitions.
         -> Env n                -- ^ Kind environment.
         -> Env n                -- ^ Type environment.
@@ -726,7 +726,7 @@ returnX a f t es cs
 -------------------------------------------------------------------------------
 -- | Check some let bindings.
 checkLetsM 
-        :: (Pretty n, Ord n)
+        :: (Show n, Pretty n, Ord n)
         => Exp a n              -- ^ Enclosing expression, for error messages.
         -> DataDefs n
         -> Env n
@@ -849,7 +849,7 @@ checkLetsM _xx _defs _kenv _tenv _lts
 -------------------------------------------------------------------------------
 -- | Check a case alternative.
 checkAltM 
-        :: (Pretty n, Ord n) 
+        :: (Show n, Pretty n, Ord n) 
         => Exp a n              -- ^ Whole case expression, for error messages.
         -> DataDefs n           -- ^ Data type definitions.
         -> Env n                -- ^ Kind environment.

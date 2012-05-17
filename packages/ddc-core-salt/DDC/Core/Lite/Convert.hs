@@ -298,7 +298,11 @@ convertA pp defs a uScrut alt
         -- Match against literal unboxed values.
         AAlt (PData uCtor []) x
          | UPrim nCtor _        <- uCtor
-         , Nothing      <- Map.lookup nCtor $ dataDefsCtors defs
+         , case nCtor of
+                L.NameInt{}     -> True
+                L.NameWord{}    -> True
+                L.NameBool{}    -> True
+                _               -> False
          -> do  uCtor'  <- convertU uCtor
                 xBody1  <- convertBodyX pp defs x
                 return  $ AAlt (PData uCtor' []) xBody1

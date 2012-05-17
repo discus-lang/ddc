@@ -25,7 +25,7 @@ import qualified Data.Map       as Map
 --
 --   If it's bad, you get a description of the error.
 checkModule
-        :: (Ord n, Pretty n)
+        :: (Ord n, Show n, Pretty n)
         => DataDefs n           -- ^ Primitive data type definitions.
         -> Env n                -- ^ Primitive kind environment.
         -> Env n                -- ^ Primitive type environment.
@@ -39,7 +39,7 @@ checkModule defs kenv tenv xx
 -- checkModule ----------------------------------------------------------------
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
 checkModuleM 
-        :: (Ord n, Pretty n)
+        :: (Ord n, Show n, Pretty n)
         => DataDefs n           -- ^ Primitive data type definitions.
         -> Env n                -- ^ Primitive kind environment.
         -> Env n                -- ^ Primitive type environment.

@@ -117,12 +117,10 @@ foo     (x : Int64#) : Int64#
 
 
 -- Unboxed Bool pattern.
---  This don't work yet.
---  The pattern has lost its type annotation.
--- :to-salt..
--- module Main with letrec
--- foo     (x : Bool#) : Bool#
---  = case x of
---        True#   -> False#
---        False#  -> True#;;
+:to-salt..
+module Main with letrec
+foo     (x : Bool#) : Bool#
+ = case x of
+       True#   -> False#
+       False#  -> True#;;
 

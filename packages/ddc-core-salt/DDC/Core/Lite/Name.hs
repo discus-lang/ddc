@@ -71,16 +71,7 @@ readName str
         | Just p        <- readPrimOp str
         = Just $ NamePrimOp p
 
-        -- Variables.
-        | c : _         <- str
-        , isLower c      
-        = Just $ NameVar str
-
-        -- Constructors.
-        | c : _         <- str
-        , isUpper c
-        = Just $ NameCon str
-
+        -- Literal unit value.
         | str == "()"
         = Just $ NamePrimDaCon PrimDaConUnit
 
@@ -97,6 +88,16 @@ readName str
         | Just (val, bits) <- readLitPrimIntOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameInt  val bits
+
+        -- Constructors.
+        | c : _         <- str
+        , isUpper c
+        = Just $ NameCon str
+
+        -- Variables.
+        | c : _         <- str
+        , isLower c      
+        = Just $ NameVar str
 
         | otherwise
         = Nothing
@@ -150,6 +151,8 @@ instance Pretty PrimDaCon where
  ppr dc
   = case dc of
         PrimDaConBoolU          -> text "B#"
+
+
         PrimDaConInt32U         -> text "I32#"
 
         PrimDaConUnit           -> text "()"

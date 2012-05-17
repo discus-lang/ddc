@@ -32,7 +32,10 @@ primDataDefs
         -- We need these so that we can match against unboxed patterns
         -- in case expressions.
         -- Bool#
-        [ DataDef (NamePrimTyCon PrimTyConBool) [] Nothing
+        [ DataDef (NamePrimTyCon PrimTyConBool) 
+                [] 
+                (Just   [ (NameBool True,  []) 
+                        , (NameBool False, []) ])
 
         -- WordN#
         , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing

@@ -67,7 +67,7 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 -- | Create rule
 -- Make sure expressions are valid, lhs is only allowed to contain XApps
 checkRewriteRule
-    :: (Ord n, Pretty n)        
+    :: (Ord n, Show n, Pretty n)        
     => T.DataDefs n             -- ^ Data type definitions.
     -> T.Env n                  -- ^ Kind environment.
     -> T.Env n                  -- ^ Type environment.
