@@ -1,0 +1,16 @@
+
+:set trans Flatten
+:set
+
+:load..
+module Main with
+letrec {
+foo : [r : %]. Int r -(Alloc r | Use r)> Unit
+ = /\(r : %). \(x : Int r). 
+   let x0 : Int r
+         = let ^ : Int r  = 10 [r] () in
+           let _ : Unit   = () in
+           ^0 in
+   let ^ : Unit = ()
+   in ^0
+};;
