@@ -6,6 +6,7 @@ where
 import DDC.Core.Lite.Convert.Type
 import DDC.Core.Lite.Convert.Base
 import DDC.Core.Salt.Platform
+import DDC.Core.Transform.LiftX
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.DataDef
@@ -47,7 +48,7 @@ constructData pp a dataDef ctorDef xsArgs
         -- Statements to write each of the fields.
         let xObject'    = XVar a $ UIx 0 $ O.tPtr O.tObj
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
-                                (O.xSetFieldOfBoxed a xObject' ix xField)
+                                (O.xSetFieldOfBoxed a xObject' ix (liftX 1 xField))
                                 | ix            <- [0..]
                                 | xField        <- xsFields]
 
@@ -82,7 +83,7 @@ constructData pp a dataDef ctorDef xsArgs
         let xObject'    = XVar a $ UIx 1 $ O.tPtr O.tObj
         let xPayload'   = XVar a $ UIx 0 O.tAddr
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
-                                (O.xWrite a tField xPayload' offset xField)
+                                (O.xWrite a tField xPayload' offset (liftX 2 xField))
                                 | tField        <- tsFields
                                 | offset        <- offsets
                                 | xField        <- xsFields]
