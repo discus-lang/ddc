@@ -5,6 +5,66 @@ ok
 -- Set the builder explicitly so we get consistent object layouts.
 ok
 
+
+-- Unboxed literal patterns.
+module Main with
+letrec {
+  foo : Word16# -> Word16#
+    = \(x : Word16#).
+      case x of {
+        5w16#  
+         -> 6w16#;
+        7w16#  
+         -> 8w16#;
+        _ 
+         -> 0w16#
+      }
+}
+
+
+module Main with
+letrec {
+  foo : Int32# -> Int32#
+    = \(x : Int32#).
+      case x of {
+        5i32#  
+         -> 6i32#;
+        7i32#  
+         -> 8i32#;
+        _ 
+         -> 0i32#
+      }
+}
+
+module Main with
+letrec {
+  foo : Int64# -> Int64#
+    = \(x : Int64#).
+      case x of {
+        5i64#  
+         -> 6i64#;
+        7i64#  
+         -> 8i64#;
+        _ 
+         -> 0i64#
+      }
+}
+
+
+-- Unboxed Bool pattern.
+module Main with
+letrec {
+  foo : Bool# -> Bool#
+    = \(x : Bool#).
+      case x of {
+        True#  
+         -> False#;
+        False#  
+         -> True#
+      }
+}
+
+
 -- Integer boxing,
 --      packs a RawSmall Object.
 module Main with
@@ -90,24 +150,6 @@ letrec {
 }
 
 
--- Construct a singleton list,
---      packs a Boxed objet.
-module Main with
-letrec {
-  singleton : Ptr# Obj -> Ptr# Obj
-    = \(x : Ptr# Obj).
-      let x1 : Ptr# Obj = allocBoxed TAG0# 0 in
-      let x2 : Ptr# Obj = allocBoxed TAG0# 8 in
-      let x3 : Ptr# Obj = x2 in
-      let x4 : Void# = setFieldOfBoxed x1 0 x3 in
-      let x0 : Ptr# Obj = x2 in
-      let x5 : Ptr# Obj = allocBoxed TAG1# 8 in
-      let _ : Void# = setFieldOfBoxed x5 0 x in
-      let _ : Void# = setFieldOfBoxed x5 1 x0 in
-      x5
-}
-
-
 -- Take the head of an Int list,
 --      unpacks a Boxed object.
 module Main with
@@ -160,61 +202,35 @@ letrec {
 }
 
 
--- Unboxed literal patterns.
+
+-- Construct a singleton list,
+--      packs a Boxed objet.
+ok
 module Main with
 letrec {
-  foo : Word16# -> Word16#
-    = \(x : Word16#).
-      case x of {
-        5w16#  
-         -> 6w16#;
-        7w16#  
-         -> 8w16#;
-        _ 
-         -> 0w16#
-      }
+  singleton : [r1 r2 : %].Int r2 -(Alloc r1 | Use r1)> List r1 (Int r2)
+    = /\(r1 r2 : %).
+       \(x : Int r2).
+      let x0 : List r1 (Int r2)
+            = Nil [r1] [Int r2] () in
+      Cons [r1] [Int r2] x x0
 }
 
 
+-- Construct a singleton list,
+--      packs a Boxed object.
 module Main with
 letrec {
-  foo : Int32# -> Int32#
-    = \(x : Int32#).
-      case x of {
-        5i32#  
-         -> 6i32#;
-        7i32#  
-         -> 8i32#;
-        _ 
-         -> 0i32#
-      }
-}
-
-module Main with
-letrec {
-  foo : Int64# -> Int64#
-    = \(x : Int64#).
-      case x of {
-        5i64#  
-         -> 6i64#;
-        7i64#  
-         -> 8i64#;
-        _ 
-         -> 0i64#
-      }
-}
-
-
--- Unboxed Bool pattern.
-module Main with
-letrec {
-  foo : Bool# -> Bool#
-    = \(x : Bool#).
-      case x of {
-        True#  
-         -> False#;
-        False#  
-         -> True#
-      }
+  singleton : Ptr# Obj -> Ptr# Obj
+    = \(x : Ptr# Obj).
+      let x1 : Ptr# Obj = allocBoxed TAG0# 8 in
+      let x2 : Ptr# Obj = allocBoxed TAG0# 0 in
+      let x3 : Ptr# Obj = x2 in
+      let _ : Void# = setFieldOfBoxed x1 0 x3 in
+      let x0 : Ptr# Obj = x1 in
+      let x4 : Ptr# Obj = allocBoxed TAG1# 16 in
+      let _ : Void# = setFieldOfBoxed x4 0 x in
+      let _ : Void# = setFieldOfBoxed x4 1 x0 in
+      x4
 }
 
