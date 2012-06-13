@@ -186,7 +186,7 @@ ok
 ok
 let ^ : [^ ^ : %].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> Pair ^1 (Int ^1) (Int ^0)
       = /\(^ ^ : %).
-         \(^ : Unit).
+         \(_ : Unit).
         let ^ : Int ^1 = 5 [^1] () in
         let ^ : Int ^0
               = letregion ^ in
@@ -195,7 +195,7 @@ let ^ : [^ ^ : %].Unit -(Read ^1 + Alloc ^0 + Alloc ^1 | Use ^0 + Use ^1)> Pair 
 letregion ^ in
 letregion ^ in
 case ^0 [^1] [^0] () of {
-  Pr (^ : Int ^1) (^ : Int ^0) 
+  Pr (_ : Int ^1) (^ : Int ^0) 
    -> copyInt [^0] [R0#] ^0
 }
 

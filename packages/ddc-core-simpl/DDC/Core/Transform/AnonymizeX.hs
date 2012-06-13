@@ -127,6 +127,11 @@ pushAnonymizeBindX
         -> Bind n 
         -> ([Bind n], Bind n)
 
+pushAnonymizeBindX kstack tstack b@BNone{}
+ = let  b'      = anonymizeWithX kstack tstack b
+        t'      = typeOfBind b'
+   in   (tstack,  BNone t')
+
 pushAnonymizeBindX kstack tstack b
  = let  b'      = anonymizeWithX kstack tstack b
         t'      = typeOfBind b'
