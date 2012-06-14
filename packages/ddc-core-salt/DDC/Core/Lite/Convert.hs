@@ -218,6 +218,8 @@ convertArgX pp defs xx
          -> convertCtorAppX pp a defs nCtor xsArgs
 
         -- Function application
+        -- TODO: This only works for full application. 
+        --       At least check for the other cases.
         XApp (AnTEC _t _ _ a') _ _
          | x1 : xsArgs          <- takeXApps xx
          -> do  x1'             <- convertArgX pp defs x1
@@ -228,9 +230,8 @@ convertArgX pp defs xx
                 xsArgs_exp'     <- mapM (convertArgX pp defs) xsArgs_exp
                 return $ makeXApps a' x1' xsArgs_exp'
 
-
-        XApp{}          
-         -> error $ "toSaltX convertArg: " ++ show xx
+         | otherwise 
+         -> error $ "toSaltX: XApp shouldn't happen as above covers all cases."
 
 
         XCast _ _ x     -> convertArgX pp defs x

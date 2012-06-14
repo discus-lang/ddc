@@ -33,6 +33,7 @@ Library
         ddc-type        == 0.3.0.*
 
   Exposed-modules:
+        DDC.Core.Analysis.Arity
         DDC.Core.Check.CheckExp
         DDC.Core.Check.CheckModule
         DDC.Core.Check.CheckWitness
