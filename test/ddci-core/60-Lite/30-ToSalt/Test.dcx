@@ -117,7 +117,6 @@ head    [r : %] [a : *] (def : a)
         _               -> def;;
 
 
-
 -- Construct a singleton list,
 --      packs a Boxed objet.
 :set trans anormalize
@@ -135,4 +134,21 @@ module Main with letrec
 singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
         : List r1 (Int r2)
  = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
+
+
+-- Full application.
+:to-salt..
+module Main with letrec
+addInt [r1 r2 r3 : %] 
+        (x : Int r1) { !0 | Use r3 } 
+        (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
+        : Int r3
+ =  case x of { I32# i1 
+ -> case y of { I32# i2 
+ -> I32# [r3] (add# [Int32#] i1 i2) } }
+
+double [r1 r2 : %]
+       (x : Int r1) { Read r1 + Alloc r2 | Use r1 + Use r2 }
+       : Int r2
+ = addInt [:r1 r1 r2:] x x;;
 

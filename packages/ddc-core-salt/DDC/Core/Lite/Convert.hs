@@ -217,9 +217,16 @@ convertArgX pp defs xx
          , XCon _ (UName nCtor _) <- x1
          -> convertCtorAppX pp a defs nCtor xsArgs
 
-        XApp (AnTEC _t _ _ _a') _ _
-         | x1 : _xsArgs          <- takeXApps xx
-         -> error $ "toSaltX: XApp " ++ show x1
+        -- Function application
+        XApp (AnTEC _t _ _ a') _ _
+         | x1 : xsArgs          <- takeXApps xx
+         -> do  x1'             <- convertArgX pp defs x1
+                let xsArgs_exp  = [x | x <- xsArgs
+                                     , not $ isXType x
+                                     , not $ isXWitness x]
+
+                xsArgs_exp'     <- mapM (convertArgX pp defs) xsArgs_exp
+                return $ makeXApps a' x1' xsArgs_exp'
 
 
         XApp{}          

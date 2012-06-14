@@ -12,6 +12,10 @@ module DDC.Core.Predicates
           -- * Applications
         , isXApp
 
+          -- * Types and Witnesses
+        , isXType
+        , isXWitness
+
           -- * Patterns
         , isPDefault)
 where
@@ -87,6 +91,23 @@ isXApp xx
  = case xx of
         XApp{}  -> True
         _       -> False
+
+
+-- Type and Witness -----------------------------------------------------------
+-- | Check whether an expression is an `XType`
+isXType :: Exp a n -> Bool
+isXType xx
+ = case xx of
+        XType{}         -> True
+        _               -> False
+
+
+-- | Check whether an expression is an `XWitness`
+isXWitness :: Exp a n -> Bool
+isXWitness xx
+ = case xx of
+        XWitness{}      -> True
+        _               -> False
 
 
 -- Patterns -------------------------------------------------------------------
