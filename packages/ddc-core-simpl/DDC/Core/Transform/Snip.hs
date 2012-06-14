@@ -6,10 +6,8 @@ where
 import DDC.Core.Analysis.Arity
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Compounds
 import qualified DDC.Core.Transform.LiftX       as L
 import qualified DDC.Type.Compounds             as T
-import qualified Data.Map                       as Map
 
 
 class Snip (c :: * -> *) where
@@ -25,17 +23,8 @@ class Snip (c :: * -> *) where
 
 instance Snip (Module a) where
  snip mm
-  = let (lts, _)        = splitXLets $ moduleBody mm
-        aritiesLets     = concatMap arityOfLets  lts
-
-        aritiesImports  = [ (BName n t, arityFromType t)        
-                          | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
-
-        arities         = emptyArities
-                        `extendsArities` aritiesImports
-                        `extendsArities` aritiesLets
-
-        body'       = snipX arities (moduleBody mm) []
+  = let arities = aritiesOfModule mm
+        body'   = snipX arities (moduleBody mm) []
     in  mm { moduleBody = body'  }
 
 

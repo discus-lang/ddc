@@ -4,11 +4,16 @@ module DDC.Core.Analysis.Arity
         , emptyArities
         , extendsArities
         , getArity
+
+          -- * Slurp
+        , aritiesOfModule
         , arityOfLets
         , arityOfExp
         , arityFromType
         , aritiesOfPat)
 where
+import DDC.Core.Compounds
+import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import qualified Data.Map       as Map
@@ -53,6 +58,22 @@ arityOfLets ll
         LLet _ b x      -> [(b, arityOfExp x)]
         LRec bxs        -> [(b, arityOfExp x) | (b, x) <- bxs ]
         _               -> []
+
+
+
+-- Slurp ----------------------------------------------------------------------
+-- | Slurp out arities of imports and top-level bindings from a module.
+aritiesOfModule :: Ord n => Module a n -> Arities n
+aritiesOfModule mm
+  = let (lts, _)        = splitXLets $ moduleBody mm
+        aritiesLets     = concatMap arityOfLets  lts
+
+        aritiesImports  = [ (BName n t, arityFromType t)        
+                          | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
+
+    in emptyArities
+       `extendsArities` aritiesImports
+       `extendsArities` aritiesLets
 
 
 -- | Get the arity of an expression. 
