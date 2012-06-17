@@ -1,8 +1,8 @@
 
 module Main 
 imports {
-        showInt32# :: Int32# -> Ptr# String#;
-        putStrLn#  :: Ptr# String# -> Void#;
+        showInt32 :: Int32# -> Ptr# String#;
+        putStrLn  :: Ptr# String# -> Void#;
 }
 with letrec
 
@@ -47,5 +47,5 @@ unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
  = letregion r in 
    let x        = fac [r] (I32# [r] 0i32#) (I32# [r] 5i32#) in
-   let _        = putStrLn# (showInt32# (unboxInt [r] x)) in
+   let _        = putStrLn (showInt32 (unboxInt [r] x)) in
    unboxInt [r] (I32# [r] 0i32#)

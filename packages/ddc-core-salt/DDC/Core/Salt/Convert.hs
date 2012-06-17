@@ -228,11 +228,24 @@ convAltM aa
 convDaConName :: Name -> Maybe Doc
 convDaConName nn
  = case nn of
-        NameNat i       -> Just $ integer i
-        NameTag i       -> Just $ integer i
+        NameNat i       
+         -> Just $ integer i
+
+        NameTag i       
+         -> Just $ integer i
+
         NameBool True   -> Just $ int 1
         NameBool False  -> Just $ int 0
-        _               -> Nothing
+
+        NameWord i bits
+         |  elem bits [8, 16, 32, 64]
+         -> Just $ integer i
+
+        NameInt  i bits  
+         |  elem bits [8, 16, 32, 64]
+         -> Just $ integer i
+
+        _ -> Nothing
 
 
 -- RValue ---------------------------------------------------------------------

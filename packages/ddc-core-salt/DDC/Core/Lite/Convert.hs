@@ -120,7 +120,7 @@ convertBodyX pp defs xx
         XVar a u
          -> do  let a'  = annotTail a
                 u'      <- convertU u
-                return  $  O.xReturn a' (typeOfBound u') (XVar a' u')
+                return  $  XVar a' u'
 
         XCon a u
          -> do  let a'  = annotTail a
