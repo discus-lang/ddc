@@ -136,8 +136,15 @@ convertBodyX pp defs xx
                 x2'     <- convertBodyX pp defs x2
                 return  $ XLet (annotTail a) (LLet LetStrict b' x1') x2'
 
-        XLet{} 
-         -> error "toSaltX: XLEt"
+        XLet _ (LLet LetLazy{} _ _) _
+         -> error "toSaltX: XLet lazy not handled"
+
+        XLet _ (LLetRegion _ _) x2
+         -> do  convertBodyX pp defs x2
+
+        XLet _ LWithRegion{} _
+         -> throw ErrorMalformed
+
 
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.

@@ -16,8 +16,11 @@ type ConvertM a x = G.CheckM (Error a) x
 
 -- | Things that can go wrong during the conversion.
 data Error a
+        -- | Found unexpected AST node, like LWithRegion
+        = ErrorMalformed
+
         -- | The program is definately not well typed.
-        = ErrorMistyped  (Exp (AnTEC a L.Name) L.Name)
+        | ErrorMistyped  (Exp (AnTEC a L.Name) L.Name)
 
         -- | The program wasn't in a-normal form.
         | ErrorNotNormalized
@@ -25,7 +28,7 @@ data Error a
         -- | The program has bottom type annotations.
         | ErrorBotAnnot
 
-        -- | Found unexpected type sum.
+        -- | Found an unexpected type sum.
         | ErrorUnexpectedSum
 
         -- | An invalid name used in a binding position
@@ -41,6 +44,9 @@ data Error a
 instance Show a => Pretty (Error a) where
  ppr err
   = case err of
+        ErrorMalformed
+         -> vcat [ text "Module is malformed."]
+
         ErrorMistyped xx
          -> vcat [ text "Module is mistyped." <> (text $ show xx) ]
 
