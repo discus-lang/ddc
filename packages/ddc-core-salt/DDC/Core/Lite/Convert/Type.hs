@@ -3,7 +3,10 @@ module DDC.Core.Lite.Convert.Type
         ( convertT
         , convertPrimT
         , convertB
-        , convertU)
+        , convertU
+
+        , convertBindNameM
+        , convertBoundNameM)
 where
 import DDC.Core.Lite.Convert.Base
 import DDC.Core.Exp

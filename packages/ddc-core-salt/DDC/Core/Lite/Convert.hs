@@ -68,15 +68,41 @@ convertM
 
 convertM pp defsPrim mm
   = do  let defs = defsPrim
-        x'       <- convertBodyX pp defs $ moduleBody mm
+        x'              <- convertBodyX pp defs $ moduleBody mm
+        tsImports'      <- liftM Map.fromList
+                        $  mapM convertImportM  
+                        $  Map.toList
+                        $  moduleImportTypes mm
 
         return $ ModuleCore
          { moduleName           = moduleName mm
          , moduleExportKinds    = Map.empty
          , moduleExportTypes    = Map.empty
          , moduleImportKinds    = Map.empty
-         , moduleImportTypes    = O.runtimeImportSigs 
+         , moduleImportTypes    = Map.union O.runtimeImportSigs tsImports'
          , moduleBody           = x' }
+
+
+-- | Convert an import spec.
+convertImportM
+        :: (L.Name, (QualName L.Name, Type L.Name))
+        -> ConvertM a (O.Name, (QualName O.Name, Type O.Name))
+
+convertImportM (n, (qn, t))
+ = do   n'      <- convertBindNameM n
+        qn'     <- convertQualNameM qn
+        t'      <- convertT t
+        return  (n', (qn', t'))
+
+
+-- | Convert a qualified name.
+convertQualNameM
+        :: QualName L.Name 
+        -> ConvertM a (QualName O.Name)
+
+convertQualNameM (QualName mn n)
+ = do   n'      <- convertBindNameM n
+        return  $ QualName mn n'
 
 
 -- Exp -------------------------------------------------------------------------
