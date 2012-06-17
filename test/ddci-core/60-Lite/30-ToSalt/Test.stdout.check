@@ -89,7 +89,7 @@ letrec {
         TAG0#  
          -> let x1 : Addr# = payloadOfRawSmall x in
             let i : Int32# = read# [Int32#] x1 0 in
-            return# [Int32#] i;
+            i;
         _ 
          -> fail# [Int32#]
       }
@@ -161,9 +161,9 @@ letrec {
         TAG1#  
          -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
             let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
-            return# [Ptr# Obj] x;
+            x;
         _ 
-         -> return# [Ptr# Obj] def
+         -> def
       }
 }
 
@@ -178,9 +178,9 @@ letrec {
         TAG1#  
          -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
             let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
-            return# [Ptr# Obj] xs;
+            xs;
         _ 
-         -> return# [Ptr# Obj] def
+         -> def
       }
 }
 
@@ -195,9 +195,9 @@ letrec {
         TAG1#  
          -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
             let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
-            return# [Ptr# Obj] x;
+            x;
         _ 
-         -> return# [Ptr# Obj] def
+         -> def
       }
 }
 

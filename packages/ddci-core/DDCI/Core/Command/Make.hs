@@ -17,6 +17,8 @@ import Data.Maybe
 import DDC.Core.Simplifier.Recipie      as Simpl
 import qualified DDC.Core.Pretty        as P
 
+data Frag = FragDCL | FragDCE
+
 
 cmdMake :: State -> Source -> String -> IO ()
 cmdMake state source str
@@ -24,15 +26,17 @@ cmdMake state source str
    in   makeFile state source filePath
 
 makeFile state source filePath
+        | isSuffixOf ".dcl" filePath
+        = makeFrag FragDCL state source filePath
+
         | isSuffixOf ".dce" filePath
-        = makeDCE state source filePath
+        = makeFrag FragDCE state source filePath
 
         | otherwise
         = error $ "Don't know how to make " ++ filePath
 
- 
-makeDCE :: State -> Source -> FilePath -> IO ()
-makeDCE state source filePath
+makeFrag :: Frag -> State -> Source -> FilePath -> IO ()
+makeFrag frag state source filePath
  = do   
         -- Read in the source file.
         exists  <- doesFileExist filePath
@@ -56,20 +60,43 @@ makeDCE state source filePath
         let builder     =  fromMaybe    (error "Can not determine host platform")
                                         mBuilder
 
-        -- Run the build pipeline.
-        errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
-                $  PipeTextLoadCore  fragmentSalt
-                [  PipeCoreSimplify  fragmentSalt
-                                     (stateSimplifier state <> Simpl.anormalize)
-                [  PipeCoreCheck     fragmentSalt
-                [  PipeCoreAsSalt
-                [  PipeSaltToLlvm    (buildSpec builder)
-                [  PipeLlvmCompile 
+        -- Make the pipeline for the final compilation.
+        let pipeLLVM    = PipeLlvmCompile
                         { pipeBuilder           = builder
                         , pipeFileLlvm          = llPath
                         , pipeFileAsm           = sPath
                         , pipeFileObject        = oPath
-                        , pipeFileExe           = Just exePath } ]]]]]
+                        , pipeFileExe           = Just exePath }
 
+        -- Run the pipelines to make the source into a binary.
+        errs
+         <- case frag of
+             FragDCL 
+              -> pipeText (nameOfSource source) (lineStartOfSource source) src
+               $ PipeTextLoadCore  fragmentLite
+               $ pipesCoreLite state builder pipeLLVM
+
+             FragDCE
+              -> pipeText (nameOfSource source) (lineStartOfSource source) src
+               $ PipeTextLoadCore  fragmentSalt 
+               $ pipesCoreSalt state builder pipeLLVM
+
+        -- Print any errors that arose during compilation.
         mapM_ (putStrLn . P.renderIndent . P.ppr) errs
 
+
+pipesCoreLite state builder pipeLLVM
+ =  [ PipeCoreAsLite 
+    [ PipeLiteToSalt    (buildSpec builder)
+    [ PipeCoreSimplify fragmentSalt Simpl.anormalize
+    [ PipeCoreCheck     fragmentSalt 
+    $ pipesCoreSalt state builder pipeLLVM]]]]
+
+pipesCoreSalt state builder pipeLLVM
+ =  [ PipeCoreSimplify  fragmentSalt
+                        (stateSimplifier state <> Simpl.anormalize)
+    [ PipeCoreCheck     fragmentSalt
+    [ PipeCoreAsSalt
+    [ PipeSaltToLlvm    (buildSpec builder) [pipeLLVM]]]]]
+
+        

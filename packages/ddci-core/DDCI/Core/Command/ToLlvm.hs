@@ -43,8 +43,9 @@ cmdLiteToLlvm state source str builder
         $  PipeTextLoadCore     fragmentLite
         [  PipeCoreAsLite
         [  PipeLiteToSalt       (buildSpec builder)
+        [  PipeCoreSimplify     fragmentSalt Simpl.anormalize
         [  PipeCoreCheck        fragmentSalt 
-        [  pipeCore_saltToLlvm state builder]]]])
+        [  pipeCore_saltToLlvm state builder]]]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
