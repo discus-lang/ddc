@@ -80,22 +80,14 @@ primDecls pp
         , declAlign             = AlignBytes (platformAlignBytes pp) }
 
    ,    FunctionDecl
-        { declName              = "putStrLn"
+        { declName              = "abort"
         , declLinkage           = External
         , declCallConv          = CC_Ccc
         , declReturnType        = TVoid
         , declParamListType     = FixedArgs
-        , declParams            = [Param (tPtr (TInt 8)) []]
-        , declAlign             = AlignBytes (platformAlignBytes pp) } 
-
-   ,    FunctionDecl
-        { declName              = "showInt32"
-        , declLinkage           = External
-        , declCallConv          = CC_Ccc
-        , declReturnType        = tPtr (TInt 8)
-        , declParamListType     = FixedArgs
-        , declParams            = [Param (TInt 32) []]
+        , declParams            = []
         , declAlign             = AlignBytes (platformAlignBytes pp) } ]
+
 
 
 
@@ -190,16 +182,15 @@ convBodyM blocks label instrs xx
 
          C.XApp{}
           |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
-          ,  A.PrimControl A.PrimControlFail    <- p
-          ,  [C.XType tResult]                   <- xs
-
+          ,  A.PrimControl A.PrimControlFail   <- p
+          ,  [C.XType _tResult]                <- xs
           -> let iFail  = ICall Nothing CallTypeStd 
-                                 (convType pp tResult) 
-                                 (NameGlobal "fail")
-                                 [] [NoReturn]
+                                 TVoid 
+                                 (NameGlobal "abort")
+                                 [] []
 
              in  return  $   blocks 
-                         |>  Block label (instrs |> iFail)
+                         |>  Block label (instrs |> iFail |> IUnreachable)
 
 
          -- Variable assignment.

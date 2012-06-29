@@ -5,6 +5,8 @@ imports {
         unboxInt32      :: Ptr# Obj -> Int32#;
         subInt32        :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
         mulInt32        :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
+        showInt32 :: Int32# -> Ptr# String#;
+        putStrLn  :: Ptr# String# -> Void#;
 }
 with letrec 
 
@@ -21,5 +23,5 @@ fac (x: Ptr# Obj) : Ptr# Obj
 
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
  = do   x2      = fac (boxInt32 10i32#)
-        putStrLn# (showInt32# (unboxInt32 x2))
+        putStrLn (showInt32 (unboxInt32 x2))
         return# [Int32#] 0i32#

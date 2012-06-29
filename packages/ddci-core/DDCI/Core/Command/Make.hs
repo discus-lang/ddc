@@ -79,7 +79,7 @@ makeFrag frag state source filePath
              FragDCE
               -> pipeText (nameOfSource source) (lineStartOfSource source) src
                $ PipeTextLoadCore  fragmentSalt 
-               $ pipesCoreSalt state builder pipeLLVM
+               $ pipesCoreSalt state False builder pipeLLVM
 
         -- Print any errors that arose during compilation.
         mapM_ (putStrLn . P.renderIndent . P.ppr) errs
@@ -90,14 +90,14 @@ pipesCoreLite state builder pipeLLVM
     [ PipeLiteToSalt    (buildSpec builder)
     [ PipeCoreSimplify  fragmentSalt Simpl.anormalize
     [ PipeCoreCheck     fragmentSalt 
-    $ pipesCoreSalt state builder pipeLLVM]]]]
+    $ pipesCoreSalt state True builder pipeLLVM]]]]
 
-pipesCoreSalt state builder pipeLLVM
+pipesCoreSalt state doTransfer builder pipeLLVM
  =  [ PipeCoreSimplify  fragmentSalt
                         (stateSimplifier state <> Simpl.anormalize)
     [ PipeCoreCheck     fragmentSalt
     [ PipeCoreAsSalt
-    [  PipeSaltOutput   (SinkFile "ddc.dump-salt.dce")
-     , PipeSaltToLlvm   (buildSpec builder) [pipeLLVM]]]]]
+    [ (if doTransfer then PipeSaltTransfer else PipeSaltId)
+    [ PipeSaltToLlvm   (buildSpec builder) [pipeLLVM]]]]]]
 
         

@@ -1,5 +1,10 @@
 
-module Main with letrec {
+module Main
+imports {
+        showInt32 :: Int32# -> Ptr# String#;
+        putStrLn  :: Ptr# String# -> Void#;
+}
+with letrec {
 
 allocRaw (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
  = do { bytesObj        = add# [Nat#] 8 bytesPayload;
@@ -56,8 +61,8 @@ fac (x: Ptr# Obj) : Ptr# Obj
 
 main (argc : Nat#) (argv : Ptr# String#) : Int32#
  = do { x       = boxInt32 10i32#;
-        str     = showInt32# (unboxInt32 (fac x));
-        putStrLn# str;
+        str     = showInt32 (unboxInt32 (fac x));
+        putStrLn str;
 
         return# [Int32#] 0i32#;
       };
