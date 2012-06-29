@@ -181,10 +181,26 @@ convBodyM blocks label instrs xx
          C.XApp{}
           |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn <- p
-          ,  [C.XType _t, x]                   <- xs
-          ,  Just x'                           <- mconvAtom pp x
-          -> return  $   blocks 
-                     |>  Block label (instrs |> IReturn (Just x'))
+          ,  [C.XType t, x]                    <- xs
+          -> do let t'  =  convType pp t
+                vDst    <- newUniqueVar t'
+                is      <- convExpM pp vDst x
+                return  $   blocks 
+                        |>  Block label (instrs >< (is |> IReturn (Just (XVar vDst))))
+
+         C.XApp{}
+          |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
+          ,  A.PrimControl A.PrimControlFail    <- p
+          ,  [C.XType tResult]                   <- xs
+
+          -> let iFail  = ICall Nothing CallTypeStd 
+                                 (convType pp tResult) 
+                                 (NameGlobal "fail")
+                                 [] [NoReturn]
+
+             in  return  $   blocks 
+                         |>  Block label (instrs |> iFail)
+
 
          -- Variable assignment.
          C.XLet _ (C.LLet C.LetStrict (C.BName (A.NameVar n) t) x1) x2
@@ -231,11 +247,21 @@ convBodyM blocks label instrs xx
 convStmtM :: Platform -> C.Exp () A.Name -> LlvmM (Seq Instr)
 convStmtM pp xx
  = case xx of
+        -- Call to primop.
         C.XApp{}
          |  C.XVar _ (C.UPrim (A.NamePrim p) tPrim) : xs <- takeXApps xx
          -> convPrimCallM pp Nothing p tPrim xs
 
-        _ -> die "invalid statement"
+        -- Call to top-level super.
+          | xFun@(C.XVar _ b) : xsArgs    <- takeXApps xx
+          , Just (Var nFun _)             <- takeGlobalV pp xFun
+          , (_, tResult)                  <- takeTFunArgResult $ typeOfBound b
+          , Just xsArgs'                  <- sequence $ map (mconvAtom pp) xsArgs
+          -> return $ Seq.singleton
+                    $ ICall Nothing CallTypeStd 
+                         (convType pp tResult) nFun xsArgs' []
+
+        _ -> die $ "invalid statement" ++ show xx
 
 
 -- Alt ------------------------------------------------------------------------

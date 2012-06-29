@@ -67,9 +67,6 @@ transSuper tails xx
                 x2'     = transX tails x2
             in  addReturnX a (annotType a) (XApp a x1' x2')
 
---         xReturn a (annotType a) 
---          $ XApp  a (transX tails x1) (transX tails x2)
-
         XLet  a lts x   -> XLet  a (transL tails lts) (down x)
         XCase a x alts  -> XCase a (transX tails x) (map (transA tails) alts)
         XCast a c x     -> XCast a c (transX tails x)
@@ -77,10 +74,10 @@ transSuper tails xx
         XWitness{}      -> xx
 
 
-addReturnX :: a
-           -> Type Name
-           -> Exp a Name 
-           -> Exp a Name
+-- | Add a statment to return this value, 
+--   but don't wrap existing control transfer operations.
+addReturnX :: a          -> Type Name
+           -> Exp a Name -> Exp a Name
 addReturnX a t xx
  = case takeXPrimApps xx of
         Just (NamePrim p, _)
