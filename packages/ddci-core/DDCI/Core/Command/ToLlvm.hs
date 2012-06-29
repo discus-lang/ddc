@@ -45,7 +45,7 @@ cmdLiteToLlvm state source str builder
         [  PipeLiteToSalt       (buildSpec builder)
         [  PipeCoreSimplify     fragmentSalt Simpl.anormalize
         [  PipeCoreCheck        fragmentSalt 
-        [  pipeCore_saltToLlvm state builder]]]]])
+        [  pipeCore_saltToLlvm state True builder]]]]])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
@@ -54,15 +54,20 @@ cmdSaltToLlvm :: State -> Source -> String -> Builder -> IO ()
 cmdSaltToLlvm state source str builder
  = (pipeText (nameOfSource source) (lineStartOfSource source) str
         $  PipeTextLoadCore     fragmentSalt
-        [  pipeCore_saltToLlvm state builder])
+        [  pipeCore_saltToLlvm state False builder])
  >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
 
 
-pipeCore_saltToLlvm :: Show a => State -> Builder -> PipeCore (AnTEC a A.Name) A.Name
-pipeCore_saltToLlvm state builder
+pipeCore_saltToLlvm 
+        :: Show a 
+        => State -> Bool -> Builder -> PipeCore (AnTEC a A.Name) A.Name
+
+pipeCore_saltToLlvm state doTransfer builder
         =  PipeCoreSimplify    fragmentSalt
                                (stateSimplifier state <> Simpl.anormalize)
         [  PipeCoreReCheck     fragmentSalt
         [  PipeCoreAsSalt
-        [  PipeSaltToLlvm      (buildSpec builder)
-        [  PipeLlvmPrint SinkStdout ]]]]
+        [  (if doTransfer then PipeSaltTransfer else PipeSaltId)
+        [  PipeSaltOutput (SinkFile "ddc.dump-salt.dce")
+        ,  PipeSaltToLlvm      (buildSpec builder)
+            [  PipeLlvmPrint SinkStdout ]]]]]

@@ -22,6 +22,7 @@ module DDC.Core.Salt.Convert.Transfer
 where
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Compounds
 import DDC.Core.Check           (AnTEC(..))
 import DDC.Core.Salt.Runtime
 import DDC.Core.Salt.Name
@@ -62,14 +63,31 @@ transSuper tails xx
         XLam  a b x     -> XLam  a b $ down x
 
         XApp  a x1 x2   
-         -> xReturn a (annotType a) 
-          $ XApp  a (transX tails x1) (transX tails x2)
+         -> let x1'     = transX tails x1
+                x2'     = transX tails x2
+            in  addReturnX a (annotType a) (XApp a x1' x2')
+
+--         xReturn a (annotType a) 
+--          $ XApp  a (transX tails x1) (transX tails x2)
 
         XLet  a lts x   -> XLet  a (transL tails lts) (down x)
         XCase a x alts  -> XCase a (transX tails x) (map (transA tails) alts)
         XCast a c x     -> XCast a c (transX tails x)
         XType{}         -> xx
         XWitness{}      -> xx
+
+
+addReturnX :: a
+           -> Type Name
+           -> Exp a Name 
+           -> Exp a Name
+addReturnX a t xx
+ = case takeXPrimApps xx of
+        Just (NamePrim p, _)
+         | PrimControl{}        <- p
+         -> xx
+
+        _ -> xReturn a t xx
 
 
 -- Let ------------------------------------------------------------------------

@@ -88,7 +88,7 @@ makeFrag frag state source filePath
 pipesCoreLite state builder pipeLLVM
  =  [ PipeCoreAsLite 
     [ PipeLiteToSalt    (buildSpec builder)
-    [ PipeCoreSimplify fragmentSalt Simpl.anormalize
+    [ PipeCoreSimplify  fragmentSalt Simpl.anormalize
     [ PipeCoreCheck     fragmentSalt 
     $ pipesCoreSalt state builder pipeLLVM]]]]
 
@@ -97,6 +97,7 @@ pipesCoreSalt state builder pipeLLVM
                         (stateSimplifier state <> Simpl.anormalize)
     [ PipeCoreCheck     fragmentSalt
     [ PipeCoreAsSalt
-    [ PipeSaltToLlvm    (buildSpec builder) [pipeLLVM]]]]]
+    [  PipeSaltOutput   (SinkFile "ddc.dump-salt.dce")
+     , PipeSaltToLlvm   (buildSpec builder) [pipeLLVM]]]]]
 
         
