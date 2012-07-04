@@ -38,7 +38,7 @@ import qualified DDC.War.Create.CreateMainHS    as CreateMainHS
 import qualified DDC.War.Create.CreateMainDS    as CreateMainDS
 import qualified DDC.War.Create.CreateTestDS    as CreateTestDS
 import qualified DDC.War.Create.CreateDCX       as CreateDCX
-import qualified DDC.War.Create.CreateDCE       as CreateDCE
+import qualified DDC.War.Create.CreateDC        as CreateDC
 
 
 -- | Create job chains based on this file.
@@ -56,5 +56,5 @@ create way allFiles filePath
                 , CreateMainDS.create
                 , CreateTestDS.create
                 , CreateDCX.create
-                , CreateDCE.create  ]]
+                , CreateDC.create  ]]
 

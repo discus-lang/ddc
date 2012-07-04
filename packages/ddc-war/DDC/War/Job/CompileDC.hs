@@ -1,7 +1,8 @@
 
-module DDC.War.Job.CompileDCE
-        ( Spec  (..)
-        , Result(..)
+module DDC.War.Job.CompileDC
+        ( Spec     (..)
+        , Fragment (..)
+        , Result   (..)
         , resultSuccess
         , build)
 where
@@ -23,6 +24,9 @@ data Spec
         { -- | Root source file of the program (the 'Main.ds')
           specFile               :: FilePath 
                                 
+          -- | Language fragment.
+        , specFragment           :: Fragment
+
           -- | Scratch dir to do the build in.
         , specScratchDir         :: String
 
@@ -41,11 +45,20 @@ data Spec
         deriving Show
 
 
+-- | Language fragments that we can compile.
+data Fragment
+        = FragmentSalt          -- File.dce
+        | FragmentLite          -- File.dcl
+        deriving Show
+
+
+-- | Result of a compilation test.
 data Result
         = ResultSuccess Seconds
         | ResultUnexpectedFailure
         | ResultUnexpectedSuccess
         deriving Show
+
 
 resultSuccess :: Result -> Bool
 resultSuccess result
@@ -65,19 +78,19 @@ instance Pretty Result where
 -- Build ----------------------------------------------------------------------
 -- | Compile a Disciple Core Sea source file.
 build :: Spec -> Build Result
-build   (Spec   srcDCE
+build   (Spec   srcDC _fragment
                 buildDir mainCompOut mainCompErr
                 mMainBin shouldSucceed)
 
- = do   needs srcDCE
+ = do   needs srcDC
         needs "bin/ddci-core"
 
         -- The directory holding the Main.dce file.
-        let (srcDir, _srcFile)  = splitFileName srcDCE
+        let (srcDir, _srcFile)  = splitFileName srcDC
                 
-        -- Touch the .dce files to the build directory to ensure they're built.
+        -- Touch the .dce and .dcl files to the build directory to ensure they're built.
         sources <- io
-                $  liftM (filter (\f -> isSuffixOf ".dce" f))
+                $  liftM (filter (\f -> isSuffixOf ".dce" f || isSuffixOf ".dcl" f))
                 $  lsFilesIn srcDir
 
         ssystemq $ "touch " ++ (intercalate " " sources)
@@ -97,7 +110,7 @@ build   (Spec   srcDCE
                                 ("bin/ddci-core"
                                 ++ " -set output "      ++ mainBin
                                 ++ " -set outputdir "   ++ buildDir
-                                ++ " -make "            ++ srcDCE)
+                                ++ " -make "            ++ srcDC)
                                 ""
 
                 -- Compile the program.
@@ -106,7 +119,7 @@ build   (Spec   srcDCE
                          $ systemTee False
                                 ("bin/ddci-core"
                                 ++ " -set outputdir "   ++ buildDir
-                                ++ " -compile "         ++ srcDCE)
+                                ++ " -compile "         ++ srcDC)
                                 ""
         (time, (code, strOut, strErr))
                 <- compile

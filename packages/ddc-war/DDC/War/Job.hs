@@ -2,7 +2,7 @@
 {-# OPTIONS -fno-warn-orphans #-}
 module DDC.War.Job where
 import DDC.War.Driver.Base
-import qualified DDC.War.Job.CompileDCE as CompileDCE
+import qualified DDC.War.Job.CompileDC  as CompileDC
 import qualified DDC.War.Job.CompileDS  as CompileDS
 import qualified DDC.War.Job.CompileHS  as CompileHS
 import qualified DDC.War.Job.Diff       as Diff
@@ -12,11 +12,11 @@ import qualified DDC.War.Job.Shell      as Shell
 import BuildBox.Pretty
 
 
-instance Spec CompileDCE.Spec CompileDCE.Result where
+instance Spec CompileDC.Spec CompileDC.Result where
  specActionName _               = "compile"
- buildFromSpec                  = CompileDCE.build
+ buildFromSpec                  = CompileDC.build
  productOfResult _ result       
-        = ProductStatus (ppr result) (CompileDCE.resultSuccess result)
+        = ProductStatus (ppr result) (CompileDC.resultSuccess result)
 
 
 instance Spec CompileDS.Spec  CompileDS.Result where

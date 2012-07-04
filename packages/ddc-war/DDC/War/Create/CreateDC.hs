@@ -1,6 +1,6 @@
 
 
-module DDC.War.Create.CreateDCE
+module DDC.War.Create.CreateDC
         (create)
 where
 import DDC.War.Create.Way
@@ -8,7 +8,7 @@ import DDC.War.Driver
 import System.FilePath
 import DDC.War.Job                              ()
 import Data.Set                                 (Set)
-import qualified DDC.War.Job.CompileDCE         as CompileDCE
+import qualified DDC.War.Job.CompileDC          as CompileDC
 import qualified DDC.War.Job.RunExe             as RunExe
 import qualified DDC.War.Job.Diff               as Diff
 import qualified Data.Set                       as Set
@@ -17,7 +17,8 @@ import qualified Data.Set                       as Set
 -- | Compile and run .dce files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | takeFileName filePath == "Main.dce"
+ |   takeFileName filePath == "Main.dce"
+  || takeFileName filePath == "Main.dcl"
  = let  
         sourceDir        = takeDirectory  filePath
         buildDir         = sourceDir </> "war-" ++ wayName way
@@ -42,10 +43,15 @@ create way allFiles filePath
         mainStderrDiff   = buildDir  </> "Main.run.stderr.diff"
         shouldDiffStderr = Set.member mainStderrCheck allFiles
 
+        fragment
+         | takeExtension filePath == "dce"  = CompileDC.FragmentSalt
+         | takeExtension filePath == "dcl"  = CompileDC.FragmentLite
+         | otherwise            = error "CreateDC.create: bad fragment"
+
         -- compile the .ds into a .bin
         compile          = jobOfSpec (JobId testName (wayName way))
-                         $ CompileDCE.Spec
-                                filePath
+                         $ CompileDC.Spec
+                                filePath fragment
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) shouldSucceed
 
