@@ -78,11 +78,11 @@ transSuper tails xx
         XApp{}
          | xv@(XVar a (UName n tF)) : args <- takeXApps xx
          , Set.member n tails
-         , (tsArgs, _)  <- takeTFunArgResult tF
+         , (tsArgs, tResult)  <- takeTFunArgResult tF
          -> let arity   = length args
                 p       = PrimCallTail arity
                 u       = UPrim (NamePrim (PrimCall p)) (typeOfPrimCall p)
-            in  makeXApps a (XVar a u) (xv : map XType tsArgs ++ args)
+            in  makeXApps a (XVar a u) (map XType (tsArgs ++ [tResult]) ++ (xv : args))
 
         XApp  a x1 x2   
          -> let x1'     = transX tails x1

@@ -161,7 +161,8 @@ convBodyM blocks label instrs xx
  = do   pp      <- gets llvmStatePlatform
         case xx of
 
-         -- End of function body must explicitly pass control.
+         -- Control transfer instructions -----------------
+         -- Return without a value.
          C.XApp{}
           |  Just (A.NamePrim p, xs)             <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn   <- p
@@ -170,6 +171,7 @@ convBodyM blocks label instrs xx
           -> return  $   blocks 
                      |>  Block label (instrs |> IReturn Nothing)
 
+         -- Return a value.
          C.XApp{}
           |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn <- p
@@ -180,6 +182,7 @@ convBodyM blocks label instrs xx
                 return  $   blocks 
                         |>  Block label (instrs >< (is |> IReturn (Just (XVar vDst))))
 
+         -- Fail and abort the program.
          C.XApp{}
           |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail   <- p
@@ -193,6 +196,25 @@ convBodyM blocks label instrs xx
                          |>  Block label (instrs |> iFail |> IUnreachable)
 
 
+         -- Calls -----------------------------------------
+         -- Tailcall a function.
+         C.XApp{}
+          |  Just (A.NamePrim p, args)         <- takeXPrimApps xx
+          ,  A.PrimCall (A.PrimCallTail arity) <- p
+          ,  _tsArgs                           <- take arity args
+          ,  C.XType tResult : xFun : xsArgs   <- drop arity args
+          ,  Just (Var nFun _)                 <- takeGlobalV pp xFun
+          ,  Just xsArgs'                      <- sequence $ map (mconvAtom pp) xsArgs
+          -> do let tResult'    = convType pp tResult
+                vDst            <- newUniqueVar tResult'
+                return  $ blocks
+                        |> (Block label 
+                        $  instrs |> ICall (Just vDst) CallTypeTail 
+                                       (convType pp tResult) nFun xsArgs' []
+                                  |> IReturn (Just (XVar vDst)))
+
+
+         -- Assignment ------------------------------------
          -- Variable assignment.
          C.XLet _ (C.LLet C.LetStrict (C.BName (A.NameVar n) t) x1) x2
           -> do t'       <- convTypeM t
