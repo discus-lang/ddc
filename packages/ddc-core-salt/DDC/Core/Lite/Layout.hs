@@ -126,23 +126,20 @@ fieldSizeOfPrimTyCon platform tc
 
         PrimTyConAddr        -> Just $ platformAddrBytes platform
         PrimTyConNat         -> Just $ platformNatBytes  platform
+        PrimTyConInt         -> Just $ platformNatBytes  platform
         PrimTyConTag         -> Just $ platformTagBytes  platform
         PrimTyConBool        -> Just $ 1
 
-        -- Strings shouldn't appear as raw fields, only pointers to them.
-        PrimTyConString      -> Nothing
-
         PrimTyConWord bits
-         | bits `mod` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
-         | otherwise         -> Nothing
-
-        PrimTyConInt bits
          | bits `mod` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
          | otherwise         -> Nothing
 
         PrimTyConFloat bits
          | bits `mod` 8 == 0 -> Just $ fromIntegral $ bits `div` 8
          | otherwise         -> Nothing
+
+        -- Strings shouldn't appear as raw fields, only pointers to them.
+        PrimTyConString      -> Nothing
 
 
 -- Unboxed --------------------------------------------------------------------

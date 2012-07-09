@@ -11,60 +11,60 @@
 -- Error: Module does not have a top-level letrec.
 :to-c..
 module Main with let
-x = 5;;
+x = 5#;;
 
 
 -- Ok: Function finishes with a return statement.
 :to-c..
 module Main with letrec
-foo (x : Int32#) : Int32#   
- = return# [Int32#] x;;
+foo (x : Int#) : Int#   
+ = return# [Int#] x;;
 
 
 -- Ok: Statements in function.
 :to-c..
 module Main with letrec 
-foo (x : Int32#) : Int32#
- = let  y       = add# [Int32#]  x x
-   in   return# [Int32#] y;;
+foo (x : Int#) : Int#
+ = let  y       = add# [Int#]  x x
+   in   return# [Int#] y;;
 
 
 -- Ok: Function explicitly fails.
 :to-c..
 module Main with letrec
-foo (x : Int32#) : Int32#
- = let  y       = add# [Int32#]  x x
-   in   fail# [Int32#];;
+foo (x : Int#) : Int#
+ = let  y       = add# [Int#]  x x
+   in   fail# [Int#];;
 
 
 -- Ok: assignment between variables.
 :to-c..
 module Main with letrec
-foo (x : Int32#) : Int32#
+foo (x : Int#) : Int#
  = let y        = x
-   in  return# [Int32#] y;;
+   in  return# [Int#] y;;
 
 
 -- Ok: assignment from a literal.
 :to-c..
 module Main with letrec
 foo (x : Nat#) : Nat#
- = let  y       = 5
+ = let  y       = 5#
    in   return# [Nat#] y;;
 
 
 -- Error: assignment from primop.
 :to-c..
 module Main with letrec
-foo (x : Int32#) : Int32#
+foo (x : Int#) : Int#
  = let y        = add#
-   in  return# [Int32#] x;;
+   in  return# [Int#] x;;
 
 
 -- Error: cannot discard non-void return value.
 :to-c..
 module Main with letrec
-foo (x : Int32#) : Int32#
+foo (x : Int#) : Int#
  = let _        = x
-   in  return# [Int32#] x;;
+   in  return# [Int#] x;;
 

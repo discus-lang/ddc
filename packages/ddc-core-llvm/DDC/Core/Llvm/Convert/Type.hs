@@ -9,7 +9,7 @@ module DDC.Core.Llvm.Convert.Type
 
           -- * Builtin Types
         , tObj, sObj,  aObj
-        , tPtr, tAddr, tNat, tTag
+        , tPtr, tAddr, tNat, tInt, tTag
 
           -- * Type Constructors
         , convTyCon
@@ -111,12 +111,12 @@ convTyCon platform tycon
         C.TyConBound (C.UPrim (NamePrimTyCon tc) _)
          -> case tc of
                 PrimTyConVoid           -> TVoid
-                PrimTyConAddr           -> TInt (8 * platformAddrBytes platform)
-                PrimTyConNat            -> TInt (8 * platformAddrBytes platform)
-                PrimTyConTag            -> TInt (8 * platformTagBytes  platform)
                 PrimTyConBool           -> TInt 1
+                PrimTyConNat            -> TInt (8 * platformAddrBytes platform)
+                PrimTyConInt            -> TInt (8 * platformAddrBytes platform)
                 PrimTyConWord bits      -> TInt (fromIntegral bits)
-                PrimTyConInt  bits      -> TInt (fromIntegral bits)
+                PrimTyConTag            -> TInt (8 * platformTagBytes  platform)
+                PrimTyConAddr           -> TInt (8 * platformAddrBytes platform)
                 PrimTyConString         -> TPointer (TInt 8)
 
                 PrimTyConFloat bits
@@ -149,9 +149,13 @@ tPtr t = TPointer t
 tAddr :: Platform -> Type
 tAddr pp = TInt (8 * platformAddrBytes pp)
 
--- | Alias for address type.
+-- | Alias for natural numner type.
 tNat :: Platform -> Type
 tNat pp = TInt (8 * platformAddrBytes pp)
+
+-- | Alias for machine integer type.
+tInt :: Platform -> Type
+tInt pp = TInt (8 * platformAddrBytes pp)
 
 -- | Alias for address type.
 tTag :: Platform -> Type
@@ -171,8 +175,8 @@ isSignedT tt
  = case tt of
         C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
          -> case n of
-                A.PrimTyConInt   _      -> True
-                A.PrimTyConFloat _      -> True
+                A.PrimTyConInt{}        -> True
+                A.PrimTyConFloat{}      -> True
                 _                       -> False
         _                               -> False
 
@@ -185,7 +189,7 @@ isUnsignedT tt
          -> case n of
                 A.PrimTyConNat          -> True
                 A.PrimTyConTag          -> True
-                A.PrimTyConWord _       -> True
+                A.PrimTyConWord{}       -> True
                 _                       -> False
         _                               -> False
 
@@ -197,8 +201,8 @@ isIntegralT tt
         C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
          -> case n of
                 A.PrimTyConNat          -> True
-                A.PrimTyConInt   _      -> True
-                A.PrimTyConWord  _      -> True
+                A.PrimTyConInt          -> True
+                A.PrimTyConWord{}       -> True
                 _                       -> False
         _                               -> False
 

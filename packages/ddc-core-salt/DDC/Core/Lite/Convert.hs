@@ -299,15 +299,21 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
  = do   t'              <- convertT t
         return $ XCon (annotTail a) (UPrim (O.NameBool b) t')
 
+ | L.NameNat i          <- nCtor
+ , []                   <- xsArgs
+ = do   t'              <- convertT t
+        return $ XCon (annotTail a) (UPrim (O.NameNat i) t')
+
+ | L.NameInt i         <- nCtor
+ , []                   <- xsArgs
+ = do   t'              <- convertT t
+        return $ XCon (annotTail a) (UPrim (O.NameInt i) t')
+
  | L.NameWord i bits    <- nCtor
  , []                   <- xsArgs
  = do   t'              <- convertT t
         return $ XCon (annotTail a) (UPrim (O.NameWord i bits) t')
 
- | L.NameInt i bits     <- nCtor
- , []                   <- xsArgs
- = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (O.NameInt i bits) t')
 
  -- Construct algbraic data that has a finite number of data constructors.
  | Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
@@ -392,13 +398,18 @@ convertC _defs a uu
           -> return ( XCon a (UPrim (O.NameBool v)      (O.tBool))
                     , O.tBool)
 
+        UPrim (L.NameNat i) _   
+          -> return ( XCon a (UPrim (O.NameNat i) O.tNat)
+                    , O.tNat)
+
+        UPrim (L.NameInt i) _   
+          -> return ( XCon a (UPrim (O.NameInt i) O.tInt)
+                    , O.tInt)
+
         UPrim (L.NameWord i bits) _   
           -> return ( XCon a (UPrim (O.NameWord i bits) (O.tWord bits))
                     , O.tWord bits)
 
-        UPrim (L.NameInt i bits) _   
-          -> return ( XCon a (UPrim (O.NameInt i bits) (O.tInt bits))
-                    , O.tInt bits)
 
         _ -> error $ "convertC failed"
 

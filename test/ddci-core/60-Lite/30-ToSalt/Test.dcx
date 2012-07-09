@@ -18,19 +18,19 @@ foo     (x : Word16#) : Word16#
 
 :to-salt..
 module Main with letrec
-foo     (x : Int32#) : Int32#
+foo     (x : Word32#) : Word32#
  = case x of
-        5i32#   -> 6i32#
-        7i32#   -> 8i32#
-        _       -> 0i32#;;
+        5w32#   -> 6w32#
+        7w32#   -> 8w32#
+        _       -> 0w32#;;
 
 :to-salt..
 module Main with letrec
-foo     (x : Int64#) : Int64#
+foo     (x : Word64#) : Word64#
  = case x of
-        5i64#   -> 6i64#
-        7i64#   -> 8i64#
-        _       -> 0i64#;;
+        5w64#   -> 6w64#
+        7w64#   -> 8w64#
+        _       -> 0w64#;;
 
 
 -- Unboxed Bool pattern.
@@ -46,17 +46,17 @@ foo     (x : Bool#) : Bool#
 --      packs a RawSmall Object.
 :to-salt..
 module Main with letrec
-boxInt [r : %] (i : Int32#) { Alloc r | Use r } : Int r
-        = I32# [r] i;;
+boxInt [r : %] (i : Int#) { Alloc r | Use r } : Int r
+        = I# [r] i;;
 
 
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
 :to-salt..
 module Main with letrec
-unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
+unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
  = case x of 
-        I32# i  -> i;;
+        I# i  -> i;;
 
 
 -- Nested case-expressions.
@@ -65,10 +65,10 @@ module Main with letrec
 addInt [r1 r2 r3 : %] 
         (x : Int r1) { !0 | $0 } 
         (y : Int r2) { Read r1 + Read r2 | Use r1 }
-        : Int32#
- =  case x of { I32# i1 
- -> case y of { I32# i2 
- -> add# [Int32#] i1 i2 } };;
+        : Int#
+ =  case x of { I# i1 
+ -> case y of { I# i2 
+ -> add# [Int#] i1 i2 } };;
 
 
 -- Boxed addition
@@ -78,9 +78,9 @@ addInt [r1 r2 r3 : %]
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
         : Int r3
- =  case x of { I32# i1 
- -> case y of { I32# i2 
- -> I32# [r3] (add# [Int32#] i1 i2) } };;
+ =  case x of { I# i1 
+ -> case y of { I# i2 
+ -> I# [r3] (add# [Int#] i1 i2) } };;
 
 
 -- Take the head of an Int list,
@@ -143,9 +143,9 @@ addInt [r1 r2 r3 : %]
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
         : Int r3
- =  case x of { I32# i1 
- -> case y of { I32# i2 
- -> I32# [r3] (add# [Int32#] i1 i2) } }
+ =  case x of { I# i1 
+ -> case y of { I# i2 
+ -> I# [r3] (add# [Int#] i1 i2) } }
 
 double [r1 r2 : %]
        (x : Int r1) { Read r1 + Alloc r2 | Use r1 + Use r2 }

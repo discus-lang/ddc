@@ -4,12 +4,13 @@
 :check add#
 
 -- Type constructors
-:kind Int64#
-:kind Int32#
+:kind Nat#
+:kind Int#
+:kind Word32#
 
 -- Error: invalid type constructors
-:kind Int#
-
+:kind Word#
+:kind Int32#
 :kind Int65#
 
 
@@ -22,11 +23,11 @@
 
 
 -- Literals
-:check 42
+:check 42#
 
-:check -5
+:check -5i#
 
-:check TAG42#
+:check 96i#
 
 :check 42w8#
 
@@ -36,16 +37,12 @@
 
 :check 42w64#
 
-:check 96i8#
-
-:check 96i16#
-
-:check 96i32#
-
-:check 96i64#
-
+:check TAG42#
 
 -- Error: lex error
+-- no negative naturals
+:check -42#
+
 -- no unboxed literals in this fragment.
 :check 42w32
 

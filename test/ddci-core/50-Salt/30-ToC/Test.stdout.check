@@ -2,36 +2,36 @@
 -- Convert a Core Salt module into raw C code.
 ok
 ok
-Obj* addInt32 (Obj* x, Obj* y)
+Obj* addInt (Obj* x, Obj* y)
 {
-        int32_t _sym_xZPm = unboxInt32 (x);
-        int32_t _sym_yZPm = unboxInt32 (y);
-        int32_t r        = (_sym_xZPm + _sym_yZPm);
-        Obj* z           = boxInt32 (r);
+        int_t _sym_xZPm  = unboxInt (x);
+        int_t _sym_yZPm  = unboxInt (y);
+        int_t r          = (_sym_xZPm + _sym_yZPm);
+        Obj* z           = boxInt (r);
         return z;
 }
 
-Obj* boxInt32 (int32_t x)
+Obj* boxInt (int_t x)
 {
         Obj* obj         = allocRaw (0, 4);
         addr_t addr      = _takePtr (Obj, obj);
-        _write (int32_t, addr, 8, x);
+        _write (int_t, addr, 8, x);
         return obj;
 }
 
-int32_t unboxInt32 (Obj* obj)
+int_t unboxInt (Obj* obj)
 {
         addr_t addr      = _takePtr (Obj, obj);
-        int32_t x        = _read (int32_t, addr, 8);
+        int_t x          = _read (int_t, addr, 8);
         return x;
 }
 
-int32_t main (nat_t argc, string_t* argv)
+int_t main (nat_t argc, string_t* argv)
 {
-        Obj* x           = boxInt32 (5);
-        Obj* x2          = addInt32 (x, x);
-        int32_t x0       = unboxInt32 (x2);
-        string_t str     = _showInt32 (x0);
+        Obj* x           = boxInt (5);
+        Obj* x2          = addInt (x, x);
+        int_t x0         = unboxInt (x2);
+        string_t str     = _showInt (x0);
         _putStrLn (str);
         return 0;
 }

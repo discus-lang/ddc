@@ -288,12 +288,12 @@ convAltM aa
 convPatBound :: Platform -> C.Bound A.Name -> Maybe Lit
 convPatBound pp (C.UPrim name _)
  = case name of
-        A.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
-        A.NameNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
-        A.NameInt  i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
-        A.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
         A.NameBool True   -> Just $ LitInt (TInt 1) 1
         A.NameBool False  -> Just $ LitInt (TInt 1) 0
+        A.NameNat  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameInt  i      -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
+        A.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
         _                 -> Nothing
 
 convPatBound _ _          = Nothing
@@ -338,13 +338,14 @@ convExpM pp vDst (C.XCon _ (C.UPrim name _t))
          -> return $ Seq.singleton
                    $ ISet vDst (XLit (LitInt (tNat pp) i))
 
+        A.NameInt  i
+         -> return $ Seq.singleton 
+                   $ ISet vDst (XLit (LitInt (tInt pp) i))
+
         A.NameWord w bits
          -> return $ Seq.singleton
                    $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
-        A.NameInt  w bits
-         -> return $ Seq.singleton 
-                   $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
         _ -> die "invalid literal"
 

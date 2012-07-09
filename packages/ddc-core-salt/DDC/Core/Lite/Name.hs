@@ -29,14 +29,18 @@ data Name
         -- | A primitive operator.
         | NamePrimOp    PrimOp
 
+        -- | An Unboxed boolean literal
+        | NameBool      Bool
+
+        -- | An unboxed natural literal.
+        | NameNat       Integer
+
         -- | An unboxed integer literal.
-        | NameInt       Integer Int
+        | NameInt       Integer
 
         -- | An unboxed word literal
         | NameWord      Integer Int
 
-        -- | An Unboxed boolean literal
-        | NameBool      Bool
         deriving (Eq, Ord, Show)
 
 
@@ -51,8 +55,9 @@ instance Pretty Name where
         NamePrimOp op           -> ppr op
         NameBool True           -> text "True#"
         NameBool False          -> text "False#"
+        NameNat  i              -> integer i <> text "#"
+        NameInt  i              -> integer i <> text "i" <> text "#"
         NameWord i bits         -> integer i <> text "w" <> int bits <> text "#"
-        NameInt  i bits         -> integer i <> text "i" <> int bits <> text "#"
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -79,15 +84,19 @@ readName str
         | str == "True#"  = Just $ NameBool True
         | str == "False#" = Just $ NameBool False
 
+        -- Literal Nat
+        | Just val <- readLitPrimNat str
+        = Just $ NameNat  val
+
+        -- Literal Ints
+        | Just val <- readLitPrimInt str
+        = Just $ NameInt  val
+
         -- Literal Words
         | Just (val, bits) <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameWord val bits
 
-        -- Literal Ints
-        | Just (val, bits) <- readLitPrimIntOfBits str
-        , elem bits [8, 16, 32, 64]
-        = Just $ NameInt  val bits
 
         -- Constructors.
         | c : _         <- str
@@ -106,11 +115,12 @@ readName str
 
 -- DataTyCon ------------------------------------------------------------------
 data DataTyCon
-        = DataTyConUnit         -- ^ Unit   type constructor.
-        | DataTyConBool         -- ^ Bool   type constructor.
-        | DataTyConInt          -- ^ Int    type constructor.
-        | DataTyConPair         -- ^ @Pair@ type constructor.
-        | DataTyConList         -- ^ @List@ type constructor.
+        = DataTyConUnit         -- ^ @Unit@  type constructor.
+        | DataTyConBool         -- ^ @Bool@  type constructor.
+        | DataTyConNat          -- ^ @Nat@   type constructor.
+        | DataTyConInt          -- ^ @Int@   type constructor.
+        | DataTyConPair         -- ^ @Pair@  type constructor.
+        | DataTyConList         -- ^ @List@  type constructor.
         deriving (Eq, Ord, Show)
 
 
@@ -119,6 +129,7 @@ instance Pretty DataTyCon where
   = case dc of
         DataTyConUnit           -> text "Unit"
         DataTyConBool           -> text "Bool"
+        DataTyConNat            -> text "Nat"
         DataTyConInt            -> text "Int"
         DataTyConPair           -> text "Pair"
         DataTyConList           -> text "List"
@@ -129,6 +140,7 @@ readDataTyCon str
  = case str of
         "Unit"  -> Just DataTyConUnit
         "Bool"  -> Just DataTyConBool
+        "Nat"   -> Just DataTyConNat
         "Int"   -> Just DataTyConInt
         "Pair"  -> Just DataTyConPair
         "List"  -> Just DataTyConList
@@ -137,8 +149,9 @@ readDataTyCon str
 
 -- PrimDaCon ------------------------------------------------------------------
 data PrimDaCon
-        = PrimDaConBoolU        -- ^ @B#@    data constructor.
-        | PrimDaConInt32U       -- ^ @I32#@  data constructor.
+        = PrimDaConBoolU        -- ^ @B#@   data constructor.
+        | PrimDaConNatU         -- ^ @N#@   data constructor.
+        | PrimDaConIntU         -- ^ @I#@   data constructor.
 
         | PrimDaConUnit         -- ^ Unit   data constructor (@()@).
         | PrimDaConPr           -- ^ @Pr@   data construct (pairs).
@@ -151,9 +164,8 @@ instance Pretty PrimDaCon where
  ppr dc
   = case dc of
         PrimDaConBoolU          -> text "B#"
-
-
-        PrimDaConInt32U         -> text "I32#"
+        PrimDaConNatU           -> text "N#"
+        PrimDaConIntU           -> text "I#"
 
         PrimDaConUnit           -> text "()"
         PrimDaConPr             -> text "Pr"
@@ -165,7 +177,8 @@ readPrimDaCon :: String -> Maybe PrimDaCon
 readPrimDaCon str
  = case str of
         "B#"    -> Just PrimDaConBoolU
-        "I32#"  -> Just PrimDaConInt32U
+        "N#"    -> Just PrimDaConNatU
+        "I#"    -> Just PrimDaConIntU
 
         "Unit"  -> Just PrimDaConUnit
         "Pr"    -> Just PrimDaConPr

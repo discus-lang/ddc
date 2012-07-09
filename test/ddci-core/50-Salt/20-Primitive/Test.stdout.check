@@ -7,13 +7,15 @@ add#
 :$: $0
 
 -- Type constructors
-Int64# :: *
-Int32# :: *
+Nat# :: *
+Int# :: *
+Word32# :: *
 
 -- Error: invalid type constructors
 When checking type.
-  Undefined type constructor:  Int#
-
+  Undefined type constructor:  Word#
+When checking type.
+  Undefined type constructor:  Int32#
 When checking type.
   Undefined type constructor:  Int65#
 
@@ -34,18 +36,18 @@ tailcall4#
 
 
 -- Literals
-42
+42#
 :*: Nat#
 :!: !0
 :$: $0
 
--5
-:*: Nat#
+5i#
+:*: Int#
 :!: !0
 :$: $0
 
-TAG42#
-:*: Tag#
+96i#
+:*: Int#
 :!: !0
 :$: $0
 
@@ -69,28 +71,18 @@ TAG42#
 :!: !0
 :$: $0
 
-96i8#
-:*: Int8#
+TAG42#
+:*: Tag#
 :!: !0
 :$: $0
-
-96i16#
-:*: Int16#
-:!: !0
-:$: $0
-
-96i32#
-:*: Int32#
-:!: !0
-:$: $0
-
-96i64#
-:*: Int64#
-:!: !0
-:$: $0
-
 
 -- Error: lex error
+-- no negative naturals
+While parsing.
+  Parse error in "<batch>" (line 1, column 1)
+  Unexpected character "lexical error".
+  Expected an expression.
+
 -- no unboxed literals in this fragment.
 While parsing.
   Parse error in "<batch>" (line 1, column 1)

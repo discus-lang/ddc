@@ -8,8 +8,9 @@ module DDC.Core.Salt.Prim
         , readPrimOp
 
         , readLitInteger
-        , readLitPrimWordOfBits
-        , readLitPrimIntOfBits)
+        , readLitPrimNat
+        , readLitPrimInt
+        , readLitPrimWordOfBits)
 where
 import DDC.Base.Pretty
 import Data.Char
@@ -22,34 +23,35 @@ data PrimTyCon
         -- | The Void type.
         = PrimTyConVoid
 
-        -- | Type of store pointers
-        | PrimTyConPtr
-
-        -- | Type of machine addresses.
-        | PrimTyConAddr
-
-        -- | Type of natural numbers,
-        --   Used for field indices and general counters.
-        | PrimTyConNat
-
-        -- | Type of data type tags.
-        | PrimTyConTag
-
         -- | Type of booleans.
         | PrimTyConBool
 
-        -- | String of UTF8 characters.
-        | PrimTyConString 
+        -- | Type of natural numbers,
+        --   Big enough to count every addressable byte in the system.
+        | PrimTyConNat
 
-        -- | Unsigned words of the given length.
+        -- | Type of signed integers,
+        | PrimTyConInt
+
+        -- | Machine words of the given length.
         | PrimTyConWord   Int
-
-        -- | Signed integers of the given length.
-        | PrimTyConInt    Int
 
         -- | Floating point numbers of the given length.
         | PrimTyConFloat  Int
 
+        -- | Type of data type tags.
+        | PrimTyConTag
+
+        -- | Type of machine addresses.
+        | PrimTyConAddr
+
+        -- | Type of store pointers
+        | PrimTyConPtr
+
+        -- | String of UTF8 characters.
+        --   TODO: We'll stop treating this as primitive once we can define 
+        --         our own types.
+        | PrimTyConString 
         deriving (Eq, Ord, Show)
 
 
@@ -57,26 +59,27 @@ instance Pretty PrimTyCon where
  ppr tc
   = case tc of
         PrimTyConVoid           -> text "Void#"
-        PrimTyConPtr            -> text "Ptr#"
-        PrimTyConAddr           -> text "Addr#"
-        PrimTyConNat            -> text "Nat#"
-        PrimTyConTag            -> text "Tag#"
         PrimTyConBool           -> text "Bool#"
-        PrimTyConString         -> text "String#"
+        PrimTyConNat            -> text "Nat#"
+        PrimTyConInt            -> text "Int#"
         PrimTyConWord   bits    -> text "Word"  <> int bits <> text "#"
-        PrimTyConInt    bits    -> text "Int"   <> int bits <> text "#"
         PrimTyConFloat  bits    -> text "Float" <> int bits <> text "#"
+        PrimTyConTag            -> text "Tag#"
+        PrimTyConAddr           -> text "Addr#"
+        PrimTyConPtr            -> text "Ptr#"
+        PrimTyConString         -> text "String#"
 
 
 -- | Read a primitive typ constructor.
 readPrimTyCon :: String -> Maybe PrimTyCon
 readPrimTyCon str
         | str == "Void#"   = Just $ PrimTyConVoid
-        | str == "Ptr#"    = Just $ PrimTyConPtr
-        | str == "Addr#"   = Just $ PrimTyConAddr
-        | str == "Nat#"    = Just $ PrimTyConNat
-        | str == "Tag#"    = Just $ PrimTyConTag
         | str == "Bool#"   = Just $ PrimTyConBool
+        | str == "Nat#"    = Just $ PrimTyConNat
+        | str == "Int#"    = Just $ PrimTyConInt
+        | str == "Tag#"    = Just $ PrimTyConTag
+        | str == "Addr#"   = Just $ PrimTyConAddr
+        | str == "Ptr#"    = Just $ PrimTyConPtr
         | str == "String#" = Just $ PrimTyConString
 
         -- WordN#
@@ -87,21 +90,13 @@ readPrimTyCon str
         , elem n [8, 16, 32, 64]
         = Just $ PrimTyConWord n
 
-        -- IntN#
-        | Just rest     <- stripPrefix "Int" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
-        , elem n [8, 16, 32, 64]
-        = Just $ PrimTyConInt n
-
         -- FloatN#
         | Just rest     <- stripPrefix "Float" str
         , (ds, "#")     <- span isDigit rest
         , not $ null ds
         , n             <- read ds
         , elem n [32, 64]
-        = Just $ PrimTyConInt n
+        = Just $ PrimTyConFloat n
 
         | otherwise
         = Nothing
@@ -193,6 +188,34 @@ readLitInteger str@(c:cs)
         = Nothing
         
 
+-- | Read an integer with an explicit format specifier like @1234i#@.
+--- TODO hande negative literals.
+readLitPrimNat :: String -> Maybe Integer
+readLitPrimNat str1
+        | (ds, str2)    <- span isDigit str1
+        , not $ null ds
+        , Just ""       <- stripPrefix "#" str2
+        = Just $ read ds
+
+        | otherwise
+        = Nothing
+
+-- | Read an integer with an explicit format specifier like @1234i#@.
+readLitPrimInt :: String -> Maybe Integer
+readLitPrimInt str1
+        | '-' : str2    <- str1
+        , (ds, "i#")    <- span isDigit str2
+        , not $ null ds
+        = Just $ read ds
+
+        | (ds, "i#")    <- span isDigit str1
+        , not $ null ds
+        = Just $ read ds
+
+        | otherwise
+        = Nothing
+
+
 -- | Read a word with an explicit format speficier.
 readLitPrimWordOfBits :: String -> Maybe (Integer, Int)
 readLitPrimWordOfBits str1
@@ -222,18 +245,3 @@ readBinary :: (Num a, Read a) => String -> a
 readBinary digits
         = foldl' (\ acc b -> if b then 2 * acc + 1 else 2 * acc) 0
         $ map (/= '0') digits
-
-
--- | Read an integer with an explicit format specifier like @1234i32@.
---- TODO hande negative literals.
-readLitPrimIntOfBits :: String -> Maybe (Integer, Int)
-readLitPrimIntOfBits str1
-        | (ds, str2)    <- span isDigit str1
-        , not $ null ds
-        , Just str3     <- stripPrefix "i" str2
-        , (bs, "#")     <- span isDigit str3
-        , not $ null bs
-        = Just $ (read ds, read bs)
-
-        | otherwise
-        = Nothing

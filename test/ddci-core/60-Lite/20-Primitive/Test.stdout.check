@@ -4,8 +4,13 @@ ok
 
 
 -- Literals
-5i32#
-:*: Int32#
+5#
+:*: Nat#
+:!: !0
+:$: $0
+
+5i#
+:*: Int#
 :!: !0
 :$: $0
 
@@ -35,21 +40,21 @@ Bool :: % ~> *
 
 
 -- Boxing ints
-/\(r : %). \(x : Int32#). I32# [r] x
-:*: [r : %].Int32# -(Alloc r | Use r)> Int r
+/\(r : %). \(x : Int#). I# [r] x
+:*: [r : %].Int# -(Alloc r | Use r)> Int r
 :!: !0
 :$: $0
 
 
 -- Unboxing ints
-/\(r : %). \(x : Int r). case x of { I32# (i : Int32#) -> i }
-:*: [r : %].Int r -(Read r | $0)> Int32#
+/\(r : %). \(x : Int r). case x of { I# (i : Int#) -> i }
+:*: [r : %].Int r -(Read r | $0)> Int#
 :!: !0
 :$: $0
 
 
 -- Boxed integer add
-let unboxInt : [r : %].Int r -(Read r | $0)> Int32# = /\(r : %). \(x : Int r). case x of { I32# (i : Int32#) -> i } in let addInt : [r1 r2 r3 : %].Int r1 -(!0 | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3 = /\(r1 r2 r3 : %). \(x : Int r1). \(y : Int r2). case x of { I32# (i1 : Int32#) -> case y of { I32# (i2 : Int32#) -> I32# [r3] (add# [Int32#] i1 i2) } } in letregion r1 in unboxInt [r1] (addInt [r1] [r1] [r1] (I32# [r1] 2i32#) (I32# [r1] 3i32#))
-:*: Int32#
+let unboxInt : [r : %].Int r -(Read r | $0)> Int# = /\(r : %). \(x : Int r). case x of { I# (i : Int#) -> i } in let addInt : [r1 r2 r3 : %].Int r1 -(!0 | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3 = /\(r1 r2 r3 : %). \(x : Int r1). \(y : Int r2). case x of { I# (i1 : Int#) -> case y of { I# (i2 : Int#) -> I# [r3] (add# [Int#] i1 i2) } } in letregion r1 in unboxInt [r1] (addInt [r1] [r1] [r1] (I# [r1] 2i#) (I# [r1] 3i#))
+:*: Int#
 :!: !0
 :$: $0

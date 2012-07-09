@@ -1,12 +1,12 @@
 
 module DDC.Core.Lite.Compounds
         ( tBoolU
-        , tIntU
+        , tNatU, tIntU
         , tWordU
 
         , tUnit
         , tBool
-        , tInt
+        , tNat,  tInt
         , tPair
         , tList)
 where
@@ -20,8 +20,11 @@ import DDC.Type.Compounds
 tBoolU :: Type Name
 tBoolU  = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData))
 
-tIntU :: Int -> Type Name
-tIntU bits  = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt bits)) kData))
+tNatU ::  Type Name
+tNatU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat) kData))
+
+tIntU ::  Type Name
+tIntU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData))
 
 tWordU :: Int -> Type Name
 tWordU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData))
@@ -38,6 +41,12 @@ tBool r1 = TApp  (TCon (TyConBound (UPrim (NameDataTyCon DataTyConBool)
                                   (kFun kRegion kData))))
                 r1
 
+
+-- | Application of the Nat type constructor.
+tNat :: Region Name -> Type Name
+tNat r1 = TApp  (TCon (TyConBound (UPrim (NameDataTyCon DataTyConNat) 
+                                  (kFun kRegion kData))))
+                r1
 
 -- | Application of the Int type constructor.
 tInt :: Region Name -> Type Name

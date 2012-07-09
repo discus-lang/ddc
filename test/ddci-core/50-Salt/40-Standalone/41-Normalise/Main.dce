@@ -1,69 +1,69 @@
 
 module Main
 imports {
-        showInt32 :: Int32# -> Ptr# String#;
+        showInt   :: Int# -> Ptr# String#;
         putStrLn  :: Ptr# String# -> Void#;
 }
 with letrec {
 
 allocRaw (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
- = do { bytesObj        = add# [Nat#] 8 bytesPayload;
+ = do { bytesObj        = add# [Nat#] 8# bytesPayload;
         addr            = alloc# bytesObj;
 
         format          = 42w32#;
         tag32           = promote# [Word32#] [Tag#] tag;
         tagShift        = shl# [Word32#] tag32 8w32#;
         header          = bor# [Word32#] tagShift format;
-        write# [Word32#] addr 0 header;
+        write# [Word32#] addr 0# header;
 
         bytesObj32      = truncate# [Word32#] [Nat#] bytesObj;
-        write# [Word32#] addr 4 bytesObj32;
+        write# [Word32#] addr 4# bytesObj32;
 
         return# [Ptr# Obj] (makePtr# [Obj] addr);
      };
 
 
-boxInt32 (x : Int32#) : Ptr# Obj
- = do { obj     = allocRaw TAG0# 4;
+boxWord32 (x : Word32#) : Ptr# Obj
+ = do { obj     = allocRaw TAG0# 4#;
         addr    = takePtr# [Obj] obj;
-        write#  [Int32#] addr 8 x;
+        write#  [Word32#] addr 8# x;
         return# [Ptr# Obj] obj;
       };
 
 
-unboxInt32 (obj : Ptr# Obj) : Int32#
+unboxWord32 (obj : Ptr# Obj) : Word32#
  = do { addr    = takePtr# [Obj] obj;
-        x       = read#   [Int32#] addr 8;
-        return# [Int32#] x;
+        x       = read#   [Word32#] addr 8#;
+        return# [Word32#] x;
       };
 
 
-addInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = return# [Ptr# Obj] (boxInt32 (add# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+addWord32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxWord32 (add# [Word32#] (unboxWord32 x) (unboxWord32 y)));
 
 
-subInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = return# [Ptr# Obj] (boxInt32 (sub# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+subWord32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxWord32 (sub# [Word32#] (unboxWord32 x) (unboxWord32 y)));
 
 
-mulInt32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = return# [Ptr# Obj] (boxInt32 (mul# [Int32#] (unboxInt32 x) (unboxInt32 y)));
+mulWord32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxWord32 (mul# [Word32#] (unboxWord32 x) (unboxWord32 y)));
 
 
 fac (x: Ptr# Obj) : Ptr# Obj
- = do { cc      = eq# [Int32#] (unboxInt32 x) 0i32#;
+ = do { cc      = eq# [Word32#] (unboxWord32 x) 0w32#;
         case cc of {
-         True#  -> return# [Ptr# Obj] (boxInt32 1i32#);
-         False# -> return# [Ptr# Obj] (mulInt32 x (fac (subInt32 x (boxInt32 1i32#))));
+         True#  -> return# [Ptr# Obj] (boxWord32 1w32#);
+         False# -> return# [Ptr# Obj] (mulWord32 x (fac (subWord32 x (boxWord32 1w32#))));
         };
       };
 
 
-main (argc : Nat#) (argv : Ptr# String#) : Int32#
- = do { x       = boxInt32 10i32#;
-        str     = showInt32 (unboxInt32 (fac x));
+main (argc : Nat#) (argv : Ptr# String#) : Int#
+ = do { x       = boxWord32 10w32#;
+        str     = showInt (truncate# [Int#] [Word32#] (unboxWord32 (fac x)));
         putStrLn str;
 
-        return# [Int32#] 0i32#;
+        return# [Int#] 0i#;
       };
 }

@@ -37,17 +37,17 @@ primDataDefs
                 (Just   [ (NameBool True,  []) 
                         , (NameBool False, []) ])
 
+        -- Nat#
+        , DataDef (NamePrimTyCon PrimTyConNat)  [] Nothing
+
+        -- Int#
+        , DataDef (NamePrimTyCon PrimTyConInt)  [] Nothing
+
         -- WordN#
         , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
         , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
         , DataDef (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
         , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
-
-        -- IntN#
-        , DataDef (NamePrimTyCon (PrimTyConInt  64))  [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConInt  32))  [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConInt  16))  [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConInt  8))   [] Nothing
 
 
         -- Boxed ----------------------------------------------------
@@ -64,13 +64,20 @@ primDataDefs
                 [kRegion]
                 (Just   [ ( NamePrimDaCon PrimDaConBoolU
                           , [tBoolU]) ])
+
+        -- Nat
+        , DataDef
+                (NameDataTyCon DataTyConNat)
+                [kRegion]
+                (Just   [ ( NamePrimDaCon PrimDaConNatU
+                          , [tNatU]) ])
         
         -- Int
         , DataDef
                 (NameDataTyCon DataTyConInt)
                 [kRegion]
-                (Just   [ ( NamePrimDaCon PrimDaConInt32U
-                          , [tIntU 32]) ])
+                (Just   [ ( NamePrimDaCon PrimDaConIntU
+                          , [tIntU]) ])
 
         -- Pair
         , DataDef
@@ -101,12 +108,12 @@ kindOfPrimTyCon tc
         PrimTyConVoid    -> kData
         PrimTyConPtr     -> kData `kFun` kData
         PrimTyConAddr    -> kData
-        PrimTyConNat     -> kData
-        PrimTyConTag     -> kData
         PrimTyConBool    -> kData
+        PrimTyConNat     -> kData
+        PrimTyConInt     -> kData
         PrimTyConWord  _ -> kData
-        PrimTyConInt   _ -> kData
         PrimTyConFloat _ -> kData
+        PrimTyConTag     -> kData
         PrimTyConString  -> kData
 
 
@@ -161,10 +168,17 @@ typeOfPrimName dc
                                         (tBot kClosure)
                  $ tBool tR
 
-        -- I32#
-        NamePrimDaCon PrimDaConInt32U
+        -- N#
+        NamePrimDaCon PrimDaConNatU
          -> Just $ tForall kRegion $ \tR
-                 -> tFun (tIntU 32)     (tAlloc tR)
+                 -> tFun tNatU          (tAlloc tR)
+                                        (tBot kClosure)
+                 $  tInt tR
+
+        -- I#
+        NamePrimDaCon PrimDaConIntU
+         -> Just $ tForall kRegion $ \tR
+                 -> tFun tIntU          (tAlloc tR)
                                         (tBot kClosure)
                  $  tInt tR
 
@@ -200,16 +214,13 @@ typeOfPrimName dc
         NamePrimOp p
          -> Just $ typeOfPrimOp p
 
-        NameBool _
-         -> Just $ tBoolU
+        -- Unboxed Literals
+        NameBool _      -> Just $ tBoolU
+        NameNat  _      -> Just $ tNatU
+        NameInt  _      -> Just $ tIntU
+        NameWord _ bits -> Just $ tWordU bits
 
-        NameInt _ bits
-         -> Just $ tIntU bits
-
-        NameWord _ bits
-         -> Just $ tWordU bits
-
-        _ -> Nothing
+        _               -> Nothing
 
 
 -- | Take the type of a primitive operator.

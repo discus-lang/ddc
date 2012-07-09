@@ -228,24 +228,20 @@ convAltM aa
 convDaConName :: Name -> Maybe Doc
 convDaConName nn
  = case nn of
-        NameNat i       
-         -> Just $ integer i
-
-        NameTag i       
-         -> Just $ integer i
-
         NameBool True   -> Just $ int 1
         NameBool False  -> Just $ int 0
+
+        NameNat  i      -> Just $ integer i
+
+        NameInt  i      -> Just $ integer i
 
         NameWord i bits
          |  elem bits [8, 16, 32, 64]
          -> Just $ integer i
 
-        NameInt  i bits  
-         |  elem bits [8, 16, 32, 64]
-         -> Just $ integer i
+        NameTag i       -> Just $ integer i
 
-        _ -> Nothing
+        _               -> Nothing
 
 
 -- RValue ---------------------------------------------------------------------
@@ -263,13 +259,13 @@ convRValueM xx
         XCon _ (UPrim (NameNat n) _)
          -> return $ integer n
 
-        XCon _ (UPrim (NameTag n) _)    
-         -> return $ integer n
-
-        XCon _ (UPrim (NameInt n _) _)    
+        XCon _ (UPrim (NameInt n) _)    
          -> return $ integer n
 
         XCon _ (UPrim (NameWord n _) _)    
+         -> return $ integer n
+
+        XCon _ (UPrim (NameTag n) _)    
          -> return $ integer n
 
         -- Primop application.

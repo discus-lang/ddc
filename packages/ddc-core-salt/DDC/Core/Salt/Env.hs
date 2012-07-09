@@ -6,10 +6,11 @@ module DDC.Core.Salt.Env
         , primTypeEnv
 
         , tVoid
+        , tBool
+        , tNat, tInt, tWord
+        , tTag
         , tObj
-        , tPtr
-        , tAddr, tNat, tTag, tBool
-        , tInt,  tWord)
+        , tAddr, tPtr)
 where
 import DDC.Core.Salt.Name
 import DDC.Type.DataDef
@@ -30,18 +31,17 @@ import qualified DDC.Type.Env                   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
-        -- Nat
-        [ DataDef (NamePrimTyCon PrimTyConNat) [] Nothing
-
-        -- Tag
-        , DataDef (NamePrimTyCon PrimTyConTag) [] Nothing
-
         -- Bool
-        , DataDef
+        [ DataDef
                 (NamePrimTyCon PrimTyConBool)
                 []
                 (Just   [ (NameBool True,  [])
                         , (NameBool False, []) ])
+        -- Nat
+        , DataDef (NamePrimTyCon PrimTyConNat) [] Nothing
+
+        -- Int
+        , DataDef (NamePrimTyCon PrimTyConInt) [] Nothing
 
         -- Word 8, 16, 32, 64
         , DataDef (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
@@ -49,15 +49,12 @@ primDataDefs
         , DataDef (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
         , DataDef (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
 
-        -- Int 8, 16, 32, 64
-        , DataDef (NamePrimTyCon (PrimTyConInt  8))  [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConInt  16)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConInt  32)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConInt  64)) [] Nothing
-
         -- Float 32, 64
-        , DataDef (NamePrimTyCon (PrimTyConInt  32)) [] Nothing
-        , DataDef (NamePrimTyCon (PrimTyConInt  64)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+        , DataDef (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+
+        -- Tag
+        , DataDef (NamePrimTyCon PrimTyConTag) [] Nothing
         ]
 
 
@@ -85,14 +82,14 @@ kindOfPrimTyCon :: PrimTyCon -> Kind Name
 kindOfPrimTyCon tc
  = case tc of
         PrimTyConVoid    -> kData
-        PrimTyConPtr     -> (kData `kFun` kData)
-        PrimTyConAddr    -> kData
-        PrimTyConNat     -> kData
-        PrimTyConTag     -> kData
         PrimTyConBool    -> kData
+        PrimTyConNat     -> kData
+        PrimTyConInt     -> kData
         PrimTyConWord  _ -> kData
-        PrimTyConInt   _ -> kData
         PrimTyConFloat _ -> kData
+        PrimTyConAddr    -> kData
+        PrimTyConPtr     -> (kData `kFun` kData)
+        PrimTyConTag     -> kData
         PrimTyConString  -> kData
 
 
@@ -109,11 +106,11 @@ typeOfName nn
  = case nn of
         NamePrim p      -> Just $ typeOfPrim p
         NameVoid        -> Just $ tVoid
-        NameNat  _      -> Just $ tNat
-        NameTag  _      -> Just $ tTag
         NameBool _      -> Just $ tBool
+        NameNat  _      -> Just $ tNat
+        NameInt  _      -> Just $ tInt
         NameWord _ bits -> Just $ tWord bits
-        NameInt  _ bits -> Just $ tInt  bits
+        NameTag  _      -> Just $ tTag
         _               -> Nothing
 
 
@@ -130,13 +127,17 @@ typeOfPrim pp
 
 
 -- Shorthands -----------------------------------------------------------------
-tAddr, tTag, tNat, tBool, tString :: Type Name
+tVoid, tBool, tNat, tInt, tTag, tAddr, tString :: Type Name
 tVoid     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)   kData))
-tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr)   kData))
-tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)    kData))
-tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)    kData))
 tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)   kData))
+tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)    kData))
+tInt      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt)    kData))
+tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)    kData))
+tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr)   kData))
 tString   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConString) kData))
+
+tWord :: Int -> Type Name
+tWord bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData))
 
 tObj :: Type Name
 tObj      = TCon (TyConBound (UPrim  NameObjTyCon kData))
@@ -144,13 +145,6 @@ tObj      = TCon (TyConBound (UPrim  NameObjTyCon kData))
 tPtr :: Type Name -> Type Name
 tPtr t    = TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr)  (kFun kData kData))))
                  t
-
-tInt :: Int -> Type Name
-tInt bits  = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConInt  bits)) kData))
-
-
-tWord :: Int -> Type Name
-tWord bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData))
 
 
 -- PrimOps --------------------------------------------------------------------
@@ -276,5 +270,5 @@ typeOfPrimExternal ps
  = case ps of
         PrimExternalPutStr        -> tString   `tFunPE` tVoid
         PrimExternalPutStrLn      -> tString   `tFunPE` tVoid
-        PrimExternalShowInt bits  -> tInt bits `tFunPE` tString
+        PrimExternalShowInt       -> tInt      `tFunPE` tString
 

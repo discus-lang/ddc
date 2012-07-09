@@ -14,7 +14,7 @@
 // Show an integer.
 //   TODO: This should be defined in an external module.
 static inline
-string_t _showInt32 (int32_t i)
+string_t _showInt (int_t i)
 {       string_t str = malloc(32);
         snprintf(str, 32, "%d", i);
         return str;

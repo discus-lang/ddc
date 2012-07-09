@@ -350,8 +350,8 @@ convPrimFCond op t
 convPrimExtern :: A.PrimExternal -> C.Type A.Name -> Maybe Name
 convPrimExtern p _t
  = case p of
-        A.PrimExternalShowInt bits      
-         -> Just $ NameGlobal ("showInt" ++ show bits)
+        A.PrimExternalShowInt
+         -> Just $ NameGlobal "showInt"
 
         A.PrimExternalPutStr
          -> Just $ NameGlobal "putStr"

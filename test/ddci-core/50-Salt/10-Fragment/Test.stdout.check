@@ -16,7 +16,7 @@ Fragment violation when converting Salt module to C code.
 
 
 -- Ok: Function finishes with a return statement.
-int32_t foo (int32_t x)
+int_t foo (int_t x)
 {
         return x;
 }
@@ -24,27 +24,27 @@ int32_t foo (int32_t x)
 
 
 -- Ok: Statements in function.
-int32_t foo (int32_t x)
+int_t foo (int_t x)
 {
-        int32_t y        = (x + x);
+        int_t y          = (x + x);
         return y;
 }
 
 
 
 -- Ok: Function explicitly fails.
-int32_t foo (int32_t x)
+int_t foo (int_t x)
 {
-        int32_t y        = (x + x);
+        int_t y          = (x + x);
         _fail();
 }
 
 
 
 -- Ok: assignment between variables.
-int32_t foo (int32_t x)
+int_t foo (int_t x)
 {
-        int32_t y        = x;
+        int_t y          = x;
         return y;
 }
 
@@ -69,6 +69,6 @@ Error loading module
 Fragment violation when converting Salt module to C code.
   Cannot discard non-void return value.
   
-  with: let _ : Int32# = x in
-        return# [Int32#] x
+  with: let _ : Int# = x in
+        return# [Int#] x
 

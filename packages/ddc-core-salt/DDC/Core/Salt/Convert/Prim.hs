@@ -14,12 +14,13 @@ convPrimTyCon :: PrimTyCon -> Maybe Doc
 convPrimTyCon tc
  = case tc of
         PrimTyConVoid           -> Just $ text "void"
-        PrimTyConAddr           -> Just $ text "addr_t"
-        PrimTyConNat            -> Just $ text "nat_t"
-        PrimTyConTag            -> Just $ text "tag_t"
         PrimTyConBool           -> Just $ text "bool_t"
-        PrimTyConInt  bits      -> Just $ text "int"  <> int bits <> text "_t"
-        PrimTyConWord bits      -> Just $ text "uint" <> int bits <> text "_t"
+        PrimTyConNat            -> Just $ text "nat_t"
+        PrimTyConInt            -> Just $ text "int_t"
+        PrimTyConWord  bits     -> Just $ text "uint"    <> int bits <> text "_t"
+        PrimTyConFloat bits     -> Just $ text "float"   <> int bits <> text "_t"
+        PrimTyConAddr           -> Just $ text "addr_t"
+        PrimTyConTag            -> Just $ text "tag_t"
         PrimTyConString         -> Just $ text "string_t"
         _                       -> Nothing
 
@@ -78,7 +79,7 @@ convPrimStore pp
 convPrimExternal :: PrimExternal -> Doc
 convPrimExternal pp
  = case pp of
-        PrimExternalShowInt b   -> text "_showInt" <> int b
+        PrimExternalShowInt     -> text "_showInt"
         PrimExternalPutStr      -> text "_putStr"
         PrimExternalPutStrLn    -> text "_putStrLn"
 

@@ -23,17 +23,17 @@ mconvAtom pp xx
          -> let n' = sanitizeName n
             in  Just $ XVar (Var (NameLocal n') (convType pp t))
 
-        C.XCon _ (C.UPrim (A.NameTag  tag) t)
-         -> Just $ XLit (LitInt (convType pp t) tag)
-
         C.XCon _ (C.UPrim (A.NameNat  nat) t)
          -> Just $ XLit (LitInt (convType pp t) nat)
 
-        C.XCon _ (C.UPrim (A.NameInt  val _) t)
+        C.XCon _ (C.UPrim (A.NameInt  val) t)
          -> Just $ XLit (LitInt (convType pp t) val)
 
         C.XCon _ (C.UPrim (A.NameWord val _) t)
          -> Just $ XLit (LitInt (convType pp t) val)
+
+        C.XCon _ (C.UPrim (A.NameTag  tag) t)
+         -> Just $ XLit (LitInt (convType pp t) tag)
 
         _ -> Nothing
 

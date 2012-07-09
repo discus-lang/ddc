@@ -24,29 +24,29 @@ letrec {
 
 module Main with
 letrec {
-  foo : Int32# -> Int32#
-    = \(x : Int32#).
+  foo : Word32# -> Word32#
+    = \(x : Word32#).
       case x of {
-        5i32#  
-         -> 6i32#;
-        7i32#  
-         -> 8i32#;
+        5w32#  
+         -> 6w32#;
+        7w32#  
+         -> 8w32#;
         _ 
-         -> 0i32#
+         -> 0w32#
       }
 }
 
 module Main with
 letrec {
-  foo : Int64# -> Int64#
-    = \(x : Int64#).
+  foo : Word64# -> Word64#
+    = \(x : Word64#).
       case x of {
-        5i64#  
-         -> 6i64#;
-        7i64#  
-         -> 8i64#;
+        5w64#  
+         -> 6w64#;
+        7w64#  
+         -> 8w64#;
         _ 
-         -> 0i64#
+         -> 0w64#
       }
 }
 
@@ -69,11 +69,11 @@ letrec {
 --      packs a RawSmall Object.
 module Main with
 letrec {
-  boxInt : Int32# -> Ptr# Obj
-    = \(i : Int32#).
-      let x0 : Ptr# Obj = allocRawSmall TAG0# 4 in
+  boxInt : Int# -> Ptr# Obj
+    = \(i : Int#).
+      let x0 : Ptr# Obj = allocRawSmall TAG0# 8# in
       let x1 : Addr# = payloadOfRawSmall x0 in
-      let _ : Void# = write# [Int32#] x1 0 i in
+      let _ : Void# = write# [Int#] x1 0# i in
       x0
 }
 
@@ -82,16 +82,16 @@ letrec {
 --      unpacks a RawSmall Object.
 module Main with
 letrec {
-  unboxInt : Ptr# Obj -> Int32#
+  unboxInt : Ptr# Obj -> Int#
     = \(x : Ptr# Obj).
       let x0 : Tag# = getTag x in
       case x0 of {
         TAG0#  
          -> let x1 : Addr# = payloadOfRawSmall x in
-            let i : Int32# = read# [Int32#] x1 0 in
+            let i : Int# = read# [Int#] x1 0# in
             i;
         _ 
-         -> fail# [Int32#]
+         -> fail# [Int#]
       }
 }
 
@@ -99,24 +99,24 @@ letrec {
 -- Nested case-expressions.
 module Main with
 letrec {
-  addInt : Ptr# Obj -> Ptr# Obj -> Int32#
+  addInt : Ptr# Obj -> Ptr# Obj -> Int#
     = \(x y : Ptr# Obj).
       let x0 : Tag# = getTag x in
       case x0 of {
         TAG0#  
          -> let x1 : Addr# = payloadOfRawSmall x in
-            let i1 : Int32# = read# [Int32#] x1 0 in
+            let i1 : Int# = read# [Int#] x1 0# in
             let x2 : Tag# = getTag y in
             case x2 of {
               TAG0#  
                -> let x3 : Addr# = payloadOfRawSmall y in
-                  let i2 : Int32# = read# [Int32#] x3 0 in
-                  add# [Int32#] i1 i2;
+                  let i2 : Int# = read# [Int#] x3 0# in
+                  add# [Int#] i1 i2;
               _ 
-               -> fail# [Int32#]
+               -> fail# [Int#]
             };
         _ 
-         -> fail# [Int32#]
+         -> fail# [Int#]
       }
 }
 
@@ -130,16 +130,16 @@ letrec {
       case x0 of {
         TAG0#  
          -> let x1 : Addr# = payloadOfRawSmall x in
-            let i1 : Int32# = read# [Int32#] x1 0 in
+            let i1 : Int# = read# [Int#] x1 0# in
             let x2 : Tag# = getTag y in
             case x2 of {
               TAG0#  
                -> let x3 : Addr# = payloadOfRawSmall y in
-                  let i2 : Int32# = read# [Int32#] x3 0 in
-                  let x4 : Ptr# Obj = allocRawSmall TAG0# 4 in
+                  let i2 : Int# = read# [Int#] x3 0# in
+                  let x4 : Ptr# Obj = allocRawSmall TAG0# 8# in
                   let x5 : Addr# = payloadOfRawSmall x4 in
-                  let x6 : Int32# = add# [Int32#] i1 i2 in
-                  let _ : Void# = write# [Int32#] x5 0 x6 in
+                  let x6 : Int# = add# [Int#] i1 i2 in
+                  let _ : Void# = write# [Int#] x5 0# x6 in
                   x4;
               _ 
                -> fail# [Ptr# Obj]
@@ -159,8 +159,8 @@ letrec {
       let x0 : Tag# = getTag xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
-            let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
+         -> let x : Ptr# Obj = getFieldOfBoxed xs 0# in
+            let xs' : Ptr# Obj = getFieldOfBoxed xs 1# in
             x;
         _ 
          -> def
@@ -176,8 +176,8 @@ letrec {
       let x0 : Tag# = getTag xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
-            let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
+         -> let x : Ptr# Obj = getFieldOfBoxed xs 0# in
+            let xs' : Ptr# Obj = getFieldOfBoxed xs 1# in
             xs;
         _ 
          -> def
@@ -193,8 +193,8 @@ letrec {
       let x0 : Tag# = getTag xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# Obj = getFieldOfBoxed xs 0 in
-            let xs' : Ptr# Obj = getFieldOfBoxed xs 1 in
+         -> let x : Ptr# Obj = getFieldOfBoxed xs 0# in
+            let xs' : Ptr# Obj = getFieldOfBoxed xs 1# in
             x;
         _ 
          -> def
@@ -222,14 +222,14 @@ module Main with
 letrec {
   singleton : Ptr# Obj -> Ptr# Obj
     = \(x : Ptr# Obj).
-      let x0 : Ptr# Obj = allocBoxed TAG1# 16 in
-      let _ : Void# = setFieldOfBoxed x0 0 x in
-      let x1 : Ptr# Obj = allocBoxed TAG0# 8 in
-      let x2 : Ptr# Obj = allocBoxed TAG0# 0 in
+      let x0 : Ptr# Obj = allocBoxed TAG1# 16# in
+      let _ : Void# = setFieldOfBoxed x0 0# x in
+      let x1 : Ptr# Obj = allocBoxed TAG0# 8# in
+      let x2 : Ptr# Obj = allocBoxed TAG0# 0# in
       let x3 : Ptr# Obj = x2 in
-      let _ : Void# = setFieldOfBoxed x1 0 x3 in
+      let _ : Void# = setFieldOfBoxed x1 0# x3 in
       let x4 : Ptr# Obj = x1 in
-      let _ : Void# = setFieldOfBoxed x0 1 x4 in
+      let _ : Void# = setFieldOfBoxed x0 1# x4 in
       x0
 }
 
@@ -243,16 +243,16 @@ letrec {
       case x0 of {
         TAG0#  
          -> let x1 : Addr# = payloadOfRawSmall x in
-            let i1 : Int32# = read# [Int32#] x1 0 in
+            let i1 : Int# = read# [Int#] x1 0# in
             let x2 : Tag# = getTag y in
             case x2 of {
               TAG0#  
                -> let x3 : Addr# = payloadOfRawSmall y in
-                  let i2 : Int32# = read# [Int32#] x3 0 in
-                  let x4 : Ptr# Obj = allocRawSmall TAG0# 4 in
+                  let i2 : Int# = read# [Int#] x3 0# in
+                  let x4 : Ptr# Obj = allocRawSmall TAG0# 8# in
                   let x5 : Addr# = payloadOfRawSmall x4 in
-                  let x6 : Int32# = add# [Int32#] i1 i2 in
-                  let _ : Void# = write# [Int32#] x5 0 x6 in
+                  let x6 : Int# = add# [Int#] i1 i2 in
+                  let _ : Void# = write# [Int#] x5 0# x6 in
                   x4;
               _ 
                -> fail# [Ptr# Obj]

@@ -6,7 +6,7 @@
 
 
 // Show an integer.
-string_t showInt32 (int32_t i)
+string_t showInt (int i)
 {       string_t str = malloc(32);
         snprintf(str, 32, "%d", i);
         return str;

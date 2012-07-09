@@ -1,27 +1,27 @@
 
 module Main
 imports {
-        boxInt32        :: Int32#   -> Ptr# Obj;
-        unboxInt32      :: Ptr# Obj -> Int32#;
-        subInt32        :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
-        mulInt32        :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
-        showInt32 :: Int32# -> Ptr# String#;
+        boxInt    :: Int#   -> Ptr# Obj;
+        unboxInt  :: Ptr# Obj -> Int#;
+        subInt    :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
+        mulInt    :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
+        showInt   :: Int# -> Ptr# String#;
         putStrLn  :: Ptr# String# -> Void#;
 }
 with letrec 
 
 fac (x: Ptr# Obj) : Ptr# Obj
- = case eq# [Int32#] (unboxInt32 x) 0i32# of 
+ = case eq# [Int#] (unboxInt x) 0i# of 
         True#  
          -> return# [Ptr# Obj] 
-                (boxInt32 1i32#)
+                (boxInt 1i#)
 
         False# 
          -> return# [Ptr# Obj] 
-                (mulInt32 x (fac (subInt32 x (boxInt32 1i32#))))
+                (mulInt x (fac (subInt x (boxInt 1i#))))
 
 
-main (argc : Nat#) (argv : Ptr# String#) : Int32#
- = do   x2      = fac (boxInt32 10i32#)
-        putStrLn (showInt32 (unboxInt32 x2))
-        return# [Int32#] 0i32#
+main (argc : Nat#) (argv : Ptr# String#) : Int#
+ = do   x2      = fac (boxInt 10i#)
+        putStrLn (showInt (unboxInt x2))
+        return# [Int#] 0i#

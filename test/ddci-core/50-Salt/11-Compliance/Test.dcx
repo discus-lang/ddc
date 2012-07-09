@@ -7,36 +7,36 @@
 -- Error: name shadowing in function definition
 :to-c..
 module Main with letrec
-foo (x : Int32#) (x : Int32#) : Int32#
- = return# [Int32#] x;;
+foo (x : Int#) (x : Int#) : Int#
+ = return# [Int#] x;;
 
 
 -- Error: name shadowing in let-expression
 :to-c..
 module Main with letrec
-foo (x : Int32#) : Int32#
- = let x = 0i32# 
-   in  return# [Int32#] x;;
+foo (x : Int#) : Int#
+ = let x = 0i# 
+   in  return# [Int#] x;;
 
 
 -- Error: use of debruijn binders
 :to-c..
 module Main with letrec
-foo (^ : Int32#) : Int32#
- = return# [Int32#] ^0;;
+foo (^ : Int#) : Int#
+ = return# [Int#] ^0;;
 
 
 -- Error: general application
 :to-c..
 module Main with letrec
-foo (^ : Int32#) : Int32#
- = (case 0 of {_ -> add# })
-   [Int32#] ^0 ^0;;
+foo (^ : Int#) : Int#
+ = (case 0i# of {_ -> add# })
+   [Int#] ^0 ^0;;
 
 
 -- Error: partially applied primop
 :to-c..
 module Main with letrec
-foo (x : Int32#) : Int32#
- = let f = add# [Int32#] x
-   in  return# [Int32#] (f x);;
+foo (x : Int#) : Int#
+ = let f = add# [Int#] x
+   in  return# [Int#] (f x);;

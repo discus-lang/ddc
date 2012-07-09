@@ -39,20 +39,20 @@ data Name
         -- | The void literal.
         | NameVoid
 
+        -- | A boolean literal.
+        | NameBool      Bool
+
         -- | A natural number literal.
         | NameNat       Integer
 
-        -- | A constructor tag literal.
-        | NameTag       Integer
-
-        -- | A boolean literal.
-        | NameBool      Bool
+        -- | An integer number literal.
+        | NameInt       Integer
 
         -- | A WordN literal, of the given width.
         | NameWord      Integer Int
 
-        -- | An IntN literal, of the given width.
-        | NameInt       Integer Int
+        -- | A constructor tag literal.
+        | NameTag       Integer
         deriving (Eq, Ord, Show)
 
 
@@ -65,12 +65,12 @@ instance Pretty Name where
         NamePrimTyCon tc  -> ppr tc
         NamePrim p        -> ppr p
         NameVoid          -> text "V#"
-        NameNat  i        -> integer i
+        NameNat  i        -> integer i  <> text "#"
+        NameInt  i        -> integer i  <> text "i#"
         NameTag  i        -> text "TAG" <> integer i <> text "#"
         NameBool True     -> text "True#"
         NameBool False    -> text "False#"
         NameWord i bits   -> integer i <> text "w" <> int bits <> text "#"
-        NameInt  i bits   -> integer i <> text "i" <> int bits <> text "#"
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -111,9 +111,13 @@ readName str
         -- Literal void
         | str == "V#" = Just $ NameVoid
 
-        -- Literal Nats.
-        | Just i        <- readLitInteger str
-        = Just $ NameNat i     
+        -- Literal Nats
+        | Just val <- readLitPrimNat str
+        = Just $ NameNat  val
+
+        -- Literal Ints
+        | Just val <- readLitPrimInt str
+        = Just $ NameInt  val
 
         -- Literal Tags
         | Just rest     <- stripPrefix "TAG" str
@@ -124,15 +128,11 @@ readName str
         | str == "True#"  = Just $ NameBool True
         | str == "False#" = Just $ NameBool False
 
+
         -- Literal Words
         | Just (val, bits) <- readLitPrimWordOfBits str
         , elem bits [8, 16, 32, 64]
         = Just $ NameWord val bits
-
-        -- Literal Ints
-        | Just (val, bits) <- readLitPrimIntOfBits str
-        , elem bits [8, 16, 32, 64]
-        = Just $ NameInt  val bits
 
         -- Constructors.
         | c : _         <- str
@@ -358,7 +358,7 @@ readPrimStore str
 -- | String funtions.
 --   We're treating these as primops until we get the FFI working.
 data PrimExternal
-        = PrimExternalShowInt Int
+        = PrimExternalShowInt
         | PrimExternalPutStr
         | PrimExternalPutStrLn
         deriving (Eq, Ord, Show)
@@ -367,7 +367,7 @@ data PrimExternal
 instance Pretty PrimExternal where
  ppr ps
   = case ps of
-        PrimExternalShowInt i   -> text "showInt" <> int i <> text "#"
+        PrimExternalShowInt     -> text "showInt#"
         PrimExternalPutStr      -> text "putStr#"
         PrimExternalPutStrLn    -> text "putStrLn#"
 
@@ -375,11 +375,8 @@ instance Pretty PrimExternal where
 readPrimExternal :: String -> Maybe PrimExternal
 readPrimExternal str
         -- showIntN#
-        | Just rest     <- stripPrefix "showInt" str
-        , (ds, "#")     <- span isDigit rest
-        , bits          <- read ds
-        , elem bits [8, 16, 32, 64]
-        = Just $ PrimExternalShowInt bits
+        | str == "showInt#"
+        = Just $ PrimExternalShowInt
 
         | str == "putStr#"      
         = Just $ PrimExternalPutStr
