@@ -73,14 +73,16 @@ stageSaltToLLVM
         -> PipeCore a Salt.Name
 
 stageSaltToLLVM state builder doTransfer pipesLLVM
- = PipeCoreSimplify       fragmentSalt
-                          (stateSimplifier state <> Simpl.anormalize)
-   [ PipeCoreOutput       (SinkFile "ddc.salt-simplified.dce")
-   , PipeCoreCheck        fragmentSalt
+ = PipeCoreSimplify         fragmentSalt
+                            (stateSimplifier state <> Simpl.anormalize)
+   [ PipeCoreOutput         (SinkFile "ddc.salt-simplified.dce")
+   , PipeCoreCheck          fragmentSalt
      [ PipeCoreAsSalt
        [ (if doTransfer then PipeSaltTransfer else PipeSaltId)
-         [ PipeSaltOutput (SinkFile "ddc.salt-transfer.dce")
-         , PipeSaltToLlvm (buildSpec builder) pipesLLVM]]]]
+         [ PipeSaltOutput   (SinkFile "ddc.salt-transfer.dce")
+         , PipeSaltToLlvm   (buildSpec builder) 
+           ( PipeLlvmPrint  (SinkFile "ddc.salt-to-llvm.ll")
+           : pipesLLVM) ]]]]
 
 
 -- | Compile LLVM code.
