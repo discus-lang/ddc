@@ -59,7 +59,7 @@ data Error
 
         -- | Error when loading a module.
         --   Blame it on the user.
-        | forall err. Pretty err => ErrorLoad  err
+        | forall err. Pretty err => ErrorLoad err
 
         -- | Error when type checking a transformed module.
         --   Blame it on the compiler.
@@ -106,7 +106,9 @@ data PipeText n (err :: * -> *) where
 deriving instance Show (PipeText n err)
 
 
--- | Text module pipeline.
+-- | Process a text module.
+--
+--   Returns empty list on success.
 pipeText
         :: String
         -> Int
@@ -182,7 +184,9 @@ deriving instance (Show a, Show n)
         => Show (PipeCore a n)
 
 
--- | Core module pipeline.
+-- | Process a core module.
+--
+--   Returns empty list on success.
 pipeCore
         :: (Show a, Eq n, Ord n, Show n, Pretty n)
         => C.Module a n
@@ -205,20 +209,12 @@ pipeCore mm pp
 
                 goCheck mm1
                  = case C.checkModule primDataDefs primKindEnv primTypeEnv mm1 of
-                        Left err   
-                         -> do  writeFile ("ddc.failed-check." ++ fragmentExtension fragment)
-                                          (renderIndent $ ppr mm1)
-                                return [ErrorLint err]
-
+                        Left err   -> return [ErrorLint err]
                         Right mm2  -> goComplies mm2
 
                 goComplies mm1
                  = case C.complies profile mm1 of
-                        Just err   
-                         -> do  writeFile ("ddc.failed-complies." ++ fragmentExtension fragment)
-                                          (renderIndent $ ppr mm1)
-                                return [ErrorLint err]
-                                
+                        Just err   -> return [ErrorLint err]
                         Nothing    -> liftM concat $ mapM (pipeCore mm1) pipes
 
              in goCheck mm
@@ -315,7 +311,10 @@ data PipeSalt a where
 
 deriving instance Show a => Show (PipeSalt a)
 
+
 -- | Process a Core Salt module.
+--  
+--   Returns empty list on success.
 pipeSalt  :: (Show a, Pretty a)
           => C.Module a Salt.Name 
           -> PipeSalt a
@@ -337,8 +336,7 @@ pipeSalt mm pp
         PipeSaltPrint withPrelude sink
          -> case Salt.convertModule mm of
                 Left  err 
-                 -> do  writeFile ("ddc.failed-saltprint.dce") (renderIndent $ ppr mm)
-                        return $ [ErrorSaltConvert err]
+                 -> return $ [ErrorSaltConvert err]
 
                 Right doc 
                  | withPrelude
@@ -374,6 +372,8 @@ data PipeLlvm
 
 
 -- | Process an LLVM module.
+--
+--   Returns empty list on success.
 pipeLlvm 
         :: Llvm.Module 
         -> PipeLlvm 
