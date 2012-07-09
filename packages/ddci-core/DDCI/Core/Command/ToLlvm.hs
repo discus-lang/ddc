@@ -44,7 +44,7 @@ cmdToLlvm state source str
 
                 -- Unrecognised.
                 | otherwise
-                = error $ "Don't know how to convert this to C"
+                = error $ "Don't know how to convert this to LLVM"
 
 
         -- Print any errors that arose during compilation

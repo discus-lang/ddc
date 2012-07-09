@@ -4,70 +4,54 @@ module DDCI.Core.Command.Compile
 where
 import DDCI.Core.Mode
 import DDCI.Core.State
+import DDCI.Core.Stage
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import System.FilePath
 import System.Directory
 import Control.Monad
 import Data.List
 import Data.Char
-import Data.Monoid
 import Data.Maybe
-import DDC.Core.Simplifier.Recipie      as Simpl
 import qualified DDC.Core.Pretty        as P
 
 
 cmdCompile :: State -> Source -> String -> IO ()
 cmdCompile state source str
- = let  filePath = dropWhile isSpace str
-   in   compileFile state source filePath
-
-compileFile state source filePath
-        | isSuffixOf ".dce" filePath
-        = compileDCE state source filePath
-
-        | otherwise
-        = error $ "Don't know how to compile " ++ filePath
-
- 
-compileDCE :: State -> Source -> FilePath -> IO ()
-compileDCE state source filePath
  = do   -- Read in the source file.
+        let filePath = dropWhile isSpace str
         exists  <- doesFileExist filePath
         when (not exists)
-         $ error $ "No such file " ++ show filePath
+         $      error $ "No such file " ++ show filePath
 
         src     <- readFile filePath
 
-        -- Decide where to put the build products.
-        let outputDir      = fromMaybe (takeDirectory filePath) (stateOutputDir state)
-        let outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
-        let llPath         = outputDirBase ++ ".ddc.ll"
-        let sPath          = outputDirBase ++ ".ddc.s"
-        let oPathDefault   = outputDirBase ++ ".o"
-        let oPath          = fromMaybe oPathDefault (stateOutputFile state)
-
-        -- Determine the default builder,
-        -- assuming the host and target platforms are the same.
+        -- Determine the builder to use.
         mBuilder        <- determineDefaultBuilder defaultBuilderConfig
-        let builder     =  fromMaybe    (error "Can not determine host platform.")
-                                        mBuilder
+        let builder     =  fromMaybe (error "Can not determine host platform")
+                                     mBuilder
 
-        -- Run the build pipeline.
-        errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
-                $  PipeTextLoadCore  fragmentSalt
-                [  PipeCoreSimplify  fragmentSalt
-                                     (stateSimplifier state <> Simpl.anormalize)
-                [  PipeCoreReCheck   fragmentSalt
-                [  PipeCoreAsSalt
-                [  PipeSaltToLlvm   (buildSpec builder)
-                [  PipeLlvmCompile   
-                        { pipeBuilder           = builder
-                        , pipeFileLlvm          = llPath
-                        , pipeFileAsm           = sPath
-                        , pipeFileObject        = oPath
-                        , pipeFileExe           = Nothing } ]]]]]
+        -- Decide what to do based on file extension.
+        let make
+                -- Make a Core Lite module.
+                | isSuffixOf ".dcl" filePath
+                = pipeText (nameOfSource source) (lineStartOfSource source) src
+                $ PipeTextLoadCore  fragmentLite
+                [ stageLiteToSalt   state builder
+                [ stageSaltToLLVM   state builder True 
+                [ stageCompileLLVM  state builder filePath False ]]]
 
+                -- Make a Core Salt module.
+                | isSuffixOf ".dce" filePath
+                = pipeText (nameOfSource source) (lineStartOfSource source) src
+                $ PipeTextLoadCore  fragmentSalt 
+                [ stageSaltToLLVM   state builder False 
+                [ stageCompileLLVM  state builder filePath False ]]
+
+                -- Unrecognised.
+                | otherwise
+                = error $ "Don't know how to make " ++ filePath
+
+        -- Print any errors that arose during compilation.
+        errs    <- make
         mapM_ (putStrLn . P.renderIndent . P.ppr) errs
-

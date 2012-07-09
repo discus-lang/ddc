@@ -126,21 +126,21 @@ module Main with
 letrec {
   addInt : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
     = \(x y : Ptr# Obj).
-      let x1 : Tag# = getTag x in
-      case x1 of {
+      let x0 : Tag# = getTag x in
+      case x0 of {
         TAG0#  
-         -> let x2 : Addr# = payloadOfRawSmall x in
-            let i1 : Int32# = read# [Int32#] x2 0 in
-            let x3 : Tag# = getTag y in
-            case x3 of {
+         -> let x1 : Addr# = payloadOfRawSmall x in
+            let i1 : Int32# = read# [Int32#] x1 0 in
+            let x2 : Tag# = getTag y in
+            case x2 of {
               TAG0#  
-               -> let x4 : Addr# = payloadOfRawSmall y in
-                  let i2 : Int32# = read# [Int32#] x4 0 in
-                  let x0 : Int32# = add# [Int32#] i1 i2 in
-                  let x5 : Ptr# Obj = allocRawSmall TAG0# 4 in
-                  let x6 : Addr# = payloadOfRawSmall x5 in
-                  let _ : Void# = write# [Int32#] x6 0 x0 in
-                  x5;
+               -> let x3 : Addr# = payloadOfRawSmall y in
+                  let i2 : Int32# = read# [Int32#] x3 0 in
+                  let x4 : Ptr# Obj = allocRawSmall TAG0# 4 in
+                  let x5 : Addr# = payloadOfRawSmall x4 in
+                  let x6 : Int32# = add# [Int32#] i1 i2 in
+                  let _ : Void# = write# [Int32#] x5 0 x6 in
+                  x4;
               _ 
                -> fail# [Ptr# Obj]
             };
@@ -222,15 +222,15 @@ module Main with
 letrec {
   singleton : Ptr# Obj -> Ptr# Obj
     = \(x : Ptr# Obj).
+      let x0 : Ptr# Obj = allocBoxed TAG1# 16 in
+      let _ : Void# = setFieldOfBoxed x0 0 x in
       let x1 : Ptr# Obj = allocBoxed TAG0# 8 in
       let x2 : Ptr# Obj = allocBoxed TAG0# 0 in
       let x3 : Ptr# Obj = x2 in
       let _ : Void# = setFieldOfBoxed x1 0 x3 in
-      let x0 : Ptr# Obj = x1 in
-      let x4 : Ptr# Obj = allocBoxed TAG1# 16 in
-      let _ : Void# = setFieldOfBoxed x4 0 x in
-      let _ : Void# = setFieldOfBoxed x4 1 x0 in
-      x4
+      let x4 : Ptr# Obj = x1 in
+      let _ : Void# = setFieldOfBoxed x0 1 x4 in
+      x0
 }
 
 
@@ -239,21 +239,21 @@ module Main with
 letrec {
   addInt : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
     = \(x y : Ptr# Obj).
-      let x1 : Tag# = getTag x in
-      case x1 of {
+      let x0 : Tag# = getTag x in
+      case x0 of {
         TAG0#  
-         -> let x2 : Addr# = payloadOfRawSmall x in
-            let i1 : Int32# = read# [Int32#] x2 0 in
-            let x3 : Tag# = getTag y in
-            case x3 of {
+         -> let x1 : Addr# = payloadOfRawSmall x in
+            let i1 : Int32# = read# [Int32#] x1 0 in
+            let x2 : Tag# = getTag y in
+            case x2 of {
               TAG0#  
-               -> let x4 : Addr# = payloadOfRawSmall y in
-                  let i2 : Int32# = read# [Int32#] x4 0 in
-                  let x0 : Int32# = add# [Int32#] i1 i2 in
-                  let x5 : Ptr# Obj = allocRawSmall TAG0# 4 in
-                  let x6 : Addr# = payloadOfRawSmall x5 in
-                  let _ : Void# = write# [Int32#] x6 0 x0 in
-                  x5;
+               -> let x3 : Addr# = payloadOfRawSmall y in
+                  let i2 : Int32# = read# [Int32#] x3 0 in
+                  let x4 : Ptr# Obj = allocRawSmall TAG0# 4 in
+                  let x5 : Addr# = payloadOfRawSmall x4 in
+                  let x6 : Int32# = add# [Int32#] i1 i2 in
+                  let _ : Void# = write# [Int32#] x5 0 x6 in
+                  x4;
               _ 
                -> fail# [Ptr# Obj]
             };

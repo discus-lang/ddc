@@ -85,10 +85,12 @@ stageSaltToLLVM state builder doTransfer pipesLLVM
 
 -- | Compile LLVM code.
 stageCompileLLVM 
-        :: State -> Builder -> FilePath
+        :: State -> Builder 
+        -> FilePath
+        -> Bool                 -- Should we link this into an executable
         -> PipeLlvm
 
-stageCompileLLVM state builder filePath
+stageCompileLLVM state builder filePath shouldLinkExe
  = let  -- Decide where to place the build products.
         outputDir      = fromMaybe (takeDirectory filePath) (stateOutputDir state)
         outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
@@ -103,6 +105,7 @@ stageCompileLLVM state builder filePath
           , pipeFileLlvm          = llPath
           , pipeFileAsm           = sPath
           , pipeFileObject        = oPath
-          , pipeFileExe           = Just exePath }
-
+          , pipeFileExe           = if shouldLinkExe 
+                                        then Just exePath 
+                                        else Nothing }
 

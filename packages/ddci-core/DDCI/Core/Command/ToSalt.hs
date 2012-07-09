@@ -5,13 +5,12 @@ where
 import DDCI.Core.Interface.Suppress
 import DDCI.Core.Mode
 import DDCI.Core.State
-import DDC.Build.Builder
+import DDCI.Core.Stage
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Data.Canned
 import System.FilePath
-import DDC.Core.Simplifier                      as Simpl
 import qualified DDC.Base.Pretty                as P
 
 
@@ -27,24 +26,24 @@ cmdToSalt state source str
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
+        -- Determine the builder to use.
         builder         <- getActiveBuilder state
 
-        if fragName == "Lite"  || mSuffix == Just ".dcl"
-         then cmdLiteToSalt  state source builder str
-        else error $ "Don't know how to convert Disciple " ++ fragName ++ " module to Disciple Salt."
+        -- Decide what to do based on file extension and current fragment.
+        let compile
+                -- Compile a Core Lite module.
+                | fragName == "Lite" || mSuffix == Just ".dcl"
+                = pipeText (nameOfSource source) (lineStartOfSource source) str
+                $ PipeTextLoadCore fragmentLite
+                [ stageLiteToSalt  state builder
+                [ PipeCoreHacks    (Canned (suppressModule state))
+                [ PipeCoreOutput   SinkStdout]]]
 
+                -- Unrecognised.
+                | otherwise
+                = error $ "Don't know how to convert this to Salt"
 
--- | Convert a Disciple Lite module to C code.
-cmdLiteToSalt :: State -> Source -> Builder -> String -> IO ()
-cmdLiteToSalt state source builder str
- = (pipeText (nameOfSource source) (lineStartOfSource source) str
-        $  PipeTextLoadCore     fragmentLite
-        [  PipeCoreSimplify     fragmentLite Simpl.anormalize
-        [  PipeCoreReCheck      fragmentLite 
-        [  PipeCoreAsLite
-        [  PipeLiteToSalt       (buildSpec builder)
-        [  PipeCoreSimplify     fragmentSalt Simpl.anormalize
-        [  PipeCoreCheck        fragmentSalt
-        [  PipeCoreHacks        (Canned (suppressModule state))
-        [  PipeCoreOutput       SinkStdout ]]]]]]]])
- >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
+        -- Print any errors that arose during compilation
+        errs <- compile
+
+        mapM_ (putStrLn . P.renderIndent . P.ppr) errs
