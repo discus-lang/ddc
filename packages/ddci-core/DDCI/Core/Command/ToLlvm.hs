@@ -4,21 +4,16 @@ module DDCI.Core.Command.ToLlvm
 where
 import DDCI.Core.Mode
 import DDCI.Core.State
+import DDCI.Core.Stage
 import DDC.Build.Pipeline
-import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
-import DDC.Core.Check
 import System.FilePath
-import DDC.Core.Simplifier.Recipie      as Simpl
-import qualified DDC.Core.Salt          as A
 import qualified DDC.Base.Pretty        as P
-import Data.Monoid
+
 
 -- | Parse, check and convert a  module to LLVM.
 ---
---   The Brine -> C conversion only accepts A-normalised programs,
---   so we normalize it along the way.
 cmdToLlvm :: State -> Source -> String -> IO ()
 cmdToLlvm state source str
  | Language fragment    <- stateLanguage state
@@ -27,47 +22,32 @@ cmdToLlvm state source str
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
+        -- Determine the builder to use.
         builder         <- getActiveBuilder state
 
-        if      fragName == "Salt"  || mSuffix == Just ".dce"
-         then cmdSaltToLlvm state source str builder
-        else if fragName == "Lite"  || mSuffix == Just ".dcl"
-         then cmdLiteToLlvm  state source str builder
-        else error $ "Don't know how to convert Disciple " ++ fragName ++ " module to C code."
+        -- Decide what to do based on file extension and current fragment.
+        let compile
+                -- Compile a Core Lite module.
+                | fragName == "Lite" || mSuffix == Just ".dcl"
+                = pipeText (nameOfSource source) (lineStartOfSource source) str
+                $ PipeTextLoadCore fragmentLite
+                [ stageLiteToSalt  state builder
+                [ stageSaltToLLVM  state builder True 
+                [ PipeLlvmPrint SinkStdout]]]
+
+                -- Compile a Core Salt module.
+                | fragName == "Salt" || mSuffix == Just ".dce"
+                = pipeText (nameOfSource source) (lineStartOfSource source) str
+                $ PipeTextLoadCore fragmentSalt
+                [ stageSaltToLLVM  state builder False
+                [ PipeLlvmPrint SinkStdout]]
+
+                -- Unrecognised.
+                | otherwise
+                = error $ "Don't know how to convert this to C"
 
 
--- | Convert a Disciple Lite module to Llvm code.
-cmdLiteToLlvm :: State -> Source -> String -> Builder -> IO ()
-cmdLiteToLlvm state source str builder
- = (pipeText (nameOfSource source) (lineStartOfSource source) str
-        $  PipeTextLoadCore     fragmentLite
-        [  PipeCoreAsLite
-        [  PipeLiteToSalt       (buildSpec builder)
-        [  PipeCoreSimplify     fragmentSalt Simpl.anormalize
-        [  PipeCoreCheck        fragmentSalt 
-        [  pipeCore_saltToLlvm state True builder]]]]])
- >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
+        -- Print any errors that arose during compilation
+        errs <- compile
 
-
--- | Convert a Disciple Salt module to Llvm code.
-cmdSaltToLlvm :: State -> Source -> String -> Builder -> IO ()
-cmdSaltToLlvm state source str builder
- = (pipeText (nameOfSource source) (lineStartOfSource source) str
-        $  PipeTextLoadCore     fragmentSalt
-        [  pipeCore_saltToLlvm state False builder])
- >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
-
-
-pipeCore_saltToLlvm 
-        :: Show a 
-        => State -> Bool -> Builder -> PipeCore (AnTEC a A.Name) A.Name
-
-pipeCore_saltToLlvm state doTransfer builder
-        =  PipeCoreSimplify    fragmentSalt
-                               (stateSimplifier state <> Simpl.anormalize)
-        [  PipeCoreReCheck     fragmentSalt
-        [  PipeCoreAsSalt
-        [  (if doTransfer then PipeSaltTransfer else PipeSaltId)
-        [  PipeSaltOutput (SinkFile "ddc.dump-salt.dce")
-        ,  PipeSaltToLlvm      (buildSpec builder)
-            [  PipeLlvmPrint SinkStdout ]]]]]
+        mapM_ (putStrLn . P.renderIndent . P.ppr) errs

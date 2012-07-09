@@ -11,10 +11,8 @@ import DDC.Core.Fragment.Profile
 import System.FilePath
 import qualified DDC.Base.Pretty                as P
 
--- | Parse, check, and fully evaluate an expression.
----
---   The Core -> C conversion only accepts A-normalised programs,
---   so we normalize it along the way.
+-- | Parse, check, and convert a module to C.
+--
 cmdToC :: State -> Source -> String -> IO ()
 cmdToC state source str
  | Language fragment    <- stateLanguage state
