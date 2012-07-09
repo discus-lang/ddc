@@ -27,6 +27,20 @@ import qualified DDC.Core.Salt.Name     as Salt
 import qualified DDC.Core.Check         as C
 import qualified Data.Set               as Set
 
+
+------------------------------------------------------------------------------
+-- | If the Dump mode is set 
+--    then produce a SinkFile to write a module to a file, 
+--    otherwise produce SinkDiscard to drop it on the floor.
+dump :: State -> String -> Sink
+dump state fileName
+        | Set.member Dump $ stateModes state
+        = SinkFile fileName
+
+        | otherwise
+        = SinkDiscard
+
+-------------------------------------------------------------------------------
 -- | Convert Lite to Salt.
 --   
 --   Result is a-normalised.
@@ -36,13 +50,13 @@ stageLiteToSalt
         -> [PipeCore (C.AnTEC () Salt.Name) Salt.Name] 
         -> PipeCore  (C.AnTEC () Lite.Name) Lite.Name
 
-stageLiteToSalt _state builder pipesSalt
+stageLiteToSalt state builder pipesSalt
  = PipeCoreAsLite 
-   [ PipeLiteOutput       (SinkFile "ddc.lite-loaded.dcl")
+   [ PipeLiteOutput       (dump state "dump.lite-loaded.dcl")
    , PipeLiteToSalt       (buildSpec builder)
-     [ PipeCoreOutput     (SinkFile "ddc.lite-to-salt.dce")
+     [ PipeCoreOutput     (dump state "dump.lite-to-salt.dce")
      , PipeCoreSimplify   fragmentSalt Simpl.anormalize
-       [ PipeCoreOutput   (SinkFile "ddc.salt-normalized.dce")
+       [ PipeCoreOutput   (dump state "dump.salt-normalized.dce")
        , PipeCoreCheck    fragmentSalt
          pipesSalt]]]
 
@@ -56,11 +70,11 @@ stageSaltToC
 stageSaltToC state _builder sink
  = PipeCoreSimplify       fragmentSalt
                           (stateSimplifier state <> Simpl.anormalize)
-   [ PipeCoreOutput       (SinkFile "ddc.salt-simplified.dce")
+   [ PipeCoreOutput       (dump state "dump.salt-simplified.dce")
    , PipeCoreCheck        fragmentSalt
      [ PipeCoreAsSalt
        [ PipeSaltTransfer
-         [ PipeSaltOutput (SinkFile "ddc.salt-transfer.dce")
+         [ PipeSaltOutput (dump state "dump.salt-transfer.dce")
          , PipeSaltPrint  
                 (Set.member SaltPrelude (stateModes state))
                 sink]]]]
@@ -75,13 +89,13 @@ stageSaltToLLVM
 stageSaltToLLVM state builder pipesLLVM
  = PipeCoreSimplify         fragmentSalt
                             (stateSimplifier state <> Simpl.anormalize)
-   [ PipeCoreOutput         (SinkFile "ddc.salt-simplified.dce")
+   [ PipeCoreOutput         (dump state "dump.salt-simplified.dce")
    , PipeCoreCheck          fragmentSalt
      [ PipeCoreAsSalt
        [ PipeSaltTransfer
-         [ PipeSaltOutput   (SinkFile "ddc.salt-transfer.dce")
+         [ PipeSaltOutput   (dump state "dump.salt-transfer.dce")
          , PipeSaltToLlvm   (buildSpec builder) 
-           ( PipeLlvmPrint  (SinkFile "ddc.salt-to-llvm.ll")
+           ( PipeLlvmPrint  (dump state "dump.salt-to-llvm.ll")
            : pipesLLVM) ]]]]
 
 

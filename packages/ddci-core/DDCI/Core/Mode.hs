@@ -26,6 +26,9 @@ data Mode
         -- | When pretty printing Salt modules as C code,
         --  include the #includes etc needed for compilation.
         |  SaltPrelude
+
+        -- | Dump all intermediate versions of the code during compilation.
+        |  Dump
         deriving (Eq, Ord, Show)
 
 
@@ -38,6 +41,7 @@ readMode str
         "Indent"                -> Just Indent
         "SuppressImports"       -> Just SuppressImports
         "SaltPrelude"           -> Just SaltPrelude
+        "Dump"                  -> Just Dump
         _                       -> Nothing
 
 
