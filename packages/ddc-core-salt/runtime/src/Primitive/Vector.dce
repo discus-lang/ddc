@@ -1,0 +1,72 @@
+
+-- | Vectors are arrays of unboxed values.
+module Vector
+imports {
+        allocRaw     :: Tag# -> Nat# -> Ptr# Obj;
+        payloadOfRaw :: Ptr# Obj -> Addr#;
+} 
+with letrec
+
+
+-- | Alloc a vector of the given length.
+-- 
+--   typedef struct
+--   {  nat_t   length
+--      uint8_t payload[] 
+--   } Vector8
+--
+--   TODO: zero fill contents.
+--
+allocVector8 (length : Nat#) : Ptr# Obj
+ = do   
+        -- total size of object payload.
+        bytes   = add# [Nat#] (bytesNat# V#) length
+        obj     = allocRaw TAG0# bytes
+
+        -- write the length field.
+        payload = payloadOfRaw obj
+        write# [Nat#] payload 0# length
+
+        -- zero fill vector
+        fillVector8 obj 0w8#
+
+        obj
+
+
+-- | Unsafely read a byte from a vector.
+indexVector8  (obj : Ptr# Obj) (index : Nat#) : Word8#
+ = do   payload = payloadOfRaw obj
+        offset  = add# [Nat#] (bytesNat# V#) index
+        read# [Word8#] payload offset 
+
+
+-- | Unsafely write a byte into a vector.
+updateVector8 (obj : Ptr# Obj) (index : Nat#) (val : Word8#) : Void#
+ = do   payload = payloadOfRaw obj
+        offset  = add# [Nat#] (bytesNat# V#) index
+        write# [Word8#] payload offset val
+        V#
+
+
+-- | Fill a vector with the given value.
+fillVector8   (obj : Ptr# Obj) (val : Word8#) : Void#
+ = do   payload = payloadOfRaw obj
+        length  = read# [Nat#] payload 0#
+
+        buf     = plusPtr# [Word8#] (makePtr# [Word8#] payload) (bytesNat# V#)
+        max     = plusPtr# [Word8#] buf  length
+        fillPtr8 buf max val
+        V#
+
+
+-- | Fill a range of bytes with the given value.
+fillPtr8 (cur : Ptr# Word8#) (top : Ptr# Word8#) (val : Word8#) : Void#
+ = do   curAddr = takePtr# [Word8#] cur
+        topAddr = takePtr# [Word8#] top
+        done    = ge# [Addr#] curAddr topAddr
+        case done of
+         True#  -> V#
+         False#  
+          -> do poke# [Word8#] cur 0# val
+                next    = plusPtr# [Word8#] cur 1#
+                fillPtr8 next top val

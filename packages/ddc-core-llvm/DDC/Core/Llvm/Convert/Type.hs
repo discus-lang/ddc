@@ -194,7 +194,7 @@ isUnsignedT tt
         _                               -> False
 
 
--- | Check whether some type is an integral type. Nat, IntN or WordN.
+-- | Check whether some type is an integral type. Nat, Int, WordN or Addr
 isIntegralT :: C.Type A.Name -> Bool
 isIntegralT tt
  = case tt of
@@ -203,6 +203,7 @@ isIntegralT tt
                 A.PrimTyConNat          -> True
                 A.PrimTyConInt          -> True
                 A.PrimTyConWord{}       -> True
+                A.PrimTyConAddr            -> True
                 _                       -> False
         _                               -> False
 

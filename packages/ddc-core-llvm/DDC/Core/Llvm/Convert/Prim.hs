@@ -44,7 +44,7 @@ convPrimCallM pp mdst p tPrim xs
                  = IFCmp dst fcond' x1' x2'
 
                  | otherwise
-                 = die "Invalid binary primop."
+                 = die $ "Invalid binary primop."
            in   return $ Seq.singleton result
 
         -- Cast primops ---------------
@@ -73,6 +73,12 @@ convPrimCallM pp mdst p tPrim xs
                                 , text "   to type: " <> ppr tDst ]
 
         -- Store primops --------------
+        A.PrimStore A.PrimStoreBytesNat
+         | [_]                  <- xs
+         , Just vDst            <- mdst
+         -> return      $ Seq.singleton
+                        $ ISet vDst (XLit (LitInt (tNat pp) (platformNatBytes pp)))
+
         A.PrimStore A.PrimStoreAlloc
          | Just [xBytes']       <- mconvAtoms pp xs
          -> return      $ Seq.singleton

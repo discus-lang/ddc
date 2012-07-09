@@ -161,6 +161,7 @@ primOpNames
         , (PrimOpEq ,           "eq#" )
         , (PrimOpNeq,           "neq#")
         , (PrimOpGt ,           "gt#" )
+        , (PrimOpGe ,           "ge#" )
         , (PrimOpLt ,           "lt#" )
         , (PrimOpLe ,           "le#" )
         , (PrimOpAnd,           "and#")

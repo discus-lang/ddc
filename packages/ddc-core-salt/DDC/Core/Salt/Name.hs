@@ -274,8 +274,16 @@ readPrimControl str
 -- Store -----------------------------------------------------------------------
 -- | A projection of some other object.
 data PrimStore
+        -- Constants ------------------
+        -- | Number of bytes used by a Nat#
+        = PrimStoreBytesNat
+
+        -- | Log2 of number of bytes used by a Nat#
+        | PrimStoreShiftNat
+
+        -- Allocation -----------------
         -- | Allocate some space on the heap.
-        = PrimStoreAlloc
+        | PrimStoreAlloc
 
         -- Addr operations ------------
         -- | Read a value from the store at a given address and offset.
@@ -317,6 +325,9 @@ data PrimStore
 instance Pretty PrimStore where
  ppr p
   = case p of        
+        PrimStoreBytesNat       -> text "bytesNat#"
+        PrimStoreShiftNat       -> text "shiftNat#"
+
         PrimStoreAlloc          -> text "alloc#"
 
         PrimStoreRead           -> text "read#"
@@ -336,6 +347,9 @@ instance Pretty PrimStore where
 readPrimStore :: String -> Maybe PrimStore
 readPrimStore str
  = case str of
+        "bytesNat#"             -> Just PrimStoreBytesNat
+        "shiftNat#"             -> Just PrimStoreShiftNat
+
         "alloc#"                -> Just PrimStoreAlloc
 
         "read#"                 -> Just PrimStoreRead

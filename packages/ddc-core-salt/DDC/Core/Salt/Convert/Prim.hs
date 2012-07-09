@@ -61,6 +61,8 @@ convPrimOp2 pp
 convPrimStore :: PrimStore -> Doc
 convPrimStore pp
  = case pp of
+        PrimStoreBytesNat       -> text "_BYTESNAT"
+        PrimStoreShiftNat       -> text "_SHIFTNAT"
         PrimStoreAlloc          -> text "_alloc"
         PrimStoreRead           -> text "_read"
         PrimStoreWrite          -> text "_write"

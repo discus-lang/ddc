@@ -205,13 +205,21 @@ convBodyM blocks label instrs xx
           ,  C.XType tResult : xFun : xsArgs   <- drop arity args
           ,  Just (Var nFun _)                 <- takeGlobalV pp xFun
           ,  Just xsArgs'                      <- sequence $ map (mconvAtom pp) xsArgs
-          -> do let tResult'    = convType pp tResult
-                vDst            <- newUniqueVar tResult'
-                return  $ blocks
-                        |> (Block label 
-                        $  instrs |> ICall (Just vDst) CallTypeTail 
-                                       (convType pp tResult) nFun xsArgs' []
-                                  |> IReturn (Just (XVar vDst)))
+          -> if isVoidT tResult
+              then do return $ blocks
+                        |> (Block label $ instrs
+                           |> ICall Nothing CallTypeTail
+                                   (convType pp tResult) nFun xsArgs' []
+                           |> IReturn Nothing)
+
+
+              else do let tResult'    = convType pp tResult
+                      vDst            <- newUniqueVar tResult'
+                      return  $ blocks
+                       |> (Block label $ instrs
+                          |> ICall (Just vDst) CallTypeTail 
+                                   (convType pp tResult) nFun xsArgs' []
+                          |> IReturn (Just (XVar vDst)))
 
 
          -- Assignment ------------------------------------
