@@ -31,13 +31,13 @@ cmdToC state source str
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentLite
                 [ stageLiteToSalt  state builder
-                [ stageSaltToC     state builder True SinkStdout]]
+                [ stageSaltToC     state builder SinkStdout]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentSalt
-                [ stageSaltToC     state builder False SinkStdout]
+                [ stageSaltToC     state builder SinkStdout]
 
                 -- Unrecognised.
                 | otherwise

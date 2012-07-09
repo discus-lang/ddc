@@ -38,14 +38,14 @@ cmdCompile state source str
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  fragmentLite
                 [ stageLiteToSalt   state builder
-                [ stageSaltToLLVM   state builder True 
+                [ stageSaltToLLVM   state builder 
                 [ stageCompileLLVM  state builder filePath False ]]]
 
                 -- Make a Core Salt module.
                 | isSuffixOf ".dce" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  fragmentSalt 
-                [ stageSaltToLLVM   state builder False 
+                [ stageSaltToLLVM   state builder  
                 [ stageCompileLLVM  state builder filePath False ]]
 
                 -- Unrecognised.

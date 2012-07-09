@@ -21,35 +21,12 @@ foo (x : Int32#) : Int32#
  = return# [Int32#] x;;
 
 
--- Error: Function does not pass control.
-:to-c..
-module Main with letrec 
-foo (x : Int32#) : Int32#   
- = x;;
-
-
 -- Ok: Statements in function.
 :to-c..
 module Main with letrec 
 foo (x : Int32#) : Int32#
  = let  y       = add# [Int32#]  x x
    in   return# [Int32#] y;;
-
-
--- Error: Function does not pass control
-:to-c..
-module Main with letrec 
-foo (x : Int32#) : Int32#
- = let  y       = add# [Int32#]  x x
-   in   add# [Int32#] y y;;
-
-
--- Error: Function does not pass control
-:to-c..
-module Main with letrec
-foo (x : Int32#) : Bool#
- = let  y       = add# [Int32#]  x x
-   in   True#;;
 
 
 -- Ok: Function explicitly fails.

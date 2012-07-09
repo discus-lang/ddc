@@ -32,14 +32,14 @@ cmdToLlvm state source str
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentLite
                 [ stageLiteToSalt  state builder
-                [ stageSaltToLLVM  state builder True 
+                [ stageSaltToLLVM  state builder 
                 [ PipeLlvmPrint SinkStdout]]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentSalt
-                [ stageSaltToLLVM  state builder False
+                [ stageSaltToLLVM  state builder
                 [ PipeLlvmPrint SinkStdout]]
 
                 -- Unrecognised.

@@ -49,17 +49,17 @@ stageLiteToSalt _state builder pipesSalt
 
 -- | Convert Salt to C code.
 stageSaltToC
-        :: State -> Builder -> Bool
+        :: State -> Builder
         -> Sink
         -> PipeCore a Salt.Name
 
-stageSaltToC state _builder doTransfer sink
+stageSaltToC state _builder sink
  = PipeCoreSimplify       fragmentSalt
                           (stateSimplifier state <> Simpl.anormalize)
    [ PipeCoreOutput       (SinkFile "ddc.salt-simplified.dce")
    , PipeCoreCheck        fragmentSalt
      [ PipeCoreAsSalt
-       [ (if doTransfer then PipeSaltTransfer else PipeSaltId)
+       [ PipeSaltTransfer
          [ PipeSaltOutput (SinkFile "ddc.salt-transfer.dce")
          , PipeSaltPrint  
                 (Set.member SaltPrelude (stateModes state))
@@ -68,17 +68,17 @@ stageSaltToC state _builder doTransfer sink
 
 -- | Convert Salt to LLVM.
 stageSaltToLLVM
-        :: State -> Builder -> Bool
+        :: State -> Builder
         -> [PipeLlvm]
         -> PipeCore a Salt.Name
 
-stageSaltToLLVM state builder doTransfer pipesLLVM
+stageSaltToLLVM state builder pipesLLVM
  = PipeCoreSimplify         fragmentSalt
                             (stateSimplifier state <> Simpl.anormalize)
    [ PipeCoreOutput         (SinkFile "ddc.salt-simplified.dce")
    , PipeCoreCheck          fragmentSalt
      [ PipeCoreAsSalt
-       [ (if doTransfer then PipeSaltTransfer else PipeSaltId)
+       [ PipeSaltTransfer
          [ PipeSaltOutput   (SinkFile "ddc.salt-transfer.dce")
          , PipeSaltToLlvm   (buildSpec builder) 
            ( PipeLlvmPrint  (SinkFile "ddc.salt-to-llvm.ll")
@@ -88,8 +88,9 @@ stageSaltToLLVM state builder doTransfer pipesLLVM
 -- | Compile LLVM code.
 stageCompileLLVM 
         :: State -> Builder 
-        -> FilePath
-        -> Bool                 -- Should we link this into an executable
+        -> FilePath             -- ^ Path of original source file.
+                                --   Build products are placed into the same dir.
+        -> Bool                 -- ^ Should we link this into an executable
         -> PipeLlvm
 
 stageCompileLLVM state builder filePath shouldLinkExe
