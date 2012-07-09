@@ -17,8 +17,11 @@ import qualified DDC.Core.Pretty        as P
 
 
 cmdMake :: State -> Source -> String -> IO ()
-cmdMake state source str
+cmdMake state _source str
  = do
+        -- Always treat the string as a filename
+        let source   = SourceFile str
+
         -- Read in the source file.
         let filePath = dropWhile isSpace str
         exists  <- doesFileExist filePath
@@ -38,16 +41,16 @@ cmdMake state source str
                 | isSuffixOf ".dcl" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  fragmentLite
-                [ stageLiteToSalt   state builder
-                [ stageSaltToLLVM   state builder  
-                [ stageCompileLLVM  state builder filePath True ]]]
+                [ stageLiteToSalt   state source builder
+                [ stageSaltToLLVM   state source builder
+                [ stageCompileLLVM  state source builder filePath True ]]]
 
                 -- Make a Core Salt module.
                 | isSuffixOf ".dce" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  fragmentSalt 
-                [ stageSaltToLLVM   state builder  
-                [ stageCompileLLVM  state builder filePath True ]]
+                [ stageSaltToLLVM   state source builder
+                [ stageCompileLLVM  state source builder filePath True ]]
 
                 -- Unrecognised.
                 | otherwise

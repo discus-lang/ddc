@@ -35,7 +35,7 @@ cmdToSalt state source str
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentLite
-                [ stageLiteToSalt  state builder
+                [ stageLiteToSalt  state source builder
                 [ PipeCoreHacks    (Canned (suppressModule state))
                 [ PipeCoreOutput   SinkStdout]]]
 

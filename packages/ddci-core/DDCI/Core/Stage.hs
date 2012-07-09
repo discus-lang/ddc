@@ -32,13 +32,23 @@ import qualified Data.Set               as Set
 -- | If the Dump mode is set 
 --    then produce a SinkFile to write a module to a file, 
 --    otherwise produce SinkDiscard to drop it on the floor.
-dump :: State -> String -> Sink
-dump state fileName
+dump :: State -> Source -> String -> Sink
+dump state source dumpFile 
         | Set.member Dump $ stateModes state
-        = SinkFile fileName
+        = let   outputDir
+                 | SourceFile filePath  <- source
+                 = fromMaybe (takeDirectory filePath) 
+                             (stateOutputDir state)
+
+                 | otherwise
+                 = fromMaybe "."
+                             (stateOutputDir state)
+
+          in    SinkFile $ outputDir </> dumpFile
 
         | otherwise
         = SinkDiscard
+
 
 -------------------------------------------------------------------------------
 -- | Convert Lite to Salt.
@@ -46,35 +56,35 @@ dump state fileName
 --   Result is a-normalised.
 --
 stageLiteToSalt 
-        :: State -> Builder 
+        :: State -> Source -> Builder
         -> [PipeCore (C.AnTEC () Salt.Name) Salt.Name] 
         -> PipeCore  (C.AnTEC () Lite.Name) Lite.Name
 
-stageLiteToSalt state builder pipesSalt
+stageLiteToSalt state source builder pipesSalt
  = PipeCoreAsLite 
-   [ PipeLiteOutput       (dump state "dump.lite-loaded.dcl")
+   [ PipeLiteOutput       (dump state source "dump.lite-loaded.dcl")
    , PipeLiteToSalt       (buildSpec builder)
-     [ PipeCoreOutput     (dump state "dump.lite-to-salt.dce")
+     [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
      , PipeCoreSimplify   fragmentSalt Simpl.anormalize
-       [ PipeCoreOutput   (dump state "dump.salt-normalized.dce")
+       [ PipeCoreOutput   (dump state source "dump.salt-normalized.dce")
        , PipeCoreCheck    fragmentSalt
          pipesSalt]]]
 
 
 -- | Convert Salt to C code.
 stageSaltToC
-        :: State -> Builder
+        :: State -> Source -> Builder
         -> Sink
         -> PipeCore a Salt.Name
 
-stageSaltToC state _builder sink
+stageSaltToC state source _builder sink
  = PipeCoreSimplify       fragmentSalt
                           (stateSimplifier state <> Simpl.anormalize)
-   [ PipeCoreOutput       (dump state "dump.salt-simplified.dce")
+   [ PipeCoreOutput       (dump state source "dump.salt-simplified.dce")
    , PipeCoreCheck        fragmentSalt
      [ PipeCoreAsSalt
        [ PipeSaltTransfer
-         [ PipeSaltOutput (dump state "dump.salt-transfer.dce")
+         [ PipeSaltOutput (dump state source "dump.salt-transfer.dce")
          , PipeSaltPrint  
                 (Set.member SaltPrelude (stateModes state))
                 sink]]]]
@@ -82,32 +92,32 @@ stageSaltToC state _builder sink
 
 -- | Convert Salt to LLVM.
 stageSaltToLLVM
-        :: State -> Builder
+        :: State -> Source -> Builder
         -> [PipeLlvm]
         -> PipeCore a Salt.Name
 
-stageSaltToLLVM state builder pipesLLVM
+stageSaltToLLVM state source builder pipesLLVM
  = PipeCoreSimplify         fragmentSalt
                             (stateSimplifier state <> Simpl.anormalize)
-   [ PipeCoreOutput         (dump state "dump.salt-simplified.dce")
+   [ PipeCoreOutput         (dump state source "dump.salt-simplified.dce")
    , PipeCoreCheck          fragmentSalt
      [ PipeCoreAsSalt
        [ PipeSaltTransfer
-         [ PipeSaltOutput   (dump state "dump.salt-transfer.dce")
+         [ PipeSaltOutput   (dump state source "dump.salt-transfer.dce")
          , PipeSaltToLlvm   (buildSpec builder) 
-           ( PipeLlvmPrint  (dump state "dump.salt-to-llvm.ll")
+           ( PipeLlvmPrint  (dump state source "dump.salt-to-llvm.ll")
            : pipesLLVM) ]]]]
 
 
 -- | Compile LLVM code.
 stageCompileLLVM 
-        :: State -> Builder 
+        :: State -> Source -> Builder 
         -> FilePath             -- ^ Path of original source file.
                                 --   Build products are placed into the same dir.
         -> Bool                 -- ^ Should we link this into an executable
         -> PipeLlvm
 
-stageCompileLLVM state builder filePath shouldLinkExe
+stageCompileLLVM state _source builder filePath shouldLinkExe
  = let  -- Decide where to place the build products.
         outputDir      = fromMaybe (takeDirectory filePath) (stateOutputDir state)
         outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
