@@ -10,6 +10,7 @@
 --
 module DDCI.Core.Stage
         ( stageLiteToSalt
+        , stageSaltToC
         , stageSaltToLLVM
         , stageCompileLLVM)
 where
@@ -24,9 +25,12 @@ import DDC.Core.Simplifier.Recipie      as Simpl
 import qualified DDC.Core.Lite.Name     as Lite
 import qualified DDC.Core.Salt.Name     as Salt
 import qualified DDC.Core.Check         as C
-
+import qualified Data.Set               as Set
 
 -- | Convert Lite to Salt.
+--   
+--   Result is a-normalised.
+--
 stageLiteToSalt 
         :: State -> Builder 
         -> [PipeCore (C.AnTEC () Salt.Name) Salt.Name] 
@@ -41,6 +45,25 @@ stageLiteToSalt _state builder pipesSalt
        [ PipeCoreOutput   (SinkFile "ddc.salt-normalized.dce")
        , PipeCoreCheck    fragmentSalt
          pipesSalt]]]
+
+
+-- | Convert Salt to C code.
+stageSaltToC
+        :: State -> Builder -> Bool
+        -> Sink
+        -> PipeCore a Salt.Name
+
+stageSaltToC state _builder doTransfer sink
+ = PipeCoreSimplify       fragmentSalt
+                          (stateSimplifier state <> Simpl.anormalize)
+   [ PipeCoreOutput       (SinkFile "ddc.salt-simplified.dce")
+   , PipeCoreCheck        fragmentSalt
+     [ PipeCoreAsSalt
+       [ (if doTransfer then PipeSaltTransfer else PipeSaltId)
+         [ PipeSaltOutput (SinkFile "ddc.salt-transfer.dce")
+         , PipeSaltPrint  
+                (Set.member SaltPrelude (stateModes state))
+                sink]]]]
 
 
 -- | Convert Salt to LLVM.

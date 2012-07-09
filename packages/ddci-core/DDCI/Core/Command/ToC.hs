@@ -4,17 +4,12 @@ module DDCI.Core.Command.ToC
 where
 import DDCI.Core.Mode
 import DDCI.Core.State
-import DDC.Build.Builder
+import DDCI.Core.Stage
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
-import DDC.Core.Check
 import System.FilePath
-import DDC.Core.Simplifier.Recipie              as Simpl
-import qualified DDC.Core.Salt                  as A
-import qualified Data.Set                       as Set
 import qualified DDC.Base.Pretty                as P
-import Data.Monoid
 
 -- | Parse, check, and fully evaluate an expression.
 ---
@@ -28,49 +23,30 @@ cmdToC state source str
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
+        -- Determine the builder to use.
         builder         <- getActiveBuilder state
 
-        if      fragName == "Salt" || mSuffix  == Just ".dce"
-         then cmdSaltToC state source str
-        else if fragName == "Lite"  || mSuffix == Just ".dcl"
-         then cmdLiteToC  state source builder str
-        else error $ "Don't know how to convert Disciple " ++ fragName ++ " module to C code."
+        -- Decide what to do based on file extension and current fragment.
+        let compile
+                -- Compile a Core Lite module.
+                | fragName == "Lite" || mSuffix == Just ".dcl"
+                = pipeText (nameOfSource source) (lineStartOfSource source) str
+                $ PipeTextLoadCore fragmentLite
+                [ stageLiteToSalt  state builder
+                [ stageSaltToC     state builder True SinkStdout]]
+
+                -- Compile a Core Salt module.
+                | fragName == "Salt" || mSuffix == Just ".dce"
+                = pipeText (nameOfSource source) (lineStartOfSource source) str
+                $ PipeTextLoadCore fragmentSalt
+                [ stageSaltToC     state builder False SinkStdout]
+
+                -- Unrecognised.
+                | otherwise
+                = error $ "Don't know how to convert this to C"
 
 
--- | Convert a Disciple Lite module to C code.
-cmdLiteToC :: State -> Source -> Builder -> String -> IO ()
-cmdLiteToC state source builder str
- = (pipeText (nameOfSource source) (lineStartOfSource source) str
-        $  PipeTextLoadCore     fragmentLite
-        [  PipeCoreAsLite
-        [  PipeLiteToSalt       (buildSpec builder)
-        [  PipeCoreSimplify     fragmentSalt Simpl.anormalize
-        [  PipeCoreCheck        fragmentSalt
-        [  pipeCore_saltToC state True ]]]]])
- >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
+        -- Print any errors that arose during compilation
+        errs <- compile
 
-
--- | Convert a Disciple Salt module to C code.
-cmdSaltToC :: State -> Source -> String -> IO ()
-cmdSaltToC state source str
- = (pipeText (nameOfSource source) (lineStartOfSource source) str
-        $  PipeTextLoadCore     fragmentSalt
-        [  pipeCore_saltToC state False ])
- >>= mapM_ (putStrLn . P.renderIndent . P.ppr)
-
-
-pipeCore_saltToC 
-        :: Show a 
-        => State -> Bool 
-        -> PipeCore (AnTEC a A.Name) A.Name
-pipeCore_saltToC state doTransfer
-        =  PipeCoreSimplify     fragmentSalt
-                                (stateSimplifier state <> Simpl.anormalize)
-        [  PipeCoreReCheck      fragmentSalt
-        [  PipeCoreAsSalt
-        [  (if doTransfer then PipeSaltTransfer else PipeSaltId)
-        [  PipeSaltPrint 
-                (Set.member SaltPrelude (stateModes state))
-                SinkStdout ]]]]
-
-
+        mapM_ (putStrLn . P.renderIndent . P.ppr) errs
