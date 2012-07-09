@@ -10,7 +10,9 @@ module DDC.Core.Salt.Env
         , tNat, tInt, tWord
         , tTag
         , tObj
-        , tAddr, tPtr)
+        , tAddr, tPtr
+
+        , typeOfPrimCall)
 where
 import DDC.Core.Salt.Name
 import DDC.Type.DataDef

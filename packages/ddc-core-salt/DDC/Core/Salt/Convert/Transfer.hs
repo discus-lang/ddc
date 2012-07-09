@@ -27,6 +27,8 @@ import DDC.Core.Check           (AnTEC(..))
 import DDC.Core.Salt.Runtime
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Error
+import DDC.Core.Salt.Env
+import DDC.Type.Compounds
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 
@@ -38,13 +40,24 @@ transferModule
 
 transferModule mm@ModuleCore{}
         | XLet a (LRec bxs) x1  <- moduleBody mm
-        = let bxs'        = [ (b, transSuper Set.empty x)
-                                        | (b, x) <- bxs ]
-
-          in Right $ mm { moduleBody = XLet a (LRec bxs') x1 }
+        = let bxs'        = map transLet bxs
+          in  Right $ mm { moduleBody = XLet a (LRec bxs') x1 }
 
         | otherwise
         = Left (ErrorNoTopLevelLetrec mm)
+
+
+-- Let ------------------------------------------------------------------------
+transLet :: (Bind Name, Exp (AnTEC a Name) Name)
+         -> (Bind Name, Exp (AnTEC a Name) Name)
+
+transLet (BName n t, x)
+ = let  tails   = Set.singleton n
+        x'      = transSuper tails x
+   in   (BName n t, x')
+
+transLet tup
+        = tup
 
 
 -- Super ----------------------------------------------------------------------
@@ -61,6 +74,15 @@ transSuper tails xx
 
         XLAM  a b x     -> XLAM  a b $ down x
         XLam  a b x     -> XLam  a b $ down x
+
+        XApp{}
+         | xv@(XVar a (UName n tF)) : args <- takeXApps xx
+         , Set.member n tails
+         , (tsArgs, _)  <- takeTFunArgResult tF
+         -> let arity   = length args
+                p       = PrimCallTail arity
+                u       = UPrim (NamePrim (PrimCall p)) (typeOfPrimCall p)
+            in  makeXApps a (XVar a u) (xv : map XType tsArgs ++ args)
 
         XApp  a x1 x2   
          -> let x1'     = transX tails x1

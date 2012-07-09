@@ -25,6 +25,11 @@ mulInt [r1 r2 r3 : %]
  -> I# [r3] (mul# [Int#] i1 i2) } }
 
 
+unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
+ = case x of 
+        I# i  -> i
+
+
 fac    [r : %] 
        (acc : Int r) {!0 | Use r}
        (n   : Int r) {Read r + Alloc r | Use r} : Int r
@@ -37,11 +42,6 @@ fac    [r : %]
                                    (subInt [:r r r:] n (I# [r] 1i#));
          };
  }
-
-
-unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
- = case x of 
-        I# i  -> i
 
 
 main (argc : Nat#) (argv : Ptr# String#) : Int#
