@@ -1,0 +1,32 @@
+
+-- | Int primitives for 32-bit machines.
+module Int32 
+imports {
+        allocRawSmall :: Tag# -> Nat# -> Ptr# Obj;
+} 
+with 
+letrec {
+
+boxInt (x : Int#) : Ptr# Obj
+ = do { obj     = allocRawSmall TAG0# 4#;
+        addr    = takePtr# [Obj] obj;
+        write#  [Int#] addr 8# x;
+        return# [Ptr# Obj] obj;
+ };
+
+unboxInt (obj : Ptr# Obj) : Int#
+ = do { addr    = takePtr# [Obj] obj;
+        x       = read#   [Int#] addr 8#;
+        return# [Int#] x;
+ };
+
+addInt (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt (add# [Int#] (unboxInt x) (unboxInt y)));
+
+subInt (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt (sub# [Int#] (unboxInt x) (unboxInt y)));
+
+mulInt (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
+ = return# [Ptr# Obj] (boxInt (mul# [Int#] (unboxInt x) (unboxInt y)));
+
+}

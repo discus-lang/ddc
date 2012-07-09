@@ -309,6 +309,13 @@ convPrimTruncate pp tDst vDst tSrc xSrc
          | bitsDst < bitsSrc        
          -> Just $ IConv vDst ConvTrunc xSrc
 
+         -- Unsigned to Signed,
+         --  destination is larger
+         | bitsDst > bitsSrc        
+         , isUnsignedT tSrc
+         , isSignedT   tDst
+         -> Just $ IConv vDst ConvZext xSrc
+
         _ -> Nothing
 
 

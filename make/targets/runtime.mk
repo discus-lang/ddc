@@ -28,6 +28,7 @@ runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 # Runtime for new compiler
 salt-runtime_dce = \
 	packages/ddc-core-salt/runtime/src/Storage/Object${BITS}.dce \
+        packages/ddc-core-salt/runtime/src/Storage/Int${BITS}.dce \
 	$(shell find packages/ddc-core-salt/runtime/src/Primitive -name "*.dce")
 
 salt-runtime_c   = $(shell find packages/ddc-core-salt/runtime/src -name "*.c")

@@ -1,5 +1,6 @@
 
-module Int32 
+-- | Int primitives for 64-bit machines.
+module Int64
 imports {
         allocRawSmall :: Tag# -> Nat# -> Ptr# Obj;
 } 
@@ -7,7 +8,7 @@ with
 letrec {
 
 boxInt (x : Int#) : Ptr# Obj
- = do { obj     = allocRawSmall TAG0# 4#;
+ = do { obj     = allocRawSmall TAG0# 8#;
         addr    = takePtr# [Obj] obj;
         write#  [Int#] addr 8# x;
         return# [Ptr# Obj] obj;
