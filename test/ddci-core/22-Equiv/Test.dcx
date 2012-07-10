@@ -109,3 +109,8 @@
 ([c1 : % ~> !]. [r : %]. Int r -(c1 r | $0)> Int r)
 ([c2 : % ~> !]. [r : %]. Int r -(!0   | $0)> Int r);;
 
+-- False: Binder in different order
+:tequiv..
+([a : *]. [b : *]. b)
+([b : *]. [a : *]. b);;
+

@@ -71,3 +71,6 @@ False
 -- False: Effect components don't match.
 False
 
+-- False: Binder in different order
+False
+
