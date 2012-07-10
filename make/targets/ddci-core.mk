@@ -37,7 +37,7 @@ bin/ddci-core : make/deps/Makefile-main.deps $(ddci-core_obj)
 	@$(GHC) -o bin/ddci-core $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(ddci-core_obj)
 
 
-# -- Helper for getting into interactive mode
+# -- Helper for getting into interactive mode. Disable -O2
 ddci-core-ghci :
-	$(GHCI) $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(patsubst %,-i%,$(ddci-core_packages_root)) packages/ddci-core/Main.hs
+	$(GHCI) $(patsubst -O2,,$(GHC_FLAGS)) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(patsubst %,-i%,$(ddci-core_packages_root)) packages/ddci-core/Main.hs
 
