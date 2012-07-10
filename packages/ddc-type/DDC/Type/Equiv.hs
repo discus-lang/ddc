@@ -38,8 +38,11 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
         t2'     = unpackSumT $ crushSomeT t2
    in case (t1', t2') of
         (TVar u1,         TVar u2)
-         -- Bound variables are name-equivalent.
-         | u1 == u2     -> True
+         -- Free variables are name-equivalent, bound variables aren't:
+	 -- (forall a. a) != (forall b. a)
+         | Nothing      <- getBindType stack1 u1
+         , Nothing      <- getBindType stack2 u2
+         , u1 == u2     -> True
 
          -- Variables aren't name equivalent, 
          -- but would be equivalent if we renamed them.
