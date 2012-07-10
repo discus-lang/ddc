@@ -17,6 +17,7 @@ THREADS		= 1
 # GHC Config ------------------------------------------------------------------
 # GHC binary to use when building.
 GHC		= ghc
+GHCI		= ghci
 
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
 

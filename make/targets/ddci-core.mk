@@ -13,6 +13,8 @@ ddci-core_packages = \
         packages/ddc-build/DDC \
         packages/ddci-core/DDCI 
 
+# -- packages without /DDC etc at end, so we can load them in ghci
+ddci-core_packages_root = $(patsubst %/DDC,%,$(patsubst %/DDCI,%,$(ddci-core_packages)))
 
 ddci-core_src_hs_all = \
         $(shell find $(ddci-core_packages) -name "*.hs" -follow) \
@@ -33,3 +35,9 @@ ddci-core_obj = $(patsubst %.hs,%.o,$(ddci-core_src_hs_all))
 bin/ddci-core : make/deps/Makefile-main.deps $(ddci-core_obj)
 	@echo "* Linking ddci-core"
 	@$(GHC) -o bin/ddci-core $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(ddci-core_obj)
+
+
+# -- Helper for getting into interactive mode
+ddci-core-ghci :
+	$(GHCI) $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(patsubst %,-i%,$(ddci-core_packages_root)) packages/ddci-core/Main.hs
+
