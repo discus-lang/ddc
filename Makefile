@@ -54,7 +54,7 @@ include make/build.mk
 allWithConfig :
 	@$(MAKE) packages/ddc-main/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc bin/ddci-core runtime external libs bin/war -j $(THREADS)
+	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core runtime external libs bin/war -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
@@ -120,6 +120,7 @@ include make/targets/lint.mk
 include make/targets/tarball.mk
 include make/targets/clean.mk
 include make/targets/ddc.mk
+include make/targets/ddc-check.mk
 include make/targets/ddci-core.mk
 include make/targets/proof.mk
 
