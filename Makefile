@@ -81,7 +81,9 @@ proof:
 
 # -- Build all dependencies
 .PHONY	: deps
-deps	: make/deps/Makefile-main.deps make/deps/Makefile-ddci-core.deps
+deps	: make/deps/Makefile-main.deps \
+          make/deps/Makefile-ddc-check.deps \
+          make/deps/Makefile-ddci-core.deps
 
 
 # -- What to do during the nightly builds
@@ -138,6 +140,7 @@ include make/rules.mk
 #   that missing -included files should be ignored.
 #
 -include make/deps/Makefile-main.deps.inc
+-include make/deps/Makefile-ddc-check.deps.inc
 -include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/proof.deps.inc
 
