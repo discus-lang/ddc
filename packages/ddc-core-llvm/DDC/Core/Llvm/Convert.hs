@@ -162,7 +162,7 @@ convBodyM blocks label instrs xx
         case xx of
 
          -- Control transfer instructions -----------------
-         -- Return without a value.
+         -- Void return applied to a literal void constructor.
          C.XApp{}
           |  Just (A.NamePrim p, xs)             <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn   <- p
@@ -171,11 +171,23 @@ convBodyM blocks label instrs xx
           -> return  $   blocks 
                      |>  Block label (instrs |> IReturn Nothing)
 
+         -- Void return applied to some other expression.
+         -- We still have to eval the expression, 
+         --  but it returns no value.
+         C.XApp{}
+          |  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          ,  A.PrimControl A.PrimControlReturn  <- p
+          ,  [C.XType t, x2]                    <- xs
+          ,  isVoidT t
+          -> do instrs2 <- convStmtM pp x2
+                return  $  blocks
+                        |> Block label (instrs >< (instrs2 |> IReturn Nothing))
+
          -- Return a value.
          C.XApp{}
-          |  Just (A.NamePrim p, xs)           <- takeXPrimApps xx
-          ,  A.PrimControl A.PrimControlReturn <- p
-          ,  [C.XType t, x]                    <- xs
+          |  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          ,  A.PrimControl A.PrimControlReturn  <- p
+          ,  [C.XType t, x]                     <- xs
           -> do let t'  =  convType pp t
                 vDst    <- newUniqueVar t'
                 is      <- convExpM pp vDst x
@@ -206,13 +218,14 @@ convBodyM blocks label instrs xx
           ,  Just (Var nFun _)                 <- takeGlobalV pp xFun
           ,  Just xsArgs'                      <- sequence $ map (mconvAtom pp) xsArgs
           -> if isVoidT tResult
+              -- Tailcalled function returns void.
               then do return $ blocks
                         |> (Block label $ instrs
                            |> ICall Nothing CallTypeTail
                                    (convType pp tResult) nFun xsArgs' []
                            |> IReturn Nothing)
 
-
+              -- Tailcalled function returns an actual value.
               else do let tResult'    = convType pp tResult
                       vDst            <- newUniqueVar tResult'
                       return  $ blocks

@@ -69,12 +69,16 @@ transSuper
 transSuper tails xx
  = let down = transSuper tails
    in  case xx of
+        -- Return the value bound to a var.
         XVar a _        -> xReturn a (annotType a) xx
+
+        -- Return a constructor value.
         XCon a _        -> xReturn a (annotType a) xx
 
         XLAM  a b x     -> XLAM  a b $ down x
         XLam  a b x     -> XLam  a b $ down x
 
+        -- Tail-call a supercombinator.
         XApp{}
          | xv@(XVar a (UName n tF)) : args <- takeXApps xx
          , Set.member n tails
@@ -84,6 +88,7 @@ transSuper tails xx
                 u       = UPrim (NamePrim (PrimCall p)) (typeOfPrimCall p)
             in  makeXApps a (XVar a u) (map XType (tsArgs ++ [tResult]) ++ (xv : args))
 
+        -- Return the result of this application.
         XApp  a x1 x2   
          -> let x1'     = transX tails x1
                 x2'     = transX tails x2
@@ -101,12 +106,16 @@ transSuper tails xx
 addReturnX :: a          -> Type Name
            -> Exp a Name -> Exp a Name
 addReturnX a t xx
- = case takeXPrimApps xx of
-        Just (NamePrim p, _)
-         | PrimControl{}        <- p
-         -> xx
 
-        _ -> xReturn a t xx
+        -- If there is already a control transfer primitive here then
+        -- don't add another one.
+        | Just (NamePrim p, _)  <- takeXPrimApps xx
+        , PrimControl{}         <- p
+        = xx
+
+        -- Wrap the final expression in a return primitive.
+        | otherwise
+        = xReturn a t xx
 
 
 -- Let ------------------------------------------------------------------------

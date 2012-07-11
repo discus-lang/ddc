@@ -7,15 +7,12 @@ imports {
 } 
 with letrec
 
-
 -- | Alloc a vector of the given length.
 -- 
 --   typedef struct
 --   {  nat_t   length
 --      uint8_t payload[] 
 --   } Vector8
---
---   TODO: zero fill contents.
 --
 allocVector8 (length : Nat#) : Ptr# Obj
  = do   
@@ -45,7 +42,6 @@ updateVector8 (obj : Ptr# Obj) (index : Nat#) (val : Word8#) : Void#
  = do   payload = payloadOfRaw obj
         offset  = add# [Nat#] (bytesNat# V#) index
         write# [Word8#] payload offset val
-        V#
 
 
 -- | Fill a vector with the given value.
@@ -56,7 +52,6 @@ fillVector8   (obj : Ptr# Obj) (val : Word8#) : Void#
         buf     = plusPtr# [Word8#] (makePtr# [Word8#] payload) (bytesNat# V#)
         max     = plusPtr# [Word8#] buf  length
         fillPtr8 buf max val
-        V#
 
 
 -- | Fill a range of bytes with the given value.
