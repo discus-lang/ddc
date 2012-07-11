@@ -17,8 +17,12 @@ import qualified DDC.Core.Pretty        as P
 
 
 cmdCompile :: State -> Source -> String -> IO ()
-cmdCompile state source str
- = do   -- Read in the source file.
+cmdCompile state _source str
+ = do   
+        -- Always treat the string as a filename
+        let source   = SourceFile str
+
+        -- Read in the source file.
         let filePath = dropWhile isSpace str
         exists  <- doesFileExist filePath
         when (not exists)
