@@ -17,6 +17,7 @@ import DDCI.Core.Command.Make
 import DDCI.Core.Command.ToSalt
 import DDCI.Core.Command.ToC
 import DDCI.Core.Command.ToLlvm
+import DDCI.Core.Command.With
 import DDCI.Core.State
 import Data.List
 
@@ -52,6 +53,8 @@ data Command
         | CommandToSalt         -- ^ Convert a module to Disciple Salt.
         | CommandToC            -- ^ Convert a module to C code.
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
+
+        | CommandWith           -- ^ Add a module to the inliner table.
         deriving (Eq, Show)
 
 
@@ -82,7 +85,8 @@ commands
         , (":make",             CommandMake)
         , (":to-salt",          CommandToSalt)
         , (":to-c",             CommandToC)
-        , (":to-llvm",          CommandToLlvm) ]
+        , (":to-llvm",          CommandToLlvm) 
+        , (":with",             CommandWith)]
 
 
 -- | Read the command from the front of a string.
@@ -221,3 +225,5 @@ handleCmd1 state cmd source line
          -> do  cmdMake state source line
                 return state
 
+        CommandWith
+         ->     cmdWith state source line
