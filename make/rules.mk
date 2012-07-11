@@ -4,9 +4,9 @@ include make/config/target.mk
 
 # -----------------------------------------------------------------------------
 # Runtime system 
-packages/ddc-core-salt/runtime/src/%.o : packages/ddc-core-salt/runtime/src/%.c
+code/c/%.o : code/c/%.c
 	@echo "* Compiling $<"
-	@gcc $(GCC_FLAGS) -Ipackages/ddc-core-salt/runtime/include -c $< -o $@ 
+	@gcc $(GCC_FLAGS) -Icode/c/runtime -c $< -o $@ 
 
 
 # -----------------------------------------------------------------------------

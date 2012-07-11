@@ -10,8 +10,8 @@
 //   needing to link against external code. Primops that are implemented with
 //   manifest object code should be imported separately.
 //   
-#ifndef _DDC_Disciple
-#define _DDC_Disciple
+#ifndef _DDC_Runtime
+#define _DDC_Runtime
 
 #include <stdint.h>
 #include <stdlib.h>

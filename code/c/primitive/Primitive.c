@@ -2,7 +2,7 @@
 // Primitive operations that sea code uses.
 // In future we'll just import these with the FFI.
 #include <stdio.h>
-#include "Disciple.h"
+#include "Runtime.h"
 
 
 // Show an integer.

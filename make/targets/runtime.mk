@@ -27,20 +27,21 @@ runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 # -----------------------------------------------------------------------------
 # Runtime for new compiler
 salt-runtime_dce = \
-	packages/ddc-core-salt/runtime/src/Storage/Object${BITS}.dce \
-        packages/ddc-core-salt/runtime/src/Storage/Int${BITS}.dce \
-	$(shell find packages/ddc-core-salt/runtime/src/Primitive -name "*.dce")
+	$(shell find code/salt/runtime${BITS}   -name "*.dce") \
+	$(shell find code/salt/primitive${BITS} -name "*.dce")
 
-salt-runtime_c   = $(shell find packages/ddc-core-salt/runtime/src -name "*.c")
+salt-runtime_c   = \
+        $(shell find code/c/primitive           -name "*.c")
 
-salt-runtime_o   = $(patsubst %.dce,%.o,$(salt-runtime_dce)) \
-	  	   $(patsubst %.c,%.o,$(salt-runtime_c))
+salt-runtime_o   = \
+        $(patsubst %.dce,%.o,$(salt-runtime_dce)) \
+        $(patsubst %.c,%.o,$(salt-runtime_c))
 
-packages/ddc-core-salt/runtime/libddc-runtime.a : $(salt-runtime_o)
+code/salt/libddc-runtime.a : $(salt-runtime_o)
 	@echo "* Linking $@"
 	@ar r $@ $^
 
-packages/ddc-core-salt/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
+code/salt/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
 	@echo "* Linking $@"
 	@$(GCC_LINK_SHARED) -o $@ $^
 
@@ -52,8 +53,8 @@ packages/ddc-core-salt/runtime/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_
 runtime : $(runtime_dep) \
 		runtime/libddc-runtime.a \
 		$(if $(SHARED_SUFFIX),runtime/libddc-runtime.$(SHARED_SUFFIX),) \
-		packages/ddc-core-salt/runtime/libddc-runtime.a \
-		$(if $(SHARED_SUFFIX),packages/ddc-core-salt/runtime/libddc-runtime.$(SHARED_SUFFIX),)
+		code/salt/libddc-runtime.a \
+		$(if $(SHARED_SUFFIX),code/salt/libddc-runtime.$(SHARED_SUFFIX),)
 
 
 # Clean objects in the runtime system
@@ -67,13 +68,4 @@ cleanRuntime :
 		-o	-name "*.dylib" \
 		-o	-name "*.a" \
 		-o	-name "*~" \
-		-follow | xargs -n 1 rm -f
-
-	@find packages/ddc-core-salt/runtime \
-		        -name "*.o" \
-		-o      -name "*.dep" \
-		-o      -name "*.so" \
-		-o      -name "*.dylib" \
-		-o      -name "*.a" \
-		-o      -name "*~" \
 		-follow | xargs -n 1 rm -f
