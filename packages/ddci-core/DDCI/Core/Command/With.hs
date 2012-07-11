@@ -48,17 +48,16 @@ cmdWith_src state source filePath src
 
 
 cmdWith_lite state source src
- = do   ref     <- newIORef (error "cmdWith_src failed")
-
+ = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore fragmentLite
-                   [ PipeCoreHacks (Canned (\m -> writeIORef ref m >> return m)) 
+                   [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
                      [PipeCoreOutput SinkDiscard] ]
 
         case errs of
          [] -> do
                 putStrLn "ok"
-                mdl     <- readIORef ref
+                Just mdl <- readIORef ref
                 return $ state
                        { stateWithLite = Map.insert (moduleName mdl) mdl (stateWithLite state) }
 
@@ -68,28 +67,20 @@ cmdWith_lite state source src
 
 
 cmdWith_salt state source src
- = do   ref     <- newIORef (error "cmdWith_src failed")
-
+ = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore fragmentSalt
-                   [ PipeCoreHacks (Canned (\m -> writeIORef ref m >> return m)) 
+                   [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
                      [PipeCoreOutput SinkDiscard] ]
 
         case errs of
          [] -> do
                 putStrLn "ok"
-                mdl     <- readIORef ref
+                Just mdl <- readIORef ref
                 return $ state
                        { stateWithSalt = Map.insert (moduleName mdl) mdl (stateWithSalt state) }
 
          _ -> do
                 mapM_ (putStrLn . renderIndent . ppr) errs
                 return state
-
-
-
-
-
-
-
 
