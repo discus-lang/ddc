@@ -17,11 +17,15 @@ where
 import DDCI.Core.Mode
 import DDC.Build.Builder
 import DDC.Build.Language
+import DDC.Core.Check
+import DDC.Core.Module
 import DDC.Core.Transform.Rewrite.Rule
-import DDC.Core.Eval.Name               (Name)
 import Data.Map                         (Map)
 import Data.Set                         (Set)
 import DDC.Core.Simplifier              (Simplifier)
+import qualified DDC.Core.Salt.Name     as Salt
+import qualified DDC.Core.Lite.Name     as Lite
+import qualified DDC.Core.Eval.Name     as Eval
 import qualified DDC.Core.Simplifier    as S
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
@@ -40,11 +44,15 @@ data State
           -- | Source language to accept.
         , stateLanguage         :: Language
 
+          -- | Maps of modules we can use as inliner templates.
+        , stateWithLite         :: Map ModuleName (Module (AnTEC () Lite.Name) Lite.Name)
+        , stateWithSalt         :: Map ModuleName (Module (AnTEC () Salt.Name) Salt.Name)
+
           -- | Simplifier to apply to core program.
         , stateSimplifier       :: Simplifier
 
           -- | Rewrite rules to apply during simplification.
-	, stateRewriteRules	:: Map String (RewriteRule () Name) 
+	, stateRewriteRules	:: Map String (RewriteRule () Eval.Name) 
 
           -- | Force the builder to this one, this sets the address width etc.
           --   If Nothing then query the host system for the default builder.
@@ -91,6 +99,8 @@ initState interface
         { stateInterface        = interface
         , stateModes            = Set.empty 
         , stateLanguage         = Language fragmentEval
+        , stateWithLite         = Map.empty
+        , stateWithSalt         = Map.empty
         , stateSimplifier       = S.Trans S.Id
 	, stateRewriteRules	= Map.empty
         , stateBuilder          = Nothing  
@@ -98,7 +108,7 @@ initState interface
         , stateOutputDir        = Nothing }
 
 
-stateRewriteRulesList :: State -> [RewriteRule () Name]
+stateRewriteRulesList :: State -> [RewriteRule () Eval.Name]
 stateRewriteRulesList State { stateRewriteRules = rules }
  = map snd $ Map.toList rules
 

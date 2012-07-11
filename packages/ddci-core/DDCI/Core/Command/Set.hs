@@ -31,14 +31,13 @@ cmdSet state []
                     -> profileName (fragmentProfile frag)
 
         putStrLn $ renderIndent
-         $ vcat [ text "mode    = " <> text (show $ Set.toList 
-                                                $ stateModes state)
+         $ vcat  [ text "Modes:      " <> text (show $ Set.toList $ stateModes state)
+                 , text "Language:   " <> text langName
+                 , text "Simplifier: " <> ppr (stateSimplifier state) 
+                 , text "Builder:    " <> text (show $ liftM builderName $ stateBuilder state) ]
+         <$> vcat (text "With Lite:  " : map ppr (Map.keys (stateWithLite state)))
+         <$> vcat (text "With Salt:  " : map ppr (Map.keys (stateWithLite state)))
 
-                , text "lang    = " <> text langName
-
-                , text "simpl   = " <> ppr (stateSimplifier state) 
-
-                , text "builder = " <> text (show $ liftM builderName $ stateBuilder state) ]
 
         return state
 

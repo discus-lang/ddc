@@ -62,3 +62,6 @@ data Fragment n (err :: * -> *)
 instance Show (Fragment n err) where
  show frag
   = profileName $ fragmentProfile frag
+
+
+
