@@ -27,17 +27,22 @@ main
                         return  (src, "<stdin>")
 
         -- Check with the configured language fragment.
-        runLanguage source sourceName (configLanguage config)
+        runLanguage config source sourceName (configLanguage config)
 
 
-runLanguage source sourceName language
+runLanguage config source sourceName language
  | Language fragment <- language
  = do   
+        -- In quiet mode just drop the checked module on the floor.
+        let sink
+                | configQuiet config    = SinkDiscard
+                | otherwise             = SinkStdout
+
         -- Loading the core code automatically check it
         -- against the provided fragment.
         errs    <- pipeText sourceName 1 source
                 $  PipeTextLoadCore  fragment
-                [  PipeCoreOutput    SinkStdout ]
+                [  PipeCoreOutput    sink ]
 
         -- If the pipeline died with errors, 
         --  then print them.
