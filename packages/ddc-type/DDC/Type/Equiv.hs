@@ -1,14 +1,17 @@
 
 module DDC.Type.Equiv
-        (equivT)
+        ( equivT
+	, matchT )
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
-import DDC.Base.Pretty
 import Data.Maybe
 import qualified DDC.Type.Sum   as Sum
+
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 
 -- | Check equivalence of types.
@@ -22,12 +25,12 @@ import qualified DDC.Type.Sum   as Sum
 --     bound variables match the binders. If this is not the case then you get
 --     an indeterminate result.
 --
-equivT  :: (Ord n, Pretty n) => Type n -> Type n -> Bool
+equivT  :: (Ord n) => Type n -> Type n -> Bool
 equivT t1 t2
         = equivT' [] 0 [] 0 t1 t2
 
 
-equivT' :: (Ord n, Pretty n)
+equivT' :: (Ord n)
         => [Bind n] -> Int
         -> [Bind n] -> Int
         -> Type n   -> Type n
@@ -91,6 +94,111 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
         (_, _)  -> False
 
 
+type VarSet n = Set.Set n
+type Subst n = Map.Map n (Type n)
+
+
+-- | Try to find a simple substitution between two types.
+-- Ignoring complicated effect sums.
+-- Eg given template "a -> b" and target "Int -> Float", returns substitution:
+--	{ a |-> Int, b |-> Float }
+--
+matchT  :: (Ord n)
+	=> VarSet n	-- ^ only attempt to match these names
+	-> Subst n	-- ^ already matched (or @Map.empty@)
+	-> Type n	-- ^ template
+	-> Type n	-- ^ target
+	-> Maybe (Subst n)
+matchT vs subst t1 t2
+        = matchT' [] 0 [] 0 t1 t2 vs subst
+
+
+matchT' :: (Ord n)
+        => [Bind n] -> Int
+        -> [Bind n] -> Int
+        -> Type n   -> Type n
+	-> VarSet n -> Subst n
+        -> Maybe (Subst n)
+
+matchT' stack1 depth1 stack2 depth2 t1 t2 vs subst
+ = let  t1'     = unpackSumT $ crushSomeT t1
+        t2'     = unpackSumT $ crushSomeT t2
+   in case (t1', t2') of
+        (TVar u1,         TVar u2)
+         -- Free variables are name-equivalent, bound variables aren't:
+	 -- (forall a. a) != (forall b. a)
+{-         | Nothing      <- getBindType stack1 u1
+         , Nothing      <- getBindType stack2 u2
+         , u1 == u2     -> True
+-}
+
+         -- Variables aren't name equivalent, 
+         -- but would be equivalent if we renamed them.
+         | depth1 == depth2
+         , Just (ix1, t1a)   <- getBindType stack1 u1
+         , Just (ix2, t2a)   <- getBindType stack2 u2
+         , ix1 == ix2
+	 , equivT' stack1 depth1 stack2 depth2 t1a t2a
+         -> Just subst --matchT' stack1 depth1 stack2 depth2 t1a t2a
+
+        -- Constructor names must be equal.
+        (TCon tc1,        TCon tc2)
+	 | tc1 == tc2
+         -> Just subst
+
+        -- Push binders on the stack as we enter foralls.
+        (TForall b11 t12, TForall b21 t22)
+         |  equivT  (typeOfBind b11) (typeOfBind b21)
+         -> matchT' (b11 : stack1) (depth1 + 1) 
+                    (b21 : stack2) (depth2 + 1) 
+                    t12 t22
+		    vs subst
+
+        -- Decend into applications.
+        (TApp t11 t12,    TApp t21 t22)
+         -> do
+		subst' <- matchT' stack1 depth1 stack2 depth2 t11 t21 vs subst
+		matchT' stack1 depth1 stack2 depth2 t12 t22 vs subst'
+        
+	-- TODO sums
+        (TSum _,        TSum _)
+	 -> Just subst
+	{-
+        -- Sums are equivalent if all of their components are.
+        (TSum ts1,        TSum ts2)
+         -> let ts1'      = Sum.toList ts1
+                ts2'      = Sum.toList ts2
+                equiv     = equivT' stack1 depth1 stack2 depth2
+
+                -- If all the components of the sum were in the element
+                -- arrays then they come out of Sum.toList sorted
+                -- and we can compare corresponding pairs.
+                checkFast = and $ zipWith equiv ts1' ts2'
+
+                -- If any of the components use a higher kinded type variable
+                -- like (c : % ~> !) then they won't nessesarally be sorted,
+                -- so we need to do this slower O(n^2) check.
+                checkSlow = and [ or (map (equiv t1c) ts2') | t1c <- ts1' ]
+                         && and [ or (map (equiv t2c) ts1') | t2c <- ts2' ]
+
+            in  (length ts1' == length ts2')
+            &&  (checkFast || checkSlow)
+	    -}
+
+	(TVar (UName n _), _)
+	-- TODO rewrite binders from t2 to t1 in t2'
+	 | Set.member n vs
+	 , Nothing <- Map.lookup n subst
+	 -> Just $ Map.insert n t2' subst
+
+	 | Set.member n vs
+	 , Just t1'' <- Map.lookup n subst
+	 , equivT' stack1 depth1 stack2 depth2 t1'' t2'
+	 -> Just subst
+
+        (_, _)  -> Nothing
+
+
 -- | Unpack single element sums into plain types.
 unpackSumT :: Type n -> Type n
 unpackSumT (TSum ts)
@@ -104,7 +212,7 @@ unpackSumT tt                     = tt
 --   As equivT is already recursive, we don't want a doubly-recursive function
 --   that tries to re-crush the same non-crushable type over and over.
 --
-crushSomeT :: (Ord n, Pretty n) => Type n -> Type n
+crushSomeT :: (Ord n) => Type n -> Type n
 crushSomeT tt
  = case tt of
         (TApp (TCon tc) _)
