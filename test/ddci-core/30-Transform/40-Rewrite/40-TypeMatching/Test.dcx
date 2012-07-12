@@ -1,0 +1,28 @@
+:set Indent
+:set trans Rewrite
+
+-- create a whacky rule (because only want to use builtins). wrap second param in another lambda
+:set.. rule whacky0 [r1 : %] [a : % ~> *] (x : a r1).
+	Cons [r1] [a r1] x (Nil [r1] [a r1] ()) =
+	Nil [r1] [a r1] ()
+;;
+
+-- should turn into a nil
+:trans..
+Cons [R0#] [Int R0#] (5 [R0#] ()) (Nil [R0#] [Int R0#] ())
+;;
+
+-- shouldn't turn into a nil; different regions
+:trans..
+Cons [R1#] [Int R0#] (5 [R0#] ()) (Nil [R1#] [Int R0#] ())
+;;
+
+-- try doing something with a function
+:set.. rule whacky1 [r1 : %] [a : % ~> *] [b : *] (x : a r1 -> b).
+	Cons [r1] [a r1 -> b] x (Nil [r1] [a r1 -> b] ()) =
+	Nil [r1] [a r1 -> b] ()
+;;
+:trans..
+Cons [R0#] [Int R0# -> Unit] (\(_:Int R0#). ()) (Nil [R0#] [Int R0# -> Unit] ())
+;;
+
