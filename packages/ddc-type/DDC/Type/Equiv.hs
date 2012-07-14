@@ -47,8 +47,8 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
          , Nothing      <- getBindType stack2 u2
          , u1 == u2     -> True
 
-         -- Variables aren't name equivalent, 
-         -- but would be equivalent if we renamed them.
+	 -- Both variables are bound in foralls, so check the stack
+         -- to see if they would be equivalent if we named them.
          | depth1 == depth2
          , Just (ix1, t1a)   <- getBindType stack1 u1
          , Just (ix2, t2a)   <- getBindType stack2 u2
@@ -110,55 +110,58 @@ matchT  :: (Ord n)
 	-> Type n	-- ^ target
 	-> Maybe (Subst n)
 matchT vs subst t1 t2
-        = matchT' [] 0 [] 0 t1 t2 vs subst
+        = matchT' [] [] t1 t2 vs subst
 
 
 matchT' :: (Ord n)
-        => [Bind n] -> Int
-        -> [Bind n] -> Int
+        => [Bind n]
+        -> [Bind n]
         -> Type n   -> Type n
 	-> VarSet n -> Subst n
         -> Maybe (Subst n)
 
-matchT' stack1 depth1 stack2 depth2 t1 t2 vs subst
+matchT' stack1 stack2 t1 t2 vs subst
  = let  t1'     = unpackSumT $ crushSomeT t1
         t2'     = unpackSumT $ crushSomeT t2
    in case (t1', t2') of
         (TVar u1,         TVar u2)
-         -- Free variables are name-equivalent, bound variables aren't:
-	 -- (forall a. a) != (forall b. a)
-{-         | Nothing      <- getBindType stack1 u1
-         , Nothing      <- getBindType stack2 u2
-         , u1 == u2     -> True
--}
-
-         -- Variables aren't name equivalent, 
-         -- but would be equivalent if we renamed them.
-         | depth1 == depth2
-         , Just (ix1, t1a)   <- getBindType stack1 u1
+	 -- If variables are bound in foralls, no need to match.
+	 -- Don't check their names - lookup bind depth instead.
+	 -- 
+	 -- I was calling equivT' here, but changing to matchT':
+	 -- perhaps if we had
+	 --	RULE [a : **] [b : a]. something [b] ...
+	 -- then matching against
+	 --	let i = Int in
+	 --		something [i]
+	 -- so to find a, we need to find i's type.
+         | Just (ix1, t1a)   <- getBindType stack1 u1
          , Just (ix2, t2a)   <- getBindType stack2 u2
          , ix1 == ix2
-	 , equivT' stack1 depth1 stack2 depth2 t1a t2a
-         -> Just subst --matchT' stack1 depth1 stack2 depth2 t1a t2a
+         -> matchT' stack1 stack2 t1a t2a vs subst
 
         -- Constructor names must be equal.
+	--
+	-- Will this still work when it's a TyConBound - basically same as TVar?
         (TCon tc1,        TCon tc2)
 	 | tc1 == tc2
          -> Just subst
 
         -- Push binders on the stack as we enter foralls.
         (TForall b11 t12, TForall b21 t22)
-         |  equivT  (typeOfBind b11) (typeOfBind b21)
-         -> matchT' (b11 : stack1) (depth1 + 1) 
-                    (b21 : stack2) (depth2 + 1) 
-                    t12 t22
-		    vs subst
+         -- |  equivT  (typeOfBind b11) (typeOfBind b21)
+         -> do
+		subst' <- matchT' stack1 stack2 (typeOfBind b11) (typeOfBind b21) vs subst
+		matchT' (b11 : stack1)
+			(b21 : stack2)
+			t12 t22
+			vs subst'
 
         -- Decend into applications.
         (TApp t11 t12,    TApp t21 t22)
          -> do
-		subst' <- matchT' stack1 depth1 stack2 depth2 t11 t21 vs subst
-		matchT' stack1 depth1 stack2 depth2 t12 t22 vs subst'
+		subst' <- matchT' stack1 stack2 t11 t21 vs subst
+		matchT' stack1 stack2 t12 t22 vs subst'
         
 	-- TODO sums
         (TSum _,        TSum _)
@@ -185,6 +188,8 @@ matchT' stack1 depth1 stack2 depth2 t1 t2 vs subst
             &&  (checkFast || checkSlow)
 	    -}
 
+	-- If template is in variable set, push the target into substitution
+	-- But we might need to rename bound variables...
 	(TVar (UName n _), _)
 	-- TODO rewrite binders from t2 to t1 in t2'
 	 | Set.member n vs
@@ -193,7 +198,7 @@ matchT' stack1 depth1 stack2 depth2 t1 t2 vs subst
 
 	 | Set.member n vs
 	 , Just t1'' <- Map.lookup n subst
-	 , equivT' stack1 depth1 stack2 depth2 t1'' t2'
+	 , equivT' stack1 (length stack1) stack2 (length stack2) t1'' t2'
 	 -> Just subst
 
         (_, _)  -> Nothing
@@ -202,8 +207,8 @@ matchT' stack1 depth1 stack2 depth2 t1 t2 vs subst
 -- | Unpack single element sums into plain types.
 unpackSumT :: Type n -> Type n
 unpackSumT (TSum ts)
-        | [t]   <- Sum.toList ts = t
-unpackSumT tt                     = tt
+	| [t]   <- Sum.toList ts = t
+unpackSumT tt			 = tt
 
 
 -- | Crush compound effects and closure terms.
