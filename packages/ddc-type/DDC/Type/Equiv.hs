@@ -27,16 +27,16 @@ import qualified Data.Set as Set
 --
 equivT  :: (Ord n) => Type n -> Type n -> Bool
 equivT t1 t2
-        = equivT' [] 0 [] 0 t1 t2
+        = equivT' [] [] t1 t2
 
 
 equivT' :: (Ord n)
-        => [Bind n] -> Int
-        -> [Bind n] -> Int
+        => [Bind n]
+        -> [Bind n]
         -> Type n   -> Type n
         -> Bool
 
-equivT' stack1 depth1 stack2 depth2 t1 t2
+equivT' stack1 stack2 t1 t2
  = let  t1'     = unpackSumT $ crushSomeT t1
         t2'     = unpackSumT $ crushSomeT t2
    in case (t1', t2') of
@@ -49,11 +49,10 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
 
 	 -- Both variables are bound in foralls, so check the stack
          -- to see if they would be equivalent if we named them.
-         | depth1 == depth2
-         , Just (ix1, t1a)   <- getBindType stack1 u1
+         | Just (ix1, t1a)   <- getBindType stack1 u1
          , Just (ix2, t2a)   <- getBindType stack2 u2
          , ix1 == ix2
-         -> equivT' stack1 depth1 stack2 depth2 t1a t2a
+         -> equivT' stack1 stack2 t1a t2a
 
         -- Constructor names must be equal.
         (TCon tc1,        TCon tc2)
@@ -62,20 +61,20 @@ equivT' stack1 depth1 stack2 depth2 t1 t2
         -- Push binders on the stack as we enter foralls.
         (TForall b11 t12, TForall b21 t22)
          |  equivT  (typeOfBind b11) (typeOfBind b21)
-         -> equivT' (b11 : stack1) (depth1 + 1) 
-                    (b21 : stack2) (depth2 + 1) 
+         -> equivT' (b11 : stack1)
+                    (b21 : stack2)
                     t12 t22
 
         -- Decend into applications.
         (TApp t11 t12,    TApp t21 t22)
-         -> equivT' stack1 depth1 stack2 depth2 t11 t21
-         && equivT' stack1 depth1 stack2 depth2 t12 t22
+         -> equivT' stack1 stack2 t11 t21
+         && equivT' stack1 stack2 t12 t22
         
         -- Sums are equivalent if all of their components are.
         (TSum ts1,        TSum ts2)
          -> let ts1'      = Sum.toList ts1
                 ts2'      = Sum.toList ts2
-                equiv     = equivT' stack1 depth1 stack2 depth2
+                equiv     = equivT' stack1 stack2
 
                 -- If all the components of the sum were in the element
                 -- arrays then they come out of Sum.toList sorted
@@ -198,7 +197,7 @@ matchT' stack1 stack2 t1 t2 vs subst
 
 	 | Set.member n vs
 	 , Just t1'' <- Map.lookup n subst
-	 , equivT' stack1 (length stack1) stack2 (length stack2) t1'' t2'
+	 , equivT' stack1 stack2 t1'' t2'
 	 -> Just subst
 
         (_, _)  -> Nothing
