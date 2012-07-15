@@ -31,7 +31,6 @@ import DDC.Build.Language
 import DDC.Build.Builder
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
-import DDC.Core.Collect
 import DDC.Base.Pretty
 import DDC.Data.Canned
 import DDC.Core.Check                           (AnTEC)
@@ -46,7 +45,6 @@ import qualified DDC.Core.Salt.Platform         as Salt
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Llvm.Module                as Llvm
-import qualified DDC.Type.Env                   as Env
 import qualified Control.Monad.State.Strict     as S
 import Control.Monad
 
@@ -103,8 +101,6 @@ data PipeText n (err :: * -> *) where
         -> [PipeCore (C.AnTEC () n) n]
         -> PipeText n err
 
-deriving instance Show (PipeText n err)
-
 
 -- | Process a text module.
 --
@@ -156,8 +152,8 @@ data PipeCore a n where
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
-        :: Fragment n err
-        -> Simplifier 
+        :: s
+        -> Simplifier s a n
         -> [PipeCore a n] 
         -> PipeCore a n
 
@@ -179,9 +175,6 @@ data PipeCore a n where
         :: Canned (C.Module a n -> IO (C.Module a n))
         -> [PipeCore a n]
         -> PipeCore a n
-
-deriving instance (Show a, Show n) 
-        => Show (PipeCore a n)
 
 
 -- | Process a core module.
@@ -223,22 +216,9 @@ pipeCore mm pp
          -> pipeCore (C.reannotate C.annotTail mm) 
          $  PipeCoreCheck fragment pipes
 
-        PipeCoreSimplify frag simpl pipes
-         | Fragment _ _ _ _ _ _ makeNamifierT makeNamifierX nameZero <- frag
-         -> let 
-                -- Collect up names used as binders,
-                -- We pass these to the namifiers so they know not to
-                -- return these names when asked for a fresh variable.
-                (tbinds, xbinds) = collectBinds mm
-                kenv    = Env.fromList tbinds
-                tenv    = Env.fromList xbinds
-                mm'     = flip S.evalState nameZero
-                        $ applySimplifier 
-                                simpl 
-                                (makeNamifierT kenv)
-                                (makeNamifierX tenv)
-                                mm 
-
+        PipeCoreSimplify nameZero simpl pipes
+         -> let mm'     = flip S.evalState nameZero
+                        $ applySimplifier simpl mm 
             in  liftM concat $ mapM (pipeCore mm') pipes
 
         PipeCoreAsLite pipes
@@ -261,7 +241,7 @@ data PipeLite
         -- | Convert the module to the Core Salt Fragment.
         | PipeLiteToSalt Salt.Platform 
                          [PipeCore () Salt.Name]
-        deriving Show
+
 
 pipeLite :: C.Module (C.AnTEC () Lite.Name) Lite.Name
          -> PipeLite

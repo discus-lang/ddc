@@ -26,39 +26,35 @@ import Control.Monad.State.Strict
 --   The state monad holds a fresh name generator.
 applySimplifier 
         :: (Show a, Ord n, Show n) 
-        => Simplifier           -- ^ Simplifier to apply.
-        -> Namifier s n         -- ^ Type namifier.
-        -> Namifier s n         -- ^ Exp  namifier
+        => Simplifier s a n     -- ^ Simplifier to apply.
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
 
-applySimplifier spec namT namX mm
+applySimplifier spec mm
  = case spec of
         Seq t1 t2
-         -> do  mm'     <- applySimplifier t1 namT namX mm
-                applySimplifier t2 namT namX mm'
+         -> do  mm'     <- applySimplifier t1 mm
+                applySimplifier t2 mm'
 
         Trans t1
-         -> applyTransform t1 namT namX mm
+         -> applyTransform t1 mm
 
 
 -- | Apply a transform to a module.
 applyTransform
         :: (Show a, Ord n, Show n)
-        => Transform            -- ^ Transform to apply.
-        -> Namifier s n         -- ^ Type namifier.
-        -> Namifier s n         -- ^ Exp  namifier.
+        => Transform s a n      -- ^ Transform to apply.
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
 
-applyTransform spec namK namT mm
+applyTransform spec mm
  = case spec of
-        Id              -> return mm
-        Anonymize       -> return $ anonymizeX mm
-        Snip            -> return $ snip mm
-        Flatten         -> return $ flatten mm
-        Namify          -> namify namK namT mm
-        _               -> error "applyTransform: finish me"
+        Id               -> return mm
+        Anonymize        -> return $ anonymizeX mm
+        Snip             -> return $ snip mm
+        Flatten          -> return $ flatten mm
+        Namify namK namT -> namifyUnique namK namT mm
+        _                -> error "applyTransform: finish me"
 
 
 -- Expressions ----------------------------------------------------------------
@@ -67,40 +63,36 @@ applyTransform spec namK namT mm
 --   The state monad holds a fresh name generator.
 applySimplifierX 
         :: (Show a, Show n, Ord n)
-        => Simplifier           -- ^ Simplifier to apply.
+        => Simplifier s a n     -- ^ Simplifier to apply.
         -> [RewriteRule a n]    -- ^ Rules to apply in the rewrite transform.
-        -> Namifier s n         -- ^ Type namifier.
-        -> Namifier s n         -- ^ Exp  namifier
         -> Exp a n              -- ^ Exp to simplify.
         -> State s (Exp a n)
 
-applySimplifierX spec rules namK namT xx
+applySimplifierX spec rules xx
  = case spec of
         Seq t1 t2
-         -> do  xx'     <- applySimplifierX t1 rules namK namT xx
-                applySimplifierX t2 rules namK namT xx'
+         -> do  xx'     <- applySimplifierX t1 rules xx
+                applySimplifierX t2 rules xx'
 
         Trans t1
-         -> applyTransformX  t1 rules namK namT xx
+         -> applyTransformX  t1 rules xx
 
 
 -- | Apply a transform to an expression.
 applyTransformX 
         :: (Show a, Show n, Ord n)
-        => Transform            -- ^ Transform to apply.
+        => Transform s a n      -- ^ Transform to apply.
         -> [RewriteRule a n]    -- ^ Rules to apply in the rewrite transform.
-        -> Namifier s n         -- ^ Type namifier.
-        -> Namifier s n         -- ^ Exp  namifier
         -> Exp a n              -- ^ Exp  to transform.
         -> State s (Exp a n)
 
-applyTransformX spec rules namK namT xx
+applyTransformX spec rules xx
  = case spec of
-        Id              -> return xx
-        Anonymize       -> return $ anonymizeX xx
-        Snip            -> return $ snip xx
-        Flatten         -> return $ flatten xx
-        Beta            -> return $ betaReduce xx
-        Rewrite         -> return $ rewrite rules xx
-        Namify          -> namify namK namT xx
+        Id               -> return xx
+        Anonymize        -> return $ anonymizeX xx
+        Snip             -> return $ snip xx
+        Flatten          -> return $ flatten xx
+        Beta             -> return $ betaReduce xx
+        Rewrite          -> return $ rewrite rules xx
+        Namify namK namT -> namifyUnique namK namT xx
 

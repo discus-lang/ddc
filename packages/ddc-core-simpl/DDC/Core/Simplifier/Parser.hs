@@ -3,13 +3,20 @@ module DDC.Core.Simplifier.Parser
         (parseSimplifier)
 where
 import DDC.Core.Simplifier.Base
+import DDC.Core.Transform.Namify
+import DDC.Type.Env
 import qualified DDC.Core.Simplifier.Recipie    as R
 import Data.Char
 
 
 -- | Parse a simplifier specification.
-parseSimplifier :: String -> Maybe Simplifier
-parseSimplifier str
+parseSimplifier 
+        :: (Env n -> Namifier s n)
+        -> (Env n -> Namifier s n)
+        -> String 
+        -> Maybe (Simplifier s a n)
+
+parseSimplifier namK namT str
  = parse (lexSimplifier str) 
  where
         parse (k : KSemi : rest)
@@ -23,17 +30,23 @@ parseSimplifier str
 
         parse1 (KVar name)
          = case name of
-                "anormalize"    -> Just R.anormalize
+                "anormalize"    -> Just (R.anormalize namK namT)
                 _               -> Nothing
 
         parse1 k@KCon{}
-         | Just t       <- parseTransform k
+         | Just t       <- parseTransform namK namT k
          = Just $ Trans t
 
         parse1 _        = Nothing
 
-parseTransform :: Tok -> Maybe Transform
-parseTransform (KCon name)
+
+parseTransform 
+        :: (Env n -> Namifier s n)
+        -> (Env n -> Namifier s n)
+        -> Tok 
+        -> Maybe (Transform s a n)
+
+parseTransform namK namT (KCon name)
  = case name of
         "Id"            -> Just Id
         "Anonymize"     -> Just Anonymize
@@ -41,10 +54,10 @@ parseTransform (KCon name)
         "Flatten"       -> Just Flatten
         "Beta"          -> Just Beta
         "Rewrite"       -> Just Rewrite
-        "Namify"        -> Just Namify
+        "Namify"        -> Just (Namify namK namT)
         _               -> Nothing
 
-parseTransform _        
+parseTransform _ _ _ 
  = Nothing
 
 

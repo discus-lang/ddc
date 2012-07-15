@@ -13,6 +13,7 @@ where
 import DDC.Core.Lexer
 import DDC.Base.Pretty
 import DDC.Data.Token
+import Data.Typeable
 import Data.Char
 
 
@@ -32,7 +33,7 @@ data Name
         | NameLoc     Loc        -- ^ Store locations.
         | NameRgn     Rgn        -- ^ Region handles.
         | NameCap     Cap        -- ^ Store capabilities.
-        deriving (Show, Eq, Ord)
+        deriving (Show, Eq, Ord, Typeable)
         
 
 instance Pretty Name where

@@ -1,6 +1,8 @@
 
 module DDC.Build.Language.Salt
-        (fragmentSalt)
+        ( fragmentSalt
+        , freshT
+        , freshX)
 where
 import DDC.Build.Language.Base
 import DDC.Core.Transform.Namify

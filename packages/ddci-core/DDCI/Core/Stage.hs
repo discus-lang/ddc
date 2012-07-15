@@ -18,14 +18,16 @@ import DDCI.Core.State
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
+import qualified DDC.Build.Language.Salt        as Salt
+import DDC.Core.Transform.Namify
 import System.FilePath
 import Data.Monoid
 import Data.Maybe
-import DDC.Core.Simplifier.Recipie      as Simpl
-import qualified DDC.Core.Lite.Name     as Lite
-import qualified DDC.Core.Salt.Name     as Salt
-import qualified DDC.Core.Check         as C
-import qualified Data.Set               as Set
+import qualified DDC.Core.Simplifier            as Simpl
+import qualified DDC.Core.Lite.Name             as Lite
+import qualified DDC.Core.Salt.Name             as Salt
+import qualified DDC.Core.Check                 as C
+import qualified Data.Set                       as Set
 
 
 ------------------------------------------------------------------------------
@@ -65,7 +67,9 @@ stageLiteToSalt state source builder pipesSalt
    [ PipeLiteOutput       (dump state source "dump.lite-loaded.dcl")
    , PipeLiteToSalt       (buildSpec builder)
      [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
-     , PipeCoreSimplify   fragmentSalt Simpl.anormalize
+     , PipeCoreSimplify   0
+                (Simpl.anormalize (makeNamifier Salt.freshT)
+                                  (makeNamifier Salt.freshX))
        [ PipeCoreOutput   (dump state source "dump.salt-normalized.dce")
        , PipeCoreCheck    fragmentSalt
          pipesSalt]]]
@@ -75,11 +79,13 @@ stageLiteToSalt state source builder pipesSalt
 stageSaltToC
         :: State -> Source -> Builder
         -> Sink
-        -> PipeCore a Salt.Name
+        -> PipeCore (C.AnTEC () Salt.Name) Salt.Name
 
 stageSaltToC state source _builder sink
- = PipeCoreSimplify       fragmentSalt
-                          (stateSimplifier state <> Simpl.anormalize)
+ = PipeCoreSimplify 0
+        (stateSimplSalt state 
+                <> Simpl.anormalize (makeNamifier Salt.freshT) 
+                                    (makeNamifier Salt.freshX))
    [ PipeCoreOutput       (dump state source "dump.salt-simplified.dce")
    , PipeCoreCheck        fragmentSalt
      [ PipeCoreAsSalt
@@ -94,11 +100,13 @@ stageSaltToC state source _builder sink
 stageSaltToLLVM
         :: State -> Source -> Builder
         -> [PipeLlvm]
-        -> PipeCore a Salt.Name
+        -> PipeCore (C.AnTEC () Salt.Name) Salt.Name
 
 stageSaltToLLVM state source builder pipesLLVM
- = PipeCoreSimplify         fragmentSalt
-                            (stateSimplifier state <> Simpl.anormalize)
+ = PipeCoreSimplify 0
+        (stateSimplSalt state
+                <> Simpl.anormalize (makeNamifier Salt.freshT)
+                                    (makeNamifier Salt.freshX))
    [ PipeCoreOutput         (dump state source "dump.salt-simplified.dce")
    , PipeCoreCheck          fragmentSalt
      [ PipeCoreAsSalt

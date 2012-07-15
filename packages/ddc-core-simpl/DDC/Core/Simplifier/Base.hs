@@ -3,18 +3,20 @@ module DDC.Core.Simplifier.Base
         ( Simplifier(..)
         , Transform(..))
 where
+import DDC.Core.Transform.Namify
+import DDC.Type.Env
 import DDC.Base.Pretty
 import Data.Monoid
 
 
 -- Simplifier -----------------------------------------------------------------
 -- | Desription of how to simplify a core program
-data Simplifier
-        = Seq   Simplifier Simplifier
-        | Trans Transform
-        deriving (Eq, Show)
+data Simplifier s a n
+        = Seq   (Simplifier s a n) (Simplifier s a n)
+        | Trans (Transform s a n)
 
-instance Monoid Simplifier where
+
+instance Monoid (Simplifier s a n) where
  mempty  = Trans Id
  mappend = Seq
 
@@ -23,18 +25,18 @@ instance Monoid Simplifier where
 -- | Represents individual transforms to apply during simplification.
 ---
 --   TODO: turn application of rewrite rules into its own transform.
-data Transform
+data Transform s a n
         = Id
         | Anonymize
         | Snip
         | Flatten
         | Beta
         | Rewrite
-        | Namify
-        deriving (Eq, Show)
+        | Namify        (Env n -> Namifier s n) 
+                        (Env n -> Namifier s n)
 
 
-instance Pretty Simplifier where
+instance Pretty (Simplifier s a n) where
  ppr ss
   = case ss of
         Seq s1 s2
@@ -44,7 +46,7 @@ instance Pretty Simplifier where
          -> ppr t1
 
 
-instance Pretty Transform where
+instance Pretty (Transform s a n) where
  ppr ss
   = case ss of
         Id              -> text "Id"
@@ -53,4 +55,4 @@ instance Pretty Transform where
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
         Rewrite         -> text "Rewrite"
-        Namify          -> text "Namify"
+        Namify{}        -> text "Namify"

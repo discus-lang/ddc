@@ -11,7 +11,6 @@ import DDC.Base.Pretty
 import DDC.Core.Pretty()
 import DDC.Type.Pretty()
 import DDC.Core.Transform.Rewrite.Error
-import qualified DDC.Core.Transform.Reannotate  as C
 import qualified DDC.Core.Check.CheckExp        as C
 import qualified DDC.Core.Transform.SpreadX     as S
 import qualified DDC.Type.DataDef               as T
@@ -73,7 +72,7 @@ checkRewriteRule
     -> T.Env n                  -- ^ Type environment.
     -> RewriteRule a n	        -- ^ Rule to check
     -> Either (Error a n)
-	      (RewriteRule () n)
+	      (RewriteRule (C.AnTEC a n) n)
 
 checkRewriteRule defs kenv tenv
     (RewriteRule bs cs lhs rhs _ _)
@@ -91,8 +90,7 @@ checkRewriteRule defs kenv tenv
 
 	return $ RewriteRule 
                         bs cs' 
-                        (C.reannotate (const ()) lhs')
-                        (C.reannotate (const ()) rhs')
+                        lhs' rhs'
                         e c
 
 

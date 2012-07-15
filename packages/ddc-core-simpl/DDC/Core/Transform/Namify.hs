@@ -3,10 +3,12 @@
 module DDC.Core.Transform.Namify
         ( Namify        (..)
         , Namifier      (..)
-        , makeNamifier)
+        , makeNamifier
+        , namifyUnique)
 where
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Type.Collect
 import DDC.Type.Compounds
 import Control.Monad
 import DDC.Type.Env             (Env)
@@ -42,6 +44,22 @@ makeNamifier
 
 makeNamifier new env
         = Namifier new env []
+
+
+-- | Namify a thing, 
+--   not reusing names already in the program.
+namifyUnique
+        :: (Ord n, Show n, Namify c, BindStruct c)
+        => (Env n -> Namifier s n)
+        -> (Env n -> Namifier s n)
+        -> c n
+        -> State s (c n)
+
+namifyUnique mkNamK mkNamT xx
+ = let  (tbinds, xbinds) = collectBinds xx
+        namK    = mkNamK (Env.fromList tbinds)
+        namT    = mkNamT (Env.fromList xbinds)
+   in   namify namK namT xx
 
 
 -- Namify ---------------------------------------------------------------------

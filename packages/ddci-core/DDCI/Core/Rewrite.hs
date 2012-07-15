@@ -6,21 +6,27 @@ module DDCI.Core.Rewrite
 	, showRule )
 where
 import DDC.Base.Pretty
-import DDC.Core.Eval.Name
-import DDC.Core.Eval.Env
+import DDC.Build.Language
 import DDC.Core.Lexer
+import DDC.Core.Fragment.Profile
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Transform.Rewrite.Parser
 import DDCI.Core.State
 import DDCI.Core.Output
 import Data.Char
+import qualified DDC.Core.Check         as C
 import qualified DDC.Base.Parser        as BP
 
 
 -- | :set rule command
-data SetRuleCommand
-        = SetAdd String (RewriteRule () Name)
-        | SetRemove String
+data SetRuleCommand a n
+        = SetAdd    
+                { setRuleName   :: String 
+                , setRuleRule   :: RewriteRule a n }
+
+        | SetRemove 
+                { setRuleName   :: String }
+
 	| SetList
         deriving (Eq, Show)
 
@@ -35,38 +41,52 @@ parseFirstWord s = break isSpace $ dropWhile isSpace s
 -- | Parse a :set rule command
 --   +name rule, name rule:  add rewrite rule
 --   -name                   remove rule
-parseRewrite :: String -> Either Error SetRuleCommand
-parseRewrite str
+parseRewrite 
+        :: (Ord n, Show n, Pretty n)
+        => Fragment n err 
+        -> String 
+        -> Either Error (SetRuleCommand (C.AnTEC () n) n)
+
+parseRewrite fragment str
  = case dropWhile isSpace str of
 	[]		-> Right SetList
-	('+':rest)	-> parseAdd rest
-	('-':rest)	-> let (name,_) = parseFirstWord rest in
-			   Right $ SetRemove name
-	rest		-> parseAdd rest
+	('+':rest)	-> parseAdd fragment rest
+
+	('-':rest)	
+         -> let (name,_) = parseFirstWord rest 
+            in Right $ SetRemove name
+
+	rest            -> parseAdd fragment rest
 
 
 -- | Parse add rule
-parseAdd :: String -> Either Error SetRuleCommand
-parseAdd str
- =  let (name,rest) = parseFirstWord str in
-    goParse name (lexExpString "<interactive>" 0 rest)
- where
-        -- Lex and parse the string.
-        goParse name toks                
-         = case BP.runTokenParser describeTok "<interactive>" pRule toks of
+parseAdd
+        :: (Ord n, Show n, Pretty n)
+        => Fragment n err
+        -> String 
+        -> Either Error (SetRuleCommand (C.AnTEC () n) n)
+
+parseAdd fragment str
+ | Fragment profile _ _ _ _ _ _ _ _     <- fragment
+ , (name, rest)                         <- parseFirstWord str
+ = case BP.runTokenParser describeTok "<interactive>" pRule
+          (fragmentLexExp fragment "interactive" 0 rest) of
                 Left err -> Left $ renderIndent $ ppr err
                 Right rule ->
-		  case checkRewriteRule primDataDefs primKindEnv primTypeEnv rule of
-		    Left err    -> Left  $ renderIndent $ ppr err
-		    Right rule' -> Right $ SetAdd name rule'
+                  case checkRewriteRule 
+                        (profilePrimDataDefs profile)
+                        (profilePrimKinds    profile)
+                        (profilePrimTypes    profile) rule of
+                    Left err    -> Left  $ renderIndent $ ppr err
+                    Right rule' -> Right $ SetAdd name rule'
 
 
 -- | Display rule
-showRule :: State -> Int -> String -> RewriteRule a Name -> IO ()
+showRule :: (Eq n, Pretty n)
+         => State -> Int -> String -> RewriteRule a n -> IO ()
+
 showRule state indentBy name rule
  = do	putStr $ (take indentBy $ repeat '\t') ++ name ++ " "
 	outDocLn state
 	 $  ppr rule
-
-
 

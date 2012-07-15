@@ -52,6 +52,7 @@ Library
         ExistentialQuantification
         KindSignatures
         RankNTypes
+        GADTs
 
   ghc-options:
         -Werror
