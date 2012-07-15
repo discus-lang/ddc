@@ -8,6 +8,7 @@ import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
 import DDC.Data.Token
 import DDC.Type.Exp
+import Data.Typeable
 import DDC.Type.Env                     (Env)
 import DDC.Core.Lexer                   as Core
 import qualified DDC.Type.Env           as Env
@@ -40,7 +41,7 @@ instance Pretty (Error a) where
 -- so they get pretty printed properly.
 data Name 
         = Name String
-        deriving (Eq, Ord, Show)
+        deriving (Eq, Ord, Show, Typeable)
 
 instance Pretty Name where
  ppr (Name str) = text str

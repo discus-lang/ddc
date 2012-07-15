@@ -15,6 +15,7 @@ module DDC.Core.Salt.Name
 where
 import DDC.Core.Salt.Prim
 import DDC.Base.Pretty
+import Data.Typeable
 import Data.Char
 import Data.List
 
@@ -53,7 +54,7 @@ data Name
 
         -- | A constructor tag literal.
         | NameTag       Integer
-        deriving (Eq, Ord, Show)
+        deriving (Eq, Ord, Show, Typeable)
 
 
 instance Pretty Name where

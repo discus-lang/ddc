@@ -5,36 +5,35 @@ module DDCI.Core.Command.Trans
 	, cmdTransEval)
 where
 import DDCI.Core.Command.Check
--- import DDCI.Core.Command.Eval
+import DDCI.Core.Command.Eval
 import DDCI.Core.Output
 import DDCI.Core.State
 import DDC.Build.Language
--- import DDC.Core.Eval.Env
--- import DDC.Core.Transform.Reannotate
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
--- import DDC.Core.Collect
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Base.Pretty
+import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.Rewrite.Rule
 import Data.Map                         (Map)
 import qualified Control.Monad.State.Strict     as S
 import qualified Data.Map                       as Map
 import qualified DDC.Core.Eval.Name             as Eval
 import Data.Typeable
--- import qualified DDC.Type.Env                   as Env
 
 
+-- Trans ----------------------------------------------------------------------
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
  | Bundle fragment zero simpl rules       <- stateBundle state
  , Fragment profile _ _ _ _ _ _ _ _ <- fragment
- = cmdParseCheckExp state fragment True source str >>= goStore profile zero simpl rules
+ =   cmdParseCheckExp state fragment True source str 
+ >>= goStore profile zero simpl rules
  where
         -- Expression had a parse or type error.
         goStore _ _ _ _ Nothing
@@ -48,6 +47,52 @@ cmdTrans state source str
 		  Just x' -> outDocLn state $ ppr x'
 
 
+-- TransEval ------------------------------------------------------------------
+-- | Apply the current transform to an expression,
+--   then evaluate and display the result
+cmdTransEval :: State -> Source -> String -> IO ()
+cmdTransEval state source str
+ | Bundle fragment zero simpl0 rules0  <- stateBundle state
+ , Fragment profile0 _ _ _ _ _ _ _ _   <- fragment
+
+ -- The evaluator only works on expressions with Eval.Names, 
+ --   The actual name type is an existential of Bundle, 
+ --   so we use gcast to check whether the bundle is really
+ --   set to Eval.
+ , Just (profile :: Profile Eval.Name) <- gcast profile0 
+ , Just (SimplBox simpl)               <- gcast (SimplBox simpl0)
+ , Just (RulesBox rules)               <- gcast (RulesBox rules0)
+ = do   result  <- cmdParseCheckExp state fragmentEval False source str 
+        case result of
+         Nothing         -> return ()
+         Just stuff@(_x, t1, eff1, clo1)
+          -> do -- Apply the current transform.
+                tr      <- applyTrans state profile zero simpl rules stuff
+                case tr of
+                 Nothing -> return ()
+                 Just x'
+                     -- Evaluate the transformed expression.
+                  -> do outDocLn state $ ppr x'
+                        let x'' = reannotate (const ()) x'
+                        evalExp state (x'', t1, eff1, clo1)
+                        return ()
+
+ | otherwise
+ = outDocLn state $ text "Language must be set to Eval for :teval"
+
+
+-- Proxies to help with type casting.
+--   The 'gcast' function will only cast the rightmost 'n' of a type,
+--   But there is also an 'n' attached to the annotation type of
+--   the simplifier. We use the proxy to cast both occurrences at once.
+data SimplBox s n
+        = SimplBox (Simplifier s (AnTEC () n) n)
+
+data RulesBox n
+        = RulesBox (Map String (RewriteRule (AnTEC () n) n))
+
+
+-- Trans ----------------------------------------------------------------------
 -- | Transform an expression, or display errors
 applyTrans 
         :: (Eq n, Ord n, Pretty n, Show n, Show a)
@@ -66,62 +111,31 @@ applyTrans state profile zero simpl rules (x, t1, eff1, clo1)
                $ applySimplifierX simpl (Map.elems rules) x
 
         -- Check that the simplifier perserved the type of the expression.
-	case checkExp (profilePrimDataDefs profile)
+        case checkExp (profilePrimDataDefs profile)
                       (profilePrimKinds profile)
                       (profilePrimTypes profile) x' of
-	  Right (_, t2, eff2, clo2)
-	   |  equivT t1 t2
-	   ,  subsumesT kEffect  eff1 eff2
-	   ,  subsumesT kClosure clo1 clo2
-	   -> do return (Just x')
+          Right (_, t2, eff2, clo2)
+           |  equivT t1 t2
+           ,  subsumesT kEffect  eff1 eff2
+           ,  subsumesT kClosure clo1 clo2
+           -> do return (Just x')
 
-	   | otherwise
-	   -> do putStrLn $ renderIndent $ vcat
-		    [ text "* CRASH AND BURN: Transform is not type preserving."
-		    , ppr x'
-		    , text "::"  <+> ppr t2
-		    , text ":!:" <+> ppr eff2
-		    , text ":$:" <+> ppr clo2 ]
-		 return Nothing
+           | otherwise
+           -> do putStrLn $ renderIndent $ vcat
+                    [ text "* CRASH AND BURN: Transform is not type preserving."
+                    , ppr x'
+                    , text "::"  <+> ppr t2
+                    , text ":!:" <+> ppr eff2
+                    , text ":$:" <+> ppr clo2 ]
+                 return Nothing
 
-	  Left err
-	   -> do putStrLn $ renderIndent $ vcat
-		    [ text "* CRASH AND BURN: Type error in transformed program."
-		    , ppr err
-		    , text "" ]
+          Left err
+           -> do putStrLn $ renderIndent $ vcat
+                    [ text "* CRASH AND BURN: Type error in transformed program."
+                    , ppr err
+                    , text "" ]
 
-		 outDocLn state $ text "Transformed expression:"
-		 outDocLn state $ ppr x'
-		 return Nothing
-
-
--- | Apply the current transform to an expression,
---   then evaluate and display the result
-cmdTransEval :: State -> Source -> String -> IO ()
-cmdTransEval state _source _str
- | Bundle fragment zero simpl _     <- stateBundle state
- , Fragment profile _ _ _ _ _ _ _ _ <- fragment
- = case gcast profile of
-        Just (profileEval :: Profile Eval.Name) -> error "yep"
-        _                                       -> error "nope"
-
-{-}
- = cmdParseCheckExp state fragmentEval False source str >>= goStore state profile zero simpl
- where
-        -- Expression had a parse or type error.
-        goStore _ _ _ _ Nothing
-         = do   return ()
-
-        -- Expression is well-typed.
-        goStore state profile s simpl (Just (x, t1, eff1, clo1))
-         = do   tr <- applyTrans state profile s simpl (x, t1, eff1, clo1)
-		case tr of
-		  Nothing -> return ()
-		  Just x'
-		   -> do outDocLn state $ ppr x'
-			 evalExp state (x',t1,eff1,clo1)
-                         return ()
--}
-
-
+                 outDocLn state $ text "Transformed expression:"
+                 outDocLn state $ ppr x'
+                 return Nothing
 

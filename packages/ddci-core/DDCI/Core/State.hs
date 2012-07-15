@@ -9,7 +9,6 @@ module DDCI.Core.State
 
         , Language      (..)
         , languages
-	, stateRewriteRulesList
         , getActiveBuilder
 
         , Mode          (..)
@@ -23,11 +22,11 @@ import DDC.Core.Module
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Base.Pretty
+import Data.Typeable
 import Data.Map                         (Map)
 import Data.Set                         (Set)
 import qualified DDC.Core.Salt.Name     as Salt
 import qualified DDC.Core.Lite.Name     as Lite
-import qualified DDC.Core.Eval.Name     as Eval
 import qualified DDC.Core.Simplifier    as S
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
@@ -45,9 +44,6 @@ data State
 
           -- | Source language to accept.
         , stateBundle           :: Bundle
-
-          -- | Rewrite rules to apply during simplification.
-	, stateRewriteRules	:: Map String (RewriteRule () Eval.Name) 
 
           -- | Maps of modules we can use as inliner templates.
         , stateWithLite         :: Map ModuleName (Module (AnTEC () Lite.Name) Lite.Name)
@@ -72,7 +68,8 @@ data State
 --      the simplifier for it,
 --      and the dictionaries we need to work with its type parameters.
 data Bundle
-        = forall s n err. (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        = forall s n err
+        .  (Typeable n, Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
         => Bundle 
         {  bundleFragment        :: Fragment n err
         ,  bundleStateInit       :: s
@@ -116,17 +113,11 @@ initState interface
         , stateBundle           = Bundle fragmentEval () (S.Trans S.Id) Map.empty
         , stateWithLite         = Map.empty
         , stateWithSalt         = Map.empty
-	, stateRewriteRules	= Map.empty
         , stateSimplLite        = S.Trans S.Id
         , stateSimplSalt        = S.Trans S.Id
         , stateBuilder          = Nothing  
         , stateOutputFile       = Nothing
         , stateOutputDir        = Nothing }
-
-
-stateRewriteRulesList :: State -> [RewriteRule () Eval.Name]
-stateRewriteRulesList State { stateRewriteRules = rules }
- = map snd $ Map.toList rules
 
 
 -- | Get the active builder.

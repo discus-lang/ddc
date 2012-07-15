@@ -7,7 +7,9 @@ module DDC.Core.Lite.Name
 where
 import DDC.Core.Salt.Prim
 import DDC.Base.Pretty
+import Data.Typeable
 import Data.Char
+
 
 -- | Names of things used in Disciple Core Lite.
 data Name
@@ -41,7 +43,7 @@ data Name
         -- | An unboxed word literal
         | NameWord      Integer Int
 
-        deriving (Eq, Ord, Show)
+        deriving (Eq, Ord, Show, Typeable)
 
 
 instance Pretty Name where
