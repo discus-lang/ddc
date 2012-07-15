@@ -40,7 +40,7 @@ cmdMake state _source str
                 -- Make a Core Lite module.
                 | isSuffixOf ".dcl" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ PipeTextLoadCore  fragmentLite
+                $ stageLiteLoad     state source
                 [ stageLiteOpt      state source  
                 [ stageLiteToSalt   state source builder
                 [ stageSaltToLLVM   state source builder

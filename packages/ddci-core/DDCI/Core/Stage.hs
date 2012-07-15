@@ -9,7 +9,8 @@
 --   These stages are then invoked by the DDCI commands.
 --
 module DDCI.Core.Stage
-        ( stageLiteOpt
+        ( stageLiteLoad
+        , stageLiteOpt
         , stageLiteToSalt
         , stageSaltToC
         , stageSaltToLLVM
@@ -30,7 +31,7 @@ import Data.List
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Simplifier            as S
-import qualified DDC.Core.Lite.Name             as Lite
+import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Core.Check                 as C
 import qualified Data.Set                       as Set
@@ -59,13 +60,26 @@ dump state source dumpFile
 
 
 -------------------------------------------------------------------------------
+-- | Load Lite.
+stageLiteLoad
+        :: State -> Source
+        -> [PipeCore (C.AnTEC () Lite.Name) Lite.Name]
+        -> PipeText Lite.Name Lite.Error
+
+stageLiteLoad state source pipesLite
+ = PipeTextLoadCore fragmentLite
+    ( PipeCoreOutput (dump state source "dump.lite-load.dcl")
+    : pipesLite )
+
+
+-------------------------------------------------------------------------------
 -- | Optimise Lite.
 stageLiteOpt 
         :: State -> Source
         -> [PipeCore (C.AnTEC () Lite.Name) Lite.Name]
         -> PipeCore  (C.AnTEC () Lite.Name) Lite.Name
 
-stageLiteOpt state _source pipes
+stageLiteOpt state source pipes
  = PipeCoreSimplify 
         (0 :: Int) 
 
@@ -73,13 +87,20 @@ stageLiteOpt state _source pipes
                     $ lookupTemplateFromModules
                         (Map.elems (stateWithLite state)))
         <> (S.Trans $ S.Beta)
+        <> (S.Trans $ S.Flatten)                -- hrm. Want a fixpoint here.
+        <> (S.Trans $ S.Flatten)
+        <> (S.Trans $ S.Flatten)
+        <> (S.Trans $ S.Flatten)
+        <> (S.Trans $ S.Flatten)
+        <> (S.Trans $ S.Flatten)
         <> S.anormalize
                 (makeNamifier Lite.freshT)      
                 (makeNamifier Lite.freshX))
 
         -- TODO: Inlining isn't preserving type annots, 
         --       so need to recheck the module before Lite -> Salt conversion.
-        [ PipeCoreReCheck   fragmentLite pipes]
+        [ PipeCoreOutput (dump state source "dump.lite-opt.dcl")
+        , PipeCoreReCheck fragmentLite pipes ]
 
 
 -- TODO: Rubbish function to load inliner templates from some modules.
@@ -119,8 +140,7 @@ stageLiteToSalt
 
 stageLiteToSalt state source builder pipesSalt
  = PipeCoreAsLite 
-   [ PipeLiteOutput       (dump state source "dump.lite-loaded.dcl")
-   , PipeLiteToSalt       (buildSpec builder)
+   [ PipeLiteToSalt       (buildSpec builder)
      [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
      , PipeCoreSimplify   0
                 (S.anormalize (makeNamifier Salt.freshT)
