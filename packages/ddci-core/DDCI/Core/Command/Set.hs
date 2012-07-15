@@ -55,7 +55,11 @@ cmdSet state cmd
  | "trans" : rest        <- words cmd
  , Bundle frag _ _ rules <- stateBundle state
  , Fragment _ _ _ _ _ _ mkNamT mkNamX zero <- frag
- = do   case parseSimplifier mkNamT mkNamX (Map.elems rules) (concat rest) of
+ = do   case parseSimplifier 
+                mkNamT mkNamX 
+                (Map.elems rules) 
+                (\_ -> Nothing)
+                (concat rest) of
          Just simpl
           -> do chatStrLn state "ok"
                 return $ state { stateBundle = Bundle frag zero simpl rules }

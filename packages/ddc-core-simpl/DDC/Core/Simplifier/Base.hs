@@ -5,6 +5,7 @@ module DDC.Core.Simplifier.Base
 where
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Transform.Namify
+import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Base.Pretty
 import Data.Monoid
@@ -24,17 +25,22 @@ instance Monoid (Simplifier s a n) where
 
 -- Transform ------------------------------------------------------------------
 -- | Represents individual transforms to apply during simplification.
----
---   TODO: turn application of rewrite rules into its own transform.
 data Transform s a n
         = Id
         | Anonymize
         | Snip
         | Flatten
         | Beta
-        | Rewrite       [RewriteRule a n]
-        | Namify        (Env n -> Namifier s n) 
-                        (Env n -> Namifier s n)
+        | Inline
+                { transInlineDef   :: n -> Maybe (Exp a n) }
+
+        | Namify
+                { transMkNamifierT :: Env n -> Namifier s n
+                , transMkNamifierX :: Env n -> Namifier s n }
+
+        | Rewrite
+                { transRules       :: [RewriteRule a n] }
+
 
 
 instance Pretty (Simplifier s a n) where
@@ -55,5 +61,6 @@ instance Pretty (Transform s a n) where
         Snip            -> text "Snip"
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
-        Rewrite{}       -> text "Rewrite"
+        Inline{}        -> text "Inline"
         Namify{}        -> text "Namify"
+        Rewrite{}       -> text "Rewrite"

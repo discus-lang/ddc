@@ -9,7 +9,8 @@
 --   These stages are then invoked by the DDCI commands.
 --
 module DDCI.Core.Stage
-        ( stageLiteToSalt
+        ( stageLiteOpt
+        , stageLiteToSalt
         , stageSaltToC
         , stageSaltToLLVM
         , stageCompileLLVM)
@@ -18,17 +19,22 @@ import DDCI.Core.State
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import qualified DDC.Build.Language.Salt        as Salt
 import DDC.Core.Transform.Namify
+import DDC.Core.Module
+import DDC.Core.Exp
+import Control.Monad
 import System.FilePath
 import Data.Monoid
 import Data.Maybe
-import qualified DDC.Core.Simplifier            as Simpl
+import Data.List
+import qualified DDC.Build.Language.Salt        as Salt
+import qualified DDC.Build.Language.Lite        as Lite
+import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Lite.Name             as Lite
 import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Core.Check                 as C
 import qualified Data.Set                       as Set
-
+import qualified Data.Map                       as Map
 
 ------------------------------------------------------------------------------
 -- | If the Dump mode is set 
@@ -53,6 +59,55 @@ dump state source dumpFile
 
 
 -------------------------------------------------------------------------------
+-- | Optimise Lite.
+stageLiteOpt 
+        :: State -> Source
+        -> [PipeCore (C.AnTEC () Lite.Name) Lite.Name]
+        -> PipeCore  (C.AnTEC () Lite.Name) Lite.Name
+
+stageLiteOpt state _source pipes
+ = PipeCoreSimplify 
+        (0 :: Int) 
+
+        (  (S.Trans $ S.Inline 
+                    $ lookupTemplateFromModules
+                        (Map.elems (stateWithLite state)))
+        <> (S.Trans $ S.Beta)
+        <> S.anormalize
+                (makeNamifier Lite.freshT)      
+                (makeNamifier Lite.freshX))
+
+        -- TODO: Inlining isn't preserving type annots, 
+        --       so need to recheck the module before Lite -> Salt conversion.
+        [ PipeCoreReCheck   fragmentLite pipes]
+
+
+-- TODO: Rubbish function to load inliner templates from some modules.
+--       It just does a linear search, which won't be good enough in the long-term.
+lookupTemplateFromModules 
+        :: Eq n
+        => [Module a n] -> n -> Maybe (Exp a n)
+
+lookupTemplateFromModules [] _  = Nothing
+lookupTemplateFromModules (m:ms) n
+ = case lookupTemplateFromModule m n of
+        Nothing -> lookupTemplateFromModules ms n
+        Just x  -> Just x
+
+
+lookupTemplateFromModule 
+        :: Eq n
+        => Module a n -> n -> Maybe (Exp a n)
+
+lookupTemplateFromModule mm n
+        | XLet _ (LRec bxs) _  <- moduleBody mm
+        = liftM snd $ find (\(BName n' _, _) -> n == n') bxs
+
+        | otherwise
+        = Nothing
+
+
+-------------------------------------------------------------------------------
 -- | Convert Lite to Salt.
 --   
 --   Result is a-normalised.
@@ -68,8 +123,8 @@ stageLiteToSalt state source builder pipesSalt
    , PipeLiteToSalt       (buildSpec builder)
      [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
      , PipeCoreSimplify   0
-                (Simpl.anormalize (makeNamifier Salt.freshT)
-                                  (makeNamifier Salt.freshX))
+                (S.anormalize (makeNamifier Salt.freshT)
+                              (makeNamifier Salt.freshX))
        [ PipeCoreOutput   (dump state source "dump.salt-normalized.dce")
        , PipeCoreCheck    fragmentSalt
          pipesSalt]]]
@@ -84,8 +139,8 @@ stageSaltToC
 stageSaltToC state source _builder sink
  = PipeCoreSimplify 0
         (stateSimplSalt state 
-                <> Simpl.anormalize (makeNamifier Salt.freshT) 
-                                    (makeNamifier Salt.freshX))
+                <> S.anormalize (makeNamifier Salt.freshT) 
+                                (makeNamifier Salt.freshX))
    [ PipeCoreOutput       (dump state source "dump.salt-simplified.dce")
    , PipeCoreCheck        fragmentSalt
      [ PipeCoreAsSalt
@@ -105,8 +160,8 @@ stageSaltToLLVM
 stageSaltToLLVM state source builder pipesLLVM
  = PipeCoreSimplify 0
         (stateSimplSalt state
-                <> Simpl.anormalize (makeNamifier Salt.freshT)
-                                    (makeNamifier Salt.freshX))
+                <> S.anormalize (makeNamifier Salt.freshT)
+                                (makeNamifier Salt.freshX))
    [ PipeCoreOutput         (dump state source "dump.salt-simplified.dce")
    , PipeCoreCheck          fragmentSalt
      [ PipeCoreAsSalt

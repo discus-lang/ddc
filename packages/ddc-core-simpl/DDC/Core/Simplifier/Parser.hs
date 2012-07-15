@@ -5,6 +5,7 @@ where
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Simplifier.Base
+import DDC.Core.Exp
 import DDC.Type.Env
 import qualified DDC.Core.Simplifier.Recipie    as R
 import Data.Char
@@ -12,13 +13,14 @@ import Data.Char
 
 -- | Parse a simplifier specification.
 parseSimplifier 
-        :: (Env n -> Namifier s n)
-        -> (Env n -> Namifier s n)
-        -> [RewriteRule a n]
+        :: (Env n -> Namifier s n)      -- ^ Namifier for type variables.
+        -> (Env n -> Namifier s n)      -- ^ Namifier for exp variables.
+        -> [RewriteRule a n]            -- ^ Rewrite rule set.
+        -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
         -> String 
         -> Maybe (Simplifier s a n)
 
-parseSimplifier namK namT rules str
+parseSimplifier namK namT rules templates str
  = parse (lexSimplifier str) 
  where
         parse (k : KSemi : rest)
@@ -36,31 +38,33 @@ parseSimplifier namK namT rules str
                 _               -> Nothing
 
         parse1 k@KCon{}
-         | Just t       <- parseTransform namK namT rules k
+         | Just t       <- parseTransform namK namT rules templates k
          = Just $ Trans t
 
         parse1 _        = Nothing
 
 
 parseTransform 
-        :: (Env n -> Namifier s n)
-        -> (Env n -> Namifier s n)
-        -> [RewriteRule a n]
+        :: (Env n -> Namifier s n)      -- ^ Namifier for type variables.
+        -> (Env n -> Namifier s n)      -- ^ Namifier for exp  variables.
+        -> [RewriteRule a n]            -- ^ Rewrite rule set.
+        -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
         -> Tok 
         -> Maybe (Transform s a n)
 
-parseTransform namK namT rules (KCon name)
+parseTransform namK namT rules templates (KCon name)
  = case name of
         "Id"            -> Just Id
         "Anonymize"     -> Just Anonymize
         "Snip"          -> Just Snip
         "Flatten"       -> Just Flatten
         "Beta"          -> Just Beta
-        "Rewrite"       -> Just (Rewrite rules)
+        "Inline"        -> Just (Inline templates)
         "Namify"        -> Just (Namify namK namT)
+        "Rewrite"       -> Just (Rewrite rules)
         _               -> Nothing
 
-parseTransform _ _ _ _
+parseTransform _ _ _ _ _
  = Nothing
 
 

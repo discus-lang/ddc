@@ -7,13 +7,18 @@ import DDC.Core.Transform.TransformX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
+import Data.Functor.Identity
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
 
 
 -- | Beta-reduce applications of a explicit lambda abstractions 
 --   to variables and values.
-betaReduce  :: Ord n => Exp a n -> Exp a n
+betaReduce  
+        :: forall (c :: * -> * -> *) a n 
+        .  (Ord n, TransformUpMX Identity c)
+        => c a n 
+        -> c a n
 betaReduce 
         = transformUpX betaReduce1 Env.empty Env.empty
 

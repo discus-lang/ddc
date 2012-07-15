@@ -41,9 +41,10 @@ cmdCompile state _source str
                 | isSuffixOf ".dcl" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  fragmentLite
+                [ stageLiteOpt      state source  
                 [ stageLiteToSalt   state source builder 
                 [ stageSaltToLLVM   state source builder 
-                [ stageCompileLLVM  state source builder filePath False ]]]
+                [ stageCompileLLVM  state source builder filePath False ]]]]
 
                 -- Make a Core Salt module.
                 | isSuffixOf ".dce" filePath
@@ -59,3 +60,5 @@ cmdCompile state _source str
         -- Print any errors that arose during compilation.
         errs    <- make
         mapM_ (putStrLn . P.renderIndent . P.ppr) errs
+
+
