@@ -1,7 +1,9 @@
--- commutativity. doesn't change (weaken) type. only for regions
-ok
+
 -- add is commutative. particular regions so it only runs once (ie terminates)
 ok, added add_comm
+
+-- commutativity. doesn't change (weaken) type. only for regions
+ok
 
 -- swap the 1 and 2
 addInt [R1#] [R0#] [R2#] (2 [R1#] ()) (1 [R0#] ())

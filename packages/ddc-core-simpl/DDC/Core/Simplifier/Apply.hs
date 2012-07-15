@@ -15,7 +15,6 @@ import DDC.Core.Transform.Snip
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Rewrite
-import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Transform.Namify
 import Control.Monad.State.Strict
 
@@ -64,35 +63,33 @@ applyTransform spec mm
 applySimplifierX 
         :: (Show a, Show n, Ord n)
         => Simplifier s a n     -- ^ Simplifier to apply.
-        -> [RewriteRule a n]    -- ^ Rules to apply in the rewrite transform.
         -> Exp a n              -- ^ Exp to simplify.
         -> State s (Exp a n)
 
-applySimplifierX spec rules xx
+applySimplifierX spec xx
  = case spec of
         Seq t1 t2
-         -> do  xx'     <- applySimplifierX t1 rules xx
-                applySimplifierX t2 rules xx'
+         -> do  xx'     <- applySimplifierX t1 xx
+                applySimplifierX t2 xx'
 
         Trans t1
-         -> applyTransformX  t1 rules xx
+         -> applyTransformX  t1 xx
 
 
 -- | Apply a transform to an expression.
 applyTransformX 
         :: (Show a, Show n, Ord n)
         => Transform s a n      -- ^ Transform to apply.
-        -> [RewriteRule a n]    -- ^ Rules to apply in the rewrite transform.
         -> Exp a n              -- ^ Exp  to transform.
         -> State s (Exp a n)
 
-applyTransformX spec rules xx
+applyTransformX spec xx
  = case spec of
         Id               -> return xx
         Anonymize        -> return $ anonymizeX xx
         Snip             -> return $ snip xx
         Flatten          -> return $ flatten xx
         Beta             -> return $ betaReduce xx
-        Rewrite          -> return $ rewrite rules xx
+        Rewrite rules    -> return $ rewrite rules xx
         Namify namK namT -> namifyUnique namK namT xx
 

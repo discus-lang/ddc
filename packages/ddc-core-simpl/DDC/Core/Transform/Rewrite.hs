@@ -1,5 +1,6 @@
 module DDC.Core.Transform.Rewrite
-    (rewrite)
+        ( RewriteRule(..)
+        , rewrite )
 where
 import DDC.Core.Exp
 import DDC.Core.Transform.Rewrite.Rule

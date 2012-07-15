@@ -1,7 +1,7 @@
 :set Indent
-:set trans Rewrite
 
 :set rule copyConst [r1:%] (x:Int r1). Const r1 => copyInt [:r1 r1:] x = x
+:set trans Rewrite
 
 :set rule
 

@@ -1,7 +1,9 @@
--- commutativity. doesn't change (weaken) type. only for regions
-:set trans Rewrite
+
 -- add is commutative. particular regions so it only runs once (ie terminates)
 :set rule add_comm (x : Int R0#) (y : Int R1#). addInt [:R0# R1# R2#:] x y = addInt [:R1# R0# R2#:] y x
+
+-- commutativity. doesn't change (weaken) type. only for regions
+:set trans Rewrite
 
 -- swap the 1 and 2
 :trans addInt [:R0# R1# R2#:] (1 [R0#] ()) (2 [R1#] ())

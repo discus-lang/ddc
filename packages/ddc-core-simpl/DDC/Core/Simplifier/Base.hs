@@ -3,6 +3,7 @@ module DDC.Core.Simplifier.Base
         ( Simplifier(..)
         , Transform(..))
 where
+import DDC.Core.Transform.Rewrite
 import DDC.Core.Transform.Namify
 import DDC.Type.Env
 import DDC.Base.Pretty
@@ -31,7 +32,7 @@ data Transform s a n
         | Snip
         | Flatten
         | Beta
-        | Rewrite
+        | Rewrite       [RewriteRule a n]
         | Namify        (Env n -> Namifier s n) 
                         (Env n -> Namifier s n)
 
@@ -54,5 +55,5 @@ instance Pretty (Transform s a n) where
         Snip            -> text "Snip"
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
-        Rewrite         -> text "Rewrite"
+        Rewrite{}       -> text "Rewrite"
         Namify{}        -> text "Namify"

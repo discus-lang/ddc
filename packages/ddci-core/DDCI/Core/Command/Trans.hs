@@ -18,10 +18,7 @@ import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Base.Pretty
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Transform.Rewrite.Rule
-import Data.Map                         (Map)
 import qualified Control.Monad.State.Strict     as S
-import qualified Data.Map                       as Map
 import qualified DDC.Core.Eval.Name             as Eval
 import Data.Typeable
 
@@ -30,18 +27,18 @@ import Data.Typeable
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
- | Bundle fragment zero simpl rules       <- stateBundle state
+ | Bundle fragment zero simpl _     <- stateBundle state
  , Fragment profile _ _ _ _ _ _ _ _ <- fragment
  =   cmdParseCheckExp state fragment True source str 
- >>= goStore profile zero simpl rules
+ >>= goStore profile zero simpl
  where
         -- Expression had a parse or type error.
-        goStore _ _ _ _ Nothing
+        goStore _ _ _ Nothing
          = do   return ()
 
         -- Expression is well-typed.
-        goStore profile zero simpl rules (Just (x, t1, eff1, clo1))
-         = do   tr <- applyTrans state profile zero simpl rules (x, t1, eff1, clo1)
+        goStore profile zero simpl (Just (x, t1, eff1, clo1))
+         = do   tr <- applyTrans state profile zero simpl (x, t1, eff1, clo1)
 		case tr of
 		  Nothing -> return ()
 		  Just x' -> outDocLn state $ ppr x'
@@ -52,7 +49,7 @@ cmdTrans state source str
 --   then evaluate and display the result
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
- | Bundle fragment zero simpl0 rules0  <- stateBundle state
+ | Bundle fragment zero simpl0 _       <- stateBundle state
  , Fragment profile0 _ _ _ _ _ _ _ _   <- fragment
 
  -- The evaluator only works on expressions with Eval.Names, 
@@ -61,13 +58,12 @@ cmdTransEval state source str
  --   set to Eval.
  , Just (profile :: Profile Eval.Name) <- gcast profile0 
  , Just (SimplBox simpl)               <- gcast (SimplBox simpl0)
- , Just (RulesBox rules)               <- gcast (RulesBox rules0)
  = do   result  <- cmdParseCheckExp state fragmentEval False source str 
         case result of
          Nothing         -> return ()
          Just stuff@(_x, t1, eff1, clo1)
           -> do -- Apply the current transform.
-                tr      <- applyTrans state profile zero simpl rules stuff
+                tr      <- applyTrans state profile zero simpl stuff
                 case tr of
                  Nothing -> return ()
                  Just x'
@@ -88,9 +84,6 @@ cmdTransEval state source str
 data SimplBox s n
         = SimplBox (Simplifier s (AnTEC () n) n)
 
-data RulesBox n
-        = RulesBox (Map String (RewriteRule (AnTEC () n) n))
-
 
 -- Trans ----------------------------------------------------------------------
 -- | Transform an expression, or display errors
@@ -100,15 +93,14 @@ applyTrans
         -> Profile n
         -> s
         -> Simplifier s a n
-        -> Map String (RewriteRule a n)
         -> (Exp a n, Type n, Effect n, Closure n) 
         -> IO (Maybe (Exp a n))
 
-applyTrans state profile zero simpl rules (x, t1, eff1, clo1)
+applyTrans state profile zero simpl (x, t1, eff1, clo1)
  = do
          -- Apply the simplifier.
         let x' = flip S.evalState zero
-               $ applySimplifierX simpl (Map.elems rules) x
+               $ applySimplifierX simpl x
 
         -- Check that the simplifier perserved the type of the expression.
         case checkExp (profilePrimDataDefs profile)

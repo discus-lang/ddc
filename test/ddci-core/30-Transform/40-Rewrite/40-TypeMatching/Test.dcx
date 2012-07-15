@@ -1,5 +1,4 @@
 :set Indent
-:set trans Rewrite
 
 -- create a whacky rule (because only want to use builtins). wrap second param in another lambda
 :set.. rule whacky0 [r1 : %] [a : % ~> *] (x : a r1).
@@ -8,6 +7,7 @@
 ;;
 
 -- should turn into a nil
+:set trans Rewrite
 :trans..
 Cons [R0#] [Int R0#] (5 [R0#] ()) (Nil [R0#] [Int R0#] ())
 ;;
@@ -22,6 +22,8 @@ Cons [R1#] [Int R0#] (5 [R0#] ()) (Nil [R1#] [Int R0#] ())
 	Cons [r1] [a r1 -> b] x (Nil [r1] [a r1 -> b] ()) =
 	Nil [r1] [a r1 -> b] ()
 ;;
+
+:set trans Rewrite
 :trans..
 Cons [R0#] [Int R0# -> Unit] (\(_:Int R0#). ()) (Nil [R0#] [Int R0# -> Unit] ())
 ;;

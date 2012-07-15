@@ -1,10 +1,11 @@
 ok
-ok
+
 -- add zero on right. make copy
 ok, added add0r
 ok, added add0l
 
 -- should work with any regions
+ok
 weakeff [Read R0# + Alloc R0#] in
 weakclo [Use R0#] in
 copyInt [R0#] [R0#] (5 [R0#] ())
@@ -20,6 +21,7 @@ ok, added addCopy2
 
 
 -- simplify some nested zeroes
+ok
 weakeff [Read R0# + Read R1# + Alloc R1# + Alloc R2#] in
 weakclo [Use R0# + Use R1# + Use R2#] in
 copyInt [R0#] [R2#]
@@ -34,6 +36,7 @@ ok, added copyLit
 ok, added copyCopy
 
 -- some more nested zeroes
+ok
 weakeff [Read R0# + Read R1# + Alloc R1# + Alloc R2#] in
 weakclo [Use R0# + Use R1# + Use R2#] in
 copyInt [R0#] [R2#]

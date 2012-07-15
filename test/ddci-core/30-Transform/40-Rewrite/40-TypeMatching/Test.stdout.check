@@ -1,10 +1,10 @@
 ok
-ok
 
 -- create a whacky rule (because only want to use builtins). wrap second param in another lambda
 ok, added whacky0
 
 -- should turn into a nil
+ok
 weakclo [Use R0#] in
 Nil [R0#] [Int R0#] ()
 
@@ -14,5 +14,7 @@ Cons [R1#] [Int R0#] (5 [R0#] ())
 
 -- try doing something with a function
 ok, added whacky1
+
+ok
 Nil [R0#] [Int R0# -> Unit] ()
 

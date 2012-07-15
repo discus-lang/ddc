@@ -2,8 +2,9 @@
 module DDC.Core.Simplifier.Parser
         (parseSimplifier)
 where
-import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Namify
+import DDC.Core.Transform.Rewrite
+import DDC.Core.Simplifier.Base
 import DDC.Type.Env
 import qualified DDC.Core.Simplifier.Recipie    as R
 import Data.Char
@@ -13,10 +14,11 @@ import Data.Char
 parseSimplifier 
         :: (Env n -> Namifier s n)
         -> (Env n -> Namifier s n)
+        -> [RewriteRule a n]
         -> String 
         -> Maybe (Simplifier s a n)
 
-parseSimplifier namK namT str
+parseSimplifier namK namT rules str
  = parse (lexSimplifier str) 
  where
         parse (k : KSemi : rest)
@@ -34,7 +36,7 @@ parseSimplifier namK namT str
                 _               -> Nothing
 
         parse1 k@KCon{}
-         | Just t       <- parseTransform namK namT k
+         | Just t       <- parseTransform namK namT rules k
          = Just $ Trans t
 
         parse1 _        = Nothing
@@ -43,21 +45,22 @@ parseSimplifier namK namT str
 parseTransform 
         :: (Env n -> Namifier s n)
         -> (Env n -> Namifier s n)
+        -> [RewriteRule a n]
         -> Tok 
         -> Maybe (Transform s a n)
 
-parseTransform namK namT (KCon name)
+parseTransform namK namT rules (KCon name)
  = case name of
         "Id"            -> Just Id
         "Anonymize"     -> Just Anonymize
         "Snip"          -> Just Snip
         "Flatten"       -> Just Flatten
         "Beta"          -> Just Beta
-        "Rewrite"       -> Just Rewrite
+        "Rewrite"       -> Just (Rewrite rules)
         "Namify"        -> Just (Namify namK namT)
         _               -> Nothing
 
-parseTransform _ _ _ 
+parseTransform _ _ _ _
  = Nothing
 
 
