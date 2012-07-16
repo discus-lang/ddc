@@ -65,6 +65,7 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 
 -- | Create rule
 -- Make sure expressions are valid, lhs is only allowed to contain XApps
+-- TODO return multiple errors?
 checkRewriteRule
     :: (Ord n, Show n, Pretty n)        
     => T.DataDefs n             -- ^ Data type definitions.
@@ -79,14 +80,17 @@ checkRewriteRule defs kenv tenv
  = do	let (kenv',tenv') = extendBinds bs kenv tenv
 	let cs' = map (S.spreadT kenv') cs
 
-	(lhs',tl,el,cl) <- check defs kenv' tenv' lhs ErrorTypeCheckLhs
-	(rhs',tr,er,cr) <- check defs kenv' tenv' rhs ErrorTypeCheckRhs
+	(lhs',tl,el,cl) <- check defs kenv' tenv' lhs (ErrorTypeCheck Lhs)
+	(rhs',tr,er,cr) <- check defs kenv' tenv' rhs (ErrorTypeCheck Rhs)
 
 	let err = ErrorTypeConflict (tl,el,cl) (tr,er,cr)
 
 	equiv tl tr err
 	e      <- weaken T.kEffect el er err
 	c      <- weaken T.kClosure cl cr err
+
+	checkAnonymousBinders bs
+	checkValidPattern lhs
 
 	return $ RewriteRule 
                         bs cs' 
@@ -128,6 +132,39 @@ weaken k l r _ | T.subsumesT k l r
  = return $ Just l
 weaken _ _ _ onError
  = Left onError
+
+checkAnonymousBinders :: [(BindMode, Bind n)] -> Either (Error a n) ()
+checkAnonymousBinders bs | (b:_) <- filter anony $ map snd bs
+ = Left $ ErrorAnonymousBinder b
+ where
+	anony (BAnon _) = True
+	anony _		= False
+
+checkAnonymousBinders _
+ = return ()
+
+
+checkValidPattern :: Exp a n -> Either (Error a n) ()
+checkValidPattern expr = go expr
+ where
+	go (XVar _ _) = return ()
+	go (XCon _ _) = return ()
+	go x@(XLAM _ _ _) = Left $ ErrorNotFirstOrder x
+	go x@(XLam _ _ _) = Left $ ErrorNotFirstOrder x
+	go (XApp _ l r) = go l >> go r
+	go x@(XLet _ _ _) = Left $ ErrorNotFirstOrder x
+	go x@(XCase _ _ _)= Left $ ErrorNotFirstOrder x
+	go (XCast _ _ x)= go x
+	go (XType t)	= go_t t
+	go (XWitness _) = return ()
+
+	go_t (TVar _)   = return ()
+	go_t (TCon _)	= return ()
+	go_t t@(TForall _ _) = Left $ ErrorNotFirstOrder (XType t)
+	go_t (TApp l r)	= go_t l >> go_t r
+	go_t (TSum _)	= return ()
+
+
 
 {-
 -- | Check if expression is valid as a rule left-hand side
