@@ -94,8 +94,8 @@ xGetTag :: a -> Exp a Name
 xGetTag a = XVar a uGetTag
 
 uGetTag :: Bound Name
-uGetTag   = UName (NameVar "getTag")
-          $ tFunPE (tPtr tObj) tTag
+uGetTag = UName (NameVar "getTag")
+          $ tForall kRegion $ \r -> (tFunPE (tPtr r tObj) tTag)
 
 
 -- Boxed ------------------------------
@@ -109,7 +109,7 @@ xAllocBoxed a tag x2
 uAllocBoxed :: Bound Name
 uAllocBoxed
         = UName (NameVar "allocBoxed")
-        $ tTag `tFunPE` tNat `tFunPE` tPtr tObj
+        $ tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj)
 
 
 -- | Get a field of a Boxed object.
@@ -121,7 +121,7 @@ xGetFieldOfBoxed a x2 offset
 uGetFieldOfBoxed :: Bound Name
 uGetFieldOfBoxed 
         = UName (NameVar "getFieldOfBoxed")
-        $ tPtr tObj `tFunPE` tNat `tFunPE` tPtr tObj
+        $ tForall kRegion $ \r -> (tPtr r tObj `tFunPE` tNat `tFunPE` tPtr r tObj)
 
 
 -- | Set a field in a Boxed Object.
@@ -133,7 +133,7 @@ xSetFieldOfBoxed a x2 offset val
 uSetFieldOfBoxed :: Bound Name
 uSetFieldOfBoxed 
         = UName (NameVar "setFieldOfBoxed")
-        $ tPtr tObj `tFunPE` tNat `tFunPE` tPtr tObj `tFunPE` tVoid
+        $ tForall kRegion $ \r -> (tPtr r tObj `tFunPE` tNat `tFunPE` tPtr r tObj `tFunPE` tVoid)
 
 
 -- RawSmall ---------------------------
@@ -146,7 +146,7 @@ xAllocRawSmall a tag x2
 uAllocRawSmall :: Bound Name
 uAllocRawSmall
         = UName (NameVar "allocRawSmall")
-        $ tTag `tFunPE` tNat `tFunPE` tPtr tObj
+        $ tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj)
 
 
 -- | Get the address of the payload of a RawSmall object.
@@ -157,5 +157,5 @@ xPayloadOfRawSmall a x2
 uPayloadOfRawSmall :: Bound Name
 uPayloadOfRawSmall
         = UName (NameVar "payloadOfRawSmall")
-        $ tFunPE (tPtr tObj) tAddr
+        $ tForall kRegion $ \r -> (tFunPE (tPtr r tObj) tAddr)
 

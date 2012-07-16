@@ -16,6 +16,7 @@ import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Error
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Sanitize
+import DDC.Core.Salt.Erase
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Core.Module
@@ -25,10 +26,10 @@ import DDC.Type.Check.Monad             (throw, result)
 import qualified DDC.Type.Check.Monad   as G
 
 
--- | Convert a Disciple Core Brine module to C-source text.
+-- | Convert a Disciple Core Salt module to C-source text.
 convertModule :: Show a => Module a Name -> Either (Error a) Doc
 convertModule mm
- = result $ convModuleM mm
+ = result $ convModuleM $ eraseM mm
 
 
 -- | Conversion Monad
@@ -36,7 +37,7 @@ type ConvertM a x = G.CheckM (Error a) x
 
 
 -- Module ---------------------------------------------------------------------
--- | Convert a Brine module to C source text.
+-- | Convert a Salt module to C source text.
 convModuleM :: Show a => Module a Name -> ConvertM a Doc
 convModuleM mm@(ModuleCore{})
         | ([LRec bxs], _) <- splitXLets $ moduleBody mm
@@ -70,8 +71,9 @@ convTypeM tt
 -- | Convert a super to C source text.
 convSuperM :: Show a => Bind Name -> Exp a Name -> ConvertM a Doc
 convSuperM b x
- | BName (NameVar nTop) tTop       <- b 
- , Just (bsParam, xBody) <- takeXLams x
+ | BName (NameVar nTop) tTop       <- b
+ , Just (_, x')          <- takeXLAMs x 
+ , Just (bsParam, xBody) <- takeXLams x'
  ,  (_, tResult)         <- takeTFunArgResult tTop
  = do    
         let nTop'       =  text $ sanitizeName nTop
@@ -267,7 +269,10 @@ convRValueM xx
 
         XCon _ (UPrim (NameTag n) _)    
          -> return $ integer n
-
+         
+        XCon _ (UPrim (NameVoid) _)
+         -> return $ text "void"
+         
         -- Primop application.
         XApp{}
          |  Just (NamePrim p, args)      <- takeXPrimApps xx

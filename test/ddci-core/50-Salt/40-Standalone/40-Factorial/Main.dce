@@ -1,12 +1,15 @@
 
 module Main 
 imports {
-        showInt   :: Int# -> Ptr# String#;
-        putStrLn  :: Ptr# String# -> Void#;
+        showInt   :: [r : %].Int# -> Ptr# r String#;
+        putStrLn  :: [r : %].Ptr# r String# -> Void#;
 }
 with letrec {
 
-allocRaw (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
+allocRaw [r : %] 
+         (tag : Tag#) {!0 | Use r}
+         (bytesPayload : Nat#) {!0 | Use r}
+         : Ptr# r Obj
  = do { bytesObj        = add# [Nat#] 8# bytesPayload;
         addr            = alloc# bytesObj;
 
@@ -19,77 +22,95 @@ allocRaw (tag : Tag#) (bytesPayload : Nat#) : Ptr# Obj
         bytesObj32      = truncate# [Word32#] [Nat#] bytesObj;
         write# [Word32#] addr 4# bytesObj32;
 
-        ptr             = makePtr# [Obj] addr;
-        return# [Ptr# Obj] ptr;
+        ptr             = makePtr# [r] [Obj] addr;
+        return# [Ptr# r Obj] ptr;
      };
 
 
-boxWord32 (x : Word32#) : Ptr# Obj
- = do { obj     = allocRaw TAG0# 4#;
-        addr    = takePtr# [Obj] obj;
+boxWord32 [r : %]
+          (x : Word32#) {!0 | Use r}
+          : Ptr# r Obj
+ = do { obj     = allocRaw [r] TAG0# 4#;
+        addr    = takePtr# [r] [Obj] obj;
         write#  [Word32#] addr 8# x;
-        return# [Ptr# Obj] obj;
+        return# [Ptr# r Obj] obj;
       };
 
-unboxWord32 (obj : Ptr# Obj) : Word32#
- = do { addr    = takePtr# [Obj] obj;
+unboxWord32 [r : %]
+            (obj : Ptr# r Obj) {!0 | Use r}
+            : Word32#
+ = do { addr    = takePtr# [r] [Obj] obj;
         x       = read#   [Word32#] addr 8#;
         return# [Word32#] x;
       };
 
 
-addWord32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = do { xu      = unboxWord32 x;
-        yu      = unboxWord32 y;
+addWord32 [r1 : %] [r2 : %] [r3 : %]
+          (x : Ptr# r1 Obj) {!0 | Use r1 + Use r2 + Use r3}
+          (y : Ptr# r2 Obj) {!0 | Use r1 + Use r2 + Use r3}
+          : Ptr# r3 Obj
+ = do { xu      = unboxWord32 [r1] x;
+        yu      = unboxWord32 [r2] y;
         zu      = add# [Word32#] xu yu;
-        z       = boxWord32 zu;
-        return# [Ptr# Obj] z;
+        z       = boxWord32 [r3] zu;
+        return# [Ptr# r3 Obj] z;
       };
 
 
-subWord32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = do { xu      = unboxWord32 x;
-        yu      = unboxWord32 y;
+subWord32 [r1 : %] [r2 : %] [r3 : %]
+          (x : Ptr# r1 Obj) {!0 | Use r1 + Use r2 + Use r3}
+          (y : Ptr# r2 Obj) {!0 | Use r1 + Use r2 + Use r3}
+          : Ptr# r3 Obj
+ = do { xu      = unboxWord32 [r1] x;
+        yu      = unboxWord32 [r2] y;
         zu      = sub# [Word32#] xu yu;
-        z       = boxWord32 zu;
-        return# [Ptr# Obj] z;
+        z       = boxWord32 [r3] zu;
+        return# [Ptr# r3 Obj] z;
       };
 
 
-mulWord32 (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = do { xu      = unboxWord32 x;
-        yu      = unboxWord32 y;
+mulWord32 [r1 : %] [r2 : %] [r3 : %]
+          (x : Ptr# r1 Obj) {!0 | Use r1 + Use r2 + Use r3}
+          (y : Ptr# r2 Obj) {!0 | Use r1 + Use r2 + Use r3}
+          : Ptr# r3 Obj
+ = do { xu      = unboxWord32 [r1] x;
+        yu      = unboxWord32 [r2] y;
         zu      = mul# [Word32#] xu yu;
-        z       = boxWord32 zu;
-        return# [Ptr# Obj] z;
+        z       = boxWord32 [r3] zu;
+        return# [Ptr# r3 Obj] z;
       };
 
-
-fac (x: Ptr# Obj) : Ptr# Obj
- = do { x2      = unboxWord32 x;
+fac [r1 : %] [r2 : %] 
+    (x: Ptr# r1 Obj) {!0 | Use r1 + Use r2}
+    : Ptr# r2 Obj
+ = do { x2      = unboxWord32 [r1] x;
         cc      = eq# [Word32#] x2 0w32#;
         case cc of {
          True# -> do {
-                r       = boxWord32 1w32#;
-                return# [Ptr# Obj] r;
+                r       = boxWord32 [r2] 1w32#;
+                return# [Ptr# r2 Obj] r;
          };
 
          False# -> do {
-                n2      = boxWord32 1w32#;
-                n3      = subWord32 x n2;
-                n4      = fac n3;
-                n5      = mulWord32 x n4;
-                return# [Ptr# Obj] n5;
+                n2      = boxWord32 [r2] 1w32#;
+                n3      = subWord32 [r1] [r2] [r2] x n2;
+                n4      = fac [r2] [r2] n3;
+                n5      = mulWord32 [r1] [r2] [r2] x n4;
+                return# [Ptr# r2 Obj] n5;
          };
         }
       };
 
-main (argc : Nat#) (argv : Ptr# String#) : Int#
- = do { x       = boxWord32 10w32#;
-        x2      = fac x;
-        x2u     = unboxWord32 x2;
-        str     = showInt (truncate# [Int#] [Word32#] x2u);
-        putStrLn str;
+-- needs support for letregion
+main [r1 : %] [r2 : %] 
+     (argc : Nat#) {!0 | Use r1 + Use r2}
+     (argv : Ptr# r1 String#) {!0 | Use r1 + Use r2}
+     : Int#
+ = do { x       = boxWord32 [r1] 10w32#;
+        x2      = fac [r1] [r2] x;
+        x2u     = unboxWord32 [r2] x2;
+        str     = showInt [r2] (truncate# [Int#] [Word32#] x2u);
+        putStrLn [r2] str;
 
         return# [Int#] 0i#;
       };

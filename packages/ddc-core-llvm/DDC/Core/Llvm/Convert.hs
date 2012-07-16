@@ -13,6 +13,7 @@ import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Salt.Sanitize
+import DDC.Core.Salt.Erase
 import DDC.Core.Compounds
 import DDC.Type.Compounds
 import Data.Sequence                    (Seq, (<|), (|>), (><))
@@ -35,7 +36,8 @@ convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm
  = let  prims           = primDeclsMap platform
         state           = llvmStateInit platform prims
-   in   clean $ evalState (convModuleM mm) state
+        mm'             = eraseM mm
+   in   clean $ evalState (convModuleM mm') state
 
 
 convModuleM :: C.Module () A.Name -> LlvmM Module
@@ -93,13 +95,17 @@ primDecls pp
 
 -- Super ----------------------------------------------------------------------
 -- | Convert a top-level supercombinator to a LLVM function.
+--   Region variables are completely stripped out.
 convSuperM 
         :: C.Bind A.Name                -- ^ Bind for the super.
         -> C.Exp () A.Name              -- ^ Super body.
         -> LlvmM Function
 
 convSuperM (C.BName (A.NameVar nTop) tSuper) x
- | Just (bsParam, xBody)  <- takeXLams x
+ | Just (_, x')           <- takeXLAMs x
+ , Just (bsParam, xBody)  <- takeXLams x'
+-- , bsParam                <- map eraseT bs
+-- , xBody                  <- eraseR x2
  = do   platform          <- gets llvmStatePlatform
 
         let nTop' = sanitizeName nTop

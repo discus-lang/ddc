@@ -1,5 +1,5 @@
 
--- | Convert Sea types to LLVM types.
+-- | Convert Salt types to LLVM types.
 module DDC.Core.Llvm.Convert.Type
         ( -- * Type conversion.
           convTypeM
@@ -40,7 +40,7 @@ convTypeM tt
         return   $ convType platform tt
 
 
--- | Convert a Sea type to an LlvmType.
+-- | Convert a Salt type to an LlvmType.
 convType :: Platform -> C.Type Name -> Type
 convType platform tt
  = case tt of
@@ -64,10 +64,11 @@ convType platform tt
              , declParamListType = FixedArgs
              , declParams        = map (llvmParameterOfType platform) tsArgs
              , declAlign         = AlignBytes (platformAlignBytes platform) }
-
-
+        
+        C.TForall _ (C.TApp _ t) -> convType platform t
+          
         _ -> die ("Invalid Type " ++ show tt)
-
+        
 
 -- | Convert an imported function type to a LLVM declaration.
 importedFunctionDeclOfType 

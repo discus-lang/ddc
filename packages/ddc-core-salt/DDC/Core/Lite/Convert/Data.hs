@@ -9,6 +9,7 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Transform.LiftX
 import DDC.Core.Exp
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad             (throw)
 import qualified DDC.Core.Lite.Layout   as L
@@ -34,9 +35,11 @@ constructData pp a dataDef ctorDef xsArgs
 
  | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor pp ctorDef
+ , XType r@(TVar u)             <- head xsArgs
+ , isRegionKind (typeOfBound u)
  = do
         -- Allocate the object.
-        let bObject     = BAnon (O.tPtr O.tObj)
+        let bObject     = BAnon (O.tPtr r O.tObj)
         let xAlloc      = O.xAllocBoxed a (dataCtorTag ctorDef)
                         $ XCon a (UPrim (O.NameNat size) O.tNat)
 
@@ -46,7 +49,7 @@ constructData pp a dataDef ctorDef xsArgs
         let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgs
 
         -- Statements to write each of the fields.
-        let xObject'    = XVar a $ UIx 0 $ O.tPtr O.tObj
+        let xObject'    = XVar a $ UIx 0 $ O.tPtr r O.tObj
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
                                 (O.xSetFieldOfBoxed a xObject' ix (liftX 1 xField))
                                 | ix            <- [0..]
@@ -58,15 +61,17 @@ constructData pp a dataDef ctorDef xsArgs
 
  | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
+ , XType r@(TVar u)             <- head xsArgs
+ , isRegionKind (typeOfBound u)
  = do   
         -- Allocate the object.
-        let bObject     = BAnon (O.tPtr O.tObj)
+        let bObject     = BAnon (O.tPtr r O.tObj)
         let xAlloc      = O.xAllocRawSmall a (dataCtorTag ctorDef)
                         $ XCon a (UPrim (O.NameNat size) O.tNat)
 
         -- Take a pointer to its payload.
         let bPayload    = BAnon O.tAddr
-        let xPayload    = O.xPayloadOfRawSmall a (XVar a (UIx 0 $ O.tPtr O.tObj))
+        let xPayload    = O.xPayloadOfRawSmall a (XVar a (UIx 0 $ O.tPtr r O.tObj))
 
         -- Convert the field types.
         tsFields         <- mapM convertT $ dataCtorFieldTypes ctorDef
@@ -80,7 +85,7 @@ constructData pp a dataDef ctorDef xsArgs
         let Just offsets = L.fieldOffsetsOfDataCtor pp ctorDef
 
         -- Statements to write each of the fields.
-        let xObject'    = XVar a $ UIx 1 $ O.tPtr O.tObj
+        let xObject'    = XVar a $ UIx 1 $ O.tPtr r O.tObj
         let xPayload'   = XVar a $ UIx 0 O.tAddr
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
                                 (O.xWrite a tField xPayload' offset (liftX 2 xField))

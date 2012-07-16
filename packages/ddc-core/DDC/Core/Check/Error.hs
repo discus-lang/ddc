@@ -37,7 +37,7 @@ data Error a n
         | ErrorUndefinedVar
         { errorBound            :: Bound n }
 
-        -- | A bound occurrence of a variable who's type annotation does not match
+        -- | A bound occurrence of a variable whose type annotation does not match
         --   the corresponding annotation in the environment.
         | ErrorVarAnnotMismatch
         { errorBound            :: Bound n

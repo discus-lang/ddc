@@ -35,13 +35,15 @@ convertPrimT    = convertT' False
 convertT' :: Bool -> Type L.Name -> ConvertM a (Type O.Name)
 convertT' stripForalls tt
  = let down = convertT' stripForalls
+       forall b t = liftM2 TForall (convertB b) (convertPrimT t) 
    in case tt of
         -- Convert type variables and constructors.
         TVar u
          --  Boxed objects are represented as a generic ptr to object.
          |  isDataKind (typeOfBound u)
          -> if stripForalls
-                then return $ O.tPtr O.tObj
+                then do r <- down $ typeOfBound u
+                        return $ O.tPtr r O.tObj
                 else liftM TVar (convertU u)
 
          -- Keep region variables.
@@ -55,10 +57,13 @@ convertT' stripForalls tt
         TCon tc 
          -> convertTyCon tc
 
-        -- Strip off foralls, as the Brine fragment doesn't care about quantifiers.
+        -- Strip off foralls, as the Salt fragment doesn't care about quantifiers.
         TForall b t     
-         | stripForalls -> down t
-         | otherwise    -> liftM2 TForall (convertB b) (convertPrimT t)
+         | stripForalls
+         -> if   isDataKind (typeOfBind b)
+            then forall (replaceTypeOfBind (TCon (TyConKind KiConRegion)) b) t
+            else down t
+         | otherwise    -> forall b t
 
         TApp{}  
          -- Strip off effect and closure information.
@@ -66,16 +71,19 @@ convertT' stripForalls tt
          -> liftM2 tFunPE (down t1) (down t2)
 
          -- Boxed data values are represented in generic form.
+         |  Just (_, args) <- takeTyConApps tt
+         -> do r <- down $ head args
+               return $ O.tPtr r O.tObj
+         
          | otherwise
-         -> return $ O.tPtr O.tObj
+         -> throw $ ErrorMalformed
 
         -- We shouldn't find any TSums.
         TSum{}          
          | isBot tt     -> throw $ ErrorBotAnnot
          | otherwise    -> throw $ ErrorUnexpectedSum
 
-
--- | Convert a simple type constructor to a Brine type.
+-- | Convert a simple type constructor to a Salt type.
 convertTyCon :: TyCon L.Name -> ConvertM a (Type O.Name)
 convertTyCon tc
  = case tc of
@@ -85,11 +93,12 @@ convertTyCon tc
         TyConWitness c           -> return $ TCon $ TyConWitness c 
         TyConSpec    c           -> return $ TCon $ TyConSpec    c 
 
-        -- Convert primitive TyCons to Brine form.
+        -- Convert primitive TyCons to Salt form.
         TyConBound   (UPrim n _) -> convertTyConPrim n
 
         -- Boxed data values are represented in generic form.
-        TyConBound   _           -> return $ O.tPtr O.tObj
+        TyConBound   u           -> do r <- convertT (typeOfBound u)
+                                       return $ O.tPtr r O.tObj
 
 
 -- | Convert a primitive type constructor to Salt form.

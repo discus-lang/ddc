@@ -90,7 +90,7 @@ kindOfPrimTyCon tc
         PrimTyConWord  _ -> kData
         PrimTyConFloat _ -> kData
         PrimTyConAddr    -> kData
-        PrimTyConPtr     -> (kData `kFun` kData)
+        PrimTyConPtr     -> (kRegion `kFun` kData `kFun` kData)
         PrimTyConTag     -> kData
         PrimTyConString  -> kData
 
@@ -144,9 +144,10 @@ tWord bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData)
 tObj :: Type Name
 tObj      = TCon (TyConBound (UPrim  NameObjTyCon kData))
 
-tPtr :: Type Name -> Type Name
-tPtr t    = TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr)  (kFun kData kData))))
-                 t
+tPtr :: Region Name -> Type Name -> Type Name
+tPtr r t = TApp (TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) (kRegion `kFun` kData `kFun` kData))))
+                      r)
+                t
 
 
 -- PrimOps --------------------------------------------------------------------
@@ -250,25 +251,25 @@ typeOfPrimStore jj
          -> tAddr  `tFunPE` tNat `tFunPE` tAddr
 
         PrimStorePeek
-         -> tForall kData $ \t -> tPtr t `tFunPE` tNat `tFunPE` t
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tNat `tFunPE` t
 
         PrimStorePoke
-         -> tForall kData $ \t -> tPtr t `tFunPE` tNat `tFunPE` t `tFunPE` tVoid
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tNat `tFunPE` t `tFunPE` tVoid
 
         PrimStorePlusPtr
-         -> tForall kData $ \t -> tPtr t `tFunPE` tNat `tFunPE` tPtr t
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tNat `tFunPE` tPtr r t
 
         PrimStoreMinusPtr
-         -> tForall kData $ \t -> tPtr t `tFunPE` tNat `tFunPE` tPtr t
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tNat `tFunPE` tPtr r t
 
         PrimStoreMakePtr
-         -> tForall kData $ \t -> tAddr `tFunPE` tPtr t
+         -> tForalls [kRegion, kData] $ \[r,t] -> tAddr `tFunPE` tPtr r t
 
         PrimStoreTakePtr
-         -> tForall kData $ \t -> tPtr t `tFunPE` tAddr
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tAddr
 
         PrimStoreCastPtr
-         -> tForalls [kData, kData] $ \[t1, t2] -> tPtr t2 `tFunPE` tPtr t1
+         -> tForalls [kRegion, kData, kData] $ \[r,t1,t2] -> tPtr r t2 `tFunPE` tPtr r t1
 
 
 
