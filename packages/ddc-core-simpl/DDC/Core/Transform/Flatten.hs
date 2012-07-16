@@ -10,7 +10,14 @@ import DDC.Core.Exp
 import DDC.Core.Compounds
 import Data.Functor.Identity
 
--- | Flatten all nested let-expressions in a thing.
+-- | Flatten binding structure in a thing.
+--
+--   Flattens nested let-expressions, 
+--   and single alternative let-case expressions
+--
+--   * Does not change the order of evaluation.
+--   * Weakly improving, will not make code worse.
+--
 flatten :: Ord n 
         => (TransformUpMX Identity c)
         => c a n -> c a n
@@ -81,7 +88,7 @@ flatten1 (XLet a1 (LLet LetStrict b1
 flatten1 (XLet  a1 (LLet LetStrict b1 
                          (XCase a2 x1 [AAlt p x2]))
                 x3)
- = let  levels  = length $ [b | b@(BAnon _) <- bindsOfPat p]            -- todo refactor to 'pushX' fun
+ = let  levels  = length $ [b | b@(BAnon _) <- bindsOfPat p]            -- todo: refactor to 'pushX' fun
         x3'     = liftX levels x3
    in   XCase a2 x1 
            [AAlt p (XLet a1 (LLet LetStrict b1 x2)

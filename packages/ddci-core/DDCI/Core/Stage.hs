@@ -83,9 +83,12 @@ stageLiteOpt state source pipes
  = PipeCoreSimplify 
         (0 :: Int) 
 
+        -- TODO: want to see every intermediate stage.
+        -- TODO: want to do a fixpoint.
         (  (S.Trans $ S.Inline 
                     $ lookupTemplateFromModules
                         (Map.elems (stateWithLite state)))
+
         <> (S.Trans $ S.Beta)
         <> (S.Trans $ S.Flatten)                -- hrm. Want a fixpoint here.
         <> (S.Trans $ S.Flatten)
