@@ -87,7 +87,6 @@ takeXLAMs xx
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
 
-
 -- | Make some nested value or witness lambda abstractions.
 makeXLams :: a -> [Bind n] -> Exp a n -> Exp a n
 makeXLams a bs x

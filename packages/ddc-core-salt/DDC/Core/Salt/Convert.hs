@@ -72,8 +72,7 @@ convTypeM tt
 convSuperM :: Show a => Bind Name -> Exp a Name -> ConvertM a Doc
 convSuperM b x
  | BName (NameVar nTop) tTop       <- b
- , Just (_, x')          <- takeXLAMs x 
- , Just (bsParam, xBody) <- takeXLams x'
+ , Just (bsParam, xBody) <- takeXLams (stripXLAMs x)
  ,  (_, tResult)         <- takeTFunArgResult tTop
  = do    
         let nTop'       =  text $ sanitizeName nTop
@@ -92,6 +91,16 @@ convSuperM b x
 
  | otherwise    
  = throw $ ErrorFunctionInvalid x
+
+
+-- | Strip any XLAM abstractions from the front of this expression.
+--   Type lambdas don't make it into the C code.
+stripXLAMs :: Exp a Name -> Exp a Name
+stripXLAMs xx
+ = case xx of
+        XLAM _ _ x      -> stripXLAMs x
+        XLam a b x      -> XLam a b (stripXLAMs x)
+        _               -> xx
 
 
 -- | Convert a function parameter binding to C source text.
