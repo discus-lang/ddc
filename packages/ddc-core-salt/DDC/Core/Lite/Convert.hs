@@ -14,6 +14,7 @@ import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw, result)
@@ -127,9 +128,17 @@ convertBodyX pp defs xx
                 (xx', _) <- convertC defs a' u
                 return  xx'
 
-        -- Strip out type lambdas.
-        XLAM _ _ x
+        -- Strip out non-region lambdas.
+        XLAM a b x
+         | isRegionKind $ typeOfBind b
+         -> do  let a'  = annotTail a
+                b'      <- convertB b
+                x'      <- convertBodyX pp defs x
+                return $ XLAM a' b' x'
+
+         | otherwise
          -> convertBodyX pp defs x
+
 
         -- Keep value binders but ditch witness binders for now.
         XLam a b x

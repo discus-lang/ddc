@@ -151,6 +151,10 @@ convBodyM xx
          |  otherwise
          -> throw $ ErrorStmtNoDiscard xx
 
+        -- Throw out letregion expressions.
+        XLet _ (LLetRegion _ _) x
+         -> convBodyM x
+
         -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
         XCase _ x [ AAlt (PData (UPrim n _) []) x1

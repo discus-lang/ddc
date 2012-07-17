@@ -35,7 +35,6 @@ convertPrimT    = convertT' False
 convertT' :: Bool -> Type L.Name -> ConvertM a (Type O.Name)
 convertT' stripForalls tt
  = let down = convertT' stripForalls
-       forall b t = liftM2 TForall (convertB b) (convertPrimT t) 
    in case tt of
         -- Convert type variables and constructors.
         TVar u
@@ -59,11 +58,11 @@ convertT' stripForalls tt
 
         -- Strip off foralls, as the Salt fragment doesn't care about quantifiers.
         TForall b t     
-         | stripForalls
-         -> if   isDataKind (typeOfBind b)
-            then forall (replaceTypeOfBind (TCon (TyConKind KiConRegion)) b) t
-            else down t
-         | otherwise    -> forall b t
+         | stripForalls && not (isRegionKind (typeOfBind b))
+         -> down t
+
+         | otherwise    
+         -> liftM2 TForall (convertB b) (convertPrimT t) 
 
         TApp{}  
          -- Strip off effect and closure information.
@@ -125,7 +124,16 @@ convertU uu
         UIx i t         -> liftM2 UIx   (return i) (convertT t)
         UName n t       -> liftM2 UName (convertBoundNameM n) (convertT t)
         UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertPrimT t)
-        UHole   t       -> liftM  UHole (convertT t)
+
+        -- This hole type is a hack that appears as the body of a module.
+        -- Make sure it stays a hole and doesn't turn into a Ptr Obj.
+        UHole t
+         |  TVar (UHole k)             <- t
+         ,  TCon (TyConKind KiConData) <- k
+         -> return $ UHole (TVar (UHole (TCon (TyConKind KiConData))))
+
+         | otherwise 
+         -> error $ "convertU: unexpected hole kind" ++ (show t)
 
 
 convertBindNameM :: L.Name -> ConvertM a O.Name

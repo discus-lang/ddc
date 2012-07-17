@@ -48,6 +48,9 @@ import qualified DDC.Llvm.Module                as Llvm
 import qualified Control.Monad.State.Strict     as S
 import Control.Monad
 
+-- import qualified Language.Haskell.Exts.Parser as H
+-- import qualified Language.Haskell.Exts.Pretty as H
+
 -- Error ----------------------------------------------------------------------
 data Error
         = ErrorSaltLoad    (CL.Error Salt.Name)
@@ -202,7 +205,13 @@ pipeCore mm pp
 
                 goCheck mm1
                  = case C.checkModule primDataDefs primKindEnv primTypeEnv mm1 of
-                        Left err   -> return [ErrorLint err]
+                        Left err  -> return [ErrorLint err]
+{-}                         -> case H.parseExp (show mm1) of
+                                H.ParseOk parsed        -> error $ H.prettyPrint parsed
+                                _                       -> error "bitches"
+
+--                        error (show mm1) -- return [ErrorLint err]
+-}
                         Right mm2  -> goComplies mm2
 
                 goComplies mm1

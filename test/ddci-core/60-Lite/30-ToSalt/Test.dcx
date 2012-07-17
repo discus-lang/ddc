@@ -4,7 +4,7 @@
 
 -- Set the builder explicitly so we get consistent object layouts.
 :set builder x86_64-darwin
-
+:set Dump
 
 -- Unboxed literal patterns.
 :to-salt..

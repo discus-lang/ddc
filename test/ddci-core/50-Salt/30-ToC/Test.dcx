@@ -5,35 +5,45 @@
 :to-c..
 module Main 
 imports {
-        allocRaw :: Tag# -> Nat# -> Ptr# Obj;
-        getTag   :: Ptr# Obj -> Tag#;
+        allocRaw :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
+        getTag   :: [r : %]. Ptr# r Obj -> Tag#;
 }
 with letrec {
-addInt (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- =      let x'  = unboxInt x in
-        let y'  = unboxInt y in
+addInt [r1 r2 r3 : %] 
+        (x : Ptr# r1 Obj) { !0 | Use r1 + Use r2 + Use r3 }
+        (y : Ptr# r2 Obj) { !0 | Use r1 + Use r2 + Use r3 } 
+        : Ptr# r3 Obj
+ =      let x'  = unboxInt [r1] x in
+        let y'  = unboxInt [r2] y in
         let r   = add# [Int#] x' y' in
-        let z   = boxInt r in
-        return# [Ptr# Obj] z;
+        let z   = boxInt [r3] r in
+        return# [Ptr# r3 Obj] z;
 
-boxInt (x : Int#) : Ptr# Obj
- = do { obj     = allocRaw TAG0# 4#;
-        addr    = takePtr# [Obj] obj;
+
+boxInt  [r : %]
+        (x : Int#) { !0 | Use r } 
+        : Ptr# r Obj
+ = do { obj     = allocRaw [r] TAG0# 4#;
+        addr    = takePtr# [r] [Obj] obj;
         write#  [Int#] addr 8# x;
-        return# [Ptr# Obj] obj;
+        return# [Ptr# r Obj] obj;
       };
 
-unboxInt (obj : Ptr# Obj) : Int#
- = do { addr    = takePtr# [Obj] obj;
-        x       = read#   [Int#] addr 8#;
+
+unboxInt [r : %] 
+        (obj : Ptr# r Obj) { !0 | Use r } 
+        : Int#
+ = do { addr    = takePtr# [r] [Obj] obj;
+        x       = read#    [Int#] addr 8#;
         return# [Int#] x;
       };
 
 
-main (argc : Nat#) (argv : Ptr# String#) : Int#
- =      let x   : Ptr# Obj   = boxInt 5i# in
-        let x2  : Ptr# Obj   = addInt x x in
-        let str : String#    = showInt# (unboxInt x2) in
+main (argc : Nat#) (argv : Addr#) : Int#
+ =      letregion r in
+        let x   : Ptr# r Obj = boxInt [r] 5i# in
+        let x2  : Ptr# r Obj = addInt [:r r r:] x x in
+        let str : String#    = showInt# (unboxInt [r] x2) in
         let _   : Void#      = putStrLn# str in
         return# [Int#] 0i#;
 };;

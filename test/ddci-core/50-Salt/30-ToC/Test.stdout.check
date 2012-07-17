@@ -26,7 +26,7 @@ int_t unboxInt (Obj* obj)
         return x;
 }
 
-int_t main (nat_t argc, string_t* argv)
+int_t main (nat_t argc, addr_t argv)
 {
         Obj* x           = boxInt (5);
         Obj* x2          = addInt (x, x);
