@@ -31,6 +31,8 @@ data Transform s a n
         | Snip
         | Flatten
         | Beta
+        | Forward
+
         | Inline
                 { transInlineDef   :: n -> Maybe (Exp a n) }
 
@@ -61,6 +63,8 @@ instance Pretty (Transform s a n) where
         Snip            -> text "Snip"
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
+        Forward         -> text "Forward"
         Inline{}        -> text "Inline"
         Namify{}        -> text "Namify"
         Rewrite{}       -> text "Rewrite"
+

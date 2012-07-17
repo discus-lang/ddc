@@ -14,6 +14,7 @@ import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.Snip
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
+import DDC.Core.Transform.Forward
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
@@ -54,6 +55,7 @@ applyTransform spec mm
         Snip             -> return $ snip mm
         Flatten          -> return $ flatten mm
         Beta             -> return $ betaReduce mm
+        Forward          -> return $ forwardModule mm
         Namify namK namT -> namifyUnique namK namT mm
         Inline getDef    -> return $ inline getDef mm
         _                -> error "applyTransform: finish me"
@@ -94,6 +96,7 @@ applyTransformX spec xx
         Flatten           -> return $ flatten xx
         Inline  getDef    -> return $ inline getDef xx
         Beta              -> return $ betaReduce xx
+        Forward           -> return $ forwardX xx
         Namify  namK namT -> namifyUnique namK namT xx
         Rewrite rules     -> return $ rewrite rules xx
 

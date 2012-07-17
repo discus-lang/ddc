@@ -28,43 +28,62 @@ instance Clean Module where
 
 instance Clean Function where
  cleanWith binds fun
-  = fun { funBlocks     = map (cleanWith binds) $ funBlocks fun }
+  = fun { funBlocks     = cleanBlocks binds [] $ funBlocks fun }
 
 
-instance Clean Block where
- cleanWith binds (Block label instrs)
-        = Block label 
-        $ Seq.fromList 
-        $ cleanInstrs binds
-        $ Seq.toList instrs
+-- | Clean set instructions in some blocks.
+cleanBlocks 
+        :: Map Var Exp 
+        -> [Block] -> [Block] -> [Block]
+
+cleanBlocks _binds acc []
+        = reverse acc
+
+cleanBlocks binds acc (Block label instrs : bs) 
+ = let  (binds', instrs2) 
+                = cleanInstrs binds [] 
+                $ Seq.toList instrs
+
+        instrs' = Seq.fromList instrs2
+        block'  = Block label instrs'
+
+   in   cleanBlocks binds' (block' : acc) bs
 
 
-cleanInstrs :: Map Var Exp -> [Instr] -> [Instr]
-cleanInstrs _  [] = []
+-- | Clean set instructions in some instructions.
+cleanInstrs 
+        :: Map Var Exp 
+        -> [Instr] -> [Instr] -> (Map Var Exp, [Instr])
 
-cleanInstrs bs (i : instrs)
-  = let down    = cleanInstrs bs
+cleanInstrs binds acc []
+        = (binds, reverse acc)
+
+cleanInstrs binds acc (i : instrs)
+  = let next binds' acc' 
+                = cleanInstrs binds' acc' instrs
 
         sub xx  
          = case xx of
                 XVar v
-                  | Just x' <- Map.lookup v bs
+                  | Just x' <- Map.lookup v binds
                   -> sub x'
                 _ -> xx
 
     in case i of
-        IComment{}              -> i                            : down instrs
-        ISet v x                -> cleanInstrs (Map.insert v x bs) instrs                -- TODO: do occ check
-        IReturn Nothing         -> i                            : down instrs
-        IReturn (Just x)        -> IReturn (Just (sub x))       : down instrs
-        IBranch{}               -> i                            : down instrs
-        IBranchIf x l1 l2       -> IBranchIf (sub x) l1 l2      : down instrs
-        ISwitch x def alts      -> ISwitch   (sub x) def alts   : down instrs
-        IUnreachable            -> i                            : down instrs
-        IOp    v op x1 x2       -> IOp   v op (sub x1) (sub x2) : down instrs
-        IConv  v c x            -> IConv v c (sub x)            : down instrs
-        ILoad  v x              -> ILoad v   (sub x)            : down instrs
-        IStore x1 x2            -> IStore    (sub x1) (sub x2)  : down instrs
-        IICmp  v c x1 x2        -> IICmp v c (sub x1) (sub x2)  : down instrs
-        IFCmp  v c x1 x2        -> IFCmp v c (sub x1) (sub x2)  : down instrs
-        ICall  mv ct t n xs ats -> ICall mv ct t n (map sub xs) ats : down instrs
+        IComment{}              -> next binds (i                                : acc)        
+        ISet v x                -> next (Map.insert v x binds)                    acc        -- TODO: do occ check
+        IReturn Nothing         -> next binds (i                                : acc)
+        IReturn (Just x)        -> next binds (IReturn (Just (sub x))           : acc)
+        IBranch{}               -> next binds (i                                : acc)
+        IBranchIf x l1 l2       -> next binds (IBranchIf (sub x) l1 l2          : acc)
+        ISwitch x def alts      -> next binds (ISwitch   (sub x) def alts       : acc)
+        IUnreachable            -> next binds (i                                : acc)
+        IOp    v op x1 x2       -> next binds (IOp   v op (sub x1) (sub x2)     : acc)
+        IConv  v c x            -> next binds (IConv v c (sub x)                : acc)
+        ILoad  v x              -> next binds (ILoad v   (sub x)                : acc)
+        IStore x1 x2            -> next binds (IStore    (sub x1) (sub x2)      : acc)
+        IICmp  v c x1 x2        -> next binds (IICmp v c (sub x1) (sub x2)      : acc)
+        IFCmp  v c x1 x2        -> next binds (IFCmp v c (sub x1) (sub x2)      : acc)
+        ICall  mv ct t n xs ats -> next binds (ICall mv ct t n (map sub xs) ats : acc)
+
+

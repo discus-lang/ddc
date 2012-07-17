@@ -89,21 +89,23 @@ stageLiteOpt state source pipes
                     $ lookupTemplateFromModules
                         (Map.elems (stateWithLite state)))
 
-        <> (S.Trans $ S.Beta)
-        <> (S.Trans $ S.Flatten)                -- hrm. Want a fixpoint here.
-        <> (S.Trans $ S.Flatten)
-        <> (S.Trans $ S.Flatten)
-        <> (S.Trans $ S.Flatten)
-        <> (S.Trans $ S.Flatten)
-        <> (S.Trans $ S.Flatten)
-        <> S.anormalize
-                (makeNamifier Lite.freshT)      
-                (makeNamifier Lite.freshX))
+        -- hrm. Want a fixpoint here.
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
+        <> normalizeLite
+        )
 
         -- TODO: Inlining isn't preserving type annots, 
         --       so need to recheck the module before Lite -> Salt conversion.
         [ PipeCoreOutput (dump state source "dump.lite-opt.dcl")
         , PipeCoreReCheck fragmentLite pipes ]
+
+ where  normalizeLite
+         = S.anormalize
+                (makeNamifier Lite.freshT)      
+                (makeNamifier Lite.freshX)
 
 
 -- TODO: Rubbish function to load inliner templates from some modules.

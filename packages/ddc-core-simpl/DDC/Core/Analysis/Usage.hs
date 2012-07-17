@@ -1,8 +1,12 @@
 
 -- | Annotate let bindings with how the bound variable is used.
-module DDC.Analysis.Usage
-        (usageX)
+module DDC.Core.Analysis.Usage
+        ( Used    (..)
+        , UsedMap (..)
+        , usageModule
+        , usageX)
 where
+import DDC.Core.Module
 import DDC.Core.Exp
 import Data.List
 import Data.Map                 (Map)
@@ -36,7 +40,7 @@ data Used
 -- | Map of bound name to how the variable is used.
 data UsedMap n
         = UsedMap (Map n [Used])
-
+        deriving Show
 
 -- | An empty usage map.
 empty :: UsedMap n
@@ -62,6 +66,25 @@ sumUsedMap (m:ms)
 
 
 -- Usage ----------------------------------------------------------------------
+usageModule :: Ord n => Module a n -> Module (UsedMap n, a) n
+usageModule 
+        (ModuleCore
+                { moduleName            = name
+                , moduleExportKinds     = exportKinds
+                , moduleExportTypes     = exportTypes
+                , moduleImportKinds     = importKinds
+                , moduleImportTypes     = importTypes
+                , moduleBody            = body })
+
+ =       ModuleCore
+                { moduleName            = name
+                , moduleExportKinds     = exportKinds
+                , moduleExportTypes     = exportTypes
+                , moduleImportKinds     = importKinds
+                , moduleImportTypes     = importTypes
+                , moduleBody            = snd $ usageX body }
+
+
 -- | Usage analysis.
 --   Annotates binding occurrences of variables with how they are used.
 usageX :: Ord n => Exp a n -> (UsedMap n, Exp (UsedMap n, a) n)
@@ -83,7 +106,7 @@ usageX xx
          ,  UsedMap us2    <- used2
          ,  used2'         <- UsedMap (Map.map (map UsedInLambda) us2)
          -> ( used2'
-            , XLam (used2', a) b1 x2')
+            , XLAM (used2', a) b1 x2')
 
         -- Wrap usages from the body in UsedInLambda to signal that if we move
         -- the definition here then it might not be demanded at runtime.
@@ -95,6 +118,15 @@ usageX xx
             , XLam (used2', a) b1 x2')
 
         XApp a x1 x2
+         -- application of a function variable.
+         |  XVar a1 u      <- x1
+         ,  used1          <- accUsed u UsedFunction empty
+         ,  (used2, x2')   <- usageX x2
+         ,  used'          <- used1 `plusUsedMap` used2
+         -> ( used'
+            , XApp (used', a) (XVar (used1, a1) u) x2')
+
+         -- General application.
          |  ( used1, x1')  <- usageX x1
          ,  ( used2, x2')  <- usageX x2
          ,  used'          <- used1 `plusUsedMap` used2
