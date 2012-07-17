@@ -385,7 +385,7 @@ convertA pp defs a uScrut alt
                 xBody1          <- convertBodyX pp defs x
 
                 -- Add let bindings to unpack the constructor.
-                xBody2          <- destructData pp a uScrut' ctorDef bsFields' xBody1
+                xBody2          <- error (show uScrut) `seq` destructData pp a uScrut' ctorDef bsFields' xBody1
 
                 return  $ AAlt (PData uTag []) xBody2
 

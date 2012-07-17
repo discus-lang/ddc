@@ -138,10 +138,10 @@ uSetFieldOfBoxed
 
 -- RawSmall ---------------------------
 -- | Allocate a RawSmall object.
-xAllocRawSmall :: a -> Integer -> Exp a Name -> Exp a Name
-xAllocRawSmall a tag x2
+xAllocRawSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
+xAllocRawSmall a tR tag x2
  = makeXApps a (XVar a uAllocRawSmall)
-        [XCon a (UPrim (NameTag tag) tTag), x2]
+        [XType tR, XCon a (UPrim (NameTag tag) tTag), x2]
 
 uAllocRawSmall :: Bound Name
 uAllocRawSmall
@@ -150,9 +150,10 @@ uAllocRawSmall
 
 
 -- | Get the address of the payload of a RawSmall object.
-xPayloadOfRawSmall :: a -> Exp a Name -> Exp a Name
-xPayloadOfRawSmall a x2 
-        = XApp a (XVar a uPayloadOfRawSmall) x2
+xPayloadOfRawSmall :: a -> Type Name -> Exp a Name -> Exp a Name
+xPayloadOfRawSmall a tR x2 
+ = makeXApps a (XVar a uPayloadOfRawSmall) 
+        [XType tR, x2]
  
 uPayloadOfRawSmall :: Bound Name
 uPayloadOfRawSmall

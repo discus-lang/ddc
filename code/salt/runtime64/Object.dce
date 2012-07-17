@@ -68,8 +68,7 @@
 module Object32 with letrec
 
 -- | Get the constructor tag of an object.
-getTag [r : %]
-       (obj : Ptr# r Obj) {!0 | Use r}
+getTag [r : %] (obj : Ptr# r Obj)
        : Tag#
  = do   
         ptr             = castPtr# [r] [Word32#] [Obj] obj

@@ -35,7 +35,8 @@ constructData pp a dataDef ctorDef xsArgs
 
  | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor pp ctorDef
- , XType r@(TVar u)             <- head xsArgs
+ , x1 : xsArgsRest              <- xsArgs
+ , XType r@(TVar u)             <- x1
  , isRegionKind (typeOfBound u)
  = do
         -- Allocate the object.
@@ -46,7 +47,7 @@ constructData pp a dataDef ctorDef xsArgs
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
-        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgs
+        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgsRest
 
         -- Statements to write each of the fields.
         let xObject'    = XVar a $ UIx 0 $ O.tPtr r O.tObj
@@ -61,17 +62,19 @@ constructData pp a dataDef ctorDef xsArgs
 
  | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
- , XType r@(TVar u)             <- head xsArgs
+ , x1 : xsArgsRest              <- xsArgs
+ , XType r@(TVar u)             <- x1
  , isRegionKind (typeOfBound u)
  = do   
         -- Allocate the object.
         let bObject     = BAnon (O.tPtr r O.tObj)
-        let xAlloc      = O.xAllocRawSmall a (dataCtorTag ctorDef)
+        let xAlloc      = O.xAllocRawSmall a r (dataCtorTag ctorDef)
                         $ XCon a (UPrim (O.NameNat size) O.tNat)
 
         -- Take a pointer to its payload.
         let bPayload    = BAnon O.tAddr
-        let xPayload    = O.xPayloadOfRawSmall a (XVar a (UIx 0 $ O.tPtr r O.tObj))
+        let xPayload    = O.xPayloadOfRawSmall a r
+                        $ XVar a (UIx 0 $ O.tPtr r O.tObj)
 
         -- Convert the field types.
         tsFields         <- mapM convertT $ dataCtorFieldTypes ctorDef
@@ -79,7 +82,7 @@ constructData pp a dataDef ctorDef xsArgs
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
-        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgs
+        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgsRest
 
         -- Get the offset of each field.
         let Just offsets = L.fieldOffsetsOfDataCtor pp ctorDef
@@ -136,7 +139,7 @@ destructData pp a uScrut ctorDef bsFields xBody
  = do   
         -- Get the address of the payload.
         let bPayload    = BAnon O.tAddr
-        let xPayload    = O.xPayloadOfRawSmall a (XVar a uScrut)
+        let xPayload    = O.xPayloadOfRawSmall a (error "destructData: broken") (XVar a uScrut)
 
         -- Bind pattern variables to the fields.
         let uPayload    = UIx 0 O.tAddr

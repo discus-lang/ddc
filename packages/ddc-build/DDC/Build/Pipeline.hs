@@ -205,13 +205,7 @@ pipeCore mm pp
 
                 goCheck mm1
                  = case C.checkModule primDataDefs primKindEnv primTypeEnv mm1 of
-                        Left err  -> return [ErrorLint err]
-{-}                         -> case H.parseExp (show mm1) of
-                                H.ParseOk parsed        -> error $ H.prettyPrint parsed
-                                _                       -> error "bitches"
-
---                        error (show mm1) -- return [ErrorLint err]
--}
+                        Left err   -> return [ErrorLint err]
                         Right mm2  -> goComplies mm2
 
                 goComplies mm1
