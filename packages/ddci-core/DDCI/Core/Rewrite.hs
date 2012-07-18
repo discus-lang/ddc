@@ -17,6 +17,9 @@ import Data.Char
 import qualified DDC.Core.Check         as C
 import qualified DDC.Base.Parser        as BP
 
+import DDC.Core.Module
+import Data.Map                         (Map)
+
 
 -- | :set rule command
 data SetRuleCommand a n
@@ -44,29 +47,31 @@ parseFirstWord s = break isSpace $ dropWhile isSpace s
 parseRewrite 
         :: (Ord n, Show n, Pretty n)
         => Fragment n err 
+	-> Map ModuleName (Module (C.AnTEC () n) n)
         -> String 
         -> Either Error (SetRuleCommand (C.AnTEC () n) n)
 
-parseRewrite fragment str
+parseRewrite fragment modules str
  = case dropWhile isSpace str of
 	[]		-> Right SetList
-	('+':rest)	-> parseAdd fragment rest
+	('+':rest)	-> parseAdd fragment modules rest
 
 	('-':rest)	
          -> let (name,_) = parseFirstWord rest 
             in Right $ SetRemove name
 
-	rest            -> parseAdd fragment rest
+	rest            -> parseAdd fragment modules rest
 
 
 -- | Parse add rule
 parseAdd
         :: (Ord n, Show n, Pretty n)
         => Fragment n err
+	-> Map ModuleName (Module (C.AnTEC () n) n)
         -> String 
         -> Either Error (SetRuleCommand (C.AnTEC () n) n)
 
-parseAdd fragment str
+parseAdd fragment _ str
  | Fragment profile _ _ _ _ _ _ _ _     <- fragment
  , (name, rest)                         <- parseFirstWord str
  = case BP.runTokenParser describeTok "<interactive>" pRule

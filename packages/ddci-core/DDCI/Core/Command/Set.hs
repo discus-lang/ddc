@@ -25,7 +25,7 @@ cmdSet ::  State -> String -> IO State
 
 -- Display the active modes.
 cmdSet state []
- | Bundle frag _ simpl _  <- stateBundle state
+ | Bundle frag modules _ simpl _  <- stateBundle state
  = do   let langName    = profileName (fragmentProfile frag)
 
         putStrLn $ renderIndent
@@ -33,6 +33,7 @@ cmdSet state []
                  , text "Language:   " <> text langName
                  , text "Simplifier: " <> ppr  simpl
                  , text "Builder:    " <> text (show $ liftM builderName $ stateBuilder state) ]
+         <$> vcat (text "With:       " : map ppr (Map.keys modules))
          <$> vcat (text "With Lite:  " : map ppr (Map.keys (stateWithLite state)))
          <$> vcat (text "With Salt:  " : map ppr (Map.keys (stateWithSalt state)))
 
@@ -46,14 +47,14 @@ cmdSet state cmd
          Just (Language fragment)
           | Fragment _ _ _ _ _ _ _ _ zero <- fragment
           -> do chatStrLn state "ok"
-                return $ state { stateBundle = Bundle fragment zero (Trans Id) Map.empty }
+                return $ state { stateBundle = Bundle fragment Map.empty zero (Trans Id) Map.empty }
 
          Nothing
           -> do putStrLn "unknown language"
                 return state
 
  | "trans" : rest        <- words cmd
- , Bundle frag _ _ rules <- stateBundle state
+ , Bundle frag modules _ _ rules <- stateBundle state
  , Fragment _ _ _ _ _ _ mkNamT mkNamX zero <- frag
  = do   case parseSimplifier 
                 mkNamT mkNamX 
@@ -62,24 +63,24 @@ cmdSet state cmd
                 (concat rest) of
          Just simpl
           -> do chatStrLn state "ok"
-                return $ state { stateBundle = Bundle frag zero simpl rules }
+                return $ state { stateBundle = Bundle frag modules zero simpl rules }
 
          Nothing
           -> do putStrLn "transform spec parse error"
                 return state
 
  | ("rule", rest)	        <- R.parseFirstWord cmd
- , Bundle frag zero simpl rules <- stateBundle state
- = case R.parseRewrite frag rest of
+ , Bundle frag modules zero simpl rules <- stateBundle state
+ = case R.parseRewrite frag modules rest of
 	Right (R.SetAdd name rule)
 	 -> do	chatStrLn state $ "ok, added " ++ name
 		let rules' = Map.insert name rule rules
-		return $ state { stateBundle = Bundle frag zero simpl rules' }
+		return $ state { stateBundle = Bundle frag modules zero simpl rules' }
 
 	Right (R.SetRemove name)
 	 -> do	chatStrLn state $ "ok, removed " ++ name
 		let rules' = Map.delete name rules
-		return $ state { stateBundle = Bundle frag zero simpl rules' }
+		return $ state { stateBundle = Bundle frag modules zero simpl rules' }
 
 	Right (R.SetList)
 	 -> do	let rules' = Map.toList rules

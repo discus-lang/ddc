@@ -56,6 +56,8 @@ data Command
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
 
         | CommandWith           -- ^ Add a module to the inliner table.
+	| CommandWithLite
+	| CommandWithSalt
         deriving (Eq, Show)
 
 
@@ -87,7 +89,9 @@ commands
         , (":to-salt",          CommandToSalt)
         , (":to-c",             CommandToC)
         , (":to-llvm",          CommandToLlvm) 
-        , (":with",             CommandWith)]
+        , (":with",             CommandWith)
+        , (":with-lite",        CommandWithLite)
+        , (":with-salt",        CommandWithSalt) ]
 
 
 -- | Read the command from the front of a string.
@@ -237,3 +241,7 @@ handleCmd1 state cmd source line
 
         CommandWith
          ->     cmdWith state source line
+        CommandWithLite
+         ->     cmdWithLite state source line
+        CommandWithSalt
+         ->     cmdWithSalt state source line

@@ -27,7 +27,7 @@ import Data.Typeable
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
- | Bundle fragment zero simpl _     <- stateBundle state
+ | Bundle fragment _ zero simpl _     <- stateBundle state
  , Fragment profile _ _ _ _ _ _ _ _ <- fragment
  =   cmdParseCheckExp state fragment True source str 
  >>= goStore profile zero simpl
@@ -49,7 +49,7 @@ cmdTrans state source str
 --   then evaluate and display the result
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
- | Bundle fragment zero simpl0 _       <- stateBundle state
+ | Bundle fragment _ zero simpl0 _       <- stateBundle state
  , Fragment profile0 _ _ _ _ _ _ _ _   <- fragment
 
  -- The evaluator only works on expressions with Eval.Names, 

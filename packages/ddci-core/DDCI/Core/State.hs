@@ -72,6 +72,7 @@ data Bundle
         .  (Typeable n, Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
         => Bundle 
         {  bundleFragment        :: Fragment n err
+	,  bundleModules	 :: Map ModuleName (Module (AnTEC () n) n)
         ,  bundleStateInit       :: s
         ,  bundleSimplifier      :: Simplifier s (AnTEC () n) n
         ,  bundleRewriteRules    :: Map String (RewriteRule (AnTEC () n) n) }
@@ -110,7 +111,7 @@ initState interface
         = State
         { stateInterface        = interface
         , stateModes            = Set.empty 
-        , stateBundle           = Bundle fragmentEval () (S.Trans S.Id) Map.empty
+        , stateBundle           = Bundle fragmentEval Map.empty () (S.Trans S.Id) Map.empty
         , stateWithLite         = Map.empty
         , stateWithSalt         = Map.empty
         , stateSimplLite        = S.Trans S.Id
