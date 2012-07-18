@@ -148,7 +148,7 @@ matchT' stack1 stack2 t1 t2 vs subst
 
         -- Push binders on the stack as we enter foralls.
         (TForall b11 t12, TForall b21 t22)
-         -- |  equivT  (typeOfBind b11) (typeOfBind b21)
+         --  equivT  (typeOfBind b11) (typeOfBind b21)
          -> do
 		subst' <- matchT' stack1 stack2 (typeOfBind b11) (typeOfBind b21) vs subst
 		matchT' (b11 : stack1)

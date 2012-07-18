@@ -91,7 +91,7 @@ parseAdd fragment@(Fragment profile _ _ _ _ _ _ _ _) modules str
 
 	mods	 = Map.elems modules
 
-	getbinds m = E.fromList $ map (\(n,k) -> BName n k) $ Map.assocs m -- $ moduleExportTypes m
+	getbinds m = E.fromList $ map (\(n,k) -> BName n k) $ Map.assocs m 
 
 	kinds'	 = foldl E.union kinds (map (getbinds.moduleExportKinds) mods)
 	types'	 = foldl E.union types (map (getbinds.moduleExportTypes) mods)
