@@ -23,6 +23,7 @@ module DDC.Type.Compounds
         , tApp,          ($:)
         , tApps,         takeTApps
         , takeTyConApps, takeDataTyConApps
+        , takePrimeRegion
         , tForall
         , tForalls,      takeTForalls
         , tBot
@@ -242,6 +243,18 @@ takeDataTyConApps tt
          | TyConBound (UPrim _ t)       <- tc
          , TCon (TyConKind KiConData)   <- takeResultKind t
          -> Just (tc, args)
+
+        _ -> Nothing
+
+
+-- | Take the prime region variable of a data type.
+--   This corresponds to the region the outermost constructor is allocated into.
+takePrimeRegion :: Type n -> Maybe (Type n)
+takePrimeRegion tt
+ = case takeTApps tt of
+        TCon _ : tR@(TVar u) : _
+         | TCon (TyConKind KiConRegion) <- typeOfBound u
+          -> Just tR
 
         _ -> Nothing
 

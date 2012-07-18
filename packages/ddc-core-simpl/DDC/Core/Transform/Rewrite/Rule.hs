@@ -13,7 +13,6 @@ import DDC.Type.Pretty()
 import DDC.Core.Transform.Rewrite.Error
 import qualified DDC.Core.Check.CheckExp        as C
 import qualified DDC.Core.Transform.SpreadX     as S
-import qualified DDC.Type.DataDef               as T
 import qualified DDC.Type.Compounds             as T
 import qualified DDC.Type.Env                   as T
 import qualified DDC.Type.Equiv                 as T
@@ -68,20 +67,20 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 -- TODO return multiple errors?
 checkRewriteRule
     :: (Ord n, Show n, Pretty n)        
-    => T.DataDefs n             -- ^ Data type definitions.
+    => C.Config n               -- ^ Type checker config.
     -> T.Env n                  -- ^ Kind environment.
     -> T.Env n                  -- ^ Type environment.
     -> RewriteRule a n	        -- ^ Rule to check
     -> Either (Error a n)
 	      (RewriteRule (C.AnTEC a n) n)
 
-checkRewriteRule defs kenv tenv
+checkRewriteRule config kenv tenv
     (RewriteRule bs cs lhs rhs _ _)
  = do	let (kenv',tenv') = extendBinds bs kenv tenv
 	let cs' = map (S.spreadT kenv') cs
 
-	(lhs',tl,el,cl) <- check defs kenv' tenv' lhs (ErrorTypeCheck Lhs)
-	(rhs',tr,er,cr) <- check defs kenv' tenv' rhs (ErrorTypeCheck Rhs)
+	(lhs',tl,el,cl) <- check config kenv' tenv' lhs (ErrorTypeCheck Lhs)
+	(rhs',tr,er,cr) <- check config kenv' tenv' rhs (ErrorTypeCheck Rhs)
 
 	let err = ErrorTypeConflict (tl,el,cl) (tr,er,cr)
 

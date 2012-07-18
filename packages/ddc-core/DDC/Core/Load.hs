@@ -64,9 +64,11 @@ loadModule
 
 loadModule profile sourceName toks'
  = goParse toks'
- where  defs    = profilePrimDataDefs profile
-        kenv    = profilePrimKinds    profile
-        tenv    = profilePrimTypes    profile
+ where  
+        -- Type checker config kind and type environments.
+        config  = configOfProfile  profile
+        kenv    = profilePrimKinds profile
+        tenv    = profilePrimTypes profile
 
         -- Parse the tokens.
         goParse toks                
@@ -76,7 +78,7 @@ loadModule profile sourceName toks'
 
         -- Check that the module is type sound.
         goCheckType mm
-         = case C.checkModule defs kenv tenv mm of
+         = case C.checkModule config kenv tenv mm of
                 Left err  -> Left (ErrorCheckExp err)
                 Right mm' -> goCheckCompliance mm'
 
@@ -130,9 +132,10 @@ loadWitness
 
 loadWitness profile sourceName toks'
  = goParse toks'
- where  defs    = profilePrimDataDefs profile
-        kenv    = profilePrimKinds    profile
-        tenv    = profilePrimTypes    profile
+ where  -- Type checker config, kind and type environments.
+        config  = configOfProfile  profile
+        kenv    = profilePrimKinds profile
+        tenv    = profilePrimTypes profile
 
         -- Parse the tokens.
         goParse toks                
@@ -142,7 +145,7 @@ loadWitness profile sourceName toks'
 
         -- Check the kind of the type.
         goCheckType w
-         = case C.checkWitness defs kenv tenv w of
+         = case C.checkWitness config kenv tenv w of
                 Left err  -> Left (ErrorCheckExp err)
                 Right k   -> Right (w, k)
 
@@ -160,9 +163,11 @@ loadExp
 
 loadExp profile sourceName toks'
  = goParse toks'
- where  defs    = profilePrimDataDefs profile
-        kenv    = profilePrimKinds    profile
-        tenv    = profilePrimTypes    profile
+ where  
+        -- Type checker profile, kind and type environments.
+        config  = configOfProfile  profile
+        kenv    = profilePrimKinds profile
+        tenv    = profilePrimTypes profile
 
         -- Parse the tokens.
         goParse toks                
@@ -172,7 +177,7 @@ loadExp profile sourceName toks'
 
         -- Check the kind of the type.
         goCheckType x
-         = case C.checkExp defs kenv tenv x of
+         = case C.checkExp config kenv tenv x of
                 Left err            -> Left  (ErrorCheckExp err)
                 Right (x', t, e, c) -> goCheckCompliance x' t e c
 

@@ -5,11 +5,14 @@ where
 
 -- | Language Features
 data Feature
+        -- Type system features ---------------------------
+        -- | Produce and require Use and DeepUse terms in closures.
+        = ClosureTerms 
 
         -- General features -------------------------------
         -- | Accept partially applied primops.
         --   Runtime systems usually can't handle this.
-        = PartialPrims
+        | PartialPrims
 
         -- | Allow function application between non-variables.
         | GeneralApplication

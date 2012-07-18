@@ -9,9 +9,7 @@ imports {
         getTag   :: [r : %]. Ptr# r Obj -> Tag#;
 }
 with letrec {
-addInt [r1 r2 r3 : %] 
-        (x : Ptr# r1 Obj) { !0 | Use r1 + Use r2 + Use r3 }
-        (y : Ptr# r2 Obj) { !0 | Use r1 + Use r2 + Use r3 } 
+addInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
         : Ptr# r3 Obj
  =      let x'  = unboxInt [r1] x in
         let y'  = unboxInt [r2] y in
@@ -20,9 +18,7 @@ addInt [r1 r2 r3 : %]
         return# [Ptr# r3 Obj] z;
 
 
-boxInt  [r : %]
-        (x : Int#) { !0 | Use r } 
-        : Ptr# r Obj
+boxInt  [r : %] (x : Int#) : Ptr# r Obj
  = do { obj     = allocRaw [r] TAG0# 4#;
         addr    = takePtr# [r] [Obj] obj;
         write#  [Int#] addr 8# x;
@@ -30,9 +26,7 @@ boxInt  [r : %]
       };
 
 
-unboxInt [r : %] 
-        (obj : Ptr# r Obj) { !0 | Use r } 
-        : Int#
+unboxInt [r : %] (obj : Ptr# r Obj) : Int#
  = do { addr    = takePtr# [r] [Obj] obj;
         x       = read#    [Int#] addr 8#;
         return# [Int#] x;

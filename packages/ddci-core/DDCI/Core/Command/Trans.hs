@@ -103,7 +103,7 @@ applyTrans state profile zero simpl (x, t1, eff1, clo1)
                $ applySimplifierX simpl x
 
         -- Check that the simplifier perserved the type of the expression.
-        case checkExp (profilePrimDataDefs profile)
+        case checkExp (configOfProfile  profile)
                       (profilePrimKinds profile)
                       (profilePrimTypes profile) x' of
           Right (_, t2, eff2, clo2)

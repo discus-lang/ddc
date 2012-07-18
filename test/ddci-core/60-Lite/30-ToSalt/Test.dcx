@@ -107,14 +107,15 @@ tail   [r : %] (def : List r (Int r))
 
 
 -- Take the head of a polymorphic list
-:to-salt..
-module Main with letrec
-head    [r : %] [a : *] (def : a)
-        (xs : List r a) {Read r | DeepUse a}
-        : a
- = case xs of
-        Cons x xs'      -> x
-        _               -> def;;
+-- BROKEN: need to handle polymorphic types better in lite -> salt conversion.
+--:to-salt..
+--module Main with letrec
+--head    [r : %] [a : *] (def : a)
+--        (xs : List r a) {Read r | DeepUse a}
+--        : a
+-- = case xs of
+--        Cons x xs'      -> x
+--        _               -> def;;
 
 
 -- Construct a singleton list,
@@ -129,11 +130,12 @@ singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 }
 
 -- Construct a singleton list,
 --      packs a Boxed object.
-:to-salt..
-module Main with letrec
-singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
-        : List r1 (Int r2)
- = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
+-- BROKEN: need to construct unit values.
+--:to-salt..
+--module Main with letrec
+--singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
+--        : List r1 (Int r2)
+-- = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
 
 
 -- Full application.

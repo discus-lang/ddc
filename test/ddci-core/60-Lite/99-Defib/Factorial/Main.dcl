@@ -1,8 +1,8 @@
 
 module Main 
 imports {
-        showInt   :: Int# -> Ptr# String#;
-        putStrLn  :: Ptr# String# -> Void#;
+        showInt   :: [r : %]. Int# -> Ptr# r String#;
+        putStrLn  :: [r : %]. Ptr# r String# -> Void#;
 }
 with letrec
 
@@ -30,9 +30,9 @@ unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
         I# i  -> i
 
 
-fac    [r : %] 
-       (acc : Int r) {!0 | Use r}
-       (n   : Int r) {Read r + Alloc r | Use r} : Int r
+fac     [r : %] 
+        (acc : Int r) {!0 | Use r }
+        (n   : Int r) {Read r + Alloc r | Use r} : Int r
  =  case n of { 
         I# i -> 
          case i of {
@@ -44,8 +44,10 @@ fac    [r : %]
  }
 
 
-main (argc : Nat#) (argv : Ptr# String#) : Int#
- = letregion r in 
-   let x        = fac [r] (I# [r] 1i#) (I# [r] 10i#) in
-   let _        = putStrLn (showInt (unboxInt [r] x)) in
+main    [r : %] 
+        (argc : Nat#)           {!0 | Use r} 
+        (argv : Ptr# r String#) {Read r + Alloc r | Use r} 
+        : Int#
+ = let x        = fac [r] (I# [r] 1i#) (I# [r] 10i#) in
+   let _        = putStrLn [r] (showInt [r] (unboxInt [r] x)) in
    unboxInt [r] (I# [r] 0i#)

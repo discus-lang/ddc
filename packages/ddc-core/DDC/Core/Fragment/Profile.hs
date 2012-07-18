@@ -6,8 +6,12 @@ module DDC.Core.Fragment.Profile
 
         , Features(..)
         , zeroFeatures
-        , setFeature)
+        , setFeature
+
+        -- * Making type checker profiles.
+        , configOfProfile )
 where
+import DDC.Core.Check
 import DDC.Core.Fragment.Feature
 import DDC.Type.DataDef
 import DDC.Type.Env                     (Env)
@@ -44,7 +48,8 @@ zeroProfile
 -- | A flattened set of features, for easy lookup.
 data Features 
         = Features
-        { featuresPartialPrims          :: Bool
+        { featuresClosureTerms          :: Bool
+        , featuresPartialPrims          :: Bool
         , featuresGeneralApplication    :: Bool
         , featuresNestedFunctions       :: Bool
         , featuresLazyBindings          :: Bool
@@ -60,7 +65,8 @@ data Features
 zeroFeatures :: Features
 zeroFeatures
         = Features
-        { featuresPartialPrims          = False
+        { featuresClosureTerms          = False
+        , featuresPartialPrims          = False
         , featuresGeneralApplication    = False
         , featuresNestedFunctions       = False
         , featuresLazyBindings          = False
@@ -75,6 +81,7 @@ zeroFeatures
 setFeature :: Feature -> Bool -> Features -> Features
 setFeature feature val features
  = case feature of
+        ClosureTerms            -> features { featuresClosureTerms        = val }
         PartialPrims            -> features { featuresPartialPrims        = val }
         GeneralApplication      -> features { featuresGeneralApplication  = val }
         NestedFunctions         -> features { featuresNestedFunctions     = val }
@@ -84,3 +91,17 @@ setFeature feature val features
         NameShadowing           -> features { featuresNameShadowing       = val }
         UnusedBindings          -> features { featuresUnusedBindings      = val }
         UnusedMatches           -> features { featuresUnusedMatches       = val }
+
+
+-- | Convert a langage profile to a type checker configuration.
+configOfProfile :: Profile n -> Config n
+configOfProfile profile
+        = Config
+        { configDataDefs      
+                = profilePrimDataDefs profile
+
+        , configSuppressClosures      
+                = not   $ featuresClosureTerms
+                        $ profileFeatures profile }
+
+

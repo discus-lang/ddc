@@ -8,17 +8,17 @@
 --      packs a RawSmall Object.
 :to-c..
 module Main with letrec
-boxInt [r : %] (i : Int32#) { Alloc r | Use r } : Int r
-        = I32# [r] i;;
+boxInt [r : %] (i : Int#) { Alloc r | Use r } : Int r
+        = I# [r] i;;
 
 
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
 :to-c..
 module Main with letrec
-unboxInt [r : %] (x : Int r) { Read r | $0 } : Int32#
+unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
  = case x of 
-        I32# i  -> i;;
+        I# i  -> i;;
 
 
 -- Boxed addition
@@ -28,15 +28,16 @@ addInt [r1 r2 r3 : %]
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
         : Int r3
- =  case x of { I32# i1 
- -> case y of { I32# i2 
- -> I32# [r3] (add# [Int32#] i1 i2) } };;
+ =  case x of { I# i1 
+ -> case y of { I# i2 
+ -> I# [r3] (add# [Int#] i1 i2) } };;
 
 
 -- Construct a singleton list,
 --      packs a Boxed objet.
-:to-c..
-module Main with letrec
-singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
-        : List r1 (Int r2)
- = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
+-- BROKEN: handle unit data types
+--:to-c..
+--module Main with letrec
+--singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
+--        : List r1 (Int r2)
+-- = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;

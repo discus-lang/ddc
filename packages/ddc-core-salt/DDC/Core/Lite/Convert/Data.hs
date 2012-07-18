@@ -126,9 +126,12 @@ destructData pp a uScrut ctorDef bsFields xBody
 
  | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
  = do   
+        -- Get the prime region that the read effects are assigned to.
+        let Just tPrime = takePrimeRegion (typeOfBound uScrut)
+
         -- Bind pattern variables to each of the fields.
         let lsFields    = [ LLet LetStrict bField 
-                                (O.xGetFieldOfBoxed a (XVar a uScrut) ix)
+                                (O.xGetFieldOfBoxed a tPrime (XVar a uScrut) ix)
                                 | bField        <- bsFields
                                 | ix            <- [0..] ]
 
@@ -137,9 +140,12 @@ destructData pp a uScrut ctorDef bsFields xBody
  | Just L.HeapObjectRawSmall <- L.heapObjectOfDataCtor ctorDef
  , Just offsets              <- L.fieldOffsetsOfDataCtor pp ctorDef
  = do   
+        -- Get the prime region that the read effects are assigned to.
+        let Just tPrime = takePrimeRegion (typeOfBound uScrut)
+
         -- Get the address of the payload.
         let bPayload    = BAnon O.tAddr
-        let xPayload    = O.xPayloadOfRawSmall a (error "destructData: broken") (XVar a uScrut)
+        let xPayload    = O.xPayloadOfRawSmall a tPrime (XVar a uScrut)
 
         -- Bind pattern variables to the fields.
         let uPayload    = UIx 0 O.tAddr

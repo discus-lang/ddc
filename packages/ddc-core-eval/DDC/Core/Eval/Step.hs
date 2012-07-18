@@ -7,6 +7,7 @@ module DDC.Core.Eval.Step
         , isValue
         , isWeakValue)
 where
+import DDC.Core.Eval.Profile
 import DDC.Core.Eval.Store
 import DDC.Core.Eval.Name
 import DDC.Core.Eval.Prim
@@ -16,6 +17,7 @@ import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Check
+import DDC.Core.Fragment.Profile
 import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Core.Exp
@@ -90,7 +92,7 @@ step    :: Store        -- ^ Current store.
 step store xx
  | (casts, xp)  <- unwrapCasts xx
  , isLambdaX xp
- = case typeOfExp primDataDefs xp of
+ = case typeOfExp (configOfProfile evalProfile) xp of
         Left err -> StepStuckMistyped err
         Right t   
          -> let Just (bs, xBody)  = takeXLamFlags xp
@@ -254,7 +256,7 @@ step store (XLet a (LLet LetStrict b x1) x2)
 step store (XLet _ (LLet (LetLazy _w) b x1) x2)
         -- We need the type of the expression to attach to the location
         -- This fakes the store typing from the formal typing rules.
- = case typeOfExp primDataDefs x1 of
+ = case typeOfExp (configOfProfile evalProfile) x1 of
         Left err -> StepStuckMistyped err
         Right t1
          -> let (store1, l)   = allocBind (Rgn 0) t1 (SThunk x1) store

@@ -90,12 +90,14 @@ runtimeImportSigs
 
 
 -- | Get the constructor tag of an object.
-xGetTag :: a -> Exp a Name
-xGetTag a = XVar a uGetTag
+xGetTag :: a -> Type Name -> Exp a Name -> Exp a Name
+xGetTag a tR x2 
+ = makeXApps a (XVar a uGetTag)
+        [ XType tR, x2 ]
 
 uGetTag :: Bound Name
 uGetTag = UName (NameVar "getTag")
-          $ tForall kRegion $ \r -> (tFunPE (tPtr r tObj) tTag)
+        $ tForall kRegion $ \r -> tPtr r tObj `tFunPE` tTag
 
 
 -- Boxed ------------------------------
@@ -113,15 +115,15 @@ uAllocBoxed
 
 
 -- | Get a field of a Boxed object.
-xGetFieldOfBoxed :: a -> Exp a Name -> Integer -> Exp a Name
-xGetFieldOfBoxed a x2 offset
+xGetFieldOfBoxed :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
+xGetFieldOfBoxed a tR x2 offset
  = makeXApps a (XVar a uGetFieldOfBoxed) 
-        [x2, XCon a (UPrim (NameNat offset) tNat)]
+        [XType tR, x2, XCon a (UPrim (NameNat offset) tNat)]
 
 uGetFieldOfBoxed :: Bound Name
 uGetFieldOfBoxed 
         = UName (NameVar "getFieldOfBoxed")
-        $ tForall kRegion $ \r -> (tPtr r tObj `tFunPE` tNat `tFunPE` tPtr r tObj)
+        $ tForall kRegion $ \r -> tPtr r tObj `tFunPE` tNat `tFunPE` tPtr r tObj
 
 
 -- | Set a field in a Boxed Object.

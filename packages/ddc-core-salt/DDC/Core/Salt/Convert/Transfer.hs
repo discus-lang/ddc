@@ -27,8 +27,8 @@ import DDC.Core.Check           (AnTEC(..))
 import DDC.Core.Salt.Runtime
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Error
-import DDC.Core.Salt.Env
-import DDC.Type.Compounds
+-- import DDC.Core.Salt.Env
+-- import DDC.Type.Compounds
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 
@@ -79,14 +79,15 @@ transSuper tails xx
         XLam  a b x     -> XLam  a b $ down x
 
         -- Tail-call a supercombinator.
-        XApp{}
-         | xv@(XVar a (UName n tF)) : args <- takeXApps xx
-         , Set.member n tails
-         , (tsArgs, tResult)  <- takeTFunArgResult tF
-         -> let arity   = length args
-                p       = PrimCallTail arity
-                u       = UPrim (NamePrim (PrimCall p)) (typeOfPrimCall p)
-            in  makeXApps a (XVar a u) (map XType (tsArgs ++ [tResult]) ++ (xv : args))
+        -- BROKEN: need to handle region args out the front.
+        --XApp{}
+        -- | xv@(XVar a (UName n tF)) : args <- takeXApps xx
+        -- , Set.member n tails
+        -- , (tsArgs, tResult)  <- takeTFunArgResult tF
+        -- -> let arity   = length args
+        --        p       = PrimCallTail arity
+        --        u       = UPrim (NamePrim (PrimCall p)) (typeOfPrimCall p)
+        --    in  makeXApps a (XVar a u) (map XType (tsArgs ++ [tResult]) ++ (xv : args))
 
         -- Return the result of this application.
         XApp  a x1 x2   

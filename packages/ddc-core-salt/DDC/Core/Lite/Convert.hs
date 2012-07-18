@@ -26,6 +26,7 @@ import qualified DDC.Core.Salt.Env       as O
 import qualified Data.Map                as Map
 import Control.Monad
 
+
 -- | Convert a Disciple Core Lite module to Disciple Core Salt.
 --
 --   Case expressions on alrebraic data values are converted into ones that just
@@ -196,9 +197,9 @@ convertBodyX pp defs xx
         -- Match against finite algebraic data.
         --   The branch is against the constructor tag.
         XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
-         -> do  x'      <- convertArgX pp defs x
-                t'      <- convertT t
-                alts'   <- mapM (convertA pp defs a' uX) alts
+         -> do  x'@(XVar _ uX') <- convertArgX pp defs x
+                t'              <- convertT t
+                alts'           <- mapM (convertA pp defs a' uX) alts
 
                 let asDefault
                         | any isPDefault [p | AAlt p _ <- alts]   
@@ -207,7 +208,8 @@ convertBodyX pp defs xx
                         | otherwise     
                         = [AAlt PDefault (O.xFail a' t')]
 
-                return  $ XCase a' (XApp a' (O.xGetTag a') x') 
+                let Just tPrime = takePrimeRegion (typeOfBound uX')
+                return  $ XCase a' (O.xGetTag a' tPrime x') 
                         $ alts' ++ asDefault
 
         XCase{}         -> throw $ ErrorNotNormalized
@@ -265,9 +267,17 @@ convertArgX pp defs xx
         XApp (AnTEC _t _ _ a') _ _
          | x1 : xsArgs          <- takeXApps xx
          -> do  x1'             <- convertArgX pp defs x1
+
+                -- We need to keep region arguments, 
+                -- but can discard other types and witnesses.
+                let keepArg x
+                        = case x of
+                                XType (TVar u)  -> isRegionKind (typeOfBound u)
+                                XWitness{}      -> False
+                                _               -> True
+
                 let xsArgs_exp  = [x | x <- xsArgs
-                                     , not $ isXType x
-                                     , not $ isXWitness x]
+                                     , keepArg x ]
 
                 xsArgs_exp'     <- mapM (convertArgX pp defs) xsArgs_exp
                 return $ makeXApps a' x1' xsArgs_exp'
@@ -288,7 +298,7 @@ convertArgX pp defs xx
 
         -- Types and witness arguments should have been discarded already.
         XType t         -> liftM XType (convertT t)
-        XWitness{}      -> error "Xwitness as arg" -- throw ErrorMistyped
+        XWitness{}      -> error "convertArgX: witness as arg" -- throw ErrorMistyped
 
 
 convertCtorAppX 
@@ -385,12 +395,12 @@ convertA pp defs a uScrut alt
                 xBody1          <- convertBodyX pp defs x
 
                 -- Add let bindings to unpack the constructor.
-                xBody2          <- error (show uScrut) `seq` destructData pp a uScrut' ctorDef bsFields' xBody1
+                xBody2          <- destructData pp a uScrut' ctorDef bsFields' xBody1
 
                 return  $ AAlt (PData uTag []) xBody2
 
         AAlt{}          
-         -> error (show alt) -- throw ErrorInvalidAlt
+         -> error $ "convertA: invalid alt " -- throw ErrorInvalidAlt
 
 
 

@@ -4,7 +4,7 @@ ok
 
 -- Set the builder explicitly so we get consistent object layouts.
 ok
-
+ok
 
 -- Unboxed literal patterns.
 module Main with
@@ -69,11 +69,11 @@ letrec {
 --      packs a RawSmall Object.
 module Main with
 letrec {
-  boxInt : Int# -> Ptr# Obj
-    = \(i : Int#).
-      let x0 : Ptr# Obj = allocRawSmall TAG0# 8# in
-      let x1 : Addr# = payloadOfRawSmall x0 in
-      let _ : Void# = write# [Int#] x1 0# i in
+  boxInt : [r : %].Int# -> Ptr# r Obj
+    = /\(r : %).
+       \(i : Int#).
+      let x0 : Ptr# r Obj = allocRawSmall [r] TAG0# 8# in
+      let x1 : Addr# = payloadOfRawSmall [r] x0 in
       x0
 }
 
@@ -82,12 +82,13 @@ letrec {
 --      unpacks a RawSmall Object.
 module Main with
 letrec {
-  unboxInt : Ptr# Obj -> Int#
-    = \(x : Ptr# Obj).
-      let x0 : Tag# = getTag x in
+  unboxInt : [r : %].Ptr# r Obj -> Int#
+    = /\(r : %).
+       \(x : Ptr# r Obj).
+      let x0 : Tag# = getTag [r] x in
       case x0 of {
         TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall x in
+         -> let x1 : Addr# = payloadOfRawSmall [r] x in
             let i : Int# = read# [Int#] x1 0# in
             i;
         _ 
@@ -99,17 +100,18 @@ letrec {
 -- Nested case-expressions.
 module Main with
 letrec {
-  addInt : Ptr# Obj -> Ptr# Obj -> Int#
-    = \(x y : Ptr# Obj).
-      let x0 : Tag# = getTag x in
+  addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Int#
+    = /\(r1 r2 r3 : %).
+       \(x : Ptr# r1 Obj).\(y : Ptr# r2 Obj).
+      let x0 : Tag# = getTag [r1] x in
       case x0 of {
         TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall x in
+         -> let x1 : Addr# = payloadOfRawSmall [r1] x in
             let i1 : Int# = read# [Int#] x1 0# in
-            let x2 : Tag# = getTag y in
+            let x2 : Tag# = getTag [r2] y in
             case x2 of {
               TAG0#  
-               -> let x3 : Addr# = payloadOfRawSmall y in
+               -> let x3 : Addr# = payloadOfRawSmall [r2] y in
                   let i2 : Int# = read# [Int#] x3 0# in
                   add# [Int#] i1 i2;
               _ 
@@ -124,28 +126,27 @@ letrec {
 -- Boxed addition
 module Main with
 letrec {
-  addInt : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-    = \(x y : Ptr# Obj).
-      let x0 : Tag# = getTag x in
+  addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+    = /\(r1 r2 r3 : %).
+       \(x : Ptr# r1 Obj).\(y : Ptr# r2 Obj).
+      let x0 : Tag# = getTag [r1] x in
       case x0 of {
         TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall x in
+         -> let x1 : Addr# = payloadOfRawSmall [r1] x in
             let i1 : Int# = read# [Int#] x1 0# in
-            let x2 : Tag# = getTag y in
+            let x2 : Tag# = getTag [r2] y in
             case x2 of {
               TAG0#  
-               -> let x3 : Addr# = payloadOfRawSmall y in
+               -> let x3 : Addr# = payloadOfRawSmall [r2] y in
                   let i2 : Int# = read# [Int#] x3 0# in
-                  let x4 : Ptr# Obj = allocRawSmall TAG0# 8# in
-                  let x5 : Addr# = payloadOfRawSmall x4 in
-                  let x6 : Int# = add# [Int#] i1 i2 in
-                  let _ : Void# = write# [Int#] x5 0# x6 in
+                  let x4 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
+                  let x5 : Addr# = payloadOfRawSmall [r3] x4 in
                   x4;
               _ 
-               -> fail# [Ptr# Obj]
+               -> fail# [Ptr# r3 Obj]
             };
         _ 
-         -> fail# [Ptr# Obj]
+         -> fail# [Ptr# r3 Obj]
       }
 }
 
@@ -154,13 +155,14 @@ letrec {
 --      unpacks a Boxed object.
 module Main with
 letrec {
-  head : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-    = \(def xs : Ptr# Obj).
-      let x0 : Tag# = getTag xs in
+  head : [r : %].Ptr# r Obj -> Ptr# r Obj -> Ptr# r Obj
+    = /\(r : %).
+       \(def xs : Ptr# r Obj).
+      let x0 : Tag# = getTag [r] xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# Obj = getFieldOfBoxed xs 0# in
-            let xs' : Ptr# Obj = getFieldOfBoxed xs 1# in
+         -> let x : Ptr# r Obj = getFieldOfBoxed [r] xs 0# in
+            let xs' : Ptr# r Obj = getFieldOfBoxed [r] xs 1# in
             x;
         _ 
          -> def
@@ -171,13 +173,14 @@ letrec {
 -- Take the tail of an Int list
 module Main with
 letrec {
-  tail : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-    = \(def xs : Ptr# Obj).
-      let x0 : Tag# = getTag xs in
+  tail : [r : %].Ptr# r Obj -> Ptr# r Obj -> Ptr# r Obj
+    = /\(r : %).
+       \(def xs : Ptr# r Obj).
+      let x0 : Tag# = getTag [r] xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# Obj = getFieldOfBoxed xs 0# in
-            let xs' : Ptr# Obj = getFieldOfBoxed xs 1# in
+         -> let x : Ptr# r Obj = getFieldOfBoxed [r] xs 0# in
+            let xs' : Ptr# r Obj = getFieldOfBoxed [r] xs 1# in
             xs;
         _ 
          -> def
@@ -186,20 +189,15 @@ letrec {
 
 
 -- Take the head of a polymorphic list
-module Main with
-letrec {
-  head : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-    = \(def xs : Ptr# Obj).
-      let x0 : Tag# = getTag xs in
-      case x0 of {
-        TAG1#  
-         -> let x : Ptr# Obj = getFieldOfBoxed xs 0# in
-            let xs' : Ptr# Obj = getFieldOfBoxed xs 1# in
-            x;
-        _ 
-         -> def
-      }
-}
+-- BROKEN: need to handle polymorphic types better in lite -> salt conversion.
+--:to-salt..
+--module Main with letrec
+--head    [r : %] [a : *] (def : a)
+--        (xs : List r a) {Read r | DeepUse a}
+--        : a
+-- = case xs of
+--        Cons x xs'      -> x
+--        _               -> def;;
 
 
 -- Construct a singleton list,
@@ -218,50 +216,42 @@ letrec {
 
 -- Construct a singleton list,
 --      packs a Boxed object.
-module Main with
-letrec {
-  singleton : Ptr# Obj -> Ptr# Obj
-    = \(x : Ptr# Obj).
-      let x0 : Ptr# Obj = allocBoxed TAG1# 16# in
-      let _ : Void# = setFieldOfBoxed x0 0# x in
-      let x1 : Ptr# Obj = allocBoxed TAG0# 8# in
-      let x2 : Ptr# Obj = allocBoxed TAG0# 0# in
-      let x3 : Ptr# Obj = x2 in
-      let _ : Void# = setFieldOfBoxed x1 0# x3 in
-      let x4 : Ptr# Obj = x1 in
-      let _ : Void# = setFieldOfBoxed x0 1# x4 in
-      x0
-}
+-- BROKEN: need to construct unit values.
+--:to-salt..
+--module Main with letrec
+--singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
+--        : List r1 (Int r2)
+-- = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
 
 
 -- Full application.
 module Main with
 letrec {
-  addInt : Ptr# Obj -> Ptr# Obj -> Ptr# Obj
-    = \(x y : Ptr# Obj).
-      let x0 : Tag# = getTag x in
+  addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+    = /\(r1 r2 r3 : %).
+       \(x : Ptr# r1 Obj).\(y : Ptr# r2 Obj).
+      let x0 : Tag# = getTag [r1] x in
       case x0 of {
         TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall x in
+         -> let x1 : Addr# = payloadOfRawSmall [r1] x in
             let i1 : Int# = read# [Int#] x1 0# in
-            let x2 : Tag# = getTag y in
+            let x2 : Tag# = getTag [r2] y in
             case x2 of {
               TAG0#  
-               -> let x3 : Addr# = payloadOfRawSmall y in
+               -> let x3 : Addr# = payloadOfRawSmall [r2] y in
                   let i2 : Int# = read# [Int#] x3 0# in
-                  let x4 : Ptr# Obj = allocRawSmall TAG0# 8# in
-                  let x5 : Addr# = payloadOfRawSmall x4 in
-                  let x6 : Int# = add# [Int#] i1 i2 in
-                  let _ : Void# = write# [Int#] x5 0# x6 in
+                  let x4 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
+                  let x5 : Addr# = payloadOfRawSmall [r3] x4 in
                   x4;
               _ 
-               -> fail# [Ptr# Obj]
+               -> fail# [Ptr# r3 Obj]
             };
         _ 
-         -> fail# [Ptr# Obj]
+         -> fail# [Ptr# r3 Obj]
       };
   
-  double : Ptr# Obj -> Ptr# Obj
-    = \(x : Ptr# Obj). addInt x x
+  double : [r1 r2 : %].Ptr# r1 Obj -> Ptr# r2 Obj
+    = /\(r1 r2 : %).
+       \(x : Ptr# r1 Obj). addInt [r1] [r1] [r2] x x
 }
 

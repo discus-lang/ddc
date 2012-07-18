@@ -1,8 +1,11 @@
 
 -- | Type checker for the Disciple core language.
 module DDC.Core.Check
-        ( -- * Checking Modules
-          checkModule
+        ( -- * Configuration
+          Config(..)
+
+          -- * Checking Modules
+        , checkModule
 
           -- * Checking Expressions
         , checkExp,     typeOfExp
@@ -22,5 +25,4 @@ import DDC.Core.Check.ErrorMessage      ()
 import DDC.Core.Check.CheckModule
 import DDC.Core.Check.CheckExp
 import DDC.Core.Check.CheckWitness
-
                 

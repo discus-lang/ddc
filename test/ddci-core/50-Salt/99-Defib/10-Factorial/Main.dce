@@ -1,27 +1,27 @@
 
 module Main
 imports {
-        boxInt    :: Int#   -> Ptr# Obj;
-        unboxInt  :: Ptr# Obj -> Int#;
-        subInt    :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
-        mulInt    :: Ptr# Obj -> Ptr# Obj -> Ptr# Obj;
-        showInt   :: Int# -> Ptr# String#;
-        putStrLn  :: Ptr# String# -> Void#;
+        boxInt    :: [r : %]. Int#   -> Ptr# r Obj;
+        unboxInt  :: [r : %]. Ptr# r Obj -> Int#;
+        subInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
+        mulInt    :: [r1 r2 r3 : %]. Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj;
+        showInt   :: [r1 : %]. Int# -> Ptr# r1 String#;
+        putStrLn  :: [r1 : %]. Ptr# r1 String# -> Void#;
 }
 with letrec 
 
-fac (x: Ptr# Obj) : Ptr# Obj
- = case eq# [Int#] (unboxInt x) 0i# of 
+fac [r1 : %] (x: Ptr# r1 Obj) : Ptr# r1 Obj
+ = case eq# [Int#] (unboxInt [r1] x) 0i# of 
         True#  
-         -> return# [Ptr# Obj] 
-                (boxInt 1i#)
+         -> return# [Ptr# r1 Obj] 
+                (boxInt [r1] 1i#)
 
         False# 
-         -> return# [Ptr# Obj] 
-                (mulInt x (fac (subInt x (boxInt 1i#))))
+         -> return# [Ptr# r1 Obj] 
+                (mulInt [:r1 r1 r1:] x (fac [r1] (subInt [:r1 r1 r1:] x (boxInt [r1] 1i#))))
 
 
-main (argc : Nat#) (argv : Ptr# String#) : Int#
- = do   x2      = fac (boxInt 10i#)
-        putStrLn (showInt (unboxInt x2))
+main [r1 : %] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
+ = do   x2      = fac [r1] (boxInt [r1] 10i#)
+        putStrLn [r1] (showInt [r1] (unboxInt [r1] x2))
         return# [Int#] 0i#

@@ -13,6 +13,7 @@ import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
 import DDC.Core.Transform.Reannotate
+import DDC.Core.Fragment.Profile
 import DDC.Core.Check
 import DDC.Core.Exp
 import DDC.Core.Pretty
@@ -135,7 +136,8 @@ forcePrint
 forcePrint state store x tX effX cloX
  = case force store x of
         StepProgress store' x'
-         -> case checkExp primDataDefs primKindEnv primTypeEnv x' of
+         -> case checkExp (configOfProfile $ fragmentProfile fragmentEval) 
+                        primKindEnv primTypeEnv x' of
              Left err
               -> do 
                     -- Print intermediate expression.

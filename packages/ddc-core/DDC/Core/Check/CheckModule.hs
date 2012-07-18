@@ -7,7 +7,6 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Check.CheckExp
 import DDC.Core.Check.Error
-import DDC.Type.DataDef
 import DDC.Type.Compounds
 import DDC.Base.Pretty
 import DDC.Type.Env             (Env)
@@ -26,39 +25,39 @@ import qualified Data.Map       as Map
 --   If it's bad, you get a description of the error.
 checkModule
         :: (Ord n, Show n, Pretty n)
-        => DataDefs n           -- ^ Primitive data type definitions.
+        => Config n             -- ^ Static config.
         -> Env n                -- ^ Primitive kind environment.
         -> Env n                -- ^ Primitive type environment.
         -> Module a n           -- ^ Module to check.
         -> Either (Error a n) (Module (AnTEC a n) n)
 
-checkModule defs kenv tenv xx 
- = result $ checkModuleM defs kenv tenv xx
+checkModule config kenv tenv xx 
+ = result $ checkModuleM config kenv tenv xx
 
 
 -- checkModule ----------------------------------------------------------------
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
 checkModuleM 
         :: (Ord n, Show n, Pretty n)
-        => DataDefs n           -- ^ Primitive data type definitions.
+        => Config n             -- ^ Static config.
         -> Env n                -- ^ Primitive kind environment.
         -> Env n                -- ^ Primitive type environment.
         -> Module a n           -- ^ Module to check.
         -> CheckM a n (Module (AnTEC a n) n)
 
-checkModuleM defs kenv tenv mm@ModuleCore{}
+checkModuleM config kenv tenv mm@ModuleCore{}
  = do   
         -- Check the sigs for exported things.
-        mapM_ (checkTypeM defs kenv) $ Map.elems $ moduleExportKinds mm
-        mapM_ (checkTypeM defs kenv) $ Map.elems $ moduleExportTypes mm
+        mapM_ (checkTypeM config kenv) $ Map.elems $ moduleExportKinds mm
+        mapM_ (checkTypeM config kenv) $ Map.elems $ moduleExportTypes mm
 
         -- Convert the imported kind and type map to a list of binds.
         let bksImport  = [BName n k |  (n, (_, k)) <- Map.toList $ moduleImportKinds mm]
         let btsImport  = [BName n t |  (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
 
         -- Check the imported kinds and types.
-        mapM_ (checkTypeM defs kenv) $ map typeOfBind bksImport
-        mapM_ (checkTypeM defs kenv) $ map typeOfBind btsImport
+        mapM_ (checkTypeM config kenv) $ map typeOfBind bksImport
+        mapM_ (checkTypeM config kenv) $ map typeOfBind btsImport
 
 
         -- Build the compound environments.
@@ -71,7 +70,7 @@ checkModuleM defs kenv tenv mm@ModuleCore{}
                          $ Env.union tenv $ Env.fromList btsImport
                 
         -- Check our let bindings (with the dummy expression on the end)
-        (x', _, _effs, _) <- checkExpM defs kenv' tenv' (moduleBody mm)
+        (x', _, _effs, _) <- checkExpM config kenv' tenv' (moduleBody mm)
 
         -- TODO: check that types of bindings match types of exports.
         -- TODO: check that all exported bindings are defined.
@@ -86,13 +85,13 @@ checkModuleM defs kenv tenv mm@ModuleCore{}
 -------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
 checkTypeM :: (Ord n, Pretty n) 
-           => DataDefs n 
+           => Config n 
            -> Env n 
            -> Type n 
            -> CheckM a n (Kind n)
 
-checkTypeM defs kenv tt
- = case T.checkType defs kenv tt of
+checkTypeM config kenv tt
+ = case T.checkType (configDataDefs config) kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 

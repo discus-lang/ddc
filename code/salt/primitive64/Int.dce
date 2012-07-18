@@ -2,31 +2,31 @@
 -- | Int primitives for 64-bit machines.
 module Int64
 imports {
-        allocRawSmall :: Tag# -> Nat# -> Ptr# Obj;
+        allocRawSmall :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
 } 
 with 
 letrec {
 
-boxInt (x : Int#) : Ptr# Obj
- = do { obj     = allocRawSmall TAG0# 8#;
-        addr    = takePtr# [Obj] obj;
+boxInt [r : %] (x : Int#) : Ptr# r Obj
+ = do { obj     = allocRawSmall [r] TAG0# 8#;
+        addr    = takePtr# [r] [Obj] obj;
         write#  [Int#] addr 8# x;
-        return# [Ptr# Obj] obj;
+        return# [Ptr# r Obj] obj;
  };
 
-unboxInt (obj : Ptr# Obj) : Int#
- = do { addr    = takePtr# [Obj] obj;
+unboxInt [r : %] (obj : Ptr# r Obj) : Int#
+ = do { addr    = takePtr# [r] [Obj] obj;
         x       = read#   [Int#] addr 8#;
         return# [Int#] x;
  };
 
-addInt (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = return# [Ptr# Obj] (boxInt (add# [Int#] (unboxInt x) (unboxInt y)));
+addInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = return# [Ptr# r3 Obj] (boxInt [r3] (add# [Int#] (unboxInt [r1] x) (unboxInt [r2] y)));
 
-subInt (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = return# [Ptr# Obj] (boxInt (sub# [Int#] (unboxInt x) (unboxInt y)));
+subInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = return# [Ptr# r3 Obj] (boxInt [r3] (sub# [Int#] (unboxInt [r1] x) (unboxInt [r2] y)));
 
-mulInt (x : Ptr# Obj) (y : Ptr# Obj) : Ptr# Obj
- = return# [Ptr# Obj] (boxInt (mul# [Int#] (unboxInt x) (unboxInt y)));
+mulInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
+ = return# [Ptr# r3 Obj] (boxInt [r3] (mul# [Int#] (unboxInt [r1] x) (unboxInt [r2] y)));
 
 }

@@ -1,7 +1,9 @@
 
 -- | Type checker for witness expressions.
 module DDC.Core.Check.CheckWitness
-        ( checkWitness
+        ( Config(..)
+
+        , checkWitness
         , typeOfWitness
         , typeOfWiCon
         , typeOfWbCon
@@ -33,6 +35,15 @@ import qualified DDC.Type.Check.Monad   as G
 type CheckM a n   = G.CheckM (Error a n)
 
 
+-- Config ---------------------------------------------------------------------
+-- | Static config info for the type checker.
+--   These fields don't change as we decend into the tree.
+data Config n
+        = Config
+        { configDataDefs                :: DataDefs n 
+        , configSuppressClosures        :: Bool }
+
+
 -- Wrappers --------------------------------------------------------------------
 -- | Check a witness.
 --   
@@ -46,14 +57,14 @@ type CheckM a n   = G.CheckM (Error a n)
 --
 checkWitness
         :: (Ord n, Pretty n)
-        => DataDefs n           -- ^ Data type definitions.
+        => Config n             -- ^ Static config.
         -> Env n                -- ^ Kind Environment.
         -> Env n                -- ^ Type Environment.
         -> Witness n            -- ^ Witness to check.
         -> Either (Error a n) (Type n)
 
-checkWitness defs kenv tenv xx
-        = result $ checkWitnessM defs kenv tenv xx
+checkWitness config kenv tenv xx
+        = result $ checkWitnessM config kenv tenv xx
 
 
 -- | Like `checkWitness`, but check in an empty environment.
@@ -64,26 +75,26 @@ checkWitness defs kenv tenv xx
 --
 typeOfWitness 
         :: (Ord n, Pretty n) 
-        => DataDefs n
+        => Config n
         -> Witness n 
         -> Either (Error a n) (Type n)
 
-typeOfWitness defs ww 
+typeOfWitness config ww 
         = result 
-        $ checkWitnessM defs Env.empty Env.empty ww
+        $ checkWitnessM config Env.empty Env.empty ww
 
 
 ------------------------------------------------------------------------------
 -- | Like `checkWitness` but using the `CheckM` monad to manage errors.
 checkWitnessM 
         :: (Ord n, Pretty n)
-        => DataDefs n           -- ^ Data type definitions.
+        => Config n             -- ^ Data type definitions.
         -> Env n                -- ^ Kind environment.
         -> Env n                -- ^ Type environment.
         -> Witness n            -- ^ Witness to check.
         -> CheckM a n (Type n)
 
-checkWitnessM _defs _kenv tenv (WVar u)
+checkWitnessM _config _kenv tenv (WVar u)
  = do   let tBound      = typeOfBound u
         let mtEnv       = Env.lookup u tenv
 
@@ -127,14 +138,14 @@ checkWitnessM _defs _kenv tenv (WVar u)
         return tResult
 
 
-checkWitnessM _defs _kenv _tenv (WCon wc)
+checkWitnessM _config _kenv _tenv (WCon wc)
  = return $ typeOfWiCon wc
 
   
 -- value-type application
-checkWitnessM defs kenv tenv ww@(WApp w1 (WType t2))
- = do   t1      <- checkWitnessM  defs kenv tenv w1
-        k2      <- checkTypeM     defs kenv t2
+checkWitnessM config kenv tenv ww@(WApp w1 (WType t2))
+ = do   t1      <- checkWitnessM  config kenv tenv w1
+        k2      <- checkTypeM     config kenv t2
         case t1 of
          TForall b11 t12
           |  typeOfBind b11 == k2
@@ -144,9 +155,9 @@ checkWitnessM defs kenv tenv ww@(WApp w1 (WType t2))
          _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
 -- witness-witness application
-checkWitnessM defs kenv tenv ww@(WApp w1 w2)
- = do   t1      <- checkWitnessM defs kenv tenv w1
-        t2      <- checkWitnessM defs kenv tenv w2
+checkWitnessM config kenv tenv ww@(WApp w1 w2)
+ = do   t1      <- checkWitnessM config kenv tenv w1
+        t2      <- checkWitnessM config kenv tenv w2
         case t1 of
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
           |  t11 == t2   
@@ -156,9 +167,9 @@ checkWitnessM defs kenv tenv ww@(WApp w1 w2)
          _              -> throw $ ErrorWAppNotCtor  ww t1 t2
 
 -- witness joining
-checkWitnessM defs kenv tenv ww@(WJoin w1 w2)
- = do   t1      <- checkWitnessM defs kenv tenv w1
-        t2      <- checkWitnessM defs kenv tenv w2
+checkWitnessM config kenv tenv ww@(WJoin w1 w2)
+ = do   t1      <- checkWitnessM config kenv tenv w1
+        t2      <- checkWitnessM config kenv tenv w2
         case (t1, t2) of
          (  TApp (TCon (TyConWitness TwConPure)) eff1
           , TApp (TCon (TyConWitness TwConPure)) eff2)
@@ -173,8 +184,8 @@ checkWitnessM defs kenv tenv ww@(WJoin w1 w2)
          _ -> throw $ ErrorCannotJoin ww w1 t1 w2 t2
 
 -- embedded types
-checkWitnessM defs kenv _tenv (WType t)
- = checkTypeM defs kenv t
+checkWitnessM config kenv _tenv (WType t)
+ = checkTypeM config kenv t
         
 
 -- | Take the type of a witness constructor.
@@ -200,13 +211,13 @@ typeOfWbCon wb
 -- | Check a type in the exp checking monad.
 checkTypeM 
         :: (Ord n, Pretty n) 
-        => DataDefs n 
+        => Config n 
         -> Env n 
         -> Type n 
         -> CheckM a n (Kind n)
 
-checkTypeM defs kenv tt
- = case T.checkType defs kenv tt of
+checkTypeM config kenv tt
+ = case T.checkType (configDataDefs config) kenv tt of
         Left err        -> throw $ ErrorType err
         Right k         -> return k
 

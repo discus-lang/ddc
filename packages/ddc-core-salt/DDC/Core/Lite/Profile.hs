@@ -26,7 +26,8 @@ profile
 features :: Features
 features 
         = Features
-        { featuresPartialPrims          = False
+        { featuresClosureTerms          = True
+        , featuresPartialPrims          = False
         , featuresGeneralApplication    = True
         , featuresNestedFunctions       = True
         , featuresLazyBindings          = True
