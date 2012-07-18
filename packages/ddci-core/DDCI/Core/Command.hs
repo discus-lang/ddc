@@ -19,6 +19,7 @@ import DDCI.Core.Command.ToC
 import DDCI.Core.Command.ToLlvm
 import DDCI.Core.Command.With
 import DDCI.Core.State
+import Data.Char (isAlphaNum)
 import Data.List
 
 
@@ -97,7 +98,8 @@ readCommand ss
 
         | (cmd, rest) : _ <- [ (cmd, drop (length str) ss) 
                                         | (str, cmd)      <- commands
-                                        , isPrefixOf str ss ]
+                                        , isPrefixOf str ss
+					, checkSeparator $ drop (length str) ss]
         = Just (cmd, rest)
 
         | ':' : _       <- ss
@@ -105,6 +107,14 @@ readCommand ss
 
         | otherwise
         = Nothing
+ where
+	-- check it's the end of the word, so ":with-lite" isn't read as ":with".
+	checkSeparator []	= True
+	checkSeparator (c:_)
+	    | not $ isAlphaNum c
+	    , c /= '-'
+	    = True
+	checkSeparator _	= False
 
 
 -- Commands -------------------------------------------------------------------
