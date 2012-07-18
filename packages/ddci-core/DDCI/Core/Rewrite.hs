@@ -81,14 +81,11 @@ parseAdd fragment@(Fragment profile _ _ _ _ _ _ _ _) modules str
           (fragmentLexExp fragment "interactive" 0 rest) of
                 Left err -> Left $ renderIndent $ ppr err
                 Right rule ->
-                  case checkRewriteRule 
-                        (profilePrimDataDefs profile)
-                        (profilePrimKinds    profile)
-                        (profilePrimTypes    profile) rule of
+                  case checkRewriteRule config kinds' types' rule of
                     Left err    -> Left  $ renderIndent $ ppr err
                     Right rule' -> Right $ SetAdd name rule'
  where
-	dataDefs = profilePrimDataDefs	profile
+        config   = configOfProfile	profile
 	kinds	 = profilePrimKinds	profile
 	types	 = profilePrimTypes	profile
 
