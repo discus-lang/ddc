@@ -74,8 +74,7 @@ getTag [r : %] (obj : Ptr# r Obj)
         ptr             = castPtr# [r] [Word32#] [Obj] obj
         header          = peek# [r] [Word32#] ptr 0#
         tag32           = shr#  [Word32#] header 8w32#
-        tag             = promote# [Tag#] [Word32#] tag32
-        return# [Tag#] tag
+        promote# [Tag#] [Word32#] tag32
  
 
 -- Boxed ----------------------------------------------------------------------
@@ -110,16 +109,14 @@ allocBoxed [r : %] (tag : Tag#) (arity : Nat#) : Ptr# r Obj
         arity32         = truncate# [Word32#] [Nat#] arity
         write# [Word32#] addr 4# arity32
 
-        return# [Ptr# r Obj] (makePtr# [r] [Obj] addr)
+        makePtr# [r] [Obj] addr
 
 
 ---- | Get one of the pointers from a boxed data object.
 getFieldOfBoxed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
- = do   
-        return# [Ptr# r Obj]
-         (peek# [r] [Ptr# r Obj]
+ =      peek# [r] [Ptr# r Obj]
                 (castPtr# [r] [Ptr# r Obj] [Obj] obj)
-                (add# [Nat#] 8# (shl# [Nat#] index 3#)))
+                (add# [Nat#] 8# (shl# [Nat#] index 3#))
 
 
 -- | Set one of the pointers from a boxed data object.
@@ -128,12 +125,10 @@ setFieldOfBoxed
         (obj : Ptr# r1 Obj) (index : Nat#)
         (val : Ptr# r2 Obj) 
         : Void#
- = do   poke# [r1] [Ptr# r2 Obj] 
+ =      poke# [r1] [Ptr# r2 Obj] 
               (castPtr# [r1] [Ptr# r2 Obj] [Obj] obj)
               (add# [Nat#] 8# (shl# [Nat#] index 3#))
               val
-
-        return# [Void#] V#
 
 
 -- Mixed ----------------------------------------------------------------------
@@ -167,20 +162,20 @@ allocMixed [r : %] (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
         bytesObj32      = promote# [Word64#] [Nat#] bytesObj
         write# [Word64#] addr 8# bytesObj32
 
-        return# [Ptr# r Obj] (makePtr# [r] [Obj] addr)
+        makePtr# [r] [Obj] addr
 
 
 -- | Get one of the pointers from a mixed data object.
 fieldOfMixed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
  = do   
         offset          = add# [Nat#] 16# (shl# [Nat#] index 2#)
-        return# [Ptr# r Obj] (plusPtr# [r] [Obj] obj offset)
+        plusPtr# [r] [Obj] obj offset
       
 
 
 -- | Get the address of the raw data payload from a mixed object.
 payloadOfMixed [r : %] (obj : Ptr# r Obj) : Addr#
- =      return# [Addr#] (plusAddr# (takePtr# [r] [Obj] obj) 16#)
+ =      plusAddr# (takePtr# [r] [Obj] obj) 16#
 
 
 -- Raw ------------------------------------------------------------------------
@@ -209,12 +204,12 @@ allocRaw [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
         bytesObj32      = truncate# [Word32#] [Nat#] bytesObj
         write# [Word32#] addr 4# bytesObj32
 
-        return# [Ptr# r Obj] (makePtr# [r] [Obj] addr)
+        makePtr# [r] [Obj] addr
 
 
 -- | Get the address of the payload data from a raw object.
 payloadOfRaw [r : %] (obj : Ptr# r Obj) : Addr#
- =      return# [Addr#] (plusAddr# (takePtr# [r] [Obj] obj) 8#)
+ =      plusAddr# (takePtr# [r] [Obj] obj) 8#
 
 
 -- RawSmall -------------------------------------------------------------------
@@ -243,10 +238,10 @@ allocRawSmall [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
                                                           format)
         write# [Word32#] addr 0# header
 
-        return# [Ptr# r Obj] (makePtr# [r] [Obj] addr)
+        makePtr# [r] [Obj] addr
 
 
 -- | Get the address of the payload data from a raw small object.
 payloadOfRawSmall [r : %] (obj : Ptr# r Obj) : Addr#
- =      return# [Addr#] (plusAddr# (takePtr# [r] [Obj] obj) 4#)
+ =      plusAddr# (takePtr# [r] [Obj] obj) 4#
 

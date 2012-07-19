@@ -4,29 +4,26 @@ module Int64
 imports {
         allocRawSmall :: [r : %]. Tag# -> Nat# -> Ptr# r Obj;
 } 
-with 
-letrec {
+with letrec 
 
 boxInt [r : %] (x : Int#) : Ptr# r Obj
- = do { obj     = allocRawSmall [r] TAG0# 8#;
-        addr    = takePtr# [r] [Obj] obj;
-        write#  [Int#] addr 8# x;
-        return# [Ptr# r Obj] obj;
- };
+ = do   obj     = allocRawSmall [r] TAG0# 8#
+        addr    = takePtr# [r] [Obj] obj
+        write#  [Int#] addr 8# x
+        obj
+
 
 unboxInt [r : %] (obj : Ptr# r Obj) : Int#
- = do { addr    = takePtr# [r] [Obj] obj;
-        x       = read#   [Int#] addr 8#;
-        return# [Int#] x;
- };
+ = do   addr    = takePtr# [r] [Obj] obj
+        read#   [Int#] addr 8#
+
 
 addInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = return# [Ptr# r3 Obj] (boxInt [r3] (add# [Int#] (unboxInt [r1] x) (unboxInt [r2] y)));
+ = boxInt [r3] (add# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
 
 subInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = return# [Ptr# r3 Obj] (boxInt [r3] (sub# [Int#] (unboxInt [r1] x) (unboxInt [r2] y)));
+ = boxInt [r3] (sub# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
 
 mulInt [r1 r2 r3 : %] (x : Ptr# r1 Obj) (y : Ptr# r2 Obj) : Ptr# r3 Obj
- = return# [Ptr# r3 Obj] (boxInt [r3] (mul# [Int#] (unboxInt [r1] x) (unboxInt [r2] y)));
+ = boxInt [r3] (mul# [Int#] (unboxInt [r1] x) (unboxInt [r2] y))
 
-}
