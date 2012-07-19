@@ -52,7 +52,7 @@ convertT' stripForalls tt
          | otherwise    
          -> error $ "convertT': unexpected var kind" ++ show tt
 
-        -- Convert type constructors.
+        -- Convert unapplied type constructors.
         TCon tc 
          -> convertTyCon tc
 
@@ -92,12 +92,21 @@ convertTyCon tc
         TyConWitness c           -> return $ TCon $ TyConWitness c 
         TyConSpec    c           -> return $ TCon $ TyConSpec    c 
 
-        -- Convert primitive TyCons to Salt form.
-        TyConBound   (UPrim n _) -> convertTyConPrim n
+        -- Primitive boxed zero-arity constructors (like Unit)
+        --  are represented in generic form.
+        -- TODO: Use a real region variable instead of a hole.
+        TyConBound   (UPrim (L.NameDataTyCon L.DataTyConUnit) _)
+         ->     return $ O.tPtr (TVar (UHole kRegion)) O.tObj
+
+        -- Convert primitive unboxed TyCons to Salt form.
+        TyConBound   (UPrim n _) 
+         ->     convertTyConPrim n
 
         -- Boxed data values are represented in generic form.
-        TyConBound   u           -> do r <- convertT (typeOfBound u)
-                                       return $ O.tPtr r O.tObj
+        TyConBound   u
+         -> do  r <- convertT (typeOfBound u)
+                return $ O.tPtr r O.tObj
+
 
 
 -- | Convert a primitive type constructor to Salt form.
@@ -106,7 +115,7 @@ convertTyConPrim n
  = case n of
         L.NamePrimTyCon pc      
           -> return $ TCon $ TyConBound (UPrim (O.NamePrimTyCon pc) kData)
-        _ -> error "toSaltX: unknown prim"
+        _ -> error $ "convertTyConPrim: unknown prim name " ++ show n
 
 
 -- Names ----------------------------------------------------------------------

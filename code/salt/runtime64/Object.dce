@@ -123,9 +123,13 @@ getFieldOfBoxed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
 
 
 -- | Set one of the pointers from a boxed data object.
-setFieldOfBoxed [r : %] (obj : Ptr# r Obj) (index : Nat#) (val : Ptr# r Obj) : Void#
- = do   poke# [r] [Ptr# r Obj] 
-              (castPtr# [r] [Ptr# r Obj] [Obj] obj)
+setFieldOfBoxed 
+        [r1 r2 : %] 
+        (obj : Ptr# r1 Obj) (index : Nat#)
+        (val : Ptr# r2 Obj) 
+        : Void#
+ = do   poke# [r1] [Ptr# r2 Obj] 
+              (castPtr# [r1] [Ptr# r2 Obj] [Obj] obj)
               (add# [Nat#] 8# (shl# [Nat#] index 3#))
               val
 

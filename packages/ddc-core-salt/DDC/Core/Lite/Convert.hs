@@ -335,10 +335,17 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
 
 
  -- Construct algbraic data that has a finite number of data constructors.
- | Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
- , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
- = do   xs'     <- mapM (convertArgX pp defs) xsArgs
-        constructData pp (annotTail a) dataDef ctorDef xs'
+ | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
+ , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
+ = do   xsArgs'         <- mapM (convertArgX pp defs)  xsArgs
+
+        let makeFieldType x
+                = case takeAnnotOfExp x of
+                        Nothing  -> return Nothing
+                        Just a'  -> liftM Just $ convertT (annotType a')
+
+        tsArgs'         <- mapM makeFieldType xsArgs
+        constructData pp (annotTail a) dataDef ctorDef xsArgs' tsArgs'
 
 
 convertCtorAppX _ _ _ nCtor xsArgs

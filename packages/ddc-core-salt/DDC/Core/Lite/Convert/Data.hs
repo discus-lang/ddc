@@ -24,37 +24,58 @@ import qualified DDC.Core.Salt.Env      as O
 --   object.
 constructData
         :: Show a
-        => Platform             -- ^ Platform definition.
-        -> a                    -- ^ Annotation to use on expressions.
-        -> DataType L.Name      -- ^ Data Type definition of object.
-        -> DataCtor L.Name      -- ^ Constructor definition of object.
-        -> [Exp a O.Name]       -- ^ Field values.
+        => Platform                     -- ^ Platform definition.
+        -> a                            -- ^ Annotation to use on expressions.
+        -> DataType L.Name              -- ^ Data Type definition of object.
+        -> DataCtor L.Name              -- ^ Constructor definition of object.
+        -> [Exp a O.Name]               -- ^ Field values.
+        -> [Maybe (Type O.Name)]        -- ^ Field types.
         -> ConvertM a (Exp a O.Name)
 
-constructData pp a dataDef ctorDef xsArgs 
+constructData pp a dataDef ctorDef xsArgs tsArgs 
 
  | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor pp ctorDef
- , x1 : xsArgsRest              <- xsArgs
- , XType r@(TVar u)             <- x1
- , isRegionKind (typeOfBound u)
  = do
+        -- Get the prime region variable that holds the outermost constructor.
+        --   For types like Unit, there is no prime region var,
+        --   so use a hole for now. 
+        --
+        -- TODO: allocate objects with no prime region var in a global region.
+        --
+        let rPrime      
+                = case xsArgs of
+                   XType r@(TVar u) : _
+                    | isRegionKind (typeOfBound u) -> r
+                   _                               -> TVar (UHole kRegion)
+
         -- Allocate the object.
-        let bObject     = BAnon (O.tPtr r O.tObj)
-        let xAlloc      = O.xAllocBoxed a (dataCtorTag ctorDef)
+        let bObject     = BAnon (O.tPtr rPrime O.tObj)
+        let xAlloc      = O.xAllocBoxed a rPrime (dataCtorTag ctorDef)
                         $ XCon a (UPrim (O.NameNat size) O.tNat)
 
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
-        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgsRest
+        let xsFields            = drop (length $ dataTypeParamKinds dataDef) xsArgs
+        let Just tsFields       = sequence 
+                                $ drop (length $ dataTypeParamKinds dataDef) tsArgs
 
         -- Statements to write each of the fields.
-        let xObject'    = XVar a $ UIx 0 $ O.tPtr r O.tObj
-        let lsFields    = [ LLet LetStrict (BNone O.tVoid)
-                                (O.xSetFieldOfBoxed a xObject' ix (liftX 1 xField))
-                                | ix            <- [0..]
-                                | xField        <- xsFields]
+
+        -- TODO: this will break if the field has unit type,
+        --       as the field has no prime region.
+        --       Make a function takePrimeRegionOrHole
+        --
+        let xObject'    = XVar a $ UIx 0 $ O.tPtr rPrime O.tObj
+        let lsFields    
+                = [ let Just rField = takePrimeRegion tField
+                    in  LLet LetStrict (BNone O.tVoid)
+                         (O.xSetFieldOfBoxed a 
+                         rPrime rField xObject' ix (liftX 1 xField))
+                  | ix            <- [0..]
+                  | xField        <- xsFields
+                  | tField        <- tsFields ]
 
         return  $ XLet a (LLet LetStrict bObject xAlloc)
                 $ foldr (XLet a) xObject' lsFields

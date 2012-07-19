@@ -9,6 +9,9 @@ module DDC.Core.Compounds
           -- * Patterns
         , bindsOfPat
 
+          -- * Annotations
+        , takeAnnotOfExp
+
           -- * Lambdas
         , makeXLAMs, takeXLAMs
         , makeXLams, takeXLams
@@ -68,6 +71,24 @@ bindsOfPat pp
  = case pp of
         PDefault          -> []
         PData _ bs        -> bs
+
+
+-- Annotations ----------------------------------------------------------------
+-- | Take the outermost annotation from an expression,
+--   or Nothing if this is an `XType` or `XWitness` without an annotation.
+takeAnnotOfExp :: Exp a n -> Maybe a
+takeAnnotOfExp xx
+ = case xx of
+        XVar  a _       -> Just a
+        XCon  a _       -> Just a
+        XLAM  a _ _     -> Just a
+        XLam  a _ _     -> Just a
+        XApp  a _ _     -> Just a
+        XLet  a _ _     -> Just a
+        XCase a _ _     -> Just a
+        XCast a _ _     -> Just a
+        XType{}         -> Nothing
+        XWitness{}      -> Nothing
 
 
 -- Lambdas ---------------------------------------------------------------------
