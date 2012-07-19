@@ -204,7 +204,7 @@ pipeCore mm pp
 
                 goCheck mm1
                  = case C.checkModule (configOfProfile profile) primKindEnv primTypeEnv mm1 of
-                        Left err   -> return [ErrorLint err]
+                        Left err  -> return [ErrorLint err]
                         Right mm2  -> goComplies mm2
 
                 goComplies mm1
