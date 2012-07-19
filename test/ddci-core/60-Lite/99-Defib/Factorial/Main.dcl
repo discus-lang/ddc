@@ -48,6 +48,6 @@ main    [r : %]
         (argc : Nat#)           {!0 | Use r} 
         (argv : Ptr# r String#) {Read r + Alloc r | Use r} 
         : Int#
- = let x        = fac [r] (I# [r] 1i#) (I# [r] 10i#) in
-   let _        = putStrLn [r] (showInt [r] (unboxInt [r] x)) in
-   unboxInt [r] (I# [r] 0i#)
+ = do   x        = fac [r] (I# [r] 1i#) (I# [r] 10i#)
+        putStrLn [r] (showInt [r] (unboxInt [r] x))
+        unboxInt [r] (I# [r] 0i#)

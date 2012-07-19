@@ -3,7 +3,8 @@
 --   and wrappers for related primops.
 module DDC.Core.Salt.Runtime
         ( -- * PrimOps
-          xRead
+          xCreate
+        , xRead
         , xWrite
         , xFail
         , xReturn
@@ -28,6 +29,18 @@ import Data.Map                 (Map)
 
 
 -- Primops --------------------------------------------------------------------
+-- | Create the heap
+--   TODO: Nat isn't the correct type.
+xCreate :: a -> Integer -> Exp a Name
+xCreate a bytes
+        = XApp a (XVar a uCreate) 
+                 (XCon a (UPrim (NameNat bytes) tNat))
+
+uCreate :: Bound Name
+uCreate = UPrim (NamePrim $ PrimStore $ PrimStoreCreate)
+                (tNat `tFunPE` tVoid)
+
+
 -- | Read a value from an address plus offset.
 xRead   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
 xRead a tField xAddr offset

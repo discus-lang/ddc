@@ -7,7 +7,7 @@
 -- Integer boxing,
 --      packs a RawSmall Object.
 :to-c..
-module Main with letrec
+module Test with letrec
 boxInt [r : %] (i : Int#) { Alloc r | Use r } : Int r
         = I# [r] i;;
 
@@ -15,7 +15,7 @@ boxInt [r : %] (i : Int#) { Alloc r | Use r } : Int r
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
 :to-c..
-module Main with letrec
+module Test with letrec
 unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
  = case x of 
         I# i  -> i;;
@@ -23,7 +23,7 @@ unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
 
 -- Boxed addition
 :to-c..
-module Main with letrec
+module Test with letrec
 addInt [r1 r2 r3 : %] 
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
@@ -36,7 +36,7 @@ addInt [r1 r2 r3 : %]
 -- Construct a singleton list,
 --      packs a Boxed objet.
 :to-c..
-module Main with letrec
+module Test with letrec
 singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
         : List r1 (Int r2)
  = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;

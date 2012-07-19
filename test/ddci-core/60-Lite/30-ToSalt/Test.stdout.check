@@ -7,7 +7,7 @@ ok
 ok
 
 -- Unboxed literal patterns.
-module Main with
+module Test with
 letrec {
   foo : Word16# -> Word16#
     = \(x : Word16#).
@@ -22,7 +22,7 @@ letrec {
 }
 
 
-module Main with
+module Test with
 letrec {
   foo : Word32# -> Word32#
     = \(x : Word32#).
@@ -36,7 +36,7 @@ letrec {
       }
 }
 
-module Main with
+module Test with
 letrec {
   foo : Word64# -> Word64#
     = \(x : Word64#).
@@ -52,7 +52,7 @@ letrec {
 
 
 -- Unboxed Bool pattern.
-module Main with
+module Test with
 letrec {
   foo : Bool# -> Bool#
     = \(x : Bool#).
@@ -67,7 +67,7 @@ letrec {
 
 -- Integer boxing,
 --      packs a RawSmall Object.
-module Main with
+module Test with
 letrec {
   boxInt : [r : %].Int# -> Ptr# r Obj
     = /\(r : %).
@@ -81,7 +81,7 @@ letrec {
 
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
-module Main with
+module Test with
 letrec {
   unboxInt : [r : %].Ptr# r Obj -> Int#
     = /\(r : %).
@@ -99,7 +99,7 @@ letrec {
 
 
 -- Nested case-expressions.
-module Main with
+module Test with
 letrec {
   addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Int#
     = /\(r1 r2 r3 : %).
@@ -125,7 +125,7 @@ letrec {
 
 
 -- Boxed addition
-module Main with
+module Test with
 letrec {
   addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
     = /\(r1 r2 r3 : %).
@@ -156,7 +156,7 @@ letrec {
 
 -- Take the head of an Int list,
 --      unpacks a Boxed object.
-module Main with
+module Test with
 letrec {
   head : [r : %].Ptr# r Obj -> Ptr# r Obj -> Ptr# r Obj
     = /\(r : %).
@@ -174,7 +174,7 @@ letrec {
 
 
 -- Take the tail of an Int list
-module Main with
+module Test with
 letrec {
   tail : [r : %].Ptr# r Obj -> Ptr# r Obj -> Ptr# r Obj
     = /\(r : %).
@@ -194,7 +194,7 @@ letrec {
 -- Take the head of a polymorphic list
 -- BROKEN: need to handle polymorphic types better in lite -> salt conversion.
 --:to-salt..
---module Main with letrec
+--module Test with letrec
 --head    [r : %] [a : *] (def : a)
 --        (xs : List r a) {Read r | DeepUse a}
 --        : a
@@ -206,7 +206,7 @@ letrec {
 -- Construct a singleton list,
 --      packs a Boxed objet.
 ok
-module Main with
+module Test with
 letrec {
   singleton : [r1 r2 : %].Int r2 -(Alloc r1 | Use r1)> List r1 (Int r2)
     = /\(r1 r2 : %).
@@ -219,16 +219,25 @@ letrec {
 
 -- Construct a singleton list,
 --      packs a Boxed object.
--- BROKEN: need to construct unit values.
---:to-salt..
---module Main with letrec
---singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
---        : List r1 (Int r2)
--- = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
+module Test with
+letrec {
+  singleton : [r1 r2 : %].Ptr# r2 Obj -> Ptr# r1 Obj
+    = /\(r1 r2 : %).
+       \(x : Ptr# r2 Obj).
+      let x0 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
+      let _ : Void# = setFieldOfBoxed [r1] [r2] x0 0# x in
+      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
+      let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+      let x3 : Ptr# _ Obj = x2 in
+      let _ : Void# = setFieldOfBoxed [r1] [_] x1 0# x3 in
+      let x4 : Ptr# r1 Obj = x1 in
+      let _ : Void# = setFieldOfBoxed [r1] [r1] x0 1# x4 in
+      x0
+}
 
 
 -- Full application.
-module Main with
+module Test with
 letrec {
   addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
     = /\(r1 r2 r3 : %).

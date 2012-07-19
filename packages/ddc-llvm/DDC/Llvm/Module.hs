@@ -138,7 +138,7 @@ instance Pretty Static where
         StaticStruct  d t        -> ppr t <> text "<{" <> hcat (punctuate comma $ map ppr d) <> text "}>"
         StaticPointer (Var n t)  -> ppr t <> text "*" <+> ppr n
         StaticBitc    v t        -> ppr t <> text " bitcast"  <+> parens (ppr v <> text " to " <> ppr t)
-        StaticPtoI    v t        -> ppr t <> text " ptrtoint" <+> brackets (ppr v <> text " to " <> ppr t)
+        StaticPtoI    v t        -> ppr t <> text " ptrtoint" <+> parens (ppr v <> text " to " <> ppr t)
 
         StaticAdd s1 s2
          -> let ty1 = typeOfStatic s1

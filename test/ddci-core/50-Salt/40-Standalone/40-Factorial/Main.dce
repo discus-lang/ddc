@@ -91,7 +91,8 @@ fac [r1 r2 : %] (x: Ptr# r1 Obj) : Ptr# r2 Obj
 
 -- needs support for letregion
 main [r1 r2 : %] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
- = do { x       = boxWord32 [r1] 10w32#;
+ = do { create# 1000#;
+        x       = boxWord32 [r1] 10w32#;
         x2      = fac [r1] [r2] x;
         x2u     = unboxWord32 [r2] x2;
         str     = showInt [r2] (truncate# [Int#] [Word32#] x2u);

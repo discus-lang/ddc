@@ -28,7 +28,7 @@ import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
 import Control.Monad
 import Data.Maybe
-import Debug.Trace
+
 
 -- Module ---------------------------------------------------------------------
 -- | Convert a module to LLVM
@@ -57,17 +57,12 @@ convModuleM mm@(C.ModuleCore{})
         -- If this is the main module then we need to declare
         -- the global RTS state.
         let isMainModule 
-                = trace (show $ C.moduleName mm) 
-                $ C.moduleName mm == C.ModuleName ["Main"]
+                = C.moduleName mm == C.ModuleName ["Main"]
 
-        let heapSize    = 10000
-        let tHeapData   = TArray heapSize (TInt 8)
-        let vHeapData   = Var (NameGlobal "DDC.Runtime.heapData") tHeapData
-        let vHeapPtr    = Var (NameGlobal "DDC.Runtime.heapPtr")  (tPtr (TInt 8))
+        let vHeapTop    = Var (NameGlobal "DDC.Runtime.heapTop")  (tPtr (TInt 8))
         let rtsGlobals
                 | isMainModule
-                = [ GlobalStatic vHeapData (StaticUninitType tHeapData) 
-                  , GlobalStatic vHeapPtr  (StaticBitc (StaticPointer vHeapData) (tPtr (TInt 8))) ]
+                = [ GlobalStatic vHeapTop (StaticLit (LitInt (tAddr platform) 0)) ]
 
                 | otherwise
                 = []

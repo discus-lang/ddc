@@ -17,6 +17,10 @@ import qualified Data.Sequence  as Seq
 
 -- Prim call ------------------------------------------------------------------
 -- | Convert a primitive call to LLVM.
+--
+--   TODO: store heap mode in platform spec.
+--         Be able to malloc new object, or use bump pointer.
+--
 convPrimCallM 
         :: Show a 
         => Platform             -- ^ Current platform.
@@ -79,18 +83,26 @@ convPrimCallM pp mdst p tPrim xs
          -> return      $ Seq.singleton
                         $ ISet vDst (XLit (LitInt (tNat pp) (platformNatBytes pp)))
 
-        A.PrimStore A.PrimStoreAlloc
-         | Just dst             <- mdst
-         , Just [_xBytes']       <- mconvAtoms pp xs
-         -> return      $ Seq.singleton
-                        $ IConv dst ConvBitcast 
-                        $ XVar (Var (NameGlobal "DDC.Runtime.heapPtr")
-                                    (TPointer (TInt 8)))
-
-{-                      $ ICall mdst CallTypeStd
+        A.PrimStore A.PrimStoreCreate
+         | Just [xBytes']         <- mconvAtoms pp xs
+         -> do  vAddr   <- newUniqueNamedVar "addr" (tAddr pp)
+                let vTopPtr = Var (NameGlobal "DDC.Runtime.heapTop") (TPointer (tAddr pp))
+                return  $ Seq.fromList
+                        [ ICall (Just vAddr) CallTypeStd
                                 (tAddr pp) (NameGlobal "malloc") 
-                                [xBytes'] []
--}
+                                [xBytes'] [] 
+                        , IStore (XVar vTopPtr) (XVar vAddr) ]
+
+        A.PrimStore A.PrimStoreAlloc
+         | Just vDst@(Var nDst _) <- mdst
+         , Just [xBytes']         <- mconvAtoms pp xs
+         -> do  let vBump   = Var (bumpName nDst "bump") (tAddr pp)
+                let vTopPtr = Var (NameGlobal "DDC.Runtime.heapTop") (TPointer (tAddr pp))
+                return  $ Seq.fromList
+                        [ ILoad  vDst  (XVar vTopPtr) 
+                        , IOp    vBump OpAdd (XVar vDst) xBytes'
+                        , IStore (XVar vTopPtr) (XVar vBump)]
+
         A.PrimStore A.PrimStoreRead
          | C.XType _t : args             <- xs
          , Just [xAddr', xOffset']      <- mconvAtoms pp args

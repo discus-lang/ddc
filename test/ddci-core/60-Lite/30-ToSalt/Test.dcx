@@ -8,7 +8,7 @@
 
 -- Unboxed literal patterns.
 :to-salt..
-module Main with letrec
+module Test with letrec
 foo     (x : Word16#) : Word16#
  = case x of
         5w16#   -> 6w16#
@@ -17,7 +17,7 @@ foo     (x : Word16#) : Word16#
 
 
 :to-salt..
-module Main with letrec
+module Test with letrec
 foo     (x : Word32#) : Word32#
  = case x of
         5w32#   -> 6w32#
@@ -25,7 +25,7 @@ foo     (x : Word32#) : Word32#
         _       -> 0w32#;;
 
 :to-salt..
-module Main with letrec
+module Test with letrec
 foo     (x : Word64#) : Word64#
  = case x of
         5w64#   -> 6w64#
@@ -35,7 +35,7 @@ foo     (x : Word64#) : Word64#
 
 -- Unboxed Bool pattern.
 :to-salt..
-module Main with letrec
+module Test with letrec
 foo     (x : Bool#) : Bool#
  = case x of
        True#   -> False#
@@ -45,7 +45,7 @@ foo     (x : Bool#) : Bool#
 -- Integer boxing,
 --      packs a RawSmall Object.
 :to-salt..
-module Main with letrec
+module Test with letrec
 boxInt [r : %] (i : Int#) { Alloc r | Use r } : Int r
         = I# [r] i;;
 
@@ -53,7 +53,7 @@ boxInt [r : %] (i : Int#) { Alloc r | Use r } : Int r
 -- Integer unboxing,
 --      unpacks a RawSmall Object.
 :to-salt..
-module Main with letrec
+module Test with letrec
 unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
  = case x of 
         I# i  -> i;;
@@ -61,7 +61,7 @@ unboxInt [r : %] (x : Int r) { Read r | $0 } : Int#
 
 -- Nested case-expressions.
 :to-salt..
-module Main with letrec
+module Test with letrec
 addInt [r1 r2 r3 : %] 
         (x : Int r1) { !0 | $0 } 
         (y : Int r2) { Read r1 + Read r2 | Use r1 }
@@ -73,7 +73,7 @@ addInt [r1 r2 r3 : %]
 
 -- Boxed addition
 :to-salt..
-module Main with letrec
+module Test with letrec
 addInt [r1 r2 r3 : %] 
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
@@ -86,7 +86,7 @@ addInt [r1 r2 r3 : %]
 -- Take the head of an Int list,
 --      unpacks a Boxed object.
 :to-salt..
-module Main with letrec
+module Test with letrec
 head    [r : %] (def : Int r) 
         (xs : List r (Int r))   { Read r | Use r } 
         : Int r
@@ -97,7 +97,7 @@ head    [r : %] (def : Int r)
 
 -- Take the tail of an Int list
 :to-salt..
-module Main with letrec
+module Test with letrec
 tail   [r : %] (def : List r (Int r))
        (xs : List r (Int r))   { Read r | Use r }
        : List r (Int r)
@@ -109,7 +109,7 @@ tail   [r : %] (def : List r (Int r))
 -- Take the head of a polymorphic list
 -- BROKEN: need to handle polymorphic types better in lite -> salt conversion.
 --:to-salt..
---module Main with letrec
+--module Test with letrec
 --head    [r : %] [a : *] (def : a)
 --        (xs : List r a) {Read r | DeepUse a}
 --        : a
@@ -122,7 +122,7 @@ tail   [r : %] (def : List r (Int r))
 --      packs a Boxed objet.
 :set trans anormalize
 :load..
-module Main with letrec
+module Test with letrec
 singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
         : List r1 (Int r2)
  = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
@@ -131,7 +131,7 @@ singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 }
 -- Construct a singleton list,
 --      packs a Boxed object.
 :to-salt..
-module Main with letrec
+module Test with letrec
 singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 } 
         : List r1 (Int r2)
  = Cons [r1] [Int r2] x (Nil [r1] [Int r2] ());;
@@ -139,7 +139,7 @@ singleton [r1 r2 : %] (x : Int r2) { Alloc r1 | Use r1 }
 
 -- Full application.
 :to-salt..
-module Main with letrec
+module Test with letrec
 addInt [r1 r2 r3 : %] 
         (x : Int r1) { !0 | Use r3 } 
         (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}

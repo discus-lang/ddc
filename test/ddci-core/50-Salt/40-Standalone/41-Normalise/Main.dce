@@ -60,7 +60,8 @@ fac [r : %] (x: Ptr# r Obj) : Ptr# r Obj
 
 
 main [r : %] (argc : Nat#) (argv : Ptr# r String#) : Int#
- = do { x       = boxWord32 [r] 10w32#;
+ = do { create# 1000#;
+        x       = boxWord32 [r] 10w32#;
         str     = showInt [r] (truncate# [Int#] [Word32#] (unboxWord32 [r] (fac [r] x)));
         putStrLn [r] str;
 
