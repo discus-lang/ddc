@@ -106,11 +106,13 @@ builder_X8632_Darwin config
         , buildTarget   = Platform ArchX86_32 OsDarwin
         , buildSpec     = Llvm.platform32
 
+        -- Use -disable-cfi to disable Call Frame Identification (CFI) directives
+        -- because the OSX system assembler doesn't support them.
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
-                $ "llc -O3 -march=x86 " 
-                ++ llFile 
+                $ "llc -O3 -march=x86 -disable-cfi" 
+                ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
         , buildAs
@@ -138,11 +140,13 @@ builder_X8664_Darwin config
         , buildTarget   = Platform ArchX86_64 OsDarwin
         , buildSpec     = Llvm.platform64
 
+        -- Use -disable-cfi to disable Call Frame Identification (CFI) directives
+        -- because the OSX system assembler doesn't support them.
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
-                $ "llc -O3 -march=x86-64 " 
-                ++ llFile 
+                $ "llc -O3 -march=x86-64 -disable-cfi" 
+                ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
         , buildAs

@@ -98,7 +98,7 @@ makeLinkCmd
 
 -- | Command to run the LLVM compiler
 llcCommand :: String
-llcCommand = "llc -march=x86-64"
+llcCommand = "llc -march=x86-64 -disable-cfi"
 
 
 -- | Command to assemble a file.
