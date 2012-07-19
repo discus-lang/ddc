@@ -62,7 +62,7 @@ constructData pp a dataDef ctorDef xsArgs
 
  | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
- , x1 : xsArgsRest              <- xsArgs
+ , x1 : _                       <- xsArgs
  , XType r@(TVar u)             <- x1
  , isRegionKind (typeOfBound u)
  = do   
@@ -82,7 +82,7 @@ constructData pp a dataDef ctorDef xsArgs
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
-        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgsRest
+        let xsFields     = drop (length $ dataTypeParamKinds dataDef) xsArgs
 
         -- Get the offset of each field.
         let Just offsets = L.fieldOffsetsOfDataCtor pp ctorDef

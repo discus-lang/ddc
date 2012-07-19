@@ -74,6 +74,7 @@ letrec {
        \(i : Int#).
       let x0 : Ptr# r Obj = allocRawSmall [r] TAG0# 8# in
       let x1 : Addr# = payloadOfRawSmall [r] x0 in
+      let _ : Void# = write# [Int#] x1 0# i in
       x0
 }
 
@@ -141,6 +142,8 @@ letrec {
                   let i2 : Int# = read# [Int#] x3 0# in
                   let x4 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
                   let x5 : Addr# = payloadOfRawSmall [r3] x4 in
+                  let x6 : Int# = add# [Int#] i1 i2 in
+                  let _ : Void# = write# [Int#] x5 0# x6 in
                   x4;
               _ 
                -> fail# [Ptr# r3 Obj]
@@ -242,6 +245,8 @@ letrec {
                   let i2 : Int# = read# [Int#] x3 0# in
                   let x4 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
                   let x5 : Addr# = payloadOfRawSmall [r3] x4 in
+                  let x6 : Int# = add# [Int#] i1 i2 in
+                  let _ : Void# = write# [Int#] x5 0# x6 in
                   x4;
               _ 
                -> fail# [Ptr# r3 Obj]
