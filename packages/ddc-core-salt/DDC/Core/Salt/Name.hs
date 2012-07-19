@@ -283,6 +283,11 @@ data PrimStore
         | PrimStoreShiftNat
 
         -- Allocation -----------------
+        -- | Create a heap of the given size.
+        --     This must be called before alloc# below, and has global side effect. 
+        --     Calling it twice in the same program is undefined.
+        | PrimStoreCreate
+
         -- | Allocate some space on the heap.
         | PrimStoreAlloc
 
@@ -329,6 +334,7 @@ instance Pretty PrimStore where
         PrimStoreBytesNat       -> text "bytesNat#"
         PrimStoreShiftNat       -> text "shiftNat#"
 
+        PrimStoreCreate         -> text "create#"
         PrimStoreAlloc          -> text "alloc#"
 
         PrimStoreRead           -> text "read#"
@@ -351,6 +357,7 @@ readPrimStore str
         "bytesNat#"             -> Just PrimStoreBytesNat
         "shiftNat#"             -> Just PrimStoreShiftNat
 
+        "create#"               -> Just PrimStoreCreate
         "alloc#"                -> Just PrimStoreAlloc
 
         "read#"                 -> Just PrimStoreRead

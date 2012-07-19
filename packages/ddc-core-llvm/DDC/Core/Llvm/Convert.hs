@@ -28,13 +28,14 @@ import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
 import Control.Monad
 import Data.Maybe
-
+import Debug.Trace
 
 -- Module ---------------------------------------------------------------------
 -- | Convert a module to LLVM
 convertModule :: Platform -> C.Module () A.Name -> Module
-convertModule platform mm
- = let  prims           = primDeclsMap platform
+convertModule platform mm@(C.ModuleCore{})
+ = let
+        prims           = primDeclsMap platform
         state           = llvmStateInit platform prims
         mm'             = eraseM mm
    in   clean $ evalState (convModuleM mm') state
@@ -51,27 +52,46 @@ convModuleM mm@(C.ModuleCore{})
                 $ [ importedFunctionDeclOfType platform External n t
                   | (n, t)   <- Map.elems $ C.moduleImportTypes mm ]
 
+        -- Add RTS def -------------------------------------------------
+        -- TODO: Split this into separate function.
+        -- If this is the main module then we need to declare
+        -- the global RTS state.
+        let isMainModule 
+                = trace (show $ C.moduleName mm) 
+                $ C.moduleName mm == C.ModuleName ["Main"]
 
+        let heapSize    = 10000
+        let tHeapData   = TArray heapSize (TInt 8)
+        let vHeapData   = Var (NameGlobal "DDC.Runtime.heapData") tHeapData
+        let vHeapPtr    = Var (NameGlobal "DDC.Runtime.heapPtr")  (tPtr (TInt 8))
+        let rtsGlobals
+                | isMainModule
+                = [ GlobalStatic vHeapData (StaticUninitType tHeapData) 
+                  , GlobalStatic vHeapPtr  (StaticBitc (StaticPointer vHeapData) (tPtr (TInt 8))) ]
+
+                | otherwise
+                = []
+
+        ---------------------------------------------------------------
         functions       <- mapM (uncurry (convSuperM)) bxs
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
-                , modGlobals    = []
+                , modGlobals    = rtsGlobals
                 , modFwdDecls   = primDecls platform ++ importDecls
                 , modFuncs      = functions }
 
  | otherwise    = die "invalid module"
 
 
+-- | Global variables used directly by the conversion.
 primDeclsMap :: Platform -> Map String FunctionDecl
-primDeclsMap pp
+primDeclsMap pp 
         = Map.fromList
         $ [ (declName decl, decl) | decl <- primDecls pp ]
 
-
--- | Global variables used directly by the conversion.
 primDecls :: Platform -> [FunctionDecl]
-primDecls pp
+primDecls pp 
  = [    FunctionDecl
         { declName              = "malloc"
         , declLinkage           = External
@@ -89,8 +109,6 @@ primDecls pp
         , declParamListType     = FixedArgs
         , declParams            = []
         , declAlign             = AlignBytes (platformAlignBytes pp) } ]
-
-
 
 
 -- Super ----------------------------------------------------------------------

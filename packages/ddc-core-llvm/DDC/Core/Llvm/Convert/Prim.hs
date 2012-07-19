@@ -80,12 +80,17 @@ convPrimCallM pp mdst p tPrim xs
                         $ ISet vDst (XLit (LitInt (tNat pp) (platformNatBytes pp)))
 
         A.PrimStore A.PrimStoreAlloc
-         | Just [xBytes']       <- mconvAtoms pp xs
+         | Just dst             <- mdst
+         , Just [_xBytes']       <- mconvAtoms pp xs
          -> return      $ Seq.singleton
-                        $ ICall mdst CallTypeStd
+                        $ IConv dst ConvBitcast 
+                        $ XVar (Var (NameGlobal "DDC.Runtime.heapPtr")
+                                    (TPointer (TInt 8)))
+
+{-                      $ ICall mdst CallTypeStd
                                 (tAddr pp) (NameGlobal "malloc") 
                                 [xBytes'] []
-
+-}
         A.PrimStore A.PrimStoreRead
          | C.XType _t : args             <- xs
          , Just [xAddr', xOffset']      <- mconvAtoms pp args

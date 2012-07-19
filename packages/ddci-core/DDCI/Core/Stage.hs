@@ -9,11 +9,17 @@
 --   These stages are then invoked by the DDCI commands.
 --
 module DDCI.Core.Stage
-        ( stageLiteLoad
+        ( -- * Lite stages. 
+          stageLiteLoad
         , stageLiteOpt
         , stageLiteToSalt
+
+          -- * Salt stages.
+        , stageSaltOpt
         , stageSaltToC
         , stageSaltToLLVM
+
+          -- * LLvm stages.
         , stageCompileLLVM)
 where
 import DDCI.Core.State
@@ -36,6 +42,7 @@ import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Core.Check                 as C
 import qualified Data.Set                       as Set
 import qualified Data.Map                       as Map
+
 
 ------------------------------------------------------------------------------
 -- | If the Dump mode is set 
@@ -94,8 +101,7 @@ stageLiteOpt state source pipes
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
-        <> normalizeLite
-        )
+        <> normalizeLite)
 
         -- TODO: Inlining isn't preserving type annots, 
         --       so need to recheck the module before Lite -> Salt conversion.
@@ -108,29 +114,37 @@ stageLiteOpt state source pipes
                 (makeNamifier Lite.freshX)
 
 
--- TODO: Rubbish function to load inliner templates from some modules.
---       It just does a linear search, which won't be good enough in the long-term.
-lookupTemplateFromModules 
-        :: Eq n
-        => [Module a n] -> n -> Maybe (Exp a n)
+-------------------------------------------------------------------------------
+-- | Optimise Salt.
+stageSaltOpt
+        :: State -> Source
+        -> [PipeCore (C.AnTEC () Salt.Name) Salt.Name]
+        -> PipeCore  (C.AnTEC () Salt.Name) Salt.Name
 
-lookupTemplateFromModules [] _  = Nothing
-lookupTemplateFromModules (m:ms) n
- = case lookupTemplateFromModule m n of
-        Nothing -> lookupTemplateFromModules ms n
-        Just x  -> Just x
+stageSaltOpt state source pipes
+ = PipeCoreSimplify 
+        (0 :: Int) 
 
+        -- TODO: want to see every intermediate stage.
+        -- TODO: want to do a fixpoint.
+        (  (S.Trans $ S.Inline 
+                    $ lookupTemplateFromModules
+                        (Map.elems (stateWithSalt state)))
 
-lookupTemplateFromModule 
-        :: Eq n
-        => Module a n -> n -> Maybe (Exp a n)
+        -- hrm. Want a fixpoint here.
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward
+        <> normalizeSalt)
 
-lookupTemplateFromModule mm n
-        | XLet _ (LRec bxs) _  <- moduleBody mm
-        = liftM snd $ find (\(BName n' _, _) -> n == n') bxs
+        ( PipeCoreOutput (dump state source "dump.salt-opt.dcl")
+        : pipes)
 
-        | otherwise
-        = Nothing
+ where  normalizeSalt
+         = S.anormalize
+                (makeNamifier Salt.freshT)      
+                (makeNamifier Salt.freshX)
 
 
 -------------------------------------------------------------------------------
@@ -155,6 +169,7 @@ stageLiteToSalt state source builder pipesSalt
          pipesSalt]]]
 
 
+-------------------------------------------------------------------------------
 -- | Convert Salt to C code.
 stageSaltToC
         :: State -> Source -> Builder
@@ -176,6 +191,7 @@ stageSaltToC state source _builder sink
                 sink]]]]
 
 
+-------------------------------------------------------------------------------
 -- | Convert Salt to LLVM.
 stageSaltToLLVM
         :: State -> Source -> Builder
@@ -197,6 +213,7 @@ stageSaltToLLVM state source builder pipesLLVM
            : pipesLLVM) ]]]]
 
 
+-------------------------------------------------------------------------------
 -- | Compile LLVM code.
 stageCompileLLVM 
         :: State -> Source -> Builder 
@@ -223,4 +240,30 @@ stageCompileLLVM state _source builder filePath shouldLinkExe
           , pipeFileExe           = if shouldLinkExe 
                                         then Just exePath 
                                         else Nothing }
+
+
+-------------------------------------------------------------------------------
+-- TODO: Rubbish function to load inliner templates from some modules.
+--       It just does a linear search, which won't be good enough in the long-term.
+lookupTemplateFromModules 
+        :: Eq n
+        => [Module a n] -> n -> Maybe (Exp a n)
+
+lookupTemplateFromModules [] _  = Nothing
+lookupTemplateFromModules (m:ms) n
+ = case lookupTemplateFromModule m n of
+        Nothing -> lookupTemplateFromModules ms n
+        Just x  -> Just x
+
+
+lookupTemplateFromModule 
+        :: Eq n
+        => Module a n -> n -> Maybe (Exp a n)
+
+lookupTemplateFromModule mm n
+        | XLet _ (LRec bxs) _  <- moduleBody mm
+        = liftM snd $ find (\(BName n' _, _) -> n == n') bxs
+
+        | otherwise
+        = Nothing
 

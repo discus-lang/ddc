@@ -35,26 +35,12 @@ data Module
         , modFuncs     :: [Function]
         }
 
--- | A global mutable variable. Maybe defined or external
-data Global
-        = Global Var (Maybe Static)
-
-
--- | Return the 'LlvmType' of the 'LMGlobal'
-typeOfGlobal :: Global -> Type
-typeOfGlobal (Global v _)       = typeOfVar v
-
-
--- | Return the 'LlvmVar' part of a 'LMGlobal'
-varOfGlobal :: Global -> Var
-varOfGlobal  (Global v _)       = v
-
 
 -- | Print out a whole LLVM module.
 instance Pretty Module where
- ppr (Module _comments aliases _globals decls funcs)
+ ppr (Module _comments aliases globals decls funcs)
   =    (vcat $ map ppr aliases)
-  <$$> empty
+  <$$> (vcat    $ map ppr globals)
   <$$> (vcat    $ map (\decl ->  text "declare" 
                              <+> pprFunctionHeader decl Nothing) decls)
   <$$> empty
@@ -63,9 +49,30 @@ instance Pretty Module where
   <$$> line
 
 
+-- Global ---------------------------------------------------------------------
+-- | A global mutable variable. Maybe defined or external
+data Global
+        = GlobalStatic Var Static
+
+
+-- | Return the 'LlvmType' of the 'LMGlobal'
+typeOfGlobal :: Global -> Type
+typeOfGlobal (GlobalStatic v _) = typeOfVar v
+
+
+-- | Return the 'LlvmVar' part of a 'LMGlobal'
+varOfGlobal :: Global -> Var
+varOfGlobal  (GlobalStatic v _) = v
+
+
+instance Pretty Global where
+ ppr  (GlobalStatic (Var name _) static)
+        = ppr name <+> text "= global" <+> ppr static
+
+
 -- Static ---------------------------------------------------------------------
 -- | Llvm Static Data.
---  These represent the possible global level variables and constants.
+--   These represent the possible global level variables and constants.
 data Static
         -- | A comment in a static section.
         = StaticComment       String
@@ -123,15 +130,15 @@ typeOfStatic ss
 instance Pretty Static where
   ppr ss
    = case ss of
-        StaticComment       s   -> text "; " <> text s
-        StaticLit     l         -> ppr l
-        StaticUninitType    t   -> ppr t <> text " undef"
-        StaticStr     s t       -> ppr t <> text " c\"" <> text s <> text "\\00\""
-        StaticArray   d t       -> ppr t <> text " [" <> hcat (punctuate comma $ map ppr d) <> text "]"
-        StaticStruct  d t       -> ppr t <> text "<{" <> hcat (punctuate comma $ map ppr d) <> text "}>"
-        StaticPointer v         -> ppr v
-        StaticBitc    v t       -> ppr t <>  text " bitcast" <+> brackets (ppr v <> text " to " <> ppr t)
-        StaticPtoI    v t       -> ppr t <> text " ptrtoint" <+> brackets (ppr v <> text " to " <> ppr t)
+        StaticComment       s    -> text "; " <> text s
+        StaticLit     l          -> ppr l
+        StaticUninitType    t    -> ppr t <> text " undef"
+        StaticStr     s t        -> ppr t <> text " c\"" <> text s <> text "\\00\""
+        StaticArray   d t        -> ppr t <> text " [" <> hcat (punctuate comma $ map ppr d) <> text "]"
+        StaticStruct  d t        -> ppr t <> text "<{" <> hcat (punctuate comma $ map ppr d) <> text "}>"
+        StaticPointer (Var n t)  -> ppr t <> text "*" <+> ppr n
+        StaticBitc    v t        -> ppr t <> text " bitcast"  <+> parens (ppr v <> text " to " <> ppr t)
+        StaticPtoI    v t        -> ppr t <> text " ptrtoint" <+> brackets (ppr v <> text " to " <> ppr t)
 
         StaticAdd s1 s2
          -> let ty1 = typeOfStatic s1

@@ -63,6 +63,7 @@ convPrimStore pp
  = case pp of
         PrimStoreBytesNat       -> text "_BYTESNAT"
         PrimStoreShiftNat       -> text "_SHIFTNAT"
+        PrimStoreCreate         -> text "_create"
         PrimStoreAlloc          -> text "_alloc"
         PrimStoreRead           -> text "_read"
         PrimStoreWrite          -> text "_write"

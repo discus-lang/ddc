@@ -235,6 +235,9 @@ typeOfPrimStore jj
         PrimStoreShiftNat       
          -> tVoid `tFunPE` tNat
 
+        PrimStoreCreate
+         -> tNat `tFunPE` tVoid
+
         PrimStoreAlloc
          -> tNat `tFunPE` tAddr
 
