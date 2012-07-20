@@ -8,6 +8,7 @@ where
 import DDC.Core.Lite.Convert.Data
 import DDC.Core.Lite.Convert.Type
 import DDC.Core.Lite.Convert.Base
+import DDC.Core.Salt.Convert.Init
 import DDC.Core.Salt.Platform
 import DDC.Core.Module
 import DDC.Core.Compounds
@@ -25,7 +26,7 @@ import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Env       as O
 import qualified Data.Map                as Map
 import Control.Monad
-import Data.List
+
 
 -- | Convert a Disciple Core Lite module to Disciple Core Salt.
 --
@@ -70,14 +71,16 @@ convertM
 
 convertM pp defsPrim mm
   = do  let defs = defsPrim
-        x'              <- convertBodyX pp defs $ moduleBody mm
-        tsImports'      <- liftM Map.fromList
-                        $  mapM convertImportM  
-                        $  Map.toList
-                        $  moduleImportTypes mm
+        x'      <- convertBodyX pp defs $ moduleBody mm
 
-        convertInitM pp
-                $ ModuleCore
+        tsImports'
+                <- liftM Map.fromList
+                $  mapM convertImportM  
+                $  Map.toList
+                $  moduleImportTypes mm
+
+        let mm_salt 
+                = ModuleCore
                 { moduleName           = moduleName mm
                 , moduleExportKinds    = Map.empty
                 , moduleExportTypes    = Map.empty
@@ -85,6 +88,11 @@ convertM pp defsPrim mm
                 , moduleImportTypes    = Map.union O.runtimeImportSigs tsImports'
                 , moduleBody           = x' }
 
+        let mm_init 
+                = initRuntime pp mm_salt
+
+        return $ mm_init
+                
 
 -- | Convert an import spec.
 convertImportM
@@ -107,51 +115,6 @@ convertQualNameM (QualName mn n)
  = do   n'      <- convertBindNameM n
         return  $ QualName mn n'
 
-
--- Init ------------------------------------------------------------------------
--- TODO: move this into Salt tree instead.
-
-convertInitM 
-        :: Platform
-        -> Module a O.Name
-        -> ConvertM a (Module a O.Name)
-
-convertInitM _pp mm@ModuleCore{}
-        | moduleName mm == ModuleName ["Main"]
-        = return $ mm
-        { moduleBody    = convertInitTopX (moduleBody mm)}
-
-        | otherwise
-        = return mm
-
-convertInitTopX :: Exp a O.Name -> Exp a O.Name
-convertInitTopX xx
-        | XLet a (LRec bxs) x2  <- xx
-        , Just (bMain, xMain)   <- find   (isMainB . fst) bxs
-        , bxs_cut               <- filter (not . isMainB . fst) bxs
-        = let   bytes   = 100000
-                                -- TODO: Heap Size parameterise this
-
-                xMain' = hackBodyX (XLet a (LLet LetStrict (BNone O.tVoid) (O.xCreate a bytes))) xMain
-
-          in    XLet a (LRec $ bxs_cut ++ [(bMain, xMain')]) x2
-
-        | otherwise
-        = error "convertInitX: no main function"
-
-hackBodyX :: (Exp a n -> Exp a n) -> Exp a n -> Exp a n
-hackBodyX f xx
- = case xx of
-        XLAM a b x      -> XLAM a b $ hackBodyX f x
-        XLam a b x      -> XLam a b $ hackBodyX f x
-        _               -> f xx
-
-
-isMainB :: Bind O.Name -> Bool
-isMainB bb
-  = case bb of
-        (BName (O.NameVar "main") _)      -> True
-        _                                 -> False
 
 -- Exp -------------------------------------------------------------------------
 convertBodyX 
