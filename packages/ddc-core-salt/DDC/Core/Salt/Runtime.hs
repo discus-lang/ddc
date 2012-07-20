@@ -2,24 +2,24 @@
 -- | Bindings to functions exported by the runtime system,
 --   and wrappers for related primops.
 module DDC.Core.Salt.Runtime
-        ( -- * PrimOps
-          xCreate
-        , xRead
-        , xWrite
-        , xFail
-        , xReturn
-
-          -- * Runtime Config
-        , Config  (..)
-
-          -- * Runtime
+        ( -- * Runtime Config
+          Config  (..)
         , runtimeImportSigs
+
+          -- * Calls to runtime functions.
         , xGetTag
         , xAllocBoxed
         , xGetFieldOfBoxed
         , xSetFieldOfBoxed
         , xAllocRawSmall
-        , xPayloadOfRawSmall)
+        , xPayloadOfRawSmall
+
+          -- * Calls to primops.
+        , xCreate
+        , xRead
+        , xWrite
+        , xFail
+        , xReturn)
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
@@ -29,64 +29,6 @@ import DDC.Core.Exp
 import DDC.Type.Compounds
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
-
-
--- Primops --------------------------------------------------------------------
--- | Create the heap
---   TODO: Nat isn't the correct type.
-xCreate :: a -> Integer -> Exp a Name
-xCreate a bytes
-        = XApp a (XVar a uCreate) 
-                 (XCon a (UPrim (NameNat bytes) tNat))
-
-uCreate :: Bound Name
-uCreate = UPrim (NamePrim $ PrimStore $ PrimStoreCreate)
-                (tNat `tFunPE` tVoid)
-
-
--- | Read a value from an address plus offset.
-xRead   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
-xRead a tField xAddr offset
-        = XApp a (XApp a (XApp a (XVar a uRead) 
-                               (XType tField))
-                          xAddr)
-                 (XCon a (UPrim (NameNat offset) tNat))
-
-uRead   :: Bound Name
-uRead   = UPrim (NamePrim $ PrimStore $ PrimStoreRead)
-                (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t)
-
-
--- | Write a value to an address pluss offset.
-xWrite   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
-xWrite a tField xAddr offset xVal
-        = XApp a (XApp a (XApp a (XApp a (XVar a uWrite) 
-                                         (XType tField))
-                                  xAddr)
-                          (XCon a (UPrim (NameNat offset) tNat)))
-                  xVal
-
-uWrite   :: Bound Name
-uWrite   = UPrim (NamePrim $ PrimStore $ PrimStoreWrite)
-                (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
-
-
--- | Fail with an internal error.
-xFail   :: a -> Type Name -> Exp a Name
-xFail a t       
- = XApp a (XVar a (UPrim (NamePrim (PrimControl PrimControlFail))
-                         (TForall (BAnon kData) (TVar $ UIx 0 kData))))
-          (XType t)
-
-
--- | Return a value.
---   like  (return# [Int32#] x)
-xReturn :: a -> Type Name -> Exp a Name -> Exp a Name
-xReturn a t x
- = XApp a (XApp a (XVar a (UPrim (NamePrim (PrimControl PrimControlReturn))
-                          (tForall kData $ \t1 -> t1 `tFunPE` t1)))
-                (XType t))
-           x
 
 
 -- Runtime --------------------------------------------------------------------
@@ -195,4 +137,64 @@ uPayloadOfRawSmall :: Bound Name
 uPayloadOfRawSmall
         = UName (NameVar "payloadOfRawSmall")
         $ tForall kRegion $ \r -> (tFunPE (tPtr r tObj) tAddr)
+
+
+
+-- Primops --------------------------------------------------------------------
+-- | Create the heap
+--   TODO: Nat isn't the correct type.
+xCreate :: a -> Integer -> Exp a Name
+xCreate a bytes
+        = XApp a (XVar a uCreate) 
+                 (XCon a (UPrim (NameNat bytes) tNat))
+
+uCreate :: Bound Name
+uCreate = UPrim (NamePrim $ PrimStore $ PrimStoreCreate)
+                (tNat `tFunPE` tVoid)
+
+
+-- | Read a value from an address plus offset.
+xRead   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
+xRead a tField xAddr offset
+        = XApp a (XApp a (XApp a (XVar a uRead) 
+                               (XType tField))
+                          xAddr)
+                 (XCon a (UPrim (NameNat offset) tNat))
+
+uRead   :: Bound Name
+uRead   = UPrim (NamePrim $ PrimStore $ PrimStoreRead)
+                (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t)
+
+
+-- | Write a value to an address pluss offset.
+xWrite   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
+xWrite a tField xAddr offset xVal
+        = XApp a (XApp a (XApp a (XApp a (XVar a uWrite) 
+                                         (XType tField))
+                                  xAddr)
+                          (XCon a (UPrim (NameNat offset) tNat)))
+                  xVal
+
+uWrite   :: Bound Name
+uWrite   = UPrim (NamePrim $ PrimStore $ PrimStoreWrite)
+                (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
+
+
+-- | Fail with an internal error.
+xFail   :: a -> Type Name -> Exp a Name
+xFail a t       
+ = XApp a (XVar a (UPrim (NamePrim (PrimControl PrimControlFail))
+                         (TForall (BAnon kData) (TVar $ UIx 0 kData))))
+          (XType t)
+
+
+-- | Return a value.
+--   like  (return# [Int32#] x)
+xReturn :: a -> Type Name -> Exp a Name -> Exp a Name
+xReturn a t x
+ = XApp a (XApp a (XVar a (UPrim (NamePrim (PrimControl PrimControlReturn))
+                          (tForall kData $ \t1 -> t1 `tFunPE` t1)))
+                (XType t))
+           x
+
 

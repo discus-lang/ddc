@@ -19,37 +19,36 @@ import Data.List
 -- PrimTyCon -----------------------------------------------------------------
 -- | Primitive type constructors.
 data PrimTyCon
-        -- | The Void type.
+        -- | @Void#@ the Void type has no values.
         = PrimTyConVoid
 
-        -- | Type of booleans.
+        -- | @Bool#@ unboxed booleans.
         | PrimTyConBool
 
-        -- | Type of natural numbers,
+        -- | @Nat#@ natural numbers.
         --   Big enough to count every addressable byte in the system.
         | PrimTyConNat
 
-        -- | Type of signed integers,
+        -- | @Int#@ signed integers,
         | PrimTyConInt
 
-        -- | Machine words of the given length.
+        -- | @WordN#@ machine words of the given length.
         | PrimTyConWord   Int
 
-        -- | Floating point numbers of the given length.
+        -- | @FloatN#@ floating point numbers of the given length.
         | PrimTyConFloat  Int
 
-        -- | Type of data type tags.
+        -- | @Tag#@ data type tags.
         | PrimTyConTag
 
-        -- | Type of machine addresses.
+        -- | @Addr#@ machine addresses.
         | PrimTyConAddr
 
-        -- | Type of store pointers
+        -- | @Ptr#@ store pointers.
         | PrimTyConPtr
 
-        -- | String of UTF8 characters.
-        --   TODO: We'll stop treating this as primitive once we can define 
-        --         our own types.
+        -- | @String#@ String of UTF8 characters.
+        --   TODO: These are primitive until we can define our own types.
         | PrimTyConString 
         deriving (Eq, Ord, Show)
 

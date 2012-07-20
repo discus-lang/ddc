@@ -8,8 +8,6 @@
 module DDC.Core.Lite
         ( -- * Language profile
           profile
-        , lexModuleString
-        , lexExpString
 
           -- * Conversion to the Disciple Core Salt.
         , toSalt
@@ -18,9 +16,17 @@ module DDC.Core.Lite
           -- * Names of variables and constructors.
         , Name          (..)
         , DataTyCon     (..)
+        , PrimTyCon     (..)
         , PrimDaCon     (..)
-        , readName)
+        , PrimOp        (..)
+        , readName
+
+          -- * Lexers
+        , lexModuleString
+        , lexExpString)
+
 where
-import DDC.Core.Lite.Profile
 import DDC.Core.Lite.Name
+import DDC.Core.Lite.Profile
 import DDC.Core.Lite.Convert
+import DDC.Core.Salt.Name.Prim

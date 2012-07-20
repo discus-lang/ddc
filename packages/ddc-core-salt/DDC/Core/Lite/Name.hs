@@ -117,6 +117,7 @@ readName str
 
 
 -- DataTyCon ------------------------------------------------------------------
+-- | Baked-in data type constructors.
 data DataTyCon
         = DataTyConUnit         -- ^ @Unit@  type constructor.
         | DataTyConBool         -- ^ @Bool@  type constructor.
@@ -138,6 +139,7 @@ instance Pretty DataTyCon where
         DataTyConList           -> text "List"
 
 
+-- | Read a Baked-in data type constructor.
 readDataTyCon :: String -> Maybe DataTyCon
 readDataTyCon str
  = case str of
@@ -151,15 +153,15 @@ readDataTyCon str
 
 
 -- PrimDaCon ------------------------------------------------------------------
+-- | Baked-in data constructors.
 data PrimDaCon
-        = PrimDaConBoolU        -- ^ @B#@   data constructor.
+        = PrimDaConUnit         -- ^ Unit   data constructor (@()@).
+        | PrimDaConBoolU        -- ^ @B#@   data constructor.
         | PrimDaConNatU         -- ^ @N#@   data constructor.
         | PrimDaConIntU         -- ^ @I#@   data constructor.
-
-        | PrimDaConUnit         -- ^ Unit   data constructor (@()@).
         | PrimDaConPr           -- ^ @Pr@   data construct (pairs).
-        | PrimDaConNil          -- ^ @Nil@  data constructor.
-        | PrimDaConCons         -- ^ @Cons@ data constructor.
+        | PrimDaConNil          -- ^ @Nil@  data constructor (lists).
+        | PrimDaConCons         -- ^ @Cons@ data constructor (lists).
         deriving (Show, Eq, Ord)
 
 
@@ -176,18 +178,16 @@ instance Pretty PrimDaCon where
         PrimDaConCons           -> text "Cons"
 
 
+-- | Read a Baked-in data constructor.
 readPrimDaCon :: String -> Maybe PrimDaCon
 readPrimDaCon str
  = case str of
+        "()"    -> Just PrimDaConUnit
         "B#"    -> Just PrimDaConBoolU
         "N#"    -> Just PrimDaConNatU
         "I#"    -> Just PrimDaConIntU
-
-        "Unit"  -> Just PrimDaConUnit
         "Pr"    -> Just PrimDaConPr
         "Nil"   -> Just PrimDaConNil
         "Cons"  -> Just PrimDaConCons
         _       -> Nothing
-
-
 

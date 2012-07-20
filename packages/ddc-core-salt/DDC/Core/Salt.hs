@@ -26,6 +26,7 @@ module DDC.Core.Salt
         , PrimOp        (..)
         , readName
 
+          -- * Lexers
         , lexModuleString
         , lexExpString)
 

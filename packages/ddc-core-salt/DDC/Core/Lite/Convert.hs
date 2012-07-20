@@ -34,10 +34,6 @@ import Control.Monad
 --   check the tag, while data constructors are unfolded into explicit allocation
 --   and field initialization primops. 
 --
---   TODO: Add the alternatives that force and follow lazy thunks and indirections.
---   TODO: Expand partial and over-applications into code that explicitly builds
---         and applies thunks.
---
 --   The input module needs to be:
 --      well typed,
 --      fully named with no deBruijn indices,
@@ -50,13 +46,17 @@ import Control.Monad
 --      debruijn indices.
 --       these which need to be eliminated before it will pass the Salt fragment checks.
 --
+--   TODO: Add the alternatives that force and follow lazy thunks and indirections.
+--   TODO: Expand partial and over-applications into code that explicitly builds
+--         and applies thunks.
+--
 toSalt
         :: Show a
-        => Platform
-        -> S.Config
-        -> DataDefs L.Name
-        -> Module (AnTEC a L.Name) L.Name 
-        -> Either (Error a) (Module a S.Name)
+        => Platform                             -- ^ Platform specification.
+        -> S.Config                             -- ^ Runtime configuration.
+        -> DataDefs L.Name                      -- ^ Data type definitions.
+        -> Module (AnTEC a L.Name) L.Name       -- ^ Lite module to convert.
+        -> Either (Error a) (Module a S.Name)   -- ^ Salt module.
 toSalt platform runConfig defs mm
  = result $ convertM platform runConfig defs mm
 
@@ -66,7 +66,7 @@ convertM
         :: Show a
         => Platform
         -> S.Config
-        -> DataDefs L.Name 
+        -> DataDefs L.Name
         -> Module (AnTEC a L.Name) L.Name 
         -> ConvertM a (Module a S.Name)
 
