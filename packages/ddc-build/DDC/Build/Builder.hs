@@ -111,7 +111,7 @@ builder_X8632_Darwin config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
-                $ "llc -O3 -march=x86 -disable-cfi" 
+                $ "llc -O3 -march=x86 -relocation-model=pic -disable-cfi" 
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
@@ -145,7 +145,7 @@ builder_X8664_Darwin config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
-                $ "llc -O3 -march=x86-64 -disable-cfi" 
+                $ "llc -O3 -march=x86-64 -relocation-model=pic -disable-cfi" 
                 ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
@@ -177,8 +177,8 @@ builder_X8632_Linux config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"
-                $ "llc -O3 -march=x86 -relocation-model=pic " 
-                ++ llFile 
+                $ "llc -O3 -march=x86 -relocation-model=pic" 
+                ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
         , buildAs
@@ -209,8 +209,8 @@ builder_X8664_Linux config
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler" 
-                $ "llc -O3 -march=x86-64 -relocation-model=pic " 
-                ++ llFile 
+                $ "llc -O3 -march=x86-64 -relocation-model=pic" 
+                ++ " "    ++ llFile 
                 ++ " -o " ++ sFile
 
         , buildAs
