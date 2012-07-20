@@ -39,6 +39,7 @@ import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt.Name             as Salt
+import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Core.Check                 as C
 import qualified Data.Set                       as Set
 import qualified Data.Map                       as Map
@@ -159,7 +160,7 @@ stageLiteToSalt
 
 stageLiteToSalt state source builder pipesSalt
  = PipeCoreAsLite 
-   [ PipeLiteToSalt       (buildSpec builder)
+   [ PipeLiteToSalt       (buildSpec builder) runConfig
      [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
      , PipeCoreSimplify   0
                 (S.anormalize (makeNamifier Salt.freshT)
@@ -167,6 +168,12 @@ stageLiteToSalt state source builder pipesSalt
        [ PipeCoreOutput   (dump state source "dump.salt-normalized.dce")
        , PipeCoreCheck    fragmentSalt
          pipesSalt]]]
+
+ where  -- Set the default runtime system parameters.
+        -- TODO: We should be able to set this from the command line.
+        runConfig
+         = Salt.Config
+         { Salt.configHeapSize   = 1000 }
 
 
 -------------------------------------------------------------------------------

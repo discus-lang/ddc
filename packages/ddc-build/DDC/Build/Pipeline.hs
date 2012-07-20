@@ -42,14 +42,13 @@ import qualified DDC.Core.Load                  as CL
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Salt.Convert.Transfer as Salt
 import qualified DDC.Core.Salt.Platform         as Salt
+import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Llvm.Module                as Llvm
 import qualified Control.Monad.State.Strict     as S
 import Control.Monad
 
--- import qualified Language.Haskell.Exts.Parser as H
--- import qualified Language.Haskell.Exts.Pretty as H
 
 -- Error ----------------------------------------------------------------------
 data Error
@@ -242,6 +241,7 @@ data PipeLite
 
         -- | Convert the module to the Core Salt Fragment.
         | PipeLiteToSalt Salt.Platform 
+                         Salt.Config
                          [PipeCore () Salt.Name]
 
 
@@ -254,8 +254,8 @@ pipeLite mm pp
         PipeLiteOutput sink
          -> pipeSink (renderIndent $ ppr mm) sink
 
-        PipeLiteToSalt platform pipes
-         -> case Lite.toSalt platform (profilePrimDataDefs Lite.profile) mm of
+        PipeLiteToSalt platform runConfig pipes
+         -> case Lite.toSalt platform runConfig (profilePrimDataDefs Lite.profile) mm of
                 Left  err       -> return [ErrorLiteConvert err]
                 Right mm'       -> liftM concat $ mapM (pipeCore mm') pipes
 

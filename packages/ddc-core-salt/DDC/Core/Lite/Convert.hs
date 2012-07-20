@@ -21,9 +21,9 @@ import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw, result)
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Lite.Name      as L
-import qualified DDC.Core.Salt.Runtime   as O
-import qualified DDC.Core.Salt.Name      as O
-import qualified DDC.Core.Salt.Env       as O
+import qualified DDC.Core.Salt.Runtime   as S
+import qualified DDC.Core.Salt.Name      as S
+import qualified DDC.Core.Salt.Env       as S
 import qualified Data.Map                as Map
 import Control.Monad
 
@@ -53,43 +53,51 @@ import Control.Monad
 toSalt
         :: Show a
         => Platform
+        -> S.Config
         -> DataDefs L.Name
         -> Module (AnTEC a L.Name) L.Name 
-        -> Either (Error a) (Module a O.Name)
-toSalt pp defs mm
- = result $ convertM pp defs mm
-
+        -> Either (Error a) (Module a S.Name)
+toSalt platform runConfig defs mm
+ = result $ convertM platform runConfig defs mm
 
 
 -- Module ---------------------------------------------------------------------
 convertM 
         :: Show a
         => Platform
+        -> S.Config
         -> DataDefs L.Name 
         -> Module (AnTEC a L.Name) L.Name 
-        -> ConvertM a (Module a O.Name)
+        -> ConvertM a (Module a S.Name)
 
-convertM pp defsPrim mm
-  = do  let defs = defsPrim
+convertM pp runConfig defs mm
+  = do  
+        -- Convert the body of the module to Salt.
         x'      <- convertBodyX pp defs $ moduleBody mm
 
+        -- Collect up signatures of imported functions.
         tsImports'
                 <- liftM Map.fromList
                 $  mapM convertImportM  
                 $  Map.toList
                 $  moduleImportTypes mm
 
+        -- Build the output module.
         let mm_salt 
                 = ModuleCore
                 { moduleName           = moduleName mm
                 , moduleExportKinds    = Map.empty
                 , moduleExportTypes    = Map.empty
                 , moduleImportKinds    = Map.empty
-                , moduleImportTypes    = Map.union O.runtimeImportSigs tsImports'
+                , moduleImportTypes    = Map.union S.runtimeImportSigs tsImports'
                 , moduleBody           = x' }
 
-        let mm_init 
-                = initRuntime pp mm_salt
+        -- If this is the 'Main' module then add code to initialise the 
+        -- runtime system. This will fail if given a Main module with no
+        -- 'main' function.
+        mm_init <- case initRuntime runConfig mm_salt of
+                        Nothing   -> throw ErrorMainHasNoMain
+                        Just mm'  -> return mm'
 
         return $ mm_init
                 
@@ -97,7 +105,7 @@ convertM pp defsPrim mm
 -- | Convert an import spec.
 convertImportM
         :: (L.Name, (QualName L.Name, Type L.Name))
-        -> ConvertM a (O.Name, (QualName O.Name, Type O.Name))
+        -> ConvertM a (S.Name, (QualName S.Name, Type S.Name))
 
 convertImportM (n, (qn, t))
  = do   n'      <- convertBindNameM n
@@ -109,7 +117,7 @@ convertImportM (n, (qn, t))
 -- | Convert a qualified name.
 convertQualNameM
         :: QualName L.Name 
-        -> ConvertM a (QualName O.Name)
+        -> ConvertM a (QualName S.Name)
 
 convertQualNameM (QualName mn n)
  = do   n'      <- convertBindNameM n
@@ -122,7 +130,7 @@ convertBodyX
         => Platform
         -> DataDefs L.Name 
         -> Exp (AnTEC a L.Name) L.Name 
-        -> ConvertM a (Exp a O.Name)
+        -> ConvertM a (Exp a S.Name)
 
 convertBodyX pp defs xx
  = case xx of
@@ -215,10 +223,10 @@ convertBodyX pp defs xx
                         = []
 
                         | otherwise     
-                        = [AAlt PDefault (O.xFail a' t')]
+                        = [AAlt PDefault (S.xFail a' t')]
 
                 let Just tPrime = takePrimeRegion (typeOfBound uX')
-                return  $ XCase a' (O.xGetTag a' tPrime x') 
+                return  $ XCase a' (S.xGetTag a' tPrime x') 
                         $ alts' ++ asDefault
 
         XCase{}         -> throw $ ErrorNotNormalized
@@ -236,7 +244,7 @@ convertArgX
         => Platform
         -> DataDefs L.Name
         -> Exp (AnTEC a L.Name) L.Name
-        -> ConvertM a (Exp a O.Name)
+        -> ConvertM a (Exp a S.Name)
 
 convertArgX pp defs xx
   = case xx of
@@ -317,7 +325,7 @@ convertCtorAppX
         -> DataDefs L.Name
         -> L.Name
         -> [Exp (AnTEC a L.Name) L.Name]
-        -> ConvertM a (Exp a O.Name)
+        -> ConvertM a (Exp a S.Name)
 
 convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
 
@@ -325,22 +333,22 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
  | L.NameBool b         <- nCtor
  , []                   <- xsArgs
  = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (O.NameBool b) t')
+        return $ XCon (annotTail a) (UPrim (S.NameBool b) t')
 
  | L.NameNat i          <- nCtor
  , []                   <- xsArgs
  = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (O.NameNat i) t')
+        return $ XCon (annotTail a) (UPrim (S.NameNat i) t')
 
  | L.NameInt i         <- nCtor
  , []                   <- xsArgs
  = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (O.NameInt i) t')
+        return $ XCon (annotTail a) (UPrim (S.NameInt i) t')
 
  | L.NameWord i bits    <- nCtor
  , []                   <- xsArgs
  = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (O.NameWord i bits) t')
+        return $ XCon (annotTail a) (UPrim (S.NameWord i bits) t')
 
 
  -- Construct algbraic data that has a finite number of data constructors.
@@ -369,7 +377,7 @@ convertA
         -> a
         -> Bound L.Name 
         -> Alt (AnTEC a L.Name) L.Name 
-        -> ConvertM a (Alt a O.Name)
+        -> ConvertM a (Alt a S.Name)
 
 convertA pp defs a uScrut alt
  = case alt of
@@ -402,7 +410,7 @@ convertA pp defs a uScrut alt
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
-                let uTag        = UPrim (O.NameTag iTag) O.tTag
+                let uTag        = UPrim (S.NameTag iTag) S.tTag
 
                 -- Get the address of the payload.
                 bsFields'       <- mapM convertB bsFields
@@ -425,25 +433,25 @@ convertC :: Show a
          => DataDefs L.Name
          -> a 
          -> Bound L.Name 
-         -> ConvertM a (Exp a O.Name, Type O.Name)
+         -> ConvertM a (Exp a S.Name, Type S.Name)
 
 convertC _defs a uu
  = case uu of
         UPrim (L.NameBool v) _   
-          -> return ( XCon a (UPrim (O.NameBool v)      (O.tBool))
-                    , O.tBool)
+          -> return ( XCon a (UPrim (S.NameBool v)      (S.tBool))
+                    , S.tBool)
 
         UPrim (L.NameNat i) _   
-          -> return ( XCon a (UPrim (O.NameNat i) O.tNat)
-                    , O.tNat)
+          -> return ( XCon a (UPrim (S.NameNat i) S.tNat)
+                    , S.tNat)
 
         UPrim (L.NameInt i) _   
-          -> return ( XCon a (UPrim (O.NameInt i) O.tInt)
-                    , O.tInt)
+          -> return ( XCon a (UPrim (S.NameInt i) S.tInt)
+                    , S.tInt)
 
         UPrim (L.NameWord i bits) _   
-          -> return ( XCon a (UPrim (O.NameWord i bits) (O.tWord bits))
-                    , O.tWord bits)
+          -> return ( XCon a (UPrim (S.NameWord i bits) (S.tWord bits))
+                    , S.tWord bits)
 
 
         _ -> error $ "convertC failed"

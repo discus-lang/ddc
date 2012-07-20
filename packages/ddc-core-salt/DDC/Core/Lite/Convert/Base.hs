@@ -40,6 +40,9 @@ data Error a
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
 
+        -- | The 'Main' module has no 'main' function
+        | ErrorMainHasNoMain
+
 
 instance Show a => Pretty (Error a) where
  ppr err
@@ -67,6 +70,9 @@ instance Show a => Pretty (Error a) where
 
         ErrorInvalidAlt
          -> vcat [ text "Invalid alternative" ]
+
+        ErrorMainHasNoMain
+         -> vcat [ text "Main module has no 'main' function" ]
 
 
 

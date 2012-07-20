@@ -9,6 +9,9 @@ module DDC.Core.Salt.Runtime
         , xFail
         , xReturn
 
+          -- * Runtime Config
+        , Config  (..)
+
           -- * Runtime
         , runtimeImportSigs
         , xGetTag
@@ -87,6 +90,12 @@ xReturn a t x
 
 
 -- Runtime --------------------------------------------------------------------
+-- | Runtime system configuration
+data Config
+        = Config
+        { configHeapSize        :: Integer }
+
+
 -- | Signatures for runtime funtions that we use when converting
 --   to Disciple Salt code.
 runtimeImportSigs :: Map Name (QualName Name, Type Name)
@@ -114,7 +123,6 @@ uGetTag = UName (NameVar "getTag")
 
 
 -- Boxed ------------------------------
-
 -- | Allocate a Boxed object.
 xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocBoxed a tR tag x2

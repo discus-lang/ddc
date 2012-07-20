@@ -1,14 +1,21 @@
 
 module DDC.Core.Module
-        ( Module        (..)
+        ( -- * Module Names.
+          QualName      (..)
+        , ModuleName    (..)
+        , isMainModuleName
+
+          -- * Modules
+        , Module        (..)
         , Extern        (..)
-        , QualName      (..)
-        , ModuleName    (..))
+        , isMainModule)
+
 where
 import DDC.Core.Exp
 import Data.Map         (Map)
 
 
+-- ModuleName -----------------------------------------------------------------
 -- | A hierarchical module name.
 data ModuleName
         = ModuleName [String]
@@ -22,6 +29,14 @@ data QualName n
         deriving Show
 
 
+isMainModuleName :: ModuleName -> Bool
+isMainModuleName mn
+ = case mn of
+        ModuleName ["Main"]     -> True
+        _                       -> False
+
+
+-- Module ---------------------------------------------------------------------
 -- | A module can be mutually recursive with other modules.
 data Module a n
 
@@ -64,3 +79,9 @@ data Extern n
 
           -- | Type of the function.
         , externType            :: Type n }
+
+
+isMainModule :: Module a n -> Bool
+isMainModule mm
+        = isMainModuleName 
+        $ moduleName mm
