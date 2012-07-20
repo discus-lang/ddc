@@ -2,8 +2,8 @@
 module DDC.Core.Salt.Convert.Init
         (initRuntime)
 where
+import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Runtime
-import DDC.Core.Salt.Env
 import DDC.Core.Salt.Name
 import DDC.Core.Module
 import DDC.Core.Exp

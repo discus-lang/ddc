@@ -23,7 +23,7 @@ import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as S
 import qualified DDC.Core.Salt.Name      as S
-import qualified DDC.Core.Salt.Env       as S
+import qualified DDC.Core.Salt.Compounds as S
 import qualified Data.Map                as Map
 import Control.Monad
 

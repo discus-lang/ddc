@@ -21,11 +21,11 @@ module DDC.Core.Salt.Runtime
         , xAllocRawSmall
         , xPayloadOfRawSmall)
 where
+import DDC.Core.Salt.Compounds
+import DDC.Core.Salt.Name
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Salt.Env
-import DDC.Core.Salt.Name
 import DDC.Type.Compounds
 import qualified Data.Map       as Map
 import Data.Map                 (Map)

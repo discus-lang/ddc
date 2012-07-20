@@ -2,9 +2,7 @@
 module DDC.Core.Lite.Env
         ( primDataDefs
         , primKindEnv
-        , primTypeEnv
-
-        , tBoolU)
+        , primTypeEnv)
 where
 import DDC.Core.Lite.Compounds
 import DDC.Core.Lite.Name

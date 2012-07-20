@@ -11,12 +11,12 @@ import DDC.Core.Exp
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.DataDef
-import DDC.Type.Check.Monad             (throw)
-import qualified DDC.Core.Lite.Layout   as L
-import qualified DDC.Core.Lite.Name     as L
-import qualified DDC.Core.Salt.Runtime  as O
-import qualified DDC.Core.Salt.Name     as O
-import qualified DDC.Core.Salt.Env      as O
+import DDC.Type.Check.Monad              (throw)
+import qualified DDC.Core.Lite.Layout    as L
+import qualified DDC.Core.Lite.Name      as L
+import qualified DDC.Core.Salt.Runtime   as O
+import qualified DDC.Core.Salt.Name      as O
+import qualified DDC.Core.Salt.Compounds as O
 
 
 -- Construct ------------------------------------------------------------------
