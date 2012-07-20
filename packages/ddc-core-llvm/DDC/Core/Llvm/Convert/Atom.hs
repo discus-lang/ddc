@@ -8,9 +8,9 @@ where
 import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
-import DDC.Core.Salt.Sanitize
-import qualified DDC.Core.Salt  as A
-import qualified DDC.Core.Exp   as C
+import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Name     as A
+import qualified DDC.Core.Exp           as C
 
 
 -- Atoms ----------------------------------------------------------------------
@@ -20,7 +20,7 @@ mconvAtom :: Platform -> C.Exp a A.Name -> Maybe Exp
 mconvAtom pp xx
  = case xx of
         C.XVar _ (C.UName (A.NameVar n) t)
-         -> let n' = sanitizeName n
+         -> let n' = A.sanitizeName n
             in  Just $ XVar (Var (NameLocal n') (convType pp t))
 
         C.XCon _ (C.UPrim (A.NameNat  nat) t)

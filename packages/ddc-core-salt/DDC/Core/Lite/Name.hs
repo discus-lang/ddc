@@ -5,7 +5,8 @@ module DDC.Core.Lite.Name
         , PrimDaCon     (..)
         , readName)
 where
-import DDC.Core.Salt.Prim
+import DDC.Core.Salt.Name.Prim
+import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Data.Typeable
 import Data.Char

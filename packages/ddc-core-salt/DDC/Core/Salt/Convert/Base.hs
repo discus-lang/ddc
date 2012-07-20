@@ -3,13 +3,20 @@
 --
 --   If we get any of these then the program doesn't map onto the features
 --   of the C-language.
-module DDC.Core.Salt.Error
-        (Error(..))
+module DDC.Core.Salt.Convert.Base
+        ( ConvertM      (..)
+        , Error(..))
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
+import qualified DDC.Type.Check.Monad   as G
+
+
+-- | Conversion Monad
+type ConvertM a x = G.CheckM (Error a) x
+
 
 -- | Things that can go wrong when converting Disciple Core Salt to
 --   to C source text.

@@ -24,11 +24,11 @@ where
 import DDC.Llvm.Attr
 import DDC.Llvm.Type
 import DDC.Core.Llvm.LlvmM
-import DDC.Core.Salt.Sanitize
 import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
 import Control.Monad.State.Strict
 import DDC.Core.Salt                    as A
+import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 
@@ -81,7 +81,7 @@ importedFunctionDeclOfType
 importedFunctionDeclOfType platform linkage (C.QualName _ (NameVar n)) tt   -- TODO: handle module qualifiers
  = let  (tsArgs@(_ : _), tResult) = takeTFunArgResult tt
    in   Just $ FunctionDecl
-             { declName           = sanitizeName  n
+             { declName           = A.sanitizeName  n
              , declLinkage        = linkage
              , declCallConv       = CC_Ccc
              , declReturnType     = convType platform tResult

@@ -10,12 +10,12 @@
 --        (these are added by DDC.Core.Salt.Convert.Transfer)
 --      
 module DDC.Core.Salt.Convert
-        (convertModule)
+        ( Error (..)
+        , convertModule)
 where
 import DDC.Core.Salt.Convert.Prim
-import DDC.Core.Salt.Error
+import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
-import DDC.Core.Salt.Sanitize
 import DDC.Core.Salt.Erase
 import DDC.Core.Compounds
 import DDC.Type.Compounds
@@ -23,17 +23,12 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
-import qualified DDC.Type.Check.Monad   as G
 
 
 -- | Convert a Disciple Core Salt module to C-source text.
 convertModule :: Show a => Module a Name -> Either (Error a) Doc
 convertModule mm
  = result $ convModuleM $ eraseM mm
-
-
--- | Conversion Monad
-type ConvertM a x = G.CheckM (Error a) x
 
 
 -- Module ---------------------------------------------------------------------

@@ -8,7 +8,7 @@ module DDC.Core.Lite.Env
 where
 import DDC.Core.Lite.Compounds
 import DDC.Core.Lite.Name
-import DDC.Core.Salt.Prim
+import DDC.Core.Salt.Name.Prim
 import DDC.Type.DataDef
 import DDC.Type.Compounds
 import DDC.Type.Exp

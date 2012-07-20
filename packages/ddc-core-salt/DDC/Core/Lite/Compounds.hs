@@ -11,7 +11,7 @@ module DDC.Core.Lite.Compounds
         , tList)
 where
 import DDC.Core.Lite.Name
-import DDC.Core.Salt.Prim
+import DDC.Core.Salt.Name.Prim
 import DDC.Type.Exp
 import DDC.Type.Compounds
 

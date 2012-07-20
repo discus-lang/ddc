@@ -16,20 +16,20 @@ module DDC.Core.Salt
 
           -- * Names of variables and constructors
         , Name          (..)
-        , module DDC.Core.Salt.Prim
+        , PrimTyCon     (..)
         , Prim          (..)
         , PrimCast      (..)
         , PrimCall      (..)
         , PrimControl   (..)
         , PrimStore     (..)
         , PrimExternal  (..)
+        , PrimOp        (..)
         , readName
+
         , lexModuleString
         , lexExpString)
 
 where
-import DDC.Core.Salt.Prim
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Profile
 import DDC.Core.Salt.Convert
-import DDC.Core.Salt.Error

@@ -20,15 +20,13 @@
 module DDC.Core.Salt.Convert.Transfer
         (transferModule)
 where
+import DDC.Core.Salt.Convert.Base
+import DDC.Core.Salt.Runtime
+import DDC.Core.Salt.Name
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import DDC.Core.Check           (AnTEC(..))
-import DDC.Core.Salt.Runtime
-import DDC.Core.Salt.Name
-import DDC.Core.Salt.Error
--- import DDC.Core.Salt.Env
--- import DDC.Type.Compounds
 import Data.Set                 (Set)
 import qualified Data.Set       as Set
 
