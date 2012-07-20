@@ -13,15 +13,14 @@ with letrec
 fac [r1 : %] (x: Ptr# r1 Obj) : Ptr# r1 Obj
  = case eq# [Int#] (unboxInt [r1] x) 0i# of 
         True#  
-         -> return# [Ptr# r1 Obj] 
-                (boxInt [r1] 1i#)
+         ->     boxInt [r1] 1i#
 
         False# 
-         -> return# [Ptr# r1 Obj] 
-                (mulInt [:r1 r1 r1:] x (fac [r1] (subInt [:r1 r1 r1:] x (boxInt [r1] 1i#))))
+         ->     mulInt [:r1 r1 r1:] x (fac [r1] (subInt [:r1 r1 r1:] x (boxInt [r1] 1i#)))
 
 
 main [r1 : %] (argc : Nat#) (argv : Ptr# r1 String#) : Int#
- = do   x2      = fac [r1] (boxInt [r1] 10i#)
+ = do   create# 100000#
+        x2      = fac [r1] (boxInt [r1] 10i#)
         putStrLn [r1] (showInt [r1] (unboxInt [r1] x2))
         return# [Int#] 0i#

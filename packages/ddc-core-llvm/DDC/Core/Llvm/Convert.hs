@@ -59,13 +59,13 @@ convModuleM mm@(C.ModuleCore{})
         let isMainModule 
                 = C.moduleName mm == C.ModuleName ["Main"]
 
-        let vHeapTop    = Var (NameGlobal "DDC.Runtime.heapTop")  (tPtr (TInt 8))
+        let vHeapTop    = Var (NameGlobal "DDC.Runtime.heapTop")  (tAddr platform)
         let rtsGlobals
                 | isMainModule
-                = [ GlobalStatic vHeapTop (StaticLit (LitInt (tAddr platform) 0)) ]
+                = [ GlobalStatic   vHeapTop (StaticLit (LitInt (tAddr platform) 0)) ]
 
                 | otherwise
-                = []
+                = [ GlobalExternal vHeapTop ]
 
         ---------------------------------------------------------------
         functions       <- mapM (uncurry (convSuperM)) bxs

@@ -52,23 +52,35 @@ instance Pretty Module where
 -- Global ---------------------------------------------------------------------
 -- | A global mutable variable. Maybe defined or external
 data Global
-        = GlobalStatic Var Static
+        = GlobalStatic   Var Static
+        | GlobalExternal Var 
 
 
 -- | Return the 'LlvmType' of the 'LMGlobal'
 typeOfGlobal :: Global -> Type
-typeOfGlobal (GlobalStatic v _) = typeOfVar v
+typeOfGlobal gg
+ = case gg of
+        GlobalStatic v _        -> typeOfVar v
+        GlobalExternal v        -> typeOfVar v
 
 
 -- | Return the 'LlvmVar' part of a 'LMGlobal'
 varOfGlobal :: Global -> Var
-varOfGlobal  (GlobalStatic v _) = v
+varOfGlobal gg
+ = case gg of
+        GlobalStatic v _        -> v
+        GlobalExternal v        -> v
 
 
 instance Pretty Global where
- ppr  (GlobalStatic (Var name _) static)
-        = ppr name <+> text "= global" <+> ppr static
+ ppr gg
+  = case gg of
+        GlobalStatic (Var name _) static
+         -> ppr name <+> text "= global" <+> ppr static
 
+        GlobalExternal (Var name t)
+         -> ppr name <+> text "= external global " <+> ppr t
+ 
 
 -- Static ---------------------------------------------------------------------
 -- | Llvm Static Data.
