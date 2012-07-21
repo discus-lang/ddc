@@ -15,7 +15,6 @@ type ConvertM a x = G.CheckM (Error a) x
 
 
 -- | Things that can go wrong during the conversion.
---   All but the first should not happen with type checked code.
 data Error a
         -- | The 'Main' module has no 'main' function.
         = ErrorMainHasNoMain
@@ -27,7 +26,7 @@ data Error a
         | ErrorMistyped  (Exp (AnTEC a L.Name) L.Name)
 
         -- | The program wasn't in a-normal form.
-        | ErrorNotNormalized
+        | ErrorNotNormalized String
 
         -- | The program has bottom type annotations.
         | ErrorBotAnnot
@@ -56,11 +55,13 @@ instance Show a => Pretty (Error a) where
         ErrorMistyped xx
          -> vcat [ text "Module is mistyped." <> (text $ show xx) ]
 
-        ErrorNotNormalized
-         -> vcat [ text "Module is not in a-normal form."]
+        ErrorNotNormalized str
+         -> vcat [ text "Module is not in a-normal form."
+                 , text str ]
 
         ErrorBotAnnot
-         -> vcat [ text "Found bottom type annotation."]
+         -> vcat [ text "Found bottom type annotation."
+                 , text "  Code should be type-checked before converting Lite -> Salt" ]
 
         ErrorUnexpectedSum
          -> vcat [ text "Unexpected type sum."]

@@ -159,21 +159,32 @@ stageLiteToSalt
         -> PipeCore  (C.AnTEC () Lite.Name) Lite.Name
 
 stageLiteToSalt state source builder pipesSalt
- = PipeCoreAsLite 
-   [ PipeLiteToSalt       (buildSpec builder) runConfig
-     [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
-     , PipeCoreSimplify   0
-                (S.anormalize (makeNamifier Salt.freshT)
-                              (makeNamifier Salt.freshX))
-       [ PipeCoreOutput   (dump state source "dump.salt-normalized.dce")
-       , PipeCoreCheck    fragmentSalt
-         pipesSalt]]]
+ = PipeCoreSimplify         0 normalizeLite
+     [ PipeCoreReCheck          fragmentLite
+       [ PipeCoreOutput         (dump state source "dump.lite-normalized.dcl")
+       , PipeCoreAsLite 
+         [ PipeLiteToSalt       (buildSpec builder) runConfig
+           [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
+           , PipeCoreSimplify 0 normalizeSalt
+             [ PipeCoreCheck    fragmentSalt
+               ( PipeCoreOutput (dump state source "dump.salt-normalized.dce")
+               : pipesSalt)]]]]]
 
  where  -- Set the default runtime system parameters.
         -- TODO: We should be able to set this from the command line.
         runConfig
          = Salt.Config
          { Salt.configHeapSize   = 1000 }
+
+        normalizeLite
+         = S.anormalize
+                (makeNamifier Lite.freshT)      
+                (makeNamifier Lite.freshX)
+
+        normalizeSalt
+         = S.anormalize
+                (makeNamifier Salt.freshT)      
+                (makeNamifier Salt.freshX)
 
 
 -------------------------------------------------------------------------------

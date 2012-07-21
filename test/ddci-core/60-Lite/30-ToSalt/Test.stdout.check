@@ -130,21 +130,21 @@ letrec {
   addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
     = /\(r1 r2 r3 : %).
        \(x : Ptr# r1 Obj).\(y : Ptr# r2 Obj).
-      let x0 : Tag# = getTag [r1] x in
-      case x0 of {
+      let x1 : Tag# = getTag [r1] x in
+      case x1 of {
         TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall [r1] x in
-            let i1 : Int# = read# [Int#] x1 0# in
-            let x2 : Tag# = getTag [r2] y in
-            case x2 of {
+         -> let x2 : Addr# = payloadOfRawSmall [r1] x in
+            let i1 : Int# = read# [Int#] x2 0# in
+            let x3 : Tag# = getTag [r2] y in
+            case x3 of {
               TAG0#  
-               -> let x3 : Addr# = payloadOfRawSmall [r2] y in
-                  let i2 : Int# = read# [Int#] x3 0# in
-                  let x4 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
-                  let x5 : Addr# = payloadOfRawSmall [r3] x4 in
-                  let x6 : Int# = add# [Int#] i1 i2 in
-                  let _ : Void# = write# [Int#] x5 0# x6 in
-                  x4;
+               -> let x4 : Addr# = payloadOfRawSmall [r2] y in
+                  let i2 : Int# = read# [Int#] x4 0# in
+                  let x0 : Int# = add# [Int#] i1 i2 in
+                  let x5 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
+                  let x6 : Addr# = payloadOfRawSmall [r3] x5 in
+                  let _ : Void# = write# [Int#] x6 0# x0 in
+                  x5;
               _ 
                -> fail# [Ptr# r3 Obj]
             };
@@ -230,15 +230,15 @@ letrec {
   singleton : [r1 r2 : %].Ptr# r2 Obj -> Ptr# r1 Obj
     = /\(r1 r2 : %).
        \(x : Ptr# r2 Obj).
-      let x0 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
-      let _ : Void# = setFieldOfBoxed [r1] [r2] x0 0# x in
       let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
       let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
       let x3 : Ptr# _ Obj = x2 in
       let _ : Void# = setFieldOfBoxed [r1] [_] x1 0# x3 in
-      let x4 : Ptr# r1 Obj = x1 in
-      let _ : Void# = setFieldOfBoxed [r1] [r1] x0 1# x4 in
-      x0
+      let x0 : Ptr# r1 Obj = x1 in
+      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
+      let _ : Void# = setFieldOfBoxed [r1] [r2] x4 0# x in
+      let _ : Void# = setFieldOfBoxed [r1] [r1] x4 1# x0 in
+      x4
 }
 
 
@@ -248,21 +248,21 @@ letrec {
   addInt : [r1 r2 r3 : %].Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
     = /\(r1 r2 r3 : %).
        \(x : Ptr# r1 Obj).\(y : Ptr# r2 Obj).
-      let x0 : Tag# = getTag [r1] x in
-      case x0 of {
+      let x1 : Tag# = getTag [r1] x in
+      case x1 of {
         TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall [r1] x in
-            let i1 : Int# = read# [Int#] x1 0# in
-            let x2 : Tag# = getTag [r2] y in
-            case x2 of {
+         -> let x2 : Addr# = payloadOfRawSmall [r1] x in
+            let i1 : Int# = read# [Int#] x2 0# in
+            let x3 : Tag# = getTag [r2] y in
+            case x3 of {
               TAG0#  
-               -> let x3 : Addr# = payloadOfRawSmall [r2] y in
-                  let i2 : Int# = read# [Int#] x3 0# in
-                  let x4 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
-                  let x5 : Addr# = payloadOfRawSmall [r3] x4 in
-                  let x6 : Int# = add# [Int#] i1 i2 in
-                  let _ : Void# = write# [Int#] x5 0# x6 in
-                  x4;
+               -> let x4 : Addr# = payloadOfRawSmall [r2] y in
+                  let i2 : Int# = read# [Int#] x4 0# in
+                  let x0 : Int# = add# [Int#] i1 i2 in
+                  let x5 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
+                  let x6 : Addr# = payloadOfRawSmall [r3] x5 in
+                  let _ : Void# = write# [Int#] x6 0# x0 in
+                  x5;
               _ 
                -> fail# [Ptr# r3 Obj]
             };
@@ -283,15 +283,15 @@ letrec {
   singleton : [r1 : %].Ptr# _ Obj -> Ptr# r1 Obj
     = /\(r1 : %).
        \(x : Ptr# _ Obj).
-      let x0 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
-      let _ : Void# = setFieldOfBoxed [r1] [_] x0 0# x in
       let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
       let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
       let x3 : Ptr# _ Obj = x2 in
       let _ : Void# = setFieldOfBoxed [r1] [_] x1 0# x3 in
-      let x4 : Ptr# r1 Obj = x1 in
-      let _ : Void# = setFieldOfBoxed [r1] [r1] x0 1# x4 in
-      x0
+      let x0 : Ptr# r1 Obj = x1 in
+      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
+      let _ : Void# = setFieldOfBoxed [r1] [_] x4 0# x in
+      let _ : Void# = setFieldOfBoxed [r1] [r1] x4 1# x0 in
+      x4
 }
 
 

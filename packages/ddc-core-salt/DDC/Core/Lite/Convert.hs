@@ -134,7 +134,9 @@ convertBodyX
 
 convertBodyX pp defs xx
  = case xx of
-        -- TODO: check there are no debruijn indices.
+        XVar _ UIx{}
+         -> throw $ ErrorMalformed 
+         $  "convertBodyX: can't convert program with anonymous value binders."
 
         XVar a u
          -> do  let a'  = annotTail a
@@ -171,11 +173,10 @@ convertBodyX pp defs xx
               -> convertBodyX pp defs x
 
              _  -> throw $ ErrorMalformed 
-                         $ "Invalid universe for XLam binder: " ++ show b
+                $ "Invalid universe for XLam binder: " ++ show b
 
         XApp{}
-         -> do  x'      <- convertArgX pp defs xx
-                return  $ x'
+         ->     convertSimpleX pp defs xx
 
         XLet a (LRec bxs) x2
          -> do  let (bs, xs)    = unzip bxs
@@ -186,8 +187,8 @@ convertBodyX pp defs xx
 
         XLet a (LLet LetStrict b x1) x2
          -> do  b'      <- convertB b
-                x1'     <- convertArgX  pp defs x1
-                x2'     <- convertBodyX pp defs x2
+                x1'     <- convertSimpleX pp defs x1
+                x2'     <- convertBodyX   pp defs x2
                 return  $ XLet (annotTail a) (LLet LetStrict b' x1') x2'
 
         XLet _ (LLet LetLazy{} _ _) _
@@ -202,20 +203,22 @@ convertBodyX pp defs xx
 
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
+        --
         --  TODO: We can't branch against float literals.
         --        Matches against float literals should be desugared into if-then-else chains.
         --        Same for string literals.
+        --
         XCase (AnTEC _t _ _ a') xScrut@(XVar _ uScrut) alts
          | TCon (TyConBound (UPrim nType _))    <- typeOfBound uScrut
          , L.NamePrimTyCon _                    <- nType
-         -> do  xScrut' <- convertArgX pp defs xScrut
+         -> do  xScrut' <- convertSimpleX pp defs xScrut
                 alts'   <- mapM (convertAlt pp defs a' uScrut) alts
                 return  $  XCase a' xScrut' alts'
 
         -- Match against finite algebraic data.
         --   The branch is against the constructor tag.
         XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
-         -> do  x'@(XVar _ uX') <- convertArgX pp defs x
+         -> do  x'@(XVar _ uX') <- convertSimpleX   pp defs x
                 t'              <- convertT t
                 alts'           <- mapM (convertAlt pp defs a' uX) alts
 
@@ -230,7 +233,7 @@ convertBodyX pp defs xx
                 return  $ XCase a' (S.xGetTag a' tPrime x') 
                         $ alts' ++ asDefault
 
-        XCase{}         -> throw $ ErrorNotNormalized
+        XCase{}         -> throw $ ErrorNotNormalized ("found case expression")
 
         XCast _ _ x     -> convertBodyX pp defs x
 
@@ -238,35 +241,28 @@ convertBodyX pp defs xx
         XWitness{}      -> throw $ ErrorMistyped xx
 
 
-
--- | Convert a function argument or let binding RHS.
-convertArgX
+-------------------------------------------------------------------------------
+-- | Convert the right of an internal let-binding.
+--   The right of the binding must be straight-line code, 
+--   and cannot contain case-expressions, or construct new functions.
+--  
+convertSimpleX
         :: Show a 
-        => Platform
+        => Platform 
         -> DataDefs L.Name
         -> Exp (AnTEC a L.Name) L.Name
         -> ConvertM a (Exp a S.Name)
 
-convertArgX pp defs xx
-  = case xx of
-        -- TODO: check there are no debruijn indices.
-        XVar a u        
-         -> liftM2 XVar (return $ annotTail a) (convertU u)
+convertSimpleX pp defs xx
+ = case xx of
 
-        XCon a u
-         -> case u of
-                UName nCtor _   -> convertCtorAppX pp a defs nCtor []
-                UPrim nCtor _   -> convertCtorAppX pp a defs nCtor []
-                _               -> throw $ ErrorInvalidBound u
+        XType{}         
+         -> throw $ ErrorMalformed 
+         $ "convertRValueX: XType should not appear as the right of a let-binding"
 
-
-        -- Primitive operations.
-        XApp a xa xb
-         | (x1, xsArgs)          <- takeXApps' xa xb
-         , XVar _ UPrim{}        <- x1
-         -> do  x1'     <- convertArgX pp defs x1
-                xsArgs' <- mapM (convertArgX pp defs) xsArgs
-                return  $ makeXApps (annotTail a) x1' xsArgs'
+        XWitness{}
+         -> throw $ ErrorMalformed 
+         $ "convertRValueX: XWithess should not appear as the right of a let-binding"
 
         -- Primitive data constructors.
         XApp a xa xb
@@ -280,53 +276,30 @@ convertArgX pp defs xx
          , XCon _ (UName nCtor _) <- x1
          -> convertCtorAppX pp a defs nCtor xsArgs
 
+        -- Primitive operations.
+        XApp a xa xb
+         | (x1, xsArgs)          <- takeXApps' xa xb
+         , XVar _ UPrim{}        <- x1
+         -> do  x1'     <- convertAtomX pp defs False x1
+
+                xsArgs' <- mapM (convertAtomX pp defs True) xsArgs
+
+                return $ makeXApps (annotTail a) x1' xsArgs'
+
         -- Function application
         -- TODO: This only works for full application. 
         --       At least check for the other cases.
         XApp (AnTEC _t _ _ a') xa xb
-         | (x1, xsArgs)          <- takeXApps' xa xb
-         -> do  x1'              <- convertArgX pp defs x1
+         | (x1, xsArgs) <- takeXApps' xa xb
+         -> do  x1'     <- convertAtomX pp defs False x1
+                xsArgs' <- mapM (convertAtomX pp defs False) xsArgs
 
-                -- We need to keep region arguments, 
-                -- but can discard other types and witnesses.
-                let keepArg x
-                        = case x of
-                                XType (TVar u)  -> isRegionKind (typeOfBound u)
-                                XWitness{}      -> False
-                                _               -> True
+                return  $ makeXApps a' x1' xsArgs'
 
-                let xsArgs_exp  = [x | x <- xsArgs
-                                     , keepArg x ]
-
-                xsArgs_exp'     <- mapM (convertArgX pp defs) xsArgs_exp
-                return $ makeXApps a' x1' xsArgs_exp'
-
-        XCast _ _ x     -> convertArgX pp defs x
-
-        -- Lambdas, should have been split out to top-level bindintg.
-        XLAM{}          -> throw ErrorNotNormalized
-        XLam{}          -> throw ErrorNotNormalized
-
-        -- Lets and cases should 
-        XLet{}          -> throw ErrorNotNormalized
-        XCase{}         -> throw ErrorNotNormalized 
-
-        -- Types and witness arguments should have been discarded already.
-
-        -- TODO: Fix this. 
-        --       We need to pass region parameters, as well data data type parameters to primops.
-        XType t         -> liftM XType (convertT t)
-
-        -- We shouldn't be passed witness args.
-        -- TODO: redo to return a Nothing, 
-        --       and have the caller discard the arg when it gets a Nothing.
-        XWitness{}
-         -> error $ unlines 
-                [ "DDC.Core.Lite.Convert.convertArgX"
-                , "  Cannot convert witness to Salt"
-                , "  Witnesses should be erased by the caller, and not passed to convertArgX" ]
+        _ -> convertAtomX pp defs False xx
 
 
+-------------------------------------------------------------------------------
 convertCtorAppX 
         :: Show a
         => Platform 
@@ -338,46 +311,89 @@ convertCtorAppX
 
 convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
 
- -- Pass through unboxed literals.
- | L.NameBool b         <- nCtor
- , []                   <- xsArgs
- = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (S.NameBool b) t')
+        -- Pass through unboxed literals.
+        | L.NameBool b         <- nCtor
+        , []                   <- xsArgs
+        = do    t'              <- convertT t
+                return $ XCon (annotTail a) (UPrim (S.NameBool b) t')
 
- | L.NameNat i          <- nCtor
- , []                   <- xsArgs
- = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (S.NameNat i) t')
+        | L.NameNat i          <- nCtor
+        , []                   <- xsArgs
+        = do    t'              <- convertT t
+                return $ XCon (annotTail a) (UPrim (S.NameNat i) t')
 
- | L.NameInt i         <- nCtor
- , []                   <- xsArgs
- = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (S.NameInt i) t')
+        | L.NameInt i         <- nCtor
+        , []                   <- xsArgs
+        = do    t'              <- convertT t
+                return $ XCon (annotTail a) (UPrim (S.NameInt i) t')
 
- | L.NameWord i bits    <- nCtor
- , []                   <- xsArgs
- = do   t'              <- convertT t
-        return $ XCon (annotTail a) (UPrim (S.NameWord i bits) t')
+        | L.NameWord i bits    <- nCtor
+        , []                   <- xsArgs
+        = do    t'              <- convertT t
+                return $ XCon (annotTail a) (UPrim (S.NameWord i bits) t')
 
 
- -- Construct algbraic data that has a finite number of data constructors.
- | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
- , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
- = do   xsArgs'         <- mapM (convertArgX pp defs)  xsArgs
+        -- Construct algbraic data that has a finite number of data constructors.
+        | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
+        , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
+        = do    
+                xsArgs'        <- mapM (convertAtomX pp defs False) xsArgs
 
-        -- Convert the types of each field.
-        let makeFieldType x
-                = case takeAnnotOfExp x of
-                        Nothing  -> return Nothing
-                        Just a'  -> liftM Just $ convertT (annotType a')
+                -- Convert the types of each field.
+                let makeFieldType x
+                        = case takeAnnotOfExp x of
+                                Nothing  -> return Nothing
+                                Just a'  -> liftM Just $ convertT (annotType a')
 
-        tsArgs'         <- mapM makeFieldType xsArgs
-        constructData pp (annotTail a) dataDef ctorDef xsArgs' tsArgs'
+                tsArgs'         <- mapM makeFieldType xsArgs
+                constructData pp (annotTail a) dataDef ctorDef xsArgs' tsArgs'
 
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
 convertCtorAppX _ _ _ _nCtor _xsArgs
         = throw $ ErrorMalformed "convertCtorAppX: invalid constructor application"
+
+
+-------------------------------------------------------------------------------
+-- | Convert an atom to Salt.
+convertAtomX
+        :: Show a 
+        => Platform
+        -> DataDefs L.Name
+        -> Bool                                 -- ^ Whether this is an arg to a primop.
+        -> Exp (AnTEC a L.Name) L.Name
+        -> ConvertM a (Exp a S.Name)
+
+convertAtomX pp defs isPrimOpArg xx
+ = case xx of
+        XVar _ UIx{}    -> throw $ ErrorMalformed     "Found anonymous binder"
+        XApp{}          -> throw $ ErrorNotNormalized "Found XApp in atom position"
+        XLAM{}          -> throw $ ErrorNotNormalized "Found XLAM in atom position"
+        XLam{}          -> throw $ ErrorNotNormalized "Found XLam in atom position"
+        XLet{}          -> throw $ ErrorNotNormalized "Found XLet in atom position"
+        XCase{}         -> throw $ ErrorNotNormalized "Found XCase in atom position"
+
+        XVar a u        
+         -> do  u'  <- convertU u
+                return $ XVar (annotTail a) u'
+
+        XCon a u
+         -> case u of
+                UName nCtor _   -> convertCtorAppX pp a defs nCtor []
+                UPrim nCtor _   -> convertCtorAppX pp a defs nCtor []
+                _               -> throw $ ErrorInvalidBound u
+
+
+        XCast _ _ x     -> convertAtomX pp defs isPrimOpArg x
+
+        -- Pass region parameters, as well data data type parameters to primops.
+        XType t
+         -> do  t'      <- convertT t
+                return  $ XType t'
+
+        -- The Salt language doesn't use witnesses yet.
+        XWitness{}
+         ->     error "convertAtomX: witnesses should be droppped by caller"
 
 
 -- Alt ------------------------------------------------------------------------
