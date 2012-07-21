@@ -194,8 +194,11 @@ convertBodyX pp defs xx
         XLet _ (LLet LetLazy{} _ _) _
          -> error "DDC.Core.Lite.Convert.toSaltX: XLet lazy not handled yet"
 
-        XLet _ (LLetRegion _ _) x2
-         -> do  convertBodyX pp defs x2
+        XLet a (LLetRegion b bs) x2
+         -> do  b'      <- convertB b
+                bs'     <- mapM convertB bs
+                x2'     <- convertBodyX pp defs x2
+                return  $ XLet (annotTail a) (LLetRegion b' bs') x2'
 
         XLet _ LWithRegion{} _
          -> throw $ ErrorMalformed "LWithRegion should not appear in Lite code."
@@ -280,9 +283,9 @@ convertSimpleX pp defs xx
         XApp a xa xb
          | (x1, xsArgs)          <- takeXApps' xa xb
          , XVar _ UPrim{}        <- x1
-         -> do  x1'     <- convertAtomX pp defs False x1
+         -> do  x1'     <- convertAtomX pp defs x1
 
-                xsArgs' <- mapM (convertAtomX pp defs True) xsArgs
+                xsArgs' <- mapM (convertAtomX pp defs) xsArgs
 
                 return $ makeXApps (annotTail a) x1' xsArgs'
 
@@ -291,12 +294,66 @@ convertSimpleX pp defs xx
         --       At least check for the other cases.
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps' xa xb
-         -> do  x1'     <- convertAtomX pp defs False x1
-                xsArgs' <- mapM (convertAtomX pp defs False) xsArgs
+         -> do  x1'     <- convertAtomX pp defs x1
+
+                -- We don't keep all type arguments.
+                let xsArgs_keep = filter shouldKeepFunArg xsArgs
+                xsArgs'         <- mapM (convertAtomX pp defs) xsArgs_keep
 
                 return  $ makeXApps a' x1' xsArgs'
 
-        _ -> convertAtomX pp defs False xx
+        _ -> convertAtomX pp defs xx
+
+
+shouldKeepFunArg :: Exp a L.Name -> Bool
+shouldKeepFunArg xx
+ = case xx of
+        XType (TVar u)  -> isRegionKind $ typeOfBound u 
+        XType _         -> False
+
+        XWitness{}      -> False
+        _               -> True
+
+
+-------------------------------------------------------------------------------
+-- | Convert an atom to Salt.
+convertAtomX
+        :: Show a 
+        => Platform
+        -> DataDefs L.Name
+        -> Exp (AnTEC a L.Name) L.Name
+        -> ConvertM a (Exp a S.Name)
+
+convertAtomX pp defs xx
+ = case xx of
+        XVar _ UIx{}    -> throw $ ErrorMalformed     "Found anonymous binder"
+        XApp{}          -> throw $ ErrorNotNormalized "Found XApp in atom position"
+        XLAM{}          -> throw $ ErrorNotNormalized "Found XLAM in atom position"
+        XLam{}          -> throw $ ErrorNotNormalized "Found XLam in atom position"
+        XLet{}          -> throw $ ErrorNotNormalized "Found XLet in atom position"
+        XCase{}         -> throw $ ErrorNotNormalized "Found XCase in atom position"
+
+        XVar a u        
+         -> do  u'  <- convertU u
+                return $ XVar (annotTail a) u'
+
+        XCon a u
+         -> case u of
+                UName nCtor _   -> convertCtorAppX pp a defs nCtor []
+                UPrim nCtor _   -> convertCtorAppX pp a defs nCtor []
+                _               -> throw $ ErrorInvalidBound u
+
+
+        XCast _ _ x     -> convertAtomX pp defs x
+
+        -- Pass region parameters, as well data data type parameters to primops.
+        XType t
+         -> do  t'      <- convertT t
+                return  $ XType t'
+
+        -- The Salt language doesn't use witnesses yet.
+        XWitness{}
+         ->     error "convertAtomX: witnesses should be droppped by caller"
 
 
 -------------------------------------------------------------------------------
@@ -337,7 +394,7 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
         | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
         , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
         = do    
-                xsArgs'        <- mapM (convertAtomX pp defs False) xsArgs
+                xsArgs'        <- mapM (convertAtomX pp defs) xsArgs
 
                 -- Convert the types of each field.
                 let makeFieldType x
@@ -352,48 +409,6 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
 -- This shouldn't happen in type-checked code.
 convertCtorAppX _ _ _ _nCtor _xsArgs
         = throw $ ErrorMalformed "convertCtorAppX: invalid constructor application"
-
-
--------------------------------------------------------------------------------
--- | Convert an atom to Salt.
-convertAtomX
-        :: Show a 
-        => Platform
-        -> DataDefs L.Name
-        -> Bool                                 -- ^ Whether this is an arg to a primop.
-        -> Exp (AnTEC a L.Name) L.Name
-        -> ConvertM a (Exp a S.Name)
-
-convertAtomX pp defs isPrimOpArg xx
- = case xx of
-        XVar _ UIx{}    -> throw $ ErrorMalformed     "Found anonymous binder"
-        XApp{}          -> throw $ ErrorNotNormalized "Found XApp in atom position"
-        XLAM{}          -> throw $ ErrorNotNormalized "Found XLAM in atom position"
-        XLam{}          -> throw $ ErrorNotNormalized "Found XLam in atom position"
-        XLet{}          -> throw $ ErrorNotNormalized "Found XLet in atom position"
-        XCase{}         -> throw $ ErrorNotNormalized "Found XCase in atom position"
-
-        XVar a u        
-         -> do  u'  <- convertU u
-                return $ XVar (annotTail a) u'
-
-        XCon a u
-         -> case u of
-                UName nCtor _   -> convertCtorAppX pp a defs nCtor []
-                UPrim nCtor _   -> convertCtorAppX pp a defs nCtor []
-                _               -> throw $ ErrorInvalidBound u
-
-
-        XCast _ _ x     -> convertAtomX pp defs isPrimOpArg x
-
-        -- Pass region parameters, as well data data type parameters to primops.
-        XType t
-         -> do  t'      <- convertT t
-                return  $ XType t'
-
-        -- The Salt language doesn't use witnesses yet.
-        XWitness{}
-         ->     error "convertAtomX: witnesses should be droppped by caller"
 
 
 -- Alt ------------------------------------------------------------------------

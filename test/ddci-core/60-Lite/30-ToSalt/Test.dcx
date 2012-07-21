@@ -172,3 +172,21 @@ headUnit [r1 : %] (xx : List r1 Unit) { Read r1 | $0 }
         Cons x _        -> x
         Nil             -> ();;
 
+
+-- Construct a singleton unit list and take its head.
+:to-salt..
+module Test with letrec
+singleton [r1 : %] (x : Unit) { Alloc r1 | Use r1 }
+        : List r1 Unit
+ = Cons [r1] [Unit] x (Nil [r1] [Unit] ())
+
+headUnit [r1 : %] (xx : List r1 Unit) { Read r1 | $0 }
+        : Unit
+ = case xx of
+        Cons x _        -> x
+        Nil             -> ()
+
+foo (_ : Unit) : Unit
+ = letregion r in
+   do   list    = singleton [r] ()
+        headUnit [r] list;;

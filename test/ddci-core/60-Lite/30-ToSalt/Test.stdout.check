@@ -316,3 +316,44 @@ letrec {
       }
 }
 
+
+-- Construct a singleton unit list and take its head.
+module Test with
+letrec {
+  singleton : [r1 : %].Ptr# _ Obj -> Ptr# r1 Obj
+    = /\(r1 : %).
+       \(x : Ptr# _ Obj).
+      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
+      let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+      let x3 : Ptr# _ Obj = x2 in
+      let _ : Void# = setFieldOfBoxed [r1] [_] x1 0# x3 in
+      let x0 : Ptr# r1 Obj = x1 in
+      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
+      let _ : Void# = setFieldOfBoxed [r1] [_] x4 0# x in
+      let _ : Void# = setFieldOfBoxed [r1] [r1] x4 1# x0 in
+      x4;
+  
+  headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# _ Obj
+    = /\(r1 : %).
+       \(xx : Ptr# r1 Obj).
+      let x5 : Tag# = getTag [r1] xx in
+      case x5 of {
+        TAG1#  
+         -> let x : Ptr# _ Obj = getFieldOfBoxed [r1] [_] xx 0# in
+            let _ : Ptr# r1 Obj = getFieldOfBoxed [r1] [r1] xx 1# in
+            x;
+        TAG0#  
+         -> let x6 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+            x6;
+        _ 
+         -> fail# [Ptr# _ Obj]
+      };
+  
+  foo : Ptr# _ Obj -> Ptr# _ Obj
+    = \(_ : Ptr# _ Obj).
+      letregion r in
+      let x7 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+      let x8 : Ptr# _ Obj = x7 in
+      let list : Ptr# r Obj = singleton [r] x8 in
+      headUnit [r] list
+}
