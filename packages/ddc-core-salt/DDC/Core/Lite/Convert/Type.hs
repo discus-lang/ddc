@@ -104,7 +104,7 @@ convertT' isPrimType tt
                return $ O.tPtr r O.tObj
          
          | otherwise
-         -> throw $ ErrorMalformed
+         -> throw $ ErrorMalformed "Bad type-type application."
 
         -- We shouldn't find any TSums.
         TSum{}          

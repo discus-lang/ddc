@@ -170,7 +170,8 @@ convertBodyX pp defs xx
              Just UniverseWitness 
               -> convertBodyX pp defs x
 
-             _          -> error "toSaltX: unexpected binder" -- throw ErrorMistyped
+             _  -> throw $ ErrorMalformed 
+                         $ "Invalid universe for XLam binder: " ++ show b
 
         XApp{}
          -> do  x'      <- convertArgX pp defs xx
@@ -190,13 +191,13 @@ convertBodyX pp defs xx
                 return  $ XLet (annotTail a) (LLet LetStrict b' x1') x2'
 
         XLet _ (LLet LetLazy{} _ _) _
-         -> error "toSaltX: XLet lazy not handled"
+         -> error "DDC.Core.Lite.Convert.toSaltX: XLet lazy not handled yet"
 
         XLet _ (LLetRegion _ _) x2
          -> do  convertBodyX pp defs x2
 
         XLet _ LWithRegion{} _
-         -> throw ErrorMalformed
+         -> throw $ ErrorMalformed "LWithRegion should not appear in Lite code."
 
 
         -- Match against literal unboxed values.
@@ -300,8 +301,10 @@ convertArgX pp defs xx
                 return $ makeXApps a' x1' xsArgs_exp'
 
          | otherwise 
-         -> error $ "toSaltX: XApp shouldn't happen as above covers all cases."
-
+         -> error $ unlines
+                [ "DDC.Core.Lite.Convert.convertArgX"
+                , "  When converting XApp"
+                , "  This shouldn't happen as above covers all cases."]
 
         XCast _ _ x     -> convertArgX pp defs x
 
@@ -322,7 +325,8 @@ convertArgX pp defs xx
         -- We shouldn't be passed witness args.
         XWitness{}
          -> error $ unlines 
-                [ "convertArgX: cannot convert witness to Salt"
+                [ "DDC.Core.Lite.Convert.convertArgX"
+                , "  Cannot convert witness to Salt"
                 , "  Witnesses should be erased by the caller, and not passed to convertArgX" ]
 
 
@@ -364,6 +368,7 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
  , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
  = do   xsArgs'         <- mapM (convertArgX pp defs)  xsArgs
 
+        -- Convert the types of each field.
         let makeFieldType x
                 = case takeAnnotOfExp x of
                         Nothing  -> return Nothing
@@ -374,7 +379,11 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
 
 
 convertCtorAppX _ _ _ nCtor xsArgs
- = error $ "toSaltX: convertCtorAppX failed " ++ show (nCtor, xsArgs)
+        = error $ unlines
+                [ "DDC.Core.Lite.Convert.convertCtorAppX"
+                , "  No match for " ++ show (nCtor, xsArgs)
+                , "  The provided constructor and args list is probably malformed" 
+                , "  This shoudn't happen in type-checked code" ]
 
 
 -- Alt ------------------------------------------------------------------------

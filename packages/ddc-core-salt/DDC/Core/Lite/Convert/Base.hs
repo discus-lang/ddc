@@ -17,7 +17,7 @@ type ConvertM a x = G.CheckM (Error a) x
 -- | Things that can go wrong during the conversion.
 data Error a
         -- | Found unexpected AST node, like LWithRegion
-        = ErrorMalformed
+        = ErrorMalformed String
 
         -- | The program is definately not well typed.
         | ErrorMistyped  (Exp (AnTEC a L.Name) L.Name)
@@ -47,8 +47,9 @@ data Error a
 instance Show a => Pretty (Error a) where
  ppr err
   = case err of
-        ErrorMalformed
-         -> vcat [ text "Module is malformed."]
+        ErrorMalformed str
+         -> vcat [ text "Module is malformed."
+                 , text str ]
 
         ErrorMistyped xx
          -> vcat [ text "Module is mistyped." <> (text $ show xx) ]

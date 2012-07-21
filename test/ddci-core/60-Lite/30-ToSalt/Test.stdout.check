@@ -275,3 +275,33 @@ letrec {
        \(x : Ptr# r1 Obj). addInt [r1] [r1] [r2] x x
 }
 
+
+-- Construct a lists of units.
+-- The head field of the Cons cells has no primary region.
+module Test with
+letrec {
+  singleton : [r1 : %].Ptr# _ Obj -> Ptr# r1 Obj
+    = /\(r1 : %).
+       \(x : Ptr# _ Obj).
+      let x0 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
+      let _ : Void# = setFieldOfBoxed [r1] [_] x0 0# x in
+      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
+      let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+      let x3 : Ptr# _ Obj = x2 in
+      let _ : Void# = setFieldOfBoxed [r1] [_] x1 0# x3 in
+      let x4 : Ptr# r1 Obj = x1 in
+      let _ : Void# = setFieldOfBoxed [r1] [r1] x0 1# x4 in
+      x0
+}
+
+
+-- Destruct a list of units.
+-- The head field of the Cons cell has no primary region.
+--:to-salt..
+--module Test with letrec
+--headUnit [r1 : %] (xx : List r1 Unit) { Read r1 | $0 }
+--        : Unit
+-- = case xx of
+--        Cons x _        -> x
+--        Nil             -> ();;
+

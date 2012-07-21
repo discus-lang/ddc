@@ -63,11 +63,6 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
                                 $ drop (length $ dataTypeParamKinds dataDef) tsArgs
 
         -- Statements to write each of the fields.
-
-        -- TODO: this will break if the field has unit type,
-        --       as the field has no prime region.
-        --       Make a function takePrimeRegionOrHole
-        --
         let xObject'    = XVar a $ UIx 0 $ O.tPtr rPrime O.tObj
         let lsFields    
                 = [ let Just rField = takePrimeRegion tField
