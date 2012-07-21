@@ -17,6 +17,7 @@ import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as O
 import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Compounds as O
+import Data.Maybe
 
 
 -- Construct ------------------------------------------------------------------
@@ -43,7 +44,7 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
         --
         -- TODO: allocate objects with no prime region var in a global region.
         --
-        let rPrime      
+        let rPrime
                 = case xsArgs of
                    XType r@(TVar u) : _
                     | isRegionKind (typeOfBound u) -> r
@@ -148,12 +149,17 @@ destructData pp a uScrut ctorDef bsFields xBody
  | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
  = do   
         -- Get the prime region that the read effects are assigned to.
-        let Just tPrime = takePrimeRegion (typeOfBound uScrut)
+        let Just trPrime  = takePrimeRegion (typeOfBound uScrut)
+
+        -- Get the prime regions of the fields.
+        let tsPrimeFields = map (fromMaybe (TVar $ UHole kRegion) . takePrimeRegion) 
+                          $ map typeOfBind bsFields
 
         -- Bind pattern variables to each of the fields.
-        let lsFields    = [ LLet LetStrict bField 
-                                (O.xGetFieldOfBoxed a tPrime (XVar a uScrut) ix)
+        let lsFields      = [ LLet LetStrict bField 
+                                (O.xGetFieldOfBoxed a trPrime tPrimeField (XVar a uScrut) ix)
                                 | bField        <- bsFields
+                                | tPrimeField   <- tsPrimeFields
                                 | ix            <- [0..] ]
 
         return  $ foldr (XLet a) xBody lsFields

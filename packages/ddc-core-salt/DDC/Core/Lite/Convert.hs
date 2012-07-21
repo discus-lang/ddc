@@ -314,8 +314,16 @@ convertArgX pp defs xx
         XCase{}         -> throw ErrorNotNormalized 
 
         -- Types and witness arguments should have been discarded already.
+
+        -- TODO: Fix this. 
+        --       We need to pass region parameters, as well data data type parameters to primops.
         XType t         -> liftM XType (convertT t)
-        XWitness{}      -> error "convertArgX: witness as arg" -- throw ErrorMistyped
+
+        -- We shouldn't be passed witness args.
+        XWitness{}
+         -> error $ unlines 
+                [ "convertArgX: cannot convert witness to Salt"
+                , "  Witnesses should be erased by the caller, and not passed to convertArgX" ]
 
 
 convertCtorAppX 

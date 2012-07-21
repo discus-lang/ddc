@@ -78,15 +78,24 @@ uAllocBoxed
 
 
 -- | Get a field of a Boxed object.
-xGetFieldOfBoxed :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
-xGetFieldOfBoxed a tR x2 offset
+xGetFieldOfBoxed 
+        :: a 
+        -> Type Name    -- ^ Prime region var of object.
+        -> Type Name    -- ^ Prime regaion var of field object.
+        -> Exp a Name   -- ^ Object to update.
+        -> Integer      -- ^ Field index.
+        -> Exp a Name
+
+xGetFieldOfBoxed a trPrime trField x2 offset
  = makeXApps a (XVar a uGetFieldOfBoxed) 
-        [XType tR, x2, XCon a (UPrim (NameNat offset) tNat)]
+        [ XType trPrime, XType trField
+        , x2, XCon a (UPrim (NameNat offset) tNat)]
 
 uGetFieldOfBoxed :: Bound Name
 uGetFieldOfBoxed 
         = UName (NameVar "getFieldOfBoxed")
-        $ tForall kRegion $ \r -> tPtr r tObj `tFunPE` tNat `tFunPE` tPtr r tObj
+        $ tForalls [kRegion, kRegion]
+        $ \[r1, r2] -> tPtr r1 tObj `tFunPE`  tNat `tFunPE` tPtr r2 tObj
 
 
 -- | Set a field in a Boxed Object.

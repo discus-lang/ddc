@@ -2,6 +2,7 @@
 module DDC.Core.Lite.Convert.Type
         ( convertT
         , convertPrimT
+
         , convertB
         , convertU
 
@@ -19,31 +20,53 @@ import qualified DDC.Core.Salt.Compounds as O
 import Control.Monad
 
 
+convertT     :: Type L.Name -> ConvertM a (Type O.Name)
+convertT     = convertT' False
+
+convertPrimT :: Type L.Name -> ConvertM a (Type O.Name)
+convertPrimT = convertT' True
+
+
 -- Type -----------------------------------------------------------------------
 -- | Convert the type of a user-defined function or argument.
-convertT     :: Type L.Name -> ConvertM a (Type O.Name)
-convertT        = convertT' True
+--
+--   The types of primops have quantifiers that quantify over unboxed types.
+--     For example:  @add# :: [a : *]. a -> a -> a@
+--   When converting these types we need to keep the quantifier, as well 
+--   as the named type variable.
+--
+--   When converting user types, we instead strip quantifiers and replace 
+--   type variables by a generic pointer type:
 
--- | Convert the type of a primop.
---   With primop types we need to keep quantifiers.
-convertPrimT :: Type L.Name -> ConvertM a (Type O.Name)
-convertPrimT    = convertT' False
+--   @
+--        head :: [r : %]. [a : *]. List r a -> a
+--    =>  head :: [r : %]. Ptr# r Obj -> Ptr# _ Obj
+--   @
+--
+--   We don't know what the primary region of the returned value is,
+--   so fill in its region varible with a hole '_'. 
+--
+--   TODO: Convert data type quantifiers into region quantifiers instead,
+--   and pass around the correct head region: 
+--       @head :: [r1 r2 : %]. Ptr# r1 Obj -> Ptr# r2 Obj@
+--
+convertT' 
+        :: Bool                 -- ^ Whether this is the type of a primop.
+        -> Type L.Name          -- ^ Type to convert.
+        -> ConvertM a (Type O.Name)
 
--- TODO: It would be better to decide what type arguments to erase 
---       at the binding point of the function, and pass this information down
---       into the tree while we're doing the main conversion.
-convertT' :: Bool -> Type L.Name -> ConvertM a (Type O.Name)
-convertT' stripForalls tt
- = let down = convertT' stripForalls
+convertT' isPrimType tt
+ = let down = convertT' isPrimType
    in case tt of
         -- Convert type variables and constructors.
         TVar u
+
          --  Boxed objects are represented as a generic ptr to object.
+         --  If we don't have the region variable, then just use a hole.
          |  isDataKind (typeOfBound u)
-         -> if stripForalls
-                then do r <- down $ typeOfBound u
-                        return $ O.tPtr r O.tObj
-                else liftM TVar (convertU u)
+         -> if isPrimType
+                then liftM TVar $ convertU u
+                else return $ O.tPtr (TVar (UHole kRegion)) O.tObj
 
          -- Keep region variables.
          | isRegionKind (typeOfBound u)
@@ -58,12 +81,18 @@ convertT' stripForalls tt
 
         -- Strip off foralls, as the Salt fragment doesn't care about quantifiers.
         TForall b t     
-         | stripForalls && not (isRegionKind (typeOfBind b))
+         |  isDataKind   (typeOfBind b)
+         -> if isPrimType
+                then liftM2 TForall (convertB b) (down t)
+                else down t
+
+         |  isRegionKind (typeOfBind b)
+         -> liftM2 TForall (convertB b) (down t) 
+
+         |  otherwise
          -> down t
 
-         | otherwise    
-         -> liftM2 TForall (convertB b) (convertPrimT t) 
-
+        -- Convert applications.
         TApp{}  
          -- Strip off effect and closure information.
          |  Just (t1, _, _, t2)  <- takeTFun tt
@@ -81,6 +110,7 @@ convertT' stripForalls tt
         TSum{}          
          | isBot tt     -> throw $ ErrorBotAnnot
          | otherwise    -> throw $ ErrorUnexpectedSum
+
 
 -- | Convert a simple type constructor to a Salt type.
 convertTyCon :: TyCon L.Name -> ConvertM a (Type O.Name)

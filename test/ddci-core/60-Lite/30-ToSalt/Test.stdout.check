@@ -164,8 +164,8 @@ letrec {
       let x0 : Tag# = getTag [r] xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# r Obj = getFieldOfBoxed [r] xs 0# in
-            let xs' : Ptr# r Obj = getFieldOfBoxed [r] xs 1# in
+         -> let x : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 0# in
+            let xs' : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 1# in
             x;
         _ 
          -> def
@@ -182,8 +182,8 @@ letrec {
       let x0 : Tag# = getTag [r] xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# r Obj = getFieldOfBoxed [r] xs 0# in
-            let xs' : Ptr# r Obj = getFieldOfBoxed [r] xs 1# in
+         -> let x : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 0# in
+            let xs' : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 1# in
             xs;
         _ 
          -> def
@@ -192,15 +192,21 @@ letrec {
 
 
 -- Take the head of a polymorphic list
--- BROKEN: need to handle polymorphic types better in lite -> salt conversion.
---:to-salt..
---module Test with letrec
---head    [r : %] [a : *] (def : a)
---        (xs : List r a) {Read r | DeepUse a}
---        : a
--- = case xs of
---        Cons x xs'      -> x
---        _               -> def;;
+module Test with
+letrec {
+  head : [r : %].Ptr# _ Obj -> Ptr# r Obj -> Ptr# _ Obj
+    = /\(r : %).
+       \(def : Ptr# _ Obj).\(xs : Ptr# r Obj).
+      let x0 : Tag# = getTag [r] xs in
+      case x0 of {
+        TAG1#  
+         -> let x : Ptr# _ Obj = getFieldOfBoxed [r] [_] xs 0# in
+            let xs' : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 1# in
+            x;
+        _ 
+         -> def
+      }
+}
 
 
 -- Construct a singleton list,

@@ -107,15 +107,14 @@ tail   [r : %] (def : List r (Int r))
 
 
 -- Take the head of a polymorphic list
--- BROKEN: need to handle polymorphic types better in lite -> salt conversion.
---:to-salt..
---module Test with letrec
---head    [r : %] [a : *] (def : a)
---        (xs : List r a) {Read r | DeepUse a}
---        : a
--- = case xs of
---        Cons x xs'      -> x
---        _               -> def;;
+:to-salt..
+module Test with letrec
+head    [r : %] [a : *] (def : a)
+        (xs : List r a) {Read r | DeepUse a}
+        : a
+ = case xs of
+        Cons x xs'      -> x
+        _               -> def;;
 
 
 -- Construct a singleton list,

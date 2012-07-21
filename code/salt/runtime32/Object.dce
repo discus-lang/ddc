@@ -107,9 +107,12 @@ allocBoxed [r : %] (tag : Tag#) (arity : Nat#) : Ptr# r Obj
 
 
 ---- | Get one of the pointers from a boxed data object.
-getFieldOfBoxed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
-        = peek# [r] [Ptr# r Obj]
-                (castPtr# [r] [Ptr# r Obj] [Obj] obj)
+getFieldOfBoxed 
+        [r1 r2 : %] 
+        (obj : Ptr# r1 Obj) (index : Nat#) 
+        : Ptr# r2 Obj
+        = peek# [r1] [Ptr# r2 Obj]
+                (castPtr# [r1] [Ptr# r2 Obj] [Obj] obj)
                 (add# [Nat#] 8# (shl# [Nat#] index 2#))
 
 
