@@ -15,9 +15,13 @@ type ConvertM a x = G.CheckM (Error a) x
 
 
 -- | Things that can go wrong during the conversion.
+--   All but the first should not happen with type checked code.
 data Error a
-        -- | Found unexpected AST node, like LWithRegion
-        = ErrorMalformed String
+        -- | The 'Main' module has no 'main' function.
+        = ErrorMainHasNoMain
+
+        -- | Found unexpected AST node, like LWithRegion.
+        | ErrorMalformed String
 
         -- | The program is definately not well typed.
         | ErrorMistyped  (Exp (AnTEC a L.Name) L.Name)
@@ -40,8 +44,6 @@ data Error a
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
 
-        -- | The 'Main' module has no 'main' function
-        | ErrorMainHasNoMain
 
 
 instance Show a => Pretty (Error a) where

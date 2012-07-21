@@ -164,11 +164,11 @@ singleton [r1 : %] (x : Unit) { Alloc r1 | Use r1 }
 
 -- Destruct a list of units.
 -- The head field of the Cons cell has no primary region.
---:to-salt..
---module Test with letrec
---headUnit [r1 : %] (xx : List r1 Unit) { Read r1 | $0 }
---        : Unit
--- = case xx of
---        Cons x _        -> x
---        Nil             -> ();;
+:to-salt..
+module Test with letrec
+headUnit [r1 : %] (xx : List r1 Unit) { Read r1 | $0 }
+        : Unit
+ = case xx of
+        Cons x _        -> x
+        Nil             -> ();;
 

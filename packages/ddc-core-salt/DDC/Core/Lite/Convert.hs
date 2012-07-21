@@ -143,7 +143,7 @@ convertBodyX pp defs xx
 
         XCon a u
          -> do  let a'  = annotTail a
-                (xx', _) <- convertC defs a' u
+                xx'     <- convertCtor pp defs a' u
                 return  xx'
 
         -- Strip out non-region lambdas.
@@ -209,7 +209,7 @@ convertBodyX pp defs xx
          | TCon (TyConBound (UPrim nType _))    <- typeOfBound uScrut
          , L.NamePrimTyCon _                    <- nType
          -> do  xScrut' <- convertArgX pp defs xScrut
-                alts'   <- mapM (convertA pp defs a' uScrut) alts
+                alts'   <- mapM (convertAlt pp defs a' uScrut) alts
                 return  $  XCase a' xScrut' alts'
 
         -- Match against finite algebraic data.
@@ -217,7 +217,7 @@ convertBodyX pp defs xx
         XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
          -> do  x'@(XVar _ uX') <- convertArgX pp defs x
                 t'              <- convertT t
-                alts'           <- mapM (convertA pp defs a' uX) alts
+                alts'           <- mapM (convertAlt pp defs a' uX) alts
 
                 let asDefault
                         | any isPDefault [p | AAlt p _ <- alts]   
@@ -318,6 +318,8 @@ convertArgX pp defs xx
         XType t         -> liftM XType (convertT t)
 
         -- We shouldn't be passed witness args.
+        -- TODO: redo to return a Nothing, 
+        --       and have the caller discard the arg when it gets a Nothing.
         XWitness{}
          -> error $ unlines 
                 [ "DDC.Core.Lite.Convert.convertArgX"
@@ -375,11 +377,11 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
 convertCtorAppX _ _ _ _nCtor _xsArgs
-        = throw $ ErrorMalformed "when converting constructor application"
+        = throw $ ErrorMalformed "convertCtorAppX: invalid constructor application"
 
 
 -- Alt ------------------------------------------------------------------------
-convertA 
+convertAlt 
         :: Show a
         => Platform
         -> DataDefs L.Name 
@@ -388,7 +390,7 @@ convertA
         -> Alt (AnTEC a L.Name) L.Name 
         -> ConvertM a (Alt a S.Name)
 
-convertA pp defs a uScrut alt
+convertAlt pp defs a uScrut alt
  = case alt of
         AAlt PDefault x
          -> do  x'      <- convertBodyX pp defs x
@@ -436,32 +438,35 @@ convertA pp defs a uScrut alt
          -> throw ErrorInvalidAlt
 
 
-
 -- Data Constructor -----------------------------------------------------------
-convertC :: Show a
-         => DataDefs L.Name
-         -> a 
-         -> Bound L.Name 
-         -> ConvertM a (Exp a S.Name, Type S.Name)
+convertCtor 
+        :: Show a
+        => Platform
+        -> DataDefs L.Name
+        -> a 
+        -> Bound L.Name 
+        -> ConvertM a (Exp a S.Name)
 
-convertC _defs a uu
+convertCtor pp defs a uu
  = case uu of
+        -- Literal values.
         UPrim (L.NameBool v) _   
-          -> return ( XCon a (UPrim (S.NameBool v)      (S.tBool))
-                    , S.tBool)
+          -> return $ XCon a (UPrim (S.NameBool v) S.tBool)
 
         UPrim (L.NameNat i) _   
-          -> return ( XCon a (UPrim (S.NameNat i) S.tNat)
-                    , S.tNat)
+          -> return $ XCon a (UPrim (S.NameNat i) S.tNat)
 
         UPrim (L.NameInt i) _   
-          -> return ( XCon a (UPrim (S.NameInt i) S.tInt)
-                    , S.tInt)
+          -> return $ XCon a (UPrim (S.NameInt i) S.tInt)
 
         UPrim (L.NameWord i bits) _   
-          -> return ( XCon a (UPrim (S.NameWord i bits) (S.tWord bits))
-                    , S.tWord bits)
+          -> return $ XCon a (UPrim (S.NameWord i bits) (S.tWord bits))
 
+        -- A Zero-arity data constructor.
+        UPrim nCtor _
+         | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
+         , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
+         -> constructData pp a dataDef ctorDef [] []
 
-        _ -> error $ "convertC failed"
+        _ -> throw $ ErrorMalformed "convertCtor: invalid constructor"
 

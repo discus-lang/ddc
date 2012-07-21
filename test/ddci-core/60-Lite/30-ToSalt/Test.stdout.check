@@ -297,11 +297,22 @@ letrec {
 
 -- Destruct a list of units.
 -- The head field of the Cons cell has no primary region.
---:to-salt..
---module Test with letrec
---headUnit [r1 : %] (xx : List r1 Unit) { Read r1 | $0 }
---        : Unit
--- = case xx of
---        Cons x _        -> x
---        Nil             -> ();;
+module Test with
+letrec {
+  headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# _ Obj
+    = /\(r1 : %).
+       \(xx : Ptr# r1 Obj).
+      let x0 : Tag# = getTag [r1] xx in
+      case x0 of {
+        TAG1#  
+         -> let x : Ptr# _ Obj = getFieldOfBoxed [r1] [_] xx 0# in
+            let _ : Ptr# r1 Obj = getFieldOfBoxed [r1] [r1] xx 1# in
+            x;
+        TAG0#  
+         -> let x1 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+            x1;
+        _ 
+         -> fail# [Ptr# _ Obj]
+      }
+}
 
