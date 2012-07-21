@@ -261,30 +261,31 @@ convertArgX pp defs xx
 
 
         -- Primitive operations.
-        XApp a _ _
-         | x1 : xsArgs          <- takeXApps xx
-         , XVar _ UPrim{}       <- x1
+        XApp a xa xb
+         | (x1, xsArgs)          <- takeXApps' xa xb
+         , XVar _ UPrim{}        <- x1
          -> do  x1'     <- convertArgX pp defs x1
                 xsArgs' <- mapM (convertArgX pp defs) xsArgs
                 return  $ makeXApps (annotTail a) x1' xsArgs'
 
         -- Primitive data constructors.
-        XApp a _ _
-         | x1 : xsArgs            <- takeXApps xx
+        XApp a xa xb
+         | (x1, xsArgs)           <- takeXApps' xa xb
          , XCon _ (UPrim nCtor _) <- x1
          -> convertCtorAppX pp a defs nCtor xsArgs
 
-        XApp a _ _
-         | x1 : xsArgs            <- takeXApps xx
+        -- User-defined data constructors.
+        XApp a xa xb
+         | (x1, xsArgs)           <- takeXApps' xa xb
          , XCon _ (UName nCtor _) <- x1
          -> convertCtorAppX pp a defs nCtor xsArgs
 
         -- Function application
         -- TODO: This only works for full application. 
         --       At least check for the other cases.
-        XApp (AnTEC _t _ _ a') _ _
-         | x1 : xsArgs          <- takeXApps xx
-         -> do  x1'             <- convertArgX pp defs x1
+        XApp (AnTEC _t _ _ a') xa xb
+         | (x1, xsArgs)          <- takeXApps' xa xb
+         -> do  x1'              <- convertArgX pp defs x1
 
                 -- We need to keep region arguments, 
                 -- but can discard other types and witnesses.
@@ -299,12 +300,6 @@ convertArgX pp defs xx
 
                 xsArgs_exp'     <- mapM (convertArgX pp defs) xsArgs_exp
                 return $ makeXApps a' x1' xsArgs_exp'
-
-         | otherwise 
-         -> error $ unlines
-                [ "DDC.Core.Lite.Convert.convertArgX"
-                , "  When converting XApp"
-                , "  This shouldn't happen as above covers all cases."]
 
         XCast _ _ x     -> convertArgX pp defs x
 
@@ -377,13 +372,10 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
         tsArgs'         <- mapM makeFieldType xsArgs
         constructData pp (annotTail a) dataDef ctorDef xsArgs' tsArgs'
 
-
-convertCtorAppX _ _ _ nCtor xsArgs
-        = error $ unlines
-                [ "DDC.Core.Lite.Convert.convertCtorAppX"
-                , "  No match for " ++ show (nCtor, xsArgs)
-                , "  The provided constructor and args list is probably malformed" 
-                , "  This shoudn't happen in type-checked code" ]
+-- If this fails then the provided constructor args list is probably malformed.
+-- This shouldn't happen in type-checked code.
+convertCtorAppX _ _ _ _nCtor _xsArgs
+        = throw $ ErrorMalformed "when converting constructor application"
 
 
 -- Alt ------------------------------------------------------------------------
@@ -441,7 +433,7 @@ convertA pp defs a uScrut alt
                 return  $ AAlt (PData uTag []) xBody2
 
         AAlt{}          
-         -> error $ "convertA: invalid alt " -- throw ErrorInvalidAlt
+         -> throw ErrorInvalidAlt
 
 
 
@@ -472,5 +464,4 @@ convertC _defs a uu
 
 
         _ -> error $ "convertC failed"
-
 

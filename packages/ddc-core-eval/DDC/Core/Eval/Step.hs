@@ -122,8 +122,8 @@ step store xx
 -- (EvPrim)
 -- Step a primitive operator or constructor defined by the client.
 step store xx
-        | x1@(XVar _ (UPrim p _)) : xs  <- takeXApps xx
-        , Just arity                    <- arityOfName p
+        | Just (x1@(XVar _ (UPrim p _)), xs)  <- takeXApps xx
+        , Just arity                          <- arityOfName p
         = let
                 -- TODO: we're not allowing over-applied primops
                 stepArg i _acc []
@@ -155,8 +155,8 @@ step store xx
 -- (EvAppArgs)
 -- Step the left-most non-wnf argument of a lambda.
 step store xx
-        | x1 : xsArgs   <- takeXApps xx
-        , Just l1       <- takeLocX x1
+        | Just (x1, xsArgs)   <- takeXApps xx
+        , Just l1             <- takeLocX x1
         , Just (Rgn 0, _, SLams bs _xBody)  <- lookupRegionTypeBind l1 store
 
         -- See if an arg to any of the lambdas needs to be stepped.
@@ -192,9 +192,9 @@ step store xx
 -- (EvAppSubst)
 -- Substitute wnf arguments into an abstraction.
 step store xx
-        | x1 : xsArgs   <- takeXApps xx
-        , (casts, xL1)  <- unwrapCasts x1
-        , Just l1       <- takeLocX xL1
+        | Just (x1, xsArgs)     <- takeXApps xx
+        , (casts, xL1)          <- unwrapCasts x1
+        , Just l1               <- takeLocX xL1
 
         , Just (Rgn 0, _, SLams fbs xBody) <- lookupRegionTypeBind l1 store
 

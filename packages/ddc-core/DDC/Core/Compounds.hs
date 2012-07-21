@@ -21,6 +21,7 @@ module DDC.Core.Compounds
           -- * Applications
         , makeXApps
         , takeXApps
+        , takeXApps'
         , takeXConApps
         , takeXPrimApps
 
@@ -155,12 +156,23 @@ makeXApps   :: a -> Exp a n -> [Exp a n] -> Exp a n
 makeXApps a t1 ts     = foldl (XApp a) t1 ts
 
 
--- | Flatten an application into the function parts and arguments, if any.
-takeXApps   :: Exp a n -> [Exp a n]
+-- | Flatten an application into the function part and its arguments.
+--   If there is no outer application then `Nothing`.
+takeXApps :: Exp a n -> Maybe (Exp a n, [Exp a n])
 takeXApps xx
- = case xx of
-        XApp _ x1 x2    -> takeXApps x1 ++ [x2]
-        _               -> [xx]
+ = case takeXAppsAsList xx of
+        (x1 : xsArgs)   -> Just (x1, xsArgs)
+        _               -> Nothing
+
+
+-- | Flatten an application into the function part and its arguments.
+--   As opposed to takeXApps, this version takes the components
+--   of the outer-most `XApp`, and therefore cannot fail.
+takeXApps' :: Exp a n -> Exp a n -> (Exp a n, [Exp a n])
+takeXApps' x1 x2
+ = case takeXApps x1 of
+        Nothing          -> (x1,  [x2])
+        Just (x11, x12s) -> (x11, x12s ++ [x2])
 
 
 -- | Flatten an application of a primop into the variable
@@ -169,7 +181,7 @@ takeXApps xx
 --   Returns `Nothing` if the expression isn't a primop application.
 takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
 takeXPrimApps xx
- = case takeXApps xx of
+ = case takeXAppsAsList xx of
         XVar _ (UPrim p _) : xs  -> Just (p, xs)
         _                        -> Nothing
 
@@ -179,9 +191,17 @@ takeXPrimApps xx
 --   Returns `Nothing` if the expression isn't a constructor application.
 takeXConApps :: Exp a n -> Maybe (Bound n, [Exp a n])
 takeXConApps xx
- = case takeXApps xx of
+ = case takeXAppsAsList xx of
         XCon _ u : xs   -> Just (u, xs)
         _               -> Nothing
+
+
+-- | Flatten an application into the function parts and arguments, if any.
+takeXAppsAsList  :: Exp a n -> [Exp a n]
+takeXAppsAsList xx
+ = case xx of
+        XApp _ x1 x2    -> takeXAppsAsList x1 ++ [x2]
+        _               -> [xx]
 
 
 -- Lets -----------------------------------------------------------------------

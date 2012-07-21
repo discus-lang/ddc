@@ -302,14 +302,14 @@ convStmtM pp xx
  = case xx of
         -- Call to primop.
         C.XApp{}
-         |  C.XVar _ (C.UPrim (A.NamePrim p) tPrim) : xs <- takeXApps xx
+         |  Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), xs) <- takeXApps xx
          -> convPrimCallM pp Nothing p tPrim xs
 
         -- Call to top-level super.
-          | xFun@(C.XVar _ b) : xsArgs    <- takeXApps xx
-          , Just (Var nFun _)             <- takeGlobalV pp xFun
-          , (_, tResult)                  <- takeTFunArgResult $ typeOfBound b
-          , Just xsArgs'                  <- sequence $ map (mconvAtom pp) xsArgs
+          | Just (xFun@(C.XVar _ b), xsArgs) <- takeXApps xx
+          , Just (Var nFun _)                <- takeGlobalV pp xFun
+          , (_, tResult)                     <- takeTFunArgResult $ typeOfBound b
+          , Just xsArgs'                     <- sequence $ map (mconvAtom pp) xsArgs
           -> return $ Seq.singleton
                     $ ICall Nothing CallTypeStd 
                          (convType pp tResult) nFun xsArgs' []
@@ -414,15 +414,14 @@ convExpM pp vDst (C.XCon _ (C.UPrim name _t))
 convExpM pp dst xx@C.XApp{}
         
         -- Call to primop.
-        | (C.XVar _ (C.UPrim (A.NamePrim p) tPrim) : args) 
-                <- takeXApps xx
+        | Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), args) <- takeXApps xx
         = convPrimCallM pp (Just dst) p tPrim args
 
         -- Call to top-level super.
-        | xFun@(C.XVar _ b) : xsArgs    <- takeXApps xx
-        , Just (Var nFun _)             <- takeGlobalV pp xFun
-        , (_, tResult)                  <- takeTFunArgResult $ typeOfBound b
-        , Just xsArgs'                  <- sequence $ map (mconvAtom pp) xsArgs
+        | Just (xFun@(C.XVar _ b), xsArgs) <- takeXApps xx
+        , Just (Var nFun _)                <- takeGlobalV pp xFun
+        , (_, tResult)                     <- takeTFunArgResult $ typeOfBound b
+        , Just xsArgs'                     <- sequence $ map (mconvAtom pp) xsArgs
         = return $ Seq.singleton
                  $ ICall (Just dst) CallTypeStd 
                          (convType pp tResult) nFun xsArgs' []

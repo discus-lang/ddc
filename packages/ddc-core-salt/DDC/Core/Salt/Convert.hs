@@ -283,12 +283,12 @@ convRValueM xx
          
         -- Primop application.
         XApp{}
-         |  Just (NamePrim p, args)      <- takeXPrimApps xx
+         |  Just (NamePrim p, args)           <- takeXPrimApps xx
          -> convPrimCallM p args
 
         -- Super application.
         XApp{}
-         |  (XVar _ (UName n _) : args)  <- takeXApps xx
+         |  Just (XVar _ (UName n _), args)  <- takeXApps xx
          ,  NameVar nTop <- n
          -> do  let nTop' = sanitizeName nTop
                 args'     <- mapM convRValueM args
@@ -309,12 +309,12 @@ convStmtM xx
  = case xx of
         -- Primop application.
         XApp{}
-          |  Just (NamePrim p, xs) <- takeXPrimApps xx
+          |  Just (NamePrim p, xs)           <- takeXPrimApps xx
           -> convPrimCallM p xs
 
         -- Super application.
         XApp{}
-         |  (XVar _ (UName n _) : args)  <- takeXApps xx
+         |  Just (XVar _ (UName n _), args)  <- takeXApps xx
          ,  NameVar nTop <- n
          -> do  let nTop' = sanitizeName nTop
                 args'     <- mapM convRValueM args
