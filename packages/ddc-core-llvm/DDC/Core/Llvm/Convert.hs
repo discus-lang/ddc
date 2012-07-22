@@ -16,6 +16,10 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Salt.Erase
 import DDC.Core.Compounds
 import DDC.Type.Compounds
+import Control.Monad.State.Strict       (evalState)
+import Control.Monad.State.Strict       (gets)
+import Control.Monad
+import Data.Maybe
 import Data.Sequence                    (Seq, (<|), (|>), (><))
 import Data.Map                         (Map)
 import qualified DDC.Core.Salt          as A
@@ -25,10 +29,6 @@ import qualified DDC.Core.Exp           as C
 import qualified Data.Map               as Map
 import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Seq
-import Control.Monad.State.Strict       (evalState)
-import Control.Monad.State.Strict       (gets)
-import Control.Monad
-import Data.Maybe
 
 
 -- Module ---------------------------------------------------------------------
@@ -115,11 +115,8 @@ convSuperM
         -> C.Exp () A.Name              -- ^ Super body.
         -> LlvmM Function
 
--- TODO: this won't work when XLAM and XLams are interspersed
--- We're probably doing this wrong in other places as well.
 convSuperM (C.BName (A.NameVar nTop) tSuper) x
- | xBodyLam               <- fromMaybe x (liftM snd $ takeXLAMs x)
- , Just (bsParam, xBody)  <- takeXLams xBodyLam
+ | Just (bsParam, xBody)  <- takeXLams $ eraseXLAMs x
  = do   
         platform          <- gets llvmStatePlatform
 
@@ -406,7 +403,6 @@ convExpM _  vDst (C.XVar _ (C.UName (A.NameVar n) t))
         return  $ Seq.singleton 
                 $ ISet vDst (XVar (Var (NameLocal n') t'))
 
-
 convExpM pp vDst (C.XCon _ (C.UPrim name _t))
  = case name of
         A.NameNat i
@@ -420,7 +416,6 @@ convExpM pp vDst (C.XCon _ (C.UPrim name _t))
         A.NameWord w bits
          -> return $ Seq.singleton
                    $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
-
 
         _ -> die "invalid literal"
 

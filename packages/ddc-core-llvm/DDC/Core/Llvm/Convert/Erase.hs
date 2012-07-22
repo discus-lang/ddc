@@ -1,10 +1,12 @@
 
 module DDC.Core.Llvm.Convert.Erase
         ( eraseTypeWitArgs
-        , eraseTForalls)
+        , eraseTForalls
+        , eraseXLAMs)
 where
 import DDC.Core.Exp
-import DDC.Type.Sum           as Sum
+import DDC.Core.Transform.TransformX
+import DDC.Type.Sum                     as Sum
 
 
 -- | Erase type and witness arge Slurp out only the values from a list of function arguments.
@@ -17,7 +19,7 @@ eraseTypeWitArgs (x:xs)
         _               -> x : eraseTypeWitArgs xs
 
 
--- | Erase all TForall quantifiers from a type.
+-- | Erase all `TForall` quantifiers from a type.
 eraseTForalls :: Ord n => Type n -> Type n
 eraseTForalls tt
  = case tt of
@@ -27,3 +29,13 @@ eraseTForalls tt
         TApp t1 t2      -> TApp (eraseTForalls t1) (eraseTForalls t2)
         TSum ts         -> TSum $ Sum.fromList (Sum.kindOfSum ts) 
                                 $ map eraseTForalls $ Sum.toList ts
+
+
+-- | Erase all `XLAM` binders from an expression.
+eraseXLAMs :: Ord n => Exp a n -> Exp a n
+eraseXLAMs 
+        = transformUpX' 
+        $ \x -> case x of
+                 XLAM _ _ x'    -> x'
+                 _              -> x
+
