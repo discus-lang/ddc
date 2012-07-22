@@ -26,12 +26,13 @@ import DDC.Llvm.Type
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import Control.Monad.State.Strict
 import DDC.Core.Salt                    as A
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
-
+import Data.Maybe
 
 -- Type -----------------------------------------------------------------------
 convTypeM :: C.Type Name -> LlvmM Type
@@ -44,6 +45,12 @@ convTypeM tt
 convType :: Platform -> C.Type Name -> Type
 convType platform tt
  = case tt of
+        -- A polymorphic type,
+        -- represented as a generic boxed object.
+        C.TVar u
+         | isDataKind (typeOfBound u)
+         -> TPointer (tObj platform)
+
         -- A primitive type.
         C.TCon tc
           -> convTyCon platform tc
@@ -65,7 +72,8 @@ convType platform tt
              , declParams        = map (llvmParameterOfType platform) tsArgs
              , declAlign         = AlignBytes (platformAlignBytes platform) }
         
-        C.TForall _ (C.TApp _ t) -> convType platform t
+        C.TForall _ t   
+         -> convType platform t
           
         _ -> die ("Invalid Type " ++ show tt)
         
@@ -79,7 +87,8 @@ importedFunctionDeclOfType
         -> Maybe FunctionDecl
 
 importedFunctionDeclOfType platform linkage (C.QualName _ (NameVar n)) tt   -- TODO: handle module qualifiers
- = let  (tsArgs@(_ : _), tResult) = takeTFunArgResult tt
+ = let  tBody             = fromMaybe tt (liftM snd $ takeTForalls tt)
+        (tsArgs, tResult) = takeTFunArgResult tBody
    in   Just $ FunctionDecl
              { declName           = A.sanitizeName  n
              , declLinkage        = linkage

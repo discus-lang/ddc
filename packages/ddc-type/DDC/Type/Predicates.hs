@@ -1,19 +1,49 @@
 
 -- | Predicates on type expressions.
 module DDC.Type.Predicates
-        ( isBot
+        ( -- * Binders
+          isBNone
+        , isBAnon
+        , isBName
+
+          -- * Atoms
+        , isBot
         , isAtomT
+
+          -- * Kinds
         , isDataKind
         , isRegionKind
         , isEffectKind
         , isClosureKind
         , isWitnessKind
+
+          -- * Data Types
         , isAlgDataType
 	, isWitnessType)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as T
+
+
+-- Binders --------------------------------------------------------------------
+isBNone :: Bind n -> Bool
+isBNone bb
+ = case bb of
+        BNone{} -> True
+        _       -> False
+
+isBAnon :: Bind n -> Bool
+isBAnon bb
+ = case bb of
+        BAnon{} -> True
+        _       -> False
+
+isBName :: Bind n -> Bool
+isBName bb
+ = case bb of
+        BName{} -> True
+        _       -> False
 
 
 -- Atoms ----------------------------------------------------------------------

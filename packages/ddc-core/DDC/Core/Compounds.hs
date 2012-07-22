@@ -30,7 +30,13 @@ module DDC.Core.Compounds
         , splitXLets 
 
           -- * Alternatives
-        , takeCtorNameOfAlt)
+        , takeCtorNameOfAlt
+
+          -- * Types
+        , takeXType
+
+          -- * Witnesses
+        , takeXWitness)
 where
 import DDC.Type.Compounds
 import DDC.Core.Exp
@@ -229,5 +235,20 @@ takeCtorNameOfAlt aa
         AAlt (PData u _) _      -> takeNameOfBound u
         _                       -> Nothing
 
+-- Types ----------------------------------------------------------------------
+-- | Take the type from an `XType` argument, if any.
+takeXType :: Exp a n -> Maybe (Type n)
+takeXType xx
+ = case xx of
+        XType t -> Just t
+        _       -> Nothing
 
+
+-- Witnesses ------------------------------------------------------------------
+-- | Take the witness from an `XWitness` argument, if any.
+takeXWitness :: Exp a n -> Maybe (Witness n)
+takeXWitness xx
+ = case xx of
+        XWitness t -> Just t
+        _          -> Nothing
 

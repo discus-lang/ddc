@@ -148,9 +148,11 @@ convertBodyX pp defs xx
                 xx'     <- convertCtor pp defs a' u
                 return  xx'
 
-        -- Strip out non-region lambdas.
+        -- Keep region and data type lambdas, 
+        -- but ditch the others.
         XLAM a b x
-         | isRegionKind $ typeOfBind b
+         |   (isRegionKind $ typeOfBind b)
+          || (isDataKind   $ typeOfBind b)
          -> do  let a'  = annotTail a
                 b'      <- convertB b
                 x'      <- convertBodyX pp defs x
@@ -308,9 +310,7 @@ convertSimpleX pp defs xx
 shouldKeepFunArg :: Exp a L.Name -> Bool
 shouldKeepFunArg xx
  = case xx of
-        XType (TVar u)  -> isRegionKind $ typeOfBound u 
-        XType _         -> False
-
+        XType{}         -> True
         XWitness{}      -> False
         _               -> True
 

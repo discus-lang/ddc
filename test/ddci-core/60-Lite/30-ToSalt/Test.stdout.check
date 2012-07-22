@@ -164,8 +164,10 @@ letrec {
       let x0 : Tag# = getTag [r] xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 0# in
-            let xs' : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 1# in
+         -> let x : Ptr# r Obj
+                  = getFieldOfBoxed [r] [Ptr# r Obj] xs 0# in
+            let xs' : Ptr# r Obj
+                  = getFieldOfBoxed [r] [Ptr# r Obj] xs 1# in
             x;
         _ 
          -> def
@@ -182,8 +184,10 @@ letrec {
       let x0 : Tag# = getTag [r] xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 0# in
-            let xs' : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 1# in
+         -> let x : Ptr# r Obj
+                  = getFieldOfBoxed [r] [Ptr# r Obj] xs 0# in
+            let xs' : Ptr# r Obj
+                  = getFieldOfBoxed [r] [Ptr# r Obj] xs 1# in
             xs;
         _ 
          -> def
@@ -194,14 +198,15 @@ letrec {
 -- Take the head of a polymorphic list
 module Test with
 letrec {
-  head : [r : %].Ptr# _ Obj -> Ptr# r Obj -> Ptr# _ Obj
-    = /\(r : %).
-       \(def : Ptr# _ Obj).\(xs : Ptr# r Obj).
+  head : [r : %].[a : *].a -> Ptr# r Obj -> a
+    = /\(r : %)./\(a : *).
+       \(def : a).\(xs : Ptr# r Obj).
       let x0 : Tag# = getTag [r] xs in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# _ Obj = getFieldOfBoxed [r] [_] xs 0# in
-            let xs' : Ptr# r Obj = getFieldOfBoxed [r] [r] xs 1# in
+         -> let x : a = getFieldOfBoxed [r] [a] xs 0# in
+            let xs' : Ptr# r Obj
+                  = getFieldOfBoxed [r] [Ptr# r Obj] xs 1# in
             x;
         _ 
          -> def
@@ -233,11 +238,14 @@ letrec {
       let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
       let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
       let x3 : Ptr# _ Obj = x2 in
-      let _ : Void# = setFieldOfBoxed [r1] [_] x1 0# x3 in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
       let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
-      let _ : Void# = setFieldOfBoxed [r1] [r2] x4 0# x in
-      let _ : Void# = setFieldOfBoxed [r1] [r1] x4 1# x0 in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# r2 Obj] x4 0# x in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# r1 Obj] x4 1# x0 in
       x4
 }
 
@@ -286,11 +294,14 @@ letrec {
       let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
       let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
       let x3 : Ptr# _ Obj = x2 in
-      let _ : Void# = setFieldOfBoxed [r1] [_] x1 0# x3 in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
       let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
-      let _ : Void# = setFieldOfBoxed [r1] [_] x4 0# x in
-      let _ : Void# = setFieldOfBoxed [r1] [r1] x4 1# x0 in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# _ Obj] x4 0# x in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# r1 Obj] x4 1# x0 in
       x4
 }
 
@@ -305,8 +316,8 @@ letrec {
       let x0 : Tag# = getTag [r1] xx in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# _ Obj = getFieldOfBoxed [r1] [_] xx 0# in
-            let _ : Ptr# r1 Obj = getFieldOfBoxed [r1] [r1] xx 1# in
+         -> let x : Ptr# _ Obj
+                  = getFieldOfBoxed [r1] [Ptr# _ Obj] xx 0# in
             x;
         TAG0#  
          -> let x1 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
@@ -326,11 +337,14 @@ letrec {
       let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
       let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
       let x3 : Ptr# _ Obj = x2 in
-      let _ : Void# = setFieldOfBoxed [r1] [_] x1 0# x3 in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
       let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
-      let _ : Void# = setFieldOfBoxed [r1] [_] x4 0# x in
-      let _ : Void# = setFieldOfBoxed [r1] [r1] x4 1# x0 in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# _ Obj] x4 0# x in
+      let _ : Void#
+            = setFieldOfBoxed [r1] [Ptr# r1 Obj] x4 1# x0 in
       x4;
   
   headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# _ Obj
@@ -339,8 +353,8 @@ letrec {
       let x5 : Tag# = getTag [r1] xx in
       case x5 of {
         TAG1#  
-         -> let x : Ptr# _ Obj = getFieldOfBoxed [r1] [_] xx 0# in
-            let _ : Ptr# r1 Obj = getFieldOfBoxed [r1] [r1] xx 1# in
+         -> let x : Ptr# _ Obj
+                  = getFieldOfBoxed [r1] [Ptr# _ Obj] xx 0# in
             x;
         TAG0#  
          -> let x6 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in

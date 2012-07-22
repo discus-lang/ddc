@@ -61,15 +61,8 @@ convertT' isPrimType tt
         -- Convert type variables and constructors.
         TVar u
 
-         --  Boxed objects are represented as a generic ptr to object.
-         --  If we don't have the region variable, then just use a hole.
-         |  isDataKind (typeOfBound u)
-         -> if isPrimType
-                then liftM TVar $ convertU u
-                else return $ O.tPtr (TVar (UHole kRegion)) O.tObj
-
-         -- Keep region variables.
-         | isRegionKind (typeOfBound u)
+         |   isRegionKind (typeOfBound u)
+          || isDataKind (typeOfBound u)
          -> liftM TVar $ convertU u
 
          | otherwise    
@@ -81,10 +74,9 @@ convertT' isPrimType tt
 
         -- Strip off foralls, as the Salt fragment doesn't care about quantifiers.
         TForall b t     
-         |  isDataKind   (typeOfBind b)
-         -> if isPrimType
-                then liftM2 TForall (convertB b) (down t)
-                else down t
+         |   isRegionKind (typeOfBind b)
+          || isDataKind   (typeOfBind b)
+         ->  liftM2 TForall (convertB b) (down t)
 
          |  isRegionKind (typeOfBind b)
          -> liftM2 TForall (convertB b) (down t) 

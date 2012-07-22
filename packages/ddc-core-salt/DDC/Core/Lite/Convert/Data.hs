@@ -19,7 +19,6 @@ import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Compounds as O
 import Data.Maybe
 
-
 -- Construct ------------------------------------------------------------------
 -- | Build an expression that allocates and initialises a data constructor.
 --   object.
@@ -65,10 +64,9 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
         -- Statements to write each of the fields.
         let xObject'    = XVar a $ UIx 0 $ O.tPtr rPrime O.tObj
         let lsFields    
-                = [ let Just rField = takePrimeRegion tField
-                    in  LLet LetStrict (BNone O.tVoid)
+                = [ LLet LetStrict (BNone O.tVoid)
                          (O.xSetFieldOfBoxed a 
-                         rPrime rField xObject' ix (liftX 1 xField))
+                         rPrime tField xObject' ix (liftX 1 xField))
                   | ix            <- [0..]
                   | xField        <- xsFields
                   | tField        <- tsFields ]
@@ -146,16 +144,16 @@ destructData pp a uScrut ctorDef bsFields xBody
         -- Get the prime region that the read effects are assigned to.
         let Just trPrime  = takePrimeRegion (typeOfBound uScrut)
 
-        -- Get the prime regions of the fields.
-        let tsPrimeFields = map (fromMaybe (TVar $ UHole kRegion) . takePrimeRegion) 
-                          $ map typeOfBind bsFields
-
         -- Bind pattern variables to each of the fields.
-        let lsFields      = [ LLet LetStrict bField 
-                                (O.xGetFieldOfBoxed a trPrime tPrimeField (XVar a uScrut) ix)
-                                | bField        <- bsFields
-                                | tPrimeField   <- tsPrimeFields
-                                | ix            <- [0..] ]
+        let lsFields      
+                = catMaybes
+                $ [ if isBNone bField
+                        then Nothing
+                        else Just $ LLet LetStrict bField 
+                                        (O.xGetFieldOfBoxed a trPrime tField (XVar a uScrut) ix)
+                  | bField        <- bsFields
+                  | tField        <- map typeOfBind bsFields
+                  | ix            <- [0..] ]
 
         return  $ foldr (XLet a) xBody lsFields
 
@@ -171,11 +169,15 @@ destructData pp a uScrut ctorDef bsFields xBody
 
         -- Bind pattern variables to the fields.
         let uPayload    = UIx 0 O.tAddr
-        let lsFields    = [ LLet LetStrict bField 
-                                (O.xRead a tField (XVar a uPayload) offset) 
-                                | bField        <- bsFields
-                                | tField        <- map typeOfBind bsFields
-                                | offset        <- offsets ]
+        let lsFields    
+                = catMaybes
+                $ [ if isBNone bField
+                     then Nothing 
+                     else Just $ LLet LetStrict bField 
+                                     (O.xRead a tField (XVar a uPayload) offset) 
+                  | bField        <- bsFields
+                  | tField        <- map typeOfBind bsFields
+                  | offset        <- offsets ]
 
         return  $ foldr (XLet a) xBody
                 $ LLet LetStrict bPayload xPayload

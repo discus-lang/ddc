@@ -10,6 +10,7 @@ import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
+import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Salt.Erase
@@ -114,19 +115,22 @@ convSuperM
         -> C.Exp () A.Name              -- ^ Super body.
         -> LlvmM Function
 
+-- TODO: this won't work when XLAM and XLams are interspersed
+-- We're probably doing this wrong in other places as well.
 convSuperM (C.BName (A.NameVar nTop) tSuper) x
- | Just (_, x')           <- takeXLAMs x
- , Just (bsParam, xBody)  <- takeXLams x'
--- , bsParam                <- map eraseT bs
--- , xBody                  <- eraseR x2
- = do   platform          <- gets llvmStatePlatform
+ | xBodyLam               <- fromMaybe x (liftM snd $ takeXLAMs x)
+ , Just (bsParam, xBody)  <- takeXLams xBodyLam
+ = do   
+        platform          <- gets llvmStatePlatform
 
+        -- Sanitise the super name so we can use it as a symbol
+        -- in the object code.
         let nTop' = A.sanitizeName nTop
 
-        -- Split off the argument and result types.
-        let (tsArgs, tResult)       
-                  = takeTFunArgResult tSuper
-
+        -- Split off the argument and result types of the super.
+        let (tsArgs, tResult)   
+                = takeTFunArgResult $ eraseTForalls tSuper
+  
         -- Make parameter binders.
         let params      = map (llvmParameterOfType platform) tsArgs
         let align       = AlignBytes (platformAlignBytes platform)
@@ -164,7 +168,7 @@ nameOfParam bb
         C.BName (A.NameVar n) _ 
            -> A.sanitizeName n
 
-        _  -> die "invalid parameter name"
+        _  -> die $ "invalid parameter name: " ++ show bb
 
 
 -- Body -----------------------------------------------------------------------
@@ -269,6 +273,10 @@ convBodyM blocks label instrs xx
           -> do instrs'   <- convStmtM pp x1
                 convBodyM blocks label (instrs >< instrs')   x2
 
+         -- Letregions
+         C.XLet _ (C.LLetRegion _ _) x2
+          -> convBodyM blocks label instrs x2
+
          -- Case statement.
          C.XCase _ x1 alts
           | Just x1'@(Var{})    <- takeLocalV pp x1
@@ -308,11 +316,16 @@ convStmtM pp xx
         -- Call to top-level super.
           | Just (xFun@(C.XVar _ b), xsArgs) <- takeXApps xx
           , Just (Var nFun _)                <- takeGlobalV pp xFun
-          , (_, tResult)                     <- takeTFunArgResult $ typeOfBound b
-          , Just xsArgs'                     <- sequence $ map (mconvAtom pp) xsArgs
-          -> return $ Seq.singleton
+          , Just xsArgs_value'  <- sequence $ map (mconvAtom pp) 
+                                $  eraseTypeWitArgs xsArgs
+
+          -> let (_, tResult)   =  takeTFunArgResult 
+                                $  eraseTForalls $ typeOfBound b
+
+             in  return $ Seq.singleton
                     $ ICall Nothing CallTypeStd 
-                         (convType pp tResult) nFun xsArgs' []
+                         (convType pp tResult) nFun xsArgs_value' []
+
 
         _ -> die $ "invalid statement" ++ show xx
 
@@ -420,13 +433,16 @@ convExpM pp dst xx@C.XApp{}
         -- Call to top-level super.
         | Just (xFun@(C.XVar _ b), xsArgs) <- takeXApps xx
         , Just (Var nFun _)                <- takeGlobalV pp xFun
-        , (_, tResult)                     <- takeTFunArgResult $ typeOfBound b
-        , Just xsArgs'                     <- sequence $ map (mconvAtom pp) xsArgs
-        = return $ Seq.singleton
+        , Just xsArgs_value'    <- sequence $ map (mconvAtom pp) 
+                                $  eraseTypeWitArgs xsArgs
+
+        = let   (_, tResult)    = takeTFunArgResult 
+                                $ eraseTForalls $ typeOfBound b
+
+          in    return $ Seq.singleton
                  $ ICall (Just dst) CallTypeStd 
-                         (convType pp tResult) nFun xsArgs' []
+                         (convType pp tResult) nFun xsArgs_value' []
 
-convExpM _ _ _
-        = die "invalid expression"
-
+convExpM _ _ xx
+        = die $ "invalid expression" ++ show xx
 

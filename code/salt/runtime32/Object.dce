@@ -108,24 +108,22 @@ allocBoxed [r : %] (tag : Tag#) (arity : Nat#) : Ptr# r Obj
 
 ---- | Get one of the pointers from a boxed data object.
 getFieldOfBoxed 
-        [r1 r2 : %] 
+        [r1 : %] [a : *] 
         (obj : Ptr# r1 Obj) (index : Nat#) 
-        : Ptr# r2 Obj
-        = peek# [r1] [Ptr# r2 Obj]
-                (castPtr# [r1] [Ptr# r2 Obj] [Obj] obj)
-                (add# [Nat#] 8# (shl# [Nat#] index 2#))
+        : a
+ =      read# [a]  (takePtr# [r1] [Obj] obj)
+                   (add# [Nat#] 8# (shl# [Nat#] index 2#))
 
 
 -- | Set one of the pointers from a boxed data object.
 setFieldOfBoxed 
-        [r1 r2 : %] 
+        [r1 : %] [a : *]
         (obj : Ptr# r1 Obj) (index : Nat#) 
-        (val : Ptr# r2 Obj) 
+        (val : a) 
         : Void#
- =      poke# [r1] [Ptr# r2 Obj] 
-                (castPtr# [r1] [Ptr# r2 Obj] [Obj] obj)
-                (add# [Nat#] 8# (shl# [Nat#] index 2#))
-                val
+ =      write# [a] (takePtr# [r1] [Obj] obj)
+                   (add# [Nat#] 8# (shl# [Nat#] index 2#))
+                   val
 
 
 -- Mixed ----------------------------------------------------------------------
