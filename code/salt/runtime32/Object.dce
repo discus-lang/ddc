@@ -90,7 +90,7 @@ getTag [r : %] (obj : Ptr# r Obj) : Tag#
 allocBoxed [r : %] (tag : Tag#) (arity : Nat#) : Ptr# r Obj
  = do   
         -- multiply arity by 4 bytes-per-pointer to get size of payload.
-        bytesPayload    = shl# [Nat#] 2# arity
+        bytesPayload    = shl# [Nat#] arity 2#
         
         bytesObj        = add# [Nat#] 8# bytesPayload
         addr            = alloc# bytesObj
@@ -140,7 +140,7 @@ setFieldOfBoxed
 --
 allocMixed [r : %] (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
  = do   
-        bytesPtrs       = shl# [Nat#] 2# arity
+        bytesPtrs       = shl# [Nat#] arity 2#
         bytesObj        = add# [Nat#] 16# (add# [Nat#] bytesPtrs bytesRaw)
         addr            = alloc# bytesObj
 

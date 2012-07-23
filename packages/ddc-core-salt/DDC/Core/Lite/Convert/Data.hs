@@ -35,7 +35,6 @@ constructData
 constructData pp a dataDef ctorDef xsArgs tsArgs 
 
  | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
- , Just size                    <- L.payloadSizeOfDataCtor pp ctorDef
  = do
         -- Get the prime region variable that holds the outermost constructor.
         --   For types like Unit, there is no prime region var,
@@ -49,17 +48,18 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
                     | isRegionKind (typeOfBound u) -> r
                    _                               -> TVar (UHole kRegion)
 
-        -- Allocate the object.
-        let bObject     = BAnon (O.tPtr rPrime O.tObj)
-        let xAlloc      = O.xAllocBoxed a rPrime (dataCtorTag ctorDef)
-                        $ XCon a (UPrim (O.NameNat size) O.tNat)
-
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
         let xsFields            = drop (length $ dataTypeParamKinds dataDef) xsArgs
         let Just tsFields       = sequence 
                                 $ drop (length $ dataTypeParamKinds dataDef) tsArgs
+
+        -- Allocate the object.
+        let arity       = length tsFields
+        let bObject     = BAnon (O.tPtr rPrime O.tObj)
+        let xAlloc      = O.xAllocBoxed a rPrime (dataCtorTag ctorDef)
+                        $ XCon a (UPrim (O.NameNat (fromIntegral arity)) O.tNat)
 
         -- Statements to write each of the fields.
         let xObject'    = XVar a $ UIx 0 $ O.tPtr rPrime O.tObj

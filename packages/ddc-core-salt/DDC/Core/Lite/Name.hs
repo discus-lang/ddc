@@ -182,10 +182,11 @@ instance Pretty PrimDaCon where
 readPrimDaCon :: String -> Maybe PrimDaCon
 readPrimDaCon str
  = case str of
-        "()"    -> Just PrimDaConUnit
         "B#"    -> Just PrimDaConBoolU
         "N#"    -> Just PrimDaConNatU
         "I#"    -> Just PrimDaConIntU
+
+        "()"    -> Just PrimDaConUnit
         "Pr"    -> Just PrimDaConPr
         "Nil"   -> Just PrimDaConNil
         "Cons"  -> Just PrimDaConCons

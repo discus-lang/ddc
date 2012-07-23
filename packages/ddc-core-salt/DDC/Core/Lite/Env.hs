@@ -134,6 +134,10 @@ kindOfPrimName nn
         NameDataTyCon DataTyConInt
          -> Just $ kFun kRegion kData
 
+        -- Nat
+        NameDataTyCon DataTyConNat
+         -> Just $ kFun kRegion kData
+
         -- Pair
         NameDataTyCon DataTyConPair
          -> Just $ kRegion `kFun` kData `kFun` kData `kFun` kData
@@ -171,7 +175,7 @@ typeOfPrimName dc
          -> Just $ tForall kRegion $ \tR
                  -> tFun tNatU          (tAlloc tR)
                                         (tBot kClosure)
-                 $  tInt tR
+                 $  tNat tR
 
         -- I#
         NamePrimDaCon PrimDaConIntU

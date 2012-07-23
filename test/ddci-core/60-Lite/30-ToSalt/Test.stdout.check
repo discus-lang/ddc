@@ -235,13 +235,13 @@ letrec {
   singleton : [r1 r2 : %].Ptr# r2 Obj -> Ptr# r1 Obj
     = /\(r1 r2 : %).
        \(x : Ptr# r2 Obj).
-      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
+      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
       let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
       let x3 : Ptr# _ Obj = x2 in
       let _ : Void#
             = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
-      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
+      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 2# in
       let _ : Void#
             = setFieldOfBoxed [r1] [Ptr# r2 Obj] x4 0# x in
       let _ : Void#
@@ -291,13 +291,13 @@ letrec {
   singleton : [r1 : %].Ptr# _ Obj -> Ptr# r1 Obj
     = /\(r1 : %).
        \(x : Ptr# _ Obj).
-      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
+      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
       let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
       let x3 : Ptr# _ Obj = x2 in
       let _ : Void#
             = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
-      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
+      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 2# in
       let _ : Void#
             = setFieldOfBoxed [r1] [Ptr# _ Obj] x4 0# x in
       let _ : Void#
@@ -334,13 +334,13 @@ letrec {
   singleton : [r1 : %].Ptr# _ Obj -> Ptr# r1 Obj
     = /\(r1 : %).
        \(x : Ptr# _ Obj).
-      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 8# in
+      let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
       let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
       let x3 : Ptr# _ Obj = x2 in
       let _ : Void#
             = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
-      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 16# in
+      let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 2# in
       let _ : Void#
             = setFieldOfBoxed [r1] [Ptr# _ Obj] x4 0# x in
       let _ : Void#
