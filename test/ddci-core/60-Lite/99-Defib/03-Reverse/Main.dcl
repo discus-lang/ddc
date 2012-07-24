@@ -54,7 +54,7 @@ length  [r1 r2 : %] [a : *]
 replicate
         [r1 r2 : %] [a : *]
         (n : Nat r1)            { !0 | Use r1 + Use r2 }
-        (x : a)                 { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2}
+        (x : a)                 { Read r1 + Alloc r2 | Use r1 + Use r2}
         : List r2 a
  = letregion r3 in
    case n of
