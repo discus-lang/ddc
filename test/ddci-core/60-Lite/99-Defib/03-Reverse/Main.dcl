@@ -136,7 +136,7 @@ main    [r : %]
         zs      = append     [:r2 r2:] [Nat r2] xs1 xs2
         zs2     = reverse    [:r2 r2:] [Nat r2] zs
 
-        dummy   = dumpNats [:r2 r2:] zs2
+        dumpNats [:r2 r2:] zs2
         0i#
 
 

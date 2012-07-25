@@ -256,7 +256,7 @@ convBodyM blocks label instrs xx
 
 
          -- Assignment ------------------------------------
-         -- Variable assignment.
+         -- Variable assignment from an expression.
          C.XLet _ (C.LLet C.LetStrict (C.BName (A.NameVar n) t) x1) x2
           -> do t'       <- convTypeM t
                 let n'   = A.sanitizeName n
@@ -264,11 +264,19 @@ convBodyM blocks label instrs xx
                 instrs'  <- convExpM pp dst x1
                 convBodyM blocks label (instrs >< instrs') x2
 
-         -- Non-binding statment.
+         -- A statement that provides no value statment.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           | isVoidT t
           -> do instrs'   <- convStmtM pp x1
-                convBodyM blocks label (instrs >< instrs')   x2
+                convBodyM blocks label (instrs >< instrs') x2
+
+         -- Variable assignment from an unsed binder.
+         -- We need to invent a dummy binder as LLVM needs some name for it.
+         C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
+          -> do t'        <- convTypeM t
+                dst       <- newUniqueNamedVar "dummy" t'
+                instrs'   <- convExpM pp dst x1
+                convBodyM blocks label (instrs >< instrs') x2
 
          -- Letregions
          C.XLet _ (C.LLetRegion _ _) x2
