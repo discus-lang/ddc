@@ -1,0 +1,66 @@
+
+ok
+ok
+ok
+
+
+-- Integer boxing,
+--      packs a RawSmall Object.
+Obj* boxInt (int_t i)
+{
+        Obj* x0          = allocRawSmall (0, 8);
+        addr_t x1        = payloadOfRawSmall (x0);
+        _write (int_t, x1, 0, i);
+        return x0;
+}
+
+
+
+-- Integer unboxing,
+--      unpacks a RawSmall Object.
+int_t unboxInt (Obj* x)
+{
+        tag_t x0         = getTag (x);
+        if (x0 != 0) _fail();
+        addr_t x1        = payloadOfRawSmall (x);
+        int_t i          = _read (int_t, x1, 0);
+        return i;
+}
+
+
+
+-- Boxed addition
+Obj* addInt (Obj* x, Obj* y)
+{
+        tag_t x1         = getTag (x);
+        if (x1 != 0) _fail();
+        addr_t x2        = payloadOfRawSmall (x);
+        int_t i1         = _read (int_t, x2, 0);
+        tag_t x3         = getTag (y);
+        if (x3 != 0) _fail();
+        addr_t x4        = payloadOfRawSmall (y);
+        int_t i2         = _read (int_t, x4, 0);
+        int_t x0         = (i1 + i2);
+        Obj* x5          = allocRawSmall (0, 8);
+        addr_t x6        = payloadOfRawSmall (x5);
+        _write (int_t, x6, 0, x0);
+        return x5;
+}
+
+
+
+-- Construct a singleton list,
+--      packs a Boxed objet.
+Obj* singleton (Obj* x)
+{
+        Obj* x1          = allocBoxed (0, 1);
+        Obj* x2          = allocBoxed (0, 0);
+        Obj* x3          = x2;
+        setFieldOfBoxed (Obj*, x1, 0, x3);
+        Obj* x0          = x1;
+        Obj* x4          = allocBoxed (1, 2);
+        setFieldOfBoxed (Obj*, x4, 0, x);
+        setFieldOfBoxed (Obj*, x4, 1, x0);
+        return x4;
+}
+
