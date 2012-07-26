@@ -238,6 +238,9 @@ data TwCon
 
         -- | Manifestness of some region (not lazy).
         | TwConManifest         -- :: % ~> @
+
+	-- | Non-interfering effects are disjoint. Used for rewrite rules.
+	| TwConDisjoint		-- :: ! ~> ! ~> @
         deriving (Eq, Show)
 
 

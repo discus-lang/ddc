@@ -164,6 +164,7 @@ instance Pretty TwCon where
         TwConLazy       -> text "Lazy"
         TwConHeadLazy   -> text "HeadLazy"
         TwConManifest   -> text "Manifest"
+        TwConDisjoint   -> text "Disjoint"
         
 
 instance Pretty TcCon where

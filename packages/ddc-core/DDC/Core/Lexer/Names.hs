@@ -70,6 +70,7 @@ readTwConBuiltin ss
         "Manifest"      -> Just TwConManifest
         "Pure"          -> Just TwConPure
         "Empty"         -> Just TwConEmpty
+        "Disjoint"      -> Just TwConDisjoint
         _               -> Nothing
 
 
