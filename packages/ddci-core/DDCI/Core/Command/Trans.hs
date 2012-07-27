@@ -22,14 +22,17 @@ import qualified Control.Monad.State.Strict     as S
 import qualified DDC.Core.Eval.Name             as Eval
 import Data.Typeable
 
+import DDC.Core.Module
+
+
 
 -- Trans ----------------------------------------------------------------------
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
- | Bundle fragment _ zero simpl _     <- stateBundle state
+ | Bundle fragment modules zero simpl _     <- stateBundle state
  , Fragment profile _ _ _ _ _ _ _ _ <- fragment
- =   cmdParseCheckExp state fragment True source str 
+ =   cmdParseCheckExp state fragment modules True source str 
  >>= goStore profile zero simpl
  where
         -- Expression had a parse or type error.
@@ -49,8 +52,8 @@ cmdTrans state source str
 --   then evaluate and display the result
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
- | Bundle fragment _ zero simpl0 _       <- stateBundle state
- , Fragment profile0 _ _ _ _ _ _ _ _   <- fragment
+ | Bundle fragment modules0 zero simpl0 _	<- stateBundle state
+ , Fragment profile0 _ _ _ _ _ _ _ _		<- fragment
 
  -- The evaluator only works on expressions with Eval.Names, 
  --   The actual name type is an existential of Bundle, 
@@ -58,7 +61,9 @@ cmdTransEval state source str
  --   set to Eval.
  , Just (profile :: Profile Eval.Name) <- gcast profile0 
  , Just (SimplBox simpl)               <- gcast (SimplBox simpl0)
- = do   result  <- cmdParseCheckExp state fragmentEval False source str 
+ , Just (modules :: ModuleMap (AnTEC () Eval.Name) Eval.Name)
+				       <- gcast modules0
+ = do   result  <- cmdParseCheckExp state fragmentEval modules False source str 
         case result of
          Nothing         -> return ()
          Just stuff@(_x, t1, eff1, clo1)

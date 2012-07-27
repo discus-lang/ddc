@@ -26,11 +26,20 @@ import DDC.Core.Eval.Store              (Store)
 import qualified DDC.Core.Eval.Store    as Store
 import qualified Data.Set               as Set
 
+import Data.Maybe (fromMaybe)
+import qualified Data.Map		as Map
+import Data.Typeable
+import DDC.Core.Module (ModuleMap)
+
 
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: State -> Source -> String -> IO ()
 cmdStep state source str
- = cmdParseCheckExp state fragmentEval False source str >>= goStore 
+ | Bundle _ modules0 _ _ _		<- stateBundle state
+ , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
+				        <- gcast modules0
+ , modules'				<- fromMaybe Map.empty modules
+ = cmdParseCheckExp state fragmentEval modules' False source str >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -54,7 +63,11 @@ cmdStep state source str
 -- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Source -> String -> IO ()
 cmdEval state source str
- = cmdParseCheckExp state fragmentEval False source str >>= goEval
+ | Bundle _ modules0 _ _ _		<- stateBundle state
+ , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
+				        <- gcast modules0
+ , modules'				<- fromMaybe Map.empty modules
+ = cmdParseCheckExp state fragmentEval modules' False source str >>= goEval
  where
     -- Expression had a parse or type error.
     goEval Nothing

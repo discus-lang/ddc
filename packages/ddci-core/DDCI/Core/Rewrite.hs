@@ -19,10 +19,6 @@ import qualified DDC.Base.Parser        as BP
 
 import DDC.Core.Module
 import Data.Map                         (Map)
-import qualified Data.Map               as Map
-
-import qualified DDC.Type.Env		as E
-import DDC.Type.Exp
 
 
 -- | :set rule command
@@ -89,12 +85,8 @@ parseAdd fragment@(Fragment profile _ _ _ _ _ _ _ _) modules str
 	kinds	 = profilePrimKinds	profile
 	types	 = profilePrimTypes	profile
 
-	mods	 = Map.elems modules
-
-	getbinds m = E.fromList $ map (\(n,k) -> BName n k) $ Map.assocs m 
-
-	kinds'	 = foldl E.union kinds (map (getbinds.moduleExportKinds) mods)
-	types'	 = foldl E.union types (map (getbinds.moduleExportTypes) mods)
+	kinds'	 = modulesExportKinds modules kinds
+	types'	 = modulesExportTypes modules types
 
 
 -- | Display rule

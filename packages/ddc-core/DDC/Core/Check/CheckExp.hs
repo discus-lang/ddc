@@ -41,6 +41,8 @@ import Control.Monad
 import Data.List                        as L
 import Data.Maybe
 
+import Data.Typeable
+
 
 -- Annot ----------------------------------------------------------------------
 data AnTEC a n
@@ -49,7 +51,7 @@ data AnTEC a n
         , annotEffect   :: Effect  n
         , annotClosure  :: Closure n 
         , annotTail     :: a }
-        deriving Show
+        deriving (Show, Typeable)
 
 instance Pretty (AnTEC a n) where
  ppr _ = text "AnTEC"        

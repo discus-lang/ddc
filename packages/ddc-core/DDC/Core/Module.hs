@@ -8,18 +8,29 @@ module DDC.Core.Module
           -- * Modules
         , Module        (..)
         , Extern        (..)
-        , isMainModule)
+        , isMainModule
+	
+	  -- * Module maps
+	, ModuleMap
+	, modulesExportKinds
+	, modulesExportTypes)
 
 where
 import DDC.Core.Exp
+
 import Data.Map         (Map)
+import qualified Data.Map               as Map
+
+import qualified DDC.Type.Env		as E
+
+import Data.Typeable
 
 
 -- ModuleName -----------------------------------------------------------------
 -- | A hierarchical module name.
 data ModuleName
         = ModuleName [String]
-        deriving (Show, Eq, Ord)
+        deriving (Show, Eq, Ord, Typeable)
 
 
 -- | A fully qualified name, 
@@ -67,7 +78,7 @@ data Module a n
           --   with the hole being just a place-holder.
         , moduleBody            :: Exp a n
         }
-        deriving Show
+        deriving (Show, Typeable)
 
 
 -- | Definition of some external thing.
@@ -85,3 +96,18 @@ isMainModule :: Module a n -> Bool
 isMainModule mm
         = isMainModuleName 
         $ moduleName mm
+
+
+type ModuleMap a n = Map ModuleName (Module a n)
+
+modulesGetBinds m = E.fromList $ map (uncurry BName) (Map.assocs m)
+
+--modulesExportKinds
+--	:: (Eq n, Ord n, Show n)
+--	=> 
+modulesExportKinds mods base
+ = foldl E.union base $ map (modulesGetBinds.moduleExportKinds) (Map.elems mods)
+
+modulesExportTypes mods base
+ = foldl E.union base $ map (modulesGetBinds.moduleExportTypes) (Map.elems mods)
+

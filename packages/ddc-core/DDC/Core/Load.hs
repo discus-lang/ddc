@@ -22,6 +22,8 @@ import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T
 import qualified DDC.Base.Parser                as BP
 
+import Data.Map (Map)
+
 
 -- | Things that can go wrong when loading.
 data Error n
@@ -156,18 +158,19 @@ loadWitness profile sourceName toks'
 loadExp
         :: (Eq n, Ord n, Show n, Pretty n)
         => Profile n
+	-> Map ModuleName (Module (C.AnTEC () n) n)
         -> String 
         -> [Token (Tok n)] 
         -> Either (Error n) 
                   (Exp (C.AnTEC () n) n, Type n, Effect n, Closure n)   -- TODO: don't need to return TEC separately
 
-loadExp profile sourceName toks'
+loadExp profile modules sourceName toks'
  = goParse toks'
  where  
         -- Type checker profile, kind and type environments.
         config  = configOfProfile  profile
-        kenv    = profilePrimKinds profile
-        tenv    = profilePrimTypes profile
+        kenv    = modulesExportKinds modules $ profilePrimKinds profile
+        tenv    = modulesExportTypes modules $ profilePrimTypes profile
 
         -- Parse the tokens.
         goParse toks                
@@ -183,7 +186,7 @@ loadExp profile sourceName toks'
 
         -- Check that the module compiles with the language fragment.
         goCheckCompliance x t e c
-         = case I.complies profile x of
+         = case I.compliesWithEnvs profile kenv tenv x of
                 Just err  -> Left (ErrorCompliance err)
                 Nothing   -> Right (x, t, e, c)
 

@@ -1,6 +1,7 @@
 
 module DDC.Core.Fragment.Compliance
         ( complies
+	, compliesWithEnvs
         , Complies      (..)
         , Error         (..))
 where
@@ -23,15 +24,28 @@ complies
         :: forall n c. (Ord n, Show n, Complies c)
         => Profile n -> c n -> Maybe (Error n)
 complies profile thing
+ = compliesWithEnvs profile
+    (profilePrimKinds profile)
+    (profilePrimTypes profile)
+    thing
+
+
+compliesWithEnvs
+        :: forall n c. (Ord n, Show n, Complies c)
+        => Profile n
+	-> Env.Env n -- ^ kind env
+	-> Env.Env n -- ^ type env
+	-> c n
+	-> Maybe (Error n)
+compliesWithEnvs profile kenv tenv thing
  = let  merr    = result 
-                $ compliesX 
-                        profile 
-                        (profilePrimKinds profile)
-                        (profilePrimTypes profile)
+                $ compliesX profile 
+                        kenv tenv
                         contextTop thing
    in   case merr of
          Left err -> Just err
          Right _  -> Nothing
+
 
 
 -- Complies -------------------------------------------------------------------

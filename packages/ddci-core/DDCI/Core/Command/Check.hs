@@ -28,6 +28,8 @@ import DDC.Type.Universe
 import qualified DDC.Type.Check         as T
 import qualified DDC.Base.Parser        as BP
 
+import DDC.Core.Module
+
 
 -- kind ------------------------------------------------------------------------
 -- | Show the kind of a type.
@@ -200,8 +202,8 @@ data ShowTypeMode
 -- | Show the type of an expression.
 cmdShowType :: State -> ShowTypeMode -> Source -> String -> IO ()
 cmdShowType state mode source ss
- | Bundle frag _ _ _ _ <- stateBundle state
- = cmdParseCheckExp state frag True source ss >>= goResult
+ | Bundle frag modules _ _ _ <- stateBundle state
+ = cmdParseCheckExp state frag modules True source ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -228,8 +230,8 @@ cmdShowType state mode source ss
 -- | Check expression and reconstruct type annotations on binders.
 cmdExpRecon :: State -> Source -> String -> IO ()
 cmdExpRecon state source ss
- |   Bundle frag _ _ _ _ <- stateBundle state
- =   cmdParseCheckExp state frag True source ss 
+ |   Bundle frag modules _ _ _ <- stateBundle state
+ =   cmdParseCheckExp state frag modules True source ss 
  >>= goResult
  where
         goResult Nothing
@@ -255,13 +257,14 @@ cmdParseCheckExp
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
         => State                -- ^ Interpreter state.
         -> Fragment n err       -- ^ The current language fragment.
+	-> ModuleMap (AnTEC () n) n -- ^ Current modules
         -> Bool                 -- ^ Allow partial application of primitives.
         -> Source               -- ^ Where this expression was sourced from.
         -> String               -- ^ Text to parse.
         -> IO (Maybe ( Exp (AnTEC () n) n
                      , Type n, Effect n, Closure n))
 
-cmdParseCheckExp _state frag permitPartialPrims source str
+cmdParseCheckExp _state frag modules permitPartialPrims source str
  = goLoad (fragmentLexExp frag (nameOfSource source) (lineStartOfSource source) str)
  where
         -- Override profile to allow partially applied primitives if we were
@@ -275,7 +278,7 @@ cmdParseCheckExp _state frag permitPartialPrims source str
 
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExp (fragmentProfile frag') (nameOfSource source) toks of
+         = case loadExp (fragmentProfile frag') modules (nameOfSource source) toks of
               Left err
                -> do    putStrLn $ renderIndent $ ppr err
                         return Nothing
