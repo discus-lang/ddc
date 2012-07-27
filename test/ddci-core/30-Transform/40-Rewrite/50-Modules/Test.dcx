@@ -1,0 +1,23 @@
+:with test/ddci-core/30-Transform/40-Rewrite/50-Modules/Module.dce
+:set.. rule mapMap [a b c : *] [r1 r2 r3 : %]
+	[ef eg : !] [cf cg : $]
+	(f : b -(ef|cf)> c) (g : a -(eg|cg)> b)
+	(xs : List r3 a).
+	map [:r2 r1 b c ef cf:] f
+		(map [:r3 r2 a b eg cg:] g xs) 
+	= map [:r3 r1 a c (ef+eg) (cf+cg):] (\(x : a). f (g x)) xs
+;;
+
+:set Indent
+:set trans Rewrite
+
+:trans..
+map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Alloc R0#) (Use R0#):]
+    (\(y : Int R0#). addInt [:R0# R0# R0#:] y (1 [R0#] ()))
+
+    (map [:R0# R0# (Int R0#) (Int R0#) (Alloc R0# + Read R0#) (Use R0#):]
+	(\(z : Int R0#). addInt [:R0# R0# R0#:] z (1 [R0#] ()))
+	(Cons [:R0# (Int R0#):] (1 [R0#] ())
+	    (Cons [:R0# (Int R0#):] (2 [R0#] ())
+		(Nil [:R0# (Int R0#):] ()))))
+;;
