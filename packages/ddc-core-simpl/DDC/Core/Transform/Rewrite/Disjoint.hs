@@ -97,15 +97,16 @@ areDistinct env p q
  = False
  -- If they're both named primitives (eg R0#, R1#)
  -- we can just check name-equality, since can't be bound in lambdas
- | UPrim p' _	<- p
- , UPrim q' _	<- q
- = p' /= q' -- unequal means they are distinct
- -- If they're both bound in letregions, we can check by name
+ -- Or if they're both bound in letregions, we can check by name
  -- (and we know names are different because that's an insta-fail)
- | RE.containsRegion p env && RE.containsRegion q env
+ | concrete p && concrete q
  = True
  -- Otherwise... we don't really know.
  -- TODO Check witness map for "Distinct p q" then give up
  | otherwise
  = False
+ where
+    -- | Check if region is 'concrete' - either global (R0#) or letregion
+    concrete (UPrim _ _) = True
+    concrete r = RE.containsRegion r env
 
