@@ -3,6 +3,7 @@ module DDC.Core.Transform.Rewrite.Env
     , empty
     , extend
     , extendLets
+    , containsRegion
     , containsWitness
     , lift
     )
@@ -21,7 +22,7 @@ import qualified DDC.Type.Transform.LiftT	as L
 data RewriteEnv n = RewriteEnv
     { witnesses	 :: [[T.Type n]]
 	-- ^ types of all witnesses in scope
-    , _letregions :: [[Bind n]]
+    , letregions :: [[Bind n]]
 	-- ^ names of letregion-bound regions:
 	-- this is interesting because they must be distinct.
     }
@@ -65,6 +66,29 @@ extendLets (LLetRegion b cs) (RewriteEnv ws rs)
     extend' []	   = [[b]]
 
 extendLets _ env = env
+
+containsRegion
+    :: (Eq n, Ord n, Show n)
+    => Bound n
+    -> RewriteEnv n
+    -> Bool
+containsRegion r env
+ = go r (letregions env)
+ where
+    go _  []	= False
+
+    go (UIx 0 ty) (w:_) 
+	= (BAnon ty) `elem` w
+    go (UIx n ty) (_:ws) 
+	= go (UIx (n-1) ty) ws
+
+    go (UName n ty) (w:ws) 
+	= BName n ty `elem` w || go r ws
+
+    go (UPrim _ _) _
+	= False
+    go (UHole _) _
+	= False
 
 -- | check if witness map contains given type
 -- tries each set, lowering c by -1 after each failure

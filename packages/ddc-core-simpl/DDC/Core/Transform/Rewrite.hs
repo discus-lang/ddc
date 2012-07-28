@@ -100,7 +100,7 @@ rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
     checkConstrs _ [] x = Just x
     checkConstrs bas (c:cs) x = do
 	let c' = S.substituteTs (Maybe.catMaybes $ map lookupT bas) c
-	if RE.containsWitness c' ws || RD.checkDisjoint c' (const $ const False)
+	if RE.containsWitness c' ws || RD.checkDisjoint c' ws
 	    then checkConstrs bas cs x
 	    else Nothing
 
