@@ -5,6 +5,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Type.Sum()
+import qualified DDC.Type.Sum as TS
 import qualified DDC.Type.Exp as T
 import qualified DDC.Type.Compounds as T
 import qualified DDC.Type.Predicates as T
@@ -22,6 +23,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 
 import qualified DDC.Type.Equiv as TE
+
 
 -- I would eventually like to change this to take Map String (RewriteRule..)
 -- so that we can record how many times each rule is fired?
@@ -89,6 +91,25 @@ containsWitness c (w:ws) =
     c `elem` w || containsWitness (L.liftT (-1) c) ws
 containsWitness _ [] = False
 
+containsWitnessDisjoint c _ws
+ | [TCon (TyConWitness TwConDisjoint), TSum f, TSum g]
+		    <- T.takeTApps c
+ , fEffs	    <- TS.toList   f
+ , gEffs	    <- TS.toList   g
+ , fCons	    <- map (head.T.takeTApps) fEffs
+ , gCons	    <- map (head.T.takeTApps) gEffs
+ -- do a quick check - if they're all harmless, we don't care
+ , all harmless (fCons++gCons)
+ = True
+ | otherwise
+ = False
+ where
+    harmless (TCon (TyConSpec con)) = harmlessCon con
+    harmless _ = False
+    harmlessCon m = m `elem`
+	[ TcConRead, TcConHeadRead, TcConDeepRead
+	, TcConAlloc, TcConDeepAlloc]
+
 -- | raise all elements in witness map if binder is anonymous
 -- only call with type binders ie XLAM, not XLam
 liftWitness (BAnon _) ws = []:ws
@@ -141,7 +162,7 @@ rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
     checkConstrs _ [] x = Just x
     checkConstrs bas (c:cs) x = do
 	let c' = S.substituteTs (Maybe.catMaybes $ map lookupT bas) c
-	if containsWitness c' ws
+	if containsWitness c' ws || containsWitnessDisjoint c' ws
 	    then checkConstrs bas cs x
 	    else Nothing
 
