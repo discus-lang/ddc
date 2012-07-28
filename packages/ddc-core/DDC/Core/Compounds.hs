@@ -24,6 +24,7 @@ module DDC.Core.Compounds
         , takeXApps'
         , takeXConApps
         , takeXPrimApps
+	, takeXAppsAsList
 
           -- * Lets
         , makeXLets

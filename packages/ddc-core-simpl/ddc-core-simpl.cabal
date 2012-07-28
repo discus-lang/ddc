@@ -25,7 +25,10 @@ Library
         ddc-core        == 0.3.0.*
 
   Exposed-modules:
+        DDC.Core.Transform.Rewrite.Disjoint
+        DDC.Core.Transform.Rewrite.Env
         DDC.Core.Transform.Rewrite.Error
+        DDC.Core.Transform.Rewrite.Match
         DDC.Core.Transform.Rewrite.Parser
         DDC.Core.Transform.Rewrite.Rule
         DDC.Core.Transform.AnonymizeX
