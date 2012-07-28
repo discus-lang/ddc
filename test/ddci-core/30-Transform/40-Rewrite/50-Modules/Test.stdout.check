@@ -1,17 +1,13 @@
 ok
-ok, added mapMap
+ok, added fromTo
 
 ok
 ok
 
 weakeff [Read R0# + Alloc R0#] in
 weakclo [Use R0#] in
-map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
-    (\(x : Int R0#).
-     (\(y : Int R0#).
-      addInt [R0#] [R0#] [R0#] y (1 [R0#] ()))
-         ((\(z : Int R0#).
-           addInt [R0#] [R0#] [R0#] z (1 [R0#] ())) x))
-    (Cons [R0#] [Int R0#] (1 [R0#] ())
-         (Cons [R0#] [Int R0#] (2 [R0#] ())
-              (Nil [R0#] [Int R0#] ())))
+copyInt [R0#] [R0#] (5 [R0#] ())
+weakeff [Read R0# + Alloc R0#] in
+weakclo [Use R0#] in
+5
+

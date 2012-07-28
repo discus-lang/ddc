@@ -1,18 +1,23 @@
 module Module
 exports {
-map :: [r1 r2 : %]. [a b : *]. [e : !]. [c : $].
-	(a -(e|c)> b) -(!0 | Use r1 + Use r2)>
-	(List r1 a)   -(Read r1 + e + Alloc r2 | Use r1 + Use r2 + c)>
-	(List r2 b);
-
+    fromInt :: [r1 r2 : %]. Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 Unit;
+    toInt :: [r1 r2 : %]. List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2;
 }
-with letrec
+with letrec {
 
-map [r1 r2 : %] [a b : *] [e : !] [c : $]
-	(f  : a -(e|c)> b) { !0 | Use r1 + Use r2 }
-	(xs : List r1 a)   { Read r1 + e + Alloc r2 | Use r1 + Use r2 + c }
-	    : List r2 b
- =  case xs of {
-      Nil -> Nil [:r2 b:] ();
-      Cons x xs' -> Cons [:r2 b:] (f x) (map [:r1 r2 a b e c:] f xs)
+fromInt [r1 r2 : %]
+    (c : Int r1) {Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2}
+    : List r2 Unit
+ = case c of {
+     0	-> Nil [:r2 Unit:] ();
+     _  -> Cons [:r2 Unit:] () (fromInt [:r1 r2:] (subInt [:r1 r1 r1:] c (1 [r1] ())))
+ };
+
+toInt [r1 r2 : %]
+    (xs : List r1 Unit) {Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2}
+    : Int r2
+ = case xs of {
+     Nil	-> 0 [r2] ();
+     Cons _ xs' -> addInt [:r2 r2 r2:] (1 [r2] ()) (toInt [:r1 r2:] xs')
  }
+}
