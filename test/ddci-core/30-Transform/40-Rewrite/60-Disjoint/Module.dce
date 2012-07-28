@@ -1,0 +1,33 @@
+module Module
+exports {
+map :: [r1 r2 : %]. [a b : *]. [e : !]. [c : $].
+	(a -(e|c)> b) -(!0 | Use r1 + Use r2)>
+	(List r1 a)   -(Read r1 + e + Alloc r2 | Use r1 + Use r2 + c)>
+	(List r2 b);
+
+compose :: [a b c : *]. [ef eg : !]. [cf cg : $].
+       (b -(ef|cf)> c)
+    -> (a -(eg|cg)> b)
+    -(!0      | cf)>
+	a
+    -(ef + eg | cf + cg)>
+	c;
+}
+with letrec
+
+map [r1 r2 : %] [a b : *] [e : !] [c : $]
+	(f  : a -(e|c)> b) { !0 | Use r1 + Use r2 }
+	(xs : List r1 a)   { Read r1 + e + Alloc r2 | Use r1 + Use r2 + c }
+	    : List r2 b
+ =  case xs of {
+      Nil -> Nil [:r2 b:] ();
+      Cons x xs' -> Cons [:r2 b:] (f x) (map [:r1 r2 a b e c:] f xs)
+ }
+
+compose [a b c : *] [ef eg : !] [cf cg : $]
+    (f : b -(ef|cf)> c) (g : a -(eg|cg)> b)
+	    { !0      | cf }
+    (x : a) { ef + eg | cf + cg }
+	    : c
+ = f (g x)
+
