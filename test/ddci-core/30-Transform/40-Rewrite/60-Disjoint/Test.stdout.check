@@ -4,6 +4,7 @@ ok, added mapMap
 ok
 ok
 
+-- should rewrite, just reading
 weakeff [Read R0# + Alloc R0#] in
 weakclo [Use R0#] in
 map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
@@ -15,4 +16,17 @@ map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
     (Cons [R0#] [Int R0#] (1 [R0#] ())
          (Cons [R0#] [Int R0#] (2 [R0#] ())
               (Nil [R0#] [Int R0#] ())))
+
+-- a write and a read from same region, no rewrite.
+letregion rMut with {wMut : Mutable rMut} in
+let mutabl : Int rMut = 5 [rMut] () in
+map [R0#] [R0#] [Int R0#] [Int R0#] [Read rMut + Alloc R0#] [Use rMut + Use R0#]
+    (\(y : Int R0#). copyInt [rMut] [R0#] mutabl)
+    (map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut] [Use rMut + Use R0#]
+         (\(z : Int R0#).
+          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl z in
+          z)
+         (Cons [R0#] [Int R0#] (1 [R0#] ())
+              (Cons [R0#] [Int R0#] (2 [R0#] ())
+                   (Nil [R0#] [Int R0#] ()))))
 
