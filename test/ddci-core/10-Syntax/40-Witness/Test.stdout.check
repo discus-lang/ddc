@@ -1,6 +1,8 @@
 -- Show the type of the mutable constructor.
 Mutable# :: [^ : %].Mutable ^0
 
+-- Show the type of the distinct constructor.
+Distinct# :: [^ ^ : %].Distinct ^1 ^0
 
 -- Mutability of some region.
 Mutable# [R0#] :: Mutable R0#

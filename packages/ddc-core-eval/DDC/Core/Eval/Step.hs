@@ -539,8 +539,10 @@ regionWitnessOfType tt
  = case tt of
         TApp (TCon (TyConWitness TwConGlobal))   r -> Just $ wGlobal   r
         TApp (TCon (TyConWitness TwConMutable))  r -> Just $ wMutable  r
-        TApp (TCon (TyConWitness TwConConst))    r -> Just $ wConst    r 
+        TApp (TCon (TyConWitness TwConConst))    r -> Just $ wConst    r
         TApp (TCon (TyConWitness TwConLazy))     r -> Just $ wLazy     r
         TApp (TCon (TyConWitness TwConManifest)) r -> Just $ wManifest r
+        TApp (TApp (TCon (TyConWitness TwConDistinct)) r1) r2
+         -> Just $ wDistinct r1 r2
         _                                          -> Nothing
 

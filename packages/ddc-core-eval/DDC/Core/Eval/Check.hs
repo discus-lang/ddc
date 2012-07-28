@@ -32,6 +32,7 @@ data CapSet
         { capsGlobal    :: Set Rgn 
         , capsConst     :: Set Rgn
         , capsMutable   :: Set Rgn
+        , capsDistinct  :: Set (Rgn,Rgn)
         , capsLazy      :: Set Rgn
         , capsManifest  :: Set Rgn }
         deriving Show
@@ -43,6 +44,7 @@ emptyCapSet
         { capsGlobal    = Set.empty
         , capsConst     = Set.empty
         , capsMutable   = Set.empty
+        , capsDistinct  = Set.empty
         , capsLazy      = Set.empty
         , capsManifest  = Set.empty }
 
@@ -60,7 +62,15 @@ mustInsertCap ww caps
         CapMutable      -> caps { capsMutable  = Set.insert r (capsMutable caps) }
         CapLazy         -> caps { capsLazy     = Set.insert r (capsLazy    caps) }
         CapManifest     -> caps { capsManifest = Set.insert r (capsManifest caps)}
-
+        _               -> error "mustInsertCap: invalid witness application"
+        
+ | WApp (WApp (WCon  (WiConBound       (UPrim (NameCap CapDistinct) _))) 
+              (WType (TCon (TyConBound (UPrim nh1                   _)))))
+        (WType (TCon (TyConBound (UPrim nh2 _)))) <- ww
+ , NameRgn r1 <- nh1
+ , NameRgn r2 <- nh2
+ = caps { capsDistinct = Set.insert (r1,r2) (capsDistinct caps) }
+ 
  | otherwise
  = error "mustInsertCap: not a capability"
 

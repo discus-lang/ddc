@@ -195,6 +195,7 @@ typeOfPrimName nn
         NameCap CapGlobal       -> Just $ tForall kRegion $ \r -> tGlobal   r
         NameCap CapConst        -> Just $ tForall kRegion $ \r -> tConst    r
         NameCap CapMutable      -> Just $ tForall kRegion $ \r -> tMutable  r
+        NameCap CapDistinct     -> Just $ tForalls [kRegion, kRegion] $ \[r1,r2] -> tDistinct r1 r2
         NameCap CapLazy         -> Just $ tForall kRegion $ \r -> tLazy     r
         NameCap CapManifest     -> Just $ tForall kRegion $ \r -> tManifest r
 

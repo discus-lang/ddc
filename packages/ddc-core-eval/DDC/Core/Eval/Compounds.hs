@@ -11,9 +11,11 @@ module DDC.Core.Eval.Compounds
           -- * Witnesses
         , wGlobal
         , wConst,    wMutable
+        , wDistinct
         , wLazy,     wManifest
         , wcGlobal
         , wcConst,   wcMutable
+        , wcDistinct
         , wcLazy,    wcManifest
         , isCapConW
 
@@ -27,6 +29,7 @@ where
 import DDC.Core.Eval.Name
 import DDC.Type.Compounds
 import DDC.Core.Exp
+import DDC.Core.Compounds (wApps)
 
 
 -- Type -----------------------------------------------------------------------
@@ -67,6 +70,9 @@ wConst r    = WApp (WCon wcConst)    (WType r)
 wMutable    :: Region Name -> Witness Name
 wMutable r  = WApp (WCon wcMutable)  (WType r)
 
+wDistinct      :: Region Name -> Region Name -> Witness Name
+wDistinct r1 r2 = wApps (WCon wcDistinct) (map WType [r1,r2])
+
 wLazy       :: Region Name -> Witness Name
 wLazy r     = WApp (WCon wcLazy)     (WType r)
 
@@ -86,6 +92,10 @@ wcConst    = WiConBound
 wcMutable  :: WiCon Name
 wcMutable  = WiConBound
            $ UPrim (NameCap CapMutable)  (tForall kRegion $ \r -> tMutable r)
+           
+wcDistinct :: WiCon Name
+wcDistinct = WiConBound
+           $ UPrim (NameCap CapDistinct) (tForalls [kRegion, kRegion] $ \[t1,t2] -> tDistinct t1 t2)         
 
 wcLazy     :: WiCon Name
 wcLazy     = WiConBound

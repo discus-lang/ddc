@@ -98,6 +98,10 @@ data Cap
         --   and prevents it from being Constant.
         | CapMutable  -- mutable  :: [r: %]. Mutable r
 
+        -- | Witness that some regions are distinct
+        --   This lets us perform aliasing based optimisations.
+        | CapDistinct -- distinct :: [r1 r2 : %]. Distinct r1 r2
+             
         -- | Witness that a region is lazy.
         --   This lets is allocate thunks into the region,
         --   and prevents it from being Manifest.
@@ -116,6 +120,7 @@ instance Pretty Cap where
         CapGlobal       -> text "Global#"
         CapConst        -> text "Const#"
         CapMutable      -> text "Mutable#"
+        CapDistinct     -> text "Distinct#"
         CapLazy         -> text "Lazy#"
         CapManifest     -> text "Manifest#"
 
@@ -234,6 +239,7 @@ readName str@(c:rest)
         | str == "Global#"      = Just $ NameCap CapGlobal
         | str == "Const#"       = Just $ NameCap CapConst
         | str == "Mutable#"     = Just $ NameCap CapMutable
+        | str == "Distinct#"    = Just $ NameCap CapDistinct
         | str == "Lazy#"        = Just $ NameCap CapLazy
         | str == "Manifest#"    = Just $ NameCap CapManifest
 

@@ -12,6 +12,13 @@ letregion r1 with {w1 : Const r1} in ()
 :$: $0
 
 
+-- Parse letregion with witness for distinctness
+letregion r1 in letregion r2 with {w1 : Distinct r1 r2} in ()
+:*: Unit
+:!: !0
+:$: $0
+
+
 -- Parse letregion with multiple witnesses.
 letregion r1 with {w1 : Const r1; w2 : Manifest r1} in ()
 :*: Unit
