@@ -37,7 +37,8 @@ module DDC.Core.Compounds
         , takeXType
 
           -- * Witnesses
-        , takeXWitness)
+        , takeXWitness
+        , wApp,  wApps)
 where
 import DDC.Type.Compounds
 import DDC.Core.Exp
@@ -253,3 +254,10 @@ takeXWitness xx
         XWitness t -> Just t
         _          -> Nothing
 
+-- | Construct a witness application
+wApp :: Witness n -> Witness n -> Witness n
+wApp = WApp
+
+-- | Construct a sequence of witness applications
+wApps :: Witness n -> [Witness n] -> Witness n
+wApps = foldl wApp

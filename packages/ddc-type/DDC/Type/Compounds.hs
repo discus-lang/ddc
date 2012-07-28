@@ -58,6 +58,7 @@ module DDC.Type.Compounds
         , tGlobal,      tDeepGlobal
         , tConst,       tDeepConst
         , tMutable,     tDeepMutable
+        , tDistinct
         , tLazy,        tHeadLazy
         , tManifest
         , tConData0,    tConData1)
@@ -429,6 +430,7 @@ tConst          = twCon1 TwConConst
 tDeepConst      = twCon1 TwConDeepConst
 tMutable        = twCon1 TwConMutable
 tDeepMutable    = twCon1 TwConDeepMutable
+tDistinct       = twCon2 TwConDistinct
 tLazy           = twCon1 TwConLazy
 tHeadLazy       = twCon1 TwConHeadLazy
 tManifest       = twCon1 TwConManifest
@@ -436,6 +438,7 @@ tManifest       = twCon1 TwConManifest
 tcCon1 tc t  = (TCon $ TyConSpec    tc) `tApp` t
 twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
 
+twCon2 tc t1 t2 = tApps (TCon $ TyConWitness tc) [t1, t2]
 
 -- | Build a nullary type constructor of the given kind.
 tConData0 :: n -> Kind n -> Type n

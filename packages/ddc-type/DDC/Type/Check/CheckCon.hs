@@ -41,19 +41,20 @@ takeSortOfKiCon kc
 kindOfTwCon :: TwCon -> Kind n
 kindOfTwCon tc
  = case tc of
-        TwConImpl       -> kWitness `kFun` kWitness `kFun` kWitness
-        TwConPure       -> kEffect  `kFun` kWitness
-        TwConEmpty      -> kClosure `kFun` kWitness
-        TwConGlobal     -> kRegion  `kFun` kWitness
-        TwConDeepGlobal -> kData    `kFun` kWitness
-        TwConConst      -> kRegion  `kFun` kWitness
-        TwConDeepConst  -> kData    `kFun` kWitness
-        TwConMutable    -> kRegion  `kFun` kWitness
-        TwConDeepMutable-> kData    `kFun` kWitness
-        TwConLazy       -> kRegion  `kFun` kWitness
-        TwConHeadLazy   -> kData    `kFun` kWitness
-        TwConManifest   -> kRegion  `kFun` kWitness
-	TwConDisjoint	-> kEffect  `kFun` kEffect `kFun` kWitness
+        TwConImpl       -> kWitness  `kFun`  kWitness `kFun` kWitness
+        TwConPure       -> kEffect   `kFun`  kWitness
+        TwConEmpty      -> kClosure  `kFun`  kWitness
+        TwConGlobal     -> kRegion   `kFun`  kWitness
+        TwConDeepGlobal -> kData     `kFun`  kWitness
+        TwConConst      -> kRegion   `kFun`  kWitness
+        TwConDeepConst  -> kData     `kFun`  kWitness
+        TwConMutable    -> kRegion   `kFun`  kWitness
+        TwConDeepMutable-> kData     `kFun`  kWitness
+        TwConDistinct   -> kRegion   `kFun`  kRegion  `kFun` kWitness        
+        TwConLazy       -> kRegion   `kFun`  kWitness
+        TwConHeadLazy   -> kData     `kFun`  kWitness
+        TwConManifest   -> kRegion   `kFun`  kWitness
+        TwConDisjoint	  -> kEffect   `kFun`  kEffect  `kFun` kWitness
 
 
 -- | Take the kind of a computation type constructor.

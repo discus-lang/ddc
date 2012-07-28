@@ -230,6 +230,9 @@ data TwCon
         -- | Mutability of material regions in some type.
         | TwConDeepMutable      -- :: * ~> @
 
+        -- | Distinctness of some two regions
+        | TwConDistinct         -- :: % ~> % ~> @
+        
         -- | Laziness of some region.
         | TwConLazy             -- :: % ~> @
 
@@ -239,8 +242,8 @@ data TwCon
         -- | Manifestness of some region (not lazy).
         | TwConManifest         -- :: % ~> @
 
-	-- | Non-interfering effects are disjoint. Used for rewrite rules.
-	| TwConDisjoint		-- :: ! ~> ! ~> @
+       	-- | Non-interfering effects are disjoint. Used for rewrite rules.
+      	| TwConDisjoint		-- :: ! ~> ! ~> @
         deriving (Eq, Show)
 
 

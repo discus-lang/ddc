@@ -65,6 +65,7 @@ readTwConBuiltin ss
         "DeepConst"     -> Just TwConDeepConst
         "Mutable"       -> Just TwConMutable
         "DeepMutable"   -> Just TwConDeepMutable
+        "Distinct"      -> Just TwConDistinct
         "Lazy"          -> Just TwConLazy
         "HeadLazy"      -> Just TwConHeadLazy
         "Manifest"      -> Just TwConManifest

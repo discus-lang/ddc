@@ -441,7 +441,7 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegion b bs) x)
 
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
-        checkWitnessBindsM xx u bs
+        checkWitnessBindsM kenv xx u bs
 
         -- Check the body expression.
         let tenv2       = Env.extends bs tenv'
@@ -956,20 +956,21 @@ mergeAnnot xx tAnnot tActual
 
 -------------------------------------------------------------------------------
 -- | Check the set of witness bindings bound in a letregion for conflicts.
-checkWitnessBindsM :: Ord n => Exp a n -> Bound n -> [Bind n] -> CheckM a n ()
-checkWitnessBindsM xx nRegion bsWits
- = mapM_ (checkWitnessBindM xx nRegion bsWits) bsWits
+checkWitnessBindsM :: (Show n, Ord n) => Env n -> Exp a n -> Bound n -> [Bind n] -> CheckM a n ()
+checkWitnessBindsM kenv xx nRegion bsWits
+ = mapM_ (checkWitnessBindM kenv xx nRegion bsWits) bsWits
 
 
 checkWitnessBindM 
-        :: Ord n 
-        => Exp a n
+        :: (Show n, Ord n)
+        => Env n
+        -> Exp a n
         -> Bound n              -- ^ Region variable bound in the letregion.
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> Bind  n              -- ^ The witness binding to check.
         -> CheckM a n ()
 
-checkWitnessBindM xx uRegion bsWit bWit
+checkWitnessBindM kenv xx uRegion bsWit bWit
  = let btsWit   
         = [(typeOfBind b, b) | b <- bsWit]
 
@@ -984,9 +985,21 @@ checkWitnessBindM xx uRegion bsWit bWit
             TCon (TyConBound u')
              | uRegion /= u'    -> throw $ ErrorLetRegionWitnessOther xx uRegion bWit
              | otherwise        -> return ()
-
+            
             -- The parser should ensure the right of a witness is a 
             -- constructor or variable.
+            _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
+            
+       checkWitnessArgOther t
+        = case t of
+            TVar u'
+             | Env.member u' kenv -> return ()
+             | otherwise          -> throw $ ErrorLetRegionWitnessFree xx u' bWit
+            
+            TCon (TyConBound u')
+             | Env.member u' kenv -> return ()
+             | otherwise          -> throw $ ErrorLetRegionWitnessFree xx u' bWit
+                        
             _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
 
    in  case typeOfBind bWit of
@@ -1012,6 +1025,10 @@ checkWitnessBindM xx uRegion bsWit bWit
          | Just bConflict <- L.lookup (tLazy t2)    btsWit
          -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
+                  
+        TApp (TApp (TCon (TyConWitness TwConDistinct)) t1) t2
+         -> do checkWitnessArgOther t1
+               checkWitnessArg t2
 
         _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
 

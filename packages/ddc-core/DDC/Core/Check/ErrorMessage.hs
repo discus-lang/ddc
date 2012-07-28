@@ -205,7 +205,14 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
                  , text "  but witness type is: "       <> ppr b2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
-
+                 
+        ErrorLetRegionWitnessFree xx x b
+         -> vcat [ text "Witness type references a free region variable."
+                 , text "      The region variable: "   <> ppr x
+                 , text "  is free in the binding: "    <> ppr b 
+                 , empty
+                 , text "with: "                        <> align (ppr xx) ]
+                 
         ErrorWithRegionNotRegion xx u k
          -> vcat [ text "Withregion handle does not have region kind."
                  , text "   Region var or ctor: "       <> ppr u

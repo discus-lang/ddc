@@ -161,6 +161,7 @@ instance Pretty TwCon where
         TwConDeepConst  -> text "DeepConst"
         TwConMutable    -> text "Mutable"
         TwConDeepMutable-> text "DeepMutable"
+        TwConDistinct   -> text "Distinct"
         TwConLazy       -> text "Lazy"
         TwConHeadLazy   -> text "HeadLazy"
         TwConManifest   -> text "Manifest"
