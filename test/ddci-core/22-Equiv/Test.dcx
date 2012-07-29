@@ -70,6 +70,18 @@
  Int r -(c1 a + c2 r | $0)> Int r);;
 
 
+-- Alpha equiv of single binder in an effect sum.
+:tequiv..
+([^  : %]. Int ^0 -(Read ^0 | $0)> Int ^0)
+([r1 : %]. Int r1 -(Read r1 | $0)> Int r1);;
+
+
+-- Alpha equiv of second binder in an effect sum.
+:tequiv..
+([r1 ^  : %]. Unit -(Read r1 + Read ^0 | $0)> Unit)
+([r1 r2 : %]. Unit -(Read r1 + Read r2 | $0)> Unit);;
+
+
 -- False: constructors are different
 :tequiv Int Unit
 
@@ -109,8 +121,8 @@
 ([c1 : % ~> !]. [r : %]. Int r -(c1 r | $0)> Int r)
 ([c2 : % ~> !]. [r : %]. Int r -(!0   | $0)> Int r);;
 
+
 -- False: Binder in different order
 :tequiv..
 ([a : *]. [b : *]. b)
 ([b : *]. [a : *]. b);;
-

@@ -74,18 +74,20 @@ equivT' stack1 stack2 t1 t2
         (TSum ts1,        TSum ts2)
          -> let ts1'      = Sum.toList ts1
                 ts2'      = Sum.toList ts2
-                equiv     = equivT' stack1 stack2
 
                 -- If all the components of the sum were in the element
                 -- arrays then they come out of Sum.toList sorted
                 -- and we can compare corresponding pairs.
-                checkFast = and $ zipWith equiv ts1' ts2'
+                checkFast = and $ zipWith (equivT' stack1 stack2) ts1' ts2'
 
                 -- If any of the components use a higher kinded type variable
                 -- like (c : % ~> !) then they won't nessesarally be sorted,
                 -- so we need to do this slower O(n^2) check.
-                checkSlow = and [ or (map (equiv t1c) ts2') | t1c <- ts1' ]
-                         && and [ or (map (equiv t2c) ts1') | t2c <- ts2' ]
+                -- Make sure to get the bind stacks the right way around here.
+                checkSlow = and [ or (map (equivT' stack1 stack2 t1c) ts2') 
+                                | t1c <- ts1' ]
+                         && and [ or (map (equivT' stack2 stack1 t2c) ts1') 
+                                | t2c <- ts2' ]
 
             in  (length ts1' == length ts2')
             &&  (checkFast || checkSlow)

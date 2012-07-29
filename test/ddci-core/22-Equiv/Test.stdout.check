@@ -44,6 +44,14 @@ True
 True
 
 
+-- Alpha equiv of single binder in an effect sum.
+True
+
+
+-- Alpha equiv of second binder in an effect sum.
+True
+
+
 -- False: constructors are different
 False
 
@@ -71,6 +79,6 @@ False
 -- False: Effect components don't match.
 False
 
+
 -- False: Binder in different order
 False
-
