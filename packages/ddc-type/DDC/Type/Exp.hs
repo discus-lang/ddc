@@ -243,7 +243,7 @@ data TwCon
         | TwConManifest         -- :: % ~> @
 
        	-- | Non-interfering effects are disjoint. Used for rewrite rules.
-      	| TwConDisjoint		-- :: ! ~> ! ~> @
+      	| TwConDisjoint		      -- :: ! ~> ! ~> @
         deriving (Eq, Show)
 
 

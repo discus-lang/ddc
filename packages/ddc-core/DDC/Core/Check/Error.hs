@@ -185,11 +185,10 @@ data Error a n
         , errorBoundRegion      :: Bound n
         , errorBindWitness      :: Bind  n }
 
-        -- | A letregion-expression where the witness binding references a
+        -- | A letregion-expression where the witness binding references some
         --   free region variable that is not the one being introduced.
         | ErrorLetRegionWitnessFree
         { errorChecking         :: Exp a n
-        , errorRegion           :: Bound n
         , errorBindWitness      :: Bind n }
         
         -- | A withregion-expression where the handle does not have region kind.

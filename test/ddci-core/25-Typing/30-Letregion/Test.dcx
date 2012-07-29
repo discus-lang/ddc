@@ -6,12 +6,6 @@
 :check letregion r1 with { w1 : Const r1 } in ()
 
 
--- Parse letregion with witness for distinctness
-:check..
-letregion r1                             in
-letregion r2 with { w1: Distinct r1 r2 } in ();;
-
-
 -- Parse letregion with multiple witnesses.
 :check letregion r1 with { w1 : Const r1; w2 : Manifest r1 } in ()
 
@@ -73,4 +67,17 @@ let z  = 5 [r1] () in
 /\(c : % ~> @).
 letregion r1 with { w : c r1 } in
 ();;
+
+
+-- Parse letregion with witness for distinctness
+:check..
+letregion r1                             in
+letregion r2 with { w1: Distinct r1 r2 } in ();;
+
+
+-- Error: distinct witness must have as one argument the region introduced with
+-- this letregion, and a bound region variable in the environment for the other.
+:check..
+letregion r1                             in
+letregion r2 with { w1: Distinct r2 r2 } in ();;
 

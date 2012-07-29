@@ -990,18 +990,12 @@ checkWitnessBindM kenv xx uRegion bsWit bWit
             -- constructor or variable.
             _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
             
-       checkWitnessArgOther t
+       isBound t
         = case t of
-            TVar u'
-             | Env.member u' kenv -> return ()
-             | otherwise          -> throw $ ErrorLetRegionWitnessFree xx u' bWit
-            
-            TCon (TyConBound u')
-             | Env.member u' kenv -> return ()
-             | otherwise          -> throw $ ErrorLetRegionWitnessFree xx u' bWit
-                        
-            _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
-
+            TVar u'              | Env.member u' kenv -> True
+            TCon (TyConBound u') | Env.member u' kenv -> True
+            _                                         -> False 
+       
    in  case typeOfBind bWit of
         TApp (TCon (TyConWitness TwConGlobal))  t2
          -> checkWitnessArg t2
@@ -1027,9 +1021,10 @@ checkWitnessBindM kenv xx uRegion bsWit bWit
          | otherwise    -> checkWitnessArg t2
                   
         TApp (TApp (TCon (TyConWitness TwConDistinct)) t1) t2
-         -> do checkWitnessArgOther t1
-               checkWitnessArg t2
-
+         | isBound t1 -> checkWitnessArg t2
+         | isBound t2 -> checkWitnessArg t1
+         | otherwise  -> throw $ ErrorLetRegionWitnessFree xx bWit
+         
         _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
 
 

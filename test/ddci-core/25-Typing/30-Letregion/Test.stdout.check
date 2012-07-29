@@ -12,13 +12,6 @@ letregion r1 with {w1 : Const r1} in ()
 :$: $0
 
 
--- Parse letregion with witness for distinctness
-letregion r1 in letregion r2 with {w1 : Distinct r1 r2} in ()
-:*: Unit
-:!: !0
-:$: $0
-
-
 -- Parse letregion with multiple witnesses.
 letregion r1 with {w1 : Const r1; w2 : Manifest r1} in ()
 :*: Unit
@@ -121,5 +114,23 @@ When checking expression.
     cannot be created with a letregion
   
   with: letregion r1 with {w : c r1} in
+        ()
+
+
+-- Parse letregion with witness for distinctness
+letregion r1 in letregion r2 with {w1 : Distinct r1 r2} in ()
+:*: Unit
+:!: !0
+:$: $0
+
+
+-- Error: distinct witness must have as one argument the region introduced with
+-- this letregion, and a bound region variable in the environment for the other.
+When checking expression.
+  Witness type references a free region variable.
+    the binding: w1 : Distinct r2 r2
+    contains free region variables.
+  
+  with: letregion r2 with {w1 : Distinct r2 r2} in
         ()
 

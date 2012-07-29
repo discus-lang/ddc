@@ -206,10 +206,10 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
                  
-        ErrorLetRegionWitnessFree xx x b
+        ErrorLetRegionWitnessFree xx b
          -> vcat [ text "Witness type references a free region variable."
-                 , text "      The region variable: "   <> ppr x
-                 , text "  is free in the binding: "    <> ppr b 
+                 , text "  the binding: "               <> ppr b 
+                 , text "  contains free region variables."
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
                  
