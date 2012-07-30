@@ -76,8 +76,10 @@ instance Namify Type where
  namify tnam xnam tt
   = let down = namify tnam xnam
     in case tt of
-        TVar u          -> return $ TVar (rewrite tnam u)
-        TCon{}          -> return tt
+        TVar u          -> liftM TVar (rewriteT tnam u)     
+
+        TCon{}          
+         ->     return tt
 
         TForall b t
          -> do  (tnam', b')     <- pushT tnam b
@@ -108,7 +110,7 @@ instance Namify Witness where
  namify tnam xnam ww
   = let down = namify tnam xnam
     in case ww of
-        WVar u          -> return $ WVar (rewrite xnam u)
+        WVar u          -> liftM  WVar  (rewriteX tnam xnam u)
         WCon{}          -> return ww
         WApp  w1 w2     -> liftM2 WApp  (down w1) (down w2)
         WJoin w1 w2     -> liftM2 WJoin (down w1) (down w2)
@@ -119,7 +121,7 @@ instance Namify (Exp a) where
  namify tnam xnam xx
   = let down = namify tnam xnam
     in case xx of
-        XVar a u        -> return $ XVar a (rewrite xnam u)
+        XVar a u        -> liftM2 XVar (return a) (rewriteX tnam xnam u)
         XCon{}          -> return xx
 
         XLAM a b x
@@ -156,7 +158,7 @@ instance Namify (Exp a) where
                 return $ XLet a (LLetRegion b' bs') x2'
 
         XLet a (LWithRegion u) x2
-         -> do  let u'          =  rewrite xnam u
+         -> do  u'              <- rewriteX tnam xnam u
                 x2'             <- down x2
                 return  $ XLet a (LWithRegion u') x2'
 
@@ -186,19 +188,40 @@ instance Namify Cast where
         CastForget w            -> liftM CastForget (down w)
 
 
--- | Rewrite anonymous binders to use the 
-rewrite  :: Show n
+-- | Rewrite level-1 anonymous binders.
+rewriteT :: Show n
         => Namifier s n
         -> Bound n
-        -> Bound n
-rewrite nam u
+        -> State s (Bound n)
+
+rewriteT tnam u
  = case u of
         UIx i t
-         -> case lookup i (zip [0..] (namifierStack nam)) of
-                Just (BName n _) -> UName n t
-                _                -> u
+         -> case lookup i (zip [0..] (namifierStack tnam)) of
+                Just (BName n _) -> return $ UName n t
+                _                -> return u
 
-        _       -> u
+        _       -> return u
+
+
+-- | Rewrite level-0 anonymous binders.
+rewriteX :: (Show n, Ord n)
+        => Namifier s n
+        -> Namifier s n
+        -> Bound n
+        -> State s (Bound n)
+
+rewriteX tnam xnam u
+ = case u of
+        UIx i t
+         -> case lookup i (zip [0..] (namifierStack xnam)) of
+                Just (BName n _) 
+                 -> do  t'      <- namify tnam xnam t
+                        return  $ UName n t'
+
+                _                -> return u
+
+        _       -> return u
 
 
 -- Push -----------------------------------------------------------------------

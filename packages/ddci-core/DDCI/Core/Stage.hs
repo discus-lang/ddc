@@ -27,6 +27,7 @@ import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Transform.Namify
+import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Module
 import DDC.Core.Exp
 import Control.Monad
@@ -101,7 +102,6 @@ stageLiteOpt state source pipes
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
         <> normalizeLite)
 
         -- TODO: Inlining isn't preserving type annots, 
@@ -113,7 +113,6 @@ stageLiteOpt state source pipes
          = S.anormalize
                 (makeNamifier Lite.freshT)      
                 (makeNamifier Lite.freshX)
-
 
 -------------------------------------------------------------------------------
 -- | Optimise Salt.
@@ -160,9 +159,9 @@ stageLiteToSalt
 
 stageLiteToSalt state source builder pipesSalt
  = PipeCoreSimplify         0 normalizeLite
-     [ PipeCoreReCheck          fragmentLite
-       [ PipeCoreOutput         (dump state source "dump.lite-normalized.dcl")
-       , PipeCoreAsLite 
+     [ PipeCoreOutput           (dump state source "dump.lite-normalized.dcl")
+     , PipeCoreReCheck          fragmentLite
+       [ PipeCoreAsLite 
          [ PipeLiteToSalt       (buildSpec builder) runConfig
            [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
            , PipeCoreSimplify 0 normalizeSalt
@@ -264,14 +263,14 @@ stageCompileLLVM state _source builder filePath shouldLinkExe
 -- TODO: Rubbish function to load inliner templates from some modules.
 --       It just does a linear search, which won't be good enough in the long-term.
 lookupTemplateFromModules 
-        :: Eq n
+        :: (Eq n, Ord n)
         => [Module a n] -> n -> Maybe (Exp a n)
 
 lookupTemplateFromModules [] _  = Nothing
 lookupTemplateFromModules (m:ms) n
  = case lookupTemplateFromModule m n of
         Nothing -> lookupTemplateFromModules ms n
-        Just x  -> Just x
+        Just x  -> Just (anonymizeX x)
 
 
 lookupTemplateFromModule 

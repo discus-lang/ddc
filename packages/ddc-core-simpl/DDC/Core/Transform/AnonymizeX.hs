@@ -35,12 +35,21 @@ instance AnonymizeX (Module a) where
   = let x'   = anonymizeWithX kstack tstack (moduleBody mm)
     in  mm { moduleBody = x' }
 
+
 instance AnonymizeX (Exp a) where
  anonymizeWithX kstack tstack xx
   = let down = anonymizeWithX kstack tstack
     in case xx of
-        XVar a u        -> XVar a (down u)
-        XCon a u        -> XCon a (down u)
+        XVar a u@(UName _ _)        
+         |  Just ix      <- findIndex (boundMatchesBind u) tstack
+         -> XVar a (UIx ix (tBot kData))
+
+        XVar a u
+         -> XVar a (replaceTypeOfBound (tBot kData) u)
+
+        XCon a u        
+         -> XCon a (replaceTypeOfBound (tBot kData) u)
+
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
         XLAM a b x
@@ -94,7 +103,13 @@ instance AnonymizeX Witness where
  anonymizeWithX kstack tstack ww
   = let down = anonymizeWithX kstack tstack 
     in case ww of
-        WVar  u         -> WVar  (down u)
+        WVar u@(UName _ _)
+         |  Just ix      <- findIndex (boundMatchesBind u) tstack
+         -> WVar (UIx ix (tBot kWitness))
+
+        WVar u
+         -> WVar (replaceTypeOfBound (tBot kData) u)
+
         WCon  c         -> WCon  c
         WApp  w1 w2     -> WApp  (down w1) (down w2)
         WJoin w1 w2     -> WJoin (down w1) (down w2)
@@ -105,17 +120,6 @@ instance AnonymizeX Bind where
  anonymizeWithX kstack _tstack bb
   = let t'      = anonymizeWithT kstack $ typeOfBind bb
     in  replaceTypeOfBind t' bb 
-
-
-instance AnonymizeX Bound where 
- anonymizeWithX kstack tstack bb
-  = case bb of
-        UName _ t
-         | Just ix      <- findIndex (boundMatchesBind bb) tstack
-         -> UIx ix (anonymizeWithT kstack t)
-         
-        _ -> bb
-
 
 -- Push ----------------------------------------------------------------------
 -- Push a binding occurrence of a type variable on the stack, 

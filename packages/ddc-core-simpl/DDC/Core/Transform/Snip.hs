@@ -121,8 +121,9 @@ snipX ar x args
          = let  e'      = down [] e
                 alts'   = [AAlt pat (down (aritiesOfPat pat) ae) | AAlt pat ae <- alts]
 
-           in   XLet a  (LLet LetStrict (BAnon (T.tBot T.kData)) (L.liftX 1 e'))
-                        (XCase a (XVar a $ UIx 0 (T.tBot T.kData)) alts')
+           in   XLet a  (LLet LetStrict (BAnon (T.tBot T.kData)) e')
+                        (XCase a (XVar a $ UIx 0 (T.tBot T.kData)) 
+                                (map (L.liftX 1) alts'))
 
         -- cast
         go (XCast a c e) 
