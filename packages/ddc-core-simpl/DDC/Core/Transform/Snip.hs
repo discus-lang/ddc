@@ -41,93 +41,88 @@ snipX
         -> [(Exp a n,a)]-- ^ Arguments being applied to current expression.
         -> Exp a n
 
--- For applications, remember the argument that the function is being 
--- applied to, and decend into the funciton part.
-snipX ar (XApp a lhs rhs) args
- = let  -- Normalise the argument and add to the argument list.
-        args' = (snipX ar rhs [], a) : args
+snipX arities x args
+        -- For applications, remember the argument that the function is being 
+        --   applied to, and decend into the funciton part.
+        --   This unzips application nodes as we decend into the tree.
+        | XApp a fun arg        <- x
+        = snipX arities fun $ (snipX arities arg [], a) : args
 
-        -- Decent into the function.
-   in   snipX ar lhs args'
+        -- Some non-application node with no arguments.
+        | null args
+        = enterX arities x
 
--- Non-applications.
--- If this expression is being applied to arguments then split it out into
--- its own binding, otherwise just decend into it.
-snipX ar x args
- =  let x' = go x 
-    in case args of
-        -- if there are no args, we're done
-        [] -> x'
+        -- Some non-application none being applied to arguments.
+        | otherwise
+        = makeLets arities (enterX arities x) args
 
-        -- there are arguments. we must apply them.
-        _  -> makeLets ar x' args
+-- Enter into a non-application.
+enterX arities x
+ = let  down ars e 
+         = snipX (extendsArities arities ars) e []
 
- where
-        -- helper for descent
-        down ars e 
-         = snipX (extendsArities ar ars) e []
-
+   in case x of
         -- The snipX function shouldn't have called us with an XApp.
-        go XApp{}           
-         = error "DDC.Core.Transform.ANormal.anormal: unexpected XApp"
+        XApp{}           
+         -> error "DDC.Core.Transform.ANormal.anormal: unexpected XApp"
 
         -- leafy constructors
-        go XVar{}           = x
-        go XCon{}           = x
-        go XType{}          = x
-        go XWitness{}       = x
+        XVar{}           -> x
+        XCon{}           -> x
+        XType{}          -> x
+        XWitness{}       -> x
 
         -- lambdas
-        go (XLAM a b e) 
-         = XLAM a b (down [(b,0)] e)
+        XLAM a b e
+         -> XLAM a b (down [(b,0)] e)
 
-        go (XLam a b e) 
-         = XLam a b (down [(b,0)] e)
+        XLam a b e
+         -> XLam a b (down [(b,0)] e)
 
         -- non-recursive let
-        go (XLet a (LLet m b le) re) 
-         = let le' = down [] le 
-               re' = down [(b, arityOfExp le')] re 
-           in  XLet a (LLet m b le') re'
+        XLet a (LLet m b le) re
+         -> let le' = down [] le 
+                re' = down [(b, arityOfExp' le')] re 
+            in  XLet a (LLet m b le') re'
 
         -- recursive let
-        go (XLet a (LRec lets) re) 
-         = let  bs      = map fst lets 
+        XLet a (LRec lets) re
+         -> let bs      = map fst lets 
                 es      = map snd lets 
-                ars     = zip bs (map arityOfExp es) 
+                ars     = zip bs (map arityOfExp' es) 
                 es'     = map (down ars) es 
                 re'     = down ars re
-           in   XLet a (LRec $ zip bs es') re' 
+            in  XLet a (LRec $ zip bs es') re' 
 
         -- letregion, just make sure we record bindings with dummy val.
-        go (XLet a (LLetRegion b bs) re) 
-         = let ars = zip bs (repeat 0) 
-           in  XLet a (LLetRegion b bs) (down ars re)
+        XLet a (LLetRegion b bs) re
+         -> let ars = zip bs (repeat 0) 
+            in  XLet a (LLetRegion b bs) (down ars re)
 
         -- withregion
-        go (XLet a (LWithRegion b) re) 
-         = XLet a (LWithRegion b) (down [] re)
+        XLet a (LWithRegion b) re
+         -> XLet a (LWithRegion b) (down [] re)
 
         -- case
         -- Split out non-atomic discriminants into their own bindings.
-        go (XCase a e alts) 
+        XCase a e alts
          | isNormal e
-         = let  e'      = down [] e 
-                alts'   = map (\(AAlt pat ae) 
+         -> let  e'      = down [] e 
+                 alts'   = map (\(AAlt pat ae) 
                               -> AAlt pat (down (aritiesOfPat pat) ae)) alts 
-           in   XCase a e' alts'
+            in   XCase a e' alts'
 
          | otherwise
-         = let  e'      = down [] e
+         -> let e'      = down [] e
                 alts'   = [AAlt pat (down (aritiesOfPat pat) ae) | AAlt pat ae <- alts]
 
-           in   XLet a  (LLet LetStrict (BAnon (T.tBot T.kData)) e')
+            in   XLet a  (LLet LetStrict (BAnon (T.tBot T.kData)) e')
                         (XCase a (XVar a $ UIx 0 (T.tBot T.kData)) 
                                 (map (L.liftX 1) alts'))
 
         -- cast
-        go (XCast a c e) 
-         = XCast a c (down [] e)
+        XCast a c e
+         -> XCast a c (down [] e)
 
 
 -- | Create lets for any non-trivial arguments
@@ -138,10 +133,17 @@ makeLets
         -> [(Exp a n,a)]   -- ^ arguments being applied to current expression
         -> Exp a n
 makeLets _  f0 [] = f0
-makeLets ar f0 args@((_,annot):_) 
+makeLets arities f0 args@((_,annot):_) 
  = go 0 f0Arity ((f0,annot):args) []
  where
-        Just f0Arity    = findArity f0
+        f0Arity    
+         = case f0 of
+                XVar _ b
+                 | Just arity <- getArity arities b
+                 -> max arity 1
+
+                _ -> max (arityOfExp' f0) 1
+
 
         tBot = T.tBot T.kData
 
@@ -151,10 +153,10 @@ makeLets ar f0 args@((_,annot):_)
 
         -- f is fully applied and we have arguments left to add:
         --	create let for intermediate result
-        go i arf ((x,a):xs) acc 
+        go i arf ((x, a) : xs) acc 
          |  length acc > arf
          =  XLet a (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
-                (go i 1 ((x,a):xs) [(XVar a $ UIx 0 tBot,a)])
+                   (go i 1 ((x, a) : xs) [(XVar a $ UIx 0 tBot, a)])
 
         -- application to variable, don't bother binding
         go i arf ((x,a):xs) acc 
@@ -187,12 +189,6 @@ makeLets ar f0 args@((_,annot):_)
         mkApps l i ((_,a):xs)
          = XApp a (mkApps l (i+1) xs) (XVar a $ UIx i tBot)
 
-        findArity (XVar _ b) 
-         | Just arity   <- getArity ar b
-         = Just (max arity 1)
-
-        findArity x
-         = Just (max (arityOfExp x) 1)
 
 
 -- | Check if an expression needs a binding, or if it's simple enough to be
@@ -210,3 +206,9 @@ isNormal xx
         XCast _ _ x     -> isNormal x
         _               -> False
 
+
+arityOfExp' :: Ord n => Exp a n -> Int
+arityOfExp' xx
+ = case arityOfExp xx of
+        Nothing -> 0 -- error $ "no arity"
+        Just a  -> a

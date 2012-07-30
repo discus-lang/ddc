@@ -40,6 +40,13 @@ instance AnonymizeX (Exp a) where
  anonymizeWithX kstack tstack xx
   = let down = anonymizeWithX kstack tstack
     in case xx of
+        -- The types on prims and cons are guaranteed to be closed,
+        -- so there is no need to erase them.
+        XVar _ UPrim{}  -> xx
+        XCon{}          -> xx      
+
+        -- Erase types on variables because they might
+        -- have free variables.
         XVar a u@(UName _ _)        
          |  Just ix      <- findIndex (boundMatchesBind u) tstack
          -> XVar a (UIx ix (tBot kData))
@@ -47,8 +54,6 @@ instance AnonymizeX (Exp a) where
         XVar a u
          -> XVar a (replaceTypeOfBound (tBot kData) u)
 
-        XCon a u        
-         -> XCon a (replaceTypeOfBound (tBot kData) u)
 
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 

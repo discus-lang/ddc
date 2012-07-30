@@ -17,7 +17,10 @@ where
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Type.Predicates
 import DDC.Type.Compounds
+import Control.Monad
+import Data.Maybe
 import qualified Data.Map       as Map
 
 
@@ -38,7 +41,8 @@ extendsArities arity exts = foldl go arity exts
         go (named, anon) (BName n _t, a) = (Map.insert n a named, anon)
 
 
--- | Look up a binder's arity.
+-- | Look up a binder's arity from the arity map
+--   or determine it from its type in the case of primops.
 getArity :: Ord n => Arities n -> Bound n -> Maybe Int
 getArity (named, anon) u
  = case u of
@@ -53,17 +57,20 @@ getArity (named, anon) u
 
         -- Get a primitive's arity from its type.
         -- The arities of primitives always match their types, so this is ok.
-        UPrim _ t       -> Just $ arityFromType t
+        UPrim _ t       -> arityFromType t
 
 
 -- | Get the arities of a `Lets`
-arityOfLets :: Ord n => Lets a n -> [(Bind n, Int)]
+arityOfLets :: Ord n => Lets a n -> Maybe [(Bind n, Int)]
 arityOfLets ll
- = case ll of
-        LLet _ b x      -> [(b, arityOfExp x)]
-        LRec bxs        -> [(b, arityOfExp x) | (b, x) <- bxs ]
-        _               -> []
-
+ = let get (b, x)
+        = case arityOfExp x of
+                Nothing         -> Nothing
+                Just a          -> Just (b, a)
+   in case ll of
+        LLet _ b x      -> sequence $ map get [(b, x)]
+        LRec bxs        -> sequence $ map get bxs
+        _               -> Just []
 
 
 -- Slurp ----------------------------------------------------------------------
@@ -71,10 +78,16 @@ arityOfLets ll
 aritiesOfModule :: Ord n => Module a n -> Arities n
 aritiesOfModule mm
   = let (lts, _)        = splitXLets $ moduleBody mm
-        aritiesLets     = concatMap arityOfLets  lts
 
-        aritiesImports  = [ (BName n t, arityFromType t)        
-                          | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
+        aritiesLets     
+         = concat $ catMaybes $ map arityOfLets  lts
+
+        aritiesImports  
+         = catMaybes
+         $ [ case arityFromType t of
+                Just a  -> Just (BName n t, a)
+                Nothing -> Nothing
+           | (n, (_, t)) <- Map.toList $ moduleImportTypes mm ]
 
     in  emptyArities
         `extendsArities` aritiesImports
@@ -83,31 +96,35 @@ aritiesOfModule mm
 
 -- | Get the arity of an expression. 
 --   Count lambdas, use type for primitives.
-arityOfExp :: Ord n => Exp a n -> Int
+arityOfExp :: Ord n => Exp a n -> Maybe Int
 arityOfExp xx
  = case xx of
         -- Counting all binders, because they all correspond to XApps.
-        XLam _ _ e              -> 1 + arityOfExp e
-        XLAM _ _ e              -> 1 + arityOfExp e
+        XLam _ _ e              -> liftM (+ 1) $ arityOfExp e
+        XLAM _ _ e              -> liftM (+ 1) $ arityOfExp e
 
         -- Find primitive's constructor's arities from type,
         -- we might need to do this for user defined constructors too.
         XCon _ (UPrim _ t)      -> arityFromType t
 
         -- Anything else we'll need to apply one at a time
-        _                       -> 0
+        _                       -> Just 0
 
 
 -- | Determine the arity of an expression by looking at its type.
 --   Count all the function arrows, and foralls.
-arityFromType :: Ord n => Type n -> Int
+arityFromType :: Ord n => Type n -> Maybe Int
 arityFromType tt
- = case tt of
-        TForall _ t             
-          -> 1 + arityFromType t
+        | TForall _ t   <- tt
+        = case arityFromType t of
+                Nothing -> Nothing
+                Just a  -> Just (1 + a)
 
-        t -> let (args, _) = takeTFunArgResult t
-             in  length args
+        | isBot tt
+        = Nothing
+
+        | (args, _)     <- takeTFunArgResult tt
+        = Just (length args)
 
 
 -- | Retrieve binders from case pattern, so we can extend the arity context.
