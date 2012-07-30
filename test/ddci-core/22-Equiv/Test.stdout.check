@@ -52,6 +52,10 @@ True
 True
 
 
+-- Alpha equiv with multiple anonymous binders.
+True
+
+
 -- False: constructors are different
 False
 

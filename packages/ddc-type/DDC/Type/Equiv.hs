@@ -9,9 +9,8 @@ import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import Data.Maybe
 import qualified DDC.Type.Sum   as Sum
-
-import qualified Data.Map as Map
-import qualified Data.Set as Set
+import qualified Data.Map       as Map
+import qualified Data.Set       as Set
 
 
 -- | Check equivalence of types.
@@ -25,12 +24,12 @@ import qualified Data.Set as Set
 --     bound variables match the binders. If this is not the case then you get
 --     an indeterminate result.
 --
-equivT  :: (Ord n) => Type n -> Type n -> Bool
+equivT  :: Ord n => Type n -> Type n -> Bool
 equivT t1 t2
         = equivT' [] [] t1 t2
 
 
-equivT' :: (Ord n)
+equivT' :: Ord n
         => [Bind n]
         -> [Bind n]
         -> Type n   -> Type n
@@ -53,6 +52,9 @@ equivT' stack1 stack2 t1 t2
          , Just (ix2, t2a)   <- getBindType stack2 u2
          , ix1 == ix2
          -> equivT' stack1 stack2 t1a t2a
+
+         | otherwise
+         -> False
 
         -- Constructor names must be equal.
         (TCon tc1,        TCon tc2)
@@ -104,7 +106,7 @@ type Subst n = Map.Map n (Type n)
 -- Eg given template "a -> b" and target "Int -> Float", returns substitution:
 --	{ a |-> Int, b |-> Float }
 --
-matchT  :: (Ord n)
+matchT  :: Ord n
 	=> VarSet n	-- ^ only attempt to match these names
 	-> Subst n	-- ^ already matched (or @Map.empty@)
 	-> Type n	-- ^ template
@@ -114,7 +116,7 @@ matchT vs subst t1 t2
         = matchT' [] [] t1 t2 vs subst
 
 
-matchT' :: (Ord n)
+matchT' :: Ord n
         => [Bind n]
         -> [Bind n]
         -> Type n   -> Type n
@@ -241,26 +243,24 @@ crushSomeT tt
 --   The binder stack contains the binders of all the `TForall`s we've
 --   entered under so far.
 getBindType :: Eq n => [Bind n] -> Bound n -> Maybe (Int, Type n)
-getBindType bs' u
- = go 0 bs'
- where  go n (BName n1 t : bs)
+getBindType bs' u'
+ = go 0 u' bs'
+ where  go n u (BName n1 t : bs)
          | UName n2 _   <- u
          , n1 == n2     = Just (n, t)
-         | otherwise    = go (n + 1) bs
 
+         | otherwise    = go (n + 1) u bs
 
-        go n (BAnon t   : bs)
-         | UIx i _      <- u
-         , i == 0       = Just (n, t)
+        go n (UIx i t1) (BAnon t   : bs)
+         | i < 0        = Nothing
+         | i == 0       = Just (n, t)
+         | otherwise    = go (n + 1) (UIx (i - 1) t1) bs
 
-         | UIx i _      <- u
-         , i < 0        = Nothing
+        go n u          (BAnon _   : bs)
+         | otherwise    = go (n + 1) u bs
 
-         | otherwise    = go (n + 1) bs
+        go n u (BNone _   : bs)
+         = go (n + 1) u bs
 
-
-        go n (BNone _   : bs)
-         = go (n + 1) bs
-
-        go _ []         = Nothing
+        go _ _ []       = Nothing
 

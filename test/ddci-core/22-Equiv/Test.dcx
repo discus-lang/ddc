@@ -82,6 +82,12 @@
 ([r1 r2 : %]. Unit -(Read r1 + Read r2 | $0)> Unit);;
 
 
+-- Alpha equiv with multiple anonymous binders.
+:tequiv..
+([r1 : %]. [a : *]. List r1 Unit)
+([^  : %]. [^ : *]. List ^1 Unit);;
+
+
 -- False: constructors are different
 :tequiv Int Unit
 
