@@ -61,3 +61,39 @@ map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Alloc R0#) (Use R0#):]
 		(Nil [:R0# (Int R0#):] ()))))
 ;;
 
+-- a write and a read from different regions, but lambda-bound - don't rewrite
+:trans..
+/\(rMut : %). \(wMut : Mutable rMut). \(dummy : Int R0#).
+let mutabl = 5 [rMut] () in
+
+map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Alloc R0#) (Use R0#):]
+    (\(y : Int R0#). addInt [:R0# R0# R0#:] y (1 [R0#] ()))
+
+    (map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Write rMut) (Use R0# + Use rMut):]
+	(\(z : Int R0#).
+	    let _ = updateInt [:rMut R0#:] <wMut> mutabl z
+	    in	    z
+	)
+	(Cons [:R0# (Int R0#):] (1 [R0#] ())
+	    (Cons [:R0# (Int R0#):] (2 [R0#] ())
+		(Nil [:R0# (Int R0#):] ()))))
+;;
+
+-- lambda-bound different regions, but with a Distinctness witness. do rewrite.
+:trans..
+/\(rMut : %). \(wMut : Mutable rMut). \(wDistinct : Distinct R0# rMut). \(dummy : Int R0#).
+let mutabl = 5 [rMut] () in
+
+map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Alloc R0#) (Use R0#):]
+    (\(y : Int R0#). addInt [:R0# R0# R0#:] y (1 [R0#] ()))
+
+    (map [:R0# R0# (Int R0#) (Int R0#) (Read R0# + Write rMut) (Use R0# + Use rMut):]
+	(\(z : Int R0#).
+	    let _ = updateInt [:rMut R0#:] <wMut> mutabl z
+	    in	    z
+	)
+	(Cons [:R0# (Int R0#):] (1 [R0#] ())
+	    (Cons [:R0# (Int R0#):] (2 [R0#] ())
+		(Nil [:R0# (Int R0#):] ()))))
+;;
+

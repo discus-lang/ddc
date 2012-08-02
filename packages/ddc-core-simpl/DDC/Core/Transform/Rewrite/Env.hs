@@ -26,6 +26,7 @@ data RewriteEnv n = RewriteEnv
 	-- ^ names of letregion-bound regions:
 	-- this is interesting because they must be distinct.
     }
+    deriving (Show,Eq)
 
 -- | Create an empty environment
 empty

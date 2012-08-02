@@ -7,7 +7,7 @@ import DDC.Core.Exp
 import qualified DDC.Core.Transform.Rewrite.Env	as RE
 
 import qualified DDC.Type.Compounds		as T
---import qualified DDC.Type.Exp			as T
+import qualified DDC.Type.Exp			as T
 import qualified DDC.Type.Sum			as TS
 import qualified DDC.Type.Transform.Crush	as TC
 
@@ -92,6 +92,10 @@ areDistinct
     -> Bound n -> Bound n
     -> Bool
 areDistinct env p q
+ -- Check witness map for "Distinct p q" and vice versa
+ | witDistinct
+ = True
+
  -- If they are the same, they can't possibly be different
  | p == q
  = False
@@ -102,11 +106,22 @@ areDistinct env p q
  | concrete p && concrete q
  = True
  -- Otherwise... we don't really know.
- -- TODO Check witness map for "Distinct p q" then give up
  | otherwise
  = False
  where
     -- | Check if region is 'concrete' - either global (R0#) or letregion
     concrete (UPrim _ _) = True
     concrete r = RE.containsRegion r env
+
+    witDistinct
+      = RE.containsWitness (wit p q) env ||
+	RE.containsWitness (wit q p) env
+
+    wit p' q'
+      = T.TCon (T.TyConWitness T.TwConDistinct) `T.TApp` rgn p' `T.TApp` rgn q'
+
+    rgn b@(UPrim _ _)
+      = T.TCon (T.TyConBound b)
+    rgn b
+      = T.TVar b
 
