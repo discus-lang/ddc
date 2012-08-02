@@ -130,6 +130,6 @@ isAlgDataType tt
 -- | Check whether type is a witness constructor
 isWitnessType :: Eq n => Type n -> Bool
 isWitnessType tt
- = case tt of
-	TApp (TCon (TyConWitness _)) _ -> True
-	_			   -> False
+ = case takeTyConApps tt of
+	Just (TyConWitness _, _) -> True
+	_			 -> False
