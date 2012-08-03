@@ -67,7 +67,7 @@ instance Pretty (AnTEC a n) where
 --   The returned expression has types attached to all variable occurrences, 
 --   so you can call `typeOfExp` on any open subterm.
 checkExp 
-        :: (Ord n, Pretty n, Show n)
+        :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Static config.
         -> Env n                -- ^ Kind environment.
         -> Env n                -- ^ Type environment.
@@ -970,7 +970,7 @@ checkWitnessBindM kenv xx uRegion bsWit bWit
 
 -------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
-checkTypeM :: (Ord n, Pretty n) 
+checkTypeM :: (Ord n, Show n, Pretty n) 
            => Config n 
            -> Env n 
            -> Type n 
@@ -988,7 +988,7 @@ checkTypeM config kenv tt
 --   If the annotation is Bot then we just replace the annotation,
 --   otherwise it must match that for the right of the binding.
 checkLetBindOfTypeM 
-        :: (Eq n, Ord n, Pretty n) 
+        :: (Eq n, Ord n, Show n, Pretty n) 
         => Exp a n 
         -> Config n             -- Data type definitions.
         -> Env n                -- Kind environment. 

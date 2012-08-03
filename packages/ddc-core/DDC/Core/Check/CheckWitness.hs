@@ -53,7 +53,7 @@ data Config n
 --   so you can call `typeOfWitness` on any open subterm.
 --
 checkWitness
-        :: (Ord n, Pretty n)
+        :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Static config.
         -> Env n                -- ^ Kind Environment.
         -> Env n                -- ^ Type Environment.
@@ -71,7 +71,7 @@ checkWitness config kenv tenv xx
 --   This attachment is performed by `checkWitness` above.
 --
 typeOfWitness 
-        :: (Ord n, Pretty n) 
+        :: (Ord n, Show n, Pretty n) 
         => Config n
         -> Witness n 
         -> Either (Error a n) (Type n)
@@ -84,7 +84,7 @@ typeOfWitness config ww
 ------------------------------------------------------------------------------
 -- | Like `checkWitness` but using the `CheckM` monad to manage errors.
 checkWitnessM 
-        :: (Ord n, Pretty n)
+        :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Data type definitions.
         -> Env n                -- ^ Kind environment.
         -> Env n                -- ^ Type environment.
@@ -167,7 +167,7 @@ typeOfWbCon wb
 -- checkType ------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
 checkTypeM 
-        :: (Ord n, Pretty n) 
+        :: (Ord n, Show n, Pretty n) 
         => Config n 
         -> Env n 
         -> Type n 

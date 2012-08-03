@@ -84,7 +84,7 @@ checkModuleM config kenv tenv mm@ModuleCore{}
 
 -------------------------------------------------------------------------------
 -- | Check a type in the exp checking monad.
-checkTypeM :: (Ord n, Pretty n) 
+checkTypeM :: (Ord n, Show n, Pretty n) 
            => Config n 
            -> Env n 
            -> Type n 

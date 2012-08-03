@@ -36,7 +36,7 @@ type CheckM n   = G.CheckM (Error n)
 
 -- Wrappers -------------------------------------------------------------------
 -- | Check a type in the given environment, returning an error or its kind.
-checkType  :: (Ord n, Pretty n) 
+checkType  :: (Ord n, Show n, Pretty n) 
            => DataDefs n 
            -> Env n 
            -> Type n 
@@ -47,7 +47,7 @@ checkType defs env tt
 
 
 -- | Check a type in an empty environment, returning an error or its kind.
-kindOfType :: (Ord n, Pretty n) 
+kindOfType :: (Ord n, Show n, Pretty n) 
            => DataDefs n
            -> Type n 
            -> Either (Error n) (Kind n)
@@ -64,7 +64,7 @@ kindOfType defs tt
 --   that need to be compared up to alpha-equivalence, nor do they contain
 --   crushable components terms.
 checkTypeM 
-        :: (Ord n, Pretty n) 
+        :: (Ord n, Show n, Pretty n) 
         => DataDefs n
         -> Env n
         -> Type n 

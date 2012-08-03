@@ -10,8 +10,10 @@ import qualified DDC.Type.Sum           as T
 
 class SpreadT (c :: * -> *) where
 
- -- | Spread type annotations from variable binders in to the bound
- --   occurrences.
+ -- | Rewrite `UName` bounds to `UPrim` bounds and attach their types.
+ --   Primitives have their types attached because they are so common in the
+ --   language, their types are closed, and we don't want to keep having to
+ --   look them up from the environment.
  spreadT :: forall n. Ord n 
          => Env n -> c n -> c n
         
@@ -49,19 +51,22 @@ instance SpreadT Bound where
  spreadT kenv uu
   = case uu of
         UIx{}           -> uu
+        UPrim{}         -> uu
+        UHole{}         -> uu
 
         UName n
          -> case Env.envPrimFun kenv n of
                 Nothing -> UName n
                 Just t  -> UPrim n t
-
-        UPrim{}         -> uu
-        UHole{}         -> uu
                  
 
 instance SpreadT TyCon where
  spreadT kenv tc
   = case tc of
-        TyConBound u k  -> TyConBound u (spreadT kenv k)
+        TyConBound (UName n) _
+         -> case Env.envPrimFun kenv n of
+                Nothing -> tc
+                Just t  -> TyConBound (UPrim n t) t
+
         _               -> tc
 
