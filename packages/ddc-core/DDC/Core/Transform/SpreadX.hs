@@ -136,11 +136,15 @@ instance SpreadX Witness where
 
 instance SpreadX WiCon where
  spreadX kenv tenv wc
-  = let down = spreadX kenv tenv
-    in case wc of
-        WiConBound u  t  -> WiConBound (down u) (spreadT kenv t)
-        WiConBuiltin{}   -> wc
+  = case wc of
+        WiConBound (UName n) _
+         -> case Env.envPrimFun tenv n of
+                Nothing -> wc
+                Just t  
+                 -> let t'      = spreadT kenv t
+                    in  WiConBound (UPrim n t') t'
 
+        _                -> wc
 
 instance SpreadX Bind where
  spreadX kenv _tenv bb
@@ -155,13 +159,15 @@ instance SpreadX Bound where
   | Just t'     <- Env.lookup uu tenv
   = case uu of
         UIx ix          -> UIx   ix
-        UPrim n _       -> UPrim n t'
-        UHole{}         -> uu
 
         UName n
          -> if Env.isPrim tenv n 
                  then UPrim n (spreadT kenv t')
                  else UName n
+
+        UPrim n _       -> UPrim n t'
+        UHole{}         -> uu
+
 
   | otherwise   = uu        
 
