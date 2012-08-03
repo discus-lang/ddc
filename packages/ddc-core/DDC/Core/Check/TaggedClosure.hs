@@ -20,6 +20,8 @@ import DDC.Type.Exp
 import Control.Monad
 import Data.Maybe
 import Data.Set                 (Set)
+import DDC.Type.Env             (Env)
+import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
 
@@ -101,23 +103,26 @@ taggedClosureOfValBound t u
            in  fromMaybe clo (trimClosure clo))
 
 
--- | Yield the tagged closure of a type argument.
+-- | Yield the tagged closure of a type argument,
+--   or `Nothing` for out-of-scope type vars.
 taggedClosureOfTyArg 
         :: (Ord n, Pretty n) 
-        => Type n -> Set (TaggedClosure n)
+        => Env n -> Type n -> Maybe (Set (TaggedClosure n))
 
-taggedClosureOfTyArg tt
+taggedClosureOfTyArg kenv tt
  = case tt of
-        TVar _u
---         |   isRegionKind (typeOfBound u)
-         ->  error "taggedClosureOfTyArg: need environment"
-         -- Set.singleton $ GBoundRgnVar u
-
+        TVar u
+         -> case Env.lookup u kenv of
+                Nothing           -> Nothing
+                Just k  
+                 | isRegionKind k -> Just $ Set.singleton $ GBoundRgnVar u
+                 | otherwise      -> Just Set.empty
+                                                    
         TCon (TyConBound u k)
          |   isRegionKind k
-         ->  Set.singleton $ GBoundRgnCon u
+         ->  Just $ Set.singleton $ GBoundRgnCon u
 
-        _ -> Set.empty
+        _ -> Just $ Set.empty
 
 
 -- | Convert the closure provided as a 'weakclo' to tagged form.

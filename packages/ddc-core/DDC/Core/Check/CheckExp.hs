@@ -181,7 +181,14 @@ checkExpM' config _kenv _tenv xx@(XCon a u)
 -- value-type application.
 checkExpM' config kenv tenv xx@(XApp a x1 (XType t2))
  = do   (x1', t1, effs1, clos1) <- checkExpM  config kenv tenv x1
+
+        -- Check the type argument.
         k2                      <- checkTypeM config kenv t2
+
+        -- Take any Use annots from a region arg.
+        --   This always matches because we just checked 't2'
+        let Just t2_clo         = taggedClosureOfTyArg kenv t2
+
         case t1 of
          TForall b11 t12
           | typeOfBind b11 == k2
@@ -189,7 +196,7 @@ checkExpM' config kenv tenv xx@(XApp a x1 (XType t2))
                 (\z -> XApp z x1' (XType t2))
                 (substituteT b11 t2 t12)
                 (substituteT b11 t2 effs1)
-                (clos1 `Set.union` taggedClosureOfTyArg t2)
+                (clos1 `Set.union` t2_clo)
 
           | otherwise   -> throw $ ErrorAppMismatch xx (typeOfBind b11) t2
          _              -> throw $ ErrorAppNotFun   xx t1 t2
