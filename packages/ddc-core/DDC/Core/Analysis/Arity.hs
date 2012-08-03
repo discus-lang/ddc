@@ -47,17 +47,17 @@ getArity :: Ord n => Arities n -> Bound n -> Maybe Int
 getArity (named, anon) u
  = case u of
         -- Get arities of anonymous things from the stack.
-        UIx ix  _       -> Just (anon !! ix)
+        UIx ix          -> Just (anon !! ix)
 
         -- Lookup arities of named things from the stack.
-        UName n _       -> Map.lookup n named
+        UName n         -> Map.lookup n named
 
         -- A hole has no expression, so no arity.
-        UHole   _       -> Nothing
+        UHole{}         -> Nothing
 
         -- Get a primitive's arity from its type.
         -- The arities of primitives always match their types, so this is ok.
-        UPrim _ t       -> arityFromType t
+        UPrim{}         -> error "DDC.Core.Analysis.Arity: need environment to determine prim arities"
 
 
 -- | Get the arities of a `Lets`
@@ -105,7 +105,7 @@ arityOfExp xx
 
         -- Find primitive's constructor's arities from type,
         -- we might need to do this for user defined constructors too.
-        XCon _ (UPrim _ t)      -> arityFromType t
+        XCon _ (UPrim{})        -> error "DDC.Core.Analysis.Arity: need environment"
 
         -- Anything else we'll need to apply one at a time
         _                       -> Just 0

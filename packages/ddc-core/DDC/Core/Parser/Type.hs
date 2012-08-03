@@ -176,10 +176,10 @@ pTypeAtom
         --  field with the bottom element of computation kinds. This isn't
         --  really part of the language, but makes sense implentation-wise.
         , do    v       <- pVar
-                return  $  TVar (UName v (tBot sComp))
+                return  $  TVar (UName v)
 
         , do    i       <- pIndex
-                return  $  TVar (UIx (fromIntegral i) (tBot sComp))
+                return  $  TVar (UIx (fromIntegral i))
         ]
  <?> "an atomic type"
 
@@ -204,6 +204,6 @@ pTyConNamed :: Parser n (TyCon n)
 pTyConNamed  
         =   P.pTokMaybe f
         <?> "a type constructor"
- where  f (KN (KCon n))          = Just (TyConBound (UName n (tBot kData)))
+ where  f (KN (KCon n))          = Just (TyConBound (UName n) (tBot kData))
         f _                      = Nothing
 

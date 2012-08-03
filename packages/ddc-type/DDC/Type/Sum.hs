@@ -60,9 +60,9 @@ elem :: (Eq n, Ord n) => Type n -> TypeSum n -> Bool
 elem _ TypeSumBot{}      =  False
 elem t ts@TypeSumSet{}
  = case t of
-        TVar (UName n _) -> Map.member n (typeSumBoundNamed ts)
+        TVar (UName n)   -> Map.member n (typeSumBoundNamed ts)
+        TVar (UIx   i)   -> Map.member i (typeSumBoundAnon  ts)
         TVar (UPrim n _) -> Map.member n (typeSumBoundNamed ts)
-        TVar (UIx   i _) -> Map.member i (typeSumBoundAnon  ts)
         TVar  UHole{}    -> False
         TCon{}           -> L.elem t (typeSumSpill ts)
 
@@ -97,12 +97,13 @@ elem t ts@TypeSumSet{}
 insert :: Ord n => Type n -> TypeSum n -> TypeSum n
 insert t (TypeSumBot k)   = insert t (emptySet k)
 insert t ts@TypeSumSet{}
- = case t of
-        TVar (UName n k) -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
-        TVar (UPrim n k) -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
-        TVar (UIx   i k) -> ts { typeSumBoundAnon  = Map.insert i k (typeSumBoundAnon  ts) }
-        TVar UHole{}     -> ts { typeSumSpill      = t : typeSumSpill ts }
-        TCon{}           -> ts { typeSumSpill      = t : typeSumSpill ts }
+ = let k        = typeSumKind ts
+   in case t of
+        TVar (UName n)  -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
+        TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.insert i k (typeSumBoundAnon  ts) }
+        TVar (UPrim n _)-> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
+        TVar UHole{}    -> ts { typeSumSpill      = t : typeSumSpill ts }
+        TCon{}          -> ts { typeSumSpill      = t : typeSumSpill ts }
 
         -- Foralls can't be part of well-kinded sums.
         --  Just add them to the splill lists so that we can still
@@ -126,12 +127,12 @@ delete :: Ord n => Type n -> TypeSum n -> TypeSum n
 delete _ ts@TypeSumBot{} = ts
 delete t ts@TypeSumSet{}
  = case t of
-        TVar (UName n _) -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
-        TVar (UPrim n _) -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
-        TVar (UIx   i _) -> ts { typeSumBoundAnon  = Map.delete i (typeSumBoundAnon  ts) }
-        TVar{}           -> ts
-        TCon{}           -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
-        TForall{}        -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
+        TVar (UName n)  -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
+        TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.delete i (typeSumBoundAnon  ts) }
+        TVar (UPrim n _)-> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
+        TVar{}          -> ts
+        TCon{}          -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
+        TForall{}       -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
         
         TApp (TCon _) _
          | Just (h, vc) <- takeSumArrayElem t
@@ -182,8 +183,8 @@ toList TypeSumSet
 
  =      [ makeSumArrayElem h vc
                 | (h, ts) <- assocs sumElems, vc <- Set.toList ts] 
-        ++ [TVar $ UName n k | (n, k) <- Map.toList named]
-        ++ [TVar $ UIx   i k | (i, k) <- Map.toList anon]
+        ++ [TVar $ UName n | (n, _) <- Map.toList named]
+        ++ [TVar $ UIx   i | (i, _) <- Map.toList anon]
         ++ spill
                 
 
@@ -247,7 +248,7 @@ takeSumArrayElem (TApp (TCon tc) t2)
         | Just h        <- hashTyCon tc
         = case t2 of
                 TVar u                  -> Just (h, TypeSumVar u)
-                TCon (TyConBound u)     -> Just (h, TypeSumCon u)
+                TCon (TyConBound u k)   -> Just (h, TypeSumCon u k)
                 _                       -> Nothing
         
 takeSumArrayElem _ = Nothing
@@ -259,7 +260,7 @@ makeSumArrayElem h vc
  = let  tc       = unhashTyCon h
    in   case vc of
          TypeSumVar u   -> TApp (TCon tc) (TVar u)
-         TypeSumCon u   -> TApp (TCon tc) (TCon (TyConBound u))
+         TypeSumCon u k -> TApp (TCon tc) (TCon (TyConBound u k))
 
 
 -- Type Equality --------------------------------------------------------------
@@ -321,16 +322,25 @@ instance Eq n => Eq (TypeSum n) where
 
 
 instance Ord n => Ord (Bound n) where
- compare (UName n1 _) (UName n2 _)      = compare n1 n2
- compare (UIx   i1 _) (UIx   i2 _)      = compare i1 i2
- compare (UPrim n1 _) (UPrim n2 _)      = compare n1 n2
- compare (UIx   _  _) _                 = LT
- compare (UName _  _) (UIx   _ _)       = GT
- compare (UName _  _) (UPrim _ _)       = LT
- compare (UPrim _  _) _                 = GT
- compare (UHole _)    _                 = LT
- compare _            (UHole _)         = GT
+ compare (UName n1)     (UName n2)      = compare n1 n2
+ compare (UIx   i1)     (UIx   i2)      = compare i1 i2
+ compare (UPrim n1 _)   (UPrim n2 _)    = compare n1 n2
+ compare UIx{}          _               = LT
+ compare UName{}        UIx{}           = GT
+ compare UName{}        UPrim{}         = LT
+ compare UPrim{}        _               = GT
+ compare UHole{}        _               = LT
+ compare _              UHole{}         = GT
 
-deriving instance Eq n  => Eq  (TypeSumVarCon n)
-deriving instance Ord n => Ord (TypeSumVarCon n)
+
+instance Eq n => Eq (TypeSumVarCon n) where
+ (==) (TypeSumVar u1)   (TypeSumVar u2)     = u1 == u2
+ (==) (TypeSumCon u1 _) (TypeSumCon u2 _)   = u1 == u2
+ (==) _ _                                   = False
+
+instance Ord n => Ord (TypeSumVarCon n) where
+ compare (TypeSumVar u1)   (TypeSumVar u2)    = compare u1 u2
+ compare (TypeSumCon u1 _) (TypeSumCon u2 _)  = compare u1 u2
+ compare (TypeSumVar _)    _                  = LT
+ compare (TypeSumCon _ _)  _                  = GT
 

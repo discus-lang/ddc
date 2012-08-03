@@ -31,8 +31,8 @@ instance LiftW Bound where
         UName{}         -> uu
         UPrim{}         -> uu
         UHole{}         -> uu
-        UIx i t 
-         | d <= i       -> UIx (i + n) t
+        UIx i
+         | d <= i       -> UIx (i + n)
          | otherwise    -> uu
 
 

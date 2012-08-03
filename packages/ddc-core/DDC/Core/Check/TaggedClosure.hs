@@ -77,7 +77,7 @@ closureOfTagged gg
  = case gg of
         GBoundVal _ clos  -> TSum $ clos
         GBoundRgnVar u    -> tUse (TVar u)
-        GBoundRgnCon u    -> tUse (TCon (TyConBound u))
+        GBoundRgnCon u    -> tUse (TCon (TyConBound u kRegion))
 
 
 -- | Convert a set of tagged closures to a regular closure by dropping the
@@ -92,12 +92,12 @@ closureOfTaggedSet clos
 -- | Yield the tagged closure of a value variable.
 taggedClosureOfValBound 
         :: (Ord n, Pretty n) 
-        => Bound n  -> TaggedClosure n
+        => Type n -> Bound n  -> TaggedClosure n
 
-taggedClosureOfValBound u
+taggedClosureOfValBound t u 
         = GBoundVal u 
         $ Sum.singleton kClosure 
-        $ (let clo = tDeepUse $ typeOfBound u
+        $ (let clo = tDeepUse t
            in  fromMaybe clo (trimClosure clo))
 
 
@@ -108,12 +108,13 @@ taggedClosureOfTyArg
 
 taggedClosureOfTyArg tt
  = case tt of
-        TVar u
-         |   isRegionKind (typeOfBound u)
-         ->  Set.singleton $ GBoundRgnVar u
+        TVar _u
+--         |   isRegionKind (typeOfBound u)
+         ->  error "taggedClosureOfTyArg: need environment"
+         -- Set.singleton $ GBoundRgnVar u
 
-        TCon (TyConBound u)
-         |   isRegionKind (typeOfBound u)
+        TCon (TyConBound u k)
+         |   isRegionKind k
          ->  Set.singleton $ GBoundRgnCon u
 
         _ -> Set.empty
@@ -136,7 +137,7 @@ taggedClosureOfWeakClo clo
             Just (TyConSpec TcConUse, [TVar u])
               -> Just $ GBoundRgnVar u
 
-            Just (TyConSpec TcConUse, [TCon (TyConBound u)])
+            Just (TyConSpec TcConUse, [TCon (TyConBound u _)])
               -> Just $ GBoundRgnCon u
 
             _ -> Nothing
@@ -163,7 +164,7 @@ maskFromTaggedSet ts1 set
             | otherwise         -> Just gg
 
            GBoundRgnCon u
-            | Sum.elem (tUse (TCon (TyConBound u))) ts1     
+            | Sum.elem (tUse (TCon (TyConBound u kRegion))) ts1     
                                 -> Nothing
             | otherwise         -> Just gg
 

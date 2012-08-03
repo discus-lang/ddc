@@ -47,13 +47,12 @@ instance AnonymizeX (Exp a) where
 
         -- Erase types on variables because they might
         -- have free variables.
-        XVar a u@(UName _ _)        
+        XVar a u@(UName{})       
          |  Just ix      <- findIndex (boundMatchesBind u) tstack
-         -> XVar a (UIx ix (tBot kData))
+         -> XVar a (UIx ix)
 
         XVar a u
-         -> XVar a (replaceTypeOfBound (tBot kData) u)
-
+         -> XVar a u
 
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
@@ -108,13 +107,11 @@ instance AnonymizeX Witness where
  anonymizeWithX kstack tstack ww
   = let down = anonymizeWithX kstack tstack 
     in case ww of
-        WVar u@(UName _ _)
+        WVar u@(UName _)
          |  Just ix      <- findIndex (boundMatchesBind u) tstack
-         -> WVar (UIx ix (tBot kWitness))
+         -> WVar (UIx ix)
 
-        WVar u
-         -> WVar (replaceTypeOfBound (tBot kData) u)
-
+        WVar u          -> WVar u
         WCon  c         -> WCon  c
         WApp  w1 w2     -> WApp  (down w1) (down w2)
         WJoin w1 w2     -> WJoin (down w1) (down w2)

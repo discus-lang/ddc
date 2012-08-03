@@ -324,8 +324,9 @@ convStmtM pp xx
           , Just xsArgs_value'  <- sequence $ map (mconvAtom pp) 
                                 $  eraseTypeWitArgs xsArgs
 
-          -> let (_, tResult)   =  takeTFunArgResult 
-                                $  eraseTForalls $ typeOfBound b
+          -> let (_, tResult)   =  b `seq` error "LLVM.convStmtM: need environment"
+                                -- takeTFunArgResult 
+--                                $  eraseTForalls $ typeOfBound b
 
              in  return $ Seq.singleton
                     $ ICall Nothing CallTypeStd 
@@ -405,9 +406,9 @@ convExpM
         -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
-convExpM _  vDst (C.XVar _ (C.UName (A.NameVar n) t))
+convExpM _  vDst (C.XVar _ (C.UName (A.NameVar n)))
  = do   let n'  = A.sanitizeName n
-        t'      <- convTypeM t
+        t'      <- error "convExpM: need environment" -- convTypeM t
         return  $ Seq.singleton 
                 $ ISet vDst (XVar (Var (NameLocal n') t'))
 
@@ -439,8 +440,9 @@ convExpM pp dst xx@C.XApp{}
         , Just xsArgs_value'    <- sequence $ map (mconvAtom pp) 
                                 $  eraseTypeWitArgs xsArgs
 
-        = let   (_, tResult)    = takeTFunArgResult 
-                                $ eraseTForalls $ typeOfBound b
+        = let   (_, tResult)    = b `seq` error "LLVM.convExpM: need environment"
+--                                takeTFunArgResult 
+--                                $ eraseTForalls $ typeOfBound b
 
           in    return $ Seq.singleton
                  $ ICall (Just dst) CallTypeStd 

@@ -14,25 +14,24 @@ import DDC.Type.Compounds
 
 
 tVoid, tBool, tNat, tInt, tTag, tAddr, tString :: Type Name
-
-tVoid     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)   kData))
-tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)   kData))
-tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)    kData))
-tInt      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt)    kData))
-tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)    kData))
-tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr)   kData))
-tString   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConString) kData))
+tVoid     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)   kData) kData)
+tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)   kData) kData)
+tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)    kData) kData)
+tInt      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt)    kData) kData)
+tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)    kData) kData)
+tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr)   kData) kData)
+tString   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConString) kData) kData)
 
 
 tWord :: Int -> Type Name
-tWord bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData))
+tWord bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
 
 
 tObj :: Type Name
-tObj      = TCon (TyConBound (UPrim  NameObjTyCon kData))
+tObj      = TCon (TyConBound (UPrim  NameObjTyCon kData) kData)
 
 
 tPtr :: Region Name -> Type Name -> Type Name
-tPtr r t = TApp (TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) (kRegion `kFun` kData `kFun` kData))))
-                      r)
-                t
+tPtr r t = TApp (TApp (TCon tcPtr) r) t
+ where  tcPtr   = TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) kPtr) kPtr
+        kPtr    = kRegion `kFun` kData `kFun` kData

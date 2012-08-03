@@ -17,7 +17,6 @@ import DDC.Type.Check.CheckError
 import DDC.Type.Check.CheckCon
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Transform.LiftT
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import Data.List
@@ -77,47 +76,9 @@ checkTypeM defs env tt
 
 -- Variables ------------------
 checkTypeM' _defs env (TVar u)
- = do   let tBound      = typeOfBound u
-        let mtEnv       = Env.lookup u env
-
-        let mkResult
-                -- If the variable is a hole then just use the annotation.
-                | UHole t       <- u
-                = return t
-
-                -- If the annot is Bot then just use the type
-                -- from the environment.
-                | Just tEnv     <- mtEnv
-                , isBot tBound
-                = return tEnv
-
-                -- The bound has an explicit type annotation,
-                --  which matches the one from the environment.
-                -- 
-                --  When the bound is a deBruijn index we need to lift the
-                --  annotation on the original binder through any lambdas
-                --  between the binding occurrence and the use.
-                | Just tEnv    <- mtEnv
-                , UIx i _      <- u
-                , tBound == liftT (i + 1) tEnv
-                = return tBound
-
-                -- The bound has an explicit type annotation,
-                --   that matches the one from the environment.
-                | Just tEnv     <- mtEnv
-                , tBound == tEnv
-                = return tBound
-
-                -- The bound has an explicit type annotation,
-                --  that does not match the one from the environment. 
-                | Just tEnv     <- mtEnv
-                = throw $ ErrorVarAnnotMismatch u tEnv
-
-                -- Type variables must be in the environment.
-                | _             <- mtEnv
-                = throw $ ErrorUndefined u
-
-        mkResult
+ = case Env.lookup u env of
+        Just t  -> return t
+        Nothing -> throw $ ErrorUndefined u
 
 -- Constructors ---------------
 checkTypeM' defs _env tt@(TCon tc)
@@ -136,16 +97,16 @@ checkTypeM' defs _env tt@(TCon tc)
         TyConSpec    tcc -> return $ kindOfTcCon tcc
 
         -- User defined type constructors need to be in the set of data defs.
-        TyConBound    u  
+        TyConBound   u k
          -> case u of
-                UName n _
+                UName n
                  | Just _ <- Map.lookup n (dataDefsTypes defs)
-                 -> return $ typeOfBound u
+                 -> return k
 
                  | otherwise
                  -> throw $ ErrorUndefinedCtor u
 
-                UPrim{} -> return $ typeOfBound u
+                UPrim{} -> return k
                 UIx{}   -> throw $ ErrorUndefinedCtor u
                 UHole{} -> throw $ ErrorUndefinedCtor u
 

@@ -49,15 +49,11 @@ pprBinderGroup (rs, t)
 instance (Pretty n, Eq n) => Pretty (Bound n) where
  ppr nn
   = case nn of
---      UName n t       -> parens (ppr n <> text ":" <> ppr t)
---      UPrim n t       -> parens (ppr n <> text ":" <> ppr t)
---      UIx i t         -> parens (text "^" <> ppr i <> text ":" <> ppr t)
+        UName n        -> ppr n
+        UPrim n _      -> ppr n
+        UIx i          -> text "^" <> ppr i
+        UHole{}        -> text "_"
 
-        UName n _       -> ppr n
-        UPrim n _       -> ppr n
-        UIx i _         -> text "^" <> ppr i
-
-        UHole _         -> text "_"
 
 -- Type -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Type n) where
@@ -128,7 +124,7 @@ instance (Eq n, Pretty n) => Pretty (TyCon n) where
         TyConKind kc    -> ppr kc
         TyConWitness tc -> ppr tc
         TyConSpec tc    -> ppr tc
-        TyConBound u    -> ppr u
+        TyConBound u _  -> ppr u
 
 
 instance Pretty SoCon where

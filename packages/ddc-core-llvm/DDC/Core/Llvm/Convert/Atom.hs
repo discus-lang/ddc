@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fno-warn-unused-binds -fno-warn-unused-matches #-}
 module DDC.Core.Llvm.Convert.Atom
         ( mconvAtom
         , mconvAtoms
@@ -9,7 +9,7 @@ import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
 import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Name     as A
+-- import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Exp           as C
 
 
@@ -19,10 +19,11 @@ import qualified DDC.Core.Exp           as C
 mconvAtom :: Platform -> C.Exp a A.Name -> Maybe Exp
 mconvAtom pp xx
  = case xx of
-        C.XVar _ (C.UName (A.NameVar n) t)
-         -> let n' = A.sanitizeName n
-            in  Just $ XVar (Var (NameLocal n') (convType pp t))
-
+        C.XVar _ (C.UName (A.NameVar n))
+         -> error "LLVM.mConvAtom: need environment"
+{-}          let n' = A.sanitizeName n
+            in  Just $ XVar (Var (NameLocal n') t)
+-}
         C.XCon _ (C.UPrim (A.NameNat  nat) t)
          -> Just $ XLit (LitInt (convType pp t) nat)
 
@@ -49,8 +50,9 @@ mconvAtoms pp xs
 takeLocalV  :: Platform -> C.Exp a A.Name -> Maybe Var
 takeLocalV pp xx
  = case xx of
-        C.XVar _ (C.UName (A.NameVar str) t)
-          -> Just $ Var (NameLocal str) (convType pp t)
+        C.XVar _ (C.UName (A.NameVar str))
+          -> error "LLVM.takeLocalV: need environment"
+--          Just $ Var (NameLocal str) (convType pp t)
         _ -> Nothing
 
 
@@ -58,7 +60,8 @@ takeLocalV pp xx
 takeGlobalV  :: Platform -> C.Exp a A.Name -> Maybe Var
 takeGlobalV pp xx
  = case xx of
-        C.XVar _ (C.UName (A.NameVar str) t)
-          -> Just $ Var (NameGlobal str) (convType pp t)
+        C.XVar _ (C.UName (A.NameVar str))
+         -> error "LLVM.takeGlobalV: need environment"
+--          -> Just $ Var (NameGlobal str) (convType pp t)
         _ -> Nothing
 

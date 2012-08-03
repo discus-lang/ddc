@@ -209,8 +209,8 @@ instance (Pretty n, Eq n) => Pretty (Witness n) where
 instance (Pretty n, Eq n) => Pretty (WiCon n) where
  ppr wc
   = case wc of
-        WiConBuiltin wb -> ppr wb
-        WiConBound   u  -> ppr u
+        WiConBuiltin wb   -> ppr wb
+        WiConBound   u  _ -> ppr u
 
 
 instance Pretty WbCon where

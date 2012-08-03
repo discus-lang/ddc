@@ -52,8 +52,8 @@ emptyCapSet
 -- | Insert a capability, or `error` if this isn't one.
 mustInsertCap :: Witness Name -> CapSet -> CapSet
 mustInsertCap ww caps
- | WApp (WCon  (WiConBound       (UPrim nc _))) 
-        (WType (TCon (TyConBound (UPrim nh _)))) <- ww
+ | WApp (WCon  (WiConBound       (UPrim nc _) _)) 
+        (WType (TCon (TyConBound (UPrim nh _) _))) <- ww
  , NameCap c     <- nc
  , NameRgn r     <- nh
  = case c of
@@ -64,9 +64,9 @@ mustInsertCap ww caps
         CapManifest     -> caps { capsManifest = Set.insert r (capsManifest caps)}
         _               -> error "mustInsertCap: invalid witness application"
         
- | WApp (WApp (WCon  (WiConBound       (UPrim (NameCap CapDistinct) _))) 
-              (WType (TCon (TyConBound (UPrim nh1                   _)))))
-        (WType (TCon (TyConBound (UPrim nh2 _)))) <- ww
+ | WApp (WApp (WCon  (WiConBound       (UPrim (NameCap CapDistinct) _) _)) 
+              (WType (TCon (TyConBound (UPrim nh1                   _) _))))
+        (WType (TCon (TyConBound (UPrim nh2 _) _))) <- ww
  , NameRgn r1 <- nh1
  , NameRgn r2 <- nh2
  = caps { capsDistinct = Set.insert (r1,r2) (capsDistinct caps) }

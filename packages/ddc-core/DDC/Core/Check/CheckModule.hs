@@ -65,7 +65,7 @@ checkModuleM config kenv tenv mm@ModuleCore{}
         let kenv'        = Env.extend (BAnon kData)
                          $ Env.union kenv $ Env.fromList bksImport
 
-        let tDummy       = TVar (UIx 0 kData)                                   -- TODO: why did we need this?
+        let tDummy       = TVar (UIx 0)                                         -- TODO: why did we need this?
         let tenv'        = Env.extend (BAnon tDummy)
                          $ Env.union tenv $ Env.fromList btsImport
                 

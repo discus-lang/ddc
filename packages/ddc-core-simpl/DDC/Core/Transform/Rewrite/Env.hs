@@ -78,16 +78,18 @@ containsRegion r env
  where
     go _  []	= False
 
-    go (UIx 0 ty) (w:_) 
-	= (BAnon ty) `elem` w
-    go (UIx n ty) (_:ws) 
-	= go (UIx (n-1) ty) ws
+    go (UIx 0) (w:_) 
+	= any (T.boundMatchesBind (UIx 0)) w
 
-    go (UName n ty) (w:ws) 
-	= BName n ty `elem` w || go r ws
+    go (UIx n) (_:ws) 
+	= go (UIx (n-1)) ws
+
+    go (UName n) (w:ws) 
+	= any (T.boundMatchesBind (UName n)) w || go r ws
 
     go (UPrim _ _) _
 	= False
+
     go (UHole _) _
 	= False
 

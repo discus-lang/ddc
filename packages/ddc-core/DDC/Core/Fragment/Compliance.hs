@@ -79,7 +79,7 @@ instance Show a => Complies (Exp a) where
         ok      = return (Set.empty, Set.empty)
     in case xx of
         -- variables ----------------------------
-        XVar _ u@(UName n _)
+        XVar _ u@(UName n)
          |  not $ Env.member u tenv
          ,  not $ has featuresUnboundLevel0Vars 
          -> throw $ ErrorUndefinedVar n

@@ -43,38 +43,39 @@ data Config
 runtimeImportSigs :: Map Name (QualName Name, Type Name)
 runtimeImportSigs
  = Map.fromList 
-   [ rn uGetTag
-   , rn uAllocBoxed
-   , rn uGetFieldOfBoxed
-   , rn uSetFieldOfBoxed
-   , rn uAllocRawSmall
-   , rn uPayloadOfRawSmall ]
- where   rn (UName n t)  = (n, (QualName (ModuleName ["Runtime"]) n, t))
-         rn _            = error "runtimeImportSigs: all runtimed bounds should be named"
+   [ rn utGetTag
+   , rn utAllocBoxed
+   , rn utGetFieldOfBoxed
+   , rn utSetFieldOfBoxed
+   , rn utAllocRawSmall
+   , rn utPayloadOfRawSmall ]
+ where   rn (UName n, t)  = (n, (QualName (ModuleName ["Runtime"]) n, t))
+         rn _             = error "runtimeImportSigs: all runtimed bounds should be named"
 
 
 -- | Get the constructor tag of an object.
 xGetTag :: a -> Type Name -> Exp a Name -> Exp a Name
 xGetTag a tR x2 
- = makeXApps a (XVar a uGetTag)
+ = makeXApps a (XVar a $ fst utGetTag)
         [ XType tR, x2 ]
 
-uGetTag :: Bound Name
-uGetTag = UName (NameVar "getTag")
-        $ tForall kRegion $ \r -> tPtr r tObj `tFunPE` tTag
+utGetTag :: (Bound Name, Type Name)
+utGetTag 
+ =      ( UName (NameVar "getTag")
+        ,       tForall kRegion $ \r -> tPtr r tObj `tFunPE` tTag)
 
 
 -- Boxed ------------------------------
 -- | Allocate a Boxed object.
 xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocBoxed a tR tag x2
- = makeXApps a (XVar a uAllocBoxed)
+ = makeXApps a (XVar a $ fst utAllocBoxed)
         [XType tR, XCon a (UPrim (NameTag tag) tTag), x2]
 
-uAllocBoxed :: Bound Name
-uAllocBoxed
-        = UName (NameVar "allocBoxed")
-        $ tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj)
+utAllocBoxed :: (Bound Name, Type Name)
+utAllocBoxed
+ =      ( UName (NameVar "allocBoxed")
+        ,       tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj))
 
 
 -- | Get a field of a Boxed object.
@@ -87,15 +88,15 @@ xGetFieldOfBoxed
         -> Exp a Name
 
 xGetFieldOfBoxed a trPrime tField x2 offset
- = makeXApps a (XVar a uGetFieldOfBoxed) 
+ = makeXApps a (XVar a $ fst utGetFieldOfBoxed) 
         [ XType trPrime, XType tField
         , x2, XCon a (UPrim (NameNat offset) tNat)]
 
-uGetFieldOfBoxed :: Bound Name
-uGetFieldOfBoxed 
-        = UName (NameVar "getFieldOfBoxed")
-        $ tForalls [kRegion, kData]
-        $ \[r1, t2] -> tPtr r1 tObj `tFunPE`  tNat `tFunPE` t2
+utGetFieldOfBoxed :: (Bound Name, Type Name)
+utGetFieldOfBoxed 
+ =      ( UName (NameVar "getFieldOfBoxed")
+        , tForalls [kRegion, kData]
+                $ \[r1, t2] -> tPtr r1 tObj `tFunPE`  tNat `tFunPE` t2)
 
 
 -- | Set a field in a Boxed Object.
@@ -109,44 +110,43 @@ xSetFieldOfBoxed
         -> Exp a Name
 
 xSetFieldOfBoxed a trPrime tField x2 offset val
- = makeXApps a (XVar a uSetFieldOfBoxed) 
+ = makeXApps a (XVar a $ fst utSetFieldOfBoxed) 
         [ XType trPrime, XType tField
         , x2, XCon a (UPrim (NameNat offset) tNat), val]
 
-uSetFieldOfBoxed :: Bound Name
-uSetFieldOfBoxed 
-        = UName (NameVar "setFieldOfBoxed")
-        $ tForalls [kRegion, kData]
-        $ \[r1, t2] -> tPtr r1 tObj 
+utSetFieldOfBoxed :: (Bound Name, Type Name)
+utSetFieldOfBoxed 
+ =      ( UName (NameVar "setFieldOfBoxed")
+        , tForalls [kRegion, kData]
+                $ \[r1, t2] -> tPtr r1 tObj 
                         `tFunPE` tNat 
                         `tFunPE` t2
-                        `tFunPE` tVoid
+                        `tFunPE` tVoid)
 
 
 -- RawSmall ---------------------------
 -- | Allocate a RawSmall object.
 xAllocRawSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocRawSmall a tR tag x2
- = makeXApps a (XVar a uAllocRawSmall)
+ = makeXApps a (XVar a $ fst utAllocRawSmall)
         [XType tR, XCon a (UPrim (NameTag tag) tTag), x2]
 
-uAllocRawSmall :: Bound Name
-uAllocRawSmall
-        = UName (NameVar "allocRawSmall")
-        $ tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj)
+utAllocRawSmall :: (Bound Name, Type Name)
+utAllocRawSmall
+ =      ( UName (NameVar "allocRawSmall")
+        , tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj))
 
 
 -- | Get the address of the payload of a RawSmall object.
 xPayloadOfRawSmall :: a -> Type Name -> Exp a Name -> Exp a Name
 xPayloadOfRawSmall a tR x2 
- = makeXApps a (XVar a uPayloadOfRawSmall) 
+ = makeXApps a (XVar a $ fst utPayloadOfRawSmall) 
         [XType tR, x2]
  
-uPayloadOfRawSmall :: Bound Name
-uPayloadOfRawSmall
-        = UName (NameVar "payloadOfRawSmall")
-        $ tForall kRegion $ \r -> (tFunPE (tPtr r tObj) tAddr)
-
+utPayloadOfRawSmall :: (Bound Name, Type Name)
+utPayloadOfRawSmall
+ =      ( UName (NameVar "payloadOfRawSmall")
+        , tForall kRegion $ \r -> (tFunPE (tPtr r tObj) tAddr))
 
 
 -- Primops --------------------------------------------------------------------
@@ -192,9 +192,9 @@ uWrite   = UPrim (NamePrim $ PrimStore $ PrimStoreWrite)
 -- | Fail with an internal error.
 xFail   :: a -> Type Name -> Exp a Name
 xFail a t       
- = XApp a (XVar a (UPrim (NamePrim (PrimControl PrimControlFail))
-                         (TForall (BAnon kData) (TVar $ UIx 0 kData))))
-          (XType t)
+ = XApp a (XVar a uFail) (XType t)
+ where  uFail   = UPrim (NamePrim (PrimControl PrimControlFail)) tFail
+        tFail   = TForall (BAnon kData) (TVar $ UIx 0)
 
 
 -- | Return a value.
@@ -205,5 +205,4 @@ xReturn a t x
                           (tForall kData $ \t1 -> t1 `tFunPE` t1)))
                 (XType t))
            x
-
 

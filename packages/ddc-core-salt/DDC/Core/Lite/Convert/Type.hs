@@ -59,12 +59,12 @@ convertT' isPrimType tt
  = let down = convertT' isPrimType
    in case tt of
         -- Convert type variables and constructors.
-        TVar u
+        TVar _u
 
-         |   isRegionKind (typeOfBound u)
+{-}         |   isRegionKind (typeOfBound u)    -- TODO: need environment.
           || isDataKind (typeOfBound u)
          -> liftM TVar $ convertU u
-
+-}
          | otherwise    
          -> error $ "convertT': unexpected var kind" ++ show tt
 
@@ -121,16 +121,16 @@ convertTyCon tc
         -- Primitive boxed zero-arity constructors (like Unit)
         --  are represented in generic form.
         -- TODO: Use a real region variable instead of a hole.
-        TyConBound   (UPrim (L.NameDataTyCon L.DataTyConUnit) _)
+        TyConBound   (UPrim (L.NameDataTyCon L.DataTyConUnit) _) _
          ->     return $ O.tPtr (TVar (UHole kRegion)) O.tObj
 
         -- Convert primitive unboxed TyCons to Salt form.
-        TyConBound   (UPrim n _) 
+        TyConBound   (UPrim n _)  _
          ->     convertTyConPrim n
 
         -- Boxed data values are represented in generic form.
-        TyConBound   u
-         -> do  r <- convertT (typeOfBound u)
+        TyConBound   _u k
+         -> do  r <- convertT k                                 -- TODO: this is wrong
                 return $ O.tPtr r O.tObj
 
 
@@ -140,7 +140,7 @@ convertTyConPrim :: L.Name -> ConvertM a (Type O.Name)
 convertTyConPrim n
  = case n of
         L.NamePrimTyCon pc      
-          -> return $ TCon $ TyConBound (UPrim (O.NamePrimTyCon pc) kData)
+          -> return $ TCon $ TyConBound (UPrim (O.NamePrimTyCon pc) kData) kData
         _ -> error $ "convertTyConPrim: unknown prim name " ++ show n
 
 
@@ -156,19 +156,10 @@ convertB bb
 convertU :: Bound L.Name -> ConvertM a (Bound O.Name)
 convertU uu
   = case uu of
-        UIx i t         -> liftM2 UIx   (return i) (convertT t)
-        UName n t       -> liftM2 UName (convertBoundNameM n) (convertT t)
+        UIx i           -> liftM  UIx   (return i)
+        UName n         -> liftM  UName (convertBoundNameM n)
         UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertPrimT t)
-
-        -- This hole type is a hack that appears as the body of a module.
-        -- Make sure it stays a hole and doesn't turn into a Ptr Obj.
-        UHole t
-         |  TVar (UHole k)             <- t
-         ,  TCon (TyConKind KiConData) <- k
-         -> return $ UHole (TVar (UHole (TCon (TyConKind KiConData))))
-
-         | otherwise 
-         -> error $ "convertU: unexpected hole kind" ++ (show t)
+        UHole t         -> liftM  UHole (convertT t)
 
 
 convertBindNameM :: L.Name -> ConvertM a O.Name

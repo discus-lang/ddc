@@ -23,7 +23,7 @@ inline1 :: Ord n
 
 inline1 getTemplate xx
  = case xx of
-        XVar _ (UName n _)
+        XVar _ (UName n)
          | Just xx'     <- getTemplate n
          -> xx'
 

@@ -43,11 +43,12 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
         -- TODO: allocate objects with no prime region var in a global region.
         --
         let rPrime
-                = case xsArgs of
+                = error "constructData: need environment"
+{-}                case xsArgs of
                    XType r@(TVar u) : _
                     | isRegionKind (typeOfBound u) -> r
                    _                               -> TVar (UHole kRegion)
-
+-}
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
@@ -62,7 +63,7 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
                         $ XCon a (UPrim (O.NameNat (fromIntegral arity)) O.tNat)
 
         -- Statements to write each of the fields.
-        let xObject'    = XVar a $ UIx 0 $ O.tPtr rPrime O.tObj
+        let xObject'    = XVar a $ UIx 0
         let lsFields    
                 = [ LLet LetStrict (BNone O.tVoid)
                          (O.xSetFieldOfBoxed a 
@@ -79,7 +80,7 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
  , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
  , x1 : _                       <- xsArgs
  , XType r@(TVar u)             <- x1
- , isRegionKind (typeOfBound u)
+ , u `seq` error "constructData: need environment"-- isRegionKind (typeOfBound u)
  = do   
         -- Allocate the object.
         let bObject     = BAnon (O.tPtr r O.tObj)
@@ -89,7 +90,7 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
         -- Take a pointer to its payload.
         let bPayload    = BAnon O.tAddr
         let xPayload    = O.xPayloadOfRawSmall a r
-                        $ XVar a (UIx 0 $ O.tPtr r O.tObj)
+                        $ XVar a (UIx 0)
 
         -- Convert the field types.
         tsFields         <- mapM convertT $ dataCtorFieldTypes ctorDef
@@ -103,8 +104,8 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
         let Just offsets = L.fieldOffsetsOfDataCtor pp ctorDef
 
         -- Statements to write each of the fields.
-        let xObject'    = XVar a $ UIx 1 $ O.tPtr r O.tObj
-        let xPayload'   = XVar a $ UIx 0 O.tAddr
+        let xObject'    = XVar a $ UIx 1
+        let xPayload'   = XVar a $ UIx 0
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
                                 (O.xWrite a tField xPayload' offset (liftX 2 xField))
                                 | tField        <- tsFields
@@ -142,7 +143,8 @@ destructData pp a uScrut ctorDef bsFields xBody
  | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
  = do   
         -- Get the prime region that the read effects are assigned to.
-        let Just trPrime  = takePrimeRegion (typeOfBound uScrut)
+        let Just trPrime  = uScrut `seq` error "destructData: need environment"
+--                              takePrimeRegion (typeOfBound uScrut)
 
         -- Bind pattern variables to each of the fields.
         let lsFields      
@@ -161,14 +163,15 @@ destructData pp a uScrut ctorDef bsFields xBody
  , Just offsets              <- L.fieldOffsetsOfDataCtor pp ctorDef
  = do   
         -- Get the prime region that the read effects are assigned to.
-        let Just tPrime = takePrimeRegion (typeOfBound uScrut)
+        let Just tPrime = uScrut `seq` error "destructData: need environment"
+--                              takePrimeRegion (typeOfBound uScrut)
 
         -- Get the address of the payload.
         let bPayload    = BAnon O.tAddr
         let xPayload    = O.xPayloadOfRawSmall a tPrime (XVar a uScrut)
 
         -- Bind pattern variables to the fields.
-        let uPayload    = UIx 0 O.tAddr
+        let uPayload    = UIx 0
         let lsFields    
                 = catMaybes
                 $ [ if isBNone bField

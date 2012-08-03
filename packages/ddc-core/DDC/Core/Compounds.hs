@@ -190,8 +190,8 @@ takeXApps' x1 x2
 takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
 takeXPrimApps xx
  = case takeXAppsAsList xx of
-        XVar _ (UPrim p _) : xs  -> Just (p, xs)
-        _                        -> Nothing
+        XVar _ (UPrim p _) : xs -> Just (p, xs)
+        _                       -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
 --   and its arguments. 

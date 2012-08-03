@@ -77,7 +77,7 @@ instance SubstituteWX (Exp a) where
   = let down    = substituteWithWX wArg
         into    = rewriteWith
     in case xx of
-        XVar a u        -> XVar a (into sub u)
+        XVar a u        -> XVar a u
         XCon{}          -> xx
         XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 
@@ -161,7 +161,7 @@ instance SubstituteWX Witness where
     in case ww of
         WVar u
          -> case substW wArg sub u of
-                Left u'  -> WVar (into sub u')
+                Left u'  -> WVar u'
                 Right w  -> w
 
         WCon{}                  -> ww
@@ -176,8 +176,8 @@ substW  :: Ord n => Witness n -> Sub n -> Bound n
 
 substW wArg sub u
   = case substBound (subStack0 sub) (subBound sub) u of
-        Left  u'                -> Left (rewriteWith sub u')
+        Left  u'                -> Left u'
         Right n  
          | not $ subShadow0 sub -> Right (liftW n wArg)
-         | otherwise            -> Left (rewriteWith sub u)
+         | otherwise            -> Left  u
 

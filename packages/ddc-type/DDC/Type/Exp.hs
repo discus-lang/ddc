@@ -49,20 +49,23 @@ data Bind n
 
 data Bound n
         -- | Nameless variable that should be on the deBruijn stack.
-        = UIx   Int (Type n)    
+        = UIx   Int   
 
         -- | Named variable that should be in the environment.
-        | UName n   (Type n)
+        | UName n
 
-        -- | Named primitive that is not bound in the environment.
-        --   Prims aren't every counted as being free.
-        | UPrim n   (Type n)    
+        -- | Named primitive that has its type attached to it.
+        --   The types of primitives must be closed.
+        | UPrim n (Type n)
 
-        -- | A hole in the expression.
+        -- | A hole in the expression.          -- TODO: ditch this.
+        --                                      --       clients should use a different name type
+        --                                      --       if they need a hole.
+        --
         --   In the type or witness unifers this is something we need to infer.
         --   In the data universe, inspecting the hole is a run-time error.
         --   It its not equal to other `Bound`, hole or otherwise.
-        | UHole     (Type n)
+        | UHole (Type n)
         deriving Show
 
 
@@ -138,7 +141,7 @@ data TyConHash
 -- | Wraps a variable or constructor that can be added the `typeSumElems` array.
 data TypeSumVarCon n
         = TypeSumVar (Bound n)
-        | TypeSumCon (Bound n)
+        | TypeSumCon (Bound n) (Type n)
         deriving Show
 
 
@@ -162,7 +165,7 @@ data TyCon n
         | TyConSpec     TcCon
 
         -- | User defined and primitive constructors.
-        | TyConBound   (Bound n)
+        | TyConBound   (Bound n) (Kind n)
         deriving Show
 
 

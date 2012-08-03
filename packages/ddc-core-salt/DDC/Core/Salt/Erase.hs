@@ -75,21 +75,24 @@ instance EraseT Bind where
         BNone t            -> BNone (eraseT t)              
 
 instance EraseT Bound where
-  eraseT uu
-    | isRegionKind $ typeOfBound uu 
+  eraseT _uu
+        = error "eraseT needs environment"
+ {-}   | isRegionKind $ typeOfBound uu 
     = UHole (typeOfBound uu)
+
     | otherwise                     
     = case uu of
         UIx   i k -> UIx   i (eraseT k)
         UName n k -> UName n (eraseT k)
         UPrim n k -> UPrim n (eraseT k)
         UHole k   -> UHole   (eraseT k)
+-}
     
 instance EraseT TyCon where
   eraseT cc
     = case cc of
-        TyConBound u -> TyConBound (eraseT u)
-        _            -> cc
+        TyConBound u t -> TyConBound (eraseT u) (eraseT t)
+        _              -> cc
         
         
 -------------------------------------------------------------------------------        
@@ -120,6 +123,9 @@ instance EraseX Exp where
         _                      -> xx
         
 isRegionTypeVar :: Type n -> Bool
+isRegionTypeVar = error "isRegionTypeVar needs environment"
+{-}
 isRegionTypeVar (TVar u) | isRegionKind $ typeOfBound u = True
 isRegionTypeVar _                                       = False
 
+-}

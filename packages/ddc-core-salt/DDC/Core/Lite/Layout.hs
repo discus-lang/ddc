@@ -46,11 +46,11 @@ heapObjectOfDataCtor ctor
         = Just HeapObjectBoxed
 
         -- All of the fixed size primitive types will fit in a RawSmall object.
-        | [t@(TCon tc)]          <- dataCtorFieldTypes ctor
-        , Just True              <- isUnboxedType t
-        , TyConBound (UPrim n _) <- tc
-        , NamePrimTyCon ptc      <- n
-        , Just True              <- isFixedSizePrimTyCon ptc
+        | [t@(TCon tc)]            <- dataCtorFieldTypes ctor
+        , Just True                <- isUnboxedType t
+        , TyConBound (UPrim n _) _ <- tc
+        , NamePrimTyCon ptc        <- n
+        , Just True                <- isFixedSizePrimTyCon ptc
         = Just HeapObjectRawSmall
 
         | otherwise
@@ -92,9 +92,9 @@ fieldSizeOfType platform tt
 
         TCon tc
          -> case tc of
-                TyConBound (UPrim n _)  -> fieldSizeOfPrim platform n
-                TyConBound _            -> Just $ platformAddrBytes platform
-                _                       -> Nothing
+                TyConBound (UPrim n _) _ -> fieldSizeOfPrim platform n
+                TyConBound _ _           -> Just $ platformAddrBytes platform
+                _                        -> Nothing
 
         -- We're not supporting polymorphic fields yet.
         TForall{}       -> Nothing
@@ -150,8 +150,8 @@ isUnboxedType tt
  = case tt of
         TVar{}          -> Just False
         TCon tc
-         | TyConBound (UPrim n _) <- tc
-         , NamePrimTyCon _        <- n    -> Just True
+         | TyConBound (UPrim n _) _ <- tc
+         , NamePrimTyCon _          <- n  -> Just True
          | otherwise                      -> Just False
 
         TForall{}       -> Just False

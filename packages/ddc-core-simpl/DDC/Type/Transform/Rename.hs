@@ -37,10 +37,10 @@ instance Rename Bind where
 instance Rename Bound where
  rename f uu
   = case uu of
-        UIx   i k       -> UIx   i     (rename f k)
-        UName n k       -> UName (f n) (rename f k)
-        UPrim n k       -> UName (f n) (rename f k)
-        UHole k         -> UHole (rename f k)
+        UIx i           -> UIx i
+        UName n         -> UName (f n)
+        UPrim n _       -> UName (f n)                  -- TODO: why rewrite to UName?
+        UHole t         -> UHole (rename f t)
 
 
 instance Rename TyCon where
@@ -50,5 +50,5 @@ instance Rename TyCon where
         TyConKind kc    -> TyConKind    kc
         TyConWitness tc -> TyConWitness tc
         TyConSpec tc    -> TyConSpec    tc
-        TyConBound u    -> TyConBound $ rename f u
+        TyConBound u t  -> TyConBound (rename f u) (rename f t)
 

@@ -21,7 +21,6 @@ import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Trim
 import DDC.Type.Transform.Instantiate
-import DDC.Type.Transform.LiftT
 import DDC.Type.Transform.LowerT
 import DDC.Type.DataDef
 import DDC.Type.Equiv
@@ -134,68 +133,19 @@ checkExpM config kenv tenv xx
 
 -- variables ------------------------------------
 checkExpM' _config _kenv tenv (XVar a u)
- = do   let tBound      = typeOfBound u
-        let mtEnv       = Env.lookup u tenv
-
-        let mkResult
-             -- If the variable is a hole then just use the annotation
-             | UHole t      <- u
-             = return t
-
-             -- There is a type for this var in the environment.
-             --
-             --    When the bound is a deBruijn index we need to lift the
-             --    annotation on the original binder through any lambdas
-             --    between the binding occurrence and the use.
-             | Just tEnv    <- mtEnv
-             , UIx i _      <- u
-             , equivT tBound (liftT (i + 1) tEnv) 
-             = return tBound
-
-             --    As above, but for UName and UPrim.
-             | Just tEnv    <- mtEnv
-             , equivT tBound tEnv
-             = return tEnv
-
-             --    When the annotation on the variable is a bot
-             --    then just use the type from the environment.
-             | Just tEnv    <- mtEnv
-             , isBot tBound
-             = return tEnv
-
-             -- The bound has an explicit type annotation,
-             --  which does not match the one from the environment.
-             | Just tEnv    <- mtEnv
-             = throw $ ErrorVarAnnotMismatch u tEnv
-
-             -- The variable is not in the environment, 
-             --     and the annotation is bot. 
-             --     This happens when the variable is undefined.
-             | Nothing      <- mtEnv
-             , isBot tBound
-             = throw  $ ErrorUndefinedVar u
-
-             -- The variable is not in the environment, 
-             --    but there is a non-bot type annotation attached to it.
-             --    This happens when checking open terms.
-             | otherwise
-             = return tBound
-        
-        tResult <- mkResult
-        let u'  =  replaceTypeOfBound tResult u
-
-        returnX a 
-                (\z -> XVar z u')
-                tResult
+ = case Env.lookup u tenv of
+        Nothing -> throw $ ErrorUndefinedVar u
+        Just t  
+         -> returnX a 
+                (\z -> XVar z u)
+                t
                 (Sum.empty kEffect)
-                (Set.singleton $ taggedClosureOfValBound u')
+                (Set.singleton $ taggedClosureOfValBound t u)
 
 
 -- constructors ---------------------------------
-checkExpM' config _kenv tenv xx@(XCon a u)
- = do   let tBound      = typeOfBound u
-        let mtEnv       = Env.lookup u tenv
-        let mkResult
+checkExpM' config _kenv _tenv xx@(XCon a u)
+ = do   let mkResult
                 -- Constructors can't be locally bound
                 | UIx{}         <- u
                 = throw $ ErrorMalformedExp xx
@@ -204,36 +154,24 @@ checkExpM' config _kenv tenv xx@(XCon a u)
                 = throw $ ErrorMalformedExp xx
 
                 -- Named constructors must be in the defs set.
-                | UName n _      <- u
-                , Nothing        <- Map.lookup n (dataDefsCtors $ configDataDefs config)
+                | UName  n      <- u
+                , Nothing       <- Map.lookup n (dataDefsCtors $ configDataDefs config)
                 = throw $ ErrorUndefinedCtor xx
 
                 -- Prim constructors don't need to be in the environment.
                 -- This is used for location constructor like L1# in the evaluator.
-                | UPrim{}        <- u
+                | UPrim _ tBound <- u
                 , not $ isBot tBound
                 = return tBound
-
-                -- When the annotation on the constructor is bot,
-                -- then just use the type from the environment.
-                | Just  tEnv     <- mtEnv
-                , isBot tBound
-                = return tEnv
-
-                -- Type on bound matches the one in the environment.
-                | Just tEnv      <- mtEnv
-                , equivT tBound tEnv
-                = return tEnv
 
                 -- Constructors can't be locally bound.
                 | otherwise
                 = throw $ ErrorMalformedExp xx
 
         tResult <- mkResult
-        let u'  = replaceTypeOfBound tResult u
 
         returnX a
-                (\z -> XCon z u')
+                (\z -> XCon z u)
                 tResult
                 (Sum.empty kEffect)
                 (Set.empty)
@@ -479,13 +417,9 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegion b bs) x)
 -- withregion -----------------------------------
 checkExpM' config kenv tenv xx@(XLet a (LWithRegion u) x)
  = do
-        -- Check the type on the region handle.
-        let k    = typeOfBound u
-        checkTypeM config kenv k
-
-        -- The handle must have region kind.
-        when (not $ isRegionKind k)
-         $ throw $ ErrorWithRegionNotRegion xx u k
+        -- The handle must have region kind.                    -- TODO: check region handle again
+--        when (not $ isRegionKind k)
+--         $ throw $ ErrorWithRegionNotRegion xx u k
         
         -- Check the body expression.
         (xBody', tBody, effs, clo) 
@@ -497,7 +431,7 @@ checkExpM' config kenv tenv xx@(XLet a (LWithRegion u) x)
          $ throw $ ErrorLetBodyNotData xx tBody kBody
         
         -- Delete effects on the bound region from the result.
-        let tu          = TCon $ TyConBound u
+        let tu          = TCon $ TyConBound u kRegion
         let effs'       = Sum.delete (tRead  tu)
                         $ Sum.delete (tWrite tu)
                         $ Sum.delete (tAlloc tu)
@@ -526,12 +460,12 @@ checkExpM' config kenv tenv xx@(XCase a xDiscrim alts)
         (nTyCon, tsArgs)
          <- case takeTyConApps tDiscrim of
                 Just (tc, ts)
-                 | TyConBound (UName n t) <- tc
-                 , takeResultKind t == kData
+                 | TyConBound (UName n) k <- tc
+                 , takeResultKind k == kData
                  -> return (n, ts)
                       
-                 | TyConBound (UPrim n t) <- tc
-                 , takeResultKind t == kData
+                 | TyConBound (UPrim n _) k <- tc
+                 , takeResultKind k == kData
                  -> return (n, ts)
 
                 _ -> throw $ ErrorCaseDiscrimNotAlgebraic xx tDiscrim
@@ -888,7 +822,13 @@ checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
         -- type arguments we got from the discriminant. 
         -- If the ctor type doesn't instantiate then it won't have enough foralls 
         -- on the front, which should have been checked by the def checker.
-        let tCtor       = typeOfBound uCon
+        tCtor   
+         <- case uCon of                                                                -- TODO fix this. Want DaCon for uCon
+                UPrim _ t       -> return t
+                UName{}         -> error "CheckExp: need to lookup type of data constructor"
+                UIx _           -> error "CheckExp: this is dodgy and shouldn't happen"
+                UHole{}         -> error "CheckExp: no hole case, we should change uCon to DaCon"
+
         tCtor_inst      
          <- case instantiateTs tCtor tsArgs of
              Nothing -> throw $ ErrorCaseCannotInstantiate xx tDiscrim tCtor
@@ -982,7 +922,7 @@ checkWitnessBindM kenv xx uRegion bsWit bWit
              | uRegion /= u'    -> throw $ ErrorLetRegionWitnessOther xx uRegion bWit
              | otherwise        -> return ()
 
-            TCon (TyConBound u')
+            TCon (TyConBound u' _)
              | uRegion /= u'    -> throw $ ErrorLetRegionWitnessOther xx uRegion bWit
              | otherwise        -> return ()
             
@@ -992,9 +932,9 @@ checkWitnessBindM kenv xx uRegion bsWit bWit
             
        isBound t
         = case t of
-            TVar u'              | Env.member u' kenv -> True
-            TCon (TyConBound u') | Env.member u' kenv -> True
-            _                                         -> False 
+            TVar u'                | Env.member u' kenv -> True
+            TCon (TyConBound u' _) | Env.member u' kenv -> True
+            _                                           -> False 
        
    in  case typeOfBind bWit of
         TApp (TCon (TyConWitness TwConGlobal))  t2

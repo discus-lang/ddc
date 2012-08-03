@@ -11,9 +11,7 @@ module DDC.Type.Compounds
         , partitionBindsByType
         
           -- * Bounds
-        , typeOfBound
         , takeNameOfBound
-        , replaceTypeOfBound
         , boundMatchesBind
         , namedBoundMatchesBind
         , takeSubstBoundOfBind
@@ -65,7 +63,7 @@ module DDC.Type.Compounds
 where
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as Sum
-
+import Debug.Trace
 
 -- Binds ----------------------------------------------------------------------
 -- | Take the variable name of a bind.
@@ -126,35 +124,15 @@ partitionBindsByType (b:bs)
 
 
 -- Bounds ---------------------------------------------------------------------
--- | Take the type of a bound variable.
-typeOfBound :: Bound n -> Type n
-typeOfBound uu
- = case uu of
-        UName _ t       -> t
-        UPrim _ t       -> t
-        UIx   _ t       -> t
-        UHole t         -> t
-
-
 -- | Take the name of bound variable.
 --   If this is a deBruijn index then there won't be a name.
 takeNameOfBound :: Bound n -> Maybe n
 takeNameOfBound uu
  = case uu of
-        UName n _       -> Just n
+        UName n         -> Just n
         UPrim n _       -> Just n
-        UIx _ _         -> Nothing
-        UHole _         -> Nothing
-
-
--- | Replace the type of a bound with a new one.
-replaceTypeOfBound :: Type n -> Bound n -> Bound n
-replaceTypeOfBound t uu
- = case uu of
-        UName n _       -> UName n t
-        UPrim n _       -> UPrim n t
-        UIx   i _       -> UIx   i t
-        UHole _         -> UHole t
+        UIx{}           -> Nothing
+        UHole{}         -> Nothing
 
 
 -- | Check whether a bound maches a bind.
@@ -164,9 +142,9 @@ replaceTypeOfBound t uu
 boundMatchesBind :: Eq n => Bound n -> Bind n -> Bool
 boundMatchesBind u b
  = case (u, b) of
-        (UName n1 _, BName n2 _) -> n1 == n2
-        (UIx 0 _,    BAnon _   ) -> True
-        _                        -> False
+        (UName n1, BName n2 _)  -> n1 == n2
+        (UIx 0,    BAnon _)     -> True
+        _                       -> False
 
 
 -- | Check whether a named bound matches a named bind. 
@@ -174,8 +152,8 @@ boundMatchesBind u b
 namedBoundMatchesBind :: Eq n => Bound n -> Bind n -> Bool
 namedBoundMatchesBind u b
  = case (u, b) of
-        (UName n1 _, BName n2 _) -> n1 == n2
-        _                        -> False
+        (UName n1, BName n2 _)  -> n1 == n2
+        _                       -> False
 
 
 
@@ -186,15 +164,15 @@ namedBoundMatchesBind u b
 takeSubstBoundOfBind :: Bind n -> Maybe (Bound n)
 takeSubstBoundOfBind bb
  = case bb of
-        BName n t       -> Just $ UName n t
-        BAnon t         -> Just $ UIx 0 t
+        BName n _       -> Just $ UName n 
+        BAnon _         -> Just $ UIx 0 
         BNone _         -> Nothing
 
 
 -- Variables ------------------------------------------------------------------
 -- | Construct a deBruijn index.
 tIx :: Kind n -> Int -> Type n
-tIx k i         = TVar (UIx i k)
+tIx _ i         = TVar (UIx i)
 
 
 -- Applications ---------------------------------------------------------------
@@ -237,12 +215,12 @@ takeDataTyConApps :: Type n -> Maybe (TyCon n, [Type n])
 takeDataTyConApps tt
  = case takeTApps tt of
         TCon tc : args  
-         | TyConBound (UName _ t)       <- tc
-         , TCon (TyConKind KiConData)   <- takeResultKind t
+         | TyConBound (UName _) k       <- tc
+         , TCon (TyConKind KiConData)   <- takeResultKind k
          -> Just (tc, args)
 
-         | TyConBound (UPrim _ t)       <- tc
-         , TCon (TyConKind KiConData)   <- takeResultKind t
+         | TyConBound  UPrim{}  k       <- tc
+         , TCon (TyConKind KiConData)   <- takeResultKind k
          -> Just (tc, args)
 
         _ -> Nothing
@@ -252,9 +230,9 @@ takeDataTyConApps tt
 --   This corresponds to the region the outermost constructor is allocated into.
 takePrimeRegion :: Type n -> Maybe (Type n)
 takePrimeRegion tt
- = case takeTApps tt of
-        TCon _ : tR@(TVar u) : _
-         | TCon (TyConKind KiConRegion) <- typeOfBound u
+ = trace ("TODO: DDC.Type.Compounds: takePrimeRegion is dodgy now as we don't check the kind of the constructor")
+ $ case takeTApps tt of
+        TCon _ : tR@(TVar _) : _
           -> Just tR
 
         _ -> Nothing
@@ -264,14 +242,14 @@ takePrimeRegion tt
 -- | Build an anonymous type abstraction, with a single parameter.
 tForall :: Kind n -> (Type n -> Type n) -> Type n
 tForall k f
-        = TForall (BAnon k) (f (TVar (UIx 0 k)))
+        = TForall (BAnon k) (f (TVar (UIx 0)))
 
 
 -- | Build an anonymous type abstraction, with several parameters.
 tForalls  :: [Kind n] -> ([Type n] -> Type n) -> Type n
 tForalls ks f
  = let  bs      = [BAnon k | k <- ks]
-        us      = zipWith ($) (reverse [(\n -> TVar (UIx n  k)) | k <- ks]) [0..]
+        us      = map (\i -> TVar (UIx i)) [0.. (length ks - 1)]
    in   foldr TForall (f $ reverse us) bs
 
 
@@ -440,13 +418,14 @@ twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
 
 twCon2 tc t1 t2 = tApps (TCon $ TyConWitness tc) [t1, t2]
 
+
 -- | Build a nullary type constructor of the given kind.
 tConData0 :: n -> Kind n -> Type n
-tConData0 n k    = TCon (TyConBound (UName n k))
+tConData0 n k   = TCon (TyConBound (UName n) k)
 
 
 -- | Build a type constructor application of one argumnet.
 tConData1 :: n -> Kind n -> Type n -> Type n
-tConData1 n k t1 = TApp (TCon (TyConBound (UName n k))) t1
+tConData1 n k t1 = TApp (TCon (TyConBound (UName n) k)) t1
 
 

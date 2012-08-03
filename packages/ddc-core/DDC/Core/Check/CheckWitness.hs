@@ -18,9 +18,6 @@ import DDC.Core.Check.ErrorMessage      ()
 import DDC.Type.DataDef
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Compounds
-import DDC.Type.Predicates
-import DDC.Type.Equiv
-import DDC.Type.Transform.LiftT
 import DDC.Type.Sum                     as Sum
 import DDC.Type.Env                     (Env)
 import DDC.Type.Check.Monad             (result, throw)
@@ -95,52 +92,12 @@ checkWitnessM
         -> CheckM a n (Type n)
 
 checkWitnessM _config _kenv tenv (WVar u)
- = do   let tBound      = typeOfBound u
-        let mtEnv       = Env.lookup u tenv
-
-        let mkResult
-             -- When annotation on the bound is bot,
-             --  then use the type from the environment.
-             | Just tEnv    <- mtEnv
-             , isBot tBound
-             = return tEnv
-
-             -- The bound has an explicit type annotation,
-             --  which matches the one from the environment.
-             -- 
-             --  When the bound is a deBruijn index we need to lift the
-             --  annotation on the original binder through any lambdas
-             --  between the binding occurrence and the use.
-             | Just tEnv    <- mtEnv
-             , UIx i _      <- u
-             , equivT tBound (liftT (i + 1) tEnv) 
-             = return tBound
-
-             -- The bound has an explicit type annotation,
-             --  which matches the one from the environment.
-             | Just tEnv    <- mtEnv
-             , equivT tBound tEnv
-             = return tEnv
-
-             -- The bound has an explicit type annotation,
-             --  which does not match the one from the environment.
-             --  This shouldn't happen because the parser doesn't add non-bot
-             --  annotations to bound variables.
-             | Just tEnv    <- mtEnv
-             = throw $ ErrorVarAnnotMismatch u tEnv
-
-             -- Variable not in environment, so use annotation.
-             --  This happens when checking open terms.
-             | otherwise
-             = return tBound
-        
-        tResult  <- mkResult
-        return tResult
-
+ = case Env.lookup u tenv of
+        Nothing -> throw $ ErrorUndefinedVar u
+        Just t  -> return t
 
 checkWitnessM _config _kenv _tenv (WCon wc)
  = return $ typeOfWiCon wc
-
   
 -- value-type application
 checkWitnessM config kenv tenv ww@(WApp w1 (WType t2))
@@ -193,7 +150,7 @@ typeOfWiCon :: WiCon n -> Type n
 typeOfWiCon wc
  = case wc of
     WiConBuiltin wb -> typeOfWbCon wb
-    WiConBound u    -> typeOfBound u
+    WiConBound _ t  -> t
 
 
 -- | Take the type of a builtin witness constructor.

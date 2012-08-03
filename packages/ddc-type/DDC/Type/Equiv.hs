@@ -193,7 +193,7 @@ matchT' stack1 stack2 t1 t2 vs subst
 
 	-- If template is in variable set, push the target into substitution
 	-- But we might need to rename bound variables...
-	(TVar (UName n _), _)
+	(TVar (UName n), _)
 	-- TODO rewrite binders from t2 to t1 in t2'
 	 | Set.member n vs
 	 , Nothing <- Map.lookup n subst
@@ -246,15 +246,15 @@ getBindType :: Eq n => [Bind n] -> Bound n -> Maybe (Int, Type n)
 getBindType bs' u'
  = go 0 u' bs'
  where  go n u (BName n1 t : bs)
-         | UName n2 _   <- u
+         | UName n2     <- u
          , n1 == n2     = Just (n, t)
 
          | otherwise    = go (n + 1) u bs
 
-        go n (UIx i t1) (BAnon t   : bs)
+        go n (UIx i)    (BAnon t   : bs)
          | i < 0        = Nothing
          | i == 0       = Just (n, t)
-         | otherwise    = go (n + 1) (UIx (i - 1) t1) bs
+         | otherwise    = go (n + 1) (UIx (i - 1)) bs
 
         go n u          (BAnon _   : bs)
          | otherwise    = go (n + 1) u bs

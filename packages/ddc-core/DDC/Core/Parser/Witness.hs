@@ -64,7 +64,7 @@ pWitnessAtom
 
    -- Named constructors
  , do   con     <- pCon
-        return  $ WCon (WiConBound $ UName con (T.tBot T.kWitness)) 
+        return  $ WCon (WiConBound (UName con) (T.tBot T.kWitness))
 
    -- Baked-in witness constructors.
  , do    wb     <- pWbCon
@@ -73,10 +73,10 @@ pWitnessAtom
                 
    -- Debruijn indices
  , do    i       <- pIndex
-         return  $ WVar (UIx   i   (T.tBot T.kWitness))
+         return  $ WVar (UIx   i)
 
    -- Variables
  , do    var     <- pVar
-         return  $ WVar (UName var (T.tBot T.kWitness)) ]
+         return  $ WVar (UName var) ]
 
  <?> "a witness"

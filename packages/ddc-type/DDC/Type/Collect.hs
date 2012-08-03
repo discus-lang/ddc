@@ -165,7 +165,7 @@ instance BindStruct Type where
 instance BindStruct TyCon where
  slurpBindTree tc
   = case tc of
-        TyConBound u    -> [BindCon BoundSpec u]
+        TyConBound u _  -> [BindCon BoundSpec u]
         _               -> []
 
 

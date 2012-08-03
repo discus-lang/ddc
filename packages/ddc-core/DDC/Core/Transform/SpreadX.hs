@@ -138,7 +138,7 @@ instance SpreadX WiCon where
  spreadX kenv tenv wc
   = let down = spreadX kenv tenv
     in case wc of
-        WiConBound u     -> WiConBound (down u)
+        WiConBound u  t  -> WiConBound (down u) (spreadT kenv t)
         WiConBuiltin{}   -> wc
 
 
@@ -154,14 +154,14 @@ instance SpreadX Bound where
  spreadX kenv tenv uu
   | Just t'     <- Env.lookup uu tenv
   = case uu of
-        UIx ix _        -> UIx ix t'
+        UIx ix          -> UIx   ix
         UPrim n _       -> UPrim n t'
         UHole{}         -> uu
 
-        UName n _
+        UName n
          -> if Env.isPrim tenv n 
                  then UPrim n (spreadT kenv t')
-                 else UName n (spreadT kenv t')
+                 else UName n
 
   | otherwise   = uu        
 

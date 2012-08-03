@@ -14,12 +14,12 @@ takeKindOfTyCon :: TyCon n -> Maybe (Kind n)
 takeKindOfTyCon tt
  = case tt of        
         -- Sorts don't have a higher classification.
-        TyConSort    _  -> Nothing
+        TyConSort    _   -> Nothing
  
-        TyConKind    kc -> takeSortOfKiCon kc
-        TyConWitness tc -> Just $ kindOfTwCon tc
-        TyConSpec    tc -> Just $ kindOfTcCon tc
-        TyConBound   u  -> Just $ typeOfBound u
+        TyConKind    kc  -> takeSortOfKiCon kc
+        TyConWitness tc  -> Just $ kindOfTwCon tc
+        TyConSpec    tc  -> Just $ kindOfTcCon tc
+        TyConBound  _u k -> Just k
 
 
 -- | Take the superkind of an atomic kind constructor.
@@ -54,7 +54,7 @@ kindOfTwCon tc
         TwConLazy       -> kRegion   `kFun`  kWitness
         TwConHeadLazy   -> kData     `kFun`  kWitness
         TwConManifest   -> kRegion   `kFun`  kWitness
-        TwConDisjoint	  -> kEffect   `kFun`  kEffect  `kFun` kWitness
+        TwConDisjoint	-> kEffect   `kFun`  kEffect  `kFun` kWitness
 
 
 -- | Take the kind of a computation type constructor.

@@ -50,7 +50,7 @@ empty   = UsedMap (Map.empty)
 accUsed :: Ord n => Bound n -> Used -> UsedMap n -> UsedMap n
 accUsed u used um@(UsedMap m)
  = case u of
-        UName n _       -> UsedMap $ Map.insertWith (++) n [used] m 
+        UName n         -> UsedMap $ Map.insertWith (++) n [used] m 
         _               -> um
 
 

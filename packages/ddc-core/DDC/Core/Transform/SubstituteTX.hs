@@ -66,7 +66,7 @@ instance SubstituteTX (Exp a) where
  substituteWithTX tArg sub xx
   = let down    = substituteWithTX tArg
     in case xx of
-        XVar a u        -> XVar a (down sub u)
+        XVar a u        -> XVar a u
         XCon{}          -> xx
         XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 
@@ -145,7 +145,7 @@ instance SubstituteTX Witness where
  substituteWithTX tArg sub ww
   = let down    = substituteWithTX tArg
     in case ww of
-        WVar u                  -> WVar  (down sub u)
+        WVar u                  -> WVar u
         WCon{}                  -> ww
         WApp  w1 w2             -> WApp  (down sub w1) (down sub w2)
         WJoin w1 w2             -> WJoin (down sub w1) (down sub w2)
@@ -155,11 +155,6 @@ instance SubstituteTX Witness where
 instance SubstituteTX Bind where
  substituteWithTX tArg sub bb
   = replaceTypeOfBind (substituteWithTX tArg sub (typeOfBind bb))  bb
-
-
-instance SubstituteTX Bound where
- substituteWithTX tArg sub uu
-  = replaceTypeOfBound (substituteWithTX tArg sub (typeOfBound uu)) uu
 
 
 instance SubstituteTX Type where

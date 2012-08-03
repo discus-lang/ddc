@@ -59,7 +59,7 @@ instance Forward Exp where
  forwardWith bindings xx
   = let down    = forwardWith bindings 
     in case xx of
-        XVar a u@(UName n _t)
+        XVar a u@(UName n)
          -> case Map.lookup n bindings of
                 Just xx'        -> xx'
                 Nothing         -> XVar (snd a) u

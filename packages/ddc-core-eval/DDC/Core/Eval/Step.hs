@@ -307,7 +307,7 @@ step store (XLet a (LLetRegion bRegion bws) x)
         -- Allocate a new region handle for the bound region.
         , (store1, uHandle@(UPrim (NameRgn rgn) _))
                         <- primNewRegion store
-        , tHandle       <- TCon $ TyConBound uHandle
+        , tHandle       <- TCon $ TyConBound uHandle kRegion
 
         -- Substitute handle into the witness types.
         , bws'          <- map (substituteBoundTX uRegion tHandle) bws

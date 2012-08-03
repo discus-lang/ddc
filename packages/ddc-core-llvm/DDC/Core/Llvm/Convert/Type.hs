@@ -26,7 +26,7 @@ import DDC.Llvm.Type
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
-import DDC.Type.Predicates
+-- import DDC.Type.Predicates
 import Control.Monad.State.Strict
 import DDC.Core.Salt                    as A
 import qualified DDC.Core.Salt.Name     as A
@@ -47,16 +47,18 @@ convType platform tt
  = case tt of
         -- A polymorphic type,
         -- represented as a generic boxed object.
-        C.TVar u
+        C.TVar _u
+         -> error "LLVM.convType: need environment"
+{-}
          | isDataKind (typeOfBound u)
          -> TPointer (tObj platform)
-
+-}
         -- A primitive type.
         C.TCon tc
           -> convTyCon platform tc
 
         -- A pointer to a primitive type.
-        C.TApp (C.TCon (C.TyConBound (C.UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
+        C.TApp (C.TCon (C.TyConBound (C.UPrim (NamePrimTyCon PrimTyConPtr) _) _)) t2
          -> TPointer (convType platform t2)
 
         -- Function types become pointers to functions.
@@ -115,10 +117,10 @@ llvmParameterOfType platform tt
 convTyCon :: Platform -> C.TyCon Name -> Type
 convTyCon platform tycon
  = case tycon of
-        C.TyConBound (C.UPrim NameObjTyCon _)
+        C.TyConBound (C.UPrim NameObjTyCon _) _
          -> tObj platform
 
-        C.TyConBound (C.UPrim (NamePrimTyCon tc) _)
+        C.TyConBound (C.UPrim (NamePrimTyCon tc) _) _
          -> case tc of
                 PrimTyConVoid           -> TVoid
                 PrimTyConBool           -> TInt 1
@@ -175,7 +177,7 @@ tTag pp = TInt (8 * platformTagBytes  pp)
 -- Predicates -----------------------------------------------------------------
 -- | Check whether this is the Void# type.
 isVoidT :: C.Type A.Name -> Bool
-isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid) _))) = True
+isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid) _) _)) = True
 isVoidT _ = False
 
 
@@ -183,7 +185,7 @@ isVoidT _ = False
 isSignedT :: C.Type A.Name -> Bool
 isSignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _) _)
          -> case n of
                 A.PrimTyConInt{}        -> True
                 A.PrimTyConFloat{}      -> True
@@ -195,7 +197,7 @@ isSignedT tt
 isUnsignedT :: C.Type A.Name -> Bool
 isUnsignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _) _)
          -> case n of
                 A.PrimTyConNat          -> True
                 A.PrimTyConTag          -> True
@@ -208,7 +210,7 @@ isUnsignedT tt
 isIntegralT :: C.Type A.Name -> Bool
 isIntegralT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _) _)
          -> case n of
                 A.PrimTyConNat          -> True
                 A.PrimTyConInt          -> True
@@ -222,7 +224,7 @@ isIntegralT tt
 isFloatingT :: C.Type A.Name -> Bool
 isFloatingT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _))
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon n) _) _)
          -> case n of
                 A.PrimTyConFloat  _     -> True
                 _                       -> False

@@ -8,7 +8,6 @@ module DDC.Type.Universe
         , universeOfType)
 where
 import DDC.Type.Exp
-import DDC.Type.Compounds
 import qualified DDC.Type.Sum   as T
 import DDC.Base.Pretty
 
@@ -80,9 +79,9 @@ universeFromType2 tt
                 KiConData       -> Just UniverseData
                 _               -> Nothing
 
-        TCon (TyConWitness _)   -> Nothing
-        TCon (TyConSpec  _)     -> Nothing
-        TCon (TyConBound _)     -> Nothing
+        TCon TyConWitness{}     -> Nothing
+        TCon TyConSpec{}        -> Nothing
+        TCon TyConBound{}       -> Nothing
         TForall _ _             -> Nothing
         TApp _ t2               -> universeFromType2 t2
         TSum _                  -> Nothing
@@ -93,13 +92,13 @@ universeFromType2 tt
 universeFromType1 :: Type n -> Maybe Universe
 universeFromType1 tt
  = case tt of
-        TVar u                    -> universeFromType2 (typeOfBound u)
+        TVar{}                    -> error "universeFromType1: don't have kind anymore, need environment"
         TCon (TyConSort _)        -> Just UniverseKind
         TCon (TyConKind _)        -> Just UniverseSpec
         TCon (TyConWitness _)     -> Just UniverseWitness
         TCon (TyConSpec TcConFun) -> Just UniverseData
         TCon (TyConSpec _)        -> Nothing
-        TCon (TyConBound u)       -> universeFromType2 (typeOfBound u)
+        TCon (TyConBound _ k)     -> universeFromType2 k
         TForall _ t2              -> universeFromType1 t2
         TApp t1 _                 -> universeFromType1 t1
         TSum _                    -> Nothing
@@ -114,12 +113,12 @@ universeFromType1 tt
 universeOfType :: Type n -> Maybe Universe
 universeOfType tt
  = case tt of
-        TVar u                  -> universeFromType1 (typeOfBound u)
+        TVar{}                  -> error "universOfType: don't have kind anymore, need environment"
         TCon (TyConSort _)      -> Just UniverseSort
         TCon (TyConKind _)      -> Just UniverseKind
         TCon (TyConWitness _)   -> Just UniverseSpec
         TCon (TyConSpec _)      -> Just UniverseSpec
-        TCon (TyConBound u)     -> universeFromType1 (typeOfBound u)
+        TCon (TyConBound _ k)   -> universeFromType1 k
         TForall _ t2            -> universeOfType t2
         TApp _ t2               -> universeOfType t2
         TSum ss                 -> universeFromType1 (T.kindOfSum ss)

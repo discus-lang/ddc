@@ -196,9 +196,9 @@ rewriteT :: Show n
 
 rewriteT tnam u
  = case u of
-        UIx i t
+        UIx i
          -> case lookup i (zip [0..] (namifierStack tnam)) of
-                Just (BName n _) -> return $ UName n t
+                Just (BName n _) -> return $ UName n
                 _                -> return u
 
         _       -> return u
@@ -211,14 +211,12 @@ rewriteX :: (Show n, Ord n)
         -> Bound n
         -> State s (Bound n)
 
-rewriteX tnam xnam u
+rewriteX _tnam xnam u
  = case u of
-        UIx i t
+        UIx i
          -> case lookup i (zip [0..] (namifierStack xnam)) of
                 Just (BName n _) 
-                 -> do  t'      <- namify tnam xnam t
-                        return  $ UName n t'
-
+                 -> do  return  $ UName n
                 _                -> return u
 
         _       -> return u

@@ -121,13 +121,13 @@ memberBind uu env
 lookup :: Ord n => Bound n -> Env n -> Maybe (Type n)
 lookup uu env
  = case uu of
-        UName n _
+        UName n 
          ->      Map.lookup n (envMap env) 
          `mplus` envPrimFun env n
 
-        UIx i _         -> P.lookup i (zip [0..] (envStack env))
+        UIx i           -> P.lookup i (zip [0..] (envStack env))
         UPrim n _       -> envPrimFun env n
-        UHole _         -> Nothing
+        UHole{}         -> Nothing
 
 
 -- | Lookup a bound name from an environment.

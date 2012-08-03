@@ -117,7 +117,7 @@ enterX arities x
                 alts'   = [AAlt pat (down (aritiesOfPat pat) ae) | AAlt pat ae <- alts]
 
             in   XLet a  (LLet LetStrict (BAnon (T.tBot T.kData)) e')
-                        (XCase a (XVar a $ UIx 0 (T.tBot T.kData)) 
+                        (XCase a (XVar a $ UIx 0) 
                                 (map (L.liftX 1) alts'))
 
         -- cast
@@ -156,7 +156,7 @@ makeLets arities f0 args@((_,annot):_)
         go i arf ((x, a) : xs) acc 
          |  length acc > arf
          =  XLet a (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
-                   (go i 1 ((x, a) : xs) [(XVar a $ UIx 0 tBot, a)])
+                   (go i 1 ((x, a) : xs) [(XVar a $ UIx 0, a)])
 
         -- application to variable, don't bother binding
         go i arf ((x,a):xs) acc 
@@ -180,14 +180,14 @@ makeLets arities f0 args@((_,annot):_)
          = L.liftX l x
 
         mkApps _ i [(_,a)]
-         = XVar a $ UIx i tBot
+         = XVar a $ UIx i
 
         -- apply this argument and recurse
         mkApps l i ((x,a):xs) | isNormal x
          = XApp a (mkApps l i xs) (L.liftX l x)
 
         mkApps l i ((_,a):xs)
-         = XApp a (mkApps l (i+1) xs) (XVar a $ UIx i tBot)
+         = XApp a (mkApps l (i+1) xs) (XVar a $ UIx i)
 
 
 

@@ -47,22 +47,21 @@ instance SpreadT Bind where
 
 instance SpreadT Bound where
  spreadT kenv uu
-  | Just t'     <- Env.lookup uu kenv
   = case uu of
-        UIx ix _        -> UIx ix t'
-        UPrim n _       -> UPrim n t'
-        UHole{}         -> uu
-        UName n _
-         -> if Env.isPrim kenv n 
-                 then UPrim n t'
-                 else UName n t'
-                 
-  | otherwise           = uu
+        UIx{}           -> uu
 
+        UName n
+         -> case Env.envPrimFun kenv n of
+                Nothing -> UName n
+                Just t  -> UPrim n t
+
+        UPrim{}         -> uu
+        UHole{}         -> uu
+                 
 
 instance SpreadT TyCon where
  spreadT kenv tc
   = case tc of
-        TyConBound u    -> TyConBound (spreadT kenv u)
+        TyConBound u k  -> TyConBound u (spreadT kenv k)
         _               -> tc
 

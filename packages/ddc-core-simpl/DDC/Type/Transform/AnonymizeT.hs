@@ -57,9 +57,9 @@ instance AnonymizeT TypeSum where
 instance AnonymizeT Bound where 
  anonymizeWithT kstack bb
   = case bb of
-        UName _ t
+        UName _
          | Just ix      <- findIndex (boundMatchesBind bb) kstack
-         -> UIx ix (anonymizeWithT kstack t)
+         -> UIx ix
          
         _ -> bb
 

@@ -61,7 +61,7 @@ pModule
 
         -- We use this hole as a place holder, so we have
         -- something to wrap around the let-expressions.
-        let hole = (XVar () (UHole (TVar (UHole T.kData)))) 
+        let hole = XVar () (UHole T.kData)
 
         -- TODO: make having duplicate names in the imports 
         --       or exports list a parse error, so we never build a bad map. 
@@ -168,7 +168,7 @@ pExp
         n       <- pVar
         pTok KIn
         x       <- pExp
-        let u   = UName n (T.tBot T.kRegion)
+        let u   = UName n
         return  $ XLet () (LWithRegion u) x
 
 
@@ -302,19 +302,19 @@ pExp0
         
         -- Named constructors
  , do   con     <- pCon
-        return  $ XCon () (UName con (T.tBot T.kData)) 
+        return  $ XCon () (UName con) 
 
         -- Literals
  , do   lit     <- pLit
-        return  $ XCon () (UName lit (T.tBot T.kData))
+        return  $ XCon () (UName lit)
 
         -- Debruijn indices
  , do   i       <- pIndex
-        return  $ XVar () (UIx   i   (T.tBot T.kData))
+        return  $ XVar () (UIx   i)
 
         -- Variables
  , do   var     <- pVar
-        return  $ XVar () (UName var (T.tBot T.kData)) 
+        return  $ XVar () (UName var) 
  ]
 
  <?> "a variable, constructor, or parenthesised type"
@@ -339,12 +339,12 @@ pPat
 
         -- LIT
  , do   nLit    <- pLit
-        return  $ PData (UName nLit (T.tBot T.kData)) []
+        return  $ PData (UName nLit) []
 
         -- CON BIND BIND ...
  , do   nCon    <- pCon 
         bs      <- P.many pBindPat
-        return  $ PData (UName nCon (T.tBot T.kData)) bs]
+        return  $ PData (UName nCon) bs]
 
 
 -- Binds in patterns can have no type annotation,

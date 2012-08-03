@@ -29,7 +29,7 @@ match _m _bs l r
  | trace ("L:"++show l++"\nR:"++show r) False
  = Nothing
  -}
-match m bs (XVar _ (UName n _)) r
+match m bs (XVar _ (UName n)) r
  | n `Set.member` bs
  = case lookupx n m of
    Nothing -> return $ insertx n r m

@@ -116,31 +116,31 @@ substBound
 
 substBound (BindStack binds _ dAnon dName) u u'
         -- Bound name matches the one that we're substituting for.
-        | UName n1 _   <- u
-        , UName n2 _   <- u'
+        | UName n1      <- u
+        , UName n2      <- u'
         , n1 == n2
         = Right (dAnon + dName)
 
         -- Bound index matches the one that we're substituting for.
-        | UIx  i1 _     <- u
-        , UIx  i2 _     <- u'
+        | UIx  i1       <- u
+        , UIx  i2       <- u'
         , i1 + dAnon == i2 
         = Right (dAnon + dName)
 
         -- The Bind for this name was rewritten to avoid variable capture,
         -- so we also have to update the bound occurrence.
-        | UName _ t     <- u'
+        | UName _       <- u'
         , Just ix       <- findIndex (boundMatchesBind u') binds
-        = Left $ UIx ix t
+        = Left $ UIx ix
 
         -- Bound index doesn't match, but lower this index by one to account
         -- for the removal of the outer binder.
-        | UIx  i2 t     <- u'
+        | UIx  i2       <- u'
         , i2 > dAnon
         , cutOffset     <- case u of
                                 UIx{}   -> 1
                                 _       -> 0
-        = Left $ UIx (i2 + dName - cutOffset) t
+        = Left $ UIx (i2 + dName - cutOffset)
 
         -- Some name that didn't match.
         | otherwise
@@ -174,10 +174,10 @@ bind0s = mapAccumL bind0
 -- | Rewrite a use of a level-1 binder if need be.
 use1 :: Ord n => Sub n -> Bound n -> Bound n
 use1 sub u
-        | UName _ t             <- u
+        | UName _               <- u
         , BindStack binds _ _ _ <- subStack1 sub
         , Just ix               <- findIndex (boundMatchesBind u) binds
-        = UIx ix t
+        = UIx ix
 
         | otherwise
         = u
@@ -186,14 +186,13 @@ use1 sub u
 -- | Rewrite the use of a level-0 binder if need be.
 use0 :: Ord n => Sub n -> Bound n -> Bound n
 use0 sub u
-        | UName _ t             <- u
+        | UName _               <- u
         , BindStack binds _ _ _ <- subStack0 sub
         , Just ix               <- findIndex (boundMatchesBind u) binds
-        = UIx ix (rewriteWith sub t)
+        = UIx ix
 
         | otherwise
-        = rewriteWith sub u
-
+        = u
 
 -------------------------------------------------------------------------------
 class Rewrite (c :: * -> *) where
@@ -205,11 +204,6 @@ class Rewrite (c :: * -> *) where
 instance Rewrite Bind where
  rewriteWith sub bb
   = replaceTypeOfBind  (rewriteWith sub (typeOfBind bb))  bb
-
-
-instance Rewrite Bound where
- rewriteWith sub uu
-  = replaceTypeOfBound (rewriteWith sub (typeOfBound uu)) uu
 
 
 instance Rewrite Type where

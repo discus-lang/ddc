@@ -116,6 +116,8 @@ data Pat n
         = PDefault
         
         -- | Match a data constructor and bind its arguments.
+        --   TODO: the Bound here should really be a DaCon.
+        --         It doesn't make sense to have UIx here.
         | PData (Bound n) [Bind n]
         deriving (Eq, Show)
         
@@ -148,7 +150,8 @@ data WiCon n
 
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
-        | WiConBound (Bound n)
+        --   The attached type must be closed.
+        | WiConBound (Bound n) (Type n)
         deriving (Eq, Show)
 
 

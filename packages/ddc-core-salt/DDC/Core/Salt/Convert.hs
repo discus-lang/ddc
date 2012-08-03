@@ -49,15 +49,15 @@ convModuleM mm@(ModuleCore{})
 convTypeM :: Type Name -> ConvertM a Doc
 convTypeM tt
   = case tt of
-        TCon (TyConBound (UPrim (NamePrimTyCon tc) _))
+        TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)
          |  Just doc     <- convPrimTyCon tc
          -> return doc
 
-        TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _))) t2
+        TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _) _)) t2
          -> do  t2'     <- convTypeM t2
                 return  $ t2' <> text "*"
 
-        TCon (TyConBound (UPrim NameObjTyCon _))
+        TCon (TyConBound (UPrim NameObjTyCon _) _)
            ->   return  $ text "Obj"
 
         _  -> return $ text "DUNNO" -- throw $ ErrorTypeInvalid tt
@@ -209,7 +209,7 @@ isControlPrim pp
 
 -- | Check whether this is the Void# type.
 isVoidT :: Type Name -> Bool
-isVoidT (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid) _))) = True
+isVoidT (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid) _) _)) = True
 isVoidT _ = False
 
 
@@ -267,7 +267,7 @@ convRValueM xx
  = case xx of
 
         -- Plain variable.
-        XVar _ (UName n _)
+        XVar _ (UName n)
          | NameVar str  <- n
          -> return $ text $ sanitizeName str
 
@@ -294,7 +294,7 @@ convRValueM xx
 
         -- Super application.
         XApp{}
-         |  Just (XVar _ (UName n _), args)  <- takeXApps xx
+         |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
          -> do  let nTop' = sanitizeName nTop
                 args'     <- mapM convRValueM args
@@ -320,7 +320,7 @@ convStmtM xx
 
         -- Super application.
         XApp{}
-         |  Just (XVar _ (UName n _), args)  <- takeXApps xx
+         |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
          -> do  let nTop' = sanitizeName nTop
                 args'     <- mapM convRValueM args

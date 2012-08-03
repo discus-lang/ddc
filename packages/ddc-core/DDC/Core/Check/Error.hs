@@ -41,6 +41,7 @@ data Error a n
         --   the corresponding annotation in the environment.
         | ErrorVarAnnotMismatch
         { errorBound            :: Bound n
+        , errorTypeAnnot        :: Type n
         , errorTypeEnv          :: Type n }
 
         -- Con --------------------------------------------

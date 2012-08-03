@@ -77,7 +77,7 @@ expOfSBind sbind
 
 -- | Convert a data constructor tag to a constructor expression.
 expOfTag :: Name -> Exp () Name
-expOfTag n = XCon () (UName n (tBot kData))
+expOfTag n = XCon () (UName n)
 
 
 -- | Convert a store location to a constructor expression.

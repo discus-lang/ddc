@@ -35,11 +35,11 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
         ErrorUndefinedVar u
          -> vcat [ text "Undefined variable: "          <> ppr u ]
 
-        ErrorVarAnnotMismatch u t
+        ErrorVarAnnotMismatch u tEnv tAnnot
          -> vcat [ text "Type mismatch in annotation."
                  , text "             Variable: "       <> ppr u
-                 , text "       has annotation: "       <> (ppr $ typeOfBound u)
-                 , text " which conflicts with: "       <> ppr t
+                 , text "       has annotation: "       <> ppr tAnnot
+                 , text " which conflicts with: "       <> ppr tEnv
                  , text "     from environment." ]
 
 

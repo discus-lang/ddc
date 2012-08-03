@@ -79,7 +79,7 @@ checkDisjoint c env
 
     boundOf (TVar b)
      = Just b
-    boundOf (TCon (TyConBound b))
+    boundOf (TCon (TyConBound b _))
      = Just b
     boundOf _
      = Nothing
@@ -120,8 +120,9 @@ areDistinct env p q
     wit p' q'
       = T.TCon (T.TyConWitness T.TwConDistinct) `T.TApp` rgn p' `T.TApp` rgn q'
 
-    rgn b@(UPrim _ _)
-      = T.TCon (T.TyConBound b)
+    rgn b@(UPrim _ t)
+      = T.TCon (T.TyConBound b t)
+
     rgn b
       = T.TVar b
 

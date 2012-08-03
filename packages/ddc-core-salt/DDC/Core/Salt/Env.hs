@@ -178,8 +178,8 @@ typeOfPrimCall cc
 makePrimCallType :: Int -> Type Name
 makePrimCallType arity
  = let  tSuper   = foldr tFunPE 
-                         (TVar (UIx 0 kData))
-                         (reverse [TVar (UIx i kData) | i <- [1..arity]])
+                         (TVar (UIx 0))
+                         (reverse [TVar (UIx i) | i <- [1..arity]])
 
         tCall    = foldr TForall (tSuper `tFunPE` tSuper) 
                          [BAnon k | k <- replicate (arity + 1) kData]

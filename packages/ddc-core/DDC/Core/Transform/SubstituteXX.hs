@@ -104,7 +104,7 @@ instance SubstituteXX Exp where
     in case xx of
         XVar a u
          -> case substX xArg sub u of
-                Left  u' -> XVar a (into sub u')
+                Left  u' -> XVar a u'
                 Right x  -> x
 
         XCon{}           -> xx
@@ -168,9 +168,9 @@ substX  :: Ord n => Exp a n -> Sub n -> Bound n
 
 substX xArg sub u
   = case substBound (subStack0 sub) (subBound sub) u of
-        Left  u'                -> Left (rewriteWith sub u')
+        Left  u'                -> Left u'
         Right n  
          | not $ subShadow0 sub -> Right (liftX n xArg)
-         | otherwise            -> Left (rewriteWith sub u)
+         | otherwise            -> Left  u
 
 

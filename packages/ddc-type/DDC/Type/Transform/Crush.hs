@@ -33,14 +33,14 @@ crushEffect tt
          -> case takeTyConApps t of
 
              -- Type has a head region.
-             Just (TyConBound u, (tR : _)) 
-              |  (k1 : _, _) <- takeKFuns (typeOfBound u)
+             Just (TyConBound _ k, (tR : _)) 
+              |  (k1 : _, _) <- takeKFuns k
               ,  isRegionKind k1
               -> tRead tR
 
              -- Type has no head region.
              -- This happens with  case () of { ... }
-             Just (TyConBound _, [])        -> tBot kEffect
+             Just (TyConBound _ _, [])  -> tBot kEffect
 
              _ -> tt
 
@@ -48,8 +48,8 @@ crushEffect tt
          -- See Note: Crushing with higher kinded type vars.
          | Just (TyConSpec TcConDeepRead, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
-             Just (TyConBound u, ts)
-              | (ks, _)  <- takeKFuns (typeOfBound u)
+             Just (TyConBound _ k, ts)
+              | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepRead ks ts
               -> crushEffect $ TSum $ Sum.fromList kEffect effs
@@ -60,8 +60,8 @@ crushEffect tt
          -- See Note: Crushing with higher kinded type vars.
          | Just (TyConSpec TcConDeepWrite, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
-             Just (TyConBound u, ts)
-              | (ks, _)  <- takeKFuns (typeOfBound u)
+             Just (TyConBound _ k, ts)
+              | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepWrite ks ts
               -> crushEffect $ TSum $ Sum.fromList kEffect effs
@@ -72,8 +72,8 @@ crushEffect tt
          -- See Note: Crushing with higher kinded type vars.
          | Just (TyConSpec TcConDeepAlloc, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
-             Just (TyConBound u, ts)
-              | (ks, _)  <- takeKFuns (typeOfBound u)
+             Just (TyConBound _ k, ts)
+              | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepAlloc ks ts
               -> crushEffect $ TSum $ Sum.fromList kEffect effs
@@ -86,8 +86,8 @@ crushEffect tt
          -- See Note: Crushing with higher kinded type vars.
          | Just (TyConWitness TwConDeepGlobal, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
-             Just (TyConBound u, ts)
-              | (ks, _)  <- takeKFuns (typeOfBound u)
+             Just (TyConBound _ k, ts)
+              | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just props       <- sequence $ zipWith makeDeepGlobal ks ts
               -> crushEffect $ TSum $ Sum.fromList kWitness props

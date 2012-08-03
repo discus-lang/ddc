@@ -217,7 +217,7 @@ convertBodyX pp defs xx
         --        Same for string literals.
         --
         XCase (AnTEC _t _ _ a') xScrut@(XVar _ uScrut) alts
-         | TCon (TyConBound (UPrim nType _))    <- typeOfBound uScrut
+         | TCon (TyConBound (UPrim nType _) _)  <- error "Lite.convertBodyX: need environment" -- typeOfBound uScrut
          , L.NamePrimTyCon _                    <- nType
          -> do  xScrut' <- convertSimpleX pp defs xScrut
                 alts'   <- mapM (convertAlt pp defs a' uScrut) alts
@@ -237,7 +237,7 @@ convertBodyX pp defs xx
                         | otherwise     
                         = [AAlt PDefault (S.xFail a' t')]
 
-                let Just tPrime = takePrimeRegion (typeOfBound uX')
+                let Just tPrime = uX' `seq` error "Lite.convertBodyX: need environment" -- takePrimeRegion (typeOfBound uX')
                 return  $ XCase a' (S.xGetTag a' tPrime x') 
                         $ alts' ++ asDefault
 
@@ -281,7 +281,7 @@ convertSimpleX pp defs xx
         -- User-defined data constructors.
         XApp a xa xb
          | (x1, xsArgs)           <- takeXApps' xa xb
-         , XCon _ (UName nCtor _) <- x1
+         , XCon _ (UName nCtor)   <- x1
          -> convertCtorAppX pp a defs nCtor xsArgs
 
         -- Primitive operations.
@@ -330,7 +330,7 @@ convertAtomX pp defs xx
 
         XCon a u
          -> case u of
-                UName nCtor _   -> convertCtorAppX pp a defs nCtor []
+                UName nCtor     -> convertCtorAppX pp a defs nCtor []
                 UPrim nCtor _   -> convertCtorAppX pp a defs nCtor []
                 _               -> throw $ ErrorInvalidBound u
 
@@ -459,7 +459,7 @@ convertAlt pp defs a uScrut alt
         -- of data constructors.
         AAlt (PData uCtor bsFields) x
          | Just nCtor    <- case uCtor of
-                                UName n _ -> Just n
+                                UName n   -> Just n
                                 UPrim n _ -> Just n
                                 _         -> Nothing
          , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs

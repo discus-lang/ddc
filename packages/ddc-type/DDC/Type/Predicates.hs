@@ -120,9 +120,9 @@ isWitnessKind tt
 -- but it is in `TyConComp`, so is easy to ignore.
 isAlgDataType :: Eq n => Type n -> Bool
 isAlgDataType tt
-        | Just (tc, _)  <- takeTyConApps tt
-        , TyConBound u  <- tc
-        = takeResultKind (typeOfBound u) == kData
+        | Just (tc, _)   <- takeTyConApps tt
+        , TyConBound _ k <- tc
+        = takeResultKind k == kData
 
         | otherwise
         = False
