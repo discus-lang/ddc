@@ -57,7 +57,7 @@ getArity (named, anon) u
 
         -- Get a primitive's arity from its type.
         -- The arities of primitives always match their types, so this is ok.
-        UPrim{}         -> error "DDC.Core.Analysis.Arity: need environment to determine prim arities"
+        UPrim _ t       -> arityFromType t
 
 
 -- | Get the arities of a `Lets`
@@ -105,7 +105,7 @@ arityOfExp xx
 
         -- Find primitive's constructor's arities from type,
         -- we might need to do this for user defined constructors too.
-        XCon _ (UPrim{})        -> error "DDC.Core.Analysis.Arity: need environment"
+        XCon _ (UPrim _ t)      -> arityFromType t
 
         -- Anything else we'll need to apply one at a time
         _                       -> Just 0
