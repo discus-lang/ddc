@@ -5,7 +5,6 @@
 module DDC.Core.Salt.Erase
         (eraseM)
 where
-
 import DDC.Type.Exp
 import DDC.Type.Sum
 import DDC.Type.Compounds
@@ -13,9 +12,11 @@ import DDC.Type.Predicates
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Transform.TransformX
+import Control.Arrow            (first, second)
+import DDC.Type.Env             (Env)
+import qualified DDC.Type.Env   as Env
+import qualified Data.Map       as Map
 
-import Control.Arrow (first, second)
-import qualified Data.Map as Map
 
 -- | Completely erase region types and kinds from a module
 eraseM :: (Show n, Ord n) => Module a n -> Module a n
@@ -24,108 +25,106 @@ eraseM mm@(ModuleCore { moduleExportKinds = eks
                       , moduleImportKinds = iks
                       , moduleImportTypes = its
                       , moduleBody        = xx })
-  = mm { moduleExportKinds = Map.map eraseT eks
-       , moduleExportTypes = Map.map eraseT ets
-       , moduleImportKinds = Map.map (second eraseT) iks
-       , moduleImportTypes = Map.map (second eraseT) its
-       , moduleBody        = transformUpX' eraseX xx }
+  = mm { moduleExportKinds = Map.map (eraseT Env.empty) eks
+       , moduleExportTypes = Map.map (eraseT Env.empty) ets
+       , moduleImportKinds = Map.map (second (eraseT Env.empty)) iks
+       , moduleImportTypes = Map.map (second (eraseT Env.empty)) its
+       , moduleBody        = transformUpX eraseX Env.empty Env.empty xx }
 
 
 -------------------------------------------------------------------------------        
 class EraseT (c :: * -> *) where
-  eraseT :: (Show n, Ord n) => c n -> c n
+  eraseT :: (Show n, Ord n) 
+         => Env n -> c n -> c n
   
 instance EraseT Type where
-  eraseT tt
+  eraseT kenv tt
     = case tt of
-        TVar    u                       -> TVar (eraseT u)
-        TCon    c                       -> TCon (eraseT c)
+        TVar    u                       -> TVar (eraseT kenv u)
+        TCon    c                       -> TCon (eraseT kenv c)
         TForall b t
-          | isRegionKind $ typeOfBind b -> eraseT t
-          | otherwise                   -> TForall (eraseT b) (eraseT t)  
+          | isRegionKind $ typeOfBind b 
+          -> eraseT (Env.extend b kenv) t
+          
+          | otherwise                   
+          -> let kenv'  = Env.extend b kenv
+             in  TForall (eraseT kenv' b) (eraseT kenv' t)  
                 
         -- Erase region type applications
         TApp   t1 t2
           | isRegionTypeVar t2          -> eraseT t1   
-          | isRegionKind t2             -> eraseT t1    
+          | isRegionKind t2             -> eraseT t1                          
+          
+        TApp   t1 t2                    -> TApp (eraseT kenv t1) (eraseT kenv t2)
+        TSum   ts                       -> TSum (eraseT kenv ts)
         
-        -- Erase witness type applications. Witnesses themselves are implications, 
-        --   so we must match on the witness constructor inside.
-        TApp (TApp t1 _) t2
-          | isWitnessType t1            -> eraseT t2
 
-        TApp   t1 t2                    -> TApp (eraseT t1) (eraseT t2)
-        TSum   ts                       -> TSum (eraseT ts)
-        
 instance EraseT TypeSum where
-  eraseT ts = fromList (eraseT $ kindOfSum ts) $ map eraseT $ toList ts
+  eraseT kenv ts 
+        = fromList (eraseT kenv $ kindOfSum ts) 
+        $ map (eraseT kenv) 
+        $ toList ts
   
+
 instance EraseT Bind where
-  eraseT bb
+  eraseT kenv bb
     = case bb of
         BName n t
-          -- Erase region binders
-          | isRegionKind t -> BNone (eraseT t)  
-          
-          -- Erase witness binders
-          | isWitnessType t-> BNone (eraseT t)
-                   
+          | isRegionKind t -> BNone (eraseT t) 
           | otherwise      -> BName n (eraseT t)                
         BAnon t            -> BAnon (eraseT t)
         BNone t            -> BNone (eraseT t)              
 
 instance EraseT Bound where
-  eraseT _uu
-        = error "eraseT needs environment"
- {-}   | isRegionKind $ typeOfBound uu 
-    = UHole (typeOfBound uu)
+  eraseT kenv uu
+    | Just k    <- Env.lookup uu kenv
+    , isRegionKind k
+    = UHole kRegion
 
     | otherwise                     
     = case uu of
-        UIx   i k -> UIx   i (eraseT k)
-        UName n k -> UName n (eraseT k)
-        UPrim n k -> UPrim n (eraseT k)
-        UHole k   -> UHole   (eraseT k)
--}
+        UIx   i   -> UIx   i
+        UName n   -> UName n
+        UPrim n k -> UPrim n k
+        UHole k   -> UHole   k
+
     
 instance EraseT TyCon where
-  eraseT cc
+  eraseT kenv cc
     = case cc of
-        TyConBound u t -> TyConBound (eraseT u) (eraseT t)
+        TyConBound u t -> TyConBound (eraseT kenv u) (eraseT kenv t)
         _              -> cc
         
         
 -------------------------------------------------------------------------------        
 class EraseX (c :: * -> * -> *) where
-  eraseX :: (Show n, Ord n) => c a n -> c a n
+  eraseX :: (Show n, Ord n) 
+        => Env n -> Env n -> c a n -> c a n
  
 instance EraseX Exp where
-  eraseX xx
+  eraseX kenv _tenv xx
     = case xx of
-        XVar a u               -> XVar a (eraseT u)
-        XCon a u               -> XCon a (eraseT u)
-        XLAM a b x             -> XLAM a (eraseT b) x
-        XLam a b x             -> XLam a (eraseT b) x
+        XVar a u               -> XVar a (eraseT kenv u)
+        XCon a u               -> XCon a (eraseT kenv u)
+        XLAM a b x             -> XLAM a (eraseT kenv b) x
+        XLam a b x             -> XLam a (eraseT kenv b) x
         
         -- Erase region type applications
         XApp _ x (XType t)
           | isRegionTypeVar t  -> x
-        
-        -- Erase witness arguments
-        XApp _ x (XWitness _) -> x
           
         -- transformUpX doesn't descend into the bindings, so we do it here
-        XLet a (LLet m b x1) x -> XLet a (LLet m (eraseT b) x1) x
-        XLet a (LRec bxs) x    -> XLet a (LRec $ map (first eraseT) bxs) x
+        XLet a (LLet m b x1) x -> XLet a (LLet m (eraseT kenv b) x1) x
+        XLet a (LRec bxs) x    -> XLet a (LRec $ map (first (eraseT kenv)) bxs) x
         
         XType t                -> XType (eraseT t)
-        
         _                      -> xx
         
-isRegionTypeVar :: Type n -> Bool
-isRegionTypeVar = error "isRegionTypeVar needs environment"
-{-}
-isRegionTypeVar (TVar u) | isRegionKind $ typeOfBound u = True
-isRegionTypeVar _                                       = False
+isRegionTypeVar :: Ord n => Env n -> Type n -> Bool
+isRegionTypeVar kenv tt
+        | TVar u        <- tt
+        , Just k        <- Env.lookup u kenv
+        = isRegionKind k
 
--}
+        | otherwise
+        = False

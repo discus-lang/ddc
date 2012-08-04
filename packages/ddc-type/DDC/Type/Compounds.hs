@@ -20,10 +20,12 @@ module DDC.Type.Compounds
         , tIx
         , tApp,          ($:)
         , tApps,         takeTApps
-        , takeTyConApps, takeDataTyConApps
+        , takeTyConApps
+        , takePrimTyConApps
+        , takeDataTyConApps
         , takePrimeRegion
         , tForall
-        , tForalls,      takeTForalls
+        , tForalls,      takeTForalls,  eraseTForalls
         , tBot
         , tSum
 
@@ -210,6 +212,18 @@ takeTyConApps tt
 
 
 -- | Flatten a sequence of type applications, returning the type constructor
+--   and arguments, if there is one. Only accept primitive type constructors.
+takePrimTyConApps :: Type n -> Maybe (n, [Type n])
+takePrimTyConApps tt
+ = case takeTApps tt of
+        TCon tc : args  
+         | TyConBound (UPrim n _) _     <- tc
+         -> Just (n, args)
+
+        _ -> Nothing
+
+
+-- | Flatten a sequence of type applications, returning the type constructor
 --   and arguments, if there is one. Only accept data type constructors.
 takeDataTyConApps :: Type n -> Maybe (TyCon n, [Type n])
 takeDataTyConApps tt
@@ -262,6 +276,18 @@ takeTForalls tt
    in   case go [] tt of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
+
+
+-- | Erase all `TForall` quantifiers from a type.
+eraseTForalls :: Ord n => Type n -> Type n
+eraseTForalls tt
+ = case tt of
+        TVar{}          -> tt
+        TCon{}          -> tt
+        TForall _ t     -> eraseTForalls t
+        TApp t1 t2      -> TApp (eraseTForalls t1) (eraseTForalls t2)
+        TSum ts         -> TSum $ Sum.fromList (Sum.kindOfSum ts) 
+                                $ map eraseTForalls $ Sum.toList ts
 
 
 -- Sums -----------------------------------------------------------------------

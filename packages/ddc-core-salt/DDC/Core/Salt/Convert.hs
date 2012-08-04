@@ -16,12 +16,11 @@ where
 import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
-import DDC.Core.Salt.Erase
 import DDC.Core.Compounds
 import DDC.Type.Compounds
-import DDC.Type.Predicates
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Type.Compounds
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
 
@@ -29,7 +28,7 @@ import DDC.Type.Check.Monad             (throw, result)
 -- | Convert a Disciple Core Salt module to C-source text.
 convertModule :: Show a => Module a Name -> Either (Error a) Doc
 convertModule mm
- = result $ convModuleM $ eraseM mm
+ = result $ convModuleM mm
 
 
 -- Module ---------------------------------------------------------------------
@@ -48,19 +47,24 @@ convModuleM mm@(ModuleCore{})
 -- | Convert a Salt type to C source text.
 convTypeM :: Type Name -> ConvertM a Doc
 convTypeM tt
-  = case tt of
-        TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)
-         |  Just doc     <- convPrimTyCon tc
+ = case tt of
+        TCon{}
+         | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _)      <- tt
+         , Just doc     <- convPrimTyCon tc
          -> return doc
 
-        TApp (TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _) _)) t2
+         | TCon (TyConBound (UPrim NameObjTyCon _) _)            <- tt
+         -> return  $ text "Obj"
+
+        TApp{}
+         | Just (NamePrimTyCon PrimTyConPtr, [_, t2])    <- takePrimTyConApps tt
          -> do  t2'     <- convTypeM t2
                 return  $ t2' <> text "*"
 
-        TCon (TyConBound (UPrim NameObjTyCon _) _)
-           ->   return  $ text "Obj"
+        TForall _ t
+          -> convTypeM t
 
-        _  -> return $ text "DUNNO" -- throw $ ErrorTypeInvalid tt
+        _ -> throw $ ErrorTypeInvalid tt
 
 
 -- Super definition -----------------------------------------------------------
@@ -69,7 +73,7 @@ convSuperM :: Show a => Bind Name -> Exp a Name -> ConvertM a Doc
 convSuperM b x
  | BName (NameVar nTop) tTop       <- b
  , Just (bsParam, xBody) <- takeXLams (stripXLAMs x)
- ,  (_, tResult)         <- takeTFunArgResult tTop
+ ,  (_, tResult)         <- takeTFunArgResult $ eraseTForalls tTop
  = do    
         let nTop'       =  text $ sanitizeName nTop
         -- Ignore binders with no bound occurences, these are typically
@@ -297,8 +301,10 @@ convRValueM xx
          |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
          -> do  let nTop' = sanitizeName nTop
-                args'     <- mapM convRValueM args
-                return  $ text nTop' <+> parenss args'
+
+                let args_val = filter (not . isXType) args
+                args_val'    <- mapM convRValueM args_val
+                return  $ text nTop' <+> parenss args_val'
 
         -- Type argument.
         XType t
@@ -327,9 +333,6 @@ convStmtM xx
                 return  $ text nTop' <+> parenss args'
 
         _ -> throw $ ErrorStmtInvalid xx
-
-
-
 
 
 -- PrimCalls ------------------------------------------------------------------
@@ -377,17 +380,25 @@ convPrimCallM p xs
         -- Store primops.
         PrimStore op
          -> do  let op'  = convPrimStore op
-                xs'     <- mapM convRValueM xs
+                xs'     <- mapM convRValueM $ filter keepArg xs
                 return  $ op' <+> parenss xs'
 
 
         -- External primops.
         PrimExternal op 
          -> do  let op' = convPrimExternal op
-                xs'     <- mapM convRValueM xs
+                xs'     <- mapM convRValueM $ filter keepArg xs
                 return  $ op' <+> parenss xs'
 
         _ -> throw $ ErrorPrimCallInvalid p xs
+
+
+-- | Throw away region arguments.
+keepArg :: Exp a n -> Bool
+keepArg xx
+ = case xx of
+        XType (TVar _)  -> False
+        _               -> True
 
 
 parenss :: [Doc] -> Doc
