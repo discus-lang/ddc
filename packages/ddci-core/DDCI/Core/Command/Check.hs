@@ -53,7 +53,9 @@ cmdUniverse state source str
  = do   result       <- cmdParseCheckType state source frag str
         case result of
          Just (t, _)
-          | Just u      <- universeOfType t
+          | Just u      <- universeOfType 
+                                (profilePrimKinds $ fragmentProfile frag)
+                                t
           ->    outDocLn state $ ppr u
 
          _ ->   outDocLn state (text "no universe")
@@ -67,7 +69,9 @@ cmdUniverse1 state source str
  = do   result       <- cmdParseCheckType state source frag str
         case result of
          Just (t, _)
-          | Just u      <- universeFromType1 t
+          | Just u      <- universeFromType1 
+                                (profilePrimKinds $ fragmentProfile frag)
+                                t
           ->    outDocLn state $ ppr u
 
          _ ->   outDocLn state (text "no universe")

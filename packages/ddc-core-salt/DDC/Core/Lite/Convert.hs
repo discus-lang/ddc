@@ -20,10 +20,12 @@ import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw, result)
 import DDC.Core.Check                    (AnTEC(..))
+import DDC.Type.Env                      (Env)
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as S
 import qualified DDC.Core.Salt.Name      as S
 import qualified DDC.Core.Salt.Compounds as S
+import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 import Control.Monad
 
@@ -55,10 +57,12 @@ toSalt
         => Platform                             -- ^ Platform specification.
         -> S.Config                             -- ^ Runtime configuration.
         -> DataDefs L.Name                      -- ^ Data type definitions.
+        -> Env L.Name                           -- ^ Kind environment.
+        -> Env L.Name                           -- ^ Type environment.
         -> Module (AnTEC a L.Name) L.Name       -- ^ Lite module to convert.
         -> Either (Error a) (Module a S.Name)   -- ^ Salt module.
-toSalt platform runConfig defs mm
- = result $ convertM platform runConfig defs mm
+toSalt platform runConfig defs kenv tenv mm
+ = result $ convertM platform runConfig defs kenv tenv mm
 
 
 -- Module ---------------------------------------------------------------------
@@ -67,20 +71,24 @@ convertM
         => Platform
         -> S.Config
         -> DataDefs L.Name
+        -> Env L.Name
+        -> Env L.Name
         -> Module (AnTEC a L.Name) L.Name 
         -> ConvertM a (Module a S.Name)
 
-convertM pp runConfig defs mm
+convertM pp runConfig defs kenv tenv mm
   = do  
-        -- Convert the body of the module to Salt.
-        x'      <- convertBodyX pp defs $ moduleBody mm
-
         -- Collect up signatures of imported functions.
         tsImports'
                 <- liftM Map.fromList
                 $  mapM convertImportM  
                 $  Map.toList
                 $  moduleImportTypes mm
+
+        -- Convert the body of the module to Salt.
+        let ntsImports  = [(BName n t) | (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
+        let tenv'       = Env.extends ntsImports tenv
+        x'              <- convertBodyX pp defs kenv tenv' $ moduleBody mm
 
         -- Build the output module.
         let mm_salt 
@@ -129,10 +137,12 @@ convertBodyX
         :: Show a 
         => Platform
         -> DataDefs L.Name 
+        -> Env L.Name
+        -> Env L.Name
         -> Exp (AnTEC a L.Name) L.Name 
         -> ConvertM a (Exp a S.Name)
 
-convertBodyX pp defs xx
+convertBodyX pp defs kenv tenv xx
  = case xx of
         XVar _ UIx{}
          -> throw $ ErrorMalformed 
@@ -153,56 +163,60 @@ convertBodyX pp defs xx
         XLAM a b x
          |   (isRegionKind $ typeOfBind b)
           || (isDataKind   $ typeOfBind b)
-         -> do  let a'  = annotTail a
-                b'      <- convertB b
-                x'      <- convertBodyX pp defs x
+         -> do  let a'          = annotTail a
+                b'              <- convertB b
+
+                let kenv'       = Env.extend b kenv
+                x'              <- convertBodyX pp defs kenv' tenv x
+
                 return $ XLAM a' b' x'
 
          | otherwise
-         -> convertBodyX pp defs x
+         -> do  let kenv'       = Env.extend b kenv
+                convertBodyX pp defs kenv' tenv x
 
 
         XLam a b x
-         -> case universeFromType1 (typeOfBind b) of
-             Just UniverseData    
-              -> liftM3 XLam 
+         -> let tenv'   = Env.extend b tenv
+            in case universeFromType1 kenv (typeOfBind b) of
+                Just UniverseData    
+                 -> liftM3 XLam 
                         (return $ annotTail a) 
                         (convertB b) 
-                        (convertBodyX pp defs x)
+                        (convertBodyX pp defs kenv tenv' x)
 
              Just UniverseWitness 
-              -> liftM3 XLam 
-                        (return $ annotTail a) 
-                        (convertB b) 
-                        (convertBodyX pp defs x)
+              -> convertBodyX pp defs x
 
-
-             _  -> throw $ ErrorMalformed 
-                $ "Invalid universe for XLam binder: " ++ show b
+                _  -> throw $ ErrorMalformed 
+                            $ "Invalid universe for XLam binder: " ++ show b
 
         XApp{}
          ->     convertSimpleX pp defs xx
 
         XLet a (LRec bxs) x2
-         -> do  let (bs, xs)    = unzip bxs
-                bs'     <- mapM convertB bs
-                xs'     <- mapM (convertBodyX pp defs) xs
-                x2'     <- convertBodyX pp defs x2
+         -> do  let tenv'       = Env.extends (map fst bxs) tenv
+                let (bs, xs)    = unzip bxs
+                bs'             <- mapM convertB bs
+                xs'             <- mapM (convertBodyX pp defs kenv tenv') xs
+                x2'             <- convertBodyX pp defs kenv tenv' x2
                 return $ XLet (annotTail a) (LRec $ zip bs' xs') x2'
 
         XLet a (LLet LetStrict b x1) x2
-         -> do  b'      <- convertB b
-                x1'     <- convertSimpleX pp defs x1
-                x2'     <- convertBodyX   pp defs x2
+         -> do  let tenv'       = Env.extend b tenv
+                b'              <- convertB b
+                x1'             <- convertSimpleX pp defs x1
+                x2'             <- convertBodyX   pp defs kenv tenv' x2
                 return  $ XLet (annotTail a) (LLet LetStrict b' x1') x2'
 
         XLet _ (LLet LetLazy{} _ _) _
          -> error "DDC.Core.Lite.Convert.toSaltX: XLet lazy not handled yet"
 
         XLet a (LLetRegion b bs) x2
-         -> do  b'      <- convertB b
-                bs'     <- mapM convertB bs
-                x2'     <- convertBodyX pp defs x2
+         -> do  let kenv'       = Env.extend b kenv
+                b'              <- convertB b
+                bs'             <- mapM convertB bs
+                x2'             <- convertBodyX pp defs kenv' tenv x2
                 return  $ XLet (annotTail a) (LLetRegion b' bs') x2'
 
         XLet _ LWithRegion{} _
@@ -220,7 +234,7 @@ convertBodyX pp defs xx
          | TCon (TyConBound (UPrim nType _) _)  <- error "Lite.convertBodyX: need environment" -- typeOfBound uScrut
          , L.NamePrimTyCon _                    <- nType
          -> do  xScrut' <- convertSimpleX pp defs xScrut
-                alts'   <- mapM (convertAlt pp defs a' uScrut) alts
+                alts'   <- mapM (convertAlt pp defs kenv tenv a' uScrut) alts
                 return  $  XCase a' xScrut' alts'
 
         -- Match against finite algebraic data.
@@ -228,7 +242,7 @@ convertBodyX pp defs xx
         XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
          -> do  x'@(XVar _ uX') <- convertSimpleX   pp defs x
                 t'              <- convertT t
-                alts'           <- mapM (convertAlt pp defs a' uX) alts
+                alts'           <- mapM (convertAlt pp defs kenv tenv a' uX) alts
 
                 let asDefault
                         | any isPDefault [p | AAlt p _ <- alts]   
@@ -243,7 +257,7 @@ convertBodyX pp defs xx
 
         XCase{}         -> throw $ ErrorNotNormalized ("found case expression")
 
-        XCast _ _ x     -> convertBodyX pp defs x
+        XCast _ _ x     -> convertBodyX pp defs kenv tenv x
 
         XType _         -> throw $ ErrorMistyped xx
         XWitness{}      -> throw $ ErrorMistyped xx
@@ -430,17 +444,19 @@ convertCtorAppX _ _ _ _nCtor _xsArgs
 -- Alt ------------------------------------------------------------------------
 convertAlt 
         :: Show a
-        => Platform
-        -> DataDefs L.Name 
-        -> a
-        -> Bound L.Name 
-        -> Alt (AnTEC a L.Name) L.Name 
+        => Platform                     -- ^ Platform specification.
+        -> DataDefs L.Name              -- ^ Data type declarations.
+        -> Env L.Name                   -- ^ Kind environment.
+        -> Env L.Name                   -- ^ Type environment.
+        -> a                            -- ^ Annotation from case expression.
+        -> Bound L.Name                 -- ^ Bound of scrutinee.
+        -> Alt (AnTEC a L.Name) L.Name  -- ^ Alternative to convert.
         -> ConvertM a (Alt a S.Name)
 
-convertAlt pp defs a uScrut alt
+convertAlt pp defs kenv tenv a uScrut alt
  = case alt of
         AAlt PDefault x
-         -> do  x'      <- convertBodyX pp defs x
+         -> do  x'      <- convertBodyX pp defs kenv tenv x
                 return  $ AAlt PDefault x'
 
         -- Match against literal unboxed values.
@@ -452,7 +468,7 @@ convertAlt pp defs a uScrut alt
                 L.NameBool{}    -> True
                 _               -> False
          -> do  uCtor'  <- convertU uCtor
-                xBody1  <- convertBodyX pp defs x
+                xBody1  <- convertBodyX pp defs kenv tenv x
                 return  $ AAlt (PData uCtor' []) xBody1
 
         -- Match against algebraic data with a finite number
@@ -464,6 +480,7 @@ convertAlt pp defs a uScrut alt
                                 _         -> Nothing
          , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
+                let tenv'       = Env.extends bsFields tenv 
                 uScrut'         <- convertU uScrut
 
                 -- Get the tag of this alternative.
@@ -474,7 +491,7 @@ convertAlt pp defs a uScrut alt
                 bsFields'       <- mapM convertB bsFields
 
                 -- Convert the right of the alternative.
-                xBody1          <- convertBodyX pp defs x
+                xBody1          <- convertBodyX pp defs kenv tenv' x
 
                 -- Add let bindings to unpack the constructor.
                 xBody2          <- destructData pp a uScrut' ctorDef bsFields' xBody1

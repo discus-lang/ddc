@@ -8,8 +8,9 @@ module DDC.Type.Universe
         , universeOfType)
 where
 import DDC.Type.Exp
-import qualified DDC.Type.Sum   as T
 import DDC.Base.Pretty
+import DDC.Type.Env             as Env
+import qualified DDC.Type.Sum   as T
 
 
 -- | Universes of the Disciple Core language.
@@ -89,18 +90,22 @@ universeFromType2 tt
 
 -- | Given the type of some thing (up one level),
 --   yield the universe of the original thing, or `Nothing` if it was badly formed.
-universeFromType1 :: Type n -> Maybe Universe
-universeFromType1 tt
+universeFromType1 :: Ord n => Env n -> Type n -> Maybe Universe
+universeFromType1 kenv tt
  = case tt of
-        TVar{}                    -> error "universeFromType1: don't have kind anymore, need environment"
+        TVar n
+         -> case Env.lookup n kenv of
+                Nothing           -> Nothing
+                Just k            -> universeFromType2 k
+
         TCon (TyConSort _)        -> Just UniverseKind
         TCon (TyConKind _)        -> Just UniverseSpec
         TCon (TyConWitness _)     -> Just UniverseWitness
         TCon (TyConSpec TcConFun) -> Just UniverseData
         TCon (TyConSpec _)        -> Nothing
         TCon (TyConBound _ k)     -> universeFromType2 k
-        TForall _ t2              -> universeFromType1 t2
-        TApp t1 _                 -> universeFromType1 t1
+        TForall b t2              -> universeFromType1 (Env.extend b kenv) t2
+        TApp t1 _                 -> universeFromType1 kenv t1
         TSum _                    -> Nothing
 
 
@@ -110,17 +115,21 @@ universeFromType1 tt
 --  universeOfType kRegion        = UniverseKind
 -- @
 --
-universeOfType :: Type n -> Maybe Universe
-universeOfType tt
+universeOfType :: Ord n => Env n -> Type n -> Maybe Universe
+universeOfType kenv tt
  = case tt of
-        TVar{}                  -> error "universOfType: don't have kind anymore, need environment"
+        TVar n
+         -> case Env.lookup n kenv of
+                Nothing         -> Nothing
+                Just k          -> universeFromType1 kenv k
+
         TCon (TyConSort _)      -> Just UniverseSort
         TCon (TyConKind _)      -> Just UniverseKind
         TCon (TyConWitness _)   -> Just UniverseSpec
         TCon (TyConSpec _)      -> Just UniverseSpec
-        TCon (TyConBound _ k)   -> universeFromType1 k
-        TForall _ t2            -> universeOfType t2
-        TApp _ t2               -> universeOfType t2
-        TSum ss                 -> universeFromType1 (T.kindOfSum ss)
+        TCon (TyConBound _ k)   -> universeFromType1 kenv k
+        TForall b t2            -> universeOfType (Env.extend b kenv) t2
+        TApp _ t2               -> universeOfType kenv t2
+        TSum ss                 -> universeFromType1 kenv (T.kindOfSum ss)
 
 

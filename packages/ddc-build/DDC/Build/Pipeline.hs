@@ -255,8 +255,12 @@ pipeLite mm pp
          -> pipeSink (renderIndent $ ppr mm) sink
 
         PipeLiteToSalt platform runConfig pipes
-         -> case Lite.toSalt platform runConfig (profilePrimDataDefs Lite.profile) mm of
-                Left  err       -> return [ErrorLiteConvert err]
+         -> case Lite.toSalt platform runConfig 
+                        (profilePrimDataDefs Lite.profile) 
+                        (profilePrimKinds    Lite.profile)
+                        (profilePrimTypes    Lite.profile)
+                        mm 
+            of  Left  err       -> return [ErrorLiteConvert err]
                 Right mm'       -> liftM concat $ mapM (pipeCore mm') pipes
 
 
