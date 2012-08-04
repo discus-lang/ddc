@@ -11,20 +11,22 @@ module DDC.Core.Lite.Convert.Type
 where
 import DDC.Core.Lite.Convert.Base
 import DDC.Core.Exp
+import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Check.Monad              (throw)
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Compounds as O
+import qualified DDC.Type.Env            as Env
 import Control.Monad
 
 
-convertT     :: Type L.Name -> ConvertM a (Type O.Name)
+convertT     :: Env L.Name -> Type L.Name -> ConvertM a (Type O.Name)
 convertT     = convertT' False
 
 convertPrimT :: Type L.Name -> ConvertM a (Type O.Name)
-convertPrimT = convertT' True
+convertPrimT = convertT' True Env.empty
 
 
 -- Type -----------------------------------------------------------------------
@@ -52,19 +54,20 @@ convertPrimT = convertT' True
 --
 convertT' 
         :: Bool                 -- ^ Whether this is the type of a primop.
+        -> Env  L.Name          -- ^ Kind environment.
         -> Type L.Name          -- ^ Type to convert.
         -> ConvertM a (Type O.Name)
 
-convertT' isPrimType tt
- = let down = convertT' isPrimType
+convertT' isPrimType kenv tt
+ = let down = convertT' isPrimType kenv
    in case tt of
         -- Convert type variables and constructors.
-        TVar _u
-
-{-}         |   isRegionKind (typeOfBound u)    -- TODO: need environment.
-          || isDataKind (typeOfBound u)
+        TVar u
+         | Just t       <- Env.lookup u kenv
+         ,   isRegionKind t
+          || isDataKind   t
          -> liftM TVar $ convertU u
--}
+
          | otherwise    
          -> error $ "convertT': unexpected var kind" ++ show tt
 
@@ -76,13 +79,13 @@ convertT' isPrimType tt
         TForall b t     
          |   isRegionKind (typeOfBind b)
           || isDataKind   (typeOfBind b)
-         ->  liftM2 TForall (convertB b) (down t)
-
-         |  isRegionKind (typeOfBind b)
-         -> liftM2 TForall (convertB b) (down t) 
+         -> let kenv'   = Env.extend b kenv
+            in  liftM2 TForall  (convertB  kenv' b) 
+                                (convertT' isPrimType kenv' t)
 
          |  otherwise
-         -> down t
+         -> let kenv'   = Env.extend b kenv
+            in  convertT' isPrimType kenv' t
 
         -- Convert applications.
         TApp{}  
@@ -129,10 +132,7 @@ convertTyCon tc
          ->     convertTyConPrim n
 
         -- Boxed data values are represented in generic form.
-        TyConBound   _u k
-         -> do  r <- convertT k                                 -- TODO: this is wrong
-                return $ O.tPtr r O.tObj
-
+        _ -> error "Lite.Convert.convertTyCon: sorry"
 
 
 -- | Convert a primitive type constructor to Salt form.
@@ -145,12 +145,12 @@ convertTyConPrim n
 
 
 -- Names ----------------------------------------------------------------------
-convertB :: Bind L.Name -> ConvertM a (Bind O.Name)
-convertB bb
+convertB :: Env L.Name -> Bind L.Name -> ConvertM a (Bind O.Name)
+convertB kenv bb
   = case bb of
-        BNone t         -> liftM  BNone (convertT t)        
-        BAnon t         -> liftM  BAnon (convertT t)
-        BName n t       -> liftM2 BName (convertBindNameM n) (convertT t)
+        BNone t         -> liftM  BNone (convertT kenv t)        
+        BAnon t         -> liftM  BAnon (convertT kenv t)
+        BName n t       -> liftM2 BName (convertBindNameM n) (convertT kenv t)
 
 
 convertU :: Bound L.Name -> ConvertM a (Bound O.Name)
@@ -159,7 +159,7 @@ convertU uu
         UIx i           -> liftM  UIx   (return i)
         UName n         -> liftM  UName (convertBoundNameM n)
         UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertPrimT t)
-        UHole t         -> liftM  UHole (convertT t)
+        UHole t         -> liftM  UHole (convertPrimT t)
 
 
 convertBindNameM :: L.Name -> ConvertM a O.Name

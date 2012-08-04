@@ -8,10 +8,12 @@ import DDC.Core.Lite.Convert.Base
 import DDC.Core.Salt.Platform
 import DDC.Core.Transform.LiftX
 import DDC.Core.Exp
+import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw)
+--import qualified DDC.Type.Env            as Env
 import qualified DDC.Core.Lite.Layout    as L
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as O
@@ -25,6 +27,8 @@ import Data.Maybe
 constructData
         :: Show a
         => Platform                     -- ^ Platform definition.
+        -> Env L.Name                   -- ^ Kind environment.
+        -> Env L.Name                   -- ^ Type environment.
         -> a                            -- ^ Annotation to use on expressions.
         -> DataType L.Name              -- ^ Data Type definition of object.
         -> DataCtor L.Name              -- ^ Constructor definition of object.
@@ -32,7 +36,7 @@ constructData
         -> [Maybe (Type O.Name)]        -- ^ Field types.
         -> ConvertM a (Exp a O.Name)
 
-constructData pp a dataDef ctorDef xsArgs tsArgs 
+constructData pp kenv _tenv a dataDef ctorDef xsArgs tsArgs 
 
  | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
  = do
@@ -93,7 +97,7 @@ constructData pp a dataDef ctorDef xsArgs tsArgs
                         $ XVar a (UIx 0)
 
         -- Convert the field types.
-        tsFields         <- mapM convertT $ dataCtorFieldTypes ctorDef
+        tsFields         <- mapM (convertT kenv) $ dataCtorFieldTypes ctorDef
 
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to

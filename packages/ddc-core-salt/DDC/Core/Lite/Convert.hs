@@ -118,7 +118,7 @@ convertImportM
 convertImportM (n, (qn, t))
  = do   n'      <- convertBindNameM n
         qn'     <- convertQualNameM qn
-        t'      <- convertT t
+        t'      <- convertT Env.empty t
         return  (n', (qn', t'))
 
 
@@ -135,11 +135,11 @@ convertQualNameM (QualName mn n)
 -- Exp -------------------------------------------------------------------------
 convertBodyX 
         :: Show a 
-        => Platform
-        -> DataDefs L.Name 
-        -> Env L.Name
-        -> Env L.Name
-        -> Exp (AnTEC a L.Name) L.Name 
+        => Platform                     -- ^ Platform specification.
+        -> DataDefs L.Name              -- ^ Data type definitions.
+        -> Env L.Name                   -- ^ Kind environment.
+        -> Env L.Name                   -- ^ Type environment.
+        -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a S.Name)
 
 convertBodyX pp defs kenv tenv xx
@@ -155,7 +155,7 @@ convertBodyX pp defs kenv tenv xx
 
         XCon a u
          -> do  let a'  = annotTail a
-                xx'     <- convertCtor pp defs a' u
+                xx'     <- convertCtor pp defs kenv tenv a' u
                 return  xx'
 
         -- Keep region and data type lambdas, 
@@ -163,11 +163,11 @@ convertBodyX pp defs kenv tenv xx
         XLAM a b x
          |   (isRegionKind $ typeOfBind b)
           || (isDataKind   $ typeOfBind b)
-         -> do  let a'          = annotTail a
-                b'              <- convertB b
+         -> do  let a'    =  annotTail a
+                b'        <- convertB kenv b
 
-                let kenv'       = Env.extend b kenv
-                x'              <- convertBodyX pp defs kenv' tenv x
+                let kenv' =  Env.extend b kenv
+                x'        <- convertBodyX pp defs kenv' tenv x
 
                 return $ XLAM a' b' x'
 
@@ -182,7 +182,7 @@ convertBodyX pp defs kenv tenv xx
                 Just UniverseData    
                  -> liftM3 XLam 
                         (return $ annotTail a) 
-                        (convertB b) 
+                        (convertB kenv b) 
                         (convertBodyX pp defs kenv tenv' x)
 
              Just UniverseWitness 
@@ -192,20 +192,20 @@ convertBodyX pp defs kenv tenv xx
                             $ "Invalid universe for XLam binder: " ++ show b
 
         XApp{}
-         ->     convertSimpleX pp defs xx
+         ->     convertSimpleX pp defs kenv tenv xx
 
         XLet a (LRec bxs) x2
          -> do  let tenv'       = Env.extends (map fst bxs) tenv
                 let (bs, xs)    = unzip bxs
-                bs'             <- mapM convertB bs
+                bs'             <- mapM (convertB kenv) bs
                 xs'             <- mapM (convertBodyX pp defs kenv tenv') xs
                 x2'             <- convertBodyX pp defs kenv tenv' x2
                 return $ XLet (annotTail a) (LRec $ zip bs' xs') x2'
 
         XLet a (LLet LetStrict b x1) x2
          -> do  let tenv'       = Env.extend b tenv
-                b'              <- convertB b
-                x1'             <- convertSimpleX pp defs x1
+                b'              <- convertB kenv b
+                x1'             <- convertSimpleX pp defs kenv tenv' x1
                 x2'             <- convertBodyX   pp defs kenv tenv' x2
                 return  $ XLet (annotTail a) (LLet LetStrict b' x1') x2'
 
@@ -214,8 +214,7 @@ convertBodyX pp defs kenv tenv xx
 
         XLet a (LLetRegion b bs) x2
          -> do  let kenv'       = Env.extend b kenv
-                b'              <- convertB b
-                bs'             <- mapM convertB bs
+                b' : bs'        <- mapM (convertB kenv) (b : bs)
                 x2'             <- convertBodyX pp defs kenv' tenv x2
                 return  $ XLet (annotTail a) (LLetRegion b' bs') x2'
 
@@ -231,17 +230,17 @@ convertBodyX pp defs kenv tenv xx
         --        Same for string literals.
         --
         XCase (AnTEC _t _ _ a') xScrut@(XVar _ uScrut) alts
-         | TCon (TyConBound (UPrim nType _) _)  <- error "Lite.convertBodyX: need environment" -- typeOfBound uScrut
-         , L.NamePrimTyCon _                    <- nType
-         -> do  xScrut' <- convertSimpleX pp defs xScrut
+         | Just (TCon (TyConBound (UPrim nType _) _))  <- Env.lookup uScrut tenv
+         , L.NamePrimTyCon _                           <- nType
+         -> do  xScrut' <- convertSimpleX pp defs kenv tenv xScrut
                 alts'   <- mapM (convertAlt pp defs kenv tenv a' uScrut) alts
                 return  $  XCase a' xScrut' alts'
 
         -- Match against finite algebraic data.
         --   The branch is against the constructor tag.
         XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
-         -> do  x'@(XVar _ uX') <- convertSimpleX   pp defs x
-                t'              <- convertT t
+         -> do  x'@(XVar _ uX') <- convertSimpleX   pp defs kenv tenv x
+                t'              <- convertT kenv t
                 alts'           <- mapM (convertAlt pp defs kenv tenv a' uX) alts
 
                 let asDefault
@@ -270,13 +269,17 @@ convertBodyX pp defs kenv tenv xx
 --  
 convertSimpleX
         :: Show a 
-        => Platform 
-        -> DataDefs L.Name
-        -> Exp (AnTEC a L.Name) L.Name
+        => Platform                     -- ^ Platform specification.
+        -> DataDefs L.Name              -- ^ Data type definitions.
+        -> Env L.Name                   -- ^ Kind environment.
+        -> Env L.Name                   -- ^ Type environment.
+        -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a S.Name)
 
-convertSimpleX pp defs xx
- = case xx of
+convertSimpleX pp defs kenv tenv xx
+ = let downAtomX    = convertAtomX    pp defs kenv tenv
+       downCtorAppX = convertCtorAppX pp defs kenv tenv
+   in  case xx of
 
         XType{}         
          -> throw $ ErrorMalformed 
@@ -290,21 +293,20 @@ convertSimpleX pp defs xx
         XApp a xa xb
          | (x1, xsArgs)           <- takeXApps' xa xb
          , XCon _ (UPrim nCtor _) <- x1
-         -> convertCtorAppX pp a defs nCtor xsArgs
+         -> downCtorAppX a nCtor xsArgs
 
         -- User-defined data constructors.
         XApp a xa xb
          | (x1, xsArgs)           <- takeXApps' xa xb
          , XCon _ (UName nCtor)   <- x1
-         -> convertCtorAppX pp a defs nCtor xsArgs
+         -> downCtorAppX a nCtor xsArgs
 
         -- Primitive operations.
         XApp a xa xb
          | (x1, xsArgs)          <- takeXApps' xa xb
          , XVar _ UPrim{}        <- x1
-         -> do  x1'     <- convertAtomX pp defs x1
-
-                xsArgs' <- mapM (convertAtomX pp defs) xsArgs
+         -> do  x1'     <- downAtomX x1
+                xsArgs' <- mapM downAtomX xsArgs
 
                 return $ makeXApps (annotTail a) x1' xsArgs'
 
@@ -313,23 +315,29 @@ convertSimpleX pp defs xx
         --       At least check for the other cases.
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps' xa xb
-         -> do  x1'     <- convertAtomX pp defs x1
-                xsArgs' <- mapM (convertAtomX pp defs) xsArgs
+         -> do  x1'     <- downAtomX x1
+
+                -- We don't keep all type arguments.
+                let xsArgs_keep = filter shouldKeepFunArg xsArgs
+                xsArgs'         <- mapM (convertAtomX pp defs) xsArgs_keep
+
                 return  $ makeXApps a' x1' xsArgs'
 
-        _ -> convertAtomX pp defs xx
+        _ -> downAtomX xx
 
 
 -------------------------------------------------------------------------------
 -- | Convert an atom to Salt.
 convertAtomX
         :: Show a 
-        => Platform
-        -> DataDefs L.Name
-        -> Exp (AnTEC a L.Name) L.Name
+        => Platform                     -- ^ Platform specification.
+        -> DataDefs L.Name              -- ^ Data type definitions.
+        -> Env L.Name                   -- ^ Kind environment.
+        -> Env L.Name                   -- ^ Type environment.
+        -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a S.Name)
 
-convertAtomX pp defs xx
+convertAtomX pp defs kenv tenv xx
  = case xx of
         XVar _ UIx{}    -> throw $ ErrorMalformed     "Found anonymous binder"
         XApp{}          -> throw $ ErrorNotNormalized "Found XApp in atom position"
@@ -344,16 +352,17 @@ convertAtomX pp defs xx
 
         XCon a u
          -> case u of
-                UName nCtor     -> convertCtorAppX pp a defs nCtor []
-                UPrim nCtor _   -> convertCtorAppX pp a defs nCtor []
+                UName nCtor     -> convertCtorAppX pp defs kenv tenv a nCtor []
+                UPrim nCtor _   -> convertCtorAppX pp defs kenv tenv a nCtor []
                 _               -> throw $ ErrorInvalidBound u
 
 
-        XCast _ _ x     -> convertAtomX pp defs x
+        XCast _ _ x
+         -> convertAtomX pp defs kenv tenv x
 
         -- Pass region parameters, as well data data type parameters to primops.
         XType t
-         -> do  t'      <- convertT t
+         -> do  t'      <- convertT kenv t
                 return  $ XType t'
 
         XWitness w      -> liftM XWitness (convertWitnessX w)
@@ -389,34 +398,36 @@ convertWiConX wicon
 -------------------------------------------------------------------------------
 convertCtorAppX 
         :: Show a
-        => Platform 
-        -> AnTEC a L.Name
-        -> DataDefs L.Name
+        => Platform             -- ^ Platform specification.
+        -> DataDefs L.Name      -- ^ Data type definitions.
+        -> Env L.Name           -- ^ Kind environment.
+        -> Env L.Name           -- ^ Type environment.
+        -> AnTEC a L.Name       -- ^ Annotation from deconstructed application node.
         -> L.Name
         -> [Exp (AnTEC a L.Name) L.Name]
         -> ConvertM a (Exp a S.Name)
 
-convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
+convertCtorAppX pp defs kenv tenv a@(AnTEC t _ _ _) nCtor xsArgs
 
         -- Pass through unboxed literals.
         | L.NameBool b         <- nCtor
         , []                   <- xsArgs
-        = do    t'              <- convertT t
+        = do    t'             <- convertT kenv t
                 return $ XCon (annotTail a) (UPrim (S.NameBool b) t')
 
         | L.NameNat i          <- nCtor
         , []                   <- xsArgs
-        = do    t'              <- convertT t
+        = do    t'             <- convertT kenv t
                 return $ XCon (annotTail a) (UPrim (S.NameNat i) t')
 
-        | L.NameInt i         <- nCtor
+        | L.NameInt i          <- nCtor
         , []                   <- xsArgs
-        = do    t'              <- convertT t
+        = do    t'             <- convertT kenv t
                 return $ XCon (annotTail a) (UPrim (S.NameInt i) t')
 
         | L.NameWord i bits    <- nCtor
         , []                   <- xsArgs
-        = do    t'              <- convertT t
+        = do    t'             <- convertT kenv t
                 return $ XCon (annotTail a) (UPrim (S.NameWord i bits) t')
 
 
@@ -424,20 +435,20 @@ convertCtorAppX pp a@(AnTEC t _ _ _) defs nCtor xsArgs
         | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
         , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
         = do    
-                xsArgs'        <- mapM (convertAtomX pp defs) xsArgs
+                xsArgs'        <- mapM (convertAtomX pp defs kenv tenv) xsArgs
 
                 -- Convert the types of each field.
                 let makeFieldType x
                         = case takeAnnotOfExp x of
                                 Nothing  -> return Nothing
-                                Just a'  -> liftM Just $ convertT (annotType a')
+                                Just a'  -> liftM Just $ convertT kenv (annotType a')
 
                 tsArgs'         <- mapM makeFieldType xsArgs
-                constructData pp (annotTail a) dataDef ctorDef xsArgs' tsArgs'
+                constructData pp kenv tenv (annotTail a) dataDef ctorDef xsArgs' tsArgs'
 
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
-convertCtorAppX _ _ _ _nCtor _xsArgs
+convertCtorAppX _ _ _ _ _ _nCtor _xsArgs
         = throw $ ErrorMalformed "convertCtorAppX: invalid constructor application"
 
 
@@ -488,7 +499,7 @@ convertAlt pp defs kenv tenv a uScrut alt
                 let uTag        = UPrim (S.NameTag iTag) S.tTag
 
                 -- Get the address of the payload.
-                bsFields'       <- mapM convertB bsFields
+                bsFields'       <- mapM (convertB kenv) bsFields
 
                 -- Convert the right of the alternative.
                 xBody1          <- convertBodyX pp defs kenv tenv' x
@@ -505,13 +516,15 @@ convertAlt pp defs kenv tenv a uScrut alt
 -- Data Constructor -----------------------------------------------------------
 convertCtor 
         :: Show a
-        => Platform
-        -> DataDefs L.Name
-        -> a 
-        -> Bound L.Name 
+        => Platform             -- ^ Platform specification.
+        -> DataDefs L.Name      -- ^ Data type definitions.
+        -> Env L.Name           -- ^ Kind environment.
+        -> Env L.Name           -- ^ Type environment.
+        -> a                    -- ^ Annotation to attach to exp nodes.
+        -> Bound L.Name         -- ^ Bound of data constructor.
         -> ConvertM a (Exp a S.Name)
 
-convertCtor pp defs a uu
+convertCtor pp defs kenv tenv a uu
  = case uu of
         -- Literal values.
         UPrim (L.NameBool v) _   
@@ -530,7 +543,7 @@ convertCtor pp defs a uu
         UPrim nCtor _
          | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
-         -> constructData pp a dataDef ctorDef [] []
+         -> constructData pp kenv tenv a dataDef ctorDef [] []
 
         _ -> throw $ ErrorMalformed "convertCtor: invalid constructor"
 
