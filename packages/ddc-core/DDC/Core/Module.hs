@@ -19,8 +19,8 @@ where
 import DDC.Core.Exp
 import Data.Typeable
 import Data.Map                         (Map)
+import DDC.Type.Env                     as Env
 import qualified Data.Map               as Map
-import qualified DDC.Type.Env		as E
 
 
 -- ModuleName -----------------------------------------------------------------
@@ -89,22 +89,36 @@ data Extern n
         , externType            :: Type n }
 
 
+-- | Check if this is the `Main` module.
 isMainModule :: Module a n -> Bool
 isMainModule mm
         = isMainModuleName 
         $ moduleName mm
 
 
-type ModuleMap a n = Map ModuleName (Module a n)
+-- ModuleMap ------------------------------------------------------------------
+-- | Map of module names to modules.
+type ModuleMap a n 
+        = Map ModuleName (Module a n)
 
-modulesGetBinds m = E.fromList $ map (uncurry BName) (Map.assocs m)
+modulesGetBinds m 
+        = Env.fromList $ map (uncurry BName) (Map.assocs m)
 
---modulesExportKinds
---	:: (Eq n, Ord n, Show n)
---	=> 
+
+-- | Get the kind environment exported by the module.
+modulesExportKinds
+	:: (Eq n, Ord n, Show n)
+	=> ModuleMap a n -> Env n -> Env n
+
 modulesExportKinds mods base
- = foldl E.union base $ map (modulesGetBinds.moduleExportKinds) (Map.elems mods)
+ = foldl Env.union base $ map (modulesGetBinds.moduleExportKinds) (Map.elems mods)
+
+
+-- | Get the type environment exported by the module.
+modulesExportTypes
+        :: (Eq n, Ord n, Show n)
+        => ModuleMap a n -> Env n -> Env n
 
 modulesExportTypes mods base
- = foldl E.union base $ map (modulesGetBinds.moduleExportTypes) (Map.elems mods)
+ = foldl Env.union base $ map (modulesGetBinds.moduleExportTypes) (Map.elems mods)
 

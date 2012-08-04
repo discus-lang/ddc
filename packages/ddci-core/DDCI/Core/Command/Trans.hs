@@ -18,6 +18,7 @@ import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Base.Pretty
 import DDC.Core.Transform.Reannotate
+import DDC.Type.Env                             as Env
 import qualified Control.Monad.State.Strict     as S
 import qualified DDC.Core.Eval.Name             as Eval
 import Data.Typeable
@@ -33,15 +34,19 @@ cmdTrans state source str
  | Bundle fragment modules zero simpl _     <- stateBundle state
  , Fragment profile _ _ _ _ _ _ _ _ <- fragment
  =   cmdParseCheckExp state fragment modules True source str 
- >>= goStore profile zero simpl
+ >>= goStore profile modules zero simpl
  where
         -- Expression had a parse or type error.
-        goStore _ _ _ Nothing
+        goStore _ _ _ _ Nothing
          = do   return ()
 
         -- Expression is well-typed.
-        goStore profile zero simpl (Just (x, t1, eff1, clo1))
-         = do   tr <- applyTrans state profile zero simpl (x, t1, eff1, clo1)
+        goStore profile modules zero simpl (Just (x, t1, eff1, clo1))
+         = do   let kenv    = modulesExportKinds modules (profilePrimKinds profile)
+                let tenv    = modulesExportTypes modules (profilePrimTypes profile)
+
+                tr <- applyTransAndCheck state profile kenv tenv 
+                                zero simpl (x, t1, eff1, clo1)
 		case tr of
 		  Nothing -> return ()
 		  Just x' -> outDocLn state $ ppr x'
@@ -67,8 +72,12 @@ cmdTransEval state source str
         case result of
          Nothing         -> return ()
          Just stuff@(_x, t1, eff1, clo1)
-          -> do -- Apply the current transform.
-                tr      <- applyTrans state profile zero simpl stuff
+          -> do let kenv    = modulesExportKinds modules (profilePrimKinds profile)
+                let tenv    = modulesExportTypes modules (profilePrimTypes profile)
+
+                -- Apply the current transform.
+                tr      <- applyTransAndCheck state profile kenv tenv
+                                zero simpl stuff
                 case tr of
                  Nothing -> return ()
                  Just x'
@@ -92,25 +101,25 @@ data SimplBox s n
 
 -- Trans ----------------------------------------------------------------------
 -- | Transform an expression, or display errors
-applyTrans 
+applyTransAndCheck 
         :: (Eq n, Ord n, Pretty n, Show n, Show a)
         => State
         -> Profile n
+        -> Env n                        -- Kind Environment.
+        -> Env n                        -- Type Environment.
         -> s
         -> Simplifier s a n
         -> (Exp a n, Type n, Effect n, Closure n) 
         -> IO (Maybe (Exp a n))
 
-applyTrans state profile zero simpl (x, t1, eff1, clo1)
+applyTransAndCheck state profile kenv tenv zero simpl (x, t1, eff1, clo1)
  = do
          -- Apply the simplifier.
         let x' = flip S.evalState zero
                $ applySimplifierX simpl x
 
         -- Check that the simplifier perserved the type of the expression.
-        case checkExp (configOfProfile  profile)
-                      (profilePrimKinds profile)
-                      (profilePrimTypes profile) x' of
+        case checkExp (configOfProfile profile) kenv tenv x' of
           Right (_, t2, eff2, clo2)
            |  equivT t1 t2
            ,  subsumesT kEffect  eff1 eff2
