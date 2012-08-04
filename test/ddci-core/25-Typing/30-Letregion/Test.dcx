@@ -19,7 +19,7 @@
 
 
 -- Error: withregion must contain a region variable or constructor.
-:check (\(e:!). withregion e in ())
+:check (/\(e:!). withregion e in ())
 
 
 -- Error: letregion cannot shadow region variables that are already in the

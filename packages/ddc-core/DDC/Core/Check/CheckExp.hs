@@ -424,9 +424,11 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegion b bs) x)
 -- withregion -----------------------------------
 checkExpM' config kenv tenv xx@(XLet a (LWithRegion u) x)
  = do
-        -- The handle must have region kind.                    -- TODO: check region handle again
---        when (not $ isRegionKind k)
---         $ throw $ ErrorWithRegionNotRegion xx u k
+        -- The handle must have region kind.
+        (case Env.lookup u kenv of
+          Nothing -> error $ "checkExpM': region handle not in env " ++ show u  --- TODO: real error message
+          Just k  -> when (not $ isRegionKind k)
+                      $ throw $ ErrorWithRegionNotRegion xx u k)
         
         -- Check the body expression.
         (xBody', tBody, effs, clo) 
