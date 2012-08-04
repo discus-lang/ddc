@@ -19,6 +19,7 @@ import DDC.Core.Salt.Name
 import DDC.Core.Salt.Erase
 import DDC.Core.Compounds
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty
@@ -71,7 +72,9 @@ convSuperM b x
  ,  (_, tResult)         <- takeTFunArgResult tTop
  = do    
         let nTop'       =  text $ sanitizeName nTop
-        bsParam'        <- mapM convBind bsParam
+        -- Ignore binders with no bound occurences, these are typically
+        --  region and witness binders.
+        bsParam'        <- mapM convBind $ filter (not . isBNone) bsParam
         tResult'        <- convTypeM tResult
         xBody'          <- convBodyM xBody
 
@@ -100,12 +103,15 @@ stripXLAMs xx
 
 -- | Convert a function parameter binding to C source text.
 convBind :: Bind Name -> ConvertM a Doc
-convBind (BName (NameVar str) t)
- = do   t'      <- convTypeM t
-        return  $ t' <+> (text $ sanitizeName str)
-
-convBind b 
- = throw $ ErrorParameterInvalid b
+convBind b
+ = case b of 
+   
+        -- Named variables binders.
+        BName (NameVar str) t
+         -> do   t'      <- convTypeM t
+                 return  $ t' <+> (text $ sanitizeName str)
+                 
+        _       -> throw $ ErrorParameterInvalid b
 
 
 -- Super body -----------------------------------------------------------------

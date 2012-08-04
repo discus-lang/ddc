@@ -47,8 +47,13 @@ instance EraseT Type where
         -- Erase region type applications
         TApp   t1 t2
           | isRegionTypeVar t2          -> eraseT t1   
-          | isRegionKind t2             -> eraseT t1                          
-          
+          | isRegionKind t2             -> eraseT t1    
+        
+        -- Erase witness type applications. Witnesses themselves are implications, 
+        --   so we must match on the witness constructor inside.
+        TApp (TApp t1 _) t2
+          | isWitnessType t1            -> eraseT t2
+
         TApp   t1 t2                    -> TApp (eraseT t1) (eraseT t2)
         TSum   ts                       -> TSum (eraseT ts)
         
@@ -59,7 +64,12 @@ instance EraseT Bind where
   eraseT bb
     = case bb of
         BName n t
-          | isRegionKind t -> BNone (eraseT t) 
+          -- Erase region binders
+          | isRegionKind t -> BNone (eraseT t)  
+          
+          -- Erase witness binders
+          | isWitnessType t-> BNone (eraseT t)
+                   
           | otherwise      -> BName n (eraseT t)                
         BAnon t            -> BAnon (eraseT t)
         BNone t            -> BNone (eraseT t)              
@@ -97,12 +107,16 @@ instance EraseX Exp where
         -- Erase region type applications
         XApp _ x (XType t)
           | isRegionTypeVar t  -> x
+        
+        -- Erase witness arguments
+        XApp _ x (XWitness _) -> x
           
         -- transformUpX doesn't descend into the bindings, so we do it here
         XLet a (LLet m b x1) x -> XLet a (LLet m (eraseT b) x1) x
         XLet a (LRec bxs) x    -> XLet a (LRec $ map (first eraseT) bxs) x
         
         XType t                -> XType (eraseT t)
+        
         _                      -> xx
         
 isRegionTypeVar :: Type n -> Bool
