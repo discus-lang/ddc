@@ -211,7 +211,7 @@ forcePrint state store x tX effX cloX
 
         StepStuckMistyped err
          -> do  putStrLn $ renderIndent
-                 $ vcat [ ppr "* OFF THE RAILS!"
+                 $ vcat [ text "* OFF THE RAILS!"
                         , ppr err
                         , empty]
 

@@ -87,20 +87,16 @@ checkExp config kenv tenv xx
                 , closureOfTaggedSet clos)
 
 
--- | Like `checkExp`, but check in an empty environment,
---   and only return the value type of an expression.
---
---   As this function is not given an environment, the types of free variables
---   must be attached directly to the bound occurrences.
---   This attachment is performed by `checkExp` above.
---
+-- | Like `checkExp`, but only return the value type of an expression.
 typeOfExp 
         :: (Ord n, Pretty n, Show n)
-        => Config n
-        -> Exp a n
+        => Config n             -- ^ Static config.
+        -> Env n                -- ^ Kind environment
+        -> Env n                -- ^ Type environment.
+        -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n) (Type n)
-typeOfExp config xx 
- = case checkExp config Env.empty Env.empty xx of
+typeOfExp config kenv tenv xx 
+ = case checkExp config kenv tenv xx of
         Left err           -> Left err
         Right (_, t, _, _) -> Right t
 

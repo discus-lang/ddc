@@ -92,8 +92,12 @@ step    :: Store        -- ^ Current store.
 step store xx
  | (casts, xp)  <- unwrapCasts xx
  , isLambdaX xp
- = case typeOfExp (configOfProfile evalProfile) xp of
-        Left err -> StepStuckMistyped err
+ = case typeOfExp 
+                (configOfProfile  evalProfile) 
+                (profilePrimKinds evalProfile)
+                (profilePrimTypes evalProfile)
+                xp 
+   of   Left err -> StepStuckMistyped err
         Right t   
          -> let Just (bs, xBody)  = takeXLamFlags xp
                 (store', l)       = allocBind (Rgn 0) t (SLams bs xBody) store
@@ -256,7 +260,11 @@ step store (XLet a (LLet LetStrict b x1) x2)
 step store (XLet _ (LLet (LetLazy _w) b x1) x2)
         -- We need the type of the expression to attach to the location
         -- This fakes the store typing from the formal typing rules.
- = case typeOfExp (configOfProfile evalProfile) x1 of
+ = case typeOfExp (configOfProfile  evalProfile)
+                  (profilePrimKinds evalProfile)
+                  (profilePrimTypes evalProfile)
+                  x1 
+   of
         Left err -> StepStuckMistyped err
         Right t1
          -> let (store1, l)   = allocBind (Rgn 0) t1 (SThunk x1) store
