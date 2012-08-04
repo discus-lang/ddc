@@ -14,9 +14,9 @@ module DDC.Core.Analysis.Arity
         , arityFromType
         , aritiesOfPat)
 where
-import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Compounds
 import Control.Monad

@@ -39,7 +39,6 @@ import qualified Data.Map               as Map
 import Control.Monad
 import Data.List                        as L
 import Data.Maybe
-
 import Data.Typeable
 
 
@@ -117,8 +116,9 @@ checkExpM
 
 checkExpM config kenv tenv xx
  = checkExpM' config kenv tenv xx
-{-} = do (xx', t, eff, clo) <- checkExpM' defs kenv tenv xx
-      trace (pretty $ vcat 
+{-
+ = do (xx', t, eff, clo) <- checkExpM' config kenv tenv xx
+      trace (renderIndent $ vcat 
                 [ text "checkExpM:  " <+> ppr xx 
                 , text "        ::  " <+> ppr t 
                 , text "        :!: " <+> ppr eff
@@ -126,9 +126,17 @@ checkExpM config kenv tenv xx
                 , text ""])
          $ return (xx', t, eff, clo)
 -}
-
 -- variables ------------------------------------
 checkExpM' _config _kenv tenv (XVar a u)
+ | UHole _t     <- u                                    -- TODO: kill dodgy hole checker for module body.
+ = let  t'       = tForall kData $ \t -> t
+   in   returnX a
+                (\z -> XVar z (UHole t'))
+                t'
+                (Sum.empty kEffect)
+                (Set.empty)
+
+ | otherwise
  = case Env.lookup u tenv of
         Nothing -> throw $ ErrorUndefinedVar u
         Just t  
@@ -677,9 +685,9 @@ returnX a f t es cs
 checkLetsM 
         :: (Show n, Pretty n, Ord n)
         => Exp a n              -- ^ Enclosing expression, for error messages.
-        -> Config n
-        -> Env n
-        -> Env n
+        -> Config n             -- ^ Static config.
+        -> Env n                -- ^ Kind environment.
+        -> Env n                -- ^ Type environment.
         -> Lets a n
         -> CheckM a n
                 ( Lets (AnTEC a n) n
@@ -822,8 +830,7 @@ checkAltM _xx config kenv tenv _tDiscrim _tsArgs (AAlt PDefault xBody)
                 , cloBody)
 
 checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
- = do   
-        -- Take the type of the constructor and instantiate it with the 
+ = do   -- Take the type of the constructor and instantiate it with the 
         -- type arguments we got from the discriminant. 
         -- If the ctor type doesn't instantiate then it won't have enough foralls 
         -- on the front, which should have been checked by the def checker.

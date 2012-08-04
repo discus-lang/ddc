@@ -17,13 +17,10 @@ module DDC.Core.Module
 
 where
 import DDC.Core.Exp
-
-import Data.Map         (Map)
-import qualified Data.Map               as Map
-
-import qualified DDC.Type.Env		as E
-
 import Data.Typeable
+import Data.Map                         (Map)
+import qualified Data.Map               as Map
+import qualified DDC.Type.Env		as E
 
 
 -- ModuleName -----------------------------------------------------------------
