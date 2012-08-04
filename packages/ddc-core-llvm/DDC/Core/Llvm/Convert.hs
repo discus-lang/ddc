@@ -13,9 +13,9 @@ import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
-import DDC.Core.Salt.Erase
 import DDC.Core.Compounds
 import DDC.Type.Compounds
+import DDC.Type.Env                     (Env)
 import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
 import Control.Monad
@@ -26,6 +26,7 @@ import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
+import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
 import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Seq
@@ -35,11 +36,9 @@ import qualified Data.Foldable          as Seq
 -- | Convert a module to LLVM
 convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm@(C.ModuleCore{})
- = let
-        prims           = primDeclsMap platform
+ = let  prims           = primDeclsMap platform
         state           = llvmStateInit platform prims
-        mm'             = eraseM mm
-   in   clean $ evalState (convModuleM mm') state
+   in   clean $ evalState (convModuleM mm) state
 
 
 convModuleM :: C.Module () A.Name -> LlvmM Module
@@ -67,9 +66,13 @@ convModuleM mm@(C.ModuleCore{})
 
                 | otherwise
                 = [ GlobalExternal vHeapTop ]
-
         ---------------------------------------------------------------
-        functions       <- mapM (uncurry (convSuperM)) bxs
+
+        -- The initial environments due to imported names.
+        let kenv        = C.moduleKindEnv mm
+        let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
+        functions       <- mapM (uncurry (convSuperM kenv tenv)) bxs
+
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
@@ -111,22 +114,31 @@ primDecls pp
 -- | Convert a top-level supercombinator to a LLVM function.
 --   Region variables are completely stripped out.
 convSuperM 
-        :: C.Bind A.Name                -- ^ Bind for the super.
+        :: Env A.Name                   -- ^ Kind environment.
+        -> Env A.Name                   -- ^ Type environment.
+        -> C.Bind A.Name                -- ^ Bind for the super.
         -> C.Exp () A.Name              -- ^ Super body.
         -> LlvmM Function
 
-convSuperM (C.BName (A.NameVar nTop) tSuper) x
- | Just (bsParam, xBody)  <- takeXLams $ eraseXLAMs x
+convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
+ | Just (bfsParam, xBody)  <- takeXLamFlags x
  = do   
-        platform          <- gets llvmStatePlatform
+        platform         <- gets llvmStatePlatform
+
+        -- Add parameters to environments.
+        let bsParamType  = [b | (True,  b) <- bfsParam]
+        let bsParamValue = [b | (False, b) <- bfsParam]
+
+        let kenv'       = Env.extends bsParamType  kenv
+        let tenv'       = Env.extends (bSuper : bsParamValue) tenv
 
         -- Sanitise the super name so we can use it as a symbol
         -- in the object code.
-        let nTop' = A.sanitizeName nTop
+        let nTop'       = A.sanitizeName nTop
 
         -- Split off the argument and result types of the super.
         let (tsArgs, tResult)   
-                = takeTFunArgResult $ eraseTForalls tSuper
+                        = takeTFunArgResult $ eraseTForalls tSuper
   
         -- Make parameter binders.
         let params      = map (llvmParameterOfType platform) tsArgs
@@ -145,17 +157,17 @@ convSuperM (C.BName (A.NameVar nTop) tSuper) x
 
         -- Convert function body to basic blocks.
         label   <- newUniqueLabel "entry"
-        blocks  <- convBodyM Seq.empty label Seq.empty xBody
+        blocks  <- convBodyM kenv' tenv' Seq.empty label Seq.empty xBody
 
         -- Build the function.
         return  $ Function
                 { funDecl               = decl
-                , funParams             = map nameOfParam bsParam
+                , funParams             = map nameOfParam bsParamValue
                 , funAttrs              = [] 
                 , funSection            = SectionAuto
                 , funBlocks             = Seq.toList blocks }
 
-convSuperM _ _          = die "invalid super"
+convSuperM _ _ _ _      = die "invalid super"
 
 
 -- | Take the string name to use for a function parameter.
@@ -171,13 +183,15 @@ nameOfParam bb
 -- Body -----------------------------------------------------------------------
 -- | Convert a function body to LLVM blocks.
 convBodyM 
-        :: Seq Block            -- ^ Previous blocks.
+        :: Env A.Name           -- ^ Kind environment.
+        -> Env A.Name           -- ^ Type environment.
+        -> Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
         -> Seq Instr            -- ^ Instrs in current block.
         -> C.Exp () A.Name      -- ^ Expression being converted.
         -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
-convBodyM blocks label instrs xx
+convBodyM kenv tenv blocks label instrs xx
  = do   pp      <- gets llvmStatePlatform
         case xx of
 
@@ -199,7 +213,7 @@ convBodyM blocks label instrs xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x2]                    <- xs
           ,  isVoidT t
-          -> do instrs2 <- convStmtM pp x2
+          -> do instrs2 <- convStmtM pp kenv tenv x2
                 return  $  blocks
                         |> Block label (instrs >< (instrs2 |> IReturn Nothing))
 
@@ -210,7 +224,7 @@ convBodyM blocks label instrs xx
           ,  [C.XType t, x]                     <- xs
           -> do let t'  =  convType pp t
                 vDst    <- newUniqueVar t'
-                is      <- convExpM pp vDst x
+                is      <- convExpM pp kenv tenv vDst x
                 return  $   blocks 
                         |>  Block label (instrs >< (is |> IReturn (Just (XVar vDst))))
 
@@ -235,8 +249,8 @@ convBodyM blocks label instrs xx
           ,  A.PrimCall (A.PrimCallTail arity) <- p
           ,  _tsArgs                           <- take arity args
           ,  C.XType tResult : xFun : xsArgs   <- drop arity args
-          ,  Just (Var nFun _)                 <- takeGlobalV pp xFun
-          ,  Just xsArgs'                      <- sequence $ map (mconvAtom pp) xsArgs
+          ,  Just (Var nFun _)                 <- takeGlobalV pp tenv xFun
+          ,  Just xsArgs'                      <- sequence $ map (mconvAtom pp kenv tenv) xsArgs
           -> if isVoidT tResult
               -- Tailcalled function returns void.
               then do return $ blocks
@@ -257,35 +271,38 @@ convBodyM blocks label instrs xx
 
          -- Assignment ------------------------------------
          -- Variable assignment from an expression.
-         C.XLet _ (C.LLet C.LetStrict (C.BName (A.NameVar n) t) x1) x2
-          -> do t'       <- convTypeM t
-                let n'   = A.sanitizeName n
-                let dst  = Var (NameLocal n') t'
-                instrs'  <- convExpM pp dst x1
-                convBodyM blocks label (instrs >< instrs') x2
+         C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t) x1) x2
+          -> do let tenv' = Env.extend b tenv
+                let n'    = A.sanitizeName n
+
+                t'        <- convTypeM t
+                let dst   = Var (NameLocal n') t'
+                instrs'   <- convExpM pp kenv tenv dst x1
+                convBodyM kenv tenv' blocks label (instrs >< instrs') x2
 
          -- A statement that provides no value statment.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           | isVoidT t
-          -> do instrs'   <- convStmtM pp x1
-                convBodyM blocks label (instrs >< instrs') x2
+          -> do instrs'   <- convStmtM pp kenv tenv x1
+                convBodyM kenv tenv blocks label (instrs >< instrs') x2
 
          -- Variable assignment from an unsed binder.
          -- We need to invent a dummy binder as LLVM needs some name for it.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           -> do t'        <- convTypeM t
                 dst       <- newUniqueNamedVar "dummy" t'
-                instrs'   <- convExpM pp dst x1
-                convBodyM blocks label (instrs >< instrs') x2
+                instrs'   <- convExpM pp kenv tenv dst x1
+                convBodyM kenv tenv blocks label (instrs >< instrs') x2
 
          -- Letregions
-         C.XLet _ (C.LLetRegion _ _) x2
-          -> convBodyM blocks label instrs x2
+         C.XLet _ (C.LLetRegion b _) x2
+          -> do let kenv' = Env.extend b kenv
+                convBodyM kenv' tenv blocks label instrs x2
 
          -- Case statement.
          C.XCase _ x1 alts
-          | Just x1'@(Var{})    <- takeLocalV pp x1
-          -> do alts'@(_:_)     <- mapM convAltM alts
+          | Just x1'@(Var{})    <- takeLocalV pp tenv x1
+          -> do alts'@(_:_)     <- mapM (convAltM kenv tenv) alts
 
                 -- Determine what default alternative to use for the instruction. 
                 (lDefault, blocksDefault)
@@ -310,28 +327,32 @@ convBodyM blocks label instrs xx
 
 -- Stmt -----------------------------------------------------------------------
 -- | Convert a Core statement to LLVM instructions.
-convStmtM :: Platform -> C.Exp () A.Name -> LlvmM (Seq Instr)
-convStmtM pp xx
+convStmtM 
+        :: Platform             -- ^ Platfom specification.
+        -> Env A.Name           -- ^ Kind environment.
+        -> Env A.Name           -- ^ Type environment.
+        -> C.Exp () A.Name      -- ^ Expression to convert.
+        -> LlvmM (Seq Instr)
+
+convStmtM pp kenv tenv xx
  = case xx of
         -- Call to primop.
         C.XApp{}
          |  Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), xs) <- takeXApps xx
-         -> convPrimCallM pp Nothing p tPrim xs
+         -> convPrimCallM pp kenv tenv Nothing p tPrim xs
 
         -- Call to top-level super.
-          | Just (xFun@(C.XVar _ b), xsArgs) <- takeXApps xx
-          , Just (Var nFun _)                <- takeGlobalV pp xFun
-          , Just xsArgs_value'  <- sequence $ map (mconvAtom pp) 
+         | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
+         , Just (Var nFun _)                <- takeGlobalV pp tenv xFun
+         , Just xsArgs_value'   <- sequence $ map (mconvAtom pp kenv tenv) 
                                 $  eraseTypeWitArgs xsArgs
+         , Just tSuper          <- Env.lookup u tenv
+         -> let (_, tResult)    =  takeTFunArgResult 
+                                $  eraseTForalls tSuper
 
-          -> let (_, tResult)   =  b `seq` error "LLVM.convStmtM: need environment"
-                                -- takeTFunArgResult 
---                                $  eraseTForalls $ typeOfBound b
-
-             in  return $ Seq.singleton
+            in  return $ Seq.singleton
                     $ ICall Nothing CallTypeStd 
                          (convType pp tResult) nFun xsArgs_value' []
-
 
         _ -> die $ "invalid statement" ++ show xx
 
@@ -347,19 +368,24 @@ data AltResult
 --
 --   This only works for zero-arity constructors.
 --   The client should extrac the fields of algebraic data objects manually.
-convAltM :: C.Alt () A.Name -> LlvmM AltResult
-convAltM aa
+convAltM 
+        :: Env A.Name           -- ^ Kind environment.
+        -> Env A.Name           -- ^ Type environment.
+        -> C.Alt () A.Name      -- ^ Alternative to convert.
+        -> LlvmM AltResult
+
+convAltM kenv tenv aa
  = do   pp      <- gets llvmStatePlatform
         case aa of
          C.AAlt C.PDefault x
           -> do label   <- newUniqueLabel "default"
-                blocks  <- convBodyM Seq.empty label Seq.empty x
+                blocks  <- convBodyM kenv tenv Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
          C.AAlt (C.PData u []) x
           | Just lit     <- convPatBound pp u
           -> do label   <- newUniqueLabel "alt"
-                blocks  <- convBodyM Seq.empty label Seq.empty x
+                blocks  <- convBodyM kenv tenv Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
          _ -> die "invalid alternative"
@@ -402,17 +428,20 @@ takeAltCase _                           = Nothing
 --   before converting it.
 convExpM
         :: Platform             -- ^ Current platform.
+        -> Env A.Name           -- ^ Kind environment.
+        -> Env A.Name           -- ^ Type environment.
         -> Var                  -- ^ Assign result to this var.
         -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
-convExpM _  vDst (C.XVar _ (C.UName (A.NameVar n)))
+convExpM _ _kenv tenv vDst (C.XVar _ u@(C.UName (A.NameVar n)))
+ | Just t       <- Env.lookup u tenv
  = do   let n'  = A.sanitizeName n
-        t'      <- error "convExpM: need environment" -- convTypeM t
+        t'      <- convTypeM t
         return  $ Seq.singleton 
                 $ ISet vDst (XVar (Var (NameLocal n') t'))
 
-convExpM pp vDst (C.XCon _ (C.UPrim name _t))
+convExpM pp _ _ vDst (C.XCon _ (C.UPrim name _t))
  = case name of
         A.NameNat i
          -> return $ Seq.singleton
@@ -428,26 +457,25 @@ convExpM pp vDst (C.XCon _ (C.UPrim name _t))
 
         _ -> die "invalid literal"
 
-convExpM pp dst xx@C.XApp{}
+convExpM pp kenv tenv dst xx@C.XApp{}
         
         -- Call to primop.
         | Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), args) <- takeXApps xx
-        = convPrimCallM pp (Just dst) p tPrim args
+        = convPrimCallM pp kenv tenv (Just dst) p tPrim args
 
         -- Call to top-level super.
-        | Just (xFun@(C.XVar _ b), xsArgs) <- takeXApps xx
-        , Just (Var nFun _)                <- takeGlobalV pp xFun
-        , Just xsArgs_value'    <- sequence $ map (mconvAtom pp) 
+        | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
+        , Just (Var nFun _)                <- takeGlobalV pp tenv xFun
+        , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
                                 $  eraseTypeWitArgs xsArgs
-
-        = let   (_, tResult)    = b `seq` error "LLVM.convExpM: need environment"
---                                takeTFunArgResult 
---                                $ eraseTForalls $ typeOfBound b
+        , Just tSuper           <- Env.lookup u tenv
+        = let   (_, tResult)    = takeTFunArgResult 
+                                $ eraseTForalls $ tSuper
 
           in    return $ Seq.singleton
                  $ ICall (Just dst) CallTypeStd 
                          (convType pp tResult) nFun xsArgs_value' []
 
-convExpM _ _ xx
-        = die $ "invalid expression" ++ show xx
+convExpM _ _ _ _ xx
+        = die $ "invalid expression " ++ show xx
 

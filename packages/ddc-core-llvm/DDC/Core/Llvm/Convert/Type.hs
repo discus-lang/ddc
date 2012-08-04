@@ -58,12 +58,15 @@ convType platform tt
           -> convTyCon platform tc
 
         -- A pointer to a primitive type.
-        C.TApp (C.TCon (C.TyConBound (C.UPrim (NamePrimTyCon PrimTyConPtr) _) _)) t2
+        C.TApp{}
+         | Just (NamePrimTyCon PrimTyConPtr, [_r, t2]) 
+                <- takePrimTyConApps tt
          -> TPointer (convType platform t2)
 
         -- Function types become pointers to functions.
         C.TApp{}
          |  (tsArgs, tResult) <- takeTFunArgResult tt
+         ,  not $ null tsArgs
          -> TPointer $ TFunction 
          $  FunctionDecl
              { declName          = "dummy.function.name"

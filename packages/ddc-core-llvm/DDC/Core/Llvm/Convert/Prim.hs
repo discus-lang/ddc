@@ -9,6 +9,7 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
 import DDC.Base.Pretty
+import DDC.Type.Env             (Env)
 import Data.Sequence            (Seq)
 import qualified DDC.Core.Exp   as C
 import qualified DDC.Core.Salt  as A
@@ -24,18 +25,20 @@ import qualified Data.Sequence  as Seq
 convPrimCallM 
         :: Show a 
         => Platform             -- ^ Current platform.
+        -> Env A.Name           -- ^ Kind environment.
+        -> Env A.Name           -- ^ Type environment.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.Prim               -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
         -> LlvmM (Seq Instr)
 
-convPrimCallM pp mdst p tPrim xs
+convPrimCallM pp kenv tenv mdst p tPrim xs
  = case p of
         -- Binary operations ----------
         A.PrimOp op
          | C.XType t : args     <- xs
-         , Just [x1', x2']      <- mconvAtoms pp args
+         , Just [x1', x2']      <- mconvAtoms pp kenv tenv args
          , Just dst             <- mdst
          -> let result
                  | Just op'     <- convPrimOp2 op t
@@ -54,7 +57,7 @@ convPrimCallM pp mdst p tPrim xs
         -- Cast primops ---------------
         A.PrimCast A.PrimCastPromote
          | [C.XType tDst, C.XType tSrc, xSrc] <- xs
-         , Just xSrc'           <- mconvAtom pp xSrc
+         , Just xSrc'           <- mconvAtom pp kenv tenv xSrc
          , Just vDst            <- mdst
          , minstr               <- convPrimPromote pp tDst vDst tSrc xSrc'
          -> case minstr of
@@ -66,7 +69,7 @@ convPrimCallM pp mdst p tPrim xs
 
         A.PrimCast A.PrimCastTruncate
          | [C.XType tDst, C.XType tSrc, xSrc] <- xs
-         , Just xSrc'           <- mconvAtom pp xSrc
+         , Just xSrc'           <- mconvAtom pp kenv tenv xSrc
          , Just vDst            <- mdst
          , minstr               <- convPrimTruncate pp tDst vDst tSrc xSrc'
          -> case minstr of
@@ -84,7 +87,7 @@ convPrimCallM pp mdst p tPrim xs
                         $ ISet vDst (XLit (LitInt (tNat pp) (platformNatBytes pp)))
 
         A.PrimStore A.PrimStoreCreate
-         | Just [xBytes']         <- mconvAtoms pp xs
+         | Just [xBytes']         <- mconvAtoms pp kenv tenv xs
          -> do  vAddr   <- newUniqueNamedVar "addr" (tAddr pp)
                 let vTopPtr = Var (NameGlobal "DDC.Runtime.heapTop") (TPointer (tAddr pp))
                 return  $ Seq.fromList
@@ -95,7 +98,7 @@ convPrimCallM pp mdst p tPrim xs
 
         A.PrimStore A.PrimStoreAlloc
          | Just vDst@(Var nDst _) <- mdst
-         , Just [xBytes']         <- mconvAtoms pp xs
+         , Just [xBytes']         <- mconvAtoms pp kenv tenv xs
          -> do  let vBump   = Var (bumpName nDst "bump") (tAddr pp)
                 let vTopPtr = Var (NameGlobal "DDC.Runtime.heapTop") (TPointer (tAddr pp))
                 return  $ Seq.fromList
@@ -105,7 +108,7 @@ convPrimCallM pp mdst p tPrim xs
 
         A.PrimStore A.PrimStoreRead
          | C.XType _t : args             <- xs
-         , Just [xAddr', xOffset']      <- mconvAtoms pp args
+         , Just [xAddr', xOffset']      <- mconvAtoms pp kenv tenv args
          , Just vDst@(Var nDst tDst)    <- mdst
          -> let vOff    = Var (bumpName nDst "off") (tAddr pp)
                 vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
@@ -116,7 +119,7 @@ convPrimCallM pp mdst p tPrim xs
 
         A.PrimStore A.PrimStoreWrite
          | C.XType _t : args              <- xs
-         , Just [xAddr', xOffset', xVal'] <- mconvAtoms pp args      
+         , Just [xAddr', xOffset', xVal'] <- mconvAtoms pp kenv tenv args      
          -> do  vOff    <- newUniqueNamedVar "off" (tAddr pp)
                 vPtr    <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
                 return  $ Seq.fromList
@@ -125,20 +128,20 @@ convPrimCallM pp mdst p tPrim xs
                         , IStore (XVar vPtr) xVal' ]
 
         A.PrimStore A.PrimStorePlusAddr
-         | Just [xAddr', xOffset']      <- mconvAtoms pp xs
+         | Just [xAddr', xOffset']      <- mconvAtoms pp kenv tenv xs
          , Just vDst                    <- mdst
          ->     return  $ Seq.singleton
                         $ IOp vDst OpAdd xAddr' xOffset'
 
         A.PrimStore A.PrimStoreMinusAddr
-         | Just [xAddr', xOffset']      <- mconvAtoms pp xs
+         | Just [xAddr', xOffset']      <- mconvAtoms pp kenv tenv xs
          , Just vDst                    <- mdst
          ->     return  $ Seq.singleton
                         $ IOp vDst OpSub xAddr' xOffset'
 
         A.PrimStore A.PrimStorePeek
-         | C.XType tDst : args          <- xs
-         , Just [xPtr', xOffset']       <- mconvAtoms pp args
+         | C.XType _r : C.XType tDst : args     <- xs
+         , Just [xPtr', xOffset']       <- mconvAtoms pp kenv tenv args
          , Just vDst@(Var nDst _)       <- mdst
          , tDst'                        <- convType   pp tDst
          -> let vAddr1   = Var (bumpName nDst "addr1") (tAddr pp)
@@ -151,8 +154,8 @@ convPrimCallM pp mdst p tPrim xs
                         , ILoad vDst  (XVar vPtr) ]
 
         A.PrimStore A.PrimStorePoke
-         | C.XType tDst : args           <- xs
-         , Just [xPtr', xOffset', xVal'] <- mconvAtoms pp args
+         | C.XType _r : C.XType tDst : args     <- xs
+         , Just [xPtr', xOffset', xVal'] <- mconvAtoms pp kenv tenv args
          , tDst'                         <- convType pp tDst
          -> do  vAddr1  <- newUniqueNamedVar "addr1" (tAddr pp)
                 vAddr2  <- newUniqueNamedVar "addr2" (tAddr pp)
@@ -164,8 +167,8 @@ convPrimCallM pp mdst p tPrim xs
                         , IStore (XVar vPtr) xVal' ]
 
         A.PrimStore A.PrimStorePlusPtr
-         | _xType : args                <- xs
-         , Just [xPtr', xOffset']       <- mconvAtoms pp args
+         | _xRgn : _xType : args        <- xs
+         , Just [xPtr', xOffset']       <- mconvAtoms pp kenv tenv args
          , Just vDst                    <- mdst
          -> do  vAddr   <- newUniqueNamedVar "addr"   (tAddr pp)
                 vAddr2  <- newUniqueNamedVar "addr2"  (tAddr pp)
@@ -175,8 +178,8 @@ convPrimCallM pp mdst p tPrim xs
                         , IConv vDst   ConvInttoptr (XVar vAddr2) ]
 
         A.PrimStore A.PrimStoreMinusPtr
-         | _xType : args                <- xs
-         , Just [xPtr', xOffset']       <- mconvAtoms pp args
+         | _xRgn : _xType : args        <- xs
+         , Just [xPtr', xOffset']       <- mconvAtoms pp kenv tenv args
          , Just vDst                    <- mdst
          -> do  vAddr   <- newUniqueNamedVar "addr"   (tAddr pp)
                 vAddr2  <- newUniqueNamedVar "addr2"  (tAddr pp)
@@ -186,29 +189,29 @@ convPrimCallM pp mdst p tPrim xs
                         , IConv vDst   ConvInttoptr (XVar vAddr2) ]
 
         A.PrimStore A.PrimStoreMakePtr
-         | [C.XType _t, xAddr]          <- xs
-         , Just xAddr'  <- mconvAtom pp xAddr
+         | [C.XType _r, C.XType _t, xAddr] <- xs
+         , Just xAddr'  <- mconvAtom pp kenv tenv xAddr
          , Just vDst    <- mdst
          ->     return  $ Seq.singleton
                         $ IConv vDst ConvInttoptr xAddr'
 
         A.PrimStore A.PrimStoreTakePtr
-         | [C.XType _t, xPtr]          <- xs
-         , Just xPtr'   <- mconvAtom pp xPtr
+         | [C.XType _r, C.XType _t, xPtr]          <- xs
+         , Just xPtr'   <- mconvAtom pp kenv tenv xPtr
          , Just vDst    <- mdst
          ->     return  $ Seq.singleton
                         $ IConv vDst ConvPtrtoint xPtr'
 
         A.PrimStore A.PrimStoreCastPtr
-         | [C.XType _tSrc, C.XType _tDst, xPtr] <- xs
-         , Just xPtr'   <- mconvAtom pp xPtr
+         | [C.XType _r, C.XType _tSrc, C.XType _tDst, xPtr] <- xs
+         , Just xPtr'   <- mconvAtom pp kenv tenv xPtr
          , Just vDst    <- mdst
          ->     return  $ Seq.singleton
                         $ IConv vDst ConvBitcast xPtr'
 
         -- External Primops -----------
         A.PrimExternal prim
-         |  Just xs'     <- sequence $ map (mconvAtom pp) xs
+         |  Just xs'     <- sequence $ map (mconvAtom pp kenv tenv) xs
          ,  (_, tResult) <- takeTFunArgResult tPrim
          ,  tResult'     <- convType pp tResult
          ,  Just name'   <- convPrimExtern prim tPrim
@@ -216,7 +219,7 @@ convPrimCallM pp mdst p tPrim xs
                         $ ICall mdst CallTypeStd tResult'
                                 name' xs' []
 
-        _ -> die "Invalid prim call."
+        _ -> die $ "Invalid prim call." ++ show (p, xs)
 
 
 

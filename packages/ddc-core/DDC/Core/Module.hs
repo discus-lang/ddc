@@ -9,7 +9,9 @@ module DDC.Core.Module
         , Module        (..)
         , Extern        (..)
         , isMainModule
-	
+	, moduleKindEnv
+        , moduleTypeEnv
+
 	  -- * Module maps
 	, ModuleMap
 	, modulesExportKinds
@@ -94,6 +96,22 @@ isMainModule :: Module a n -> Bool
 isMainModule mm
         = isMainModuleName 
         $ moduleName mm
+
+
+-- | Get the top-level kind environment of a module,
+--   from its imported types.
+moduleKindEnv :: Ord n => Module a n -> Env n
+moduleKindEnv mm
+        = Env.fromList 
+        $ [BName n k | (n, (_, k)) <- Map.toList $ moduleImportKinds mm]
+
+
+-- | Get the top-level type environment of a module,
+--   from its imported values.
+moduleTypeEnv :: Ord n => Module a n -> Env n
+moduleTypeEnv mm
+        = Env.fromList 
+        $ [BName n k | (n, (_, k)) <- Map.toList $ moduleImportTypes mm]
 
 
 -- ModuleMap ------------------------------------------------------------------
