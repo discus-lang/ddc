@@ -13,7 +13,6 @@ import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw)
---import qualified DDC.Type.Env            as Env
 import qualified DDC.Core.Lite.Layout    as L
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as O
@@ -32,27 +31,14 @@ constructData
         -> a                            -- ^ Annotation to use on expressions.
         -> DataType L.Name              -- ^ Data Type definition of object.
         -> DataCtor L.Name              -- ^ Constructor definition of object.
+        -> Type   O.Name                -- ^ Prime region variable.
         -> [Exp a O.Name]               -- ^ Field values.
         -> [Maybe (Type O.Name)]        -- ^ Field types.
         -> ConvertM a (Exp a O.Name)
 
-constructData pp kenv _tenv a dataDef ctorDef xsArgs tsArgs 
-
+constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs 
  | Just L.HeapObjectBoxed       <- L.heapObjectOfDataCtor ctorDef
  = do
-        -- Get the prime region variable that holds the outermost constructor.
-        --   For types like Unit, there is no prime region var,
-        --   so use a hole for now. 
-        --
-        -- TODO: allocate objects with no prime region var in a global region.
-        --
-        let rPrime
-                = error "constructData: need environment"
-{-}                case xsArgs of
-                   XType r@(TVar u) : _
-                    | isRegionKind (typeOfBound u) -> r
-                   _                               -> TVar (UHole kRegion)
--}
         -- We want to write the fields into the newly allocated object.
         -- The xsArgs list also contains type arguments, so we need to
         --  drop these off first.
@@ -82,18 +68,15 @@ constructData pp kenv _tenv a dataDef ctorDef xsArgs tsArgs
 
  | Just L.HeapObjectRawSmall    <- L.heapObjectOfDataCtor ctorDef
  , Just size                    <- L.payloadSizeOfDataCtor  pp ctorDef
- , x1 : _                       <- xsArgs
- , XType r@(TVar u)             <- x1
- , u `seq` error "constructData: need environment"-- isRegionKind (typeOfBound u)
  = do   
         -- Allocate the object.
-        let bObject     = BAnon (O.tPtr r O.tObj)
-        let xAlloc      = O.xAllocRawSmall a r (dataCtorTag ctorDef)
+        let bObject     = BAnon (O.tPtr rPrime O.tObj)
+        let xAlloc      = O.xAllocRawSmall a rPrime (dataCtorTag ctorDef)
                         $ XCon a (UPrim (O.NameNat size) O.tNat)
 
         -- Take a pointer to its payload.
         let bPayload    = BAnon O.tAddr
-        let xPayload    = O.xPayloadOfRawSmall a r
+        let xPayload    = O.xPayloadOfRawSmall a rPrime
                         $ XVar a (UIx 0)
 
         -- Convert the field types.

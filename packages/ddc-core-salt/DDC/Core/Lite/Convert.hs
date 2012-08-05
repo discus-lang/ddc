@@ -435,7 +435,22 @@ convertCtorAppX pp defs kenv tenv a@(AnTEC t _ _ _) nCtor xsArgs
         | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
         , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
         = do    
-                xsArgs'        <- mapM (convertAtomX pp defs kenv tenv) xsArgs
+                -- Get the prime region variable that holds the outermost constructor.
+                --   For types like Unit, there is no prime region var,
+                --   so use a hole for now. 
+                --
+                -- TODO: allocate objects with no prime region var in a global region.
+                --
+                rPrime
+                 <- case xsArgs of
+                        XType (TVar u) : _
+                         | Just tu      <- Env.lookup u kenv
+                         -> if isRegionKind tu
+                             then do u'      <- convertU u
+                                     return  $ TVar u'
+                             else return $ TVar (UHole kRegion)
+
+                        _ -> error $ "constructData: prime region var not in environment"
 
                 -- Convert the types of each field.
                 let makeFieldType x
@@ -443,8 +458,12 @@ convertCtorAppX pp defs kenv tenv a@(AnTEC t _ _ _) nCtor xsArgs
                                 Nothing  -> return Nothing
                                 Just a'  -> liftM Just $ convertT kenv (annotType a')
 
+                xsArgs'         <- mapM (convertAtomX pp defs kenv tenv) xsArgs
                 tsArgs'         <- mapM makeFieldType xsArgs
-                constructData pp kenv tenv (annotTail a) dataDef ctorDef xsArgs' tsArgs'
+                constructData pp kenv tenv (annotTail a)
+                                dataDef ctorDef
+                                rPrime xsArgs' tsArgs'
+
 
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
@@ -543,7 +562,9 @@ convertCtor pp defs kenv tenv a uu
         UPrim nCtor _
          | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
-         -> constructData pp kenv tenv a dataDef ctorDef [] []
+         -> do  -- TODO: allocate objects with no prime region var in a global region.
+                let rPrime      = TVar (UHole kRegion)
+                constructData pp kenv tenv a dataDef ctorDef rPrime [] []
 
         _ -> throw $ ErrorMalformed "convertCtor: invalid constructor"
 
