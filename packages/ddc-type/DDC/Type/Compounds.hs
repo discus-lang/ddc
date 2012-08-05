@@ -65,7 +65,7 @@ module DDC.Type.Compounds
 where
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as Sum
-import Debug.Trace
+
 
 -- Binds ----------------------------------------------------------------------
 -- | Take the variable name of a bind.
@@ -244,8 +244,7 @@ takeDataTyConApps tt
 --   This corresponds to the region the outermost constructor is allocated into.
 takePrimeRegion :: Type n -> Maybe (Type n)
 takePrimeRegion tt
- = trace ("TODO: DDC.Type.Compounds: takePrimeRegion is dodgy now as we don't check the kind of the constructor")
- $ case takeTApps tt of
+ = case takeTApps tt of                                 -- TODO: check we're actually returning a region var
         TCon _ : tR@(TVar _) : _
           -> Just tR
 

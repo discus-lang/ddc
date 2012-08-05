@@ -120,19 +120,16 @@ destructData
         :: Platform 
         -> a
         -> Bound O.Name         -- ^ Bound of Scruitinee.
-        -> DataCtor L.Name      -- ^ Definition of the data constructor to unpack
+        -> DataCtor L.Name      -- ^ Definition of the data constructor to unpack.
+        -> Type  O.Name         -- ^ Prime region.
         -> [Bind O.Name]        -- ^ Binders for each of the fields.
         -> Exp a O.Name         -- ^ Body expression that uses the field binders.
         -> ConvertM a (Exp a O.Name)
 
-destructData pp a uScrut ctorDef bsFields xBody
+destructData pp a uScrut ctorDef trPrime bsFields xBody
 
  | Just L.HeapObjectBoxed    <- L.heapObjectOfDataCtor ctorDef
  = do   
-        -- Get the prime region that the read effects are assigned to.
-        let Just trPrime  = uScrut `seq` error "destructData: need environment"
---                              takePrimeRegion (typeOfBound uScrut)
-
         -- Bind pattern variables to each of the fields.
         let lsFields      
                 = catMaybes
@@ -149,13 +146,9 @@ destructData pp a uScrut ctorDef bsFields xBody
  | Just L.HeapObjectRawSmall <- L.heapObjectOfDataCtor ctorDef
  , Just offsets              <- L.fieldOffsetsOfDataCtor pp ctorDef
  = do   
-        -- Get the prime region that the read effects are assigned to.
-        let Just tPrime = uScrut `seq` error "destructData: need environment"
---                              takePrimeRegion (typeOfBound uScrut)
-
         -- Get the address of the payload.
         let bPayload    = BAnon O.tAddr
-        let xPayload    = O.xPayloadOfRawSmall a tPrime (XVar a uScrut)
+        let xPayload    = O.xPayloadOfRawSmall a trPrime (XVar a uScrut)
 
         -- Bind pattern variables to the fields.
         let uPayload    = UIx 0

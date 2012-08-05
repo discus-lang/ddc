@@ -28,6 +28,7 @@ import qualified DDC.Core.Salt.Compounds as S
 import qualified DDC.Type.Env            as Env
 import qualified Data.Map                as Map
 import Control.Monad
+import Data.Maybe
 
 
 -- | Convert a Disciple Core Lite module to Disciple Core Salt.
@@ -229,33 +230,38 @@ convertBodyX pp defs kenv tenv xx
         --        Matches against float literals should be desugared into if-then-else chains.
         --        Same for string literals.
         --
-        XCase (AnTEC _t _ _ a') xScrut@(XVar _ uScrut) alts
-         | Just (TCon (TyConBound (UPrim nType _) _))  <- Env.lookup uScrut tenv
-         , L.NamePrimTyCon _                           <- nType
+        XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
+         | TCon (TyConBound (UPrim nType _) _)  <- tScrut
+         , L.NamePrimTyCon _                    <- nType
          -> do  xScrut' <- convertSimpleX pp defs kenv tenv xScrut
-                alts'   <- mapM (convertAlt pp defs kenv tenv a' uScrut) alts
+                alts'   <- mapM (convertAlt pp defs kenv tenv a' uScrut tScrut) alts
                 return  $  XCase a' xScrut' alts'
 
         -- Match against finite algebraic data.
         --   The branch is against the constructor tag.
-        XCase (AnTEC t _ _ a') x@(XVar _ uX) alts  
-         -> do  x'@(XVar _ uX') <- convertSimpleX   pp defs kenv tenv x
-                t'              <- convertT kenv t
-                alts'           <- mapM (convertAlt pp defs kenv tenv a' uX) alts
+        XCase (AnTEC tX _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
+         | TCon (TyConBound (UPrim nType _) _) : _ <- takeTApps tScrut
+         , L.NameDataTyCon _                       <- nType
+         -> do  x'      <- convertSimpleX   pp defs kenv tenv xScrut
+                tX'     <- convertT kenv tX
+                alts'   <- mapM (convertAlt pp defs kenv tenv a' uScrut tScrut) alts
 
                 let asDefault
                         | any isPDefault [p | AAlt p _ <- alts]   
                         = []
 
                         | otherwise     
-                        = [AAlt PDefault (S.xFail a' t')]
+                        = [AAlt PDefault (S.xFail a' tX')]
 
-                let Just tPrime = uX' `seq` error "Lite.convertBodyX: need environment" -- takePrimeRegion (typeOfBound uX')
+                -- TODO: use unknown region instead of a hole.
+                tScrut'    <- convertT kenv tScrut
+                let tPrime = fromMaybe (TVar (UHole kRegion))
+                           $ takePrimeRegion tScrut'
+
                 return  $ XCase a' (S.xGetTag a' tPrime x') 
                         $ alts' ++ asDefault
 
-        XCase{}         -> throw $ ErrorNotNormalized ("found case expression")
-
+        XCase{}         -> throw $ ErrorNotNormalized ("cannot convert case expression")
         XCast _ _ x     -> convertBodyX pp defs kenv tenv x
 
         XType _         -> throw $ ErrorMistyped xx
@@ -443,6 +449,9 @@ convertCtorAppX pp defs kenv tenv a@(AnTEC t _ _ _) nCtor xsArgs
                 --
                 rPrime
                  <- case xsArgs of
+                        [] 
+                         -> return $ TVar (UHole kRegion)
+
                         XType (TVar u) : _
                          | Just tu      <- Env.lookup u kenv
                          -> if isRegionKind tu
@@ -450,7 +459,8 @@ convertCtorAppX pp defs kenv tenv a@(AnTEC t _ _ _) nCtor xsArgs
                                      return  $ TVar u'
                              else return $ TVar (UHole kRegion)
 
-                        _ -> error $ "constructData: prime region var not in environment"
+                        _ -> error $ "convertCtorAppX: prime region var not in environment" 
+
 
                 -- Convert the types of each field.
                 let makeFieldType x
@@ -480,10 +490,11 @@ convertAlt
         -> Env L.Name                   -- ^ Type environment.
         -> a                            -- ^ Annotation from case expression.
         -> Bound L.Name                 -- ^ Bound of scrutinee.
+        -> Type  L.Name                 -- ^ Type  of scrutinee
         -> Alt (AnTEC a L.Name) L.Name  -- ^ Alternative to convert.
         -> ConvertM a (Alt a S.Name)
 
-convertAlt pp defs kenv tenv a uScrut alt
+convertAlt pp defs kenv tenv a uScrut tScrut alt
  = case alt of
         AAlt PDefault x
          -> do  x'      <- convertBodyX pp defs kenv tenv x
@@ -524,7 +535,9 @@ convertAlt pp defs kenv tenv a uScrut alt
                 xBody1          <- convertBodyX pp defs kenv tenv' x
 
                 -- Add let bindings to unpack the constructor.
-                xBody2          <- destructData pp a uScrut' ctorDef bsFields' xBody1
+                tScrut'         <- convertT kenv tScrut
+                let Just trPrime = takePrimeRegion tScrut'
+                xBody2           <- destructData pp a uScrut' ctorDef trPrime bsFields' xBody1
 
                 return  $ AAlt (PData uTag []) xBody2
 
@@ -562,7 +575,8 @@ convertCtor pp defs kenv tenv a uu
         UPrim nCtor _
          | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
-         -> do  -- TODO: allocate objects with no prime region var in a global region.
+         -> do  
+                -- TODO: allocate objects with no prime region var in a global region.
                 let rPrime      = TVar (UHole kRegion)
                 constructData pp kenv tenv a dataDef ctorDef rPrime [] []
 

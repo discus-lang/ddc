@@ -76,6 +76,10 @@ checkTypeM defs env tt
 
 -- Variables ------------------
 checkTypeM' _defs env (TVar u)
+ | UHole k      <- u                            -- TODO: remove dodgy hole
+ = return k
+
+ | otherwise
  = case Env.lookup u env of
         Just t  -> return t
         Nothing -> throw $ ErrorUndefined u
