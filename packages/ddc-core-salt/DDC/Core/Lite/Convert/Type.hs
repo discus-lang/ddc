@@ -90,6 +90,10 @@ convertT' isPrimType tt
          |  Just (t1, _, _, t2)  <- takeTFun tt
          -> liftM2 tFunPE (down t1) (down t2)
 
+         -- Witness application are passed through to Salt.
+         |  Just (tc@(TyConWitness _), args) <- takeTyConApps tt
+         -> liftM2 tApps (convertTyCon tc) (mapM down args)
+         
          -- Boxed data values are represented in generic form.
          |  Just (_, args) <- takeTyConApps tt
          -> do r <- down $ head args

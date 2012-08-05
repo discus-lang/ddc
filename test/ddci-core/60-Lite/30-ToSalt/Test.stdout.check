@@ -371,3 +371,28 @@ letrec {
       let list : Ptr# r Obj = singleton [r] x8 in
       headUnit [r] list
 }
+-- Keep witnesses arguments
+module Test with
+letrec {
+  foo : [r : %].Mutable r => Ptr# _ Obj -> Word64#
+    = /\(r : %).
+       \(w : Mutable r).\(x : Ptr# _ Obj). 42w64#
+}
+
+
+-- Keep witnesses applications
+module Test with
+letrec {
+  foo : [r1 r2 r3 : %].Mutable r1 => Distinct r2 r3 => Ptr# _ Obj -> Word64#
+    = /\(r1 r2 r3 : %).
+       \(w1 : Mutable r1).\(w2 : Distinct r2 r3).\(x : Ptr# _ Obj). 42w64#;
+  
+  bar : Ptr# _ Obj -> Word64#
+    = \(_ : Ptr# _ Obj).
+      letregion r1 with {w1 : Mutable r1} in
+      letregion r2 in
+      letregion r3 with {w2 : Distinct r2 r3} in
+      let x0 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+      let x1 : Ptr# _ Obj = x0 in
+      foo [r1] [r2] [r3] <w1> <w2> x1
+}

@@ -162,7 +162,6 @@ convertBodyX pp defs xx
          -> convertBodyX pp defs x
 
 
-        -- Keep value binders but ditch witness binders for now.
         XLam a b x
          -> case universeFromType1 (typeOfBind b) of
              Just UniverseData    
@@ -172,7 +171,11 @@ convertBodyX pp defs xx
                         (convertBodyX pp defs x)
 
              Just UniverseWitness 
-              -> convertBodyX pp defs x
+              -> liftM3 XLam 
+                        (return $ annotTail a) 
+                        (convertB b) 
+                        (convertBodyX pp defs x)
+
 
              _  -> throw $ ErrorMalformed 
                 $ "Invalid universe for XLam binder: " ++ show b
@@ -297,22 +300,10 @@ convertSimpleX pp defs xx
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps' xa xb
          -> do  x1'     <- convertAtomX pp defs x1
-
-                -- We don't keep all type arguments.
-                let xsArgs_keep = filter shouldKeepFunArg xsArgs
-                xsArgs'         <- mapM (convertAtomX pp defs) xsArgs_keep
-
+                xsArgs' <- mapM (convertAtomX pp defs) xsArgs
                 return  $ makeXApps a' x1' xsArgs'
 
         _ -> convertAtomX pp defs xx
-
-
-shouldKeepFunArg :: Exp a L.Name -> Bool
-shouldKeepFunArg xx
- = case xx of
-        XType{}         -> True
-        XWitness{}      -> False
-        _               -> True
 
 
 -------------------------------------------------------------------------------
@@ -351,9 +342,34 @@ convertAtomX pp defs xx
          -> do  t'      <- convertT t
                 return  $ XType t'
 
-        -- The Salt language doesn't use witnesses yet.
-        XWitness{}
-         ->     error "convertAtomX: witnesses should be droppped by caller"
+        XWitness w      -> liftM XWitness (convertWitnessX w)
+
+
+-------------------------------------------------------------------------------
+-- | Convert a witness expression to Salt
+convertWitnessX
+        :: Show a
+        => Witness L.Name
+        -> ConvertM a (Witness S.Name)
+
+convertWitnessX ww
+ = let down = convertWitnessX
+   in  case ww of
+            WVar n      -> liftM  WVar  (convertU n)
+            WCon wc     -> liftM  WCon  (convertWiConX wc)        
+            WApp w1 w2  -> liftM2 WApp  (down w1) (down w2)
+            WJoin w1 w2 -> liftM2 WApp  (down w1) (down w2)
+            WType t     -> liftM  WType (convertT t)
+
+
+convertWiConX
+        :: Show a
+        => WiCon L.Name
+        -> ConvertM a (WiCon S.Name)    
+convertWiConX wicon            
+ = case wicon of
+        WiConBuiltin w -> return $ WiConBuiltin w
+        WiConBound n   -> liftM WiConBound (convertU n)
 
 
 -------------------------------------------------------------------------------
