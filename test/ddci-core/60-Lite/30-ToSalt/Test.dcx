@@ -190,8 +190,8 @@ foo (_ : Unit) : Unit
  = letregion r in
    do   list    = singleton [r] ()
         headUnit [r] list;;
-        
-        
+
+
 -- Keep witnesses arguments
 :to-salt..
 module Test with letrec

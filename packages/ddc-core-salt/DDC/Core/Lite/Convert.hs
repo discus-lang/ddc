@@ -217,8 +217,10 @@ convertBodyX pp defs kenv tenv xx
          -> error "DDC.Core.Lite.Convert.toSaltX: XLet lazy not handled yet"
 
         XLet a (LLetRegion b bs) x2
-         -> do  let kenv'       = Env.extend b kenv
-                b' : bs'        <- mapM (convertB kenv) (b : bs)
+         -> do  b'              <- convertB kenv b
+
+                let kenv'       = Env.extend b kenv
+                bs'             <- mapM (convertB kenv') bs
                 x2'             <- convertBodyX pp defs kenv' tenv x2
                 return  $ XLet (annotTail a) (LLetRegion b' bs') x2'
 

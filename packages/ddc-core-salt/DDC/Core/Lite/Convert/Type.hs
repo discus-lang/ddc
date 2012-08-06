@@ -63,13 +63,17 @@ convertT' isPrimType kenv tt
    in case tt of
         -- Convert type variables and constructors.
         TVar u
-         | Just t       <- Env.lookup u kenv
-         ,   isRegionKind t
-          || isDataKind   t
-         -> liftM TVar $ convertU u
+         -> case Env.lookup u kenv of
+             Just t
+              | isRegionKind t || isDataKind   t
+              -> liftM TVar $ convertU u
 
-         | otherwise    
-         -> error $ "convertT': unexpected var kind" ++ show tt
+              | otherwise
+              -> error $ "convertT': unexpected var kind " ++ show tt
+
+             Nothing 
+              -> error $ "convertT': type var not in kind environment " ++ show tt
+
 
         -- Convert unapplied type constructors.
         TCon tc 
