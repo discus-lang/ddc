@@ -17,10 +17,11 @@ import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
 import DDC.Core.Compounds
+import DDC.Core.Predicates
 import DDC.Type.Compounds
+import DDC.Type.Predicates
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Type.Compounds
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
 

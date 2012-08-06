@@ -52,9 +52,14 @@ instance EraseT Type where
                 
         -- Erase region type applications
         TApp   t1 t2
-          | isRegionTypeVar t2          -> eraseT t1   
-          | isRegionKind t2             -> eraseT t1                          
+          | isRegionTypeVar kenv t2     -> eraseT kenv t1   
+          | isRegionKind t2             -> eraseT kenv t1                          
           
+        -- Erase witness type applications. Witnesses themselves are implications, 
+        --   so we must match on the witness constructor inside.
+        TApp (TApp t1 _) t2
+          | isWitnessType t1            -> eraseT kenv t2
+
         TApp   t1 t2                    -> TApp (eraseT kenv t1) (eraseT kenv t2)
         TSum   ts                       -> TSum (eraseT kenv ts)
         
@@ -70,10 +75,15 @@ instance EraseT Bind where
   eraseT kenv bb
     = case bb of
         BName n t
-          | isRegionKind t -> BNone (eraseT t) 
-          | otherwise      -> BName n (eraseT t)                
-        BAnon t            -> BAnon (eraseT t)
-        BNone t            -> BNone (eraseT t)              
+          -- Erase region binders
+          | isRegionKind t -> BNone (eraseT kenv t)  
+          
+          -- Erase witness binders
+          | isWitnessType t-> BNone (eraseT kenv t)
+                   
+          | otherwise      -> BName n (eraseT kenv t)                
+        BAnon t            -> BAnon (eraseT kenv t)
+        BNone t            -> BNone (eraseT kenv t)              
 
 instance EraseT Bound where
   eraseT kenv uu
@@ -111,13 +121,16 @@ instance EraseX Exp where
         
         -- Erase region type applications
         XApp _ x (XType t)
-          | isRegionTypeVar t  -> x
+          | isRegionTypeVar kenv t  -> x
+        
+        -- Erase witness arguments
+        XApp _ x (XWitness _)       -> x
           
         -- transformUpX doesn't descend into the bindings, so we do it here
         XLet a (LLet m b x1) x -> XLet a (LLet m (eraseT kenv b) x1) x
         XLet a (LRec bxs) x    -> XLet a (LRec $ map (first (eraseT kenv)) bxs) x
         
-        XType t                -> XType (eraseT t)
+        XType t                -> XType (eraseT kenv t)
         _                      -> xx
         
 isRegionTypeVar :: Ord n => Env n -> Type n -> Bool

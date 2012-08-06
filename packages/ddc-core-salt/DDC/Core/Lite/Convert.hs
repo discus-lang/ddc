@@ -186,8 +186,11 @@ convertBodyX pp defs kenv tenv xx
                         (convertB kenv b) 
                         (convertBodyX pp defs kenv tenv' x)
 
-             Just UniverseWitness 
-              -> convertBodyX pp defs x
+                Just UniverseWitness 
+                 -> liftM3 XLam
+                        (return $ annotTail a)
+                        (convertB kenv b)
+                        (convertBodyX pp defs kenv tenv' x)
 
                 _  -> throw $ ErrorMalformed 
                             $ "Invalid universe for XLam binder: " ++ show b
@@ -322,11 +325,7 @@ convertSimpleX pp defs kenv tenv xx
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps' xa xb
          -> do  x1'     <- downAtomX x1
-
-                -- We don't keep all type arguments.
-                let xsArgs_keep = filter shouldKeepFunArg xsArgs
-                xsArgs'         <- mapM (convertAtomX pp defs) xsArgs_keep
-
+                xsArgs' <- mapM downAtomX xsArgs
                 return  $ makeXApps a' x1' xsArgs'
 
         _ -> downAtomX xx
@@ -371,34 +370,41 @@ convertAtomX pp defs kenv tenv xx
          -> do  t'      <- convertT kenv t
                 return  $ XType t'
 
-        XWitness w      -> liftM XWitness (convertWitnessX w)
+        XWitness w      -> liftM XWitness (convertWitnessX kenv w)
 
 
 -------------------------------------------------------------------------------
 -- | Convert a witness expression to Salt
 convertWitnessX
         :: Show a
-        => Witness L.Name
+        => Env L.Name                   -- ^ Kind enviornment
+        -> Witness L.Name               -- ^ Witness to convert.
         -> ConvertM a (Witness S.Name)
 
-convertWitnessX ww
- = let down = convertWitnessX
+convertWitnessX kenv ww
+ = let down = convertWitnessX kenv
    in  case ww of
             WVar n      -> liftM  WVar  (convertU n)
-            WCon wc     -> liftM  WCon  (convertWiConX wc)        
+            WCon wc     -> liftM  WCon  (convertWiConX kenv wc)
             WApp w1 w2  -> liftM2 WApp  (down w1) (down w2)
             WJoin w1 w2 -> liftM2 WApp  (down w1) (down w2)
-            WType t     -> liftM  WType (convertT t)
+            WType t     -> liftM  WType (convertT kenv t)
 
 
 convertWiConX
         :: Show a
-        => WiCon L.Name
+        => Env L.Name                   -- ^ Kind environment. 
+        -> WiCon L.Name                 -- ^ Witness constructor to convert.
         -> ConvertM a (WiCon S.Name)    
-convertWiConX wicon            
+convertWiConX kenv wicon            
  = case wicon of
-        WiConBuiltin w -> return $ WiConBuiltin w
-        WiConBound n   -> liftM WiConBound (convertU n)
+        WiConBuiltin w
+         -> return $ WiConBuiltin w
+
+        WiConBound n t 
+         -> liftM2 WiConBound
+                        (convertU n)
+                        (convertT kenv t)
 
 
 -------------------------------------------------------------------------------
