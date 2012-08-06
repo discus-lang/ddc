@@ -275,7 +275,7 @@ convBodyM kenv tenv blocks label instrs xx
           -> do let tenv' = Env.extend b tenv
                 let n'    = A.sanitizeName n
 
-                t'        <- convTypeM kenv t
+                let t'    = convType pp kenv t
                 let dst   = Var (NameLocal n') t'
                 instrs'   <- convExpM pp kenv tenv dst x1
                 convBodyM kenv tenv' blocks label (instrs >< instrs') x2
@@ -289,7 +289,7 @@ convBodyM kenv tenv blocks label instrs xx
          -- Variable assignment from an unsed binder.
          -- We need to invent a dummy binder as LLVM needs some name for it.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
-          -> do t'        <- convTypeM kenv t
+          -> do let t'    =  convType pp kenv t
                 dst       <- newUniqueNamedVar "dummy" t'
                 instrs'   <- convExpM pp kenv tenv dst x1
                 convBodyM kenv tenv blocks label (instrs >< instrs') x2
@@ -434,10 +434,10 @@ convExpM
         -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
-convExpM _ kenv tenv vDst (C.XVar _ u@(C.UName (A.NameVar n)))
+convExpM pp kenv tenv vDst (C.XVar _ u@(C.UName (A.NameVar n)))
  | Just t       <- Env.lookup u tenv
  = do   let n'  = A.sanitizeName n
-        t'      <- convTypeM kenv t
+        let t'  = convType pp kenv t
         return  $ Seq.singleton 
                 $ ISet vDst (XVar (Var (NameLocal n') t'))
 

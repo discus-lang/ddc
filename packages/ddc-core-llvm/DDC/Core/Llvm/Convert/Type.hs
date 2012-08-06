@@ -2,8 +2,7 @@
 -- | Convert Salt types to LLVM types.
 module DDC.Core.Llvm.Convert.Type
         ( -- * Type conversion.
-          convTypeM
-        , convType
+          convType
         , convSuperType
         , importedFunctionDeclOfType
 
@@ -28,7 +27,6 @@ import DDC.Core.Salt.Platform
 import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import Control.Monad.State.Strict
 import DDC.Core.Salt                    as A
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Module        as C
@@ -37,18 +35,6 @@ import qualified DDC.Type.Env           as Env
 
 
 -- Type -----------------------------------------------------------------------
--- | Convert a Salt type to an LLVM Type.
---   Use this verison for types of things that are passed around as arguments.
-convTypeM 
-        :: Env Name             -- ^ Kind environment.
-        -> C.Type Name          -- ^ Type to convert.
-        -> LlvmM Type
-
-convTypeM kenv tt
- = do   platform <- gets llvmStatePlatform
-        return   $ convType platform kenv tt
-
-
 -- | Convert a Salt type to an LlvmType.
 convType 
         :: Platform             -- ^ Platform specification.                            -- TODO: rename to convValType
