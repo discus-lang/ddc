@@ -329,9 +329,10 @@ convStmtM xx
         XApp{}
          |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
-         -> do  let nTop' = sanitizeName nTop
-                args'     <- mapM convRValueM args
-                return  $ text nTop' <+> parenss args'
+         -> do  let nTop'       = sanitizeName nTop
+                let args_val    = filter keepArgX args
+                args_val'       <- mapM convRValueM args_val
+                return  $ text nTop' <+> parenss args_val'
 
         _ -> throw $ ErrorStmtInvalid xx
 
@@ -381,22 +382,22 @@ convPrimCallM p xs
         -- Store primops.
         PrimStore op
          -> do  let op'  = convPrimStore op
-                xs'     <- mapM convRValueM $ filter keepArg xs
+                xs'     <- mapM convRValueM $ filter keepArgX xs
                 return  $ op' <+> parenss xs'
 
 
         -- External primops.
         PrimExternal op 
          -> do  let op' = convPrimExternal op
-                xs'     <- mapM convRValueM $ filter keepArg xs
+                xs'     <- mapM convRValueM $ filter keepArgX xs
                 return  $ op' <+> parenss xs'
 
         _ -> throw $ ErrorPrimCallInvalid p xs
 
 
 -- | Throw away region arguments.
-keepArg :: Exp a n -> Bool
-keepArg xx
+keepArgX :: Exp a n -> Bool
+keepArgX xx
  = case xx of
         XType (TVar _)  -> False
         _               -> True
