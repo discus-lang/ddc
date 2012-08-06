@@ -4,7 +4,6 @@ ok
 
 -- Set the builder explicitly so we get consistent object layouts.
 ok
-ok
 
 -- Unboxed literal patterns.
 module Test with

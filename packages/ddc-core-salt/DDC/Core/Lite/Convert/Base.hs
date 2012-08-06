@@ -44,7 +44,6 @@ data Error a
         | ErrorInvalidAlt
 
 
-
 instance Show a => Pretty (Error a) where
  ppr err
   = case err of
@@ -77,6 +76,4 @@ instance Show a => Pretty (Error a) where
 
         ErrorMainHasNoMain
          -> vcat [ text "Main module has no 'main' function" ]
-
-
 
