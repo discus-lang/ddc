@@ -59,7 +59,7 @@ convPrimCallM pp kenv tenv mdst p tPrim xs
          | [C.XType tDst, C.XType tSrc, xSrc] <- xs
          , Just xSrc'           <- mconvAtom pp kenv tenv xSrc
          , Just vDst            <- mdst
-         , minstr               <- convPrimPromote pp tDst vDst tSrc xSrc'
+         , minstr               <- convPrimPromote pp kenv tDst vDst tSrc xSrc'
          -> case minstr of
                 Just instr      -> return $ Seq.singleton instr
                 Nothing         -> dieDoc $ vcat
@@ -71,7 +71,7 @@ convPrimCallM pp kenv tenv mdst p tPrim xs
          | [C.XType tDst, C.XType tSrc, xSrc] <- xs
          , Just xSrc'           <- mconvAtom pp kenv tenv xSrc
          , Just vDst            <- mdst
-         , minstr               <- convPrimTruncate pp tDst vDst tSrc xSrc'
+         , minstr               <- convPrimTruncate pp kenv tDst vDst tSrc xSrc'
          -> case minstr of
                 Just instr      -> return $ Seq.singleton instr
                 Nothing         -> dieDoc $ vcat
@@ -143,7 +143,7 @@ convPrimCallM pp kenv tenv mdst p tPrim xs
          | C.XType _r : C.XType tDst : args     <- xs
          , Just [xPtr', xOffset']       <- mconvAtoms pp kenv tenv args
          , Just vDst@(Var nDst _)       <- mdst
-         , tDst'                        <- convType   pp tDst
+         , tDst'                        <- convType   pp kenv tDst
          -> let vAddr1   = Var (bumpName nDst "addr1") (tAddr pp)
                 vAddr2   = Var (bumpName nDst "addr2") (tAddr pp)
                 vPtr     = Var (bumpName nDst "ptr")   (tPtr tDst')
@@ -156,7 +156,7 @@ convPrimCallM pp kenv tenv mdst p tPrim xs
         A.PrimStore A.PrimStorePoke
          | C.XType _r : C.XType tDst : args     <- xs
          , Just [xPtr', xOffset', xVal'] <- mconvAtoms pp kenv tenv args
-         , tDst'                         <- convType pp tDst
+         , tDst'                         <- convType   pp kenv tDst
          -> do  vAddr1  <- newUniqueNamedVar "addr1" (tAddr pp)
                 vAddr2  <- newUniqueNamedVar "addr2" (tAddr pp)
                 vPtr    <- newUniqueNamedVar "ptr"   (tPtr tDst')
@@ -213,7 +213,7 @@ convPrimCallM pp kenv tenv mdst p tPrim xs
         A.PrimExternal prim
          |  Just xs'     <- sequence $ map (mconvAtom pp kenv tenv) xs
          ,  (_, tResult) <- takeTFunArgResult tPrim
-         ,  tResult'     <- convType pp tResult
+         ,  tResult'     <- convType pp kenv tResult
          ,  Just name'   <- convPrimExtern prim tPrim
          -> return      $ Seq.singleton
                         $ ICall mdst CallTypeStd tResult'
@@ -281,13 +281,14 @@ convPrimOp2 op t
 -- | Convert a primitive promotion to LLVM.
 convPrimPromote 
         :: Platform 
+        -> Env A.Name           -- ^ Kine environment.
         -> C.Type A.Name -> Var
         -> C.Type A.Name -> Exp
         -> Maybe Instr
 
-convPrimPromote pp tDst vDst tSrc xSrc
- = let  tDst'   = convType pp tDst
-        tSrc'   = convType pp tSrc
+convPrimPromote pp kenv tDst vDst tSrc xSrc
+ = let  tDst'   = convType pp kenv tDst
+        tSrc'   = convType pp kenv tSrc
    in case (tDst', tSrc') of
         (TInt bitsDst, TInt bitsSrc)
          -- Same sized integers
@@ -318,13 +319,14 @@ convPrimPromote pp tDst vDst tSrc xSrc
 -- | Convert a primitive truncation to LLVM.
 convPrimTruncate
         :: Platform 
+        -> Env A.Name           -- ^ Kind environment.
         -> C.Type A.Name -> Var
         -> C.Type A.Name -> Exp
         -> Maybe Instr
 
-convPrimTruncate pp tDst vDst tSrc xSrc
- = let  tDst'   = convType pp tDst
-        tSrc'   = convType pp tSrc
+convPrimTruncate pp kenv tDst vDst tSrc xSrc
+ = let  tDst'   = convType pp kenv tDst
+        tSrc'   = convType pp kenv tSrc
    in case (tDst', tSrc') of
         (TInt bitsDst, TInt bitsSrc)
          -- Same sized integers

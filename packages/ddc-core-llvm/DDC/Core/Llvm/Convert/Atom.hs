@@ -30,20 +30,20 @@ mconvAtom pp kenv tenv xx
         C.XVar _ u@(C.UName (A.NameVar n))
          |  Just t      <- Env.lookup u tenv
          -> let n'      = A.sanitizeName n
-                t'      = convType pp t
+                t'      = convType pp kenv t
             in  Just $ XVar (Var (NameLocal n') t')
 
         C.XCon _ (C.UPrim (A.NameNat  nat) t)
-         -> Just $ XLit (LitInt (convType pp t) nat)
+         -> Just $ XLit (LitInt (convType pp kenv t) nat)
 
         C.XCon _ (C.UPrim (A.NameInt  val) t)
-         -> Just $ XLit (LitInt (convType pp t) val)
+         -> Just $ XLit (LitInt (convType pp kenv t) val)
 
         C.XCon _ (C.UPrim (A.NameWord val _) t)
-         -> Just $ XLit (LitInt (convType pp t) val)
+         -> Just $ XLit (LitInt (convType pp kenv t) val)
 
         C.XCon _ (C.UPrim (A.NameTag  tag) t)
-         -> Just $ XLit (LitInt (convType pp t) tag)
+         -> Just $ XLit (LitInt (convType pp kenv t) tag)
 
         _ -> Nothing
 
@@ -64,29 +64,31 @@ mconvAtoms pp kenv tenv xs
 -- | Take a variable from an expression as a local var, if any.
 takeLocalV  
         :: Platform             -- ^ Platform specification.
+        -> Env A.Name           -- ^ Kind environment.
         -> Env A.Name           -- ^ Type environment.
         -> C.Exp a A.Name       
         -> Maybe Var
 
-takeLocalV pp tenv xx
+takeLocalV pp kenv tenv xx
  = case xx of
         C.XVar _ u@(C.UName (A.NameVar str))
           |  Just t       <- Env.lookup u tenv
-          -> Just $ Var (NameLocal str) (convType pp t)
+          -> Just $ Var (NameLocal str) (convType pp kenv t)
         _ -> Nothing
 
 
 -- | Take a variable from an expression as a local var, if any.
 takeGlobalV  
         :: Platform             -- ^ Platform specification.
+        -> Env A.Name           -- ^ Kind environment.
         -> Env A.Name           -- ^ Type environment.
         -> C.Exp a A.Name
         -> Maybe Var
 
-takeGlobalV pp tenv xx
+takeGlobalV pp kenv tenv xx
  = case xx of
         C.XVar _ u@(C.UName (A.NameVar str))
           |  Just t      <- Env.lookup u tenv
-          -> Just $ Var (NameGlobal str) (convType pp t)
+          -> Just $ Var (NameGlobal str) (convType pp kenv t)
         _ -> Nothing
 

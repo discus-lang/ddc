@@ -4,7 +4,7 @@ module DDC.Core.Llvm.Convert.Type
         ( -- * Type conversion.
           convTypeM
         , convType
-        , llvmParameterOfType
+        , convSuperType
         , importedFunctionDeclOfType
 
           -- * Builtin Types
@@ -25,94 +25,129 @@ import DDC.Llvm.Attr
 import DDC.Llvm.Type
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
+import DDC.Type.Env
 import DDC.Type.Compounds
--- import DDC.Type.Predicates
+import DDC.Type.Predicates
 import Control.Monad.State.Strict
 import DDC.Core.Salt                    as A
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
-import Data.Maybe
+import qualified DDC.Type.Env           as Env
+
 
 -- Type -----------------------------------------------------------------------
-convTypeM :: C.Type Name -> LlvmM Type
-convTypeM tt
+-- | Convert a Salt type to an LLVM Type.
+--   Use this verison for types of things that are passed around as arguments.
+convTypeM 
+        :: Env Name             -- ^ Kind environment.
+        -> C.Type Name          -- ^ Type to convert.
+        -> LlvmM Type
+
+convTypeM kenv tt
  = do   platform <- gets llvmStatePlatform
-        return   $ convType platform tt
+        return   $ convType platform kenv tt
 
 
 -- | Convert a Salt type to an LlvmType.
-convType :: Platform -> C.Type Name -> Type
-convType platform tt
+convType 
+        :: Platform             -- ^ Platform specification.                            -- TODO: rename to convValType
+        -> Env Name             -- ^ Kind environmnent.                                 -- to contrast with convSuperType
+        -> C.Type Name          -- ^ Type to convert.
+        -> Type
+
+convType pp kenv tt
  = case tt of
         -- A polymorphic type,
         -- represented as a generic boxed object.
-        C.TVar _u
-         -> error "LLVM.convType: need environment"
-{-}
-         | isDataKind (typeOfBound u)
-         -> TPointer (tObj platform)
--}
+        C.TVar u
+         -> case Env.lookup u kenv of
+             Nothing            -> die $ "Type variable not in kind environment." ++ show u
+             Just k
+              | isDataKind k    -> TPointer (tObj pp)
+              | otherwise       -> die "Invalid type variable."
+
         -- A primitive type.
         C.TCon tc
-          -> convTyCon platform tc
+          -> convTyCon pp tc
 
         -- A pointer to a primitive type.
         C.TApp{}
          | Just (NamePrimTyCon PrimTyConPtr, [_r, t2]) 
                 <- takePrimTyConApps tt
-         -> TPointer (convType platform t2)
+         -> TPointer (convType pp kenv t2)
 
         -- Function types become pointers to functions.
         C.TApp{}
-         |  (tsArgs, tResult) <- takeTFunArgResult tt
-         ,  not $ null tsArgs
+         |  (tsArgs, tResult)    <- convSuperType pp kenv tt
          -> TPointer $ TFunction 
          $  FunctionDecl
              { declName          = "dummy.function.name"
              , declLinkage       = Internal
              , declCallConv      = CC_Ccc
-             , declReturnType    = convType platform tResult
+             , declReturnType    = tResult
              , declParamListType = FixedArgs
-             , declParams        = map (llvmParameterOfType platform) tsArgs
-             , declAlign         = AlignBytes (platformAlignBytes platform) }
+             , declParams        = [Param t [] | t <- tsArgs]
+             , declAlign         = AlignBytes (platformAlignBytes pp) }
         
-        C.TForall _ t   
-         -> convType platform t
+        C.TForall b t
+         -> let kenv'   = Env.extend b kenv
+            in  convType pp kenv' t
           
         _ -> die ("Invalid Type " ++ show tt)
         
 
+-- Super Type -----------------------------------------------------------------
+-- | Split the parameter and result types from a supercombinator type and
+--   and convert them to LLVM form. We can't split the type first and just
+--   call 'convType' above as we need to decend into any quantifiers that
+--   wrap the body type.
+convSuperType 
+        :: Platform
+        -> Env Name
+        -> C.Type Name
+        -> ([Type], Type)
+
+convSuperType pp kenv tt
+ = case tt of
+        C.TApp{}
+         |  (tsArgs, tResult)    <- takeTFunArgResult tt
+         ,  not $ null tsArgs
+         -> let tsArgs'  = map (convType pp kenv) tsArgs
+                tResult' = convType pp kenv tResult
+            in  (tsArgs', tResult')
+
+        C.TForall b t
+         -> let kenv' = Env.extend b kenv
+            in  convSuperType pp kenv' t
+
+        _ -> die ("Invalid super type" ++ show tt)
+
+
+-- Imports --------------------------------------------------------------------
 -- | Convert an imported function type to a LLVM declaration.
 importedFunctionDeclOfType 
-        :: Platform 
+        :: Platform             -- ^ Platform specification.
+        -> Env Name             -- ^ Kind environment.
         -> Linkage 
         -> C.QualName Name 
         -> C.Type Name 
         -> Maybe FunctionDecl
 
-importedFunctionDeclOfType platform linkage (C.QualName _ (NameVar n)) tt   -- TODO: handle module qualifiers
- = let  tBody             = fromMaybe tt (liftM snd $ takeTForalls tt)
-        (tsArgs, tResult) = takeTFunArgResult tBody
+importedFunctionDeclOfType pp kenv linkage (C.QualName _ (NameVar n)) tt                -- TODO: handle module qualifiers
+ = let  (tsArgs, tResult)         = convSuperType pp kenv tt
+        mkParam t                 = Param t []
    in   Just $ FunctionDecl
              { declName           = A.sanitizeName  n
              , declLinkage        = linkage
              , declCallConv       = CC_Ccc
-             , declReturnType     = convType platform tResult
+             , declReturnType     = tResult
              , declParamListType  = FixedArgs
-             , declParams         = map (llvmParameterOfType platform) tsArgs
-             , declAlign          = AlignBytes (platformAlignBytes platform) }
+             , declParams         = map mkParam tsArgs
+             , declAlign          = AlignBytes (platformAlignBytes pp) }
 
-importedFunctionDeclOfType _ _ _ _
+importedFunctionDeclOfType _ _ _ _ _
         = Nothing
-
-
--- | Convert a parameter type to a LlvmParameter decl.
-llvmParameterOfType :: Platform -> C.Type Name -> Param
-llvmParameterOfType platform tt
-        = Param
-        { paramType     = convType platform tt
-        , paramAttrs    = [] }
 
 
 -- TyCon ----------------------------------------------------------------------

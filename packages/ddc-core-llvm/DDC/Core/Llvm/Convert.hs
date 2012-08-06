@@ -46,10 +46,14 @@ convModuleM mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   platform        <- gets llvmStatePlatform
 
+        -- The initial environments due to imported names.
+        let kenv        = C.moduleKindEnv mm
+        let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
+
         -- Forward declarations for imported functions.
         let Just importDecls 
                 = sequence
-                $ [ importedFunctionDeclOfType platform External n t
+                $ [ importedFunctionDeclOfType platform kenv External n t
                   | (n, t)   <- Map.elems $ C.moduleImportTypes mm ]
 
         -- Add RTS def -------------------------------------------------
@@ -68,9 +72,6 @@ convModuleM mm@(C.ModuleCore{})
                 = [ GlobalExternal vHeapTop ]
         ---------------------------------------------------------------
 
-        -- The initial environments due to imported names.
-        let kenv        = C.moduleKindEnv mm
-        let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
         functions       <- mapM (uncurry (convSuperM kenv tenv)) bxs
 
         return  $ Module 
@@ -125,7 +126,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
  = do   
         platform         <- gets llvmStatePlatform
 
-        -- Add parameters to environments.
+        -- Add parameters to environments.                                      -- TODO: this scoping isn't right.
         let bsParamType  = [b | (True,  b) <- bfsParam]
         let bsParamValue = [b | (False, b) <- bfsParam]
 
@@ -137,11 +138,10 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
         let nTop'       = A.sanitizeName nTop
 
         -- Split off the argument and result types of the super.
-        let (tsArgs, tResult)   
-                        = takeTFunArgResult $ eraseTForalls tSuper
+        let (tsParam, tResult)   
+                        = convSuperType platform kenv tSuper
   
         -- Make parameter binders.
-        let params      = map (llvmParameterOfType platform) tsArgs
         let align       = AlignBytes (platformAlignBytes platform)
 
         -- Declaration of the super.
@@ -150,9 +150,9 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
                 { declName               = nTop'
                 , declLinkage            = External
                 , declCallConv           = CC_Ccc
-                , declReturnType         = convType platform tResult
+                , declReturnType         = tResult
                 , declParamListType      = FixedArgs
-                , declParams             = params
+                , declParams             = [Param t [] | t <- tsParam]
                 , declAlign              = align }
 
         -- Convert function body to basic blocks.
@@ -222,7 +222,7 @@ convBodyM kenv tenv blocks label instrs xx
           |  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x]                     <- xs
-          -> do let t'  =  convType pp t
+          -> do let t'  =  convType pp kenv t
                 vDst    <- newUniqueVar t'
                 is      <- convExpM pp kenv tenv vDst x
                 return  $   blocks 
@@ -249,23 +249,23 @@ convBodyM kenv tenv blocks label instrs xx
           ,  A.PrimCall (A.PrimCallTail arity) <- p
           ,  _tsArgs                           <- take arity args
           ,  C.XType tResult : xFun : xsArgs   <- drop arity args
-          ,  Just (Var nFun _)                 <- takeGlobalV pp tenv xFun
+          ,  Just (Var nFun _)                 <- takeGlobalV pp kenv tenv xFun
           ,  Just xsArgs'                      <- sequence $ map (mconvAtom pp kenv tenv) xsArgs
           -> if isVoidT tResult
               -- Tailcalled function returns void.
               then do return $ blocks
                         |> (Block label $ instrs
                            |> ICall Nothing CallTypeTail
-                                   (convType pp tResult) nFun xsArgs' []
+                                   (convType pp kenv tResult) nFun xsArgs' []
                            |> IReturn Nothing)
 
               -- Tailcalled function returns an actual value.
-              else do let tResult'    = convType pp tResult
+              else do let tResult'    = convType pp kenv tResult
                       vDst            <- newUniqueVar tResult'
                       return  $ blocks
                        |> (Block label $ instrs
                           |> ICall (Just vDst) CallTypeTail 
-                                   (convType pp tResult) nFun xsArgs' []
+                                   (convType pp kenv tResult) nFun xsArgs' []
                           |> IReturn (Just (XVar vDst)))
 
 
@@ -275,7 +275,7 @@ convBodyM kenv tenv blocks label instrs xx
           -> do let tenv' = Env.extend b tenv
                 let n'    = A.sanitizeName n
 
-                t'        <- convTypeM t
+                t'        <- convTypeM kenv t
                 let dst   = Var (NameLocal n') t'
                 instrs'   <- convExpM pp kenv tenv dst x1
                 convBodyM kenv tenv' blocks label (instrs >< instrs') x2
@@ -289,7 +289,7 @@ convBodyM kenv tenv blocks label instrs xx
          -- Variable assignment from an unsed binder.
          -- We need to invent a dummy binder as LLVM needs some name for it.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
-          -> do t'        <- convTypeM t
+          -> do t'        <- convTypeM kenv t
                 dst       <- newUniqueNamedVar "dummy" t'
                 instrs'   <- convExpM pp kenv tenv dst x1
                 convBodyM kenv tenv blocks label (instrs >< instrs') x2
@@ -301,7 +301,7 @@ convBodyM kenv tenv blocks label instrs xx
 
          -- Case statement.
          C.XCase _ x1 alts
-          | Just x1'@(Var{})    <- takeLocalV pp tenv x1
+          | Just x1'@(Var{})    <- takeLocalV pp kenv tenv x1
           -> do alts'@(_:_)     <- mapM (convAltM kenv tenv) alts
 
                 -- Determine what default alternative to use for the instruction. 
@@ -343,7 +343,7 @@ convStmtM pp kenv tenv xx
 
         -- Call to top-level super.
          | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
-         , Just (Var nFun _)                <- takeGlobalV pp tenv xFun
+         , Just (Var nFun _)                <- takeGlobalV pp kenv tenv xFun
          , Just xsArgs_value'   <- sequence $ map (mconvAtom pp kenv tenv) 
                                 $  eraseTypeWitArgs xsArgs
          , Just tSuper          <- Env.lookup u tenv
@@ -352,7 +352,7 @@ convStmtM pp kenv tenv xx
 
             in  return $ Seq.singleton
                     $ ICall Nothing CallTypeStd 
-                         (convType pp tResult) nFun xsArgs_value' []
+                         (convType pp kenv tResult) nFun xsArgs_value' []
 
         _ -> die $ "invalid statement" ++ show xx
 
@@ -434,10 +434,10 @@ convExpM
         -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
-convExpM _ _kenv tenv vDst (C.XVar _ u@(C.UName (A.NameVar n)))
+convExpM _ kenv tenv vDst (C.XVar _ u@(C.UName (A.NameVar n)))
  | Just t       <- Env.lookup u tenv
  = do   let n'  = A.sanitizeName n
-        t'      <- convTypeM t
+        t'      <- convTypeM kenv t
         return  $ Seq.singleton 
                 $ ISet vDst (XVar (Var (NameLocal n') t'))
 
@@ -465,7 +465,7 @@ convExpM pp kenv tenv dst xx@C.XApp{}
 
         -- Call to top-level super.
         | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
-        , Just (Var nFun _)                <- takeGlobalV pp tenv xFun
+        , Just (Var nFun _)                <- takeGlobalV pp kenv tenv xFun
         , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
                                 $  eraseTypeWitArgs xsArgs
         , Just tSuper           <- Env.lookup u tenv
@@ -474,7 +474,7 @@ convExpM pp kenv tenv dst xx@C.XApp{}
 
           in    return $ Seq.singleton
                  $ ICall (Just dst) CallTypeStd 
-                         (convType pp tResult) nFun xsArgs_value' []
+                         (convType pp kenv tResult) nFun xsArgs_value' []
 
 convExpM _ _ _ _ xx
         = die $ "invalid expression " ++ show xx
