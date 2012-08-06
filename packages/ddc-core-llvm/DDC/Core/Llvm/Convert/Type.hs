@@ -239,7 +239,7 @@ isIntegralT tt
                 A.PrimTyConNat          -> True
                 A.PrimTyConInt          -> True
                 A.PrimTyConWord{}       -> True
-                A.PrimTyConAddr            -> True
+                A.PrimTyConAddr         -> True
                 _                       -> False
         _                               -> False
 

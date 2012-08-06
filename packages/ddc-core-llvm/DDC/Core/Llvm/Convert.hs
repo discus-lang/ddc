@@ -14,7 +14,6 @@ import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
-import DDC.Type.Compounds
 import DDC.Type.Env                     (Env)
 import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
@@ -347,12 +346,12 @@ convStmtM pp kenv tenv xx
          , Just xsArgs_value'   <- sequence $ map (mconvAtom pp kenv tenv) 
                                 $  eraseTypeWitArgs xsArgs
          , Just tSuper          <- Env.lookup u tenv
-         -> let (_, tResult)    =  takeTFunArgResult 
-                                $  eraseTForalls tSuper
+
+         -> let (_, tResult)    =  convSuperType pp kenv tSuper
 
             in  return $ Seq.singleton
                     $ ICall Nothing CallTypeStd 
-                         (convType pp kenv tResult) nFun xsArgs_value' []
+                         tResult nFun xsArgs_value' []
 
         _ -> die $ "invalid statement" ++ show xx
 
@@ -469,12 +468,11 @@ convExpM pp kenv tenv dst xx@C.XApp{}
         , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
                                 $  eraseTypeWitArgs xsArgs
         , Just tSuper           <- Env.lookup u tenv
-        = let   (_, tResult)    = takeTFunArgResult 
-                                $ eraseTForalls $ tSuper
+        = let   (_, tResult)    = convSuperType pp kenv tSuper
 
           in    return $ Seq.singleton
                  $ ICall (Just dst) CallTypeStd 
-                         (convType pp kenv tResult) nFun xsArgs_value' []
+                         tResult nFun xsArgs_value' []
 
 convExpM _ _ _ _ xx
         = die $ "invalid expression " ++ show xx
