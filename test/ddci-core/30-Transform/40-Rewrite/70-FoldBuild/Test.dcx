@@ -1,0 +1,76 @@
+:with test/ddci-core/30-Transform/40-Rewrite/70-FoldBuild/Module.dce
+
+:set Indent
+
+:set.. rule foldrBuild
+    [a b : *] [r : %]
+    [ek1 ek2 ez eg1 eg2 : !]
+    [ck1 ck2 cz cg1 cg2 : $]
+    (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
+    (z : Unit -(ez|cz)> b)
+    (g : [b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+	(a -(ec1|cc1)> b -(ec2|cc2)> b)
+       -(eg1|cg1)>
+	(Unit -(en|cn)> b)
+       -(eg2+ec1+ec2+en|cg2+cc1)>
+	b).
+    Disjoint (ek1+ek2+ez) (eg1+eg2) =>
+foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
+    k z
+    (build [:a r eg1 eg2 cg1 cg2:] g)
+= g [:b ek1 ek2 ez ck1 ck2 cz:] k z
+;;
+
+:set trans Rewrite
+
+
+-- sum = foldr (+) 0 xs
+-- count  m  = build (count' m)
+-- count' m = \c n -> if m == 0
+--			then n
+--			else c m (count' (m-1) c n)
+:trans..
+letrec {
+    plus
+	(a : Int R0#)
+	{ !0 | Use R0# }
+	(b : Int R0#)
+	{ Read R0# + Alloc R0# | Use R0# }
+	: Int R0#
+	= addInt [:R0# R0# R0#:] a b
+;
+    zero
+	(u : Unit)
+	{ Alloc R0# | Use R0# }
+	: Int R0# = 0 [R0#] ()
+;
+
+    pred
+	(a : Int R0#)
+	{ Read R0# + Alloc R0# | Use R0# }
+	: Int R0# = subInt [:R0# R0# R0#:] a (1 [R0#] ())
+;
+
+    count' (m : Int R0#)
+	   { !0 | Use R0# }
+	   [b : *]
+	   [ec1 ec2 en : !]
+	   [cc1 cc2 cn : $]
+	   (k : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
+	   { !0 | Use R0# }
+	   (z : Unit -(en|cn)> b)
+	   { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0# }
+	   : b
+	= case m of {
+	    0	-> z ();
+	    _	-> k m (count' (pred m) [:b ec1 ec2 en cc1 cc2 cn:] k z)
+	    }
+} in
+foldr [:(Int R0#) (Int R0#) R1#
+	!0 (Read R0# + Alloc R0#) (Alloc R0#)
+	(Use R0#) (Use R0#) (Use R0#):]
+	plus zero
+    (build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (count' (10 [R0#] ())))
+;;
+
+-- { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + cc2 + cn + Use R0# }

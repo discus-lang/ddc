@@ -1,0 +1,65 @@
+module Module
+exports {
+
+foldr  :: [a b : *]. [r : %].
+    [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
+	(a -(ek1|ck1)> b -(ek2|ck2)> b)
+    ->	(Unit -(ez|cz)> b)
+    ->	(List r a)
+    -(Read r + ek1 + ek2 + ez | ck1 + ck2 + cz + Use r)>
+	b;
+
+build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
+    ([b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
+	-(eg1|cg1)>
+	 (Unit -(en|cn)> b)
+	-(eg2+ec1+ec2+en|cg2+cc1)>
+	 b)
+    -(eg1+eg2 + Alloc r | Use r)> List r a;
+
+compose :: [a b c : *]. [ef eg : !]. [cf cg : $].
+       (b -(ef|cf)> c)
+    -> (a -(eg|cg)> b)
+    -(!0      | cf)>
+	a
+    -(ef + eg | cf + cg)>
+	c;
+}
+with letrec
+
+foldr  [a b : *] [r : %]
+    [ek1 ek2 ez : !] [ck1 ck2 cz : $]
+    (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
+    { !0 | Use r }
+    (z : Unit -(ez|cz)> b)
+    { !0 | Use r + ck1 }
+    (xs: List r a)
+    { Read r + ek1 + ek2 + ez | ck1 + cz + Use r }
+    : b
+    = case xs of {
+	Nil -> z ();
+	Cons x xs' ->
+	    k x (foldr [:a b r ek1 ek2 ez ck1 ck2 cz:] k z xs')
+    }
+
+build [a : *] [r : %] [eg1 eg2 : !] [cg1 cg2 : $]
+    (g : [b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+	 (a -(ec1|cc1)> b -(ec2|cc2)> b)
+	-(eg1|cg1)>
+	 (Unit -(en|cn)> b)
+	-(eg2+ec1+ec2+en|cg2+cc1)>
+	 b)
+    { eg1+eg2 + Alloc r | Use r }
+    : List r a
+    = g [List r a] [!0] [Alloc r] [Alloc r] [:$0 (DeepUse a) $0:]
+	(Cons [:r a:]) (Nil [:r a:])
+
+compose [a b c : *] [ef eg : !] [cf cg : $]
+    (f : b -(ef|cf)> c) (g : a -(eg|cg)> b)
+	    { !0      | cf }
+    (x : a) { ef + eg | cf + cg }
+	    : c
+ = f (g x)
+
+
