@@ -25,6 +25,7 @@ import DDC.Core.Exp
 import DDC.Base.Pretty
 import DDC.Type.Check.Monad             (throw, result)
 
+import Control.Monad (ap)
 
 -- | Convert a Disciple Core Salt module to C-source text.
 convertModule :: Show a => Module a Name -> Either (Error a) Doc
@@ -77,10 +78,8 @@ convSuperM b x
  ,  (_, tResult)         <- takeTFunArgResult $ eraseTForalls tTop
  = do    
         let nTop'       =  text $ sanitizeName nTop
-        -- Ignore binders with no bound occurences, these are typically
-        --  region and witness binders.
-        bsParam'        <- mapM convBind $ filter (not . isBNone) bsParam
-        tResult'        <- convTypeM tResult
+        bsParam'        <- mapM convBind $ filter keepBind bsParam
+        tResult'        <- convTypeM $ eraseWitArg tResult
         xBody'          <- convBodyM xBody
 
         return  $ vcat
@@ -96,6 +95,31 @@ convSuperM b x
  = throw $ ErrorFunctionInvalid x
 
 
+-- | Remove witness arguments from the return type
+eraseWitArg :: Type Name -> Type Name
+eraseWitArg tt
+ = case tt of 
+        -- Distinguish between application of witnesses and ptr
+        TApp _ t2
+         | Just (NamePrimTyCon PrimTyConPtr, _) <- takePrimTyConApps tt -> tt
+         | otherwise -> eraseWitArg t2
+        -- Pass through all other types
+        _ -> tt
+
+
+-- | Ditch witness bindings
+keepBind :: Bind Name -> Bool
+keepBind bb
+ = case bb of        
+        BName _ t
+         |  tc : _ <- takeTApps t
+         ,  isWitnessType tc
+         -> False
+         
+        BNone{} -> False         
+        _       -> True
+         
+         
 -- | Strip any XLAM abstractions from the front of this expression.
 --   Type lambdas don't make it into the C code.
 stripXLAMs :: Exp a Name -> Exp a Name
@@ -302,8 +326,8 @@ convRValueM xx
          |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
          -> do  let nTop' = sanitizeName nTop
-
-                let args_val = filter (not . isXType) args
+                -- Ditch region and witness arguments
+                let args_val = filter (and . ap [not . isXType, not . isXWitness] . return) args
                 args_val'    <- mapM convRValueM args_val
                 return  $ text nTop' <+> parenss args_val'
 
