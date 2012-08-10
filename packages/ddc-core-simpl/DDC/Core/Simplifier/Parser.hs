@@ -35,6 +35,7 @@ parseSimplifier namK namT rules templates str
         parse1 (KVar name)
          = case name of
                 "anormalize"    -> Just (R.anormalize namK namT)
+                "rewriteSimp"	-> Just (R.rewriteSimp rules)
                 _               -> Nothing
 
         parse1 k@KCon{}

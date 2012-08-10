@@ -21,7 +21,7 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 = g [:b ek1 ek2 ez ck1 ck2 cz:] k z
 ;;
 
-:set trans Rewrite
+:set trans rewriteSimp
 
 
 -- sum = foldr (+) 0 xs

@@ -26,22 +26,18 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
 -- sum
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo [Use R0# + Use R1#] in
-(/\(^ : *)./\(^ ^ ^ : !)./\(^ ^ ^ : $).
-  \(^ : Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6).\(^ : Unit -(^3 | ^0)> ^6).
- foldr [Int R0#] [^6] [R1#] [!0] [Read R0# + Alloc R0# + ^4 + ^5] [^3] [Use R0# + ^2] [Use R0# + ^2] [^0]
-     (\(^ : Int R0#).\(^ : ^6).
-      case even ^1 of {
-        0  
-         -> ^3 ^1 ^0;
-        _ 
-         -> ^0
-      }) ^0
-     (build [Int R0#] [R1#] [!0] [Read R0# + Read R1# + Alloc R0# + Alloc R1#] [Use R0# + Use R1#] [Use R0# + Use R1#]
-          (/\(^ : *)./\(^ ^ ^ : !)./\(^ ^ ^ : $).
-            \(^ : Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6).\(^ : Unit -(^3 | ^0)> ^6).
-           foldr [Int R0#] [^6] [R1#] [Read R0# + Alloc R0# + ^5] [^4] [^3] [Use R0# + ^2] [^1] [^0]
-               (compose [Int R0#] [Int R0#] [^6 -(^4 | ^1)> ^6] [^5] [Read R0# + Alloc R0#] [^2] [Use R0#] ^1 double) ^0
-               (build [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
-                    (count' (100 [R0#] ())))))) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
+weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
+weakclo [Use R0# + Use R1#] in
+weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
+weakclo [Use R0# + Use R1#] in
+count' (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
+    (compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
+         (\(^ ^ : Int R0#).
+          case even ^1 of {
+            0  
+             -> plus ^1 ^0;
+            _ 
+             -> ^0
+          }) double) zero
 
 -- { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + cc2 + cn + Use R0# }
