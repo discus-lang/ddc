@@ -2,6 +2,8 @@ module DDC.Core.Transform.Rewrite
         ( RewriteRule(..)
         , rewrite )
 where
+import DDC.Base.Pretty
+
 import DDC.Core.Exp
 import qualified DDC.Core.Compounds			as X
 import qualified DDC.Core.Transform.AnonymizeX          as A
@@ -17,10 +19,12 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 
 
+
+
 -- I would eventually like to change this to take Map String (RewriteRule..)
 -- so that we can record how many times each rule is fired?
 -- (no, I think just [(String,Rule)] because don't want to require unique names
-rewrite :: (Show a, Show n, Ord n) => [RewriteRule a n] -> Exp a n -> Exp a n
+rewrite :: (Show a, Show n, Ord n, Pretty n) => [RewriteRule a n] -> Exp a n -> Exp a n
 rewrite rules x0
  =  down x0 RE.empty
  where
@@ -55,7 +59,7 @@ rewrite rules x0
 	Just x  -> go x [] ws
 
 rewriteX
-    :: (Show n, Show a, Ord n)
+    :: (Show n, Show a, Ord n, Pretty n)
     => RewriteRule a n
     -> Exp a n
     -> [(Exp a n,a)]

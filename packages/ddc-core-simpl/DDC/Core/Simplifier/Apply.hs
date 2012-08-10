@@ -7,6 +7,7 @@ module DDC.Core.Simplifier.Apply
         , applySimplifierX
         , applyTransformX)
 where
+import DDC.Base.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Simplifier.Base
@@ -26,7 +27,7 @@ import Control.Monad.State.Strict
 --
 --   The state monad holds a fresh name generator.
 applySimplifier 
-        :: (Show a, Ord n, Show n) 
+        :: (Show a, Ord n, Show n, Pretty n) 
         => Simplifier s a n     -- ^ Simplifier to apply.
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
@@ -43,7 +44,7 @@ applySimplifier spec mm
 
 -- | Apply a transform to a module.
 applyTransform
-        :: (Show a, Ord n, Show n)
+        :: (Show a, Ord n, Show n, Pretty n)
         => Transform s a n      -- ^ Transform to apply.
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
@@ -66,7 +67,7 @@ applyTransform spec mm
 --
 --   The state monad holds a fresh name generator.
 applySimplifierX 
-        :: (Show a, Show n, Ord n)
+        :: (Show a, Show n, Ord n, Pretty n)
         => Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
         -> State s (Exp a n)
@@ -83,7 +84,7 @@ applySimplifierX spec xx
 
 -- | Apply a transform to an expression.
 applyTransformX 
-        :: (Show a, Show n, Ord n)
+        :: (Show a, Show n, Ord n, Pretty n)
         => Transform s a n      -- ^ Transform to apply.
         -> Exp a n              -- ^ Exp  to transform.
         -> State s (Exp a n)
