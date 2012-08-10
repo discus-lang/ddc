@@ -38,9 +38,9 @@ addInt [R0#] [R0#] [R0#] ^0 ^0
 
 -- binders inside let
 let ^ : Int R0#
-      = let x : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 5 in
-        let y : Unit = () in
-        (/\(r : %).
-          \(u : Unit). x [r] u) [R0#] () in
+      = let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 5 in
+        let ^ : Unit = () in
+        (/\(^ : %).
+          \(^ : Unit). ^2 [^0] ^0) [R0#] () in
 addInt [R0#] [R0#] [R0#] ^0 ^0
 10

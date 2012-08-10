@@ -90,7 +90,7 @@ rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
     -- TODO constraints
     subst m
      =	    let bas  = Maybe.catMaybes $ map (lookupz m) bs
-	        bas' = map (\(b,a) -> (A.anonymizeX b, a)) bas
+	        bas' = map (\(b,a) -> (A.anonymizeX b, A.anonymizeX a)) bas
 		rhs' = A.anonymizeX rhs
 	    in  checkConstrs bas' constrs
 		$ weakeff bas' eff

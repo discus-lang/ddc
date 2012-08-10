@@ -9,10 +9,10 @@ weakeff [Read R0# + Alloc R0#] in
 weakclo [Use R0#] in
 map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
-         (\(y : Int R0#).
-          addInt [R0#] [R0#] [R0#] y (1 [R0#] ()))
-         (\(z : Int R0#).
-          addInt [R0#] [R0#] [R0#] z (1 [R0#] ())))
+         (\(^ : Int R0#).
+          addInt [R0#] [R0#] [R0#] ^0 (1 [R0#] ()))
+         (\(^ : Int R0#).
+          addInt [R0#] [R0#] [R0#] ^0 (1 [R0#] ())))
     (Cons [R0#] [Int R0#] (1 [R0#] ())
          (Cons [R0#] [Int R0#] (2 [R0#] ())
               (Nil [R0#] [Int R0#] ())))
@@ -37,11 +37,11 @@ weakeff [Read R0# + Write rMut + Alloc R0#] in
 weakclo [Use rMut + Use R0#] in
 map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut + Alloc R0#] [Use rMut + Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Write rMut] [Use R0#] [Use rMut + Use R0#]
-         (\(y : Int R0#).
-          addInt [R0#] [R0#] [R0#] y (1 [R0#] ()))
-         (\(z : Int R0#).
-          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl z in
-          z))
+         (\(^ : Int R0#).
+          addInt [R0#] [R0#] [R0#] ^0 (1 [R0#] ()))
+         (\(^ : Int R0#).
+          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl ^0 in
+          ^0))
     (Cons [R0#] [Int R0#] (1 [R0#] ())
          (Cons [R0#] [Int R0#] (2 [R0#] ())
               (Nil [R0#] [Int R0#] ())))
@@ -69,11 +69,11 @@ weakeff [Read R0# + Write rMut + Alloc R0#] in
 weakclo [Use rMut + Use R0#] in
 map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut + Alloc R0#] [Use rMut + Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Write rMut] [Use R0#] [Use rMut + Use R0#]
-         (\(y : Int R0#).
-          addInt [R0#] [R0#] [R0#] y (1 [R0#] ()))
-         (\(z : Int R0#).
-          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl z in
-          z))
+         (\(^ : Int R0#).
+          addInt [R0#] [R0#] [R0#] ^0 (1 [R0#] ()))
+         (\(^ : Int R0#).
+          let _ : Unit = updateInt [rMut] [R0#] <wMut> mutabl ^0 in
+          ^0))
     (Cons [R0#] [Int R0#] (1 [R0#] ())
          (Cons [R0#] [Int R0#] (2 [R0#] ())
               (Nil [R0#] [Int R0#] ())))
