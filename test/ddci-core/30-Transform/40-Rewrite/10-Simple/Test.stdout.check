@@ -17,3 +17,30 @@ addInt [R1#] [R0#] [R2#] (3 [R1#] ()) (addInt [R0#] [R0#] [R0#] (1 [R0#] ()) (2 
 -- don't rewrite if it's not an addInt
 mulInt [R0#] [R1#] [R2#] (1 [R0#] ()) (2 [R1#] ())
 
+-- rule: let in right-hand side
+ok, added mul2
+
+ok
+ok
+
+-- simple let
+let ^ : Int R0# = 5 [R0#] () in
+addInt [R0#] [R0#] [R0#] ^0 ^0
+10
+
+-- nested apps 
+let ^ : Int R0#
+      = let ^ : Int R0#
+              = addInt [R0#] [R0#] [R0#] (1 [R0#] ()) (2 [R0#] ()) in
+        addInt [R0#] [R0#] [R0#] ^0 ^0 in
+addInt [R0#] [R0#] [R0#] ^0 ^0
+12
+
+-- binders inside let
+let ^ : Int R0#
+      = let x : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 5 in
+        let y : Unit = () in
+        (/\(r : %).
+          \(u : Unit). x [r] u) [R0#] () in
+addInt [R0#] [R0#] [R0#] ^0 ^0
+10

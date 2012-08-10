@@ -4,6 +4,7 @@ module DDC.Core.Transform.Rewrite
 where
 import DDC.Core.Exp
 import qualified DDC.Core.Compounds			as X
+import qualified DDC.Core.Transform.AnonymizeX          as A
 import qualified DDC.Core.Transform.Rewrite.Disjoint	as RD
 import qualified DDC.Core.Transform.Rewrite.Env		as RE
 import qualified DDC.Core.Transform.Rewrite.Match	as RM
@@ -84,8 +85,13 @@ rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
     -- TODO type-check?
     -- TODO constraints
     subst m
-     =	    let bas = Maybe.catMaybes $ map (lookupz m) bs in
-	    checkConstrs bas constrs $ weakeff bas eff $ weakclo bas clo $ S.substituteXArgs bas rhs
+     =	    let bas  = Maybe.catMaybes $ map (lookupz m) bs
+	        bas' = map (\(b,a) -> (A.anonymizeX b, a)) bas
+		rhs' = A.anonymizeX rhs
+	    in  checkConstrs bas' constrs
+		$ weakeff bas' eff
+		$ weakclo bas' clo
+		$ S.substituteXArgs bas' rhs'
     
     anno = snd $ head args
 

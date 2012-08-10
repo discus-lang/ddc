@@ -17,3 +17,29 @@
 -- don't rewrite if it's not an addInt
 :trans mulInt [:R0# R1# R2#:] (1 [R0#] ()) (2 [R1#] ())
 
+-- rule: let in right-hand side
+:set rule mul2 (x : Int R0#). mulInt [:R0# R0# R0#:] x (2 [R0#] ()) = let y = x in addInt [:R0# R0# R0#:] y y
+
+:set Indent
+:set trans Rewrite
+
+-- simple let
+:trun mulInt [:R0# R0# R0#:] (5 [R0#] ()) (2 [R0#] ())
+
+-- nested apps 
+:trun..
+    mulInt [:R0# R0# R0#:]
+	(mulInt [:R0# R0# R0#:]
+	    (addInt [:R0# R0# R0#:] (1 [R0#] ()) (2 [R0#] ()))
+	    (2 [R0#] ())
+	) (2 [R0#] ())
+;;
+
+-- binders inside let
+:trun..
+    mulInt [:R0# R0# R0#:]
+	(let x = 5 in
+	 let y = () in
+	 (/\(r : %).\(u:Unit). x [r] u) [R0#] ())
+	(2 [R0#] ())
+;;
