@@ -8,12 +8,12 @@
     [ck1 ck2 cz cg1 cg2 : $]
     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
     (z : Unit -(ez|cz)> b)
-    (g : [b : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
-	(a -(ec1|cc1)> b -(ec2|cc2)> b)
+    (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
        -(eg1|cg1)>
-	(Unit -(en|cn)> b)
+	(Unit -(en|cn)> gb)
        -(eg2+ec1+ec2+en|cg2+cc1)>
-	b).
+	gb).
     Disjoint (ek1+ek2+ez) (eg1+eg2) =>
 foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
     k z
@@ -30,47 +30,75 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 --			then n
 --			else c m (count' (m-1) c n)
 :trans..
-letrec {
-    plus
-	(a : Int R0#)
-	{ !0 | Use R0# }
-	(b : Int R0#)
-	{ Read R0# + Alloc R0# | Use R0# }
-	: Int R0#
-	= addInt [:R0# R0# R0#:] a b
-;
-    zero
-	(u : Unit)
-	{ Alloc R0# | Use R0# }
-	: Int R0# = 0 [R0#] ()
-;
-
-    pred
-	(a : Int R0#)
-	{ Read R0# + Alloc R0# | Use R0# }
-	: Int R0# = subInt [:R0# R0# R0#:] a (1 [R0#] ())
-;
-
-    count' (m : Int R0#)
-	   { !0 | Use R0# }
-	   [b : *]
-	   [ec1 ec2 en : !]
-	   [cc1 cc2 cn : $]
-	   (k : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
-	   { !0 | Use R0# }
-	   (z : Unit -(en|cn)> b)
-	   { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0# }
-	   : b
-	= case m of {
-	    0	-> z ();
-	    _	-> k m (count' (pred m) [:b ec1 ec2 en cc1 cc2 cn:] k z)
-	    }
-} in
 foldr [:(Int R0#) (Int R0#) R1#
 	!0 (Read R0# + Alloc R0#) (Alloc R0#)
 	(Use R0#) (Use R0#) (Use R0#):]
 	plus zero
     (build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (count' (10 [R0#] ())))
+;;
+
+
+-- map f xs = build (\c n -> foldr (c . f) n xs)
+
+-- filter f xs = build (\c n -> foldr
+--	(\x xs -> if f x
+--		  then c x xs
+--		  else xs) n xs)
+:trans..
+
+-- sum
+foldr [:(Int R0#) (Int R0#) R1#
+	!0 (Read R0# + Alloc R0#) (Alloc R0#)
+	(Use R0#) (Use R0#) (Use R0#):]
+	plus zero
+    -- filter f xs
+    (build [:(Int R0#) R1#
+	!0 (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
+	-- (Read R0# + Alloc R0#) !0
+	(Use R0# + Use R1#)
+	(Use R0# + Use R1#)
+	:]
+	(/\(bF : *). /\(ec1F ec2F enF : !). /\(cc1F cc2F cnF : $).
+	\(c : Int R0# -(ec1F|cc1F)> bF -(ec2F|cc2F)> bF).
+	\(n : Unit -(enF|cnF)> bF).
+
+	foldr [:(Int R0#) bF R1#
+		!0 (Read R0# + Alloc R0# + ec1F + ec2F) enF
+		(Use R0# + cc1F) (Use R0# + cc1F) cnF
+		:] 
+	    (\(x : Int R0#).
+	     \(xs : bF).
+	      case even x of {
+		0 -> c x xs;
+		_ -> xs
+	      }
+	     )
+	    n
+	    
+	-- map *2
+	    (build [:(Int R0#) R1# 
+		     !0 (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
+		     (Use R0# + Use R1#) (Use R0# + Use R1#) :]
+		    (/\(b : *). /\(ec1 ec2 en : !). /\(cc1 cc2 cn : $).
+		    \(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
+		    \(n : Unit -(en|cn)> b).
+
+		    foldr [:(Int R0#) b R1#
+			    (Read R0# + Alloc R0# + ec1)
+				ec2 en
+			    (Use R0# + cc1) cc2 cn
+			    :]
+
+			(compose [:(Int R0#) (Int R0#) (b -(ec2|cc2)> b)
+				   ec1 (Alloc R0# + Read R0#)
+				   cc1 (Use R0#)
+				 :] c double)
+			n
+
+			-- enum 100
+			(build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (count' (100 [R0#] ())))
+		    ))))
+
 ;;
 
 -- { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + cc2 + cn + Use R0# }

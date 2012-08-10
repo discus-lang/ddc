@@ -25,6 +25,47 @@ compose :: [a b c : *]. [ef eg : !]. [cf cg : $].
 	a
     -(ef + eg | cf + cg)>
 	c;
+
+plus ::
+    Int R0#
+    -( !0 | Use R0#)>
+    Int R0#
+    -(Read R0# + Alloc R0# | Use R0#)>
+    Int R0#;
+
+zero ::
+    Unit
+    -(Alloc R0# | Use R0#)>
+    Int R0#;
+
+pred ::
+    Int R0#
+    -(Read R0# + Alloc R0# | Use R0#)>
+    Int R0#;
+
+count' ::
+    Int R0#
+    -(!0 | Use R0#)>
+    ([b : *].
+    [ec1 ec2 en : !].
+    [cc1 cc2 cn : $].
+    (Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
+    -(!0 | Use R0#)>
+    (Unit -(en|cn)> b)
+    -(Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0#)>
+    b);
+
+double ::
+    Int R0#
+    -(Alloc R0# + Read R0# | Use R0#)>
+    Int R0#;
+
+even ::
+    Int R0#
+    -(Alloc R0# + Read R0# | Use R0# )>
+    Int R0#;
+
+-- TODO double
 }
 with letrec
 
@@ -62,4 +103,50 @@ compose [a b c : *] [ef eg : !] [cf cg : $]
 	    : c
  = f (g x)
 
+
+plus
+    (a : Int R0#)
+    { !0 | Use R0# }
+    (b : Int R0#)
+    { Read R0# + Alloc R0# | Use R0# }
+    : Int R0#
+    = addInt [:R0# R0# R0#:] a b
+
+zero
+    (u : Unit)
+    { Alloc R0# | Use R0# }
+    : Int R0# = 0 [R0#] ()
+
+pred
+    (a : Int R0#)
+    { Read R0# + Alloc R0# | Use R0# }
+    : Int R0# = subInt [:R0# R0# R0#:] a (1 [R0#] ())
+
+count' (m : Int R0#)
+       { !0 | Use R0# }
+       [b : *]
+       [ec1 ec2 en : !]
+       [cc1 cc2 cn : $]
+       (k : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b)
+       { !0 | Use R0# }
+       (z : Unit -(en|cn)> b)
+       { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + Use R0# }
+       : b
+    = case m of {
+	0	-> z ();
+	_	-> k m (count' (pred m) [:b ec1 ec2 en cc1 cc2 cn:] k z)
+	}
+
+
+double (c : Int R0#)
+    {Alloc R0# + Read R0# | Use R0# }
+    : Int R0#
+    = mulInt [:R0# R0# R0#:] c (2 [R0#] ())
+
+even (c : Int R0#)
+    {Alloc R0# + Read R0# | Use R0# }
+    : Int R0#
+    = weakeff [Read R0#]
+      in
+      0 [R0#] ()
 

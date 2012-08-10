@@ -12,31 +12,36 @@ ok
 -- count' m = \c n -> if m == 0
 --			then n
 --			else c m (count' (m-1) c n)
-letrec {
-  plus : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-    = \(a b : Int R0#). addInt [R0#] [R0#] [R0#] a b;
-  
-  zero : Unit -(Alloc R0# | Use R0#)> Int R0#
-    = \(u : Unit). 0 [R0#] ();
-  
-  pred : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
-    = \(a : Int R0#).
-      subInt [R0#] [R0#] [R0#] a (1 [R0#] ());
-  
-  count' : Int R0# -(!0 | Use R0#)> [b : *].[ec1 ec2 en : !].[cc1 cc2 cn : $].(Int R0# -(ec1 | cc1)> b -(ec2 | cc2)> b) -(!0 | Use R0#)> (Unit -(en | cn)> b) -(Read R0# + Alloc R0# + ec1 + ec2 + en | Use R0# + cc1)> b
-    = \(m : Int R0#).
-      /\(b : *)./\(ec1 ec2 en : !)./\(cc1 cc2 cn : $).
-       \(k : Int R0# -(ec1 | cc1)> b -(ec2 | cc2)> b).\(z : Unit -(en | cn)> b).
-      case m of {
-        0  
-         -> z ();
-        _ 
-         -> k m
-                (count' (pred m) [b] [ec1] [ec2] [en] [cc1] [cc2] [cn] k z)
-      }
-} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo [Use R0# + Use R1#] in
 count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
+
+
+-- map f xs = build (\c n -> foldr (c . f) n xs)
+
+-- filter f xs = build (\c n -> foldr
+--	(\x xs -> if f x
+--		  then c x xs
+--		  else xs) n xs)
+-- sum
+weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
+weakclo [Use R0# + Use R1#] in
+(/\(^ : *)./\(^ ^ ^ : !)./\(^ ^ ^ : $).
+  \(^ : Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6).\(^ : Unit -(^3 | ^0)> ^6).
+ foldr [Int R0#] [^6] [R1#] [!0] [Read R0# + Alloc R0# + ^4 + ^5] [^3] [Use R0# + ^2] [Use R0# + ^2] [^0]
+     (\(^ : Int R0#).\(^ : ^6).
+      case even ^1 of {
+        0  
+         -> ^3 ^1 ^0;
+        _ 
+         -> ^0
+      }) ^0
+     (build [Int R0#] [R1#] [!0] [Read R0# + Read R1# + Alloc R0# + Alloc R1#] [Use R0# + Use R1#] [Use R0# + Use R1#]
+          (/\(^ : *)./\(^ ^ ^ : !)./\(^ ^ ^ : $).
+            \(^ : Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6).\(^ : Unit -(^3 | ^0)> ^6).
+           foldr [Int R0#] [^6] [R1#] [Read R0# + Alloc R0# + ^5] [^4] [^3] [Use R0# + ^2] [^1] [^0]
+               (compose [Int R0#] [Int R0#] [^6 -(^4 | ^1)> ^6] [^5] [Read R0# + Alloc R0#] [^2] [Use R0#] ^1 double) ^0
+               (build [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
+                    (count' (100 [R0#] ())))))) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 -- { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + cc2 + cn + Use R0# }
