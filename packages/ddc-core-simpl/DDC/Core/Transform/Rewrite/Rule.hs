@@ -12,13 +12,17 @@ import DDC.Core.Pretty()
 import DDC.Type.Pretty()
 import DDC.Core.Transform.Rewrite.Error
 import qualified DDC.Core.Check.CheckExp        as C
+import qualified DDC.Core.Collect               as C
 import qualified DDC.Core.Transform.SpreadX     as S
+import qualified DDC.Type.Check                 as T
 import qualified DDC.Type.Compounds             as T
 import qualified DDC.Type.Env                   as T
 import qualified DDC.Type.Equiv                 as T
 import qualified DDC.Type.Subsumes              as T
 import qualified DDC.Type.Transform.SpreadT     as S
 
+import qualified Data.Maybe		as Maybe
+import qualified Data.Set               as Set
 
 -- | A substitution rule
 -- rhs should have same or weaker type as lhs
@@ -78,6 +82,7 @@ checkRewriteRule config kenv tenv
     (RewriteRule bs cs lhs rhs _ _)
  = do	let (kenv',tenv') = extendBinds bs kenv tenv
 	let cs' = map (S.spreadT kenv') cs
+	mapM_ (\c -> checkTy config kenv' c ErrorBadConstraint) cs'
 
 	(lhs',tl,el,cl) <- check config kenv' tenv' lhs (ErrorTypeCheck Lhs)
 	(rhs',tr,er,cr) <- check config kenv' tenv' rhs (ErrorTypeCheck Rhs)
@@ -88,6 +93,7 @@ checkRewriteRule config kenv tenv
 	e      <- weaken T.kEffect el er err
 	c      <- weaken T.kClosure cl cr err
 
+	checkUnmentionedBinders bs lhs
 	checkAnonymousBinders bs
 	checkValidPattern lhs
 
@@ -120,6 +126,12 @@ check defs kenv tenv xx onError
    Left err -> Left $ onError xx' err
    Right rhs -> return rhs
 
+checkTy defs kenv xx onError
+ = case T.checkType (C.configDataDefs defs) kenv xx of
+   Left _err -> Left $ onError xx
+   Right rhs -> return rhs
+
+
 equiv l r _ | T.equivT l r
  = return ()
 equiv _ _ onError
@@ -132,12 +144,27 @@ weaken k l r _ | T.subsumesT k l r
 weaken _ _ _ onError
  = Left onError
 
+checkUnmentionedBinders
+    :: (Ord n, Show n)
+    => [(BindMode, Bind n)]
+    -> Exp a n
+    -> Either (Error a n) ()
+checkUnmentionedBinders bs expr
+ = let used  = C.freeX T.empty expr `Set.union` C.freeT T.empty expr
+       binds = Set.fromList
+	     $ Maybe.catMaybes
+	     $ map (T.takeSubstBoundOfBind . snd) bs
+   in if   binds `Set.isSubsetOf` used
+      then return ()
+      else Left ErrorVarUnmentioned
+
+
 checkAnonymousBinders :: [(BindMode, Bind n)] -> Either (Error a n) ()
 checkAnonymousBinders bs | (b:_) <- filter anony $ map snd bs
  = Left $ ErrorAnonymousBinder b
  where
-	anony (BAnon _) = True
-	anony _		= False
+    anony (BAnon _) = True
+    anony _		= False
 
 checkAnonymousBinders _
  = return ()
@@ -146,22 +173,22 @@ checkAnonymousBinders _
 checkValidPattern :: Exp a n -> Either (Error a n) ()
 checkValidPattern expr = go expr
  where
-	go (XVar _ _) = return ()
-	go (XCon _ _) = return ()
-	go x@(XLAM _ _ _) = Left $ ErrorNotFirstOrder x
-	go x@(XLam _ _ _) = Left $ ErrorNotFirstOrder x
-	go (XApp _ l r) = go l >> go r
-	go x@(XLet _ _ _) = Left $ ErrorNotFirstOrder x
-	go x@(XCase _ _ _)= Left $ ErrorNotFirstOrder x
-	go (XCast _ _ x)= go x
-	go (XType t)	= go_t t
-	go (XWitness _) = return ()
+    go (XVar _ _) = return ()
+    go (XCon _ _) = return ()
+    go x@(XLAM _ _ _) = Left $ ErrorNotFirstOrder x
+    go x@(XLam _ _ _) = Left $ ErrorNotFirstOrder x
+    go (XApp _ l r) = go l >> go r
+    go x@(XLet _ _ _) = Left $ ErrorNotFirstOrder x
+    go x@(XCase _ _ _)= Left $ ErrorNotFirstOrder x
+    go (XCast _ _ x)= go x
+    go (XType t)	= go_t t
+    go (XWitness _) = return ()
 
-	go_t (TVar _)   = return ()
-	go_t (TCon _)	= return ()
-	go_t t@(TForall _ _) = Left $ ErrorNotFirstOrder (XType t)
-	go_t (TApp l r)	= go_t l >> go_t r
-	go_t (TSum _)	= return ()
+    go_t (TVar _)   = return ()
+    go_t (TCon _)	= return ()
+    go_t t@(TForall _ _) = Left $ ErrorNotFirstOrder (XType t)
+    go_t (TApp l r)	= go_t l >> go_t r
+    go_t (TSum _)	= return ()
 
 
 

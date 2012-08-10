@@ -1,0 +1,29 @@
+ok
+
+-- Bad: rhs & lhs have different types
+LHS and RHS have different types:
+Type L: Int r
+Type R: Unit
+Eff L:  Alloc r
+Eff R:  !0
+Clo L:  Use r
+Clo R:  $0
+
+-- Bad: doesn't typecheck
+Can't typecheck lhs:  Undefined variable: r
+While checking r [r] ()
+
+
+-- Bad: left-hand side shouldn't have binders
+No binders allowed in left-hand side.
+While checking \(x : Unit). x
+
+-- ..Ok: right-hand side can have binders
+ok, added ok_BindersRhs
+
+-- Bad: no such constraint 'Mutz'
+Bad constraint: Mutz r
+
+-- Bad: not all variables mentioned in left-hand side
+All variables in rule should be mentioned in left-hand side.
+
