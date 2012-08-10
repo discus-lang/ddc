@@ -50,6 +50,9 @@ rewrite rules x0
     goAlts ws (AAlt p e)
      = AAlt p (down e ws)
 
+    -- TODO this should find the "most specific".
+    -- ben suggested that size of substitution map might be good indicator
+    -- (smaller is better)
     rewrites f args ws = rewrites' rules f args ws
     rewrites' [] f args _
      = mkApps f args
