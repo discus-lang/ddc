@@ -18,6 +18,7 @@ import DDC.Type.Check.Monad              (throw)
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Compounds as O
+import qualified DDC.Core.Salt.Runtime   as O
 import qualified DDC.Type.Env            as Env
 import Control.Monad
 
@@ -126,10 +127,9 @@ convertTyCon tc
         TyConSpec    c           -> return $ TCon $ TyConSpec    c 
 
         -- Primitive boxed zero-arity constructors (like Unit)
-        --  are represented in generic form.
-        -- TODO: Use a real region variable instead of a hole.
+        -- are represented in generic form.
         TyConBound   (UPrim (L.NameDataTyCon L.DataTyConUnit) _) _
-         ->     return $ O.tPtr (TVar (UHole kRegion)) O.tObj
+         ->     return $ O.tPtr O.rTop O.tObj
 
         -- Convert primitive unboxed TyCons to Salt form.
         TyConBound   (UPrim n _)  _

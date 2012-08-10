@@ -235,10 +235,10 @@ letrec {
     = /\(r1 r2 : %).
        \(x : Ptr# r2 Obj).
       let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
-      let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
-      let x3 : Ptr# _ Obj = x2 in
+      let x2 : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
+      let x3 : Ptr# rT Obj = x2 in
       let _ : Void#
-            = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
+            = setFieldOfBoxed [r1] [Ptr# rT Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
       let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 2# in
       let _ : Void#
@@ -287,18 +287,18 @@ letrec {
 -- The head field of the Cons cells has no primary region.
 module Test with
 letrec {
-  singleton : [r1 : %].Ptr# _ Obj -> Ptr# r1 Obj
+  singleton : [r1 : %].Ptr# rT Obj -> Ptr# r1 Obj
     = /\(r1 : %).
-       \(x : Ptr# _ Obj).
+       \(x : Ptr# rT Obj).
       let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
-      let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
-      let x3 : Ptr# _ Obj = x2 in
+      let x2 : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
+      let x3 : Ptr# rT Obj = x2 in
       let _ : Void#
-            = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
+            = setFieldOfBoxed [r1] [Ptr# rT Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
       let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 2# in
       let _ : Void#
-            = setFieldOfBoxed [r1] [Ptr# _ Obj] x4 0# x in
+            = setFieldOfBoxed [r1] [Ptr# rT Obj] x4 0# x in
       let _ : Void#
             = setFieldOfBoxed [r1] [Ptr# r1 Obj] x4 1# x0 in
       x4
@@ -309,20 +309,20 @@ letrec {
 -- The head field of the Cons cell has no primary region.
 module Test with
 letrec {
-  headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# _ Obj
+  headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# rT Obj
     = /\(r1 : %).
        \(xx : Ptr# r1 Obj).
       let x0 : Tag# = getTag [r1] xx in
       case x0 of {
         TAG1#  
-         -> let x : Ptr# _ Obj
-                  = getFieldOfBoxed [r1] [Ptr# _ Obj] xx 0# in
+         -> let x : Ptr# rT Obj
+                  = getFieldOfBoxed [r1] [Ptr# rT Obj] xx 0# in
             x;
         TAG0#  
-         -> let x1 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+         -> let x1 : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
             x1;
         _ 
-         -> fail# [Ptr# _ Obj]
+         -> fail# [Ptr# rT Obj]
       }
 }
 
@@ -330,43 +330,43 @@ letrec {
 -- Construct a singleton unit list and take its head.
 module Test with
 letrec {
-  singleton : [r1 : %].Ptr# _ Obj -> Ptr# r1 Obj
+  singleton : [r1 : %].Ptr# rT Obj -> Ptr# r1 Obj
     = /\(r1 : %).
-       \(x : Ptr# _ Obj).
+       \(x : Ptr# rT Obj).
       let x1 : Ptr# r1 Obj = allocBoxed [r1] TAG0# 1# in
-      let x2 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
-      let x3 : Ptr# _ Obj = x2 in
+      let x2 : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
+      let x3 : Ptr# rT Obj = x2 in
       let _ : Void#
-            = setFieldOfBoxed [r1] [Ptr# _ Obj] x1 0# x3 in
+            = setFieldOfBoxed [r1] [Ptr# rT Obj] x1 0# x3 in
       let x0 : Ptr# r1 Obj = x1 in
       let x4 : Ptr# r1 Obj = allocBoxed [r1] TAG1# 2# in
       let _ : Void#
-            = setFieldOfBoxed [r1] [Ptr# _ Obj] x4 0# x in
+            = setFieldOfBoxed [r1] [Ptr# rT Obj] x4 0# x in
       let _ : Void#
             = setFieldOfBoxed [r1] [Ptr# r1 Obj] x4 1# x0 in
       x4;
   
-  headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# _ Obj
+  headUnit : [r1 : %].Ptr# r1 Obj -> Ptr# rT Obj
     = /\(r1 : %).
        \(xx : Ptr# r1 Obj).
       let x5 : Tag# = getTag [r1] xx in
       case x5 of {
         TAG1#  
-         -> let x : Ptr# _ Obj
-                  = getFieldOfBoxed [r1] [Ptr# _ Obj] xx 0# in
+         -> let x : Ptr# rT Obj
+                  = getFieldOfBoxed [r1] [Ptr# rT Obj] xx 0# in
             x;
         TAG0#  
-         -> let x6 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
+         -> let x6 : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
             x6;
         _ 
-         -> fail# [Ptr# _ Obj]
+         -> fail# [Ptr# rT Obj]
       };
   
-  foo : Ptr# _ Obj -> Ptr# _ Obj
-    = \(_ : Ptr# _ Obj).
+  foo : Ptr# rT Obj -> Ptr# rT Obj
+    = \(_ : Ptr# rT Obj).
       letregion r in
-      let x7 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
-      let x8 : Ptr# _ Obj = x7 in
+      let x7 : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
+      let x8 : Ptr# rT Obj = x7 in
       let list : Ptr# r Obj = singleton [r] x8 in
       headUnit [r] list
 }
@@ -375,25 +375,25 @@ letrec {
 -- Keep witnesses arguments
 module Test with
 letrec {
-  foo : [r : %].Mutable r => Ptr# _ Obj -> Word64#
+  foo : [r : %].Mutable r => Ptr# rT Obj -> Word64#
     = /\(r : %).
-       \(w : Mutable r).\(x : Ptr# _ Obj). 42w64#
+       \(w : Mutable r).\(x : Ptr# rT Obj). 42w64#
 }
 
 
 -- Keep witnesses applications
 module Test with
 letrec {
-  foo : [r1 r2 r3 : %].Mutable r1 => Distinct r2 r3 => Ptr# _ Obj -> Word64#
+  foo : [r1 r2 r3 : %].Mutable r1 => Distinct r2 r3 => Ptr# rT Obj -> Word64#
     = /\(r1 r2 r3 : %).
-       \(w1 : Mutable r1).\(w2 : Distinct r2 r3).\(x : Ptr# _ Obj). 42w64#;
+       \(w1 : Mutable r1).\(w2 : Distinct r2 r3).\(x : Ptr# rT Obj). 42w64#;
   
-  bar : Ptr# _ Obj -> Word64#
-    = \(_ : Ptr# _ Obj).
+  bar : Ptr# rT Obj -> Word64#
+    = \(_ : Ptr# rT Obj).
       letregion r1 with {w1 : Mutable r1} in
       letregion r2 in
       letregion r3 with {w2 : Distinct r2 r3} in
-      let x0 : Ptr# _ Obj = allocBoxed [_] TAG0# 0# in
-      let x1 : Ptr# _ Obj = x0 in
+      let x0 : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
+      let x1 : Ptr# rT Obj = x0 in
       foo [r1] [r2] [r3] <w1> <w2> x1
 }

@@ -259,9 +259,8 @@ convertBodyX pp defs kenv tenv xx
                         | otherwise     
                         = [AAlt PDefault (S.xFail a' tX')]
 
-                -- TODO: use unknown region instead of a hole.
                 tScrut'    <- convertT kenv tScrut
-                let tPrime = fromMaybe (TVar (UHole kRegion))
+                let tPrime = fromMaybe S.rTop
                            $ takePrimeRegion tScrut'
 
                 return  $ XCase a' (S.xGetTag a' tPrime x') 
@@ -451,22 +450,19 @@ convertCtorAppX pp defs kenv tenv a@(AnTEC t _ _ _) nCtor xsArgs
         , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
         = do    
                 -- Get the prime region variable that holds the outermost constructor.
-                --   For types like Unit, there is no prime region var,
-                --   so use a hole for now. 
-                --
-                -- TODO: allocate objects with no prime region var in a global region.
-                --
+                --   For types like Unit, there is no prime region, so put them in the 
+                --   top-level region of the program.
                 rPrime
                  <- case xsArgs of
                         [] 
-                         -> return $ TVar (UHole kRegion)
+                         -> return S.rTop
 
                         XType (TVar u) : _
                          | Just tu      <- Env.lookup u kenv
                          -> if isRegionKind tu
                              then do u'      <- convertU u
                                      return  $ TVar u'
-                             else return $ TVar (UHole kRegion)
+                             else return S.rTop
 
                         _ -> error $ "convertCtorAppX: prime region var not in environment" 
 
@@ -584,9 +580,8 @@ convertCtor pp defs kenv tenv a uu
         UPrim nCtor _
          | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
-         -> do  
-                -- TODO: allocate objects with no prime region var in a global region.
-                let rPrime      = TVar (UHole kRegion)
+         -> do  -- Put zero-arity data constructors in the top-level region.
+                let rPrime      = S.rTop
                 constructData pp kenv tenv a dataDef ctorDef rPrime [] []
 
         _ -> throw $ ErrorMalformed "convertCtor: invalid constructor"

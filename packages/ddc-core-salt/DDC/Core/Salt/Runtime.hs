@@ -8,7 +8,7 @@ module DDC.Core.Salt.Runtime
         , runtimeImportTypes
 
           -- * Types defined in the runtime system.
-        , tTop
+        , rTop
 
           -- * Functions defined in the runtime system.
         , xGetTag
@@ -66,11 +66,11 @@ runtimeImportTypes
 
 
 -- Regions ----------------------------
--- | The top level region.
+-- | The top-level region.
 --   This region lives for the whole program, and is used to store objects whose 
 --   types don't have region annotations (like function closures and Unit values).
-tTop    :: Type Name
-tTop    = TCon (TyConBound (fst ukTop) (snd ukTop))
+rTop    :: Type Name
+rTop   = TVar (fst ukTop)
 
 ukTop :: (Bound Name, Kind Name)
 ukTop
