@@ -4,9 +4,13 @@
 module DDC.Core.Salt.Runtime
         ( -- * Runtime Config
           Config  (..)
-        , runtimeImportSigs
+        , runtimeImportKinds
+        , runtimeImportTypes
 
-          -- * Calls to runtime functions.
+          -- * Types defined in the runtime system.
+        , tTop
+
+          -- * Functions defined in the runtime system.
         , xGetTag
         , xAllocBoxed
         , xGetFieldOfBoxed
@@ -38,10 +42,18 @@ data Config
         { configHeapSize        :: Integer }
 
 
--- | Signatures for runtime funtions that we use when converting
---   to Disciple Salt code.
-runtimeImportSigs :: Map Name (QualName Name, Type Name)
-runtimeImportSigs
+-- | Kind signatures for runtime types that we use when converting to Salt.
+runtimeImportKinds :: Map Name (QualName Name, Kind Name)
+runtimeImportKinds
+ = Map.fromList
+   [ rn ukTop ]
+ where   rn (UName n, t)  = (n, (QualName (ModuleName ["Runtime"]) n, t))
+         rn _             = error "runtimeImporKinds: all runtime bindings must be named."
+
+
+-- | Type signatures for runtime funtions that we use when converting to Salt.
+runtimeImportTypes :: Map Name (QualName Name, Type Name)
+runtimeImportTypes
  = Map.fromList 
    [ rn utGetTag
    , rn utAllocBoxed
@@ -50,9 +62,23 @@ runtimeImportSigs
    , rn utAllocRawSmall
    , rn utPayloadOfRawSmall ]
  where   rn (UName n, t)  = (n, (QualName (ModuleName ["Runtime"]) n, t))
-         rn _             = error "runtimeImportSigs: all runtimed bounds should be named"
+         rn _             = error "runtimeImportTypes: all runtime bindings must be named."
 
 
+-- Regions ----------------------------
+-- | The top level region.
+--   This region lives for the whole program, and is used to store objects whose 
+--   types don't have region annotations (like function closures and Unit values).
+tTop    :: Type Name
+tTop    = TCon (TyConBound (fst ukTop) (snd ukTop))
+
+ukTop :: (Bound Name, Kind Name)
+ukTop
+ =      ( UName (NameVar "rT")
+        , kRegion)
+
+
+-- Tags -------------------------------
 -- | Get the constructor tag of an object.
 xGetTag :: a -> Type Name -> Exp a Name -> Exp a Name
 xGetTag a tR x2 
@@ -151,7 +177,6 @@ utPayloadOfRawSmall
 
 -- Primops --------------------------------------------------------------------
 -- | Create the heap
---   TODO: Nat isn't the correct type.
 xCreate :: a -> Integer -> Exp a Name
 xCreate a bytes
         = XApp a (XVar a uCreate) 
@@ -175,7 +200,7 @@ uRead   = UPrim (NamePrim $ PrimStore $ PrimStoreRead)
                 (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t)
 
 
--- | Write a value to an address pluss offset.
+-- | Write a value to an address plus offset.
 xWrite   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
 xWrite a tField xAddr offset xVal
         = XApp a (XApp a (XApp a (XApp a (XVar a uWrite) 
@@ -186,7 +211,7 @@ xWrite a tField xAddr offset xVal
 
 uWrite   :: Bound Name
 uWrite   = UPrim (NamePrim $ PrimStore $ PrimStoreWrite)
-                (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
+                 (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
 
 
 -- | Fail with an internal error.

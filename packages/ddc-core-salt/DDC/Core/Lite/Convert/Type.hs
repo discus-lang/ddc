@@ -103,7 +103,7 @@ convertT' isPrimType kenv tt
          
          -- Boxed data values are represented in generic form.
          |  Just (_, args) <- takeTyConApps tt
-         -> do r <- down $ head args
+         -> do r <- down $ head args                                                    -- TODO: don't use 'head' function
                return $ O.tPtr r O.tObj
          
          | otherwise

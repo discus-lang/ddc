@@ -1,4 +1,5 @@
--- | Pretty printing for core expressions.
+
+-- | Pretty printing for core modules and expressions.
 module DDC.Core.Pretty 
         ( module DDC.Type.Pretty
         , module DDC.Base.Pretty)
@@ -27,23 +28,30 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         { moduleName            = name
         , moduleExportKinds     = _exportKinds
         , moduleExportTypes     = _exportTypes
-        , moduleImportKinds     = _importKinds
+        , moduleImportKinds     = importKinds
         , moduleImportTypes     = importTypes
         , moduleBody            = body }
-  = let (lts, _)         = splitXLets body
+  = let 
+        (lts, _)         = splitXLets body
 
-        docsImportTypes  = [ ppr n <+> text "::" <+> ppr t 
-                                | (n, (_, t))   <- Map.toList importTypes]
+        docsImportKinds  
+                = [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
+                  | (n, (_, t)) <- Map.toList importKinds ]
+
+        docsImportTypes  
+                = [ ppr n                 <+> text "::" <+> ppr t <> semi
+                  | (n, (_, t)) <- Map.toList importTypes ]
 
     in  text "module" <+> ppr name 
          <+> (if Map.null importTypes 
                 then empty
                 else line 
                         <> text "imports" <+> lbrace 
+                        <> (nest 8 $ line <> vcat docsImportKinds)
                         <> (nest 8 $ line <> vcat docsImportTypes)
                         <> line 
-                        <> rbrace)
-         <> text "with" <$$> (vcat $ map ppr lts)
+                        <> rbrace <> space)
+         <>  text "with" <$$> (vcat $ map ppr lts)
 
 
 -- Exp ------------------------------------------------------------------------

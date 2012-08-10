@@ -97,8 +97,8 @@ convertM pp runConfig defs kenv tenv mm
                 { moduleName           = moduleName mm
                 , moduleExportKinds    = Map.empty
                 , moduleExportTypes    = Map.empty
-                , moduleImportKinds    = Map.empty
-                , moduleImportTypes    = Map.union S.runtimeImportSigs tsImports'
+                , moduleImportKinds    = S.runtimeImportKinds
+                , moduleImportTypes    = Map.union S.runtimeImportTypes tsImports'
                 , moduleBody           = x' }
 
         -- If this is the 'Main' module then add code to initialise the 
@@ -134,6 +134,7 @@ convertQualNameM (QualName mn n)
 
 
 -- Exp -------------------------------------------------------------------------
+-- | Convert the body of a supercombinator to Salt.
 convertBodyX 
         :: Show a 
         => Platform                     -- ^ Platform specification.
