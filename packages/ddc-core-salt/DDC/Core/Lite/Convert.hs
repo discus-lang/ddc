@@ -428,10 +428,15 @@ convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
         , []                       <- xsArgs
         = return $ S.xWord a i bits
 
+        -- Handle the unit constructor.
+        -- TODO: use a shared object instead of allocating one.
+        | DaConUnit      <- daConName dc
+        = do    return  $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
+
         -- Construct algbraic data that has a finite number of data constructors.
-        | Just nCtor            <- takeNameOfDaCon dc
-        , Just ctorDef          <- Map.lookup nCtor $ dataDefsCtors defs
-        , Just dataDef          <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
+        | Just nCtor     <- takeNameOfDaCon dc
+        , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
+        , Just dataDef   <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
         = do    
                 -- Get the prime region variable that holds the outermost constructor.
                 --   For types like Unit, there is no prime region, so put them in the 
@@ -545,7 +550,12 @@ convertCtor
         -> ConvertM a (Exp a S.Name)
 
 convertCtor pp defs kenv tenv a dc
- | Just n      <- takeNameOfDaCon dc
+
+ -- TODO: Use a shared unit constructor instead of allocating a new one.
+ | DaConUnit    <- daConName dc
+ =      return $ S.xAllocBoxed a S.rTop 0 (S.xNat a 0)
+
+ | Just n       <- takeNameOfDaCon dc
  = case n of
         -- Literal values.
         L.NameBool v            -> return $ S.xBool a v

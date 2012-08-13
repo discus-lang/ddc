@@ -125,12 +125,10 @@ convertTyCon tc
         TyConSort    c           -> return $ TCon $ TyConSort    c 
         TyConKind    c           -> return $ TCon $ TyConKind    c 
         TyConWitness c           -> return $ TCon $ TyConWitness c 
-        TyConSpec    c           -> return $ TCon $ TyConSpec    c 
 
-        -- Primitive boxed zero-arity constructors (like Unit)
-        -- are represented in generic form.
-        TyConBound   (UPrim (L.NameDataTyCon L.DataTyConUnit) _) _
-         ->     return $ O.tPtr O.rTop O.tObj
+        -- Handle baked-in unit and function constructors.
+        TyConSpec    TcConFun    -> return $ TCon $ TyConSpec TcConFun
+        TyConSpec    TcConUnit   -> return $ O.tPtr O.rTop O.tObj
 
         -- Convert primitive unboxed TyCons to Salt form.
         TyConBound   (UPrim n _)  _
@@ -158,7 +156,7 @@ convertDC
 convertDC kenv dc
  = case daConName dc of
         DaConUnit
-         -> return $ dcUnit 
+         -> error "DDC.Core.Lite.convertDC: not converting unit DaConName"
 
         DaConNamed n
          -> do  n'      <- convertBoundNameM n

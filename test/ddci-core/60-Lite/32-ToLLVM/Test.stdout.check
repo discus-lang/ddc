@@ -71,8 +71,8 @@ l1.entry:
         %_v2.off     = add i64 %x1, 0
         %_v3.ptr     = inttoptr i64 %_v2.off to i64*
         store i64 5, i64* %_v3.ptr
-        %x2          = call %s.Obj* @allocBoxed (i32 0, i64 0) 
-        ret %s.Obj* %x2
+        %_v5         = call %s.Obj* @allocBoxed (i32 0, i64 0) 
+        ret %s.Obj* %_v5
 }
 
 
