@@ -34,12 +34,18 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
   = let 
         (lts, _)         = splitXLets body
 
-        docsImportKinds  
-                = [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
+        docsImportKinds
+         | Map.null importKinds        = empty
+         | otherwise  
+         = nest 8 $ line 
+         <> vcat  [ text "type" <+> ppr n <+> text "::" <+> ppr t <> semi
                   | (n, (_, t)) <- Map.toList importKinds ]
 
         docsImportTypes  
-                = [ ppr n                 <+> text "::" <+> ppr t <> semi
+         | Map.null importTypes        = empty
+         | otherwise
+         = nest 8 $ line
+         <> vcat  [ ppr n                 <+> text "::" <+> ppr t <> semi
                   | (n, (_, t)) <- Map.toList importTypes ]
 
     in  text "module" <+> ppr name 
@@ -47,8 +53,8 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
                 then empty
                 else line 
                         <> text "imports" <+> lbrace 
-                        <> (nest 8 $ line <> vcat docsImportKinds)
-                        <> (nest 8 $ line <> vcat docsImportTypes)
+                        <> docsImportKinds
+                        <> docsImportTypes
                         <> line 
                         <> rbrace <> space)
          <>  text "with" <$$> (vcat $ map ppr lts)
