@@ -40,7 +40,6 @@ module DDC.Core.Compounds
         , takeXWitness
         , wApp,  wApps)
 where
-import DDC.Type.Compounds
 import DDC.Core.Exp
 
 
@@ -235,7 +234,7 @@ splitXLets xx
 takeCtorNameOfAlt :: Alt a n -> Maybe n
 takeCtorNameOfAlt aa
  = case aa of
-        AAlt (PData u _) _      -> takeNameOfBound u
+        AAlt (PData dc _) _     -> takeNameOfDaCon dc
         _                       -> Nothing
 
 -- Types ----------------------------------------------------------------------

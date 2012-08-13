@@ -381,8 +381,9 @@ convAltM kenv tenv aa
                 blocks  <- convBodyM kenv tenv Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
-         C.AAlt (C.PData u []) x
-          | Just lit     <- convPatBound pp u
+         C.AAlt (C.PData dc []) x
+          | Just n      <- C.takeNameOfDaCon dc
+          , Just lit    <- convPatName pp n
           -> do label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM kenv tenv Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
@@ -390,9 +391,9 @@ convAltM kenv tenv aa
          _ -> die "invalid alternative"
 
 
--- | Convert a pattern to a LLVM literal.
-convPatBound :: Platform -> C.Bound A.Name -> Maybe Lit
-convPatBound pp (C.UPrim name _)
+-- | Convert a constructor pattern to a LLVM literal.
+convPatName :: Platform -> A.Name -> Maybe Lit
+convPatName pp name
  = case name of
         A.NameBool True   -> Just $ LitInt (TInt 1) 1
         A.NameBool False  -> Just $ LitInt (TInt 1) 0
@@ -401,8 +402,6 @@ convPatBound pp (C.UPrim name _)
         A.NameWord i bits -> Just $ LitInt (TInt $ fromIntegral bits) i
         A.NameTag  i      -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
         _                 -> Nothing
-
-convPatBound _ _          = Nothing
 
 
 -- | Take the blocks from an `AltResult`.

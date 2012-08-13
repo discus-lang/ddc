@@ -269,7 +269,7 @@ data Error a n
         -- | A case-expression where one of the patterns has too many binders.
         | ErrorCaseTooManyBinders
         { errorChecking         :: Exp a n
-        , errorCtorBound        :: Bound n
+        , errorCtorDaCon        :: DaCon n
         , errorCtorFields       :: Int
         , errorPatternFields    :: Int }
 

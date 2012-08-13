@@ -459,8 +459,8 @@ tagMatchesAlt n (AAlt p _)
 -- | See if a constructor tag matches a pattern.
 tagMatchesPat :: Name -> Pat Name -> Bool
 tagMatchesPat _ PDefault        = True
-tagMatchesPat n (PData u' _)
- = case takeNameOfBound u' of
+tagMatchesPat n (PData dc _)
+ = case takeNameOfDaCon dc of
         Just n' -> n == n'
         _       -> False
 

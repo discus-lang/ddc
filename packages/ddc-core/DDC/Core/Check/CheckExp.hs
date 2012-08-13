@@ -828,17 +828,13 @@ checkAltM _xx config kenv tenv _tDiscrim _tsArgs (AAlt PDefault xBody)
                 , effBody
                 , cloBody)
 
-checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
- = do   -- Take the type of the constructor and instantiate it with the 
+checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData dc bsArg) xBody)
+ = do   
+        -- Take the type of the constructor and instantiate it with the 
         -- type arguments we got from the discriminant. 
         -- If the ctor type doesn't instantiate then it won't have enough foralls 
         -- on the front, which should have been checked by the def checker.
-        tCtor   
-         <- case uCon of                                                                -- TODO fix this. Want DaCon for uCon
-                UPrim _ t       -> return t
-                UName{}         -> error "CheckExp: need to lookup type of data constructor"
-                UIx _           -> error "CheckExp: this is dodgy and shouldn't happen"
-                UHole{}         -> error "CheckExp: no hole case, we should change uCon to DaCon"
+        let tCtor = daConType dc
 
         tCtor_inst      
          <- case instantiateTs tCtor tsArgs of
@@ -858,7 +854,7 @@ checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
         when (length tsFields_ctor < length bsArg)
-         $ throw $ ErrorCaseTooManyBinders xx uCon 
+         $ throw $ ErrorCaseTooManyBinders xx dc
                         (length tsFields_ctor)
                         (length bsArg)
 
@@ -884,7 +880,7 @@ checkAltM xx config kenv tenv tDiscrim tsArgs (AAlt (PData uCon bsArg) xBody)
                 $ mapMaybe (cutTaggedClosureXs bsArg')
                 $ Set.toList closBody
 
-        return  ( AAlt (PData uCon bsArg') xBody'
+        return  ( AAlt (PData dc bsArg') xBody'
                 , tBody
                 , effsBody
                 , closBody_cut)

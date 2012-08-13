@@ -120,9 +120,7 @@ data Pat n
         = PDefault
         
         -- | Match a data constructor and bind its arguments.
-        --   TODO: the Bound here should really be a DaCon.
-        --         It doesn't make sense to have UIx here.
-        | PData (Bound n) [Bind n]
+        | PData (DaCon n) [Bind n]
         deriving (Eq, Show)
         
 

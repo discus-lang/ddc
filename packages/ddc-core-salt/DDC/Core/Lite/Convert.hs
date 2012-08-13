@@ -490,32 +490,32 @@ convertAlt pp defs kenv tenv a uScrut tScrut alt
                 return  $ AAlt PDefault x'
 
         -- Match against literal unboxed values.
-        AAlt (PData uCtor []) x
-         | UPrim nCtor _        <- uCtor
+        AAlt (PData dc []) x
+         | Just nCtor           <- takeNameOfDaCon dc
          , case nCtor of
                 L.NameInt{}     -> True
                 L.NameWord{}    -> True
                 L.NameBool{}    -> True
                 _               -> False
-         -> do  uCtor'  <- convertU uCtor
+
+         -> do  dc'     <- convertDC kenv dc
                 xBody1  <- convertBodyX pp defs kenv tenv x
-                return  $ AAlt (PData uCtor' []) xBody1
+                return  $ AAlt (PData dc' []) xBody1
+
+        -- TODO: Handle matching unit constructors.
 
         -- Match against algebraic data with a finite number
         -- of data constructors.
-        AAlt (PData uCtor bsFields) x
-         | Just nCtor    <- case uCtor of
-                                UName n   -> Just n
-                                UPrim n _ -> Just n
-                                _         -> Nothing
-         , Just ctorDef   <- Map.lookup nCtor $ dataDefsCtors defs
+        AAlt (PData dc bsFields) x
+         | Just nCtor   <- takeNameOfDaCon dc
+         , Just ctorDef <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
                 let tenv'       = Env.extends bsFields tenv 
                 uScrut'         <- convertU uScrut
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
-                let uTag        = UPrim (S.NameTag iTag) S.tTag
+                let dcTag       = mkDaConAlg (S.NameTag iTag) S.tTag
 
                 -- Get the address of the payload.
                 bsFields'       <- mapM (convertB kenv) bsFields
@@ -527,8 +527,7 @@ convertAlt pp defs kenv tenv a uScrut tScrut alt
                 tScrut'         <- convertT kenv tScrut
                 let Just trPrime = takePrimeRegion tScrut'
                 xBody2           <- destructData pp a uScrut' ctorDef trPrime bsFields' xBody1
-
-                return  $ AAlt (PData uTag []) xBody2
+                return  $ AAlt (PData dcTag []) xBody2
 
         AAlt{}          
          -> throw ErrorInvalidAlt

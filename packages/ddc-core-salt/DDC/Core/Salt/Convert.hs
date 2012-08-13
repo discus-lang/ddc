@@ -187,9 +187,10 @@ convBodyM xx
 
         -- Case-expression.
         --   Prettier printing for case-expression that just checks for failure.
-        XCase _ x [ AAlt (PData (UPrim n _) []) x1
+        XCase _ x [ AAlt (PData dc []) x1
                   , AAlt PDefault     xFail]
          | isFailX xFail
+         , Just n       <- takeNameOfDaCon dc
          , Just n'      <- convDaConName n
          -> do  
                 x'      <- convRValueM x
@@ -204,8 +205,10 @@ convBodyM xx
 
         -- Case-expression.
         --   Prettier printing for if-then-else.
-        XCase _ x [ AAlt (PData (UPrim (NameBool True)  _) []) x1
-                  , AAlt (PData (UPrim (NameBool False) _) []) x2 ]
+        XCase _ x [ AAlt (PData dc1 []) x1
+                  , AAlt (PData dc2 []) x2 ]
+         | Just (NameBool True)  <- takeNameOfDaCon dc1
+         , Just (NameBool False) <- takeNameOfDaCon dc2
          -> do  x'      <- convRValueM x
                 x1'     <- convBodyM   x1
                 x2'     <- convBodyM   x2
@@ -258,8 +261,9 @@ convAltM aa
                 return  $ text "default:" <+> x1' <> semi
 
 
-        AAlt (PData (UPrim n _) []) x1
-         | Just n'      <- convDaConName n
+        AAlt (PData dc []) x1
+         | Just n       <- takeNameOfDaCon dc
+         , Just n'      <- convDaConName n
          -> do  x1'     <- convBodyM x1
                 return  $ vcat
                         [ text "case" <+> n' <> colon

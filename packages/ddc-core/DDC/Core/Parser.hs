@@ -349,14 +349,16 @@ pPat
 
         -- LIT
  , do   nLit    <- pLit
-        return  $ PData (UName nLit) []
+        return  $ PData (mkDaConAlg nLit (T.tBot T.kData)) []
 
         -- Unit
+ , do   pTok KDaConUnit
+        return  $ PData  dcUnit []
 
         -- CON BIND BIND ...
  , do   nCon    <- pCon 
         bs      <- P.many pBindPat
-        return  $ PData (UName nCon) bs]
+        return  $ PData (mkDaConAlg nCon (T.tBot T.kData)) bs]
 
 
 -- Binds in patterns can have no type annotation,

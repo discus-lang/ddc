@@ -3,6 +3,7 @@ module DDC.Core.Lite.Convert.Type
         ( convertT
         , convertPrimT
 
+        , convertDC
         , convertB
         , convertU
 
@@ -149,6 +150,25 @@ convertTyConPrim n
 
 
 -- Names ----------------------------------------------------------------------
+convertDC 
+        :: Env L.Name 
+        -> DaCon L.Name 
+        -> ConvertM a (DaCon O.Name)
+
+convertDC kenv dc
+ = case daConName dc of
+        DaConUnit
+         -> return $ dcUnit 
+
+        DaConNamed n
+         -> do  n'      <- convertBoundNameM n
+                t'      <- convertT kenv (daConType dc)
+                return  $ DaCon
+                        { daConName             = DaConNamed n'
+                        , daConType             = t'
+                        , daConIsAlgebraic      = daConIsAlgebraic dc }
+
+
 convertB :: Env L.Name -> Bind L.Name -> ConvertM a (Bind O.Name)
 convertB kenv bb
   = case bb of
