@@ -40,7 +40,8 @@ crushEffect tt
 
              -- Type has no head region.
              -- This happens with  case () of { ... }
-             Just (TyConBound _ _, [])  -> tBot kEffect
+             Just (TyConSpec  TcConUnit, [])    -> tBot kEffect
+             Just (TyConBound _ _,       [])    -> tBot kEffect
 
              _ -> tt
 

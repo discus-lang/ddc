@@ -469,23 +469,31 @@ checkExpM' config kenv tenv xx@(XCase a xDiscrim alts)
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
         -- type etc. 
-        (nTyCon, tsArgs)
+        (mmode, tsArgs)
          <- case takeTyConApps tDiscrim of
                 Just (tc, ts)
-                 | TyConBound (UName n) k <- tc
+                 | TyConSpec TcConUnit         <- tc
+                 -> return ( Just (DataModeSmall [])
+                           , [] )
+                                -- TODO: the DataModeSmall should hold DaCons instead of
+                                --       names, as we don't have a name for Unit.
+
+                 | TyConBound (UName nTyCon) k <- tc
                  , takeResultKind k == kData
-                 -> return (n, ts)
+                 -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
+                           , ts )
                       
-                 | TyConBound (UPrim n _) k <- tc
+                 | TyConBound (UPrim nTyCon _) k <- tc
                  , takeResultKind k == kData
-                 -> return (n, ts)
+                 -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
+                           , ts )
 
                 _ -> throw $ ErrorCaseDiscrimNotAlgebraic xx tDiscrim
 
         -- Get the mode of the data type, 
         --   this tells us how many constructors there are.
         mode    
-         <- case lookupModeOfDataType nTyCon (configDataDefs config) of
+         <- case mmode of
              Nothing -> throw $ ErrorCaseDiscrimTypeUndeclared xx tDiscrim
              Just m  -> return m
 
