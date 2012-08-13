@@ -24,12 +24,12 @@ import qualified Data.Set       as Set
 --     bound variables match the binders. If this is not the case then you get
 --     an indeterminate result.
 --
-equivT  :: Ord n => Type n -> Type n -> Bool
+equivT  :: (Ord n, Show n) => Type n -> Type n -> Bool
 equivT t1 t2
         = equivT' [] [] t1 t2
 
 
-equivT' :: Ord n
+equivT' :: (Ord n, Show n)
         => [Bind n]
         -> [Bind n]
         -> Type n   -> Type n
@@ -44,17 +44,19 @@ equivT' stack1 stack2 t1 t2
 	 -- (forall a. a) != (forall b. a)
          | Nothing      <- getBindType stack1 u1
          , Nothing      <- getBindType stack2 u2
-         , u1 == u2     -> True
+         , u1 == u2     -> checkBounds u1 u2 True
 
 	 -- Both variables are bound in foralls, so check the stack
          -- to see if they would be equivalent if we named them.
          | Just (ix1, t1a)   <- getBindType stack1 u1
          , Just (ix2, t2a)   <- getBindType stack2 u2
          , ix1 == ix2
-         -> equivT' stack1 stack2 t1a t2a
+         -> checkBounds u1 u2 
+         $  equivT' stack1 stack2 t1a t2a
 
          | otherwise
-         -> False
+         -> checkBounds u1 u2
+         $  False
 
         -- Constructor names must be equal.
         (TCon tc1,        TCon tc2)
@@ -97,6 +99,28 @@ equivT' stack1 stack2 t1 t2
         (_, _)  -> False
 
 
+-- | If we have a UName and UPrim with the same name then these won't match
+--   even though they pretty print the same. This will only happen due to 
+--   a compiler bugs, but is very confusing when it does, so we check for
+--   this case explicitly.
+checkBounds :: (Eq n, Show n) => Bound n -> Bound n -> a -> a
+checkBounds u1 u2 x
+ = case (u1, u2) of
+        (UName n2, UPrim n1 _)
+         | n1 == n2     -> die
+
+        (UPrim n1 _, UName n2)
+         | n1 == n2     -> die
+
+        _               -> x
+ where
+  die   = error $ unlines
+        [ "DDC.Type.Equiv: Found a primitive and non-primitive bound variable with the same name."
+        , "  u1 = " ++ show u1
+        , "  u2 = " ++ show u2 ]
+
+
+
 type VarSet n = Set.Set n
 type Subst n = Map.Map n (Type n)
 
@@ -106,7 +130,7 @@ type Subst n = Map.Map n (Type n)
 -- Eg given template "a -> b" and target "Int -> Float", returns substitution:
 --	{ a |-> Int, b |-> Float }
 --
-matchT  :: Ord n
+matchT  :: (Ord n, Show n)
 	=> VarSet n	-- ^ only attempt to match these names
 	-> Subst n	-- ^ already matched (or @Map.empty@)
 	-> Type n	-- ^ template
@@ -116,7 +140,7 @@ matchT vs subst t1 t2
         = matchT' [] [] t1 t2 vs subst
 
 
-matchT' :: Ord n
+matchT' :: (Ord n, Show n)
         => [Bind n]
         -> [Bind n]
         -> Type n   -> Type n
