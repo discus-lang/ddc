@@ -42,21 +42,21 @@ tPtr r t = TApp (TApp (TCon tcPtr) r) t
 
 -- Expressions ----------------------------------------------------------------
 xBool :: a -> Bool   -> Exp a Name
-xBool a b       = XCon a (DaConAlgebraic (NameBool b) tBool)
+xBool a b       = XCon a (mkDaConAlg (NameBool b) tBool)
 
 
 xNat  :: a -> Integer -> Exp a Name
-xNat a i        = XCon a (DaConAlgebraic (NameNat i) tNat)
+xNat a i        = XCon a (mkDaConAlg (NameNat i) tNat)
 
 
 xInt  :: a -> Integer -> Exp a Name
-xInt a i        = XCon a (DaConAlgebraic (NameInt i) tInt)
+xInt a i        = XCon a (mkDaConAlg (NameInt i) tInt)
 
 
 xWord :: a -> Integer -> Int -> Exp a Name
-xWord a i bits  = XCon a (DaConAlgebraic (NameWord i bits) (tWord bits))
+xWord a i bits  = XCon a (mkDaConAlg (NameWord i bits) (tWord bits))
 
 
 xTag  :: a -> Integer -> Exp a Name
-xTag a i        = XCon a (DaConAlgebraic (NameTag i) tTag)
+xTag a i        = XCon a (mkDaConAlg (NameTag i) tTag)
 

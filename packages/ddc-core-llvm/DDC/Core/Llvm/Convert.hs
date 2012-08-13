@@ -200,7 +200,7 @@ convBodyM kenv tenv blocks label instrs xx
           |  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType _, C.XCon _ dc]           <- xs
-          ,  Just A.NameVoid                    <- takeNameOfDaCon dc
+          ,  Just A.NameVoid                    <- C.takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label (instrs |> IReturn Nothing)
 
@@ -440,7 +440,8 @@ convExpM pp kenv tenv vDst (C.XVar _ u@(C.UName (A.NameVar n)))
         return  $ Seq.singleton 
                 $ ISet vDst (XVar (Var (NameLocal n') t'))
 
-convExpM pp _ _ vDst (C.XCon _ (C.DaConAlgebraic n _))
+convExpM pp _ _ vDst (C.XCon _ dc)
+ | Just n       <- C.takeNameOfDaCon dc
  = case n of
         A.NameNat i
          -> return $ Seq.singleton

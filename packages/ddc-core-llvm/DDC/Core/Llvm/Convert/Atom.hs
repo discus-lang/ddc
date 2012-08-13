@@ -38,7 +38,9 @@ mconvAtom pp kenv tenv xx
             in  Just $ XVar (Var (NameLocal n') t')
 
         -- Literals. 
-        C.XCon _ (C.DaConAlgebraic n t)
+        C.XCon _ dc
+         | C.DaConNamed n <- C.daConName dc
+         , t              <- C.daConType dc
          -> case n of
                 A.NameNat  nat   -> Just $ XLit (LitInt (convType pp kenv t) nat)
                 A.NameInt  val   -> Just $ XLit (LitInt (convType pp kenv t) val)

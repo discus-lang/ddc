@@ -102,7 +102,7 @@ step store xx
         Right t   
          -> let Just (bs, xBody) = takeXLamFlags xp
                 (store', l)      = allocBind (Rgn 0) t (SLams bs xBody) store
-                x'               = XCon () (DaConSolid (NameLoc l) t)
+                x'               = xLoc l t
             in  StepProgress store' (wrapCasts casts x')
 
 
@@ -270,7 +270,7 @@ step store (XLet _ (LLet (LetLazy _w) b x1) x2)
         Left err -> StepStuckMistyped err
         Right t1
          -> let (store1, l)   = allocBind (Rgn 0) t1 (SThunk x1) store
-                x1'           = XCon () (DaConSolid (NameLoc l) t1)
+                x1'           = xLoc l t1
             in  StepProgress store1 (substituteXX b x1' x2)
 
 
@@ -282,7 +282,7 @@ step store (XLet _ (LRec bxs) x2)
 
         -- Allocate new locations in the store to hold the expressions.
         (store1, ls)  = newLocs (length bs) store
-        xls           = [XCon () (DaConSolid (NameLoc l) t) | (l, t) <- zip ls ts]
+        xls           = [xLoc l t | (l, t) <- zip ls ts]
 
         -- Substitute locations into all the bindings.
         xs'      = map (substituteXXs (zip bs xls)) xs
@@ -393,7 +393,7 @@ step store (XCase a xDiscrim alts)
             -> StepProgress store xBody
 
            PData _ bsArgs      
-            | bxsArgs   <- [ (b, wrapCasts casts (XCon a (DaConSolid (NameLoc l) t)))
+            | bxsArgs   <- [ (b, wrapCasts casts (xLoc l t))
                                 | l     <- lsArgs
                                 | t     <- tsArgs
                                 | b     <- bsArgs]
@@ -489,8 +489,9 @@ isSomeValue weak store xx
  = case xx of
          XVar{}         -> True
 
-         XCon _ (DaConSolid (NameLoc l) _)
-          | Just SThunk{}       <- lookupBind l store
+         XCon _ dc
+          | Just (NameLoc l)    <- takeNameOfDaCon dc
+          , Just SThunk{}       <- lookupBind l store
           -> weak
 
          XCon{}         -> True

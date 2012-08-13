@@ -67,25 +67,17 @@ instance SpreadX (Exp a) where
 
 -- TODO: flip non-algebaric constructors to DaConSolid
 instance SpreadX DaCon where
- spreadX _kenv tenv da
-  = case da of
-        DaConUnit       -> DaConUnit
+ spreadX _kenv tenv dc
+  = case daConName dc of
+        DaConUnit       -> dc
 
-        DaConSolid n t
-         -> let u | Env.isPrim tenv n   = UPrim n t
+        DaConNamed n
+         -> let u | Env.isPrim tenv n   = UPrim n (daConType dc)
                   | otherwise           = UName n
 
             in  case Env.lookup u tenv of
-                 Just t' -> DaConSolid n t'
+                 Just t' -> dc { daConType = t' }
                  Nothing -> error "spreadX: data constructor is not in type environment."
-
-        DaConAlgebraic n t
-         -> let u | Env.isPrim tenv n   = UPrim n t
-                  | otherwise           = UName n
-
-            in case Env.lookup u tenv of
-                Just t' -> DaConAlgebraic n t'
-                Nothing -> error  "spreadX: data constructor is not in type environment."
 
 
 instance SpreadX Cast where

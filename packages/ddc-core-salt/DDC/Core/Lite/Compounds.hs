@@ -34,7 +34,7 @@ tNatU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat) kData) kData)
 
 -- | A Literal Nat# data constructor.
 dcNatU :: Integer -> DaCon Name
-dcNatU i = DaConAlgebraic (NameNat i) tNatU
+dcNatU i = mkDaConAlg (NameNat i) tNatU
 
 
 -- | A literal Nat#

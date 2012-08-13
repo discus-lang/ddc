@@ -3,8 +3,7 @@
 --   expressions.
 module DDC.Core.Eval.Compounds
         ( -- * Types
-          tInt
-        , tPair
+          tPair
         , tList 
 
           -- * Witnesses
@@ -19,11 +18,23 @@ module DDC.Core.Eval.Compounds
         , isCapConW
 
           -- * Expressions
+        , takeMutableX
+
+          -- * Units
+        , xUnit
         , isUnitX
+
+          -- * Region Handles
         , takeHandleT
         , takeHandleX
-        , takeLocX,     stripLocX
-        , takeMutableX)
+
+          -- * Store Locations.
+        , xLoc, takeLocX,     stripLocX
+
+          -- * Integers
+        , tInt, tcInt
+        , dcInt
+        , takeIntDC, takeIntX)
 where
 import DDC.Core.Eval.Name
 import DDC.Type.Compounds
@@ -32,14 +43,6 @@ import DDC.Core.Compounds (wApps)
 
 
 -- Type -----------------------------------------------------------------------
--- | Application of the Int type constructor.
-tInt :: Region Name -> Type Name
-tInt r1 
- = TApp (TCon tcInt) r1
- where  tcInt   = TyConBound (UPrim (NamePrimCon PrimTyConInt) kInt) kInt
-        kInt    = kFun kRegion kData
-
-
 -- | Application of the Pair type constructor.
 tPair :: Region Name -> Type Name -> Type Name -> Type Name
 tPair tR tA tB
@@ -112,14 +115,23 @@ isCapConW ww
 
 
 -- Exp ------------------------------------------------------------------------
+-- | Make a unit literal.
+xUnit :: Exp () Name
+xUnit   = XCon () $ dcUnit
+
+
 -- | Check whether an expression is the unit constructor.
 isUnitX :: Exp a Name -> Bool
 isUnitX xx
  = case xx of
-        XCon _  DaConUnit       -> True
+        XCon _  dc
+         -> case daConName dc of
+                DaConUnit       -> True
+                _               -> False
         _                       -> False
 
 
+-- Handles --------------------------------------
 -- | Take a region handle from a type.
 takeHandleT :: Type Name -> Maybe Rgn
 takeHandleT tt
@@ -137,6 +149,13 @@ takeHandleX xx
         _       -> Nothing
 
 
+-- Locations ------------------------------------
+-- | Make a location expression.
+xLoc :: Loc -> Type Name -> Exp () Name
+xLoc l t
+        = XCon () $ mkDaConSolid (NameLoc l) t
+
+
 -- | Take a store location from an expression.
 --   We strip off 'forget' casts along the way
 takeLocX :: Exp a Name -> Maybe Loc
@@ -145,8 +164,11 @@ takeLocX xx
         XCast _ (CastForget _) x
          -> takeLocX x
 
-        XCon _  (DaConSolid (NameLoc l) _)
-                -> Just l
+        XCon _  dc
+         -> case takeNameOfDaCon dc of
+                Just (NameLoc l) -> Just l
+                _                -> Nothing
+
         _       -> Nothing
 
 
@@ -157,12 +179,16 @@ stripLocX xx
         XCast _ (CastForget _) x
           -> stripLocX x
 
-        XCon _  (DaConSolid (NameLoc l) _)
-          -> Just l
+
+        XCon _ dc
+         -> case takeNameOfDaCon dc of
+                Just (NameLoc l) -> Just l
+                _                -> Nothing
 
         _ -> Nothing
 
 
+-- Witnesses ------------------------------------
 -- | Take a witness of mutability from an expression.
 takeMutableX :: Exp a Name -> Maybe Rgn
 takeMutableX xx
@@ -172,3 +198,35 @@ takeMutableX xx
                 -> takeHandleT tR1
         _       -> Nothing
 
+
+-- Integers -------------------------------------
+-- | Application of the Int type constructor.
+tInt :: Region Name -> Type Name
+tInt r1 
+ = TApp (TCon tcInt) r1
+ 
+
+-- | The integer type constructor
+tcInt :: TyCon Name
+tcInt = TyConBound (UPrim (NamePrimCon PrimTyConInt) kInt) kInt
+ where  kInt = kFun kRegion kData
+
+
+-- | Make an integer data constructor.
+dcInt :: Integer -> DaCon Name
+dcInt i = mkDaConAlg (NameInt i) (TCon tcInt)
+
+-- | Take an integer literal from an data constructor.
+takeIntDC :: DaCon Name -> Maybe Integer
+takeIntDC dc
+ = case takeNameOfDaCon dc of
+        Just (NameInt i) -> Just i
+        _                -> Nothing
+
+
+-- | Take an integer literal from an expression.
+takeIntX :: Exp a Name -> Maybe Integer
+takeIntX xx
+ = case xx of
+        XCon _ dc       -> takeIntDC dc
+        _               -> Nothing

@@ -302,7 +302,7 @@ pExp0
  
         -- The unit data constructor.       
  , do   pTok KDaConUnit
-        return  $ XCon () daConUnit
+        return  $ XCon () dcUnit
 
         -- Named algebraic constructors.
         --  We just fill-in the type with tBot for now, and leave it to 

@@ -132,7 +132,7 @@ initial = Store
 
         , storeBinds    
            = Map.fromList 
-                [ (Loc 0, (Rgn 0, tUnit, SObj DaConUnit []))]
+                [ (Loc 0, (Rgn 0, tUnit, SObj dcUnit []))]
         }
 
 -- | Location of the static unit object.
@@ -143,15 +143,12 @@ locUnit = Loc 0
 -- | Check whether an expression is the unit constructor, 
 --   or its static heap location.
 isUnitOrLocX :: Exp a Name -> Bool
-isUnitOrLocX xx
- = case xx of
-        XCon _  DaConUnit
-          -> True
-
-        XCon _  (DaConSolid (NameLoc l) _)
-          -> l == locUnit
-
-        _ -> False
+isUnitOrLocX (XCon _ dc)
+ = case daConName dc of
+        DaConUnit               -> True
+        DaConNamed (NameLoc l)  -> l == locUnit
+        _                       -> False
+isUnitOrLocX _                  = False
 
 
 -- Locations ------------------------------------------------------------------

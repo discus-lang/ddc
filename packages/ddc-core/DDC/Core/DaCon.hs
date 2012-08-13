@@ -7,7 +7,8 @@ module DDC.Core.DaCon
         , takeNameOfDaCon
         , typeOfDaCon
         , dcUnit
-        , mkDaConAlg)
+        , mkDaConAlg
+        , mkDaConSolid)
 where
 import DDC.Type.Compounds
 import DDC.Type.Exp
@@ -23,7 +24,10 @@ data DaCon n
         , daConType             :: Type n
 
           -- | Algebraic constructors can be deconstructed with case-expressions,
-          --   and must have a data type declaration for their types.
+          --   and must have a data type declaration.
+          -- 
+          --   Non-algebraic types like 'Float' can't be inspected with
+          --   case-expressions.
         , daConIsAlgebraic      :: Bool }
         deriving Show
 
@@ -56,7 +60,7 @@ dcUnit  :: DaCon n
 dcUnit  = DaCon
         { daConName             = DaConUnit
         , daConType             = tUnit
-        , daConIsAlgebraic      = False }
+        , daConIsAlgebraic      = True }
 
 
 -- | Make an algebraic data constructor.
@@ -67,3 +71,13 @@ mkDaConAlg n t
         , daConType             = t
         , daConIsAlgebraic      = True }
 
+
+-- | Make a non-algebraic (solid) constructor.
+--   These are used for location values in the interpreter,
+--   and for floating point literals in the main compiler.
+mkDaConSolid :: n -> Type n -> DaCon n
+mkDaConSolid n t
+        = DaCon
+        { daConName             = DaConNamed n
+        , daConType             = t
+        , daConIsAlgebraic      = False }

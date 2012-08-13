@@ -12,7 +12,6 @@ where
 import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Store
 import DDC.Core.Eval.Name
-import DDC.Core.Compounds
 import DDC.Type.Compounds
 import DDC.Core.Exp
 import qualified DDC.Core.Eval.Store   as Store
@@ -30,17 +29,23 @@ stepPrimCon
 
 -- Redirect the unit constructor.
 -- All unit values point to the same object in the store.
-stepPrimCon DaConUnit [] store
+stepPrimCon dc xsArgs store
+        | DaConUnit     <- daConName dc
+        , []            <- xsArgs
         = Just  ( store
-                , XCon () (DaConSolid (NameLoc locUnit) tUnit) )
+                , xLoc locUnit tUnit )
 
 
--- Alloction of Ints.
-stepPrimCon dc@(DaConAlgebraic (NameInt _) _) [xR, xUnit] store
+stepPrimCon dc xsArgs store
+
+    ------ Alloction of Ints ----------------------------------------
+        | Just _        <- takeIntDC dc
+        , [xR, xUnit']  <- xsArgs
+
         -- unpack the args
-        | XType tR      <- xR
+        , XType tR      <- xR
         , Just rgn      <- takeHandleT tR
-        , isUnitOrLocX xUnit
+        , isUnitOrLocX xUnit'
 
         -- the store must contain the region we're going to allocate into.
         , Store.hasRgn store rgn
@@ -50,13 +55,15 @@ stepPrimCon dc@(DaConAlgebraic (NameInt _) _) [xR, xUnit] store
                                 (tInt tR) (SObj dc []) store
 
         = Just  ( store1
-                , XCon () (DaConSolid (NameLoc l) (tInt tR)))
+                , xLoc l (tInt tR))
 
 
--- Handle Pair specially until we have general data types.
-stepPrimCon dc@(DaConAlgebraic (NamePrimCon PrimDaConPr) _) [xR, xA, xB, x1, x2] store
+    ------ Handle Pair specially until we have general data types --
+        | Just (NamePrimCon PrimDaConPr) <- takeNameOfDaCon dc
+        , [xR, xA, xB, x1, x2]           <- xsArgs
+        
         -- unpack the args
-        | XType tR      <- xR
+        , XType tR      <- xR
         , Just rgn      <- takeHandleT tR
         , XType tA      <- xA
         , XType tB      <- xB
@@ -71,16 +78,18 @@ stepPrimCon dc@(DaConAlgebraic (NamePrimCon PrimDaConPr) _) [xR, xA, xB, x1, x2]
                                 (tPair tR tA tB) (SObj dc [l1, l2]) store
 
         = Just  ( store1
-                , XCon () (DaConSolid (NameLoc l) (tPair tR tA tB)))
+                , xLoc l (tPair tR tA tB))
 
 
--- Handle Nil and Cons specially until we have general data types.
-stepPrimCon dc@(DaConAlgebraic (NamePrimCon PrimDaConNil) _) [xR, xA, xUnit] store
+    ---- Handle Nil and Cons specially until we have general data types.
+        | Just (NamePrimCon PrimDaConNil) <- takeNameOfDaCon dc
+        , [xR, xA, xUnit']                <- xsArgs
+
         -- unpack the args
-        | XType tR      <- xR
+        , XType tR      <- xR
         , Just rgn      <- takeHandleT tR
         , XType tA      <- xA
-        , isUnitOrLocX xUnit
+        , isUnitOrLocX xUnit'
 
         -- the store must contain the region we're going to allocate into.
         , Store.hasRgn store rgn
@@ -88,14 +97,15 @@ stepPrimCon dc@(DaConAlgebraic (NamePrimCon PrimDaConNil) _) [xR, xA, xUnit] sto
         -- add the binding to the store
         , (store1, l)   <- Store.allocBind rgn
                                 (tList tR tA) (SObj dc []) store
-
         = Just  ( store1
-                , XCon () (DaConSolid (NameLoc l) (tList tR tA)))
+                , xLoc l (tList tR tA))
 
 
-stepPrimCon dc@(DaConAlgebraic (NamePrimCon PrimDaConCons) _) [xR, xA, xHead, xTail] store
+        | Just (NamePrimCon PrimDaConCons) <- takeNameOfDaCon dc
+        , [xR, xA, xHead, xTail]           <- xsArgs
+
         -- unpack the args
-        | XType tR      <- xR
+        , XType tR      <- xR
         , Just rgn      <- takeHandleT tR
         , XType tA      <- xA
         , Just lHead    <- takeLocX xHead
@@ -109,7 +119,7 @@ stepPrimCon dc@(DaConAlgebraic (NamePrimCon PrimDaConCons) _) [xR, xA, xHead, xT
                                 (tList tR tA) (SObj dc [lHead, lTail]) store
 
         = Just  ( store1
-                , XCon () (DaConSolid (NameLoc l) (tList tR tA)))
+                , xLoc l (tList tR tA))
 
 stepPrimCon _ _ _
         = Nothing
@@ -142,11 +152,11 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
         , Just l2       <- stripLocX xL2
 
         -- get the regions and values of each location
-        , Just (r1', _, SObj (DaConAlgebraic (NameInt i1) tIntCon) [])  
-                <- Store.lookupRegionTypeBind l1 store
+        , Just (r1', _, SObj dc1 [])    <- Store.lookupRegionTypeBind l1 store
+        , Just i1                       <- takeIntDC dc1
 
-        , Just (r2', _, SObj (DaConAlgebraic (NameInt i2) _)       [])
-                <- Store.lookupRegionTypeBind l2 store
+        , Just (r2', _, SObj dc2 [])    <- Store.lookupRegionTypeBind l2 store
+        , Just i2                       <- takeIntDC dc2
         
         -- the locations must be in the regions the args said they were in
         , r1' == r1
@@ -160,11 +170,11 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xR3, xL1, xL2] store
         
         -- write the result to a new location in the store
         , (store1, l3)  <- Store.allocBind r3 (tInt tR3) 
-                                (SObj (DaConAlgebraic (NameInt i3) tIntCon) []) 
+                                (SObj (dcInt i3) []) 
                                 store
 
         = Just  ( store1
-                , XCon () (DaConSolid (NameLoc l3) (tInt tR3)))
+                , xLoc l3 (tInt tR3))
 
 
 -- Update integer primop.
@@ -180,21 +190,20 @@ stepPrimOp (NamePrimOp PrimOpUpdateInt) [xR1, xR2, xMutR1, xL1, xL2] store
         , r1W == r1
 
         -- get the regions and values of each location
-        , Just (r1L, tX1, SObj dc1 [])       <- Store.lookupRegionTypeBind l1 store
-        , DaConAlgebraic (NameInt _) tIntCon <- dc1
+        , Just (r1L, tX1, SObj dc1 [])  <- Store.lookupRegionTypeBind l1 store
+        , Just _i1                      <- takeIntDC dc1
 
         , Just (r2L, _,   SObj dc2 [])  <- Store.lookupRegionTypeBind l2 store
-        , Just (NameInt i2)             <- takeNameOfDaCon dc2
+        , Just i2                       <- takeIntDC dc2
 
         -- the locations must be in the regions the args said they were in
         , r1L == r1
         , r2L == r2
 
         -- update the destination
-        , dc'           <- DaConAlgebraic (NameInt i2) tIntCon
-        , store1        <- Store.addBind l1 r1 tX1 (SObj dc' []) store
+        , store1        <- Store.addBind l1 r1 tX1 (SObj (dcInt i2) []) store
         = Just  ( store1
-                , XCon () DaConUnit)
+                , xUnit)
 
 -- Unary integer operations
 stepPrimOp (NamePrimOp op) [xR1, xR2, xL1] store
@@ -208,8 +217,8 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xL1] store
         , Just l1       <- stripLocX    xL1
 
         -- get the region and value of the int
-        , Just (r1L, _, SObj dc1  [])           <- Store.lookupRegionTypeBind l1 store
-        , DaConAlgebraic (NameInt i1) tIntCon   <- dc1
+        , Just (r1L, _, SObj dc1  [])   <- Store.lookupRegionTypeBind l1 store
+        , Just i1                       <- takeIntDC dc1
 
         -- the locations must be in the regions the args said they were in
         , r1L == r1
@@ -218,14 +227,13 @@ stepPrimOp (NamePrimOp op) [xR1, xR2, xL1] store
         , Store.hasRgn store r2
 
 	-- calculate
-	, i2 <- fOp i1
+	, i2           <- fOp i1
 
         -- write the result to a new location in the store
-        , dc'           <- DaConAlgebraic (NameInt i2) tIntCon
-        , (store1, l2)  <- Store.allocBind r2 (tInt tR2) (SObj dc' []) store
+        , (store1, l2)  <- Store.allocBind r2 (tInt tR2) (SObj (dcInt i2) []) store
 
         = Just  ( store1
-                , XCon () (DaConSolid (NameLoc l2) (tInt tR2)))
+                , xLoc l2 (tInt tR2))
 
 stepPrimOp _ _ _
         = Nothing

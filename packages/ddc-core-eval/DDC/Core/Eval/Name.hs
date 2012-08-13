@@ -86,31 +86,31 @@ data Cap
         --   deallocated in a stack like manner. This lets us hide the use of
         --   such regions, and rely on the garbage collector to reclaim the
         --   space.
-        = CapGlobal   -- global   :: [r: %]. Global r
+        = CapGlobal   -- Global#   :: [r: %]. Global r
 
         -- | Witness that a region is constant.
         --   This lets us purify read and allocation effects on it,
         --   and prevents it from being Mutable.
-        | CapConst    -- const    :: [r: %]. Const r
+        | CapConst    -- Const#    :: [r: %]. Const r
         
         -- | Witness that a region is mutable.
         --   This lets us update objects in the region, 
         --   and prevents it from being Constant.
-        | CapMutable  -- mutable  :: [r: %]. Mutable r
+        | CapMutable  -- Mutable#  :: [r: %]. Mutable r
 
         -- | Witness that some regions are distinct
         --   This lets us perform aliasing based optimisations.
-        | CapDistinct -- distinct :: [r1 r2 : %]. Distinct r1 r2
+        | CapDistinct -- Distinct# :: [r1 r2 : %]. Distinct r1 r2
              
         -- | Witness that a region is lazy.
         --   This lets is allocate thunks into the region,
         --   and prevents it from being Manifest.
-        | CapLazy     -- lazy     :: [r: %].Lazy r
+        | CapLazy     -- Lazy#     :: [r: %].Lazy r
         
         -- | Witness that a region is manifest.
         --   This ensures there are no thunks in the region,
         --   which prevents it from being Lazy.
-        | CapManifest -- manifest :: [r: %]. Manifest r
+        | CapManifest -- Manifest# :: [r: %]. Manifest r
         deriving (Eq, Ord, Show)
 
 

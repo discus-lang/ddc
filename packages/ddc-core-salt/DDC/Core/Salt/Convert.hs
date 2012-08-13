@@ -301,7 +301,8 @@ convRValueM xx
          -> return $ text $ sanitizeName str
 
         -- Literals
-        XCon _ (DaConAlgebraic n _)
+        XCon _ dc
+         | DaConNamed n         <- daConName dc
          -> case n of
                 NameNat  i      -> return $ integer i
                 NameInt  i      -> return $ integer i

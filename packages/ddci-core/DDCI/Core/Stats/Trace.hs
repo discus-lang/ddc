@@ -78,5 +78,5 @@ expOfSBind sbind
 
 -- | Convert a store location to a constructor expression.
 expOfLoc :: Loc -> Exp () Name
-expOfLoc l = XCon () (DaConSolid (NameLoc l) (tBot kData))
+expOfLoc l = XCon () (mkDaConSolid (NameLoc l) (tBot kData))
 
