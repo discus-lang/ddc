@@ -1,0 +1,24 @@
+-- Global regions aren't deallocated as we leave the scope of the 
+-- letregion that created it.
+When checking expression.
+  Type cannot apply non-constructor witness
+                of type: Empty (Use r1)
+    to argument of type: Const r1
+  
+  with: use [r1] w0 w1
+
+
+-- Error: Region variable is not in scope (wrong level)
+When checking expression.
+  Undefined spec variable: e
+
+
+-- Error: Region variable has wrong kind.
+When checking expression.
+  Withregion handle does not have region kind.
+     Region var or ctor: e
+               has kind: !
+         but it must be: %
+  
+  with: withregion e in
+        ()

@@ -1,4 +1,4 @@
- -- Global regions aren't deallocated as we leave the scope of the 
+-- Global regions aren't deallocated as we leave the scope of the 
 -- letregion that created it.
 :eval..
 let f = letregion r1 with {w0 : Global r1; w1 : Const r1} in
@@ -7,3 +7,11 @@ let f = letregion r1 with {w0 : Global r1; w1 : Const r1} in
         purify <read [r1] w1 & alloc [r1] w1> in
         addInt [:r1 R0# R0#:] (2 [r1] ()) (3 [R0#] ())
 in  f ();;
+
+
+-- Error: Region variable is not in scope (wrong level)
+:check (\(e:!). withregion e in ()) 
+
+
+-- Error: Region variable has wrong kind.
+:check (/\(e:!). withregion e in ()) 

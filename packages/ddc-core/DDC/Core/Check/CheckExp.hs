@@ -420,9 +420,12 @@ checkExpM' config kenv tenv xx@(XLet a (LWithRegion u) x)
  = do
         -- The handle must have region kind.
         (case Env.lookup u kenv of
-          Nothing -> error $ "checkExpM': region handle not in env " ++ show u  --- TODO: real error message
-          Just k  -> when (not $ isRegionKind k)
-                      $ throw $ ErrorWithRegionNotRegion xx u k)
+          Nothing -> throw $ ErrorUndefinedVar u UniverseSpec
+
+          Just k  |  not $ isRegionKind k
+                  -> throw $ ErrorWithRegionNotRegion xx u k
+
+          _       -> return ())
         
         -- Check the body expression.
         (xBody', tBody, effs, clo) 
