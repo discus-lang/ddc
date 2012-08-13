@@ -65,7 +65,6 @@ instance SpreadX (Exp a) where
         XWitness w      -> XWitness (down w)
 
 
--- TODO: flip non-algebaric constructors to DaConSolid
 instance SpreadX DaCon where
  spreadX _kenv tenv dc
   = case daConName dc of
@@ -77,7 +76,7 @@ instance SpreadX DaCon where
 
             in  case Env.lookup u tenv of
                  Just t' -> dc { daConType = t' }
-                 Nothing -> error "spreadX: data constructor is not in type environment."
+                 Nothing -> dc -- error $ "spreadX: data constructor is not in type environment."
 
 
 instance SpreadX Cast where

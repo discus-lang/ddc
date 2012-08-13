@@ -351,6 +351,8 @@ pPat
  , do   nLit    <- pLit
         return  $ PData (UName nLit) []
 
+        -- Unit
+
         -- CON BIND BIND ...
  , do   nCon    <- pCon 
         bs      <- P.many pBindPat

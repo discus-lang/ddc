@@ -147,7 +147,7 @@ checkExpM' _config _kenv tenv (XVar a u)
 
 
 -- constructors ---------------------------------
-checkExpM' _config _kenv _tenv _xx@(XCon a dc)
+checkExpM' _config _kenv _tenv xx@(XCon a dc)
  = do   
         -- TODO: Check that algebraic constructors have data type declarations.
         --       The following code doesn't work because literal constructors
@@ -165,6 +165,11 @@ checkExpM' _config _kenv _tenv _xx@(XCon a dc)
         --         _       -> return ()
 
         --   | otherwise   -> return ())
+
+        -- All data constructors need to have valid type annotations.
+        when (isBot $ daConType dc)
+         $ throw $ ErrorUndefinedCtor xx
+        
 
         let tResult     = typeOfDaCon dc
 

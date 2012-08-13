@@ -109,10 +109,14 @@ When checking expression.
 
 
 -- Type constructor used as a data constructor.
-When checking expression.
-  Undefined data constructor: Unit
+While parsing.
+  Parse error in "<batch>" (line 1, column 1)
+  Unexpected constructor "Unit".
+  Expected an expression.
 
 
 -- Data constructor used as a type constructor.
-When checking type.
-  Undefined type constructor:  ()
+While parsing.
+  Parse error in "<batch>" (line 1, column 1)
+  Unexpected constructor "()".
+  Expected a type.
