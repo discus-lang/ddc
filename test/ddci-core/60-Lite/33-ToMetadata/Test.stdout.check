@@ -1,0 +1,37 @@
+
+ok
+ok
+ok
+
+%s.Obj = type <{i64}>
+@DDC.Runtime.heapTop = external global  i64
+declare external ccc i64 @malloc(i64 ) align 8
+declare external ccc void @abort() align 8
+declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
+declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
+declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
+declare external ccc i32 @getTag(%s.Obj* ) align 8
+declare external ccc i64 @payloadOfRawSmall(%s.Obj* ) align 8
+declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
+
+define external ccc i64 @foo(%s.Obj*  %w1) align 8  
+{
+l1.entry:
+        ret i64 42
+}
+
+define external ccc i64 @bar() align 8  
+{
+l3.entry:
+        %x0          = call %s.Obj* @allocBoxed (i32 0, i64 0) 
+        %_v4         = call i64 @foo (%s.Obj* %x0) 
+        ret i64 %_v4
+}
+
+
+
+!9 = metadata !{metadata !"9", null, i11}
+!8 = metadata !{metadata !"8", !9, i11}
+!7 = metadata !{metadata !"7", null, i11}
+!5 = metadata !{metadata !"5", !7, i10}
+!6 = metadata !{metadata !"6", !7, i10}

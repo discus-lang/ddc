@@ -19,7 +19,9 @@ module DDC.Type.Predicates
 
           -- * Data Types
         , isAlgDataType
-	, isWitnessType)
+	      , isWitnessType
+	      , isConstWitType
+	      , isDistinctWitType)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -133,3 +135,18 @@ isWitnessType tt
  = case takeTyConApps tt of
 	Just (TyConWitness _, _) -> True
 	_			 -> False
+	
+
+isConstWitType :: Eq n => Type n -> Bool
+isConstWitType tt
+ = case takeTyConApps tt of
+        Just (TyConWitness TwConConst, _) -> True
+        _                                 -> False
+        
+        
+isDistinctWitType :: Eq n => Type n -> Bool
+isDistinctWitType tt
+ = case takeTyConApps tt of
+        Just (TyConWitness TwConDistinct, _) -> True
+        _                                    -> False
+	

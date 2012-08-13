@@ -11,6 +11,7 @@ import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Erase
+import DDC.Core.Llvm.Convert.Derive
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
@@ -74,12 +75,15 @@ convModuleM mm@(C.ModuleCore{})
 
         functions       <- mapM (uncurry (convSuperM kenv tenv)) bxs
 
+        metadataWithEnv <- deriveMetadataM kenv tenv mm
+
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
                 , modGlobals    = rtsGlobals
                 , modFwdDecls   = primDecls platform ++ importDecls
-                , modFuncs      = functions }
+                , modFuncs      = functions
+                , modMetadata   = metadata metadataWithEnv }
 
  | otherwise    = die "invalid module"
 
@@ -162,7 +166,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
         -- Build the function.
         return  $ Function
                 { funDecl               = decl
-                , funParams             = map nameOfParam bsParamValue
+                , funParams             = map nameOfParam $ filter (not . isBNone) bsParamValue
                 , funAttrs              = [] 
                 , funSection            = SectionAuto
                 , funBlocks             = Seq.toList blocks }
