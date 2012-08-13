@@ -52,7 +52,6 @@ instance (Pretty n, Eq n) => Pretty (Bound n) where
         UName n        -> ppr n
         UPrim n _      -> ppr n
         UIx i          -> text "^" <> ppr i
-        UHole{}        -> text "_"
 
 
 -- Type -----------------------------------------------------------------------

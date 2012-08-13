@@ -40,7 +40,6 @@ instance Rename Bound where
         UIx i           -> UIx i
         UName n         -> UName (f n)
         UPrim n _       -> UName (f n)                  -- TODO: why rewrite to UName?
-        UHole t         -> UHole (rename f t)
 
 
 instance Rename TyCon where

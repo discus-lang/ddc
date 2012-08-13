@@ -52,9 +52,6 @@ getArity (named, anon) u
         -- Lookup arities of named things from the stack.
         UName n         -> Map.lookup n named
 
-        -- A hole has no expression, so no arity.
-        UHole{}         -> Nothing
-
         -- Get a primitive's arity from its type.
         -- The arities of primitives always match their types, so this is ok.
         UPrim _ t       -> arityFromType t

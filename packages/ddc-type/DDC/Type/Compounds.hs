@@ -137,7 +137,6 @@ takeNameOfBound uu
         UName n         -> Just n
         UPrim n _       -> Just n
         UIx{}           -> Nothing
-        UHole{}         -> Nothing
 
 
 -- | Check whether a bound maches a bind.

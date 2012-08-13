@@ -180,8 +180,6 @@ instance SpreadX Bound where
                  else UName n
 
         UPrim n _       -> UPrim n t'
-        UHole{}         -> uu
-
 
   | otherwise   = uu        
 

@@ -57,15 +57,6 @@ data Bound n
         -- | Named primitive that has its type attached to it.
         --   The types of primitives must be closed.
         | UPrim n (Type n)
-
-        -- | A hole in the expression.          -- TODO: ditch this.
-        --                                      --       clients should use a different name type
-        --                                      --       if they need a hole.
-        --
-        --   In the type or witness unifers this is something we need to infer.
-        --   In the data universe, inspecting the hole is a run-time error.
-        --   It its not equal to other `Bound`, hole or otherwise.
-        | UHole (Type n)
         deriving Show
 
 

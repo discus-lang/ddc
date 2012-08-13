@@ -118,8 +118,6 @@ containsRegion r env
     go (UPrim _ _) _
 	= False
 
-    go (UHole _) _
-	= False
 
 -- | check if witness map contains given type
 -- tries each set, lowering c by -1 after each failure

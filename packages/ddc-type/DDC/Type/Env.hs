@@ -127,7 +127,6 @@ lookup uu env
 
         UIx i           -> P.lookup i (zip [0..] (envStack env))
         UPrim n _       -> envPrimFun env n
-        UHole{}         -> Nothing
 
 
 -- | Lookup a bound name from an environment.

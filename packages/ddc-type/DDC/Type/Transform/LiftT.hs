@@ -41,10 +41,10 @@ instance LiftT Bound where
   = case uu of
         UName{}         -> uu
         UPrim{}         -> uu
-        UHole{}         -> uu
         UIx i 
          | d <= i       -> UIx (i + n)
          | otherwise    -> uu
+
 
 instance LiftT Type where
  liftAtDepthT n d tt

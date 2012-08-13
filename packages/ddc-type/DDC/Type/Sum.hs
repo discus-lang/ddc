@@ -63,7 +63,6 @@ elem t ts@TypeSumSet{}
         TVar (UName n)   -> Map.member n (typeSumBoundNamed ts)
         TVar (UIx   i)   -> Map.member i (typeSumBoundAnon  ts)
         TVar (UPrim n _) -> Map.member n (typeSumBoundNamed ts)
-        TVar  UHole{}    -> False
         TCon{}           -> L.elem t (typeSumSpill ts)
 
         -- Foralls can't be a part of well-kinded sums.
@@ -102,7 +101,6 @@ insert t ts@TypeSumSet{}
         TVar (UName n)  -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
         TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.insert i k (typeSumBoundAnon  ts) }
         TVar (UPrim n _)-> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
-        TVar UHole{}    -> ts { typeSumSpill      = t : typeSumSpill ts }
         TCon{}          -> ts { typeSumSpill      = t : typeSumSpill ts }
 
         -- Foralls can't be part of well-kinded sums.
@@ -130,7 +128,6 @@ delete t ts@TypeSumSet{}
         TVar (UName n)  -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
         TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.delete i (typeSumBoundAnon  ts) }
         TVar (UPrim n _)-> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
-        TVar{}          -> ts
         TCon{}          -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
         TForall{}       -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
         
@@ -329,8 +326,6 @@ instance Ord n => Ord (Bound n) where
  compare UName{}        UIx{}           = GT
  compare UName{}        UPrim{}         = LT
  compare UPrim{}        _               = GT
- compare UHole{}        _               = LT
- compare _              UHole{}         = GT
 
 
 instance Eq n => Eq (TypeSumVarCon n) where

@@ -181,7 +181,6 @@ convertU uu
         UIx i           -> liftM  UIx   (return i)
         UName n         -> liftM  UName (convertBoundNameM n)
         UPrim n t       -> liftM2 UPrim (convertBoundNameM n) (convertPrimT t)
-        UHole t         -> liftM  UHole (convertPrimT t)
 
 
 convertBindNameM :: L.Name -> ConvertM a O.Name

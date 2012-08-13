@@ -52,7 +52,6 @@ instance SpreadT Bound where
   = case uu of
         UIx{}           -> uu
         UPrim{}         -> uu
-        UHole{}         -> uu
 
         UName n
          -> case Env.envPrimFun kenv n of
