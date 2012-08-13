@@ -1,0 +1,21 @@
+module Module
+exports {
+    box :: Int R0# -> Int R0#;
+    unbox :: Int R0# -> Int R0#;
+
+    box_ :: [r : %]. Int r -> Int r;
+    unbox_ :: [r : %]. Int r -> Int r;
+} with letrec
+
+box (x : Int R0#) : Int R0#
+    = x
+
+unbox (x : Int R0#) : Int R0#
+    = x
+
+
+box_ [r : %] (x : Int r) : Int r
+    = x
+
+unbox_ [r : %] (x : Int r) : Int r
+    = x

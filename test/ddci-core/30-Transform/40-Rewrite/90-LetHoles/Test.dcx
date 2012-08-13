@@ -1,0 +1,79 @@
+:set Indent
+
+:with test/ddci-core/30-Transform/40-Rewrite/90-LetHoles/Module.dce
+
+-- don't look past lets normally
+:set.. rule unbox_box (s : Int R0#).
+    unbox (box s)
+    = s
+;;
+:set trans Rewrite
+
+-- don't rewrite non-locals
+:trans..
+let x = box (5 [R0#] ())	in
+let y = unbox x			in
+let z = unbox x			in
+    unbox (box (addInt [:R0# R0# R0#:] y z))
+;;
+
+-- the {{ }} brackets indicate that the argument is cheap enough to be split across places
+:set.. rule unbox_box (s : Int R0#).
+    unbox {box s}
+    = s
+;;
+:set trans Rewrite
+
+-- rewrite y and z
+:trans..
+let x = box (5 [R0#] ())	in
+let y = unbox x			in
+let z = unbox x			in
+    addInt [:R0# R0# R0#:] y z
+;;
+
+-- shadowing, don't rewrite
+:trans..
+let x = box (5 [R0#] ())	in
+let x = 2 [R0#] ()		in
+    unbox x
+;;
+
+-- some de bruijns. do rewrite
+:trans..
+let ^ = box (5 [R0#] ())	in
+let ^ = 2 [R0#] ()		in
+let b = unbox ^1		in
+let ^ = 3 [R0#] ()		in
+let c = unbox ^2		in
+    ()
+;;
+
+
+-- now with a Const contraint and regions
+:set.. rule unbox_box [r : %] (s : Int r).
+    Const r =>
+    unbox_ [r] {box_ [r] s}
+    = s
+;;
+:set trans Rewrite
+
+-- don't do it: not const
+:trans..
+unbox_ [R0#] (box_ [R0#] (5 [R0#] ()))
+;;
+
+-- do it: const
+:trans..
+letregion r with {w : Const r}		in
+let x = unbox_ [r] (box_ [r] (5 [r] ()))	in
+    ()
+;;
+
+-- separated
+:trans..
+letregion r with {w : Const r}	in
+let x = box_ [r] (5 [r] ())	in
+let y = unbox_ [r] x		in
+    ()
+;;
