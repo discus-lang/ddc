@@ -27,7 +27,7 @@ pRule
 	pTok KEquals
 	rhs	 <- pExp
 
-	return $ R.mkRewriteRule (trace (show bs) bs) cs lhs hole rhs
+	return $ R.mkRewriteRule bs cs lhs hole rhs
 
 pRuleBinders :: Ord n => Parser n [(R.BindMode,Bind n)]
 pRuleBinders
