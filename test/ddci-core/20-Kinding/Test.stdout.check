@@ -55,5 +55,7 @@ When checking type.
 
 
 -- #242 Error: Undefined type constructor ().
-When checking type.
-  Undefined type constructor:  ()
+While parsing.
+  Parse error in "<batch>" (line 32, column 10)
+  Unexpected constructor "()".
+  Expected a type.

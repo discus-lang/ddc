@@ -35,7 +35,6 @@ import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Check         as T
 import qualified Data.Set               as Set
-import qualified Data.Map               as Map
 import Control.Monad
 import Data.List                        as L
 import Data.Maybe
@@ -148,18 +147,24 @@ checkExpM' _config _kenv tenv (XVar a u)
 
 
 -- constructors ---------------------------------
-checkExpM' config _kenv _tenv xx@(XCon a dc)
+checkExpM' _config _kenv _tenv _xx@(XCon a dc)
  = do   
-        -- Check that algebraic constructors have data type declarations.
-        (case daConName dc of
-          DaConUnit      -> return ()
-          DaConNamed n
-           | daConIsAlgebraic dc
-           -> case Map.lookup n (dataDefsCtors $ configDataDefs config) of
-                 Nothing -> throw $ ErrorUndefinedCtor xx
-                 _       -> return ()
+        -- TODO: Check that algebraic constructors have data type declarations.
+        --       The following code doesn't work because literal constructors
+        --       like '23' are not in the type environment. We need to use their
+        --       attached types to lookup the data type declaration.
 
-           | otherwise   -> return ())
+        -- TODO: Check that constructors have non-bot type annotations.
+
+        --(case daConName dc of
+        --  DaConUnit      -> return ()
+        --  DaConNamed n
+        --   | daConIsAlgebraic dc
+        --   -> case Map.lookup n (dataDefsCtors $ configDataDefs config) of
+        --         Nothing -> throw $ ErrorUndefinedCtor xx
+        --         _       -> return ()
+
+        --   | otherwise   -> return ())
 
         let tResult     = typeOfDaCon dc
 

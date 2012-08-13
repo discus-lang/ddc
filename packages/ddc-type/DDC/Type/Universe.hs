@@ -95,18 +95,19 @@ universeFromType1 kenv tt
  = case tt of
         TVar n
          -> case Env.lookup n kenv of
-                Nothing           -> Nothing
-                Just k            -> universeFromType2 k
+                Nothing            -> Nothing
+                Just k             -> universeFromType2 k
 
-        TCon (TyConSort _)        -> Just UniverseKind
-        TCon (TyConKind _)        -> Just UniverseSpec
-        TCon (TyConWitness _)     -> Just UniverseWitness
-        TCon (TyConSpec TcConFun) -> Just UniverseData
-        TCon (TyConSpec _)        -> Nothing
-        TCon (TyConBound _ k)     -> universeFromType2 k
-        TForall b t2              -> universeFromType1 (Env.extend b kenv) t2
-        TApp t1 _                 -> universeFromType1 kenv t1
-        TSum _                    -> Nothing
+        TCon (TyConSort _)         -> Just UniverseKind
+        TCon (TyConKind _)         -> Just UniverseSpec
+        TCon (TyConWitness _)      -> Just UniverseWitness
+        TCon (TyConSpec TcConFun)  -> Just UniverseData
+        TCon (TyConSpec TcConUnit) -> Just UniverseData
+        TCon (TyConSpec _)         -> Nothing
+        TCon (TyConBound _ k)      -> universeFromType2 k
+        TForall b t2               -> universeFromType1 (Env.extend b kenv) t2
+        TApp t1 _                  -> universeFromType1 kenv t1
+        TSum _                     -> Nothing
 
 
 -- | Yield the universe of some type.
