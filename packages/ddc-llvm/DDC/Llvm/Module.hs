@@ -12,6 +12,7 @@ module DDC.Llvm.Module
 where
 import DDC.Llvm.Function
 import DDC.Llvm.Exp
+import DDC.Llvm.Metadata
 import DDC.Base.Pretty
 
 
@@ -33,12 +34,15 @@ data Module
 
           -- | Functions defined in this module.
         , modFuncs     :: [Function]
+        
+          -- | Metdata for alias analysis
+        , modMetadata  :: [Metadata]
         }
 
 
 -- | Print out a whole LLVM module.
 instance Pretty Module where
- ppr (Module _comments aliases globals decls funcs)
+ ppr (Module _comments aliases globals decls funcs metas)
   =    (vcat $ map ppr aliases)
   <$$> (vcat    $ map ppr globals)
   <$$> (vcat    $ map (\decl ->  text "declare" 
@@ -47,6 +51,8 @@ instance Pretty Module where
   <$$> (vcat    $ punctuate line 
                 $ map ppr funcs)
   <$$> line
+  <$$> empty
+  <$$> (vcat     $ map ppr metas)
 
 
 -- Global ---------------------------------------------------------------------
