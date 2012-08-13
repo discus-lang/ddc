@@ -15,6 +15,7 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
 import DDC.Type.Env                     (Env)
+import DDC.Type.Predicates
 import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
 import Control.Monad

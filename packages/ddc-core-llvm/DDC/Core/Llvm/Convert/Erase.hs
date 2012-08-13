@@ -1,7 +1,8 @@
 
 module DDC.Core.Llvm.Convert.Erase
         ( eraseTypeWitArgs
-        , eraseXLAMs)
+        , eraseXLAMs
+        , eraseWitTApps )
 where
 import DDC.Core.Exp
 import DDC.Core.Transform.TransformX
@@ -25,3 +26,9 @@ eraseXLAMs
                  XLAM _ _ x'    -> x'
                  _              -> x
 
+
+eraseWitTApps :: Type n -> Type n
+eraseWitTApps tt
+ = case tt of
+        TApp (TApp (TCon (TyConWitness _)) _) t -> eraseWitTApps t
+        _                                       -> tt

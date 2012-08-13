@@ -24,6 +24,7 @@ import DDC.Llvm.Attr
 import DDC.Llvm.Type
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
+import DDC.Core.Llvm.Convert.Erase
 import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
@@ -95,19 +96,20 @@ convSuperType
         -> ([Type], Type)
 
 convSuperType pp kenv tt
- = case tt of
-        C.TApp{}
-         |  (tsArgs, tResult)    <- takeTFunArgResult tt
-         ,  not $ null tsArgs
-         -> let tsArgs'  = map (convType pp kenv) tsArgs
-                tResult' = convType pp kenv tResult
-            in  (tsArgs', tResult')
+ = let tt' = eraseWitTApps tt
+   in  case tt' of
+            C.TApp{}
+             |  (tsArgs, tResult)    <- takeTFunArgResult tt'
+             ,  not $ null tsArgs
+             -> let tsArgs'  = map (convType pp kenv) tsArgs
+                    tResult' = convType pp kenv tResult
+                in  (tsArgs', tResult')
 
-        C.TForall b t
-         -> let kenv' = Env.extend b kenv
-            in  convSuperType pp kenv' t
+            C.TForall b t
+             -> let kenv' = Env.extend b kenv
+                in  convSuperType pp kenv' t
 
-        _ -> die ("Invalid super type" ++ show tt)
+            _ -> die ("Invalid super type" ++ show tt')
 
 
 -- Imports --------------------------------------------------------------------
