@@ -61,8 +61,7 @@ rewrite rules x0
 		    -- lift e by (length bas)
 		    e'	       = L.liftX (length bas') e
 		    -- SAVE in wit env
-		    ws'	       = RE.insertDef b def'
-		               $ foldl (flip RE.extendLets) ws lets'
+		    ws'	       = foldl (flip RE.extendLets) ws lets'
 		in  X.makeXLets a lets' $ down e ws'
 	    _ -> XLet a l (down e (RE.extendLets l ws))
 

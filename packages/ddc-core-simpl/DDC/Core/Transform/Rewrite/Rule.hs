@@ -94,6 +94,8 @@ checkRewriteRule
 checkRewriteRule config kenv tenv
     (RewriteRule bs cs lhs hole rhs _ _)
  = do	let (kenv',tenv') = extendBinds bs kenv tenv
+        -- spread binders: otherwise types aren't quite correct
+	-- TODO should be building up kenv as going
 	let bs' = map (\(bm,b) -> (bm, S.spreadT kenv' b)) bs
 	let cs' = map (S.spreadT kenv') cs
 	mapM_ (\c -> checkTy config kenv' c ErrorBadConstraint) cs'
@@ -107,7 +109,7 @@ checkRewriteRule config kenv tenv
 	         Nothing -> return Nothing
 
 	-- TODO annotation?
-	-- TODO "holes": only variables mentioned in hole can be mentioned in RHS.
+	-- TODO "holes": only variables mentioned in hole can be mentioned in RHS?
 	let lhs_full = maybe lhs
 		       (XApp undefined lhs)
 		       hole

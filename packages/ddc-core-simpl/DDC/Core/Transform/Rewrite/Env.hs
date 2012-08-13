@@ -77,8 +77,13 @@ extendLets (LLetRegion b cs) (env@RewriteEnv{letregions = rs})
     extend' (r:rs') = (b:r) : rs'
     extend' []	   = [[b]]
 
-extendLets (LLet _ b _) env
- =  liftValue b env
+extendLets (LLet _ b def) env
+ =  insertDef b def' (liftValue b env)
+ where
+   def' = case b of
+	  BAnon{} -> L.liftX 1 def
+	  _	  -> def
+ -- =  liftValue b $ insertDef b def env
 
 extendLets (LRec bs) env
  = foldl (flip liftValue) env (map fst bs)
