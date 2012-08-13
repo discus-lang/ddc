@@ -299,14 +299,24 @@ pExp0
         t       <- pExp
         pTok KRoundKet
         return  $ t
-        
-        -- Named constructors
- , do   con     <- pCon
-        return  $ XCon () (UName con) 
+ 
+        -- The unit data constructor.       
+ , do   pTok KDaConUnit
+        return  $ XCon () daConUnit
 
-        -- Literals
+        -- Named algebraic constructors.
+        --  We just fill-in the type with tBot for now, and leave it to 
+        --  the spreader to attach the real type.
+ , do   con     <- pCon
+        return  $ XCon () (mkDaConAlg con (T.tBot T.kData))
+
+        -- Literals.
+        --  We just fill-in the type with tBot for now, and leave it to
+        --  the spreader to attach the real type.
+        --  We also set the literal as being algebraic, which may not be
+        --  true (as for Floats). The spreader also needs to fix this.
  , do   lit     <- pLit
-        return  $ XCon () (UName lit)
+        return  $ XCon () (mkDaConAlg lit (T.tBot T.kData))
 
         -- Debruijn indices
  , do   i       <- pIndex

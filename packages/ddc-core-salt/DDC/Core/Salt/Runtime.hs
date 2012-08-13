@@ -96,7 +96,9 @@ utGetTag
 xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocBoxed a tR tag x2
  = makeXApps a (XVar a $ fst utAllocBoxed)
-        [XType tR, XCon a (UPrim (NameTag tag) tTag), x2]
+        [ XType tR
+        , XCon a (DaConAlgebraic (NameTag tag) tTag)
+        , x2]
 
 utAllocBoxed :: (Bound Name, Type Name)
 utAllocBoxed
@@ -116,7 +118,8 @@ xGetFieldOfBoxed
 xGetFieldOfBoxed a trPrime tField x2 offset
  = makeXApps a (XVar a $ fst utGetFieldOfBoxed) 
         [ XType trPrime, XType tField
-        , x2, XCon a (UPrim (NameNat offset) tNat)]
+        , x2
+        , xNat a offset ]
 
 utGetFieldOfBoxed :: (Bound Name, Type Name)
 utGetFieldOfBoxed 
@@ -138,7 +141,9 @@ xSetFieldOfBoxed
 xSetFieldOfBoxed a trPrime tField x2 offset val
  = makeXApps a (XVar a $ fst utSetFieldOfBoxed) 
         [ XType trPrime, XType tField
-        , x2, XCon a (UPrim (NameNat offset) tNat), val]
+        , x2
+        , xNat a offset
+        , val]
 
 utSetFieldOfBoxed :: (Bound Name, Type Name)
 utSetFieldOfBoxed 
@@ -155,7 +160,9 @@ utSetFieldOfBoxed
 xAllocRawSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocRawSmall a tR tag x2
  = makeXApps a (XVar a $ fst utAllocRawSmall)
-        [XType tR, XCon a (UPrim (NameTag tag) tTag), x2]
+        [ XType tR
+        , xTag a tag
+        , x2]
 
 utAllocRawSmall :: (Bound Name, Type Name)
 utAllocRawSmall
@@ -180,7 +187,7 @@ utPayloadOfRawSmall
 xCreate :: a -> Integer -> Exp a Name
 xCreate a bytes
         = XApp a (XVar a uCreate) 
-                 (XCon a (UPrim (NameNat bytes) tNat))
+                 (xNat  a bytes) 
 
 uCreate :: Bound Name
 uCreate = UPrim (NamePrim $ PrimStore $ PrimStoreCreate)
@@ -193,7 +200,7 @@ xRead a tField xAddr offset
         = XApp a (XApp a (XApp a (XVar a uRead) 
                                (XType tField))
                           xAddr)
-                 (XCon a (UPrim (NameNat offset) tNat))
+                 (xNat a offset)
 
 uRead   :: Bound Name
 uRead   = UPrim (NamePrim $ PrimStore $ PrimStoreRead)
@@ -206,7 +213,7 @@ xWrite a tField xAddr offset xVal
         = XApp a (XApp a (XApp a (XApp a (XVar a uWrite) 
                                          (XType tField))
                                   xAddr)
-                          (XCon a (UPrim (NameNat offset) tNat)))
+                          (xNat a offset))
                   xVal
 
 uWrite   :: Bound Name

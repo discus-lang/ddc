@@ -59,7 +59,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
  pprPrec d xx
   = case xx of
         XVar  _ u       -> ppr u
-        XCon  _ tc      -> ppr tc
+        XCon  _ dc      -> ppr dc
         
         XLAM{}
          -> let Just (bs, xBody) = takeXLAMs xx
@@ -127,6 +127,14 @@ pprPatBind b
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
  ppr (AAlt p x)
   = ppr p <+> nest 1 (line <> nest 3 (text "->" <+> ppr x))
+
+
+-- DaCon ----------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (DaCon n) where
+ ppr dc
+  = case daConName dc of
+        DaConUnit               -> text "()"
+        DaConNamed n            -> ppr n
 
 
 -- Cast -----------------------------------------------------------------------

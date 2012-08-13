@@ -148,34 +148,23 @@ checkExpM' _config _kenv tenv (XVar a u)
 
 
 -- constructors ---------------------------------
-checkExpM' config _kenv _tenv xx@(XCon a u)
- = do   let mkResult
-                -- Constructors can't be locally bound
-                | UIx{}         <- u
-                = throw $ ErrorMalformedExp xx
+checkExpM' config _kenv _tenv xx@(XCon a dc)
+ = do   
+        -- Check that algebraic constructors have data type declarations.
+        (case daConName dc of
+          DaConUnit      -> return ()
+          DaConNamed n
+           | daConIsAlgebraic dc
+           -> case Map.lookup n (dataDefsCtors $ configDataDefs config) of
+                 Nothing -> throw $ ErrorUndefinedCtor xx
+                 _       -> return ()
 
-                | UHole{}       <- u
-                = throw $ ErrorMalformedExp xx
+           | otherwise   -> return ())
 
-                -- Named constructors must be in the defs set.
-                | UName  n      <- u
-                , Nothing       <- Map.lookup n (dataDefsCtors $ configDataDefs config)
-                = throw $ ErrorUndefinedCtor xx
-
-                -- Prim constructors don't need to be in the environment.
-                -- This is used for location constructor like L1# in the evaluator.
-                | UPrim _ tBound <- u
-                , not $ isBot tBound
-                = return tBound
-
-                -- Constructors can't be locally bound.
-                | otherwise
-                = throw $ ErrorMalformedExp xx
-
-        tResult <- mkResult
+        let tResult     = typeOfDaCon dc
 
         returnX a
-                (\z -> XCon z u)
+                (\z -> XCon z dc)
                 tResult
                 (Sum.empty kEffect)
                 (Set.empty)

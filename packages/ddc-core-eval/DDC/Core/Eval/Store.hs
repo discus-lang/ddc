@@ -28,7 +28,7 @@ module DDC.Core.Eval.Store
 where
 import DDC.Core.Exp
 import DDC.Core.Eval.Name
-import DDC.Core.Eval.Compounds
+import DDC.Type.Compounds
 import Control.Monad
 import DDC.Core.Pretty          hiding (empty)
 import Data.Map                 (Map)
@@ -64,7 +64,7 @@ data Store
 data SBind 
         -- | An algebraic data constructor.
         = SObj
-        { sbindDataTag          :: Name
+        { sbindDataTag          :: DaCon Name
         , sbindDataArgs         :: [Loc] }
 
         -- | Lambda abstraction, used for recursive bindings.
@@ -132,7 +132,7 @@ initial = Store
 
         , storeBinds    
            = Map.fromList 
-                [ (Loc 0, (Rgn 0, tUnit, SObj (NamePrimCon PrimDaConUnit) []))]
+                [ (Loc 0, (Rgn 0, tUnit, SObj DaConUnit []))]
         }
 
 -- | Location of the static unit object.
@@ -145,9 +145,13 @@ locUnit = Loc 0
 isUnitOrLocX :: Exp a Name -> Bool
 isUnitOrLocX xx
  = case xx of
-        XCon _  (UPrim (NamePrimCon PrimDaConUnit) _)   -> True
-        XCon _  (UPrim (NameLoc l) _)                   -> l == locUnit
-        _                                               -> False
+        XCon _  DaConUnit
+          -> True
+
+        XCon _  (DaConSolid (NameLoc l) _)
+          -> l == locUnit
+
+        _ -> False
 
 
 -- Locations ------------------------------------------------------------------

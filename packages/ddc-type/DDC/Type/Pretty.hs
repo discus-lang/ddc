@@ -167,6 +167,7 @@ instance Pretty TwCon where
 instance Pretty TcCon where
  ppr tc 
   = case tc of
+        TcConUnit       -> text "Unit"
         TcConFun        -> text "(->)"
         TcConRead       -> text "Read"
         TcConHeadRead   -> text "HeadRead"

@@ -58,7 +58,8 @@ force   :: Store        -- ^ Current store.
 
 force store xx
         | (casts, xx')                  <- unwrapCasts xx
-        , XCon _ (UPrim (NameLoc l) _)  <- xx'
+        , XCon _ dc                     <- xx'
+        , Just (NameLoc l)              <- takeNameOfDaCon dc
         , Just (rgn, t, SThunk x)       <- lookupRegionTypeBind l store
         = case force store x of
                 StepProgress store' x'
@@ -99,27 +100,28 @@ step store xx
                 xp 
    of   Left err -> StepStuckMistyped err
         Right t   
-         -> let Just (bs, xBody)  = takeXLamFlags xp
-                (store', l)       = allocBind (Rgn 0) t (SLams bs xBody) store
-            in  StepProgress store' (wrapCasts casts $ XCon () (UPrim (NameLoc l) t))
+         -> let Just (bs, xBody) = takeXLamFlags xp
+                (store', l)      = allocBind (Rgn 0) t (SLams bs xBody) store
+                x'               = XCon () (DaConSolid (NameLoc l) t)
+            in  StepProgress store' (wrapCasts casts x')
 
 
 -- (EvAlloc)
 -- Construct some data in the heap.
 step store xx
-        | Just (u, xs)  <- takeXConApps xx
-        , case u of
+        | Just (dc, xs)  <- takeXConApps xx
+        , case takeNameOfDaCon dc of
             -- Unit constructors are not allocated into the store.
-            UPrim NamePrimCon{} _               -> True
-            UPrim NameInt{}     _               -> True
-            UPrim NameCon{}     _               -> True
-            _                                   -> False
+            Just NamePrimCon{}  -> True
+            Just NameInt{}      -> True
+            Just NameCon{}      -> True
+            _                   -> False
 
-        , UPrim n _     <- u
-        , Just arity    <- arityOfName n
+        , Just n                <- takeNameOfDaCon dc
+        , Just arity            <- arityOfName n
         , length xs == arity
         , and $ map (isWeakValue store) xs
-        , Just (store', x')     <- stepPrimCon n xs store
+        , Just (store', x')     <- stepPrimCon dc xs store
         = StepProgress store' x'
 
 
@@ -268,7 +270,7 @@ step store (XLet _ (LLet (LetLazy _w) b x1) x2)
         Left err -> StepStuckMistyped err
         Right t1
          -> let (store1, l)   = allocBind (Rgn 0) t1 (SThunk x1) store
-                x1'           = XCon () (UPrim (NameLoc l) t1)
+                x1'           = XCon () (DaConSolid (NameLoc l) t1)
             in  StepProgress store1 (substituteXX b x1' x2)
 
 
@@ -280,11 +282,10 @@ step store (XLet _ (LRec bxs) x2)
 
         -- Allocate new locations in the store to hold the expressions.
         (store1, ls)  = newLocs (length bs) store
-        xls           = [XCon () (UPrim (NameLoc l) t) | (l, t) <- zip ls ts]
+        xls           = [XCon () (DaConSolid (NameLoc l) t) | (l, t) <- zip ls ts]
 
         -- Substitute locations into all the bindings.
         xs'      = map (substituteXXs (zip bs xls)) xs
-
 
         -- Create store objects for each of the bindings.
         mos      = map (\x -> case takeXLamFlags x of
@@ -383,7 +384,8 @@ step store (XCase a xDiscrim alts)
     StepDone
      | (casts, xDiscrim')       <- unwrapCasts xDiscrim
      , Just lDiscrim            <- takeLocX xDiscrim'
-     , Just (SObj nTag lsArgs)  <- lookupBind lDiscrim store
+     , Just (SObj dc lsArgs)    <- lookupBind lDiscrim store
+     , Just nTag                <- takeNameOfDaCon dc
      , Just tsArgs              <- sequence $ map (\l -> lookupTypeOfLoc l store) lsArgs
      , AAlt pat xBody : _       <- filter (tagMatchesAlt nTag) alts
      -> case pat of
@@ -391,7 +393,7 @@ step store (XCase a xDiscrim alts)
             -> StepProgress store xBody
 
            PData _ bsArgs      
-            | bxsArgs   <- [ (b, wrapCasts casts (XCon a (UPrim (NameLoc l) t)))
+            | bxsArgs   <- [ (b, wrapCasts casts (XCon a (DaConSolid (NameLoc l) t)))
                                 | l     <- lsArgs
                                 | t     <- tsArgs
                                 | b     <- bsArgs]
@@ -487,7 +489,7 @@ isSomeValue weak store xx
  = case xx of
          XVar{}         -> True
 
-         XCon _ (UPrim (NameLoc l) _)
+         XCon _ (DaConSolid (NameLoc l) _)
           | Just SThunk{}       <- lookupBind l store
           -> weak
 
@@ -513,23 +515,23 @@ isSomeValue weak store xx
          XApp _ x1 x2
 
           -- Application if a primop to enough args is not wnf.
-          | Just (n, xs)     <- takeXPrimApps xx
+          | Just (n, xs)        <- takeXPrimApps xx
           , and $ map (isSomeValue weak store) xs
-          , Just a           <- arityOfName n
+          , Just a              <- arityOfName n
           , length xs >= a
           -> False
 
           -- Application of a lambda in the store is not wnf.
-          | Just (u, _xs)    <- takeXConApps xx
-          , UPrim (NameLoc l) _ <- u
-          , Just SLams{}     <- lookupBind l store
+          | Just (dc, _xs)      <- takeXConApps xx
+          , Just (NameLoc l)    <- takeNameOfDaCon dc
+          , Just SLams{}        <- lookupBind l store
           -> False
 
           -- Application of a data constructor to enough args is not wnf.
-          | Just (u, xs)     <- takeXConApps xx
+          | Just (dc, xs)       <- takeXConApps xx
           , and $ map (isSomeValue weak store) xs
-          , UPrim n _        <- u
-          , Just a           <- arityOfName n
+          , Just n              <- takeNameOfDaCon dc
+          , Just a              <- arityOfName n
           , length xs >= a   
           -> False
 

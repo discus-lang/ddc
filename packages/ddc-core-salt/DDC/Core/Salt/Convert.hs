@@ -301,24 +301,18 @@ convRValueM xx
          -> return $ text $ sanitizeName str
 
         -- Literals
-        XCon _ (UPrim (NameNat n) _)
-         -> return $ integer n
+        XCon _ (DaConAlgebraic n _)
+         -> case n of
+                NameNat  i      -> return $ integer i
+                NameInt  i      -> return $ integer i
+                NameWord i _    -> return $ integer i
+                NameTag  i      -> return $ integer i
+                NameVoid        -> return $ text "void"
+                _               -> throw $ ErrorRValueInvalid xx
 
-        XCon _ (UPrim (NameInt n) _)    
-         -> return $ integer n
-
-        XCon _ (UPrim (NameWord n _) _)    
-         -> return $ integer n
-
-        XCon _ (UPrim (NameTag n) _)    
-         -> return $ integer n
-         
-        XCon _ (UPrim (NameVoid) _)
-         -> return $ text "void"
-         
         -- Primop application.
         XApp{}
-         |  Just (NamePrim p, args)           <- takeXPrimApps xx
+         |  Just (NamePrim p, args)        <- takeXPrimApps xx
          -> convPrimCallM p args
 
         -- Super application.
@@ -326,6 +320,7 @@ convRValueM xx
          |  Just (XVar _ (UName n), args)  <- takeXApps xx
          ,  NameVar nTop <- n
          -> do  let nTop' = sanitizeName nTop
+
                 -- Ditch region and witness arguments
                 let args_val = filter (and . ap [not . isXType, not . isXWitness] . return) args
                 args_val'    <- mapM convRValueM args_val

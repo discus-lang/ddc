@@ -300,17 +300,11 @@ convertSimpleX pp defs kenv tenv xx
          -> throw $ ErrorMalformed 
          $ "convertRValueX: XWithess should not appear as the right of a let-binding"
 
-        -- Primitive data constructors.
+        -- Data constructors.
         XApp a xa xb
          | (x1, xsArgs)           <- takeXApps' xa xb
-         , XCon _ (UPrim nCtor _) <- x1
-         -> downCtorAppX a nCtor xsArgs
-
-        -- User-defined data constructors.
-        XApp a xa xb
-         | (x1, xsArgs)           <- takeXApps' xa xb
-         , XCon _ (UName nCtor)   <- x1
-         -> downCtorAppX a nCtor xsArgs
+         , XCon _ dc <- x1
+         -> downCtorAppX a dc xsArgs
 
         -- Primitive operations.
         XApp a xa xb
@@ -357,15 +351,9 @@ convertAtomX pp defs kenv tenv xx
          -> do  u'  <- convertU u
                 return $ XVar (annotTail a) u'
 
-        XCon a u
-         -> case u of
-                UName nCtor     -> convertCtorAppX pp defs kenv tenv a nCtor []
-                UPrim nCtor _   -> convertCtorAppX pp defs kenv tenv a nCtor []
-                _               -> throw $ ErrorInvalidBound u
+        XCon a dc       -> convertCtorAppX pp defs kenv tenv a dc []
 
-
-        XCast _ _ x
-         -> convertAtomX pp defs kenv tenv x
+        XCast _ _ x     -> convertAtomX    pp defs kenv tenv x
 
         -- Pass region parameters, as well data data type parameters to primops.
         XType t
@@ -417,37 +405,33 @@ convertCtorAppX
         -> Env L.Name           -- ^ Kind environment.
         -> Env L.Name           -- ^ Type environment.
         -> AnTEC a L.Name       -- ^ Annotation from deconstructed application node.
-        -> L.Name
+        -> DaCon L.Name         -- ^ Data constructor being applied.
         -> [Exp (AnTEC a L.Name) L.Name]
         -> ConvertM a (Exp a S.Name)
 
-convertCtorAppX pp defs kenv tenv a@(AnTEC t _ _ _) nCtor xsArgs
+convertCtorAppX pp defs kenv tenv (AnTEC _ _ _ a) dc xsArgs
 
         -- Pass through unboxed literals.
-        | L.NameBool b         <- nCtor
-        , []                   <- xsArgs
-        = do    t'             <- convertT kenv t
-                return $ XCon (annotTail a) (UPrim (S.NameBool b) t')
+        | Just (L.NameBool b)   <- takeNameOfDaCon dc
+        , []                    <- xsArgs
+        = return $ S.xBool a b
 
-        | L.NameNat i          <- nCtor
-        , []                   <- xsArgs
-        = do    t'             <- convertT kenv t
-                return $ XCon (annotTail a) (UPrim (S.NameNat i) t')
+        | Just (L.NameNat i)    <- takeNameOfDaCon dc
+        , []                    <- xsArgs
+        = return $ S.xNat  a i
 
-        | L.NameInt i          <- nCtor
-        , []                   <- xsArgs
-        = do    t'             <- convertT kenv t
-                return $ XCon (annotTail a) (UPrim (S.NameInt i) t')
+        | Just (L.NameInt i)    <- takeNameOfDaCon dc
+        , []                    <- xsArgs
+        = return $ S.xInt  a i
 
-        | L.NameWord i bits    <- nCtor
-        , []                   <- xsArgs
-        = do    t'             <- convertT kenv t
-                return $ XCon (annotTail a) (UPrim (S.NameWord i bits) t')
-
+        | Just (L.NameWord i bits) <- takeNameOfDaCon dc
+        , []                       <- xsArgs
+        = return $ S.xWord a i bits
 
         -- Construct algbraic data that has a finite number of data constructors.
-        | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
-        , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
+        | Just nCtor            <- takeNameOfDaCon dc
+        , Just ctorDef          <- Map.lookup nCtor $ dataDefsCtors defs
+        , Just dataDef          <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
         = do    
                 -- Get the prime region variable that holds the outermost constructor.
                 --   For types like Unit, there is no prime region, so put them in the 
@@ -475,7 +459,7 @@ convertCtorAppX pp defs kenv tenv a@(AnTEC t _ _ _) nCtor xsArgs
 
                 xsArgs'         <- mapM (convertAtomX pp defs kenv tenv) xsArgs
                 tsArgs'         <- mapM makeFieldType xsArgs
-                constructData pp kenv tenv (annotTail a)
+                constructData pp kenv tenv a
                                 dataDef ctorDef
                                 rPrime xsArgs' tsArgs'
 
@@ -558,26 +542,20 @@ convertCtor
         -> Env L.Name           -- ^ Kind environment.
         -> Env L.Name           -- ^ Type environment.
         -> a                    -- ^ Annotation to attach to exp nodes.
-        -> Bound L.Name         -- ^ Bound of data constructor.
+        -> DaCon L.Name         -- ^ Data constructor to convert.
         -> ConvertM a (Exp a S.Name)
 
-convertCtor pp defs kenv tenv a uu
- = case uu of
+convertCtor pp defs kenv tenv a dc
+ | Just n      <- takeNameOfDaCon dc
+ = case n of
         -- Literal values.
-        UPrim (L.NameBool v) _   
-          -> return $ XCon a (UPrim (S.NameBool v) S.tBool)
-
-        UPrim (L.NameNat i) _   
-          -> return $ XCon a (UPrim (S.NameNat i) S.tNat)
-
-        UPrim (L.NameInt i) _   
-          -> return $ XCon a (UPrim (S.NameInt i) S.tInt)
-
-        UPrim (L.NameWord i bits) _   
-          -> return $ XCon a (UPrim (S.NameWord i bits) (S.tWord bits))
+        L.NameBool v            -> return $ S.xBool a v
+        L.NameNat  i            -> return $ S.xNat  a i
+        L.NameInt  i            -> return $ S.xInt  a i
+        L.NameWord i bits       -> return $ S.xWord a i bits
 
         -- A Zero-arity data constructor.
-        UPrim nCtor _
+        nCtor
          | Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          , Just dataDef         <- Map.lookup (dataCtorTypeName ctorDef) $ dataDefsTypes defs
          -> do  -- Put zero-arity data constructors in the top-level region.
@@ -586,3 +564,5 @@ convertCtor pp defs kenv tenv a uu
 
         _ -> throw $ ErrorMalformed "convertCtor: invalid constructor"
 
+ | otherwise
+ = throw $ ErrorMalformed "convertCtor: invalid constructor"

@@ -2,9 +2,11 @@
 -- | Abstract syntax for the Disciple core language.
 module DDC.Core.Exp 
         ( module DDC.Type.Exp
+        , module DDC.Core.DaCon
 
           -- * Computation expressions
         , Exp     (..)
+        , DaCon   (..)
         , Cast    (..)
         , Lets    (..)
         , LetMode (..)
@@ -16,6 +18,7 @@ module DDC.Core.Exp
         , WiCon   (..)
         , WbCon   (..))
 where
+import DDC.Core.DaCon
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
 
@@ -31,7 +34,7 @@ data Exp a n
         = XVar  a  (Bound n)
 
         -- | Data constructor or literal.
-        | XCon  a  (Bound n)
+        | XCon  a  (DaCon n)
 
         -- | Type abstraction (level-1).
         | XLAM  a  (Bind n)   (Exp a n)
@@ -58,6 +61,7 @@ data Exp a n
         | XWitness (Witness n)
         deriving (Eq, Show)
 
+deriving instance Eq n => Eq (DaCon n)
 
 -- | Type casts.
 data Cast n

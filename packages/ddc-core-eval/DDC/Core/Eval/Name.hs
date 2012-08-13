@@ -129,13 +129,11 @@ instance Pretty Cap where
 -- | A primitive constructor.
 data PrimCon
         -- Type constructors
-        = PrimTyConUnit         -- ^ Unit type constructor (@Unit@).
-        | PrimTyConInt          -- ^ @Int@  type constructor.
+        = PrimTyConInt          -- ^ @Int@  type constructor.
         | PrimTyConPair         -- ^ @Pair@ type constructor.
         | PrimTyConList         -- ^ @List@ type constructor.
 
         -- Implement lists as primitives until we have data decls working
-        | PrimDaConUnit         -- ^ Unit data constructor (@()@).
         | PrimDaConPr           -- ^ @P@ data construct (pairs).
         | PrimDaConNil          -- ^ @Nil@ data constructor.
         | PrimDaConCons         -- ^ @Cons@ data constructor.
@@ -144,12 +142,10 @@ data PrimCon
 instance Pretty PrimCon where
  ppr con
   = case con of
-        PrimTyConUnit   -> text "Unit"
         PrimTyConInt    -> text "Int"
         PrimTyConPair   -> text "Pair"
         PrimTyConList   -> text "List"
 
-        PrimDaConUnit   -> text "()"
         PrimDaConPr     -> text "Pr"
         PrimDaConNil    -> text "Nil"
         PrimDaConCons   -> text "Cons"
@@ -199,10 +195,6 @@ readName str@(c:rest)
                 "updateInt"     -> Just $ NamePrimOp PrimOpUpdateInt
                 "copyInt"	-> Just $ NamePrimOp PrimOpCopyInt
                 _               -> Just $ NameVar str
-
-        -- units
-        | str == "Unit"         = Just $ NamePrimCon PrimTyConUnit
-        | str == "()"           = Just $ NamePrimCon PrimDaConUnit
 
         -- integers
         | str == "Int"          = Just $ NamePrimCon PrimTyConInt

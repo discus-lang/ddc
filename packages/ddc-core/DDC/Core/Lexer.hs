@@ -79,7 +79,7 @@ lexString sourceName lineStart str
 
 
         -- The unit data constructor
-        '(' : ')' : w'   -> tokN (KCon "()")     : lexMore 2 w'
+        '(' : ')' : w'   -> tokA KDaConUnit      : lexMore 2 w'
 
         -- Compound Parens
         '['  : ':' : w'  -> tokA KSquareColonBra : lexMore 2 w'

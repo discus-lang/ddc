@@ -3,8 +3,7 @@
 --   expressions.
 module DDC.Core.Eval.Compounds
         ( -- * Types
-          tUnit
-        , tInt
+          tInt
         , tPair
         , tList 
 
@@ -33,13 +32,6 @@ import DDC.Core.Compounds (wApps)
 
 
 -- Type -----------------------------------------------------------------------
--- | Application of the Unit type constructor.
-tUnit :: Type Name
-tUnit   
- = TCon tcUnit
- where  tcUnit  = TyConBound (UPrim (NamePrimCon PrimTyConUnit) kData) kData
-
-
 -- | Application of the Int type constructor.
 tInt :: Region Name -> Type Name
 tInt r1 
@@ -114,8 +106,8 @@ wcManifest      = WiConBound (UPrim (NameCap CapManifest) t) t
 isCapConW :: Witness Name -> Bool
 isCapConW ww
  = case ww of
-        WCon WiConBound{}     -> True
-        _                     -> False
+        WCon WiConBound{}       -> True
+        _                       -> False
 
 
 
@@ -124,8 +116,8 @@ isCapConW ww
 isUnitX :: Exp a Name -> Bool
 isUnitX xx
  = case xx of
-        XCon _   (UPrim (NamePrimCon PrimDaConUnit) _)  -> True
-        _                                               -> False
+        XCon _  DaConUnit       -> True
+        _                       -> False
 
 
 -- | Take a region handle from a type.
@@ -153,7 +145,7 @@ takeLocX xx
         XCast _ (CastForget _) x
          -> takeLocX x
 
-        XCon _ (UPrim (NameLoc l) _)
+        XCon _  (DaConSolid (NameLoc l) _)
                 -> Just l
         _       -> Nothing
 
@@ -165,7 +157,7 @@ stripLocX xx
         XCast _ (CastForget _) x
           -> stripLocX x
 
-        XCon _ (UPrim (NameLoc l) _) 
+        XCon _  (DaConSolid (NameLoc l) _)
           -> Just l
 
         _ -> Nothing

@@ -80,6 +80,7 @@ readTwConBuiltin ss
 readTcConBuiltin :: String -> Maybe TcCon
 readTcConBuiltin ss
  = case ss of
+        "Unit"          -> Just TcConUnit
         "Read"          -> Just TcConRead
         "HeadRead"      -> Just TcConHeadRead
         "DeepRead"      -> Just TcConDeepRead

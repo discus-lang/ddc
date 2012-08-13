@@ -28,9 +28,10 @@ traceStoreX store entered xx
    in  case xx of
         XVar{}  -> xx
 
-        XCon _ (UPrim n@(NameLoc l) _)
-         | not $ Set.member n entered
-         , Just sbind   <- lookupBind l store
+        XCon _ dc
+         | Just n@(NameLoc l)     <- takeNameOfDaCon dc
+         , not $ Set.member n entered
+         , Just sbind           <- lookupBind l store
          -> traceStoreX store (Set.insert n entered) (expOfSBind sbind)
 
         XCon{}          -> xx
@@ -65,8 +66,8 @@ traceStoreA store entered (AAlt p x)
 expOfSBind :: SBind -> Exp () Name
 expOfSBind sbind
  = case sbind of
-        SObj nTag lsArgs
-         -> makeXApps () (expOfTag nTag) (map expOfLoc lsArgs)
+        SObj dcTag lsArgs
+         -> makeXApps () (XCon () dcTag) (map expOfLoc lsArgs)
 
         SLams fbs x
          -> makeXLamFlags () fbs x
@@ -75,12 +76,7 @@ expOfSBind sbind
          -> x
 
 
--- | Convert a data constructor tag to a constructor expression.
-expOfTag :: Name -> Exp () Name
-expOfTag n = XCon () (UName n)
-
-
 -- | Convert a store location to a constructor expression.
 expOfLoc :: Loc -> Exp () Name
-expOfLoc l = XCon () (UPrim (NameLoc l) (tBot kData))
+expOfLoc l = XCon () (DaConSolid (NameLoc l) (tBot kData))
 

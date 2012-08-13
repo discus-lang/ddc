@@ -253,9 +253,11 @@ data TwCon
 -- | Other constructors at the spec level.
 data TcCon
         -- Data type constructors ---------------
-        -- | The function type constructor is baked in so we 
-        --   represent it separately.
-        = TcConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
+        -- | The unit data type constructor is baked in.
+        = TcConUnit             -- 'Unit :: *'
+
+        -- | The function type constructor is baked in.
+        | TcConFun              -- '(->) :: * ~> * ~> ! ~> $ ~> *'
 
         -- Effect type constructors -------------
         -- | Read of some region.

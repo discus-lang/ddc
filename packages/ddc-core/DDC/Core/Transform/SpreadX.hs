@@ -65,14 +65,37 @@ instance SpreadX (Exp a) where
         XWitness w      -> XWitness (down w)
 
 
+-- TODO: flip non-algebaric constructors to DaConSolid
+instance SpreadX DaCon where
+ spreadX _kenv tenv da
+  = case da of
+        DaConUnit       -> DaConUnit
+
+        DaConSolid n t
+         -> let u | Env.isPrim tenv n   = UPrim n t
+                  | otherwise           = UName n
+
+            in  case Env.lookup u tenv of
+                 Just t' -> DaConSolid n t'
+                 Nothing -> error "spreadX: data constructor is not in type environment."
+
+        DaConAlgebraic n t
+         -> let u | Env.isPrim tenv n   = UPrim n t
+                  | otherwise           = UName n
+
+            in case Env.lookup u tenv of
+                Just t' -> DaConAlgebraic n t'
+                Nothing -> error  "spreadX: data constructor is not in type environment."
+
+
 instance SpreadX Cast where
  spreadX kenv tenv cc
   = let down = spreadX kenv tenv 
     in case cc of
-        CastWeakenEffect eff  -> CastWeakenEffect  (spreadT kenv eff)
-        CastWeakenClosure clo -> CastWeakenClosure (spreadT kenv clo)
-        CastPurify w          -> CastPurify        (down w)
-        CastForget w          -> CastForget        (down w)
+        CastWeakenEffect eff    -> CastWeakenEffect  (spreadT kenv eff)
+        CastWeakenClosure clo   -> CastWeakenClosure (spreadT kenv clo)
+        CastPurify w            -> CastPurify        (down w)
+        CastForget w            -> CastForget        (down w)
 
 
 instance SpreadX Pat where

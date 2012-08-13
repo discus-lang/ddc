@@ -29,6 +29,9 @@ module DDC.Type.Compounds
         , tBot
         , tSum
 
+          -- * The unit data type.
+        , tUnit
+
           -- * Function type construction
         , kFun
         , kFuns,        takeKFun
@@ -293,6 +296,11 @@ eraseTForalls tt
 tSum :: Ord n => Kind n -> [Type n] -> Type n
 tSum k ts
         = TSum (Sum.fromList k ts)
+
+
+-- Unit -----------------------------------------------------------------------
+tUnit :: Type n
+tUnit           = TCon (TyConSpec TcConUnit)
 
 
 -- Function Constructors ------------------------------------------------------

@@ -1,43 +1,19 @@
 
 module DDC.Core.Lite.Compounds
-        ( tBoolU
-        , tNatU, tIntU
+        ( tBoolU, tBool
+        , tNatU,  tNat, dcNatU, xNatU
+        , tIntU,  tInt
         , tWordU
-
-        , tUnit
-        , tBool
-        , tNat,  tInt
         , tPair
         , tList)
 where
 import DDC.Core.Lite.Name
 import DDC.Core.Salt.Name.Prim
-import DDC.Type.Exp
+import DDC.Core.Exp
 import DDC.Type.Compounds
 
 
--- Type -----------------------------------------------------------------------
-tBoolU :: Type Name
-tBoolU  = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData) kData)
-
-
-tNatU ::  Type Name
-tNatU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat) kData) kData)
-
-
-tIntU ::  Type Name
-tIntU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
-
-
-tWordU :: Int -> Type Name
-tWordU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
-
-
--- | Application of the Unit type constructor.
-tUnit :: Type Name
-tUnit   = TCon $ TyConBound (UPrim (NameDataTyCon DataTyConUnit) kData) kData
-
-
+-- Bools ----------------------------------------------------------------------
 -- | Application of the Bool type constructor.
 tBool  :: Region Name -> Type Name
 tBool r1 
@@ -45,12 +21,38 @@ tBool r1
  where  tcBool  = TyConBound (UPrim (NameDataTyCon DataTyConBool) kBool) kBool
         kBool   = kFun kRegion kData
 
+
+tBoolU :: Type Name
+tBoolU  = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData) kData)
+
+
+-- Nats -----------------------------------------------------------------------
+-- | The Nat# type constructor.
+tNatU ::  Type Name
+tNatU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat) kData) kData)
+
+
+-- | A Literal Nat# data constructor.
+dcNatU :: Integer -> DaCon Name
+dcNatU i = DaConAlgebraic (NameNat i) tNatU
+
+
+-- | A literal Nat#
+xNatU  :: a -> Integer -> Exp a Name
+xNatU a i = XCon a (dcNatU i)
+
+
 -- | Application of the Nat type constructor.
 tNat :: Region Name -> Type Name
 tNat r1 
  = TApp (TCon tcNat) r1
  where  tcNat   = TyConBound (UPrim (NameDataTyCon DataTyConNat) kNat) kNat
         kNat    = kFun kRegion kData
+
+
+-- Ints -----------------------------------------------------------------------
+tIntU ::  Type Name
+tIntU   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
 
 
 -- | Application of the Int type constructor.
@@ -61,6 +63,12 @@ tInt r1
         kInt    = kFun kRegion kData
 
 
+-- Words ----------------------------------------------------------------------
+tWordU :: Int -> Type Name
+tWordU bits = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
+
+
+-- Pairs ----------------------------------------------------------------------
 -- | Application of the Pair type constructor.
 tPair :: Region Name -> Type Name -> Type Name -> Type Name
 tPair tR tA tB
@@ -69,6 +77,7 @@ tPair tR tA tB
         kPair   = kFuns [kRegion, kData, kData] kData
 
 
+-- Lists ----------------------------------------------------------------------
 -- | Application of the List type constructor.
 tList :: Region Name -> Type Name -> Type Name
 tList tR tA

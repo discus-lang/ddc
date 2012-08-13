@@ -20,6 +20,7 @@ import qualified DDC.Core.Salt.Name      as O
 import qualified DDC.Core.Salt.Compounds as O
 import Data.Maybe
 
+
 -- Construct ------------------------------------------------------------------
 -- | Build an expression that allocates and initialises a data constructor.
 --   object.
@@ -50,7 +51,7 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         let arity       = length tsFields
         let bObject     = BAnon (O.tPtr rPrime O.tObj)
         let xAlloc      = O.xAllocBoxed a rPrime (dataCtorTag ctorDef)
-                        $ XCon a (UPrim (O.NameNat (fromIntegral arity)) O.tNat)
+                        $ O.xNat a (fromIntegral arity)
 
         -- Statements to write each of the fields.
         let xObject'    = XVar a $ UIx 0
@@ -72,7 +73,7 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         -- Allocate the object.
         let bObject     = BAnon (O.tPtr rPrime O.tObj)
         let xAlloc      = O.xAllocRawSmall a rPrime (dataCtorTag ctorDef)
-                        $ XCon a (UPrim (O.NameNat size) O.tNat)
+                        $ O.xNat a size
 
         -- Take a pointer to its payload.
         let bPayload    = BAnon O.tAddr

@@ -197,10 +197,10 @@ convBodyM kenv tenv blocks label instrs xx
          -- Control transfer instructions -----------------
          -- Void return applied to a literal void constructor.
          C.XApp{}
-          |  Just (A.NamePrim p, xs)             <- takeXPrimApps xx
-          ,  A.PrimControl A.PrimControlReturn   <- p
-          ,  [C.XType _, C.XCon _ (C.UPrim n _)] <- xs
-          ,  A.NameVoid                          <- n
+          |  Just (A.NamePrim p, xs)            <- takeXPrimApps xx
+          ,  A.PrimControl A.PrimControlReturn  <- p
+          ,  [C.XType _, C.XCon _ dc]           <- xs
+          ,  Just A.NameVoid                    <- takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label (instrs |> IReturn Nothing)
 
@@ -440,8 +440,8 @@ convExpM pp kenv tenv vDst (C.XVar _ u@(C.UName (A.NameVar n)))
         return  $ Seq.singleton 
                 $ ISet vDst (XVar (Var (NameLocal n') t'))
 
-convExpM pp _ _ vDst (C.XCon _ (C.UPrim name _t))
- = case name of
+convExpM pp _ _ vDst (C.XCon _ (C.DaConAlgebraic n _))
+ = case n of
         A.NameNat i
          -> return $ Seq.singleton
                    $ ISet vDst (XLit (LitInt (tNat pp) i))

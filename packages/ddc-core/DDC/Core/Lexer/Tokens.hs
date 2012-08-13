@@ -182,9 +182,17 @@ data TokAtom
         -- debruijn indices
         | KIndex Int
 
-        -- builtin names
+        -- builtin names ------------
+        --   the unit data constructor.
+        | KDaConUnit
+
+        --   witness type constructors.
         | KTwConBuiltin TwCon
+
+        --   witness constructors.
         | KWbConBuiltin WbCon
+
+        --   other builtin spec constructors.
         | KTcConBuiltin TcCon
         deriving (Eq, Show)
 
@@ -275,13 +283,14 @@ describeTokAtom' ta
         KIndex i                -> (Index,   "^" ++ show i)
 
         -- builtin names
+        KDaConUnit              -> (Constructor, "()")
         KTwConBuiltin tw        -> (Constructor, renderPlain $ ppr tw)
         KWbConBuiltin wi        -> (Constructor, renderPlain $ ppr wi)
         KTcConBuiltin tc        -> (Constructor, renderPlain $ ppr tc)
 
 
 -- TokNamed -------------------------------------------------------------------
--- | A token witn a user-defined name.
+-- | A token with a user-defined name.
 data TokNamed n
         = KCon n
         | KVar n

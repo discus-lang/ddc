@@ -27,23 +27,24 @@ mconvAtom
 
 mconvAtom pp kenv tenv xx
  = case xx of
+
+        -- Variables. Their names need to be sanitized before we write
+        -- them to LLVM, as LLVM doesn't handle all the symbolic names
+        -- that Disciple Core accepts.
         C.XVar _ u@(C.UName (A.NameVar n))
          |  Just t      <- Env.lookup u tenv
          -> let n'      = A.sanitizeName n
                 t'      = convType pp kenv t
             in  Just $ XVar (Var (NameLocal n') t')
 
-        C.XCon _ (C.UPrim (A.NameNat  nat) t)
-         -> Just $ XLit (LitInt (convType pp kenv t) nat)
-
-        C.XCon _ (C.UPrim (A.NameInt  val) t)
-         -> Just $ XLit (LitInt (convType pp kenv t) val)
-
-        C.XCon _ (C.UPrim (A.NameWord val _) t)
-         -> Just $ XLit (LitInt (convType pp kenv t) val)
-
-        C.XCon _ (C.UPrim (A.NameTag  tag) t)
-         -> Just $ XLit (LitInt (convType pp kenv t) tag)
+        -- Literals. 
+        C.XCon _ (C.DaConAlgebraic n t)
+         -> case n of
+                A.NameNat  nat   -> Just $ XLit (LitInt (convType pp kenv t) nat)
+                A.NameInt  val   -> Just $ XLit (LitInt (convType pp kenv t) val)
+                A.NameWord val _ -> Just $ XLit (LitInt (convType pp kenv t) val)
+                A.NameTag  tag   -> Just $ XLit (LitInt (convType pp kenv t) tag)
+                _                -> Nothing
 
         _ -> Nothing
 

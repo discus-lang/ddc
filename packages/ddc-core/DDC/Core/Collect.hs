@@ -49,11 +49,17 @@ instance BindStruct (Module a) where
 instance BindStruct (Exp a) where
  slurpBindTree xx
   = case xx of
-        XVar _ u        -> [BindUse BoundExpWit u]
-        XCon _ u        -> [BindCon BoundExpWit u]
-        XApp _ x1 x2    -> slurpBindTree x1 ++ slurpBindTree x2
-        XLAM _ b x      -> [bindDefT BindLAM [b] [x]]
-        XLam _ b x      -> [bindDefX BindLam [b] [x]]      
+        XVar _ u
+         -> [BindUse BoundExpWit u]
+
+        XCon _ dc
+         -> case daConName dc of
+                DaConUnit               -> []
+                DaConNamed n            -> [BindCon BoundExpWit (UName n)]
+
+        XApp _ x1 x2            -> slurpBindTree x1 ++ slurpBindTree x2
+        XLAM _ b x              -> [bindDefT BindLAM [b] [x]]
+        XLam _ b x              -> [bindDefX BindLam [b] [x]]      
 
         XLet _ (LLet m b x1) x2
          -> slurpBindTree m

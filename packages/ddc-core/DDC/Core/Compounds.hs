@@ -44,6 +44,7 @@ import DDC.Type.Compounds
 import DDC.Core.Exp
 
 
+-- Lets -----------------------------------------------------------------------
 -- | Take the binds of a `Lets`.
 bindsOfLets :: Lets a n -> [Bind n]
 bindsOfLets ll
@@ -197,10 +198,10 @@ takeXPrimApps xx
 --   and its arguments. 
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
-takeXConApps :: Exp a n -> Maybe (Bound n, [Exp a n])
+takeXConApps :: Exp a n -> Maybe (DaCon n, [Exp a n])
 takeXConApps xx
  = case takeXAppsAsList xx of
-        XCon _ u : xs   -> Just (u, xs)
+        XCon _ dc : xs  -> Just (dc, xs)
         _               -> Nothing
 
 

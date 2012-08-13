@@ -31,33 +31,27 @@ import qualified DDC.Type.Env   as Env
 --
 -- @  Type   Constructors
 --  ----   ------------
---  Unit   ()
 --  Int    0 1 2 3 ...
+--  Pair   Pr
 --  List   Nil Cons
 -- @
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
-        -- Unit
-        [ DataDef
-                (NamePrimCon PrimTyConUnit)
-                []
-                (Just [ (NamePrimCon PrimDaConUnit, []) ])
-        
-        -- Int
-        , DataDef
+        [ -- Int
+          DataDef
                 (NamePrimCon PrimTyConInt)
                 [kRegion]
                 Nothing
 
-        -- Pair
+          -- Pair
         , DataDef
                 (NamePrimCon PrimTyConPair)
                 [kRegion, kData, kData]
                 (Just   [ ( NamePrimCon PrimDaConPr
                           , [tIx kData 1, tIx kData 0]) ])
 
-        -- List
+          -- List
         , DataDef
                 (NamePrimCon PrimTyConList)
                 [kRegion, kData]
@@ -81,10 +75,6 @@ kindOfPrimName nn
  = case nn of
         NameRgn _
          -> Just $ kRegion
-
-        -- Unit
-        NamePrimCon PrimTyConUnit
-         -> Just $ kData
 
         -- Int
         NamePrimCon PrimTyConInt
@@ -123,10 +113,6 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName nn
  = case nn of
-        -- Unit
-        NamePrimCon PrimDaConUnit
-         -> Just $ tUnit 
-
         -- Pair
         NamePrimCon PrimDaConPr
          -> Just $ tForalls [kRegion, kData, kData] $ \[tR, tA, tB]
@@ -213,7 +199,6 @@ arityOfName n
         NameRgn{}                       -> Just 0
         NameInt{}                       -> Just 2
 
-        NamePrimCon PrimDaConUnit       -> Just 0        
         NamePrimCon PrimDaConPr         -> Just 5
         NamePrimCon PrimDaConNil        -> Just 3
         NamePrimCon PrimDaConCons       -> Just 4
