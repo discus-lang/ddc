@@ -3,6 +3,7 @@ module DDC.Core.Check.Error
         (Error(..))
 where
 import DDC.Core.Exp
+import DDC.Type.Universe
 import qualified DDC.Type.Check as T
 
 
@@ -33,9 +34,10 @@ data Error a n
         { errorChecking         :: Exp a n }
 
         -- Var --------------------------------------------
-        -- | An undefined variable.
+        -- | An undefined type variable.
         | ErrorUndefinedVar
-        { errorBound            :: Bound n }
+        { errorBound            :: Bound n 
+        , errorUniverse         :: Universe }
 
         -- | A bound occurrence of a variable whose type annotation does not match
         --   the corresponding annotation in the environment.

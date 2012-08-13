@@ -6,6 +6,7 @@ where
 import DDC.Core.Pretty
 import DDC.Core.Check.Error
 import DDC.Type.Compounds
+import DDC.Type.Universe
 
 
 instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
@@ -32,8 +33,20 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
                  , text "with: "                        <> align (ppr xx) ]
 
         -- Variable ---------------------------------------
-        ErrorUndefinedVar u
-         -> vcat [ text "Undefined variable: "          <> ppr u ]
+        ErrorUndefinedVar  u universe
+         -> case universe of
+             UniverseSpec
+               -> vcat [ text "Undefined spec variable: "  <> ppr u ]
+
+             UniverseData
+               -> vcat [ text "Undefined value variable: " <> ppr u ]
+
+             UniverseWitness
+               -> vcat [ text "Undefined witness variable: " <> ppr u ]
+
+             -- Universes other than the above don't have variables,
+             -- but let's not worry about that here.
+             _ -> vcat [ text "Undefined variable: "    <> ppr u ]
 
         ErrorVarAnnotMismatch u tEnv tAnnot
          -> vcat [ text "Type mismatch in annotation."

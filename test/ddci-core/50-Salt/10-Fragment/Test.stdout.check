@@ -6,7 +6,7 @@ ok
 
 -- Error: Unknown primop.
 When checking expression.
-  Undefined variable: foo#
+  Undefined value variable: foo#
 
 
 -- Error: Module does not have a top-level letrec.

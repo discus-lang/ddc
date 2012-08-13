@@ -128,7 +128,7 @@ checkExpM config kenv tenv xx
 -- variables ------------------------------------
 checkExpM' _config _kenv tenv (XVar a u)
  = case Env.lookup u tenv of
-        Nothing -> throw $ ErrorUndefinedVar u
+        Nothing -> throw $ ErrorUndefinedVar u UniverseData
         Just t  
          -> returnX a 
                 (\z -> XVar z u)

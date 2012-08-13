@@ -10,7 +10,7 @@ Clo L:  Use r
 Clo R:  $0
 
 -- Bad: doesn't typecheck
-Can't typecheck lhs:  Undefined variable: r
+Can't typecheck lhs:  Undefined value variable: r
 While checking r [r] ()
 
 

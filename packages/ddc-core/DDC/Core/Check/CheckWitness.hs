@@ -18,6 +18,7 @@ import DDC.Core.Check.ErrorMessage      ()
 import DDC.Type.DataDef
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Compounds
+import DDC.Type.Universe
 import DDC.Type.Sum                     as Sum
 import DDC.Type.Env                     (Env)
 import DDC.Type.Check.Monad             (result, throw)
@@ -93,7 +94,7 @@ checkWitnessM
 
 checkWitnessM _config _kenv tenv (WVar u)
  = case Env.lookup u tenv of
-        Nothing -> throw $ ErrorUndefinedVar u
+        Nothing -> throw $ ErrorUndefinedVar u UniverseWitness
         Just t  -> return t
 
 checkWitnessM _config _kenv _tenv (WCon wc)
