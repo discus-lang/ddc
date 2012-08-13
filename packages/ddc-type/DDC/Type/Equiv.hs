@@ -115,7 +115,8 @@ checkBounds u1 u2 x
         _               -> x
  where
   die   = error $ unlines
-        [ "DDC.Type.Equiv: Found a primitive and non-primitive bound variable with the same name."
+        [ "DDC.Type.Equiv"
+        , "  Found a primitive and non-primitive bound variable with the same name."
         , "  u1 = " ++ show u1
         , "  u2 = " ++ show u2 ]
 

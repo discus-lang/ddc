@@ -39,7 +39,7 @@ instance Rename Bound where
   = case uu of
         UIx i           -> UIx i
         UName n         -> UName (f n)
-        UPrim n _       -> UName (f n)                  -- TODO: why rewrite to UName?
+        UPrim n t       -> UPrim (f n) (rename f t)
 
 
 instance Rename TyCon where
