@@ -1,4 +1,3 @@
-
 module DDC.Core.Transform.Flatten
         ( flatten
         , flatten1)
@@ -9,6 +8,7 @@ import DDC.Core.Transform.LiftX
 import DDC.Core.Exp
 import DDC.Core.Compounds
 import Data.Functor.Identity
+
 
 -- | Flatten binding structure in a thing.
 --
@@ -25,8 +25,6 @@ flatten = transformUpX' flatten1
 
 
 -- | Flatten a single nested let-expression.
---
---
 ---
 -- TODO: make this work on lazy lets as well.
 flatten1
@@ -79,6 +77,7 @@ flatten1 (XLet a1 (LLet LetStrict b1
         x1
 
 
+
 -- Drag 'letregion' out of the top-level of a binding.
 -- @
 --    let b1 = letregion b2 in x2 in
@@ -115,7 +114,7 @@ flatten1 (XLet  a1 (LLet LetStrict b1
                          (XCase a2 x1 [AAlt p x2]))
                 x3)
  = let  levels  = length $ [b | b@(BAnon _) <- bindsOfPat p]            -- todo: refactor to 'pushX' fun
-        x3'     = liftX levels x3
+        x3'     = liftAtDepthX 1 levels x3
    in   XCase a2 x1 
            [AAlt p (XLet a1 (LLet LetStrict b1 x2)
                         (anonymizeX x3'))]
