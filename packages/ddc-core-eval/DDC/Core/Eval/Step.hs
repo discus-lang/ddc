@@ -110,16 +110,6 @@ step store xx
 -- Construct some data in the heap.
 step store xx
         | Just (dc, xs)  <- takeXConApps xx
-        , case takeNameOfDaCon dc of
-            -- Unit constructors are not allocated into the store.
-            Just NamePrimCon{}  -> True
-            Just NameInt{}      -> True
-            Just NameCon{}      -> True
-            _                   -> False
-
-        , Just n                <- takeNameOfDaCon dc
-        , Just arity            <- arityOfName n
-        , length xs == arity
         , and $ map (isWeakValue store) xs
         , Just (store', x')     <- stepPrimCon dc xs store
         = StepProgress store' x'
