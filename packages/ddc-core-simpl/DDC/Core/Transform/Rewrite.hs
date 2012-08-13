@@ -12,7 +12,7 @@ import qualified DDC.Core.Transform.AnonymizeX          as A
 import qualified DDC.Core.Transform.Rewrite.Disjoint	as RD
 import qualified DDC.Core.Transform.Rewrite.Env		as RE
 import qualified DDC.Core.Transform.Rewrite.Match	as RM
-import		 DDC.Core.Transform.Rewrite.Rule	(RewriteRule(..))
+import		 DDC.Core.Transform.Rewrite.Rule	(RewriteRule(..), BindMode(..))
 import qualified DDC.Core.Transform.SubstituteXX	as S
 import qualified DDC.Type.Transform.SubstituteT		as S
 import qualified DDC.Core.Transform.LiftX		as L
@@ -50,7 +50,9 @@ rewrite rules x0
      =	let subs = checkHoles def ws
 	in  case subs of
 	    (((sub,[]),RewriteRule bs _cs hole Nothing _rhs _e _c):_) ->
-		let (bas,bas') = lookups (map snd bs) sub
+		    -- only get value-level bindings
+		let bs'	       = map snd $ filter ((==BMType).fst) bs
+		    (_,bas')   = lookups bs' sub
 		    -- surround whole expression with anon lets from sub
 		    values     = map	 (\(b,v) ->     (BAnon (T.typeOfBind b), v)) bas'
 		    -- replace 'def' with LHS-HOLE[sub => ^n]
