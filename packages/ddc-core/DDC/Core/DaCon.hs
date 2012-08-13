@@ -4,11 +4,12 @@
 module DDC.Core.DaCon 
         ( DaCon         (..)
         , DaConName     (..)
-        , takeNameOfDaCon
-        , typeOfDaCon
+
         , dcUnit
         , mkDaConAlg
-        , mkDaConSolid)
+        , mkDaConSolid
+        , takeNameOfDaCon
+        , typeOfDaCon)
 where
 import DDC.Type.Compounds
 import DDC.Type.Exp

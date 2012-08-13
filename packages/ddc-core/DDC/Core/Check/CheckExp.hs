@@ -127,15 +127,6 @@ checkExpM config kenv tenv xx
 -}
 -- variables ------------------------------------
 checkExpM' _config _kenv tenv (XVar a u)
- | UHole _t     <- u                                    -- TODO: kill dodgy hole checker for module body.
- = let  t'       = tForall kData $ \t -> t
-   in   returnX a
-                (\z -> XVar z (UHole t'))
-                t'
-                (Sum.empty kEffect)
-                (Set.empty)
-
- | otherwise
  = case Env.lookup u tenv of
         Nothing -> throw $ ErrorUndefinedVar u
         Just t  

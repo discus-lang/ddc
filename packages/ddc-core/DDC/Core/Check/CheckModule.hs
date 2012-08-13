@@ -62,12 +62,8 @@ checkModuleM config kenv tenv mm@ModuleCore{}
 
         -- Build the compound environments.
         -- These contain primitive types as well as the imported ones.
-        let kenv'        = Env.extend (BAnon kData)
-                         $ Env.union kenv $ Env.fromList bksImport
-
-        let tDummy       = TVar (UIx 0)                                         -- TODO: why did we need this?
-        let tenv'        = Env.extend (BAnon tDummy)
-                         $ Env.union tenv $ Env.fromList btsImport
+        let kenv'        = Env.union kenv $ Env.fromList bksImport
+        let tenv'        = Env.union tenv $ Env.fromList btsImport
                 
         -- Check our let bindings (with the dummy expression on the end)
         (x', _, _effs, _) <- checkExpM config kenv' tenv' (moduleBody mm)
@@ -78,7 +74,6 @@ checkModuleM config kenv tenv mm@ModuleCore{}
 
         -- Return the checked bindings as they have explicit type annotations.
         let mm'         = mm { moduleBody = x' }
-
         return mm'
 
 

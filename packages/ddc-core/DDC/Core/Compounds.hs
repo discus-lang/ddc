@@ -12,6 +12,9 @@ module DDC.Core.Compounds
           -- * Annotations
         , takeAnnotOfExp
 
+          -- * Units
+        , xUnit
+
           -- * Lambdas
         , makeXLAMs, takeXLAMs
         , makeXLams, takeXLams
@@ -98,6 +101,11 @@ takeAnnotOfExp xx
         XCast a _ _     -> Just a
         XType{}         -> Nothing
         XWitness{}      -> Nothing
+
+
+-- Units -----------------------------------------------------------------------
+xUnit   :: a -> Exp a n
+xUnit a = XCon a dcUnit
 
 
 -- Lambdas ---------------------------------------------------------------------

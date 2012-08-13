@@ -59,9 +59,9 @@ pModule
         -- LET;+
         lts     <- P.sepBy1 pLets (pTok KIn)
 
-        -- We use this hole as a place holder, so we have
-        -- something to wrap around the let-expressions.
-        let hole = XVar () (UHole T.kData)
+        -- The body of the module consists of the top-level bindings wrapped
+        -- around a unit constructor place-holder.
+        let body = makeXLets () lts (xUnit ())
 
         -- TODO: make having duplicate names in the imports 
         --       or exports list a parse error, so we never build a bad map. 
@@ -71,7 +71,7 @@ pModule
                 , moduleExportTypes     = Map.fromList tExports
                 , moduleImportKinds     = Map.empty
                 , moduleImportTypes     = Map.fromList tImports
-                , moduleBody            = makeXLets () lts hole }
+                , moduleBody            = body }
 
 
 -- | Parse a type signature.
