@@ -21,12 +21,13 @@ import qualified DDC.Core.Transform.Rewrite.Rule as R
 -}
 pRule	:: Ord n => Parser n (R.RewriteRule () n)
 pRule
- = do	bs  <- pRuleBinders
+ = do	bs	 <- pRuleBinders
 	(cs,lhs) <- pRuleCsLhs
+	hole	 <- pRuleHole
 	pTok KEquals
-	rhs <- pExp
+	rhs	 <- pExp
 
-	return $ R.mkRewriteRule bs cs lhs rhs
+	return $ R.mkRewriteRule (trace (show bs) bs) cs lhs hole rhs
 
 pRuleBinders :: Ord n => Parser n [(R.BindMode,Bind n)]
 pRuleBinders
@@ -49,6 +50,14 @@ pRuleCsLhs
  , do	lhs <- pExp
 	return ([],lhs)
  ]
+
+pRuleHole :: Ord n => Parser n (Maybe (Exp () n))
+pRuleHole
+ = P.optionMaybe
+ $ do	pTok KBraceBra
+	e <- pExp
+	pTok KBraceKet
+	return e
 
 -- | Parse rewrite binders
 --

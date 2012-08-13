@@ -13,8 +13,8 @@ import qualified DDC.Type.Transform.Crush	as TC
 
 checkDisjoint
     :: (Eq n, Ord n, Show n)
-    => Type n		-- ^ target, might be "Disjoint f g"
-    -> RE.RewriteEnv n	-- ^ for distinctness map
+    => Type n			-- ^ target, might be "Disjoint f g"
+    -> RE.RewriteEnv a n	-- ^ for distinctness map
     -> Bool
 checkDisjoint c env
  | [TCon (TyConWitness TwConDisjoint), fs, gs]
@@ -88,7 +88,7 @@ checkDisjoint c env
 -- We might not know, eg if they're bound in lambdas, so err on false
 areDistinct
     :: (Eq n, Ord n, Show n)
-    => RE.RewriteEnv n
+    => RE.RewriteEnv a n
     -> Bound n -> Bound n
     -> Bool
 areDistinct env p q

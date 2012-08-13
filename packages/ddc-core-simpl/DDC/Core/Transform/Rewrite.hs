@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wwarn #-}
+
 module DDC.Core.Transform.Rewrite
         ( RewriteRule(..)
         , rewrite )
@@ -13,10 +15,14 @@ import qualified DDC.Core.Transform.Rewrite.Match	as RM
 import		 DDC.Core.Transform.Rewrite.Rule	(RewriteRule(..))
 import qualified DDC.Core.Transform.SubstituteXX	as S
 import qualified DDC.Type.Transform.SubstituteT		as S
+import qualified DDC.Core.Transform.LiftX		as L
+import qualified DDC.Type.Compounds			as T
 
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+
+import Debug.Trace
 
 
 
@@ -34,11 +40,45 @@ rewrite rules x0
     go x@(XCon{})	args ws = rewrites x args ws
     go (XLAM a b e)	args ws = rewrites (XLAM a b $ down e (RE.lift b ws)) args ws
     go (XLam a b e)	args ws = rewrites (XLam a b $ down e (RE.extend b ws)) args ws
-    go (XLet a l e)	args ws = rewrites (XLet a (goLets l ws) (down e (RE.extendLets l ws))) args ws
+    go (XLet a l e)	args ws = rewrites (goDefHoles a (goLets l ws) e ws) args ws
     go (XCase a e alts)	args ws = rewrites (XCase a (down e ws) (map (goAlts ws) alts)) args ws
     go (XCast a c e)	args ws = rewrites (XCast a c $ down e ws) args ws
     go x@(XType{})	args ws = rewrites x args ws
     go x@(XWitness{})	args ws = rewrites x args ws
+
+    goDefHoles a l@(LLet LetStrict b def) e ws
+     =	let subs = checkHoles def ws
+	in  case subs of
+	    (((sub,[]),RewriteRule bs _cs hole Nothing _rhs _e _c):_) ->
+		let (bas,bas') = lookups (map snd bs) sub
+		    -- surround whole expression with anon lets from sub
+		    values     = map	 (\(b,v) ->     (BAnon (T.typeOfBind b), v)) bas'
+		    -- replace 'def' with LHS-HOLE[sub => ^n]
+		    anons      = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
+		    lets       = map (\(b,v) -> LLet LetStrict b v) values
+		    def'       = S.substituteXArgs anons hole
+		    lets'      = lets ++ [LLet LetStrict b def']
+		    -- lift e by (length bas)
+		    e'	       = L.liftX (length bas') e
+		    -- SAVE in wit env
+		    ws'	       = RE.insertDef b def'
+		               $ foldl (flip RE.extendLets) ws lets'
+		in  X.makeXLets a lets' $ down e ws'
+	    _ -> XLet a l (down e (RE.extendLets l ws))
+
+    goDefHoles a l e ws = XLet a l (down e (RE.extendLets l ws))
+
+    checkHoles def ws
+     =  let rules'   = Maybe.catMaybes $ map holeRule rules
+	    (f,args) = takeApps def
+	    -- TODO most specific?
+	in  Maybe.catMaybes
+	  $ map (\r -> fmap (\s -> (s,r)) $ rewriteSubst r f args ws)
+	    rules'
+
+    holeRule (RewriteRule bs cs _lhs (Just hole) rhs e c)
+	= Just (RewriteRule bs cs hole Nothing rhs e c) -- LOL undefineds
+    holeRule _ = Nothing
 
     goLets (LLet lm b e) ws
      = LLet lm b $ down e ws
@@ -61,14 +101,15 @@ rewrite rules x0
 	Nothing -> rewrites' rs f args ws
 	Just x  -> go x [] ws
 
-rewriteX
+rewriteSubst
     :: (Show n, Show a, Ord n, Pretty n)
     => RewriteRule a n
     -> Exp a n
     -> [(Exp a n,a)]
-    -> RE.RewriteEnv n
-    -> Maybe (Exp a n)
-rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
+    -> RE.RewriteEnv a n
+    -> Maybe (RM.SubstInfo a n, [(Exp a n, a)]) -- ^ substitution map and remaining args
+-- TODO check constraints?
+rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _
  = do	let m	= RM.emptySubstInfo
 	l:ls   <- return $ X.takeXAppsAsList lhs
 	m'     <- RM.match m vs l f
@@ -81,25 +122,60 @@ rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
     nm _ = error "no anonymous binders in rewrite rules, please"
 
     go m [] rest
-     = do   s <- subst m
-	    return $ mkApps s rest
+     = do   return $ (m, rest)
     go m (l:ls) ((r,_):rs)
      = do   m' <- RM.match m vs l r
 	    go m' ls rs
     go _ _ _ = Nothing
 
+rewriteSubst (RewriteRule binds constrs lhs (Just hole) rhs eff clo) f args ws
+ =  case rewriteSubst rule_full f args ws of
+    Just s  -> Just s
+    Nothing ->
+      -- try inlining without hole
+      case rewriteSubst rule_some f args ws of
+      Just (sub,((XVar a b, a'):as)) -> 
+	case RE.getDef b ws of
+	Just d' -> let (fd,ad) = takeApps d' in
+		    -- TODO match with 'sub' as well?
+		   case rewriteSubst rule_hole fd ad ws of
+		   -- TODO merge subs
+		   Just (subd,asd) -> Just (subd,asd ++ as)
+		   Nothing	-> Nothing
+	Nothing -> Nothing
+      s -> s
+ where
+  lhs_full  = XApp undefined lhs hole
+  rule_full = RewriteRule binds constrs lhs_full Nothing rhs eff clo
+
+  rule_some = RewriteRule binds constrs lhs Nothing rhs eff clo
+  rule_hole = RewriteRule binds constrs hole Nothing rhs eff clo
+
+rewriteX
+    :: (Show n, Show a, Ord n, Pretty n)
+    => RewriteRule a n
+    -> Exp a n
+    -> [(Exp a n,a)]
+    -> RE.RewriteEnv a n
+    -> Maybe (Exp a n)
+rewriteX rule@(RewriteRule binds constrs _ _ rhs eff clo) f args ws
+ = do	(m,rest) <- rewriteSubst rule f args ws
+	s	 <- subst m
+	return   $  mkApps s rest
+ where
+    bs = map snd binds
+
     -- TODO the annotations here will be rubbish
     -- TODO type-check?
     -- TODO constraints
     subst m
-     =	    let bas  = Maybe.catMaybes $ map (lookupz m) bs
-	        bas' = map (\(b,a) -> (A.anonymizeX b, A.anonymizeX a)) bas
-		rhs' = A.anonymizeX rhs
+     =	    let (bas,bas') = lookups bs m
+		rhs'	   = A.anonymizeX rhs
 	    in  checkConstrs bas' constrs
 		$ weakeff bas' eff
 		$ weakclo bas' clo
 		$ S.substituteXArgs bas' rhs'
-    
+
     anno = snd $ head args
 
     weakeff _ Nothing x = x
@@ -120,15 +196,21 @@ rewriteX (RewriteRule binds constrs lhs rhs eff clo) f args ws
     lookupT (b,XType t) = Just (b,t)
     lookupT _ = Nothing
 
-    lookupz (xs,_) b@(BName n _)
-     | Just x <- Map.lookup n xs
-     = Just (b,x)
-    lookupz (_,tys) b@(BName n _)
-     | Just t <- Map.lookup n tys
-     = Just (b,XType t)
+lookups bs m
+ =  let bas  = Maybe.catMaybes $ map (lookupX m) bs
+        bas' = map (\(b,a) -> (A.anonymizeX b, A.anonymizeX a)) bas
+    in  (bas, bas')
 
-    lookupz _ _ = Nothing
-    
+lookupX (xs,_) b@(BName n _)
+ | Just x <- Map.lookup n xs
+ = Just (b,x)
+lookupX (_,tys) b@(BName n _)
+ | Just t <- Map.lookup n tys
+ = Just (b,XType t)
+
+lookupX _ _ = Nothing
+
+
 -- | Build sequence of applications.
 -- Similar to makeXApps but also takes list of annotations for XApp
 mkApps :: Exp a n -> [(Exp a n, a)] -> Exp a n
@@ -136,4 +218,13 @@ mkApps f []
  = f
 mkApps f ((arg,a):as)
  = mkApps (XApp a f arg) as
+
+-- | Destruct sequence of applications.
+-- Similar to takeXApps but also keeps annotations for later
+takeApps :: Exp a n -> (Exp a n, [(Exp a n, a)])
+takeApps (XApp a f arg)
+ = let (f', args') = takeApps f
+   in  (f', args' ++ [(arg,a)])
+takeApps x
+ = (x, [])
 

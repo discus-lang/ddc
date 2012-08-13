@@ -39,6 +39,7 @@ data RewriteRule a n
 	    [(BindMode,Bind n)]	--  bindings & their types
 	    [Type n]		--  requirements for rules to fire
 	    (Exp a n)		--  left-hand side to match on
+	    (Maybe (Exp a n))	--  allow this bit to be out-of-context
 	    (Exp a n)		--  replacement
 	    (Maybe (Effect n))	--  effect of lhs if needs weaken
 	    (Maybe (Closure n)) --  closure of lhs if needs weaken
@@ -47,15 +48,21 @@ data RewriteRule a n
 data BindMode = BMKind | BMType
     deriving (Eq, Show)
 
-mkRewriteRule :: Ord n => [(BindMode,Bind n)] -> [Type n] ->
-	         Exp a n -> Exp a n -> RewriteRule a n
-mkRewriteRule bs cs lhs rhs
- = RewriteRule bs cs lhs rhs Nothing Nothing
+mkRewriteRule
+    :: Ord n
+    => [(BindMode,Bind n)]
+    -> [Type n]
+    -> Exp a n
+    -> Maybe (Exp a n)
+    -> Exp a n
+    -> RewriteRule a n
+mkRewriteRule bs cs lhs hole rhs
+ = RewriteRule bs cs lhs hole rhs Nothing Nothing
 
 
 instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
- ppr (RewriteRule bs cs lhs rhs _ _)
-  = pprBinders bs <> pprConstrs cs <> ppr lhs <> text " = " <> ppr rhs
+ ppr (RewriteRule bs cs lhs hole rhs _ _)
+  = pprBinders bs <> pprConstrs cs <> ppr lhs <> pprHole <> text " = " <> ppr rhs
   where
       pprBinders []	= text ""
       pprBinders bs'	= foldl1 (<>) (map pprBinder bs') <> text ". "
@@ -64,6 +71,12 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
       
       pprConstrs []	= text ""
       pprConstrs (c:cs')= ppr c <> text " => " <> pprConstrs cs'
+
+      pprHole
+        | Just h <- hole
+	= text " {" <> ppr h <> text "}"
+	| otherwise
+	= text ""
 
 
 -- | Create rule
@@ -79,12 +92,28 @@ checkRewriteRule
 	      (RewriteRule (C.AnTEC a n) n)
 
 checkRewriteRule config kenv tenv
-    (RewriteRule bs cs lhs rhs _ _)
+    (RewriteRule bs cs lhs hole rhs _ _)
  = do	let (kenv',tenv') = extendBinds bs kenv tenv
+	let bs' = map (\(bm,b) -> (bm, S.spreadT kenv' b)) bs
 	let cs' = map (S.spreadT kenv') cs
 	mapM_ (\c -> checkTy config kenv' c ErrorBadConstraint) cs'
 
-	(lhs',tl,el,cl) <- check config kenv' tenv' lhs (ErrorTypeCheck Lhs)
+	(lhs',_,_,_)    <- check config kenv' tenv' lhs (ErrorTypeCheck Lhs)
+
+	hole' <- case hole of
+	         Just h  -> do
+		    (h',_,_,_) <- check config kenv' tenv' h (ErrorTypeCheck Lhs)
+		    return $ Just h'
+	         Nothing -> return Nothing
+
+	-- TODO annotation?
+	-- TODO "holes": only variables mentioned in hole can be mentioned in RHS.
+	let lhs_full = maybe lhs
+		       (XApp undefined lhs)
+		       hole
+
+	(_   ,tl,el,cl) <- check config kenv' tenv' lhs_full (ErrorTypeCheck Lhs)
+
 	(rhs',tr,er,cr) <- check config kenv' tenv' rhs (ErrorTypeCheck Rhs)
 
 	let err = ErrorTypeConflict (tl,el,cl) (tr,er,cr)
@@ -93,13 +122,13 @@ checkRewriteRule config kenv tenv
 	e      <- weaken T.kEffect el er err
 	c      <- weaken T.kClosure cl cr err
 
-	checkUnmentionedBinders bs lhs
-	checkAnonymousBinders bs
-	checkValidPattern lhs
+	checkUnmentionedBinders bs' lhs_full
+	checkAnonymousBinders bs'
+	checkValidPattern lhs_full
 
 	return $ RewriteRule 
-                        bs cs' 
-                        lhs' rhs'
+                        bs' cs' 
+                        lhs' hole' rhs'
                         e c
 
 
