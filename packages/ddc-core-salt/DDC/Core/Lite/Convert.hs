@@ -89,7 +89,14 @@ convertM pp runConfig defs kenv tenv mm
         -- Convert the body of the module to Salt.
         let ntsImports  = [(BName n t) | (n, (_, t)) <- Map.toList $ moduleImportTypes mm]
         let tenv'       = Env.extends ntsImports tenv
-        x'              <- convertBodyX pp defs kenv tenv' $ moduleBody mm
+        x1              <- convertBodyX pp defs kenv tenv' $ moduleBody mm
+
+        -- Converting the body will also expand out code to construct,
+        -- the place-holder '()' inside the top-level lets.
+        -- We don't want that, so just replace that code with a fresh unit.
+        let Just a      = takeAnnotOfExp x1
+        let (lts', _)   = splitXLets x1
+        let x2          = makeXLets a lts' (xUnit a)
 
         -- Build the output module.
         let mm_salt 
@@ -99,7 +106,7 @@ convertM pp runConfig defs kenv tenv mm
                 , moduleExportTypes    = Map.empty
                 , moduleImportKinds    = S.runtimeImportKinds
                 , moduleImportTypes    = Map.union S.runtimeImportTypes tsImports'
-                , moduleBody           = x' }
+                , moduleBody           = x2 }
 
         -- If this is the 'Main' module then add code to initialise the 
         -- runtime system. This will fail if given a Main module with no
