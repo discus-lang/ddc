@@ -7,7 +7,7 @@ import DDC.Core.Transform.Rewrite
 import DDC.Core.Simplifier.Base
 import DDC.Core.Exp
 import DDC.Type.Env
-import qualified DDC.Core.Simplifier.Recipie    as R
+import qualified DDC.Core.Simplifier.Recipe     as R
 import Data.Char
 
 

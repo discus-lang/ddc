@@ -1,6 +1,6 @@
 
--- | Common simplifier recipies that combine multiple transforms.
-module DDC.Core.Simplifier.Recipie
+-- | Common simplifier recipes that combine multiple transforms.
+module DDC.Core.Simplifier.Recipe
         ( anormalize
 	, rewriteSimp)
 where
@@ -22,16 +22,16 @@ anormalize namK namT
         <> Trans Flatten 
         <> Trans (Namify namK namT)
 
+
 -- | Intersperse rewrites and beta reduction
 rewriteSimp
         :: [RewriteRule a n]
 	-> Simplifier s a n
 
 rewriteSimp rules
-        = let r = Trans $ Rewrite rules
-	      b = Trans Beta
-	  in
-	  r <> b <> r <> b <> r <> b
+ = let  r = Trans $ Rewrite rules
+        b = Trans Beta
+   in   r <> b <> r <> b <> r <> b
 
 
 

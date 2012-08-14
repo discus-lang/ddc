@@ -19,4 +19,4 @@ where
 import DDC.Core.Simplifier.Apply
 import DDC.Core.Simplifier.Base
 import DDC.Core.Simplifier.Parser
-import DDC.Core.Simplifier.Recipie
+import DDC.Core.Simplifier.Recipe
