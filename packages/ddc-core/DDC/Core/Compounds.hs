@@ -48,13 +48,13 @@ import DDC.Core.Exp
 
 -- Lets -----------------------------------------------------------------------
 -- | Take the binds of a `Lets`.
-bindsOfLets :: Lets a n -> [Bind n]
+bindsOfLets :: Lets a n -> ([Bind n], [Bind n])
 bindsOfLets ll
  = case ll of
-        LLet _ b _        -> [b]
-        LRec bxs          -> map fst bxs
-        LLetRegion   b bs -> b : bs
-        LWithRegion{}     -> []
+        LLet _ b _        -> ([],  [b])
+        LRec bxs          -> ([],  map fst bxs)
+        LLetRegion   b bs -> ([b], bs)
+        LWithRegion{}     -> ([],  [])
 
 
 -- | Like `bindsOfLets` but only take the type binders.

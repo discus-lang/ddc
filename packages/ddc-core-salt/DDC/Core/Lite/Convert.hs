@@ -199,35 +199,17 @@ convertBodyX pp defs kenv tenv xx
         XApp{}
          ->     convertSimpleX pp defs kenv tenv xx
 
-        XLet a (LRec bxs) x2
-         -> do  let tenv'       = Env.extends (map fst bxs) tenv
-                let (bs, xs)    = unzip bxs
-                bs'             <- mapM (convertB kenv) bs
-                xs'             <- mapM (convertBodyX pp defs kenv tenv') xs
-                x2'             <- convertBodyX pp defs kenv tenv' x2
-                return $ XLet (annotTail a) (LRec $ zip bs' xs') x2'
+        XLet a lts x2
+         -> do  -- Convert the bindings.
+                lts'            <- convertLetsX pp defs kenv tenv lts
 
-        XLet a (LLet LetStrict b x1) x2
-         -> do  let tenv'       = Env.extend b tenv
-                b'              <- convertB kenv b
-                x1'             <- convertSimpleX pp defs kenv tenv' x1
-                x2'             <- convertBodyX   pp defs kenv tenv' x2
-                return  $ XLet (annotTail a) (LLet LetStrict b' x1') x2'
+                -- Convert the body of the expression.
+                let (bs1, bs0)  = bindsOfLets lts
+                let kenv'       = Env.extends bs1 kenv
+                let tenv'       = Env.extends bs0 tenv
+                x2'             <- convertBodyX pp defs kenv' tenv' x2
 
-        XLet _ (LLet LetLazy{} _ _) _
-         -> error "DDC.Core.Lite.Convert.toSaltX: XLet lazy not handled yet"
-
-        XLet a (LLetRegion b bs) x2
-         -> do  b'              <- convertB kenv b
-
-                let kenv'       = Env.extend b kenv
-                bs'             <- mapM (convertB kenv') bs
-                x2'             <- convertBodyX pp defs kenv' tenv x2
-                return  $ XLet (annotTail a) (LLetRegion b' bs') x2'
-
-        XLet _ LWithRegion{} _
-         -> throw $ ErrorMalformed "LWithRegion should not appear in Lite code."
-
+                return $ XLet (annotTail a) lts' x2'
 
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
@@ -271,6 +253,45 @@ convertBodyX pp defs kenv tenv xx
 
         XType _         -> throw $ ErrorMistyped xx
         XWitness{}      -> throw $ ErrorMistyped xx
+
+
+-------------------------------------------------------------------------------
+-- | Convert a let-binding to Salt.
+convertLetsX 
+        :: Show a 
+        => Platform                     -- ^ Platform specification.
+        -> DataDefs L.Name              -- ^ Data type definitions.
+        -> Env L.Name                   -- ^ Kind environment.
+        -> Env L.Name                   -- ^ Type environment.
+        -> Lets (AnTEC a L.Name) L.Name -- ^ Expression to convert.
+        -> ConvertM a (Lets a S.Name)
+
+convertLetsX pp defs kenv tenv lts
+ = case lts of
+        LRec bxs
+         -> do  let tenv'       = Env.extends (map fst bxs) tenv
+                let (bs, xs)    = unzip bxs
+                bs'             <- mapM (convertB kenv) bs
+                xs'             <- mapM (convertBodyX pp defs kenv tenv') xs
+                return  $ LRec $ zip bs' xs'
+
+        LLet LetStrict b x1
+         -> do  let tenv'       = Env.extend b tenv
+                b'              <- convertB       kenv b
+                x1'             <- convertSimpleX pp defs kenv tenv' x1
+                return  $ LLet LetStrict b' x1'
+
+        LLet LetLazy{} _ _
+         ->     error "DDC.Core.Lite.Convert.toSaltX: XLet lazy not handled yet"
+
+        LLetRegion b bs
+         -> do  b'              <- convertB kenv b
+                let kenv'       = Env.extend b kenv
+                bs'             <- mapM (convertB kenv') bs
+                return  $ LLetRegion b' bs'
+  
+        LWithRegion{}
+         ->     throw $ ErrorMalformed "LWithRegion should not appear in Lite code."
 
 
 -------------------------------------------------------------------------------
