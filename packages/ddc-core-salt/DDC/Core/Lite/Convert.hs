@@ -429,12 +429,12 @@ convertWiConX kenv wicon
 -------------------------------------------------------------------------------
 convertCtorAppX 
         :: Show a
-        => Platform             -- ^ Platform specification.
-        -> DataDefs L.Name      -- ^ Data type definitions.
-        -> KindEnv L.Name       -- ^ Kind environment.
-        -> TypeEnv L.Name       -- ^ Type environment.
-        -> AnTEC a L.Name       -- ^ Annotation from deconstructed application node.
-        -> DaCon L.Name         -- ^ Data constructor being applied.
+        => Platform                     -- ^ Platform specification.
+        -> DataDefs L.Name              -- ^ Data type definitions.
+        -> KindEnv L.Name               -- ^ Kind environment.
+        -> TypeEnv L.Name               -- ^ Type environment.
+        -> AnTEC a L.Name               -- ^ Annotation from deconstructed application node.
+        -> DaCon L.Name                 -- ^ Data constructor being applied.
         -> [Exp (AnTEC a L.Name) L.Name]
         -> ConvertM a (Exp a S.Name)
 
