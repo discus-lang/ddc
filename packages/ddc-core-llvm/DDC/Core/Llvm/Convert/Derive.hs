@@ -9,7 +9,7 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Env                 (Env)
+import DDC.Type.Env                 (Env, KindEnv, TypeEnv)
 import DDC.Type.Collect
 import DDC.Core.Module
 import DDC.Base.Pretty              hiding (empty)
@@ -62,11 +62,12 @@ lookups us menv = map (flip lookup menv) us
 
 -- Deriving metadata ----------------------------------------------------------
 deriveMetadataM
-            :: (BindStruct (Module ()), Ord n, Show n)
-            => Env n                   -- ^ Kind environment
-            -> Env n                   -- ^ Type environment
-            -> Module () n             -- ^ Module to derive from
-            -> LlvmM (MetadataSet n)   -- ^ Metadata encoding witness information            
+        :: (BindStruct (Module ()), Ord n, Show n)
+        => KindEnv n
+        -> TypeEnv n
+        -> Module () n                  -- ^ Module to derive from
+        -> LlvmM (MetadataSet n)        -- ^ Metadata encoding witness information            
+
 deriveMetadataM kenv tenv mm
  = do 
       -- Add all the binds this module to the environment, so we have all the region
@@ -95,6 +96,7 @@ deriveDistinctM
         -> (MetadataEnv n, [Metadata])
         -> (Bound n, Bound n) 
         -> LlvmM (MetadataEnv n, [Metadata])
+
 deriveDistinctM consts (menv, ms) (r1, r2)
   = do   ns               <- replicateM 3 newUnique
          let [n1, n2, rn] = map show ns
@@ -108,6 +110,7 @@ deriveConstM
         => (MetadataEnv n, [Metadata])
         -> Bound n
         -> LlvmM (MetadataEnv n, [Metadata])
+
 deriveConstM (menv, ms) c
   = do   ns <- replicateM 2 newUnique
          let [n, rn] = map show ns

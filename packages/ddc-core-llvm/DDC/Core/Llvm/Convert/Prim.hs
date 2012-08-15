@@ -9,7 +9,7 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Type.Compounds
 import DDC.Base.Pretty
-import DDC.Type.Env             (Env)
+import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Sequence            (Seq)
 import qualified DDC.Core.Exp   as C
 import qualified DDC.Core.Salt  as A
@@ -24,9 +24,9 @@ import qualified Data.Sequence  as Seq
 --
 convPrimCallM 
         :: Show a 
-        => Platform             -- ^ Current platform.
-        -> Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
+        => Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.Prim               -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
@@ -281,8 +281,8 @@ convPrimOp2 op t
 -- | Convert a primitive promotion to LLVM.
 convPrimPromote 
         :: Platform 
-        -> Env A.Name           -- ^ Kine environment.
-        -> C.Type A.Name -> Var
+        -> KindEnv A.Name
+        -> C.Type A.Name -> Var 
         -> C.Type A.Name -> Exp
         -> Maybe Instr
 
@@ -319,9 +319,9 @@ convPrimPromote pp kenv tDst vDst tSrc xSrc
 -- | Convert a primitive truncation to LLVM.
 convPrimTruncate
         :: Platform 
-        -> Env A.Name           -- ^ Kind environment.
-        -> C.Type A.Name -> Var
-        -> C.Type A.Name -> Exp
+        -> KindEnv A.Name
+        -> C.Type  A.Name -> Var
+        -> C.Type  A.Name -> Exp
         -> Maybe Instr
 
 convPrimTruncate pp kenv tDst vDst tSrc xSrc

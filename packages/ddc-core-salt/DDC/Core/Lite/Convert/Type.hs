@@ -24,7 +24,7 @@ import qualified DDC.Type.Env            as Env
 import Control.Monad
 
 
-convertT     :: Env L.Name -> Type L.Name -> ConvertM a (Type O.Name)
+convertT     :: KindEnv L.Name -> Type L.Name -> ConvertM a (Type O.Name)
 convertT     = convertT' False
 
 convertPrimT :: Type L.Name -> ConvertM a (Type O.Name)
@@ -56,7 +56,7 @@ convertPrimT = convertT' True Env.empty
 --
 convertT' 
         :: Bool                 -- ^ Whether this is the type of a primop.
-        -> Env  L.Name          -- ^ Kind environment.
+        -> KindEnv  L.Name      -- ^ Kind environment.
         -> Type L.Name          -- ^ Type to convert.
         -> ConvertM a (Type O.Name)
 
@@ -149,7 +149,7 @@ convertTyConPrim n
 
 -- Names ----------------------------------------------------------------------
 convertDC 
-        :: Env L.Name 
+        :: KindEnv L.Name 
         -> DaCon L.Name 
         -> ConvertM a (DaCon O.Name)
 
@@ -167,7 +167,7 @@ convertDC kenv dc
                         , daConIsAlgebraic      = daConIsAlgebraic dc }
 
 
-convertB :: Env L.Name -> Bind L.Name -> ConvertM a (Bind O.Name)
+convertB :: KindEnv L.Name -> Bind L.Name -> ConvertM a (Bind O.Name)
 convertB kenv bb
   = case bb of
         BNone t         -> liftM  BNone (convertT kenv t)        

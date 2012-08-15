@@ -27,8 +27,8 @@ import Data.Maybe
 constructData
         :: Show a
         => Platform                     -- ^ Platform definition.
-        -> Env L.Name                   -- ^ Kind environment.
-        -> Env L.Name                   -- ^ Type environment.
+        -> KindEnv L.Name               -- ^ Kind environment.
+        -> TypeEnv L.Name               -- ^ Type environment.
         -> a                            -- ^ Annotation to use on expressions.
         -> DataType L.Name              -- ^ Data Type definition of object.
         -> DataCtor L.Name              -- ^ Constructor definition of object.

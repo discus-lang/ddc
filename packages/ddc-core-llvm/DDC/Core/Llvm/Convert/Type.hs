@@ -38,8 +38,8 @@ import qualified DDC.Type.Env           as Env
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to an LlvmType.
 convType 
-        :: Platform             -- ^ Platform specification.                            -- TODO: rename to convValType
-        -> Env Name             -- ^ Kind environmnent.                                 -- to contrast with convSuperType
+        :: Platform             -- TODO: rename to convValType
+        -> KindEnv Name         -- to contrast with convSuperType
         -> C.Type Name          -- ^ Type to convert.
         -> Type
 
@@ -91,8 +91,8 @@ convType pp kenv tt
 --   wrap the body type.
 convSuperType 
         :: Platform
-        -> Env Name
-        -> C.Type Name
+        -> KindEnv Name
+        -> C.Type  Name
         -> ([Type], Type)
 
 convSuperType pp kenv tt
@@ -115,8 +115,8 @@ convSuperType pp kenv tt
 -- Imports --------------------------------------------------------------------
 -- | Convert an imported function type to a LLVM declaration.
 importedFunctionDeclOfType 
-        :: Platform             -- ^ Platform specification.
-        -> Env Name             -- ^ Kind environment.
+        :: Platform
+        -> KindEnv Name
         -> Linkage 
         -> C.QualName Name 
         -> C.Type Name 

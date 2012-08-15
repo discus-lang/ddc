@@ -8,6 +8,8 @@
 --
 module DDC.Type.Env
         ( Env(..)
+        , KindEnv
+        , TypeEnv
         , empty
         , extend,       extends
         , setPrimFun,   isPrim
@@ -43,6 +45,14 @@ data Env n
 
           -- | Types of baked in, primitive names.
         , envPrimFun     :: n -> Maybe (Type n) }
+
+
+-- | Type synonym to improve readability.
+type KindEnv n  = Env n
+
+
+-- | Type synonym to improve readability.
+type TypeEnv n  = Env n
 
 
 -- | An empty environment.

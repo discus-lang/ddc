@@ -15,7 +15,7 @@ import DDC.Core.Llvm.Convert.Derive
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Type.Predicates
 import Control.Monad.State.Strict       (evalState)
 import Control.Monad.State.Strict       (gets)
@@ -34,7 +34,7 @@ import qualified Data.Foldable          as Seq
 
 
 -- Module ---------------------------------------------------------------------
--- | Convert a module to LLVM
+-- | Convert a module to LLVM.
 convertModule :: Platform -> C.Module () A.Name -> Module
 convertModule platform mm@(C.ModuleCore{})
  = let  prims           = primDeclsMap platform
@@ -88,7 +88,7 @@ convModuleM mm@(C.ModuleCore{})
  | otherwise    = die "invalid module"
 
 
--- | Global variables used directly by the conversion.
+-- | Global variables used directly by the converted code.
 primDeclsMap :: Platform -> Map String FunctionDecl
 primDeclsMap pp 
         = Map.fromList
@@ -119,10 +119,10 @@ primDecls pp
 -- | Convert a top-level supercombinator to a LLVM function.
 --   Region variables are completely stripped out.
 convSuperM 
-        :: Env A.Name                   -- ^ Kind environment.
-        -> Env A.Name                   -- ^ Type environment.
-        -> C.Bind A.Name                -- ^ Bind for the super.
-        -> C.Exp () A.Name              -- ^ Super body.
+        :: KindEnv A.Name
+        -> TypeEnv A.Name
+        -> C.Bind  A.Name       -- ^ Bind of the top-level super.
+        -> C.Exp () A.Name      -- ^ Super body.
         -> LlvmM Function
 
 convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
@@ -187,8 +187,8 @@ nameOfParam bb
 -- Body -----------------------------------------------------------------------
 -- | Convert a function body to LLVM blocks.
 convBodyM 
-        :: Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
+        :: KindEnv A.Name
+        -> TypeEnv A.Name
         -> Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
         -> Seq Instr            -- ^ Instrs in current block.
@@ -332,9 +332,9 @@ convBodyM kenv tenv blocks label instrs xx
 -- Stmt -----------------------------------------------------------------------
 -- | Convert a Core statement to LLVM instructions.
 convStmtM 
-        :: Platform             -- ^ Platfom specification.
-        -> Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
+        :: Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
         -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)
 
@@ -373,8 +373,8 @@ data AltResult
 --   This only works for zero-arity constructors.
 --   The client should extrac the fields of algebraic data objects manually.
 convAltM 
-        :: Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
+        :: KindEnv  A.Name
+        -> TypeEnv  A.Name
         -> C.Alt () A.Name      -- ^ Alternative to convert.
         -> LlvmM AltResult
 
@@ -396,7 +396,7 @@ convAltM kenv tenv aa
          _ -> die "invalid alternative"
 
 
--- | Convert a constructor pattern to a LLVM literal.
+-- | Convert a constructor name from a pattern to a LLVM literal.
 convPatName :: Platform -> A.Name -> Maybe Lit
 convPatName pp name
  = case name of
@@ -430,9 +430,9 @@ takeAltCase _                           = Nothing
 --   primitive operators. The client should ensure the program is in this form 
 --   before converting it.
 convExpM
-        :: Platform             -- ^ Current platform.
-        -> Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
+        :: Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
         -> Var                  -- ^ Assign result to this var.
         -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq Instr)

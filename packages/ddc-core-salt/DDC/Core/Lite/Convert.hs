@@ -20,7 +20,7 @@ import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Type.Check.Monad              (throw, result)
 import DDC.Core.Check                    (AnTEC(..))
-import DDC.Type.Env                      (Env)
+import DDC.Type.Env                      (KindEnv, TypeEnv)
 import qualified DDC.Core.Lite.Name      as L
 import qualified DDC.Core.Salt.Runtime   as S
 import qualified DDC.Core.Salt.Name      as S
@@ -58,8 +58,8 @@ toSalt
         => Platform                             -- ^ Platform specification.
         -> S.Config                             -- ^ Runtime configuration.
         -> DataDefs L.Name                      -- ^ Data type definitions.
-        -> Env L.Name                           -- ^ Kind environment.
-        -> Env L.Name                           -- ^ Type environment.
+        -> KindEnv L.Name                       -- ^ Kind environment.
+        -> TypeEnv L.Name                       -- ^ Type environment.
         -> Module (AnTEC a L.Name) L.Name       -- ^ Lite module to convert.
         -> Either (Error a) (Module a S.Name)   -- ^ Salt module.
 toSalt platform runConfig defs kenv tenv mm
@@ -72,8 +72,8 @@ convertM
         => Platform
         -> S.Config
         -> DataDefs L.Name
-        -> Env L.Name
-        -> Env L.Name
+        -> KindEnv L.Name
+        -> TypeEnv L.Name
         -> Module (AnTEC a L.Name) L.Name 
         -> ConvertM a (Module a S.Name)
 
@@ -146,8 +146,8 @@ convertBodyX
         :: Show a 
         => Platform                     -- ^ Platform specification.
         -> DataDefs L.Name              -- ^ Data type definitions.
-        -> Env L.Name                   -- ^ Kind environment.
-        -> Env L.Name                   -- ^ Type environment.
+        -> KindEnv L.Name               -- ^ Kind environment.
+        -> TypeEnv L.Name               -- ^ Type environment.
         -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a S.Name)
 
@@ -268,8 +268,8 @@ convertLetsX
         :: Show a 
         => Platform                     -- ^ Platform specification.
         -> DataDefs L.Name              -- ^ Data type definitions.
-        -> Env L.Name                   -- ^ Kind environment.
-        -> Env L.Name                   -- ^ Type environment.
+        -> KindEnv L.Name               -- ^ Kind environment.
+        -> TypeEnv L.Name               -- ^ Type environment.
         -> Lets (AnTEC a L.Name) L.Name -- ^ Expression to convert.
         -> ConvertM a (Lets a S.Name)
 
@@ -310,8 +310,8 @@ convertSimpleX
         :: Show a 
         => Platform                     -- ^ Platform specification.
         -> DataDefs L.Name              -- ^ Data type definitions.
-        -> Env L.Name                   -- ^ Kind environment.
-        -> Env L.Name                   -- ^ Type environment.
+        -> KindEnv L.Name               -- ^ Kind environment.
+        -> TypeEnv L.Name               -- ^ Type environment.
         -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a S.Name)
 
@@ -361,8 +361,8 @@ convertAtomX
         :: Show a 
         => Platform                     -- ^ Platform specification.
         -> DataDefs L.Name              -- ^ Data type definitions.
-        -> Env L.Name                   -- ^ Kind environment.
-        -> Env L.Name                   -- ^ Type environment.
+        -> KindEnv L.Name               -- ^ Kind environment.
+        -> TypeEnv L.Name               -- ^ Type environment.
         -> Exp (AnTEC a L.Name) L.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a S.Name)
 
@@ -395,7 +395,7 @@ convertAtomX pp defs kenv tenv xx
 -- | Convert a witness expression to Salt
 convertWitnessX
         :: Show a
-        => Env L.Name                   -- ^ Kind enviornment
+        => KindEnv L.Name               -- ^ Kind enviornment
         -> Witness L.Name               -- ^ Witness to convert.
         -> ConvertM a (Witness S.Name)
 
@@ -411,9 +411,10 @@ convertWitnessX kenv ww
 
 convertWiConX
         :: Show a
-        => Env L.Name                   -- ^ Kind environment. 
+        => KindEnv L.Name               -- ^ Kind environment. 
         -> WiCon L.Name                 -- ^ Witness constructor to convert.
         -> ConvertM a (WiCon S.Name)    
+
 convertWiConX kenv wicon            
  = case wicon of
         WiConBuiltin w
@@ -430,8 +431,8 @@ convertCtorAppX
         :: Show a
         => Platform             -- ^ Platform specification.
         -> DataDefs L.Name      -- ^ Data type definitions.
-        -> Env L.Name           -- ^ Kind environment.
-        -> Env L.Name           -- ^ Type environment.
+        -> KindEnv L.Name       -- ^ Kind environment.
+        -> TypeEnv L.Name       -- ^ Type environment.
         -> AnTEC a L.Name       -- ^ Annotation from deconstructed application node.
         -> DaCon L.Name         -- ^ Data constructor being applied.
         -> [Exp (AnTEC a L.Name) L.Name]
@@ -504,12 +505,13 @@ convertCtorAppX _ _ _ _ _ _nCtor _xsArgs
 
 
 -- Alt ------------------------------------------------------------------------
+-- | Convert a Lite alternative to Salt.
 convertAlt 
         :: Show a
         => Platform                     -- ^ Platform specification.
         -> DataDefs L.Name              -- ^ Data type declarations.
-        -> Env L.Name                   -- ^ Kind environment.
-        -> Env L.Name                   -- ^ Type environment.
+        -> KindEnv L.Name               -- ^ Kind environment.
+        -> TypeEnv L.Name               -- ^ Type environment.
         -> a                            -- ^ Annotation from case expression.
         -> Bound L.Name                 -- ^ Bound of scrutinee.
         -> Type  L.Name                 -- ^ Type  of scrutinee
@@ -567,12 +569,13 @@ convertAlt pp defs kenv tenv a uScrut tScrut alt
 
 
 -- Data Constructor -----------------------------------------------------------
+-- | Expand out code to build a data constructor.
 convertCtor 
         :: Show a
         => Platform             -- ^ Platform specification.
         -> DataDefs L.Name      -- ^ Data type definitions.
-        -> Env L.Name           -- ^ Kind environment.
-        -> Env L.Name           -- ^ Type environment.
+        -> KindEnv L.Name       -- ^ Kind environment.
+        -> TypeEnv L.Name       -- ^ Type environment.
         -> a                    -- ^ Annotation to attach to exp nodes.
         -> DaCon L.Name         -- ^ Data constructor to convert.
         -> ConvertM a (Exp a S.Name)

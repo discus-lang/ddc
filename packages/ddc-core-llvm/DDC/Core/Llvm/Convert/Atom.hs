@@ -8,7 +8,7 @@ where
 import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
-import DDC.Type.Env                     (Env)
+import DDC.Type.Env                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Salt.Name     as A
@@ -19,10 +19,10 @@ import qualified DDC.Core.Exp           as C
 -- | Take a variable or literal from an expression.
 --   These can be used directly in instructions.
 mconvAtom 
-        :: Platform             -- ^ Platform specification.
-        -> Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
-        -> C.Exp a A.Name       -- ^ Expression to convert.
+        :: Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
+        -> C.Exp a A.Name
         -> Maybe Exp
 
 mconvAtom pp kenv tenv xx
@@ -53,10 +53,10 @@ mconvAtom pp kenv tenv xx
 
 -- | Convert several atoms to core.
 mconvAtoms 
-        :: Platform             -- ^ Platform specification
-        -> Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
-        -> [C.Exp a A.Name]     -- ^ Atoms to convert.
+        :: Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
+        -> [C.Exp a A.Name]
         -> Maybe [Exp]
 
 mconvAtoms pp kenv tenv xs
@@ -66,9 +66,9 @@ mconvAtoms pp kenv tenv xs
 -- Utils ----------------------------------------------------------------------
 -- | Take a variable from an expression as a local var, if any.
 takeLocalV  
-        :: Platform             -- ^ Platform specification.
-        -> Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
+        :: Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
         -> C.Exp a A.Name       
         -> Maybe Var
 
@@ -82,9 +82,9 @@ takeLocalV pp kenv tenv xx
 
 -- | Take a variable from an expression as a local var, if any.
 takeGlobalV  
-        :: Platform             -- ^ Platform specification.
-        -> Env A.Name           -- ^ Kind environment.
-        -> Env A.Name           -- ^ Type environment.
+        :: Platform
+        -> KindEnv A.Name
+        -> TypeEnv A.Name
         -> C.Exp a A.Name
         -> Maybe Var
 
