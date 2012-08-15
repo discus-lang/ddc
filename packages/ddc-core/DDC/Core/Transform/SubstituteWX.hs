@@ -143,13 +143,13 @@ instance SubstituteWX (Alt a) where
             in  AAlt (PData uCon bs') x'
 
 
-instance SubstituteWX Cast where
+instance SubstituteWX (Cast a) where
  substituteWithWX wArg sub cc
   = let down    = substituteWithWX wArg
         into    = rewriteWith
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (into sub eff)
-        CastWeakenClosure clo   -> CastWeakenClosure (into sub clo)
+        CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)
         CastPurify w            -> CastPurify        (down sub w)
         CastForget w            -> CastForget        (down sub w)
 

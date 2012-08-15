@@ -356,18 +356,4 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
                  , text "       has kind: "             <> ppr k
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
-
-        ErrorMaxcloNotClo xx clo k
-         -> vcat [ text "Type provided for a 'maxclo' does not have closure kind."
-                 , text "           Type: "             <> ppr clo
-                 , text "       has kind: "             <> ppr k
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-        ErrorMaxcloMalformed xx clo
-         -> vcat [ text "Type provided for a 'maxclo' is malformed."
-                 , text "        Closure: "             <> ppr clo
-                 , text " can only contain 'Use' terms."
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
        

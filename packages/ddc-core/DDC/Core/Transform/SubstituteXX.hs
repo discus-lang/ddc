@@ -144,7 +144,7 @@ instance SubstituteXX Exp where
          -> XLet a (LWithRegion uR) (down sub x2)
 
         XCase a x1 alts -> XCase a  (down sub x1) (map (down sub) alts)
-        XCast a cc x1   -> XCast a  (into sub cc) (down sub x1)
+        XCast a cc x1   -> XCast a  (down sub cc) (down sub x1)
         XType t         -> XType    (into sub t)
         XWitness w      -> XWitness (into sub w)
  
@@ -160,6 +160,17 @@ instance SubstituteXX Alt where
          -> let (sub1, bs')     = bind0s sub bs
                 x'              = down   sub1 x
             in  AAlt (PData uCon bs') x'
+
+
+instance SubstituteXX Cast where
+ substituteWithXX xArg sub cc
+  = let down = substituteWithXX xArg
+        into = rewriteWith
+    in case cc of
+        CastWeakenEffect eff    -> CastWeakenEffect  (into sub eff)
+        CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)
+        CastPurify w            -> CastPurify (into sub w)
+        CastForget w            -> CastForget (into sub w)
 
 
 -- | Rewrite or substitute into an expression variable.

@@ -5,7 +5,6 @@ ok, added whacky0
 
 -- should turn into a nil
 ok
-weakclo [Use R0#] in
 Nil [R0#] [Int R0#] ()
 
 -- shouldn't turn into a nil; different regions

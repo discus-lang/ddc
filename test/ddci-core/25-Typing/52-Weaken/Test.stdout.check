@@ -1,7 +1,7 @@
 -- When choosing between two functions, 
 -- use the weakening forms to make the type of the smaller
 -- one match the larger.
-/\(r1 r2 : %). \(x : Int r1). case x of { 0 -> \(y : Int r2). weakeff [Read r1 + Read r2 + Alloc r2] in weakclo [Use r1 + Use r2] in y; _ -> \(y : Int r2). addInt [r1] [r2] [r2] x (1 [r2] ()) }
+/\(r1 r2 : %). \(x : Int r1). case x of { 0 -> \(y : Int r2). weakeff [Read r1 + Read r2 + Alloc r2] in weakclo {x; [r2]} in y; _ -> \(y : Int r2). addInt [r1] [r2] [r2] x (1 [r2] ()) }
 :*: [r1 r2 : %].Int r1 -(Read r1 | Use r1 + Use r2)> Int r2 -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2
 :!: !0
 :$: $0
@@ -14,25 +14,6 @@ When checking expression.
          has kind: %
   
   with: weakeff [r1] in
-        weakclo [Use r1 + Use r2] in
+        weakclo {x; [r2]} in
         y
 
-
--- Error: type supplied to weakclo does not have closure kind
-When checking expression.
-  Type provided for a 'maxclo' does not have closure kind.
-             Type: Read r1
-         has kind: !
-  
-  with: weakclo [Read r1] in
-        y
-
-
--- Error: malformed closure supplied to weakclo
-When checking expression.
-  Type provided for a 'maxclo' is malformed.
-          Closure: DeepUse a
-   can only contain 'Use' terms.
-  
-  with: weakclo [DeepUse a] in
-        y

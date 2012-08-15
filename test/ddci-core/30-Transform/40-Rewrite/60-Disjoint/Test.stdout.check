@@ -6,7 +6,6 @@ ok
 
 -- should rewrite, just reading
 weakeff [Read R0# + Alloc R0#] in
-weakclo [Use R0#] in
 map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
          (\(^ : Int R0#).
@@ -34,7 +33,6 @@ map [R0#] [R0#] [Int R0#] [Int R0#] [Read rMut + Alloc R0#] [Use rMut + Use R0#]
 letregion rMut with {wMut : Mutable rMut} in
 let mutabl : Int rMut = 5 [rMut] () in
 weakeff [Read R0# + Write rMut + Alloc R0#] in
-weakclo [Use rMut + Use R0#] in
 map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut + Alloc R0#] [Use rMut + Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Write rMut] [Use R0#] [Use rMut + Use R0#]
          (\(^ : Int R0#).
@@ -66,7 +64,6 @@ map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Use R0#]
  \(wMut : Mutable rMut).\(wDistinct : Distinct R0# rMut).\(dummy : Int R0#).
 let mutabl : Int rMut = 5 [rMut] () in
 weakeff [Read R0# + Write rMut + Alloc R0#] in
-weakclo [Use rMut + Use R0#] in
 map [R0#] [R0#] [Int R0#] [Int R0#] [Read R0# + Write rMut + Alloc R0#] [Use rMut + Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Write rMut] [Use R0#] [Use rMut + Use R0#]
          (\(^ : Int R0#).

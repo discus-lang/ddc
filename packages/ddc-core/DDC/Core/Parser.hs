@@ -205,14 +205,14 @@ pExp
         return  $ XCast () (CastWeakenEffect t) x
 
 
-        -- weakclo [TYPE] in EXP
+        -- weakclo {EXP;+} in EXP
  , do   pTok KWeakClo
-        pTok KSquareBra
-        t       <- pType
-        pTok KSquareKet
+        pTok KBraceBra
+        xs       <- liftM concat $ P.sepEndBy1 pArgs (pTok KSemiColon)
+        pTok KBraceKet
         pTok KIn
         x       <- pExp
-        return  $ XCast () (CastWeakenClosure t) x
+        return  $ XCast () (CastWeakenClosure xs) x
 
 
         -- purify <WITNESS> in EXP

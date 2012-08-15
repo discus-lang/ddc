@@ -153,14 +153,21 @@ checkCapsXM xx
         XWitness w      -> checkCapsWM w
 
 
-checkCapsCM :: Cast Name -> CheckM a [Witness Name]
+checkCapsCM :: Cast a Name -> CheckM a [Witness Name]
 checkCapsCM cc
  = let none     = return []
    in case cc of
-        CastWeakenEffect{}      -> none
-        CastWeakenClosure{}     -> none
-        CastPurify w            -> checkCapsWM w
-        CastForget w            -> checkCapsWM w
+        CastWeakenEffect{}
+         -> none
+
+        CastWeakenClosure xs
+         -> liftM concat $ mapM checkCapsXM xs
+
+        CastPurify w
+         -> checkCapsWM w
+
+        CastForget w
+         -> checkCapsWM w
 
 
 checkCapsLM :: Lets a Name -> CheckM a [Witness Name]

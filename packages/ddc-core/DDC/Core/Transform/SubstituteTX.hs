@@ -131,12 +131,12 @@ instance SubstituteTX (Alt a) where
             in  AAlt (PData uCon bs') x'
 
 
-instance SubstituteTX Cast where
+instance SubstituteTX (Cast a) where
  substituteWithTX tArg sub cc
   = let down    = substituteWithTX tArg
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (down sub eff)
-        CastWeakenClosure clo   -> CastWeakenClosure (down sub clo)
+        CastWeakenClosure clo   -> CastWeakenClosure (map (down sub) clo)
         CastPurify w            -> CastPurify        (down sub w)
         CastForget w            -> CastForget        (down sub w)
 

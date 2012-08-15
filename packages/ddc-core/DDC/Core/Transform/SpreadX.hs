@@ -79,12 +79,12 @@ instance SpreadX DaCon where
                  Nothing -> dc -- error $ "spreadX: data constructor is not in type environment."
 
 
-instance SpreadX Cast where
+instance SpreadX (Cast a) where
  spreadX kenv tenv cc
   = let down = spreadX kenv tenv 
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (spreadT kenv eff)
-        CastWeakenClosure clo   -> CastWeakenClosure (spreadT kenv clo)
+        CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
         CastPurify w            -> CastPurify        (down w)
         CastForget w            -> CastForget        (down w)
 

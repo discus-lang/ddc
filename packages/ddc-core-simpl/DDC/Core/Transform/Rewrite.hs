@@ -159,7 +159,7 @@ rewriteX
     -> [(Exp a n,a)]
     -> RE.RewriteEnv a n
     -> Maybe (Exp a n)
-rewriteX rule@(RewriteRule binds constrs _ _ rhs eff clo) f args ws
+rewriteX rule@(RewriteRule binds constrs _ lhs rhs eff clo) f args ws
  = do	(m,rest) <- rewriteSubst rule f args ws
 	s	 <- subst m
 	return   $  mkApps s rest
@@ -185,7 +185,11 @@ rewriteX rule@(RewriteRule binds constrs _ _ rhs eff clo) f args ws
 
     weakclo _ Nothing x = x
     weakclo bas (Just c) x
-     = XCast anno (CastWeakenClosure $ S.substituteTs (Maybe.catMaybes $ map lookupT bas) c) x
+     = x
+        -- TODO: weakclo is broken.
+        --       need to update to use new plan for CastWeakenClosure,
+        --       it contains expressions now instead of Use types.
+        -- XCast anno (CastWeakenClosure $ S.substituteTs (Maybe.catMaybes $ map lookupT bas) c) x
 
     checkConstrs _ [] x = Just x
     checkConstrs bas (c:cs) x = do

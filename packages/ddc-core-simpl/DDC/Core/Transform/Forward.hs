@@ -80,9 +80,19 @@ instance Forward Exp where
          -> XLet a' (down lts) (down x)
 
         XCase a x alts  -> XCase (snd a) (down x) (map down alts)
-        XCast a c x     -> XCast (snd a) c (down x)
+        XCast a c x     -> XCast (snd a) (down c) (down x)
         XType t         -> XType t
         XWitness w      -> XWitness w
+
+
+instance Forward Cast where
+ forwardWith bindings xx
+  = let down    = forwardWith bindings
+    in case xx of
+        CastWeakenEffect eff    -> CastWeakenEffect eff
+        CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
+        CastPurify w            -> CastPurify w
+        CastForget w            -> CastForget w
 
 
 instance Forward Lets where

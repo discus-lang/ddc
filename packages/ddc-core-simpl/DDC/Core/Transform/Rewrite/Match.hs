@@ -55,8 +55,9 @@ match m bs (XApp _ lf la) (XApp _ rf ra)
  = do	m' <- match m bs lf rf
 	match m' bs la ra
 
-match m bs (XCast _ lc le) (XCast _ rc re)
- | lc == rc	= match m bs le re
+-- TODO: match the casts
+match m bs (XCast _ _lc le) (XCast _ _rc re)
+ = match m bs le re
 
 match (xs,tys) bs (XType l) (XType r)
  = do	tys' <- TE.matchT bs tys l r

@@ -5,7 +5,7 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 
-
+-- | Rewrite the annotation in a thing.
 class Reannotate c where
  reannotate :: (a -> b) -> c a n -> c b n
 
@@ -33,7 +33,7 @@ instance Reannotate Exp where
         XApp  a x1 x2   -> XApp  (f a) (down x1)  (down x2)
         XLet  a lts x   -> XLet  (f a) (down lts) (down x)
         XCase a x alts  -> XCase (f a) (down x)   (map down alts)
-        XCast a c x     -> XCast (f a) c          (down x)
+        XCast a c x     -> XCast (f a) (down c)   (down x)
         XType t         -> XType t
         XWitness w      -> XWitness w
 
@@ -54,5 +54,13 @@ instance Reannotate Alt where
         AAlt w x        -> AAlt w (reannotate f x)
 
 
+instance Reannotate Cast where
+ reannotate f cc
+  = let down    = reannotate f
+    in case cc of
+        CastWeakenEffect  eff   -> CastWeakenEffect eff
+        CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
+        CastPurify w            -> CastPurify w
+        CastForget w            -> CastForget w
 
 

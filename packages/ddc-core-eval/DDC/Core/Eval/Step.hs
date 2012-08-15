@@ -421,7 +421,7 @@ step store xx
 
 -- Casts ----------------------------------------------------------------------
 -- Unwrap casts from the front of an expression.
-unwrapCasts :: Exp () n -> ([Cast n], Exp () n)
+unwrapCasts :: Exp () n -> ([Cast () n], Exp () n)
 unwrapCasts xx
  = case xx of
         XCast _ c x       
@@ -432,7 +432,7 @@ unwrapCasts xx
 
 
 -- Wrap casts around an expression.
-wrapCasts   :: [Cast n] -> Exp () n -> Exp () n
+wrapCasts   :: [Cast () n] -> Exp () n -> Exp () n
 wrapCasts cc xx
  = case cc of
         []      -> xx

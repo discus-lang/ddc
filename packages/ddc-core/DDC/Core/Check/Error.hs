@@ -310,17 +310,5 @@ data Error a n
         { errorChecking         :: Exp a n
         , errorEffect           :: Effect n
         , errorKind             :: Kind n }
-
-        -- | A maxclo-cast where the type provided does not have closure kind.
-        | ErrorMaxcloNotClo
-        { errorChecking         :: Exp a n
-        , errorClosure          :: Closure n
-        , errorKind             :: Kind n }
-
-        -- | A maxclo-case where the closure provided is malformed. 
-        --   It can only contain `Use` terms.
-        | ErrorMaxcloMalformed
-        { errorChecking         :: Exp a n 
-        , errorClosure          :: Closure n }
         deriving (Show)
 

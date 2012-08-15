@@ -75,13 +75,20 @@ instance AnonymizeX (Exp a) where
         XWitness w      -> XWitness (down w)
 
 
-instance AnonymizeX Cast where
+instance AnonymizeX (Cast a) where
  anonymizeWithX kstack tstack cc
   = case cc of
-        CastWeakenEffect eff    -> CastWeakenEffect  (anonymizeWithT kstack eff)
-        CastWeakenClosure clo   -> CastWeakenClosure (anonymizeWithT kstack clo)
-        CastPurify w            -> CastPurify   (anonymizeWithX kstack tstack w)
-        CastForget w            -> CastForget   (anonymizeWithX kstack tstack w)
+        CastWeakenEffect eff
+         -> CastWeakenEffect  (anonymizeWithT kstack eff)
+
+        CastWeakenClosure xs
+         -> CastWeakenClosure (map (anonymizeWithX kstack tstack) xs)
+
+        CastPurify w
+         -> CastPurify        (anonymizeWithX kstack tstack w)
+
+        CastForget w
+         -> CastForget        (anonymizeWithX kstack tstack w)
 
 
 instance AnonymizeX LetMode where

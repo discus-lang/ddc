@@ -569,7 +569,7 @@ checkExpM' config kenv tenv xx@(XCase a xDiscrim alts)
 
 -- type cast -------------------------------------
 -- Weaken an effect, adding in the given terms.
-checkExpM' config kenv tenv xx@(XCast a c@(CastWeakenEffect eff) x1)
+checkExpM' config kenv tenv xx@(XCast a (CastWeakenEffect eff) x1)
  = do
         -- Check the effect term.
         kEff    <- checkTypeM config kenv eff
@@ -578,41 +578,36 @@ checkExpM' config kenv tenv xx@(XCast a c@(CastWeakenEffect eff) x1)
 
         -- Check the body.
         (x1', t1, effs, clo)    <- checkExpM config kenv tenv x1
+        let c'                  = CastWeakenEffect eff
 
         returnX a
-                (\z -> XCast z c x1')
+                (\z -> XCast z c' x1')
                 t1
                 (Sum.insert eff effs)
                 clo
 
 
 -- Weaken a closure, adding in the given terms.
-checkExpM' config kenv tenv xx@(XCast a c@(CastWeakenClosure clo2) x1)
+checkExpM' config kenv tenv (XCast a (CastWeakenClosure xs) x1)
  = do
-        -- Check the closure term.
-        kClo    <- checkTypeM config kenv clo2
-        when (not $ isClosureKind kClo)
-         $ throw $ ErrorMaxcloNotClo xx clo2 kClo
-
-        -- The closure supplied to weakclo can only contain Use terms
-        -- of region variables.
-        clos2
-         <- case taggedClosureOfWeakClo clo2 of
-             Nothing     -> throw $ ErrorMaxcloMalformed xx clo2
-             Just clos2' -> return clos2'
+        -- Check the contained expressions.
+        (xs', closs)
+                <- liftM unzip
+                $ mapM (checkArgM config kenv tenv) xs
 
         -- Check the body.
         (x1', t1, effs, clos)   <- checkExpM config kenv tenv x1
+        let c'                  = CastWeakenClosure xs'
 
         returnX a
-                (\z -> XCast z c x1')
+                (\z -> XCast z c' x1')
                 t1
                 effs
-                (Set.union clos clos2)
+                (Set.unions (clos : closs))
 
 
 -- Purify an effect, given a witness that it is pure.
-checkExpM' config kenv tenv xx@(XCast a c@(CastPurify w) x1)
+checkExpM' config kenv tenv xx@(XCast a (CastPurify w) x1)
  = do
         tW                   <- checkWitnessM config kenv tenv w
         (x1', t1, effs, clo) <- checkExpM     config kenv tenv x1
@@ -622,13 +617,15 @@ checkExpM' config kenv tenv xx@(XCast a c@(CastPurify w) x1)
                     -> return $ Sum.delete effMask effs
                   _ -> throw  $ ErrorWitnessNotPurity xx w tW
 
+        let c'  = CastPurify w
+
         returnX a
-                (\z -> XCast z c x1')
+                (\z -> XCast z c' x1')
                 t1 effs' clo
 
 
 -- Forget a closure, given a witness that it is empty.
-checkExpM' config kenv tenv xx@(XCast a c@(CastForget w) x1)
+checkExpM' config kenv tenv xx@(XCast a (CastForget w) x1)
  = do   
         tW                    <- checkWitnessM config kenv tenv w
         (x1', t1, effs, clos) <- checkExpM     config kenv tenv x1
@@ -641,8 +638,10 @@ checkExpM' config kenv tenv xx@(XCast a c@(CastForget w) x1)
 
                   _ -> throw $ ErrorWitnessNotEmpty xx w tW
 
+        let c'  = CastForget w
+
         returnX a
-                (\z -> XCast z c x1')
+                (\z -> XCast z c' x1')
                 t1 effs clos'
 
 
@@ -656,6 +655,37 @@ checkExpM' _config _kenv _tenv xx@(XWitness _)
 
 checkExpM' _ _ _ _
         = error "checkExpM: bogus warning killer"
+
+
+-- | Like `checkExp` but we allow naked types and witnesses.
+checkArgM 
+        :: (Show n, Pretty n, Ord n)
+        => Config n             -- ^ Static config.
+        -> Env n                -- ^ Kind environment.
+        -> Env n                -- ^ Type environment.
+        -> Exp a n              -- ^ Expression to check.
+        -> CheckM a n 
+                ( Exp (AnTEC a n) n
+                , Set (TaggedClosure n))
+
+checkArgM config kenv tenv xx
+ = case xx of
+        XType t
+         -> do  checkTypeM config kenv t
+                let Just clo = taggedClosureOfTyArg kenv t
+
+                return  ( XType t
+                        , clo)
+
+        XWitness w
+         -> do  checkWitnessM config kenv tenv w
+                return  ( XWitness w
+                        , Set.empty)
+
+        _ -> do
+                (xx', _, _, clos) <- checkExpM config kenv tenv xx
+                return  ( xx'
+                        , clos)
 
 
 -- | Helper function for building the return value of checkExpM'

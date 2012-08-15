@@ -92,11 +92,11 @@ instance BindStruct LetMode where
         LetLazy (Just ww)       -> slurpBindTree ww
 
 
-instance BindStruct Cast where
+instance BindStruct (Cast a) where
  slurpBindTree cc
   = case cc of
-        CastWeakenEffect eff    -> slurpBindTree eff
-        CastWeakenClosure clo   -> slurpBindTree clo
+        CastWeakenEffect  eff   -> slurpBindTree eff
+        CastWeakenClosure xs    -> concatMap slurpBindTree xs
         CastPurify w            -> slurpBindTree w
         CastForget w            -> slurpBindTree w
 

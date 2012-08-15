@@ -144,14 +144,16 @@ instance (Pretty n, Eq n) => Pretty (DaCon n) where
 
 
 -- Cast -----------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Cast n) where
+instance (Pretty n, Eq n) => Pretty (Cast a n) where
  ppr cc
   = case cc of
         CastWeakenEffect  eff   
          -> text "weakeff" <+> brackets (ppr eff)
 
-        CastWeakenClosure clo
-         -> text "weakclo" <+> brackets (ppr clo)
+        CastWeakenClosure xs
+         -> text "weakclo" 
+         <+> braces (hcat $ punctuate (semi <> space) 
+                          $ map ppr xs)
 
         CastPurify w
          -> text "purify"  <+> angles   (ppr w)

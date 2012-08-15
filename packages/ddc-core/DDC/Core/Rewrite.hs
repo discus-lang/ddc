@@ -14,14 +14,14 @@ instance Rewrite LetMode where
         LetLazy Nothing  -> LetLazy Nothing
 
 
-instance Rewrite Cast where
- rewriteWith sub cc
-  = let down    = rewriteWith sub 
-    in case cc of
-        CastWeakenEffect  eff   -> CastWeakenEffect  (down eff)
-        CastWeakenClosure clo   -> CastWeakenClosure (down clo)
-        CastPurify w            -> CastPurify (down w)
-        CastForget w            -> CastForget (down w)
+--instance Rewrite (Cast a) where
+-- rewriteWith sub cc
+--  = let down    = rewriteWith sub 
+--    in case cc of
+--        CastWeakenEffect  eff   -> CastWeakenEffect  (down eff)
+--        CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
+--        CastPurify w            -> CastPurify (down w)
+--        CastForget w            -> CastForget (down w)
 
 
 

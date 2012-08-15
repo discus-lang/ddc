@@ -52,7 +52,7 @@ data Exp a n
         | XCase a  (Exp a n)  [Alt a n]
 
         -- | Type cast.
-        | XCast a  (Cast n)   (Exp a n)
+        | XCast a  (Cast a n) (Exp a n)
 
         -- | Type can appear as the argument of an application.
         | XType    (Type n)
@@ -64,12 +64,16 @@ data Exp a n
 deriving instance Eq n => Eq (DaCon n)
 
 -- | Type casts.
-data Cast n
+data Cast a n
         -- | Weaken the effect of an expression.
+        --   The given effect is added to the effect
+        --   of the casted expression.
         = CastWeakenEffect  (Effect n)
         
         -- | Weaken the closure of an expression.
-        | CastWeakenClosure (Closure n)
+        --   The closures of these expressions are added to the closure
+        --   of the casted expression.
+        | CastWeakenClosure [Exp a n]
 
         -- | Purify the effect of an expression.
         | CastPurify (Witness n)
