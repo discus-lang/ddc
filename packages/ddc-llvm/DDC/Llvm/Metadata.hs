@@ -9,6 +9,17 @@ import DDC.Base.Pretty
 import DDC.Llvm.Type
 
 
+-- | Name of a named metadata
+data Name = Name String deriving (Eq, Show, Ord)
+
+instance Pretty Name where
+ ppr (Name s) = text ("!" ++ s)
+
+instance Pretty (Maybe Name) where
+ ppr (Just n) = ppr n
+ ppr Nothing  = text "null"
+
+
 -- | Different types of metadata used in LLVM IR, e.g. 'debug', 'tbaa', 'range', etc.
 data Metadata
         -- Metadata used for type-based alias analysis.
@@ -18,20 +29,6 @@ data Metadata
         , parent     :: (Maybe Name)         -- the parent node in the metadata tree
         , isConst    :: ConstFlag            -- whether this region is const
         } deriving (Eq, Show)
-        
--- | Name of a metadata thing
-data Name = Name String deriving (Eq, Show, Ord)
-
-data ConstFlag = ConstFlag Bool deriving (Eq, Show)
-
--- | Primitive types of LLVM metadata
-data MetaPrim 
-        = MetaString String 
-        | MetaNode [MetaNodeElt]     
-        deriving (Eq, Show)
-           
-data MetaNodeElt = NodeMD Metadata | NodeT Type deriving (Eq, Show)
-
 
 instance Pretty Metadata where
  ppr mt
@@ -43,31 +40,41 @@ instance Pretty Metadata where
          Tbaa (Nothing) n p c
            -> text "metadata !"
            <> braces (hcat $ punctuate (comma <> space) [ppr n, ppr p, ppr c])
-            
-instance Pretty (Maybe Name) where
- ppr (Just n) = ppr n
- ppr Nothing  = text "null"
-      
-instance Pretty ConstFlag where
- ppr (ConstFlag c) = text "i1" <> text (if c then "1" else "0")
- 
-instance Pretty Name where
- ppr (Name s) = text ("!" ++ s)
 
+
+-- | Primitive types of LLVM metadata
+data MetaPrim 
+        = MetaString String 
+        | MetaNode [MetaNodeElt]     
+        deriving (Eq, Show)
 
 instance Pretty MetaPrim where
  ppr mp
   = case mp of
          MetaString s -> text "metadata !"  <> (dquotes $ text s)
          MetaNode  es -> text "metadata !{" <> ppr es <> text "}"
-         
+
+
+-- | Elements of a metadata node
+data MetaNodeElt = NodeMD Metadata | NodeT Type deriving (Eq, Show)
+
 instance Pretty MetaNodeElt where
  ppr elt
   = case elt of
          NodeMD (Tbaa (Just n) _ _ _) -> ppr n
          NodeMD (Tbaa Nothing _ _ _)  -> text "foo"
          NodeT  t -> ppr t
+       
+       
+-- | A TBAA metadata field that indicates whether the node refers to a const region
+data ConstFlag = ConstFlag Bool deriving (Eq, Show)           
+      
+instance Pretty ConstFlag where
+ ppr (ConstFlag c) = text "i1" <> text (if c then "1" else "0")
  
+
+-- Constructing TBAA metadata ------------------------------------------------- 
+
 -- | Construct a single named tbaa metadata node, using the same name
 --      for the reference and the ID.
 tbaaNamedNode

@@ -61,6 +61,7 @@ lookups us menv = map (flip lookup menv) us
 
 
 -- Deriving metadata ----------------------------------------------------------
+-- | Generate tbaa metadata for a core (Salt) module
 deriveMetadataM
         :: (BindStruct (Module ()), Ord n, Show n)
         => KindEnv n
@@ -127,9 +128,9 @@ distinctPairs ws
                              , isDistinctWitType tc
                              = Just (u1, u2)
                              | otherwise = Nothing      
-   in map fromJust $ filter isJust $ map (toDistinctPair) ws
+   in catMaybes $ map (toDistinctPair) ws
    
-
+-- | Check in a region has a witness for constancy
 isConstReg :: (Ord n, Show n) => [(Bound n, Type n)] -> Bound n -> Bool
 isConstReg ws r
  = let  isConstWit (_, t) | tc : args <- takeTApps t
@@ -140,8 +141,12 @@ isConstReg ws r
    in   if   null $ filter isConstWit ws
         then False else True
   
-
-collectRegions :: (BindStruct (Module ()), Ord n, Show n) => Env n -> Module () n -> [Bound n]
+-- | Collect region variables in a module
+collectRegions 
+          :: (BindStruct (Module ()), Ord n, Show n) 
+          => Env n 
+          -> Module () n 
+          -> [Bound n]
 collectRegions kenv mm
  = let regionKind u = case Env.lookup u kenv of
                              Just t | isRegionKind t -> True
@@ -149,10 +154,15 @@ collectRegions kenv mm
    in filter regionKind $ Set.toList (collectBound mm)
  
  
-collectWitnesses :: (BindStruct (Module ()), Ord n, Show n) => Env n -> Module () n -> [(Bound n, Type n)]
+-- | Collect witness terms in a module, together with their types (for convinience)
+collectWitnesses 
+          :: (BindStruct (Module ()), Ord n, Show n) 
+          => Env n 
+          -> Module () n 
+          -> [(Bound n, Type n)]
 collectWitnesses tenv mm
  = let witnessType u = case Env.lookup u tenv of
                             Just t | isWitnessType t -> Just (u, t)
                             _                        -> Nothing
-   in  map fromJust $ filter isJust $ map (witnessType) $ Set.toList (collectBound mm)
+   in  catMaybes $ map (witnessType) $ Set.toList (collectBound mm)
 
