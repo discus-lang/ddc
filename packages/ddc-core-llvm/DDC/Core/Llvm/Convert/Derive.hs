@@ -11,7 +11,7 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Env                 (Env)
+import DDC.Type.Env                 (KindEnv, TypeEnv)
 import DDC.Type.Collect
 import DDC.Core.Exp
 import DDC.Base.Pretty              hiding (empty)
@@ -74,15 +74,15 @@ lookups us mdsup = map (flip lookup mdsup) us
 -- Deriving metadata ----------------------------------------------------------
 -- | Generate tbaa metadata for a core (Salt) top-level super
 deriveMetadataM
-            :: (BindStruct (Module ()), Ord n, Show n)
-            => Env n                   -- ^ Kind environment
-            -> Env n                   -- ^ Type environment
-            -> Module () n             -- ^ Module to derive from
-            -> LlvmM (MetadataSet n)   -- ^ Metadata encoding witness information            
-deriveMetadataM kenv tenv mm
- = do 
-      -- Add all the binds this module to the environment, so we have all the region
-      --    variables and witnesses in scope
+            :: (BindStruct (Exp ()))
+            => KindEnv A.Name               -- ^ Kind environment
+            -> TypeEnv A.Name               -- ^ Type environment
+            -> String                       -- ^ Sanitized name of super
+            -> Exp () A.Name                -- ^ Super to derive from
+            -> LlvmM (MDSuper)              -- ^ Metadata encoding witness information            
+deriveMetadataM kenv tenv nTop xx
+ = do
+      --  Add all the binds
       let bs    =  collectBinds xx
       let kenv' =  Env.extends (fst bs) kenv
       let tenv' =  Env.extends (snd bs) tenv
@@ -110,31 +110,36 @@ qualifyRoot :: String -> Int -> String
 qualifyRoot q i = q ++ "_ROOT_" ++ (show i)
 
 deriveDistinctM 
-        :: (Ord n, Show n)
-        => [Bound n]
-        -> (MetadataEnv n, [Metadata])
-        -> (Bound n, Bound n) 
-        -> LlvmM (MetadataEnv n, [Metadata])
-deriveDistinctM consts (menv, ms) (r1, r2)
-  = do   ns               <- replicateM 3 newUnique
-         let [n1, n2, rn] = map show ns
-         let root     = tbaaRoot rn
-         let mkTbaa n = tbaaNamedNode n root (r1 `elem` consts)
-         return $ ( extends (zip [r1,r2] [Name n1, Name n2]) menv
-                  , [ root, mkTbaa n1, mkTbaa n2 ] ++ ms )      
-      
+        :: String                        -- ^ Qualify all names with this
+        -> [Bound A.Name]                -- ^ Constant regions
+        -> (MDEnv, [MDecl])              -- ^ Environment
+        -> (Bound A.Name, Bound A.Name)  -- ^ Distinct pair
+        -> LlvmM (MDEnv, [MDecl])       
+deriveDistinctM fn consts (mdenv, mdecls) (r1, r2)
+  = do   [nr,n1,n2]     <- replicateM 3 newUnique
+         let root       =  tbaaRoot $ qualifyRoot fn nr
+         let mkTbaa u n =  tbaaNode (qualify fn u n) (MRef nr) (r1 `elem` consts)
+         let (dr,d1,d2) = ( MDecl (MRef nr)   root
+                          , MDecl (MRef n1) $ mkTbaa r1 n1
+                          , MDecl (MRef n2) $ mkTbaa r2 n2)
+         return $ ( extendsDict (zip [r1, r2] [d1, d2]) mdenv
+                  , declares    [dr, d1, d2]            mdecls )
+  
+                  
 deriveConstM
-        :: (Ord n, Show n)
-        => (MetadataEnv n, [Metadata])
-        -> Bound n
-        -> LlvmM (MetadataEnv n, [Metadata])
-deriveConstM (menv, ms) c
-  = do   ns <- replicateM 2 newUnique
-         let [n, rn] = map show ns
-         let root    = tbaaRoot rn
-         return $ ( extend (c, Name n) menv
-                  , [ root, tbaaNamedNode n root True ] ++ ms)
-                              
+        :: String
+        -> (MDEnv, [MDecl])
+        -> Bound A.Name
+        -> LlvmM (MDEnv, [MDecl])
+deriveConstM fn (mdenv, mdecls) c
+  = do   [nr, n]    <- replicateM 2 newUnique
+         let root   =  tbaaRoot $ qualifyRoot fn nr
+         let (dr,d) =  ( MDecl (MRef nr)  root
+                       , MDecl (MRef n) $ tbaaNode (qualify fn c n) (MRef nr) True)
+         return $ ( extendDict (c, d)   mdenv
+                  , declares   [dr, d]  mdecls )
+      
+                                    
 distinctPairs 
           :: [(Bound A.Name, Type A.Name)]   -- ^ Witnesses 
           -> [(Bound A.Name, Bound A.Name)]  -- ^ Pairs of regions that have a distinct witness
