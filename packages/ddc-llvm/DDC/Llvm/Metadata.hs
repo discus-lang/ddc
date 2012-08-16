@@ -1,68 +1,86 @@
 module DDC.Llvm.Metadata 
         ( Metadata (..)
-        , Name (..)
-        , tbaaNamedNode 
-        , tbaaRoot )
-where
-  
+        , tbaaNode 
+        , tbaaRoot 
+        , MDecl    (..)
+        , MRef     (..)
+        , declares, rval )
+where  
 import DDC.Base.Pretty
 import DDC.Llvm.Type
 
 
--- | Name of a named metadata
-data Name = Name String deriving (Eq, Show, Ord)
-
-instance Pretty Name where
- ppr (Name s) = text ("!" ++ s)
-
-instance Pretty (Maybe Name) where
- ppr (Just n) = ppr n
- ppr Nothing  = text "null"
-
-
--- | Different types of metadata used in LLVM IR, e.g. 'debug', 'tbaa', 'range', etc.
+-- Metadata types -------------------------------------------------------------
+-- | Different types of metadata used in LLVM IR
+--      e.g. 'debug', 'tbaa', 'range', etc.
 data Metadata
         -- Metadata used for type-based alias analysis.
         = Tbaa 
-        { ref        :: (Maybe Name)         -- the name if this metadat is named
-        , identifier :: MetaPrim             -- a string uniquely indentify the region
-        , parent     :: (Maybe Name)         -- the parent node in the metadata tree
+        { identifier :: MDPrim               -- a string uniquely indentify this metadata
+        , parent     :: (Maybe MRef)         -- the parent node in the metadata tree
         , isConst    :: ConstFlag            -- whether this region is const
         } deriving (Eq, Show)
 
+
+-- | Pretty the metadata with all of its contents
+--      e.g. !{ metadata !"rx", metadata !0, i11}
 instance Pretty Metadata where
  ppr mt
   = case mt of
-         Tbaa (Just r) n p c
-           -> ppr r 
-           <> text " = metadata !" 
-           <> braces (hcat $ punctuate (comma <> space) [ppr n, ppr p, ppr c])
-         Tbaa (Nothing) n p c
-           -> text "metadata !"
+         Tbaa n p c
+           -> text " !" 
            <> braces (hcat $ punctuate (comma <> space) [ppr n, ppr p, ppr c])
 
 
+-- | Maps matadata references to metadata nodes
+--      e.g. !2 = !{ metadata "id", !0, !i11}
+data MDecl = MDecl MRef Metadata
+
+data MRef  = MRef Int 
+             deriving (Show, Eq)
+
+instance Pretty MDecl where
+  ppr (MDecl ref m) = ppr ref <> space <> equals <> space <> text "metadata" <> ppr m
+
+instance Pretty (MRef) where
+  ppr (MRef i) = text ("!" ++ show i)
+
+-- | Pretty for metadata refs that act as operands of other metadata
+--      apparently "null" is fine.
+instance Pretty (Maybe MRef) where
+ ppr (Just m) = ppr m
+ ppr Nothing  = text "null"
+
+
+-- Sugar
+declares :: [MDecl] -> [MDecl] -> [MDecl]
+declares ms mss = ms ++ mss
+
+rval :: MDecl -> Metadata
+rval (MDecl _ m) = m
+
+
+-- Metadata internal-----------------------------------------------------------
 -- | Primitive types of LLVM metadata
-data MetaPrim 
-        = MetaString String 
-        | MetaNode [MetaNodeElt]     
+data MDPrim 
+        = MDString String 
+        | MDNode [MDNodeElt]     
         deriving (Eq, Show)
 
-instance Pretty MetaPrim where
+instance Pretty MDPrim where
  ppr mp
   = case mp of
-         MetaString s -> text "metadata !"  <> (dquotes $ text s)
-         MetaNode  es -> text "metadata !{" <> ppr es <> text "}"
+         MDString s -> text "!" <> (dquotes $ text s)
+         MDNode  es -> text "!" <> braces (ppr es)
 
 
 -- | Elements of a metadata node
-data MetaNodeElt = NodeMD Metadata | NodeT Type deriving (Eq, Show)
+data MDNodeElt = NodeMD Metadata | NodeT Type deriving (Eq, Show)
 
-instance Pretty MetaNodeElt where
+instance Pretty MDNodeElt where
  ppr elt
   = case elt of
-         NodeMD (Tbaa (Just n) _ _ _) -> ppr n
-         NodeMD (Tbaa Nothing _ _ _)  -> text "foo"
+         NodeMD n@(Tbaa _ _ _) -> ppr n
          NodeT  t -> ppr t
        
        
@@ -73,20 +91,16 @@ instance Pretty ConstFlag where
  ppr (ConstFlag c) = text "i1" <> text (if c then "1" else "0")
  
 
--- Constructing TBAA metadata ------------------------------------------------- 
 
--- | Construct a single named tbaa metadata node, using the same name
---      for the reference and the ID.
-tbaaNamedNode
-      :: String         -- ^ A unique name for the node
-      -> Metadata       -- ^ The parent node
+-- Constructing TBAA metadata ------------------------------------------------- 
+-- | Construct a single tbaa node
+tbaaNode
+      :: String         -- ^ A unique identifier for the node
+      -> MRef           -- ^ The parent node
       -> Bool           -- ^ Whether this node represents a const region
       -> Metadata 
-tbaaNamedNode n p c
- = case p of
-        Tbaa (Just pn) _ _ _ -> Tbaa (Just $ Name n) (MetaString n) (Just pn) (ConstFlag c)
-        _                    -> error $ "Parent of a tbaa node must be another named tbaa node."
+tbaaNode n pr c = Tbaa (MDString n) (Just pr) (ConstFlag c)
 
 tbaaRoot :: String -> Metadata
-tbaaRoot n = Tbaa (Just $ Name n) (MetaString n) Nothing (ConstFlag True)
+tbaaRoot n = Tbaa (MDString n) Nothing (ConstFlag True)
       

@@ -36,13 +36,13 @@ data Module
         , modFuncs     :: [Function]
         
           -- | Metdata for alias analysis
-        , modMetadata  :: [Metadata]
+        , modMDecls    :: [MDecl]
         }
 
 
 -- | Print out a whole LLVM module.
 instance Pretty Module where
- ppr (Module _comments aliases globals decls funcs metas)
+ ppr (Module _comments aliases globals decls funcs mdecls)
   =    (vcat $ map ppr aliases)
   <$$> (vcat    $ map ppr globals)
   <$$> (vcat    $ map (\decl ->  text "declare" 
@@ -52,7 +52,7 @@ instance Pretty Module where
                 $ map ppr funcs)
   <$$> line
   <$$> empty
-  <$$> (vcat     $ map ppr metas)
+  <$$> (vcat    $ map ppr mdecls)
 
 
 -- Global ---------------------------------------------------------------------

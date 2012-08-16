@@ -73,17 +73,16 @@ convModuleM mm@(C.ModuleCore{})
                 = [ GlobalExternal vHeapTop ]
         ---------------------------------------------------------------
 
-        functions       <- mapM (uncurry (convSuperM kenv tenv)) bxs
-
-        metadataWithEnv <- deriveMetadataM kenv tenv mm
-
+        functionsAndMD          <- mapM (uncurry (convSuperM kenv tenv)) bxs
+        let (functions, mdecls) =  unzip functionsAndMD
+        
         return  $ Module 
                 { modComments   = []
                 , modAliases    = [aObj platform]
                 , modGlobals    = rtsGlobals
                 , modFwdDecls   = primDecls platform ++ importDecls
-                , modFuncs      = functions
-                , modMetadata   = metadata metadataWithEnv }
+                , modFuncs      = functions 
+                , modMDecls     = concat mdecls }
 
  | otherwise    = die "invalid module"
 
@@ -123,23 +122,24 @@ convSuperM
         -> TypeEnv A.Name
         -> C.Bind  A.Name       -- ^ Bind of the top-level super.
         -> C.Exp () A.Name      -- ^ Super body.
-        -> LlvmM Function
+        -> LlvmM (Function, [MDecl])
 
 convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
  | Just (bfsParam, xBody)  <- takeXLamFlags x
  = do   
         platform         <- gets llvmStatePlatform
 
+        -- Sanitise the super name so we can use it as a symbol
+        -- in the object code.
+        let nTop'       = A.sanitizeName nTop
+
         -- Add parameters to environments.                                      -- TODO: this scoping isn't right.
         let bsParamType  = [b | (True,  b) <- bfsParam]
         let bsParamValue = [b | (False, b) <- bfsParam]
 
-        let kenv'       = Env.extends bsParamType  kenv
-        let tenv'       = Env.extends (bSuper : bsParamValue) tenv
-
-        -- Sanitise the super name so we can use it as a symbol
-        -- in the object code.
-        let nTop'       = A.sanitizeName nTop
+        let kenv'       =  Env.extends bsParamType  kenv
+        let tenv'       =  Env.extends (bSuper : bsParamValue) tenv
+        mdsup           <- deriveMetadataM kenv tenv nTop' x
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   
@@ -164,12 +164,14 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
         blocks  <- convBodyM kenv' tenv' Seq.empty label Seq.empty xBody
 
         -- Build the function.
-        return  $ Function
-                { funDecl               = decl
-                , funParams             = map nameOfParam $ filter (not . isBNone) bsParamValue
-                , funAttrs              = [] 
-                , funSection            = SectionAuto
-                , funBlocks             = Seq.toList blocks }
+        return  $ ( Function
+                    { funDecl     = decl
+                    , funParams   = map nameOfParam $ filter (not . isBNone) bsParamValue
+                    , funAttrs    = [] 
+                    , funSection  = SectionAuto
+                    , funBlocks   = Seq.toList blocks }
+                  , decls mdsup )
+                  
 
 convSuperM _ _ _ _      = die "invalid super"
 
