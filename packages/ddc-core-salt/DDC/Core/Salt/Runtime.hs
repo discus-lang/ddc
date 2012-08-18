@@ -22,11 +22,14 @@ module DDC.Core.Salt.Runtime
         , xCreate
         , xRead
         , xWrite
+        , xPeekObj
+        , xPokeObj
         , xFail
         , xReturn)
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
+import DDC.Core.Salt.Env
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -170,7 +173,7 @@ utAllocRawSmall
         , tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj))
 
 
--- | Get the address of the payload of a RawSmall object.
+-- | Get the payload of a RawSmall object.
 xPayloadOfRawSmall :: a -> Type Name -> Exp a Name -> Exp a Name
 xPayloadOfRawSmall a tR x2 
  = makeXApps a (XVar a $ fst utPayloadOfRawSmall) 
@@ -179,7 +182,7 @@ xPayloadOfRawSmall a tR x2
 utPayloadOfRawSmall :: (Bound Name, Type Name)
 utPayloadOfRawSmall
  =      ( UName (NameVar "payloadOfRawSmall")
-        , tForall kRegion $ \r -> (tFunPE (tPtr r tObj) tAddr))
+        , tForall kRegion $ \r -> (tFunPE (tPtr r tObj) (tPtr r tObj)))
 
 
 -- Primops --------------------------------------------------------------------
@@ -221,6 +224,51 @@ uWrite   = UPrim (NamePrim $ PrimStore $ PrimStoreWrite)
                  (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
 
 
+-- | Peek a value from an object pointer plus offset
+xPeekObj :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name
+xPeekObj a r t xPtr offset
+ = let castedPtr = xCast a r t tObj xPtr
+   in  XApp a (XApp a (XApp a (XApp a (XVar a uPeek) 
+                                      (XType r)) 
+                              (XType t)) 
+                       castedPtr) 
+              (xNat a offset)
+
+uPeek :: Bound Name
+uPeek = UPrim (NamePrim $ PrimStore $ PrimStorePeek)
+              (typeOfPrimStore PrimStorePeek)
+              
+
+-- | Poke a value from an object pointer plus offset
+xPokeObj :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
+xPokeObj a r t xPtr offset xVal
+ = let castedPtr = xCast a r t tObj xPtr
+   in  XApp a (XApp a (XApp a (XApp a (XApp a (XVar a uPoke) 
+                                              (XType r)) 
+                                      (XType t)) 
+                               castedPtr) 
+                      (xNat a offset))
+              xVal
+
+uPoke :: Bound Name
+uPoke = UPrim (NamePrim $ PrimStore $ PrimStorePoke)
+              (typeOfPrimStore PrimStorePoke)
+
+
+-- | Cast a pointer
+xCast :: a -> Type Name -> Type Name -> Type Name -> Exp a Name -> Exp a Name
+xCast a r toType fromType xPtr
+ =     XApp a (XApp a (XApp a (XApp a (XVar a uCast)
+                                      (XType r)) 
+                              (XType toType))
+                      (XType fromType))
+              xPtr           
+                      
+uCast :: Bound Name
+uCast = UPrim (NamePrim $ PrimStore $ PrimStoreCastPtr)
+              (typeOfPrimStore PrimStoreCastPtr)
+              
+                             
 -- | Fail with an internal error.
 xFail   :: a -> Type Name -> Exp a Name
 xFail a t       

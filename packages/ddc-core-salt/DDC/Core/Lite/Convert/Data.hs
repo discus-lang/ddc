@@ -76,7 +76,7 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
                         $ O.xNat a size
 
         -- Take a pointer to its payload.
-        let bPayload    = BAnon O.tAddr
+        let bPayload    = BAnon (O.tPtr rPrime O.tObj)
         let xPayload    = O.xPayloadOfRawSmall a rPrime
                         $ XVar a (UIx 0)
 
@@ -95,7 +95,7 @@ constructData pp kenv _tenv a dataDef ctorDef rPrime xsArgs tsArgs
         let xObject'    = XVar a $ UIx 1
         let xPayload'   = XVar a $ UIx 0
         let lsFields    = [ LLet LetStrict (BNone O.tVoid)
-                                (O.xWrite a tField xPayload' offset (liftX 2 xField))
+                                (O.xPokeObj a rPrime tField xPayload' offset (liftX 2 xField))
                                 | tField        <- tsFields
                                 | offset        <- offsets
                                 | xField        <- xsFields]
@@ -148,7 +148,7 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
  , Just offsets              <- L.fieldOffsetsOfDataCtor pp ctorDef
  = do   
         -- Get the address of the payload.
-        let bPayload    = BAnon O.tAddr
+        let bPayload    = BAnon (O.tPtr trPrime O.tObj)
         let xPayload    = O.xPayloadOfRawSmall a trPrime (XVar a uScrut)
 
         -- Bind pattern variables to the fields.
@@ -158,7 +158,7 @@ destructData pp a uScrut ctorDef trPrime bsFields xBody
                 $ [ if isBNone bField
                      then Nothing 
                      else Just $ LLet LetStrict bField 
-                                     (O.xRead a tField (XVar a uPayload) offset) 
+                                     (O.xPeekObj a trPrime tField (XVar a uPayload) offset) 
                   | bField        <- bsFields
                   | tField        <- map typeOfBind bsFields
                   | offset        <- offsets ]

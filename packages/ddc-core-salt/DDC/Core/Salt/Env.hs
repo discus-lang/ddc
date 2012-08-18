@@ -4,7 +4,8 @@ module DDC.Core.Salt.Env
         ( primDataDefs
         , primKindEnv
         , primTypeEnv
-        , typeOfPrimCall)
+        , typeOfPrimCall
+        , typeOfPrimStore )
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name

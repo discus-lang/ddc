@@ -209,8 +209,8 @@ allocRaw [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
 
 
 -- | Get the address of the payload data from a raw object.
-payloadOfRaw [r : %] (obj : Ptr# r Obj) : Addr#
- =      plusAddr# (takePtr# [r] [Obj] obj) 8#
+payloadOfRaw [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
+ =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 8#)
 
 
 -- RawSmall -------------------------------------------------------------------
@@ -243,6 +243,6 @@ allocRawSmall [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
 
 
 -- | Get the address of the payload data from a raw small object.
-payloadOfRawSmall [r : %] (obj : Ptr# r Obj) : Addr#
- =      plusAddr# (takePtr# [r] [Obj] obj) 4#
+payloadOfRawSmall [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
+ =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 4#)
 
