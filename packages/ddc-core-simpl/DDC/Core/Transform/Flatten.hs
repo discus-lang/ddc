@@ -1,3 +1,5 @@
+
+-- | Flattening nested let and case expressions.
 module DDC.Core.Transform.Flatten
         ( flatten
         , flatten1)

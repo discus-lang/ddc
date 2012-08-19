@@ -33,47 +33,41 @@ instance Monoid (Simplifier s a n) where
 -- Transform ------------------------------------------------------------------
 -- | Represents individual transforms to apply during simplification.
 data Transform s a n
+        -- | The Identity transform returns the program unharmed.
         = Id
+
+        -- | Rewrite named binders to anonymous deBruijn binders.
         | Anonymize
+
+        -- | Introduce let-bindings for nested applications.
         | Snip
+
+        -- | Flatten nested let and case expressions.
         | Flatten
+
+        -- | Perform beta reduction for atomic arguments.
         | Beta
+
+        -- | Carry function bindings forward into their use sites.
         | Forward
 
+        -- | Float casts outwards.
+        | Bubble
+
+        -- | Inline definitions into their use sites.
         | Inline
                 { transInlineDef   :: n -> Maybe (Exp a n) }
 
+        -- | Rewrite anonymous binders to fresh named binders.
         | Namify
                 { transMkNamifierT :: Env n -> Namifier s n
                 , transMkNamifierX :: Env n -> Namifier s n }
 
+        -- | Apply general rule-based rewrites.
         | Rewrite
                 { transRules       :: [(String,RewriteRule a n)] }
 
 
--- | The result of a transform
-data TransformResult r
-	= TransformResult
-	{ result   	 :: r
-	, resultProgress :: Bool
-	, resultInfo	 :: TransformInfo }
-
-data TransformInfo
-	= forall i.
-	(Typeable i, Pretty i)
-	=> TransformInfo i
-
-
--- | Create a result with no extra information
--- We say that progress is false to stop a fixpoint running.
-resultSimple :: String -> r -> TransformResult r
-resultSimple name r = TransformResult r False
-		    $ TransformInfo $ NoInformation name
-
-data NoInformation = NoInformation String
-    deriving Typeable
-instance Pretty NoInformation where
-    ppr (NoInformation name) = text name P.<> text ": No information"
 
 instance Pretty (Simplifier s a n) where
  ppr ss
@@ -97,6 +91,7 @@ instance Pretty (Transform s a n) where
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
         Forward         -> text "Forward"
+        Bubble          -> text "Bubble"
         Inline{}        -> text "Inline"
         Namify{}        -> text "Namify"
         Rewrite{}       -> text "Rewrite"

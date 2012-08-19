@@ -16,6 +16,7 @@ import DDC.Core.Transform.Snip
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Forward
+import DDC.Core.Transform.Bubble
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
@@ -169,14 +170,14 @@ applyTransformX
 
 applyTransformX spec xx
  = case spec of
-        Id                -> res    $ xx
-        Anonymize         -> res    $ anonymizeX xx
-        Snip              -> res    $ snip xx
-        Flatten           -> res    $ flatten xx
-        Inline  getDef    -> res    $ inline getDef xx
+        Id                -> return xx
+        Anonymize         -> return $ anonymizeX xx
+        Snip              -> return $ snip xx
+        Flatten           -> return $ flatten xx
+        Inline  getDef    -> return $ inline getDef xx
         Beta              -> return $ betaReduce xx
         Forward           -> return $ forwardX xx
-        Namify  namK namT -> namifyUnique namK namT xx >>= res
-        Rewrite rules     -> return $ rewrite rules xx
+        Namify  namK namT -> namifyUnique namK namT xx
+        Rewrite rules     -> return $ fst $ rewrite rules xx
  where
     res x = return $ resultSimple (show $ ppr spec) x

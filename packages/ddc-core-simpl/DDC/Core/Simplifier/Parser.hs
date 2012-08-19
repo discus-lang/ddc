@@ -70,6 +70,7 @@ parseTransform namK namT rules templates (KCon name)
         "Anonymize"     -> Just Anonymize
         "Snip"          -> Just Snip
         "Flatten"       -> Just Flatten
+        "Bubble"        -> Just Bubble
         "Beta"          -> Just Beta
         "Forward"       -> Just Forward
         "Inline"        -> Just (Inline templates)
