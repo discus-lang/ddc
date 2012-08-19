@@ -1,4 +1,4 @@
-module DDC.Core.Llvm.Convert.Derive
+module DDC.Core.Llvm.Convert.Metadata
        ( MDSuper(..) 
        , MDEnv  (..)
        , MDecl  (..) 
