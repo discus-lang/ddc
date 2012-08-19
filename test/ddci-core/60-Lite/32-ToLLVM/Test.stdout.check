@@ -13,37 +13,43 @@ declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8
-declare external ccc i64 @payloadOfRawSmall(%s.Obj* ) align 8
+declare external ccc %s.Obj* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
 define external ccc %s.Obj* @addInt(%s.Obj*  %x, %s.Obj*  %y) align 8  
 {
 l1.entry:
         %x1          = call i32 @getTag (%s.Obj* %x) 
-        switch i32 %x1, label %l8.default [ i32 0,label %l2.alt ]
+        switch i32 %x1, label %l9.default [ i32 0,label %l2.alt ]
 l2.alt:
-        %x2          = call i64 @payloadOfRawSmall (%s.Obj* %x) 
-        %i1.off      = add i64 %x2, 0
-        %i1.ptr      = inttoptr i64 %i1.off to i64*
+        %x2          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x) 
+        %x3          = bitcast %s.Obj* %x2 to i64*
+        %i1.addr1    = ptrtoint i64* %x3 to i64
+        %i1.addr2    = add i64 %i1.addr1, 0
+        %i1.ptr      = inttoptr i64 %i1.addr2 to i64*
         %i1          = load i64* %i1.ptr
-        %x3          = call i32 @getTag (%s.Obj* %y) 
-        switch i32 %x3, label %l7.default [ i32 0,label %l3.alt ]
+        %x4          = call i32 @getTag (%s.Obj* %y) 
+        switch i32 %x4, label %l8.default [ i32 0,label %l3.alt ]
 l3.alt:
-        %x4          = call i64 @payloadOfRawSmall (%s.Obj* %y) 
-        %i2.off      = add i64 %x4, 0
-        %i2.ptr      = inttoptr i64 %i2.off to i64*
+        %x5          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %y) 
+        %x6          = bitcast %s.Obj* %x5 to i64*
+        %i2.addr1    = ptrtoint i64* %x6 to i64
+        %i2.addr2    = add i64 %i2.addr1, 0
+        %i2.ptr      = inttoptr i64 %i2.addr2 to i64*
         %i2          = load i64* %i2.ptr
         %x0          = add i64 %i1, %i2
-        %x5          = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
-        %x6          = call i64 @payloadOfRawSmall (%s.Obj* %x5) 
-        %_v4.off     = add i64 %x6, 0
-        %_v5.ptr     = inttoptr i64 %_v4.off to i64*
-        store i64 %x0, i64* %_v5.ptr
-        ret %s.Obj* %x5
-l7.default:
+        %x7          = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x8          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x7) 
+        %x9          = bitcast %s.Obj* %x8 to i64*
+        %_v4.addr1   = ptrtoint i64* %x9 to i64
+        %_v5.addr2   = add i64 %_v4.addr1, 0
+        %_v6.ptr     = inttoptr i64 %_v5.addr2 to i64*
+        store i64 %x0, i64* %_v6.ptr
+        ret %s.Obj* %x7
+l8.default:
         call void @abort () 
         unreachable
-l8.default:
+l9.default:
         call void @abort () 
         unreachable
 }
@@ -62,19 +68,21 @@ declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
 declare external ccc %s.Obj* @allocRawSmall(i32 , i64 ) align 8
 declare external ccc %s.Obj* @getFieldOfBoxed(%s.Obj* , i64 ) align 8
 declare external ccc i32 @getTag(%s.Obj* ) align 8
-declare external ccc i64 @payloadOfRawSmall(%s.Obj* ) align 8
+declare external ccc %s.Obj* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
 define external ccc %s.Obj* @thing(%s.Obj*  %z) align 8  
 {
 l1.entry:
         %x0          = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
-        %x1          = call i64 @payloadOfRawSmall (%s.Obj* %x0) 
-        %_v2.off     = add i64 %x1, 0
-        %_v3.ptr     = inttoptr i64 %_v2.off to i64*
-        store i64 5, i64* %_v3.ptr
-        %_v5         = call %s.Obj* @allocBoxed (i32 0, i64 0) 
-        ret %s.Obj* %_v5
+        %x1          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x0) 
+        %x2          = bitcast %s.Obj* %x1 to i64*
+        %_v2.addr1   = ptrtoint i64* %x2 to i64
+        %_v3.addr2   = add i64 %_v2.addr1, 0
+        %_v4.ptr     = inttoptr i64 %_v3.addr2 to i64*
+        store i64 5, i64* %_v4.ptr
+        %_v6         = call %s.Obj* @allocBoxed (i32 0, i64 0) 
+        ret %s.Obj* %_v6
 }
 
 

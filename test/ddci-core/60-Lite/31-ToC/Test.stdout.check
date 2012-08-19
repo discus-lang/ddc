@@ -9,8 +9,9 @@ ok
 Obj* boxInt (int_t i)
 {
         Obj* x0          = allocRawSmall (0, 8);
-        addr_t x1        = payloadOfRawSmall (x0);
-        _write (int_t, x1, 0, i);
+        Obj* x1          = payloadOfRawSmall (x0);
+        int_t* x2        = _castPtr (int_t, Obj, x1);
+        _poke (int_t, x2, 0, i);
         return x0;
 }
 
@@ -22,8 +23,9 @@ int_t unboxInt (Obj* x)
 {
         tag_t x0         = getTag (x);
         if (x0 != 0) _fail();
-        addr_t x1        = payloadOfRawSmall (x);
-        int_t i          = _read (int_t, x1, 0);
+        Obj* x1          = payloadOfRawSmall (x);
+        int_t* x2        = _castPtr (int_t, Obj, x1);
+        int_t i          = _peek (int_t, x2, 0);
         return i;
 }
 
@@ -34,17 +36,20 @@ Obj* addInt (Obj* x, Obj* y)
 {
         tag_t x1         = getTag (x);
         if (x1 != 0) _fail();
-        addr_t x2        = payloadOfRawSmall (x);
-        int_t i1         = _read (int_t, x2, 0);
-        tag_t x3         = getTag (y);
-        if (x3 != 0) _fail();
-        addr_t x4        = payloadOfRawSmall (y);
-        int_t i2         = _read (int_t, x4, 0);
+        Obj* x2          = payloadOfRawSmall (x);
+        int_t* x3        = _castPtr (int_t, Obj, x2);
+        int_t i1         = _peek (int_t, x3, 0);
+        tag_t x4         = getTag (y);
+        if (x4 != 0) _fail();
+        Obj* x5          = payloadOfRawSmall (y);
+        int_t* x6        = _castPtr (int_t, Obj, x5);
+        int_t i2         = _peek (int_t, x6, 0);
         int_t x0         = (i1 + i2);
-        Obj* x5          = allocRawSmall (0, 8);
-        addr_t x6        = payloadOfRawSmall (x5);
-        _write (int_t, x6, 0, x0);
-        return x5;
+        Obj* x7          = allocRawSmall (0, 8);
+        Obj* x8          = payloadOfRawSmall (x7);
+        int_t* x9        = _castPtr (int_t, Obj, x8);
+        _poke (int_t, x9, 0, x0);
+        return x7;
 }
 
 

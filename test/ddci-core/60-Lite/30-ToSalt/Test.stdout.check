@@ -72,8 +72,9 @@ letrec {
     = /\(r : %).
        \(i : Int#).
       let x0 : Ptr# r Obj = allocRawSmall [r] TAG0# 8# in
-      let x1 : Addr# = payloadOfRawSmall [r] x0 in
-      let _ : Void# = write# [Int#] x1 0# i in
+      let x1 : Ptr# r Obj = payloadOfRawSmall [r] x0 in
+      let x2 : Ptr# r Int# = castPtr# [r] [Int#] [Obj] x1 in
+      let _ : Void# = poke# [r] [Int#] x2 0# i in
       x0
 }
 
@@ -88,8 +89,9 @@ letrec {
       let x0 : Tag# = getTag [r] x in
       case x0 of {
         TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall [r] x in
-            let i : Int# = read# [Int#] x1 0# in
+         -> let x1 : Ptr# r Obj = payloadOfRawSmall [r] x in
+            let x2 : Ptr# r Int# = castPtr# [r] [Int#] [Obj] x1 in
+            let i : Int# = peek# [r] [Int#] x2 0# in
             i;
         _ 
          -> fail# [Int#]
@@ -106,13 +108,15 @@ letrec {
       let x0 : Tag# = getTag [r1] x in
       case x0 of {
         TAG0#  
-         -> let x1 : Addr# = payloadOfRawSmall [r1] x in
-            let i1 : Int# = read# [Int#] x1 0# in
-            let x2 : Tag# = getTag [r2] y in
-            case x2 of {
+         -> let x1 : Ptr# r1 Obj = payloadOfRawSmall [r1] x in
+            let x2 : Ptr# r1 Int# = castPtr# [r1] [Int#] [Obj] x1 in
+            let i1 : Int# = peek# [r1] [Int#] x2 0# in
+            let x3 : Tag# = getTag [r2] y in
+            case x3 of {
               TAG0#  
-               -> let x3 : Addr# = payloadOfRawSmall [r2] y in
-                  let i2 : Int# = read# [Int#] x3 0# in
+               -> let x4 : Ptr# r2 Obj = payloadOfRawSmall [r2] y in
+                  let x5 : Ptr# r2 Int# = castPtr# [r2] [Int#] [Obj] x4 in
+                  let i2 : Int# = peek# [r2] [Int#] x5 0# in
                   add# [Int#] i1 i2;
               _ 
                -> fail# [Int#]
@@ -132,18 +136,21 @@ letrec {
       let x1 : Tag# = getTag [r1] x in
       case x1 of {
         TAG0#  
-         -> let x2 : Addr# = payloadOfRawSmall [r1] x in
-            let i1 : Int# = read# [Int#] x2 0# in
-            let x3 : Tag# = getTag [r2] y in
-            case x3 of {
+         -> let x2 : Ptr# r1 Obj = payloadOfRawSmall [r1] x in
+            let x3 : Ptr# r1 Int# = castPtr# [r1] [Int#] [Obj] x2 in
+            let i1 : Int# = peek# [r1] [Int#] x3 0# in
+            let x4 : Tag# = getTag [r2] y in
+            case x4 of {
               TAG0#  
-               -> let x4 : Addr# = payloadOfRawSmall [r2] y in
-                  let i2 : Int# = read# [Int#] x4 0# in
+               -> let x5 : Ptr# r2 Obj = payloadOfRawSmall [r2] y in
+                  let x6 : Ptr# r2 Int# = castPtr# [r2] [Int#] [Obj] x5 in
+                  let i2 : Int# = peek# [r2] [Int#] x6 0# in
                   let x0 : Int# = add# [Int#] i1 i2 in
-                  let x5 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
-                  let x6 : Addr# = payloadOfRawSmall [r3] x5 in
-                  let _ : Void# = write# [Int#] x6 0# x0 in
-                  x5;
+                  let x7 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
+                  let x8 : Ptr# r3 Obj = payloadOfRawSmall [r3] x7 in
+                  let x9 : Ptr# r3 Int# = castPtr# [r3] [Int#] [Obj] x8 in
+                  let _ : Void# = poke# [r3] [Int#] x9 0# x0 in
+                  x7;
               _ 
                -> fail# [Ptr# r3 Obj]
             };
@@ -257,18 +264,21 @@ letrec {
       let x1 : Tag# = getTag [r1] x in
       case x1 of {
         TAG0#  
-         -> let x2 : Addr# = payloadOfRawSmall [r1] x in
-            let i1 : Int# = read# [Int#] x2 0# in
-            let x3 : Tag# = getTag [r2] y in
-            case x3 of {
+         -> let x2 : Ptr# r1 Obj = payloadOfRawSmall [r1] x in
+            let x3 : Ptr# r1 Int# = castPtr# [r1] [Int#] [Obj] x2 in
+            let i1 : Int# = peek# [r1] [Int#] x3 0# in
+            let x4 : Tag# = getTag [r2] y in
+            case x4 of {
               TAG0#  
-               -> let x4 : Addr# = payloadOfRawSmall [r2] y in
-                  let i2 : Int# = read# [Int#] x4 0# in
+               -> let x5 : Ptr# r2 Obj = payloadOfRawSmall [r2] y in
+                  let x6 : Ptr# r2 Int# = castPtr# [r2] [Int#] [Obj] x5 in
+                  let i2 : Int# = peek# [r2] [Int#] x6 0# in
                   let x0 : Int# = add# [Int#] i1 i2 in
-                  let x5 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
-                  let x6 : Addr# = payloadOfRawSmall [r3] x5 in
-                  let _ : Void# = write# [Int#] x6 0# x0 in
-                  x5;
+                  let x7 : Ptr# r3 Obj = allocRawSmall [r3] TAG0# 8# in
+                  let x8 : Ptr# r3 Obj = payloadOfRawSmall [r3] x7 in
+                  let x9 : Ptr# r3 Int# = castPtr# [r3] [Int#] [Obj] x8 in
+                  let _ : Void# = poke# [r3] [Int#] x9 0# x0 in
+                  x7;
               _ 
                -> fail# [Ptr# r3 Obj]
             };
