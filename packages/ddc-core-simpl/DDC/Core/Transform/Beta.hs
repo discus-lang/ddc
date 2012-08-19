@@ -2,19 +2,16 @@
 module DDC.Core.Transform.Beta
         (betaReduce)
 where
-import DDC.Base.Pretty
 import DDC.Core.Exp
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.TransformX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
-import Control.Monad.Writer	(Writer, runWriter, tell)
-import Data.Monoid		(Monoid, mempty, mappend)
-import Data.Typeable		(Typeable)
+import Data.Functor.Identity
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env    as Env
-
+import qualified Data.Set       as Set
 
 -- | Beta-reduce applications of a explicit lambda abstractions 
 --   to variables and values.
@@ -35,35 +32,21 @@ betaReduce x
   progress (BetaReduceInfo ty wit val _)
    = (ty + wit + val) > 0
 
-
-betaReduce1
-    :: Ord n
-    => Env n
-    -> Env n
-    -> Exp a n
-    -> Writer BetaReduceInfo (Exp a n)
-betaReduce1 _ _ xx
+betaReduce1 :: Ord n => Env n -> Env n -> Exp a n -> Exp a n
+betaReduce1 kenv tenv xx
  = case xx of
         XApp _ (XLAM _ b11 x12) (XType t2)
-         -> ret mempty { infoTypes	   = 1 }
-	      $ substituteTX b11 t2 x12
+         -> substituteTX b11 t2 x12
 
         XApp _ (XLam _ b11 x12) (XWitness w2)
-         -> ret mempty { infoWits	   = 1 }
-	      $	substituteWX b11 w2 x12
+         -> substituteWX b11 w2 x12
 
         XApp _ (XLam _ b11 x12) x2
          |  canBetaSubstX x2     
-         -> ret mempty { infoValues	   = 1 }
-	      $	substituteXX b11 x2 x12
+         -> substituteXX b11 x2 x12
 
          | otherwise
-         -> ret mempty { infoValuesSkipped = 1 }
-	      $	xx
-
-        _ -> return xx
- where
-  ret info x = tell info >> return x
+         -> xx
 
 
 
