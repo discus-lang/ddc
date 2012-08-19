@@ -102,7 +102,8 @@ stageLiteOpt state source pipes
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
         <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
-        <> normalizeLite)
+        <> normalizeLite
+        )
 
         -- TODO: Inlining isn't preserving type annots, 
         --       so need to recheck the module before Lite -> Salt conversion.

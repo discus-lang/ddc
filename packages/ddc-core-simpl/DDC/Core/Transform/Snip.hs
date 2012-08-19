@@ -154,12 +154,13 @@ makeLets arities f0 args@((_,annot):_)
 
         -- f is fully applied and we have arguments left to add:
         --	create let for intermediate result
-        go i arf ((x, a) : xs) acc 
-         |  length acc > arf
-         =  XLet a (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
-                   (go i 1 ((x, a) : xs) [(XVar a $ UIx 0, a)])
+        -- TODO: this produces the wrong debruijn indices.
+        -- go i arf ((x, a) : xs) acc 
+        --  |  length acc > arf
+        --  =  XLet a (LLet LetStrict (BAnon tBot) (mkApps i 0 acc))
+        --           (go i 1 ((x, a) : xs) [(XVar a $ UIx 0, a)])
 
-        -- application to variable, don't bother binding
+        ---- application to variable, don't bother binding
         go i arf ((x,a):xs) acc 
          | isNormal x
          =  go i arf xs ((x,a):acc)
