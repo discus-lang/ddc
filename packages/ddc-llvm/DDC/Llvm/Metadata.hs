@@ -35,6 +35,7 @@ instance Pretty Metadata where
 -- | Maps matadata references to metadata nodes
 --      e.g. !2 = !{ metadata "id", !0, !i11}
 data MDecl = MDecl MRef Metadata
+             deriving Show
 
 data MRef  = MRef Int 
              deriving (Show, Eq)

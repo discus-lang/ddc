@@ -161,7 +161,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
 
         -- Convert function body to basic blocks.
         label   <- newUniqueLabel "entry"
-        blocks  <- convBodyM kenv' tenv' Seq.empty label Seq.empty xBody
+        blocks  <- convBodyM kenv' tenv' mdsup Seq.empty label Seq.empty xBody
 
         -- Build the function.
         return  $ ( Function
@@ -191,13 +191,14 @@ nameOfParam bb
 convBodyM 
         :: KindEnv A.Name
         -> TypeEnv A.Name
+        -> MDSuper
         -> Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
-        -> Seq Instr            -- ^ Instrs in current block.
+        -> Seq AnnotInstr       -- ^ Instrs in current block.
         -> C.Exp () A.Name      -- ^ Expression being converted.
         -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
-convBodyM kenv tenv blocks label instrs xx
+convBodyM kenv tenv mdsup blocks label instrs xx
  = do   pp      <- gets llvmStatePlatform
         case xx of
 
@@ -209,7 +210,8 @@ convBodyM kenv tenv blocks label instrs xx
           ,  [C.XType _, C.XCon _ dc]           <- xs
           ,  Just A.NameVoid                    <- C.takeNameOfDaCon dc
           -> return  $   blocks 
-                     |>  Block label (instrs |> IReturn Nothing)
+                     |>  Block label 
+                               (instrs |> (annotNil $ IReturn Nothing))
 
          -- Void return applied to some other expression.
          -- We still have to eval the expression, 
@@ -219,9 +221,10 @@ convBodyM kenv tenv blocks label instrs xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x2]                    <- xs
           ,  isVoidT t
-          -> do instrs2 <- convStmtM pp kenv tenv x2
+          -> do instrs2 <- convStmtM pp kenv tenv mdsup x2
                 return  $  blocks
-                        |> Block label (instrs >< (instrs2 |> IReturn Nothing))
+                        |> Block label 
+                                 (instrs >< (instrs2 |> (annotNil $ IReturn Nothing)))
 
          -- Return a value.
          C.XApp{}
@@ -230,9 +233,10 @@ convBodyM kenv tenv blocks label instrs xx
           ,  [C.XType t, x]                     <- xs
           -> do let t'  =  convType pp kenv t
                 vDst    <- newUniqueVar t'
-                is      <- convExpM pp kenv tenv vDst x
+                is      <- convExpM pp kenv tenv mdsup vDst x
                 return  $   blocks 
-                        |>  Block label (instrs >< (is |> IReturn (Just (XVar vDst))))
+                        |>  Block label 
+                                  (instrs >< (is |> (annotNil $ IReturn (Just (XVar vDst)))))
 
          -- Fail and abort the program.
          C.XApp{}
@@ -245,7 +249,8 @@ convBodyM kenv tenv blocks label instrs xx
                                  [] []
 
              in  return  $   blocks 
-                         |>  Block label (instrs |> iFail |> IUnreachable)
+                         |>  Block label 
+                                   (instrs |> annotNil iFail |> (annotNil $ IUnreachable))
 
 
          -- Calls -----------------------------------------
@@ -261,18 +266,18 @@ convBodyM kenv tenv blocks label instrs xx
               -- Tailcalled function returns void.
               then do return $ blocks
                         |> (Block label $ instrs
-                           |> ICall Nothing CallTypeTail
-                                   (convType pp kenv tResult) nFun xsArgs' []
-                           |> IReturn Nothing)
+                           |> (annotNil $ ICall Nothing CallTypeTail
+                                               (convType pp kenv tResult) nFun xsArgs' [])
+                           |> (annotNil $ IReturn Nothing))
 
               -- Tailcalled function returns an actual value.
               else do let tResult'    = convType pp kenv tResult
                       vDst            <- newUniqueVar tResult'
                       return  $ blocks
                        |> (Block label $ instrs
-                          |> ICall (Just vDst) CallTypeTail 
-                                   (convType pp kenv tResult) nFun xsArgs' []
-                          |> IReturn (Just (XVar vDst)))
+                          |> (annotNil $ ICall (Just vDst) CallTypeTail 
+                                   (convType pp kenv tResult) nFun xsArgs' [])
+                          |> (annotNil $ IReturn (Just (XVar vDst))))
 
 
          -- Assignment ------------------------------------
@@ -283,32 +288,32 @@ convBodyM kenv tenv blocks label instrs xx
 
                 let t'    = convType pp kenv t
                 let dst   = Var (NameLocal n') t'
-                instrs'   <- convExpM pp kenv tenv dst x1
-                convBodyM kenv tenv' blocks label (instrs >< instrs') x2
+                instrs'   <- convExpM pp kenv tenv mdsup dst x1
+                convBodyM kenv tenv' mdsup blocks label (instrs >< instrs') x2
 
          -- A statement that provides no value statment.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           | isVoidT t
-          -> do instrs'   <- convStmtM pp kenv tenv x1
-                convBodyM kenv tenv blocks label (instrs >< instrs') x2
+          -> do instrs'   <- convStmtM pp kenv tenv mdsup x1
+                convBodyM kenv tenv mdsup blocks label (instrs >< instrs') x2
 
          -- Variable assignment from an unsed binder.
          -- We need to invent a dummy binder as LLVM needs some name for it.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           -> do let t'    =  convType pp kenv t
                 dst       <- newUniqueNamedVar "dummy" t'
-                instrs'   <- convExpM pp kenv tenv dst x1
-                convBodyM kenv tenv blocks label (instrs >< instrs') x2
+                instrs'   <- convExpM pp kenv tenv mdsup dst x1
+                convBodyM kenv tenv mdsup blocks label (instrs >< instrs') x2
 
          -- Letregions
          C.XLet _ (C.LLetRegion b _) x2
           -> do let kenv' = Env.extend b kenv
-                convBodyM kenv' tenv blocks label instrs x2
+                convBodyM kenv' tenv mdsup blocks label instrs x2
 
          -- Case statement.
          C.XCase _ x1 alts
           | Just x1'@(Var{})    <- takeLocalV pp kenv tenv x1
-          -> do alts'@(_:_)     <- mapM (convAltM kenv tenv) alts
+          -> do alts'@(_:_)     <- mapM (convAltM kenv tenv mdsup) alts
 
                 -- Determine what default alternative to use for the instruction. 
                 (lDefault, blocksDefault)
@@ -324,7 +329,7 @@ convBodyM kenv tenv blocks label instrs xx
                 let blocksTable = join $ fmap altResultBlocks $ Seq.fromList altsTable
 
                 let switchBlock = Block label
-                                $ instrs |> ISwitch (XVar x1') lDefault table
+                                $ instrs |> (annotNil $ ISwitch (XVar x1') lDefault table)
 
                 return  $ blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
@@ -337,15 +342,16 @@ convStmtM
         :: Platform
         -> KindEnv A.Name
         -> TypeEnv A.Name
+        -> MDSuper
         -> C.Exp () A.Name      -- ^ Expression to convert.
-        -> LlvmM (Seq Instr)
+        -> LlvmM (Seq AnnotInstr)
 
-convStmtM pp kenv tenv xx
+convStmtM pp kenv tenv mdsup xx
  = case xx of
         -- Call to primop.
         C.XApp{}
          |  Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), xs) <- takeXApps xx
-         -> convPrimCallM pp kenv tenv Nothing p tPrim xs
+         -> convPrimCallM pp kenv tenv mdsup Nothing p tPrim xs
 
         -- Call to top-level super.
          | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
@@ -356,8 +362,8 @@ convStmtM pp kenv tenv xx
 
          -> let (_, tResult)    =  convSuperType pp kenv tSuper
 
-            in  return $ Seq.singleton
-                    $ ICall Nothing CallTypeStd 
+            in  return $ Seq.singleton $ annotNil
+                       $ ICall Nothing CallTypeStd 
                          tResult nFun xsArgs_value' []
 
         _ -> die $ "invalid statement" ++ show xx
@@ -377,22 +383,23 @@ data AltResult
 convAltM 
         :: KindEnv  A.Name
         -> TypeEnv  A.Name
+        -> MDSuper
         -> C.Alt () A.Name      -- ^ Alternative to convert.
         -> LlvmM AltResult
 
-convAltM kenv tenv aa
+convAltM kenv tenv mdsup aa
  = do   pp      <- gets llvmStatePlatform
         case aa of
          C.AAlt C.PDefault x
           -> do label   <- newUniqueLabel "default"
-                blocks  <- convBodyM kenv tenv Seq.empty label Seq.empty x
+                blocks  <- convBodyM kenv tenv mdsup Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
          C.AAlt (C.PData dc []) x
           | Just n      <- C.takeNameOfDaCon dc
           , Just lit    <- convPatName pp n
           -> do label   <- newUniqueLabel "alt"
-                blocks  <- convBodyM kenv tenv Seq.empty label Seq.empty x
+                blocks  <- convBodyM kenv tenv mdsup Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
          _ -> die "invalid alternative"
@@ -435,39 +442,40 @@ convExpM
         :: Platform
         -> KindEnv A.Name
         -> TypeEnv A.Name
+        -> MDSuper
         -> Var                  -- ^ Assign result to this var.
         -> C.Exp () A.Name      -- ^ Expression to convert.
-        -> LlvmM (Seq Instr)
+        -> LlvmM (Seq AnnotInstr)
 
-convExpM pp kenv tenv vDst (C.XVar _ u@(C.UName (A.NameVar n)))
+convExpM pp kenv tenv _ vDst (C.XVar _ u@(C.UName (A.NameVar n)))
  | Just t       <- Env.lookup u tenv
  = do   let n'  = A.sanitizeName n
         let t'  = convType pp kenv t
-        return  $ Seq.singleton 
+        return  $ Seq.singleton $ annotNil
                 $ ISet vDst (XVar (Var (NameLocal n') t'))
 
-convExpM pp _ _ vDst (C.XCon _ dc)
+convExpM pp _ _ _ vDst (C.XCon _ dc)
  | Just n       <- C.takeNameOfDaCon dc
  = case n of
         A.NameNat i
-         -> return $ Seq.singleton
+         -> return $ Seq.singleton $ annotNil
                    $ ISet vDst (XLit (LitInt (tNat pp) i))
 
         A.NameInt  i
-         -> return $ Seq.singleton 
+         -> return $ Seq.singleton $ annotNil
                    $ ISet vDst (XLit (LitInt (tInt pp) i))
 
         A.NameWord w bits
-         -> return $ Seq.singleton
+         -> return $ Seq.singleton $ annotNil
                    $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
 
         _ -> die "invalid literal"
 
-convExpM pp kenv tenv dst xx@C.XApp{}
+convExpM pp kenv tenv mdsup dst xx@C.XApp{}
         
         -- Call to primop.
         | Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), args) <- takeXApps xx
-        = convPrimCallM pp kenv tenv (Just dst) p tPrim args
+        = convPrimCallM pp kenv tenv mdsup (Just dst) p tPrim args
 
         -- Call to top-level super.
         | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
@@ -477,10 +485,10 @@ convExpM pp kenv tenv dst xx@C.XApp{}
         , Just tSuper           <- Env.lookup u tenv
         = let   (_, tResult)    = convSuperType pp kenv tSuper
 
-          in    return $ Seq.singleton
-                 $ ICall (Just dst) CallTypeStd 
+          in    return $ Seq.singleton $ annotNil
+                       $ ICall (Just dst) CallTypeStd 
                          tResult nFun xsArgs_value' []
 
-convExpM _ _ _ _ xx
+convExpM _ _ _ _ _ xx
         = die $ "invalid expression " ++ show xx
 

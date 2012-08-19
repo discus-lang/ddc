@@ -3,7 +3,7 @@ module DDC.Core.Llvm.Convert.Derive
        , MDEnv  (..)
        , MDecl  (..) 
        , deriveMetadataM 
-       , lookup, lookups )
+       , lookup, lookups, annot)
 where
 
 import DDC.Llvm.Metadata
@@ -18,6 +18,7 @@ import DDC.Base.Pretty              hiding (empty)
 import DDC.Type.Env                 (Env)
 import qualified DDC.Type.Env       as Env
 import qualified DDC.Core.Salt.Name as A
+import qualified DDC.Llvm.Instr     as V
 
 import Prelude                      hiding (lookup)
 import Data.Map                     (Map)
@@ -37,7 +38,7 @@ data MDSuper
             -- Metadata nodes, to be pretty-printed with the module as
             --    declarations. e.g. "1 = !{ metadata "id", !parent, !i11}
           , decls       :: [MDecl]
-          }
+          } deriving Show
 
 instance Pretty (MDSuper) where
  ppr (MDSuper _ metadata)
@@ -92,7 +93,7 @@ deriveMetadataM kenv tenv nTop xx
       let wits      =  collectWitnesses tenv' xx
       let consts    =  filter (isConstReg wits) regs
       let distincts =  distinctPairs wits
-            
+      
       -- Generate a single-level tree for each distinct pair, using unique names for nodes   
       ms              <- foldM (deriveDistinctM nTop consts) (emptyDict, []) distincts   
       
@@ -165,33 +166,23 @@ isConstReg ws r
   
 -- Attaching metadata ---------------------------------------------------------  
 -- | Attach relevant metadata to instructions
-{-annotate
-      :: (BindStruct c)
+annot :: (BindStruct c, Show (c A.Name))
       => Env A.Name                     -- ^ Kind environment
-      -> MDSuper                          -- ^ Metadata available      
-      -> [c A.Name ]                    -- ^ Arguments to the primop
-      -> Instr                          -- ^ Instruction to annotate
-      -> InstrMD
+      -> MDSuper                        -- ^ Metadata available      
+      -> [c A.Name]                     -- ^ Things to lookup for MD
+      -> V.Instr                        -- ^ Instruction to annotate
+      -> V.AnnotInstr
       
-annotate kenv MDSuper xxs ins
- = let regions  = concatMap (collectRegions kenv) xxs
-       mdecls   = concat $ catMaybes $ lookups regions MDSuper
-       mds      = map rval mdecls
+annot kenv mdsup xs ins
+ = let regions  = concatMap (collectRegions kenv) xs
+       mdecls   = concat $ catMaybes $ lookups regions mdsup
        annotate' ms is 
          = case is of
-                ILoad{}  -> InstrMD is ms
-                IStore{} -> InstrMD is ms
-                _        -> InstrMD is []              
-   in  annotate' mds ins
+                V.ILoad{}  -> V.AnnotInstr (is, ms)
+                V.IStore{} -> V.AnnotInstr (is, ms)
+                _          -> V.AnnotInstr (is, [])              
+   in  annotate' mdecls ins
 
-
-annotateSeq
-        :: (BindStruct c)
-        => Env A.Name -> MDSuper -> [c A.Name ]
-        -> Seq Instr -> Seq InstrMD
-
-annotateSeq kenv MDSuper xxs = fmap (annotate kenv MDSuper xxs)-}
- 
  
 -- Collecting bounds ----------------------------------------------------------  
 -- | Collect region variables
@@ -202,8 +193,8 @@ collectRegions
           -> [Bound A.Name]
 collectRegions kenv cc
  = let regionKind u = case Env.lookup u kenv of
-                             Just t | isRegionKind t -> True
-                             _                       -> False
+                           Just t | isRegionKind t -> True
+                           _                       -> False
    in filter regionKind $ Set.toList (collectBound cc)
  
  
@@ -214,10 +205,19 @@ collectWitnesses
           -> c A.Name
           -> [(Bound A.Name, Type A.Name)]
 collectWitnesses tenv cc
- = let witnessType u = case Env.lookup u tenv of
-                            Just t | isWitnessType t -> Just (u, t)
-                            _                        -> Nothing
-   in  catMaybes $ map (witnessType) $ Set.toList (collectBound cc)
+ = let isBoundWit u 
+         = case Env.lookup u tenv of
+                Just t | isWitnessType t -> Just (u, t)
+                _                        -> Nothing
+       
+       isBindWit  b 
+         = case b of
+                BName n t | isWitnessType t -> Just (UName n, t)
+                _                           -> Nothing
+       
+       boundWits = map (isBoundWit) $ Set.toList (collectBound cc)
+       bindWits  = map (isBindWit)  $ snd        (collectBinds cc)
+   in  catMaybes $ boundWits ++ bindWits
 
 
 

@@ -3,14 +3,20 @@ module DDC.Llvm.Instr
         ( module DDC.Llvm.Exp
         , module DDC.Llvm.Type
         , module DDC.Llvm.Prim
+        , module DDC.Llvm.Metadata
         , Label         (..)
         , Block         (..)
         , CallType      (..)
-        , Instr         (..))
+        , Instr         (..)
+        
+        -- * Instructions annotated with metadata
+        , AnnotInstr    (..)
+        , annotNil, annotWith )
 where
 import DDC.Llvm.Prim
 import DDC.Llvm.Type
 import DDC.Llvm.Exp
+import DDC.Llvm.Metadata
 import DDC.Base.Pretty
 import Data.Sequence            (Seq)
 import qualified Data.Foldable  as Seq
@@ -35,7 +41,7 @@ data Block
 
           -- | A list of LlvmStatement's representing the code for this block.
           -- This list must end with a control flow statement.
-        , blockStmts    :: Seq Instr
+        , blockStmts    :: Seq AnnotInstr
         }
 
 
@@ -64,6 +70,25 @@ instance Pretty CallType where
 
 
 -- Instr ----------------------------------------------------------------------
+data AnnotInstr = AnnotInstr (Instr, [MDecl])
+                  deriving Show
+                  
+instance Pretty AnnotInstr where
+ ppr (AnnotInstr (instr, [])) = ppr instr
+ ppr (AnnotInstr (instr, mds))
+  = let pprWithTag (MDecl ref Tbaa{}) = text "!tbaa" <> space <> ppr ref
+    in  ppr  instr
+        <>   comma <> (hcat $ replicate 4 space)
+        <>   (hcat $ punctuate (comma <> space) (map pprWithTag mds))
+                                        
+                                        
+annotNil :: Instr -> AnnotInstr
+annotNil ins = AnnotInstr (ins, [])
+
+annotWith :: Instr -> [MDecl] -> AnnotInstr
+annotWith ins mds = AnnotInstr (ins, mds)
+
+                    
 -- | Instructions
 data Instr
         -- | Comment meta-instruction.
