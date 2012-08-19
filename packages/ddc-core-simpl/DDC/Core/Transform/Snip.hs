@@ -43,7 +43,7 @@ snipX
 
 snipX arities x args
         -- For applications, remember the argument that the function is being 
-        --   applied to, and decend into the funciton part.
+        --   applied to, and decend into the function part.
         --   This unzips application nodes as we decend into the tree.
         | XApp a fun arg        <- x
         = snipX arities fun $ (snipX arities arg [], a) : args
@@ -57,20 +57,20 @@ snipX arities x args
         = makeLets arities (enterX arities x) args
 
 -- Enter into a non-application.
-enterX arities x
+enterX arities xx
  = let  down ars e 
          = snipX (extendsArities arities ars) e []
 
-   in case x of
+   in case xx of
         -- The snipX function shouldn't have called us with an XApp.
         XApp{}           
          -> error "DDC.Core.Transform.ANormal.anormal: unexpected XApp"
 
         -- leafy constructors
-        XVar{}           -> x
-        XCon{}           -> x
-        XType{}          -> x
-        XWitness{}       -> x
+        XVar{}           -> xx
+        XCon{}           -> xx
+        XType{}          -> xx
+        XWitness{}       -> xx
 
         -- lambdas
         XLAM a b e
@@ -80,28 +80,28 @@ enterX arities x
          -> XLam a b (down [(b,0)] e)
 
         -- non-recursive let
-        XLet a (LLet m b le) re
-         -> let le' = down [] le 
-                re' = down [(b, arityOfExp' le')] re 
-            in  XLet a (LLet m b le') re'
+        XLet a (LLet m b x1) x2
+         -> let x1' = down [] x1
+                x2' = down [(b, arityOfExp' x1')] x2
+            in  XLet a (LLet m b x1') x2'
 
         -- recursive let
-        XLet a (LRec lets) re
+        XLet a (LRec lets) x2
          -> let bs      = map fst lets 
-                es      = map snd lets 
-                ars     = zip bs (map arityOfExp' es) 
-                es'     = map (down ars) es 
-                re'     = down ars re
-            in  XLet a (LRec $ zip bs es') re' 
+                xs      = map snd lets 
+                ars     = zip bs (map arityOfExp' xs) 
+                xs'     = map (down ars) xs
+                x2'     = down ars x2
+            in  XLet a (LRec $ zip bs xs') x2' 
 
         -- letregion, just make sure we record bindings with dummy val.
-        XLet a (LLetRegion b bs) re
+        XLet a (LLetRegion b bs) x2
          -> let ars = zip bs (repeat 0) 
-            in  XLet a (LLetRegion b bs) (down ars re)
+            in  XLet a (LLetRegion b bs) (down ars x2)
 
         -- withregion
-        XLet a (LWithRegion b) re
-         -> XLet a (LWithRegion b) (down [] re)
+        XLet a (LWithRegion b) z2
+         -> XLet a (LWithRegion b) (down [] z2)
 
         -- case
         -- Split out non-atomic discriminants into their own bindings.
@@ -132,6 +132,7 @@ makeLets
         -> Exp a n	   -- ^ function
         -> [(Exp a n,a)]   -- ^ arguments being applied to current expression
         -> Exp a n
+
 makeLets _  f0 [] = f0
 makeLets arities f0 args@((_,annot):_) 
  = go 0 f0Arity ((f0,annot):args) []
@@ -183,7 +184,8 @@ makeLets arities f0 args@((_,annot):_)
          = XVar a $ UIx i
 
         -- apply this argument and recurse
-        mkApps l i ((x,a):xs) | isNormal x
+        mkApps l i ((x,a):xs) 
+         | isNormal x
          = XApp a (mkApps l i xs) (L.liftX l x)
 
         mkApps l i ((_,a):xs)

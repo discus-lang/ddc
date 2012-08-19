@@ -19,9 +19,9 @@ module DDC.Type.Predicates
 
           -- * Data Types
         , isAlgDataType
-        , isWitnessType
-        , isConstWitType
-        , isDistinctWitType)
+	      , isWitnessType
+	      , isConstWitType
+	      , isDistinctWitType)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
