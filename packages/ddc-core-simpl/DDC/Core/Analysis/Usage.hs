@@ -151,25 +151,18 @@ usageX xx
          -> ( used'
             , XCase (used', a) x1' alts' )
 
-        XCast _ _ x1
-         -> usageX x1
+        XCast a c x1
+         |  (used1, x1')   <- usageX x1
+         ,  (used2, c')    <- usageC c
+         ,  used'          <- plusUsedMap used1 used2
+         -> ( used'
+            , XCast (used', a) c' x1')
 
         XType t        
          -> (empty, XType t)
 
         XWitness w     
          -> (empty, XWitness w)
-
-
--- | Annotate binding occurrences of named variables with usage information.
-usageAlt  
-        :: Ord n 
-        => Alt a n  
-        -> (UsedMap n, Alt (UsedMap n, a) n)
-
-usageAlt (AAlt p x)
- = let  (used, x')      = usageX x
-   in   (used, AAlt p x')
 
 
 -- | Annotate binding occurences of named variables with usage information.
@@ -195,4 +188,39 @@ usageLets lts
 
         LWithRegion b
          -> (empty, LWithRegion b)
+
+
+-- | Annotate binding occurrences of named value variables with 
+--  usage information.
+usageC  :: Ord n
+        => Cast a n
+        -> (UsedMap n, Cast (UsedMap n, a) n)
+usageC cc
+ = case cc of
+        CastWeakenEffect eff    
+         -> (empty, CastWeakenEffect eff)
+
+        CastWeakenClosure xs
+         | (useds, xs')         <- unzip $ map usageX xs
+         , used'                <- sumUsedMap useds
+         -> (used', CastWeakenClosure xs')
+
+        CastPurify w
+         -> (empty, CastPurify w)
+
+        CastForget w
+         -> (empty, CastForget w)
+
+
+-- | Annotate binding occurrences of named level-0 variables with
+--   usage information.
+usageAlt  
+        :: Ord n 
+        => Alt a n  
+        -> (UsedMap n, Alt (UsedMap n, a) n)
+
+usageAlt (AAlt p x)
+ = let  (used, x')      = usageX x
+   in   (used, AAlt p x')
+
 
