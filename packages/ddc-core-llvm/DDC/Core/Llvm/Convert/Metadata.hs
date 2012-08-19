@@ -98,7 +98,7 @@ deriveMetadataM kenv tenv nTop xx
       ms              <- foldM (deriveDistinctM nTop consts) (emptyDict, []) distincts   
       
       -- Generate a node for constant regions
-      (mdenv, mdecls) <- foldM (deriveConstM nTop) ms consts
+      (mdenv, mdecls) <- foldM (deriveConstM nTop distincts) ms consts
           
       return $ MDSuper mdenv mdecls
 
@@ -110,10 +110,12 @@ qualify q _                     i = q ++ "_" ++ (show i)
 qualifyRoot :: String -> Int -> String
 qualifyRoot q i = q ++ "_ROOT_" ++ (show i)
 
+
+-- | Generate metadata for each pair of distinct regions
 deriveDistinctM 
-        :: String                        -- ^ Qualify all names with this
+        :: String                        -- ^ Qualify all metadata names with this
         -> [Bound A.Name]                -- ^ Constant regions
-        -> (MDEnv, [MDecl])              -- ^ Environment
+        -> (MDEnv, [MDecl])              -- ^ Accumulator
         -> (Bound A.Name, Bound A.Name)  -- ^ Distinct pair
         -> LlvmM (MDEnv, [MDecl])       
 deriveDistinctM fn consts (mdenv, mdecls) (r1, r2)
@@ -126,13 +128,21 @@ deriveDistinctM fn consts (mdenv, mdecls) (r1, r2)
          return $ ( extendsDict (zip [r1, r2] [d1, d2]) mdenv
                   , declares    [dr, d1, d2]            mdecls )
   
-                  
+
+
+-- | Generate metadata for constant regions that are not already included in some
+--      distinct pair.                  
 deriveConstM
-        :: String
-        -> (MDEnv, [MDecl])
-        -> Bound A.Name
+        :: String                          -- ^ Qualify metadata identifiers with this
+        -> [(Bound A.Name, Bound A.Name)]  -- ^ Distinct pairs
+        -> (MDEnv, [MDecl])                -- ^ Accumulator
+        -> Bound A.Name                    -- ^ Constant region to derive metadata for
         -> LlvmM (MDEnv, [MDecl])
-deriveConstM fn (mdenv, mdecls) c
+deriveConstM fn distincts (mdenv, mdecls) c
+  | (ds1, ds2) <- unzip distincts
+  , (c `elem` ds1) || (c `elem` ds2)
+  = return $ (mdenv, mdecls)
+  | otherwise
   = do   [nr, n]    <- replicateM 2 newUnique
          let root   =  tbaaRoot $ qualifyRoot fn nr
          let (dr,d) =  ( MDecl (MRef nr)  root
@@ -140,7 +150,8 @@ deriveConstM fn (mdenv, mdecls) c
          return $ ( extendDict (c, d)   mdenv
                   , declares   [dr, d]  mdecls )
       
-                                    
+
+-- | Convert distinct witnesses to tuples of distinct regions                                    
 distinctPairs 
           :: [(Bound A.Name, Type A.Name)]   -- ^ Witnesses 
           -> [(Bound A.Name, Bound A.Name)]  -- ^ Pairs of regions that have a distinct witness
