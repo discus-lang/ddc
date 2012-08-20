@@ -43,7 +43,7 @@ instance LiftX (Exp a) where
         XCon{}          -> xx
         XApp a x1 x2    -> XApp a (down x1) (down x2)
         XLAM a b x      -> XLAM a b (down x)
-        XLam a b x      -> XLam a b (liftAtDepthX n (d + 1) x)
+        XLam a b x      -> XLam a b (liftAtDepthX n (d + countBAnons [b]) x)
          
         XLet a lets x   
          -> let (lets', levels) = liftAtDepthXLets n d lets 
@@ -77,7 +77,8 @@ liftAtDepthXLets n d lts
  = case lts of
         LLet m b x
          -> let inc = countBAnons [b]
-                x'  = liftAtDepthX n (d+inc) x
+		-- non-recursive binding: do not increase x's depth
+                x'  = liftAtDepthX n d x
             in  (LLet m b x', inc)
 
         LRec bs

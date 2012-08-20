@@ -43,7 +43,7 @@ instance LiftW (Exp a) where
         XCon{}          -> xx
         XApp a x1 x2    -> XApp a (down x1) (down x2)
         XLAM a b x      -> XLAM a b (down x)
-        XLam a b x      -> XLam a b (liftAtDepthW n (d + 1) x)
+        XLam a b x      -> XLam a b (liftAtDepthW n (d + countBAnons [b]) x)
          
         XLet a lets x   
          -> let (lets', levels) = liftAtDepthXLets n d lets 
@@ -97,7 +97,7 @@ liftAtDepthXLets n d lts
         LLet m b x
          -> let m'  = liftAtDepthW n d m
                 inc = countBAnons [b]
-                x'  = liftAtDepthW n (d+inc) x
+                x'  = liftAtDepthW n d x
             in  (LLet m' b x', inc)
 
         LRec bs

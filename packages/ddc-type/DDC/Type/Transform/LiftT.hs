@@ -52,7 +52,7 @@ instance LiftT Type where
     in case tt of
         TVar u          -> TVar    (down d u)
         TCon{}          -> tt
-        TForall b t     -> TForall (down d b)  (down (d + 1) t)
+        TForall b t     -> TForall (down d b)  (down (d + countBAnons [b]) t)
         TApp t1 t2      -> TApp    (down d t1) (down d t2)
         TSum ss         -> TSum    (down d ss)
 
@@ -62,4 +62,8 @@ instance LiftT TypeSum where
   = Sum.fromList (liftAtDepthT n d $ Sum.kindOfSum ss)
         $ map (liftAtDepthT n d)
         $ Sum.toList ss
+
+countBAnons = length . filter isAnon
+ where	isAnon (BAnon _) = True
+	isAnon _	 = False
 
