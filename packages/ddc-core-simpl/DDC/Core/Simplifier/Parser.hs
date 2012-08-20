@@ -15,7 +15,7 @@ import Data.Char
 parseSimplifier 
         :: (Env n -> Namifier s n)      -- ^ Namifier for type variables.
         -> (Env n -> Namifier s n)      -- ^ Namifier for exp variables.
-        -> [RewriteRule a n]            -- ^ Rewrite rule set.
+        -> [(String, RewriteRule a n)]  -- ^ Rewrite rule set.
         -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
         -> String 
         -> Maybe (Simplifier s a n)
@@ -48,7 +48,7 @@ parseSimplifier namK namT rules templates str
 parseTransform 
         :: (Env n -> Namifier s n)      -- ^ Namifier for type variables.
         -> (Env n -> Namifier s n)      -- ^ Namifier for exp  variables.
-        -> [RewriteRule a n]            -- ^ Rewrite rule set.
+        -> [(String, RewriteRule a n)]  -- ^ Rewrite rule set.
         -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
         -> Tok 
         -> Maybe (Transform s a n)

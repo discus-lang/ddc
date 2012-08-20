@@ -41,7 +41,7 @@ data Transform s a n
                 , transMkNamifierX :: Env n -> Namifier s n }
 
         | Rewrite
-                { transRules       :: [RewriteRule a n] }
+                { transRules       :: [(String,RewriteRule a n)] }
 
 
 

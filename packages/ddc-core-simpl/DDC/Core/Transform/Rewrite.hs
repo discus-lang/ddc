@@ -17,24 +17,39 @@ import qualified DDC.Type.Compounds			as T
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import Control.Monad.Writer
 
 
 -- I would eventually like to change this to take Map String (RewriteRule..)
 -- so that we can record how many times each rule is fired?
 -- (no, I think just [(String,Rule)] because don't want to require unique names
-rewrite :: (Show a, Show n, Ord n, Pretty n) => [RewriteRule a n] -> Exp a n -> Exp a n
+rewrite :: (Show a, Show n, Ord n, Pretty n) => [(String,RewriteRule a n)] -> Exp a n -> (Exp a n, [String])
 rewrite rules x0
- =  down x0 RE.empty
+ =  runWriter $ down x0 RE.empty
  where
     down x ws = go x [] ws
-    go (XApp a f arg)	args ws = go f ((down arg ws,a):args) ws
+    go (XApp a f arg)	args ws = do
+	arg' <- down arg ws
+	go f ((arg',a):args) ws
     go x@(XVar{})	args ws = rewrites x args ws
     go x@(XCon{})	args ws = rewrites x args ws
-    go (XLAM a b e)	args ws = rewrites (XLAM a b $ down e (RE.lift b ws)) args ws
-    go (XLam a b e)	args ws = rewrites (XLam a b $ down e (RE.extend b ws)) args ws
-    go (XLet a l e)	args ws = rewrites (goDefHoles a (goLets l ws) e ws) args ws
-    go (XCase a e alts)	args ws = rewrites (XCase a (down e ws) (map (goAlts ws) alts)) args ws
-    go (XCast a c e)	args ws = rewrites (XCast a c $ down e ws) args ws
+    go (XLAM a b e)	args ws = do
+	e' <- down e (RE.lift b ws)
+	rewrites (XLAM a b e') args ws
+    go (XLam a b e)	args ws = do
+	e' <- down e (RE.extend b ws)
+	rewrites (XLam a b e') args ws
+    go (XLet a l e)	args ws = do
+	l' <- goLets l ws
+	dh <- goDefHoles a l' e ws
+	rewrites dh args ws
+    go (XCase a e alts)	args ws = do
+	e'    <- down e ws
+	alts' <- mapM (goAlts ws) alts
+	rewrites (XCase a e' alts') args ws
+    go (XCast a c e)	args ws = do
+	e' <- down e ws
+	rewrites (XCast a c e') args ws
     go x@(XType{})	args ws = rewrites x args ws
     go x@(XWitness{})	args ws = rewrites x args ws
 
@@ -46,7 +61,7 @@ rewrite rules x0
 		let bs'	       = map snd $ filter ((==BMType).fst) bs
 		    (_,bas')   = lookups bs' sub
 		    -- surround whole expression with anon lets from sub
-		    values     = map	 (\(b,v) ->     (BAnon (T.typeOfBind b), v)) bas'
+		    values     = map	 (\(b,v) ->   (BAnon (T.typeOfBind b), v)) bas'
 		    -- replace 'def' with LHS-HOLE[sub => ^n]
 		    anons      = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
 		    lets       = map (\(b,v) -> LLet LetStrict b v) values
@@ -59,10 +74,16 @@ rewrite rules x0
 		    e'	       = L.liftAtDepthX (length bas') depth e
 		    -- SAVE in wit env
 		    ws'	       = foldl (flip RE.extendLets) ws lets'
-		in  X.makeXLets a lets' $ down e' ws'
-	    _ -> XLet a l (down e (RE.extendLets l ws))
+		in do
+		    e'' <- down e' ws'
+		    return $ X.makeXLets a lets' e''
+	    _ -> do
+		e' <- down e (RE.extendLets l ws)
+		return $ XLet a l e'
 
-    goDefHoles a l e ws = XLet a l (down e (RE.extendLets l ws))
+    goDefHoles a l e ws = do
+	e' <- down e (RE.extendLets l ws)
+	return $ XLet a l e'
 
     checkHoles def ws
      =  let rules'   = Maybe.catMaybes $ map holeRule rules
@@ -72,30 +93,33 @@ rewrite rules x0
 	  $ map (\r -> fmap (\s -> (s,r)) $ rewriteSubst r f args ws RM.emptySubstInfo)
 	    rules'
 
-    holeRule (RewriteRule bs cs _lhs (Just hole) rhs e c)
-	= Just (RewriteRule bs cs hole Nothing rhs e c) -- LOL undefineds
+    holeRule (_, RewriteRule bs cs _lhs (Just hole) rhs e c)
+	= Just (RewriteRule bs cs hole Nothing rhs e c)
     holeRule _ = Nothing
 
-    goLets (LLet lm b e) ws
-     = LLet lm b $ down e ws
-    goLets (LRec bs) ws
-     = LRec $ zip (map fst bs) (map (flip down ws.snd) bs)
-    goLets l _
-     = l
+    goLets (LLet lm b e) ws = do
+	e' <- down e ws
+	return $ LLet lm b e'
+    goLets (LRec bs) ws = do
+	bs' <- mapM (flip down ws . snd) bs
+	return $ LRec $ zip (map fst bs) bs'
+    goLets l _ =
+	return $ l
 
-    goAlts ws (AAlt p e)
-     = AAlt p (down e ws)
+    goAlts ws (AAlt p e) = do
+	e' <- down e ws
+	return $ AAlt p e'
 
     -- TODO this should find the "most specific".
     -- ben suggested that size of substitution map might be good indicator
     -- (smaller is better)
     rewrites f args ws = rewrites' rules f args ws
     rewrites' [] f args _
-     = mkApps f args
-    rewrites' (r:rs) f args ws
+     = return $ mkApps f args
+    rewrites' ((n,r):rs) f args ws
      = case rewriteX r f args ws of
 	Nothing -> rewrites' rs f args ws
-	Just x  -> go x [] ws
+	Just x  -> tell [n] >> go x [] ws
 
 rewriteSubst
     :: (Show n, Show a, Ord n, Pretty n)

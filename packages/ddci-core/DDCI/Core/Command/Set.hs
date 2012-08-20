@@ -58,7 +58,7 @@ cmdSet state cmd
  , Fragment _ _ _ _ _ _ mkNamT mkNamX zero <- frag
  = do   case parseSimplifier 
                 mkNamT mkNamX 
-                (Map.elems rules) 
+                (Map.assocs rules) 
                 (\_ -> Nothing)
                 (concat rest) of
          Just simpl

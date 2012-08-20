@@ -25,7 +25,7 @@ anormalize namK namT
 
 -- | Intersperse rewrites and beta reduction
 rewriteSimp
-        :: [RewriteRule a n]
+        :: [(String,RewriteRule a n)]
 	-> Simplifier s a n
 
 rewriteSimp rules

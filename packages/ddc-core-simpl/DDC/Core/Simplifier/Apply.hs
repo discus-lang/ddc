@@ -99,5 +99,5 @@ applyTransformX spec xx
         Beta              -> return $ betaReduce xx
         Forward           -> return $ forwardX xx
         Namify  namK namT -> namifyUnique namK namT xx
-        Rewrite rules     -> return $ rewrite rules xx
+        Rewrite rules     -> return $ fst $ rewrite rules xx
 
