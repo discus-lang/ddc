@@ -49,6 +49,28 @@ let c = unbox ^2		in
     ()
 ;;
 
+-- some surrounding de bruijns
+:trans..
+let ^ = 2 [R0#] ()		in
+let ^ = box (5 [R0#] ())	in
+let ^ = ^1	        	in
+let c = unbox ^1		in
+    ()
+;;
+
+-- some lambda-y de bruijns
+:trans..
+let ^ = 2 [R0#] ()		in
+let ^ = box (5 [R0#] ())	in
+ (\(a : Unit).
+  \(^ : Unit).
+    let ^ = ^2	        	in
+    let c = unbox ^2		in
+	()
+ )
+;;
+
+
 
 -- now with a Const contraint and regions
 :set.. rule unbox_box [r : %] (s : Int r).

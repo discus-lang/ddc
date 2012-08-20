@@ -39,6 +39,24 @@ let ^ : Int R0# = 3 [R0#] () in
 let c : Int R0# = ^3 in
 ()
 
+-- some surrounding de bruijns
+let ^ : Int R0# = 2 [R0#] () in
+let ^ : Int R0# = 5 [R0#] () in
+let ^ : Int R0# = box ^0 in
+let ^ : Int R0# = ^2 in
+let c : Int R0# = ^2 in
+()
+
+-- some lambda-y de bruijns
+let ^ : Int R0# = 2 [R0#] () in
+let ^ : Int R0# = 5 [R0#] () in
+let ^ : Int R0# = box ^0 in
+\(a ^ : Unit).
+let ^ : Int R0# = ^3 in
+let c : Int R0# = ^3 in
+()
+
+
 
 -- now with a Const contraint and regions
 ok, added unbox_box

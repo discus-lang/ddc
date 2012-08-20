@@ -1,11 +1,8 @@
-{-# OPTIONS_GHC -Wwarn #-}
-
 module DDC.Core.Transform.Rewrite
         ( RewriteRule(..)
         , rewrite )
 where
 import DDC.Base.Pretty
-
 import DDC.Core.Exp
 import qualified DDC.Core.Compounds			as X
 import qualified DDC.Core.Transform.AnonymizeX          as A
@@ -17,14 +14,9 @@ import qualified DDC.Core.Transform.SubstituteXX	as S
 import qualified DDC.Type.Transform.SubstituteT		as S
 import qualified DDC.Core.Transform.LiftX		as L
 import qualified DDC.Type.Compounds			as T
-
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
-
-import Debug.Trace
-
-
 
 
 -- I would eventually like to change this to take Map String (RewriteRule..)
@@ -46,7 +38,7 @@ rewrite rules x0
     go x@(XType{})	args ws = rewrites x args ws
     go x@(XWitness{})	args ws = rewrites x args ws
 
-    goDefHoles a l@(LLet LetStrict b def) e ws
+    goDefHoles a l@(LLet LetStrict let_bind def) e ws
      =	let subs = checkHoles def ws
 	in  case subs of
 	    (((sub,[]),RewriteRule bs _cs hole Nothing _rhs _e _c):_) ->
@@ -59,12 +51,15 @@ rewrite rules x0
 		    anons      = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
 		    lets       = map (\(b,v) -> LLet LetStrict b v) values
 		    def'       = S.substituteXArgs anons hole
-		    lets'      = lets ++ [LLet LetStrict b def']
+		    lets'      = lets ++ [LLet LetStrict let_bind def']
 		    -- lift e by (length bas)
-		    e'	       = L.liftX (length bas') e
+		    depth      = case let_bind of
+				 BAnon _ -> 1 
+				 _       -> 0
+		    e'	       = L.liftAtDepthX (length bas') depth e
 		    -- SAVE in wit env
 		    ws'	       = foldl (flip RE.extendLets) ws lets'
-		in  X.makeXLets a lets' $ down e ws'
+		in  X.makeXLets a lets' $ down e' ws'
 	    _ -> XLet a l (down e (RE.extendLets l ws))
 
     goDefHoles a l e ws = XLet a l (down e (RE.extendLets l ws))
@@ -74,7 +69,7 @@ rewrite rules x0
 	    (f,args) = takeApps def
 	    -- TODO most specific?
 	in  Maybe.catMaybes
-	  $ map (\r -> fmap (\s -> (s,r)) $ rewriteSubst r f args ws)
+	  $ map (\r -> fmap (\s -> (s,r)) $ rewriteSubst r f args ws RM.emptySubstInfo)
 	    rules'
 
     holeRule (RewriteRule bs cs _lhs (Just hole) rhs e c)
@@ -108,13 +103,13 @@ rewriteSubst
     -> Exp a n
     -> [(Exp a n,a)]
     -> RE.RewriteEnv a n
+    -> RM.SubstInfo  a n
     -> Maybe (RM.SubstInfo a n, [(Exp a n, a)]) -- ^ substitution map and remaining args
 -- TODO check constraints?
-rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _
- = do	let m	= RM.emptySubstInfo
-	l:ls   <- return $ X.takeXAppsAsList lhs
-	m'     <- RM.match m vs l f
-	go m' ls args
+rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _ sub
+ = do	l:ls   <- return $ X.takeXAppsAsList lhs
+	sub'     <- RM.match sub vs l f
+	go sub' ls args
  where
     bs = map snd binds
     vs = Set.fromList $ map nm bs
@@ -129,18 +124,16 @@ rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _
 	    go m' ls rs
     go _ _ _ = Nothing
 
-rewriteSubst (RewriteRule binds constrs lhs (Just hole) rhs eff clo) f args ws
- =  case rewriteSubst rule_full f args ws of
+rewriteSubst (RewriteRule binds constrs lhs (Just hole) rhs eff clo) f args ws sub
+ =  case rewriteSubst rule_full f args ws sub of
     Just s  -> Just s
     Nothing ->
       -- try inlining without hole
-      case rewriteSubst rule_some f args ws of
-      Just (sub,((XVar a b, a'):as)) -> 
+      case rewriteSubst rule_some f args ws sub of
+      Just (sub',((XVar _ b, _):as)) -> 
 	case RE.getDef b ws of
 	Just d' -> let (fd,ad) = takeApps d' in
-		    -- TODO match with 'sub' as well?
-		   case rewriteSubst rule_hole fd ad ws of
-		   -- TODO merge subs
+		   case rewriteSubst rule_hole fd ad ws sub' of
 		   Just (subd,asd) -> Just (subd,asd ++ as)
 		   Nothing	-> Nothing
 	Nothing -> Nothing
@@ -159,8 +152,8 @@ rewriteX
     -> [(Exp a n,a)]
     -> RE.RewriteEnv a n
     -> Maybe (Exp a n)
-rewriteX rule@(RewriteRule binds constrs _ lhs rhs eff clo) f args ws
- = do	(m,rest) <- rewriteSubst rule f args ws
+rewriteX rule@(RewriteRule binds constrs _lhs _hole rhs eff clo) f args ws
+ = do	(m,rest) <- rewriteSubst rule f args ws RM.emptySubstInfo
 	s	 <- subst m
 	return   $  mkApps s rest
  where
@@ -170,22 +163,27 @@ rewriteX rule@(RewriteRule binds constrs _ lhs rhs eff clo) f args ws
     -- TODO type-check?
     -- TODO constraints
     subst m
-     =	    let (bas,bas') = lookups bs m
-		rhs'	   = A.anonymizeX rhs
+     =	    let (_,bas') = lookups bs m
+		rhs'	 = A.anonymizeX rhs
 	    in  checkConstrs bas' constrs
-		$ weakeff bas' eff
-		$ weakclo bas' clo
+		$ weakeff bas'
+		$ weakclo bas'
 		$ S.substituteXArgs bas' rhs'
 
     anno = snd $ head args
 
-    weakeff _ Nothing x = x
-    weakeff bas (Just e) x
-     = XCast anno (CastWeakenEffect $ S.substituteTs (Maybe.catMaybes $ map lookupT bas) e) x
+    weakeff bas x
+     = case eff of
+       Nothing -> x
+       Just e  -> XCast anno
+		  (CastWeakenEffect $ S.substituteTs
+		    (Maybe.catMaybes $ map lookupT bas) e)
+		  x
 
-    weakclo _ Nothing x = x
-    weakclo bas (Just c) x
-     = x
+    weakclo _bas x
+     = case clo of
+       Nothing -> x
+       Just _c -> x
         -- TODO: weakclo is broken.
         --       need to update to use new plan for CastWeakenClosure,
         --       it contains expressions now instead of Use types.
