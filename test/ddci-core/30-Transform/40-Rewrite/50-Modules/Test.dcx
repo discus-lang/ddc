@@ -8,7 +8,7 @@
 :set Indent
 :set trans Rewrite
 
-:trun..
+:trans..
 toInt [:R0# R0#:] (fromInt [:R0# R0#:] (5 [R0#] ()))
 ;;
 

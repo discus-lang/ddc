@@ -24,19 +24,23 @@ ok
 ok
 
 -- simple let
+weakclo {mulInt} in
 let ^ : Int R0# = 5 [R0#] () in
 addInt [R0#] [R0#] [R0#] ^0 ^0
 10
 
 -- nested apps 
+weakclo {mulInt} in
 let ^ : Int R0#
-      = let ^ : Int R0#
+      = weakclo {mulInt} in
+        let ^ : Int R0#
               = addInt [R0#] [R0#] [R0#] (1 [R0#] ()) (2 [R0#] ()) in
         addInt [R0#] [R0#] [R0#] ^0 ^0 in
 addInt [R0#] [R0#] [R0#] ^0 ^0
 12
 
 -- binders inside let
+weakclo {mulInt} in
 let ^ : Int R0#
       = let ^ : [^ : %].Unit -(Alloc ^0 | $0)> Int ^0 = 5 in
         let ^ : Unit = () in

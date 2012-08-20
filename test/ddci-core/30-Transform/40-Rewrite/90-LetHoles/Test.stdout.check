@@ -11,6 +11,7 @@ let x : Int R0#
       = box (5 [R0#] ()) in
 let y : Int R0# = unbox x in
 let z : Int R0# = unbox x in
+weakclo {box; unbox} in
 addInt [R0#] [R0#] [R0#] y z
 
 -- the {{ }} brackets indicate that the argument is cheap enough to be split across places
@@ -20,8 +21,12 @@ ok
 -- rewrite y and z
 let ^ : Int R0# = 5 [R0#] () in
 let x : Int R0# = box ^0 in
-let y : Int R0# = ^0 in
-let z : Int R0# = ^0 in
+let y : Int R0#
+      = weakclo {box; unbox} in
+        ^0 in
+let z : Int R0#
+      = weakclo {box; unbox} in
+        ^0 in
 addInt [R0#] [R0#] [R0#] y z
 
 -- shadowing, don't rewrite
@@ -34,9 +39,13 @@ unbox x
 let ^ : Int R0# = 5 [R0#] () in
 let ^ : Int R0# = box ^0 in
 let ^ : Int R0# = 2 [R0#] () in
-let b : Int R0# = ^2 in
+let b : Int R0#
+      = weakclo {box; unbox} in
+        ^2 in
 let ^ : Int R0# = 3 [R0#] () in
-let c : Int R0# = ^3 in
+let c : Int R0#
+      = weakclo {box; unbox} in
+        ^3 in
 ()
 
 -- some surrounding de bruijns
@@ -44,7 +53,9 @@ let ^ : Int R0# = 2 [R0#] () in
 let ^ : Int R0# = 5 [R0#] () in
 let ^ : Int R0# = box ^0 in
 let ^ : Int R0# = ^2 in
-let c : Int R0# = ^2 in
+let c : Int R0#
+      = weakclo {box; unbox} in
+        ^2 in
 ()
 
 -- some lambda-y de bruijns
@@ -53,7 +64,9 @@ let ^ : Int R0# = 5 [R0#] () in
 let ^ : Int R0# = box ^0 in
 \(a ^ : Unit).
 let ^ : Int R0# = ^3 in
-let c : Int R0# = ^3 in
+let c : Int R0#
+      = weakclo {box; unbox} in
+        ^3 in
 ()
 
 
@@ -69,7 +82,7 @@ unbox_ [R0#]
 -- do it: const
 letregion r with {w : Const r} in
 let x : Int r
-      = weakclo {[r]} in
+      = weakclo {box_; unbox_; [r]} in
         5 [r] () in
 ()
 
@@ -78,6 +91,6 @@ letregion r with {w : Const r} in
 let ^ : Int r = 5 [r] () in
 let x : Int r = box_ [r] ^0 in
 let y : Int r
-      = weakclo {[r]} in
+      = weakclo {box_; unbox_; [r]} in
         ^0 in
 ()

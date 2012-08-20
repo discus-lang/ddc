@@ -186,7 +186,7 @@ weakEff _ _ _ onError
  = Left onError
 
 -- | Find free variables in LHS that are not in RHS for closure information
-weakClo bs lhs rhs
+weakClo _bs lhs rhs
  = Right (vals ++ tys)
  where
   vals = map (XVar undefined)
@@ -198,8 +198,6 @@ weakClo bs lhs rhs
   vars free
        = Set.toList
        $ (free T.empty lhs `Set.difference` free T.empty rhs)
-         `Set.intersection`
-	 Set.fromList (Maybe.catMaybes $ map (T.takeSubstBoundOfBind . snd) bs)
 
 
 checkUnmentionedBinders

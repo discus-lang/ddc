@@ -14,14 +14,14 @@ letregion r in
 letregion r with {w : Const r} in
 (\(x : Int r). ())
     (weakeff [Read r + Alloc r] in
-     weakclo {[r]} in
+     weakclo {copyInt; [r]} in
      23 [r] ())
 
 -- do it
 letregion ^ with {w : Const ^0} in
 (\(x : Int ^0). ())
     (weakeff [Read ^0 + Alloc ^0] in
-     weakclo {[^0]} in
+     weakclo {copyInt; [^0]} in
      23 [^0] ())
 
 -- lift de bruijns: don't do it
@@ -35,13 +35,13 @@ letregion ^ with {w : Const ^0} in
 letregion ^ in
 (\(x : Int ^1). ())
     (weakeff [Read ^1 + Alloc ^1] in
-     weakclo {[^1]} in
+     weakclo {copyInt; [^1]} in
      23 [^1] ())
 
 -- and with witnesses as lambda arguments
 \(w : Const R0#).\(u : Unit).
 weakeff [Read R0# + Alloc R0#] in
-weakclo {[R0#]} in
+weakclo {copyInt; [R0#]} in
 23 [R0#] ()
 
 -- don't: lambda arguments for a different region

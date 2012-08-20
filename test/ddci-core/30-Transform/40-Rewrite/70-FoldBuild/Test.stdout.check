@@ -13,7 +13,7 @@ ok
 --			then n
 --			else c m (count' (m-1) c n)
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {[Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
 count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 
@@ -25,11 +25,11 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
 --		  else xs) n xs)
 -- sum
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {[Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
+weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {[Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
+weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {[Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
 count' (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
          (\(^ ^ : Int R0#).
