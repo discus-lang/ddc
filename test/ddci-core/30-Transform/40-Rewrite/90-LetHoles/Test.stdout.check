@@ -68,12 +68,16 @@ unbox_ [R0#]
 
 -- do it: const
 letregion r with {w : Const r} in
-let x : Int r = 5 [r] () in
+let x : Int r
+      = weakclo {[r]} in
+        5 [r] () in
 ()
 
 -- separated
 letregion r with {w : Const r} in
 let ^ : Int r = 5 [r] () in
 let x : Int r = box_ [r] ^0 in
-let y : Int r = ^0 in
+let y : Int r
+      = weakclo {[r]} in
+        ^0 in
 ()

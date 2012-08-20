@@ -42,7 +42,7 @@ data RewriteRule a n
 	    (Maybe (Exp a n))	--  allow this bit to be out-of-context
 	    (Exp a n)		--  replacement
 	    (Maybe (Effect n))	--  effect of lhs if needs weaken
-	    (Maybe (Closure n)) --  closure of lhs if needs weaken
+	    [Exp a n]		--  closure of lhs if needs weaken
         deriving (Eq, Show)
 
 data BindMode = BMKind | BMType
@@ -57,7 +57,7 @@ mkRewriteRule
     -> Exp a n
     -> RewriteRule a n
 mkRewriteRule bs cs lhs hole rhs
- = RewriteRule bs cs lhs hole rhs Nothing Nothing
+ = RewriteRule bs cs lhs hole rhs Nothing []
 
 
 instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
@@ -108,8 +108,6 @@ checkRewriteRule config kenv tenv
 		    return $ Just h'
 	         Nothing -> return Nothing
 
-	-- TODO annotation?
-	-- TODO "holes": only variables mentioned in hole can be mentioned in RHS?
 	let lhs_full = maybe lhs
 		       (XApp undefined lhs)
 		       hole
@@ -121,8 +119,8 @@ checkRewriteRule config kenv tenv
 	let err = ErrorTypeConflict (tl,el,cl) (tr,er,cr)
 
 	equiv tl tr err
-	e      <- weaken T.kEffect el er err
-	c      <- weaken T.kClosure cl cr err
+	e      <- weaken  T.kEffect el er err
+	c      <- weakClo bs lhs_full rhs
 
 	checkUnmentionedBinders bs' lhs_full
 	checkAnonymousBinders bs'
@@ -174,6 +172,22 @@ weaken k l r _ | T.subsumesT k l r
  = return $ Just l
 weaken _ _ _ onError
  = Left onError
+
+weakClo bs lhs rhs
+ = Right (vals ++ tys)
+ where
+  vals = map (XVar undefined)
+       $ vars C.freeX
+
+  tys  = map (XType . TVar)
+       $ vars C.freeT
+
+  vars free
+       = Set.toList
+       $ (free T.empty lhs `Set.difference` free T.empty rhs)
+         `Set.intersection`
+	 Set.fromList (Maybe.catMaybes $ map (T.takeSubstBoundOfBind . snd) bs)
+
 
 checkUnmentionedBinders
     :: (Ord n, Show n)

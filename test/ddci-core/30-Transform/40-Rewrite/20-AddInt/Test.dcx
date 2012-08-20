@@ -45,3 +45,15 @@ addInt [:R7# R1# R2#:]
     (addInt [:R9# R8# R7#:] x (0 [R8#] ()))
     (0 [R1#] ())
 ;;
+
+
+-- nested inside a function: give the closures a workout
+:trans..
+letrec foo [r1 r2 r3 : %]
+    (x : Int r1)
+    { Read r1 + Read r2 + Alloc r2 + Alloc r3 | Use r1 + Use r2 + Use r3 }
+    : Int r3
+ =  addInt [:r1 r2 r3:] x (0 [r2] ())
+in
+ foo [:R0# R0# R0#:] (5 [R0#] ())
+;;

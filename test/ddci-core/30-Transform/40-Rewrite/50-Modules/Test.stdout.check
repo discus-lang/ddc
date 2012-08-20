@@ -5,7 +5,9 @@ ok
 ok
 
 weakeff [Read R0# + Alloc R0#] in
+weakclo {[R0#]} in
 copyInt [R0#] [R0#] (5 [R0#] ())
 weakeff [Read R0# + Alloc R0#] in
+weakclo {[R0#]} in
 5
 

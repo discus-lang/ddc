@@ -174,16 +174,19 @@ rewriteX rule@(RewriteRule binds constrs _lhs _hole rhs eff clo) f args ws
 
     weakeff bas x
      = case eff of
-       Nothing -> x
-       Just e  -> XCast anno
-		  (CastWeakenEffect $ S.substituteTs
+       Nothing	-> x
+       Just e	-> XCast anno
+		   (CastWeakenEffect $ S.substituteTs
 		    (Maybe.catMaybes $ map lookupT bas) e)
-		  x
+		   x
 
-    weakclo _bas x
+    weakclo bas x
      = case clo of
-       Nothing -> x
-       Just _c -> x
+       []	-> x
+       _	-> XCast anno 
+		   (CastWeakenClosure
+		   $ map (S.substituteXArgs bas) clo)
+		   x
         -- TODO: weakclo is broken.
         --       need to update to use new plan for CastWeakenClosure,
         --       it contains expressions now instead of Use types.
