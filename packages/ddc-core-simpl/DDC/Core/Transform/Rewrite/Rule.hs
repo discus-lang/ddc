@@ -1,5 +1,4 @@
-
--- | Rewriting one expression to another
+-- | Constructing and checking whether rewrite rules are valid
 module DDC.Core.Transform.Rewrite.Rule 
         ( RewriteRule   (..)
 	, BindMode     (..)
@@ -20,41 +19,38 @@ import qualified DDC.Type.Env                   as T
 import qualified DDC.Type.Equiv                 as T
 import qualified DDC.Type.Subsumes              as T
 import qualified DDC.Type.Transform.SpreadT     as S
-
 import qualified Data.Maybe		as Maybe
 import qualified Data.Set               as Set
 
--- | A substitution rule
--- rhs should have same or weaker type as lhs
+-- | A rewrite rule
 --
--- TODO want to split into dumb @RewriteRule@ that parser needs
--- and then merge into nicer @RewriteRuleSet@ with index, effect etc
--- 
--- TODO list of binds might need to be list of *groups* of binds...
--- or perhaps we just need them to be named:
---	[^:%] (x y : Int ^0)
--- no.. should be fine....
+--   RULE [r1 r2 r3 : %] (x : Int r1).
+--	addInt  [:r1 r2 r3:] x (0 [r2] ()
+--    = copyInt [:r1 r3:]    x
+--
 data RewriteRule a n
         = RewriteRule
-	    [(BindMode,Bind n)]	--  bindings & their types
-	    [Type n]		--  requirements for rules to fire
-	    (Exp a n)		--  left-hand side to match on
-	    (Maybe (Exp a n))	--  allow this bit to be out-of-context
-	    (Exp a n)		--  replacement
-	    (Maybe (Effect n))	--  effect of lhs if needs weaken
-	    [Exp a n]		--  closure of lhs if needs weaken
-        deriving (Eq, Show)
+	{ ruleBinds	  :: [(BindMode,Bind n)]--  ^ Bindings & their types
+	, ruleConstraints :: [Type n]		--  ^ Requirements for rules to fire
+	, ruleLeft	  :: Exp a n		--  ^ Left-hand side to match on
+	, ruleLeftHole	  :: Maybe (Exp a n)	--  ^ Extra part of left-hand side,
+						--    but allow this bit to be out-of-context
+	, ruleRight	  :: Exp a n		--  ^ Replacement
+	, ruleWeakEff	  :: Maybe (Effect n)	--  ^ Effect of lhs if needs weaken
+	, ruleWeakClo	  :: [Exp a n]		--  ^ Closure of lhs if needs weaken
+	} deriving (Eq, Show)
 
 data BindMode = BMKind | BMType
     deriving (Eq, Show)
 
+-- | Construct a rewrite rule, do not check if it's valid
 mkRewriteRule
     :: Ord n
-    => [(BindMode,Bind n)]
-    -> [Type n]
-    -> Exp a n
-    -> Maybe (Exp a n)
-    -> Exp a n
+    => [(BindMode,Bind n)]	-- ^ Binders
+    -> [Type n]			-- ^ Constraints
+    -> Exp a n			-- ^ Left-hand side
+    -> Maybe (Exp a n)		-- ^ Extra part of left, can be out of context
+    -> Exp a n			-- ^ Right-hand side (replacement)
     -> RewriteRule a n
 mkRewriteRule bs cs lhs hole rhs
  = RewriteRule bs cs lhs hole rhs Nothing []
@@ -79,9 +75,11 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 	= text ""
 
 
--- | Create rule
--- Make sure expressions are valid, lhs is only allowed to contain XApps
--- TODO return multiple errors?
+-- | Take a rule, make sure it's valid and fill in type, closure and effect information.
+--   The left-hand side of rule can't have any binders (lambdas, lets etc).
+--   All binders must appear in the left-hand side, otherwise they would match with no value.
+--   Both sides must have the same types, but the right can have fewer effects and smaller closure.
+--   Anonymous binders aren't allowed (for no real reason other than laziness)
 checkRewriteRule
     :: (Ord n, Show n, Pretty n)        
     => C.Config n               -- ^ Type checker config.
@@ -93,37 +91,41 @@ checkRewriteRule
 
 checkRewriteRule config kenv tenv
     (RewriteRule bs cs lhs hole rhs _ _)
- = do	let (kenv',tenv') = extendBinds bs kenv tenv
-        -- spread binders: otherwise types aren't quite correct
-	-- TODO should be building up kenv as going
-	let bs' = map (\(bm,b) -> (bm, S.spreadT kenv' b)) bs
+ = do	let (kenv',tenv',bs') = extendBinds bs kenv tenv
 	let cs' = map (S.spreadT kenv') cs
+	-- Check that all constraints are valid types. TODO make sure they're witnesses
 	mapM_ (\c -> checkTy config kenv' c ErrorBadConstraint) cs'
 
+	-- Typecheck, spread and annotate with type information
 	(lhs',_,_,_)    <- check config kenv' tenv' lhs (ErrorTypeCheck Lhs)
 
+	-- If the extra left part is there, typecheck and annotate it
 	hole' <- case hole of
 	         Just h  -> do
 		    (h',_,_,_) <- check config kenv' tenv' h (ErrorTypeCheck Lhs)
 		    return $ Just h'
 	         Nothing -> return Nothing
 
+	-- Build application from lhs and the hole so we can check its type against rhs
 	let lhs_full = maybe lhs
 		       (XApp undefined lhs)
 		       hole
-
 	(_   ,tl,el,cl) <- check config kenv' tenv' lhs_full (ErrorTypeCheck Lhs)
 
-	(rhs',tr,er,cr) <- check config kenv' tenv' rhs (ErrorTypeCheck Rhs)
+	(rhs',tr,er,cr) <- check config kenv' tenv' rhs	     (ErrorTypeCheck Rhs)
 
 	let err = ErrorTypeConflict (tl,el,cl) (tr,er,cr)
-
+	-- Check that types are equivalent, or error
 	equiv tl tr err
-	e      <- weaken  T.kEffect el er err
-	c      <- weakClo bs lhs_full rhs
+	-- Error if right's effect is bigger, or add a weaken cast if necessary
+	e <- weakEff T.kEffect el er err
+	c <- weakClo bs lhs_full rhs
 
+	-- Make sure all binders are in left-hand side
 	checkUnmentionedBinders bs' lhs_full
+	-- No BAnons allowed
 	checkAnonymousBinders bs'
+	-- No lets or lambdas in left-hand side
 	checkValidPattern lhs_full
 
 	return $ RewriteRule 
@@ -132,47 +134,58 @@ checkRewriteRule config kenv tenv
                         e c
 
 
+-- | Extend kind and type environments with a rule's binders.
+--   Which environment a binder goes into depends on its BindMode.
+--   Also return list of binders which have been spread.
 extendBinds 
         :: Ord n 
         => [(BindMode, Bind n)] 
         -> T.Env n 
         -> T.Env n 
-        -> (T.Env n, T.Env n)
+        -> (T.Env n, T.Env n, [(BindMode, Bind n)])
 
-extendBinds [] kenv tenv = (kenv,tenv)
-extendBinds ((bm,b):bs) ke te
- = let b' = S.spreadX ke te b in
-   let (ke',te') =
-	case bm of
-	BMKind -> (T.extend b' ke, te)
-	BMType -> (ke, T.extend b' te)
-    in
-   extendBinds bs ke' te'
+extendBinds binds kenv tenv
+ = go binds kenv tenv []
+ where
+   go []	  k t acc
+     = (k,t,acc)
+   go ((bm,b):bs) k t acc
+     = let b'      = S.spreadX k t b
+           (k',t') = case bm of
+		     BMKind -> (T.extend b' k, t)
+		     BMType -> (k, T.extend b' t)
+       in  go bs k' t' (acc ++ [(bm,b')])
 
+-- | Typecheck an expression or return an error
 check defs kenv tenv xx onError
  = let xx' = S.spreadX kenv tenv xx in
    case C.checkExp defs kenv tenv xx' of
    Left err -> Left $ onError xx' err
    Right rhs -> return rhs
 
+-- | Typecheck a type or return an error
 checkTy defs kenv xx onError
  = case T.checkType (C.configDataDefs defs) kenv xx of
    Left _err -> Left $ onError xx
    Right rhs -> return rhs
 
 
+-- | Check equivalence of types or error
 equiv l r _ | T.equivT l r
  = return ()
 equiv _ _ onError
  = Left onError
 
-weaken _ l r _ | T.equivT l r
+-- | Determine whether weaken cast is necessary,
+--   or error if right has more effects than left
+weakEff _ l r _ | T.equivT l r
  = return Nothing
-weaken k l r _ | T.subsumesT k l r
+weakEff k l r _ | T.subsumesT k l r
  = return $ Just l
-weaken _ _ _ onError
+weakEff _ _ _ onError
  = Left onError
 
+-- | Find free variables in LHS that are not in RHS for closure information
 weakClo bs lhs rhs
  = Right (vals ++ tys)
  where
@@ -205,55 +218,34 @@ checkUnmentionedBinders bs expr
 
 
 checkAnonymousBinders :: [(BindMode, Bind n)] -> Either (Error a n) ()
-checkAnonymousBinders bs | (b:_) <- filter anony $ map snd bs
+checkAnonymousBinders bs
+ | (b:_) <- filter anony $ map snd bs
  = Left $ ErrorAnonymousBinder b
+ | otherwise
+ = return ()
  where
     anony (BAnon _) = True
-    anony _		= False
-
-checkAnonymousBinders _
- = return ()
+    anony _	    = False
 
 
 checkValidPattern :: Exp a n -> Either (Error a n) ()
-checkValidPattern expr = go expr
+checkValidPattern expr
+ = go expr
  where
-    go (XVar _ _) = return ()
-    go (XCon _ _) = return ()
-    go x@(XLAM _ _ _) = Left $ ErrorNotFirstOrder x
-    go x@(XLam _ _ _) = Left $ ErrorNotFirstOrder x
-    go (XApp _ l r) = go l >> go r
-    go x@(XLet _ _ _) = Left $ ErrorNotFirstOrder x
-    go x@(XCase _ _ _)= Left $ ErrorNotFirstOrder x
-    go (XCast _ _ x)= go x
+    go (XVar _ _)	= return ()
+    go (XCon _ _)	= return ()
+    go x@(XLAM _ _ _)	= Left $ ErrorNotFirstOrder x
+    go x@(XLam _ _ _)	= Left $ ErrorNotFirstOrder x
+    go (XApp _ l r)	= go l >> go r
+    go x@(XLet _ _ _)	= Left $ ErrorNotFirstOrder x
+    go x@(XCase _ _ _)  = Left $ ErrorNotFirstOrder x
+    go (XCast _ _ x)	= go x
     go (XType t)	= go_t t
-    go (XWitness _) = return ()
+    go (XWitness _)	= return ()
 
-    go_t (TVar _)   = return ()
+    go_t (TVar _)	= return ()
     go_t (TCon _)	= return ()
-    go_t t@(TForall _ _) = Left $ ErrorNotFirstOrder (XType t)
+    go_t t@(TForall _ _)= Left $ ErrorNotFirstOrder (XType t)
     go_t (TApp l r)	= go_t l >> go_t r
     go_t (TSum _)	= return ()
-
-
-
-{-
--- | Check if expression is valid as a rule left-hand side
--- (Only simple applications, no binders)
-isLhsOk :: Ord n => Exp a n -> Bool
--- Simple expressions are OK
-isLhsOk (XVar _ _) = True
-isLhsOk (XCon _ _) = True
-isLhsOk (XType _) = True
-isLhsOk (XWitness _) = True
-
--- Casts are OK if their expression is
-isLhsOk (XCast _ _ x) = isLhsOk x
--- Applications are OK if both sides are
-isLhsOk (XApp _ l r) = isLhsOk l && isLhsOk r
-
--- Anything else is rubbish
-isLhsOk _ = False
-
--}
 

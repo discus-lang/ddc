@@ -22,18 +22,18 @@ import qualified DDC.Core.Transform.LiftX	as L
 import Data.Maybe (listToMaybe)
 
 -- | The environment of an expression,
--- with witnesses and distinct regions.
+--   with witnesses and distinct regions.
 --
--- Because of the de Bruijn indices, using lists to make lifting easier.
+--   Because of the de Bruijn indices, using lists to make lifting easier.
 data RewriteEnv a n = RewriteEnv
     { witnesses	 :: [[T.Type n]]
-	-- ^ types of all witnesses in scope
+	-- ^ Types of all witnesses in scope
     , letregions :: [[Bind n]]
-	-- ^ names of letregion-bound regions:
+	-- ^ Names of letregion-bound regions:
 	-- this is interesting because they must be distinct.
     , defs	 :: [[RewriteDef a n]]
-	-- ^ assoc of known values
-	-- if going to inline them, they must only reference de bruijn binds
+	-- ^ Assoc of known values
+	-- If going to inline them, they must only reference de bruijn binds
 	-- these are value-level bindings, so be careful lifting
     }
     deriving (Show,Eq)
@@ -83,7 +83,6 @@ extendLets (LLet _ b def) env
    def' = case b of
 	  BAnon{} -> L.liftX 1 def
 	  _	  -> def
- -- =  liftValue b $ insertDef b def env
 
 extendLets (LRec bs) env
  = foldl (flip liftValue) env (map fst bs)
@@ -137,24 +136,27 @@ getDef
 getDef b env
  = go b 0 (defs env)
  where
-    go _ _  []	   = Nothing
-    go b' i (w:ws) = match b' i w `orM` go (L.liftX (-1) b') (i+1) ws
+    go _ _  []	    = Nothing
+    go b' i (w:ws)  = match b' i w `orM` go (L.liftX (-1) b') (i+1) ws
 
-    match b' i ds  = fmap (L.liftX i) $ listToMaybe $ map snd $ filter (T.boundMatchesBind b' . fst) ds
+    match b' i ds   = fmap (L.liftX i)
+		    $ listToMaybe
+		    $ map snd
+		    $ filter (T.boundMatchesBind b' . fst) ds
 
     orM (Just x) _  = Just x
     orM Nothing  y  = y
 
 
--- | raise all elements in witness map if binder is anonymous
--- only call with type binders ie XLAM, not XLam
+-- | Raise all elements in witness map if binder is anonymous.
+-- Only call with type binders: ie XLAM, not XLam
 lift (BAnon _) (RewriteEnv ws rs is)
     = RewriteEnv ([]:ws) ([]:rs) is
 lift _ env = env
 
 
--- | raise all elements in definitions map if binder is anonymous
--- *value* binders, not type binders
+-- | Raise all elements in definitions map if binder is anonymous
+-- Use for *value* binders, not type binders.
 liftValue (BAnon _) (RewriteEnv ws rs is)
     = RewriteEnv ws rs ([]:is)
 liftValue _ env = env

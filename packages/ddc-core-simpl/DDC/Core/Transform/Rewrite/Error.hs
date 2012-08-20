@@ -3,11 +3,9 @@ module DDC.Core.Transform.Rewrite.Error
 where
 
 import DDC.Core.Exp
-
-import qualified DDC.Core.Check.Error as C
 import DDC.Core.Check.ErrorMessage()
-
 import DDC.Type.Pretty
+import qualified DDC.Core.Check.Error as C
 
 -- | What can go wrong when checking a rewrite rule?
 data Error a n
@@ -49,8 +47,10 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
         ErrorTypeCheck s x e
          -> vcat [ text "Can't typecheck " <> ppr s <> text ":  " <> ppr e
 		 , text "While checking " <> ppr x ]
+
         ErrorBadConstraint c
          ->        text "Bad constraint: " <> ppr c
+
         ErrorTypeConflict (tl,el,cl) (tr,er,cr)
          -> vcat [ text "LHS and RHS have different types:"
 		 , text "Type L: " <> ppr tl 
@@ -59,11 +59,14 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
 		 , text "Eff R:  " <> ppr er
 		 , text "Clo L:  " <> ppr cl
 		 , text "Clo R:  " <> ppr cr ]
+
         ErrorNotFirstOrder x
 	 -> vcat [ text "No binders allowed in left-hand side."
 		 , text "While checking " <> ppr x ]
+
 	ErrorVarUnmentioned 
 	 ->	   text "All variables in rule should be mentioned in left-hand side."
+
 	ErrorAnonymousBinder b
 	 ->        text "Anonymous binders, just give it a name: " <> ppr b
 
