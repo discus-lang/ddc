@@ -25,3 +25,10 @@ case x of {
         _       -> \(y : Int r2). addInt [:r1 r2 r2:] x (1 [r2] ());
 };;
 
+
+-- Weakens should still evaluate their args
+:eval..
+let x = weakclo {mulInt} in 5 [R0#] ()
+in  addInt [:R0# R0# R0#:] x x
+;;
+

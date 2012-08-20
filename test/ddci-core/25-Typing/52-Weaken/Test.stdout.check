@@ -17,3 +17,7 @@ When checking expression.
         weakclo {x; [r2]} in
         y
 
+
+-- Weakens should still evaluate their args
+10
+

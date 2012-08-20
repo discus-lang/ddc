@@ -409,6 +409,17 @@ step store (XCast a cc x)
  = case step store x of
     StepProgress store' x'
           -> StepProgress store' (XCast a cc x')
+
+    -- Strip out any weakens, so we can evaluate further.
+    -- XXX this should probably be elsewhere
+    StepDone
+	  -> case cc of
+	      CastWeakenEffect _
+		-> StepProgress store x
+	      CastWeakenClosure _
+	        -> StepProgress store x
+	      _ -> StepDone
+
     err   -> err
 
 
