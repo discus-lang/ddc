@@ -16,12 +16,10 @@ bar (_ : Unit) : Word64#
    
 
 -- Bound name shadowing across the module should be ok
---    should realise that the "distinct r1 r3" isn't referring to r1 and r3
---    in strangeMain
 :set lang Lite
 :to-llvm..
 module Test with letrec
-strange [r6 r7 : %] <w42 : Distinct r6 r7> (x : Unit) : Word64# = 42w64# 
+strange [r1 r2 : %] <w : Distinct r1 r2> (x : Unit) : Word64# = 42w64# 
  
 strangeAdd [r0 r2 ret : %] 
            <w1 : Const r0>

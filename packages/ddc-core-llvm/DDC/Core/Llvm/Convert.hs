@@ -139,7 +139,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
 
         let kenv'       =  Env.extends bsParamType  kenv
         let tenv'       =  Env.extends (bSuper : bsParamValue) tenv
-        mdsup           <- deriveMetadataM kenv tenv nTop' x
+        mdsup           <- deriveMetadataM nTop' x
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   

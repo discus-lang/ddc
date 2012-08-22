@@ -11,11 +11,10 @@ import DDC.Core.Llvm.LlvmM
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Predicates
-import DDC.Type.Env                 (KindEnv, TypeEnv)
 import DDC.Type.Collect
 import DDC.Core.Exp
 import DDC.Base.Pretty              hiding (empty)
-import DDC.Type.Env                 (Env)
+import DDC.Type.Env                 (KindEnv)
 import qualified DDC.Type.Env       as Env
 import qualified DDC.Core.Salt.Name as A
 import qualified DDC.Llvm.Instr     as V
@@ -24,8 +23,8 @@ import Prelude                      hiding (lookup)
 import Data.Map                     (Map)
 import Data.Maybe
 import Control.Monad                (foldM, replicateM)
-import qualified Data.Map           as Map
 import qualified Data.Set           as Set
+import qualified Data.Map           as Map
 
 
 -- | Metadata for a super
@@ -76,21 +75,14 @@ lookups us mdsup = map (flip lookup mdsup) us
 -- | Generate tbaa metadata for a core (Salt) top-level super
 deriveMetadataM
             :: (BindStruct (Exp ()))
-            => KindEnv A.Name               -- ^ Kind environment
-            -> TypeEnv A.Name               -- ^ Type environment
-            -> String                       -- ^ Sanitized name of super
+            => String                       -- ^ Sanitized name of super
             -> Exp () A.Name                -- ^ Super to derive from
             -> LlvmM (MDSuper)              -- ^ Metadata encoding witness information            
-deriveMetadataM kenv tenv nTop xx
- = do
-      --  Add all the binds
-      let bs    =  collectBinds xx
-      let kenv' =  Env.extends (fst bs) kenv
-      let tenv' =  Env.extends (snd bs) tenv
-       
+deriveMetadataM nTop xx
+ = do       
       -- Collect list of distinct pairs and const regions
-      let regs      =  collectRegions kenv' xx
-      let wits      =  collectWitnesses tenv' xx
+      let regs      =  collectRegionsB xx
+      let wits      =  collectWitnessesB xx
       let consts    =  filter (isConstReg wits) regs
       let distincts =  distinctPairs wits
       
@@ -121,7 +113,7 @@ deriveDistinctM
 deriveDistinctM fn consts (mdenv, mdecls) (r1, r2)
   = do   [nr,n1,n2]     <- replicateM 3 newUnique
          let root       =  tbaaRoot $ qualifyRoot fn nr
-         let mkTbaa u n =  tbaaNode (qualify fn u n) (MRef nr) (r1 `elem` consts)
+         let mkTbaa u n =  tbaaNode (qualify fn u n) (MRef nr) (u `elem` consts)
          let (dr,d1,d2) = ( MDecl (MRef nr)   root
                           , MDecl (MRef n1) $ mkTbaa r1 n1
                           , MDecl (MRef n2) $ mkTbaa r2 n2)
@@ -163,11 +155,11 @@ distinctPairs ws
    in catMaybes $ map (toDistinctPair) ws
      
    
--- | Check in a region has a witness for constancy
+-- | Check if a region has a witness for constancy
 isConstReg :: [(Bound A.Name, Type A.Name)] -> Bound A.Name -> Bool
 isConstReg ws r
- = let  isConstWit (_, t) | tc : args <- takeTApps t
-                          , isConstWitType tc
+ = let  isConstWit (_, t) | isConstWitType t
+                          , _ : args <- takeTApps t
                           , elem (TVar r) args
                           = True
                           | otherwise = False 
@@ -178,14 +170,14 @@ isConstReg ws r
 -- Attaching metadata ---------------------------------------------------------  
 -- | Attach relevant metadata to instructions
 annot :: (BindStruct c, Show (c A.Name))
-      => Env A.Name                     -- ^ Kind environment
+      => KindEnv A.Name 
       -> MDSuper                        -- ^ Metadata available      
       -> [c A.Name]                     -- ^ Things to lookup for MD
       -> V.Instr                        -- ^ Instruction to annotate
       -> V.AnnotInstr
       
 annot kenv mdsup xs ins
- = let regions  = concatMap (collectRegions kenv) xs
+ = let regions  = concatMap (collectRegionsU kenv) xs
        mdecls   = concat $ catMaybes $ lookups regions mdsup
        annotate' ms is 
          = case is of
@@ -196,39 +188,45 @@ annot kenv mdsup xs ins
 
  
 -- Collecting bounds ----------------------------------------------------------  
--- | Collect region variables
-collectRegions 
+-- | Collect region bindings
+collectRegionsB 
           :: (BindStruct c) 
-          => Env A.Name 
-          -> c A.Name 
+          => c A.Name 
           -> [Bound A.Name]
-collectRegions kenv cc
- = let regionKind u = case Env.lookup u kenv of
-                           Just t | isRegionKind t -> True
-                           _                       -> False
-   in filter regionKind $ Set.toList (collectBound cc)
+collectRegionsB cc
+ = let isBindReg b 
+         = case b of
+                BName n t | isRegionKind t -> Just (UName n)
+                _                          -> Nothing
+       bindRegs = map (isBindReg) $ fst (collectBinds cc)                            
+   in  catMaybes bindRegs
  
- 
--- | Collect witness terms together with their types (for convinience)
-collectWitnesses 
-          :: (BindStruct c) 
-          => Env A.Name 
+
+-- | Collect region bounds
+collectRegionsU
+          :: (BindStruct c)
+          => KindEnv A.Name
           -> c A.Name
+          -> [Bound A.Name]
+collectRegionsU kenv cc
+ = let isReg u = case Env.lookup u kenv of
+                      Just t | isRegionKind t -> True
+                      _                       -> False
+   in  filter isReg $ Set.toList (collectBound cc)
+   
+   
+-- | Collect witness bindings together with their types (for convinience)
+collectWitnessesB 
+          :: (BindStruct c) 
+          => c A.Name
           -> [(Bound A.Name, Type A.Name)]
-collectWitnesses tenv cc
- = let isBoundWit u 
-         = case Env.lookup u tenv of
-                Just t | isWitnessType t -> Just (u, t)
-                _                        -> Nothing
-       
+collectWitnessesB cc
+ = let 
        isBindWit  b 
          = case b of
                 BName n t | isWitnessType t -> Just (UName n, t)
                 _                           -> Nothing
        
-       boundWits = map (isBoundWit) $ Set.toList (collectBound cc)
-       bindWits  = map (isBindWit)  $ snd        (collectBinds cc)
-   in  catMaybes $ boundWits ++ bindWits
-
-
+       bindWits  = map (isBindWit) $ snd (collectBinds cc)
+   in  catMaybes bindWits
 
