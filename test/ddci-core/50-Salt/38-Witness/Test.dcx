@@ -28,9 +28,9 @@ boxInt  [r : %] (x : Int#) : Ptr# r Obj
 
 unboxInt [r : %] (obj : Ptr# r Obj) : Int#
  = do { addr    = takePtr# [r] [Obj] obj;
-    x       = read#    [Int#] addr 8#;
-    return# [Int#] x;
-    };
+        x       = read#    [Int#] addr 8#;
+        return# [Int#] x;
+      };
 
 
 main (argc : Nat#) (argv : Addr#) : Int#

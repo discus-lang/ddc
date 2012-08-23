@@ -87,7 +87,7 @@ instance Pretty MDNodeOp where
          OpMDString ms -> text "metadata" <> space <> ppr ms
          OpMDNode   ns -> text "metadata" <> space <> ppr ns
          OpMDRef    r  -> text "metadata" <> space <> ppr r 
-         OpBool     b  -> text "i1"       <> space <> text (if b then "1" else "0")
+         OpBool     b  -> text "i32"      <> space <> text (if b then "1" else "0")
          OpType     t  -> ppr t 
 
 

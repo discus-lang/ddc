@@ -3,37 +3,34 @@
 :set builder x86_64-darwin
 
 
--- Intransitive test: should generate two aliases for r2 and put them in different trees
+-- Intransitive test
+--    should generate two aliases for r2 and put them in different trees
+:set lang Lite
 :to-llvm..
 module Test with letrec
 foo [r1 r2 r3 : %] <w1 : Distinct r1 r2> <w2 : Distinct r2 r3> (x : Unit) : Word64# = 42w64#
 
 bar (_ : Unit) : Word64#
- = letregion reg1 in
-   letregion reg2 with { wit1 : Distinct reg1 reg2 } in
-   letregion reg3 with { wit2 : Distinct reg2 reg3 } in
-   do   foo [:reg1 reg2 reg3:] <wit1> <wit2> ();;
+ = letregion r1 in
+   letregion r2 with { w1 : Distinct r1 r2 } in
+   letregion r3 with { w2 : Distinct r2 r3 } in
+   do   foo [:r1 r2 r3:] <w1> <w2> ();;
    
 
--- Bound name shadowing across the module should be ok
-:set lang Lite
+-- Annotate load/store instructions with metadata
 :to-llvm..
 module Test with letrec
-strange [r1 r2 : %] <w : Distinct r1 r2> (x : Unit) : Word64# = 42w64# 
  
-strangeAdd [r0 r2 ret : %] 
-           <w1 : Const r0>
-           <w2 : Distinct r0 r2>
-           <w3 : Distinct r2 ret>
-           (x : Int r0) { !0 | Use ret } 
-           (y : Int r2) { Read r0 + Read r2 + Alloc ret | Use r0 + Use ret}
-            : Int ret
- =  letregion r1 in
-    letregion r3 with {w : Distinct r1 r3} in
-    do  foo = strange [:r1 r3:] <w> ()
-        case x of { I# i1 
+strangeAdd [r1 r2 r3 : %] 
+           <w1 : Const r1>
+           <w2 : Distinct r1 r2>
+           <w3 : Distinct r2 r3>
+           (x : Int r1) { !0 | Use r3 } 
+           (y : Int r2) { Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3}
+            : Int r3
+ =  do  case x of { I# i1 
      -> case y of { I# i2 
-     -> I# [ret] (add# [Int#] i1 i2) } }
+     -> I# [r3] (add# [Int#] i1 i2) } }
 
 strangeMain (_ : Unit) :  Unit
  = letregion r1 with { w1 : Const r1 } in
@@ -41,3 +38,45 @@ strangeMain (_ : Unit) :  Unit
    letregion r3 with { w3 : Distinct r2 r3 } in
    do   x = strangeAdd [:r1 r2 r3:] <w1> <w2> <w3> (I# [r1] 5i#) (I# [r2] 3i#) 
         ();;
+        
+        
+-- Observable optimisations
+-- Feed the output of this test to `opt -S -tbaa -basicaa -gvn -o - <test.ll>`
+-- 
+--    This test is equivalent to:
+--      int gvn_test (int* x, int* y, int* z, int* beta) {
+--        int a = *x + *y;
+--        *z = a;
+--        *beta = *x + *y;
+--        return *beta;
+--      }
+--    Where we have (distinct x z) and (distinct y z)
+--    The second load to x and y (to evaluate *x + *y) should be eliminated.
+--    
+-- BROKEN: due to problems with the current metadata representation, only
+--    the second load to either x or y is eliminated, but not both (i.e.
+--    only one of the metadata nodes attached is useful)
+--
+-- PROBLEM: since only load/stores can be annotated (and not function calls),
+--    we have to inline addInt manually here.
+--
+:set lang Salt
+:to-llvm..
+module Test with letrec {
+
+foo [rx ry rz rbeta : %]
+    <w1 : Distinct rx rz> <w2 : Distinct ry rz>
+    (x : Ptr# rx Int#) 
+    (y : Ptr# ry Int#) 
+    (z : Ptr# rz Int#)
+    (beta : Ptr# rbeta Int#)
+    : Void#
+ = do  { xval1 = peek# [rx] [Int#] x 0#;
+         yval1 = peek# [ry] [Int#] y 0#;
+         a     = add# [Int#] xval1 yval1; 
+                 poke# [rz] [Int#] z 0# a;
+         xval2 = peek# [rx] [Int#] x 0#;
+         yval2 = peek# [ry] [Int#] y 0#;
+         b     = add# [Int#] xval2 yval2; 
+                 poke# [rbeta]  [Int#] beta 0# b; };
+};;

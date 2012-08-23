@@ -3,7 +3,9 @@ ok
 ok
 
 
--- Intransitive test: should generate two aliases for r2 and put them in different trees
+-- Intransitive test
+--    should generate two aliases for r2 and put them in different trees
+ok
 %s.Obj = type <{i64}>
 @DDC.Runtime.heapTop = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
@@ -15,7 +17,7 @@ declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc %s.Obj* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
-define external ccc i64 @foo(%s.Obj*  %w1) align 8  
+define external ccc i64 @foo(%s.Obj*  %x) align 8  
 {
 l7.entry:
         ret i64 42
@@ -31,21 +33,20 @@ l15.entry:
 
 
 
-!4 = metadata !{!"foo_ROOT_4", null, i11}
-!5 = metadata !{!"foo_r2", !4, i10}
-!6 = metadata !{!"foo_r3", !4, i10}
-!1 = metadata !{!"foo_ROOT_1", null, i11}
-!2 = metadata !{!"foo_r1", !1, i10}
-!3 = metadata !{!"foo_r2", !1, i10}
-!12 = metadata !{!"bar_ROOT_12", null, i11}
-!13 = metadata !{!"bar_reg2", !12, i10}
-!14 = metadata !{!"bar_reg3", !12, i10}
-!9 = metadata !{!"bar_ROOT_9", null, i11}
-!10 = metadata !{!"bar_reg1", !9, i10}
-!11 = metadata !{!"bar_reg2", !9, i10}
+!4 = metadata !{metadata !"foo_ROOT_4", null, i32 1}
+!5 = metadata !{metadata !"foo_r2", metadata !4, i32 0}
+!6 = metadata !{metadata !"foo_r3", metadata !4, i32 0}
+!1 = metadata !{metadata !"foo_ROOT_1", null, i32 1}
+!2 = metadata !{metadata !"foo_r1", metadata !1, i32 0}
+!3 = metadata !{metadata !"foo_r2", metadata !1, i32 0}
+!12 = metadata !{metadata !"bar_ROOT_12", null, i32 1}
+!13 = metadata !{metadata !"bar_r2", metadata !12, i32 0}
+!14 = metadata !{metadata !"bar_r3", metadata !12, i32 0}
+!9 = metadata !{metadata !"bar_ROOT_9", null, i32 1}
+!10 = metadata !{metadata !"bar_r1", metadata !9, i32 0}
+!11 = metadata !{metadata !"bar_r2", metadata !9, i32 0}
 
--- Bound name shadowing across the module should be ok
-ok
+-- Annotate load/store instructions with metadata
 %s.Obj = type <{i64}>
 @DDC.Runtime.heapTop = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
@@ -57,91 +58,143 @@ declare external ccc i32 @getTag(%s.Obj* ) align 8
 declare external ccc %s.Obj* @payloadOfRawSmall(%s.Obj* ) align 8
 declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
-define external ccc i64 @strange(%s.Obj*  %w) align 8  
+define external ccc %s.Obj* @strangeAdd(%s.Obj*  %x, %s.Obj*  %y) align 8  
 {
-l4.entry:
-        ret i64 42
-}
-
-define external ccc %s.Obj* @strangeAdd(%s.Obj*  %w1, %s.Obj*  %w2) align 8  
-{
-l15.entry:
-        %x3          = call %s.Obj* @allocBoxed (i32 0, i64 0) 
-        %foo         = call i64 @strange (%s.Obj* %x3) 
-        %x4          = call i32 @getTag (%s.Obj* %x) 
-        switch i32 %x4, label %l23.default [ i32 0,label %l16.alt ]
-l16.alt:
-        %x5          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x) 
-        %x6          = bitcast %s.Obj* %x5 to i64*
-        %i1.addr1    = ptrtoint i64* %x6 to i64
+l7.entry:
+        %x3          = call i32 @getTag (%s.Obj* %x) 
+        switch i32 %x3, label %l15.default [ i32 0,label %l8.alt ]
+l8.alt:
+        %x4          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x) 
+        %x5          = bitcast %s.Obj* %x4 to i64*
+        %i1.addr1    = ptrtoint i64* %x5 to i64
         %i1.addr2    = add i64 %i1.addr1, 0
         %i1.ptr      = inttoptr i64 %i1.addr2 to i64*
-        %i1          = load i64* %i1.ptr,    !tbaa !7
-        %x7          = call i32 @getTag (%s.Obj* %y) 
-        switch i32 %x7, label %l22.default [ i32 0,label %l17.alt ]
-l17.alt:
-        %x8          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %y) 
-        %x9          = bitcast %s.Obj* %x8 to i64*
-        %i2.addr1    = ptrtoint i64* %x9 to i64
+        %i1          = load i64* %i1.ptr,    !tbaa !2
+        %x6          = call i32 @getTag (%s.Obj* %y) 
+        switch i32 %x6, label %l14.default [ i32 0,label %l9.alt ]
+l9.alt:
+        %x7          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %y) 
+        %x8          = bitcast %s.Obj* %x7 to i64*
+        %i2.addr1    = ptrtoint i64* %x8 to i64
         %i2.addr2    = add i64 %i2.addr1, 0
         %i2.ptr      = inttoptr i64 %i2.addr2 to i64*
-        %i2          = load i64* %i2.ptr,    !tbaa !10, !tbaa !8
+        %i2          = load i64* %i2.ptr,    !tbaa !5, !tbaa !3
         %x0          = add i64 %i1, %i2
-        %x10         = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
-        %x11         = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x10) 
-        %x12         = bitcast %s.Obj* %x11 to i64*
-        %_v18.addr1  = ptrtoint i64* %x12 to i64
-        %_v19.addr2  = add i64 %_v18.addr1, 0
-        %_v20.ptr    = inttoptr i64 %_v19.addr2 to i64*
-        store i64 %x0, i64* %_v20.ptr,    !tbaa !11
-        ret %s.Obj* %x10
-l22.default:
+        %x9          = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x10         = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x9) 
+        %x11         = bitcast %s.Obj* %x10 to i64*
+        %_v10.addr1  = ptrtoint i64* %x11 to i64
+        %_v11.addr2  = add i64 %_v10.addr1, 0
+        %_v12.ptr    = inttoptr i64 %_v11.addr2 to i64*
+        store i64 %x0, i64* %_v12.ptr,    !tbaa !6
+        ret %s.Obj* %x9
+l14.default:
         call void @abort () 
         unreachable
-l23.default:
+l15.default:
         call void @abort () 
         unreachable
 }
 
 define external ccc %s.Obj* @strangeMain() align 8  
 {
-l30.entry:
-        %x13         = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
-        %x14         = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x13) 
-        %x15         = bitcast %s.Obj* %x14 to i64*
-        %_v31.addr1  = ptrtoint i64* %x15 to i64
-        %_v32.addr2  = add i64 %_v31.addr1, 0
-        %_v33.ptr    = inttoptr i64 %_v32.addr2 to i64*
-        store i64 5, i64* %_v33.ptr,    !tbaa !25
-        %x16         = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
-        %x17         = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x16) 
-        %x18         = bitcast %s.Obj* %x17 to i64*
-        %_v34.addr1  = ptrtoint i64* %x18 to i64
-        %_v35.addr2  = add i64 %_v34.addr1, 0
-        %_v36.ptr    = inttoptr i64 %_v35.addr2 to i64*
-        store i64 3, i64* %_v36.ptr,    !tbaa !28, !tbaa !26
-        %x           = call %s.Obj* @strangeAdd (%s.Obj* %x13, %s.Obj* %x16) 
-        %_v37        = call %s.Obj* @allocBoxed (i32 0, i64 0) 
-        ret %s.Obj* %_v37
+l22.entry:
+        %x12         = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x13         = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x12) 
+        %x14         = bitcast %s.Obj* %x13 to i64*
+        %_v23.addr1  = ptrtoint i64* %x14 to i64
+        %_v24.addr2  = add i64 %_v23.addr1, 0
+        %_v25.ptr    = inttoptr i64 %_v24.addr2 to i64*
+        store i64 5, i64* %_v25.ptr,    !tbaa !17
+        %x15         = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
+        %x16         = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x15) 
+        %x17         = bitcast %s.Obj* %x16 to i64*
+        %_v26.addr1  = ptrtoint i64* %x17 to i64
+        %_v27.addr2  = add i64 %_v26.addr1, 0
+        %_v28.ptr    = inttoptr i64 %_v27.addr2 to i64*
+        store i64 3, i64* %_v28.ptr,    !tbaa !20, !tbaa !18
+        %x           = call %s.Obj* @strangeAdd (%s.Obj* %x12, %s.Obj* %x15) 
+        %_v29        = call %s.Obj* @allocBoxed (i32 0, i64 0) 
+        ret %s.Obj* %_v29
 }
 
 
 
-!1 = metadata !{!"strange_ROOT_1", null, i11}
-!2 = metadata !{!"strange_r1", !1, i10}
-!3 = metadata !{!"strange_r2", !1, i10}
-!12 = metadata !{!"strangeAdd_ROOT_12", null, i11}
-!13 = metadata !{!"strangeAdd_r1", !12, i10}
-!14 = metadata !{!"strangeAdd_r3", !12, i10}
-!9 = metadata !{!"strangeAdd_ROOT_9", null, i11}
-!10 = metadata !{!"strangeAdd_r2", !9, i10}
-!11 = metadata !{!"strangeAdd_ret", !9, i10}
-!6 = metadata !{!"strangeAdd_ROOT_6", null, i11}
-!7 = metadata !{!"strangeAdd_r0", !6, i11}
-!8 = metadata !{!"strangeAdd_r2", !6, i10}
-!27 = metadata !{!"strangeMain_ROOT_27", null, i11}
-!28 = metadata !{!"strangeMain_r2", !27, i10}
-!29 = metadata !{!"strangeMain_r3", !27, i10}
-!24 = metadata !{!"strangeMain_ROOT_24", null, i11}
-!25 = metadata !{!"strangeMain_r1", !24, i11}
-!26 = metadata !{!"strangeMain_r2", !24, i10}
+!4 = metadata !{metadata !"strangeAdd_ROOT_4", null, i32 1}
+!5 = metadata !{metadata !"strangeAdd_r2", metadata !4, i32 0}
+!6 = metadata !{metadata !"strangeAdd_r3", metadata !4, i32 0}
+!1 = metadata !{metadata !"strangeAdd_ROOT_1", null, i32 1}
+!2 = metadata !{metadata !"strangeAdd_r1", metadata !1, i32 1}
+!3 = metadata !{metadata !"strangeAdd_r2", metadata !1, i32 0}
+!19 = metadata !{metadata !"strangeMain_ROOT_19", null, i32 1}
+!20 = metadata !{metadata !"strangeMain_r2", metadata !19, i32 0}
+!21 = metadata !{metadata !"strangeMain_r3", metadata !19, i32 0}
+!16 = metadata !{metadata !"strangeMain_ROOT_16", null, i32 1}
+!17 = metadata !{metadata !"strangeMain_r1", metadata !16, i32 1}
+!18 = metadata !{metadata !"strangeMain_r2", metadata !16, i32 0}
+-- Observable optimisations
+-- Feed the output of this test to `opt -S -tbaa -basicaa -gvn -o - <test.ll>`
+-- 
+--    This test is equivalent to:
+--      int gvn_test (int* x, int* y, int* z, int* beta) {
+--        int a = *x + *y;
+--        *z = a;
+--        *beta = *x + *y;
+--        return *beta;
+--      }
+--    Where we have (distinct x z) and (distinct y z)
+--    The second load to x and y (to evaluate *x + *y) should be eliminated.
+--    
+-- BROKEN: due to problems with the current metadata representation, only
+--    the second load to either x or y is eliminated, but not both (i.e.
+--    only one of the metadata nodes attached is useful)
+--
+-- PROBLEM: since only load/stores can be annotated (and not function calls),
+--    we have to inline addInt manually here.
+--
+ok
+%s.Obj = type <{i64}>
+@DDC.Runtime.heapTop = external global  i64
+declare external ccc i64 @malloc(i64 ) align 8
+declare external ccc void @abort() align 8
+
+define external ccc void @foo(i64*  %x, i64*  %y, i64*  %z, i64*  %beta) align 8  
+{
+l7.entry:
+        %xval1.addr1 = ptrtoint i64* %x to i64
+        %xval1.addr2 = add i64 %xval1.addr1, 0
+        %xval1.ptr   = inttoptr i64 %xval1.addr2 to i64*
+        %xval1       = load i64* %xval1.ptr,    !tbaa !2
+        %yval1.addr1 = ptrtoint i64* %y to i64
+        %yval1.addr2 = add i64 %yval1.addr1, 0
+        %yval1.ptr   = inttoptr i64 %yval1.addr2 to i64*
+        %yval1       = load i64* %yval1.ptr,    !tbaa !5
+        %a           = add i64 %xval1, %yval1
+        %_v8.addr1   = ptrtoint i64* %z to i64
+        %_v9.addr2   = add i64 %_v8.addr1, 0
+        %_v10.ptr    = inttoptr i64 %_v9.addr2 to i64*
+        store i64 %a, i64* %_v10.ptr,    !tbaa !6, !tbaa !3
+        %xval2.addr1 = ptrtoint i64* %x to i64
+        %xval2.addr2 = add i64 %xval2.addr1, 0
+        %xval2.ptr   = inttoptr i64 %xval2.addr2 to i64*
+        %xval2       = load i64* %xval2.ptr,    !tbaa !2
+        %yval2.addr1 = ptrtoint i64* %y to i64
+        %yval2.addr2 = add i64 %yval2.addr1, 0
+        %yval2.ptr   = inttoptr i64 %yval2.addr2 to i64*
+        %yval2       = load i64* %yval2.ptr,    !tbaa !5
+        %b           = add i64 %xval2, %yval2
+        %_v11.addr1  = ptrtoint i64* %beta to i64
+        %_v12.addr2  = add i64 %_v11.addr1, 0
+        %_v13.ptr    = inttoptr i64 %_v12.addr2 to i64*
+        store i64 %b, i64* %_v13.ptr
+        ret void
+}
+
+
+
+!4 = metadata !{metadata !"foo_ROOT_4", null, i32 1}
+!5 = metadata !{metadata !"foo_ry", metadata !4, i32 0}
+!6 = metadata !{metadata !"foo_rz", metadata !4, i32 0}
+!1 = metadata !{metadata !"foo_ROOT_1", null, i32 1}
+!2 = metadata !{metadata !"foo_rx", metadata !1, i32 0}
+!3 = metadata !{metadata !"foo_rz", metadata !1, i32 0}
