@@ -19,10 +19,9 @@ import qualified DDC.Type.Predicates		as T
 import qualified DDC.Type.Transform.LiftT	as L
 import qualified DDC.Core.Transform.LiftX	as L
 
-import Data.Maybe (listToMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 
--- | The environment of an expression,
---   with witnesses and distinct regions.
+-- | The environment of an expression with witnesses and distinct regions.
 --
 --   Because of the de Bruijn indices, using lists to make lifting easier.
 data RewriteEnv a n = RewriteEnv
@@ -37,7 +36,9 @@ data RewriteEnv a n = RewriteEnv
 	-- these are value-level bindings, so be careful lifting
     }
     deriving (Show,Eq)
-type RewriteDef a n = (Bind n, Exp a n)
+
+type RewriteDef a n = (Bind n, Maybe (Exp a n))
+
 
 -- | Create an empty environment
 empty
@@ -54,7 +55,7 @@ extend
     -> RewriteEnv a n
 extend b env
   | T.isWitnessType ty	= liftValue b $ env { witnesses = extend' (witnesses env) }
-  | otherwise		= liftValue b $ env
+  | otherwise		= insertDef b Nothing (liftValue b env)
  where
     ty = T.typeOfBind b
     extend' (w:ws')	= (ty:w) : ws'
@@ -78,7 +79,7 @@ extendLets (LLetRegion b cs) (env@RewriteEnv{letregions = rs})
     extend' []	   = [[b]]
 
 extendLets (LLet _ b def) env
- =  insertDef b def' (liftValue b env)
+ =  insertDef b (Just def') (liftValue b env)
  where
    def' = case b of
 	  BAnon{} -> L.liftX 1 def
@@ -89,11 +90,13 @@ extendLets (LRec bs) env
 
 extendLets _ env = env
 
+
 insertDef b def env
  =  env { defs = extend' $ defs env }
  where
     extend' (r:rs') = ((b,def):r) : rs'
     extend' []	    = [[(b,def)]]
+
 
 containsRegion
     :: (Eq n, Ord n, Show n)
@@ -128,18 +131,19 @@ containsWitness c env
     go _  []	= False
     go c' (w:ws)= c' `elem` w || go (L.liftT (-1) c') ws
 
+
 getDef
     :: (Eq n, Ord n, Show n, L.LiftX (Exp a))
     => Bound n
     -> RewriteEnv a n
     -> Maybe (Exp a n)
 getDef b env
- = go b 0 (defs env)
+ = fromMaybe Nothing $ go b 0 (defs env)
  where
     go _ _  []	    = Nothing
     go b' i (w:ws)  = match b' i w `orM` go (L.liftX (-1) b') (i+1) ws
 
-    match b' i ds   = fmap (L.liftX i)
+    match b' i ds   = fmap (fmap $ L.liftX i)
 		    $ listToMaybe
 		    $ map snd
 		    $ filter (T.boundMatchesBind b' . fst) ds

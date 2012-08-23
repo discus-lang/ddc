@@ -39,6 +39,14 @@ let x = 2 [R0#] ()		in
     unbox x
 ;;
 
+-- shadowing with lambdas, don't rewrite
+:trans..
+let x = box (5 [R0#] ())	in
+\(x : Int R0#).
+    unbox x
+;;
+
+
 -- some de bruijns. do rewrite
 :trans..
 let ^ = box (5 [R0#] ())	in
@@ -99,3 +107,4 @@ let x = box_ [r] (5 [r] ())	in
 let y = unbox_ [r] x		in
     ()
 ;;
+

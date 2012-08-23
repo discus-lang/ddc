@@ -24,6 +24,9 @@ ok, added ok_BindersRhs
 -- Bad: no such constraint 'Mutz'
 Bad constraint: Mutz r
 
+-- Bad: constraint isn't a witness
+Bad constraint: Int r
+
 -- Bad: not all variables mentioned in left-hand side
 All variables in rule should be mentioned in left-hand side.
 

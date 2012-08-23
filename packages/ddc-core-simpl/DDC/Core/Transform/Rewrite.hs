@@ -20,39 +20,62 @@ import qualified Data.Set as Set
 import Control.Monad.Writer
 
 
--- I would eventually like to change this to take Map String (RewriteRule..)
--- so that we can record how many times each rule is fired?
--- (no, I think just [(String,Rule)] because don't want to require unique names
+-- | Perform rewrites top-down, repeatedly.
+--
 rewrite :: (Show a, Show n, Ord n, Pretty n) => [(String,RewriteRule a n)] -> Exp a n -> (Exp a n, [String])
 rewrite rules x0
  =  runWriter $ down x0 RE.empty
  where
     down x ws = go x [] ws
+
     go (XApp a f arg)	args ws = do
 	arg' <- down arg ws
 	go f ((arg',a):args) ws
+
     go x@(XVar{})	args ws = rewrites x args ws
+
     go x@(XCon{})	args ws = rewrites x args ws
+
     go (XLAM a b e)	args ws = do
 	e' <- down e (RE.lift b ws)
 	rewrites (XLAM a b e') args ws
+
     go (XLam a b e)	args ws = do
 	e' <- down e (RE.extend b ws)
 	rewrites (XLam a b e') args ws
+
     go (XLet a l e)	args ws = do
 	l' <- goLets l ws
 	dh <- goDefHoles a l' e ws
 	rewrites dh args ws
+
     go (XCase a e alts)	args ws = do
 	e'    <- down e ws
 	alts' <- mapM (goAlts ws) alts
 	rewrites (XCase a e' alts') args ws
+
     go (XCast a c e)	args ws = do
 	e' <- down e ws
 	rewrites (XCast a c e') args ws
+
     go x@(XType{})	args ws = rewrites x args ws
+
     go x@(XWitness{})	args ws = rewrites x args ws
 
+    -- If definitions match the holes of any rules,
+    -- clean it up and record it for later.
+    -- Eg with this rule,
+    --	 RULE unbox {box s} = s
+    --
+    -- this expression:
+    --   let x = box (some expensive op)
+    --	 in  ...
+    --
+    -- will be transformed to
+    --   let ^ = some expensive op
+    --       x = box ^0
+    --   in ...
+    --
     goDefHoles a l@(LLet LetStrict let_bind def) e ws
      =	let subs = checkHoles def ws
 	in  case subs of
@@ -85,6 +108,7 @@ rewrite rules x0
 	e' <- down e (RE.extendLets l ws)
 	return $ XLet a l e'
 
+    -- Match a let-definition against the holes in all the rules
     checkHoles def ws
      =  let rules'   = Maybe.catMaybes $ map holeRule rules
 	    (f,args) = takeApps def
@@ -121,15 +145,39 @@ rewrite rules x0
 	Nothing -> rewrites' rs f args ws
 	Just x  -> tell [n] >> go x [] ws
 
+
+-- | Attempt to find a rewrite substitution to match expression against rule.
+--   Returns substitution and the left-over arguments that weren't matched against.
+--   EG:
+--
+--   rewriteSubst
+--	(RULE mapMapId [a b : *] (f : a -> b) (xs : List a).
+--	      map [:a b:] f (map [:a a:] id xs)
+--	    = map [:a b:] f xs)
+--	map
+--	[ [Int], [Int], (\x -> f), (map [:Int Int:] id [1,2,3]) ]
+--
+--	env
+--
+--	emptySubstInfo
+--   ==>
+--     Just ({a |-> Int, b |-> Int, f |-> (\x -> f), xs |-> [1,2,3] }, [])
+--
+--   However if we had passed a substitution such as {a |-> Float} instead of emptySubstInfo,
+--	it would not have matched.
+--
+--   The environment is used for 'hole' rules, that can look up bound definitions
+--   and match if inlining would let them, even when inlining won't occur.
+--
 rewriteSubst
     :: (Show n, Show a, Ord n, Pretty n)
-    => RewriteRule a n
-    -> Exp a n
-    -> [(Exp a n,a)]
-    -> RE.RewriteEnv a n
-    -> RM.SubstInfo  a n
-    -> Maybe (RM.SubstInfo a n, [(Exp a n, a)]) -- ^ substitution map and remaining args
--- TODO check constraints?
+    => RewriteRule a n		-- ^ Rule
+    -> Exp a n			-- ^ Bottom-most (function) of expression
+    -> [(Exp a n,a)]		-- ^ Arguments applied to function, with XApp's annotation
+    -> RE.RewriteEnv a n	-- ^ Environment to rewrite in: witnesses for constraints,
+    -> RM.SubstInfo  a n	-- ^ Existing substitution to match with
+    -> Maybe (RM.SubstInfo a n, [(Exp a n, a)])
+				-- ^ Substitution map and remaining (unmatched) args
 rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _ sub
  = do	l:ls   <- return $ X.takeXAppsAsList lhs
 	sub'     <- RM.match sub vs l f
@@ -138,9 +186,11 @@ rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _ sub
     bs = map snd binds
     vs = Set.fromList $ map nm bs
 
+    -- Get name from a Bind. We disallow BAnon and BNone earlier, so this is safe.
     nm (BName name _) = name
-    nm _ = error "no anonymous binders in rewrite rules, please"
+    nm _ = error "Impossible! No anonymous binders in rewrite rules, please"
 
+    -- Match each left-hand rule against the arguments
     go m [] rest
      = do   return $ (m, rest)
     go m (l:ls) ((r,_):rs)
@@ -148,20 +198,30 @@ rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _ sub
 	    go m' ls rs
     go _ _ _ = Nothing
 
+-- Find substitution for rules with a 'hole'.
+-- An example rule with a holes is:
+--	RULE (i : Int). unbox {box i} = i
 rewriteSubst (RewriteRule binds constrs lhs (Just hole) rhs eff clo) f args ws sub
- =  case rewriteSubst rule_full f args ws sub of
+ =  -- Try to match against entire rule with no inlining. Eg (unbox (box 5))
+    case rewriteSubst rule_full f args ws sub of
     Just s  -> Just s
     Nothing ->
-      -- try inlining without hole
+      -- Try to match without the hole:
+      --    rewriteSubst (RULE (i : Int). unbox) (unbox x)
+      -- which will return a substitution (empty here), and the leftover argument 'x'.
       case rewriteSubst rule_some f args ws sub of
       Just (sub',((XVar _ b, _):as)) -> 
+        -- Check if hole variable is bound to a value
 	case RE.getDef b ws of
 	Just d' -> let (fd,ad) = takeApps d' in
+		   -- Merge the outer substitution with one for the hole
 		   case rewriteSubst rule_hole fd ad ws sub' of
 		   Just (subd,asd) -> Just (subd,asd ++ as)
-		   Nothing	-> Nothing
+		   Nothing	   -> Nothing
+	-- No definition in environment
 	Nothing -> Nothing
-      s -> s
+      -- rule_some didn't match properly: failure
+      _ -> Nothing
  where
   lhs_full  = XApp undefined lhs hole
   rule_full = RewriteRule binds constrs lhs_full Nothing rhs eff clo
@@ -169,6 +229,9 @@ rewriteSubst (RewriteRule binds constrs lhs (Just hole) rhs eff clo) f args ws s
   rule_some = RewriteRule binds constrs lhs Nothing rhs eff clo
   rule_hole = RewriteRule binds constrs hole Nothing rhs eff clo
 
+-- | Perform rewrite rule on expression if a valid substitution exists,
+--   and constraints are satisfied.
+--
 rewriteX
     :: (Show n, Show a, Ord n, Pretty n)
     => RewriteRule a n
@@ -177,15 +240,16 @@ rewriteX
     -> RE.RewriteEnv a n
     -> Maybe (Exp a n)
 rewriteX rule@(RewriteRule binds constrs _lhs _hole rhs eff clo) f args ws
- = do	(m,rest) <- rewriteSubst rule f args ws RM.emptySubstInfo
+ = do	-- Find a substitution
+	(m,rest) <- rewriteSubst rule f args ws RM.emptySubstInfo
+	-- Check constraints, perform substitution and add weakens if necessary
 	s	 <- subst m
+	-- Add the remaining arguments that weren't matched by rule
 	return   $  mkApps s rest
  where
     bs = map snd binds
 
-    -- TODO the annotations here will be rubbish
-    -- TODO type-check?
-    -- TODO constraints
+    -- TODO the annotations here will be rubbish because they are from the rule's source location
     subst m
      =	    let (_,bas') = lookups bs m
 		rhs'	 = A.anonymizeX rhs
@@ -194,7 +258,10 @@ rewriteX rule@(RewriteRule binds constrs _lhs _hole rhs eff clo) f args ws
 		$ weakclo bas'
 		$ S.substituteXArgs bas' rhs'
 
-    anno = snd $ head args
+    -- Dummy annotation for the casts
+    anno = case args of
+	   (_,a):_ -> a
+	   _	   -> undefined
 
     weakeff bas x
      = case eff of
@@ -211,10 +278,6 @@ rewriteX rule@(RewriteRule binds constrs _lhs _hole rhs eff clo) f args ws
 		   (CastWeakenClosure
 		   $ map (S.substituteXArgs bas) clo)
 		   x
-        -- TODO: weakclo is broken.
-        --       need to update to use new plan for CastWeakenClosure,
-        --       it contains expressions now instead of Use types.
-        -- XCast anno (CastWeakenClosure $ S.substituteTs (Maybe.catMaybes $ map lookupT bas) c) x
 
     checkConstrs _ [] x = Just x
     checkConstrs bas (c:cs) x = do

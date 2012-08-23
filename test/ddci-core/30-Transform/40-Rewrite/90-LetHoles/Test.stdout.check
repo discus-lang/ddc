@@ -35,6 +35,12 @@ let x : Int R0# = box ^0 in
 let x : Int R0# = 2 [R0#] () in
 unbox x
 
+-- shadowing with lambdas, don't rewrite
+let ^ : Int R0# = 5 [R0#] () in
+let x : Int R0# = box ^0 in
+\(x : Int R0#). unbox x
+
+
 -- some de bruijns. do rewrite
 let ^ : Int R0# = 5 [R0#] () in
 let ^ : Int R0# = box ^0 in
@@ -94,3 +100,4 @@ let y : Int r
       = weakclo {box_; unbox_; [r]} in
         ^0 in
 ()
+

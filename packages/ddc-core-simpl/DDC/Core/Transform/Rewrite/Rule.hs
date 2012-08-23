@@ -17,6 +17,7 @@ import qualified DDC.Type.Check                 as T
 import qualified DDC.Type.Compounds             as T
 import qualified DDC.Type.Env                   as T
 import qualified DDC.Type.Equiv                 as T
+import qualified DDC.Type.Predicates            as T
 import qualified DDC.Type.Subsumes              as T
 import qualified DDC.Type.Transform.SpreadT     as S
 import qualified Data.Maybe		as Maybe
@@ -93,8 +94,8 @@ checkRewriteRule config kenv tenv
     (RewriteRule bs cs lhs hole rhs _ _)
  = do	let (kenv',tenv',bs') = extendBinds bs kenv tenv
 	let cs' = map (S.spreadT kenv') cs
-	-- Check that all constraints are valid types. TODO make sure they're witnesses
-	mapM_ (\c -> checkTy config kenv' c ErrorBadConstraint) cs'
+	-- Check that all constraints are valid types.
+	mapM_ (\c -> checkConstraint config kenv' c ErrorBadConstraint) cs'
 
 	-- Typecheck, spread and annotate with type information
 	(lhs',_,_,_)    <- check config kenv' tenv' lhs (ErrorTypeCheck Lhs)
@@ -163,11 +164,14 @@ check defs kenv tenv xx onError
    Left err -> Left $ onError xx' err
    Right rhs -> return rhs
 
--- | Typecheck a type or return an error
-checkTy defs kenv xx onError
+-- | Typecheck a constraint or return an error
+checkConstraint defs kenv xx onError
  = case T.checkType (C.configDataDefs defs) kenv xx of
    Left _err -> Left $ onError xx
-   Right rhs -> return rhs
+   Right rhs ->
+	if   T.isWitnessType xx
+	then return rhs
+	else Left $ onError xx
 
 
 -- | Check equivalence of types or error

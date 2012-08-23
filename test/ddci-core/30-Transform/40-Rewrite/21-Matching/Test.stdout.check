@@ -1,0 +1,54 @@
+ok
+
+-- test using a binder twice
+ok, added add_n_n
+
+ok
+
+-- simple one, do
+weakclo {addInt} in
+mulInt [R0#] [R0#] [R0#] (5 [R0#] ()) (2 [R0#] ())
+
+-- different values, don't
+addInt [R0#] [R0#] [R0#] (5 [R0#] ()) (6 [R0#] ())
+
+-- more complicated value, do
+weakclo {addInt} in
+mulInt [R0#] [R0#] [R0#]
+    (mulInt [R0#] [R0#] [R0#] (5 [R0#] ()) (3 [R0#] ())) (2 [R0#] ())
+
+-- different regions, don't
+addInt [R0#] [R0#] [R0#]
+    (mulInt [R0#] [R0#] [R0#] (5 [R0#] ()) (3 [R0#] ()))
+    (mulInt [R0#] [R1#] [R0#] (5 [R0#] ()) (3 [R1#] ()))
+
+-- referencing let-bound vars, do
+let x : Int R0# = 5 [R0#] () in
+weakclo {addInt} in
+mulInt [R0#] [R0#] [R0#] x (2 [R0#] ())
+
+-- shadowing, don't
+let x : Int R0# = 5 [R0#] () in
+addInt [R0#] [R0#] [R0#] x
+    (let x : Int R0# = 2 [R0#] () in
+     x)
+
+-- with binders, do
+weakclo {addInt} in
+mulInt [R0#] [R0#] [R0#]
+    (let ^ : Int R0# = 5 [R0#] () in
+     ^0) (2 [R0#] ())
+
+-- with binders different values, don't
+addInt [R0#] [R0#] [R0#]
+    (let y : Int R0# = 5 [R0#] () in
+     y)
+    (let y : Int R0# = 0 [R0#] () in
+     y)
+
+-- with binders same value different names, do
+weakclo {addInt} in
+mulInt [R0#] [R0#] [R0#]
+    (let ^ : Int R0# = 5 [R0#] () in
+     ^0) (2 [R0#] ())
+

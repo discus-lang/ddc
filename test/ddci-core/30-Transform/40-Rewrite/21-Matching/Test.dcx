@@ -1,0 +1,71 @@
+:set Indent
+
+-- test using a binder twice
+:set.. rule add_n_n (n : Int R0#).
+    addInt [:R0# R0# R0#:] n n
+  = mulInt [:R0# R0# R0#:] n (2 [R0#] ())
+;;
+
+:set trans Rewrite
+
+-- simple one, do
+:trans..
+ addInt [:R0# R0# R0#:] (5 [R0#] ()) (5 [R0#] ())
+;;
+
+-- different values, don't
+:trans..
+ addInt [:R0# R0# R0#:] (5 [R0#] ()) (6 [R0#] ())
+;;
+
+-- more complicated value, do
+:trans..
+ addInt [:R0# R0# R0#:]
+    (mulInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ()))
+    (mulInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ()))
+;;
+
+-- different regions, don't
+:trans..
+ addInt [:R0# R0# R0#:]
+    (mulInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ()))
+    (mulInt [:R0# R1# R0#:] (5 [R0#] ()) (3 [R1#] ()))
+;;
+
+-- referencing let-bound vars, do
+:trans..
+let x = 5 [R0#] ()	in
+addInt [:R0# R0# R0#:]
+    x
+    x
+;;
+
+-- shadowing, don't
+:trans..
+let x = 5 [R0#] ()	in
+addInt [:R0# R0# R0#:]
+    x
+    (let x = 2 [R0#] () in x)
+;;
+
+-- with binders, do
+:trans..
+addInt [:R0# R0# R0#:]
+    (let y = 5 [R0#] () in y)
+    (let y = 5 [R0#] () in y)
+;;
+
+-- with binders different values, don't
+:trans..
+addInt [:R0# R0# R0#:]
+    (let y = 5 [R0#] () in y)
+    (let y = 0 [R0#] () in y)
+;;
+
+-- with binders same value different names, do
+:trans..
+addInt [:R0# R0# R0#:]
+    (let y = 5 [R0#] () in y)
+    (let z = 5 [R0#] () in z)
+;;
+

@@ -32,6 +32,13 @@
     0 [r] () = 1 [r] ()
 ;;
 
+-- Bad: constraint isn't a witness
+:set.. rule bad_Constraint2
+    [r : %].
+    Int r =>
+    0 [r] () = 1 [r] ()
+;;
+
 -- Bad: not all variables mentioned in left-hand side
 :set.. rule bad_Unmentioned
     [r : %].
