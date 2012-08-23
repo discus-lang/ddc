@@ -2,8 +2,10 @@
 module DDC.Core.Llvm.Convert.Erase
         ( eraseTypeWitArgs
         , eraseXLAMs
-        , eraseWitTApps )
+        , eraseWitTApps 
+        , eraseWitBinds )
 where
+import DDC.Type.Predicates
 import DDC.Core.Exp
 import DDC.Core.Transform.TransformX
 
@@ -32,3 +34,13 @@ eraseWitTApps tt
  = case tt of
         TApp (TApp (TCon (TyConWitness _)) _) t -> eraseWitTApps t
         _                                       -> tt
+
+
+-- | Erase witness bindings
+eraseWitBinds :: Eq n => [(Bool, Bind n)] -> [(Bool, Bind n)]
+eraseWitBinds
+ = let isBindWit (_, b) 
+          = case b of
+                 BName _ t | isWitnessType t -> True
+                 _                           -> False
+   in  filter (not . isBindWit)

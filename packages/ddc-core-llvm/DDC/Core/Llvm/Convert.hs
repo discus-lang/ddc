@@ -134,8 +134,9 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
         let nTop'       = A.sanitizeName nTop
 
         -- Add parameters to environments.                                      -- TODO: this scoping isn't right.
-        let bsParamType  = [b | (True,  b) <- bfsParam]
-        let bsParamValue = [b | (False, b) <- bfsParam]
+        let bfsParam'    = eraseWitBinds bfsParam
+        let bsParamType  = [b | (True,  b) <- bfsParam']
+        let bsParamValue = [b | (False, b) <- bfsParam']
 
         let kenv'       =  Env.extends bsParamType  kenv
         let tenv'       =  Env.extends (bSuper : bsParamValue) tenv
