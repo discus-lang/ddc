@@ -76,7 +76,8 @@ data AnnotInstr = AnnotInstr (Instr, [MDecl])
 instance Pretty AnnotInstr where
  ppr (AnnotInstr (instr, [])) = ppr instr
  ppr (AnnotInstr (instr, mds))
-  = let pprWithTag (MDecl ref Tbaa{}) = text "!tbaa" <> space <> ppr ref
+  = let pprWithTag (MDecl ref Tbaa{}) = text "!tbaa"  <> space <> ppr ref
+        pprWithTag (MDecl ref Debug)  = text "!debug" <> space <> ppr ref
     in  ppr  instr
         <>   comma <> (hcat $ replicate 4 space)
         <>   (hcat $ punctuate (comma <> space) (map pprWithTag mds))
