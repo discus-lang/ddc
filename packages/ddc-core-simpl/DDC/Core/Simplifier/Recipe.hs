@@ -31,7 +31,7 @@ rewriteSimp
 rewriteSimp rules
  = let  r = Trans $ Rewrite rules
         b = Trans Beta
-   in   r <> b <> r <> b <> r <> b
+   in   Fix 20 (r <> b)
 
 
 

@@ -3,6 +3,8 @@ module DDC.Core.Simplifier
         ( -- * Description
           Simplifier(..)
         , Transform(..)
+        , TransformInfo(..)
+        , TransformResult(..)
 
           -- * Parsing
         , parseSimplifier

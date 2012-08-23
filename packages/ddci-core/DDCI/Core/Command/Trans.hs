@@ -21,7 +21,9 @@ import DDC.Core.Transform.Reannotate
 import DDC.Type.Env                             as Env
 import qualified Control.Monad.State.Strict     as S
 import qualified DDC.Core.Eval.Name             as Eval
+import qualified Data.Set               as Set
 import Data.Typeable
+import Control.Monad
 
 import DDC.Core.Module
 
@@ -115,8 +117,15 @@ applyTransAndCheck
 applyTransAndCheck state profile kenv tenv zero simpl (x, t1, eff1, clo1)
  = do
          -- Apply the simplifier.
-        let x' = flip S.evalState zero
+        let tx = flip S.evalState zero
                $ applySimplifierX simpl x
+	
+	let x' = resultExp tx
+
+	when (Set.member TraceTrans $ stateModes state)
+	 $ case (resultInfo tx) of
+	   TransformInfo inf
+	    -> outDocLn state (text "* TRANSFORM INFORMATION: " <$> indent 4 (ppr inf) <$> text "")
 
         -- Check that the simplifier perserved the type of the expression.
         case checkExp (configOfProfile profile) kenv tenv x' of

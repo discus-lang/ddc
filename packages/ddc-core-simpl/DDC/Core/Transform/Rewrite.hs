@@ -4,6 +4,7 @@ module DDC.Core.Transform.Rewrite
 where
 import DDC.Base.Pretty
 import DDC.Core.Exp
+import DDC.Core.Simplifier.Base (TransformResult(..), TransformInfo(..))
 import qualified DDC.Core.Compounds			as X
 import qualified DDC.Core.Transform.AnonymizeX          as A
 import qualified DDC.Core.Transform.Rewrite.Disjoint	as RD
@@ -17,14 +18,24 @@ import qualified DDC.Type.Compounds			as T
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
-import Control.Monad.Writer
+import Control.Monad.Writer (tell, runWriter)
+import Data.Typeable (Typeable)
 
+
+data RewriteInfo = RewriteInfo [String]
+    deriving Typeable
+instance Pretty RewriteInfo where
+ ppr (RewriteInfo rules) = text "Rules fired: " <> vcat (map text rules)
 
 -- | Perform rewrites top-down, repeatedly.
 --
-rewrite :: (Show a, Show n, Ord n, Pretty n) => [(String,RewriteRule a n)] -> Exp a n -> (Exp a n, [String])
+rewrite :: (Show a, Show n, Ord n, Pretty n) => [(String,RewriteRule a n)] -> Exp a n -> TransformResult a n
 rewrite rules x0
- =  runWriter $ down x0 RE.empty
+ =  let (x,info) = runWriter $ down x0 RE.empty
+    in  TransformResult
+	{ resultExp	 = x
+	, resultProgress = not $ null info
+	, resultInfo	 = TransformInfo (RewriteInfo info) }
  where
     down x ws = go x [] ws
 

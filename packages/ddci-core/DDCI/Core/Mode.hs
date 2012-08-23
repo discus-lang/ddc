@@ -29,6 +29,9 @@ data Mode
 
         -- | Dump all intermediate versions of the code during compilation.
         |  Dump
+
+	-- | Display information about each transformation step
+	|  TraceTrans
         deriving (Eq, Ord, Show)
 
 
@@ -42,6 +45,7 @@ readMode str
         "SuppressImports"       -> Just SuppressImports
         "SaltPrelude"           -> Just SaltPrelude
         "Dump"                  -> Just Dump
+        "TraceTrans"            -> Just TraceTrans
         _                       -> Nothing
 
 

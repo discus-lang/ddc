@@ -1,6 +1,7 @@
 :with test/ddci-core/30-Transform/40-Rewrite/70-FoldBuild/Module.dce
 
 :set Indent
+:set TraceTrans
 
 :set.. rule foldrBuild
     [a b : *] [r : %]
