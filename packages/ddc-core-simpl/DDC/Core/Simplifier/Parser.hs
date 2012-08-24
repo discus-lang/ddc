@@ -6,10 +6,11 @@ import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Simplifier.Base
 import DDC.Core.Exp
+import DDC.Core.Module
 import DDC.Type.Env
-import qualified DDC.Core.Simplifier.Recipe     as R
 import Data.Char
 
+type ModuleTemplate a n = (ModuleName, (n -> Maybe (Exp a n)))
 
 -- | Parse a simplifier specification.
 parseSimplifier 
@@ -17,10 +18,11 @@ parseSimplifier
         -> (Env n -> Namifier s n)      -- ^ Namifier for exp variables.
         -> [(String, RewriteRule a n)]  -- ^ Rewrite rule set.
         -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
+        -> [ModuleTemplate a n]		-- ^ Module-specific inliner templates.
         -> String 
         -> Maybe (Simplifier s a n)
 
-parseSimplifier namK namT rules templates str
+parseSimplifier namK namT rules templates module_templates str
  = let toks = (lexSimplifier str) 
    in  case parse toks of
        Just (t,[]) -> Just t
@@ -49,8 +51,8 @@ parseSimplifier namK namT rules templates str
                 "rewriteSimp"	-> Just (R.rewriteSimp rules, rest)
                 _               -> Nothing
 
-        parse1 (k@KCon{} : rest)
-         | Just t       <- parseTransform namK namT rules templates k
+        parse1 toks@(KCon{} : _)
+         | Just (t,rest) <- parseTransform namK namT rules templates module_templates toks
          = Just (Trans t, rest)
 
         parse1 _        = Nothing
@@ -61,24 +63,26 @@ parseTransform
         -> (Env n -> Namifier s n)      -- ^ Namifier for exp  variables.
         -> [(String, RewriteRule a n)]  -- ^ Rewrite rule set.
         -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
-        -> Tok 
-        -> Maybe (Transform s a n)
+        -> [ModuleTemplate a n]		-- ^ Module-specific inliner templates.
+        -> [Tok]
+        -> Maybe (Transform s a n, [Tok])
 
-parseTransform namK namT rules templates (KCon name)
+parseTransform namK namT rules templates modules ((KCon name):rest)
  = case name of
         "Id"            -> Just Id
         "Anonymize"     -> Just Anonymize
         "Snip"          -> Just Snip
         "Flatten"       -> Just Flatten
-        "Bubble"        -> Just Bubble
         "Beta"          -> Just Beta
         "Forward"       -> Just Forward
         "Inline"        -> Just (Inline templates)
         "Namify"        -> Just (Namify namK namT)
         "Rewrite"       -> Just (Rewrite rules)
         _               -> Nothing
+ where
+  ret t = Just (t, rest)
 
-parseTransform _ _ _ _ _
+parseTransform _ _ _ _ _ _
  = Nothing
 
 

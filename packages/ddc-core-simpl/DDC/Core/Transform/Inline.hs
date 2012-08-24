@@ -28,3 +28,4 @@ inline1 getTemplate xx
          -> xx'
 
         _ -> xx
+

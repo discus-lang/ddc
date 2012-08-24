@@ -26,15 +26,11 @@ import DDCI.Core.State
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
+import DDC.Core.Transform.Inline.Templates
 import DDC.Core.Transform.Namify
-import DDC.Core.Transform.AnonymizeX
-import DDC.Core.Module
-import DDC.Core.Exp
-import Control.Monad
 import System.FilePath
 import Data.Monoid
 import Data.Maybe
-import Data.List
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Simplifier            as S
@@ -260,29 +256,4 @@ stageCompileLLVM state _source builder filePath shouldLinkExe
                                         then Just exePath 
                                         else Nothing }
 
-
--------------------------------------------------------------------------------
--- TODO: Rubbish function to load inliner templates from some modules.
---       It just does a linear search, which won't be good enough in the long-term.
-lookupTemplateFromModules 
-        :: (Eq n, Ord n)
-        => [Module a n] -> n -> Maybe (Exp a n)
-
-lookupTemplateFromModules [] _  = Nothing
-lookupTemplateFromModules (m:ms) n
- = case lookupTemplateFromModule m n of
-        Nothing -> lookupTemplateFromModules ms n
-        Just x  -> Just (anonymizeX x)
-
-
-lookupTemplateFromModule 
-        :: Eq n
-        => Module a n -> n -> Maybe (Exp a n)
-
-lookupTemplateFromModule mm n
-        | XLet _ (LRec bxs) _  <- moduleBody mm
-        = liftM snd $ find (\(BName n' _, _) -> n == n') bxs
-
-        | otherwise
-        = Nothing
 

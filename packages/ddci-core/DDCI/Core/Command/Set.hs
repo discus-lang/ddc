@@ -15,9 +15,10 @@ import DDC.Base.Pretty
 import Control.Monad
 import Data.Char
 import Data.List
-import qualified DDCI.Core.Rewrite as R
-import qualified Data.Set       as Set
-import qualified Data.Map       as Map
+import qualified DDC.Core.Transform.Inline.Templates	as I
+import qualified DDCI.Core.Rewrite			as R
+import qualified Data.Set				as Set
+import qualified Data.Map				as Map
 
 
 
@@ -59,8 +60,11 @@ cmdSet state cmd
  = do   case parseSimplifier 
                 mkNamT mkNamX 
                 (Map.assocs rules) 
-                (\_ -> Nothing)
-                (concat rest) of
+		-- Collect all definitions from modules
+                (I.lookupTemplateFromModules $ Map.elems modules)
+		-- Module-specific templates
+		(map (\(n,m) -> (n, I.lookupTemplateFromModule m)) $ Map.assocs modules)
+                (concat $ intersperse " " rest) of
          Just simpl
           -> do chatStrLn state "ok"
                 return $ state { stateBundle = Bundle frag modules zero simpl rules }
