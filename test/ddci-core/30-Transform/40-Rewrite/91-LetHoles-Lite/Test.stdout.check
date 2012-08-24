@@ -1,0 +1,100 @@
+ok
+ok
+
+ok
+
+-- now with a Const contraint and regions
+ok, added unboxInt_boxInt
+ok
+
+-- don't do it: not const
+letregion r in
+unboxInt [r] (boxInt [r] 5i#)
+
+-- do it: const
+letregion r with {w : Const r} in
+let x : Int#
+      = weakeff [Read r + Alloc r] in
+        weakclo {boxInt; unboxInt; [r]} in
+        5i# in
+()
+
+-- separated
+letregion r with {w : Const r} in
+let ^ : Int# = 5i# in
+let x : Int r = boxInt [r] ^0 in
+let y : Int#
+      = weakeff [Read r + Alloc r] in
+        weakclo {boxInt; unboxInt; [r]} in
+        ^0 in
+()
+
+ok
+ok
+
+-- do the factorial
+* TRANSFORM INFORMATION: 
+    Inline: No information;
+    fix 5:
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        Beta reduction:
+            Types:          1
+            Witnesses:      1
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Rules fired:
+            Rewrite: unboxInt_boxInt;
+        Bubble: No information;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  1
+            Values skipped: 0;
+        Rules fired:
+            Unfold:  unboxInt_boxInt;
+        Bubble: No information;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Rules fired:
+            Unfold:  unboxInt_boxInt;
+        Bubble: No information
+
+letrec {
+  main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
+    = /\(r : %).
+       \(w : Const r).\(_ : Int#).
+      weakclo {<w>} in
+      weakeff [Read r + Alloc r] in
+      weakclo {boxInt; unboxInt; [r]} in
+      let x : Int r
+            = (let ^ : Int# = 1i# in
+               let ^ : Int# = ^0 in
+               let ^ : Int r = boxInt [r] ^0 in
+               \(^ : Int r).
+               case unboxInt [r] ^0 of {
+                 0i#  
+                  -> ^1;
+                 1i#  
+                  -> ^1;
+                 _ 
+                  -> fac [r] <w> (mulInt [r] [r] [r] ^1 ^0)
+                         (subInt [r] [r] [r] ^0 (boxInt [r] 1i#))
+               }) (boxInt [r] 10i#) in
+      let show : Int# = unboxInt [r] x in
+      0i#
+} in
+()

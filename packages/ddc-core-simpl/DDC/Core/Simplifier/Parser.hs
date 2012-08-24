@@ -2,6 +2,7 @@
 module DDC.Core.Simplifier.Parser
         (parseSimplifier)
 where
+import DDC.Base.Pretty
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
 import DDC.Core.Simplifier.Base
@@ -17,7 +18,8 @@ type ModuleTemplate a n = (ModuleName, (n -> Maybe (Exp a n)))
 
 -- | Parse a simplifier specification.
 parseSimplifier 
-        :: (Env n -> Namifier s n)      -- ^ Namifier for type variables.
+	:: (Eq n, Show n, Pretty n)
+        => (Env n -> Namifier s n)      -- ^ Namifier for type variables.
         -> (Env n -> Namifier s n)      -- ^ Namifier for exp variables.
         -> [(String, RewriteRule a n)]  -- ^ Rewrite rule set.
         -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
@@ -62,7 +64,8 @@ parseSimplifier namK namT rules templates module_templates str
 
 
 parseTransform 
-        :: (Env n -> Namifier s n)      -- ^ Namifier for type variables.
+	:: (Eq n, Show n, Pretty n)
+        => (Env n -> Namifier s n)      -- ^ Namifier for type variables.
         -> (Env n -> Namifier s n)      -- ^ Namifier for exp  variables.
         -> [(String, RewriteRule a n)]  -- ^ Rewrite rule set.
         -> (n -> Maybe (Exp a n))       -- ^ Inliner templates.
@@ -82,17 +85,32 @@ parseTransform namK namT rules templates modules ((KCon name):rest)
         "Forward"       -> ret Forward
         "Namify"        -> ret (Namify namK namT)
         "Rewrite"       -> ret (Rewrite rules)
-
-        "Inline"        
-	  -> case rest of
-		(KCon mname : rest')
-		  -> fmap (\t -> (Inline t, rest'))
-			  (P.lookup (ModuleName [mname]) modules)
-		_ -> ret (Inline templates)
-
+        "Inline"        -> parseInline rest
         _               -> Nothing
  where
   ret t = Just (t, rest)
+
+  -- Can inline a specific module except for some functions.
+  -- "Inline Int -boxInt -unboxInt"
+  parseInline (KCon mname : toks)
+   | Just f	 <- P.lookup (ModuleName [mname]) modules
+   , (f', rest') <- parseInlineArgs toks f
+   = Just (Inline f', rest')
+
+  parseInline toks
+   = let (f', rest') = parseInlineArgs toks templates
+     in  Just (Inline f', rest')
+
+  parseInlineArgs (KMinus : KVar except : rest') f
+    = parseInlineArgs rest'
+	(\lname ->
+	    -- TODO This is really stupid, need some way to create names
+	    if   (show $ ppr lname) == except
+	    then Nothing
+	    else f lname)
+
+  parseInlineArgs rest' f = (f, rest')
+
 
 parseTransform _ _ _ _ _ _
  = Nothing
@@ -113,6 +131,9 @@ lexSimplifier ss
 
         (')' : cs)
          -> KRoundKet : lexSimplifier cs
+
+        ('-' : cs)
+         -> KMinus    : lexSimplifier cs
 
         (c : cs)
          | isSpace c
@@ -142,6 +163,7 @@ data Tok
         | KCon          String
 	| KInt		Int
         | KVar          String
+	| KMinus
         | KSemi
 	| KRoundBra
 	| KRoundKet

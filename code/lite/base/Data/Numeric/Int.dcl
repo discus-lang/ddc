@@ -1,4 +1,35 @@
 module Int 
+exports {
+
+boxInt  ::
+    [r : %].
+    Int# -(Alloc r | Use r)>
+    Int r;
+
+unboxInt ::
+    [r : %].
+    Int r -(Read r | $0)>
+    Int#;
+
+addInt ::
+    [r1 r2 r3 : %].
+    Int r1 -(!0 | Use r3)>
+    Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
+    Int r3;
+
+subInt ::
+    [r1 r2 r3 : %].
+    Int r1 -(!0 | Use r3)>
+    Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
+    Int r3;
+
+mulInt ::
+    [r1 r2 r3 : %].
+    Int r1 -(!0 | Use r3)>
+    Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)>
+    Int r3;
+
+}
 with letrec
 
 
