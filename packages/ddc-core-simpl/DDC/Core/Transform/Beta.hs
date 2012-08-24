@@ -29,15 +29,15 @@ betaReduce
 betaReduce x
  = let (x', info) = runWriter
 		  $ transformUpMX betaReduce1 Env.empty Env.empty x
+
+        -- Check if any actual work was performed
+        progress (BetaReduceInfo ty wit val _)
+         = (ty + wit + val) > 0
+
    in  TransformResult
 	{ result   	 = x'
 	, resultProgress = progress info
 	, resultInfo	 = TransformInfo info }
- where
-  -- Check if any actual work was performed
-  progress (BetaReduceInfo ty wit val _)
-   = (ty + wit + val) > 0
-
 
 
 -- | Do a single beta reduction for this application.
@@ -55,7 +55,8 @@ betaReduce1
         -> Exp a n
         -> Writer BetaReduceInfo (Exp a n)
 betaReduce1 kenv tenv xx
- = case xx of
+ = let  ret info x = tell info >> return x
+   in case xx of
         XApp a (XLAM _ b11 x12) (XType t2)
          -> let usesBind        = any (flip boundMatchesBind b11)
                                 $ Set.toList $ freeT kenv x12
@@ -92,8 +93,6 @@ betaReduce1 kenv tenv xx
               $ xx
 
         _ -> return xx
- where
-  ret info x = tell info >> return x
 
 
 -- | Check whether we can safely substitute this expression during beta
@@ -121,12 +120,12 @@ canBetaSubstX xx
 
 -- | A summary of what the beta reduction performed
 data BetaReduceInfo
-    = BetaReduceInfo
-    { infoTypes		:: Int
-    , infoWits		:: Int
-    , infoValues	:: Int
-    , infoValuesSkipped :: Int }
-    deriving Typeable
+        = BetaReduceInfo
+        { infoTypes             :: Int
+        , infoWits		:: Int
+        , infoValues	        :: Int
+        , infoValuesSkipped     :: Int }
+        deriving Typeable
 
 
 instance Pretty BetaReduceInfo where
@@ -141,8 +140,7 @@ instance Pretty BetaReduceInfo where
 
 instance Monoid BetaReduceInfo where
  mempty = BetaReduceInfo 0 0 0 0
- mappend
-    (BetaReduceInfo ty1 wit1 val1 skip1)
-    (BetaReduceInfo ty2 wit2 val2 skip2)
+ mappend (BetaReduceInfo ty1 wit1 val1 skip1)
+         (BetaReduceInfo ty2 wit2 val2 skip2)
   = (BetaReduceInfo (ty1+ty2) (wit1+wit2) (val1+val2) (skip1+skip2))
 
