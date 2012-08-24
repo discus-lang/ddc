@@ -70,7 +70,7 @@ ok
             Values letted:  0
             Values skipped: 0;
         Rules fired:
-            Unfold:  unboxInt_boxInt;
+            ;
         Bubble: No information
 
 letrec {
@@ -82,7 +82,6 @@ letrec {
       weakclo {boxInt; unboxInt; [r]} in
       let x : Int r
             = (let ^ : Int# = 1i# in
-               let ^ : Int# = ^0 in
                let ^ : Int r = boxInt [r] ^0 in
                \(^ : Int r).
                case unboxInt [r] ^0 of {

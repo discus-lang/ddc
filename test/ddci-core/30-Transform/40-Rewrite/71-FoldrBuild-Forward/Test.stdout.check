@@ -34,16 +34,15 @@ ok
             Substitutions:  0
             Bindings:       0;
         Rules fired:
-            Unfold:  foldrBuild
+            
 
 let num : Int R0# = 10 [R0#] () in
 let ^ : [^ : *].[^ ^ ^ : !].[^ ^ ^ : $].(Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6) -(!0 | Use R0#)> (Unit -(^3 | ^0)> ^6) -(Read R0# + Alloc R0# + ^3 + ^4 + ^5 | Use R0# + ^2)> ^6 = count' num in
-let ^ : [^ : *].[^ ^ ^ : !].[^ ^ ^ : $].(Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6) -(!0 | Use R0#)> (Unit -(^3 | ^0)> ^6) -(Read R0# + Alloc R0# + ^3 + ^4 + ^5 | Use R0# + ^2)> ^6 = ^0 in
 let ^ : List R1# (Int R0#)
       = build [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#] ^0 in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
-^2 [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
+^1 [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 ok
 

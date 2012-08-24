@@ -36,10 +36,7 @@ instance Pretty RewriteLog where
  ppr (LogRewrite name) = text "Rewrite: " <> text name
  ppr (LogUnfold  name) = text "Unfold:  " <> text name
 
-isProgress = not . null . filter isLogRewrite
- where
-  isLogRewrite (LogRewrite _) = True
-  isLogRewrite (LogUnfold  _) = False
+isProgress = not . null
 
 -- | Perform rewrites top-down, repeatedly.
 --
@@ -115,6 +112,13 @@ rewrite rules x0
 		let bs'	       = map snd $ filter ((==BMType).fst) bs
 		    (_,bas')   = lookups bs' sub
 
+		    -- check if it looks like something has already been unfolded
+		    isUIx x = case x of 
+			      XVar _ (UIx _)	 -> True
+			      XVar _ (UPrim _ _) -> True
+			      _			 -> False
+		    already_done= all isUIx $ map snd bas'
+
 		    -- find kind-values and sub those in as well
 		    bsK'       = map snd $ filter ((==BMKind).fst) bs
 		    (_,basK)   = lookups bsK' sub
@@ -141,10 +145,14 @@ rewrite rules x0
 		    e'	       = L.liftAtDepthX (length bas') depth e
 		    -- SAVE in wit env
 		    ws'	       = foldl (flip RE.extendLets) ws lets'
-		in do
-		    tell [LogUnfold name]
-		    e'' <- down e' ws'
-		    return $ X.makeXLets a lets' e''
+		in  if already_done
+		    then do
+			e'' <- down e (RE.extendLets l ws)
+			return $ XLet a l e''
+		    else do
+			tell [LogUnfold name]
+			e'' <- down e' ws'
+			return $ X.makeXLets a lets' e''
 	    _ -> do
 		e' <- down e (RE.extendLets l ws)
 		return $ XLet a l e'
