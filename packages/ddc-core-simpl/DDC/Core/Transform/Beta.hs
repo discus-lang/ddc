@@ -129,18 +129,20 @@ data BetaReduceInfo
 
 
 instance Pretty BetaReduceInfo where
- ppr (BetaReduceInfo ty wit val skip)
+ ppr (BetaReduceInfo ty wit val lets skip)
   =  text "Beta reduction:"
   <$> indent 4 (vcat
       [ text "Types:          "	<> int ty
       , text "Witnesses:      "	<> int wit
       , text "Values:         "	<> int val
+      , text "Values letted:  " <> int lets
       , text "Values skipped: " <> int skip ])
 
 
 instance Monoid BetaReduceInfo where
- mempty = BetaReduceInfo 0 0 0 0
- mappend (BetaReduceInfo ty1 wit1 val1 skip1)
-         (BetaReduceInfo ty2 wit2 val2 skip2)
+ mempty = BetaReduceInfo 0 0 0 0 0
+ mappend
+    (BetaReduceInfo ty1 wit1 val1 skip1)
+    (BetaReduceInfo ty2 wit2 val2 skip2)
   = (BetaReduceInfo (ty1+ty2) (wit1+wit2) (val1+val2) (skip1+skip2))
 
