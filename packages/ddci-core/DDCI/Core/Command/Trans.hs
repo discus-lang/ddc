@@ -120,7 +120,7 @@ applyTransAndCheck state profile kenv tenv zero simpl (x, t1, eff1, clo1)
         let tx = flip S.evalState zero
                $ applySimplifierX simpl x
 	
-	let x' = resultExp tx
+	let x' = result tx
 
 	when (Set.member TraceTrans $ stateModes state)
 	 $ case (resultInfo tx) of

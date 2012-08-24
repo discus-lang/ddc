@@ -60,7 +60,7 @@ applyTransform spec mm
         Anonymize        -> return $ anonymizeX mm
         Snip             -> return $ snip mm
         Flatten          -> return $ flatten mm
-        Beta             -> return $ betaReduce mm
+        Beta             -> return $ result $ betaReduce mm
         Forward          -> return $ forwardModule mm
         Namify namK namT -> namifyUnique namK namT mm
         Inline getDef    -> return $ inline getDef mm
@@ -75,20 +75,20 @@ applySimplifierX
         :: (Show a, Show n, Ord n, Pretty n)
         => Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
-        -> State s (TransformResult a n)
+        -> State s (TransformResult (Exp a n))
 
 applySimplifierX spec xx
  = case spec of
         Seq t1 t2
          -> do  tx  <- applySimplifierX t1 xx
-                tx' <- applySimplifierX t2 (resultExp tx)
+                tx' <- applySimplifierX t2 (result tx)
 
 		let info =
 			case (resultInfo tx, resultInfo tx') of
 			(TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
 		
 		return TransformResult
-		    { resultExp	     = resultExp tx'
+		    { result   	     = result tx'
 		    , resultProgress = resultProgress tx || resultProgress tx'
 		    , resultInfo     = TransformInfo info }
 
@@ -99,7 +99,7 @@ applySimplifierX spec xx
 			TransformInfo info1 -> FixInfo i info1
 		
 		return TransformResult
-		    { resultExp	     = resultExp tx
+		    { result   	     = result tx
 		    , resultProgress = resultProgress tx
 		    , resultInfo     = TransformInfo info }
 		
@@ -113,7 +113,7 @@ applyFixpointX
         => Int			-- ^ Maximum number of times to apply
 	-> Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
-        -> State s (TransformResult a n)
+        -> State s (TransformResult (Exp a n))
 applyFixpointX i' s xx'
  = go i' xx'
  where
@@ -124,13 +124,13 @@ applyFixpointX i' s xx'
 	False ->
 	    return tx
 	True  -> do
-	    tx' <- go (i-1) (resultExp tx)
+	    tx' <- go (i-1) (result tx)
 	    let info =
 		    case (resultInfo tx, resultInfo tx') of
 		    (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
 	    
 	    return TransformResult
-		{ resultExp	 = resultExp tx'
+		{ result   	 = result tx'
 		, resultProgress = resultProgress tx'
 		, resultInfo     = TransformInfo info }
 
@@ -165,7 +165,7 @@ applyTransformX
         :: (Show a, Show n, Ord n, Pretty n)
         => Transform s a n      -- ^ Transform to apply.
         -> Exp a n              -- ^ Exp  to transform.
-        -> State s (TransformResult a n)
+        -> State s (TransformResult (Exp a n))
 
 applyTransformX spec xx
  = case spec of
@@ -174,7 +174,7 @@ applyTransformX spec xx
         Snip              -> return $ resultSimple $ snip xx
         Flatten           -> return $ resultSimple $ flatten xx
         Inline  getDef    -> return $ resultSimple $ inline getDef xx
-        Beta              -> return $ betaReduceTrans xx
+        Beta              -> return $ betaReduce xx
         Forward           -> return $ resultSimple $ forwardX xx
         Namify  namK namT -> namifyUnique namK namT xx >>= return.resultSimple
         Rewrite rules     -> return $ rewrite rules xx

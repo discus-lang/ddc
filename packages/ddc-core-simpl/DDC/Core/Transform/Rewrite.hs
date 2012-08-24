@@ -29,11 +29,11 @@ instance Pretty RewriteInfo where
 
 -- | Perform rewrites top-down, repeatedly.
 --
-rewrite :: (Show a, Show n, Ord n, Pretty n) => [(String,RewriteRule a n)] -> Exp a n -> TransformResult a n
+rewrite :: (Show a, Show n, Ord n, Pretty n) => [(String,RewriteRule a n)] -> Exp a n -> TransformResult (Exp a n)
 rewrite rules x0
  =  let (x,info) = runWriter $ down x0 RE.empty
     in  TransformResult
-	{ resultExp	 = x
+	{ result   	 = x
 	, resultProgress = not $ null info
 	, resultInfo	 = TransformInfo (RewriteInfo info) }
  where

@@ -1,7 +1,6 @@
 
 module DDC.Core.Transform.Beta
-        ( betaReduce
-	, betaReduceTrans)
+        (betaReduce)
 where
 import DDC.Base.Pretty
 import DDC.Core.Exp
@@ -23,31 +22,19 @@ betaReduce
         :: forall (c :: * -> * -> *) a n 
         .  (Ord n, TransformUpMX (Writer BetaReduceInfo) c)
         => c a n 
-        -> c a n
+        -> TransformResult (c a n)
 betaReduce x
-	-- Ignore the extra information for now
-        = fst
-	$ runWriter
-	$ transformUpMX betaReduce1 Env.empty Env.empty x
-
--- | Beta-reduce applications of a explicit lambda abstractions 
---   to variables and values.
---   Return information about which beta reductions are performed
-betaReduceTrans
-        :: (Ord n)
-        => Exp a n 
-        -> TransformResult a n
-betaReduceTrans x
  = let (x', info) = runWriter
 		  $ transformUpMX betaReduce1 Env.empty Env.empty x
    in  TransformResult
-	{ resultExp	 = x'
+	{ result   	 = x'
 	, resultProgress = progress info
 	, resultInfo	 = TransformInfo info }
  where
   -- Check if any actual work was performed
   progress (BetaReduceInfo ty wit val _)
    = (ty + wit + val) > 0
+
 
 betaReduce1
     :: Ord n

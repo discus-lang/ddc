@@ -52,9 +52,9 @@ data Transform s a n
 
 
 -- | The result of a transform
-data TransformResult a n
+data TransformResult r
 	= TransformResult
-	{ resultExp	 :: Exp a n
+	{ result   	 :: r
 	, resultProgress :: Bool
 	, resultInfo	 :: TransformInfo }
 
@@ -66,8 +66,8 @@ data TransformInfo
 
 -- | Create a result with no extra information
 -- We say that progress is false to stop a fixpoint running.
-resultSimple :: Exp a n -> TransformResult a n
-resultSimple x = TransformResult x False (TransformInfo NoInformation)
+resultSimple :: r -> TransformResult r
+resultSimple r = TransformResult r False (TransformInfo NoInformation)
 
 data NoInformation = NoInformation
     deriving Typeable
@@ -101,7 +101,7 @@ instance Pretty (Transform s a n) where
         Rewrite{}       -> text "Rewrite"
 
 
-instance Pretty (TransformResult a n) where
+instance Pretty (TransformResult r) where
  ppr (TransformResult _ _ (TransformInfo i))
   = ppr i
 
