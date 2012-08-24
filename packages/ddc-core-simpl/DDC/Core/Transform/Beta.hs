@@ -141,8 +141,7 @@ instance Pretty BetaReduceInfo where
 
 instance Monoid BetaReduceInfo where
  mempty = BetaReduceInfo 0 0 0 0 0
- mappend
-    (BetaReduceInfo ty1 wit1 val1 skip1)
-    (BetaReduceInfo ty2 wit2 val2 skip2)
-  = (BetaReduceInfo (ty1+ty2) (wit1+wit2) (val1+val2) (skip1+skip2))
+ mappend (BetaReduceInfo ty1 wit1 val1 lets1 skip1)
+	 (BetaReduceInfo ty2 wit2 val2 lets2 skip2)
+  = (BetaReduceInfo (ty1+ty2) (wit1+wit2) (val1+val2) (lets1+lets2) (skip1+skip2))
 
