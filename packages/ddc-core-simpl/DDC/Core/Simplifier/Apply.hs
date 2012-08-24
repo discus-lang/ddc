@@ -121,20 +121,23 @@ applyFixpointX
 applyFixpointX i' s xx'
  = go i' xx' False
  where
-  go 0 xx = applySimplifierX s xx
-  go i xx = do
+  go 0 xx progress = do
+    tx <- applySimplifierX s xx
+    return tx { resultProgress = progress }
+
+  go i xx progress = do
     tx <- applySimplifierX s xx
     case resultProgress tx of
 	False ->
-	    return tx
+	    return tx { resultProgress = progress }
 	True  -> do
-	    tx' <- go (i-1) (resultExp tx)
+	    tx' <- go (i-1) (result tx) True
 	    let info =
 		    case (resultInfo tx, resultInfo tx') of
 		    (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
 	    
 	    return TransformResult
-		{ resultExp	 = resultExp tx'
+		{ result   	 = result tx'
 		, resultProgress = resultProgress tx'
 		, resultInfo     = TransformInfo info }
 
