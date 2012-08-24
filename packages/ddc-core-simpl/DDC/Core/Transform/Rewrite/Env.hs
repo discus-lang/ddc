@@ -133,7 +133,7 @@ containsWitness c env
 
 
 getDef
-    :: (Eq n, Ord n, Show n, L.LiftX (Exp a))
+    :: (Eq n, Ord n, Show n, L.MapBoundX (Exp a) n)
     => Bound n
     -> RewriteEnv a n
     -> Maybe (Exp a n)

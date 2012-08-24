@@ -63,9 +63,10 @@ applyTransform spec mm
         Flatten          -> return $ flatten mm
         Beta             -> return $ result $ betaReduce mm
         Forward          -> return $ forwardModule mm
+        Bubble           -> return $ bubbleModule mm
         Namify namK namT -> namifyUnique namK namT mm
         Inline getDef    -> return $ inline getDef mm
-        _                -> error "applyTransform: finish me"
+        Rewrite{}        -> error "applyTransform: rewrite doesn't work on modules yet"
 
 
 -- Expressions ----------------------------------------------------------------

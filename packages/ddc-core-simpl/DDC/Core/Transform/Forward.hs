@@ -6,8 +6,6 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Analysis.Usage
 import DDC.Core.Exp
-import DDC.Core.Module
-import DDC.Core.Simplifier.Base
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import Control.Monad		(liftM, liftM2)
@@ -88,8 +86,9 @@ instance Forward Exp where
         XLam a b x      -> liftM    (XLam (snd a) b) (down x)
         XApp a x1 x2    -> liftM2   (XApp (snd a))   (down x1) (down x2)
 
-        XLet (UsedMap um, _) (LLet _mode (BName n _) (x1@XLam{})) x2
-         | Just usage     <- Map.lookup n um
+        XLet (UsedMap um, _) (LLet _mode (BName n _) x1) x2
+         | isXLam x1 || isXLAM x1
+         , Just usage     <- Map.lookup n um
          , [UsedFunction] <- usage
 	 -> do
 	    tell mempty { infoBindings = 1 }

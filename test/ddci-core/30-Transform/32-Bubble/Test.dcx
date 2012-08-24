@@ -2,6 +2,22 @@
 :set trans Bubble
 :set +Indent
 
+
+-- Float cast out of application.
 :trans..
 let x = 5 [R0#] ()
 in  addInt [:R0# R0# R0#:] (weakclo {x} in (2 [R0#] ())) (3 [R0#] ());;
+
+
+-- Float cast out of inner let-binding.
+:trans..
+let y = 6 [R0#] () in
+let x = 5 [R0#] () in
+addInt [:R0# R0# R0#:] (weakclo {y} in (2 [R0#] ())) (3 [R0#] ());;
+
+
+-- Debruijn bounds must be lowered when bubbled past a binder.
+:trans..
+let ^ = 6 [R0#] () in
+let ^ = 5 [R0#] () in
+addInt [:R0# R0# R0#:] (weakclo {^1} in (2 [R0#] ())) (3 [R0#] ());;

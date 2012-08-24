@@ -99,9 +99,10 @@ stageLiteOpt state source pipes
                         (Map.elems (stateWithLite state)))
 
         -- hrm. Want a fixpoint here.
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward <> S.Trans S.Bubble
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward <> S.Trans S.Bubble
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward <> S.Trans S.Bubble
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward <> S.Trans S.Bubble
         <> normalizeLite
         )
 
