@@ -65,7 +65,7 @@
 --   that can load them typically suffer a penalty, so it is good to align heap
 --   objects anyway.
 --
-module Object32 with letrec
+module Object with letrec
 
 -- | Get the constructor tag of an object.
 getTag [r : %] (obj : Ptr# r Obj)
