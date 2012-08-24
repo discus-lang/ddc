@@ -20,10 +20,15 @@ import Data.Typeable (Typeable)
 -- Simplifier -----------------------------------------------------------------
 -- | Desription of how to simplify a core program
 data Simplifier s a n
+        -- | Apply two simplifiers in sequence.
         = Seq   (Simplifier s a n) (Simplifier s a n)
-	| Fix	Int		   (Simplifier s a n)
-        | Trans (Transform s a n)
 
+        -- | Apply a transform until it stops progressing,
+        --   or bail out after a maximum number of applications.
+	| Fix	Int		   (Simplifier s a n)
+
+        -- | Apply a single transform.
+        | Trans (Transform s a n)
 
 instance Monoid (Simplifier s a n) where
  mempty  = Trans Id

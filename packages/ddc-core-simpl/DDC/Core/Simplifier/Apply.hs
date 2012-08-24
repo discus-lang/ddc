@@ -115,7 +115,7 @@ applyFixpointX
         => Int			-- ^ Maximum number of times to apply
 	-> Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
-        -> State s (TransformResult (Exp a n))
+        -> State s (TransformResult a n)
 applyFixpointX i' s xx'
  = go i' xx'
  where
@@ -126,43 +126,44 @@ applyFixpointX i' s xx'
 	False ->
 	    return tx
 	True  -> do
-	    tx' <- go (i-1) (result tx)
+	    tx' <- go (i-1) (resultExp tx)
 	    let info =
 		    case (resultInfo tx, resultInfo tx') of
 		    (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
 	    
 	    return TransformResult
-		{ result   	 = result tx'
+		{ resultExp	 = resultExp tx'
 		, resultProgress = resultProgress tx'
 		, resultInfo     = TransformInfo info }
 
-    
 
+-- | Result of applying two simplifiers in sequence.
 data SeqInfo
-    = forall i1 i2.
-    (Typeable i1, Typeable i2, Pretty i1, Pretty i2)
-    => SeqInfo i1 i2
-    deriving Typeable
+        = forall i1 i2
+        . (Typeable i1, Typeable i2, Pretty i1, Pretty i2)
+        => SeqInfo i1 i2
+        deriving Typeable
 
 
 instance Pretty SeqInfo where
-    ppr (SeqInfo i1 i2) = ppr i1 P.<> text ";" <$> ppr i2
+ ppr (SeqInfo i1 i2) = ppr i1 P.<> text ";" <$> ppr i2
 
 
+-- | Result of applying a simplifier until we reach a fixpoint.
 data FixInfo
-    = forall i1.
-    (Typeable i1, Pretty i1)
-    => FixInfo Int i1
-    deriving Typeable
+        = forall i1
+        . (Typeable i1, Pretty i1)
+        => FixInfo Int i1
+        deriving Typeable
 
 
 instance Pretty FixInfo where
-    ppr (FixInfo num i1) =
-	text "fix" <+> int num P.<> text ":"
-	    <$> indent 4 (ppr i1)
+ ppr (FixInfo num i1) 
+  =  text "fix" <+> int num P.<> text ":"
+  <$> indent 4 (ppr i1)
 
 
--- | Apply a transform to an expression.
+-- | Apply a single transform to an expression.
 applyTransformX 
         :: (Show a, Show n, Ord n, Pretty n)
         => Transform s a n      -- ^ Transform to apply.
@@ -180,5 +181,4 @@ applyTransformX spec xx
         Forward           -> return $ forwardX xx
         Namify  namK namT -> namifyUnique namK namT xx
         Rewrite rules     -> return $ fst $ rewrite rules xx
- where
-    res x = return $ resultSimple (show $ ppr spec) x
+

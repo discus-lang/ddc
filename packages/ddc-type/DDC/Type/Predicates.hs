@@ -19,9 +19,9 @@ module DDC.Type.Predicates
 
           -- * Data Types
         , isAlgDataType
-	      , isWitnessType
-	      , isConstWitType
-	      , isDistinctWitType)
+        , isWitnessType
+	, isConstWitType
+	, isDistinctWitType)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -115,11 +115,9 @@ isWitnessKind tt
 --   It needs to have an explicit data constructor out the front,
 --   and not a type variable. The constructor must not be the function
 --   constructor, and must return a value of kind '*'.
-
--- Algebraic data types are all built from constructors
--- that have '*' as their result kind.
--- The function constructor (->) also has this result kind,
--- but it is in `TyConComp`, so is easy to ignore.
+---
+--   The function constructor (->) also has this result kind,
+--   but it is in `TyConComp`, so is easy to ignore.
 isAlgDataType :: Eq n => Type n -> Bool
 isAlgDataType tt
         | Just (tc, _)   <- takeTyConApps tt
