@@ -169,13 +169,14 @@ applyTransformX
 
 applyTransformX spec xx
  = case spec of
-        Id                -> return $ resultSimple xx
-        Anonymize         -> return $ resultSimple $ anonymizeX xx
-        Snip              -> return $ resultSimple $ snip xx
-        Flatten           -> return $ resultSimple $ flatten xx
-        Inline  getDef    -> return $ resultSimple $ inline getDef xx
+        Id                -> res    $ xx
+        Anonymize         -> res    $ anonymizeX xx
+        Snip              -> res    $ snip xx
+        Flatten           -> res    $ flatten xx
+        Inline  getDef    -> res    $ inline getDef xx
         Beta              -> return $ betaReduce xx
-        Forward           -> return $ resultSimple $ forwardX xx
-        Namify  namK namT -> namifyUnique namK namT xx >>= return.resultSimple
+        Forward           -> res    $ forwardX xx
+        Namify  namK namT -> namifyUnique namK namT xx >>= res
         Rewrite rules     -> return $ rewrite rules xx
-
+ where
+    res x = return $ resultSimple (show $ ppr spec) x

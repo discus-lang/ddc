@@ -66,13 +66,14 @@ data TransformInfo
 
 -- | Create a result with no extra information
 -- We say that progress is false to stop a fixpoint running.
-resultSimple :: r -> TransformResult r
-resultSimple r = TransformResult r False (TransformInfo NoInformation)
+resultSimple :: String -> r -> TransformResult r
+resultSimple name r = TransformResult r False
+		    $ TransformInfo $ NoInformation name
 
-data NoInformation = NoInformation
+data NoInformation = NoInformation String
     deriving Typeable
 instance Pretty NoInformation where
-    ppr NoInformation = text "No information available"
+    ppr (NoInformation name) = text name P.<> text ": No information"
 
 instance Pretty (Simplifier s a n) where
  ppr ss
