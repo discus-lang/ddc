@@ -61,7 +61,8 @@ applyTransform spec mm
         Anonymize        -> return $ anonymizeX mm
         Snip             -> return $ snip mm
         Flatten          -> return $ flatten mm
-        Beta             -> return $ result $ betaReduce mm
+        Beta             -> return $ result $ betaReduce False mm
+        BetaLets         -> return $ result $ betaReduce True mm
         Forward          -> return $ forwardModule mm
         Bubble           -> return $ bubbleModule mm
         Namify namK namT -> namifyUnique namK namT mm
@@ -118,7 +119,7 @@ applyFixpointX
         -> State s (TransformResult (Exp a n))
 
 applyFixpointX i' s xx'
- = go i' xx'
+ = go i' xx' False
  where
   go 0 xx = applySimplifierX s xx
   go i xx = do
@@ -127,13 +128,13 @@ applyFixpointX i' s xx'
 	False ->
 	    return tx
 	True  -> do
-	    tx' <- go (i-1) (result tx)
+	    tx' <- go (i-1) (resultExp tx)
 	    let info =
 		    case (resultInfo tx, resultInfo tx') of
 		    (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
 	    
 	    return TransformResult
-		{ result   	 = result tx'
+		{ resultExp	 = resultExp tx'
 		, resultProgress = resultProgress tx'
 		, resultInfo     = TransformInfo info }
 
