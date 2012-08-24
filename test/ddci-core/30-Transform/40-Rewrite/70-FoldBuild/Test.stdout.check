@@ -16,7 +16,7 @@ ok
 * TRANSFORM INFORMATION: 
     fix 20:
         Rules fired:
-            "foldrBuild";
+            Rewrite: foldrBuild;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -45,21 +45,21 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
 * TRANSFORM INFORMATION: 
     fix 20:
         Rules fired:
-            "foldrBuild";
+            Rewrite: foldrBuild;
         Beta reduction:
             Types:          7
             Witnesses:      0
             Values:         2
             Values skipped: 0;
         Rules fired:
-            "foldrBuild";
+            Rewrite: foldrBuild;
         Beta reduction:
             Types:          7
             Witnesses:      0
             Values:         2
             Values skipped: 0;
         Rules fired:
-            "foldrBuild";
+            Rewrite: foldrBuild;
         Beta reduction:
             Types:          0
             Witnesses:      0

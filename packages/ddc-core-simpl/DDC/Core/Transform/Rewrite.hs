@@ -22,10 +22,24 @@ import Control.Monad.Writer (tell, runWriter)
 import Data.Typeable (Typeable)
 
 
-data RewriteInfo = RewriteInfo [String]
+data RewriteInfo = RewriteInfo [RewriteLog]
     deriving Typeable
 instance Pretty RewriteInfo where
- ppr (RewriteInfo rules) = text "Rules fired:" <$> indent 4 (vcat (map (text.show) rules))
+ ppr (RewriteInfo rules) = text "Rules fired:"
+		       <$> indent 4 (vcat $ map ppr rules)
+
+data RewriteLog
+    = LogRewrite String
+    | LogUnfold  String
+    deriving Typeable
+instance Pretty RewriteLog where
+ ppr (LogRewrite name) = text "Rewrite: " <> text name
+ ppr (LogUnfold  name) = text "Unfold:  " <> text name
+
+isProgress = not . null . filter isLogRewrite
+ where
+  isLogRewrite (LogRewrite _) = True
+  isLogRewrite (LogUnfold  _) = False
 
 -- | Perform rewrites top-down, repeatedly.
 --
@@ -34,7 +48,7 @@ rewrite rules x0
  =  let (x,info) = runWriter $ down x0 RE.empty
     in  TransformResult
 	{ result   	 = x
-	, resultProgress = not $ null info
+	, resultProgress = isProgress info
 	, resultInfo	 = TransformInfo (RewriteInfo info) }
  where
     down x ws = go x [] ws
@@ -90,17 +104,30 @@ rewrite rules x0
     goDefHoles a l@(LLet LetStrict let_bind def) e ws
      =	let subs = checkHoles def ws
 	in  case subs of
-	    (((sub,[]),RewriteRule bs _cs hole Nothing _rhs _e _c):_) ->
+	    (((sub,[]),name,RewriteRule bs _cs hole Nothing _rhs _e _c):_) ->
 		    -- only get value-level bindings
 		let bs'	       = map snd $ filter ((==BMType).fst) bs
 		    (_,bas')   = lookups bs' sub
+
+		    -- find kind-values and sub those in as well
+		    bsK'       = map snd $ filter ((==BMKind).fst) bs
+		    (_,basK)   = lookups bsK' sub
+
+		    basK'      = concatMap (\(b,x) -> case X.takeXType x of
+						      Just t -> [(b,t)]
+						      Nothing-> []) basK
+
 		    -- surround whole expression with anon lets from sub
-		    values     = map	 (\(b,v) ->   (BAnon (T.typeOfBind b), v)) bas'
+		    values     = map	 (\(b,v) ->   (BAnon (S.substituteTs basK' $ T.typeOfBind b), v)) bas'
 		    -- replace 'def' with LHS-HOLE[sub => ^n]
 		    anons      = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
 		    lets       = map (\(b,v) -> LLet LetStrict b v) values
-		    def'       = S.substituteXArgs anons hole
-		    lets'      = lets ++ [LLet LetStrict let_bind def']
+
+		    def'       = S.substituteXArgs basK
+			       $ S.substituteXArgs anons hole
+
+		    let_bind'  = S.substituteTs basK' let_bind
+		    lets'      = lets ++ [LLet LetStrict let_bind' def']
 		    -- lift e by (length bas)
 		    depth      = case let_bind of
 				 BAnon _ -> 1 
@@ -109,6 +136,7 @@ rewrite rules x0
 		    -- SAVE in wit env
 		    ws'	       = foldl (flip RE.extendLets) ws lets'
 		in do
+		    tell [LogUnfold name]
 		    e'' <- down e' ws'
 		    return $ X.makeXLets a lets' e''
 	    _ -> do
@@ -125,11 +153,11 @@ rewrite rules x0
 	    (f,args) = takeApps def
 	    -- TODO most specific?
 	in  Maybe.catMaybes
-	  $ map (\r -> fmap (\s -> (s,r)) $ rewriteSubst r f args ws RM.emptySubstInfo)
+	  $ map (\(name,r) -> fmap (\s -> (s,name,r)) $ rewriteSubst r f args ws RM.emptySubstInfo)
 	    rules'
 
-    holeRule (_, RewriteRule bs cs _lhs (Just hole) rhs e c)
-	= Just (RewriteRule bs cs hole Nothing rhs e c)
+    holeRule (name, RewriteRule bs cs _lhs (Just hole) rhs e c)
+	= Just (name, RewriteRule bs cs hole Nothing rhs e c)
     holeRule _ = Nothing
 
     goLets (LLet lm b e) ws = do
@@ -154,7 +182,7 @@ rewrite rules x0
     rewrites' ((n,r):rs) f args ws
      = case rewriteX r f args ws of
 	Nothing -> rewrites' rs f args ws
-	Just x  -> tell [n] >> go x [] ws
+	Just x  -> tell [LogRewrite n] >> go x [] ws
 
 
 -- | Attempt to find a rewrite substitution to match expression against rule.

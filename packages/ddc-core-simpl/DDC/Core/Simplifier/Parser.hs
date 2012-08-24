@@ -21,15 +21,32 @@ parseSimplifier
         -> Maybe (Simplifier s a n)
 
 parseSimplifier namK namT rules templates str
- = parse (lexSimplifier str) 
+ = let toks = (lexSimplifier str) 
+   in  case parse toks of
+       Just (t,[]) -> Just t
+       _	   -> Nothing
  where
-        parse (k : KSemi : rest)
-         | Just t1      <- parse1 k
-         , Just t2      <- parse rest
-         = Just $ Seq t1 t2
+	parse (KVar "fix" : rest)
+	 | KInt n : KRoundBra : rest1 <- rest
+	 , Just (t1,rest2)	      <- parse rest1
+	 , KRoundKet : rest3	      <- rest2
+	 = Just (Fix n t1, rest3)
 
-        parse (k : [])  = parse1 k
-        parse _         = Nothing
+        parse (k : KSemi : rest)
+         | Just t1	   <- parse1 k
+         , Just (t2,rest') <- parse rest
+         = Just (Seq t1 t2, rest')
+
+	-- TODO fix this..  "fix (fix 5 (blah))" won't parse
+        parse (k : KRoundKet : rest)
+         | Just t1	   <- parse1 k
+         = Just (t1, KRoundKet : rest)
+
+        parse (k : [])
+	 | Just t1	   <- parse1 k
+	 = Just (t1, [])
+
+        parse _		   = Nothing
 
 
         parse1 (KVar name)
@@ -80,6 +97,12 @@ lexSimplifier ss
         ('<' : '>' : cs)
          -> KSemi  : lexSimplifier cs
 
+        ('(' : cs)
+         -> KRoundBra : lexSimplifier cs
+
+        (')' : cs)
+         -> KRoundKet : lexSimplifier cs
+
         (c : cs)
          | isSpace c
          -> lexSimplifier cs
@@ -94,6 +117,11 @@ lexSimplifier ss
          ,  (body, rest) <- span isAlpha cs
          -> KVar (c : body) : lexSimplifier rest
 
+        (c : cs)
+         | isDigit c
+	 , (digits, rest) <- span isDigit cs
+         -> KInt (read (c:digits)) : lexSimplifier rest
+
         _ -> [KJunk ss]
 
 
@@ -101,7 +129,10 @@ lexSimplifier ss
 data Tok
         = KJunk         String
         | KCon          String
+	| KInt		Int
         | KVar          String
         | KSemi
+	| KRoundBra
+	| KRoundKet
         deriving (Eq, Show)
 
