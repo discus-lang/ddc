@@ -174,7 +174,7 @@ applyTransformX spec xx
         Snip              -> return $ resultSimple $ snip xx
         Flatten           -> return $ resultSimple $ flatten xx
         Inline  getDef    -> return $ resultSimple $ inline getDef xx
-        Beta              -> return $ resultSimple $ betaReduce xx
+        Beta              -> return $ betaReduceTrans xx
         Forward           -> return $ resultSimple $ forwardX xx
         Namify  namK namT -> namifyUnique namK namT xx >>= return.resultSimple
         Rewrite rules     -> return $ rewrite rules xx
