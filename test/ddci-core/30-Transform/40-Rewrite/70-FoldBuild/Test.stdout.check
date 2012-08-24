@@ -15,13 +15,15 @@ ok
 --			else c m (count' (m-1) c n)
 * TRANSFORM INFORMATION: 
     fix 20:
-        Rules fired: foldrBuild;
+        Rules fired:
+            "foldrBuild";
         Beta reduction:
             Types:          0
             Witnesses:      0
             Values:         0
             Values skipped: 0;
-        Rules fired: ;
+        Rules fired:
+            ;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -42,25 +44,29 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
 -- sum
 * TRANSFORM INFORMATION: 
     fix 20:
-        Rules fired: foldrBuild;
+        Rules fired:
+            "foldrBuild";
         Beta reduction:
             Types:          7
             Witnesses:      0
             Values:         2
             Values skipped: 0;
-        Rules fired: foldrBuild;
+        Rules fired:
+            "foldrBuild";
         Beta reduction:
             Types:          7
             Witnesses:      0
             Values:         2
             Values skipped: 0;
-        Rules fired: foldrBuild;
+        Rules fired:
+            "foldrBuild";
         Beta reduction:
             Types:          0
             Witnesses:      0
             Values:         0
             Values skipped: 0;
-        Rules fired: ;
+        Rules fired:
+            ;
         Beta reduction:
             Types:          0
             Witnesses:      0

@@ -25,7 +25,7 @@ import Data.Typeable (Typeable)
 data RewriteInfo = RewriteInfo [String]
     deriving Typeable
 instance Pretty RewriteInfo where
- ppr (RewriteInfo rules) = text "Rules fired: " <> vcat (map text rules)
+ ppr (RewriteInfo rules) = text "Rules fired:" <$> indent 4 (vcat (map (text.show) rules))
 
 -- | Perform rewrites top-down, repeatedly.
 --
