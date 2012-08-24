@@ -1,0 +1,105 @@
+-- Using the previous test's module on purpose.
+ok
+
+ok
+ok
+
+ok, added foldrBuild
+
+ok
+
+
+-- sum = foldr (+) 0 xs
+-- count  m  = build (count' m)
+-- count' m = \c n -> if m == 0
+--			then n
+--			else c m (count' (m-1) c n)
+-- define outside, otherwise beta reduction won't fire...
+* TRANSFORM INFORMATION: 
+    fix 5:
+        fix 10:
+            Beta reduction:
+                Types:          0
+                Witnesses:      0
+                Values:         0
+                Values skipped: 0;
+            Forward:
+                Substitutions:  2
+                Bindings:       2;
+            Rules fired:
+                ;
+            Beta reduction:
+                Types:          0
+                Witnesses:      0
+                Values:         1
+                Values skipped: 1;
+            Forward:
+                Substitutions:  0
+                Bindings:       0;
+            Rules fired:
+                ;
+            Beta reduction:
+                Types:          0
+                Witnesses:      0
+                Values:         0
+                Values skipped: 1;
+            Forward:
+                Substitutions:  0
+                Bindings:       0;
+            Rules fired:
+                ;
+        Inline: No information
+
+let num : Int R0# = 10 [R0#] () in
+(\(xs : List R1# (Int R0#)).
+ foldr [Int R0#] [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero xs)
+    (build [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#] (count' num))
+
+ok
+
+-- define outside, otherwise beta reduction won't fire...
+* TRANSFORM INFORMATION: 
+    fix 30:
+        Forward:
+            Substitutions:  4
+            Bindings:       4;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         3
+            Values skipped: 3;
+        Rules fired:
+            ;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values skipped: 3;
+        Rules fired:
+            
+
+let num : Int R0# = 10 [R0#] () in
+(\(xs : List R1# (Int R0#)).
+ foldr [Int R0#] [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero xs)
+    ((\(xs : List R1# (Int R0#)).
+      build [Int R0#] [R1#] [!0] [Read R0# + Read R1# + Alloc R0#] [Use R0# + Use R1#] [Use R0# + Use R1#]
+          (/\(bF : *)./\(ec1F ec2F enF : !)./\(cc1F cc2F cnF : $).
+            \(c : Int R0# -(ec1F | cc1F)> bF -(ec2F | cc2F)> bF).\(n : Unit -(enF | cnF)> bF).
+           foldr [Int R0#] [bF] [R1#] [!0] [Read R0# + Alloc R0# + ec1F + ec2F] [enF] [Use R0# + cc1F] [Use R0# + cc1F] [cnF]
+               (\(x : Int R0#).\(xs : bF).
+                case even x of {
+                  0  
+                   -> c x xs;
+                  _ 
+                   -> xs
+                }) n xs))
+         ((\(xs : List R1# (Int R0#)).
+           build [Int R0#] [R1#] [!0] [Read R0# + Read R1# + Alloc R0#] [Use R0# + Use R1#] [Use R0# + Use R1#]
+               (/\(b : *)./\(ec1 ec2 en : !)./\(cc1 cc2 cn : $).
+                 \(c : Int R0# -(ec1 | cc1)> b -(ec2 | cc2)> b).\(n : Unit -(en | cn)> b).
+                foldr [Int R0#] [b] [R1#] [Read R0# + Alloc R0# + ec1] [ec2] [en] [Use R0# + cc1] [cc2] [cn]
+                    (compose [Int R0#] [Int R0#] [b -(ec2 | cc2)> b] [ec1] [Read R0# + Alloc R0#] [cc1] [Use R0#] c double) n xs))
+              (build [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#] (count' num))))

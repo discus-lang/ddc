@@ -1,0 +1,124 @@
+-- Using the previous test's module on purpose.
+:with test/ddci-core/30-Transform/40-Rewrite/70-FoldBuild/Module.dce
+
+:set Indent
+:set TraceTrans
+
+:set.. rule foldrBuild
+    [a b : *] [r : %]
+    [ek1 ek2 ez eg1 eg2 : !]
+    [ck1 ck2 cz cg1 cg2 : $]
+    (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
+    (z : Unit -(ez|cz)> b)
+    (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
+       -(eg1|cg1)>
+	(Unit -(en|cn)> gb)
+       -(eg2+ec1+ec2+en|cg2+cc1)>
+	gb).
+    Disjoint (ek1+ek2+ez) (eg1+eg2) =>
+foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
+    k z
+    {build [:a r eg1 eg2 cg1 cg2:] g}
+= g [:b ek1 ek2 ez ck1 ck2 cz:] k z
+;;
+
+:set.. trans
+    fix 5 (fix 10 (Beta <> Forward <> Rewrite) <> Inline)
+;;
+
+
+-- sum = foldr (+) 0 xs
+-- count  m  = build (count' m)
+-- count' m = \c n -> if m == 0
+--			then n
+--			else c m (count' (m-1) c n)
+:trans..
+let sum = \(xs : List R1# (Int R0#)).
+	foldr
+	    [:(Int R0#) (Int R0#) R1#
+	    !0 (Read R0# + Alloc R0#) (Alloc R0#)
+	    (Use R0#) (Use R0#) (Use R0#):]
+	plus zero xs
+in
+let count = \(m : Int R0#).
+    build
+	[:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
+	(count' m)
+in
+-- define outside, otherwise beta reduction won't fire...
+let num = 10 [R0#] ()
+in
+sum (count num)
+;;
+
+:set.. trans
+    fix 30 (Forward <> Beta <> Rewrite)
+;;
+
+:trans..
+let sum = \(xs : List R1# (Int R0#)).
+	foldr
+	    [:(Int R0#) (Int R0#) R1#
+	    !0 (Read R0# + Alloc R0#) (Alloc R0#)
+	    (Use R0#) (Use R0#) (Use R0#):]
+	plus zero xs
+in
+let filter = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : List R1# (Int R0#)).
+    (build [:(Int R0#) R1#
+	!0 (Read R0# + Read R1# + Alloc R0#)
+	-- (Read R0# + Alloc R0#) !0
+	(Use R0# + Use R1#)
+	(Use R0# + Use R1#)
+	:]
+	(/\(bF : *). /\(ec1F ec2F enF : !). /\(cc1F cc2F cnF : $).
+	\(c : Int R0# -(ec1F|cc1F)> bF -(ec2F|cc2F)> bF).
+	\(n : Unit -(enF|cnF)> bF).
+
+	foldr [:(Int R0#) bF R1#
+		!0 (Read R0# + Alloc R0# + ec1F + ec2F) enF
+		(Use R0# + cc1F) (Use R0# + cc1F) cnF
+		:] 
+	    (\(x : Int R0#).
+	     \(xs : bF).
+	      case f x of {
+		0 -> c x xs;
+		_ -> xs
+	      }
+	     )
+	    n xs
+	    ))
+in
+let map = \(f : Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#). \(xs : List R1# (Int R0#)).
+	    (build [:(Int R0#) R1# 
+		     !0 (Read R0# + Read R1# + Alloc R0#)
+		     (Use R0# + Use R1#) (Use R0# + Use R1#) :]
+		    (/\(b : *). /\(ec1 ec2 en : !). /\(cc1 cc2 cn : $).
+		    \(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
+		    \(n : Unit -(en|cn)> b).
+
+		    foldr [:(Int R0#) b R1#
+			    (Read R0# + Alloc R0# + ec1)
+				ec2 en
+			    (Use R0# + cc1) cc2 cn
+			    :]
+
+			(compose [:(Int R0#) (Int R0#) (b -(ec2|cc2)> b)
+				   ec1 (Alloc R0# + Read R0#)
+				   cc1 (Use R0#)
+				 :] c f)
+			n xs))
+in
+let count = \(m : Int R0#).
+    build
+	[:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
+	(count' m)
+in
+-- define outside, otherwise beta reduction won't fire...
+let num = 10 [R0#] ()
+in
+sum
+    (filter even
+	(map double
+	    (count num)))
+;;
