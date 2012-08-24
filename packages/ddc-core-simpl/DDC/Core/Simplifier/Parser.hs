@@ -60,6 +60,7 @@ parseTransform namK namT rules templates (KCon name)
         "Snip"          -> Just Snip
         "Flatten"       -> Just Flatten
         "Beta"          -> Just Beta
+        "Forward"       -> Just Forward
         "Inline"        -> Just (Inline templates)
         "Namify"        -> Just (Namify namK namT)
         "Rewrite"       -> Just (Rewrite rules)

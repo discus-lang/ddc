@@ -175,7 +175,7 @@ applyTransformX spec xx
         Flatten           -> res    $ flatten xx
         Inline  getDef    -> res    $ inline getDef xx
         Beta              -> return $ betaReduce xx
-        Forward           -> res    $ forwardX xx
+        Forward           -> return $ forwardX xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
         Rewrite rules     -> return $ rewrite rules xx
  where
