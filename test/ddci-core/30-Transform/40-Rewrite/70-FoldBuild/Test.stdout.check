@@ -34,7 +34,30 @@ ok
             Types:          0
             Witnesses:      0
             Values:         0
+            Values letted:  0
             Values skipped: 0
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information;
+    Rules fired:
+        ;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information;
+    Rules fired:
+        ;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
@@ -57,6 +80,7 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
             Types:          7
             Witnesses:      0
             Values:         2
+            Values letted:  0
             Values skipped: 0;
         Rules fired:
             Rewrite: foldrBuild;
@@ -74,6 +98,7 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
             Types:          0
             Witnesses:      0
             Values:         0
+            Values letted:  0
             Values skipped: 0;
         Rules fired:
             ;
@@ -82,7 +107,30 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
             Types:          0
             Witnesses:      0
             Values:         0
+            Values letted:  0
             Values skipped: 0
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information;
+    Rules fired:
+        ;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information;
+    Rules fired:
+        ;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
