@@ -31,7 +31,7 @@ rewriteSimp
 rewriteSimp rules
  = let  rewrite = Trans $ Rewrite rules
         bubble  = Trans Bubble
-        beta    = Trans Beta
+        beta    = Trans BetaLets
    in   Fix 20 (rewrite <> bubble <> beta)
 
 

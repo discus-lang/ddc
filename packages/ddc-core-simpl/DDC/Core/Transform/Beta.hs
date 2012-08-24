@@ -24,15 +24,16 @@ import qualified Data.Set       as Set
 betaReduce  
         :: forall (c :: * -> * -> *) a n 
         .  (Ord n, TransformUpMX (Writer BetaReduceInfo) c)
-        => c a n 
+        => Bool		-- ^ If true, turn any betas we can't substitute into lets.
+	-> c a n 
         -> TransformResult (c a n)
-betaReduce x
+betaReduce lets x
  = let (x', info) = runWriter
-		  $ transformUpMX betaReduce1 Env.empty Env.empty x
+		  $ transformUpMX (betaReduce1 lets) Env.empty Env.empty x
 
         -- Check if any actual work was performed
-        progress (BetaReduceInfo ty wit val _)
-         = (ty + wit + val) > 0
+       progress (BetaReduceInfo ty wit val lets' _)
+         = (ty + wit + val + lets') > 0
 
    in  TransformResult
 	{ result   	 = x'
@@ -50,11 +51,12 @@ betaReduce x
 --    
 betaReduce1
         :: Ord n
-        => Env n
+        => Bool	-- ^ If true, turn any betas we can't substitute into lets.
+        -> Env n
         -> Env n
         -> Exp a n
         -> Writer BetaReduceInfo (Exp a n)
-betaReduce1 kenv tenv xx
+betaReduce1 lets kenv tenv xx
  = let  ret info x = tell info >> return x
    in case xx of
         XApp a (XLAM _ b11 x12) (XType t2)
@@ -87,6 +89,10 @@ betaReduce1 kenv tenv xx
                     then substituteXX b11 x2 x12
                     else XCast a (CastWeakenClosure [x2])
                        $ substituteXX b11 x2 x12
+
+         | lets
+         -> ret mempty { infoValuesLetted  = 1 }
+	      $	XLet a (LLet LetStrict b11 x2) x12
 
          | otherwise
          -> ret mempty { infoValuesSkipped = 1 }
@@ -124,6 +130,7 @@ data BetaReduceInfo
         { infoTypes             :: Int
         , infoWits		:: Int
         , infoValues	        :: Int
+	, infoValuesLetted	:: Int
         , infoValuesSkipped     :: Int }
         deriving Typeable
 

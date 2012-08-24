@@ -53,6 +53,9 @@ data Transform s a n
         -- | Perform beta reduction for atomic arguments.
         | Beta
 
+        -- | Perform beta reduction, turning non-atomic arguments into lets.
+        | BetaLets
+
         -- | Carry function bindings forward into their use sites.
         | Forward
 
@@ -127,6 +130,7 @@ instance Pretty (Transform s a n) where
         Snip            -> text "Snip"
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
+        BetaLets        -> text "BetaLets"
         Forward         -> text "Forward"
         Bubble          -> text "Bubble"
         Inline{}        -> text "Inline"

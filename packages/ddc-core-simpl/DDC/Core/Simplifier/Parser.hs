@@ -9,6 +9,9 @@ import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Type.Env
 import Data.Char
+import qualified DDC.Core.Simplifier.Recipe	as R
+import Prelude
+import qualified Prelude			as P
 
 type ModuleTemplate a n = (ModuleName, (n -> Maybe (Exp a n)))
 
@@ -75,7 +78,7 @@ parseTransform namK namT rules templates modules ((KCon name):rest)
         "Flatten"       -> ret Flatten
         "Beta"          -> ret Beta
         "BetaLets"      -> ret BetaLets
-        "Bubble"        -> Just Bubble
+        "Bubble"        -> ret Bubble
         "Forward"       -> ret Forward
         "Namify"        -> ret (Namify namK namT)
         "Rewrite"       -> ret (Rewrite rules)

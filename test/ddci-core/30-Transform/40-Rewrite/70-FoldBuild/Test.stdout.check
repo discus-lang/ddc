@@ -35,11 +35,12 @@ ok
             Witnesses:      0
             Values:         0
             Values letted:  0
-            Values skipped: 0
+            Values skipped: 0;
     Beta reduction:
         Types:          0
         Witnesses:      0
         Values:         0
+        Values letted:  0
         Values skipped: 0;
     Bubble: No information;
     Rules fired:
@@ -48,6 +49,7 @@ ok
         Types:          0
         Witnesses:      0
         Values:         0
+        Values letted:  0
         Values skipped: 0;
     Bubble: No information;
     Rules fired:
@@ -56,6 +58,7 @@ ok
         Types:          0
         Witnesses:      0
         Values:         0
+        Values letted:  0
         Values skipped: 0;
     Bubble: No information
 
@@ -79,7 +82,7 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Beta reduction:
             Types:          7
             Witnesses:      0
-            Values:         2
+            Values:         1
             Values letted:  0
             Values skipped: 0;
         Rules fired:
@@ -97,7 +100,7 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Beta reduction:
             Types:          0
             Witnesses:      0
-            Values:         0
+            Values:         1
             Values letted:  0
             Values skipped: 0;
         Rules fired:
@@ -108,11 +111,12 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
             Witnesses:      0
             Values:         0
             Values letted:  0
-            Values skipped: 0
+            Values skipped: 0;
     Beta reduction:
         Types:          0
         Witnesses:      0
         Values:         0
+        Values letted:  0
         Values skipped: 0;
     Bubble: No information;
     Rules fired:
@@ -121,6 +125,7 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Types:          0
         Witnesses:      0
         Values:         0
+        Values letted:  0
         Values skipped: 0;
     Bubble: No information;
     Rules fired:
@@ -129,6 +134,7 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
         Types:          0
         Witnesses:      0
         Values:         0
+        Values letted:  0
         Values skipped: 0;
     Bubble: No information
 

@@ -62,7 +62,7 @@ applyTransform spec mm
         Snip             -> return $ snip mm
         Flatten          -> return $ flatten mm
         Beta             -> return $ result $ betaReduce False mm
-        BetaLets         -> return $ result $ betaReduce True mm
+        BetaLets         -> return $ result $ betaReduce True  mm
         Forward          -> return $ forwardModule mm
         Bubble           -> return $ bubbleModule mm
         Namify namK namT -> namifyUnique namK namT mm
@@ -182,7 +182,8 @@ applyTransformX spec xx
         Snip              -> res $ snip xx
         Flatten           -> res $ flatten xx
         Inline  getDef    -> res $ inline getDef xx
-        Beta              -> return $ betaReduce xx
+        Beta              -> return $ betaReduce False xx
+        BetaLets          -> return $ betaReduce True  xx
         Forward           -> return $ forwardX xx
         Bubble            -> res $ bubbleX xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
