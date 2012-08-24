@@ -69,15 +69,24 @@ parseTransform
 
 parseTransform namK namT rules templates modules ((KCon name):rest)
  = case name of
-        "Id"            -> Just Id
-        "Anonymize"     -> Just Anonymize
-        "Snip"          -> Just Snip
-        "Flatten"       -> Just Flatten
-        "Beta"          -> Just Beta
-        "Forward"       -> Just Forward
-        "Inline"        -> Just (Inline templates)
-        "Namify"        -> Just (Namify namK namT)
-        "Rewrite"       -> Just (Rewrite rules)
+        "Id"            -> ret Id
+        "Anonymize"     -> ret Anonymize
+        "Snip"          -> ret Snip
+        "Flatten"       -> ret Flatten
+        "Beta"          -> ret Beta
+        "BetaLets"      -> ret BetaLets
+        "Bubble"        -> Just Bubble
+        "Forward"       -> ret Forward
+        "Namify"        -> ret (Namify namK namT)
+        "Rewrite"       -> ret (Rewrite rules)
+
+        "Inline"        
+	  -> case rest of
+		(KCon mname : rest')
+		  -> fmap (\t -> (Inline t, rest'))
+			  (P.lookup (ModuleName [mname]) modules)
+		_ -> ret (Inline templates)
+
         _               -> Nothing
  where
   ret t = Just (t, rest)
