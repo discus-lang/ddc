@@ -7,6 +7,7 @@ module DDCI.Core.Input
 where
 import DDCI.Core.State
 import DDCI.Core.Command
+import DDCI.Core.Command.TransInteract
 import System.Directory
 import Data.List
 import Data.Char
@@ -62,6 +63,12 @@ readInput ss
 -- Eating input lines.
 eatLine :: State -> InputState -> String -> IO (State, InputState)
 eatLine state (InputState mCommand inputMode lineNumber acc) line
+ | stateTransInteract state
+ = do
+	state' <- cmdTransInteractLoop state line
+	return (state', InputState mCommand inputMode (lineNumber+1) acc)
+
+ | otherwise
  = do   
         -- If this is the first line then try to read the command and
         --  input mode from the front so we know how to continue.

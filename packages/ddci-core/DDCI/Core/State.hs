@@ -4,6 +4,8 @@ module DDCI.Core.State
         , Bundle        (..)
         , initState
 
+        , TransHistory	(..)
+
         , Interface     (..)
         , Source        (..)
 
@@ -18,6 +20,7 @@ import DDCI.Core.Mode
 import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Check
+import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Rewrite.Rule
@@ -61,7 +64,9 @@ data State
         , stateOutputFile       :: Maybe FilePath 
 
           -- | Output dir for @compile@ and @make@ commands
-        , stateOutputDir        :: Maybe FilePath }
+        , stateOutputDir        :: Maybe FilePath
+
+	, stateTransInteract	:: Bool}
 
 
 -- | Existential container for a language fragment, 
@@ -75,7 +80,14 @@ data Bundle
 	,  bundleModules	 :: Map ModuleName (Module (AnTEC () n) n)
         ,  bundleStateInit       :: s
         ,  bundleSimplifier      :: Simplifier s (AnTEC () n) n
-        ,  bundleRewriteRules    :: Map String (RewriteRule (AnTEC () n) n) }
+        ,  bundleRewriteRules    :: Map String (RewriteRule (AnTEC () n) n)
+
+	,  bundleTransHistory	 :: Maybe (TransHistory (AnTEC () n) n) }
+
+data TransHistory a n
+    = TransHistory
+    { historyExp	:: (Exp a n, Type n, Effect n, Closure n) 
+    , historySteps	:: [Exp a n] }
 
 
 -- | What interface is being used.
@@ -111,14 +123,15 @@ initState interface
         = State
         { stateInterface        = interface
         , stateModes            = Set.empty 
-        , stateBundle           = Bundle fragmentEval Map.empty () (S.Trans S.Id) Map.empty
+        , stateBundle           = Bundle fragmentEval Map.empty () (S.Trans S.Id) Map.empty Nothing
         , stateWithLite         = Map.empty
         , stateWithSalt         = Map.empty
         , stateSimplLite        = S.Trans S.Id
         , stateSimplSalt        = S.Trans S.Id
         , stateBuilder          = Nothing  
         , stateOutputFile       = Nothing
-        , stateOutputDir        = Nothing }
+        , stateOutputDir        = Nothing
+	, stateTransInteract	= False }
 
 
 -- | Get the active builder.

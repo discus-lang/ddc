@@ -15,7 +15,7 @@ import DDC.Data.Canned
 -- | Load and transform a module.
 cmdLoad :: State -> Source -> String -> IO ()
 cmdLoad state source str
- | Bundle fragment _ zero simpl _    <- stateBundle state
+ | Bundle fragment _ zero simpl _ _    <- stateBundle state
  = do   errs    <- pipeText (nameOfSource source) (lineStartOfSource source) str
                 $  PipeTextLoadCore  fragment
                 [  PipeCoreSimplify  zero simpl

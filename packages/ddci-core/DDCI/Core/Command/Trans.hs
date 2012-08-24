@@ -2,7 +2,8 @@
 
 module DDCI.Core.Command.Trans
         ( cmdTrans
-	, cmdTransEval)
+	, cmdTransEval
+	, applyTransAndCheck)
 where
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
@@ -33,7 +34,7 @@ import DDC.Core.Module
 -- | Apply the current transform to an expression.
 cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
- | Bundle fragment modules zero simpl _     <- stateBundle state
+ | Bundle fragment modules zero simpl _ _     <- stateBundle state
  , Fragment profile _ _ _ _ _ _ _ _ <- fragment
  =   cmdParseCheckExp state fragment modules True source str 
  >>= goStore profile modules zero simpl
@@ -59,7 +60,7 @@ cmdTrans state source str
 --   then evaluate and display the result
 cmdTransEval :: State -> Source -> String -> IO ()
 cmdTransEval state source str
- | Bundle fragment modules0 zero simpl0 _	<- stateBundle state
+ | Bundle fragment modules0 zero simpl0 _ _	<- stateBundle state
  , Fragment profile0 _ _ _ _ _ _ _ _		<- fragment
 
  -- The evaluator only works on expressions with Eval.Names, 

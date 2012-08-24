@@ -11,6 +11,7 @@ import DDCI.Core.Command.Load
 import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
+import DDCI.Core.Command.TransInteract
 import DDCI.Core.Command.Ast
 import DDCI.Core.Command.Compile
 import DDCI.Core.Command.Make
@@ -46,6 +47,8 @@ data Command
         | CommandEval           -- ^ Evaluate an expression.
         | CommandTrans          -- ^ Transform an expression.
         | CommandTransEval      -- ^ Transform then evaluate an expression.
+        | CommandTransInteract  -- ^ Interactively transform an expression.
+
         | CommandAst            -- ^ Show the AST of an expression.
 
         | CommandCompile        -- ^ Compile a file.
@@ -83,6 +86,7 @@ commands
         , (":eval",             CommandEval)
         , (":trans",            CommandTrans)
         , (":trun",             CommandTransEval)
+        , (":trans-interact",   CommandTransInteract)
         , (":ast",              CommandAst) 
         , (":compile",          CommandCompile)
         , (":make",             CommandMake)
@@ -214,6 +218,9 @@ handleCmd1 state cmd source line
         CommandTransEval
          -> do  cmdTransEval state source line
                 return state
+        
+        CommandTransInteract
+         -> do  cmdTransInteract state source line
         
         CommandAst
          -> do  cmdAst state source line
