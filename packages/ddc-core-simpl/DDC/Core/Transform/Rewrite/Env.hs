@@ -7,6 +7,8 @@ module DDC.Core.Transform.Rewrite.Env
     , containsWitness
     , insertDef
     , getDef
+    , getDef'
+    , isDef
     , lift
     , liftValue
     )
@@ -19,7 +21,7 @@ import qualified DDC.Type.Predicates		as T
 import qualified DDC.Type.Transform.LiftT	as L
 import qualified DDC.Core.Transform.LiftX	as L
 
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, listToMaybe, isJust)
 
 -- | The environment of an expression with witnesses and distinct regions.
 --
@@ -86,7 +88,9 @@ extendLets (LLet _ b def) env
 	  _	  -> def
 
 extendLets (LRec bs) env
- = foldl (flip liftValue) env (map fst bs)
+ = foldl lift' env (map fst bs)
+ where
+  lift' e b = insertDef b Nothing (liftValue b e)
 
 extendLets _ env = env
 
@@ -138,7 +142,16 @@ getDef
     -> RewriteEnv a n
     -> Maybe (Exp a n)
 getDef b env
- = fromMaybe Nothing $ go b 0 (defs env)
+ = fromMaybe Nothing $ getDef' b env
+
+
+getDef'
+    :: (Eq n, Ord n, Show n, L.MapBoundX (Exp a) n)
+    => Bound n
+    -> RewriteEnv a n
+    -> Maybe (Maybe (Exp a n))
+getDef' b env
+ = go b 0 (defs env)
  where
     go _ _  []	    = Nothing
     go b' i (w:ws)  = match b' i w `orM` go (L.liftX (-1) b') (i+1) ws
@@ -150,6 +163,15 @@ getDef b env
 
     orM (Just x) _  = Just x
     orM Nothing  y  = y
+
+
+isDef
+    :: (Eq n, Ord n, Show n, L.MapBoundX (Exp a) n)
+    => Bound n
+    -> RewriteEnv a n
+    -> Bool
+isDef b env
+ = isJust $ getDef' b env
 
 
 -- | Raise all elements in witness map if binder is anonymous.

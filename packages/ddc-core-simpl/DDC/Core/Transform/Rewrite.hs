@@ -69,6 +69,12 @@ rewrite rules x0
 	e' <- down e (RE.extend b ws)
 	rewrites (XLam a b e') args ws
 
+    go (XLet a l@(LRec _) e) args ws	= do
+	let ws' = RE.extendLets l ws
+	l' <- goLets l ws'
+	e' <- down e ws'
+	rewrites (XLet a l' e') args ws'
+
     go (XLet a l e)	args ws = do
 	l' <- goLets l ws
 	dh <- goDefHoles a l' e ws
@@ -104,7 +110,7 @@ rewrite rules x0
     goDefHoles a l@(LLet LetStrict let_bind def) e ws
      =	let subs = checkHoles def ws
 	in  case subs of
-	    (((sub,[]),name,RewriteRule bs _cs hole Nothing _rhs _e _c):_) ->
+	    (((sub, []), name, RewriteRule { ruleBinds = bs, ruleLeft = hole }):_) ->
 		    -- only get value-level bindings
 		let bs'	       = map snd $ filter ((==BMType).fst) bs
 		    (_,bas')   = lookups bs' sub
@@ -156,8 +162,10 @@ rewrite rules x0
 	  $ map (\(name,r) -> fmap (\s -> (s,name,r)) $ rewriteSubst r f args ws RM.emptySubstInfo)
 	    rules'
 
-    holeRule (name, RewriteRule bs cs _lhs (Just hole) rhs e c)
-	= Just (name, RewriteRule bs cs hole Nothing rhs e c)
+    holeRule (name, rule@RewriteRule { ruleLeftHole	= Just hole })
+	= Just (name,
+	    rule { ruleLeft	= hole
+		 , ruleLeftHole	= Nothing })
     holeRule _ = Nothing
 
     goLets (LLet lm b e) ws = do
@@ -217,11 +225,27 @@ rewriteSubst
     -> RM.SubstInfo  a n	-- ^ Existing substitution to match with
     -> Maybe (RM.SubstInfo a n, [(Exp a n, a)])
 				-- ^ Substitution map and remaining (unmatched) args
-rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _ sub
- = do	l:ls   <- return $ X.takeXAppsAsList lhs
+rewriteSubst
+    RewriteRule
+	{ ruleBinds	= binds
+	, ruleLeft	= lhs
+	, ruleLeftHole	= Nothing
+	, ruleFreeVars	= free}
+    f args env sub
+ = do	-- First check if any of the free variables have been re-bound: instafail
+	checkFreeVars
+
+	l:ls   <- return $ X.takeXAppsAsList lhs
 	sub'     <- RM.match sub vs l f
 	go sub' ls args
  where
+    checkFreeVars
+     | any (flip RE.isDef env) free
+     = Nothing
+
+     | otherwise
+     = return ()
+
     bs = map snd binds
     vs = Set.fromList $ map nm bs
 
@@ -240,7 +264,9 @@ rewriteSubst (RewriteRule binds _ lhs Nothing _ _ _) f args _ sub
 -- Find substitution for rules with a 'hole'.
 -- An example rule with a holes is:
 --	RULE (i : Int). unbox {box i} = i
-rewriteSubst (RewriteRule binds constrs lhs (Just hole) rhs eff clo) f args ws sub
+rewriteSubst
+    rule@(RewriteRule{ ruleLeftHole = Just hole })
+    f args ws sub
  =  -- Try to match against entire rule with no inlining. Eg (unbox (box 5))
     case rewriteSubst rule_full f args ws sub of
     Just s  -> Just s
@@ -262,11 +288,18 @@ rewriteSubst (RewriteRule binds constrs lhs (Just hole) rhs eff clo) f args ws s
       -- rule_some didn't match properly: failure
       _ -> Nothing
  where
-  lhs_full  = XApp undefined lhs hole
-  rule_full = RewriteRule binds constrs lhs_full Nothing rhs eff clo
+  lhs_full  = XApp undefined (ruleLeft rule) hole
+  rule_full = rule
+	      { ruleLeft	= lhs_full
+	      , ruleLeftHole	= Nothing }
 
-  rule_some = RewriteRule binds constrs lhs Nothing rhs eff clo
-  rule_hole = RewriteRule binds constrs hole Nothing rhs eff clo
+  rule_some = rule
+	      { ruleLeft	= ruleLeft rule
+	      , ruleLeftHole	= Nothing }
+
+  rule_hole = rule
+	      { ruleLeft	= hole
+	      , ruleLeftHole	= Nothing }
 
 -- | Perform rewrite rule on expression if a valid substitution exists,
 --   and constraints are satisfied.
@@ -278,7 +311,14 @@ rewriteX
     -> [(Exp a n,a)]
     -> RE.RewriteEnv a n
     -> Maybe (Exp a n)
-rewriteX rule@(RewriteRule binds constrs _lhs _hole rhs eff clo) f args ws
+rewriteX
+    rule@(RewriteRule
+	    { ruleBinds		= binds
+	    , ruleConstraints	= constrs
+	    , ruleRight		= rhs
+	    , ruleWeakEff	= eff
+	    , ruleWeakClo	= clo })
+    f args ws
  = do	-- Find a substitution
 	(m,rest) <- rewriteSubst rule f args ws RM.emptySubstInfo
 	-- Check constraints, perform substitution and add weakens if necessary

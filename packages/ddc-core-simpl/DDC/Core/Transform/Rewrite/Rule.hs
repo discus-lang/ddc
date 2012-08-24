@@ -39,6 +39,8 @@ data RewriteRule a n
 	, ruleRight	  :: Exp a n		--  ^ Replacement
 	, ruleWeakEff	  :: Maybe (Effect n)	--  ^ Effect of lhs if needs weaken
 	, ruleWeakClo	  :: [Exp a n]		--  ^ Closure of lhs if needs weaken
+	, ruleFreeVars	  :: [Bound n]		--  ^ References to environment:
+						--    used to check if rule is shadowed.
 	} deriving (Eq, Show)
 
 data BindMode = BMKind | BMType
@@ -54,11 +56,11 @@ mkRewriteRule
     -> Exp a n			-- ^ Right-hand side (replacement)
     -> RewriteRule a n
 mkRewriteRule bs cs lhs hole rhs
- = RewriteRule bs cs lhs hole rhs Nothing []
+ = RewriteRule bs cs lhs hole rhs Nothing [] []
 
 
 instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
- ppr (RewriteRule bs cs lhs hole rhs _ _)
+ ppr (RewriteRule bs cs lhs hole rhs _ _ _)
   = pprBinders bs <> pprConstrs cs <> ppr lhs <> pprHole <> text " = " <> ppr rhs
   where
       pprBinders []	= text ""
@@ -91,7 +93,7 @@ checkRewriteRule
 	      (RewriteRule (C.AnTEC a n) n)
 
 checkRewriteRule config kenv tenv
-    (RewriteRule bs cs lhs hole rhs _ _)
+    (RewriteRule bs cs lhs hole rhs _ _ _)
  = do	let (kenv',tenv',bs') = extendBinds bs kenv tenv
 	let cs' = map (S.spreadT kenv') cs
 	-- Check that all constraints are valid types.
@@ -129,10 +131,18 @@ checkRewriteRule config kenv tenv
 	-- No lets or lambdas in left-hand side
 	checkValidPattern lhs_full
 
+	let binds = Set.fromList
+		  $ Maybe.catMaybes
+		  $ map (T.takeSubstBoundOfBind . snd) bs
+	let freeVars = Set.toList
+		     $ (C.freeX T.empty lhs_full `Set.union` C.freeX T.empty rhs)
+		     `Set.difference` binds
+
 	return $ RewriteRule 
                         bs' cs' 
                         lhs' hole' rhs'
                         e c
+			freeVars
 
 
 -- | Extend kind and type environments with a rule's binders.

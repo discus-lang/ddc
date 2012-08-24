@@ -2,6 +2,8 @@ module Module
 exports {
     fromInt :: [r1 r2 : %]. Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 Unit;
     toInt :: [r1 r2 : %]. List r1 Unit -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> Int r2;
+
+    newInt :: [r1 r2 : %]. Int r1 -(Read r1 + Alloc r2 | Use r1 + Use r2)> Int r2;
 }
 with letrec {
 
@@ -19,5 +21,10 @@ toInt [r1 r2 : %]
  = case xs of {
      Nil	-> 0 [r2] ();
      Cons _ xs' -> addInt [:r2 r2 r2:] (1 [r2] ()) (toInt [:r1 r2:] xs')
- }
+ };
+
+newInt [r1 r2 : %]
+    (x : Int r1) {Read r1 + Alloc r2 | Use r1 + Use r2}
+    : Int r2
+ = copyInt [:r1 r2:] x
 }
