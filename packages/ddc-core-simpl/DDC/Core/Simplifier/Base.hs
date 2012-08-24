@@ -73,6 +73,38 @@ data Transform s a n
                 { transRules       :: [(String,RewriteRule a n)] }
 
 
+-- | The result of a transform
+data TransformResult r
+	= TransformResult
+	{ result   	 :: r
+	, resultProgress :: Bool
+	, resultInfo	 :: TransformInfo }
+
+
+-- | Existential package for a TransformInfo.
+data TransformInfo
+	= forall i
+        .  (Typeable i, Pretty i)
+	=> TransformInfo i
+
+
+-- | Create a result with no extra information
+--   We say that progress is false to stop a fixpoint running.
+resultSimple :: String -> r -> TransformResult r
+resultSimple name r = TransformResult r False
+		    $ TransformInfo $ NoInformation name
+
+
+-- | Place-holder type to use when there is no real TransformResult.
+data NoInformation 
+        = NoInformation String
+        deriving Typeable
+
+
+instance Pretty NoInformation where
+    ppr (NoInformation name) = text name P.<> text ": No information"
+
+
 
 instance Pretty (Simplifier s a n) where
  ppr ss

@@ -115,7 +115,8 @@ applyFixpointX
         => Int			-- ^ Maximum number of times to apply
 	-> Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
-        -> State s (TransformResult a n)
+        -> State s (TransformResult (Exp a n))
+
 applyFixpointX i' s xx'
  = go i' xx'
  where
@@ -126,13 +127,13 @@ applyFixpointX i' s xx'
 	False ->
 	    return tx
 	True  -> do
-	    tx' <- go (i-1) (resultExp tx)
+	    tx' <- go (i-1) (result tx)
 	    let info =
 		    case (resultInfo tx, resultInfo tx') of
 		    (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
 	    
 	    return TransformResult
-		{ resultExp	 = resultExp tx'
+		{ result   	 = result tx'
 		, resultProgress = resultProgress tx'
 		, resultInfo     = TransformInfo info }
 
@@ -172,13 +173,15 @@ applyTransformX
 
 applyTransformX spec xx
  = case spec of
-        Id                -> return xx
-        Anonymize         -> return $ anonymizeX xx
-        Snip              -> return $ snip xx
-        Flatten           -> return $ flatten xx
-        Inline  getDef    -> return $ inline getDef xx
+        Id                -> res xx
+        Anonymize         -> res $ anonymizeX xx
+        Snip              -> res $ snip xx
+        Flatten           -> res $ flatten xx
+        Inline  getDef    -> res $ inline getDef xx
         Beta              -> return $ betaReduce xx
         Forward           -> return $ forwardX xx
-        Namify  namK namT -> namifyUnique namK namT xx
-        Rewrite rules     -> return $ fst $ rewrite rules xx
-
+        Bubble            -> res $ bubbleX xx
+        Namify  namK namT -> namifyUnique namK namT xx >>= res
+        Rewrite rules     -> return $ rewrite rules xx
+ where
+    res x = return $ resultSimple (show $ ppr spec) x

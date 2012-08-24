@@ -29,9 +29,10 @@ rewriteSimp
 	-> Simplifier s a n
 
 rewriteSimp rules
- = let  r = Trans $ Rewrite rules
-        b = Trans Beta
-   in   Fix 20 (r <> b)
+ = let  rewrite = Trans $ Rewrite rules
+        bubble  = Trans Bubble
+        beta    = Trans Beta
+   in   Fix 20 (rewrite <> bubble <> beta)
 
 
 

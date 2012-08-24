@@ -6,6 +6,9 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Analysis.Usage
 import DDC.Core.Exp
+import DDC.Core.Module
+import DDC.Core.Simplifier.Base
+import DDC.Core.Predicates
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import Control.Monad		(liftM, liftM2)

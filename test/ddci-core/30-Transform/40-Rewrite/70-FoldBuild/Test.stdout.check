@@ -5,6 +5,9 @@ ok
 
 ok, added foldrBuild
 
+
+-- TODO: the Fix simplifier isn't pushing this though,
+--       So I've written the transform out explicitly.
 ok
 
 
@@ -17,6 +20,7 @@ ok
     fix 20:
         Rules fired:
             Rewrite: foldrBuild;
+        Bubble: No information;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -24,11 +28,34 @@ ok
             Values skipped: 0;
         Rules fired:
             ;
+        Bubble: No information;
         Beta reduction:
             Types:          0
             Witnesses:      0
             Values:         0
-            Values skipped: 0
+            Values skipped: 0;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information;
+    Rules fired:
+        ;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information;
+    Rules fired:
+        ;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
@@ -46,6 +73,15 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
     fix 20:
         Rules fired:
             Rewrite: foldrBuild;
+        Bubble: No information;
+        Beta reduction:
+            Types:          7
+            Witnesses:      0
+            Values:         1
+            Values skipped: 0;
+        Rules fired:
+            Rewrite: foldrBuild;
+        Bubble: No information;
         Beta reduction:
             Types:          7
             Witnesses:      0
@@ -53,30 +89,55 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
             Values skipped: 0;
         Rules fired:
             Rewrite: foldrBuild;
-        Beta reduction:
-            Types:          7
-            Witnesses:      0
-            Values:         2
-            Values skipped: 0;
-        Rules fired:
-            Rewrite: foldrBuild;
+        Bubble: No information;
         Beta reduction:
             Types:          0
             Witnesses:      0
-            Values:         0
+            Values:         1
             Values skipped: 0;
         Rules fired:
             ;
+        Bubble: No information;
         Beta reduction:
             Types:          0
             Witnesses:      0
             Values:         0
-            Values skipped: 0
+            Values skipped: 0;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information;
+    Rules fired:
+        ;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information;
+    Rules fired:
+        ;
+    Beta reduction:
+        Types:          0
+        Witnesses:      0
+        Values:         0
+        Values skipped: 0;
+    Bubble: No information
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
+weakclo {plus} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
+weakclo {\(^ ^ : Int R0#).
+case even ^1 of {
+  0  
+   -> plus ^1 ^0;
+  _ 
+   -> ^0
+}} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
 count' (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]

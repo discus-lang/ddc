@@ -22,7 +22,10 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 = g [:b ek1 ek2 ez ck1 ck2 cz:] k z
 ;;
 
-:set trans rewriteSimp
+
+-- TODO: the Fix simplifier isn't pushing this though,
+--       So I've written the transform out explicitly.
+:set trans rewriteSimp <> Beta <> Bubble <> Rewrite <> Beta <> Bubble <> Rewrite <> Beta <> Bubble
 
 
 -- sum = foldr (+) 0 xs
