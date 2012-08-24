@@ -1,4 +1,4 @@
--- Using the previous test's module on purpose.
+ok
 ok
 
 ok
@@ -8,52 +8,40 @@ ok, added foldrBuild
 
 ok
 
-
--- sum = foldr (+) 0 xs
--- count  m  = build (count' m)
--- count' m = \c n -> if m == 0
---			then n
---			else c m (count' (m-1) c n)
 -- define outside, otherwise beta reduction won't fire...
 * TRANSFORM INFORMATION: 
-    fix 5:
-        fix 10:
-            Beta reduction:
-                Types:          0
-                Witnesses:      0
-                Values:         0
-                Values skipped: 0;
-            Forward:
-                Substitutions:  2
-                Bindings:       2;
-            Rules fired:
-                ;
-            Beta reduction:
-                Types:          0
-                Witnesses:      0
-                Values:         1
-                Values skipped: 1;
-            Forward:
-                Substitutions:  0
-                Bindings:       0;
-            Rules fired:
-                ;
-            Beta reduction:
-                Types:          0
-                Witnesses:      0
-                Values:         0
-                Values skipped: 1;
-            Forward:
-                Substitutions:  0
-                Bindings:       0;
-            Rules fired:
-                ;
-        Inline: No information
+    Inline: No information;
+    fix 10:
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         1
+            Values letted:  1
+            Values skipped: 0;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        Rules fired:
+            Unfold:  foldrBuild
+            Rewrite: foldrBuild;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        Rules fired:
+            Unfold:  foldrBuild
 
 let num : Int R0# = 10 [R0#] () in
-(\(xs : List R1# (Int R0#)).
- foldr [Int R0#] [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero xs)
-    (build [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#] (count' num))
+let ^ : [^ : *].[^ ^ ^ : !].[^ ^ ^ : $].(Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6) -(!0 | Use R0#)> (Unit -(^3 | ^0)> ^6) -(Read R0# + Alloc R0# + ^3 + ^4 + ^5 | Use R0# + ^2)> ^6 = count' num in
+let ^ : [^ : *].[^ ^ ^ : !].[^ ^ ^ : $].(Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6) -(!0 | Use R0#)> (Unit -(^3 | ^0)> ^6) -(Read R0# + Alloc R0# + ^3 + ^4 + ^5 | Use R0# + ^2)> ^6 = ^0 in
+let ^ : List R1# (Int R0#)
+      = build [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#] ^0 in
+^2 [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 ok
 
@@ -67,6 +55,7 @@ ok
             Types:          0
             Witnesses:      0
             Values:         3
+            Values letted:  0
             Values skipped: 3;
         Rules fired:
             ;
@@ -77,6 +66,7 @@ ok
             Types:          0
             Witnesses:      0
             Values:         0
+            Values letted:  0
             Values skipped: 3;
         Rules fired:
             

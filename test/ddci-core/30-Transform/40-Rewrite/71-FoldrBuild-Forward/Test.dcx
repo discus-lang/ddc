@@ -1,5 +1,5 @@
--- Using the previous test's module on purpose.
-:with test/ddci-core/30-Transform/40-Rewrite/70-FoldBuild/Module.dce
+:with test/ddci-core/30-Transform/40-Rewrite/71-FoldrBuild-Forward/FoldBuild.dce
+:with test/ddci-core/30-Transform/40-Rewrite/71-FoldrBuild-Forward/List.dce
 
 :set Indent
 :set TraceTrans
@@ -24,28 +24,10 @@ foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
 ;;
 
 :set.. trans
-    fix 5 (fix 10 (Beta <> Forward <> Rewrite) <> Inline)
+  Inline List <> fix 10 (BetaLets <> Forward <> Rewrite)
 ;;
 
-
--- sum = foldr (+) 0 xs
--- count  m  = build (count' m)
--- count' m = \c n -> if m == 0
---			then n
---			else c m (count' (m-1) c n)
 :trans..
-let sum = \(xs : List R1# (Int R0#)).
-	foldr
-	    [:(Int R0#) (Int R0#) R1#
-	    !0 (Read R0# + Alloc R0#) (Alloc R0#)
-	    (Use R0#) (Use R0#) (Use R0#):]
-	plus zero xs
-in
-let count = \(m : Int R0#).
-    build
-	[:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):]
-	(count' m)
-in
 -- define outside, otherwise beta reduction won't fire...
 let num = 10 [R0#] ()
 in
