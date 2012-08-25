@@ -3,12 +3,43 @@ ok
 ok
 ok
 
-ok, added foldrBuild
+ok, added foldrBuild_one
 
+ok, added foldrBuild_fuse
+
+
+
+-- :set.. rule foldrBuild
+--     [a b : *] [r : %]
+--     [ek1 ek2 ez eg1 eg2 : !]
+--     [ck1 ck2 cz cg1 cg2 : $]
+--     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
+--     (z : Unit -(ez|cz)> b)
+--     (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+-- 	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
+--        -(eg1|cg1)>
+-- 	(Unit -(en|cn)> gb)
+--        -(eg2+ec1+ec2+en|cg2+cc1)>
+-- 	gb).
+--     Disjoint (ek1+ek2+ez) (eg1+eg2) =>
+-- foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
+--     k z
+--     (build [:a r eg1 eg2 cg1 cg2:] g)
+-- = g [:b ek1 ek2 ez ck1 ck2 cz:] k z
+-- ;;
+-- 
 
 -- TODO: the Fix simplifier isn't pushing this though,
 --       So I've written the transform out explicitly.
+-- Here we would inline map, sum, filter, etc. But output is cleaner with them
+-- Try to fuse anything we can, even fusing interfering foldr/builds into foldrAndBuild.
+-- Also for cleaner output, don't anormalize
+-- By now we've turned all the foldr/builds we can into foldrAndBuild,
+-- so inline any pesky builds that were getting in the way
+-- But for cleaner output, don't inline anything else...
+-- Crush again
 ok
+
 
 
 -- sum = foldr (+) 0 xs
@@ -17,54 +48,57 @@ ok
 --			then n
 --			else c m (count' (m-1) c n)
 * TRANSFORM INFORMATION: 
-    fix 20:
-        Rules fired:
-            Rewrite: foldrBuild;
-        Bubble: No information;
+    fix 10:
         Beta reduction:
             Types:          0
             Witnesses:      0
             Values:         0
             Values letted:  0
             Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            Rewrite: foldrBuild_one
+            Rewrite: foldrBuild_fuse;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
         Rules fired:
             ;
-        Bubble: No information;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+    Inline: No information;
+    fix 10:
         Beta reduction:
             Types:          0
             Witnesses:      0
             Values:         0
             Values letted:  0
             Values skipped: 0;
-    Beta reduction:
-        Types:          0
-        Witnesses:      0
-        Values:         0
-        Values letted:  0
-        Values skipped: 0;
-    Bubble: No information;
-    Rules fired:
-        ;
-    Beta reduction:
-        Types:          0
-        Witnesses:      0
-        Values:         0
-        Values letted:  0
-        Values skipped: 0;
-    Bubble: No information;
-    Rules fired:
-        ;
-    Beta reduction:
-        Types:          0
-        Witnesses:      0
-        Values:         0
-        Values letted:  0
-        Values skipped: 0;
-    Bubble: No information
+        Bubble: No information;
+        Rules fired:
+            ;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0
 
+weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
-count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
+weakclo {foldrAndBuild; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 
 -- map f xs = build (\c n -> foldr (c . f) n xs)
@@ -75,74 +109,104 @@ count' (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
 --		  else xs) n xs)
 -- sum
 * TRANSFORM INFORMATION: 
-    fix 20:
-        Rules fired:
-            Rewrite: foldrBuild;
-        Bubble: No information;
-        Beta reduction:
-            Types:          7
-            Witnesses:      0
-            Values:         1
-            Values letted:  0
-            Values skipped: 0;
-        Rules fired:
-            Rewrite: foldrBuild;
-        Bubble: No information;
-        Beta reduction:
-            Types:          7
-            Witnesses:      0
-            Values:         2
-            Values letted:  0
-            Values skipped: 0;
-        Rules fired:
-            Rewrite: foldrBuild;
-        Bubble: No information;
-        Beta reduction:
-            Types:          0
-            Witnesses:      0
-            Values:         1
-            Values letted:  0
-            Values skipped: 0;
-        Rules fired:
-            ;
-        Bubble: No information;
+    fix 10:
         Beta reduction:
             Types:          0
             Witnesses:      0
             Values:         0
             Values letted:  0
             Values skipped: 0;
-    Beta reduction:
-        Types:          0
-        Witnesses:      0
-        Values:         0
-        Values letted:  0
-        Values skipped: 0;
-    Bubble: No information;
-    Rules fired:
-        ;
-    Beta reduction:
-        Types:          0
-        Witnesses:      0
-        Values:         0
-        Values letted:  0
-        Values skipped: 0;
-    Bubble: No information;
-    Rules fired:
-        ;
-    Beta reduction:
-        Types:          0
-        Witnesses:      0
-        Values:         0
-        Values letted:  0
-        Values skipped: 0;
-    Bubble: No information
+        Bubble: No information;
+        Rules fired:
+            Rewrite: foldrBuild_one
+            Rewrite: foldrBuild_one
+            Rewrite: foldrBuild_one
+            Rewrite: foldrBuild_fuse;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+        Beta reduction:
+            Types:          7
+            Witnesses:      0
+            Values:         1
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            Rewrite: foldrBuild_fuse;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+        Beta reduction:
+            Types:          7
+            Witnesses:      0
+            Values:         2
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            Rewrite: foldrBuild_fuse;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         1
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            ;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            ;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+    Inline: No information;
+    fix 10:
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            ;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0
 
+weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
+weakclo {foldrAndBuild; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
 weakclo {plus} in
+weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
+weakclo {foldrAndBuild; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
 weakclo {\(^ ^ : Int R0#).
 case even ^1 of {
   0  
@@ -150,9 +214,10 @@ case even ^1 of {
   _ 
    -> ^0
 }} in
+weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
-count' (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
+weakclo {foldrAndBuild; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
          (\(^ ^ : Int R0#).
           case even ^1 of {
@@ -162,4 +227,90 @@ count' (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
              -> ^0
           }) double) zero
 
--- { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + cc2 + cn + Use R0# }
+
+-- If it's only a 'build' at the start, the inner foldrs and builds don't know
+-- what their entire effect will be. So they were not being fired.
+-- map *2
+* TRANSFORM INFORMATION: 
+    fix 10:
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            Rewrite: foldrBuild_one;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            ;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+    Inline: No information;
+    fix 10:
+        Beta reduction:
+            Types:          6
+            Witnesses:      0
+            Values:         1
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            ;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+        Beta reduction:
+            Types:          7
+            Witnesses:      0
+            Values:         2
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            Rewrite: foldrBuild_fuse;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Bubble: No information;
+        Rules fired:
+            ;
+        Forward:
+            Substitutions:  0
+            Bindings:       0;
+        DeadCode:
+            Removed:        0
+
+weakclo {build; foldr} in
+weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
+weakclo {foldrAndBuild; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+countZ (100 [R0#] ()) [List R1# (Int R0#)] [Read R0# + Alloc R0#] [Alloc R1#] [Alloc R1#] [Use R0#] [Use R0#] [$0]
+    (compose [Int R0#] [Int R0#] [List R1# (Int R0#) -(Alloc R1# | Use R0#)> List R1# (Int R0#)] [!0] [Read R0# + Alloc R0#] [$0] [Use R0#]
+         (Cons [R1#] [Int R0#]) double)
+    (Nil [R1#] [Int R0#])
+

@@ -3,7 +3,27 @@
 :set Indent
 :set TraceTrans
 
-:set.. rule foldrBuild
+:set.. rule foldrBuild_one
+    [a b : *] [r : %]
+    [ek1 ek2 ez eg1 eg2 : !]
+    [ck1 ck2 cz cg1 cg2 : $]
+    (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
+    (z : Unit -(ez|cz)> b)
+    (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
+       -(eg1|cg1)>
+	(Unit -(en|cn)> gb)
+       -(eg2+ec1+ec2+en|cg2+cc1)>
+	gb).
+foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
+    k z
+    (build [:a r eg1 eg2 cg1 cg2:] g)
+= foldrAndBuild [:a b r ek1 ek2 ez ck1 ck2 cz:]
+	      [:eg1 eg2 cg1 cg2:]
+	k z g
+;;
+
+:set.. rule foldrBuild_fuse
     [a b : *] [r : %]
     [ek1 ek2 ez eg1 eg2 : !]
     [ck1 ck2 cz cg1 cg2 : $]
@@ -16,16 +36,49 @@
        -(eg2+ec1+ec2+en|cg2+cc1)>
 	gb).
     Disjoint (ek1+ek2+ez) (eg1+eg2) =>
-foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
-    k z
-    (build [:a r eg1 eg2 cg1 cg2:] g)
+ foldrAndBuild [:a b r ek1 ek2 ez ck1 ck2 cz:]
+	      [:eg1 eg2 cg1 cg2:]
+	k z g
 = g [:b ek1 ek2 ez ck1 ck2 cz:] k z
 ;;
 
 
+
+-- :set.. rule foldrBuild
+--     [a b : *] [r : %]
+--     [ek1 ek2 ez eg1 eg2 : !]
+--     [ck1 ck2 cz cg1 cg2 : $]
+--     (k : a -(ek1|ck1)> b -(ek2|ck2)> b)
+--     (z : Unit -(ez|cz)> b)
+--     (g : [gb : *]. [ec1 ec2 en : !]. [cc1 cc2 cn : $].
+-- 	(a -(ec1|cc1)> gb -(ec2|cc2)> gb)
+--        -(eg1|cg1)>
+-- 	(Unit -(en|cn)> gb)
+--        -(eg2+ec1+ec2+en|cg2+cc1)>
+-- 	gb).
+--     Disjoint (ek1+ek2+ez) (eg1+eg2) =>
+-- foldr [:a b r ek1 ek2 ez ck1 ck2 cz:]
+--     k z
+--     (build [:a r eg1 eg2 cg1 cg2:] g)
+-- = g [:b ek1 ek2 ez ck1 ck2 cz:] k z
+-- ;;
+-- 
+
 -- TODO: the Fix simplifier isn't pushing this though,
 --       So I've written the transform out explicitly.
-:set trans rewriteSimp <> Beta <> Bubble <> Rewrite <> Beta <> Bubble <> Rewrite <> Beta <> Bubble
+:set.. trans
+-- Here we would inline map, sum, filter, etc. But output is cleaner with them
+-- Try to fuse anything we can, even fusing interfering foldr/builds into foldrAndBuild.
+-- Also for cleaner output, don't anormalize
+    fix 10 (BetaLets <> Bubble <> Rewrite <> Forward <> DeadCode) <>
+-- By now we've turned all the foldr/builds we can into foldrAndBuild,
+-- so inline any pesky builds that were getting in the way
+-- But for cleaner output, don't inline anything else...
+    Inline -foldrAndBuild -foldr -compose -plus -zero -pred -countZ -double -even <>
+-- Crush again
+    fix 10 (BetaLets <> Bubble <> Rewrite <> Forward <> DeadCode)
+;;
+
 
 
 -- sum = foldr (+) 0 xs
@@ -38,7 +91,7 @@ foldr [:(Int R0#) (Int R0#) R1#
 	!0 (Read R0# + Alloc R0#) (Alloc R0#)
 	(Use R0#) (Use R0#) (Use R0#):]
 	plus zero
-    (build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (count' (10 [R0#] ())))
+    (build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (10 [R0#] ())))
 ;;
 
 
@@ -100,9 +153,38 @@ foldr [:(Int R0#) (Int R0#) R1#
 			n
 
 			-- enum 100
-			(build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (count' (100 [R0#] ())))
+			(build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (100 [R0#] ())))
 		    ))))
 
 ;;
 
--- { Read R0# + Alloc R0# + ec1 + ec2 + en | cc1 + cc2 + cn + Use R0# }
+
+-- If it's only a 'build' at the start, the inner foldrs and builds don't know
+-- what their entire effect will be. So they were not being fired.
+:trans..
+
+-- map *2
+(build [:(Int R0#) R1# 
+	 !0 (Read R0# + Read R1# + Alloc R0# + Alloc R1#)
+	 (Use R0# + Use R1#) (Use R0# + Use R1#) :]
+	(/\(b : *). /\(ec1 ec2 en : !). /\(cc1 cc2 cn : $).
+	\(c : Int R0# -(ec1|cc1)> b -(ec2|cc2)> b).
+	\(n : Unit -(en|cn)> b).
+
+	foldr [:(Int R0#) b R1#
+		(Read R0# + Alloc R0# + ec1)
+		    ec2 en
+		(Use R0# + cc1) cc2 cn
+		:]
+
+	    (compose [:(Int R0#) (Int R0#) (b -(ec2|cc2)> b)
+		       ec1 (Alloc R0# + Read R0#)
+		       cc1 (Use R0#)
+		     :] c double)
+	    n
+
+	    -- enum 100
+	    (build [:(Int R0#) R1# !0 (Read R0# + Alloc R0#) (Use R0#) (Use R0#):] (countZ (100 [R0#] ())))
+	))
+;;
+

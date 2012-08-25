@@ -18,6 +18,25 @@ build :: [a : *]. [r : %]. [eg1 eg2 : !]. [cg1 cg2 : $].
 	 b)
     -(eg1+eg2 + Alloc r | Use r)> List r a;
 
+-- TODO implement
+foldrAndBuild ::
+    [a b : *]. [r : %].
+    [ek1 ek2 ez : !]. [ck1 ck2 cz : $].
+    [eg1 eg2 : !]. [cg1 cg2 : $].
+
+	(a -(ek1|ck1)> b -(ek2|ck2)> b)
+    ->	(Unit -(ez|cz)> b)
+
+-- TODO very strange issue here: if use names 'ec1' instead of 'ec1FB' they parse as anonymous & then references get mixed up
+    ->  ([bFB : *]. [ec1FB ec2FB enFB : !]. [cc1FB cc2FB cnFB : $].
+	     (a -(ec1FB|cc1FB)> bFB -(ec2FB|cc2FB)> bFB)
+	    -(eg1|cg1)>
+	     (Unit -(enFB|cnFB)> bFB)
+	    -(eg2+ec1FB+ec2FB+enFB|cg2+cc1FB)>
+	     bFB)
+    -(Read r + ek1 + ek2 + ez + eg1 + eg2 + Alloc r | ck1 + ck2 + cz + Use r)>
+    b;
+
 compose :: [a b c : *]. [ef eg : !]. [cf cg : $].
        (b -(ef|cf)> c)
     -> (a -(eg|cg)> b)
@@ -43,7 +62,7 @@ pred ::
     -(Read R0# + Alloc R0# | Use R0#)>
     Int R0#;
 
-count' ::
+countZ ::
     Int R0#
     -(!0 | Use R0#)>
     ([b : *].
@@ -122,7 +141,7 @@ pred
     { Read R0# + Alloc R0# | Use R0# }
     : Int R0# = subInt [:R0# R0# R0#:] a (1 [R0#] ())
 
-count' (m : Int R0#)
+countZ (m : Int R0#)
        { !0 | Use R0# }
        [b : *]
        [ec1 ec2 en : !]
@@ -134,7 +153,7 @@ count' (m : Int R0#)
        : b
     = case m of {
 	0	-> z ();
-	_	-> k m (count' (pred m) [:b ec1 ec2 en cc1 cc2 cn:] k z)
+	_	-> k m (countZ (pred m) [:b ec1 ec2 en cc1 cc2 cn:] k z)
 	}
 
 
