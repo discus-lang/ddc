@@ -92,7 +92,7 @@ instance Bubble Lets where
  bubble lts
   = case lts of
 
-        -- We need to drop casts that mention the bound variable here, 
+        -- Drop casts that mention the bound variable here, 
         -- but we can float the others further outwards.
         LLet m b x
          -> let (cs, x')        = bubble x
@@ -100,6 +100,7 @@ instance Bubble Lets where
                 (cs', xc')      = dropCasts a [] [b] cs x'
             in  (cs', LLet m b xc')
 
+        -- TODO: Bubble casts out of recursive lets.
         LRec bxs
          -> let bubbleRec (b, x)
                  = let  (cs, x') = bubble x
@@ -124,15 +125,18 @@ instance Bubble Alt where
 
  -- Drop casts before we leave the alt because they could contain
  -- variables bound by the pattern.
- -- TODO: check for this and shift accepable bindings further outwards.
  bubble (AAlt p x)
-  = let (cs, x') = bubble x
-        Just a   = takeAnnotOfExp x'
-    in  ([], AAlt p $ dropAllCasts a cs x')
+  = let (cs, x')        = bubble x
+        bs              = bindsOfPat p
+        Just a          = takeAnnotOfExp x'
+        (csUp, xcHere)  = dropCasts a [] bs cs x'
+    in  (csUp, AAlt p xcHere)
 
 
 -- FvsCast --------------------------------------------------------------------
 -- | A Cast along with its free level-1 and level-0 vars.
+--   When we first build a `FvsCast` we record its free variables, 
+--   so that we don't have to keep recomputing them.
 data FvsCast a n
         = FvsCast (Cast a n)
                   (Set (Bound n))
@@ -148,6 +152,7 @@ instance Ord n => MapBoundX (FvsCast a) n where
 
 
 -- Dropping -------------------------------------------------------------------
+-- | Wrap the provided expression with these casts.
 dropAllCasts 
         :: a 
         -> [FvsCast a n] -> Exp a n 
