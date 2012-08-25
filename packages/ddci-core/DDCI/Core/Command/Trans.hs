@@ -25,9 +25,7 @@ import qualified DDC.Core.Eval.Name             as Eval
 import qualified Data.Set               as Set
 import Data.Typeable
 import Control.Monad
-
 import DDC.Core.Module
-
 
 
 -- Trans ----------------------------------------------------------------------
