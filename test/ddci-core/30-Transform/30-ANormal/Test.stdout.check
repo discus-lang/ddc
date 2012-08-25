@@ -135,3 +135,11 @@ case ^0 of {
    -> ()
 }
 
+
+-- Anonymous witnesses
+let useWit : Const R0# => Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
+      = \(^ : Const R0#).\(^ : Int R0#). addInt [R0#] [R0#] [R0#] ^0 ^0 in
+\(^ : Const R0#).\(^ : Int R0#).
+let ^ = 1 [R0#] () in
+let ^ = addInt [R0#] [R0#] [R0#] ^0 ^1 in
+useWit <^3> ^0

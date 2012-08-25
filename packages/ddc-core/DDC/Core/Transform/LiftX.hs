@@ -93,9 +93,29 @@ instance MapBoundX (Exp a) n where
         XCase a x alts  -> XCase a (down x)  (map down alts)
         XCast a cc x    -> XCast a (down cc) (down x)
         XType{}         -> xx
-        XWitness{}      -> xx
+        XWitness w	-> XWitness (down w)
 
          
+instance MapBoundX Witness n where
+ mapBoundAtDepthX f d w
+  = let down = mapBoundAtDepthX f d
+    in case w of
+        WVar b
+         -> WVar (down b)
+	
+	WCon _
+	 -> w
+	
+	WApp a b
+	 -> WApp (down a) (down b)
+	
+	WJoin a b
+	 -> WJoin (down a) (down b)
+	
+	WType _
+	 -> w
+
+
 instance MapBoundX (Cast a) n where
  mapBoundAtDepthX f d cc
   = case cc of
