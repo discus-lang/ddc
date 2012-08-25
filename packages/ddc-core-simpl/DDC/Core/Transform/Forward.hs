@@ -15,7 +15,6 @@ import Control.Monad		(liftM, liftM2)
 import Control.Monad.Writer	(Writer, runWriter, tell)
 import Data.Monoid		(Monoid, mempty, mappend)
 import Data.Typeable		(Typeable)
-
 import qualified DDC.Core.Transform.SubstituteXX	as S
 
 forwardModule 
@@ -94,7 +93,7 @@ instance Forward Exp where
         XLet (UsedMap um, _) (LLet _mode (BName n _) x1) x2
          | isXLam x1 || isXLAM x1
          , Just usage     <- Map.lookup n um
-         , [UsedFunction] <- usage
+         , [UsedFunction] <- filterUsedInCasts usage
 	 -> do
 	    tell mempty { infoBindings = 1 }
 	    x1'           <- down x1

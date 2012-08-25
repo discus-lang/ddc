@@ -4,7 +4,8 @@ module DDC.Core.Analysis.Usage
         ( Used    (..)
         , UsedMap (..)
         , usageModule
-        , usageX)
+        , usageX
+	, filterUsedInCasts)
 where
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -24,6 +25,9 @@ data Used
 
         -- | Bound variable is destructed by a case-expression.
         | UsedDestruct
+
+	-- | Bound variable is used inside a weakclo
+	| UsedInCast
 
         -- | Bound variable has a single occurrence that is not one of the above.
         | UsedOcc
@@ -64,6 +68,11 @@ sumUsedMap []   = UsedMap Map.empty
 sumUsedMap (m:ms)
         = foldl' plusUsedMap m ms
 
+filterUsedInCasts :: [Used] -> [Used]
+filterUsedInCasts = filter notCast
+ where
+  notCast UsedInCast	= False
+  notCast _		= True
 
 -- Usage ----------------------------------------------------------------------
 usageModule :: Ord n => Module a n -> Module (UsedMap n, a) n
@@ -202,8 +211,9 @@ usageC cc
 
         CastWeakenClosure xs
          | (useds, xs')         <- unzip $ map usageX xs
-         , used'                <- sumUsedMap useds
-         -> (used', CastWeakenClosure xs')
+         , UsedMap used'        <- sumUsedMap useds
+	 , usedCasts		<- Map.map (map $ const UsedInCast) used'
+         -> (UsedMap usedCasts, CastWeakenClosure xs')
 
         CastPurify w
          -> (empty, CastPurify w)
