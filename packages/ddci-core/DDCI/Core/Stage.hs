@@ -130,10 +130,10 @@ stageSaltOpt state source pipes
                         (Map.elems (stateWithSalt state)))
 
         -- hrm. Want a fixpoint here.
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward <> S.Trans S.Bubble
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward <> S.Trans S.Bubble
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward <> S.Trans S.Bubble
+        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward <> S.Trans S.Bubble
         <> normalizeSalt)
 
         ( PipeCoreOutput (dump state source "dump.salt-opt.dcl")
