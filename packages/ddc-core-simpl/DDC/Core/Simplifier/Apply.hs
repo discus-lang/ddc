@@ -10,6 +10,7 @@ where
 import DDC.Base.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
+import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.Snip
@@ -20,6 +21,7 @@ import DDC.Core.Transform.Bubble
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
+import DDC.Type.Env                     (Env)
 import Control.Monad.State.Strict
 import qualified DDC.Base.Pretty	as P
 import Data.Typeable (Typeable)
@@ -76,15 +78,19 @@ applyTransform spec mm
 --   The state monad holds a fresh name generator.
 applySimplifierX 
         :: (Show a, Show n, Ord n, Pretty n)
-        => Simplifier s a n     -- ^ Simplifier to apply.
+	=> Profile n		-- ^ Profile of language we're working in
+	-> Env n		-- ^ Kind environment
+	-> Env n		-- ^ Type environment
+        -> Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
         -> State s (TransformResult (Exp a n))
 
-applySimplifierX spec xx
- = case spec of
+applySimplifierX profile kenv tenv spec xx
+ = let down = applySimplifierX profile kenv tenv
+   in  case spec of
         Seq t1 t2
-         -> do  tx  <- applySimplifierX t1 xx
-                tx' <- applySimplifierX t2 (result tx)
+         -> do  tx  <- down t1 xx
+                tx' <- down t2 (result tx)
 
 		let info =
 			case (resultInfo tx, resultInfo tx') of
@@ -96,7 +102,7 @@ applySimplifierX spec xx
 		    , resultInfo     = TransformInfo info }
 
 	Fix i s
-	 -> do	tx <- applyFixpointX i s xx
+	 -> do	tx <- applyFixpointX profile kenv tenv i s xx
 		let info =
 			case resultInfo tx of
 			TransformInfo info1 -> FixInfo i info1
@@ -107,26 +113,31 @@ applySimplifierX spec xx
 		    , resultInfo     = TransformInfo info }
 		
         Trans t1
-         -> applyTransformX  t1 xx
+         -> applyTransformX profile kenv tenv t1 xx
 
 
 -- | Apply a simplifier until it stops progressing, or a maximum number of times
 applyFixpointX
         :: (Show a, Show n, Ord n, Pretty n)
-        => Int			-- ^ Maximum number of times to apply
+	=> Profile n		-- ^ Profile of language we're working in
+	-> Env n		-- ^ Kind environment
+	-> Env n		-- ^ Type environment
+        -> Int			-- ^ Maximum number of times to apply
 	-> Simplifier s a n     -- ^ Simplifier to apply.
         -> Exp a n              -- ^ Exp to simplify.
         -> State s (TransformResult (Exp a n))
 
-applyFixpointX i' s xx'
+applyFixpointX profile kenv tenv i' s xx'
  = go i' xx' False
  where
+  simp = applySimplifierX profile kenv tenv s
+
   go 0 xx progress = do
-    tx <- applySimplifierX s xx
+    tx <- simp xx
     return tx { resultProgress = progress }
 
   go i xx progress = do
-    tx <- applySimplifierX s xx
+    tx <- simp xx
     case resultProgress tx of
 	False ->
 	    return tx { resultProgress = progress }
@@ -171,11 +182,14 @@ instance Pretty FixInfo where
 -- | Apply a single transform to an expression.
 applyTransformX 
         :: (Show a, Show n, Ord n, Pretty n)
-        => Transform s a n      -- ^ Transform to apply.
+	=> Profile n		-- ^ Profile of language we're working in
+	-> Env n		-- ^ Kind environment
+	-> Env n		-- ^ Type environment
+        -> Transform s a n      -- ^ Transform to apply.
         -> Exp a n              -- ^ Exp  to transform.
         -> State s (TransformResult (Exp a n))
 
-applyTransformX spec xx
+applyTransformX _profile _kenv _tenv spec xx
  = case spec of
         Id                -> res xx
         Anonymize         -> res $ anonymizeX xx

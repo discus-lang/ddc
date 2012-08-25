@@ -117,7 +117,7 @@ applyTransAndCheck state profile kenv tenv zero simpl (x, t1, eff1, clo1)
  = do
          -- Apply the simplifier.
         let tx = flip S.evalState zero
-               $ applySimplifierX simpl x
+               $ applySimplifierX profile kenv tenv simpl x
 	
 	let x' = result tx
 
