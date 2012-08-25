@@ -334,6 +334,9 @@ convBodyM kenv tenv mdsup blocks label instrs xx
 
                 return  $ blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
+         C.XCast _ _ x
+          -> convBodyM kenv tenv mdsup blocks label instrs x
+
          _ -> die $ "invalid body statement " ++ show xx
  
 
@@ -448,48 +451,51 @@ convExpM
         -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq AnnotInstr)
 
-convExpM pp kenv tenv _ vDst (C.XVar _ u@(C.UName (A.NameVar n)))
- | Just t       <- Env.lookup u tenv
- = do   let n'  = A.sanitizeName n
-        let t'  = convType pp kenv t
-        return  $ Seq.singleton $ annotNil
-                $ ISet vDst (XVar (Var (NameLocal n') t'))
-
-convExpM pp _ _ _ vDst (C.XCon _ dc)
- | Just n       <- C.takeNameOfDaCon dc
- = case n of
-        A.NameNat i
-         -> return $ Seq.singleton $ annotNil
-                   $ ISet vDst (XLit (LitInt (tNat pp) i))
-
-        A.NameInt  i
-         -> return $ Seq.singleton $ annotNil
-                   $ ISet vDst (XLit (LitInt (tInt pp) i))
-
-        A.NameWord w bits
-         -> return $ Seq.singleton $ annotNil
-                   $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
-
-        _ -> die "invalid literal"
-
-convExpM pp kenv tenv mdsup dst xx@C.XApp{}
+convExpM pp kenv tenv mdsup vDst xx
+ = case xx of
+        C.XVar _ u@(C.UName (A.NameVar n))
+         | Just t       <- Env.lookup u tenv
+         -> do  let n'  = A.sanitizeName n
+                let t'  = convType pp kenv t
+                return  $ Seq.singleton $ annotNil
+                        $ ISet vDst (XVar (Var (NameLocal n') t'))
         
-        -- Call to primop.
-        | Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), args) <- takeXApps xx
-        = convPrimCallM pp kenv tenv mdsup (Just dst) p tPrim args
+        C.XCon _ dc
+         | Just n       <- C.takeNameOfDaCon dc
+         -> case n of
+                A.NameNat i
+                 -> return $ Seq.singleton $ annotNil
+                           $ ISet vDst (XLit (LitInt (tNat pp) i))
 
-        -- Call to top-level super.
-        | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
-        , Just (Var nFun _)                <- takeGlobalV pp kenv tenv xFun
-        , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
+                A.NameInt  i
+                 -> return $ Seq.singleton $ annotNil
+                           $ ISet vDst (XLit (LitInt (tInt pp) i))
+
+                A.NameWord w bits
+                 -> return $ Seq.singleton $ annotNil
+                           $ ISet vDst (XLit (LitInt (TInt $ fromIntegral bits) w))
+
+                _ -> die "invalid literal"
+
+        C.XApp{}
+         -- Call to primop.
+         | Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), args) <- takeXApps xx
+         -> convPrimCallM pp kenv tenv mdsup (Just vDst) p tPrim args
+
+         -- Call to top-level super.
+         | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
+         , Just (Var nFun _)                <- takeGlobalV pp kenv tenv xFun
+         , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
                                 $  eraseTypeWitArgs xsArgs
-        , Just tSuper           <- Env.lookup u tenv
-        = let   (_, tResult)    = convSuperType pp kenv tSuper
+         , Just tSuper           <- Env.lookup u tenv
+         -> let   (_, tResult)    = convSuperType pp kenv tSuper
+ 
+            in    return $ Seq.singleton $ annotNil
+                         $ ICall (Just vDst) CallTypeStd 
+                           tResult nFun xsArgs_value' []
 
-          in    return $ Seq.singleton $ annotNil
-                       $ ICall (Just dst) CallTypeStd 
-                         tResult nFun xsArgs_value' []
+        C.XCast _ _ x
+         -> convExpM pp kenv tenv mdsup vDst x
 
-convExpM _ _ _ _ _ xx
-        = die $ "invalid expression " ++ show xx
+        _ -> die $ "invalid expression " ++ show xx
 
