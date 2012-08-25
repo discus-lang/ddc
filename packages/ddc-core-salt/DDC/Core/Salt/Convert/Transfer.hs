@@ -96,7 +96,7 @@ transSuper tails xx
 
         XLet  a lts x   -> XLet  a (transL tails lts) (down x)
         XCase a x alts  -> XCase a (transX tails x) (map (transA tails) alts)
-        XCast a c x     -> XCast a c (transX tails x)
+        XCast a c x     -> XCast a c (transSuper tails x)
         XType{}         -> xx
         XWitness{}      -> xx
 
