@@ -20,7 +20,6 @@ import DDCI.Core.Command.ToC
 import DDCI.Core.Command.ToLlvm
 import DDCI.Core.Command.With
 import DDCI.Core.State
-import Data.Char (isAlphaNum)
 import Data.List
 
 
@@ -65,6 +64,8 @@ data Command
 
 
 -- | Names used to invoke each command.
+--   Short names that form prefixes of other ones must come later
+--   in the list. Eg ':with-lite' after ':with'
 commands :: [(String, Command)]
 commands 
  =      [ (":help",             CommandHelp)
@@ -93,9 +94,9 @@ commands
         , (":to-salt",          CommandToSalt)
         , (":to-c",             CommandToC)
         , (":to-llvm",          CommandToLlvm) 
-        , (":with",             CommandWith)
         , (":with-lite",        CommandWithLite)
-        , (":with-salt",        CommandWithSalt) ]
+        , (":with-salt",        CommandWithSalt) 
+        , (":with",             CommandWith) ]
 
 
 -- | Read the command from the front of a string.
@@ -106,8 +107,7 @@ readCommand ss
 
         | (cmd, rest) : _ <- [ (cmd, drop (length str) ss) 
                                         | (str, cmd)      <- commands
-                                        , isPrefixOf str ss
-					, checkSeparator $ drop (length str) ss]
+                                        , isPrefixOf str ss ]
         = Just (cmd, rest)
 
         | ':' : _       <- ss
@@ -115,14 +115,6 @@ readCommand ss
 
         | otherwise
         = Nothing
- where
-	-- check it's the end of the word, so ":with-lite" isn't read as ":with".
-	checkSeparator []	= True
-	checkSeparator (c:_)
-	    | not $ isAlphaNum c
-	    , c /= '-'
-	    = True
-	checkSeparator _	= False
 
 
 -- Commands -------------------------------------------------------------------
@@ -248,7 +240,10 @@ handleCmd1 state cmd source line
 
         CommandWith
          ->     cmdWith state source line
+
         CommandWithLite
          ->     cmdWithLite state source line
+
         CommandWithSalt
          ->     cmdWithSalt state source line
+

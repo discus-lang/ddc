@@ -51,7 +51,7 @@ readInput ss
         | isPrefixOf ".." ss
         = (InputBlock, drop 2 ss)
 
-        | isPrefixOf "-" ss
+        | isPrefixOf "<" ss
         , filePath      <- dropWhile isSpace (drop 1 ss)
         = (InputFile filePath, drop (length filePath) ss)
 
