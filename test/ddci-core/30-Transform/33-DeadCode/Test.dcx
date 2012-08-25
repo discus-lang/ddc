@@ -1,0 +1,60 @@
+:set TraceTrans
+:set Indent
+
+:set trans fix 5 (DeadCode)
+
+-- No effects
+:trans..
+let x = 5 [R0#] ()	in
+let y = 5 [R0#] ()	in
+let z = 5 [R0#] ()	in
+()
+;;
+
+-- Doesn't work for anonymous
+:trans..
+let ^ = 5 [R0#] ()	in
+let ^ = 5 [R0#] ()	in
+let ^ = 5 [R0#] ()	in
+()
+;;
+
+-- Works for unnamed
+:trans..
+let _ = 5 [R0#] ()	in
+let _ = 5 [R0#] ()	in
+let _ = 5 [R0#] ()	in
+()
+;;
+
+
+-- Use one of them
+:trans..
+let x = 5 [R0#] ()	in
+let y = 5 [R0#] ()	in
+y
+;;
+
+-- Make mutable, but no update
+:trans..
+letregion r with {w : Mutable r} in
+let x = 5 [r] ()		 in
+()
+;;
+
+-- Do an update - update name is unmentioned
+:trans..
+letregion r with {w : Mutable r}		in
+let x = 5 [r] ()				in
+let y = updateInt [:r r:] <w> x (2 [r] ())	in
+copyInt [:r R0#:] x
+;;
+
+-- TODO Doesn't cascade, because of the weakclo produced...
+:trans..
+let x = 5 [R0#] ()			in
+let y = addInt [:R0# R0# R0#:] x x	in
+let z = subInt [:R0# R0# R0#:] y x	in
+()
+;;
+
