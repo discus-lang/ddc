@@ -91,11 +91,17 @@ copyInt [r] [R0#] x
         DeadCode:
             Removed:        1;
         DeadCode:
+            Removed:        1;
+        DeadCode:
+            Removed:        1;
+        DeadCode:
             Removed:        0
 
-let x : Int R0# = 5 [R0#] () in
-let y : Int R0# = addInt [R0#] [R0#] [R0#] x x in
 weakeff [Read R0# + Alloc R0#] in
-weakclo {x; y; subInt} in
+weakclo {} in
+weakeff [Read R0# + Alloc R0#] in
+weakclo {5 [R0#] (); addInt} in
+weakeff [Read R0# + Alloc R0#] in
+weakclo {5 [R0#] (); addInt [R0#] [R0#] [R0#] (5 [R0#] ()) (5 [R0#] ()); subInt} in
 ()
 

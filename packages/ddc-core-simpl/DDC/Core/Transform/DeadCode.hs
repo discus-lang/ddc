@@ -20,6 +20,7 @@ import qualified DDC.Type.Compounds			as T
 import qualified DDC.Type.Env				as T
 import qualified DDC.Type.Sum				as TS
 import qualified DDC.Type.Transform.Crush		as T
+import qualified DDC.Core.Transform.SubstituteXX	as S
 
 deadCode
 	:: (Show a, Show n, Ord n, Pretty n)
@@ -42,15 +43,18 @@ deadCode profile kenv tenv xx
 
 
 transformTypeUsage profile kenv tenv trans xx
- | Right (xx1,_,_,_) <- checkExp (configOfProfile profile) kenv tenv xx
- , (_,xx2)	     <- usageX xx1
- , (x', info)	     <- runWriter (trans xx2)
- , x''		     <- reannotate (\(_, AnTEC { annotTail = a}) -> a) x'
- = (x'', info)
+ = case checkExp (configOfProfile profile) kenv tenv xx of
+    Right (xx1,_,_,_) ->
+     let (_,xx2)    = usageX xx1
+         (x', info) = runWriter (trans xx2)
+         x''	    = reannotate (\(_, AnTEC { annotTail = a}) -> a) x'
+     in (x'', info)
 
- -- TODO: There was an error typechecking
- | otherwise
- = error "Unable to typecheck!?"
+     -- TODO: There was an error typechecking
+    Left err ->
+     error ("Unable to typecheck!?"
+	++ "\n"
+	++ renderIndent (ppr err))
 
 
 
@@ -69,11 +73,13 @@ deadCodeTrans _ _ xx
      | isUnused b um
      , isDead   $ annotEffect antec
      -> do
+	-- Substitute value in anyway, in case it's used in a cast.
+	let x2' = S.substituteXX b x1 x2
 	tell mempty{infoRemoved = 1}
 	return $
 	    XCast a (CastWeakenEffect $ annotEffect antec)
 	  $ XCast a (weakClo a x1)
-	  $ x2
+	  $ x2'
 
     _ -> return xx
 
@@ -92,9 +98,8 @@ deadCodeTrans _ _ xx
 
     isUnused (BName n _) um
      = case Map.lookup n um of
-	Just [UsedNone] -> True
-	Nothing		-> True
-	_		-> False
+	Just useds -> filterUsedInCasts useds == []
+	Nothing	   -> True
 
     isUnused (BNone _) _ = True
     isUnused _	   _     = False
