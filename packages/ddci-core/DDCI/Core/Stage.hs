@@ -34,6 +34,7 @@ import Data.Maybe
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Simplifier            as S
+import qualified DDC.Core.Simplifier.Recipe     as S
 import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt
@@ -95,12 +96,11 @@ stageLiteOpt state source pipes
                         (Map.elems (stateWithLite state)))
 
         -- hrm. Want a fixpoint here.
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward <> S.Trans S.Bubble
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward <> S.Trans S.Bubble
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward <> S.Trans S.Bubble
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeLite <> S.Trans S.Forward <> S.Trans S.Bubble
-        <> normalizeLite
-        )
+        <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
+        <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
+        <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
+        <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
+        <> normalizeLite)
 
         -- TODO: Inlining isn't preserving type annots, 
         --       so need to recheck the module before Lite -> Salt conversion.
@@ -130,10 +130,10 @@ stageSaltOpt state source pipes
                         (Map.elems (stateWithSalt state)))
 
         -- hrm. Want a fixpoint here.
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward <> S.Trans S.Bubble
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward <> S.Trans S.Bubble
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward <> S.Trans S.Bubble
-        <> S.Trans S.Beta <> S.Trans S.Flatten <> normalizeSalt <> S.Trans S.Forward <> S.Trans S.Bubble
+        <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
+        <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
+        <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
+        <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
         <> normalizeSalt)
 
         ( PipeCoreOutput (dump state source "dump.salt-opt.dcl")
