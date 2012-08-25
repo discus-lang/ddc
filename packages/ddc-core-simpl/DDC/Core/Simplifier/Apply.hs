@@ -16,6 +16,7 @@ import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.Snip
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Beta
+import DDC.Core.Transform.DeadCode
 import DDC.Core.Transform.Forward
 import DDC.Core.Transform.Bubble
 import DDC.Core.Transform.Inline
@@ -70,6 +71,7 @@ applyTransform spec mm
         Namify namK namT -> namifyUnique namK namT mm
         Inline getDef    -> return $ inline getDef mm
         Rewrite{}        -> error "applyTransform: rewrite doesn't work on modules yet"
+        DeadCode{}       -> error "applyTransform: DeadCode doesn't work on modules yet"
 
 
 -- Expressions ----------------------------------------------------------------
@@ -189,7 +191,7 @@ applyTransformX
         -> Exp a n              -- ^ Exp  to transform.
         -> State s (TransformResult (Exp a n))
 
-applyTransformX _profile _kenv _tenv spec xx
+applyTransformX profile kenv tenv spec xx
  = case spec of
         Id                -> res xx
         Anonymize         -> res $ anonymizeX xx
@@ -198,6 +200,7 @@ applyTransformX _profile _kenv _tenv spec xx
         Inline  getDef    -> res $ inline getDef xx
         Beta              -> return $ betaReduce False xx
         BetaLets          -> return $ betaReduce True  xx
+        DeadCode          -> return $ deadCode profile kenv tenv xx
         Forward           -> return $ forwardX xx
         Bubble            -> res $ bubbleX xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res

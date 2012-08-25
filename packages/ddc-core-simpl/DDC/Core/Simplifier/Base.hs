@@ -56,6 +56,9 @@ data Transform s a n
         -- | Perform beta reduction, turning non-atomic arguments into lets.
         | BetaLets
 
+        -- | Remove unused and non-effectful let bindings
+        | DeadCode
+
         -- | Carry function bindings forward into their use sites.
         | Forward
 
@@ -131,6 +134,7 @@ instance Pretty (Transform s a n) where
         Flatten         -> text "Flatten"
         Beta            -> text "Beta"
         BetaLets        -> text "BetaLets"
+        DeadCode        -> text "DeadCode"
         Forward         -> text "Forward"
         Bubble          -> text "Bubble"
         Inline{}        -> text "Inline"
