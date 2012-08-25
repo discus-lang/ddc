@@ -16,6 +16,8 @@ import Control.Monad.Writer	(Writer, runWriter, tell)
 import Data.Monoid		(Monoid, mempty, mappend)
 import Data.Typeable		(Typeable)
 
+import qualified DDC.Core.Transform.SubstituteXX	as S
+
 forwardModule 
         :: (Show n, Ord n)
         => Module a n -> Module a n
@@ -97,6 +99,14 @@ instance Forward Exp where
 	    tell mempty { infoBindings = 1 }
 	    x1'           <- down x1
             forwardWith (Map.insert n x1' bindings) x2
+
+	-- Always forward atomic bindings (variables, constructors)
+        XLet _ (LLet _mode b x1) x2
+	 | isAtomX x1
+	 -> do
+	    tell mempty { infoBindings = 1 }
+	    -- Slow, but handles anonymous binders and shadowing
+	    down $ S.substituteXX b x1 x2
 
         XLet (_, a') lts x     
          -> liftM2 (XLet a') (down lts) (down x)

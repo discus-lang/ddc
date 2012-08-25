@@ -62,7 +62,7 @@ ok
         Bubble: No information;
         Forward:
             Substitutions:  0
-            Bindings:       0;
+            Bindings:       1;
         Beta reduction:
             Types:          0
             Witnesses:      0
@@ -70,7 +70,43 @@ ok
             Values letted:  0
             Values skipped: 0;
         Rules fired:
-            ;
+            Unfold:  unboxInt_boxInt;
+        Bubble: No information;
+        Forward:
+            Substitutions:  0
+            Bindings:       1;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Rules fired:
+            Unfold:  unboxInt_boxInt;
+        Bubble: No information;
+        Forward:
+            Substitutions:  0
+            Bindings:       1;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Rules fired:
+            Unfold:  unboxInt_boxInt;
+        Bubble: No information;
+        Forward:
+            Substitutions:  0
+            Bindings:       1;
+        Beta reduction:
+            Types:          0
+            Witnesses:      0
+            Values:         0
+            Values letted:  0
+            Values skipped: 0;
+        Rules fired:
+            Unfold:  unboxInt_boxInt;
         Bubble: No information
 
 letrec {
