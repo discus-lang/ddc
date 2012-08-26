@@ -25,6 +25,7 @@ import DDC.Core.Transform.Rewrite
 import DDC.Type.Env                     (Env)
 import Control.Monad.State.Strict
 import qualified DDC.Base.Pretty	as P
+import qualified DDC.Type.Env           as Env
 import Data.Typeable (Typeable)
 
 
@@ -212,7 +213,7 @@ applyTransformX profile kenv tenv spec xx
         BetaLets          -> return $ betaReduce True  xx
         DeadCode          -> return $ deadCode profile kenv tenv xx
         Forward           -> return $ forwardX xx
-        Bubble            -> res $ bubbleX xx
+        Bubble            -> res $ bubbleX Env.empty xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
         Rewrite rules     -> return $ rewrite rules xx
  where
