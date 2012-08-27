@@ -61,7 +61,8 @@ builders config
  =      [ builder_X8632_Darwin config
         , builder_X8664_Darwin config
         , builder_X8632_Linux  config 
-        , builder_X8664_Linux  config ]
+        , builder_X8664_Linux  config
+        , builder_PPC32_Linux  config ]
 
 
 defaultBuilderConfig
@@ -91,6 +92,9 @@ determineDefaultBuilder config
 
 	 Just (Platform ArchX86_64 OsLinux)
 		-> return $ Just (builder_X8664_Linux  config)
+
+	 Just (Platform ArchPPC_32 OsLinux)
+		-> return $ Just (builder_PPC32_Linux  config)
 
 	 Just (Platform ArchX86_32 OsCygwin)
 		-> return $ Just (builder_X8632_Cygwin config)
@@ -224,6 +228,38 @@ builder_X8664_Linux config
                 = \oFile binFile
                 -> doCmd "linker" 
                 $  "gcc -m64" 
+                ++ " -o " ++ binFile
+                ++ " "    ++ oFile
+                ++ " "    ++ (builderConfigRuntime config </> "libddc-runtime.so")
+        }
+
+
+-- ppc32-linux ---------------------------------------------------------------
+builder_PPC32_Linux config
+ =      Builder
+        { builderName   = "ppc32-linux"
+        , buildHost     = Platform ArchPPC_32 OsLinux
+        , buildTarget   = Platform ArchPPC_32 OsLinux
+        , buildSpec     = Llvm.platform32
+
+        , buildLlc    
+                = \llFile sFile
+                -> doCmd "LLVM compiler"
+                $ "llc -O3 -march=ppc32 -relocation-model=pic" 
+                ++ " "    ++ llFile 
+                ++ " -o " ++ sFile
+
+        , buildAs
+                = \sFile oFile
+                -> doCmd "assembler"
+                $  "as"
+                ++ " -o " ++ oFile
+                ++ " "    ++ sFile  
+
+        , buildLdExe  
+                = \oFile binFile
+                -> doCmd "linker"
+                $  "gcc -m32" 
                 ++ " -o " ++ binFile
                 ++ " "    ++ oFile
                 ++ " "    ++ (builderConfigRuntime config </> "libddc-runtime.so")
