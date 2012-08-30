@@ -44,7 +44,7 @@ instance Reannotate Lets where
     in case xx of
         LLet m b x       -> LLet m b (down x)
         LRec bxs         -> LRec [(b, down x) | (b, x) <- bxs]
-        LLetRegion  b bs -> LLetRegion  b bs
+        LLetRegions b bs -> LLetRegions b bs
         LWithRegion b    -> LWithRegion b
 
 

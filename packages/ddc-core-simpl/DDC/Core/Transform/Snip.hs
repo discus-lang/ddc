@@ -95,9 +95,9 @@ enterX arities xx
             in  XLet a (LRec $ zip bs xs') x2' 
 
         -- letregion, just make sure we record bindings with dummy val.
-        XLet a (LLetRegion b bs) x2
+        XLet a (LLetRegions b bs) x2
          -> let ars = zip bs (repeat 0) 
-            in  XLet a (LLetRegion b bs) (down ars x2)
+            in  XLet a (LLetRegions b bs) (down ars x2)
 
         -- withregion
         XLet a (LWithRegion b) z2

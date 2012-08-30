@@ -307,8 +307,8 @@ convBodyM kenv tenv mdsup blocks label instrs xx
                 convBodyM kenv tenv mdsup blocks label (instrs >< instrs') x2
 
          -- Letregions
-         C.XLet _ (C.LLetRegion b _) x2
-          -> do let kenv' = Env.extend b kenv
+         C.XLet _ (C.LLetRegions b _) x2
+          -> do let kenv' = Env.extends b kenv
                 convBodyM kenv' tenv mdsup blocks label instrs x2
 
          -- Case statement.

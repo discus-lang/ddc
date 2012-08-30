@@ -165,6 +165,7 @@ data TokAtom
         | KLet
         | KLazy
         | KLetRec
+        | KLetRegions
         | KLetRegion
         | KWithRegion
         | KCase
@@ -265,7 +266,8 @@ describeTokAtom' ta
         KLet                    -> (Keyword, "let")
         KLazy                   -> (Keyword, "lazy")
         KLetRec                 -> (Keyword, "letrec")
-        KLetRegion              -> (Keyword, "letregion")
+        KLetRegions             -> (Keyword, "letregions")
+        KLetRegion             -> (Keyword, "letregion")
         KWithRegion             -> (Keyword, "withregion")
         KCase                   -> (Keyword, "case")
         KOf                     -> (Keyword, "of")

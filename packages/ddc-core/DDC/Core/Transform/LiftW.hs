@@ -108,8 +108,8 @@ liftAtDepthXLets n d lts
                 bs' = map (\(b,e) -> (b, liftAtDepthW n (d+inc) e)) bs
             in  (LRec bs', inc)
 
-        LLetRegion _b bs -> (lts, countBAnons bs)
-        LWithRegion _    -> (lts, 0)
+        LLetRegions _b bs -> (lts, countBAnons bs)
+        LWithRegion _     -> (lts, 0)
 
 
 countBAnons = length . filter isAnon

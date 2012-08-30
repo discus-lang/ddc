@@ -51,10 +51,10 @@ import DDC.Core.Exp
 bindsOfLets :: Lets a n -> ([Bind n], [Bind n])
 bindsOfLets ll
  = case ll of
-        LLet _ b _        -> ([],  [b])
-        LRec bxs          -> ([],  map fst bxs)
-        LLetRegion   b bs -> ([b], bs)
-        LWithRegion{}     -> ([],  [])
+        LLet _ b _         -> ([],  [b])
+        LRec bxs           -> ([],  map fst bxs)
+        LLetRegions bs bbs -> (bs, bbs)
+        LWithRegion{}      -> ([],  [])
 
 
 -- | Like `bindsOfLets` but only take the type binders.
@@ -63,7 +63,7 @@ specBindsOfLets ll
  = case ll of
         LLet _ _ _       -> []
         LRec _           -> []
-        LLetRegion b _   -> [b]
+        LLetRegions bs _ -> bs
         LWithRegion{}    -> []
 
 
@@ -73,7 +73,7 @@ valwitBindsOfLets ll
  = case ll of
         LLet _ b _       -> [b]
         LRec bxs         -> map fst bxs
-        LLetRegion _ bs  -> bs
+        LLetRegions _ bs -> bs
         LWithRegion{}    -> []
 
 

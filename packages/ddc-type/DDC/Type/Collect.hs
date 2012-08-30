@@ -120,7 +120,7 @@ data BindWay
         | BindLam
         | BindLet
         | BindLetRec
-        | BindLetRegion
+        | BindLetRegions
         | BindLetRegionWith
         | BindCasePat
         deriving (Eq, Show)
@@ -142,7 +142,7 @@ boundLevelOfBindWay way
         BindLam                 -> BoundExpWit
         BindLet                 -> BoundExpWit
         BindLetRec              -> BoundExpWit
-        BindLetRegion           -> BoundSpec
+        BindLetRegions          -> BoundSpec
         BindLetRegionWith       -> BoundExpWit
         BindCasePat             -> BoundExpWit
 

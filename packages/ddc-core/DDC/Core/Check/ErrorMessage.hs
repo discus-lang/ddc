@@ -176,27 +176,27 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
 
 
         -- Letregion --------------------------------------
-        ErrorLetRegionNotRegion xx b k
-         -> vcat [ text "Letregion binder does not have region kind."
-                 , text "        Region binder: "       <> ppr b
-                 , text "             has kind: "       <> ppr k
-                 , text "       but is must be: %" 
+        ErrorLetRegionsNotRegion xx bs ks
+         -> vcat [ text "Letregion binders do not have region kind."
+                 , text "        Region binders: "       <> (hcat $ map ppr bs)
+                 , text "             has kinds: "       <> (hcat $ map ppr ks)
+                 , text "       but they must all be: %" 
                  , empty
-                 , text "with: "                        <> align (ppr xx) ]
+                 , text "with: "                         <> align (ppr xx) ]
 
-        ErrorLetRegionRebound xx b
-         -> vcat [ text "Region variable shadows existing one."
-                 , text "           Region variable: "  <> ppr b
-                 , text "     is already in environment"
+        ErrorLetRegionsRebound xx bs
+         -> vcat [ text "Region variables shadow existing ones."
+                 , text "           Region variables: "  <> (hcat $ map ppr bs)
+                 , text "     are already in environment"
                  , empty
-                 , text "with: "                        <> align (ppr xx) ]
+                 , text "with: "                         <> align (ppr xx) ]
 
-        ErrorLetRegionFree xx b t
-         -> vcat [ text "Region variable escapes scope of letregion."
-                 , text "       The region variable: "  <> ppr b
-                 , text "  is free in the body type: "  <> ppr t
+        ErrorLetRegionFree xx bs t
+         -> vcat [ text "Region variables escape scope of letregion."
+                 , text "       The region variables: "  <> (hcat $ map ppr bs)
+                 , text "  is free in the body type: "   <> ppr t
                  , empty
-                 , text "with: "                        <> align (ppr xx) ]
+                 , text "with: "                         <> align (ppr xx) ]
         
         ErrorLetRegionWitnessInvalid xx b
          -> vcat [ text "Invalid witness type with letregion."
@@ -212,9 +212,9 @@ instance (Show a, Pretty n, Show n, Eq n) => Pretty (Error a n) where
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLetRegionWitnessOther xx b1 b2
-         -> vcat [ text "Witness type is not for bound region."
-                 , text "      letregion binds: "       <> ppr b1
+        ErrorLetRegionsWitnessOther xx bs1 b2
+         -> vcat [ text "Witness type is not for bound regions."
+                 , text "      letregion binds: "       <> (hcat $ map ppr bs1)
                  , text "  but witness type is: "       <> ppr b2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]

@@ -8,7 +8,7 @@ module DDC.Type.Rewrite
         , pushBinds
         , substBound
 
-        , bind1, bind0, bind0s
+        , bind1, bind1s, bind0, bind0s
         , use1,  use0)
 where
 import DDC.Type.Compounds
@@ -153,6 +153,9 @@ bind1 :: Ord n => Sub n -> Bind n -> (Sub n, Bind n)
 bind1 sub b 
  = let  (stackT', b')     = pushBind (subConflict1 sub) (subStack1 sub) b
    in   (sub { subStack1  = stackT' }, b')
+
+bind1s :: Ord n => Sub n -> [Bind n] -> (Sub n, [Bind n])
+bind1s = mapAccumL bind1
 
 
 -- | Push a level-0 binder on the rewrite stack.

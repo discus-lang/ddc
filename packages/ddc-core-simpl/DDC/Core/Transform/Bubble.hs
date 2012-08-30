@@ -111,7 +111,7 @@ instance Bubble Lets where
 
             in  ([], LRec bxs')
 
-        LLetRegion{}            -> ([], lts)
+        LLetRegions{}           -> ([], lts)
         LWithRegion{}           -> ([], lts)
 
 

@@ -300,8 +300,8 @@ step store (XLet _ (LRec bxs) x2)
 
 -- (EvCreateRegion)
 -- Create a new region.
-step store (XLet a (LLetRegion bRegion bws) x)
-        | Just uRegion  <- takeSubstBoundOfBind bRegion
+step store (XLet a (LLetRegions bRegions bws) x)
+        | Just uRegions <- takeSubstBoundsOfBinds bRegions
 
         -- Allocate a new region handle for the bound region.
         , (store1, uHandle@(UPrim (NameRgn rgn) _))
@@ -309,7 +309,9 @@ step store (XLet a (LLetRegion bRegion bws) x)
         , tHandle       <- TCon $ TyConBound uHandle kRegion
 
         -- Substitute handle into the witness types.
-        , bws'          <- map (substituteBoundTX uRegion tHandle) bws
+        , bws'          <- concatMap 
+                                 (\uRegion -> map (substituteBoundTX uRegion tHandle) bws) 
+                                 uRegions
 
         -- Build witnesses for each of the witness types.
         -- This can fail if the set of witness signatures is malformed.
@@ -318,8 +320,11 @@ step store (XLet a (LLetRegion bRegion bws) x)
                         $  map typeOfBind bws'
 
         = let   -- Substitute handle and witnesses into body.
-                x'      = substituteBoundTX  uRegion tHandle
-                        $ substituteWXs (zip bws' wits)  x
+                substituteBoundTX' xx u
+                        = substituteBoundTX u tHandle xx                
+                        
+                x'      = substituteWXs (zip bws' wits)  x
+                x''     = foldl substituteBoundTX' x' uRegions
 
                 isGlobalBind b
                  = case typeOfBind b of
@@ -332,7 +337,7 @@ step store (XLet a (LLetRegion bRegion bws) x)
                                 then setGlobal rgn store1
                                 else store1
 
-          in    StepProgress store2 (XLet a (LWithRegion uHandle) x')
+          in    StepProgress store2 (XLet a (LWithRegion uHandle) x'')
 
         -- Region binder was a wildcard, so we can't create the region handle.
         --  No witness sigs can be in the set, because any sig would need

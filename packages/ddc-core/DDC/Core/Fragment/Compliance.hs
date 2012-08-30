@@ -175,9 +175,9 @@ instance Show a => Complies (Exp a) where
                 return (tUseds, vUseds')
 
 
-        XLet _ (LLetRegion r bs) x2
+        XLet _ (LLetRegions rs bs) x2
          -> do  (tUsed2, vUsed2) 
-                 <- compliesX profile   (Env.extend  r  kenv) 
+                 <- compliesX profile   (Env.extends rs  kenv) 
                                         (Env.extends bs tenv) 
                                         (reset context) x2
                 return (tUsed2, vUsed2)

@@ -291,11 +291,11 @@ convertLetsX pp defs kenv tenv lts
         LLet LetLazy{} _ _
          ->     error "DDC.Core.Lite.Convert.toSaltX: XLet lazy not handled yet"
 
-        LLetRegion b bs
-         -> do  b'              <- convertB kenv b
-                let kenv'       = Env.extend b kenv
+        LLetRegions b bs
+         -> do  b'              <- mapM (convertB kenv) b
+                let kenv'       = Env.extends b kenv
                 bs'             <- mapM (convertB kenv') bs
-                return  $ LLetRegion b' bs'
+                return  $ LLetRegions b' bs'
   
         LWithRegion{}
          ->     throw $ ErrorMalformed "LWithRegion should not appear in Lite code."

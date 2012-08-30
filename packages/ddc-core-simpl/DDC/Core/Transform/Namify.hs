@@ -151,11 +151,11 @@ instance Namify (Exp a) where
                 x2'             <- namify tnam xnam' x2
                 return $ XLet a (LRec (zip bs' xs')) x2'
 
-        XLet a (LLetRegion b bs) x2
-         -> do  (tnam', b')     <- pushT tnam b
+        XLet a (LLetRegions b bs) x2
+         -> do  (tnam', b')     <- pushTs tnam b
                 (xnam', bs')    <- pushXs tnam' xnam bs
                 x2'             <- namify tnam' xnam' x2
-                return $ XLet a (LLetRegion b' bs') x2'
+                return $ XLet a (LLetRegions b' bs') x2'
 
         XLet a (LWithRegion u) x2
          -> do  u'              <- rewriteX tnam xnam u
@@ -271,6 +271,17 @@ pushT   :: Ord n
         -> State s (Namifier s n, Bind n)
 pushT   = push
 
+
+pushTs  :: Ord n
+        => Namifier s n
+        -> [Bind n]
+        -> State s (Namifier s n, [Bind n])
+pushTs  tnam [] = return (tnam, [])
+pushTs  tnam (b:bs)
+ = do (tnam1, b')  <- pushT  tnam  b
+      (tnam2, bs') <- pushTs tnam1 bs
+      return (tnam2, b' : bs')
+        
 
 -- | Rewrite an anonymous binder and push it on the stack.
 push    :: Ord n 

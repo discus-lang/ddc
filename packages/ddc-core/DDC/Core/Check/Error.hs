@@ -149,24 +149,24 @@ data Error a n
 
 
         -- Letregion --------------------------------------
-        -- | A letregion-expression where the bound variable does not have
-        --   region kind.
-        | ErrorLetRegionNotRegion
+        -- | A letregion-expression where the some of the bound variables do not
+        --   have region kind.
+        | ErrorLetRegionsNotRegion
         { errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorKind             :: Kind n }
+        , errorBinds            :: [Bind n]
+        , errorKinds            :: [Kind n] }
 
-        -- | A letregion-expression that tried to shadow a pre-existing named
-        --   region variable.
-        | ErrorLetRegionRebound
+        -- | A letregion-expression that tried to shadow some pre-existing named
+        --   region variables.
+        | ErrorLetRegionsRebound
         { errorChecking         :: Exp a n
-        , errorBind             :: Bind n }
+        , errorBinds            :: [Bind n] }
 
-        -- | A letregion-expression where the bound region variable is free in
-        --  the type of the body.
+        -- | A letregion-expression where some of the the bound region variables
+        --   are free in the type of the body.
         | ErrorLetRegionFree
         { errorChecking         :: Exp a n
-        , errorBind             :: Bind n
+        , errorBinds            :: [Bind n]
         , errorType             :: Type n }
 
         -- | A letregion-expression that tried to create a witness with an 
@@ -183,9 +183,9 @@ data Error a n
 
         -- | A letregion-expression where a bound witnesses was not for the
         --   the region variable being introduced.
-        | ErrorLetRegionWitnessOther
+        | ErrorLetRegionsWitnessOther
         { errorChecking         :: Exp a n
-        , errorBoundRegion      :: Bound n
+        , errorBoundRegions     :: [Bound n]
         , errorBindWitness      :: Bind  n }
 
         -- | A letregion-expression where the witness binding references some

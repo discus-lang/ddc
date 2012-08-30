@@ -355,32 +355,33 @@ checkExpM' config kenv tenv xx@(XLet a lts x2)
 
 
 -- letregion --------------------------------------
-checkExpM' config kenv tenv xx@(XLet a (LLetRegion b bs) x)
- = case takeSubstBoundOfBind b of
-     Nothing     -> checkExpM config kenv tenv x
-     Just u
+checkExpM' config kenv tenv xx@(XLet a (LLetRegions b bs) x)
+ = case (takeSubstBoundsOfBinds b) of
+     Nothing -> checkExpM config kenv tenv x     
+     Just us
       -> do
-        -- Check the type on the region binder.
-        let k   = typeOfBind b
-        checkTypeM config kenv k
+        -- Check the type on the region binders.
+        let ks   = map typeOfBind b
+        mapM_ (checkTypeM config kenv) ks
 
-        -- The binder must have region kind.
-        when (not $ isRegionKind k)
-         $ throw $ ErrorLetRegionNotRegion xx b k
+        -- The binders must have region kind.
+        when (any (not . isRegionKind) ks) 
+         $ throw $ ErrorLetRegionsNotRegion xx b ks
 
         -- We can't shadow region binders because we might have witnesses
         -- in the environment that conflict with the ones created here.
-        when (Env.memberBind b kenv)
-         $ throw $ ErrorLetRegionRebound xx b
+        let rebounds = filter (flip Env.memberBind kenv) b
+        when (not $ null rebounds)
+         $ throw $ ErrorLetRegionsRebound xx rebounds
         
         -- Check the witness types.
-        let kenv'       = Env.extend b kenv
+        let kenv'       = Env.extends b kenv
         let tenv'       = Env.lift 1 tenv
         mapM_ (checkTypeM config kenv') $ map typeOfBind bs
 
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
-        checkWitnessBindsM kenv xx u bs
+        checkWitnessBindsM kenv xx us bs
 
         -- Check the body expression.
         let tenv2       = Env.extends bs tenv'
@@ -393,23 +394,24 @@ checkExpM' config kenv tenv xx@(XLet a (LLetRegion b bs) x)
 
         -- The bound region variable cannot be free in the body type.
         let fvsT         = freeT Env.empty tBody
-        when (Set.member u fvsT)
+        when (any (flip Set.member fvsT) us)
          $ throw $ ErrorLetRegionFree xx b tBody
         
         -- Delete effects on the bound region from the result.
-        let effs'       = Sum.delete (tRead  (TVar u))
+        let delEff es u = Sum.delete (tRead  (TVar u))
                         $ Sum.delete (tWrite (TVar u))
                         $ Sum.delete (tAlloc (TVar u))
-                        $ effs
+                        $ es
+        let effs'       = foldl delEff effs us 
 
         -- Delete the bound region variable from the closure.
         -- Mask closure terms due to locally bound region vars.
-        let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureT b)
-                        $ Set.toList clo
+        let cutClo c r  = mapMaybe (cutTaggedClosureT r) c
+        let c2_cut      = Set.fromList 
+                        $ foldl cutClo (Set.toList clo) b
 
         returnX a
-                (\z -> XLet z (LLetRegion b bs) xBody')
+                (\z -> XLet z (LLetRegions b bs) xBody')
                 (lowerT 1 tBody)
                 (lowerT 1 effs')
                 c2_cut
@@ -935,21 +937,21 @@ mergeAnnot xx tAnnot tActual
 
 -------------------------------------------------------------------------------
 -- | Check the set of witness bindings bound in a letregion for conflicts.
-checkWitnessBindsM :: (Show n, Ord n) => Env n -> Exp a n -> Bound n -> [Bind n] -> CheckM a n ()
-checkWitnessBindsM kenv xx nRegion bsWits
- = mapM_ (checkWitnessBindM kenv xx nRegion bsWits) bsWits
+checkWitnessBindsM :: (Show n, Ord n) => Env n -> Exp a n -> [Bound n] -> [Bind n] -> CheckM a n ()
+checkWitnessBindsM kenv xx nRegions bsWits
+ = mapM_ (checkWitnessBindM kenv xx nRegions bsWits) bsWits
 
 
 checkWitnessBindM 
         :: (Show n, Ord n)
         => Env n
         -> Exp a n
-        -> Bound n              -- ^ Region variable bound in the letregion.
+        -> [Bound n]            -- ^ Region variables bound in the letregion.
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> Bind  n              -- ^ The witness binding to check.
         -> CheckM a n ()
 
-checkWitnessBindM kenv xx uRegion bsWit bWit
+checkWitnessBindM kenv xx uRegions bsWit bWit
  = let btsWit   
         = [(typeOfBind b, b) | b <- bsWit]
 
@@ -958,12 +960,12 @@ checkWitnessBindM kenv xx uRegion bsWit bWit
        checkWitnessArg t
         = case t of
             TVar u'
-             | uRegion /= u'    -> throw $ ErrorLetRegionWitnessOther xx uRegion bWit
-             | otherwise        -> return ()
+             | all (/= u') uRegions -> throw $ ErrorLetRegionsWitnessOther xx uRegions bWit
+             | otherwise            -> return ()
 
             TCon (TyConBound u' _)
-             | uRegion /= u'    -> throw $ ErrorLetRegionWitnessOther xx uRegion bWit
-             | otherwise        -> return ()
+             | all (/= u') uRegions -> throw $ ErrorLetRegionsWitnessOther xx uRegions bWit
+             | otherwise            -> return ()
             
             -- The parser should ensure the right of a witness is a 
             -- constructor or variable.

@@ -71,14 +71,18 @@ extendLets
     => Lets a n
     -> RewriteEnv a n
     -> RewriteEnv a n
-extendLets (LLetRegion b cs) (env@RewriteEnv{letregions = rs})
- | BAnon _	<- b
- = foldl (flip extend) (lift b $ env { letregions = [b]:rs } ) cs
- | BName _ _	<- b
- = foldl (flip extend) (lift b $ env { letregions = extend' rs } ) cs
+extendLets (LLetRegions bs cs) (renv@RewriteEnv{letregions = rs})
+ = foldl extendB renv bs
  where
-    extend' (r:rs') = (b:r) : rs'
-    extend' []	   = [[b]]
+    extendB env b
+      | BAnon _	<- b
+      = foldl (flip extend) (lift b $ env { letregions = [b]:rs } ) cs
+      | BName _ _	<- b
+      = foldl (flip extend) (lift b $ env { letregions = extend' b rs } ) cs
+      | otherwise
+      = error "I don't know what do do here"
+    extend' b (r:rs') = (b:r) : rs'
+    extend' b []	   = [[b]]
 
 extendLets (LLet _ b def) env
  =  insertDef b (Just def') (liftValue b env)

@@ -192,8 +192,8 @@ usageLets lts
          ,  used'         <- sumUsedMap useds'
          -> (used', LRec $ zip bs xs')
 
-        LLetRegion b bs 
-         -> (empty, LLetRegion b bs)
+        LLetRegions b bs 
+         -> (empty, LLetRegions b bs)
 
         LWithRegion b
          -> (empty, LWithRegion b)

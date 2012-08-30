@@ -4,7 +4,7 @@ module DDC.Core.Transform.Rewrite.Parser
         (pRule)
 where
 import DDC.Core.Exp
-import DDC.Core.Parser.Type
+import DDC.Core.Parser.Type                     hiding (pBinders)
 import DDC.Core.Parser
 import DDC.Core.Lexer.Tokens
 import qualified DDC.Base.Parser                 as P

@@ -404,25 +404,36 @@ pLets
           ]      
 
       -- Local region binding.
-      --   letregion BINDER with { BINDER : TYPE ... } in EXP
-      --   letregion BINDER in EXP
+      --   letregion [BINDER] with { BINDER : TYPE ... } in EXP
+      --   letregion [BINDER] in EXP
+    , do pTok KLetRegions
+         brs    <- pBinders
+         let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
+         pLetWits bs
+          
     , do pTok KLetRegion
-         br      <- pBinder
-         let b   = T.makeBindFromBinder br T.kRegion
-         P.choice 
-          [ do   pTok KWith
-                 pTok KBraceBra
-                 wits    <- P.sepBy
-                            (do  w       <- pVar
-                                 pTok KColon
-                                 t       <- pTypeApp
-                                 return  (BName w t))
-                            (pTok KSemiColon)
-                 pTok KBraceKet
-                 return (LLetRegion b wits)
-
-          , do   return (LLetRegion b [])
-          ]
+         br    <- pBinder
+         let b =  T.makeBindFromBinder br T.kRegion
+         pLetWits [b]
+         
+    ]
+    
+    
+pLetWits :: Ord n => [Bind n] -> Parser n (Lets () n)
+pLetWits bs
+ = P.choice 
+    [ do   pTok KWith
+           pTok KBraceBra
+           wits    <- P.sepBy
+                      (do  w       <- pVar
+                           pTok KColon
+                           t       <- pTypeApp
+                           return  (BName w t))
+                      (pTok KSemiColon)
+           pTok KBraceKet
+           return (LLetRegions bs wits)
+    
+    , do   return (LLetRegions bs [])
     ]
 
 -- | A binding for let expression.

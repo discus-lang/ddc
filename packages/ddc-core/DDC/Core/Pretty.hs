@@ -190,14 +190,24 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                                $ map pprLetRecBind bxs)))
                 <$> rbrace
 
-
-        LLetRegion b []
+        
+        LLetRegions [b] []
          -> text "letregion"
                 <+> ppr (binderOfBind b)
-
-        LLetRegion b bs
+        
+        LLetRegions [b] bs
          -> text "letregion"
                 <+> ppr (binderOfBind b)
+                <+> text "with"
+                <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
+
+        LLetRegions b []
+         -> text "letregions"
+                <+> encloseSep (text "[:") (text ":]") space (map (ppr . binderOfBind) b)
+
+        LLetRegions b bs
+         -> text "letregions"
+                <+> encloseSep (text "[:") (text ":]") space (map (ppr . binderOfBind) b)
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
 

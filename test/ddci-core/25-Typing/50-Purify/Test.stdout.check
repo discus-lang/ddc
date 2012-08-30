@@ -1,7 +1,7 @@
 -- Error: region is free in the return type of the returned function.
 When checking expression.
-  Region variable escapes scope of letregion.
-         The region variable: r1 : %
+  Region variables escape scope of letregion.
+         The region variables: r1 : %
     is free in the body type: Unit -(!0 | Use r1)> Int r1
   
   with: letregion r1 with {w1 : Const r1} in
@@ -23,8 +23,8 @@ When checking expression.
 
 -- Error: region is visible in the effect of the returned function.
 When checking expression.
-  Region variable escapes scope of letregion.
-         The region variable: r1 : %
+  Region variables escape scope of letregion.
+         The region variables: r1 : %
     is free in the body type: Unit -(Read r1 + Read R0# + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 with {w1 : Const r1} in
@@ -35,8 +35,8 @@ When checking expression.
 -- Error: region is visible in the effect of the returned function.
 -- We've purified the read effect, but the alloc effect is still visible.
 When checking expression.
-  Region variable escapes scope of letregion.
-         The region variable: r1 : %
+  Region variables escape scope of letregion.
+         The region variables: r1 : %
     is free in the body type: Unit -(Read R0# + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 with {w1 : Const r1} in
@@ -50,8 +50,8 @@ When checking expression.
 -- that the function uses the region due to the Use term in the
 -- function's closure.
 When checking expression.
-  Region variable escapes scope of letregion.
-         The region variable: r1 : %
+  Region variables escape scope of letregion.
+         The region variables: r1 : %
     is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 with {w1 : Const r1} in

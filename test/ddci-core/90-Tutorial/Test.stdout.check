@@ -131,8 +131,8 @@ updateInt :: [^ ^ : %].Mutable ^1 => Int ^1 -> Int ^0 -(Read ^0 + Write ^1 | Use
 -- Local objects cannot escape ------------------------------------------------
 -- Error: local region visible in return type.
 When checking expression.
-  Region variable escapes scope of letregion.
-         The region variable: r1 : %
+  Region variables escape scope of letregion.
+         The region variables: r1 : %
     is free in the body type: Int r1
   
   with: letregion r1 in
@@ -141,8 +141,8 @@ When checking expression.
 
 -- Error: local region visible in return type.
 When checking expression.
-  Region variable escapes scope of letregion.
-         The region variable: r1 : %
+  Region variables escape scope of letregion.
+         The region variables: r1 : %
     is free in the body type: Unit -(Read r1 + Alloc r1 + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 in
@@ -153,8 +153,8 @@ When checking expression.
 
 -- Error: local region visible in return type.
 When checking expression.
-  Region variable escapes scope of letregion.
-         The region variable: r1 : %
+  Region variables escape scope of letregion.
+         The region variables: r1 : %
     is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 in

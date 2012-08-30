@@ -14,7 +14,7 @@ module DDC.Type.Compounds
         , takeNameOfBound
         , boundMatchesBind
         , namedBoundMatchesBind
-        , takeSubstBoundOfBind
+        , takeSubstBoundOfBind,         takeSubstBoundsOfBinds
 
           -- * Type structure
         , tIx
@@ -67,6 +67,7 @@ module DDC.Type.Compounds
         , tConData0,    tConData1)
 where
 import DDC.Type.Exp
+import Data.Maybe
 import qualified DDC.Type.Sum   as Sum
 
 
@@ -160,8 +161,7 @@ namedBoundMatchesBind u b
         _                       -> False
 
 
-
--- | Convert a `Bound` to a `Bind`, ready for substitution.
+-- | Convert a `Bind` to a `Bound`, ready for substitution.
 --   
 --   Returns `UName` for `BName`, @UIx 0@ for `BAnon` 
 --   and `Nothing` for `BNone`, because there's nothing to substitute.
@@ -173,6 +173,15 @@ takeSubstBoundOfBind bb
         BNone _         -> Nothing
 
 
+-- | Convert some `Bind`s to `Bounds`
+takeSubstBoundsOfBinds :: [Bind n] -> Maybe [Bound n]
+takeSubstBoundsOfBinds bbs
+ = let us = map takeSubstBoundOfBind bbs
+   in  case us of
+            [Nothing] -> Nothing
+            _         -> Just    $ catMaybes us
+            
+            
 -- Variables ------------------------------------------------------------------
 -- | Construct a deBruijn index.
 tIx :: Kind n -> Int -> Type n

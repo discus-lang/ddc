@@ -75,17 +75,17 @@ flatten1 (XLet a1 (LLet LetStrict b1
 -- @
 --
 flatten1 (XLet a1 (LLet LetStrict b1
-            inner@(XLet a2 (LLetRegion b2 bs2) x2))
+            inner@(XLet a2 (LLetRegions b2 bs2) x2))
                x1)
- | isBName b2
+ | all isBName b2
  = flatten1
         $ XLet a1 (LLet LetStrict b1
                   (anonymizeX inner))
                x1
 
  | otherwise
- = let  x1'      = liftAcrossX [b1] [b2] x1
-   in   XLet a2 (LLetRegion b2 bs2) 
+ = let  x1'      = liftAcrossX [b1] b2 x1
+   in   XLet a2 (LLetRegions b2 bs2) 
       $ flatten1
       $ XLet a1 (LLet LetStrict b1 x2) 
              x1'

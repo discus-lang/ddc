@@ -135,8 +135,8 @@ instance Forward Lets where
 		(mapM (\(b,x) -> do
 			x' <- down x
 			return (b, x')) bxs)
-        LLetRegion b bs -> return $ LLetRegion b bs
-        LWithRegion b   -> return $ LWithRegion b
+        LLetRegions b bs -> return $ LLetRegions b bs
+        LWithRegion b    -> return $ LWithRegion b
 
 
 instance Forward Alt where

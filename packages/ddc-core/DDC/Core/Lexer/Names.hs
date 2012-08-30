@@ -39,6 +39,7 @@ keywords
         , ("in",         KA KIn)
         , ("of",         KA KOf) 
         , ("letrec",     KA KLetRec)
+        , ("letregions", KA KLetRegions)
         , ("letregion",  KA KLetRegion)
         , ("withregion", KA KWithRegion)
         , ("let",        KA KLet)

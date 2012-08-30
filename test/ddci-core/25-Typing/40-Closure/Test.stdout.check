@@ -84,8 +84,8 @@ letregion r1 with {w1 : Const r1} in purify <read [r1] w1> in addInt [r1] [R0#] 
 -- that the function uses the region due to the Use term in the
 -- function's closure.
 When checking expression.
-  Region variable escapes scope of letregion.
-         The region variable: r1 : %
+  Region variables escape scope of letregion.
+         The region variables: r1 : %
     is free in the body type: Unit -(Read R0# + Alloc R0# | Use r1 + Use R0#)> Int R0#
   
   with: letregion r1 with {w1 : Const r1} in

@@ -127,7 +127,7 @@ transL tails lts
  = case lts of
         LLet mode b x   -> LLet mode b (transX tails x)
         LRec bxs        -> LRec [(b, transX tails x) | (b, x) <- bxs]
-        LLetRegion{}    -> lts
+        LLetRegions{}   -> lts
         LWithRegion{}   -> lts
 
 

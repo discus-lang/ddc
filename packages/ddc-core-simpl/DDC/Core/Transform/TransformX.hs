@@ -120,7 +120,7 @@ instance Monad m => TransformUpMX m Lets where
                 xs'          <- mapM (transformUpMX f kenv tenv') xs
                 return       $ LRec $ zip bs xs'
 
-        LLetRegion{}    -> return xx
+        LLetRegions{}    -> return xx
         LWithRegion{}    -> return xx
 
 

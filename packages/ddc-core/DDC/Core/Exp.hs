@@ -93,7 +93,7 @@ data Lets a n
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LLetRegion  (Bind n) [Bind n]
+        | LLetRegions  [Bind n] [Bind n]
         
         -- | Holds a region handle during evaluation.
         | LWithRegion (Bound n)

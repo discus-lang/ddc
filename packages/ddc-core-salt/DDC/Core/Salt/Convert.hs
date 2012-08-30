@@ -182,7 +182,7 @@ convBodyM xx
          -> throw $ ErrorStmtNoDiscard xx
 
         -- Throw out letregion expressions.
-        XLet _ (LLetRegion _ _) x
+        XLet _ (LLetRegions _ _) x
          -> convBodyM x
 
         -- Case-expression.
