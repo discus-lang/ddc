@@ -31,9 +31,11 @@ loopInteractive
  where  
         loop state inputState hlState 
          = do   -- If this isn't the first line then print the prompt.
-                let prompt = if isNothing (inputCommand inputState)
-                                then "> "
-                                else ""
+                let prompt = if isJust (inputCommand inputState)
+                             then ""
+			     else if isJust (stateTransInteract state)
+			     then "trans> "
+                             else "> "
          
                 -- Read a line from the user and echo it back.
                 line    <- getInput hlState prompt

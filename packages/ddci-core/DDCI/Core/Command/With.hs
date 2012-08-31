@@ -18,14 +18,14 @@ import qualified Data.Map       as Map
 -- | Add a module to the inliner table.
 cmdWith :: State -> Source -> String -> IO State
 cmdWith state _source str
- | Bundle frag modules zero simpl rules _ <- stateBundle state
+ | Bundle frag modules zero simpl rules <- stateBundle state
  = do   res <- cmdWith_load frag str
 	case res of
 	  Nothing  -> return state
 	  Just mdl -> 
 		let modules' = Map.insert (moduleName mdl) mdl modules in
 		return $ state
-		       { stateBundle = Bundle frag modules' zero simpl rules  Nothing }
+		       { stateBundle = Bundle frag modules' zero simpl rules }
 
 cmdWithLite :: State -> Source -> String -> IO State
 cmdWithLite state _source str

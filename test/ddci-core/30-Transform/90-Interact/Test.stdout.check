@@ -286,3 +286,8 @@ letrec {
              \(^ : Int#). I# [^0] ^0) [r] 0i#)
 } in
 ()
+* TRANSFORM SEQUENCE:
+    Inline
+    BetaLets
+    Inline
+    Rewrite

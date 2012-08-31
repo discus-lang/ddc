@@ -15,7 +15,7 @@ import qualified DDC.Base.Pretty                as P
 --
 cmdToC :: State -> Source -> String -> IO ()
 cmdToC state source str
- | Bundle fragment _ _ _ _  _ <- stateBundle state
+ | Bundle fragment _ _ _  _ <- stateBundle state
  = do   let fragName = profileName (fragmentProfile fragment)
         let mSuffix  = case source of 
                         SourceFile filePath     -> Just $ takeExtension filePath

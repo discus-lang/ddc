@@ -35,7 +35,7 @@ import DDC.Core.Module (ModuleMap)
 -- | Parse, check, and single step evaluate an expression.
 cmdStep :: State -> Source -> String -> IO ()
 cmdStep state source str
- | Bundle _ modules0 _ _ _ _		<- stateBundle state
+ | Bundle _ modules0 _ _ _		<- stateBundle state
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
 				        <- gcast modules0
  , modules'				<- fromMaybe Map.empty modules
@@ -63,7 +63,7 @@ cmdStep state source str
 -- | Parse, check, and fully evaluate an expression.
 cmdEval :: State -> Source -> String -> IO ()
 cmdEval state source str
- | Bundle _ modules0 _ _ _ _		<- stateBundle state
+ | Bundle _ modules0 _ _ _		<- stateBundle state
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
 				        <- gcast modules0
  , modules'				<- fromMaybe Map.empty modules

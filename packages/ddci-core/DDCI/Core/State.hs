@@ -26,6 +26,9 @@ import DDC.Core.Simplifier
 import DDC.Core.Transform.Rewrite.Rule
 import DDC.Base.Pretty
 import Data.Typeable
+import DDC.Core.Transform.Namify        (Namifier)
+import DDC.Type.Env                     (Env)
+import DDC.Core.Fragment.Profile	(Profile)
 import Data.Map                         (Map)
 import Data.Set                         (Set)
 import qualified DDC.Core.Salt.Name     as Salt
@@ -66,7 +69,8 @@ data State
           -- | Output dir for @compile@ and @make@ commands
         , stateOutputDir        :: Maybe FilePath
 
-	, stateTransInteract	:: Bool}
+	  -- | Interactive transform mode
+	, stateTransInteract	:: Maybe TransHistory}
 
 
 -- | Existential container for a language fragment, 
@@ -80,14 +84,28 @@ data Bundle
 	,  bundleModules	 :: Map ModuleName (Module (AnTEC () n) n)
         ,  bundleStateInit       :: s
         ,  bundleSimplifier      :: Simplifier s (AnTEC () n) n
-        ,  bundleRewriteRules    :: Map String (RewriteRule (AnTEC () n) n)
+        ,  bundleRewriteRules    :: Map String (RewriteRule (AnTEC () n) n) }
 
-	,  bundleTransHistory	 :: Maybe (TransHistory (AnTEC () n) n) }
+data TransHistory
+	= forall s n
+        .  (Typeable n, Ord n, Show n, Pretty n)
+	=> TransHistory
+	{ -- | Original expression and its types
+	  historyExp		:: (Exp (AnTEC () n) n, Type n, Effect n, Closure n) 
+	  -- | Keep history of steps so we can go back and construct final sequence
+	, historySteps		:: [(Exp (AnTEC () n) n, Simplifier s (AnTEC () n) n)]
 
-data TransHistory a n
-    = TransHistory
-    { historyExp	:: (Exp a n, Type n, Effect n, Closure n) 
-    , historySteps	:: [Exp a n] }
+	  -- | We need to keep these around so we know they're same type
+	  --   I must be doing this wrong.
+	  --   But I tried using casts and would have needed to derive
+	  --   Data.Typeable on Env, RewriteRule, everything.
+	, historyMakeNamifierT	:: Env n -> Namifier s n
+	, historyMakeNamifierX	:: Env n -> Namifier s n 
+	, historyNameZero	:: s
+	, historyProfile	:: Profile n 
+	, historyModules	:: Map ModuleName (Module (AnTEC () n) n) 
+        , historyRewriteRules   :: Map String (RewriteRule (AnTEC () n) n) }
+
 
 
 -- | What interface is being used.
@@ -123,7 +141,7 @@ initState interface
         = State
         { stateInterface        = interface
         , stateModes            = Set.empty 
-        , stateBundle           = Bundle fragmentEval Map.empty () (S.Trans S.Id) Map.empty Nothing
+        , stateBundle           = Bundle fragmentEval Map.empty () (S.Trans S.Id) Map.empty
         , stateWithLite         = Map.empty
         , stateWithSalt         = Map.empty
         , stateSimplLite        = S.Trans S.Id
@@ -131,7 +149,7 @@ initState interface
         , stateBuilder          = Nothing  
         , stateOutputFile       = Nothing
         , stateOutputDir        = Nothing
-	, stateTransInteract	= False }
+	, stateTransInteract	= Nothing }
 
 
 -- | Get the active builder.

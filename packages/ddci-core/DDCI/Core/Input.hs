@@ -63,7 +63,7 @@ readInput ss
 -- Eating input lines.
 eatLine :: State -> InputState -> String -> IO (State, InputState)
 eatLine state (InputState mCommand inputMode lineNumber acc) line
- | stateTransInteract state
+ | Just _ <- stateTransInteract state
  = do
 	state' <- cmdTransInteractLoop state line
 	return (state', InputState mCommand inputMode (lineNumber+1) acc)

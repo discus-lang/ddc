@@ -11,7 +11,7 @@ import qualified Language.Haskell.Exts.Pretty as H
 -- | Parse, check, and pretty print an expression's internal representation
 cmdAst :: State -> Source -> String -> IO ()
 cmdAst state source str
- | Bundle frag modules _ _ _ _ <- stateBundle state
+ | Bundle frag modules _ _ _ <- stateBundle state
  = cmdParseCheckExp state frag modules True source str >>= goShow
  where
         -- Expression had a parse or type error.

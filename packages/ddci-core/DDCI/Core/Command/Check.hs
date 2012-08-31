@@ -35,7 +35,7 @@ import DDC.Core.Module
 -- | Show the kind of a type.
 cmdShowKind :: State -> Source -> String -> IO ()
 cmdShowKind state source str
- | Bundle frag _ _ _ _ _ <- stateBundle state
+ | Bundle frag _ _ _ _ <- stateBundle state
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         toks    = fragmentLexExp frag srcName srcLine str
@@ -49,7 +49,7 @@ cmdShowKind state source str
 -- | Show the universe of some type.
 cmdUniverse :: State -> Source -> String -> IO ()
 cmdUniverse state source str
- | Bundle frag _ _ _ _ _ <- stateBundle state
+ | Bundle frag _ _ _ _ <- stateBundle state
  = do   result       <- cmdParseCheckType state source frag str
         case result of
          Just (t, _)
@@ -65,7 +65,7 @@ cmdUniverse state source str
 --   show the universe of the thing.
 cmdUniverse1 :: State -> Source -> String -> IO ()
 cmdUniverse1 state source str
- | Bundle frag _ _ _ _ _ <- stateBundle state
+ | Bundle frag _ _ _ _ <- stateBundle state
  = do   result       <- cmdParseCheckType state source frag str
         case result of
          Just (t, _)
@@ -81,7 +81,7 @@ cmdUniverse1 state source str
 --   show the universe of the thing.
 cmdUniverse2 :: State -> Source -> String -> IO ()
 cmdUniverse2 state source str
- | Bundle frag _ _ _ _ _ <- stateBundle state
+ | Bundle frag _ _ _ _ <- stateBundle state
  = do   result       <- cmdParseCheckType state source frag str
         case result of
          Just (t, _)
@@ -96,7 +96,7 @@ cmdUniverse2 state source str
 --   We can't type check naked sorts, so just parse them.
 cmdUniverse3 :: State -> Source -> String -> IO ()
 cmdUniverse3 state source str
- | Bundle frag _ _ _ _ _ <- stateBundle state
+ | Bundle frag _ _ _ _ <- stateBundle state
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         profile = fragmentProfile frag
@@ -143,7 +143,7 @@ cmdParseCheckType _state source frag str
 -- | Check if two types are equivlant.
 cmdTypeEquiv :: State -> Source -> String -> IO ()
 cmdTypeEquiv state source ss
- | Bundle frag _ _ _ _ _ <- stateBundle state
+ | Bundle frag _ _ _ _ <- stateBundle state
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         
@@ -183,7 +183,7 @@ cmdTypeEquiv state source ss
 -- | Show the type of a witness.
 cmdShowWType :: State -> Source -> String -> IO ()
 cmdShowWType state source str
- | Bundle frag _ _ _ _ _ <- stateBundle state
+ | Bundle frag _ _ _ _ <- stateBundle state
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         toks    = fragmentLexExp frag srcName srcLine str
@@ -206,7 +206,7 @@ data ShowTypeMode
 -- | Show the type of an expression.
 cmdShowType :: State -> ShowTypeMode -> Source -> String -> IO ()
 cmdShowType state mode source ss
- | Bundle frag modules _ _ _ _ <- stateBundle state
+ | Bundle frag modules _ _ _ <- stateBundle state
  = cmdParseCheckExp state frag modules True source ss >>= goResult
  where
         goResult Nothing
@@ -234,7 +234,7 @@ cmdShowType state mode source ss
 -- | Check expression and reconstruct type annotations on binders.
 cmdExpRecon :: State -> Source -> String -> IO ()
 cmdExpRecon state source ss
- |   Bundle frag modules _ _ _ _ <- stateBundle state
+ |   Bundle frag modules _ _ _ <- stateBundle state
  =   cmdParseCheckExp state frag modules True source ss 
  >>= goResult
  where
