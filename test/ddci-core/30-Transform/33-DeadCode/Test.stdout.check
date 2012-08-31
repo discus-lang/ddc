@@ -100,8 +100,8 @@ copyInt [r] [R0#] x
 weakeff [Read R0# + Alloc R0#] in
 weakclo {} in
 weakeff [Read R0# + Alloc R0#] in
-weakclo {5 [R0#] (); addInt} in
+weakclo {\(x : Int R0#). x; addInt} in
 weakeff [Read R0# + Alloc R0#] in
-weakclo {5 [R0#] (); addInt [R0#] [R0#] [R0#] (5 [R0#] ()) (5 [R0#] ()); subInt} in
+weakclo {\(x : Int R0#). x; \(y : Int R0#). y; subInt} in
 ()
 

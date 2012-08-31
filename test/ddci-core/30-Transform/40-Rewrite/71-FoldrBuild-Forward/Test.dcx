@@ -35,7 +35,7 @@ sum (count num)
 ;;
 
 :set.. trans
-    fix 30 (Forward <> Beta <> Rewrite)
+    fix 30 (Forward <> BetaLets <> Bubble <> DeadCode <> Rewrite <> anormalize)
 ;;
 
 :trans..

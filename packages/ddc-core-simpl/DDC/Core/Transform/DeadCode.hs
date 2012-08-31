@@ -16,11 +16,12 @@ import Control.Monad.Writer	(Writer, runWriter, tell)
 import Data.Monoid		(Monoid, mempty, mappend)
 import Data.Typeable		(Typeable)
 import qualified DDC.Core.Collect			as C
+import qualified DDC.Core.Compounds			as C
+--import qualified DDC.Core.Transform.SubstituteXX	as S
 import qualified DDC.Type.Compounds			as T
 import qualified DDC.Type.Env				as T
 import qualified DDC.Type.Sum				as TS
 import qualified DDC.Type.Transform.Crush		as T
-import qualified DDC.Core.Transform.SubstituteXX	as S
 
 deadCode
 	:: (Show a, Show n, Ord n, Pretty n)
@@ -48,11 +49,11 @@ transformTypeUsage profile kenv tenv trans xx
      let (_,xx2)    = usageX xx1
          (x', info) = runWriter (trans xx2)
          x''	    = reannotate (\(_, AnTEC { annotTail = a}) -> a) x'
-     in (x'', info)
+     in  (x'', info)
 
      -- TODO: There was an error typechecking
     Left err ->
-     error ("Unable to typecheck!?"
+     error ("Unable to typecheck in DeadCode(!?)"
 	++ "\n"
 	++ renderIndent (ppr err))
 
@@ -73,11 +74,11 @@ deadCodeTrans _ _ xx
      | isUnused b um
      , isDead   $ annotEffect antec
      -> do
-	-- Substitute value in anyway, in case it's used in a cast.
-	let x2' = S.substituteXX b x1 x2
+	-- We still need to substitute value into casts
+	let x2' = substCasts b x1 x2 -- S.substituteXX b x1 x2
 	tell mempty{infoRemoved = 1}
-	return $
-	    XCast a (CastWeakenEffect $ annotEffect antec)
+	return
+	  $ XCast a (CastWeakenEffect $ T.crushEffect $ annotEffect antec)
 	  $ XCast a (weakClo a x1)
 	  $ x2'
 
@@ -86,11 +87,11 @@ deadCodeTrans _ _ xx
  where
     weakClo a x1 = CastWeakenClosure $
 		 (map (XType . TVar)
-		 $ Set.toList
-		 $ C.freeT T.empty x1)
+		  $ Set.toList
+		  $ C.freeT T.empty x1)
 	    ++   (map (XVar a)
-		 $ Set.toList
-		 $ C.freeX T.empty x1)
+		  $ Set.toList
+		  $ C.freeX T.empty x1)
 
     sumList (TSum ts) = TS.toList ts
     sumList tt	      = [tt]
@@ -116,6 +117,51 @@ deadCodeTrans _ _ xx
 	_				-> False
 
     ok [] = False
+
+
+-- | Put old bindings into casts
+--   We can't just substitute it in, though: if 'b' is mentioned inside a lambda,
+--   substituting it in might change the type of the lambda.
+--
+--   Instead, wrap it in another lambda.
+--
+--   TODO handle shadowing
+substCasts b@(BName n _) _x1 x2
+ = transformUpX' go x2
+ where
+  go (XCast a (CastWeakenClosure es) x)
+    = XCast a (CastWeakenClosure $ map fix es) x
+
+  go x
+    = x
+
+  -- Check if the binding is used in the closure expression.
+  -- If it is, wrap it in a lambda
+  fix e
+    = case C.takeAnnotOfExp e of
+        Just a@(UsedMap um,_) ->
+          case Map.lookup n um of
+	    Just useds ->
+	      if   not $ null useds -- any inlambda useds
+	      then wrap a e
+	      else e -- S.substituteXX b x1 e
+	    Nothing	   -> e
+        Nothing ->
+	  e
+
+  wrap a e = XLam a b e
+
+{-
+  inlambda u
+   = case u of
+     UsedInLambda _  -> True
+     UsedInAlt    u' -> inlambda u'
+     _		     -> False
+-}
+
+
+substCasts _ _ x2 = x2
+
 
 
 -- | Summary
