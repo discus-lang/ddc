@@ -203,11 +203,11 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
 
         LLetRegions b []
          -> text "letregions"
-                <+> encloseSep (text "[:") (text ":]") space (map (ppr . binderOfBind) b)
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
 
         LLetRegions b bs
          -> text "letregions"
-                <+> encloseSep (text "[:") (text ":]") space (map (ppr . binderOfBind) b)
+                <+> (hcat $ punctuate space (map (ppr . binderOfBind) b))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bs)
 

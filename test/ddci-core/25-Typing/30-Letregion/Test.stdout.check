@@ -135,7 +135,7 @@ When checking expression.
         ()
 
 -- Parse letregion with witness for multi-way distinctness
-letregions [:r1 r2 r3:] with {w : Distinct3 r1 r2 r3} in ()
+letregions r1 r2 r3 with {w : Distinct3 r1 r2 r3} in ()
 :*: Unit
 :!: !0
 :$: $0

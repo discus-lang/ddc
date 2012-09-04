@@ -404,10 +404,10 @@ pLets
           ]      
 
       -- Local region binding.
-      --   letregion [BINDER] with { BINDER : TYPE ... } in EXP
-      --   letregion [BINDER] in EXP
+      --   letregions [BINDER] with { BINDER : TYPE ... } in EXP
+      --   letregions [BINDER] in EXP
     , do pTok KLetRegions
-         brs    <- pBinders
+         brs    <- P.manyTill pBinder (P.try $ P.lookAhead $ P.choice [pTok KIn, pTok KWith])
          let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
          pLetWits bs
           
@@ -435,6 +435,7 @@ pLetWits bs
     
     , do   return (LLetRegions bs [])
     ]
+
 
 -- | A binding for let expression.
 pLetBinding :: Ord n => Parser n (LetMode n, Bind n, Exp () n)

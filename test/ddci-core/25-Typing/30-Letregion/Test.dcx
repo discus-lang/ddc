@@ -83,5 +83,5 @@ letregion r2 with { w1: Distinct2 r2 r2 } in ();;
 
 -- Parse letregion with witness for multi-way distinctness
 :check..
-letregions [:r1 r2 r3:] with { w : Distinct3 r1 r2 r3 } in ();;
+letregions r1 r2 r3 with { w : Distinct3 r1 r2 r3 } in ();;
 

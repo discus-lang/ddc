@@ -4,7 +4,7 @@ module DDC.Core.Parser.Type
         ( module DDC.Base.Parser
         , Parser
         , pType, pTypeAtom, pTypeApp
-        , pBinder, pBinders
+        , pBinder
         , pIndex
         , pTok, pTokAs)
 where
@@ -54,18 +54,6 @@ pBinder
         , do    pTok KUnderscore
                 return  $ RNone ]
  <?> "a binder"
-
-
--- | Parse a list of binders
-pBinders :: Ord n => Parser n [Binder n]
-pBinders
- = do pTok KSquareColonBra
-      ts <- P.many1 pBinder
-      pTok KSquareColonKet
-      return ts
-      
-   <?> "some binders"
-   
    
 -- | Parse a quantified type.
 pTypeForall :: Ord n => Parser n (Type n)
