@@ -9,6 +9,7 @@ module DDC.Type.Collect
         , BindStruct (..)
 
         , BoundLevel (..)
+        , isBoundExpWit
         , boundLevelOfBindWay
         , bindDefT)
 where
@@ -55,7 +56,7 @@ collectBoundOfTree tt
  = case tt of
         BindDef _ _ ts  -> Set.unions $ map collectBoundOfTree ts
         BindUse _ u     -> Set.singleton u
-        BindCon _ u     -> Set.singleton u
+        BindCon _ u _   -> Set.singleton u
 
 
 -- collectSpecBinds -----------------------------------------------------------
@@ -89,7 +90,7 @@ collectExpBindsOfTree :: Ord n => BindTree n -> [Bind n]
 collectExpBindsOfTree tt
  = case tt of
         BindDef way bs ts
-         |   BoundExpWit <- boundLevelOfBindWay way
+         |   BoundExp <- boundLevelOfBindWay way
          ->  concat ( bs
                     : map collectExpBindsOfTree ts)
 
@@ -109,7 +110,7 @@ data BindTree n
         | BindUse BoundLevel (Bound n)
 
         -- | Use of a constructor.
-        | BindCon BoundLevel (Bound n)
+        | BindCon BoundLevel (Bound n) (Maybe (Kind n))
         deriving (Eq, Show)
 
 
@@ -129,8 +130,16 @@ data BindWay
 -- | What level this binder is at.
 data BoundLevel
         = BoundSpec
-        | BoundExpWit
+        | BoundExp
+        | BoundWit
         deriving (Eq, Show)
+
+
+-- | Check if a boundlevel is expression or witness
+isBoundExpWit :: BoundLevel -> Bool
+isBoundExpWit BoundExp = True
+isBoundExpWit BoundWit = True
+isBoundExpWit _        = False
 
 
 -- | Get the `BoundLevel` corresponding to a `BindWay`.
@@ -139,12 +148,12 @@ boundLevelOfBindWay way
  = case way of
         BindForall              -> BoundSpec
         BindLAM                 -> BoundSpec
-        BindLam                 -> BoundExpWit
-        BindLet                 -> BoundExpWit
-        BindLetRec              -> BoundExpWit
+        BindLam                 -> BoundExp
+        BindLet                 -> BoundExp
+        BindLetRec              -> BoundExp
         BindLetRegions          -> BoundSpec
-        BindLetRegionWith       -> BoundExpWit
-        BindCasePat             -> BoundExpWit
+        BindLetRegionWith       -> BoundExp
+        BindCasePat             -> BoundExp
 
 
 -- BindStruct -----------------------------------------------------------------
@@ -165,7 +174,7 @@ instance BindStruct Type where
 instance BindStruct TyCon where
  slurpBindTree tc
   = case tc of
-        TyConBound u _  -> [BindCon BoundSpec u]
+        TyConBound u k  -> [BindCon BoundSpec u (Just k)]
         _               -> []
 
 

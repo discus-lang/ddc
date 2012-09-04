@@ -26,16 +26,17 @@ freeOfTreeX :: Ord n => Env n -> BindTree n -> Set (Bound n)
 freeOfTreeX tenv tt
  = case tt of
         BindDef way bs ts
-         |  BoundExpWit <- boundLevelOfBindWay way
-         ,  tenv'       <- Env.extends bs tenv
+         |  isBoundExpWit $ boundLevelOfBindWay way
+         ,  tenv'        <- Env.extends bs tenv
          -> Set.unions $ map (freeOfTreeX tenv') ts
 
         BindDef _ _ ts
          -> Set.unions $ map (freeOfTreeX  tenv) ts
 
-        BindUse BoundExpWit u
-         | Env.member u tenv -> Set.empty
-         | otherwise         -> Set.singleton u
+        BindUse bl u
+         | isBoundExpWit bl
+         , Env.member u tenv -> Set.empty
+         | isBoundExpWit bl  -> Set.singleton u
         _                    -> Set.empty
 
 
@@ -50,12 +51,12 @@ instance BindStruct (Exp a) where
  slurpBindTree xx
   = case xx of
         XVar _ u
-         -> [BindUse BoundExpWit u]
+         -> [BindUse BoundExp u]
 
         XCon _ dc
          -> case daConName dc of
                 DaConUnit               -> []
-                DaConNamed n            -> [BindCon BoundExpWit (UName n)]
+                DaConNamed n            -> [BindCon BoundExp (UName n) Nothing]
 
         XApp _ x1 x2            -> slurpBindTree x1 ++ slurpBindTree x2
         XLAM _ b x              -> [bindDefT BindLAM [b] [x]]
@@ -76,7 +77,7 @@ instance BindStruct (Exp a) where
              [bindDefX BindLetRegionWith bs [x2]]]
 
         XLet _ (LWithRegion u) x2
-         -> BindUse BoundExpWit u : slurpBindTree x2
+         -> BindUse BoundExp u : slurpBindTree x2
 
         XCase _ x alts  -> slurpBindTree x ++ concatMap slurpBindTree alts
         XCast _ c x     -> slurpBindTree c ++ slurpBindTree x
@@ -114,7 +115,7 @@ instance BindStruct (Alt a) where
 instance BindStruct Witness where
  slurpBindTree ww
   = case ww of
-        WVar u          -> [BindUse BoundExpWit u]
+        WVar u          -> [BindUse BoundWit u]
         WCon{}          -> []
         WApp  w1 w2     -> slurpBindTree w1 ++ slurpBindTree w2
         WJoin w1 w2     -> slurpBindTree w1 ++ slurpBindTree w2
