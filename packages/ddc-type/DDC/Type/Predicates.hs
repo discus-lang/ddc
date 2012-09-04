@@ -145,6 +145,6 @@ isConstWitType tt
 isDistinctWitType :: Eq n => Type n -> Bool
 isDistinctWitType tt
  = case takeTyConApps tt of
-        Just (TyConWitness TwConDistinct, _) -> True
-        _                                    -> False
+        Just (TyConWitness (TwConDistinct _), _) -> True
+        _                                        -> False
 	

@@ -449,7 +449,7 @@ tConst          = twCon1 TwConConst
 tDeepConst      = twCon1 TwConDeepConst
 tMutable        = twCon1 TwConMutable
 tDeepMutable    = twCon1 TwConDeepMutable
-tDistinct       = twCon2 TwConDistinct
+tDistinct n     = twCon2 (TwConDistinct n)
 tLazy           = twCon1 TwConLazy
 tHeadLazy       = twCon1 TwConHeadLazy
 tManifest       = twCon1 TwConManifest
@@ -457,7 +457,7 @@ tManifest       = twCon1 TwConManifest
 tcCon1 tc t  = (TCon $ TyConSpec    tc) `tApp` t
 twCon1 tc t  = (TCon $ TyConWitness tc) `tApp` t
 
-twCon2 tc t1 t2 = tApps (TCon $ TyConWitness tc) [t1, t2]
+twCon2 tc ts = tApps (TCon $ TyConWitness tc) ts
 
 
 -- | Build a nullary type constructor of the given kind.

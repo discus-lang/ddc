@@ -162,7 +162,7 @@ areDistinct env p q
       || RE.containsWitness (wit q p) env
 
     wit p' q'
-      = T.TCon (T.TyConWitness T.TwConDistinct) `T.TApp` rgn p' `T.TApp` rgn q'
+      = T.TCon (T.TyConWitness (T.TwConDistinct 2)) `T.TApp` rgn p' `T.TApp` rgn q'
 
     rgn b
      = case b of

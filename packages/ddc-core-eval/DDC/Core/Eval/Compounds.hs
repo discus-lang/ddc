@@ -69,15 +69,14 @@ wConst r    = WApp (WCon wcConst)    (WType r)
 wMutable    :: Region Name -> Witness Name
 wMutable r  = WApp (WCon wcMutable)  (WType r)
 
-wDistinct      :: Region Name -> Region Name -> Witness Name
-wDistinct r1 r2 = wApps (WCon wcDistinct) (map WType [r1,r2])
-
 wLazy       :: Region Name -> Witness Name
 wLazy r     = WApp (WCon wcLazy)     (WType r)
 
 wManifest   :: Region Name -> Witness Name
 wManifest r = WApp (WCon wcManifest) (WType r)
 
+wDistinct     :: Int -> [Region Name] -> Witness Name
+wDistinct n rs = wApps (WCon (wcDistinct n)) (map WType rs)
 
 -- Just the Constructors
 wcGlobal   :: WiCon Name
@@ -92,10 +91,6 @@ wcMutable  :: WiCon Name
 wcMutable       = WiConBound (UPrim (NameCap CapMutable) t) t
  where  t       = tForall kRegion $ \r -> tMutable r
            
-wcDistinct :: WiCon Name
-wcDistinct      = WiConBound (UPrim (NameCap CapDistinct) t) t
- where  t       = tForalls [kRegion, kRegion] $ \[t1,t2] -> tDistinct t1 t2
-
 wcLazy     :: WiCon Name
 wcLazy          = WiConBound (UPrim (NameCap CapLazy) t) t
  where  t       = tForall kRegion $ \r -> tLazy r
@@ -104,6 +99,10 @@ wcManifest :: WiCon Name
 wcManifest      = WiConBound (UPrim (NameCap CapManifest) t) t
  where  t       = tForall kRegion $ \r -> tManifest r
       
+wcDistinct :: Int -> WiCon Name
+wcDistinct n    = WiConBound (UPrim (NameCap (CapDistinct n)) t) t
+ where  t       = tForalls (replicate n kRegion) $ \ts -> tDistinct n ts
+
 
 -- | Check whether a witness is a capability constructor.
 isCapConW :: Witness Name -> Bool

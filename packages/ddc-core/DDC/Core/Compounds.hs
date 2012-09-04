@@ -27,7 +27,7 @@ module DDC.Core.Compounds
         , takeXApps'
         , takeXConApps
         , takeXPrimApps
-	, takeXAppsAsList
+	      , takeXAppsAsList
 
           -- * Lets
         , makeXLets
@@ -41,7 +41,8 @@ module DDC.Core.Compounds
 
           -- * Witnesses
         , takeXWitness
-        , wApp,  wApps)
+        , wApp,  wApps
+        , takeWApps,  takePrimWiConApps)
 where
 import DDC.Core.Exp
 
@@ -269,3 +270,19 @@ wApp = WApp
 -- | Construct a sequence of witness applications
 wApps :: Witness n -> [Witness n] -> Witness n
 wApps = foldl wApp
+
+
+takeWApps :: Witness n -> [Witness n]
+takeWApps ww
+ = case ww of
+        WApp w1 w2 -> takeWApps w1 ++ [w2]
+        _          -> [ww]
+ 
+         
+takePrimWiConApps :: Witness n -> Maybe (n, [Witness n])
+takePrimWiConApps ww
+ = case takeWApps ww of
+        WCon wc : args | WiConBound (UPrim n _) _ <- wc
+          -> Just (n, args)
+        _ -> Nothing
+        

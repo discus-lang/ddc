@@ -1,8 +1,9 @@
 -- Show the type of the mutable constructor.
 :wtype Mutable#
 
--- Show the type of the distinct constructor.
-:wtype Distinct#
+-- Show the type of the distinct constructors.
+:wtype Distinct2#
+:wtype Distinct10# 
 
 -- Mutability of some region.
 :wtype Mutable# [R0#]

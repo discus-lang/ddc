@@ -224,8 +224,8 @@ data TwCon
         -- | Mutability of material regions in some type.
         | TwConDeepMutable      -- :: * ~> @
 
-        -- | Distinctness of some two regions
-        | TwConDistinct         -- :: % ~> % ~> @
+        -- | Distinctness of some n regions
+        | TwConDistinct Int     -- :: * ~> [%] ~> @
         
         -- | Laziness of some region.
         | TwConLazy             -- :: % ~> @

@@ -178,12 +178,12 @@ typeOfPrimName nn
                                         (tBot kClosure)
                       $ (tInt r0)
 
-        NameCap CapGlobal       -> Just $ tForall kRegion $ \r -> tGlobal   r
-        NameCap CapConst        -> Just $ tForall kRegion $ \r -> tConst    r
-        NameCap CapMutable      -> Just $ tForall kRegion $ \r -> tMutable  r
-        NameCap CapDistinct     -> Just $ tForalls [kRegion, kRegion] $ \[r1,r2] -> tDistinct r1 r2
-        NameCap CapLazy         -> Just $ tForall kRegion $ \r -> tLazy     r
-        NameCap CapManifest     -> Just $ tForall kRegion $ \r -> tManifest r
+        NameCap CapGlobal       -> Just $ tForall kRegion                $ \r  -> tGlobal   r
+        NameCap CapConst        -> Just $ tForall kRegion                $ \r  -> tConst    r
+        NameCap CapMutable      -> Just $ tForall kRegion                $ \r  -> tMutable  r
+        NameCap CapLazy         -> Just $ tForall kRegion                $ \r  -> tLazy     r
+        NameCap CapManifest     -> Just $ tForall kRegion                $ \r  -> tManifest r
+        NameCap (CapDistinct n) -> Just $ tForalls (replicate n kRegion) $ \rs -> tDistinct n rs
 
         _ -> Nothing
 

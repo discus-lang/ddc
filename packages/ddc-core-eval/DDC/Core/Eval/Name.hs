@@ -15,6 +15,7 @@ import DDC.Base.Pretty
 import DDC.Data.Token
 import Data.Typeable
 import Data.Char
+import Data.List
 
 
 -- | Names of things recognised by the evaluator.
@@ -100,7 +101,7 @@ data Cap
 
         -- | Witness that some regions are distinct
         --   This lets us perform aliasing based optimisations.
-        | CapDistinct -- Distinct# :: [r1 r2 : %]. Distinct r1 r2
+        | CapDistinct Int -- Distinct2# :: [r1 r2 : %]. Distinct2 r1 r2
              
         -- | Witness that a region is lazy.
         --   This lets is allocate thunks into the region,
@@ -120,7 +121,7 @@ instance Pretty Cap where
         CapGlobal       -> text "Global#"
         CapConst        -> text "Const#"
         CapMutable      -> text "Mutable#"
-        CapDistinct     -> text "Distinct#"
+        CapDistinct n   -> text "Distinct" <> ppr n <> text "#"
         CapLazy         -> text "Lazy#"
         CapManifest     -> text "Manifest#"
 
@@ -231,9 +232,11 @@ readName str@(c:rest)
         | str == "Global#"      = Just $ NameCap CapGlobal
         | str == "Const#"       = Just $ NameCap CapConst
         | str == "Mutable#"     = Just $ NameCap CapMutable
-        | str == "Distinct#"    = Just $ NameCap CapDistinct
         | str == "Lazy#"        = Just $ NameCap CapLazy
         | str == "Manifest#"    = Just $ NameCap CapManifest
+        | Just n <- stripPrefix "Distinct" str
+        , n'     <- read $ takeWhile ('#' /=) n
+                                = Just $ NameCap (CapDistinct n')
 
         -- other constructors
         | isUpper c

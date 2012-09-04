@@ -28,6 +28,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
 import Data.Char
+import Data.List
 
 
 -- | Textual keywords in the core language.
@@ -66,16 +67,24 @@ readTwConBuiltin ss
         "DeepConst"     -> Just TwConDeepConst
         "Mutable"       -> Just TwConMutable
         "DeepMutable"   -> Just TwConDeepMutable
-        "Distinct"      -> Just TwConDistinct
         "Lazy"          -> Just TwConLazy
         "HeadLazy"      -> Just TwConHeadLazy
         "Manifest"      -> Just TwConManifest
         "Pure"          -> Just TwConPure
         "Empty"         -> Just TwConEmpty
         "Disjoint"      -> Just TwConDisjoint
-        _               -> Nothing
+        "Distinct"      -> Just (TwConDistinct 2)
+        _               -> readTwConWithArity ss
 
 
+readTwConWithArity :: String -> Maybe TwCon
+readTwConWithArity ss
+ | Just n <- stripPrefix "Distinct" ss 
+ , all isDigit n
+ = Just (TwConDistinct $ read n)
+ | otherwise = Nothing
+ 
+ 
 -- | Read a builtin `TcCon` with a non-symbolic name, 
 --   ie not '->'.
 readTcConBuiltin :: String -> Maybe TcCon

@@ -553,13 +553,12 @@ isSomeValue weak store xx
 --   permitted in a letregion.
 regionWitnessOfType :: Type Name -> Maybe (Witness Name)
 regionWitnessOfType tt
- = case tt of
-        TApp (TCon (TyConWitness TwConGlobal))   r -> Just $ wGlobal   r
-        TApp (TCon (TyConWitness TwConMutable))  r -> Just $ wMutable  r
-        TApp (TCon (TyConWitness TwConConst))    r -> Just $ wConst    r
-        TApp (TCon (TyConWitness TwConLazy))     r -> Just $ wLazy     r
-        TApp (TCon (TyConWitness TwConManifest)) r -> Just $ wManifest r
-        TApp (TApp (TCon (TyConWitness TwConDistinct)) r1) r2
-         -> Just $ wDistinct r1 r2
+ = case takeTyConApps tt of
+        Just (TyConWitness  TwConGlobal     , [r]) -> Just $ wGlobal   r
+        Just (TyConWitness  TwConMutable    , [r]) -> Just $ wMutable  r
+        Just (TyConWitness  TwConConst      , [r]) -> Just $ wConst    r
+        Just (TyConWitness  TwConLazy       , [r]) -> Just $ wLazy     r
+        Just (TyConWitness  TwConManifest   , [r]) -> Just $ wManifest r
+        Just (TyConWitness (TwConDistinct n), rs)  -> Just $ wDistinct n rs
         _                                          -> Nothing
 

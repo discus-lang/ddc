@@ -9,7 +9,7 @@ imports {
     getTag   :: [r : %]. Ptr# r Obj -> Tag#;
 }
 with letrec {
-addDistinct [r1 r2 r3 : %] <w1 : Mutable r1> <w2 : Distinct r1 r2> (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
+addDistinct [r1 r2 r3 : %] <w1 : Mutable r1> <w2 : Distinct2 r1 r2> (x : Ptr# r1 Obj) (y : Ptr# r2 Obj)
     : Ptr# r3 Obj
  =  let x'  = unboxInt [r1] x in
     let y'  = unboxInt [r2] y in

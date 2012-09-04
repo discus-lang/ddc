@@ -6,6 +6,7 @@ where
 import DDC.Core.Eval.Compounds
 import DDC.Core.Eval.Name
 import DDC.Core.Exp
+import DDC.Core.Compounds
 import DDC.Base.Pretty
 import Control.Monad
 import Data.Maybe
@@ -32,7 +33,7 @@ data CapSet
         { capsGlobal    :: Set Rgn 
         , capsConst     :: Set Rgn
         , capsMutable   :: Set Rgn
-        , capsDistinct  :: Set (Rgn,Rgn)
+        , capsDistinct  :: Set [Rgn]
         , capsLazy      :: Set Rgn
         , capsManifest  :: Set Rgn }
         deriving Show
@@ -64,15 +65,17 @@ mustInsertCap ww caps
         CapManifest     -> caps { capsManifest = Set.insert r (capsManifest caps)}
         _               -> error "mustInsertCap: invalid witness application"
         
- | WApp (WApp (WCon  (WiConBound       (UPrim (NameCap CapDistinct) _) _)) 
-              (WType (TCon (TyConBound (UPrim nh1                   _) _))))
-        (WType (TCon (TyConBound (UPrim nh2 _) _))) <- ww
- , NameRgn r1 <- nh1
- , NameRgn r2 <- nh2
- = caps { capsDistinct = Set.insert (r1,r2) (capsDistinct caps) }
+ | Just (NameCap (CapDistinct _), ws) <- takePrimWiConApps ww
+ , ws'                                <- map takeNameRgn ws  
+ , all isJust ws'
+ = caps { capsDistinct = Set.insert (catMaybes ws') (capsDistinct caps) }
  
  | otherwise
  = error "mustInsertCap: not a capability"
+
+takeNameRgn :: Witness Name -> Maybe Rgn
+takeNameRgn (WType (TCon (TyConBound (UPrim (NameRgn r) _) _))) = Just r
+takeNameRgn _                                                   = Nothing
 
 
 -- | Check a capability set for conflicts between the capabilities.

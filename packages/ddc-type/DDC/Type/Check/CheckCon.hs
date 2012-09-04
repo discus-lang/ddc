@@ -50,11 +50,11 @@ kindOfTwCon tc
         TwConDeepConst  -> kData     `kFun`  kWitness
         TwConMutable    -> kRegion   `kFun`  kWitness
         TwConDeepMutable-> kData     `kFun`  kWitness
-        TwConDistinct   -> kRegion   `kFun`  kRegion  `kFun` kWitness        
         TwConLazy       -> kRegion   `kFun`  kWitness
         TwConHeadLazy   -> kData     `kFun`  kWitness
         TwConManifest   -> kRegion   `kFun`  kWitness
-        TwConDisjoint	-> kEffect   `kFun`  kEffect  `kFun` kWitness
+        TwConDisjoint	  -> kEffect   `kFun`  kEffect  `kFun`  kWitness
+        TwConDistinct n -> (replicate n kRegion)      `kFuns` kWitness        
 
 
 -- | Take the kind of a computation type constructor.

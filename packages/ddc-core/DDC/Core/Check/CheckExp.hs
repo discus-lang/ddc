@@ -1,4 +1,4 @@
-
+{-# LANGUAGE ViewPatterns #-}
 -- | Type checker for the Disciple Core language.
 module DDC.Core.Check.CheckExp
         ( Config (..)
@@ -1000,11 +1000,13 @@ checkWitnessBindM kenv xx uRegions bsWit bWit
          | Just bConflict <- L.lookup (tLazy t2)    btsWit
          -> throw $ ErrorLetRegionWitnessConflict xx bWit bConflict
          | otherwise    -> checkWitnessArg t2
-                  
-        TApp (TApp (TCon (TyConWitness TwConDistinct)) t1) t2
-         | isBound t1 -> checkWitnessArg t2
-         | isBound t2 -> checkWitnessArg t1
-         | otherwise  -> throw $ ErrorLetRegionWitnessFree xx bWit
+         
+        (takeTyConApps -> Just (TyConWitness (TwConDistinct _), ts))
+         | ts /= (nub ts) -> throw $ ErrorLetRegionWitnessInvalid xx bWit         
+         | notBounds <- filter (not . isBound) ts
+         , not $ null notBounds
+         -> mapM_ checkWitnessArg notBounds
+         | otherwise      -> throw $ ErrorLetRegionWitnessFree    xx bWit
          
         _ -> throw $ ErrorLetRegionWitnessInvalid xx bWit
 
