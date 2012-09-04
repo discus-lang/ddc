@@ -13,6 +13,7 @@ import qualified DDC.Core.Transform.Rewrite.Match	as RM
 import		 DDC.Core.Transform.Rewrite.Rule	(RewriteRule(..), BindMode(..))
 import qualified DDC.Core.Transform.SubstituteXX	as S
 import qualified DDC.Type.Transform.SubstituteT		as S
+import qualified DDC.Core.Transform.Trim                as Trim
 import qualified DDC.Core.Transform.LiftX		as L
 import qualified DDC.Type.Compounds			as T
 import qualified Data.Map as Map
@@ -363,6 +364,7 @@ rewriteX
        []	-> x
        _	-> XCast anno 
 		   (CastWeakenClosure
+                   $ Trim.trimClosures anno
 		   $ map (S.substituteXArgs bas) clo)
 		   x
 

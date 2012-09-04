@@ -97,7 +97,7 @@ ok
 
 weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {foldrAndBuild; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+weakclo {foldrAndBuild; [Int]; [R0#]; [R1#]} in
 countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 
@@ -202,21 +202,15 @@ countZ (10 [R0#] ()) [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#]
 
 weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {foldrAndBuild; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
+weakclo {foldrAndBuild; [Int]; [R0#]; [R1#]} in
 weakclo {plus} in
 weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {foldrAndBuild; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0# + Alloc R1#]; [R1#]} in
-weakclo {\(^ ^ : Int R0#).
-case even ^1 of {
-  0  
-   -> plus ^1 ^0;
-  _ 
-   -> ^0
-}} in
+weakclo {foldrAndBuild; [Int]; [R0#]; [R1#]} in
+weakclo {[Int]; [R0#]; even; plus} in
 weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {foldrAndBuild; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+weakclo {foldrAndBuild; [Int]; [R0#]; [R1#]} in
 countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#]
     (compose [Int R0#] [Int R0#] [Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#]
          (\(^ ^ : Int R0#).
@@ -308,7 +302,7 @@ countZ (100 [R0#] ()) [Int R0#] [Read R0# + Alloc R0#] [Read R0# + Alloc R0#] [A
 
 weakclo {build; foldr} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {foldrAndBuild; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+weakclo {foldrAndBuild; [Int]; [R0#]; [R1#]} in
 countZ (100 [R0#] ()) [List R1# (Int R0#)] [Read R0# + Alloc R0#] [Alloc R1#] [Alloc R1#] [Use R0#] [Use R0#] [$0]
     (compose [Int R0#] [Int R0#] [List R1# (Int R0#) -(Alloc R1# | Use R0#)> List R1# (Int R0#)] [!0] [Read R0# + Alloc R0#] [$0] [Use R0#]
          (Cons [R1#] [Int R0#]) double)

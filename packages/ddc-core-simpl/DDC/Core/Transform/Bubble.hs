@@ -15,8 +15,9 @@ import DDC.Core.Collect
 import DDC.Core.Compounds
 import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
-import qualified DDC.Type.Env   as Env
-import qualified Data.Set       as Set
+import qualified DDC.Core.Transform.Trim        as Trim
+import qualified DDC.Type.Env                   as Env
+import qualified Data.Set                       as Set
 import Data.Set                 (Set)
 import Data.List
 
@@ -42,7 +43,7 @@ class Bubble (c :: * -> * -> *) where
 
 instance Bubble Exp where
  bubble xx
-  = case xx of
+  = case Trim.trimX xx of
         XVar{}  -> ([], xx)
         XCon{}  -> ([], xx)
 

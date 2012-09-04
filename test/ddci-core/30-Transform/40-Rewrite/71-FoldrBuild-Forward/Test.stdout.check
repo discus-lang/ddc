@@ -41,7 +41,7 @@ let ^ : [^ : *].[^ ^ ^ : !].[^ ^ ^ : $].(Int R0# -(^5 | ^2)> ^6 -(^4 | ^1)> ^6) 
 let ^ : List R1# (Int R0#)
       = build [Int R0#] [R1#] [!0] [Read R0# + Alloc R0#] [Use R0#] [Use R0#] ^0 in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+weakclo {build; foldr; [Int]; [R0#]; [R1#]} in
 ^1 [Int R0#] [!0] [Read R0# + Alloc R0#] [Alloc R0#] [Use R0#] [Use R0#] [Use R0#] plus zero
 
 ok
@@ -141,7 +141,7 @@ ok
         Flatten: No information;
         Namify: No information;
         Forward:
-            Substitutions:  2
+            Substitutions:  3
             Bindings:       2;
         Beta reduction:
             Types:          7
@@ -194,36 +194,19 @@ ok
         Namify: No information
 
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0#]; [R1#]} in
+weakclo {build; foldr; [Int]; [R0#]; [R1#]} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int R0#]; [Use R0# + Use R1#]; [Use R0# + Use R1#]; [!0]; [Read R0# + Read R1# + Alloc R0#]; [R1#]} in
+weakclo {build; foldr; [Int]; [R0#]; [R1#]} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; \(v20 : List R1# (Int R0#)).
-/\(t21 : *)./\(t22 t23 t24 : !)./\(t25 t26 t27 : $).
- \(v28 : Int R0# -(t22 | t25)> t21 -(t23 | t26)> t21).\(v29 : Unit -(t24 | t27)> t21).
-let v33 : Int R0# -(!0 | Use R0# + t25)> t21 -(Read R0# + Alloc R0# + t22 + t23 | Use R0# + t25)> t21
-      = \(v30 : Int R0#).\(v31 : t21).
-        let v32 : Int R0# = even v30 in
-        case v32 of {
-          0  
-           -> v28 v30 v31;
-          _ 
-           -> v31
-        } in
-foldr [Int R0#] [t21] [R1#] [!0] [Read R0# + Alloc R0# + t22 + t23] [t24] [Use R0# + t25] [Use R0# + t25] [t27] v33 v29 v20} in
 weakeff [Read R0# + Read R1# + Alloc R0# + Alloc R1#] in
-weakclo {build; foldr; [Int R0#]; [Use R0#]; [Use R0#]; [!0]; [Read R0# + Alloc R0#]; [R1#]} in
+weakclo {build; foldr; [Int]; [R0#]; [R1#]} in
 weakeff [Read R0# + Alloc R0# + Alloc R1#] in
-weakclo {build; \(v8 : List R1# (Int R0#)).
-/\(t9 : *)./\(t10 t11 t12 : !)./\(t13 t14 t15 : $).
- \(v16 : Int R0# -(t10 | t13)> t9 -(t11 | t14)> t9).\(v17 : Unit -(t12 | t15)> t9).
-let v18 : Int R0# -(Read R0# + Alloc R0# + t10 | Use R0# + t13)> t9 -(t11 | t14)> t9
-      = compose [Int R0#] [Int R0#] [t9 -(t11 | t14)> t9] [t10] [Read R0# + Alloc R0#] [t13] [Use R0#] v16 double in
-foldr [Int R0#] [t9] [R1#] [Read R0# + Alloc R0# + t10] [t11] [t12] [Use R0# + t13] [t14] [t15] v18 v17 v8} in
 let num : Int R0# = 10 [R0#] () in
 let v7 : [t0 : *].[t1 t2 t3 : !].[t4 t5 t6 : $].(Int R0# -(t1 | t4)> t0 -(t2 | t5)> t0) -(!0 | Use R0#)> (Unit -(t3 | t6)> t0) -(Read R0# + Alloc R0# + t1 + t2 + t3 | Use R0# + t4)> t0 = count' num in
 weakclo {build; v7} in
+weakclo {build; [Int]; [R0#]; compose; double; foldr; [R1#]; v7} in
+weakclo {build; [Int]; [R0#]; even; foldr; [R1#]; compose; double; v7} in
 let v33 : Int R0# -(!0 | Use R0#)> Int R0# -(Read R0# + Alloc R0# | Use R0#)> Int R0#
       = \(v30 v31 : Int R0#).
         let v32 : Int R0# = even v30 in

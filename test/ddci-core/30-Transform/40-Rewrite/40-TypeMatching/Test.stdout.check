@@ -5,7 +5,7 @@ ok, added whacky0
 
 -- should turn into a nil
 ok
-weakclo {5 [R0#] ()} in
+weakclo {[R0#]} in
 Nil [R0#] [Int R0#] ()
 
 -- shouldn't turn into a nil; different regions
@@ -16,6 +16,6 @@ Cons [R1#] [Int R0#] (5 [R0#] ())
 ok, added whacky1
 
 ok
-weakclo {\(_ : Int R0#). ()} in
+weakclo {[Int]; [R0#]} in
 Nil [R0#] [Int R0# -> Unit] ()
 
