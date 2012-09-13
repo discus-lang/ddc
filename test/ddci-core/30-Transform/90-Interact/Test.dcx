@@ -27,7 +27,7 @@ main    [r : %]
 in ()
 ;;
 Inline Int -boxInt -unboxInt
-BetaLets
+BetaLets <> Forward
 Forward
 Rewrite
 :back

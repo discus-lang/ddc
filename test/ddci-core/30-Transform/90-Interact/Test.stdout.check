@@ -38,7 +38,10 @@ letrec {
         Witnesses:      1
         Values:         0
         Values letted:  0
-        Values skipped: 0
+        Values skipped: 0;
+    Forward:
+        Substitutions:  0
+        Bindings:       0
 
 letrec {
   main : [r : %].Const r => Int# -(Read r + Alloc r | Use r)> Int#
@@ -288,6 +291,6 @@ letrec {
 ()
 * TRANSFORM SEQUENCE:
     Inline
-    BetaLets
+    BetaLets <> Forward
     Inline
     Rewrite
