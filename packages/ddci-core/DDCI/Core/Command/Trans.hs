@@ -138,9 +138,12 @@ applyTransAndCheck state profile kenv tenv zero simpl (x, t1, eff1, clo1)
            -> do putStrLn $ renderIndent $ vcat
                     [ text "* CRASH AND BURN: Transform is not type preserving."
                     , ppr x'
-                    , text "::"  <+> ppr t2
-                    , text ":!:" <+> ppr eff2
-                    , text ":$:" <+> ppr clo2 ]
+                    , text ":: 1 " <+> ppr t1
+                    , text ":: 2 " <+> ppr t2
+                    , text ":!:1 " <+> ppr eff1
+                    , text ":!:2 " <+> ppr eff2
+                    , text ":$:1 " <+> ppr clo1
+                    , text ":$:2 " <+> ppr clo2 ]
                  return Nothing
 
           Left err
