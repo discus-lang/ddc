@@ -101,3 +101,12 @@ let y : Int r
         ^0 in
 ()
 
+
+ok, added silly
+ok
+
+-- don't fire, just unfold
+let ^ : Int R0# = 5 [R0#] () in
+let ^ : Int R0# = 3 [R0#] () in
+let z : Int R0# = subInt [R0#] [R0#] [R0#] ^1 ^0 in
+addInt [R0#] [R0#] [R0#] (0 [R0#] ()) z

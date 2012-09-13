@@ -10,7 +10,7 @@ import qualified DDC.Core.Transform.AnonymizeX          as A
 import qualified DDC.Core.Transform.Rewrite.Disjoint	as RD
 import qualified DDC.Core.Transform.Rewrite.Env		as RE
 import qualified DDC.Core.Transform.Rewrite.Match	as RM
-import		 DDC.Core.Transform.Rewrite.Rule	(RewriteRule(..), BindMode(..))
+import		 DDC.Core.Transform.Rewrite.Rule	(RewriteRule(..), BindMode(..), isBMType)
 import qualified DDC.Core.Transform.SubstituteXX	as S
 import qualified DDC.Type.Transform.SubstituteT		as S
 import qualified DDC.Core.Transform.Trim                as Trim
@@ -20,7 +20,8 @@ import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import Control.Monad.Writer (tell, runWriter)
-import Data.Typeable (Typeable)
+import Data.List	    (partition)
+import Data.Typeable	    (Typeable)
 
 
 data RewriteInfo = RewriteInfo [RewriteLog]
@@ -110,8 +111,8 @@ rewrite rules x0
 	in  case subs of
 	    (((sub, []), name, RewriteRule { ruleBinds = bs, ruleLeft = hole }):_) ->
 		    -- only get value-level bindings
-		let bs'	       = map snd $ filter ((==BMType).fst) bs
-		    (_,bas')   = lookups bs' sub
+		let bs'	       = map snd $ filter (isBMType.fst) bs
+		    bas'       = lookups bs' sub
 
 		    -- check if it looks like something has already been unfolded
 		    isUIx x = case x of 
@@ -122,14 +123,14 @@ rewrite rules x0
 
 		    -- find kind-values and sub those in as well
 		    bsK'       = map snd $ filter ((==BMKind).fst) bs
-		    (_,basK)   = lookups bsK' sub
+		    basK       = lookups bsK' sub
 
 		    basK'      = concatMap (\(b,x) -> case X.takeXType x of
 						      Just t -> [(b,t)]
 						      Nothing-> []) basK
 
 		    -- surround whole expression with anon lets from sub
-		    values     = map	 (\(b,v) ->   (BAnon (S.substituteTs basK' $ T.typeOfBind b), v)) bas'
+		    values     = map	 (\(b,v) ->   (BAnon (S.substituteTs basK' $ T.typeOfBind b), v)) (reverse bas')
 		    -- replace 'def' with LHS-HOLE[sub => ^n]
 		    anons      = zipWith (\(b,_) i -> (b, XVar a (UIx i))) bas' [0..]
 		    lets       = map (\(b,v) -> LLet LetStrict b v) values
@@ -339,12 +340,30 @@ rewriteX
 
     -- TODO the annotations here will be rubbish because they are from the rule's source location
     subst m
-     =	    let (_,bas') = lookups bs m
-		rhs'	 = A.anonymizeX rhs
-	    in  checkConstrs bas' constrs
-		$ weakeff bas'
-		$ weakclo bas'
-		$ S.substituteXArgs bas' rhs'
+     =	    let bas2        = lookups bs m
+		rhs2	    = A.anonymizeX rhs
+		(bas3,lets) = wrapLets bas2
+		rhs3	    = L.liftX (length lets) rhs2
+
+	    in  checkConstrs bas3 constrs
+		$ X.makeXLets anno lets
+		$ weakeff bas3
+		$ weakclo bas3
+		$ S.substituteXArgs bas3 rhs3
+
+    wrapLets bas
+     =	let (as,bs'') = partition isMkLet (bas `zip` binds)
+	    as'	    = map fst as
+	    bs'	    = map fst bs''
+
+	    anons   = zipWith (\(b,_) i -> (b, XVar anno (UIx i))) as' [0..]
+	    values  = map     (\(b,v) ->   (BAnon (substT bs' $ T.typeOfBind b), v)) (reverse as')
+	    lets    = map (\(b,v) -> LLet LetStrict b v) values
+
+	in  (bs'++anons, lets)
+
+    isMkLet (_,(BMType i,_)) = i /= 1
+    isMkLet _                = False
 
     -- Dummy annotation for the casts
     anno = case args of
@@ -355,8 +374,7 @@ rewriteX
      = case eff of
        Nothing	-> x
        Just e	-> XCast anno
-		   (CastWeakenEffect $ S.substituteTs
-		    (Maybe.catMaybes $ map lookupT bas) e)
+		   (CastWeakenEffect $ substT bas e)
 		   x
 
     weakclo bas x
@@ -370,10 +388,12 @@ rewriteX
 
     checkConstrs _ [] x = Just x
     checkConstrs bas (c:cs) x = do
-	let c' = S.substituteTs (Maybe.catMaybes $ map lookupT bas) c
+	let c' = substT bas c
 	if RE.containsWitness c' ws || RD.checkDisjoint c' ws
 	    then checkConstrs bas cs x
 	    else Nothing
+    
+    substT bas x = S.substituteTs (Maybe.catMaybes $ map lookupT bas) x
 
     lookupT (b,XType t) = Just (b,t)
     lookupT _ = Nothing
@@ -381,7 +401,7 @@ rewriteX
 lookups bs m
  =  let bas  = Maybe.catMaybes $ map (lookupX m) bs
         bas' = map (\(b,a) -> (A.anonymizeX b, A.anonymizeX a)) bas
-    in  (bas, bas')
+    in  bas'
 
 lookupX (xs,_) b@(BName n _)
  | Just x <- Map.lookup n xs

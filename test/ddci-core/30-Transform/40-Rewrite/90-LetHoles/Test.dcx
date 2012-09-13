@@ -108,3 +108,15 @@ let y = unbox_ [r] x		in
     ()
 ;;
 
+
+:set.. rule silly [r : %] (x y : Int r).
+    addInt [:r r r:] x {subInt [:r r r:] y x}
+    = y
+;;
+:set trans Rewrite
+
+-- don't fire, just unfold
+:trans..
+let z = subInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ())
+in  addInt [:R0# R0# R0#:] (0 [R0#] ()) z
+;;

@@ -2,6 +2,7 @@
 module DDC.Core.Transform.Rewrite.Rule 
         ( RewriteRule   (..)
 	, BindMode     (..)
+	, isBMKind, isBMType
 	, checkRewriteRule
 	, mkRewriteRule)
 where
@@ -10,6 +11,7 @@ import DDC.Base.Pretty
 import DDC.Core.Pretty()
 import DDC.Type.Pretty()
 import DDC.Core.Transform.Rewrite.Error
+import qualified DDC.Core.Analysis.Usage	as U
 import qualified DDC.Core.Check.CheckExp        as C
 import qualified DDC.Core.Collect               as C
 import qualified DDC.Core.Transform.SpreadX     as S
@@ -20,6 +22,7 @@ import qualified DDC.Type.Equiv                 as T
 import qualified DDC.Type.Predicates            as T
 import qualified DDC.Type.Subsumes              as T
 import qualified DDC.Type.Transform.SpreadT     as S
+import qualified Data.Map		as Map
 import qualified Data.Maybe		as Maybe
 import qualified Data.Set               as Set
 
@@ -43,8 +46,16 @@ data RewriteRule a n
 						--    used to check if rule is shadowed.
 	} deriving (Eq, Show)
 
-data BindMode = BMKind | BMType
+data BindMode = BMKind | BMType Int -- ^ number of usages
     deriving (Eq, Show)
+
+isBMKind :: BindMode -> Bool
+isBMKind BMKind = True
+isBMKind _	= False
+
+isBMType :: BindMode -> Bool
+isBMType (BMType _) = True
+isBMType _	    = False
 
 -- | Construct a rewrite rule, do not check if it's valid
 mkRewriteRule
@@ -66,7 +77,7 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
       pprBinders []	= text ""
       pprBinders bs'	= foldl1 (<>) (map pprBinder bs') <> text ". "
       pprBinder (BMKind,b) = text "[" <> ppr b <> text "] "
-      pprBinder (BMType,b) = text "(" <> ppr b <> text ") "
+      pprBinder (BMType _,b) = text "(" <> ppr b <> text ") "
       
       pprConstrs []	= text ""
       pprConstrs (c:cs')= ppr c <> text " => " <> pprConstrs cs'
@@ -131,6 +142,9 @@ checkRewriteRule config kenv tenv
 	-- No lets or lambdas in left-hand side
 	checkValidPattern lhs_full
 
+	-- Count how many times each binder is used in rhs
+	bs'' <- countBinderUsage bs' rhs
+
 	let binds = Set.fromList
 		  $ Maybe.catMaybes
 		  $ map (T.takeSubstBoundOfBind . snd) bs
@@ -139,7 +153,7 @@ checkRewriteRule config kenv tenv
 		     `Set.difference` binds
 
 	return $ RewriteRule 
-                        bs' cs' 
+                        bs'' cs' 
                         lhs' hole' rhs'
                         e c
 			freeVars
@@ -163,8 +177,8 @@ extendBinds binds kenv tenv
    go ((bm,b):bs) k t acc
      = let b'      = S.spreadX k t b
            (k',t') = case bm of
-		     BMKind -> (T.extend b' k, t)
-		     BMType -> (k, T.extend b' t)
+		     BMKind   -> (T.extend b' k, t)
+		     BMType _ -> (k, T.extend b' t)
        in  go bs k' t' (acc ++ [(bm,b')])
 
 -- | Typecheck an expression or return an error
@@ -261,3 +275,17 @@ checkValidPattern expr
     go_t (TApp l r)	= go_t l >> go_t r
     go_t (TSum _)	= return ()
 
+-- Count how many times each binder is used in rhs
+countBinderUsage :: Ord n => [(BindMode, Bind n)] -> Exp a n -> Either (Error a n) [(BindMode, Bind n)]
+countBinderUsage bs x
+ = let	(U.UsedMap um,_)    = U.usageX x
+   in	return $ map (get um) bs
+ where
+   get um (BMType _, BName n t)
+     = (BMType
+        $ length
+        $ Maybe.fromMaybe []
+        $ Map.lookup n um
+       , BName n t)
+   get _  b
+     = b
