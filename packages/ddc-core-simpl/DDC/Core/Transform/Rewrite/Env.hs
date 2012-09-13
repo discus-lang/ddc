@@ -75,12 +75,15 @@ extendLets (LLetRegions bs cs) (renv@RewriteEnv{letregions = rs})
  = foldl extendB renv bs
  where
     extendB env b
-      | BAnon _	<- b
+      | BAnon _     <- b
       = foldl (flip extend) (lift b $ env { letregions = [b]:rs } ) cs
-      | BName _ _	<- b
+      | BName _ _   <- b
       = foldl (flip extend) (lift b $ env { letregions = extend' b rs } ) cs
+
+      -- Otherwise it's a BNone, so don't need to modify environment
       | otherwise
-      = error "I don't know what do do here"
+      = env
+
     extend' b (r:rs') = (b:r) : rs'
     extend' b []	   = [[b]]
 

@@ -17,6 +17,15 @@ letregion r with {w : Const r} in
      weakclo {copyInt; [r]} in
      23 [r] ())
 
+-- letregionS only do first one
+letregions r1 r2 with {w : Const r1} in
+(\(x : Int r1). ())
+    (addInt [r1] [r2] [r1]
+         (weakeff [Read r1 + Alloc r1] in
+          weakclo {copyInt; [r1]} in
+          23 [r1] ())
+         (copyInt [r2] [r2] (5 [r2] ())))
+
 -- do it
 letregion ^ with {w : Const ^0} in
 (\(x : Int ^0). ())
