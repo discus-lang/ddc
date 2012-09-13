@@ -63,3 +63,55 @@ letregion ^ in
 	(copyInt [:R1# R1#:] (23 [R1#] ())))
 ;;
 
+
+-- a silly rule to test Distinct constraints
+:set.. rule dumbDistinct [r1 r2:%] (x:Int r1) (y:Int r2).
+    Distinct r1 r2 =>
+    addInt [:r1 r2 r1:] x y
+    = 0 [r1] ()
+;;
+
+:set trans Rewrite
+
+-- don't: not distinct
+:trans..
+addInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ())
+;;
+-- don't: not known
+:trans..
+/\(r1 r2 : %). \(_ : Unit).
+addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
+;;
+-- do: both concrete
+:trans..
+addInt [:R0# R1# R0#:] (5 [R0#] ()) (3 [R1#] ())
+;;
+-- do: both concrete
+:trans..
+letregion ^ in
+addInt [:R0# ^0 R0#:] (5 [R0#] ()) (3 [^0] ())
+;;
+-- do: known from argument
+:trans..
+/\(r1 r2 : %). \(w : Distinct r1 r2). \(_ : Unit).
+addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
+;;
+-- do: known from letregions
+:trans..
+letregions r1 r2 with { w : Distinct r1 r2 } in
+copyInt [:r1 R0#:]
+    (addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ()))
+;;
+
+-- do: subset of a Distinct3
+-- this needs to be an argument because letregions are treated as 'concrete' & known to be distinct to other concretes as well.
+:trans..
+/\(r1 r2 r3 : %). \(w : Distinct3 r1 r2 r3). \(_ : Unit).
+addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
+;;
+-- do: another subset (rot)
+:trans..
+/\(r1 r2 r3 : %). \(w : Distinct3 r2 r3 r1). \(_ : Unit).
+addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
+;;
+-- TODO TODO TODO

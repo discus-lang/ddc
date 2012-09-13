@@ -389,7 +389,7 @@ rewriteX
     checkConstrs _ [] x = Just x
     checkConstrs bas (c:cs) x = do
 	let c' = substT bas c
-	if RE.containsWitness c' ws || RD.checkDisjoint c' ws
+	if RE.containsWitness c' ws || RD.checkDisjoint c' ws || RD.checkDistinct c' ws
 	    then checkConstrs bas cs x
 	    else Nothing
     

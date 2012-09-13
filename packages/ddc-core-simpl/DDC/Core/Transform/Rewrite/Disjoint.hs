@@ -1,6 +1,7 @@
 -- | Check whether two effects are non-interfering
 module DDC.Core.Transform.Rewrite.Disjoint
-    ( checkDisjoint )
+    ( checkDisjoint
+    , checkDistinct )
 where
 
 import DDC.Core.Exp
@@ -124,6 +125,30 @@ checkDisjoint c env
     boundOf _
      = Nothing
 
+checkDistinct
+    :: (Eq n, Ord n, Show n)
+    => Type n			-- ^ Target, eg "Distinct r q"
+    -> RE.RewriteEnv a n	-- ^ Environment: distinctness map
+    -> Bool
+checkDistinct c env
+ -- It's of the form "Distinct r q"
+ | (TCon (TyConWitness (TwConDistinct n)) : args)
+		<- T.takeTApps c
+
+ , args'	<- concatMap bound $ take n args
+ = all (uncurry $ areDistinct env) (combs args')
+
+ | otherwise
+ = False
+
+ where
+  combs [] = []
+  combs (x:xs) = repeat x `zip` xs ++ combs xs
+
+  bound (TVar b)		= [b]
+  bound (TCon (TyConBound b _)) = [b]
+  bound _			= []
+
 -- | Check if two regions are definitely distinct.
 -- We might not know, eg if they're bound in lambdas, so err on false
 areDistinct
@@ -161,6 +186,7 @@ areDistinct env p q
       =  RE.containsWitness (wit p q) env
       || RE.containsWitness (wit q p) env
 
+    -- TODO deal with distinctN
     wit p' q'
       = T.TCon (T.TyConWitness (T.TwConDistinct 2)) `T.TApp` rgn p' `T.TApp` rgn q'
 

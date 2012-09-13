@@ -57,3 +57,55 @@ weakclo {copyInt; [R0#]} in
 \(w : Const R0#).\(u : Unit).
 copyInt [R1#] [R1#] (23 [R1#] ())
 
+
+-- a silly rule to test Distinct constraints
+ok, added dumbDistinct
+
+ok
+
+-- don't: not distinct
+addInt [R0#] [R0#] [R0#] (5 [R0#] ()) (3 [R0#] ())
+-- don't: not known
+/\(r1 r2 : %).
+ \(_ : Unit).
+addInt [r1] [r2] [r1] (5 [r1] ()) (3 [r2] ())
+-- do: both concrete
+let ^ : Int R1# = 3 [R1#] () in
+let ^ : Int R0# = 5 [R0#] () in
+weakeff [Read R0# + Read R1# + Alloc R0#] in
+weakclo {^0; ^1; addInt; [R1#]} in
+0 [R0#] ()
+-- do: both concrete
+letregion ^ in
+let ^ : Int ^0 = 3 [^0] () in
+let ^ : Int R0# = 5 [R0#] () in
+weakeff [Read ^0 + Read R0# + Alloc R0#] in
+weakclo {^0; ^1; addInt; [^0]} in
+0 [R0#] ()
+-- do: known from argument
+/\(r1 r2 : %).
+ \(w : Distinct2 r1 r2).\(_ : Unit).
+let ^ : Int r2 = 3 [r2] () in
+let ^ : Int r1 = 5 [r1] () in
+weakeff [Read r1 + Read r2 + Alloc r1] in
+weakclo {^0; ^1; addInt; [r2]} in
+0 [r1] ()
+-- do: known from letregions
+letregions r1 r2 with {w : Distinct2 r1 r2} in
+copyInt [r1] [R0#]
+    (let ^ : Int r2 = 3 [r2] () in
+     let ^ : Int r1 = 5 [r1] () in
+     weakeff [Read r1 + Read r2 + Alloc r1] in
+     weakclo {^0; ^1; addInt; [r2]} in
+     0 [r1] ())
+
+-- do: subset of a Distinct3
+-- this needs to be an argument because letregions are treated as 'concrete' & known to be distinct to other concretes as well.
+/\(r1 r2 r3 : %).
+ \(w : Distinct3 r1 r2 r3).\(_ : Unit).
+addInt [r1] [r2] [r1] (5 [r1] ()) (3 [r2] ())
+-- do: another subset (rot)
+/\(r1 r2 r3 : %).
+ \(w : Distinct3 r2 r3 r1).\(_ : Unit).
+addInt [r1] [r2] [r1] (5 [r1] ()) (3 [r2] ())
+-- TODO TODO TODO
