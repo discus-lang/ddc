@@ -5,6 +5,7 @@ module DDC.Core.Transform.Rewrite.Env
     , extendLets
     , containsRegion
     , containsWitness
+    , getWitnesses
     , insertDef
     , getDef
     , getDef'
@@ -142,6 +143,13 @@ containsWitness c env
  where
     go _  []	= False
     go c' (w:ws)= c' `elem` w || go (L.liftT (-1) c') ws
+
+-- | get all the witnesses
+getWitnesses env
+ = go (witnesses env) 0
+ where
+    go []     _ = []
+    go (w:ws) i = map (L.liftT i) w ++ go ws (i+1)
 
 
 getDef

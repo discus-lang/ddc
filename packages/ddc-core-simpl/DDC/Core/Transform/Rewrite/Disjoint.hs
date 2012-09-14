@@ -157,13 +157,13 @@ areDistinct
     -> Bound n -> Bound n
     -> Bool
 areDistinct env p q
- -- Check witness map for "Distinct p q" and vice versa
- | witDistinct
- = True
-
  -- If they are the same, they can't possibly be different
  | p == q
  = False
+
+ -- Check witness map for "Distinct p q" and vice versa
+ | witDistinct
+ = True
 
  -- If they're both named primitives (eg R0#, R1#)
  -- we can just check name-equality, since can't be bound in lambdas
@@ -183,12 +183,13 @@ areDistinct env p q
        _	 -> RE.containsRegion r env
 
     witDistinct
-      =  RE.containsWitness (wit p q) env
-      || RE.containsWitness (wit q p) env
+      =  any check $ RE.getWitnesses env
 
-    -- TODO deal with distinctN
-    wit p' q'
-      = T.TCon (T.TyConWitness (T.TwConDistinct 2)) `T.TApp` rgn p' `T.TApp` rgn q'
+    check w
+     | (T.TCon (T.TyConWitness (T.TwConDistinct _)) : args) <- T.takeTApps w
+     = rgn p `elem` args && rgn q `elem` args
+     | otherwise
+     = False
 
     rgn b
      = case b of
