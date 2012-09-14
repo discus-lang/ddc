@@ -87,6 +87,7 @@ stageLiteOpt
 
 stageLiteOpt state source pipes
  = PipeCoreSimplify 
+	fragmentLite
         (0 :: Int) 
 
         -- TODO: want to see every intermediate stage.
@@ -121,6 +122,7 @@ stageSaltOpt
 
 stageSaltOpt state source pipes
  = PipeCoreSimplify 
+	fragmentSalt
         (0 :: Int) 
 
         -- TODO: want to see every intermediate stage.
@@ -156,13 +158,13 @@ stageLiteToSalt
         -> PipeCore  (C.AnTEC () Lite.Name) Lite.Name
 
 stageLiteToSalt state source builder pipesSalt
- = PipeCoreSimplify         0 normalizeLite
+ = PipeCoreSimplify         fragmentLite 0 normalizeLite
      [ PipeCoreOutput           (dump state source "dump.lite-normalized.dcl")
      , PipeCoreReCheck          fragmentLite
        [ PipeCoreAsLite 
          [ PipeLiteToSalt       (buildSpec builder) runConfig
            [ PipeCoreOutput     (dump state source "dump.lite-to-salt.dce")
-           , PipeCoreSimplify 0 normalizeSalt
+           , PipeCoreSimplify fragmentSalt 0 normalizeSalt
              [ PipeCoreCheck    fragmentSalt
                ( PipeCoreOutput (dump state source "dump.salt-normalized.dce")
                : pipesSalt)]]]]]
@@ -192,7 +194,7 @@ stageSaltToC
         -> PipeCore (C.AnTEC () Salt.Name) Salt.Name
 
 stageSaltToC state source _builder sink
- = PipeCoreSimplify 0
+ = PipeCoreSimplify fragmentSalt 0
         (stateSimplSalt state 
                 <> S.anormalize (makeNamifier Salt.freshT) 
                                 (makeNamifier Salt.freshX))
@@ -214,7 +216,7 @@ stageSaltToLLVM
         -> PipeCore (C.AnTEC () Salt.Name) Salt.Name
 
 stageSaltToLLVM state source builder pipesLLVM
- = PipeCoreSimplify 0
+ = PipeCoreSimplify fragmentSalt 0
         (stateSimplSalt state
                 <> S.anormalize (makeNamifier Salt.freshT)
                                 (makeNamifier Salt.freshX))

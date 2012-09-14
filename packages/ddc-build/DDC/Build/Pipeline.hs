@@ -154,7 +154,8 @@ data PipeCore a n where
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
-        :: s
+        :: Fragment n err
+        -> s
         -> Simplifier s a n
         -> [PipeCore a n] 
         -> PipeCore a n
@@ -217,9 +218,13 @@ pipeCore mm pp
          -> pipeCore (C.reannotate C.annotTail mm) 
          $  PipeCoreCheck fragment pipes
 
-        PipeCoreSimplify nameZero simpl pipes
-         -> let mm'     = flip S.evalState nameZero
-                        $ applySimplifier simpl mm 
+        PipeCoreSimplify fragment nameZero simpl pipes
+         -> let profile         = fragmentProfile fragment
+                primKindEnv     = profilePrimKinds      profile
+                primTypeEnv     = profilePrimTypes      profile
+
+                mm'		= flip S.evalState nameZero
+				$ applySimplifier profile primKindEnv primTypeEnv simpl mm 
             in  liftM concat $ mapM (pipeCore mm') pipes
 
         PipeCoreAsLite pipes

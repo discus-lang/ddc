@@ -1,9 +1,11 @@
 module DDC.Core.Transform.Rewrite
         ( RewriteRule(..)
-        , rewrite )
+        , rewrite
+	, rewriteModule )
 where
 import DDC.Base.Pretty
 import DDC.Core.Exp
+import DDC.Core.Module
 import DDC.Core.Simplifier.Base (TransformResult(..), TransformInfo(..))
 import qualified DDC.Core.Compounds			as X
 import qualified DDC.Core.Transform.AnonymizeX          as A
@@ -39,6 +41,15 @@ instance Pretty RewriteLog where
  ppr (LogUnfold  name) = text "Unfold:  " <> text name
 
 isProgress = not . null
+
+
+rewriteModule
+    :: (Show a, Show n, Ord n, Pretty n)
+    => [(String,RewriteRule a n)]
+    -> Module a n
+    -> Module a n
+rewriteModule rules mm
+ = mm { moduleBody = result $ rewrite rules $ moduleBody mm }
 
 -- | Perform rewrites top-down, repeatedly.
 --

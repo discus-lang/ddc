@@ -1,5 +1,6 @@
 module DDC.Core.Transform.DeadCode
-    ( deadCode )
+    ( deadCode
+    , deadCodeModule )
 where
 import DDC.Base.Pretty
 import DDC.Core.Analysis.Usage
@@ -7,6 +8,7 @@ import DDC.Core.Check.CheckExp
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Core.Fragment.Profile
+import DDC.Core.Module
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.TransformX
@@ -22,6 +24,16 @@ import qualified DDC.Type.Compounds			as T
 import qualified DDC.Type.Env				as T
 import qualified DDC.Type.Sum				as TS
 import qualified DDC.Type.Transform.Crush		as T
+
+deadCodeModule
+	:: (Show a, Show n, Ord n, Pretty n)
+	=> Profile n
+	-> Env n		-- ^ Kind env
+	-> Env n		-- ^ Type env
+	-> Module a n
+	-> Module a n
+deadCodeModule profile kenv tenv mm
+ = mm { moduleBody = result $ deadCode profile kenv tenv $ moduleBody mm }
 
 deadCode
 	:: (Show a, Show n, Ord n, Pretty n)

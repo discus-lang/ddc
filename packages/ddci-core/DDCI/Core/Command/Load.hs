@@ -18,7 +18,7 @@ cmdLoad state source str
  | Bundle fragment _ zero simpl _    <- stateBundle state
  = do   errs    <- pipeText (nameOfSource source) (lineStartOfSource source) str
                 $  PipeTextLoadCore  fragment
-                [  PipeCoreSimplify  zero simpl
+                [  PipeCoreSimplify  fragment zero simpl
                 [  PipeCoreCheck     fragment
                 [  PipeCoreHacks     (Canned (suppressModule state))
                 [  PipeCoreOutput    SinkStdout ]]]]

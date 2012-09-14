@@ -34,31 +34,41 @@ import Data.Typeable (Typeable)
 --   The state monad holds a fresh name generator.
 applySimplifier 
         :: (Show a, Ord n, Show n, Pretty n) 
-        => Simplifier s a n     -- ^ Simplifier to apply.
+	=> Profile n		-- ^ Profile of language we're working in
+	-> Env n		-- ^ Kind environment
+	-> Env n		-- ^ Type environment
+        -> Simplifier s a n     -- ^ Simplifier to apply.
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
 
-applySimplifier spec mm
+applySimplifier profile kenv tenv spec mm
  = case spec of
         Seq t1 t2
-         -> do  mm'     <- applySimplifier t1 mm
-                applySimplifier t2 mm'
+         -> do  mm'     <- applySimplifier profile kenv tenv t1 mm
+                applySimplifier profile kenv tenv t2 mm'
 
         Trans t1
-         -> applyTransform t1 mm
+         -> applyTransform profile kenv tenv t1 mm
 	
-	Fix _ _
-	 -> error "applySimplifier: finish fix"
+	-- finish fix: applyTransform should really return a TransformResult
+	Fix 0 _
+	 -> return mm
+	Fix n s
+	 -> do	mm' <- applySimplifier profile kenv tenv s mm
+		applySimplifier profile kenv tenv (Fix (n-1) s) mm'
 
 
 -- | Apply a transform to a module.
 applyTransform
         :: (Show a, Ord n, Show n, Pretty n)
-        => Transform s a n      -- ^ Transform to apply.
+	=> Profile n		-- ^ Profile of language we're working in
+	-> Env n		-- ^ Kind environment
+	-> Env n		-- ^ Type environment
+        -> Transform s a n      -- ^ Transform to apply.
         -> Module a n           -- ^ Module to simplify.
         -> State s (Module a n)
 
-applyTransform spec mm
+applyTransform profile kenv tenv spec mm
  = case spec of
         Id               -> return mm
         Anonymize        -> return $ anonymizeX mm
@@ -70,8 +80,8 @@ applyTransform spec mm
         Bubble           -> return $ bubbleModule mm
         Namify namK namT -> namifyUnique namK namT mm
         Inline getDef    -> return $ inline getDef mm
-        Rewrite{}        -> error "applyTransform: rewrite doesn't work on modules yet"
-        DeadCode{}       -> error "applyTransform: DeadCode doesn't work on modules yet"
+        Rewrite rules    -> return $ rewriteModule rules mm
+        DeadCode         -> return $ deadCodeModule profile kenv tenv mm
 
 
 -- Expressions ----------------------------------------------------------------
