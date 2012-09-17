@@ -1,5 +1,5 @@
 module DDC.Core.Transform.Trim
-        ( trimClosures, trimX )
+--        ( trimClosures, trimX )
 where
 
 import DDC.Core.Collect()
@@ -21,10 +21,12 @@ trimClosures
         => a
         -> [Exp a n]
         -> [Exp a n]
+
 trimClosures a xs
  = nub' $ concatMap (freeExp a empty empty) xs
  where
   nub' = nubBy (\x y -> reannotate (const ()) x == reannotate (const ()) y)
+
 
 -- | Trim an expression if it is a weakclo cast. 
 --   Does not recurse! If you want to recursively trim closures,
@@ -42,22 +44,25 @@ trimX x
 -- freeExp --------------------------------------------------------------------
 -- | Collect all the free variables, but return them all as expressions:
 --   eg
---     freeExp (
---          let i = 5 [R0#] () in
---          updateInt [:R0# R1#:] <w> i ...)
+--     freeExp 
+--       (let i = 5 [R0#] () in
+--        updateInt [:R0# R1#:] <w> i ...)
+--
 --     will return something like
 --       [ XType (TCon R0#)
 --       , XVar updateInt
 --       , XType (TCon R0#)
 --       , XType (TCon R1#)
 --       , XWitness w ]
+--
 freeExp :: (BindStruct c, Ord n) 
         => a
         -> Env n
         -> Env n
         -> c n
         -> [Exp a n]
-freeExp a kenv tenv xx = concatMap (freeOfTreeExp a kenv tenv) $ slurpBindTree xx
+freeExp a kenv tenv xx 
+ = concatMap (freeOfTreeExp a kenv tenv) $ slurpBindTree xx
 
 freeOfTreeExp
         :: Ord n

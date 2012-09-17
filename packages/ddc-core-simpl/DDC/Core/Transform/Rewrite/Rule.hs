@@ -8,9 +8,10 @@ module DDC.Core.Transform.Rewrite.Rule
 where
 import DDC.Core.Exp
 import DDC.Base.Pretty
-import DDC.Core.Pretty()
-import DDC.Type.Pretty()
+import DDC.Core.Pretty                          ()
+import DDC.Type.Pretty                          ()
 import DDC.Core.Transform.Rewrite.Error
+import DDC.Core.Collect.Support
 import qualified DDC.Core.Analysis.Usage	as U
 import qualified DDC.Core.Check.CheckExp        as C
 import qualified DDC.Core.Collect               as C
@@ -22,9 +23,10 @@ import qualified DDC.Type.Equiv                 as T
 import qualified DDC.Type.Predicates            as T
 import qualified DDC.Type.Subsumes              as T
 import qualified DDC.Type.Transform.SpreadT     as S
-import qualified Data.Map		as Map
-import qualified Data.Maybe		as Maybe
-import qualified Data.Set               as Set
+import qualified Data.Map                       as Map
+import qualified Data.Maybe                     as Maybe
+import qualified Data.Set                       as Set
+import qualified DDC.Type.Env                   as Env
 
 -- | A rewrite rule
 --
@@ -213,19 +215,36 @@ weakEff k l r _ | T.subsumesT k l r
 weakEff _ _ _ onError
  = Left onError
 
--- | Find free variables in LHS that are not in RHS for closure information
+
+-- | Build the closure weakening for a rule.
+--   This contains a closure term for all variables that are present
+--   in the left of a rule but not in the right.
+weakClo :: Ord n
+        => [(BindMode, Bind n)]
+        -> Exp a n -> Exp a n 
+        -> Either (Error a n) [Exp (C.AnTEC a n) n]
+
 weakClo _bs lhs rhs
- = Right (vals ++ tys)
- where
-  vals = map (XVar undefined)
-       $ vars C.freeX
+ = let  supportLeft  = support Env.empty Env.empty lhs
+        daLeft  = supportDaVar supportLeft
+        wiLeft  = supportWiVar supportLeft
+        spLeft  = supportSpVar supportLeft
 
-  tys  = map (XType . TVar)
-       $ vars C.freeT
+        supportRight = support Env.empty Env.empty rhs
+        daRight = supportDaVar supportRight
+        wiRight = supportWiVar supportRight
+        spRight = supportSpVar supportRight
 
-  vars free
-       = Set.toList
-       $ (free T.empty lhs `Set.difference` free T.empty rhs)
+   in   Right
+         $  [XVar (error "weakClo annot") u 
+                | u <- Set.toList $ daLeft `Set.difference` daRight ]
+
+         ++ [XWitness (WVar u)
+                | u <- Set.toList $ wiLeft `Set.difference` wiRight ]
+
+         ++ [XType (TVar u)
+                | u <- Set.toList $ spLeft `Set.difference` spRight ]
+
 
 
 checkUnmentionedBinders

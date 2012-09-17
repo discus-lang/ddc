@@ -11,28 +11,25 @@ letrec {
   replicate : [r1 r2 : %].[a : *].Nat r1 -(!0 | Use r1 + Use r2)> a -(Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2)> List r2 a
     = /\(r1 r2 : %)./\(a : *).
        \(n : Nat r1).\(x : a).
-      weakclo {[r1]} in
-      weakclo {n} in
+      weakclo {[r1]; n} in
       letregion r3 in
       weakclo {[r3]} in
       case n of {
         N# (n2 : Nat#) 
-         -> let x0 : Bool# = eq# [Nat#] n2 0# in
-            case x0 of {
+         -> case eq# [Nat#] n2 0# of {
               True#  
                -> Nil [r2] [a] ();
               False#  
-               -> let x6 : Nat r3 = N# [r3] 1# in
-                  case n of {
-                    N# (x9 : Nat#) 
-                     -> case x6 of {
-                          N# (x10 : Nat#) 
-                           -> let x11 : Nat# = sub# [Nat#] x9 x10 in
-                              let x7 : Nat r3 = N# [r3] x11 in
-                              let x12 : List r2 a = replicate [r3] [r2] [a] x7 x in
-                              Cons [r2] [a] x x12
-                        }
-                  }
+               -> Cons [r2] [a] x
+                      (replicate [r3] [r2] [a]
+                           ((\(^ : Nat r3).
+                             case n of {
+                               N# (^ : Nat#) 
+                                -> case ^1 of {
+                                     N# (^ : Nat#) 
+                                      -> N# [r3] (sub# [Nat#] ^1 ^0)
+                                   }
+                             }) (N# [r3] 1#)) x)
             }
       }
 }

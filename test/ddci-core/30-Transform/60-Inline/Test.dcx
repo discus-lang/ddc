@@ -3,9 +3,5 @@
 :set  lang Lite
 :with code/lite/base/Data/Numeric/Nat.dcl
 :set.. 
- trans  Inline  <> Beta <> Bubble 
-                <> Beta <> Bubble 
-                <> Beta <> Bubble 
-                <> Snip <> Flatten <> Namify <> Forward 
-                <> Beta <> Flatten <> Namify;;
+ trans  Inline  <> Beta <> Bubble <> Beta <> Bubble <> Beta <> Bubble;;
 :load<  test/ddci-core/30-Transform/60-Inline/List.dcl

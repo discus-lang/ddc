@@ -15,9 +15,11 @@ import DDC.Core.Collect
 import DDC.Core.Compounds
 import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
-import qualified DDC.Type.Env   as Env
-import qualified Data.Set       as Set
-import Data.Set                 (Set)
+import DDC.Type.Env                             (TypeEnv)
+import qualified DDC.Type.Env                   as Env
+import qualified DDC.Type.Sum                   as Sum
+import qualified Data.Set                       as Set
+import Data.Set                                 (Set)
 import Data.List
 
 
@@ -46,7 +48,7 @@ class Bubble (c :: * -> * -> *) where
 
 instance Bubble Exp where
  bubble tenv xx
-  = case Trim.trimX xx of
+  = case xx of
         XVar{}  -> ([], xx)
         XCon{}  -> ([], xx)
 
@@ -175,7 +177,7 @@ packFvsCasts tenv a fvsCasts
 --   together. We pack casts just before we drop them, so that the resulting
 --   code is easier to read.
 packCasts :: Ord n => TypeEnv n -> a -> [Cast a n] -> [Cast a n]
-packCasts _tenv a vs
+packCasts tenv a vs
  = let  collect weakEffs weakClos others cc
          = case cc of
             []                        
@@ -199,15 +201,15 @@ packCasts _tenv a vs
                 else [CastWeakenEffect  (TSum $ Sum.fromList kEffect effs)])
      ++ (if null xsClos
                 then []
-                else [CastWeakenClosure (packWeakenClosureXs a xsClos)])
+                else [CastWeakenClosure (packWeakenClosureXs tenv a xsClos)])
      ++ csOthers
 
 
 -- | Pack the expressions given to a `WeakenClosure` to just the ones that we
 --   care about. We only need region variables, and value variables with 
 --   open types.
-packWeakenClosureXs :: Ord n => a -> [Exp a n] -> [Exp a n]
-packWeakenClosureXs a xx
+packWeakenClosureXs :: Ord n => TypeEnv n -> a -> [Exp a n] -> [Exp a n]
+packWeakenClosureXs tenv a xx
  = let  eat fvs1 fvs0 []
          = (fvs1, fvs0)
 
@@ -218,9 +220,21 @@ packWeakenClosureXs a xx
 
         (vs1, vs0)      = eat Set.empty Set.empty xx
 
-   in   [XType (TVar v) | v <- Set.toList vs1]
-     ++ [XVar a v       | v <- Set.toList vs0]
+   in   [XType (TVar u) | u <- Set.toList vs1]
+     ++ [XVar a u       | u <- Set.toList vs0, keepBound tenv u]
 
+
+-- | When packing vars given to a closure weakening,
+--   we only need to keep the ones with open types.
+--   Cars with closed types don't have any closure.
+keepBound :: Ord n => TypeEnv n -> Bound n -> Bool
+keepBound tenv u
+        | Just t       <- Env.lookup u tenv
+        , Set.null (freeT Env.empty t)
+        = False
+
+        | otherwise
+        = True 
 
 
 -- Dropping -------------------------------------------------------------------
