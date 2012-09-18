@@ -42,6 +42,36 @@ replicate
                                         (subNat [:r1 r3 r3:] n (N# [r3] 1#))
                                         x)
 
+-- | Construct a range of Nat values
+enumFromTo
+        [r1 r2 : %]
+        (n      : Nat r2)       { !0 | Use r1 + Use r2 }
+        (max    : Nat r2)       { Read r2 + Alloc r1 + Alloc r2 | Use r1 + Use r2 }
+        : List r1 (Nat r2)
+ = case n of
+    N# n2
+     -> case max of
+         N# max2 
+          -> case ge# [Nat#] n2 max2 of
+                True#   -> singleton [r1] [Nat r2] n
+                False#  -> Cons [r1] [Nat r2] n
+                                (enumFromTo [:r1 r2:]
+                                        (addNat [:r2 r2 r2:] n (N# [r2] 1#))
+                                        max)
+
+
+-- | O(n^2) reverse the elements in a list.
+reverse [r1 r2 : %] [a : *]
+        (xx : List r1 a)        { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2 }
+        : List r2 a
+ = case xx of
+        Nil     -> Nil [:r2 a:] ()
+        Cons x xs
+         -> append [:r2 r2 a:] 
+                (reverse   [:r1 r2 a:] xs)
+                (singleton [:r2 a:] x)
+
+
 -- | Append two lists.
 append  [r1 r2 : %] [a : *]
         (xx : List r1 a)        { !0 | Use r1 + Use r2 }
@@ -58,13 +88,20 @@ append  [r1 r2 : %] [a : *]
 -------------------------------------------------------------------------------
 -- | Take the length of a list.
 length  [r1 r2 : %] [a : *]
-        (xx : List r1 a)        { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2 }
+        (xx : List r1 a)   { Read r1 + Read r2 + Alloc r2 | Use r1 + Use r2 }
+        : Nat r2
+ = length2 [:r1 r2 a:] (N# [r2] 0#) xx
+
+length2 [r1 r2 : %] [a : *]
+        (acc : Nat r2)     { !0 | Use r1 + Use r2 }
+        (xx : List r1 a)   { Read r1 + Read r2 + Alloc r2 
+                           | Use r1  + Use r2}
         : Nat r2
  = case xx of
-        Nil     
-         -> N# [r2] 0#
+        Nil -> acc
 
-        Cons x xs       
-         -> addNat [:r2 r2 r2:] (N# [r2] 1#)
-                (length [:r1 r2:] [a] xs)
-        
+        Cons x xs
+         -> length2 [:r1 r2 a:]
+                    (addNat [:r2 r2 r2:] acc (N# [r2] 1#))
+                    xs
+
