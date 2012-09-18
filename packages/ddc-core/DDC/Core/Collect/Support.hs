@@ -29,6 +29,7 @@ data Support n
           -- | Free value variables in an expression.
           --   (from the Data universe)
         , supportDaVar          :: Set (Bound n) }
+        deriving Show
 
 
 instance Ord n => Monoid (Support n) where
@@ -56,7 +57,7 @@ class SupportX (c :: * -> *) where
 
 instance SupportX Type where
  support kenv _tenv t
-  = let (tcs, fvs1)     = freeVarConT kenv t
+  = let (fvs1, tcs)     = freeVarConT kenv t
     in  mempty  { supportTyCon  = tcs
                 , supportSpVar  = fvs1 }
 

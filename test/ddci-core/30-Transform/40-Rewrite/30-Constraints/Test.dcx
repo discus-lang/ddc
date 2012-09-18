@@ -77,25 +77,30 @@ letregion ^ in
 :trans..
 addInt [:R0# R0# R0#:] (5 [R0#] ()) (3 [R0#] ())
 ;;
+
 -- don't: not known
 :trans..
 /\(r1 r2 : %). \(_ : Unit).
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 ;;
+
 -- do: both concrete
 :trans..
 addInt [:R0# R1# R0#:] (5 [R0#] ()) (3 [R1#] ())
 ;;
+
 -- do: both concrete
 :trans..
 letregion ^ in
 addInt [:R0# ^0 R0#:] (5 [R0#] ()) (3 [^0] ())
 ;;
+
 -- do: known from argument
 :trans..
 /\(r1 r2 : %). \(w : Distinct r1 r2). \(_ : Unit).
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 ;;
+
 -- do: known from letregions
 :trans..
 letregions r1 r2 with { w : Distinct r1 r2 } in
@@ -109,6 +114,7 @@ copyInt [:r1 R0#:]
 /\(r1 r2 r3 : %). \(w : Distinct3 r1 r2 r3). \(_ : Unit).
 addInt [:r1 r2 r1:] (5 [r1] ()) (3 [r2] ())
 ;;
+
 -- do: another subset (rot)
 :trans..
 /\(r1 r2 r3 : %). \(w : Distinct3 r2 r3 r1). \(_ : Unit).

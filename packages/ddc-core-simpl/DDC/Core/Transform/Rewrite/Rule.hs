@@ -106,8 +106,7 @@ mkRewriteRule  bs cs lhs hole rhs
 instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
  ppr (RewriteRule bs cs lhs hole rhs _ _ _)
   = pprBinders bs <> pprConstrs cs <> ppr lhs <> pprHole <> text " = " <> ppr rhs
-  where
-        pprBinders []          = text ""
+  where pprBinders []          = text ""
         pprBinders bs'         = foldl1 (<>) (map pprBinder bs') <> text ". "
 
         pprBinder (BMKind,b)   = text "[" <> ppr b <> text "] "
@@ -178,8 +177,8 @@ checkRewriteRule config kenv tenv
         equiv tl tr err
 
         -- Error if right's effect is bigger, or add a weaken cast if necessary
-        e <- weakEff T.kEffect el er err
-        c <- weakClo bs lhs_full rhs
+        e <- makeEffectWeakening  T.kEffect el er err
+        c <- makeClosureWeakening bs lhs_full rhs
 
         -- Make sure all binders are in left-hand side
         checkUnmentionedBinders bs' lhs_full
@@ -201,11 +200,13 @@ checkRewriteRule config kenv tenv
                       $ (C.freeX T.empty lhs_full `Set.union` C.freeX T.empty rhs)
                       `Set.difference` binds
 
-        return $ RewriteRule 
-                        bs'' cs' 
-                        lhs' hole' rhs'
-                        e c
-                        freeVars
+        let rule      = RewriteRule 
+                                bs'' cs' 
+                                lhs' hole' rhs'
+                                e c
+                                freeVars
+
+        return  rule
 
 
 -- | Extend kind and type environments with a rule's binders.
@@ -258,29 +259,33 @@ equiv _ _ onError
  = Left onError
 
 
--- | Determine whether weaken cast is necessary,
---   or error if right has more effects than left
-weakEff _ l r _ 
+-- | Make the effect weakening for a rule.
+--   This contains the effects that are caused by the left of the rule
+--   but not the right. 
+--   If the right has more effects than the left then return an error.
+
+makeEffectWeakening _ l r _ 
  | T.equivT l r
  = return Nothing
 
-weakEff k l r _ 
+makeEffectWeakening k l r _ 
  | T.subsumesT k l r
  = return $ Just l
 
-weakEff _ _ _ onError
+makeEffectWeakening _ _ _ onError
  = Left onError
 
 
--- | Build the closure weakening for a rule.
+-- | Make the closure weakening for a rule.
 --   This contains a closure term for all variables that are present
 --   in the left of a rule but not in the right.
-weakClo :: Ord n
+makeClosureWeakening 
+        :: (Ord n, Pretty n)
         => [(BindMode, Bind n)]
         -> Exp a n -> Exp a n 
         -> Either (Error a n) [Exp (C.AnTEC a n) n]
 
-weakClo _bs lhs rhs
+makeClosureWeakening _bs lhs rhs
  = let  supportLeft  = support Env.empty Env.empty lhs
         daLeft  = supportDaVar supportLeft
         wiLeft  = supportWiVar supportLeft
@@ -291,7 +296,7 @@ weakClo _bs lhs rhs
         wiRight = supportWiVar supportRight
         spRight = supportSpVar supportRight
 
-   in   Right
+   in   Right 
          $  [XVar (error "weakClo annot") u 
                 | u <- Set.toList $ daLeft `Set.difference` daRight ]
 
