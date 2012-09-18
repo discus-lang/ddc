@@ -12,6 +12,7 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Collect
+import DDC.Core.Collect.Support
 import DDC.Core.Compounds
 import DDC.Core.Transform.LiftX
 import DDC.Type.Compounds
@@ -210,18 +211,19 @@ packCasts tenv a vs
 --   open types.
 packWeakenClosureXs :: Ord n => TypeEnv n -> a -> [Exp a n] -> [Exp a n]
 packWeakenClosureXs tenv a xx
- = let  eat fvs1 fvs0 []
-         = (fvs1, fvs0)
+ = let  eat fvsSp fvsDa []
+         = (fvsSp, fvsDa)
 
-        eat fvs1 fvs0 (x : xs)
-         = let  fvs1'   = freeT Env.empty x
-                fvs0'   = freeX Env.empty x
-           in   eat (Set.union fvs1 fvs1') (Set.union fvs0 fvs0') xs
+        eat fvsSp fvsDa (x : xs)
+         = let  sup      = support Env.empty Env.empty x
+                fvsSp'   = supportSpVar sup
+                fvsDa'   = supportDaVar sup
+           in   eat (Set.union fvsSp fvsSp') (Set.union fvsDa fvsDa') xs
 
-        (vs1, vs0)      = eat Set.empty Set.empty xx
+        (vsSp, vsDa)      = eat Set.empty Set.empty xx
 
-   in   [XType (TVar u) | u <- Set.toList vs1]
-     ++ [XVar a u       | u <- Set.toList vs0, keepBound tenv u]
+   in   [XType (TVar u) | u <- Set.toList vsSp]
+     ++ [XVar a u       | u <- Set.toList vsDa, keepBound tenv u]
 
 
 -- | When packing vars given to a closure weakening,
