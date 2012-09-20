@@ -1,11 +1,11 @@
 
-module DDC.Main.Command.Ast
+module DDC.Driver.Command.Ast
         ( cmdAstModule
         , cmdAstExp)
 where
-import DDC.Main.Command.Check
-import DDC.Main.Source
-import DDC.Main.Bundle
+import DDC.Driver.Command.Check
+import DDC.Driver.Source
+import DDC.Driver.Bundle
 import qualified Language.Haskell.Exts.Parser as H
 import qualified Language.Haskell.Exts.Pretty as H
 

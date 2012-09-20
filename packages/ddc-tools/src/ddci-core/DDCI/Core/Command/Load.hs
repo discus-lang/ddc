@@ -5,7 +5,7 @@ module DDCI.Core.Command.Load
 where
 import DDCI.Core.Interface.Suppress
 import DDCI.Core.State
-import DDC.Main.Source
+import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Core.Load
 import DDC.Core.Pretty

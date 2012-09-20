@@ -1,6 +1,7 @@
 
-module DDC.Main.Bundle
-        (Bundle (..))
+module DDC.Driver.Bundle
+        ( Bundle (..)
+        , bundleOfExtension)
 where
 import DDC.Build.Language
 import DDC.Core.Simplifier
@@ -10,6 +11,8 @@ import DDC.Core.Module
 import DDC.Base.Pretty
 import Data.Typeable
 import Data.Map                         (Map)
+import qualified Data.Map               as Map
+import qualified DDC.Core.Simplifier    as S
 
 
 -- | Existential container for a language fragment, 
@@ -24,3 +27,18 @@ data Bundle
         ,  bundleStateInit       :: s
         ,  bundleSimplifier      :: Simplifier s (AnTEC () n) n
         ,  bundleRewriteRules    :: Map String (RewriteRule (AnTEC () n) n) }
+
+
+-- | Get the bundle for the language with this file extension.
+bundleOfExtension :: String -> Maybe Bundle
+bundleOfExtension ext
+ = case languageOfExtension ext of
+        Nothing         -> Nothing
+        Just (Language frag)
+         -> Just $ Bundle 
+                 { bundleFragment        = frag
+                 , bundleModules         = Map.empty
+                 , bundleStateInit       = ()
+                 , bundleSimplifier      = S.Trans S.Id
+                 , bundleRewriteRules    = Map.empty }
+

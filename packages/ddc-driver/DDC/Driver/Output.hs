@@ -1,5 +1,5 @@
 
-module DDC.Main.Output
+module DDC.Driver.Output
         ( outDoc, outDocLn
         , outStr, outStrLn
         , chatStrLn)

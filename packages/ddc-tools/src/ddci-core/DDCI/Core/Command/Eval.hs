@@ -7,7 +7,7 @@ where
 import DDCI.Core.Stats.Trace
 import DDCI.Core.Output
 import DDCI.Core.State
-import DDC.Main.Command.Check
+import DDC.Driver.Command.Check
 import DDC.Build.Language
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step

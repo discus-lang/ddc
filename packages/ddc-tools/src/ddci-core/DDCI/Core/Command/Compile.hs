@@ -4,7 +4,7 @@ module DDCI.Core.Command.Compile
 where
 import DDCI.Core.State
 import DDCI.Core.Stage
-import DDC.Main.Source
+import DDC.Driver.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language

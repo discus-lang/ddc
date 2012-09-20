@@ -4,12 +4,13 @@ module DDCI.Core.Command.ToC
 where
 import DDCI.Core.State
 import DDCI.Core.Stage
-import DDC.Main.Source
+import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import System.FilePath
 import qualified DDC.Base.Pretty                as P
+
 
 -- | Parse, check, and convert a module to C.
 --

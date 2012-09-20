@@ -17,8 +17,8 @@ module DDCI.Core.State
         , adjustMode)
 where
 import DDCI.Core.Mode
-import DDC.Main.Source
-import DDC.Main.Bundle
+import DDC.Driver.Source
+import DDC.Driver.Bundle
 import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Core.Check

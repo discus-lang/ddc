@@ -18,8 +18,8 @@ import DDCI.Core.Command.ToC
 import DDCI.Core.Command.ToLlvm
 import DDCI.Core.Command.With
 import DDCI.Core.State
-import DDC.Main.Command.Ast
-import DDC.Main.Command.Check
+import DDC.Driver.Command.Ast
+import DDC.Driver.Command.Check
 import Data.List
 
 

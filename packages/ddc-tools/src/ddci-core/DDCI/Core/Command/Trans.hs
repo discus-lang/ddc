@@ -8,7 +8,7 @@ where
 import DDCI.Core.Command.Eval
 import DDCI.Core.Output
 import DDCI.Core.State
-import DDC.Main.Command.Check
+import DDC.Driver.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier

@@ -1,4 +1,4 @@
-module DDC.Main.Command.Check
+module DDC.Driver.Command.Check
         ( cmdUniverse
         , cmdUniverse1
         , cmdUniverse2
@@ -13,10 +13,10 @@ module DDC.Main.Command.Check
         , cmdParseCheckModule
         , cmdParseCheckExp)
 where
+import DDC.Driver.Bundle
+import DDC.Driver.Source
+import DDC.Driver.Output
 import DDC.Build.Language
-import DDC.Main.Bundle
-import DDC.Main.Source
-import DDC.Main.Output
 import DDC.Core.Fragment.Profile
 import DDC.Core.Load
 import DDC.Core.Parser

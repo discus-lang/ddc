@@ -1,5 +1,5 @@
 
-module DDC.Main.Source
+module DDC.Driver.Source
         ( Source(..)
         , lineStartOfSource
         , nameOfSource)

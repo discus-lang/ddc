@@ -123,6 +123,7 @@ include make/targets/tarball.mk
 include make/targets/clean.mk
 include make/targets/ddc-alpha.mk
 include make/targets/ddc-check.mk
+include make/targets/ddc-main.mk
 include make/targets/ddci-core.mk
 include make/targets/proof.mk
 
