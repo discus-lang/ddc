@@ -28,3 +28,68 @@ Executable ddc-check
   Other-modules: 
         Config.hs
   
+
+  Executable ddci-core
+  Build-depends:
+        base            == 4.5.*,
+        containers      == 0.4.*,
+        process         == 1.1.*,
+        filepath        == 1.3.*,
+        haskeline       == 0.6.4.*,
+        haskell-src-exts== 1.*,
+        directory       == 1.1.*,
+        mtl             == 2.0.*,
+        ddc-base        == 0.3.0.*,
+        ddc-type        == 0.3.0.*,
+        ddc-core        == 0.3.0.*,
+        ddc-core-eval   == 0.3.0.*,
+        ddc-core-simpl  == 0.3.0.*,
+        ddc-core-salt   == 0.3.0.*,
+        ddc-core-llvm   == 0.3.0.*,
+        ddc-llvm        == 0.3.0.*,
+        ddc-build       == 0.3.0.*
+
+  Main-is:
+        Main.hs
+  
+  Other-modules:
+        DDCI.Core.Command.Ast
+        DDCI.Core.Command.Check
+        DDCI.Core.Command.Compile
+        DDCI.Core.Command.Eval
+        DDCI.Core.Command.Help
+        DDCI.Core.Command.Load
+        DDCI.Core.Command.Make
+        DDCI.Core.Command.Set
+        DDCI.Core.Command.ToC
+        DDCI.Core.Command.ToLlvm
+        DDCI.Core.Command.Trans
+        DDCI.Core.Interface.Args
+        DDCI.Core.Interface.Batch
+        DDCI.Core.Interface.Interactive
+        DDCI.Core.Stats.Trace
+        DDCI.Core.Command
+        DDCI.Core.Input
+        DDCI.Core.Mode
+        DDCI.Core.Output
+        DDCI.Core.Rewrite
+        DDCI.Core.State
+
+  Extensions:
+        DoAndIfThenElse
+        PatternGuards
+        ParallelListComp
+        FlexibleContexts
+        ExistentialQuantification
+        MultiParamTypeClasses
+        FunctionalDependencies
+        TypeSynonymInstances
+        FlexibleInstances
+        StandaloneDeriving
+        KindSignatures
+        RankNTypes
+
+  ghc-options:
+        -Wall
+        -fno-warn-missing-signatures
+        -fno-warn-unused-do-bind

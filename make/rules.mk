@@ -92,7 +92,7 @@ packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
                       -ipackages/ddc-build \
                       -ipackages/ddc-tools/src/ddc-check
 
-packages/ddci-core/%.o : packages/ddci-core/%.hs
+packages/ddc-tools/src/ddci-core/%.o : packages/ddc-tools/src/ddci-core/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -ipackages/ddc-base -ipackages/ddc-type \
@@ -101,7 +101,7 @@ packages/ddci-core/%.o : packages/ddci-core/%.hs
                       -ipackages/ddc-core-salt \
                       -ipackages/ddc-core-llvm -ipackages/ddc-llvm \
                       -ipackages/ddc-build \
-                      -ipackages/ddci-core
+                      -ipackages/ddc-tools/src/ddci-core
 
 
 # -- Generic Rules ------------------------------------------------------------
