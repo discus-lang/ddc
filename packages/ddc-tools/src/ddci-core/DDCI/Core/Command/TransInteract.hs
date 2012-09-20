@@ -5,10 +5,9 @@ module DDCI.Core.Command.TransInteract
 	, cmdTransInteractLoop)
 where
 import DDCI.Core.Command.Trans
-
-import DDCI.Core.Command.Check
 import DDCI.Core.Output
 import DDCI.Core.State
+import DDC.Main.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
@@ -26,7 +25,7 @@ cmdTransInteract :: State -> Source -> String -> IO State
 cmdTransInteract state source str
  | Bundle fragment modules _ _ rules		    <- stateBundle state
  , Fragment profile _ _ _ _ _ mkNamT mkNamX zero    <- fragment
- =   cmdParseCheckExp state fragment modules True source str 
+ =   cmdParseCheckExp fragment modules True source str 
  >>= goStore mkNamT mkNamX zero profile modules rules
  where
         -- Expression had a parse or type error.

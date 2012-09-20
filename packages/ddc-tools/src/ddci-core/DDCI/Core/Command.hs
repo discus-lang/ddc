@@ -8,11 +8,9 @@ where
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Set
 import DDCI.Core.Command.Load
-import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
 import DDCI.Core.Command.TransInteract
-import DDCI.Core.Command.Ast
 import DDCI.Core.Command.Compile
 import DDCI.Core.Command.Make
 import DDCI.Core.Command.ToSalt
@@ -20,6 +18,8 @@ import DDCI.Core.Command.ToC
 import DDCI.Core.Command.ToLlvm
 import DDCI.Core.Command.With
 import DDCI.Core.State
+import DDC.Main.Command.Ast
+import DDC.Main.Command.Check
 import Data.List
 
 
@@ -152,51 +152,51 @@ handleCmd1 state cmd source line
                 return state
 
         CommandKind       
-         -> do  cmdShowKind state source line
+         -> do  cmdShowKind (stateBundle state) source line
                 return state
 
         CommandUniverse
-         -> do  cmdUniverse state source line
+         -> do  cmdUniverse (stateBundle state) source line
                 return state
 
         CommandUniverse1
-         -> do  cmdUniverse1 state source line
+         -> do  cmdUniverse1 (stateBundle state) source line
                 return state
 
         CommandUniverse2
-         -> do  cmdUniverse2 state source line
+         -> do  cmdUniverse2 (stateBundle state) source line
                 return state
 
         CommandUniverse3
-         -> do  cmdUniverse3 state source line
+         -> do  cmdUniverse3 (stateBundle state) source line
                 return state
 
         CommandEquivType
-         -> do  cmdTypeEquiv state source line
+         -> do  cmdTypeEquiv (stateBundle state) source line
                 return state
 
         CommandWitType    
-         -> do  cmdShowWType state source line
+         -> do  cmdShowWType (stateBundle state) source line
                 return state
 
         CommandExpCheck   
-         -> do  cmdShowType state ShowTypeAll source line
+         -> do  cmdShowType (stateBundle state) ShowTypeAll source line
                 return state
 
         CommandExpType  
-         -> do  cmdShowType state ShowTypeValue source line
+         -> do  cmdShowType (stateBundle state) ShowTypeValue source line
                 return state
 
         CommandExpEffect  
-         -> do  cmdShowType state ShowTypeEffect source line
+         -> do  cmdShowType (stateBundle state) ShowTypeEffect source line
                 return state
 
         CommandExpClosure 
-         -> do  cmdShowType state ShowTypeClosure source line
+         -> do  cmdShowType (stateBundle state) ShowTypeClosure source line
                 return state
 
         CommandExpRecon
-         -> do  cmdExpRecon state source line
+         -> do  cmdExpRecon (stateBundle state) source line
                 return state
 
         CommandEval       
@@ -215,7 +215,7 @@ handleCmd1 state cmd source line
          -> do  cmdTransInteract state source line
         
         CommandAst
-         -> do  cmdAst state source line
+         -> do  cmdAst (stateBundle state) source line
                 return state
 
         CommandToSalt

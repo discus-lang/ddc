@@ -5,17 +5,17 @@ module DDCI.Core.Command.Eval
         , evalExp)
 where
 import DDCI.Core.Stats.Trace
-import DDCI.Core.Command.Check
 import DDCI.Core.Output
 import DDCI.Core.State
+import DDC.Main.Command.Check
 import DDC.Build.Language
 import DDC.Core.Eval.Env
 import DDC.Core.Eval.Step
 import DDC.Core.Eval.Name
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Fragment.Profile
-import DDC.Core.Check
 import DDC.Core.Exp
+import DDC.Core.Check
 import DDC.Core.Pretty
 import DDC.Core.Collect
 import DDC.Type.Equiv
@@ -39,7 +39,7 @@ cmdStep state source str
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
 				        <- gcast modules0
  , modules'				<- fromMaybe Map.empty modules
- = cmdParseCheckExp state fragmentEval modules' False source str >>= goStore 
+ = cmdParseCheckExp fragmentEval modules' False source str >>= goStore 
  where
         -- Expression had a parse or type error.
         goStore Nothing
@@ -67,7 +67,7 @@ cmdEval state source str
  , (modules :: Maybe (ModuleMap (AnTEC () Name) Name))
 				        <- gcast modules0
  , modules'				<- fromMaybe Map.empty modules
- = cmdParseCheckExp state fragmentEval modules' False source str >>= goEval
+ = cmdParseCheckExp fragmentEval modules' False source str >>= goEval
  where
     -- Expression had a parse or type error.
     goEval Nothing

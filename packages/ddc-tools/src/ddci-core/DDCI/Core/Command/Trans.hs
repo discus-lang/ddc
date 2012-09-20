@@ -5,10 +5,10 @@ module DDCI.Core.Command.Trans
 	, cmdTransEval
 	, applyTransAndCheck)
 where
-import DDCI.Core.Command.Check
 import DDCI.Core.Command.Eval
 import DDCI.Core.Output
 import DDCI.Core.State
+import DDC.Main.Command.Check
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import DDC.Core.Simplifier
@@ -34,7 +34,7 @@ cmdTrans :: State -> Source -> String -> IO ()
 cmdTrans state source str
  | Bundle fragment modules zero simpl _     <- stateBundle state
  , Fragment profile _ _ _ _ _ _ _ _ <- fragment
- =   cmdParseCheckExp state fragment modules True source str 
+ =   cmdParseCheckExp fragment modules True source str 
  >>= goStore profile modules zero simpl
  where
         -- Expression had a parse or type error.
@@ -69,7 +69,7 @@ cmdTransEval state source str
  , Just (SimplBox simpl)               <- gcast (SimplBox simpl0)
  , Just (modules :: ModuleMap (AnTEC () Eval.Name) Eval.Name)
 				       <- gcast modules0
- = do   result  <- cmdParseCheckExp state fragmentEval modules False source str 
+ = do   result  <- cmdParseCheckExp fragmentEval modules False source str 
         case result of
          Nothing         -> return ()
          Just stuff@(_x, t1, eff1, clo1)

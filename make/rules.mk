@@ -81,6 +81,17 @@ packages/ddc-build/%.o : packages/ddc-build/%.hs
 		      -ipackages/ddc-llvm -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-build
 
+packages/ddc-main/%.o : packages/ddc-main/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base -ipackages/ddc-type \
+		      -ipackages/ddc-core -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-eval \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-llvm -ipackages/ddc-core-llvm \
+		      -ipackages/ddc-build \
+		      -ipackages/ddc-main
+
 packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
@@ -101,6 +112,7 @@ packages/ddc-tools/src/ddci-core/%.o : packages/ddc-tools/src/ddci-core/%.hs
                       -ipackages/ddc-core-salt \
                       -ipackages/ddc-core-llvm -ipackages/ddc-llvm \
                       -ipackages/ddc-build \
+		      -ipackages/ddc-main \
                       -ipackages/ddc-tools/src/ddci-core
 
 

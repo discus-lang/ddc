@@ -4,8 +4,8 @@ module DDCI.Core.Command.Load
         , loadModule)
 where
 import DDCI.Core.Interface.Suppress
-import DDCI.Core.Mode
 import DDCI.Core.State
+import DDC.Main.Source
 import DDC.Build.Pipeline
 import DDC.Core.Load
 import DDC.Core.Pretty

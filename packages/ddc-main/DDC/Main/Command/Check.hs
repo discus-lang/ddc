@@ -1,102 +1,87 @@
-
-module DDCI.Core.Command.Check
-        ( cmdShowKind
-        , cmdUniverse
+module DDC.Main.Command.Check
+        ( cmdUniverse
         , cmdUniverse1
         , cmdUniverse2
         , cmdUniverse3
+        , cmdShowKind
         , cmdTypeEquiv
         , cmdShowWType
         , cmdShowType
         , cmdExpRecon
         , ShowTypeMode(..)
+        , cmdParseCheckType
         , cmdParseCheckExp)
 where
-import DDCI.Core.Mode
-import DDCI.Core.State
-import DDCI.Core.Output
 import DDC.Build.Language
+import DDC.Main.Bundle
+import DDC.Main.Source
+import DDC.Main.Output
 import DDC.Core.Fragment.Profile
 import DDC.Core.Load
-import DDC.Core.Exp
-import DDC.Core.Pretty
 import DDC.Core.Parser
 import DDC.Core.Lexer
-import DDC.Type.Equiv
+import DDC.Core.Module
+import DDC.Core.Exp
+import DDC.Core.Pretty
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
-import qualified DDC.Type.Check         as T
+import DDC.Type.Equiv
 import qualified DDC.Base.Parser        as BP
-
-import DDC.Core.Module
-
-
--- kind ------------------------------------------------------------------------
--- | Show the kind of a type.
-cmdShowKind :: State -> Source -> String -> IO ()
-cmdShowKind state source str
- | Bundle frag _ _ _ _ <- stateBundle state
- = let  srcName = nameOfSource source
-        srcLine = lineStartOfSource source
-        toks    = fragmentLexExp frag srcName srcLine str
-        eTK     = loadType (fragmentProfile frag) srcName toks
-   in   case eTK of
-         Left err       -> putStrLn $ renderIndent $ ppr err
-         Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
+import qualified DDC.Type.Check         as T
 
 
 -- universe -------------------------------------------------------------------
 -- | Show the universe of some type.
-cmdUniverse :: State -> Source -> String -> IO ()
-cmdUniverse state source str
- | Bundle frag _ _ _ _ <- stateBundle state
- = do   result       <- cmdParseCheckType state source frag str
+cmdUniverse :: Bundle -> Source -> String -> IO ()
+cmdUniverse bundle source str
+ | Bundle frag _ _ _ _ <- bundle
+ = do   result         <- cmdParseCheckType source frag str
         case result of
          Just (t, _)
           | Just u      <- universeOfType 
                                 (profilePrimKinds $ fragmentProfile frag)
                                 t
-          ->    outDocLn state $ ppr u
+          ->    outDocLn $ ppr u
 
-         _ ->   outDocLn state (text "no universe")
+         _ ->   outDocLn $ text "no universe"
 
 
 -- | Given the type of some thing (up one level)
 --   show the universe of the thing.
-cmdUniverse1 :: State -> Source -> String -> IO ()
-cmdUniverse1 state source str
- | Bundle frag _ _ _ _ <- stateBundle state
- = do   result       <- cmdParseCheckType state source frag str
+cmdUniverse1 :: Bundle -> Source -> String -> IO ()
+cmdUniverse1 bundle source str
+ | Bundle frag _ _ _ _ <- bundle
+ = do   result         <- cmdParseCheckType source frag str
         case result of
          Just (t, _)
           | Just u      <- universeFromType1 
                                 (profilePrimKinds $ fragmentProfile frag)
                                 t
-          ->    outDocLn state $ ppr u
+          ->    outDocLn $ ppr u
 
-         _ ->   outDocLn state (text "no universe")
+         _ ->   outDocLn $ text "no universe"
 
 
 -- | Given the kind of some thing (up two levels)
 --   show the universe of the thing.
-cmdUniverse2 :: State -> Source -> String -> IO ()
-cmdUniverse2 state source str
- | Bundle frag _ _ _ _ <- stateBundle state
- = do   result       <- cmdParseCheckType state source frag str
+cmdUniverse2 :: Bundle -> Source -> String -> IO ()
+cmdUniverse2 bundle source str
+ | Bundle frag _ _ _ _ <- bundle
+ = do   result         <- cmdParseCheckType source frag str
         case result of
          Just (t, _)
           | Just u      <- universeFromType2 t
-          ->    outDocLn state $ ppr u
+          ->    outDocLn $ ppr u
 
-         _ ->   outDocLn state (text "no universe")
+         _ ->   outDocLn $ text "no universe"
 
 
 -- | Given the sort of some thing (up three levels)
 --   show the universe of the thing.
 --   We can't type check naked sorts, so just parse them.
-cmdUniverse3 :: State -> Source -> String -> IO ()
-cmdUniverse3 state source str
- | Bundle frag _ _ _ _ <- stateBundle state
+cmdUniverse3 :: Bundle -> Source -> String -> IO ()
+cmdUniverse3 bundle source str
+ | Bundle frag _ _ _ _ <- bundle
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         profile = fragmentProfile frag
@@ -105,45 +90,36 @@ cmdUniverse3 state source str
         -- Parse the tokens.
         goParse toks                
          = case BP.runTokenParser describeTok srcName pType toks of
-            Left err    -> outDocLn state $ ppr err
+            Left err    -> outDocLn $ ppr err
             Right t     -> goUniverse3 (spreadT kenv t)
 
         goUniverse3 tt
          = case universeFromType3 tt of
-            Just u      -> outDocLn state $ ppr u
-            Nothing     -> outDocLn state (text "no universe")
+            Just u      -> outDocLn $ ppr u
+            Nothing     -> outDocLn $ text "no universe"
 
    in   goParse (fragmentLexExp frag srcName srcLine str)
 
 
--- | Parse a core type, and check its kind.
-cmdParseCheckType 
-        :: (Ord n, Show n, Pretty n)
-        => State 
-        -> Source 
-        -> Fragment n err
-        -> String 
-        -> IO (Maybe (Type n, Kind n))
-
-cmdParseCheckType _state source frag str
+-- kind ------------------------------------------------------------------------
+-- | Show the kind of a type.
+cmdShowKind :: Bundle -> Source -> String -> IO ()
+cmdShowKind bundle source str
+ | Bundle frag _ _ _ _ <- bundle
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         toks    = fragmentLexExp frag srcName srcLine str
         eTK     = loadType (fragmentProfile frag) srcName toks
    in   case eTK of
-         Left err       
-          -> do putStrLn $ renderIndent $ ppr err
-                return Nothing
-
-         Right (t, k)
-          ->    return $ Just (t, k)
+         Left err       -> outDocLn $ ppr err
+         Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
 
 
 -- tequiv ---------------------------------------------------------------------
 -- | Check if two types are equivlant.
-cmdTypeEquiv :: State -> Source -> String -> IO ()
-cmdTypeEquiv state source ss
- | Bundle frag _ _ _ _ <- stateBundle state
+cmdTypeEquiv :: Bundle -> Source -> String -> IO ()
+cmdTypeEquiv bundle source ss
+ | Bundle frag _ _ _ _ <- bundle
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         
@@ -153,14 +129,14 @@ cmdTypeEquiv state source ss
                             t2 <- pTypeAtom
                             return (t1, t2))
                         toks
-            of Left err -> putStrLn $ renderIndent $ text "parse error " <> ppr err
+            of Left err -> outDocLn $ text "parse error " <> ppr err
                Right tt -> goEquiv tt
          
         goEquiv (t1, t2)
          = do   b1 <- checkT t1
                 b2 <- checkT t2
                 if b1 && b2 
-                 then putStrLn $ show $ equivT t1 t2    
+                 then outStrLn $ show $ equivT t1 t2    
                  else return ()
 
         defs    = profilePrimDataDefs (fragmentProfile frag)
@@ -169,7 +145,7 @@ cmdTypeEquiv state source ss
         checkT t
          = case T.checkType defs kenv (spreadT kenv t) of
                 Left err 
-                 -> do  putStrLn $ renderIndent $ ppr err
+                 -> do  outDocLn $ ppr err
                         return False
 
                 Right{} 
@@ -178,19 +154,18 @@ cmdTypeEquiv state source ss
    in goParse (fragmentLexExp frag srcName srcLine ss)
 
 
-
 -- wtype ----------------------------------------------------------------------
 -- | Show the type of a witness.
-cmdShowWType :: State -> Source -> String -> IO ()
-cmdShowWType state source str
- | Bundle frag _ _ _ _ <- stateBundle state
+cmdShowWType :: Bundle -> Source -> String -> IO ()
+cmdShowWType bundle source str
+ | Bundle frag _ _ _ _ <- bundle
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
         toks    = fragmentLexExp frag srcName srcLine str
         eTK     = loadWitness (fragmentProfile frag) srcName toks
    in   case eTK of
-         Left err       -> putStrLn $ renderIndent $ ppr err
-         Right (t, k)   -> outDocLn state $ ppr t <+> text "::" <+> ppr k
+         Left err       -> outDocLn $ ppr err
+         Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
 
 
 -- check / type / effect / closure --------------------------------------------
@@ -204,10 +179,10 @@ data ShowTypeMode
 
 
 -- | Show the type of an expression.
-cmdShowType :: State -> ShowTypeMode -> Source -> String -> IO ()
-cmdShowType state mode source ss
- | Bundle frag modules _ _ _ <- stateBundle state
- = cmdParseCheckExp state frag modules True source ss >>= goResult
+cmdShowType :: Bundle -> ShowTypeMode -> Source -> String -> IO ()
+cmdShowType bundle mode source ss
+ | Bundle frag modules _ _ _ <- bundle
+ = cmdParseCheckExp frag modules True source ss >>= goResult
  where
         goResult Nothing
          = return ()
@@ -215,37 +190,59 @@ cmdShowType state mode source ss
         goResult (Just (x, t, eff, clo))
          = case mode of
                 ShowTypeAll
-                 -> do  outDocLn state $ ppr x
-                        outDocLn state $ text ":*: " <+> ppr t
-                        outDocLn state $ text ":!:" <+> ppr eff
-                        outDocLn state $ text ":$:" <+> ppr clo
+                 -> do  outDocLn $ ppr x
+                        outDocLn $ text ":*: " <+> ppr t
+                        outDocLn $ text ":!:" <+> ppr eff
+                        outDocLn $ text ":$:" <+> ppr clo
         
                 ShowTypeValue
-                 -> outDocLn state $ ppr x <+> text "::" <+> ppr t
+                 ->     outDocLn $ ppr x <+> text "::" <+> ppr t
         
                 ShowTypeEffect
-                 -> outDocLn state $ ppr x <+> text ":!" <+> ppr eff
+                 ->     outDocLn $ ppr x <+> text ":!" <+> ppr eff
 
                 ShowTypeClosure
-                 -> outDocLn state $ ppr x <+> text ":$" <+> ppr clo
+                 ->     outDocLn $ ppr x <+> text ":$" <+> ppr clo
 
 
 -- Recon ----------------------------------------------------------------------
 -- | Check expression and reconstruct type annotations on binders.
-cmdExpRecon :: State -> Source -> String -> IO ()
-cmdExpRecon state source ss
- |   Bundle frag modules _ _ _ <- stateBundle state
- =   cmdParseCheckExp state frag modules True source ss 
+cmdExpRecon :: Bundle -> Source -> String -> IO ()
+cmdExpRecon bundle source ss
+ |   Bundle frag modules _ _ _ <- bundle
+ =   cmdParseCheckExp frag modules True source ss 
  >>= goResult
  where
         goResult Nothing
          = return ()
 
         goResult (Just (x, _, _, _))
-         = outDocLn state $ ppr x
+         = outDocLn $ ppr x
 
 
 -- Check ----------------------------------------------------------------------
+-- | Parse a core type, and check its kind.
+cmdParseCheckType 
+        :: (Ord n, Show n, Pretty n)
+        => Source
+        -> Fragment n err
+        -> String 
+        -> IO (Maybe (Type n, Kind n))
+
+cmdParseCheckType source frag str
+ = let  srcName = nameOfSource source
+        srcLine = lineStartOfSource source
+        toks    = fragmentLexExp frag srcName srcLine str
+        eTK     = loadType (fragmentProfile frag) srcName toks
+   in   case eTK of
+         Left err       
+          -> do outDocLn $ ppr err
+                return Nothing
+
+         Right (t, k)
+          ->    return $ Just (t, k)
+
+
 -- | Parse the given core expression, 
 --   and return it, along with its type, effect and closure.
 --
@@ -259,16 +256,15 @@ cmdExpRecon state source ss
 --
 cmdParseCheckExp 
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
-        => State                -- ^ Interpreter state.
-        -> Fragment n err       -- ^ The current language fragment.
-	-> ModuleMap (AnTEC () n) n -- ^ Current modules
+        => Fragment n err       -- ^ The current language fragment.
+        -> ModuleMap (AnTEC () n) n -- ^ Current modules
         -> Bool                 -- ^ Allow partial application of primitives.
         -> Source               -- ^ Where this expression was sourced from.
         -> String               -- ^ Text to parse.
         -> IO (Maybe ( Exp (AnTEC () n) n
                      , Type n, Effect n, Closure n))
 
-cmdParseCheckExp _state frag modules permitPartialPrims source str
+cmdParseCheckExp frag modules permitPartialPrims source str
  = goLoad (fragmentLexExp frag (nameOfSource source) (lineStartOfSource source) str)
  where
         -- Override profile to allow partially applied primitives if we were
@@ -299,5 +295,3 @@ cmdParseCheckExp _state frag modules permitPartialPrims source str
 
              Nothing  
               -> do     return (Just (x, t, e, c))
-
-

@@ -1,18 +1,19 @@
 
-module DDCI.Core.Command.Ast
+module DDC.Main.Command.Ast
         (cmdAst)
 where
-import DDCI.Core.Command.Check
-import DDCI.Core.State
+import DDC.Main.Command.Check
+import DDC.Main.Source
+import DDC.Main.Bundle
 import qualified Language.Haskell.Exts.Parser as H
 import qualified Language.Haskell.Exts.Pretty as H
 
 
 -- | Parse, check, and pretty print an expression's internal representation
-cmdAst :: State -> Source -> String -> IO ()
-cmdAst state source str
- | Bundle frag modules _ _ _ <- stateBundle state
- = cmdParseCheckExp state frag modules True source str >>= goShow
+cmdAst :: Bundle -> Source -> String -> IO ()
+cmdAst bundle source str
+ | Bundle frag modules _ _ _ <- bundle
+ = cmdParseCheckExp frag modules True source str >>= goShow
  where
         -- Expression had a parse or type error.
         goShow Nothing

@@ -2,9 +2,9 @@
 module DDCI.Core.Command.ToC
         (cmdToC)
 where
-import DDCI.Core.Mode
 import DDCI.Core.State
 import DDCI.Core.Stage
+import DDC.Main.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
