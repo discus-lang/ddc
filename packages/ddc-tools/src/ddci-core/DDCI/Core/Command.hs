@@ -215,7 +215,7 @@ handleCmd1 state cmd source line
          -> do  cmdTransInteract state source line
         
         CommandAst
-         -> do  cmdAst (stateBundle state) source line
+         -> do  cmdAstExp (stateBundle state) source line
                 return state
 
         CommandToSalt

@@ -10,6 +10,7 @@ module DDC.Main.Command.Check
         , cmdExpRecon
         , ShowTypeMode(..)
         , cmdParseCheckType
+        , cmdParseCheckModule
         , cmdParseCheckExp)
 where
 import DDC.Build.Language
@@ -241,6 +242,38 @@ cmdParseCheckType source frag str
 
          Right (t, k)
           ->    return $ Just (t, k)
+
+
+-- | Parse and type-check the given core module.
+cmdParseCheckModule 
+        :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC () n)))
+        => Fragment n err
+        -> Source
+        -> String
+        -> IO (Maybe (Module (AnTEC () n) n))
+
+cmdParseCheckModule frag source str
+ = goLoad (fragmentLexModule frag 
+                (nameOfSource source) (lineStartOfSource source) str)
+ where
+        -- Parse and type-check the module.
+        goLoad toks
+         = case loadModule (fragmentProfile frag) (nameOfSource source) toks of
+                Left err
+                 -> do  outDocLn $ ppr err
+                        return Nothing
+
+                Right result
+                 -> do  goCheckFragment result
+
+        goCheckFragment m
+         = case fragmentCheckModule frag m of
+                Just err
+                 -> do outDocLn $ ppr err
+                       return Nothing
+
+                Nothing
+                 ->     return (Just m)
 
 
 -- | Parse the given core expression, 
