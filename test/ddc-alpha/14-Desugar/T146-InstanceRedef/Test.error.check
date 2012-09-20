@@ -1,0 +1,7 @@
+ddc-alpha: ERROR
+./test/ddc-alpha/14-Desugar/T146-InstanceRedef/Test.ds:8:14
+        Duplicate instance  'Show' 'Whatever'
+        
+            first defined at: ./test/ddc-alpha/14-Desugar/T146-InstanceRedef/Test.ds:4:14
+             is redefined at: ./test/ddc-alpha/14-Desugar/T146-InstanceRedef/Test.ds:8:14
+

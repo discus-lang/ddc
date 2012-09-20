@@ -1,0 +1,11 @@
+ddc-alpha: ERROR
+./test/ddc-alpha/14-Desugar/15-Defix/T186-OperatorSourcePosition/Main.ds:8:41
+        Kind mismatch during unification.
+            cannot match: $ -> *
+                    with: % -> *
+
+./test/ddc-alpha/14-Desugar/15-Defix/T186-OperatorSourcePosition/Main.ds:8:41
+        Kind mismatch during unification.
+            cannot match: $
+                    with: %
+

@@ -1,7 +1,0 @@
-ddc-alpha: ERROR
-./test/ddc-main/13-Renamer/T53-CheckShadowForall/Test.ds:5:20
-        Shadowed type variable 'w' in forall quantifier.
-
-./test/ddc-main/13-Renamer/T53-CheckShadowForall/Test.ds:8:20
-        Shadowed type variable 'y' in forall quantifier.
-

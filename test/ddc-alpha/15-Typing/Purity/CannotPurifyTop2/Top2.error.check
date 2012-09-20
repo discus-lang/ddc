@@ -1,0 +1,12 @@
+ddc-alpha: ERROR
+./test/ddc-alpha/15-Typing/Purity/CannotPurifyTop2/Top2.ds:3:36
+        Cannot purify effect 'System.Console.!Console'.
+        
+              the use of: print
+                 of type: System.Console.!Console
+                      at: ./test/ddc-alpha/15-Typing/Purity/CannotPurifyTop2/Top2.ds:3:36
+        
+            conflicts with,
+              the use of: mapL
+                      at: ./test/ddc-alpha/15-Typing/Purity/CannotPurifyTop2/Top2.ds:3:19
+

@@ -1,3 +1,0 @@
-ddc-alpha: "./test/ddc-main/12-Parser/Exp/T197-BadErrorMsg/Test.ds" (line 7, column 1):
-unexpected ;
-expecting pExp2 or pBracketExp

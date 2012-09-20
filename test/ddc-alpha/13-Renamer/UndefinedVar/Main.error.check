@@ -1,0 +1,7 @@
+ddc-alpha: ERROR
+./test/ddc-alpha/13-Renamer/UndefinedVar/Main.ds:6:16
+        Undefined value variable 'y'.
+
+./test/ddc-alpha/13-Renamer/UndefinedVar/Main.ds:9:15
+        Undefined value variable 'z'.
+

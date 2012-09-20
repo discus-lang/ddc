@@ -1,3 +1,0 @@
-ddc-alpha: "./test/ddc-main/15-Typing/Signatures/Unsupported/HigherRanked/Test.ds" (line 4, column 9):
-unexpected forall
-expecting parenthesised body type 

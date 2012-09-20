@@ -1,0 +1,15 @@
+ddc-alpha: ERROR
+./test/ddc-alpha/15-Typing/Unification/IfDef/Test.ds:6:10
+        Type mismatch during unification.
+            cannot match: Bool
+                    with: Int32
+        
+          object of if-then-else expression
+           which must be: Bool
+                      at: ./test/ddc-alpha/15-Typing/Unification/IfDef/Test.ds:6:10
+        
+                conflicts with, 
+              the use of: x
+                 of type: Int32
+                      at: ./test/ddc-alpha/15-Typing/Unification/IfDef/Test.ds:6:13
+

@@ -1,0 +1,8 @@
+ddc-alpha: ERROR
+./test/ddc-alpha/15-Typing/Main/T100-MainType/Foo.ds:3:0
+        The program's main function must be of type:
+            main :: Unit -> Unit
+        but it was inferred to be:
+            main
+                :: Unit
+

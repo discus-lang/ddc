@@ -1,0 +1,4 @@
+ddc-alpha: ERROR
+./test/ddc-alpha/15-Typing/Projection/FieldNotPresent/Main.ds:13:39
+        Type 'Main.Fish' has no projection named '.tastiness'
+

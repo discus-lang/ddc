@@ -1,0 +1,11 @@
+ddc-alpha: ERROR
+./test/ddc-alpha/15-Typing/Unification/Multi/Main.ds:11:19
+        Kind mismatch during unification.
+            cannot match: $ -> *
+                    with: % -> *
+
+./test/ddc-alpha/15-Typing/Unification/Multi/Main.ds:11:19
+        Kind mismatch during unification.
+            cannot match: $
+                    with: %
+

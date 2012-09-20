@@ -1,7 +1,0 @@
-ddc-alpha: ERROR
-./test/ddc-main/13-Renamer/T92-InstanceOfUnknownClass/Main.ds:4:9
-        Undefined class variable 'Wibble'.
-
-./test/ddc-main/13-Renamer/T92-InstanceOfUnknownClass/Main.ds:5:1
-        Undefined value variable 'foo'.
-
