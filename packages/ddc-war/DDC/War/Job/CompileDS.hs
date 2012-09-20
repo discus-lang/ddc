@@ -75,7 +75,7 @@ build (Spec     srcDS optionsDDC optionsRTS
 		mMainBin shouldSucceed)
 
  = do	needs srcDS
-        needs "bin/ddc"
+        needs "bin/ddc-alpha"
 	
 	-- The directory holding the Main.ds file.
 	let (srcDir, _srcFile)	= splitFileName srcDS
@@ -100,7 +100,7 @@ build (Spec     srcDS optionsDDC optionsRTS
 			-- Build the program.
 	 		timeBuild 
 	 		 $ systemTee False 
-				("bin/ddc"
+				("bin/ddc-alpha"
 				++ " -v -make "	  ++ srcDS
 				++ " -o "	  ++ mainBin
 				++ " -outputdir " ++ buildDir
@@ -113,7 +113,7 @@ build (Spec     srcDS optionsDDC optionsRTS
 		| otherwise
 		= do	timeBuild
 	 		 $ systemTee False
-				("bin/ddc"
+				("bin/ddc-alpha"
 				++ " -c "	  ++ srcDS
 				++ " -outputdir " ++ buildDir
 				++ " " 		  ++ intercalate " " optionsDDC

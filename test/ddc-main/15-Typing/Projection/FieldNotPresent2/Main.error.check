@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Projection/FieldNotPresent2/Main.ds:3:15
         Type '(->)' has no projections defined for it.
 

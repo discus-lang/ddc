@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Main/MainString/Main.ds:4:0
         The program's main function must be of type:
             main :: Unit -> Unit

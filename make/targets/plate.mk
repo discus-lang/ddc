@@ -7,6 +7,10 @@ bin/plate : packages/ddc-plate/Main.hs
 
 
 # Generate boilerplate
-packages/ddc-main/Source/Plate/Trans.hs : bin/plate packages/ddc-main/Source/Plate/Trans.hs-stub packages/ddc-main/Source/Exp.hs
+packages/ddc-alpha/Source/Plate/Trans.hs : \
+  bin/plate packages/ddc-alpha/Source/Plate/Trans.hs-stub packages/ddc-alpha/Source/Exp.hs
 	@echo "* Generating boilerplate for $@"
-	@bin/plate packages/ddc-main/Source/Exp.hs packages/ddc-main/Source/Plate/Trans.hs-stub packages/ddc-main/Source/Plate/Trans.hs
+	@bin/plate \
+                packages/ddc-alpha/Source/Exp.hs \
+                packages/ddc-alpha/Source/Plate/Trans.hs-stub \
+                packages/ddc-alpha/Source/Plate/Trans.hs

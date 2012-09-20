@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Purity/ConstWrite/Test.ds:13:18
         Conflicting region constraints.
         

@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Unification/DefDef/Test.ds:8:10
         Type mismatch during unification.
             cannot match: Int32

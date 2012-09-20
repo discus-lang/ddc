@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Unification/DefConst/Test.ds:6:15
         Type mismatch during unification.
             cannot match: String

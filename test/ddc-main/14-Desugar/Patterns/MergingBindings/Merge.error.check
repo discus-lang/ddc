@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/14-Desugar/Patterns/MergingBindings/Merge.ds:5:0
         Bindings for 'Merge.fun3' have a differing number of arguments.
         

@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Closure/T84-LateExport/Main.ds:5:8
         
         I naively assumed that 'ref' was constant, and thus safe to generalise.

@@ -28,6 +28,6 @@ make/deps/Makefile-ddc-check.deps : $(ddc-check_src_hs_all)
 # -- Link ddci-core -----------------------------------------------------------
 ddc-check_obj = $(patsubst %.hs,%.o,$(ddc-check_src_hs_all))
 
-bin/ddc-check : make/deps/Makefile-main.deps $(ddc-check_obj)
+bin/ddc-check : $(ddc-check_obj)
 	@echo "* Linking ddc-check"
 	@$(GHC) -o bin/ddc-check $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(ddc-check_obj)

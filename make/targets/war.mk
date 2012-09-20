@@ -1,7 +1,7 @@
 
 # -- The driver program ---------------------------------------------------------------------------
 war_hs	= $(shell find packages/ddc-war -name "*.hs") \
-          $(shell find packages/ddc-main/Util -name "*.hs")
+          $(shell find packages/ddc-alpha/Util -name "*.hs")
 
 bin/war : $(war_hs)
 	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) -Wall -fno-warn-unused-do-bind -O2 -threaded  \

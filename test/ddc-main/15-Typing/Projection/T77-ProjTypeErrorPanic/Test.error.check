@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:3:8
         Type mismatch during unification.
             cannot match: Unit

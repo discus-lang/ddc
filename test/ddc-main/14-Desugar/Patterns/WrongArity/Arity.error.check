@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/14-Desugar/Patterns/WrongArity/Arity.ds:18:8
     Wrong number of arguments for constructor match.
          constructor: Arity.ThingC2

@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Closure/LateSig/LateSig.ds:15:8
         Type mismatch during unification.
             cannot match: Int32

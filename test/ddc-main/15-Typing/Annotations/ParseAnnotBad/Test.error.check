@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Annotations/ParseAnnotBad/Test.ds:4:28
         Type mismatch during unification.
             cannot match: Char32

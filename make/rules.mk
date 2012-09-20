@@ -14,13 +14,13 @@ code/c/%.o : code/c/%.c
 #   so we need to write these rules specific to the package.
 #   Writing specific rules for each package also means that we can control
 #   inter-package dependencies.
-packages/ddc-main/%.o : packages/ddc-main/%.hs
+packages/ddc-alpha/%.o : packages/ddc-alpha/%.hs
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-main 
+	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-alpha
 
-packages/ddc-main/%.hi-boot : packages/ddc-main/%.hs-boot packages/ddc-main/%.o-boot
+packages/ddc-alpha/%.hi-boot : packages/ddc-alpha/%.hs-boot packages/ddc-alpha/%.o-boot
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-main 
+	@$(GHC) $(GHC_FLAGS) $(DDC_PACKAGES) $(GHC_INCDIRS) -c $< -ipackages/ddc-alpha
 
 
 packages/ddc-base/%.o : packages/ddc-base/%.hs

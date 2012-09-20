@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
         Conflicting region constraints.
         

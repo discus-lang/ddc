@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ?
         CAFs like Test.plus4se must be pure,
         but this one has the unmaskable effects: System.Console.!Console

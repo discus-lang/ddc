@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Signatures/Bad/SmallerEffect/Test.ds:5:8
         Inferred type:
             thing

@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:8
         Conflicting region constraints.
         

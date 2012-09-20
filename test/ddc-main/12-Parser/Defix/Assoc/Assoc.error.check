@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/12-Parser/Defix/Assoc/Assoc.ds:7:12
         Precedence parsing error.
         

@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Closure/LateMutable/Main.ds:25:8
         
         I naively assumed that 'box' was constant, and thus safe to generalise.

@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Masking/MaskOrder3/Main.ds:16:8
         Cannot purify effect '!Write %223'.
         

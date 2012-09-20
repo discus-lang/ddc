@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/ddc -c $1/Array.ds -outputdir $2
+bin/ddc-alpha -c $1/Array.ds -outputdir $2

@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/14-Desugar/T146-InstanceRedef/Test.ds:8:14
         Duplicate instance  'Show' 'Whatever'
         

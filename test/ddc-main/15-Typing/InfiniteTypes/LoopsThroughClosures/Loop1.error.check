@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/InfiniteTypes/LoopsThroughClosures/Loop1.ds:32:0
         Cannot construct infinite type for 'captId'.
             via:

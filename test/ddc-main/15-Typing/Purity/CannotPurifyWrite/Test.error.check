@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Purity/CannotPurifyWrite/Test.ds:5:9
         Cannot purify effect '!WriteT *23'.
         

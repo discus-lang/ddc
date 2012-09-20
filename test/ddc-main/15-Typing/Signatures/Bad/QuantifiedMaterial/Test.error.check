@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Signatures/Bad/QuantifiedMaterial/Test.ds:5:18
         Variable '%r1' cannot be quantified because it is material in this type.
         

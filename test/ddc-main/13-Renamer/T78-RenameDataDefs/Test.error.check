@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/13-Renamer/T78-RenameDataDefs/Test.ds:7:11
         Redefined data constructor 'Foo'
             first defined at: ./test/ddc-main/13-Renamer/T78-RenameDataDefs/Test.ds:6:11

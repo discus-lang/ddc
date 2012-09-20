@@ -32,7 +32,7 @@ make/deps/Makefile-ddci-core.deps : $(ddci-core_src_hs_all)
 # -- Link ddci-core -----------------------------------------------------------
 ddci-core_obj = $(patsubst %.hs,%.o,$(ddci-core_src_hs_all))
 
-bin/ddci-core : make/deps/Makefile-main.deps $(ddci-core_obj)
+bin/ddci-core : $(ddci-core_obj)
 	@echo "* Linking ddci-core"
 	@$(GHC) -o bin/ddci-core $(GHC_FLAGS) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) $(ddci-core_obj)
 

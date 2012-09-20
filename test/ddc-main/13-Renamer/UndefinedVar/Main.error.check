@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/13-Renamer/UndefinedVar/Main.ds:6:16
         Undefined value variable 'y'.
 

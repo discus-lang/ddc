@@ -1,7 +1,7 @@
 
 top = ../../../../
 
-DDC = $(top)bin/ddc -basedir $(top)
+DDC = $(top)bin/ddc-alpha -basedir $(top)
 
 export DYLD_LIBRARY_PATH = $(top)runtime
 

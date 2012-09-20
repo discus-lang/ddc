@@ -1,2 +1,2 @@
-ddc: "./test/ddc-main/12-Parser/Literals/T193-UnterminatedStringLiteral/Test.ds" (line 2, column 22):
+ddc-alpha: "./test/ddc-main/12-Parser/Literals/T193-UnterminatedStringLiteral/Test.ds" (line 2, column 22):
 unterminated string literal

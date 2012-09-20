@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Kinds/T74-KindErrorFunctor/Test.ds:2:17
         Kind mismatch during unification.
             cannot match: % -> *

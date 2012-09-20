@@ -114,6 +114,6 @@ genBuildMk outfile mainBin mainHs
  = do	let str	= "# Generated Makefile\n\n"
  		++ "include make/build.mk\n\n"
                 ++ mainBin ++ " : " ++ mainHs ++ "\n"
-                ++ "\t$(GHC) $(GHC_LANGUAGE) $(DDC_PACKAGES) -ipackages/ddc-main --make $^ -o $@\n\n"
+                ++ "\t$(GHC) $(GHC_LANGUAGE) $(DDC_PACKAGES) -ipackages/ddc-alpha --make $^ -o $@\n\n"
 	io $ writeFile outfile str
 

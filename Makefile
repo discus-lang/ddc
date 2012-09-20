@@ -52,9 +52,9 @@ include make/build.mk
 # Build everything, now that we have the configuration included above.
 .PHONY	: allWithConfig
 allWithConfig :
-	@$(MAKE) packages/ddc-main/Source/Lexer.hs
+	@$(MAKE) packages/ddc-alpha/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core runtime external libs bin/war -j $(THREADS)
+	@$(MAKE) bin/ddc-alpha bin/ddc-check bin/ddci-core runtime external libs bin/war -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
@@ -81,7 +81,7 @@ proof:
 
 # -- Build all dependencies
 .PHONY	: deps
-deps	: make/deps/Makefile-main.deps \
+deps	: make/deps/Makefile-ddc-alpha.deps \
           make/deps/Makefile-ddc-check.deps \
           make/deps/Makefile-ddci-core.deps
 
@@ -121,7 +121,7 @@ include make/targets/war.mk
 include make/targets/lint.mk
 include make/targets/tarball.mk
 include make/targets/clean.mk
-include make/targets/ddc.mk
+include make/targets/ddc-alpha.mk
 include make/targets/ddc-check.mk
 include make/targets/ddci-core.mk
 include make/targets/proof.mk
@@ -139,7 +139,7 @@ include make/rules.mk
 #   This behavior is different to the documentation which says
 #   that missing -included files should be ignored.
 #
--include make/deps/Makefile-main.deps.inc
+-include make/deps/Makefile-ddc-alpha.deps.inc
 -include make/deps/Makefile-ddc-check.deps.inc
 -include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/proof.deps.inc

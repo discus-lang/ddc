@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Purity/CannotPurifyTop1/Top1.ds:3:15
         Cannot purify effect 'System.Console.!Console'.
         

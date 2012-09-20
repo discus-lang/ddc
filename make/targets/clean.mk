@@ -20,6 +20,6 @@ clean  : cleanWar cleanRuntime cleanLibrary
 		-follow | xargs -n 1 rm -f
 
 	@rm -f doc/haddock/*
-	@rm -f packages/ddc-main/Config/Config.hs package/ddc-main/Source/Lexer.hs
+	@rm -f packages/ddc-alpha/Config/Config.hs package/ddc-alpha/Source/Lexer.hs
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak

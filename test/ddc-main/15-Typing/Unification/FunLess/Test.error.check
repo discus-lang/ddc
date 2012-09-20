@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Unification/FunLess/Test.ds:6:15
         Kind mismatch during unification.
             cannot match: % -> *

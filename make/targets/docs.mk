@@ -2,10 +2,10 @@
 
 # We leave these out to break import loops.
 nodoc	= \
-	packages/ddc-main/src/Source/Lexer.hs \
-	packages/ddc-main/src/Util/Tunnel.hs \
-	packages/ddc-main/src/Source/Type/SlurpA.hs \
-	packages/ddc-main/src/Source/Type/SlurpX.hs
+	packages/ddc-alpha/src/Source/Lexer.hs \
+	packages/ddc-alpha/src/Util/Tunnel.hs \
+	packages/ddc-alpha/src/Source/Type/SlurpA.hs \
+	packages/ddc-alpha/src/Source/Type/SlurpX.hs
 
 .PHONY	: docs
 
@@ -15,14 +15,14 @@ nodoc	= \
 # use it and eliminate the duplication.
 docs	:
 	@echo "* Building haddock documentation ---------------------------------------------------"
-	@$(MAKE) docs-main
+	@$(MAKE) docs-alpha
 	@$(MAKE) docs-core
 
-docs-main :
-	@haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-main \
+docs-alpha :
+	@haddock -w -h -o doc/haddock --optghc=-ipackages/ddc-alpha \
                 $(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
-		$(filter-out $(nodoc),$(ddc-main_src_hs_all))
+		$(filter-out $(nodoc),$(ddc-alpha_src_hs_all))
 
 docs-core :
 	@haddock -w -h -o doc/haddock-core \
@@ -42,11 +42,11 @@ docs-core :
 # Build hoogle docs
 docs-hoogle	:
 	@echo "* Building hoogle documentation ---------------------------------------------------"
-	@$(MAKE) docs-hoogle-main
+	@$(MAKE) docs-hoogle-alpha
 	@$(MAKE) docs-hoogle-core
 
-docs-hoogle-main :
-	@haddock --hoogle -w -o doc/hoogle --optghc=-ipackages/ddc-main \
+docs-hoogle-alpha :
+	@haddock --hoogle -w -o doc/hoogle --optghc=-ipackages/ddc-alpha \
 								$(patsubst %,--optghc=%,$(DDC_PACKAGES)) \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(ddc-main_src_hs_all))

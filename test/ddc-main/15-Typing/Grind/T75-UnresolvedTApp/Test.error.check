@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/Grind/T75-UnresolvedTApp/Test.ds:2:0
         No instance for Class.Functor.Functor t0
 

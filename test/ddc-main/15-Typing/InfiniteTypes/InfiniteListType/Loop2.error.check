@@ -1,4 +1,4 @@
-ddc: ERROR
+ddc-alpha: ERROR
 ./test/ddc-main/15-Typing/InfiniteTypes/InfiniteListType/Loop2.ds:4:0
         Cannot construct infinite type for 'x'.
             via:
