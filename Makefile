@@ -83,6 +83,7 @@ proof:
 .PHONY	: deps
 deps	: make/deps/Makefile-ddc-alpha.deps \
           make/deps/Makefile-ddc-check.deps \
+          make/deps/Makefile-ddc-main.deps \
           make/deps/Makefile-ddci-core.deps
 
 
@@ -142,6 +143,7 @@ include make/rules.mk
 #
 -include make/deps/Makefile-ddc-alpha.deps.inc
 -include make/deps/Makefile-ddc-check.deps.inc
+-include make/deps/Makefile-ddc-main.deps.inc
 -include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/proof.deps.inc
 

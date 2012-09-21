@@ -2,7 +2,6 @@
 module DDC.Main.Config
         ( Mode   (..)
         , Config (..)
-        , parseArgs
         , defaultConfig
         , liteBundleOfConfig
         , saltBundleOfConfig
@@ -23,6 +22,9 @@ data Mode
         -- | Don't do anything
         = ModeNone
 
+        -- | Display the help page.
+        | ModeHelp
+
         -- | Pretty print a module's AST.
         | ModeAST  FilePath
 
@@ -34,7 +36,6 @@ data Mode
         deriving (Eq, Show)
 
 
--- DDC Config -----------------------------------------------------------------
 -- | DDC config.
 data Config
         = Config
@@ -47,29 +48,6 @@ defaultConfig :: Config
 defaultConfig
         = Config
         { configMode    = ModeNone }
-
-
--- | Parse command line arguments.
-parseArgs :: [String] -> Config -> IO Config
-parseArgs [] config
-        = return config
-
-parseArgs args config
-        | "-ast" : file : rest  <- args
-        = parseArgs rest
-        $ config { configMode   = ModeAST file }
-
-        | "-load" : file : rest <- args
-        = parseArgs rest
-        $ config { configMode   = ModeLoad file }
-
-        | compile : file : rest <- args
-        , elem compile ["-c", "-compile"]
-        = parseArgs rest
-        $ config { configMode   = ModeCompile file}
-
-        | otherwise
-        = error "bad usage"
 
 
 -- | Get the Lite specific stuff from the config.
