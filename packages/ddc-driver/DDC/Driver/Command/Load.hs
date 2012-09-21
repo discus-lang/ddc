@@ -1,27 +1,24 @@
 
-module DDCI.Core.Command.Load
+module DDC.Driver.Command.Load
         ( cmdLoad
         , loadModule)
 where
-import DDCI.Core.Interface.Suppress
-import DDCI.Core.State
 import DDC.Driver.Source
+import DDC.Driver.Bundle
 import DDC.Build.Pipeline
 import DDC.Core.Load
 import DDC.Core.Pretty
-import DDC.Data.Canned
 
 
 -- | Load and transform a module.
-cmdLoad :: State -> Source -> String -> IO ()
-cmdLoad state source str
- | Bundle fragment _ zero simpl _    <- stateBundle state
+cmdLoad :: Bundle -> Source -> String -> IO ()
+cmdLoad bundle source str
+ | Bundle fragment _ zero simpl _    <- bundle
  = do   errs    <- pipeText (nameOfSource source) (lineStartOfSource source) str
                 $  PipeTextLoadCore  fragment
                 [  PipeCoreSimplify  fragment zero simpl
                 [  PipeCoreCheck     fragment
-                [  PipeCoreHacks     (Canned (suppressModule state))
-                [  PipeCoreOutput    SinkStdout ]]]]
+                [  PipeCoreOutput    SinkStdout ]]]
 
         mapM_ (putStrLn . renderIndent . ppr) errs
 

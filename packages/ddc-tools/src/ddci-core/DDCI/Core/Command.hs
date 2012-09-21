@@ -7,7 +7,6 @@ module DDCI.Core.Command
 where
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Set
-import DDCI.Core.Command.Load
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
 import DDCI.Core.Command.TransInteract
@@ -20,6 +19,7 @@ import DDCI.Core.Command.With
 import DDCI.Core.State
 import DDC.Driver.Command.Ast
 import DDC.Driver.Command.Check
+import DDC.Driver.Command.Load
 import Data.List
 
 
@@ -148,7 +148,7 @@ handleCmd1 state cmd source line
                 return state'
 
         CommandLoad
-         -> do  cmdLoad state source line
+         -> do  cmdLoad (stateBundle state) source line
                 return state
 
         CommandKind       

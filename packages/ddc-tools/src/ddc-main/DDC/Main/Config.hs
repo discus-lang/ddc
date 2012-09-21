@@ -12,7 +12,10 @@ data Mode
         = ModeNone
 
         -- | Pretty print a module's AST.
-        | ModeAST FilePath
+        | ModeAST  FilePath
+
+        -- | Parse and type-check a module.
+        | ModeLoad FilePath
         deriving (Eq, Show)
 
 
@@ -39,6 +42,10 @@ parseArgs args config
         | "-ast" : file : rest  <- args
         = parseArgs rest
         $ config { configMode   = ModeAST file }
+
+        | "-load" : file : rest <- args
+        = parseArgs rest
+        $ config { configMode   = ModeLoad file }
 
         | otherwise
         = error "bad usage"
