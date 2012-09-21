@@ -76,19 +76,27 @@ opt1_lite
         -> IO (Simplifier Int (AnTEC () Lite.Name) Lite.Name)
 
 opt1_lite config _builder
- = do   let normalizeLite
+ = do
+        -- Auto-inline basic numeric code.
+        -- TODO: we should be able to specify where the this code is.
+        let inlineModulePaths
+                =  [ "code/lite/base/Data/Numeric/Int.dcl"
+                   , "code/lite/base/Data/Numeric/Nat.dcl" ]
+                ++ (configWithSalt config)
+
+        Just inlineModules
+                <- liftM sequence
+                $  mapM (cmdReadModule Lite.fragmentLite)
+                        inlineModulePaths
+
+        -- Simplifier to convert to a-normal form.
+        let normalizeLite
                 = S.anormalize
                         (makeNamifier Lite.freshT)      
                         (makeNamifier Lite.freshX)
 
-        Just modules 
-                <- liftM sequence
-                $  mapM (cmdReadModule Lite.fragmentLite)
-                        (configWithLite config)
-
-
         return  $ (S.Trans $ S.Inline 
-                           $ lookupTemplateFromModules modules)
+                           $ lookupTemplateFromModules inlineModules)
         
                 -- TODO: want to do a fixpoint.
                 <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
@@ -110,14 +118,14 @@ opt1_salt config builder
                 = archPointerWidth $ platformArch $ buildTarget builder
 
         -- TODO: we should be able to specify where the RTS code is.
-        let inlineModules
+        let inlineModulePaths
                 =  [ "code/salt/runtime" ++ show targetWidth ++ "/Object.dce"]
                 ++ (configWithSalt config)
 
-        Just modules
+        Just inlineModules
                 <- liftM sequence
                 $  mapM (cmdReadModule Salt.fragmentSalt)
-                        inlineModules
+                        inlineModulePaths
 
         -- Simplifier to convert to a-normal form.
         let normalizeSalt
@@ -126,7 +134,7 @@ opt1_salt config builder
                         (makeNamifier Salt.freshX)
         
         return  $ (S.Trans $ S.Inline 
-                           $ lookupTemplateFromModules modules)
+                           $ lookupTemplateFromModules inlineModules)
 
                 -- hrm. Want a fixpoint here.
                 <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
