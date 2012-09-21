@@ -1,6 +1,15 @@
 -- Check reconstruction of annotation on let-bound variable.
-let x : Int R0# = 5 [R0#] () in x
+let x : Int R0# = 5 [R0#] () in
+x
 
 -- Check reconstruction of annotations on case-bound variables.
-/\(r1 : %). \(xx : List r1 (Int r1)). case xx of { Nil -> Nil [r1] [Int r1] (); Cons (x : Int r1) (xs : List r1 (Int r1)) -> Cons [r1] [Int r1] x (Cons [r1] [Int r1] x xs) }
+/\(r1 : %).
+ \(xx : List r1 (Int r1)).
+case xx of {
+  Nil  
+   -> Nil [r1] [Int r1] ();
+  Cons (x : Int r1) (xs : List r1 (Int r1)) 
+   -> Cons [r1] [Int r1] x
+          (Cons [r1] [Int r1] x xs)
+}
 

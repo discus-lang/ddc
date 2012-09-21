@@ -1,12 +1,14 @@
 -- Ok: let expression with explicit type annotation.
-let x : Int R0# = 5 [R0#] () in x
+let x : Int R0# = 5 [R0#] () in
+x
 :*: Int R0#
 :!: Alloc R0#
 :$: Use R0#
 
 
 -- Ok: let expression with no type annotation.
-let x : Int R0# = 5 [R0#] () in x
+let x : Int R0# = 5 [R0#] () in
+x
 :*: Int R0#
 :!: Alloc R0#
 :$: Use R0#
@@ -107,14 +109,42 @@ When checking expression.
 
 
 -- Should be ok.
-letrec { enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = /\(r1 r2 : %). \(m n : Int r1). case eqInt [r1] [r1] [r1] m n of { 0 -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ()) } } in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+letrec {
+  enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+    = /\(r1 r2 : %).
+       \(m n : Int r1).
+      case eqInt [r1] [r1] [r1] m n of {
+        0  
+         -> Cons [r2] [Int r1] m
+                (enumFromTo [r1] [r2]
+                     (addInt [r1] [r1] [r1] m (1 [r1] ())) n);
+        _ 
+         -> Cons [r2] [Int r1] m
+                (Nil [r2] [Int r1] ())
+      }
+} in
+enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 :*: List R2# (Int R1#)
 :!: Read R1# + Alloc R1# + Alloc R2#
 :$: Use R1# + Use R2#
 
 
 -- Same as above, but the effect and closure terms are in a different order.
-letrec { enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1) = /\(r1 r2 : %). \(m n : Int r1). case eqInt [r1] [r1] [r1] m n of { 0 -> Cons [r2] [Int r1] m (enumFromTo [r1] [r2] (addInt [r1] [r1] [r1] m (1 [r1] ())) n); _ -> Cons [r2] [Int r1] m (Nil [r2] [Int r1] ()) } } in enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
+letrec {
+  enumFromTo : [r1 r2 : %].Int r1 -(!0 | Use r1 + Use r2)> Int r1 -(Read r1 + Alloc r1 + Alloc r2 | Use r1 + Use r2)> List r2 (Int r1)
+    = /\(r1 r2 : %).
+       \(m n : Int r1).
+      case eqInt [r1] [r1] [r1] m n of {
+        0  
+         -> Cons [r2] [Int r1] m
+                (enumFromTo [r1] [r2]
+                     (addInt [r1] [r1] [r1] m (1 [r1] ())) n);
+        _ 
+         -> Cons [r2] [Int r1] m
+                (Nil [r2] [Int r1] ())
+      }
+} in
+enumFromTo [R1#] [R2#] (5 [R1#] ()) (9 [R1#] ())
 :*: List R2# (Int R1#)
 :!: Read R1# + Alloc R1# + Alloc R2#
 :$: Use R1# + Use R2#

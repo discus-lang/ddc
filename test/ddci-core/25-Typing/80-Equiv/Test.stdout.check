@@ -1,12 +1,24 @@
 -- Equivalence checker must crush effect and closure terms.
-\(x : Int R0#). \(y : Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit). \(z : Unit -(Read R0# | Use R0#)> Unit). case x of { 0 -> y; _ -> z }
+\(x : Int R0#).\(y : Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit).\(z : Unit -(Read R0# | Use R0#)> Unit).
+case x of {
+  0  
+   -> y;
+  _ 
+   -> z
+}
 :*: Int R0# -> (Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit) -(!0 | Use R0#)> (Unit -(Read R0# | Use R0#)> Unit) -(Read R0# | Use R0#)> Unit -(DeepRead (Int R0#) | DeepUse (Int R0#))> Unit
 :!: !0
 :$: $0
 
 
 -- Equivalence checker must handle alpha-equivalence.
-\(x : Int R0#). \(y : [a : *].a -> a). \(z : [^ : *].^0 -> ^0). case x of { 0 -> y; _ -> z }
+\(x : Int R0#).\(y : [a : *].a -> a).\(z : [^ : *].^0 -> ^0).
+case x of {
+  0  
+   -> y;
+  _ 
+   -> z
+}
 :*: Int R0# -> ([a : *].a -> a) -(!0 | Use R0#)> ([^ : *].^0 -> ^0) -(Read R0# | Use R0#)> [a : *].a -> a
 :!: !0
 :$: $0

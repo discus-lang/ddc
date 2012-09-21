@@ -192,7 +192,7 @@ cmdShowType bundle mode source ss
          = case mode of
                 ShowTypeAll
                  -> do  outDocLn $ ppr x
-                        outDocLn $ text ":*: " <+> ppr t
+                        outDocLn $ text ":*:" <+> ppr t
                         outDocLn $ text ":!:" <+> ppr eff
                         outDocLn $ text ":$:" <+> ppr clo
         

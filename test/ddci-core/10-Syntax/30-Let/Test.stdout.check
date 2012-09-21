@@ -1,75 +1,93 @@
 -- Non-binding let.
-let _ : Unit = () in ()
+let _ : Unit = () in
+()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Non-binding lazy.
-let _ : Unit lazy = () in ()
+let _ : Unit lazy = () in
+()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Binding let.
-let x : Unit = () in x
+let x : Unit = () in
+x
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Binding lazy.
-let x : Unit lazy = () in ()
+let x : Unit lazy = () in
+()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Let-bound function with full signature.
-let f : Unit -> Unit = \(x : Unit). x in ()
+let f : Unit -> Unit
+      = \(x : Unit). x in
+()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Lazy-bound function with full signature.
-let f : Unit -> Unit lazy = \(x : Unit). x in ()
+let f : Unit -> Unit lazy
+      = \(x : Unit). x in
+()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Let using function syntax with a return type.
-let f : Unit -> Unit = \(x : Unit). x in f ()
+let f : Unit -> Unit
+      = \(x : Unit). x in
+f ()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Lazy using function syntax with a return type.
-let f : Unit -> Unit lazy = \(x : Unit). x in f ()
+let f : Unit -> Unit lazy
+      = \(x : Unit). x in
+f ()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Let using function syntax without a return type.
-let f : Unit -> Unit = \(x : Unit). x in f ()
+let f : Unit -> Unit
+      = \(x : Unit). x in
+f ()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Lazy using function syntax without a return type.
-let f : Unit -> Unit = \(x : Unit). x in f ()
+let f : Unit -> Unit
+      = \(x : Unit). x in
+f ()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Multiple lets.
-let x : Unit = () in let y : Unit = () in y
+let x : Unit = () in
+let y : Unit = () in
+y
 :*: Unit
 :!: !0
 :$: $0
@@ -78,61 +96,90 @@ let x : Unit = () in let y : Unit = () in y
 -- Mutltiple lets with debruijn indices.
 -- If the bound variable is pushed on the stack when checking
 -- the right of the non-recursive binding then this is mistyped.
-let ^ : Unit = () in let ^ : Int R0# = 23 [R0#] ^0 in ^0
+let ^ : Unit = () in
+let ^ : Int R0# = 23 [R0#] ^0 in
+^0
 :*: Int R0#
 :!: Alloc R0#
 :$: Use R0#
 
 
 -- Let and lazy
-let x : Unit = () in let y : Unit lazy = () in y
+let x : Unit = () in
+let y : Unit lazy = () in
+y
 :*: Unit
 :!: !0
 :$: $0
 
 -- Simple letregion.
-letregion r in let x : Int r = 4 [r] () in addInt [r] [r] [R1#] x x
+letregion r in
+let x : Int r = 4 [r] () in
+addInt [r] [r] [R1#] x x
 :*: Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 
 -- Letregion with explicitly empty witness set.
-letregion r in let x : Int r = 4 [r] () in addInt [r] [r] [R1#] x x
+letregion r in
+let x : Int r = 4 [r] () in
+addInt [r] [r] [R1#] x x
 :*: Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 
 -- Simple letregion with letrec using explicit type annotation
-letregion r in letrec { f : Unit -(Alloc r | Use r)> Int r = \(x : Unit). 4 [r] () } in addInt [r] [r] [R1#] (f ()) (f ())
+letregion r in
+letrec {
+  f : Unit -(Alloc r | Use r)> Int r
+    = \(x : Unit). 4 [r] ()
+} in
+addInt [r] [r] [R1#] (f ()) (f ())
 :*: Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 
 -- Simple letregion with letrec using function syntax.
-letregion r in letrec { f : Unit -(Alloc r | Use r)> Int r = \(x : Unit). 4 [r] () } in addInt [r] [r] [R1#] (f ()) (f ())
+letregion r in
+letrec {
+  f : Unit -(Alloc r | Use r)> Int r
+    = \(x : Unit). 4 [r] ()
+} in
+addInt [r] [r] [R1#] (f ()) (f ())
 :*: Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 
 -- Letrec with a single binding and no braces around it.
-letregion r in letrec { f : Unit -(Alloc r | Use r)> Int r = \(x : Unit). 4 [r] () } in addInt [r] [r] [R1#] (f ()) (f ())
+letregion r in
+letrec {
+  f : Unit -(Alloc r | Use r)> Int r
+    = \(x : Unit). 4 [r] ()
+} in
+addInt [r] [r] [R1#] (f ()) (f ())
 :*: Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 
 -- Multiple lets and letregion. 
-letregions r1 r2 in let x1 : Int r1 = 2 [r1] () in let x2 : Int r2 = 3 [r2] () in addInt [r1] [r2] [R1#] x1 x2
+letregions r1 r2 in
+let x1 : Int r1 = 2 [r1] () in
+let x2 : Int r2 = 3 [r2] () in
+addInt [r1] [r2] [R1#] x1 x2
 :*: Int R1#
 :!: Alloc R1#
 :$: Use R1#
 
 -- As above, but no annots on binders.
-letregions r1 r2 in let x1 : Int r1 = 2 [r1] () in let x2 : Int r2 = 3 [r2] () in addInt [r1] [r2] [R1#] x1 x2
+letregions r1 r2 in
+let x1 : Int r1 = 2 [r1] () in
+let x2 : Int r2 = 3 [r2] () in
+addInt [r1] [r2] [R1#] x1 x2
 :*: Int R1#
 :!: Alloc R1#
 :$: Use R1#

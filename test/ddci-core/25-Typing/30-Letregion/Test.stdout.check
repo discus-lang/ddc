@@ -1,33 +1,38 @@
 -- Parse letregion with no witnesses
-letregion r1 in ()
+letregion r1 in
+()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Parse letregion with one witness.
-letregion r1 with {w1 : Const r1} in ()
+letregion r1 with {w1 : Const r1} in
+()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Parse letregion with multiple witnesses.
-letregion r1 with {w1 : Const r1; w2 : Manifest r1} in ()
+letregion r1 with {w1 : Const r1; w2 : Manifest r1} in
+()
 :*: Unit
 :!: !0
 :$: $0
 
 
 -- Use the bound region in the body of the expression.
-letregion r1 in addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
+letregion r1 in
+addInt [r1] [r1] [R2#] (2 [r1] ()) (3 [r1] ())
 :*: Int R2#
 :!: Alloc R2#
 :$: Use R2#
 
 
 -- As above, but with debruijn indices.
-letregion ^ in addInt [^0] [^0] [R2#] (2 [^0] ()) (3 [^0] ())
+letregion ^ in
+addInt [^0] [^0] [R2#] (2 [^0] ()) (3 [^0] ())
 :*: Int R2#
 :!: Alloc R2#
 :$: Use R2#
@@ -118,7 +123,9 @@ When checking expression.
 
 
 -- Parse letregion with witness for distinctness
-letregion r1 in letregion r2 with {w1 : Distinct2 r1 r2} in ()
+letregion r1 in
+letregion r2 with {w1 : Distinct2 r1 r2} in
+()
 :*: Unit
 :!: !0
 :$: $0
@@ -135,7 +142,8 @@ When checking expression.
         ()
 
 -- Parse letregion with witness for multi-way distinctness
-letregions r1 r2 r3 with {w : Distinct3 r1 r2 r3} in ()
+letregions r1 r2 r3 with {w : Distinct3 r1 r2 r3} in
+()
 :*: Unit
 :!: !0
 :$: $0

@@ -26,35 +26,66 @@ Bool :: % ~> *
 
 
 -- Boxing bools
-/\(r : %). \(x : Bool#). B# [r] x
+/\(r : %).
+ \(x : Bool#). B# [r] x
 :*: [r : %].Bool# -(Alloc r | Use r)> Bool r
 :!: !0
 :$: $0
 
 
 -- Unboxing bools.
-/\(r : %). \(x : Bool r). case x of { B# (b : Bool#) -> b }
+/\(r : %).
+ \(x : Bool r).
+case x of {
+  B# (b : Bool#) 
+   -> b
+}
 :*: [r : %].Bool r -(Read r | $0)> Bool#
 :!: !0
 :$: $0
 
 
 -- Boxing ints
-/\(r : %). \(x : Int#). I# [r] x
+/\(r : %).
+ \(x : Int#). I# [r] x
 :*: [r : %].Int# -(Alloc r | Use r)> Int r
 :!: !0
 :$: $0
 
 
 -- Unboxing ints
-/\(r : %). \(x : Int r). case x of { I# (i : Int#) -> i }
+/\(r : %).
+ \(x : Int r).
+case x of {
+  I# (i : Int#) 
+   -> i
+}
 :*: [r : %].Int r -(Read r | $0)> Int#
 :!: !0
 :$: $0
 
 
 -- Boxed integer add
-let unboxInt : [r : %].Int r -(Read r | $0)> Int# = /\(r : %). \(x : Int r). case x of { I# (i : Int#) -> i } in let addInt : [r1 r2 r3 : %].Int r1 -(!0 | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3 = /\(r1 r2 r3 : %). \(x : Int r1). \(y : Int r2). case x of { I# (i1 : Int#) -> case y of { I# (i2 : Int#) -> I# [r3] (add# [Int#] i1 i2) } } in letregion r1 in unboxInt [r1] (addInt [r1] [r1] [r1] (I# [r1] 2i#) (I# [r1] 3i#))
+let unboxInt : [r : %].Int r -(Read r | $0)> Int#
+      = /\(r : %).
+         \(x : Int r).
+        case x of {
+          I# (i : Int#) 
+           -> i
+        } in
+let addInt : [r1 r2 r3 : %].Int r1 -(!0 | Use r3)> Int r2 -(Read r1 + Read r2 + Alloc r3 | Use r1 + Use r3)> Int r3
+      = /\(r1 r2 r3 : %).
+         \(x : Int r1).\(y : Int r2).
+        case x of {
+          I# (i1 : Int#) 
+           -> case y of {
+                I# (i2 : Int#) 
+                 -> I# [r3] (add# [Int#] i1 i2)
+              }
+        } in
+letregion r1 in
+unboxInt [r1]
+    (addInt [r1] [r1] [r1] (I# [r1] 2i#) (I# [r1] 3i#))
 :*: Int#
 :!: !0
 :$: $0
