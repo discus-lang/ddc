@@ -1,8 +1,8 @@
 
 -- | Interactive interface to DDC.
---     This also accepts interpreter commands as arguments on the command-line.
---     If you want a more unixy inferface then use the ddc-main interface instead.
---
+--      This also accepts interpreter commands as arguments on the command-line.
+--      If you want a more unixy inferface then use the ddc-main interface instead.
+module Main where
 import DDCI.Core.Command.Make
 import DDCI.Core.Command.Help
 import DDCI.Core.Interface.Args
