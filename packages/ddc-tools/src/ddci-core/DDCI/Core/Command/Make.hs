@@ -5,14 +5,12 @@ where
 import DDCI.Core.State
 import DDC.Driver.Stage
 import DDC.Driver.Source
-import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import System.Directory
 import Data.Char
 import Data.List
 import Control.Monad
-import Data.Maybe
 import qualified DDC.Core.Pretty        as P
 
 
@@ -30,13 +28,8 @@ cmdMake state _source str
 
         src     <- readFile filePath
 
-        -- Determine the builder to use.
-        mBuilder        <- determineDefaultBuilder defaultBuilderConfig
-        let builder     =  fromMaybe (error "Can not determine host platform")
-                                     mBuilder
-
         -- Slurp out the driver config we need from the DDCI state.
-        let config      = driverConfigOfState state
+        config  <- getDriverConfigOfState state
 
         -- Decide what to do based on file extension.
         let make
@@ -45,18 +38,18 @@ cmdMake state _source str
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ stageLiteLoad     config source
                 [ stageLiteOpt      config source  
-                [ stageLiteToSalt   config source builder
+                [ stageLiteToSalt   config source 
                 [ stageSaltOpt      config source
-                [ stageSaltToLLVM   config source builder
-                [ stageCompileLLVM  config source builder filePath True ]]]]]
+                [ stageSaltToLLVM   config source 
+                [ stageCompileLLVM  config source filePath True ]]]]]
 
                 -- Make a Core Salt module.
                 | isSuffixOf ".dce" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  fragmentSalt 
                 [ stageSaltOpt      config source
-                [ stageSaltToLLVM   config source builder
-                [ stageCompileLLVM  config source builder filePath True ]]]
+                [ stageSaltToLLVM   config source 
+                [ stageCompileLLVM  config source filePath True ]]]
 
                 -- Unrecognised.
                 | otherwise

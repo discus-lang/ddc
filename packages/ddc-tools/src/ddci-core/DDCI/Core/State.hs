@@ -3,7 +3,7 @@ module DDCI.Core.State
         ( State         (..)
         , Bundle        (..)
         , initState
-        , driverConfigOfState
+        , getDriverConfigOfState
 
         , TransHistory	(..)
 
@@ -145,18 +145,21 @@ initState interface
 
 
 -- | Slurp out the relevant parts of the DDCI stage into a driver config.
-driverConfigOfState :: State -> D.Config
-driverConfigOfState state
-        = D.Config
-        { D.configDump                  = Set.member Dump (stateModes state)
-        , D.configOutputFile            = stateOutputFile state
-        , D.configOutputDir             = stateOutputDir  state
-        , D.configSimplLite             = stateSimplLite  state
-        , D.configSimplSalt             = stateSimplSalt  state
-        , D.configWithLite              = stateWithLite   state
-        , D.configWithSalt              = stateWithSalt   state
-        , D.configSuppressCoreImports   = Set.member SuppressImports (stateModes state)
-        , D.configSuppressHashImports   = not $ Set.member SaltPrelude (stateModes state) }
+getDriverConfigOfState :: State -> IO D.Config
+getDriverConfigOfState state
+ = do   builder <- getActiveBuilder state
+        return 
+         $ D.Config
+         { D.configDump                  = Set.member Dump (stateModes state)
+         , D.configOutputFile            = stateOutputFile state
+         , D.configOutputDir             = stateOutputDir  state
+         , D.configSimplLite             = stateSimplLite  state
+         , D.configSimplSalt             = stateSimplSalt  state
+         , D.configWithLite              = stateWithLite   state
+         , D.configWithSalt              = stateWithSalt   state
+         , D.configBuilder               = builder
+         , D.configSuppressCoreImports   = Set.member SuppressImports (stateModes state)
+         , D.configSuppressHashImports   = not $ Set.member SaltPrelude (stateModes state) }
 
 
 -- | Get the active builder.

@@ -10,7 +10,6 @@ import DDCI.Core.Command.Set
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
 import DDCI.Core.Command.TransInteract
-import DDCI.Core.Command.Compile
 import DDCI.Core.Command.Make
 import DDCI.Core.Command.ToSalt
 import DDCI.Core.Command.ToC
@@ -20,6 +19,7 @@ import DDCI.Core.State
 import DDC.Driver.Command.Ast
 import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
+import DDC.Driver.Command.Compile
 import Data.List
 
 
@@ -231,7 +231,8 @@ handleCmd1 state cmd source line
                 return state
 
         CommandCompile
-         -> do  cmdCompile state source line
+         -> do  config  <- getDriverConfigOfState state
+                cmdCompile config line
                 return state
 
         CommandMake

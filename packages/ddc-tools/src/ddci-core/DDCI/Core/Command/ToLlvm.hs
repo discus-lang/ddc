@@ -22,11 +22,8 @@ cmdToLlvm state source str
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
-        -- Determine the builder to use.
-        builder         <- getActiveBuilder state
-
         -- Slurp out the driver config we need from the DDCI state.
-        let config      = driverConfigOfState state
+        config          <- getDriverConfigOfState state
 
         -- Decide what to do based on file extension and current fragment.
         let compile
@@ -34,15 +31,15 @@ cmdToLlvm state source str
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentLite
-                [ stageLiteToSalt  config source builder
-                [ stageSaltToLLVM  config source builder 
+                [ stageLiteToSalt  config source
+                [ stageSaltToLLVM  config source 
                 [ PipeLlvmPrint SinkStdout]]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentSalt
-                [ stageSaltToLLVM  config source builder
+                [ stageSaltToLLVM  config source
                 [ PipeLlvmPrint SinkStdout]]
 
                 -- Unrecognised.

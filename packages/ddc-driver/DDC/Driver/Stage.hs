@@ -46,12 +46,6 @@ data Config
         { -- | Dump intermediate code.
           configDump            :: Bool
 
-          -- | Override output file.
-        , configOutputFile      :: Maybe FilePath
-
-          -- | Override directory for build products.
-        , configOutputDir       :: Maybe FilePath
-
           -- | Simplifiers to apply to intermediate code.
         , configSimplLite       :: Simplifier Int (AnTEC () Lite.Name) Lite.Name
         , configSimplSalt       :: Simplifier Int (AnTEC () Salt.Name) Salt.Name
@@ -60,11 +54,20 @@ data Config
         , configWithLite        :: Map ModuleName (Module (AnTEC () Lite.Name) Lite.Name)
         , configWithSalt        :: Map ModuleName (Module (AnTEC () Salt.Name) Salt.Name)
 
+          -- | The builder to use for the target architecture
+        , configBuilder                 :: Builder
+
           -- | Suppress imports in Core modules
-        , configSuppressCoreImports :: Bool
+        , configSuppressCoreImports     :: Bool
 
           -- | Suppress the #import prelude in C modules.
-        , configSuppressHashImports :: Bool 
+        , configSuppressHashImports     :: Bool 
+
+          -- | Override output file.
+        , configOutputFile              :: Maybe FilePath
+
+          -- | Override directory for build products.
+        , configOutputDir               :: Maybe FilePath
         }
 
 
@@ -156,16 +159,16 @@ stageSaltOpt config source pipes
 --   Result is a-normalised.
 --
 stageLiteToSalt 
-        :: Config -> Source -> Builder
+        :: Config -> Source
         -> [PipeCore (AnTEC () Salt.Name) Salt.Name] 
         -> PipeCore  (AnTEC () Lite.Name) Lite.Name
 
-stageLiteToSalt config source builder pipesSalt
+stageLiteToSalt config source pipesSalt
  = PipeCoreSimplify         fragmentLite 0 normalizeLite
      [ PipeCoreOutput           (dump config source "dump.lite-normalized.dcl")
      , PipeCoreReCheck          fragmentLite
        [ PipeCoreAsLite 
-         [ PipeLiteToSalt       (buildSpec builder) runConfig
+         [ PipeLiteToSalt       (buildSpec $ configBuilder config) runConfig
            [ PipeCoreOutput     (dump config source "dump.lite-to-salt.dce")
            , PipeCoreSimplify fragmentSalt 0 normalizeSalt
              [ PipeCoreCheck    fragmentSalt
@@ -192,11 +195,11 @@ stageLiteToSalt config source builder pipesSalt
 -------------------------------------------------------------------------------
 -- | Convert Salt to C code.
 stageSaltToC
-        :: Config -> Source -> Builder
+        :: Config -> Source
         -> Sink
         -> PipeCore (AnTEC () Salt.Name) Salt.Name
 
-stageSaltToC config source _builder sink
+stageSaltToC config source sink
  = PipeCoreSimplify fragmentSalt 0
         (configSimplSalt config 
                 <> S.anormalize (makeNamifier Salt.freshT) 
@@ -214,11 +217,11 @@ stageSaltToC config source _builder sink
 -------------------------------------------------------------------------------
 -- | Convert Salt to LLVM.
 stageSaltToLLVM
-        :: Config -> Source -> Builder
+        :: Config -> Source
         -> [PipeLlvm]
         -> PipeCore (AnTEC () Salt.Name) Salt.Name
 
-stageSaltToLLVM config source builder pipesLLVM
+stageSaltToLLVM config source pipesLLVM
  = PipeCoreSimplify fragmentSalt 0
         (configSimplSalt config
                 <> S.anormalize (makeNamifier Salt.freshT)
@@ -228,7 +231,7 @@ stageSaltToLLVM config source builder pipesLLVM
      [ PipeCoreAsSalt
        [ PipeSaltTransfer
          [ PipeSaltOutput   (dump config source "dump.salt-transfer.dce")
-         , PipeSaltToLlvm   (buildSpec builder) 
+         , PipeSaltToLlvm   (buildSpec $ configBuilder config) 
            ( PipeLlvmPrint  (dump config source "dump.salt-to-llvm.ll")
            : pipesLLVM) ]]]]
 
@@ -236,13 +239,13 @@ stageSaltToLLVM config source builder pipesLLVM
 -------------------------------------------------------------------------------
 -- | Compile LLVM code.
 stageCompileLLVM 
-        :: Config -> Source -> Builder 
+        :: Config -> Source
         -> FilePath             -- ^ Path of original source file.
                                 --   Build products are placed into the same dir.
         -> Bool                 -- ^ Should we link this into an executable
         -> PipeLlvm
 
-stageCompileLLVM config _source builder filePath shouldLinkExe
+stageCompileLLVM config _source filePath shouldLinkExe
  = let  -- Decide where to place the build products.
         outputDir      = fromMaybe (takeDirectory filePath) (configOutputDir config)
         outputDirBase  = dropExtension (replaceDirectory filePath outputDir)
@@ -253,7 +256,7 @@ stageCompileLLVM config _source builder filePath shouldLinkExe
         exePath        = fromMaybe exePathDefault (configOutputFile config)
    in   -- Make the pipeline for the final compilation.
         PipeLlvmCompile
-          { pipeBuilder           = builder
+          { pipeBuilder           = configBuilder config
           , pipeFileLlvm          = llPath
           , pipeFileAsm           = sPath
           , pipeFileObject        = oPath
