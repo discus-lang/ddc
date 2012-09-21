@@ -168,8 +168,8 @@ fieldOfMixed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
 
 
 -- | Get the address of the raw data payload from a mixed object.
-payloadOfMixed  [r : %] (obj : Ptr# r Obj) : Addr#
- =      plusAddr# (takePtr# [r] [Obj] obj) 16#
+payloadOfMixed [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
+ =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 16#)
 
 
 -- Raw ------------------------------------------------------------------------
@@ -199,9 +199,9 @@ allocRaw [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
         makePtr# [r] [Obj] addr
 
 
--- | Get the address of the payload data from a raw object.
-payloadOfRaw [r : %] (obj : Ptr# r Obj) : Addr#
- =      plusAddr# (takePtr# [r] [Obj] obj) 8#
+-- | Get the payload data from a raw object.
+payloadOfRaw [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
+ =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 8#)
 
 
 -- RawSmall -------------------------------------------------------------------
@@ -219,8 +219,8 @@ allocRawSmall [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
         bytesObj        = add# [Nat#] 4# bytesPayload
         addr            = alloc# bytesObj
 
-        tag32           = promote# [Word32#] [Tag#] tag
-        bytesPayload32  = promote# [Word32#] [Nat#] bytesPayload
+        tag32           = promote#  [Word32#] [Tag#] tag
+        bytesPayload32  = truncate# [Word32#] [Nat#] bytesPayload
         wordsPayload32  = shr# [Word32#] bytesPayload32 2w32#
         format          = 0b0011w32#
         header          =  bor# [Word32#] (shl# [Word32#] tag32          8w32#) 
@@ -231,7 +231,7 @@ allocRawSmall [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
         makePtr# [r] [Obj] addr
 
 
--- | Get the address of the payload data from a raw small object.
-payloadOfRawSmall [r : %] (obj : Ptr# r Obj) : Addr#
- =      plusAddr# (takePtr# [r] [Obj] obj) 4#
+-- | Get the payload data from a raw small object.
+payloadOfRawSmall [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
+ =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 4#)
 
