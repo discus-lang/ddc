@@ -38,6 +38,18 @@ parseArgs args config
         = parseArgs rest
         $ config { configOutputDir  = Just dir }
 
+        -- Optimisation -------------------------
+        | "-O0" : rest          <- args
+        = parseArgs rest
+        $ config { configOptLevelLite   = OptLevel0 
+                 , configOptLevelSalt   = OptLevel0 }
+
+        | flag : rest          <- args
+        , elem flag     [ "-O", "-O1" ]
+        = parseArgs rest
+        $ config { configOptLevelLite   = OptLevel1
+                 , configOptLevelSalt   = OptLevel1 }
+
         -- Conversion ---------------------------
         | "-to-salt" : file : rest  <- args
         = parseArgs rest
@@ -80,6 +92,10 @@ help    = unlines
         , "  -c,  -compile    <file>   Compile a module into an object file."
         , "  -o,  -output     <file>   Redirect output to this file."
         , "       -output-dir <dir>    Redirect output to this directory."
+        , ""
+        , " Optimisation:"
+        , "       -O0                  No optimisations.             (default)"
+        , "  -O,  -O1                  Do standard optimisations."
         , ""
         , " Conversion:"
         , "       -to-salt    <file>   Convert a module to Disciple Core Salt."

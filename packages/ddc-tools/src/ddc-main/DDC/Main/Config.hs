@@ -1,20 +1,24 @@
 
 module DDC.Main.Config
-        ( Mode   (..)
-        , Config (..)
+        ( Mode     (..)
+        , OptLevel (..)
+        , Config   (..)
+
         , defaultConfig
         , liteBundleOfConfig
         , saltBundleOfConfig
-        , bundleFromFilePath
-        , getDriverConfig)
+        , bundleFromFilePath)
 where
-import DDC.Build.Builder
 import DDC.Build.Language
 import DDC.Driver.Bundle
+import DDC.Core.Module
+import DDC.Core.Check                   (AnTEC)
 import System.FilePath
-import qualified DDC.Driver.Stage       as D
+import Data.Map                         (Map)
 import qualified DDC.Core.Simplifier    as S
 import qualified Data.Map               as Map
+import qualified DDC.Core.Lite.Name     as Lite
+import qualified DDC.Core.Salt.Name     as Salt
 
 
 -- | The main command that we're running.
@@ -48,11 +52,31 @@ data Mode
         deriving (Eq, Show)
 
 
+data OptLevel
+        -- | Don't do any optimisations.
+        = OptLevel0
+
+        -- | Do standard optimisations.
+        | OptLevel1
+
+        -- | Custom optimiation definition.
+        | OptCustom String
+        deriving Show
+
+
 -- | DDC config.
 data Config
         = Config
         { -- | The main compilation mode.
           configMode            :: Mode 
+
+          -- | What optimisation levels to use
+        , configOptLevelLite    :: OptLevel
+        , configOptLevelSalt    :: OptLevel
+
+          -- | Maps of modules to use as inliner templates.
+        , configWithLite        :: Map ModuleName (Module (AnTEC () Lite.Name) Lite.Name)
+        , configWithSalt        :: Map ModuleName (Module (AnTEC () Salt.Name) Salt.Name)
 
           -- | Redirect output to this file.
         , configOutputFile      :: Maybe FilePath
@@ -62,7 +86,7 @@ data Config
 
           -- | Dump intermediate representations.
         , configDump            :: Bool }
-        deriving (Eq, Show)
+        deriving (Show)
 
 
 -- | Default configuation.
@@ -70,6 +94,10 @@ defaultConfig :: Config
 defaultConfig
         = Config
         { configMode            = ModeNone 
+        , configOptLevelLite    = OptLevel0
+        , configOptLevelSalt    = OptLevel0
+        , configWithLite        = Map.empty
+        , configWithSalt        = Map.empty
         , configOutputFile      = Nothing
         , configOutputDir       = Nothing 
         , configDump            = False }
@@ -106,21 +134,4 @@ bundleFromFilePath config filePath
         ".dce"  -> Just (saltBundleOfConfig config)
         _       -> Nothing
 
-
--- | Get the compile driver from the config.
-getDriverConfig :: Config -> IO D.Config
-getDriverConfig config
- = do   Just builder <- determineDefaultBuilder defaultBuilderConfig
-
-        return  $ D.Config
-                { D.configDump                  = configDump config
-                , D.configSimplLite             = S.Trans S.Id
-                , D.configSimplSalt             = S.Trans S.Id
-                , D.configWithLite              = Map.empty
-                , D.configWithSalt              = Map.empty
-                , D.configBuilder               = builder
-                , D.configSuppressCoreImports   = False
-                , D.configSuppressHashImports   = False
-                , D.configOutputFile            = configOutputFile config
-                , D.configOutputDir             = configOutputDir  config }
 

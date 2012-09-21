@@ -21,23 +21,18 @@ import DDC.Driver.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import DDC.Core.Transform.Inline.Templates
 import DDC.Core.Transform.Namify
-import DDC.Core.Module
 import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
 import Data.Monoid
 import Data.Maybe
-import Data.Map                                 (Map)
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 import qualified DDC.Core.Simplifier            as S
-import qualified DDC.Core.Simplifier.Recipe     as S
 import qualified DDC.Core.Lite                  as Lite
 import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt
-import qualified Data.Map                       as Map
 
 
 -- | Configuration for main compiler stages.
@@ -49,10 +44,6 @@ data Config
           -- | Simplifiers to apply to intermediate code.
         , configSimplLite       :: Simplifier Int (AnTEC () Lite.Name) Lite.Name
         , configSimplSalt       :: Simplifier Int (AnTEC () Salt.Name) Salt.Name
-
-          -- | Maps of modules to use as inliner templates.
-        , configWithLite        :: Map ModuleName (Module (AnTEC () Lite.Name) Lite.Name)
-        , configWithSalt        :: Map ModuleName (Module (AnTEC () Salt.Name) Salt.Name)
 
           -- | The builder to use for the target architecture
         , configBuilder                 :: Builder
@@ -95,26 +86,13 @@ stageLiteOpt config source pipes
  = PipeCoreSimplify 
 	fragmentLite
         (0 :: Int) 
-
-        -- TODO: want to see every intermediate stage.
-        -- TODO: want to do a fixpoint.
-        (  (S.Trans $ S.Inline 
-                    $ lookupTemplateFromModules
-                        (Map.elems (configWithLite config)))
-
-        -- hrm. Want a fixpoint here.
-        <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
-        <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
-        <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
-        <> S.beta <> S.bubble <> S.flatten <> normalizeLite <> S.forward 
-        <> normalizeLite)
-
-        -- TODO: Inlining isn't preserving type annots, 
-        --       so need to recheck the module before Lite -> Salt conversion.
+        (configSimplLite config <> normalizeLite)
         [ PipeCoreOutput (dump config source "dump.lite-opt.dcl")
         , PipeCoreReCheck fragmentLite pipes ]
 
- where  normalizeLite
+ where  -- The code fed to later stages must be normalized, 
+        -- so ensure out simplifications are preserving this.
+        normalizeLite
          = S.anormalize
                 (makeNamifier Lite.freshT)      
                 (makeNamifier Lite.freshX)
@@ -130,24 +108,13 @@ stageSaltOpt config source pipes
  = PipeCoreSimplify 
 	fragmentSalt
         (0 :: Int) 
-
-        -- TODO: want to see every intermediate stage.
-        -- TODO: want to do a fixpoint.
-        (  (S.Trans $ S.Inline 
-                    $ lookupTemplateFromModules
-                        (Map.elems (configWithSalt config)))
-
-        -- hrm. Want a fixpoint here.
-        <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
-        <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
-        <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
-        <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
-        <> normalizeSalt)
-
+        (configSimplSalt config <> normalizeSalt)
         ( PipeCoreOutput (dump config source "dump.salt-opt.dcl")
         : pipes)
 
- where  normalizeSalt
+ where  -- The code fed to later stages must be normalized,
+        -- so ensure out simplifications are preserving this.
+        normalizeSalt
          = S.anormalize
                 (makeNamifier Salt.freshT)      
                 (makeNamifier Salt.freshX)
