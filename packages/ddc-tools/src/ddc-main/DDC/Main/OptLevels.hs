@@ -70,7 +70,7 @@ opt1_lite config
                 (makeNamifier Lite.freshX)
 
    in   (S.Trans $ S.Inline 
-                $ lookupTemplateFromModules
+                 $ lookupTemplateFromModules
                         (Map.elems (configWithLite config)))
         
          -- TODO: want to do a fixpoint.
@@ -89,7 +89,7 @@ opt1_salt config
                 (makeNamifier Salt.freshX)
 
    in   (S.Trans $ S.Inline 
-                $ lookupTemplateFromModules
+                 $ lookupTemplateFromModules
                         (Map.elems (configWithSalt config)))
 
          -- hrm. Want a fixpoint here.

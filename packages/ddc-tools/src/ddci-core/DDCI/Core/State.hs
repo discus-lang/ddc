@@ -12,6 +12,7 @@ module DDCI.Core.State
 
         , Language      (..)
         , languages
+        , defaultBuilderConfig
         , getActiveBuilder
 
         , Mode          (..)
@@ -155,11 +156,16 @@ getDriverConfigOfState state
          , D.configOutputDir             = stateOutputDir  state
          , D.configSimplLite             = stateSimplLite  state
          , D.configSimplSalt             = stateSimplSalt  state
-         , D.configWithLite              = stateWithLite   state
-         , D.configWithSalt              = stateWithSalt   state
          , D.configBuilder               = builder
          , D.configSuppressCoreImports   = Set.member SuppressImports (stateModes state)
          , D.configSuppressHashImports   = not $ Set.member SaltPrelude (stateModes state) }
+
+
+-- | Holds platform independent builder info.
+defaultBuilderConfig :: BuilderConfig
+defaultBuilderConfig
+        = BuilderConfig
+        { builderConfigRuntime  = "code/salt" }
 
 
 -- | Get the active builder.

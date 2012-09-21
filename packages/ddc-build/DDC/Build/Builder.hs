@@ -1,8 +1,6 @@
 
 module DDC.Build.Builder
         ( BuilderConfig (..)
-        , defaultBuilderConfig
-
         , Builder       (..)
         , builders
 
@@ -63,11 +61,6 @@ builders config
         , builder_X8632_Linux  config 
         , builder_X8664_Linux  config
         , builder_PPC32_Linux  config ]
-
-
-defaultBuilderConfig
-        = BuilderConfig
-        { builderConfigRuntime  = "code/salt" }
 
 
 -- defaultBuilder -------------------------------------------------------------
