@@ -2,11 +2,17 @@
 module DDC.Main.Config
         ( Mode   (..)
         , Config (..)
-        , defaultConfig
         , parseArgs
+        , defaultConfig
+        , liteBundleOfConfig
+        , saltBundleOfConfig
+        , bundleFromFilePath
         , getDriverConfig)
 where
 import DDC.Build.Builder
+import DDC.Build.Language
+import DDC.Driver.Bundle
+import System.FilePath
 import qualified DDC.Driver.Stage       as D
 import qualified DDC.Core.Simplifier    as S
 import qualified Data.Map               as Map
@@ -29,7 +35,7 @@ data Mode
 
 
 -- DDC Config -----------------------------------------------------------------
--- | DDC driver config.
+-- | DDC config.
 data Config
         = Config
         { configMode    :: Mode }
@@ -66,7 +72,39 @@ parseArgs args config
         = error "bad usage"
 
 
--- Driver Stage Config --------------------------------------------------------
+-- | Get the Lite specific stuff from the config.
+liteBundleOfConfig :: Config -> Bundle
+liteBundleOfConfig _config
+ = Bundle
+        { bundleFragment        = fragmentLite
+        , bundleModules         = Map.empty
+        , bundleStateInit       = ()
+        , bundleSimplifier      = S.Trans S.Id
+        , bundleRewriteRules    = Map.empty }
+
+
+-- | Get the Salt specific stuff from the config.
+saltBundleOfConfig :: Config -> Bundle
+saltBundleOfConfig _config
+ = Bundle
+        { bundleFragment        = fragmentSalt
+        , bundleModules         = Map.empty
+        , bundleStateInit       = ()
+        , bundleSimplifier      = S.Trans S.Id
+        , bundleRewriteRules    = Map.empty }
+
+
+-- | Determine the current language based on the file extension of this path, 
+--   and slurp out a bundle of stuff specific to that language from the config.
+bundleFromFilePath :: Config -> FilePath -> Maybe Bundle
+bundleFromFilePath config filePath
+ = case takeExtension filePath of
+        ".dcl"  -> Just (liteBundleOfConfig config)
+        ".dce"  -> Just (saltBundleOfConfig config)
+        _       -> Nothing
+
+
+-- | Get the compile driver from the config.
 getDriverConfig :: Config -> IO D.Config
 getDriverConfig _config
  = do   Just builder <- determineDefaultBuilder defaultBuilderConfig
