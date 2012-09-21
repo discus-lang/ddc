@@ -1,50 +1,45 @@
 
-module DDCI.Core.Command.ToLlvm
-        (cmdToLlvm)
+module DDC.Driver.Command.ToC
+        (cmdToC)
 where
-import DDCI.Core.State
+import DDC.Driver.Bundle
 import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment.Profile
 import System.FilePath
-import qualified DDC.Base.Pretty        as P
+import qualified DDC.Base.Pretty                as P
 
 
--- | Parse, check and convert a  module to LLVM.
----
-cmdToLlvm :: State -> Source -> String -> IO ()
-cmdToLlvm state source str
- | Bundle fragment _ _ _ _ <- stateBundle state
+-- | Parse, check, and convert a module to C.
+--
+cmdToC :: Config -> Bundle -> Source -> String -> IO ()
+cmdToC config bundle source sourceText
+ | Bundle fragment _ _ _  _ <- bundle
  = do   let fragName = profileName (fragmentProfile fragment)
         let mSuffix  = case source of 
                         SourceFile filePath     -> Just $ takeExtension filePath
                         _                       -> Nothing
 
-        -- Slurp out the driver config we need from the DDCI state.
-        config          <- getDriverConfigOfState state
-
         -- Decide what to do based on file extension and current fragment.
         let compile
                 -- Compile a Core Lite module.
                 | fragName == "Lite" || mSuffix == Just ".dcl"
-                = pipeText (nameOfSource source) (lineStartOfSource source) str
+                = pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentLite
-                [ stageLiteToSalt  config source
-                [ stageSaltToLLVM  config source 
-                [ PipeLlvmPrint SinkStdout]]]
+                [ stageLiteToSalt  config source 
+                [ stageSaltToC     config source SinkStdout]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
-                = pipeText (nameOfSource source) (lineStartOfSource source) str
+                = pipeText (nameOfSource source) (lineStartOfSource source) sourceText
                 $ PipeTextLoadCore fragmentSalt
-                [ stageSaltToLLVM  config source
-                [ PipeLlvmPrint SinkStdout]]
+                [ stageSaltToC     config source SinkStdout]
 
                 -- Unrecognised.
                 | otherwise
-                = error $ "Don't know how to convert this to LLVM"
+                = error $ "Don't know how to convert this to C"
 
 
         -- Print any errors that arose during compilation

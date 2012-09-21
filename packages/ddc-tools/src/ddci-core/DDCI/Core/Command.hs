@@ -10,9 +10,6 @@ import DDCI.Core.Command.Set
 import DDCI.Core.Command.Eval
 import DDCI.Core.Command.Trans
 import DDCI.Core.Command.TransInteract
-import DDCI.Core.Command.ToSalt
-import DDCI.Core.Command.ToC
-import DDCI.Core.Command.ToLlvm
 import DDCI.Core.Command.With
 import DDCI.Core.State
 import DDC.Driver.Command.Ast
@@ -20,6 +17,9 @@ import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Make
+import DDC.Driver.Command.ToSalt
+import DDC.Driver.Command.ToC
+import DDC.Driver.Command.ToLlvm
 import Data.List
 
 
@@ -219,15 +219,18 @@ handleCmd1 state cmd source line
                 return state
 
         CommandToSalt
-         -> do  cmdToSalt state source line
+         -> do  config  <- getDriverConfigOfState state
+                cmdToSalt config (stateBundle state) source line
                 return    state
 
         CommandToC
-         -> do  cmdToC state source line
+         -> do  config  <- getDriverConfigOfState state
+                cmdToC config (stateBundle state) source line
                 return state
 
         CommandToLlvm
-         -> do  cmdToLlvm state source line
+         -> do  config  <- getDriverConfigOfState state
+                cmdToLlvm config (stateBundle state) source line
                 return state
 
         CommandCompile

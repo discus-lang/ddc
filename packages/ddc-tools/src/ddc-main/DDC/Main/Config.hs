@@ -25,17 +25,26 @@ data Mode
         -- | Display the help page.
         | ModeHelp
 
-        -- | Pretty print a module's AST.
-        | ModeAST  FilePath
-
         -- | Parse and type-check a module.
-        | ModeLoad FilePath
+        | ModeLoad      FilePath
 
         -- | Compile a .dcl or .dce into an object file.
-        | ModeCompile FilePath
+        | ModeCompile   FilePath
 
         -- | Compile a .dcl or .dce into an executable file.
-        | ModeMake    FilePath
+        | ModeMake      FilePath
+
+        -- | Pretty print a module's AST.
+        | ModeAST       FilePath
+
+        -- | Convert a module to Salt.
+        | ModeToSalt    FilePath
+
+        -- | Convert a module to C.
+        | ModeToC       FilePath
+
+        -- | Convert a module to LLVM.
+        | ModeToLLVM    FilePath
         deriving (Eq, Show)
 
 
