@@ -5,20 +5,18 @@ module DDC.Main.Config
         , Config   (..)
 
         , defaultConfig
+        , defaultBuilderConfig
+
         , liteBundleOfConfig
         , saltBundleOfConfig
         , bundleFromFilePath)
 where
 import DDC.Build.Language
+import DDC.Build.Builder
 import DDC.Driver.Bundle
-import DDC.Core.Module
-import DDC.Core.Check                   (AnTEC)
 import System.FilePath
-import Data.Map                         (Map)
 import qualified DDC.Core.Simplifier    as S
 import qualified Data.Map               as Map
-import qualified DDC.Core.Lite.Name     as Lite
-import qualified DDC.Core.Salt.Name     as Salt
 
 
 -- | The main command that we're running.
@@ -74,9 +72,9 @@ data Config
         , configOptLevelLite    :: OptLevel
         , configOptLevelSalt    :: OptLevel
 
-          -- | Maps of modules to use as inliner templates.
-        , configWithLite        :: Map ModuleName (Module (AnTEC () Lite.Name) Lite.Name)
-        , configWithSalt        :: Map ModuleName (Module (AnTEC () Salt.Name) Salt.Name)
+          -- | Paths to modules to use as inliner templates.
+        , configWithLite        :: [FilePath]
+        , configWithSalt        :: [FilePath]
 
           -- | Redirect output to this file.
         , configOutputFile      :: Maybe FilePath
@@ -96,11 +94,17 @@ defaultConfig
         { configMode            = ModeNone 
         , configOptLevelLite    = OptLevel0
         , configOptLevelSalt    = OptLevel0
-        , configWithLite        = Map.empty
-        , configWithSalt        = Map.empty
+        , configWithLite        = []
+        , configWithSalt        = []
         , configOutputFile      = Nothing
         , configOutputDir       = Nothing 
         , configDump            = False }
+
+
+defaultBuilderConfig :: BuilderConfig
+defaultBuilderConfig
+        = BuilderConfig
+        { builderConfigRuntime  = "code/salt" }
 
 
 -- | Get the Lite specific stuff from the config.
