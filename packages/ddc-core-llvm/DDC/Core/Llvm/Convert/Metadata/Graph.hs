@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 -- Manipulate graphs for metadata generation
 --  WARNING: everything in here is REALLY SLOW
 --
@@ -35,7 +36,7 @@ toListG :: (Dom a, Rel a) -> [(a, a)]
 toListG (d,r)  = toList d r
 
 fromListSym     :: Eq a => [(a, a)] -> Rel a
-fromListSym     s = \x y -> or [(x,y) `elem` s, (y,x) `elem` s]
+fromListSym     s = \x y -> (x,y) `elem` s || (y,x) `elem` s
 
 fromListAntiSym :: Eq a => [(a, a)] -> Rel a
 fromListAntiSym s = \x y -> (x,y) `elem` s
@@ -60,13 +61,13 @@ transitiveR dom r
 
 
 transClosure :: Dom a -> Rel a -> Rel a
-transClosure dom rel = transclo (length dom)
+transClosure dom rel = transclo $ length dom
   where transclo 1 = rel
         transclo n 
           = let transclo' = transclo (n-1)
-                step      = \x z -> not $ null $ [y | y <- dom
-                                                    , transclo' x y
-                                                    , transclo' y z ]
+                step      = \x z -> not $ null [y | y <- dom
+                                                  , transclo' x y
+                                                  , transclo' y z ]
             in  transclo' `unionR` step
 
 
@@ -74,8 +75,7 @@ transClosure dom rel = transclo (length dom)
 transReduction :: Dom a -> Rel a -> Rel a
 transReduction dom rel 
   = let composeR' = composeR dom
-    in  rel `differenceR` (rel `composeR'` (transClosure dom rel))
-
+    in  rel `differenceR` (rel `composeR'` transClosure dom rel)
 
 -- Graphs ---------------------------------------------------------------------
 type UndirectedG a = (Dom a, Rel a)
@@ -83,8 +83,8 @@ type DAG         a = (Dom a, Rel a)
 
 isTree :: Dom a -> Rel a -> Bool
 isTree dom r 
-  = let neighbours x = [ y | y <- dom, r x y ]
-    in  and $ map ((<=1) . length . neighbours) dom
+  = let neighbours x = filter (r x) dom 
+    in  all ((<=1) . length . neighbours) dom
 
 targets :: Eq a => a -> DAG a -> [a]
 targets x (d, r) = [y | y <- d, r x y]
@@ -107,14 +107,12 @@ transOrientation (d,g)
         edges 
           -> let  -- Treat G as a directed graph. For all subsets S of A (set of arcs),
                   --   reverse the direction of all arcs in S and check if the result
-                  --   is transitive. 
-                  combo k      = filter ((k==).length) (subsequences edges)
-                  choices      = concat [ combo n | n <- [1..(length d)] ]
-                  choose c     = g `differenceR` (fromListAntiSym c) 
-                                   `unionR`    (fromListAntiSym $ map swap c)
-                  orientations = map choose choices
-                  withDom g'   = (d,g')
-              in  liftM withDom $ find (transitiveR d) orientations
+                  --   is transitive.
+                  combo k      = filter ((k==) . length) $ subsequences edges
+                  choices      = concatMap combo [1..length d]
+                  choose c     = g `differenceR` fromListAntiSym c
+                                   `unionR`      fromListAntiSym (map swap c)
+              in  liftM (d,) $ find (transitiveR d) $ map choose choices
 
 
 transOrientation' :: (Show a, Eq a) => UndirectedG a -> DAG a
@@ -135,20 +133,15 @@ minimumCompletion (d,g)
        -- Let U be the set of all possible fill edges. For all subsets
        --   S of U, add S to G and see if the result is trans-orientable.
        u           = toList d $ allR `differenceR` g
-       combo k     = filter ((k==).length) (subsequences u)
-       choices     = concat [ combo n | n <- [0..(length u)] ]
-       choose c    = g `unionR` (fromListAntiSym c)
-       completions = map choose choices
-       withDom g'  = (d,g')
-
+       combo k     = filter ((k==) . length) $ subsequences u
+       choices     = concatMap combo [0..length u]
+       choose c    = g `unionR` fromListAntiSym c
        -- There always exists a comparability completion for an undirected graph
        --   in the worst case it's the complete version of the graph.
        --   the result is minimum thanks to how `subsequences` and
        --   list comprehensions work.
-   in  case find (isTransOrientable . withDom) completions of
-            Just comp -> (d, comp)
-            Nothing   -> error "minimumCompletion: no completion found! " $ show $ map (toList d) completions
-
+   in  (d, fromMaybe (error "minimumCompletion: no completion found!") 
+                    $ find (isTransOrientable . (d,)) $ map choose choices)
 
 -- | Find the minimal comparability completion of an undirected graph
 --      (the approximation of a minimum completion)
@@ -165,25 +158,22 @@ type Tree a = (Dom a, Rel a)
 --      all nodes are disjoint
 partitionDAG :: Eq a => DAG a -> [Tree a]
 partitionDAG (d,g)
- = let nodePartitions  = partitions d       
-       edgesFor nodes  = [ (x,y) | x <- nodes, y <- nodes, g x y ]    
+ = let edgesFor nodes  = [ (x,y) | x <- nodes, y <- nodes, g x y ]    
        mkDAG nodes     = (nodes, fromListAntiSym $ edgesFor nodes)
-       mkDAGs par      = map mkDAG par       
-       allTrees dags   = and $ map (\(d',g') -> isTree d' g') dags
-   in  case find allTrees $ map mkDAGs nodePartitions of
-            Just p  -> p
-            Nothing -> error "partitionDAG: no partition found! Fix your bugs!"
+   in fromMaybe (error "partitionDAG: no partition found!") 
+               $ find (all $ uncurry isTree) 
+               $ map (map mkDAG) 
+               $ partitions d
 
 partitions :: Eq a => [a] -> [[[a]]]
 partitions nodes = concat [ npartition n | n <- [1..m] ]
   where m             = length nodes
-        combo k xs    = filter ((k==).length) (subsequences xs)
+        combo k xs    = filter ((k==) . length) (subsequences xs)
         npartition k  = concatMap match $ combo k nodes
-        match      cs = [ [cs] ++ [cs'] 
-                        | cs' <- combo (m - (length cs)) (nodes \\ cs) ] 
+        match      cs = map ((cs:) . return) $ combo (m - length cs) (nodes \\ cs) 
 
 rootTree :: Eq a => a -> Tree a -> Tree a
 rootTree root (d,g)
-  = let leaves = filter (\x -> null [y | y <- d, g x y]) d
-        arcs   = [ (x, root) | x <- leaves ]
-    in  (root:d, g `unionR` (fromListAntiSym arcs))
+  = let leaves = filter (null . flip filter d . g) d
+        arcs   = map (, root) leaves
+    in  (root:d, g `unionR` fromListAntiSym arcs)
