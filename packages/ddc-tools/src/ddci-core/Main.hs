@@ -3,12 +3,12 @@
 --      This also accepts interpreter commands as arguments on the command-line.
 --      If you want a more unixy inferface then use the ddc-main interface instead.
 module Main where
-import DDCI.Core.Command.Make
 import DDCI.Core.Command.Help
 import DDCI.Core.Interface.Args
 import DDCI.Core.Interface.Batch
 import DDCI.Core.Interface.Interactive
 import DDCI.Core.State
+import DDC.Driver.Command.Make
 import System.Environment
 import Data.List
 
@@ -33,7 +33,8 @@ main
          -- so we behave more like GHC.
          ["--make",  filePath]
           -> do let state       = initState (InterfaceBatch filePath)
-                cmdMake state (SourceFile filePath) filePath
+                config          <- getDriverConfigOfState state
+                cmdMake config filePath
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]

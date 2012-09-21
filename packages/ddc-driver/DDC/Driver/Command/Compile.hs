@@ -45,7 +45,7 @@ cmdCompile config filePath
 
                 -- Unrecognised.
                 | otherwise
-                = error $ "Don't know how to make " ++ filePath
+                = error $ "Don't know how to compile " ++ filePath
 
         -- Print any errors that arose during compilation.
         errs    <- make

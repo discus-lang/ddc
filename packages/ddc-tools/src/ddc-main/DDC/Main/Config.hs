@@ -31,8 +31,11 @@ data Mode
         -- | Parse and type-check a module.
         | ModeLoad FilePath
 
-        -- | Compile a .dcl or .dce file.
+        -- | Compile a .dcl or .dce into an object file.
         | ModeCompile FilePath
+
+        -- | Compile a .dcl or .dce into an executable file.
+        | ModeMake    FilePath
         deriving (Eq, Show)
 
 

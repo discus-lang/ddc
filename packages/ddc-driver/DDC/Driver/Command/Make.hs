@@ -1,35 +1,27 @@
 
-module DDCI.Core.Command.Make
+module DDC.Driver.Command.Make
         (cmdMake)
 where
-import DDCI.Core.State
 import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import System.Directory
-import Data.Char
-import Data.List
 import Control.Monad
+import Data.List
 import qualified DDC.Core.Pretty        as P
 
 
-cmdMake :: State -> Source -> String -> IO ()
-cmdMake state _source str
+cmdMake :: Config -> FilePath -> IO ()
+cmdMake config filePath
  = do
-        -- Always treat the string as a filename
-        let source   = SourceFile str
-
         -- Read in the source file.
-        let filePath = dropWhile isSpace str
         exists  <- doesFileExist filePath
         when (not exists)
          $      error $ "No such file " ++ show filePath
 
-        src     <- readFile filePath
-
-        -- Slurp out the driver config we need from the DDCI state.
-        config  <- getDriverConfigOfState state
+        src             <- readFile filePath
+        let source      = SourceFile filePath
 
         -- Decide what to do based on file extension.
         let make

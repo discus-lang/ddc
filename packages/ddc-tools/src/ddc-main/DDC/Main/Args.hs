@@ -20,6 +20,10 @@ parseArgs args config
         = parseArgs rest
         $ config { configMode   = ModeLoad file }
 
+        | "-make" : file : rest <- args
+        = parseArgs rest
+        $ config { configMode   = ModeMake file }
+
         | compile : file : rest <- args
         , elem compile ["-c", "-compile"]
         = parseArgs rest
@@ -32,9 +36,10 @@ parseArgs args config
 help :: String
 help    = unlines
         [ "The Disciplined Disciple Compiler, version 0.3.0"
-        , "    -help                 Display this help."
-        , "    -ast  <file>          Pretty print the AST of a module."
-        , "    -load <file>          Parse and type-check a module."
-        , "    -c, -compile <file>   Compile a module."
+        , "       -help             Display this help."
+        , "       -ast     <file>   Pretty print the AST of a module."
+        , "       -load    <file>   Parse and type-check a module."
+        , "  -c,  -compile <file>   Compile a module into an object file."
+        , "       -make    <file>   Compile a module into an executable file."
         , "" ]
 
