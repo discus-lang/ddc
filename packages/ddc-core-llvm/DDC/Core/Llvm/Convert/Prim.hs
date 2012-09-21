@@ -5,7 +5,7 @@ where
 import DDC.Llvm.Instr
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Metadata
+import DDC.Core.Llvm.Convert.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Type.Compounds

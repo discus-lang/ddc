@@ -4,7 +4,7 @@ module DDC.Llvm.Metadata
         , tbaaRoot 
         , MDecl    (..)
         , MRef     (..)
-        , declares, rval )
+        , rval )
 where  
 import DDC.Base.Pretty
 import DDC.Llvm.Type
@@ -44,11 +44,6 @@ data MRef = MRef Int
 
 instance Pretty (MRef) where
   ppr (MRef i) = text ("!" ++ show i)
-
-
--- Sugar
-declares :: [MDecl] -> [MDecl] -> [MDecl]
-declares ms mss = ms ++ mss
 
 rval :: MDecl -> Metadata
 rval (MDecl _ m) = m
@@ -91,7 +86,7 @@ instance Pretty MDNodeOp where
          OpType     t  -> ppr t 
 
 
--- Constructing TBAA metadata ------------------------------------------------- 
+-- TBAA metadata -------------------------------------------------------------- 
 -- | Construct a single tbaa node
 tbaaNode
       :: String         -- ^ A unique identifier for the node

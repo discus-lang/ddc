@@ -11,7 +11,7 @@ import DDC.Core.Llvm.Convert.Prim
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Atom
 import DDC.Core.Llvm.Convert.Erase
-import DDC.Core.Llvm.Convert.Metadata
+import DDC.Core.Llvm.Convert.Metadata.Tbaa
 import DDC.Core.Llvm.LlvmM
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
@@ -140,7 +140,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
 
         let kenv'       =  Env.extends bsParamType  kenv
         let tenv'       =  Env.extends (bSuper : bsParamValue) tenv
-        mdsup           <- deriveMetadataM nTop' x
+        mdsup           <- deriveMD nTop' x
 
         -- Split off the argument and result types of the super.
         let (tsParam, tResult)   

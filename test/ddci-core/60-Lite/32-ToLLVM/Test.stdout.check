@@ -18,45 +18,49 @@ declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
 define external ccc %s.Obj* @addInt(%s.Obj*  %x, %s.Obj*  %y) align 8  
 {
-l1.entry:
+l8.entry:
         %x1          = call i32 @getTag (%s.Obj* %x) 
-        switch i32 %x1, label %l9.default [ i32 0,label %l2.alt ]
-l2.alt:
+        switch i32 %x1, label %l16.default [ i32 0,label %l9.alt ]
+l9.alt:
         %x2          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x) 
         %x3          = bitcast %s.Obj* %x2 to i64*
         %i1.addr1    = ptrtoint i64* %x3 to i64
         %i1.addr2    = add i64 %i1.addr1, 0
         %i1.ptr      = inttoptr i64 %i1.addr2 to i64*
-        %i1          = load i64* %i1.ptr
+        %i1          = load i64* %i1.ptr,    !tbaa !3
         %x4          = call i32 @getTag (%s.Obj* %y) 
-        switch i32 %x4, label %l8.default [ i32 0,label %l3.alt ]
-l3.alt:
+        switch i32 %x4, label %l15.default [ i32 0,label %l10.alt ]
+l10.alt:
         %x5          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %y) 
         %x6          = bitcast %s.Obj* %x5 to i64*
         %i2.addr1    = ptrtoint i64* %x6 to i64
         %i2.addr2    = add i64 %i2.addr1, 0
         %i2.ptr      = inttoptr i64 %i2.addr2 to i64*
-        %i2          = load i64* %i2.ptr
+        %i2          = load i64* %i2.ptr,    !tbaa !6
         %x0          = add i64 %i1, %i2
         %x7          = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
         %x8          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x7) 
         %x9          = bitcast %s.Obj* %x8 to i64*
-        %_v4.addr1   = ptrtoint i64* %x9 to i64
-        %_v5.addr2   = add i64 %_v4.addr1, 0
-        %_v6.ptr     = inttoptr i64 %_v5.addr2 to i64*
-        store i64 %x0, i64* %_v6.ptr
+        %_v11.addr1  = ptrtoint i64* %x9 to i64
+        %_v12.addr2  = add i64 %_v11.addr1, 0
+        %_v13.ptr    = inttoptr i64 %_v12.addr2 to i64*
+        store i64 %x0, i64* %_v13.ptr,    !tbaa !7
         ret %s.Obj* %x7
-l8.default:
+l15.default:
         call void @abort () 
         unreachable
-l9.default:
+l16.default:
         call void @abort () 
         unreachable
 }
 
 
 
-
+!7 = metadata !{metadata !"addInt_r3", metadata !6, i32 0}
+!6 = metadata !{metadata !"addInt_r2", metadata !5, i32 0}
+!5 = metadata !{metadata !"addInt_ROOT_4", null, i32 1}
+!3 = metadata !{metadata !"addInt_r1", metadata !2, i32 0}
+!2 = metadata !{metadata !"addInt_ROOT_1", null, i32 1}
 
 
 -- None binders.
@@ -73,21 +77,23 @@ declare external ccc void @setFieldOfBoxed(%s.Obj* , i64 , %s.Obj* ) align 8
 
 define external ccc %s.Obj* @thing(%s.Obj*  %z) align 8  
 {
-l1.entry:
+l6.entry:
         %x0          = call %s.Obj* @allocRawSmall (i32 0, i64 8) 
         %x1          = call %s.Obj* @payloadOfRawSmall (%s.Obj* %x0) 
         %x2          = bitcast %s.Obj* %x1 to i64*
-        %_v2.addr1   = ptrtoint i64* %x2 to i64
-        %_v3.addr2   = add i64 %_v2.addr1, 0
-        %_v4.ptr     = inttoptr i64 %_v3.addr2 to i64*
-        store i64 5, i64* %_v4.ptr
-        %_v6         = call %s.Obj* @allocBoxed (i32 0, i64 0) 
-        ret %s.Obj* %_v6
+        %_v7.addr1   = ptrtoint i64* %x2 to i64
+        %_v8.addr2   = add i64 %_v7.addr1, 0
+        %_v9.ptr     = inttoptr i64 %_v8.addr2 to i64*
+        store i64 5, i64* %_v9.ptr,    !tbaa !3
+        %_v11        = call %s.Obj* @allocBoxed (i32 0, i64 0) 
+        ret %s.Obj* %_v11
 }
 
 
 
-
+!5 = metadata !{metadata !"thing_ROOT_4", null, i32 1}
+!3 = metadata !{metadata !"thing_r1", metadata !2, i32 0}
+!2 = metadata !{metadata !"thing_ROOT_1", null, i32 1}
 
 
 -- BROKEN: CAF binder.
