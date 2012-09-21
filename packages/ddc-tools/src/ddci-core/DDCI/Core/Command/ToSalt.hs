@@ -4,7 +4,7 @@ module DDCI.Core.Command.ToSalt
 where
 import DDCI.Core.Interface.Suppress
 import DDCI.Core.State
-import DDCI.Core.Stage
+import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
@@ -29,14 +29,19 @@ cmdToSalt state source str
         -- Determine the builder to use.
         builder         <- getActiveBuilder state
 
+        -- Slurp out the driver config we need from the DDCI state.
+        let config      = driverConfigOfState state
+
         -- Decide what to do based on file extension and current fragment.
         let compile
                 -- Compile a Core Lite module.
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentLite
-                [ stageLiteToSalt  state source builder
-                [ PipeCoreHacks    (Canned (suppressModule state))
+                [ stageLiteToSalt  config source builder
+                [ (if configSuppressCoreImports config
+                        then PipeCoreHacks    (Canned (\x -> return $ eraseImports x))
+                        else PipeCoreId)
                 [ PipeCoreOutput   SinkStdout]]]
 
                 -- Unrecognised.

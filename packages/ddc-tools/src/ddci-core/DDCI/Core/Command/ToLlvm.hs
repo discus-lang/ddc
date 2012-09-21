@@ -3,7 +3,7 @@ module DDCI.Core.Command.ToLlvm
         (cmdToLlvm)
 where
 import DDCI.Core.State
-import DDCI.Core.Stage
+import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
@@ -25,21 +25,24 @@ cmdToLlvm state source str
         -- Determine the builder to use.
         builder         <- getActiveBuilder state
 
+        -- Slurp out the driver config we need from the DDCI state.
+        let config      = driverConfigOfState state
+
         -- Decide what to do based on file extension and current fragment.
         let compile
                 -- Compile a Core Lite module.
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentLite
-                [ stageLiteToSalt  state source builder
-                [ stageSaltToLLVM  state source builder 
+                [ stageLiteToSalt  config source builder
+                [ stageSaltToLLVM  config source builder 
                 [ PipeLlvmPrint SinkStdout]]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentSalt
-                [ stageSaltToLLVM  state source builder
+                [ stageSaltToLLVM  config source builder
                 [ PipeLlvmPrint SinkStdout]]
 
                 -- Unrecognised.

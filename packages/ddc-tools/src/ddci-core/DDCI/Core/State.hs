@@ -3,6 +3,7 @@ module DDCI.Core.State
         ( State         (..)
         , Bundle        (..)
         , initState
+        , driverConfigOfState
 
         , TransHistory	(..)
 
@@ -36,6 +37,7 @@ import Data.Set                         (Set)
 import qualified DDC.Core.Salt.Name     as Salt
 import qualified DDC.Core.Lite.Name     as Lite
 import qualified DDC.Core.Simplifier    as S
+import qualified DDC.Driver.Stage       as D
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 
@@ -140,6 +142,21 @@ initState interface
         , stateOutputFile       = Nothing
         , stateOutputDir        = Nothing
 	, stateTransInteract	= Nothing }
+
+
+-- | Slurp out the relevant parts of the DDCI stage into a driver config.
+driverConfigOfState :: State -> D.Config
+driverConfigOfState state
+        = D.Config
+        { D.configDump                  = Set.member Dump (stateModes state)
+        , D.configOutputFile            = stateOutputFile state
+        , D.configOutputDir             = stateOutputDir  state
+        , D.configSimplLite             = stateSimplLite  state
+        , D.configSimplSalt             = stateSimplSalt  state
+        , D.configWithLite              = stateWithLite   state
+        , D.configWithSalt              = stateWithSalt   state
+        , D.configSuppressCoreImports   = Set.member SuppressImports (stateModes state)
+        , D.configSuppressHashImports   = not $ Set.member SaltPrelude (stateModes state) }
 
 
 -- | Get the active builder.

@@ -3,7 +3,7 @@ module DDCI.Core.Command.ToC
         (cmdToC)
 where
 import DDCI.Core.State
-import DDCI.Core.Stage
+import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
@@ -25,20 +25,23 @@ cmdToC state source str
         -- Determine the builder to use.
         builder         <- getActiveBuilder state
 
+        -- Slurp out the driver config we need from the DDCI state.
+        let config      = driverConfigOfState state
+
         -- Decide what to do based on file extension and current fragment.
         let compile
                 -- Compile a Core Lite module.
                 | fragName == "Lite" || mSuffix == Just ".dcl"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentLite
-                [ stageLiteToSalt  state source builder
-                [ stageSaltToC     state source builder SinkStdout]]
+                [ stageLiteToSalt  config source builder
+                [ stageSaltToC     config source builder SinkStdout]]
 
                 -- Compile a Core Salt module.
                 | fragName == "Salt" || mSuffix == Just ".dce"
                 = pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ PipeTextLoadCore fragmentSalt
-                [ stageSaltToC     state source builder SinkStdout]
+                [ stageSaltToC     config source builder SinkStdout]
 
                 -- Unrecognised.
                 | otherwise

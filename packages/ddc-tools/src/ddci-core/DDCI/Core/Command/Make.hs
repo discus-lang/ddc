@@ -3,7 +3,7 @@ module DDCI.Core.Command.Make
         (cmdMake)
 where
 import DDCI.Core.State
-import DDCI.Core.Stage
+import DDC.Driver.Stage
 import DDC.Driver.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
@@ -35,25 +35,28 @@ cmdMake state _source str
         let builder     =  fromMaybe (error "Can not determine host platform")
                                      mBuilder
 
+        -- Slurp out the driver config we need from the DDCI state.
+        let config      = driverConfigOfState state
+
         -- Decide what to do based on file extension.
         let make
                 -- Make a Core Lite module.
                 | isSuffixOf ".dcl" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageLiteLoad     state source
-                [ stageLiteOpt      state source  
-                [ stageLiteToSalt   state source builder
-                [ stageSaltOpt      state source
-                [ stageSaltToLLVM   state source builder
-                [ stageCompileLLVM  state source builder filePath True ]]]]]
+                $ stageLiteLoad     config source
+                [ stageLiteOpt      config source  
+                [ stageLiteToSalt   config source builder
+                [ stageSaltOpt      config source
+                [ stageSaltToLLVM   config source builder
+                [ stageCompileLLVM  config source builder filePath True ]]]]]
 
                 -- Make a Core Salt module.
                 | isSuffixOf ".dce" filePath
                 = pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ PipeTextLoadCore  fragmentSalt 
-                [ stageSaltOpt      state source
-                [ stageSaltToLLVM   state source builder
-                [ stageCompileLLVM  state source builder filePath True ]]]
+                [ stageSaltOpt      config source
+                [ stageSaltToLLVM   config source builder
+                [ stageCompileLLVM  config source builder filePath True ]]]
 
                 -- Unrecognised.
                 | otherwise
