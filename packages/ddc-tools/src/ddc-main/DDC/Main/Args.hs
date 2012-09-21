@@ -12,6 +12,7 @@ parseArgs [] config
         = return config
 
 parseArgs args config
+        -- General ------------------------------
         | flag : _              <- args
         , elem flag ["-h", "-help", "--help"]
         = return 
@@ -21,19 +22,23 @@ parseArgs args config
         = parseArgs rest
         $ config { configMode   = ModeMake file }
 
+        -- Compilation --------------------------
         | compile : file : rest <- args
         , elem compile ["-c", "-compile"]
         = parseArgs rest
         $ config { configMode   = ModeCompile file}
 
-        | "-load" : file : rest <- args
+        | flag : file : rest     <- args
+        , elem flag    ["-o", "-output"]
         = parseArgs rest
-        $ config { configMode   = ModeLoad file }
+        $ config { configOutputFile = Just file }
 
-        | "-ast" : file : rest  <- args
+        | flag : dir : rest     <- args
+        , elem flag    ["-output-dir"]
         = parseArgs rest
-        $ config { configMode   = ModeAST file }
+        $ config { configOutputDir  = Just dir }
 
+        -- Conversion ---------------------------
         | "-to-salt" : file : rest  <- args
         = parseArgs rest
         $ config { configMode   = ModeToSalt file }
@@ -46,6 +51,19 @@ parseArgs args config
         = parseArgs rest
         $ config { configMode   = ModeToLLVM file }
 
+        -- Debugging ----------------------------
+        | "-dump" : rest        <- args
+        = parseArgs rest
+        $ config { configDump   = True }
+
+        | "-load" : file : rest <- args
+        = parseArgs rest
+        $ config { configMode   = ModeLoad file }
+
+        | "-ast" : file : rest  <- args
+        = parseArgs rest
+        $ config { configMode   = ModeAST file }
+
         | otherwise
         = error $ "Cannot parse arguments " ++ show args
 
@@ -54,16 +72,23 @@ help :: String
 help    = unlines
         [ "The Disciplined Disciple Compiler, version 0.3.0"
         , ""
-        , "       -help             Display this help."
+        , " General:"
+        , "       -help                Display this help."
         , ""
-        , "  -c,  -compile <file>   Compile a module into an object file."
-        , "       -make    <file>   Compile a module into an executable file."
+        , " Compilation:"
+        , "       -make       <file>   Compile a module into an executable file."
+        , "  -c,  -compile    <file>   Compile a module into an object file."
+        , "  -o,  -output     <file>   Redirect output to this file."
+        , "       -output-dir <dir>    Redirect output to this directory."
         , ""
-        , "       -load    <file>   Parse and type-check a module."
-        , "       -ast     <file>   Pretty print the AST of a module."
+        , " Conversion:"
+        , "       -to-salt    <file>   Convert a module to Disciple Core Salt."
+        , "       -to-c       <file>   Convert a module to C code."
+        , "       -to-llvm    <file>   Convert a module to LLVM code."
         , ""
-        , "       -to-salt <file>   Convert a module to Disciple Core Salt."
-        , "       -to-c    <file>   Convert a module to C code."
-        , "       -to-llvm <file>   Convert a module to LLVM code."
+        , " Debugging:"
+        , "       -dump                Dump intermediate representations."
+        , "       -load       <file>   Parse and type-check a module."
+        , "       -ast        <file>   Pretty print the AST of a module."
         , "" ]
 

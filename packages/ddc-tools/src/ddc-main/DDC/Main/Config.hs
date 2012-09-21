@@ -51,7 +51,17 @@ data Mode
 -- | DDC config.
 data Config
         = Config
-        { configMode    :: Mode }
+        { -- | The main compilation mode.
+          configMode            :: Mode 
+
+          -- | Redirect output to this file.
+        , configOutputFile      :: Maybe FilePath
+
+          -- | Redirect output to this directory.
+        , configOutputDir       :: Maybe FilePath 
+
+          -- | Dump intermediate representations.
+        , configDump            :: Bool }
         deriving (Eq, Show)
 
 
@@ -59,7 +69,10 @@ data Config
 defaultConfig :: Config
 defaultConfig
         = Config
-        { configMode    = ModeNone }
+        { configMode            = ModeNone 
+        , configOutputFile      = Nothing
+        , configOutputDir       = Nothing 
+        , configDump            = False }
 
 
 -- | Get the Lite specific stuff from the config.
@@ -96,11 +109,11 @@ bundleFromFilePath config filePath
 
 -- | Get the compile driver from the config.
 getDriverConfig :: Config -> IO D.Config
-getDriverConfig _config
+getDriverConfig config
  = do   Just builder <- determineDefaultBuilder defaultBuilderConfig
 
         return  $ D.Config
-                { D.configDump                  = False
+                { D.configDump                  = configDump config
                 , D.configSimplLite             = S.Trans S.Id
                 , D.configSimplSalt             = S.Trans S.Id
                 , D.configWithLite              = Map.empty
@@ -108,6 +121,6 @@ getDriverConfig _config
                 , D.configBuilder               = builder
                 , D.configSuppressCoreImports   = False
                 , D.configSuppressHashImports   = False
-                , D.configOutputFile            = Nothing
-                , D.configOutputDir             = Nothing }
+                , D.configOutputFile            = configOutputFile config
+                , D.configOutputDir             = configOutputDir  config }
 
