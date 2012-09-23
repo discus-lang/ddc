@@ -7,6 +7,7 @@ ok
 -- Boxed addition
 %s.Obj = type <{i64}>
 @DDC.Runtime.heapTop = external global  i64
+@DDC.Runtime.heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
@@ -66,6 +67,7 @@ l16.default:
 -- None binders.
 %s.Obj = type <{i64}>
 @DDC.Runtime.heapTop = external global  i64
+@DDC.Runtime.heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8

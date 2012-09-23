@@ -8,6 +8,7 @@ ok
 ok
 %s.Obj = type <{i64}>
 @DDC.Runtime.heapTop = external global  i64
+@DDC.Runtime.heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
@@ -47,6 +48,7 @@ l17.entry:
 -- Annotate load/store instructions with metadata
 %s.Obj = type <{i64}>
 @DDC.Runtime.heapTop = external global  i64
+@DDC.Runtime.heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external ccc %s.Obj* @allocBoxed(i32 , i64 ) align 8
@@ -147,6 +149,7 @@ l24.entry:
 ok
 %s.Obj = type <{i64}>
 @DDC.Runtime.heapTop = external global  i64
+@DDC.Runtime.heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 

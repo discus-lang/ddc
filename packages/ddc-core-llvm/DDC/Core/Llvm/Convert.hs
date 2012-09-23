@@ -197,9 +197,18 @@ nameOfParam bb
 
 
 -- Body -----------------------------------------------------------------------
+-- | What context we're doing this conversion in.
 data BodyContext
+        -- | Conversion at the top-level of a function.
+        --   The expresison being converted must eventually pass control.
         = BodyTop
+
+        -- | In a nested context, like in the right of a let-binding.
+        --   The expression should produce a value that we assign to this
+        --   variable, then jump to the provided label to continue evaluation.
         | BodyNest Var Label
+        deriving Show
+
 
 -- | Convert a function body to LLVM blocks.
 convBodyM 
@@ -239,7 +248,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [C.XType t, x2]                    <- xs
           ,  isVoidT t
-          -> do instrs2 <- convStmtM pp kenv tenv mdsup x2
+          -> do instrs2 <- convExpM ExpTop pp kenv tenv mdsup x2
                 return  $  blocks
                         |> Block label 
                                  (instrs >< (instrs2 |> (annotNil $ IReturn Nothing)))
@@ -253,7 +262,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           ,  [C.XType t, x]                     <- xs
           -> do let t'  =  convType pp kenv t
                 vDst    <- newUniqueVar t'
-                is      <- convExpM pp kenv tenv mdsup vDst x
+                is      <- convExpM (ExpAssign vDst) pp kenv tenv mdsup x
                 return  $   blocks 
                         |>  Block label 
                                   (instrs >< (is |> (annotNil $ IReturn (Just (XVar vDst)))))
@@ -309,8 +318,12 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
                   x2
           |  Just x11'@Var{}    <- takeLocalV pp kenv tenv x11
           -> do 
+                -- Label to jump to that continues evaluting 'x2' above.
                 label2          <- newUniqueLabel "cont"
 
+                -- Convert all the alternatives.
+                --  We set 'BodyNest' so the alternative code jumps to 'label2' to 
+                --  continue evaluation of x2.
                 let n'          = A.sanitizeName n
                 let t'          = convType pp kenv t
                 let vDst        = Var (NameLocal n') t'
@@ -334,9 +347,9 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
                 let blocks'     = blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
+                -- Continue converting 'x2', the body of the let-expression.
                 let tenv'       = Env.extend b tenv
                 convBodyM context kenv tenv' mdsup blocks' label2 Seq.empty x2
-
 
          -- Variable assignment from an expression.
          C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t) x1) x2
@@ -345,13 +358,13 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
                 let t'    = convType pp kenv t
                 let dst   = Var (NameLocal n') t'
-                instrs'   <- convExpM pp kenv tenv mdsup dst x1
+                instrs'   <- convExpM (ExpAssign dst) pp kenv tenv mdsup x1
                 convBodyM context kenv tenv' mdsup blocks label (instrs >< instrs') x2
 
-         -- A statement that provides no value statment.
+         -- A statement that provides no value.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           | isVoidT t
-          -> do instrs'   <- convStmtM pp kenv tenv mdsup x1
+          -> do instrs'   <- convExpM ExpTop pp kenv tenv mdsup x1
                 convBodyM context kenv tenv mdsup blocks label (instrs >< instrs') x2
 
          -- Variable assignment from an unsed binder.
@@ -361,7 +374,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           -> do let t'    =  convType pp kenv t
                 dst       <- newUniqueNamedVar "dummy" t'
-                instrs'   <- convExpM pp kenv tenv mdsup dst x1
+                instrs'   <- convExpM (ExpAssign dst) pp kenv tenv mdsup x1
                 convBodyM context kenv tenv mdsup blocks label (instrs >< instrs') x2
 
          -- Letregions ------------------------------------
@@ -397,7 +410,7 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
 
          _ 
           | BodyNest vDst label' <- context
-          -> do instrs'  <- convExpM pp kenv tenv mdsup vDst xx
+          -> do instrs'  <- convExpM (ExpAssign vDst) pp kenv tenv mdsup xx
                 return  $ blocks >< Seq.singleton (Block label 
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
 
@@ -405,66 +418,56 @@ convBodyM context kenv tenv mdsup blocks label instrs xx
           -> die $ "invalid body statement " ++ show xx
  
 
- -- Stmt -----------------------------------------------------------------------
--- | Convert a Core statement to LLVM instructions.
-convStmtM 
-        :: Platform
-        -> KindEnv A.Name
-        -> TypeEnv A.Name
-        -> MDSuper
-        -> C.Exp () A.Name      -- ^ Expression to convert.
-        -> LlvmM (Seq AnnotInstr)
-
-convStmtM pp kenv tenv mdsup xx
- = case xx of
-        -- Call to primop.
-        C.XApp{}
-         |  Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), xs) <- takeXApps xx
-         -> convPrimCallM pp kenv tenv mdsup Nothing p tPrim xs
-
-        -- Call to top-level super.
-         | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
-         , Just (Var nFun _)                <- takeGlobalV pp kenv tenv xFun
-         , Just xsArgs_value'   <- sequence $ map (mconvAtom pp kenv tenv) 
-                                $  eraseTypeWitArgs xsArgs
-         , Just tSuper          <- Env.lookup u tenv
-
-         -> let (_, tResult)    =  convSuperType pp kenv tSuper
-
-            in  return $ Seq.singleton $ annotNil
-                       $ ICall Nothing CallTypeStd 
-                         tResult nFun xsArgs_value' []
-
-        _ -> die $ "invalid statement" ++ show xx
-
-
-
 -- Exp ------------------------------------------------------------------------
--- | Convert a Core expression to LLVM instructions.
+-- | What context we're doing this conversion in.
+data ExpContext
+        -- | Conversion at the top-level of the function.
+        --   We don't have a variable to assign the result to, 
+        --    so this must be a statement that transfers control
+        = ExpTop        
+
+        -- | Conversion in a context that expects a value.
+        --   We evaluate the expression and assign the result to this variable.
+        | ExpAssign Var
+        deriving Show
+
+
+-- | Take any assignable variable from an `ExpContext`.
+varOfExpContext :: ExpContext -> Maybe Var
+varOfExpContext xc
+ = case xc of
+        ExpTop          -> Nothing
+        ExpAssign var   -> Just var
+
+
+-- | Convert a simple Core expression to LLVM instructions.
 --
 --   This only works for variables, literals, and full applications of
 --   primitive operators. The client should ensure the program is in this form 
---   before converting it.
+--   before converting it. The result is just a sequence of instructions,
+ --  so there are no new labels to jump to.
 convExpM
-        :: Platform
+        :: ExpContext
+        -> Platform
         -> KindEnv A.Name
         -> TypeEnv A.Name
         -> MDSuper
-        -> Var                  -- ^ Assign result to this var.
         -> C.Exp () A.Name      -- ^ Expression to convert.
         -> LlvmM (Seq AnnotInstr)
 
-convExpM pp kenv tenv mdsup vDst xx
+convExpM context pp kenv tenv mdsup xx
  = case xx of
         C.XVar _ u@(C.UName (A.NameVar n))
-         | Just t       <- Env.lookup u tenv
+         | Just t               <- Env.lookup u tenv
+         , ExpAssign vDst       <- context
          -> do  let n'  = A.sanitizeName n
                 let t'  = convType pp kenv t
                 return  $ Seq.singleton $ annotNil
                         $ ISet vDst (XVar (Var (NameLocal n') t'))
         
         C.XCon _ dc
-         | Just n       <- C.takeNameOfDaCon dc
+         | Just n               <- C.takeNameOfDaCon dc
+         , ExpAssign vDst       <- context
          -> case n of
                 A.NameNat i
                  -> return $ Seq.singleton $ annotNil
@@ -483,26 +486,25 @@ convExpM pp kenv tenv mdsup vDst xx
         C.XApp{}
          -- Call to primop.
          | Just (C.XVar _ (C.UPrim (A.NamePrim p) tPrim), args) <- takeXApps xx
-         -> convPrimCallM pp kenv tenv mdsup (Just vDst) p tPrim args
+         -> convPrimCallM pp kenv tenv mdsup
+                        (varOfExpContext context)
+                        p tPrim args
 
          -- Call to top-level super.
          | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
          , Just (Var nFun _)                <- takeGlobalV pp kenv tenv xFun
          , Just xsArgs_value'    <- sequence $ map (mconvAtom pp kenv tenv) 
-                                $  eraseTypeWitArgs xsArgs
+                                 $  eraseTypeWitArgs xsArgs
          , Just tSuper           <- Env.lookup u tenv
-         -> let   (_, tResult)    = convSuperType pp kenv tSuper
- 
-            in    return $ Seq.singleton $ annotNil
-                         $ ICall (Just vDst) CallTypeStd 
+         -> let (_, tResult)    = convSuperType pp kenv tSuper
+            in  return $ Seq.singleton $ annotNil
+                       $ ICall (varOfExpContext context) CallTypeStd 
                            tResult nFun xsArgs_value' []
 
         C.XCast _ _ x
-         -> convExpM pp kenv tenv mdsup vDst x
+         -> convExpM context pp kenv tenv mdsup x
 
         _ -> die $ "invalid expression " ++ show xx
-
-
 
 
 -- Alt ------------------------------------------------------------------------
