@@ -2,7 +2,7 @@
 :set lang Lite
 :set TraceTrans
 
-:with test/ddci-core/30-Transform/40-Rewrite/91-LetHoles-Lite/Int.dcl
+:with test/ddc-main/30-Transform/40-Rewrite/91-LetHoles-Lite/Int.dcl
 
 -- now with a Const contraint and regions
 :set.. rule unboxInt_boxInt [r : %] (s : Int#).

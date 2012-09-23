@@ -1,6 +1,6 @@
 :set Indent
 
-:with test/ddci-core/30-Transform/40-Rewrite/90-LetHoles/Module.dce
+:with test/ddc-main/30-Transform/40-Rewrite/90-LetHoles/Module.dce
 
 -- don't look past lets normally
 :set.. rule unbox_box (s : Int R0#).

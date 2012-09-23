@@ -1,4 +1,4 @@
-:with test/ddci-core/30-Transform/40-Rewrite/50-Modules/Module.dce
+:with test/ddc-main/30-Transform/40-Rewrite/50-Modules/Module.dce
 :set.. rule fromTo [r1 r2 r3 : %]
 	(c : Int r3).
     toInt [:r2 r1:] (fromInt [:r3 r2:] c)

@@ -4,4 +4,4 @@
 :with code/lite/base/Data/Numeric/Nat.dcl
 :set.. 
  trans  Inline  <> Beta <> Bubble <> Beta <> Bubble <> Beta <> Bubble;;
-:load<  test/ddci-core/30-Transform/60-Inline/List.dcl
+:load<  test/ddc-main/30-Transform/60-Inline/List.dcl
