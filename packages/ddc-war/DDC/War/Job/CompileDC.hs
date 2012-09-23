@@ -23,7 +23,10 @@ data Spec
         = Spec
         { -- | Root source file of the program (the 'Main.ds')
           specFile               :: FilePath 
-                                
+                       
+          -- | Extra DDC options for building in this way.
+        , specOptionsDDC         :: [String]
+
           -- | Language fragment.
         , specFragment           :: Fragment
 
@@ -78,7 +81,7 @@ instance Pretty Result where
 -- Build ----------------------------------------------------------------------
 -- | Compile a Disciple Core Sea source file.
 build :: Spec -> Build Result
-build   (Spec   srcDC _fragment
+build   (Spec   srcDC optionsDDC _fragment 
                 buildDir mainCompOut mainCompErr
                 mMainBin shouldSucceed)
 
@@ -108,6 +111,7 @@ build   (Spec   srcDC _fragment
                         timeBuild
                          $ systemTee False 
                                 ("bin/ddc"
+                                ++ " "               ++ intercalate " " optionsDDC
                                 ++ " -output "       ++ mainBin
                                 ++ " -output-dir "   ++ buildDir
                                 ++ " -make "         ++ srcDC)
@@ -118,6 +122,7 @@ build   (Spec   srcDC _fragment
                 = do    timeBuild
                          $ systemTee False
                                 ("bin/ddc"
+                                ++ " "               ++ intercalate " " optionsDDC
                                 ++ " -output-dir "   ++ buildDir
                                 ++ " -compile "      ++ srcDC)
                                 ""

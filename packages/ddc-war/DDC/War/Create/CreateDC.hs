@@ -51,7 +51,7 @@ create way allFiles filePath
         -- compile the .ds into a .bin
         compile          = jobOfSpec (JobId testName (wayName way))
                          $ CompileDC.Spec
-                                filePath fragment
+                                filePath (wayOptsComp way) fragment 
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) shouldSucceed
 

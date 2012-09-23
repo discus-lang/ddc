@@ -1,8 +1,9 @@
 
 module DDC.Main.Config
-        ( Mode     (..)
-        , OptLevel (..)
-        , Config   (..)
+        ( Mode       (..)
+        , OptLevel   (..)
+        , ViaBackend (..)
+        , Config     (..)
 
         , defaultConfig
         , defaultBuilderConfig
@@ -62,12 +63,32 @@ data OptLevel
         deriving Show
 
 
+data ViaBackend
+        -- | Compile via the C backend.
+        = ViaC
+
+        -- | Compile via the LLVM backend.
+        | ViaLLVM
+        deriving Show
+
+
 -- | DDC config.
 data Config
         = Config
         { -- | The main compilation mode.
           configMode            :: Mode 
 
+          -- Compilation --------------
+          -- | Redirect output to this file.
+        , configOutputFile      :: Maybe FilePath
+
+          -- | Redirect output to this directory.
+        , configOutputDir       :: Maybe FilePath 
+
+          -- | What backend to use for compilation
+        , configViaBackend      :: ViaBackend
+
+          -- Optimisation -------------
           -- | What optimisation levels to use
         , configOptLevelLite    :: OptLevel
         , configOptLevelSalt    :: OptLevel
@@ -76,12 +97,7 @@ data Config
         , configWithLite        :: [FilePath]
         , configWithSalt        :: [FilePath]
 
-          -- | Redirect output to this file.
-        , configOutputFile      :: Maybe FilePath
-
-          -- | Redirect output to this directory.
-        , configOutputDir       :: Maybe FilePath 
-
+          -- Debugging -----------------
           -- | Dump intermediate representations.
         , configDump            :: Bool }
         deriving (Show)
@@ -92,12 +108,19 @@ defaultConfig :: Config
 defaultConfig
         = Config
         { configMode            = ModeNone 
+
+          -- Compilation --------------
+        , configOutputFile      = Nothing
+        , configOutputDir       = Nothing
+        , configViaBackend      = ViaLLVM
+
+          -- Optimisation -------------
         , configOptLevelLite    = OptLevel0
         , configOptLevelSalt    = OptLevel0
         , configWithLite        = []
         , configWithSalt        = []
-        , configOutputFile      = Nothing
-        , configOutputDir       = Nothing 
+
+          -- Debugging ----------------
         , configDump            = False }
 
 

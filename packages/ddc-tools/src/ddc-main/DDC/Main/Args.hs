@@ -38,6 +38,14 @@ parseArgs args config
         = parseArgs rest
         $ config { configOutputDir  = Just dir }
 
+        | "-fvia-c" : rest      <- args
+        = parseArgs rest
+        $ config { configViaBackend = ViaC }
+
+        | "-fvia-llvm" : rest   <- args
+        = parseArgs rest
+        $ config { configViaBackend = ViaLLVM }
+
         -- Optimisation -------------------------
         | "-O0" : rest          <- args
         = parseArgs rest
@@ -90,8 +98,12 @@ help    = unlines
         , " Compilation:"
         , "       -make       <file>   Compile a module into an executable file."
         , "  -c,  -compile    <file>   Compile a module into an object file."
+        , ""
         , "  -o,  -output     <file>   Redirect output to this file."
         , "       -output-dir <dir>    Redirect output to this directory."
+        , ""
+        , "       -fvia-llvm           Compile via the LLVM backend  (default)"
+        , "       -fvia-c              Compile via the C backend."
         , ""
         , " Optimisation:"
         , "       -O0                  No optimisations.             (default)"
