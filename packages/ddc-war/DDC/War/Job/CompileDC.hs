@@ -83,7 +83,7 @@ build   (Spec   srcDC _fragment
                 mMainBin shouldSucceed)
 
  = do   needs srcDC
-        needs "bin/ddci-core"
+        needs "bin/ddc"
 
         -- The directory holding the Main.dce file.
         let (srcDir, _srcFile)  = splitFileName srcDC
@@ -107,19 +107,19 @@ build   (Spec   srcDC _fragment
                         -- Build the program.
                         timeBuild
                          $ systemTee False 
-                                ("bin/ddci-core"
-                                ++ " -set output "      ++ mainBin
-                                ++ " -set outputdir "   ++ buildDir
-                                ++ " -make "            ++ srcDC)
+                                ("bin/ddc"
+                                ++ " -output "       ++ mainBin
+                                ++ " -output-dir "   ++ buildDir
+                                ++ " -make "         ++ srcDC)
                                 ""
 
                 -- Compile the program.
                 | otherwise
                 = do    timeBuild
                          $ systemTee False
-                                ("bin/ddci-core"
-                                ++ " -set outputdir "   ++ buildDir
-                                ++ " -compile "         ++ srcDC)
+                                ("bin/ddc"
+                                ++ " -output-dir "   ++ buildDir
+                                ++ " -compile "      ++ srcDC)
                                 ""
         (time, (code, strOut, strErr))
                 <- compile
