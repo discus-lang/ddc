@@ -1,4 +1,5 @@
 
+-- | Define the command line configuation arguments.
 module DDC.Main.Config
         ( Mode       (..)
         , OptLevel   (..)
@@ -57,9 +58,6 @@ data OptLevel
 
         -- | Do standard optimisations.
         | OptLevel1
-
-        -- | Custom optimiation definition.
-        | OptCustom String
         deriving Show
 
 
@@ -79,6 +77,9 @@ data Config
           configMode            :: Mode 
 
           -- Compilation --------------
+          -- | Path to the base library code.
+        , configLibraryPath     :: FilePath
+
           -- | Redirect output to this file.
         , configOutputFile      :: Maybe FilePath
 
@@ -110,6 +111,7 @@ defaultConfig
         { configMode            = ModeNone 
 
           -- Compilation --------------
+        , configLibraryPath     = "code"
         , configOutputFile      = Nothing
         , configOutputDir       = Nothing
         , configViaBackend      = ViaLLVM
@@ -124,10 +126,10 @@ defaultConfig
         , configDump            = False }
 
 
-defaultBuilderConfig :: BuilderConfig
-defaultBuilderConfig
+defaultBuilderConfig :: Config -> BuilderConfig
+defaultBuilderConfig config
         = BuilderConfig
-        { builderConfigRuntime  = "code/salt" }
+        { builderConfigRuntime  = configLibraryPath config </> "salt" }
 
 
 -- | Get the Lite specific stuff from the config.

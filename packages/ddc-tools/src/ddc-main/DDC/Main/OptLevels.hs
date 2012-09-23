@@ -12,15 +12,17 @@ import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Simplifier                      (Simplifier)
 import DDC.Core.Transform.Inline.Templates
 import DDC.Core.Transform.Namify
+import System.FilePath
+import Control.Monad
+import Data.Monoid
+import Data.Maybe
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
 import qualified DDC.Core.Lite.Name             as Lite
 import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
-import Data.Monoid
-import Data.Maybe
-import Control.Monad
+
 
 -- | Get the simplifier for Lite code from the config.
 --   This also reads up all the modules we use for inliner templates.
@@ -37,7 +39,6 @@ getSimplLiteOfConfig config builder
  = case configOptLevelLite config of
         OptLevel0       -> opt0_lite config
         OptLevel1       -> opt1_lite config builder
-        OptCustom _str  -> error "OptLevel: custom optimsations not parsed yet" 
 
 
 -- | Get the simplifier for Salt code from the config.
@@ -50,7 +51,6 @@ getSimplSaltOfConfig config builder
  = case configOptLevelSalt config of
         OptLevel0       -> opt0_salt config
         OptLevel1       -> opt1_salt config builder
-        OptCustom _str  -> error "OptLevel: custom optimsations not parsed yet" 
 
 
 -- Level 0 --------------------------------------------------------------------
@@ -79,12 +79,10 @@ opt1_lite
 opt1_lite config _builder
  = do
         -- Auto-inline basic numeric code.
-        -- TODO: we should be able to specify where the this code is.
         let inlineModulePaths
-                =  [ "code/lite/base/Data/Numeric/Int.dcl"
-                   , "code/lite/base/Data/Numeric/Nat.dcl" ]
+                =  [ configLibraryPath config </> "lite/base/Data/Numeric/Int.dcl"
+                   , configLibraryPath config </> "lite/base/Data/Numeric/Nat.dcl" ]
                 ++ (configWithSalt config)
-
 
         -- Load all the modues that we're using for inliner templates.
         --  If any of these don't load then the 'cmdReadModule' function 
@@ -123,10 +121,12 @@ opt1_salt config builder
         let targetWidth
                 = archPointerWidth $ platformArch $ buildTarget builder
 
-        -- TODO: we should be able to specify where the RTS code is.
+        -- The runtime system code comes in different versions, 
+        --  depending on the pointer width of the target architecture.
         let inlineModulePaths
-                =  [ "code/salt/runtime" ++ show targetWidth ++ "/Object.dce"]
-                ++ (configWithSalt config)
+                =  [ configLibraryPath config 
+                        </> "salt/runtime" </> show targetWidth </> "Object.dce"]
+                ++ configWithSalt config
 
         -- Load all the modues that we're using for inliner templates.
         --  If any of these don't load then the 'cmdReadModule' function 
@@ -151,6 +151,4 @@ opt1_salt config builder
                 <> S.Fix 5 (S.beta 
                                 <> S.bubble      <> S.flatten 
                                 <> normalizeSalt <> S.forward)
-
-
 

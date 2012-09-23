@@ -1,4 +1,5 @@
 
+-- | Parsing of command line configuation arguments.
 module DDC.Main.Args 
         ( parseArgs
         , help)
@@ -28,15 +29,14 @@ parseArgs args config
         = parseArgs rest
         $ config { configMode   = ModeCompile file}
 
+        | "-library" : path : rest <- args
+        = parseArgs rest
+        $ config { configLibraryPath = path }
+
         | flag : file : rest     <- args
         , elem flag    ["-o", "-output"]
         = parseArgs rest
         $ config { configOutputFile = Just file }
-
-        | flag : dir : rest     <- args
-        , elem flag    ["-output-dir"]
-        = parseArgs rest
-        $ config { configOutputDir  = Just dir }
 
         | "-fvia-c" : rest      <- args
         = parseArgs rest
@@ -45,6 +45,11 @@ parseArgs args config
         | "-fvia-llvm" : rest   <- args
         = parseArgs rest
         $ config { configViaBackend = ViaLLVM }
+
+        | flag : dir : rest     <- args
+        , elem flag    ["-output-dir"]
+        = parseArgs rest
+        $ config { configOutputDir  = Just dir }
 
         -- Optimisation -------------------------
         | "-O0" : rest          <- args
@@ -99,11 +104,13 @@ help    = unlines
         , "       -make       <file>   Compile a module into an executable file."
         , "  -c,  -compile    <file>   Compile a module into an object file."
         , ""
-        , "  -o,  -output     <file>   Redirect output to this file."
-        , "       -output-dir <dir>    Redirect output to this directory."
+        , "       -library    <dir>    Path to the base library code (./code)"
         , ""
         , "       -fvia-llvm           Compile via the LLVM backend  (default)"
         , "       -fvia-c              Compile via the C backend."
+        , ""
+        , "  -o,  -output     <file>   Redirect output to this file."
+        , "       -output-dir <dir>    Redirect output to this directory."
         , ""
         , " Optimisation:"
         , "       -O0                  No optimisations.             (default)"

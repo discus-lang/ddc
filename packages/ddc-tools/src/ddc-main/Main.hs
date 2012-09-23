@@ -89,7 +89,7 @@ run config
 -- | Get the compile driver from the config.
 getDriverConfig :: Config -> IO D.Config
 getDriverConfig config
- = do   Just builder    <- determineDefaultBuilder defaultBuilderConfig
+ = do   Just builder    <- determineDefaultBuilder (defaultBuilderConfig config)
         simplLite       <- getSimplLiteOfConfig config builder
         simplSalt       <- getSimplSaltOfConfig config builder
 
