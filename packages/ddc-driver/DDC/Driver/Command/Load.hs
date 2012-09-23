@@ -45,10 +45,10 @@ cmdReadModule frag filePath
         src     <- readFile filePath
         let source   = SourceFile filePath
 
-        cmdReadModule_parse frag source src
+        cmdReadModule_parse filePath frag source src
 
 
-cmdReadModule_parse frag source src
+cmdReadModule_parse filePath frag source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore frag
@@ -57,9 +57,9 @@ cmdReadModule_parse frag source src
 
         case errs of
          [] -> do
-                putStrLn "ok"
                 readIORef ref
 
          _ -> do
+                putStrLn $ "When reading " ++ filePath
                 mapM_ (putStrLn . renderIndent . ppr) errs
                 return Nothing

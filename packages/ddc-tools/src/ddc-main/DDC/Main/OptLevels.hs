@@ -19,6 +19,7 @@ import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Build.Language.Lite        as Lite
 import Data.Monoid
+import Data.Maybe
 import Control.Monad
 
 -- | Get the simplifier for Lite code from the config.
@@ -84,10 +85,18 @@ opt1_lite config _builder
                    , "code/lite/base/Data/Numeric/Nat.dcl" ]
                 ++ (configWithSalt config)
 
-        Just inlineModules
+
+        -- Load all the modues that we're using for inliner templates.
+        --  If any of these don't load then the 'cmdReadModule' function 
+        --  will display the errors.
+        minlineModules
                 <- liftM sequence
                 $  mapM (cmdReadModule Lite.fragmentLite)
                         inlineModulePaths
+
+        let inlineModules
+                = fromMaybe (error "Imported modules do not parse.")
+                            minlineModules
 
         -- Simplifier to convert to a-normal form.
         let normalizeLite
@@ -122,10 +131,17 @@ opt1_salt config builder
                 =  [ "code/salt/runtime" ++ show targetWidth ++ "/Object.dce"]
                 ++ (configWithSalt config)
 
-        Just inlineModules
+        -- Load all the modues that we're using for inliner templates.
+        --  If any of these don't load then the 'cmdReadModule' function 
+        --  will display the errors.
+        minlineModules
                 <- liftM sequence
                 $  mapM (cmdReadModule Salt.fragmentSalt)
                         inlineModulePaths
+
+        let inlineModules
+                = fromMaybe (error "Imported modules do not parse.")
+                            minlineModules
 
         -- Simplifier to convert to a-normal form.
         let normalizeSalt
@@ -141,4 +157,6 @@ opt1_salt config builder
                 <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
                 <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
                 <> S.beta <> S.bubble <> S.flatten <> normalizeSalt <> S.forward
+
+
 
