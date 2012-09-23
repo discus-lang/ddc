@@ -93,30 +93,36 @@ When checking expression.
          \(_ : Unit). 2 [r] ()
 
 
--- Type variable not in environment.
+-- Error: Type variable not in environment.
 When checking type.
   Undefined type variable:  a
 
 
--- Type constructor not in environment.
+-- Error: Type constructor not in environment.
 When checking type.
   Undefined type constructor:  Whatever
 
 
--- Data constructor not in environment.
+-- Error: Data constructor not in environment.
 When checking expression.
   Undefined data constructor: Whatever
 
 
--- Type constructor used as a data constructor.
+-- Error: Type constructor used as a data constructor.
 While parsing.
   Parse error in "<batch>" (line 1, column 1)
   Unexpected constructor "Unit".
   Expected an expression.
 
 
--- Data constructor used as a type constructor.
+-- Error: Data constructor used as a type constructor.
 While parsing.
   Parse error in "<batch>" (line 1, column 1)
   Unexpected constructor "()".
   Expected a type.
+
+
+-- Error: Type variable used as a value variable.
+When checking expression.
+  Undefined value variable: a
+
