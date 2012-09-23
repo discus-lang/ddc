@@ -91,12 +91,22 @@ getTag [r : %] (obj : Ptr# r Obj) : Tag#
 --        Obj*      payload[];    
 --   } DataBoxed;
 --    
-allocBoxed [r : %] (tag : Tag#) (arity : Nat#) : Ptr# r Obj
+allocBoxed
+        [r : %]
+        (tag : Tag#) (arity : Nat#) : Ptr# r Obj
  = do   
         -- Multiple arity by 8 bytes-per-pointer to get size of payload.
         bytesPayload    = shl# [Nat#] arity 3#
 
         bytesObj        = add# [Nat#] 8# bytesPayload
+        case check# bytesObj of
+         True#  -> allocBoxed_ok [r] tag arity bytesObj
+         False# -> fail# [Ptr# r Obj]
+
+allocBoxed_ok
+        [r : %]
+        (tag : Tag#) (arity : Nat#) (bytesObj : Nat#) : Ptr# r Obj
+ = do   
         addr            = alloc# bytesObj
 
         tag32           = promote# [Word32#] [Tag#] tag
@@ -145,10 +155,20 @@ setFieldOfBoxed
 --           Obj*      payload[];    // Contains ptrCount pointers, then raw data.
 --   } DataMixed;
 --
-allocMixed [r : %] (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
+allocMixed 
+        [r : %]
+        (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
  = do   
         bytesPtrs       = shl# [Nat#] arity 3#
         bytesObj        = add# [Nat#] 16# (add# [Nat#] bytesPtrs bytesRaw)
+        case check# bytesObj of
+         True#  -> allocMixed_ok [r] tag arity bytesObj
+         False# -> fail# [Ptr# r Obj]
+
+allocMixed_ok
+        [r : %]
+        (tag : Tag#) (arity : Nat#) (bytesObj : Nat#) : Ptr# r Obj
+ = do
         addr            = alloc# bytesObj
 
         tag32           = promote# [Word32#] [Tag#] tag
@@ -172,7 +192,6 @@ fieldOfMixed [r : %] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
         plusPtr# [r] [Obj] obj offset
       
 
-
 -- | Get the address of the raw data payload from a mixed object.
 payloadOfMixed [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
  =      makePtr# [r] [Obj] (plusAddr# (takePtr# [r] [Obj] obj) 16#)
@@ -191,9 +210,19 @@ payloadOfMixed [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
 --           uint8_t   payload[];    // Raw data that does not contain heap pointers.
 --   } DataRaw;
 --
-allocRaw [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
+allocRaw
+        [r : %] 
+        (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do   
         bytesObj        = add# [Nat#] 8# bytesPayload
+        case check# bytesObj of
+         True#  -> allocRaw [r] tag bytesObj
+         False# -> fail# [Ptr# r Obj]
+
+allocRaw_ok
+        [r : %]
+        (tag : Tag#) (bytesObj : Nat#) : Ptr# r Obj
+ = do
         addr            = alloc# bytesObj
 
         tag32           = promote# [Word32#] [Tag#] tag
@@ -224,9 +253,19 @@ payloadOfRaw [r : %] (obj : Ptr# r Obj) : Ptr# r Obj
 --           uint8_t   payload[];    // Raw data that does not contain heap pointers.
 --   } DataRawSmall;
 --
-allocRawSmall [r : %] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
+allocRawSmall
+        [r : %]
+        (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do   
         bytesObj        = add# [Nat#] 4# bytesPayload
+        case check# bytesObj of
+         True#   -> allocRawSmall_ok [r] tag bytesPayload bytesObj
+         False#  -> fail# [Ptr# r Obj]
+
+allocRawSmall_ok
+        [r : %]
+        (tag : Tag#) (bytesPayload : Nat#) (bytesObj : Nat#) : Ptr# r Obj
+ = do   
         addr            = alloc# bytesObj
 
         tag32           = promote#  [Word32#] [Tag#] tag
