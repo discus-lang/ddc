@@ -54,7 +54,7 @@ include make/build.mk
 allWithConfig :
 	@$(MAKE) packages/ddc-alpha/Source/Lexer.hs
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc-alpha bin/ddc-check bin/ddci-core runtime external libs bin/war -j $(THREADS)
+	@$(MAKE) bin/ddc-alpha bin/ddc bin/ddc-check bin/ddci-core runtime external libs bin/war -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
