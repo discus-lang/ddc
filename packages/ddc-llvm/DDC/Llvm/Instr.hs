@@ -178,7 +178,7 @@ instance Pretty Instr where
          -> text "ret" <+> ppr value
 
         IBranch label
-         -> text "br"  <+> ppr label
+         -> text "br label %"  <> ppr label
 
         IBranchIf cond labelTrue labelFalse
          -> hsep [ text "br"

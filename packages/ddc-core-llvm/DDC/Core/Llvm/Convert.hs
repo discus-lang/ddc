@@ -171,7 +171,7 @@ convSuperM kenv tenv bSuper@(C.BName (A.NameVar nTop) tSuper) x
 
         -- Convert function body to basic blocks.
         label   <- newUniqueLabel "entry"
-        blocks  <- convBodyM kenv' tenv' mdsup Seq.empty label Seq.empty xBody
+        blocks  <- convBodyM kenv' tenv' mdsup Nothing Seq.empty label Seq.empty xBody
 
         -- Build the function.
         return  $ ( Function
@@ -202,13 +202,14 @@ convBodyM
         :: KindEnv A.Name
         -> TypeEnv A.Name
         -> MDSuper
+        -> Maybe (Var, Label)   -- ^ Assign result to this var (TODO: hacks)
         -> Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
         -> Seq AnnotInstr       -- ^ Instrs in current block.
         -> C.Exp () A.Name      -- ^ Expression being converted.
         -> LlvmM (Seq Block)    -- ^ Final blocks of function body.
 
-convBodyM kenv tenv mdsup blocks label instrs xx
+convBodyM kenv tenv mdsup mDst blocks label instrs xx
  = do   pp      <- gets llvmStatePlatform
         case xx of
 
@@ -291,6 +292,41 @@ convBodyM kenv tenv mdsup blocks label instrs xx
 
 
          -- Assignment ------------------------------------
+         -- Variable assigment from a case-expression.
+         C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t)
+                                     (C.XCase _ x11 alts))
+                  x2
+          |  Just x11'@Var{}    <- takeLocalV pp kenv tenv x11
+          -> do 
+                label2          <- newUniqueLabel "cont"
+
+                let n'          = A.sanitizeName n
+                let t'          = convType pp kenv t
+                let vDst        = Var (NameLocal n') t'
+                alts'@(_:_)     <- mapM (convAltM kenv tenv mdsup (Just (vDst, label2))) alts
+
+                -- Determine what default alternative to use for the instruction. 
+                (lDefault, blocksDefault)
+                 <- case last alts' of
+                        AltDefault l bs -> return (l, bs)
+                        AltCase _  l bs -> return (l, bs)
+
+                -- Alts that aren't the default.
+                let altsTable   = init alts'
+
+                -- Build the jump table of non-default alts.
+                let table       = mapMaybe takeAltCase altsTable
+                let blocksTable = join $ fmap altResultBlocks $ Seq.fromList altsTable
+
+                let switchBlock = Block label
+                                $ instrs |> (annotNil $ ISwitch (XVar x11') lDefault table)
+
+                let blocks'     = blocks >< (switchBlock <| (blocksTable >< blocksDefault))
+
+                let tenv'       = Env.extend b tenv
+                convBodyM kenv tenv' mdsup Nothing blocks' label2 Seq.empty x2
+
+
          -- Variable assignment from an expression.
          C.XLet _ (C.LLet C.LetStrict b@(C.BName (A.NameVar n) t) x1) x2
           -> do let tenv' = Env.extend b tenv
@@ -299,31 +335,33 @@ convBodyM kenv tenv mdsup blocks label instrs xx
                 let t'    = convType pp kenv t
                 let dst   = Var (NameLocal n') t'
                 instrs'   <- convExpM pp kenv tenv mdsup dst x1
-                convBodyM kenv tenv' mdsup blocks label (instrs >< instrs') x2
+                convBodyM kenv tenv' mdsup mDst blocks label (instrs >< instrs') x2
 
          -- A statement that provides no value statment.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           | isVoidT t
           -> do instrs'   <- convStmtM pp kenv tenv mdsup x1
-                convBodyM kenv tenv mdsup blocks label (instrs >< instrs') x2
+                convBodyM kenv tenv mdsup mDst blocks label (instrs >< instrs') x2
 
          -- Variable assignment from an unsed binder.
          -- We need to invent a dummy binder as LLVM needs some name for it.
+         --  TODO: do an initial pass to add binders,
+         --        so we don't need to handle this separately.
          C.XLet _ (C.LLet C.LetStrict (C.BNone t) x1) x2
           -> do let t'    =  convType pp kenv t
                 dst       <- newUniqueNamedVar "dummy" t'
                 instrs'   <- convExpM pp kenv tenv mdsup dst x1
-                convBodyM kenv tenv mdsup blocks label (instrs >< instrs') x2
+                convBodyM kenv tenv mdsup mDst blocks label (instrs >< instrs') x2
 
-         -- Letregions
+         -- Letregions ------------------------------------
          C.XLet _ (C.LLetRegions b _) x2
           -> do let kenv' = Env.extends b kenv
-                convBodyM kenv' tenv mdsup blocks label instrs x2
+                convBodyM kenv' tenv mdsup mDst blocks label instrs x2
 
-         -- Case statement.
+         -- Case ------------------------------------------
          C.XCase _ x1 alts
           | Just x1'@(Var{})    <- takeLocalV pp kenv tenv x1
-          -> do alts'@(_:_)     <- mapM (convAltM kenv tenv mdsup) alts
+          -> do alts'@(_:_)     <- mapM (convAltM kenv tenv mdsup mDst) alts
 
                 -- Determine what default alternative to use for the instruction. 
                 (lDefault, blocksDefault)
@@ -344,9 +382,16 @@ convBodyM kenv tenv mdsup blocks label instrs xx
                 return  $ blocks >< (switchBlock <| (blocksTable >< blocksDefault))
 
          C.XCast _ _ x
-          -> convBodyM kenv tenv mdsup blocks label instrs x
+          -> convBodyM kenv tenv mdsup mDst blocks label instrs x
 
-         _ -> die $ "invalid body statement " ++ show xx
+         _ 
+          | Just (vDst, label') <- mDst
+          -> do instrs'  <- convExpM pp kenv tenv mdsup vDst xx
+                return  $ blocks >< Seq.singleton (Block label 
+                                (instrs >< (instrs' |> (annotNil $ IBranch label'))))
+
+          |  otherwise
+          -> die $ "invalid body statement " ++ show xx
  
 
 -- Stmt -----------------------------------------------------------------------
@@ -397,22 +442,23 @@ convAltM
         :: KindEnv  A.Name
         -> TypeEnv  A.Name
         -> MDSuper
+        -> Maybe (Var, Label)
         -> C.Alt () A.Name      -- ^ Alternative to convert.
         -> LlvmM AltResult
 
-convAltM kenv tenv mdsup aa
+convAltM kenv tenv mdsup mDst aa
  = do   pp      <- gets llvmStatePlatform
         case aa of
          C.AAlt C.PDefault x
           -> do label   <- newUniqueLabel "default"
-                blocks  <- convBodyM kenv tenv mdsup Seq.empty label Seq.empty x
+                blocks  <- convBodyM kenv tenv mdsup mDst Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
          C.AAlt (C.PData dc []) x
           | Just n      <- C.takeNameOfDaCon dc
           , Just lit    <- convPatName pp n
           -> do label   <- newUniqueLabel "alt"
-                blocks  <- convBodyM kenv tenv mdsup Seq.empty label Seq.empty x
+                blocks  <- convBodyM kenv tenv mdsup mDst Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
          _ -> die "invalid alternative"
